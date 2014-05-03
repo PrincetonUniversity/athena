@@ -63,10 +63,10 @@ void Fluid::PredictVL2(Mesh *pm)
   for (int n=0; n<NVAR; ++n){
 #pragma simd
   for (int i=is; i<=ie+1; ++i){
-    Real& wri = wl(n,i);
-    Real& wli = wr(n,i);
-    Real& wi   = w(n,k,j,i  );
+    Real& wli = wl(n,i);
+    Real& wri = wr(n,i);
     Real& wim1 = w(n,k,j,i-1);
+    Real& wi   = w(n,k,j,i  );
     Real& wip1 = w(n,k,j,i+1);
 
     Real dwl = wi - wim1;
@@ -84,12 +84,12 @@ void Fluid::PredictVL2(Mesh *pm)
     wli = wi - dwm;
   }}
  
-  hllc(is,ie+1,wl,wr,flx );
+  hllc(is,ie+1,wl,wr,flx);
 
   for (int n=0; n<NVAR; ++n){
 #pragma simd
-    for (int i=is; i<=ie+1; ++i){
-      Real& ui  = u1(n,k,j,i);
+    for (int i=is; i<=ie; ++i){
+      Real& ui  = u (n,k,j,i);
       Real& u1i = u1(n,k,j,i);
       Real& flxi   = flx(n,  i);
       Real& flxip1 = flx(n,i+1);
@@ -120,11 +120,11 @@ void Fluid::PredictVL2(Mesh *pm)
   for (int n=0; n<NVAR; ++n){
 #pragma simd
   for (int i=is; i<=ie; ++i){
-    Real& wri = wr(n,i);
-    Real& wli = wl(n,i);
+    Real& wlj = wl(n,i);
+    Real& wrj = wr(n,i);
+    Real& wjm1 = w(n,k,j-1,i);
     Real& wj   = w(n,k,j  ,i);
     Real& wjp1 = w(n,k,j+1,i);
-    Real& wjm1 = w(n,k,j-1,i);
     
     Real dwl = wj - wjm1;
     Real dwr = wjp1 - wj;
@@ -137,22 +137,23 @@ void Fluid::PredictVL2(Mesh *pm)
       
 // Compute L/R values 
 
-    wri = wj - dwm;
-    wli = wj + dwm;
+    wrj = wj - dwm;
+    wlj = wj + dwm;
   }}
 
-  hllc(is,ie,wl,wr,flx ); 
+  hllc(is,ie,wl,wr,flx); 
 
-  Real dtodx = proot->dt/(pb->dx2f(j));
+  Real dtodxjm1 = proot->dt/(pb->dx2f(j-1));
+  Real dtodxj   = proot->dt/(pb->dx2f(j));
   for (int n=0; n<NVAR; ++n){
 #pragma simd
     for (int i=is; i<=ie; ++i){
-      Real& u1j   = u1(n,k,j  ,i);
       Real& u1jm1 = u1(n,k,j-1,i);
-      Real& flxi  = flx(n,i);
+      Real& u1j   = u1(n,k,j  ,i);
+      Real& flxj  = flx(n,i);
 
-      u1j   -= dtodx*flxi;
-      u1jm1 += dtodx*flxi;
+      u1jm1 -= dtodxjm1*flxj;
+      u1j   += dtodxj  *flxj;
     }
   }
 
@@ -180,11 +181,11 @@ void Fluid::PredictVL2(Mesh *pm)
 #pragma simd
   for (int i=is; i<=ie; ++i){
 
-    Real& wk   = w(n,k  ,j,i);
-    Real& wkm1 = w(n,k-1,j,i);
-    Real& wkp1 = w(n,k+1,j,i);
     Real& wrk = wr(n,i);
     Real& wlk = wl(n,i);
+    Real& wkm1 = w(n,k-1,j,i);
+    Real& wk   = w(n,k  ,j,i);
+    Real& wkp1 = w(n,k+1,j,i);
 
 
     Real dwl = wk - wkm1;
@@ -204,16 +205,17 @@ void Fluid::PredictVL2(Mesh *pm)
 
   hllc(is,ie,wl,wr,flx);
 
-  Real dtodx = proot->dt/(pb->dx3f(k));
+  Real dtodxkm1 = proot->dt/(pb->dx3f(k-1));
+  Real dtodxk   = proot->dt/(pb->dx3f(k));
   for (int n=0; n<NVAR; ++n){
 #pragma simd
     for (int i=is; i<=ie; ++i){
-      Real& u1k   = u1(n,k  ,j,i);
       Real& u1km1 = u1(n,k-1,j,i);
-      Real& flxi = flx(n,i);
+      Real& u1k   = u1(n,k  ,j,i);
+      Real& flxk = flx(n,i);
 
-      u1k   -= dtodx*flxi;
-      u1km1 += dtodx*flxi;
+      u1km1 -= dtodxkm1*flxk;
+      u1k   += dtodxk  *flxk;
     }
   }
 

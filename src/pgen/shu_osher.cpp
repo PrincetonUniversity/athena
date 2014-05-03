@@ -23,7 +23,6 @@
 #include "../parameter_input.hpp"
 #include "../mesh.hpp"
 #include "../fluid.hpp"
-#include "../integrators/integrator.hpp"
 
 //======================================================================================
 /*! \file shu_osher.cpp
