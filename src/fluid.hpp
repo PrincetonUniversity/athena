@@ -41,6 +41,8 @@ public:
   void Predict(Mesh *pm);
 
   void PredictVL2(Mesh *pm);
+  void hllc(const int il, const int iu,
+     AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx);
 
 private:
   AthenaArray<Real> u1_,w1_; // conserved and primitive variables at the half-time step
