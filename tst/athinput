@@ -1,0 +1,56 @@
+<comment>
+problem   = Sod's shock tube
+reference = Sod, G.A., JCP 27, pp. 1-31 (1978)
+configure = --with-gas=hydro --with-problem=shkset1d
+
+<job>
+problem_id      = Sod       # problem ID: basename of output filenames
+maxout          = 2         # Output blocks number from 1 -> maxout
+
+<output1>
+out_fmt = tab               # Tabular data dump
+out     = prim              # variables to be output
+dat_fmt = %12.5e            # Optional data format string
+dt      = 0.01              # time increment between outputs
+
+<output2>
+out_fmt = hst               # History data dump
+dt      = 0.01              # time increment between outputs
+
+<time>
+cfl             = 0.8       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim            = -1        # cycle limit
+tlim            = 0.25      # time limit
+
+<mesh>
+nx1             = 256       # Number of zones in X1-direction
+x1min           = -0.5      # minimum value of X1
+x1max           = 0.5       # maximum value of X1
+
+nx2             = 256       # Number of zones in X2-direction
+x2min           = -0.5      # minimum value of X2
+x2max           = 0.5       # maximum value of X2
+
+nx3             = 256       # Number of zones in X3-direction
+x3min           = -0.5      # minimum value of X3
+x3max           = 0.5       # maximum value of X3
+
+<fluid>
+gamma   = 1.4               # gamma = C_p/C_v
+
+<problem>
+shk_dir = 1                 # Shock Direction -- (1,2,3) = (x1,x2,x3)
+
+dl  = 1.0                   # density on left half of grid
+pl  = 1.0                   # pressure
+v1l = 0.0                   # X-velocity
+v2l = 0.0                   # Y-velocity
+v3l = 0.0                   # Z-velocity
+r0l = 1.0                   # "color"
+
+dr  = 0.125                 # density on right half of grid
+pr  = 0.1                   # pressure
+v1r = 0.0                   # X-velocity
+v2r = 0.0                   # Y-velocity
+v3r = 0.0                   # Z-velocity
+r0r = 0.0                   # "color"
