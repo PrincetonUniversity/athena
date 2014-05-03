@@ -71,5 +71,7 @@ void Fluid::ProblemGenerator(ParameterInput *pin, Domain *pd)
     }
   }}
 
+  ConservedToPrimitive(pd, proot->u, proot->w);
+
   return;
 }
