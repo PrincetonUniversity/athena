@@ -49,10 +49,10 @@ void Fluid::ProblemGenerator(ParameterInput *pin, Domain *pd)
 
   Real gm1 = Fluid::GetGamma_m1();
 
-  for (int k=ks; k<=ke; ++k) {
-  for (int j=js; j<=je; ++j) {
+  for (int k=ks-2; k<=ke+2; ++k) {
+  for (int j=js-2; j<=je+2; ++j) {
 #pragma simd
-    for (int i=is; i<=ie; ++i) {
+    for (int i=is-2; i<=ie+2; ++i) {
 
       if (pb->x1v(i) < -0.8) {
         proot->u(IDN,k,j,i) = dl;

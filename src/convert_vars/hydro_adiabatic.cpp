@@ -39,17 +39,17 @@ void Fluid::ConservedToPrimitive(Domain *pd, AthenaArray<Real> &u, AthenaArray<R
   int ie = pb->ie; int je = pb->je; int ke = pb->ke;
 
 /*
-  AthenaArray<Real> u = proot->u;
-  AthenaArray<Real> w = proot->w;
+  AthenaArray<Real> ut = u;
+  AthenaArray<Real> wt = w;
 */
 
 //--------------------------------------------------------------------------------------
 // Convert to Primitives
 
-  for (int k=ks; k<=ke; ++k){
-  for (int j=js; j<=je; ++j){
+  for (int k=ks-2; k<=ke+2; ++k){
+  for (int j=js-2; j<=je+2; ++j){
 #pragma simd
-    for (int i=is; i<=ie; ++i){
+    for (int i=is-2; i<=ie+2; ++i){
       Real& u_d  = u(IDN,k,j,i);
       Real& u_m1 = u(IVX,k,j,i);
       Real& u_m2 = u(IVY,k,j,i);
