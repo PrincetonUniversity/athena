@@ -30,7 +30,7 @@
  *  \brief HLLC Riemann solver for hydrodynamics
  *====================================================================================*/
 
-void Fluid::hllc(const int il, const int iu,
+void Fluid::HLLC(const int il, const int iu,
        AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {
   Real sqrtdl,sqrtdr,isdlpdr,v1roe,v2roe,v3roe,hroe;

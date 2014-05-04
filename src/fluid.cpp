@@ -81,9 +81,15 @@ Fluid::~Fluid()
 
 void Fluid::Predict(Mesh *pm)
 {
-  PredictVL2(pm);
+  PredictVanLeer2(pm);
 
 //  PredictSourceTerms
+//  BoundaryValues
+//  ConservedToPrimitive
+
+  CorrectVanLeer2(pm);
+
+//  CorrectSourceTerms
 //  BoundaryValues
 //  ConservedToPrimitive
 }

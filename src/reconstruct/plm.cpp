@@ -31,7 +31,7 @@
  *  \brief  piecewise linear reconstruction
  *====================================================================================*/
 
-void Fluid::PLM(const int k, const int j, const int il, const int iu,
+void Fluid::PiecewiseLinear(const int k, const int j, const int il, const int iu,
   const int dir, AthenaArray<Real> &w, AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
   int offset;
