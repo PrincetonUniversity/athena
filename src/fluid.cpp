@@ -30,27 +30,26 @@
 
 // constructor, initializes data structures and parameters, calls problem generator
 
-Fluid::Fluid(ParameterInput *pin, Mesh *pm)
+Fluid::Fluid(ParameterInput *pin, Block *pb)
 {
+  pmy_block = pb;
 // Read adiabatic index from input file
 
   gamma_ = pin->GetReal("fluid","gamma");
-  gamma_m1_ = gamma_ - 1.0;
 
-// Allocate FluidData structure on root Domain, initialize times
+// initialize time, timestep
 
-  proot = new FluidData;
-  proot->time = 0.0;
-  proot->dt   = 1.0;
+  time = 0.0;
+  dt   = 1.0;
 
-// Allocate memory for primitive/conserved variables on root Domain
+// Allocate memory for primitive/conserved variables
 
-  int ncells1 = pm->root.pblock->block_size.nx1 + 2*(NGHOST);
-  int ncells2 = pm->root.pblock->block_size.nx2 + 2*(NGHOST);
-  int ncells3 = pm->root.pblock->block_size.nx3 + 2*(NGHOST);
+  int ncells1 = pmy_block->block_size.nx1 + 2*(NGHOST);
+  int ncells2 = pmy_block->block_size.nx2 + 2*(NGHOST);
+  int ncells3 = pmy_block->block_size.nx3 + 2*(NGHOST);
 
-  proot->u.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
-  proot->w.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
+  u.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
+  w.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
 
 // Allocate memory for primitive/conserved variables at half-time step, and scratch
 
@@ -61,35 +60,18 @@ Fluid::Fluid(ParameterInput *pin, Mesh *pm)
   wr_.NewAthenaArray(NVAR,ncells1);
   flx_.NewAthenaArray(NVAR,ncells1);
 
-// call problem generator (set by file in pgen/ compiled by configure) on root domain
-
-  ProblemGenerator(pin, &(pm->root));
-
-// initialize integration algorithms, source terms, boundary conditions
-
 }
 
 // destructor
 
 Fluid::~Fluid()
 {
-}
-
-//--------------------------------------------------------------------------------------
-/*! \fn  void Fluid::Predict()
- *  \brief integrates fluid over the predict step */
-
-void Fluid::Predict(Mesh *pm)
-{
-  PredictVanLeer2(pm);
-
-//  PredictSourceTerms
-//  BoundaryValues
-//  ConservedToPrimitive
-
-  CorrectVanLeer2(pm);
-
-//  CorrectSourceTerms
-//  BoundaryValues
-//  ConservedToPrimitive
+  u.DeleteAthenaArray();
+  w.DeleteAthenaArray();
+  
+  u1_.DeleteAthenaArray();
+  w1_.DeleteAthenaArray();
+  wl_.DeleteAthenaArray();
+  wr_.DeleteAthenaArray();
+  flx_.DeleteAthenaArray();
 }

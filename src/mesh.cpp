@@ -21,17 +21,19 @@
 #include "athena_arrays.hpp"
 #include "parameter_input.hpp"
 #include "mesh.hpp"
+#include "fluid.hpp"
 
 //======================================================================================
 /*! \file mesh.cpp
- *  \brief implementation of functions in class Mesh
+ *  \brief implementation of functions in classes Mesh, Domain, and Block
  *====================================================================================*/
 
-// constructor, builds mesh based on parameters in input file
+//--------------------------------------------------------------------------------------
+// Mesh constructor, builds mesh based on parameters in input file
 
 Mesh::Mesh(ParameterInput *pin)
 {
-// read size of root domain from input file.  
+// read mesh (root domain) size from input file.  
 // need to add error checking
 
   mesh_size.nx1 = pin->GetInteger("mesh","nx1");
@@ -46,113 +48,160 @@ Mesh::Mesh(ParameterInput *pin)
   mesh_size.x2max = pin->GetReal("mesh","x2max");
   mesh_size.x3max = pin->GetReal("mesh","x3max");
 
-// set region size of root domain, and initialize
+// allocate root domain
 
-  root.domain_size = mesh_size;
-  InitDomain(&root);
+  pdomain = new Domain(mesh_size);
+
 }
 
-// destructor
+// Mesh destructor
 
 Mesh::~Mesh()
 {
-  delete[] root.pblock;
+  delete[] pdomain;
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn  void Mesh::InitDomain()
- *  \brief Initializes Domain struct */  
+// Domain constructor
 
-void Mesh::InitDomain(Domain *pd)
+Domain::Domain(RegionSize region)
 {
+  domain_size = region;
 
-// allocate blocks in domain, set their region sizes, and initialize
+// calculate array of blocks in domain, set their region sizes, and initialize
 
-  pd->pblock = new Block;
-  pd->pblock->block_size = pd->domain_size;
-  InitBlocks(pd->pblock); 
+  pblock = new Block(domain_size);
 
   return;
 }
 
-//--------------------------------------------------------------------------------------
-/*! \fn  void Mesh::InitBlocks()
- *  \brief Initializes data in Blocks struct */  
+// Domain destructor
 
-void Mesh::InitBlocks(Block *pb)
+Domain::~Domain()
 {
+  delete[] pblock;
+}
+
+//--------------------------------------------------------------------------------------
+// Block constructor
+
+Block::Block(RegionSize region)
+{
+  block_size = region;
 
 // initilize grid indices
 // assumes 3D for now, need to add error checks
 
-  int ncells1 = pb->block_size.nx1 + 2*(NGHOST);
-  int ncells2 = pb->block_size.nx2 + 2*(NGHOST);
-  int ncells3 = pb->block_size.nx3 + 2*(NGHOST);
+  int ncells1 = block_size.nx1 + 2*(NGHOST);
+  int ncells2 = block_size.nx2 + 2*(NGHOST);
+  int ncells3 = block_size.nx3 + 2*(NGHOST);
 
-  pb->is = NGHOST;
-  pb->ie = pb->is + pb->block_size.nx1 - 1;
+  is = NGHOST;
+  ie = is + block_size.nx1 - 1;
 
-  pb->js = NGHOST;
-  pb->je = pb->js + pb->block_size.nx2 - 1;
+  js = NGHOST;
+  je = js + block_size.nx2 - 1;
 
-  pb->ks = NGHOST;
-  pb->ke = pb->ks + pb->block_size.nx3 - 1;
+  ks = NGHOST;
+  ke = ks + block_size.nx3 - 1;
 
-  std::cout << "is=" << pb->is << " ie=" << pb->ie << std::endl;
-  std::cout << "js=" << pb->js << " je=" << pb->je << std::endl;
-  std::cout << "ks=" << pb->ks << " ke=" << pb->ke << std::endl;
+  std::cout << "is=" << is << " ie=" << ie << std::endl;
+  std::cout << "js=" << js << " je=" << je << std::endl;
+  std::cout << "ks=" << ks << " ke=" << ke << std::endl;
 
 // allocate arrays for grid spacing and positions
 // assumes 3D for now
 
-  pb->x1v.NewAthenaArray(ncells1);
-  pb->x2v.NewAthenaArray(ncells2);
-  pb->x3v.NewAthenaArray(ncells3);
+  x1v.NewAthenaArray(ncells1);
+  x2v.NewAthenaArray(ncells2);
+  x3v.NewAthenaArray(ncells3);
 
-  pb->dx1v.NewAthenaArray(ncells1);
-  pb->dx2v.NewAthenaArray(ncells2);
-  pb->dx3v.NewAthenaArray(ncells3);
+  dx1v.NewAthenaArray(ncells1);
+  dx2v.NewAthenaArray(ncells2);
+  dx3v.NewAthenaArray(ncells3);
 
-  pb->x1f.NewAthenaArray(ncells1 + 1);
-  pb->x2f.NewAthenaArray(ncells2 + 1);
-  pb->x3f.NewAthenaArray(ncells3 + 1);
+  x1f.NewAthenaArray(ncells1 + 1);
+  x2f.NewAthenaArray(ncells2 + 1);
+  x3f.NewAthenaArray(ncells3 + 1);
 
-  pb->dx1f.NewAthenaArray(ncells1);
-  pb->dx2f.NewAthenaArray(ncells2);
-  pb->dx3f.NewAthenaArray(ncells3);
+  dx1f.NewAthenaArray(ncells1);
+  dx2f.NewAthenaArray(ncells2);
+  dx3f.NewAthenaArray(ncells3);
 
 // initialize grid spacing
 // assumes uniform Cartesian mesh for now
 
-  Real dx = (pb->block_size.x1max - pb->block_size.x1min)/(Real)pb->block_size.nx1;
+  Real dx = (block_size.x1max - block_size.x1min)/(Real)block_size.nx1;
   for (int i=0; i<ncells1; ++i) {
-    pb->dx1v(i) = dx;
-    pb->dx1f(i) = dx;
+    dx1v(i) = dx;
+    dx1f(i) = dx;
   }
 
-  dx = (pb->block_size.x2max - pb->block_size.x2min)/(Real)pb->block_size.nx2;
+  dx = (block_size.x2max - block_size.x2min)/(Real)block_size.nx2;
   for (int j=0; j<ncells2; ++j) {
-    pb->dx2v(j) = dx;
-    pb->dx2f(j) = dx;
+    dx2v(j) = dx;
+    dx2f(j) = dx;
   }
 
-  dx = (pb->block_size.x3max - pb->block_size.x3min)/(Real)pb->block_size.nx3;
+  dx = (block_size.x3max - block_size.x3min)/(Real)block_size.nx3;
   for (int k=0; k<ncells3; ++k) {
-    pb->dx3v(k) = dx;
-    pb->dx3f(k) = dx;
+    dx3v(k) = dx;
+    dx3f(k) = dx;
   }
 
 // Grid positions are calculated starting from both xmin and xmax and averaged
 // to reduce round-off error
 // assumes uniform Cartesian mesh for now
 
-  pb->x1f(pb->is) = pb->block_size.x1min;
-  pb->x2f(pb->js) = pb->block_size.x2min;
-  pb->x3f(pb->ks) = pb->block_size.x3min;
+  x1f(is) = block_size.x1min;
+  x2f(js) = block_size.x2min;
+  x3f(ks) = block_size.x3min;
 
-  pb->x1f(pb->ie+1) = pb->block_size.x1max;
-  pb->x2f(pb->je+1) = pb->block_size.x2max;
-  pb->x3f(pb->ke+1) = pb->block_size.x3max;
+  x1f(ie+1) = block_size.x1max;
+  x2f(je+1) = block_size.x2max;
+  x3f(ke+1) = block_size.x3max;
+
+// Create Fluid
+
+//  pfluid = new Fluid(pin, this);
 
   return;
 }
+
+// Block destructor
+
+Block::~Block()
+{
+// delete vectors storing cell positions and spacing
+
+  x1v.DeleteAthenaArray();
+  x2v.DeleteAthenaArray();
+  x3v.DeleteAthenaArray();
+  x1f.DeleteAthenaArray();
+  x2f.DeleteAthenaArray();
+  x3f.DeleteAthenaArray();
+
+  dx1v.DeleteAthenaArray();  
+  dx2v.DeleteAthenaArray();  
+  dx3v.DeleteAthenaArray();  
+  dx1f.DeleteAthenaArray();  
+  dx2f.DeleteAthenaArray();  
+  dx3f.DeleteAthenaArray();  
+}
+
+//--------------------------------------------------------------------------------------
+// 
+
+void Mesh::StepThroughDomains(enum AlgorithmSteps action, ParameterInput *pin)
+{
+// Eventually this will be a loop over all domains
+//  if (pdomain->pblock != nullptr)  {
+    if (action == construct_fluid) {
+      pdomain->pblock->pfluid = new Fluid(pin,pdomain->pblock);
+    }
+    if (action == initialize_fluid) {
+      pdomain->pblock->pfluid->Problem(pin);
+    }
+//  }
+}
+

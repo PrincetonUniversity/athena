@@ -17,5 +17,6 @@
 typedef double Real;
 enum {IDN=0, IM1=1, IM2=2, IM3=3, IEN=4};
 enum {IVX=1, IVY=2, IVZ=3};
+enum AlgorithmSteps {construct_fluid,initialize_fluid};
 
 #endif

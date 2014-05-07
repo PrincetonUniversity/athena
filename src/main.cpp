@@ -40,8 +40,8 @@
 
 int main(int argc, char *argv[])
 {
-  std::string athenapp_version = "version 0.1 - February 2014";
-  std::string input_file = "appinput";
+  std::string athena_version = "version 0.1 - February 2014";
+  std::string input_file = "athinput";
   char *prestart_file = NULL;
   char *prundir = NULL;
   int res_flag=0;     // gets set to 1 if -r        argument is on cmdline
@@ -84,11 +84,11 @@ int main(int argc, char *argv[])
 	break;
       case 'h':
       default:
-        std::cout<<"Athena++ "<< athenapp_version << std::endl;
+        std::cout<<"Athena++ "<< athena_version << std::endl;
         std::cout<<"Last configure: CONFIGURE_DATE"<< std::endl;
         std::cout<<"Usage: "<< argv[0] <<" [options] [block/par=value ...]"<< std::endl;
         std::cout<<"Options:" << std::endl;
-        std::cout<<"  -i <file>       specify input file [appinput]"<< std::endl;
+        std::cout<<"  -i <file>       specify input file [athinput]"<< std::endl;
         std::cout<<"  -r <file>       restart with this file"<< std::endl;
         std::cout<<"  -d <directory>  specify run dir [current dir]"<< std::endl;
         std::cout<<"  -n              parse input file and quit"<< std::endl;
@@ -152,12 +152,12 @@ int main(int argc, char *argv[])
   }
 
 //--- Step 5. --------------------------------------------------------------------------
-// Construct and initialize fluid.  Fluid constructor also sets integration algorithms
+// Now construct and initialize fluid on every Mesh block.
 // Note memory allocations and parameter input are protected by a simple error handler
 
-  Fluid *gas;
   try {
-    gas = new Fluid(inputs, mesh);
+    mesh->StepThroughDomains(construct_fluid,inputs);
+    mesh->StepThroughDomains(initialize_fluid,inputs);
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR memory allocation failed" << std::endl
@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
 
   {
 
-    gas->Predict(mesh);
+//    gas->Predict(mesh);
 
     std::cout << "cycle= time= dt= " << std::endl;
 

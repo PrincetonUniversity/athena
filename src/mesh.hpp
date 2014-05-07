@@ -6,11 +6,12 @@
  * See LICENSE file for full public license information.
  *====================================================================================*/
 /*! \file mesh.hpp
- *  \brief defines class Mesh
- *  Contains data structures and functions related to the computational mesh
+ *  \brief defines classes Mesh, Domain, and Block
+ *  These classes contain data and functions related to the computational mesh
  *====================================================================================*/
 
 class ParameterInput;
+class Fluid;
 
 //! \struct RegionSize
 //  \brief physical size and number of cells in a region (Domain or Block)
@@ -21,45 +22,46 @@ typedef struct RegionSize {
   int nx1, nx2, nx3;
 } RegionSize;
 
-//! \struct Block
-//  \brief data associated with a single block inside a domain
+//! \class Block
+//  \brief data/functions associated with a single block inside a domain
 
-struct FluidData;
+class Block {
+public:
+  Block(RegionSize region);
+  ~Block();
 
-typedef struct Block {
   AthenaArray<Real> x1v, x2v, x3v, dx1v, dx2v, dx3v;
   AthenaArray<Real> x1f, x2f, x3f, dx1f, dx2f, dx3f; 
   int is,ie,js,je,ks,ke;
   RegionSize block_size;
-} Block;
 
-//! \struct Domain
-//  \brief data associated with a domain
+  Fluid *pfluid;
+};
 
-typedef struct Domain {
+//! \class Domain
+//  \brief data/functions associated with a domain
+
+class Domain {
+public:
+  Domain(RegionSize region);
+  ~Domain();
+
   Block *pblock;
   RegionSize domain_size;
-} Domain;
+};
 
 //! \class Mesh
-//  \brief mesh data and functions
+//  \brief data/functions associated with the mesh
 
 class Mesh {
 public:
   Mesh(ParameterInput *pin);
   ~Mesh();
 
+  Domain *pdomain;
   RegionSize mesh_size;
-  Domain root;
 
-// public functions implemented in mesh.cpp
-
-  void InitDomain(Domain *pd);
-  void InitBlocks(Block *pb);
-
-private:
-
-// private functions implemented in mesh.cpp
+  void StepThroughDomains(enum AlgorithmSteps action, ParameterInput *pin);
 
 };
 #endif

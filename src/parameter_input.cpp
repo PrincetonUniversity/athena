@@ -37,6 +37,9 @@
  *   name1=value       # each parameter name must be on a line by itself
  *   name2 = value1    # whitespace around the = is optional
  *                     # blank lines are OK
+ *   # my comment here   comment lines are OK
+ *   # name3 = value3    values (and blocks) that are commented out are ignored
+ *    
  *   <blockname2>      # start new block
  *   name1 = value1    # note that same parameter names can appear in different blocks
  *   name2 = value2    # empty lines (like following) are OK
@@ -49,9 +52,9 @@
  *   - parameter specification (name=val #comment) must all be on a single line
  *
  * HISTORY:
- *   - Nov 2002: Created for Athena1.0/Cambridge release by Peter Teuben
+ *   - Nov 2002:  Created for Athena1.0/Cambridge release by Peter Teuben
  *   - 2003-2008: Many improvements and extensions by T. Gardiner and J.M. Stone
- *   - Jun 2013: Rewritten in C++ for the Athena++ code by J.M. Stone
+ *   - Jan 2014:  Rewritten in C++ for the Athena++ code by J.M. Stone
  *====================================================================================*/
 
 // constructor
@@ -62,20 +65,17 @@ ParameterInput::ParameterInput()
   last_filename_ = "";
 }
 
-// destructor (iterates through linked list of input blocks/lines and deletes each node)
+// destructor - iterates through linked lists of blocks/lines and deletes each node
 
 ParameterInput::~ParameterInput()
 {
-  InputBlock *pold_block, *pblock = pfirst_block_;
-  InputLine *pold_line, *pline;
-  while (pblock) {
-    pline = pblock->pline;
-    while (pline) {
-      pold_line = pline;
+  while (InputBlock *pblock=pfirst_block_) {
+    while (InputLine *pline=pblock->pline) {
+      InputLine *pold_line = pline;
       pline = pline->pnext;
       delete pold_line;
     }
-    pold_block = pblock;
+    InputBlock *pold_block = pblock;
     pblock = pblock->pnext;
     delete pold_block;
   }

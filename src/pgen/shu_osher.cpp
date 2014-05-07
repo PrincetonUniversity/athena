@@ -33,11 +33,14 @@
  *   non-oscillatory shock-capturing schemes, II", JCP, 83, 32 (1998)	     
  *====================================================================================*/
 
-void Fluid::ProblemGenerator(ParameterInput *pin, Domain *pd)
+void Fluid::Problem(ParameterInput *pin)
 {
-  Block *pb = pd->pblock;
+  Block *pb = pmy_block;
+
   int is = pb->is; int js = pb->js; int ks = pb->ks;
   int ie = pb->ie; int je = pb->je; int ke = pb->ke;
+
+  std::cout << "is=" << is << std::endl; 
 
 /* setup dependent variables */
 
@@ -47,7 +50,7 @@ void Fluid::ProblemGenerator(ParameterInput *pin, Domain *pd)
   Real wl = 0.0;
   Real vl = 0.0;
 
-  Real gm1 = Fluid::GetGamma_m1();
+  Real gm1 = (GetGamma()) - 1.0;
 
   for (int k=ks-2; k<=ke+2; ++k) {
   for (int j=js-2; j<=je+2; ++j) {
@@ -55,23 +58,23 @@ void Fluid::ProblemGenerator(ParameterInput *pin, Domain *pd)
     for (int i=is-2; i<=ie+2; ++i) {
 
       if (pb->x1v(i) < -0.8) {
-        proot->u(IDN,k,j,i) = dl;
-        proot->u(IM1,k,j,i) = ul*dl;
-        proot->u(IM2,k,j,i) = vl*dl;
-        proot->u(IM3,k,j,i) = wl*dl;
-        proot->u(IEN,k,j,i) = pl/gm1 + 0.5*dl*(ul*ul + vl*vl + wl*wl);
+        u(IDN,k,j,i) = dl;
+        u(IM1,k,j,i) = ul*dl;
+        u(IM2,k,j,i) = vl*dl;
+        u(IM3,k,j,i) = wl*dl;
+        u(IEN,k,j,i) = pl/gm1 + 0.5*dl*(ul*ul + vl*vl + wl*wl);
       }
       else {
-        proot->u(IDN,k,j,i) = 1.0 + 0.2*sin(5.0*PI*(pb->x1v(i)));
-        proot->u(IM1,k,j,i) = 0.0;
-        proot->u(IM2,k,j,i) = 0.0;
-        proot->u(IM3,k,j,i) = 0.0;
-        proot->u(IEN,k,j,i) = 1.0/gm1;
+        u(IDN,k,j,i) = 1.0 + 0.2*sin(5.0*PI*(pb->x1v(i)));
+        u(IM1,k,j,i) = 0.0;
+        u(IM2,k,j,i) = 0.0;
+        u(IM3,k,j,i) = 0.0;
+        u(IEN,k,j,i) = 1.0/gm1;
       }
     }
   }}
-
-  ConservedToPrimitive(pd, proot->u, proot->w);
+  
+  std::cout << u(IEN,128,64,64) << std::endl; 
 
   return;
 }
