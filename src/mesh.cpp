@@ -22,6 +22,7 @@
 #include "parameter_input.hpp"
 #include "mesh.hpp"
 #include "fluid.hpp"
+#include "bvals/boundary_conditions.hpp"
 
 //======================================================================================
 /*! \file mesh.cpp
@@ -195,13 +196,23 @@ Block::~Block()
 void Mesh::StepThroughDomains(enum AlgorithmSteps action, ParameterInput *pin)
 {
 // Eventually this will be a loop over all domains
-//  if (pdomain->pblock != nullptr)  {
-    if (action == construct_fluid) {
+
+  if (pdomain->pblock != NULL)  {
+
+// construct fluid, BCs, ... and call problem generator
+
+    if (action == construct_and_init_fluid) {
       pdomain->pblock->pfluid = new Fluid(pin,pdomain->pblock);
-    }
-    if (action == initialize_fluid) {
+      pdomain->pblock->pfluid->pbvals = new BoundaryConditions(pin,pdomain->pblock->pfluid);
       pdomain->pblock->pfluid->Problem(pin);
     }
-//  }
+
+// Set fluid boundary conditions
+
+    if (action == apply_fluid_bcs) {
+      pdomain->pblock->pfluid->pbvals->SetFluidBoundaryValues(pdomain->pblock->pfluid);
+    }
+  }
+
 }
 

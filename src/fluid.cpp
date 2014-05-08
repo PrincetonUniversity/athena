@@ -60,6 +60,8 @@ Fluid::Fluid(ParameterInput *pin, Block *pb)
   wr_.NewAthenaArray(NVAR,ncells1);
   flx_.NewAthenaArray(NVAR,ncells1);
 
+//  Problem(pin);
+
 }
 
 // destructor

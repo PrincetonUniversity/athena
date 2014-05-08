@@ -156,8 +156,8 @@ int main(int argc, char *argv[])
 // Note memory allocations and parameter input are protected by a simple error handler
 
   try {
-    mesh->StepThroughDomains(construct_fluid,inputs);
-    mesh->StepThroughDomains(initialize_fluid,inputs);
+    mesh->StepThroughDomains(construct_and_init_fluid,inputs);
+    mesh->StepThroughDomains(apply_fluid_bcs,inputs);
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR memory allocation failed" << std::endl

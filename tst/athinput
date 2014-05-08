@@ -26,14 +26,20 @@ tlim            = 0.25      # time limit
 nx1             = 256       # Number of zones in X1-direction
 x1min           = -0.5      # minimum value of X1
 x1max           = 0.5       # maximum value of X1
+ix1_bc          = 1         # Inner X1 boundary condition
+ox1_bc          = 1         # Outer X1 boundary condition
 
 nx2             = 256       # Number of zones in X2-direction
 x2min           = -0.5      # minimum value of X2
 x2max           = 0.5       # maximum value of X2
+ix2_bc          = 1         # Inner X2 boundary condition
+ox2_bc          = 1         # Outer X2 boundary condition
 
 nx3             = 256       # Number of zones in X3-direction
 x3min           = -0.5      # minimum value of X3
 x3max           = 0.5       # maximum value of X3
+ix3_bc          = 1         # Inner X2 boundary condition
+ox3_bc          = 1         # Outer X2 boundary condition
 
 <fluid>
 gamma   = 1.4               # gamma = C_p/C_v

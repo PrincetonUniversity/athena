@@ -11,6 +11,7 @@
  *====================================================================================*/
 
 class ParameterInput;
+class BoundaryConditions;
 
 //! \class Fluid
 //  \brief fluid data and functions
@@ -23,9 +24,10 @@ public:
   AthenaArray<Real> u,w;     // conserved and primitive variables
   Real time, dt;
 
-  Block* pmy_block;
+  Block* pmy_block;          // pointer to parent Block of this Fluid
   Real GetGamma() const { return gamma_; }
 
+  BoundaryConditions *pbvals;
   void Problem(ParameterInput *pin);
 
 private:
