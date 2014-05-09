@@ -29,7 +29,7 @@
 
 //======================================================================================
 /*! \file boundary_conditions.cpp
- *  \brief Sets boundary conditions for fluid (quantities in ghost zones) on each edge
+ *  \brief boundary conditions for fluid (quantities in ghost zones) on each edge
  *====================================================================================*/
 
 // constructor -- set BC function pointers based on integer flags read from input file
@@ -140,33 +140,33 @@ BoundaryConditions::~BoundaryConditions()
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void SetFluidBoundaryValues()
+/*! \fn void SetBoundaryValues()
  *  \brief Calls BC functions using appropriate function pointers to set ghost zones.  
  */
 
-void BoundaryConditions::SetFluidBoundaryValues(Fluid *pf)
+void BoundaryConditions::SetBoundaryValues(AthenaArray<Real> &a)
 {
 
 // Boundary Conditions in x1-direction
 
-  (*(FluidInnerX1_))(pf);
-  (*(FluidOuterX1_))(pf);
+  (*(FluidInnerX1_))(pmy_fluid,a);
+  (*(FluidOuterX1_))(pmy_fluid,a);
 
 // Boundary Conditions in x2-direction 
 
-  if (pf->pmy_block->block_size.nx2 > 1){
+  if (pmy_fluid->pmy_block->block_size.nx2 > 1){
 
-    (*(FluidInnerX2_))(pf);
-    (*(FluidOuterX2_))(pf);
+    (*(FluidInnerX2_))(pmy_fluid,a);
+    (*(FluidOuterX2_))(pmy_fluid,a);
 
   }
 
 // Boundary Conditions in x3-direction 
 
-  if (pf->pmy_block->block_size.nx3 > 1){
+  if (pmy_fluid->pmy_block->block_size.nx3 > 1){
 
-    (*(FluidInnerX3_))(pf);
-    (*(FluidOuterX3_))(pf);
+    (*(FluidInnerX3_))(pmy_fluid,a);
+    (*(FluidOuterX3_))(pmy_fluid,a);
 
   }
 

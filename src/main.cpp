@@ -156,8 +156,7 @@ int main(int argc, char *argv[])
 // Note memory allocations and parameter input are protected by a simple error handler
 
   try {
-    mesh->StepThroughDomains(construct_and_init_fluid,inputs);
-    mesh->StepThroughDomains(apply_fluid_bcs,inputs);
+    mesh->InitializeOnDomains(fluid,inputs);
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR memory allocation failed" << std::endl
@@ -178,8 +177,29 @@ int main(int argc, char *argv[])
   tstart = clock();
 
   {
+// predict step
 
-//    gas->Predict(mesh);
+    mesh->StepThroughDomains(fluid_predict    );
+    mesh->StepThroughDomains(fluid_bvals_nhalf);
+
+    mesh->StepThroughDomains(field_predict    );
+    mesh->StepThroughDomains(field_bvals_nhalf);
+
+    mesh->StepThroughDomains(convert_vars_nhalf);
+
+// correct step
+
+    mesh->StepThroughDomains(fluid_correct);
+    mesh->StepThroughDomains(fluid_bvals_n);
+
+    mesh->StepThroughDomains(field_correct);
+    mesh->StepThroughDomains(field_bvals_n);
+
+    mesh->StepThroughDomains(convert_vars_n);
+
+// outputs, diagnostics
+
+    mesh->StepThroughDomains(data_output);
 
     std::cout << "cycle= time= dt= " << std::endl;
 

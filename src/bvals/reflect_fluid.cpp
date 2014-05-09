@@ -31,12 +31,14 @@
 //! \fn void ReflectInnerX1(Fluid *pf)
 //  \brief  REFLECTING boundary conditions conserved vars, inner x1 boundary (ix1_bc=1)
 
-void ReflectInnerX1(Fluid *pf)
+void ReflectInnerX1(Fluid *pf, AthenaArray<Real> &a)
 {
   Block *pb = pf->pmy_block;
   int is = pb->is;
   int js = pb->js, je = pb->je;
   int ks = pb->ks, ke = pb->ke;
+
+  printf("is=%i\n",is);
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
@@ -45,13 +47,13 @@ void ReflectInnerX1(Fluid *pf)
       if (n==(IM1)) {
 #pragma simd
         for (int i=1; i<=(NGHOST); ++i) {
-          pf->u(IM1,k,j,is-i) = -pf->u(IM1,k,j,(is+i-1));  // reflect 1-mom
+          a(IM1,k,j,is-i) = -a(IM1,k,j,(is+i-1));  // reflect 1-mom
         }
 
       } else {
 #pragma simd
         for (int i=1; i<=(NGHOST); ++i) {
-          pf->u(n,k,j,is-i) = pf->u(n,k,j,(is+i-1));
+          a(n,k,j,is-i) = a(n,k,j,(is+i-1));
         }
       }
 
@@ -65,7 +67,7 @@ void ReflectInnerX1(Fluid *pf)
 //! \fn void ReflectOuterX1(Fluid *pf)
 //  \brief  REFLECTING boundary conditions conserved vars, outer x1 boundary (ox1_bc=1)
 
-void ReflectOuterX1(Fluid *pf)
+void ReflectOuterX1(Fluid *pf, AthenaArray<Real> &a)
 {
   Block *pb = pf->pmy_block;
   int ie = pb->ie;
@@ -79,13 +81,13 @@ void ReflectOuterX1(Fluid *pf)
       if (n==(IM1)) {
 #pragma simd
         for (int i=1; i<=(NGHOST); ++i) {
-          pf->u(IM1,k,j,ie+i) = -pf->u(IM1,k,j,(ie-i+1));  // reflect 1-mom
+          a(IM1,k,j,ie+i) = -a(IM1,k,j,(ie-i+1));  // reflect 1-mom
         }
 
       } else {
 #pragma simd
         for (int i=1; i<=(NGHOST); ++i) {
-          pf->u(n,k,j,ie+i) = pf->u(n,k,j,(ie-i+1));
+          a(n,k,j,ie+i) = a(n,k,j,(ie-i+1));
         }
       }
 
@@ -99,7 +101,7 @@ void ReflectOuterX1(Fluid *pf)
 //! \fn void ReflectInnerX2(Fluid *pf)
 //  \brief  REFLECTING boundary conditions conserved vars, inner x2 boundary (ix2_bc=1)
 
-void ReflectInnerX2(Fluid *pf)
+void ReflectInnerX2(Fluid *pf, AthenaArray<Real> &a)
 {
   Block *pb = pf->pmy_block;
   int is = pb->is, ie = pb->ie;
@@ -113,13 +115,13 @@ void ReflectInnerX2(Fluid *pf)
       if (n==(IM2)) {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          pf->u(IM2,k,js-j,i) = -pf->u(IM2,k,js+j-1,i);  // reflect 2-mom
+          a(IM2,k,js-j,i) = -a(IM2,k,js+j-1,i);  // reflect 2-mom
         }
 
       } else {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          pf->u(n,k,js-j,i) = pf->u(n,k,js+j-1,i);
+          a(n,k,js-j,i) = a(n,k,js+j-1,i);
         }
       }
 
@@ -133,7 +135,7 @@ void ReflectInnerX2(Fluid *pf)
 //! \fn void ReflectOuterX2(Fluid *pf)
 //  \brief  REFLECTING boundary conditions conserved vars, outer x2 boundary (ox2_bc=1)
 
-void ReflectOuterX2(Fluid *pf)
+void ReflectOuterX2(Fluid *pf, AthenaArray<Real> &a)
 {
   Block *pb = pf->pmy_block;
   int is = pb->is, ie = pb->ie;
@@ -147,13 +149,13 @@ void ReflectOuterX2(Fluid *pf)
       if (n==(IM2)) {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          pf->u(IM2,k,je+j,i) = -pf->u(IM2,k,je-j+1,i);  // reflect 2-mom
+          a(IM2,k,je+j,i) = -a(IM2,k,je-j+1,i);  // reflect 2-mom
         }
 
       } else {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          pf->u(n,k,je+j,i) = pf->u(n,k,je-j+1,i);
+          a(n,k,je+j,i) = a(n,k,je-j+1,i);
         }
       }
 
@@ -167,7 +169,7 @@ void ReflectOuterX2(Fluid *pf)
 //! \fn void ReflectInnerX3(Fluid *pf)
 //  \brief  REFLECTING boundary conditions conserved vars, inner x3 boundary (ix3_bc=1)
 
-void ReflectInnerX3(Fluid *pf)
+void ReflectInnerX3(Fluid *pf, AthenaArray<Real> &a)
 {
   Block *pb = pf->pmy_block;
   int is = pb->is, ie = pb->ie;
@@ -181,13 +183,13 @@ void ReflectInnerX3(Fluid *pf)
       if (n==(IM3)) {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          pf->u(IM3,ks-k,j,i) = -pf->u(IM3,ks+k-1,j,i);  // reflect 3-mom
+          a(IM3,ks-k,j,i) = -a(IM3,ks+k-1,j,i);  // reflect 3-mom
         }
 
       } else {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          pf->u(n,ks-k,j,i) = pf->u(n,ks+k-1,j,i);
+          a(n,ks-k,j,i) = a(n,ks+k-1,j,i);
         }
       }
 
@@ -201,7 +203,7 @@ void ReflectInnerX3(Fluid *pf)
 //! \fn void ReflectOuterX3(Fluid *pf)
 //  \brief  REFLECTING boundary conditions conserved vars, outer x3 boundary (ox3_bc=1)
 
-void ReflectOuterX3(Fluid *pf)
+void ReflectOuterX3(Fluid *pf, AthenaArray<Real> &a)
 {
   Block *pb = pf->pmy_block;
   int is = pb->is, ie = pb->ie;
@@ -215,13 +217,13 @@ void ReflectOuterX3(Fluid *pf)
       if (n==(IM3)) {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          pf->u(IM3,ke+k,j,i) = -pf->u(IM3,ke-k+1,j,i);  // reflect 3-mom
+          a(IM3,ke+k,j,i) = -a(IM3,ke-k+1,j,i);  // reflect 3-mom
         }
 
       } else {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          pf->u(n,ke+k,j,i) = pf->u(n,ke-k+1,j,i);
+          a(n,ke+k,j,i) = a(n,ke-k+1,j,i);
         }
       }
 

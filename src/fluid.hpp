@@ -22,6 +22,7 @@ public:
   ~Fluid();
 
   AthenaArray<Real> u,w;     // conserved and primitive variables
+  AthenaArray<Real> u1_,w1_; // conserved and primitive variables at the half-time step
   Real time, dt;
 
   Block* pmy_block;          // pointer to parent Block of this Fluid
@@ -31,7 +32,6 @@ public:
   void Problem(ParameterInput *pin);
 
 private:
-  AthenaArray<Real> u1_,w1_; // conserved and primitive variables at the half-time step
   Real gamma_;               // ratio of specific heats
 
   AthenaArray<Real> wl_,wr_,flx_;

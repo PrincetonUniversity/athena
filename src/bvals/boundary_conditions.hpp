@@ -21,19 +21,20 @@ public:
   BoundaryConditions(ParameterInput *pin, Fluid *pf);
   ~BoundaryConditions();
 
-  void SetFluidBoundaryValues(Fluid *pf);
+// calls boundary value functions on each edge of Block
+  void SetBoundaryValues(AthenaArray<Real> &a);
 
 private:
   Fluid *pmy_fluid;
 
 // function pointers, set in constructor based on parameters in input file
 
-  void (*FluidInnerX1_) (Fluid *pmy_fluid);
-  void (*FluidOuterX1_) (Fluid *pmy_fluid);
-  void (*FluidInnerX2_) (Fluid *pmy_fluid);
-  void (*FluidOuterX2_) (Fluid *pmy_fluid);
-  void (*FluidInnerX3_) (Fluid *pmy_fluid);
-  void (*FluidOuterX3_) (Fluid *pmy_fluid);
+  void (*FluidInnerX1_) (Fluid *pmy_fluid, AthenaArray<Real> &a);
+  void (*FluidOuterX1_) (Fluid *pmy_fluid, AthenaArray<Real> &a);
+  void (*FluidInnerX2_) (Fluid *pmy_fluid, AthenaArray<Real> &a);
+  void (*FluidOuterX2_) (Fluid *pmy_fluid, AthenaArray<Real> &a);
+  void (*FluidInnerX3_) (Fluid *pmy_fluid, AthenaArray<Real> &a);
+  void (*FluidOuterX3_) (Fluid *pmy_fluid, AthenaArray<Real> &a);
 
 };
 #endif

@@ -191,28 +191,59 @@ Block::~Block()
 }
 
 //--------------------------------------------------------------------------------------
-// 
+// \!fn 
+// \brief
 
-void Mesh::StepThroughDomains(enum AlgorithmSteps action, ParameterInput *pin)
+void Mesh::InitializeOnDomains(enum QuantityToBeInitialized qnty, ParameterInput *pin)
 {
+
 // Eventually this will be a loop over all domains
 
   if (pdomain->pblock != NULL)  {
 
-// construct fluid, BCs, ... and call problem generator
-
-    if (action == construct_and_init_fluid) {
-      pdomain->pblock->pfluid = new Fluid(pin,pdomain->pblock);
-      pdomain->pblock->pfluid->pbvals = new BoundaryConditions(pin,pdomain->pblock->pfluid);
-      pdomain->pblock->pfluid->Problem(pin);
+    switch (qnty) {
+      case fluid:
+        pdomain->pblock->pfluid = new Fluid(pin,pdomain->pblock);
+        Fluid *pf = pdomain->pblock->pfluid;
+        pf->Problem(pin);
+        pf->pbvals = new BoundaryConditions(pin,pf);
+        pf->pbvals->SetBoundaryValues(pf->u);
+        break;
     }
 
-// Set fluid boundary conditions
-
-    if (action == apply_fluid_bcs) {
-      pdomain->pblock->pfluid->pbvals->SetFluidBoundaryValues(pdomain->pblock->pfluid);
-    }
   }
+}
 
+//--------------------------------------------------------------------------------------
+// \!fn 
+// \brief
+
+void Mesh::StepThroughDomains(enum AlgorithmSteps action)
+{
+// Eventually this will be a loop over all domains
+
+  if (pdomain->pblock != NULL)  {
+    Fluid *pf = pdomain->pblock->pfluid;
+
+    switch (action) {
+      case fluid_bvals_n:
+        pf->pbvals->SetBoundaryValues(pf->u);
+        break;
+      case fluid_bvals_nhalf:
+        pf->pbvals->SetBoundaryValues(pf->u1_);
+        break;
+      case fluid_predict:
+        break;
+      case fluid_correct:
+        break;
+      case convert_vars_n:
+        break;
+      case convert_vars_nhalf:
+        break;
+      case data_output:
+        break;
+    }
+
+  }
 }
 

@@ -17,7 +17,9 @@
 typedef double Real;
 enum {IDN=0, IM1=1, IM2=2, IM3=3, IEN=4};
 enum {IVX=1, IVY=2, IVZ=3};
-enum AlgorithmSteps {construct_and_init_fluid,
-                     apply_fluid_bcs};
+enum AlgorithmSteps {fluid_predict, fluid_correct, field_predict, field_correct,
+                     fluid_bvals_n, fluid_bvals_nhalf, field_bvals_n, field_bvals_nhalf,
+                     convert_vars_n, convert_vars_nhalf, data_output};
+enum QuantityToBeInitialized {fluid};
 
 #endif

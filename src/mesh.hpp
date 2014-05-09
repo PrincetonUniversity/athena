@@ -61,7 +61,8 @@ public:
   Domain *pdomain;
   RegionSize mesh_size;
 
-  void StepThroughDomains(enum AlgorithmSteps action, ParameterInput *pin);
+  void InitializeOnDomains(enum QuantityToBeInitialized qnty, ParameterInput *pin);
+  void StepThroughDomains(enum AlgorithmSteps action);
 
 };
 #endif
