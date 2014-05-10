@@ -23,6 +23,7 @@
 #include "mesh.hpp"
 #include "fluid.hpp"
 #include "bvals/boundary_conditions.hpp"
+#include "convert_var/convert_var.hpp"
 
 //======================================================================================
 /*! \file mesh.cpp
@@ -203,11 +204,19 @@ void Mesh::InitializeOnDomains(enum QuantityToBeInitialized qnty, ParameterInput
 
     switch (qnty) {
       case fluid:
+// construct new fluid, call problem generator
         pdomain->pblock->pfluid = new Fluid(pin,pdomain->pblock);
         Fluid *pf = pdomain->pblock->pfluid;
         pf->Problem(pin);
+
+// construct new BCs, and set them for u
         pf->pbvals = new BoundaryConditions(pin,pf);
         pf->pbvals->SetBoundaryValues(pf->u);
+
+// construction new variable conversion class, and compute w
+        pf->pcons_to_prim = new ConvertVariables(pf);
+        pf->pcons_to_prim->ComputePrimitives(pf->u, pf->w);
+
         break;
     }
 

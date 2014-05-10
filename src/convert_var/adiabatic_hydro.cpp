@@ -25,16 +25,17 @@
 #include "../parameter_input.hpp"
 #include "../mesh.hpp"
 #include "../fluid.hpp"
+#include "convert_var.hpp"
 
 
 //======================================================================================
-/*! \file vl2.cpp
- *  \brief van-Leer (MUSCL-Hancock) second-order integrator
+/*! \file adiabatic_hydro.cpp
+ *  \brief calculates primitives in adiabatic hydrodynamics`
  *====================================================================================*/
 
-void Fluid::ConservedToPrimitive(Domain *pd, AthenaArray<Real> &u, AthenaArray<Real> &w)
+void ConvertVariables::ComputePrimitives(AthenaArray<Real> &c, AthenaArray<Real> &p)
 {
-  Block *pb = pd->pblock;
+  Block *pb = pmy_fluid_->pmy_block;
   int is = pb->is; int js = pb->js; int ks = pb->ks;
   int ie = pb->ie; int je = pb->je; int ke = pb->ke;
 
@@ -46,21 +47,21 @@ void Fluid::ConservedToPrimitive(Domain *pd, AthenaArray<Real> &u, AthenaArray<R
 //--------------------------------------------------------------------------------------
 // Convert to Primitives
 
-  for (int k=ks-2; k<=ke+2; ++k){
-  for (int j=js-2; j<=je+2; ++j){
+  for (int k=ks-(NGHOST); k<=ke+(NGHOST); ++k){
+  for (int j=js-(NGHOST); j<=je+(NGHOST); ++j){
 #pragma simd
-    for (int i=is-2; i<=ie+2; ++i){
-      Real& u_d  = u(IDN,k,j,i);
-      Real& u_m1 = u(IVX,k,j,i);
-      Real& u_m2 = u(IVY,k,j,i);
-      Real& u_m3 = u(IVZ,k,j,i);
-      Real& u_e  = u(IEN,k,j,i);
+    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i){
+      Real& u_d  = c(IDN,k,j,i);
+      Real& u_m1 = c(IVX,k,j,i);
+      Real& u_m2 = c(IVY,k,j,i);
+      Real& u_m3 = c(IVZ,k,j,i);
+      Real& u_e  = c(IEN,k,j,i);
 
-      Real& w_d  = w(IDN,k,j,i);
-      Real& w_m1 = w(IVX,k,j,i);
-      Real& w_m2 = w(IVY,k,j,i);
-      Real& w_m3 = w(IVZ,k,j,i);
-      Real& w_e  = w(IEN,k,j,i);
+      Real& w_d  = p(IDN,k,j,i);
+      Real& w_m1 = p(IVX,k,j,i);
+      Real& w_m2 = p(IVY,k,j,i);
+      Real& w_m3 = p(IVZ,k,j,i);
+      Real& w_e  = p(IEN,k,j,i);
 
       Real di = 1.0/u_d;
       w_d  = u_d;
@@ -68,10 +69,7 @@ void Fluid::ConservedToPrimitive(Domain *pd, AthenaArray<Real> &u, AthenaArray<R
       w_m2 = u_m2*di;
       w_m3 = u_m3*di;
 
-      Real qa = u_m1*u_m1;
-      qa += u_m2*u_m2;
-      qa += u_m3*u_m3;
-      w_e = u_e - 0.5*qa*di;
+      w_e = u_e - 0.5*di*(u_m1*u_m1 + u_m2*u_m2 + u_m3*u_m3);
     }
   }}
 

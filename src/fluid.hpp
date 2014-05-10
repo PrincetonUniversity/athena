@@ -12,6 +12,7 @@
 
 class ParameterInput;
 class BoundaryConditions;
+class ConvertVariables;
 
 //! \class Fluid
 //  \brief fluid data and functions
@@ -26,10 +27,12 @@ public:
   Real time, dt;
 
   Block* pmy_block;          // pointer to parent Block of this Fluid
-  Real GetGamma() const { return gamma_; }
 
-  BoundaryConditions *pbvals;
-  void Problem(ParameterInput *pin);
+  BoundaryConditions *pbvals;       // object to handle BCs for fluid
+  ConvertVariables *pcons_to_prim;  // object to convert conserved-to-primitive
+
+  void Problem(ParameterInput *pin);       // problem generator function
+  Real GetGamma() const { return gamma_; }
 
 private:
   Real gamma_;               // ratio of specific heats

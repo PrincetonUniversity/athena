@@ -22,6 +22,7 @@
 #include "parameter_input.hpp"
 #include "mesh.hpp"
 #include "fluid.hpp"
+#include "convert_var/convert_var.hpp"
 
 //======================================================================================
 //! \file fluid.cpp
