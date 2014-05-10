@@ -131,14 +131,14 @@ AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
 
 template<typename T>
 AthenaArray<T> AthenaArray<T>::ShallowCopy() {
-  this.nx1_=nx1_;
-  this.nx2_=nx2_;
-  this.nx3_=nx3_;
-  this.nx4_=nx4_;
-  this.pdata_ = pdata_;
-  this.scopy_ = 1;
-
-  return *this;
+  AthenaArray<T> dest;
+  dest.nx1_=nx1_;
+  dest.nx2_=nx2_;
+  dest.nx3_=nx3_;
+  dest.nx4_=nx4_;
+  dest.pdata_ = pdata_;
+  dest.scopy_ = 1;
+  return dest;
 }
 
 //--------------------------------------------------------------------------------------

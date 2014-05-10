@@ -48,14 +48,14 @@ void FluidIntegrator::Predict(Block *pb)
   Real sum=0.0; Real sum_2=0.0;
   int ndata = (pb->block_size.nx1)*(pb->block_size.nx2)*(pb->block_size.nx3)*(NVAR);
  
-  AthenaArray<Real> u = pb->pfluid->u;
-  AthenaArray<Real> w = pb->pfluid->w;
-  AthenaArray<Real> u1 = pb->pfluid->u1;
-  AthenaArray<Real> w1 = pb->pfluid->w1;
+  AthenaArray<Real> u = pb->pfluid->u.ShallowCopy();
+  AthenaArray<Real> w = pb->pfluid->w.ShallowCopy();
+  AthenaArray<Real> u1 = pb->pfluid->u1.ShallowCopy();
+  AthenaArray<Real> w1 = pb->pfluid->w1.ShallowCopy();
 
-  AthenaArray<Real> wl = pb->pfluid->wl_;
-  AthenaArray<Real> wr = pb->pfluid->wr_;
-  AthenaArray<Real> flx = pb->pfluid->flx_;
+  AthenaArray<Real> wl = pb->pfluid->wl_.ShallowCopy();
+  AthenaArray<Real> wr = pb->pfluid->wr_.ShallowCopy();
+  AthenaArray<Real> flx = pb->pfluid->flx_.ShallowCopy();
  
 #if SUM_ON>0
   /**** output to force calcs ****/
