@@ -22,8 +22,9 @@
 #include "parameter_input.hpp"
 #include "mesh.hpp"
 #include "fluid.hpp"
-#include "bvals/boundary_conditions.hpp"
+#include "bvals/fluid_bvals.hpp"
 #include "convert_var/convert_var.hpp"
+#include "integrators/fluid_integrator.hpp"
 
 //======================================================================================
 /*! \file mesh.cpp
@@ -204,18 +205,21 @@ void Mesh::InitializeOnDomains(enum QuantityToBeInitialized qnty, ParameterInput
 
     switch (qnty) {
       case fluid:
-// construct new fluid, call problem generator
+// construct new Fluid, call problem generator
         pdomain->pblock->pfluid = new Fluid(pin,pdomain->pblock);
         Fluid *pf = pdomain->pblock->pfluid;
         pf->Problem(pin);
 
-// construct new BCs, and set them for u
-        pf->pbvals = new BoundaryConditions(pin,pf);
+// construct new BCs inside Fluid, and set them for u
+        pf->pbvals = new FluidBoundaryConditions(pin,pf);
         pf->pbvals->SetBoundaryValues(pf->u);
 
-// construction new variable conversion class, and compute w
+// construct new variable conversion object inside Fluid, and compute w
         pf->pcons_to_prim = new ConvertVariables(pf);
         pf->pcons_to_prim->ComputePrimitives(pf->u, pf->w);
+
+// construct new Integrator (containing Reconstruction and RiemannSolver) inside Fluid
+        pf->pintegrate = new FluidIntegrator(pf);
 
         break;
     }
@@ -239,9 +243,10 @@ void Mesh::StepThroughDomains(enum AlgorithmSteps action)
         pf->pbvals->SetBoundaryValues(pf->u);
         break;
       case fluid_bvals_nhalf:
-        pf->pbvals->SetBoundaryValues(pf->u1_);
+        pf->pbvals->SetBoundaryValues(pf->u1);
         break;
       case fluid_predict:
+        pf->pintegrate->Predict(pdomain->pblock);
         break;
       case fluid_correct:
         break;

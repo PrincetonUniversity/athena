@@ -6,12 +6,11 @@
  * See LICENSE file for full public license information.
  *====================================================================================*/
 /*! \file athena_arrays.hpp
- *  \brief provides array objects
+ *  \brief provides array classes valid in 1D to 4D.
  *
- *  Functionally, all arrays are allocated as 1D vectors.  The () operator is overloaded
- *  so, e.g. a 4D array data elements can be accessed as 
- *      A(n,k,j,i) = A[i + nx1*(j + nx2*(k + nx3*n))]
- *  NOTE THE TRAILING INDEX INSIDE THE PARENTHESES IS INDEXED FASTEST, AS IN C
+ *  The operator() is overloaded, e.g. elements of a 4D array of size [N4xN3xN2xN1]
+ *  are accessed as:  A(n,k,j,i) = A[i + N1*(j + N2*(k + N3*n))]
+ *  NOTE THE TRAILING INDEX INSIDE THE PARENTHESES IS INDEXED FASTEST
  *====================================================================================*/
 
 template<typename T>
@@ -35,42 +34,49 @@ public:
   int GetDim3() const { return nx3_; }
   int GetDim4() const { return nx4_; }
 
-  T* data() { return data_; }
-  const T* data() const	{ return data_; }
+  T *data() { return pdata_; }
+  const T *data() const	{ return pdata_; }
 
-// overload () operator to access 1d/2d/3d/4d data
+// overload operator() to access 1d/2d/3d/4d data
 
-  T& operator() (const int n) { 
-    return data_[n]; }
+  T &operator() (const int n) { 
+    return pdata_[n]; }
   T operator() (const int n) const { 
-    return data_[n]; }
+    return pdata_[n]; }
 
-  T& operator() (const int n, const int i) { 
-    return data_[i + nx1_*n]; }
+  T &operator() (const int n, const int i) { 
+    return pdata_[i + nx1_*n]; }
   T operator() (const int n, const int i) const { 
-    return data_[i + nx1_*n]; }
+    return pdata_[i + nx1_*n]; }
 
-  T& operator() (const int n, const int j, const int i) { 
-    return data_[i + nx1_*(j + nx2_*n)]; }
+  T &operator() (const int n, const int j, const int i) { 
+    return pdata_[i + nx1_*(j + nx2_*n)]; }
   T operator() (const int n, const int j, const int i) const { 
-    return data_[i + nx1_*(j + nx2_*n)]; }
+    return pdata_[i + nx1_*(j + nx2_*n)]; }
 
-  T& operator() (const int n, const int k, const int j, const int i) { 
-    return data_[i + nx1_*(j + nx2_*(k + nx3_*n))]; }
+  T &operator() (const int n, const int k, const int j, const int i) { 
+    return pdata_[i + nx1_*(j + nx2_*(k + nx3_*n))]; }
   T operator() (const int n, const int k, const int j, const int i) const { 
-    return data_[i + nx1_*(j + nx2_*(k + nx3_*n))]; }
+    return pdata_[i + nx1_*(j + nx2_*(k + nx3_*n))]; }
+
+// copy constructor and overloaded assignment operator (both do deep copies).
+// A shallow copy function is also provided.
+
+  AthenaArray(const AthenaArray<T>& t);
+  AthenaArray<T> &operator= (const AthenaArray<T> &t);
+  AthenaArray<T> ShallowCopy();
 
 private:
-
-  T*  data_;
+  T *pdata_;
   int nx1_, nx2_, nx3_, nx4_;
+  int scopy_;  // =0 if shallow copy (prevents source from being deleted)
 };
 
 //constructor
 
 template<typename T>
 AthenaArray<T>::AthenaArray()
-  : data_(0), nx1_(0), nx2_(0), nx3_(0), nx4_(0)
+  : pdata_(0), nx1_(0), nx2_(0), nx3_(0), nx4_(0), scopy_(0)
 {
 }
 
@@ -79,12 +85,65 @@ AthenaArray<T>::AthenaArray()
 template<typename T>
 AthenaArray<T>::~AthenaArray()
 {
-  DeleteAthenaArray();
+  if (scopy_ == 0) DeleteAthenaArray();
+}
+
+// copy constructor (does a deep copy)
+
+template<typename T>
+AthenaArray<T>::AthenaArray(const AthenaArray<T>& src) {
+  nx1_ = src.nx1_;
+  nx2_ = src.nx2_;
+  nx3_ = src.nx3_;
+  nx4_ = src.nx4_;
+  if (src.pdata_) {
+    size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_);
+    pdata_ = new T[size];
+    for (size_t i=0; i<size; ++i) {
+      pdata_[i] = src.pdata_[i];
+    } 
+  }
+}
+
+// assignment operator (does a deep copy)
+
+template<typename T>
+AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
+  if (this != &src){
+    this.nx1_ = src.nx1_;
+    this.nx2_ = src.nx2_;
+    this.nx3_ = src.nx3_;
+    this.nx4_ = src.nx4_;
+
+    delete[] this.pdata_;
+    size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_);
+    this.pdata_ = new T[size];
+    for (size_t i=0; i<size; ++i) {
+      this.pdata_[i] = src.pdata_[i];
+    } 
+  }
+  return *this;
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn
- *  \brief 1d data allocation */
+//! \fn AthenaArray::ShallowCopy()
+//  \brief shallow copy of array 
+
+template<typename T>
+AthenaArray<T> AthenaArray<T>::ShallowCopy() {
+  this.nx1_=nx1_;
+  this.nx2_=nx2_;
+  this.nx3_=nx3_;
+  this.nx4_=nx4_;
+  this.pdata_ = pdata_;
+  this.scopy_ = 1;
+
+  return *this;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn
+//  \brief 1d data allocation
 
 template<typename T>
 void AthenaArray<T>::NewAthenaArray(int nx1)
@@ -93,7 +152,7 @@ void AthenaArray<T>::NewAthenaArray(int nx1)
   nx2_ = 1;
   nx3_ = 1;
   nx4_ = 1;
-  data_ = new T[nx1];
+  pdata_ = new T[nx1];
 }
  
 //--------------------------------------------------------------------------------------
@@ -107,7 +166,7 @@ void AthenaArray<T>::NewAthenaArray(int nx2, int nx1)
   nx2_ = nx2;
   nx3_ = 1;
   nx4_ = 1;
-  data_ = new T[nx1*nx2];
+  pdata_ = new T[nx1*nx2];
 }
  
 //--------------------------------------------------------------------------------------
@@ -121,7 +180,7 @@ void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1)
   nx2_ = nx2;
   nx3_ = nx3;
   nx4_ = 1;
-  data_ = new T[nx1*nx2*nx3];
+  pdata_ = new T[nx1*nx2*nx3];
 }
  
 //--------------------------------------------------------------------------------------
@@ -135,7 +194,7 @@ void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2, int nx1)
   nx2_ = nx2;
   nx3_ = nx3;
   nx4_ = nx4;
-  data_ = new T[nx1*nx2*nx3*nx4];
+  pdata_ = new T[nx1*nx2*nx3*nx4];
 }
 
 //--------------------------------------------------------------------------------------
@@ -145,6 +204,6 @@ void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2, int nx1)
 template<typename T>
 void AthenaArray<T>::DeleteAthenaArray()
 {
-  delete[] data_;
+  delete[] pdata_;
 } 
 #endif

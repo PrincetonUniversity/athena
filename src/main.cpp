@@ -182,8 +182,8 @@ int main(int argc, char *argv[])
     mesh->StepThroughDomains(fluid_predict    );
     mesh->StepThroughDomains(fluid_bvals_nhalf);
 
-    mesh->StepThroughDomains(field_predict    );
-    mesh->StepThroughDomains(field_bvals_nhalf);
+    mesh->StepThroughDomains(bfield_predict    );
+    mesh->StepThroughDomains(bfield_bvals_nhalf);
 
     mesh->StepThroughDomains(convert_vars_nhalf);
 
@@ -192,8 +192,8 @@ int main(int argc, char *argv[])
     mesh->StepThroughDomains(fluid_correct);
     mesh->StepThroughDomains(fluid_bvals_n);
 
-    mesh->StepThroughDomains(field_correct);
-    mesh->StepThroughDomains(field_bvals_n);
+    mesh->StepThroughDomains(bfield_correct);
+    mesh->StepThroughDomains(bfield_bvals_n);
 
     mesh->StepThroughDomains(convert_vars_n);
 

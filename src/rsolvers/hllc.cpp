@@ -24,13 +24,14 @@
 #include "../parameter_input.hpp"
 #include "../mesh.hpp"
 #include "../fluid.hpp"
+#include "riemann_solver.hpp"
 
 //======================================================================================
 /*! \file hllc.cpp
  *  \brief HLLC Riemann solver for hydrodynamics
  *====================================================================================*/
 
-void Fluid::HLLC(const int il, const int iu,
+void RiemannSolver::HLLC(const int il, const int iu,
        AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {
   Real sqrtdl,sqrtdr,isdlpdr,v1roe,v2roe,v3roe,hroe;

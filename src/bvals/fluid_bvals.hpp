@@ -6,7 +6,7 @@
  * See LICENSE file for full public license information.
  *====================================================================================*/
 /*! \file boundary_conditions.hpp
- *  \brief defines class BoundaryConditions
+ *  \brief defines class FluidBoundaryConditions
  *  Contains data structures and functions related to BCs for the fluid
  *====================================================================================*/
 
@@ -16,10 +16,10 @@ class Fluid;
 //! \class BoundaryConditions
 //  \brief BCs data and functions
 
-class BoundaryConditions {
+class FluidBoundaryConditions {
 public:
-  BoundaryConditions(ParameterInput *pin, Fluid *pf);
-  ~BoundaryConditions();
+  FluidBoundaryConditions(ParameterInput *pin, Fluid *pf);
+  ~FluidBoundaryConditions();
 
 // calls boundary value functions on each edge of Block
   void SetBoundaryValues(AthenaArray<Real> &a);

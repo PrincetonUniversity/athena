@@ -11,25 +11,28 @@
  *====================================================================================*/
 
 class ParameterInput;
-class BoundaryConditions;
+class FluidBoundaryConditions;
 class ConvertVariables;
+class FluidIntegrator;
 
 //! \class Fluid
 //  \brief fluid data and functions
 
 class Fluid {
+friend class FluidIntegrator;
 public:
   Fluid(ParameterInput *pin, Block *pb);
   ~Fluid();
 
-  AthenaArray<Real> u,w;     // conserved and primitive variables
-  AthenaArray<Real> u1_,w1_; // conserved and primitive variables at the half-time step
+  AthenaArray<Real> u,w;   // conserved and primitive variables
+  AthenaArray<Real> u1,w1; // conserved and primitive variables at the half-time step
   Real time, dt;
 
   Block* pmy_block;          // pointer to parent Block of this Fluid
 
-  BoundaryConditions *pbvals;       // object to handle BCs for fluid
+  FluidBoundaryConditions *pbvals;       // object to handle BCs for fluid
   ConvertVariables *pcons_to_prim;  // object to convert conserved-to-primitive
+  FluidIntegrator *pintegrate;
 
   void Problem(ParameterInput *pin);       // problem generator function
   Real GetGamma() const { return gamma_; }

@@ -25,7 +25,7 @@
 #include "../mesh.hpp"
 #include "../fluid.hpp"
 #include "prototypes.hpp"
-#include "boundary_conditions.hpp"
+#include "fluid_bvals.hpp"
 
 //======================================================================================
 /*! \file boundary_conditions.cpp
@@ -34,7 +34,7 @@
 
 // constructor -- set BC function pointers based on integer flags read from input file
 
-BoundaryConditions::BoundaryConditions(ParameterInput *pin, Fluid *pf)
+FluidBoundaryConditions::FluidBoundaryConditions(ParameterInput *pin, Fluid *pf)
 {
   std::stringstream msg;
   int flag;
@@ -49,7 +49,7 @@ BoundaryConditions::BoundaryConditions(ParameterInput *pin, Fluid *pf)
       FluidInnerX1_ = ReflectInnerX1;
     break;
     default:
-      msg << "### FATAL ERROR in BoundaryConditions constructor" << std::endl
+      msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
           << "Boundary condition flag ix1_bc=" << flag << " not valid" << std::endl;
       throw std::runtime_error(msg.str().c_str());
     break;
@@ -63,7 +63,7 @@ BoundaryConditions::BoundaryConditions(ParameterInput *pin, Fluid *pf)
       FluidOuterX1_ = ReflectOuterX1;
     break;
     default:
-      msg << "### FATAL ERROR in BoundaryConditions constructor" << std::endl
+      msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
           << "Boundary condition flag ox1_bc=" << flag << " not valid" << std::endl;
       throw std::runtime_error(msg.str().c_str());
     break;
@@ -79,7 +79,7 @@ BoundaryConditions::BoundaryConditions(ParameterInput *pin, Fluid *pf)
         FluidInnerX2_ = ReflectInnerX2;
       break;
       default:
-        msg << "### FATAL ERROR in BoundaryConditions constructor" << std::endl
+        msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
             << "Boundary condition flag ix2_bc=" << flag << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
       break;
@@ -93,7 +93,7 @@ BoundaryConditions::BoundaryConditions(ParameterInput *pin, Fluid *pf)
         FluidOuterX2_ = ReflectOuterX2;
       break;
       default:
-        msg << "### FATAL ERROR in BoundaryConditions constructor" << std::endl
+        msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
             << "Boundary condition flag ox2_bc=" << flag << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
       break;
@@ -110,7 +110,7 @@ BoundaryConditions::BoundaryConditions(ParameterInput *pin, Fluid *pf)
         FluidInnerX3_ = ReflectInnerX3;
       break;
       default:
-        msg << "### FATAL ERROR in BoundaryConditions constructor" << std::endl
+        msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
             << "Boundary condition flag ix3_bc=" << flag << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
       break;
@@ -124,7 +124,7 @@ BoundaryConditions::BoundaryConditions(ParameterInput *pin, Fluid *pf)
         FluidOuterX3_ = ReflectOuterX3;
       break;
       default:
-        msg << "### FATAL ERROR in BoundaryConditions constructor" << std::endl
+        msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
             << "Boundary condition flag ox3_bc=" << flag << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
       break;
@@ -135,7 +135,7 @@ BoundaryConditions::BoundaryConditions(ParameterInput *pin, Fluid *pf)
 
 // destructor
 
-BoundaryConditions::~BoundaryConditions()
+FluidBoundaryConditions::~FluidBoundaryConditions()
 {
 }
 
@@ -144,7 +144,7 @@ BoundaryConditions::~BoundaryConditions()
  *  \brief Calls BC functions using appropriate function pointers to set ghost zones.  
  */
 
-void BoundaryConditions::SetBoundaryValues(AthenaArray<Real> &a)
+void FluidBoundaryConditions::SetBoundaryValues(AthenaArray<Real> &a)
 {
 
 // Boundary Conditions in x1-direction
