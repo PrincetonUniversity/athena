@@ -10,6 +10,7 @@
  *====================================================================================*/
 
 class ParameterInput;
+class Mesh;
 
 //! \struct OutputBlock
 //  \brief  node in a linked list of output blocks in the input file
@@ -30,7 +31,7 @@ public:
   DataOutput(ParameterInput *pin);
   ~DataOutput();
 
-  void CheckForOutputs();
+  void CheckForOutputs(Mesh *pm);
 //  void ComputeOutputData();
 //  void WriteOutputData();
 

@@ -15,7 +15,7 @@
 /*! \fn void FormattedTable()
  *  \brief   */
 
-void DataOutput::FormattedTable(MeshS *pM, OutputS *pOut)
+void DataOutput::FormattedTable(, data)
 {
 
 

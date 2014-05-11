@@ -65,7 +65,9 @@ public:
 
   Domain *pdomain;
   RegionSize mesh_size;
-  Real time, dt;
+
+  Real time, start_time, dt, tlim, cfl_number;
+  int ncycle, nlim;
 
   void InitializeOnDomains(enum QuantityToBeInitialized qnty, ParameterInput *pin);
   void StepThroughDomains(enum AlgorithmSteps action);

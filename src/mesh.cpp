@@ -18,6 +18,7 @@
 #include <string>
 #include <iostream>
 #include <stdexcept>
+#include <float.h>
 
 #include "athena.hpp"
 #include "athena_arrays.hpp"
@@ -39,6 +40,16 @@
 Mesh::Mesh(ParameterInput *pin)
 {
   std::stringstream msg;
+
+// read time and cycle limits from input file
+
+  tlim = pin->GetReal("time","tlim");
+  nlim = pin->GetOrAddInteger("time","nlim",-1);
+  start_time = pin->GetOrAddReal("time","start_time",0.0);
+  cfl_number = pin->GetReal("time","cfl_number");
+  ncycle = 0;
+  time = start_time;
+  dt   = (FLT_MAX);
 
 // read number of grid cells in mesh (root domain) from input file.  
 

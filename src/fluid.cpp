@@ -40,7 +40,6 @@ Fluid::Fluid(ParameterInput *pin, Block *pb)
 // Read some parameters from input file
 
   gamma_ = pin->GetReal("fluid","gamma");
-  cfl_number_ = pin->GetReal("time","cfl_number");
 
 // Allocate memory for primitive/conserved variables
 
@@ -138,7 +137,8 @@ void Fluid::NewTimeStep(Block *pb)
   }}
 
   Real old_dt = pb->pmy_domain->pmy_mesh->dt;
-  pb->pmy_domain->pmy_mesh->dt = std::min((cfl_number_*min_dt), (2.0*old_dt));
+  Real cfl = pb->pmy_domain->pmy_mesh->cfl_number;
+  pb->pmy_domain->pmy_mesh->dt = std::min((cfl*min_dt), (2.0*old_dt));
 
   return;
 

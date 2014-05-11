@@ -21,7 +21,9 @@
 #include <iomanip>
 
 #include "../athena.hpp"
+#include "../athena_arrays.hpp"
 #include "../parameter_input.hpp"
+#include "../mesh.hpp"
 #include "data_output.hpp"
 
 //======================================================================================
@@ -33,29 +35,38 @@
 
 DataOutput::DataOutput(ParameterInput *pin)
 {
+  pfirst_block_ = NULL;
   InputBlock *pin_block = pin->pfirst_block_;
-  OutputBlock *pb = pfirst_block_;
+  OutputBlock *pob = NULL;
   
 // loop over input block names.  Find those that start with "output", and create new
 // node in OutputBlock list.  Read input paramters in block into node.
 
   while (pin_block != NULL) {
+    OutputBlock* plast = pob;
     if (pin_block->block_name.compare(0,6,"output") == 0) { 
-      pb = new OutputBlock;
-      pb->pnext = NULL;
+      pob = new OutputBlock;
 // extract integer number of output block.  Save name and number 
       std::string outn = pin_block->block_name.substr(6); // 6 because starts at 0!
-      pb->block_number = atoi(outn.c_str());
-      pb->block_name   = pin_block->block_name;
-// extract time of last output, time between outputs
-      pb->last_time = pin->GetOrAddReal(pb->block_name,"last_time",0.0);
-      pb->dt = pin->GetReal(pb->block_name,"dt");
+      pob->block_number = atoi(outn.c_str());
+      pob->block_name.assign(pin_block->block_name);
+      pob->pnext = NULL;
+// set time of last output, time between outputs
+      pob->last_time = pin->GetOrAddReal(pob->block_name,"last_time",0.0);
+      pob->dt = pin->GetReal(pob->block_name,"dt");
+// Create filename
 
-      std::cout << pb->block_number << std::endl;
-      std::cout << std::setprecision(6) << pb->last_time << std::endl;
-      std::cout << std::setprecision(6) << pb->dt << std::endl;
+      std::cout << pob->block_number << std::endl;
+      std::cout << std::setprecision(6) << pob->last_time << std::endl;
+      std::cout << std::setprecision(6) << pob->dt << std::endl;
 
-      pb = pb->pnext;
+// if this is the first output block in list, save pointer to it in class
+
+     if (pfirst_block_ == NULL) {
+       pfirst_block_ = pob;
+     } else {
+       plast->pnext = pob;  // add to end of list
+     }
     }
     pin_block = pin_block->pnext;  // move to next input block name
   }
@@ -72,6 +83,20 @@ DataOutput::~DataOutput()
 //! \fn void
 //  \brief
 
-void DataOutput::CheckForOutputs()
+void DataOutput::CheckForOutputs(Mesh *pm)
 {
+  OutputBlock* pob = pfirst_block_;
+
+  while (pob != NULL) {
+    if ( (pm->time == pm->start_time) || (pm->time >= (pob->last_time + pob->dt)) ||
+         (pm->time == pm->tlim) ) {
+//      pob->OutputData.ComputeData();
+//      pob->OutputData.WriteFile();
+//      IncremntFilename(pob->filename);
+      pob->last_time += pob->dt;
+      std::cout << "Making output " << pob->block_number << std::endl;
+    }
+    pob = pob->pnext;
+
+  }
 }

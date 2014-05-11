@@ -39,7 +39,6 @@ public:
 
 private:
   Real gamma_;               // ratio of specific heats
-  Real cfl_number_;
   AthenaArray<Real> dt1_,dt2_,dt3_;  // scratch arrays used in NewTimeStep
 };
 #endif

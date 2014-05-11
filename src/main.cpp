@@ -17,6 +17,7 @@
 #include <iostream>
 #include <string>
 #include <stdint.h>
+#include <iomanip>
 
 #include "athena.hpp"
 #include "athena_arrays.hpp"
@@ -188,11 +189,13 @@ int main(int argc, char *argv[])
 //--- Step 9. === START OF MAIN INTEGRATION LOOP =======================================
 // For performance, there is no error handler protecting this step
 
-  std::cout << std::endl <<"Setup complete, entering main loop..."<< std::endl;
-  std::cout << std::endl <<"cycle= time= dt=" << mesh->dt << std::endl;
+  std::cout << std::endl << "Setup complete, entering main loop..." << std::endl;
+  std::cout << std::endl << "cycle=" << mesh->ncycle
+            << std::scientific << std::setprecision(5)
+            << " time=" << mesh->time << " dt=" << mesh->dt << std::endl;
   tstart = clock();
 
-  {
+  while ((mesh->time < mesh->tlim) && (mesh->nlim < 0 || mesh->ncycle < mesh->nlim)){
 // predict step
 
     mesh->StepThroughDomains(fluid_predict    );
@@ -215,10 +218,14 @@ int main(int argc, char *argv[])
 
 // new time step, outputs, diagnostics
 
-    mesh->StepThroughDomains(new_timestep);
-    mesh->StepThroughDomains(data_output);
+    mesh->ncycle++;
+    mesh->time  += mesh->dt;
 
-    std::cout << "cycle= time= dt= " << mesh->dt << std::endl;
+    outputs->CheckForOutputs(mesh);
+    mesh->StepThroughDomains(new_timestep);
+
+    std::cout << "cycle=" << mesh->ncycle << std::scientific << std::setprecision(5)
+              << " time=" << mesh->time << " dt=" << mesh->dt << std::endl;
 
   } // END OF MAIN INTEGRATION LOOP ====================================================
 //======================================================================================
