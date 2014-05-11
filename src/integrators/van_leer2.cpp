@@ -44,6 +44,7 @@ void FluidIntegrator::Predict(Block *pb)
 {
   int is = pb->is; int js = pb->js; int ks = pb->ks;
   int ie = pb->ie; int je = pb->je; int ke = pb->ke;
+  Real dt = pb->pmy_domain->pmy_mesh->dt;
 
   Real sum=0.0; Real sum_2=0.0;
   int ndata = (pb->block_size.nx1)*(pb->block_size.nx2)*(pb->block_size.nx3)*(NVAR);
@@ -56,6 +57,7 @@ void FluidIntegrator::Predict(Block *pb)
   AthenaArray<Real> wl = pb->pfluid->wl_.ShallowCopy();
   AthenaArray<Real> wr = pb->pfluid->wr_.ShallowCopy();
   AthenaArray<Real> flx = pb->pfluid->flx_.ShallowCopy();
+  AthenaArray<Real> dx1f = pb->dx1f.ShallowCopy();
  
 #if SUM_ON>0
   /**** output to force calcs ****/
@@ -83,9 +85,9 @@ void FluidIntegrator::Predict(Block *pb)
         Real& u1i = u1(n,k,j,i);
         Real& flxi   = flx(n,  i);
         Real& flxip1 = flx(n,i+1);
-        Real& dx = pb->dx1f(i);
+        Real& dx = dx1f(i);
  
-        u1i = ui - 0.5*pb->pfluid->dt*(flxip1 - flxi)/dx;
+        u1i = ui - 0.5*dt*(flxip1 - flxi)/dx;
       }
     }
 
@@ -111,8 +113,8 @@ void FluidIntegrator::Predict(Block *pb)
 
     flux_->HLLC(is,ie,wl,wr,flx); 
 
-    Real dtodxjm1 = 0.5*pb->pfluid->dt/(pb->dx2f(j-1));
-    Real dtodxj   = 0.5*pb->pfluid->dt/(pb->dx2f(j));
+    Real dtodxjm1 = 0.5*dt/(pb->dx2f(j-1));
+    Real dtodxj   = 0.5*dt/(pb->dx2f(j));
     for (int n=0; n<NVAR; ++n){
 #pragma simd
       for (int i=is; i<=ie; ++i){
@@ -149,8 +151,8 @@ void FluidIntegrator::Predict(Block *pb)
 
     flux_->HLLC(is,ie,wl,wr,flx);
 
-    Real dtodxkm1 = 0.5*pb->pfluid->dt/(pb->dx3f(k-1));
-    Real dtodxk   = 0.5*pb->pfluid->dt/(pb->dx3f(k));
+    Real dtodxkm1 = 0.5*dt/(pb->dx3f(k-1));
+    Real dtodxk   = 0.5*dt/(pb->dx3f(k));
     for (int n=0; n<NVAR; ++n){
 #pragma simd
       for (int i=is; i<=ie; ++i){

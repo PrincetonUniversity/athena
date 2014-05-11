@@ -53,7 +53,7 @@ Mesh::Mesh(ParameterInput *pin)
 
 // allocate root domain
 
-  pdomain = new Domain(mesh_size);
+  pdomain = new Domain(mesh_size, this);
 
 }
 
@@ -67,13 +67,14 @@ Mesh::~Mesh()
 //--------------------------------------------------------------------------------------
 // Domain constructor
 
-Domain::Domain(RegionSize region)
+Domain::Domain(RegionSize region, Mesh* pm)
 {
+  pmy_mesh = pm;
   domain_size = region;
 
 // calculate array of blocks in domain, set their region sizes, and initialize
 
-  pblock = new Block(domain_size);
+  pblock = new Block(domain_size, this);
 
   return;
 }
@@ -88,8 +89,9 @@ Domain::~Domain()
 //--------------------------------------------------------------------------------------
 // Block constructor
 
-Block::Block(RegionSize region)
+Block::Block(RegionSize region, Domain *pd)
 {
+  pmy_domain = pd;
   block_size = region;
 
 // initilize grid indices
@@ -253,6 +255,9 @@ void Mesh::StepThroughDomains(enum AlgorithmSteps action)
       case convert_vars_n:
         break;
       case convert_vars_nhalf:
+        break;
+      case new_timestep:
+        pf->NewTimeStep(pdomain->pblock);
         break;
       case data_output:
         break;

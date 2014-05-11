@@ -16,6 +16,8 @@
 
 #include <iostream>
 #include <string>
+#include <math.h>
+#include <float.h>
 
 #include "athena.hpp"
 #include "athena_arrays.hpp"
@@ -34,14 +36,11 @@
 Fluid::Fluid(ParameterInput *pin, Block *pb)
 {
   pmy_block = pb;
-// Read adiabatic index from input file
+
+// Read some parameters from input file
 
   gamma_ = pin->GetReal("fluid","gamma");
-
-// initialize time, timestep
-
-  time = 0.0;
-  dt   = 1.0;
+  cfl_number_ = pin->GetReal("time","cfl_number");
 
 // Allocate memory for primitive/conserved variables
 
@@ -77,4 +76,47 @@ Fluid::~Fluid()
   wl_.DeleteAthenaArray();
   wr_.DeleteAthenaArray();
   flx_.DeleteAthenaArray();
+}
+
+//--------------------------------------------------------------------------------------
+// \!fn 
+// \brief
+
+void Fluid::NewTimeStep(Block *pb)
+{
+  Real min_dt1=(FLT_MAX), min_dt2=(FLT_MAX), min_dt3=(FLT_MAX);
+  int is = pb->is; int js = pb->js; int ks = pb->ks;
+  int ie = pb->ie; int je = pb->je; int ke = pb->ke;
+  Real gam = GetGamma();
+
+  AthenaArray<Real> w = pb->pfluid->w.ShallowCopy();
+
+  for (int k=ks; k<=ke; ++k){
+  for (int j=js; j<=je; ++j){
+    Real& dx2 = pb->dx2f(j);
+    Real& dx3 = pb->dx3f(k);
+#pragma simd
+    for (int i=is; i<=ie; ++i){
+      Real& w_d  = w(IDN,k,j,i);
+      Real& w_v1 = w(IVX,k,j,i);
+      Real& w_v2 = w(IVY,k,j,i);
+      Real& w_v3 = w(IVZ,k,j,i);
+      Real& w_p  = w(IEN,k,j,i);
+      Real& dx1  = pb->dx1f(i);
+
+      Real cs = sqrt(gam*w_p/((gam-1.0)*w_d));
+      min_dt1 = std::max(min_dt1,(dx1/(fabs(w_v1) + cs)));
+      if (pb->block_size.nx2 > 1) min_dt2 = std::min(min_dt2,(dx2/(fabs(w_v2) + cs)));
+      if (pb->block_size.nx3 > 1) min_dt3 = std::min(min_dt3,(dx3/(fabs(w_v3) + cs)));
+    }
+  }}
+
+  Real min_dt = std::min(min_dt1,min_dt2);
+  min_dt = std::min(min_dt ,min_dt3);
+
+  Real old_dt = pb->pmy_domain->pmy_mesh->dt;
+  pb->pmy_domain->pmy_mesh->dt = std::min((cfl_number_*min_dt), (2.0*old_dt));
+
+  return;
+
 }

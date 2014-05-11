@@ -38,8 +38,6 @@ void ReflectInnerX1(Fluid *pf, AthenaArray<Real> &a)
   int js = pb->js, je = pb->je;
   int ks = pb->ks, ke = pb->ke;
 
-  printf("is=%i\n",is);
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
     for (int n=0; n<(NVAR); ++n) {

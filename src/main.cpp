@@ -167,13 +167,14 @@ int main(int argc, char *argv[])
     std::cout << ex.what() << std::endl;  // prints diagnostic message 
     return(0);
   }
+  mesh->StepThroughDomains(new_timestep);
 
 //======================================================================================
 //--- Step 9. === START OF MAIN INTEGRATION LOOP =======================================
 // For performance, there is no error handler protecting this step
 
   std::cout << std::endl <<"Setup complete, entering main loop..."<< std::endl;
-  std::cout << std::endl <<"cycle= time= dt="<< std::endl;
+  std::cout << std::endl <<"cycle= time= dt=" << mesh->dt << std::endl;
   tstart = clock();
 
   {
@@ -197,11 +198,12 @@ int main(int argc, char *argv[])
 
     mesh->StepThroughDomains(convert_vars_n);
 
-// outputs, diagnostics
+// new time step, outputs, diagnostics
 
+    mesh->StepThroughDomains(new_timestep);
     mesh->StepThroughDomains(data_output);
 
-    std::cout << "cycle= time= dt= " << std::endl;
+    std::cout << "cycle= time= dt= " << mesh->dt << std::endl;
 
   } // END OF MAIN INTEGRATION LOOP ====================================================
 //======================================================================================

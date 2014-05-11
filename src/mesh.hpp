@@ -12,6 +12,8 @@
 
 class ParameterInput;
 class Fluid;
+class Mesh;
+class Domain;
 
 //! \struct RegionSize
 //  \brief physical size and number of cells in a region (Domain or Block)
@@ -27,15 +29,17 @@ typedef struct RegionSize {
 
 class Block {
 public:
-  Block(RegionSize region);
+  Block(RegionSize region, Domain *pd);
   ~Block();
+
+  Fluid *pfluid;
 
   AthenaArray<Real> x1v, x2v, x3v, dx1v, dx2v, dx3v;
   AthenaArray<Real> x1f, x2f, x3f, dx1f, dx2f, dx3f; 
   int is,ie,js,je,ks,ke;
   RegionSize block_size;
 
-  Fluid *pfluid;
+  Domain *pmy_domain;
 };
 
 //! \class Domain
@@ -43,11 +47,12 @@ public:
 
 class Domain {
 public:
-  Domain(RegionSize region);
+  Domain(RegionSize region, Mesh *pm);
   ~Domain();
 
   Block *pblock;
   RegionSize domain_size;
+  Mesh *pmy_mesh;
 };
 
 //! \class Mesh
@@ -60,6 +65,7 @@ public:
 
   Domain *pdomain;
   RegionSize mesh_size;
+  Real time, dt;
 
   void InitializeOnDomains(enum QuantityToBeInitialized qnty, ParameterInput *pin);
   void StepThroughDomains(enum AlgorithmSteps action);

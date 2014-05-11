@@ -23,6 +23,7 @@ public:
   ~FluidIntegrator();
 
   void Predict(Block *pb);
+  Real cfl_number;
 
 private:
   Fluid *pmy_fluid_;  // pointer to parent Fluid object

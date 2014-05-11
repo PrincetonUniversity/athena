@@ -26,7 +26,6 @@ public:
 
   AthenaArray<Real> u,w;   // conserved and primitive variables
   AthenaArray<Real> u1,w1; // conserved and primitive variables at the half-time step
-  Real time, dt;
 
   Block* pmy_block;          // pointer to parent Block of this Fluid
 
@@ -34,11 +33,13 @@ public:
   ConvertVariables *pcons_to_prim;  // object to convert conserved-to-primitive
   FluidIntegrator *pintegrate;
 
-  void Problem(ParameterInput *pin);       // problem generator function
+  void Problem(ParameterInput *pin); // problem generator function
+  void NewTimeStep(Block *pb);       // computes new timestep on a Block
   Real GetGamma() const { return gamma_; }
 
 private:
   Real gamma_;               // ratio of specific heats
+  Real cfl_number_;
 
   AthenaArray<Real> wl_,wr_,flx_;
 
