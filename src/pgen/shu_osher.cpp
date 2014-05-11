@@ -14,6 +14,7 @@
  * the code distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
+#include <sstream>
 #include <iostream>
 #include <string>
 #include <math.h>
@@ -40,8 +41,6 @@ void Fluid::Problem(ParameterInput *pin)
   int is = pb->is; int js = pb->js; int ks = pb->ks;
   int ie = pb->ie; int je = pb->je; int ke = pb->ke;
 
-  std::cout << "is=" << is << std::endl; 
-
 /* setup dependent variables */
 
   Real dl = 3.857143;
@@ -52,10 +51,10 @@ void Fluid::Problem(ParameterInput *pin)
 
   Real gm1 = (GetGamma()) - 1.0;
 
-  for (int k=ks-2; k<=ke+2; ++k) {
-  for (int j=js-2; j<=je+2; ++j) {
+  for (int k=ks; k<=ke; ++k) {
+  for (int j=js; j<=je; ++j) {
 #pragma simd
-    for (int i=is-2; i<=ie+2; ++i) {
+    for (int i=is; i<=ie; ++i) {
 
       if (pb->x1v(i) < -0.8) {
         u(IDN,k,j,i) = dl;
@@ -73,8 +72,6 @@ void Fluid::Problem(ParameterInput *pin)
       }
     }
   }}
-  
-  std::cout << u(IEN,128,64,64) << std::endl; 
 
   return;
 }

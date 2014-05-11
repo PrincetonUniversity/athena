@@ -36,8 +36,17 @@
 void ConvertVariables::ComputePrimitives(AthenaArray<Real> &c, AthenaArray<Real> &p)
 {
   Block *pb = pmy_fluid_->pmy_block;
-  int is = pb->is; int js = pb->js; int ks = pb->ks;
-  int ie = pb->ie; int je = pb->je; int ke = pb->ke;
+  int is = pb->is; int ie = pb->ie;
+  int jl = pb->js; int ju = pb->je;
+  int kl = pb->ks; int ku = pb->ke;
+  if (pb->block_size.nx2 > 1) {
+    jl -= (NGHOST);
+    ju += (NGHOST);
+  }
+  if (pb->block_size.nx3 > 1) {
+    kl -= (NGHOST);
+    ku += (NGHOST);
+  }
 
   AthenaArray<Real> lc = c.ShallowCopy();
   AthenaArray<Real> lp = p.ShallowCopy();
@@ -45,8 +54,8 @@ void ConvertVariables::ComputePrimitives(AthenaArray<Real> &c, AthenaArray<Real>
 //--------------------------------------------------------------------------------------
 // Convert to Primitives
 
-  for (int k=ks-(NGHOST); k<=ke+(NGHOST); ++k){
-  for (int j=js-(NGHOST); j<=je+(NGHOST); ++j){
+  for (int k=kl; k<=ku; ++k){
+  for (int j=jl; j<=ju; ++j){
 #pragma simd
     for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i){
       Real& u_d  = lc(IDN,k,j,i);

@@ -40,8 +40,5 @@ public:
 private:
   Real gamma_;               // ratio of specific heats
   Real cfl_number_;
-
-  AthenaArray<Real> wl_,wr_,flx_;
-
 };
 #endif

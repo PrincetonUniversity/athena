@@ -51,17 +51,10 @@ Fluid::Fluid(ParameterInput *pin, Block *pb)
   u.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
   w.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
 
-// Allocate memory for primitive/conserved variables at half-time step, and scratch
+// Allocate memory for primitive/conserved variables at half-time step
 
   u1.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
   w1.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
-
-  wl_.NewAthenaArray(NVAR,ncells1);
-  wr_.NewAthenaArray(NVAR,ncells1);
-  flx_.NewAthenaArray(NVAR,ncells1);
-
-//  Problem(pin);
-
 }
 
 // destructor
@@ -72,10 +65,6 @@ Fluid::~Fluid()
   w.DeleteAthenaArray();
   u1.DeleteAthenaArray();
   w1.DeleteAthenaArray();
-  
-  wl_.DeleteAthenaArray();
-  wr_.DeleteAthenaArray();
-  flx_.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------

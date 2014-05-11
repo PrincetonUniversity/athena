@@ -38,14 +38,27 @@
 FluidIntegrator::FluidIntegrator(Fluid *pf)
 {
   pmy_fluid_ = pf;
-  flux_ = new RiemannSolver(pf);
-  lr_states_ = new Reconstruction(pf);
+
+// construct riemann solver and reconstructions methods
+
+  flux_func_ = new RiemannSolver(pf);
+  lr_states_func_ = new Reconstruction(pf);
+
+// Allocate memory for scratch vectors
+
+  int ncells1 = pf->pmy_block->block_size.nx1 + 2*(NGHOST);
+  wl_.NewAthenaArray(NVAR,ncells1);
+  wr_.NewAthenaArray(NVAR,ncells1);
+  flx_.NewAthenaArray(NVAR,ncells1);
 }
 
 // destructor
 
 FluidIntegrator::~FluidIntegrator()
 {
-  delete[] flux_;
-  delete[] lr_states_;
+  delete[] flux_func_;
+  delete[] lr_states_func_;
+  wl_.DeleteAthenaArray();
+  wr_.DeleteAthenaArray();
+  flx_.DeleteAthenaArray();
 }

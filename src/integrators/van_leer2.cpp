@@ -54,9 +54,9 @@ void FluidIntegrator::Predict(Block *pb)
   AthenaArray<Real> u1 = pb->pfluid->u1.ShallowCopy();
   AthenaArray<Real> w1 = pb->pfluid->w1.ShallowCopy();
 
-  AthenaArray<Real> wl = pb->pfluid->wl_.ShallowCopy();
-  AthenaArray<Real> wr = pb->pfluid->wr_.ShallowCopy();
-  AthenaArray<Real> flx = pb->pfluid->flx_.ShallowCopy();
+  AthenaArray<Real> wl = wl_.ShallowCopy();
+  AthenaArray<Real> wr = wr_.ShallowCopy();
+  AthenaArray<Real> flx = flx_.ShallowCopy();
   AthenaArray<Real> dx1f = pb->dx1f.ShallowCopy();
  
 #if SUM_ON>0
@@ -74,9 +74,9 @@ void FluidIntegrator::Predict(Block *pb)
   for (int k=ks; k<=ke; ++k){
   for (int j=js; j<=je; ++j){
 
-    lr_states_->PiecewiseLinear(k,j,is,ie+1,1,w,wl,wr);
+    lr_states_func_->PiecewiseLinear(k,j,is,ie+1,1,w,wl,wr);
 
-    flux_->HLLC(is,ie+1,wl,wr,flx);
+    flux_func_->HLLC(is,ie+1,wl,wr,flx);
 
     for (int n=0; n<NVAR; ++n){
 #pragma simd
@@ -106,28 +106,30 @@ void FluidIntegrator::Predict(Block *pb)
 //--------------------------------------------------------------------------------------
 // j-direction
 
-  for (int k=ks; k<=ke; ++k){
-  for (int j=js; j<=je+1; ++j){
+  if (pb->block_size.nx2 > 1) {
+    for (int k=ks; k<=ke; ++k){
+    for (int j=js; j<=je+1; ++j){
 
-    lr_states_->PiecewiseLinear(k,j,is,ie,2,w,wl,wr);
+      lr_states_func_->PiecewiseLinear(k,j,is,ie,2,w,wl,wr);
 
-    flux_->HLLC(is,ie,wl,wr,flx); 
+      flux_func_->HLLC(is,ie,wl,wr,flx); 
 
-    Real dtodxjm1 = 0.5*dt/(pb->dx2f(j-1));
-    Real dtodxj   = 0.5*dt/(pb->dx2f(j));
-    for (int n=0; n<NVAR; ++n){
+      Real dtodxjm1 = 0.5*dt/(pb->dx2f(j-1));
+      Real dtodxj   = 0.5*dt/(pb->dx2f(j));
+      for (int n=0; n<NVAR; ++n){
 #pragma simd
-      for (int i=is; i<=ie; ++i){
-        Real& u1jm1 = u1(n,k,j-1,i);
-        Real& u1j   = u1(n,k,j  ,i);
-        Real& flxj  = flx(n,i);
+        for (int i=is; i<=ie; ++i){
+          Real& u1jm1 = u1(n,k,j-1,i);
+          Real& u1j   = u1(n,k,j  ,i);
+          Real& flxj  = flx(n,i);
   
-        u1jm1 -= dtodxjm1*flxj;
-        u1j   += dtodxj  *flxj;
+          u1jm1 -= dtodxjm1*flxj;
+          u1j   += dtodxj  *flxj;
+        }
       }
-    }
 
-  }}
+    }}
+  }
 
 
 #if SUM_ON>0
@@ -144,28 +146,30 @@ void FluidIntegrator::Predict(Block *pb)
 //--------------------------------------------------------------------------------------
 // k-direction 
 
-  for (int k=ks; k<=ke+1; ++k){
-  for (int j=js; j<=je; ++j){
+  if (pb->block_size.nx3 > 1) {
+    for (int k=ks; k<=ke+1; ++k){
+    for (int j=js; j<=je; ++j){
 
-    lr_states_->PiecewiseLinear(k,j,is,ie,3,w,wl,wr);
+      lr_states_func_->PiecewiseLinear(k,j,is,ie,3,w,wl,wr);
 
-    flux_->HLLC(is,ie,wl,wr,flx);
+      flux_func_->HLLC(is,ie,wl,wr,flx);
 
-    Real dtodxkm1 = 0.5*dt/(pb->dx3f(k-1));
-    Real dtodxk   = 0.5*dt/(pb->dx3f(k));
-    for (int n=0; n<NVAR; ++n){
+      Real dtodxkm1 = 0.5*dt/(pb->dx3f(k-1));
+      Real dtodxk   = 0.5*dt/(pb->dx3f(k));
+      for (int n=0; n<NVAR; ++n){
 #pragma simd
-      for (int i=is; i<=ie; ++i){
-        Real& u1km1 = u1(n,k-1,j,i);
-        Real& u1k   = u1(n,k  ,j,i);
-        Real& flxk = flx(n,i);
+        for (int i=is; i<=ie; ++i){
+          Real& u1km1 = u1(n,k-1,j,i);
+          Real& u1k   = u1(n,k  ,j,i);
+          Real& flxk = flx(n,i);
 
-        u1km1 -= dtodxkm1*flxk;
-        u1k   += dtodxk  *flxk;
+          u1km1 -= dtodxkm1*flxk;
+          u1k   += dtodxk  *flxk;
+        }
       }
-    }
 
-  }}
+    }}
+  }
 
   return;
 }
@@ -188,9 +192,9 @@ void FluidIntegrator::Correct(Block *pb)
   AthenaArray<Real> u1 = pb->pfluid->u1.ShallowCopy();
   AthenaArray<Real> w1 = pb->pfluid->w1.ShallowCopy();
 
-  AthenaArray<Real> wl = pb->pfluid->wl_.ShallowCopy();
-  AthenaArray<Real> wr = pb->pfluid->wr_.ShallowCopy();
-  AthenaArray<Real> flx = pb->pfluid->flx_.ShallowCopy();
+  AthenaArray<Real> wl = wl_.ShallowCopy();
+  AthenaArray<Real> wr = wr_.ShallowCopy();
+  AthenaArray<Real> flx = flx_.ShallowCopy();
   AthenaArray<Real> dx1f = pb->dx1f.ShallowCopy();
  
 #if SUM_ON>0
@@ -208,9 +212,9 @@ void FluidIntegrator::Correct(Block *pb)
   for (int k=ks; k<=ke; ++k){
   for (int j=js; j<=je; ++j){
 
-    lr_states_->PiecewiseLinear(k,j,is,ie+1,1,w1,wl,wr);
+    lr_states_func_->PiecewiseLinear(k,j,is,ie+1,1,w1,wl,wr);
 
-    flux_->HLLC(is,ie+1,wl,wr,flx);
+    flux_func_->HLLC(is,ie+1,wl,wr,flx);
 
     for (int n=0; n<NVAR; ++n){
 #pragma simd
@@ -239,29 +243,30 @@ void FluidIntegrator::Correct(Block *pb)
 //--------------------------------------------------------------------------------------
 // j-direction
 
-  for (int k=ks; k<=ke; ++k){
-  for (int j=js; j<=je+1; ++j){
+  if (pb->block_size.nx2 > 1) {
+    for (int k=ks; k<=ke; ++k){
+    for (int j=js; j<=je+1; ++j){
 
-    lr_states_->PiecewiseLinear(k,j,is,ie,2,w1,wl,wr);
+      lr_states_func_->PiecewiseLinear(k,j,is,ie,2,w1,wl,wr);
 
-    flux_->HLLC(is,ie,wl,wr,flx); 
+      flux_func_->HLLC(is,ie,wl,wr,flx); 
 
-    Real dtodxjm1 = dt/(pb->dx2f(j-1));
-    Real dtodxj   = dt/(pb->dx2f(j));
-    for (int n=0; n<NVAR; ++n){
+      Real dtodxjm1 = dt/(pb->dx2f(j-1));
+      Real dtodxj   = dt/(pb->dx2f(j));
+      for (int n=0; n<NVAR; ++n){
 #pragma simd
-      for (int i=is; i<=ie; ++i){
-        Real& ujm1 = u(n,k,j-1,i);
-        Real& uj   = u(n,k,j  ,i);
-        Real& flxj  = flx(n,i);
+        for (int i=is; i<=ie; ++i){
+          Real& ujm1 = u(n,k,j-1,i);
+          Real& uj   = u(n,k,j  ,i);
+          Real& flxj  = flx(n,i);
   
-        ujm1 -= dtodxjm1*flxj;
-        uj   += dtodxj  *flxj;
+          ujm1 -= dtodxjm1*flxj;
+          uj   += dtodxj  *flxj;
+        }
       }
-    }
 
-  }}
-
+    }}
+  }
 
 #if SUM_ON>0
   /**** output to force calcs ****/
@@ -277,28 +282,30 @@ void FluidIntegrator::Correct(Block *pb)
 //--------------------------------------------------------------------------------------
 // k-direction 
 
-  for (int k=ks; k<=ke+1; ++k){
-  for (int j=js; j<=je; ++j){
+  if (pb->block_size.nx3 > 1) {
+    for (int k=ks; k<=ke+1; ++k){
+    for (int j=js; j<=je; ++j){
 
-    lr_states_->PiecewiseLinear(k,j,is,ie,3,w1,wl,wr);
+      lr_states_func_->PiecewiseLinear(k,j,is,ie,3,w1,wl,wr);
 
-    flux_->HLLC(is,ie,wl,wr,flx);
+      flux_func_->HLLC(is,ie,wl,wr,flx);
 
-    Real dtodxkm1 = dt/(pb->dx3f(k-1));
-    Real dtodxk   = dt/(pb->dx3f(k));
-    for (int n=0; n<NVAR; ++n){
+      Real dtodxkm1 = dt/(pb->dx3f(k-1));
+      Real dtodxk   = dt/(pb->dx3f(k));
+      for (int n=0; n<NVAR; ++n){
 #pragma simd
-      for (int i=is; i<=ie; ++i){
-        Real& ukm1 = u(n,k-1,j,i);
-        Real& uk   = u(n,k  ,j,i);
-        Real& flxk = flx(n,i);
+        for (int i=is; i<=ie; ++i){
+          Real& ukm1 = u(n,k-1,j,i);
+          Real& uk   = u(n,k  ,j,i);
+          Real& flxk = flx(n,i);
 
-        ukm1 -= dtodxkm1*flxk;
-        uk   += dtodxk  *flxk;
+          ukm1 -= dtodxkm1*flxk;
+          uk   += dtodxk  *flxk;
+        }
       }
-    }
 
-  }}
+    }}
+  }
 
   return;
 }

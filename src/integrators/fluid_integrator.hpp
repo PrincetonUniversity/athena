@@ -28,8 +28,9 @@ public:
 
 private:
   Fluid *pmy_fluid_;  // pointer to parent Fluid object
-  RiemannSolver *flux_;
-  Reconstruction *lr_states_;
+  RiemannSolver *flux_func_;
+  Reconstruction *lr_states_func_;
+  AthenaArray<Real> wl_,wr_,flx_; // 1D scratch vectors (L/R states, flux)
 
 };
 #endif

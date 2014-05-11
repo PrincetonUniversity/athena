@@ -37,7 +37,6 @@ void ReflectInnerX1(Fluid *pf, AthenaArray<Real> &a)
   int is = pb->is;
   int js = pb->js, je = pb->je;
   int ks = pb->ks, ke = pb->ke;
-
   AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=ks; k<=ke; ++k) {
@@ -73,7 +72,6 @@ void ReflectOuterX1(Fluid *pf, AthenaArray<Real> &a)
   int ie = pb->ie;
   int js = pb->js, je = pb->je;
   int ks = pb->ks, ke = pb->ke;
-
   AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=ks; k<=ke; ++k) {
@@ -109,7 +107,6 @@ void ReflectInnerX2(Fluid *pf, AthenaArray<Real> &a)
   int is = pb->is, ie = pb->ie;
   int js = pb->js;
   int ks = pb->ks, ke = pb->ke;
-
   AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=ks; k<=ke; ++k) {
@@ -145,7 +142,6 @@ void ReflectOuterX2(Fluid *pf, AthenaArray<Real> &a)
   int is = pb->is, ie = pb->ie;
   int je = pb->je;
   int ks = pb->ks, ke = pb->ke;
-
   AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=ks; k<=ke; ++k) {
@@ -181,7 +177,6 @@ void ReflectInnerX3(Fluid *pf, AthenaArray<Real> &a)
   int is = pb->is, ie = pb->ie;
   int js = pb->js, je = pb->je;
   int ks = pb->ks;
-
   AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=1; k<=(NGHOST); ++k) {
@@ -217,7 +212,6 @@ void ReflectOuterX3(Fluid *pf, AthenaArray<Real> &a)
   int is = pb->is, ie = pb->ie;
   int js = pb->js, je = pb->je;
   int ke = pb->ke;
-
   AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=1; k<=(NGHOST); ++k) {
