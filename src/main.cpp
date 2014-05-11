@@ -23,6 +23,7 @@
 #include "parameter_input.hpp"
 #include "mesh.hpp"
 #include "fluid.hpp"
+#include "outputs/data_output.hpp"
 
 //======================================================================================
 /* //////////////////////////////// Athena++ Main Program \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
@@ -131,9 +132,9 @@ int main(int argc, char *argv[])
 
 //  g_comm_world_id = 0;
 
+// Note steps 4-6 are protected by a simple error handler
 //--- Step 4. --------------------------------------------------------------------------
 // Construct and initialize Mesh
-// Note memory allocations and parameter input are protected by a simple error handler
 
   Mesh *mesh;
   try {
@@ -151,7 +152,6 @@ int main(int argc, char *argv[])
 
 //--- Step 5. --------------------------------------------------------------------------
 // Now construct and initialize fluid on every Mesh block.
-// Note memory allocations and parameter input are protected by a simple error handler
 
   try {
     mesh->InitializeOnDomains(fluid,inputs);
@@ -166,6 +166,23 @@ int main(int argc, char *argv[])
     return(0);
   }
   mesh->StepThroughDomains(new_timestep);
+
+//--- Step 6. --------------------------------------------------------------------------
+// Construct output object, and make outputs of initial conditions
+
+  DataOutput *outputs;
+  try {
+    outputs = new DataOutput(inputs);
+  } 
+  catch(std::bad_alloc& ba) {
+    std::cout << "### FATAL ERROR memory allocation failed" << std::endl
+              << "error initializing class ParameterInput: " << ba.what() << std::endl;
+    return(0);
+  }
+  catch(std::exception const& ex) {
+    std::cout << ex.what() << std::endl;  // prints diagnostic message  
+    return(0);
+  }
 
 //======================================================================================
 //--- Step 9. === START OF MAIN INTEGRATION LOOP =======================================

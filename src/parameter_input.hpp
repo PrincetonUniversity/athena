@@ -37,6 +37,7 @@ typedef struct InputBlock {
 //  \brief data and functions used to store and access input parameters
 
 class ParameterInput {
+friend class DataOutput;
 public:
   ParameterInput();
   ~ParameterInput();

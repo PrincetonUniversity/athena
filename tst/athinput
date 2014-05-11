@@ -17,6 +17,22 @@ dt      = 0.01              # time increment between outputs
 out_fmt = hst               # History data dump
 dt      = 0.01              # time increment between outputs
 
+<output44>
+dt=1.0e-3
+
+<output16>
+dt=1.0e-5
+
+<output17>
+last_time = 33.7
+dt = 44.65
+
+<output3>
+dt=1.0e-3
+
+<output2>
+dt=1.0e-6
+
 <time>
 cfl_number      = 0.8       # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim            = -1        # cycle limit

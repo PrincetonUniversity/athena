@@ -55,6 +55,12 @@ Fluid::Fluid(ParameterInput *pin, Block *pb)
 
   u1.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
   w1.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
+
+// Allocate memory for scratch arrays
+
+  dt1_.NewAthenaArray(ncells1);
+  dt2_.NewAthenaArray(ncells1);
+  dt3_.NewAthenaArray(ncells1);
 }
 
 // destructor
@@ -73,12 +79,15 @@ Fluid::~Fluid()
 
 void Fluid::NewTimeStep(Block *pb)
 {
-  Real min_dt1=(FLT_MAX), min_dt2=(FLT_MAX), min_dt3=(FLT_MAX);
   int is = pb->is; int js = pb->js; int ks = pb->ks;
   int ie = pb->ie; int je = pb->je; int ke = pb->ke;
   Real gam = GetGamma();
+  Real min_dt;
 
   AthenaArray<Real> w = pb->pfluid->w.ShallowCopy();
+  AthenaArray<Real> dt1 = dt1_.ShallowCopy();
+  AthenaArray<Real> dt2 = dt2_.ShallowCopy();
+  AthenaArray<Real> dt3 = dt3_.ShallowCopy();
 
   for (int k=ks; k<=ke; ++k){
   for (int j=js; j<=je; ++j){
@@ -92,16 +101,41 @@ void Fluid::NewTimeStep(Block *pb)
       Real& w_v3 = w(IVZ,k,j,i);
       Real& w_p  = w(IEN,k,j,i);
       Real& dx1  = pb->dx1f(i);
+      Real& d_t1 = dt1(i);
+      Real& d_t2 = dt2(i);
+      Real& d_t3 = dt3(i);
 
       Real cs = sqrt(gam*w_p/((gam-1.0)*w_d));
-      min_dt1 = std::max(min_dt1,(dx1/(fabs(w_v1) + cs)));
-      if (pb->block_size.nx2 > 1) min_dt2 = std::min(min_dt2,(dx2/(fabs(w_v2) + cs)));
-      if (pb->block_size.nx3 > 1) min_dt3 = std::min(min_dt3,(dx3/(fabs(w_v3) + cs)));
-    }
-  }}
 
-  Real min_dt = std::min(min_dt1,min_dt2);
-  min_dt = std::min(min_dt ,min_dt3);
+      d_t1 = dx1/(fabs(w_v1) + cs);
+      d_t2 = dx2/(fabs(w_v2) + cs);
+      d_t3 = dx3/(fabs(w_v3) + cs);
+    }
+
+// compute minimum of (v1 +/- C)
+
+    min_dt = dt1(is);
+    for (int i=is+1; i<=ie; ++i){
+      min_dt = std::min(min_dt,dt1(i));
+    }
+    
+// if grid is 2D/3D, compute minimum of (v2 +/- C)
+
+    if (pb->block_size.nx2 > 1) {
+      for (int i=is; i<=ie; ++i){
+        min_dt = std::min(min_dt,dt2(i));
+      }
+    }
+
+// if grid is 3D, compute minimum of (v3 +/- C)
+
+    if (pb->block_size.nx3 > 1) {
+      for (int i=is; i<=ie; ++i){
+        min_dt = std::min(min_dt,dt3(i));
+      }
+    }
+
+  }}
 
   Real old_dt = pb->pmy_domain->pmy_mesh->dt;
   pb->pmy_domain->pmy_mesh->dt = std::min((cfl_number_*min_dt), (2.0*old_dt));
