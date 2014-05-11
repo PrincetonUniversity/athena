@@ -39,11 +39,6 @@ void ConvertVariables::ComputePrimitives(AthenaArray<Real> &c, AthenaArray<Real>
   int is = pb->is; int js = pb->js; int ks = pb->ks;
   int ie = pb->ie; int je = pb->je; int ke = pb->ke;
 
-/*
-  AthenaArray<Real> ut = u;
-  AthenaArray<Real> wt = w;
-*/
-
 //--------------------------------------------------------------------------------------
 // Convert to Primitives
 

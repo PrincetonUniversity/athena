@@ -51,8 +51,6 @@ int main(int argc, char *argv[])
 // local variables used for timing and performance measures
 
   clock_t tstart, tstop;
-  int64_t zones;
-  float cpu_time, zcs;
 
 //--- Step 1. --------------------------------------------------------------------------
 // Check for command line options and respond. 
@@ -211,9 +209,11 @@ int main(int argc, char *argv[])
 // Calculate and print the zone-cycles/cpu-second on this processor
 
   tstop = clock();
-  cpu_time = (tstop > tstart ? (float)(tstop - tstart) : 1.0)/
-      (float)CLOCKS_PER_SEC;
-  std::cout << "time used = " << cpu_time << std::endl;
+  float cpu_time = (tstop>tstart ? (float)(tstop-tstart) : 1.0)/(float)CLOCKS_PER_SEC;
+  int64_t zones = (mesh->mesh_size.nx1)*(mesh->mesh_size.nx2)*(mesh->mesh_size.nx3);
+  float zcs = (float)zones/cpu_time;
+  std::cout << "cpu time used = " << cpu_time << std::endl;
+  std::cout << "zone-cycles/second = " << zcs << std::endl;
 
 
 //  if(time(&stop_time)>0) /* current calendar time (UTC) is available */

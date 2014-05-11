@@ -23,6 +23,7 @@ public:
   ~FluidIntegrator();
 
   void Predict(Block *pb);
+  void Correct(Block *pb);
   Real cfl_number;
 
 private:

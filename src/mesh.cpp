@@ -251,10 +251,13 @@ void Mesh::StepThroughDomains(enum AlgorithmSteps action)
         pf->pintegrate->Predict(pdomain->pblock);
         break;
       case fluid_correct:
+        pf->pintegrate->Correct(pdomain->pblock);
         break;
       case convert_vars_n:
+        pf->pcons_to_prim->ComputePrimitives(pf->u,pf->w);
         break;
       case convert_vars_nhalf:
+        pf->pcons_to_prim->ComputePrimitives(pf->u1,pf->w1);
         break;
       case new_timestep:
         pf->NewTimeStep(pdomain->pblock);
