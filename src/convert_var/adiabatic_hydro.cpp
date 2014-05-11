@@ -39,6 +39,9 @@ void ConvertVariables::ComputePrimitives(AthenaArray<Real> &c, AthenaArray<Real>
   int is = pb->is; int js = pb->js; int ks = pb->ks;
   int ie = pb->ie; int je = pb->je; int ke = pb->ke;
 
+  AthenaArray<Real> lc = c.ShallowCopy();
+  AthenaArray<Real> lp = p.ShallowCopy();
+
 //--------------------------------------------------------------------------------------
 // Convert to Primitives
 
@@ -46,17 +49,17 @@ void ConvertVariables::ComputePrimitives(AthenaArray<Real> &c, AthenaArray<Real>
   for (int j=js-(NGHOST); j<=je+(NGHOST); ++j){
 #pragma simd
     for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i){
-      Real& u_d  = c(IDN,k,j,i);
-      Real& u_m1 = c(IVX,k,j,i);
-      Real& u_m2 = c(IVY,k,j,i);
-      Real& u_m3 = c(IVZ,k,j,i);
-      Real& u_e  = c(IEN,k,j,i);
+      Real& u_d  = lc(IDN,k,j,i);
+      Real& u_m1 = lc(IVX,k,j,i);
+      Real& u_m2 = lc(IVY,k,j,i);
+      Real& u_m3 = lc(IVZ,k,j,i);
+      Real& u_e  = lc(IEN,k,j,i);
 
-      Real& w_d  = p(IDN,k,j,i);
-      Real& w_m1 = p(IVX,k,j,i);
-      Real& w_m2 = p(IVY,k,j,i);
-      Real& w_m3 = p(IVZ,k,j,i);
-      Real& w_e  = p(IEN,k,j,i);
+      Real& w_d  = lp(IDN,k,j,i);
+      Real& w_m1 = lp(IVX,k,j,i);
+      Real& w_m2 = lp(IVY,k,j,i);
+      Real& w_m3 = lp(IVZ,k,j,i);
+      Real& w_e  = lp(IEN,k,j,i);
 
       Real di = 1.0/u_d;
       w_d  = u_d;

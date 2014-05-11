@@ -38,6 +38,8 @@ void ReflectInnerX1(Fluid *pf, AthenaArray<Real> &a)
   int js = pb->js, je = pb->je;
   int ks = pb->ks, ke = pb->ke;
 
+  AthenaArray<Real> la = a.ShallowCopy();
+
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
     for (int n=0; n<(NVAR); ++n) {
@@ -45,13 +47,13 @@ void ReflectInnerX1(Fluid *pf, AthenaArray<Real> &a)
       if (n==(IM1)) {
 #pragma simd
         for (int i=1; i<=(NGHOST); ++i) {
-          a(IM1,k,j,is-i) = -a(IM1,k,j,(is+i-1));  // reflect 1-mom
+          la(IM1,k,j,is-i) = -la(IM1,k,j,(is+i-1));  // reflect 1-mom
         }
 
       } else {
 #pragma simd
         for (int i=1; i<=(NGHOST); ++i) {
-          a(n,k,j,is-i) = a(n,k,j,(is+i-1));
+          la(n,k,j,is-i) = la(n,k,j,(is+i-1));
         }
       }
 
@@ -72,6 +74,8 @@ void ReflectOuterX1(Fluid *pf, AthenaArray<Real> &a)
   int js = pb->js, je = pb->je;
   int ks = pb->ks, ke = pb->ke;
 
+  AthenaArray<Real> la = a.ShallowCopy();
+
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
     for (int n=0; n<(NVAR); ++n) {
@@ -79,13 +83,13 @@ void ReflectOuterX1(Fluid *pf, AthenaArray<Real> &a)
       if (n==(IM1)) {
 #pragma simd
         for (int i=1; i<=(NGHOST); ++i) {
-          a(IM1,k,j,ie+i) = -a(IM1,k,j,(ie-i+1));  // reflect 1-mom
+          la(IM1,k,j,ie+i) = -la(IM1,k,j,(ie-i+1));  // reflect 1-mom
         }
 
       } else {
 #pragma simd
         for (int i=1; i<=(NGHOST); ++i) {
-          a(n,k,j,ie+i) = a(n,k,j,(ie-i+1));
+          la(n,k,j,ie+i) = la(n,k,j,(ie-i+1));
         }
       }
 
@@ -106,6 +110,8 @@ void ReflectInnerX2(Fluid *pf, AthenaArray<Real> &a)
   int js = pb->js;
   int ks = pb->ks, ke = pb->ke;
 
+  AthenaArray<Real> la = a.ShallowCopy();
+
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
     for (int n=0; n<(NVAR); ++n) {
@@ -113,13 +119,13 @@ void ReflectInnerX2(Fluid *pf, AthenaArray<Real> &a)
       if (n==(IM2)) {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          a(IM2,k,js-j,i) = -a(IM2,k,js+j-1,i);  // reflect 2-mom
+          la(IM2,k,js-j,i) = -la(IM2,k,js+j-1,i);  // reflect 2-mom
         }
 
       } else {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          a(n,k,js-j,i) = a(n,k,js+j-1,i);
+          la(n,k,js-j,i) = la(n,k,js+j-1,i);
         }
       }
 
@@ -140,6 +146,8 @@ void ReflectOuterX2(Fluid *pf, AthenaArray<Real> &a)
   int je = pb->je;
   int ks = pb->ks, ke = pb->ke;
 
+  AthenaArray<Real> la = a.ShallowCopy();
+
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
     for (int n=0; n<(NVAR); ++n) {
@@ -147,13 +155,13 @@ void ReflectOuterX2(Fluid *pf, AthenaArray<Real> &a)
       if (n==(IM2)) {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          a(IM2,k,je+j,i) = -a(IM2,k,je-j+1,i);  // reflect 2-mom
+          la(IM2,k,je+j,i) = -la(IM2,k,je-j+1,i);  // reflect 2-mom
         }
 
       } else {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          a(n,k,je+j,i) = a(n,k,je-j+1,i);
+          la(n,k,je+j,i) = la(n,k,je-j+1,i);
         }
       }
 
@@ -174,6 +182,8 @@ void ReflectInnerX3(Fluid *pf, AthenaArray<Real> &a)
   int js = pb->js, je = pb->je;
   int ks = pb->ks;
 
+  AthenaArray<Real> la = a.ShallowCopy();
+
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
     for (int n=0; n<(NVAR); ++n) {
@@ -181,13 +191,13 @@ void ReflectInnerX3(Fluid *pf, AthenaArray<Real> &a)
       if (n==(IM3)) {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          a(IM3,ks-k,j,i) = -a(IM3,ks+k-1,j,i);  // reflect 3-mom
+          la(IM3,ks-k,j,i) = -la(IM3,ks+k-1,j,i);  // reflect 3-mom
         }
 
       } else {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          a(n,ks-k,j,i) = a(n,ks+k-1,j,i);
+          la(n,ks-k,j,i) = la(n,ks+k-1,j,i);
         }
       }
 
@@ -208,6 +218,8 @@ void ReflectOuterX3(Fluid *pf, AthenaArray<Real> &a)
   int js = pb->js, je = pb->je;
   int ke = pb->ke;
 
+  AthenaArray<Real> la = a.ShallowCopy();
+
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
     for (int n=0; n<(NVAR); ++n) {
@@ -215,13 +227,13 @@ void ReflectOuterX3(Fluid *pf, AthenaArray<Real> &a)
       if (n==(IM3)) {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          a(IM3,ke+k,j,i) = -a(IM3,ke-k+1,j,i);  // reflect 3-mom
+          la(IM3,ke+k,j,i) = -la(IM3,ke-k+1,j,i);  // reflect 3-mom
         }
 
       } else {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          a(n,ke+k,j,i) = a(n,ke-k+1,j,i);
+          la(n,ke+k,j,i) = la(n,ke-k+1,j,i);
         }
       }
 

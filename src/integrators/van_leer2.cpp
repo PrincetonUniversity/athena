@@ -29,7 +29,7 @@
 #include "../rsolvers/riemann_solver.hpp"
 #include "fluid_integrator.hpp"
 
-#define SUM_ON 1
+#define SUM_ON 0
 
 //======================================================================================
 /*! \file van_leer2.cpp
