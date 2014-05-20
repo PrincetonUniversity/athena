@@ -32,25 +32,19 @@
  *====================================================================================*/
 
 void RiemannSolver::HLLC(const int il, const int iu,
-       AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx)
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {
-  Real sqrtdl,sqrtdr,isdlpdr,v1roe,v2roe,v3roe,hroe;
   Real cfl,cfr,bp,bm;
-  Real al,ar; /* Min and Max wave speeds */
-  Real am,cp; /* Contact wave speed and pressure */
+  Real al,ar; // Min and Max wave speeds
+  Real am,cp; // Contact wave speed and pressure
   Real tl,tr,ml,mr,sl,sm,sr;
-  Real Ul_E,Ur_E,Ul_Mx,Ur_Mx,vsq,asq,a,evp,evm;
+  Real evp,evm;
   Real Fl[NVAR],Fr[NVAR];
-  Real qa,qb;
 
-//  Real Gamma = Fluid::GetGamma();
-  Real Gamma = 1.6666667;
+  Real Gamma = pmy_fluid_->GetGamma();
 
 #pragma simd
   for (int i=il; i<=iu; ++i){
-
-/* Compute Roe-averaged data from left- and right-states */
-
     Real& d_l=wl(IDN,i);
     Real& vx_l=wl(IVX,i);
     Real& vy_l=wl(IVY,i);
@@ -69,34 +63,33 @@ void RiemannSolver::HLLC(const int il, const int iu,
     Real& vz_Flx=flx(IVZ,i);
     Real& e_Flx=flx(IEN,i);
       
+// Compute Roe-averaged velocities
 
-    sqrtdl = sqrt(d_l);
-    sqrtdr = sqrt(d_r);
-    isdlpdr = 1.0/(sqrtdl + sqrtdr);
+    Real sqrtdl = sqrt(d_l);
+    Real sqrtdr = sqrt(d_r);
+    Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
 
-    v1roe = (sqrtdl*vx_l + sqrtdr*vx_r)*isdlpdr;
-    v2roe = (sqrtdl*vy_l + sqrtdr*vy_r)*isdlpdr;
-    v3roe = (sqrtdl*vz_l + sqrtdr*vz_r)*isdlpdr;
+    Real v1roe = (sqrtdl*vx_l + sqrtdr*vx_r)*isdlpdr;
+    Real v2roe = (sqrtdl*vy_l + sqrtdr*vy_r)*isdlpdr;
+    Real v3roe = (sqrtdl*vz_l + sqrtdr*vz_r)*isdlpdr;
 
-/* Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
- * rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
- */
+// Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
+// rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
 
-    Ul_E = e_l + 0.5*d_l*
-          (vx_l*vx_l + vy_l*vy_l + vz_l*vz_l);
-    Ur_E = e_r + 0.5*d_r*
-          (vx_r*vx_r + vy_r*vy_r + vz_r*vz_r);
-    Ul_Mx = d_l*vx_l;
-    Ur_Mx = d_r*vx_r;
-    
-    hroe = ((Ul_E + e_l)/sqrtdl + (Ur_E + e_r)/sqrtdr)*isdlpdr;
-    vsq = v1roe*v1roe + v2roe*v2roe + v3roe*v3roe;
-    asq = (Gamma-1.0)*std::max((hroe - 0.5*vsq), TINY_NUMBER);
-    a = sqrt(asq);
-    evp = v1roe + a;
-    evm = v1roe - a;
+    Real Ul_E  = e_l + 0.5*d_l* (vx_l*vx_l + vy_l*vy_l + vz_l*vz_l);
+    Real Ur_E  = e_r + 0.5*d_r* (vx_r*vx_r + vy_r*vy_r + vz_r*vz_r);
+    Real Ul_Mx = d_l*vx_l;
+    Real Ur_Mx = d_r*vx_r;
+    Real hroe  = ((Ul_E + e_l)/sqrtdl + (Ur_E + e_r)/sqrtdr)*isdlpdr;
 
-/* Compute the max and min wave speeds */
+// Compute Roe-averaged wave speeds
+
+    Real vsq = v1roe*v1roe + v2roe*v2roe + v3roe*v3roe;
+    Real asq = (Gamma-1.0)*std::max((hroe - 0.5*vsq), TINY_NUMBER);
+    evp = v1roe + sqrt(asq);
+    evm = v1roe - sqrt(asq);
+
+// Compute the max/min wave speeds based on L/R values and Roe averages
 
     cfl = sqrt((Gamma*e_l/d_l));
     cfr = sqrt((Gamma*e_r/d_r));
@@ -107,7 +100,7 @@ void RiemannSolver::HLLC(const int il, const int iu,
     bp = ar > 0.0 ? ar : 0.0;
     bm = al < 0.0 ? al : 0.0;
 
-/* Compute the contact wave speed and Pressure */
+// Compute the contact wave speed and pressure
 
     tl = e_l + (vx_l - al)*Ul_Mx;
     tr = e_r + (vx_r - ar)*Ur_Mx;
@@ -115,13 +108,13 @@ void RiemannSolver::HLLC(const int il, const int iu,
     ml =   Ul_Mx - d_l*al;
     mr = -(Ur_Mx - d_r*ar);
 
-/* Determine the contact wave speed... */
+// Determine the contact wave speed...
     am = (tl - tr)/(ml + mr);
-/* ...and the pressure at the contact surface */
+// ...and the pressure at the contact surface
     cp = (ml*tr + mr*tl)/(ml + mr);
     cp = cp > 0.0 ? cp : 0.0;
 
-/* Compute L/R fluxes along the line bm, bp */
+// Compute L/R fluxes along the line bm, bp
 
     Fl[IDN]  = Ul_Mx - bm*d_l;
     Fr[IDN]  = Ur_Mx - bp*d_r;
@@ -141,7 +134,7 @@ void RiemannSolver::HLLC(const int il, const int iu,
     Fl[IEN] = Ul_E*(vx_l - bm) + e_l*vx_l;
     Fr[IEN] = Ur_E*(vx_r - bp) + e_r*vx_r;
 
-/* Compute flux weights or scales */
+// Compute flux weights or scales
 
     if (am >= 0.0) {
       sl =  am/(am - bm);
@@ -154,18 +147,19 @@ void RiemannSolver::HLLC(const int il, const int iu,
       sm =  bp/(bp - am);
     }
 
-/* Compute the HLLC flux at interface */
+// Compute the HLLC flux at interface
 
-    d_Flx = sl*Fl[IDN] + sr*Fr[IDN];
+    d_Flx  = sl*Fl[IDN] + sr*Fr[IDN];
     vx_Flx = sl*Fl[IVX] + sr*Fr[IVX];
     vy_Flx = sl*Fl[IVY] + sr*Fr[IVY];
     vz_Flx = sl*Fl[IVZ] + sr*Fr[IVZ];
-    e_Flx = sl*Fl[IEN] + sr*Fr[IEN];
+    e_Flx  = sl*Fl[IEN] + sr*Fr[IEN];
 
-/* Add the weighted contribution of the flux along the contact */
+// Add the weighted contribution of the flux along the contact
 
     vx_Flx += sm*cp;
-    e_Flx += sm*cp*am;
+    e_Flx  += sm*cp*am;
   }
+
   return;
 }

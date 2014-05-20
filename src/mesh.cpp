@@ -121,7 +121,7 @@ Mesh::Mesh(ParameterInput *pin)
 
 Mesh::~Mesh()
 {
-  delete[] pdomain;
+  delete pdomain;
 }
 
 //--------------------------------------------------------------------------------------
@@ -143,7 +143,7 @@ Domain::Domain(RegionSize region, Mesh* pm)
 
 Domain::~Domain()
 {
-  delete[] pblock;
+  delete pblock;
 }
 
 //--------------------------------------------------------------------------------------
