@@ -28,6 +28,7 @@
 #include "bvals/fluid_bvals.hpp"
 #include "convert_var/convert_var.hpp"
 #include "integrators/fluid_integrator.hpp"
+#include "geometry/geometry.hpp"
 
 //======================================================================================
 /*! \file mesh.cpp
@@ -233,6 +234,8 @@ Block::Block(RegionSize region, Domain *pd)
   x1f(ie+1) = block_size.x1max;
   x2f(je+1) = block_size.x2max;
   x3f(ke+1) = block_size.x3max;
+
+  pcoordinates = new Geometry(this);
 
 // Create Fluid
 

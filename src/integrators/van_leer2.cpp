@@ -27,6 +27,7 @@
 #include "../fluid.hpp"
 #include "../reconstruct/reconstruction.hpp"
 #include "../rsolvers/riemann_solver.hpp"
+#include "../geometry/geometry.hpp"
 #include "fluid_integrator.hpp"
 
 #define SUM_ON 0
@@ -57,8 +58,10 @@ void FluidIntegrator::Predict(Block *pb)
   AthenaArray<Real> wl = wl_.ShallowCopy();
   AthenaArray<Real> wr = wr_.ShallowCopy();
   AthenaArray<Real> flx = flx_.ShallowCopy();
-  AthenaArray<Real> dx1f = pb->dx1f.ShallowCopy();
  
+  AthenaArray<Real> area = pb->pcoordinates->face_area.ShallowCopy();
+  AthenaArray<Real> vol  = pb->pcoordinates->cell_volume.ShallowCopy();
+
 #if SUM_ON>0
   /**** output to force calcs ****/
   for (int i=0; i<ndata; ++i){
@@ -78,6 +81,9 @@ void FluidIntegrator::Predict(Block *pb)
 
     flux_func_->HLLC(is,ie+1,wl,wr,flx);
 
+    pb->pcoordinates->Area1Face(k,j,is,ie+1,area);
+    pb->pcoordinates->VolumeOfCell(k,j,is,ie,vol);
+
     for (int n=0; n<NVAR; ++n){
 #pragma simd
       for (int i=is; i<=ie; ++i){
@@ -85,9 +91,12 @@ void FluidIntegrator::Predict(Block *pb)
         Real& u1i = u1(n,k,j,i);
         Real& flxi   = flx(n,  i);
         Real& flxip1 = flx(n,i+1);
-        Real& dx = dx1f(i);
+
+        Real& area_i   = area(i);
+        Real& area_ip1 = area(i+1);
+        Real& dvol = vol(i);
  
-        u1i = ui - 0.5*dt*(flxip1 - flxi)/dx;
+        u1i = ui - 0.5*dt*(area_ip1*flxip1 - area_i*flxi)/dvol;
       }
     }
 
@@ -114,17 +123,35 @@ void FluidIntegrator::Predict(Block *pb)
 
       flux_func_->HLLC(is,ie,wl,wr,flx); 
 
-      Real dtodxjm1 = 0.5*dt/(pb->dx2f(j-1));
-      Real dtodxj   = 0.5*dt/(pb->dx2f(j));
-      for (int n=0; n<NVAR; ++n){
+      pb->pcoordinates->Area2Face(k,j,is,ie,area);
+
+      if (j>js) {
+        pb->pcoordinates->VolumeOfCell(k,j-1,is,ie,vol);
+        for (int n=0; n<NVAR; ++n){
 #pragma simd
-        for (int i=is; i<=ie; ++i){
-          Real& u1jm1 = u1(n,k,j-1,i);
-          Real& u1j   = u1(n,k,j  ,i);
-          Real& flxj  = flx(n,i);
+          for (int i=is; i<=ie; ++i){
+            Real& u1jm1 = u1(n,k,j-1,i);
+            Real& flxj  = flx(n,i);
+            Real& area_i   = area(i);
+            Real& dvol = vol(i);
   
-          u1jm1 -= dtodxjm1*flxj;
-          u1j   += dtodxj  *flxj;
+            u1jm1 -= 0.5*dt*area_i*flxj/dvol;
+          }
+        }
+      }
+
+      if (j<(je+1)) {
+        pb->pcoordinates->VolumeOfCell(k,j,is,ie,vol);
+        for (int n=0; n<NVAR; ++n){
+#pragma simd
+          for (int i=is; i<=ie; ++i){
+            Real& u1j   = u1(n,k,j  ,i);
+            Real& flxj  = flx(n,i);
+            Real& area_i   = area(i);
+            Real& dvol = vol(i);
+
+            u1j   += 0.5*dt*area_i*flxj/dvol;
+          }
         }
       }
 
@@ -154,17 +181,35 @@ void FluidIntegrator::Predict(Block *pb)
 
       flux_func_->HLLC(is,ie,wl,wr,flx);
 
-      Real dtodxkm1 = 0.5*dt/(pb->dx3f(k-1));
-      Real dtodxk   = 0.5*dt/(pb->dx3f(k));
-      for (int n=0; n<NVAR; ++n){
-#pragma simd
-        for (int i=is; i<=ie; ++i){
-          Real& u1km1 = u1(n,k-1,j,i);
-          Real& u1k   = u1(n,k  ,j,i);
-          Real& flxk = flx(n,i);
+      pb->pcoordinates->Area3Face(k,j,is,ie+1,area);
 
-          u1km1 -= dtodxkm1*flxk;
-          u1k   += dtodxk  *flxk;
+      if (k>ks) {
+        pb->pcoordinates->VolumeOfCell(k-1,j,is,ie,vol);
+        for (int n=0; n<NVAR; ++n){
+#pragma simd
+          for (int i=is; i<=ie; ++i){
+            Real& u1km1 = u1(n,k-1,j,i);
+            Real& flxk = flx(n,i);
+            Real& area_i   = area(i);
+            Real& dvol = vol(i);
+
+            u1km1 -= 0.5*dt*area_i*flxk/dvol;
+          }
+        }
+      }
+
+      if (k<(ke+1)) {
+        pb->pcoordinates->VolumeOfCell(k,j,is,ie,vol);
+        for (int n=0; n<NVAR; ++n){
+#pragma simd
+          for (int i=is; i<=ie; ++i){
+            Real& u1k   = u1(n,k  ,j,i);
+            Real& flxk = flx(n,i);
+            Real& area_i   = area(i);
+            Real& dvol = vol(i);
+
+            u1k += 0.5*dt*area_i*flxk/dvol;
+          }
         }
       }
 
@@ -195,7 +240,9 @@ void FluidIntegrator::Correct(Block *pb)
   AthenaArray<Real> wl = wl_.ShallowCopy();
   AthenaArray<Real> wr = wr_.ShallowCopy();
   AthenaArray<Real> flx = flx_.ShallowCopy();
-  AthenaArray<Real> dx1f = pb->dx1f.ShallowCopy();
+
+  AthenaArray<Real> area = pb->pcoordinates->face_area.ShallowCopy();
+  AthenaArray<Real> vol  = pb->pcoordinates->cell_volume.ShallowCopy();
  
 #if SUM_ON>0
   /**** output to force calcs ****/
@@ -216,15 +263,21 @@ void FluidIntegrator::Correct(Block *pb)
 
     flux_func_->HLLC(is,ie+1,wl,wr,flx);
 
+    pb->pcoordinates->Area1Face(k,j,is,ie+1,area);
+    pb->pcoordinates->VolumeOfCell(k,j,is,ie,vol);
+
     for (int n=0; n<NVAR; ++n){
 #pragma simd
       for (int i=is; i<=ie; ++i){
         Real& ui  = u (n,k,j,i);
         Real& flxi   = flx(n,  i);
         Real& flxip1 = flx(n,i+1);
-        Real& dx = dx1f(i);
+
+        Real& area_i   = area(i);
+        Real& area_ip1 = area(i+1);
+        Real& dvol = vol(i);
  
-        ui -= dt*(flxip1 - flxi)/dx;
+        ui -= dt*(area_ip1*flxip1 - area_i*flxi)/dvol;
       }
     }
 
@@ -251,17 +304,35 @@ void FluidIntegrator::Correct(Block *pb)
 
       flux_func_->HLLC(is,ie,wl,wr,flx); 
 
-      Real dtodxjm1 = dt/(pb->dx2f(j-1));
-      Real dtodxj   = dt/(pb->dx2f(j));
-      for (int n=0; n<NVAR; ++n){
+      pb->pcoordinates->Area2Face(k,j,is,ie,area);
+
+      if (j>js){
+        pb->pcoordinates->VolumeOfCell(k,j-1,is,ie,vol);
+        for (int n=0; n<NVAR; ++n){
 #pragma simd
-        for (int i=is; i<=ie; ++i){
-          Real& ujm1 = u(n,k,j-1,i);
-          Real& uj   = u(n,k,j  ,i);
-          Real& flxj  = flx(n,i);
+          for (int i=is; i<=ie; ++i){
+            Real& ujm1 = u(n,k,j-1,i);
+            Real& flxj  = flx(n,i);
+            Real& area_i   = area(i);
+            Real& dvol = vol(i);
   
-          ujm1 -= dtodxjm1*flxj;
-          uj   += dtodxj  *flxj;
+            ujm1 -= dt*area_i*flxj/dvol;
+          }
+        }
+      }
+
+      if (j>(je+1)){
+        pb->pcoordinates->VolumeOfCell(k,j,is,ie,vol);
+        for (int n=0; n<NVAR; ++n){
+#pragma simd
+          for (int i=is; i<=ie; ++i){
+            Real& uj   = u(n,k,j  ,i);
+            Real& flxj  = flx(n,i);
+            Real& area_i   = area(i);
+            Real& dvol = vol(i);
+  
+            uj += dt*area_i*flxj/dvol;
+          }
         }
       }
 
@@ -290,17 +361,35 @@ void FluidIntegrator::Correct(Block *pb)
 
       flux_func_->HLLC(is,ie,wl,wr,flx);
 
-      Real dtodxkm1 = dt/(pb->dx3f(k-1));
-      Real dtodxk   = dt/(pb->dx3f(k));
-      for (int n=0; n<NVAR; ++n){
-#pragma simd
-        for (int i=is; i<=ie; ++i){
-          Real& ukm1 = u(n,k-1,j,i);
-          Real& uk   = u(n,k  ,j,i);
-          Real& flxk = flx(n,i);
+      pb->pcoordinates->Area3Face(is,ie,j,k,area);
 
-          ukm1 -= dtodxkm1*flxk;
-          uk   += dtodxk  *flxk;
+      if (k<ks){
+        pb->pcoordinates->VolumeOfCell(k-1,j,is,ie,vol);
+        for (int n=0; n<NVAR; ++n){
+#pragma simd
+          for (int i=is; i<=ie; ++i){
+            Real& ukm1 = u(n,k-1,j,i);
+            Real& flxk = flx(n,i);
+            Real& area_i   = area(i);
+            Real& dvol = vol(i);
+
+            ukm1 -= dt*area_i*flxk/dvol;
+          }
+        }
+      }
+
+      if (k>(ke+1)){
+        pb->pcoordinates->VolumeOfCell(k,j,is,ie,vol);
+        for (int n=0; n<NVAR; ++n){
+#pragma simd
+          for (int i=is; i<=ie; ++i){
+            Real& uk   = u(n,k  ,j,i);
+            Real& flxk = flx(n,i);
+            Real& area_i   = area(i);
+            Real& dvol = vol(i);
+
+            uk   += dt*area_i*flxk/dvol;
+          }
         }
       }
 

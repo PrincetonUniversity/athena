@@ -14,6 +14,7 @@ class ParameterInput;
 class Fluid;
 class Mesh;
 class Domain;
+class Geometry;
 
 //! \struct RegionSize
 //  \brief physical size and number of cells in a region (Domain or Block)
@@ -33,6 +34,8 @@ public:
   ~Block();
 
   Fluid *pfluid;
+
+  Geometry *pcoordinates;
 
   AthenaArray<Real> x1v, x2v, x3v, dx1v, dx2v, dx3v;
   AthenaArray<Real> x1f, x2f, x3f, dx1f, dx2f, dx3f; 
