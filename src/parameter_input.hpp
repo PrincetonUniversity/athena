@@ -22,16 +22,24 @@ typedef struct InputLine {
   struct InputLine *pnext;    // pointer to the next node
 } InputLine;
 
-//! \struct InputBlock
+//! \class InputBlock
 //  \brief  node in a linked list of all input blocks contained within input file
 
-typedef struct InputBlock { 
+class InputBlock { 
+public:
+  InputBlock();
+  ~InputBlock();
+
   std::string block_name;
   std::size_t max_len_parname;  // length of longest param_name, for nice-looking output
   std::size_t max_len_parvalue; // length of longest param_value, to format outputs
   InputLine *pline;             // pointer to first InputLine in this block
-  struct InputBlock *pnext;     // pointer to the next node
-} InputBlock;
+  InputBlock *pnext;            // pointer to the next node
+
+  int GetIntegerInThisBlock(std::string name);
+  Real GetRealInThisBlock(std::string name);
+  InputLine* GetPtrToLine(std::string name);
+};
 
 //! \class ParameterInput
 //  \brief data and functions used to store and access input parameters
@@ -54,7 +62,6 @@ public:
   Real GetOrAddReal(std::string block, std::string name, Real value);
 
 private:
-
   InputBlock* pfirst_block_;   // pointer to first input block in linked list
   std::string last_filename_;  // last input file opened, to prevent duplicate reads
 
@@ -66,6 +73,5 @@ private:
                     std::string comment);
   InputBlock* FindOrAddBlock(std::string name);
   InputBlock* GetPtrToBlock(std::string name);
-  InputLine*  GetPtrToLine(InputBlock *pb, std::string name);
 };
 #endif

@@ -57,7 +57,7 @@
  *   - Jan 2014:  Rewritten in C++ for the Athena++ code by J.M. Stone
  *====================================================================================*/
 
-// constructor
+// constructors
 
 ParameterInput::ParameterInput()
 {
@@ -70,11 +70,6 @@ ParameterInput::ParameterInput()
 ParameterInput::~ParameterInput()
 {
   while (InputBlock *pblock=pfirst_block_) {
-    while (InputLine *pline=pblock->pline) {
-      InputLine *pold_line = pline;
-      pline = pline->pnext;
-      delete pold_line;
-    }
     InputBlock *pold_block = pblock;
     pblock = pblock->pnext;
     delete pold_block;
@@ -321,7 +316,7 @@ void ParameterInput::ModifyFromCmdline(int argc, char *argv[])
 
 // get pointer to node with same parameter name in linked list of InputLines
 
-    pl = GetPtrToLine(pb,name);
+    pl = pb->GetPtrToLine(name);
     if (pl == NULL) {
       msg << "### FATAL ERROR in function [ParameterInput::ModifyFromCmdline]"
           << std::endl << "Parameter '" << name << "' in block '" << block 
@@ -348,19 +343,6 @@ InputBlock* ParameterInput::GetPtrToBlock(std::string name)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn InputLine* ParameterInput::GetPtrToLine(InputBlock *pb, std::string name)
- *  \brief return pointer to InputLine containing specified parameter if it exists */
-
-InputLine* ParameterInput::GetPtrToLine(InputBlock *pb, std::string name)
-{
-  InputLine *pl;
-  for(pl = pb->pline; pl != NULL; pl = pl->pnext){
-    if (name.compare(pl->param_name) == 0) return pl;    
-  }
-  return NULL;
-}
-
-//--------------------------------------------------------------------------------------
 /*! \fn int ParameterInput::ParameterExists()
  *  \brief check whether parameter of given name in given block exists */
 
@@ -370,7 +352,7 @@ int ParameterInput::ParameterExists(std::string block, std::string name)
   InputBlock *pb;
   pb = GetPtrToBlock(block);
   if (pb == NULL) return 0;
-  pl = GetPtrToLine(pb, name);
+  pl = pb->GetPtrToLine(name);
   return (pl == NULL ? 0 : 1);
 }
 
@@ -396,7 +378,7 @@ int ParameterInput::GetInteger(std::string block, std::string name)
 
 // get pointer to node with same parameter name in linked list of InputLines
 
-  pl = GetPtrToLine(pb,name);
+  pl = pb->GetPtrToLine(name);
   if (pl == NULL) {
     msg << "### FATAL ERROR in function [ParameterInput::GetInteger]" << std::endl 
         << "Parameter name '" << name << "' not found in block '" << block << "'";
@@ -430,7 +412,7 @@ Real ParameterInput::GetReal(std::string block, std::string name)
 
 // get pointer to node with same parameter name in linked list of InputLines
 
-  pl = GetPtrToLine(pb,name);
+  pl = pb->GetPtrToLine(name);
   if (pl == NULL) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
         << "Parameter name '" << name << "' not found in block '" << block << "'";
@@ -504,4 +486,76 @@ void ParameterInput::ParameterDump(std::ostream& os)
   
   os<< "#------------------------- PAR_DUMP -------------------------" << std::endl;
   os<< "<par_end>" << std::endl;    // finish with par-end (useful in restart files)
+}
+
+//--------------------------------------------------------------------------------------
+// InputBlock constructor and destructor
+
+InputBlock::InputBlock()
+{
+}
+
+// destructor - iterates through linked lists of blocks/lines and deletes each node
+
+InputBlock::~InputBlock()
+{
+}
+
+//--------------------------------------------------------------------------------------
+/*! \fn InputLine* InputBlock::GetPtrToLine(std::string name)
+ *  \brief return pointer to InputLine containing specified parameter if it exists */
+
+InputLine* InputBlock::GetPtrToLine(std::string name)
+{
+  for(InputLine* pl = pline; pl != NULL; pl = pl->pnext){
+    if (name.compare(pl->param_name) == 0) return pl;    
+  }
+  return NULL;
+}
+
+//--------------------------------------------------------------------------------------
+/*! \fn 
+ *  \brief */
+
+int InputBlock::GetIntegerInThisBlock(std::string name)
+{
+
+// get pointer to node with same parameter name in linked list of InputLines
+
+  InputLine* pl = GetPtrToLine(name);
+  if (pl == NULL) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in func [InputBlock::GetIntegerInThisBlock]" << std::endl 
+        << "Parameter name '" << name << "' not found in block '" 
+        << this->block_name << "'";
+    throw std::runtime_error(msg.str().c_str());
+  }
+
+// Convert string to integer and return value
+
+  return atoi(pl->param_value.c_str());
+}
+
+//--------------------------------------------------------------------------------------
+/*! \fn 
+ *  \brief */
+
+Real InputBlock::GetRealInThisBlock(std::string name)
+{
+
+// get pointer to node with same parameter name in linked list of InputLines
+
+  InputLine* pl = GetPtrToLine(name);
+
+  if (pl == NULL) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in func [InputBlock::GetRealInThisBlock]" << std::endl
+        << "Parameter name '" << name << "' not found in block '" 
+        << this->block_name << "'";
+    throw std::runtime_error(msg.str().c_str());
+  }
+
+// Convert string to integer and return value
+
+  return (Real)atof(pl->param_value.c_str());
 }
