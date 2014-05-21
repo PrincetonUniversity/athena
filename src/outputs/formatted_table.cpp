@@ -15,9 +15,11 @@
 /*! \fn void FormattedTable()
  *  \brief   */
 
-void DataOutput::FormattedTable(, data)
+/*
+void DataOutput::FormattedTable()
 {
 
 
   return;
 }
+*/

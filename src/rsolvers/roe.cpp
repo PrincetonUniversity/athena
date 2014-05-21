@@ -42,6 +42,7 @@
 /* maximum wavespeed used by H-correction, value passed from integrator */
 Real etah=0.0;
 
+/*
 void RiemannSolver::Roe(const int il, const int iu,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {
@@ -61,9 +62,9 @@ void RiemannSolver::Roe(const int il, const int iu,
     }
   }
 
-/*--- Step 2. ------------------------------------------------------------------
- * Compute Roe-averaged data from left- and right-states
- */
+//--- Step 2. ------------------------------------------------------------------
+// Compute Roe-averaged data from left- and right-states
+///
 
   sqrtdl = sqrt((double)Wl.d);
   sqrtdr = sqrt((double)Wr.d);
@@ -74,23 +75,23 @@ void RiemannSolver::Roe(const int il, const int iu,
   v2roe = (sqrtdl*Wl.Vy + sqrtdr*Wr.Vy)*isdlpdr;
   v3roe = (sqrtdl*Wl.Vz + sqrtdr*Wr.Vz)*isdlpdr;
 
-/*
- * Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
- * rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
- */
+//
+// Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
+// rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
+///
 
   hroe  = ((Ul.E + Wl.P + pbl)/sqrtdl + (Ur.E + Wr.P + pbr)/sqrtdr)*isdlpdr;
 
-/*--- Step 3. ------------------------------------------------------------------
- * Compute eigenvalues and eigenmatrices using Roe-averaged values
- */
+//--- Step 3. ------------------------------------------------------------------
+// Compute eigenvalues and eigenmatrices using Roe-averaged values
+///
 
   esys_roe_adb_hyd(v1roe,v2roe,v3roe,hroe,ev,rem,lem);
 
 
-/*--- Step 4. ------------------------------------------------------------------
- * Compute L/R fluxes 
- */
+//--- Step 4. ------------------------------------------------------------------
+// Compute L/R fluxes 
+///
 
   Fl.d  = Ul.Mx;
   Fr.d  = Ur.Mx;
@@ -110,9 +111,9 @@ void RiemannSolver::Roe(const int il, const int iu,
   Fl.E  = (Ul.E + Wl.P)*Wl.Vx;
   Fr.E  = (Ur.E + Wr.P)*Wr.Vx;
 
-/*--- Step 5. ------------------------------------------------------------------
- * Return upwind flux if flow is supersonic
- */
+//--- Step 5. ------------------------------------------------------------------
+// Return upwind flux if flow is supersonic
+///
 
   if(ev[0] >= 0.0){
     *pFlux = Fl;
@@ -124,9 +125,9 @@ void RiemannSolver::Roe(const int il, const int iu,
     return;
   }
 
-/*--- Step 6. ------------------------------------------------------------------
- * Compute projection of dU onto L eigenvectors ("vector A")
- */
+//--- Step 6. ------------------------------------------------------------------
+// Compute projection of dU onto L eigenvectors ("vector A")
+///
 
   pUr = (Real *)&(Ur);
   pUl = (Real *)&(Ul);
@@ -137,11 +138,11 @@ void RiemannSolver::Roe(const int il, const int iu,
     for (m=0; m<NWAVE; m++) a[n] += lem[n][m]*dU[m];
   }
 
-/*--- Step 7. ------------------------------------------------------------------
- * Check that the density and pressure in the intermediate states are positive.
- * If not, set hlle_flag=1 if d_inter<0; hlle_flag=2 if p_inter<0, get HLLE
- * fluxes, and return
- */
+//--- Step 7. ------------------------------------------------------------------
+// Check that the density and pressure in the intermediate states are positive.
+// If not, set hlle_flag=1 if d_inter<0; hlle_flag=2 if p_inter<0, get HLLE
+// fluxes, and return
+///
 
   hlle_flag = 0;
 #ifdef TEST_INTERMEDIATE_STATES
@@ -168,10 +169,10 @@ void RiemannSolver::Roe(const int il, const int iu,
     return;
   }
 
-#endif /* TEST_INTERMEDIATE_STATES */
+#endif // TEST_INTERMEDIATE_STATES
 
-/*--- Step 8. ------------------------------------------------------------------
- * Compute Roe flux */
+//--- Step 8. ------------------------------------------------------------------
+// Compute Roe flux
 
   pFl = (Real *)&(Fl);
   pFr = (Real *)&(Fr);
@@ -190,6 +191,7 @@ void RiemannSolver::Roe(const int il, const int iu,
   return;
 }
 
+*/
 
 /*============================================================================*/
 /*! \file esystem_roe.c
@@ -232,6 +234,7 @@ void RiemannSolver::Roe(const int il, const int iu,
  * - Output: eigenvalues[5], right_eigenmatrix[5,5], left_eigenmatrix[5,5];
  */
 
+/*
 void esys_roe_adb_hyd(const Real v1, const Real v2, const Real v3, const Real h,
   Real eigenvalues[],
   Real right_eigenmatrix[][5], Real left_eigenmatrix[][5])
@@ -241,7 +244,7 @@ void esys_roe_adb_hyd(const Real v1, const Real v2, const Real v3, const Real h,
   asq = Gamma_1*MAX((h-0.5*vsq), TINY_NUMBER);
   a = sqrt(asq);
 
-/* Compute eigenvalues (eq. B2) */
+// Compute eigenvalues (eq. B2)
 
   eigenvalues[0] = v1 - a;
   eigenvalues[1] = v1;
@@ -250,7 +253,7 @@ void esys_roe_adb_hyd(const Real v1, const Real v2, const Real v3, const Real h,
   eigenvalues[4] = v1 + a;
   if (right_eigenmatrix == NULL || left_eigenmatrix == NULL) return;
 
-/* Right-eigenvectors, stored as COLUMNS (eq. B3) */
+// Right-eigenvectors, stored as COLUMNS (eq. B3)
 
   right_eigenmatrix[0][0] = 1.0;
   right_eigenmatrix[1][0] = v1 - a;
@@ -258,15 +261,15 @@ void esys_roe_adb_hyd(const Real v1, const Real v2, const Real v3, const Real h,
   right_eigenmatrix[3][0] = v3;
   right_eigenmatrix[4][0] = h - v1*a;
 
-/*right_eigenmatrix[0][1] = 0.0; */
-/*right_eigenmatrix[1][1] = 0.0; */
+//right_eigenmatrix[0][1] = 0.0;
+//right_eigenmatrix[1][1] = 0.0;
   right_eigenmatrix[2][1] = 1.0;
-/*right_eigenmatrix[3][1] = 0.0; */
+//right_eigenmatrix[3][1] = 0.0;
   right_eigenmatrix[4][1] = v2;
 
-/*right_eigenmatrix[0][2] = 0.0; */
-/*right_eigenmatrix[1][2] = 0.0; */
-/*right_eigenmatrix[2][2] = 0.0; */
+//right_eigenmatrix[0][2] = 0.0;
+//right_eigenmatrix[1][2] = 0.0;
+//right_eigenmatrix[2][2] = 0.0; 
   right_eigenmatrix[3][2] = 1.0;
   right_eigenmatrix[4][2] = v3;
 
@@ -282,7 +285,7 @@ void esys_roe_adb_hyd(const Real v1, const Real v2, const Real v3, const Real h,
   right_eigenmatrix[3][4] = v3;
   right_eigenmatrix[4][4] = h + v1*a;
 
-/* Left-eigenvectors, stored as ROWS (eq. B4) */
+// Left-eigenvectors, stored as ROWS (eq. B4)
 
   na = 0.5/asq;
   left_eigenmatrix[0][0] = na*(0.5*Gamma_1*vsq + v1*a);
@@ -292,16 +295,16 @@ void esys_roe_adb_hyd(const Real v1, const Real v2, const Real v3, const Real h,
   left_eigenmatrix[0][4] = na*Gamma_1;
 
   left_eigenmatrix[1][0] = -v2;
-/*left_eigenmatrix[1][1] = 0.0; */
+//left_eigenmatrix[1][1] = 0.0;
   left_eigenmatrix[1][2] = 1.0;
-/*left_eigenmatrix[1][3] = 0.0; */
-/*left_eigenmatrix[1][4] = 0.0; */
+//left_eigenmatrix[1][3] = 0.0;
+//left_eigenmatrix[1][4] = 0.0;
 
   left_eigenmatrix[2][0] = -v3;
-/*left_eigenmatrix[2][1] = 0.0; */
-/*left_eigenmatrix[2][2] = 0.0; */
+//left_eigenmatrix[2][1] = 0.0;
+//left_eigenmatrix[2][2] = 0.0;
   left_eigenmatrix[2][3] = 1.0;
-/*left_eigenmatrix[2][4] = 0.0; */
+//left_eigenmatrix[2][4] = 0.0; 
 
   qa = Gamma_1/asq;
   left_eigenmatrix[3][0] = 1.0 - na*Gamma_1*vsq;
@@ -316,3 +319,4 @@ void esys_roe_adb_hyd(const Real v1, const Real v2, const Real v3, const Real h,
   left_eigenmatrix[4][3] = left_eigenmatrix[0][3];
   left_eigenmatrix[4][4] = left_eigenmatrix[0][4];
 }
+*/

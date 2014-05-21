@@ -44,6 +44,7 @@
  *   schemes for hyperbolic conservation laws", SIAM Review 25, 35-61 (1983).
  *====================================================================================*/
 
+/*
 void RiemannSolver::HLLE(const int il, const int iu,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {
@@ -141,3 +142,4 @@ void RiemannSolver::HLLE(const int il, const int iu,
 
   return;
 }
+*/
