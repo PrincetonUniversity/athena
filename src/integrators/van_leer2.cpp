@@ -181,7 +181,7 @@ void FluidIntegrator::Predict(Block *pb)
 
       flux_func_->HLLC(is,ie,wl,wr,flx);
 
-      pb->pcoordinates->Area3Face(k,j,is,ie+1,area);
+      pb->pcoordinates->Area3Face(k,j,is,ie,area);
 
       if (k>ks) {
         pb->pcoordinates->VolumeOfCell(k-1,j,is,ie,vol);

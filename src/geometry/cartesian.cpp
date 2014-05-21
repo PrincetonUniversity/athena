@@ -49,12 +49,13 @@ void Geometry::Area1Face(const int k, const int j, const int il, const int iu,
 void Geometry::Area2Face(const int k, const int j, const int il, const int iu, 
   AthenaArray<Real> &area)
 {
+  AthenaArray<Real> dx1v = pmy_block->dx1v.ShallowCopy();
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
-    Real& dx1    = pmy_block->dx1v(i);
+    Real& dx1_i  = dx1v(i);
 
-    area_i = dx1*(pmy_block->dx3v(k));
+    area_i = dx1_i*(pmy_block->dx3v(k));
   }
   return;
 }
@@ -62,12 +63,13 @@ void Geometry::Area2Face(const int k, const int j, const int il, const int iu,
 void Geometry::Area3Face(const int k, const int j, const int il, const int iu, 
   AthenaArray<Real> &area)
 {
+  AthenaArray<Real> dx1v = pmy_block->dx1v.ShallowCopy();
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
-    Real& dx1    = pmy_block->dx1v(i);
+    Real& dx1_i  = dx1v(i);
 
-    area_i = dx1*(pmy_block->dx2v(j));
+    area_i = dx1_i*(pmy_block->dx2v(j));
   }
   return;
 }
@@ -79,12 +81,13 @@ void Geometry::Area3Face(const int k, const int j, const int il, const int iu,
 void Geometry::VolumeOfCell(const int k, const int j, const int il, const int iu, 
   AthenaArray<Real> &vol)
 {
+  AthenaArray<Real> dx1v = pmy_block->dx1v.ShallowCopy();
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& vol_i = vol(i);
-    Real& dx1   = pmy_block->dx1v(i);
+    Real& dx1_i = dx1v(i);
 
-    vol_i = dx1*(pmy_block->dx2v(j))*(pmy_block->dx3v(k));
+    vol_i = dx1_i*(pmy_block->dx2v(j))*(pmy_block->dx3v(k));
   }
   return;
 }
