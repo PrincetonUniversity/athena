@@ -25,15 +25,16 @@
 #include "../parameter_input.hpp"
 #include "../mesh.hpp"
 #include "../fluid.hpp"
-#include "reconstruction.hpp"
+#include "../integrators/integrators.hpp"
 
 //======================================================================================
 /*! \file plm.cpp
  *  \brief  piecewise linear reconstruction
  *====================================================================================*/
 
-void Reconstruction::PiecewiseLinear(const int k, const int j,const int il,const int iu,
-  const int dir, AthenaArray<Real> &w, AthenaArray<Real> &wl, AthenaArray<Real> &wr)
+void FluidIntegrator::ReconstructionFunc(const int k, const int j, 
+  const int il, const int iu, const int dir,
+  AthenaArray<Real> &w, AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
   int offset;
   int n1 = w.GetDim1();

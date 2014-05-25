@@ -24,7 +24,9 @@
 #include "parameter_input.hpp"
 #include "mesh.hpp"
 #include "fluid.hpp"
+#include "bvals/bvals.hpp"
 #include "convert_var/convert_var.hpp"
+#include "integrators/integrators.hpp"
 
 //======================================================================================
 //! \file fluid.cpp
@@ -33,19 +35,18 @@
 
 // constructor, initializes data structures and parameters, calls problem generator
 
-Fluid::Fluid(ParameterInput *pin, Block *pb)
+Fluid::Fluid(Block *pb)
 {
-  pmy_block = pb;
-
-// Read some parameters from input file
-
-  gamma_ = pin->GetReal("fluid","gamma");
+  pparent_block = pb;
 
 // Allocate memory for primitive/conserved variables
 
-  int ncells1 = pmy_block->block_size.nx1 + 2*(NGHOST);
-  int ncells2 = pmy_block->block_size.nx2 + 2*(NGHOST);
-  int ncells3 = pmy_block->block_size.nx3 + 2*(NGHOST);
+  int ncells1 = pparent_block->block_size.nx1 + 2*(NGHOST);
+  int ncells2 = 1, ncells3 = 1;
+  if (pparent_block->block_size.nx2 > 1) 
+    ncells2 = pparent_block->block_size.nx2 + 2*(NGHOST);
+  if (pparent_block->block_size.nx3 > 1) 
+    ncells3 = pparent_block->block_size.nx3 + 2*(NGHOST);
 
   u.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
   w.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
@@ -60,6 +61,12 @@ Fluid::Fluid(ParameterInput *pin, Block *pb)
   dt1_.NewAthenaArray(ncells1);
   dt2_.NewAthenaArray(ncells1);
   dt3_.NewAthenaArray(ncells1);
+
+// Construct new BC, variable conversion, and integrator objects
+
+  pf_bcs = new FluidBoundaryConditions(this);
+  pcons_to_prim = new ConvertVariables(this);
+  pf_integrator = new FluidIntegrator(this);
 }
 
 // destructor
@@ -136,9 +143,9 @@ void Fluid::NewTimeStep(Block *pb)
 
   }}
 
-  Real old_dt = pb->pmy_domain->pmy_mesh->dt;
-  Real cfl = pb->pmy_domain->pmy_mesh->cfl_number;
-  pb->pmy_domain->pmy_mesh->dt = std::min((cfl*min_dt), (2.0*old_dt));
+  Mesh *pm = pb->pparent_domain->pparent_mesh;
+  Real old_dt = pm->dt;
+  pm->dt = std::min( ((pm->cfl_number)*min_dt) , (2.0*old_dt) );
 
   return;
 

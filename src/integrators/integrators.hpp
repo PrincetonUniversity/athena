@@ -1,18 +1,15 @@
-#ifndef FLUID_INTEGRATOR_HPP
-#define FLUID_INTEGRATOR_HPP
+#ifndef INTEGRATORS_HPP
+#define INTEGRATORS_HPP
 //======================================================================================
 /* Athena++ astrophysical MHD code
  * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
  * See LICENSE file for full public license information.
  *====================================================================================*/
-/*! \file fluid_integrator.hpp
- *  \brief defines class FluidIntegrator
- * implements data and functions to integrate fluid
+/*! \file integrators.hpp
+ *  \brief defines FluidIntegrator implements data and functions to integrate fluid
  *====================================================================================*/
 
 class Fluid;
-class RiemannSolver;
-class Reconstruction;
 
 //! \class FluidIntegrator
 //  \brief member functions implement various integration algorithms for the fluid
@@ -22,15 +19,16 @@ public:
   FluidIntegrator(Fluid *pf);
   ~FluidIntegrator();
 
+  Fluid *pparent_fluid;          // ptr to parent Fluid
+
   void Predict(Block *pb);
   void Correct(Block *pb);
-  Real cfl_number;
+  void RiemannSolver(const int il, const int iu, 
+    AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx);
+  void ReconstructionFunc(const int k, const int j, const int il, const int iu, 
+    const int dir, AthenaArray<Real> &w, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
 private:
-  Fluid *pmy_fluid_;  // pointer to parent Fluid object
-  RiemannSolver *flux_func_;
-  Reconstruction *lr_states_func_;
   AthenaArray<Real> wl_,wr_,flx_; // 1D scratch vectors (L/R states, flux)
-
 };
 #endif

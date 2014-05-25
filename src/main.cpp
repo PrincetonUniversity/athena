@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 // Now construct and initialize fluid on every Mesh block.
 
   try {
-    mesh->InitializeOnDomains(fluid,inputs);
+    mesh->InitializeAcrossDomains(fluid,inputs);
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR memory allocation failed" << std::endl
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
     std::cout << ex.what() << std::endl;  // prints diagnostic message 
     return(0);
   }
-  mesh->StepThroughDomains(new_timestep);
+  mesh->UpdateAcrossDomains(new_timestep);
 
 //--- Step 6. --------------------------------------------------------------------------
 // Construct output object, and make outputs of initial conditions
@@ -198,23 +198,23 @@ int main(int argc, char *argv[])
   while ((mesh->time < mesh->tlim) && (mesh->nlim < 0 || mesh->ncycle < mesh->nlim)){
 // predict step
 
-    mesh->StepThroughDomains(fluid_predict    );
-    mesh->StepThroughDomains(fluid_bvals_nhalf);
+    mesh->UpdateAcrossDomains(fluid_predict    );
+    mesh->UpdateAcrossDomains(fluid_bvals_nhalf);
 
-    mesh->StepThroughDomains(bfield_predict    );
-    mesh->StepThroughDomains(bfield_bvals_nhalf);
+    mesh->UpdateAcrossDomains(bfield_predict    );
+    mesh->UpdateAcrossDomains(bfield_bvals_nhalf);
 
-    mesh->StepThroughDomains(convert_vars_nhalf);
+    mesh->UpdateAcrossDomains(convert_vars_nhalf);
 
 // correct step
 
-    mesh->StepThroughDomains(fluid_correct);
-    mesh->StepThroughDomains(fluid_bvals_n);
+    mesh->UpdateAcrossDomains(fluid_correct);
+    mesh->UpdateAcrossDomains(fluid_bvals_n);
 
-    mesh->StepThroughDomains(bfield_correct);
-    mesh->StepThroughDomains(bfield_bvals_n);
+    mesh->UpdateAcrossDomains(bfield_correct);
+    mesh->UpdateAcrossDomains(bfield_bvals_n);
 
-    mesh->StepThroughDomains(convert_vars_n);
+    mesh->UpdateAcrossDomains(convert_vars_n);
 
 // new time step, outputs, diagnostics
 
@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
     mesh->time  += mesh->dt;
 
     outputs->CheckForOutputs(mesh);
-    mesh->StepThroughDomains(new_timestep);
+    mesh->UpdateAcrossDomains(new_timestep);
 
     std::cout << "cycle=" << mesh->ncycle << std::scientific << std::setprecision(5)
               << " time=" << mesh->time << " dt=" << mesh->dt << std::endl;

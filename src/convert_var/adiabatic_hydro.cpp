@@ -35,7 +35,7 @@
 
 void ConvertVariables::ComputePrimitives(AthenaArray<Real> &c, AthenaArray<Real> &p)
 {
-  Block *pb = pmy_fluid_->pmy_block;
+  Block *pb = pparent_fluid_->pparent_block;
   int is = pb->is; int ie = pb->ie;
   int jl = pb->js; int ju = pb->je;
   int kl = pb->ks; int ku = pb->ke;

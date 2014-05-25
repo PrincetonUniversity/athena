@@ -24,14 +24,14 @@
 #include "../parameter_input.hpp"
 #include "../mesh.hpp"
 #include "../fluid.hpp"
-#include "riemann_solver.hpp"
+#include "../integrators/integrators.hpp"
 
 //======================================================================================
 /*! \file hllc.cpp
  *  \brief HLLC Riemann solver for hydrodynamics
  *====================================================================================*/
 
-void RiemannSolver::HLLC(const int il, const int iu,
+void FluidIntegrator::RiemannSolver(const int il, const int iu,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {
   Real cfl,cfr,bp,bm;
@@ -41,7 +41,7 @@ void RiemannSolver::HLLC(const int il, const int iu,
   Real evp,evm;
   Real Fl[NVAR],Fr[NVAR];
 
-  Real Gamma = pmy_fluid_->GetGamma();
+  Real Gamma = pparent_fluid->GetGamma();
 
 #pragma simd
   for (int i=il; i<=iu; ++i){

@@ -34,12 +34,16 @@
  *   non-oscillatory shock-capturing schemes, II", JCP, 83, 32 (1998)	     
  *====================================================================================*/
 
-void Fluid::Problem(ParameterInput *pin)
+void Fluid::InitProblem(ParameterInput *pin)
 {
-  Block *pb = pmy_block;
+  Block *pb = pparent_block;
 
   int is = pb->is; int js = pb->js; int ks = pb->ks;
   int ie = pb->ie; int je = pb->je; int ke = pb->ke;
+
+// Read parameters from input file
+
+  gamma_ = pin->GetReal("fluid","gamma");
 
 /* setup dependent variables */
 

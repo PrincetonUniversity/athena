@@ -18,16 +18,17 @@ class Fluid;
 
 class FluidBoundaryConditions {
 public:
-  FluidBoundaryConditions(ParameterInput *pin, Fluid *pf);
+  FluidBoundaryConditions(Fluid *pf);
   ~FluidBoundaryConditions();
 
-// calls boundary value functions on each edge of Block
-  void SetBoundaryValues(AthenaArray<Real> &a);
+// functions to initialize BC function pointers, and to apply BCs at each edge of Block
+  void InitBoundaryConditions(ParameterInput *pin);
+  void ApplyBoundaryConditions(AthenaArray<Real> &a);
 
 private:
-  Fluid *pmy_fluid;
+  Fluid *pparent_fluid;  // ptr to parent Fluid
 
-// function pointers, set in constructor based on parameters in input file
+// function pointers, set in Init function based on parameters in input file
 
   void (*FluidInnerX1_) (Fluid *pmy_fluid, AthenaArray<Real> &a);
   void (*FluidOuterX1_) (Fluid *pmy_fluid, AthenaArray<Real> &a);

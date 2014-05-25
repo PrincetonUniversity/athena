@@ -22,7 +22,8 @@ class Geometry;
 typedef struct RegionSize {
   Real x1min, x2min, x3min;
   Real x1max, x2max, x3max;
-  int nx1, nx2, nx3;
+  Real x1rat, x2rat, x3rat; // ratio of x(i)/x(i-1)
+  int nx1, nx2, nx3;        // number of active cells (not including ghost zones)
 } RegionSize;
 
 //! \class Block
@@ -30,36 +31,35 @@ typedef struct RegionSize {
 
 class Block {
 public:
-  Block(RegionSize region, Domain *pd);
+  Block(RegionSize blk_size, Domain *pd);
   ~Block();
 
-  Fluid *pfluid;
-
-  Geometry *pcoordinates;
-
-  AthenaArray<Real> x1v, x2v, x3v, dx1v, dx2v, dx3v;
-  AthenaArray<Real> x1f, x2f, x3f, dx1f, dx2f, dx3f; 
+  Domain *pparent_domain;                            // ptr to parent Domain
+  AthenaArray<Real> x1f, x2f, x3f, dx1f, dx2f, dx3f; // cell face   centers and spacing
+  AthenaArray<Real> x1v, x2v, x3v, dx1v, dx2v, dx3v; // cell volume centers and spacing
   int is,ie,js,je,ks,ke;
   RegionSize block_size;
 
-  Domain *pmy_domain;
+  Fluid *pfluid;
+  Geometry *pgeometry;
 };
 
 //! \class Domain
-//  \brief data/functions associated with a domain
+//  \brief data/functions associated with a domain inside the mesh
 
 class Domain {
 public:
-  Domain(RegionSize region, Mesh *pm);
+  Domain(RegionSize dom_size, Mesh *pm);
   ~Domain();
+
+  Mesh *pparent_mesh;  // ptr to parent Mesh
 
   Block *pblock;
   RegionSize domain_size;
-  Mesh *pmy_mesh;
 };
 
 //! \class Mesh
-//  \brief data/functions associated with the mesh
+//  \brief data/functions associated with the overall mesh
 
 class Mesh {
 public:
@@ -69,11 +69,10 @@ public:
   Domain *pdomain;
   RegionSize mesh_size;
 
-  Real time, start_time, dt, tlim, cfl_number;
-  int ncycle, nlim;
+  Real start_time, tlim, cfl_number, time, dt;
+  int nlim, ncycle;
 
-  void InitializeOnDomains(enum QuantityToBeInitialized qnty, ParameterInput *pin);
-  void StepThroughDomains(enum AlgorithmSteps action);
-
+  void InitializeAcrossDomains(enum QuantityToBeInit qnty, ParameterInput *pin);
+  void UpdateAcrossDomains(enum UpdateAction action);
 };
 #endif

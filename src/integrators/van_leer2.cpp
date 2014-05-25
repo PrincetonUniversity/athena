@@ -25,10 +25,8 @@
 #include "../parameter_input.hpp"
 #include "../mesh.hpp"
 #include "../fluid.hpp"
-#include "../reconstruct/reconstruction.hpp"
-#include "../rsolvers/riemann_solver.hpp"
 #include "../geometry/geometry.hpp"
-#include "fluid_integrator.hpp"
+#include "integrators.hpp"
 
 #define SUM_ON 0
 
@@ -45,7 +43,7 @@ void FluidIntegrator::Predict(Block *pb)
 {
   int is = pb->is; int js = pb->js; int ks = pb->ks;
   int ie = pb->ie; int je = pb->je; int ke = pb->ke;
-  Real dt = pb->pmy_domain->pmy_mesh->dt;
+  Real dt = pb->pparent_domain->pparent_mesh->dt;
 
   Real sum=0.0; Real sum_2=0.0;
   int ndata = (pb->block_size.nx1)*(pb->block_size.nx2)*(pb->block_size.nx3)*(NVAR);
@@ -59,8 +57,8 @@ void FluidIntegrator::Predict(Block *pb)
   AthenaArray<Real> wr = wr_.ShallowCopy();
   AthenaArray<Real> flx = flx_.ShallowCopy();
  
-  AthenaArray<Real> area = pb->pcoordinates->face_area.ShallowCopy();
-  AthenaArray<Real> vol  = pb->pcoordinates->cell_volume.ShallowCopy();
+  AthenaArray<Real> area = pb->pgeometry->face_area.ShallowCopy();
+  AthenaArray<Real> vol  = pb->pgeometry->cell_volume.ShallowCopy();
 
 #if SUM_ON>0
   /**** output to force calcs ****/
@@ -77,12 +75,12 @@ void FluidIntegrator::Predict(Block *pb)
   for (int k=ks; k<=ke; ++k){
   for (int j=js; j<=je; ++j){
 
-    lr_states_func_->PiecewiseLinear(k,j,is,ie+1,1,w,wl,wr);
+    ReconstructionFunc(k,j,is,ie+1,1,w,wl,wr);
 
-    flux_func_->HLLC(is,ie+1,wl,wr,flx);
+    RiemannSolver(is,ie+1,wl,wr,flx);
 
-    pb->pcoordinates->Area1Face(k,j,is,ie+1,area);
-    pb->pcoordinates->VolumeOfCell(k,j,is,ie,vol);
+    pb->pgeometry->Area1Face(k,j,is,ie+1,area);
+    pb->pgeometry->VolumeOfCell(k,j,is,ie,vol);
 
     for (int n=0; n<NVAR; ++n){
 #pragma simd
@@ -119,14 +117,14 @@ void FluidIntegrator::Predict(Block *pb)
     for (int k=ks; k<=ke; ++k){
     for (int j=js; j<=je+1; ++j){
 
-      lr_states_func_->PiecewiseLinear(k,j,is,ie,2,w,wl,wr);
+      ReconstructionFunc(k,j,is,ie,2,w,wl,wr);
 
-      flux_func_->HLLC(is,ie,wl,wr,flx); 
+      RiemannSolver(is,ie,wl,wr,flx); 
 
-      pb->pcoordinates->Area2Face(k,j,is,ie,area);
+      pb->pgeometry->Area2Face(k,j,is,ie,area);
 
       if (j>js) {
-        pb->pcoordinates->VolumeOfCell(k,j-1,is,ie,vol);
+        pb->pgeometry->VolumeOfCell(k,j-1,is,ie,vol);
         for (int n=0; n<NVAR; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
@@ -141,7 +139,7 @@ void FluidIntegrator::Predict(Block *pb)
       }
 
       if (j<(je+1)) {
-        pb->pcoordinates->VolumeOfCell(k,j,is,ie,vol);
+        pb->pgeometry->VolumeOfCell(k,j,is,ie,vol);
         for (int n=0; n<NVAR; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
@@ -177,14 +175,14 @@ void FluidIntegrator::Predict(Block *pb)
     for (int k=ks; k<=ke+1; ++k){
     for (int j=js; j<=je; ++j){
 
-      lr_states_func_->PiecewiseLinear(k,j,is,ie,3,w,wl,wr);
+      ReconstructionFunc(k,j,is,ie,3,w,wl,wr);
 
-      flux_func_->HLLC(is,ie,wl,wr,flx);
+      RiemannSolver(is,ie,wl,wr,flx);
 
-      pb->pcoordinates->Area3Face(k,j,is,ie,area);
+      pb->pgeometry->Area3Face(k,j,is,ie,area);
 
       if (k>ks) {
-        pb->pcoordinates->VolumeOfCell(k-1,j,is,ie,vol);
+        pb->pgeometry->VolumeOfCell(k-1,j,is,ie,vol);
         for (int n=0; n<NVAR; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
@@ -199,7 +197,7 @@ void FluidIntegrator::Predict(Block *pb)
       }
 
       if (k<(ke+1)) {
-        pb->pcoordinates->VolumeOfCell(k,j,is,ie,vol);
+        pb->pgeometry->VolumeOfCell(k,j,is,ie,vol);
         for (int n=0; n<NVAR; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
@@ -227,7 +225,7 @@ void FluidIntegrator::Correct(Block *pb)
 {
   int is = pb->is; int js = pb->js; int ks = pb->ks;
   int ie = pb->ie; int je = pb->je; int ke = pb->ke;
-  Real dt = pb->pmy_domain->pmy_mesh->dt;
+  Real dt = pb->pparent_domain->pparent_mesh->dt;
 
   Real sum=0.0; Real sum_2=0.0;
   int ndata = (pb->block_size.nx1)*(pb->block_size.nx2)*(pb->block_size.nx3)*(NVAR);
@@ -241,8 +239,8 @@ void FluidIntegrator::Correct(Block *pb)
   AthenaArray<Real> wr = wr_.ShallowCopy();
   AthenaArray<Real> flx = flx_.ShallowCopy();
 
-  AthenaArray<Real> area = pb->pcoordinates->face_area.ShallowCopy();
-  AthenaArray<Real> vol  = pb->pcoordinates->cell_volume.ShallowCopy();
+  AthenaArray<Real> area = pb->pgeometry->face_area.ShallowCopy();
+  AthenaArray<Real> vol  = pb->pgeometry->cell_volume.ShallowCopy();
  
 #if SUM_ON>0
   /**** output to force calcs ****/
@@ -259,12 +257,12 @@ void FluidIntegrator::Correct(Block *pb)
   for (int k=ks; k<=ke; ++k){
   for (int j=js; j<=je; ++j){
 
-    lr_states_func_->PiecewiseLinear(k,j,is,ie+1,1,w1,wl,wr);
+    ReconstructionFunc(k,j,is,ie+1,1,w1,wl,wr);
 
-    flux_func_->HLLC(is,ie+1,wl,wr,flx);
+    RiemannSolver(is,ie+1,wl,wr,flx); 
 
-    pb->pcoordinates->Area1Face(k,j,is,ie+1,area);
-    pb->pcoordinates->VolumeOfCell(k,j,is,ie,vol);
+    pb->pgeometry->Area1Face(k,j,is,ie+1,area);
+    pb->pgeometry->VolumeOfCell(k,j,is,ie,vol);
 
     for (int n=0; n<NVAR; ++n){
 #pragma simd
@@ -300,14 +298,14 @@ void FluidIntegrator::Correct(Block *pb)
     for (int k=ks; k<=ke; ++k){
     for (int j=js; j<=je+1; ++j){
 
-      lr_states_func_->PiecewiseLinear(k,j,is,ie,2,w1,wl,wr);
+      ReconstructionFunc(k,j,is,ie,2,w1,wl,wr);
 
-      flux_func_->HLLC(is,ie,wl,wr,flx); 
+      RiemannSolver(is,ie,wl,wr,flx); 
 
-      pb->pcoordinates->Area2Face(k,j,is,ie,area);
+      pb->pgeometry->Area2Face(k,j,is,ie,area);
 
       if (j>js){
-        pb->pcoordinates->VolumeOfCell(k,j-1,is,ie,vol);
+        pb->pgeometry->VolumeOfCell(k,j-1,is,ie,vol);
         for (int n=0; n<NVAR; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
@@ -322,7 +320,7 @@ void FluidIntegrator::Correct(Block *pb)
       }
 
       if (j>(je+1)){
-        pb->pcoordinates->VolumeOfCell(k,j,is,ie,vol);
+        pb->pgeometry->VolumeOfCell(k,j,is,ie,vol);
         for (int n=0; n<NVAR; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
@@ -357,14 +355,14 @@ void FluidIntegrator::Correct(Block *pb)
     for (int k=ks; k<=ke+1; ++k){
     for (int j=js; j<=je; ++j){
 
-      lr_states_func_->PiecewiseLinear(k,j,is,ie,3,w1,wl,wr);
+      ReconstructionFunc(k,j,is,ie,3,w1,wl,wr);
 
-      flux_func_->HLLC(is,ie,wl,wr,flx);
+      RiemannSolver(is,ie,wl,wr,flx);
 
-      pb->pcoordinates->Area3Face(is,ie,j,k,area);
+      pb->pgeometry->Area3Face(is,ie,j,k,area);
 
       if (k<ks){
-        pb->pcoordinates->VolumeOfCell(k-1,j,is,ie,vol);
+        pb->pgeometry->VolumeOfCell(k-1,j,is,ie,vol);
         for (int n=0; n<NVAR; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
@@ -379,7 +377,7 @@ void FluidIntegrator::Correct(Block *pb)
       }
 
       if (k>(ke+1)){
-        pb->pcoordinates->VolumeOfCell(k,j,is,ie,vol);
+        pb->pgeometry->VolumeOfCell(k,j,is,ie,vol);
         for (int n=0; n<NVAR; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){

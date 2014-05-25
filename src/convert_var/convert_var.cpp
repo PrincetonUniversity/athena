@@ -35,7 +35,7 @@
 
 ConvertVariables::ConvertVariables(Fluid *pf)
 {
-  pmy_fluid_ = pf;
+  pparent_fluid_ = pf;
 }
 
 // destructor

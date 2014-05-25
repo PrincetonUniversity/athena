@@ -24,7 +24,7 @@ public:
   void ComputePrimitives(AthenaArray<Real> &c, AthenaArray<Real> &p);
 
 private:
-  Fluid *pmy_fluid_;  // pointer to parent Fluid object
+  Fluid *pparent_fluid_;  // ptr to parent Fluid
 
 };
 #endif

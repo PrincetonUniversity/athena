@@ -21,24 +21,24 @@ class FluidIntegrator;
 class Fluid {
 friend class FluidIntegrator;
 public:
-  Fluid(ParameterInput *pin, Block *pb);
+  Fluid(Block *pb);
   ~Fluid();
+
+  Block* pparent_block;    // ptr to parent Block
 
   AthenaArray<Real> u,w;   // conserved and primitive variables
   AthenaArray<Real> u1,w1; // conserved and primitive variables at the half-time step
 
-  Block* pmy_block;          // pointer to parent Block of this Fluid
+  FluidBoundaryConditions *pf_bcs;       // boundary conditions for fluid
+  ConvertVariables *pcons_to_prim;       // convert conserved-to-primitive
+  FluidIntegrator *pf_integrator;        // integration algorithm
 
-  FluidBoundaryConditions *pbvals;       // object to handle BCs for fluid
-  ConvertVariables *pcons_to_prim;  // object to convert conserved-to-primitive
-  FluidIntegrator *pintegrate;
-
-  void Problem(ParameterInput *pin); // problem generator function
-  void NewTimeStep(Block *pb);       // computes new timestep on a Block
-  Real GetGamma() const { return gamma_; }
+  void NewTimeStep(Block *pb);           // computes new timestep on a Block
+  void InitProblem(ParameterInput *pin); // problem generator function (files in /pgen)
+  Real GetGamma() const {return gamma_;}
 
 private:
-  Real gamma_;               // ratio of specific heats
+  Real gamma_;                       // ratio of specific heats
   AthenaArray<Real> dt1_,dt2_,dt3_;  // scratch arrays used in NewTimeStep
 };
 #endif

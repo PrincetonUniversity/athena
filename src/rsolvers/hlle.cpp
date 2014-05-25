@@ -24,7 +24,6 @@
 #include "../parameter_input.hpp"
 #include "../mesh.hpp"
 #include "../fluid.hpp"
-#include "riemann_solver.hpp"
 
 //======================================================================================
 /*! \file hlle.cpp

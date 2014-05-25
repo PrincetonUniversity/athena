@@ -25,25 +25,40 @@
 #include "../mesh.hpp"
 #include "../fluid.hpp"
 #include "prototypes.hpp"
-#include "fluid_bvals.hpp"
+#include "bvals.hpp"
 
 //======================================================================================
 /*! \file boundary_conditions.cpp
  *  \brief boundary conditions for fluid (quantities in ghost zones) on each edge
  *====================================================================================*/
 
-// constructor -- set BC function pointers based on integer flags read from input file
+// constructor
 
-FluidBoundaryConditions::FluidBoundaryConditions(ParameterInput *pin, Fluid *pf)
+
+FluidBoundaryConditions::FluidBoundaryConditions(Fluid *pf)
+{
+  pparent_fluid = pf;
+}
+
+// destructor
+
+FluidBoundaryConditions::~FluidBoundaryConditions()
+{
+}
+
+//--------------------------------------------------------------------------------------
+/*! \fn void InitBoundaryConditions()
+ *  \brief set BC function pointers based on integer flags read from input file
+ */
+
+void FluidBoundaryConditions::InitBoundaryConditions(ParameterInput *pin)
 {
   std::stringstream msg;
-  int flag;
-  pmy_fluid = pf;
 
 // Set BC function pointers for each of the 6 boundaries in turn -----------------------
 // Inner x1
 
-  flag = pin->GetOrAddInteger("mesh","ix1_bc",0);
+  int flag = pin->GetOrAddInteger("mesh","ix1_bc",0);
   switch(flag){
     case 1:
       FluidInnerX1_ = ReflectInnerX1;
@@ -73,7 +88,7 @@ FluidBoundaryConditions::FluidBoundaryConditions(ParameterInput *pin, Fluid *pf)
 
   int nx2  = pin->GetInteger("mesh","nx2");
   if (nx2 > 1) {
-    flag = pin->GetOrAddInteger("mesh","ix2_bc",0);
+    int flag = pin->GetOrAddInteger("mesh","ix2_bc",0);
     switch(flag){
       case 1:
         FluidInnerX2_ = ReflectInnerX2;
@@ -104,7 +119,7 @@ FluidBoundaryConditions::FluidBoundaryConditions(ParameterInput *pin, Fluid *pf)
 
   int nx3  = pin->GetInteger("mesh","nx3");
   if (nx3 > 1) {
-    flag = pin->GetOrAddInteger("mesh","ix3_bc",0);
+    int flag = pin->GetOrAddInteger("mesh","ix3_bc",0);
     switch(flag){
       case 1:
         FluidInnerX3_ = ReflectInnerX3;
@@ -133,40 +148,34 @@ FluidBoundaryConditions::FluidBoundaryConditions(ParameterInput *pin, Fluid *pf)
 
 }
 
-// destructor
-
-FluidBoundaryConditions::~FluidBoundaryConditions()
-{
-}
-
 //--------------------------------------------------------------------------------------
-/*! \fn void SetBoundaryValues()
+/*! \fn void ApplyBoundaryConditions()
  *  \brief Calls BC functions using appropriate function pointers to set ghost zones.  
  */
 
-void FluidBoundaryConditions::SetBoundaryValues(AthenaArray<Real> &a)
+void FluidBoundaryConditions::ApplyBoundaryConditions(AthenaArray<Real> &a)
 {
 
 // Boundary Conditions in x1-direction
 
-  (*(FluidInnerX1_))(pmy_fluid,a);
-  (*(FluidOuterX1_))(pmy_fluid,a);
+  (*(FluidInnerX1_))(pparent_fluid,a);
+  (*(FluidOuterX1_))(pparent_fluid,a);
 
 // Boundary Conditions in x2-direction 
 
-  if (pmy_fluid->pmy_block->block_size.nx2 > 1){
+  if (pparent_fluid->pparent_block->block_size.nx2 > 1){
 
-    (*(FluidInnerX2_))(pmy_fluid,a);
-    (*(FluidOuterX2_))(pmy_fluid,a);
+    (*(FluidInnerX2_))(pparent_fluid,a);
+    (*(FluidOuterX2_))(pparent_fluid,a);
 
   }
 
 // Boundary Conditions in x3-direction 
 
-  if (pmy_fluid->pmy_block->block_size.nx3 > 1){
+  if (pparent_fluid->pparent_block->block_size.nx3 > 1){
 
-    (*(FluidInnerX3_))(pmy_fluid,a);
-    (*(FluidOuterX3_))(pmy_fluid,a);
+    (*(FluidInnerX3_))(pparent_fluid,a);
+    (*(FluidOuterX3_))(pparent_fluid,a);
 
   }
 

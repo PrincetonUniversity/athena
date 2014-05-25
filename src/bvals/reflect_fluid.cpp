@@ -33,7 +33,7 @@
 
 void ReflectInnerX1(Fluid *pf, AthenaArray<Real> &a)
 {
-  Block *pb = pf->pmy_block;
+  Block *pb = pf->pparent_block;
   int is = pb->is;
   int js = pb->js, je = pb->je;
   int ks = pb->ks, ke = pb->ke;
@@ -68,7 +68,7 @@ void ReflectInnerX1(Fluid *pf, AthenaArray<Real> &a)
 
 void ReflectOuterX1(Fluid *pf, AthenaArray<Real> &a)
 {
-  Block *pb = pf->pmy_block;
+  Block *pb = pf->pparent_block;
   int ie = pb->ie;
   int js = pb->js, je = pb->je;
   int ks = pb->ks, ke = pb->ke;
@@ -103,7 +103,7 @@ void ReflectOuterX1(Fluid *pf, AthenaArray<Real> &a)
 
 void ReflectInnerX2(Fluid *pf, AthenaArray<Real> &a)
 {
-  Block *pb = pf->pmy_block;
+  Block *pb = pf->pparent_block;
   int is = pb->is, ie = pb->ie;
   int js = pb->js;
   int ks = pb->ks, ke = pb->ke;
@@ -138,7 +138,7 @@ void ReflectInnerX2(Fluid *pf, AthenaArray<Real> &a)
 
 void ReflectOuterX2(Fluid *pf, AthenaArray<Real> &a)
 {
-  Block *pb = pf->pmy_block;
+  Block *pb = pf->pparent_block;
   int is = pb->is, ie = pb->ie;
   int je = pb->je;
   int ks = pb->ks, ke = pb->ke;
@@ -173,7 +173,7 @@ void ReflectOuterX2(Fluid *pf, AthenaArray<Real> &a)
 
 void ReflectInnerX3(Fluid *pf, AthenaArray<Real> &a)
 {
-  Block *pb = pf->pmy_block;
+  Block *pb = pf->pparent_block;
   int is = pb->is, ie = pb->ie;
   int js = pb->js, je = pb->je;
   int ks = pb->ks;
@@ -208,7 +208,7 @@ void ReflectInnerX3(Fluid *pf, AthenaArray<Real> &a)
 
 void ReflectOuterX3(Fluid *pf, AthenaArray<Real> &a)
 {
-  Block *pb = pf->pmy_block;
+  Block *pb = pf->pparent_block;
   int is = pb->is, ie = pb->ie;
   int js = pb->js, je = pb->je;
   int ke = pb->ke;
