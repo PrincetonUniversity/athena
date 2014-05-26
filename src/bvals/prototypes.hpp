@@ -11,11 +11,11 @@
 
 // reflecting BC functions
 
-  void ReflectInnerX1(Fluid *pf, AthenaArray<Real> &a);
-  void ReflectOuterX1(Fluid *pf, AthenaArray<Real> &a);
-  void ReflectInnerX2(Fluid *pf, AthenaArray<Real> &a);
-  void ReflectOuterX2(Fluid *pf, AthenaArray<Real> &a);
-  void ReflectInnerX3(Fluid *pf, AthenaArray<Real> &a);
-  void ReflectOuterX3(Fluid *pf, AthenaArray<Real> &a);
+  void ReflectInnerX1(Block *pb, AthenaArray<Real> &a);
+  void ReflectOuterX1(Block *pb, AthenaArray<Real> &a);
+  void ReflectInnerX2(Block *pb, AthenaArray<Real> &a);
+  void ReflectOuterX2(Block *pb, AthenaArray<Real> &a);
+  void ReflectInnerX3(Block *pb, AthenaArray<Real> &a);
+  void ReflectOuterX3(Block *pb, AthenaArray<Real> &a);
 
 #endif

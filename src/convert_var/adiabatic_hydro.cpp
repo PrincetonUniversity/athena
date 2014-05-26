@@ -25,17 +25,16 @@
 #include "../parameter_input.hpp"
 #include "../mesh.hpp"
 #include "../fluid.hpp"
-#include "convert_var.hpp"
 
 
 //======================================================================================
 /*! \file adiabatic_hydro.cpp
- *  \brief calculates primitives in adiabatic hydrodynamics`
+ *  \brief converts conserved to primitive variables in adiabatic hydrodynamics`
  *====================================================================================*/
 
-void ConvertVariables::ComputePrimitives(AthenaArray<Real> &c, AthenaArray<Real> &p)
+void Fluid::ConservedToPrimitive(AthenaArray<Real> &c, AthenaArray<Real> &p)
 {
-  Block *pb = pparent_fluid_->pparent_block;
+  Block *pb = pparent_block;
   int is = pb->is; int ie = pb->ie;
   int jl = pb->js; int ju = pb->je;
   int kl = pb->ks; int ku = pb->ke;

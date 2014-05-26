@@ -11,13 +11,14 @@
  *====================================================================================*/
 
 class ParameterInput;
-class Fluid;
 class Mesh;
 class Domain;
 class Geometry;
+class FluidBoundaryConditions;
+class Fluid;
 
 //! \struct RegionSize
-//  \brief physical size and number of cells in a region (Domain or Block)
+//  \brief physical size and number of cells in Mesh, Domain or Block
 
 typedef struct RegionSize {
   Real x1min, x2min, x3min;
@@ -26,38 +27,53 @@ typedef struct RegionSize {
   int nx1, nx2, nx3;        // number of active cells (not including ghost zones)
 } RegionSize;
 
+//! \struct RegionBCs
+//  \brief boundary conditions flags for a Mesh, Domain or Block
+
+typedef struct RegionBoundary {
+  int ix1_bc, ix2_bc, ix3_bc;  // inner-x (left edge) BC flags
+  int ox1_bc, ox2_bc, ox3_bc;  // outer-x (right edge) BC flags
+} RegionBoundary;
+
+//--------------------------------------------------------------------------------------
 //! \class Block
 //  \brief data/functions associated with a single block inside a domain
 
 class Block {
 public:
-  Block(RegionSize blk_size, Domain *pd);
+  Block(RegionSize blk_size, RegionBoundary blk_bndry, Domain *pd);
   ~Block();
 
   Domain *pparent_domain;                            // ptr to parent Domain
-  AthenaArray<Real> x1f, x2f, x3f, dx1f, dx2f, dx3f; // cell face   centers and spacing
-  AthenaArray<Real> x1v, x2v, x3v, dx1v, dx2v, dx3v; // cell volume centers and spacing
-  int is,ie,js,je,ks,ke;
   RegionSize block_size;
+  RegionBoundary block_bndry;
 
-  Fluid *pfluid;
+  AthenaArray<Real> dx1f, dx2f, dx3f, x1f, x2f, x3f; // cell face   spacing and centers
+  AthenaArray<Real> dx1v, dx2v, dx3v, x1v, x2v, x3v; // cell volume spacing and centers
+  int is,ie,js,je,ks,ke;
+
+  FluidBoundaryConditions *pf_bcs;
   Geometry *pgeometry;
+  Fluid *pfluid;
 };
 
+//--------------------------------------------------------------------------------------
 //! \class Domain
 //  \brief data/functions associated with a domain inside the mesh
 
 class Domain {
 public:
-  Domain(RegionSize dom_size, Mesh *pm);
+  Domain(RegionSize dom_size, RegionBoundary dom_bndry, Mesh *pm);
   ~Domain();
 
   Mesh *pparent_mesh;  // ptr to parent Mesh
 
   Block *pblock;
   RegionSize domain_size;
+  RegionBoundary domain_bndry;
 };
 
+//--------------------------------------------------------------------------------------
 //! \class Mesh
 //  \brief data/functions associated with the overall mesh
 
@@ -68,6 +84,7 @@ public:
 
   Domain *pdomain;
   RegionSize mesh_size;
+  RegionBoundary mesh_bndry;
 
   Real start_time, tlim, cfl_number, time, dt;
   int nlim, ncycle;

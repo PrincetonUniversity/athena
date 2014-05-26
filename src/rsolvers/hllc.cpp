@@ -31,6 +31,8 @@
  *  \brief HLLC Riemann solver for hydrodynamics
  *====================================================================================*/
 
+//namespace hllc_hydro_solver {
+
 void FluidIntegrator::RiemannSolver(const int il, const int iu,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {
@@ -163,3 +165,5 @@ void FluidIntegrator::RiemannSolver(const int il, const int iu,
 
   return;
 }
+
+//} // end hllc_hydro_solver namespace

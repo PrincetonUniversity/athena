@@ -12,7 +12,6 @@
 
 class ParameterInput;
 class FluidBoundaryConditions;
-class ConvertVariables;
 class FluidIntegrator;
 
 //! \class Fluid
@@ -29,9 +28,10 @@ public:
   AthenaArray<Real> u,w;   // conserved and primitive variables
   AthenaArray<Real> u1,w1; // conserved and primitive variables at the half-time step
 
-  FluidBoundaryConditions *pf_bcs;       // boundary conditions for fluid
-  ConvertVariables *pcons_to_prim;       // convert conserved-to-primitive
-  FluidIntegrator *pf_integrator;        // integration algorithm
+  FluidIntegrator *pf_integrator;   // integration algorithm
+
+// conserved to primitive functions implemented in files in /convert_var
+  void ConservedToPrimitive(AthenaArray<Real> &c, AthenaArray<Real> &p);
 
   void NewTimeStep(Block *pb);           // computes new timestep on a Block
   void InitProblem(ParameterInput *pin); // problem generator function (files in /pgen)

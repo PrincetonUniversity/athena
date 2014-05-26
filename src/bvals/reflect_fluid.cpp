@@ -21,19 +21,17 @@
 #include "../athena_arrays.hpp"
 #include "../parameter_input.hpp"
 #include "../mesh.hpp"
-#include "../fluid.hpp"
 
 //======================================================================================
 /*! \file reflect_fluid.cpp
  *  \brief implements reflecting BCs in each dimension for conserved fluid variables
  *====================================================================================*/
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectInnerX1(Fluid *pf)
+//! \fn void ReflectInnerX1(Block *pb)
 //  \brief  REFLECTING boundary conditions conserved vars, inner x1 boundary (ix1_bc=1)
 
-void ReflectInnerX1(Fluid *pf, AthenaArray<Real> &a)
+void ReflectInnerX1(Block *pb, AthenaArray<Real> &a)
 {
-  Block *pb = pf->pparent_block;
   int is = pb->is;
   int js = pb->js, je = pb->je;
   int ks = pb->ks, ke = pb->ke;
@@ -63,12 +61,11 @@ void ReflectInnerX1(Fluid *pf, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectOuterX1(Fluid *pf)
+//! \fn void ReflectOuterX1(Block *pb)
 //  \brief  REFLECTING boundary conditions conserved vars, outer x1 boundary (ox1_bc=1)
 
-void ReflectOuterX1(Fluid *pf, AthenaArray<Real> &a)
+void ReflectOuterX1(Block *pb, AthenaArray<Real> &a)
 {
-  Block *pb = pf->pparent_block;
   int ie = pb->ie;
   int js = pb->js, je = pb->je;
   int ks = pb->ks, ke = pb->ke;
@@ -98,12 +95,11 @@ void ReflectOuterX1(Fluid *pf, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectInnerX2(Fluid *pf)
+//! \fn void ReflectInnerX2(Block *pb)
 //  \brief  REFLECTING boundary conditions conserved vars, inner x2 boundary (ix2_bc=1)
 
-void ReflectInnerX2(Fluid *pf, AthenaArray<Real> &a)
+void ReflectInnerX2(Block *pb, AthenaArray<Real> &a)
 {
-  Block *pb = pf->pparent_block;
   int is = pb->is, ie = pb->ie;
   int js = pb->js;
   int ks = pb->ks, ke = pb->ke;
@@ -133,12 +129,11 @@ void ReflectInnerX2(Fluid *pf, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectOuterX2(Fluid *pf)
+//! \fn void ReflectOuterX2(Block *pb)
 //  \brief  REFLECTING boundary conditions conserved vars, outer x2 boundary (ox2_bc=1)
 
-void ReflectOuterX2(Fluid *pf, AthenaArray<Real> &a)
+void ReflectOuterX2(Block *pb, AthenaArray<Real> &a)
 {
-  Block *pb = pf->pparent_block;
   int is = pb->is, ie = pb->ie;
   int je = pb->je;
   int ks = pb->ks, ke = pb->ke;
@@ -168,12 +163,11 @@ void ReflectOuterX2(Fluid *pf, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectInnerX3(Fluid *pf)
+//! \fn void ReflectInnerX3(Block *pb)
 //  \brief  REFLECTING boundary conditions conserved vars, inner x3 boundary (ix3_bc=1)
 
-void ReflectInnerX3(Fluid *pf, AthenaArray<Real> &a)
+void ReflectInnerX3(Block *pb, AthenaArray<Real> &a)
 {
-  Block *pb = pf->pparent_block;
   int is = pb->is, ie = pb->ie;
   int js = pb->js, je = pb->je;
   int ks = pb->ks;
@@ -203,12 +197,11 @@ void ReflectInnerX3(Fluid *pf, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectOuterX3(Fluid *pf)
+//! \fn void ReflectOuterX3(Block *pb)
 //  \brief  REFLECTING boundary conditions conserved vars, outer x3 boundary (ox3_bc=1)
 
-void ReflectOuterX3(Fluid *pf, AthenaArray<Real> &a)
+void ReflectOuterX3(Block *pb, AthenaArray<Real> &a)
 {
-  Block *pb = pf->pparent_block;
   int is = pb->is, ie = pb->ie;
   int js = pb->js, je = pb->je;
   int ke = pb->ke;

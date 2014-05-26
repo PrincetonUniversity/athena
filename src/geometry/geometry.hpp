@@ -13,24 +13,30 @@
 //! \class Geometry
 //  \brief geometry data and functions
 
+//namespace COORDINATE_SYSTEM {
+
 class Geometry {
 public:
   Geometry(Block *pb);
   ~Geometry();
 
-  Block *pmy_block;
+  Block *pparent_block;
 
+  AthenaArray<Real> dx1v, dx2v, dx3v, x1v, x2v, x3v;
+
+  void InitGeometryFactors(ParameterInput *pin);
   void Area1Face(const int k, const int j, const int il, const int iu,
-       AthenaArray<Real> &area);
+    AthenaArray<Real> &area);
   void Area2Face(const int k, const int j, const int il, const int iu,
-       AthenaArray<Real> &area);
+    AthenaArray<Real> &area);
   void Area3Face(const int k, const int j, const int il, const int iu,
-       AthenaArray<Real> &area);
-  void VolumeOfCell(const int k, const int j, const int il, const int iu,
-       AthenaArray<Real> &area);
+    AthenaArray<Real> &area);
+  void CellVolume(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &area);
   void SourceTerms(const int k, const int j, const int il, const int iu,
-       AthenaArray<Real> &src);
+    AthenaArray<Real> &src);
 
   AthenaArray<Real> face_area, cell_volume;
 };
+//} // end namespace COORDINATE_SYSTEM
 #endif

@@ -25,7 +25,6 @@
 #include "mesh.hpp"
 #include "fluid.hpp"
 #include "bvals/bvals.hpp"
-#include "convert_var/convert_var.hpp"
 #include "integrators/integrators.hpp"
 
 //======================================================================================
@@ -62,10 +61,8 @@ Fluid::Fluid(Block *pb)
   dt2_.NewAthenaArray(ncells1);
   dt3_.NewAthenaArray(ncells1);
 
-// Construct new BC, variable conversion, and integrator objects
+// Construct new integrator objects
 
-  pf_bcs = new FluidBoundaryConditions(this);
-  pcons_to_prim = new ConvertVariables(this);
   pf_integrator = new FluidIntegrator(this);
 }
 

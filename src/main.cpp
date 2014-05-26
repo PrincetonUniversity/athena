@@ -152,10 +152,13 @@ int main(int argc, char *argv[])
   }
 
 //--- Step 5. --------------------------------------------------------------------------
-// Now construct and initialize fluid on every Mesh block.
+// initialize BC func ptrs, ghost zone cell sizes, geometry, and call problem generator
 
   try {
-    mesh->InitializeAcrossDomains(fluid,inputs);
+    mesh->InitializeAcrossDomains(fluid_bcs,inputs);
+    mesh->InitializeAcrossDomains(bfield_bcs,inputs);
+    mesh->InitializeAcrossDomains(geometry,inputs);
+    mesh->InitializeAcrossDomains(initial_conditions,inputs);
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR memory allocation failed" << std::endl
@@ -166,6 +169,12 @@ int main(int argc, char *argv[])
     std::cout << ex.what() << std::endl;  // prints diagnostic message 
     return(0);
   }
+
+// apply BCs, compute primitive from conserved variables, compute first timestep
+
+  mesh->UpdateAcrossDomains(fluid_bcs_n);
+  mesh->UpdateAcrossDomains(bfield_bcs_n);
+  mesh->UpdateAcrossDomains(convert_vars_n);
   mesh->UpdateAcrossDomains(new_timestep);
 
 //--- Step 6. --------------------------------------------------------------------------
@@ -199,20 +208,20 @@ int main(int argc, char *argv[])
 // predict step
 
     mesh->UpdateAcrossDomains(fluid_predict    );
-    mesh->UpdateAcrossDomains(fluid_bvals_nhalf);
+    mesh->UpdateAcrossDomains(fluid_bcs_nhalf);
 
     mesh->UpdateAcrossDomains(bfield_predict    );
-    mesh->UpdateAcrossDomains(bfield_bvals_nhalf);
+    mesh->UpdateAcrossDomains(bfield_bcs_nhalf);
 
     mesh->UpdateAcrossDomains(convert_vars_nhalf);
 
 // correct step
 
     mesh->UpdateAcrossDomains(fluid_correct);
-    mesh->UpdateAcrossDomains(fluid_bvals_n);
+    mesh->UpdateAcrossDomains(fluid_bcs_n);
 
     mesh->UpdateAcrossDomains(bfield_correct);
-    mesh->UpdateAcrossDomains(bfield_bvals_n);
+    mesh->UpdateAcrossDomains(bfield_bcs_n);
 
     mesh->UpdateAcrossDomains(convert_vars_n);
 

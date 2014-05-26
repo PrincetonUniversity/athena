@@ -28,16 +28,16 @@
 #include "bvals.hpp"
 
 //======================================================================================
-/*! \file boundary_conditions.cpp
+/*! \file bvals.cpp
  *  \brief boundary conditions for fluid (quantities in ghost zones) on each edge
  *====================================================================================*/
 
 // constructor
 
 
-FluidBoundaryConditions::FluidBoundaryConditions(Fluid *pf)
+FluidBoundaryConditions::FluidBoundaryConditions(Block *pb)
 {
-  pparent_fluid = pf;
+  pparent_block = pb;
 }
 
 // destructor
@@ -158,24 +158,24 @@ void FluidBoundaryConditions::ApplyBoundaryConditions(AthenaArray<Real> &a)
 
 // Boundary Conditions in x1-direction
 
-  (*(FluidInnerX1_))(pparent_fluid,a);
-  (*(FluidOuterX1_))(pparent_fluid,a);
+  (*(FluidInnerX1_))(pparent_block, a);
+  (*(FluidOuterX1_))(pparent_block, a);
 
 // Boundary Conditions in x2-direction 
 
-  if (pparent_fluid->pparent_block->block_size.nx2 > 1){
+  if (pparent_block->block_size.nx2 > 1){
 
-    (*(FluidInnerX2_))(pparent_fluid,a);
-    (*(FluidOuterX2_))(pparent_fluid,a);
+    (*(FluidInnerX2_))(pparent_block, a);
+    (*(FluidOuterX2_))(pparent_block, a);
 
   }
 
 // Boundary Conditions in x3-direction 
 
-  if (pparent_fluid->pparent_block->block_size.nx3 > 1){
+  if (pparent_block->block_size.nx3 > 1){
 
-    (*(FluidInnerX3_))(pparent_fluid,a);
-    (*(FluidOuterX3_))(pparent_fluid,a);
+    (*(FluidInnerX3_))(pparent_block, a);
+    (*(FluidOuterX3_))(pparent_block, a);
 
   }
 

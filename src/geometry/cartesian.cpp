@@ -21,6 +21,7 @@
 
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
 #include "../mesh.hpp"
 #include "geometry.hpp"
 
@@ -29,6 +30,27 @@
 //  \brief implements geometry functions for Cartesian coordinates (the trivial case)
 //======================================================================================
 
+//namespace cartesian_coordinates {
+
+//--------------------------------------------------------------------------------------
+// \!fn 
+// \brief
+
+void Geometry::InitGeometryFactors(ParameterInput *pin)
+{
+  int is = pparent_block->is; int js = pparent_block->js; int ks = pparent_block->ks;
+  int ie = pparent_block->ie; int je = pparent_block->je; int ke = pparent_block->ke;
+
+// initialize volume-averaged positions and spacing
+// x1-direction
+
+  for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+    x1v(i) = (pparent_block->x1f(i+1) - pparent_block->x1f(i))/2.0;
+  }
+  for (int i=is-(NGHOST)+1; i<=ie+(NGHOST); ++i) {
+    dx1v(i) = x1v(i) - x1v(i-1);
+  }
+}
 
 //--------------------------------------------------------------------------------------
 // \!fn 
@@ -40,8 +62,7 @@ void Geometry::Area1Face(const int k, const int j, const int il, const int iu,
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
-
-    area_i = (pmy_block->dx2v(j))*(pmy_block->dx3v(k));
+    area_i = (pparent_block->dx2f(j))*(pparent_block->dx3f(k));
   }
   return;
 }
@@ -49,13 +70,12 @@ void Geometry::Area1Face(const int k, const int j, const int il, const int iu,
 void Geometry::Area2Face(const int k, const int j, const int il, const int iu, 
   AthenaArray<Real> &area)
 {
-  AthenaArray<Real> dx1v = pmy_block->dx1v.ShallowCopy();
+  AthenaArray<Real> dx1f = pparent_block->dx1f.ShallowCopy();
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
-    Real& dx1_i  = dx1v(i);
-
-    area_i = dx1_i*(pmy_block->dx3v(k));
+    Real& dx1_i  = dx1f(i);
+    area_i = dx1_i*(pparent_block->dx3f(k));
   }
   return;
 }
@@ -63,13 +83,12 @@ void Geometry::Area2Face(const int k, const int j, const int il, const int iu,
 void Geometry::Area3Face(const int k, const int j, const int il, const int iu, 
   AthenaArray<Real> &area)
 {
-  AthenaArray<Real> dx1v = pmy_block->dx1v.ShallowCopy();
+  AthenaArray<Real> dx1f = pparent_block->dx1f.ShallowCopy();
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
-    Real& dx1_i  = dx1v(i);
-
-    area_i = dx1_i*(pmy_block->dx2v(j));
+    Real& dx1_i  = dx1f(i);
+    area_i = dx1_i*(pparent_block->dx2f(j));
   }
   return;
 }
@@ -78,16 +97,15 @@ void Geometry::Area3Face(const int k, const int j, const int il, const int iu,
 // \!fn 
 // \brief
 
-void Geometry::VolumeOfCell(const int k, const int j, const int il, const int iu, 
+void Geometry::CellVolume(const int k, const int j, const int il, const int iu, 
   AthenaArray<Real> &vol)
 {
-  AthenaArray<Real> dx1v = pmy_block->dx1v.ShallowCopy();
+  AthenaArray<Real> dx1f = pparent_block->dx1f.ShallowCopy();
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& vol_i = vol(i);
-    Real& dx1_i = dx1v(i);
-
-    vol_i = dx1_i*(pmy_block->dx2v(j))*(pmy_block->dx3v(k));
+    Real& dx1_i = dx1f(i);
+    vol_i = dx1_i*(pparent_block->dx2f(j))*(pparent_block->dx3f(k));
   }
   return;
 }
@@ -101,3 +119,5 @@ void Geometry::SourceTerms(const int k, const int j, const int il, const int iu,
 {
   return;
 }
+
+//} // end cartesian_ccordinates namespace

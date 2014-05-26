@@ -32,6 +32,8 @@
  *  \brief  piecewise linear reconstruction
  *====================================================================================*/
 
+//namespace piecewise_linear_method {
+
 void FluidIntegrator::ReconstructionFunc(const int k, const int j, 
   const int il, const int iu, const int dir,
   AthenaArray<Real> &w, AthenaArray<Real> &wl, AthenaArray<Real> &wr)
@@ -71,3 +73,5 @@ void FluidIntegrator::ReconstructionFunc(const int k, const int j,
 
   return;
 }
+
+//} // end piecewise_linear_method namespace

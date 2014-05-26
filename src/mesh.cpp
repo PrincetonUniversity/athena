@@ -28,7 +28,6 @@
 #include "mesh.hpp"
 #include "fluid.hpp"
 #include "bvals/bvals.hpp"
-#include "convert_var/convert_var.hpp"
 #include "integrators/integrators.hpp"
 #include "geometry/geometry.hpp"
 
@@ -141,9 +140,19 @@ Mesh::Mesh(ParameterInput *pin)
     throw std::runtime_error(msg.str().c_str());
   }
 
+// read BC flags for each of the 6 boundaries in turn.  Error tests performed in
+// function FluidBoundaryConditions::InitBoundaryConditions
+
+  mesh_bndry.ix1_bc = pin->GetOrAddInteger("mesh","ix1_bc",0);
+  mesh_bndry.ox1_bc = pin->GetOrAddInteger("mesh","ox1_bc",0);
+  mesh_bndry.ix2_bc = pin->GetOrAddInteger("mesh","ix2_bc",0);
+  mesh_bndry.ox2_bc = pin->GetOrAddInteger("mesh","ox2_bc",0);
+  mesh_bndry.ix3_bc = pin->GetOrAddInteger("mesh","ix3_bc",0);
+  mesh_bndry.ox3_bc = pin->GetOrAddInteger("mesh","ox3_bc",0);
+
 // allocate root domain
 
-  pdomain = new Domain(mesh_size, this);
+  pdomain = new Domain(mesh_size, mesh_bndry, this);
 }
 
 // Mesh destructor
@@ -157,15 +166,16 @@ Mesh::~Mesh()
 // Domain constructor: builds array of Blocks based on input arguments.  May be called
 // at any time in a simulation, whenever AMR creates a new Domain
 
-Domain::Domain(RegionSize dom_size, Mesh* pm)
+Domain::Domain(RegionSize dom_size, RegionBoundary dom_bndry, Mesh* pm)
 {
   pparent_mesh = pm;
   domain_size = dom_size;
+  domain_bndry = dom_bndry;
 
 // allocate block on this domain
 // In future w MPI: calculate array of blocks, set their region sizes, and initialize
 
-  pblock = new Block(domain_size, this);
+  pblock = new Block(domain_size, domain_bndry, this);
 
   return;
 }
@@ -182,12 +192,13 @@ Domain::~Domain()
 // arguments. Constructs Fluid and Geometry objects (but these are initialized with
 // separate init functions).  May be called at any time in an AMR simulations. 
 
-Block::Block(RegionSize blk_size, Domain *pd)
+Block::Block(RegionSize blk_size, RegionBoundary blk_bndry, Domain *pd)
 {
   pparent_domain = pd;
   block_size = blk_size;
+  block_bndry = blk_bndry;
 
-// initilize grid indices
+// initialize grid indices
 
   is = NGHOST;
   ie = is + block_size.nx1 - 1;
@@ -210,106 +221,188 @@ Block::Block(RegionSize blk_size, Domain *pd)
   std::cout << "js=" << js << " je=" << je << std::endl;
   std::cout << "ks=" << ks << " ke=" << ke << std::endl;
 
-// allocate arrays for positions and spacing of cell faces and volume centers
+// allocate arrays for spacing and positions of cell faces and volume centers
 
   int ncells1 = block_size.nx1 + 2*(NGHOST);
   int ncells2 = 1, ncells3 = 1;
   if (block_size.nx2 > 1) ncells2 = block_size.nx2 + 2*(NGHOST);
   if (block_size.nx3 > 1) ncells3 = block_size.nx3 + 2*(NGHOST);
 
-  x1f.NewAthenaArray(ncells1 + 1);
-  x2f.NewAthenaArray(ncells2 + 1);
-  x3f.NewAthenaArray(ncells3 + 1);
-
   dx1f.NewAthenaArray(ncells1);
   dx2f.NewAthenaArray(ncells2);
   dx3f.NewAthenaArray(ncells3);
-
-  x1v.NewAthenaArray(ncells1);
-  x2v.NewAthenaArray(ncells2);
-  x3v.NewAthenaArray(ncells3);
-
   dx1v.NewAthenaArray(ncells1);
   dx2v.NewAthenaArray(ncells2);
   dx3v.NewAthenaArray(ncells3);
 
-// initialize positions and spacing of x1-cell faces.
+  x1f.NewAthenaArray(ncells1 + 1);
+  x2f.NewAthenaArray(ncells2 + 1);
+  x3f.NewAthenaArray(ncells3 + 1);
+  x1v.NewAthenaArray(ncells1);
+  x2v.NewAthenaArray(ncells2);
+  x3v.NewAthenaArray(ncells3);
+
+// X1-DIRECTION: initialize spacing and positions of cell FACES (dx1f,x1f)
 
   Real dx = block_size.x1max - block_size.x1min;
-  x1f(is  ) = block_size.x1min;
-  x1f(ie+1) = block_size.x1max;
   if (block_size.x1rat == 1.0) {
     dx1f(is) = dx/(Real)block_size.nx1;
   } else {
     dx1f(is) = dx*(block_size.x1rat - 1.0)/(pow(block_size.x1rat,block_size.nx1) - 1.0);
   }
+
+  x1f(is) = block_size.x1min;
   for (int i=is+1; i<=ie; ++i) {
-    dx1f(i) = block_size.x1rat*dx1f(i-1);
-     x1f(i) = x1f(i-1) + dx1f(i-1);
+    x1f(i) = x1f(i-1) + dx1f(i-1);
+    dx1f(i) = dx1f(i-1)*block_size.x1rat;
   }
-// compute x1-positions starting from x1max, then average with above to prevent
-// round-off from accumulating in last cell.  Recompute dx1f for consistency.
-  for (int i=ie; i>is; --i) {
-    x1v(i) = x1f(i+1) - dx1f(i);  // x1v is being used as a temporary variable!!
+  x1f(ie+1) = block_size.x1max;
+
+// cell face positions and spacing in ghost zones
+
+  if (block_bndry.ix1_bc == 1) {
+    for (int i=1; i<=(NGHOST); ++i) {
+      dx1f(is-i) = dx1f(is+i-1);
+       x1f(is-i) =  x1f(is-i+1) - dx1f(is-i);
+    }
+  } else {
+    for (int i=1; i<=(NGHOST); ++i) {
+      dx1f(is-i) = dx1f(is-i+1)/block_size.x1rat;
+       x1f(is-i) =  x1f(is-i+1) - dx1f(is-i);
+    }
   }
-  for (int i=is+1; i<=ie; ++i) {
-     x1f(i) = 0.5*(x1f(i) + x1v(i));
-    dx1f(i) = x1f(i) - x1f(i-1);
+
+  if (block_bndry.ox1_bc == 1) {
+    for (int i=1; i<=(NGHOST); ++i) {
+      dx1f(ie+i  ) = dx1f(ie-i+1);
+       x1f(ie+i+1) =  x1f(ie+i) + dx1f(ie+i);
+    }
+  } else {
+    for (int i=1; i<=(NGHOST); ++i) {
+      dx1f(ie+i  ) = dx1f(ie+i-1)*block_size.x1rat;
+       x1f(ie+i+1) =  x1f(ie+i) + dx1f(ie+i);
+    }
   }
-// cell face face positions and spacing in ghost zones
-  for (int i=1; i<=(NGHOST); ++i) {
-    dx1f(is-i) = dx1f(is-i+1)/block_size.x1rat;
-     x1f(is-i) =  x1f(is-i+1) - dx1f(is-i);
+
+// X2-DIRECTION: initialize spacing and positions of cell FACES (dx2f,x2f)
+
+  dx = block_size.x2max - block_size.x2min;
+  if (block_size.nx2 == 1) {
+    dx2f(is) = dx;
+    x2f(js  ) = block_size.x2min;
+    x2f(je+1) = block_size.x2max;
+  } else {
+    if (block_size.x2rat == 1.0) {
+      dx2f(js) = dx/(Real)block_size.nx2;
+    } else {
+      dx2f(js)=dx*(block_size.x2rat - 1.0)/(pow(block_size.x2rat,block_size.nx2) - 1.0);
+    }
+
+    x2f(js) = block_size.x2min;
+    for (int j=js+1; j<=je; ++j) {
+      x2f(j) = x2f(j-1) + dx2f(j-1);
+      dx2f(j) = dx2f(j-1)*block_size.x2rat;
+    }
+    x2f(je+1) = block_size.x2max;
+
+// cell face positions and spacing in ghost zones
+
+    if (block_bndry.ix2_bc == 1) {
+      for (int j=1; j<=(NGHOST); ++j) {
+        dx2f(js-j) = dx2f(js+j-1);
+         x2f(js-j) =  x2f(js-j+1) - dx2f(js-j);
+      }
+    } else {
+      for (int j=1; j<=(NGHOST); ++j) {
+        dx2f(js-j) = dx2f(js-j+1)/block_size.x2rat;
+         x2f(js-j) =  x2f(js-j+1) - dx2f(js-j);
+      }
+    }
+
+    if (block_bndry.ox2_bc == 1) {
+      for (int j=1; j<=(NGHOST); ++j) {
+        dx2f(je+j  ) = dx2f(je-j+1);
+         x2f(je+j+1) =  x2f(je+j) + dx2f(je+j);
+      }
+    } else {
+      for (int j=1; j<=(NGHOST); ++j) {
+        dx2f(je+j  ) = dx2f(je+j-1)*block_size.x2rat;
+         x2f(je+j+1) =  x2f(je+j) + dx2f(je+j);
+      }
+    }
   }
-  for (int i=1; i<=(NGHOST); ++i) {
-    dx1f(ie+i  ) = dx1f(ie+i-1)*block_size.x1rat;
-     x1f(ie+i+1) =  x1f(ie+i) - dx1f(ie+i);
+
+// X3-DIRECTION: initialize spacing and positions of cell FACES (dx3f,x3f)
+
+  dx = block_size.x3max - block_size.x3min;
+  if (block_size.nx3 == 1) {
+    dx3f(is) = dx;
+    x3f(ks  ) = block_size.x3min;
+    x3f(ke+1) = block_size.x3max;
+  } else {
+    if (block_size.x3rat == 1.0) {
+      dx3f(ks) = dx/(Real)block_size.nx3;
+    } else {
+      dx3f(ks)=dx*(block_size.x3rat - 1.0)/(pow(block_size.x3rat,block_size.nx3) - 1.0);
+    }
+
+    x3f(ks) = block_size.x3min;
+    for (int k=ks+1; k<=ke; ++k) {
+      x3f(k) = x3f(k-1) + dx3f(k-1);
+      dx3f(k) = dx3f(k-1)*block_size.x3rat;
+    }
+    x3f(ke+1) = block_size.x3max;
+
+// cell face positions and spacing in ghost zones
+
+    if (block_bndry.ix3_bc == 1) {
+      for (int k=1; k<=(NGHOST); ++k) {
+        dx3f(ks-k) = dx3f(ks+k-1);
+         x3f(ks-k) =  x3f(ks-k+1) - dx3f(ks-k);
+      }
+    } else {
+      for (int k=1; k<=(NGHOST); ++k) {
+        dx3f(ks-k) = dx3f(ks-k+1)/block_size.x3rat;
+         x3f(ks-k) =  x3f(ks-k+1) - dx3f(ks-k);
+      }
+    }
+
+    if (block_bndry.ox3_bc == 1) {
+      for (int k=1; k<=(NGHOST); ++k) {
+        dx3f(ke+k  ) = dx3f(ke-k+1);
+         x3f(ke+k+1) =  x3f(ke+k) + dx3f(ke+k);
+      }
+    } else {
+      for (int k=1; k<=(NGHOST); ++k) {
+        dx3f(ke+k  ) = dx3f(ke+k-1)*block_size.x3rat;
+         x3f(ke+k+1) =  x3f(ke+k) + dx3f(ke+k);
+      }
+    }
   }
 
 /********************/
   for (int i=0; i<((ie-is+1)+2*(NGHOST)); ++i) {
     printf("i=%i  x1f= %e  dx1f=%e \n",i,x1f(i),dx1f(i));
   }
+  printf("i=%i  x1f= %e  \n",((ie-is+1)+2*NGHOST),x1f(((ie-is+1)+2*NGHOST)));
+
+  for (int j=0; j<((je-js+1)+2*(NGHOST)); ++j) {
+    printf("j=%i  x2f= %e  dx2f=%e \n",j,x2f(j),dx2f(j));
+  }
+  printf("j=%i  x2f= %e  \n",((je-js+1)+2*NGHOST),x2f(((je-js+1)+2*NGHOST)));
+
+  for (int k=0; k<((ke-ks+1)+2*(NGHOST)); ++k) {
+    printf("k=%i  x3f= %e  dx3f=%e \n",k,x3f(k),dx3f(k));
+  }
+  printf("k=%i  x3f= %e  \n",((ke-ks+1)+2*NGHOST),x3f(((ke-ks+1)+2*NGHOST)));
 /********************/
 
-
-
-  for (int i=0; i<ncells1; ++i) {
-    dx1v(i) = dx;
-//    dx1f(i) = dx;
-  }
-
-  dx = (block_size.x2max - block_size.x2min)/(Real)block_size.nx2;
-  for (int j=0; j<ncells2; ++j) {
-    dx2v(j) = dx;
-    dx2f(j) = dx;
-  }
-
-  dx = (block_size.x3max - block_size.x3min)/(Real)block_size.nx3;
-  for (int k=0; k<ncells3; ++k) {
-    dx3v(k) = dx;
-    dx3f(k) = dx;
-  }
-
-// Grid positions are calculated starting from both xmin and xmax and averaged
-// to reduce round-off error
-// assumes uniform Cartesian mesh for now
-
-  x1f(is) = block_size.x1min;
-  x2f(js) = block_size.x2min;
-  x3f(ks) = block_size.x3min;
-
-  x1f(ie+1) = block_size.x1max;
-  x2f(je+1) = block_size.x2max;
-  x3f(ke+1) = block_size.x3max;
-
-// Construct Fluid and Geometry objects.  Fluid is initialized in seperate functions
-// depending on whether this block is created at the start of a new simulation, or as
-// part of a new domain in an AMR simulation.  Positions and spacing of cell volume
-// centers depend on geometry and so are initialized in the Geometry class.
-
-  pfluid = new Fluid(this);
+// construct BCs, Geometry and Fluid objects.  Each also requires a special initializer
+// function that depends on whether this block is created in a new simulation or by AMR
+ 
+  pf_bcs = new FluidBoundaryConditions(this);
   pgeometry = new Geometry(this);
+  pfluid = new Fluid(this);
 
   return;
 }
@@ -318,22 +411,21 @@ Block::Block(RegionSize blk_size, Domain *pd)
 
 Block::~Block()
 {
-  x1v.DeleteAthenaArray();
-  x2v.DeleteAthenaArray();
-  x3v.DeleteAthenaArray();
-  x1f.DeleteAthenaArray();
-  x2f.DeleteAthenaArray();
-  x3f.DeleteAthenaArray();
-
-  dx1v.DeleteAthenaArray();  
-  dx2v.DeleteAthenaArray();  
-  dx3v.DeleteAthenaArray();  
   dx1f.DeleteAthenaArray();  
   dx2f.DeleteAthenaArray();  
   dx3f.DeleteAthenaArray();  
+  dx1v.DeleteAthenaArray();  
+  dx2v.DeleteAthenaArray();  
+  dx3v.DeleteAthenaArray();  
+  x1f.DeleteAthenaArray();
+  x2f.DeleteAthenaArray();
+  x3f.DeleteAthenaArray();
+  x1v.DeleteAthenaArray();
+  x2v.DeleteAthenaArray();
+  x3v.DeleteAthenaArray();
 
-  delete pfluid;
   delete pgeometry;
+  delete pfluid;
 }
 
 //--------------------------------------------------------------------------------------
@@ -346,21 +438,17 @@ void Mesh::InitializeAcrossDomains(enum QuantityToBeInit qnty, ParameterInput *p
 // Eventually this will be a loop over all domains
 
   if (pdomain->pblock != NULL)  {
+    Fluid *pf = pdomain->pblock->pfluid;
 
     switch (qnty) {
-      case fluid:
-        Fluid *pf = pdomain->pblock->pfluid;
-
-// call problem generator to set initial conditions
+      case fluid_bcs:
+        pdomain->pblock->pf_bcs->InitBoundaryConditions(pin);
+        break;
+      case initial_conditions:
         pf->InitProblem(pin);
-
-// set function pointers for BCs, then apply BCs for u
-        pf->pf_bcs->InitBoundaryConditions(pin);
-        pf->pf_bcs->ApplyBoundaryConditions(pf->u);
-
-// compute w everywhere (including ghost zones)
-        pf->pcons_to_prim->ComputePrimitives(pf->u, pf->w);
-
+        break;
+      case geometry:
+        pdomain->pblock->pgeometry->InitGeometryFactors(pin);
         break;
     }
 
@@ -379,11 +467,11 @@ void Mesh::UpdateAcrossDomains(enum UpdateAction action)
     Fluid *pf = pdomain->pblock->pfluid;
 
     switch (action) {
-      case fluid_bvals_n:
-        pf->pf_bcs->ApplyBoundaryConditions(pf->u);
+      case fluid_bcs_n:
+        pdomain->pblock->pf_bcs->ApplyBoundaryConditions(pf->u);
         break;
-      case fluid_bvals_nhalf:
-        pf->pf_bcs->ApplyBoundaryConditions(pf->u1);
+      case fluid_bcs_nhalf:
+        pdomain->pblock->pf_bcs->ApplyBoundaryConditions(pf->u1);
         break;
       case fluid_predict:
         pf->pf_integrator->Predict(pdomain->pblock);
@@ -392,10 +480,10 @@ void Mesh::UpdateAcrossDomains(enum UpdateAction action)
         pf->pf_integrator->Correct(pdomain->pblock);
         break;
       case convert_vars_n:
-        pf->pcons_to_prim->ComputePrimitives(pf->u,pf->w);
+        pf->ConservedToPrimitive(pf->u,pf->w);
         break;
       case convert_vars_nhalf:
-        pf->pcons_to_prim->ComputePrimitives(pf->u1,pf->w1);
+        pf->ConservedToPrimitive(pf->u1,pf->w1);
         break;
       case new_timestep:
         pf->NewTimeStep(pdomain->pblock);

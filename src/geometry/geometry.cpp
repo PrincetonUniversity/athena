@@ -29,13 +29,27 @@
 //  \brief implementation of functions in class Geometry
 //======================================================================================
 
+//namespace COORDINATE_SYSTEM {
+
 // constructor
 
 Geometry::Geometry(Block *pb)
 {
-  pmy_block = pb;
+  pparent_block = pb;
 
   int ncells1 = pb->block_size.nx1 + 2*(NGHOST);
+  int ncells2 = 1, ncells3 = 1;
+  if (pb->block_size.nx2 > 1) ncells2 = pb->block_size.nx2 + 2*(NGHOST);
+  if (pb->block_size.nx3 > 1) ncells3 = pb->block_size.nx3 + 2*(NGHOST);
+
+  dx1v.NewAthenaArray(ncells1);
+  dx2v.NewAthenaArray(ncells2);
+  dx3v.NewAthenaArray(ncells3);
+
+  x1v.NewAthenaArray(ncells1);
+  x2v.NewAthenaArray(ncells2);
+  x3v.NewAthenaArray(ncells3);
+
   face_area.NewAthenaArray(ncells1);
   cell_volume.NewAthenaArray(ncells1);
 }
@@ -46,6 +60,4 @@ Geometry::~Geometry()
 {
 }
 
-//--------------------------------------------------------------------------------------
-// \!fn 
-// \brief
+//} // end namespace COORDINATE_SYSTEM

@@ -5,7 +5,7 @@
  * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
  * See LICENSE file for full public license information.
  *====================================================================================*/
-/*! \file boundary_conditions.hpp
+/*! \file bvals.hpp
  *  \brief defines class FluidBoundaryConditions
  *  Contains data structures and functions related to BCs for the fluid
  *====================================================================================*/
@@ -13,12 +13,12 @@
 class ParameterInput;
 class Fluid;
 
-//! \class BoundaryConditions
-//  \brief BCs data and functions
+//! \class FluidBoundaryConditions
+//  \brief BCs data and functions for fluid
 
 class FluidBoundaryConditions {
 public:
-  FluidBoundaryConditions(Fluid *pf);
+  FluidBoundaryConditions(Block *pb);
   ~FluidBoundaryConditions();
 
 // functions to initialize BC function pointers, and to apply BCs at each edge of Block
@@ -26,16 +26,16 @@ public:
   void ApplyBoundaryConditions(AthenaArray<Real> &a);
 
 private:
-  Fluid *pparent_fluid;  // ptr to parent Fluid
+  Block *pparent_block;  // ptr to parent Block
 
 // function pointers, set in Init function based on parameters in input file
 
-  void (*FluidInnerX1_) (Fluid *pmy_fluid, AthenaArray<Real> &a);
-  void (*FluidOuterX1_) (Fluid *pmy_fluid, AthenaArray<Real> &a);
-  void (*FluidInnerX2_) (Fluid *pmy_fluid, AthenaArray<Real> &a);
-  void (*FluidOuterX2_) (Fluid *pmy_fluid, AthenaArray<Real> &a);
-  void (*FluidInnerX3_) (Fluid *pmy_fluid, AthenaArray<Real> &a);
-  void (*FluidOuterX3_) (Fluid *pmy_fluid, AthenaArray<Real> &a);
+  void (*FluidInnerX1_) (Block *pb, AthenaArray<Real> &a);
+  void (*FluidOuterX1_) (Block *pb, AthenaArray<Real> &a);
+  void (*FluidInnerX2_) (Block *pb, AthenaArray<Real> &a);
+  void (*FluidOuterX2_) (Block *pb, AthenaArray<Real> &a);
+  void (*FluidInnerX3_) (Block *pb, AthenaArray<Real> &a);
+  void (*FluidOuterX3_) (Block *pb, AthenaArray<Real> &a);
 
 };
 #endif
