@@ -34,6 +34,7 @@ public:
   int GetDim3() const { return nx3_; }
   int GetDim4() const { return nx4_; }
 
+  bool IsShallowCopy() { return (scopy_ == 1); }
   T *data() { return pdata_; }
   const T *data() const	{ return pdata_; }
 
@@ -65,6 +66,7 @@ public:
   AthenaArray(const AthenaArray<T>& t);
   AthenaArray<T> &operator= (const AthenaArray<T> &t);
   AthenaArray<T> ShallowCopy();
+  AthenaArray<T>* ShallowCopy(const int n);
 
 private:
   T *pdata_;
@@ -138,6 +140,23 @@ AthenaArray<T> AthenaArray<T>::ShallowCopy() {
   dest.nx4_=nx4_;
   dest.pdata_ = pdata_;
   dest.scopy_ = 1;
+  return dest;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn AthenaArray::ShallowCopy(int index)
+//  \brief shallow copy of a subset of an array to a new dynamically allocated array
+
+template<typename T>
+AthenaArray<T>* AthenaArray<T>::ShallowCopy(const int n) {
+  AthenaArray<T> *dest = new AthenaArray<T>;
+  dest->nx1_=nx1_;
+  dest->nx2_=nx2_;
+  dest->nx3_=nx3_;
+  dest->nx4_=1;
+// No error checking: n must be < nx4 in original array
+  dest->pdata_ = pdata_ + n * nx1_*nx2_*nx3_;
+  dest->scopy_ = 1;
   return dest;
 }
 

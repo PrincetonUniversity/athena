@@ -419,7 +419,7 @@ Real ParameterInput::GetReal(std::string block, std::string name)
     throw std::runtime_error(msg.str().c_str());
   }
 
-// Convert string to integer and return value
+// Convert string to real and return value
 
   return (Real)atof(pl->param_value.c_str());
 }
@@ -454,6 +454,49 @@ Real ParameterInput::GetOrAddReal(std::string block, std::string name, Real valu
   ss_value << value;
   AddParameter(pb, name, ss_value.str(), "# Default value added at run time");
   return value;
+}
+
+//--------------------------------------------------------------------------------------
+/*! \fn 
+ *  \brief */
+
+std::string ParameterInput::GetString(std::string block, std::string name)
+{
+  InputBlock* pb;
+  InputLine* pl;
+  std::stringstream msg;
+
+// get pointer to node with same block name in linked list of InputBlocks
+
+  pb = GetPtrToBlock(block);
+  if (pb == NULL) {
+    msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
+        << "Block name '" << block << "' not found when trying to set value "
+        << "for parameter '" << name << "'";
+    throw std::runtime_error(msg.str().c_str());
+  }
+
+// get pointer to node with same parameter name in linked list of InputLines
+
+  pl = pb->GetPtrToLine(name);
+  if (pl == NULL) {
+    msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
+        << "Parameter name '" << name << "' not found in block '" << block << "'";
+    throw std::runtime_error(msg.str().c_str());
+  }
+
+// Convert string to integer and return value
+
+  return pl->param_value;
+}
+
+//--------------------------------------------------------------------------------------
+/*! \fn 
+ *  \brief */
+
+InputBlock*  ParameterInput::GetFirstBlock()
+{
+  return pfirst_block_;
 }
 
 //--------------------------------------------------------------------------------------
@@ -558,4 +601,128 @@ Real InputBlock::GetRealInThisBlock(std::string name)
 // Convert string to integer and return value
 
   return (Real)atof(pl->param_value.c_str());
+}
+
+std::string InputBlock::GetStringInThisBlock(std::string name)
+{
+
+// get pointer to node with same parameter name in linked list of InputLines
+
+  InputLine* pl = GetPtrToLine(name);
+
+  if (pl == NULL) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in func [InputBlock::GetRealInThisBlock]" << std::endl
+        << "Parameter name '" << name << "' not found in block '" 
+        << this->block_name << "'";
+    throw std::runtime_error(msg.str().c_str());
+  }
+
+// Convert string to integer and return value
+
+  return pl->param_value;
+}
+
+//--------------------------------------------------------------------------------------
+/*! \fn int ParameterInput::ParameterExistsInThisBlock()
+ *  \brief check whether parameter of given name exists */
+
+int InputBlock::ParameterExistsInThisBlock(std::string name)
+{
+  InputLine *pl;
+
+  pl = this->GetPtrToLine(name);
+  return (pl == NULL ? 0 : 1);
+}
+
+void InputBlock::AddParameterInThisBlock(std::string name, std::string value,
+                                         std::string comment)
+{
+  InputLine *pl, *plast;
+
+// Search linked list of InputLines to see if name exists.  This also sets *plast
+// to point to last member of list
+
+  pl = this->pline;
+  plast = this->pline;
+  while (pl != NULL) {
+    if (name.compare(pl->param_name) == 0) {   // param name already exists
+      pl->param_value.assign(value);           // replace existing param value
+      pl->param_comment.assign(comment);       // replace exisiting param comment
+      if(value.length() > this->max_len_parvalue) this->max_len_parvalue = value.length();
+      return;
+    }
+    plast = pl;
+    pl = pl->pnext;
+  }
+
+// Create new node in linked list if name does not already exist
+
+  pl = new InputLine;
+  pl->param_name.assign(name);
+  pl->param_value.assign(value);
+  pl->param_comment.assign(comment);
+  pl->pnext = NULL;
+
+// if this is the first parameter in list, save pointer to it in block.
+
+  if (this->pline == NULL) {
+    this->pline = pl;
+    this->max_len_parname = name.length();
+    this->max_len_parvalue = value.length();
+  } else {
+    plast->pnext = pl;  // link new node into list
+    if(name.length() > this->max_len_parname) this->max_len_parname = name.length();
+    if(value.length() > this->max_len_parvalue) this->max_len_parvalue = value.length();
+  }
+
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+/*! \fn 
+ *  \brief */
+
+Real InputBlock::GetOrAddRealInThisBlock(std::string name, Real value)
+{
+  std::stringstream ss_value;
+
+ if (ParameterExistsInThisBlock(name)) return GetRealInThisBlock(name);
+ ss_value << value;
+ AddParameterInThisBlock(name, ss_value.str(), "# Default value added at run time");
+ return value;
+
+}
+
+
+//--------------------------------------------------------------------------------------
+/*! \fn 
+ *  \brief */
+
+int InputBlock::GetOrAddIntInThisBlock(std::string name, int value)
+{
+  std::stringstream ss_value;
+
+ if (ParameterExistsInThisBlock(name)) return GetRealInThisBlock(name);
+ ss_value << value;
+ AddParameterInThisBlock(name, ss_value.str(), "# Default value added at run time");
+ return value;
+
+}
+
+
+//--------------------------------------------------------------------------------------
+/*! \fn 
+ *  \brief */
+
+std::string InputBlock::GetOrAddStringInThisBlock(std::string name, std::string value)
+{
+  std::stringstream ss_value;
+
+ if (ParameterExistsInThisBlock(name)) return GetStringInThisBlock(name);
+ ss_value << value;
+ AddParameterInThisBlock(name, ss_value.str(), "# Default value added at run time");
+ return value;
+
 }
