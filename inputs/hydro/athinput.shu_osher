@@ -11,17 +11,18 @@ out_fmt = tab               # Tabular data dump
 out     = prim              # variables to be output
 dat_fmt = %12.5e            # Optional data format string
 dt      = 0.01              # time increment between outputs
+trans   = Slice1Dx1
 
 <output2>
 out_fmt = hst               # History data dump
 dt      = 0.01              # time increment between outputs
 
-<output17>
-last_time = 33.7
-dt = 44.65
+#<output17>
+#last_time = 33.7
+#dt = 44.65
 
-<output3>
-dt=1.0e-1
+#<output3>
+#dt=1.0e-1
 
 <time>
 cfl_number      = 0.8       # The Courant, Friedrichs, & Lewy (CFL) Number
