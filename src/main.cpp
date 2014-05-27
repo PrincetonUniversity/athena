@@ -24,7 +24,8 @@
 #include "parameter_input.hpp"
 #include "mesh.hpp"
 #include "fluid.hpp"
-#include "outputs/data_output.hpp"
+#include "datablock.hpp"
+#include "outputs/output.hpp"
 
 //======================================================================================
 /* //////////////////////////////// Athena++ Main Program \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
@@ -171,9 +172,9 @@ int main(int argc, char *argv[])
 //--- Step 6. --------------------------------------------------------------------------
 // Construct output object, and make outputs of initial conditions
 
-  DataOutput *outputs;
+  OutputList *outputs;
   try {
-    outputs = new DataOutput(inputs);
+    outputs = new OutputList(inputs,mesh);
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR memory allocation failed" << std::endl
