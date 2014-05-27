@@ -13,7 +13,7 @@
 class ParameterInput;
 class Mesh;
 class Domain;
-class Geometry;
+namespace COORDINATE_SYSTEM {class Coordinates;}
 class FluidBoundaryConditions;
 class Fluid;
 
@@ -53,7 +53,7 @@ public:
   int is,ie,js,je,ks,ke;
 
   FluidBoundaryConditions *pf_bcs;
-  Geometry *pgeometry;
+  COORDINATE_SYSTEM::Coordinates *pcoord;
   Fluid *pfluid;
 };
 

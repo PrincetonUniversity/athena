@@ -21,8 +21,6 @@ public:
   FluidBoundaryConditions(Block *pb);
   ~FluidBoundaryConditions();
 
-// functions to initialize BC function pointers, and to apply BCs at each edge of Block
-  void InitBoundaryConditions(ParameterInput *pin);
   void ApplyBoundaryConditions(AthenaArray<Real> &a);
 
 private:

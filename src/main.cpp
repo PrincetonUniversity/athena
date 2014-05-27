@@ -152,12 +152,9 @@ int main(int argc, char *argv[])
   }
 
 //--- Step 5. --------------------------------------------------------------------------
-// initialize BC func ptrs, ghost zone cell sizes, geometry, and call problem generator
+// Set initial conditions by calling problem generator on each Domain/Block
 
   try {
-    mesh->InitializeAcrossDomains(fluid_bcs,inputs);
-    mesh->InitializeAcrossDomains(bfield_bcs,inputs);
-    mesh->InitializeAcrossDomains(geometry,inputs);
     mesh->InitializeAcrossDomains(initial_conditions,inputs);
   } 
   catch(std::bad_alloc& ba) {

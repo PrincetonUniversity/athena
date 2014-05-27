@@ -23,40 +23,83 @@
 #include "../athena_arrays.hpp"
 #include "../parameter_input.hpp"
 #include "../mesh.hpp"
-#include "geometry.hpp"
+#include "coordinates.hpp"
 
 //======================================================================================
 //! \file cartesian.cpp
-//  \brief implements geometry functions for Cartesian coordinates (the trivial case)
+//  \brief implements functions in class Coordinates for Cartesian coordinates
 //======================================================================================
 
-//namespace cartesian_coordinates {
+namespace cartesian_coordinates {
 
-//--------------------------------------------------------------------------------------
-// \!fn 
-// \brief
+// constructor
 
-void Geometry::InitGeometryFactors(ParameterInput *pin)
+Coordinates::Coordinates(Block *pb)
 {
-  int is = pparent_block->is; int js = pparent_block->js; int ks = pparent_block->ks;
-  int ie = pparent_block->ie; int je = pparent_block->je; int ke = pparent_block->ke;
+  pparent_block = pb;
+
+  int is = pb->is; int js = pb->js; int ks = pb->ks;
+  int ie = pb->ie; int je = pb->je; int ke = pb->ke;
+
+  int ncells1 = pb->block_size.nx1 + 2*(NGHOST);
+  int ncells2 = 1, ncells3 = 1;
+  if (pb->block_size.nx2 > 1) ncells2 = pb->block_size.nx2 + 2*(NGHOST);
+  if (pb->block_size.nx3 > 1) ncells3 = pb->block_size.nx3 + 2*(NGHOST);
+  face_area.NewAthenaArray(ncells1);
+  cell_volume.NewAthenaArray(ncells1);
 
 // initialize volume-averaged positions and spacing
 // x1-direction
 
   for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-    x1v(i) = (pparent_block->x1f(i+1) - pparent_block->x1f(i))/2.0;
+    pb->x1v(i) = 0.5*(pb->x1f(i+1) - pb->x1f(i));
   }
   for (int i=is-(NGHOST)+1; i<=ie+(NGHOST); ++i) {
-    dx1v(i) = x1v(i) - x1v(i-1);
+    pb->dx1v(i) = pb->x1v(i) - pb->x1v(i-1);
   }
+
+// x2-direction
+
+  if (ncells2 == 1) {
+    pb->x2v(js) = 0.5*(pb->x2f(js+1) - pb->x2f(js));
+    pb->dx2v(js) = pb->dx2f(js);
+  } else {
+    for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
+      pb->x2v(j) = 0.5*(pb->x2f(j+1) - pb->x2f(j));
+    }
+    for (int j=js-(NGHOST)+1; j<=je+(NGHOST); ++j) {
+      pb->dx2v(j) = pb->x2v(j) - pb->x2v(j-1);
+    }
+  }
+
+// x3-direction
+
+  if (ncells3 == 1) {
+    pb->x3v(ks) = 0.5*(pb->x3f(ks+1) - pb->x3f(ks));
+    pb->dx3v(ks) = pb->dx3f(ks);
+  } else {
+    for (int k=ks-(NGHOST); k<=ke+(NGHOST); ++k) {
+      pb->x3v(k) = 0.5*(pb->x3f(k+1) - pb->x3f(k));
+    }
+    for (int k=ks-(NGHOST)+1; k<=ke+(NGHOST); ++k) {
+      pb->dx3v(k) = pb->x3v(k) - pb->x3v(k-1);
+    }
+  }
+}
+
+// destructor
+
+Coordinates::~Coordinates()
+{
+  face_area.DeleteAthenaArray();
+  cell_volume.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------
 // \!fn 
 // \brief
 
-void Geometry::Area1Face(const int k, const int j, const int il, const int iu, 
+void Coordinates::Area1Face(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
 #pragma simd
@@ -67,7 +110,7 @@ void Geometry::Area1Face(const int k, const int j, const int il, const int iu,
   return;
 }
 
-void Geometry::Area2Face(const int k, const int j, const int il, const int iu, 
+void Coordinates::Area2Face(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
   AthenaArray<Real> dx1f = pparent_block->dx1f.ShallowCopy();
@@ -80,7 +123,7 @@ void Geometry::Area2Face(const int k, const int j, const int il, const int iu,
   return;
 }
 
-void Geometry::Area3Face(const int k, const int j, const int il, const int iu, 
+void Coordinates::Area3Face(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
   AthenaArray<Real> dx1f = pparent_block->dx1f.ShallowCopy();
@@ -97,7 +140,7 @@ void Geometry::Area3Face(const int k, const int j, const int il, const int iu,
 // \!fn 
 // \brief
 
-void Geometry::CellVolume(const int k, const int j, const int il, const int iu, 
+void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &vol)
 {
   AthenaArray<Real> dx1f = pparent_block->dx1f.ShallowCopy();
@@ -114,10 +157,10 @@ void Geometry::CellVolume(const int k, const int j, const int il, const int iu,
 // \!fn 
 // \brief
 
-void Geometry::SourceTerms(const int k, const int j, const int il, const int iu, 
+void Coordinates::SourceTerms(const int k, const int j, const int il, const int iu, 
   AthenaArray<Real> &src)
 {
   return;
 }
 
-//} // end cartesian_ccordinates namespace
+} // end cartesian_ccordinates namespace

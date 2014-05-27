@@ -38,78 +38,58 @@
 FluidBoundaryConditions::FluidBoundaryConditions(Block *pb)
 {
   pparent_block = pb;
-}
-
-// destructor
-
-FluidBoundaryConditions::~FluidBoundaryConditions()
-{
-}
-
-//--------------------------------------------------------------------------------------
-/*! \fn void InitBoundaryConditions()
- *  \brief set BC function pointers based on integer flags read from input file
- */
-
-void FluidBoundaryConditions::InitBoundaryConditions(ParameterInput *pin)
-{
   std::stringstream msg;
 
 // Set BC function pointers for each of the 6 boundaries in turn -----------------------
 // Inner x1
 
-  int flag = pin->GetOrAddInteger("mesh","ix1_bc",0);
-  switch(flag){
+  switch(pb->block_bndry.ix1_bc){
     case 1:
       FluidInnerX1_ = ReflectInnerX1;
     break;
     default:
       msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
-          << "Boundary condition flag ix1_bc=" << flag << " not valid" << std::endl;
+          << "Flag ix1_bc=" << pb->block_bndry.ix1_bc << " not valid" << std::endl;
       throw std::runtime_error(msg.str().c_str());
     break;
    }
 
 // Outer x1
 
-  flag = pin->GetOrAddInteger("mesh","ox1_bc",0);
-  switch(flag){
+  switch(pb->block_bndry.ox1_bc){
     case 1:
       FluidOuterX1_ = ReflectOuterX1;
     break;
     default:
       msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
-          << "Boundary condition flag ox1_bc=" << flag << " not valid" << std::endl;
+          << "Flag ox1_bc=" << pb->block_bndry.ox1_bc << " not valid" << std::endl;
       throw std::runtime_error(msg.str().c_str());
     break;
   }
 
 // Inner x2
 
-  int nx2  = pin->GetInteger("mesh","nx2");
-  if (nx2 > 1) {
-    int flag = pin->GetOrAddInteger("mesh","ix2_bc",0);
-    switch(flag){
+  if (pb->block_size.nx2 > 1) {
+    switch(pb->block_bndry.ix2_bc){
       case 1:
         FluidInnerX2_ = ReflectInnerX2;
       break;
       default:
         msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
-            << "Boundary condition flag ix2_bc=" << flag << " not valid" << std::endl;
+            << "Flag ix2_bc=" << pb->block_bndry.ix2_bc << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
       break;
      }
 
 // Outer x2
 
-    flag = pin->GetOrAddInteger("mesh","ox2_bc",0);
-    switch(flag){
+    switch(pb->block_bndry.ox2_bc){
       case 1:
         FluidOuterX2_ = ReflectOuterX2;
       break;
       default:
         msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
-            << "Boundary condition flag ox2_bc=" << flag << " not valid" << std::endl;
+            << "Flag ox2_bc=" << pb->block_bndry.ox2_bc << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
       break;
     }
@@ -117,35 +97,38 @@ void FluidBoundaryConditions::InitBoundaryConditions(ParameterInput *pin)
 
 // Inner x3
 
-  int nx3  = pin->GetInteger("mesh","nx3");
-  if (nx3 > 1) {
-    int flag = pin->GetOrAddInteger("mesh","ix3_bc",0);
-    switch(flag){
+  if (pb->block_size.nx3 > 1) {
+    switch(pb->block_bndry.ix3_bc){
       case 1:
         FluidInnerX3_ = ReflectInnerX3;
       break;
       default:
         msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
-            << "Boundary condition flag ix3_bc=" << flag << " not valid" << std::endl;
+            << "Flag ix3_bc=" << pb->block_bndry.ix3_bc << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
       break;
      }
 
 // Outer x3
 
-    flag = pin->GetOrAddInteger("mesh","ox3_bc",0);
-    switch(flag){
+    switch(pb->block_bndry.ox3_bc){
       case 1:
         FluidOuterX3_ = ReflectOuterX3;
       break;
       default:
         msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
-            << "Boundary condition flag ox3_bc=" << flag << " not valid" << std::endl;
+            << "Flag ox3_bc=" << pb->block_bndry.ox3_bc << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
       break;
     }
   }
 
+}
+
+// destructor
+
+FluidBoundaryConditions::~FluidBoundaryConditions()
+{
 }
 
 //--------------------------------------------------------------------------------------

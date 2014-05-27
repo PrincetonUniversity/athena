@@ -29,7 +29,7 @@
 #include "fluid.hpp"
 #include "bvals/bvals.hpp"
 #include "integrators/integrators.hpp"
-#include "geometry/geometry.hpp"
+#include "coordinates/coordinates.hpp"
 
 //======================================================================================
 /*! \file mesh.cpp
@@ -188,9 +188,9 @@ Domain::~Domain()
 }
 
 //--------------------------------------------------------------------------------------
-// Block constructor: builds 1D vectors of cell sizes and spacing based on input
-// arguments. Constructs Fluid and Geometry objects (but these are initialized with
-// separate init functions).  May be called at any time in an AMR simulations. 
+// Block constructor: builds 1D vectors of cell coordinates, and constructs coordinate,
+// boundary condition, and fluid objects.  Fluid initial conditions are set in
+// init function rather than fluid constructor.  May be called at any time with AMR.
 
 Block::Block(RegionSize blk_size, RegionBoundary blk_bndry, Domain *pd)
 {
@@ -397,11 +397,12 @@ Block::Block(RegionSize blk_size, RegionBoundary blk_bndry, Domain *pd)
   printf("k=%i  x3f= %e  \n",((ke-ks+1)+2*NGHOST),x3f(((ke-ks+1)+2*NGHOST)));
 /********************/
 
-// construct BCs, Geometry and Fluid objects.  Each also requires a special initializer
-// function that depends on whether this block is created in a new simulation or by AMR
+// construct Coordinates, BoundaryCOnditions, and Fluid objects.
+// Coordinates constructor initializes volume-centered coordinates (x1v,dx1v,...)
+// BoundaryConditions constructor sets function pointers for each edge of this block
  
+  pcoord = new COORDINATE_SYSTEM::Coordinates(this);
   pf_bcs = new FluidBoundaryConditions(this);
-  pgeometry = new Geometry(this);
   pfluid = new Fluid(this);
 
   return;
@@ -424,7 +425,7 @@ Block::~Block()
   x2v.DeleteAthenaArray();
   x3v.DeleteAthenaArray();
 
-  delete pgeometry;
+  delete pcoord;
   delete pfluid;
 }
 
@@ -441,14 +442,8 @@ void Mesh::InitializeAcrossDomains(enum QuantityToBeInit qnty, ParameterInput *p
     Fluid *pf = pdomain->pblock->pfluid;
 
     switch (qnty) {
-      case fluid_bcs:
-        pdomain->pblock->pf_bcs->InitBoundaryConditions(pin);
-        break;
       case initial_conditions:
         pf->InitProblem(pin);
-        break;
-      case geometry:
-        pdomain->pblock->pgeometry->InitGeometryFactors(pin);
         break;
     }
 
