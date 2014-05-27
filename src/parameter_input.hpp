@@ -77,9 +77,9 @@ private:
 // private functions implemented in parameter_input.cpp
 
   void ParseLine(InputBlock *pb, std::string line, std::string& name,
-                 std::string& value, std::string& comment);
+       std::string& value, std::string& comment);
   void AddParameter(InputBlock *pb, std::string name, std::string value,
-                    std::string comment);
+       std::string comment);
   InputBlock* FindOrAddBlock(std::string name);
   InputBlock* GetPtrToBlock(std::string name);
 };
