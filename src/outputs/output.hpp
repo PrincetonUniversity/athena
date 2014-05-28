@@ -96,14 +96,14 @@ public:
 };
 */
 
-//! \class TabularOutput
+//! \class FormattedTableOutput
 //  \brief  output class for tabular data
 
-class TabularOutput : public Output {
+class FormattedTableOutput : public Output {
 
 public:
-  TabularOutput(InputBlock *pin_block, Mesh *pm);
-  ~TabularOutput() {};
+  FormattedTableOutput(InputBlock *pin_block, Mesh *pm);
+  ~FormattedTableOutput() {};
 
   void ComputeFromMesh(Mesh *pM);
   void Write();

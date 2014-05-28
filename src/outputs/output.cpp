@@ -15,7 +15,6 @@
  *====================================================================================*/
 
 #include <sstream>
-//#include <fstream>
 #include <iostream>
 #include <string>
 #include <stdexcept>
@@ -30,6 +29,7 @@
 #include "../fluid.hpp"
 #include "../datablock.hpp"
 #include "output.hpp"
+
 //======================================================================================
 /*! \file output.cpp
  *  \brief implements functions for fluid data outputs
@@ -37,8 +37,8 @@
 
 //--------------------------------------------------------------------------------------
 // OutputBlock constructor
-// This needs to be made more extensible since new outputs may need new
-// specifiers
+// This needs to be made more extensible since new outputs may need new specifiers
+
 OutputBlock::OutputBlock(InputBlock *pin_block)
 {
 
@@ -109,7 +109,7 @@ OutputList::OutputList(ParameterInput *pin, Mesh *pm)
       if (fmt.compare("hst") == 0) {
         pout = new HistoryOutput(pin_block,pm);
       } else if (fmt.compare("tab") == 0) {
-        pout = new TabularOutput(pin_block,pm);
+        pout = new FormattedTableOutput(pin_block,pm);
       } else {
         msg << "### FATAL ERROR in function [Output_example::InitializeOutputs]"
             << std::endl << "Unrecognized out_fmt = '" << fmt << "' in output block '"
@@ -256,220 +256,4 @@ DataBlock* Output::LoadFluidFromMesh(Mesh *pm)
   }
   return pdb;
 
-}
-
-// TabularOutput implementation ========================================================
-//--------------------------------------------------------------------------------------
-// TabularOutput constructor
-
-TabularOutput::TabularOutput(InputBlock *pin_block, Mesh *pm)
-  : Output(pin_block,pm)
-{
-
-}
-
-//--------------------------------------------------------------------------------------
-/*! \fn void TabularOutput::ComputeFromMesh(Mesh *pm)
- *  \brief Performs any operations on Mesh and stores results in the output's DataBlock
- */
-void TabularOutput::ComputeFromMesh(Mesh *pm)
-{
-
-// Read data from Mesh
-  pdata = LoadFluidFromMesh(pm);
-
-// Determine initial dimensions of output
-  pdata->GetNode(3)->GetDimensions(nx3,nx2,nx1);
-
-// Loop over transformation list
-  DataBlockTransform* pdbt = ptrans;
-  while (pdbt != NULL) {
-    pdbt->Transform(pdata);
-    pdbt = pdbt->GetNext();
-  }
-
-//Determine final dimensions of output
-  pdata->GetNode(3)->GetDimensions(nx3,nx2,nx1);
-
-}
-
-//--------------------------------------------------------------------------------------
-/*! \fn void Output::WriteNodeData(DataNode *pdn, FILE *pfile, std::string fmt)
- *  \brief Simple formatted write of all data in DataNode
- */
-
-void TabularOutput::WriteNodeData(DataNode *pdn, FILE *pfile, std::string fmt)
-{
-  int is,ie,js,je,ks,ke;
-  pdn->GetRanges(is,ie,js,je,ks,ke);
-
-  for (int n=0; n<pdn->GetData()->GetDim4(); ++n){
-    for (int k=ks; k<=ke; ++k){
-      for (int j=js; j<=je; ++j){
-        for (int i=is; i<=ie; ++i){
-          // Not certain this wil autovectorize well ???
-          fprintf( pfile, fmt.c_str(), (*pdn->GetData())(n,k,j,i) );
-        }
-        fprintf(pfile,"\n");
-      }}}
-
-}
-
-//--------------------------------------------------------------------------------------
-/*! \fn void TabularOutput:::Write()
- *  \brief writes DataBlock to file in tabular format
- *         uses c style printf for the moment
- */
-void TabularOutput::Write()
-{
-  std::stringstream msg;
-
-// create filename
-  std::stringstream ftmp;
-  ftmp << "Sod." << Number() << ".tab";//hardwire for now
-  std::string filename=ftmp.str();
-
-// open file for output
-  FILE *pfile;
-  if((pfile = fopen(filename.c_str(),"w")) == NULL){
-    msg << "### FATAL ERROR in function [TabularOutput::Write]" << std::endl
-        << "Output file '" << filename << "' could not be opened";
-    throw std::runtime_error(msg.str().c_str());
-  }
-
-// write header description
-  if(pdata->GetDescriptor().compare("") != 0)
-    fprintf(pfile,"# %s\n",pdata->GetDescriptor().c_str());
-// write dimensions
-  if (nx1 > 1) fprintf(pfile,"# Nx1 = %d\n",nx1);
-  if (nx2 > 1) fprintf(pfile,"# Nx2 = %d\n",nx2);
-  if (nx3 > 1) fprintf(pfile,"# Nx3 = %d\n",nx3);
-
-// Loop over headers and write row headings
-  int col_cnt = 0;
-  fprintf(pfile,"#");
-  if (nx1 > 1) {
-    fprintf(pfile," [%d]=%s",col_cnt,pdata->GetNode(0)->GetVariableTypes().c_str());
-    col_cnt++;
-  }
-  if (nx2 > 1) {
-    fprintf(pfile," [%d]=%s",col_cnt,pdata->GetNode(1)->GetVariableTypes().c_str());
-    col_cnt++;
-  }
-  if (nx3 > 1) {
-    fprintf(pfile," [%d]=%s",col_cnt,pdata->GetNode(2)->GetVariableTypes().c_str());
-    col_cnt++;
-  }
-  DataNode* pdn = pdata->GetNode(2);
-  while (pdn->GetNext() != NULL){
-    pdn = pdn->GetNext();
-    fprintf(pfile," [%d]=%s",col_cnt,pdn->GetVariableTypes().c_str());
-    col_cnt++;
-  }
-  fprintf(pfile,"\n");
-
-// First three nodes always contain mesh data: write if more than one element
-  if (nx1 > 1) WriteNodeData(pdata->GetNode(0),pfile,output_block.dat_fmt);
-  if (nx2 > 1) WriteNodeData(pdata->GetNode(1),pfile,output_block.dat_fmt);
-  if (nx3 > 1) WriteNodeData(pdata->GetNode(2),pfile,output_block.dat_fmt);
-
-// Loop over remaining data nodes and write output
-  pdn = pdata->GetNode(2);
-  while (pdn->GetNext() != NULL){
-    pdn = pdn->GetNext();
-    WriteNodeData(pdn,pfile,output_block.dat_fmt);
-  }
-  fclose(pfile);
-  delete pdata;  // Release any memory allocated this output cycle
-}
-
-// HistoryOutput implementation ========================================================
-//--------------------------------------------------------------------------------------
-// HistoryOutput constructor
-
-HistoryOutput::HistoryOutput(InputBlock *pin_block, Mesh *pm)
-  : Output(pin_block,pm)
-{
-  output_block.out = "cons";
-
-}
-
-
-//--------------------------------------------------------------------------------------
-/*! \fn void HistoryOutput::ComputeFromMesh(Mesh *pm)
- *  \brief Performs any operations on Mesh and stores results in the output's DataBlock
- */
-void HistoryOutput::ComputeFromMesh(Mesh *pm)
-{
-
-// Read data from Mesh
-  pdata = LoadFluidFromMesh(pm);
-
-// Loop over transformation list
-  DataBlockTransform* pdbt = ptrans;
-  while (pdbt != NULL) {
-    pdbt->Transform(pdata);
-    pdbt = pdbt->GetNext();
-  }
-
-  SumOverAll sum_trans;
-  sum_trans.Transform(pdata);
-
-}
-
-//--------------------------------------------------------------------------------------
-/*! \fn void HistoryOutput:::Write()
- *  \brief writes DataBlock to file in history format
- *         uses c style printf for the moment
- */
-void HistoryOutput::Write()
-{
-  std::stringstream msg;
-
-// create filename
-  std::stringstream ftmp;
-  ftmp << "Sod.hst";//hardwire for now
-  std::string filename=ftmp.str();
-
-// open file for output
-  FILE *pfile;
-  if((pfile = fopen(filename.c_str(),"a")) == NULL){
-    msg << "### FATAL ERROR in function [HistoryOutput::Write]" << std::endl
-        << "Output file '" << filename << "' could not be opened";
-    throw std::runtime_error(msg.str().c_str());
-  }
- 
-  Real dVol = 1.0; // Temporary!!!
-  DataNode* pdn;
-  if (Number() == 0) {
-    fprintf(pfile,"# Athena history dump for volume=%e\n",dVol);
-// write header description
-    if(pdata->GetDescriptor().compare("") != 0)
-      fprintf(pfile,"# %s\n",pdata->GetDescriptor().c_str());
-
-// Loop over headers and write row headings
-    int col_cnt = 0;
-    fprintf(pfile,"#");
-    fprintf(pfile," [%d]=%s",col_cnt++,"time");
-    fprintf(pfile," [%d]=%s",col_cnt++,"dt");
-    pdn = pdata->GetNode(2);
-    while (pdn->GetNext() != NULL){
-      pdn = pdn->GetNext();
-      fprintf(pfile," [%d]=%s",col_cnt,pdn->GetVariableTypes().c_str());
-      col_cnt++;
-    }
-    fprintf(pfile,"\n");
-  }
-// Write time and timestep
-  fprintf( pfile, output_block.dat_fmt.c_str(), pdata->GetTime() );
-  fprintf( pfile, output_block.dat_fmt.c_str(), pdata->GetTimeStep() );
-// Loop over DataNodes and write sums
-  pdn = pdata->GetNode(2);
-  while (pdn->GetNext() != NULL){
-    pdn = pdn->GetNext();
-    fprintf( pfile, output_block.dat_fmt.c_str(), (*pdn->GetData())(0) );
-  }
-  fprintf(pfile,"\n");
-  fclose(pfile);
-  delete pdata;  // Release any memory allocated this output cycle
 }
