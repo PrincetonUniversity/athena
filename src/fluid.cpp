@@ -92,6 +92,7 @@ void Fluid::NewTimeStep(Block *pb)
   AthenaArray<Real> dt2 = dt2_.ShallowCopy();
   AthenaArray<Real> dt3 = dt3_.ShallowCopy();
 
+  min_dt = (FLT_MAX);
   for (int k=ks; k<=ke; ++k){
   for (int j=js; j<=je; ++j){
     Real& dx2 = pb->dx2f(j);
@@ -117,8 +118,7 @@ void Fluid::NewTimeStep(Block *pb)
 
 // compute minimum of (v1 +/- C)
 
-    min_dt = dt1(is);
-    for (int i=is+1; i<=ie; ++i){
+    for (int i=is; i<=ie; ++i){
       min_dt = std::min(min_dt,dt1(i));
     }
     

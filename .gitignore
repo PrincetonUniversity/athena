@@ -20,3 +20,8 @@
 *.out
 *.app
 athena
+
+# Athena output files
+*.tab
+*.vtk
+*.hst
