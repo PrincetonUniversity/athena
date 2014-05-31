@@ -52,7 +52,6 @@ public:
 //  \brief data and functions used to store and access input parameters
 
 class ParameterInput {
-
 public:
   ParameterInput();
   ~ParameterInput();
@@ -64,14 +63,16 @@ public:
   void ParameterDump(std::ostream& os);
   int  ParameterExists(std::string block, std::string name);
   int  GetInteger(std::string block, std::string name);
-  Real GetReal(std::string block, std::string name);
   int  GetOrAddInteger(std::string block, std::string name, int value);
+  Real GetReal(std::string block, std::string name);
   Real GetOrAddReal(std::string block, std::string name, Real value);
   std::string GetString(std::string block, std::string name);
+  std::string GetOrAddString(std::string block, std::string name, std::string value);
   InputBlock* GetFirstBlock();
 
+  InputBlock* pfirst_block;   // pointer to first input block in linked list
+
 private:
-  InputBlock* pfirst_block_;   // pointer to first input block in linked list
   std::string last_filename_;  // last input file opened, to prevent duplicate reads
 
 // private functions implemented in parameter_input.cpp

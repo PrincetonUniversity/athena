@@ -24,7 +24,7 @@ enum {IDN=0, IM1=1, IM2=2, IM3=3, IEN=4};
 enum {IVX=1, IVY=2, IVZ=3};
 enum UpdateAction {fluid_predict, fluid_correct,   bfield_predict, bfield_correct,
                    fluid_bcs_n,   fluid_bcs_nhalf, bfield_bcs_n,   bfield_bcs_nhalf,
-                   convert_vars_n, convert_vars_nhalf, new_timestep, data_output};
-enum QuantityToBeInit {bfield_bcs, fluid_bcs, geometry, initial_conditions};
+                   convert_vars_n, convert_vars_nhalf, new_timestep, make_output};
+enum QuantityToBeInit {initial_conditions, outputs};
 
 #endif

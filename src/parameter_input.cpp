@@ -61,7 +61,7 @@
 
 ParameterInput::ParameterInput()
 {
-  pfirst_block_ = NULL;
+  pfirst_block = NULL;
   last_filename_ = "";
 }
 
@@ -69,7 +69,8 @@ ParameterInput::ParameterInput()
 
 ParameterInput::~ParameterInput()
 {
-  while (InputBlock *pblock=pfirst_block_) {
+  InputBlock *pblock=pfirst_block;
+  while (pblock != NULL) {
     InputBlock *pold_block = pblock;
     pblock = pblock->pnext;
     delete pold_block;
@@ -155,8 +156,8 @@ void ParameterInput::LoadFromFile(std::string filename)
 InputBlock* ParameterInput::FindOrAddBlock(std::string name)
 {
   InputBlock *pblock, *plast;
-  plast  = pfirst_block_;
-  pblock = pfirst_block_;
+  plast  = pfirst_block;
+  pblock = pfirst_block;
 
 // Search linked list of InputBlocks to see if name exists, return if found.
 
@@ -175,8 +176,8 @@ InputBlock* ParameterInput::FindOrAddBlock(std::string name)
 
 // if this is the first block in list, save pointer to it in class
 
-  if (pfirst_block_ == NULL) {
-     pfirst_block_ = pblock;
+  if (pfirst_block == NULL) {
+     pfirst_block = pblock;
   } else {
     plast->pnext = pblock;      // link new node into list
   }
@@ -336,7 +337,7 @@ void ParameterInput::ModifyFromCmdline(int argc, char *argv[])
 InputBlock* ParameterInput::GetPtrToBlock(std::string name)
 {
   InputBlock *pb;
-  for (pb = pfirst_block_; pb != NULL; pb = pb->pnext){
+  for (pb = pfirst_block; pb != NULL; pb = pb->pnext){
     if (name.compare(pb->block_name) == 0) return pb;    
   }
   return NULL;
@@ -428,6 +429,40 @@ Real ParameterInput::GetReal(std::string block, std::string name)
 /*! \fn 
  *  \brief */
 
+std::string ParameterInput::GetString(std::string block, std::string name)
+{
+  InputBlock* pb;
+  InputLine* pl;
+  std::stringstream msg;
+
+// get pointer to node with same block name in linked list of InputBlocks
+
+  pb = GetPtrToBlock(block);
+  if (pb == NULL) {
+    msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
+        << "Block name '" << block << "' not found when trying to set value "
+        << "for parameter '" << name << "'";
+    throw std::runtime_error(msg.str().c_str());
+  }
+
+// get pointer to node with same parameter name in linked list of InputLines
+
+  pl = pb->GetPtrToLine(name);
+  if (pl == NULL) {
+    msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
+        << "Parameter name '" << name << "' not found in block '" << block << "'";
+    throw std::runtime_error(msg.str().c_str());
+  }
+
+// return value
+
+  return pl->param_value;
+}
+
+//--------------------------------------------------------------------------------------
+/*! \fn 
+ *  \brief */
+
 int ParameterInput::GetOrAddInteger(std::string block, std::string name, int value)
 {
   InputBlock* pb;
@@ -460,34 +495,16 @@ Real ParameterInput::GetOrAddReal(std::string block, std::string name, Real valu
 /*! \fn 
  *  \brief */
 
-std::string ParameterInput::GetString(std::string block, std::string name)
+std::string ParameterInput::GetOrAddString(std::string block, std::string name, 
+  std::string value)
 {
   InputBlock* pb;
-  InputLine* pl;
-  std::stringstream msg;
+  std::stringstream ss_value;
 
-// get pointer to node with same block name in linked list of InputBlocks
-
-  pb = GetPtrToBlock(block);
-  if (pb == NULL) {
-    msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
-        << "Block name '" << block << "' not found when trying to set value "
-        << "for parameter '" << name << "'";
-    throw std::runtime_error(msg.str().c_str());
-  }
-
-// get pointer to node with same parameter name in linked list of InputLines
-
-  pl = pb->GetPtrToLine(name);
-  if (pl == NULL) {
-    msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
-        << "Parameter name '" << name << "' not found in block '" << block << "'";
-    throw std::runtime_error(msg.str().c_str());
-  }
-
-// Convert string to integer and return value
-
-  return pl->param_value;
+  if (ParameterExists(block, name)) return GetString(block,name);
+  pb = FindOrAddBlock(block);
+  AddParameter(pb, name, value, "# Default value added at run time");
+  return value;
 }
 
 //--------------------------------------------------------------------------------------
@@ -496,7 +513,7 @@ std::string ParameterInput::GetString(std::string block, std::string name)
 
 InputBlock*  ParameterInput::GetFirstBlock()
 {
-  return pfirst_block_;
+  return pfirst_block;
 }
 
 //--------------------------------------------------------------------------------------
@@ -512,7 +529,7 @@ void ParameterInput::ParameterDump(std::ostream& os)
 
   os<< "#------------------------- PAR_DUMP -------------------------" << std::endl;
 
-  for (pb = pfirst_block_; pb != NULL; pb = pb->pnext){ // loop over InputBlocks
+  for (pb = pfirst_block; pb != NULL; pb = pb->pnext){ // loop over InputBlocks
     os<< "<" << pb->block_name << ">" << std::endl;     // write block name
     for (pl = pb->pline; pl != NULL; pl = pl->pnext){   // loop over InputLines
       param_name.assign(pl->param_name);

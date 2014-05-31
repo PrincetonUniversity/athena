@@ -16,6 +16,7 @@ class Domain;
 namespace COORDINATE_SYSTEM {class Coordinates;}
 class FluidBoundaryConditions;
 class Fluid;
+class OutputList;
 
 //! \struct RegionSize
 //  \brief physical size and number of cells in Mesh, Domain or Block
@@ -55,6 +56,7 @@ public:
   FluidBoundaryConditions *pf_bcs;
   COORDINATE_SYSTEM::Coordinates *pcoord;
   Fluid *pfluid;
+  OutputList *poutputs;
 };
 
 //--------------------------------------------------------------------------------------

@@ -27,8 +27,7 @@
 #include "../parameter_input.hpp"
 #include "../mesh.hpp"
 #include "../fluid.hpp"
-#include "../datablock.hpp"
-#include "output.hpp"
+#include "outputs.hpp"
 
 //======================================================================================
 /*! \file formatted_table.cpp
@@ -39,124 +38,83 @@
 //--------------------------------------------------------------------------------------
 // FormattedTableOutput constructor
 
-FormattedTableOutput::FormattedTableOutput(InputBlock *pin_block, Mesh *pm)
-  : Output(pin_block,pm)
+FormattedTableOutput::FormattedTableOutput(OutputBlock out_blk, Block *pb)
+  : OutputType(out_blk,pb)
 {
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void TabularOutput::ComputeFromMesh(Mesh *pm)
- *  \brief Performs any operations on Mesh and stores results in the output's DataBlock
- */
-
-void FormattedTableOutput::ComputeFromMesh(Mesh *pm)
-{
-
-// Read data from Mesh
-  pdata = LoadFluidFromMesh(pm);
-
-// Determine initial dimensions of output
-  pdata->GetNode(3)->GetDimensions(nx3,nx2,nx1);
-
-// Loop over transformation list
-  DataBlockTransform* pdbt = ptrans;
-  while (pdbt != NULL) {
-    pdbt->Transform(pdata);
-    pdbt = pdbt->GetNext();
-  }
-
-//Determine final dimensions of output
-  pdata->GetNode(3)->GetDimensions(nx3,nx2,nx1);
-
-}
-
-//--------------------------------------------------------------------------------------
-/*! \fn
+/*! \fn void FormattedTableOutput:::ComputeDataList()
  *  \brief
  */
 
-void FormattedTableOutput::WriteNodeData(DataNode *pdn, FILE *pfile, std::string fmt)
-{
-  int is,ie,js,je,ks,ke;
-  pdn->GetRanges(is,ie,js,je,ks,ke);
-
-  for (int n=0; n<pdn->GetData()->GetDim4(); ++n){
-    for (int k=ks; k<=ke; ++k){
-      for (int j=js; j<=je; ++j){
-        for (int i=is; i<=ie; ++i){
-          // Not certain this wil autovectorize well ???
-          fprintf( pfile, fmt.c_str(), (*pdn->GetData())(n,k,j,i) );
-        }
-        fprintf(pfile,"\n");
-      }}}
-
-}
+//void FormattedTableOutput::ComputeDataList()
+//{
+//}
 
 //--------------------------------------------------------------------------------------
-/*! \fn void TabularOutput:::Write()
- *  \brief writes DataBlock to file in tabular format
- *         uses c style printf for the moment
+/*! \fn void FormattedTableOutput:::WriteOutputData()
+ *  \brief writes DataBlock to file in tabular format using C style fprintf
  */
 
-void FormattedTableOutput::Write()
+void FormattedTableOutput::WriteOutputData()
 {
   std::stringstream msg;
+  DataList *pdl;
+
+// create DataList using function in base OutputType class
+  pdl = LoadDataList();
+
+// Apply data transforms (e.g. sums, slices, etc.)
 
 // create filename
-  std::stringstream ftmp;
-  ftmp << "Sod." << Number() << ".tab";//hardwire for now
-  std::string filename=ftmp.str();
+  std::string fname;
+  fname.assign(output_block.file_basename);
+  fname.append(".");
+  char number[5];
+  sprintf(number,"%04d",output_block.file_number);
+  fname.append(number);
+  fname.append(".tab");
 
 // open file for output
   FILE *pfile;
-  if((pfile = fopen(filename.c_str(),"w")) == NULL){
-    msg << "### FATAL ERROR in function [TabularOutput::Write]" << std::endl
-        << "Output file '" << filename << "' could not be opened";
+  if ((pfile = fopen(fname.c_str(),"w")) == NULL){
+    msg << "### FATAL ERROR in function [FormattedTableOutput::WriteOutputData]"
+        << std::endl << "Output file '" << fname << "' could not be opened";
     throw std::runtime_error(msg.str().c_str());
   }
 
-// write header description
-  if(pdata->GetDescriptor().compare("") != 0)
-    fprintf(pfile,"# %s\n",pdata->GetDescriptor().c_str());
-// write dimensions
-  if (nx1 > 1) fprintf(pfile,"# Nx1 = %d\n",nx1);
-  if (nx2 > 1) fprintf(pfile,"# Nx2 = %d\n",nx2);
-  if (nx3 > 1) fprintf(pfile,"# Nx3 = %d\n",nx3);
+// loop over all cells in data arrays
 
-// Loop over headers and write row headings
-  int col_cnt = 0;
-  fprintf(pfile,"#");
-  if (nx1 > 1) {
-    fprintf(pfile," [%d]=%s",col_cnt,pdata->GetNode(0)->GetVariableTypes().c_str());
-    col_cnt++;
-  }
-  if (nx2 > 1) {
-    fprintf(pfile," [%d]=%s",col_cnt,pdata->GetNode(1)->GetVariableTypes().c_str());
-    col_cnt++;
-  }
-  if (nx3 > 1) {
-    fprintf(pfile," [%d]=%s",col_cnt,pdata->GetNode(2)->GetVariableTypes().c_str());
-    col_cnt++;
-  }
-  DataNode* pdn = pdata->GetNode(2);
-  while (pdn->GetNext() != NULL){
-    pdn = pdn->GetNext();
-    fprintf(pfile," [%d]=%s",col_cnt,pdn->GetVariableTypes().c_str());
-    col_cnt++;
-  }
-  fprintf(pfile,"\n");
+  for (int k=(pdl->header.kl); k<=(pdl->header.kl); ++k) {
+  for (int j=(pdl->header.jl); j<=(pdl->header.jl); ++j) {
+  for (int i=(pdl->header.il); i<=(pdl->header.iu); ++i) {
 
-// First three nodes always contain mesh data: write if more than one element
-  if (nx1 > 1) WriteNodeData(pdata->GetNode(0),pfile,output_block.dat_fmt);
-  if (nx2 > 1) WriteNodeData(pdata->GetNode(1),pfile,output_block.dat_fmt);
-  if (nx3 > 1) WriteNodeData(pdata->GetNode(2),pfile,output_block.dat_fmt);
+// write x1, x2, x3 indices and coordinates
+    if (pdl->header.il != pdl->header.iu) {
+      fprintf(pfile,"%04d",i);
+      fprintf(pfile,output_block.data_format.c_str(),pparent_block->x1v(i));
+    }
 
-// Loop over remaining data nodes and write output
-  pdn = pdata->GetNode(2);
-  while (pdn->GetNext() != NULL){
-    pdn = pdn->GetNext();
-    WriteNodeData(pdn,pfile,output_block.dat_fmt);
-  }
+// step through linked-list of data nodes and write data
+    DataNode *pnode = pdl->pfirst_node;
+    while (pnode != NULL) {
+      for (int n=0; n<(pnode->pdata->GetDim4()); ++n) {
+        fprintf( pfile, output_block.data_format.c_str(), (*pnode->pdata)(n,k,j,i) );
+      }
+      pnode = pnode->pnext;
+    }
+
+// terminate line
+    fprintf(pfile,"\n");
+
+  }}}
+
+// close output file, increment file number and update time of last output
+
   fclose(pfile);
-  delete pdata;  // Release any memory allocated this output cycle
+  output_block.file_number++;
+  output_block.last_time += output_block.dt;
+
+  return;
 }

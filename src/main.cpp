@@ -24,8 +24,7 @@
 #include "parameter_input.hpp"
 #include "mesh.hpp"
 #include "fluid.hpp"
-#include "datablock.hpp"
-#include "outputs/output.hpp"
+//#include "outputs/outputs.hpp"
 
 //======================================================================================
 /* //////////////////////////////// Athena++ Main Program \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
@@ -176,11 +175,10 @@ int main(int argc, char *argv[])
   mesh->UpdateAcrossDomains(new_timestep);
 
 //--- Step 6. --------------------------------------------------------------------------
-// Construct output object, and make outputs of initial conditions
+// Initialize output object on each Block, and make outputs of initial conditions
 
-  OutputList *outputs;
   try {
-    outputs = new OutputList(inputs,mesh);
+    mesh->InitializeAcrossDomains(outputs,inputs);
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR memory allocation failed" << std::endl
@@ -191,6 +189,7 @@ int main(int argc, char *argv[])
     std::cout << ex.what() << std::endl;  // prints diagnostic message  
     return(0);
   }
+  mesh->UpdateAcrossDomains(make_output);
 
 //======================================================================================
 //--- Step 9. === START OF MAIN INTEGRATION LOOP =======================================
@@ -228,7 +227,7 @@ int main(int argc, char *argv[])
     mesh->ncycle++;
     mesh->time  += mesh->dt;
 
-    outputs->CheckForOutputs(mesh);
+    mesh->UpdateAcrossDomains(make_output);
     mesh->UpdateAcrossDomains(new_timestep);
 
     std::cout << "cycle=" << mesh->ncycle << std::scientific << std::setprecision(5)
