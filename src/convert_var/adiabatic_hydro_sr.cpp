@@ -1,0 +1,174 @@
+/*// Conserved-to-primitive inversion for adiabatic hydrodynamics in special relativity
+
+// TODO: sort out headers
+// TODO: make conserved inputs const
+// TODO: sort out namespace conflict with adiabatic_hydro.cpp
+
+// Temporary includes to make compilation work
+#include <iostream>
+#include <string>
+#include <cmath>
+#include <algorithm>
+#include <stdio.h>
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../fluid.hpp"
+
+// Main header
+#include "../fluid.hpp"
+
+// Standard libraries
+#include <algorithm>  // max(), min()
+#include <cmath>      // atan2(), cbrt(), cos(), pow(), sqrt()
+
+// Other headers
+#include "../athena.hpp"         // array access, macros
+#include "../athena_arrays.hpp"  // AthenaArray
+
+// Variable inverter
+// Inputs:
+//   C: conserved quantities
+// Outputs:
+//   P: primitives
+// Notes:
+//   solves quartic equation for velocity explicitly
+//   follows relativistic hydro routine in old Athena's convert_var.c:
+//     1) given quartic |v|^4 + a3 |v|^3 + a2 |v|^2 + a1 |v| + a0
+//     2) construct resolvent cubic x^3 + b2 x^2 + b1 x + b0:
+//          b2 = -a2
+//          b1 = -4 a0 + a1 a3
+//          b0 = 4 a0 a2 - a1^2 - a0 a3^2
+//     3) eliminate quadratic term from cubic y^3 + (3 c1) y - 2 c2 = 0:
+//          c1 = b1/3 - b2^2/9
+//          c2 = -(1/2) b0 + (1/6) b1 b2 - (1/27) b2^3
+//          c3 = c1^3 + c2^2
+//     4) find real root of new cubic:
+//          if c3 >= 0, y0 = (c2 + sqrt(c3))^(1/3) + (c2 - sqrt(c3))^(1/3)
+//          otherwise use y0 = 2 (c2^2 + c3)^(1/6) cos((1/3) atan2(sqrt(-c2), c3))
+//          formulas are equivalent except for implicit assumptions about branch cuts
+//     5) find real root of original (resolvent) cubic:
+//          x0 = y0 - b2/3
+//     6) solve for (correct) root of original quartic:
+//          d1 = 1/2 * (a3 + sqrt(4 x0 - 4 a2 + a3^2))
+//          d0 = 1/2 * (x0 - sqrt(x0^2 - 4 a0))
+//          then |v|^2 + d1 |v| + d0 = 0
+//          |v| = 1/2 * (-d1 + sqrt(d1^2 - 4 d0))
+void Fluid::ConservedToPrimitive(AthenaArray<Real> &C, AthenaArray<Real> &P)
+{
+  // Parameters
+  const Real max_velocity = 1.0 - 1.0e-15;
+
+  // Extract ratio of specific heats
+  const Real Gamma = GetGamma();
+  const Real Gamma_minus_1 = Gamma - 1.0;
+  const Real Gamma_prime = Gamma / Gamma_minus_1;
+
+  // Determine array bounds
+  Block *pb = pparent_block;
+  int is = pb->is;
+  int ie = pb->ie;
+  int jl = pb->js;
+  int ju = pb->je;
+  int kl = pb->ks;
+  int ku = pb->ke;
+  if (pb->block_size.nx2 > 1)
+  {
+    jl -= (NGHOST);
+    ju += (NGHOST);
+  }
+  if (pb->block_size.nx3 > 1)
+  {
+    kl -= (NGHOST);
+    ku += (NGHOST);
+  }
+
+  // Make array copies for performance reasons
+  AthenaArray<Real> C_copy = C.ShallowCopy();
+  AthenaArray<Real> P_copy = P.ShallowCopy();
+
+  // Go through cells
+  for (int k = kl; k <= ku; k++)
+    for (int j = jl; j <= ju; j++)
+    {
+#pragma simd
+      for (int i = is - (NGHOST); i <= ie + (NGHOST); i++)
+      {
+        // Extract conserved quantities
+        Real &D = C_copy(IDN,k,j,i);
+        Real &E = C_copy(IEN,k,j,i);
+        Real &Mx = C_copy(IVX,k,j,i);
+        Real &My = C_copy(IVY,k,j,i);
+        Real &Mz = C_copy(IVZ,k,j,i);
+
+        // Extract primitives
+        Real &rho = P_copy(IDN,k,j,i);
+        Real &pgas = P_copy(IEN,k,j,i);
+        Real &vx = P_copy(IVX,k,j,i);
+        Real &vy = P_copy(IVY,k,j,i);
+        Real &vz = P_copy(IVZ,k,j,i);
+
+        // Calculate total momentum
+        Real M_sq = Mx*Mx + My*My + Mz*Mz;
+
+        // Case out based on whether momentum vanishes
+        if (M_sq >= TINY_NUMBER*TINY_NUMBER)  // generic case, nonzero velocity
+        {
+          // Step 1: Prepare quartic coefficients
+          Real M_abs = sqrt(M_sq);
+          Real denom_inverse = 1.0 / (Gamma_minus_1*Gamma_minus_1 * (D*D + M_sq));
+          Real a3 = -2.0 * Gamma * Gamma_minus_1 * M_abs * E * denom_inverse;
+          Real a2 = (Gamma*Gamma * E*E + 2.0 * Gamma_minus_1 * M_sq -
+              Gamma_minus_1*Gamma_minus_1 * D*D) * denom_inverse;
+          Real a1 = -2.0 * Gamma * M_abs * E * denom_inverse;
+          Real a0 = M_sq * denom_inverse;
+
+          // Step 2: Find resolvent cubic coefficients
+          Real b2 = -a2;
+          Real b1 = -4.0*a0 + a1*a3;
+          Real b0 = 4.0*a0*a2 - a1*a1 - a0*a3*a3;
+
+          // Step 3: Eliminate quadratic term from cubic
+          Real c1 = b1/3.0 - b2*b2/9.0;
+          Real c2 = -b0/2.0 + b1*b2/6.0 - b2*b2*b2/27.0;
+          Real c3 = c1*c1*c1 + c2*c2;
+
+          // Step 4: Find real root of new cubic
+          Real y0;
+          if (c3 >= 0.0)
+            y0 = cbrt(c2 + sqrt(c3)) + cbrt(c2 - sqrt(c3));
+          else
+            y0 = 2.0 * pow(c2*c2 + c3, 1.0/6.0) * cos(atan2(sqrt(-c3), c2) / 3.0);
+
+          // Step 5: Find real root of original (resolvent) cubic:
+          Real x0 = y0 - b2/3.0;
+
+          // Step 6: Solve for (correct) root of original quartic
+          Real d1 = (a3 + sqrt(4.0*x0 - 4.0*a2 + a3*a3)) / 2.0;
+          Real d0 = (x0 - sqrt(x0*x0 - 4.0*a0)) / 2.0;
+          Real v_abs = (-d1 + sqrt(d1*d1 - 4.0*d0)) / 2.0;
+
+          // Ensure velocity is physical
+          v_abs = std::max(v_abs, 0.0);
+          v_abs = std::min(v_abs, 1.0-1.0e-15);
+
+          // Set primitives
+          rho = D * sqrt(1.0 - v_abs*v_abs);
+          pgas = Gamma_minus_1 * (E - (Mx * vx + My * vy + Mz * vz) - rho);
+          vx = Mx * v_abs / M_abs;
+          vy = My * v_abs / M_abs;
+          vz = Mz * v_abs / M_abs;
+        }
+        else  // vanishing velocity
+        {
+          rho = D;
+          pgas = Gamma_minus_1 * (E - rho);
+          vx = 0.0;
+          vy = 0.0;
+          vz = 0.0;
+        }
+      }
+    }
+  return;
+}*/

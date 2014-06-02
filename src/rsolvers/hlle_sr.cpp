@@ -4,7 +4,8 @@
 #include "../integrators/integrators.hpp"
 
 // Standard libraries
-#include <cmath>  // sqrt()
+#include <algorithm>  // max(), min()
+#include <cmath>      // sqrt()
 
 // Other headers
 #include "../athena.hpp"         // array access, macros
@@ -24,7 +25,7 @@ void FluidIntegrator::RiemannSolver(int il, int iu, const AthenaArray<Real> &P_L
 {
   // Extract ratio of specific heats
   const Real Gamma = pparent_fluid->GetGamma();
-  Real Gamma_prime = Gamma / (Gamma - 1.0);
+  const Real Gamma_prime = Gamma / (Gamma - 1.0);
 
   // Go through each interface
 #pragma simd
@@ -72,9 +73,8 @@ void FluidIntegrator::RiemannSolver(int il, int iu, const AthenaArray<Real> &P_L
     Real lambda_minus_R = 1.0 / (1.0 + sigma_s) * (vx_R - relative_speed);  // (MB 23)
 
     // Calculate extremal wavespeeds
-    Real lambda_L = (lambda_minus_L <= lambda_minus_R) ?
-        lambda_minus_L : lambda_minus_R;
-    Real lambda_R = (lambda_plus_L >= lambda_plus_R) ? lambda_plus_L : lambda_plus_R;
+    Real lambda_L = std::min(lambda_minus_L, lambda_minus_R);
+    Real lambda_R = std::max(lambda_plus_L, lambda_plus_R);
 
     // Set fluxes in extremal cases
     if (lambda_L >= 0.0)  // left region
