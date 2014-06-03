@@ -45,7 +45,7 @@ void Fluid::InitProblem(ParameterInput *pin)
 
   gamma_ = pin->GetReal("fluid","gamma");
 
-/* setup dependent variables */
+// setup dependent variables
 
   Real dl = 3.857143;
   Real pl = 10.33333;

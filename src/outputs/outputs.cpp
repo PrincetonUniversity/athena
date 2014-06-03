@@ -234,6 +234,7 @@ void OutputList::InitOutputs(ParameterInput *pin)
           ob.variable = pin->GetString(ob.block_name,"variable");
         }
         ob.data_format = pin->GetOrAddString(ob.block_name,"data_format","%12e.5");
+        ob.data_format.insert(0," "); // prepend with blank to separate columns
 
 // Construct new OutputType according to file format
 

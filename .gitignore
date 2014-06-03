@@ -25,3 +25,6 @@ athena
 *.tab
 *.vtk
 *.hst
+
+# Visualization package files
+.smhist
