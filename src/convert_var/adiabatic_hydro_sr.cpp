@@ -29,9 +29,9 @@
 
 // Variable inverter
 // Inputs:
-//   C: conserved quantities
+//   cons: conserved quantities
 // Outputs:
-//   P: primitives
+//   prim: primitives
 // Notes:
 //   solves quartic equation for velocity explicitly
 //   follows relativistic hydro routine in old Athena's convert_var.c:
@@ -55,15 +55,14 @@
 //          d0 = 1/2 * (x0 - sqrt(x0^2 - 4 a0))
 //          then |v|^2 + d1 |v| + d0 = 0
 //          |v| = 1/2 * (-d1 + sqrt(d1^2 - 4 d0))
-void Fluid::ConservedToPrimitive(AthenaArray<Real> &C, AthenaArray<Real> &P)
+void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &prim)
 {
   // Parameters
   const Real max_velocity = 1.0 - 1.0e-15;
 
   // Extract ratio of specific heats
-  const Real Gamma = GetGamma();
-  const Real Gamma_minus_1 = Gamma - 1.0;
-  const Real Gamma_prime = Gamma / Gamma_minus_1;
+  const Real gamma_adi = GetGamma();
+  const Real gamma_adi_minus_1 = gamma_adi - 1.0;
 
   // Determine array bounds
   Block *pb = pparent_block;
@@ -85,8 +84,8 @@ void Fluid::ConservedToPrimitive(AthenaArray<Real> &C, AthenaArray<Real> &P)
   }
 
   // Make array copies for performance reasons
-  AthenaArray<Real> C_copy = C.ShallowCopy();
-  AthenaArray<Real> P_copy = P.ShallowCopy();
+  AthenaArray<Real> cons_copy = cons.ShallowCopy();
+  AthenaArray<Real> prim_copy = prim.ShallowCopy();
 
   // Go through cells
   for (int k = kl; k <= ku; k++)
@@ -96,33 +95,34 @@ void Fluid::ConservedToPrimitive(AthenaArray<Real> &C, AthenaArray<Real> &P)
       for (int i = is - (NGHOST); i <= ie + (NGHOST); i++)
       {
         // Extract conserved quantities
-        Real &D = C_copy(IDN,k,j,i);
-        Real &E = C_copy(IEN,k,j,i);
-        Real &Mx = C_copy(IVX,k,j,i);
-        Real &My = C_copy(IVY,k,j,i);
-        Real &Mz = C_copy(IVZ,k,j,i);
+        Real &d = cons_copy(IDN,k,j,i);
+        Real &e = cons_copy(IEN,k,j,i);
+        Real &mx = cons_copy(IVX,k,j,i);
+        Real &my = cons_copy(IVY,k,j,i);
+        Real &mz = cons_copy(IVZ,k,j,i);
 
         // Extract primitives
-        Real &rho = P_copy(IDN,k,j,i);
-        Real &pgas = P_copy(IEN,k,j,i);
-        Real &vx = P_copy(IVX,k,j,i);
-        Real &vy = P_copy(IVY,k,j,i);
-        Real &vz = P_copy(IVZ,k,j,i);
+        Real &rho = prim_copy(IDN,k,j,i);
+        Real &pgas = prim_copy(IEN,k,j,i);
+        Real &vx = prim_copy(IVX,k,j,i);
+        Real &vy = prim_copy(IVY,k,j,i);
+        Real &vz = prim_copy(IVZ,k,j,i);
 
         // Calculate total momentum
-        Real M_sq = Mx*Mx + My*My + Mz*Mz;
+        Real m_sq = mx*mx + my*my + mz*mz;
 
         // Case out based on whether momentum vanishes
-        if (M_sq >= TINY_NUMBER*TINY_NUMBER)  // generic case, nonzero velocity
+        if (m_sq >= TINY_NUMBER*TINY_NUMBER)  // generic case, nonzero velocity
         {
           // Step 1: Prepare quartic coefficients
-          Real M_abs = sqrt(M_sq);
-          Real denom_inverse = 1.0 / (Gamma_minus_1*Gamma_minus_1 * (D*D + M_sq));
-          Real a3 = -2.0 * Gamma * Gamma_minus_1 * M_abs * E * denom_inverse;
-          Real a2 = (Gamma*Gamma * E*E + 2.0 * Gamma_minus_1 * M_sq -
-              Gamma_minus_1*Gamma_minus_1 * D*D) * denom_inverse;
-          Real a1 = -2.0 * Gamma * M_abs * E * denom_inverse;
-          Real a0 = M_sq * denom_inverse;
+          Real m_abs = sqrt(m_sq);
+          Real denom_inverse = 1.0 / (gamma_adi_minus_1*gamma_adi_minus_1
+              * (d*d + m_sq));
+          Real a3 = -2.0 * gamma_adi * gamma_adi_minus_1 * m_abs * e * denom_inverse;
+          Real a2 = (gamma_adi*gamma_adi * e*e + 2.0 * gamma_adi_minus_1 * m_sq -
+              gamma_adi_minus_1*gamma_adi_minus_1 * d*d) * denom_inverse;
+          Real a1 = -2.0 * gamma_adi * m_abs * e * denom_inverse;
+          Real a0 = m_sq * denom_inverse;
 
           // Step 2: Find resolvent cubic coefficients
           Real b2 = -a2;
@@ -154,16 +154,16 @@ void Fluid::ConservedToPrimitive(AthenaArray<Real> &C, AthenaArray<Real> &P)
           v_abs = std::min(v_abs, 1.0-1.0e-15);
 
           // Set primitives
-          rho = D * sqrt(1.0 - v_abs*v_abs);
-          pgas = Gamma_minus_1 * (E - (Mx * vx + My * vy + Mz * vz) - rho);
-          vx = Mx * v_abs / M_abs;
-          vy = My * v_abs / M_abs;
-          vz = Mz * v_abs / M_abs;
+          rho = d * sqrt(1.0 - v_abs*v_abs);
+          pgas = gamma_adi_minus_1 * (e - (mx * vx + my * vy + mz * vz) - rho);
+          vx = mx * v_abs / m_abs;
+          vy = my * v_abs / m_abs;
+          vz = mz * v_abs / m_abs;
         }
         else  // vanishing velocity
         {
-          rho = D;
-          pgas = Gamma_minus_1 * (E - rho);
+          rho = d;
+          pgas = gamma_adi_minus_1 * (e - rho);
           vx = 0.0;
           vy = 0.0;
           vz = 0.0;

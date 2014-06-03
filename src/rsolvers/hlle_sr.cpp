@@ -30,141 +30,146 @@
 // Riemann solver
 // Inputs:
 //   il, iu: lower and upper indices for interfaces
-//   P_L, P_R: left and right primitive states
+//   prim_left, prim_right: left and right primitive states
 // Outputs:
-//   F: fluxes
+//   flux: fluxes
 // Notes:
 //   implements HLLC algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
-void FluidIntegrator::RiemannSolver(int il, int iu, AthenaArray<Real> &P_L,
-    AthenaArray<Real> &P_R, AthenaArray<Real> &F)
+void FluidIntegrator::RiemannSolver(const int il, const int iu, const int ivx,
+    const int ivy, const int ivz, AthenaArray<Real> &prim_left,
+    AthenaArray<Real> &prim_right, AthenaArray<Real> &flux)
 {
   // Extract ratio of specific heats
-  const Real Gamma = pparent_fluid->GetGamma();
-  const Real Gamma_prime = Gamma / (Gamma - 1.0);
+  const Real gamma_adi = pparent_fluid->GetGamma();
+  const Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Go through each interface
 #pragma simd
   for (int i = il; i <= iu; i++)
   {
     // Extract left primitives
-    Real &rho_L = P_L(IDN,i);
-    Real &pgas_L = P_L(IEN,i);
-    Real &vx_L = P_L(IVX,i);
-    Real &vy_L = P_L(IVY,i);
-    Real &vz_L = P_L(IVZ,i);
+    Real &rho_left = prim_left(IDN,i);
+    Real &pgas_left = prim_left(IEN,i);
+    Real &vx_left = prim_left(ivx,i);
+    Real &vy_left = prim_left(ivy,i);
+    Real &vz_left = prim_left(ivz,i);
 
     // Extract right primitives
-    Real &rho_R = P_R(IDN,i);
-    Real &pgas_R = P_R(IEN,i);
-    Real &vx_R = P_R(IVX,i);
-    Real &vy_R = P_R(IVY,i);
-    Real &vz_R = P_R(IVZ,i);
+    Real &rho_right = prim_right(IDN,i);
+    Real &pgas_right = prim_right(IEN,i);
+    Real &vx_right = prim_right(ivx,i);
+    Real &vy_right = prim_right(ivy,i);
+    Real &vz_right = prim_right(ivz,i);
 
     // Extract fluxes
-    Real &F_D = F(IDN,i);
-    Real &F_E = F(IEN,i);
-    Real &F_Mx = F(IVX,i);
-    Real &F_My = F(IVY,i);
-    Real &F_Mz = F(IVZ,i);
+    Real &flux_d = flux(IDN,i);
+    Real &flux_e = flux(IEN,i);
+    Real &flux_mx = flux(ivx,i);
+    Real &flux_my = flux(ivy,i);
+    Real &flux_mz = flux(ivz,i);
 
     // Calculate wavespeeds in left region
-    Real rho_h_L = rho_L + Gamma_prime * pgas_L;
-    Real cs_sq = Gamma * pgas_L / rho_h_L;                                  // (MB 4)
-    Real v_sq_L = vx_L*vx_L + vy_L*vy_L + vz_L*vz_L;
-    Real gamma_sq_L = 1.0 / (1.0 - v_sq_L);
-    Real sigma_s = cs_sq / (gamma_sq_L * (1.0 - cs_sq));
-    Real relative_speed = sqrt(sigma_s * (1.0 + sigma_s - vx_L*vx_L));
-    Real lambda_plus_L = 1.0 / (1.0 + sigma_s) * (vx_L + relative_speed);   // (MB 23)
-    Real lambda_minus_L = 1.0 / (1.0 + sigma_s) * (vx_L - relative_speed);  // (MB 23)
+    Real rho_h_left = rho_left + gamma_adi_red * pgas_left;
+    Real cs_sq = gamma_adi * pgas_left / rho_h_left;  // (MB 4)
+    Real v_sq_left = vx_left*vx_left + vy_left*vy_left + vz_left*vz_left;
+    Real gamma_sq_left = 1.0 / (1.0 - v_sq_left);
+    Real sigma_s = cs_sq / (gamma_sq_left * (1.0 - cs_sq));
+    Real relative_speed = sqrt(sigma_s * (1.0 + sigma_s - vx_left*vx_left));
+    Real lambda_plus_left = 1.0 / (1.0 + sigma_s) * (vx_left
+        + relative_speed);  // (MB 23)
+    Real lambda_minus_left = 1.0 / (1.0 + sigma_s) * (vx_left
+        - relative_speed);  // (MB 23)
 
     // Calculate wavespeeds in right region
-    Real rho_h_R = rho_R + Gamma_prime * pgas_R;
-    cs_sq = Gamma * pgas_R / rho_h_R;                                       // (MB 4)
-    Real v_sq_R = vx_R*vx_R + vy_R*vy_R + vz_R*vz_R;
-    Real gamma_sq_R = 1.0 / (1.0 - v_sq_R);
-    sigma_s = cs_sq / (gamma_sq_R * (1.0 - cs_sq));
-    relative_speed = sqrt(sigma_s * (1.0 + sigma_s - vx_R*vx_R));
-    Real lambda_plus_R = 1.0 / (1.0 + sigma_s) * (vx_R + relative_speed);   // (MB 23)
-    Real lambda_minus_R = 1.0 / (1.0 + sigma_s) * (vx_R - relative_speed);  // (MB 23)
+    Real rho_h_right = rho_right + gamma_adi_red * pgas_right;
+    cs_sq = gamma_adi * pgas_right / rho_h_right;  // (MB 4)
+    Real v_sq_right = vx_right*vx_right + vy_right*vy_right + vz_right*vz_right;
+    Real gamma_sq_right = 1.0 / (1.0 - v_sq_right);
+    sigma_s = cs_sq / (gamma_sq_right * (1.0 - cs_sq));
+    relative_speed = sqrt(sigma_s * (1.0 + sigma_s - vx_right*vx_right));
+    Real lambda_plus_right = 1.0 / (1.0 + sigma_s) * (vx_right
+        + relative_speed);  // (MB 23)
+    Real lambda_minus_right = 1.0 / (1.0 + sigma_s) * (vx_right
+        - relative_speed);  // (MB 23)
 
     // Calculate extremal wavespeeds
-    Real lambda_L = std::min(lambda_minus_L, lambda_minus_R);
-    Real lambda_R = std::max(lambda_plus_L, lambda_plus_R);
+    Real lambda_left = std::min(lambda_minus_left, lambda_minus_right);
+    Real lambda_right = std::max(lambda_plus_left, lambda_plus_right);
 
     // Set fluxes in extremal cases
-    if (lambda_L >= 0.0)  // left region
+    if (lambda_left >= 0.0)  // left region
     {
       // Calculate intermediate quantities (MB 3)
-      Real gamma_sq_rho_h = gamma_sq_L * rho_h_L;
-      Real D = sqrt(gamma_sq_L) * rho_L;
-      Real Mx = gamma_sq_rho_h * vx_L;
-      Real My = gamma_sq_rho_h * vy_L;
-      Real Mz = gamma_sq_rho_h * vz_L;
+      Real gamma_sq_rho_h = gamma_sq_left * rho_h_left;
+      Real d = sqrt(gamma_sq_left) * rho_left;
+      Real mx = gamma_sq_rho_h * vx_left;
+      Real my = gamma_sq_rho_h * vy_left;
+      Real mz = gamma_sq_rho_h * vz_left;
 
       // Set fluxes (MB 2)
-      F_D = D * vx_L;
-      F_E = Mx;
-      F_Mx = Mx * vx_L + pgas_L;
-      F_My = My * vx_L;
-      F_Mz = Mz * vx_L;
+      flux_d = d * vx_left;
+      flux_e = mx;
+      flux_mx = mx * vx_left + pgas_left;
+      flux_my = my * vx_left;
+      flux_mz = mz * vx_left;
       continue;
     }
-    if (lambda_R <= 0.0)  // right region
+    if (lambda_right <= 0.0)  // right region
     {
       // Calculate intermediate quantities (MB 3)
-      Real gamma_sq_rho_h = gamma_sq_R * rho_h_R;
-      Real D = sqrt(gamma_sq_R) * rho_R;
-      Real Mx = gamma_sq_rho_h * vx_R;
-      Real My = gamma_sq_rho_h * vy_R;
-      Real Mz = gamma_sq_rho_h * vz_R;
+      Real gamma_sq_rho_h = gamma_sq_right * rho_h_right;
+      Real d = sqrt(gamma_sq_right) * rho_right;
+      Real mx = gamma_sq_rho_h * vx_right;
+      Real my = gamma_sq_rho_h * vy_right;
+      Real mz = gamma_sq_rho_h * vz_right;
 
       // Set fluxes (MB 2)
-      F_D = D * vx_R;
-      F_E = Mx;
-      F_Mx = Mx * vx_R + pgas_R;
-      F_My = My * vx_R;
-      F_Mz = Mz * vx_R;
+      flux_d = d * vx_right;
+      flux_e = mx;
+      flux_mx = mx * vx_right + pgas_right;
+      flux_my = my * vx_right;
+      flux_mz = mz * vx_right;
       continue;
     }
 
     // Calculate left conserved quantities and fluxes
-    Real gamma_sq_rho_h_L = gamma_sq_L * rho_h_L;
-    Real D_L = sqrt(gamma_sq_L) * rho_L;   // (MB 3)
-    Real E_L = gamma_sq_rho_h_L - pgas_L;  // (MB 3)
-    Real Mx_L = gamma_sq_rho_h_L * vx_L;   // (MB 3)
-    Real My_L = gamma_sq_rho_h_L * vy_L;   // (MB 3)
-    Real Mz_L = gamma_sq_rho_h_L * vz_L;   // (MB 3)
-    Real F_D_L = D_L * vx_L;               // (MB 2)
-    Real F_E_L = Mx_L;                     // (MB 2)
-    Real F_Mx_L = Mx_L * vx_L + pgas_L;    // (MB 2)
-    Real F_My_L = My_L * vx_L;             // (MB 2)
-    Real F_Mz_L = Mz_L * vx_L;             // (MB 2)
+    Real gamma_sq_rho_h_left = gamma_sq_left * rho_h_left;
+    Real d_left = sqrt(gamma_sq_left) * rho_left;       // (MB 3)
+    Real e_left = gamma_sq_rho_h_left - pgas_left;      // (MB 3)
+    Real mx_left = gamma_sq_rho_h_left * vx_left;       // (MB 3)
+    Real my_left = gamma_sq_rho_h_left * vy_left;       // (MB 3)
+    Real mz_left = gamma_sq_rho_h_left * vz_left;       // (MB 3)
+    Real flux_d_left = d_left * vx_left;                // (MB 2)
+    Real flux_e_left = mx_left;                         // (MB 2)
+    Real flux_mx_left = mx_left * vx_left + pgas_left;  // (MB 2)
+    Real flux_my_left = my_left * vx_left;              // (MB 2)
+    Real flux_mz_left = mz_left * vx_left;              // (MB 2)
 
     // Calculate right conserved quantities and fluxes
-    Real gamma_sq_rho_h_R = gamma_sq_R * rho_h_R;
-    Real D_R = sqrt(gamma_sq_R) * rho_R;   // (MB 3)
-    Real E_R = gamma_sq_rho_h_R - pgas_R;  // (MB 3)
-    Real Mx_R = gamma_sq_rho_h_R * vx_R;   // (MB 3)
-    Real My_R = gamma_sq_rho_h_R * vy_R;   // (MB 3)
-    Real Mz_R = gamma_sq_rho_h_R * vz_R;   // (MB 3)
-    Real F_D_R = D_R * vx_R;               // (MB 2)
-    Real F_E_R = Mx_R;                     // (MB 2)
-    Real F_Mx_R = Mx_R * vx_R + pgas_R;    // (MB 2)
-    Real F_My_R = My_R * vx_R;             // (MB 2)
-    Real F_Mz_R = Mz_R * vx_R;             // (MB 2)
+    Real gamma_sq_rho_h_right = gamma_sq_right * rho_h_right;
+    Real d_right = sqrt(gamma_sq_right) * rho_right;        // (MB 3)
+    Real e_right = gamma_sq_rho_h_right - pgas_right;       // (MB 3)
+    Real mx_right = gamma_sq_rho_h_right * vx_right;        // (MB 3)
+    Real my_right = gamma_sq_rho_h_right * vy_right;        // (MB 3)
+    Real mz_right = gamma_sq_rho_h_right * vz_right;        // (MB 3)
+    Real flux_d_right = d_right * vx_right;                 // (MB 2)
+    Real flux_e_right = mx_right;                           // (MB 2)
+    Real flux_mx_right = mx_right * vx_right + pgas_right;  // (MB 2)
+    Real flux_my_right = my_right * vx_right;               // (MB 2)
+    Real flux_mz_right = mz_right * vx_right;               // (MB 2)
 
     // Set fluxes (MB 11)
-    Real denom_inverse = 1.0 / (lambda_R - lambda_L);
-    F_D = (lambda_R * F_D_L - lambda_L * F_D_R + lambda_R * lambda_L * (D_R - D_L))
-        * denom_inverse;
-    F_E = (lambda_R * F_E_L - lambda_L * F_E_R + lambda_R * lambda_L * (E_R - E_L))
-        * denom_inverse;
-    F_Mx = (lambda_R * F_Mx_L - lambda_L * F_Mx_R + lambda_R * lambda_L * (Mx_R - Mx_L))
-        * denom_inverse;
-    F_My = (lambda_R * F_My_L - lambda_L * F_My_R + lambda_R * lambda_L * (My_R - My_L))
-        * denom_inverse;
-    F_Mz = (lambda_R * F_Mz_L - lambda_L * F_Mz_R + lambda_R * lambda_L * (Mz_R - Mz_L))
-        * denom_inverse;
+    Real denom_inverse = 1.0 / (lambda_right - lambda_left);
+    flux_d = (lambda_right * flux_d_left - lambda_left * flux_d_right + lambda_right
+        * lambda_left * (d_right - d_left)) * denom_inverse;
+    flux_e = (lambda_right * flux_e_left - lambda_left * flux_e_right + lambda_right
+        * lambda_left * (e_right - e_left)) * denom_inverse;
+    flux_mx = (lambda_right * flux_mx_left - lambda_left * flux_mx_right + lambda_right
+        * lambda_left * (mx_right - mx_left)) * denom_inverse;
+    flux_my = (lambda_right * flux_my_left - lambda_left * flux_my_right + lambda_right
+        * lambda_left * (my_right - my_left)) * denom_inverse;
+    flux_mz = (lambda_right * flux_mz_left - lambda_left * flux_mz_right + lambda_right
+        * lambda_left * (mz_right - mz_left)) * denom_inverse;
   }
   return;
 }*/
