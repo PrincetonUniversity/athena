@@ -1,4 +1,4 @@
-// HLLE Riemann solver for special relativistic hydro
+/*// HLLE Riemann solver for special relativistic hydro
 
 // TODO: sort out headers
 // TODO: make left and right inputs const
@@ -15,7 +15,6 @@
 #include "../fluid.hpp"
 #include "../integrators/integrators.hpp"
 
-/*
 // Main header
 #include "../integrators/integrators.hpp"
 
@@ -27,7 +26,6 @@
 #include "../athena.hpp"         // array access, macros
 #include "../athena_arrays.hpp"  // AthenaArray
 #include "../fluid.hpp"          // GetGamma()
-*/
 
 // Riemann solver
 // Inputs:
@@ -169,4 +167,4 @@ void FluidIntegrator::RiemannSolver(int il, int iu, AthenaArray<Real> &P_L,
         * denom_inverse;
   }
   return;
-}
+}*/

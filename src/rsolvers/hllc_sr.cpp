@@ -1,4 +1,4 @@
-// HLLC Riemann solver for special relativistic hydro
+/*// HLLC Riemann solver for special relativistic hydro
 
 // TODO: sort out headers
 // TODO: make left and right inputs const
@@ -15,7 +15,6 @@
 #include "../fluid.hpp"
 #include "../integrators/integrators.hpp"
 
-/*
 // Main header
 #include "../integrators/integrators.hpp"
 
@@ -27,7 +26,6 @@
 #include "../athena.hpp"         // array access, macros
 #include "../athena_arrays.hpp"  // AthenaArray
 #include "../fluid.hpp"          // GetGamma()
-*/
 
 // Declarations
 double quadratic_root(double a1, double a0, bool greater_root);
@@ -278,4 +276,4 @@ double quadratic_root(double a1, double a0, bool greater_root)
         return 2.0/a1;
     }
   }
-}
+}*/
