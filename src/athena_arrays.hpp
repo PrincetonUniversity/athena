@@ -66,7 +66,7 @@ public:
   AthenaArray(const AthenaArray<T>& t);
   AthenaArray<T> &operator= (const AthenaArray<T> &t);
   AthenaArray<T> ShallowCopy();
-  AthenaArray<T>* ShallowCopy(const int n);
+  AthenaArray<T> *ShallowCopy(const int indx, const int nvar);
 
 private:
   T *pdata_;
@@ -144,18 +144,19 @@ AthenaArray<T> AthenaArray<T>::ShallowCopy() {
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn AthenaArray::ShallowCopy(int index)
-//  \brief shallow copy of a subset of an array to a new dynamically allocated array
+//! \fn AthenaArray::ShallowCopy(int indx, int nvar)
+//  \brief shallow copy of the indx-th variable to a new dynamically allocated array
+//  with nvar variables
 
 template<typename T>
-AthenaArray<T>* AthenaArray<T>::ShallowCopy(const int n) {
+AthenaArray<T> *AthenaArray<T>::ShallowCopy(const int indx, const int nvar) {
   AthenaArray<T> *dest = new AthenaArray<T>;
   dest->nx1_=nx1_;
   dest->nx2_=nx2_;
   dest->nx3_=nx3_;
-  dest->nx4_=1;
+  dest->nx4_=nvar;
 // No error checking: n must be < nx4 in original array
-  dest->pdata_ = pdata_ + n * nx1_*nx2_*nx3_;
+  dest->pdata_ = pdata_ + indx * nx1_*nx2_*nx3_;
   dest->scopy_ = 1;
   return dest;
 }

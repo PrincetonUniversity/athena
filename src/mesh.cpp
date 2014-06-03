@@ -30,6 +30,7 @@
 #include "bvals/bvals.hpp"
 #include "integrators/integrators.hpp"
 #include "coordinates/coordinates.hpp"
+#include "outputs/outputs.hpp"
 
 //======================================================================================
 /*! \file mesh.cpp
@@ -380,31 +381,34 @@ Block::Block(RegionSize blk_size, RegionBoundary blk_bndry, Domain *pd)
     }
   }
 
+
+// construct Coordinates, BoundaryConditions, and Fluid objects.
+// Coordinates constructor: initializes volume-centered coordinates (x1v,dx1v,...)
+// BoundaryConditions constructor: sets function pointers for each edge of this block
+// Fluid constructor: allocates memory for u,w, etc., and constructs FluidIntegrator.
+//   Initial conditions set in problem generator called from main
+ 
+  pcoord   = new COORDINATE_SYSTEM::Coordinates(this);
+  pf_bcs   = new FluidBoundaryConditions(this);
+  pfluid   = new Fluid(this);
+  poutputs = new OutputList(this);
+
 /********************/
   for (int i=0; i<((ie-is+1)+2*(NGHOST)); ++i) {
-    printf("i=%i  x1f= %e  dx1f=%e \n",i,x1f(i),dx1f(i));
+    printf("i=%i  x1f=%e  dx1f=%e x1v=%e dx1v=%e \n",i,x1f(i),dx1f(i),x1v(i),dx1v(i));
   }
   printf("i=%i  x1f= %e  \n",((ie-is+1)+2*NGHOST),x1f(((ie-is+1)+2*NGHOST)));
 
   for (int j=0; j<((je-js+1)+2*(NGHOST)); ++j) {
-    printf("j=%i  x2f= %e  dx2f=%e \n",j,x2f(j),dx2f(j));
+    printf("j=%i  x2f=%e  dx2f=%e x2v=%e dx2v%e \n",j,x2f(j),dx2f(j),x2v(j),dx2v(j));
   }
   printf("j=%i  x2f= %e  \n",((je-js+1)+2*NGHOST),x2f(((je-js+1)+2*NGHOST)));
 
   for (int k=0; k<((ke-ks+1)+2*(NGHOST)); ++k) {
-    printf("k=%i  x3f= %e  dx3f=%e \n",k,x3f(k),dx3f(k));
+    printf("k=%i  x3f= %e  dx3f=%e x3v=%e dx3v=%e \n",k,x3f(k),dx3f(k),x3v(k),dx3v(k));
   }
   printf("k=%i  x3f= %e  \n",((ke-ks+1)+2*NGHOST),x3f(((ke-ks+1)+2*NGHOST)));
 /********************/
-
-// construct Coordinates, BoundaryCOnditions, and Fluid objects.
-// Coordinates constructor initializes volume-centered coordinates (x1v,dx1v,...)
-// BoundaryConditions constructor sets function pointers for each edge of this block
- 
-  pcoord = new COORDINATE_SYSTEM::Coordinates(this);
-  pf_bcs = new FluidBoundaryConditions(this);
-  pfluid = new Fluid(this);
-
   return;
 }
 
@@ -445,6 +449,9 @@ void Mesh::InitializeAcrossDomains(enum QuantityToBeInit qnty, ParameterInput *p
       case initial_conditions:
         pf->InitProblem(pin);
         break;
+      case outputs:
+        pdomain->pblock->poutputs->InitOutputs(pin);
+        break;
     }
 
   }
@@ -483,7 +490,8 @@ void Mesh::UpdateAcrossDomains(enum UpdateAction action)
       case new_timestep:
         pf->NewTimeStep(pdomain->pblock);
         break;
-      case data_output:
+      case make_output:
+        pdomain->pblock->poutputs->MakeOutputs();
         break;
     }
 

@@ -52,7 +52,7 @@ Coordinates::Coordinates(Block *pb)
 // x1-direction
 
   for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-    pb->x1v(i) = 0.5*(pb->x1f(i+1) - pb->x1f(i));
+    pb->x1v(i) = 0.5*(pb->x1f(i+1) + pb->x1f(i));
   }
   for (int i=is-(NGHOST)+1; i<=ie+(NGHOST); ++i) {
     pb->dx1v(i) = pb->x1v(i) - pb->x1v(i-1);
@@ -61,11 +61,11 @@ Coordinates::Coordinates(Block *pb)
 // x2-direction
 
   if (ncells2 == 1) {
-    pb->x2v(js) = 0.5*(pb->x2f(js+1) - pb->x2f(js));
+    pb->x2v(js) = 0.5*(pb->x2f(js+1) + pb->x2f(js));
     pb->dx2v(js) = pb->dx2f(js);
   } else {
     for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
-      pb->x2v(j) = 0.5*(pb->x2f(j+1) - pb->x2f(j));
+      pb->x2v(j) = 0.5*(pb->x2f(j+1) + pb->x2f(j));
     }
     for (int j=js-(NGHOST)+1; j<=je+(NGHOST); ++j) {
       pb->dx2v(j) = pb->x2v(j) - pb->x2v(j-1);
@@ -75,11 +75,11 @@ Coordinates::Coordinates(Block *pb)
 // x3-direction
 
   if (ncells3 == 1) {
-    pb->x3v(ks) = 0.5*(pb->x3f(ks+1) - pb->x3f(ks));
+    pb->x3v(ks) = 0.5*(pb->x3f(ks+1) + pb->x3f(ks));
     pb->dx3v(ks) = pb->dx3f(ks);
   } else {
     for (int k=ks-(NGHOST); k<=ke+(NGHOST); ++k) {
-      pb->x3v(k) = 0.5*(pb->x3f(k+1) - pb->x3f(k));
+      pb->x3v(k) = 0.5*(pb->x3f(k+1) + pb->x3f(k));
     }
     for (int k=ks-(NGHOST)+1; k<=ke+(NGHOST); ++k) {
       pb->dx3v(k) = pb->x3v(k) - pb->x3v(k-1);

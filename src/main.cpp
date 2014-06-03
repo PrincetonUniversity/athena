@@ -24,8 +24,7 @@
 #include "parameter_input.hpp"
 #include "mesh.hpp"
 #include "fluid.hpp"
-#include "datablock.hpp"
-#include "outputs/output.hpp"
+//#include "outputs/outputs.hpp"
 
 //======================================================================================
 /* //////////////////////////////// Athena++ Main Program \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
@@ -176,11 +175,10 @@ int main(int argc, char *argv[])
   mesh->UpdateAcrossDomains(new_timestep);
 
 //--- Step 6. --------------------------------------------------------------------------
-// Construct output object, and make outputs of initial conditions
+// Initialize output object on each Block, and make outputs of initial conditions
 
-  OutputList *outputs;
   try {
-    outputs = new OutputList(inputs,mesh);
+    mesh->InitializeAcrossDomains(outputs,inputs);
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR memory allocation failed" << std::endl
@@ -191,59 +189,64 @@ int main(int argc, char *argv[])
     std::cout << ex.what() << std::endl;  // prints diagnostic message  
     return(0);
   }
+  mesh->UpdateAcrossDomains(make_output);
 
 //======================================================================================
 //--- Step 9. === START OF MAIN INTEGRATION LOOP =======================================
 // For performance, there is no error handler protecting this step
 
-  std::cout << std::endl << "Setup complete, entering main loop..." << std::endl;
-  std::cout << std::endl << "cycle=" << mesh->ncycle
-            << std::scientific << std::setprecision(5)
-            << " time=" << mesh->time << " dt=" << mesh->dt << std::endl;
+  std::cout<<std::endl<< "Setup complete, entering main loop..." <<std::endl<<std::endl;
   tstart = clock();
 
   while ((mesh->time < mesh->tlim) && (mesh->nlim < 0 || mesh->ncycle < mesh->nlim)){
+    std::cout << "cycle=" << mesh->ncycle << std::scientific << std::setprecision(5)
+              << " time=" << mesh->time << " dt=" << mesh->dt << std::endl;
+
 // predict step
 
     mesh->UpdateAcrossDomains(fluid_predict    );
     mesh->UpdateAcrossDomains(fluid_bcs_nhalf);
-
     mesh->UpdateAcrossDomains(bfield_predict    );
     mesh->UpdateAcrossDomains(bfield_bcs_nhalf);
-
     mesh->UpdateAcrossDomains(convert_vars_nhalf);
 
 // correct step
 
     mesh->UpdateAcrossDomains(fluid_correct);
     mesh->UpdateAcrossDomains(fluid_bcs_n);
-
     mesh->UpdateAcrossDomains(bfield_correct);
     mesh->UpdateAcrossDomains(bfield_bcs_n);
-
     mesh->UpdateAcrossDomains(convert_vars_n);
 
 // new time step, outputs, diagnostics
 
     mesh->ncycle++;
     mesh->time  += mesh->dt;
-
-    outputs->CheckForOutputs(mesh);
+    mesh->UpdateAcrossDomains(make_output);
     mesh->UpdateAcrossDomains(new_timestep);
-
-    std::cout << "cycle=" << mesh->ncycle << std::scientific << std::setprecision(5)
-              << " time=" << mesh->time << " dt=" << mesh->dt << std::endl;
 
   } // END OF MAIN INTEGRATION LOOP ====================================================
 //======================================================================================
+
+// print diagnostic messages
+
+  std::cout << "cycle=" << mesh->ncycle << std::scientific << std::setprecision(5)
+            << " time=" << mesh->time << " dt=" << mesh->dt << std::endl;
+  if (mesh->ncycle == mesh->nlim) {
+    std::cout << std::endl << "Terminating on cycle limit" << std::endl;
+  } else {
+    std::cout << std::endl << "Terminating on time limit" << std::endl;
+  }
+  std::cout << "time=" << mesh->time << " cycle=" << mesh->ncycle << std::endl;
+  std::cout << "tlim=" << mesh->tlim << " nlim=" << mesh->nlim << std::endl;
 
 // Calculate and print the zone-cycles/cpu-second on this processor
 
   tstop = clock();
   float cpu_time = (tstop>tstart ? (float)(tstop-tstart) : 1.0)/(float)CLOCKS_PER_SEC;
   int64_t zones = (mesh->mesh_size.nx1)*(mesh->mesh_size.nx2)*(mesh->mesh_size.nx3);
-  float zcs = (float)zones/cpu_time;
-  std::cout << "cpu time used = " << cpu_time << std::endl;
+  float zcs = (float)(zones*mesh->ncycle)/cpu_time;
+  std::cout << std::endl << "cpu time used = " << cpu_time << std::endl;
   std::cout << "zone-cycles/second = " << zcs << std::endl;
 
 
