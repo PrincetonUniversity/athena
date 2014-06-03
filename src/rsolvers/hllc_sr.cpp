@@ -1,5 +1,20 @@
 /*// HLLC Riemann solver for special relativistic hydro
 
+// TODO: sort out headers
+// TODO: make left and right inputs const
+
+// Temporary includes to make compilation work
+#include <iostream>
+#include <string>
+#include <cmath>
+#include <algorithm>
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../fluid.hpp"
+#include "../integrators/integrators.hpp"
+
 // Main header
 #include "../integrators/integrators.hpp"
 
@@ -12,6 +27,9 @@
 #include "../athena_arrays.hpp"  // AthenaArray
 #include "../fluid.hpp"          // GetGamma()
 
+// Declarations
+double quadratic_root(double a1, double a0, bool greater_root);
+
 // Riemann solver
 // Inputs:
 //   il, iu: lower and upper indices for interfaces
@@ -20,8 +38,8 @@
 //   F: fluxes
 // Notes:
 //   implements HLLC algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
-void FluidIntegrator::RiemannSolver(int il, int iu, const AthenaArray<Real> &P_L,
-    const AthenaArray<Real> &P_R, AthenaArray<Real> &F)
+void FluidIntegrator::RiemannSolver(int il, int iu, AthenaArray<Real> &P_L,
+    AthenaArray<Real> &P_R, AthenaArray<Real> &F)
 {
   // Extract ratio of specific heats
   const Real Gamma = pparent_fluid->GetGamma();
@@ -91,7 +109,7 @@ void FluidIntegrator::RiemannSolver(int il, int iu, const AthenaArray<Real> &P_L
       F_E = Mx;
       F_Mx = Mx * vx_L + pgas_L;
       F_My = My * vx_L;
-      F_mz = Mz * vx_L;
+      F_Mz = Mz * vx_L;
       continue;
     }
     if (lambda_R <= 0.0)  // right region
@@ -108,7 +126,7 @@ void FluidIntegrator::RiemannSolver(int il, int iu, const AthenaArray<Real> &P_L
       F_E = Mx;
       F_Mx = Mx * vx_R + pgas_R;
       F_My = My * vx_R;
-      F_mz = Mz * vx_R;
+      F_Mz = Mz * vx_R;
       continue;
     }
 
