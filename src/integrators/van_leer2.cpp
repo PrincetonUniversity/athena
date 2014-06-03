@@ -81,7 +81,7 @@ void FluidIntegrator::Predict(Block *pb)
 
     ReconstructionFunc(k,j,is,ie+1,1,w,wl,wr);
 
-    RiemannSolver(is,ie+1,wl,wr,flx);
+    RiemannSolver(is,ie+1,IVX,IVY,IVZ,wl,wr,flx);
 
     pb->pcoord->Area1Face(k,j,is,ie+1,area);
     pb->pcoord->CellVolume(k,j,is,ie,vol);
@@ -123,7 +123,7 @@ void FluidIntegrator::Predict(Block *pb)
 
       ReconstructionFunc(k,j,is,ie,2,w,wl,wr);
 
-      RiemannSolver(is,ie,wl,wr,flx); 
+      RiemannSolver(is,ie,IVY,IVZ,IVX,wl,wr,flx); 
 
       pb->pcoord->Area2Face(k,j,is,ie,area);
 
@@ -181,7 +181,7 @@ void FluidIntegrator::Predict(Block *pb)
 
       ReconstructionFunc(k,j,is,ie,3,w,wl,wr);
 
-      RiemannSolver(is,ie,wl,wr,flx);
+      RiemannSolver(is,ie,IVZ,IVX,IVY,wl,wr,flx);
 
       pb->pcoord->Area3Face(k,j,is,ie,area);
 
@@ -263,7 +263,7 @@ void FluidIntegrator::Correct(Block *pb)
 
     ReconstructionFunc(k,j,is,ie+1,1,w1,wl,wr);
 
-    RiemannSolver(is,ie+1,wl,wr,flx); 
+    RiemannSolver(is,ie+1,IVX,IVY,IVZ,wl,wr,flx); 
 
     pb->pcoord->Area1Face(k,j,is,ie+1,area);
     pb->pcoord->CellVolume(k,j,is,ie,vol);
@@ -304,7 +304,7 @@ void FluidIntegrator::Correct(Block *pb)
 
       ReconstructionFunc(k,j,is,ie,2,w1,wl,wr);
 
-      RiemannSolver(is,ie,wl,wr,flx); 
+      RiemannSolver(is,ie,IVY,IVZ,IVX,wl,wr,flx); 
 
       pb->pcoord->Area2Face(k,j,is,ie,area);
 
@@ -323,7 +323,7 @@ void FluidIntegrator::Correct(Block *pb)
         }
       }
 
-      if (j>(je+1)){
+      if (j<(je+1)){
         pb->pcoord->CellVolume(k,j,is,ie,vol);
         for (int n=0; n<NVAR; ++n){
 #pragma simd
@@ -361,11 +361,11 @@ void FluidIntegrator::Correct(Block *pb)
 
       ReconstructionFunc(k,j,is,ie,3,w1,wl,wr);
 
-      RiemannSolver(is,ie,wl,wr,flx);
+      RiemannSolver(is,ie,IVZ,IVX,IVY,wl,wr,flx);
 
-      pb->pcoord->Area3Face(is,ie,j,k,area);
+      pb->pcoord->Area3Face(k,j,is,ie,area);
 
-      if (k<ks){
+      if (k>ks){
         pb->pcoord->CellVolume(k-1,j,is,ie,vol);
         for (int n=0; n<NVAR; ++n){
 #pragma simd
@@ -380,7 +380,7 @@ void FluidIntegrator::Correct(Block *pb)
         }
       }
 
-      if (k>(ke+1)){
+      if (k<(ke+1)){
         pb->pcoord->CellVolume(k,j,is,ie,vol);
         for (int n=0; n<NVAR; ++n){
 #pragma simd

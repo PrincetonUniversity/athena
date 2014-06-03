@@ -457,6 +457,7 @@ void OutputList::MakeOutputs()
         (pm->time >= pout->output_block.next_time) ||
         (pm->time >= pm->tlim)) {
 
+/*
       std::cout << std::setprecision(6) << pout->output_block.next_time << std::endl;
       std::cout << std::setprecision(6) << pout->output_block.dt << std::endl;
       std::cout << pout->output_block.block_number << std::endl;
@@ -473,6 +474,7 @@ std::cout << "islice=" << pout->output_block.islice
 std::cout << "isum=" << pout->output_block.isum
           << "jsum=" << pout->output_block.jsum
           << "ksum=" << pout->output_block.ksum << std::endl;
+*/
 
       pout->WriteOutputData();
 

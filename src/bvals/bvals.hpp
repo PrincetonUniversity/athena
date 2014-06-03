@@ -56,4 +56,13 @@ private:
   void OutflowInnerX3(Block *pb, AthenaArray<Real> &a);
   void OutflowOuterX3(Block *pb, AthenaArray<Real> &a);
 
+// preiodic BC functions
+
+  void PeriodicInnerX1(Block *pb, AthenaArray<Real> &a);
+  void PeriodicOuterX1(Block *pb, AthenaArray<Real> &a);
+  void PeriodicInnerX2(Block *pb, AthenaArray<Real> &a);
+  void PeriodicOuterX2(Block *pb, AthenaArray<Real> &a);
+  void PeriodicInnerX3(Block *pb, AthenaArray<Real> &a);
+  void PeriodicOuterX3(Block *pb, AthenaArray<Real> &a);
+
 #endif

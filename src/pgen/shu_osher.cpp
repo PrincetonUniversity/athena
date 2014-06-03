@@ -48,10 +48,10 @@ void Fluid::InitProblem(ParameterInput *pin)
 /* setup dependent variables */
 
   Real dl = 3.857143;
-  Real ul = 2.629369;
   Real pl = 10.33333;
-  Real wl = 0.0;
+  Real ul = 2.629369;
   Real vl = 0.0;
+  Real wl = 0.0;
 
   Real gm1 = (GetGamma()) - 1.0;
 

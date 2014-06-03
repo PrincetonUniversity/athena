@@ -408,7 +408,7 @@ Block::Block(RegionSize blk_size, RegionBoundary blk_bndry, Domain *pd)
     printf("j=%i  x2f=%e  \n",((je-js+1)+2*NGHOST),x2f(((je-js+1)+2*NGHOST)));
   }
 
-  if (block_size.nx2 == 1) {
+  if (block_size.nx3 == 1) {
     printf("k=%i  x3f=%e  dx3f=%e x3v=%e dx3v=%e\n",ks,x3f(ks),dx3f(ks),x3v(ks),dx3v(ks));
   } else {
     for (int k=0; k<((ke-ks+1)+2*(NGHOST)); ++k) {

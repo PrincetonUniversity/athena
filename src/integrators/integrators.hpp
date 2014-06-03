@@ -23,7 +23,8 @@ public:
 
   void Predict(Block *pb);
   void Correct(Block *pb);
-  void RiemannSolver(const int il, const int iu, 
+  void RiemannSolver(
+    const int il, const int iu, const int ivx, const int ivy, const int ivz,
     AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx);
   void ReconstructionFunc(const int k, const int j, const int il, const int iu, 
     const int dir, AthenaArray<Real> &w, AthenaArray<Real> &wl, AthenaArray<Real> &wr);

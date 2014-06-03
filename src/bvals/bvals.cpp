@@ -50,6 +50,9 @@ FluidBoundaryConditions::FluidBoundaryConditions(Block *pb)
     case 2:
       FluidInnerX1_ = OutflowInnerX1;
     break;
+    case 4:
+      FluidInnerX1_ = PeriodicInnerX1;
+    break;
     default:
       msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
           << "Flag ix1_bc=" << pb->block_bndry.ix1_bc << " not valid" << std::endl;
@@ -65,6 +68,9 @@ FluidBoundaryConditions::FluidBoundaryConditions(Block *pb)
     break;
     case 2:
       FluidOuterX1_ = OutflowOuterX1;
+    break;
+    case 4:
+      FluidOuterX1_ = PeriodicOuterX1;
     break;
     default:
       msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
@@ -83,6 +89,9 @@ FluidBoundaryConditions::FluidBoundaryConditions(Block *pb)
       case 2:
         FluidInnerX2_ = OutflowInnerX2;
       break;
+      case 4:
+        FluidInnerX2_ = PeriodicInnerX2;
+      break;
       default:
         msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
             << "Flag ix2_bc=" << pb->block_bndry.ix2_bc << " not valid" << std::endl;
@@ -98,6 +107,9 @@ FluidBoundaryConditions::FluidBoundaryConditions(Block *pb)
       break;
       case 2:
         FluidOuterX2_ = OutflowOuterX2;
+      break;
+      case 4:
+        FluidOuterX2_ = PeriodicOuterX2;
       break;
       default:
         msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
@@ -117,6 +129,9 @@ FluidBoundaryConditions::FluidBoundaryConditions(Block *pb)
       case 2:
         FluidInnerX3_ = OutflowInnerX3;
       break;
+      case 4:
+        FluidInnerX3_ = PeriodicInnerX3;
+      break;
       default:
         msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
             << "Flag ix3_bc=" << pb->block_bndry.ix3_bc << " not valid" << std::endl;
@@ -132,6 +147,9 @@ FluidBoundaryConditions::FluidBoundaryConditions(Block *pb)
       break;
       case 2:
         FluidOuterX3_ = OutflowOuterX3;
+      break;
+      case 4:
+        FluidOuterX3_ = PeriodicOuterX3;
       break;
       default:
         msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
