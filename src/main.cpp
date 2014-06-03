@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
   tstop = clock();
   float cpu_time = (tstop>tstart ? (float)(tstop-tstart) : 1.0)/(float)CLOCKS_PER_SEC;
   int64_t zones = (mesh->mesh_size.nx1)*(mesh->mesh_size.nx2)*(mesh->mesh_size.nx3);
-  float zcs = (float)zones/cpu_time;
+  float zcs = (float)(zones*mesh->ncycle)/cpu_time;
   std::cout << "cpu time used = " << cpu_time << std::endl;
   std::cout << "zone-cycles/second = " << zcs << std::endl;
 

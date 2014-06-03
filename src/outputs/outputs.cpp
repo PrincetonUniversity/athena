@@ -35,36 +35,37 @@
  *====================================================================================*/
 
 //--------------------------------------------------------------------------------------
-// DataNode constructor
+// OutputDataNode constructor
 
-DataNode::DataNode(AthenaArray<Real> *pinit_data, DataNodeHeader init_head)
+OutputDataNode::OutputDataNode(AthenaArray<Real> *parray, OutputDataNodeHeader head)
 {
-  header = init_head;
-  pdata = pinit_data;
+  header = head;
+  pdata = parray;
   pnext = NULL;
+  pprev = NULL;
 }
 
 //--------------------------------------------------------------------------------------
-// DataNode destructor
+// OutputDataNode destructor
 
-DataNode::~DataNode()
+OutputDataNode::~OutputDataNode()
 {
-  pdata->DeleteAthenaArray();
+  if (!pdata->IsShallowCopy()) pdata->DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------
 // DataList constructor
 
-DataList::DataList()
+OutputData::OutputData()
 {
   pfirst_node = NULL;
-  plast_node_ = NULL;
+  plast_node = NULL;
 }
 
 //--------------------------------------------------------------------------------------
 // DataList destructor
 
-DataList::~DataList()
+OutputData::~OutputData()
 {
 }
 
@@ -76,6 +77,7 @@ OutputType::OutputType(OutputBlock out_blk, Block *pb)
   output_block = out_blk;
   pparent_block = pb;
   pnext = NULL; // Terminate linked list with NULL ptr
+//  ptrans = NULL;
 }
 
 //--------------------------------------------------------------------------------------
@@ -117,12 +119,14 @@ void OutputList::InitOutputs(ParameterInput *pin)
   InputBlock *pib = pin->pfirst_block;
   OutputType *pnew_out;
   OutputType *plast = pfirst_out_;
+  Block *pb = pparent_block;
 
 // loop over input block names.  Find those that start with "output", read parameters,
 // and construct linked list of OutputTypes.
 
   while (pib != NULL) {
     if (pib->block_name.compare(0,6,"output") == 0) {
+      int create_output = 1;
       OutputBlock ob;  // define temporary OutputBlock struct
 
 // extract integer number of output block.  Save name and number 
@@ -133,7 +137,7 @@ void OutputList::InitOutputs(ParameterInput *pin)
 
 // set time of last output, time between outputs
 
-      ob.last_time = pin->GetOrAddReal(ob.block_name,"last_time",0.0);
+      ob.next_time = pin->GetOrAddReal(ob.block_name,"next_time",0.0);
       ob.dt = pin->GetReal(ob.block_name,"dt");
 
 // set file number, basename, id, and format
@@ -145,86 +149,199 @@ void OutputList::InitOutputs(ParameterInput *pin)
       ob.file_id = pin->GetOrAddString(ob.block_name,"id",define_id);
       ob.file_format = pin->GetString(ob.block_name,"file_format");
 
+// read slicing options.  Check that slice is within range
+
+      if (pin->ParameterExists(ob.block_name,"x1_slice")) {
+        Real x1 = pin->GetReal(ob.block_name,"x1_slice");
+        if (x1 >= pb->block_size.x1min && x1 < pb->block_size.x1max) {
+          for (int i=pb->is+1; i<=pb->ie+1; ++i) {
+            if (pb->x1f(i) > x1) {
+              ob.islice = i-1;
+              break;
+            }
+          }
+        } else {
+          create_output=0;;
+        }
+      } else {ob.islice = -999;}
+
+      if (pin->ParameterExists(ob.block_name,"x2_slice")) {
+        Real x2 = pin->GetReal(ob.block_name,"x2_slice");
+        if (x2 >= pb->block_size.x2min && x2 < pb->block_size.x2max) {
+          for (int j=pb->js+1; j<=pb->je+1; ++j) {
+            if (pb->x2f(j) > x2) {
+              ob.jslice = j-1;
+              break;
+            }
+          }
+        } else {
+          create_output=0;;
+        }
+      } else {ob.jslice = -999;}
+
+      if (pin->ParameterExists(ob.block_name,"x3_slice")) {
+        Real x3 = pin->GetReal(ob.block_name,"x3_slice");
+        if (x3 >= pb->block_size.x3min && x3 < pb->block_size.x3max) {
+          for (int k=pb->ks+1; k<=pb->ke+1; ++k) {
+            if (pb->x3f(k) > x3) {
+              ob.kslice = k-1;
+              break;
+            }
+          }
+        } else {
+          create_output=0;;
+        }
+      } else {ob.kslice = -999;}
+
+// read sum options.  Check for conflicts with slicing.
+
+      if (pin->ParameterExists(ob.block_name,"x1_sum")) {
+        if (pin->ParameterExists(ob.block_name,"x1_slice")) {
+          msg << "### FATAL ERROR in function [OutputList::InitOutputs]"
+              << std::endl << "Cannot request both slice and sum along x1-direction"
+              << " in output block '" << ob.block_name << "'" << std::endl;
+          throw std::runtime_error(msg.str().c_str());
+        } else {
+          ob.isum = pin->GetInteger(ob.block_name,"x1_sum");;
+        }
+      } else {ob.isum = 0;}
+
+      if (pin->ParameterExists(ob.block_name,"x2_sum")) {
+        if (pin->ParameterExists(ob.block_name,"x2_slice")) {
+          msg << "### FATAL ERROR in function [OutputList::InitOutputs]"
+              << std::endl << "Cannot request both slice and sum along x2-direction"
+              << " in output block '" << ob.block_name << "'" << std::endl;
+          throw std::runtime_error(msg.str().c_str());
+        } else {
+          ob.jsum = pin->GetInteger(ob.block_name,"x2_sum");;
+        }
+      } else {ob.jsum = 0;}
+
+      if (pin->ParameterExists(ob.block_name,"x3_sum")) {
+        if (pin->ParameterExists(ob.block_name,"x3_slice")) {
+          msg << "### FATAL ERROR in function [OutputList::InitOutputs]"
+              << std::endl << "Cannot request both slice and sum along x3-direction"
+              << " in output block '" << ob.block_name << "'" << std::endl;
+          throw std::runtime_error(msg.str().c_str());
+        } else {
+          ob.ksum = pin->GetInteger(ob.block_name,"x3_sum");;
+        }
+      } else {ob.ksum = 0;}
+
+
+      if (create_output) {  // skip output if slice not in range
+
 // set output variable and optional data format string used in formatted writes
 
-      if (ob.file_format.compare("hst") != 0)
-        ob.variable = pin->GetString(ob.block_name,"variable");
-      ob.data_format = pin->GetOrAddString(ob.block_name,"data_format","%12e.5");
+        if (ob.file_format.compare("hst") != 0) {
+          ob.variable = pin->GetString(ob.block_name,"variable");
+        }
+        ob.data_format = pin->GetOrAddString(ob.block_name,"data_format","%12e.5");
 
 // Construct new OutputType according to file format
 
-      if (ob.file_format.compare("tab") == 0) {
-        pnew_out = new FormattedTableOutput(ob, pparent_block);
-      } else if (ob.file_format.compare("hst") == 0) {
-        pnew_out = new HistoryOutput(ob, pparent_block);
-      } else {
-        msg << "### FATAL ERROR in function [OutputList::InitOutputs]"
-            << std::endl << "Unrecognized file format = '" << ob.file_format 
-            << "' in output block '" << pib->block_name << "'";
-        throw std::runtime_error(msg.str().c_str());
-      }
+        if (ob.file_format.compare("tab") == 0) {
+          pnew_out = new FormattedTableOutput(ob, pparent_block);
+        } else if (ob.file_format.compare("hst") == 0) {
+          pnew_out = new HistoryOutput(ob, pparent_block);
+        } else {
+          msg << "### FATAL ERROR in function [OutputList::InitOutputs]"
+              << std::endl << "Unrecognized file format = '" << ob.file_format 
+              << "' in output block '" << ob.block_name << "'" << std::endl;
+          throw std::runtime_error(msg.str().c_str());
+        }
 
 // Add new type as node in linked list 
 
-      if (pfirst_out_ == NULL) {
-        pfirst_out_ = pnew_out;
-      } else {
-        plast->pnext = pnew_out;
+        if (pfirst_out_ == NULL) {
+          pfirst_out_ = pnew_out;
+        } else {
+          plast->pnext = pnew_out;
+        }
+        plast = pnew_out;
       }
-      plast = pnew_out;
     }
     pib = pib->pnext;  // move to next input block name
   }
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void DataList::InsertNode()
+/*! \fn void OutputData::AppendNode()
  *  \brief
  */
 
-void DataList::InsertNode(AthenaArray<Real> *pdata, DataNodeHeader init_head)
+void OutputData::AppendNode(AthenaArray<Real> *parray, OutputDataNodeHeader head)
 {
-  DataNode *pnew_node = new DataNode(pdata, init_head);
+  OutputDataNode *pnew_node = new OutputDataNode(parray, head);
 
   if (pfirst_node == NULL)
-    pfirst_node = plast_node_ = pnew_node;
+    pfirst_node = plast_node = pnew_node;
   else {
-    plast_node_->pnext = pnew_node;
-    plast_node_ = pnew_node;
+    pnew_node->pprev = plast_node;
+    plast_node->pnext = pnew_node;
+    plast_node = pnew_node;
   }
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn DataList* OutputType::LoadDataList()
- *  \brief selects data to be included in output data container (DataList)
+/*! \fn void OutputData::ReplaceNode()
+ *  \brief
  */
 
-DataList* OutputType::LoadDataList()
+void OutputData::ReplaceNode(OutputDataNode *pold, OutputDataNode *pnew) 
 {
-  DataNodeHeader node_header;
-  DataList *pdl = new DataList;
+  if (pold == pfirst_node) {
+    pfirst_node = pnew;
+    if (pold->pnext != NULL) {    // there is another node in the list 
+      pnew->pnext = pold->pnext;
+      pnew->pnext->pprev = pnew;
+    } else {                      // there is only one node in the list
+      plast_node = pnew;
+    }
+  } else if (pold == plast_node) {
+    plast_node = pnew;
+    pnew->pprev = pold->pprev;
+    pnew->pprev->pnext = pnew;
+  } else {
+    pnew->pnext = pold->pnext;
+    pnew->pprev = pold->pprev;
+    pnew->pprev->pnext = pnew;
+    pnew->pnext->pprev = pnew;
+  }
+  delete pold;
+}
+
+//--------------------------------------------------------------------------------------
+/*! \fn OutputData* OutputType::LoadOutputData()
+ *  \brief selects data to be included in output data container (OuputData)
+ */
+
+OutputData* OutputType::LoadOutputData()
+{
+  OutputDataNodeHeader node_header;
+  OutputData *pod = new OutputData;
   Fluid *pf = pparent_block->pfluid;;
 
-  pdl->header.il = pparent_block->is;
-  pdl->header.iu = pparent_block->ie;
-  pdl->header.jl = pparent_block->js;
-  pdl->header.ju = pparent_block->je;
-  pdl->header.kl = pparent_block->ks;
-  pdl->header.ku = pparent_block->ke;
+  pod->header.il = pparent_block->is;
+  pod->header.iu = pparent_block->ie;
+  pod->header.jl = pparent_block->js;
+  pod->header.ju = pparent_block->je;
+  pod->header.kl = pparent_block->ks;
+  pod->header.ku = pparent_block->ke;
 
   node_header.type = "SCALARS";
   node_header.type = "dens";
-  pdl->InsertNode(pf->u.ShallowCopy(IDN,1),node_header);
+  pod->AppendNode(pf->u.ShallowCopy(IDN,1),node_header);
 
   node_header.type = "SCALARS";
   node_header.type = "Etot";
-  pdl->InsertNode(pf->u.ShallowCopy(IEN,1),node_header);
+  pod->AppendNode(pf->u.ShallowCopy(IEN,1),node_header);
 
   node_header.type = "VECTORS";
   node_header.type = "mom";
-  pdl->InsertNode(pf->u.ShallowCopy(IM1,3),node_header);
+  pod->AppendNode(pf->u.ShallowCopy(IM1,3),node_header);
 
-  return pdl;
+  return pod;
 }
 
 //--------------------------------------------------------------------------------------
@@ -232,8 +349,95 @@ DataList* OutputType::LoadDataList()
  *  \brief 
  */
 
-void OutputType::ComputeDataList()
+void OutputType::ComputeOutputData(OutputData *pod)
 {
+  if (output_block.kslice != -999) {
+    Slice(pod,3);
+  }
+  if (output_block.jslice != -999) {
+    Slice(pod,2);
+  }
+  if (output_block.islice != -999) {
+    Slice(pod,1);
+  }
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+/*! \fn OutputData* OutputType::Slice(OutputData* pod)
+ *  \brief
+ */
+
+void OutputType::Slice(OutputData* pod, int dim)
+{
+  OutputDataNodeHeader node_header;
+  AthenaArray<Real> *pslice;
+  std::stringstream str;
+
+// modify OutputData header
+
+  if (dim == 3) {
+    str << "Slice at x3= " << pparent_block->x3v(output_block.kslice) << std::endl;
+    pod->header.kl = 0;
+    pod->header.ku = 0;
+  } else if (dim == 2) {
+    str << "Slice at x2= " << pparent_block->x2v(output_block.jslice) << std::endl;
+    pod->header.jl = 0;
+    pod->header.ju = 0;
+  } else {
+    str << "Slice at x1= " << pparent_block->x1v(output_block.islice) << std::endl;
+    pod->header.il = 0;
+    pod->header.iu = 0;
+  }
+  pod->header.descriptor.append(str.str());
+
+// For each node in OutputData linked list, slice arrays containing output data  
+
+  OutputDataNode *pdn;
+  pdn = pod->pfirst_node;
+
+  while (pdn != NULL) {
+    node_header = pdn->header;
+    int nx4 = pdn->pdata->GetDim4();
+    int nx3 = pdn->pdata->GetDim3();
+    int nx2 = pdn->pdata->GetDim2();
+    int nx1 = pdn->pdata->GetDim1();
+    pslice = new AthenaArray<Real>;
+
+// Loop over variables and dimensions, extract slice
+
+    if (dim == 3) {
+      pslice->NewAthenaArray(nx4,1,nx2,nx1);
+      for (int n=0; n<nx4; ++n){
+      for (int j=(pod->header.jl); j<=(pod->header.ju); ++j){
+        for (int i=(pod->header.il); i<=(pod->header.iu); ++i){
+          (*pslice)(n,0,j,i) = (*pdn->pdata)(n,output_block.kslice,j,i);
+        }
+      }}
+    } else if (dim == 2) {
+      pslice->NewAthenaArray(nx4,nx3,1,nx1);
+      for (int n=0; n<nx4; ++n){
+      for (int k=(pod->header.kl); k<=(pod->header.ku); ++k){
+        for (int i=(pod->header.il); i<=(pod->header.iu); ++i){
+          (*pslice)(n,k,0,i) = (*pdn->pdata)(n,k,output_block.jslice,i);
+        }
+      }}
+    } else {
+      pslice->NewAthenaArray(nx4,nx3,nx2,1);
+      for (int n=0; n<nx4; ++n){
+      for (int k=(pod->header.kl); k<=(pod->header.ku); ++k){
+        for (int j=(pod->header.jl); j<=(pod->header.ju); ++j){
+          (*pslice)(n,k,j,0) = (*pdn->pdata)(n,k,j,output_block.islice);
+        }
+      }}
+    }
+
+    OutputDataNode *pnew = new OutputDataNode(pslice, node_header);
+    pod->ReplaceNode(pdn,pnew);
+    pdn = pdn->pnext;
+  }
+ 
+  return;
 }
 
 //--------------------------------------------------------------------------------------
@@ -248,16 +452,10 @@ void OutputList::MakeOutputs()
 
   while (pout != NULL) {
     if ((pm->time == pm->start_time) || 
-        (pm->time >= (pout->output_block.last_time + pout->output_block.dt)) ||
+        (pm->time >= pout->output_block.next_time) ||
         (pm->time >= pm->tlim)) {
 
-//      pout->ComputeFromMesh(pm); // Load data and perform transformations
- //     pout->WriteOutputData();  // Write data to file
-  //    pout->Update();  // Update number and time since last output
-      // std::cout << "Making output " << pout->BlockNumber() << std::endl;
-    
-/*
-      std::cout << std::setprecision(6) << pout->output_block.last_time << std::endl;
+      std::cout << std::setprecision(6) << pout->output_block.next_time << std::endl;
       std::cout << std::setprecision(6) << pout->output_block.dt << std::endl;
       std::cout << pout->output_block.block_number << std::endl;
       std::cout << pout->output_block.file_number << std::endl;
@@ -267,7 +465,12 @@ void OutputList::MakeOutputs()
       std::cout << pout->output_block.variable << std::endl;
       std::cout << pout->output_block.file_format << std::endl;
       std::cout << pout->output_block.data_format << std::endl;
-*/
+std::cout << "islice=" << pout->output_block.islice
+          << "jslice=" << pout->output_block.jslice
+          << "kslice=" << pout->output_block.kslice << std::endl;
+std::cout << "isum=" << pout->output_block.isum
+          << "jsum=" << pout->output_block.jsum
+          << "ksum=" << pout->output_block.ksum << std::endl;
 
       pout->WriteOutputData();
 

@@ -48,7 +48,7 @@ HistoryOutput::HistoryOutput(OutputBlock out_blk, Block *pb)
  *  \brief
  */
 
-void HistoryOutput::ComputeDataList()
+void HistoryOutput::ComputeOutputData(OutputData *pod)
 {
 }
 

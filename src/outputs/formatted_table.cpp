@@ -44,7 +44,7 @@ FormattedTableOutput::FormattedTableOutput(OutputBlock out_blk, Block *pb)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void FormattedTableOutput:::ComputeDataList()
+/*! \fn void FormattedTableOutput:::ComputeOutputData()
  *  \brief
  */
 
@@ -60,12 +60,12 @@ FormattedTableOutput::FormattedTableOutput(OutputBlock out_blk, Block *pb)
 void FormattedTableOutput::WriteOutputData()
 {
   std::stringstream msg;
-  DataList *pdl;
+  OutputData *pod;
 
-// create DataList using function in base OutputType class
-  pdl = LoadDataList();
+// create OutputData, apply transforms (slices, sums, etc)
 
-// Apply data transforms (e.g. sums, slices, etc.)
+  pod = LoadOutputData();
+  ComputeOutputData(pod);
 
 // create filename
   std::string fname;
@@ -80,24 +80,24 @@ void FormattedTableOutput::WriteOutputData()
   FILE *pfile;
   if ((pfile = fopen(fname.c_str(),"w")) == NULL){
     msg << "### FATAL ERROR in function [FormattedTableOutput::WriteOutputData]"
-        << std::endl << "Output file '" << fname << "' could not be opened";
+        << std::endl << "Output file '" << fname << "' could not be opened" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
 
 // loop over all cells in data arrays
 
-  for (int k=(pdl->header.kl); k<=(pdl->header.kl); ++k) {
-  for (int j=(pdl->header.jl); j<=(pdl->header.jl); ++j) {
-  for (int i=(pdl->header.il); i<=(pdl->header.iu); ++i) {
+  for (int k=(pod->header.kl); k<=(pod->header.ku); ++k) {
+  for (int j=(pod->header.jl); j<=(pod->header.ju); ++j) {
+  for (int i=(pod->header.il); i<=(pod->header.iu); ++i) {
 
 // write x1, x2, x3 indices and coordinates
-    if (pdl->header.il != pdl->header.iu) {
+    if (pod->header.il != pod->header.iu) {
       fprintf(pfile,"%04d",i);
       fprintf(pfile,output_block.data_format.c_str(),pparent_block->x1v(i));
     }
 
 // step through linked-list of data nodes and write data
-    DataNode *pnode = pdl->pfirst_node;
+    OutputDataNode *pnode = pod->pfirst_node;
     while (pnode != NULL) {
       for (int n=0; n<(pnode->pdata->GetDim4()); ++n) {
         fprintf( pfile, output_block.data_format.c_str(), (*pnode->pdata)(n,k,j,i) );
@@ -110,11 +110,12 @@ void FormattedTableOutput::WriteOutputData()
 
   }}}
 
-// close output file, increment file number and update time of last output
+// close output file, increment file number, update time of last output, clean up
 
   fclose(pfile);
   output_block.file_number++;
-  output_block.last_time += output_block.dt;
+  output_block.next_time += output_block.dt;
+  delete pod;
 
   return;
 }

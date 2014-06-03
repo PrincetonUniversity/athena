@@ -11,10 +11,12 @@ file_format = tab               # Tabular data dump
 variable    = prim              # variables to be output
 data_format = %12.5e            # Optional data format string
 dt          = 0.01              # time increment between outputs
+x3_slice    = 0.0
+x2_slice    = 0.0
 
-<output2>
-file_format = hst               # History data dump
-dt          = 0.01              # time increment between outputs
+#<output2>
+#file_format = hst               # History data dump
+#dt          = 0.01              # time increment between outputs
 
 #<output17>
 #last_time = 33.7

@@ -13,47 +13,49 @@
 class Mesh;
 class ParameterInput;
 
-struct DataListHeader {
+struct OutputDataHeader {
   std::string descriptor;
   int il,iu,jl,ju,kl,ku;
 };
 
-struct DataNodeHeader {
+struct OutputDataNodeHeader {
   std::string type;
   std::string name;
 };
 
-class DataNode {
+class OutputDataNode {
 public:
-  DataNode(AthenaArray<Real> *pinit_data, DataNodeHeader init_head);
-  ~DataNode();
+  OutputDataNode(AthenaArray<Real> *parray, OutputDataNodeHeader head);
+  ~OutputDataNode();
 
-  DataNodeHeader header;
+  OutputDataNodeHeader header;
   AthenaArray<Real> *pdata;
 
-  DataNode *pnext;
+  OutputDataNode *pnext,*pprev;
 };
 
-class DataList {
+class OutputData {
 public:
-  DataList();
-  ~DataList();
+  OutputData();
+  ~OutputData();
 
-  DataListHeader header;
-  void InsertNode(AthenaArray<Real> *pdata, DataNodeHeader init_head);
+  OutputDataHeader header;
+  void AppendNode(AthenaArray<Real> *parray, OutputDataNodeHeader head);
+  void ReplaceNode(OutputDataNode *pold, OutputDataNode *pnew);
 
-  DataNode *pfirst_node;  // Pointer to first node
-private:
-  DataNode *plast_node_;   // Pointer to last node
+  OutputDataNode *pfirst_node;  // Pointer to first node
+  OutputDataNode *plast_node;   // Pointer to last node
 };
 
 //! \struct OutputBlock
 //  \brief  contains parameter values read from <output> blocks in the input file
 
 struct OutputBlock {
-  Real last_time, dt;
+  Real next_time, dt;
   int block_number;
   int file_number;
+  int islice, jslice, kslice;
+  int isum, jsum, ksum;
   std::string block_name;
   std::string file_basename;
   std::string file_id;
@@ -62,24 +64,26 @@ struct OutputBlock {
   std::string data_format;
 };
 
+//-------------------------- OutputTypes base and derived classes ----------------------
 //! \class OutputType
-//  \brief abstract base class for different output types.  The WriteOutputData pure
-//  virtual function is overloaded in each of the derived output classes below.
+//  \brief abstract base class for different output types.
 
 class OutputType {
 public:
   OutputType(OutputBlock out_blck, Block *pb);
   ~OutputType();
 
-  virtual DataList* LoadDataList();
-  virtual void ComputeDataList();
+  Block *pparent_block;
+
+  virtual OutputData* LoadOutputData();
+  virtual void ComputeOutputData(OutputData *pod);
   virtual void WriteOutputData() = 0;  // pure virtual function!
 
-  OutputBlock output_block;
-  Block *pparent_block;
-  OutputType *pnext;
+  void Slice(OutputData* pod, int dim);
 
-  DataList *pdlist;
+  OutputBlock output_block;
+
+  OutputType *pnext;
 };
 
 //! \class OutputList
@@ -121,8 +125,8 @@ public:
   HistoryOutput(OutputBlock out_blk, Block *pb);
   ~HistoryOutput() {};
 
-  void ComputeDataList();
+  void ComputeOutputData(OutputData *pod);
   void WriteOutputData();
-
 };
+
 #endif
