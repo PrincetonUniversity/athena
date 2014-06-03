@@ -80,9 +80,13 @@ void FormattedTableOutput::WriteOutputData()
   FILE *pfile;
   if ((pfile = fopen(fname.c_str(),"w")) == NULL){
     msg << "### FATAL ERROR in function [FormattedTableOutput::WriteOutputData]"
-        << std::endl << "Output file '" << fname << "' could not be opened" << std::endl;
+        << std::endl << "Output file '" << fname << "' could not be opened" <<std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
+
+// print header
+
+  fprintf(pfile,"%s",pod->header.descriptor.c_str());
 
 // loop over all cells in data arrays
 

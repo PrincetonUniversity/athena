@@ -77,7 +77,6 @@ OutputType::OutputType(OutputBlock out_blk, Block *pb)
   output_block = out_blk;
   pparent_block = pb;
   pnext = NULL; // Terminate linked list with NULL ptr
-//  ptrans = NULL;
 }
 
 //--------------------------------------------------------------------------------------
@@ -228,9 +227,7 @@ void OutputList::InitOutputs(ParameterInput *pin)
         }
       } else {ob.ksum = 0;}
 
-
       if (create_output) {  // skip output if slice not in range
-
 // set output variable and optional data format string used in formatted writes
 
         if (ob.file_format.compare("hst") != 0) {
@@ -321,7 +318,12 @@ OutputData* OutputType::LoadOutputData()
   OutputDataNodeHeader node_header;
   OutputData *pod = new OutputData;
   Fluid *pf = pparent_block->pfluid;;
+  std::stringstream str;
 
+  str << "# Athena++ tabular data at time=" 
+      << pparent_block->pparent_domain->pparent_mesh->time << " cycle="
+      << pparent_block->pparent_domain->pparent_mesh->ncycle << std::endl;
+  pod->header.descriptor.append(str.str());
   pod->header.il = pparent_block->is;
   pod->header.iu = pparent_block->ie;
   pod->header.jl = pparent_block->js;
@@ -364,7 +366,7 @@ void OutputType::ComputeOutputData(OutputData *pod)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn OutputData* OutputType::Slice(OutputData* pod)
+/*! \fn void OutputType::Slice(OutputData* pod, int dim)
  *  \brief
  */
 
@@ -377,15 +379,15 @@ void OutputType::Slice(OutputData* pod, int dim)
 // modify OutputData header
 
   if (dim == 3) {
-    str << "Slice at x3= " << pparent_block->x3v(output_block.kslice) << std::endl;
+    str << "# Slice at x3= " << pparent_block->x3v(output_block.kslice) << std::endl;
     pod->header.kl = 0;
     pod->header.ku = 0;
   } else if (dim == 2) {
-    str << "Slice at x2= " << pparent_block->x2v(output_block.jslice) << std::endl;
+    str << "# Slice at x2= " << pparent_block->x2v(output_block.jslice) << std::endl;
     pod->header.jl = 0;
     pod->header.ju = 0;
   } else {
-    str << "Slice at x1= " << pparent_block->x1v(output_block.islice) << std::endl;
+    str << "# Slice at x1= " << pparent_block->x1v(output_block.islice) << std::endl;
     pod->header.il = 0;
     pod->header.iu = 0;
   }

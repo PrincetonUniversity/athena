@@ -31,7 +31,7 @@ public:
   OutputDataNodeHeader header;
   AthenaArray<Real> *pdata;
 
-  OutputDataNode *pnext,*pprev;
+  OutputDataNode *pnext, *pprev;
 };
 
 class OutputData {

@@ -36,16 +36,7 @@ public:
   InputLine *pline;             // pointer to first InputLine in this block
   InputBlock *pnext;            // pointer to the next node
 
-  int GetIntegerInThisBlock(std::string name);
-  Real GetRealInThisBlock(std::string name);
-  std::string GetStringInThisBlock(std::string name);
-  int ParameterExistsInThisBlock(std::string name);
-  Real GetOrAddRealInThisBlock(std::string name, Real value);
-  int GetOrAddIntInThisBlock(std::string name, int value);
-  std::string GetOrAddStringInThisBlock(std::string name, std::string value);
   InputLine* GetPtrToLine(std::string name);
-  void AddParameterInThisBlock(std::string name, std::string value,std::string comment);
-
 };
 
 //! \class ParameterInput
@@ -68,7 +59,6 @@ public:
   Real GetOrAddReal(std::string block, std::string name, Real value);
   std::string GetString(std::string block, std::string name);
   std::string GetOrAddString(std::string block, std::string name, std::string value);
-  InputBlock* GetFirstBlock();
 
   InputBlock* pfirst_block;   // pointer to first input block in linked list
 
