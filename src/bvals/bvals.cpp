@@ -24,7 +24,7 @@
 #include "../parameter_input.hpp"
 #include "../mesh.hpp"
 #include "../fluid.hpp"
-#include "prototypes.hpp"
+//#include "prototypes.hpp"
 #include "bvals.hpp"
 
 //======================================================================================
@@ -47,6 +47,9 @@ FluidBoundaryConditions::FluidBoundaryConditions(Block *pb)
     case 1:
       FluidInnerX1_ = ReflectInnerX1;
     break;
+    case 2:
+      FluidInnerX1_ = OutflowInnerX1;
+    break;
     default:
       msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
           << "Flag ix1_bc=" << pb->block_bndry.ix1_bc << " not valid" << std::endl;
@@ -59,6 +62,9 @@ FluidBoundaryConditions::FluidBoundaryConditions(Block *pb)
   switch(pb->block_bndry.ox1_bc){
     case 1:
       FluidOuterX1_ = ReflectOuterX1;
+    break;
+    case 2:
+      FluidOuterX1_ = OutflowOuterX1;
     break;
     default:
       msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
@@ -74,6 +80,9 @@ FluidBoundaryConditions::FluidBoundaryConditions(Block *pb)
       case 1:
         FluidInnerX2_ = ReflectInnerX2;
       break;
+      case 2:
+        FluidInnerX2_ = OutflowInnerX2;
+      break;
       default:
         msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
             << "Flag ix2_bc=" << pb->block_bndry.ix2_bc << " not valid" << std::endl;
@@ -86,6 +95,9 @@ FluidBoundaryConditions::FluidBoundaryConditions(Block *pb)
     switch(pb->block_bndry.ox2_bc){
       case 1:
         FluidOuterX2_ = ReflectOuterX2;
+      break;
+      case 2:
+        FluidOuterX2_ = OutflowOuterX2;
       break;
       default:
         msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
@@ -102,6 +114,9 @@ FluidBoundaryConditions::FluidBoundaryConditions(Block *pb)
       case 1:
         FluidInnerX3_ = ReflectInnerX3;
       break;
+      case 2:
+        FluidInnerX3_ = OutflowInnerX3;
+      break;
       default:
         msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
             << "Flag ix3_bc=" << pb->block_bndry.ix3_bc << " not valid" << std::endl;
@@ -114,6 +129,9 @@ FluidBoundaryConditions::FluidBoundaryConditions(Block *pb)
     switch(pb->block_bndry.ox3_bc){
       case 1:
         FluidOuterX3_ = ReflectOuterX3;
+      break;
+      case 2:
+        FluidOuterX3_ = OutflowOuterX3;
       break;
       default:
         msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl

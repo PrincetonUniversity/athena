@@ -36,4 +36,24 @@ private:
   void (*FluidOuterX3_) (Block *pb, AthenaArray<Real> &a);
 
 };
+
+//----------- prototypes for all BC functions ------------------------------------------
+// reflecting BC functions
+
+  void ReflectInnerX1(Block *pb, AthenaArray<Real> &a);
+  void ReflectOuterX1(Block *pb, AthenaArray<Real> &a);
+  void ReflectInnerX2(Block *pb, AthenaArray<Real> &a);
+  void ReflectOuterX2(Block *pb, AthenaArray<Real> &a);
+  void ReflectInnerX3(Block *pb, AthenaArray<Real> &a);
+  void ReflectOuterX3(Block *pb, AthenaArray<Real> &a);
+
+// outflow BC functions
+
+  void OutflowInnerX1(Block *pb, AthenaArray<Real> &a);
+  void OutflowOuterX1(Block *pb, AthenaArray<Real> &a);
+  void OutflowInnerX2(Block *pb, AthenaArray<Real> &a);
+  void OutflowOuterX2(Block *pb, AthenaArray<Real> &a);
+  void OutflowInnerX3(Block *pb, AthenaArray<Real> &a);
+  void OutflowOuterX3(Block *pb, AthenaArray<Real> &a);
+
 #endif

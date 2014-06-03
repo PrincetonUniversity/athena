@@ -47,29 +47,37 @@ void FluidIntegrator::ReconstructionFunc(const int k, const int j,
   if (dir == 3) offset = n1*n2;
 
   for (int n=0; n<NVAR; ++n){
-  int zero = n1*(j + n2*(k + n3*n));
+    int zero = n1*(j + n2*(k + n3*n));
 #pragma simd
-  for (int i=il; i<=iu; ++i){
-    Real& wli = wl(n,i);
-    Real& wri = wr(n,i);
-    Real& wim1 = w(i+zero-offset);
-    Real& wi   = w(i+zero);
-    Real& wip1 = w(i+zero+offset);
+    for (int i=il; i<=iu; ++i){
+      Real& wim2 = w(i+zero-2*offset);
+      Real& wim1 = w(i+zero-  offset);
+      Real& wi   = w(i+zero         );
+      Real& wip1 = w(i+zero+  offset);
 
-    Real dwl = wi - wim1;
-    Real dwr = wip1 - wi;
-    Real dw2 = dwl*dwr;
+      Real dwl = wim1 - wim2;
+      Real dwc = wi   - wim1;
+      Real dwr = wip1 - wi;
 
-// Apply monotonicity constraints to differences in primitive vars
+// Apply monotonicity constraints to differences in primitive vars, compute wl_(i-1/2)
 
-    Real dwm = dw2/(dwl + dwr + TINY_NUMBER);
-    if (dw2 <= 0.0) dwm  = 0.0;
+      Real dw2 = dwl*dwc;
+      Real dwm = 2.0*dw2/(dwl + dwc + TINY_NUMBER);
+      if (dw2 <= 0.0) dwm  = 0.0;
+
+      Real& wli = wl(n,i);
+      wli = wim1 + 0.5*dwm;
     
-// Compute L/R values
+// Apply monotonicity constraints to differences in primitive vars, compute wr_(i-1/2)
 
-    wri = wi + dwm;
-    wli = wi - dwm;
-  }}
+      dw2 = dwc*dwr;
+      dwm = 2.0*dw2/(dwc + dwr + TINY_NUMBER);
+      if (dw2 <= 0.0) dwm  = 0.0;
+
+      Real& wri = wr(n,i);
+      wri = wi - 0.5*dwm;
+    }
+  }
 
   return;
 }

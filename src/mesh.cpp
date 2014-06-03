@@ -289,7 +289,7 @@ Block::Block(RegionSize blk_size, RegionBoundary blk_bndry, Domain *pd)
 
   dx = block_size.x2max - block_size.x2min;
   if (block_size.nx2 == 1) {
-    dx2f(is) = dx;
+    dx2f(js) = dx;
     x2f(js  ) = block_size.x2min;
     x2f(je+1) = block_size.x2max;
   } else {
@@ -337,7 +337,7 @@ Block::Block(RegionSize blk_size, RegionBoundary blk_bndry, Domain *pd)
 
   dx = block_size.x3max - block_size.x3min;
   if (block_size.nx3 == 1) {
-    dx3f(is) = dx;
+    dx3f(ks) = dx;
     x3f(ks  ) = block_size.x3min;
     x3f(ke+1) = block_size.x3max;
   } else {
@@ -397,17 +397,25 @@ Block::Block(RegionSize blk_size, RegionBoundary blk_bndry, Domain *pd)
   for (int i=0; i<((ie-is+1)+2*(NGHOST)); ++i) {
     printf("i=%i  x1f=%e  dx1f=%e x1v=%e dx1v=%e \n",i,x1f(i),dx1f(i),x1v(i),dx1v(i));
   }
-  printf("i=%i  x1f= %e  \n",((ie-is+1)+2*NGHOST),x1f(((ie-is+1)+2*NGHOST)));
+  printf("i=%i  x1f=%e  \n",((ie-is+1)+2*NGHOST),x1f(((ie-is+1)+2*NGHOST)));
 
-  for (int j=0; j<((je-js+1)+2*(NGHOST)); ++j) {
-    printf("j=%i  x2f=%e  dx2f=%e x2v=%e dx2v%e \n",j,x2f(j),dx2f(j),x2v(j),dx2v(j));
+  if (block_size.nx2 == 1) {
+    printf("j=%i  x2f=%e  dx2f=%e x2v=%e dx2v=%e\n",js,x2f(js),dx2f(js),x2v(js),dx2v(js));
+  } else {
+    for (int j=0; j<((je-js+1)+2*(NGHOST)); ++j) {
+      printf("j=%i  x2f=%e  dx2f=%e x2v=%e dx2v=%e \n",j,x2f(j),dx2f(j),x2v(j),dx2v(j));
+    }
+    printf("j=%i  x2f=%e  \n",((je-js+1)+2*NGHOST),x2f(((je-js+1)+2*NGHOST)));
   }
-  printf("j=%i  x2f= %e  \n",((je-js+1)+2*NGHOST),x2f(((je-js+1)+2*NGHOST)));
 
-  for (int k=0; k<((ke-ks+1)+2*(NGHOST)); ++k) {
-    printf("k=%i  x3f= %e  dx3f=%e x3v=%e dx3v=%e \n",k,x3f(k),dx3f(k),x3v(k),dx3v(k));
-  }
+  if (block_size.nx2 == 1) {
+    printf("k=%i  x3f=%e  dx3f=%e x3v=%e dx3v=%e\n",ks,x3f(ks),dx3f(ks),x3v(ks),dx3v(ks));
+  } else {
+    for (int k=0; k<((ke-ks+1)+2*(NGHOST)); ++k) {
+      printf("k=%i  x3f=%e  dx3f=%e x3v=%e dx3v=%e \n",k,x3f(k),dx3f(k),x3v(k),dx3v(k));
+    }
   printf("k=%i  x3f= %e  \n",((ke-ks+1)+2*NGHOST),x3f(((ke-ks+1)+2*NGHOST)));
+  }
 /********************/
   return;
 }
