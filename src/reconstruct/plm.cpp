@@ -32,54 +32,133 @@
  *  \brief  piecewise linear reconstruction
  *====================================================================================*/
 
-//namespace piecewise_linear_method {
+//! \fn FluidIntegrator::ReconstructionFuncX1()
+//  \brief 
 
-void FluidIntegrator::ReconstructionFunc(const int k, const int j, 
-  const int il, const int iu, const int dir,
+void FluidIntegrator::ReconstructionFuncX1(
+  const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &w, AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
-  int offset;
-  int n1 = w.GetDim1();
-  int n2 = w.GetDim2();
-  int n3 = w.GetDim3();
-  if (dir == 1) offset = 1;
-  if (dir == 2) offset = n1;
-  if (dir == 3) offset = n1*n2;
-
   for (int n=0; n<NVAR; ++n){
-    int zero = n1*(j + n2*(k + n3*n));
 #pragma simd
     for (int i=il; i<=iu; ++i){
-      Real& wim2 = w(i+zero-2*offset);
-      Real& wim1 = w(i+zero-  offset);
-      Real& wi   = w(i+zero         );
-      Real& wip1 = w(i+zero+  offset);
+      Real& wim2 = w(n,k,j,i-2);
+      Real& wim1 = w(n,k,j,i-1);
+      Real& wi   = w(n,k,j,i  );
+      Real& wip1 = w(n,k,j,i+1);
+      Real& dxim2 = pparent_fluid->pparent_block->dx1v(i-2);
+      Real& dxim1 = pparent_fluid->pparent_block->dx1v(i-1);
+      Real& dxi   = pparent_fluid->pparent_block->dx1v(i  );
 
-      Real dwl = wim1 - wim2;
-      Real dwc = wi   - wim1;
-      Real dwr = wip1 - wi;
+      Real dwl = (wim1 - wim2)/dxim2;
+      Real dwc = (wi   - wim1)/dxim1;
+      Real dwr = (wip1 - wi)/dxi;
 
 // Apply monotonicity constraints to differences in primitive vars, compute wl_(i-1/2)
 
       Real dw2 = dwl*dwc;
-      Real dwm = 2.0*dw2/(dwl + dwc + TINY_NUMBER);
+      Real dwm = dw2/(dwl + dwc + TINY_NUMBER);
       if (dw2 <= 0.0) dwm  = 0.0;
 
       Real& wli = wl(n,i);
-      wli = wim1 + 0.5*dwm;
+      dxim1 = pparent_fluid->pparent_block->dx1f(i-1);
+      wli = wim1 + dxim1*dwm;
     
 // Apply monotonicity constraints to differences in primitive vars, compute wr_(i-1/2)
 
       dw2 = dwc*dwr;
-      dwm = 2.0*dw2/(dwc + dwr + TINY_NUMBER);
+      dwm = dw2/(dwc + dwr + TINY_NUMBER);
       if (dw2 <= 0.0) dwm  = 0.0;
 
       Real& wri = wr(n,i);
-      wri = wi - 0.5*dwm;
+      dxi = pparent_fluid->pparent_block->dx1f(i);
+      wri = wi - dxi*dwm;
     }
   }
 
   return;
 }
 
-//} // end piecewise_linear_method namespace
+//! \fn FluidIntegrator::ReconstructionFuncX2()
+//  \brief 
+
+void FluidIntegrator::ReconstructionFuncX2(
+  const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &w, AthenaArray<Real> &wl, AthenaArray<Real> &wr)
+{
+  for (int n=0; n<NVAR; ++n){
+#pragma simd
+    for (int i=il; i<=iu; ++i){
+      Real& wim2 = w(n,k,j-2,i);
+      Real& wim1 = w(n,k,j-1,i);
+      Real& wi   = w(n,k,j  ,i);
+      Real& wip1 = w(n,k,j+1,i);
+
+      Real dwl = (wim1 - wim2)/pparent_fluid->pparent_block->dx2v(j-2);
+      Real dwc = (wi   - wim1)/pparent_fluid->pparent_block->dx2v(j-1);
+      Real dwr = (wip1 - wi  )/pparent_fluid->pparent_block->dx2v(j  );
+
+// Apply monotonicity constraints to differences in primitive vars, compute wl_(i-1/2)
+
+      Real dw2 = dwl*dwc;
+      Real dwm = dw2/(dwl + dwc + TINY_NUMBER);
+      if (dw2 <= 0.0) dwm  = 0.0;
+
+      Real& wli = wl(n,i);
+      wli = wim1 + (pparent_fluid->pparent_block->dx2f(j-1))*dwm;
+    
+// Apply monotonicity constraints to differences in primitive vars, compute wr_(i-1/2)
+
+      dw2 = dwc*dwr;
+      dwm = dw2/(dwc + dwr + TINY_NUMBER);
+      if (dw2 <= 0.0) dwm  = 0.0;
+
+      Real& wri = wr(n,i);
+      wri = wi - (pparent_fluid->pparent_block->dx2f(j))*dwm;
+    }
+  }
+
+  return;
+}
+
+//! \fn FluidIntegrator::ReconstructionFuncX3()
+//  \brief 
+
+void FluidIntegrator::ReconstructionFuncX3(
+  const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &w, AthenaArray<Real> &wl, AthenaArray<Real> &wr)
+{
+  for (int n=0; n<NVAR; ++n){
+#pragma simd
+    for (int i=il; i<=iu; ++i){
+      Real& wim2 = w(n,k-2,j,i);
+      Real& wim1 = w(n,k-1,j,i);
+      Real& wi   = w(n,k  ,j,i);
+      Real& wip1 = w(n,k+1,j,i);
+
+      Real dwl = (wim1 - wim2)/pparent_fluid->pparent_block->dx3v(k-2);
+      Real dwc = (wi   - wim1)/pparent_fluid->pparent_block->dx3v(k-1);
+      Real dwr = (wip1 - wi  )/pparent_fluid->pparent_block->dx3v(k  );
+
+// Apply monotonicity constraints to differences in primitive vars, compute wl_(i-1/2)
+
+      Real dw2 = dwl*dwc;
+      Real dwm = dw2/(dwl + dwc + TINY_NUMBER);
+      if (dw2 <= 0.0) dwm  = 0.0;
+
+      Real& wli = wl(n,i);
+      wli = wim1 + (pparent_fluid->pparent_block->dx3f(k-1))*dwm;
+    
+// Apply monotonicity constraints to differences in primitive vars, compute wr_(i-1/2)
+
+      dw2 = dwc*dwr;
+      dwm = dw2/(dwc + dwr + TINY_NUMBER);
+      if (dw2 <= 0.0) dwm  = 0.0;
+
+      Real& wri = wr(n,i);
+      wri = wi - (pparent_fluid->pparent_block->dx3f(k))*dwm;
+    }
+  }
+
+  return;
+}

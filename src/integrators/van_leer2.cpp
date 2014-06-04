@@ -28,12 +28,6 @@
 #include "../coordinates/coordinates.hpp"
 #include "integrators.hpp"
 
-//using namespace COORDINATE_SYSTEM;
-//using namespace RIEMANN_SOLVER;
-//using namespace RECONSTRUCTION_ALGORITHM;
-
-#define SUM_ON 0
-
 //======================================================================================
 /*! \file van_leer2.cpp
  *  \brief van-Leer (MUSCL-Hancock) second-order integrator
@@ -64,22 +58,13 @@ void FluidIntegrator::Predict(Block *pb)
   AthenaArray<Real> area = pb->pcoord->face_area.ShallowCopy();
   AthenaArray<Real> vol  = pb->pcoord->cell_volume.ShallowCopy();
 
-#if SUM_ON>0
-  /**** output to force calcs ****/
-  for (int i=0; i<ndata; ++i){
-    sum += pb->pfluid->u(i);
-    sum_2 += pb->pfluid->w(i);
-  }
-  printf("sum = %e sum_2 = %e\n", sum, sum_2);
-#endif
-
 //--------------------------------------------------------------------------------------
 // i-direction 
 
   for (int k=ks; k<=ke; ++k){
   for (int j=js; j<=je; ++j){
 
-    ReconstructionFunc(k,j,is,ie+1,1,w,wl,wr);
+    ReconstructionFuncX1(k,j,is,ie+1,w,wl,wr);
 
     RiemannSolver(is,ie+1,IVX,IVY,IVZ,wl,wr,flx);
 
@@ -104,16 +89,6 @@ void FluidIntegrator::Predict(Block *pb)
 
   }}
 
-#if SUM_ON>0
-  /**** output to force calcs ****/
-  for (int i=0; i<ndata; ++i){
-      sum += pb->pfluid->u(i);
-      sum_2 += u1(i);
-  }
-  printf("sum = %e sum_2 = %e\n", sum, sum_2);
-#endif
-
-
 //--------------------------------------------------------------------------------------
 // j-direction
 
@@ -121,7 +96,7 @@ void FluidIntegrator::Predict(Block *pb)
     for (int k=ks; k<=ke; ++k){
     for (int j=js; j<=je+1; ++j){
 
-      ReconstructionFunc(k,j,is,ie,2,w,wl,wr);
+      ReconstructionFuncX2(k,j,is,ie,w,wl,wr);
 
       RiemannSolver(is,ie,IVY,IVZ,IVX,wl,wr,flx); 
 
@@ -160,18 +135,6 @@ void FluidIntegrator::Predict(Block *pb)
     }}
   }
 
-
-#if SUM_ON>0
-  /**** output to force calcs ****/
-  for (int i=0; i<ndata; ++i){
-    sum += pb->pfluid->u(i);
-    sum_2 += u1(i);
-  }
-  printf("sum = %e sum_2 = %e\n", sum, sum_2);
-#endif
-
-
-
 //--------------------------------------------------------------------------------------
 // k-direction 
 
@@ -179,7 +142,7 @@ void FluidIntegrator::Predict(Block *pb)
     for (int k=ks; k<=ke+1; ++k){
     for (int j=js; j<=je; ++j){
 
-      ReconstructionFunc(k,j,is,ie,3,w,wl,wr);
+      ReconstructionFuncX3(k,j,is,ie,w,wl,wr);
 
       RiemannSolver(is,ie,IVZ,IVX,IVY,wl,wr,flx);
 
@@ -246,22 +209,13 @@ void FluidIntegrator::Correct(Block *pb)
   AthenaArray<Real> area = pb->pcoord->face_area.ShallowCopy();
   AthenaArray<Real> vol  = pb->pcoord->cell_volume.ShallowCopy();
  
-#if SUM_ON>0
-  /**** output to force calcs ****/
-  for (int i=0; i<ndata; ++i){
-    sum += pb->pfluid->u(i);
-    sum_2 += pb->pfluid->w(i);
-  }
-  printf("sum = %e sum_2 = %e\n", sum, sum_2);
-#endif
-
 //--------------------------------------------------------------------------------------
 // i-direction 
 
   for (int k=ks; k<=ke; ++k){
   for (int j=js; j<=je; ++j){
 
-    ReconstructionFunc(k,j,is,ie+1,1,w1,wl,wr);
+    ReconstructionFuncX1(k,j,is,ie+1,w1,wl,wr);
 
     RiemannSolver(is,ie+1,IVX,IVY,IVZ,wl,wr,flx); 
 
@@ -285,16 +239,6 @@ void FluidIntegrator::Correct(Block *pb)
 
   }}
 
-#if SUM_ON>0
-  /**** output to force calcs ****/
-  for (int i=0; i<ndata; ++i){
-      sum += pb->pfluid->u(i);
-      sum_2 += u1(i);
-  }
-  printf("sum = %e sum_2 = %e\n", sum, sum_2);
-#endif
-
-
 //--------------------------------------------------------------------------------------
 // j-direction
 
@@ -302,7 +246,7 @@ void FluidIntegrator::Correct(Block *pb)
     for (int k=ks; k<=ke; ++k){
     for (int j=js; j<=je+1; ++j){
 
-      ReconstructionFunc(k,j,is,ie,2,w1,wl,wr);
+      ReconstructionFuncX2(k,j,is,ie,w1,wl,wr);
 
       RiemannSolver(is,ie,IVY,IVZ,IVX,wl,wr,flx); 
 
@@ -341,17 +285,6 @@ void FluidIntegrator::Correct(Block *pb)
     }}
   }
 
-#if SUM_ON>0
-  /**** output to force calcs ****/
-  for (int i=0; i<ndata; ++i){
-    sum += pb->pfluid->u(i);
-    sum_2 += u1(i);
-  }
-  printf("sum = %e sum_2 = %e\n", sum, sum_2);
-#endif
-
-
-
 //--------------------------------------------------------------------------------------
 // k-direction 
 
@@ -359,7 +292,7 @@ void FluidIntegrator::Correct(Block *pb)
     for (int k=ks; k<=ke+1; ++k){
     for (int j=js; j<=je; ++j){
 
-      ReconstructionFunc(k,j,is,ie,3,w1,wl,wr);
+      ReconstructionFuncX3(k,j,is,ie,w1,wl,wr);
 
       RiemannSolver(is,ie,IVZ,IVX,IVY,wl,wr,flx);
 

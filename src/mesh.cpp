@@ -393,7 +393,7 @@ Block::Block(RegionSize blk_size, RegionBoundary blk_bndry, Domain *pd)
   pfluid   = new Fluid(this);
   poutputs = new OutputList(this);
 
-/********************/
+/*******************
   for (int i=0; i<((ie-is+1)+2*(NGHOST)); ++i) {
     printf("i=%i  x1f=%e  dx1f=%e x1v=%e dx1v=%e \n",i,x1f(i),dx1f(i),x1v(i),dx1v(i));
   }
@@ -416,7 +416,7 @@ Block::Block(RegionSize blk_size, RegionBoundary blk_bndry, Domain *pd)
     }
   printf("k=%i  x3f= %e  \n",((ke-ks+1)+2*NGHOST),x3f(((ke-ks+1)+2*NGHOST)));
   }
-/********************/
+*******************/
   return;
 }
 
