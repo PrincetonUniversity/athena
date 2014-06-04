@@ -1,4 +1,4 @@
-/*// Conserved-to-primitive inversion for adiabatic hydrodynamics in special relativity
+// Conserved-to-primitive inversion for adiabatic hydrodynamics in special relativity
 
 // TODO: sort out headers
 // TODO: make conserved inputs const
@@ -16,6 +16,7 @@
 #include "../mesh.hpp"
 #include "../fluid.hpp"
 
+/*
 // Main header
 #include "../fluid.hpp"
 
@@ -26,6 +27,7 @@
 // Other headers
 #include "../athena.hpp"         // array access, macros
 #include "../athena_arrays.hpp"  // AthenaArray
+*/
 
 // Variable inverter
 // Inputs:
@@ -171,4 +173,4 @@ void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &pri
       }
     }
   return;
-}*/
+}
