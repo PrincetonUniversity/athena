@@ -14,16 +14,17 @@
  * the code distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
-#include <sstream>
-#include <iostream>
-#include <string>
-#include <math.h>
-
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh.hpp"
+// Primary header
 #include "../fluid.hpp"
+
+// C++ headers
+#include <cmath>  // sin()
+
+// Athena headers
+#include "../athena.hpp"           // enums, macros, Real
+#include "../athena_arrays.hpp"    // AthenaArray
+#include "../mesh.hpp"             // Block
+#include "../parameter_input.hpp"  // ParameterInput
 
 //======================================================================================
 /*! \file shu_osher.cpp

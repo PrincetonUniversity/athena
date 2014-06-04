@@ -14,23 +14,27 @@
  * the code distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
-#include <sstream>
-#include <string>
-#include <iostream>
-#include <stdexcept>
-#include <stdlib.h>
-#include <float.h>
-#include <math.h>
-
-#include "athena.hpp"
-#include "athena_arrays.hpp"
-#include "parameter_input.hpp"
+// Primary header
 #include "mesh.hpp"
-#include "fluid.hpp"
-#include "bvals/bvals.hpp"
-#include "integrators/integrators.hpp"
-#include "coordinates/coordinates.hpp"
-#include "outputs/outputs.hpp"
+
+// C++ headers
+#include <cfloat>     // FLT_MAX
+#include <cmath>      // pow()
+#include <cstdlib>    // abs()
+#include <iostream>   // cout, endl
+#include <sstream>    // sstream
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str()
+
+// Athena headers
+#include "athena.hpp"                   // enums, macros, Real
+#include "athena_arrays.hpp"            // AthenaArray
+#include "bvals/bvals.hpp"              // FluidBoundaryConditions
+#include "coordinates/coordinates.hpp"  // Coordinates
+#include "fluid.hpp"                    // Fluid
+#include "integrators/integrators.hpp"  // FluidIntegrator
+#include "outputs/outputs.hpp"          // OutputList
+#include "parameter_input.hpp"          // ParameterInput
 
 //======================================================================================
 /*! \file mesh.cpp

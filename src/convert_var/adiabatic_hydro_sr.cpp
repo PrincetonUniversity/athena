@@ -10,7 +10,7 @@
 #include <cmath>      // atan2(), cbrt(), cos(), pow(), sqrt()
 
 // Athena headers
-#include "../athena.hpp"         // array access, macros
+#include "../athena.hpp"         // enums, macros, Real
 #include "../athena_arrays.hpp"  // AthenaArray
 #include "../mesh.hpp"           // Block
 

@@ -14,16 +14,13 @@
  * the code distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
-#include <iostream>
-#include <string>
-#include <math.h>
-#include <float.h>
-
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh.hpp"
+// Primary header
 #include "coordinates.hpp"
+
+// Athena headers
+#include "../athena.hpp"         // macros, Real
+#include "../athena_arrays.hpp"  // AthenaArray
+#include "../mesh.hpp"           // Block
 
 //======================================================================================
 //! \file cartesian.cpp

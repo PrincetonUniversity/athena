@@ -14,19 +14,15 @@
  * the code distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
-#include <iostream>
-#include <string>
-#include <math.h>
-#include <algorithm>
-#include <stdio.h>
-
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh.hpp"
-#include "../fluid.hpp"
-#include "../coordinates/coordinates.hpp"
+// Primary header
 #include "integrators.hpp"
+
+// Athena headers
+#include "../athena.hpp"                   // enums, macros, Real
+#include "../athena_arrays.hpp"            // AthenaArray
+#include "../coordinates/coordinates.hpp"  // Coordinates
+#include "../fluid.hpp"                    // Fluid
+#include "../mesh.hpp"                     // Block, Domain, Mesh
 
 //======================================================================================
 /*! \file van_leer2.cpp

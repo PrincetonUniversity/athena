@@ -10,8 +10,12 @@
  *  Contains data structures and functions related to BCs for the fluid
  *====================================================================================*/
 
-class ParameterInput;
-class Fluid;
+// Athena headers
+#include "../athena.hpp"         // Real
+#include "../athena_arrays.hpp"  // AthenaArray
+
+// Declarations
+class Block;
 
 //! \class FluidBoundaryConditions
 //  \brief BCs data and functions for fluid

@@ -11,7 +11,7 @@
  *====================================================================================*/
 
 // Athena headers
-#include "athena.hpp"         // Real
+#include "athena.hpp"         // macros, Real
 #include "athena_arrays.hpp"  // AthenaArray
 
 class ParameterInput;

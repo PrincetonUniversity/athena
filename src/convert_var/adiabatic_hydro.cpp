@@ -14,18 +14,13 @@
  * the code distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
-#include <iostream>
-#include <string>
-#include <math.h>
-#include <algorithm>
-#include <stdio.h>
-
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh.hpp"
+// Primary header
 #include "../fluid.hpp"
 
+// Athena headers
+#include "../athena.hpp"         // enums, macros, Real
+#include "../athena_arrays.hpp"  // AthenaArray
+#include "../mesh.hpp"           // Block
 
 //======================================================================================
 /*! \file adiabatic_hydro.cpp

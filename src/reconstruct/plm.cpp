@@ -14,18 +14,14 @@
  * the code distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
-#include <iostream>
-#include <string>
-#include <math.h>
-#include <algorithm>
-#include <stdio.h>
-
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh.hpp"
-#include "../fluid.hpp"
+// Primary header
 #include "../integrators/integrators.hpp"
+
+// Athena headers
+#include "../athena.hpp"         // macros, Real
+#include "../athena_arrays.hpp"  // AthenaArray
+#include "../fluid.hpp"          // Fluid
+#include "../mesh.hpp"           // Block
 
 //======================================================================================
 /*! \file plm.cpp

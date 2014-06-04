@@ -14,17 +14,23 @@
  * the code distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
-#include <iostream>
-#include <string>
-#include <stdint.h>
-#include <iomanip>
-
+// Primary header
 #include "athena.hpp"
-#include "athena_arrays.hpp"
-#include "parameter_input.hpp"
-#include "mesh.hpp"
-#include "fluid.hpp"
-//#include "outputs/outputs.hpp"
+
+// C headers
+#include <stdint.h>  // int64_t
+
+// C++ headers
+#include <ctime>      // clock(), CLOCKS_PER_SEC, clock_t
+#include <exception>  // exception
+#include <iomanip>    // setprecision()
+#include <iostream>   // cout, endl
+#include <new>        // bad_alloc
+#include <string>     // string
+
+// Athena headers
+#include "mesh.hpp"             // Mesh
+#include "parameter_input.hpp"  // ParameterInput
 
 //======================================================================================
 /* //////////////////////////////// Athena++ Main Program \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\

@@ -10,9 +10,9 @@
 #include <cmath>      // sqrt()
 
 // Athena headers
-#include "../athena.hpp"         // array access, macros
+#include "../athena.hpp"         // enums, macros, Real
 #include "../athena_arrays.hpp"  // AthenaArray
-#include "../fluid.hpp"          // GetGamma()
+#include "../fluid.hpp"          // Fluid
 
 // Declarations
 double quadratic_root(double a1, double a0, bool greater_root);

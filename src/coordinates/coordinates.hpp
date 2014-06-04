@@ -10,6 +10,13 @@
  *  volumes, source terms) related to a Mesh
  *====================================================================================*/
 
+// Athena headers
+#include "../athena.hpp"  // macros, Real
+#include "../athena_arrays.hpp"  // AthenaArray
+
+// Declarations
+class Block;
+
 //! \class Coordinates
 //  \brief coordinate data and functions
 

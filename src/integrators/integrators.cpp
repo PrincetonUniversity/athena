@@ -14,17 +14,14 @@
  * the code distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
-#include <sstream>
-#include <iostream>
-#include <string>
-#include <stdexcept>
-
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh.hpp"
-#include "../fluid.hpp"
+// Primary header
 #include "integrators.hpp"
+
+// Athena headers
+#include "../athena.hpp"         // macros
+#include "../athena_arrays.hpp"  // AthenaArray
+#include "../fluid.hpp"          // Fluid
+#include "../mesh.hpp"           // Block
 
 //======================================================================================
 /*! \file integrators.cpp

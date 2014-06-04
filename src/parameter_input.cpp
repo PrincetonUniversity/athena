@@ -14,14 +14,19 @@
  * the code distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
-#include <sstream>
-#include <fstream>
-#include <string>
-#include <stdexcept>
-#include <stdlib.h>
-
-#include "athena.hpp"
+// Primary header
 #include "parameter_input.hpp"
+
+// C++ headers
+#include <cstdlib>    // atoi(), atof(), NULL, size_t
+#include <fstream>    // ifstream
+#include <iostream>   // endl, ostream
+#include <sstream>    // stringstream
+#include <stdexcept>  // runtime_error
+#include <string>     // string
+
+// Athena headers
+#include "athena.hpp"  // Real
 
 //======================================================================================
 /*! \file parameter_input.cpp

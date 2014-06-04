@@ -14,17 +14,20 @@
  * the code distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
-#include <sstream>
-#include <iostream>
-#include <stdexcept>
-#include <string>
-#include <math.h>
-
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh.hpp"
+// Primary header
 #include "../fluid.hpp"
+
+// C++ headers
+#include <iostream>   // endl
+#include <sstream>    // stringstream
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str
+
+// Athena headers
+#include "../athena.hpp"           // enums, Real
+#include "../athena_arrays.hpp"    // AthenaArray
+#include "../mesh.hpp"             // Block, Domain, Mesh
+#include "../parameter_input.hpp"  // ParameterInput
 
 //======================================================================================
 /*! \file shock_tube.cpp

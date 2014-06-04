@@ -14,13 +14,13 @@
  * the code distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
-#include <iostream>
-#include <string>
+// Primary header
+#include "bvals.hpp"
 
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh.hpp"
+// Athena headers
+#include "../athena.hpp"         // macros, Real
+#include "../athena_arrays.hpp"  // AthenaArray
+#include "../mesh.hpp"           // Block
 
 //======================================================================================
 /*! \file outflow_fluid.cpp

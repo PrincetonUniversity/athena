@@ -14,18 +14,19 @@
  * the code distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
-#include <iostream>
-#include <string>
-#include <math.h>
-#include <float.h>
-
-#include "athena.hpp"
-#include "athena_arrays.hpp"
-#include "parameter_input.hpp"
-#include "mesh.hpp"
+// Primary header
 #include "fluid.hpp"
-#include "bvals/bvals.hpp"
-#include "integrators/integrators.hpp"
+
+// C++ headers
+#include <algorithm>  // min()
+#include <cfloat>     // FLT_MAX
+#include <cmath>      // fabs(), sqrt()
+
+// Athena headers
+#include "athena.hpp"                   // array access, macros, Real
+#include "athena_arrays.hpp"            // AthenaArray
+#include "integrators/integrators.hpp"  // FluidIntegrator
+#include "mesh.hpp"                     // Block, Mesh
 
 //======================================================================================
 //! \file fluid.cpp
