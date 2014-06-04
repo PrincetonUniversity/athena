@@ -1,33 +1,18 @@
 // Conserved-to-primitive inversion for adiabatic hydrodynamics in special relativity
 
-// TODO: sort out headers
 // TODO: make conserved inputs const
-// TODO: sort out namespace conflict with adiabatic_hydro.cpp
 
-// Temporary includes to make compilation work
-#include <iostream>
-#include <string>
-#include <cmath>
-#include <algorithm>
-#include <stdio.h>
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh.hpp"
+// Primary header
 #include "../fluid.hpp"
 
-/*
-// Main header
-#include "../fluid.hpp"
-
-// Standard libraries
+// C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // atan2(), cbrt(), cos(), pow(), sqrt()
 
-// Other headers
+// Athena headers
 #include "../athena.hpp"         // array access, macros
 #include "../athena_arrays.hpp"  // AthenaArray
-*/
+#include "../mesh.hpp"           // Block
 
 // Variable inverter
 // Inputs:

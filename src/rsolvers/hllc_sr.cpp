@@ -1,33 +1,18 @@
 // HLLC Riemann solver for special relativistic hydro
 
-// TODO: sort out headers
 // TODO: make left and right inputs const
 
-// Temporary includes to make compilation work
-#include <iostream>
-#include <string>
-#include <cmath>
-#include <algorithm>
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh.hpp"
-#include "../fluid.hpp"
+// Primary header
 #include "../integrators/integrators.hpp"
 
-/*
-// Main header
-#include "../integrators/integrators.hpp"
-
-// Standard libraries
+// C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
-// Other headers
+// Athena headers
 #include "../athena.hpp"         // array access, macros
 #include "../athena_arrays.hpp"  // AthenaArray
 #include "../fluid.hpp"          // GetGamma()
-*/
 
 // Declarations
 double quadratic_root(double a1, double a0, bool greater_root);
