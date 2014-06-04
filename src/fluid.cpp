@@ -109,7 +109,7 @@ void Fluid::NewTimeStep(Block *pb)
       Real& d_t2 = dt2(i);
       Real& d_t3 = dt3(i);
 
-      Real cs = sqrt(gam*w_p/((gam-1.0)*w_d));
+      Real cs = sqrt(gam*w_p/w_d);
 
       d_t1 = dx1/(fabs(w_v1) + cs);
       d_t2 = dx2/(fabs(w_v2) + cs);
@@ -145,5 +145,4 @@ void Fluid::NewTimeStep(Block *pb)
   pm->dt = std::min( ((pm->cfl_number)*min_dt) , (2.0*old_dt) );
 
   return;
-
 }
