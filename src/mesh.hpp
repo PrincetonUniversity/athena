@@ -10,6 +10,10 @@
  *  These classes contain data and functions related to the computational mesh
  *====================================================================================*/
 
+// Athena headers
+#include "athena.hpp"         // Real
+#include "athena_arrays.hpp"  // AthenaArray
+
 class ParameterInput;
 class Mesh;
 class Domain;

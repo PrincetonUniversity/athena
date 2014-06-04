@@ -13,6 +13,9 @@
  *  NOTE THE TRAILING INDEX INSIDE THE PARENTHESES IS INDEXED FASTEST
  *====================================================================================*/
 
+// C++ headers
+#include <cstddef>  // size_t
+
 template<typename T>
 class AthenaArray {
 public:
@@ -99,9 +102,9 @@ AthenaArray<T>::AthenaArray(const AthenaArray<T>& src) {
   nx3_ = src.nx3_;
   nx4_ = src.nx4_;
   if (src.pdata_) {
-    size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_);
+    std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_);
     pdata_ = new T[size];
-    for (size_t i=0; i<size; ++i) {
+    for (std::size_t i=0; i<size; ++i) {
       pdata_[i] = src.pdata_[i];
     } 
   }
@@ -118,9 +121,9 @@ AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
     this.nx4_ = src.nx4_;
 
     delete[] this.pdata_;
-    size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_);
+    std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_);
     this.pdata_ = new T[size];
-    for (size_t i=0; i<size; ++i) {
+    for (std::size_t i=0; i<size; ++i) {
       this.pdata_[i] = src.pdata_[i];
     } 
   }

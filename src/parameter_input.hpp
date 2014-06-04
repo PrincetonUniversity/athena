@@ -12,6 +12,14 @@
  *  information on the Athena++ input file format.
  *====================================================================================*/
 
+// C++ headers
+#include <cstddef>  // size_t
+#include <ostream>  // ostream
+#include <string>   // string
+
+// Athena headers
+#include "athena.hpp"  // Real
+
 //! \struct InputLine
 //  \brief  node in a linked list of parameters contained within a single input block
 

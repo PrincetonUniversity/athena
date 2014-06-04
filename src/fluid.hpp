@@ -10,6 +10,11 @@
  *  contains data structures and functions for a Fluid stored on the Mesh
  *====================================================================================*/
 
+// Athena headers
+#include "athena.hpp"         // Real
+#include "athena_arrays.hpp"  // AthenaArray
+
+class Block;
 class ParameterInput;
 class FluidBoundaryConditions;
 class FluidIntegrator;

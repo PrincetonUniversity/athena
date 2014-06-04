@@ -9,6 +9,11 @@
  *  \brief defines FluidIntegrator implements data and functions to integrate fluid
  *====================================================================================*/
 
+// Athena headers
+#include "../athena.hpp"         // Real
+#include "../athena_arrays.hpp"  // AthenaArray
+
+class Block;
 class Fluid;
 
 //! \class FluidIntegrator
