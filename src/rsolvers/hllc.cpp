@@ -52,20 +52,14 @@ void FluidIntegrator::RiemannSolver(
     Real& vx_l=wl(ivx,i);
     Real& vy_l=wl(ivy,i);
     Real& vz_l=wl(ivz,i);
-    Real& e_l=wl(IEN,i);
+    Real& p_l=wl(IEN,i);
 
     Real& d_r=wr(IDN,i);
     Real& vx_r=wr(ivx,i);
     Real& vy_r=wr(ivy,i);
     Real& vz_r=wr(ivz,i);
-    Real& e_r=wr(IEN,i);
+    Real& p_r=wr(IEN,i);
 
-    Real& d_flx=flx(IDN,i);
-    Real& vx_flx=flx(ivx,i);
-    Real& vy_flx=flx(ivy,i);
-    Real& vz_flx=flx(ivz,i);
-    Real& e_flx=flx(IEN,i);
-      
 // Compute Roe-averaged velocities
 
     Real sqrtdl = sqrt(d_l);
@@ -79,11 +73,11 @@ void FluidIntegrator::RiemannSolver(
 // Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
 // rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
 
-    Real ul_e  = e_l + 0.5*d_l* (vx_l*vx_l + vy_l*vy_l + vz_l*vz_l);
-    Real ur_e  = e_r + 0.5*d_r* (vx_r*vx_r + vy_r*vy_r + vz_r*vz_r);
+    Real ul_e  = p_l/(gamma - 1.0) + 0.5*d_l*(vx_l*vx_l + vy_l*vy_l + vz_l*vz_l);
+    Real ur_e  = p_r/(gamma - 1.0) + 0.5*d_r*(vx_r*vx_r + vy_r*vy_r + vz_r*vz_r);
     Real ul_mx = d_l*vx_l;
     Real ur_mx = d_r*vx_r;
-    Real hroe  = ((ul_e + e_l)/sqrtdl + (ur_e + e_r)/sqrtdr)*isdlpdr;
+    Real hroe  = ((ul_e + p_l)/sqrtdl + (ur_e + p_r)/sqrtdr)*isdlpdr;
 
 // Compute Roe-averaged wave speeds
 
@@ -94,8 +88,8 @@ void FluidIntegrator::RiemannSolver(
 
 // Compute the max/min wave speeds based on L/R values and Roe averages
 
-    cfl = sqrt((gamma*e_l/d_l));
-    cfr = sqrt((gamma*e_r/d_r));
+    cfl = sqrt((gamma*p_l/d_l));
+    cfr = sqrt((gamma*p_r/d_r));
 
     ar = std::max(evp,(vx_r + cfr));
     al = std::min(evm,(vx_l - cfl));
@@ -105,8 +99,8 @@ void FluidIntegrator::RiemannSolver(
 
 // Compute the contact wave speed and pressure
 
-    tl = e_l + (vx_l - al)*ul_mx;
-    tr = e_r + (vx_r - ar)*ur_mx;
+    tl = p_l + (vx_l - al)*ul_mx;
+    tr = p_r + (vx_r - ar)*ur_mx;
 
     ml =   ul_mx - d_l*al;
     mr = -(ur_mx - d_r*ar);
@@ -131,11 +125,11 @@ void FluidIntegrator::RiemannSolver(
     fl[ivz] = d_l*vz_l*(vx_l - bm);
     fr[ivz] = d_r*vz_r*(vx_r - bp);
 
-    fl[ivx] += e_l;
-    fr[ivx] += e_r;
+    fl[ivx] += p_l;
+    fr[ivx] += p_r;
 
-    fl[IEN] = ul_e*(vx_l - bm) + e_l*vx_l;
-    fr[IEN] = ur_e*(vx_r - bp) + e_r*vx_r;
+    fl[IEN] = ul_e*(vx_l - bm) + p_l*vx_l;
+    fr[IEN] = ur_e*(vx_r - bp) + p_r*vx_r;
 
 // Compute flux weights or scales
 
@@ -152,6 +146,12 @@ void FluidIntegrator::RiemannSolver(
 
 // Compute the HLLC flux at interface
 
+    Real& d_flx=flx(IDN,i);
+    Real& vx_flx=flx(ivx,i);
+    Real& vy_flx=flx(ivy,i);
+    Real& vz_flx=flx(ivz,i);
+    Real& e_flx=flx(IEN,i);
+      
     d_flx  = sl*fl[IDN] + sr*fr[IDN];
     vx_flx = sl*fl[ivx] + sr*fr[ivx];
     vy_flx = sl*fl[ivy] + sr*fr[ivy];

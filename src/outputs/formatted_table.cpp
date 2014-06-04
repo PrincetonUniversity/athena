@@ -94,13 +94,25 @@ void FormattedTableOutput::WriteOutputData()
   for (int j=(pod->header.jl); j<=(pod->header.ju); ++j) {
   for (int i=(pod->header.il); i<=(pod->header.iu); ++i) {
 
-// write x1, x2, x3 indices and coordinates
+// write x1, x2, x3 indices and coordinates on start of new line
+
     if (pod->header.il != pod->header.iu) {
       fprintf(pfile,"%04d",i);
       fprintf(pfile,output_block.data_format.c_str(),pparent_block->x1v(i));
     }
 
-// step through linked-list of data nodes and write data
+    if (pod->header.jl != pod->header.ju) {
+      fprintf(pfile,"%04d",j);
+      fprintf(pfile,output_block.data_format.c_str(),pparent_block->x2v(j));
+    }
+
+    if (pod->header.kl != pod->header.ku) {
+      fprintf(pfile,"%04d",k);
+      fprintf(pfile,output_block.data_format.c_str(),pparent_block->x3v(k));
+    }
+
+// step through linked-list of data nodes and write data on same line
+
     OutputDataNode *pnode = pod->pfirst_node;
     while (pnode != NULL) {
       for (int n=0; n<(pnode->pdata->GetDim4()); ++n) {
@@ -109,8 +121,7 @@ void FormattedTableOutput::WriteOutputData()
       pnode = pnode->pnext;
     }
 
-// terminate line
-    fprintf(pfile,"\n");
+    fprintf(pfile,"\n"); // terminate line
 
   }}}
 

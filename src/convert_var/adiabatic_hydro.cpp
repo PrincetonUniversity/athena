@@ -46,6 +46,7 @@ void Fluid::ConservedToPrimitive(AthenaArray<Real> &c, AthenaArray<Real> &p)
     kl -= (NGHOST);
     ku += (NGHOST);
   }
+  Real gamma = pb->pfluid->GetGamma();
 
   AthenaArray<Real> lc = c.ShallowCopy();
   AthenaArray<Real> lp = p.ShallowCopy();
@@ -67,7 +68,7 @@ void Fluid::ConservedToPrimitive(AthenaArray<Real> &c, AthenaArray<Real> &p)
       Real& w_m1 = lp(IVX,k,j,i);
       Real& w_m2 = lp(IVY,k,j,i);
       Real& w_m3 = lp(IVZ,k,j,i);
-      Real& w_e  = lp(IEN,k,j,i);
+      Real& w_p  = lp(IEN,k,j,i);
 
       Real di = 1.0/u_d;
       w_d  = u_d;
@@ -75,7 +76,8 @@ void Fluid::ConservedToPrimitive(AthenaArray<Real> &c, AthenaArray<Real> &p)
       w_m2 = u_m2*di;
       w_m3 = u_m3*di;
 
-      w_e = u_e - 0.5*di*(u_m1*u_m1 + u_m2*u_m2 + u_m3*u_m3);
+      w_p = u_e - 0.5*di*(u_m1*u_m1 + u_m2*u_m2 + u_m3*u_m3);
+      w_p *= (gamma - 1.0);
     }
   }}
 
