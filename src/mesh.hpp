@@ -17,7 +17,7 @@
 class ParameterInput;
 class Mesh;
 class Domain;
-namespace COORDINATE_SYSTEM {class Coordinates;}
+class Coordinates;
 class FluidBoundaryConditions;
 class Fluid;
 class OutputList;
@@ -58,7 +58,7 @@ public:
   int is,ie,js,je,ks,ke;
 
   FluidBoundaryConditions *pf_bcs;
-  COORDINATE_SYSTEM::Coordinates *pcoord;
+  Coordinates *pcoord;
   Fluid *pfluid;
   OutputList *poutputs;
 };

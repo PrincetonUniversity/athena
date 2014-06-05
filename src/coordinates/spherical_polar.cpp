@@ -14,17 +14,20 @@
  * the code distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
-// Primary header
+#include <iostream>
+#include <string>
+#include <math.h>
+#include <float.h>
+
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
 #include "coordinates.hpp"
 
-// Athena headers
-#include "../athena.hpp"         // macros, Real
-#include "../athena_arrays.hpp"  // AthenaArray
-#include "../mesh.hpp"           // Block
-
 //======================================================================================
-//! \file cartesian.cpp
-//  \brief implements functions in class Coordinates for Cartesian coordinates
+//! \file spherical_polar.cpp
+//  \brief implements functions in class Coordinates for spherical polar coordinates
 //======================================================================================
 
 // constructor
@@ -39,7 +42,8 @@ Coordinates::Coordinates(Block *pb)
 // x1-direction
 
   for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-    pb->x1v(i) = 0.5*(pb->x1f(i+1) + pb->x1f(i));
+    pb->x1v(i) = 0.75*(pow(pb->x1f(i+1),4) - pow(pb->x1f(i),4))
+                     /(pow(pb->x1f(i+1),3) - pow(pb->x1f(i),3));
   }
   for (int i=is-(NGHOST); i<=ie+(NGHOST)-1; ++i) {
     pb->dx1v(i) = pb->x1v(i+1) - pb->x1v(i);
@@ -52,7 +56,9 @@ Coordinates::Coordinates(Block *pb)
     pb->dx2v(js) = pb->dx2f(js);
   } else {
     for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
-      pb->x2v(j) = 0.5*(pb->x2f(j+1) + pb->x2f(j));
+      pb->x2v(j) = ((sin(pb->x2f(j+1)) - pb->x2f(j+1)*cos(pb->x2f(j+1))) -
+                    (sin(pb->x2f(j  )) - pb->x2f(j  )*cos(pb->x2f(j  ))))/
+                         (cos(pb->x2f(j  )) - cos(pb->x2f(j+1)));
     }
     for (int j=js-(NGHOST); j<=je+(NGHOST)-1; ++j) {
       pb->dx2v(j) = pb->x2v(j+1) - pb->x2v(j);
@@ -74,22 +80,72 @@ Coordinates::Coordinates(Block *pb)
   }
 
 // Allocate memory for scratch arrays used in integrator, and internal scratch arrays
-// For cartesian coordinates, no local scratch arrays are needed
+// Allocate only those local scratch arrays needed for spherical polar coordinates
 
   int ncells1 = pb->block_size.nx1 + 2*(NGHOST);
   int ncells2 = 1;
   if (pb->block_size.nx2 > 1) ncells2 = pb->block_size.nx2 + 2*(NGHOST);
 
-  face_area.NewAthenaArray(ncells1);
-  cell_volume.NewAthenaArray(ncells1);
+  face_area.NewAthenaArray(ncells1);   // scratch used in integrator
+  cell_volume.NewAthenaArray(ncells1); // scratch used in integrator
+
+  face1_area_i_.NewAthenaArray(ncells1);
+  face2_area_i_.NewAthenaArray(ncells1);
+  face3_area_i_.NewAthenaArray(ncells1);
+  src_terms_i_.NewAthenaArray(ncells1);
+  volume_i_.NewAthenaArray(ncells1);
+
+  face1_area_j_.NewAthenaArray(ncells2);
+  face2_area_j_.NewAthenaArray(ncells2);
+  src_terms_j_.NewAthenaArray(ncells2);
+  volume_j_.NewAthenaArray(ncells2);
+
+// compute constant factors used to compute face-areas and cell volumes and store in
+// local scratch arrays.  This helps improve performance.
+
+#pragma simd
+  for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i){
+    face1_area_i_(i) = pb->x1f(i)*pb->x1f(i);
+    face2_area_i_(i) = 0.5*(pb->x1f(i+1)*pb->x1f(i+1) - pb->x1f(i)*pb->x1f(i));
+    face3_area_i_(i) = 0.5*(pb->x1f(i+1)*pb->x1f(i+1) - pb->x1f(i)*pb->x1f(i));
+    volume_i_(i)     = (1.0/3.0)*(pow(pb->x1f(i+1),3) - pow(pb->x1f(i),3));
+    src_terms_i_(i)  = face2_area_i_(i)/volume_i_(i);
+  }
+  if (pb->block_size.nx2 > 1) {
+#pragma simd
+    for (int j=js-(NGHOST); j<=je+(NGHOST); ++j){
+      face1_area_j_(j) = cos(pb->x2f(j)) - cos(pb->x2f(j+1));
+      face2_area_j_(j) = sin(pb->x2f(j));
+      volume_j_(j)     = cos(pb->x2f(j)) - cos(pb->x2f(j+1));
+      src_terms_j_(j)  = (sin(pb->x2f(j+1)) - sin(pb->x2f(j)))/volume_j_(j);
+    }
+  } else {
+    face1_area_j_(js) = cos(pb->x2f(js)) - cos(pb->x2f(js+1));
+    face2_area_j_(js) = sin(pb->x2f(js));
+    volume_j_(js)     = cos(pb->x2f(js)) - cos(pb->x2f(js+1));
+    src_terms_j_(js)  = (sin(pb->x2f(js)) - sin(pb->x2f(js)))/volume_j_(js);
+  }
+
 }
 
 // destructor
 
 Coordinates::~Coordinates()
 {
+// delete scratch arrays used in integrator, and local arrays used internally
   face_area.DeleteAthenaArray();
   cell_volume.DeleteAthenaArray();
+
+  face1_area_i_.DeleteAthenaArray();
+  face2_area_i_.DeleteAthenaArray();
+  face3_area_i_.DeleteAthenaArray();
+  src_terms_i_.DeleteAthenaArray();
+  volume_i_.DeleteAthenaArray();
+
+  face1_area_j_.DeleteAthenaArray();
+  face2_area_j_.DeleteAthenaArray();
+  src_terms_j_.DeleteAthenaArray();
+  volume_j_.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------
@@ -102,7 +158,7 @@ void Coordinates::Area1Face(const int k, const int j, const int il, const int iu
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
-    area_i = (pparent_block->dx2f(j))*(pparent_block->dx3f(k));
+    area_i = face1_area_i_(i)*face1_area_j_(j)*(pparent_block->dx3f(k));
   }
   return;
 }
@@ -110,12 +166,10 @@ void Coordinates::Area1Face(const int k, const int j, const int il, const int iu
 void Coordinates::Area2Face(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-  AthenaArray<Real> dx1f = pparent_block->dx1f.ShallowCopy();
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
-    Real& dx1_i  = dx1f(i);
-    area_i = dx1_i*(pparent_block->dx3f(k));
+    area_i = face2_area_i_(i)*face2_area_j_(j)*(pparent_block->dx3f(k));
   }
   return;
 }
@@ -123,12 +177,10 @@ void Coordinates::Area2Face(const int k, const int j, const int il, const int iu
 void Coordinates::Area3Face(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-  AthenaArray<Real> dx1f = pparent_block->dx1f.ShallowCopy();
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
-    Real& dx1_i  = dx1f(i);
-    area_i = dx1_i*(pparent_block->dx2f(j));
+    area_i = face3_area_i_(i)*(pparent_block->dx2f(j));
   }
   return;
 }
@@ -140,12 +192,10 @@ void Coordinates::Area3Face(const int k, const int j, const int il, const int iu
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &vol)
 {
-  AthenaArray<Real> dx1f = pparent_block->dx1f.ShallowCopy();
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& vol_i = vol(i);
-    Real& dx1_i = dx1f(i);
-    vol_i = dx1_i*(pparent_block->dx2f(j))*(pparent_block->dx3f(k));
+    vol_i = volume_i_(i)*volume_j_(j)*(pparent_block->dx3f(k));
   }
   return;
 }
@@ -157,5 +207,18 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 void Coordinates::CoordinateSourceTerms(
   const int k, const int j, AthenaArray<Real> &prim, AthenaArray<Real> &src)
 {
+#pragma simd
+  for (int i=(pparent_block->is); i<=(pparent_block->ie); ++i) {
+    Real m_tt = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM2,k,j,i) + prim(IEN,k,j,i);
+    Real m_pp = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM3,k,j,i) + prim(IEN,k,j,i);
+    src(IM1,i) = src_terms_i_(i)*(m_tt + m_pp);
+
+    Real m_tr = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM1,k,j,i);
+    src(IM2,i) = (-1.0)*src_terms_i_(i)*(m_tr - src_terms_j_(j)*m_pp);
+
+    Real m_pr = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM1,k,j,i);
+    Real m_pt = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM2,k,j,i);
+    src(IM3,i) = (-1.0)*src_terms_i_(i)*(m_pr + src_terms_j_(j)*m_pt);
+  }
   return;
 }

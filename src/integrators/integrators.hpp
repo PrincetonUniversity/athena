@@ -46,6 +46,6 @@ public:
     AthenaArray<Real> &w, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
 private:
-  AthenaArray<Real> wl_,wr_,flx_; // 1D scratch vectors (L/R states, flux)
+  AthenaArray<Real> wl_,wr_,flx_,src_; // 1D scratch vectors used in integrator
 };
 #endif

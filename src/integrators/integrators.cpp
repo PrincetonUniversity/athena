@@ -40,6 +40,7 @@ FluidIntegrator::FluidIntegrator(Fluid *pf)
   wl_.NewAthenaArray(NVAR,ncells1);
   wr_.NewAthenaArray(NVAR,ncells1);
   flx_.NewAthenaArray(NVAR,ncells1);
+  src_.NewAthenaArray(NVAR,ncells1);
 }
 
 // destructor
@@ -49,4 +50,5 @@ FluidIntegrator::~FluidIntegrator()
   wl_.DeleteAthenaArray();
   wr_.DeleteAthenaArray();
   flx_.DeleteAthenaArray();
+  src_.DeleteAthenaArray();
 }

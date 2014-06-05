@@ -20,8 +20,6 @@ class Block;
 //! \class Coordinates
 //  \brief coordinate data and functions
 
-namespace COORDINATE_SYSTEM {
-
 class Coordinates {
 public:
   Coordinates(Block *pb);
@@ -29,18 +27,24 @@ public:
 
   Block *pparent_block;
 
-  void Area1Face(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &area);
-  void Area2Face(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &area);
-  void Area3Face(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &area);
-  void CellVolume(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &area);
-  void SourceTerms(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &src);
+  void Area1Face(
+    const int k, const int j, const int il, const int iu, AthenaArray<Real> &area);
+  void Area2Face(
+    const int k, const int j, const int il, const int iu, AthenaArray<Real> &area);
+  void Area3Face(
+    const int k, const int j, const int il, const int iu, AthenaArray<Real> &area);
+  void CellVolume(
+    const int k, const int j, const int il, const int iu, AthenaArray<Real> &area);
+  void CoordinateSourceTerms(
+    const int k, const int j, AthenaArray<Real> &prim, AthenaArray<Real> &src);
 
   AthenaArray<Real> face_area, cell_volume;
+
+private:
+  AthenaArray<Real> face1_area_i_, face1_area_j_;
+  AthenaArray<Real> face2_area_i_, face2_area_j_;
+  AthenaArray<Real> face3_area_i_, face3_area_j_;
+  AthenaArray<Real> src_terms_i_,  src_terms_j_;
+  AthenaArray<Real> volume_i_,     volume_j_;
 };
-} // end namespace COORDINATE_SYSTEM
 #endif
