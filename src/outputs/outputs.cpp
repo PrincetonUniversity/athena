@@ -242,6 +242,8 @@ void OutputList::InitOutputs(ParameterInput *pin)
           pnew_out = new FormattedTableOutput(ob, pparent_block);
         } else if (ob.file_format.compare("hst") == 0) {
           pnew_out = new HistoryOutput(ob, pparent_block);
+        } else if (ob.file_format.compare("vtk") == 0) {
+          pnew_out = new VTKOutput(ob, pparent_block);
         } else {
           msg << "### FATAL ERROR in function [OutputList::InitOutputs]"
               << std::endl << "Unrecognized file format = '" << ob.file_format 
@@ -333,15 +335,15 @@ OutputData* OutputType::LoadOutputData()
   pod->header.ku = pparent_block->ke;
 
   node_header.type = "SCALARS";
-  node_header.type = "dens";
+  node_header.name = "dens";
   pod->AppendNode(pf->u.ShallowCopy(IDN,1),node_header);
 
   node_header.type = "SCALARS";
-  node_header.type = "Etot";
+  node_header.name = "Etot";
   pod->AppendNode(pf->u.ShallowCopy(IEN,1),node_header);
 
   node_header.type = "VECTORS";
-  node_header.type = "mom";
+  node_header.name = "mom";
   pod->AppendNode(pf->u.ShallowCopy(IM1,3),node_header);
 
   return pod;
@@ -380,15 +382,15 @@ void OutputType::Slice(OutputData* pod, int dim)
 // modify OutputData header
 
   if (dim == 3) {
-    str << "# Slice at x3= " << pparent_block->x3v(output_block.kslice) << std::endl;
+//    str << "# Slice at x3= " << pparent_block->x3v(output_block.kslice) << std::endl;
     pod->header.kl = 0;
     pod->header.ku = 0;
   } else if (dim == 2) {
-    str << "# Slice at x2= " << pparent_block->x2v(output_block.jslice) << std::endl;
+//    str << "# Slice at x2= " << pparent_block->x2v(output_block.jslice) << std::endl;
     pod->header.jl = 0;
     pod->header.ju = 0;
   } else {
-    str << "# Slice at x1= " << pparent_block->x1v(output_block.islice) << std::endl;
+//    str << "# Slice at x1= " << pparent_block->x1v(output_block.islice) << std::endl;
     pod->header.il = 0;
     pod->header.iu = 0;
   }

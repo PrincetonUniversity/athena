@@ -129,4 +129,15 @@ public:
   void WriteOutputData();
 };
 
+//! \class VTKOutput
+//  \brief derived OutputType class for vtk dumps
+
+class VTKOutput : public OutputType {
+public:
+  VTKOutput(OutputBlock out_blk, Block *pb);
+  ~VTKOutput() {};
+
+  void WriteOutputData();
+};
+
 #endif
