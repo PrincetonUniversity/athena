@@ -1,6 +1,7 @@
 # Makefile for running unit tests
 
 # Files for conditional compilation
+COORDINATES_FILE = cartesian.cpp
 CONVERT_VAR_FILE = adiabatic_hydro_sr.cpp
 PROBLEM_FILE = shock_tube_sr.cpp
 RSOLVER_FILE = hllc_sr.cpp
@@ -16,10 +17,14 @@ LIBRARY_FLAGS := -lm -lgtest
 # Preliminary definitions
 EXECUTABLE := run_tests
 TEST_SRC := $(wildcard src/*.cpp)
-ATHENA_SRC := $(wildcard ../src/*.cpp) $(wildcard ../src/bvals/*.cpp) \
-	      $(wildcard ../src/coordinates/*.cpp) $(wildcard ../src/integrators/*.cpp) \
-	      $(wildcard ../src/outputs/*.cpp) ../src/convert_var/$(CONVERT_VAR_FILE) \
-	      ../src/pgen/$(PROBLEM_FILE) ../src/reconstruct/$(RECONSTRUCT_FILE) \
+ATHENA_SRC := $(wildcard ../src/*.cpp) \
+	      $(wildcard ../src/bvals/*.cpp) \
+	      ../src/coordinates/$(COORDINATES_FILE) \
+	      $(wildcard ../src/integrators/*.cpp) \
+	      $(wildcard ../src/outputs/*.cpp) \
+	      ../src/convert_var/$(CONVERT_VAR_FILE) \
+	      ../src/pgen/$(PROBLEM_FILE) \
+	      ../src/reconstruct/$(RECONSTRUCT_FILE) \
 	      ../src/rsolvers/$(RSOLVER_FILE)
 SRC_DIR := $(dir $(TEST_SRC)) $(dir $(ATHENA_SRC))
 OBJ_DIR := obj/
