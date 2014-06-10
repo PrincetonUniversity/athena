@@ -7,7 +7,7 @@
 
 // C++ headers
 #include <algorithm>  // max(), min()
-#include <cmath>      // atan2(), cbrt(), cos(), pow(), sqrt()
+#include <cmath>      // atan2(), cbrt(), cos(), sqrt()
 
 // Athena headers
 #include "../athena.hpp"         // enums, macros, Real
@@ -126,7 +126,7 @@ void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &pri
           if (c3 >= 0.0)
             y0 = cbrt(c2 + sqrt(c3)) + cbrt(c2 - sqrt(c3));
           else
-            y0 = 2.0 * pow(c2*c2 + c3, 1.0/6.0) * cos(atan2(sqrt(-c3), c2) / 3.0);
+            y0 = 2.0 * cbrt(c2*c2 + c3) * cos(atan2(sqrt(-c3), c2) / 3.0);
 
           // Step 5: Find real root of original (resolvent) cubic:
           Real x0 = y0 - b2/3.0;
@@ -137,15 +137,15 @@ void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &pri
           Real v_abs = (-d1 + sqrt(d1*d1 - 4.0*d0)) / 2.0;
 
           // Ensure velocity is physical
-          v_abs = std::max(v_abs, 0.0);
-          v_abs = std::min(v_abs, 1.0-1.0e-15);
+          v_abs = (v_abs > 0.0) ? v_abs : 0.0;  // sets NaN to 0
+          v_abs = (v_abs < max_velocity) ? v_abs : max_velocity;
 
           // Set primitives
           rho = d * sqrt(1.0 - v_abs*v_abs);
-          pgas = gamma_adi_minus_1 * (e - (mx * vx + my * vy + mz * vz) - rho);
           vx = mx * v_abs / m_abs;
           vy = my * v_abs / m_abs;
           vz = mz * v_abs / m_abs;
+          pgas = gamma_adi_minus_1 * (e - (mx * vx + my * vy + mz * vz) - rho);
         }
         else  // vanishing velocity
         {

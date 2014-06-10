@@ -21,7 +21,7 @@
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
-#include <string>     // c_str
+#include <string>     // c_str()
 
 // Athena headers
 #include "../athena.hpp"           // enums, Real
