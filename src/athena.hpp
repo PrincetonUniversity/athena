@@ -15,9 +15,11 @@
 #define TINY_NUMBER 1.0e-20
 #define HUGE_NUMBER 1.0e+36
 
-#define COORDINATE_SYSTEM cartesian_coordinates
+/*
+#define COORDINATE_SYSTEM spherical_polar_coordinates
 #define RIEMANN_SOLVER hllc_hydro_solver
 #define RECONSTRUCTION_ALGORITHM piecewise_linear_method
+*/
 
 typedef double Real;
 enum {IDN=0, IM1=1, IM2=2, IM3=3, IEN=4};

@@ -392,7 +392,7 @@ Block::Block(RegionSize blk_size, RegionBoundary blk_bndry, Domain *pd)
 // Fluid constructor: allocates memory for u,w, etc., and constructs FluidIntegrator.
 //   Initial conditions set in problem generator called from main
  
-  pcoord   = new COORDINATE_SYSTEM::Coordinates(this);
+  pcoord   = new Coordinates(this);
   pf_bcs   = new FluidBoundaryConditions(this);
   pfluid   = new Fluid(this);
   poutputs = new OutputList(this);

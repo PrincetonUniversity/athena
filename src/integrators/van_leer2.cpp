@@ -14,6 +14,8 @@
  * the code distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
+#include <stdio.h>
+
 // Primary header
 #include "integrators.hpp"
 
@@ -50,6 +52,7 @@ void FluidIntegrator::Predict(Block *pb)
   AthenaArray<Real> wl = wl_.ShallowCopy();
   AthenaArray<Real> wr = wr_.ShallowCopy();
   AthenaArray<Real> flx = flx_.ShallowCopy();
+  AthenaArray<Real> src = flx_.ShallowCopy();
  
   AthenaArray<Real> area = pb->pcoord->face_area.ShallowCopy();
   AthenaArray<Real> vol  = pb->pcoord->cell_volume.ShallowCopy();
@@ -177,6 +180,26 @@ void FluidIntegrator::Predict(Block *pb)
     }}
   }
 
+//--------------------------------------------------------------------------------------
+//  Add source terms for half a timestep
+
+  for (int k=ks; k<=ke; ++k){
+  for (int j=js; j<=je; ++j){
+
+    pb->pcoord->CoordinateSourceTerms(k,j,w,src);
+
+#pragma simd
+    for (int i=is; i<=ie; ++i){
+      Real& u1im1   = u1(IM1,k,j,i);
+      Real& u1im2   = u1(IM2,k,j,i);
+      Real& u1im3   = u1(IM3,k,j,i);
+
+      u1im1 += 0.5*dt*src(IM1,i);
+      u1im2 += 0.5*dt*src(IM2,i);
+      u1im3 += 0.5*dt*src(IM3,i);
+    }
+  }}
+
   return;
 }
 
@@ -201,6 +224,7 @@ void FluidIntegrator::Correct(Block *pb)
   AthenaArray<Real> wl = wl_.ShallowCopy();
   AthenaArray<Real> wr = wr_.ShallowCopy();
   AthenaArray<Real> flx = flx_.ShallowCopy();
+  AthenaArray<Real> src = src_.ShallowCopy();
 
   AthenaArray<Real> area = pb->pcoord->face_area.ShallowCopy();
   AthenaArray<Real> vol  = pb->pcoord->cell_volume.ShallowCopy();
@@ -327,5 +351,24 @@ void FluidIntegrator::Correct(Block *pb)
     }}
   }
 
+//--------------------------------------------------------------------------------------
+//  Add source terms for a full timestep
+
+  for (int k=ks; k<=ke; ++k){
+  for (int j=js; j<=je; ++j){
+
+    pb->pcoord->CoordinateSourceTerms(k,j,w1,src);
+
+#pragma simd
+    for (int i=is; i<=ie; ++i){
+      Real& uim1   = u(IM1,k,j,i);
+      Real& uim2   = u(IM2,k,j,i);
+      Real& uim3   = u(IM3,k,j,i);
+
+      uim1 += dt*src(IM1,i);
+      uim2 += dt*src(IM2,i);
+      uim3 += dt*src(IM3,i);
+    }
+  }}
   return;
 }

@@ -2,6 +2,7 @@
 
 # Files for conditional compilation
 
+COORDINATES_FILE = cartesian.cpp
 CONVERT_VAR_FILE = adiabatic_hydro.cpp
 PROBLEM_FILE = shock_tube.cpp
 RSOLVER_FILE = hllc.cpp
@@ -17,10 +18,14 @@ LIBRARY_FLAGS := -lm
 
 EXE_DIR := bin/
 EXECUTABLE := $(EXE_DIR)athena
-SRC_FILES := $(wildcard src/*.cpp) $(wildcard src/bvals/*.cpp) \
-	     $(wildcard src/coordinates/*.cpp) $(wildcard src/integrators/*.cpp) \
-	     $(wildcard src/outputs/*.cpp) src/convert_var/$(CONVERT_VAR_FILE) \
-	     src/pgen/$(PROBLEM_FILE) src/reconstruct/$(RECONSTRUCT_FILE) \
+SRC_FILES := $(wildcard src/*.cpp) \
+	     $(wildcard src/bvals/*.cpp) \
+	     src/coordinates/$(COORDINATES_FILE) \
+	     $(wildcard src/integrators/*.cpp) \
+	     $(wildcard src/outputs/*.cpp) \
+	     src/convert_var/$(CONVERT_VAR_FILE) \
+	     src/pgen/$(PROBLEM_FILE) \
+	     src/reconstruct/$(RECONSTRUCT_FILE) \
 	     src/rsolvers/$(RSOLVER_FILE)
 SRC_DIR := $(dir $(SRC_FILES))
 OBJ_DIR := obj/
