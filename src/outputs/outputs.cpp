@@ -323,9 +323,9 @@ OutputData* OutputType::LoadOutputData()
   Fluid *pf = pparent_block->pfluid;;
   std::stringstream str;
 
-  str << "# Athena++ tabular data at time=" 
-      << pparent_block->pparent_domain->pparent_mesh->time << " cycle="
-      << pparent_block->pparent_domain->pparent_mesh->ncycle << std::endl;
+  str << "# Athena++ data at time=" << pparent_block->pparent_domain->pparent_mesh->time
+      << "  cycle=" << pparent_block->pparent_domain->pparent_mesh->ncycle
+      << "  variables=" << output_block.variable << std::endl;
   pod->header.descriptor.append(str.str());
   pod->header.il = pparent_block->is;
   pod->header.iu = pparent_block->ie;
@@ -350,11 +350,11 @@ OutputData* OutputType::LoadOutputData()
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void OutputType::ComputeOutputData()
+/*! \fn void OutputType::TransformOutputData()
  *  \brief 
  */
 
-void OutputType::ComputeOutputData(OutputData *pod)
+void OutputType::TransformOutputData(OutputData *pod)
 {
   if (output_block.kslice != -999) {
     Slice(pod,3);

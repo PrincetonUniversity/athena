@@ -24,7 +24,6 @@
 
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../mesh.hpp"
 #include "../fluid.hpp"
 #include "outputs.hpp"
@@ -44,7 +43,8 @@ VTKOutput::VTKOutput(OutputBlock out_blk, Block *pb)
 }
 
 //--------------------------------------------------------------------------------------
-// Functions to detect big endian machine, and to byte-swap 32-bit words.
+// Functions to detect big endian machine, and to byte-swap 32-bit words.  The vtk
+// legacy format requires data to be stored as big-endian.
 
 int IsBigEndian(void)
 {
@@ -72,14 +72,14 @@ void VTKOutput::WriteOutputData()
 // create OutputData, apply transforms (slices, sums, etc)
 
   pod = LoadOutputData();
-  ComputeOutputData(pod);
+  TransformOutputData(pod);
 
-// create filename
+// create filename: "file_basename" + XXXX + ".vtk", where XXXX = 4-digit file_number
 
   std::string fname;
   fname.assign(output_block.file_basename);
   fname.append(".");
-  char number[5];
+  char number[5]; // array to store 4-digit number and end-of-string char
   sprintf(number,"%04d",output_block.file_number);
   fname.append(number);
   fname.append(".vtk");
