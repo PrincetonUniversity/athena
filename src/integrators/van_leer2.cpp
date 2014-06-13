@@ -52,7 +52,7 @@ void FluidIntegrator::Predict(Block *pb)
   AthenaArray<Real> wl = wl_.ShallowCopy();
   AthenaArray<Real> wr = wr_.ShallowCopy();
   AthenaArray<Real> flx = flx_.ShallowCopy();
-  AthenaArray<Real> src = flx_.ShallowCopy();
+  AthenaArray<Real> src = src_.ShallowCopy();
  
   AthenaArray<Real> area = pb->pcoord->face_area.ShallowCopy();
   AthenaArray<Real> vol  = pb->pcoord->cell_volume.ShallowCopy();
@@ -370,5 +370,6 @@ void FluidIntegrator::Correct(Block *pb)
       uim3 += dt*src(IM3,i);
     }
   }}
+
   return;
 }
