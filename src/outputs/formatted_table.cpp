@@ -72,9 +72,10 @@ void FormattedTableOutput::WriteOutputData()
     throw std::runtime_error(msg.str().c_str());
   }
 
-// print header
+// print header (data descriptor and transforms)
 
   fprintf(pfile,"%s",pod->header.descriptor.c_str());
+  fprintf(pfile,"%s",pod->header.transforms.c_str());
 
 // loop over all cells in data arrays
 

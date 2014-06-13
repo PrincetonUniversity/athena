@@ -14,10 +14,11 @@ class Mesh;
 class ParameterInput;
 
 //! \struct OutputDataHeader
-//  \brief string describing data, and range of indices of arrays in each node
+//  \brief string describing data, transforms, and array range in each node
 
 struct OutputDataHeader {
   std::string descriptor;
+  std::string transforms;
   int il,iu,jl,ju,kl,ku;
 };
 
@@ -93,6 +94,7 @@ public:
   virtual void WriteOutputData() = 0;  // pure virtual function!
 
   void Slice(OutputData* pod, int dim);
+  void Sum(OutputData* pod, int dim);
 
   OutputBlock output_block;
 
