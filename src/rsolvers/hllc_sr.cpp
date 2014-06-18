@@ -14,9 +14,6 @@
 #include "../athena_arrays.hpp"  // AthenaArray
 #include "../fluid.hpp"          // Fluid
 
-// Declarations
-double quadratic_root(double a1, double a0, bool greater_root);
-
 // Riemann solver
 // Inputs:
 //   il, iu: lower and upper indices for interfaces
@@ -152,8 +149,27 @@ void FluidIntegrator::RiemannSolver(const int il, const int iu, const int ivx,
     // Calculate contact wavespeed (MB 18)
     Real lambda_star;
     if (flux_e_hll > TINY_NUMBER || flux_e_hll < -TINY_NUMBER)  // use quadratic formula
-      lambda_star = quadratic_root(-(e_hll + flux_mx_hll)/flux_e_hll, mx_hll/flux_e_hll,
-          false);
+    {
+      // Follows algorithm in Numerical Recipes (section 5.6) for avoiding cancellations
+      Real quad_a = flux_e_hll;
+      Real quad_b = -(e_hll + flux_mx_hll);
+      Real quad_c = mx_hll;
+      // TODO: figure out why old Athena used commented out lines instead
+      // old lines should give wrong root for b > 0
+      // but if b is always negative why do we worry about its sign?
+      /*if (quad_b <= 0.0)
+      {
+        Real quad_q = -0.5 * (quad_b - sqrt(quad_b*quad_b - 4.0 * quad_a * quad_c));
+        lambda_star = quad_c / quad_q;
+      }
+      else
+      {
+        Real quad_q = -0.5 * (quad_b + sqrt(quad_b*quad_b - 4.0 * quad_a * quad_c));
+        lambda_star = quad_q / quad_a;
+      }*/
+      Real quad_q = -0.5 * (quad_b + copysign(sqrt(quad_b*quad_b - 4.0 * quad_a * quad_c), quad_b));
+      lambda_star = quad_c / quad_q;
+    }
     else  // no quadratic term
       lambda_star = mx_hll / (e_hll + flux_mx_hll);
 
@@ -223,54 +239,4 @@ void FluidIntegrator::RiemannSolver(const int il, const int iu, const int ivx,
     }
   }
   return;
-}
-
-// Function for finding root of monic quadratic equation
-// Inputs:
-//   a1: linear coefficient
-//   a0: constant coefficient
-//   greater_root: flag indicating that larger root is to be returned
-//     "larger" does not mean absolute value
-// Outputs:
-//   returned value: desired root
-// Notes:
-//   solves x^2 + a_1 x + a_0 = 0 for x
-//   discards imaginary parts of answers
-//   follows advice in Numerical Recipes (section 5.6) for avoiding large cancellations
-double quadratic_root(double a1, double a0, bool greater_root)
-{
-  if (greater_root)
-  {
-    if (a1 >= 0.0)
-    {
-      if (a1*a1 > 4.0*a0)
-        return -2.0*a0 / (a1 + std::sqrt(a1*a1 - 4.0*a0));
-      else
-        return -2.0*a0/a1;
-    }
-    else
-    {
-      if (a1*a1 > 4.0*a0)
-        return (-a1 + std::sqrt(a1*a1 - 4.0*a0)) / 2.0;
-      else
-        return -a1/2.0;
-    }
-  }
-  else
-  {
-    if (a1 >= 0.0)
-    {
-      if (a1*a1 > 4.0*a0)
-        return (-a1 - std::sqrt(a1*a1 - 4.0*a0)) / 2.0;
-      else
-        return -a1/2.0;
-    }
-    else
-    {
-      if (a1*a1 > 4.0*a0)
-        return -2.0*a0 / (a1 - std::sqrt(a1*a1 - 4.0*a0));
-      else
-        return 2.0/a1;
-    }
-  }
 }
