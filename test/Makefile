@@ -37,6 +37,8 @@ VPATH := $(SRC_DIR)
 test : dirs $(EXECUTABLE)
 dirs :
 	@mkdir -p $(OBJ_DIR)
+	@mkdir -p data
+	@mkdir -p plots
 
 # Link objects into executable
 $(EXECUTABLE) : $(OBJ_FILES)

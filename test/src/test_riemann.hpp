@@ -1,10 +1,10 @@
-// Class for testing variable inversion in adiabatic hydro
+// Class for testing Riemann solvers
 
-#ifndef TEST_ADIABATIC_HYDRO_SR_HPP
-#define TEST_ADIABATIC_HYDRO_SR_HPP
+#ifndef TEST_RIEMANN_HPP
+#define TEST_RIEMANN_HPP
 
 // Primary headers
-#include "../../src/fluid.hpp"
+#include "../../src/integrators/integrators.hpp"
 #include "test.hpp"
 
 // C++ headers
@@ -19,7 +19,7 @@
 namespace {
 
 // Test class
-class AdiabaticHydroSRTest : public GeneralTest
+class RiemannTest : public GeneralTest
 {
  protected:
 
@@ -27,18 +27,18 @@ class AdiabaticHydroSRTest : public GeneralTest
   ParameterInput *inputs;
   std::string input_file;
   Mesh *mesh;
-  Fluid *pfluid;
-  AthenaArray<Real> cons, prim;
-  Real prim_expected[NVAR];
+  FluidIntegrator *pfluid_integrator;
+  AthenaArray<Real> prim_left, prim_right, flux;
+  Real flux_expected[NVAR];
 
   // Constructor
-  AdiabaticHydroSRTest(std::string input) : GeneralTest(1.0e-5, 1.0e-5)
+  RiemannTest(std::string input) : GeneralTest(1.0e-5, 1.0e-5)
   {
     input_file = input;
   }
 
   // Destructor
-  virtual ~AdiabaticHydroSRTest() {};
+  virtual ~RiemannTest() {};
 
   // Function invoked before each test
   virtual void SetUp()
@@ -49,34 +49,32 @@ class AdiabaticHydroSRTest : public GeneralTest
     inputs->ModifyFromCmdline(3, const_cast<char **>(argv));
     mesh = new Mesh(inputs);
     mesh->InitializeAcrossDomains(initial_conditions, inputs);
-    Block *pblock = mesh->pdomain->pblock;
-    pblock->is = NGHOST;
-    pblock->ie = -NGHOST;
-    pblock->js = pblock->je = 0;
-    pblock->ks = pblock->ke = 0;
-    pfluid = pblock->pfluid;
-    cons.NewAthenaArray(NVAR,1,1,1);
-    prim.NewAthenaArray(NVAR,1,1,1);
+    pfluid_integrator = new FluidIntegrator(mesh->pdomain->pblock->pfluid);
+    prim_left.NewAthenaArray(NVAR,1,1,1);
+    prim_right.NewAthenaArray(NVAR,1,1,1);
+    flux.NewAthenaArray(NVAR,1,1,1);
   }
 
   // Function invoked after each test
   virtual void TearDown()
   {
-    //prim.DeleteAthenaArray();
-    //cons.DeleteAthenaArray();
+    //prim_left.DeleteAthenaArray();
+    //prim_right.DeleteAthenaArray();
+    //flux.DeleteAthenaArray();
+    //delete pfluid_integrator;
     //delete mesh;
     delete inputs;
   }
 };
 
-// Gamma = 4/3
-class AdiabaticHydroSRTest1 : public AdiabaticHydroSRTest
+// HLLC SR, Gamma = 5/3
+class HLLCSRTest : public RiemannTest
 {
  protected:
-  AdiabaticHydroSRTest1() : AdiabaticHydroSRTest("inputs/athinput.adiabatic_hydro_sr_a") {};
-  virtual ~AdiabaticHydroSRTest1() {};
+  HLLCSRTest() : RiemannTest("inputs/athinput.riemann_a") {};
+  virtual ~HLLCSRTest() {};
 };
 
 }
 
-#endif  // TEST_ADIABATIC_HYDRO_SR_HPP
+#endif  // TEST_RIEMANN_HPP

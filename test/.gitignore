@@ -1,2 +1,5 @@
 # Executables
 run_tests
+
+# Plot directory
+plots/
