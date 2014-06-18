@@ -1,0 +1,12 @@
+Outputs:
+ - add output of ghost zones 
+ - add double precision option for vtk outputs
+ - add proper line integrals in Sum transform
+
+Documentation (wiki pages):
+ - tutorial
+ - outputs
+ - setting physics options
+ - writing problem generators
+ - adding source terms
+ - design and classes

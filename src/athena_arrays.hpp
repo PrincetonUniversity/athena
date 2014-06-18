@@ -175,7 +175,7 @@ void AthenaArray<T>::NewAthenaArray(int nx1)
   nx2_ = 1;
   nx3_ = 1;
   nx4_ = 1;
-  pdata_ = new T[nx1];
+  pdata_ = new T[nx1](); // empty parentheses initialize to zero
 }
  
 //--------------------------------------------------------------------------------------
@@ -189,7 +189,7 @@ void AthenaArray<T>::NewAthenaArray(int nx2, int nx1)
   nx2_ = nx2;
   nx3_ = 1;
   nx4_ = 1;
-  pdata_ = new T[nx1*nx2];
+  pdata_ = new T[nx1*nx2](); // empty parentheses initialize to zero
 }
  
 //--------------------------------------------------------------------------------------
@@ -203,7 +203,7 @@ void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1)
   nx2_ = nx2;
   nx3_ = nx3;
   nx4_ = 1;
-  pdata_ = new T[nx1*nx2*nx3];
+  pdata_ = new T[nx1*nx2*nx3](); // empty parentheses initialize to zero
 }
  
 //--------------------------------------------------------------------------------------
@@ -217,7 +217,7 @@ void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2, int nx1)
   nx2_ = nx2;
   nx3_ = nx3;
   nx4_ = nx4;
-  pdata_ = new T[nx1*nx2*nx3*nx4];
+  pdata_ = new T[nx1*nx2*nx3*nx4](); // empty parentheses initialize to zero
 }
 
 //--------------------------------------------------------------------------------------

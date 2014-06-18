@@ -23,10 +23,7 @@
 #include <stdio.h>
 
 #include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../mesh.hpp"
-#include "../fluid.hpp"
 #include "outputs.hpp"
 
 //======================================================================================
@@ -44,15 +41,6 @@ FormattedTableOutput::FormattedTableOutput(OutputBlock out_blk, Block *pb)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void FormattedTableOutput:::ComputeOutputData()
- *  \brief
- */
-
-//void FormattedTableOutput::ComputeDataList()
-//{
-//}
-
-//--------------------------------------------------------------------------------------
 /*! \fn void FormattedTableOutput:::WriteOutputData()
  *  \brief writes DataBlock to file in tabular format using C style fprintf
  */
@@ -65,7 +53,7 @@ void FormattedTableOutput::WriteOutputData()
 // create OutputData, apply transforms (slices, sums, etc)
 
   pod = LoadOutputData();
-  ComputeOutputData(pod);
+  TransformOutputData(pod);
 
 // create filename
   std::string fname;
@@ -84,9 +72,10 @@ void FormattedTableOutput::WriteOutputData()
     throw std::runtime_error(msg.str().c_str());
   }
 
-// print header
+// print header (data descriptor and transforms)
 
   fprintf(pfile,"%s",pod->header.descriptor.c_str());
+  fprintf(pfile,"%s",pod->header.transforms.c_str());
 
 // loop over all cells in data arrays
 

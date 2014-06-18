@@ -185,6 +185,7 @@ int main(int argc, char *argv[])
 
   try {
     mesh->InitializeAcrossDomains(outputs,inputs);
+    mesh->UpdateAcrossDomains(make_output);
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR memory allocation failed" << std::endl
@@ -195,7 +196,6 @@ int main(int argc, char *argv[])
     std::cout << ex.what() << std::endl;  // prints diagnostic message  
     return(0);
   }
-  mesh->UpdateAcrossDomains(make_output);
 
 //======================================================================================
 //--- Step 9. === START OF MAIN INTEGRATION LOOP =======================================
@@ -228,7 +228,20 @@ int main(int argc, char *argv[])
 
     mesh->ncycle++;
     mesh->time  += mesh->dt;
-    mesh->UpdateAcrossDomains(make_output);
+
+    try {
+      mesh->UpdateAcrossDomains(make_output);
+    } 
+    catch(std::bad_alloc& ba) {
+      std::cout << "### FATAL ERROR memory allocation failed" << std::endl
+                << "error in making outputs: " << ba.what() << std::endl;
+      return(0);
+    }
+    catch(std::exception const& ex) {
+      std::cout << ex.what() << std::endl;  // prints diagnostic message  
+      return(0);
+    }
+
     mesh->UpdateAcrossDomains(new_timestep);
 
   } // END OF MAIN INTEGRATION LOOP ====================================================

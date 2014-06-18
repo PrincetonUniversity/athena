@@ -242,6 +242,8 @@ void OutputList::InitOutputs(ParameterInput *pin)
           pnew_out = new FormattedTableOutput(ob, pparent_block);
         } else if (ob.file_format.compare("hst") == 0) {
           pnew_out = new HistoryOutput(ob, pparent_block);
+        } else if (ob.file_format.compare("vtk") == 0) {
+          pnew_out = new VTKOutput(ob, pparent_block);
         } else {
           msg << "### FATAL ERROR in function [OutputList::InitOutputs]"
               << std::endl << "Unrecognized file format = '" << ob.file_format 
@@ -321,9 +323,11 @@ OutputData* OutputType::LoadOutputData()
   Fluid *pf = pparent_block->pfluid;;
   std::stringstream str;
 
-  str << "# Athena++ tabular data at time=" 
-      << pparent_block->pparent_domain->pparent_mesh->time << " cycle="
-      << pparent_block->pparent_domain->pparent_mesh->ncycle << std::endl;
+// Create OutputData header
+
+  str << "# Athena++ data at time=" << pparent_block->pparent_domain->pparent_mesh->time
+      << "  cycle=" << pparent_block->pparent_domain->pparent_mesh->ncycle
+      << "  variables=" << output_block.variable << std::endl;
   pod->header.descriptor.append(str.str());
   pod->header.il = pparent_block->is;
   pod->header.iu = pparent_block->ie;
@@ -332,27 +336,69 @@ OutputData* OutputType::LoadOutputData()
   pod->header.kl = pparent_block->ks;
   pod->header.ku = pparent_block->ke;
 
-  node_header.type = "SCALARS";
-  node_header.type = "dens";
-  pod->AppendNode(pf->u.ShallowCopy(IDN,1),node_header);
+// Create linked list of OutputDataNodes containing requested data
 
-  node_header.type = "SCALARS";
-  node_header.type = "Etot";
-  pod->AppendNode(pf->u.ShallowCopy(IEN,1),node_header);
+  int node_added = 0;
+  if (output_block.variable.compare("d") == 0 || 
+      output_block.variable.compare("prim") == 0 ||
+      output_block.variable.compare("cons") == 0) {
+    node_header.type = "SCALARS";
+    node_header.name = "dens";
+    pod->AppendNode(pf->u.ShallowCopy(IDN,1),node_header); // density
+    node_added = 1;
+  }
 
-  node_header.type = "VECTORS";
-  node_header.type = "mom";
-  pod->AppendNode(pf->u.ShallowCopy(IM1,3),node_header);
+  if (output_block.variable.compare("E") == 0 || 
+      output_block.variable.compare("cons") == 0) {
+    node_header.type = "SCALARS";
+    node_header.name = "Etot";
+    pod->AppendNode(pf->u.ShallowCopy(IEN,1),node_header); // total energy
+    node_added = 1;
+  }
+
+  if (output_block.variable.compare("e") == 0 || 
+      output_block.variable.compare("prim") == 0) {
+    node_header.type = "SCALARS";
+    node_header.name = "eint";
+    pod->AppendNode(pf->w.ShallowCopy(IEN,1),node_header); // internal energy
+    node_added = 1;
+  }
+
+  if (output_block.variable.compare("m") == 0 || 
+      output_block.variable.compare("cons") == 0) {
+    node_header.type = "VECTORS";
+    node_header.name = "mom";
+    pod->AppendNode(pf->u.ShallowCopy(IM1,3),node_header); // momentum vector
+    node_added = 1;
+  }
+
+  if (output_block.variable.compare("v") == 0 || 
+      output_block.variable.compare("prim") == 0) {
+    node_header.type = "VECTORS";
+    node_header.name = "vel";
+    pod->AppendNode(pf->w.ShallowCopy(IM1,3),node_header); // velocity vector
+    node_added = 1;
+  }
+
+// throw an error if output variable name not recognized
+
+  if (!node_added) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in function [OutputType::LoadOutputData]" << std::endl
+        << "Output variable '" << output_block.variable << "' not implemented"
+        << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
 
   return pod;
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void OutputType::ComputeOutputData()
+/*! \fn void OutputType::TransformOutputData()
  *  \brief 
  */
 
-void OutputType::ComputeOutputData(OutputData *pod)
+void OutputType::TransformOutputData(OutputData *pod)
 {
   if (output_block.kslice != -999) {
     Slice(pod,3);
@@ -362,6 +408,15 @@ void OutputType::ComputeOutputData(OutputData *pod)
   }
   if (output_block.islice != -999) {
     Slice(pod,1);
+  }
+  if (output_block.ksum) {
+    Sum(pod,3);
+  }
+  if (output_block.jsum) {
+    Sum(pod,2);
+  }
+  if (output_block.isum) {
+    Sum(pod,1);
   }
   return;
 }
@@ -376,23 +431,6 @@ void OutputType::Slice(OutputData* pod, int dim)
   OutputDataNodeHeader node_header;
   AthenaArray<Real> *pslice;
   std::stringstream str;
-
-// modify OutputData header
-
-  if (dim == 3) {
-    str << "# Slice at x3= " << pparent_block->x3v(output_block.kslice) << std::endl;
-    pod->header.kl = 0;
-    pod->header.ku = 0;
-  } else if (dim == 2) {
-    str << "# Slice at x2= " << pparent_block->x2v(output_block.jslice) << std::endl;
-    pod->header.jl = 0;
-    pod->header.ju = 0;
-  } else {
-    str << "# Slice at x1= " << pparent_block->x1v(output_block.islice) << std::endl;
-    pod->header.il = 0;
-    pod->header.iu = 0;
-  }
-  pod->header.descriptor.append(str.str());
 
 // For each node in OutputData linked list, slice arrays containing output data  
 
@@ -440,6 +478,106 @@ void OutputType::Slice(OutputData* pod, int dim)
     pdn = pdn->pnext;
   }
  
+// modify OutputData header
+
+  if (dim == 3) {
+    str << "# Slice at x3=" << pparent_block->x3v(output_block.kslice)
+        << "  (k-ks)=" << (output_block.kslice - pparent_block->ks) << std::endl;
+    pod->header.kl = 0;
+    pod->header.ku = 0;
+  } else if (dim == 2) {
+    str << "# Slice at x2=" << pparent_block->x2v(output_block.jslice)
+        << "  (j-js)=" << (output_block.jslice - pparent_block->js) << std::endl;
+    pod->header.jl = 0;
+    pod->header.ju = 0;
+  } else {
+    str << "# Slice at x1=" << pparent_block->x1v(output_block.islice)
+        << "  (i-is)=" << (output_block.islice - pparent_block->is) << std::endl;
+    pod->header.il = 0;
+    pod->header.iu = 0;
+  }
+  pod->header.transforms.append(str.str());
+
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+/*! \fn void OutputType::Sum(OutputData* pod, int dim)
+ *  \brief
+ */
+
+void OutputType::Sum(OutputData* pod, int dim)
+{
+  OutputDataNodeHeader node_header;
+  AthenaArray<Real> *psum;
+  std::stringstream str;
+
+// For each node in OutputData linked list, sum arrays containing output data  
+
+  OutputDataNode *pdn;
+  pdn = pod->pfirst_node;
+
+  while (pdn != NULL) {
+    node_header = pdn->header;
+    int nx4 = pdn->pdata->GetDim4();
+    int nx3 = pdn->pdata->GetDim3();
+    int nx2 = pdn->pdata->GetDim2();
+    int nx1 = pdn->pdata->GetDim1();
+    psum = new AthenaArray<Real>;
+
+// Loop over variables and dimensions, sum over specified dimension
+
+    if (dim == 3) {
+      psum->NewAthenaArray(nx4,1,nx2,nx1);
+      for (int n=0; n<nx4; ++n){
+      for (int k=(pod->header.kl); k<=(pod->header.ku); ++k){
+      for (int j=(pod->header.jl); j<=(pod->header.ju); ++j){
+        for (int i=(pod->header.il); i<=(pod->header.iu); ++i){
+          (*psum)(n,0,j,i) += (*pdn->pdata)(n,k,j,i);
+        }
+      }}}
+    } else if (dim == 2) {
+      psum->NewAthenaArray(nx4,nx3,1,nx1);
+      for (int n=0; n<nx4; ++n){
+      for (int k=(pod->header.kl); k<=(pod->header.ku); ++k){
+      for (int j=(pod->header.jl); j<=(pod->header.ju); ++j){
+        for (int i=(pod->header.il); i<=(pod->header.iu); ++i){
+          (*psum)(n,k,0,i) += (*pdn->pdata)(n,k,j,i);
+        }
+      }}}
+    } else {
+      psum->NewAthenaArray(nx4,nx3,nx2,1);
+      for (int n=0; n<nx4; ++n){
+      for (int k=(pod->header.kl); k<=(pod->header.ku); ++k){
+      for (int j=(pod->header.jl); j<=(pod->header.ju); ++j){
+        for (int i=(pod->header.il); i<=(pod->header.iu); ++i){
+          (*psum)(n,k,j,0) += (*pdn->pdata)(n,k,j,i);
+        }
+      }}}
+    }
+
+    OutputDataNode *pnew = new OutputDataNode(psum, node_header);
+    pod->ReplaceNode(pdn,pnew);
+    pdn = pdn->pnext;
+  }
+ 
+// modify OutputData header
+
+  if (dim == 3) {
+    str << "# Sum over x3" << std::endl;
+    pod->header.kl = 0;
+    pod->header.ku = 0;
+  } else if (dim == 2) {
+    str << "# Sum over x2" << std::endl;
+    pod->header.jl = 0;
+    pod->header.ju = 0;
+  } else {
+    str << "# Sum over x1" << std::endl;
+    pod->header.il = 0;
+    pod->header.iu = 0;
+  }
+  pod->header.transforms.append(str.str());
+
   return;
 }
 

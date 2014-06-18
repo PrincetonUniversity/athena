@@ -13,15 +13,25 @@
 class Mesh;
 class ParameterInput;
 
+//! \struct OutputDataHeader
+//  \brief string describing data, transforms, and array range in each node
+
 struct OutputDataHeader {
   std::string descriptor;
+  std::string transforms;
   int il,iu,jl,ju,kl,ku;
 };
+
+//! \struct OutputDataNodeHeader
+//  \brief strings describing type (SCALARS/VECTORS) and name of data in node
 
 struct OutputDataNodeHeader {
   std::string type;
   std::string name;
 };
+
+//! \class OutputDataNode
+//  \brief node in a linked list of data arrays in an OutputData class
 
 class OutputDataNode {
 public:
@@ -33,6 +43,10 @@ public:
 
   OutputDataNode *pnext, *pprev;
 };
+
+//! \class OutputData
+//  \brief container for output data, containing a linked list of OutputDataNodes and
+//  functions to add and replace nodes
 
 class OutputData {
 public:
@@ -76,10 +90,11 @@ public:
   Block *pparent_block;
 
   virtual OutputData* LoadOutputData();
-  virtual void ComputeOutputData(OutputData *pod);
+  virtual void TransformOutputData(OutputData *pod);
   virtual void WriteOutputData() = 0;  // pure virtual function!
 
   void Slice(OutputData* pod, int dim);
+  void Sum(OutputData* pod, int dim);
 
   OutputBlock output_block;
 
@@ -125,8 +140,18 @@ public:
   HistoryOutput(OutputBlock out_blk, Block *pb);
   ~HistoryOutput() {};
 
-  void ComputeOutputData(OutputData *pod);
+  OutputData* LoadOutputData();  // overload with function that computes history data
   void WriteOutputData();
 };
 
+//! \class VTKOutput
+//  \brief derived OutputType class for vtk dumps
+
+class VTKOutput : public OutputType {
+public:
+  VTKOutput(OutputBlock out_blk, Block *pb);
+  ~VTKOutput() {};
+
+  void WriteOutputData();
+};
 #endif
