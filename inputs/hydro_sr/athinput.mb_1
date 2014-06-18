@@ -19,7 +19,7 @@ nlim       = -1   # cycle limit
 tlim       = 0.4  # time limit
 
 <mesh>
-nx1    = 100   # Number of zones in X1-direction
+nx1    = 400   # Number of zones in X1-direction
 x1min  = -0.5  # minimum value of X1
 x1max  = 0.5   # maximum value of X1
 ix1_bc = 2     # Inner-X1 boundary condition flag

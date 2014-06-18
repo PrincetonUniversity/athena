@@ -41,17 +41,17 @@ ox3_bc = 4     # Outer-X3 boundary condition flag
 gamma = 1.66666666666667  # gamma = C_p/C_v
 
 <problem>
-shock_dir = 1                 # Shock Direction -- (1,2,3) = (x1,x2,x3)
-xshock    = 0.0               # position of initial interface
+shock_dir = 1                  # Shock Direction -- (1,2,3) = (x1,x2,x3)
+xshock    = 0.0                # position of initial interface
 
-dl        = 10.0              # density on left
-pl        = 13.3333333333333  # pressure
-ul        = 0.0               # X-velocity
-vl        = 0.0               # Y-velocity
-wl        = 0.0               # Z-velocity
+dl        = 10.0               # density on left
+pl        = 13.3333333333333   # pressure
+ul        = 0.0                # X-velocity
+vl        = 0.0                # Y-velocity
+wl        = 0.0                # Z-velocity
 
-dr        = 1.0               # density on right
-pr        = 0.0               # pressure
-ur        = 0.0               # X-velocity
-vr        = 0.0               # Y-velocity
-wr        = 0.0               # Z-velocity
+dr        = 1.0                # density on right
+pr        = 6.666666666667e-7  # pressure
+ur        = 0.0                # X-velocity
+vr        = 0.0                # Y-velocity
+wr        = 0.0                # Z-velocity
