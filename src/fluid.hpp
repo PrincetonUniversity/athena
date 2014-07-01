@@ -33,6 +33,8 @@ public:
   AthenaArray<Real> u,w;   // conserved and primitive variables
   AthenaArray<Real> u1,w1; // conserved and primitive variables at the half-time step
 
+  AthenaArray<Real> g, g_inv;  // metric and its inverse
+
   FluidIntegrator *pf_integrator;   // integration algorithm
 
 // conserved to primitive functions implemented in files in /convert_var

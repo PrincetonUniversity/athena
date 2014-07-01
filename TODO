@@ -1,3 +1,13 @@
+Fluid:
+ - timestep calculation only works for Newtonian hydro
+
+Integrators:
+ - RiemannSolver() needs j and k as inputs
+ - do we really need all of ivx, ivy, and ivz?
+   - either ivx==IVX (and so ivy==IVY and ivz==IVZ)
+     or ivx==IVY, ivy==IVZ, ivz==IVX
+     or ivx==IVZ, ivy==IVX, ivz==IVY
+
 Outputs:
  - add output of ghost zones 
  - add double precision option for vtk outputs

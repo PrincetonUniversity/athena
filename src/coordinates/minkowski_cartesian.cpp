@@ -165,12 +165,80 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 //   j: y-index
 //   prim: 1D array of primitive values in cells
 // Outputs:
-//   sources: 1D array of source terms
+//   sources: array of source terms in 1D
 // Notes:
 //   source terms all vanish identically
 //   sources assumed to be 0-initialized
 void Coordinates::CoordinateSourceTerms(const int k, const int j,
     AthenaArray<Real> &prim, AthenaArray<Real> &sources)
+{
+  return;
+}
+
+// Function for computing metric terms
+// Inputs:
+//   k: z-index
+//   j: y-index
+// Outputs:
+//   g: array of metric components in 1D
+//   g_inv: array of inverse metric components in 1D
+// Notes:
+//   both arrays assumed to be 0-initialized
+void Coordinates::CellMetric(const int k, const int j, AthenaArray<Real> &g,
+    AthenaArray<Real> &g_inv)
+{
+#pragma simd
+  for (int i = pparent_block->is-NGHOST; i <= pparent_block->ie+NGHOST; i++)
+  {
+    // TODO: should 0's be set explicitly?
+    g(I00,i) = -1.0;
+    g(I11,i) = 1.0;
+    g(I22,i) = 1.0;
+    g(I33,i) = 1.0;
+    g_inv(I00,i) = -1.0;
+    g_inv(I11,i) = 1.0;
+    g_inv(I22,i) = 1.0;
+    g_inv(I33,i) = 1.0;
+  }
+  return;
+}
+
+// Function for transforming primitives to locally flat frame orthogonal to 1-direction
+// Inputs:
+//   k: z-index
+//   j: y-index
+//   il, iu: x-index bounds
+//   ivx: index for direction orthogonal to interface
+//     IVX: x1-direction
+//     IVY: x2-direction
+//     IVZ: x3-direction
+//   prim: array of primitives in 1D, using global coordinates
+// Outputs:
+//   prim: values overwritten in local coordinates
+// Notes:
+//   transformation is trivial
+void Coordinates::PrimToLocal(const int k, const int j, const int il, const int iu, const int ivx,
+    AthenaArray<Real> &prim)
+{
+  return;
+}
+
+// Function for transforming primitives to locally flat frame orthogonal to 1-direction
+// Inputs:
+//   k: z-index
+//   j: y-index
+//   il, iu: x-index bounds
+//   ivx: index for direction orthogonal to interface
+//     IVX: x1-direction
+//     IVY: x2-direction
+//     IVZ: x3-direction
+//   flux: array of fluxes in 1D, using local coordinates
+// Outputs:
+//   flux: values overwritten in global coordinates
+// Notes:
+//   transformation is trivial
+void Coordinates::FluxToGlobal(const int k, const int j, const int il, const int iu, const int ivx,
+    AthenaArray<Real> &flux)
 {
   return;
 }

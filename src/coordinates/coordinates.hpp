@@ -38,6 +38,13 @@ public:
   void CoordinateSourceTerms(
     const int k, const int j, AthenaArray<Real> &prim, AthenaArray<Real> &src);
 
+  void CellMetric(const int k, const int j, AthenaArray<Real> &g,
+      AthenaArray<Real> &g_inv);
+  void PrimToLocal(const int k, const int j, const int il, const int iu, const int ivx,
+      AthenaArray<Real> &prim);
+  void FluxToGlobal(const int k, const int j, const int il, const int iu, const int ivx,
+      AthenaArray<Real> &flux);
+
   AthenaArray<Real> face_area, cell_volume;
 
 private:

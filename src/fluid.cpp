@@ -56,6 +56,11 @@ Fluid::Fluid(Block *pb)
   u1.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
   w1.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
 
+  // Allocate memory for metric
+  // TODO: this should only be done if we are in GR
+  g.NewAthenaArray(NMETRIC, ncells1);
+  g_inv.NewAthenaArray(NMETRIC, ncells1);
+
 // Allocate memory for scratch arrays
 
   dt1_.NewAthenaArray(ncells1);
@@ -75,6 +80,8 @@ Fluid::~Fluid()
   w.DeleteAthenaArray();
   u1.DeleteAthenaArray();
   w1.DeleteAthenaArray();
+  g.DeleteAthenaArray();
+  g_inv.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------
