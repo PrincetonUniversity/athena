@@ -12,6 +12,10 @@ Outputs:
  - add output of ghost zones 
  - add double precision option for vtk outputs
  - add proper line integrals in Sum transform
+ - prim density different from cons density in relativity
+
+Command-line inputs:
+ - Implement -d <directory> option
 
 Documentation (wiki pages):
  - tutorial
