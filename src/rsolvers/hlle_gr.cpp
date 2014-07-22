@@ -6,8 +6,8 @@
 #include "../integrators/integrators.hpp"
 
 // C++ headers
-#include <algorithm>  // max(), min()
-#include <cmath>      // sqrt()
+#include <algorithm>  // std::max(), std::min()
+#include <cmath>      // std::sqrt()
 
 // Athena headers
 #include "../athena.hpp"                   // enums, macros, Real
@@ -72,7 +72,7 @@ void FluidIntegrator::RiemannSolver(const int il, const int iu, const int ivx,
     Real v_sq_left = vx_left*vx_left + vy_left*vy_left + vz_left*vz_left;
     Real gamma_sq_left = 1.0 / (1.0 - v_sq_left);
     Real sigma_s = cs_sq / (gamma_sq_left * (1.0 - cs_sq));
-    Real relative_speed = sqrt(sigma_s * (1.0 + sigma_s - vx_left*vx_left));
+    Real relative_speed = std::sqrt(sigma_s * (1.0 + sigma_s - vx_left*vx_left));
     Real lambda_plus_left = 1.0 / (1.0 + sigma_s) * (vx_left
         + relative_speed);  // (MB 23)
     Real lambda_minus_left = 1.0 / (1.0 + sigma_s) * (vx_left
@@ -84,7 +84,7 @@ void FluidIntegrator::RiemannSolver(const int il, const int iu, const int ivx,
     Real v_sq_right = vx_right*vx_right + vy_right*vy_right + vz_right*vz_right;
     Real gamma_sq_right = 1.0 / (1.0 - v_sq_right);
     sigma_s = cs_sq / (gamma_sq_right * (1.0 - cs_sq));
-    relative_speed = sqrt(sigma_s * (1.0 + sigma_s - vx_right*vx_right));
+    relative_speed = std::sqrt(sigma_s * (1.0 + sigma_s - vx_right*vx_right));
     Real lambda_plus_right = 1.0 / (1.0 + sigma_s) * (vx_right
         + relative_speed);  // (MB 23)
     Real lambda_minus_right = 1.0 / (1.0 + sigma_s) * (vx_right
@@ -99,7 +99,7 @@ void FluidIntegrator::RiemannSolver(const int il, const int iu, const int ivx,
     {
       // Calculate intermediate quantities (MB 3)
       Real gamma_sq_rho_h = gamma_sq_left * rho_h_left;
-      Real d = sqrt(gamma_sq_left) * rho_left;
+      Real d = std::sqrt(gamma_sq_left) * rho_left;
       Real mx = gamma_sq_rho_h * vx_left;
       Real my = gamma_sq_rho_h * vy_left;
       Real mz = gamma_sq_rho_h * vz_left;
@@ -116,7 +116,7 @@ void FluidIntegrator::RiemannSolver(const int il, const int iu, const int ivx,
     {
       // Calculate intermediate quantities (MB 3)
       Real gamma_sq_rho_h = gamma_sq_right * rho_h_right;
-      Real d = sqrt(gamma_sq_right) * rho_right;
+      Real d = std::sqrt(gamma_sq_right) * rho_right;
       Real mx = gamma_sq_rho_h * vx_right;
       Real my = gamma_sq_rho_h * vy_right;
       Real mz = gamma_sq_rho_h * vz_right;
@@ -132,7 +132,7 @@ void FluidIntegrator::RiemannSolver(const int il, const int iu, const int ivx,
 
     // Calculate left conserved quantities and fluxes
     Real gamma_sq_rho_h_left = gamma_sq_left * rho_h_left;
-    Real d_left = sqrt(gamma_sq_left) * rho_left;       // (MB 3)
+    Real d_left = std::sqrt(gamma_sq_left) * rho_left;       // (MB 3)
     Real e_left = gamma_sq_rho_h_left - pgas_left;      // (MB 3)
     Real mx_left = gamma_sq_rho_h_left * vx_left;       // (MB 3)
     Real my_left = gamma_sq_rho_h_left * vy_left;       // (MB 3)
@@ -145,7 +145,7 @@ void FluidIntegrator::RiemannSolver(const int il, const int iu, const int ivx,
 
     // Calculate right conserved quantities and fluxes
     Real gamma_sq_rho_h_right = gamma_sq_right * rho_h_right;
-    Real d_right = sqrt(gamma_sq_right) * rho_right;        // (MB 3)
+    Real d_right = std::sqrt(gamma_sq_right) * rho_right;        // (MB 3)
     Real e_right = gamma_sq_rho_h_right - pgas_right;       // (MB 3)
     Real mx_right = gamma_sq_rho_h_right * vx_right;        // (MB 3)
     Real my_right = gamma_sq_rho_h_right * vy_right;        // (MB 3)

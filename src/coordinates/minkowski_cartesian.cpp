@@ -1,6 +1,6 @@
 // Minkowski spacetime, Cartesian coordinates
 // Notes:
-//   coordinates: x^\mu = (t, x, y, z)
+//   coordinates: t, x, y, z
 //   metric: ds^2 = -dt^2 + dx^2 + dy^2 + dz^2
 
 // Primary header
@@ -217,8 +217,8 @@ void Coordinates::CellMetric(const int k, const int j, AthenaArray<Real> &g,
 //   prim: values overwritten in local coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::PrimToLocal(const int k, const int j, const int il, const int iu, const int ivx,
-    AthenaArray<Real> &prim)
+void Coordinates::PrimToLocal(const int k, const int j, const int il, const int iu,
+    const int ivx, AthenaArray<Real> &prim)
 {
   return;
 }
@@ -237,8 +237,8 @@ void Coordinates::PrimToLocal(const int k, const int j, const int il, const int 
 //   flux: values overwritten in global coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::FluxToGlobal(const int k, const int j, const int il, const int iu, const int ivx,
-    AthenaArray<Real> &flux)
+void Coordinates::FluxToGlobal(const int k, const int j, const int il, const int iu,
+    const int ivx, AthenaArray<Real> &flux)
 {
   return;
 }
