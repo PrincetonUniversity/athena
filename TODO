@@ -14,8 +14,29 @@ Outputs:
  - add proper line integrals in Sum transform
  - prim density different from cons density in relativity
 
-Command-line inputs:
- - Implement -d <directory> option
+Inputs:
+ - how do we specify metric parameters (e.g. M and a=J/M)?
+   - answer: add <problem> fields in input file
+ - implement -d <directory> option?
+
+Coordinates:
+ - are arrays like face1_area_i_ big enough? seems like they should be nx1+2*NGHOST +1
+   - answer: only using areas that border non-ghost cells, so this works as long as
+     NGHOST >= 1
+ - CellVolume(), Area1Face(), Area2Face(), Area3Face(): input il and iu should be
+   calculable from which function is called:
+   - CellVolume(): is -> ie
+   - Area1Face(): is -> ie+1
+   - Area2Face(): is -> ie
+   - Area3Face(): is -> ie
+   - Even future additions to code shouldn't care about areas and volumes in outer
+     regions of ghost zones?
+
+Mesh:
+ - do we need to print is, ie, js, etc. at runtime?
+
+Optimization:
+ - const-ness of input int's can't be influencing code, can it?
 
 Documentation (wiki pages):
  - tutorial
