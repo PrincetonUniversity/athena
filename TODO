@@ -2,7 +2,6 @@ Fluid:
  - timestep calculation only works for Newtonian hydro
 
 Integrators:
- - RiemannSolver() needs j and k as inputs
  - do we really need all of ivx, ivy, and ivz?
    - either ivx==IVX (and so ivy==IVY and ivz==IVZ)
      or ivx==IVY, ivy==IVZ, ivz==IVX
@@ -12,7 +11,6 @@ Outputs:
  - add output of ghost zones 
  - add double precision option for vtk outputs
  - add proper line integrals in Sum transform
- - prim density different from cons density in relativity
 
 Inputs:
  - how do we specify metric parameters (e.g. M and a=J/M)?
@@ -45,3 +43,7 @@ Documentation (wiki pages):
  - writing problem generators
  - adding source terms
  - design and classes
+ - running unit tests?
+
+Other:
+ - Any "TODO" in source code

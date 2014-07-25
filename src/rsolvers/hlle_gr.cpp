@@ -25,18 +25,15 @@
 // Notes:
 //   implements HLLC algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
 //   wl, wr overwritten
-void FluidIntegrator::RiemannSolver(const int il, const int iu, const int ivx,
-    const int ivy, const int ivz, AthenaArray<Real> &wl, AthenaArray<Real> &wr,
-    AthenaArray<Real> &flux)
+void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
+    const int iu, const int ivx, const int ivy, const int ivz, AthenaArray<Real> &wl,
+    AthenaArray<Real> &wr, AthenaArray<Real> &flux)
 {
   // Extract ratio of specific heats
   const Real gamma_adi = pparent_fluid->GetGamma();
   const Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Transform primitives into locally flat coordinates
-  // TODO: need j,k to be inputs to Riemannsolver
-  int j = 0;
-  int k = 0;
   // TODO: should this be made 1 function call?
   pparent_fluid->pparent_block->pcoord->PrimToLocal(k, j, il, iu, ivx, wl);
   pparent_fluid->pparent_block->pcoord->PrimToLocal(k, j, il, iu, ivx, wr);

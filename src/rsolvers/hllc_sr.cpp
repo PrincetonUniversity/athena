@@ -22,9 +22,10 @@
 //   flux: fluxes
 // Notes:
 //   implements HLLC algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
-void FluidIntegrator::RiemannSolver(const int il, const int iu, const int ivx,
-    const int ivy, const int ivz, AthenaArray<Real> &prim_left,
-    AthenaArray<Real> &prim_right, AthenaArray<Real> &flux)
+void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
+    const int iu, const int ivx, const int ivy, const int ivz,
+    AthenaArray<Real> &prim_left, AthenaArray<Real> &prim_right,
+    AthenaArray<Real> &flux)
 {
   // Extract ratio of specific heats
   const Real gamma_adi = pparent_fluid->GetGamma();

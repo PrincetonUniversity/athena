@@ -29,7 +29,7 @@ public:
   void Predict(Block *pb);
   void Correct(Block *pb);
 
-  void RiemannSolver(
+  void RiemannSolver(const int k, const int j,
     const int il, const int iu, const int ivx, const int ivy, const int ivz,
     AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx);
 

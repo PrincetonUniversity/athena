@@ -35,7 +35,8 @@ TEST_F(HLLCSRTest, MB_3_L)
   flux_expected[IM3] = 0.0;
 
   // Check conserved-to-primitive inversion
-  pfluid_integrator->RiemannSolver(0, 0, IM1, IM2, IM3, prim_left, prim_right, flux);
+  pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, prim_left, prim_right,
+      flux);
   for (int n = 0; n < NVAR; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0,0,0));
 }
@@ -65,7 +66,8 @@ TEST_F(HLLCSRTest, MB_3_R)
   flux_expected[IM3] = 0.0;
 
   // Check conserved-to-primitive inversion
-  pfluid_integrator->RiemannSolver(0, 0, IM1, IM2, IM3, prim_left, prim_right, flux);
+  pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, prim_left, prim_right,
+      flux);
   for (int n = 0; n < NVAR; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0,0,0));
 }
@@ -95,7 +97,8 @@ TEST_F(HLLCSRTest, MB_3_C)
   flux_expected[IM3] = 0.0;
 
   // Check conserved-to-primitive inversion
-  pfluid_integrator->RiemannSolver(0, 0, IM1, IM2, IM3, prim_left, prim_right, flux);
+  pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, prim_left, prim_right,
+      flux);
   for (int n = 0; n < NVAR; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0,0,0));
 }
@@ -125,7 +128,8 @@ TEST_F(HLLCSRTest, Test1)
   flux_expected[IM3] = 0.0;
 
   // Check conserved-to-primitive inversion
-  pfluid_integrator->RiemannSolver(0, 0, IM1, IM2, IM3, prim_left, prim_right, flux);
+  pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, prim_left, prim_right,
+      flux);
   for (int n = 0; n < NVAR; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0,0,0));
 }
@@ -155,7 +159,8 @@ TEST_F(HLLCSRTest, Test2)
   flux_expected[IM3] = 0.0;
 
   // Check conserved-to-primitive inversion
-  pfluid_integrator->RiemannSolver(0, 0, IM1, IM2, IM3, prim_left, prim_right, flux);
+  pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, prim_left, prim_right,
+      flux);
   for (int n = 0; n < NVAR; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0,0,0));
 }
@@ -185,7 +190,8 @@ TEST_F(HLLCSRTest, Test3)
   flux_expected[IM3] = 0.0;
 
   // Check conserved-to-primitive inversion
-  pfluid_integrator->RiemannSolver(0, 0, IM1, IM2, IM3, prim_left, prim_right, flux);
+  pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, prim_left, prim_right,
+      flux);
   for (int n = 0; n < NVAR; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0,0,0));
 }
@@ -215,7 +221,8 @@ TEST_F(HLLCSRTest, Test4)
   flux_expected[IM3] = 0.0;
 
   // Check conserved-to-primitive inversion
-  pfluid_integrator->RiemannSolver(0, 0, IM1, IM2, IM3, prim_left, prim_right, flux);
+  pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, prim_left, prim_right,
+      flux);
   for (int n = 0; n < NVAR; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0,0,0));
 }
@@ -245,7 +252,8 @@ TEST_F(HLLCSRTest, Test5)
   flux_expected[IM3] = 0.0;
 
   // Check conserved-to-primitive inversion
-  pfluid_integrator->RiemannSolver(0, 0, IM1, IM2, IM3, prim_left, prim_right, flux);
+  pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, prim_left, prim_right,
+      flux);
   for (int n = 0; n < NVAR; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0,0,0));
 }
@@ -275,7 +283,8 @@ TEST_F(HLLCSRTest, Test6)
   flux_expected[IM3] = 0.0;
 
   // Check conserved-to-primitive inversion
-  pfluid_integrator->RiemannSolver(0, 0, IM1, IM2, IM3, prim_left, prim_right, flux);
+  pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, prim_left, prim_right,
+      flux);
   for (int n = 0; n < NVAR; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0,0,0));
 }
@@ -305,7 +314,8 @@ TEST_F(HLLCSRTest, Test7)
   flux_expected[IM3] = 0.0;
 
   // Check conserved-to-primitive inversion
-  pfluid_integrator->RiemannSolver(0, 0, IM1, IM2, IM3, prim_left, prim_right, flux);
+  pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, prim_left, prim_right,
+      flux);
   for (int n = 0; n < NVAR; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0,0,0));
 }
@@ -335,7 +345,8 @@ TEST_F(HLLCSRTest, Test8)
   flux_expected[IM3] = 0.0;
 
   // Check conserved-to-primitive inversion
-  pfluid_integrator->RiemannSolver(0, 0, IM1, IM2, IM3, prim_left, prim_right, flux);
+  pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, prim_left, prim_right,
+      flux);
   for (int n = 0; n < NVAR; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0,0,0));
 }
@@ -365,7 +376,8 @@ TEST_F(HLLCSRTest, Test9)
   flux_expected[IM3] = 0.0;
 
   // Check conserved-to-primitive inversion
-  pfluid_integrator->RiemannSolver(0, 0, IM1, IM2, IM3, prim_left, prim_right, flux);
+  pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, prim_left, prim_right,
+      flux);
   for (int n = 0; n < NVAR; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0,0,0));
 }
@@ -395,7 +407,8 @@ TEST_F(HLLCSRTest, Test10)
   flux_expected[IM3] = 0.0;
 
   // Check conserved-to-primitive inversion
-  pfluid_integrator->RiemannSolver(0, 0, IM1, IM2, IM3, prim_left, prim_right, flux);
+  pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, prim_left, prim_right,
+      flux);
   for (int n = 0; n < NVAR; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0,0,0));
 }

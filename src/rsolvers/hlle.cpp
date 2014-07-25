@@ -44,7 +44,7 @@
  *   schemes for hyperbolic conservation laws", SIAM Review 25, 35-61 (1983).
  *====================================================================================*/
 
-void FluidIntegrator::RiemannSolver(
+void FluidIntegrator::RiemannSolver(const int k, const int j,
   const int il, const int iu, const int ivx, const int ivy, const int ivz,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {

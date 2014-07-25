@@ -65,7 +65,7 @@ void FluidIntegrator::Predict(Block *pb)
 
     ReconstructionFuncX1(k,j,is,ie+1,w,wl,wr);
 
-    RiemannSolver(is,ie+1,IVX,IVY,IVZ,wl,wr,flx);
+    RiemannSolver(k,j,is,ie+1,IVX,IVY,IVZ,wl,wr,flx);
 
     pb->pcoord->Area1Face(k,j,is,ie+1,area);
     pb->pcoord->CellVolume(k,j,is,ie,vol);
@@ -97,7 +97,7 @@ void FluidIntegrator::Predict(Block *pb)
 
       ReconstructionFuncX2(k,j,is,ie,w,wl,wr);
 
-      RiemannSolver(is,ie,IVY,IVZ,IVX,wl,wr,flx); 
+      RiemannSolver(k,j,is,ie,IVY,IVZ,IVX,wl,wr,flx); 
 
       pb->pcoord->Area2Face(k,j,is,ie,area);
 
@@ -143,7 +143,7 @@ void FluidIntegrator::Predict(Block *pb)
 
       ReconstructionFuncX3(k,j,is,ie,w,wl,wr);
 
-      RiemannSolver(is,ie,IVZ,IVX,IVY,wl,wr,flx);
+      RiemannSolver(k,j,is,ie,IVZ,IVX,IVY,wl,wr,flx);
 
       pb->pcoord->Area3Face(k,j,is,ie,area);
 
@@ -237,7 +237,7 @@ void FluidIntegrator::Correct(Block *pb)
 
     ReconstructionFuncX1(k,j,is,ie+1,w1,wl,wr);
 
-    RiemannSolver(is,ie+1,IVX,IVY,IVZ,wl,wr,flx); 
+    RiemannSolver(k,j,is,ie+1,IVX,IVY,IVZ,wl,wr,flx); 
 
     pb->pcoord->Area1Face(k,j,is,ie+1,area);
     pb->pcoord->CellVolume(k,j,is,ie,vol);
@@ -268,7 +268,7 @@ void FluidIntegrator::Correct(Block *pb)
 
       ReconstructionFuncX2(k,j,is,ie,w1,wl,wr);
 
-      RiemannSolver(is,ie,IVY,IVZ,IVX,wl,wr,flx); 
+      RiemannSolver(k,j,is,ie,IVY,IVZ,IVX,wl,wr,flx); 
 
       pb->pcoord->Area2Face(k,j,is,ie,area);
 
@@ -314,7 +314,7 @@ void FluidIntegrator::Correct(Block *pb)
 
       ReconstructionFuncX3(k,j,is,ie,w1,wl,wr);
 
-      RiemannSolver(is,ie,IVZ,IVX,IVY,wl,wr,flx);
+      RiemannSolver(k,j,is,ie,IVZ,IVX,IVY,wl,wr,flx);
 
       pb->pcoord->Area3Face(k,j,is,ie,area);
 
