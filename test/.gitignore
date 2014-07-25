@@ -1,5 +1,5 @@
-# Executables
-run_tests
+# Log directory
+logs/
 
 # Plot directory
 plots/

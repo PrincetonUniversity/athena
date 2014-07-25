@@ -7,8 +7,8 @@
 #include "gtest/gtest.h"
 
 // Athena headers
-#include "../../src/athena.hpp"         // enums, macros
-#include "../../src/athena_arrays.hpp"  // array_access
+#include "../../../src/athena.hpp"         // enums, macros
+#include "../../../src/athena_arrays.hpp"  // array_access
 
 // Shock tube 3 from Mignone & Bodo 2005, MNRAS 364 126 - left side
 TEST_F(HLLCSRTest, MB_3_L)

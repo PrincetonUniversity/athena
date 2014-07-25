@@ -7,8 +7,8 @@
 #include "gtest/gtest.h"
 
 // Athena headers
-#include "../../src/athena.hpp"         // enums, macros
-#include "../../src/athena_arrays.hpp"  // array_access
+#include "../../../src/athena.hpp"         // enums, macros
+#include "../../../src/athena_arrays.hpp"  // array_access
 
 // Test inversion with no y- or z- motion
 TEST_F(AdiabaticHydroSRTest1, TestX)

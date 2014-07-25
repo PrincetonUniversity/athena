@@ -4,17 +4,17 @@
 #define TEST_RIEMANN_HPP
 
 // Primary headers
-#include "../../src/integrators/integrators.hpp"
-#include "test.hpp"
+#include "../../../src/integrators/integrators.hpp"
+#include "../test.hpp"
 
 // C++ headers
 #include <string>  // string
 
 // Athena headers
-#include "../../src/athena.hpp"           // macros, Real
-#include "../../src/athena_arrays.hpp"    // AthenaArray
-#include "../../src/mesh.hpp"             // Mesh, Domain, Block
-#include "../../src/parameter_input.hpp"  // ParameterInput
+#include "../../../src/athena.hpp"           // macros, Real
+#include "../../../src/athena_arrays.hpp"    // AthenaArray
+#include "../../../src/mesh.hpp"             // Mesh, Domain, Block
+#include "../../../src/parameter_input.hpp"  // ParameterInput
 
 namespace {
 
