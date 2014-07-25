@@ -339,12 +339,19 @@ OutputData* OutputType::LoadOutputData()
 // Create linked list of OutputDataNodes containing requested data
 
   int node_added = 0;
-  if (output_block.variable.compare("d") == 0 || 
-      output_block.variable.compare("prim") == 0 ||
+  if (output_block.variable.compare("D") == 0 || 
       output_block.variable.compare("cons") == 0) {
     node_header.type = "SCALARS";
     node_header.name = "dens";
-    pod->AppendNode(pf->u.ShallowCopy(IDN,1),node_header); // density
+    pod->AppendNode(pf->u.ShallowCopy(IDN,1),node_header); // (lab-frame) density
+    node_added = 1;
+  }
+
+  if (output_block.variable.compare("d") == 0 || 
+      output_block.variable.compare("prim") == 0) {
+    node_header.type = "SCALARS";
+    node_header.name = "rho";
+    pod->AppendNode(pf->w.ShallowCopy(IDN,1),node_header); // (rest-frame) density
     node_added = 1;
   }
 
