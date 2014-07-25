@@ -87,7 +87,6 @@ Coordinates::Coordinates(Block *pb)
   face_area.NewAthenaArray(ncells1);   // scratch used in integrator
   cell_volume.NewAthenaArray(ncells1); // scratch used in integrator
 
-  face2_area_i_.NewAthenaArray(ncells1);
   volume_i_.NewAthenaArray(ncells1);
   src_terms_i_.NewAthenaArray(ncells1);
 
@@ -96,9 +95,8 @@ Coordinates::Coordinates(Block *pb)
 
 #pragma simd
   for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i){
-    face2_area_i_(i) = 0.5*(pb->x1f(i+1)*pb->x1f(i+1) - pb->x1f(i)*pb->x1f(i));
-    volume_i_(i)     = 0.5*(pb->x1f(i+1)*pb->x1f(i+1) - pb->x1f(i)*pb->x1f(i));
-    src_terms_i_(i)  = pb->dx1f(i)/volume_i_(i);
+    volume_i_(i)    = 0.5*(pb->x1f(i+1)*pb->x1f(i+1) - pb->x1f(i)*pb->x1f(i));
+    src_terms_i_(i) = pb->dx1f(i)/volume_i_(i);
   }
 
 }
@@ -111,7 +109,6 @@ Coordinates::~Coordinates()
   face_area.DeleteAthenaArray();
   cell_volume.DeleteAthenaArray();
 
-  face2_area_i_.DeleteAthenaArray();
   volume_i_.DeleteAthenaArray();
 }
 
@@ -136,7 +133,7 @@ void Coordinates::Area2Face(const int k, const int j, const int il, const int iu
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
-    area_i = face2_area_i_(i)*(pparent_block->dx3f(k));
+    area_i = (pparent_block->dx1f(i))*(pparent_block->dx3f(k));
   }
   return;
 }
