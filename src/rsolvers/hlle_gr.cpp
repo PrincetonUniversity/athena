@@ -6,8 +6,8 @@
 #include "../integrators/integrators.hpp"
 
 // C++ headers
-#include <algorithm>  // std::max(), std::min()
-#include <cmath>      // std::sqrt()
+#include <algorithm>  // max(), min()
+#include <cmath>      // sqrt()
 
 // Athena headers
 #include "../athena.hpp"                   // enums, macros, Real
@@ -35,8 +35,21 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
 
   // Transform primitives into locally flat coordinates
   // TODO: should this be made 1 function call?
-  pparent_fluid->pparent_block->pcoord->PrimToLocal(k, j, il, iu, ivx, wl);
-  pparent_fluid->pparent_block->pcoord->PrimToLocal(k, j, il, iu, ivx, wr);
+  switch (ivx)
+  {
+    case IVX:
+      pparent_fluid->pparent_block->pcoord->PrimToLocal1(k, j, wl);
+      pparent_fluid->pparent_block->pcoord->PrimToLocal1(k, j, wr);
+      break;
+    case IVY:
+      pparent_fluid->pparent_block->pcoord->PrimToLocal2(k, j, wl);
+      pparent_fluid->pparent_block->pcoord->PrimToLocal2(k, j, wr);
+      break;
+    case IVZ:
+      pparent_fluid->pparent_block->pcoord->PrimToLocal3(k, j, wl);
+      pparent_fluid->pparent_block->pcoord->PrimToLocal3(k, j, wr);
+      break;
+  }
 
   // Go through each interface
 #pragma simd
@@ -168,6 +181,18 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   }
 
   // Transform fluxes into global coordinates
-  pparent_fluid->pparent_block->pcoord->FluxToGlobal(k, j, il, iu, ivx, flux);
+  switch (ivx)
+  {
+    case IVX:
+      pparent_fluid->pparent_block->pcoord->FluxToGlobal1(k, j, flux);
+      break;
+    case IVY:
+      pparent_fluid->pparent_block->pcoord->FluxToGlobal2(k, j, flux);
+      break;
+    case IVZ:
+      pparent_fluid->pparent_block->pcoord->FluxToGlobal3(k, j, flux);
+      break;
+  }
+
   return;
 }

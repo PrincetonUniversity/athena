@@ -203,42 +203,86 @@ void Coordinates::CellMetric(const int k, const int j, AthenaArray<Real> &g,
   return;
 }
 
-// Function for transforming primitives to locally flat frame orthogonal to 1-direction
+// Function for transforming primitives to locally flat frame: x-interface
 // Inputs:
 //   k: z-index
 //   j: y-index
-//   il, iu: x-index bounds
-//   ivx: index for direction orthogonal to interface
-//     IVX: x1-direction
-//     IVY: x2-direction
-//     IVZ: x3-direction
 //   prim: array of primitives in 1D, using global coordinates
 // Outputs:
 //   prim: values overwritten in local coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::PrimToLocal(const int k, const int j, const int il, const int iu,
-    const int ivx, AthenaArray<Real> &prim)
+void Coordinates::PrimToLocal1(const int k, const int j, AthenaArray<Real> &prim)
 {
   return;
 }
 
-// Function for transforming primitives to locally flat frame orthogonal to 1-direction
+// Function for transforming primitives to locally flat frame: y-interface
 // Inputs:
 //   k: z-index
 //   j: y-index
-//   il, iu: x-index bounds
-//   ivx: index for direction orthogonal to interface
-//     IVX: x1-direction
-//     IVY: x2-direction
-//     IVZ: x3-direction
+//   prim: array of primitives in 1D, using global coordinates
+// Outputs:
+//   prim: values overwritten in local coordinates
+// Notes:
+//   transformation is trivial
+void Coordinates::PrimToLocal2(const int k, const int j, AthenaArray<Real> &prim)
+{
+  return;
+}
+
+// Function for transforming primitives to locally flat frame: z-interface
+// Inputs:
+//   k: z-index
+//   j: y-index
+//   prim: array of primitives in 1D, using global coordinates
+// Outputs:
+//   prim: values overwritten in local coordinates
+// Notes:
+//   transformation is trivial
+void Coordinates::PrimToLocal3(const int k, const int j, AthenaArray<Real> &prim)
+{
+  return;
+}
+
+// Function for transforming fluxes to global frame: x-interface
+// Inputs:
+//   k: z-index
+//   j: y-index
 //   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
 //   flux: values overwritten in global coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::FluxToGlobal(const int k, const int j, const int il, const int iu,
-    const int ivx, AthenaArray<Real> &flux)
+void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flux)
+{
+  return;
+}
+
+// Function for transforming fluxes to global frame: y-interface
+// Inputs:
+//   k: z-index
+//   j: y-index
+//   flux: array of fluxes in 1D, using local coordinates
+// Outputs:
+//   flux: values overwritten in global coordinates
+// Notes:
+//   transformation is trivial
+void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flux)
+{
+  return;
+}
+
+// Function for transforming fluxes to global frame: z-interface
+// Inputs:
+//   k: z-index
+//   j: y-index
+//   flux: array of fluxes in 1D, using local coordinates
+// Outputs:
+//   flux: values overwritten in global coordinates
+// Notes:
+//   transformation is trivial
+void Coordinates::FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flux)
 {
   return;
 }
