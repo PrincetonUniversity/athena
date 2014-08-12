@@ -1,9 +1,6 @@
 Fluid:
  - timestep calculation only works for Newtonian hydro
 
-Inversion:
- - GR inversion problematic when state changes rapidly
-
 Integrators:
  - do we really need all of ivx, ivy, and ivz?
    - either ivx==IVX (and so ivy==IVY and ivz==IVZ)
@@ -35,6 +32,8 @@ Coordinates:
 
 Problem Generators:
  - shock_tube_gr: currently assumes Minkowski
+ - *if* they are required to set primitives (and half-step primitives) everywhere
+   (including BCs), then does mesh step 5 need UpdateAcrossDomains(convert_vars_n)?
 
 Mesh:
  - do we need to print is, ie, js, etc. at runtime?

@@ -253,9 +253,20 @@ void Coordinates::PrimToLocal3(const int k, const int j, AthenaArray<Real> &prim
 // Outputs:
 //   flux: values overwritten in global coordinates
 // Notes:
-//   transformation is trivial
+//   transformation is trivial except for sign change from lowering time index
 void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flux)
 {
+  // Go through 1D block of cells
+#pragma simd
+  for (int i = pparent_block->is; i <= pparent_block->ie+1; i++)
+  {
+    // Extract fluxes for reading and writing
+    Real &txt = flux(IEN,i);
+    Real &t10 = flux(IEN,i);
+
+    // Set new fluxes
+    t10 = -txt;
+  }
   return;
 }
 
@@ -267,9 +278,20 @@ void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flu
 // Outputs:
 //   flux: values overwritten in global coordinates
 // Notes:
-//   transformation is trivial
+//   transformation is trivial except for sign change from lowering time index
 void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flux)
 {
+  // Go through 1D block of cells
+#pragma simd
+  for (int i = pparent_block->is; i <= pparent_block->ie; i++)
+  {
+    // Extract fluxes for reading and writing
+    Real &tyt = flux(IEN,i);
+    Real &t20 = flux(IEN,i);
+
+    // Set new fluxes
+    t20 = -tyt;
+  }
   return;
 }
 
@@ -281,8 +303,19 @@ void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flu
 // Outputs:
 //   flux: values overwritten in global coordinates
 // Notes:
-//   transformation is trivial
+//   transformation is trivial except for sign change from lowering time index
 void Coordinates::FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flux)
 {
+  // Go through 1D block of cells
+#pragma simd
+  for (int i = pparent_block->is; i <= pparent_block->ie; i++)
+  {
+    // Extract fluxes for reading and writing
+    Real &tzt = flux(IEN,i);
+    Real &t30 = flux(IEN,i);
+
+    // Set new fluxes
+    t30 = -tzt;
+  }
   return;
 }
