@@ -118,7 +118,8 @@ class AdiabaticHydroGRTest1 : public AdiabaticHydroGRTest
 };
 
 // Gamma = 5/3
-class AdiabaticHydroGRTest2 : public AdiabaticHydroGRTest
+class AdiabaticHydroGRTest2 : public AdiabaticHydroGRTest,
+                              public ::testing::WithParamInterface<Real>
 {
  protected:
 

@@ -27,7 +27,8 @@
  *  \brief converts conserved to primitive variables in adiabatic hydrodynamics`
  *====================================================================================*/
 
-void Fluid::ConservedToPrimitive(AthenaArray<Real> &c, AthenaArray<Real> &p)
+void Fluid::ConservedToPrimitive(AthenaArray<Real> &c, AthenaArray<Real> &p_old,
+    AthenaArray<Real> &p)
 {
   Block *pb = pparent_block;
   int is = pb->is; int ie = pb->ie;

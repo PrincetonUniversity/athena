@@ -16,6 +16,7 @@
 // Variable inverter
 // Inputs:
 //   cons: conserved quantities
+//   prim_old: primitive quantities from previous half timestep (not used)
 // Outputs:
 //   prim: primitives
 // Notes:
@@ -41,7 +42,8 @@
 //          d0 = 1/2 * (x0 - sqrt(x0^2 - 4 a0))
 //          then |v|^2 + d1 |v| + d0 = 0
 //          |v| = 1/2 * (-d1 + sqrt(d1^2 - 4 d0))
-void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &prim)
+void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &prim_old,
+    AthenaArray<Real> &prim)
 {
   // Parameters
   const Real max_velocity = 1.0 - 1.0e-15;

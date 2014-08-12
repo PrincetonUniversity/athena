@@ -25,15 +25,19 @@ Real residual_derivative(Real w_guess, Real d_norm, Real q_norm_sq, Real gamma_p
 // Variable inverter
 // Inputs:
 //   cons: conserved quantities
+//   prim_old: primitive quantities from previous half timestep
 // Outputs:
 //   prim: primitives
 // Notes:
 //   follows Noble et al. 2006, ApJ 641 626 (N)
 //   implements formulas assuming no magnetic field
-void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &prim)
+void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &prim_old,
+    AthenaArray<Real> &prim)
 {
   // Parameters
   const Real max_velocity = 1.0 - 1.0e-15;
+  const Real initial_guess_multiplier = 10.0;
+  const int initial_guess_multiplications = 10;
 
   // Extract ratio of specific heats
   const Real gamma_adi = GetGamma();
@@ -89,6 +93,13 @@ void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &pri
         Real &m2 = cons(IVY,k,j,i);
         Real &m3 = cons(IVZ,k,j,i);
 
+        // Extract old primitives
+        Real &rho_old = prim_old(IDN,k,j,i);
+        Real &pgas_old = prim_old(IEN,k,j,i);
+        Real &v1_old = prim_old(IVX,k,j,i);
+        Real &v2_old = prim_old(IVY,k,j,i);
+        Real &v3_old = prim_old(IVZ,k,j,i);
+
         // Extract primitives
         Real &rho = prim(IDN,k,j,i);
         Real &pgas = prim(IEN,k,j,i);
@@ -119,12 +130,15 @@ void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &pri
         Real q_norm_sq = q_norm_sq_a + q_norm_sq_b*q_norm_sq_b;
 
         // Construct initial guess for enthalpy W
-        Real v_sq = g11*v1*v1 + g22*v2*v2 + g33*v3*v3
-            + 2.0 * (g12*v1*v2 + g13*v1*v3 + g23*v2*v3);
-        Real beta_v = g01*v1 + g02*v2 + g03*v3;
+        Real v_sq = g11*v1_old*v1_old + g22*v2_old*v2_old + g33*v3_old*v3_old
+            + 2.0 * (g12*v1_old*v2_old + g13*v1_old*v3_old + g23*v2_old*v3_old);
+        Real beta_v = g01*v1_old + g02*v2_old + g03*v3_old;
         Real v_norm_sq = 1.0/alpha_sq * (v_sq + 2.0*beta_v + beta_sq);
         Real gamma_sq = 1.0 / (1.0 - v_norm_sq);
-        Real w_initial = gamma_sq * (rho + gamma_prime * pgas);
+        Real w_initial = gamma_sq * (rho_old + gamma_prime * pgas_old);
+        for (int count = 0; count < initial_guess_multiplications; count++)
+          if (w_initial*w_initial <= q_norm_sq)  // v^2 negative according to (N28)
+            w_initial *= initial_guess_multiplier;
 
         // Apply Newton-Raphson method to find new W
         Real w_true = find_root_nr(w_initial, d_norm, q_dot_n, q_norm_sq, gamma_prime);

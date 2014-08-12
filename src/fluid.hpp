@@ -38,7 +38,8 @@ public:
   FluidIntegrator *pf_integrator;   // integration algorithm
 
 // conserved to primitive functions implemented in files in /convert_var
-  void ConservedToPrimitive(AthenaArray<Real> &c, AthenaArray<Real> &p);
+  void ConservedToPrimitive(AthenaArray<Real> &c, AthenaArray<Real> &p_old,
+      AthenaArray<Real> &p);
 
   void NewTimeStep(Block *pb);           // computes new timestep on a Block
   void InitProblem(ParameterInput *pin); // problem generator function (files in /pgen)

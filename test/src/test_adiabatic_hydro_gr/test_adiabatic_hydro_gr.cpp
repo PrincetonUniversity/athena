@@ -25,7 +25,7 @@ TEST_F(AdiabaticHydroGRTest1, TestAll)
   primitive_to_conserved();
 
   // Check conserved-to-primitive inversion
-  pfluid->ConservedToPrimitive(cons, prim);
+  pfluid->ConservedToPrimitive(cons, prim, prim);
   for (int n = 0; n < NVAR; n++)
     EXPECT_DOUBLE_TOL(prim_expected[n], prim(n,0,0,0));
 }
@@ -45,13 +45,13 @@ TEST_F(AdiabaticHydroGRTest2, TestX)
   primitive_to_conserved();
 
   // Check conserved-to-primitive inversion
-  pfluid->ConservedToPrimitive(cons, prim);
+  pfluid->ConservedToPrimitive(cons, prim, prim);
   for (int n = 0; n < NVAR; n++)
     EXPECT_DOUBLE_TOL(prim_expected[n], prim(n,0,0,0));
 }
 
 // Test inversion with imperfect guess
-TEST_F(AdiabaticHydroGRTest2, TestImperfect)
+TEST_P(AdiabaticHydroGRTest2, TestImperfect)
 {
   // Prepare expected outputs
   prim_expected[IDN] = 0.79482790185472818;
@@ -63,14 +63,15 @@ TEST_F(AdiabaticHydroGRTest2, TestImperfect)
   // Prepare inputs
   primitive_to_conserved();
   prim(IDN,0,0,0) = 1.0;
-  prim(IEN,0,0,0) = 10.0;//0.01;
+  prim(IEN,0,0,0) = GetParam();
   prim(IM1,0,0,0) = 0.0;
   prim(IM2,0,0,0) = 0.0;
   prim(IM3,0,0,0) = 0.0;
 
   // Check conserved-to-primitive inversion
-  pfluid->ConservedToPrimitive(cons, prim);
+  pfluid->ConservedToPrimitive(cons, prim, prim);
   for (int n = 0; n < NVAR; n++)
     EXPECT_DOUBLE_TOL(prim_expected[n], prim(n,0,0,0));
 }
-
+INSTANTIATE_TEST_CASE_P(VariedInitialPressure, AdiabaticHydroGRTest2,
+    ::testing::Values(40.0, 10.0, 1.0, 0.1, 0.02));
