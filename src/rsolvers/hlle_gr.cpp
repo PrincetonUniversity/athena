@@ -1,4 +1,4 @@
-// HLLE Riemann solver for general relativistic hydro
+// HLLE Riemann solver for general relativistic hydrodynamics
 
 // TODO: make left and right inputs const
 
@@ -23,7 +23,7 @@
 // Outputs:
 //   flux: fluxes
 // Notes:
-//   implements HLLC algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
+//   implements HLLE algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
 //   wl, wr overwritten
 void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     const int iu, const int ivx, const int ivy, const int ivz, AthenaArray<Real> &wl,
@@ -142,7 +142,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
 
     // Calculate left conserved quantities and fluxes
     Real gamma_sq_rho_h_left = gamma_sq_left * rho_h_left;
-    Real d_left = std::sqrt(gamma_sq_left) * rho_left;       // (MB 3)
+    Real d_left = std::sqrt(gamma_sq_left) * rho_left;  // (MB 3)
     Real e_left = gamma_sq_rho_h_left - pgas_left;      // (MB 3)
     Real mx_left = gamma_sq_rho_h_left * vx_left;       // (MB 3)
     Real my_left = gamma_sq_rho_h_left * vy_left;       // (MB 3)
@@ -155,7 +155,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
 
     // Calculate right conserved quantities and fluxes
     Real gamma_sq_rho_h_right = gamma_sq_right * rho_h_right;
-    Real d_right = std::sqrt(gamma_sq_right) * rho_right;        // (MB 3)
+    Real d_right = std::sqrt(gamma_sq_right) * rho_right;   // (MB 3)
     Real e_right = gamma_sq_rho_h_right - pgas_right;       // (MB 3)
     Real mx_right = gamma_sq_rho_h_right * vx_right;        // (MB 3)
     Real my_right = gamma_sq_rho_h_right * vy_right;        // (MB 3)
@@ -193,6 +193,5 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
       pparent_fluid->pparent_block->pcoord->FluxToGlobal3(k, j, flux);
       break;
   }
-
   return;
 }

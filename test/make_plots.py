@@ -234,7 +234,7 @@ def run_new_gr(input_prefix, output_prefix, settings):
 
   # Prepare strings
   new_make_string = 'make all COORDINATES_FILE=minkowski_cartesian.cpp \
-      CONVERT_VAR_FILE=adiabatic_hydro_gr.cpp PROBLEM_FILE=shock_tube_sr.cpp \
+      CONVERT_VAR_FILE=adiabatic_hydro_gr.cpp PROBLEM_FILE=shock_tube_gr.cpp \
       RSOLVER_FILE=hlle_gr.cpp RECONSTRUCT_FILE=plm.cpp'
   # TODO: change when -d option works
   #new_run_string = './athena -i inputs/hydro_sr/athinput.' + input_prefix + '{1} \
