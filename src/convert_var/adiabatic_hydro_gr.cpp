@@ -1,4 +1,4 @@
-// Conserved-to-primitive inversion for adiabatic hydrodynamics in special relativity
+// Conserved-to-primitive inversion for adiabatic hydrodynamics in general relativity
 
 // TODO: make conserved inputs const
 // TODO: manually inline functions?
@@ -7,7 +7,7 @@
 #include "../fluid.hpp"
 
 // C++ headers
-#include <cmath>  // NAN, sqrt(), std::abs(), std::isfinite()
+#include <cmath>  // NAN, sqrt(), abs(), isfinite()
 
 // Athena headers
 #include "../athena.hpp"                   // enums, macros, Real
@@ -58,10 +58,6 @@ void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &pri
     ku += (NGHOST);
   }
 
-  // Make array copies for performance reasons
-  AthenaArray<Real> cons_copy = cons.ShallowCopy();
-  AthenaArray<Real> prim_copy = prim.ShallowCopy();
-
   // Go through cells
   for (int k = kl; k <= ku; k++)
     for (int j = jl; j <= ju; j++)
@@ -87,21 +83,21 @@ void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &pri
              &gi33 = g_inv(I33,i);
 
         // Extract conserved quantities
-        Real &d = cons_copy(IDN,k,j,i);
-        Real &e = cons_copy(IEN,k,j,i);
-        Real &m1 = cons_copy(IVX,k,j,i);
-        Real &m2 = cons_copy(IVY,k,j,i);
-        Real &m3 = cons_copy(IVZ,k,j,i);
+        Real &d = cons(IDN,k,j,i);
+        Real &e = cons(IEN,k,j,i);
+        Real &m1 = cons(IVX,k,j,i);
+        Real &m2 = cons(IVY,k,j,i);
+        Real &m3 = cons(IVZ,k,j,i);
 
         // Extract primitives
-        Real &rho = prim_copy(IDN,k,j,i);
-        Real &pgas = prim_copy(IEN,k,j,i);
-        Real &v1 = prim_copy(IVX,k,j,i);
-        Real &v2 = prim_copy(IVY,k,j,i);
-        Real &v3 = prim_copy(IVZ,k,j,i);
+        Real &rho = prim(IDN,k,j,i);
+        Real &pgas = prim(IEN,k,j,i);
+        Real &v1 = prim(IVX,k,j,i);
+        Real &v2 = prim(IVY,k,j,i);
+        Real &v3 = prim(IVZ,k,j,i);
 
         // Calculate useful geometric quantities
-        Real alpha = 1.0 / sqrt(-gi00);
+        Real alpha = 1.0 / std::sqrt(-gi00);
         Real alpha_sq = alpha*alpha;
         Real beta_sq = g00 + alpha_sq;
 
@@ -136,8 +132,9 @@ void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &pri
         // Calculate primitives from W
         v_norm_sq = q_norm_sq / (w_true*w_true);  // (N28)
         gamma_sq = 1.0/(1.0 - v_norm_sq);
-        Real gamma_rel = sqrt(gamma_sq);
-        pgas = 1.0/gamma_prime * (w_true/gamma_sq - d_norm/sqrt(gamma_sq));  // (N32)
+        Real gamma_rel = std::sqrt(gamma_sq);
+        pgas = 1.0/gamma_prime
+            * (w_true/gamma_sq - d_norm/std::sqrt(gamma_sq));  // (N32)
         rho = w_true / gamma_sq - gamma_prime * pgas;
         Real u0 = d_norm / (alpha * rho);  // (N21)
         Real u_norm_1 = gamma_rel * q_norm_1 / w_true;  // (N31)
@@ -243,10 +240,11 @@ Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
 //   implements formulas assuming no magnetic field
 Real residual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq, Real gamma_prime)
 {
-  Real v_norm_sq = q_norm_sq / (w_guess*w_guess);                            // (N28)
+  Real v_norm_sq = q_norm_sq / (w_guess*w_guess);  // (N28)
   Real gamma_sq = 1.0/(1.0 - v_norm_sq);
-  Real pgas = 1.0/gamma_prime * (w_guess/gamma_sq - d_norm/sqrt(gamma_sq));  // (N32)
-  return -w_guess + pgas - q_dot_n;                                          // (N29)
+  Real pgas = 1.0/gamma_prime
+      * (w_guess/gamma_sq - d_norm/std::sqrt(gamma_sq));  // (N32)
+  return -w_guess + pgas - q_dot_n;  // (N29)
 }
 
 // Derivative of residual()
@@ -269,6 +267,6 @@ Real residual_derivative(Real w_guess, Real d_norm, Real q_norm_sq, Real gamma_p
   Real d_v_norm_sq_dw = -2.0 * q_norm_sq / (w_guess*w_guess*w_guess);  // (N28)
   Real d_gamma_sq_dw = gamma_4 * d_v_norm_sq_dw;
   Real dpgas_dw = 1.0/(gamma_prime * gamma_4) * (gamma_sq
-      + (0.5*d_norm*sqrt(gamma_sq) - w_guess) * d_gamma_sq_dw);  // (N32)
+      + (0.5*d_norm*std::sqrt(gamma_sq) - w_guess) * d_gamma_sq_dw);  // (N32)
   return -1.0 + dpgas_dw;  // (N29)
 }

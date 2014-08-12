@@ -6,7 +6,6 @@
 #include "../fluid.hpp"
 
 // C++ headers
-#include <algorithm>  // max(), min()
 #include <cmath>      // atan2(), cbrt(), cos(), sqrt()
 
 // Athena headers
@@ -102,7 +101,7 @@ void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &pri
         if (m_sq >= TINY_NUMBER*TINY_NUMBER)  // generic case, nonzero velocity
         {
           // Step 1: Prepare quartic coefficients
-          Real m_abs = sqrt(m_sq);
+          Real m_abs = std::sqrt(m_sq);
           Real denom_inverse = 1.0 / (gamma_adi_minus_1*gamma_adi_minus_1
               * (d*d + m_sq));
           Real a3 = -2.0 * gamma_adi * gamma_adi_minus_1 * m_abs * e * denom_inverse;
@@ -124,24 +123,25 @@ void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &pri
           // Step 4: Find real root of new cubic
           Real y0;
           if (c3 >= 0.0)
-            y0 = cbrt(c2 + sqrt(c3)) + cbrt(c2 - sqrt(c3));
+            y0 = cbrt(c2 + std::sqrt(c3)) + cbrt(c2 - std::sqrt(c3));
           else
-            y0 = 2.0 * cbrt(c2*c2 + c3) * cos(atan2(sqrt(-c3), c2) / 3.0);
+            y0 = 2.0 * cbrt(c2*c2 + c3)
+                * std::cos(std::atan2(std::sqrt(-c3), c2) / 3.0);
 
           // Step 5: Find real root of original (resolvent) cubic:
           Real x0 = y0 - b2/3.0;
 
           // Step 6: Solve for (correct) root of original quartic
-          Real d1 = (a3 + sqrt(4.0*x0 - 4.0*a2 + a3*a3)) / 2.0;
-          Real d0 = (x0 - sqrt(x0*x0 - 4.0*a0)) / 2.0;
-          Real v_abs = (-d1 + sqrt(d1*d1 - 4.0*d0)) / 2.0;
+          Real d1 = (a3 + std::sqrt(4.0*x0 - 4.0*a2 + a3*a3)) / 2.0;
+          Real d0 = (x0 - std::sqrt(x0*x0 - 4.0*a0)) / 2.0;
+          Real v_abs = (-d1 + std::sqrt(d1*d1 - 4.0*d0)) / 2.0;
 
           // Ensure velocity is physical
           v_abs = (v_abs > 0.0) ? v_abs : 0.0;  // sets NaN to 0
           v_abs = (v_abs < max_velocity) ? v_abs : max_velocity;
 
           // Set primitives
-          rho = d * sqrt(1.0 - v_abs*v_abs);
+          rho = d * std::sqrt(1.0 - v_abs*v_abs);
           vx = mx * v_abs / m_abs;
           vy = my * v_abs / m_abs;
           vz = mz * v_abs / m_abs;
