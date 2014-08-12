@@ -1,6 +1,9 @@
 Fluid:
  - timestep calculation only works for Newtonian hydro
 
+Inversion:
+ - GR inversion problematic when state changes rapidly
+
 Integrators:
  - do we really need all of ivx, ivy, and ivz?
    - either ivx==IVX (and so ivy==IVY and ivz==IVZ)
@@ -30,6 +33,9 @@ Coordinates:
    - Even future additions to code shouldn't care about areas and volumes in outer
      regions of ghost zones?
 
+Problem Generators:
+ - shock_tube_gr: currently assumes Minkowski
+
 Mesh:
  - do we need to print is, ie, js, etc. at runtime?
 
@@ -47,3 +53,8 @@ Documentation (wiki pages):
 
 Other:
  - Any "TODO" in source code
+ - Use cbrt()?
+   - so far always available in <cmath>
+   - but only guaranteed for C++11
+   - pre-C++11 if included it is in global namespace, not std::
+   - cbrt(<>) treats negative inputs correctly; pow(<>,1./3.) does not
