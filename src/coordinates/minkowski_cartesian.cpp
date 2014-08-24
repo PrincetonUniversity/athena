@@ -203,42 +203,119 @@ void Coordinates::CellMetric(const int k, const int j, AthenaArray<Real> &g,
   return;
 }
 
-// Function for transforming primitives to locally flat frame orthogonal to 1-direction
+// Function for transforming primitives to locally flat frame: x-interface
 // Inputs:
 //   k: z-index
 //   j: y-index
-//   il, iu: x-index bounds
-//   ivx: index for direction orthogonal to interface
-//     IVX: x1-direction
-//     IVY: x2-direction
-//     IVZ: x3-direction
 //   prim: array of primitives in 1D, using global coordinates
 // Outputs:
 //   prim: values overwritten in local coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::PrimToLocal(const int k, const int j, const int il, const int iu,
-    const int ivx, AthenaArray<Real> &prim)
+void Coordinates::PrimToLocal1(const int k, const int j, AthenaArray<Real> &prim)
 {
   return;
 }
 
-// Function for transforming primitives to locally flat frame orthogonal to 1-direction
+// Function for transforming primitives to locally flat frame: y-interface
 // Inputs:
 //   k: z-index
 //   j: y-index
-//   il, iu: x-index bounds
-//   ivx: index for direction orthogonal to interface
-//     IVX: x1-direction
-//     IVY: x2-direction
-//     IVZ: x3-direction
+//   prim: array of primitives in 1D, using global coordinates
+// Outputs:
+//   prim: values overwritten in local coordinates
+// Notes:
+//   transformation is trivial
+void Coordinates::PrimToLocal2(const int k, const int j, AthenaArray<Real> &prim)
+{
+  return;
+}
+
+// Function for transforming primitives to locally flat frame: z-interface
+// Inputs:
+//   k: z-index
+//   j: y-index
+//   prim: array of primitives in 1D, using global coordinates
+// Outputs:
+//   prim: values overwritten in local coordinates
+// Notes:
+//   transformation is trivial
+void Coordinates::PrimToLocal3(const int k, const int j, AthenaArray<Real> &prim)
+{
+  return;
+}
+
+// Function for transforming fluxes to global frame: x-interface
+// Inputs:
+//   k: z-index
+//   j: y-index
 //   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
 //   flux: values overwritten in global coordinates
 // Notes:
-//   transformation is trivial
-void Coordinates::FluxToGlobal(const int k, const int j, const int il, const int iu,
-    const int ivx, AthenaArray<Real> &flux)
+//   transformation is trivial except for sign change from lowering time index
+void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flux)
 {
+  // Go through 1D block of cells
+#pragma simd
+  for (int i = pparent_block->is; i <= pparent_block->ie+1; i++)
+  {
+    // Extract fluxes for reading and writing
+    Real &txt = flux(IEN,i);
+    Real &t10 = flux(IEN,i);
+
+    // Set new fluxes
+    t10 = -txt;
+  }
+  return;
+}
+
+// Function for transforming fluxes to global frame: y-interface
+// Inputs:
+//   k: z-index
+//   j: y-index
+//   flux: array of fluxes in 1D, using local coordinates
+// Outputs:
+//   flux: values overwritten in global coordinates
+// Notes:
+//   transformation is trivial except for sign change from lowering time index
+void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flux)
+{
+  // Go through 1D block of cells
+#pragma simd
+  for (int i = pparent_block->is; i <= pparent_block->ie; i++)
+  {
+    // Extract fluxes for reading and writing
+    Real &tyt = flux(IEN,i);
+    Real &t20 = flux(IEN,i);
+
+    // Set new fluxes
+    t20 = -tyt;
+  }
+  return;
+}
+
+// Function for transforming fluxes to global frame: z-interface
+// Inputs:
+//   k: z-index
+//   j: y-index
+//   flux: array of fluxes in 1D, using local coordinates
+// Outputs:
+//   flux: values overwritten in global coordinates
+// Notes:
+//   transformation is trivial except for sign change from lowering time index
+void Coordinates::FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flux)
+{
+  // Go through 1D block of cells
+#pragma simd
+  for (int i = pparent_block->is; i <= pparent_block->ie; i++)
+  {
+    // Extract fluxes for reading and writing
+    Real &tzt = flux(IEN,i);
+    Real &t30 = flux(IEN,i);
+
+    // Set new fluxes
+    t30 = -tzt;
+  }
   return;
 }

@@ -43,7 +43,7 @@ def main(**kwargs):
     for testsuite in testsuites:
       for testcase in testsuite:
         test_count += 1
-        for failure in testcase.iter('failure'):
+        if testcase.find('failure') is not None:
           if kwargs['quiet']:
             print('\033[1;31mfailure:\033[0;0m {0}.{1}'.format(testsuite.attrib['name'], testcase.attrib['name']))
           failure_count += 1

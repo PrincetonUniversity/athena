@@ -1,4 +1,4 @@
-// HLLE Riemann solver for general relativistic hydro
+// HLLE Riemann solver for general relativistic hydrodynamics
 
 // TODO: make left and right inputs const
 
@@ -6,8 +6,8 @@
 #include "../integrators/integrators.hpp"
 
 // C++ headers
-#include <algorithm>  // std::max(), std::min()
-#include <cmath>      // std::sqrt()
+#include <algorithm>  // max(), min()
+#include <cmath>      // sqrt()
 
 // Athena headers
 #include "../athena.hpp"                   // enums, macros, Real
@@ -23,7 +23,7 @@
 // Outputs:
 //   flux: fluxes
 // Notes:
-//   implements HLLC algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
+//   implements HLLE algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
 //   wl, wr overwritten
 void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     const int iu, const int ivx, const int ivy, const int ivz, AthenaArray<Real> &wl,
@@ -35,8 +35,21 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
 
   // Transform primitives into locally flat coordinates
   // TODO: should this be made 1 function call?
-  pparent_fluid->pparent_block->pcoord->PrimToLocal(k, j, il, iu, ivx, wl);
-  pparent_fluid->pparent_block->pcoord->PrimToLocal(k, j, il, iu, ivx, wr);
+  switch (ivx)
+  {
+    case IVX:
+      pparent_fluid->pparent_block->pcoord->PrimToLocal1(k, j, wl);
+      pparent_fluid->pparent_block->pcoord->PrimToLocal1(k, j, wr);
+      break;
+    case IVY:
+      pparent_fluid->pparent_block->pcoord->PrimToLocal2(k, j, wl);
+      pparent_fluid->pparent_block->pcoord->PrimToLocal2(k, j, wr);
+      break;
+    case IVZ:
+      pparent_fluid->pparent_block->pcoord->PrimToLocal3(k, j, wl);
+      pparent_fluid->pparent_block->pcoord->PrimToLocal3(k, j, wr);
+      break;
+  }
 
   // Go through each interface
 #pragma simd
@@ -129,7 +142,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
 
     // Calculate left conserved quantities and fluxes
     Real gamma_sq_rho_h_left = gamma_sq_left * rho_h_left;
-    Real d_left = std::sqrt(gamma_sq_left) * rho_left;       // (MB 3)
+    Real d_left = std::sqrt(gamma_sq_left) * rho_left;  // (MB 3)
     Real e_left = gamma_sq_rho_h_left - pgas_left;      // (MB 3)
     Real mx_left = gamma_sq_rho_h_left * vx_left;       // (MB 3)
     Real my_left = gamma_sq_rho_h_left * vy_left;       // (MB 3)
@@ -142,7 +155,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
 
     // Calculate right conserved quantities and fluxes
     Real gamma_sq_rho_h_right = gamma_sq_right * rho_h_right;
-    Real d_right = std::sqrt(gamma_sq_right) * rho_right;        // (MB 3)
+    Real d_right = std::sqrt(gamma_sq_right) * rho_right;   // (MB 3)
     Real e_right = gamma_sq_rho_h_right - pgas_right;       // (MB 3)
     Real mx_right = gamma_sq_rho_h_right * vx_right;        // (MB 3)
     Real my_right = gamma_sq_rho_h_right * vy_right;        // (MB 3)
@@ -168,6 +181,17 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   }
 
   // Transform fluxes into global coordinates
-  pparent_fluid->pparent_block->pcoord->FluxToGlobal(k, j, il, iu, ivx, flux);
+  switch (ivx)
+  {
+    case IVX:
+      pparent_fluid->pparent_block->pcoord->FluxToGlobal1(k, j, flux);
+      break;
+    case IVY:
+      pparent_fluid->pparent_block->pcoord->FluxToGlobal2(k, j, flux);
+      break;
+    case IVZ:
+      pparent_fluid->pparent_block->pcoord->FluxToGlobal3(k, j, flux);
+      break;
+  }
   return;
 }

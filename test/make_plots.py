@@ -36,11 +36,21 @@ def main(**kwargs):
       run_new('mb_', 'hydro_sr_new_', settings)
     if plots_needed:
       plot_shockset('plots/hydro_sr_shockset')
+  elif problem == 'hydro_sr_shockset_gr':  # relativistic hydro shocks in GR framework
+    if computation_needed:
+      settings = [['1', '400', '0.4', '0.4', 'prim'],
+                  ['2', '400', '0.4', '0.4', 'prim'],
+                  ['3', '400', '0.4', '0.4', 'prim'],
+                  ['4', '400', '0.4', '0.4', 'prim']]
+      run_old('mb', 'hydro_sr_gr_old_', settings)
+      run_new_gr('mb_', 'hydro_sr_gr_new_', settings)
+    if plots_needed:
+      plot_shockset('plots/hydro_sr_shockset_gr', gr=True)
   else:
     print('ERROR: problem not recognized')
 
 # Function for plotting shock set
-def plot_shockset(filename):
+def plot_shockset(filename, gr=False):
 
   # Read data
   print('Reading data...')
@@ -52,14 +62,24 @@ def plot_shockset(filename):
       ['x', 'rho', 'vx', 'vy', 'vz', 'pgas'])
   data_old_4 = read_athena('data/hydro_sr_old_4.0001.tab',
       ['x', 'rho', 'vx', 'vy', 'vz', 'pgas'])
-  data_new_1 = read_athena('data/hydro_sr_new_1.0001.tab',
-      ['x', 'rho', 'pgas', 'vx', 'vy', 'vz'])
-  data_new_2 = read_athena('data/hydro_sr_new_2.0001.tab',
-      ['x', 'rho', 'pgas', 'vx', 'vy', 'vz'])
-  data_new_3 = read_athena('data/hydro_sr_new_3.0001.tab',
-      ['x', 'rho', 'pgas', 'vx', 'vy', 'vz'])
-  data_new_4 = read_athena('data/hydro_sr_new_4.0001.tab',
-      ['x', 'rho', 'pgas', 'vx', 'vy', 'vz'])
+  if gr:
+    data_new_1 = read_athena('data/hydro_sr_gr_new_1.0001.tab',
+        ['x', 'rho', 'pgas', 'vx', 'vy', 'vz'])
+    data_new_2 = read_athena('data/hydro_sr_gr_new_2.0001.tab',
+        ['x', 'rho', 'pgas', 'vx', 'vy', 'vz'])
+    data_new_3 = read_athena('data/hydro_sr_gr_new_3.0001.tab',
+        ['x', 'rho', 'pgas', 'vx', 'vy', 'vz'])
+    data_new_4 = read_athena('data/hydro_sr_gr_new_4.0001.tab',
+        ['x', 'rho', 'pgas', 'vx', 'vy', 'vz'])
+  else:
+    data_new_1 = read_athena('data/hydro_sr_new_1.0001.tab',
+        ['x', 'rho', 'pgas', 'vx', 'vy', 'vz'])
+    data_new_2 = read_athena('data/hydro_sr_new_2.0001.tab',
+        ['x', 'rho', 'pgas', 'vx', 'vy', 'vz'])
+    data_new_3 = read_athena('data/hydro_sr_new_3.0001.tab',
+        ['x', 'rho', 'pgas', 'vx', 'vy', 'vz'])
+    data_new_4 = read_athena('data/hydro_sr_new_4.0001.tab',
+        ['x', 'rho', 'pgas', 'vx', 'vy', 'vz'])
 
   # Plot data
   print('Plotting data...')
@@ -202,6 +222,57 @@ def run_new(input_prefix, output_prefix, settings):
     for case in settings:
       os.system(new_run_string.format(current_directory, case[0], case[1], case[2],
           case[3], case[4]) + ' &> /dev/null')
+      # TODO: remove when -d option works
+      os.system('mv {0}*.tab {1}/data/.'.format(output_prefix, current_directory))
+    os.chdir(current_directory)
+  except OSError as err:
+    print('OS Error ({0}): {1}'.format(err.errno, err.strerror))
+    exit()
+
+# Function for running new Athena with GR
+def run_new_gr(input_prefix, output_prefix, settings):
+
+  # Prepare strings
+  new_make_string = 'make all COORDINATES_FILE=minkowski_cartesian.cpp \
+      CONVERT_VAR_FILE=adiabatic_hydro_gr.cpp PROBLEM_FILE=shock_tube_gr.cpp \
+      RSOLVER_FILE=hlle_gr.cpp RECONSTRUCT_FILE=plm.cpp'
+  # TODO: change when -d option works
+  #new_run_string = './athena -i inputs/hydro_sr/athinput.' + input_prefix + '{1} \
+  #    -d {0}/data job/problem_id=' + output_prefix + '{1} output1/variable={5} \
+  #    output1/data_format=%24.16e output1/dt={3} time/cfl_number={4} time/nlim=-1 \
+  #    time/tlim={3} mesh/nx1={2}'
+  new_run_string = './athena \
+      -i ../inputs/hydro_sr/athinput.' + input_prefix + '{1} \
+      job/problem_id=' + output_prefix + '{1} output1/variable={5} \
+      output1/data_format=%24.16e output1/dt={3} time/cfl_number={4} time/nlim=-1 \
+      time/tlim={3} mesh/nx1={2}'
+
+  # Generate data
+  print('deleting new Athena data...')
+  try:
+    data_files = glob.glob('data/{0}*.tab'.format(output_prefix))
+    rm_command = 'rm -f'.split()
+    rm_command.extend(data_files)
+    subprocess.call(rm_command)
+    # TODO: remove when -d option works
+    data_files = glob.glob('../bin/{0}*.tab'.format(output_prefix))
+    rm_command = 'rm -f'.split()
+    rm_command.extend(data_files)
+    subprocess.call(rm_command)
+  except OSError as err:
+    print('OS Error ({0}): {1}'.format(err.errno, err.strerror))
+    exit()
+  print('running new Athena...')
+  try:
+    current_directory = os.getcwd()
+    os.chdir('..')
+    os.system('make clean ')#&> /dev/null')
+    os.system(new_make_string )#+ ' &> /dev/null')
+    os.chdir('bin')
+    for case in settings:
+      print(new_run_string.format(current_directory, case[0], case[1], case[2], case[3], case[4]))
+      os.system(new_run_string.format(current_directory, case[0], case[1], case[2],
+          case[3], case[4]) )#+ ' &> /dev/null')
       # TODO: remove when -d option works
       os.system('mv {0}*.tab {1}/data/.'.format(output_prefix, current_directory))
     os.chdir(current_directory)

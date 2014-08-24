@@ -9,8 +9,7 @@
 #include "coordinates.hpp"
 
 // C++ headers
-#include <cmath>  // std::acos(), std::cbrt(), std::cos(), std::cot, std::sin(),
-                  // std::sqrt()
+#include <cmath>  // acos(), cbrt(), cos(), cot, sin(), sqrt()
 
 // Athena headers
 #include "../athena.hpp"         // enums, macros, Real

@@ -493,10 +493,10 @@ void Mesh::UpdateAcrossDomains(enum UpdateAction action)
         pf->pf_integrator->Correct(pdomain->pblock);
         break;
       case convert_vars_n:
-        pf->ConservedToPrimitive(pf->u,pf->w);
+        pf->ConservedToPrimitive(pf->u,pf->w1,pf->w);
         break;
       case convert_vars_nhalf:
-        pf->ConservedToPrimitive(pf->u1,pf->w1);
+        pf->ConservedToPrimitive(pf->u1,pf->w,pf->w1);
         break;
       case new_timestep:
         pf->NewTimeStep(pdomain->pblock);

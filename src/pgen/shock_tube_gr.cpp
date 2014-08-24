@@ -1,4 +1,4 @@
-// Special relativistic shock tube generator
+// General relativistic shock tube generator
 
 // Primary header
 #include "../fluid.hpp"
@@ -11,15 +11,15 @@
 #include <string>     // c_str()
 
 // Athena headers
-#include "../athena.hpp"           // enums, macros, Real
+#include "../athena.hpp"           // enums, Real
 #include "../athena_arrays.hpp"    // AthenaArray
 #include "../mesh.hpp"             // Block, Domain, Mesh
 #include "../parameter_input.hpp"  // ParameterInput
 
 // Declarations
-static void set_state(AthenaArray<Real> &prim, AthenaArray<Real> &cons, int i, int j,
-    int k, Real rho, Real pgas, Real vx, Real vy, Real vz, Real gamma_adi,
-    Real gamma_adi_red);
+static void set_state(AthenaArray<Real> &prim, AthenaArray<Real> &prim_half,
+    AthenaArray<Real> &cons, int i, int j, int k, Real rho, Real pgas, Real vx, Real vy,
+    Real vz, Real gamma_adi, Real gamma_adi_red);
 
 // Function for setting initial conditions
 // Inputs:
@@ -88,16 +88,16 @@ void Fluid::InitProblem(ParameterInput *pin)
   // Read left state
   Real rho_left = pin->GetReal("problem", "dl");
   Real pgas_left = pin->GetReal("problem", "pl");
-  Real vx_left = pin->GetReal("problem", "ul");
-  Real vy_left = pin->GetReal("problem", "vl");
-  Real vz_left = pin->GetReal("problem", "wl");
+  Real v1_left = pin->GetReal("problem", "ul");
+  Real v2_left = pin->GetReal("problem", "vl");
+  Real v3_left = pin->GetReal("problem", "wl");
 
   // Read right state
   Real rho_right = pin->GetReal("problem", "dr");
   Real pgas_right = pin->GetReal("problem", "pr");
-  Real vx_right = pin->GetReal("problem", "ur");
-  Real vy_right = pin->GetReal("problem", "vr");
-  Real vz_right = pin->GetReal("problem", "wr");
+  Real v1_right = pin->GetReal("problem", "ur");
+  Real v2_right = pin->GetReal("problem", "vr");
+  Real v3_right = pin->GetReal("problem", "wr");
 
   // Initialize the discontinuity
   for (int k = kl; k <= ku; k++)
@@ -120,29 +120,30 @@ void Fluid::InitProblem(ParameterInput *pin)
               left_side = true;
         }
         if (left_side)
-          set_state(w, u, i, j, k, rho_left, pgas_left, vx_left, vy_left, vz_left,
+          set_state(w, w1, u, i, j, k, rho_left, pgas_left, v1_left, v2_left, v3_left,
               gamma_adi, gamma_adi_red);
         else
-          set_state(w, u, i, j, k, rho_right, pgas_right, vx_right, vy_right, vz_right,
+          set_state(w, w1, u, i, j, k, rho_right, pgas_right, v1_right, v2_right, v3_right,
               gamma_adi, gamma_adi_red);
       }
   return;
 }
 
 // Function for setting conserved variables in a cell given the primitives
-static void set_state(AthenaArray<Real> &prim, AthenaArray<Real> &cons, int i, int j,
-    int k, Real rho, Real pgas, Real vx, Real vy, Real vz, Real gamma_adi,
-    Real gamma_adi_red)
+// TODO: only works for Minkowski Cartesian metric
+static void set_state(AthenaArray<Real> &prim, AthenaArray<Real> &prim_half,
+    AthenaArray<Real> &cons, int i, int j, int k, Real rho, Real pgas, Real vx, Real vy,
+    Real vz, Real gamma_adi, Real gamma_adi_red)
 {
-  prim(IDN,k,j,i) = rho;
-  prim(IEN,k,j,i) = pgas;
-  prim(IM1,k,j,i) = vx;
-  prim(IM2,k,j,i) = vy;
-  prim(IM3,k,j,i) = vz;
+  prim(IDN,k,j,i) = prim_half(IDN,k,j,i) = rho;
+  prim(IEN,k,j,i) = prim_half(IEN,k,j,i) = pgas;
+  prim(IM1,k,j,i) = prim_half(IM1,k,j,i) = vx;
+  prim(IM2,k,j,i) = prim_half(IM2,k,j,i) = vy;
+  prim(IM3,k,j,i) = prim_half(IM3,k,j,i) = vz;
   Real gamma_lor_sq = 1.0 / (1.0 - (vx*vx + vy*vy + vz*vz));
   Real gamma_lor_sq_rho_h = gamma_lor_sq * (rho + gamma_adi_red * pgas);
   cons(IDN,k,j,i) = std::sqrt(gamma_lor_sq) * rho;
-  cons(IEN,k,j,i) = gamma_lor_sq_rho_h - pgas;
+  cons(IEN,k,j,i) = -gamma_lor_sq_rho_h + pgas;
   cons(IM1,k,j,i) = gamma_lor_sq_rho_h * vx;
   cons(IM2,k,j,i) = gamma_lor_sq_rho_h * vy;
   cons(IM3,k,j,i) = gamma_lor_sq_rho_h * vz;
