@@ -28,7 +28,7 @@ public:
   void ApplyBoundaryConditions(AthenaArray<Real> &a);
 
 private:
-  Block *pparent_block;  // ptr to parent Block
+  Block *pmy_block;  // ptr to Block containing this FluidBoundaryConditions
 
 // function pointers, set in Init function based on parameters in input file
 
@@ -60,7 +60,7 @@ private:
   void OutflowInnerX3(Block *pb, AthenaArray<Real> &a);
   void OutflowOuterX3(Block *pb, AthenaArray<Real> &a);
 
-// preiodic BC functions
+// periodic BC functions
 
   void PeriodicInnerX1(Block *pb, AthenaArray<Real> &a);
   void PeriodicOuterX1(Block *pb, AthenaArray<Real> &a);

@@ -37,9 +37,9 @@
  * shock along x1 (in 1D, 2D, 3D), along x2 (in 2D, 3D), and along x3 (in 3D).
  *====================================================================================*/
 
-void Fluid::InitProblem(ParameterInput *pin)
+void Fluid::InitFluid(ParameterInput *pin)
 {
-  Block *pb = pparent_block;
+  Block *pb = pmy_block;
   std::stringstream msg;
 
   int is = pb->is; int js = pb->js; int ks = pb->ks;
@@ -57,20 +57,20 @@ void Fluid::InitProblem(ParameterInput *pin)
 // shock location (must be inside grid)
 
   Real xshock = pin->GetReal("problem","xshock"); 
-  if (shk_dir == 1 && (xshock < pb->pparent_domain->pparent_mesh->mesh_size.x1min ||
-                       xshock > pb->pparent_domain->pparent_mesh->mesh_size.x1max)) {
+  if (shk_dir == 1 && (xshock < pb->pmy_domain->pmy_mesh->mesh_size.x1min ||
+                       xshock > pb->pmy_domain->pmy_mesh->mesh_size.x1max)) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl << "xshock="
         << xshock << " lies outside x1 domain for shkdir=" << shk_dir << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if (shk_dir == 2 && (xshock < pb->pparent_domain->pparent_mesh->mesh_size.x2min ||
-                       xshock > pb->pparent_domain->pparent_mesh->mesh_size.x2max)) {
+  if (shk_dir == 2 && (xshock < pb->pmy_domain->pmy_mesh->mesh_size.x2min ||
+                       xshock > pb->pmy_domain->pmy_mesh->mesh_size.x2max)) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl << "xshock="
         << xshock << " lies outside x2 domain for shkdir=" << shk_dir << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if (shk_dir == 3 && (xshock < pb->pparent_domain->pparent_mesh->mesh_size.x3min ||
-                       xshock > pb->pparent_domain->pparent_mesh->mesh_size.x3max)) {
+  if (shk_dir == 3 && (xshock < pb->pmy_domain->pmy_mesh->mesh_size.x3min ||
+                       xshock > pb->pmy_domain->pmy_mesh->mesh_size.x3max)) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl << "xshock="
         << xshock << " lies outside x3 domain for shkdir=" << shk_dir << std::endl;
     throw std::runtime_error(msg.str().c_str());

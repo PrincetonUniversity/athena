@@ -30,7 +30,7 @@
 void Fluid::ConservedToPrimitive(AthenaArray<Real> &c, AthenaArray<Real> &p_old,
     AthenaArray<Real> &p)
 {
-  Block *pb = pparent_block;
+  Block *pb = pmy_block;
   int is = pb->is; int ie = pb->ie;
   int jl = pb->js; int ju = pb->je;
   int kl = pb->ks; int ku = pb->ke;

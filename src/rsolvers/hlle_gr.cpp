@@ -30,7 +30,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     AthenaArray<Real> &wr, AthenaArray<Real> &flux)
 {
   // Extract ratio of specific heats
-  const Real gamma_adi = pparent_fluid->GetGamma();
+  const Real gamma_adi = pmy_fluid->GetGamma();
   const Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Transform primitives into locally flat coordinates
@@ -38,16 +38,16 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   switch (ivx)
   {
     case IVX:
-      pparent_fluid->pparent_block->pcoord->PrimToLocal1(k, j, wl);
-      pparent_fluid->pparent_block->pcoord->PrimToLocal1(k, j, wr);
+      pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, wl);
+      pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, wr);
       break;
     case IVY:
-      pparent_fluid->pparent_block->pcoord->PrimToLocal2(k, j, wl);
-      pparent_fluid->pparent_block->pcoord->PrimToLocal2(k, j, wr);
+      pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, wl);
+      pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, wr);
       break;
     case IVZ:
-      pparent_fluid->pparent_block->pcoord->PrimToLocal3(k, j, wl);
-      pparent_fluid->pparent_block->pcoord->PrimToLocal3(k, j, wr);
+      pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, wl);
+      pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, wr);
       break;
   }
 
@@ -184,13 +184,13 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   switch (ivx)
   {
     case IVX:
-      pparent_fluid->pparent_block->pcoord->FluxToGlobal1(k, j, flux);
+      pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, flux);
       break;
     case IVY:
-      pparent_fluid->pparent_block->pcoord->FluxToGlobal2(k, j, flux);
+      pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, flux);
       break;
     case IVZ:
-      pparent_fluid->pparent_block->pcoord->FluxToGlobal3(k, j, flux);
+      pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, flux);
       break;
   }
   return;

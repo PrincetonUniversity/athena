@@ -38,7 +38,7 @@
 
 FluidBoundaryConditions::FluidBoundaryConditions(Block *pb)
 {
-  pparent_block = pb;
+  pmy_block = pb;
   std::stringstream msg;
 
 // Set BC function pointers for each of the 6 boundaries in turn -----------------------
@@ -178,24 +178,24 @@ void FluidBoundaryConditions::ApplyBoundaryConditions(AthenaArray<Real> &a)
 
 // Boundary Conditions in x1-direction
 
-  (*(FluidInnerX1_))(pparent_block, a);
-  (*(FluidOuterX1_))(pparent_block, a);
+  (*(FluidInnerX1_))(pmy_block, a);
+  (*(FluidOuterX1_))(pmy_block, a);
 
 // Boundary Conditions in x2-direction 
 
-  if (pparent_block->block_size.nx2 > 1){
+  if (pmy_block->block_size.nx2 > 1){
 
-    (*(FluidInnerX2_))(pparent_block, a);
-    (*(FluidOuterX2_))(pparent_block, a);
+    (*(FluidInnerX2_))(pmy_block, a);
+    (*(FluidOuterX2_))(pmy_block, a);
 
   }
 
 // Boundary Conditions in x3-direction 
 
-  if (pparent_block->block_size.nx3 > 1){
+  if (pmy_block->block_size.nx3 > 1){
 
-    (*(FluidInnerX3_))(pparent_block, a);
-    (*(FluidOuterX3_))(pparent_block, a);
+    (*(FluidInnerX3_))(pmy_block, a);
+    (*(FluidOuterX3_))(pmy_block, a);
 
   }
 

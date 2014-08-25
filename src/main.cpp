@@ -118,8 +118,9 @@ int main(int argc, char *argv[])
     inputs->ModifyFromCmdline(argc,argv);
   } 
   catch(std::bad_alloc& ba) {
-    std::cout << "### FATAL ERROR memory allocation failed" << std::endl
-              << "error initializing class ParameterInput: " << ba.what() << std::endl;
+    std::cout << "### FATAL ERROR in main" << std::endl
+              << "memory allocation failed initializing class ParameterInput: " 
+              << ba.what() << std::endl;
     return(0);
   }
   catch(std::exception const& ex) {
@@ -148,8 +149,9 @@ int main(int argc, char *argv[])
     mesh = new Mesh(inputs);
   }
   catch(std::bad_alloc& ba) {
-    std::cout << "### FATAL ERROR memory allocation failed" << std::endl
-              << "error initializing class Mesh: " << ba.what() << std::endl;
+    std::cout << "### FATAL ERROR in main" << std::endl
+              << "memory allocation failed initializing class Mesh: " 
+              << ba.what() << std::endl;
     return(0);
   }
   catch(std::exception const& ex) {
@@ -161,11 +163,12 @@ int main(int argc, char *argv[])
 // Set initial conditions by calling problem generator on each Domain/Block
 
   try {
-    mesh->InitializeAcrossDomains(initial_conditions,inputs);
+    mesh->ForAllDomains(init_fluid,inputs);
   } 
   catch(std::bad_alloc& ba) {
-    std::cout << "### FATAL ERROR memory allocation failed" << std::endl
-              << "error initializing class Fluid: " << ba.what() << std::endl;
+    std::cout << "### FATAL ERROR in main" << std::endl
+              << "memory allocation failed initializing class Fluid: "
+              << ba.what() << std::endl;
     return(0);
   }
   catch(std::exception const& ex) {
@@ -175,21 +178,22 @@ int main(int argc, char *argv[])
 
 // apply BCs, compute primitive from conserved variables, compute first timestep
 
-  mesh->UpdateAcrossDomains(fluid_bcs_n);
-  mesh->UpdateAcrossDomains(bfield_bcs_n);
-  mesh->UpdateAcrossDomains(convert_vars_n);
-  mesh->UpdateAcrossDomains(new_timestep);
+  mesh->ForAllDomains( fluid_bcs_n,inputs);
+  mesh->ForAllDomains(bfield_bcs_n,inputs);
+  mesh->ForAllDomains(primitives_n,inputs);
+  mesh->ForAllDomains(new_timestep,inputs);
 
 //--- Step 6. --------------------------------------------------------------------------
 // Initialize output object on each Block, and make outputs of initial conditions
 
   try {
-    mesh->InitializeAcrossDomains(outputs,inputs);
-    mesh->UpdateAcrossDomains(make_output);
+    mesh->ForAllDomains(init_outputs,inputs);
+    mesh->ForAllDomains(make_outputs,inputs);
   } 
   catch(std::bad_alloc& ba) {
-    std::cout << "### FATAL ERROR memory allocation failed" << std::endl
-              << "error initializing class ParameterInput: " << ba.what() << std::endl;
+    std::cout << "### FATAL ERROR in main" << std::endl
+              << "memory allocation failed setting initial conditions: " 
+              << ba.what() << std::endl;
     return(0);
   }
   catch(std::exception const& ex) {
@@ -197,7 +201,6 @@ int main(int argc, char *argv[])
     return(0);
   }
 
-//======================================================================================
 //--- Step 9. === START OF MAIN INTEGRATION LOOP =======================================
 // For performance, there is no error handler protecting this step
 
@@ -210,19 +213,23 @@ int main(int argc, char *argv[])
 
 // predict step
 
-    mesh->UpdateAcrossDomains(fluid_predict    );
-    mesh->UpdateAcrossDomains(fluid_bcs_nhalf);
-    mesh->UpdateAcrossDomains(bfield_predict    );
-    mesh->UpdateAcrossDomains(bfield_bcs_nhalf);
-    mesh->UpdateAcrossDomains(convert_vars_nhalf);
+    mesh->ForAllDomains( fluid_predict  ,inputs);
+    mesh->ForAllDomains( fluid_bcs_nhalf,inputs);
+
+    mesh->ForAllDomains(bfield_predict  ,inputs);
+    mesh->ForAllDomains(bfield_bcs_nhalf,inputs);
+
+    mesh->ForAllDomains(primitives_nhalf,inputs);
 
 // correct step
 
-    mesh->UpdateAcrossDomains(fluid_correct);
-    mesh->UpdateAcrossDomains(fluid_bcs_n);
-    mesh->UpdateAcrossDomains(bfield_correct);
-    mesh->UpdateAcrossDomains(bfield_bcs_n);
-    mesh->UpdateAcrossDomains(convert_vars_n);
+    mesh->ForAllDomains( fluid_correct,inputs);
+    mesh->ForAllDomains( fluid_bcs_n,  inputs);
+
+    mesh->ForAllDomains(bfield_correct,inputs);
+    mesh->ForAllDomains(bfield_bcs_n,  inputs);
+
+    mesh->ForAllDomains(primitives_n,  inputs);
 
 // new time step, outputs, diagnostics
 
@@ -230,11 +237,11 @@ int main(int argc, char *argv[])
     mesh->time  += mesh->dt;
 
     try {
-      mesh->UpdateAcrossDomains(make_output);
+      mesh->ForAllDomains(make_outputs,inputs);
     } 
     catch(std::bad_alloc& ba) {
-      std::cout << "### FATAL ERROR memory allocation failed" << std::endl
-                << "error in making outputs: " << ba.what() << std::endl;
+      std::cout << "### FATAL ERROR in main" << std::endl
+                << "memory allocation failed during outputs: " << ba.what() << std::endl;
       return(0);
     }
     catch(std::exception const& ex) {
@@ -242,10 +249,9 @@ int main(int argc, char *argv[])
       return(0);
     }
 
-    mesh->UpdateAcrossDomains(new_timestep);
+    mesh->ForAllDomains(new_timestep,inputs);
 
   } // END OF MAIN INTEGRATION LOOP ====================================================
-//======================================================================================
 
 // print diagnostic messages
 

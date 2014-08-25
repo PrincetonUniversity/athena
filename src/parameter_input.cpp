@@ -349,10 +349,10 @@ InputBlock* ParameterInput::GetPtrToBlock(std::string name)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn int ParameterInput::ParameterExists()
+/*! \fn int ParameterInput::DoesParameterExist()
  *  \brief check whether parameter of given name in given block exists */
 
-int ParameterInput::ParameterExists(std::string block, std::string name)
+int ParameterInput::DoesParameterExist(std::string block, std::string name)
 {
   InputLine *pl;
   InputBlock *pb;
@@ -473,7 +473,7 @@ int ParameterInput::GetOrAddInteger(std::string block, std::string name, int val
   InputBlock* pb;
   std::stringstream ss_value;
 
-  if (ParameterExists(block, name)) return GetInteger(block,name);
+  if (DoesParameterExist(block, name)) return GetInteger(block,name);
   pb = FindOrAddBlock(block);
   ss_value << value;
   AddParameter(pb, name, ss_value.str(), "# Default value added at run time");
@@ -489,7 +489,7 @@ Real ParameterInput::GetOrAddReal(std::string block, std::string name, Real valu
   InputBlock* pb;
   std::stringstream ss_value;
 
-  if (ParameterExists(block, name)) return GetReal(block,name);
+  if (DoesParameterExist(block, name)) return GetReal(block,name);
   pb = FindOrAddBlock(block);
   ss_value << value;
   AddParameter(pb, name, ss_value.str(), "# Default value added at run time");
@@ -506,7 +506,7 @@ std::string ParameterInput::GetOrAddString(std::string block, std::string name,
   InputBlock* pb;
   std::stringstream ss_value;
 
-  if (ParameterExists(block, name)) return GetString(block,name);
+  if (DoesParameterExist(block, name)) return GetString(block,name);
   pb = FindOrAddBlock(block);
   AddParameter(pb, name, value, "# Default value added at run time");
   return value;

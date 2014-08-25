@@ -87,17 +87,17 @@ void FormattedTableOutput::WriteOutputData()
 
     if (pod->header.il != pod->header.iu) {
       fprintf(pfile,"%04d",i);
-      fprintf(pfile,output_block.data_format.c_str(),pparent_block->x1v(i));
+      fprintf(pfile,output_block.data_format.c_str(),pmy_block->x1v(i));
     }
 
     if (pod->header.jl != pod->header.ju) {
       fprintf(pfile,"%04d",j);
-      fprintf(pfile,output_block.data_format.c_str(),pparent_block->x2v(j));
+      fprintf(pfile,output_block.data_format.c_str(),pmy_block->x2v(j));
     }
 
     if (pod->header.kl != pod->header.ku) {
       fprintf(pfile,"%04d",k);
-      fprintf(pfile,output_block.data_format.c_str(),pparent_block->x3v(k));
+      fprintf(pfile,output_block.data_format.c_str(),pmy_block->x3v(k));
     }
 
 // step through linked-list of data nodes and write data on same line

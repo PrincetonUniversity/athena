@@ -37,16 +37,14 @@
 
 Fluid::Fluid(Block *pb)
 {
-  pparent_block = pb;
+  pmy_block = pb;
 
 // Allocate memory for primitive/conserved variables
 
-  int ncells1 = pparent_block->block_size.nx1 + 2*(NGHOST);
+  int ncells1 = pmy_block->block_size.nx1 + 2*(NGHOST);
   int ncells2 = 1, ncells3 = 1;
-  if (pparent_block->block_size.nx2 > 1) 
-    ncells2 = pparent_block->block_size.nx2 + 2*(NGHOST);
-  if (pparent_block->block_size.nx3 > 1) 
-    ncells3 = pparent_block->block_size.nx3 + 2*(NGHOST);
+  if (pmy_block->block_size.nx2 > 1) ncells2 = pmy_block->block_size.nx2 + 2*(NGHOST);
+  if (pmy_block->block_size.nx3 > 1) ncells3 = pmy_block->block_size.nx3 + 2*(NGHOST);
 
   u.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
   w.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
@@ -148,7 +146,7 @@ void Fluid::NewTimeStep(Block *pb)
 
   }}
 
-  Mesh *pm = pb->pparent_domain->pparent_mesh;
+  Mesh *pm = pb->pmy_domain->pmy_mesh;
   Real old_dt = pm->dt;
   pm->dt = std::min( ((pm->cfl_number)*min_dt) , (2.0*old_dt) );
 

@@ -25,9 +25,11 @@ typedef double Real;
 enum {IDN=0, IM1=1, IM2=2, IM3=3, IEN=4};
 enum {IVX=1, IVY=2, IVZ=3};
 enum {I00, I01, I02, I03, I11, I12, I13, I22, I23, I33, NMETRIC};
-enum UpdateAction {fluid_predict, fluid_correct,   bfield_predict, bfield_correct,
-                   fluid_bcs_n,   fluid_bcs_nhalf, bfield_bcs_n,   bfield_bcs_nhalf,
-                   convert_vars_n, convert_vars_nhalf, new_timestep, make_output};
-enum QuantityToBeInit {initial_conditions, outputs};
+enum QuantityToBeInit {fluid, outputs};
+enum ActionOnDomain 
+  {init_fluid, init_outputs, 
+   fluid_predict, fluid_correct,   bfield_predict, bfield_correct,
+   fluid_bcs_n,   fluid_bcs_nhalf, bfield_bcs_n,   bfield_bcs_nhalf,
+   primitives_n, primitives_nhalf, new_timestep, make_outputs};
 
 #endif

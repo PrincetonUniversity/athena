@@ -31,7 +31,7 @@
 
 Coordinates::Coordinates(Block *pb)
 {
-  pparent_block = pb;
+  pmy_block = pb;
   int is = pb->is; int js = pb->js; int ks = pb->ks;
   int ie = pb->ie; int je = pb->je; int ke = pb->ke;
 
@@ -102,7 +102,7 @@ void Coordinates::Area1Face(const int k, const int j, const int il, const int iu
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
-    area_i = (pparent_block->dx2f(j))*(pparent_block->dx3f(k));
+    area_i = (pmy_block->dx2f(j))*(pmy_block->dx3f(k));
   }
   return;
 }
@@ -110,12 +110,12 @@ void Coordinates::Area1Face(const int k, const int j, const int il, const int iu
 void Coordinates::Area2Face(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-  AthenaArray<Real> dx1f = pparent_block->dx1f.ShallowCopy();
+  AthenaArray<Real> dx1f = pmy_block->dx1f.ShallowCopy();
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
     Real& dx1_i  = dx1f(i);
-    area_i = dx1_i*(pparent_block->dx3f(k));
+    area_i = dx1_i*(pmy_block->dx3f(k));
   }
   return;
 }
@@ -123,12 +123,12 @@ void Coordinates::Area2Face(const int k, const int j, const int il, const int iu
 void Coordinates::Area3Face(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-  AthenaArray<Real> dx1f = pparent_block->dx1f.ShallowCopy();
+  AthenaArray<Real> dx1f = pmy_block->dx1f.ShallowCopy();
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
     Real& dx1_i  = dx1f(i);
-    area_i = dx1_i*(pparent_block->dx2f(j));
+    area_i = dx1_i*(pmy_block->dx2f(j));
   }
   return;
 }
@@ -140,12 +140,12 @@ void Coordinates::Area3Face(const int k, const int j, const int il, const int iu
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &vol)
 {
-  AthenaArray<Real> dx1f = pparent_block->dx1f.ShallowCopy();
+  AthenaArray<Real> dx1f = pmy_block->dx1f.ShallowCopy();
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& vol_i = vol(i);
     Real& dx1_i = dx1f(i);
-    vol_i = dx1_i*(pparent_block->dx2f(j))*(pparent_block->dx3f(k));
+    vol_i = dx1_i*(pmy_block->dx2f(j))*(pmy_block->dx3f(k));
   }
   return;
 }

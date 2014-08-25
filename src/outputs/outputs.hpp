@@ -87,7 +87,7 @@ public:
   OutputType(OutputBlock out_blck, Block *pb);
   ~OutputType();
 
-  Block *pparent_block;
+  Block *pmy_block;  // ptr to Block containing this OutputType
 
   virtual OutputData* LoadOutputData();
   virtual void TransformOutputData(OutputData *pod);
@@ -110,7 +110,7 @@ public:
   OutputList(Block *pb);
   ~OutputList();
 
-  Block *pparent_block;
+  Block *pmy_block;  // ptr to Block containing this OutputList
 
   void InitOutputs(ParameterInput *pin);
   void MakeOutputs();

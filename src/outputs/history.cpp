@@ -51,8 +51,8 @@ HistoryOutput::HistoryOutput(OutputBlock out_blk, Block *pb)
 
 OutputData* HistoryOutput::LoadOutputData()
 {
-  Fluid *pf = pparent_block->pfluid;;
-  AthenaArray<Real> vol = pparent_block->pcoord->cell_volume.ShallowCopy();
+  Fluid *pf = pmy_block->pfluid;;
+  AthenaArray<Real> vol = pmy_block->pcoord->cell_volume.ShallowCopy();
 
 // Allocate OutputData, add header
 
@@ -60,9 +60,9 @@ OutputData* HistoryOutput::LoadOutputData()
   std::stringstream str;
   str << "# Athena++ history data" << std::endl;
   pod->header.descriptor.append(str.str());
-  pod->header.il = pparent_block->is; pod->header.iu = pparent_block->ie;
-  pod->header.jl = pparent_block->js; pod->header.ju = pparent_block->je;
-  pod->header.kl = pparent_block->ks; pod->header.ku = pparent_block->ke;
+  pod->header.il = pmy_block->is; pod->header.iu = pmy_block->ie;
+  pod->header.jl = pmy_block->js; pod->header.ju = pmy_block->je;
+  pod->header.kl = pmy_block->ks; pod->header.ku = pmy_block->ke;
 
 // Add text for column headers to node_header
 
@@ -84,8 +84,8 @@ OutputData* HistoryOutput::LoadOutputData()
 
 // Add time, time step
 
-  (*phistory_datum)(0,0,0,0) = pf->pparent_block->pparent_domain->pparent_mesh->time;
-  (*phistory_datum)(1,0,0,0) = pf->pparent_block->pparent_domain->pparent_mesh->dt;
+  (*phistory_datum)(0,0,0,0) = pf->pmy_block->pmy_domain->pmy_mesh->time;
+  (*phistory_datum)(1,0,0,0) = pf->pmy_block->pmy_domain->pmy_mesh->dt;
 
 // Sum over cells, add mass, mom, KE, and total-E
 
@@ -95,7 +95,7 @@ OutputData* HistoryOutput::LoadOutputData()
   for (int j=(pod->header.jl); j<=(pod->header.ju); ++j) {
     Real partial_sum[8];
     for (int i=0; i<8; ++i) partial_sum[i] = 0.0;
-    pparent_block->pcoord->CellVolume(k,j,(pod->header.il),(pod->header.iu),vol);
+    pmy_block->pcoord->CellVolume(k,j,(pod->header.il),(pod->header.iu),vol);
 
     for (int i=(pod->header.il); i<=(pod->header.iu); ++i) {
       partial_sum[0] += vol(i)*pf->u(IDN,k,j,i);

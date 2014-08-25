@@ -28,7 +28,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     AthenaArray<Real> &flux)
 {
   // Extract ratio of specific heats
-  const Real gamma_adi = pparent_fluid->GetGamma();
+  const Real gamma_adi = pmy_fluid->GetGamma();
   const Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Go through each interface

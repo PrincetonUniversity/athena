@@ -53,7 +53,7 @@ void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &pri
   const Real gamma_adi_minus_1 = gamma_adi - 1.0;
 
   // Determine array bounds
-  Block *pb = pparent_block;
+  Block *pb = pmy_block;
   int is = pb->is;
   int ie = pb->ie;
   int jl = pb->js;

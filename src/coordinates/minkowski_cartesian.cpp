@@ -16,8 +16,8 @@
 //   pb: pointer to block containing this grid
 Coordinates::Coordinates(Block *pb)
 {
-  // Set pointer to parent
-  pparent_block = pb;
+  // Set pointer to host Block
+  pmy_block = pb;
 
   // Initialize volume-averated positions and spacings: x-direction
   for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST; i++)
@@ -78,8 +78,8 @@ Coordinates::~Coordinates()
 void Coordinates::Area1Face(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
-  Real &delta_y = pparent_block->dx2f(j);
-  Real &delta_z = pparent_block->dx3f(k);
+  Real &delta_y = pmy_block->dx2f(j);
+  Real &delta_z = pmy_block->dx3f(k);
 #pragma simd
   for (int i = il; i <= iu; i++)
   {
@@ -101,12 +101,12 @@ void Coordinates::Area1Face(const int k, const int j, const int il, const int iu
 void Coordinates::Area2Face(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
-  Real &delta_z = pparent_block->dx3f(k);
+  Real &delta_z = pmy_block->dx3f(k);
 #pragma simd
   for (int i = il; i <= iu; i++)
   {
     Real &area = areas(i);
-    Real &delta_x = pparent_block->dx1f(i);
+    Real &delta_x = pmy_block->dx1f(i);
     area = delta_x * delta_z;
   }
   return;
@@ -124,12 +124,12 @@ void Coordinates::Area2Face(const int k, const int j, const int il, const int iu
 void Coordinates::Area3Face(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
-  Real &delta_y = pparent_block->dx2f(j);
+  Real &delta_y = pmy_block->dx2f(j);
 #pragma simd
   for (int i = il; i <= iu; i++)
   {
     Real &area = areas(i);
-    Real &delta_x = pparent_block->dx1f(i);
+    Real &delta_x = pmy_block->dx1f(i);
     area = delta_x * delta_y;
   }
   return;
@@ -147,13 +147,13 @@ void Coordinates::Area3Face(const int k, const int j, const int il, const int iu
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &volumes)
 {
-  Real &delta_y = pparent_block->dx2f(j);
-  Real &delta_z = pparent_block->dx3f(k);
+  Real &delta_y = pmy_block->dx2f(j);
+  Real &delta_z = pmy_block->dx3f(k);
 #pragma simd
   for (int i = il; i <= iu; i++)
   {
     Real &volume = volumes(i);
-    Real &delta_x = pparent_block->dx1f(i);
+    Real &delta_x = pmy_block->dx1f(i);
     volume = delta_x * delta_y * delta_z;
   }
   return;
@@ -188,7 +188,7 @@ void Coordinates::CellMetric(const int k, const int j, AthenaArray<Real> &g,
     AthenaArray<Real> &g_inv)
 {
 #pragma simd
-  for (int i = pparent_block->is-NGHOST; i <= pparent_block->ie+NGHOST; i++)
+  for (int i = pmy_block->is-NGHOST; i <= pmy_block->ie+NGHOST; i++)
   {
     // TODO: should 0's be set explicitly?
     g(I00,i) = -1.0;
@@ -258,7 +258,7 @@ void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flu
 {
   // Go through 1D block of cells
 #pragma simd
-  for (int i = pparent_block->is; i <= pparent_block->ie+1; i++)
+  for (int i = pmy_block->is; i <= pmy_block->ie+1; i++)
   {
     // Extract fluxes for reading and writing
     Real &txt = flux(IEN,i);
@@ -283,7 +283,7 @@ void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flu
 {
   // Go through 1D block of cells
 #pragma simd
-  for (int i = pparent_block->is; i <= pparent_block->ie; i++)
+  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
   {
     // Extract fluxes for reading and writing
     Real &tyt = flux(IEN,i);
@@ -308,7 +308,7 @@ void Coordinates::FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flu
 {
   // Go through 1D block of cells
 #pragma simd
-  for (int i = pparent_block->is; i <= pparent_block->ie; i++)
+  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
   {
     // Extract fluxes for reading and writing
     Real &tzt = flux(IEN,i);

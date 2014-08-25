@@ -48,19 +48,18 @@ public:
 };
 
 //! \class ParameterInput
-//  \brief data and functions used to store and access input parameters
+//  \brief data and definitions of functions used to store and access input parameters
+//  Functions are implemented in parameter_input.cpp
 
 class ParameterInput {
 public:
   ParameterInput();
   ~ParameterInput();
 
-// public functions implemented in parameter_input.cpp
-
   void LoadFromFile(std::string filename);
   void ModifyFromCmdline(int argc, char *argv[]);
   void ParameterDump(std::ostream& os);
-  int  ParameterExists(std::string block, std::string name);
+  int  DoesParameterExist(std::string block, std::string name);
   int  GetInteger(std::string block, std::string name);
   int  GetOrAddInteger(std::string block, std::string name, int value);
   Real GetReal(std::string block, std::string name);
@@ -72,8 +71,6 @@ public:
 
 private:
   std::string last_filename_;  // last input file opened, to prevent duplicate reads
-
-// private functions implemented in parameter_input.cpp
 
   void ParseLine(InputBlock *pb, std::string line, std::string& name,
        std::string& value, std::string& comment);

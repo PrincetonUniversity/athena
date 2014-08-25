@@ -75,7 +75,7 @@ OutputData::~OutputData()
 OutputType::OutputType(OutputBlock out_blk, Block *pb)
 {
   output_block = out_blk;
-  pparent_block = pb;
+  pmy_block = pb;
   pnext = NULL; // Terminate linked list with NULL ptr
 }
 
@@ -91,7 +91,7 @@ OutputType::~OutputType()
 
 OutputList::OutputList(Block *pb)
 {
-  pparent_block = pb;
+  pmy_block = pb;
   pfirst_out_ = NULL;
 }
 
@@ -118,7 +118,7 @@ void OutputList::InitOutputs(ParameterInput *pin)
   InputBlock *pib = pin->pfirst_block;
   OutputType *pnew_out;
   OutputType *plast = pfirst_out_;
-  Block *pb = pparent_block;
+  Block *pb = pmy_block;
 
 // loop over input block names.  Find those that start with "output", read parameters,
 // and construct linked list of OutputTypes.
@@ -150,7 +150,7 @@ void OutputList::InitOutputs(ParameterInput *pin)
 
 // read slicing options.  Check that slice is within range
 
-      if (pin->ParameterExists(ob.block_name,"x1_slice")) {
+      if (pin->DoesParameterExist(ob.block_name,"x1_slice")) {
         Real x1 = pin->GetReal(ob.block_name,"x1_slice");
         if (x1 >= pb->block_size.x1min && x1 < pb->block_size.x1max) {
           for (int i=pb->is+1; i<=pb->ie+1; ++i) {
@@ -164,7 +164,7 @@ void OutputList::InitOutputs(ParameterInput *pin)
         }
       } else {ob.islice = -999;}
 
-      if (pin->ParameterExists(ob.block_name,"x2_slice")) {
+      if (pin->DoesParameterExist(ob.block_name,"x2_slice")) {
         Real x2 = pin->GetReal(ob.block_name,"x2_slice");
         if (x2 >= pb->block_size.x2min && x2 < pb->block_size.x2max) {
           for (int j=pb->js+1; j<=pb->je+1; ++j) {
@@ -178,7 +178,7 @@ void OutputList::InitOutputs(ParameterInput *pin)
         }
       } else {ob.jslice = -999;}
 
-      if (pin->ParameterExists(ob.block_name,"x3_slice")) {
+      if (pin->DoesParameterExist(ob.block_name,"x3_slice")) {
         Real x3 = pin->GetReal(ob.block_name,"x3_slice");
         if (x3 >= pb->block_size.x3min && x3 < pb->block_size.x3max) {
           for (int k=pb->ks+1; k<=pb->ke+1; ++k) {
@@ -194,8 +194,8 @@ void OutputList::InitOutputs(ParameterInput *pin)
 
 // read sum options.  Check for conflicts with slicing.
 
-      if (pin->ParameterExists(ob.block_name,"x1_sum")) {
-        if (pin->ParameterExists(ob.block_name,"x1_slice")) {
+      if (pin->DoesParameterExist(ob.block_name,"x1_sum")) {
+        if (pin->DoesParameterExist(ob.block_name,"x1_slice")) {
           msg << "### FATAL ERROR in function [OutputList::InitOutputs]"
               << std::endl << "Cannot request both slice and sum along x1-direction"
               << " in output block '" << ob.block_name << "'" << std::endl;
@@ -205,8 +205,8 @@ void OutputList::InitOutputs(ParameterInput *pin)
         }
       } else {ob.isum = 0;}
 
-      if (pin->ParameterExists(ob.block_name,"x2_sum")) {
-        if (pin->ParameterExists(ob.block_name,"x2_slice")) {
+      if (pin->DoesParameterExist(ob.block_name,"x2_sum")) {
+        if (pin->DoesParameterExist(ob.block_name,"x2_slice")) {
           msg << "### FATAL ERROR in function [OutputList::InitOutputs]"
               << std::endl << "Cannot request both slice and sum along x2-direction"
               << " in output block '" << ob.block_name << "'" << std::endl;
@@ -216,8 +216,8 @@ void OutputList::InitOutputs(ParameterInput *pin)
         }
       } else {ob.jsum = 0;}
 
-      if (pin->ParameterExists(ob.block_name,"x3_sum")) {
-        if (pin->ParameterExists(ob.block_name,"x3_slice")) {
+      if (pin->DoesParameterExist(ob.block_name,"x3_sum")) {
+        if (pin->DoesParameterExist(ob.block_name,"x3_slice")) {
           msg << "### FATAL ERROR in function [OutputList::InitOutputs]"
               << std::endl << "Cannot request both slice and sum along x3-direction"
               << " in output block '" << ob.block_name << "'" << std::endl;
@@ -239,11 +239,11 @@ void OutputList::InitOutputs(ParameterInput *pin)
 // Construct new OutputType according to file format
 
         if (ob.file_format.compare("tab") == 0) {
-          pnew_out = new FormattedTableOutput(ob, pparent_block);
+          pnew_out = new FormattedTableOutput(ob, pmy_block);
         } else if (ob.file_format.compare("hst") == 0) {
-          pnew_out = new HistoryOutput(ob, pparent_block);
+          pnew_out = new HistoryOutput(ob, pmy_block);
         } else if (ob.file_format.compare("vtk") == 0) {
-          pnew_out = new VTKOutput(ob, pparent_block);
+          pnew_out = new VTKOutput(ob, pmy_block);
         } else {
           msg << "### FATAL ERROR in function [OutputList::InitOutputs]"
               << std::endl << "Unrecognized file format = '" << ob.file_format 
@@ -320,21 +320,21 @@ OutputData* OutputType::LoadOutputData()
 {
   OutputDataNodeHeader node_header;
   OutputData *pod = new OutputData;
-  Fluid *pf = pparent_block->pfluid;;
+  Fluid *pf = pmy_block->pfluid;;
   std::stringstream str;
 
 // Create OutputData header
 
-  str << "# Athena++ data at time=" << pparent_block->pparent_domain->pparent_mesh->time
-      << "  cycle=" << pparent_block->pparent_domain->pparent_mesh->ncycle
+  str << "# Athena++ data at time=" << pmy_block->pmy_domain->pmy_mesh->time
+      << "  cycle=" << pmy_block->pmy_domain->pmy_mesh->ncycle
       << "  variables=" << output_block.variable << std::endl;
   pod->header.descriptor.append(str.str());
-  pod->header.il = pparent_block->is;
-  pod->header.iu = pparent_block->ie;
-  pod->header.jl = pparent_block->js;
-  pod->header.ju = pparent_block->je;
-  pod->header.kl = pparent_block->ks;
-  pod->header.ku = pparent_block->ke;
+  pod->header.il = pmy_block->is;
+  pod->header.iu = pmy_block->ie;
+  pod->header.jl = pmy_block->js;
+  pod->header.ju = pmy_block->je;
+  pod->header.kl = pmy_block->ks;
+  pod->header.ku = pmy_block->ke;
 
 // Create linked list of OutputDataNodes containing requested data
 
@@ -488,18 +488,18 @@ void OutputType::Slice(OutputData* pod, int dim)
 // modify OutputData header
 
   if (dim == 3) {
-    str << "# Slice at x3=" << pparent_block->x3v(output_block.kslice)
-        << "  (k-ks)=" << (output_block.kslice - pparent_block->ks) << std::endl;
+    str << "# Slice at x3=" << pmy_block->x3v(output_block.kslice)
+        << "  (k-ks)=" << (output_block.kslice - pmy_block->ks) << std::endl;
     pod->header.kl = 0;
     pod->header.ku = 0;
   } else if (dim == 2) {
-    str << "# Slice at x2=" << pparent_block->x2v(output_block.jslice)
-        << "  (j-js)=" << (output_block.jslice - pparent_block->js) << std::endl;
+    str << "# Slice at x2=" << pmy_block->x2v(output_block.jslice)
+        << "  (j-js)=" << (output_block.jslice - pmy_block->js) << std::endl;
     pod->header.jl = 0;
     pod->header.ju = 0;
   } else {
-    str << "# Slice at x1=" << pparent_block->x1v(output_block.islice)
-        << "  (i-is)=" << (output_block.islice - pparent_block->is) << std::endl;
+    str << "# Slice at x1=" << pmy_block->x1v(output_block.islice)
+        << "  (i-is)=" << (output_block.islice - pmy_block->is) << std::endl;
     pod->header.il = 0;
     pod->header.iu = 0;
   }
@@ -596,7 +596,7 @@ void OutputType::Sum(OutputData* pod, int dim)
 void OutputList::MakeOutputs()
 {
   OutputType* pout=pfirst_out_;
-  Mesh* pm = pparent_block->pparent_domain->pparent_mesh;
+  Mesh* pm = pmy_block->pmy_domain->pmy_mesh;
 
   while (pout != NULL) {
     if ((pm->time == pm->start_time) || 

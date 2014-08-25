@@ -28,7 +28,7 @@ public:
   Fluid(Block *pb);
   ~Fluid();
 
-  Block* pparent_block;    // ptr to parent Block
+  Block* pmy_block;    // ptr to Block containing this Fluid
 
   AthenaArray<Real> u,w;   // conserved and primitive variables
   AthenaArray<Real> u1,w1; // conserved and primitive variables at the half-time step
@@ -42,7 +42,7 @@ public:
       AthenaArray<Real> &p);
 
   void NewTimeStep(Block *pb);           // computes new timestep on a Block
-  void InitProblem(ParameterInput *pin); // problem generator function (files in /pgen)
+  void InitFluid(ParameterInput *pin); // problem generator function (files in /pgen)
   Real GetGamma() const {return gamma_;}
 
 private:

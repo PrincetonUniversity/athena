@@ -32,11 +32,11 @@
 
 FluidIntegrator::FluidIntegrator(Fluid *pf)
 {
-  pparent_fluid = pf;
+  pmy_fluid = pf;
 
 // Allocate memory for scratch vectors
 
-  int ncells1 = pf->pparent_block->block_size.nx1 + 2*(NGHOST);
+  int ncells1 = pf->pmy_block->block_size.nx1 + 2*(NGHOST);
   wl_.NewAthenaArray(NVAR,ncells1);
   wr_.NewAthenaArray(NVAR,ncells1);
   flx_.NewAthenaArray(NVAR,ncells1);

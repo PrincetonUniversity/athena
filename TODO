@@ -11,6 +11,8 @@ Outputs:
  - add output of ghost zones 
  - add double precision option for vtk outputs
  - add proper line integrals in Sum transform
+ - allow 5 digits in filename numbers??
+ - clean-up/comment
 
 Inputs:
  - how do we specify metric parameters (e.g. M and a=J/M)?
@@ -51,7 +53,9 @@ Documentation (wiki pages):
  - running unit tests?
 
 Other:
+ - RESTARTS!!
  - Any "TODO" in source code
+ - fix memory leaks
  - Use cbrt()?
    - so far always available in <cmath>
    - but only guaranteed for C++11

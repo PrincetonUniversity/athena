@@ -28,8 +28,8 @@ using namespace globals;
 //   pb: pointer to block containing this grid
 Coordinates::Coordinates(Block *pb)
 {
-  // Set pointer to parent
-  pparent_block = pb;
+  // Set pointer to host Block
+  pmy_block = pb;
 
   // Initialize volume-averated positions and spacings: r-direction
   for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST; i++)
@@ -366,7 +366,7 @@ void Coordinates::Area1Face(const int k, const int j, const int il, const int iu
     AthenaArray<Real> &areas)
 {
   Real &neg_delta_cos_theta = face1_area_j_(j);
-  Real &delta_phi = pparent_block->dx3f(k);
+  Real &delta_phi = pmy_block->dx3f(k);
 #pragma simd
   for (int i = il; i <= iu; i++)
   {
@@ -390,7 +390,7 @@ void Coordinates::Area2Face(const int k, const int j, const int il, const int iu
     AthenaArray<Real> &areas)
 {
   Real &sin_theta = face2_area_j_(j);
-  Real &delta_phi = pparent_block->dx3f(k);
+  Real &delta_phi = pmy_block->dx3f(k);
 #pragma simd
   for (int i = il; i <= iu; i++)
   {
@@ -437,7 +437,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
     AthenaArray<Real> &volumes)
 {
   Real &neg_delta_cos_theta = volume_j_(j);
-  Real &delta_phi = pparent_block->dx3f(k);
+  Real &delta_phi = pmy_block->dx3f(k);
 #pragma simd
   for (int i = il; i <= iu; i++)
   {
@@ -462,7 +462,7 @@ void Coordinates::CoordinateSourceTerms(const int k, const int j,
     AthenaArray<Real> &prim, AthenaArray<Real> &sources)
 {
   // Extract ratio of specific heats
-  const Real gamma_adi = pparent_fluid->GetGamma();
+  const Real gamma_adi = pmy_fluid->GetGamma();
   const Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Extract geometric quantities that do not depend on r
@@ -472,7 +472,7 @@ void Coordinates::CoordinateSourceTerms(const int k, const int j,
 
   // Go through 1D block of cells
 #pragma simd
-  for (int i = pparent_block->is; i <= pparent_block->ie; i++)
+  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
   {
     // Extract remaining geometric quantities
     Real &g00 = metric_cell_i1_(i);
@@ -553,7 +553,7 @@ void Coordinates::CellMetric(const int k, const int j, AthenaArray<Real> &g,
 
   // Go through 1D block of cells
 #pragma simd
-  for (int i = pparent_block->is-NGHOST; i <= pparent_block->ie+NGHOST; i++)
+  for (int i = pmy_block->is-NGHOST; i <= pmy_block->ie+NGHOST; i++)
   {
     // Extract remaining geometric quantities
     Real &t_factor = metric_cell_i1_(i);
@@ -598,7 +598,7 @@ void Coordinates::PrimToLocal1(const int k, const int j, AthenaArray<Real> &prim
 {
   // Go through 1D block of cells
 #pragma simd
-  for (int i = pparent_block->is; i <= pparent_block->ie+1; i++)
+  for (int i = pmy_block->is; i <= pmy_block->ie+1; i++)
   {
     // Extract primitives
     Real &v1 = prim(IVX,k,j,i);
@@ -644,7 +644,7 @@ void Coordinates::PrimToLocal2(const int k, const int j, AthenaArray<Real> &prim
 {
   // Go through 1D block of cells
 #pragma simd
-  for (int i = pparent_block->is; i <= pparent_block->ie; i++)
+  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
   {
     // Extract primitives
     Real &v1 = prim(IVX,k,j,i);
@@ -690,7 +690,7 @@ void Coordinates::PrimToLocal3(const int k, const int j, AthenaArray<Real> &prim
 {
   // Go through 1D block of cells
 #pragma simd
-  for (int i = pparent_block->is; i <= pparent_block->ie; i++)
+  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
   {
     // Extract primitives
     Real &v1 = prim(IVX,k,j,i);
@@ -736,7 +736,7 @@ void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flu
 {
   // Go through 1D block of cells
 #pragma simd
-  for (int i = pparent_block->is; i <= pparent_block->ie+1; i++)
+  for (int i = pmy_block->is; i <= pmy_block->ie+1; i++)
   {
     // Extract fluxes for reading
     Real &dx = flux(IDN,i);
@@ -790,7 +790,7 @@ void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flu
 {
   // Go through 1D block of cells
 #pragma simd
-  for (int i = pparent_block->is; i <= pparent_block->ie; i++)
+  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
   {
     // Extract fluxes for reading
     Real &dy = flux(IDN,i);
@@ -844,7 +844,7 @@ void Coordinates::FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flu
 {
   // Go through 1D block of cells
 #pragma simd
-  for (int i = pparent_block->is; i <= pparent_block->ie; i++)
+  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
   {
     // Extract fluxes for reading
     Real &dz = flux(IDN,i);

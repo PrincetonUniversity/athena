@@ -170,11 +170,11 @@ Mesh::~Mesh()
 // Domain constructor: builds array of Blocks based on input arguments.  May be called
 // at any time in a simulation, whenever AMR creates a new Domain
 
-Domain::Domain(RegionSize dom_size, RegionBoundary dom_bndry, Mesh* pm)
+Domain::Domain(RegionSize input_size, RegionBoundaryFlags input_bndry, Mesh* pm)
 {
-  pparent_mesh = pm;
-  domain_size = dom_size;
-  domain_bndry = dom_bndry;
+  pmy_mesh = pm;
+  domain_size  = input_size;
+  domain_bndry = input_bndry;
 
 // allocate block on this domain
 // In future w MPI: calculate array of blocks, set their region sizes, and initialize
@@ -196,11 +196,11 @@ Domain::~Domain()
 // boundary condition, and fluid objects.  Fluid initial conditions are set in
 // init function rather than fluid constructor.  May be called at any time with AMR.
 
-Block::Block(RegionSize blk_size, RegionBoundary blk_bndry, Domain *pd)
+Block::Block(RegionSize input_size, RegionBoundaryFlags input_bndry, Domain *pd)
 {
-  pparent_domain = pd;
-  block_size = blk_size;
-  block_bndry = blk_bndry;
+  pmy_domain = pd;
+  block_size  = input_size;
+  block_bndry = input_bndry;
 
 // initialize grid indices
 
@@ -384,12 +384,12 @@ Block::Block(RegionSize blk_size, RegionBoundary blk_bndry, Domain *pd)
     }
   }
 
-
-// construct Coordinates, BoundaryConditions, and Fluid objects.
-// Coordinates constructor: initializes volume-centered coordinates (x1v,dx1v,...)
-// BoundaryConditions constructor: sets function pointers for each edge of this block
-// Fluid constructor: allocates memory for u,w, etc., and constructs FluidIntegrator.
-//   Initial conditions set in problem generator called from main
+// construct various objects stored in Block class.  Constructors do the following:
+//   Coordinates: initializes volume-centered coordinates (x1v,dx1v,...)
+//   FluidBoundaryConditions: sets function pointers for each edge of this block
+//   Fluid: allocates memory for arrays, and constructs FluidIntegrator.
+//   OutputList:
+// initial conditions for fluid set in problem generator called from main
  
   pcoord   = new Coordinates(this);
   pf_bcs   = new FluidBoundaryConditions(this);
@@ -448,63 +448,55 @@ Block::~Block()
 // \!fn 
 // \brief
 
-void Mesh::InitializeAcrossDomains(enum QuantityToBeInit qnty, ParameterInput *pin)
+void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
 {
 
 // Eventually this will be a loop over all domains
 
   if (pdomain->pblock != NULL)  {
-    Fluid *pf = pdomain->pblock->pfluid;
-
-    switch (qnty) {
-      case initial_conditions:
-        pf->InitProblem(pin);
-        break;
-      case outputs:
-        pdomain->pblock->poutputs->InitOutputs(pin);
-        break;
-    }
-
-  }
-}
-
-//--------------------------------------------------------------------------------------
-// \!fn 
-// \brief
-
-void Mesh::UpdateAcrossDomains(enum UpdateAction action)
-{
-// Eventually this will be a loop over all domains
-
-  if (pdomain->pblock != NULL)  {
-    Fluid *pf = pdomain->pblock->pfluid;
+    Fluid* pf = pdomain->pblock->pfluid;
 
     switch (action) {
+
+      case init_fluid:
+        pdomain->pblock->pfluid->InitFluid(pin);
+        break;
+
+      case init_outputs:
+        pdomain->pblock->poutputs->InitOutputs(pin);
+        break;
+
       case fluid_bcs_n:
         pdomain->pblock->pf_bcs->ApplyBoundaryConditions(pf->u);
         break;
+
       case fluid_bcs_nhalf:
         pdomain->pblock->pf_bcs->ApplyBoundaryConditions(pf->u1);
         break;
+
       case fluid_predict:
-        pf->pf_integrator->Predict(pdomain->pblock);
+        pdomain->pblock->pfluid->pf_integrator->Predict(pdomain->pblock);
         break;
+
       case fluid_correct:
-        pf->pf_integrator->Correct(pdomain->pblock);
+        pdomain->pblock->pfluid->pf_integrator->Correct(pdomain->pblock);
         break;
-      case convert_vars_n:
-        pf->ConservedToPrimitive(pf->u,pf->w1,pf->w);
+
+      case primitives_n:
+        pdomain->pblock->pfluid->ConservedToPrimitive(pf->u,pf->w1,pf->w);
         break;
-      case convert_vars_nhalf:
-        pf->ConservedToPrimitive(pf->u1,pf->w,pf->w1);
+
+      case primitives_nhalf:
+        pdomain->pblock->pfluid->ConservedToPrimitive(pf->u1,pf->w,pf->w1);
         break;
+
       case new_timestep:
-        pf->NewTimeStep(pdomain->pblock);
+        pdomain->pblock->pfluid->NewTimeStep(pdomain->pblock);
         break;
-      case make_output:
+
+      case make_outputs:
         pdomain->pblock->poutputs->MakeOutputs();
         break;
     }
-
   }
 }

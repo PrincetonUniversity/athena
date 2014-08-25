@@ -25,7 +25,7 @@ public:
   Coordinates(Block *pb);
   ~Coordinates();
 
-  Block *pparent_block;
+  Block *pmy_block;  // ptr to Block containing this Coordinates
 
   void Area1Face(
     const int k, const int j, const int il, const int iu, AthenaArray<Real> &area);

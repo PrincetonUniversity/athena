@@ -35,9 +35,9 @@
  *   non-oscillatory shock-capturing schemes, II", JCP, 83, 32 (1998)	     
  *====================================================================================*/
 
-void Fluid::InitProblem(ParameterInput *pin)
+void Fluid::InitFluid(ParameterInput *pin)
 {
-  Block *pb = pparent_block;
+  Block *pb = pmy_block;
 
   int is = pb->is; int js = pb->js; int ks = pb->ks;
   int ie = pb->ie; int je = pb->je; int ke = pb->ke;

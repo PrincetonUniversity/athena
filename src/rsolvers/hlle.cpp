@@ -52,7 +52,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j,
   Real evp,evm,al,ar;
   Real fl[NVAR],fr[NVAR];
 
-  Real gamma = pparent_fluid->GetGamma();
+  Real gamma = pmy_fluid->GetGamma();
 
 #pragma simd
   for (int i=il; i<=iu; ++i){

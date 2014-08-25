@@ -34,7 +34,7 @@
 
 Coordinates::Coordinates(Block *pb)
 {
-  pparent_block = pb;
+  pmy_block = pb;
   int is = pb->is; int js = pb->js; int ks = pb->ks;
   int ie = pb->ie; int je = pb->je; int ke = pb->ke;
 
@@ -122,7 +122,7 @@ void Coordinates::Area1Face(const int k, const int j, const int il, const int iu
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
-    area_i = pparent_block->x1f(i)*(pparent_block->dx2f(j))*(pparent_block->dx3f(k));
+    area_i = pmy_block->x1f(i)*(pmy_block->dx2f(j))*(pmy_block->dx3f(k));
   }
   return;
 }
@@ -133,7 +133,7 @@ void Coordinates::Area2Face(const int k, const int j, const int il, const int iu
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
-    area_i = (pparent_block->dx1f(i))*(pparent_block->dx3f(k));
+    area_i = (pmy_block->dx1f(i))*(pmy_block->dx3f(k));
   }
   return;
 }
@@ -144,7 +144,7 @@ void Coordinates::Area3Face(const int k, const int j, const int il, const int iu
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
-    area_i = (pparent_block->dx1f(i))*(pparent_block->dx2f(j));
+    area_i = (pmy_block->dx1f(i))*(pmy_block->dx2f(j));
   }
   return;
 }
@@ -159,7 +159,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& vol_i = vol(i);
-    vol_i = volume_i_(i)*(pparent_block->dx2f(j))*(pparent_block->dx3f(k));
+    vol_i = volume_i_(i)*(pmy_block->dx2f(j))*(pmy_block->dx3f(k));
   }
   return;
 }
@@ -172,7 +172,7 @@ void Coordinates::CoordinateSourceTerms(
   const int k, const int j, AthenaArray<Real> &prim, AthenaArray<Real> &src)
 {
 #pragma simd
-  for (int i=(pparent_block->is); i<=(pparent_block->ie); ++i) {
+  for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
     Real m_pp = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM3,k,j,i) + prim(IEN,k,j,i);
     src(IM1,i) = src_terms_i_(i)*m_pp;
   }

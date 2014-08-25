@@ -24,7 +24,7 @@ public:
   FluidIntegrator(Fluid *pf);
   ~FluidIntegrator();
 
-  Fluid *pparent_fluid;          // ptr to parent Fluid
+  Fluid *pmy_fluid;  // ptr to Fluid containing this FluidIntegrator
 
   void Predict(Block *pb);
   void Correct(Block *pb);

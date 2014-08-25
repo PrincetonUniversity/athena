@@ -131,7 +131,7 @@ void VTKOutput::WriteOutputData()
 
   fprintf(pfile,"X_COORDINATES %d float\n",ncoord1);
   for (int i=(pod->header.il); i<=(pod->header.iu)+1; ++i) {
-    data[i-(pod->header.il)] = (float)pparent_block->x1f(i);
+    data[i-(pod->header.il)] = (float)pmy_block->x1f(i);
   }
   if (!big_end) {for (int i=0; i<ncoord1; ++i) Swap4Bytes(&data[i]);}
   fwrite(data,sizeof(float),(size_t)ncoord1,pfile);
@@ -140,10 +140,10 @@ void VTKOutput::WriteOutputData()
 
   fprintf(pfile,"\nY_COORDINATES %d float\n",ncoord2);
   if (ncells2 == 1) {
-      data[0] = (float)pparent_block->x2v(pod->header.jl);
+      data[0] = (float)pmy_block->x2v(pod->header.jl);
   } else {
     for (int j=(pod->header.jl); j<=(pod->header.ju)+1; ++j) {
-      data[j-(pod->header.jl)] = (float)pparent_block->x2f(j);
+      data[j-(pod->header.jl)] = (float)pmy_block->x2f(j);
     }
   }
   if (!big_end) {for (int i=0; i<ncoord2; ++i) Swap4Bytes(&data[i]);}
@@ -153,10 +153,10 @@ void VTKOutput::WriteOutputData()
 
   fprintf(pfile,"\nZ_COORDINATES %d float\n",ncoord3);
   if (ncells3 == 1) {
-      data[0] = (float)pparent_block->x3v(pod->header.kl);
+      data[0] = (float)pmy_block->x3v(pod->header.kl);
   } else {
     for (int k=(pod->header.kl); k<=(pod->header.ku)+1; ++k) {
-      data[k-(pod->header.kl)] = (float)pparent_block->x3f(k);
+      data[k-(pod->header.kl)] = (float)pmy_block->x3f(k);
     }
   }
   if (!big_end) {for (int i=0; i<ncoord3; ++i) Swap4Bytes(&data[i]);}

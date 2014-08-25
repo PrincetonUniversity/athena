@@ -39,7 +39,7 @@ void FluidIntegrator::Predict(Block *pb)
 {
   int is = pb->is; int js = pb->js; int ks = pb->ks;
   int ie = pb->ie; int je = pb->je; int ke = pb->ke;
-  Real dt = pb->pparent_domain->pparent_mesh->dt;
+  Real dt = pb->pmy_domain->pmy_mesh->dt;
 
   Real sum=0.0; Real sum_2=0.0;
   int ndata = (pb->block_size.nx1)*(pb->block_size.nx2)*(pb->block_size.nx3)*(NVAR);
@@ -211,7 +211,7 @@ void FluidIntegrator::Correct(Block *pb)
 {
   int is = pb->is; int js = pb->js; int ks = pb->ks;
   int ie = pb->ie; int je = pb->je; int ke = pb->ke;
-  Real dt = pb->pparent_domain->pparent_mesh->dt;
+  Real dt = pb->pmy_domain->pmy_mesh->dt;
 
   Real sum=0.0; Real sum_2=0.0;
   int ndata = (pb->block_size.nx1)*(pb->block_size.nx2)*(pb->block_size.nx3)*(NVAR);
