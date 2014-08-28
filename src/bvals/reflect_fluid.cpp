@@ -20,17 +20,17 @@
 // Athena headers
 #include "../athena.hpp"         // macros, Real
 #include "../athena_arrays.hpp"  // AthenaArray
-#include "../mesh.hpp"           // Block
+#include "../mesh.hpp"           // MeshBlock
 
 //======================================================================================
 /*! \file reflect_fluid.cpp
  *  \brief implements reflecting BCs in each dimension for conserved fluid variables
  *====================================================================================*/
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectInnerX1(Block *pb)
+//! \fn void ReflectInnerX1(MeshBlock *pb)
 //  \brief  REFLECTING boundary conditions conserved vars, inner x1 boundary (ix1_bc=1)
 
-void ReflectInnerX1(Block *pb, AthenaArray<Real> &a)
+void ReflectInnerX1(MeshBlock *pb, AthenaArray<Real> &a)
 {
   int is = pb->is;
   int js = pb->js, je = pb->je;
@@ -61,10 +61,10 @@ void ReflectInnerX1(Block *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectOuterX1(Block *pb)
+//! \fn void ReflectOuterX1(MeshBlock *pb)
 //  \brief  REFLECTING boundary conditions conserved vars, outer x1 boundary (ox1_bc=1)
 
-void ReflectOuterX1(Block *pb, AthenaArray<Real> &a)
+void ReflectOuterX1(MeshBlock *pb, AthenaArray<Real> &a)
 {
   int ie = pb->ie;
   int js = pb->js, je = pb->je;
@@ -95,10 +95,10 @@ void ReflectOuterX1(Block *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectInnerX2(Block *pb)
+//! \fn void ReflectInnerX2(MeshBlock *pb)
 //  \brief  REFLECTING boundary conditions conserved vars, inner x2 boundary (ix2_bc=1)
 
-void ReflectInnerX2(Block *pb, AthenaArray<Real> &a)
+void ReflectInnerX2(MeshBlock *pb, AthenaArray<Real> &a)
 {
   int is = pb->is, ie = pb->ie;
   int js = pb->js;
@@ -129,10 +129,10 @@ void ReflectInnerX2(Block *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectOuterX2(Block *pb)
+//! \fn void ReflectOuterX2(MeshBlock *pb)
 //  \brief  REFLECTING boundary conditions conserved vars, outer x2 boundary (ox2_bc=1)
 
-void ReflectOuterX2(Block *pb, AthenaArray<Real> &a)
+void ReflectOuterX2(MeshBlock *pb, AthenaArray<Real> &a)
 {
   int is = pb->is, ie = pb->ie;
   int je = pb->je;
@@ -163,10 +163,10 @@ void ReflectOuterX2(Block *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectInnerX3(Block *pb)
+//! \fn void ReflectInnerX3(MeshBlock *pb)
 //  \brief  REFLECTING boundary conditions conserved vars, inner x3 boundary (ix3_bc=1)
 
-void ReflectInnerX3(Block *pb, AthenaArray<Real> &a)
+void ReflectInnerX3(MeshBlock *pb, AthenaArray<Real> &a)
 {
   int is = pb->is, ie = pb->ie;
   int js = pb->js, je = pb->je;
@@ -197,10 +197,10 @@ void ReflectInnerX3(Block *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectOuterX3(Block *pb)
+//! \fn void ReflectOuterX3(MeshBlock *pb)
 //  \brief  REFLECTING boundary conditions conserved vars, outer x3 boundary (ox3_bc=1)
 
-void ReflectOuterX3(Block *pb, AthenaArray<Real> &a)
+void ReflectOuterX3(MeshBlock *pb, AthenaArray<Real> &a)
 {
   int is = pb->is, ie = pb->ie;
   int js = pb->js, je = pb->je;

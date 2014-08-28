@@ -37,7 +37,7 @@
 //--------------------------------------------------------------------------------------
 // VTKOutput constructor
 
-VTKOutput::VTKOutput(OutputBlock out_blk, Block *pb)
+VTKOutput::VTKOutput(OutputBlock out_blk, MeshBlock *pb)
   : OutputType(out_blk,pb)
 {
 }

@@ -14,7 +14,7 @@
 #include "athena.hpp"         // Real
 #include "athena_arrays.hpp"  // AthenaArray
 
-class Block;
+class MeshBlock;
 class ParameterInput;
 class FluidBoundaryConditions;
 class FluidIntegrator;
@@ -25,10 +25,10 @@ class FluidIntegrator;
 class Fluid {
 friend class FluidIntegrator;
 public:
-  Fluid(Block *pb);
+  Fluid(MeshBlock *pmb);
   ~Fluid();
 
-  Block* pmy_block;    // ptr to Block containing this Fluid
+  MeshBlock* pmy_block;    // ptr to MeshBlock containing this Fluid
 
   AthenaArray<Real> u,w;   // conserved and primitive variables
   AthenaArray<Real> u1,w1; // conserved and primitive variables at the half-time step
@@ -41,7 +41,7 @@ public:
   void ConservedToPrimitive(AthenaArray<Real> &c, AthenaArray<Real> &p_old,
       AthenaArray<Real> &p);
 
-  void NewTimeStep(Block *pb);           // computes new timestep on a Block
+  void NewTimeStep(MeshBlock *pmb);    // computes new timestep on a MeshBlock
   void InitFluid(ParameterInput *pin); // problem generator function (files in /pgen)
   Real GetGamma() const {return gamma_;}
 

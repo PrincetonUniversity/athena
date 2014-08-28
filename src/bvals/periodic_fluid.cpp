@@ -20,17 +20,17 @@
 // Athena headers
 #include "../athena.hpp"         // macros, Real
 #include "../athena_arrays.hpp"  // AthenaArray
-#include "../mesh.hpp"           // Block
+#include "../mesh.hpp"           // MeshBlock
 
 //======================================================================================
 /*! \file periodic_fluid.cpp
  *  \brief implements periodic BCs in each dimension for conserved fluid variables
  *====================================================================================*/
 //--------------------------------------------------------------------------------------
-//! \fn void PeriodicInnerX1(Block *pb)
+//! \fn void PeriodicInnerX1(MeshBlock *pb)
 //  \brief  PERIODIC boundary conditions conserved vars, inner x1 boundary (ix1_bc=4)
 
-void PeriodicInnerX1(Block *pb, AthenaArray<Real> &a)
+void PeriodicInnerX1(MeshBlock *pb, AthenaArray<Real> &a)
 {
   int is = pb->is, ie = pb->ie;
   int js = pb->js, je = pb->je;
@@ -51,10 +51,10 @@ void PeriodicInnerX1(Block *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void PeriodicOuterX1(Block *pb)
+//! \fn void PeriodicOuterX1(MeshBlock *pb)
 //  \brief  PERIODIC boundary conditions conserved vars, outer x1 boundary (ox1_bc=4)
 
-void PeriodicOuterX1(Block *pb, AthenaArray<Real> &a)
+void PeriodicOuterX1(MeshBlock *pb, AthenaArray<Real> &a)
 {
   int is = pb->is, ie = pb->ie;
   int js = pb->js, je = pb->je;
@@ -75,10 +75,10 @@ void PeriodicOuterX1(Block *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void PeriodicInnerX2(Block *pb)
+//! \fn void PeriodicInnerX2(MeshBlock *pb)
 //  \brief  PERIODIC boundary conditions conserved vars, inner x2 boundary (ix2_bc=4)
 
-void PeriodicInnerX2(Block *pb, AthenaArray<Real> &a)
+void PeriodicInnerX2(MeshBlock *pb, AthenaArray<Real> &a)
 {
   int is = pb->is, ie = pb->ie;
   int js = pb->js, je = pb->je;
@@ -99,10 +99,10 @@ void PeriodicInnerX2(Block *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void PeriodicOuterX2(Block *pb)
+//! \fn void PeriodicOuterX2(MeshBlock *pb)
 //  \brief  PERIODIC boundary conditions conserved vars, outer x2 boundary (ox2_bc=4)
 
-void PeriodicOuterX2(Block *pb, AthenaArray<Real> &a)
+void PeriodicOuterX2(MeshBlock *pb, AthenaArray<Real> &a)
 {
   int is = pb->is, ie = pb->ie;
   int js = pb->js, je = pb->je;
@@ -123,10 +123,10 @@ void PeriodicOuterX2(Block *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void PeriodicInnerX3(Block *pb)
+//! \fn void PeriodicInnerX3(MeshBlock *pb)
 //  \brief  PERIODIC boundary conditions conserved vars, inner x3 boundary (ix3_bc=4)
 
-void PeriodicInnerX3(Block *pb, AthenaArray<Real> &a)
+void PeriodicInnerX3(MeshBlock *pb, AthenaArray<Real> &a)
 {
   int is = pb->is, ie = pb->ie;
   int js = pb->js, je = pb->je;
@@ -147,10 +147,10 @@ void PeriodicInnerX3(Block *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void PeriodicOuterX3(Block *pb)
+//! \fn void PeriodicOuterX3(MeshBlock *pb)
 //  \brief  PERIODIC boundary conditions conserved vars, outer x3 boundary (ox3_bc=4)
 
-void PeriodicOuterX3(Block *pb, AthenaArray<Real> &a)
+void PeriodicOuterX3(MeshBlock *pb, AthenaArray<Real> &a)
 {
   int is = pb->is, ie = pb->ie;
   int js = pb->js, je = pb->je;

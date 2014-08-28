@@ -13,7 +13,7 @@
 #include "../athena.hpp"         // Real
 #include "../athena_arrays.hpp"  // AthenaArray
 
-class Block;
+class MeshBlock;
 class Fluid;
 
 //! \class FluidIntegrator
@@ -26,8 +26,8 @@ public:
 
   Fluid *pmy_fluid;  // ptr to Fluid containing this FluidIntegrator
 
-  void Predict(Block *pb);
-  void Correct(Block *pb);
+  void Predict(MeshBlock *pmb);
+  void Correct(MeshBlock *pmb);
 
   void RiemannSolver(const int k, const int j,
     const int il, const int iu, const int ivx, const int ivy, const int ivz,

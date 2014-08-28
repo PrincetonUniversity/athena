@@ -20,7 +20,7 @@
 // Athena headers
 #include "../athena.hpp"         // macros, Real
 #include "../athena_arrays.hpp"  // AthenaArray
-#include "../mesh.hpp"           // Block
+#include "../mesh.hpp"           // MeshBlock
 
 //======================================================================================
 //! \file cartesian.cpp
@@ -29,56 +29,56 @@
 
 // constructor
 
-Coordinates::Coordinates(Block *pb)
+Coordinates::Coordinates(MeshBlock *pmb)
 {
-  pmy_block = pb;
-  int is = pb->is; int js = pb->js; int ks = pb->ks;
-  int ie = pb->ie; int je = pb->je; int ke = pb->ke;
+  pmy_block = pmb;
+  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
+  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
 // initialize volume-averaged positions and spacing
 // x1-direction
 
   for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-    pb->x1v(i) = 0.5*(pb->x1f(i+1) + pb->x1f(i));
+    pmb->x1v(i) = 0.5*(pmb->x1f(i+1) + pmb->x1f(i));
   }
   for (int i=is-(NGHOST); i<=ie+(NGHOST)-1; ++i) {
-    pb->dx1v(i) = pb->x1v(i+1) - pb->x1v(i);
+    pmb->dx1v(i) = pmb->x1v(i+1) - pmb->x1v(i);
   }
 
 // x2-direction
 
-  if (pb->block_size.nx2 == 1) {
-    pb->x2v(js) = 0.5*(pb->x2f(js+1) + pb->x2f(js));
-    pb->dx2v(js) = pb->dx2f(js);
+  if (pmb->block_size.nx2 == 1) {
+    pmb->x2v(js) = 0.5*(pmb->x2f(js+1) + pmb->x2f(js));
+    pmb->dx2v(js) = pmb->dx2f(js);
   } else {
     for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
-      pb->x2v(j) = 0.5*(pb->x2f(j+1) + pb->x2f(j));
+      pmb->x2v(j) = 0.5*(pmb->x2f(j+1) + pmb->x2f(j));
     }
     for (int j=js-(NGHOST); j<=je+(NGHOST)-1; ++j) {
-      pb->dx2v(j) = pb->x2v(j+1) - pb->x2v(j);
+      pmb->dx2v(j) = pmb->x2v(j+1) - pmb->x2v(j);
     }
   }
 
 // x3-direction
 
-  if (pb->block_size.nx3 == 1) {
-    pb->x3v(ks) = 0.5*(pb->x3f(ks+1) + pb->x3f(ks));
-    pb->dx3v(ks) = pb->dx3f(ks);
+  if (pmb->block_size.nx3 == 1) {
+    pmb->x3v(ks) = 0.5*(pmb->x3f(ks+1) + pmb->x3f(ks));
+    pmb->dx3v(ks) = pmb->dx3f(ks);
   } else {
     for (int k=ks-(NGHOST); k<=ke+(NGHOST); ++k) {
-      pb->x3v(k) = 0.5*(pb->x3f(k+1) + pb->x3f(k));
+      pmb->x3v(k) = 0.5*(pmb->x3f(k+1) + pmb->x3f(k));
     }
     for (int k=ks-(NGHOST); k<=ke+(NGHOST)-1; ++k) {
-      pb->dx3v(k) = pb->x3v(k+1) - pb->x3v(k);
+      pmb->dx3v(k) = pmb->x3v(k+1) - pmb->x3v(k);
     }
   }
 
 // Allocate memory for scratch arrays used in integrator, and internal scratch arrays
 // For cartesian coordinates, no local scratch arrays are needed
 
-  int ncells1 = pb->block_size.nx1 + 2*(NGHOST);
+  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
   int ncells2 = 1;
-  if (pb->block_size.nx2 > 1) ncells2 = pb->block_size.nx2 + 2*(NGHOST);
+  if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
 
   face_area.NewAthenaArray(ncells1);
   cell_volume.NewAthenaArray(ncells1);

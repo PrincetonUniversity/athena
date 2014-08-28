@@ -26,7 +26,7 @@
 // Athena headers
 #include "../athena.hpp"         // Real
 #include "../athena_arrays.hpp"  // AthenaArray
-#include "../mesh.hpp"           // Block
+#include "../mesh.hpp"           // MeshBlock
 
 //======================================================================================
 /*! \file bvals.cpp
@@ -36,7 +36,7 @@
 // constructor
 
 
-FluidBoundaryConditions::FluidBoundaryConditions(Block *pb)
+FluidBoundaryConditions::FluidBoundaryConditions(MeshBlock *pb)
 {
   pmy_block = pb;
   std::stringstream msg;

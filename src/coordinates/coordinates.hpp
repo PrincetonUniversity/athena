@@ -15,17 +15,17 @@
 #include "../athena_arrays.hpp"  // AthenaArray
 
 // Declarations
-class Block;
+class MeshBlock;
 
 //! \class Coordinates
 //  \brief coordinate data and functions
 
 class Coordinates {
 public:
-  Coordinates(Block *pb);
+  Coordinates(MeshBlock *pmb);
   ~Coordinates();
 
-  Block *pmy_block;  // ptr to Block containing this Coordinates
+  MeshBlock *pmy_block;  // ptr to MeshBlock containing this Coordinates
 
   void Area1Face(
     const int k, const int j, const int il, const int iu, AthenaArray<Real> &area);

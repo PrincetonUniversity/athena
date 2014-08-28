@@ -38,7 +38,7 @@
 //--------------------------------------------------------------------------------------
 // HistoryOutput constructor
 
-HistoryOutput::HistoryOutput(OutputBlock out_blk, Block *pb)
+HistoryOutput::HistoryOutput(OutputBlock out_blk, MeshBlock *pb)
   : OutputType(out_blk,pb)
 {
 }

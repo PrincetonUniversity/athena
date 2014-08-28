@@ -35,7 +35,7 @@
 //--------------------------------------------------------------------------------------
 // FormattedTableOutput constructor
 
-FormattedTableOutput::FormattedTableOutput(OutputBlock out_blk, Block *pb)
+FormattedTableOutput::FormattedTableOutput(OutputBlock out_blk, MeshBlock *pb)
   : OutputType(out_blk,pb)
 {
 }

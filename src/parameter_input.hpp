@@ -72,9 +72,9 @@ public:
 private:
   std::string last_filename_;  // last input file opened, to prevent duplicate reads
 
-  void ParseLine(InputBlock *pb, std::string line, std::string& name,
+  void ParseLine(InputBlock *pib, std::string line, std::string& name,
        std::string& value, std::string& comment);
-  void AddParameter(InputBlock *pb, std::string name, std::string value,
+  void AddParameter(InputBlock *pib, std::string name, std::string value,
        std::string comment);
   InputBlock* FindOrAddBlock(std::string name);
   InputBlock* GetPtrToBlock(std::string name);

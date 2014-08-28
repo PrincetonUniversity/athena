@@ -72,7 +72,7 @@ OutputData::~OutputData()
 //--------------------------------------------------------------------------------------
 // OutputType constructor
 
-OutputType::OutputType(OutputBlock out_blk, Block *pb)
+OutputType::OutputType(OutputBlock out_blk, MeshBlock *pb)
 {
   output_block = out_blk;
   pmy_block = pb;
@@ -89,7 +89,7 @@ OutputType::~OutputType()
 //--------------------------------------------------------------------------------------
 // OutputList constructor
 
-OutputList::OutputList(Block *pb)
+OutputList::OutputList(MeshBlock *pb)
 {
   pmy_block = pb;
   pfirst_out_ = NULL;
@@ -118,7 +118,7 @@ void OutputList::InitOutputs(ParameterInput *pin)
   InputBlock *pib = pin->pfirst_block;
   OutputType *pnew_out;
   OutputType *plast = pfirst_out_;
-  Block *pb = pmy_block;
+  MeshBlock *pb = pmy_block;
 
 // loop over input block names.  Find those that start with "output", read parameters,
 // and construct linked list of OutputTypes.

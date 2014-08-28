@@ -84,10 +84,10 @@ struct OutputBlock {
 
 class OutputType {
 public:
-  OutputType(OutputBlock out_blck, Block *pb);
+  OutputType(OutputBlock out_blck, MeshBlock *pb);
   ~OutputType();
 
-  Block *pmy_block;  // ptr to Block containing this OutputType
+  MeshBlock *pmy_block;  // ptr to MeshBlock containing this OutputType
 
   virtual OutputData* LoadOutputData();
   virtual void TransformOutputData(OutputData *pod);
@@ -107,10 +107,10 @@ public:
 
 class OutputList {
 public:
-  OutputList(Block *pb);
+  OutputList(MeshBlock *pb);
   ~OutputList();
 
-  Block *pmy_block;  // ptr to Block containing this OutputList
+  MeshBlock *pmy_block;  // ptr to MeshBlock containing this OutputList
 
   void InitOutputs(ParameterInput *pin);
   void MakeOutputs();
@@ -124,7 +124,7 @@ private:
 
 class FormattedTableOutput : public OutputType {
 public:
-  FormattedTableOutput(OutputBlock out_blk, Block *pb);
+  FormattedTableOutput(OutputBlock out_blk, MeshBlock *pb);
   ~FormattedTableOutput() {};
 
   void WriteOutputData();
@@ -137,7 +137,7 @@ private:
 
 class HistoryOutput : public OutputType {
 public:
-  HistoryOutput(OutputBlock out_blk, Block *pb);
+  HistoryOutput(OutputBlock out_blk, MeshBlock *pb);
   ~HistoryOutput() {};
 
   OutputData* LoadOutputData();  // overload with function that computes history data
@@ -149,7 +149,7 @@ public:
 
 class VTKOutput : public OutputType {
 public:
-  VTKOutput(OutputBlock out_blk, Block *pb);
+  VTKOutput(OutputBlock out_blk, MeshBlock *pb);
   ~VTKOutput() {};
 
   void WriteOutputData();

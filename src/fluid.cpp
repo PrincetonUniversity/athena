@@ -26,7 +26,7 @@
 #include "athena.hpp"                   // array access, macros, Real
 #include "athena_arrays.hpp"            // AthenaArray
 #include "integrators/integrators.hpp"  // FluidIntegrator
-#include "mesh.hpp"                     // Block, Mesh
+#include "mesh.hpp"                     // MeshBlock, Mesh
 
 //======================================================================================
 //! \file fluid.cpp
@@ -35,9 +35,9 @@
 
 // constructor, initializes data structures and parameters, calls problem generator
 
-Fluid::Fluid(Block *pb)
+Fluid::Fluid(MeshBlock *pmb)
 {
-  pmy_block = pb;
+  pmy_block = pmb;
 
 // Allocate memory for primitive/conserved variables
 
@@ -86,14 +86,14 @@ Fluid::~Fluid()
 // \!fn 
 // \brief
 
-void Fluid::NewTimeStep(Block *pb)
+void Fluid::NewTimeStep(MeshBlock *pmb)
 {
-  int is = pb->is; int js = pb->js; int ks = pb->ks;
-  int ie = pb->ie; int je = pb->je; int ke = pb->ke;
+  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
+  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   Real gam = GetGamma();
   Real min_dt;
 
-  AthenaArray<Real> w = pb->pfluid->w.ShallowCopy();
+  AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
   AthenaArray<Real> dt1 = dt1_.ShallowCopy();
   AthenaArray<Real> dt2 = dt2_.ShallowCopy();
   AthenaArray<Real> dt3 = dt3_.ShallowCopy();
@@ -101,8 +101,8 @@ void Fluid::NewTimeStep(Block *pb)
   min_dt = (FLT_MAX);
   for (int k=ks; k<=ke; ++k){
   for (int j=js; j<=je; ++j){
-    Real& dx2 = pb->dx2f(j);
-    Real& dx3 = pb->dx3f(k);
+    Real& dx2 = pmb->dx2f(j);
+    Real& dx3 = pmb->dx3f(k);
 #pragma simd
     for (int i=is; i<=ie; ++i){
       Real& w_d  = w(IDN,k,j,i);
@@ -110,7 +110,7 @@ void Fluid::NewTimeStep(Block *pb)
       Real& w_v2 = w(IVY,k,j,i);
       Real& w_v3 = w(IVZ,k,j,i);
       Real& w_p  = w(IEN,k,j,i);
-      Real& dx1  = pb->dx1f(i);
+      Real& dx1  = pmb->dx1f(i);
       Real& d_t1 = dt1(i);
       Real& d_t2 = dt2(i);
       Real& d_t3 = dt3(i);
@@ -130,7 +130,7 @@ void Fluid::NewTimeStep(Block *pb)
     
 // if grid is 2D/3D, compute minimum of (v2 +/- C)
 
-    if (pb->block_size.nx2 > 1) {
+    if (pmb->block_size.nx2 > 1) {
       for (int i=is; i<=ie; ++i){
         min_dt = std::min(min_dt,dt2(i));
       }
@@ -138,7 +138,7 @@ void Fluid::NewTimeStep(Block *pb)
 
 // if grid is 3D, compute minimum of (v3 +/- C)
 
-    if (pb->block_size.nx3 > 1) {
+    if (pmb->block_size.nx3 > 1) {
       for (int i=is; i<=ie; ++i){
         min_dt = std::min(min_dt,dt3(i));
       }
@@ -146,7 +146,7 @@ void Fluid::NewTimeStep(Block *pb)
 
   }}
 
-  Mesh *pm = pb->pmy_domain->pmy_mesh;
+  Mesh *pm = pmb->pmy_domain->pmy_mesh;
   Real old_dt = pm->dt;
   pm->dt = std::min( ((pm->cfl_number)*min_dt) , (2.0*old_dt) );
 

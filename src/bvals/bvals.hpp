@@ -15,58 +15,58 @@
 #include "../athena_arrays.hpp"  // AthenaArray
 
 // Declarations
-class Block;
+class MeshBlock;
 
 //! \class FluidBoundaryConditions
 //  \brief BCs data and functions for fluid
 
 class FluidBoundaryConditions {
 public:
-  FluidBoundaryConditions(Block *pb);
+  FluidBoundaryConditions(MeshBlock *pb);
   ~FluidBoundaryConditions();
 
   void ApplyBoundaryConditions(AthenaArray<Real> &a);
 
 private:
-  Block *pmy_block;  // ptr to Block containing this FluidBoundaryConditions
+  MeshBlock *pmy_block;  // ptr to MeshBlock containing this FluidBoundaryConditions
 
 // function pointers, set in Init function based on parameters in input file
 
-  void (*FluidInnerX1_) (Block *pb, AthenaArray<Real> &a);
-  void (*FluidOuterX1_) (Block *pb, AthenaArray<Real> &a);
-  void (*FluidInnerX2_) (Block *pb, AthenaArray<Real> &a);
-  void (*FluidOuterX2_) (Block *pb, AthenaArray<Real> &a);
-  void (*FluidInnerX3_) (Block *pb, AthenaArray<Real> &a);
-  void (*FluidOuterX3_) (Block *pb, AthenaArray<Real> &a);
+  void (*FluidInnerX1_) (MeshBlock *pb, AthenaArray<Real> &a);
+  void (*FluidOuterX1_) (MeshBlock *pb, AthenaArray<Real> &a);
+  void (*FluidInnerX2_) (MeshBlock *pb, AthenaArray<Real> &a);
+  void (*FluidOuterX2_) (MeshBlock *pb, AthenaArray<Real> &a);
+  void (*FluidInnerX3_) (MeshBlock *pb, AthenaArray<Real> &a);
+  void (*FluidOuterX3_) (MeshBlock *pb, AthenaArray<Real> &a);
 
 };
 
 //----------- prototypes for all BC functions ------------------------------------------
 // reflecting BC functions
 
-  void ReflectInnerX1(Block *pb, AthenaArray<Real> &a);
-  void ReflectOuterX1(Block *pb, AthenaArray<Real> &a);
-  void ReflectInnerX2(Block *pb, AthenaArray<Real> &a);
-  void ReflectOuterX2(Block *pb, AthenaArray<Real> &a);
-  void ReflectInnerX3(Block *pb, AthenaArray<Real> &a);
-  void ReflectOuterX3(Block *pb, AthenaArray<Real> &a);
+  void ReflectInnerX1(MeshBlock *pb, AthenaArray<Real> &a);
+  void ReflectOuterX1(MeshBlock *pb, AthenaArray<Real> &a);
+  void ReflectInnerX2(MeshBlock *pb, AthenaArray<Real> &a);
+  void ReflectOuterX2(MeshBlock *pb, AthenaArray<Real> &a);
+  void ReflectInnerX3(MeshBlock *pb, AthenaArray<Real> &a);
+  void ReflectOuterX3(MeshBlock *pb, AthenaArray<Real> &a);
 
 // outflow BC functions
 
-  void OutflowInnerX1(Block *pb, AthenaArray<Real> &a);
-  void OutflowOuterX1(Block *pb, AthenaArray<Real> &a);
-  void OutflowInnerX2(Block *pb, AthenaArray<Real> &a);
-  void OutflowOuterX2(Block *pb, AthenaArray<Real> &a);
-  void OutflowInnerX3(Block *pb, AthenaArray<Real> &a);
-  void OutflowOuterX3(Block *pb, AthenaArray<Real> &a);
+  void OutflowInnerX1(MeshBlock *pb, AthenaArray<Real> &a);
+  void OutflowOuterX1(MeshBlock *pb, AthenaArray<Real> &a);
+  void OutflowInnerX2(MeshBlock *pb, AthenaArray<Real> &a);
+  void OutflowOuterX2(MeshBlock *pb, AthenaArray<Real> &a);
+  void OutflowInnerX3(MeshBlock *pb, AthenaArray<Real> &a);
+  void OutflowOuterX3(MeshBlock *pb, AthenaArray<Real> &a);
 
 // periodic BC functions
 
-  void PeriodicInnerX1(Block *pb, AthenaArray<Real> &a);
-  void PeriodicOuterX1(Block *pb, AthenaArray<Real> &a);
-  void PeriodicInnerX2(Block *pb, AthenaArray<Real> &a);
-  void PeriodicOuterX2(Block *pb, AthenaArray<Real> &a);
-  void PeriodicInnerX3(Block *pb, AthenaArray<Real> &a);
-  void PeriodicOuterX3(Block *pb, AthenaArray<Real> &a);
+  void PeriodicInnerX1(MeshBlock *pb, AthenaArray<Real> &a);
+  void PeriodicOuterX1(MeshBlock *pb, AthenaArray<Real> &a);
+  void PeriodicInnerX2(MeshBlock *pb, AthenaArray<Real> &a);
+  void PeriodicOuterX2(MeshBlock *pb, AthenaArray<Real> &a);
+  void PeriodicInnerX3(MeshBlock *pb, AthenaArray<Real> &a);
+  void PeriodicOuterX3(MeshBlock *pb, AthenaArray<Real> &a);
 
 #endif
