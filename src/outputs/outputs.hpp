@@ -96,7 +96,7 @@ public:
 
   virtual void LoadOutputData(OutputData *pod);
   virtual void TransformOutputData(OutputData *pod);
-  virtual void WriteOutputData() = 0;  // pure virtual function!
+  virtual void WriteOutputFile(OutputData *pod) = 0;  // pure virtual function!
 
 // functions that implement useful transforms applied to each variable in OutputData
 
@@ -112,7 +112,7 @@ public:
   FormattedTableOutput(OutputParameters oparams, MeshBlock *pmb);
   ~FormattedTableOutput() {};
 
-  void WriteOutputData();
+  void WriteOutputFile(OutputData *pod);
 
 private:
 };
@@ -125,8 +125,8 @@ public:
   HistoryOutput(OutputParameters oparams, MeshBlock *pmb);
   ~HistoryOutput() {};
 
-  OutputData* LoadOutputData();  // overload with function that computes history data
-  void WriteOutputData();
+  void LoadOutputData(OutputData *pod);  // overloads base class function
+  void WriteOutputFile(OutputData *pod);
 };
 
 //! \class VTKOutput
@@ -137,7 +137,7 @@ public:
   VTKOutput(OutputParameters oparams, MeshBlock *pmb);
   ~VTKOutput() {};
 
-  void WriteOutputData();
+  void WriteOutputFile(OutputData *pod);
 };
 //--------------------- end of OutputTypes base and derived classes --------------------
 

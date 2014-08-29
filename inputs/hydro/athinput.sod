@@ -17,6 +17,7 @@ x3_slice    = 0.0       # slice in x3
 <output2>
 file_type   = hst       # History data dump
 dt          = 0.01      # time increment between outputs
+data_format = %12.5e    # Optional data format string
 
 <time>
 cfl_number  = 0.8       # The Courant, Friedrichs, & Lewy (CFL) Number

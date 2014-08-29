@@ -38,25 +38,24 @@
 //--------------------------------------------------------------------------------------
 // HistoryOutput constructor
 
-HistoryOutput::HistoryOutput(OutputParameters out_blk, MeshBlock *pb)
-  : OutputType(out_blk,pb)
+HistoryOutput::HistoryOutput(OutputParameters oparams, MeshBlock *pb)
+  : OutputType(oparams,pb)
 {
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn OutputData* OutputType::LoadOutputData()
- *  \brief computes data to be included in output data container (OuputData).  This
+/*! \fn void HistoryOutput::LoadOutputData(OutputData *pod)
+ *  \brief computes data to be included in output data container (OutputData).  This
  *  version over-rides the default defined in the base class.
  */
 
-OutputData* HistoryOutput::LoadOutputData()
+void HistoryOutput::LoadOutputData(OutputData *pod)
 {
   Fluid *pf = pmy_block->pfluid;;
   AthenaArray<Real> vol = pmy_block->pcoord->cell_volume.ShallowCopy();
 
-// Allocate OutputData, add header
+// add header
 
-  OutputData *pod = new OutputData;
   std::stringstream str;
   str << "# Athena++ history data" << std::endl;
   pod->data_header.descriptor.append(str.str());
@@ -115,7 +114,7 @@ OutputData* HistoryOutput::LoadOutputData()
 
   pod->AppendNode(phistory_datum,var_header);
 
-  return pod;
+  return;
 }
 
 //--------------------------------------------------------------------------------------
@@ -123,16 +122,11 @@ OutputData* HistoryOutput::LoadOutputData()
  *  \brief writes DataBlock to file in history format using C style fprintf
  */
 
-void HistoryOutput::WriteOutputData()
+void HistoryOutput::WriteOutputFile(OutputData *pod)
 {
   std::stringstream msg;
-  OutputData *pod;
 
-// create OutputData
-
-  pod = LoadOutputData();
-
-// create filename
+// create filename: "file_basename" + ".hst".  There is no file number.
 
   std::string fname;
   fname.assign(output_params.file_basename);
@@ -176,9 +170,6 @@ void HistoryOutput::WriteOutputData()
   fclose(pfile);
   output_params.file_number++;
   output_params.next_time += output_params.dt;
-  delete pod; // delete OutputData object created in LoadOutputData
- 
-  fclose(pfile);
 
   return;
 }

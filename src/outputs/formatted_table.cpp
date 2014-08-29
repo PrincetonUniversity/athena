@@ -35,27 +35,22 @@
 //--------------------------------------------------------------------------------------
 // FormattedTableOutput constructor
 
-FormattedTableOutput::FormattedTableOutput(OutputParameters out_blk, MeshBlock *pb)
-  : OutputType(out_blk,pb)
+FormattedTableOutput::FormattedTableOutput(OutputParameters oparams, MeshBlock *pb)
+  : OutputType(oparams,pb)
 {
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void FormattedTableOutput:::WriteOutputData()
- *  \brief writes DataBlock to file in tabular format using C style fprintf
+/*! \fn void FormattedTableOutput:::WriteOutputFile(OutputData *pod)
+ *  \brief writes OutputData to file in tabular format using C style fprintf
  */
 
-void FormattedTableOutput::WriteOutputData()
+void FormattedTableOutput::WriteOutputFile(OutputData *pod)
 {
   std::stringstream msg;
-  OutputData *pod;
 
-// create OutputData, apply transforms (slices, sums, etc)
+// create filename: "file_basename" + XXXX + ".tab", where XXXX = 4-digit file_number
 
-  pod = LoadOutputData();
-  TransformOutputData(pod);
-
-// create filename
   std::string fname;
   fname.assign(output_params.file_basename);
   fname.append(".");
@@ -119,7 +114,6 @@ void FormattedTableOutput::WriteOutputData()
   fclose(pfile);
   output_params.file_number++;
   output_params.next_time += output_params.dt;
-  delete pod;
 
   return;
 }

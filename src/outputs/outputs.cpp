@@ -45,7 +45,6 @@ OutputVariable::OutputVariable(AthenaArray<Real> *parray, OutputVariableHeader v
   pprev = NULL;
 }
 
-//--------------------------------------------------------------------------------------
 // OutputVariable destructor
 
 OutputVariable::~OutputVariable()
@@ -62,11 +61,16 @@ OutputData::OutputData()
   plast_var = NULL;
 }
 
-//--------------------------------------------------------------------------------------
-// OutputData destructor
+// OutputData destructor - iterates through linked list of OutputVariables and deletes nodes
 
 OutputData::~OutputData()
 {
+  OutputVariable *pvar = pfirst_var;
+  while(pvar != NULL) {
+    OutputVariable *pvar_old = pvar;
+    pvar = pvar->pnext;
+    delete pvar_old;
+  }
 }
 
 //--------------------------------------------------------------------------------------
@@ -79,7 +83,6 @@ OutputType::OutputType(OutputParameters oparams, MeshBlock *pb)
   pnext = NULL; // Terminate linked list with NULL ptr
 }
 
-//--------------------------------------------------------------------------------------
 // OutputType destructor
 
 OutputType::~OutputType()
@@ -101,9 +104,9 @@ Outputs::~Outputs()
 {
   OutputType *pout = pfirst_out_;
   while(pout != NULL) {
-    OutputType *pold_out = pout;
+    OutputType *pout_old = pout;
     pout = pout->pnext;
-    delete pold_out;
+    delete pout_old;
   }
 }
 
@@ -594,21 +597,23 @@ void Outputs::InitOutputTypes(ParameterInput *pin)
 
 void Outputs::MakeOutputs()
 {
-  OutputType* pout=pfirst_out_;
+  OutputType* pout = pfirst_out_;
   Mesh* pm = pmy_block->pmy_domain->pmy_mesh;
 
   while (pout != NULL) {
-    if ((pm->time == pm->start_time) || 
+    if ((pm->time == pm->start_time) ||
         (pm->time >= pout->output_params.next_time) ||
         (pm->time >= pm->tlim)) {
+
+// Create new OutputData container, load and transform data, then write to file
 
       OutputData* pod = new OutputData;
       pout->LoadOutputData(pod);
       pout->TransformOutputData(pod);
-      pout->WriteOutputFile();
+      pout->WriteOutputFile(pod);
       delete pod;
 
     }
-    pout = pout->pnext;
+    pout = pout->pnext; // move to next OutputType in list
   }
 }

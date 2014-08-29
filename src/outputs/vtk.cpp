@@ -28,20 +28,6 @@
 #include "../fluid.hpp"
 #include "outputs.hpp"
 
-//======================================================================================
-/*! \file vtk.cpp
- *  \brief writes output data in (legacy) vtk format.
- *  Data is written in RECTILINEAR_GRID geometry, in BINARY format, and in FLOAT type
- *====================================================================================*/
-
-//--------------------------------------------------------------------------------------
-// VTKOutput constructor
-
-VTKOutput::VTKOutput(OutputParameters out_blk, MeshBlock *pb)
-  : OutputType(out_blk,pb)
-{
-}
-
 //--------------------------------------------------------------------------------------
 // Functions to detect big endian machine, and to byte-swap 32-bit words.  The vtk
 // legacy format requires data to be stored as big-endian.
@@ -59,20 +45,28 @@ static inline void Swap4Bytes(void *vdat) {
   tmp = dat[1];  dat[1] = dat[2];  dat[2] = tmp;
 }
 
-//--------------------------------------------------------------------------------------
-/*! \fn void VTKOutput:::WriteOutputData()
- *  \brief writes DataBlock to file in (legacy) vtk format  */
+//======================================================================================
+/*! \file vtk.cpp
+ *  \brief writes output data in (legacy) vtk format.
+ *  Data is written in RECTILINEAR_GRID geometry, in BINARY format, and in FLOAT type
+ *====================================================================================*/
 
-void VTKOutput::WriteOutputData()
+//--------------------------------------------------------------------------------------
+// VTKOutput constructor
+
+VTKOutput::VTKOutput(OutputParameters oparams, MeshBlock *pb)
+  : OutputType(oparams,pb)
+{
+}
+
+//--------------------------------------------------------------------------------------
+/*! \fn void VTKOutput:::WriteOutputFile(OutputData *pod)
+ *  \brief writes OutputData to file in (legacy) vtk format  */
+
+void VTKOutput::WriteOutputFile(OutputData *pod)
 {
   std::stringstream msg;
-  OutputData *pod;
   int big_end = IsBigEndian(); // =1 on big endian machine
-
-// create OutputData, apply transforms (slices, sums, etc)
-
-  pod = LoadOutputData();
-  TransformOutputData(pod);
 
 // create filename: "file_basename" + XXXX + ".vtk", where XXXX = 4-digit file_number
 
@@ -202,7 +196,6 @@ void VTKOutput::WriteOutputData()
   fclose(pfile);
   output_params.file_number++;
   output_params.next_time += output_params.dt;
-  delete pod; // delete OutputData object created in LoadOutputData
   delete data;
 
   return;
