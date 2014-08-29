@@ -20,7 +20,7 @@ class MeshDomain;
 class Coordinates;
 class FluidBoundaryConditions;
 class Fluid;
-class OutputList;
+class Outputs;
 
 //! \struct RegionSize
 //  \brief physical size and number of cells in a Mesh, MeshDomain or MeshBlock
@@ -60,7 +60,7 @@ public:
   FluidBoundaryConditions *pf_bcs;
   Coordinates *pcoord;
   Fluid *pfluid;
-  OutputList *poutputs;
+  Outputs *poutputs;
 };
 
 //--------------------------------------------------------------------------------------

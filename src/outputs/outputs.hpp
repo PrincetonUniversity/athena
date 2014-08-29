@@ -6,65 +6,34 @@
  * See LICENSE file for full public license information.
  *====================================================================================*/
 /*! \file outputs.hpp
- *  \brief provides multiple classes to handle ALL types of data output (fluid, field,
- *  radiation, particles, etc.)
+ *  \brief provides multiple classes to handle ALL types of data output (fluid, bfield,
+ *  gravity, radiation, particles, etc.)
  *====================================================================================*/
 
 class Mesh;
 class ParameterInput;
 
 //! \struct OutputDataHeader
-//  \brief string describing data, transforms, and array range in each node
+//  \brief metadata describing OutputData contained within an OutputType
 
 struct OutputDataHeader {
-  std::string descriptor;
-  std::string transforms;
-  int il,iu,jl,ju,kl,ku;
+  std::string descriptor; // time, cycle, variables in output
+  std::string transforms; // list of any transforms (sum, slice) applied to variables
+  int il,iu,jl,ju,kl,ku;  // range of data arrays
 };
 
-//! \struct OutputDataNodeHeader
-//  \brief strings describing type (SCALARS/VECTORS) and name of data in node
+//! \struct OutputVariableHeader
+//  \brief metadata describing each OutputVariable contained in OutputData class
 
-struct OutputDataNodeHeader {
-  std::string type;
+struct OutputVariableHeader {
+  std::string type; // one of (SCALARS,VECTORS)
   std::string name;
 };
 
-//! \class OutputDataNode
-//  \brief node in a linked list of data arrays in an OutputData class
+//! \struct OutputParameters
+//  \brief  control parameter values read from <output> block in the input file
 
-class OutputDataNode {
-public:
-  OutputDataNode(AthenaArray<Real> *parray, OutputDataNodeHeader head);
-  ~OutputDataNode();
-
-  OutputDataNodeHeader header;
-  AthenaArray<Real> *pdata;
-
-  OutputDataNode *pnext, *pprev;
-};
-
-//! \class OutputData
-//  \brief container for output data, containing a linked list of OutputDataNodes and
-//  functions to add and replace nodes
-
-class OutputData {
-public:
-  OutputData();
-  ~OutputData();
-
-  OutputDataHeader header;
-  void AppendNode(AthenaArray<Real> *parray, OutputDataNodeHeader head);
-  void ReplaceNode(OutputDataNode *pold, OutputDataNode *pnew);
-
-  OutputDataNode *pfirst_node;  // Pointer to first node
-  OutputDataNode *plast_node;   // Pointer to last node
-};
-
-//! \struct OutputBlock
-//  \brief  contains parameter values read from <output> blocks in the input file
-
-struct OutputBlock {
+struct OutputParameters {
   Real next_time, dt;
   int block_number;
   int file_number;
@@ -74,49 +43,65 @@ struct OutputBlock {
   std::string file_basename;
   std::string file_id;
   std::string variable;
-  std::string file_format;
+  std::string file_type;
   std::string data_format;
 };
 
+//! \class OutputVariable
+//  \brief node in a linked list of output variables in OutputData class
+
+class OutputVariable {
+public:
+  OutputVariable(AthenaArray<Real> *parray, OutputVariableHeader vhead);
+  ~OutputVariable();
+
+  OutputVariableHeader var_header;
+  AthenaArray<Real> *pdata;
+
+  OutputVariable *pnext, *pprev; // ptrs to next and previous nodes in list
+};
+
+//! \class OutputData
+//  \brief container for output data, composed of a header (metadata describing output),
+//  a linked list of OutputVariables, and functions to add and replace nodes
+
+class OutputData {
+public:
+  OutputData();
+  ~OutputData();
+
+  OutputDataHeader data_header;
+  OutputVariable *pfirst_var;  // ptr to first variable (node) in linked list
+  OutputVariable *plast_var;   // ptr to last  variable (node) in linked list
+
+  void AppendNode(AthenaArray<Real> *parray, OutputVariableHeader vhead);
+  void ReplaceNode(OutputVariable *pold, OutputVariable *pnew);
+};
+
+
 //-------------------------- OutputTypes base and derived classes ----------------------
 //! \class OutputType
-//  \brief abstract base class for different output types.
+//  \brief abstract base class for different output types (modes), designed to be a node
+//  in a linked list created and stored in objects of the Outputs class.
 
 class OutputType {
 public:
-  OutputType(OutputBlock out_blck, MeshBlock *pb);
+  OutputType(OutputParameters oparams, MeshBlock *pmb);
   ~OutputType();
+  MeshBlock *pmy_block;           // ptr to MeshBlock containing this OutputType
+  OutputParameters output_params; // control data read from <output> block 
+  OutputType *pnext;              // ptr to next node in linked list of OutputTypes
 
-  MeshBlock *pmy_block;  // ptr to MeshBlock containing this OutputType
+// functions that operate on OutputData container
 
-  virtual OutputData* LoadOutputData();
+  virtual void LoadOutputData(OutputData *pod);
   virtual void TransformOutputData(OutputData *pod);
   virtual void WriteOutputData() = 0;  // pure virtual function!
 
+// functions that implement useful transforms applied to each variable in OutputData
+
   void Slice(OutputData* pod, int dim);
   void Sum(OutputData* pod, int dim);
-
-  OutputBlock output_block;
-
-  OutputType *pnext;
-};
-
-//! \class OutputList
-//  \brief provides a linked list of OutputTypes, with each node representing one type
-//  of output to be made during a simulation.
-
-class OutputList {
-public:
-  OutputList(MeshBlock *pb);
-  ~OutputList();
-
-  MeshBlock *pmy_block;  // ptr to MeshBlock containing this OutputList
-
-  void InitOutputs(ParameterInput *pin);
-  void MakeOutputs();
-
-private:
-  OutputType *pfirst_out_;
 };
 
 //! \class FormattedTableOutput
@@ -124,7 +109,7 @@ private:
 
 class FormattedTableOutput : public OutputType {
 public:
-  FormattedTableOutput(OutputBlock out_blk, MeshBlock *pb);
+  FormattedTableOutput(OutputParameters oparams, MeshBlock *pmb);
   ~FormattedTableOutput() {};
 
   void WriteOutputData();
@@ -137,7 +122,7 @@ private:
 
 class HistoryOutput : public OutputType {
 public:
-  HistoryOutput(OutputBlock out_blk, MeshBlock *pb);
+  HistoryOutput(OutputParameters oparams, MeshBlock *pmb);
   ~HistoryOutput() {};
 
   OutputData* LoadOutputData();  // overload with function that computes history data
@@ -149,9 +134,27 @@ public:
 
 class VTKOutput : public OutputType {
 public:
-  VTKOutput(OutputBlock out_blk, MeshBlock *pb);
+  VTKOutput(OutputParameters oparams, MeshBlock *pmb);
   ~VTKOutput() {};
 
   void WriteOutputData();
+};
+//--------------------- end of OutputTypes base and derived classes --------------------
+
+//! \class Outputs
+//  \brief root class for all Athena++ outputs.  Provides a linked list of OutputTypes,
+//  with each node representing one mode of output to be made during a simulation.
+
+class Outputs {
+public:
+  Outputs(MeshBlock *pmb);
+  ~Outputs();
+  MeshBlock *pmy_block;  // ptr to MeshBlock containing this Outputs
+
+  void InitOutputTypes(ParameterInput *pin);
+  void MakeOutputs();
+
+private:
+  OutputType *pfirst_out_; // ptr to first OutputType in linked list
 };
 #endif

@@ -32,7 +32,7 @@
 #include "coordinates/coordinates.hpp"  // Coordinates
 #include "fluid.hpp"                    // Fluid
 #include "integrators/integrators.hpp"  // FluidIntegrator
-#include "outputs/outputs.hpp"          // OutputList
+#include "outputs/outputs.hpp"          // Outputs
 #include "parameter_input.hpp"          // ParameterInput
 
 //======================================================================================
@@ -386,13 +386,13 @@ MeshBlock::MeshBlock(RegionSize input_size, RegionBCFlags input_bndry, MeshDomai
 //   Coordinates: initializes volume-centered coordinates (x1v,dx1v,...)
 //   FluidBoundaryConditions: sets function pointers for each edge of this block
 //   Fluid: allocates memory for arrays, and constructs FluidIntegrator.
-//   OutputList:
+//   Outputs:
 // initial conditions for fluid set in problem generator called from main
  
   pcoord   = new Coordinates(this);
   pf_bcs   = new FluidBoundaryConditions(this);
   pfluid   = new Fluid(this);
-  poutputs = new OutputList(this);
+  poutputs = new Outputs(this);
 
 /*******************
   for (int i=0; i<((ie-is+1)+2*(NGHOST)); ++i) {
@@ -461,7 +461,7 @@ void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
         break;
 
       case init_outputs:
-        pdomain->pblock->poutputs->InitOutputs(pin);
+        pdomain->pblock->poutputs->InitOutputTypes(pin);
         break;
 
       case fluid_bcs_n:

@@ -37,7 +37,7 @@
 //--------------------------------------------------------------------------------------
 // VTKOutput constructor
 
-VTKOutput::VTKOutput(OutputBlock out_blk, MeshBlock *pb)
+VTKOutput::VTKOutput(OutputParameters out_blk, MeshBlock *pb)
   : OutputType(out_blk,pb)
 {
 }
@@ -77,10 +77,10 @@ void VTKOutput::WriteOutputData()
 // create filename: "file_basename" + XXXX + ".vtk", where XXXX = 4-digit file_number
 
   std::string fname;
-  fname.assign(output_block.file_basename);
+  fname.assign(output_params.file_basename);
   fname.append(".");
   char number[5]; // array to store 4-digit number and end-of-string char
-  sprintf(number,"%04d",output_block.file_number);
+  sprintf(number,"%04d",output_params.file_number);
   fname.append(number);
   fname.append(".vtk");
 
@@ -100,7 +100,7 @@ void VTKOutput::WriteOutputData()
 
 //  2. Header
 
-  fprintf(pfile,"%s",pod->header.descriptor.c_str());
+  fprintf(pfile,"%s",pod->data_header.descriptor.c_str());
 
 //  3. File format
 
@@ -109,9 +109,9 @@ void VTKOutput::WriteOutputData()
 //  4. Dataset structure
 
 
-  int ncells1 = pod->header.iu - pod->header.il + 1;
-  int ncells2 = pod->header.ju - pod->header.jl + 1;
-  int ncells3 = pod->header.ku - pod->header.kl + 1;
+  int ncells1 = pod->data_header.iu - pod->data_header.il + 1;
+  int ncells2 = pod->data_header.ju - pod->data_header.jl + 1;
+  int ncells3 = pod->data_header.ku - pod->data_header.kl + 1;
   int ncoord1 = ncells1 + 1;
   int ncoord2 = ncells2; if (ncells2 > 1) ncoord2++;
   int ncoord3 = ncells3; if (ncells3 > 1) ncoord3++;
@@ -130,8 +130,8 @@ void VTKOutput::WriteOutputData()
 // write x1-coordinates as binary float in big endian order
 
   fprintf(pfile,"X_COORDINATES %d float\n",ncoord1);
-  for (int i=(pod->header.il); i<=(pod->header.iu)+1; ++i) {
-    data[i-(pod->header.il)] = (float)pmy_block->x1f(i);
+  for (int i=(pod->data_header.il); i<=(pod->data_header.iu)+1; ++i) {
+    data[i-(pod->data_header.il)] = (float)pmy_block->x1f(i);
   }
   if (!big_end) {for (int i=0; i<ncoord1; ++i) Swap4Bytes(&data[i]);}
   fwrite(data,sizeof(float),(size_t)ncoord1,pfile);
@@ -140,10 +140,10 @@ void VTKOutput::WriteOutputData()
 
   fprintf(pfile,"\nY_COORDINATES %d float\n",ncoord2);
   if (ncells2 == 1) {
-      data[0] = (float)pmy_block->x2v(pod->header.jl);
+      data[0] = (float)pmy_block->x2v(pod->data_header.jl);
   } else {
-    for (int j=(pod->header.jl); j<=(pod->header.ju)+1; ++j) {
-      data[j-(pod->header.jl)] = (float)pmy_block->x2f(j);
+    for (int j=(pod->data_header.jl); j<=(pod->data_header.ju)+1; ++j) {
+      data[j-(pod->data_header.jl)] = (float)pmy_block->x2f(j);
     }
   }
   if (!big_end) {for (int i=0; i<ncoord2; ++i) Swap4Bytes(&data[i]);}
@@ -153,10 +153,10 @@ void VTKOutput::WriteOutputData()
 
   fprintf(pfile,"\nZ_COORDINATES %d float\n",ncoord3);
   if (ncells3 == 1) {
-      data[0] = (float)pmy_block->x3v(pod->header.kl);
+      data[0] = (float)pmy_block->x3v(pod->data_header.kl);
   } else {
-    for (int k=(pod->header.kl); k<=(pod->header.ku)+1; ++k) {
-      data[k-(pod->header.kl)] = (float)pmy_block->x3f(k);
+    for (int k=(pod->data_header.kl); k<=(pod->data_header.ku)+1; ++k) {
+      data[k-(pod->data_header.kl)] = (float)pmy_block->x3f(k);
     }
   }
   if (!big_end) {for (int i=0; i<ncoord3; ++i) Swap4Bytes(&data[i]);}
@@ -169,22 +169,22 @@ void VTKOutput::WriteOutputData()
 
 // step through linked-list of data nodes and write out each data array
 
-  OutputDataNode *pnode = pod->pfirst_node;
-  while (pnode != NULL) {
+  OutputVariable *pvar = pod->pfirst_var;
+  while (pvar != NULL) {
 
 // write data type (SCALARS or VECTORS) and name
 
-    fprintf(pfile,"\n%s %s float\n",pnode->header.type.c_str(),
-      pnode->header.name.c_str());
+    fprintf(pfile,"\n%s %s float\n",pvar->var_header.type.c_str(),
+      pvar->var_header.name.c_str());
 
-    int nvar = pnode->pdata->GetDim4();
+    int nvar = pvar->pdata->GetDim4();
     if (nvar == 1) fprintf(pfile,"LOOKUP_TABLE default\n");
-    for (int k=(pod->header.kl); k<=(pod->header.ku); ++k) {
-    for (int j=(pod->header.jl); j<=(pod->header.ju); ++j) {
+    for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k) {
+    for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j) {
 
-      for (int i=(pod->header.il); i<=(pod->header.iu); ++i) {
+      for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i) {
       for (int n=0; n<nvar; ++n) {
-        data[nvar*(i-(pod->header.il))+n] = (float)(*pnode->pdata)(n,k,j,i);
+        data[nvar*(i-(pod->data_header.il))+n] = (float)(*pvar->pdata)(n,k,j,i);
       }}
 
 // write data in big endian order
@@ -194,14 +194,14 @@ void VTKOutput::WriteOutputData()
      
     }}
 
-    pnode = pnode->pnext;
+    pvar = pvar->pnext;
   }
 
 // close output file, increment file number, update time of last output, clean up
 
   fclose(pfile);
-  output_block.file_number++;
-  output_block.next_time += output_block.dt;
+  output_params.file_number++;
+  output_params.next_time += output_params.dt;
   delete pod; // delete OutputData object created in LoadOutputData
   delete data;
 

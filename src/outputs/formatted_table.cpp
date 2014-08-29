@@ -35,7 +35,7 @@
 //--------------------------------------------------------------------------------------
 // FormattedTableOutput constructor
 
-FormattedTableOutput::FormattedTableOutput(OutputBlock out_blk, MeshBlock *pb)
+FormattedTableOutput::FormattedTableOutput(OutputParameters out_blk, MeshBlock *pb)
   : OutputType(out_blk,pb)
 {
 }
@@ -57,10 +57,10 @@ void FormattedTableOutput::WriteOutputData()
 
 // create filename
   std::string fname;
-  fname.assign(output_block.file_basename);
+  fname.assign(output_params.file_basename);
   fname.append(".");
   char number[5];
-  sprintf(number,"%04d",output_block.file_number);
+  sprintf(number,"%04d",output_params.file_number);
   fname.append(number);
   fname.append(".tab");
 
@@ -74,40 +74,40 @@ void FormattedTableOutput::WriteOutputData()
 
 // print header (data descriptor and transforms)
 
-  fprintf(pfile,"%s",pod->header.descriptor.c_str());
-  fprintf(pfile,"%s",pod->header.transforms.c_str());
+  fprintf(pfile,"%s",pod->data_header.descriptor.c_str());
+  fprintf(pfile,"%s",pod->data_header.transforms.c_str());
 
 // loop over all cells in data arrays
 
-  for (int k=(pod->header.kl); k<=(pod->header.ku); ++k) {
-  for (int j=(pod->header.jl); j<=(pod->header.ju); ++j) {
-  for (int i=(pod->header.il); i<=(pod->header.iu); ++i) {
+  for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k) {
+  for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j) {
+  for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i) {
 
 // write x1, x2, x3 indices and coordinates on start of new line
 
-    if (pod->header.il != pod->header.iu) {
+    if (pod->data_header.il != pod->data_header.iu) {
       fprintf(pfile,"%04d",i);
-      fprintf(pfile,output_block.data_format.c_str(),pmy_block->x1v(i));
+      fprintf(pfile,output_params.data_format.c_str(),pmy_block->x1v(i));
     }
 
-    if (pod->header.jl != pod->header.ju) {
+    if (pod->data_header.jl != pod->data_header.ju) {
       fprintf(pfile,"%04d",j);
-      fprintf(pfile,output_block.data_format.c_str(),pmy_block->x2v(j));
+      fprintf(pfile,output_params.data_format.c_str(),pmy_block->x2v(j));
     }
 
-    if (pod->header.kl != pod->header.ku) {
+    if (pod->data_header.kl != pod->data_header.ku) {
       fprintf(pfile,"%04d",k);
-      fprintf(pfile,output_block.data_format.c_str(),pmy_block->x3v(k));
+      fprintf(pfile,output_params.data_format.c_str(),pmy_block->x3v(k));
     }
 
-// step through linked-list of data nodes and write data on same line
+// step through linked-list of variables and write data on same line
 
-    OutputDataNode *pnode = pod->pfirst_node;
-    while (pnode != NULL) {
-      for (int n=0; n<(pnode->pdata->GetDim4()); ++n) {
-        fprintf( pfile, output_block.data_format.c_str(), (*pnode->pdata)(n,k,j,i) );
+    OutputVariable *pvar = pod->pfirst_var;
+    while (pvar != NULL) {
+      for (int n=0; n<(pvar->pdata->GetDim4()); ++n) {
+        fprintf( pfile, output_params.data_format.c_str(), (*pvar->pdata)(n,k,j,i) );
       }
-      pnode = pnode->pnext;
+      pvar = pvar->pnext;
     }
 
     fprintf(pfile,"\n"); // terminate line
@@ -117,8 +117,8 @@ void FormattedTableOutput::WriteOutputData()
 // close output file, increment file number, update time of last output, clean up
 
   fclose(pfile);
-  output_block.file_number++;
-  output_block.next_time += output_block.dt;
+  output_params.file_number++;
+  output_params.next_time += output_params.dt;
   delete pod;
 
   return;
