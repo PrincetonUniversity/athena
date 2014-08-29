@@ -23,7 +23,7 @@
 // Athena headers
 #include "../athena.hpp"           // enums, macros, Real
 #include "../athena_arrays.hpp"    // AthenaArray
-#include "../mesh.hpp"             // Block
+#include "../mesh.hpp"             // MeshBlock
 #include "../parameter_input.hpp"  // ParameterInput
 
 //======================================================================================
@@ -37,7 +37,7 @@
 
 void Fluid::InitFluid(ParameterInput *pin)
 {
-  Block *pb = pmy_block;
+  MeshBlock *pb = pmy_block;
 
   int is = pb->is; int js = pb->js; int ks = pb->ks;
   int ie = pb->ie; int je = pb->je; int ke = pb->ke;

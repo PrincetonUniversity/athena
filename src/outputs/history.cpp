@@ -38,49 +38,48 @@
 //--------------------------------------------------------------------------------------
 // HistoryOutput constructor
 
-HistoryOutput::HistoryOutput(OutputBlock out_blk, Block *pb)
-  : OutputType(out_blk,pb)
+HistoryOutput::HistoryOutput(OutputParameters oparams, MeshBlock *pb)
+  : OutputType(oparams,pb)
 {
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn OutputData* OutputType::LoadOutputData()
- *  \brief computes data to be included in output data container (OuputData).  This
+/*! \fn void HistoryOutput::LoadOutputData(OutputData *pod)
+ *  \brief computes data to be included in output data container (OutputData).  This
  *  version over-rides the default defined in the base class.
  */
 
-OutputData* HistoryOutput::LoadOutputData()
+void HistoryOutput::LoadOutputData(OutputData *pod)
 {
   Fluid *pf = pmy_block->pfluid;;
   AthenaArray<Real> vol = pmy_block->pcoord->cell_volume.ShallowCopy();
 
-// Allocate OutputData, add header
+// add header
 
-  OutputData *pod = new OutputData;
   std::stringstream str;
   str << "# Athena++ history data" << std::endl;
-  pod->header.descriptor.append(str.str());
-  pod->header.il = pmy_block->is; pod->header.iu = pmy_block->ie;
-  pod->header.jl = pmy_block->js; pod->header.ju = pmy_block->je;
-  pod->header.kl = pmy_block->ks; pod->header.ku = pmy_block->ke;
+  pod->data_header.descriptor.append(str.str());
+  pod->data_header.il = pmy_block->is; pod->data_header.iu = pmy_block->ie;
+  pod->data_header.jl = pmy_block->js; pod->data_header.ju = pmy_block->je;
+  pod->data_header.kl = pmy_block->ks; pod->data_header.ku = pmy_block->ke;
 
-// Add text for column headers to node_header
+// Add text for column headers to var_header
 
-  OutputDataNodeHeader node_header;
+  OutputVariableHeader var_header;
   AthenaArray<Real> *phistory_datum;
   phistory_datum = new AthenaArray<Real>;
   phistory_datum->NewAthenaArray(10,1,1,1);
-  node_header.type = "SCALARS";
-  node_header.name.assign("[1]=time     ");
-  node_header.name.append("[2]=dt       ");
-  node_header.name.append("[3]=mass     ");
-  node_header.name.append("[4]=1-mom    ");
-  node_header.name.append("[5]=2-mom    ");
-  node_header.name.append("[6]=3-mom    ");
-  node_header.name.append("[7]=1-KE     ");
-  node_header.name.append("[8]=2-KE     ");
-  node_header.name.append("[9]=3-KE     ");
-  node_header.name.append("[10]=tot-E   ");
+  var_header.type = "SCALARS";
+  var_header.name.assign("[1]=time     ");
+  var_header.name.append("[2]=dt       ");
+  var_header.name.append("[3]=mass     ");
+  var_header.name.append("[4]=1-mom    ");
+  var_header.name.append("[5]=2-mom    ");
+  var_header.name.append("[6]=3-mom    ");
+  var_header.name.append("[7]=1-KE     ");
+  var_header.name.append("[8]=2-KE     ");
+  var_header.name.append("[9]=3-KE     ");
+  var_header.name.append("[10]=tot-E   ");
 
 // Add time, time step
 
@@ -91,13 +90,13 @@ OutputData* HistoryOutput::LoadOutputData()
 
   for (int n=2; n<10; ++n) (*phistory_datum)(n,0,0,0) = 0.0;
 
-  for (int k=(pod->header.kl); k<=(pod->header.ku); ++k) {
-  for (int j=(pod->header.jl); j<=(pod->header.ju); ++j) {
+  for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k) {
+  for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j) {
     Real partial_sum[8];
     for (int i=0; i<8; ++i) partial_sum[i] = 0.0;
-    pmy_block->pcoord->CellVolume(k,j,(pod->header.il),(pod->header.iu),vol);
+    pmy_block->pcoord->CellVolume(k,j,(pod->data_header.il),(pod->data_header.iu),vol);
 
-    for (int i=(pod->header.il); i<=(pod->header.iu); ++i) {
+    for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i) {
       partial_sum[0] += vol(i)*pf->u(IDN,k,j,i);
       partial_sum[1] += vol(i)*pf->u(IM1,k,j,i);
       partial_sum[2] += vol(i)*pf->u(IM2,k,j,i);
@@ -113,9 +112,9 @@ OutputData* HistoryOutput::LoadOutputData()
 
 // Append node to linked list in OutputData
 
-  pod->AppendNode(phistory_datum,node_header);
+  pod->AppendNode(phistory_datum,var_header);
 
-  return pod;
+  return;
 }
 
 //--------------------------------------------------------------------------------------
@@ -123,19 +122,14 @@ OutputData* HistoryOutput::LoadOutputData()
  *  \brief writes DataBlock to file in history format using C style fprintf
  */
 
-void HistoryOutput::WriteOutputData()
+void HistoryOutput::WriteOutputFile(OutputData *pod)
 {
   std::stringstream msg;
-  OutputData *pod;
 
-// create OutputData
-
-  pod = LoadOutputData();
-
-// create filename
+// create filename: "file_basename" + ".hst".  There is no file number.
 
   std::string fname;
-  fname.assign(output_block.file_basename);
+  fname.assign(output_params.file_basename);
   fname.append(".hst");
 
 // open file for output
@@ -149,36 +143,33 @@ void HistoryOutput::WriteOutputData()
 
 // If this is the first output, write header
 
-  if (output_block.file_number == 0) {
-    fprintf(pfile,"%s",pod->header.descriptor.c_str()); // descriptor is first line
+  if (output_params.file_number == 0) {
+    fprintf(pfile,"%s",pod->data_header.descriptor.c_str()); // descriptor is first line
     fprintf(pfile,"# ");                              // start second line with hash
-    OutputDataNode *pnode = pod->pfirst_node;
-    while (pnode != NULL) {
-      fprintf(pfile,"%s",pnode->header.name.c_str()); // add column headers
-      pnode = pnode->pnext;
+    OutputVariable *pvar = pod->pfirst_var;
+    while (pvar != NULL) {
+      fprintf(pfile,"%s",pvar->var_header.name.c_str()); // add column headers
+      pvar = pvar->pnext;
     }
     fprintf(pfile,"\n");                              // terminate line
   }
 
 // step through linked-list of data nodes and write data on same line
 
-  OutputDataNode *pnode = pod->pfirst_node;
-  while (pnode != NULL) {
-    for (int n=0; n<(pnode->pdata->GetDim4()); ++n) {
-      fprintf( pfile, output_block.data_format.c_str(), (*pnode->pdata)(n,0,0,0) );
+  OutputVariable *pvar = pod->pfirst_var;
+  while (pvar != NULL) {
+    for (int n=0; n<(pvar->pdata->GetDim4()); ++n) {
+      fprintf( pfile, output_params.data_format.c_str(), (*pvar->pdata)(n,0,0,0) );
     }
-    pnode = pnode->pnext;
+    pvar = pvar->pnext;
   }
   fprintf(pfile,"\n"); // terminate line
 
 // close output file, increment output counter, update time of last output, clean up
 
   fclose(pfile);
-  output_block.file_number++;
-  output_block.next_time += output_block.dt;
-  delete pod; // delete OutputData object created in LoadOutputData
- 
-  fclose(pfile);
+  output_params.file_number++;
+  output_params.next_time += output_params.dt;
 
   return;
 }

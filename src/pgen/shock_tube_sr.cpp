@@ -13,7 +13,7 @@
 // Athena headers
 #include "../athena.hpp"           // enums, macros, Real
 #include "../athena_arrays.hpp"    // AthenaArray
-#include "../mesh.hpp"             // Block, Domain, Mesh
+#include "../mesh.hpp"             // MeshBlock
 #include "../parameter_input.hpp"  // ParameterInput
 
 // Declarations
@@ -30,7 +30,7 @@ static void set_state(AthenaArray<Real> &prim, AthenaArray<Real> &cons, int i, i
 void Fluid::InitFluid(ParameterInput *pin)
 {
   // Prepare index bounds
-  Block *pb = pmy_block;
+  MeshBlock *pb = pmy_block;
   int il = pb->is - NGHOST;
   int iu = pb->ie + NGHOST;
   int jl = pb->js;

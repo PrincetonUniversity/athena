@@ -9,14 +9,14 @@
 // Athena headers
 #include "../athena.hpp"         // enums, macros, Real
 #include "../athena_arrays.hpp"  // AthenaArray
-#include "../mesh.hpp"           // Block
+#include "../mesh.hpp"           // MeshBlock
 
 // Constructor
 // Inputs:
 //   pb: pointer to block containing this grid
-Coordinates::Coordinates(Block *pb)
+Coordinates::Coordinates(MeshBlock *pb)
 {
-  // Set pointer to host Block
+  // Set pointer to host MeshBlock
   pmy_block = pb;
 
   // Initialize volume-averated positions and spacings: x-direction

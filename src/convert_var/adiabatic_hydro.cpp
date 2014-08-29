@@ -20,7 +20,7 @@
 // Athena headers
 #include "../athena.hpp"         // enums, macros, Real
 #include "../athena_arrays.hpp"  // AthenaArray
-#include "../mesh.hpp"           // Block
+#include "../mesh.hpp"           // MeshBlock
 
 //======================================================================================
 /*! \file adiabatic_hydro.cpp
@@ -30,7 +30,7 @@
 void Fluid::ConservedToPrimitive(AthenaArray<Real> &c, AthenaArray<Real> &p_old,
     AthenaArray<Real> &p)
 {
-  Block *pb = pmy_block;
+  MeshBlock *pb = pmy_block;
   int is = pb->is; int ie = pb->ie;
   int jl = pb->js; int ju = pb->je;
   int kl = pb->ks; int ku = pb->ke;

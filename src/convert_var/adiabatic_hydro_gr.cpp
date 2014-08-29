@@ -13,7 +13,7 @@
 #include "../athena.hpp"                   // enums, macros, Real
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../coordinates/coordinates.hpp"  // Coordinates
-#include "../mesh.hpp"                     // Block
+#include "../mesh.hpp"                     // MeshBlock
 
 // Declarations
 Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
@@ -44,7 +44,7 @@ void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &pri
   const Real gamma_prime = gamma_adi / (gamma_adi - 1.0);
 
   // Determine array bounds
-  Block *pb = pmy_block;
+  MeshBlock *pb = pmy_block;
   int is = pb->is;
   int ie = pb->ie;
   int jl = pb->js;

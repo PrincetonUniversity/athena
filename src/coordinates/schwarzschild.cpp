@@ -15,7 +15,7 @@
 #include "../athena.hpp"         // enums, macros, Real
 #include "../athena_arrays.hpp"  // AthenaArray
 #include "../fluid.hpp"          // Fluid
-#include "../mesh.hpp"           // Block
+#include "../mesh.hpp"           // MeshBlock
 
 // TODO: find better input method
 namespace globals
@@ -26,10 +26,10 @@ using namespace globals;
 
 // Constructor
 // Inputs:
-//   pb: pointer to block containing this grid
-Coordinates::Coordinates(Block *pb)
+//   pb: pointer to MeshBlock containing this grid
+Coordinates::Coordinates(MeshBlock *pb)
 {
-  // Set pointer to host Block
+  // Set pointer to host MeshBlock
   pmy_block = pb;
 
   // Initialize volume-averated positions and spacings: r-direction

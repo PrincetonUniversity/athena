@@ -24,7 +24,7 @@
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../fluid.hpp"                    // Fluid
-#include "../mesh.hpp"                     // Block, Domain, Mesh
+#include "../mesh.hpp"                     // MeshBlock
 
 //======================================================================================
 /*! \file van_leer2.cpp
@@ -35,27 +35,27 @@
 ///*! \fn  void FluidIntegrator::PredictVanLeer2
 // *  \brief predictor step for 2nd order VL integrator */
 
-void FluidIntegrator::Predict(Block *pb)
+void FluidIntegrator::Predict(MeshBlock *pmb)
 {
-  int is = pb->is; int js = pb->js; int ks = pb->ks;
-  int ie = pb->ie; int je = pb->je; int ke = pb->ke;
-  Real dt = pb->pmy_domain->pmy_mesh->dt;
+  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
+  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+  Real dt = pmb->pmy_domain->pmy_mesh->dt;
 
   Real sum=0.0; Real sum_2=0.0;
-  int ndata = (pb->block_size.nx1)*(pb->block_size.nx2)*(pb->block_size.nx3)*(NVAR);
+  int ndata = (pmb->block_size.nx1)*(pmb->block_size.nx2)*(pmb->block_size.nx3)*(NVAR);
  
-  AthenaArray<Real> u = pb->pfluid->u.ShallowCopy();
-  AthenaArray<Real> w = pb->pfluid->w.ShallowCopy();
-  AthenaArray<Real> u1 = pb->pfluid->u1.ShallowCopy();
-  AthenaArray<Real> w1 = pb->pfluid->w1.ShallowCopy();
+  AthenaArray<Real> u = pmb->pfluid->u.ShallowCopy();
+  AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
+  AthenaArray<Real> u1 = pmb->pfluid->u1.ShallowCopy();
+  AthenaArray<Real> w1 = pmb->pfluid->w1.ShallowCopy();
 
   AthenaArray<Real> wl = wl_.ShallowCopy();
   AthenaArray<Real> wr = wr_.ShallowCopy();
   AthenaArray<Real> flx = flx_.ShallowCopy();
   AthenaArray<Real> src = src_.ShallowCopy();
  
-  AthenaArray<Real> area = pb->pcoord->face_area.ShallowCopy();
-  AthenaArray<Real> vol  = pb->pcoord->cell_volume.ShallowCopy();
+  AthenaArray<Real> area = pmb->pcoord->face_area.ShallowCopy();
+  AthenaArray<Real> vol  = pmb->pcoord->cell_volume.ShallowCopy();
 
 //--------------------------------------------------------------------------------------
 // i-direction 
@@ -67,8 +67,8 @@ void FluidIntegrator::Predict(Block *pb)
 
     RiemannSolver(k,j,is,ie+1,IVX,IVY,IVZ,wl,wr,flx);
 
-    pb->pcoord->Area1Face(k,j,is,ie+1,area);
-    pb->pcoord->CellVolume(k,j,is,ie,vol);
+    pmb->pcoord->Area1Face(k,j,is,ie+1,area);
+    pmb->pcoord->CellVolume(k,j,is,ie,vol);
 
     for (int n=0; n<NVAR; ++n){
 #pragma simd
@@ -91,7 +91,7 @@ void FluidIntegrator::Predict(Block *pb)
 //--------------------------------------------------------------------------------------
 // j-direction
 
-  if (pb->block_size.nx2 > 1) {
+  if (pmb->block_size.nx2 > 1) {
     for (int k=ks; k<=ke; ++k){
     for (int j=js; j<=je+1; ++j){
 
@@ -99,10 +99,10 @@ void FluidIntegrator::Predict(Block *pb)
 
       RiemannSolver(k,j,is,ie,IVY,IVZ,IVX,wl,wr,flx); 
 
-      pb->pcoord->Area2Face(k,j,is,ie,area);
+      pmb->pcoord->Area2Face(k,j,is,ie,area);
 
       if (j>js) {
-        pb->pcoord->CellVolume(k,j-1,is,ie,vol);
+        pmb->pcoord->CellVolume(k,j-1,is,ie,vol);
         for (int n=0; n<NVAR; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
@@ -117,7 +117,7 @@ void FluidIntegrator::Predict(Block *pb)
       }
 
       if (j<(je+1)) {
-        pb->pcoord->CellVolume(k,j,is,ie,vol);
+        pmb->pcoord->CellVolume(k,j,is,ie,vol);
         for (int n=0; n<NVAR; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
@@ -137,7 +137,7 @@ void FluidIntegrator::Predict(Block *pb)
 //--------------------------------------------------------------------------------------
 // k-direction 
 
-  if (pb->block_size.nx3 > 1) {
+  if (pmb->block_size.nx3 > 1) {
     for (int k=ks; k<=ke+1; ++k){
     for (int j=js; j<=je; ++j){
 
@@ -145,10 +145,10 @@ void FluidIntegrator::Predict(Block *pb)
 
       RiemannSolver(k,j,is,ie,IVZ,IVX,IVY,wl,wr,flx);
 
-      pb->pcoord->Area3Face(k,j,is,ie,area);
+      pmb->pcoord->Area3Face(k,j,is,ie,area);
 
       if (k>ks) {
-        pb->pcoord->CellVolume(k-1,j,is,ie,vol);
+        pmb->pcoord->CellVolume(k-1,j,is,ie,vol);
         for (int n=0; n<NVAR; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
@@ -163,7 +163,7 @@ void FluidIntegrator::Predict(Block *pb)
       }
 
       if (k<(ke+1)) {
-        pb->pcoord->CellVolume(k,j,is,ie,vol);
+        pmb->pcoord->CellVolume(k,j,is,ie,vol);
         for (int n=0; n<NVAR; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
@@ -186,7 +186,7 @@ void FluidIntegrator::Predict(Block *pb)
   for (int k=ks; k<=ke; ++k){
   for (int j=js; j<=je; ++j){
 
-    pb->pcoord->CoordinateSourceTerms(k,j,w,src);
+    pmb->pcoord->CoordinateSourceTerms(k,j,w,src);
 
 #pragma simd
     for (int i=is; i<=ie; ++i){
@@ -207,27 +207,27 @@ void FluidIntegrator::Predict(Block *pb)
 // \!fn 
 // \brief
 
-void FluidIntegrator::Correct(Block *pb)
+void FluidIntegrator::Correct(MeshBlock *pmb)
 {
-  int is = pb->is; int js = pb->js; int ks = pb->ks;
-  int ie = pb->ie; int je = pb->je; int ke = pb->ke;
-  Real dt = pb->pmy_domain->pmy_mesh->dt;
+  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
+  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+  Real dt = pmb->pmy_domain->pmy_mesh->dt;
 
   Real sum=0.0; Real sum_2=0.0;
-  int ndata = (pb->block_size.nx1)*(pb->block_size.nx2)*(pb->block_size.nx3)*(NVAR);
+  int ndata = (pmb->block_size.nx1)*(pmb->block_size.nx2)*(pmb->block_size.nx3)*(NVAR);
  
-  AthenaArray<Real> u = pb->pfluid->u.ShallowCopy();
-  AthenaArray<Real> w = pb->pfluid->w.ShallowCopy();
-  AthenaArray<Real> u1 = pb->pfluid->u1.ShallowCopy();
-  AthenaArray<Real> w1 = pb->pfluid->w1.ShallowCopy();
+  AthenaArray<Real> u = pmb->pfluid->u.ShallowCopy();
+  AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
+  AthenaArray<Real> u1 = pmb->pfluid->u1.ShallowCopy();
+  AthenaArray<Real> w1 = pmb->pfluid->w1.ShallowCopy();
 
   AthenaArray<Real> wl = wl_.ShallowCopy();
   AthenaArray<Real> wr = wr_.ShallowCopy();
   AthenaArray<Real> flx = flx_.ShallowCopy();
   AthenaArray<Real> src = src_.ShallowCopy();
 
-  AthenaArray<Real> area = pb->pcoord->face_area.ShallowCopy();
-  AthenaArray<Real> vol  = pb->pcoord->cell_volume.ShallowCopy();
+  AthenaArray<Real> area = pmb->pcoord->face_area.ShallowCopy();
+  AthenaArray<Real> vol  = pmb->pcoord->cell_volume.ShallowCopy();
  
 //--------------------------------------------------------------------------------------
 // i-direction 
@@ -239,8 +239,8 @@ void FluidIntegrator::Correct(Block *pb)
 
     RiemannSolver(k,j,is,ie+1,IVX,IVY,IVZ,wl,wr,flx); 
 
-    pb->pcoord->Area1Face(k,j,is,ie+1,area);
-    pb->pcoord->CellVolume(k,j,is,ie,vol);
+    pmb->pcoord->Area1Face(k,j,is,ie+1,area);
+    pmb->pcoord->CellVolume(k,j,is,ie,vol);
 
     for (int n=0; n<NVAR; ++n){
 #pragma simd
@@ -262,7 +262,7 @@ void FluidIntegrator::Correct(Block *pb)
 //--------------------------------------------------------------------------------------
 // j-direction
 
-  if (pb->block_size.nx2 > 1) {
+  if (pmb->block_size.nx2 > 1) {
     for (int k=ks; k<=ke; ++k){
     for (int j=js; j<=je+1; ++j){
 
@@ -270,10 +270,10 @@ void FluidIntegrator::Correct(Block *pb)
 
       RiemannSolver(k,j,is,ie,IVY,IVZ,IVX,wl,wr,flx); 
 
-      pb->pcoord->Area2Face(k,j,is,ie,area);
+      pmb->pcoord->Area2Face(k,j,is,ie,area);
 
       if (j>js){
-        pb->pcoord->CellVolume(k,j-1,is,ie,vol);
+        pmb->pcoord->CellVolume(k,j-1,is,ie,vol);
         for (int n=0; n<NVAR; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
@@ -288,7 +288,7 @@ void FluidIntegrator::Correct(Block *pb)
       }
 
       if (j<(je+1)){
-        pb->pcoord->CellVolume(k,j,is,ie,vol);
+        pmb->pcoord->CellVolume(k,j,is,ie,vol);
         for (int n=0; n<NVAR; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
@@ -308,7 +308,7 @@ void FluidIntegrator::Correct(Block *pb)
 //--------------------------------------------------------------------------------------
 // k-direction 
 
-  if (pb->block_size.nx3 > 1) {
+  if (pmb->block_size.nx3 > 1) {
     for (int k=ks; k<=ke+1; ++k){
     for (int j=js; j<=je; ++j){
 
@@ -316,10 +316,10 @@ void FluidIntegrator::Correct(Block *pb)
 
       RiemannSolver(k,j,is,ie,IVZ,IVX,IVY,wl,wr,flx);
 
-      pb->pcoord->Area3Face(k,j,is,ie,area);
+      pmb->pcoord->Area3Face(k,j,is,ie,area);
 
       if (k>ks){
-        pb->pcoord->CellVolume(k-1,j,is,ie,vol);
+        pmb->pcoord->CellVolume(k-1,j,is,ie,vol);
         for (int n=0; n<NVAR; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
@@ -334,7 +334,7 @@ void FluidIntegrator::Correct(Block *pb)
       }
 
       if (k<(ke+1)){
-        pb->pcoord->CellVolume(k,j,is,ie,vol);
+        pmb->pcoord->CellVolume(k,j,is,ie,vol);
         for (int n=0; n<NVAR; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
@@ -357,7 +357,7 @@ void FluidIntegrator::Correct(Block *pb)
   for (int k=ks; k<=ke; ++k){
   for (int j=js; j<=je; ++j){
 
-    pb->pcoord->CoordinateSourceTerms(k,j,w1,src);
+    pmb->pcoord->CoordinateSourceTerms(k,j,w1,src);
 
 #pragma simd
     for (int i=is; i<=ie; ++i){

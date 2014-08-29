@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
   }
 
 //--- Step 5. --------------------------------------------------------------------------
-// Set initial conditions by calling problem generator on each Domain/Block
+// Set initial conditions by calling problem generator on each MeshDomain/MeshBlock
 
   try {
     mesh->ForAllDomains(init_fluid,inputs);

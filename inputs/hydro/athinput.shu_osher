@@ -7,7 +7,7 @@ configure = --with-gas=hydro --with-problem=shu-osher
 problem_id  = ShuOsher  # problem ID: basename of output filenames
 
 <output1>
-file_format = tab       # Tabular data dump
+file_type   = tab       # Tabular data dump
 variable    = prim      # variables to be output
 data_format = %12.5e    # Optional data format string
 dt          = 0.0235    # time increment between outputs
@@ -15,7 +15,7 @@ x2_slice    = 0.5       # slice in x2
 x3_slice    = 0.5       # slice in x3
 
 <output2>
-file_format = hst       # History data dump
+file_type   = hst       # History data dump
 dt          = 0.0235    # time increment between outputs
 
 <time>

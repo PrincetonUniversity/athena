@@ -74,10 +74,10 @@ ParameterInput::ParameterInput()
 
 ParameterInput::~ParameterInput()
 {
-  InputBlock *pblock=pfirst_block;
-  while (pblock != NULL) {
-    InputBlock *pold_block = pblock;
-    pblock = pblock->pnext;
+  InputBlock *pib=pfirst_block;
+  while (pib != NULL) {
+    InputBlock *pold_block = pib;
+    pib = pib->pnext;
     delete pold_block;
   }
 }
@@ -96,7 +96,7 @@ void ParameterInput::LoadFromFile(std::string filename)
   std::string line, block_name, param_name, param_value, param_comment;
   std::size_t first_char,last_char;
   std::stringstream msg;
-  InputBlock *pblock;
+  InputBlock *pib;
 
   if (last_filename_ == filename) {
     msg << "### FATAL ERROR in function [ParameterInput::LoadFromFile]" << std::endl
@@ -131,9 +131,9 @@ void ParameterInput::LoadFromFile(std::string filename)
         throw std::runtime_error(msg.str().c_str());
       }
 
-      pblock = FindOrAddBlock(block_name);  // find or add block to linked list
+      pib = FindOrAddBlock(block_name);  // find or add block to linked list
 
-      if (pblock == NULL) {
+      if (pib == NULL) {
         msg << "### FATAL ERROR in function [ParameterInput::LoadFromFile]" << std::endl
             << "Block name '" << block_name << "' could not be found/added";
         throw std::runtime_error(msg.str().c_str());
@@ -144,8 +144,8 @@ void ParameterInput::LoadFromFile(std::string filename)
 // if line does not contain a block name, it must contain a parameter value.  So parse
 // line and add name/value/comment strings (if found) to current block name
 
-    ParseLine(pblock,line,param_name,param_value,param_comment);
-    AddParameter(pblock,param_name,param_value,param_comment);
+    ParseLine(pib,line,param_name,param_value,param_comment);
+    AddParameter(pib,param_name,param_value,param_comment);
   }
 
   input_file.close();
@@ -160,43 +160,43 @@ void ParameterInput::LoadFromFile(std::string filename)
 
 InputBlock* ParameterInput::FindOrAddBlock(std::string name)
 {
-  InputBlock *pblock, *plast;
-  plast  = pfirst_block;
-  pblock = pfirst_block;
+  InputBlock *pib, *plast;
+  plast = pfirst_block;
+  pib = pfirst_block;
 
 // Search linked list of InputBlocks to see if name exists, return if found.
 
-  while (pblock != NULL) {
-    if (name.compare(pblock->block_name) == 0) return pblock;    
-    plast = pblock;
-    pblock = pblock->pnext;
+  while (pib != NULL) {
+    if (name.compare(pib->block_name) == 0) return pib;    
+    plast = pib;
+    pib = pib->pnext;
   }
 
 // Create new block in list if not found above
 
-  pblock = new InputBlock;
-  pblock->block_name.assign(name);  // store the new block name
-  pblock->pline = NULL;             // Terminate the InputLine list
-  pblock->pnext = NULL;             // Terminate the InputBlock list
+  pib = new InputBlock;
+  pib->block_name.assign(name);  // store the new block name
+  pib->pline = NULL;             // Terminate the InputLine list
+  pib->pnext = NULL;             // Terminate the InputBlock list
 
 // if this is the first block in list, save pointer to it in class
 
   if (pfirst_block == NULL) {
-     pfirst_block = pblock;
+     pfirst_block = pib;
   } else {
-    plast->pnext = pblock;      // link new node into list
+    plast->pnext = pib;      // link new node into list
   }
 
-  return pblock;
+  return pib;
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void ParameterInput::ParseLine(InputBlock *pblock, std::string line,
+/*! \fn void ParameterInput::ParseLine(InputBlock *pib, std::string line,
  *           std::string& name, std::string& value, std::string& comment)
  *  \brief parse "name = value # comment" format, return name/value/comment strings. 
  */
 
-void ParameterInput::ParseLine(InputBlock *pblock, std::string line,
+void ParameterInput::ParseLine(InputBlock *pib, std::string line,
      std::string& name, std::string& value, std::string& comment)
 {
   std::size_t first_char,last_char,equal_char,hash_char,len;
@@ -235,7 +235,7 @@ void ParameterInput::ParseLine(InputBlock *pblock, std::string line,
 
 //--------------------------------------------------------------------------------------
 /*! \fn static void AddParameter()
- *  \brief add name/value/comment tuple to the InputLine linked list in  block *pb.  
+ *  \brief add name/value/comment tuple to the InputLine linked list in block *pb.  
  *
  *  If a parameter with the same name already exists, the value and comment strings
  *  are replaced (overwritten).

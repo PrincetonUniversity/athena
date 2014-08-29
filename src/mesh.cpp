@@ -32,12 +32,12 @@
 #include "coordinates/coordinates.hpp"  // Coordinates
 #include "fluid.hpp"                    // Fluid
 #include "integrators/integrators.hpp"  // FluidIntegrator
-#include "outputs/outputs.hpp"          // OutputList
+#include "outputs/outputs.hpp"          // Outputs
 #include "parameter_input.hpp"          // ParameterInput
 
 //======================================================================================
 /*! \file mesh.cpp
- *  \brief implementation of functions in classes Mesh, Domain, and Block
+ *  \brief implementation of functions in classes Mesh, MeshDomain, and MeshBlock
  *====================================================================================*/
 
 //--------------------------------------------------------------------------------------
@@ -156,7 +156,7 @@ Mesh::Mesh(ParameterInput *pin)
 
 // allocate root domain
 
-  pdomain = new Domain(mesh_size, mesh_bndry, this);
+  pdomain = new MeshDomain(mesh_size, mesh_bndry, this);
 }
 
 // Mesh destructor
@@ -167,10 +167,9 @@ Mesh::~Mesh()
 }
 
 //--------------------------------------------------------------------------------------
-// Domain constructor: builds array of Blocks based on input arguments.  May be called
-// at any time in a simulation, whenever AMR creates a new Domain
+// MeshDomain constructor: builds array of MeshBlocks based on input arguments.
 
-Domain::Domain(RegionSize input_size, RegionBoundaryFlags input_bndry, Mesh* pm)
+MeshDomain::MeshDomain(RegionSize input_size, RegionBCFlags input_bndry, Mesh* pm)
 {
   pmy_mesh = pm;
   domain_size  = input_size;
@@ -179,24 +178,23 @@ Domain::Domain(RegionSize input_size, RegionBoundaryFlags input_bndry, Mesh* pm)
 // allocate block on this domain
 // In future w MPI: calculate array of blocks, set their region sizes, and initialize
 
-  pblock = new Block(domain_size, domain_bndry, this);
+  pblock = new MeshBlock(domain_size, domain_bndry, this);
 
   return;
 }
 
-// Domain destructor
+// MeshDomain destructor
 
-Domain::~Domain()
+MeshDomain::~MeshDomain()
 {
   delete pblock;
 }
 
 //--------------------------------------------------------------------------------------
-// Block constructor: builds 1D vectors of cell coordinates, and constructs coordinate,
-// boundary condition, and fluid objects.  Fluid initial conditions are set in
-// init function rather than fluid constructor.  May be called at any time with AMR.
+// MeshBlock constructor: builds 1D vectors of cell positions and spacings, and
+// constructs coordinate, boundary condition, and fluid objects.
 
-Block::Block(RegionSize input_size, RegionBoundaryFlags input_bndry, Domain *pd)
+MeshBlock::MeshBlock(RegionSize input_size, RegionBCFlags input_bndry, MeshDomain *pd)
 {
   pmy_domain = pd;
   block_size  = input_size;
@@ -384,17 +382,17 @@ Block::Block(RegionSize input_size, RegionBoundaryFlags input_bndry, Domain *pd)
     }
   }
 
-// construct various objects stored in Block class.  Constructors do the following:
+// construct various objects stored in MeshBlock class.  Constructors do the following:
 //   Coordinates: initializes volume-centered coordinates (x1v,dx1v,...)
 //   FluidBoundaryConditions: sets function pointers for each edge of this block
 //   Fluid: allocates memory for arrays, and constructs FluidIntegrator.
-//   OutputList:
+//   Outputs:
 // initial conditions for fluid set in problem generator called from main
  
   pcoord   = new Coordinates(this);
   pf_bcs   = new FluidBoundaryConditions(this);
   pfluid   = new Fluid(this);
-  poutputs = new OutputList(this);
+  poutputs = new Outputs(this);
 
 /*******************
   for (int i=0; i<((ie-is+1)+2*(NGHOST)); ++i) {
@@ -423,9 +421,9 @@ Block::Block(RegionSize input_size, RegionBoundaryFlags input_bndry, Domain *pd)
   return;
 }
 
-// Block destructor
+// MeshBlock destructor
 
-Block::~Block()
+MeshBlock::~MeshBlock()
 {
   dx1f.DeleteAthenaArray();  
   dx2f.DeleteAthenaArray();  
@@ -463,7 +461,7 @@ void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
         break;
 
       case init_outputs:
-        pdomain->pblock->poutputs->InitOutputs(pin);
+        pdomain->pblock->poutputs->InitOutputTypes(pin);
         break;
 
       case fluid_bcs_n:

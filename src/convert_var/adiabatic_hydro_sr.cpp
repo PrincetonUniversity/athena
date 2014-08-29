@@ -11,7 +11,7 @@
 // Athena headers
 #include "../athena.hpp"         // enums, macros, Real
 #include "../athena_arrays.hpp"  // AthenaArray
-#include "../mesh.hpp"           // Block
+#include "../mesh.hpp"           // MeshBlock
 
 // Variable inverter
 // Inputs:
@@ -53,7 +53,7 @@ void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &pri
   const Real gamma_adi_minus_1 = gamma_adi - 1.0;
 
   // Determine array bounds
-  Block *pb = pmy_block;
+  MeshBlock *pb = pmy_block;
   int is = pb->is;
   int ie = pb->ie;
   int jl = pb->js;

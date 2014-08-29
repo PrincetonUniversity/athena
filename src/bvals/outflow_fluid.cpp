@@ -20,17 +20,17 @@
 // Athena headers
 #include "../athena.hpp"         // macros, Real
 #include "../athena_arrays.hpp"  // AthenaArray
-#include "../mesh.hpp"           // Block
+#include "../mesh.hpp"           // MeshBlock
 
 //======================================================================================
 /*! \file outflow_fluid.cpp
  *  \brief implements outflow BCs in each dimension for conserved fluid variables
  *====================================================================================*/
 //--------------------------------------------------------------------------------------
-//! \fn void OutflowInnerX1(Block *pb)
+//! \fn void OutflowInnerX1(MeshBlock *pb)
 //  \brief  OUTFLOW  boundary conditions conserved vars, inner x1 boundary (ix1_bc=2)
 
-void OutflowInnerX1(Block *pb, AthenaArray<Real> &a)
+void OutflowInnerX1(MeshBlock *pb, AthenaArray<Real> &a)
 {
   int is = pb->is;
   int js = pb->js, je = pb->je;
@@ -51,10 +51,10 @@ void OutflowInnerX1(Block *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void OutflowOuterX1(Block *pb)
+//! \fn void OutflowOuterX1(MeshBlock *pb)
 //  \brief  OUTFLOW  boundary conditions conserved vars, outer x1 boundary (ox1_bc=2)
 
-void OutflowOuterX1(Block *pb, AthenaArray<Real> &a)
+void OutflowOuterX1(MeshBlock *pb, AthenaArray<Real> &a)
 {
   int ie = pb->ie;
   int js = pb->js, je = pb->je;
@@ -75,10 +75,10 @@ void OutflowOuterX1(Block *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void OutflowInnerX2(Block *pb)
+//! \fn void OutflowInnerX2(MeshBlock *pb)
 //  \brief  OUTFLOW  boundary conditions conserved vars, inner x2 boundary (ix2_bc=2)
 
-void OutflowInnerX2(Block *pb, AthenaArray<Real> &a)
+void OutflowInnerX2(MeshBlock *pb, AthenaArray<Real> &a)
 {
   int is = pb->is, ie = pb->ie;
   int js = pb->js;
@@ -99,10 +99,10 @@ void OutflowInnerX2(Block *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void OutflowOuterX2(Block *pb)
+//! \fn void OutflowOuterX2(MeshBlock *pb)
 //  \brief  OUTFLOW  boundary conditions conserved vars, outer x2 boundary (ox2_bc=2)
 
-void OutflowOuterX2(Block *pb, AthenaArray<Real> &a)
+void OutflowOuterX2(MeshBlock *pb, AthenaArray<Real> &a)
 {
   int is = pb->is, ie = pb->ie;
   int je = pb->je;
@@ -123,10 +123,10 @@ void OutflowOuterX2(Block *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void OutflowInnerX3(Block *pb)
+//! \fn void OutflowInnerX3(MeshBlock *pb)
 //  \brief  OUTFLOW  boundary conditions conserved vars, inner x3 boundary (ix3_bc=2)
 
-void OutflowInnerX3(Block *pb, AthenaArray<Real> &a)
+void OutflowInnerX3(MeshBlock *pb, AthenaArray<Real> &a)
 {
   int is = pb->is, ie = pb->ie;
   int js = pb->js, je = pb->je;
@@ -147,10 +147,10 @@ void OutflowInnerX3(Block *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void OutflowOuterX3(Block *pb)
+//! \fn void OutflowOuterX3(MeshBlock *pb)
 //  \brief  OUTFLOW  boundary conditions conserved vars, outer x3 boundary (ox3_bc=2)
 
-void OutflowOuterX3(Block *pb, AthenaArray<Real> &a)
+void OutflowOuterX3(MeshBlock *pb, AthenaArray<Real> &a)
 {
   int is = pb->is, ie = pb->ie;
   int js = pb->js, je = pb->je;

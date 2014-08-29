@@ -6,7 +6,7 @@
  * See LICENSE file for full public license information.
  *====================================================================================*/
 /*! \file mesh.hpp
- *  \brief defines classes Mesh, Domain, and Block
+ *  \brief defines classes Mesh, MeshDomain, and MeshBlock
  *  These classes contain data and functions related to the computational mesh
  *====================================================================================*/
 
@@ -16,14 +16,14 @@
 
 class ParameterInput;
 class Mesh;
-class Domain;
+class MeshDomain;
 class Coordinates;
 class FluidBoundaryConditions;
 class Fluid;
-class OutputList;
+class Outputs;
 
 //! \struct RegionSize
-//  \brief physical size and number of cells in a Mesh, Domain or Block
+//  \brief physical size and number of cells in a Mesh, MeshDomain or MeshBlock
 
 typedef struct RegionSize {
   Real x1min, x2min, x3min;
@@ -32,26 +32,26 @@ typedef struct RegionSize {
   int nx1, nx2, nx3;        // number of active cells (not including ghost zones)
 } RegionSize;
 
-//! \struct RegionBoundaryFlags
-//  \brief boundary condition flags for a Mesh, Domain or Block
+//! \struct RegionBCFlags
+//  \brief boundary condition flags for a Mesh, MeshDomain or MeshBlock
 
-typedef struct RegionBoundaryFlags {
+typedef struct RegionBCFlags {
   int ix1_bc, ix2_bc, ix3_bc;  // inner-x (left edge) BC flags
   int ox1_bc, ox2_bc, ox3_bc;  // outer-x (right edge) BC flags
-} RegionBoundaryFlags;
+} RegionBCFlags;
 
 //--------------------------------------------------------------------------------------
-//! \class Block
+//! \class MeshBlock
 //  \brief data/functions associated with a single block inside a domain
 
-class Block {
+class MeshBlock {
 public:
-  Block(RegionSize input_size, RegionBoundaryFlags input_bndry, Domain *pd);
-  ~Block();
+  MeshBlock(RegionSize input_size, RegionBCFlags input_bndry, MeshDomain *pd);
+  ~MeshBlock();
 
-  Domain *pmy_domain;  // ptr to Domain containing this Block
+  MeshDomain *pmy_domain;  // ptr to MeshDomain containing this MeshBlock
   RegionSize block_size;
-  RegionBoundaryFlags block_bndry;
+  RegionBCFlags block_bndry;
 
   AthenaArray<Real> dx1f, dx2f, dx3f, x1f, x2f, x3f; // face   spacing and positions
   AthenaArray<Real> dx1v, dx2v, dx3v, x1v, x2v, x3v; // volume spacing and positions
@@ -60,23 +60,23 @@ public:
   FluidBoundaryConditions *pf_bcs;
   Coordinates *pcoord;
   Fluid *pfluid;
-  OutputList *poutputs;
+  Outputs *poutputs;
 };
 
 //--------------------------------------------------------------------------------------
-//! \class Domain
+//! \class MeshDomain
 //  \brief data/functions associated with a domain inside the mesh
 
-class Domain {
+class MeshDomain {
 public:
-  Domain(RegionSize input_size, RegionBoundaryFlags input_bndry, Mesh *pm);
-  ~Domain();
+  MeshDomain(RegionSize input_size, RegionBCFlags input_bndry, Mesh *pm);
+  ~MeshDomain();
 
   Mesh *pmy_mesh;  // ptr to Mesh containing this Domain
 
-  Block *pblock;
+  MeshBlock *pblock;
   RegionSize domain_size;
-  RegionBoundaryFlags domain_bndry;
+  RegionBCFlags domain_bndry;
 };
 
 //--------------------------------------------------------------------------------------
@@ -88,9 +88,9 @@ public:
   Mesh(ParameterInput *pin);
   ~Mesh();
 
-  Domain *pdomain;
+  MeshDomain *pdomain;
   RegionSize mesh_size;
-  RegionBoundaryFlags mesh_bndry;
+  RegionBCFlags mesh_bndry;
 
   Real start_time, tlim, cfl_number, time, dt;
   int nlim, ncycle;

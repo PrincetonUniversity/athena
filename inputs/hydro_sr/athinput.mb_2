@@ -6,7 +6,7 @@ reference = Mignone & Bodo 2005, MNRAS 364 126
 problem_id  = MBShock2  # problem ID: basename of output filenames
 
 <output1>
-file_format = tab      # Tabular data dump
+file_type   = tab      # Tabular data dump
 variable    = cons     # variables to be output
 data_format = %24.16e  # Optional data format string
 dt          = 0.4      # time increment between outputs
