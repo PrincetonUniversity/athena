@@ -13,7 +13,7 @@
 // Athena headers
 #include "../../../src/athena.hpp"           // macros, Real
 #include "../../../src/athena_arrays.hpp"    // AthenaArray
-#include "../../../src/mesh.hpp"             // Mesh, Domain, Block
+#include "../../../src/mesh.hpp"             // Mesh, MeshDomain, MeshBlock
 #include "../../../src/parameter_input.hpp"  // ParameterInput
 
 namespace {

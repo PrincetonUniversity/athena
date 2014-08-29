@@ -14,7 +14,7 @@
 // Athena headers
 #include "../../../src/athena.hpp"           // macros, Real
 #include "../../../src/athena_arrays.hpp"    // AthenaArray
-#include "../../../src/mesh.hpp"             // Mesh, Domain, Block
+#include "../../../src/mesh.hpp"             // Mesh, MeshDomain, MeshBlock
 #include "../../../src/parameter_input.hpp"  // ParameterInput
 
 namespace {
@@ -50,7 +50,7 @@ class AdiabaticHydroGRTest : public GeneralTest
     inputs->ModifyFromCmdline(3, const_cast<char **>(argv));
     mesh = new Mesh(inputs);
     mesh->ForAllDomains(init_fluid, inputs);
-    Block *pblock = mesh->pdomain->pblock;
+    MeshBlock *pblock = mesh->pdomain->pblock;
     pblock->is = NGHOST;
     pblock->ie = -NGHOST;
     pblock->js = pblock->je = 0;

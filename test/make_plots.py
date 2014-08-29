@@ -335,7 +335,6 @@ def run_new_shock_gr(input_prefix, output_prefix, settings):
     os.system(new_make_string + ' &> /dev/null')
     os.chdir('bin')
     for case in settings:
-      print(new_run_string.format(current_directory, case[0], case[1], case[2], case[3], case[4]))
       os.system(new_run_string.format(current_directory, case[0], case[1], case[2],
           case[3], case[4]) + ' &> /dev/null')
       # TODO: remove when -d option works
