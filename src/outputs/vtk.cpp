@@ -59,6 +59,8 @@ VTKOutput::VTKOutput(OutputParameters oparams, MeshBlock *pb)
 {
 }
 
+// destructor - not needed for this derived class
+
 //--------------------------------------------------------------------------------------
 /*! \fn void VTKOutput:::WriteOutputFile(OutputData *pod)
  *  \brief writes OutputData to file in (legacy) vtk format  */
@@ -82,7 +84,7 @@ void VTKOutput::WriteOutputFile(OutputData *pod)
 
   FILE *pfile;
   if ((pfile = fopen(fname.c_str(),"w")) == NULL){
-    msg << "### FATAL ERROR in function [VTKOutput::WriteOutputData]"
+    msg << "### FATAL ERROR in function [VTKOutput::WriteOutputFile]"
         << std::endl << "Output file '" << fname << "' could not be opened" <<std::endl;
     throw std::runtime_error(msg.str().c_str());
   }

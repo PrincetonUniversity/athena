@@ -12,7 +12,7 @@ Outputs:
  - add double precision option for vtk outputs
  - add proper line integrals in Sum transform
  - allow 5 digits in filename numbers??
- - clean-up/comment
+ - add plast and plast_out ptrs to all linked lists so they are back-searchable
 
 Inputs:
  - how do we specify metric parameters (e.g. M and a=J/M)?
@@ -51,6 +51,7 @@ Documentation (wiki pages):
  - adding source terms
  - design and classes
  - running unit tests?
+ - recursion tests?
 
 Other:
  - RESTARTS!!

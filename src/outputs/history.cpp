@@ -43,6 +43,8 @@ HistoryOutput::HistoryOutput(OutputParameters oparams, MeshBlock *pb)
 {
 }
 
+// destructor - not required for this derived class
+
 //--------------------------------------------------------------------------------------
 /*! \fn void HistoryOutput::LoadOutputData(OutputData *pod)
  *  \brief computes data to be included in output data container (OutputData).  This
@@ -118,8 +120,8 @@ void HistoryOutput::LoadOutputData(OutputData *pod)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void HistoryOutput:::WriteOutputData()
- *  \brief writes DataBlock to file in history format using C style fprintf
+/*! \fn void HistoryOutput:::WriteOutputFile()
+ *  \brief writes OutputData to file in history format using C style fprintf
  */
 
 void HistoryOutput::WriteOutputFile(OutputData *pod)
@@ -136,7 +138,7 @@ void HistoryOutput::WriteOutputFile(OutputData *pod)
 
   FILE *pfile;
   if((pfile = fopen(fname.c_str(),"a")) == NULL){
-    msg << "### FATAL ERROR in function [HistoryOutput::WriteOutputData]" << std::endl
+    msg << "### FATAL ERROR in function [HistoryOutput::WriteOutputFile]" << std::endl
         << "Output file '" << fname << "' could not be opened";
     throw std::runtime_error(msg.str().c_str());
   }

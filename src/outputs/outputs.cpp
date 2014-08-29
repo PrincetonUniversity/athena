@@ -31,7 +31,46 @@
 
 //======================================================================================
 /*! \file outputs.cpp
- *  \brief implements functions for fluid data outputs
+ *  \brief implements functions for Athena++ outputs
+ *
+ * The number and types of outputs are all controlled by the number and values of
+ * parameters specified in <outputN> blocks in the input file.  Each output block must
+ * be labelled by a unique integer "N".  Following the convention of the parser
+ * implemented in the ParameterInput class, a second output block with the same integer
+ * "N" of an earlier block will silently overwrite the values read by the first block.
+ * The numbering of the output blocks does not need to be consecutive, and blocks may
+ * appear in any order in the input file.  Moreover, unlike the C version of Athena, the
+ * total number of <outputN> blocks does not need to be specified -- in Athena++ a new
+ * output type will be created for each and every <outputN> block in the input file.
+ *
+ * Required parameters that must be specified in an <outputN> block are:
+ *   - variable     = cons,prim,D,d,E,e,m,v
+ *   - file_type    = tab,vtk,hst
+ *   - dt           = problem time between outputs
+ *
+ * Optional parameters that may be specified in an <outputN> block are:
+ *   - data_format  = format string used in writing data (e.g. %12.5e)
+ *   - next_time    = time of next output (useful for restarts)
+ *   - id           = any string
+ *   - file_number  = any integer with up to 4 digits
+ *   - x[123]_slice = specifies data should be a slice at x[123] position
+ *   - x[123]_sum   = set to 1 to sum data along specified direction
+ *   
+ * EXAMPLE of an <outputN> block for a VTK dump:
+ *   <output3>
+ *   file_type   = tab       # Tabular data dump
+ *   variable    = prim      # variables to be output
+ *   data_format = %12.5e    # Optional data format string
+ *   dt          = 0.01      # time increment between outputs
+ *   x2_slice    = 0.0       # slice in x2
+ *   x3_slice    = 0.0       # slice in x3
+ *
+ * Each <outputN> block will result in a new node being created in a linked list of
+ * OutputType stored in the Outputs class.  During a simulation, outputs are made when
+ * the simulation time satisfies the criteria implemented in the MakeOutputs() function.
+ *
+ * To implement a new type of output X, write a new derived OutputType class, and
+ * construct an object of this class in the Outputs::InitOutputTypes() function.
  *====================================================================================*/
 
 //--------------------------------------------------------------------------------------
@@ -45,7 +84,7 @@ OutputVariable::OutputVariable(AthenaArray<Real> *parray, OutputVariableHeader v
   pprev = NULL;
 }
 
-// OutputVariable destructor
+// destructor
 
 OutputVariable::~OutputVariable()
 {
@@ -61,7 +100,7 @@ OutputData::OutputData()
   plast_var = NULL;
 }
 
-// OutputData destructor - iterates through linked list of OutputVariables and deletes nodes
+// destructor - iterates through linked list of OutputVariables and deletes nodes
 
 OutputData::~OutputData()
 {
@@ -83,7 +122,7 @@ OutputType::OutputType(OutputParameters oparams, MeshBlock *pb)
   pnext = NULL; // Terminate linked list with NULL ptr
 }
 
-// OutputType destructor
+// destructor
 
 OutputType::~OutputType()
 {
@@ -98,7 +137,7 @@ Outputs::Outputs(MeshBlock *pb)
   pfirst_out_ = NULL;
 }
 
-// Outputs destructor - iterates through linked list of OutputTypes and deletes nodes
+// destructor - iterates through linked list of OutputTypes and deletes nodes
 
 Outputs::~Outputs()
 {
@@ -562,6 +601,7 @@ void Outputs::InitOutputTypes(ParameterInput *pin)
         op.data_format.insert(0," "); // prepend with blank to separate columns
 
 // Construct new OutputType according to file format
+// TODO: add any new output types here
 
         if (op.file_type.compare("tab") == 0) {
           pnew_out = new FormattedTableOutput(op, pmy_block);
@@ -576,7 +616,7 @@ void Outputs::InitOutputTypes(ParameterInput *pin)
           throw std::runtime_error(msg.str().c_str());
         }
 
-// Add new type as node in linked list 
+// Add type as node in linked list 
 
         if (pfirst_out_ == NULL) {
           pfirst_out_ = pnew_out;

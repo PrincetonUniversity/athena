@@ -62,7 +62,8 @@
  *   - Jan 2014:  Rewritten in C++ for the Athena++ code by J.M. Stone
  *====================================================================================*/
 
-// constructors
+//--------------------------------------------------------------------------------------
+// ParameterInput constructor
 
 ParameterInput::ParameterInput()
 {
@@ -74,7 +75,7 @@ ParameterInput::ParameterInput()
 
 ParameterInput::~ParameterInput()
 {
-  InputBlock *pib=pfirst_block;
+  InputBlock *pib = pfirst_block;
   while (pib != NULL) {
     InputBlock *pold_block = pib;
     pib = pib->pnext;
@@ -83,9 +84,22 @@ ParameterInput::~ParameterInput()
 }
 
 //--------------------------------------------------------------------------------------
+// InputBlock constructor
+
+InputBlock::InputBlock()
+{
+}
+
+// destructor 
+
+InputBlock::~InputBlock()
+{
+}
+
+//--------------------------------------------------------------------------------------
 /*! \fn  void ParameterInput::LoadFromFile(std::string filename)
- *  \brief opens/reads/closes an input file. */  
-/*  Input block names are allocated and stored in a linked list of InputBlocks.  Within
+ *  \brief opens/reads/closes an input file.
+ *  Input block names are allocated and stored in a linked list of InputBlocks.  Within
  *  each InputBlock the names, values, and comments of each parameter are allocated and
  *  stored in a linked list of InputLines.
  */
@@ -234,9 +248,9 @@ void ParameterInput::ParseLine(InputBlock *pib, std::string line,
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn static void AddParameter()
+/*! \fn void ParameterInput::AddParameter(InputBlock *pb, std::string name, 
+ *   std::string value, std::string comment)
  *  \brief add name/value/comment tuple to the InputLine linked list in block *pb.  
- *
  *  If a parameter with the same name already exists, the value and comment strings
  *  are replaced (overwritten).
  */
@@ -287,8 +301,8 @@ void ParameterInput::AddParameter(InputBlock *pb, std::string name,
 
 //--------------------------------------------------------------------------------------
 /*! void ParameterInput::ModifyFromCmdline(int argc, char *argv[])
- *  \brief parse commandline for changes to input parameters */
-// Note this function is very forgiving (no warnings!) if there is an error in format */
+ *  \brief parse commandline for changes to input parameters
+ * Note this function is very forgiving (no warnings!) if there is an error in format */
 
 void ParameterInput::ModifyFromCmdline(int argc, char *argv[])
 {
@@ -349,7 +363,7 @@ InputBlock* ParameterInput::GetPtrToBlock(std::string name)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn int ParameterInput::DoesParameterExist()
+/*! \fn int ParameterInput::DoesParameterExist(std::string block, std::string name)
  *  \brief check whether parameter of given name in given block exists */
 
 int ParameterInput::DoesParameterExist(std::string block, std::string name)
@@ -363,8 +377,8 @@ int ParameterInput::DoesParameterExist(std::string block, std::string name)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn 
- *  \brief */
+/*! \fn int ParameterInput::GetInteger(std::string block, std::string name)
+ *  \brief returns integer value of string stored in block/name */
 
 int ParameterInput::GetInteger(std::string block, std::string name)
 {
@@ -397,8 +411,8 @@ int ParameterInput::GetInteger(std::string block, std::string name)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn 
- *  \brief */
+/*! \fn Real ParameterInput::GetReal(std::string block, std::string name)
+ *  \brief returns real value of string stored in block/name */
 
 Real ParameterInput::GetReal(std::string block, std::string name)
 {
@@ -431,8 +445,8 @@ Real ParameterInput::GetReal(std::string block, std::string name)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn 
- *  \brief */
+/*! \fn std::string ParameterInput::GetString(std::string block, std::string name)
+ *  \brief returns string stored in block/name */
 
 std::string ParameterInput::GetString(std::string block, std::string name)
 {
@@ -465,51 +479,57 @@ std::string ParameterInput::GetString(std::string block, std::string name)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn 
- *  \brief */
+/*! \fn int ParameterInput::GetOrAddInteger(std::string block, std::string name,
+      int default_value)
+ *  \brief returns integer value stored in block/name if it exists, or creates and sets
+ *  value to def_value if it does not exist */
 
-int ParameterInput::GetOrAddInteger(std::string block, std::string name, int value)
+int ParameterInput::GetOrAddInteger(std::string block, std::string name, int def_value)
 {
   InputBlock* pb;
   std::stringstream ss_value;
 
   if (DoesParameterExist(block, name)) return GetInteger(block,name);
   pb = FindOrAddBlock(block);
-  ss_value << value;
+  ss_value << def_value;
   AddParameter(pb, name, ss_value.str(), "# Default value added at run time");
-  return value;
+  return def_value;
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn 
- *  \brief */
+/*! \fn Real ParameterInput::GetOrAddReal(std::string block, std::string name,
+ *    Real def_value)
+ *  \brief returns real value stored in block/name if it exists, or creates and sets
+ *  value to def_value if it does not exist */
 
-Real ParameterInput::GetOrAddReal(std::string block, std::string name, Real value)
+Real ParameterInput::GetOrAddReal(std::string block, std::string name, Real def_value)
 {
   InputBlock* pb;
   std::stringstream ss_value;
 
   if (DoesParameterExist(block, name)) return GetReal(block,name);
   pb = FindOrAddBlock(block);
-  ss_value << value;
+  ss_value << def_value;
   AddParameter(pb, name, ss_value.str(), "# Default value added at run time");
-  return value;
+  return def_value;
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn 
- *  \brief */
+/*! \fn std::string ParameterInput::GetOrAddString(std::string block, std::string name, 
+  std::string def_value)
+ *  \brief returns string value stored in block/name if it exists, or creates and sets
+ *  value to def_value if it does not exist */
 
 std::string ParameterInput::GetOrAddString(std::string block, std::string name, 
-  std::string value)
+  std::string def_value)
 {
   InputBlock* pb;
   std::stringstream ss_value;
 
   if (DoesParameterExist(block, name)) return GetString(block,name);
   pb = FindOrAddBlock(block);
-  AddParameter(pb, name, value, "# Default value added at run time");
-  return value;
+  AddParameter(pb, name, def_value, "# Default value added at run time");
+  return def_value;
 }
 
 //--------------------------------------------------------------------------------------
@@ -542,19 +562,6 @@ void ParameterInput::ParameterDump(std::ostream& os)
   
   os<< "#------------------------- PAR_DUMP -------------------------" << std::endl;
   os<< "<par_end>" << std::endl;    // finish with par-end (useful in restart files)
-}
-
-//--------------------------------------------------------------------------------------
-// InputBlock constructor and destructor
-
-InputBlock::InputBlock()
-{
-}
-
-// destructor - iterates through linked lists of blocks/lines and deletes each node
-
-InputBlock::~InputBlock()
-{
 }
 
 //--------------------------------------------------------------------------------------

@@ -40,6 +40,8 @@ FormattedTableOutput::FormattedTableOutput(OutputParameters oparams, MeshBlock *
 {
 }
 
+// destructor - not required for this derived class
+
 //--------------------------------------------------------------------------------------
 /*! \fn void FormattedTableOutput:::WriteOutputFile(OutputData *pod)
  *  \brief writes OutputData to file in tabular format using C style fprintf
@@ -62,7 +64,7 @@ void FormattedTableOutput::WriteOutputFile(OutputData *pod)
 // open file for output
   FILE *pfile;
   if ((pfile = fopen(fname.c_str(),"w")) == NULL){
-    msg << "### FATAL ERROR in function [FormattedTableOutput::WriteOutputData]"
+    msg << "### FATAL ERROR in function [FormattedTableOutput::WriteOutputFile]"
         << std::endl << "Output file '" << fname << "' could not be opened" <<std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
