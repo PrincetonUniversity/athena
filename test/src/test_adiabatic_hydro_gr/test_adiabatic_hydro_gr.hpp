@@ -49,7 +49,7 @@ class AdiabaticHydroGRTest : public GeneralTest
     const char *argv[] = {"athena", "-i", input_file.c_str()};
     inputs->ModifyFromCmdline(3, const_cast<char **>(argv));
     mesh = new Mesh(inputs);
-    mesh->InitializeAcrossDomains(initial_conditions, inputs);
+    mesh->ForAllDomains(init_fluid, inputs);
     Block *pblock = mesh->pdomain->pblock;
     pblock->is = NGHOST;
     pblock->ie = -NGHOST;

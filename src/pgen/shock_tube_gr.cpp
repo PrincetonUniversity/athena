@@ -27,7 +27,7 @@ static void set_state(AthenaArray<Real> &prim, AthenaArray<Real> &prim_half,
 // Outputs: (none)
 // Notes:
 //   sets conserved variables according to input primitives
-void Fluid::InitProblem(ParameterInput *pin)
+void Fluid::InitFluid(ParameterInput *pin)
 {
   // Prepare index bounds
   Block *pb = pmy_block;
