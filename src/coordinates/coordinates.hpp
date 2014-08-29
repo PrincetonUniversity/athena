@@ -46,6 +46,7 @@ public:
   void FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flux);
   void FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flux);
   void FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flux);
+  void PrimToCons(AthenaArray<Real> &prim, AthenaArray<Real> &cons);
 
 // these are scratch arrays used by integrators and allocated in this class
   AthenaArray<Real> face_area, cell_volume;
@@ -55,7 +56,7 @@ private:
   AthenaArray<Real> face2_area_i_, face2_area_j_;
   AthenaArray<Real> face3_area_i_, face3_area_j_;
   AthenaArray<Real> src_terms_i_,  src_terms_j_;
-  AthenaArray<Real> src_terms_i1_, src_terms_i2_, src_terms_i3_, src_terms_i4;
+  AthenaArray<Real> src_terms_i1_, src_terms_i2_, src_terms_i3_, src_terms_i4_;
   AthenaArray<Real> src_terms_j1_, src_terms_j2_, src_terms_j3_;
   AthenaArray<Real> volume_i_,     volume_j_;
   AthenaArray<Real> metric_cell_i1_, metric_cell_i2_, metric_cell_i3_, metric_cell_i4_,

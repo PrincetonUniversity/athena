@@ -9,11 +9,12 @@
 #include "coordinates.hpp"
 
 // C++ headers
-#include <cmath>  // acos(), cbrt(), cos(), cot, sin(), sqrt()
+#include <cmath>  // acos(), cbrt(), cos(), sin(), sqrt()
 
 // Athena headers
 #include "../athena.hpp"         // enums, macros, Real
 #include "../athena_arrays.hpp"  // AthenaArray
+#include "../fluid.hpp"          // Fluid
 #include "../mesh.hpp"           // Block
 
 // TODO: find better input method
@@ -36,7 +37,7 @@ Coordinates::Coordinates(Block *pb)
   {
     Real r_m = pb->x1f(i);
     Real r_p = pb->x1f(i+1);
-    pb->x1v(i) = std::cbrt(0.5 * (r_m*r_m*r_m + r_p*r_p*r_p));
+    pb->x1v(i) = cbrt(0.5 * (r_m*r_m*r_m + r_p*r_p*r_p));
   }
   for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST-1; i++)
     pb->dx1v(i) = pb->x1v(i+1) - pb->x1v(i);
@@ -146,7 +147,7 @@ Coordinates::Coordinates(Block *pb)
 
   // Calculate intermediate geometric quantities: r-direction
 #pragma simd
-  for (int i = is-NGHOST; i <= ie+NGHOST; i++)
+  for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST; i++)
   {
     // Useful quantities
     Real r_c = pb->x1v(i);
@@ -206,7 +207,7 @@ Coordinates::Coordinates(Block *pb)
   if (n_cells_2 > 1)  // extended
   {
 #pragma simd
-    for (int j = js-NGHOST; j <= js+NGHOST; j++)
+    for (int j = pb->js-NGHOST; j <= pb->je+NGHOST; j++)
     {
       // Useful quantities
       Real theta_c = pb->x2v(j);
@@ -229,7 +230,7 @@ Coordinates::Coordinates(Block *pb)
           - 2.0 * cos_m * cos_p - std::cos(2.0*theta_p));
       src_terms_j2_(j) = 1.0/3.0 * (sin_m*sin_m*sin_m - sin_p*sin_p*sin_p)
           / (cos_m - cos_p);
-      src_terms_j3_(j) = std::cot(0.5 * (theta_m + theta_p));
+      src_terms_j3_(j) = tan(PI/2.0 - 0.5 * (theta_m + theta_p));
 
       // Cell-centered metric
       metric_cell_j1_(j) = sin_c*sin_c;
@@ -252,9 +253,9 @@ Coordinates::Coordinates(Block *pb)
   else  // no extent
   {
     // Useful quantities
-    Real theta_c = pb->x2v(js);
-    Real theta_m = pb->x2f(js);
-    Real theta_p = pb->x2f(js+1);
+    Real theta_c = pb->x2v(pb->js);
+    Real theta_m = pb->x2f(pb->js);
+    Real theta_p = pb->x2f(pb->js+1);
     Real sin_c = std::sin(theta_c);
     Real sin_m = std::sin(theta_m);
     Real sin_p = std::sin(theta_p);
@@ -262,34 +263,34 @@ Coordinates::Coordinates(Block *pb)
     Real cos_p = std::cos(theta_p);
 
     // Volumes and areas
-    volume_j_(js) = cos_m - cos_p;
-    face1_area_j_(js) = volume_j_(js);
-    face2_area_j_(js) = sin_m;
-    face3_area_j_(js) = volume_j_(js);
+    volume_j_(pb->js) = cos_m - cos_p;
+    face1_area_j_(pb->js) = volume_j_(pb->js);
+    face2_area_j_(pb->js) = sin_m;
+    face3_area_j_(pb->js) = volume_j_(pb->js);
 
     // Source terms
-    src_terms_j1_(js) = 1.0/6.0 * (4.0 - std::cos(2.0*theta_m)
+    src_terms_j1_(pb->js) = 1.0/6.0 * (4.0 - std::cos(2.0*theta_m)
         - 2.0 * cos_m * cos_p - std::cos(2.0*theta_p));
-    src_terms_j2_(js) = 1.0/3.0 * (sin_m*sin_m*sin_m - sin_p*sin_p*sin_p)
+    src_terms_j2_(pb->js) = 1.0/3.0 * (sin_m*sin_m*sin_m - sin_p*sin_p*sin_p)
         / (cos_m - cos_p);
-    src_terms_j3_(js) = std::cot(0.5 * (theta_m + theta_p));
+    src_terms_j3_(pb->js) = tan(PI/2.0 - 0.5 * (theta_m + theta_p));
 
     // Cell-centered metric
-    metric_cell_j1_(js) = sin_c*sin_c;
-    metric_cell_j2_(js) = 1.0 / metric_cell_j1_(js);
+    metric_cell_j1_(pb->js) = sin_c*sin_c;
+    metric_cell_j2_(pb->js) = 1.0 / metric_cell_j1_(pb->js);
 
     // Face-centered metric
-    metric_face1_j1_(js) = metric_cell_j1_(js);
-    metric_face2_j1_(js) = sin_m*sin_m;
-    metric_face3_j1_(js) = metric_cell_j1_(js);
+    metric_face1_j1_(pb->js) = metric_cell_j1_(pb->js);
+    metric_face2_j1_(pb->js) = sin_m*sin_m;
+    metric_face3_j1_(pb->js) = metric_cell_j1_(pb->js);
 
     // Coordinate transformations
-    trans_face1_j1_(js) = sin_c;
-    trans_face1_j2_(js) = 1.0 / sin_c;
-    trans_face2_j1_(js) = sin_m;
-    trans_face2_j2_(js) = 1.0 / sin_m;
-    trans_face3_j1_(js) = sin_m;
-    trans_face3_j2_(js) = trans_face2_j2_(js);
+    trans_face1_j1_(pb->js) = sin_c;
+    trans_face1_j2_(pb->js) = 1.0 / sin_c;
+    trans_face2_j1_(pb->js) = sin_m;
+    trans_face2_j2_(pb->js) = 1.0 / sin_m;
+    trans_face3_j1_(pb->js) = sin_m;
+    trans_face3_j2_(pb->js) = trans_face2_j2_(pb->js);
   }
 }
 
@@ -441,9 +442,9 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 #pragma simd
   for (int i = il; i <= iu; i++)
   {
-    Real &area = areas(i);
+    Real &volume = volumes(i);
     Real &third_delta_r_cb = volume_i_(i);
-    area = third_delta_r_cb * neg_delta_cos_theta * delta_phi;
+    volume = third_delta_r_cb * neg_delta_cos_theta * delta_phi;
   }
   return;
 }
@@ -462,7 +463,7 @@ void Coordinates::CoordinateSourceTerms(const int k, const int j,
     AthenaArray<Real> &prim, AthenaArray<Real> &sources)
 {
   // Extract ratio of specific heats
-  const Real gamma_adi = pmy_fluid->GetGamma();
+  const Real gamma_adi = pmy_block->pfluid->GetGamma();
   const Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Extract geometric quantities that do not depend on r
@@ -884,5 +885,81 @@ void Coordinates::FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flu
     t32 = f_m2;
     t33 = f_m3;
   }
+  return;
+}
+
+// Function for converting all primitives to conserved variables
+// Inputs:
+//   prim: 3D array of primitives
+// Outputs:
+//   cons: 3D array of conserved variables
+void Coordinates::PrimToCons(AthenaArray<Real> &prim, AthenaArray<Real> &cons)
+{
+  // Extract ratio of specific heats
+  const Real gamma_adi = pmy_block->pfluid->GetGamma();
+  const Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
+
+  // Prepare index bounds
+  int il = pmy_block->is - NGHOST;
+  int iu = pmy_block->ie + NGHOST;
+  int jl = pmy_block->js;
+  int ju = pmy_block->je;
+  if (pmy_block->block_size.nx2 > 1)
+  {
+    jl -= (NGHOST);
+    ju += (NGHOST);
+  }
+  int kl = pmy_block->ks;
+  int ku = pmy_block->ke;
+  if (pmy_block->block_size.nx3 > 1)
+  {
+    kl -= (NGHOST);
+    ku += (NGHOST);
+  }
+
+  // Go through all cells
+  for (int k = kl; k <= ku; k++)
+    for (int j = jl; j <= ju; j++)
+#pragma simd
+      for (int i = il; i <= iu; i++)
+      {
+        // Extract geometric quantities
+        Real &g00 = metric_cell_i1_(i);
+        Real &g11 = metric_cell_i2_(i);
+        Real &g22 = metric_cell_i3_(i);
+        Real g33 = metric_cell_i3_(i) * metric_cell_j1_(j);
+
+        // Extract primitives
+        Real &rho = prim(IDN,k,j,i);
+        Real &pgas = prim(IEN,k,j,i);
+        Real &v1 = prim(IVX,k,j,i);
+        Real &v2 = prim(IVY,k,j,i);
+        Real &v3 = prim(IVZ,k,j,i);
+
+        // Extract conserved quantities
+        Real &d = cons(IDN,k,j,i);
+        Real &e = cons(IEN,k,j,i);
+        Real &m1 = cons(IVX,k,j,i);
+        Real &m2 = cons(IVY,k,j,i);
+        Real &m3 = cons(IVZ,k,j,i);
+
+        // Calculate 4-velocity
+        Real u0 = std::sqrt(-1.0 / (g00 + g11*v1*v1 + g22*v2*v2 + g33*v3*v3));
+        Real u1 = u0 * v1;
+        Real u2 = u0 * v2;
+        Real u3 = u0 * v3;
+        Real u_lower_0 = g00 * u0;
+        Real u_lower_1 = g11 * u1;
+        Real u_lower_2 = g22 * u2;
+        Real u_lower_3 = g33 * u3;
+
+        // Calculate conserved quantities
+        d = rho * u0;
+        Real rho_h = rho + gamma_adi_red * pgas;
+        e = rho_h * u0 * u_lower_0 + pgas;
+        m1 = rho_h * u0 * u_lower_1;
+        m2 = rho_h * u0 * u_lower_2;
+        m3 = rho_h * u0 * u_lower_3;
+      }
   return;
 }

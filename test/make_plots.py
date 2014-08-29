@@ -32,8 +32,8 @@ def main(**kwargs):
                   ['2', '400', '0.4', '0.4', 'prim'],
                   ['3', '400', '0.4', '0.4', 'prim'],
                   ['4', '400', '0.4', '0.4', 'prim']]
-      run_old('mb', 'hydro_sr_old_', settings)
-      run_new('mb_', 'hydro_sr_new_', settings)
+      run_old_shock('mb', 'hydro_sr_old_', settings)
+      run_new_shock('mb_', 'hydro_sr_new_', settings)
     if plots_needed:
       plot_shockset('plots/hydro_sr_shockset')
   elif problem == 'hydro_sr_shockset_gr':  # relativistic hydro shocks in GR framework
@@ -42,10 +42,26 @@ def main(**kwargs):
                   ['2', '400', '0.4', '0.4', 'prim'],
                   ['3', '400', '0.4', '0.4', 'prim'],
                   ['4', '400', '0.4', '0.4', 'prim']]
-      run_old('mb', 'hydro_sr_gr_old_', settings)
-      run_new_gr('mb_', 'hydro_sr_gr_new_', settings)
+      run_old_shock('mb', 'hydro_sr_gr_old_', settings)
+      run_new_shock_gr('mb_', 'hydro_sr_gr_new_', settings)
     if plots_needed:
       plot_shockset('plots/hydro_sr_shockset_gr', gr=True)
+  elif problem == 'hydro_schwarzschild':  # 1D radial accretion onto Schwarzschild BH
+    if computation_needed:
+      make_string = 'make all \
+          COORDINATES_FILE=schwarzschild.cpp \
+          CONVERT_VAR_FILE=adiabatic_hydro_gr.cpp \
+          PROBLEM_FILE=accretion_gr.cpp \
+          RSOLVER_FILE=hlle_gr.cpp \
+          RECONSTRUCT_FILE=plm.cpp'
+      name_string = 'hydro_schwarzschild_geodesic'
+      run_string = './athena \
+          -i ../inputs/hydro_gr/athinput.geodesic \
+          job/problem_id={0} \
+          output1/variable=prim'.format(name_string)
+      run_new(make_string, run_string, name_string)
+    if plots_needed:
+      plot_accretion('hydro_schwarzschild_geodesic')
   else:
     print('ERROR: problem not recognized')
 
@@ -135,8 +151,57 @@ def plot_shockset_aux(rows, cols, position, data_old, data_new, divisors, y_limi
       r'v_x{2}\ \mathrm{{(b)}}$').\
       format(divisor_strings[0], divisor_strings[1], divisor_strings[2]))
 
+# Function for plotting accretion
+def plot_accretion(filename):
+
+  # Set parameters
+  mass = 1.0
+  gamma_adi = 5.0/3.0
+
+  # Read and process data
+  filename_actual = glob.glob('data/{0}*0.tab'.format(filename))[0]
+  data = read_athena(filename_actual, ['r', 'rho', 'pgas', 'v1', 'v2', 'v3'])
+  alpha = (1.0 - 2.0*mass/data['r'])**0.5
+  u0 = 1.0/(1.0 - 2.0*mass/data['r'])
+  epsilon = 1.0/(1.0-gamma_adi) * data['pgas']/data['rho']
+  d_norm = alpha * data['rho'] * u0
+  e_norm = epsilon * d_norm
+
+  # Calculate expected values
+  v_expected = -(2.0*mass/data['r'])**0.5 * (1.0 - 2.0*mass/data['r'])
+  d_expected = 1.0/data['r']**2 * (data['r']/(2.0*mass))**0.5 \
+      * (1.0 - 2.0*mass/data['r'])**-0.5
+  d_expected *= d_norm[-1] / d_expected[-1]
+  e_expected = (data['r']**2 * (2.0*mass/data['r'])**0.5)**-gamma_adi \
+      * (1.0 - 2.0*mass/data['r'])**(-(gamma_adi+1.0)/4.0)
+  e_expected *= e_norm[-1] / e_expected[-1]
+
+  # Plot data
+  plot_accretion_aux(2, 2, 1, data['r'], None, data['rho'], [0.0, 20.0], None, r'$\rho$')
+  plot_accretion_aux(2, 2, 2, data['r'], -v_expected, -data['v1'], [0.0, 20.0], None,
+      r'$v_\mathrm{infall} = -v^1$')
+  plot_accretion_aux(2, 2, 3, data['r'], d_expected, d_norm, [0.0, 20.0], None,
+      r'$D = \alpha \rho u^0$')
+  plot_accretion_aux(2, 2, 4, data['r'], -e_expected, -e_norm, [0.0, 20.0], None,
+      r'$E = -\alpha \rho \epsilon u^0$')
+  plt.tight_layout()
+  plt.savefig('plots/' + filename + '.png')
+
+# Auxiliary function for plotting accretion
+def plot_accretion_aux(rows, cols, position, r, vals_expected, vals_actual, r_range,
+    val_range, val_label):
+  plt.subplot(rows, cols, position)
+  if vals_expected is not None:
+    plt.plot(r, vals_expected, c='gray', lw=3)
+  plt.plot(r, vals_actual, 'ko', ms=2)
+  plt.xlim(r_range)
+  if val_range is not None:
+    plt.ylim(val_range)
+  plt.xlabel(r'$r$')
+  plt.ylabel(val_label)
+
 # Function for running old Athena
-def run_old(input_prefix, output_prefix, settings):
+def run_old_shock(input_prefix, output_prefix, settings):
 
   # Prepare strings
   old_athena_env = 'ATHENA_ROOT'
@@ -180,12 +245,12 @@ def run_old(input_prefix, output_prefix, settings):
     exit()
 
 # Function for running new Athena
-def run_new(input_prefix, output_prefix, settings):
+def run_new_shock(input_prefix, output_prefix, settings):
 
   # Prepare strings
   new_make_string = 'make all COORDINATES_FILE=cartesian.cpp \
       CONVERT_VAR_FILE=adiabatic_hydro_sr.cpp PROBLEM_FILE=shock_tube_sr.cpp \
-      RSOLVER_FILE=hllc_sr.cpp RECONSTRUCT_FILE=plm.cpp'
+      RSOLVER_FILE=hlle_sr.cpp RECONSTRUCT_FILE=plm.cpp'
   # TODO: change when -d option works
   #new_run_string = './athena -i inputs/hydro_sr/athinput.' + input_prefix + '{1} \
   #    -d {0}/data job/problem_id=' + output_prefix + '{1} output1/variable={5} \
@@ -230,7 +295,7 @@ def run_new(input_prefix, output_prefix, settings):
     exit()
 
 # Function for running new Athena with GR
-def run_new_gr(input_prefix, output_prefix, settings):
+def run_new_shock_gr(input_prefix, output_prefix, settings):
 
   # Prepare strings
   new_make_string = 'make all COORDINATES_FILE=minkowski_cartesian.cpp \
@@ -266,15 +331,55 @@ def run_new_gr(input_prefix, output_prefix, settings):
   try:
     current_directory = os.getcwd()
     os.chdir('..')
-    os.system('make clean ')#&> /dev/null')
-    os.system(new_make_string )#+ ' &> /dev/null')
+    os.system('make clean &> /dev/null')
+    os.system(new_make_string + ' &> /dev/null')
     os.chdir('bin')
     for case in settings:
       print(new_run_string.format(current_directory, case[0], case[1], case[2], case[3], case[4]))
       os.system(new_run_string.format(current_directory, case[0], case[1], case[2],
-          case[3], case[4]) )#+ ' &> /dev/null')
+          case[3], case[4]) + ' &> /dev/null')
       # TODO: remove when -d option works
       os.system('mv {0}*.tab {1}/data/.'.format(output_prefix, current_directory))
+    os.chdir(current_directory)
+  except OSError as err:
+    print('OS Error ({0}): {1}'.format(err.errno, err.strerror))
+    exit()
+
+# Function for running new Athena in general
+def run_new(make_string, run_string, name_string):
+
+  # Delete old data
+  print('deleting old data...')
+  try:
+    os.system('rm -f data/{0}*.tab'.format(name_string))
+    # TODO: remove when -d option works
+    os.system('rm -f ../bin/{0}*.tab'.format(name_string))
+  except OSError as err:
+    print('OS Error ({0}): {1}'.format(err.errno, err.strerror))
+    exit()
+
+  # Compile code
+  print('compiling code...')
+  try:
+    current_directory = os.getcwd()
+    os.chdir('..')
+    os.system('make clean &> /dev/null')
+    #os.system(make_string + ' &> /dev/null')
+    os.system(make_string)
+    os.chdir('bin')
+  except OSError as err:
+    print('OS Error ({0}): {1}'.format(err.errno, err.strerror))
+    exit()
+
+  # Generate new data
+  print('generating new data...')
+  try:
+    #os.system(run_string + ' &> /dev/null')
+    print(run_string)
+    os.system(run_string)
+    exit()
+    # TODO: remove when -d option works
+    os.system('mv {0}*.tab {1}/data/.'.format(name_string, current_directory))
     os.chdir(current_directory)
   except OSError as err:
     print('OS Error ({0}): {1}'.format(err.errno, err.strerror))
