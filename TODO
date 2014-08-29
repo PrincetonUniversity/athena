@@ -61,3 +61,10 @@ Other:
    - but only guaranteed for C++11
    - pre-C++11 if included it is in global namespace, not std::
    - cbrt(<>) treats negative inputs correctly; pow(<>,1./3.) does not
+ - Check for local declarations at the beginnings of files
+   - Often have "// Declarations" line above them
+   - Consist of helper functions only used by that file
+   - Is there a way ensure these don't have namespace collisions with other files?
+     - Namespaces?
+     - Static or inline linkage? (What do these *really* do in C++ anyway?)
+   - Manually inline for performance anyway?
