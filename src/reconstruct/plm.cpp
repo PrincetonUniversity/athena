@@ -21,7 +21,7 @@
 #include "../athena.hpp"         // macros, Real
 #include "../athena_arrays.hpp"  // AthenaArray
 #include "../fluid.hpp"          // Fluid
-#include "../mesh.hpp"           // Block
+#include "../mesh.hpp"           // MeshBlock
 
 //======================================================================================
 /*! \file plm.cpp

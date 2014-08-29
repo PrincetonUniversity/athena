@@ -7,7 +7,7 @@
 #include "../athena.hpp"                   // enums, Real
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../coordinates/coordinates.hpp"  // PrimToCons()
-#include "../mesh.hpp"                     // Block, Domain, Mesh
+#include "../mesh.hpp"                     // MeshBlock, MeshDomain, Mesh
 #include "../parameter_input.hpp"          // ParameterInput
 
 // Declarations
@@ -23,7 +23,7 @@ static void set_state(AthenaArray<Real> &prim, AthenaArray<Real> &prim_half, int
 void Fluid::InitFluid(ParameterInput *pin)
 {
   // Prepare index bounds
-  Block *pb = pmy_block;
+  MeshBlock *pb = pmy_block;
   int il = pb->is - NGHOST;
   int iu = pb->ie + NGHOST;
   int jl = pb->js;

@@ -5,7 +5,7 @@ problem = GR hydro accretion
 problem_id  = BHAccretion  # problem ID: basename of output filenames
 
 <output1>
-file_format = tab      # tabular data dump
+file_type   = tab      # tabular data dump
 variable    = cons     # variables to be output
 data_format = %24.16e  # optional data format string
 dt          = 1.0      # time increment between outputs

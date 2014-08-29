@@ -21,7 +21,7 @@
 #include "../athena.hpp"         // macros
 #include "../athena_arrays.hpp"  // AthenaArray
 #include "../fluid.hpp"          // Fluid
-#include "../mesh.hpp"           // Block
+#include "../mesh.hpp"           // MeshBlock
 
 //======================================================================================
 /*! \file integrators.cpp
