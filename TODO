@@ -1,5 +1,16 @@
 Fluid:
  - timestep calculation only works for Newtonian hydro
+ - design decision: metric arrays
+   - currently have g, g_inv as 1D arrays (x 10 for size of metric) in Fluid
+   - no longer used in Fluid; currently only used in FluidEqnOfState (cons -> prim)
+   - FluidEqnOfState could calculate needed size (ncells1) and allocate g,g_inv
+     - Fluid would no longer need g,g_inv
+     - Would avoid awkward deep copy of arrays just to get size
+       - Even a shallow *copy* would be awkward
+   - Cons:
+     - maybe something else under Fluid will want metric; don't want to duplicate
+       ncells1 calculation
+     - Fluid is already calculating ncells1 anyway
 
 Integrators:
  - do we really need all of ivx, ivy, and ivz?
@@ -42,6 +53,14 @@ Mesh:
 
 Optimization:
  - const-ness of input int's can't be influencing code, can it?
+
+AthenaArray:
+ - check bug fix in move operator
+   - athena_arrays.hpp, line 115
+   - template<typename T> AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src)
+   - "this." -> "this->"?
+   - compiler never complained before -> not instantiatated anywhere (and therefore
+     never compiled)?
 
 Documentation (wiki pages):
  - tutorial

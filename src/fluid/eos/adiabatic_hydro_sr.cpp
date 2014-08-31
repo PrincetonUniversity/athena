@@ -1,17 +1,32 @@
 // Conserved-to-primitive inversion for adiabatic hydrodynamics in special relativity
 
-// TODO: make conserved inputs const
+// TODO: make inputs const?
 
 // Primary header
-#include "../fluid.hpp"
+#include "eos.hpp"
 
 // C++ headers
-#include <cmath>      // atan2(), cbrt(), cos(), sqrt()
+#include <cmath>  // atan2(), cbrt(), cos(), sqrt()
 
 // Athena headers
-#include "../athena.hpp"         // enums, macros, Real
-#include "../athena_arrays.hpp"  // AthenaArray
-#include "../mesh.hpp"           // MeshBlock
+#include "../fluid.hpp"               // Fluid
+#include "../../athena.hpp"           // enums, macros, Real
+#include "../../athena_arrays.hpp"    // AthenaArray
+#include "../../mesh.hpp"             // MeshBlock
+#include "../../parameter_input.hpp"  // GetReal()
+
+// Constructor
+// Inputs:
+//   pf: pointer to fluid object
+//   pin: pointer to runtime inputs
+FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
+{
+  pmy_fluid_ = pf;
+  gamma_ = pin->GetReal("fluid", "gamma");
+}
+
+// Destructor
+FluidEqnOfState::~FluidEqnOfState() {}
 
 // Variable inverter
 // Inputs:
@@ -42,8 +57,8 @@
 //          d0 = 1/2 * (x0 - sqrt(x0^2 - 4 a0))
 //          then |v|^2 + d1 |v| + d0 = 0
 //          |v| = 1/2 * (-d1 + sqrt(d1^2 - 4 d0))
-void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &prim_old,
-    AthenaArray<Real> &prim)
+void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
+    AthenaArray<Real> &prim_old, AthenaArray<Real> &prim)
 {
   // Parameters
   const Real max_velocity = 1.0 - 1.0e-15;
@@ -53,7 +68,7 @@ void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &pri
   const Real gamma_adi_minus_1 = gamma_adi - 1.0;
 
   // Determine array bounds
-  MeshBlock *pb = pmy_block;
+  MeshBlock *pb = pmy_fluid_->pmy_block;
   int is = pb->is;
   int ie = pb->ie;
   int jl = pb->js;

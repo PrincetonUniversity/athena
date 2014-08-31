@@ -3,18 +3,18 @@
 // TODO: make left and right inputs const
 
 // Primary header
-#include "../integrators/integrators.hpp"
+#include "../integrators.hpp"
 
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
 // Athena headers
-#include "../athena.hpp"                   // enums, macros, Real
-#include "../athena_arrays.hpp"            // AthenaArray
-#include "../coordinates/coordinates.hpp"  // Coordinates
-#include "../fluid.hpp"                    // Fluid
-#include "../mesh.hpp"                     // MeshBlock
+#include "../../fluid.hpp"                       // Fluid
+#include "../../../athena.hpp"                   // enums, macros, Real
+#include "../../../athena_arrays.hpp"            // AthenaArray
+#include "../../../coordinates/coordinates.hpp"  // Coordinates
+#include "../../../mesh.hpp"                     // MeshBlock
 
 // Riemann solver
 // Inputs:

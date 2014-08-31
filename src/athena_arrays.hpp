@@ -115,16 +115,16 @@ AthenaArray<T>::AthenaArray(const AthenaArray<T>& src) {
 template<typename T>
 AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
   if (this != &src){
-    this.nx1_ = src.nx1_;
-    this.nx2_ = src.nx2_;
-    this.nx3_ = src.nx3_;
-    this.nx4_ = src.nx4_;
+    this->nx1_ = src.nx1_;
+    this->nx2_ = src.nx2_;
+    this->nx3_ = src.nx3_;
+    this->nx4_ = src.nx4_;
 
-    delete[] this.pdata_;
+    delete[] this->pdata_;
     std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_);
-    this.pdata_ = new T[size];
+    this->pdata_ = new T[size];
     for (std::size_t i=0; i<size; ++i) {
-      this.pdata_[i] = src.pdata_[i];
+      this->pdata_[i] = src.pdata_[i];
     } 
   }
   return *this;

@@ -27,7 +27,8 @@ using namespace globals;
 // Constructor
 // Inputs:
 //   pb: pointer to MeshBlock containing this grid
-Coordinates::Coordinates(MeshBlock *pb)
+//   pin: pointer to runtime inputs
+Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
 {
   // Set pointer to host MeshBlock
   pmy_block = pb;

@@ -18,11 +18,11 @@
 #include "eos.hpp"
 
 // Athena headers
-#include "../../athena.hpp"         // enums, macros, Real
-#include "../../athena_arrays.hpp"  // AthenaArray
-#include "../../mesh.hpp"           // MeshBlock
-#include "../fluid.hpp"
-#include "../../parameter_input.hpp"
+#include "../fluid.hpp"               // Fluid
+#include "../../athena.hpp"           // enums, macros, Real
+#include "../../athena_arrays.hpp"    // AthenaArray
+#include "../../mesh.hpp"             // MeshBlock
+#include "../../parameter_input.hpp"  // GetReal()
 
 //======================================================================================
 /*! \file adiabatic_hydro.cpp

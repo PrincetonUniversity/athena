@@ -17,14 +17,15 @@ EXECUTABLE_NAME := run_tests
 EXECUTABLE := $(BIN_DIR)$(EXECUTABLE_NAME)_$(words $(wildcard $(BIN_DIR)$(EXECUTABLE_NAME)_*))
 TEST_SRC := $(wildcard src/*.cpp) $(wildcard $(LOCAL_LOCATION)/*.cpp)
 ATHENA_SRC := $(wildcard ../src/*.cpp) \
-	      $(wildcard ../src/bvals/*.cpp) \
-	      $(wildcard ../src/integrators/*.cpp) \
+	      $(wildcard ../src/fluid/*.cpp) \
+	      $(wildcard ../src/fluid/bvals/*.cpp) \
+	      $(wildcard ../src/fluid/integrators/*.cpp) \
 	      $(wildcard ../src/outputs/*.cpp) \
 	      ../src/coordinates/$(COORDINATES_FILE) \
-	      ../src/convert_var/$(CONVERT_VAR_FILE) \
-	      ../src/pgen/$(PROBLEM_FILE) \
-	      ../src/reconstruct/$(RECONSTRUCT_FILE) \
-	      ../src/rsolvers/$(RSOLVER_FILE)
+	      ../src/fluid/eos/$(CONVERT_VAR_FILE) \
+	      ../src/fluid/integrators/reconstruct/$(RECONSTRUCT_FILE) \
+	      ../src/fluid/integrators/rsolvers/$(RSOLVER_FILE) \
+	      ../src/pgen/$(PROBLEM_FILE)
 SRC_DIR := $(dir $(TEST_SRC)) $(dir $(ATHENA_SRC))
 OBJ_DIR := obj/
 OBJ_FILES := $(addprefix $(OBJ_DIR),$(notdir $(TEST_SRC)) $(filter-out main.cpp,$(notdir $(ATHENA_SRC))))

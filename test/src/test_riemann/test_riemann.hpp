@@ -4,7 +4,7 @@
 #define TEST_RIEMANN_HPP
 
 // Primary headers
-#include "../../../src/integrators/integrators.hpp"
+#include "../../../src/fluid/integrators/integrators.hpp"
 #include "../test.hpp"
 
 // C++ headers

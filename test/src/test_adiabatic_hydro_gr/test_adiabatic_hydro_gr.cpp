@@ -25,7 +25,7 @@ TEST_F(AdiabaticHydroGRTest1, TestAll)
   primitive_to_conserved();
 
   // Check conserved-to-primitive inversion
-  pfluid->ConservedToPrimitive(cons, prim, prim);
+  pf_eos->ConservedToPrimitive(cons, prim, prim);
   for (int n = 0; n < NVAR; n++)
     EXPECT_DOUBLE_TOL(prim_expected[n], prim(n,0,0,0));
 }
@@ -45,7 +45,7 @@ TEST_F(AdiabaticHydroGRTest2, TestX)
   primitive_to_conserved();
 
   // Check conserved-to-primitive inversion
-  pfluid->ConservedToPrimitive(cons, prim, prim);
+  pf_eos->ConservedToPrimitive(cons, prim, prim);
   for (int n = 0; n < NVAR; n++)
     EXPECT_DOUBLE_TOL(prim_expected[n], prim(n,0,0,0));
 }
@@ -69,7 +69,7 @@ TEST_P(AdiabaticHydroGRTest2, TestImperfect)
   prim(IM3,0,0,0) = 0.0;
 
   // Check conserved-to-primitive inversion
-  pfluid->ConservedToPrimitive(cons, prim, prim);
+  pf_eos->ConservedToPrimitive(cons, prim, prim);
   for (int n = 0; n < NVAR; n++)
     EXPECT_DOUBLE_TOL(prim_expected[n], prim(n,0,0,0));
 }

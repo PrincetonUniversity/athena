@@ -1,19 +1,21 @@
 // Conserved-to-primitive inversion for adiabatic hydrodynamics in general relativity
 
-// TODO: make conserved inputs const
+// TODO: make inputs const?
 // TODO: manually inline functions?
 
 // Primary header
-#include "../fluid.hpp"
+#include "eos.hpp"
 
 // C++ headers
 #include <cmath>  // NAN, sqrt(), abs(), isfinite()
 
 // Athena headers
-#include "../athena.hpp"                   // enums, macros, Real
-#include "../athena_arrays.hpp"            // AthenaArray
-#include "../coordinates/coordinates.hpp"  // Coordinates
-#include "../mesh.hpp"                     // MeshBlock
+#include "../fluid.hpp"                       // Fluid
+#include "../../athena.hpp"                   // enums, macros, Real
+#include "../../athena_arrays.hpp"            // AthenaArray
+#include "../../coordinates/coordinates.hpp"  // Coordinates
+#include "../../mesh.hpp"                     // MeshBlock
+#include "../../parameter_input.hpp"          // GetReal()
 
 // Declarations
 Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
@@ -21,6 +23,27 @@ Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
 Real residual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq,
     Real gamma_prime);
 Real residual_derivative(Real w_guess, Real d_norm, Real q_norm_sq, Real gamma_prime);
+
+// Constructor
+// Inputs:
+//   pf: pointer to fluid object
+//   pin: pointer to runtime inputs
+FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
+{
+  pmy_fluid_ = pf;
+  gamma_ = pin->GetReal("fluid", "gamma");
+  // TODO: find better way of getting g_ and g_inv_ to have correct size
+  //       note might be ok to have these arrays overlap with pf->g,g_inv in memory
+  g_ = pf->g;
+  g_inv_ = pf->g_inv;
+}
+
+// Destructor
+FluidEqnOfState::~FluidEqnOfState()
+{
+  g_.DeleteAthenaArray();
+  g_inv_.DeleteAthenaArray();
+}
 
 // Variable inverter
 // Inputs:
@@ -31,20 +54,19 @@ Real residual_derivative(Real w_guess, Real d_norm, Real q_norm_sq, Real gamma_p
 // Notes:
 //   follows Noble et al. 2006, ApJ 641 626 (N)
 //   implements formulas assuming no magnetic field
-void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &prim_old,
-    AthenaArray<Real> &prim)
+void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
+    AthenaArray<Real> &prim_old, AthenaArray<Real> &prim)
 {
   // Parameters
   const Real max_velocity = 1.0 - 1.0e-15;
   const Real initial_guess_multiplier = 10.0;
   const int initial_guess_multiplications = 10;
 
-  // Extract ratio of specific heats
-  const Real gamma_adi = GetGamma();
-  const Real gamma_prime = gamma_adi / (gamma_adi - 1.0);
+  // Calculate reduced ratio of specific heats
+  const Real gamma_prime = gamma_ / (gamma_ - 1.0);
 
   // Determine array bounds
-  MeshBlock *pb = pmy_block;
+  MeshBlock *pb = pmy_fluid_->pmy_block;
   int is = pb->is;
   int ie = pb->ie;
   int jl = pb->js;
@@ -66,25 +88,25 @@ void Fluid::ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &pri
   for (int k = kl; k <= ku; k++)
     for (int j = jl; j <= ju; j++)
     {
-      pb->pcoord->CellMetric(k, j, g, g_inv);
+      pb->pcoord->CellMetric(k, j, g_, g_inv_);
 #pragma simd
       for (int i = is-NGHOST; i <= ie+NGHOST; i++)
       {
         // Extract metric
-        Real &g00 = g(I00,i), &g01 = g(I01,i), &g02 = g(I02,i), &g03 = g(I03,i);
-        Real &g10 = g(I01,i), &g11 = g(I11,i), &g12 = g(I12,i), &g13 = g(I13,i);
-        Real &g20 = g(I02,i), &g21 = g(I12,i), &g22 = g(I22,i), &g23 = g(I23,i);
-        Real &g30 = g(I03,i), &g31 = g(I13,i), &g32 = g(I23,i), &g33 = g(I33,i);
+        Real &g00 = g_(I00,i), &g01 = g_(I01,i), &g02 = g_(I02,i), &g03 = g_(I03,i);
+        Real &g10 = g_(I01,i), &g11 = g_(I11,i), &g12 = g_(I12,i), &g13 = g_(I13,i);
+        Real &g20 = g_(I02,i), &g21 = g_(I12,i), &g22 = g_(I22,i), &g23 = g_(I23,i);
+        Real &g30 = g_(I03,i), &g31 = g_(I13,i), &g32 = g_(I23,i), &g33 = g_(I33,i);
 
         // Extract inverse of metric
-        Real &gi00 = g_inv(I00,i), &gi01 = g_inv(I01,i), &gi02 = g_inv(I02,i),
-             &gi03 = g_inv(I03,i);
-        Real &gi10 = g_inv(I01,i), &gi11 = g_inv(I11,i), &gi12 = g_inv(I12,i),
-             &gi13 = g_inv(I13,i);
-        Real &gi20 = g_inv(I02,i), &gi21 = g_inv(I12,i), &gi22 = g_inv(I22,i),
-             &gi23 = g_inv(I23,i);
-        Real &gi30 = g_inv(I03,i), &gi31 = g_inv(I13,i), &gi32 = g_inv(I23,i),
-             &gi33 = g_inv(I33,i);
+        Real &gi00 = g_inv_(I00,i), &gi01 = g_inv_(I01,i), &gi02 = g_inv_(I02,i),
+             &gi03 = g_inv_(I03,i);
+        Real &gi10 = g_inv_(I01,i), &gi11 = g_inv_(I11,i), &gi12 = g_inv_(I12,i),
+             &gi13 = g_inv_(I13,i);
+        Real &gi20 = g_inv_(I02,i), &gi21 = g_inv_(I12,i), &gi22 = g_inv_(I22,i),
+             &gi23 = g_inv_(I23,i);
+        Real &gi30 = g_inv_(I03,i), &gi31 = g_inv_(I13,i), &gi32 = g_inv_(I23,i),
+             &gi33 = g_inv_(I33,i);
 
         // Extract conserved quantities
         Real &d = cons(IDN,k,j,i);

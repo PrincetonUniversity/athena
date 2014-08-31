@@ -4,7 +4,7 @@
 #define TEST_ADIABATIC_HYDRO_SR_HPP
 
 // Primary headers
-#include "../../../src/fluid.hpp"
+#include "../../../src/fluid/eos/eos.hpp"
 #include "../test.hpp"
 
 // C++ headers
@@ -14,6 +14,7 @@
 #include "../../../src/athena.hpp"           // macros, Real
 #include "../../../src/athena_arrays.hpp"    // AthenaArray
 #include "../../../src/mesh.hpp"             // Mesh, MeshDomain, MeshBlock
+#include "../../../src/fluid/fluid.hpp"      // Fluid
 #include "../../../src/parameter_input.hpp"  // ParameterInput
 
 namespace {
@@ -27,7 +28,7 @@ class AdiabaticHydroSRTest : public GeneralTest
   ParameterInput *inputs;
   std::string input_file;
   Mesh *mesh;
-  Fluid *pfluid;
+  FluidEqnOfState *pf_eos;
   AthenaArray<Real> cons, prim;
   Real prim_expected[NVAR];
 
@@ -54,7 +55,7 @@ class AdiabaticHydroSRTest : public GeneralTest
     pblock->ie = -NGHOST;
     pblock->js = pblock->je = 0;
     pblock->ks = pblock->ke = 0;
-    pfluid = pblock->pfluid;
+    pf_eos = pblock->pfluid->pf_eos;
     cons.NewAthenaArray(NVAR,1,1,1);
     prim.NewAthenaArray(NVAR,1,1,1);
   }

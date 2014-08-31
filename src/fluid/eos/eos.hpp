@@ -33,7 +33,8 @@ public:
   Real GetGamma() const {return gamma_;}
 
 private:
-  Fluid *pmy_fluid_;  // ptr to Fluid containing this EqnOfState
-  Real gamma_;        // ratio of specific heats
+  Fluid *pmy_fluid_;             // ptr to Fluid containing this EqnOfState
+  Real gamma_;                   // ratio of specific heats
+  AthenaArray<Real> g_, g_inv_;  // metric and its inverse
 };
 #endif

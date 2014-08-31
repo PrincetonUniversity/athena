@@ -1,7 +1,7 @@
 // General relativistic black hole accretion generator
 
 // Primary header
-#include "../fluid.hpp"
+#include "../fluid/fluid.hpp"
 
 // Athena headers
 #include "../athena.hpp"                   // enums, Real

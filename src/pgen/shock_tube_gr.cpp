@@ -1,7 +1,7 @@
 // General relativistic shock tube generator
 
 // Primary header
-#include "../fluid.hpp"
+#include "../fluid/fluid.hpp"
 
 // C++ headers
 #include <iostream>   // endl

@@ -28,7 +28,7 @@ TEST_F(AdiabaticHydroSRTest1, TestX)
   prim_expected[IM3] = 0.0;
 
   // Check conserved-to-primitive inversion
-  pfluid->ConservedToPrimitive(cons, prim, prim);
+  pf_eos->ConservedToPrimitive(cons, prim, prim);
   for (int n = 0; n < NVAR; n++)
     EXPECT_DOUBLE_TOL(prim_expected[n], prim(n,0,0,0));
 }
