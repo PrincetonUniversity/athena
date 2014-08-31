@@ -13,7 +13,7 @@
 // Athena headers
 #include "../../../src/athena.hpp"           // macros, Real
 #include "../../../src/athena_arrays.hpp"    // AthenaArray
-#include "../../../src/mesh.hpp"             // Mesh, Domain, Block
+#include "../../../src/mesh.hpp"             // Mesh, MeshDomain, MeshBlock
 #include "../../../src/parameter_input.hpp"  // ParameterInput
 
 namespace {
@@ -48,7 +48,7 @@ class RiemannTest : public GeneralTest
     const char *argv[] = {"athena", "-i", input_file.c_str()};
     inputs->ModifyFromCmdline(3, const_cast<char **>(argv));
     mesh = new Mesh(inputs);
-    mesh->InitializeAcrossDomains(initial_conditions, inputs);
+    mesh->ForAllDomains(init_fluid, inputs);
     pfluid_integrator = new FluidIntegrator(mesh->pdomain->pblock->pfluid);
     prim_left.NewAthenaArray(NVAR,1,1,1);
     prim_right.NewAthenaArray(NVAR,1,1,1);

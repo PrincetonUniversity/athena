@@ -14,7 +14,7 @@
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../fluid.hpp"                    // Fluid
-#include "../mesh.hpp"                     // Block
+#include "../mesh.hpp"                     // MeshBlock
 
 // Riemann solver
 // Inputs:
