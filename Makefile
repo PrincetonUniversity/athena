@@ -19,14 +19,15 @@ LIBRARY_FLAGS := -lm
 EXE_DIR := bin/
 EXECUTABLE := $(EXE_DIR)athena
 SRC_FILES := $(wildcard src/*.cpp) \
-	     $(wildcard src/bvals/*.cpp) \
 	     src/coordinates/$(COORDINATES_FILE) \
-	     $(wildcard src/integrators/*.cpp) \
+	     $(wildcard src/fluid/*.cpp) \
+	     $(wildcard src/fluid/bvals/*.cpp) \
+	     $(wildcard src/fluid/integrators/*.cpp) \
 	     $(wildcard src/outputs/*.cpp) \
-	     src/convert_var/$(CONVERT_VAR_FILE) \
+	     src/fluid/eos/$(CONVERT_VAR_FILE) \
 	     src/pgen/$(PROBLEM_FILE) \
-	     src/reconstruct/$(RECONSTRUCT_FILE) \
-	     src/rsolvers/$(RSOLVER_FILE)
+	     src/fluid/integrators/reconstruct/$(RECONSTRUCT_FILE) \
+	     src/fluid/integrators/rsolvers/$(RSOLVER_FILE)
 SRC_DIR := $(dir $(SRC_FILES))
 OBJ_DIR := obj/
 OBJ_FILES := $(addprefix $(OBJ_DIR),$(notdir $(SRC_FILES:.cpp=.o)))

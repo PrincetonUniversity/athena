@@ -10,8 +10,8 @@
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
  * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
- * You should have received a copy of GNU GPL in the file LICENSE included in
- * the code distribution.  If not see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of GNU GPL in the file LICENSE included in the code
+ * distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
 #include <stdio.h>
@@ -20,11 +20,11 @@
 #include "integrators.hpp"
 
 // Athena headers
-#include "../athena.hpp"                   // enums, macros, Real
-#include "../athena_arrays.hpp"            // AthenaArray
-#include "../coordinates/coordinates.hpp"  // Coordinates
+#include "../../athena.hpp"                   // enums, macros, Real
+#include "../../athena_arrays.hpp"            // AthenaArray
+#include "../../coordinates/coordinates.hpp"  // Coordinates
 #include "../fluid.hpp"                    // Fluid
-#include "../mesh.hpp"                     // MeshBlock
+#include "../../mesh.hpp"                     // MeshBlock
 
 //======================================================================================
 /*! \file van_leer2.cpp

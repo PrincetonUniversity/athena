@@ -10,8 +10,8 @@
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
  * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
- * You should have received a copy of GNU GPL in the file LICENSE included in
- * the code distribution.  If not see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of GNU GPL in the file LICENSE included in the code
+ * distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
 #include <sstream>
@@ -25,7 +25,7 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../mesh.hpp"
-#include "../fluid.hpp"
+#include "../fluid/fluid.hpp"
 #include "outputs.hpp"
 
 //--------------------------------------------------------------------------------------

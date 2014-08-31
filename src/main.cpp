@@ -10,8 +10,8 @@
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
  * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
- * You should have received a copy of GNU GPL in the file LICENSE included in
- * the code distribution.  If not see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of GNU GPL in the file LICENSE included in the code
+ * distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
 // Primary header
@@ -178,10 +178,15 @@ int main(int argc, char *argv[])
 
 // apply BCs, compute primitive from conserved variables, compute first timestep
 
+  std::cout << "here 1" << std::endl;
+
   mesh->ForAllDomains( fluid_bcs_n,inputs);
+  std::cout << "here 2" << std::endl;
   mesh->ForAllDomains(bfield_bcs_n,inputs);
   mesh->ForAllDomains(primitives_n,inputs);
+  std::cout << "here 3" << std::endl;
   mesh->ForAllDomains(new_timestep,inputs);
+  std::cout << "here 4" << std::endl;
 
 //--- Step 6. --------------------------------------------------------------------------
 // Initialize output object on each Block, and make outputs of initial conditions
@@ -200,6 +205,7 @@ int main(int argc, char *argv[])
     std::cout << ex.what() << std::endl;  // prints diagnostic message  
     return(0);
   }
+  std::cout << "here 5" << std::endl;
 
 //--- Step 9. === START OF MAIN INTEGRATION LOOP =======================================
 // For performance, there is no error handler protecting this step

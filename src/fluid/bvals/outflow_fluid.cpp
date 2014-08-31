@@ -10,31 +10,31 @@
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
  * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
- * You should have received a copy of GNU GPL in the file LICENSE included in
- * the code distribution.  If not see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of GNU GPL in the file LICENSE included in the code
+ * distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
 // Primary header
 #include "bvals.hpp"
 
 // Athena headers
-#include "../athena.hpp"         // macros, Real
-#include "../athena_arrays.hpp"  // AthenaArray
-#include "../mesh.hpp"           // MeshBlock
+#include "../../athena.hpp"         // macros, Real
+#include "../../athena_arrays.hpp"  // AthenaArray
+#include "../../mesh.hpp"           // MeshBlock
 
 //======================================================================================
-/*! \file periodic_fluid.cpp
- *  \brief implements periodic BCs in each dimension for conserved fluid variables
+/*! \file outflow_fluid.cpp
+ *  \brief implements outflow BCs in each dimension for conserved fluid variables
  *====================================================================================*/
 //--------------------------------------------------------------------------------------
-//! \fn void PeriodicInnerX1(MeshBlock *pb)
-//  \brief  PERIODIC boundary conditions conserved vars, inner x1 boundary (ix1_bc=4)
+//! \fn void OutflowInnerX1(MeshBlock *pmb)
+//  \brief  OUTFLOW  boundary conditions conserved vars, inner x1 boundary (ix1_bc=2)
 
-void PeriodicInnerX1(MeshBlock *pb, AthenaArray<Real> &a)
+void OutflowInnerX1(MeshBlock *pmb, AthenaArray<Real> &a)
 {
-  int is = pb->is, ie = pb->ie;
-  int js = pb->js, je = pb->je;
-  int ks = pb->ks, ke = pb->ke;
+  int is = pmb->is;
+  int js = pmb->js, je = pmb->je;
+  int ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=ks; k<=ke; ++k) {
@@ -42,7 +42,7 @@ void PeriodicInnerX1(MeshBlock *pb, AthenaArray<Real> &a)
     for (int n=0; n<(NVAR); ++n) {
 #pragma simd
       for (int i=1; i<=(NGHOST); ++i) {
-        la(n,k,j,is-i) = la(n,k,j,(ie-i+1));
+        la(n,k,j,is-i) = la(n,k,j,(is+i-1));
       }
     }
   }}
@@ -51,14 +51,14 @@ void PeriodicInnerX1(MeshBlock *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void PeriodicOuterX1(MeshBlock *pb)
-//  \brief  PERIODIC boundary conditions conserved vars, outer x1 boundary (ox1_bc=4)
+//! \fn void OutflowOuterX1(MeshBlock *pmb)
+//  \brief  OUTFLOW  boundary conditions conserved vars, outer x1 boundary (ox1_bc=2)
 
-void PeriodicOuterX1(MeshBlock *pb, AthenaArray<Real> &a)
+void OutflowOuterX1(MeshBlock *pmb, AthenaArray<Real> &a)
 {
-  int is = pb->is, ie = pb->ie;
-  int js = pb->js, je = pb->je;
-  int ks = pb->ks, ke = pb->ke;
+  int ie = pmb->ie;
+  int js = pmb->js, je = pmb->je;
+  int ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=ks; k<=ke; ++k) {
@@ -66,7 +66,7 @@ void PeriodicOuterX1(MeshBlock *pb, AthenaArray<Real> &a)
     for (int n=0; n<(NVAR); ++n) {
 #pragma simd
       for (int i=1; i<=(NGHOST); ++i) {
-        la(n,k,j,ie+i) = la(n,k,j,(is+i-1));
+        la(n,k,j,ie+i) = la(n,k,j,(ie-i+1));
       }
     }
   }}
@@ -75,14 +75,14 @@ void PeriodicOuterX1(MeshBlock *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void PeriodicInnerX2(MeshBlock *pb)
-//  \brief  PERIODIC boundary conditions conserved vars, inner x2 boundary (ix2_bc=4)
+//! \fn void OutflowInnerX2(MeshBlock *pmb)
+//  \brief  OUTFLOW  boundary conditions conserved vars, inner x2 boundary (ix2_bc=2)
 
-void PeriodicInnerX2(MeshBlock *pb, AthenaArray<Real> &a)
+void OutflowInnerX2(MeshBlock *pmb, AthenaArray<Real> &a)
 {
-  int is = pb->is, ie = pb->ie;
-  int js = pb->js, je = pb->je;
-  int ks = pb->ks, ke = pb->ke;
+  int is = pmb->is, ie = pmb->ie;
+  int js = pmb->js;
+  int ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=ks; k<=ke; ++k) {
@@ -90,7 +90,7 @@ void PeriodicInnerX2(MeshBlock *pb, AthenaArray<Real> &a)
     for (int n=0; n<(NVAR); ++n) {
 #pragma simd
       for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-        la(n,k,js-j,i) = la(n,k,je-j+1,i);
+        la(n,k,js-j,i) = la(n,k,js+j-1,i);
       }
     }
   }}
@@ -99,14 +99,14 @@ void PeriodicInnerX2(MeshBlock *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void PeriodicOuterX2(MeshBlock *pb)
-//  \brief  PERIODIC boundary conditions conserved vars, outer x2 boundary (ox2_bc=4)
+//! \fn void OutflowOuterX2(MeshBlock *pmb)
+//  \brief  OUTFLOW  boundary conditions conserved vars, outer x2 boundary (ox2_bc=2)
 
-void PeriodicOuterX2(MeshBlock *pb, AthenaArray<Real> &a)
+void OutflowOuterX2(MeshBlock *pmb, AthenaArray<Real> &a)
 {
-  int is = pb->is, ie = pb->ie;
-  int js = pb->js, je = pb->je;
-  int ks = pb->ks, ke = pb->ke;
+  int is = pmb->is, ie = pmb->ie;
+  int je = pmb->je;
+  int ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=ks; k<=ke; ++k) {
@@ -114,7 +114,7 @@ void PeriodicOuterX2(MeshBlock *pb, AthenaArray<Real> &a)
     for (int n=0; n<(NVAR); ++n) {
 #pragma simd
       for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-        la(n,k,je+j,i) = la(n,k,js+j-1,i);
+        la(n,k,je+j,i) = la(n,k,je-j+1,i);
       }
     }
   }}
@@ -123,14 +123,14 @@ void PeriodicOuterX2(MeshBlock *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void PeriodicInnerX3(MeshBlock *pb)
-//  \brief  PERIODIC boundary conditions conserved vars, inner x3 boundary (ix3_bc=4)
+//! \fn void OutflowInnerX3(MeshBlock *pmb)
+//  \brief  OUTFLOW  boundary conditions conserved vars, inner x3 boundary (ix3_bc=2)
 
-void PeriodicInnerX3(MeshBlock *pb, AthenaArray<Real> &a)
+void OutflowInnerX3(MeshBlock *pmb, AthenaArray<Real> &a)
 {
-  int is = pb->is, ie = pb->ie;
-  int js = pb->js, je = pb->je;
-  int ks = pb->ks, ke = pb->ke;
+  int is = pmb->is, ie = pmb->ie;
+  int js = pmb->js, je = pmb->je;
+  int ks = pmb->ks;
   AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=1; k<=(NGHOST); ++k) {
@@ -138,7 +138,7 @@ void PeriodicInnerX3(MeshBlock *pb, AthenaArray<Real> &a)
     for (int n=0; n<(NVAR); ++n) {
 #pragma simd
       for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-        la(n,ks-k,j,i) = la(n,ke-k+1,j,i);
+        la(n,ks-k,j,i) = la(n,ks+k-1,j,i);
       }
     }
   }}
@@ -147,14 +147,14 @@ void PeriodicInnerX3(MeshBlock *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void PeriodicOuterX3(MeshBlock *pb)
-//  \brief  PERIODIC boundary conditions conserved vars, outer x3 boundary (ox3_bc=4)
+//! \fn void OutflowOuterX3(MeshBlock *pmb)
+//  \brief  OUTFLOW  boundary conditions conserved vars, outer x3 boundary (ox3_bc=2)
 
-void PeriodicOuterX3(MeshBlock *pb, AthenaArray<Real> &a)
+void OutflowOuterX3(MeshBlock *pmb, AthenaArray<Real> &a)
 {
-  int is = pb->is, ie = pb->ie;
-  int js = pb->js, je = pb->je;
-  int ks = pb->ks, ke = pb->ke;
+  int is = pmb->is, ie = pmb->ie;
+  int js = pmb->js, je = pmb->je;
+  int ke = pmb->ke;
   AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=1; k<=(NGHOST); ++k) {
@@ -162,7 +162,7 @@ void PeriodicOuterX3(MeshBlock *pb, AthenaArray<Real> &a)
     for (int n=0; n<(NVAR); ++n) {
 #pragma simd
       for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-        la(n,ke+k,j,i) = la(n,ks+k-1,j,i);
+        la(n,ke+k,j,i) = la(n,ke-k+1,j,i);
       }
     }
   }}

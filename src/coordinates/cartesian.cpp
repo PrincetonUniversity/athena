@@ -10,8 +10,8 @@
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
  * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
- * You should have received a copy of GNU GPL in the file LICENSE included in
- * the code distribution.  If not see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of GNU GPL in the file LICENSE included in the code
+ * distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
 // Primary header
@@ -27,9 +27,9 @@
 //  \brief implements functions in class Coordinates for Cartesian coordinates
 //======================================================================================
 
-// constructor
+// Coordinates constructor
 
-Coordinates::Coordinates(MeshBlock *pmb)
+Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_block = pmb;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
@@ -93,8 +93,9 @@ Coordinates::~Coordinates()
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn 
-// \brief
+/* \!fn void Coordinates::Area1Face(const int k, const int j, const int il,
+ *  const int iu, AthenaArray<Real> &area)
+ * \brief  functions to compute area at each face of a grid cell    */
 
 void Coordinates::Area1Face(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
@@ -134,8 +135,9 @@ void Coordinates::Area3Face(const int k, const int j, const int il, const int iu
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn 
-// \brief
+/* \!fn void Coordinates::CellVolume(const int k,const int j,const int il, const int iu,
+ *   AthenaArray<Real> &vol)
+ * \brief function to compute cell volume    */
 
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &vol)
@@ -151,8 +153,9 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn 
-// \brief
+/* \!fn void Coordinates::CoordinateSourceTerms(
+ *   const int k, const int j, AthenaArray<Real> &prim, AthenaArray<Real> &src)
+ * \brief function to compute source terms associated with geometry */
 
 void Coordinates::CoordinateSourceTerms(
   const int k, const int j, AthenaArray<Real> &prim, AthenaArray<Real> &src)

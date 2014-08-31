@@ -10,18 +10,18 @@
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
  * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
- * You should have received a copy of GNU GPL in the file LICENSE included in
- * the code distribution.  If not see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of GNU GPL in the file LICENSE included in the code
+ * distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
 // Primary header
-#include "../integrators/integrators.hpp"
+#include "../integrators.hpp"
 
 // Athena headers
-#include "../athena.hpp"         // macros, Real
-#include "../athena_arrays.hpp"  // AthenaArray
-#include "../fluid.hpp"          // Fluid
-#include "../mesh.hpp"           // Block
+#include "../../../athena.hpp"         // macros, Real
+#include "../../../athena_arrays.hpp"  // AthenaArray
+#include "../../fluid.hpp"          // Fluid
+#include "../../../mesh.hpp"           // Block
 
 //======================================================================================
 /*! \file plm.cpp

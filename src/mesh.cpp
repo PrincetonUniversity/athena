@@ -10,8 +10,8 @@
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
  * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
- * You should have received a copy of GNU GPL in the file LICENSE included in
- * the code distribution.  If not see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of GNU GPL in the file LICENSE included in the code
+ * distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
 // Primary header
@@ -28,10 +28,11 @@
 // Athena headers
 #include "athena.hpp"                   // enums, macros, Real
 #include "athena_arrays.hpp"            // AthenaArray
-#include "bvals/bvals.hpp"              // FluidBoundaryConditions
 #include "coordinates/coordinates.hpp"  // Coordinates
-#include "fluid.hpp"                    // Fluid
-#include "integrators/integrators.hpp"  // FluidIntegrator
+#include "fluid/fluid.hpp"                    // Fluid
+#include "fluid/bvals/bvals.hpp"              // FluidBoundaryConditions
+#include "fluid/eos/eos.hpp"              // FluidEqnOfState
+#include "fluid/integrators/integrators.hpp"  // FluidIntegrator
 #include "outputs/outputs.hpp"          // Outputs
 #include "parameter_input.hpp"          // ParameterInput
 
@@ -147,19 +148,19 @@ Mesh::Mesh(ParameterInput *pin)
 // read BC flags for each of the 6 boundaries in turn.  Error tests performed in
 // function FluidBoundaryConditions::InitBoundaryConditions
 
-  mesh_bndry.ix1_bc = pin->GetOrAddInteger("mesh","ix1_bc",0);
-  mesh_bndry.ox1_bc = pin->GetOrAddInteger("mesh","ox1_bc",0);
-  mesh_bndry.ix2_bc = pin->GetOrAddInteger("mesh","ix2_bc",0);
-  mesh_bndry.ox2_bc = pin->GetOrAddInteger("mesh","ox2_bc",0);
-  mesh_bndry.ix3_bc = pin->GetOrAddInteger("mesh","ix3_bc",0);
-  mesh_bndry.ox3_bc = pin->GetOrAddInteger("mesh","ox3_bc",0);
+  mesh_bcs.ix1_bc = pin->GetOrAddInteger("mesh","ix1_bc",0);
+  mesh_bcs.ox1_bc = pin->GetOrAddInteger("mesh","ox1_bc",0);
+  mesh_bcs.ix2_bc = pin->GetOrAddInteger("mesh","ix2_bc",0);
+  mesh_bcs.ox2_bc = pin->GetOrAddInteger("mesh","ox2_bc",0);
+  mesh_bcs.ix3_bc = pin->GetOrAddInteger("mesh","ix3_bc",0);
+  mesh_bcs.ox3_bc = pin->GetOrAddInteger("mesh","ox3_bc",0);
 
 // allocate root domain
 
-  pdomain = new MeshDomain(mesh_size, mesh_bndry, this);
+  pdomain = new MeshDomain(mesh_size, mesh_bcs, this, pin);
 }
 
-// Mesh destructor
+// destructor
 
 Mesh::~Mesh()
 {
@@ -169,21 +170,21 @@ Mesh::~Mesh()
 //--------------------------------------------------------------------------------------
 // MeshDomain constructor: builds array of MeshBlocks based on input arguments.
 
-MeshDomain::MeshDomain(RegionSize input_size, RegionBCFlags input_bndry, Mesh* pm)
+MeshDomain::MeshDomain(RegionSize in_size, RegionBCs in_bcs, Mesh* pm, ParameterInput *pin)
 {
   pmy_mesh = pm;
-  domain_size  = input_size;
-  domain_bndry = input_bndry;
+  domain_size = in_size;
+  domain_bcs  = in_bcs;
 
 // allocate block on this domain
 // In future w MPI: calculate array of blocks, set their region sizes, and initialize
 
-  pblock = new MeshBlock(domain_size, domain_bndry, this);
+  pblock = new MeshBlock(domain_size, domain_bcs, this, pin);
 
   return;
 }
 
-// MeshDomain destructor
+// destructor
 
 MeshDomain::~MeshDomain()
 {
@@ -194,11 +195,11 @@ MeshDomain::~MeshDomain()
 // MeshBlock constructor: builds 1D vectors of cell positions and spacings, and
 // constructs coordinate, boundary condition, and fluid objects.
 
-MeshBlock::MeshBlock(RegionSize input_size, RegionBCFlags input_bndry, MeshDomain *pd)
+MeshBlock::MeshBlock(RegionSize in_size, RegionBCs in_bcs, MeshDomain *pd, ParameterInput *pin)
 {
   pmy_domain = pd;
-  block_size  = input_size;
-  block_bndry = input_bndry;
+  block_size = in_size;
+  block_bcs  = in_bcs;
 
 // initialize grid indices
 
@@ -262,7 +263,7 @@ MeshBlock::MeshBlock(RegionSize input_size, RegionBCFlags input_bndry, MeshDomai
 
 // cell face positions and spacing in ghost zones
 
-  if (block_bndry.ix1_bc == 1) {
+  if (block_bcs.ix1_bc == 1) {
     for (int i=1; i<=(NGHOST); ++i) {
       dx1f(is-i) = dx1f(is+i-1);
        x1f(is-i) =  x1f(is-i+1) - dx1f(is-i);
@@ -274,7 +275,7 @@ MeshBlock::MeshBlock(RegionSize input_size, RegionBCFlags input_bndry, MeshDomai
     }
   }
 
-  if (block_bndry.ox1_bc == 1) {
+  if (block_bcs.ox1_bc == 1) {
     for (int i=1; i<=(NGHOST); ++i) {
       dx1f(ie+i  ) = dx1f(ie-i+1);
        x1f(ie+i+1) =  x1f(ie+i) + dx1f(ie+i);
@@ -309,7 +310,7 @@ MeshBlock::MeshBlock(RegionSize input_size, RegionBCFlags input_bndry, MeshDomai
 
 // cell face positions and spacing in ghost zones
 
-    if (block_bndry.ix2_bc == 1) {
+    if (block_bcs.ix2_bc == 1) {
       for (int j=1; j<=(NGHOST); ++j) {
         dx2f(js-j) = dx2f(js+j-1);
          x2f(js-j) =  x2f(js-j+1) - dx2f(js-j);
@@ -321,7 +322,7 @@ MeshBlock::MeshBlock(RegionSize input_size, RegionBCFlags input_bndry, MeshDomai
       }
     }
 
-    if (block_bndry.ox2_bc == 1) {
+    if (block_bcs.ox2_bc == 1) {
       for (int j=1; j<=(NGHOST); ++j) {
         dx2f(je+j  ) = dx2f(je-j+1);
          x2f(je+j+1) =  x2f(je+j) + dx2f(je+j);
@@ -357,7 +358,7 @@ MeshBlock::MeshBlock(RegionSize input_size, RegionBCFlags input_bndry, MeshDomai
 
 // cell face positions and spacing in ghost zones
 
-    if (block_bndry.ix3_bc == 1) {
+    if (block_bcs.ix3_bc == 1) {
       for (int k=1; k<=(NGHOST); ++k) {
         dx3f(ks-k) = dx3f(ks+k-1);
          x3f(ks-k) =  x3f(ks-k+1) - dx3f(ks-k);
@@ -369,7 +370,7 @@ MeshBlock::MeshBlock(RegionSize input_size, RegionBCFlags input_bndry, MeshDomai
       }
     }
 
-    if (block_bndry.ox3_bc == 1) {
+    if (block_bcs.ox3_bc == 1) {
       for (int k=1; k<=(NGHOST); ++k) {
         dx3f(ke+k  ) = dx3f(ke-k+1);
          x3f(ke+k+1) =  x3f(ke+k) + dx3f(ke+k);
@@ -384,15 +385,13 @@ MeshBlock::MeshBlock(RegionSize input_size, RegionBCFlags input_bndry, MeshDomai
 
 // construct various objects stored in MeshBlock class.  Constructors do the following:
 //   Coordinates: initializes volume-centered coordinates (x1v,dx1v,...)
-//   FluidBoundaryConditions: sets function pointers for each edge of this block
 //   Fluid: allocates memory for arrays, and constructs FluidIntegrator.
 //   Outputs:
 // initial conditions for fluid set in problem generator called from main
  
-  pcoord   = new Coordinates(this);
-  pf_bcs   = new FluidBoundaryConditions(this);
-  pfluid   = new Fluid(this);
-  poutputs = new Outputs(this);
+  pcoord   = new Coordinates(this, pin);
+  pfluid   = new Fluid(this, pin);
+  poutputs = new Outputs(this, pin);
 
 /*******************
   for (int i=0; i<((ie-is+1)+2*(NGHOST)); ++i) {
@@ -421,7 +420,7 @@ MeshBlock::MeshBlock(RegionSize input_size, RegionBCFlags input_bndry, MeshDomai
   return;
 }
 
-// MeshBlock destructor
+// destructor
 
 MeshBlock::~MeshBlock()
 {
@@ -443,8 +442,8 @@ MeshBlock::~MeshBlock()
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn 
-// \brief
+// \!fn void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
+// \brief function that loops over all MeshDomains and calls MeshBlock functions
 
 void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
 {
@@ -465,11 +464,11 @@ void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
         break;
 
       case fluid_bcs_n:
-        pdomain->pblock->pf_bcs->ApplyBoundaryConditions(pf->u);
+        pdomain->pblock->pfluid->pf_bcs->ApplyBoundaryConditions(pf->u);
         break;
 
       case fluid_bcs_nhalf:
-        pdomain->pblock->pf_bcs->ApplyBoundaryConditions(pf->u1);
+        pdomain->pblock->pfluid->pf_bcs->ApplyBoundaryConditions(pf->u1);
         break;
 
       case fluid_predict:
@@ -481,11 +480,11 @@ void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
         break;
 
       case primitives_n:
-        pdomain->pblock->pfluid->ConservedToPrimitive(pf->u,pf->w1,pf->w);
+        pdomain->pblock->pfluid->pf_eos->ConservedToPrimitive(pf->u,pf->w1,pf->w);
         break;
 
       case primitives_nhalf:
-        pdomain->pblock->pfluid->ConservedToPrimitive(pf->u1,pf->w,pf->w1);
+        pdomain->pblock->pfluid->pf_eos->ConservedToPrimitive(pf->u1,pf->w,pf->w1);
         break;
 
       case new_timestep:

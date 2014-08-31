@@ -147,7 +147,7 @@ public:
 
 class Outputs {
 public:
-  Outputs(MeshBlock *pmb);
+  Outputs(MeshBlock *pmb, ParameterInput *pin);
   ~Outputs();
   MeshBlock *pmy_block;  // ptr to MeshBlock containing this Outputs
 

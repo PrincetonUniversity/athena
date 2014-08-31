@@ -10,31 +10,31 @@
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
  * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
- * You should have received a copy of GNU GPL in the file LICENSE included in
- * the code distribution.  If not see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of GNU GPL in the file LICENSE included in the code
+ * distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
 // Primary header
 #include "bvals.hpp"
 
 // Athena headers
-#include "../athena.hpp"         // macros, Real
-#include "../athena_arrays.hpp"  // AthenaArray
-#include "../mesh.hpp"           // MeshBlock
+#include "../../athena.hpp"         // macros, Real
+#include "../../athena_arrays.hpp"  // AthenaArray
+#include "../../mesh.hpp"           // MeshBlock
 
 //======================================================================================
 /*! \file reflect_fluid.cpp
  *  \brief implements reflecting BCs in each dimension for conserved fluid variables
  *====================================================================================*/
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectInnerX1(MeshBlock *pb)
+//! \fn void ReflectInnerX1(MeshBlock *pmb)
 //  \brief  REFLECTING boundary conditions conserved vars, inner x1 boundary (ix1_bc=1)
 
-void ReflectInnerX1(MeshBlock *pb, AthenaArray<Real> &a)
+void ReflectInnerX1(MeshBlock *pmb, AthenaArray<Real> &a)
 {
-  int is = pb->is;
-  int js = pb->js, je = pb->je;
-  int ks = pb->ks, ke = pb->ke;
+  int is = pmb->is;
+  int js = pmb->js, je = pmb->je;
+  int ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=ks; k<=ke; ++k) {
@@ -61,14 +61,14 @@ void ReflectInnerX1(MeshBlock *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectOuterX1(MeshBlock *pb)
+//! \fn void ReflectOuterX1(MeshBlock *pmb)
 //  \brief  REFLECTING boundary conditions conserved vars, outer x1 boundary (ox1_bc=1)
 
-void ReflectOuterX1(MeshBlock *pb, AthenaArray<Real> &a)
+void ReflectOuterX1(MeshBlock *pmb, AthenaArray<Real> &a)
 {
-  int ie = pb->ie;
-  int js = pb->js, je = pb->je;
-  int ks = pb->ks, ke = pb->ke;
+  int ie = pmb->ie;
+  int js = pmb->js, je = pmb->je;
+  int ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=ks; k<=ke; ++k) {
@@ -95,14 +95,14 @@ void ReflectOuterX1(MeshBlock *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectInnerX2(MeshBlock *pb)
+//! \fn void ReflectInnerX2(MeshBlock *pmb)
 //  \brief  REFLECTING boundary conditions conserved vars, inner x2 boundary (ix2_bc=1)
 
-void ReflectInnerX2(MeshBlock *pb, AthenaArray<Real> &a)
+void ReflectInnerX2(MeshBlock *pmb, AthenaArray<Real> &a)
 {
-  int is = pb->is, ie = pb->ie;
-  int js = pb->js;
-  int ks = pb->ks, ke = pb->ke;
+  int is = pmb->is, ie = pmb->ie;
+  int js = pmb->js;
+  int ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=ks; k<=ke; ++k) {
@@ -129,14 +129,14 @@ void ReflectInnerX2(MeshBlock *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectOuterX2(MeshBlock *pb)
+//! \fn void ReflectOuterX2(MeshBlock *pmb)
 //  \brief  REFLECTING boundary conditions conserved vars, outer x2 boundary (ox2_bc=1)
 
-void ReflectOuterX2(MeshBlock *pb, AthenaArray<Real> &a)
+void ReflectOuterX2(MeshBlock *pmb, AthenaArray<Real> &a)
 {
-  int is = pb->is, ie = pb->ie;
-  int je = pb->je;
-  int ks = pb->ks, ke = pb->ke;
+  int is = pmb->is, ie = pmb->ie;
+  int je = pmb->je;
+  int ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=ks; k<=ke; ++k) {
@@ -163,14 +163,14 @@ void ReflectOuterX2(MeshBlock *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectInnerX3(MeshBlock *pb)
+//! \fn void ReflectInnerX3(MeshBlock *pmb)
 //  \brief  REFLECTING boundary conditions conserved vars, inner x3 boundary (ix3_bc=1)
 
-void ReflectInnerX3(MeshBlock *pb, AthenaArray<Real> &a)
+void ReflectInnerX3(MeshBlock *pmb, AthenaArray<Real> &a)
 {
-  int is = pb->is, ie = pb->ie;
-  int js = pb->js, je = pb->je;
-  int ks = pb->ks;
+  int is = pmb->is, ie = pmb->ie;
+  int js = pmb->js, je = pmb->je;
+  int ks = pmb->ks;
   AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=1; k<=(NGHOST); ++k) {
@@ -197,14 +197,14 @@ void ReflectInnerX3(MeshBlock *pb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectOuterX3(MeshBlock *pb)
+//! \fn void ReflectOuterX3(MeshBlock *pmb)
 //  \brief  REFLECTING boundary conditions conserved vars, outer x3 boundary (ox3_bc=1)
 
-void ReflectOuterX3(MeshBlock *pb, AthenaArray<Real> &a)
+void ReflectOuterX3(MeshBlock *pmb, AthenaArray<Real> &a)
 {
-  int is = pb->is, ie = pb->ie;
-  int js = pb->js, je = pb->je;
-  int ke = pb->ke;
+  int is = pmb->is, ie = pmb->ie;
+  int js = pmb->js, je = pmb->je;
+  int ke = pmb->ke;
   AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=1; k<=(NGHOST); ++k) {

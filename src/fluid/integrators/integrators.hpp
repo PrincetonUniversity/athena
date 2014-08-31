@@ -10,8 +10,8 @@
  *====================================================================================*/
 
 // Athena headers
-#include "../athena.hpp"         // Real
-#include "../athena_arrays.hpp"  // AthenaArray
+#include "../../athena.hpp"         // Real
+#include "../../athena_arrays.hpp"  // AthenaArray
 
 class MeshBlock;
 class Fluid;

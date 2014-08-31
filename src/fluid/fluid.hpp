@@ -11,13 +11,14 @@
  *====================================================================================*/
 
 // Athena headers
-#include "athena.hpp"         // Real
-#include "athena_arrays.hpp"  // AthenaArray
+#include "../athena.hpp"         // Real
+#include "../athena_arrays.hpp"  // AthenaArray
 
 class MeshBlock;
 class ParameterInput;
-class FluidBoundaryConditions;
 class FluidIntegrator;
+class FluidBoundaryConditions;
+class FluidEqnOfState;
 
 //! \class Fluid
 //  \brief fluid data and functions
@@ -25,9 +26,8 @@ class FluidIntegrator;
 class Fluid {
 friend class FluidIntegrator;
 public:
-  Fluid(MeshBlock *pmb);
+  Fluid(MeshBlock *pmb, ParameterInput *pin);
   ~Fluid();
-
   MeshBlock* pmy_block;    // ptr to MeshBlock containing this Fluid
 
   AthenaArray<Real> u,w;   // conserved and primitive variables
@@ -36,6 +36,8 @@ public:
   AthenaArray<Real> g, g_inv;  // metric and its inverse
 
   FluidIntegrator *pf_integrator;   // integration algorithm
+  FluidBoundaryConditions *pf_bcs;  // boundary conditions
+  FluidEqnOfState *pf_eos;
 
 // conserved to primitive functions implemented in files in /convert_var
   void ConservedToPrimitive(AthenaArray<Real> &c, AthenaArray<Real> &p_old,

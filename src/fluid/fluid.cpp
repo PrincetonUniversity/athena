@@ -10,8 +10,8 @@
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
  * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
- * You should have received a copy of GNU GPL in the file LICENSE included in
- * the code distribution.  If not see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of GNU GPL in the file LICENSE included in the code
+ * distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
 // Primary header
@@ -23,19 +23,21 @@
 #include <cmath>      // fabs(), sqrt()
 
 // Athena headers
-#include "athena.hpp"                   // array access, macros, Real
-#include "athena_arrays.hpp"            // AthenaArray
+#include "../athena.hpp"                   // array access, macros, Real
+#include "../athena_arrays.hpp"            // AthenaArray
+#include "bvals/bvals.hpp"               // FluidBoundaryConditions
+#include "eos/eos.hpp"                  // FluidEqnOfState
 #include "integrators/integrators.hpp"  // FluidIntegrator
-#include "mesh.hpp"                     // MeshBlock, Mesh
+#include "../mesh.hpp"                     // MeshBlock, Mesh
 
 //======================================================================================
 //! \file fluid.cpp
 //  \brief implementation of functions in class Fluid
 //======================================================================================
 
-// constructor, initializes data structures and parameters, calls problem generator
+// constructor, initializes data structures and parameters
 
-Fluid::Fluid(MeshBlock *pmb)
+Fluid::Fluid(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_block = pmb;
 
@@ -49,7 +51,7 @@ Fluid::Fluid(MeshBlock *pmb)
   u.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
   w.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
 
-// Allocate memory for primitive/conserved variables at half-time step
+// Allocate memory for primitive/conserved variables at intermediate-time step
 
   u1.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
   w1.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
@@ -68,6 +70,8 @@ Fluid::Fluid(MeshBlock *pmb)
 // Construct new integrator objects
 
   pf_integrator = new FluidIntegrator(this);
+  pf_bcs = new FluidBoundaryConditions(this);
+  pf_eos = new FluidEqnOfState(this, pin);
 }
 
 // destructor

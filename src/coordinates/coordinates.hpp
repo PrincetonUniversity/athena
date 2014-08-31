@@ -16,13 +16,14 @@
 
 // Declarations
 class MeshBlock;
+class ParameterInput;
 
 //! \class Coordinates
 //  \brief coordinate data and functions
 
 class Coordinates {
 public:
-  Coordinates(MeshBlock *pmb);
+  Coordinates(MeshBlock *pmb, ParameterInput *pin);
   ~Coordinates();
 
   MeshBlock *pmy_block;  // ptr to MeshBlock containing this Coordinates
