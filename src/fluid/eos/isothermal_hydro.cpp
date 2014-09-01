@@ -17,9 +17,6 @@
 // Primary header
 #include "eos.hpp"
 
-// C++ headers
-#include <cmath>   // sqrt()
-
 // Athena headers
 #include "../fluid.hpp"               // Fluid
 #include "../../athena.hpp"           // enums, macros, Real
@@ -28,8 +25,8 @@
 #include "../../parameter_input.hpp"  // GetReal()
 
 //======================================================================================
-/*! \file adiabatic_hydro.cpp
- *  \brief implements functions in class FluidEqnOfState for adiabatic hydrodynamics`
+/*! \file isothermal_hydro.cpp
+ *  \brief implements functions in class FluidEqnOfState for isothermal hydrodynamics`
  *====================================================================================*/
 
 // FluidEqnOfState constructor
@@ -37,7 +34,7 @@
 FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
 {
   pmy_fluid_ = pf;
-  gamma_ = pin->GetReal("fluid","gamma");
+  iso_sound_speed_ = pin->GetReal("fluid","iso_sound_speed"); // error if missing!
 }
 
 // destructor
@@ -81,22 +78,17 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       Real& u_m1 = lcons(IVX,k,j,i);
       Real& u_m2 = lcons(IVY,k,j,i);
       Real& u_m3 = lcons(IVZ,k,j,i);
-      Real& u_e  = lcons(IEN,k,j,i);
 
       Real& w_d  = lprim(IDN,k,j,i);
       Real& w_m1 = lprim(IVX,k,j,i);
       Real& w_m2 = lprim(IVY,k,j,i);
       Real& w_m3 = lprim(IVZ,k,j,i);
-      Real& w_p  = lprim(IEN,k,j,i);
 
       Real di = 1.0/u_d;
       w_d  = u_d;
       w_m1 = u_m1*di;
       w_m2 = u_m2*di;
       w_m3 = u_m3*di;
-
-      w_p = u_e - 0.5*di*(u_m1*u_m1 + u_m2*u_m2 + u_m3*u_m3);
-      w_p *= (GetGamma() - 1.0);
     }
   }}
 
@@ -104,10 +96,10 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 }
 
 //--------------------------------------------------------------------------------------
-/* \!fn Real FluidEqnOfState::SoundSpeed(Real prim[5])
- * \brief returns adiabatic sound speed given vector of primitive variables  */
+/* \!fn Real FluidEqnOfState::SoundSpeed(Real prim[NVAR])
+ * \brief returns isothermal sound speed */
 
 Real FluidEqnOfState::SoundSpeed(Real prim[NVAR])
 {
-  return GetGamma()*sqrt(prim[IEN]/prim[IDN]);
+  return iso_sound_speed_;
 }

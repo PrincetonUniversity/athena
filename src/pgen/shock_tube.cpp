@@ -28,6 +28,7 @@
 #include "../athena_arrays.hpp"    // AthenaArray
 #include "../mesh.hpp"             // MeshBlock
 #include "../parameter_input.hpp"  // ParameterInput
+#include "../fluid/eos/eos.hpp"    // ParameterInput
 
 //======================================================================================
 /*! \file shock_tube.cpp
@@ -45,16 +46,11 @@ void Fluid::InitFluid(ParameterInput *pin)
   int is = pb->is; int js = pb->js; int ks = pb->ks;
   int ie = pb->ie; int je = pb->je; int ke = pb->ke;
 
-// Read parameters from input file
-
-  gamma_ = pin->GetReal("fluid","gamma");
-  Real gm1 = (GetGamma()) - 1.0;
-
-// shock direction: {1,2,3} -> {x1,x2,x3}
+// parse shock direction: {1,2,3} -> {x1,x2,x3}
 
   int shk_dir = pin->GetInteger("problem","shock_dir"); 
 
-// shock location (must be inside grid)
+// parse shock location (must be inside grid)
 
   Real xshock = pin->GetReal("problem","xshock"); 
   if (shk_dir == 1 && (xshock < pb->pmy_domain->pmy_mesh->mesh_size.x1min ||
@@ -76,21 +72,23 @@ void Fluid::InitFluid(ParameterInput *pin)
     throw std::runtime_error(msg.str().c_str());
   }
 
-// Parse left state read from input file: dl,pl,ul,vl,wl
+// Parse left state read from input file: dl,ul,vl,wl,[pl]
 
-  Real dl = pin->GetReal("problem","dl");
-  Real pl = pin->GetReal("problem","pl");
-  Real ul = pin->GetReal("problem","ul");
-  Real vl = pin->GetReal("problem","vl");
-  Real wl = pin->GetReal("problem","wl");
+  Real wl[NVAR];
+  wl[IDN] = pin->GetReal("problem","dl");
+  wl[IVX] = pin->GetReal("problem","ul");
+  wl[IVY] = pin->GetReal("problem","vl");
+  wl[IVZ] = pin->GetReal("problem","wl");
+  if (NON_BAROTROPIC_EOS) wl[IEN] = pin->GetReal("problem","pl");
 
-// Parse right state read from input file: dr,pr,ur,vr,wr
+// Parse right state read from input file: dr,ur,vr,wr,[pr]
 
-  Real dr = pin->GetReal("problem","dr");
-  Real pr = pin->GetReal("problem","pr");
-  Real ur = pin->GetReal("problem","ur");
-  Real vr = pin->GetReal("problem","vr");
-  Real wr = pin->GetReal("problem","wr");
+  Real wr[NVAR];
+  wr[IDN] = pin->GetReal("problem","dr");
+  wr[IVX] = pin->GetReal("problem","ur");
+  wr[IVY] = pin->GetReal("problem","vr");
+  wr[IVZ] = pin->GetReal("problem","wr");
+  if (NON_BAROTROPIC_EOS) wr[IEN] = pin->GetReal("problem","pr");
 
 // Initialize the discontinuity
 
@@ -102,17 +100,19 @@ void Fluid::InitFluid(ParameterInput *pin)
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         if (pb->x1v(i) < xshock) {
-          u(IDN,k,j,i) = dl;
-          u(IM1,k,j,i) = ul*dl;
-          u(IM2,k,j,i) = vl*dl;
-          u(IM3,k,j,i) = wl*dl;
-          u(IEN,k,j,i) = pl/gm1 + 0.5*dl*(ul*ul + vl*vl + wl*wl);
+          u(IDN,k,j,i) = wl[IDN];
+          u(IM1,k,j,i) = wl[IVX]*wl[IDN];
+          u(IM2,k,j,i) = wl[IVY]*wl[IDN];
+          u(IM3,k,j,i) = wl[IVZ]*wl[IDN];
+          if (NON_BAROTROPIC_EOS) u(IEN,k,j,i)= wl[IEN]/(pf_eos->GetGamma() - 1.0) + 
+            0.5*wl[IDN]*(wl[IVX]*wl[IVX] + wl[IVY]*wl[IVY] + wl[IVZ]*wl[IVZ]);
         } else {
-          u(IDN,k,j,i) = dr;
-          u(IM1,k,j,i) = ur*dr;
-          u(IM2,k,j,i) = vr*dr;
-          u(IM3,k,j,i) = wr*dr;
-          u(IEN,k,j,i) = pr/gm1 + 0.5*dr*(ur*ur + vr*vr + wr*wr);
+          u(IDN,k,j,i) = wr[IDN];
+          u(IM1,k,j,i) = wr[IVX]*wr[IDN];
+          u(IM2,k,j,i) = wr[IVY]*wr[IDN];
+          u(IM3,k,j,i) = wr[IVZ]*wr[IDN];
+          if (NON_BAROTROPIC_EOS) u(IEN,k,j,i)= wr[IEN]/(pf_eos->GetGamma() - 1.0) + 
+            0.5*wr[IDN]*(wr[IVX]*wr[IVX] + wr[IVY]*wr[IVY] + wr[IVZ]*wr[IVZ]);
         }
       }
     }}
@@ -124,19 +124,21 @@ void Fluid::InitFluid(ParameterInput *pin)
     for (int j=js; j<=je; ++j) {
       if (pb->x2v(j) < xshock) {
         for (int i=is; i<=ie; ++i) {
-          u(IDN,k,j,i) = dl;
-          u(IM1,k,j,i) = wl*dl;
-          u(IM2,k,j,i) = ul*dl;
-          u(IM3,k,j,i) = vl*dl;
-          u(IEN,k,j,i) = pl/gm1 + 0.5*dl*(ul*ul + vl*vl + wl*wl);
+          u(IDN,k,j,i) = wl[IDN];
+          u(IM2,k,j,i) = wl[IVX]*wl[IDN];
+          u(IM3,k,j,i) = wl[IVY]*wl[IDN];
+          u(IM1,k,j,i) = wl[IVZ]*wl[IDN];
+          if (NON_BAROTROPIC_EOS) u(IEN,k,j,i)= wl[IEN]/(pf_eos->GetGamma() - 1.0) + 
+            0.5*wl[IDN]*(wl[IVX]*wl[IVX] + wl[IVY]*wl[IVY] + wl[IVZ]*wl[IVZ]);
         }
       } else {
         for (int i=is; i<=ie; ++i) {
-          u(IDN,k,j,i) = dr;
-          u(IM1,k,j,i) = wr*dr;
-          u(IM2,k,j,i) = ur*dr;
-          u(IM3,k,j,i) = vr*dr;
-          u(IEN,k,j,i) = pr/gm1 + 0.5*dr*(ur*ur + vr*vr + wr*wr);
+          u(IDN,k,j,i) = wr[IDN];
+          u(IM2,k,j,i) = wr[IVX]*wr[IDN];
+          u(IM3,k,j,i) = wr[IVY]*wr[IDN];
+          u(IM1,k,j,i) = wr[IVZ]*wr[IDN];
+          if (NON_BAROTROPIC_EOS) u(IEN,k,j,i)= wr[IEN]/(pf_eos->GetGamma() - 1.0) + 
+            0.5*wr[IDN]*(wr[IVX]*wr[IVX] + wr[IVY]*wr[IVY] + wr[IVZ]*wr[IVZ]);
         }
       }
     }}
@@ -149,20 +151,22 @@ void Fluid::InitFluid(ParameterInput *pin)
       if (pb->x3v(k) < xshock) {
         for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
-          u(IDN,k,j,i) = dl;
-          u(IM1,k,j,i) = vl*dl;
-          u(IM2,k,j,i) = wl*dl;
-          u(IM3,k,j,i) = ul*dl;
-          u(IEN,k,j,i) = pl/gm1 + 0.5*dl*(ul*ul + vl*vl + wl*wl);
+          u(IDN,k,j,i) = wl[IDN];
+          u(IM3,k,j,i) = wl[IVX]*wl[IDN];
+          u(IM1,k,j,i) = wl[IVY]*wl[IDN];
+          u(IM2,k,j,i) = wl[IVZ]*wl[IDN];
+          if (NON_BAROTROPIC_EOS) u(IEN,k,j,i)= wl[IEN]/(pf_eos->GetGamma() - 1.0) + 
+            0.5*wl[IDN]*(wl[IVX]*wl[IVX] + wl[IVY]*wl[IVY] + wl[IVZ]*wl[IVZ]);
         }}
       } else {
         for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
-          u(IDN,k,j,i) = dr;
-          u(IM1,k,j,i) = vr*dr;
-          u(IM2,k,j,i) = wr*dr;
-          u(IM3,k,j,i) = ur*dr;
-          u(IEN,k,j,i) = pr/gm1 + 0.5*dr*(ur*ur + vr*vr + wr*wr);
+          u(IDN,k,j,i) = wr[IDN];
+          u(IM3,k,j,i) = wr[IVX]*wr[IDN];
+          u(IM1,k,j,i) = wr[IVY]*wr[IDN];
+          u(IM2,k,j,i) = wr[IVZ]*wr[IDN];
+          if (NON_BAROTROPIC_EOS) u(IEN,k,j,i)= wr[IEN]/(pf_eos->GetGamma() - 1.0) + 
+            0.5*wr[IDN]*(wr[IVX]*wr[IVX] + wr[IVY]*wr[IVY] + wr[IVZ]*wr[IVZ]);
         }}
       }
     }

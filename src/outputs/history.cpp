@@ -69,10 +69,14 @@ void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 
 // Add text for column headers to var_header
 
+  int nvars = 9;
+  if (NON_BAROTROPIC_EOS) nvars++;
+
   OutputVariableHeader var_header;
   AthenaArray<Real> *phistory_datum;
   phistory_datum = new AthenaArray<Real>;
-  phistory_datum->NewAthenaArray(10,1,1,1);
+  phistory_datum->NewAthenaArray(nvars,1,1,1);
+
   var_header.type = "SCALARS";
   var_header.name.assign("[1]=time     ");
   var_header.name.append("[2]=dt       ");
@@ -83,7 +87,7 @@ void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
   var_header.name.append("[7]=1-KE     ");
   var_header.name.append("[8]=2-KE     ");
   var_header.name.append("[9]=3-KE     ");
-  var_header.name.append("[10]=tot-E   ");
+  if (NON_BAROTROPIC_EOS) var_header.name.append("[10]=tot-E   ");
 
 // Add time, time step
 
@@ -92,12 +96,12 @@ void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 
 // Sum over cells, add mass, mom, KE, and total-E
 
-  for (int n=2; n<10; ++n) (*phistory_datum)(n,0,0,0) = 0.0;
+  for (int n=2; n<nvars; ++n) (*phistory_datum)(n,0,0,0) = 0.0;
 
   for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k) {
   for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j) {
-    Real partial_sum[8];
-    for (int i=0; i<8; ++i) partial_sum[i] = 0.0;
+    Real partial_sum[(nvars-2)];
+    for (int i=0; i<(nvars-2); ++i) partial_sum[i] = 0.0;
     pmb->pcoord->CellVolume(k,j,(pod->data_header.il),(pod->data_header.iu),vol);
 
     for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i) {
@@ -108,9 +112,9 @@ void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       partial_sum[4] += vol(i)*pf->w(IDN,k,j,i)*pf->w(IM1,k,j,i)*pf->w(IM1,k,j,i);
       partial_sum[5] += vol(i)*pf->w(IDN,k,j,i)*pf->w(IM2,k,j,i)*pf->w(IM2,k,j,i);
       partial_sum[6] += vol(i)*pf->w(IDN,k,j,i)*pf->w(IM3,k,j,i)*pf->w(IM3,k,j,i);
-      partial_sum[7] += vol(i)*pf->u(IEN,k,j,i);
+      if (NON_BAROTROPIC_EOS) partial_sum[7] += vol(i)*pf->u(IEN,k,j,i);
     }
-    for (int n=0; n<8; ++n) (*phistory_datum)(n+2,0,0,0) += partial_sum[n];
+    for (int n=0; n<(nvars-2); ++n) (*phistory_datum)(n+2,0,0,0) += partial_sum[n];
 
   }}
 

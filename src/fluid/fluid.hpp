@@ -45,10 +45,8 @@ public:
 
   void NewTimeStep(MeshBlock *pmb);    // computes new timestep on a MeshBlock
   void InitFluid(ParameterInput *pin); // problem generator function (files in /pgen)
-  Real GetGamma() const {return gamma_;}
 
 private:
-  Real gamma_;                       // ratio of specific heats
   AthenaArray<Real> dt1_,dt2_,dt3_;  // scratch arrays used in NewTimeStep
 };
 #endif

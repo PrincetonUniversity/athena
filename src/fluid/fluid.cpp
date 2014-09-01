@@ -103,8 +103,8 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
 {
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  Real gam = GetGamma();
   Real min_dt;
+  Real wi[NVAR];
 
   AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
   AthenaArray<Real> dt1 = dt1_.ShallowCopy();
@@ -118,21 +118,21 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
     Real& dx3 = pmb->dx3f(k);
 #pragma simd
     for (int i=is; i<=ie; ++i){
-      Real& w_d  = w(IDN,k,j,i);
-      Real& w_v1 = w(IVX,k,j,i);
-      Real& w_v2 = w(IVY,k,j,i);
-      Real& w_v3 = w(IVZ,k,j,i);
-      Real& w_p  = w(IEN,k,j,i);
+      wi[IDN]=w(IDN,i);
+      wi[IVX]=w(IVX,i);
+      wi[IVY]=w(IVY,i);
+      wi[IVZ]=w(IVZ,i);
+      if (NON_BAROTROPIC_EOS) wi[IEN]=w(IEN,i);
       Real& dx1  = pmb->dx1f(i);
       Real& d_t1 = dt1(i);
       Real& d_t2 = dt2(i);
       Real& d_t3 = dt3(i);
 
-      Real cs = sqrt(gam*w_p/w_d);
+      Real cs = pf_eos->SoundSpeed(wi);
 
-      d_t1 = dx1/(fabs(w_v1) + cs);
-      d_t2 = dx2/(fabs(w_v2) + cs);
-      d_t3 = dx3/(fabs(w_v3) + cs);
+      d_t1 = dx1/(fabs(wi[IVX]) + cs);
+      d_t2 = dx2/(fabs(wi[IVY]) + cs);
+      d_t3 = dx3/(fabs(wi[IVZ]) + cs);
     }
 
 // compute minimum of (v1 +/- C)

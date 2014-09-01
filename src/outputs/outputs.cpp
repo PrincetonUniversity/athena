@@ -393,20 +393,24 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     var_added = 1;
   }
 
-  if (output_params.variable.compare("E") == 0 || 
-      output_params.variable.compare("cons") == 0) {
-    var_header.type = "SCALARS";
-    var_header.name = "Etot";
-    pod->AppendNode(pf->u.ShallowCopy(IEN,1),var_header); // total energy
-    var_added = 1;
+  if (NON_BAROTROPIC_EOS) {
+    if (output_params.variable.compare("E") == 0 || 
+        output_params.variable.compare("cons") == 0) {
+      var_header.type = "SCALARS";
+      var_header.name = "Etot";
+      pod->AppendNode(pf->u.ShallowCopy(IEN,1),var_header); // total energy
+      var_added = 1;
+    }
   }
 
-  if (output_params.variable.compare("e") == 0 || 
-      output_params.variable.compare("prim") == 0) {
-    var_header.type = "SCALARS";
-    var_header.name = "eint";
-    pod->AppendNode(pf->w.ShallowCopy(IEN,1),var_header); // internal energy
-    var_added = 1;
+  if (NON_BAROTROPIC_EOS) {
+    if (output_params.variable.compare("e") == 0 || 
+        output_params.variable.compare("prim") == 0) {
+      var_header.type = "SCALARS";
+      var_header.name = "eint";
+      pod->AppendNode(pf->w.ShallowCopy(IEN,1),var_header); // internal energy
+      var_added = 1;
+    }
   }
 
   if (output_params.variable.compare("m") == 0 || 

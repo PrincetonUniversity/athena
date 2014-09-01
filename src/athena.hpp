@@ -10,11 +10,12 @@
  *====================================================================================*/
 
 #define NGHOST 2
-#define NVAR 5
 #define PI 3.14159265358979323846
 #define TINY_NUMBER 1.0e-20
 #define HUGE_NUMBER 1.0e+36
-#define NON_BAROTROPIC_EOS 1
+
+#define NVAR 4
+#define NON_BAROTROPIC_EOS 0
 
 /*
 #define COORDINATE_SYSTEM spherical_polar_coordinates

@@ -3,7 +3,7 @@
 # Files for conditional compilation
 
 COORDINATES_FILE = cartesian.cpp
-CONVERT_VAR_FILE = adiabatic_hydro.cpp
+CONVERT_VAR_FILE = isothermal_hydro.cpp
 PROBLEM_FILE = shock_tube.cpp
 RSOLVER_FILE = hlle.cpp
 RECONSTRUCT_FILE = plm.cpp
