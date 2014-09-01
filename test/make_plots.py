@@ -159,7 +159,7 @@ def plot_accretion(filename):
   gamma_adi = 5.0/3.0
 
   # Read and process data
-  filename_actual = glob.glob('data/{0}*0.tab'.format(filename))[0]
+  filename_actual = glob.glob('data/{0}*1.tab'.format(filename))[0]
   data = read_athena(filename_actual, ['r', 'rho', 'pgas', 'v1', 'v2', 'v3'])
   alpha = (1.0 - 2.0*mass/data['r'])**0.5
   u0 = 1.0/(1.0 - 2.0*mass/data['r'])
@@ -363,8 +363,7 @@ def run_new(make_string, run_string, name_string):
     current_directory = os.getcwd()
     os.chdir('..')
     os.system('make clean &> /dev/null')
-    #os.system(make_string + ' &> /dev/null')
-    os.system(make_string)
+    os.system(make_string + ' &> /dev/null')
     os.chdir('bin')
   except OSError as err:
     print('OS Error ({0}): {1}'.format(err.errno, err.strerror))
@@ -374,9 +373,7 @@ def run_new(make_string, run_string, name_string):
   print('generating new data...')
   try:
     #os.system(run_string + ' &> /dev/null')
-    print(run_string)
     os.system(run_string)
-    exit()
     # TODO: remove when -d option works
     os.system('mv {0}*.tab {1}/data/.'.format(name_string, current_directory))
     os.chdir(current_directory)

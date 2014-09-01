@@ -14,7 +14,7 @@
 // Athena headers
 #include "../athena.hpp"         // enums, macros, Real
 #include "../athena_arrays.hpp"  // AthenaArray
-#include "../fluid.hpp"          // Fluid
+#include "../fluid/fluid.hpp"    // GetGamma()
 #include "../mesh.hpp"           // MeshBlock
 
 // TODO: find better input method
@@ -500,10 +500,10 @@ void Coordinates::CoordinateSourceTerms(const int k, const int j,
     Real &v3 = prim(IVZ,k,j,i);
 
     // Extract sources
-    Real &s0 = sources(IEN,k,j,i);
-    Real &s1 = sources(IM1,k,j,i);
-    Real &s2 = sources(IM2,k,j,i);
-    Real &s3 = sources(IM3,k,j,i);
+    Real &s0 = sources(IEN,i);
+    Real &s1 = sources(IM1,i);
+    Real &s2 = sources(IM2,i);
+    Real &s3 = sources(IM3,i);
 
     // Calculate 4-velocity
     Real u0 = std::sqrt(-1.0 / (g00 + g11*v1*v1 + g22*v2*v2 + g33*v3*v3));
