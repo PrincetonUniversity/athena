@@ -17,6 +17,9 @@
 // Primary header
 #include "eos.hpp"
 
+// C++ headers
+#include <cmath>   // sqrt()
+
 // Athena headers
 #include "../fluid.hpp"               // Fluid
 #include "../../athena.hpp"           // enums, macros, Real
@@ -26,7 +29,7 @@
 
 //======================================================================================
 /*! \file adiabatic_hydro.cpp
- *  \brief implements functions in class EqnOfState for  adiabatic hydrodynamics`
+ *  \brief implements functions in class FluidEqnOfState for adiabatic hydrodynamics`
  *====================================================================================*/
 
 // FluidEqnOfState constructor
@@ -41,6 +44,7 @@ FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
 
 FluidEqnOfState::~FluidEqnOfState()
 {
+  pmy_fluid_ = NULL; // Fluid destructor will free this memory
 }
 
 //--------------------------------------------------------------------------------------
@@ -97,4 +101,17 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   }}
 
   return;
+}
+
+//--------------------------------------------------------------------------------------
+/* \!fn Real FluidEqnOfState::SoundSpeed(Real prim[5])
+ * \brief returns sound speed given vector of primitive variables  */
+
+Real FluidEqnOfState::SoundSpeed(Real prim[NVAR])
+{
+  if (NON_BAROTROPIC_EOS) {
+    return GetGamma()*sqrt(prim[IEN]/prim[IDN]);
+  } else {
+    return iso_sound_speed_;
+  }
 }

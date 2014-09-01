@@ -14,6 +14,7 @@
 #define PI 3.14159265358979323846
 #define TINY_NUMBER 1.0e-20
 #define HUGE_NUMBER 1.0e+36
+#define NON_BAROTROPIC_EOS 1
 
 /*
 #define COORDINATE_SYSTEM spherical_polar_coordinates
@@ -29,9 +30,8 @@ enum {IVX=1, IVY=2, IVZ=3};
 enum {I00, I01, I02, I03, I11, I12, I13, I22, I23, I33, NMETRIC};
 
 enum ActionOnDomain 
-  {init_fluid, init_outputs, 
+  {init_fluid,    primitives_n, primitives_nhalf, new_timestep,
    fluid_predict, fluid_correct,   bfield_predict, bfield_correct,
-   fluid_bcs_n,   fluid_bcs_nhalf, bfield_bcs_n,   bfield_bcs_nhalf,
-   primitives_n, primitives_nhalf, new_timestep, make_outputs};
+   fluid_bcs_n,   fluid_bcs_nhalf, bfield_bcs_n,   bfield_bcs_nhalf};
 
 #endif

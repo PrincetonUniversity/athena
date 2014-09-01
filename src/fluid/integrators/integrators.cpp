@@ -47,6 +47,7 @@ FluidIntegrator::FluidIntegrator(Fluid *pf)
 
 FluidIntegrator::~FluidIntegrator()
 {
+  pmy_fluid = NULL; // Fluid destructor will free this memory
   wl_.DeleteAthenaArray();
   wr_.DeleteAthenaArray();
   flx_.DeleteAthenaArray();

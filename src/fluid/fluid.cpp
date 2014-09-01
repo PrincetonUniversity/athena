@@ -78,6 +78,7 @@ Fluid::Fluid(MeshBlock *pmb, ParameterInput *pin)
 
 Fluid::~Fluid()
 {
+  pmy_block = NULL; // MeshBlock destructor will free this memory
   u.DeleteAthenaArray();
   w.DeleteAthenaArray();
   u1.DeleteAthenaArray();

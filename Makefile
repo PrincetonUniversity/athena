@@ -5,7 +5,7 @@
 COORDINATES_FILE = cartesian.cpp
 CONVERT_VAR_FILE = adiabatic_hydro.cpp
 PROBLEM_FILE = shock_tube.cpp
-RSOLVER_FILE = hllc.cpp
+RSOLVER_FILE = hlle.cpp
 RECONSTRUCT_FILE = plm.cpp
 
 # General compiler specifications

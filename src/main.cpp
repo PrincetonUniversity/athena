@@ -281,7 +281,8 @@ int main(int argc, char *argv[])
 //    ath_pout(0,"\nSimulation terminated on %s",ctime(&stop_time));
 
   delete pinput;
-//  delete pmesh;  TODO: for some reason get a malloc error???
+//  TODO: for some reason get a malloc error in following???
+//  delete pmesh;
   delete pouts;
 
   return(0); 

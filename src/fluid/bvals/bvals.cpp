@@ -168,6 +168,7 @@ FluidBoundaryConditions::FluidBoundaryConditions(Fluid *pf)
 
 FluidBoundaryConditions::~FluidBoundaryConditions()
 {
+  pmy_fluid = NULL; // Fluid destructor will free this memory
 }
 
 //--------------------------------------------------------------------------------------

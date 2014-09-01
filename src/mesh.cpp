@@ -188,6 +188,7 @@ MeshDomain::MeshDomain(RegionSize in_size, RegionBCs in_bcs, Mesh* pm, Parameter
 
 MeshDomain::~MeshDomain()
 {
+  pmy_mesh = NULL; // Mesh destructor will free this memory.
   delete pblock;
 }
 
@@ -422,6 +423,8 @@ MeshBlock::MeshBlock(RegionSize in_size, RegionBCs in_bcs, MeshDomain *pd,
 
 MeshBlock::~MeshBlock()
 {
+  pmy_domain = NULL; // MeshDomain constructor will delete this memory
+
   dx1f.DeleteAthenaArray();  
   dx2f.DeleteAthenaArray();  
   dx3f.DeleteAthenaArray();  
