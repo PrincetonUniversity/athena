@@ -19,118 +19,95 @@
 
 // C++ headers
 #include <algorithm>  // max(), min()
-#include <cmath>      // sqrt()
 
 // Athena headers
 #include "../../../athena.hpp"         // enums, macros, Real
 #include "../../../athena_arrays.hpp"  // AthenaArray
-#include "../../fluid.hpp"          // Fluid
+#include "../../fluid.hpp"             // Fluid
+#include "../../eos/eos.hpp"           // GetGamma
 
 //======================================================================================
 /*! \file hllc.cpp
- *  \brief HLLC Riemann solver for hydrodynamics
+ *  \brief HLLC Riemann solver for hydrodynamics, an extension of  the HLLE fluxes to
+ *    include the contact wave.  Only works for adiabatic hydrodynamics.
+ *
+ * REFERENCES:
+ * - E.F. Toro, "Riemann Solvers and numerical methods for fluid dynamics", 2nd ed.,
+ *   Springer-Verlag, Berlin, (1999) chpt. 10.
+ *
+ * - P. Batten, N. Clarke, C. Lambert, and D. M. Causon, "On the Choice of Wavespeeds
+ *   for the HLLC Riemann Solver", SIAM J. Sci. & Stat. Comp. 18, 6, 1553-1570, (1997).
  *====================================================================================*/
 
 void FluidIntegrator::RiemannSolver(const int k, const int j,
   const int il, const int iu, const int ivx, const int ivy, const int ivz,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {
-  Real cfl,cfr,bp,bm;
-  Real al,ar; // Min and Max wave speeds
-  Real am,cp; // Contact wave speed and pressure
-  Real tl,tr,ml,mr,sl,sm,sr;
-  Real evp,evm;
-  Real fl[NVAR],fr[NVAR];
-
-  Real gamma = pmy_fluid->GetGamma();
+  Real fl[NVAR],fr[NVAR],wli[NVAR],wri[NVAR],flxi[NVAR];
 
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& d_l=wl(IDN,i);
-    Real& vx_l=wl(ivx,i);
-    Real& vy_l=wl(ivy,i);
-    Real& vz_l=wl(ivz,i);
-    Real& p_l=wl(IEN,i);
+    wli[IDN]=wl(IDN,i);
+    wli[IVX]=wl(ivx,i);
+    wli[IVY]=wl(ivy,i);
+    wli[IVZ]=wl(ivz,i);
+    wli[IEN]=wl(IEN,i);
 
-    Real& d_r=wr(IDN,i);
-    Real& vx_r=wr(ivx,i);
-    Real& vy_r=wr(ivy,i);
-    Real& vz_r=wr(ivz,i);
-    Real& p_r=wr(IEN,i);
+    wri[IDN]=wr(IDN,i);
+    wri[IVX]=wr(ivx,i);
+    wri[IVY]=wr(ivy,i);
+    wri[IVZ]=wr(ivz,i);
+    wri[IEN]=wr(IEN,i);
 
-// Compute Roe-averaged velocities
+    Real al = wli[IVX] - pmy_fluid->pf_eos->SoundSpeed(wli);
+    Real ar = wri[IVX] + pmy_fluid->pf_eos->SoundSpeed(wri);
 
-    Real sqrtdl = sqrt(d_l);
-    Real sqrtdr = sqrt(d_r);
-    Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
-
-    Real v1roe = (sqrtdl*vx_l + sqrtdr*vx_r)*isdlpdr;
-    Real v2roe = (sqrtdl*vy_l + sqrtdr*vy_r)*isdlpdr;
-    Real v3roe = (sqrtdl*vz_l + sqrtdr*vz_r)*isdlpdr;
-
-// Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
-// rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
-
-    Real ul_e  = p_l/(gamma - 1.0) + 0.5*d_l*(vx_l*vx_l + vy_l*vy_l + vz_l*vz_l);
-    Real ur_e  = p_r/(gamma - 1.0) + 0.5*d_r*(vx_r*vx_r + vy_r*vy_r + vz_r*vz_r);
-    Real ul_mx = d_l*vx_l;
-    Real ur_mx = d_r*vx_r;
-    Real hroe  = ((ul_e + p_l)/sqrtdl + (ur_e + p_r)/sqrtdr)*isdlpdr;
-
-// Compute Roe-averaged wave speeds
-
-    Real vsq = v1roe*v1roe + v2roe*v2roe + v3roe*v3roe;
-    Real asq = (gamma-1.0)*std::max((hroe - 0.5*vsq), TINY_NUMBER);
-    evp = v1roe + sqrt(asq);
-    evm = v1roe - sqrt(asq);
-
-// Compute the max/min wave speeds based on L/R values and Roe averages
-
-    cfl = sqrt((gamma*p_l/d_l));
-    cfr = sqrt((gamma*p_r/d_r));
-
-    ar = std::max(evp,(vx_r + cfr));
-    al = std::min(evm,(vx_l - cfl));
-
-    bp = ar > 0.0 ? ar : 0.0;
-    bm = al < 0.0 ? al : 0.0;
+    Real bp = ar > 0.0 ? ar : 0.0;
+    Real bm = al < 0.0 ? al : 0.0;
 
 // Compute the contact wave speed and pressure
 
-    tl = p_l + (vx_l - al)*ul_mx;
-    tr = p_r + (vx_r - ar)*ur_mx;
+    Real mxl = wli[IDN]*wli[IVX];
+    Real mxr = wri[IDN]*wri[IVX];
 
-    ml =   ul_mx - d_l*al;
-    mr = -(ur_mx - d_r*ar);
+    Real tl = wli[IEN] + (wli[IVX] - al)*mxl;
+    Real tr = wri[IEN] + (wri[IVX] - ar)*mxl;
+
+    Real ml =   mxl - wli[IDN]*al;
+    Real mr = -(mxr - wri[IDN]*ar);
 
 // Determine the contact wave speed...
-    am = (tl - tr)/(ml + mr);
+    Real am = (tl - tr)/(ml + mr);
 // ...and the pressure at the contact surface
-    cp = (ml*tr + mr*tl)/(ml + mr);
+    Real cp = (ml*tr + mr*tl)/(ml + mr);
     cp = cp > 0.0 ? cp : 0.0;
 
 // Compute L/R fluxes along the line bm, bp
 
-    fl[IDN]  = ul_mx - bm*d_l;
-    fr[IDN]  = ur_mx - bp*d_r;
+    fl[IDN]  = mxl - bm*wli[IDN];
+    fr[IDN]  = mxr - bp*wri[IDN];
 
-    fl[ivx] = ul_mx*(vx_l - bm);
-    fr[ivx] = ur_mx*(vx_r - bp);
+    fl[IVX] = mxl*(wli[IVX] - bm) + wli[IEN];
+    fr[IVX] = mxr*(wri[IVX] - bp) + wri[IEN];
 
-    fl[ivy] = d_l*vy_l*(vx_l - bm);
-    fr[ivy] = d_r*vy_r*(vx_r - bp);
+    fl[IVY] = wli[IDN]*wli[IVY]*(wli[IVX] - bm);
+    fr[IVY] = wri[IDN]*wri[IVY]*(wri[IVX] - bp);
 
-    fl[ivz] = d_l*vz_l*(vx_l - bm);
-    fr[ivz] = d_r*vz_r*(vx_r - bp);
+    fl[IVZ] = wli[IDN]*wli[IVZ]*(wli[IVX] - bm);
+    fr[IVZ] = wri[IDN]*wri[IVZ]*(wri[IVX] - bp);
 
-    fl[ivx] += p_l;
-    fr[ivx] += p_r;
-
-    fl[IEN] = ul_e*(vx_l - bm) + p_l*vx_l;
-    fr[IEN] = ur_e*(vx_r - bp) + p_r*vx_r;
+    fl[IEN] = wli[IEN]/(pmy_fluid->pf_eos->GetGamma() - 1.0) + 0.5*wli[IDN]*
+      (wli[IVX]*wli[IVX] + wli[IVY]*wli[IVY] + wli[IVZ]*wli[IVZ]);
+    fr[IEN] = wri[IEN]/(pmy_fluid->pf_eos->GetGamma() - 1.0) + 0.5*wri[IDN]*
+      (wri[IVX]*wri[IVX] + wri[IVY]*wri[IVY] + wri[IVZ]*wri[IVZ]);
+    fl[IEN] *= (wli[IVX] - bm);
+    fr[IEN] *= (wri[IVX] - bp);
+    fl[IEN] += wli[IEN]*wli[IVX];
+    fr[IEN] += wri[IEN]*wri[IVX];
 
 // Compute flux weights or scales
 
+    Real sl,sr,sm;
     if (am >= 0.0) {
       sl =  am/(am - bm);
       sr = 0.0;
@@ -142,24 +119,20 @@ void FluidIntegrator::RiemannSolver(const int k, const int j,
       sm =  bp/(bp - am);
     }
 
-// Compute the HLLC flux at interface
+// Compute the HLLC flux at interface, including the weighted contribution of the flux
+// along the contact
 
-    Real& d_flx=flx(IDN,i);
-    Real& vx_flx=flx(ivx,i);
-    Real& vy_flx=flx(ivy,i);
-    Real& vz_flx=flx(ivz,i);
-    Real& e_flx=flx(IEN,i);
-      
-    d_flx  = sl*fl[IDN] + sr*fr[IDN];
-    vx_flx = sl*fl[ivx] + sr*fr[ivx];
-    vy_flx = sl*fl[ivy] + sr*fr[ivy];
-    vz_flx = sl*fl[ivz] + sr*fr[ivz];
-    e_flx  = sl*fl[IEN] + sr*fr[IEN];
+    flxi[IDN] = sl*fl[IDN] + sr*fr[IDN];
+    flxi[IVX] = sl*fl[IVX] + sr*fr[IVX] + sm*cp;
+    flxi[IVY] = sl*fl[IVY] + sr*fr[IVY];
+    flxi[IVZ] = sl*fl[IVZ] + sr*fr[IVZ];
+    flxi[IEN] = sl*fl[IEN] + sr*fr[IEN] + sm*cp*am;
 
-// Add the weighted contribution of the flux along the contact
-
-    vx_flx += sm*cp;
-    e_flx  += sm*cp*am;
+    flx(IDN,i) = flxi[IDN];
+    flx(ivx,i) = flxi[IVX];
+    flx(ivy,i) = flxi[IVY];
+    flx(ivz,i) = flxi[IVZ];
+    flx(IEN,i) = flxi[IEN];
   }
 
   return;

@@ -19,13 +19,12 @@
 
 // C++ headers
 #include <algorithm>  // max(), min()
-#include <cmath>      // sqrt()
 
 // Athena headers
 #include "../../../athena.hpp"         // enums, macros, Real
 #include "../../../athena_arrays.hpp"  // AthenaArray
 #include "../../fluid.hpp"             // Fluid
-#include "../../eos/eos.hpp"             // Fluid
+#include "../../eos/eos.hpp"           // GetGamma
 
 //======================================================================================
 /*! \file hlle.cpp
@@ -49,8 +48,6 @@ void FluidIntegrator::RiemannSolver(const int k, const int j,
   const int il, const int iu, const int ivx, const int ivy, const int ivz,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {
-  Real cfl,cfr,bp,bm;
-  Real evp,evm,al,ar;
   Real fl[NVAR],fr[NVAR],wli[NVAR],wri[NVAR],flxi[NVAR];
 
 #pragma simd
@@ -69,11 +66,11 @@ void FluidIntegrator::RiemannSolver(const int k, const int j,
 
 // Compute the max/min wave speeds based on L/R values
 
-    al = wli[IVX] - pmy_fluid->pf_eos->SoundSpeed(wli);
-    ar = wri[IVX] + pmy_fluid->pf_eos->SoundSpeed(wri);
+    Real al = wli[IVX] - pmy_fluid->pf_eos->SoundSpeed(wli);
+    Real ar = wri[IVX] + pmy_fluid->pf_eos->SoundSpeed(wri);
 
-    bp = ar > 0.0 ? ar : 0.0;
-    bm = al < 0.0 ? al : 0.0;
+    Real bp = ar > 0.0 ? ar : 0.0;
+    Real bm = al < 0.0 ? al : 0.0;
 
 // Compute L/R fluxes along the lines bm/bp: F_{L}-S_{L}U_{L}; F_{R}-S_{R}U_{R}
 
