@@ -84,6 +84,14 @@ Fluid::~Fluid()
   w1.DeleteAthenaArray();
   g.DeleteAthenaArray();
   g_inv.DeleteAthenaArray();
+
+  dt1_.DeleteAthenaArray();
+  dt2_.DeleteAthenaArray();
+  dt3_.DeleteAthenaArray();
+
+  delete pf_integrator;
+  delete pf_bcs;
+  delete pf_eos;
 }
 
 //--------------------------------------------------------------------------------------

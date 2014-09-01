@@ -31,6 +31,7 @@
 // Athena headers
 #include "mesh.hpp"             // Mesh
 #include "parameter_input.hpp"  // ParameterInput
+#include "outputs/outputs.hpp"  // Outputs
 
 //======================================================================================
 /* //////////////////////////////// Athena++ Main Program \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
@@ -111,11 +112,11 @@ int main(int argc, char *argv[])
 // Construct object to store input parameters, then parse input file and command line
 // Note memory allocations and parameter input are protected by a simple error handler
 
-  ParameterInput *inputs;
+  ParameterInput *pinput;
   try {
-    inputs = new ParameterInput;
-    inputs->LoadFromFile(input_file);
-    inputs->ModifyFromCmdline(argc,argv);
+    pinput = new ParameterInput;
+    pinput->LoadFromFile(input_file);
+    pinput->ModifyFromCmdline(argc,argv);
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl
@@ -131,7 +132,7 @@ int main(int argc, char *argv[])
 // Dump input parameters and quit if code was run with -n option.
 
   if (narg_flag){
-    inputs->ParameterDump(std::cout);
+    pinput->ParameterDump(std::cout);
     return(0);
   }
 
@@ -144,9 +145,9 @@ int main(int argc, char *argv[])
 //--- Step 4. --------------------------------------------------------------------------
 // Construct and initialize Mesh
 
-  Mesh *mesh;
+  Mesh *pmesh;
   try {
-    mesh = new Mesh(inputs);
+    pmesh = new Mesh(pinput);
   }
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl
@@ -163,12 +164,11 @@ int main(int argc, char *argv[])
 // Set initial conditions by calling problem generator on each MeshDomain/MeshBlock
 
   try {
-    mesh->ForAllDomains(init_fluid,inputs);
+    pmesh->ForAllDomains(init_fluid,pinput);
   } 
   catch(std::bad_alloc& ba) {
-    std::cout << "### FATAL ERROR in main" << std::endl
-              << "memory allocation failed initializing class Fluid: "
-              << ba.what() << std::endl;
+    std::cout << "### FATAL ERROR in main" << std::endl << "memory allocation failed "
+              << "in problem generator " << ba.what() << std::endl;
     return(0);
   }
   catch(std::exception const& ex) {
@@ -178,22 +178,18 @@ int main(int argc, char *argv[])
 
 // apply BCs, compute primitive from conserved variables, compute first timestep
 
-  std::cout << "here 1" << std::endl;
-
-  mesh->ForAllDomains( fluid_bcs_n,inputs);
-  std::cout << "here 2" << std::endl;
-  mesh->ForAllDomains(bfield_bcs_n,inputs);
-  mesh->ForAllDomains(primitives_n,inputs);
-  std::cout << "here 3" << std::endl;
-  mesh->ForAllDomains(new_timestep,inputs);
-  std::cout << "here 4" << std::endl;
+  pmesh->ForAllDomains( fluid_bcs_n,pinput);
+  pmesh->ForAllDomains(bfield_bcs_n,pinput);
+  pmesh->ForAllDomains(primitives_n,pinput);
+  pmesh->ForAllDomains(new_timestep,pinput);
 
 //--- Step 6. --------------------------------------------------------------------------
-// Initialize output object on each Block, and make outputs of initial conditions
+// Initialize outputs object, and make outputs of data on Mesh
 
+  Outputs *pouts;
   try {
-    mesh->ForAllDomains(init_outputs,inputs);
-    mesh->ForAllDomains(make_outputs,inputs);
+    pouts = new Outputs(pmesh, pinput);
+    pouts->MakeOutputs(pmesh);
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl
@@ -205,7 +201,6 @@ int main(int argc, char *argv[])
     std::cout << ex.what() << std::endl;  // prints diagnostic message  
     return(0);
   }
-  std::cout << "here 5" << std::endl;
 
 //--- Step 9. === START OF MAIN INTEGRATION LOOP =======================================
 // For performance, there is no error handler protecting this step
@@ -213,41 +208,42 @@ int main(int argc, char *argv[])
   std::cout<<std::endl<< "Setup complete, entering main loop..." <<std::endl<<std::endl;
   tstart = clock();
 
-  while ((mesh->time < mesh->tlim) && (mesh->nlim < 0 || mesh->ncycle < mesh->nlim)){
-    std::cout << "cycle=" << mesh->ncycle << std::scientific << std::setprecision(5)
-              << " time=" << mesh->time << " dt=" << mesh->dt << std::endl;
+  while ((pmesh->time < pmesh->tlim) && 
+         (pmesh->nlim < 0 || pmesh->ncycle < pmesh->nlim)){
+    std::cout << "cycle=" << pmesh->ncycle << std::scientific << std::setprecision(5)
+              << " time=" << pmesh->time << " dt=" << pmesh->dt << std::endl;
 
 // predict step
 
-    mesh->ForAllDomains( fluid_predict  ,inputs);
-    mesh->ForAllDomains( fluid_bcs_nhalf,inputs);
+    pmesh->ForAllDomains( fluid_predict  ,pinput);
+    pmesh->ForAllDomains( fluid_bcs_nhalf,pinput);
 
-    mesh->ForAllDomains(bfield_predict  ,inputs);
-    mesh->ForAllDomains(bfield_bcs_nhalf,inputs);
+    pmesh->ForAllDomains(bfield_predict  ,pinput);
+    pmesh->ForAllDomains(bfield_bcs_nhalf,pinput);
 
-    mesh->ForAllDomains(primitives_nhalf,inputs);
+    pmesh->ForAllDomains(primitives_nhalf,pinput);
 
 // correct step
 
-    mesh->ForAllDomains( fluid_correct,inputs);
-    mesh->ForAllDomains( fluid_bcs_n,  inputs);
+    pmesh->ForAllDomains( fluid_correct,pinput);
+    pmesh->ForAllDomains( fluid_bcs_n,  pinput);
 
-    mesh->ForAllDomains(bfield_correct,inputs);
-    mesh->ForAllDomains(bfield_bcs_n,  inputs);
+    pmesh->ForAllDomains(bfield_correct,pinput);
+    pmesh->ForAllDomains(bfield_bcs_n,  pinput);
 
-    mesh->ForAllDomains(primitives_n,  inputs);
+    pmesh->ForAllDomains(primitives_n,  pinput);
 
 // new time step, outputs, diagnostics
 
-    mesh->ncycle++;
-    mesh->time  += mesh->dt;
+    pmesh->ncycle++;
+    pmesh->time  += pmesh->dt;
 
     try {
-      mesh->ForAllDomains(make_outputs,inputs);
+      pouts->MakeOutputs(pmesh);
     } 
     catch(std::bad_alloc& ba) {
       std::cout << "### FATAL ERROR in main" << std::endl
-                << "memory allocation failed during outputs: " << ba.what() << std::endl;
+                << "memory allocation failed during output: " << ba.what() << std::endl;
       return(0);
     }
     catch(std::exception const& ex) {
@@ -255,34 +251,38 @@ int main(int argc, char *argv[])
       return(0);
     }
 
-    mesh->ForAllDomains(new_timestep,inputs);
+    pmesh->ForAllDomains(new_timestep,pinput);
 
   } // END OF MAIN INTEGRATION LOOP ====================================================
 
 // print diagnostic messages
 
-  std::cout << "cycle=" << mesh->ncycle << std::scientific << std::setprecision(5)
-            << " time=" << mesh->time << " dt=" << mesh->dt << std::endl;
-  if (mesh->ncycle == mesh->nlim) {
+  std::cout << "cycle=" << pmesh->ncycle << std::scientific << std::setprecision(5)
+            << " time=" << pmesh->time << " dt=" << pmesh->dt << std::endl;
+  if (pmesh->ncycle == pmesh->nlim) {
     std::cout << std::endl << "Terminating on cycle limit" << std::endl;
   } else {
     std::cout << std::endl << "Terminating on time limit" << std::endl;
   }
-  std::cout << "time=" << mesh->time << " cycle=" << mesh->ncycle << std::endl;
-  std::cout << "tlim=" << mesh->tlim << " nlim=" << mesh->nlim << std::endl;
+  std::cout << "time=" << pmesh->time << " cycle=" << pmesh->ncycle << std::endl;
+  std::cout << "tlim=" << pmesh->tlim << " nlim=" << pmesh->nlim << std::endl;
 
 // Calculate and print the zone-cycles/cpu-second on this processor
 
   tstop = clock();
   float cpu_time = (tstop>tstart ? (float)(tstop-tstart) : 1.0)/(float)CLOCKS_PER_SEC;
-  int64_t zones = (mesh->mesh_size.nx1)*(mesh->mesh_size.nx2)*(mesh->mesh_size.nx3);
-  float zcs = (float)(zones*mesh->ncycle)/cpu_time;
+  int64_t zones = (pmesh->mesh_size.nx1)*(pmesh->mesh_size.nx2)*(pmesh->mesh_size.nx3);
+  float zcs = (float)(zones*pmesh->ncycle)/cpu_time;
   std::cout << std::endl << "cpu time used = " << cpu_time << std::endl;
   std::cout << "zone-cycles/second = " << zcs << std::endl;
 
 
 //  if(time(&stop_time)>0) /* current calendar time (UTC) is available */
 //    ath_pout(0,"\nSimulation terminated on %s",ctime(&stop_time));
+
+  delete pinput;
+//  delete pmesh;  TODO: for some reason get a malloc error???
+  delete pouts;
 
   return(0); 
 

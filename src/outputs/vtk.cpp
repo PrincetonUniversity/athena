@@ -54,21 +54,22 @@ static inline void Swap4Bytes(void *vdat) {
 //--------------------------------------------------------------------------------------
 // VTKOutput constructor
 
-VTKOutput::VTKOutput(OutputParameters oparams, MeshBlock *pb)
-  : OutputType(oparams,pb)
+VTKOutput::VTKOutput(OutputParameters oparams)
+  : OutputType(oparams)
 {
 }
 
 // destructor - not needed for this derived class
 
 //--------------------------------------------------------------------------------------
-/*! \fn void VTKOutput:::WriteOutputFile(OutputData *pod)
+/*! \fn void VTKOutput:::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
  *  \brief writes OutputData to file in (legacy) vtk format  */
 
-void VTKOutput::WriteOutputFile(OutputData *pod)
+void VTKOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 {
   std::stringstream msg;
   int big_end = IsBigEndian(); // =1 on big endian machine
+  if (pod->data_header.ndata == 0) return;  // slice out of range, etc.
 
 // create filename: "file_basename" + XXXX + ".vtk", where XXXX = 4-digit file_number
 
@@ -127,7 +128,7 @@ void VTKOutput::WriteOutputFile(OutputData *pod)
 
   fprintf(pfile,"X_COORDINATES %d float\n",ncoord1);
   for (int i=(pod->data_header.il); i<=(pod->data_header.iu)+1; ++i) {
-    data[i-(pod->data_header.il)] = (float)pmy_block->x1f(i);
+    data[i-(pod->data_header.il)] = (float)pmb->x1f(i);
   }
   if (!big_end) {for (int i=0; i<ncoord1; ++i) Swap4Bytes(&data[i]);}
   fwrite(data,sizeof(float),(size_t)ncoord1,pfile);
@@ -136,10 +137,10 @@ void VTKOutput::WriteOutputFile(OutputData *pod)
 
   fprintf(pfile,"\nY_COORDINATES %d float\n",ncoord2);
   if (ncells2 == 1) {
-      data[0] = (float)pmy_block->x2v(pod->data_header.jl);
+      data[0] = (float)pmb->x2v(pod->data_header.jl);
   } else {
     for (int j=(pod->data_header.jl); j<=(pod->data_header.ju)+1; ++j) {
-      data[j-(pod->data_header.jl)] = (float)pmy_block->x2f(j);
+      data[j-(pod->data_header.jl)] = (float)pmb->x2f(j);
     }
   }
   if (!big_end) {for (int i=0; i<ncoord2; ++i) Swap4Bytes(&data[i]);}
@@ -149,10 +150,10 @@ void VTKOutput::WriteOutputFile(OutputData *pod)
 
   fprintf(pfile,"\nZ_COORDINATES %d float\n",ncoord3);
   if (ncells3 == 1) {
-      data[0] = (float)pmy_block->x3v(pod->data_header.kl);
+      data[0] = (float)pmb->x3v(pod->data_header.kl);
   } else {
     for (int k=(pod->data_header.kl); k<=(pod->data_header.ku)+1; ++k) {
-      data[k-(pod->data_header.kl)] = (float)pmy_block->x3f(k);
+      data[k-(pod->data_header.kl)] = (float)pmb->x3f(k);
     }
   }
   if (!big_end) {for (int i=0; i<ncoord3; ++i) Swap4Bytes(&data[i]);}

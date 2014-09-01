@@ -18,9 +18,7 @@ class ParameterInput;
 class Mesh;
 class MeshDomain;
 class Coordinates;
-class FluidBoundaryConditions;
 class Fluid;
-class Outputs;
 
 //! \struct RegionSize
 //  \brief physical size and number of cells in a Mesh, MeshDomain or MeshBlock
@@ -55,10 +53,8 @@ public:
   AthenaArray<Real> dx1v, dx2v, dx3v, x1v, x2v, x3v; // volume spacing and positions
   int is,ie,js,je,ks,ke;
 
-  FluidBoundaryConditions *pf_bcs;
   Coordinates *pcoord;
   Fluid *pfluid;
-  Outputs *poutputs;
 };
 
 //! \class MeshDomain

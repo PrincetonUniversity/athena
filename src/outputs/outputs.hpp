@@ -20,6 +20,7 @@ struct OutputDataHeader {
   std::string descriptor; // time, cycle, variables in output
   std::string transforms; // list of any transforms (sum, slice) applied to variables
   int il,iu,jl,ju,kl,ku;  // range of data arrays
+  int ndata;              // number of data points in arrays
 };
 
 //! \struct OutputVariableHeader
@@ -38,6 +39,7 @@ struct OutputParameters {
   int block_number;
   int file_number;
   int islice, jslice, kslice;
+  Real x1_slice, x2_slice, x3_slice;
   int isum, jsum, ksum;
   std::string block_name;
   std::string file_basename;
@@ -86,22 +88,21 @@ public:
 
 class OutputType {
 public:
-  OutputType(OutputParameters oparams, MeshBlock *pmb);
+  OutputType(OutputParameters oparams);
   ~OutputType();
-  MeshBlock *pmy_block;           // ptr to MeshBlock containing this OutputType
   OutputParameters output_params; // control data read from <output> block 
   OutputType *pnext;              // ptr to next node in linked list of OutputTypes
 
 // functions that operate on OutputData container
 
-  virtual void LoadOutputData(OutputData *pod);
-  virtual void TransformOutputData(OutputData *pod);
-  virtual void WriteOutputFile(OutputData *pod) = 0;  // pure virtual function!
+  virtual void LoadOutputData(OutputData *pod, MeshBlock *pmb);
+  virtual void TransformOutputData(OutputData *pod, MeshBlock *pmb);
+  virtual void WriteOutputFile(OutputData *pod, MeshBlock *pmb) = 0;  // pure virtual!
 
 // functions that implement useful transforms applied to each variable in OutputData
 
-  void Slice(OutputData* pod, int dim);
-  void Sum(OutputData* pod, int dim);
+  void Slice(OutputData* pod, MeshBlock *pmb, int dim);
+  void Sum(OutputData* pod, MeshBlock *pmb, int dim);
 };
 
 //! \class FormattedTableOutput
@@ -109,10 +110,10 @@ public:
 
 class FormattedTableOutput : public OutputType {
 public:
-  FormattedTableOutput(OutputParameters oparams, MeshBlock *pmb);
+  FormattedTableOutput(OutputParameters oparams);
   ~FormattedTableOutput() {};
 
-  void WriteOutputFile(OutputData *pod);
+  void WriteOutputFile(OutputData *pod, MeshBlock *pmb);
 
 private:
 };
@@ -122,11 +123,11 @@ private:
 
 class HistoryOutput : public OutputType {
 public:
-  HistoryOutput(OutputParameters oparams, MeshBlock *pmb);
+  HistoryOutput(OutputParameters oparams);
   ~HistoryOutput() {};
 
-  void LoadOutputData(OutputData *pod);  // overloads base class function
-  void WriteOutputFile(OutputData *pod);
+  void LoadOutputData(OutputData *pod, MeshBlock *pmb); // overloads base class function
+  void WriteOutputFile(OutputData *pod, MeshBlock *pmb);
 };
 
 //! \class VTKOutput
@@ -134,10 +135,10 @@ public:
 
 class VTKOutput : public OutputType {
 public:
-  VTKOutput(OutputParameters oparams, MeshBlock *pmb);
+  VTKOutput(OutputParameters oparams);
   ~VTKOutput() {};
 
-  void WriteOutputFile(OutputData *pod);
+  void WriteOutputFile(OutputData *pod, MeshBlock *pmb);
 };
 //--------------------- end of OutputTypes base and derived classes --------------------
 
@@ -147,14 +148,13 @@ public:
 
 class Outputs {
 public:
-  Outputs(MeshBlock *pmb, ParameterInput *pin);
+  Outputs(Mesh *pm, ParameterInput *pin);
   ~Outputs();
-  MeshBlock *pmy_block;  // ptr to MeshBlock containing this Outputs
 
   void InitOutputTypes(ParameterInput *pin);
-  void MakeOutputs();
+  void MakeOutputs(Mesh *pm);
 
 private:
-  OutputType *pfirst_out_; // ptr to first OutputType in linked list
+  OutputType *pfirst_type_; // ptr to first OutputType in linked list
 };
 #endif

@@ -38,32 +38,34 @@
 //--------------------------------------------------------------------------------------
 // HistoryOutput constructor
 
-HistoryOutput::HistoryOutput(OutputParameters oparams, MeshBlock *pb)
-  : OutputType(oparams,pb)
+HistoryOutput::HistoryOutput(OutputParameters oparams)
+  : OutputType(oparams)
 {
 }
 
 // destructor - not required for this derived class
 
 //--------------------------------------------------------------------------------------
-/*! \fn void HistoryOutput::LoadOutputData(OutputData *pod)
+/*! \fn void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmd)
  *  \brief computes data to be included in output data container (OutputData).  This
  *  version over-rides the default defined in the base class.
  */
 
-void HistoryOutput::LoadOutputData(OutputData *pod)
+void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 {
-  Fluid *pf = pmy_block->pfluid;;
-  AthenaArray<Real> vol = pmy_block->pcoord->cell_volume.ShallowCopy();
+  Fluid *pf = pmb->pfluid;;
+  AthenaArray<Real> vol = pmb->pcoord->cell_volume.ShallowCopy();
 
-// add header
+// add OutputData header
 
   std::stringstream str;
   str << "# Athena++ history data" << std::endl;
   pod->data_header.descriptor.append(str.str());
-  pod->data_header.il = pmy_block->is; pod->data_header.iu = pmy_block->ie;
-  pod->data_header.jl = pmy_block->js; pod->data_header.ju = pmy_block->je;
-  pod->data_header.kl = pmy_block->ks; pod->data_header.ku = pmy_block->ke;
+  pod->data_header.il = pmb->is; pod->data_header.iu = pmb->ie;
+  pod->data_header.jl = pmb->js; pod->data_header.ju = pmb->je;
+  pod->data_header.kl = pmb->ks; pod->data_header.ku = pmb->ke;
+  pod->data_header.ndata = (pmb->ie - pmb->is + 1)*(pmb->je - pmb->js + 1)
+                          *(pmb->ke - pmb->ks + 1);
 
 // Add text for column headers to var_header
 
@@ -85,8 +87,8 @@ void HistoryOutput::LoadOutputData(OutputData *pod)
 
 // Add time, time step
 
-  (*phistory_datum)(0,0,0,0) = pf->pmy_block->pmy_domain->pmy_mesh->time;
-  (*phistory_datum)(1,0,0,0) = pf->pmy_block->pmy_domain->pmy_mesh->dt;
+  (*phistory_datum)(0,0,0,0) = pmb->pmy_domain->pmy_mesh->time;
+  (*phistory_datum)(1,0,0,0) = pmb->pmy_domain->pmy_mesh->dt;
 
 // Sum over cells, add mass, mom, KE, and total-E
 
@@ -96,7 +98,7 @@ void HistoryOutput::LoadOutputData(OutputData *pod)
   for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j) {
     Real partial_sum[8];
     for (int i=0; i<8; ++i) partial_sum[i] = 0.0;
-    pmy_block->pcoord->CellVolume(k,j,(pod->data_header.il),(pod->data_header.iu),vol);
+    pmb->pcoord->CellVolume(k,j,(pod->data_header.il),(pod->data_header.iu),vol);
 
     for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i) {
       partial_sum[0] += vol(i)*pf->u(IDN,k,j,i);
@@ -116,6 +118,13 @@ void HistoryOutput::LoadOutputData(OutputData *pod)
 
   pod->AppendNode(phistory_datum,var_header);
 
+// Modify OutputData header
+
+  pod->data_header.il = 1; pod->data_header.iu = 1;
+  pod->data_header.jl = 1; pod->data_header.ju = 1;
+  pod->data_header.kl = 1; pod->data_header.ku = 1;
+  pod->data_header.ndata = 1;
+
   return;
 }
 
@@ -124,9 +133,10 @@ void HistoryOutput::LoadOutputData(OutputData *pod)
  *  \brief writes OutputData to file in history format using C style fprintf
  */
 
-void HistoryOutput::WriteOutputFile(OutputData *pod)
+void HistoryOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 {
   std::stringstream msg;
+  if (pod->data_header.ndata == 0) return;  // slice out of range, etc.
 
 // create filename: "file_basename" + ".hst".  There is no file number.
 

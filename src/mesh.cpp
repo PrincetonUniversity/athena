@@ -33,7 +33,7 @@
 #include "fluid/bvals/bvals.hpp"              // FluidBoundaryConditions
 #include "fluid/eos/eos.hpp"              // FluidEqnOfState
 #include "fluid/integrators/integrators.hpp"  // FluidIntegrator
-#include "outputs/outputs.hpp"          // Outputs
+//#include "outputs/outputs.hpp"          // Outputs
 #include "parameter_input.hpp"          // ParameterInput
 
 //======================================================================================
@@ -195,7 +195,8 @@ MeshDomain::~MeshDomain()
 // MeshBlock constructor: builds 1D vectors of cell positions and spacings, and
 // constructs coordinate, boundary condition, and fluid objects.
 
-MeshBlock::MeshBlock(RegionSize in_size, RegionBCs in_bcs, MeshDomain *pd, ParameterInput *pin)
+MeshBlock::MeshBlock(RegionSize in_size, RegionBCs in_bcs, MeshDomain *pd,
+  ParameterInput *pin)
 {
   pmy_domain = pd;
   block_size = in_size;
@@ -383,15 +384,12 @@ MeshBlock::MeshBlock(RegionSize in_size, RegionBCs in_bcs, MeshDomain *pd, Param
     }
   }
 
-// construct various objects stored in MeshBlock class.  Constructors do the following:
-//   Coordinates: initializes volume-centered coordinates (x1v,dx1v,...)
-//   Fluid: allocates memory for arrays, and constructs FluidIntegrator.
-//   Outputs:
-// initial conditions for fluid set in problem generator called from main
+// construct Coordinates and Fluid objects stored in MeshBlock class.  Note that the
+// initial conditions for the fluid are set in problem generator called from main, not
+// in the Fluid constructor
  
   pcoord   = new Coordinates(this, pin);
   pfluid   = new Fluid(this, pin);
-  poutputs = new Outputs(this, pin);
 
 /*******************
   for (int i=0; i<((ie-is+1)+2*(NGHOST)); ++i) {
@@ -459,10 +457,6 @@ void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
         pdomain->pblock->pfluid->InitFluid(pin);
         break;
 
-      case init_outputs:
-        pdomain->pblock->poutputs->InitOutputTypes(pin);
-        break;
-
       case fluid_bcs_n:
         pdomain->pblock->pfluid->pf_bcs->ApplyBoundaryConditions(pf->u);
         break;
@@ -491,9 +485,6 @@ void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
         pdomain->pblock->pfluid->NewTimeStep(pdomain->pblock);
         break;
 
-      case make_outputs:
-        pdomain->pblock->poutputs->MakeOutputs();
-        break;
     }
   }
 }

@@ -35,21 +35,22 @@
 //--------------------------------------------------------------------------------------
 // FormattedTableOutput constructor
 
-FormattedTableOutput::FormattedTableOutput(OutputParameters oparams, MeshBlock *pb)
-  : OutputType(oparams,pb)
+FormattedTableOutput::FormattedTableOutput(OutputParameters oparams)
+  : OutputType(oparams)
 {
 }
 
 // destructor - not required for this derived class
 
 //--------------------------------------------------------------------------------------
-/*! \fn void FormattedTableOutput:::WriteOutputFile(OutputData *pod)
+/*! \fn void FormattedTableOutput:::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
  *  \brief writes OutputData to file in tabular format using C style fprintf
  */
 
-void FormattedTableOutput::WriteOutputFile(OutputData *pod)
+void FormattedTableOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 {
   std::stringstream msg;
+  if (pod->data_header.ndata == 0) return;  // slice out of range, etc.
 
 // create filename: "file_basename" + XXXX + ".tab", where XXXX = 4-digit file_number
 
@@ -84,17 +85,17 @@ void FormattedTableOutput::WriteOutputFile(OutputData *pod)
 
     if (pod->data_header.il != pod->data_header.iu) {
       fprintf(pfile,"%04d",i);
-      fprintf(pfile,output_params.data_format.c_str(),pmy_block->x1v(i));
+      fprintf(pfile,output_params.data_format.c_str(),pmb->x1v(i));
     }
 
     if (pod->data_header.jl != pod->data_header.ju) {
       fprintf(pfile,"%04d",j);
-      fprintf(pfile,output_params.data_format.c_str(),pmy_block->x2v(j));
+      fprintf(pfile,output_params.data_format.c_str(),pmb->x2v(j));
     }
 
     if (pod->data_header.kl != pod->data_header.ku) {
       fprintf(pfile,"%04d",k);
-      fprintf(pfile,output_params.data_format.c_str(),pmy_block->x3v(k));
+      fprintf(pfile,output_params.data_format.c_str(),pmb->x3v(k));
     }
 
 // step through linked-list of variables and write data on same line
