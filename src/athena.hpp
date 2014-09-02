@@ -9,13 +9,11 @@
  *  \brief contains Athena++ specific types, structures, macros, etc.
  *====================================================================================*/
 
-#define NGHOST 2
+#include "defs.hpp"
+
 #define PI 3.14159265358979323846
 #define TINY_NUMBER 1.0e-20
 #define HUGE_NUMBER 1.0e+36
-
-#define NVAR 4
-#define NON_BAROTROPIC_EOS 0
 
 /*
 #define COORDINATE_SYSTEM spherical_polar_coordinates

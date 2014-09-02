@@ -2,11 +2,11 @@
 
 # Files for conditional compilation
 
-COORDINATES_FILE = cartesian.cpp
-CONVERT_VAR_FILE = isothermal_hydro.cpp
-PROBLEM_FILE = shock_tube.cpp
-RSOLVER_FILE = hlle.cpp
-RECONSTRUCT_FILE = plm.cpp
+COORDINATES_FILE = @COORDINATES_FILE@
+EOS_FILE = @EOS_FILE@
+PROBLEM_FILE = @PROBLEM_FILE@
+RECONSTRUCT_FILE = @RECONSTRUCT_FILE@
+RSOLVER_FILE = @RSOLVER_FILE@
 
 # General compiler specifications
 
@@ -22,12 +22,12 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     src/coordinates/$(COORDINATES_FILE) \
 	     $(wildcard src/fluid/*.cpp) \
 	     $(wildcard src/fluid/bvals/*.cpp) \
+	     src/fluid/eos/$(EOS_FILE) \
 	     $(wildcard src/fluid/integrators/*.cpp) \
-	     $(wildcard src/outputs/*.cpp) \
-	     src/fluid/eos/$(CONVERT_VAR_FILE) \
-	     src/pgen/$(PROBLEM_FILE) \
 	     src/fluid/integrators/reconstruct/$(RECONSTRUCT_FILE) \
-	     src/fluid/integrators/rsolvers/$(RSOLVER_FILE)
+	     src/fluid/integrators/rsolvers/$(RSOLVER_FILE) \
+	     $(wildcard src/outputs/*.cpp) \
+	     src/pgen/$(PROBLEM_FILE)
 SRC_DIR := $(dir $(SRC_FILES))
 OBJ_DIR := obj/
 OBJ_FILES := $(addprefix $(OBJ_DIR),$(notdir $(SRC_FILES:.cpp=.o)))
