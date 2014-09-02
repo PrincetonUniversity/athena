@@ -14,32 +14,35 @@
  * distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
-#include <iostream>
-#include <string>
-#include <math.h>
-#include <float.h>
-
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh.hpp"
+// Primary header
 #include "coordinates.hpp"
+
+// C headers
+#include <math.h>  // pow, trig functions
+
+// Athena++ headers
+#include "../athena.hpp"          // macros, Real
+#include "../athena_arrays.hpp"   // AthenaArray
+#include "../parameter_input.hpp" // ParameterInput
+#include "../mesh.hpp"            // MeshBlock
 
 //======================================================================================
 //! \file spherical_polar.cpp
-//  \brief implements functions in class Coordinates for spherical polar coordinates
+//  \brief implements functions in class Coordinates for 3D (r-theta-phi) spherical
+//    polar coordinates
 //======================================================================================
 
-// constructor
+//--------------------------------------------------------------------------------------
+// Coordinates constructor
 
-Coordinates::Coordinates(MeshBlock *pmb)
+Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_block = pmb;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
 // initialize volume-averaged positions and spacing
-// x1-direction
+// x1-direction: x1v = (\int r dV / \int dV) = d(r^4/4)/d(r^3/3)
 
   for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
     pmb->x1v(i) = 0.75*(pow(pmb->x1f(i+1),4) - pow(pmb->x1f(i),4))
@@ -49,7 +52,8 @@ Coordinates::Coordinates(MeshBlock *pmb)
     pmb->dx1v(i) = pmb->x1v(i+1) - pmb->x1v(i);
   }
 
-// x2-direction
+// x2-direction: x2v = (\int sin[theta] theta dV / \int dV) =
+//   d(sin[theta] - theta cos[theta])/d(-cos[theta])
 
   if (pmb->block_size.nx2 == 1) {
     pmb->x2v(js) = 0.5*(pmb->x2f(js+1) + pmb->x2f(js));
@@ -65,7 +69,7 @@ Coordinates::Coordinates(MeshBlock *pmb)
     }
   }
 
-// x3-direction
+// x3-direction: x3v = (\int phi dV / \int dV) = dphi/2
 
   if (pmb->block_size.nx3 == 1) {
     pmb->x3v(ks) = 0.5*(pmb->x3f(ks+1) + pmb->x3f(ks));
@@ -83,18 +87,16 @@ Coordinates::Coordinates(MeshBlock *pmb)
 // Allocate only those local scratch arrays needed for spherical polar coordinates
 
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  int ncells2 = 1;
-  if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
-
   face_area.NewAthenaArray(ncells1);   // scratch used in integrator
   cell_volume.NewAthenaArray(ncells1); // scratch used in integrator
-
   face1_area_i_.NewAthenaArray(ncells1);
   face2_area_i_.NewAthenaArray(ncells1);
   face3_area_i_.NewAthenaArray(ncells1);
   src_terms_i_.NewAthenaArray(ncells1);
   volume_i_.NewAthenaArray(ncells1);
 
+  int ncells2 = 1;
+  if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
   face1_area_j_.NewAthenaArray(ncells2);
   face2_area_j_.NewAthenaArray(ncells2);
   src_terms_j_.NewAthenaArray(ncells2);
@@ -123,7 +125,7 @@ Coordinates::Coordinates(MeshBlock *pmb)
     face1_area_j_(js) = cos(pmb->x2f(js)) - cos(pmb->x2f(js+1));
     face2_area_j_(js) = sin(pmb->x2f(js));
     volume_j_(js)     = cos(pmb->x2f(js)) - cos(pmb->x2f(js+1));
-    src_terms_j_(js)  = (sin(pmb->x2f(js)) - sin(pmb->x2f(js)))/volume_j_(js);
+    src_terms_j_(js)  = (sin(pmb->x2f(js+1)) - sin(pmb->x2f(js)))/volume_j_(js);
   }
 
 }
@@ -132,7 +134,6 @@ Coordinates::Coordinates(MeshBlock *pmb)
 
 Coordinates::~Coordinates()
 {
-// delete scratch arrays used in integrator, and local arrays used internally
   face_area.DeleteAthenaArray();
   cell_volume.DeleteAthenaArray();
 
@@ -149,16 +150,18 @@ Coordinates::~Coordinates()
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn 
-// \brief
+// \!fn void Coordinates::Area1Face(const int k,const int j, const int il, const int iu,
+//        AthenaArray<Real> &area)
+// \brief functions to compute area of cell faces in each direction
 
 void Coordinates::Area1Face(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
+// area1 = r^2 sin[theta] dtheta dphi = r^2 d(-cos[theta]) dphi
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
-    area_i = face1_area_i_(i)*face1_area_j_(j)*(pmy_block->dx3f(k));
+    area_i = face1_area_i_(i)*face1_area_j_(j)*(pmy_block->dx3f(k)); 
   }
   return;
 }
@@ -166,6 +169,7 @@ void Coordinates::Area1Face(const int k, const int j, const int il, const int iu
 void Coordinates::Area2Face(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
+// area2 = dr r sin[theta] dphi = d(r^2/2) sin[theta] dphi
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
@@ -177,6 +181,7 @@ void Coordinates::Area2Face(const int k, const int j, const int il, const int iu
 void Coordinates::Area3Face(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
+// area3 = dr r dtheta = d(r^2/2) dtheta
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
@@ -186,12 +191,14 @@ void Coordinates::Area3Face(const int k, const int j, const int il, const int iu
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn 
-// \brief
+// \!fn void Coordinates::CellVolume(const int k,const int j,const int il, const int iu,
+//        AthenaArray<Real> &vol)
+// \brief function to compute cell volume
 
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &vol)
 {
+// volume = r^2 sin(theta) dr dtheta dphi = d(r^3/3) d(-cos theta) dphi
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& vol_i = vol(i);
@@ -201,12 +208,18 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn 
-// \brief
+// \!fn void Coordinates::CoordinateSourceTerms(const int k, const int j,
+//        AthenaArray<Real> &prim, AthenaArray<Real> &src)
+// \brief function to compute coordinate source term
 
-void Coordinates::CoordinateSourceTerms(
-  const int k, const int j, AthenaArray<Real> &prim, AthenaArray<Real> &src)
+void Coordinates::CoordinateSourceTerms(const int k, const int j,
+  AthenaArray<Real> &prim, AthenaArray<Real> &src)
 {
+// src_1 = < M_{theta theta} + M_{phi phi} ><1/r> = <M_{tt} + M_{pp}> d(r^2/3)d(r^3/3)
+// src_2 = -< M_{theta r} - cot[theta]M_{phi phi} ><1/r> 
+//         = (<M_{pp}> d(sin[theta])/d(-cos[theta]) - M_{tr}>) d(r^2/3)d(r^3/3)
+// src_3 = -< M_{phi r} + cot[theta]M_{phi theta} ><1/r> 
+//         = -(<M_{pr} + M_{pt} d(sin[theta])/d(-cos[theta]) >) d(r^2/3)d(r^3/3)
 #pragma simd
   for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
     Real m_tt = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM2,k,j,i) + prim(IEN,k,j,i);
@@ -214,7 +227,7 @@ void Coordinates::CoordinateSourceTerms(
     src(IM1,i) = src_terms_i_(i)*(m_tt + m_pp);
 
     Real m_tr = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM1,k,j,i);
-    src(IM2,i) = (-1.0)*src_terms_i_(i)*(m_tr - src_terms_j_(j)*m_pp);
+    src(IM2,i) = src_terms_i_(i)*(src_terms_j_(j)*m_pp - m_tr);
 
     Real m_pr = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM1,k,j,i);
     Real m_pt = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM2,k,j,i);

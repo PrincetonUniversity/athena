@@ -20,6 +20,10 @@
 // C headers
 #include <math.h>   // pow function
 
+// C++ headers
+#include <stdexcept> // runtime_error
+#include <sstream>   // sstream
+
 // Athena++ headers
 #include "../athena.hpp"          // macros, Real
 #include "../athena_arrays.hpp"   // AthenaArray
@@ -27,8 +31,8 @@
 #include "../mesh.hpp"            // MeshBlock
 
 //======================================================================================
-//! \file cylindrical.cpp
-//  \brief implements functions in class Coordinates for 3D (r-z-phi) cylindrical coord
+//! \file cylindrical-rphi.cpp
+//  \brief implements functions in class Coordinates for 2D (r-phi) cylindrical coords
 //======================================================================================
 
 //--------------------------------------------------------------------------------------
@@ -51,7 +55,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     pmb->dx1v(i) = pmb->x1v(i+1) - pmb->x1v(i);
   }
 
-// x2-direction: x2v = (\int z dV / \int dV) = dz/2
+// x2-direction: x2v = (\int phi dV / \int dV) = dphi/2
 
   if (pmb->block_size.nx2 == 1) {
     pmb->x2v(js) = 0.5*(pmb->x2f(js+1) + pmb->x2f(js));
@@ -65,18 +69,17 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     }
   }
 
-// x3-direction: x3v = (\int phi dV / \int dV) = dphi/2
+// x3-direction: These coordinates only work in 2D!
 
   if (pmb->block_size.nx3 == 1) {
     pmb->x3v(ks) = 0.5*(pmb->x3f(ks+1) + pmb->x3f(ks));
     pmb->dx3v(ks) = pmb->dx3f(ks);
   } else {
-    for (int k=ks-(NGHOST); k<=ke+(NGHOST); ++k) {
-      pmb->x3v(k) = 0.5*(pmb->x3f(k+1) + pmb->x3f(k));
-    }
-    for (int k=ks-(NGHOST); k<=ke+(NGHOST)-1; ++k) {
-      pmb->dx3v(k) = pmb->x3v(k+1) - pmb->x3v(k);
-    }
+    std::stringstream msg;
+    msg << "### FATAL ERROR in Coordinates constructor" << std::endl
+        << "Cylindrical r-phi coordinates restricted to 2D, but nx3="
+        << pmb->pmy_domain->pmy_mesh->mesh_size.nx3 << std::endl;
+    throw std::runtime_error(msg.str().c_str());
   }
 
 // Allocate memory for scratch arrays used in integrator, and internal scratch arrays
@@ -85,7 +88,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
   face_area.NewAthenaArray(ncells1);   // scratch used in integrator
   cell_volume.NewAthenaArray(ncells1); // scratch used in integrator
-  face2_area_i_.NewAthenaArray(ncells1);
   volume_i_.NewAthenaArray(ncells1);
   src_terms_i_.NewAthenaArray(ncells1);
 
@@ -94,7 +96,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 
 #pragma simd
   for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i){
-    face2_area_i_(i)= 0.5*(pmb->x1f(i+1)*pmb->x1f(i+1) - pmb->x1f(i)*pmb->x1f(i));
     volume_i_(i)    = 0.5*(pmb->x1f(i+1)*pmb->x1f(i+1) - pmb->x1f(i)*pmb->x1f(i));
     src_terms_i_(i) = pmb->dx1f(i)/volume_i_(i);
   }
@@ -107,7 +108,6 @@ Coordinates::~Coordinates()
 {
   face_area.DeleteAthenaArray();
   cell_volume.DeleteAthenaArray();
-  face2_area_i_.DeleteAthenaArray();
   volume_i_.DeleteAthenaArray();
   src_terms_i_.DeleteAthenaArray();
 }
@@ -120,11 +120,11 @@ Coordinates::~Coordinates()
 void Coordinates::Area1Face(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-// area1 = dz r dphi 
+// area1 = r dphi 
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
-    area_i = (pmy_block->dx2f(j))*(pmy_block->x1f(i)*pmy_block->dx3f(k));
+    area_i = pmy_block->x1f(i)*pmy_block->dx2f(j);
   }
   return;
 }
@@ -132,11 +132,11 @@ void Coordinates::Area1Face(const int k, const int j, const int il, const int iu
 void Coordinates::Area2Face(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-// area2 = dr r dphi = d(r^2/2) dphi
+// area2 = dr
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
-    area_i = face2_area_i_(i)*(pmy_block->dx3f(k));
+    area_i = pmy_block->dx1f(i);
   }
   return;
 }
@@ -144,11 +144,11 @@ void Coordinates::Area2Face(const int k, const int j, const int il, const int iu
 void Coordinates::Area3Face(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-// area3 = dr dz
+// 2D only!  area3 = 1.0
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
-    area_i = (pmy_block->dx1f(i))*(pmy_block->dx2f(j));
+    area_i = 1.0;
   }
   return;
 }
@@ -161,11 +161,11 @@ void Coordinates::Area3Face(const int k, const int j, const int il, const int iu
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &vol)
 {
-// volume = dr dz r dphi = d(r^2/2) dz dphi
+// volume = dr r dphi = d(r^2/2) dphi
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& vol_i = vol(i);
-    vol_i = volume_i_(i)*(pmy_block->dx2f(j))*(pmy_block->dx3f(k));
+    vol_i = volume_i_(i)*(pmy_block->dx2f(j));
   }
   return;
 }
@@ -181,7 +181,7 @@ void Coordinates::CoordinateSourceTerms(const int k, const int j,
 // src_1 = <M_{phi phi}><1/r> = M_{phi phi} dr/d(r^2/2)
 #pragma simd
   for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
-    Real m_pp = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM3,k,j,i) + prim(IEN,k,j,i);
+    Real m_pp = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM2,k,j,i) + prim(IEN,k,j,i);
     src(IM1,i) = src_terms_i_(i)*m_pp;
   }
   return;

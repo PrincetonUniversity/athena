@@ -17,16 +17,18 @@
 // Primary header
 #include "coordinates.hpp"
 
-// Athena headers
-#include "../athena.hpp"         // macros, Real
-#include "../athena_arrays.hpp"  // AthenaArray
-#include "../mesh.hpp"           // MeshBlock
+// Athena++ headers
+#include "../athena.hpp"          // macros, Real
+#include "../athena_arrays.hpp"   // AthenaArray
+#include "../parameter_input.hpp" // ParameterInput
+#include "../mesh.hpp"            // MeshBlock
 
 //======================================================================================
 //! \file cartesian.cpp
 //  \brief implements functions in class Coordinates for Cartesian coordinates
 //======================================================================================
 
+//--------------------------------------------------------------------------------------
 // Coordinates constructor
 
 Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
@@ -36,7 +38,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
 // initialize volume-averaged positions and spacing
-// x1-direction
+// x1-direction: x1v = dx/2
 
   for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
     pmb->x1v(i) = 0.5*(pmb->x1f(i+1) + pmb->x1f(i));
@@ -45,7 +47,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     pmb->dx1v(i) = pmb->x1v(i+1) - pmb->x1v(i);
   }
 
-// x2-direction
+// x2-direction: x2v = dy/2
 
   if (pmb->block_size.nx2 == 1) {
     pmb->x2v(js) = 0.5*(pmb->x2f(js+1) + pmb->x2f(js));
@@ -59,7 +61,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     }
   }
 
-// x3-direction
+// x3-direction: x3v = dz/2
 
   if (pmb->block_size.nx3 == 1) {
     pmb->x3v(ks) = 0.5*(pmb->x3f(ks+1) + pmb->x3f(ks));
@@ -77,8 +79,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 // For cartesian coordinates, no local scratch arrays are needed
 
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  int ncells2 = 1;
-  if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
 
   face_area.NewAthenaArray(ncells1);
   cell_volume.NewAthenaArray(ncells1);
@@ -94,9 +94,9 @@ Coordinates::~Coordinates()
 }
 
 //--------------------------------------------------------------------------------------
-/* \!fn void Coordinates::Area1Face(const int k, const int j, const int il,
- *  const int iu, AthenaArray<Real> &area)
- * \brief  functions to compute area at each face of a grid cell    */
+/* \!fn void Coordinates::Area1Face(const int k,const int j, const int il, const int iu,
+      AthenaArray<Real> &area)
+ * \brief  functions to compute area of cell faces in each direction    */
 
 void Coordinates::Area1Face(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
@@ -104,7 +104,7 @@ void Coordinates::Area1Face(const int k, const int j, const int il, const int iu
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
-    area_i = (pmy_block->dx2f(j))*(pmy_block->dx3f(k));
+    area_i = (pmy_block->dx2f(j))*(pmy_block->dx3f(k));  // dy*dz
   }
   return;
 }
@@ -117,7 +117,7 @@ void Coordinates::Area2Face(const int k, const int j, const int il, const int iu
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
     Real& dx1_i  = dx1f(i);
-    area_i = dx1_i*(pmy_block->dx3f(k));
+    area_i = dx1_i*(pmy_block->dx3f(k));  // dx*dz
   }
   return;
 }
@@ -130,7 +130,7 @@ void Coordinates::Area3Face(const int k, const int j, const int il, const int iu
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
     Real& dx1_i  = dx1f(i);
-    area_i = dx1_i*(pmy_block->dx2f(j));
+    area_i = dx1_i*(pmy_block->dx2f(j));  // dx*dy
   }
   return;
 }
@@ -148,7 +148,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
   for (int i=il; i<=iu; ++i){
     Real& vol_i = vol(i);
     Real& dx1_i = dx1f(i);
-    vol_i = dx1_i*(pmy_block->dx2f(j))*(pmy_block->dx3f(k));
+    vol_i = dx1_i*(pmy_block->dx2f(j))*(pmy_block->dx3f(k));  // dx*dy*dz
   }
   return;
 }
@@ -156,10 +156,10 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 //--------------------------------------------------------------------------------------
 /* \!fn void Coordinates::CoordinateSourceTerms(
  *   const int k, const int j, AthenaArray<Real> &prim, AthenaArray<Real> &src)
- * \brief function to compute source terms associated with geometry */
+ * \brief function to compute coordinate source terms (no-op function for cartesian)  */
 
-void Coordinates::CoordinateSourceTerms(
-  const int k, const int j, AthenaArray<Real> &prim, AthenaArray<Real> &src)
+void Coordinates::CoordinateSourceTerms(const int k, const int j,
+  AthenaArray<Real> &prim, AthenaArray<Real> &src)
 {
   return;
 }
