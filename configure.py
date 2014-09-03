@@ -39,11 +39,11 @@ def main(**kwargs):
 
   # Determine coordinates file
   if packages['geometry'] is None:
-    if packages['coordinates'] not in ['cartesian', 'cylindrical', 'spherical_polar']:
+    if packages['coordinates'] not in ['cartesian', 'cylindrical', 'cylindrical-rphi', 'spherical_polar']:
       print('ERROR: invalid coordinate choice for Newtonian/flat spacetime')
       exit()
   elif packages['geometry'] == 'minkowski':
-    if packages['coordinates'] not in ['cartesian', 'cylindrical', 'spherical_polar']:
+    if packages['coordinates'] not in ['cartesian', 'cylindrical', 'cylindrical-rphi', 'spherical_polar']:
       print('ERROR: invalid coordinate choice for Minkowski spacetime')
       exit()
     packages['coordinates'] = 'minkowski_' + packages['coordinates']
@@ -145,7 +145,7 @@ if __name__ == '__main__':
       help='spacetime geometry (independent of coordinate representation)')
   parser.add_argument('--with-coordinates',
       default='cartesian',
-      choices=['cartesian', 'cylindrical', 'spherical_polar', 'schwarzschild'],
+      choices=['cartesian', 'cylindrical', 'cylindrical-rphi', 'spherical_polar', 'schwarzschild'],
       help='type of coordinate system to use')
   parser.add_argument('--with-eos',
       default='adiabatic',
