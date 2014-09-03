@@ -28,6 +28,7 @@ Outputs:
  - add proper line integrals in Sum transform
  - allow 5 digits in filename numbers??
  - add plast and plast_out ptrs to all linked lists so they are back-searchable
+ - disabel slicing and sums for 1D data
 
 Inputs:
  - how do we specify metric parameters (e.g. M and a=J/M)?

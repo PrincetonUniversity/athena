@@ -96,10 +96,10 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 }
 
 //--------------------------------------------------------------------------------------
-/* \!fn Real FluidEqnOfState::SoundSpeed(Real prim[NVAR])
+/* \!fn Real FluidEqnOfState::SoundSpeed(Real dummy_arg[NVAR])
  * \brief returns isothermal sound speed */
 
-Real FluidEqnOfState::SoundSpeed(Real prim[NVAR])
+Real FluidEqnOfState::SoundSpeed(Real dummy_arg[NVAR])
 {
   return iso_sound_speed_;
 }

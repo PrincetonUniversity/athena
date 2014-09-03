@@ -29,6 +29,8 @@
 #include "../athena_arrays.hpp"   // AthenaArray
 #include "../parameter_input.hpp" // ParameterInput
 #include "../mesh.hpp"            // MeshBlock
+#include "../fluid/fluid.hpp"     // Fluid
+#include "../fluid/eos/eos.hpp"   // SoundSpeed()
 
 //======================================================================================
 //! \file cylindrical-rphi.cpp
@@ -178,10 +180,17 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 void Coordinates::CoordinateSourceTerms(const int k, const int j,
   AthenaArray<Real> &prim, AthenaArray<Real> &src)
 {
+  Real dummy_arg[NVAR];
 // src_1 = <M_{phi phi}><1/r> = M_{phi phi} dr/d(r^2/2)
 #pragma simd
   for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
-    Real m_pp = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM2,k,j,i) + prim(IEN,k,j,i);
+    Real m_pp = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM2,k,j,i);
+    if (NON_BAROTROPIC_EOS) {
+       m_pp += prim(IEN,k,j,i);
+    } else {
+       Real iso_cs = pmy_block->pfluid->pf_eos->SoundSpeed(dummy_arg);
+       m_pp += (iso_cs*iso_cs)*prim(IDN,k,j,i);
+    }
     src(IM1,i) = src_terms_i_(i)*m_pp;
   }
   return;
