@@ -29,13 +29,13 @@ public:
   MeshBlock *pmy_block;  // ptr to MeshBlock containing this Coordinates
 
   void Area1Face(
-    const int k, const int j, const int il, const int iu, AthenaArray<Real> &area);
+    const int k, const int j, const int il, const int iu, AthenaArray<Real> *parea);
   void Area2Face(
-    const int k, const int j, const int il, const int iu, AthenaArray<Real> &area);
+    const int k, const int j, const int il, const int iu, AthenaArray<Real> *parea);
   void Area3Face(
-    const int k, const int j, const int il, const int iu, AthenaArray<Real> &area);
+    const int k, const int j, const int il, const int iu, AthenaArray<Real> *parea);
   void CellVolume(
-    const int k, const int j, const int il, const int iu, AthenaArray<Real> &area);
+    const int k, const int j, const int il, const int iu, AthenaArray<Real> *pvol);
   void CoordinateSourceTerms(
     const int k, const int j, AthenaArray<Real> &prim, AthenaArray<Real> &src);
 

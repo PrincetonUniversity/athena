@@ -80,8 +80,8 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
 
-  face_area.NewAthenaArray(ncells1);
-  cell_volume.NewAthenaArray(ncells1);
+  face_area.NewAthenaArray(ATHENA_MAX_NUM_THREADS,ncells1);
+  cell_volume.NewAthenaArray(ATHENA_MAX_NUM_THREADS,ncells1);
 }
 
 // destructor
@@ -99,23 +99,23 @@ Coordinates::~Coordinates()
  * \brief  functions to compute area of cell faces in each direction    */
 
 void Coordinates::Area1Face(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area)
+  AthenaArray<Real> *parea)
 {
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = area(i);
+    Real& area_i = (*parea)(i);
     area_i = (pmy_block->dx2f(j))*(pmy_block->dx3f(k));  // dy*dz
   }
   return;
 }
 
 void Coordinates::Area2Face(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area)
+  AthenaArray<Real> *parea)
 {
   AthenaArray<Real> dx1f = pmy_block->dx1f.ShallowCopy();
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = area(i);
+    Real& area_i = (*parea)(i);
     Real& dx1_i  = dx1f(i);
     area_i = dx1_i*(pmy_block->dx3f(k));  // dx*dz
   }
@@ -123,12 +123,12 @@ void Coordinates::Area2Face(const int k, const int j, const int il, const int iu
 }
 
 void Coordinates::Area3Face(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area)
+  AthenaArray<Real> *parea)
 {
   AthenaArray<Real> dx1f = pmy_block->dx1f.ShallowCopy();
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = area(i);
+    Real& area_i = (*parea)(i);
     Real& dx1_i  = dx1f(i);
     area_i = dx1_i*(pmy_block->dx2f(j));  // dx*dy
   }
@@ -141,12 +141,12 @@ void Coordinates::Area3Face(const int k, const int j, const int il, const int iu
  * \brief function to compute cell volume    */
 
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &vol)
+  AthenaArray<Real> *pvol)
 {
   AthenaArray<Real> dx1f = pmy_block->dx1f.ShallowCopy();
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& vol_i = vol(i);
+    Real& vol_i = (*pvol)(i);
     Real& dx1_i = dx1f(i);
     vol_i = dx1_i*(pmy_block->dx2f(j))*(pmy_block->dx3f(k));  // dx*dy*dz
   }

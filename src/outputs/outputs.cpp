@@ -381,7 +381,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       output_params.variable.compare("cons") == 0) {
     var_header.type = "SCALARS";
     var_header.name = "dens";
-    pod->AppendNode(pf->u.ShallowCopy(IDN,1),var_header); // (lab-frame) density
+    pod->AppendNode(pf->u.ShallowSlice(IDN,1),var_header); // (lab-frame) density
     var_added = 1;
   }
 
@@ -389,7 +389,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       output_params.variable.compare("prim") == 0) {
     var_header.type = "SCALARS";
     var_header.name = "rho";
-    pod->AppendNode(pf->w.ShallowCopy(IDN,1),var_header); // (rest-frame) density
+    pod->AppendNode(pf->w.ShallowSlice(IDN,1),var_header); // (rest-frame) density
     var_added = 1;
   }
 
@@ -398,7 +398,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
         output_params.variable.compare("cons") == 0) {
       var_header.type = "SCALARS";
       var_header.name = "Etot";
-      pod->AppendNode(pf->u.ShallowCopy(IEN,1),var_header); // total energy
+      pod->AppendNode(pf->u.ShallowSlice(IEN,1),var_header); // total energy
       var_added = 1;
     }
   }
@@ -408,7 +408,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
         output_params.variable.compare("prim") == 0) {
       var_header.type = "SCALARS";
       var_header.name = "eint";
-      pod->AppendNode(pf->w.ShallowCopy(IEN,1),var_header); // internal energy
+      pod->AppendNode(pf->w.ShallowSlice(IEN,1),var_header); // internal energy
       var_added = 1;
     }
   }
@@ -417,7 +417,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       output_params.variable.compare("cons") == 0) {
     var_header.type = "VECTORS";
     var_header.name = "mom";
-    pod->AppendNode(pf->u.ShallowCopy(IM1,3),var_header); // momentum vector
+    pod->AppendNode(pf->u.ShallowSlice(IM1,3),var_header); // momentum vector
     var_added = 1;
   }
 
@@ -425,7 +425,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       output_params.variable.compare("prim") == 0) {
     var_header.type = "VECTORS";
     var_header.name = "vel";
-    pod->AppendNode(pf->w.ShallowCopy(IM1,3),var_header); // velocity vector
+    pod->AppendNode(pf->w.ShallowSlice(IM1,3),var_header); // velocity vector
     var_added = 1;
   }
 

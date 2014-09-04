@@ -54,7 +54,8 @@ HistoryOutput::HistoryOutput(OutputParameters oparams)
 void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 {
   Fluid *pf = pmb->pfluid;;
-  AthenaArray<Real> vol = pmb->pcoord->cell_volume.ShallowCopy();
+  int tid=0;
+  AthenaArray<Real> *pvol = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
 
 // add OutputData header
 
@@ -102,17 +103,17 @@ void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
   for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j) {
     Real partial_sum[(nvars-2)];
     for (int i=0; i<(nvars-2); ++i) partial_sum[i] = 0.0;
-    pmb->pcoord->CellVolume(k,j,(pod->data_header.il),(pod->data_header.iu),vol);
+    pmb->pcoord->CellVolume(k,j,(pod->data_header.il),(pod->data_header.iu),pvol);
 
     for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i) {
-      partial_sum[0] += vol(i)*pf->u(IDN,k,j,i);
-      partial_sum[1] += vol(i)*pf->u(IM1,k,j,i);
-      partial_sum[2] += vol(i)*pf->u(IM2,k,j,i);
-      partial_sum[3] += vol(i)*pf->u(IM3,k,j,i);
-      partial_sum[4] += vol(i)*pf->w(IDN,k,j,i)*pf->w(IM1,k,j,i)*pf->w(IM1,k,j,i);
-      partial_sum[5] += vol(i)*pf->w(IDN,k,j,i)*pf->w(IM2,k,j,i)*pf->w(IM2,k,j,i);
-      partial_sum[6] += vol(i)*pf->w(IDN,k,j,i)*pf->w(IM3,k,j,i)*pf->w(IM3,k,j,i);
-      if (NON_BAROTROPIC_EOS) partial_sum[7] += vol(i)*pf->u(IEN,k,j,i);
+      partial_sum[0] += (*pvol)(i)*pf->u(IDN,k,j,i);
+      partial_sum[1] += (*pvol)(i)*pf->u(IM1,k,j,i);
+      partial_sum[2] += (*pvol)(i)*pf->u(IM2,k,j,i);
+      partial_sum[3] += (*pvol)(i)*pf->u(IM3,k,j,i);
+      partial_sum[4] += (*pvol)(i)*pf->w(IDN,k,j,i)*pf->w(IM1,k,j,i)*pf->w(IM1,k,j,i);
+      partial_sum[5] += (*pvol)(i)*pf->w(IDN,k,j,i)*pf->w(IM2,k,j,i)*pf->w(IM2,k,j,i);
+      partial_sum[6] += (*pvol)(i)*pf->w(IDN,k,j,i)*pf->w(IM3,k,j,i)*pf->w(IM3,k,j,i);
+      if (NON_BAROTROPIC_EOS) partial_sum[7] += (*pvol)(i)*pf->u(IEN,k,j,i);
     }
     for (int n=0; n<(nvars-2); ++n) (*phistory_datum)(n+2,0,0,0) += partial_sum[n];
 

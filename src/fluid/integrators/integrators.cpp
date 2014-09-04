@@ -37,10 +37,10 @@ FluidIntegrator::FluidIntegrator(Fluid *pf)
 // Allocate memory for scratch vectors
 
   int ncells1 = pf->pmy_block->block_size.nx1 + 2*(NGHOST);
-  wl_.NewAthenaArray(NVAR,ncells1);
-  wr_.NewAthenaArray(NVAR,ncells1);
-  flx_.NewAthenaArray(NVAR,ncells1);
-  src_.NewAthenaArray(NVAR,ncells1);
+  wl_.NewAthenaArray(ATHENA_MAX_NUM_THREADS,NVAR,ncells1);
+  wr_.NewAthenaArray(ATHENA_MAX_NUM_THREADS,NVAR,ncells1);
+  flx_.NewAthenaArray(ATHENA_MAX_NUM_THREADS,NVAR,ncells1);
+  src_.NewAthenaArray(ATHENA_MAX_NUM_THREADS,NVAR,ncells1);
 }
 
 // destructor
