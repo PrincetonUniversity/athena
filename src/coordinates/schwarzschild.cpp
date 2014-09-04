@@ -14,7 +14,8 @@
 // Athena headers
 #include "../athena.hpp"         // enums, macros, Real
 #include "../athena_arrays.hpp"  // AthenaArray
-#include "../fluid/fluid.hpp"    // GetGamma()
+#include "../fluid/eos/eos.hpp"  // GetGamma()
+#include "../fluid/fluid.hpp"    // Fluid
 #include "../mesh.hpp"           // MeshBlock
 
 // TODO: find better input method
@@ -464,7 +465,7 @@ void Coordinates::CoordinateSourceTerms(const int k, const int j,
     AthenaArray<Real> &prim, AthenaArray<Real> &sources)
 {
   // Extract ratio of specific heats
-  const Real gamma_adi = pmy_block->pfluid->GetGamma();
+  const Real gamma_adi = pmy_block->pfluid->pf_eos->GetGamma();
   const Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Extract geometric quantities that do not depend on r
@@ -897,7 +898,7 @@ void Coordinates::FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flu
 void Coordinates::PrimToCons(AthenaArray<Real> &prim, AthenaArray<Real> &cons)
 {
   // Extract ratio of specific heats
-  const Real gamma_adi = pmy_block->pfluid->GetGamma();
+  const Real gamma_adi = pmy_block->pfluid->pf_eos->GetGamma();
   const Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Prepare index bounds

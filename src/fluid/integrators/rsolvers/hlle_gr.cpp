@@ -10,6 +10,7 @@
 #include <cmath>      // sqrt()
 
 // Athena headers
+#include "../../eos/eos.hpp"                     // GetGamma()
 #include "../../fluid.hpp"                       // Fluid
 #include "../../../athena.hpp"                   // enums, macros, Real
 #include "../../../athena_arrays.hpp"            // AthenaArray
@@ -30,7 +31,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     AthenaArray<Real> &wr, AthenaArray<Real> &flux)
 {
   // Extract ratio of specific heats
-  const Real gamma_adi = pmy_fluid->GetGamma();
+  const Real gamma_adi = pmy_fluid->pf_eos->GetGamma();
   const Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Transform primitives into locally flat coordinates

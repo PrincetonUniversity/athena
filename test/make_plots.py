@@ -48,18 +48,22 @@ def main(**kwargs):
       plot_shockset('plots/hydro_sr_shockset_gr', gr=True)
   elif problem == 'hydro_schwarzschild':  # 1D radial accretion onto Schwarzschild BH
     if computation_needed:
-      make_string = 'make all \
-          COORDINATES_FILE=schwarzschild.cpp \
-          CONVERT_VAR_FILE=adiabatic_hydro_gr.cpp \
-          PROBLEM_FILE=accretion_gr.cpp \
-          RSOLVER_FILE=hlle_gr.cpp \
-          RECONSTRUCT_FILE=plm.cpp'
+      configure_string = './configure.py \
+          --with-geometry=schwarzschild \
+          --with-coordinates=schwarzschild \
+          --with-eos=adiabatic \
+          --with-integrator=vl2 \
+          --with-rsolver=hlle \
+          --with-reconstruct=plm \
+          --with-problem=accretion \
+          --enable-general-relativity'
+      make_string = 'make all'
       name_string = 'hydro_schwarzschild_geodesic'
       run_string = './athena \
           -i ../inputs/hydro_gr/athinput.geodesic \
           job/problem_id={0} \
           output1/variable=prim'.format(name_string)
-      run_new(make_string, run_string, name_string)
+      run_new(configure_string, make_string, run_string, name_string)
     if plots_needed:
       plot_accretion('hydro_schwarzschild_geodesic')
   else:
@@ -248,9 +252,15 @@ def run_old_shock(input_prefix, output_prefix, settings):
 def run_new_shock(input_prefix, output_prefix, settings):
 
   # Prepare strings
-  new_make_string = 'make all COORDINATES_FILE=cartesian.cpp \
-      CONVERT_VAR_FILE=adiabatic_hydro_sr.cpp PROBLEM_FILE=shock_tube_sr.cpp \
-      RSOLVER_FILE=hlle_sr.cpp RECONSTRUCT_FILE=plm.cpp'
+  new_configure_string = './configure.py \
+      --with-coordinates=cartesian \
+      --with-eos=adiabatic \
+      --with-integrator=vl2 \
+      --with-rsolver=hlle \
+      --with-reconstruct=plm \
+      --with-problem=shock_tube \
+      --enable-special-relativity'
+  new_make_string = 'make all'
   # TODO: change when -d option works
   #new_run_string = './athena -i inputs/hydro_sr/athinput.' + input_prefix + '{1} \
   #    -d {0}/data job/problem_id=' + output_prefix + '{1} output1/variable={5} \
@@ -281,6 +291,7 @@ def run_new_shock(input_prefix, output_prefix, settings):
   try:
     current_directory = os.getcwd()
     os.chdir('..')
+    os.system(new_configure_string + ' &> /dev/null')
     os.system('make clean &> /dev/null')
     os.system(new_make_string + ' &> /dev/null')
     os.chdir('bin')
@@ -298,9 +309,16 @@ def run_new_shock(input_prefix, output_prefix, settings):
 def run_new_shock_gr(input_prefix, output_prefix, settings):
 
   # Prepare strings
-  new_make_string = 'make all COORDINATES_FILE=minkowski_cartesian.cpp \
-      CONVERT_VAR_FILE=adiabatic_hydro_gr.cpp PROBLEM_FILE=shock_tube_gr.cpp \
-      RSOLVER_FILE=hlle_gr.cpp RECONSTRUCT_FILE=plm.cpp'
+  new_configure_string = './configure.py \
+      --with-geometry=minkowski \
+      --with-coordinates=cartesian \
+      --with-eos=adiabatic \
+      --with-integrator=vl2 \
+      --with-rsolver=hlle \
+      --with-reconstruct=plm \
+      --with-problem=shock_tube \
+      --enable-general-relativity'
+  new_make_string = 'make all'
   # TODO: change when -d option works
   #new_run_string = './athena -i inputs/hydro_sr/athinput.' + input_prefix + '{1} \
   #    -d {0}/data job/problem_id=' + output_prefix + '{1} output1/variable={5} \
@@ -331,6 +349,7 @@ def run_new_shock_gr(input_prefix, output_prefix, settings):
   try:
     current_directory = os.getcwd()
     os.chdir('..')
+    os.system(new_configure_string + ' &> /dev/null')
     os.system('make clean &> /dev/null')
     os.system(new_make_string + ' &> /dev/null')
     os.chdir('bin')
@@ -345,7 +364,7 @@ def run_new_shock_gr(input_prefix, output_prefix, settings):
     exit()
 
 # Function for running new Athena in general
-def run_new(make_string, run_string, name_string):
+def run_new(configure_string, make_string, run_string, name_string):
 
   # Delete old data
   print('deleting old data...')
@@ -362,6 +381,7 @@ def run_new(make_string, run_string, name_string):
   try:
     current_directory = os.getcwd()
     os.chdir('..')
+    os.system(configure_string + ' &> /dev/null')
     os.system('make clean &> /dev/null')
     os.system(make_string + ' &> /dev/null')
     os.chdir('bin')
@@ -372,8 +392,7 @@ def run_new(make_string, run_string, name_string):
   # Generate new data
   print('generating new data...')
   try:
-    #os.system(run_string + ' &> /dev/null')
-    os.system(run_string)
+    os.system(run_string + ' &> /dev/null')
     # TODO: remove when -d option works
     os.system('mv {0}*.tab {1}/data/.'.format(name_string, current_directory))
     os.chdir(current_directory)

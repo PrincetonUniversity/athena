@@ -13,6 +13,7 @@
 // Athena headers
 #include "../athena.hpp"           // enums, macros, Real
 #include "../athena_arrays.hpp"    // AthenaArray
+#include "../fluid/eos/eos.hpp"    // GetGamma()
 #include "../mesh.hpp"             // MeshBlock
 #include "../parameter_input.hpp"  // ParameterInput
 
@@ -49,8 +50,7 @@ void Fluid::InitFluid(ParameterInput *pin)
   }
 
   // Read and set ratio of specific heats
-  gamma_ = pin->GetReal("fluid", "gamma");
-  Real gamma_adi = GetGamma();
+  Real gamma_adi = pf_eos->GetGamma();
   Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Read and check shock direction and position

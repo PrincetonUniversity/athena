@@ -33,7 +33,7 @@ OBJ_FILES := $(OBJ_FILES:.cpp=.o)
 VPATH := $(SRC_DIR)
 
 # Generally useful targets
-.PHONY : test dirs local clean
+.PHONY : test dirs local
 test : dirs
 	$(foreach SUBDIR,$(SUBDIRS),$(MAKE) -C $(SUBDIR) all;)
 dirs :
@@ -52,6 +52,7 @@ $(OBJ_DIR)%.o : %.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(INCLUDE_FLAGS) -c $< -o $@ 
 
 # Cleanup
+.PHONY : clean
 clean :
 	-rm -rf $(OBJ_DIR)*
 	-rm -rf $(BIN_DIR)$(EXECUTABLE_NAME)*
