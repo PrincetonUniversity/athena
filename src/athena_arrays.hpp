@@ -64,12 +64,12 @@ public:
     return pdata_[i + nx1_*(j + nx2_*(k + nx3_*n))]; }
 
 // copy constructor and overloaded assignment operator (both do deep copies).
-// A shallow copy function is also provided.
+// Shallow copy and slice functions are also provided.
 
   AthenaArray(const AthenaArray<T>& t);
   AthenaArray<T> &operator= (const AthenaArray<T> &t);
   AthenaArray<T> ShallowCopy();
-  AthenaArray<T> *ShallowCopy(const int indx, const int nvar);
+  AthenaArray<T> *ShallowSlice(const int indx, const int nvar);
 
 private:
   T *pdata_;
@@ -103,9 +103,9 @@ AthenaArray<T>::AthenaArray(const AthenaArray<T>& src) {
   nx4_ = src.nx4_;
   if (src.pdata_) {
     std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_);
-    pdata_ = new T[size];
+    pdata_ = new T[size]; // allocate memory for array data
     for (std::size_t i=0; i<size; ++i) {
-      pdata_[i] = src.pdata_[i];
+      pdata_[i] = src.pdata_[i]; // copy data (not just addresses!) into new memory
     } 
   }
 }
@@ -122,9 +122,9 @@ AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
 
     delete[] this->pdata_;
     std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_);
-    this->pdata_ = new T[size];
+    this->pdata_ = new T[size]; // allocate memory for array data
     for (std::size_t i=0; i<size; ++i) {
-      this->pdata_[i] = src.pdata_[i];
+      this->pdata_[i] = src.pdata_[i]; // copy data (not just addresses!) into new mem
     } 
   }
   return *this;
@@ -132,7 +132,7 @@ AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
 
 //--------------------------------------------------------------------------------------
 //! \fn AthenaArray::ShallowCopy()
-//  \brief shallow copy of array 
+//  \brief shallow copy of array (copies ptrs, but not data)
 
 template<typename T>
 AthenaArray<T> AthenaArray<T>::ShallowCopy() {
@@ -147,19 +147,33 @@ AthenaArray<T> AthenaArray<T>::ShallowCopy() {
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn AthenaArray::ShallowCopy(int indx, int nvar)
-//  \brief shallow copy of the indx-th variable to a new dynamically allocated array
-//  with nvar variables
+//! \fn AthenaArray::ShallowSlice(int indx, int nvar)
+//  \brief shallow copy of nvar elements in the largest dimension of an array, starting
+//  at index=indx.  Copies pointers to data, but not data itself.  Examples:
+//    4D array nvar=3: copy has size OUT(3,nx3,nx2,nx1) with OUT(0,*,*,*)=IN(indx,*,*,*)
+//    3D array nvar=1: copy has size OUT(1,1,nx2,nx1)   with OUT(0,0,*,*)=IN(0,indx,*,*)
 
 template<typename T>
-AthenaArray<T> *AthenaArray<T>::ShallowCopy(const int indx, const int nvar) {
+AthenaArray<T> *AthenaArray<T>::ShallowSlice(const int indx, const int nvar) {
   AthenaArray<T> *dest = new AthenaArray<T>;
   dest->nx1_=nx1_;
   dest->nx2_=nx2_;
   dest->nx3_=nx3_;
-  dest->nx4_=nvar;
-// No error checking: n must be < nx4 in original array
-  dest->pdata_ = pdata_ + indx * nx1_*nx2_*nx3_;
+  dest->nx4_=nx4_;
+  dest->pdata_ = pdata_;
+  if (nx4_ > 1) {
+    dest->nx4_=nvar;
+    dest->pdata_ += indx * nx1_*nx2_*nx3_;
+  } else if (nx3_ > 1) {
+    dest->nx3_=nvar;
+    dest->pdata_ += indx * nx1_*nx2_;
+  } else if (nx2_ > 1) {
+    dest->nx2_=nvar;
+    dest->pdata_ += indx * nx1_;
+  } else if (nx1_ > 1) {
+    dest->nx1_=nvar;
+    dest->pdata_ += indx;
+  }
   dest->scopy_ = 1;
   return dest;
 }
@@ -175,7 +189,7 @@ void AthenaArray<T>::NewAthenaArray(int nx1)
   nx2_ = 1;
   nx3_ = 1;
   nx4_ = 1;
-  pdata_ = new T[nx1](); // empty parentheses initialize to zero
+  pdata_ = new T[nx1](); // allocate memory (initialized to zero using () )
 }
  
 //--------------------------------------------------------------------------------------
@@ -189,7 +203,7 @@ void AthenaArray<T>::NewAthenaArray(int nx2, int nx1)
   nx2_ = nx2;
   nx3_ = 1;
   nx4_ = 1;
-  pdata_ = new T[nx1*nx2](); // empty parentheses initialize to zero
+  pdata_ = new T[nx1*nx2](); // allocate memory (initialized to zero using () )
 }
  
 //--------------------------------------------------------------------------------------
@@ -203,7 +217,7 @@ void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1)
   nx2_ = nx2;
   nx3_ = nx3;
   nx4_ = 1;
-  pdata_ = new T[nx1*nx2*nx3](); // empty parentheses initialize to zero
+  pdata_ = new T[nx1*nx2*nx3](); // allocate memory (initialized to zero using () )
 }
  
 //--------------------------------------------------------------------------------------
@@ -217,7 +231,7 @@ void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2, int nx1)
   nx2_ = nx2;
   nx3_ = nx3;
   nx4_ = nx4;
-  pdata_ = new T[nx1*nx2*nx3*nx4](); // empty parentheses initialize to zero
+  pdata_ = new T[nx1*nx2*nx3*nx4](); // allocate memory (initialized to zero using () )
 }
 
 //--------------------------------------------------------------------------------------
