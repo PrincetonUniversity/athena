@@ -88,8 +88,8 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 // Allocate only those local scratch arrays needed for cylindrical coordinates
 
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  face_area.NewAthenaArray(ncells1);   // scratch used in integrator
-  cell_volume.NewAthenaArray(ncells1); // scratch used in integrator
+  face_area.NewAthenaArray(ATHENA_MAX_NUM_THREADS,ncells1);
+  cell_volume.NewAthenaArray(ATHENA_MAX_NUM_THREADS,ncells1);
   volume_i_.NewAthenaArray(ncells1);
   src_terms_i_.NewAthenaArray(ncells1);
 
@@ -120,36 +120,36 @@ Coordinates::~Coordinates()
 // \brief functions to compute area of cell faces in each direction
 
 void Coordinates::Area1Face(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area)
+  AthenaArray<Real> *parea)
 {
 // area1 = r dphi 
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = area(i);
+    Real& area_i = (*parea)(i);
     area_i = pmy_block->x1f(i)*pmy_block->dx2f(j);
   }
   return;
 }
 
 void Coordinates::Area2Face(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area)
+  AthenaArray<Real> *parea)
 {
 // area2 = dr
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = area(i);
+    Real& area_i = (*parea)(i);
     area_i = pmy_block->dx1f(i);
   }
   return;
 }
 
 void Coordinates::Area3Face(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area)
+  AthenaArray<Real> *parea)
 {
 // 2D only!  area3 = 1.0
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = area(i);
+    Real& area_i = (*parea)(i);
     area_i = 1.0;
   }
   return;
@@ -161,12 +161,12 @@ void Coordinates::Area3Face(const int k, const int j, const int il, const int iu
 // \brief function to compute cell volume
 
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &vol)
+  AthenaArray<Real> *pvol)
 {
 // volume = dr r dphi = d(r^2/2) dphi
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& vol_i = vol(i);
+    Real& vol_i = (*pvol)(i);
     vol_i = volume_i_(i)*(pmy_block->dx2f(j));
   }
   return;
@@ -182,6 +182,7 @@ void Coordinates::CoordinateSourceTerms(const int k, const int j,
 {
   Real dummy_arg[NVAR];
 // src_1 = <M_{phi phi}><1/r> = M_{phi phi} dr/d(r^2/2)
+// src_2 = -< M_{phi r} ><1/r>  = -(<M_{pr}>) dr/d(r^2/2)
 #pragma simd
   for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
     Real m_pp = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM2,k,j,i);
@@ -192,6 +193,9 @@ void Coordinates::CoordinateSourceTerms(const int k, const int j,
        m_pp += (iso_cs*iso_cs)*prim(IDN,k,j,i);
     }
     src(IM1,i) = src_terms_i_(i)*m_pp;
+
+    Real m_pr = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM1,k,j,i);
+    src(IM2,i) = (-1.0)*src_terms_i_(i)*m_pr;
   }
   return;
 }

@@ -73,6 +73,9 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //--------------------------------------------------------------------------------------
 // Convert to Primitives
 
+#pragma omp parallel default(shared) num_threads(ATHENA_MAX_NUM_THREADS)
+{
+#pragma omp for schedule(dynamic,4)
   for (int k=kl; k<=ku; ++k){
   for (int j=jl; j<=ju; ++j){
 #pragma simd
@@ -99,6 +102,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       w_p *= (GetGamma() - 1.0);
     }
   }}
+}
 
   return;
 }
