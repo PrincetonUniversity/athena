@@ -41,12 +41,12 @@ public:
 
   void CellMetric(const int k, const int j, AthenaArray<Real> &g,
       AthenaArray<Real> &g_inv);
-  void PrimToLocal1(const int k, const int j, AthenaArray<Real> &prim);
-  void PrimToLocal2(const int k, const int j, AthenaArray<Real> &prim);
-  void PrimToLocal3(const int k, const int j, AthenaArray<Real> &prim);
-  void FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flux);
-  void FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flux);
-  void FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flux);
+  void PrimToLocal1(const int k, const int j, AthenaArray<Real> *pprim);
+  void PrimToLocal2(const int k, const int j, AthenaArray<Real> *pprim);
+  void PrimToLocal3(const int k, const int j, AthenaArray<Real> *pprim);
+  void FluxToGlobal1(const int k, const int j, AthenaArray<Real> *pflux);
+  void FluxToGlobal2(const int k, const int j, AthenaArray<Real> *pflux);
+  void FluxToGlobal3(const int k, const int j, AthenaArray<Real> *pflux);
   void PrimToCons(AthenaArray<Real> &prim, AthenaArray<Real> &cons);
 
 // these are scratch arrays used by integrators and allocated in this class

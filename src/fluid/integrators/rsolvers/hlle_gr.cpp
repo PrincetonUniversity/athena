@@ -10,6 +10,7 @@
 #include <cmath>      // sqrt()
 
 // Athena headers
+#include "../../eos/eos.hpp"                     // GetGamma()
 #include "../../fluid.hpp"                       // Fluid
 #include "../../../athena.hpp"                   // enums, macros, Real
 #include "../../../athena_arrays.hpp"            // AthenaArray
@@ -19,18 +20,19 @@
 // Riemann solver
 // Inputs:
 //   il, iu: lower and upper indices for interfaces
-//   wl, wr: left and right primitive states
+//   pprim_left, pprim_right: pointers to left and right primitive states
 // Outputs:
-//   flux: fluxes
+//   pflux: pointer to fluxes
 // Notes:
 //   implements HLLE algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
-//   wl, wr overwritten
+//   *pprim_left, *pprim_right overwritten
 void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
-    const int iu, const int ivx, const int ivy, const int ivz, AthenaArray<Real> &wl,
-    AthenaArray<Real> &wr, AthenaArray<Real> &flux)
+    const int iu, const int ivx, const int ivy, const int ivz,
+    AthenaArray<Real> *pprim_left, AthenaArray<Real> *pprim_right,
+    AthenaArray<Real> *pflux)
 {
   // Extract ratio of specific heats
-  const Real gamma_adi = pmy_fluid->GetGamma();
+  const Real gamma_adi = pmy_fluid->pf_eos->GetGamma();
   const Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Transform primitives into locally flat coordinates
@@ -38,16 +40,16 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   switch (ivx)
   {
     case IVX:
-      pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, wl);
-      pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, wr);
+      pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, pprim_left);
+      pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, pprim_right);
       break;
     case IVY:
-      pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, wl);
-      pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, wr);
+      pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, pprim_left);
+      pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, pprim_right);
       break;
     case IVZ:
-      pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, wl);
-      pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, wr);
+      pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, pprim_left);
+      pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, pprim_right);
       break;
   }
 
@@ -56,25 +58,25 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   for (int i = il; i <= iu; i++)
   {
     // Extract left primitives
-    Real &rho_left = wl(IDN,i);
-    Real &pgas_left = wl(IEN,i);
-    Real &vx_left = wl(ivx,i);
-    Real &vy_left = wl(ivy,i);
-    Real &vz_left = wl(ivz,i);
+    Real &rho_left = (*pprim_left)(IDN,i);
+    Real &pgas_left = (*pprim_left)(IEN,i);
+    Real &vx_left = (*pprim_left)(ivx,i);
+    Real &vy_left = (*pprim_left)(ivy,i);
+    Real &vz_left = (*pprim_left)(ivz,i);
 
     // Extract right primitives
-    Real &rho_right = wr(IDN,i);
-    Real &pgas_right = wr(IEN,i);
-    Real &vx_right = wr(ivx,i);
-    Real &vy_right = wr(ivy,i);
-    Real &vz_right = wr(ivz,i);
+    Real &rho_right = (*pprim_right)(IDN,i);
+    Real &pgas_right = (*pprim_right)(IEN,i);
+    Real &vx_right = (*pprim_right)(ivx,i);
+    Real &vy_right = (*pprim_right)(ivy,i);
+    Real &vz_right = (*pprim_right)(ivz,i);
 
     // Extract fluxes
-    Real &flux_d = flux(IDN,i);
-    Real &flux_e = flux(IEN,i);
-    Real &flux_mx = flux(ivx,i);
-    Real &flux_my = flux(ivy,i);
-    Real &flux_mz = flux(ivz,i);
+    Real &flux_d = (*pflux)(IDN,i);
+    Real &flux_e = (*pflux)(IEN,i);
+    Real &flux_mx = (*pflux)(ivx,i);
+    Real &flux_my = (*pflux)(ivy,i);
+    Real &flux_mz = (*pflux)(ivz,i);
 
     // Calculate wavespeeds in left region
     Real rho_h_left = rho_left + gamma_adi_red * pgas_left;
@@ -184,13 +186,13 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   switch (ivx)
   {
     case IVX:
-      pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, flux);
+      pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, pflux);
       break;
     case IVY:
-      pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, flux);
+      pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, pflux);
       break;
     case IVZ:
-      pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, flux);
+      pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, pflux);
       break;
   }
   return;

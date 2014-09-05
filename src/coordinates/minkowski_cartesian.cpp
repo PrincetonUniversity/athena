@@ -77,14 +77,14 @@ Coordinates::~Coordinates()
 // Notes:
 //   \Delta A = \Delta y * \Delta z
 void Coordinates::Area1Face(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &areas)
+    AthenaArray<Real> *pareas)
 {
   Real &delta_y = pmy_block->dx2f(j);
   Real &delta_z = pmy_block->dx3f(k);
 #pragma simd
   for (int i = il; i <= iu; i++)
   {
-    Real &area = areas(i);
+    Real &area = (*pareas)(i);
     area = delta_y * delta_z;
   }
   return;
@@ -100,13 +100,13 @@ void Coordinates::Area1Face(const int k, const int j, const int il, const int iu
 // Notes:
 //   \Delta A = \Delta x * \Delta z
 void Coordinates::Area2Face(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &areas)
+    AthenaArray<Real> *pareas)
 {
   Real &delta_z = pmy_block->dx3f(k);
 #pragma simd
   for (int i = il; i <= iu; i++)
   {
-    Real &area = areas(i);
+    Real &area = (*pareas)(i);
     Real &delta_x = pmy_block->dx1f(i);
     area = delta_x * delta_z;
   }
@@ -123,13 +123,13 @@ void Coordinates::Area2Face(const int k, const int j, const int il, const int iu
 // Notes:
 //   \Delta A = \Delta x * \Delta y
 void Coordinates::Area3Face(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &areas)
+    AthenaArray<Real> *pareas)
 {
   Real &delta_y = pmy_block->dx2f(j);
 #pragma simd
   for (int i = il; i <= iu; i++)
   {
-    Real &area = areas(i);
+    Real &area = (*pareas)(i);
     Real &delta_x = pmy_block->dx1f(i);
     area = delta_x * delta_y;
   }
@@ -146,14 +146,14 @@ void Coordinates::Area3Face(const int k, const int j, const int il, const int iu
 // Notes:
 //   \Delta V = \Delta x * \Delta y * \Delta z
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &volumes)
+    AthenaArray<Real> *pvolumes)
 {
   Real &delta_y = pmy_block->dx2f(j);
   Real &delta_z = pmy_block->dx3f(k);
 #pragma simd
   for (int i = il; i <= iu; i++)
   {
-    Real &volume = volumes(i);
+    Real &volume = (*pvolumes)(i);
     Real &delta_x = pmy_block->dx1f(i);
     volume = delta_x * delta_y * delta_z;
   }
@@ -208,12 +208,12 @@ void Coordinates::CellMetric(const int k, const int j, AthenaArray<Real> &g,
 // Inputs:
 //   k: z-index
 //   j: y-index
-//   prim: array of primitives in 1D, using global coordinates
+//   pprim: pointer to array of primitives in 1D, using global coordinates
 // Outputs:
-//   prim: values overwritten in local coordinates
+//   pprim: pointer to values in local coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::PrimToLocal1(const int k, const int j, AthenaArray<Real> &prim)
+void Coordinates::PrimToLocal1(const int k, const int j, AthenaArray<Real> *pprim)
 {
   return;
 }
@@ -222,12 +222,12 @@ void Coordinates::PrimToLocal1(const int k, const int j, AthenaArray<Real> &prim
 // Inputs:
 //   k: z-index
 //   j: y-index
-//   prim: array of primitives in 1D, using global coordinates
+//   pprim: pointer to array of primitives in 1D, using global coordinates
 // Outputs:
-//   prim: values overwritten in local coordinates
+//   pprim: pointer to values in local coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::PrimToLocal2(const int k, const int j, AthenaArray<Real> &prim)
+void Coordinates::PrimToLocal2(const int k, const int j, AthenaArray<Real> *pprim)
 {
   return;
 }
@@ -236,12 +236,12 @@ void Coordinates::PrimToLocal2(const int k, const int j, AthenaArray<Real> &prim
 // Inputs:
 //   k: z-index
 //   j: y-index
-//   prim: array of primitives in 1D, using global coordinates
+//   pprim: pointer to array of primitives in 1D, using global coordinates
 // Outputs:
-//   prim: values overwritten in local coordinates
+//   pprim: pointer to values in local coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::PrimToLocal3(const int k, const int j, AthenaArray<Real> &prim)
+void Coordinates::PrimToLocal3(const int k, const int j, AthenaArray<Real> *pprim)
 {
   return;
 }
@@ -250,20 +250,20 @@ void Coordinates::PrimToLocal3(const int k, const int j, AthenaArray<Real> &prim
 // Inputs:
 //   k: z-index
 //   j: y-index
-//   flux: array of fluxes in 1D, using local coordinates
+//   pflux: pointer to array of fluxes in 1D, using local coordinates
 // Outputs:
-//   flux: values overwritten in global coordinates
+//   pflux: pointer to values overwritten in global coordinates
 // Notes:
 //   transformation is trivial except for sign change from lowering time index
-void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flux)
+void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> *pflux)
 {
   // Go through 1D block of cells
 #pragma simd
   for (int i = pmy_block->is; i <= pmy_block->ie+1; i++)
   {
     // Extract fluxes for reading and writing
-    Real &txt = flux(IEN,i);
-    Real &t10 = flux(IEN,i);
+    Real &txt = (*pflux)(IEN,i);
+    Real &t10 = (*pflux)(IEN,i);
 
     // Set new fluxes
     t10 = -txt;
@@ -275,20 +275,20 @@ void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flu
 // Inputs:
 //   k: z-index
 //   j: y-index
-//   flux: array of fluxes in 1D, using local coordinates
+//   pflux: pointer to array of fluxes in 1D, using local coordinates
 // Outputs:
-//   flux: values overwritten in global coordinates
+//   pflux: pointer to values overwritten in global coordinates
 // Notes:
 //   transformation is trivial except for sign change from lowering time index
-void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flux)
+void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> *pflux)
 {
   // Go through 1D block of cells
 #pragma simd
   for (int i = pmy_block->is; i <= pmy_block->ie; i++)
   {
     // Extract fluxes for reading and writing
-    Real &tyt = flux(IEN,i);
-    Real &t20 = flux(IEN,i);
+    Real &tyt = (*pflux)(IEN,i);
+    Real &t20 = (*pflux)(IEN,i);
 
     // Set new fluxes
     t20 = -tyt;
@@ -300,20 +300,20 @@ void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flu
 // Inputs:
 //   k: z-index
 //   j: y-index
-//   flux: array of fluxes in 1D, using local coordinates
+//   pflux: pointer to array of fluxes in 1D, using local coordinates
 // Outputs:
-//   flux: values overwritten in global coordinates
+//   pflux: pointer to values overwritten in global coordinates
 // Notes:
 //   transformation is trivial except for sign change from lowering time index
-void Coordinates::FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flux)
+void Coordinates::FluxToGlobal3(const int k, const int j, AthenaArray<Real> *pflux)
 {
   // Go through 1D block of cells
 #pragma simd
   for (int i = pmy_block->is; i <= pmy_block->ie; i++)
   {
     // Extract fluxes for reading and writing
-    Real &tzt = flux(IEN,i);
-    Real &t30 = flux(IEN,i);
+    Real &tzt = (*pflux)(IEN,i);
+    Real &t30 = (*pflux)(IEN,i);
 
     // Set new fluxes
     t30 = -tzt;

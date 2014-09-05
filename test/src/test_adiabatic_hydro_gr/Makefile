@@ -13,4 +13,5 @@ export LOCAL_LOCATION := $(CURDIR)
 # Call global file
 .PHONY : all
 all :
+	@cp defs.hpp.in ../../../src/defs.hpp
 	$(MAKE) -C $(GLOBAL_LOCATION) local

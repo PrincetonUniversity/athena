@@ -1,0 +1,8 @@
+#define NVAR 5
+#define NON_BAROTROPIC_EOS 1
+
+#define RELATIVISTIC_DYNAMICS 1
+
+#define NGHOST 2
+
+#define ATHENA_MAX_NUM_THREADS 1

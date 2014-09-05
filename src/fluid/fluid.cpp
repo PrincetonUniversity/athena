@@ -128,11 +128,19 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
       Real& d_t2 = dt2(i);
       Real& d_t3 = dt3(i);
 
-      Real cs = pf_eos->SoundSpeed(wi);
-
-      d_t1 = dx1/(fabs(wi[IVX]) + cs);
-      d_t2 = dx2/(fabs(wi[IVY]) + cs);
-      d_t3 = dx3/(fabs(wi[IVZ]) + cs);
+      if (RELATIVISTIC_DYNAMICS)
+      {
+        d_t1 = dx1;
+        d_t2 = dx2;
+        d_t3 = dx3;
+      }
+      else
+      {
+        Real cs = pf_eos->SoundSpeed(wi);
+        d_t1 = dx1/(fabs(wi[IVX]) + cs);
+        d_t2 = dx2/(fabs(wi[IVY]) + cs);
+        d_t3 = dx3/(fabs(wi[IVZ]) + cs);
+      }
     }
 
 // compute minimum of (v1 +/- C)
