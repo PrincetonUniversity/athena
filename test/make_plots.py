@@ -5,13 +5,18 @@
 
 # Modules
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-from matplotlib import rc
 import argparse
 import glob
 import os
 import subprocess
+import re
+
+# Matplotlib
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+from matplotlib import rc
 
 # Main function
 def main(**kwargs):
@@ -23,6 +28,7 @@ def main(**kwargs):
   # Extract inputs
   plots_needed = not kwargs['computation_only']
   computation_needed = not kwargs['plot_only']
+  movie_needed = kwargs['movie']
 
   # Case out on problem
   problem = kwargs['problem']
@@ -59,13 +65,21 @@ def main(**kwargs):
           --enable-general-relativity'
       make_string = 'make all'
       name_string = 'hydro_schwarzschild_geodesic'
-      run_string = './athena \
-          -i ../inputs/hydro_gr/athinput.geodesic \
-          job/problem_id={0} \
-          output1/variable=prim'.format(name_string)
+      if movie_needed:
+        run_string = './athena \
+            -i ../inputs/hydro_gr/athinput.geodesic \
+            job/problem_id={0} \
+            output1/dt=0.5 \
+            time/tlim=100.0'.format(name_string)
+      else:
+        run_string = './athena \
+            -i ../inputs/hydro_gr/athinput.geodesic \
+            job/problem_id={0} \
+            output1/dt=100.0 \
+            time/tlim=100.0'.format(name_string)
       run_new(configure_string, make_string, run_string, name_string)
     if plots_needed:
-      plot_accretion('hydro_schwarzschild_geodesic')
+      plot_accretion('hydro_schwarzschild_geodesic', movie_needed)
   else:
     print('ERROR: problem not recognized')
 
@@ -156,48 +170,107 @@ def plot_shockset_aux(rows, cols, position, data_old, data_new, divisors, y_limi
       format(divisor_strings[0], divisor_strings[1], divisor_strings[2]))
 
 # Function for plotting accretion
-def plot_accretion(filename):
+def plot_accretion(filename, movie_needed):
+
+  # Prepare to make new plots
+  print('deleting old plots...')
+  os.system('rm -f plots/{0}.png'.format(filename))
+  os.system('rm -f plots/{0}_*.png'.format(filename))
+  print('generating new plots...')
 
   # Set parameters
   mass = 1.0
   gamma_adi = 5.0/3.0
 
-  # Read and process data
-  filename_actual = glob.glob('data/{0}*1.tab'.format(filename))[0]
-  data = read_athena(filename_actual, ['r', 'rho', 'pgas', 'v1', 'v2', 'v3'])
-  alpha = (1.0 - 2.0*mass/data['r'])**0.5
-  u0 = 1.0/(1.0 - 2.0*mass/data['r'])
-  epsilon = 1.0/(1.0-gamma_adi) * data['pgas']/data['rho']
-  d_norm = alpha * data['rho'] * u0
-  e_norm = epsilon * d_norm
+  # Prepare list of files
+  filenames_actual = glob.glob('data/{0}.*.tab'.format(filename))
 
-  # Calculate expected values
-  v_expected = -(2.0*mass/data['r'])**0.5 * (1.0 - 2.0*mass/data['r'])
-  d_expected = 1.0/data['r']**2 * (data['r']/(2.0*mass))**0.5 \
-      * (1.0 - 2.0*mass/data['r'])**-0.5
-  d_expected *= d_norm[-1] / d_expected[-1]
-  e_expected = (data['r']**2 * (2.0*mass/data['r'])**0.5)**-gamma_adi \
-      * (1.0 - 2.0*mass/data['r'])**(-(gamma_adi+1.0)/4.0)
-  e_expected *= e_norm[-1] / e_expected[-1]
+  # Create frames
+  for filename_actual in filenames_actual:
 
-  # Plot data
-  plot_accretion_aux(2, 2, 1, data['r'], None, data['rho'], [0.0, 20.0], None, r'$\rho$')
-  plot_accretion_aux(2, 2, 2, data['r'], -v_expected, -data['v1'], [0.0, 20.0], None,
-      r'$v_\mathrm{infall} = -v^1$')
-  plot_accretion_aux(2, 2, 3, data['r'], d_expected, d_norm, [0.0, 20.0], None,
-      r'$D = \alpha \rho u^0$')
-  plot_accretion_aux(2, 2, 4, data['r'], -e_expected, -e_norm, [0.0, 20.0], None,
-      r'$E = -\alpha \rho \epsilon u^0$')
-  plt.tight_layout()
-  plt.savefig('plots/' + filename + '.png')
+    # Get frame number
+    match = re.match(r'data/{0}.(\d+).tab'.format(filename), filename_actual)
+    frame_string = match.group(1)
+    frame = int(frame_string)
+
+    # Read and process data
+    data = read_athena(filename_actual, ['r', 'rho', 'pgas', 'v1', 'v2', 'v3'])
+    if frame == 0:
+      alpha = (1.0 - 2.0*mass/data['r'])**0.5
+      u0 = 1.0/(1.0 - 2.0*mass/data['r'])
+    epsilon = 1.0/(1.0-gamma_adi) * data['pgas']/data['rho']
+    d_norm = alpha * data['rho'] * u0
+    e_norm = epsilon * d_norm
+    s_norm = (d_norm + gamma_adi * e_norm) * (2.0*mass/data['r'])**0.5 \
+        / (1.0 - 2.0*mass/data['r'])
+
+    # Calculate expected values
+    if frame == 0:
+      v_expected = -(2.0*mass/data['r'])**0.5 * (1.0 - 2.0*mass/data['r'])
+      d_expected = 1.0/data['r']**2 * (data['r']/(2.0*mass))**0.5 \
+          * (1.0 - 2.0*mass/data['r'])**-0.5
+      d_expected *= d_norm[-1] / d_expected[-1]
+      e_expected = (data['r']**2 * (2.0*mass/data['r'])**0.5)**-gamma_adi \
+          * (1.0 - 2.0*mass/data['r'])**(-(gamma_adi+1.0)/4.0)
+      e_expected *= e_norm[-1] / e_expected[-1]
+      s_expected = (d_expected + gamma_adi * e_expected) * (2.0*mass/data['r'])**0.5 \
+          / (1.0 - 2.0*mass/data['r'])
+      rho_expected = d_expected / (alpha * u0)
+      pgas_expected = -(gamma_adi-1.0) * e_expected / (alpha * u0)
+
+    # Prepare limits
+    if frame == 0:
+      rho_limits = [5.0e-3, 2.0e-1]
+      v_limits = [0.0, 0.5]
+      pgas_limits = [2.0e-7, 1.0e-3]
+      d_limits = [5.0e-3, 3.0e-1]
+      s_limits = [1.0e-3, 1.0e0]
+      e_limits = [3.0e-7, 3.0e-3]
+
+    # Plot data
+    plt.figure(figsize=(10,6))
+    if frame == 0 and not movie_needed:
+      continue
+    plot_accretion_aux(2, 3, 1, data['r'], rho_expected, data['rho'], [0.0, 20.0],
+        rho_limits, r'$\rho$', True)
+    plot_accretion_aux(2, 3, 2, data['r'], -v_expected, -data['v1'], [0.0, 20.0],
+        v_limits, r'$v_\mathrm{infall} = -v^1$', False)
+    plot_accretion_aux(2, 3, 3, data['r'], pgas_expected, data['pgas'], [0.0, 20.0],
+        pgas_limits, r'$p_\mathrm{gas}$', True)
+    plot_accretion_aux(2, 3, 4, data['r'], d_expected, d_norm, [0.0, 20.0], d_limits,
+        r'$D = \alpha \rho u^0$', True)
+    plot_accretion_aux(2, 3, 5, data['r'], s_expected, s_norm, [0.0, 20.0], s_limits,
+        r'$S_1 = -\alpha T^0{}_1$', True)
+    plot_accretion_aux(2, 3, 6, data['r'], -e_expected, -e_norm, [0.0, 20.0], e_limits,
+        r'$E = -\alpha \rho \epsilon u^0$', True)
+    plt.tight_layout()
+    if movie_needed:
+      plt.savefig('plots/{0}_{1}.png'.format(filename, frame_string))
+    else:
+      plt.savefig('plots/{0}.png'.format(filename))
+    plt.clf()
+
+  # Make movie
+  if movie_needed:
+    print('deleting old movie...')
+    os.system('rm -f movies/{0}.mp4'.format(filename))
+    print('generating movie...')
+    num_digits = len(frame_string)
+    try:
+      os.system('ffmpeg -loglevel warning -r 10.0 -i plots/{0}_%0{1}d.png -pix_fmt \
+          yuv420p -y movies/{0}.mp4'.format(filename, num_digits))
+    except OSError as err:
+      print('OS Error ({0}): {1}'.format(err.errno, err.strerror))
+      exit()    
 
 # Auxiliary function for plotting accretion
 def plot_accretion_aux(rows, cols, position, r, vals_expected, vals_actual, r_range,
-    val_range, val_label):
+    val_range, val_label, log_plot):
   plt.subplot(rows, cols, position)
-  if vals_expected is not None:
-    plt.plot(r, vals_expected, c='gray', lw=3)
+  plt.plot(r, vals_expected, c='gray', lw=3)
   plt.plot(r, vals_actual, 'ko', ms=2)
+  if log_plot:
+    plt.yscale('log')
   plt.xlim(r_range)
   if val_range is not None:
     plt.ylim(val_range)
@@ -435,5 +508,7 @@ if __name__ == '__main__':
       help='flag indicating computations are not to be redone')
   parser.add_argument('-c', '--computation_only', action='store_true', default=False,
       help='flag indicating no plots are to be made')  
+  parser.add_argument('-m', '--movie', action='store_true', default=False,
+      help='flag indicating movie should be made')
   args = parser.parse_args()
   main(**vars(args))
