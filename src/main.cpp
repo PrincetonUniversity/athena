@@ -33,6 +33,9 @@
 #include "parameter_input.hpp"  // ParameterInput
 #include "outputs/outputs.hpp"  // Outputs
 
+// OpenMP headers
+#include <omp.h>
+
 //======================================================================================
 /* //////////////////////////////// Athena++ Main Program \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
  *! \file main.cpp
@@ -56,10 +59,6 @@ int main(int argc, char *argv[])
   int res_flag=0;     // gets set to 1 if -r        argument is on cmdline
   int narg_flag=0;    // gets set to 1 if -n        argument is on cmdline
   int iarg_flag=0;    // gets set to 1 if -i <file> argument is on cmdline
-
-// local variables used for timing and performance measures
-
-  clock_t tstart, tstop;
 
 //--- Step 1. --------------------------------------------------------------------------
 // Check for command line options and respond. 
@@ -206,7 +205,10 @@ int main(int argc, char *argv[])
 // For performance, there is no error handler protecting this step
 
   std::cout<<std::endl<< "Setup complete, entering main loop..." <<std::endl<<std::endl;
-  tstart = clock();
+  clock_t tstart = clock();
+#ifdef OPENMP_PARALLEL
+  double omp_time = omp_get_wtime();
+#endif
 
   while ((pmesh->time < pmesh->tlim) && 
          (pmesh->nlim < 0 || pmesh->ncycle < pmesh->nlim)){
@@ -254,31 +256,37 @@ int main(int argc, char *argv[])
     pmesh->ForAllDomains(new_timestep,pinput);
 
   } // END OF MAIN INTEGRATION LOOP ====================================================
+#ifdef OPENMP_PARALLEL
+  omp_time = omp_get_wtime() - omp_time;;
+#endif
+  clock_t tstop = clock();
 
 // print diagnostic messages
 
   std::cout << "cycle=" << pmesh->ncycle << std::scientific << std::setprecision(5)
             << " time=" << pmesh->time << " dt=" << pmesh->dt << std::endl;
+
   if (pmesh->ncycle == pmesh->nlim) {
     std::cout << std::endl << "Terminating on cycle limit" << std::endl;
   } else {
     std::cout << std::endl << "Terminating on time limit" << std::endl;
   }
+
   std::cout << "time=" << pmesh->time << " cycle=" << pmesh->ncycle << std::endl;
   std::cout << "tlim=" << pmesh->tlim << " nlim=" << pmesh->nlim << std::endl;
 
-// Calculate and print the zone-cycles/cpu-second on this processor
+// Calculate and print the zone-cycles/cpu-second and wall-second
 
-  tstop = clock();
   float cpu_time = (tstop>tstart ? (float)(tstop-tstart) : 1.0)/(float)CLOCKS_PER_SEC;
   int64_t zones = (pmesh->mesh_size.nx1)*(pmesh->mesh_size.nx2)*(pmesh->mesh_size.nx3);
-  float zcs = (float)(zones*pmesh->ncycle)/cpu_time;
-  std::cout << std::endl << "cpu time used = " << cpu_time << std::endl;
-  std::cout << "zone-cycles/second = " << zcs << std::endl;
-
-
-//  if(time(&stop_time)>0) /* current calendar time (UTC) is available */
-//    ath_pout(0,"\nSimulation terminated on %s",ctime(&stop_time));
+  float zc_cpus = (float)(zones*pmesh->ncycle)/cpu_time;
+  std::cout << std::endl << "cpu time used  = " << cpu_time << std::endl;
+  std::cout << "zone-cycles/cpu_second = " << zc_cpus << std::endl;
+#ifdef OPENMP_PARALLEL
+  float zc_omps = (float)(zones*pmesh->ncycle)/omp_time;
+  std::cout << std::endl << "omp wtime used = " << omp_time << std::endl;
+  std::cout << "zone-cycles/omp_wsecond = " << zc_omps << std::endl;
+#endif
 
   delete pinput;
 //  TODO: for some reason get a malloc error in following???
@@ -286,5 +294,4 @@ int main(int argc, char *argv[])
   delete pouts;
 
   return(0); 
-
-} // END OF MAIN
+}

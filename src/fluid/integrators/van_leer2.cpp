@@ -70,7 +70,7 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
   AthenaArray<Real> *parea = pmb->pcoord->face_area.ShallowSlice(tid,1);
   AthenaArray<Real> *pvol  = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
 
-#pragma omp for schedule(dynamic,4)
+#pragma omp for schedule(dynamic,2)
   for (int k=ks; k<=ke; ++k){
   for (int j=js; j<=je; ++j){
 
@@ -116,7 +116,7 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
     AthenaArray<Real> *parea = pmb->pcoord->face_area.ShallowSlice(tid,1);
     AthenaArray<Real> *pvol  = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
 
-#pragma omp for schedule(dynamic,4)
+#pragma omp for schedule(dynamic,2)
     for (int k=ks; k<=ke; ++k){
     for (int j=js; j<=je+1; ++j){
 
@@ -176,7 +176,7 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
     AthenaArray<Real> *parea = pmb->pcoord->face_area.ShallowSlice(tid,1);
     AthenaArray<Real> *pvol  = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
 
-#pragma omp for schedule(dynamic,4)
+#pragma omp for schedule(dynamic,2)
     for (int k=ks; k<=ke+1; ++k){
     for (int j=js; j<=je; ++j){
 
@@ -278,7 +278,7 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
   AthenaArray<Real> *parea = pmb->pcoord->face_area.ShallowSlice(tid,1);
   AthenaArray<Real> *pvol  = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
 
-#pragma omp for schedule(dynamic,4)
+#pragma omp for schedule(dynamic,2)
   for (int k=ks; k<=ke; ++k){
   for (int j=js; j<=je; ++j){
 
@@ -323,7 +323,7 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
     AthenaArray<Real> *parea = pmb->pcoord->face_area.ShallowSlice(tid,1);
     AthenaArray<Real> *pvol  = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
 
-#pragma omp for schedule(dynamic,4)
+#pragma omp for schedule(dynamic,2)
     for (int k=ks; k<=ke; ++k){
     for (int j=js; j<=je+1; ++j){
 
@@ -383,7 +383,7 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
     AthenaArray<Real> *parea = pmb->pcoord->face_area.ShallowSlice(tid,1);
     AthenaArray<Real> *pvol  = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
 
-#pragma omp for schedule(dynamic,4)
+#pragma omp for schedule(dynamic,2)
     for (int k=ks; k<=ke+1; ++k){
     for (int j=js; j<=je; ++j){
 
