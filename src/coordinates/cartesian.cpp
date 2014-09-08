@@ -158,8 +158,8 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
  *   const int k, const int j, AthenaArray<Real> &prim, AthenaArray<Real> &src)
  * \brief function to compute coordinate source terms (no-op function for cartesian)  */
 
-void Coordinates::CoordinateSourceTerms(const int k, const int j,
-  AthenaArray<Real> &prim, AthenaArray<Real> &src)
+void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
+  AthenaArray<Real> &src)
 {
   return;
 }

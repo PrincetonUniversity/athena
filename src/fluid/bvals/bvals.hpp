@@ -14,16 +14,17 @@
 #include "../../athena.hpp"         // Real
 #include "../../athena_arrays.hpp"  // AthenaArray
 
-// Declarations
+// forward declarations
 class MeshBlock;
 class Fluid;
+class ParameterInput;
 
 //! \class FluidBoundaryConditions
 //  \brief BCs data and functions for fluid
 
 class FluidBoundaryConditions {
 public:
-  FluidBoundaryConditions(Fluid *pf);
+  FluidBoundaryConditions(Fluid *pf, ParameterInput *pin);
   ~FluidBoundaryConditions();
 
   void ApplyBoundaryConditions(AthenaArray<Real> &a);

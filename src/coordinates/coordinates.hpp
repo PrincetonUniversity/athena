@@ -36,8 +36,7 @@ public:
     const int k, const int j, const int il, const int iu, AthenaArray<Real> *parea);
   void CellVolume(
     const int k, const int j, const int il, const int iu, AthenaArray<Real> *pvol);
-  void CoordinateSourceTerms(
-    const int k, const int j, AthenaArray<Real> &prim, AthenaArray<Real> &src);
+  void CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim, AthenaArray<Real> &cons);
 
   void CellMetric(const int k, const int j, AthenaArray<Real> &g,
       AthenaArray<Real> &g_inv);
