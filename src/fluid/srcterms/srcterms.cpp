@@ -41,7 +41,26 @@
 FluidSourceTerms::FluidSourceTerms(Fluid *pf, ParameterInput *pin)
 {
   pmy_fluid_ = pf;
-  pt_mass_ = pin->GetOrAddReal("problem","gm",0.0);
+  pt_mass_ = pin->GetOrAddReal("problem","GM",0.0);
+
+// Allocate memory for scratch arrays used in integrator, and internal scratch arrays
+// Only allocate arrays needed for forces in x1 direction for now 
+
+  MeshBlock *pmb = pmy_fluid_->pmy_block;
+  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
+  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
+  volume_i_.NewAthenaArray(ncells1);
+  src_terms_i_.NewAthenaArray(ncells1);
+
+// compute constant factors used to compute face-areas and cell volumes and store in
+// local scratch arrays.  This helps improve performance.
+
+#pragma simd
+  for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i){
+    volume_i_(i)    = 0.5*(pmb->x1f(i+1)*pmb->x1f(i+1) - pmb->x1f(i)*pmb->x1f(i));
+    src_terms_i_(i) = pmb->dx1f(i)/volume_i_(i);
+  }
 }
 
 // destructor
@@ -49,6 +68,8 @@ FluidSourceTerms::FluidSourceTerms(Fluid *pf, ParameterInput *pin)
 FluidSourceTerms::~FluidSourceTerms()
 {
   pmy_fluid_ = NULL; // Fluid destructor will free this memory
+  volume_i_.DeleteAthenaArray();
+  src_terms_i_.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------

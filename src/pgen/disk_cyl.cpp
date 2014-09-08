@@ -48,7 +48,7 @@ static Real x1Max, x1Min;
 static Real rho0, rho_floor, rho_MIN;
 static int ICd, ICv;
 static Real rstart=0.0,rtrunc=0.0;
-static Real q_m, R0 = 1.0;
+static Real GM=0.0, q_m=0.0, R0 = 1.0;
 
 // Function Declarations
 static Real ICden(const Real x1);
@@ -64,6 +64,9 @@ void Fluid::InitFluid(ParameterInput *pin)
   int ie = pb->ie; int je = pb->je; int ke = pb->ke;
   x1Max = pb->block_size.x1max;
   x1Min = pb->block_size.x1min;
+
+// Get parameters for grav terms
+  GM = pin->GetOrAddReal("problem","GM",0.0);
 
 // Get initial density
   rho0 = pin->GetReal("problem","rho0");
@@ -82,7 +85,6 @@ void Fluid::InitFluid(ParameterInput *pin)
   if(NON_BAROTROPIC_EOS){
     pressure = pin->GetReal("problem","pressure");
   }
-std::cout<<"[Problem Generator]: pressure="<<pressure<<std::endl;
 
 // Get options for boundary conditions
   int Hbc = pin->GetInteger("problem","Hbc");
@@ -180,7 +182,7 @@ Real ICvel(const Real x1){
 
 // Kepler Velocity
 static Real KeplerVel(const Real x1){
-  Real v = 1.0/sqrt(x1); 
+  Real v = GM/sqrt(x1); 
   return v;
 }
 

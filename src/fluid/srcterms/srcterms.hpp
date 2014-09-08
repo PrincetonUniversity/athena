@@ -31,5 +31,7 @@ public:
 private:
   Fluid *pmy_fluid_;    // ptr to Fluid containing this FluidSourceTerms
   Real pt_mass_;
+  AthenaArray<Real> src_terms_i_, src_terms_j_;
+  AthenaArray<Real> volume_i_,    volume_j_;
 };
 #endif
