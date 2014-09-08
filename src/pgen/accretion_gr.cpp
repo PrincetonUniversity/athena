@@ -55,21 +55,33 @@ void Fluid::InitFluid(ParameterInput *pin)
   Real v2_outer = pin->GetReal("problem", "v2_outer");
   Real v3_outer = pin->GetReal("problem", "v3_outer");
 
-  // Read initial conditions
-  Real rho_init = pin->GetReal("problem", "rho_init");
-  Real pgas_init = pin->GetReal("problem", "pgas_init");
-  Real v1_init = pin->GetReal("problem", "v1_init");
-  Real v2_init = pin->GetReal("problem", "v2_init");
-  Real v3_init = pin->GetReal("problem", "v3_init");
+  // Read inner initial state
+  Real rho_inner = pin->GetReal("problem", "rho_inner");
+  Real pgas_inner = pin->GetReal("problem", "pgas_inner");
+  Real v1_inner = pin->GetReal("problem", "v1_inner");
+  Real v2_inner = pin->GetReal("problem", "v2_inner");
+  Real v3_inner = pin->GetReal("problem", "v3_inner");
+
+  // Calculate slopes
+  Real rho_slope = (rho_outer - rho_inner) / (pb->x1v(iu) - pb->x1v(il));
+  Real pgas_slope = (pgas_outer - pgas_inner) / (pb->x1v(iu) - pb->x1v(il));
+  Real v1_slope = (v1_outer - v1_inner) / (pb->x1v(iu) - pb->x1v(il));
+  Real v2_slope = (v2_outer - v2_inner) / (pb->x1v(iu) - pb->x1v(il));
+  Real v3_slope = (v3_outer - v3_inner) / (pb->x1v(iu) - pb->x1v(il));
 
   // Initialize the infalling material
   for (int k = kl; k <= ku; k++)
     for (int j = jl; j <= ju; j++)
-    {
-      for (int i = il; i <= iu-1; i++)
+      for (int i = il; i <= iu; i++)
+      {
+        Real displacement = pb->x1v(i) - pb->x1v(il);
+        Real rho_init = rho_inner + rho_slope * displacement;
+        Real pgas_init = pgas_inner + pgas_slope * displacement;
+        Real v1_init = v1_inner + v1_slope * displacement;
+        Real v2_init = v2_inner + v2_slope * displacement;
+        Real v3_init = v3_inner + v3_slope * displacement;
         set_state(w, w1, i, j, k, rho_init, pgas_init, v1_init, v2_init, v3_init);
-      set_state(w, w1, iu, j, k, rho_outer, pgas_outer, v1_outer, v2_outer, v3_outer);
-    }
+      }
   pmy_block->pcoord->PrimToCons(w, u);
   return;
 }

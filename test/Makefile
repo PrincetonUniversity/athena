@@ -40,6 +40,7 @@ dirs :
 	@mkdir -p $(OBJ_DIR)
 	@mkdir -p data
 	@mkdir -p logs
+	@mkdir -p movies
 	@mkdir -p plots
 local : $(EXECUTABLE)
 

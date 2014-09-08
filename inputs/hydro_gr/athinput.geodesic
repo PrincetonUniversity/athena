@@ -6,19 +6,19 @@ problem_id  = BHAccretion  # problem ID: basename of output filenames
 
 <output1>
 file_type   = tab                 # tabular data dump
-variable    = cons                # variables to be output
+variable    = prim                # variables to be output
 data_format = %24.16e             # optional data format string
-dt          = 0.01               # time increment between outputs
-x2_slice    = 1.5707963267948964  # slice in theta
+dt          = 100.0               # time increment between outputs
+x2_slice    = 1.5707963267948964  # slice in theta (pi/2)
 x3_slice    = 0.0                 # slice in phi
 
 <time>
 cfl_number = 0.4    # Courant-Friedrichs-Lewy number
 nlim       = -1     # cycle limit
-tlim       = 0.06  # time limit
+tlim       = 100.0  # time limit
 
 <mesh>
-nx1    = 80                 # number of zones in r-direction
+nx1    = 100                 # number of zones in r-direction
 x1min  = 3.0                 # inner r
 x1max  = 20.0                # outer r
 ix1_bc = 2                   # inner r boundary condition: outflow
@@ -40,16 +40,16 @@ ox3_bc = 4                   # maximum phi boundary condition: periodic
 gamma = 1.6666666666666667  # Gamma = C_p/C_v
 
 <problem>
-mass       = 1.0     # black hole mass
+mass       = 1.0                    # black hole mass
 
-rho_outer  = 1.0     # fixed density in outer cells
-pgas_outer = 1.0e-2  # fixed gas pressure in outer cells
-v1_outer   = 0.0     # fixed velocity (r-direction) in outer cells
-v2_outer   = 0.0     # fixed velocity (theta-direction) in outer cells
-v3_outer   = 0.0     # fixed velocity (phi-direction) in outer cells
+rho_outer  = 0.007956144625349656   # fixed density in outer cell
+pgas_outer = 2.1514947559382366e-7  # fixed gas pressure in outer cell
+v1_outer   = -0.28507443467021765   # fixed velocity (r-direction) in outer cell
+v2_outer   = 0.0                    # fixed velocity (theta-direction) in outer cell
+v3_outer   = 0.0                    # fixed velocity (phi-direction) in outer cell
 
-rho_init   = 1.0e-5  # initial density
-pgas_init  = 1.0e-7  # initial gas pressure
-v1_init    = 0.0     # initial velocity in r-direction
-v2_init    = 0.0     # initial velocity in theta-direction
-v3_init    = 0.0     # initial velocity in phi-direction
+rho_inner  = 1.0e-2                 # initial density in inner cells
+pgas_inner = 1.0e-5                 # initial gas pressure in inner cell
+v1_inner   = -0.2                   # initial velocity (r-direction) in inner cell
+v2_inner   = 0.0                    # initial velocity (theta-direction) in inner cell
+v3_inner   = 0.0                    # initial velocity (phi-direction) in inner cell
