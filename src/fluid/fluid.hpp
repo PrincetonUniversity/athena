@@ -19,6 +19,7 @@ class ParameterInput;
 class FluidIntegrator;
 class FluidBoundaryConditions;
 class FluidEqnOfState;
+class FluidSourceTerms;
 
 //! \class Fluid
 //  \brief fluid data and functions
@@ -37,7 +38,8 @@ public:
 
   FluidIntegrator *pf_integrator;   // integration algorithm
   FluidBoundaryConditions *pf_bcs;  // boundary conditions
-  FluidEqnOfState *pf_eos;
+  FluidEqnOfState *pf_eos;          // equation of state
+  FluidSourceTerms *pf_srcterms;    // physical source terms
 
 // conserved to primitive functions implemented in files in /convert_var
   void ConservedToPrimitive(AthenaArray<Real> &c, AthenaArray<Real> &p_old,

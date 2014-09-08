@@ -22,6 +22,7 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     src/coordinates/$(COORDINATES_FILE) \
 	     $(wildcard src/fluid/*.cpp) \
 	     $(wildcard src/fluid/bvals/*.cpp) \
+	     $(wildcard src/fluid/srcterms/*.cpp) \
 	     src/fluid/eos/$(EOS_FILE) \
 	     $(wildcard src/fluid/integrators/*.cpp) \
 	     src/fluid/integrators/reconstruct/$(RECONSTRUCT_FILE) \

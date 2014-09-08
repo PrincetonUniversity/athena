@@ -6,7 +6,7 @@
  * See LICENSE file for full public license information.
  *====================================================================================*/
 /*! \file eos.hpp
- *  \brief defines class EqnOfState
+ *  \brief defines class FluidEqnOfState
  *  Contains data and functions that implement the equation of state for the fluid
  *====================================================================================*/
 
@@ -19,7 +19,7 @@ class Fluid;
 class ParameterInput;
 
 //! \class FluidEqnOfState
-//  \brief EoS data and functions for fluid
+//  \brief data and functions that implement EoS for fluid
 
 class FluidEqnOfState {
 public:
@@ -35,6 +35,6 @@ public:
 private:
   Fluid *pmy_fluid_;             // ptr to Fluid containing this EqnOfState
   Real iso_sound_speed_, gamma_; // isothermal Cs, ratio of specific heats
-  AthenaArray<Real> g_, g_inv_;  // metric and its inverse
+  AthenaArray<Real> g_, g_inv_;  // metric and its inverse, used for cons->prim in GR
 };
 #endif
