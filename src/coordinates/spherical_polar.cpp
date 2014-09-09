@@ -155,36 +155,36 @@ Coordinates::~Coordinates()
 // \brief functions to compute area of cell faces in each direction
 
 void Coordinates::Area1Face(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area)
+  AthenaArray<Real> *parea)
 {
 // area1 = r^2 sin[theta] dtheta dphi = r^2 d(-cos[theta]) dphi
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = area(i);
+    Real& area_i = (*parea)(i);
     area_i = face1_area_i_(i)*face1_area_j_(j)*(pmy_block->dx3f(k)); 
   }
   return;
 }
 
 void Coordinates::Area2Face(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area)
+  AthenaArray<Real> *parea)
 {
 // area2 = dr r sin[theta] dphi = d(r^2/2) sin[theta] dphi
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = area(i);
+    Real& area_i = (*parea)(i);
     area_i = face2_area_i_(i)*face2_area_j_(j)*(pmy_block->dx3f(k));
   }
   return;
 }
 
 void Coordinates::Area3Face(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &area)
+  AthenaArray<Real> *parea)
 {
 // area3 = dr r dtheta = d(r^2/2) dtheta
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = area(i);
+    Real& area_i = (*parea)(i);
     area_i = face3_area_i_(i)*(pmy_block->dx2f(j));
   }
   return;
@@ -196,42 +196,56 @@ void Coordinates::Area3Face(const int k, const int j, const int il, const int iu
 // \brief function to compute cell volume
 
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &vol)
+  AthenaArray<Real> *pvol)
 {
 // volume = r^2 sin(theta) dr dtheta dphi = d(r^3/3) d(-cos theta) dphi
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& vol_i = vol(i);
+    Real& vol_i = (*pvol)(i);
     vol_i = volume_i_(i)*volume_j_(j)*(pmy_block->dx3f(k));
   }
   return;
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn void Coordinates::CoordinateSourceTerms(const int k, const int j,
-//        AthenaArray<Real> &prim, AthenaArray<Real> &src)
-// \brief function to compute coordinate source term
+// \!fn void Coordinates::CoordinateSourceTerms(const int k, const int j, Read dt,
+//        AthenaArray<Real> &prim, AthenaArray<Real> &cons)
+// \brief function to add coordinate source terms to input conserved variables
 
-void Coordinates::CoordinateSourceTerms(const int k, const int j,
-  AthenaArray<Real> &prim, AthenaArray<Real> &src)
+void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
+  AthenaArray<Real> &cons)
 {
+  Real src[NVAR];
+
 // src_1 = < M_{theta theta} + M_{phi phi} ><1/r> = <M_{tt} + M_{pp}> d(r^2/3)d(r^3/3)
 // src_2 = -< M_{theta r} - cot[theta]M_{phi phi} ><1/r> 
 //         = (<M_{pp}> d(sin[theta])/d(-cos[theta]) - M_{tr}>) d(r^2/3)d(r^3/3)
 // src_3 = -< M_{phi r} + cot[theta]M_{phi theta} ><1/r> 
 //         = -(<M_{pr} + M_{pt} d(sin[theta])/d(-cos[theta]) >) d(r^2/3)d(r^3/3)
+
+  for (int k=(pmy_block->ks); k<=(pmy_block->ke); ++k) {
+  for (int j=(pmy_block->js); j<=(pmy_block->je); ++j) {
 #pragma simd
-  for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
-    Real m_tt = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM2,k,j,i) + prim(IEN,k,j,i);
-    Real m_pp = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM3,k,j,i) + prim(IEN,k,j,i);
-    src(IM1,i) = src_terms_i_(i)*(m_tt + m_pp);
+    for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
+      Real m_tt = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM2,k,j,i) + prim(IEN,k,j,i);
+      Real m_pp = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM3,k,j,i) + prim(IEN,k,j,i);
+      src[IM1] = src_terms_i_(i)*(m_tt + m_pp);
 
-    Real m_tr = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM1,k,j,i);
-    src(IM2,i) = src_terms_i_(i)*(src_terms_j_(j)*m_pp - m_tr);
+      Real m_tr = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM1,k,j,i);
+      src[IM2] = src_terms_i_(i)*(src_terms_j_(j)*m_pp - m_tr);
 
-    Real m_pr = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM1,k,j,i);
-    Real m_pt = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM2,k,j,i);
-    src(IM3,i) = (-1.0)*src_terms_i_(i)*(m_pr + src_terms_j_(j)*m_pt);
-  }
+      Real m_pr = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM1,k,j,i);
+      Real m_pt = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM2,k,j,i);
+      src[IM3] = (-1.0)*src_terms_i_(i)*(m_pr + src_terms_j_(j)*m_pt);
+
+      Real& uim1 = cons(IM1,k,j,i);
+      Real& uim2 = cons(IM2,k,j,i);
+      Real& uim3 = cons(IM3,k,j,i);
+      uim1 += dt*src[IM1];
+      uim2 += dt*src[IM2];
+      uim3 += dt*src[IM3];
+    }
+  }}
+
   return;
 }

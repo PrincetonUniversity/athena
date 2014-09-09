@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/lib/python2.7/bin/python
 
 # Modules
 import argparse
@@ -166,7 +166,7 @@ if __name__ == '__main__':
   parser.add_argument('--with-problem',
       required=True,
       default='shock_tube',
-      choices=['shock_tube', 'accretion'],
+      choices=['shock_tube', 'accretion','disk_cyl'],
       help='problem generator')
   parser.add_argument('-s', '--enable-special-relativity',
       action='store_true',

@@ -24,10 +24,11 @@
 #include <string>     // c_str()
 
 // Athena headers
-#include "../../athena.hpp"         // Real
-#include "../../athena_arrays.hpp"  // AthenaArray
-#include "../../mesh.hpp"           // MeshBlock
-#include "../fluid.hpp"           // Fluid
+#include "../../athena.hpp"          // Real
+#include "../../athena_arrays.hpp"   // AthenaArray
+#include "../../mesh.hpp"            // MeshBlock
+#include "../fluid.hpp"              // Fluid
+#include "../../parameter_input.hpp" // ParameterInput
 
 //======================================================================================
 /*! \file bvals.cpp
@@ -37,7 +38,7 @@
 // FluidBoundaryConditions constructor - sets function pointers for the appropriate
 // boundary conditions at each of the 6 edges of a MeshBlock
 
-FluidBoundaryConditions::FluidBoundaryConditions(Fluid *pf)
+FluidBoundaryConditions::FluidBoundaryConditions(Fluid *pf, ParameterInput *pin)
 {
   pmy_fluid = pf;
   std::stringstream msg;

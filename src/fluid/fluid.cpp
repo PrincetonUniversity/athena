@@ -23,12 +23,13 @@
 #include <cmath>      // fabs(), sqrt()
 
 // Athena headers
-#include "../athena.hpp"                   // array access, macros, Real
-#include "../athena_arrays.hpp"            // AthenaArray
-#include "bvals/bvals.hpp"               // FluidBoundaryConditions
+#include "../athena.hpp"                // array access, macros, Real
+#include "../athena_arrays.hpp"         // AthenaArray
+#include "bvals/bvals.hpp"              // FluidBoundaryConditions
 #include "eos/eos.hpp"                  // FluidEqnOfState
+#include "srcterms/srcterms.hpp"        // FluidSourceTerms
 #include "integrators/integrators.hpp"  // FluidIntegrator
-#include "../mesh.hpp"                     // MeshBlock, Mesh
+#include "../mesh.hpp"                  // MeshBlock, Mesh
 
 //======================================================================================
 //! \file fluid.cpp
@@ -67,11 +68,12 @@ Fluid::Fluid(MeshBlock *pmb, ParameterInput *pin)
   dt2_.NewAthenaArray(ncells1);
   dt3_.NewAthenaArray(ncells1);
 
-// Construct new integrator objects
+// Construct ptrs to objects of various classes needed to integrate fluid eqns 
 
   pf_integrator = new FluidIntegrator(this);
-  pf_bcs = new FluidBoundaryConditions(this);
-  pf_eos = new FluidEqnOfState(this, pin);
+  pf_bcs = new FluidBoundaryConditions(this,pin);
+  pf_eos = new FluidEqnOfState(this,pin);
+  pf_srcterms = new FluidSourceTerms(this,pin);
 }
 
 // destructor

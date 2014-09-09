@@ -175,18 +175,30 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 //        AthenaArray<Real> &prim, AthenaArray<Real> &src)
 // \brief function to compute coordinate source term
 
-void Coordinates::CoordinateSourceTerms(const int k, const int j,
-  AthenaArray<Real> &prim, AthenaArray<Real> &src)
+void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
+  AthenaArray<Real> &cons)
 {
+  Real src[NVAR];
+
 // src_1 = <M_{phi phi}><1/r> = M_{phi phi} dr/d(r^2/2)
 // src_3 = -< M_{phi r} ><1/r>  = -(<M_{pr}>) dr/d(r^2/2)
-#pragma simd
-  for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
-    Real m_pp = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM3,k,j,i) + prim(IEN,k,j,i);
-    src(IM1,i) = src_terms_i_(i)*m_pp;
 
-    Real m_pr = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM1,k,j,i);
-    src(IM3,i) = (-1.0)*src_terms_i_(i)*m_pr;
-  }
+  for (int k=(pmy_block->ks); k<=(pmy_block->ke); ++k) {
+  for (int j=(pmy_block->js); j<=(pmy_block->je); ++j) {
+#pragma simd
+    for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
+      Real m_pp = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM3,k,j,i) + prim(IEN,k,j,i);
+      src[IM1] = src_terms_i_(i)*m_pp;
+
+      Real m_pr = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM1,k,j,i);
+      src[IM3] = (-1.0)*src_terms_i_(i)*m_pr;
+
+      Real& uim1 = cons(IM1,k,j,i);
+      Real& uim3 = cons(IM3,k,j,i);
+      uim1 += dt*src[IM1];
+      uim3 += dt*src[IM3];
+    }
+  }}
+
   return;
 }

@@ -15,16 +15,18 @@
  *====================================================================================*/
 
 #include <stdio.h>
+#include <iostream>
 
 // Primary header
 #include "integrators.hpp"
 
 // Athena headers
-#include "../../athena.hpp"                   // enums, macros, Real
-#include "../../athena_arrays.hpp"            // AthenaArray
-#include "../../coordinates/coordinates.hpp"  // Coordinates
-#include "../fluid.hpp"                    // Fluid
-#include "../../mesh.hpp"                     // MeshBlock
+#include "../../athena.hpp"                  // enums, macros, Real
+#include "../../athena_arrays.hpp"           // AthenaArray
+#include "../../coordinates/coordinates.hpp" // Coordinates
+#include "../fluid.hpp"                      // Fluid
+#include "../../mesh.hpp"                    // MeshBlock
+#include "../srcterms/srcterms.hpp"          // PhysicalSourceTerms()
 
 #ifdef OPENMP_PARALLEL
 #include <omp.h>
@@ -59,6 +61,7 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
 //--------------------------------------------------------------------------------------
 // i-direction 
 
+int count=0;
 #pragma omp parallel default(shared) private(tid) num_threads(ATHENA_MAX_NUM_THREADS)
 {
 #ifdef OPENMP_PARALLEL
@@ -70,8 +73,9 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
   AthenaArray<Real> *parea = pmb->pcoord->face_area.ShallowSlice(tid,1);
   AthenaArray<Real> *pvol  = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
 
-#pragma omp for schedule(dynamic,2)
   for (int k=ks; k<=ke; ++k){
+#pragma omp for schedule(dynamic,2)
+
   for (int j=js; j<=je; ++j){
 
     ReconstructionFuncX1(k,j,is,ie+1,w,pwl,pwr);
@@ -116,8 +120,9 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
     AthenaArray<Real> *parea = pmb->pcoord->face_area.ShallowSlice(tid,1);
     AthenaArray<Real> *pvol  = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
 
-#pragma omp for schedule(dynamic,2)
     for (int k=ks; k<=ke; ++k){
+#pragma omp for schedule(dynamic,2)
+
     for (int j=js; j<=je+1; ++j){
 
       ReconstructionFuncX2(k,j,is,ie,w,pwl,pwr);
@@ -176,8 +181,8 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
     AthenaArray<Real> *parea = pmb->pcoord->face_area.ShallowSlice(tid,1);
     AthenaArray<Real> *pvol  = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
 
-#pragma omp for schedule(dynamic,2)
     for (int k=ks; k<=ke+1; ++k){
+#pragma omp for schedule(dynamic,2)
     for (int j=js; j<=je; ++j){
 
       ReconstructionFuncX3(k,j,is,ie,w,pwl,pwr);
@@ -223,22 +228,8 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
 //--------------------------------------------------------------------------------------
 //  Add source terms for half a timestep
 
-  for (int k=ks; k<=ke; ++k){
-  for (int j=js; j<=je; ++j){
-
-    pmb->pcoord->CoordinateSourceTerms(k,j,w,src);
-
-#pragma simd
-    for (int i=is; i<=ie; ++i){
-      Real& u1im1   = u1(IM1,k,j,i);
-      Real& u1im2   = u1(IM2,k,j,i);
-      Real& u1im3   = u1(IM3,k,j,i);
-
-      u1im1 += 0.5*dt*src(IM1,i);
-      u1im2 += 0.5*dt*src(IM2,i);
-      u1im3 += 0.5*dt*src(IM3,i);
-    }
-  }}
+  pmb->pcoord->CoordinateSourceTerms(0.5*dt,w,u1);
+  pmb->pfluid->pf_srcterms->PhysicalSourceTerms(0.5*dt,w,u1);
 
   return;
 }
@@ -278,8 +269,8 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
   AthenaArray<Real> *parea = pmb->pcoord->face_area.ShallowSlice(tid,1);
   AthenaArray<Real> *pvol  = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
 
-#pragma omp for schedule(dynamic,2)
   for (int k=ks; k<=ke; ++k){
+#pragma omp for schedule(dynamic,2)
   for (int j=js; j<=je; ++j){
 
     ReconstructionFuncX1(k,j,is,ie+1,w1,pwl,pwr);
@@ -323,8 +314,8 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
     AthenaArray<Real> *parea = pmb->pcoord->face_area.ShallowSlice(tid,1);
     AthenaArray<Real> *pvol  = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
 
-#pragma omp for schedule(dynamic,2)
     for (int k=ks; k<=ke; ++k){
+#pragma omp for schedule(dynamic,2)
     for (int j=js; j<=je+1; ++j){
 
       ReconstructionFuncX2(k,j,is,ie,w1,pwl,pwr);
@@ -383,8 +374,8 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
     AthenaArray<Real> *parea = pmb->pcoord->face_area.ShallowSlice(tid,1);
     AthenaArray<Real> *pvol  = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
 
-#pragma omp for schedule(dynamic,2)
     for (int k=ks; k<=ke+1; ++k){
+#pragma omp for schedule(dynamic,2)
     for (int j=js; j<=je; ++j){
 
       ReconstructionFuncX3(k,j,is,ie,w1,pwl,pwr);
@@ -430,22 +421,8 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 //--------------------------------------------------------------------------------------
 //  Add source terms for a full timestep
 
-  for (int k=ks; k<=ke; ++k){
-  for (int j=js; j<=je; ++j){
-
-    pmb->pcoord->CoordinateSourceTerms(k,j,w1,src);
-
-#pragma simd
-    for (int i=is; i<=ie; ++i){
-      Real& uim1   = u(IM1,k,j,i);
-      Real& uim2   = u(IM2,k,j,i);
-      Real& uim3   = u(IM3,k,j,i);
-
-      uim1 += dt*src(IM1,i);
-      uim2 += dt*src(IM2,i);
-      uim3 += dt*src(IM3,i);
-    }
-  }}
+  pmb->pcoord->CoordinateSourceTerms(dt,w1,u);
+  pmb->pfluid->pf_srcterms->PhysicalSourceTerms(dt,w1,u);
 
   return;
 }
