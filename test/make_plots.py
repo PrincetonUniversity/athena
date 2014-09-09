@@ -69,8 +69,8 @@ def main(**kwargs):
         run_string = './athena \
             -i ../inputs/hydro_gr/athinput.geodesic \
             job/problem_id={0} \
-            output1/dt=0.5 \
-            time/tlim=100.0'.format(name_string)
+            output1/dt=1.0 \
+            time/tlim=80.0'.format(name_string)
       else:
         run_string = './athena \
             -i ../inputs/hydro_gr/athinput.geodesic \
@@ -212,6 +212,9 @@ def plot_accretion(filename, movie_needed):
       d_expected *= d_norm[-1] / d_expected[-1]
       e_expected = (data['r']**2 * (2.0*mass/data['r'])**0.5)**-gamma_adi \
           * (1.0 - 2.0*mass/data['r'])**(-(gamma_adi+1.0)/4.0)
+      # TODO: decide whether to use HSW value (above) or what is probably correct value (below)
+      #e_expected = (1.0 - 2.0*mass/data['r'])**-0.5 \
+      #    * (data['r']**2 * (2.0*mass/data['r'])**0.5)**-gamma_adi
       e_expected *= e_norm[-1] / e_expected[-1]
       s_expected = (d_expected + gamma_adi * e_expected) * (2.0*mass/data['r'])**0.5 \
           / (1.0 - 2.0*mass/data['r'])
