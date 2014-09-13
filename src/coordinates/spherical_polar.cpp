@@ -217,7 +217,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
   AthenaArray<Real> &cons)
 {
-  Real src[NVAR];
+  Real src[NVAR],dummy_arg[NVAR];
 
 // src_1 = < M_{theta theta} + M_{phi phi} ><1/r> = <M_{tt} + M_{pp}> d(r^2/3)d(r^3/3)
 // src_2 = -< M_{theta r} - cot[theta]M_{phi phi} ><1/r> 
