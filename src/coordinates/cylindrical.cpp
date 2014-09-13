@@ -25,6 +25,8 @@
 #include "../athena_arrays.hpp"   // AthenaArray
 #include "../parameter_input.hpp" // ParameterInput
 #include "../mesh.hpp"            // MeshBlock
+#include "../fluid/fluid.hpp"     // Fluid
+#include "../fluid/eos/eos.hpp"   // SoundSpeed()
 
 //======================================================================================
 //! \file cylindrical.cpp
@@ -178,7 +180,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
   AthenaArray<Real> &cons)
 {
-  Real src[NVAR];
+  Real src[NVAR],dummy_arg[NVAR];
 
 // src_1 = <M_{phi phi}><1/r> = M_{phi phi} dr/d(r^2/2)
 // src_3 = -< M_{phi r} ><1/r>  = -(<M_{pr}>) dr/d(r^2/2)
@@ -187,7 +189,13 @@ void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
   for (int j=(pmy_block->js); j<=(pmy_block->je); ++j) {
 #pragma simd
     for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
-      Real m_pp = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM3,k,j,i) + prim(IEN,k,j,i);
+      Real m_pp = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM3,k,j,i);
+      if (NON_BAROTROPIC_EOS) {
+         m_pp += prim(IEN,k,j,i);
+      } else {
+         Real iso_cs = pmy_block->pfluid->pf_eos->SoundSpeed(dummy_arg);
+         m_pp += (iso_cs*iso_cs)*prim(IDN,k,j,i);
+      }
       src[IM1] = src_terms_i_(i)*m_pp;
 
       Real m_pr = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM1,k,j,i);

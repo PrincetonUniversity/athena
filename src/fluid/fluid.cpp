@@ -109,7 +109,6 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   Real tmin_dt[ATHENA_MAX_NUM_THREADS];
-  Real wi[NVAR];
 
   AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
 
@@ -123,6 +122,7 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
   AthenaArray<Real> *pdt1 = dt1_.ShallowSlice(tid,1);
   AthenaArray<Real> *pdt2 = dt2_.ShallowSlice(tid,1);
   AthenaArray<Real> *pdt3 = dt3_.ShallowSlice(tid,1);
+  Real wi[NVAR];
 
   for (int k=ks; k<=ke; ++k){
 
@@ -132,39 +132,41 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
       Real& dx3 = pmb->dx3f(k);
 #pragma simd
       for (int i=is; i<=ie; ++i){
-        wi[IDN]=w(IDN,i);
-        wi[IVX]=w(IVX,i);
-        wi[IVY]=w(IVY,i);
-        wi[IVZ]=w(IVZ,i);
-        if (NON_BAROTROPIC_EOS) wi[IEN]=w(IEN,i);
+        wi[IDN]=w(IDN,k,j,i);
+        wi[IVX]=w(IVX,k,j,i);
+        wi[IVY]=w(IVY,k,j,i);
+        wi[IVZ]=w(IVZ,k,j,i);
+        if (NON_BAROTROPIC_EOS) wi[IEN]=w(IEN,k,j,i);
         Real& dx1  = pmb->dx1f(i);
-        Real& d_t1 = (*pdt1)(i);
-        Real& d_t2 = (*pdt2)(i);
-        Real& d_t3 = (*pdt3)(i);
+        Real& dt_1 = (*pdt1)(i);
+        Real& dt_2 = (*pdt2)(i);
+        Real& dt_3 = (*pdt3)(i);
 
         if (RELATIVISTIC_DYNAMICS) {
-          d_t1 = dx1;
-          d_t2 = dx2;
-          d_t3 = dx3;
+          dt_1 = dx1;
+          dt_2 = dx2;
+          dt_3 = dx3;
         } else {
           Real cs = pf_eos->SoundSpeed(wi);
-          d_t1 = dx1/(fabs(wi[IVX]) + cs);
-          d_t2 = dx2/(fabs(wi[IVY]) + cs);
-          d_t3 = dx3/(fabs(wi[IVZ]) + cs);
+          dt_1 = dx1/(fabs(wi[IVX]) + cs);
+          dt_2 = dx2/(fabs(wi[IVY]) + cs);
+          dt_3 = dx3/(fabs(wi[IVZ]) + cs);
         }
       }
 
 // compute minimum of (v1 +/- C)
 
       for (int i=is; i<=ie; ++i){
-        tmin_dt[tid] = std::min(tmin_dt[tid],(*pdt1)(i));
+        Real& dt_1 = (*pdt1)(i);
+        tmin_dt[tid] = std::min(tmin_dt[tid],dt_1);
       }
     
 // if grid is 2D/3D, compute minimum of (v2 +/- C)
 
       if (pmb->block_size.nx2 > 1) {
         for (int i=is; i<=ie; ++i){
-          tmin_dt[tid] = std::min(tmin_dt[tid],(*pdt2)(i));
+          Real& dt_2 = (*pdt2)(i);
+          tmin_dt[tid] = std::min(tmin_dt[tid],dt_2);
         }
       }
 
@@ -172,7 +174,8 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
 
       if (pmb->block_size.nx3 > 1) {
         for (int i=is; i<=ie; ++i){
-          tmin_dt[tid] = std::min(tmin_dt[tid],(*pdt3)(i));
+          Real& dt_3 = (*pdt3)(i);
+          tmin_dt[tid] = std::min(tmin_dt[tid],dt_3);
         }
       }
 

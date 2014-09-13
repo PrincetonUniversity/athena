@@ -25,6 +25,8 @@
 #include "../athena_arrays.hpp"   // AthenaArray
 #include "../parameter_input.hpp" // ParameterInput
 #include "../mesh.hpp"            // MeshBlock
+#include "../fluid/fluid.hpp"     // Fluid
+#include "../fluid/eos/eos.hpp"   // SoundSpeed()
 
 //======================================================================================
 //! \file spherical_polar.cpp
@@ -227,8 +229,16 @@ void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
   for (int j=(pmy_block->js); j<=(pmy_block->je); ++j) {
 #pragma simd
     for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
-      Real m_tt = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM2,k,j,i) + prim(IEN,k,j,i);
-      Real m_pp = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM3,k,j,i) + prim(IEN,k,j,i);
+      Real m_tt = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM2,k,j,i);
+      Real m_pp = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM3,k,j,i);
+      if (NON_BAROTROPIC_EOS) {
+         m_tt += prim(IEN,k,j,i);
+         m_pp += prim(IEN,k,j,i);
+      } else {
+         Real iso_cs = pmy_block->pfluid->pf_eos->SoundSpeed(dummy_arg);
+         m_tt += (iso_cs*iso_cs)*prim(IDN,k,j,i);
+         m_pp += (iso_cs*iso_cs)*prim(IDN,k,j,i);
+      }
       src[IM1] = src_terms_i_(i)*(m_tt + m_pp);
 
       Real m_tr = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM1,k,j,i);

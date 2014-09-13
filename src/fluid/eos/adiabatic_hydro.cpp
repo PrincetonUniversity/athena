@@ -111,7 +111,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 /* \!fn Real FluidEqnOfState::SoundSpeed(Real prim[5])
  * \brief returns adiabatic sound speed given vector of primitive variables  */
 
-Real FluidEqnOfState::SoundSpeed(Real prim[NVAR])
+Real FluidEqnOfState::SoundSpeed(const Real prim[NVAR])
 {
-  return GetGamma()*sqrt(prim[IEN]/prim[IDN]);
+  return sqrt(GetGamma()*prim[IEN]/prim[IDN]);
 }
