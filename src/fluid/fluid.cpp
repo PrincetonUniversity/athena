@@ -62,12 +62,6 @@ Fluid::Fluid(MeshBlock *pmb, ParameterInput *pin)
   g.NewAthenaArray(NMETRIC, ncells1);
   g_inv.NewAthenaArray(NMETRIC, ncells1);
 
-// Allocate memory for scratch arrays
-
-  dt1_.NewAthenaArray(ncells1);
-  dt2_.NewAthenaArray(ncells1);
-  dt3_.NewAthenaArray(ncells1);
-
 // Construct ptrs to objects of various classes needed to integrate fluid eqns 
 
   pf_integrator = new FluidIntegrator(this);
@@ -88,10 +82,6 @@ Fluid::~Fluid()
   g.DeleteAthenaArray();
   g_inv.DeleteAthenaArray();
 
-  dt1_.DeleteAthenaArray();
-  dt2_.DeleteAthenaArray();
-  dt3_.DeleteAthenaArray();
-
   delete pf_integrator;
   delete pf_bcs;
   delete pf_eos;
@@ -105,69 +95,59 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
 {
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  Real min_dt;
   Real wi[NVAR];
 
   AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
-  AthenaArray<Real> dt1 = dt1_.ShallowCopy();
-  AthenaArray<Real> dt2 = dt2_.ShallowCopy();
-  AthenaArray<Real> dt3 = dt3_.ShallowCopy();
+  Real min_dt = (FLT_MAX);
 
-  min_dt = (FLT_MAX);
+//#pragma omp parallel default(shared) num_threads(ATHENA_MAX_NUM_THREADS)
+{
+  Real cs,dt1,dt2,dt3;
   for (int k=ks; k<=ke; ++k){
-  for (int j=js; j<=je; ++j){
-    Real& dx2 = pmb->dx2f(j);
-    Real& dx3 = pmb->dx3f(k);
-#pragma simd
-    for (int i=is; i<=ie; ++i){
-      wi[IDN]=w(IDN,i);
-      wi[IVX]=w(IVX,i);
-      wi[IVY]=w(IVY,i);
-      wi[IVZ]=w(IVZ,i);
-      if (NON_BAROTROPIC_EOS) wi[IEN]=w(IEN,i);
-      Real& dx1  = pmb->dx1f(i);
-      Real& d_t1 = dt1(i);
-      Real& d_t2 = dt2(i);
-      Real& d_t3 = dt3(i);
 
-      if (RELATIVISTIC_DYNAMICS)
-      {
-        d_t1 = dx1;
-        d_t2 = dx2;
-        d_t3 = dx3;
-      }
-      else
-      {
-        Real cs = pf_eos->SoundSpeed(wi);
-        d_t1 = dx1/(fabs(wi[IVX]) + cs);
-        d_t2 = dx2/(fabs(wi[IVY]) + cs);
-        d_t3 = dx3/(fabs(wi[IVZ]) + cs);
-      }
-    }
+//#pragma omp for schedule(static)
+    for (int j=js; j<=je; ++j){
+      Real& dx2 = pmb->dx2f(j);
+      Real& dx3 = pmb->dx3f(k);
+#pragma simd
+      for (int i=is; i<=ie; ++i){
+        wi[IDN]=w(IDN,i);
+        wi[IVX]=w(IVX,i);
+        wi[IVY]=w(IVY,i);
+        wi[IVZ]=w(IVZ,i);
+        if (NON_BAROTROPIC_EOS) wi[IEN]=w(IEN,i);
+        Real& dx1  = pmb->dx1f(i);
+
+        if (RELATIVISTIC_DYNAMICS) {
+          dt1 = dx1;
+          dt2 = dx2;
+          dt3 = dx3;
+        } else {
+          cs = pf_eos->SoundSpeed(wi);
+          dt1 = dx1/(fabs(wi[IVX]) + cs);
+          dt2 = dx2/(fabs(wi[IVY]) + cs);
+          dt3 = dx3/(fabs(wi[IVZ]) + cs);
+        }
 
 // compute minimum of (v1 +/- C)
 
-    for (int i=is; i<=ie; ++i){
-      min_dt = std::min(min_dt,dt1(i));
-    }
+        min_dt = std::min(min_dt,dt1);
     
 // if grid is 2D/3D, compute minimum of (v2 +/- C)
 
-    if (pmb->block_size.nx2 > 1) {
-      for (int i=is; i<=ie; ++i){
-        min_dt = std::min(min_dt,dt2(i));
-      }
-    }
+        if (pmb->block_size.nx2 > 1) {
+          min_dt = std::min(min_dt,dt2);
+        }
 
 // if grid is 3D, compute minimum of (v3 +/- C)
 
-    if (pmb->block_size.nx3 > 1) {
-      for (int i=is; i<=ie; ++i){
-        min_dt = std::min(min_dt,dt3(i));
+        if (pmb->block_size.nx3 > 1) {
+          min_dt = std::min(min_dt,dt3);
+        }
       }
     }
-
-  }}
+  }
+} // end of omp parallel region
 
   Mesh *pm = pmb->pmy_domain->pmy_mesh;
   Real old_dt = pm->dt;
