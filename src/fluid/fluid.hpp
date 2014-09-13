@@ -47,5 +47,8 @@ public:
 
   void NewTimeStep(MeshBlock *pmb);    // computes new timestep on a MeshBlock
   void InitFluid(ParameterInput *pin); // problem generator function (files in /pgen)
+
+private:
+  AthenaArray<Real> dt1_,dt2_,dt3_;  // scratch arrays used in NewTimeStep
 };
 #endif
