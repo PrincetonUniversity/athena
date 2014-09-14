@@ -89,8 +89,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 // Allocate only those local scratch arrays needed for spherical polar coordinates
 
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  face_area.NewAthenaArray(ncells1);   // scratch used in integrator
-  cell_volume.NewAthenaArray(ncells1); // scratch used in integrator
   face1_area_i_.NewAthenaArray(ncells1);
   face2_area_i_.NewAthenaArray(ncells1);
   face3_area_i_.NewAthenaArray(ncells1);
@@ -136,9 +134,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 
 Coordinates::~Coordinates()
 {
-  face_area.DeleteAthenaArray();
-  cell_volume.DeleteAthenaArray();
-
   face1_area_i_.DeleteAthenaArray();
   face2_area_i_.DeleteAthenaArray();
   face3_area_i_.DeleteAthenaArray();
@@ -214,7 +209,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 //        AthenaArray<Real> &prim, AthenaArray<Real> &cons)
 // \brief function to add coordinate source terms to input conserved variables
 
-void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
+void Coordinates::CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
   AthenaArray<Real> &cons)
 {
   Real src[NVAR],dummy_arg[NVAR];

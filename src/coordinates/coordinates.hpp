@@ -28,15 +28,16 @@ public:
 
   MeshBlock *pmy_block;  // ptr to MeshBlock containing this Coordinates
 
-  void Area1Face(
-    const int k, const int j, const int il, const int iu, AthenaArray<Real> *parea);
-  void Area2Face(
-    const int k, const int j, const int il, const int iu, AthenaArray<Real> *parea);
-  void Area3Face(
-    const int k, const int j, const int il, const int iu, AthenaArray<Real> *parea);
-  void CellVolume(
-    const int k, const int j, const int il, const int iu, AthenaArray<Real> *pvol);
-  void CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim, AthenaArray<Real> &cons);
+  void Area1Face(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> *parea);
+  void Area2Face(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> *parea);
+  void Area3Face(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> *parea);
+  void CellVolume(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> *pvol);
+  void CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
+    AthenaArray<Real> &cons);
 
   void CellMetric(const int k, const int j, AthenaArray<Real> &g,
       AthenaArray<Real> &g_inv);
@@ -48,10 +49,8 @@ public:
   void FluxToGlobal3(const int k, const int j, AthenaArray<Real> *pflux);
   void PrimToCons(AthenaArray<Real> &prim, AthenaArray<Real> &cons);
 
-// these are scratch arrays used by integrators and allocated in this class
-  AthenaArray<Real> face_area, cell_volume;
-
 private:
+// scratch arrays containing precomputed factors used in above functions
   AthenaArray<Real> face1_area_i_, face1_area_j_;
   AthenaArray<Real> face2_area_i_, face2_area_j_;
   AthenaArray<Real> face3_area_i_, face3_area_j_;

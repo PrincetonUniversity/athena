@@ -86,8 +86,6 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
 
   // Allocate scratch arrays for integrator
   int n_cells_1 = pb->block_size.nx1 + 2*NGHOST;
-  face_area.NewAthenaArray(n_cells_1);
-  cell_volume.NewAthenaArray(n_cells_1);
 
   // Allocate arrays for intermediate geometric quantities: r-direction
   volume_i_.NewAthenaArray(n_cells_1);
@@ -299,8 +297,6 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
 // Destructor
 Coordinates::~Coordinates()
 {
-  face_area.DeleteAthenaArray();
-  cell_volume.DeleteAthenaArray();
   volume_i_.DeleteAthenaArray();
   face1_area_i_.DeleteAthenaArray();
   face2_area_i_.DeleteAthenaArray();

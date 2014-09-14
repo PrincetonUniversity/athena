@@ -66,8 +66,8 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
   AthenaArray<Real> *pwl = wl_.ShallowSlice(tid,1);
   AthenaArray<Real> *pwr = wr_.ShallowSlice(tid,1);
   AthenaArray<Real> *pflx = flx_.ShallowSlice(tid,1);
-  AthenaArray<Real> *parea = pmb->pcoord->face_area.ShallowSlice(tid,1);
-  AthenaArray<Real> *pvol  = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
+  AthenaArray<Real> *parea = face_area_.ShallowSlice(tid,1);
+  AthenaArray<Real> *pvol  = cell_volume_.ShallowSlice(tid,1);
 
 //--------------------------------------------------------------------------------------
 // i-direction 
@@ -236,13 +236,13 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 #pragma omp parallel default(shared) private(tid) num_threads(ATHENA_MAX_NUM_THREADS)
 {
 #ifdef OPENMP_PARALLEL
-  tid=omp_get_thread_num();;
+  tid=omp_get_thread_num();
 #endif
   AthenaArray<Real> *pwl = wl_.ShallowSlice(tid,1);
   AthenaArray<Real> *pwr = wr_.ShallowSlice(tid,1);
   AthenaArray<Real> *pflx = flx_.ShallowSlice(tid,1);
-  AthenaArray<Real> *parea = pmb->pcoord->face_area.ShallowSlice(tid,1);
-  AthenaArray<Real> *pvol  = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
+  AthenaArray<Real> *parea = face_area_.ShallowSlice(tid,1);
+  AthenaArray<Real> *pvol  = cell_volume_.ShallowSlice(tid,1);
 
 //--------------------------------------------------------------------------------------
 // i-direction 

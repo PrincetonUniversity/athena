@@ -74,14 +74,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
       pmb->dx3v(k) = pmb->x3v(k+1) - pmb->x3v(k);
     }
   }
-
-// Allocate memory for scratch arrays used in integrator, and internal scratch arrays
-// For cartesian coordinates, no local scratch arrays are needed
-
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-
-  face_area.NewAthenaArray(ATHENA_MAX_NUM_THREADS,ncells1);
-  cell_volume.NewAthenaArray(ATHENA_MAX_NUM_THREADS,ncells1);
 }
 
 // destructor
@@ -89,8 +81,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 Coordinates::~Coordinates()
 {
   pmy_block = NULL; // MeshBlock destructor will free this memory
-  face_area.DeleteAthenaArray();
-  cell_volume.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------
@@ -158,7 +148,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
  *   const int k, const int j, AthenaArray<Real> &prim, AthenaArray<Real> &src)
  * \brief function to compute coordinate source terms (no-op function for cartesian)  */
 
-void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
+void Coordinates::CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
   AthenaArray<Real> &src)
 {
   return;

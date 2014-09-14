@@ -85,8 +85,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 // Allocate only those local scratch arrays needed for cylindrical coordinates
 
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  face_area.NewAthenaArray(ATHENA_MAX_NUM_THREADS,ncells1);
-  cell_volume.NewAthenaArray(ATHENA_MAX_NUM_THREADS,ncells1);
   face2_area_i_.NewAthenaArray(ncells1);
   volume_i_.NewAthenaArray(ncells1);
   src_terms_i_.NewAthenaArray(ncells1);
@@ -107,8 +105,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 
 Coordinates::~Coordinates()
 {
-  face_area.DeleteAthenaArray();
-  cell_volume.DeleteAthenaArray();
   face2_area_i_.DeleteAthenaArray();
   volume_i_.DeleteAthenaArray();
   src_terms_i_.DeleteAthenaArray();
@@ -177,7 +173,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 //        AthenaArray<Real> &prim, AthenaArray<Real> &src)
 // \brief function to compute coordinate source term
 
-void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
+void Coordinates::CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
   AthenaArray<Real> &cons)
 {
   Real src[NVAR],dummy_arg[NVAR];

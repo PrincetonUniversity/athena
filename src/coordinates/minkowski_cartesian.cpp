@@ -53,18 +53,11 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
     for (int k = pb->ks-NGHOST; k <= pb->ke+NGHOST-1; k++)
       pb->dx3v(k) = pb->x3v(k+1) - pb->x3v(k);
   }
-
-  // Allocate scratch arrays for integrator
-  int n_cells = pb->block_size.nx1 + 2*NGHOST;
-  face_area.NewAthenaArray(n_cells);
-  cell_volume.NewAthenaArray(n_cells);
 }
 
 // Destructor
 Coordinates::~Coordinates()
 {
-  face_area.DeleteAthenaArray();
-  cell_volume.DeleteAthenaArray();
 }
 
 // Function for computing areas orthogonal to x
@@ -170,8 +163,8 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 // Notes:
 //   source terms all vanish identically
 //   sources assumed to be 0-initialized
-void Coordinates::CoordinateSourceTerms(const int k, const int j,
-    AthenaArray<Real> &prim, AthenaArray<Real> &sources)
+void Coordinates::CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
+  AthenaArray<Real> &sources)
 {
   return;
 }

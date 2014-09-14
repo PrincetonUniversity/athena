@@ -41,6 +41,8 @@ FluidIntegrator::FluidIntegrator(Fluid *pf)
   wr_.NewAthenaArray(ATHENA_MAX_NUM_THREADS,NVAR,ncells1);
   flx_.NewAthenaArray(ATHENA_MAX_NUM_THREADS,NVAR,ncells1);
   src_.NewAthenaArray(ATHENA_MAX_NUM_THREADS,NVAR,ncells1);
+  face_area_.NewAthenaArray(ATHENA_MAX_NUM_THREADS,ncells1);
+  cell_volume_.NewAthenaArray(ATHENA_MAX_NUM_THREADS,ncells1);
 }
 
 // destructor
@@ -52,4 +54,6 @@ FluidIntegrator::~FluidIntegrator()
   wr_.DeleteAthenaArray();
   flx_.DeleteAthenaArray();
   src_.DeleteAthenaArray();
+  face_area_.DeleteAthenaArray();
+  cell_volume_.DeleteAthenaArray();
 }
