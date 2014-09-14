@@ -111,11 +111,17 @@ Coordinates::~Coordinates()
 }
 
 //--------------------------------------------------------------------------------------
+// Edge Length functions
+
+
+//--------------------------------------------------------------------------------------
+// Face Area functions
+
 // \!fn void Coordinates::Area1Face(const int k,const int j, const int il, const int iu,
 //        AthenaArray<Real> &area)
 // \brief functions to compute area of cell faces in each direction
 
-void Coordinates::Area1Face(const int k, const int j, const int il, const int iu,
+void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> *parea)
 {
 // area1 = r dphi 
@@ -127,7 +133,7 @@ void Coordinates::Area1Face(const int k, const int j, const int il, const int iu
   return;
 }
 
-void Coordinates::Area2Face(const int k, const int j, const int il, const int iu,
+void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> *parea)
 {
 // area2 = dr
@@ -139,7 +145,7 @@ void Coordinates::Area2Face(const int k, const int j, const int il, const int iu
   return;
 }
 
-void Coordinates::Area3Face(const int k, const int j, const int il, const int iu,
+void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> *parea)
 {
 // 2D only!  area3 = 1.0
@@ -152,6 +158,8 @@ void Coordinates::Area3Face(const int k, const int j, const int il, const int iu
 }
 
 //--------------------------------------------------------------------------------------
+// Cell Volume function
+
 // \!fn void Coordinates::CellVolume(const int k,const int j,const int il, const int iu,
 //        AthenaArray<Real> &vol)
 // \brief function to compute cell volume
@@ -166,6 +174,24 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
     vol_i = volume_i_(i)*(pmy_block->dx2f(j));
   }
   return;
+}
+
+//--------------------------------------------------------------------------------------
+// Cell Width functions
+
+Real Coordinates::VolumeCenterWidth1(const int k, const int j, const int i)
+{
+  return (pmy_block->dx1f(i));
+}
+
+Real Coordinates::VolumeCenterWidth2(const int k, const int j, const int i)
+{
+  return (pmy_block->x1v(i)*pmy_block->dx2f(j));
+}
+
+Real Coordinates::VolumeCenterWidth3(const int k, const int j, const int i)
+{
+  return (pmy_block->dx3f(k));
 }
 
 //--------------------------------------------------------------------------------------

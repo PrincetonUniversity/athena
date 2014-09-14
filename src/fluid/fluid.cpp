@@ -30,6 +30,7 @@
 #include "srcterms/srcterms.hpp"        // FluidSourceTerms
 #include "integrators/integrators.hpp"  // FluidIntegrator
 #include "../mesh.hpp"                  // MeshBlock, Mesh
+#include "../coordinates/coordinates.hpp" // VolumeCenterWidth()
 
 #include <omp.h>
 
@@ -148,9 +149,9 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
           dt_3 = dx3;
         } else {
           Real cs = pf_eos->SoundSpeed(wi);
-          dt_1 = dx1/(fabs(wi[IVX]) + cs);
-          dt_2 = dx2/(fabs(wi[IVY]) + cs);
-          dt_3 = dx3/(fabs(wi[IVZ]) + cs);
+          dt_1 = pmy_block->pcoord->VolumeCenterWidth1(k,j,i)/(fabs(wi[IVX]) + cs);
+          dt_2 = pmy_block->pcoord->VolumeCenterWidth2(k,j,i)/(fabs(wi[IVY]) + cs);
+          dt_3 = pmy_block->pcoord->VolumeCenterWidth3(k,j,i)/(fabs(wi[IVZ]) + cs);
         }
       }
 

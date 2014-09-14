@@ -81,7 +81,7 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
 
       RiemannSolver(k,j,is,ie+1,IVX,IVY,IVZ,pwl,pwr,pflx);
 
-      pmb->pcoord->Area1Face(k,j,is,ie+1,parea);
+      pmb->pcoord->Face1Area(k,j,is,ie+1,parea);
       pmb->pcoord->CellVolume(k,j,is,ie,pvol);
 
       for (int n=0; n<NVAR; ++n){
@@ -116,7 +116,7 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
 
         RiemannSolver(k,j,is,ie,IVY,IVZ,IVX,pwl,pwr,pflx); 
 
-        pmb->pcoord->Area2Face(k,j,is,ie,parea);
+        pmb->pcoord->Face2Area(k,j,is,ie,parea);
 
         if (j>js) {
           pmb->pcoord->CellVolume(k,j-1,is,ie,pvol);
@@ -166,7 +166,7 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
 
         RiemannSolver(k,j,is,ie,IVZ,IVX,IVY,pwl,pwr,pflx);
 
-        pmb->pcoord->Area3Face(k,j,is,ie,parea);
+        pmb->pcoord->Face3Area(k,j,is,ie,parea);
   
         if (k>ks) {
           pmb->pcoord->CellVolume(k-1,j,is,ie,pvol);
@@ -256,7 +256,7 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 
       RiemannSolver(k,j,is,ie+1,IVX,IVY,IVZ,pwl,pwr,pflx); 
 
-      pmb->pcoord->Area1Face(k,j,is,ie+1,parea);
+      pmb->pcoord->Face1Area(k,j,is,ie+1,parea);
       pmb->pcoord->CellVolume(k,j,is,ie,pvol);
 
       for (int n=0; n<NVAR; ++n){
@@ -290,7 +290,7 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 
         RiemannSolver(k,j,is,ie,IVY,IVZ,IVX,pwl,pwr,pflx); 
 
-        pmb->pcoord->Area2Face(k,j,is,ie,parea);
+        pmb->pcoord->Face2Area(k,j,is,ie,parea);
 
         if (j>js){
           pmb->pcoord->CellVolume(k,j-1,is,ie,pvol);
@@ -340,7 +340,7 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 
         RiemannSolver(k,j,is,ie,IVZ,IVX,IVY,pwl,pwr,pflx);
 
-        pmb->pcoord->Area3Face(k,j,is,ie,parea);
+        pmb->pcoord->Face3Area(k,j,is,ie,parea);
 
         if (k>ks){
           pmb->pcoord->CellVolume(k-1,j,is,ie,pvol);
