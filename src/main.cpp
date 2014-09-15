@@ -36,6 +36,9 @@
 // OpenMP headers
 #include <omp.h>
 
+// function prototypes
+void ShowConfig();
+
 //======================================================================================
 /* //////////////////////////////// Athena++ Main Program \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
  *! \file main.cpp
@@ -70,28 +73,27 @@ int main(int argc, char *argv[])
     if(*argv[i] == '-'  && *(argv[i]+1) != '\0' && *(argv[i]+2) == '\0'){
       switch(*(argv[i]+1)) {
       case 'i':                      // -i <input_file>
-	input_file = argv[++i];
+        input_file = argv[++i];
         iarg_flag = 1;
-	break;
+      break;
       case 'r':                      // -r <restart_file>
-	res_flag = 1;
-	prestart_file = argv[++i];
-	if(iarg_flag) input_file = prestart_file; // use restart if input file not set 
-	break;
+        res_flag = 1;
+        prestart_file = argv[++i];
+        if(iarg_flag) input_file = prestart_file; // use restart if input file not set 
+        break;
       case 'd':                      // -d <run_directory>
-	prundir = argv[++i];
-	break;
+        prundir = argv[++i];
+        break;
       case 'n':
-	narg_flag = 1;
-	break;
+        narg_flag = 1;
+        break;
       case 'c':
-//	ShowConfig();
-	return(0);
-	break;
+        ShowConfig();
+        return(0);
+      break;
       case 'h':
       default:
         std::cout<<"Athena++ "<< athena_version << std::endl;
-        std::cout<<"Last configure: CONFIGURE_DATE"<< std::endl;
         std::cout<<"Usage: "<< argv[0] <<" [options] [block/par=value ...]"<< std::endl;
         std::cout<<"Options:" << std::endl;
         std::cout<<"  -i <file>       specify input file [athinput]"<< std::endl;
@@ -100,9 +102,9 @@ int main(int argc, char *argv[])
         std::cout<<"  -n              parse input file and quit"<< std::endl;
         std::cout<<"  -c              show configuration and quit"<< std::endl;
         std::cout<<"  -h              this help"<< std::endl;
-//	ShowConfig();
+        ShowConfig();
         return(0);
-	break;
+        break;
       }
     } // else if argv[i] not of form "-?" ignore it
   }
@@ -202,7 +204,7 @@ int main(int argc, char *argv[])
   }
 
 //--- Step 9. === START OF MAIN INTEGRATION LOOP =======================================
-// For performance, there is no error handler protecting this step
+// For performance, there is no error handler protecting this step (except outputs)
 
   std::cout<<std::endl<< "Setup complete, entering main loop..." <<std::endl<<std::endl;
   clock_t tstart = clock();
