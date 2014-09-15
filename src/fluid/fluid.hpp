@@ -6,8 +6,7 @@
  * See LICENSE file for full public license information.
  *====================================================================================*/
 /*! \file fluid.hpp
- *  \brief defines derived class Fluid, based on base class Mesh
- *  contains data structures and functions for a Fluid stored on the Mesh
+ *  \brief defines Fluid class which implements data and functions for thermal fluid
  *====================================================================================*/
 
 // Athena headers
@@ -32,18 +31,14 @@ public:
   MeshBlock* pmy_block;    // ptr to MeshBlock containing this Fluid
 
   AthenaArray<Real> u,w;   // conserved and primitive variables
-  AthenaArray<Real> u1,w1; // conserved and primitive variables at the half-time step
+  AthenaArray<Real> u1,w1; // conserved and primitive variables at intermediate step
 
   AthenaArray<Real> g, g_inv;  // metric and its inverse
 
   FluidIntegrator *pf_integrator;   // integration algorithm
   FluidBoundaryConditions *pf_bcs;  // boundary conditions
-  FluidEqnOfState *pf_eos;          // equation of state
+  FluidEqnOfState *pf_eos;          // equation of state (including cons->prim func)
   FluidSourceTerms *pf_srcterms;    // physical source terms
-
-// conserved to primitive functions implemented in files in /convert_var
-  void ConservedToPrimitive(AthenaArray<Real> &c, AthenaArray<Real> &p_old,
-      AthenaArray<Real> &p);
 
   void NewTimeStep(MeshBlock *pmb);    // computes new timestep on a MeshBlock
   void InitFluid(ParameterInput *pin); // problem generator function (files in /pgen)
