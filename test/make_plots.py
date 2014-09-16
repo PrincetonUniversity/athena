@@ -54,15 +54,14 @@ def main(**kwargs):
       plot_shockset('plots/hydro_sr_shockset_gr', gr=True)
   elif problem == 'hydro_schwarzschild_1d' or problem == 'hydro_schwarzschild_2d':  # 1D radial accretion onto Schwarzschild BH
     if computation_needed:
-      configure_string = 'python configure.py \
-          --with-geometry=schwarzschild \
-          --with-coordinates=schwarzschild \
-          --with-eos=adiabatic \
-          --with-integrator=vl2 \
-          --with-rsolver=hlle \
-          --with-reconstruct=plm \
-          --with-problem=accretion \
-          --enable-general-relativity'
+      configure_string = 'python configure.py -g \
+          --prob=accretion_gr \
+          --coord=schwarzschild \
+          --eos=adiabatic \
+          --flux=hlle \
+          --order=plm \
+          --fint=vl2 \
+          --cxx=g++'
       make_string = 'make all'
       dimension_string = '_1d' if problem == 'hydro_schwarzschild_1d' else '_2d'
       name_string = 'hydro_schwarzschild_geodesic' + dimension_string
@@ -330,14 +329,14 @@ def run_old_shock(input_prefix, output_prefix, settings):
 def run_new_shock(input_prefix, output_prefix, settings):
 
   # Prepare strings
-  new_configure_string = 'python configure.py \
-      --with-coordinates=cartesian \
-      --with-eos=adiabatic \
-      --with-integrator=vl2 \
-      --with-rsolver=hlle \
-      --with-reconstruct=plm \
-      --with-problem=shock_tube \
-      --enable-special-relativity'
+  new_configure_string = 'python configure.py -s \
+      --prob=shock_tube_sr \
+      --coord=cartesian \
+      --eos=adiabatic \
+      --flux=hlle \
+      --order=plm \
+      --fint=vl2 \
+      --cxx=g++'
   new_make_string = 'make all'
   # TODO: change when -d option works
   #new_run_string = './athena -i inputs/hydro_sr/athinput.' + input_prefix + '{1} \
@@ -387,15 +386,14 @@ def run_new_shock(input_prefix, output_prefix, settings):
 def run_new_shock_gr(input_prefix, output_prefix, settings):
 
   # Prepare strings
-  new_configure_string = 'python configure.py \
-      --with-geometry=minkowski \
-      --with-coordinates=cartesian \
-      --with-eos=adiabatic \
-      --with-integrator=vl2 \
-      --with-rsolver=hlle \
-      --with-reconstruct=plm \
-      --with-problem=shock_tube \
-      --enable-general-relativity'
+  new_configure_string = 'python configure.py -g \
+      --prob=shock_tube_gr \
+      --coord=minkowski_cartesian \
+      --eos=adiabatic \
+      --flux=hlle \
+      --order=plm \
+      --fint=vl2 \
+      --cxx=g++'
   new_make_string = 'make all'
   # TODO: change when -d option works
   #new_run_string = './athena -i inputs/hydro_sr/athinput.' + input_prefix + '{1} \

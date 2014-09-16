@@ -361,7 +361,7 @@ Coordinates::~Coordinates()
 //   areas: 1D array of interface areas orthogonal to r
 // Notes:
 //   \Delta A = r^2 (-\Delta\cos\theta) \Delta\phi
-void Coordinates::Area1Face(const int k, const int j, const int il, const int iu,
+void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> *pareas)
 {
   Real &neg_delta_cos_theta = face1_area_j_(j);
@@ -385,7 +385,7 @@ void Coordinates::Area1Face(const int k, const int j, const int il, const int iu
 //   areas: 1D array of interface areas orthogonal to theta
 // Notes:
 //   \Delta A = 1/3 \Delta(r^3) \sin\theta \Delta\phi
-void Coordinates::Area2Face(const int k, const int j, const int il, const int iu,
+void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> *pareas)
 {
   Real &sin_theta = face2_area_j_(j);
@@ -409,7 +409,7 @@ void Coordinates::Area2Face(const int k, const int j, const int il, const int iu
 //   areas: 1D array of interface areas orthogonal to phi
 // Notes:
 //   \Delta A = 1/3 \Delta(r^3) (-\Delta\cos\theta)
-void Coordinates::Area3Face(const int k, const int j, const int il, const int iu,
+void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> *pareas)
 {
   Real &neg_delta_cos_theta = face3_area_j_(j);
@@ -454,9 +454,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 //   cons: full grid of conserved variables at end of half timestep
 // Outputs:
 //   cons: source terms added
-// Notes:
-//   sources assumed to be 0-initialized
-void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
+void Coordinates::CoordinateSourceTerms(Real dt, const AthenaArray<Real> &prim,
     AthenaArray<Real> &cons)
 {
   // Extract ratio of specific heats
@@ -493,11 +491,11 @@ void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
         Real &gamma_331 = gamma_313;
 
         // Extract primitives
-        Real &rho = prim(IDN,k,j,i);
-        Real &pgas = prim(IEN,k,j,i);
-        Real &v1 = prim(IVX,k,j,i);
-        Real &v2 = prim(IVY,k,j,i);
-        Real &v3 = prim(IVZ,k,j,i);
+        const Real &rho = prim(IDN,k,j,i);
+        const Real &pgas = prim(IEN,k,j,i);
+        const Real &v1 = prim(IVX,k,j,i);
+        const Real &v2 = prim(IVY,k,j,i);
+        const Real &v3 = prim(IVZ,k,j,i);
 
         // Calculate 4-velocity
         Real u0 = std::sqrt(-1.0 / (g00 + g11*v1*v1 + g22*v2*v2 + g33*v3*v3));

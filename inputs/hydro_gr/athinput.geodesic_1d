@@ -5,10 +5,15 @@ problem = GR hydro accretion in radial direction
 problem_id  = BHAccretion1D  # problem ID: basename of output filenames
 
 <output1>
-file_type   = tab                 # tabular data dump
-variable    = prim                # variables to be output
-data_format = %24.16e             # optional data format string
-dt          = 100.0               # time increment between outputs
+file_type   = tab      # tabular data dump
+variable    = prim     # variables to be output
+data_format = %24.16e  # optional data format string
+dt          = 100.0    # time increment between outputs
+
+<output2>
+file_type   = vtk    # vtk file
+variable    = prim   # variables to be output
+dt          = 100.0  # time increment between outputs
 
 <time>
 cfl_number = 0.4    # Courant-Friedrichs-Lewy number

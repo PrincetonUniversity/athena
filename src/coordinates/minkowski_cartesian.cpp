@@ -69,7 +69,7 @@ Coordinates::~Coordinates()
 //   areas: 1D array of interface areas orthogonal to x
 // Notes:
 //   \Delta A = \Delta y * \Delta z
-void Coordinates::Area1Face(const int k, const int j, const int il, const int iu,
+void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> *pareas)
 {
   Real &delta_y = pmy_block->dx2f(j);
@@ -92,7 +92,7 @@ void Coordinates::Area1Face(const int k, const int j, const int il, const int iu
 //   areas: 1D array of interface areas orthogonal to y
 // Notes:
 //   \Delta A = \Delta x * \Delta z
-void Coordinates::Area2Face(const int k, const int j, const int il, const int iu,
+void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> *pareas)
 {
   Real &delta_z = pmy_block->dx3f(k);
@@ -115,7 +115,7 @@ void Coordinates::Area2Face(const int k, const int j, const int il, const int iu
 //   areas: 1D array of interface areas orthogonal to z
 // Notes:
 //   \Delta A = \Delta x * \Delta y
-void Coordinates::Area3Face(const int k, const int j, const int il, const int iu,
+void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> *pareas)
 {
   Real &delta_y = pmy_block->dx2f(j);
@@ -162,8 +162,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 //   cons: source terms added
 // Notes:
 //   source terms all vanish identically
-//   sources assumed to be 0-initialized
-void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
+void Coordinates::CoordinateSourceTerms(Real dt, const AthenaArray<Real> &prim,
     AthenaArray<Real> &cons)
 {
   return;

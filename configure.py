@@ -10,10 +10,10 @@
 #   --prob=name       use src/pgen/name.cpp as the problem generator
 #   --coord=choice    use choice as the coordinate system
 #   --eos=choice      use choice as the equation of state
+#   --flux=choice     use choice as the Riemann solver
 #   -b                enable magnetic fields
 #   -s                enable special-relativity
 #   -g                enable general-relativity
-#   --flux=choice     use choice as the Riemann solver
 #   --order=choice    use choice as the spatial reconstruction algorithm
 #   --fint=choice     use choice as the fluid time-integration algorithm
 #   --cxx=choice      use choice as the C++ compiler
@@ -25,12 +25,18 @@ import argparse
 import glob
 import re
 
+# Set template and output filenames
+defsfile_input = 'src/defs.hpp.in'
+defsfile_output = 'src/defs.hpp'
+makefile_input = 'Makefile.in'
+makefile_output = 'Makefile'
+
 # Prepare parser, add each of the arguments 
 parser = argparse.ArgumentParser()
 
 # --prob=[name] argument
 pgen_directory = 'src/pgen/'
-# set choices to list of files in src/pgen/
+# set choices to list of .cpp files in src/pgen/
 pgen_choices = glob.glob(pgen_directory + '*.cpp')
 # remove 'src/pgen/' prefix and '.cpp' extension from filenames 
 pgen_choices = [choice[len(pgen_directory):-4] for choice in pgen_choices]
@@ -42,7 +48,8 @@ parser.add_argument('--prob',
 # --coord=[name] argument
 parser.add_argument('--coord',
     default='cartesian',
-    choices=['cartesian','cylindrical','spherical_polar','cylindrical-rphi'],
+    choices=['cartesian','cylindrical','spherical_polar','cylindrical-rphi',\
+        'minkowski_cartesian','schwarzschild'],
     help='selects coordinate system')
 
 # --eos=[name] argument
@@ -50,6 +57,12 @@ parser.add_argument('--eos',
     default='adiabatic',
     choices=['adiabatic','isothermal'],
     help='selects equation of state')
+
+# --flux=[name] argument
+parser.add_argument('--flux',
+    default='hlle',
+    choices=['hlle','hllc'],
+    help='selects Riemann solver')
 
 # -b argument
 parser.add_argument('-b',
@@ -68,12 +81,6 @@ parser.add_argument('-g',
     action='store_true',
     default=False,
     help='enables general relativity')
-
-# --flux=[name] argument
-parser.add_argument('--flux',
-    default='hlle',
-    choices=['hlle','hllc'],
-    help='selects Riemann solver')
 
 # --order=[name] argument
 parser.add_argument('--order',
@@ -99,19 +106,14 @@ parser.add_argument('-omp',
     default=False,
     help='enable parallelization with OpenMP')
 
+# Parse command-line inputs
 args = vars(parser.parse_args())
 
-# Set filenames
-makefile_input = 'Makefile.in'
-makefile_output = 'Makefile'
-defsfile_input = 'src/defs.hpp.in'
-defsfile_output = 'src/defs.hpp'
-
-# Prepare dictionaries
-makefile_options = {}
+# Prepare dictionaries of substitutions to be made
 definitions = {}
+makefile_options = {}
 
-# Set definitions and Makefile options  based on above arguments
+# Set definitions and Makefile options based on above arguments
 
 definitions['PROBLEM'] = args['prob']
 makefile_options['PROBLEM_FILE'] = args['prob'] + '.cpp'
@@ -126,18 +128,21 @@ if args['eos'] == 'adiabatic':
 if args['eos'] == 'isothermal':
   definitions['NFLUID_VARIABLES'] = '4'
 
+definitions['RSOLVER'] = args['flux']
+makefile_options['RSOLVER_FILE'] = args['flux']
+
 definitions['MAGNETIC_FIELDS_ENABLED'] = '1' if args['b'] else '0'
 makefile_options['EOS_FILE'] += '_mhd' if args['b'] else '_hydro'
 
 definitions['RELATIVISTIC_DYNAMICS'] = '1' if args['s'] or args['g'] else '0'
 if args['s']:
   makefile_options['EOS_FILE'] += '_sr'
+  makefile_options['RSOLVER_FILE'] += '_sr'
 if args['g']:
   makefile_options['EOS_FILE'] += '_gr'
+  makefile_options['RSOLVER_FILE'] += '_gr'
 makefile_options['EOS_FILE'] += '.cpp'
-
-definitions['RSOLVER'] = args['flux']
-makefile_options['RSOLVER_FILE'] = args['flux'] + '.cpp'
+makefile_options['RSOLVER_FILE'] += '.cpp'
 
 definitions['RECONSTRUCT'] = args['order']
 makefile_options['RECONSTRUCT_FILE'] = args['order'] + '.cpp'
@@ -154,7 +159,8 @@ if args['cxx'] == 'g++':
   makefile_options['COMPILER_FLAGS'] = '-O3'
   definitions['COMPILER_FLAGS'] = '-O3'
 
-definitions['OPENMP_OPTION'] = 'OPENMP_PARALLEL' if args['omp'] else 'NOT_OPENMP_PARALLEL'
+definitions['OPENMP_OPTION'] = 'OPENMP_PARALLEL' if args['omp'] \
+    else 'NOT_OPENMP_PARALLEL'
 if args['omp']:
   if args['cxx'] == 'g++':
     makefile_options['COMPILER_FLAGS'] += ' -fopenmp'
@@ -164,22 +170,22 @@ if args['omp']:
     definitions['COMPILER_FLAGS'] += ' -openmp'
 
 # Read templates
-with open(makefile_input, 'r') as current_file:
-  makefile_template = current_file.read()
 with open(defsfile_input, 'r') as current_file:
   defsfile_template = current_file.read()
+with open(makefile_input, 'r') as current_file:
+  makefile_template = current_file.read()
 
 # Make substitutions
-for key,val in makefile_options.iteritems():
-  makefile_template = re.sub(r'@{0}@'.format(key), val, makefile_template)
 for key,val in definitions.iteritems():
   defsfile_template = re.sub(r'@{0}@'.format(key), val, defsfile_template)
+for key,val in makefile_options.iteritems():
+  makefile_template = re.sub(r'@{0}@'.format(key), val, makefile_template)
 
 # Write output files
-with open(makefile_output, 'w') as current_file:
-  current_file.write(makefile_template)
 with open(defsfile_output, 'w') as current_file:
   current_file.write(defsfile_template)
+with open(makefile_output, 'w') as current_file:
+  current_file.write(makefile_template)
 
 # Finish with diagnostic output
 print('Your Athena++ distribution has now been configured with the following options:')

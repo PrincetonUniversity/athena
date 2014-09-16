@@ -2,7 +2,7 @@
 
 # General compiler specifications
 CXX := g++
-CXXFLAGS := -O0 -g $(INCLUDE_FLAGS)
+CXXFLAGS := -O3 $(INCLUDE_FLAGS)
 CPPFLAGS :=
 INCLUDE_FLAGS := -isystem /usr/local/include
 LIBRARY_FLAGS := -lm -lgtest
