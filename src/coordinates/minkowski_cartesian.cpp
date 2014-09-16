@@ -162,16 +162,16 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 
 // Function for computing source terms
 // Inputs:
-//   k: z-index
-//   j: y-index
-//   prim: 1D array of primitive values in cells
+//   dt: size of timestep
+//   prim: full grid of primitive values at beginning of half timestep
+//   cons: full grid of conserved variables at end of half timestep
 // Outputs:
-//   sources: array of source terms in 1D
+//   cons: source terms added
 // Notes:
 //   source terms all vanish identically
 //   sources assumed to be 0-initialized
-void Coordinates::CoordinateSourceTerms(const int k, const int j,
-    AthenaArray<Real> &prim, AthenaArray<Real> &sources)
+void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
+    AthenaArray<Real> &cons)
 {
   return;
 }

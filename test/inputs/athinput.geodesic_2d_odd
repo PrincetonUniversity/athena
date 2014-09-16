@@ -1,21 +1,19 @@
 <comment>
-problem = GR hydro accretion
+problem = GR hydro accretion in r-theta plane
 
 <job>
-problem_id  = BHAccretion  # problem ID: basename of output filenames
+problem_id  = BHAccretion2D  # problem ID: basename of output filenames
 
 <output1>
-file_type   = tab                 # tabular data dump
-variable    = prim                # variables to be output
-data_format = %24.16e             # optional data format string
-dt          = 100.0               # time increment between outputs
-x2_slice    = 1.5707963267948964  # slice in theta (pi/2)
-x3_slice    = 0.0                 # slice in phi
+file_type   = tab      # tabular data dump
+variable    = prim     # variables to be output
+data_format = %24.16e  # optional data format string
+dt          = 1.0      # time increment between outputs
 
 <time>
-cfl_number = 0.4    # Courant-Friedrichs-Lewy number
-nlim       = -1     # cycle limit
-tlim       = 100.0  # time limit
+cfl_number = 0.2  # Courant-Friedrichs-Lewy number
+nlim       = -1   # cycle limit
+tlim       = 1.0  # time limit
 
 <mesh>
 nx1    = 100                 # number of zones in r-direction
@@ -24,11 +22,11 @@ x1max  = 20.0                # outer r
 ix1_bc = 2                   # inner r boundary condition: outflow
 ox1_bc = 2                   # outer r boundary condition: outflow
 
-nx2    = 1                   # number of zones in theta-direction
-x2min  = 1.0707963267948964  # lower theta (pi/2 - 1/2)
-x2max  = 2.0707963267948964  # upper theta (pi/2 + 1/2)
-ix2_bc = 4                   # lower theta boundary condition: periodic
-ox2_bc = 4                   # upper theta boundary condition: periodic
+nx2    = 15                  # number of zones in theta-direction
+x2min  = 0.5235987755982988  # lower theta (pi/6)
+x2max  = 2.6179938779914944  # upper theta (5*pi/6)
+ix2_bc = 2                   # lower theta boundary condition: periodic
+ox2_bc = 2                   # upper theta boundary condition: periodic
 
 nx3    = 1                   # number of zones in phi-direction
 x3min  = -0.5                # minimum phi

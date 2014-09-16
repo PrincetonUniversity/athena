@@ -52,9 +52,9 @@ def main(**kwargs):
       run_new_shock_gr('mb_', 'hydro_sr_gr_new_', settings)
     if plots_needed:
       plot_shockset('plots/hydro_sr_shockset_gr', gr=True)
-  elif problem == 'hydro_schwarzschild':  # 1D radial accretion onto Schwarzschild BH
+  elif problem == 'hydro_schwarzschild_1d' or problem == 'hydro_schwarzschild_2d':  # 1D radial accretion onto Schwarzschild BH
     if computation_needed:
-      configure_string = './configure.py \
+      configure_string = 'python configure.py \
           --with-geometry=schwarzschild \
           --with-coordinates=schwarzschild \
           --with-eos=adiabatic \
@@ -64,22 +64,24 @@ def main(**kwargs):
           --with-problem=accretion \
           --enable-general-relativity'
       make_string = 'make all'
-      name_string = 'hydro_schwarzschild_geodesic'
+      dimension_string = '_1d' if problem == 'hydro_schwarzschild_1d' else '_2d'
+      name_string = 'hydro_schwarzschild_geodesic' + dimension_string
       if movie_needed:
         run_string = './athena \
-            -i ../inputs/hydro_gr/athinput.geodesic \
+            -i ../inputs/hydro_gr/athinput.geodesic{1} \
             job/problem_id={0} \
+            time/tlim=100.0 \
             output1/dt=1.0 \
-            time/tlim=80.0'.format(name_string)
+            output2/dt=1.0'.format(name_string, dimension_string)
       else:
         run_string = './athena \
-            -i ../inputs/hydro_gr/athinput.geodesic \
+            -i ../inputs/hydro_gr/athinput.geodesic{1} \
             job/problem_id={0} \
             output1/dt=100.0 \
-            time/tlim=100.0'.format(name_string)
+            time/tlim=100.0'.format(name_string, dimension_string)
       run_new(configure_string, make_string, run_string, name_string)
     if plots_needed:
-      plot_accretion('hydro_schwarzschild_geodesic', movie_needed)
+      plot_accretion_1d('hydro_schwarzschild_geodesic'+dimension_string, movie_needed)
   else:
     print('ERROR: problem not recognized')
 
@@ -170,7 +172,7 @@ def plot_shockset_aux(rows, cols, position, data_old, data_new, divisors, y_limi
       format(divisor_strings[0], divisor_strings[1], divisor_strings[2]))
 
 # Function for plotting accretion
-def plot_accretion(filename, movie_needed):
+def plot_accretion_1d(filename, movie_needed):
 
   # Prepare to make new plots
   print('deleting old plots...')
@@ -328,7 +330,7 @@ def run_old_shock(input_prefix, output_prefix, settings):
 def run_new_shock(input_prefix, output_prefix, settings):
 
   # Prepare strings
-  new_configure_string = './configure.py \
+  new_configure_string = 'python configure.py \
       --with-coordinates=cartesian \
       --with-eos=adiabatic \
       --with-integrator=vl2 \
@@ -385,7 +387,7 @@ def run_new_shock(input_prefix, output_prefix, settings):
 def run_new_shock_gr(input_prefix, output_prefix, settings):
 
   # Prepare strings
-  new_configure_string = './configure.py \
+  new_configure_string = 'python configure.py \
       --with-geometry=minkowski \
       --with-coordinates=cartesian \
       --with-eos=adiabatic \
@@ -445,9 +447,11 @@ def run_new(configure_string, make_string, run_string, name_string):
   # Delete old data
   print('deleting old data...')
   try:
-    os.system('rm -f data/{0}*.tab'.format(name_string))
+    os.system('rm -f data/{0}.*.tab'.format(name_string))
+    os.system('rm -f data/{0}.*.vtk'.format(name_string))
     # TODO: remove when -d option works
-    os.system('rm -f ../bin/{0}*.tab'.format(name_string))
+    os.system('rm -f ../bin/{0}.*.tab'.format(name_string))
+    os.system('rm -f ../bin/{0}.*.vtk'.format(name_string))
   except OSError as err:
     print('OS Error ({0}): {1}'.format(err.errno, err.strerror))
     exit()
@@ -470,7 +474,8 @@ def run_new(configure_string, make_string, run_string, name_string):
   try:
     os.system(run_string + ' &> /dev/null')
     # TODO: remove when -d option works
-    os.system('mv {0}*.tab {1}/data/.'.format(name_string, current_directory))
+    os.system('mv {0}.*.tab {1}/data/.'.format(name_string, current_directory))
+    os.system('mv {0}.*.vtk {1}/data/.'.format(name_string, current_directory))
     os.chdir(current_directory)
   except OSError as err:
     print('OS Error ({0}): {1}'.format(err.errno, err.strerror))

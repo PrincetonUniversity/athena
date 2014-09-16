@@ -20,6 +20,7 @@ ATHENA_SRC := $(wildcard ../src/*.cpp) \
 	      $(wildcard ../src/fluid/*.cpp) \
 	      $(wildcard ../src/fluid/bvals/*.cpp) \
 	      $(wildcard ../src/fluid/integrators/*.cpp) \
+	      $(wildcard ../src/fluid/srcterms/*.cpp) \
 	      $(wildcard ../src/outputs/*.cpp) \
 	      ../src/coordinates/$(COORDINATES_FILE) \
 	      ../src/fluid/eos/$(CONVERT_VAR_FILE) \
