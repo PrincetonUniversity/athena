@@ -75,8 +75,8 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
 #pragma omp parallel default(shared) num_threads(ATHENA_MAX_NUM_THREADS)
 {
-#pragma omp for schedule(dynamic,4)
   for (int k=kl; k<=ku; ++k){
+#pragma omp for schedule(static)
   for (int j=jl; j<=ju; ++j){
 #pragma simd
     for (int i=pmb->is-(NGHOST); i<=pmb->ie+(NGHOST); ++i){
@@ -111,7 +111,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 /* \!fn Real FluidEqnOfState::SoundSpeed(Real prim[5])
  * \brief returns adiabatic sound speed given vector of primitive variables  */
 
-Real FluidEqnOfState::SoundSpeed(Real prim[NVAR])
+Real FluidEqnOfState::SoundSpeed(const Real prim[NVAR])
 {
-  return GetGamma()*sqrt(prim[IEN]/prim[IDN]);
+  return sqrt(GetGamma()*prim[IEN]/prim[IDN]);
 }

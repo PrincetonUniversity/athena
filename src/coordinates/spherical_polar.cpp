@@ -25,6 +25,8 @@
 #include "../athena_arrays.hpp"   // AthenaArray
 #include "../parameter_input.hpp" // ParameterInput
 #include "../mesh.hpp"            // MeshBlock
+#include "../fluid/fluid.hpp"     // Fluid
+#include "../fluid/eos/eos.hpp"   // SoundSpeed()
 
 //======================================================================================
 //! \file spherical_polar.cpp
@@ -87,8 +89,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 // Allocate only those local scratch arrays needed for spherical polar coordinates
 
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  face_area.NewAthenaArray(ncells1);   // scratch used in integrator
-  cell_volume.NewAthenaArray(ncells1); // scratch used in integrator
   face1_area_i_.NewAthenaArray(ncells1);
   face2_area_i_.NewAthenaArray(ncells1);
   face3_area_i_.NewAthenaArray(ncells1);
@@ -134,9 +134,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 
 Coordinates::~Coordinates()
 {
-  face_area.DeleteAthenaArray();
-  cell_volume.DeleteAthenaArray();
-
   face1_area_i_.DeleteAthenaArray();
   face2_area_i_.DeleteAthenaArray();
   face3_area_i_.DeleteAthenaArray();
@@ -150,11 +147,17 @@ Coordinates::~Coordinates()
 }
 
 //--------------------------------------------------------------------------------------
+// Edge Length functions
+
+
+//--------------------------------------------------------------------------------------
+// Face Area functions
+
 // \!fn void Coordinates::Area1Face(const int k,const int j, const int il, const int iu,
 //        AthenaArray<Real> &area)
 // \brief functions to compute area of cell faces in each direction
 
-void Coordinates::Area1Face(const int k, const int j, const int il, const int iu,
+void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> *parea)
 {
 // area1 = r^2 sin[theta] dtheta dphi = r^2 d(-cos[theta]) dphi
@@ -166,7 +169,7 @@ void Coordinates::Area1Face(const int k, const int j, const int il, const int iu
   return;
 }
 
-void Coordinates::Area2Face(const int k, const int j, const int il, const int iu,
+void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> *parea)
 {
 // area2 = dr r sin[theta] dphi = d(r^2/2) sin[theta] dphi
@@ -178,7 +181,7 @@ void Coordinates::Area2Face(const int k, const int j, const int il, const int iu
   return;
 }
 
-void Coordinates::Area3Face(const int k, const int j, const int il, const int iu,
+void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> *parea)
 {
 // area3 = dr r dtheta = d(r^2/2) dtheta
@@ -191,6 +194,8 @@ void Coordinates::Area3Face(const int k, const int j, const int il, const int iu
 }
 
 //--------------------------------------------------------------------------------------
+// Cell Volume function
+
 // \!fn void Coordinates::CellVolume(const int k,const int j,const int il, const int iu,
 //        AthenaArray<Real> &vol)
 // \brief function to compute cell volume
@@ -208,14 +213,32 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 }
 
 //--------------------------------------------------------------------------------------
+// Cell Width functions
+
+Real Coordinates::VolumeCenterWidth1(const int k, const int j, const int i)
+{
+  return (pmy_block->dx1f(i));
+}
+
+Real Coordinates::VolumeCenterWidth2(const int k, const int j, const int i)
+{
+  return (pmy_block->x1v(i)*pmy_block->dx2f(j));
+}
+
+Real Coordinates::VolumeCenterWidth3(const int k, const int j, const int i)
+{
+  return (pmy_block->x1v(i)*sin(pmy_block->x2v(j))*pmy_block->dx3f(k));
+}
+
+//--------------------------------------------------------------------------------------
 // \!fn void Coordinates::CoordinateSourceTerms(const int k, const int j, Read dt,
 //        AthenaArray<Real> &prim, AthenaArray<Real> &cons)
 // \brief function to add coordinate source terms to input conserved variables
 
-void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
+void Coordinates::CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
   AthenaArray<Real> &cons)
 {
-  Real src[NVAR];
+  Real src[NVAR],dummy_arg[NVAR];
 
 // src_1 = < M_{theta theta} + M_{phi phi} ><1/r> = <M_{tt} + M_{pp}> d(r^2/3)d(r^3/3)
 // src_2 = -< M_{theta r} - cot[theta]M_{phi phi} ><1/r> 
@@ -227,8 +250,16 @@ void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
   for (int j=(pmy_block->js); j<=(pmy_block->je); ++j) {
 #pragma simd
     for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
-      Real m_tt = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM2,k,j,i) + prim(IEN,k,j,i);
-      Real m_pp = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM3,k,j,i) + prim(IEN,k,j,i);
+      Real m_tt = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM2,k,j,i);
+      Real m_pp = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM3,k,j,i);
+      if (NON_BAROTROPIC_EOS) {
+         m_tt += prim(IEN,k,j,i);
+         m_pp += prim(IEN,k,j,i);
+      } else {
+         Real iso_cs = pmy_block->pfluid->pf_eos->SoundSpeed(dummy_arg);
+         m_tt += (iso_cs*iso_cs)*prim(IDN,k,j,i);
+         m_pp += (iso_cs*iso_cs)*prim(IDN,k,j,i);
+      }
       src[IM1] = src_terms_i_(i)*(m_tt + m_pp);
 
       Real m_tr = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM1,k,j,i);

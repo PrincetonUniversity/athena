@@ -11,10 +11,10 @@
  *====================================================================================*/
 
 // Athena headers
-#include "../athena.hpp"  // macros, Real
+#include "../athena.hpp"         // macros, Real
 #include "../athena_arrays.hpp"  // AthenaArray
 
-// Declarations
+// forward declarations
 class MeshBlock;
 class ParameterInput;
 
@@ -28,15 +28,27 @@ public:
 
   MeshBlock *pmy_block;  // ptr to MeshBlock containing this Coordinates
 
-  void Area1Face(
-    const int k, const int j, const int il, const int iu, AthenaArray<Real> *parea);
-  void Area2Face(
-    const int k, const int j, const int il, const int iu, AthenaArray<Real> *parea);
-  void Area3Face(
-    const int k, const int j, const int il, const int iu, AthenaArray<Real> *parea);
-  void CellVolume(
-    const int k, const int j, const int il, const int iu, AthenaArray<Real> *pvol);
-  void CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim, AthenaArray<Real> &cons);
+// functions to compute length of edges, area of faces, and volumes of cells
+  Real Edge1Length();
+  Real Edge2Length();
+  Real Edge3Length();
+  void Face1Area(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> *parea);
+  void Face2Area(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> *parea);
+  void Face3Area(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> *parea);
+  void CellVolume(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> *pvol);
+
+//functions to compute physical width of cells, physical distance between points
+  Real VolumeCenterWidth1(const int k, const int j, const int i);
+  Real VolumeCenterWidth2(const int k, const int j, const int i);
+  Real VolumeCenterWidth3(const int k, const int j, const int i);
+  Real DistanceBetweenPoints(const Real pt1, const Real pt2);
+
+  void CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
+    AthenaArray<Real> &cons);
 
   void CellMetric(const int k, const int j, AthenaArray<Real> &g,
       AthenaArray<Real> &g_inv);
@@ -48,10 +60,8 @@ public:
   void FluxToGlobal3(const int k, const int j, AthenaArray<Real> *pflux);
   void PrimToCons(AthenaArray<Real> &prim, AthenaArray<Real> &cons);
 
-// these are scratch arrays used by integrators and allocated in this class
-  AthenaArray<Real> face_area, cell_volume;
-
 private:
+// scratch arrays containing precomputed factors used in class functions
   AthenaArray<Real> face1_area_i_, face1_area_j_;
   AthenaArray<Real> face2_area_i_, face2_area_j_;
   AthenaArray<Real> face3_area_i_, face3_area_j_;

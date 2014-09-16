@@ -6,20 +6,10 @@
  * See LICENSE file for full public license information.
  *====================================================================================*/
 /*! \file athena.hpp
- *  \brief contains Athena++ specific types, structures, macros, etc.
+ *  \brief contains Athena++ general purpose types, structures, enums, etc.
  *====================================================================================*/
 
 #include "defs.hpp"
-
-#define PI 3.14159265358979323846
-#define TINY_NUMBER 1.0e-20
-#define HUGE_NUMBER 1.0e+36
-
-/*
-#define COORDINATE_SYSTEM spherical_polar_coordinates
-#define RIEMANN_SOLVER hllc_hydro_solver
-#define RECONSTRUCTION_ALGORITHM piecewise_linear_method
-*/
 
 typedef double Real;
 

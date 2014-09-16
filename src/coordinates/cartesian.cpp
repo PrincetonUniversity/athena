@@ -74,14 +74,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
       pmb->dx3v(k) = pmb->x3v(k+1) - pmb->x3v(k);
     }
   }
-
-// Allocate memory for scratch arrays used in integrator, and internal scratch arrays
-// For cartesian coordinates, no local scratch arrays are needed
-
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-
-  face_area.NewAthenaArray(ATHENA_MAX_NUM_THREADS,ncells1);
-  cell_volume.NewAthenaArray(ATHENA_MAX_NUM_THREADS,ncells1);
 }
 
 // destructor
@@ -89,16 +81,20 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 Coordinates::~Coordinates()
 {
   pmy_block = NULL; // MeshBlock destructor will free this memory
-  face_area.DeleteAthenaArray();
-  cell_volume.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------
-/* \!fn void Coordinates::Area1Face(const int k,const int j, const int il, const int iu,
+// Edge Length functions
+
+
+//--------------------------------------------------------------------------------------
+// Face Area functions
+
+/* \!fn void Coordinates::Face1Area(const int k,const int j, const int il, const int iu,
       AthenaArray<Real> &area)
  * \brief  functions to compute area of cell faces in each direction    */
 
-void Coordinates::Area1Face(const int k, const int j, const int il, const int iu,
+void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> *parea)
 {
 #pragma simd
@@ -109,7 +105,7 @@ void Coordinates::Area1Face(const int k, const int j, const int il, const int iu
   return;
 }
 
-void Coordinates::Area2Face(const int k, const int j, const int il, const int iu,
+void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> *parea)
 {
   AthenaArray<Real> dx1f = pmy_block->dx1f.ShallowCopy();
@@ -122,7 +118,7 @@ void Coordinates::Area2Face(const int k, const int j, const int il, const int iu
   return;
 }
 
-void Coordinates::Area3Face(const int k, const int j, const int il, const int iu,
+void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> *parea)
 {
   AthenaArray<Real> dx1f = pmy_block->dx1f.ShallowCopy();
@@ -136,6 +132,8 @@ void Coordinates::Area3Face(const int k, const int j, const int il, const int iu
 }
 
 //--------------------------------------------------------------------------------------
+// Cell Volume function
+
 /* \!fn void Coordinates::CellVolume(const int k,const int j,const int il, const int iu,
  *   AthenaArray<Real> &vol)
  * \brief function to compute cell volume    */
@@ -154,11 +152,29 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 }
 
 //--------------------------------------------------------------------------------------
+// Cell Width functions
+
+Real Coordinates::VolumeCenterWidth1(const int k, const int j, const int i)
+{
+  return (pmy_block->dx1f(i));
+}
+
+Real Coordinates::VolumeCenterWidth2(const int k, const int j, const int i)
+{
+  return (pmy_block->dx2f(j));
+}
+
+Real Coordinates::VolumeCenterWidth3(const int k, const int j, const int i)
+{
+  return (pmy_block->dx3f(k));
+}
+
+//--------------------------------------------------------------------------------------
 /* \!fn void Coordinates::CoordinateSourceTerms(
  *   const int k, const int j, AthenaArray<Real> &prim, AthenaArray<Real> &src)
  * \brief function to compute coordinate source terms (no-op function for cartesian)  */
 
-void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
+void Coordinates::CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
   AthenaArray<Real> &src)
 {
   return;

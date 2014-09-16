@@ -55,7 +55,12 @@ void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 {
   Fluid *pf = pmb->pfluid;;
   int tid=0;
-  AthenaArray<Real> *pvol = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
+
+  AthenaArray<Real> cell_volume;
+  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
+  cell_volume.NewAthenaArray(ATHENA_MAX_NUM_THREADS,ncells1);
+
+  AthenaArray<Real> *pvol = cell_volume.ShallowSlice(tid,1);
 
 // add OutputData header
 
@@ -129,6 +134,8 @@ void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
   pod->data_header.jl = 1; pod->data_header.ju = 1;
   pod->data_header.kl = 1; pod->data_header.ku = 1;
   pod->data_header.ndata = 1;
+
+//  cell_volume.DeleteAthenaArray();
 
   return;
 }

@@ -58,10 +58,6 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
 
   AthenaArray<Real> src = src_.ShallowCopy();
 
-//--------------------------------------------------------------------------------------
-// i-direction 
-
-int count=0;
 #pragma omp parallel default(shared) private(tid) num_threads(ATHENA_MAX_NUM_THREADS)
 {
 #ifdef OPENMP_PARALLEL
@@ -70,99 +66,90 @@ int count=0;
   AthenaArray<Real> *pwl = wl_.ShallowSlice(tid,1);
   AthenaArray<Real> *pwr = wr_.ShallowSlice(tid,1);
   AthenaArray<Real> *pflx = flx_.ShallowSlice(tid,1);
-  AthenaArray<Real> *parea = pmb->pcoord->face_area.ShallowSlice(tid,1);
-  AthenaArray<Real> *pvol  = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
+  AthenaArray<Real> *parea = face_area_.ShallowSlice(tid,1);
+  AthenaArray<Real> *pvol  = cell_volume_.ShallowSlice(tid,1);
+
+//--------------------------------------------------------------------------------------
+// i-direction 
 
   for (int k=ks; k<=ke; ++k){
-#pragma omp for schedule(dynamic,2)
 
-  for (int j=js; j<=je; ++j){
+#pragma omp for schedule(static)
+    for (int j=js; j<=je; ++j){
 
-    ReconstructionFuncX1(k,j,is,ie+1,w,pwl,pwr);
+      ReconstructionFuncX1(k,j,is,ie+1,w,pwl,pwr);
 
-    RiemannSolver(k,j,is,ie+1,IVX,IVY,IVZ,pwl,pwr,pflx);
+      RiemannSolver(k,j,is,ie+1,IVX,IVY,IVZ,pwl,pwr,pflx);
 
-    pmb->pcoord->Area1Face(k,j,is,ie+1,parea);
-    pmb->pcoord->CellVolume(k,j,is,ie,pvol);
+      pmb->pcoord->Face1Area(k,j,is,ie+1,parea);
+      pmb->pcoord->CellVolume(k,j,is,ie,pvol);
 
-    for (int n=0; n<NVAR; ++n){
+      for (int n=0; n<NVAR; ++n){
 #pragma simd
-      for (int i=is; i<=ie; ++i){
-        Real& ui  = u (n,k,j,i);
-        Real& u1i = u1(n,k,j,i);
-        Real& flxi   = (*pflx)(n,  i);
-        Real& flxip1 = (*pflx)(n,i+1);
+        for (int i=is; i<=ie; ++i){
+          Real& ui  = u (n,k,j,i);
+          Real& u1i = u1(n,k,j,i);
+          Real& flxi   = (*pflx)(n,  i);
+          Real& flxip1 = (*pflx)(n,i+1);
 
-        Real& area_i   = (*parea)(i);
-        Real& area_ip1 = (*parea)(i+1);
-        Real& dvol = (*pvol)(i);
+          Real& area_i   = (*parea)(i);
+          Real& area_ip1 = (*parea)(i+1);
+          Real& dvol = (*pvol)(i);
  
-        u1i = ui - 0.5*dt*(area_ip1*flxip1 - area_i*flxi)/dvol;
+          u1i = ui - 0.5*dt*(area_ip1*flxip1 - area_i*flxi)/dvol;
+        }
       }
     }
-
-  }}
-}
+  }
 
 //--------------------------------------------------------------------------------------
 // j-direction
 
   if (pmb->block_size.nx2 > 1) {
 
-#pragma omp parallel default(shared) private(tid) num_threads(ATHENA_MAX_NUM_THREADS)
-{
-#ifdef OPENMP_PARALLEL
-    tid=omp_get_thread_num();
-#endif
-    AthenaArray<Real> *pwl = wl_.ShallowSlice(tid,1);
-    AthenaArray<Real> *pwr = wr_.ShallowSlice(tid,1);
-    AthenaArray<Real> *pflx = flx_.ShallowSlice(tid,1);
-    AthenaArray<Real> *parea = pmb->pcoord->face_area.ShallowSlice(tid,1);
-    AthenaArray<Real> *pvol  = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
-
     for (int k=ks; k<=ke; ++k){
-#pragma omp for schedule(dynamic,2)
 
-    for (int j=js; j<=je+1; ++j){
+#pragma omp for schedule(static)
+      for (int j=js; j<=je+1; ++j){
 
-      ReconstructionFuncX2(k,j,is,ie,w,pwl,pwr);
+        ReconstructionFuncX2(k,j,is,ie,w,pwl,pwr);
 
-      RiemannSolver(k,j,is,ie,IVY,IVZ,IVX,pwl,pwr,pflx); 
+        RiemannSolver(k,j,is,ie,IVY,IVZ,IVX,pwl,pwr,pflx); 
 
-      pmb->pcoord->Area2Face(k,j,is,ie,parea);
+        pmb->pcoord->Face2Area(k,j,is,ie,parea);
 
-      if (j>js) {
-        pmb->pcoord->CellVolume(k,j-1,is,ie,pvol);
-        for (int n=0; n<NVAR; ++n){
+        if (j>js) {
+          pmb->pcoord->CellVolume(k,j-1,is,ie,pvol);
+          for (int n=0; n<NVAR; ++n){
 #pragma simd
-          for (int i=is; i<=ie; ++i){
-            Real& u1jm1 = u1(n,k,j-1,i);
-            Real& flxj  = (*pflx)(n,i);
-            Real& area_i   = (*parea)(i);
-            Real& dvol = (*pvol)(i);
+            for (int i=is; i<=ie; ++i){
+              Real& u1jm1 = u1(n,k,j-1,i);
+              Real& flxj  = (*pflx)(n,i);
+              Real& area_i   = (*parea)(i);
+              Real& dvol = (*pvol)(i);
   
-            u1jm1 -= 0.5*dt*area_i*flxj/dvol;
+              u1jm1 -= 0.5*dt*area_i*flxj/dvol;
+            }
           }
         }
-      }
 
-      if (j<(je+1)) {
-        pmb->pcoord->CellVolume(k,j,is,ie,pvol);
-        for (int n=0; n<NVAR; ++n){
+        if (j<(je+1)) {
+          pmb->pcoord->CellVolume(k,j,is,ie,pvol);
+          for (int n=0; n<NVAR; ++n){
 #pragma simd
-          for (int i=is; i<=ie; ++i){
-            Real& u1j   = u1(n,k,j  ,i);
-            Real& flxj  = (*pflx)(n,i);
-            Real& area_i   = (*parea)(i);
-            Real& dvol = (*pvol)(i);
+            for (int i=is; i<=ie; ++i){
+              Real& u1j   = u1(n,k,j  ,i);
+              Real& flxj  = (*pflx)(n,i);
+              Real& area_i   = (*parea)(i);
+              Real& dvol = (*pvol)(i);
 
-            u1j   += 0.5*dt*area_i*flxj/dvol;
+              u1j   += 0.5*dt*area_i*flxj/dvol;
+            }
           }
         }
-      }
 
-    }}
-}
+      }
+    }
   }
 
 //--------------------------------------------------------------------------------------
@@ -170,60 +157,51 @@ int count=0;
 
   if (pmb->block_size.nx3 > 1) {
 
-#pragma omp parallel default(shared) private(tid) num_threads(ATHENA_MAX_NUM_THREADS)
-{
-#ifdef OPENMP_PARALLEL
-    tid=omp_get_thread_num();
-#endif
-    AthenaArray<Real> *pwl = wl_.ShallowSlice(tid,1);
-    AthenaArray<Real> *pwr = wr_.ShallowSlice(tid,1);
-    AthenaArray<Real> *pflx = flx_.ShallowSlice(tid,1);
-    AthenaArray<Real> *parea = pmb->pcoord->face_area.ShallowSlice(tid,1);
-    AthenaArray<Real> *pvol  = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
-
     for (int k=ks; k<=ke+1; ++k){
-#pragma omp for schedule(dynamic,2)
-    for (int j=js; j<=je; ++j){
 
-      ReconstructionFuncX3(k,j,is,ie,w,pwl,pwr);
+#pragma omp for schedule(static)
+      for (int j=js; j<=je; ++j){
 
-      RiemannSolver(k,j,is,ie,IVZ,IVX,IVY,pwl,pwr,pflx);
+        ReconstructionFuncX3(k,j,is,ie,w,pwl,pwr);
 
-      pmb->pcoord->Area3Face(k,j,is,ie,parea);
+        RiemannSolver(k,j,is,ie,IVZ,IVX,IVY,pwl,pwr,pflx);
 
-      if (k>ks) {
-        pmb->pcoord->CellVolume(k-1,j,is,ie,pvol);
-        for (int n=0; n<NVAR; ++n){
+        pmb->pcoord->Face3Area(k,j,is,ie,parea);
+  
+        if (k>ks) {
+          pmb->pcoord->CellVolume(k-1,j,is,ie,pvol);
+          for (int n=0; n<NVAR; ++n){
 #pragma simd
-          for (int i=is; i<=ie; ++i){
-            Real& u1km1 = u1(n,k-1,j,i);
-            Real& flxk = (*pflx)(n,i);
-            Real& area_i   = (*parea)(i);
-            Real& dvol = (*pvol)(i);
+            for (int i=is; i<=ie; ++i){
+              Real& u1km1 = u1(n,k-1,j,i);
+              Real& flxk = (*pflx)(n,i);
+              Real& area_i   = (*parea)(i);
+              Real& dvol = (*pvol)(i);
 
-            u1km1 -= 0.5*dt*area_i*flxk/dvol;
+              u1km1 -= 0.5*dt*area_i*flxk/dvol;
+            }
           }
         }
-      }
 
-      if (k<(ke+1)) {
-        pmb->pcoord->CellVolume(k,j,is,ie,pvol);
-        for (int n=0; n<NVAR; ++n){
+        if (k<(ke+1)) {
+          pmb->pcoord->CellVolume(k,j,is,ie,pvol);
+          for (int n=0; n<NVAR; ++n){
 #pragma simd
-          for (int i=is; i<=ie; ++i){
-            Real& u1k   = u1(n,k  ,j,i);
-            Real& flxk = (*pflx)(n,i);
-            Real& area_i   = (*parea)(i);
-            Real& dvol = (*pvol)(i);
+            for (int i=is; i<=ie; ++i){
+              Real& u1k   = u1(n,k  ,j,i);
+              Real& flxk = (*pflx)(n,i);
+              Real& area_i   = (*parea)(i);
+              Real& dvol = (*pvol)(i);
 
-            u1k += 0.5*dt*area_i*flxk/dvol;
+              u1k += 0.5*dt*area_i*flxk/dvol;
+            }
           }
         }
-      }
 
-    }}
-}
+      }
+    }
   }
+} // end of omp parallel region
 
 //--------------------------------------------------------------------------------------
 //  Add source terms for half a timestep
@@ -255,107 +233,97 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 
   AthenaArray<Real> src = src_.ShallowCopy();
  
-//--------------------------------------------------------------------------------------
-// i-direction 
-
 #pragma omp parallel default(shared) private(tid) num_threads(ATHENA_MAX_NUM_THREADS)
 {
 #ifdef OPENMP_PARALLEL
-  tid=omp_get_thread_num();;
+  tid=omp_get_thread_num();
 #endif
   AthenaArray<Real> *pwl = wl_.ShallowSlice(tid,1);
   AthenaArray<Real> *pwr = wr_.ShallowSlice(tid,1);
   AthenaArray<Real> *pflx = flx_.ShallowSlice(tid,1);
-  AthenaArray<Real> *parea = pmb->pcoord->face_area.ShallowSlice(tid,1);
-  AthenaArray<Real> *pvol  = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
+  AthenaArray<Real> *parea = face_area_.ShallowSlice(tid,1);
+  AthenaArray<Real> *pvol  = cell_volume_.ShallowSlice(tid,1);
+
+//--------------------------------------------------------------------------------------
+// i-direction 
 
   for (int k=ks; k<=ke; ++k){
-#pragma omp for schedule(dynamic,2)
-  for (int j=js; j<=je; ++j){
 
-    ReconstructionFuncX1(k,j,is,ie+1,w1,pwl,pwr);
+#pragma omp for schedule(static)
+    for (int j=js; j<=je; ++j){
 
-    RiemannSolver(k,j,is,ie+1,IVX,IVY,IVZ,pwl,pwr,pflx); 
+      ReconstructionFuncX1(k,j,is,ie+1,w1,pwl,pwr);
 
-    pmb->pcoord->Area1Face(k,j,is,ie+1,parea);
-    pmb->pcoord->CellVolume(k,j,is,ie,pvol);
+      RiemannSolver(k,j,is,ie+1,IVX,IVY,IVZ,pwl,pwr,pflx); 
 
-    for (int n=0; n<NVAR; ++n){
+      pmb->pcoord->Face1Area(k,j,is,ie+1,parea);
+      pmb->pcoord->CellVolume(k,j,is,ie,pvol);
+
+      for (int n=0; n<NVAR; ++n){
 #pragma simd
-      for (int i=is; i<=ie; ++i){
-        Real& ui  = u (n,k,j,i);
-        Real& flxi   = (*pflx)(n,  i);
-        Real& flxip1 = (*pflx)(n,i+1);
+        for (int i=is; i<=ie; ++i){
+          Real& ui  = u (n,k,j,i);
+          Real& flxi   = (*pflx)(n,  i);
+          Real& flxip1 = (*pflx)(n,i+1);
 
-        Real& area_i   = (*parea)(i);
-        Real& area_ip1 = (*parea)(i+1);
-        Real& dvol = (*pvol)(i);
- 
-        ui -= dt*(area_ip1*flxip1 - area_i*flxi)/dvol;
+          Real& area_i   = (*parea)(i);
+          Real& area_ip1 = (*parea)(i+1);
+          Real& dvol = (*pvol)(i);
+   
+          ui -= dt*(area_ip1*flxip1 - area_i*flxi)/dvol;
+        }
       }
     }
-
-  }}
-}
+  }
 
 //--------------------------------------------------------------------------------------
 // j-direction
 
   if (pmb->block_size.nx2 > 1) {
 
-#pragma omp parallel default(shared) private(tid) num_threads(ATHENA_MAX_NUM_THREADS)
-{
-#ifdef OPENMP_PARALLEL
-    tid=omp_get_thread_num();;
-#endif
-    AthenaArray<Real> *pwl = wl_.ShallowSlice(tid,1);
-    AthenaArray<Real> *pwr = wr_.ShallowSlice(tid,1);
-    AthenaArray<Real> *pflx = flx_.ShallowSlice(tid,1);
-    AthenaArray<Real> *parea = pmb->pcoord->face_area.ShallowSlice(tid,1);
-    AthenaArray<Real> *pvol  = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
-
     for (int k=ks; k<=ke; ++k){
-#pragma omp for schedule(dynamic,2)
-    for (int j=js; j<=je+1; ++j){
 
-      ReconstructionFuncX2(k,j,is,ie,w1,pwl,pwr);
+#pragma omp for schedule(static)
+      for (int j=js; j<=je+1; ++j){
 
-      RiemannSolver(k,j,is,ie,IVY,IVZ,IVX,pwl,pwr,pflx); 
+        ReconstructionFuncX2(k,j,is,ie,w1,pwl,pwr);
 
-      pmb->pcoord->Area2Face(k,j,is,ie,parea);
+        RiemannSolver(k,j,is,ie,IVY,IVZ,IVX,pwl,pwr,pflx); 
 
-      if (j>js){
-        pmb->pcoord->CellVolume(k,j-1,is,ie,pvol);
-        for (int n=0; n<NVAR; ++n){
+        pmb->pcoord->Face2Area(k,j,is,ie,parea);
+
+        if (j>js){
+          pmb->pcoord->CellVolume(k,j-1,is,ie,pvol);
+          for (int n=0; n<NVAR; ++n){
 #pragma simd
-          for (int i=is; i<=ie; ++i){
-            Real& ujm1 = u(n,k,j-1,i);
-            Real& flxj  = (*pflx)(n,i);
-            Real& area_i   = (*parea)(i);
-            Real& dvol = (*pvol)(i);
+            for (int i=is; i<=ie; ++i){
+              Real& ujm1 = u(n,k,j-1,i);
+              Real& flxj  = (*pflx)(n,i);
+              Real& area_i   = (*parea)(i);
+              Real& dvol = (*pvol)(i);
   
-            ujm1 -= dt*area_i*flxj/dvol;
+              ujm1 -= dt*area_i*flxj/dvol;
+            }
           }
         }
-      }
 
-      if (j<(je+1)){
-        pmb->pcoord->CellVolume(k,j,is,ie,pvol);
-        for (int n=0; n<NVAR; ++n){
+        if (j<(je+1)){
+          pmb->pcoord->CellVolume(k,j,is,ie,pvol);
+          for (int n=0; n<NVAR; ++n){
 #pragma simd
-          for (int i=is; i<=ie; ++i){
-            Real& uj   = u(n,k,j  ,i);
-            Real& flxj  = (*pflx)(n,i);
-            Real& area_i   = (*parea)(i);
-            Real& dvol = (*pvol)(i);
+            for (int i=is; i<=ie; ++i){
+              Real& uj   = u(n,k,j  ,i);
+              Real& flxj  = (*pflx)(n,i);
+              Real& area_i   = (*parea)(i);
+              Real& dvol = (*pvol)(i);
   
-            uj += dt*area_i*flxj/dvol;
+              uj += dt*area_i*flxj/dvol;
+            }
           }
         }
-      }
 
-    }}
-}
+      }
+    }
   }
 
 //--------------------------------------------------------------------------------------
@@ -363,60 +331,51 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 
   if (pmb->block_size.nx3 > 1) {
 
-#pragma omp parallel default(shared) private(tid) num_threads(ATHENA_MAX_NUM_THREADS)
-{
-#ifdef OPENMP_PARALLEL
-    tid=omp_get_thread_num();;
-#endif
-    AthenaArray<Real> *pwl = wl_.ShallowSlice(tid,1);
-    AthenaArray<Real> *pwr = wr_.ShallowSlice(tid,1);
-    AthenaArray<Real> *pflx = flx_.ShallowSlice(tid,1);
-    AthenaArray<Real> *parea = pmb->pcoord->face_area.ShallowSlice(tid,1);
-    AthenaArray<Real> *pvol  = pmb->pcoord->cell_volume.ShallowSlice(tid,1);
-
     for (int k=ks; k<=ke+1; ++k){
-#pragma omp for schedule(dynamic,2)
-    for (int j=js; j<=je; ++j){
 
-      ReconstructionFuncX3(k,j,is,ie,w1,pwl,pwr);
+#pragma omp for schedule(static)
+      for (int j=js; j<=je; ++j){
 
-      RiemannSolver(k,j,is,ie,IVZ,IVX,IVY,pwl,pwr,pflx);
+        ReconstructionFuncX3(k,j,is,ie,w1,pwl,pwr);
 
-      pmb->pcoord->Area3Face(k,j,is,ie,parea);
+        RiemannSolver(k,j,is,ie,IVZ,IVX,IVY,pwl,pwr,pflx);
 
-      if (k>ks){
-        pmb->pcoord->CellVolume(k-1,j,is,ie,pvol);
-        for (int n=0; n<NVAR; ++n){
+        pmb->pcoord->Face3Area(k,j,is,ie,parea);
+
+        if (k>ks){
+          pmb->pcoord->CellVolume(k-1,j,is,ie,pvol);
+          for (int n=0; n<NVAR; ++n){
 #pragma simd
-          for (int i=is; i<=ie; ++i){
-            Real& ukm1 = u(n,k-1,j,i);
-            Real& flxk = (*pflx)(n,i);
-            Real& area_i   = (*parea)(i);
-            Real& dvol = (*pvol)(i);
-
-            ukm1 -= dt*area_i*flxk/dvol;
+            for (int i=is; i<=ie; ++i){
+              Real& ukm1 = u(n,k-1,j,i);
+              Real& flxk = (*pflx)(n,i);
+              Real& area_i   = (*parea)(i);
+              Real& dvol = (*pvol)(i);
+  
+              ukm1 -= dt*area_i*flxk/dvol;
+            }
           }
         }
-      }
 
-      if (k<(ke+1)){
-        pmb->pcoord->CellVolume(k,j,is,ie,pvol);
-        for (int n=0; n<NVAR; ++n){
+        if (k<(ke+1)){
+          pmb->pcoord->CellVolume(k,j,is,ie,pvol);
+          for (int n=0; n<NVAR; ++n){
 #pragma simd
-          for (int i=is; i<=ie; ++i){
-            Real& uk   = u(n,k  ,j,i);
-            Real& flxk = (*pflx)(n,i);
-            Real& area_i   = (*parea)(i);
-            Real& dvol = (*pvol)(i);
+            for (int i=is; i<=ie; ++i){
+              Real& uk   = u(n,k  ,j,i);
+              Real& flxk = (*pflx)(n,i);
+              Real& area_i   = (*parea)(i);
+              Real& dvol = (*pvol)(i);
 
-            uk   += dt*area_i*flxk/dvol;
+              uk   += dt*area_i*flxk/dvol;
+            }
           }
         }
-      }
 
-    }}
-}
+      }
+    }
   }
+} // end of omp parallel region
 
 //--------------------------------------------------------------------------------------
 //  Add source terms for a full timestep

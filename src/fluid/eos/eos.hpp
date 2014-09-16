@@ -29,7 +29,7 @@ public:
   void ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &prim_old,
     AthenaArray<Real> &prim);
 
-  Real SoundSpeed(Real prim[NVAR]); 
+  Real SoundSpeed(const Real prim[NVAR]); 
   Real GetGamma() const {return gamma_;}
 
 private:

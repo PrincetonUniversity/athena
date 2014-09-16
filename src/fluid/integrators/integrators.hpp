@@ -29,23 +29,22 @@ public:
   void Predict(MeshBlock *pmb);
   void Correct(MeshBlock *pmb);
 
-  void RiemannSolver(const int k, const int j,
-    const int il, const int iu, const int ivx, const int ivy, const int ivz,
+  void RiemannSolver(const int k, const int j, const int il, const int iu,
+    const int ivx, const int ivy, const int ivz,
     AthenaArray<Real> *pwl, AthenaArray<Real> *pwr, AthenaArray<Real> *pflx);
 
-  void ReconstructionFuncX1(
-    const int k, const int j, const int il, const int iu, 
+  void ReconstructionFuncX1(const int k, const int j, const int il, const int iu, 
     AthenaArray<Real> &w, AthenaArray<Real> *pwl, AthenaArray<Real> *pwr);
 
-  void ReconstructionFuncX2(
-    const int k, const int j, const int il, const int iu, 
+  void ReconstructionFuncX2(const int k, const int j, const int il, const int iu, 
     AthenaArray<Real> &w, AthenaArray<Real> *pwl, AthenaArray<Real> *pwr);
 
-  void ReconstructionFuncX3(
-    const int k, const int j, const int il, const int iu, 
+  void ReconstructionFuncX3(const int k, const int j, const int il, const int iu, 
     AthenaArray<Real> &w, AthenaArray<Real> *pwl, AthenaArray<Real> *pwr);
 
 private:
-  AthenaArray<Real> wl_,wr_,flx_,src_; // 1D scratch vectors used in integrator
+// scratch space used in integrator
+  AthenaArray<Real> wl_, wr_, flx_, src_; 
+  AthenaArray<Real> face_area_, cell_volume_;
 };
 #endif
