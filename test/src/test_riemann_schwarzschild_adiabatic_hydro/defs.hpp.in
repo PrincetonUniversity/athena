@@ -15,10 +15,10 @@
 // macros which define physics and algorithms
 
 // problem generator 
-#define PROBLEM_GENERATOR "shock_tube_gr"
+#define PROBLEM_GENERATOR "accretion_gr"
 
 // coordinate system
-#define COORDINATE_SYSTEM "minkowski_cartesian"
+#define COORDINATE_SYSTEM "schwarzschild"
 
 // non-barotropic equation of state (i.e. P not simply a func of rho)? default=1 (true)
 #define NON_BAROTROPIC_EOS 1

@@ -69,7 +69,7 @@ Coordinates::~Coordinates()
 //   areas: 1D array of interface areas orthogonal to x
 // Notes:
 //   \Delta A = \Delta y * \Delta z
-void Coordinates::Area1Face(const int k, const int j, const int il, const int iu,
+void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> *pareas)
 {
   Real &delta_y = pmy_block->dx2f(j);
@@ -92,7 +92,7 @@ void Coordinates::Area1Face(const int k, const int j, const int il, const int iu
 //   areas: 1D array of interface areas orthogonal to y
 // Notes:
 //   \Delta A = \Delta x * \Delta z
-void Coordinates::Area2Face(const int k, const int j, const int il, const int iu,
+void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> *pareas)
 {
   Real &delta_z = pmy_block->dx3f(k);
@@ -115,7 +115,7 @@ void Coordinates::Area2Face(const int k, const int j, const int il, const int iu
 //   areas: 1D array of interface areas orthogonal to z
 // Notes:
 //   \Delta A = \Delta x * \Delta y
-void Coordinates::Area3Face(const int k, const int j, const int il, const int iu,
+void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> *pareas)
 {
   Real &delta_y = pmy_block->dx2f(j);
@@ -155,16 +155,15 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 
 // Function for computing source terms
 // Inputs:
-//   k: z-index
-//   j: y-index
-//   prim: 1D array of primitive values in cells
+//   dt: size of timestep
+//   prim: full grid of primitive values at beginning of half timestep
+//   cons: full grid of conserved variables at end of half timestep
 // Outputs:
-//   sources: array of source terms in 1D
+//   cons: source terms added
 // Notes:
 //   source terms all vanish identically
-//   sources assumed to be 0-initialized
-void Coordinates::CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
-  AthenaArray<Real> &sources)
+void Coordinates::CoordinateSourceTerms(Real dt, const AthenaArray<Real> &prim,
+    AthenaArray<Real> &cons)
 {
   return;
 }

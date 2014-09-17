@@ -361,7 +361,7 @@ Coordinates::~Coordinates()
 //   areas: 1D array of interface areas orthogonal to r
 // Notes:
 //   \Delta A = r^2 (-\Delta\cos\theta) \Delta\phi
-void Coordinates::Area1Face(const int k, const int j, const int il, const int iu,
+void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> *pareas)
 {
   Real &neg_delta_cos_theta = face1_area_j_(j);
@@ -385,7 +385,7 @@ void Coordinates::Area1Face(const int k, const int j, const int il, const int iu
 //   areas: 1D array of interface areas orthogonal to theta
 // Notes:
 //   \Delta A = 1/3 \Delta(r^3) \sin\theta \Delta\phi
-void Coordinates::Area2Face(const int k, const int j, const int il, const int iu,
+void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> *pareas)
 {
   Real &sin_theta = face2_area_j_(j);
@@ -409,7 +409,7 @@ void Coordinates::Area2Face(const int k, const int j, const int il, const int iu
 //   areas: 1D array of interface areas orthogonal to phi
 // Notes:
 //   \Delta A = 1/3 \Delta(r^3) (-\Delta\cos\theta)
-void Coordinates::Area3Face(const int k, const int j, const int il, const int iu,
+void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> *pareas)
 {
   Real &neg_delta_cos_theta = face3_area_j_(j);
@@ -449,90 +449,98 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 
 // Function for computing source terms
 // Inputs:
-//   k: z-index
-//   j: y-index
-//   prim: 1D array of primitive values in cells
+//   dt: size of timestep
+//   prim: full grid of primitive values at beginning of half timestep
+//   cons: full grid of conserved variables at end of half timestep
 // Outputs:
-//   sources: array of source terms in 1D
-// Notes:
-//   source terms all vanish identically
-//   sources assumed to be 0-initialized
-void Coordinates::CoordinateSourceTerms(const int k, const int j,
-    AthenaArray<Real> &prim, AthenaArray<Real> &sources)
+//   cons: source terms added
+void Coordinates::CoordinateSourceTerms(Real dt, const AthenaArray<Real> &prim,
+    AthenaArray<Real> &cons)
 {
   // Extract ratio of specific heats
   const Real gamma_adi = pmy_block->pfluid->pf_eos->GetGamma();
   const Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
-  // Extract geometric quantities that do not depend on r
-  Real &gamma_233 = src_terms_j2_(j);
-  Real &gamma_323 = src_terms_j3_(j);
-  Real &gamma_332 = gamma_323;
+  // Go through cells
+  for (int k = pmy_block->ks; k <= pmy_block->ke; k++)
+    for (int j = pmy_block->ks; j <= pmy_block->ke; j++)
+    {
+      // Extract geometric quantities that do not depend on r
+      Real &gamma_233 = src_terms_j2_(j);
+      Real &gamma_323 = src_terms_j3_(j);
+      Real &gamma_332 = gamma_323;
 
-  // Go through 1D block of cells
+      // Go through cells in r-direction
 #pragma simd
-  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
-  {
-    // Extract remaining geometric quantities
-    Real &g00 = metric_cell_i1_(i);
-    Real &g11 = metric_cell_i2_(i);
-    Real &g22 = metric_cell_i3_(i);
-    Real g33 = metric_cell_i3_(i) * metric_cell_j1_(j);
-    Real &gamma_001 = src_terms_i1_(i);
-    Real &gamma_010 = gamma_001;
-    Real &gamma_100 = src_terms_i2_(i);
-    Real gamma_111 = -gamma_001;
-    Real &gamma_122 = src_terms_i3_(i);
-    Real gamma_133 = gamma_122 * src_terms_j1_(j);
-    Real &gamma_212 = src_terms_i4_(i);
-    Real &gamma_221 = gamma_212;
-    Real &gamma_313 = gamma_212;
-    Real &gamma_331 = gamma_313;
+      for (int i = pmy_block->is; i <= pmy_block->ie; i++)
+      {
+        // Extract remaining geometric quantities
+        Real &g00 = metric_cell_i1_(i);
+        Real &g11 = metric_cell_i2_(i);
+        Real &g22 = metric_cell_i3_(i);
+        Real g33 = metric_cell_i3_(i) * metric_cell_j1_(j);
+        Real &gamma_001 = src_terms_i1_(i);
+        Real &gamma_010 = gamma_001;
+        Real &gamma_100 = src_terms_i2_(i);
+        Real gamma_111 = -gamma_001;
+        Real &gamma_122 = src_terms_i3_(i);
+        Real gamma_133 = gamma_122 * src_terms_j1_(j);
+        Real &gamma_212 = src_terms_i4_(i);
+        Real &gamma_221 = gamma_212;
+        Real &gamma_313 = gamma_212;
+        Real &gamma_331 = gamma_313;
 
-    // Extract primitives
-    Real &rho = prim(IDN,k,j,i);
-    Real &pgas = prim(IEN,k,j,i);
-    Real &v1 = prim(IVX,k,j,i);
-    Real &v2 = prim(IVY,k,j,i);
-    Real &v3 = prim(IVZ,k,j,i);
+        // Extract primitives
+        const Real &rho = prim(IDN,k,j,i);
+        const Real &pgas = prim(IEN,k,j,i);
+        const Real &v1 = prim(IVX,k,j,i);
+        const Real &v2 = prim(IVY,k,j,i);
+        const Real &v3 = prim(IVZ,k,j,i);
 
-    // Extract sources
-    Real &s0 = sources(IEN,i);
-    Real &s1 = sources(IM1,i);
-    Real &s2 = sources(IM2,i);
-    Real &s3 = sources(IM3,i);
+        // Calculate 4-velocity
+        Real u0 = std::sqrt(-1.0 / (g00 + g11*v1*v1 + g22*v2*v2 + g33*v3*v3));
+        Real u1 = u0 * v1;
+        Real u2 = u0 * v2;
+        Real u3 = u0 * v3;
+        Real u_lower_0 = g00 * u0;
+        Real u_lower_1 = g11 * u1;
+        Real u_lower_2 = g22 * u2;
+        Real u_lower_3 = g33 * u3;
 
-    // Calculate 4-velocity
-    Real u0 = std::sqrt(-1.0 / (g00 + g11*v1*v1 + g22*v2*v2 + g33*v3*v3));
-    Real u1 = u0 * v1;
-    Real u2 = u0 * v2;
-    Real u3 = u0 * v3;
-    Real u_lower_0 = g00 * u0;
-    Real u_lower_1 = g11 * u1;
-    Real u_lower_2 = g22 * u2;
-    Real u_lower_3 = g33 * u3;
+        // Calculate stress-energy tensor
+        Real rho_h = rho + gamma_adi_red * pgas;
+        Real t00 = rho_h * u0 * u_lower_0 + pgas;
+        Real t01 = rho_h * u0 * u_lower_1;
+        Real t10 = rho_h * u1 * u_lower_0;
+        Real t11 = rho_h * u1 * u_lower_1 + pgas;
+        Real t12 = rho_h * u1 * u_lower_2;
+        Real t13 = rho_h * u1 * u_lower_3;
+        Real t21 = rho_h * u2 * u_lower_1;
+        Real t22 = rho_h * u2 * u_lower_2 + pgas;
+        Real t23 = rho_h * u2 * u_lower_3;
+        Real t31 = rho_h * u3 * u_lower_1;
+        Real t32 = rho_h * u3 * u_lower_2;
+        Real t33 = rho_h * u3 * u_lower_3 + pgas;
 
-    // Calculate stress-energy tensor
-    Real rho_h = rho + gamma_adi_red * pgas;
-    Real t00 = rho_h * u0 * u_lower_0 + pgas;
-    Real t01 = rho_h * u0 * u_lower_1;
-    Real t10 = rho_h * u1 * u_lower_0;
-    Real t11 = rho_h * u1 * u_lower_1 + pgas;
-    Real t12 = rho_h * u1 * u_lower_2;
-    Real t13 = rho_h * u1 * u_lower_3;
-    Real t21 = rho_h * u2 * u_lower_1;
-    Real t22 = rho_h * u2 * u_lower_2 + pgas;
-    Real t23 = rho_h * u2 * u_lower_3;
-    Real t31 = rho_h * u3 * u_lower_1;
-    Real t32 = rho_h * u3 * u_lower_2;
-    Real t33 = rho_h * u3 * u_lower_3 + pgas;
+        // Calculate source terms
+        Real s0 = gamma_010 * t10 + gamma_100 * t01;
+        Real s1 = gamma_001 * t00 + gamma_111 * t11 + gamma_221 * t22 + gamma_331 * t33;
+        Real s2 = gamma_122 * t21 + gamma_212 * t12 + gamma_332 * t33;
+        Real s3 = gamma_133 * t31 + gamma_233 * t32 + gamma_313 * t13 + gamma_323 * t23;
 
-    // Set source terms
-    s0 = gamma_010 * t10 + gamma_100 * t01;
-    s1 = gamma_001 * t00 + gamma_111 * t11 + gamma_221 * t22 + gamma_331 * t33;
-    s2 = gamma_122 * t21 + gamma_212 * t12 + gamma_332 * t33;
-    s3 = gamma_133 * t31 + gamma_233 * t32 + gamma_313 * t13 + gamma_323 * t23;
-  }
+        // Extract conserved quantities
+        Real &e = cons(IEN,k,j,i);
+        Real &m1 = cons(IM1,k,j,i);
+        Real &m2 = cons(IM2,k,j,i);
+        Real &m3 = cons(IM3,k,j,i);
+
+        // Add source terms to conserved quantities
+        e += dt * s0;
+        m1 += dt * s1;
+        m2 += dt * s2;
+        m3 += dt * s3;
+      }
+    }
   return;
 }
 

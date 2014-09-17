@@ -17,10 +17,6 @@ Integrators:
    - either ivx==IVX (and so ivy==IVY and ivz==IVZ)
      or ivx==IVY, ivy==IVZ, ivz==IVX
      or ivx==IVZ, ivy==IVX, ivz==IVY
- - Source terms:
-   - van Leer integrator assumes density and energy terms are 0
-   - GR formulation guarantees density terms are 0
-   - should integrator not assume energy terms vanish?
 
 Outputs:
  - add output of ghost zones 

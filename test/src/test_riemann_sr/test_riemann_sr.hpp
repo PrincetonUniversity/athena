@@ -1,7 +1,7 @@
 // Class for testing Riemann solvers
 
-#ifndef TEST_RIEMANN_HPP
-#define TEST_RIEMANN_HPP
+#ifndef TEST_RIEMANN_SR_HPP
+#define TEST_RIEMANN_SR_HPP
 
 // Primary headers
 #include "../../../src/fluid/integrators/integrators.hpp"
@@ -50,9 +50,9 @@ class RiemannTest : public GeneralTest
     mesh = new Mesh(inputs);
     mesh->ForAllDomains(init_fluid, inputs);
     pfluid_integrator = new FluidIntegrator(mesh->pdomain->pblock->pfluid);
-    prim_left.NewAthenaArray(NVAR,1,1,1);
-    prim_right.NewAthenaArray(NVAR,1,1,1);
-    flux.NewAthenaArray(NVAR,1,1,1);
+    prim_left.NewAthenaArray(NVAR,1);
+    prim_right.NewAthenaArray(NVAR,1);
+    flux.NewAthenaArray(NVAR,1);
   }
 
   // Function invoked after each test
@@ -77,4 +77,4 @@ class HLLCSRTest : public RiemannTest
 
 }
 
-#endif  // TEST_RIEMANN_HPP
+#endif  // TEST_RIEMANN_SR_HPP

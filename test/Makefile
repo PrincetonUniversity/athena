@@ -2,7 +2,7 @@
 
 # General compiler specifications
 CXX := g++
-CXXFLAGS := -O0 -g $(INCLUDE_FLAGS)
+CXXFLAGS := -O3 $(INCLUDE_FLAGS)
 CPPFLAGS :=
 INCLUDE_FLAGS := -isystem /usr/local/include
 LIBRARY_FLAGS := -lm -lgtest
@@ -20,6 +20,7 @@ ATHENA_SRC := $(wildcard ../src/*.cpp) \
 	      $(wildcard ../src/fluid/*.cpp) \
 	      $(wildcard ../src/fluid/bvals/*.cpp) \
 	      $(wildcard ../src/fluid/integrators/*.cpp) \
+	      $(wildcard ../src/fluid/srcterms/*.cpp) \
 	      $(wildcard ../src/outputs/*.cpp) \
 	      ../src/coordinates/$(COORDINATES_FILE) \
 	      ../src/fluid/eos/$(CONVERT_VAR_FILE) \
