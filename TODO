@@ -53,6 +53,11 @@ Mesh:
  - do we need to print is, ie, js, etc. at runtime?
 
 Optimization:
+ - check formulas in GR coordinates for simplifications
+   - example: T^2_2 = M^2_y g_{22} M^2_y T^{yy} = T^{yy} in Schwarzschild
+     - perhaps we should be storing combinations like M^2_y g_{22} M^2_y above rather
+       than M^\mu_\hat{\nu} (but we still need M^\hat{\mu}_\nu) for transformation of
+       primitives
  - const-ness of input int's can't be influencing code, can it?
 
 AthenaArray:
