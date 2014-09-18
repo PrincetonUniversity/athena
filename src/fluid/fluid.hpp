@@ -35,6 +35,8 @@ public:
 
   AthenaArray<Real> g, g_inv;  // metric and its inverse
 
+  AthenaArray<Real> ifov;  // internal fluid output variables for analysis
+
   FluidIntegrator *pf_integrator;   // integration algorithm
   FluidBoundaryConditions *pf_bcs;  // boundary conditions
   FluidEqnOfState *pf_eos;          // equation of state (including cons->prim func)

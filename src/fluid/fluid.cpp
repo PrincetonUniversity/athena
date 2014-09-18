@@ -71,6 +71,10 @@ Fluid::Fluid(MeshBlock *pmb, ParameterInput *pin)
   dt2_.NewAthenaArray(ATHENA_MAX_NUM_THREADS,ncells1);
   dt3_.NewAthenaArray(ATHENA_MAX_NUM_THREADS,ncells1);
 
+// Allocate memory for internal fluid output variables (if needed)
+
+  ifov.NewAthenaArray(NIFOV,ncells3,ncells2,ncells1);
+
 // Construct ptrs to objects of various classes needed to integrate fluid eqns 
 
   pf_integrator = new FluidIntegrator(this);

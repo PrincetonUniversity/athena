@@ -71,13 +71,17 @@ void VTKOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
   int big_end = IsBigEndian(); // =1 on big endian machine
   if (pod->data_header.ndata == 0) return;  // slice out of range, etc.
 
-// create filename: "file_basename" + XXXX + ".vtk", where XXXX = 4-digit file_number
+// create filename: "file_basename" + "." + "file_id" + "." + XXXX + ".vtk",
+// where XXXX = 4-digit file_number
 
   std::string fname;
-  fname.assign(output_params.file_basename);
-  fname.append(".");
   char number[5]; // array to store 4-digit number and end-of-string char
   sprintf(number,"%04d",output_params.file_number);
+
+  fname.assign(output_params.file_basename);
+  fname.append(".");
+  fname.append(output_params.file_id);
+  fname.append(".");
   fname.append(number);
   fname.append(".vtk");
 

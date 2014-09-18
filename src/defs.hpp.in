@@ -47,6 +47,9 @@
 // openMP parallelization (OPENMP_PARALLEL or NOT_OPENMP_PARALLEL)
 #define @OPENMP_OPTION@
 
+// number of internal fluid output variables
+#define NIFOV  @NUM_IFOV@
+
 
 //--------------------------------------------------------------------------------------
 // macros associated with numerical algorithm (rarely modified)
