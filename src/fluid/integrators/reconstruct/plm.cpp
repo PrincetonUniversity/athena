@@ -42,13 +42,10 @@ void FluidIntegrator::ReconstructionFuncX1(
       Real& wim1 = w(n,k,j,i-1);
       Real& wi   = w(n,k,j,i  );
       Real& wip1 = w(n,k,j,i+1);
-      Real& dxim2 = pmy_fluid->pmy_block->dx1v(i-2);
-      Real& dxim1 = pmy_fluid->pmy_block->dx1v(i-1);
-      Real& dxi   = pmy_fluid->pmy_block->dx1v(i  );
 
-      Real dwl = (wim1 - wim2)/dxim2;
-      Real dwc = (wi   - wim1)/dxim1;
-      Real dwr = (wip1 - wi)/dxi;
+      Real dwl = (wim1 - wim2)/pmy_fluid->pmy_block->dx1v(i-2);
+      Real dwc = (wi   - wim1)/pmy_fluid->pmy_block->dx1v(i-1);
+      Real dwr = (wip1 - wi  )/pmy_fluid->pmy_block->dx1v(i  );
 
 // Apply monotonicity constraints to differences in primitive vars, compute wl_(i-1/2)
 
@@ -57,8 +54,7 @@ void FluidIntegrator::ReconstructionFuncX1(
       if (dw2 <= 0.0) dwm  = 0.0;
 
       Real& wli = (*pwl)(n,i);
-      dxim1 = pmy_fluid->pmy_block->dx1f(i-1);
-      wli = wim1 + dxim1*dwm;
+      wli = wim1 + (pmy_fluid->pmy_block->dx1f(i-1))*dwm;
     
 // Apply monotonicity constraints to differences in primitive vars, compute wr_(i-1/2)
 
@@ -67,8 +63,8 @@ void FluidIntegrator::ReconstructionFuncX1(
       if (dw2 <= 0.0) dwm  = 0.0;
 
       Real& wri = (*pwr)(n,i);
-      dxi = pmy_fluid->pmy_block->dx1f(i);
-      wri = wi - dxi*dwm;
+      Real& dxif = pmy_fluid->pmy_block->dx1f(i);
+      wri = wi - (pmy_fluid->pmy_block->dx1f(i))*dwm;
     }
   }
 
