@@ -226,13 +226,14 @@ MeshBlock::MeshBlock(RegionSize in_size, RegionBCs in_bcs, MeshDomain *pd,
   std::cout << "js=" << js << " je=" << je << std::endl;
   std::cout << "ks=" << ks << " ke=" << ke << std::endl;
 
-// allocate arrays for spacing and positions of cell faces and volume centers
+// allocate arrays for sizes and positions of cells
 
   int ncells1 = block_size.nx1 + 2*(NGHOST);
   int ncells2 = 1, ncells3 = 1;
   if (block_size.nx2 > 1) ncells2 = block_size.nx2 + 2*(NGHOST);
   if (block_size.nx3 > 1) ncells3 = block_size.nx3 + 2*(NGHOST);
 
+// cell sizes
   dx1f.NewAthenaArray(ncells1);
   dx2f.NewAthenaArray(ncells2);
   dx3f.NewAthenaArray(ncells3);
@@ -240,14 +241,15 @@ MeshBlock::MeshBlock(RegionSize in_size, RegionBCs in_bcs, MeshDomain *pd,
   dx2v.NewAthenaArray(ncells2);
   dx3v.NewAthenaArray(ncells3);
 
-  x1f.NewAthenaArray(ncells1 + 1);
-  x2f.NewAthenaArray(ncells2 + 1);
-  x3f.NewAthenaArray(ncells3 + 1);
+// cell positions. Note the extra element for cell face positions
+  x1f.NewAthenaArray((ncells1+1));
+  x2f.NewAthenaArray((ncells2+1));
+  x3f.NewAthenaArray((ncells3+1));
   x1v.NewAthenaArray(ncells1);
   x2v.NewAthenaArray(ncells2);
   x3v.NewAthenaArray(ncells3);
 
-// X1-DIRECTION: initialize spacing and positions of cell FACES (dx1f,x1f)
+// X1-DIRECTION: initialize sizes and positions of cell FACES (dx1f,x1f)
 
   Real dx = block_size.x1max - block_size.x1min;
   if (block_size.x1rat == 1.0) {
@@ -392,30 +394,6 @@ MeshBlock::MeshBlock(RegionSize in_size, RegionBCs in_bcs, MeshDomain *pd,
   pcoord   = new Coordinates(this, pin);
   pfluid   = new Fluid(this, pin);
 
-/*******************
-  for (int i=0; i<((ie-is+1)+2*(NGHOST)); ++i) {
-    printf("i=%i  x1f=%e  dx1f=%e x1v=%e dx1v=%e \n",i,x1f(i),dx1f(i),x1v(i),dx1v(i));
-  }
-  printf("i=%i  x1f=%e  \n",((ie-is+1)+2*NGHOST),x1f(((ie-is+1)+2*NGHOST)));
-
-  if (block_size.nx2 == 1) {
-    printf("j=%i  x2f=%e  dx2f=%e x2v=%e dx2v=%e\n",js,x2f(js),dx2f(js),x2v(js),dx2v(js));
-  } else {
-    for (int j=0; j<((je-js+1)+2*(NGHOST)); ++j) {
-      printf("j=%i  x2f=%e  dx2f=%e x2v=%e dx2v=%e \n",j,x2f(j),dx2f(j),x2v(j),dx2v(j));
-    }
-    printf("j=%i  x2f=%e  \n",((je-js+1)+2*NGHOST),x2f(((je-js+1)+2*NGHOST)));
-  }
-
-  if (block_size.nx3 == 1) {
-    printf("k=%i  x3f=%e  dx3f=%e x3v=%e dx3v=%e\n",ks,x3f(ks),dx3f(ks),x3v(ks),dx3v(ks));
-  } else {
-    for (int k=0; k<((ke-ks+1)+2*(NGHOST)); ++k) {
-      printf("k=%i  x3f=%e  dx3f=%e x3v=%e dx3v=%e \n",k,x3f(k),dx3f(k),x3v(k),dx3v(k));
-    }
-  printf("k=%i  x3f= %e  \n",((ke-ks+1)+2*NGHOST),x3f(((ke-ks+1)+2*NGHOST)));
-  }
-*******************/
   return;
 }
 
@@ -456,35 +434,35 @@ void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
 
     switch (action) {
 
-      case init_fluid:
+      case init_fluid: // call problem generator
         pdomain->pblock->pfluid->InitFluid(pin);
         break;
 
-      case fluid_bcs_n:
+      case fluid_bcs_n: // set fluid BCs at t^n
         pdomain->pblock->pfluid->pf_bcs->ApplyBoundaryConditions(pf->u);
         break;
 
-      case fluid_bcs_nhalf:
+      case fluid_bcs_nhalf: // set fluid BCs at t^{intermediate}
         pdomain->pblock->pfluid->pf_bcs->ApplyBoundaryConditions(pf->u1);
         break;
 
-      case fluid_predict:
+      case fluid_predict: // integrate fluid to intermediate step 
         pdomain->pblock->pfluid->pf_integrator->Predict(pdomain->pblock);
         break;
 
-      case fluid_correct:
+      case fluid_correct: // integrate fluid for full timestep, t^n --> t^{n+1}
         pdomain->pblock->pfluid->pf_integrator->Correct(pdomain->pblock);
         break;
 
-      case primitives_n:
+      case primitives_n: // compute primitives from conseerved at t^n
         pdomain->pblock->pfluid->pf_eos->ConservedToPrimitive(pf->u,pf->w1,pf->w);
         break;
 
-      case primitives_nhalf:
+      case primitives_nhalf: // compute primitives from conseerved at t^{intermediate}
         pdomain->pblock->pfluid->pf_eos->ConservedToPrimitive(pf->u1,pf->w,pf->w1);
         break;
 
-      case new_timestep:
+      case new_timestep: // calculate new time step
         pdomain->pblock->pfluid->NewTimeStep(pdomain->pblock);
         break;
 

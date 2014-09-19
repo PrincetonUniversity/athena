@@ -429,6 +429,15 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     var_added = 1;
   }
 
+  if (output_params.variable.compare("ifov") == 0) {
+    for (int n=0; n<(NIFOV); ++n) {
+      var_header.type = "SCALARS";
+      var_header.name = "ifov";
+      pod->AppendNode(pf->ifov.ShallowSlice(n,1),var_header); // internal fluid outvars
+    }
+    var_added = 1;
+  }
+
 // throw an error if output variable name not recognized
 
   if (!var_added) {

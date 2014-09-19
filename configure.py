@@ -17,6 +17,7 @@
 #   --order=choice    use choice as the spatial reconstruction algorithm
 #   --fint=choice     use choice as the fluid time-integration algorithm
 #   --cxx=choice      use choice as the C++ compiler
+#   --ifov=N          enable N internal fluid output variables 
 #   --omp             enable parallelization with OpenMP
 #---------------------------------------------------------------------------------------
 
@@ -106,6 +107,12 @@ parser.add_argument('-omp',
     default=False,
     help='enable parallelization with OpenMP')
 
+# -ifov=N argument
+parser.add_argument('--ifov',
+    type=int,
+    default=0,
+    help='number of internal fluid output variables')
+
 # Parse command-line inputs
 args = vars(parser.parse_args())
 
@@ -169,6 +176,8 @@ if args['omp']:
     makefile_options['COMPILER_FLAGS'] += ' -openmp'
     definitions['COMPILER_FLAGS'] += ' -openmp'
 
+definitions['NUM_IFOV'] = str(args['ifov'])
+
 # Read templates
 with open(defsfile_input, 'r') as current_file:
   defsfile_template = current_file.read()
@@ -189,14 +198,15 @@ with open(makefile_output, 'w') as current_file:
 
 # Finish with diagnostic output
 print('Your Athena++ distribution has now been configured with the following options:')
-print('  Problem generator:      ' + args['prob'])
-print('  Coordinate system:      ' + args['coord'])
-print('  Equation of state:      ' + args['eos'])
-print('  Riemann solver:         ' + args['flux'])
-print('  Reconstruction method:  ' + args['order'])
-print('  Fluid integrator:       ' + args['fint'])
-print('  Compiler and flags:     ' + args['cxx'])
-print('  Magnetic fields:        ' + ('enabled' if args['b'] else 'disabled'))
-print('  Special relativity:     ' + ('enabled' if args['s'] else 'disabled'))
-print('  General relativity:     ' + ('enabled' if args['g'] else 'disabled'))
-print('  OpenMP parallelism:     ' + ('enabled' if args['omp'] else 'disabled'))
+print('  Problem generator:       ' + args['prob'])
+print('  Coordinate system:       ' + args['coord'])
+print('  Equation of state:       ' + args['eos'])
+print('  Riemann solver:          ' + args['flux'])
+print('  Reconstruction method:   ' + args['order'])
+print('  Fluid integrator:        ' + args['fint'])
+print('  Compiler and flags:      ' + args['cxx'])
+print('  Magnetic fields:         ' + ('enabled' if args['b'] else 'disabled'))
+print('  Special relativity:      ' + ('enabled' if args['s'] else 'disabled'))
+print('  General relativity:      ' + ('enabled' if args['g'] else 'disabled'))
+print('  OpenMP parallelism:      ' + ('enabled' if args['omp'] else 'disabled'))
+print('  Internal fluid outvars:  ' + str(args['ifov']))
