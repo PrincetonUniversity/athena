@@ -8,7 +8,7 @@
 
 // Athena headers
 #include "../../../src/athena.hpp"         // enums, macros, Real
-#include "../../../src/athena_arrays.hpp"  // array_access
+#include "../../../src/athena_arrays.hpp"  // array access
 
 // Test inversion with no motion in all directions
 TEST_F(AdiabaticHydroGRTest1, TestAll)
