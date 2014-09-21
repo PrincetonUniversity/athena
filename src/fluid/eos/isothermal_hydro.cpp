@@ -41,7 +41,6 @@ FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
 
 FluidEqnOfState::~FluidEqnOfState()
 {
-  pmy_fluid_ = NULL; // Fluid destructor will free this memory
 }
 
 //--------------------------------------------------------------------------------------
@@ -96,10 +95,10 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 }
 
 //--------------------------------------------------------------------------------------
-/* \!fn Real FluidEqnOfState::SoundSpeed(Real dummy_arg[NVAR])
+/* \!fn Real FluidEqnOfState::SoundSpeed(Real dummy_arg[NFLUID])
  * \brief returns isothermal sound speed */
 
-Real FluidEqnOfState::SoundSpeed(const Real dummy_arg[NVAR])
+Real FluidEqnOfState::SoundSpeed(const Real dummy_arg[NFLUID])
 {
   return iso_sound_speed_;
 }

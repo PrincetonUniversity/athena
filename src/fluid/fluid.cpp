@@ -25,7 +25,7 @@
 // Athena headers
 #include "../athena.hpp"                // array access, macros, Real
 #include "../athena_arrays.hpp"         // AthenaArray
-#include "bvals/bvals.hpp"              // FluidBoundaryConditions
+#include "bvals/bvals.hpp"              // FluidBCs
 #include "eos/eos.hpp"                  // FluidEqnOfState
 #include "srcterms/srcterms.hpp"        // FluidSourceTerms
 #include "integrators/integrators.hpp"  // FluidIntegrator
@@ -52,13 +52,13 @@ Fluid::Fluid(MeshBlock *pmb, ParameterInput *pin)
   if (pmy_block->block_size.nx2 > 1) ncells2 = pmy_block->block_size.nx2 + 2*(NGHOST);
   if (pmy_block->block_size.nx3 > 1) ncells3 = pmy_block->block_size.nx3 + 2*(NGHOST);
 
-  u.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
-  w.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
+  u.NewAthenaArray(NFLUID,ncells3,ncells2,ncells1);
+  w.NewAthenaArray(NFLUID,ncells3,ncells2,ncells1);
 
 // Allocate memory for primitive/conserved variables at intermediate-time step
 
-  u1.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
-  w1.NewAthenaArray(NVAR,ncells3,ncells2,ncells1);
+  u1.NewAthenaArray(NFLUID,ncells3,ncells2,ncells1);
+  w1.NewAthenaArray(NFLUID,ncells3,ncells2,ncells1);
 
   // Allocate memory for metric
   // TODO: this should only be done if we are in GR
@@ -77,8 +77,8 @@ Fluid::Fluid(MeshBlock *pmb, ParameterInput *pin)
 
 // Construct ptrs to objects of various classes needed to integrate fluid eqns 
 
-  pf_integrator = new FluidIntegrator(this);
-  pf_bcs = new FluidBoundaryConditions(this,pin);
+  pf_integrator = new FluidIntegrator(this,pin);
+  pf_bcs = new FluidBCs(this,pin);
   pf_eos = new FluidEqnOfState(this,pin);
   pf_srcterms = new FluidSourceTerms(this,pin);
 }
@@ -87,7 +87,6 @@ Fluid::Fluid(MeshBlock *pmb, ParameterInput *pin)
 
 Fluid::~Fluid()
 {
-  pmy_block = NULL; // MeshBlock destructor will free this memory
   u.DeleteAthenaArray();
   w.DeleteAthenaArray();
   u1.DeleteAthenaArray();
@@ -127,7 +126,7 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
   AthenaArray<Real> *pdt1 = dt1_.ShallowSlice(tid,1);
   AthenaArray<Real> *pdt2 = dt2_.ShallowSlice(tid,1);
   AthenaArray<Real> *pdt3 = dt3_.ShallowSlice(tid,1);
-  Real wi[NVAR];
+  Real wi[NFLUID];
 
   for (int k=ks; k<=ke; ++k){
 

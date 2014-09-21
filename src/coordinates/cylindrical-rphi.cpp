@@ -202,7 +202,7 @@ Real Coordinates::VolumeCenterWidth3(const int k, const int j, const int i)
 void Coordinates::CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
   AthenaArray<Real> &cons)
 {
-  Real src[NVAR],dummy_arg[NVAR];
+  Real src[NFLUID],dummy_arg[NFLUID];
 
 // src_1 = <M_{phi phi}><1/r> = M_{phi phi} dr/d(r^2/2)
 // src_2 = -< M_{phi r} ><1/r>  = -(<M_{pr}>) dr/d(r^2/2)

@@ -44,7 +44,6 @@ FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
 
 FluidEqnOfState::~FluidEqnOfState()
 {
-  pmy_fluid_ = NULL; // Fluid destructor will free this memory
 }
 
 //--------------------------------------------------------------------------------------
@@ -111,7 +110,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 /* \!fn Real FluidEqnOfState::SoundSpeed(Real prim[5])
  * \brief returns adiabatic sound speed given vector of primitive variables  */
 
-Real FluidEqnOfState::SoundSpeed(const Real prim[NVAR])
+Real FluidEqnOfState::SoundSpeed(const Real prim[NFLUID])
 {
   return sqrt(GetGamma()*prim[IEN]/prim[IDN]);
 }

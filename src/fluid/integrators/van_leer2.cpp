@@ -49,7 +49,7 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
   Real dt = pmb->pmy_domain->pmy_mesh->dt;
 
   Real sum=0.0; Real sum_2=0.0;
-  int ndata = (pmb->block_size.nx1)*(pmb->block_size.nx2)*(pmb->block_size.nx3)*(NVAR);
+  int ndata = (pmb->block_size.nx1)*(pmb->block_size.nx2)*(pmb->block_size.nx3)*(NFLUID);
  
   AthenaArray<Real> u = pmb->pfluid->u.ShallowCopy();
   AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
@@ -84,7 +84,7 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
       pmb->pcoord->Face1Area(k,j,is,ie+1,parea);
       pmb->pcoord->CellVolume(k,j,is,ie,pvol);
 
-      for (int n=0; n<NVAR; ++n){
+      for (int n=0; n<NFLUID; ++n){
 #pragma simd
         for (int i=is; i<=ie; ++i){
           Real& ui  = u (n,k,j,i);
@@ -120,7 +120,7 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
 
         if (j>js) {
           pmb->pcoord->CellVolume(k,j-1,is,ie,pvol);
-          for (int n=0; n<NVAR; ++n){
+          for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
               Real& u1jm1 = u1(n,k,j-1,i);
@@ -135,7 +135,7 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
 
         if (j<(je+1)) {
           pmb->pcoord->CellVolume(k,j,is,ie,pvol);
-          for (int n=0; n<NVAR; ++n){
+          for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
               Real& u1j   = u1(n,k,j  ,i);
@@ -170,7 +170,7 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
   
         if (k>ks) {
           pmb->pcoord->CellVolume(k-1,j,is,ie,pvol);
-          for (int n=0; n<NVAR; ++n){
+          for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
               Real& u1km1 = u1(n,k-1,j,i);
@@ -185,7 +185,7 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
 
         if (k<(ke+1)) {
           pmb->pcoord->CellVolume(k,j,is,ie,pvol);
-          for (int n=0; n<NVAR; ++n){
+          for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
               Real& u1k   = u1(n,k  ,j,i);
@@ -224,7 +224,7 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
   Real dt = pmb->pmy_domain->pmy_mesh->dt;
 
   Real sum=0.0; Real sum_2=0.0;
-  int ndata = (pmb->block_size.nx1)*(pmb->block_size.nx2)*(pmb->block_size.nx3)*(NVAR);
+  int ndata = (pmb->block_size.nx1)*(pmb->block_size.nx2)*(pmb->block_size.nx3)*(NFLUID);
  
   AthenaArray<Real> u = pmb->pfluid->u.ShallowCopy();
   AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
@@ -259,7 +259,7 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
       pmb->pcoord->Face1Area(k,j,is,ie+1,parea);
       pmb->pcoord->CellVolume(k,j,is,ie,pvol);
 
-      for (int n=0; n<NVAR; ++n){
+      for (int n=0; n<NFLUID; ++n){
 #pragma simd
         for (int i=is; i<=ie; ++i){
           Real& ui  = u (n,k,j,i);
@@ -294,7 +294,7 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 
         if (j>js){
           pmb->pcoord->CellVolume(k,j-1,is,ie,pvol);
-          for (int n=0; n<NVAR; ++n){
+          for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
               Real& ujm1 = u(n,k,j-1,i);
@@ -309,7 +309,7 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 
         if (j<(je+1)){
           pmb->pcoord->CellVolume(k,j,is,ie,pvol);
-          for (int n=0; n<NVAR; ++n){
+          for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
               Real& uj   = u(n,k,j  ,i);
@@ -344,7 +344,7 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 
         if (k>ks){
           pmb->pcoord->CellVolume(k-1,j,is,ie,pvol);
-          for (int n=0; n<NVAR; ++n){
+          for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
               Real& ukm1 = u(n,k-1,j,i);
@@ -359,7 +359,7 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 
         if (k<(ke+1)){
           pmb->pcoord->CellVolume(k,j,is,ie,pvol);
-          for (int n=0; n<NVAR; ++n){
+          for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
               Real& uk   = u(n,k  ,j,i);

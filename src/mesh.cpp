@@ -30,7 +30,7 @@
 #include "athena_arrays.hpp"            // AthenaArray
 #include "coordinates/coordinates.hpp"  // Coordinates
 #include "fluid/fluid.hpp"                    // Fluid
-#include "fluid/bvals/bvals.hpp"              // FluidBoundaryConditions
+#include "fluid/bvals/bvals.hpp"              // FluidBCs
 #include "fluid/eos/eos.hpp"              // FluidEqnOfState
 #include "fluid/integrators/integrators.hpp"  // FluidIntegrator
 //#include "outputs/outputs.hpp"          // Outputs
@@ -146,7 +146,7 @@ Mesh::Mesh(ParameterInput *pin)
   }
 
 // read BC flags for each of the 6 boundaries in turn.  Error tests performed in
-// function FluidBoundaryConditions::InitBoundaryConditions
+// FluidBCs constructor
 
   mesh_bcs.ix1_bc = pin->GetOrAddInteger("mesh","ix1_bc",0);
   mesh_bcs.ox1_bc = pin->GetOrAddInteger("mesh","ox1_bc",0);
@@ -188,7 +188,6 @@ MeshDomain::MeshDomain(RegionSize in_size, RegionBCs in_bcs, Mesh* pm, Parameter
 
 MeshDomain::~MeshDomain()
 {
-  pmy_mesh = NULL; // Mesh destructor will free this memory.
   delete pblock;
 }
 
@@ -401,8 +400,6 @@ MeshBlock::MeshBlock(RegionSize in_size, RegionBCs in_bcs, MeshDomain *pd,
 
 MeshBlock::~MeshBlock()
 {
-  pmy_domain = NULL; // MeshDomain constructor will delete this memory
-
   dx1f.DeleteAthenaArray();  
   dx2f.DeleteAthenaArray();  
   dx3f.DeleteAthenaArray();  
@@ -439,11 +436,11 @@ void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
         break;
 
       case fluid_bcs_n: // set fluid BCs at t^n
-        pdomain->pblock->pfluid->pf_bcs->ApplyBoundaryConditions(pf->u);
+        pdomain->pblock->pfluid->pf_bcs->ApplyFluidBCs(pf->u);
         break;
 
       case fluid_bcs_nhalf: // set fluid BCs at t^{intermediate}
-        pdomain->pblock->pfluid->pf_bcs->ApplyBoundaryConditions(pf->u1);
+        pdomain->pblock->pfluid->pf_bcs->ApplyFluidBCs(pf->u1);
         break;
 
       case fluid_predict: // integrate fluid to intermediate step 

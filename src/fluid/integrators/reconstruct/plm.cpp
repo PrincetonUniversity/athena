@@ -35,7 +35,7 @@ void FluidIntegrator::ReconstructionFuncX1(
   const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &w, AthenaArray<Real> *pwl, AthenaArray<Real> *pwr)
 {
-  for (int n=0; n<NVAR; ++n){
+  for (int n=0; n<NFLUID; ++n){
 #pragma simd
     for (int i=il; i<=iu; ++i){
       Real& wim2 = w(n,k,j,i-2);
@@ -78,7 +78,7 @@ void FluidIntegrator::ReconstructionFuncX2(
   const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &w, AthenaArray<Real> *pwl, AthenaArray<Real> *pwr)
 {
-  for (int n=0; n<NVAR; ++n){
+  for (int n=0; n<NFLUID; ++n){
 #pragma simd
     for (int i=il; i<=iu; ++i){
       Real& wim2 = w(n,k,j-2,i);
@@ -120,7 +120,7 @@ void FluidIntegrator::ReconstructionFuncX3(
   const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &w, AthenaArray<Real> *pwl, AthenaArray<Real> *pwr)
 {
-  for (int n=0; n<NVAR; ++n){
+  for (int n=0; n<NFLUID; ++n){
 #pragma simd
     for (int i=il; i<=iu; ++i){
       Real& wim2 = w(n,k-2,j,i);

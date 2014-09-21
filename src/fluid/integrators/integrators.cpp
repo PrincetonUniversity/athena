@@ -18,10 +18,11 @@
 #include "integrators.hpp"
 
 // Athena headers
-#include "../../athena.hpp"         // macros
-#include "../../athena_arrays.hpp"  // AthenaArray
-#include "../fluid.hpp"          // Fluid
-#include "../../mesh.hpp"           // Block
+#include "../../athena.hpp"          // macros
+#include "../../athena_arrays.hpp"   // AthenaArray
+#include "../fluid.hpp"              // Fluid
+#include "../../mesh.hpp"            // MeshBlock
+#include "../../parameter_input.hpp" 
 
 //======================================================================================
 /*! \file integrators.cpp
@@ -30,17 +31,17 @@
 
 // constructor
 
-FluidIntegrator::FluidIntegrator(Fluid *pf)
+FluidIntegrator::FluidIntegrator(Fluid *pf, ParameterInput *pin)
 {
   pmy_fluid = pf;
 
 // Allocate memory for scratch vectors
 
   int ncells1 = pf->pmy_block->block_size.nx1 + 2*(NGHOST);
-  wl_.NewAthenaArray(ATHENA_MAX_NUM_THREADS,NVAR,ncells1);
-  wr_.NewAthenaArray(ATHENA_MAX_NUM_THREADS,NVAR,ncells1);
-  flx_.NewAthenaArray(ATHENA_MAX_NUM_THREADS,NVAR,ncells1);
-  src_.NewAthenaArray(ATHENA_MAX_NUM_THREADS,NVAR,ncells1);
+  wl_.NewAthenaArray(ATHENA_MAX_NUM_THREADS,NFLUID,ncells1);
+  wr_.NewAthenaArray(ATHENA_MAX_NUM_THREADS,NFLUID,ncells1);
+  flx_.NewAthenaArray(ATHENA_MAX_NUM_THREADS,NFLUID,ncells1);
+  src_.NewAthenaArray(ATHENA_MAX_NUM_THREADS,NFLUID,ncells1);
   face_area_.NewAthenaArray(ATHENA_MAX_NUM_THREADS,ncells1);
   cell_volume_.NewAthenaArray(ATHENA_MAX_NUM_THREADS,ncells1);
 }
@@ -49,7 +50,6 @@ FluidIntegrator::FluidIntegrator(Fluid *pf)
 
 FluidIntegrator::~FluidIntegrator()
 {
-  pmy_fluid = NULL; // Fluid destructor will free this memory
   wl_.DeleteAthenaArray();
   wr_.DeleteAthenaArray();
   flx_.DeleteAthenaArray();

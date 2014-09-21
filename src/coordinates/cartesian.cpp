@@ -80,7 +80,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 
 Coordinates::~Coordinates()
 {
-  pmy_block = NULL; // MeshBlock destructor will free this memory
 }
 
 //--------------------------------------------------------------------------------------

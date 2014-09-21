@@ -39,7 +39,7 @@ void ReflectInnerX1(MeshBlock *pmb, AthenaArray<Real> &a)
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
-    for (int n=0; n<(NVAR); ++n) {
+    for (int n=0; n<(NFLUID); ++n) {
 
       if (n==(IM1)) {
 #pragma simd
@@ -73,7 +73,7 @@ void ReflectOuterX1(MeshBlock *pmb, AthenaArray<Real> &a)
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
-    for (int n=0; n<(NVAR); ++n) {
+    for (int n=0; n<(NFLUID); ++n) {
 
       if (n==(IM1)) {
 #pragma simd
@@ -107,7 +107,7 @@ void ReflectInnerX2(MeshBlock *pmb, AthenaArray<Real> &a)
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
-    for (int n=0; n<(NVAR); ++n) {
+    for (int n=0; n<(NFLUID); ++n) {
 
       if (n==(IM2)) {
 #pragma simd
@@ -141,7 +141,7 @@ void ReflectOuterX2(MeshBlock *pmb, AthenaArray<Real> &a)
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
-    for (int n=0; n<(NVAR); ++n) {
+    for (int n=0; n<(NFLUID); ++n) {
 
       if (n==(IM2)) {
 #pragma simd
@@ -175,7 +175,7 @@ void ReflectInnerX3(MeshBlock *pmb, AthenaArray<Real> &a)
 
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
-    for (int n=0; n<(NVAR); ++n) {
+    for (int n=0; n<(NFLUID); ++n) {
 
       if (n==(IM3)) {
 #pragma simd
@@ -209,7 +209,7 @@ void ReflectOuterX3(MeshBlock *pmb, AthenaArray<Real> &a)
 
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
-    for (int n=0; n<(NVAR); ++n) {
+    for (int n=0; n<(NFLUID); ++n) {
 
       if (n==(IM3)) {
 #pragma simd

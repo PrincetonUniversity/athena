@@ -6,7 +6,7 @@
  * See LICENSE file for full public license information.
  *====================================================================================*/
 /*! \file bfield_bvals.hpp
- *  \brief defines class FieldBoundaryConditions
+ *  \brief defines class FieldBCs
  *  Contains data structures and functions related to BCs for the magnetic field
  *====================================================================================*/
 
@@ -22,15 +22,16 @@ class ParameterInput;
 //! \class BFieldBCs
 //  \brief BCs data and functions for magnetic field
 
-class BFieldBoundaryConditions {
+class BFieldBCs {
 public:
-  BFieldBoundaryConditions(BField *pb, ParameterInput *pin);
-  ~BFieldBoundaryConditions();
+  BFieldBCs(BField *pb, ParameterInput *pin);
+  ~BFieldBCs();
 
-  void ApplyBoundaryConditions(AthenaArray<Real> &a);
+  void ApplyBFieldBCs(AthenaArray<Real> &a);
+  void ApplyEFieldBCs(AthenaArray<Real> &a);
 
 private:
-  BField *pmy_bfield;  // ptr to BField containing this BFieldBoundaryConditions
+  BField *pmy_bfield;  // ptr to BField containing this BFieldBCs
 
 // function pointers, set in constructor based on parameters in input file
 

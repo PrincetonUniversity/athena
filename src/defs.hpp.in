@@ -54,7 +54,8 @@
 //--------------------------------------------------------------------------------------
 // macros associated with numerical algorithm (rarely modified)
 
-#define NVAR @NFLUID_VARIABLES@
+#define NFLUID @NFLUID_VARIABLES@
+#define NFIELD 3
 
 #define NGHOST 2
 

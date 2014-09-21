@@ -36,7 +36,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j,
   const AthenaArray<Real> *bl, const AthenaArray<Real> *br, const AthenaArray<Real> *bi,
   const  AthenaArray<Real> *pwl, const AthenaArray<Real> *pwr, AthenaArray<Real> *pflx)
 {
-  Real fl[NVAR],fr[NVAR],wli[NVAR],wri[NVAR],flxi[NVAR];
+  Real fl[NFLUID],fr[NFLUID],wli[NFLUID],wri[NFLUID],flxi[NFLUID];
 
 #pragma simd
   for (int i=il; i<=iu; ++i){
