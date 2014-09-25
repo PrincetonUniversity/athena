@@ -53,6 +53,7 @@ def main(**kwargs):
     if plots_needed:
       plot_shockset('plots/hydro_sr_shockset_gr', gr=True)
   elif problem == 'hydro_schwarzschild_1d' or problem == 'hydro_schwarzschild_2d':  # 1D radial accretion onto Schwarzschild BH
+    dimension_string = '_1d' if problem == 'hydro_schwarzschild_1d' else '_2d'
     if computation_needed:
       configure_string = 'python configure.py -g \
           --prob=accretion_gr \
@@ -63,7 +64,6 @@ def main(**kwargs):
           --fint=vl2 \
           --cxx=g++'
       make_string = 'make all'
-      dimension_string = '_1d' if problem == 'hydro_schwarzschild_1d' else '_2d'
       name_string = 'hydro_schwarzschild_geodesic' + dimension_string
       if movie_needed:
         run_string = './athena \
@@ -98,22 +98,22 @@ def plot_shockset(filename, gr=False):
   data_old_4 = read_athena('data/hydro_sr_old_4.0001.tab',
       ['x', 'rho', 'vx', 'vy', 'vz', 'pgas'])
   if gr:
-    data_new_1 = read_athena('data/hydro_sr_gr_new_1.0001.tab',
+    data_new_1 = read_athena('data/hydro_sr_gr_new_1.out1.0001.tab',
         ['x', 'rho', 'pgas', 'vx', 'vy', 'vz'])
-    data_new_2 = read_athena('data/hydro_sr_gr_new_2.0001.tab',
+    data_new_2 = read_athena('data/hydro_sr_gr_new_2.out1.0001.tab',
         ['x', 'rho', 'pgas', 'vx', 'vy', 'vz'])
-    data_new_3 = read_athena('data/hydro_sr_gr_new_3.0001.tab',
+    data_new_3 = read_athena('data/hydro_sr_gr_new_3.out1.0001.tab',
         ['x', 'rho', 'pgas', 'vx', 'vy', 'vz'])
-    data_new_4 = read_athena('data/hydro_sr_gr_new_4.0001.tab',
+    data_new_4 = read_athena('data/hydro_sr_gr_new_4.out1.0001.tab',
         ['x', 'rho', 'pgas', 'vx', 'vy', 'vz'])
   else:
-    data_new_1 = read_athena('data/hydro_sr_new_1.0001.tab',
+    data_new_1 = read_athena('data/hydro_sr_new_1.out1.0001.tab',
         ['x', 'rho', 'pgas', 'vx', 'vy', 'vz'])
-    data_new_2 = read_athena('data/hydro_sr_new_2.0001.tab',
+    data_new_2 = read_athena('data/hydro_sr_new_2.out1.0001.tab',
         ['x', 'rho', 'pgas', 'vx', 'vy', 'vz'])
-    data_new_3 = read_athena('data/hydro_sr_new_3.0001.tab',
+    data_new_3 = read_athena('data/hydro_sr_new_3.out1.0001.tab',
         ['x', 'rho', 'pgas', 'vx', 'vy', 'vz'])
-    data_new_4 = read_athena('data/hydro_sr_new_4.0001.tab',
+    data_new_4 = read_athena('data/hydro_sr_new_4.out1.0001.tab',
         ['x', 'rho', 'pgas', 'vx', 'vy', 'vz'])
 
   # Plot data
@@ -184,13 +184,13 @@ def plot_accretion_1d(filename, movie_needed):
   gamma_adi = 5.0/3.0
 
   # Prepare list of files
-  filenames_actual = glob.glob('data/{0}.*.tab'.format(filename))
+  filenames_actual = glob.glob('data/{0}.out1.*.tab'.format(filename))
 
   # Create frames
   for filename_actual in filenames_actual:
 
     # Get frame number
-    match = re.match(r'data/{0}.(\d+).tab'.format(filename), filename_actual)
+    match = re.match(r'data/{0}.out1.(\d+).tab'.format(filename), filename_actual)
     frame_string = match.group(1)
     frame = int(frame_string)
 
@@ -352,12 +352,12 @@ def run_new_shock(input_prefix, output_prefix, settings):
   # Generate data
   print('deleting new Athena data...')
   try:
-    data_files = glob.glob('data/{0}*.tab'.format(output_prefix))
+    data_files = glob.glob('data/{0}*.out1.*.tab'.format(output_prefix))
     rm_command = 'rm -f'.split()
     rm_command.extend(data_files)
     subprocess.call(rm_command)
     # TODO: remove when -d option works
-    data_files = glob.glob('../bin/{0}*.tab'.format(output_prefix))
+    data_files = glob.glob('../bin/{0}*.out1.*.tab'.format(output_prefix))
     rm_command = 'rm -f'.split()
     rm_command.extend(data_files)
     subprocess.call(rm_command)
@@ -376,7 +376,8 @@ def run_new_shock(input_prefix, output_prefix, settings):
       os.system(new_run_string.format(current_directory, case[0], case[1], case[2],
           case[3], case[4]) + ' &> /dev/null')
       # TODO: remove when -d option works
-      os.system('mv {0}*.tab {1}/data/.'.format(output_prefix, current_directory))
+      os.system('mv {0}{1}.out1.*.tab {2}/data/.'.format(output_prefix, case[0],
+          current_directory))
     os.chdir(current_directory)
   except OSError as err:
     print('OS Error ({0}): {1}'.format(err.errno, err.strerror))
@@ -409,12 +410,12 @@ def run_new_shock_gr(input_prefix, output_prefix, settings):
   # Generate data
   print('deleting new Athena data...')
   try:
-    data_files = glob.glob('data/{0}*.tab'.format(output_prefix))
+    data_files = glob.glob('data/{0}.out1.*.tab'.format(output_prefix))
     rm_command = 'rm -f'.split()
     rm_command.extend(data_files)
     subprocess.call(rm_command)
     # TODO: remove when -d option works
-    data_files = glob.glob('../bin/{0}*.tab'.format(output_prefix))
+    data_files = glob.glob('../bin/{0}.out1.*.tab'.format(output_prefix))
     rm_command = 'rm -f'.split()
     rm_command.extend(data_files)
     subprocess.call(rm_command)
@@ -433,7 +434,8 @@ def run_new_shock_gr(input_prefix, output_prefix, settings):
       os.system(new_run_string.format(current_directory, case[0], case[1], case[2],
           case[3], case[4]) + ' &> /dev/null')
       # TODO: remove when -d option works
-      os.system('mv {0}*.tab {1}/data/.'.format(output_prefix, current_directory))
+      os.system('mv {0}{1}.out1.*.tab {2}/data/.'.format(output_prefix, case[0],\
+          current_directory))
     os.chdir(current_directory)
   except OSError as err:
     print('OS Error ({0}): {1}'.format(err.errno, err.strerror))
@@ -445,11 +447,11 @@ def run_new(configure_string, make_string, run_string, name_string):
   # Delete old data
   print('deleting old data...')
   try:
-    os.system('rm -f data/{0}.*.tab'.format(name_string))
-    os.system('rm -f data/{0}.*.vtk'.format(name_string))
+    os.system('rm -f data/{0}.out1.*.tab'.format(name_string))
+    os.system('rm -f data/{0}.out2.*.vtk'.format(name_string))
     # TODO: remove when -d option works
-    os.system('rm -f ../bin/{0}.*.tab'.format(name_string))
-    os.system('rm -f ../bin/{0}.*.vtk'.format(name_string))
+    os.system('rm -f ../bin/{0}.out1.*.tab'.format(name_string))
+    os.system('rm -f ../bin/{0}.out2.*.vtk'.format(name_string))
   except OSError as err:
     print('OS Error ({0}): {1}'.format(err.errno, err.strerror))
     exit()
@@ -472,8 +474,8 @@ def run_new(configure_string, make_string, run_string, name_string):
   try:
     os.system(run_string + ' &> /dev/null')
     # TODO: remove when -d option works
-    os.system('mv {0}.*.tab {1}/data/.'.format(name_string, current_directory))
-    os.system('mv {0}.*.vtk {1}/data/.'.format(name_string, current_directory))
+    os.system('mv {0}.out1.*.tab {1}/data/.'.format(name_string, current_directory))
+    os.system('mv {0}.out2.*.vtk {1}/data/.'.format(name_string, current_directory))
     os.chdir(current_directory)
   except OSError as err:
     print('OS Error ({0}): {1}'.format(err.errno, err.strerror))

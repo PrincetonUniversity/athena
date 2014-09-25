@@ -3,6 +3,7 @@
 # Files for conditional compilation
 export COORDINATES_FILE := minkowski_cartesian.cpp
 export CONVERT_VAR_FILE := adiabatic_hydro_gr.cpp
+export FLUID_INT_FILE := vl2.cpp
 export PROBLEM_FILE := shock_tube_gr.cpp
 export RECONSTRUCT_FILE := plm.cpp
 export RSOLVER_FILE := hlle_gr.cpp

@@ -3,6 +3,7 @@
 # Files for conditional compilation
 export COORDINATES_FILE := cartesian.cpp
 export CONVERT_VAR_FILE := adiabatic_hydro_sr.cpp
+export FLUID_INT_FILE := vl2.cpp
 export PROBLEM_FILE := shock_tube_sr.cpp
 export RECONSTRUCT_FILE := plm.cpp
 export RSOLVER_FILE := hllc_sr.cpp
