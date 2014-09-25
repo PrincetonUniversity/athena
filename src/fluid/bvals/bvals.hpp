@@ -6,7 +6,7 @@
  * See LICENSE file for full public license information.
  *====================================================================================*/
 /*! \file bvals.hpp
- *  \brief defines class FluidBoundaryConditions
+ *  \brief defines class FluidBCs
  *  Contains data structures and functions related to BCs for the fluid
  *====================================================================================*/
 
@@ -19,18 +19,18 @@ class MeshBlock;
 class Fluid;
 class ParameterInput;
 
-//! \class FluidBoundaryConditions
+//! \class FluidBCs
 //  \brief BCs data and functions for fluid
 
-class FluidBoundaryConditions {
+class FluidBCs {
 public:
-  FluidBoundaryConditions(Fluid *pf, ParameterInput *pin);
-  ~FluidBoundaryConditions();
+  FluidBCs(Fluid *pf, ParameterInput *pin);
+  ~FluidBCs();
 
-  void ApplyBoundaryConditions(AthenaArray<Real> &a);
+  void ApplyFluidBCs(AthenaArray<Real> &a);
 
 private:
-  Fluid *pmy_fluid;  // ptr to Fluid containing this FluidBoundaryConditions
+  Fluid *pmy_fluid;  // ptr to Fluid containing this FluidBCs
 
 // function pointers, set in Init function based on parameters in input file
 

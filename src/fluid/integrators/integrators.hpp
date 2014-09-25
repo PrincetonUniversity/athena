@@ -13,15 +13,17 @@
 #include "../../athena.hpp"         // Real
 #include "../../athena_arrays.hpp"  // AthenaArray
 
+// Forward declarations
 class MeshBlock;
 class Fluid;
+class ParameterInput;
 
 //! \class FluidIntegrator
 //  \brief member functions implement various integration algorithms for the fluid
 
 class FluidIntegrator {
 public:
-  FluidIntegrator(Fluid *pf);
+  FluidIntegrator(Fluid *pf, ParameterInput *pin);
   ~FluidIntegrator();
 
   Fluid *pmy_fluid;  // ptr to Fluid containing this FluidIntegrator

@@ -16,7 +16,7 @@
 class MeshBlock;
 class ParameterInput;
 class FluidIntegrator;
-class FluidBoundaryConditions;
+class FluidBCs;
 class FluidEqnOfState;
 class FluidSourceTerms;
 
@@ -37,10 +37,10 @@ public:
 
   AthenaArray<Real> ifov;  // internal fluid output variables for analysis
 
-  FluidIntegrator *pf_integrator;   // integration algorithm
-  FluidBoundaryConditions *pf_bcs;  // boundary conditions
-  FluidEqnOfState *pf_eos;          // equation of state (including cons->prim func)
-  FluidSourceTerms *pf_srcterms;    // physical source terms
+  FluidIntegrator *pf_integrator;  // integration algorithm
+  FluidBCs *pf_bcs;                // boundary conditions
+  FluidEqnOfState *pf_eos;         // equation of state (including cons->prim func)
+  FluidSourceTerms *pf_srcterms;   // physical source terms
 
   void NewTimeStep(MeshBlock *pmb);    // computes new timestep on a MeshBlock
   void InitFluid(ParameterInput *pin); // problem generator function (files in /pgen)

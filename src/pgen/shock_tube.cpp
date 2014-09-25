@@ -74,7 +74,7 @@ void Fluid::InitFluid(ParameterInput *pin)
 
 // Parse left state read from input file: dl,ul,vl,wl,[pl]
 
-  Real wl[NVAR];
+  Real wl[NFLUID];
   wl[IDN] = pin->GetReal("problem","dl");
   wl[IVX] = pin->GetReal("problem","ul");
   wl[IVY] = pin->GetReal("problem","vl");
@@ -83,7 +83,7 @@ void Fluid::InitFluid(ParameterInput *pin)
 
 // Parse right state read from input file: dr,ur,vr,wr,[pr]
 
-  Real wr[NVAR];
+  Real wr[NFLUID];
   wr[IDN] = pin->GetReal("problem","dr");
   wr[IVX] = pin->GetReal("problem","ur");
   wr[IVY] = pin->GetReal("problem","vr");

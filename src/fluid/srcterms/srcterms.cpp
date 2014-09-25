@@ -67,7 +67,6 @@ FluidSourceTerms::FluidSourceTerms(Fluid *pf, ParameterInput *pin)
 
 FluidSourceTerms::~FluidSourceTerms()
 {
-  pmy_fluid_ = NULL; // Fluid destructor will free this memory
   volume_i_.DeleteAthenaArray();
   src_terms_i_.DeleteAthenaArray();
 }
@@ -80,7 +79,7 @@ FluidSourceTerms::~FluidSourceTerms()
 void FluidSourceTerms::PhysicalSourceTerms(Real dt, AthenaArray<Real> &prim,
   AthenaArray<Real> &cons)
 {
-  Real src[NVAR];
+  Real src[NFLUID];
   MeshBlock *pmb = pmy_fluid_->pmy_block;
   if (pt_mass_ == 0.0) return;
 

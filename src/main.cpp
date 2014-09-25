@@ -291,8 +291,7 @@ int main(int argc, char *argv[])
 #endif
 
   delete pinput;
-//  TODO: for some reason get a malloc error in following???
-//  delete pmesh;
+  delete pmesh;
   delete pouts;
 
   return(0); 

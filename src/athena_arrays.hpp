@@ -85,12 +85,11 @@ AthenaArray<T>::AthenaArray()
 {
 }
 
-// destructor
+// destructor -- does nothing as DeleteAthenaArray should always be used to free memory
 
 template<typename T>
 AthenaArray<T>::~AthenaArray()
 {
-  if (scopy_ == 0) DeleteAthenaArray();
 }
 
 // copy constructor (does a deep copy)

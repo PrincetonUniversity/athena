@@ -35,10 +35,10 @@
  *  \brief implements functions that initialize/apply BCs on each edge
  *====================================================================================*/
 
-// FluidBoundaryConditions constructor - sets function pointers for the appropriate
+// FluidBCs constructor - sets function pointers for the appropriate
 // boundary conditions at each of the 6 edges of a MeshBlock
 
-FluidBoundaryConditions::FluidBoundaryConditions(Fluid *pf, ParameterInput *pin)
+FluidBCs::FluidBCs(Fluid *pf, ParameterInput *pin)
 {
   pmy_fluid = pf;
   std::stringstream msg;
@@ -58,7 +58,7 @@ FluidBoundaryConditions::FluidBoundaryConditions(Fluid *pf, ParameterInput *pin)
       FluidInnerX1_ = PeriodicInnerX1;
     break;
     default:
-      msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
+      msg << "### FATAL ERROR in FluidBCs constructor" << std::endl
           << "Flag ix1_bc=" << pmb->block_bcs.ix1_bc << " not valid" << std::endl;
       throw std::runtime_error(msg.str().c_str());
     break;
@@ -77,7 +77,7 @@ FluidBoundaryConditions::FluidBoundaryConditions(Fluid *pf, ParameterInput *pin)
       FluidOuterX1_ = PeriodicOuterX1;
     break;
     default:
-      msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
+      msg << "### FATAL ERROR in FluidBCs constructor" << std::endl
           << "Flag ox1_bc=" << pmb->block_bcs.ox1_bc << " not valid" << std::endl;
       throw std::runtime_error(msg.str().c_str());
     break;
@@ -97,7 +97,7 @@ FluidBoundaryConditions::FluidBoundaryConditions(Fluid *pf, ParameterInput *pin)
         FluidInnerX2_ = PeriodicInnerX2;
       break;
       default:
-        msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
+        msg << "### FATAL ERROR in FluidBCs constructor" << std::endl
             << "Flag ix2_bc=" << pmb->block_bcs.ix2_bc << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
       break;
@@ -116,7 +116,7 @@ FluidBoundaryConditions::FluidBoundaryConditions(Fluid *pf, ParameterInput *pin)
         FluidOuterX2_ = PeriodicOuterX2;
       break;
       default:
-        msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
+        msg << "### FATAL ERROR in FluidBCs constructor" << std::endl
             << "Flag ox2_bc=" << pmb->block_bcs.ox2_bc << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
       break;
@@ -137,7 +137,7 @@ FluidBoundaryConditions::FluidBoundaryConditions(Fluid *pf, ParameterInput *pin)
         FluidInnerX3_ = PeriodicInnerX3;
       break;
       default:
-        msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
+        msg << "### FATAL ERROR in FluidBCs constructor" << std::endl
             << "Flag ix3_bc=" << pmb->block_bcs.ix3_bc << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
       break;
@@ -156,7 +156,7 @@ FluidBoundaryConditions::FluidBoundaryConditions(Fluid *pf, ParameterInput *pin)
         FluidOuterX3_ = PeriodicOuterX3;
       break;
       default:
-        msg << "### FATAL ERROR in FluidBoundaryConditions constructor" << std::endl
+        msg << "### FATAL ERROR in FluidBCs constructor" << std::endl
             << "Flag ox3_bc=" << pmb->block_bcs.ox3_bc << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
       break;
@@ -167,17 +167,16 @@ FluidBoundaryConditions::FluidBoundaryConditions(Fluid *pf, ParameterInput *pin)
 
 // destructor
 
-FluidBoundaryConditions::~FluidBoundaryConditions()
+FluidBCs::~FluidBCs()
 {
-  pmy_fluid = NULL; // Fluid destructor will free this memory
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void FluidBoundaryConditions::ApplyBoundaryConditions(AthenaArray<Real> &a)
+/*! \fn void FluidBCs::ApplyFluidBCs(AthenaArray<Real> &a)
  *  \brief Calls BC functions using appropriate function pointers to set ghost zones.  
  */
 
-void FluidBoundaryConditions::ApplyBoundaryConditions(AthenaArray<Real> &a)
+void FluidBCs::ApplyFluidBCs(AthenaArray<Real> &a)
 {
 
 // Boundary Conditions in x1-direction

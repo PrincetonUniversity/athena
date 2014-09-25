@@ -169,7 +169,6 @@ BFieldBoundaryConditions::BFieldBoundaryConditions(Fluid *pf, ParameterInput *pi
 
 BFieldBoundaryConditions::~BFieldBoundaryConditions()
 {
-  pmy_fluid = NULL; // Fluid destructor will free this memory
 }
 
 //--------------------------------------------------------------------------------------
