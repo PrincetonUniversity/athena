@@ -463,7 +463,7 @@ void Coordinates::CoordinateSourceTerms(Real dt, const AthenaArray<Real> &prim,
 
   // Go through cells
   for (int k = pmy_block->ks; k <= pmy_block->ke; k++)
-    for (int j = pmy_block->ks; j <= pmy_block->ke; j++)
+    for (int j = pmy_block->js; j <= pmy_block->je; j++)
     {
       // Extract geometric quantities that do not depend on r
       Real &gamma_233 = src_terms_j2_(j);
