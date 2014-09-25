@@ -69,11 +69,11 @@ class AdiabaticHydroInversionTest : public GeneralTest
   // Function invoked after each test
   virtual void TearDown()
   {
-    //prim_original.DeleteAthenaArray();
-    //prim_close.DeleteAthenaArray();
-    //prim_returned.DeleteAthenaArray();
-    //cons.DeleteAthenaArray();
-    //delete mesh;
+    prim_original.DeleteAthenaArray();
+    prim_close.DeleteAthenaArray();
+    prim_returned.DeleteAthenaArray();
+    cons.DeleteAthenaArray();
+    delete mesh;
     delete inputs;
   }
 

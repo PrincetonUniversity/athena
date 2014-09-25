@@ -54,7 +54,8 @@
 //--------------------------------------------------------------------------------------
 // macros associated with numerical algorithm (rarely modified)
 
-#define NVAR 5
+#define NFLUID 5
+#define NFIELD 3
 
 #define NGHOST 2
 

@@ -29,7 +29,7 @@ class RiemannTest : public GeneralTest
   Mesh *mesh;
   FluidIntegrator *pfluid_integrator;
   AthenaArray<Real> prim_left, prim_right, flux;
-  Real flux_expected[NVAR];
+  Real flux_expected[NFLUID];
 
   // Constructor
   RiemannTest(std::string input) : GeneralTest(1.0e-5, 1.0e-5)
@@ -49,20 +49,20 @@ class RiemannTest : public GeneralTest
     inputs->ModifyFromCmdline(3, const_cast<char **>(argv));
     mesh = new Mesh(inputs);
     mesh->ForAllDomains(init_fluid, inputs);
-    pfluid_integrator = new FluidIntegrator(mesh->pdomain->pblock->pfluid);
-    prim_left.NewAthenaArray(NVAR,1);
-    prim_right.NewAthenaArray(NVAR,1);
-    flux.NewAthenaArray(NVAR,1);
+    pfluid_integrator = new FluidIntegrator(mesh->pdomain->pblock->pfluid, inputs);
+    prim_left.NewAthenaArray(NFLUID,1);
+    prim_right.NewAthenaArray(NFLUID,1);
+    flux.NewAthenaArray(NFLUID,1);
   }
 
   // Function invoked after each test
   virtual void TearDown()
   {
-    //prim_left.DeleteAthenaArray();
-    //prim_right.DeleteAthenaArray();
-    //flux.DeleteAthenaArray();
-    //delete pfluid_integrator;
-    //delete mesh;
+    prim_left.DeleteAthenaArray();
+    prim_right.DeleteAthenaArray();
+    flux.DeleteAthenaArray();
+    delete pfluid_integrator;
+    delete mesh;
     delete inputs;
   }
 };

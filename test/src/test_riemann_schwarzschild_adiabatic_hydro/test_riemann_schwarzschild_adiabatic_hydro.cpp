@@ -41,7 +41,7 @@ TEST_F(Geodesic2DTest, EquatorialFlux)
   // Check for correct fluxes
   pfluid_integrator->RiemannSolver(ks, jm, is, ie, IVY, IVZ, IVX, &prim_left,
       &prim_right, &flux);
-  for (int n = 0; n < NVAR; n++)
+  for (int n = 0; n < NFLUID; n++)
     for (int i = is; i <= ie; i++)
       EXPECT_DOUBLE_TOL(flux_expected(n,i), flux(n,i));
 }
@@ -79,7 +79,7 @@ TEST_F(Geodesic2DTest, ThetaFlux)
   {
     pfluid_integrator->RiemannSolver(ks, j, is, ie, IVY, IVZ, IVX, &prim_left,
         &prim_right, &flux);
-    for (int n = 0; n < NVAR; n++)
+    for (int n = 0; n < NFLUID; n++)
       for (int i = is; i <= ie; i++)
         EXPECT_DOUBLE_TOL(flux_expected(n,i), flux(n,i));
   }

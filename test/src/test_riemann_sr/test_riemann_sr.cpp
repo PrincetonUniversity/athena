@@ -37,7 +37,7 @@ TEST_F(HLLCSRTest, MB_3_L)
   // Check for correct fluxes
   pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, &prim_left, &prim_right,
       &flux);
-  for (int n = 0; n < NVAR; n++)
+  for (int n = 0; n < NFLUID; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0));
 }
 
@@ -68,7 +68,7 @@ TEST_F(HLLCSRTest, MB_3_R)
   // Check for correct fluxes
   pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, &prim_left, &prim_right,
       &flux);
-  for (int n = 0; n < NVAR; n++)
+  for (int n = 0; n < NFLUID; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0));
 }
 
@@ -99,7 +99,7 @@ TEST_F(HLLCSRTest, MB_3_C)
   // Check for correct fluxes
   pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, &prim_left, &prim_right,
       &flux);
-  for (int n = 0; n < NVAR; n++)
+  for (int n = 0; n < NFLUID; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0));
 }
 
@@ -130,7 +130,7 @@ TEST_F(HLLCSRTest, Test1)
   // Check for correct fluxes
   pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, &prim_left, &prim_right,
       &flux);
-  for (int n = 0; n < NVAR; n++)
+  for (int n = 0; n < NFLUID; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0));
 }
 
@@ -162,7 +162,7 @@ TEST_F(HLLCSRTest, Test2)
   // Check for correct fluxes
   pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, &prim_left, &prim_right,
       &flux);
-  for (int n = 0; n < NVAR; n++)
+  for (int n = 0; n < NFLUID; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0));
 }
 
@@ -194,7 +194,7 @@ TEST_F(HLLCSRTest, Test3)
   // Check for correct fluxes
   pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, &prim_left, &prim_right,
       &flux);
-  for (int n = 0; n < NVAR; n++)
+  for (int n = 0; n < NFLUID; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0));
 }
 
@@ -226,7 +226,7 @@ TEST_F(HLLCSRTest, Test4)
   // Check for correct fluxes
   pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, &prim_left, &prim_right,
       &flux);
-  for (int n = 0; n < NVAR; n++)
+  for (int n = 0; n < NFLUID; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0));
 }
 
@@ -258,7 +258,7 @@ TEST_F(HLLCSRTest, Test5)
   // Check for correct fluxes
   pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, &prim_left, &prim_right,
       &flux);
-  for (int n = 0; n < NVAR; n++)
+  for (int n = 0; n < NFLUID; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0));
 }
 
@@ -290,7 +290,7 @@ TEST_F(HLLCSRTest, Test6)
   // Check for correct fluxes
   pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, &prim_left, &prim_right,
       &flux);
-  for (int n = 0; n < NVAR; n++)
+  for (int n = 0; n < NFLUID; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0));
 }
 
@@ -322,7 +322,7 @@ TEST_F(HLLCSRTest, Test7)
   // Check for correct fluxes
   pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, &prim_left, &prim_right,
       &flux);
-  for (int n = 0; n < NVAR; n++)
+  for (int n = 0; n < NFLUID; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0));
 }
 
@@ -354,7 +354,7 @@ TEST_F(HLLCSRTest, Test8)
   // Check for correct fluxes
   pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, &prim_left, &prim_right,
       &flux);
-  for (int n = 0; n < NVAR; n++)
+  for (int n = 0; n < NFLUID; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0));
 }
 
@@ -386,7 +386,7 @@ TEST_F(HLLCSRTest, Test9)
   // Check for correct fluxes
   pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, &prim_left, &prim_right,
       &flux);
-  for (int n = 0; n < NVAR; n++)
+  for (int n = 0; n < NFLUID; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0));
 }
 
@@ -418,6 +418,6 @@ TEST_F(HLLCSRTest, Test10)
   // Check for correct fluxes
   pfluid_integrator->RiemannSolver(0, 0, 0, 0, IM1, IM2, IM3, &prim_left, &prim_right,
       &flux);
-  for (int n = 0; n < NVAR; n++)
+  for (int n = 0; n < NFLUID; n++)
     EXPECT_DOUBLE_TOL(flux_expected[n], flux(n,0));
 }

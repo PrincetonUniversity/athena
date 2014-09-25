@@ -30,7 +30,7 @@ class AdiabaticHydroSRTest : public GeneralTest
   Mesh *mesh;
   FluidEqnOfState *pf_eos;
   AthenaArray<Real> cons, prim;
-  Real prim_expected[NVAR];
+  Real prim_expected[NFLUID];
 
   // Constructor
   AdiabaticHydroSRTest(std::string input) : GeneralTest(1.0e-5, 1.0e-5)
@@ -56,16 +56,16 @@ class AdiabaticHydroSRTest : public GeneralTest
     pblock->js = pblock->je = 0;
     pblock->ks = pblock->ke = 0;
     pf_eos = pblock->pfluid->pf_eos;
-    cons.NewAthenaArray(NVAR,1,1,1);
-    prim.NewAthenaArray(NVAR,1,1,1);
+    cons.NewAthenaArray(NFLUID,1,1,1);
+    prim.NewAthenaArray(NFLUID,1,1,1);
   }
 
   // Function invoked after each test
   virtual void TearDown()
   {
-    //prim.DeleteAthenaArray();
-    //cons.DeleteAthenaArray();
-    //delete mesh;
+    prim.DeleteAthenaArray();
+    cons.DeleteAthenaArray();
+    delete mesh;
     delete inputs;
   }
 };

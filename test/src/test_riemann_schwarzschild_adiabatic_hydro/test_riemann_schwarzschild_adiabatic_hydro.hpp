@@ -49,7 +49,7 @@ class RiemannTest : public GeneralTest
     inputs->ModifyFromCmdline(3, const_cast<char **>(argv));
     mesh = new Mesh(inputs);
     mesh->ForAllDomains(init_fluid, inputs);
-    pfluid_integrator = new FluidIntegrator(mesh->pdomain->pblock->pfluid);
+    pfluid_integrator = new FluidIntegrator(mesh->pdomain->pblock->pfluid, inputs);
     is = mesh->pdomain->pblock->is;
     ie = mesh->pdomain->pblock->ie;
     js = mesh->pdomain->pblock->js;
@@ -57,20 +57,21 @@ class RiemannTest : public GeneralTest
     jm = (js + je + 1) / 2;
     ks = mesh->pdomain->pblock->ks;
     ncells1 = mesh->pdomain->pblock->block_size.nx1 + 2*NGHOST;
-    prim_left.NewAthenaArray(NVAR,ncells1);
-    prim_right.NewAthenaArray(NVAR,ncells1);
-    flux.NewAthenaArray(NVAR,ncells1);
-    flux_expected.NewAthenaArray(NVAR,ncells1);
+    prim_left.NewAthenaArray(NFLUID,ncells1);
+    prim_right.NewAthenaArray(NFLUID,ncells1);
+    flux.NewAthenaArray(NFLUID,ncells1);
+    flux_expected.NewAthenaArray(NFLUID,ncells1);
   }
 
   // Function invoked after each test
   virtual void TearDown()
   {
-    //prim_left.DeleteAthenaArray();
-    //prim_right.DeleteAthenaArray();
-    //flux.DeleteAthenaArray();
-    //delete pfluid_integrator;
-    //delete mesh;
+    prim_left.DeleteAthenaArray();
+    prim_right.DeleteAthenaArray();
+    flux.DeleteAthenaArray();
+    flux_expected.DeleteAthenaArray();
+    delete pfluid_integrator;
+    delete mesh;
     delete inputs;
   }
 };

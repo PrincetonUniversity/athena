@@ -24,7 +24,7 @@ TEST_F(AdiabaticHydroInversionTest1, TestStaticPerfectGuess)
   // Check conserved-to-primitive inversion
   mesh->pdomain->pblock->pfluid->pf_eos->ConservedToPrimitive(cons, prim_close,
       prim_returned);
-  for (int n = 0; n < NVAR; n++)
+  for (int n = 0; n < NFLUID; n++)
     for (int k = ks; k <= ke; k++)
       for (int j = js; j <= je; j++)
         for (int i = is; i <= ie; i++)
@@ -41,7 +41,7 @@ TEST_F(AdiabaticHydroInversionTest1, TestStatic)
   // Check conserved-to-primitive inversion
   mesh->pdomain->pblock->pfluid->pf_eos->ConservedToPrimitive(cons, prim_close,
       prim_returned);
-  for (int n = 0; n < NVAR; n++)
+  for (int n = 0; n < NFLUID; n++)
     for (int k = ks; k <= ke; k++)
       for (int j = js; j <= je; j++)
         for (int i = is; i <= ie; i++)
@@ -58,7 +58,7 @@ TEST_F(AdiabaticHydroInversionTest1, TestStaticLowPressure)
   // Check conserved-to-primitive inversion
   mesh->pdomain->pblock->pfluid->pf_eos->ConservedToPrimitive(cons, prim_close,
       prim_returned);
-  for (int n = 0; n < NVAR; n++)
+  for (int n = 0; n < NFLUID; n++)
     for (int k = ks; k <= ke; k++)
       for (int j = js; j <= je; j++)
         for (int i = is; i <= ie; i++)
@@ -75,7 +75,7 @@ TEST_F(AdiabaticHydroInversionTest1, TestMovingPerfectGuess)
   // Check conserved-to-primitive inversion
   mesh->pdomain->pblock->pfluid->pf_eos->ConservedToPrimitive(cons, prim_close,
       prim_returned);
-  for (int n = 0; n < NVAR; n++)
+  for (int n = 0; n < NFLUID; n++)
     for (int k = ks; k <= ke; k++)
       for (int j = js; j <= je; j++)
         for (int i = is; i <= ie; i++)
@@ -92,7 +92,7 @@ TEST_F(AdiabaticHydroInversionTest1, TestMoving)
   // Check conserved-to-primitive inversion
   mesh->pdomain->pblock->pfluid->pf_eos->ConservedToPrimitive(cons, prim_close,
       prim_returned);
-  for (int n = 0; n < NVAR; n++)
+  for (int n = 0; n < NFLUID; n++)
     for (int k = ks; k <= ke; k++)
       for (int j = js; j <= je; j++)
         for (int i = is; i <= ie; i++)
@@ -109,7 +109,7 @@ TEST_F(AdiabaticHydroInversionTest1, TestMovingLowPressure)
   // Check conserved-to-primitive inversion
   mesh->pdomain->pblock->pfluid->pf_eos->ConservedToPrimitive(cons, prim_close,
       prim_returned);
-  for (int n = 0; n < NVAR; n++)
+  for (int n = 0; n < NFLUID; n++)
     for (int k = ks; k <= ke; k++)
       for (int j = js; j <= je; j++)
         for (int i = is; i <= ie; i++)
