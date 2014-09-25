@@ -32,8 +32,8 @@ ox1_bc = 2                   # outer r boundary condition: outflow
 nx2    = 15                  # number of zones in theta-direction
 x2min  = 0.5235987755982988  # lower theta (pi/6)
 x2max  = 2.6179938779914944  # upper theta (5*pi/6)
-ix2_bc = 2                   # lower theta boundary condition: periodic
-ox2_bc = 2                   # upper theta boundary condition: periodic
+ix2_bc = 4                   # lower theta boundary condition: periodic
+ox2_bc = 4                   # upper theta boundary condition: periodic
 
 nx3    = 1                   # number of zones in phi-direction
 x3min  = -0.5                # minimum phi
