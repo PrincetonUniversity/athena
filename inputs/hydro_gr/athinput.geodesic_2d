@@ -1,5 +1,5 @@
 <comment>
-problem = GR hydro accretion in r-theta plane
+problem = GR hydro accretion in r-theta plane, negligible pressure
 
 <job>
 problem_id  = BHAccretion2D  # problem ID: basename of output filenames
@@ -53,7 +53,7 @@ v1_outer   = -0.28507443467021765   # fixed velocity (r-direction) in outer cell
 v2_outer   = 0.0                    # fixed velocity (theta-direction) in outer cell
 v3_outer   = 0.0                    # fixed velocity (phi-direction) in outer cell
 
-rho_inner  = 1.0e-2                 # initial density in inner cells
+rho_inner  = 1.0e-2                 # initial density in inner cell
 pgas_inner = 1.0e-5                 # initial gas pressure in inner cell
 v1_inner   = -0.2                   # initial velocity (r-direction) in inner cell
 v2_inner   = 0.0                    # initial velocity (theta-direction) in inner cell
