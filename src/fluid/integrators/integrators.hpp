@@ -36,13 +36,13 @@ public:
     AthenaArray<Real> *pwl, AthenaArray<Real> *pwr, AthenaArray<Real> *pflx);
 
   void ReconstructionFuncX1(const int k, const int j, const int il, const int iu, 
-    AthenaArray<Real> &w, AthenaArray<Real> *pwl, AthenaArray<Real> *pwr);
+    const AthenaArray<Real> &w, AthenaArray<Real> *pwl, AthenaArray<Real> *pwr);
 
   void ReconstructionFuncX2(const int k, const int j, const int il, const int iu, 
-    AthenaArray<Real> &w, AthenaArray<Real> *pwl, AthenaArray<Real> *pwr);
+    const AthenaArray<Real> &w, AthenaArray<Real> *pwl, AthenaArray<Real> *pwr);
 
   void ReconstructionFuncX3(const int k, const int j, const int il, const int iu, 
-    AthenaArray<Real> &w, AthenaArray<Real> *pwl, AthenaArray<Real> *pwr);
+    const AthenaArray<Real> &w, AthenaArray<Real> *pwl, AthenaArray<Real> *pwr);
 
 private:
 // scratch space used in integrator
