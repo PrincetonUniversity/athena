@@ -116,13 +116,13 @@ void FluidSourceTerms::PhysicalSourceTerms(const Real dt, const AthenaArray<Real
   if (pfirst_mass == NULL) return;
 
   MeshBlock *pmb = pmy_fluid_->pmy_block;
-  PointMass *ppm = pfirst_mass;
   ThreeVector r,p1;
 
 // Source terms due to point mass gravity
 
   for (int k=pmb->ks; k<=pmb->ke; ++k) {
   for (int j=pmb->js; j<=pmb->je; ++j) {
+    PointMass *ppm = pfirst_mass;
     while (ppm != NULL) {
       p1.x2 = pmb->x2v(j);
       p1.x3 = pmb->x3v(k);
@@ -137,30 +137,16 @@ void FluidSourceTerms::PhysicalSourceTerms(const Real dt, const AthenaArray<Real
         cons(IM1,k,j,i) += src;
         if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVX,k,j,i);
 
-if (i==2 && j==2 && k==0) {
-std::cout << r.x1 << "  " << r.x2 << "  " << r.x3 << std::endl;
-std::cout << src/dt << "  " << d << std::endl; 
-}
- 
-
         if (pmb->block_size.nx2 > 1) {
           src = dt*force*(r.x2/d);
           cons(IM2,k,j,i) += src;
           if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVY,k,j,i);
-if (i==2 && j==2 && k==0) {
-std::cout << src/dt << "  " << d << std::endl; 
-}
- 
         }
 
         if (pmb->block_size.nx3 > 1) {
           src = dt*force*(r.x3/d);
           cons(IM3,k,j,i) += src;
           if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVZ,k,j,i);
-if (i==2 && j==2 && k==0) {
-std::cout << src/dt << "  " << d << std::endl; 
-}
- 
         }
       }
       ppm = ppm->pnext;

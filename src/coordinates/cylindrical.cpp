@@ -231,9 +231,6 @@ void Coordinates::CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &
          m_pp += (iso_cs*iso_cs)*prim(IDN,k,j,i);
       }
       cons(IM1,k,j,i) += dt*(src_terms_i_(i)*m_pp);
-if (i==2 && j==2 && k==0) {
-std::cout << m_pp << "  " << src_terms_i_(i) << "  " << dt << std::endl;
-}
     }
     if (pmy_block->block_size.nx2 > 1) {
 #pragma simd
