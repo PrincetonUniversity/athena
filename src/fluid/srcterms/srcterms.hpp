@@ -18,6 +18,16 @@
 class Fluid;
 class ParameterInput;
 
+//! \struct PointMass
+//  \brief node in a linked list contained data about point masses
+
+typedef struct PointMass {
+  Real gm;
+  ThreeVector position;
+  ThreeVector velocity;
+  struct PointMass *pnext;   // pointer to next node
+} PointMass;
+
 //! \class FluidSourceTerms
 //  \brief data and functions for physical source terms in the fluid
 
@@ -26,11 +36,12 @@ public:
   FluidSourceTerms(Fluid *pf, ParameterInput *pin);
   ~FluidSourceTerms();
 
-  void PhysicalSourceTerms(Real dt, AthenaArray<Real> &p, AthenaArray<Real> &c);
+  void PhysicalSourceTerms(const Real dt, const AthenaArray<Real> &p,
+    AthenaArray<Real> &c);
 
 private:
-  Fluid *pmy_fluid_;    // ptr to Fluid containing this FluidSourceTerms
-  Real pt_mass_;
+  Fluid *pmy_fluid_;       // ptr to Fluid containing this FluidSourceTerms
+  PointMass *pfirst_mass;  // ptr to first PointMass in linked list
   AthenaArray<Real> src_terms_i_, src_terms_j_;
   AthenaArray<Real> volume_i_,    volume_j_;
 };

@@ -41,11 +41,14 @@ public:
   void CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> *pvol);
 
-//functions to compute physical width of cells, physical distance between points
-  Real VolumeCenterWidth1(const int k, const int j, const int i);
-  Real VolumeCenterWidth2(const int k, const int j, const int i);
-  Real VolumeCenterWidth3(const int k, const int j, const int i);
-  Real DistanceBetweenPoints(const Real pt1, const Real pt2);
+// functions to compute physical width/spacing/distances
+  Real CellPhysicalWidth1(const int k, const int j, const int i);
+  Real CellPhysicalWidth2(const int k, const int j, const int i);
+  Real CellPhysicalWidth3(const int k, const int j, const int i);
+  Real CellPhysicalSpacing1(const int k, const int j, const int i);
+  Real CellPhysicalSpacing2(const int k, const int j, const int i);
+  Real CellPhysicalSpacing3(const int k, const int j, const int i);
+  ThreeVector VectorBetweenPoints(const ThreeVector pt1, const ThreeVector pt2);
 
   void CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
     AthenaArray<Real> &cons);

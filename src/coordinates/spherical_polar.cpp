@@ -213,21 +213,30 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 }
 
 //--------------------------------------------------------------------------------------
-// Cell Width functions
+// Width and Distance functions
 
-Real Coordinates::VolumeCenterWidth1(const int k, const int j, const int i)
+Real Coordinates::CellPhysicalWidth1(const int k, const int j, const int i)
 {
   return (pmy_block->dx1f(i));
 }
 
-Real Coordinates::VolumeCenterWidth2(const int k, const int j, const int i)
+Real Coordinates::CellPhysicalWidth2(const int k, const int j, const int i)
 {
   return (pmy_block->x1v(i)*pmy_block->dx2f(j));
 }
 
-Real Coordinates::VolumeCenterWidth3(const int k, const int j, const int i)
+Real Coordinates::CellPhysicalWidth3(const int k, const int j, const int i)
 {
   return (pmy_block->x1v(i)*sin(pmy_block->x2v(j))*pmy_block->dx3f(k));
+}
+
+ThreeVector Coordinates::VectorBetweenPoints(const ThreeVector p1, const ThreeVector p2)
+{
+  ThreeVector r;
+  r.x1 = p1.x1 - p2.x1*(sin(p1.x2)*sin(p2.x2)*cos(p1.x3-p2.x3) + cos(p1.x2)*cos(p2.x2));
+  r.x2 = p2.x1*(cos(p1.x2)*sin(p2.x2)*cos(p1.x3-p2.x3) - sin(p1.x2)*cos(p2.x2));
+  r.x3 = p2.x1*sin(p2.x2)*sin(p1.x3-p2.x3);;
+  return r;
 }
 
 //--------------------------------------------------------------------------------------
