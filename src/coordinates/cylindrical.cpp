@@ -28,6 +28,8 @@
 #include "../fluid/fluid.hpp"     // Fluid
 #include "../fluid/eos/eos.hpp"   // SoundSpeed()
 
+#include <iostream>
+
 //======================================================================================
 //! \file cylindrical.cpp
 //  \brief implements functions for cylindrical (r-z-phi) class Coordinates
@@ -194,12 +196,13 @@ Real Coordinates::CellPhysicalWidth3(const int k, const int j, const int i)
   return (pmy_block->dx3f(k));
 }
 
+// returns vector pointing from p1 to p2
 ThreeVector Coordinates::VectorBetweenPoints(const ThreeVector p1, const ThreeVector p2)
 {
   ThreeVector r;
-  r.x1 = p1.x1 - p2.x1*cos(p1.x2 - p2.x2);
-  r.x2 = p2.x1*sin(p1.x2 - p2.x2);
-  r.x3 = p1.x3 - p2.x3;
+  r.x1 = p2.x1*cos(p1.x2 - p2.x2) - p1.x1;
+  r.x2 = p2.x1*sin(p2.x2 - p1.x2);
+  r.x3 = p2.x3 - p1.x3;
   return r;
 }
 
@@ -220,23 +223,23 @@ void Coordinates::CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &
   for (int j=(pmy_block->js); j<=(pmy_block->je); ++j) {
 #pragma simd
     for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
-      Real m_pp = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM3,k,j,i);
+      Real m_pp = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM2,k,j,i);
       if (NON_BAROTROPIC_EOS) {
          m_pp += prim(IEN,k,j,i);
       } else {
          Real iso_cs = pmy_block->pfluid->pf_eos->SoundSpeed(dummy_arg);
          m_pp += (iso_cs*iso_cs)*prim(IDN,k,j,i);
       }
-
-      Real& uim1 = cons(IM1,k,j,i);
-      uim1 += dt*(src_terms_i_(i)*m_pp);
+      cons(IM1,k,j,i) += dt*(src_terms_i_(i)*m_pp);
+if (i==2 && j==2 && k==0) {
+std::cout << m_pp << "  " << src_terms_i_(i) << "  " << dt << std::endl;
+}
     }
     if (pmy_block->block_size.nx2 > 1) {
 #pragma simd
       for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
         Real m_pr = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM1,k,j,i);
-        Real& uim2 = cons(IM2,k,j,i);
-        uim2 -= dt*(src_terms_i_(i)*m_pr);
+        cons(IM2,k,j,i) -= dt*(src_terms_i_(i)*m_pr);
       }
     }
   }}

@@ -66,7 +66,7 @@ void Fluid::InitFluid(ParameterInput *pin)
   x1Min = pb->block_size.x1min;
 
 // Get parameters for grav terms
-  GM = pin->GetOrAddReal("problem","GM",0.0);
+  GM = pin->GetReal("pointmass0","GM");
 
 // Get initial density
   rho0 = pin->GetReal("problem","rho0");
@@ -87,9 +87,8 @@ void Fluid::InitFluid(ParameterInput *pin)
   }
 
 // Get options for boundary conditions
-  int Hbc = pin->GetInteger("problem","Hbc");
-  int ix1_bc = pin->GetInteger("mesh","ix1_bc");
-  int ox1_bc = pin->GetInteger("mesh","ox1_bc");
+//  int ix1_bc = pin->GetInteger("mesh","ix1_bc");
+//  int ox1_bc = pin->GetInteger("mesh","ox1_bc");
 
 // Initialize the disk
   for (int k=ks; k<=ke; ++k) {

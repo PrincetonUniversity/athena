@@ -11,7 +11,7 @@
  * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of GNU GPL in the file LICENSE included in the code
- * distribution.  If not see <http://www.gnu.org/licenses/>.
+
  *====================================================================================*/
 
 // Primary header
@@ -131,28 +131,40 @@ void FluidSourceTerms::PhysicalSourceTerms(const Real dt, const AthenaArray<Real
         p1.x1 = pmb->x1v(i);
         r = pmb->pcoord->VectorBetweenPoints(p1,ppm->position);
         Real d = sqrt(r.x1*r.x1 + r.x2*r.x2 + r.x3*r.x3);
-        Real src = dt*src_terms_i_(i)*((ppm->gm)*prim(IDN,k,j,i)/(d*d*d));
+        Real force = (ppm->gm)*prim(IDN,k,j,i)/(d*d);
 
-        Real& um1 = cons(IM1,k,j,i);
-        um1 -= src*r.x1;
-        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*r.x1*prim(IVX,k,j,i);
+        Real src = dt*src_terms_i_(i)*pmb->x1v(i)*force*(r.x1/d);
+        cons(IM1,k,j,i) += src;
+        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVX,k,j,i);
+
+if (i==2 && j==2 && k==0) {
+std::cout << r.x1 << "  " << r.x2 << "  " << r.x3 << std::endl;
+std::cout << src/dt << "  " << d << std::endl; 
+}
  
 
         if (pmb->block_size.nx2 > 1) {
-          Real& um2 = cons(IM2,k,j,i);
-          um2 -= src*r.x2;
-          if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*r.x2*prim(IVY,k,j,i);
+          src = dt*force*(r.x2/d);
+          cons(IM2,k,j,i) += src;
+          if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVY,k,j,i);
+if (i==2 && j==2 && k==0) {
+std::cout << src/dt << "  " << d << std::endl; 
+}
+ 
         }
 
         if (pmb->block_size.nx3 > 1) {
-          Real& um3 = cons(IM3,k,j,i);
-          um3 -= src*r.x3;
-          if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*r.x3*prim(IVZ,k,j,i);
+          src = dt*force*(r.x3/d);
+          cons(IM3,k,j,i) += src;
+          if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVZ,k,j,i);
+if (i==2 && j==2 && k==0) {
+std::cout << src/dt << "  " << d << std::endl; 
+}
+ 
         }
       }
-
+      ppm = ppm->pnext;
     }
-    ppm = ppm->pnext;
   }}
 
   return;
