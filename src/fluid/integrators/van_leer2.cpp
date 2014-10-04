@@ -47,9 +47,6 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   Real dt = pmb->pmy_domain->pmy_mesh->dt;
-
-  Real sum=0.0; Real sum_2=0.0;
-  int ndata = (pmb->block_size.nx1)*(pmb->block_size.nx2)*(pmb->block_size.nx3)*(NFLUID);
  
   AthenaArray<Real> u = pmb->pfluid->u.ShallowCopy();
   AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
@@ -77,7 +74,13 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
 #pragma omp for schedule(static)
     for (int j=js; j<=je; ++j){
 
-      ReconstructionFuncX1(k,j,is,ie+1,w,pwl,pwr);
+      for (int n=0; n<NFLUID; ++n){
+#pragma simd
+        for (int i=is; i<=ie+1; ++i){
+          (*pwl)(n,i) = w(n,k,j,i-1);
+          (*pwr)(n,i) = w(n,k,j,i  );
+        }
+      }
 
       RiemannSolver(k,j,is,ie+1,IVX,IVY,IVZ,pwl,pwr,pflx);
 
@@ -112,7 +115,13 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
 #pragma omp for schedule(static)
       for (int j=js; j<=je+1; ++j){
 
-        ReconstructionFuncX2(k,j,is,ie,w,pwl,pwr);
+        for (int n=0; n<NFLUID; ++n){
+#pragma simd
+          for (int i=is; i<=ie; ++i){
+            (*pwl)(n,i) = w(n,k,j-1,i);
+            (*pwr)(n,i) = w(n,k,j  ,i);
+          }
+        }
 
         RiemannSolver(k,j,is,ie,IVY,IVZ,IVX,pwl,pwr,pflx); 
 
@@ -162,7 +171,13 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
 #pragma omp for schedule(static)
       for (int j=js; j<=je; ++j){
 
-        ReconstructionFuncX3(k,j,is,ie,w,pwl,pwr);
+        for (int n=0; n<NFLUID; ++n){
+#pragma simd
+          for (int i=is; i<=ie; ++i){
+            (*pwl)(n,i) = w(n,k-1,j,i);
+            (*pwr)(n,i) = w(n,k  ,j,i);
+          }
+        }
 
         RiemannSolver(k,j,is,ie,IVZ,IVX,IVY,pwl,pwr,pflx);
 
@@ -223,9 +238,6 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   Real dt = pmb->pmy_domain->pmy_mesh->dt;
 
-  Real sum=0.0; Real sum_2=0.0;
-  int ndata = (pmb->block_size.nx1)*(pmb->block_size.nx2)*(pmb->block_size.nx3)*(NFLUID);
- 
   AthenaArray<Real> u = pmb->pfluid->u.ShallowCopy();
   AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
   AthenaArray<Real> u1 = pmb->pfluid->u1.ShallowCopy();
