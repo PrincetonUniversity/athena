@@ -67,7 +67,6 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   }
 
   AthenaArray<Real> lcons = cons.ShallowCopy();
-  AthenaArray<Real> lprim = prim.ShallowCopy();
 
 //--------------------------------------------------------------------------------------
 // Convert to Primitives
@@ -85,20 +84,14 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       Real& u_m3 = lcons(IVZ,k,j,i);
       Real& u_e  = lcons(IEN,k,j,i);
 
-      Real& w_d  = lprim(IDN,k,j,i);
-      Real& w_m1 = lprim(IVX,k,j,i);
-      Real& w_m2 = lprim(IVY,k,j,i);
-      Real& w_m3 = lprim(IVZ,k,j,i);
-      Real& w_p  = lprim(IEN,k,j,i);
-
       Real di = 1.0/u_d;
-      w_d  = u_d;
-      w_m1 = u_m1*di;
-      w_m2 = u_m2*di;
-      w_m3 = u_m3*di;
+      prim(IDN,k,j,i) = u_d;
+      prim(IVX,k,j,i) = u_m1*di;
+      prim(IVY,k,j,i) = u_m2*di;
+      prim(IVZ,k,j,i) = u_m3*di;
 
-      w_p = u_e - 0.5*di*(u_m1*u_m1 + u_m2*u_m2 + u_m3*u_m3);
-      w_p *= (GetGamma() - 1.0);
+      prim(IEN,k,j,i) = u_e - 0.5*di*(u_m1*u_m1 + u_m2*u_m2 + u_m3*u_m3);
+      prim(IEN,k,j,i) *= (GetGamma() - 1.0);
     }
   }}
 }

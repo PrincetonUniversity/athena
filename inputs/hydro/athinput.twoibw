@@ -9,11 +9,12 @@ problem_id  = TwoIBW    # problem ID: basename of output filenames
 <output1>
 file_type   = tab       # Tabular data dump
 variable    = prim      # variables to be output
-data_format = %12.5e    # Optional data format string
+data_format = %14.5e    # Optional data format string
 dt          = 0.0019    # time increment between outputs
 
 <output2>
 file_type   = hst       # History data dump
+data_format = %14.5e    # Optional data format string
 dt          = 0.0019    # time increment between outputs
 
 <time>

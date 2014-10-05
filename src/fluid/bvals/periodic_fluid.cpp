@@ -35,14 +35,13 @@ void PeriodicInnerX1(MeshBlock *pmb, AthenaArray<Real> &a)
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
   int ks = pmb->ks, ke = pmb->ke;
-  AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
     for (int n=0; n<(NFLUID); ++n) {
 #pragma simd
       for (int i=1; i<=(NGHOST); ++i) {
-        la(n,k,j,is-i) = la(n,k,j,(ie-i+1));
+        a(n,k,j,is-i) = a(n,k,j,(ie-i+1));
       }
     }
   }}
@@ -59,14 +58,13 @@ void PeriodicOuterX1(MeshBlock *pmb, AthenaArray<Real> &a)
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
   int ks = pmb->ks, ke = pmb->ke;
-  AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
     for (int n=0; n<(NFLUID); ++n) {
 #pragma simd
       for (int i=1; i<=(NGHOST); ++i) {
-        la(n,k,j,ie+i) = la(n,k,j,(is+i-1));
+        a(n,k,j,ie+i) = a(n,k,j,(is+i-1));
       }
     }
   }}
@@ -83,14 +81,13 @@ void PeriodicInnerX2(MeshBlock *pmb, AthenaArray<Real> &a)
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
   int ks = pmb->ks, ke = pmb->ke;
-  AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
     for (int n=0; n<(NFLUID); ++n) {
 #pragma simd
       for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-        la(n,k,js-j,i) = la(n,k,je-j+1,i);
+        a(n,k,js-j,i) = a(n,k,je-j+1,i);
       }
     }
   }}
@@ -107,14 +104,13 @@ void PeriodicOuterX2(MeshBlock *pmb, AthenaArray<Real> &a)
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
   int ks = pmb->ks, ke = pmb->ke;
-  AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
     for (int n=0; n<(NFLUID); ++n) {
 #pragma simd
       for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-        la(n,k,je+j,i) = la(n,k,js+j-1,i);
+        a(n,k,je+j,i) = a(n,k,js+j-1,i);
       }
     }
   }}
@@ -131,14 +127,13 @@ void PeriodicInnerX3(MeshBlock *pmb, AthenaArray<Real> &a)
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
   int ks = pmb->ks, ke = pmb->ke;
-  AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
     for (int n=0; n<(NFLUID); ++n) {
 #pragma simd
       for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-        la(n,ks-k,j,i) = la(n,ke-k+1,j,i);
+        a(n,ks-k,j,i) = a(n,ke-k+1,j,i);
       }
     }
   }}
@@ -155,14 +150,13 @@ void PeriodicOuterX3(MeshBlock *pmb, AthenaArray<Real> &a)
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
   int ks = pmb->ks, ke = pmb->ke;
-  AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
     for (int n=0; n<(NFLUID); ++n) {
 #pragma simd
       for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-        la(n,ke+k,j,i) = la(n,ks+k-1,j,i);
+        a(n,ke+k,j,i) = a(n,ks+k-1,j,i);
       }
     }
   }}

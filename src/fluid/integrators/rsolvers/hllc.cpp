@@ -71,7 +71,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j,
     Real mxr = wri[IDN]*wri[IVX];
 
     Real tl = wli[IEN] + (wli[IVX] - al)*mxl;
-    Real tr = wri[IEN] + (wri[IVX] - ar)*mxl;
+    Real tr = wri[IEN] + (wri[IVX] - ar)*mxr;
 
     Real ml =   mxl - wli[IDN]*al;
     Real mr = -(mxr - wri[IDN]*ar);

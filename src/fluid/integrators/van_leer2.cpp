@@ -91,7 +91,6 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
 #pragma simd
         for (int i=is; i<=ie; ++i){
           Real& ui  = u (n,k,j,i);
-          Real& u1i = u1(n,k,j,i);
           Real& flxi   = (*pflx)(n,  i);
           Real& flxip1 = (*pflx)(n,i+1);
 
@@ -99,7 +98,7 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
           Real& area_ip1 = (*parea)(i+1);
           Real& dvol = (*pvol)(i);
  
-          u1i = ui - 0.5*dt*(area_ip1*flxip1 - area_i*flxi)/dvol;
+          u1(n,k,j,i) = ui - 0.5*dt*(area_ip1*flxip1 - area_i*flxi)/dvol;
         }
       }
     }
@@ -132,12 +131,11 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
-              Real& u1jm1 = u1(n,k,j-1,i);
               Real& flxj  = (*pflx)(n,i);
               Real& area_i   = (*parea)(i);
               Real& dvol = (*pvol)(i);
   
-              u1jm1 -= 0.5*dt*area_i*flxj/dvol;
+              u1(n,k,j-1,i) -= 0.5*dt*area_i*flxj/dvol;
             }
           }
         }
@@ -147,12 +145,11 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
-              Real& u1j   = u1(n,k,j  ,i);
               Real& flxj  = (*pflx)(n,i);
               Real& area_i   = (*parea)(i);
               Real& dvol = (*pvol)(i);
 
-              u1j   += 0.5*dt*area_i*flxj/dvol;
+              u1(n,k,j,i) += 0.5*dt*area_i*flxj/dvol;
             }
           }
         }
@@ -188,12 +185,11 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
-              Real& u1km1 = u1(n,k-1,j,i);
               Real& flxk = (*pflx)(n,i);
               Real& area_i   = (*parea)(i);
               Real& dvol = (*pvol)(i);
 
-              u1km1 -= 0.5*dt*area_i*flxk/dvol;
+              u1(n,k-1,j,i) -= 0.5*dt*area_i*flxk/dvol;
             }
           }
         }
@@ -203,12 +199,11 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
-              Real& u1k   = u1(n,k  ,j,i);
               Real& flxk = (*pflx)(n,i);
               Real& area_i   = (*parea)(i);
               Real& dvol = (*pvol)(i);
 
-              u1k += 0.5*dt*area_i*flxk/dvol;
+              u1(n,k,j,i) += 0.5*dt*area_i*flxk/dvol;
             }
           }
         }
@@ -274,7 +269,6 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
       for (int n=0; n<NFLUID; ++n){
 #pragma simd
         for (int i=is; i<=ie; ++i){
-          Real& ui  = u (n,k,j,i);
           Real& flxi   = (*pflx)(n,  i);
           Real& flxip1 = (*pflx)(n,i+1);
 
@@ -282,7 +276,7 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
           Real& area_ip1 = (*parea)(i+1);
           Real& dvol = (*pvol)(i);
    
-          ui -= dt*(area_ip1*flxip1 - area_i*flxi)/dvol;
+          u(n,k,j,i) -= dt*(area_ip1*flxip1 - area_i*flxi)/dvol;
         }
       }
     }
@@ -309,12 +303,11 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
-              Real& ujm1 = u(n,k,j-1,i);
               Real& flxj  = (*pflx)(n,i);
               Real& area_i   = (*parea)(i);
               Real& dvol = (*pvol)(i);
   
-              ujm1 -= dt*area_i*flxj/dvol;
+              u(n,k,j-1,i) -= dt*area_i*flxj/dvol;
             }
           }
         }
@@ -324,12 +317,11 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
-              Real& uj   = u(n,k,j  ,i);
               Real& flxj  = (*pflx)(n,i);
               Real& area_i   = (*parea)(i);
               Real& dvol = (*pvol)(i);
   
-              uj += dt*area_i*flxj/dvol;
+              u(n,k,j,i) += dt*area_i*flxj/dvol;
             }
           }
         }
@@ -359,12 +351,11 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
-              Real& ukm1 = u(n,k-1,j,i);
               Real& flxk = (*pflx)(n,i);
               Real& area_i   = (*parea)(i);
               Real& dvol = (*pvol)(i);
   
-              ukm1 -= dt*area_i*flxk/dvol;
+              u(n,k-1,j,i) -= dt*area_i*flxk/dvol;
             }
           }
         }
@@ -374,12 +365,11 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
-              Real& uk   = u(n,k  ,j,i);
               Real& flxk = (*pflx)(n,i);
               Real& area_i   = (*parea)(i);
               Real& dvol = (*pvol)(i);
 
-              uk   += dt*area_i*flxk/dvol;
+              u(n,k,j,i) += dt*area_i*flxk/dvol;
             }
           }
         }

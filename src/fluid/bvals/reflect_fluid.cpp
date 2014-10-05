@@ -35,7 +35,6 @@ void ReflectInnerX1(MeshBlock *pmb, AthenaArray<Real> &a)
   int is = pmb->is;
   int js = pmb->js, je = pmb->je;
   int ks = pmb->ks, ke = pmb->ke;
-  AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
@@ -44,13 +43,13 @@ void ReflectInnerX1(MeshBlock *pmb, AthenaArray<Real> &a)
       if (n==(IM1)) {
 #pragma simd
         for (int i=1; i<=(NGHOST); ++i) {
-          la(IM1,k,j,is-i) = -la(IM1,k,j,(is+i-1));  // reflect 1-mom
+          a(IM1,k,j,is-i) = -a(IM1,k,j,(is+i-1));  // reflect 1-mom
         }
 
       } else {
 #pragma simd
         for (int i=1; i<=(NGHOST); ++i) {
-          la(n,k,j,is-i) = la(n,k,j,(is+i-1));
+          a(n,k,j,is-i) = a(n,k,j,(is+i-1));
         }
       }
 
@@ -69,7 +68,6 @@ void ReflectOuterX1(MeshBlock *pmb, AthenaArray<Real> &a)
   int ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
   int ks = pmb->ks, ke = pmb->ke;
-  AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
@@ -78,13 +76,13 @@ void ReflectOuterX1(MeshBlock *pmb, AthenaArray<Real> &a)
       if (n==(IM1)) {
 #pragma simd
         for (int i=1; i<=(NGHOST); ++i) {
-          la(IM1,k,j,ie+i) = -la(IM1,k,j,(ie-i+1));  // reflect 1-mom
+          a(IM1,k,j,ie+i) = -a(IM1,k,j,(ie-i+1));  // reflect 1-mom
         }
 
       } else {
 #pragma simd
         for (int i=1; i<=(NGHOST); ++i) {
-          la(n,k,j,ie+i) = la(n,k,j,(ie-i+1));
+          a(n,k,j,ie+i) = a(n,k,j,(ie-i+1));
         }
       }
 
@@ -103,7 +101,6 @@ void ReflectInnerX2(MeshBlock *pmb, AthenaArray<Real> &a)
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js;
   int ks = pmb->ks, ke = pmb->ke;
-  AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
@@ -112,13 +109,13 @@ void ReflectInnerX2(MeshBlock *pmb, AthenaArray<Real> &a)
       if (n==(IM2)) {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          la(IM2,k,js-j,i) = -la(IM2,k,js+j-1,i);  // reflect 2-mom
+          a(IM2,k,js-j,i) = -a(IM2,k,js+j-1,i);  // reflect 2-mom
         }
 
       } else {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          la(n,k,js-j,i) = la(n,k,js+j-1,i);
+          a(n,k,js-j,i) = a(n,k,js+j-1,i);
         }
       }
 
@@ -137,7 +134,6 @@ void ReflectOuterX2(MeshBlock *pmb, AthenaArray<Real> &a)
   int is = pmb->is, ie = pmb->ie;
   int je = pmb->je;
   int ks = pmb->ks, ke = pmb->ke;
-  AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
@@ -146,13 +142,13 @@ void ReflectOuterX2(MeshBlock *pmb, AthenaArray<Real> &a)
       if (n==(IM2)) {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          la(IM2,k,je+j,i) = -la(IM2,k,je-j+1,i);  // reflect 2-mom
+          a(IM2,k,je+j,i) = -a(IM2,k,je-j+1,i);  // reflect 2-mom
         }
 
       } else {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          la(n,k,je+j,i) = la(n,k,je-j+1,i);
+          a(n,k,je+j,i) = a(n,k,je-j+1,i);
         }
       }
 
@@ -171,7 +167,6 @@ void ReflectInnerX3(MeshBlock *pmb, AthenaArray<Real> &a)
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
   int ks = pmb->ks;
-  AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
@@ -180,13 +175,13 @@ void ReflectInnerX3(MeshBlock *pmb, AthenaArray<Real> &a)
       if (n==(IM3)) {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          la(IM3,ks-k,j,i) = -la(IM3,ks+k-1,j,i);  // reflect 3-mom
+          a(IM3,ks-k,j,i) = -a(IM3,ks+k-1,j,i);  // reflect 3-mom
         }
 
       } else {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          la(n,ks-k,j,i) = la(n,ks+k-1,j,i);
+          a(n,ks-k,j,i) = a(n,ks+k-1,j,i);
         }
       }
 
@@ -205,7 +200,6 @@ void ReflectOuterX3(MeshBlock *pmb, AthenaArray<Real> &a)
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
   int ke = pmb->ke;
-  AthenaArray<Real> la = a.ShallowCopy();
 
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
@@ -214,13 +208,13 @@ void ReflectOuterX3(MeshBlock *pmb, AthenaArray<Real> &a)
       if (n==(IM3)) {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          la(IM3,ke+k,j,i) = -la(IM3,ke-k+1,j,i);  // reflect 3-mom
+          a(IM3,ke+k,j,i) = -a(IM3,ke-k+1,j,i);  // reflect 3-mom
         }
 
       } else {
 #pragma simd
         for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-          la(n,ke+k,j,i) = la(n,ke-k+1,j,i);
+          a(n,ke+k,j,i) = a(n,ke-k+1,j,i);
         }
       }
 

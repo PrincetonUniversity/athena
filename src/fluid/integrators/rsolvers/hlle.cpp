@@ -13,6 +13,7 @@
  * You should have received a copy of GNU GPL in the file LICENSE included in the code
  * distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
+#include <iostream>
 
 // Primary header
 #include "../integrators.hpp"
@@ -48,7 +49,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j,
   const int il, const int iu, const int ivx, const int ivy, const int ivz,
   AthenaArray<Real> *pwl, AthenaArray<Real> *pwr, AthenaArray<Real> *pflx)
 {
-  Real fl[NFLUID],fr[NFLUID],wli[NFLUID],wri[NFLUID],flxi[NFLUID];
+  Real wli[NFLUID],wri[NFLUID],wroe[NFLUID],fl[NFLUID],fr[NFLUID],flxi[NFLUID];
 
 #pragma simd
   for (int i=il; i<=iu; ++i){
@@ -64,10 +65,37 @@ void FluidIntegrator::RiemannSolver(const int k, const int j,
     wri[IVZ]=(*pwr)(ivz,i);
     if (NON_BAROTROPIC_EOS) wri[IEN]=(*pwr)(IEN,i);
 
-// Compute the max/min wave speeds based on L/R values
+// compute Roe averaged state
 
-    Real al = wli[IVX] - pmy_fluid->pf_eos->SoundSpeed(wli);
-    Real ar = wri[IVX] + pmy_fluid->pf_eos->SoundSpeed(wri);
+    Real sqrtdl = sqrt(wli[IDN]);
+    Real sqrtdr = sqrt(wri[IDN]);
+    Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
+
+    wroe[IDN] = sqrtdl*sqrtdr;
+    wroe[IVX] = (sqrtdl*wli[IVX] + sqrtdr*wri[IVX])*isdlpdr;
+    wroe[IVY] = (sqrtdl*wli[IVY] + sqrtdr*wri[IVY])*isdlpdr;
+    wroe[IVZ] = (sqrtdl*wli[IVZ] + sqrtdr*wri[IVZ])*isdlpdr;
+
+    Real el,er,a;
+    if (NON_BAROTROPIC_EOS) {
+      el = wli[IEN]/(pmy_fluid->pf_eos->GetGamma() - 1.0) + 0.5*wli[IDN]*
+        (wli[IVX]*wli[IVX] + wli[IVY]*wli[IVY] + wli[IVZ]*wli[IVZ]);
+      er = wri[IEN]/(pmy_fluid->pf_eos->GetGamma() - 1.0) + 0.5*wri[IDN]*
+        (wri[IVX]*wri[IVX] + wri[IVY]*wri[IVY] + wri[IVZ]*wri[IVZ]);
+      wroe[IEN] = ((el + wli[IEN])/sqrtdl + (er + wri[IEN])/sqrtdr)*isdlpdr;
+
+      Real q = wroe[IEN] - 
+        0.5*(wroe[IVX]*wroe[IVX] + wroe[IVY]*wroe[IVY] + wroe[IVZ]*wroe[IVZ]);
+      if (q < 0.0) q=0.0;
+      a = sqrt((pmy_fluid->pf_eos->GetGamma() - 1.0)*q);
+    } else {
+      a = pmy_fluid->pf_eos->SoundSpeed(wroe);
+    }
+
+// Compute the max/min wave speeds based on L/R and Roe-averaged values
+
+    Real al = std::min((wroe[IVX]-a),(wli[IVX] - pmy_fluid->pf_eos->SoundSpeed(wli)));
+    Real ar = std::max((wroe[IVX]+a),(wri[IVX] + pmy_fluid->pf_eos->SoundSpeed(wri)));
 
     Real bp = ar > 0.0 ? ar : 0.0;
     Real bm = al < 0.0 ? al : 0.0;
@@ -89,14 +117,8 @@ void FluidIntegrator::RiemannSolver(const int k, const int j,
     if (NON_BAROTROPIC_EOS) {
       fl[IVX] += wli[IEN];
       fr[IVX] += wri[IEN];
-      fl[IEN] = wli[IEN]/(pmy_fluid->pf_eos->GetGamma() - 1.0) + 0.5*wli[IDN]*
-        (wli[IVX]*wli[IVX] + wli[IVY]*wli[IVY] + wli[IVZ]*wli[IVZ]);
-      fr[IEN] = wri[IEN]/(pmy_fluid->pf_eos->GetGamma() - 1.0) + 0.5*wri[IDN]*
-        (wri[IVX]*wri[IVX] + wri[IVY]*wri[IVY] + wri[IVZ]*wri[IVZ]);
-      fl[IEN] *= (wli[IVX] - bm);
-      fr[IEN] *= (wri[IVX] - bp);
-      fl[IEN] += wli[IEN]*wli[IVX];
-      fr[IEN] += wri[IEN]*wri[IVX];
+      fl[IEN] = el*(wli[IVX] - bm) + wli[IEN]*wli[IVX];
+      fr[IEN] = er*(wri[IVX] - bp) + wri[IEN]*wri[IVX];
     } else {
       Real iso_cs = pmy_fluid->pf_eos->SoundSpeed(wli);
       fl[IVX] += (iso_cs*iso_cs)*wli[IDN];
@@ -105,7 +127,12 @@ void FluidIntegrator::RiemannSolver(const int k, const int j,
 
 // Compute the HLLE flux at interface.
 
-    Real tmp = 0.5*(bp + bm)/(bp - bm);
+    Real tmp;
+    if (bp == bm) {
+      tmp = 0.0;
+    } else {
+      tmp = 0.5*(bp + bm)/(bp - bm);
+    }
 
     flxi[IDN] = 0.5*(fl[IDN]+fr[IDN]) + (fl[IDN]-fr[IDN])*tmp;
     flxi[IVX] = 0.5*(fl[IVX]+fr[IVX]) + (fl[IVX]-fr[IVX])*tmp;
