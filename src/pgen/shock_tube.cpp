@@ -40,11 +40,11 @@
 
 void Fluid::InitFluid(ParameterInput *pin)
 {
-  MeshBlock *pb = pmy_block;
+  MeshBlock *pmb = pmy_block;
   std::stringstream msg;
 
-  int is = pb->is; int js = pb->js; int ks = pb->ks;
-  int ie = pb->ie; int je = pb->je; int ke = pb->ke;
+  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
+  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
 // parse shock direction: {1,2,3} -> {x1,x2,x3}
 
@@ -53,20 +53,20 @@ void Fluid::InitFluid(ParameterInput *pin)
 // parse shock location (must be inside grid)
 
   Real xshock = pin->GetReal("problem","xshock"); 
-  if (shk_dir == 1 && (xshock < pb->pmy_domain->pmy_mesh->mesh_size.x1min ||
-                       xshock > pb->pmy_domain->pmy_mesh->mesh_size.x1max)) {
+  if (shk_dir == 1 && (xshock < pmb->pmy_domain->pmy_mesh->mesh_size.x1min ||
+                       xshock > pmb->pmy_domain->pmy_mesh->mesh_size.x1max)) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl << "xshock="
         << xshock << " lies outside x1 domain for shkdir=" << shk_dir << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if (shk_dir == 2 && (xshock < pb->pmy_domain->pmy_mesh->mesh_size.x2min ||
-                       xshock > pb->pmy_domain->pmy_mesh->mesh_size.x2max)) {
+  if (shk_dir == 2 && (xshock < pmb->pmy_domain->pmy_mesh->mesh_size.x2min ||
+                       xshock > pmb->pmy_domain->pmy_mesh->mesh_size.x2max)) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl << "xshock="
         << xshock << " lies outside x2 domain for shkdir=" << shk_dir << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if (shk_dir == 3 && (xshock < pb->pmy_domain->pmy_mesh->mesh_size.x3min ||
-                       xshock > pb->pmy_domain->pmy_mesh->mesh_size.x3max)) {
+  if (shk_dir == 3 && (xshock < pmb->pmy_domain->pmy_mesh->mesh_size.x3min ||
+                       xshock > pmb->pmy_domain->pmy_mesh->mesh_size.x3max)) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl << "xshock="
         << xshock << " lies outside x3 domain for shkdir=" << shk_dir << std::endl;
     throw std::runtime_error(msg.str().c_str());
@@ -99,7 +99,7 @@ void Fluid::InitFluid(ParameterInput *pin)
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
-        if (pb->x1v(i) < xshock) {
+        if (pmb->x1v(i) < xshock) {
           u(IDN,k,j,i) = wl[IDN];
           u(IM1,k,j,i) = wl[IVX]*wl[IDN];
           u(IM2,k,j,i) = wl[IVY]*wl[IDN];
@@ -122,7 +122,7 @@ void Fluid::InitFluid(ParameterInput *pin)
   case 2:
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
-      if (pb->x2v(j) < xshock) {
+      if (pmb->x2v(j) < xshock) {
         for (int i=is; i<=ie; ++i) {
           u(IDN,k,j,i) = wl[IDN];
           u(IM2,k,j,i) = wl[IVX]*wl[IDN];
@@ -148,7 +148,7 @@ void Fluid::InitFluid(ParameterInput *pin)
 
   case 3:
     for (int k=ks; k<=ke; ++k) {
-      if (pb->x3v(k) < xshock) {
+      if (pmb->x3v(k) < xshock) {
         for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
           u(IDN,k,j,i) = wl[IDN];
