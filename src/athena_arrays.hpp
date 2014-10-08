@@ -240,6 +240,6 @@ void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2, int nx1)
 template<typename T>
 void AthenaArray<T>::DeleteAthenaArray()
 {
-  delete[] pdata_;
+  if (!scopy_) delete[] pdata_;
 } 
 #endif

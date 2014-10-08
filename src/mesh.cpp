@@ -59,6 +59,16 @@ Mesh::Mesh(ParameterInput *pin)
   nlim = pin->GetOrAddInteger("time","nlim",-1);
   ncycle = 0;
 
+// read number of OpenMP threads for mesh
+
+  nthreads_mesh = pin->GetOrAddReal("mesh","max_num_threads",1);
+  if (nthreads_mesh < 1) {
+    msg << "### FATAL ERROR in Mesh constructor" << std::endl
+        << "Number of OpenMP threads must be >= 1, but max_num_threads=" 
+        << nthreads_mesh << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+
 // read number of grid cells in mesh (root domain) from input file.  
 
   mesh_size.nx1 = pin->GetInteger("mesh","nx1");

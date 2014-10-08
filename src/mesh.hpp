@@ -83,6 +83,7 @@ public:
 
   Real start_time, tlim, cfl_number, time, dt;
   int nlim, ncycle;
+  int nthreads_mesh;
 
   MeshDomain *pdomain;
 

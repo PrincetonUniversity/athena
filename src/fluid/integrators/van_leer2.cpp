@@ -47,15 +47,14 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   Real dt = pmb->pmy_domain->pmy_mesh->dt;
+  int thread_max = pmb->pmy_domain->pmy_mesh->nthreads_mesh;
  
   AthenaArray<Real> u = pmb->pfluid->u.ShallowCopy();
   AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
   AthenaArray<Real> u1 = pmb->pfluid->u1.ShallowCopy();
   AthenaArray<Real> w1 = pmb->pfluid->w1.ShallowCopy();
 
-  AthenaArray<Real> src = src_.ShallowCopy();
-
-#pragma omp parallel default(shared) private(tid) num_threads(ATHENA_MAX_NUM_THREADS)
+#pragma omp parallel default(shared) private(tid) num_threads(thread_max)
 {
 #ifdef OPENMP_PARALLEL
   tid=omp_get_thread_num();
@@ -211,6 +210,8 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
       }
     }
   }
+  delete pwl, pwr, pflx, parea, pvol;
+
 } // end of omp parallel region
 
 //--------------------------------------------------------------------------------------
@@ -232,15 +233,14 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   Real dt = pmb->pmy_domain->pmy_mesh->dt;
+  int thread_max = pmb->pmy_domain->pmy_mesh->nthreads_mesh;
 
   AthenaArray<Real> u = pmb->pfluid->u.ShallowCopy();
   AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
   AthenaArray<Real> u1 = pmb->pfluid->u1.ShallowCopy();
   AthenaArray<Real> w1 = pmb->pfluid->w1.ShallowCopy();
 
-  AthenaArray<Real> src = src_.ShallowCopy();
- 
-#pragma omp parallel default(shared) private(tid) num_threads(ATHENA_MAX_NUM_THREADS)
+#pragma omp parallel default(shared) private(tid) num_threads(thread_max)
 {
 #ifdef OPENMP_PARALLEL
   tid=omp_get_thread_num();
@@ -377,6 +377,8 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
       }
     }
   }
+  delete pwl, pwr, pflx, parea, pvol;
+
 } // end of omp parallel region
 
 //--------------------------------------------------------------------------------------
