@@ -49,7 +49,7 @@ parser.add_argument('--prob',
 # --coord=[name] argument
 parser.add_argument('--coord',
     default='cartesian',
-    choices=['cartesian','cylindrical','spherical_polar','cylindrical-rphi',\
+    choices=['cartesian','cylindrical','spherical_polar',\
         'minkowski_cartesian','schwarzschild'],
     help='selects coordinate system')
 

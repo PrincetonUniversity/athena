@@ -41,7 +41,6 @@
 FluidBCs::FluidBCs(Fluid *pf, ParameterInput *pin)
 {
   pmy_fluid = pf;
-  std::stringstream msg;
   MeshBlock *pmb = pmy_fluid->pmy_block;
 
 // Set BC function pointers for each of the 6 boundaries in turn -----------------------
@@ -50,18 +49,18 @@ FluidBCs::FluidBCs(Fluid *pf, ParameterInput *pin)
   switch(pmb->block_bcs.ix1_bc){
     case 1:
       FluidInnerX1_ = ReflectInnerX1;
-    break;
+      break;
     case 2:
       FluidInnerX1_ = OutflowInnerX1;
-    break;
+      break;
     case 4:
       FluidInnerX1_ = PeriodicInnerX1;
-    break;
+      break;
     default:
+      std::stringstream msg;
       msg << "### FATAL ERROR in FluidBCs constructor" << std::endl
           << "Flag ix1_bc=" << pmb->block_bcs.ix1_bc << " not valid" << std::endl;
       throw std::runtime_error(msg.str().c_str());
-    break;
    }
 
 // Outer x1
@@ -69,18 +68,18 @@ FluidBCs::FluidBCs(Fluid *pf, ParameterInput *pin)
   switch(pmb->block_bcs.ox1_bc){
     case 1:
       FluidOuterX1_ = ReflectOuterX1;
-    break;
+      break;
     case 2:
       FluidOuterX1_ = OutflowOuterX1;
-    break;
+      break;
     case 4:
       FluidOuterX1_ = PeriodicOuterX1;
-    break;
+      break;
     default:
+      std::stringstream msg;
       msg << "### FATAL ERROR in FluidBCs constructor" << std::endl
           << "Flag ox1_bc=" << pmb->block_bcs.ox1_bc << " not valid" << std::endl;
       throw std::runtime_error(msg.str().c_str());
-    break;
   }
 
 // Inner x2
@@ -89,18 +88,18 @@ FluidBCs::FluidBCs(Fluid *pf, ParameterInput *pin)
     switch(pmb->block_bcs.ix2_bc){
       case 1:
         FluidInnerX2_ = ReflectInnerX2;
-      break;
+        break;
       case 2:
         FluidInnerX2_ = OutflowInnerX2;
-      break;
+        break;
       case 4:
         FluidInnerX2_ = PeriodicInnerX2;
-      break;
+        break;
       default:
+        std::stringstream msg;
         msg << "### FATAL ERROR in FluidBCs constructor" << std::endl
             << "Flag ix2_bc=" << pmb->block_bcs.ix2_bc << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
-      break;
      }
 
 // Outer x2
@@ -108,18 +107,18 @@ FluidBCs::FluidBCs(Fluid *pf, ParameterInput *pin)
     switch(pmb->block_bcs.ox2_bc){
       case 1:
         FluidOuterX2_ = ReflectOuterX2;
-      break;
+        break;
       case 2:
         FluidOuterX2_ = OutflowOuterX2;
-      break;
+        break;
       case 4:
         FluidOuterX2_ = PeriodicOuterX2;
-      break;
+        break;
       default:
+        std::stringstream msg;
         msg << "### FATAL ERROR in FluidBCs constructor" << std::endl
             << "Flag ox2_bc=" << pmb->block_bcs.ox2_bc << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
-      break;
     }
   }
 
@@ -129,18 +128,18 @@ FluidBCs::FluidBCs(Fluid *pf, ParameterInput *pin)
     switch(pmb->block_bcs.ix3_bc){
       case 1:
         FluidInnerX3_ = ReflectInnerX3;
-      break;
+        break;
       case 2:
         FluidInnerX3_ = OutflowInnerX3;
-      break;
+        break;
       case 4:
         FluidInnerX3_ = PeriodicInnerX3;
-      break;
+        break;
       default:
+        std::stringstream msg;
         msg << "### FATAL ERROR in FluidBCs constructor" << std::endl
             << "Flag ix3_bc=" << pmb->block_bcs.ix3_bc << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
-      break;
      }
 
 // Outer x3
@@ -148,18 +147,18 @@ FluidBCs::FluidBCs(Fluid *pf, ParameterInput *pin)
     switch(pmb->block_bcs.ox3_bc){
       case 1:
         FluidOuterX3_ = ReflectOuterX3;
-      break;
+        break;
       case 2:
         FluidOuterX3_ = OutflowOuterX3;
-      break;
+        break;
       case 4:
         FluidOuterX3_ = PeriodicOuterX3;
-      break;
+        break;
       default:
+        std::stringstream msg;
         msg << "### FATAL ERROR in FluidBCs constructor" << std::endl
             << "Flag ox3_bc=" << pmb->block_bcs.ox3_bc << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
-      break;
     }
   }
 
@@ -169,6 +168,41 @@ FluidBCs::FluidBCs(Fluid *pf, ParameterInput *pin)
 
 FluidBCs::~FluidBCs()
 {
+}
+
+//--------------------------------------------------------------------------------------
+/*! \fn
+ *  \brief
+ */
+
+void FluidBCs::EnrollBoundaryFunction(enum EdgeNames edge, BCFunc_t my_bc)
+{
+  switch(edge){
+  case inner_x1:
+    FluidInnerX1_ = my_bc;
+    break;
+  case outer_x1:
+    FluidOuterX1_ = my_bc;
+    break;
+  case inner_x2:
+    FluidInnerX2_ = my_bc;
+    break;
+  case outer_x2:
+    FluidOuterX2_ = my_bc;
+    break;
+  case inner_x3:
+    FluidInnerX3_ = my_bc;
+    break;
+  case outer_x3:
+    FluidOuterX3_ = my_bc;
+    break;
+  default:
+    std::stringstream msg;
+    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
+        << "EdgeName = " << edge << " not valid" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  return;
 }
 
 //--------------------------------------------------------------------------------------
@@ -187,19 +221,15 @@ void FluidBCs::ApplyFluidBCs(AthenaArray<Real> &a)
 // Boundary Conditions in x2-direction 
 
   if (pmy_fluid->pmy_block->block_size.nx2 > 1){
-
     (*(FluidInnerX2_))(pmy_fluid->pmy_block, a);
     (*(FluidOuterX2_))(pmy_fluid->pmy_block, a);
-
   }
 
 // Boundary Conditions in x3-direction 
 
   if (pmy_fluid->pmy_block->block_size.nx3 > 1){
-
     (*(FluidInnerX3_))(pmy_fluid->pmy_block, a);
     (*(FluidOuterX3_))(pmy_fluid->pmy_block, a);
-
   }
 
   return;

@@ -38,7 +38,7 @@
  *   fluid flow with strong shocks", JCP, 54, 115, sect. IVa
  *====================================================================================*/
 
-void Fluid::InitProblem(ParameterInput *pin)
+void Fluid::InitFluid(ParameterInput *pin)
 {
   MeshBlock *pmb = pmy_block;
 
@@ -63,14 +63,14 @@ void Fluid::InitProblem(ParameterInput *pin)
       u(IM1,k,j,i) = 0.0;
       u(IM2,k,j,i) = 0.0;
       u(IM3,k,j,i) = 0.0;
-      if ((shk_dir==1 && pb->x1v(i) < 0.1) ||
-          (shk_dir==2 && pb->x2v(j) < 0.1) ||
-          (shk_dir==3 && pb->x3v(k) < 0.1)) {
+      if ((shk_dir==1 && pmb->x1v(i) < 0.1) ||
+          (shk_dir==2 && pmb->x2v(j) < 0.1) ||
+          (shk_dir==3 && pmb->x3v(k) < 0.1)) {
         u(IEN,k,j,i)= 1.0e3/(pf_eos->GetGamma() - 1.0);
       }
-      else if ((shk_dir==1 && pb->x1v(i) > 0.9) ||
-               (shk_dir==2 && pb->x2v(j) > 0.9) ||
-               (shk_dir==3 && pb->x3v(k) > 0.9)) {
+      else if ((shk_dir==1 && pmb->x1v(i) > 0.9) ||
+               (shk_dir==2 && pmb->x2v(j) > 0.9) ||
+               (shk_dir==3 && pmb->x3v(k) > 0.9)) {
         u(IEN,k,j,i)= 1.0e2/(pf_eos->GetGamma() - 1.0);
       }
       else {

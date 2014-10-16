@@ -10,8 +10,13 @@
  *====================================================================================*/
 
 #include "defs.hpp"
+#include <math.h>
 
 typedef double Real;
+
+typedef struct ThreeVector {
+  Real x1, x2, x3;
+} ThreeVector;
 
 enum {IDN=0, IM1=1, IM2=2, IM3=3, IEN=4};
 enum {IVX=1, IVY=2, IVZ=3};

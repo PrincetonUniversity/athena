@@ -28,9 +28,11 @@
 #include "../fluid/fluid.hpp"     // Fluid
 #include "../fluid/eos/eos.hpp"   // SoundSpeed()
 
+#include <iostream>
+
 //======================================================================================
 //! \file cylindrical.cpp
-//  \brief implements functions in class Coordinates for 3D (r-z-phi) cylindrical coord
+//  \brief implements functions for cylindrical (r-z-phi) class Coordinates
 //======================================================================================
 
 //--------------------------------------------------------------------------------------
@@ -53,7 +55,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     pmb->dx1v(i) = pmb->x1v(i+1) - pmb->x1v(i);
   }
 
-// x2-direction: x2v = (\int z dV / \int dV) = dz/2
+// x2-direction: x2v = (\int phi dV / \int dV) = dphi/2
 
   if (pmb->block_size.nx2 == 1) {
     pmb->x2v(js) = 0.5*(pmb->x2f(js+1) + pmb->x2f(js));
@@ -67,7 +69,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     }
   }
 
-// x3-direction: x3v = (\int phi dV / \int dV) = dphi/2
+// x3-direction: x3v = (\int z dV / \int dV) = dz/2
 
   if (pmb->block_size.nx3 == 1) {
     pmb->x3v(ks) = 0.5*(pmb->x3f(ks+1) + pmb->x3f(ks));
@@ -85,7 +87,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 // Allocate only those local scratch arrays needed for cylindrical coordinates
 
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  face2_area_i_.NewAthenaArray(ncells1);
+  face3_area_i_.NewAthenaArray(ncells1);
   volume_i_.NewAthenaArray(ncells1);
   src_terms_i_.NewAthenaArray(ncells1);
 
@@ -94,7 +96,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 
 #pragma simd
   for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i){
-    face2_area_i_(i)= 0.5*(pmb->x1f(i+1)*pmb->x1f(i+1) - pmb->x1f(i)*pmb->x1f(i));
+    face3_area_i_(i)= 0.5*(pmb->x1f(i+1)*pmb->x1f(i+1) - pmb->x1f(i)*pmb->x1f(i));
     volume_i_(i)    = 0.5*(pmb->x1f(i+1)*pmb->x1f(i+1) - pmb->x1f(i)*pmb->x1f(i));
     src_terms_i_(i) = pmb->dx1f(i)/volume_i_(i);
   }
@@ -105,7 +107,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 
 Coordinates::~Coordinates()
 {
-  face2_area_i_.DeleteAthenaArray();
+  face3_area_i_.DeleteAthenaArray();
   volume_i_.DeleteAthenaArray();
   src_terms_i_.DeleteAthenaArray();
 }
@@ -124,11 +126,11 @@ Coordinates::~Coordinates()
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> *parea)
 {
-// area1 = dz r dphi 
+// area1 = r dphi dz 
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = (*parea)(i);
-    area_i = (pmy_block->dx2f(j))*(pmy_block->x1f(i)*pmy_block->dx3f(k));
+    area_i = (pmy_block->x1f(i)*pmy_block->dx2f(j))*(pmy_block->dx3f(k));
   }
   return;
 }
@@ -136,11 +138,11 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> *parea)
 {
-// area2 = dr r dphi = d(r^2/2) dphi
+// area3 = dr dz
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = (*parea)(i);
-    area_i = face2_area_i_(i)*(pmy_block->dx3f(k));
+    area_i = (pmy_block->dx1f(i))*(pmy_block->dx3f(k));
   }
   return;
 }
@@ -148,11 +150,11 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> *parea)
 {
-// area3 = dr dz
+// area2 = dr r dphi = d(r^2/2) dphi
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = (*parea)(i);
-    area_i = (pmy_block->dx1f(i))*(pmy_block->dx2f(j));
+    area_i = face3_area_i_(i)*(pmy_block->dx2f(j));
   }
   return;
 }
@@ -167,7 +169,7 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> *pvol)
 {
-// volume = dr dz r dphi = d(r^2/2) dz dphi
+// volume = dr dz r dphi = d(r^2/2) dphi dz
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& vol_i = (*pvol)(i);
@@ -177,21 +179,31 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 }
 
 //--------------------------------------------------------------------------------------
-// Cell Width functions
+// Width and Distance functions
 
-Real Coordinates::VolumeCenterWidth1(const int k, const int j, const int i)
+Real Coordinates::CellPhysicalWidth1(const int k, const int j, const int i)
 {
   return (pmy_block->dx1f(i));
 }
 
-Real Coordinates::VolumeCenterWidth2(const int k, const int j, const int i)
+Real Coordinates::CellPhysicalWidth2(const int k, const int j, const int i)
 {
-  return (pmy_block->dx2f(j));
+  return (pmy_block->x1v(i)*pmy_block->dx2f(j));
 }
 
-Real Coordinates::VolumeCenterWidth3(const int k, const int j, const int i)
+Real Coordinates::CellPhysicalWidth3(const int k, const int j, const int i)
 {
-  return (pmy_block->x1v(i)*pmy_block->dx3f(k));
+  return (pmy_block->dx3f(k));
+}
+
+// returns vector pointing from p1 to p2
+ThreeVector Coordinates::VectorBetweenPoints(const ThreeVector p1, const ThreeVector p2)
+{
+  ThreeVector r;
+  r.x1 = p2.x1*cos(p1.x2 - p2.x2) - p1.x1;
+  r.x2 = p2.x1*sin(p2.x2 - p1.x2);
+  r.x3 = p2.x3 - p1.x3;
+  return r;
 }
 
 //--------------------------------------------------------------------------------------
@@ -202,31 +214,30 @@ Real Coordinates::VolumeCenterWidth3(const int k, const int j, const int i)
 void Coordinates::CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
   AthenaArray<Real> &cons)
 {
-  Real src[NFLUID],dummy_arg[NFLUID];
+  Real dummy_arg[NFLUID];
 
 // src_1 = <M_{phi phi}><1/r> = M_{phi phi} dr/d(r^2/2)
-// src_3 = -< M_{phi r} ><1/r>  = -(<M_{pr}>) dr/d(r^2/2)
+// src_2 = -< M_{phi r} ><1/r>  = -(<M_{pr}>) dr/d(r^2/2)
 
   for (int k=(pmy_block->ks); k<=(pmy_block->ke); ++k) {
   for (int j=(pmy_block->js); j<=(pmy_block->je); ++j) {
 #pragma simd
     for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
-      Real m_pp = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM3,k,j,i);
+      Real m_pp = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM2,k,j,i);
       if (NON_BAROTROPIC_EOS) {
          m_pp += prim(IEN,k,j,i);
       } else {
          Real iso_cs = pmy_block->pfluid->pf_eos->SoundSpeed(dummy_arg);
          m_pp += (iso_cs*iso_cs)*prim(IDN,k,j,i);
       }
-      src[IM1] = src_terms_i_(i)*m_pp;
-
-      Real m_pr = prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM1,k,j,i);
-      src[IM3] = (-1.0)*src_terms_i_(i)*m_pr;
-
-      Real& uim1 = cons(IM1,k,j,i);
-      Real& uim3 = cons(IM3,k,j,i);
-      uim1 += dt*src[IM1];
-      uim3 += dt*src[IM3];
+      cons(IM1,k,j,i) += dt*(src_terms_i_(i)*m_pp);
+    }
+    if (pmy_block->block_size.nx2 > 1) {
+#pragma simd
+      for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
+        Real m_pr = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM1,k,j,i);
+        cons(IM2,k,j,i) -= dt*(src_terms_i_(i)*m_pr);
+      }
     }
   }}
 

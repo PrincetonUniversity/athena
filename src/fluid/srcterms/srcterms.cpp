@@ -11,7 +11,7 @@
  * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of GNU GPL in the file LICENSE included in the code
- * distribution.  If not see <http://www.gnu.org/licenses/>.
+
  *====================================================================================*/
 
 // Primary header
@@ -27,6 +27,7 @@
 #include "../../athena.hpp"          // Real
 #include "../../athena_arrays.hpp"   // AthenaArray
 #include "../../mesh.hpp"            // MeshBlock
+#include "../../coordinates/coordinates.hpp"  // VectorBetweenPoints()
 #include "../fluid.hpp"              // Fluid
 #include "../../parameter_input.hpp" // ParameterInput
 
@@ -41,7 +42,32 @@
 FluidSourceTerms::FluidSourceTerms(Fluid *pf, ParameterInput *pin)
 {
   pmy_fluid_ = pf;
-  pt_mass_ = pin->GetOrAddReal("problem","GM",0.0);
+
+  pfirst_mass = NULL;
+  PointMass *pnew_mass;
+  PointMass *plast = pfirst_mass;
+
+  InputBlock *pib = pin->pfirst_block;
+  while (pib != NULL) {
+    if (pib->block_name.compare(0,9,"pointmass") == 0) {
+      pnew_mass = new PointMass;
+      pnew_mass->gm = pin->GetReal(pib->block_name,"GM");
+      pnew_mass->position.x1 = pin->GetReal(pib->block_name,"x1_0");
+      pnew_mass->position.x2 = pin->GetReal(pib->block_name,"x2_0");
+      pnew_mass->position.x3 = pin->GetReal(pib->block_name,"x3_0");
+      pnew_mass->velocity.x1 = pin->GetOrAddReal(pib->block_name,"v1_0",0.0);
+      pnew_mass->velocity.x2 = pin->GetOrAddReal(pib->block_name,"v2_0",0.0);
+      pnew_mass->velocity.x3 = pin->GetOrAddReal(pib->block_name,"v3_0",0.0);
+      pnew_mass->pnext = NULL;
+      if (pfirst_mass == NULL) {
+        pfirst_mass = pnew_mass;
+      } else {
+        plast->pnext = pnew_mass;
+      }
+      plast = pnew_mass;
+    }
+    pib = pib->pnext;
+  }
 
 // Allocate memory for scratch arrays used in integrator, and internal scratch arrays
 // Only allocate arrays needed for forces in x1 direction for now 
@@ -67,6 +93,14 @@ FluidSourceTerms::FluidSourceTerms(Fluid *pf, ParameterInput *pin)
 
 FluidSourceTerms::~FluidSourceTerms()
 {
+// iterate through linked list of point masses and delete each node
+  PointMass *ppm = pfirst_mass;
+  while (ppm != NULL) {
+    PointMass *pold_mass = ppm;
+    ppm = ppm->pnext;
+    delete pold_mass;
+  }
+
   volume_i_.DeleteAthenaArray();
   src_terms_i_.DeleteAthenaArray();
 }
@@ -76,23 +110,46 @@ FluidSourceTerms::~FluidSourceTerms()
  *  \brief
  */
 
-void FluidSourceTerms::PhysicalSourceTerms(Real dt, AthenaArray<Real> &prim,
+void FluidSourceTerms::PhysicalSourceTerms(const Real dt, const AthenaArray<Real> &prim,
   AthenaArray<Real> &cons)
 {
-  Real src[NFLUID];
-  MeshBlock *pmb = pmy_fluid_->pmy_block;
-  if (pt_mass_ == 0.0) return;
+  if (pfirst_mass == NULL) return;
 
-// src = GM/R_{cell_center}
+  MeshBlock *pmb = pmy_fluid_->pmy_block;
+  ThreeVector r,p1;
+
+// Source terms due to point mass gravity
 
   for (int k=pmb->ks; k<=pmb->ke; ++k) {
   for (int j=pmb->js; j<=pmb->je; ++j) {
+    PointMass *ppm = pfirst_mass;
+    while (ppm != NULL) {
+      p1.x2 = pmb->x2v(j);
+      p1.x3 = pmb->x3v(k);
 #pragma simd
-    for (int i=pmb->is; i<=pmb->ie; ++i) {
-      src[IM1] = src_terms_i_(i)*(pt_mass_*prim(IDN,k,j,i)/(pmb->x1v(i)));
+      for (int i=pmb->is; i<=pmb->ie; ++i) {
+        p1.x1 = pmb->x1v(i);
+        r = pmb->pcoord->VectorBetweenPoints(p1,ppm->position);
+        Real d = sqrt(r.x1*r.x1 + r.x2*r.x2 + r.x3*r.x3);
+        Real force = (ppm->gm)*prim(IDN,k,j,i)/(d*d);
 
-      Real& uim1 = cons(IM1,k,j,i);
-      uim1 -= dt*src[IM1];
+        Real src = dt*src_terms_i_(i)*pmb->x1v(i)*force*(r.x1/d);
+        cons(IM1,k,j,i) += src;
+        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVX,k,j,i);
+
+        if (pmb->block_size.nx2 > 1) {
+          src = dt*force*(r.x2/d);
+          cons(IM2,k,j,i) += src;
+          if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVY,k,j,i);
+        }
+
+        if (pmb->block_size.nx3 > 1) {
+          src = dt*force*(r.x3/d);
+          cons(IM3,k,j,i) += src;
+          if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVZ,k,j,i);
+        }
+      }
+      ppm = ppm->pnext;
     }
   }}
 

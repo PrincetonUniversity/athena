@@ -19,6 +19,9 @@ class MeshBlock;
 class Fluid;
 class ParameterInput;
 
+enum EdgeNames {inner_x1, outer_x1, inner_x2, outer_x2, inner_x3, outer_x3};
+typedef void (*BCFunc_t)(MeshBlock *pmb, AthenaArray<Real> &a);
+
 //! \class FluidBCs
 //  \brief BCs data and functions for fluid
 
@@ -28,6 +31,7 @@ public:
   ~FluidBCs();
 
   void ApplyFluidBCs(AthenaArray<Real> &a);
+  void EnrollBoundaryFunction(enum EdgeNames edge, BCFunc_t my_bc);
 
 private:
   Fluid *pmy_fluid;  // ptr to Fluid containing this FluidBCs
