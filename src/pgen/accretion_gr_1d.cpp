@@ -1,4 +1,4 @@
-// General relativistic black hole accretion generator
+// General relativistic black hole accretion generator, spherically symmetric flows
 
 // Primary header
 #include "../fluid/fluid.hpp"
@@ -20,7 +20,7 @@ static void set_state(AthenaArray<Real> &prim, AthenaArray<Real> &prim_half, int
 //   pin: parameters
 // Outputs: (none)
 // Notes:
-//   sets conserved variables according to input primitives
+//   sets primitive and conserved variables according to input primitives
 void Fluid::InitFluid(ParameterInput *pin)
 {
   // Prepare index bounds

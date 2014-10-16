@@ -1,0 +1,51 @@
+<comment>
+problem = GR hydro thick disk in (r,theta)-plane
+
+<job>
+problem_id  = BHThickDisk2D
+
+<output1>
+file_type   = tab
+variable    = prim
+data_format = %24.16e
+dt          = 1.0
+x2_slice    = 1.5707963267948966  # pi/2
+
+<output2>
+file_type   = vtk
+variable    = prim
+data_format = %24.16e
+dt          = 1.0
+
+<time>
+cfl_number = 0.4
+nlim       = -1
+tlim       = 1.0
+
+<mesh>
+nx1    = 1000                  # number of zones in r-direction
+x1min  = 3.0                   # inner r
+x1max  = 100.0                 # outer r
+ix1_bc = 2                     # inner r boundary condition: outflow
+ox1_bc = 2                     # outer r boundary condition: outflow
+
+nx2    = 100                   # number of zones in theta-direction
+x2min  = 0.015707963267948967  # lower theta (pi/200)
+x2max  = 3.1258846903218442    # upper theta (199*pi/200)
+ix2_bc = 2                     # lower theta boundary condition: outflow
+ox2_bc = 2                     # upper theta boundary condition: outflow
+
+nx3    = 1                     # number of zones in phi-direction
+x3min  = -0.5                  # minimum phi
+x3max  = 0.5                   # maximum phi
+ix3_bc = 4                     # minimum phi boundary condition: periodic
+ox3_bc = 4                     # maximum phi boundary condition: periodic
+
+<fluid>
+gamma = 1.6666666666666667  # Gamma = C_p/C_v
+
+<problem>
+mass       = 1.0      # black hole mass
+k          = 1.0      # p_gas = K * rho^Gamma
+l          = 1.0      # l = -u_3/u_0
+rho_floor  = 1.0e-10  # minimum density

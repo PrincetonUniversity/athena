@@ -70,7 +70,7 @@ def main(**kwargs):
     flow_string = 'bondi' if problem == 'hydro_schwarzschild_bondi_1d' else 'geodesic'
     if computation_needed:
       configure_string = 'python configure.py -g \
-          --prob=accretion_gr \
+          --prob=accretion_gr_1d \
           --coord=schwarzschild \
           --eos=adiabatic \
           --flux=hlle \
@@ -97,6 +97,32 @@ def main(**kwargs):
         plot_accretion_geodesic(problem, movie_needed)
       if flow_string == 'bondi':
         plot_accretion_bondi(problem, movie_needed)
+  elif problem == 'hydro_schwarzschild_disk_2d':
+    if computation_needed:
+      configure_string = 'python configure.py -g \
+          --prob=accretion_gr_2d \
+          --coord=schwarzschild \
+          --eos=adiabatic \
+          --flux=hlle \
+          --order=plm \
+          --fint=vl2 \
+          --cxx=g++'
+      make_string = 'make all'
+      if movie_needed:
+        run_string = './athena \
+            -i ../inputs/hydro_gr/athinput.thick_disk_2d \
+            job/problem_id={0} \
+            time/tlim=20.0 \
+            output1/dt=20.0 \
+            output2/dt=1.0'.format(problem)
+      else:
+        run_string = './athena \
+            -i ../inputs/hydro_gr/athinput.thick_disk_2d \
+            job/problem_id={0} \
+            time/tlim=1.0 \
+            output1/dt=1.0 \
+            output2/dt=1.0'.format(problem)
+      run_new(configure_string, make_string, run_string, problem)
   else:
     print('ERROR: problem not recognized')
 
@@ -597,9 +623,7 @@ def run_new(configure_string, make_string, run_string, name_string):
   print('deleting old data...')
   try:
     os.system('rm -f data/{0}.out*'.format(name_string))
-    os.system('rm -f data/{0}.out*'.format(name_string))
     # TODO: remove when -d option works
-    os.system('rm -f ../bin/{0}.out*'.format(name_string))
     os.system('rm -f ../bin/{0}.out*'.format(name_string))
   except OSError as err:
     print('OS Error ({0}): {1}'.format(err.errno, err.strerror))
@@ -623,7 +647,6 @@ def run_new(configure_string, make_string, run_string, name_string):
   try:
     os.system(run_string + ' &> /dev/null')
     # TODO: remove when -d option works
-    os.system('mv {0}.out* {1}/data/.'.format(name_string, current_directory))
     os.system('mv {0}.out* {1}/data/.'.format(name_string, current_directory))
     os.chdir(current_directory)
   except OSError as err:
