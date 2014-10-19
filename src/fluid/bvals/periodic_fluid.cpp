@@ -1,18 +1,18 @@
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- *
- * This program is free software: you can redistribute and/or modify it under the terms
- * of the GNU General Public License (GPL) as published by the Free Software Foundation,
- * either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
- * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of GNU GPL in the file LICENSE included in the code
- * distribution.  If not see <http://www.gnu.org/licenses/>.
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+//
+// This program is free software: you can redistribute and/or modify it under the terms
+// of the GNU General Public License (GPL) as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of GNU GPL in the file LICENSE included in the code
+// distribution.  If not see <http://www.gnu.org/licenses/>.
+//======================================================================================
 
 // Primary header
 #include "bvals.hpp"
@@ -23,9 +23,9 @@
 #include "../../mesh.hpp"           // MeshBlock
 
 //======================================================================================
-/*! \file periodic_fluid.cpp
- *  \brief implements periodic BCs in each dimension for conserved fluid variables
- *====================================================================================*/
+//! \file periodic_fluid.cpp
+//  \brief implements periodic BCs in each dimension for conserved fluid variables
+//======================================================================================
 //--------------------------------------------------------------------------------------
 //! \fn void PeriodicInnerX1(MeshBlock *pmb)
 //  \brief  PERIODIC boundary conditions conserved vars, inner x1 boundary (ix1_bc=4)

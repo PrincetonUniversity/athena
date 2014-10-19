@@ -1,18 +1,18 @@
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- *
- * This program is free software: you can redistribute and/or modify it under the terms
- * of the GNU General Public License (GPL) as published by the Free Software Foundation,
- * either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
- * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of GNU GPL in the file LICENSE included in the code
- * distribution.  If not see <http://www.gnu.org/licenses/>.
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+//
+// This program is free software: you can redistribute and/or modify it under the terms
+// of the GNU General Public License (GPL) as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of GNU GPL in the file LICENSE included in the code
+// distribution.  If not see <http://www.gnu.org/licenses/>.
+//======================================================================================
 #include <iostream>
 
 // Primary header
@@ -28,22 +28,22 @@
 #include "../../eos/eos.hpp"           // GetGamma
 
 //======================================================================================
-/*! \file hlle.cpp
- *  \brief HLLE Riemann solver for hydrodynamics
- *
- *  Computes 1D fluxes using the Harten-Lax-van Leer (HLL) Riemann solver.  This flux is
- *  very diffusive, especially for contacts, and so it is not recommended for use in
- *  applications.  However, as shown by Einfeldt et al.(1991), it is positively
- *  conservative (cannot return negative densities or pressure), so it is a useful
- *  option when other approximate solvers fail and/or when extra dissipation is needed.
- *
- * REFERENCES:
- * - E.F. Toro, "Riemann Solvers and numerical methods for fluid dynamics", 2nd ed.,
- *   Springer-Verlag, Berlin, (1999) chpt. 10.
- * - Einfeldt et al., "On Godunov-type methods near low densities", JCP, 92, 273 (1991)
- * - A. Harten, P. D. Lax and B. van Leer, "On upstream differencing and Godunov-type
- *   schemes for hyperbolic conservation laws", SIAM Review 25, 35-61 (1983).
- *====================================================================================*/
+//! \file hlle.cpp
+//  \brief HLLE Riemann solver for hydrodynamics
+//
+//  Computes 1D fluxes using the Harten-Lax-van Leer (HLL) Riemann solver.  This flux is
+//  very diffusive, especially for contacts, and so it is not recommended for use in
+//  applications.  However, as shown by Einfeldt et al.(1991), it is positively
+//  conservative (cannot return negative densities or pressure), so it is a useful
+//  option when other approximate solvers fail and/or when extra dissipation is needed.
+//
+// REFERENCES:
+// - E.F. Toro, "Riemann Solvers and numerical methods for fluid dynamics", 2nd ed.,
+//   Springer-Verlag, Berlin, (1999) chpt. 10.
+// - Einfeldt et al., "On Godunov-type methods near low densities", JCP, 92, 273 (1991)
+// - A. Harten, P. D. Lax and B. van Leer, "On upstream differencing and Godunov-type
+//   schemes for hyperbolic conservation laws", SIAM Review 25, 35-61 (1983).
+//======================================================================================
 
 void FluidIntegrator::RiemannSolver(const int k, const int j,
   const int il, const int iu, const int ivx, const int ivy, const int ivz,

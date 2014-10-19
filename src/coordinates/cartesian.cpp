@@ -1,18 +1,18 @@
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- *
- * This program is free software: you can redistribute and/or modify it under the terms
- * of the GNU General Public License (GPL) as published by the Free Software Foundation,
- * either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
- * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of GNU GPL in the file LICENSE included in the code
- * distribution.  If not see <http://www.gnu.org/licenses/>.
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+//
+// This program is free software: you can redistribute and/or modify it under the terms
+// of the GNU General Public License (GPL) as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of GNU GPL in the file LICENSE included in the code
+// distribution.  If not see <http://www.gnu.org/licenses/>.
+//======================================================================================
 
 // Primary header
 #include "coordinates.hpp"
@@ -89,9 +89,9 @@ Coordinates::~Coordinates()
 //--------------------------------------------------------------------------------------
 // Face Area functions
 
-/* \!fn void Coordinates::Face1Area(const int k,const int j, const int il, const int iu,
-      AthenaArray<Real> &area)
- * \brief  functions to compute area of cell faces in each direction    */
+// \!fn void Coordinates::Face1Area(const int k,const int j, const int il, const int iu,
+//    AthenaArray<Real> &area)
+// \brief  functions to compute area of cell faces in each direction
 
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> *parea)
@@ -133,9 +133,9 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 //--------------------------------------------------------------------------------------
 // Cell Volume function
 
-/* \!fn void Coordinates::CellVolume(const int k,const int j,const int il, const int iu,
- *   AthenaArray<Real> &vol)
- * \brief function to compute cell volume    */
+// \!fn void Coordinates::CellVolume(const int k,const int j,const int il, const int iu,
+//   AthenaArray<Real> &vol)
+// \brief function to compute cell volume
 
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> *pvol)
@@ -178,9 +178,9 @@ ThreeVector Coordinates::VectorBetweenPoints(const ThreeVector p1, const ThreeVe
 }
 
 //--------------------------------------------------------------------------------------
-/* \!fn void Coordinates::CoordinateSourceTerms(
- *   const int k, const int j, AthenaArray<Real> &prim, AthenaArray<Real> &src)
- * \brief function to compute coordinate source terms (no-op function for cartesian)  */
+// \!fn void Coordinates::CoordinateSourceTerms(
+//   const int k, const int j, AthenaArray<Real> &prim, AthenaArray<Real> &src)
+// \brief function to compute coordinate source terms (no-op function for cartesian)
 
 void Coordinates::CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
   AthenaArray<Real> &src)

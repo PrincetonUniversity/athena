@@ -1,18 +1,18 @@
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- *
- * This program is free software: you can redistribute and/or modify it under the terms
- * of the GNU General Public License (GPL) as published by the Free Software Foundation,
- * either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
- * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of GNU GPL in the file LICENSE included in the code
- * distribution.  If not see <http://www.gnu.org/licenses/>.
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+//
+// This program is free software: you can redistribute and/or modify it under the terms
+// of the GNU General Public License (GPL) as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of GNU GPL in the file LICENSE included in the code
+// distribution.  If not see <http://www.gnu.org/licenses/>.
+//======================================================================================
 
 // Primary header
 #include "bvals.hpp"
@@ -31,9 +31,9 @@
 #include "../../parameter_input.hpp" // ParameterInput
 
 //======================================================================================
-/*! \file bvals.cpp
- *  \brief implements functions that initialize/apply BCs on each edge
- *====================================================================================*/
+//! \file bvals.cpp
+//  \brief implements functions that initialize/apply BCs on each edge
+//======================================================================================
 
 // FluidBCs constructor - sets function pointers for the appropriate
 // boundary conditions at each of the 6 edges of a MeshBlock
@@ -171,9 +171,8 @@ FluidBCs::~FluidBCs()
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn
- *  \brief
- */
+//! \fn
+//  \brief
 
 void FluidBCs::EnrollBoundaryFunction(enum EdgeNames edge, BCFunc_t my_bc)
 {
@@ -206,9 +205,8 @@ void FluidBCs::EnrollBoundaryFunction(enum EdgeNames edge, BCFunc_t my_bc)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void FluidBCs::ApplyFluidBCs(AthenaArray<Real> &a)
- *  \brief Calls BC functions using appropriate function pointers to set ghost zones.  
- */
+//! \fn void FluidBCs::ApplyFluidBCs(AthenaArray<Real> &a)
+//  \brief Calls BC functions using appropriate function pointers to set ghost zones.  
 
 void FluidBCs::ApplyFluidBCs(AthenaArray<Real> &a)
 {

@@ -1,18 +1,18 @@
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- *
- * This program is free software: you can redistribute and/or modify it under the terms
- * of the GNU General Public License (GPL) as published by the Free Software Foundation,
- * either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
- * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of GNU GPL in the file LICENSE included in the code
- * distribution.  If not see <http://www.gnu.org/licenses/>.
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+//
+// This program is free software: you can redistribute and/or modify it under the terms
+// of the GNU General Public License (GPL) as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of GNU GPL in the file LICENSE included in the code
+// distribution.  If not see <http://www.gnu.org/licenses/>.
+//======================================================================================
 
 #include <sstream>
 #include <iostream>
@@ -30,48 +30,48 @@
 #include "outputs.hpp"
 
 //======================================================================================
-/*! \file outputs.cpp
- *  \brief implements functions for Athena++ outputs
- *
- * The number and types of outputs are all controlled by the number and values of
- * parameters specified in <outputN> blocks in the input file.  Each output block must
- * be labelled by a unique integer "N".  Following the convention of the parser
- * implemented in the ParameterInput class, a second output block with the same integer
- * "N" of an earlier block will silently overwrite the values read by the first block.
- * The numbering of the output blocks does not need to be consecutive, and blocks may
- * appear in any order in the input file.  Moreover, unlike the C version of Athena, the
- * total number of <outputN> blocks does not need to be specified -- in Athena++ a new
- * output type will be created for each and every <outputN> block in the input file.
- *
- * Required parameters that must be specified in an <outputN> block are:
- *   - variable     = cons,prim,D,d,E,e,m,v
- *   - file_type    = tab,vtk,hst
- *   - dt           = problem time between outputs
- *
- * Optional parameters that may be specified in an <outputN> block are:
- *   - data_format  = format string used in writing data (e.g. %12.5e)
- *   - next_time    = time of next output (useful for restarts)
- *   - id           = any string
- *   - file_number  = any integer with up to 4 digits
- *   - x[123]_slice = specifies data should be a slice at x[123] position
- *   - x[123]_sum   = set to 1 to sum data along specified direction
- *   
- * EXAMPLE of an <outputN> block for a VTK dump:
- *   <output3>
- *   file_type   = tab       # Tabular data dump
- *   variable    = prim      # variables to be output
- *   data_format = %12.5e    # Optional data format string
- *   dt          = 0.01      # time increment between outputs
- *   x2_slice    = 0.0       # slice in x2
- *   x3_slice    = 0.0       # slice in x3
- *
- * Each <outputN> block will result in a new node being created in a linked list of
- * OutputType stored in the Outputs class.  During a simulation, outputs are made when
- * the simulation time satisfies the criteria implemented in the MakeOutputs() function.
- *
- * To implement a new type of output X, write a new derived OutputType class, and
- * construct an object of this class in the Outputs::InitOutputTypes() function.
- *====================================================================================*/
+//! \file outputs.cpp
+//  \brief implements functions for Athena++ outputs
+//
+// The number and types of outputs are all controlled by the number and values of
+// parameters specified in <outputN> blocks in the input file.  Each output block must
+// be labelled by a unique integer "N".  Following the convention of the parser
+// implemented in the ParameterInput class, a second output block with the same integer
+// "N" of an earlier block will silently overwrite the values read by the first block.
+// The numbering of the output blocks does not need to be consecutive, and blocks may
+// appear in any order in the input file.  Moreover, unlike the C version of Athena, the
+// total number of <outputN> blocks does not need to be specified -- in Athena++ a new
+// output type will be created for each and every <outputN> block in the input file.
+//
+// Required parameters that must be specified in an <outputN> block are:
+//   - variable     = cons,prim,D,d,E,e,m,v
+//   - file_type    = tab,vtk,hst
+//   - dt           = problem time between outputs
+//
+// Optional parameters that may be specified in an <outputN> block are:
+//   - data_format  = format string used in writing data (e.g. %12.5e)
+//   - next_time    = time of next output (useful for restarts)
+//   - id           = any string
+//   - file_number  = any integer with up to 4 digits
+//   - x[123]_slice = specifies data should be a slice at x[123] position
+//   - x[123]_sum   = set to 1 to sum data along specified direction
+//   
+// EXAMPLE of an <outputN> block for a VTK dump:
+//   <output3>
+//   file_type   = tab       # Tabular data dump
+//   variable    = prim      # variables to be output
+//   data_format = %12.5e    # Optional data format string
+//   dt          = 0.01      # time increment between outputs
+//   x2_slice    = 0.0       # slice in x2
+//   x3_slice    = 0.0       # slice in x3
+//
+// Each <outputN> block will result in a new node being created in a linked list of
+// OutputType stored in the Outputs class.  During a simulation, outputs are made when
+// the simulation time satisfies the criteria implemented in the MakeOutputs() function.
+//
+// To implement a new type of output X, write a new derived OutputType class, and
+// construct an object of this class in the Outputs::InitOutputTypes() function.
+//======================================================================================
 
 //--------------------------------------------------------------------------------------
 // OutputVariable constructor
@@ -303,9 +303,8 @@ Outputs::~Outputs()
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void OutputData::AppendNode()
- *  \brief
- */
+//! \fn void OutputData::AppendNode()
+//  \brief
 
 void OutputData::AppendNode(AthenaArray<Real> *parray, OutputVariableHeader vhead)
 {
@@ -321,9 +320,8 @@ void OutputData::AppendNode(AthenaArray<Real> *parray, OutputVariableHeader vhea
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void OutputData::ReplaceNode()
- *  \brief
- */
+//! \fn void OutputData::ReplaceNode()
+//  \brief
 
 void OutputData::ReplaceNode(OutputVariable *pold, OutputVariable *pnew) 
 {
@@ -349,9 +347,8 @@ void OutputData::ReplaceNode(OutputVariable *pold, OutputVariable *pnew)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void OutputType::LoadOutputData(OutputData *pod)
- *  \brief initializes output data in OutputData container
- */
+//! \fn void OutputType::LoadOutputData(OutputData *pod)
+//  \brief initializes output data in OutputData container
 
 void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 {
@@ -452,9 +449,8 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void OutputType::TransformOutputData()
- *  \brief 
- */
+//! \fn void OutputType::TransformOutputData()
+//  \brief 
 
 void OutputType::TransformOutputData(OutputData *pod, MeshBlock *pmb)
 {
@@ -480,9 +476,8 @@ void OutputType::TransformOutputData(OutputData *pod, MeshBlock *pmb)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void OutputType::Slice(OutputData* pod, int dim)
- *  \brief
- */
+//! \fn void OutputType::Slice(OutputData* pod, int dim)
+//  \brief
 
 void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
 {
@@ -604,9 +599,8 @@ void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void OutputType::Sum(OutputData* pod, int dim)
- *  \brief
- */
+//! \fn void OutputType::Sum(OutputData* pod, int dim)
+//  \brief
 
 void OutputType::Sum(OutputData* pod, MeshBlock* pmb, int dim)
 {
@@ -684,9 +678,8 @@ void OutputType::Sum(OutputData* pod, MeshBlock* pmb, int dim)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void Outputs::MakeOutputs()
- *  \brief scans through linked list of OutputTypes and makes any outputs needed.
- */
+//! \fn void Outputs::MakeOutputs()
+//  \brief scans through linked list of OutputTypes and makes any outputs needed.
 
 void Outputs::MakeOutputs(Mesh *pm)
 {

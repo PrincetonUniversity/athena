@@ -1,18 +1,18 @@
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- *
- * This program is free software: you can redistribute and/or modify it under the terms
- * of the GNU General Public License (GPL) as published by the Free Software Foundation,
- * either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
- * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of GNU GPL in the file LICENSE included in the code
- * distribution.  If not see <http://www.gnu.org/licenses/>.
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+//
+// This program is free software: you can redistribute and/or modify it under the terms
+// of the GNU General Public License (GPL) as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of GNU GPL in the file LICENSE included in the code
+// distribution.  If not see <http://www.gnu.org/licenses/>.
+//======================================================================================
 
 #include <sstream>
 #include <iostream>
@@ -30,10 +30,10 @@
 #include "outputs.hpp"
 
 //======================================================================================
-/*! \file history.cpp
- *  \brief writes history output data.  History data are volume-averaged quantities that
- *  are output frequently in time to trace their history.
- *====================================================================================*/
+//! \file history.cpp
+//  \brief writes history output data.  History data are volume-averaged quantities that
+//  are output frequently in time to trace their history.
+//======================================================================================
 
 //--------------------------------------------------------------------------------------
 // HistoryOutput constructor
@@ -46,10 +46,9 @@ HistoryOutput::HistoryOutput(OutputParameters oparams)
 // destructor - not required for this derived class
 
 //--------------------------------------------------------------------------------------
-/*! \fn void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmd)
- *  \brief computes data to be included in output data container (OutputData).  This
- *  version over-rides the default defined in the base class.
- */
+//! \fn void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmd)
+//  \brief computes data to be included in output data container (OutputData).  This
+//  version over-rides the default defined in the base class.
 
 void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 {
@@ -143,9 +142,8 @@ void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void HistoryOutput:::WriteOutputFile()
- *  \brief writes OutputData to file in history format using C style fprintf
- */
+//! \fn void HistoryOutput:::WriteOutputFile()
+//  \brief writes OutputData to file in history format using C style fprintf
 
 void HistoryOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 {

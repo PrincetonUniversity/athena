@@ -1,15 +1,15 @@
 #ifndef DEFINITIONS_HPP
 #define DEFINITIONS_HPP
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- * See LICENSE file for full public license information.
- *====================================================================================*/
-/*! \file defs.hpp.in
- *  \brief Template file for defs.hpp.  When the configure.py script is run, a new
- *  defs.hpp file will be created (overwriting the last) from this template.  This new
- *  file contains Athena++ specific cpp macros and definitions set by configure.
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+// See LICENSE file for full public license information.
+//======================================================================================
+//! \file defs.hpp.in
+//  \brief Template file for defs.hpp.  When the configure.py script is run, a new
+//  defs.hpp file will be created (overwriting the last) from this template.  This new
+//  file contains Athena++ specific cpp macros and definitions set by configure.
+//======================================================================================
 
 //--------------------------------------------------------------------------------------
 // macros which define physics and algorithms

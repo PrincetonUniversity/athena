@@ -1,14 +1,14 @@
 #ifndef MESH_HPP
 #define MESH_HPP
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- * See LICENSE file for full public license information.
- *====================================================================================*/
-/*! \file mesh.hpp
- *  \brief defines classes Mesh, MeshDomain, and MeshBlock
- *  These classes contain data and functions related to the computational mesh
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+// See LICENSE file for full public license information.
+//======================================================================================
+//! \file mesh.hpp
+//  \brief defines classes Mesh, MeshDomain, and MeshBlock
+//  These classes contain data and functions related to the computational mesh
+//======================================================================================
 
 // Athena headers
 #include "athena.hpp"         // macros, Real

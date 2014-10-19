@@ -1,18 +1,18 @@
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- *
- * This program is free software: you can redistribute and/or modify it under the terms
- * of the GNU General Public License (GPL) as published by the Free Software Foundation,
- * either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
- * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of GNU GPL in the file LICENSE included in the code
- * distribution.  If not see <http://www.gnu.org/licenses/>.
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+//
+// This program is free software: you can redistribute and/or modify it under the terms
+// of the GNU General Public License (GPL) as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of GNU GPL in the file LICENSE included in the code
+// distribution.  If not see <http://www.gnu.org/licenses/>.
+//======================================================================================
 
 // Primary header
 #include "../integrators.hpp"
@@ -27,17 +27,17 @@
 #include "../../eos/eos.hpp"           // GetGamma
 
 //======================================================================================
-/*! \file hllc.cpp
- *  \brief HLLC Riemann solver for hydrodynamics, an extension of  the HLLE fluxes to
- *    include the contact wave.  Only works for adiabatic hydrodynamics.
- *
- * REFERENCES:
- * - E.F. Toro, "Riemann Solvers and numerical methods for fluid dynamics", 2nd ed.,
- *   Springer-Verlag, Berlin, (1999) chpt. 10.
- *
- * - P. Batten, N. Clarke, C. Lambert, and D. M. Causon, "On the Choice of Wavespeeds
- *   for the HLLC Riemann Solver", SIAM J. Sci. & Stat. Comp. 18, 6, 1553-1570, (1997).
- *====================================================================================*/
+//! \file hllc.cpp
+//  \brief HLLC Riemann solver for hydrodynamics, an extension of  the HLLE fluxes to
+//    include the contact wave.  Only works for adiabatic hydrodynamics.
+//
+// REFERENCES:
+// - E.F. Toro, "Riemann Solvers and numerical methods for fluid dynamics", 2nd ed.,
+//   Springer-Verlag, Berlin, (1999) chpt. 10.
+//
+// - P. Batten, N. Clarke, C. Lambert, and D. M. Causon, "On the Choice of Wavespeeds
+//   for the HLLC Riemann Solver", SIAM J. Sci. & Stat. Comp. 18, 6, 1553-1570, (1997).
+//======================================================================================
 
 void FluidIntegrator::RiemannSolver(const int k, const int j,
   const int il, const int iu, const int ivx, const int ivy, const int ivz,

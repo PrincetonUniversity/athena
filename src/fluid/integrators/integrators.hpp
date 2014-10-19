@@ -1,13 +1,13 @@
 #ifndef INTEGRATORS_HPP
 #define INTEGRATORS_HPP
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- * See LICENSE file for full public license information.
- *====================================================================================*/
-/*! \file integrators.hpp
- *  \brief defines FluidIntegrator implements data and functions to integrate fluid
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+// See LICENSE file for full public license information.
+//======================================================================================
+//! \file integrators.hpp
+//  \brief defines FluidIntegrator implements data and functions to integrate fluid
+//======================================================================================
 
 // Athena headers
 #include "../../athena.hpp"         // Real

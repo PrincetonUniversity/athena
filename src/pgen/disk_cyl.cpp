@@ -1,18 +1,18 @@
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- *
- * This program is free software: you can redistribute and/or modify it under the terms
- * of the GNU General Public License (GPL) as published by the Free Software Foundation,
- * either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
- * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of GNU GPL in the file LICENSE included in the code
- * distribution.  If not see <http://www.gnu.org/licenses/>.
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+//
+// This program is free software: you can redistribute and/or modify it under the terms
+// of the GNU General Public License (GPL) as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of GNU GPL in the file LICENSE included in the code
+// distribution.  If not see <http://www.gnu.org/licenses/>.
+//======================================================================================
 
 // Primary header
 #include "../fluid/fluid.hpp"
@@ -37,11 +37,11 @@ inline Real SQR(Real x){
 }
 
 //======================================================================================
-/*! \file disk_cyl.cpp
- *  \brief Problem generator for accretion disk problems.  
- *
- * Problem generator for disk problems in disk_cyl system.
- *====================================================================================*/
+//! \file disk_cyl.cpp
+//  \brief Problem generator for accretion disk problems.  
+//
+// Problem generator for disk problems in disk_cyl system.
+//======================================================================================
 
 // File scope variables
 static Real x1Max, x1Min;
@@ -109,37 +109,37 @@ void Fluid::InitFluid(ParameterInput *pin)
   return;
 }
 
-/* Initial Density Profile*/
+// Initial Density Profile
 Real ICden(const Real x1){
   Real den = 0.0;
   std::stringstream msg;
   
-  /*Initial Condition 1: for no inflow*/
+  //Initial Condition 1: for no inflow
   if(ICd == 1) {
     den = rho0;
   } 
-  /*Initial Condition 2: for L1-inflow*/
+  //Initial Condition 2: for L1-inflow
   if(ICd == 2) {
     if(x1<=0.2*x1Max) den = 0.2*rho0;
     else den = rho_floor;
   } 
-  /*Initial Condition 3: empty initial disk*/
+  //Initial Condition 3: empty initial disk
   if(ICd == 3) {
     den = rho_floor;
   } 
-  /*Initial Condition 4: truncated initial disk*/
+  //Initial Condition 4: truncated initial disk
   if(ICd == 4) {
     if(x1>=rstart && x1<=rtrunc) den = rho0;
     else den = rho_floor;
   } 
-  /*Initial Condition 5: truncated initial disk*/
+  //Initial Condition 5: truncated initial disk
   if(ICd == 5) {
     if(x1>=rstart && x1<=rtrunc) den = rho0;
     else if(x1 > rtrunc)
       den = rho0*exp(-SQR(x1-rtrunc)/2./SQR(0.1*(x1Max-rtrunc)));
     else if(x1 < rstart)
       den = rho0*exp(-SQR(x1-rstart)/2./SQR(0.1*(x1Min-rstart)));
-  } /*ICd 5*/
+  } //ICd 5
   
   if((ICd!=1)&&(ICd!=2)&&(ICd!=3)&&(ICd!=4)&&(ICd!=5)){
     msg << "### FATAL ERROR in Problem Generator" << std::endl 
@@ -149,16 +149,16 @@ Real ICden(const Real x1){
   return den;
 }
 
-/* Initial Velocity Profile*/
+// Initial Velocity Profile
 Real ICvel(const Real x1){
   Real vel = 0.0;
   std::stringstream msg;
 
-  /*Initial Condition 1: static gas*/
+  //Initial Condition 1: static gas
   if(ICv == 1) {
     vel = 0.0;
   } 
-  /*Initial Condition 2: moving gas*/
+  //Initial Condition 2: moving gas
   else if(ICv == 2) {
     Real rtrans=x1Min+0.1*(x1Max-x1Min);
     if(x1 < rtrans)
@@ -166,7 +166,7 @@ Real ICvel(const Real x1){
     else 
       vel = sqrt(x1-rtrans);
   }
-  /*Initial Condition 2: moving gas*/
+  //Initial Condition 2: moving gas
   else if(ICv == 3) {
     vel = KeplerVel(x1); 
   }

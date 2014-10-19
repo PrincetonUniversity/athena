@@ -1,14 +1,14 @@
 #ifndef SRC_TERMS_HPP
 #define SRC_TERMS_HPP
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- * See LICENSE file for full public license information.
- *====================================================================================*/
-/*! \file srcterms.hpp
- *  \brief defines class FluidSourceTerms
- *  Contains data and functions that implement physical (not coordinate) source terms
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+// See LICENSE file for full public license information.
+//======================================================================================
+//! \file srcterms.hpp
+//  \brief defines class FluidSourceTerms
+//  Contains data and functions that implement physical (not coordinate) source terms
+//======================================================================================
 
 // Athena headers
 #include "../../athena.hpp"         // Real

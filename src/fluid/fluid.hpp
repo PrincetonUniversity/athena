@@ -1,13 +1,13 @@
 #ifndef FLUID_HPP
 #define FLUID_HPP
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- * See LICENSE file for full public license information.
- *====================================================================================*/
-/*! \file fluid.hpp
- *  \brief defines Fluid class which implements data and functions for thermal fluid
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+// See LICENSE file for full public license information.
+//======================================================================================
+//! \file fluid.hpp
+//  \brief defines Fluid class which implements data and functions for thermal fluid
+//======================================================================================
 
 // Athena headers
 #include "../athena.hpp"         // Real

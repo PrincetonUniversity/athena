@@ -1,16 +1,16 @@
 #ifndef PARAMETER_INPUT_HPP
 #define PARAMETER_INPUT_HPP
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- * See LICENSE file for full public license information.
- *====================================================================================*/
-/*! \file parameter_input.hpp
- *  \brief definition of class ParameterInput
- *  Contains data structures used to store, and functions used to access, parameters
- *  read from the input file.  See comments at start of parameter_input.cpp for more
- *  information on the Athena++ input file format.
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+// See LICENSE file for full public license information.
+//======================================================================================
+//! \file parameter_input.hpp
+//  \brief definition of class ParameterInput
+//  Contains data structures used to store, and functions used to access, parameters
+//  read from the input file.  See comments at start of parameter_input.cpp for more
+//  information on the Athena++ input file format.
+//======================================================================================
 
 // C++ headers
 #include <cstddef>  // size_t

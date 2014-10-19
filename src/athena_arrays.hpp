@@ -1,17 +1,17 @@
 #ifndef ATHENA_ARRAYS_HPP
 #define ATHENA_ARRAYS_HPP
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- * See LICENSE file for full public license information.
- *====================================================================================*/
-/*! \file athena_arrays.hpp
- *  \brief provides array classes valid in 1D to 4D.
- *
- *  The operator() is overloaded, e.g. elements of a 4D array of size [N4xN3xN2xN1]
- *  are accessed as:  A(n,k,j,i) = A[i + N1*(j + N2*(k + N3*n))]
- *  NOTE THE TRAILING INDEX INSIDE THE PARENTHESES IS INDEXED FASTEST
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+// See LICENSE file for full public license information.
+//======================================================================================
+//! \file athena_arrays.hpp
+//  \brief provides array classes valid in 1D to 4D.
+//
+//  The operator() is overloaded, e.g. elements of a 4D array of size [N4xN3xN2xN1]
+//  are accessed as:  A(n,k,j,i) = A[i + N1*(j + N2*(k + N3*n))]
+//  NOTE THE TRAILING INDEX INSIDE THE PARENTHESES IS INDEXED FASTEST
+//======================================================================================
 
 // C++ headers
 #include <cstddef>  // size_t
@@ -192,8 +192,8 @@ void AthenaArray<T>::NewAthenaArray(int nx1)
 }
  
 //--------------------------------------------------------------------------------------
-/*! \fn
- *  \brief 2d data allocation */
+//! \fn
+//  \brief 2d data allocation
 
 template<typename T>
 void AthenaArray<T>::NewAthenaArray(int nx2, int nx1)
@@ -206,8 +206,8 @@ void AthenaArray<T>::NewAthenaArray(int nx2, int nx1)
 }
  
 //--------------------------------------------------------------------------------------
-/*! \fn
- *  \brief 3d data allocation */
+//! \fn
+//  \brief 3d data allocation
 
 template<typename T>
 void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1)
@@ -220,8 +220,8 @@ void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1)
 }
  
 //--------------------------------------------------------------------------------------
-/*! \fn
- *  \brief 4d data allocation */
+//! \fn
+//  \brief 4d data allocation
 
 template<typename T>
 void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2, int nx1)
@@ -234,8 +234,8 @@ void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2, int nx1)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn
- *  \brief  free memory allocated for data array */
+//! \fn
+//  \brief  free memory allocated for data array
 
 template<typename T>
 void AthenaArray<T>::DeleteAthenaArray()

@@ -1,13 +1,13 @@
 #ifndef BFIELD_HPP
 #define BFIELD_HPP
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- * See LICENSE file for full public license information.
- *====================================================================================*/
-/*! \file bfield.hpp
- *  \brief defines BField class which implements data and functions for magnetic field
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+// See LICENSE file for full public license information.
+//======================================================================================
+//! \file bfield.hpp
+//  \brief defines BField class which implements data and functions for magnetic field
+//======================================================================================
 
 // Athena headers
 #include "../athena.hpp"         // Real

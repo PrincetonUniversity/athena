@@ -1,14 +1,14 @@
 #ifndef OUTPUTS_HPP
 #define OUTPUTS_HPP
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- * See LICENSE file for full public license information.
- *====================================================================================*/
-/*! \file outputs.hpp
- *  \brief provides multiple classes to handle ALL types of data output (fluid, bfield,
- *  gravity, radiation, particles, etc.)
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+// See LICENSE file for full public license information.
+//======================================================================================
+//! \file outputs.hpp
+//  \brief provides multiple classes to handle ALL types of data output (fluid, bfield,
+//  gravity, radiation, particles, etc.)
+//======================================================================================
 
 class Mesh;
 class ParameterInput;

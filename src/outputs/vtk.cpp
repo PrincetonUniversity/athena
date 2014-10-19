@@ -1,18 +1,18 @@
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- *
- * This program is free software: you can redistribute and/or modify it under the terms
- * of the GNU General Public License (GPL) as published by the Free Software Foundation,
- * either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
- * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of GNU GPL in the file LICENSE included in the code
- * distribution.  If not see <http://www.gnu.org/licenses/>.
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+//
+// This program is free software: you can redistribute and/or modify it under the terms
+// of the GNU General Public License (GPL) as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of GNU GPL in the file LICENSE included in the code
+// distribution.  If not see <http://www.gnu.org/licenses/>.
+//======================================================================================
 
 #include <sstream>
 #include <iostream>
@@ -46,10 +46,10 @@ static inline void Swap4Bytes(void *vdat) {
 }
 
 //======================================================================================
-/*! \file vtk.cpp
- *  \brief writes output data in (legacy) vtk format.
- *  Data is written in RECTILINEAR_GRID geometry, in BINARY format, and in FLOAT type
- *====================================================================================*/
+//! \file vtk.cpp
+//  \brief writes output data in (legacy) vtk format.
+//  Data is written in RECTILINEAR_GRID geometry, in BINARY format, and in FLOAT type
+//======================================================================================
 
 //--------------------------------------------------------------------------------------
 // VTKOutput constructor
@@ -62,8 +62,8 @@ VTKOutput::VTKOutput(OutputParameters oparams)
 // destructor - not needed for this derived class
 
 //--------------------------------------------------------------------------------------
-/*! \fn void VTKOutput:::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
- *  \brief writes OutputData to file in (legacy) vtk format  */
+//! \fn void VTKOutput:::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
+//  \brief writes OutputData to file in (legacy) vtk format
 
 void VTKOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 {
