@@ -7,13 +7,20 @@
 #include "../athena.hpp"                   // enums, Real
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../coordinates/coordinates.hpp"  // PrimToCons()
+#include "../fluid/bvals/bvals.hpp"        // EnrollBoundaryFunction()
 #include "../fluid/eos/eos.hpp"            // GetGamma()
 #include "../mesh.hpp"                     // MeshBlock, MeshDomain, Mesh
 #include "../parameter_input.hpp"          // ParameterInput
 
 // Declarations
+void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons);
+void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons);
 static void set_state(AthenaArray<Real> &prim, AthenaArray<Real> &prim_half, int i,
     int j, int k, Real rho, Real pgas, Real vx, Real vy, Real vz);
+
+// Global variables
+static Real d_inner, e_inner, m1_inner, m2_inner, m3_inner;
+static Real d_outer, e_outer, m1_outer, m2_outer, m3_outer;
 
 // Function for setting initial conditions
 // Inputs:
@@ -48,19 +55,19 @@ void Fluid::InitFluid(ParameterInput *pin)
 
   // TODO: read and set mass
 
-  // Read outer boundary state
-  Real rho_outer = pin->GetReal("problem", "rho_outer");
-  Real pgas_outer = pin->GetReal("problem", "pgas_outer");
-  Real v1_outer = pin->GetReal("problem", "v1_outer");
-  Real v2_outer = pin->GetReal("problem", "v2_outer");
-  Real v3_outer = pin->GetReal("problem", "v3_outer");
-
   // Read inner initial state
   Real rho_inner = pin->GetReal("problem", "rho_inner");
   Real pgas_inner = pin->GetReal("problem", "pgas_inner");
   Real v1_inner = pin->GetReal("problem", "v1_inner");
   Real v2_inner = pin->GetReal("problem", "v2_inner");
   Real v3_inner = pin->GetReal("problem", "v3_inner");
+
+  // Read outer initial state
+  Real rho_outer = pin->GetReal("problem", "rho_outer");
+  Real pgas_outer = pin->GetReal("problem", "pgas_outer");
+  Real v1_outer = pin->GetReal("problem", "v1_outer");
+  Real v2_outer = pin->GetReal("problem", "v2_outer");
+  Real v3_outer = pin->GetReal("problem", "v3_outer");
 
   // Calculate slopes
   Real rho_slope = (rho_outer - rho_inner) / (pb->x1v(iu) - pb->x1v(il));
@@ -83,6 +90,72 @@ void Fluid::InitFluid(ParameterInput *pin)
         set_state(w, w1, i, j, k, rho_init, pgas_init, v1_init, v2_init, v3_init);
       }
   pmy_block->pcoord->PrimToCons(w, u);
+
+  // Read inner boundary state
+  d_inner = pin->GetReal("problem", "d_inner");
+  e_inner = pin->GetReal("problem", "e_inner");
+  m1_inner = pin->GetReal("problem", "m1_inner");
+  m2_inner = pin->GetReal("problem", "m2_inner");
+  m3_inner = pin->GetReal("problem", "m3_inner");
+
+  // Read outer boundary state
+  d_outer = pin->GetReal("problem", "d_outer");
+  e_outer = pin->GetReal("problem", "e_outer");
+  m1_outer = pin->GetReal("problem", "m1_outer");
+  m2_outer = pin->GetReal("problem", "m2_outer");
+  m3_outer = pin->GetReal("problem", "m3_outer");
+
+  // Enroll boundary functions
+  pb->pfluid->pf_bcs->EnrollBoundaryFunction(inner_x1, FixedInner);
+  pb->pfluid->pf_bcs->EnrollBoundaryFunction(outer_x1, FixedOuter);
+  return;
+}
+
+// Inner boundary condition
+void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons)
+{
+  // Extract boundary indices
+  int is = pmb->is;
+  int js = pmb->js;
+  int je = pmb->je;
+  int ks = pmb->ks;
+  int ke = pmb->ke;
+
+  // Set conserved values
+  for (int k = ks; k <= ke; k++)
+    for (int j = js; j <= je; j++)
+      for (int i = is-NGHOST; i <= is; i++)
+      {
+        cons(IDN,k,j,i) = d_inner;
+        cons(IEN,k,j,i) = e_inner;
+        cons(IM1,k,j,i) = m1_inner;
+        cons(IM2,k,j,i) = m2_inner;
+        cons(IM3,k,j,i) = m3_inner;
+      }
+  return;
+}
+
+// Outer boundary condition
+void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons)
+{
+  // Extract boundary indices
+  int ie = pmb->ie;
+  int js = pmb->js;
+  int je = pmb->je;
+  int ks = pmb->ks;
+  int ke = pmb->ke;
+
+  // Set conserved values
+  for (int k = ks; k <= ke; k++)
+    for (int j = js; j <= je; j++)
+      for (int i = ie; i <= ie+NGHOST; i++)
+      {
+        cons(IDN,k,j,i) = d_outer;
+        cons(IEN,k,j,i) = e_outer;
+        cons(IM1,k,j,i) = m1_outer;
+        cons(IM2,k,j,i) = m2_outer;
+        cons(IM3,k,j,i) = m3_outer;
+      }
   return;
 }
 

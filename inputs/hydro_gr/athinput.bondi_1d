@@ -46,41 +46,26 @@ gamma = 1.6666666666666667  # Gamma = C_p/C_v
 <problem>
 mass       = 1.0                    # black hole mass
 
-# r_crit = 10
-rho_outer  = 0.0034470223774786661  # fixed density in outer cell
-pgas_outer = 7.8657505859249104e-5  # fixed gas pressure in outer cell
-v1_outer   = -0.11713831073283545   # fixed velocity (r-direction) in outer cell
-v2_outer   = 0.0                    # fixed velocity (theta-direction) in outer cell
-v3_outer   = 0.0                    # fixed velocity (phi-direction) in outer cell
-
 rho_inner  = 0.13691571529049434    # initial density in inner cell
 pgas_inner = 0.036371021566097922   # initial gas pressure in inner cell
 v1_inner   = -0.075636117798301636  # initial velocity (r-direction) in inner cell
 v2_inner   = 0.0                    # initial velocity (theta-direction) in inner cell
 v3_inner   = 0.0                    # initial velocity (phi-direction) in inner cell
 
-## r_crit = 100
-#rho_outer  = 0.0024763783431944646  # fixed density in outer cell
-#pgas_outer = 4.5327489102726061e-05  # fixed gas pressure in outer cell
-#v1_outer   = -0.11514101840725283   # fixed velocity (r-direction) in outer cell
-#v2_outer   = 0.0                    # fixed velocity (theta-direction) in outer cell
-#v3_outer   = 0.0                    # fixed velocity (phi-direction) in outer cell
-#
-#rho_inner  = 0.13729771093151802    # initial density in inner cell
-#pgas_inner = 0.036540304406945071   # initial gas pressure in inner cell
-#v1_inner   = -0.053877550985382161  # initial velocity (r-direction) in inner cell
-#v2_inner   = 0.0                    # initial velocity (theta-direction) in inner cell
-#v3_inner   = 0.0                    # initial velocity (phi-direction) in inner cell
+rho_outer  = 0.0034470223774786661  # initial density in outer cell
+pgas_outer = 7.8657505859249104e-5  # initial gas pressure in outer cell
+v1_outer   = -0.11713831073283545   # initial velocity (r-direction) in outer cell
+v2_outer   = 0.0                    # initial velocity (theta-direction) in outer cell
+v3_outer   = 0.0                    # initial velocity (phi-direction) in outer cell
 
-## r_crit = 2.9
-#rho_outer  = 0.1109638261035399  # fixed density in outer cell
-#pgas_outer = 0.025623337981005932  # fixed gas pressure in outer cell
-#v1_outer   = -0.023588770745453867   # fixed velocity (r-direction) in outer cell
-#v2_outer   = 0.0                    # fixed velocity (theta-direction) in outer cell
-#v3_outer   = 0.0                    # fixed velocity (phi-direction) in outer cell
-#
-#rho_inner  = 0.29626708207612057    # initial density in inner cell
-#pgas_inner = 0.1316656033464941   # initial gas pressure in inner cell
-#v1_inner   = -0.19263659593243126  # initial velocity (r-direction) in inner cell
-#v2_inner   = 0.0                    # initial velocity (theta-direction) in inner cell
-#v3_inner   = 0.0                    # initial velocity (phi-direction) in inner cell
+d_inner = 0.236219706042337;        # fixed conserved density in inner cell
+e_inner = -0.20248863899055827;     # fixed energy in inner cell
+m1_inner = -0.14564987828029977;    # fixed momentum (r-direction) in inner cell
+m2_inner = 0.0;                     # fixed momentum (theta-direction) in inner cell
+m3_inner = 0.0;                     # fixed momentum (phi-direction) in inner cell
+
+d_outer = 0.0036655481577347556;    # fixed conserved density in outer cell
+e_outer = -0.0036278562451725026;   # fixed energy in outer cell
+m1_outer = -0.0005365248014230201;  # fixed momentum (r-direction) in outer cell
+m2_outer = 0.0;                     # fixed momentum (theta-direction) in outer cell
+m3_outer = 0.0;                     # fixed momentum (phi-direction) in outer cell

@@ -47,5 +47,5 @@ gamma = 1.6666666666666667  # Gamma = C_p/C_v
 <problem>
 mass       = 1.0      # black hole mass
 k          = 1.0      # p_gas = K * rho^Gamma
-l          = 1.0      # l = -u_3/u_0
+l          = 1.5      # l = -u_3/u_0
 rho_floor  = 1.0e-10  # minimum density
