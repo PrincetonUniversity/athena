@@ -36,13 +36,13 @@ def make():
     os.chdir(current_dir)
 
 # Function for running Athena++
-def run(input_filename, *args):
+def run(input_filename, arguments):
   current_dir = os.getcwd()
   os.chdir('bin')
   try:
     input_filename_full = '../' + athena_rel_path + 'inputs/' + input_filename
     run_string = './athena -i {0}'.format(input_filename_full)
-    for arg in args:
+    for arg in arguments:
       run_string += ' {0}'.format(arg)
     os.system(run_string)
   finally:

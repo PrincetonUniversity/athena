@@ -11,7 +11,7 @@ def run_test():
       prob='shock_tube_gr',
       coord='minkowski_cartesian')
   athena.make()
-  parameters = [
+  arguments = [
       'job/problem_id=gr_shock_tube',
       'output1/file_type=tab',
       'output1/variable=cons',
@@ -20,7 +20,7 @@ def run_test():
       'time/cfl_number=0.4',
       'time/tlim=0.4',
       'mesh/nx1=400']
-  athena.run('hydro_sr/athinput.mb_1', *parameters)
+  athena.run('hydro_sr/athinput.mb_1', arguments)
   headings = ['x', 'D', 'E', 'M1', 'M2', 'M3']
   data_ref = athena.read('data/gr_shock_tube.tab', headings)
   data_new = athena.read('bin/gr_shock_tube.out1.0001.tab', headings)
