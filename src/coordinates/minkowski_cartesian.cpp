@@ -159,9 +159,8 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 // Outputs:
 //   returned value: vector from pt1 to pt2
 // Notes:
-//   currently not implemented correctly
-//   TODO: implement?
-ThreeVector VectorBetweenPoints(const ThreeVector pt1, const ThreeVector pt2)
+//   not expected to be used
+ThreeVector Coordinates::VectorBetweenPoints(const ThreeVector p1, const ThreeVector p2)
 {
   ThreeVector r;
   r.x1 = p1.x1 - p2.x1;
