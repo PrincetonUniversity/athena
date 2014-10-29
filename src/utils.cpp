@@ -14,16 +14,20 @@
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
 
-#include <iostream>
+#include <iostream>      // endl, ostream
+#include <sstream>       // stringstream
+#include <stdexcept>     // runtime error
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "athena.hpp"
 
 //======================================================================================
-//! \file show_config.cpp 
-//  \brief contains function to output information on configuration of Athena++
+//! \file utils.cpp 
+//  \brief contains a variety of utility functions
 //======================================================================================
 
 //--------------------------------------------------------------------------------------
-//! \fn void show_config(void)
+//! \fn void ShowConfig(void)
 //  \brief prints diagnostic messages about the configuration of an Athena++ executable
 
 void ShowConfig(void)
@@ -56,6 +60,26 @@ void ShowConfig(void)
   std::cout<<"  OpenMP parallelism:         disabled" << std::endl;
 #endif
 
+
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void ChangeToRunDir(const char *pdir)
+//  \brief change to input run directory; create if it does not exist yet
+
+void ChangeToRunDir(const char *pdir)
+{
+  std::stringstream msg;
+
+  if (pdir == NULL || *pdir == '\0') return;
+
+  mkdir(pdir, 0775);
+  if(chdir(pdir)) {
+    msg << "### FATAL ERROR in function [ChangeToRunDir]" << std::endl
+        << "Cannot cd to directory '" << pdir << "'";
+    throw std::runtime_error(msg.str().c_str());
+  }
 
   return;
 }

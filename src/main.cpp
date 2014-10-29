@@ -38,6 +38,7 @@
 
 // function prototypes
 void ShowConfig();
+void ChangeToRunDir(const char *pdir);
 
 //======================================================================================
 /////////////////////////////////// Athena++ Main Program \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
@@ -185,10 +186,11 @@ int main(int argc, char *argv[])
   pmesh->ForAllDomains(new_timestep,pinput);
 
 //--- Step 6. --------------------------------------------------------------------------
-// Initialize outputs object, and make outputs of data on Mesh
+// Change to run directory, initialize outputs object, and make output of ICs
 
   Outputs *pouts;
   try {
+    ChangeToRunDir(prundir);
     pouts = new Outputs(pmesh, pinput);
     pouts->MakeOutputs(pmesh);
   } 

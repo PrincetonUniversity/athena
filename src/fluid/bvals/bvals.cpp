@@ -53,6 +53,8 @@ FluidBCs::FluidBCs(Fluid *pf, ParameterInput *pin)
     case 2:
       FluidInnerX1_ = OutflowInnerX1;
       break;
+    case 3: // do nothing, useful for user-enrolled BCs
+      break;
     case 4:
       FluidInnerX1_ = PeriodicInnerX1;
       break;
@@ -71,6 +73,8 @@ FluidBCs::FluidBCs(Fluid *pf, ParameterInput *pin)
       break;
     case 2:
       FluidOuterX1_ = OutflowOuterX1;
+      break;
+    case 3: // do nothing, useful for user-enrolled BCs
       break;
     case 4:
       FluidOuterX1_ = PeriodicOuterX1;
@@ -92,6 +96,8 @@ FluidBCs::FluidBCs(Fluid *pf, ParameterInput *pin)
       case 2:
         FluidInnerX2_ = OutflowInnerX2;
         break;
+      case 3: // do nothing, useful for user-enrolled BCs
+        break;
       case 4:
         FluidInnerX2_ = PeriodicInnerX2;
         break;
@@ -110,6 +116,8 @@ FluidBCs::FluidBCs(Fluid *pf, ParameterInput *pin)
         break;
       case 2:
         FluidOuterX2_ = OutflowOuterX2;
+        break;
+      case 3: // do nothing, useful for user-enrolled BCs
         break;
       case 4:
         FluidOuterX2_ = PeriodicOuterX2;
@@ -132,6 +140,8 @@ FluidBCs::FluidBCs(Fluid *pf, ParameterInput *pin)
       case 2:
         FluidInnerX3_ = OutflowInnerX3;
         break;
+      case 3: // do nothing, useful for user-enrolled BCs
+        break;
       case 4:
         FluidInnerX3_ = PeriodicInnerX3;
         break;
@@ -150,6 +160,8 @@ FluidBCs::FluidBCs(Fluid *pf, ParameterInput *pin)
         break;
       case 2:
         FluidOuterX3_ = OutflowOuterX3;
+        break;
+      case 3: // do nothing, useful for user-enrolled BCs
         break;
       case 4:
         FluidOuterX3_ = PeriodicOuterX3;

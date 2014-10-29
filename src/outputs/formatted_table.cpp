@@ -92,12 +92,12 @@ void FormattedTableOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
     }
 
     if (pod->data_header.jl != pod->data_header.ju) {
-      fprintf(pfile,"%04d",j);
+      fprintf(pfile," %04d",j);  // note extra space for formatting
       fprintf(pfile,output_params.data_format.c_str(),pmb->x2v(j));
     }
 
     if (pod->data_header.kl != pod->data_header.ku) {
-      fprintf(pfile,"%04d",k);
+      fprintf(pfile," %04d",k);  // note extra space for formatting
       fprintf(pfile,output_params.data_format.c_str(),pmb->x3v(k));
     }
 
