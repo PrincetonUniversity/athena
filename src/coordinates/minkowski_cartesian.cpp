@@ -153,6 +153,22 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
   return;
 }
 
+// Function for computing displacement vector
+// Inputs:
+//   pt1, pt2: endpoints
+// Outputs:
+//   returned value: vector from pt1 to pt2
+// Notes:
+//   not expected to be used
+ThreeVector Coordinates::VectorBetweenPoints(const ThreeVector p1, const ThreeVector p2)
+{
+  ThreeVector r;
+  r.x1 = p1.x1 - p2.x1;
+  r.x2 = p1.x2 - p2.x2;
+  r.x3 = p1.x3 - p2.x3;
+  return r;
+}
+
 // Function for computing source terms
 // Inputs:
 //   dt: size of timestep
