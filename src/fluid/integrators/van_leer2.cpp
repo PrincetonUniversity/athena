@@ -218,7 +218,9 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
 //  Add source terms for half a timestep
 
   pmb->pcoord->CoordinateSourceTerms(0.5*dt,w,u1);
-  pmb->pfluid->pf_srcterms->PhysicalSourceTerms(0.5*dt,w,u1);
+  pmb->pfluid->pf_srcterms->PhysicalSourceTerms(pmb->pmy_domain->pmy_mesh->time,0.5*dt,w,u1);
+  if (pmb->pfluid->pf_srcterms->UserSourceTerm != NULL)
+    pmb->pfluid->pf_srcterms->UserSourceTerm(pmb->pmy_domain->pmy_mesh->time,0.5*dt,w,u1);
 
   return;
 }
@@ -385,7 +387,9 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 //  Add source terms for a full timestep
 
   pmb->pcoord->CoordinateSourceTerms(dt,w1,u);
-  pmb->pfluid->pf_srcterms->PhysicalSourceTerms(dt,w1,u);
+  pmb->pfluid->pf_srcterms->PhysicalSourceTerms(pmb->pmy_domain->pmy_mesh->time,dt,w1,u);
+  if (pmb->pfluid->pf_srcterms->UserSourceTerm != NULL)
+    pmb->pfluid->pf_srcterms->UserSourceTerm(pmb->pmy_domain->pmy_mesh->time,dt,w1,u);
 
   return;
 }

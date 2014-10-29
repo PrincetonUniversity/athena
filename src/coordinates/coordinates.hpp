@@ -23,6 +23,7 @@ class ParameterInput;
 
 class Coordinates {
 public:
+  friend class FluidSourceTerms;
   Coordinates(MeshBlock *pmb, ParameterInput *pin);
   ~Coordinates();
 

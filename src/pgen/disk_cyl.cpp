@@ -66,7 +66,7 @@ void Fluid::InitFluid(ParameterInput *pin)
   x1Min = pb->block_size.x1min;
 
 // Get parameters for grav terms
-  GM = pin->GetOrAddReal("pointmass0","GM",0.0);
+  GM = pin->GetOrAddReal("problem","GM",0.0);
 
 // Get initial density
   rho0 = pin->GetReal("problem","rho0");

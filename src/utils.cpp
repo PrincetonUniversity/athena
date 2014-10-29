@@ -17,8 +17,8 @@
 #include <iostream>      // endl, ostream
 #include <sstream>       // stringstream
 #include <stdexcept>     // runtime error
-#include <sys/stat.h>
-#include <sys/types.h>
+#include <sys/stat.h>    // mkdir
+#include <sys/types.h>   // mkdir
 #include "athena.hpp"
 
 //======================================================================================
