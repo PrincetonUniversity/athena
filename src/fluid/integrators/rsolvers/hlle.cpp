@@ -8,7 +8,7 @@
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
@@ -47,23 +47,23 @@
 
 void FluidIntegrator::RiemannSolver(const int k, const int j,
   const int il, const int iu, const int ivx, const int ivy, const int ivz,
-  AthenaArray<Real> *pwl, AthenaArray<Real> *pwr, AthenaArray<Real> *pflx)
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {
   Real wli[NFLUID],wri[NFLUID],wroe[NFLUID],fl[NFLUID],fr[NFLUID],flxi[NFLUID];
 
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    wli[IDN]=(*pwl)(IDN,i);
-    wli[IVX]=(*pwl)(ivx,i);
-    wli[IVY]=(*pwl)(ivy,i);
-    wli[IVZ]=(*pwl)(ivz,i);
-    if (NON_BAROTROPIC_EOS) wli[IEN]=(*pwl)(IEN,i);
+    wli[IDN]=wl(IDN,i);
+    wli[IVX]=wl(ivx,i);
+    wli[IVY]=wl(ivy,i);
+    wli[IVZ]=wl(ivz,i);
+    if (NON_BAROTROPIC_EOS) wli[IEN]=wl(IEN,i);
 
-    wri[IDN]=(*pwr)(IDN,i);
-    wri[IVX]=(*pwr)(ivx,i);
-    wri[IVY]=(*pwr)(ivy,i);
-    wri[IVZ]=(*pwr)(ivz,i);
-    if (NON_BAROTROPIC_EOS) wri[IEN]=(*pwr)(IEN,i);
+    wri[IDN]=wr(IDN,i);
+    wri[IVX]=wr(ivx,i);
+    wri[IVY]=wr(ivy,i);
+    wri[IVZ]=wr(ivz,i);
+    if (NON_BAROTROPIC_EOS) wri[IEN]=wr(IEN,i);
 
 // compute Roe averaged state
 
@@ -140,11 +140,11 @@ void FluidIntegrator::RiemannSolver(const int k, const int j,
     flxi[IVZ] = 0.5*(fl[IVZ]+fr[IVZ]) + (fl[IVZ]-fr[IVZ])*tmp;
     if (NON_BAROTROPIC_EOS) flxi[IEN] = 0.5*(fl[IEN]+fr[IEN]) + (fl[IEN]-fr[IEN])*tmp;
 
-    (*pflx)(IDN,i) = flxi[IDN];
-    (*pflx)(ivx,i) = flxi[IVX];
-    (*pflx)(ivy,i) = flxi[IVY];
-    (*pflx)(ivz,i) = flxi[IVZ];
-    if (NON_BAROTROPIC_EOS) (*pflx)(IEN,i) = flxi[IEN];
+    flx(IDN,i) = flxi[IDN];
+    flx(ivx,i) = flxi[IVX];
+    flx(ivy,i) = flxi[IVY];
+    flx(ivz,i) = flxi[IVZ];
+    if (NON_BAROTROPIC_EOS) flx(IEN,i) = flxi[IEN];
   }
 
   return;

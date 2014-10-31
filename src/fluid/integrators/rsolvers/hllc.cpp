@@ -41,23 +41,23 @@
 
 void FluidIntegrator::RiemannSolver(const int k, const int j,
   const int il, const int iu, const int ivx, const int ivy, const int ivz,
-  AthenaArray<Real> *pwl, AthenaArray<Real> *pwr, AthenaArray<Real> *pflx)
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {
   Real fl[NFLUID],fr[NFLUID],wli[NFLUID],wri[NFLUID],flxi[NFLUID];
 
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    wli[IDN]=(*pwl)(IDN,i);
-    wli[IVX]=(*pwl)(ivx,i);
-    wli[IVY]=(*pwl)(ivy,i);
-    wli[IVZ]=(*pwl)(ivz,i);
-    wli[IEN]=(*pwl)(IEN,i);
+    wli[IDN]=wl(IDN,i);
+    wli[IVX]=wl(ivx,i);
+    wli[IVY]=wl(ivy,i);
+    wli[IVZ]=wl(ivz,i);
+    wli[IEN]=wl(IEN,i);
 
-    wri[IDN]=(*pwr)(IDN,i);
-    wri[IVX]=(*pwr)(ivx,i);
-    wri[IVY]=(*pwr)(ivy,i);
-    wri[IVZ]=(*pwr)(ivz,i);
-    wri[IEN]=(*pwr)(IEN,i);
+    wri[IDN]=wr(IDN,i);
+    wri[IVX]=wr(ivx,i);
+    wri[IVY]=wr(ivy,i);
+    wri[IVZ]=wr(ivz,i);
+    wri[IEN]=wr(IEN,i);
 
     Real al = wli[IVX] - pmy_fluid->pf_eos->SoundSpeed(wli);
     Real ar = wri[IVX] + pmy_fluid->pf_eos->SoundSpeed(wri);
@@ -128,11 +128,11 @@ void FluidIntegrator::RiemannSolver(const int k, const int j,
     flxi[IVZ] = sl*fl[IVZ] + sr*fr[IVZ];
     flxi[IEN] = sl*fl[IEN] + sr*fr[IEN] + sm*cp*am;
 
-    (*pflx)(IDN,i) = flxi[IDN];
-    (*pflx)(ivx,i) = flxi[IVX];
-    (*pflx)(ivy,i) = flxi[IVY];
-    (*pflx)(ivz,i) = flxi[IVZ];
-    (*pflx)(IEN,i) = flxi[IEN];
+    flx(IDN,i) = flxi[IDN];
+    flx(ivx,i) = flxi[IVX];
+    flx(ivy,i) = flxi[IVY];
+    flx(ivz,i) = flxi[IVZ];
+    flx(IEN,i) = flxi[IEN];
   }
 
   return;

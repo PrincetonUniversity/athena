@@ -158,36 +158,36 @@ Coordinates::~Coordinates()
 // \brief functions to compute area of cell faces in each direction
 
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> *parea)
+  AthenaArray<Real> &area)
 {
 // area1 = r^2 sin[theta] dtheta dphi = r^2 d(-cos[theta]) dphi
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = (*parea)(i);
+    Real& area_i = area(i);
     area_i = face1_area_i_(i)*face1_area_j_(j)*(pmy_block->dx3f(k)); 
   }
   return;
 }
 
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> *parea)
+  AthenaArray<Real> &area)
 {
 // area2 = dr r sin[theta] dphi = d(r^2/2) sin[theta] dphi
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = (*parea)(i);
+    Real& area_i = area(i);
     area_i = face2_area_i_(i)*face2_area_j_(j)*(pmy_block->dx3f(k));
   }
   return;
 }
 
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> *parea)
+  AthenaArray<Real> &area)
 {
 // area3 = dr r dtheta = d(r^2/2) dtheta
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = (*parea)(i);
+    Real& area_i = area(i);
     area_i = face3_area_i_(i)*(pmy_block->dx2f(j));
   }
   return;
@@ -201,12 +201,12 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 // \brief function to compute cell volume
 
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> *pvol)
+  AthenaArray<Real> &vol)
 {
 // volume = r^2 sin(theta) dr dtheta dphi = d(r^3/3) d(-cos theta) dphi
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& vol_i = (*pvol)(i);
+    Real& vol_i = vol(i);
     vol_i = volume_i_(i)*volume_j_(j)*(pmy_block->dx3f(k));
   }
   return;
@@ -228,15 +228,6 @@ Real Coordinates::CellPhysicalWidth2(const int k, const int j, const int i)
 Real Coordinates::CellPhysicalWidth3(const int k, const int j, const int i)
 {
   return (pmy_block->x1v(i)*sin(pmy_block->x2v(j))*pmy_block->dx3f(k));
-}
-
-ThreeVector Coordinates::VectorBetweenPoints(const ThreeVector p1, const ThreeVector p2)
-{
-  ThreeVector r;
-  r.x1 = p1.x1 - p2.x1*(sin(p1.x2)*sin(p2.x2)*cos(p1.x3-p2.x3) + cos(p1.x2)*cos(p2.x2));
-  r.x2 = p2.x1*(cos(p1.x2)*sin(p2.x2)*cos(p1.x3-p2.x3) - sin(p1.x2)*cos(p2.x2));
-  r.x3 = p2.x1*sin(p2.x2)*sin(p1.x3-p2.x3);;
-  return r;
 }
 
 //--------------------------------------------------------------------------------------

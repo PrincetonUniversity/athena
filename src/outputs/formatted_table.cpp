@@ -105,8 +105,8 @@ void FormattedTableOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 
     OutputVariable *pvar = pod->pfirst_var;
     while (pvar != NULL) {
-      for (int n=0; n<(pvar->pdata->GetDim4()); ++n) {
-        fprintf( pfile, output_params.data_format.c_str(), (*pvar->pdata)(n,k,j,i) );
+      for (int n=0; n<(pvar->data.GetDim4()); ++n) {
+        fprintf( pfile, output_params.data_format.c_str(), pvar->data(n,k,j,i) );
       }
       pvar = pvar->pnext;
     }

@@ -94,23 +94,23 @@ Coordinates::~Coordinates()
 // \brief  functions to compute area of cell faces in each direction
 
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> *parea)
+  AthenaArray<Real> &area)
 {
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = (*parea)(i);
+    Real& area_i = area(i);
     area_i = (pmy_block->dx2f(j))*(pmy_block->dx3f(k));  // dy*dz
   }
   return;
 }
 
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> *parea)
+  AthenaArray<Real> &area)
 {
   AthenaArray<Real> dx1f = pmy_block->dx1f.ShallowCopy();
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = (*parea)(i);
+    Real& area_i = area(i);
     Real& dx1_i  = dx1f(i);
     area_i = dx1_i*(pmy_block->dx3f(k));  // dx*dz
   }
@@ -118,12 +118,12 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 }
 
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> *parea)
+  AthenaArray<Real> &area)
 {
   AthenaArray<Real> dx1f = pmy_block->dx1f.ShallowCopy();
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = (*parea)(i);
+    Real& area_i = area(i);
     Real& dx1_i  = dx1f(i);
     area_i = dx1_i*(pmy_block->dx2f(j));  // dx*dy
   }
@@ -138,12 +138,12 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 // \brief function to compute cell volume
 
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> *pvol)
+  AthenaArray<Real> &vol)
 {
   AthenaArray<Real> dx1f = pmy_block->dx1f.ShallowCopy();
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& vol_i = (*pvol)(i);
+    Real& vol_i = vol(i);
     Real& dx1_i = dx1f(i);
     vol_i = dx1_i*(pmy_block->dx2f(j))*(pmy_block->dx3f(k));  // dx*dy*dz
   }
@@ -166,15 +166,6 @@ Real Coordinates::CellPhysicalWidth2(const int k, const int j, const int i)
 Real Coordinates::CellPhysicalWidth3(const int k, const int j, const int i)
 {
   return (pmy_block->dx3f(k));
-}
-
-ThreeVector Coordinates::VectorBetweenPoints(const ThreeVector p1, const ThreeVector p2)
-{
-  ThreeVector r;
-  r.x1 = p1.x1 - p2.x1;
-  r.x2 = p1.x2 - p2.x2;
-  r.x3 = p1.x3 - p2.x3;
-  return r;
 }
 
 //--------------------------------------------------------------------------------------

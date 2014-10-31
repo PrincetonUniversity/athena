@@ -59,11 +59,11 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
 #ifdef OPENMP_PARALLEL
   tid=omp_get_thread_num();
 #endif
-  AthenaArray<Real> *pwl = wl_.ShallowSlice(tid,1);
-  AthenaArray<Real> *pwr = wr_.ShallowSlice(tid,1);
-  AthenaArray<Real> *pflx = flx_.ShallowSlice(tid,1);
-  AthenaArray<Real> *parea = face_area_.ShallowSlice(tid,1);
-  AthenaArray<Real> *pvol  = cell_volume_.ShallowSlice(tid,1);
+  AthenaArray<Real> wl = wl_.ShallowSlice(tid,1);
+  AthenaArray<Real> wr = wr_.ShallowSlice(tid,1);
+  AthenaArray<Real> flx = flx_.ShallowSlice(tid,1);
+  AthenaArray<Real> area = face_area_.ShallowSlice(tid,1);
+  AthenaArray<Real> vol  = cell_volume_.ShallowSlice(tid,1);
 
 //--------------------------------------------------------------------------------------
 // i-direction 
@@ -76,26 +76,26 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
       for (int n=0; n<NFLUID; ++n){
 #pragma simd
         for (int i=is; i<=ie+1; ++i){
-          (*pwl)(n,i) = w(n,k,j,i-1);
-          (*pwr)(n,i) = w(n,k,j,i  );
+          wl(n,i) = w(n,k,j,i-1);
+          wr(n,i) = w(n,k,j,i  );
         }
       }
 
-      RiemannSolver(k,j,is,ie+1,IVX,IVY,IVZ,pwl,pwr,pflx);
+      RiemannSolver(k,j,is,ie+1,IVX,IVY,IVZ,wl,wr,flx);
 
-      pmb->pcoord->Face1Area(k,j,is,ie+1,parea);
-      pmb->pcoord->CellVolume(k,j,is,ie,pvol);
+      pmb->pcoord->Face1Area(k,j,is,ie+1,area);
+      pmb->pcoord->CellVolume(k,j,is,ie,vol);
 
       for (int n=0; n<NFLUID; ++n){
 #pragma simd
         for (int i=is; i<=ie; ++i){
           Real& ui  = u (n,k,j,i);
-          Real& flxi   = (*pflx)(n,  i);
-          Real& flxip1 = (*pflx)(n,i+1);
+          Real& flxi   = flx(n,  i);
+          Real& flxip1 = flx(n,i+1);
 
-          Real& area_i   = (*parea)(i);
-          Real& area_ip1 = (*parea)(i+1);
-          Real& dvol = (*pvol)(i);
+          Real& area_i   = area(i);
+          Real& area_ip1 = area(i+1);
+          Real& dvol = vol(i);
  
           u1(n,k,j,i) = ui - 0.5*dt*(area_ip1*flxip1 - area_i*flxi)/dvol;
         }
@@ -116,23 +116,23 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
         for (int n=0; n<NFLUID; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
-            (*pwl)(n,i) = w(n,k,j-1,i);
-            (*pwr)(n,i) = w(n,k,j  ,i);
+            wl(n,i) = w(n,k,j-1,i);
+            wr(n,i) = w(n,k,j  ,i);
           }
         }
 
-        RiemannSolver(k,j,is,ie,IVY,IVZ,IVX,pwl,pwr,pflx); 
+        RiemannSolver(k,j,is,ie,IVY,IVZ,IVX,wl,wr,flx); 
 
-        pmb->pcoord->Face2Area(k,j,is,ie,parea);
+        pmb->pcoord->Face2Area(k,j,is,ie,area);
 
         if (j>js) {
-          pmb->pcoord->CellVolume(k,j-1,is,ie,pvol);
+          pmb->pcoord->CellVolume(k,j-1,is,ie,vol);
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
-              Real& flxj  = (*pflx)(n,i);
-              Real& area_i   = (*parea)(i);
-              Real& dvol = (*pvol)(i);
+              Real& flxj  = flx(n,i);
+              Real& area_i   = area(i);
+              Real& dvol = vol(i);
   
               u1(n,k,j-1,i) -= 0.5*dt*area_i*flxj/dvol;
             }
@@ -140,13 +140,13 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
         }
 
         if (j<(je+1)) {
-          pmb->pcoord->CellVolume(k,j,is,ie,pvol);
+          pmb->pcoord->CellVolume(k,j,is,ie,vol);
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
-              Real& flxj  = (*pflx)(n,i);
-              Real& area_i   = (*parea)(i);
-              Real& dvol = (*pvol)(i);
+              Real& flxj  = flx(n,i);
+              Real& area_i   = area(i);
+              Real& dvol = vol(i);
 
               u1(n,k,j,i) += 0.5*dt*area_i*flxj/dvol;
             }
@@ -170,23 +170,23 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
         for (int n=0; n<NFLUID; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
-            (*pwl)(n,i) = w(n,k-1,j,i);
-            (*pwr)(n,i) = w(n,k  ,j,i);
+            wl(n,i) = w(n,k-1,j,i);
+            wr(n,i) = w(n,k  ,j,i);
           }
         }
 
-        RiemannSolver(k,j,is,ie,IVZ,IVX,IVY,pwl,pwr,pflx);
+        RiemannSolver(k,j,is,ie,IVZ,IVX,IVY,wl,wr,flx);
 
-        pmb->pcoord->Face3Area(k,j,is,ie,parea);
+        pmb->pcoord->Face3Area(k,j,is,ie,area);
   
         if (k>ks) {
-          pmb->pcoord->CellVolume(k-1,j,is,ie,pvol);
+          pmb->pcoord->CellVolume(k-1,j,is,ie,vol);
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
-              Real& flxk = (*pflx)(n,i);
-              Real& area_i   = (*parea)(i);
-              Real& dvol = (*pvol)(i);
+              Real& flxk = flx(n,i);
+              Real& area_i   = area(i);
+              Real& dvol = vol(i);
 
               u1(n,k-1,j,i) -= 0.5*dt*area_i*flxk/dvol;
             }
@@ -194,13 +194,13 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
         }
 
         if (k<(ke+1)) {
-          pmb->pcoord->CellVolume(k,j,is,ie,pvol);
+          pmb->pcoord->CellVolume(k,j,is,ie,vol);
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
-              Real& flxk = (*pflx)(n,i);
-              Real& area_i   = (*parea)(i);
-              Real& dvol = (*pvol)(i);
+              Real& flxk = flx(n,i);
+              Real& area_i   = area(i);
+              Real& dvol = vol(i);
 
               u1(n,k,j,i) += 0.5*dt*area_i*flxk/dvol;
             }
@@ -210,7 +210,6 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
       }
     }
   }
-  delete pwl, pwr, pflx, parea, pvol;
 
 } // end of omp parallel region
 
@@ -247,11 +246,11 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 #ifdef OPENMP_PARALLEL
   tid=omp_get_thread_num();
 #endif
-  AthenaArray<Real> *pwl = wl_.ShallowSlice(tid,1);
-  AthenaArray<Real> *pwr = wr_.ShallowSlice(tid,1);
-  AthenaArray<Real> *pflx = flx_.ShallowSlice(tid,1);
-  AthenaArray<Real> *parea = face_area_.ShallowSlice(tid,1);
-  AthenaArray<Real> *pvol  = cell_volume_.ShallowSlice(tid,1);
+  AthenaArray<Real> wl = wl_.ShallowSlice(tid,1);
+  AthenaArray<Real> wr = wr_.ShallowSlice(tid,1);
+  AthenaArray<Real> flx = flx_.ShallowSlice(tid,1);
+  AthenaArray<Real> area = face_area_.ShallowSlice(tid,1);
+  AthenaArray<Real> vol  = cell_volume_.ShallowSlice(tid,1);
 
 //--------------------------------------------------------------------------------------
 // i-direction 
@@ -261,22 +260,22 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 #pragma omp for schedule(static)
     for (int j=js; j<=je; ++j){
 
-      ReconstructionFuncX1(k,j,is,ie+1,w1,pwl,pwr);
+      ReconstructionFuncX1(k,j,is,ie+1,w1,wl,wr);
 
-      RiemannSolver(k,j,is,ie+1,IVX,IVY,IVZ,pwl,pwr,pflx); 
+      RiemannSolver(k,j,is,ie+1,IVX,IVY,IVZ,wl,wr,flx); 
 
-      pmb->pcoord->Face1Area(k,j,is,ie+1,parea);
-      pmb->pcoord->CellVolume(k,j,is,ie,pvol);
+      pmb->pcoord->Face1Area(k,j,is,ie+1,area);
+      pmb->pcoord->CellVolume(k,j,is,ie,vol);
 
       for (int n=0; n<NFLUID; ++n){
 #pragma simd
         for (int i=is; i<=ie; ++i){
-          Real& flxi   = (*pflx)(n,  i);
-          Real& flxip1 = (*pflx)(n,i+1);
+          Real& flxi   = flx(n,  i);
+          Real& flxip1 = flx(n,i+1);
 
-          Real& area_i   = (*parea)(i);
-          Real& area_ip1 = (*parea)(i+1);
-          Real& dvol = (*pvol)(i);
+          Real& area_i   = area(i);
+          Real& area_ip1 = area(i+1);
+          Real& dvol = vol(i);
    
           u(n,k,j,i) -= dt*(area_ip1*flxip1 - area_i*flxi)/dvol;
         }
@@ -294,20 +293,20 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 #pragma omp for schedule(static)
       for (int j=js; j<=je+1; ++j){
 
-        ReconstructionFuncX2(k,j,is,ie,w1,pwl,pwr);
+        ReconstructionFuncX2(k,j,is,ie,w1,wl,wr);
 
-        RiemannSolver(k,j,is,ie,IVY,IVZ,IVX,pwl,pwr,pflx); 
+        RiemannSolver(k,j,is,ie,IVY,IVZ,IVX,wl,wr,flx); 
 
-        pmb->pcoord->Face2Area(k,j,is,ie,parea);
+        pmb->pcoord->Face2Area(k,j,is,ie,area);
 
         if (j>js){
-          pmb->pcoord->CellVolume(k,j-1,is,ie,pvol);
+          pmb->pcoord->CellVolume(k,j-1,is,ie,vol);
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
-              Real& flxj  = (*pflx)(n,i);
-              Real& area_i   = (*parea)(i);
-              Real& dvol = (*pvol)(i);
+              Real& flxj  = flx(n,i);
+              Real& area_i   = area(i);
+              Real& dvol = vol(i);
   
               u(n,k,j-1,i) -= dt*area_i*flxj/dvol;
             }
@@ -315,13 +314,13 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
         }
 
         if (j<(je+1)){
-          pmb->pcoord->CellVolume(k,j,is,ie,pvol);
+          pmb->pcoord->CellVolume(k,j,is,ie,vol);
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
-              Real& flxj  = (*pflx)(n,i);
-              Real& area_i   = (*parea)(i);
-              Real& dvol = (*pvol)(i);
+              Real& flxj  = flx(n,i);
+              Real& area_i   = area(i);
+              Real& dvol = vol(i);
   
               u(n,k,j,i) += dt*area_i*flxj/dvol;
             }
@@ -342,20 +341,20 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 #pragma omp for schedule(static)
       for (int j=js; j<=je; ++j){
 
-        ReconstructionFuncX3(k,j,is,ie,w1,pwl,pwr);
+        ReconstructionFuncX3(k,j,is,ie,w1,wl,wr);
 
-        RiemannSolver(k,j,is,ie,IVZ,IVX,IVY,pwl,pwr,pflx);
+        RiemannSolver(k,j,is,ie,IVZ,IVX,IVY,wl,wr,flx);
 
-        pmb->pcoord->Face3Area(k,j,is,ie,parea);
+        pmb->pcoord->Face3Area(k,j,is,ie,area);
 
         if (k>ks){
-          pmb->pcoord->CellVolume(k-1,j,is,ie,pvol);
+          pmb->pcoord->CellVolume(k-1,j,is,ie,vol);
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
-              Real& flxk = (*pflx)(n,i);
-              Real& area_i   = (*parea)(i);
-              Real& dvol = (*pvol)(i);
+              Real& flxk = flx(n,i);
+              Real& area_i   = area(i);
+              Real& dvol = vol(i);
   
               u(n,k-1,j,i) -= dt*area_i*flxk/dvol;
             }
@@ -363,13 +362,13 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
         }
 
         if (k<(ke+1)){
-          pmb->pcoord->CellVolume(k,j,is,ie,pvol);
+          pmb->pcoord->CellVolume(k,j,is,ie,vol);
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
-              Real& flxk = (*pflx)(n,i);
-              Real& area_i   = (*parea)(i);
-              Real& dvol = (*pvol)(i);
+              Real& flxk = flx(n,i);
+              Real& area_i   = area(i);
+              Real& dvol = vol(i);
 
               u(n,k,j,i) += dt*area_i*flxk/dvol;
             }
@@ -379,7 +378,6 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
       }
     }
   }
-  delete pwl, pwr, pflx, parea, pvol;
 
 } // end of omp parallel region
 

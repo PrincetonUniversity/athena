@@ -33,16 +33,16 @@ public:
 
   void RiemannSolver(const int k, const int j, const int il, const int iu,
     const int ivx, const int ivy, const int ivz,
-    AthenaArray<Real> *pwl, AthenaArray<Real> *pwr, AthenaArray<Real> *pflx);
+    AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx);
 
   void ReconstructionFuncX1(const int k, const int j, const int il, const int iu, 
-    const AthenaArray<Real> &w, AthenaArray<Real> *pwl, AthenaArray<Real> *pwr);
+    const AthenaArray<Real> &w, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
   void ReconstructionFuncX2(const int k, const int j, const int il, const int iu, 
-    const AthenaArray<Real> &w, AthenaArray<Real> *pwl, AthenaArray<Real> *pwr);
+    const AthenaArray<Real> &w, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
   void ReconstructionFuncX3(const int k, const int j, const int il, const int iu, 
-    const AthenaArray<Real> &w, AthenaArray<Real> *pwl, AthenaArray<Real> *pwr);
+    const AthenaArray<Real> &w, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
 private:
 // scratch space used in integrator

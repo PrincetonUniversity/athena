@@ -69,26 +69,25 @@
 // OutputType stored in the Outputs class.  During a simulation, outputs are made when
 // the simulation time satisfies the criteria implemented in the MakeOutputs() function.
 //
-// To implement a new type of output X, write a new derived OutputType class, and
-// construct an object of this class in the Outputs::InitOutputTypes() function.
+// To implement a new output type, write a new derived OutputType class, and construct
+// an object of this class in the Outputs constructor at the location indicated by the
+// text 'ADD NEW OUTPUT TYPES HERE'.
 //======================================================================================
 
 //--------------------------------------------------------------------------------------
 // OutputVariable constructor
 
-OutputVariable::OutputVariable(AthenaArray<Real> *parray, OutputVariableHeader vhead)
+OutputVariable::OutputVariable()
 {
-  var_header = vhead;
-  pdata = parray;
   pnext = NULL;
   pprev = NULL;
 }
 
-// destructor
+// destructor - iterates through linked list of OutputVariables and deletes nodes
 
 OutputVariable::~OutputVariable()
 {
-  if (!pdata->IsShallowCopy()) pdata->DeleteAthenaArray();
+  data.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------
@@ -118,7 +117,7 @@ OutputData::~OutputData()
 OutputType::OutputType(OutputParameters oparams)
 {
   output_params = oparams;
-  pnext = NULL; // Terminate linked list with NULL ptr
+  pnext_type = NULL; // Terminate linked list with NULL ptr
 }
 
 // destructor
@@ -262,7 +261,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
       op.data_format.insert(0," "); // prepend with blank to separate columns
 
 // Construct new OutputType according to file format
-// TODO: add any new output types here
+// ADD NEW OUTPUT TYPES HERE
 
       if (op.file_type.compare("tab") == 0) {
         pnew_type = new FormattedTableOutput(op);
@@ -271,8 +270,8 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
       } else if (op.file_type.compare("vtk") == 0) {
         pnew_type = new VTKOutput(op);
       } else {
-        msg << "### FATAL ERROR in function [Outputs::InitOutputTypes]"
-            << std::endl << "Unrecognized file format = '" << op.file_type 
+        msg << "### FATAL ERROR in Outputs constructor" << std::endl
+            << "Unrecognized file format = '" << op.file_type 
             << "' in output block '" << op.block_name << "'" << std::endl;
         throw std::runtime_error(msg.str().c_str());
       }
@@ -282,7 +281,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
       if (pfirst_type_ == NULL) {
         pfirst_type_ = pnew_type;
       } else {
-        plast->pnext = pnew_type;
+        plast->pnext_type = pnew_type;
       }
       plast = pnew_type;
     }
@@ -297,7 +296,7 @@ Outputs::~Outputs()
   OutputType *ptype = pfirst_type_;
   while(ptype != NULL) {
     OutputType *ptype_old = ptype;
-    ptype = ptype->pnext;
+    ptype = ptype->pnext_type;
     delete ptype_old;
   }
 }
@@ -306,17 +305,15 @@ Outputs::~Outputs()
 //! \fn void OutputData::AppendNode()
 //  \brief
 
-void OutputData::AppendNode(AthenaArray<Real> *parray, OutputVariableHeader vhead)
+void OutputData::AppendNode(OutputVariable *pnew_var)
 {
-  OutputVariable *pnew_var = new OutputVariable(parray, vhead);
-
   if (pfirst_var == NULL)
-    pfirst_var = plast_var = pnew_var;
+    pfirst_var = pnew_var;
   else {
     pnew_var->pprev = plast_var;
     plast_var->pnext = pnew_var;
-    plast_var = pnew_var;
   }
+  plast_var = pnew_var;
 }
 
 //--------------------------------------------------------------------------------------
@@ -352,7 +349,6 @@ void OutputData::ReplaceNode(OutputVariable *pold, OutputVariable *pnew)
 
 void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 {
-  OutputVariableHeader var_header;
   Fluid *pf = pmb->pfluid;;
   std::stringstream str;
 
@@ -373,29 +369,36 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 
 // Create linked list of OutputVariables containing requested data
 
+  OutputVariable *pov;
   int var_added = 0;
   if (output_params.variable.compare("D") == 0 || 
       output_params.variable.compare("cons") == 0) {
-    var_header.type = "SCALARS";
-    var_header.name = "dens";
-    pod->AppendNode(pf->u.ShallowSlice(IDN,1),var_header); // (lab-frame) density
+    pov = new OutputVariable; 
+    pov->type = "SCALARS";
+    pov->name = "dens";
+    pov->data = pf->u.ShallowSlice(IDN,1);
+    pod->AppendNode(pov); // (lab-frame) density
     var_added = 1;
   }
 
   if (output_params.variable.compare("d") == 0 || 
       output_params.variable.compare("prim") == 0) {
-    var_header.type = "SCALARS";
-    var_header.name = "rho";
-    pod->AppendNode(pf->w.ShallowSlice(IDN,1),var_header); // (rest-frame) density
+    pov = new OutputVariable; 
+    pov->type = "SCALARS";
+    pov->name = "rho";
+    pov->data = pf->w.ShallowSlice(IDN,1);
+    pod->AppendNode(pov); // (rest-frame) density
     var_added = 1;
   }
 
   if (NON_BAROTROPIC_EOS) {
     if (output_params.variable.compare("E") == 0 || 
         output_params.variable.compare("cons") == 0) {
-      var_header.type = "SCALARS";
-      var_header.name = "Etot";
-      pod->AppendNode(pf->u.ShallowSlice(IEN,1),var_header); // total energy
+      pov = new OutputVariable; 
+      pov->type = "SCALARS";
+      pov->name = "Etot";
+      pov->data = pf->u.ShallowSlice(IEN,1);
+      pod->AppendNode(pov); // total energy
       var_added = 1;
     }
   }
@@ -403,34 +406,42 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
   if (NON_BAROTROPIC_EOS) {
     if (output_params.variable.compare("e") == 0 || 
         output_params.variable.compare("prim") == 0) {
-      var_header.type = "SCALARS";
-      var_header.name = "eint";
-      pod->AppendNode(pf->w.ShallowSlice(IEN,1),var_header); // internal energy
+      pov = new OutputVariable; 
+      pov->type = "SCALARS";
+      pov->name = "eint";
+      pov->data = pf->w.ShallowSlice(IEN,1);
+      pod->AppendNode(pov); // internal energy
       var_added = 1;
     }
   }
 
   if (output_params.variable.compare("m") == 0 || 
       output_params.variable.compare("cons") == 0) {
-    var_header.type = "VECTORS";
-    var_header.name = "mom";
-    pod->AppendNode(pf->u.ShallowSlice(IM1,3),var_header); // momentum vector
+    pov = new OutputVariable; 
+    pov->type = "VECTORS";
+    pov->name = "mom";
+    pov->data = pf->u.ShallowSlice(IM1,3);
+    pod->AppendNode(pov); // momentum vector
     var_added = 1;
   }
 
   if (output_params.variable.compare("v") == 0 || 
       output_params.variable.compare("prim") == 0) {
-    var_header.type = "VECTORS";
-    var_header.name = "vel";
-    pod->AppendNode(pf->w.ShallowSlice(IM1,3),var_header); // velocity vector
+    pov = new OutputVariable; 
+    pov->type = "VECTORS";
+    pov->name = "vel";
+    pov->data = pf->w.ShallowSlice(IM1,3);
+    pod->AppendNode(pov); // velocity vector
     var_added = 1;
   }
 
   if (output_params.variable.compare("ifov") == 0) {
     for (int n=0; n<(NIFOV); ++n) {
-      var_header.type = "SCALARS";
-      var_header.name = "ifov";
-      pod->AppendNode(pf->ifov.ShallowSlice(n,1),var_header); // internal fluid outvars
+      pov = new OutputVariable; 
+      pov->type = "SCALARS";
+      pov->name = "ifov";
+      pov->data = pf->ifov.ShallowSlice(n,1);
+      pod->AppendNode(pov); // internal fluid outvars
     }
     var_added = 1;
   }
@@ -528,48 +539,47 @@ void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
 
 // For each node in OutputData linked list, slice arrays containing output data  
 
-  OutputVariableHeader var_header;
-  OutputVariable *pvar;
+  OutputVariable *pvar,*pnew;
   pvar = pod->pfirst_var;
-  AthenaArray<Real> *pslice;
 
   while (pvar != NULL) {
-    var_header = pvar->var_header;
-    int nx4 = pvar->pdata->GetDim4();
-    int nx3 = pvar->pdata->GetDim3();
-    int nx2 = pvar->pdata->GetDim2();
-    int nx1 = pvar->pdata->GetDim1();
-    pslice = new AthenaArray<Real>;
+    pnew = new OutputVariable;
+    pnew->type = pvar->type;
+    pnew->name = pvar->name;
+    int nx4 = pvar->data.GetDim4();
+    int nx3 = pvar->data.GetDim3();
+    int nx2 = pvar->data.GetDim2();
+    int nx1 = pvar->data.GetDim1();
 
 // Loop over variables and dimensions, extract slice
 
     if (dim == 3) {
-      pslice->NewAthenaArray(nx4,1,nx2,nx1);
+      pnew->data.NewAthenaArray(nx4,1,nx2,nx1);
       for (int n=0; n<nx4; ++n){
       for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j){
         for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i){
-          (*pslice)(n,0,j,i) = (*pvar->pdata)(n,kslice,j,i);
+//          (*pnew->data)(n,0,j,i) = (*pvar->data)(n,kslice,j,i);
+          pnew->data(n,0,j,i) = pvar->data(n,kslice,j,i);
         }
       }}
     } else if (dim == 2) {
-      pslice->NewAthenaArray(nx4,nx3,1,nx1);
+      pnew->data.NewAthenaArray(nx4,nx3,1,nx1);
       for (int n=0; n<nx4; ++n){
       for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k){
         for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i){
-          (*pslice)(n,k,0,i) = (*pvar->pdata)(n,k,jslice,i);
+          pnew->data(n,k,0,i) = pvar->data(n,k,jslice,i);
         }
       }}
     } else {
-      pslice->NewAthenaArray(nx4,nx3,nx2,1);
+      pnew->data.NewAthenaArray(nx4,nx3,nx2,1);
       for (int n=0; n<nx4; ++n){
       for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k){
         for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j){
-          (*pslice)(n,k,j,0) = (*pvar->pdata)(n,k,j,islice);
+          pnew->data(n,k,j,0) = pvar->data(n,k,j,islice);
         }
       }}
     }
 
-    OutputVariable *pnew = new OutputVariable(pslice, var_header);
     pod->ReplaceNode(pvar,pnew);
     pvar = pvar->pnext;
   }
@@ -604,55 +614,55 @@ void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
 
 void OutputType::Sum(OutputData* pod, MeshBlock* pmb, int dim)
 {
-  OutputVariableHeader var_header;
   AthenaArray<Real> *psum;
   std::stringstream str;
 
 // For each node in OutputData linked list, sum arrays containing output data  
 
-  OutputVariable *pvar;
+  OutputVariable *pvar,*pnew;
   pvar = pod->pfirst_var;
 
   while (pvar != NULL) {
-    var_header = pvar->var_header;
-    int nx4 = pvar->pdata->GetDim4();
-    int nx3 = pvar->pdata->GetDim3();
-    int nx2 = pvar->pdata->GetDim2();
-    int nx1 = pvar->pdata->GetDim1();
+    pnew = new OutputVariable;
+    pnew->type = pvar->type;
+    pnew->name = pvar->name;
+    int nx4 = pvar->data.GetDim4();
+    int nx3 = pvar->data.GetDim3();
+    int nx2 = pvar->data.GetDim2();
+    int nx1 = pvar->data.GetDim1();
     psum = new AthenaArray<Real>;
 
 // Loop over variables and dimensions, sum over specified dimension
 
     if (dim == 3) {
-      psum->NewAthenaArray(nx4,1,nx2,nx1);
+      pnew->data.NewAthenaArray(nx4,1,nx2,nx1);
       for (int n=0; n<nx4; ++n){
       for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k){
       for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j){
         for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i){
-          (*psum)(n,0,j,i) += (*pvar->pdata)(n,k,j,i);
+          pnew->data(n,0,j,i) += pvar->data(n,k,j,i);
         }
       }}}
     } else if (dim == 2) {
-      psum->NewAthenaArray(nx4,nx3,1,nx1);
+      pnew->data.NewAthenaArray(nx4,nx3,1,nx1);
       for (int n=0; n<nx4; ++n){
       for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k){
       for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j){
         for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i){
-          (*psum)(n,k,0,i) += (*pvar->pdata)(n,k,j,i);
+          pnew->data(n,k,0,i) += pvar->data(n,k,j,i);
         }
       }}}
     } else {
-      psum->NewAthenaArray(nx4,nx3,nx2,1);
+      pnew->data.NewAthenaArray(nx4,nx3,nx2,1);
       for (int n=0; n<nx4; ++n){
       for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k){
       for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j){
         for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i){
-          (*psum)(n,k,j,0) += (*pvar->pdata)(n,k,j,i);
+          pnew->data(n,k,j,0) += pvar->data(n,k,j,i);
         }
       }}}
     }
 
-    OutputVariable *pnew = new OutputVariable(psum, var_header);
     pod->ReplaceNode(pvar,pnew);
     pvar = pvar->pnext;
   }
@@ -704,7 +714,7 @@ void Outputs::MakeOutputs(Mesh *pm)
         delete pod;
 
       }
-      ptype = ptype->pnext; // move to next OutputType in list
+      ptype = ptype->pnext_type; // move to next OutputType in list
     }
   }
 }

@@ -34,13 +34,13 @@ public:
   Real Edge2Length();
   Real Edge3Length();
   void Face1Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> *parea);
+    AthenaArray<Real> &area);
   void Face2Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> *parea);
+    AthenaArray<Real> &area);
   void Face3Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> *parea);
+    AthenaArray<Real> &area);
   void CellVolume(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> *pvol);
+    AthenaArray<Real> &vol);
 
 // functions to compute physical width/spacing/distances
   Real CellPhysicalWidth1(const int k, const int j, const int i);
@@ -49,19 +49,18 @@ public:
   Real CellPhysicalSpacing1(const int k, const int j, const int i);
   Real CellPhysicalSpacing2(const int k, const int j, const int i);
   Real CellPhysicalSpacing3(const int k, const int j, const int i);
-  ThreeVector VectorBetweenPoints(const ThreeVector pt1, const ThreeVector pt2);
 
   void CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
     AthenaArray<Real> &cons);
 
   void CellMetric(const int k, const int j, AthenaArray<Real> &g,
       AthenaArray<Real> &g_inv);
-  void PrimToLocal1(const int k, const int j, AthenaArray<Real> *pprim);
-  void PrimToLocal2(const int k, const int j, AthenaArray<Real> *pprim);
-  void PrimToLocal3(const int k, const int j, AthenaArray<Real> *pprim);
-  void FluxToGlobal1(const int k, const int j, AthenaArray<Real> *pflux);
-  void FluxToGlobal2(const int k, const int j, AthenaArray<Real> *pflux);
-  void FluxToGlobal3(const int k, const int j, AthenaArray<Real> *pflux);
+  void PrimToLocal1(const int k, const int j, AthenaArray<Real> &prim);
+  void PrimToLocal2(const int k, const int j, AthenaArray<Real> &prim);
+  void PrimToLocal3(const int k, const int j, AthenaArray<Real> &prim);
+  void FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flux);
+  void FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flux);
+  void FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flux);
   void PrimToCons(AthenaArray<Real> &prim, AthenaArray<Real> &cons);
 
 private:

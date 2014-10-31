@@ -127,9 +127,9 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
 #ifdef OPENMP_PARALLEL
   tid=omp_get_thread_num();
 #endif
-  AthenaArray<Real> *pdt1 = dt1_.ShallowSlice(tid,1);
-  AthenaArray<Real> *pdt2 = dt2_.ShallowSlice(tid,1);
-  AthenaArray<Real> *pdt3 = dt3_.ShallowSlice(tid,1);
+  AthenaArray<Real> dt1 = dt1_.ShallowSlice(tid,1);
+  AthenaArray<Real> dt2 = dt2_.ShallowSlice(tid,1);
+  AthenaArray<Real> dt3 = dt3_.ShallowSlice(tid,1);
   Real wi[NFLUID];
 
   for (int k=ks; k<=ke; ++k){
@@ -148,21 +148,21 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
         Real& dx1  = pmb->dx1f(i);
 
         if (RELATIVISTIC_DYNAMICS) {
-          (*pdt1)(i) = dx1;
-          (*pdt2)(i) = dx2;
-          (*pdt3)(i) = dx3;
+          dt1(i) = dx1;
+          dt2(i) = dx2;
+          dt3(i) = dx3;
         } else {
           Real cs = pf_eos->SoundSpeed(wi);
-          (*pdt1)(i)= pmy_block->pcoord->CellPhysicalWidth1(k,j,i)/(fabs(wi[IVX]) + cs);
-          (*pdt2)(i)= pmy_block->pcoord->CellPhysicalWidth2(k,j,i)/(fabs(wi[IVY]) + cs);
-          (*pdt3)(i)= pmy_block->pcoord->CellPhysicalWidth3(k,j,i)/(fabs(wi[IVZ]) + cs);
+          dt1(i)= pmy_block->pcoord->CellPhysicalWidth1(k,j,i)/(fabs(wi[IVX]) + cs);
+          dt2(i)= pmy_block->pcoord->CellPhysicalWidth2(k,j,i)/(fabs(wi[IVY]) + cs);
+          dt3(i)= pmy_block->pcoord->CellPhysicalWidth3(k,j,i)/(fabs(wi[IVZ]) + cs);
         }
       }
 
 // compute minimum of (v1 +/- C)
 
       for (int i=is; i<=ie; ++i){
-        Real& dt_1 = (*pdt1)(i);
+        Real& dt_1 = dt1(i);
         thread_min(tid) = std::min(thread_min(tid),dt_1);
       }
     
@@ -170,7 +170,7 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
 
       if (pmb->block_size.nx2 > 1) {
         for (int i=is; i<=ie; ++i){
-          Real& dt_2 = (*pdt2)(i);
+          Real& dt_2 = dt2(i);
           thread_min(tid) = std::min(thread_min(tid),dt_2);
         }
       }
@@ -179,7 +179,7 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
 
       if (pmb->block_size.nx3 > 1) {
         for (int i=is; i<=ie; ++i){
-          Real& dt_3 = (*pdt3)(i);
+          Real& dt_3 = dt3(i);
           thread_min(tid) = std::min(thread_min(tid),dt_3);
         }
       }
@@ -187,7 +187,6 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
     }
   }
 
-  delete pdt1,pdt2,pdt3;
 } // end of omp parallel region
 
 // compute minimum across all threads

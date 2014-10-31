@@ -124,36 +124,36 @@ Coordinates::~Coordinates()
 // \brief functions to compute area of cell faces in each direction
 
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> *parea)
+  AthenaArray<Real> &area)
 {
 // area1 = r dphi dz 
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = (*parea)(i);
+    Real& area_i = area(i);
     area_i = (pmy_block->x1f(i)*pmy_block->dx2f(j))*(pmy_block->dx3f(k));
   }
   return;
 }
 
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> *parea)
+  AthenaArray<Real> &area)
 {
 // area3 = dr dz
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = (*parea)(i);
+    Real& area_i = area(i);
     area_i = (pmy_block->dx1f(i))*(pmy_block->dx3f(k));
   }
   return;
 }
 
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> *parea)
+  AthenaArray<Real> &area)
 {
 // area2 = dr r dphi = d(r^2/2) dphi
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = (*parea)(i);
+    Real& area_i = area(i);
     area_i = face3_area_i_(i)*(pmy_block->dx2f(j));
   }
   return;
@@ -167,12 +167,12 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 // \brief function to compute cell volume
 
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> *pvol)
+  AthenaArray<Real> &vol)
 {
 // volume = dr dz r dphi = d(r^2/2) dphi dz
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& vol_i = (*pvol)(i);
+    Real& vol_i = vol(i);
     vol_i = volume_i_(i)*(pmy_block->dx2f(j))*(pmy_block->dx3f(k));
   }
   return;

@@ -69,7 +69,7 @@ public:
   AthenaArray(const AthenaArray<T>& t);
   AthenaArray<T> &operator= (const AthenaArray<T> &t);
   AthenaArray<T> ShallowCopy();
-  AthenaArray<T> *ShallowSlice(const int indx, const int nvar);
+  AthenaArray<T> ShallowSlice(const int indx, const int nvar);
 
 private:
   T *pdata_;
@@ -153,27 +153,27 @@ AthenaArray<T> AthenaArray<T>::ShallowCopy() {
 //    3D array nvar=1: copy has size OUT(1,1,nx2,nx1)   with OUT(0,0,*,*)=IN(0,indx,*,*)
 
 template<typename T>
-AthenaArray<T> *AthenaArray<T>::ShallowSlice(const int indx, const int nvar) {
-  AthenaArray<T> *dest = new AthenaArray<T>;
-  dest->nx1_=nx1_;
-  dest->nx2_=nx2_;
-  dest->nx3_=nx3_;
-  dest->nx4_=nx4_;
-  dest->pdata_ = pdata_;
+AthenaArray<T> AthenaArray<T>::ShallowSlice(const int indx, const int nvar) {
+  AthenaArray<T> dest;
+  dest.nx1_=nx1_;
+  dest.nx2_=nx2_;
+  dest.nx3_=nx3_;
+  dest.nx4_=nx4_;
+  dest.pdata_ = pdata_;
   if (nx4_ > 1) {
-    dest->nx4_=nvar;
-    dest->pdata_ += indx * nx1_*nx2_*nx3_;
+    dest.nx4_=nvar;
+    dest.pdata_ += indx * nx1_*nx2_*nx3_;
   } else if (nx3_ > 1) {
-    dest->nx3_=nvar;
-    dest->pdata_ += indx * nx1_*nx2_;
+    dest.nx3_=nvar;
+    dest.pdata_ += indx * nx1_*nx2_;
   } else if (nx2_ > 1) {
-    dest->nx2_=nvar;
-    dest->pdata_ += indx * nx1_;
+    dest.nx2_=nvar;
+    dest.pdata_ += indx * nx1_;
   } else if (nx1_ > 1) {
-    dest->nx1_=nvar;
-    dest->pdata_ += indx;
+    dest.nx1_=nvar;
+    dest.pdata_ += indx;
   }
-  dest->scopy_ = 1;
+  dest.scopy_ = 1;
   return dest;
 }
 

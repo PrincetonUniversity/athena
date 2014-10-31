@@ -175,17 +175,17 @@ void VTKOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 
 // write data type (SCALARS or VECTORS) and name
 
-    fprintf(pfile,"\n%s %s float\n",pvar->var_header.type.c_str(),
-      pvar->var_header.name.c_str());
+    fprintf(pfile,"\n%s %s float\n",pvar->type.c_str(),
+      pvar->name.c_str());
 
-    int nvar = pvar->pdata->GetDim4();
+    int nvar = pvar->data.GetDim4();
     if (nvar == 1) fprintf(pfile,"LOOKUP_TABLE default\n");
     for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k) {
     for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j) {
 
       for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i) {
       for (int n=0; n<nvar; ++n) {
-        data[nvar*(i-(pod->data_header.il))+n] = (float)(*pvar->pdata)(n,k,j,i);
+        data[nvar*(i-(pod->data_header.il))+n] = (float)pvar->data(n,k,j,i);
       }}
 
 // write data in big endian order
