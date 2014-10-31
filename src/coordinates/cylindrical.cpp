@@ -196,16 +196,6 @@ Real Coordinates::CellPhysicalWidth3(const int k, const int j, const int i)
   return (pmy_block->dx3f(k));
 }
 
-// returns vector pointing from p1 to p2
-ThreeVector Coordinates::VectorBetweenPoints(const ThreeVector p1, const ThreeVector p2)
-{
-  ThreeVector r;
-  r.x1 = p2.x1*cos(p1.x2 - p2.x2) - p1.x1;
-  r.x2 = p2.x1*sin(p2.x2 - p1.x2);
-  r.x3 = p2.x3 - p1.x3;
-  return r;
-}
-
 //--------------------------------------------------------------------------------------
 // \!fn void Coordinates::CoordinateSourceTerms(const int k, const int j,
 //        AthenaArray<Real> &prim, AthenaArray<Real> &src)
