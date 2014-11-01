@@ -15,7 +15,7 @@
 //======================================================================================
 
 // Primary header
-#include "bfield.hpp"
+#include "field.hpp"
 
 // C++ headers
 #include <algorithm>  // min()
@@ -25,56 +25,53 @@
 // Athena headers
 #include "../athena.hpp"                  // array access, macros, Real
 #include "../athena_arrays.hpp"           // AthenaArray
-#include "bvals/bfield_bvals.hpp"         // FluidBoundaryConditions
 #include "../mesh.hpp"                    // MeshBlock, Mesh
-#include "../coordinates/coordinates.hpp" // VolumeCenterWidth()
 
 //======================================================================================
-//! \file bfield.cpp
-//  \brief implementation of functions in class BField
+//! \file field.cpp
+//  \brief implementation of functions in class Field
 //======================================================================================
 
 // constructor, initializes data structures and parameters
 
-BField::BField(MeshBlock *pmb, ParameterInput *pin)
+Field::Field(MeshBlock *pmb, ParameterInput *pin)
 {
-  pmy_block_ = pmb;
+  pmy_mblock_ = pmb;
 
 // Allocate memory for interface fields, but only when needed.
 
   if (MAGNETIC_FIELDS_ENABLED) {
-    int ncells1 = pmy_block_->block_size.nx1 + 2*(NGHOST);
+    int ncells1 = pmy_mblock_->block_size.nx1 + 2*(NGHOST);
     int ncells2 = 1, ncells3 = 1;
-    if (pmy_block_->block_size.nx2 > 1) ncells2=pmy_block_->block_size.nx2 + 2*(NGHOST);
-    if (pmy_block_->block_size.nx3 > 1) ncells3=pmy_block_->block_size.nx3 + 2*(NGHOST);
+    if (pmy_mblock_->block_size.nx2 > 1) ncells2=pmy_mblock_->block_size.nx2 + 2*(NGHOST);
+    if (pmy_mblock_->block_size.nx3 > 1) ncells3=pmy_mblock_->block_size.nx3 + 2*(NGHOST);
 
 //  Note the extra cell in each longitudunal dirn
-    b1i.NewAthenaArray(ncells3,ncells2,(ncells1+1));
-    b2i.NewAthenaArray(ncells3,(ncells2+1),ncells1);
-    b3i.NewAthenaArray((ncells3+1),ncells2,ncells1);
+    bi.x1.NewAthenaArray(ncells3,ncells2,(ncells1+1));
+    bi.x2.NewAthenaArray(ncells3,(ncells2+1),ncells1);
+    bi.x3.NewAthenaArray((ncells3+1),ncells2,ncells1);
 
 // Allocate memory for interface fields at intermediate-time step
 
-    b1i_1.NewAthenaArray(ncells3,ncells2,(ncells1+1));
-    b2i_1.NewAthenaArray(ncells3,(ncells2+1),ncells1);
-    b3i_1.NewAthenaArray((ncells3+1),ncells2,ncells1);
+    bi1.x1.NewAthenaArray(ncells3,ncells2,(ncells1+1));
+    bi1.x2.NewAthenaArray(ncells3,(ncells2+1),ncells1);
+    bi1.x3.NewAthenaArray((ncells3+1),ncells2,ncells1);
 
 // Construct ptrs to objects of various classes needed to integrate B-field
 
 //  pf_integrator = new FluidIntegrator(this);
-//  pf_bcs = new FluidBoundaryConditions(this,pin);
 
   }
 }
 
 // destructor
 
-BField::~BField()
+Field::~Field()
 {
-  b1i.DeleteAthenaArray();
-  b2i.DeleteAthenaArray();
-  b3i.DeleteAthenaArray();
-  b1i_1.DeleteAthenaArray();
-  b2i_1.DeleteAthenaArray();
-  b3i_1.DeleteAthenaArray();
+  bi.x1.DeleteAthenaArray();
+  bi.x2.DeleteAthenaArray();
+  bi.x3.DeleteAthenaArray();
+  bi1.x1.DeleteAthenaArray();
+  bi1.x2.DeleteAthenaArray();
+  bi1.x3.DeleteAthenaArray();
 }
