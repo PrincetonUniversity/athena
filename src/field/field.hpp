@@ -29,8 +29,10 @@ public:
   Field(MeshBlock *pmb, ParameterInput *pin);
   ~Field();
 
-  InterfaceBField bi;   // interface magnetic fields
-  InterfaceBField bi1;  // interface magnetic fields at intermediate step
+  InterfaceBField bi;    // interface magnetic fields
+  InterfaceBField bi1;   // interface magnetic fields at intermediate step
+  AthenaArray<Real> bc;  // cell-centered fields
+  AthenaArray<Real> bc1; // cell-centered fields at intermediate step
 
 //  BFieldIntegrator *pb_integrator;   // integration algorithm (CT)
 

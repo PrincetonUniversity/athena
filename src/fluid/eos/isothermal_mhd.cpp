@@ -17,20 +17,17 @@
 // Primary header
 #include "eos.hpp"
 
-// C++ headers
-#include <cmath>   // sqrt()
-
 // Athena headers
 #include "../fluid.hpp"               // Fluid
 #include "../../athena.hpp"           // enums, macros, Real
 #include "../../athena_arrays.hpp"    // AthenaArray
 #include "../../mesh.hpp"             // MeshBlock
 #include "../../parameter_input.hpp"  // GetReal()
-#include "../../field/field.hpp"      // InterfaceBField
+#include "../../field/field.hpp"      // BFields
 
 //======================================================================================
-//! \file adiabatic_hydro.cpp
-//  \brief implements functions in class FluidEqnOfState for adiabatic hydrodynamics`
+//! \file isothermal_mhd.cpp
+//  \brief implements functions in class FluidEqnOfState for isothermal MHD
 //======================================================================================
 
 // FluidEqnOfState constructor
@@ -38,7 +35,7 @@
 FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
 {
   pmy_fluid_ = pf;
-  gamma_ = pin->GetReal("fluid","gamma");
+  iso_sound_speed_ = pin->GetReal("fluid","iso_sound_speed"); // error if missing!
 }
 
 // destructor
@@ -50,10 +47,11 @@ FluidEqnOfState::~FluidEqnOfState()
 //--------------------------------------------------------------------------------------
 // \!fn void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //   AthenaArray<Real> &prim_old, AthenaArray<Real> &prim)
-// \brief convert conserved to primitive variables for adiabatic hydro
+// \brief convert conserved to primitive variables for adiabatic MHD
 
-void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceBField &bi,
-  AthenaArray<Real> &prim_old, AthenaArray<Real> &prim, AthenaArray<Real> &bc)
+void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
+  const InterfaceBField &bi, const AthenaArray<Real> &prim_old, AthenaArray<Real> &prim,
+  AthenaArray<Real> &bc)
 {
   MeshBlock *pmb = pmy_fluid_->pmy_block;
   int jl = pmb->js; int ju = pmb->je;
@@ -68,16 +66,14 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceBFi
   }
 
   AthenaArray<Real> lcons = cons.ShallowCopy();
+  AthenaArray<Real> bi_x1 = bi.x1.ShallowCopy();
+  AthenaArray<Real> bi_x2 = bi.x2.ShallowCopy();
+  AthenaArray<Real> bi_x3 = bi.x3.ShallowCopy();
 
 //--------------------------------------------------------------------------------------
 // Convert to Primitives
 
-  int max_nthreads = pmb->pmy_domain->pmy_mesh->nthreads_mesh;
-
-// #pragma omp parallel default(shared) num_threads(max_nthreads)
-{
   for (int k=kl; k<=ku; ++k){
-// #pragma omp for schedule(dynamic)
   for (int j=jl; j<=ju; ++j){
 #pragma simd
     for (int i=pmb->is-(NGHOST); i<=pmb->ie+(NGHOST); ++i){
@@ -85,7 +81,6 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceBFi
       Real& u_m1 = lcons(IVX,k,j,i);
       Real& u_m2 = lcons(IVY,k,j,i);
       Real& u_m3 = lcons(IVZ,k,j,i);
-      Real& u_e  = lcons(IEN,k,j,i);
 
       Real di = 1.0/u_d;
       prim(IDN,k,j,i) = u_d;
@@ -93,20 +88,20 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceBFi
       prim(IVY,k,j,i) = u_m2*di;
       prim(IVZ,k,j,i) = u_m3*di;
 
-      prim(IEN,k,j,i) = u_e - 0.5*di*(u_m1*u_m1 + u_m2*u_m2 + u_m3*u_m3);
-      prim(IEN,k,j,i) *= (GetGamma() - 1.0);
+      bc(0,k,j,i) = 0.5*(bi_x1(k,j,i) + bi_x1(k,j,i+1));
+      bc(1,k,j,i) = 0.5*(bi_x2(k,j,i) + bi_x2(k,j+1,i));
+      bc(2,k,j,i) = 0.5*(bi_x3(k,j,i) + bi_x3(k+1,j,i));
     }
   }}
-}
 
   return;
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn Real FluidEqnOfState::SoundSpeed(Real prim[5])
-// \brief returns adiabatic sound speed given vector of primitive variables
+// \!fn Real FluidEqnOfState::SoundSpeed(Real dummy_arg[NFLUID])
+// \brief returns isothermal sound speed
 
-Real FluidEqnOfState::SoundSpeed(const Real prim[NFLUID])
+Real FluidEqnOfState::SoundSpeed(const Real dummy_arg[NFLUID])
 {
-  return sqrt(GetGamma()*prim[IEN]/prim[IDN]);
+  return iso_sound_speed_;
 }

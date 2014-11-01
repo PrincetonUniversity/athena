@@ -19,6 +19,7 @@ class Mesh;
 class MeshDomain;
 class Coordinates;
 class Fluid;
+class Field;
 class BoundaryValues;
 
 //! \struct RegionSize
@@ -56,6 +57,7 @@ public:
 
   Coordinates *pcoord;
   Fluid *pfluid;
+  Field *pfield;
   BoundaryValues *pbval;
 };
 

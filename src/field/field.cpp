@@ -43,19 +43,22 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin)
   if (MAGNETIC_FIELDS_ENABLED) {
     int ncells1 = pmy_mblock_->block_size.nx1 + 2*(NGHOST);
     int ncells2 = 1, ncells3 = 1;
-    if (pmy_mblock_->block_size.nx2 > 1) ncells2=pmy_mblock_->block_size.nx2 + 2*(NGHOST);
-    if (pmy_mblock_->block_size.nx3 > 1) ncells3=pmy_mblock_->block_size.nx3 + 2*(NGHOST);
+    if (pmy_mblock_->block_size.nx2 > 1)
+      ncells2 = pmy_mblock_->block_size.nx2 + 2*(NGHOST);
+    if (pmy_mblock_->block_size.nx3 > 1)
+      ncells3 = pmy_mblock_->block_size.nx3 + 2*(NGHOST);
 
-//  Note the extra cell in each longitudunal dirn
+//  Note the extra cell in each longitudinal dirn for interface fields
+
     bi.x1.NewAthenaArray(ncells3,ncells2,(ncells1+1));
     bi.x2.NewAthenaArray(ncells3,(ncells2+1),ncells1);
     bi.x3.NewAthenaArray((ncells3+1),ncells2,ncells1);
-
-// Allocate memory for interface fields at intermediate-time step
-
     bi1.x1.NewAthenaArray(ncells3,ncells2,(ncells1+1));
     bi1.x2.NewAthenaArray(ncells3,(ncells2+1),ncells1);
     bi1.x3.NewAthenaArray((ncells3+1),ncells2,ncells1);
+
+    bc.NewAthenaArray(3,ncells3,ncells2,ncells1);
+    bc1.NewAthenaArray(3,ncells3,ncells2,ncells1);
 
 // Construct ptrs to objects of various classes needed to integrate B-field
 
@@ -74,4 +77,6 @@ Field::~Field()
   bi1.x1.DeleteAthenaArray();
   bi1.x2.DeleteAthenaArray();
   bi1.x3.DeleteAthenaArray();
+  bc.DeleteAthenaArray();
+  bc1.DeleteAthenaArray();
 }

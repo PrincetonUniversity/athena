@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
 // apply BCs, compute primitive from conserved variables, compute first timestep
 
   pmesh->ForAllDomains( fluid_bcs_n,pinput);
-  pmesh->ForAllDomains(bfield_bcs_n,pinput);
+  if (MAGNETIC_FIELDS_ENABLED) pmesh->ForAllDomains(bfield_bcs_n,pinput);
   pmesh->ForAllDomains(primitives_n,pinput);
   pmesh->ForAllDomains(new_timestep,pinput);
 
@@ -224,8 +224,10 @@ int main(int argc, char *argv[])
     pmesh->ForAllDomains( fluid_predict  ,pinput);
     pmesh->ForAllDomains( fluid_bcs_nhalf,pinput);
 
-    pmesh->ForAllDomains(bfield_predict  ,pinput);
-    pmesh->ForAllDomains(bfield_bcs_nhalf,pinput);
+    if (MAGNETIC_FIELDS_ENABLED) {
+      pmesh->ForAllDomains(bfield_predict  ,pinput);
+      pmesh->ForAllDomains(bfield_bcs_nhalf,pinput);
+    }
 
     pmesh->ForAllDomains(primitives_nhalf,pinput);
 
@@ -234,8 +236,10 @@ int main(int argc, char *argv[])
     pmesh->ForAllDomains( fluid_correct,pinput);
     pmesh->ForAllDomains( fluid_bcs_n,  pinput);
 
-    pmesh->ForAllDomains(bfield_correct,pinput);
-    pmesh->ForAllDomains(bfield_bcs_n,  pinput);
+    if (MAGNETIC_FIELDS_ENABLED) {
+      pmesh->ForAllDomains(bfield_correct,pinput);
+      pmesh->ForAllDomains(bfield_bcs_n,  pinput);
+    }
 
     pmesh->ForAllDomains(primitives_n,  pinput);
 

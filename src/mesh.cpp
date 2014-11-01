@@ -29,11 +29,11 @@
 #include "athena.hpp"                   // enums, macros, Real
 #include "athena_arrays.hpp"            // AthenaArray
 #include "coordinates/coordinates.hpp"  // Coordinates
-#include "fluid/fluid.hpp"                    // Fluid
+#include "fluid/fluid.hpp"              // Fluid
+#include "field/field.hpp"              // Field
 #include "bvals/bvals.hpp"              // BoundaryValues
 #include "fluid/eos/eos.hpp"              // FluidEqnOfState
 #include "fluid/integrators/integrators.hpp"  // FluidIntegrator
-//#include "outputs/outputs.hpp"          // Outputs
 #include "parameter_input.hpp"          // ParameterInput
 
 //======================================================================================
@@ -203,7 +203,7 @@ MeshDomain::~MeshDomain()
 
 //--------------------------------------------------------------------------------------
 // MeshBlock constructor: builds 1D vectors of cell positions and spacings, and
-// constructs coordinate, boundary condition, and fluid objects.
+// constructs coordinate, boundary condition, fluid and field objects.
 
 MeshBlock::MeshBlock(RegionSize in_size, RegionBCs in_bcs, MeshDomain *pd,
   ParameterInput *pin)
@@ -402,6 +402,7 @@ MeshBlock::MeshBlock(RegionSize in_size, RegionBCs in_bcs, MeshDomain *pd,
  
   pcoord = new Coordinates(this, pin);
   pfluid = new Fluid(this, pin);
+  pfield = new Field(this, pin);
   pbval  = new BoundaryValues(this, pin);
 
   return;
@@ -426,6 +427,7 @@ MeshBlock::~MeshBlock()
 
   delete pcoord;
   delete pfluid;
+  delete pfield;
   delete pbval;
 }
 
@@ -438,41 +440,51 @@ void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
 
 // Eventually this will be a loop over all domains
 
-  if (pdomain->pblock != NULL)  {
-    Fluid* pf = pdomain->pblock->pfluid;
+  MeshBlock* pmb = pdomain->pblock;
+  if (pmb != NULL)  {
+    Fluid* pfl = pdomain->pblock->pfluid;
+    Field* pfd = pdomain->pblock->pfield;
 
     switch (action) {
 
       case init_fluid: // call problem generator
-        pdomain->pblock->pfluid->InitFluid(pin);
+        pfl->InitFluid(pin);
         break;
 
       case fluid_bcs_n: // set fluid BCs at t^n
-        pdomain->pblock->pbval->ApplyBVals(pf->u);
+        pmb->pbval->ApplyBVals(pfl->u);
         break;
 
       case fluid_bcs_nhalf: // set fluid BCs at t^{intermediate}
-        pdomain->pblock->pbval->ApplyBVals(pf->u1);
+        pmb->pbval->ApplyBVals(pfl->u1);
+        break;
+
+      case bfield_bcs_n: // set bfield BCs at t^n
+        pmb->pbval->ApplyBVals(pfd->bi);
+        break;
+
+      case bfield_bcs_nhalf: // set bfield BCs at t^{intermediate}
+        pmb->pbval->ApplyBVals(pfd->bi1);
         break;
 
       case fluid_predict: // integrate fluid to intermediate step 
-        pdomain->pblock->pfluid->pf_integrator->Predict(pdomain->pblock);
+        pfl->pf_integrator->Predict(pdomain->pblock);
         break;
 
       case fluid_correct: // integrate fluid for full timestep, t^n --> t^{n+1}
-        pdomain->pblock->pfluid->pf_integrator->Correct(pdomain->pblock);
+        pfl->pf_integrator->Correct(pdomain->pblock);
         break;
 
       case primitives_n: // compute primitives from conseerved at t^n
-        pdomain->pblock->pfluid->pf_eos->ConservedToPrimitive(pf->u,pf->w1,pf->w);
+        pfl->pf_eos->ConservedToPrimitive(pfl->u,pfd->bi,pfl->w1,pfl->w,pfd->bc);
         break;
 
       case primitives_nhalf: // compute primitives from conseerved at t^{intermediate}
-        pdomain->pblock->pfluid->pf_eos->ConservedToPrimitive(pf->u1,pf->w,pf->w1);
+        pfl->pf_eos->ConservedToPrimitive(pfl->u1,pfd->bi1,pfl->w,pfl->w1,pfd->bc1);
         break;
 
       case new_timestep: // calculate new time step
-        pdomain->pblock->pfluid->NewTimeStep(pdomain->pblock);
+        pfl->NewTimeStep(pdomain->pblock);
         break;
 
     }

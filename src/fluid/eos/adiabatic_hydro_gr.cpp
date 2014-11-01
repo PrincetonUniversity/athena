@@ -16,6 +16,7 @@
 #include "../../coordinates/coordinates.hpp"  // Coordinates
 #include "../../mesh.hpp"                     // MeshBlock
 #include "../../parameter_input.hpp"          // GetReal()
+#include "../../field/field.hpp"      // InterfaceBField
 
 // Declarations
 Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
@@ -54,8 +55,8 @@ FluidEqnOfState::~FluidEqnOfState()
 // Notes:
 //   follows Noble et al. 2006, ApJ 641 626 (N)
 //   implements formulas assuming no magnetic field
-void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-    AthenaArray<Real> &prim_old, AthenaArray<Real> &prim)
+void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceBField &bi,
+    AthenaArray<Real> &prim_old, AthenaArray<Real> &prim, AthenaArray<Real> &bc)
 {
   // Parameters
   const Real max_velocity = 1.0 - 1.0e-15;

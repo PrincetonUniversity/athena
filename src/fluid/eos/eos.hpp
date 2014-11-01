@@ -17,6 +17,7 @@
 // Declarations
 class Fluid;
 class ParameterInput;
+struct InterfaceBField;
 
 //! \class FluidEqnOfState
 //  \brief data and functions that implement EoS for fluid
@@ -26,8 +27,8 @@ public:
   FluidEqnOfState(Fluid *pf, ParameterInput *pin);
   ~FluidEqnOfState();
 
-  void ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &prim_old,
-    AthenaArray<Real> &prim);
+  void ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceBField &bi,
+    AthenaArray<Real> &prim_old, AthenaArray<Real> &prim, AthenaArray<Real> &bc);
 
   Real SoundSpeed(const Real prim[NFLUID]); 
   Real GetGamma() const {return gamma_;}

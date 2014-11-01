@@ -26,11 +26,11 @@
 #include "../../athena_arrays.hpp"    // AthenaArray
 #include "../../mesh.hpp"             // MeshBlock
 #include "../../parameter_input.hpp"  // GetReal()
-#include "../../field/field.hpp"      // InterfaceBField
+#include "../../field/field.hpp"      // BFields
 
 //======================================================================================
-//! \file adiabatic_hydro.cpp
-//  \brief implements functions in class FluidEqnOfState for adiabatic hydrodynamics`
+//! \file adiabatic_mhd.cpp
+//  \brief implements functions in class FluidEqnOfState for adiabatic MHD
 //======================================================================================
 
 // FluidEqnOfState constructor
@@ -68,6 +68,9 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceBFi
   }
 
   AthenaArray<Real> lcons = cons.ShallowCopy();
+  AthenaArray<Real> bi_x1 = bi.x1.ShallowCopy();
+  AthenaArray<Real> bi_x2 = bi.x2.ShallowCopy();
+  AthenaArray<Real> bi_x3 = bi.x3.ShallowCopy();
 
 //--------------------------------------------------------------------------------------
 // Convert to Primitives
@@ -93,7 +96,16 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceBFi
       prim(IVY,k,j,i) = u_m2*di;
       prim(IVZ,k,j,i) = u_m3*di;
 
+      bc(0,k,j,i) = 0.5*(bi_x1(k,j,i) + bi_x1(k,j,i+1));
+      bc(1,k,j,i) = 0.5*(bi_x2(k,j,i) + bi_x2(k,j+1,i));
+      bc(2,k,j,i) = 0.5*(bi_x3(k,j,i) + bi_x3(k+1,j,i));
+
+      Real& bc1 = bc(0,k,j,i);
+      Real& bc2 = bc(1,k,j,i);
+      Real& bc3 = bc(2,k,j,i);
+
       prim(IEN,k,j,i) = u_e - 0.5*di*(u_m1*u_m1 + u_m2*u_m2 + u_m3*u_m3);
+      prim(IEN,k,j,i) -= 0.5*(bc1*bc1 + bc2*bc2 + bc3*bc3);
       prim(IEN,k,j,i) *= (GetGamma() - 1.0);
     }
   }}

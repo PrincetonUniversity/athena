@@ -23,6 +23,7 @@
 #include "../../athena_arrays.hpp"    // AthenaArray
 #include "../../mesh.hpp"             // MeshBlock
 #include "../../parameter_input.hpp"  // GetReal()
+#include "../../field/field.hpp"      // InterfaceBField
 
 //======================================================================================
 //! \file isothermal_hydro.cpp
@@ -48,8 +49,8 @@ FluidEqnOfState::~FluidEqnOfState()
 //   AthenaArray<Real> &prim_old, AthenaArray<Real> &prim)
 // \brief convert conserved to primitive variables for adiabatic hydro
 
-void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-  AthenaArray<Real> &prim_old, AthenaArray<Real> &prim)
+void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceBField &bi,
+  AthenaArray<Real> &prim_old, AthenaArray<Real> &prim, AthenaArray<Real> &bc)
 {
   MeshBlock *pmb = pmy_fluid_->pmy_block;
   int jl = pmb->js; int ju = pmb->je;
@@ -64,7 +65,6 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   }
 
   AthenaArray<Real> lcons = cons.ShallowCopy();
-  AthenaArray<Real> lprim = prim.ShallowCopy();
 
 //--------------------------------------------------------------------------------------
 // Convert to Primitives
@@ -78,16 +78,11 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       Real& u_m2 = lcons(IVY,k,j,i);
       Real& u_m3 = lcons(IVZ,k,j,i);
 
-      Real& w_d  = lprim(IDN,k,j,i);
-      Real& w_m1 = lprim(IVX,k,j,i);
-      Real& w_m2 = lprim(IVY,k,j,i);
-      Real& w_m3 = lprim(IVZ,k,j,i);
-
       Real di = 1.0/u_d;
-      w_d  = u_d;
-      w_m1 = u_m1*di;
-      w_m2 = u_m2*di;
-      w_m3 = u_m3*di;
+      prim(IDN,k,j,i) = u_d;
+      prim(IVX,k,j,i) = u_m1*di;
+      prim(IVY,k,j,i) = u_m2*di;
+      prim(IVZ,k,j,i) = u_m3*di;
     }
   }}
 
