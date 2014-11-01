@@ -67,10 +67,10 @@ Fluid::Fluid(MeshBlock *pmb, ParameterInput *pin)
 
 // Allocate memory for scratch arrays
 
-  Mesh *pmm = pmy_block->pmy_domain->pmy_mesh;
-  dt1_.NewAthenaArray(pmm->nthreads_mesh,ncells1);
-  dt2_.NewAthenaArray(pmm->nthreads_mesh,ncells1);
-  dt3_.NewAthenaArray(pmm->nthreads_mesh,ncells1);
+  int max_nthreads = pmy_block->pmy_domain->pmy_mesh->nthreads_mesh;
+  dt1_.NewAthenaArray(max_nthreads,ncells1);
+  dt2_.NewAthenaArray(max_nthreads,ncells1);
+  dt3_.NewAthenaArray(max_nthreads,ncells1);
 
 // Allocate memory for internal fluid output variables (if needed)
 
@@ -114,15 +114,15 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
   int tid=0;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-
   AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
-  AthenaArray<Real> thread_min;
-  int max_threads = pmb->pmy_domain->pmy_mesh->nthreads_mesh;
-  thread_min.NewAthenaArray(max_threads);
 
-  for (int n=0; n<max_threads; ++n) thread_min(n) = (FLT_MAX);
+  int max_nthreads = pmb->pmy_domain->pmy_mesh->nthreads_mesh;
+  Real *pthread_min_dt;
+  pthread_min_dt = new Real [max_nthreads];
 
-#pragma omp parallel default(shared) private(tid) num_threads(max_threads)
+  for (int n=0; n<max_nthreads; ++n) pthread_min_dt[n] = (FLT_MAX);
+
+#pragma omp parallel default(shared) private(tid) num_threads(max_nthreads)
 {
 #ifdef OPENMP_PARALLEL
   tid=omp_get_thread_num();
@@ -163,7 +163,7 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
 
       for (int i=is; i<=ie; ++i){
         Real& dt_1 = dt1(i);
-        thread_min(tid) = std::min(thread_min(tid),dt_1);
+        pthread_min_dt[tid] = std::min(pthread_min_dt[tid],dt_1);
       }
     
 // if grid is 2D/3D, compute minimum of (v2 +/- C)
@@ -171,7 +171,7 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
       if (pmb->block_size.nx2 > 1) {
         for (int i=is; i<=ie; ++i){
           Real& dt_2 = dt2(i);
-          thread_min(tid) = std::min(thread_min(tid),dt_2);
+          pthread_min_dt[tid] = std::min(pthread_min_dt[tid],dt_2);
         }
       }
 
@@ -180,7 +180,7 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
       if (pmb->block_size.nx3 > 1) {
         for (int i=is; i<=ie; ++i){
           Real& dt_3 = dt3(i);
-          thread_min(tid) = std::min(thread_min(tid),dt_3);
+          pthread_min_dt[tid] = std::min(pthread_min_dt[tid],dt_3);
         }
       }
 
@@ -190,15 +190,15 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
 } // end of omp parallel region
 
 // compute minimum across all threads
-  Real min_dt = thread_min(0);
-  for (int n=1; n<max_threads; ++n) min_dt = std::min(min_dt,thread_min(n));
+  Real min_dt = pthread_min_dt[0];
+  for (int n=1; n<max_nthreads; ++n) min_dt = std::min(min_dt,pthread_min_dt[n]);
 
 // compute new global timestep
   Mesh *pm = pmb->pmy_domain->pmy_mesh;
   Real old_dt = pm->dt;
   pm->dt = std::min( ((pm->cfl_number)*min_dt) , (2.0*old_dt) );
 
-  thread_min.DeleteAthenaArray();
+  delete[] pthread_min_dt;
 
   return;
 }

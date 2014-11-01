@@ -71,12 +71,12 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //--------------------------------------------------------------------------------------
 // Convert to Primitives
 
-  int threads_max = pmb->pmy_domain->pmy_mesh->nthreads_mesh;
+  int max_nthreads = pmb->pmy_domain->pmy_mesh->nthreads_mesh;
 
-#pragma omp parallel default(shared) num_threads(threads_max)
+// #pragma omp parallel default(shared) num_threads(max_nthreads)
 {
   for (int k=kl; k<=ku; ++k){
-#pragma omp for schedule(static)
+// #pragma omp for schedule(dynamic)
   for (int j=jl; j<=ju; ++j){
 #pragma simd
     for (int i=pmb->is-(NGHOST); i<=pmb->ie+(NGHOST); ++i){
