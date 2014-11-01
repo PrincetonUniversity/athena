@@ -30,7 +30,7 @@
 #include "athena_arrays.hpp"            // AthenaArray
 #include "coordinates/coordinates.hpp"  // Coordinates
 #include "fluid/fluid.hpp"                    // Fluid
-#include "fluid/bvals/bvals.hpp"              // FluidBCs
+#include "bvals/bvals.hpp"              // BoundaryValues
 #include "fluid/eos/eos.hpp"              // FluidEqnOfState
 #include "fluid/integrators/integrators.hpp"  // FluidIntegrator
 //#include "outputs/outputs.hpp"          // Outputs
@@ -156,7 +156,7 @@ Mesh::Mesh(ParameterInput *pin)
   }
 
 // read BC flags for each of the 6 boundaries in turn.  Error tests performed in
-// FluidBCs constructor
+// BoundaryValues constructor
 
   mesh_bcs.ix1_bc = pin->GetOrAddInteger("mesh","ix1_bc",0);
   mesh_bcs.ox1_bc = pin->GetOrAddInteger("mesh","ox1_bc",0);
@@ -400,8 +400,9 @@ MeshBlock::MeshBlock(RegionSize in_size, RegionBCs in_bcs, MeshDomain *pd,
 // initial conditions for the fluid are set in problem generator called from main, not
 // in the Fluid constructor
  
-  pcoord   = new Coordinates(this, pin);
-  pfluid   = new Fluid(this, pin);
+  pcoord = new Coordinates(this, pin);
+  pfluid = new Fluid(this, pin);
+  pbval  = new BoundaryValues(this, pin);
 
   return;
 }
@@ -425,6 +426,7 @@ MeshBlock::~MeshBlock()
 
   delete pcoord;
   delete pfluid;
+  delete pbval;
 }
 
 //--------------------------------------------------------------------------------------
@@ -446,11 +448,11 @@ void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
         break;
 
       case fluid_bcs_n: // set fluid BCs at t^n
-        pdomain->pblock->pfluid->pf_bcs->ApplyFluidBCs(pf->u);
+        pdomain->pblock->pbval->ApplyBVals(pf->u);
         break;
 
       case fluid_bcs_nhalf: // set fluid BCs at t^{intermediate}
-        pdomain->pblock->pfluid->pf_bcs->ApplyFluidBCs(pf->u1);
+        pdomain->pblock->pbval->ApplyBVals(pf->u1);
         break;
 
       case fluid_predict: // integrate fluid to intermediate step 

@@ -24,11 +24,11 @@
 #include <string>     // c_str()
 
 // Athena headers
-#include "../../athena.hpp"          // Real
-#include "../../athena_arrays.hpp"   // AthenaArray
-#include "../../mesh.hpp"            // MeshBlock
-#include "../fluid.hpp"              // Fluid
-#include "../../parameter_input.hpp" // ParameterInput
+#include "../athena.hpp"          // Real
+#include "../athena_arrays.hpp"   // AthenaArray
+#include "../mesh.hpp"            // MeshBlock
+#include "../fluid/fluid.hpp"     // Fluid
+#include "../parameter_input.hpp" // ParameterInput
 
 //======================================================================================
 //! \file bvals.cpp
@@ -38,10 +38,9 @@
 // FluidBCs constructor - sets function pointers for the appropriate
 // boundary conditions at each of the 6 edges of a MeshBlock
 
-FluidBCs::FluidBCs(Fluid *pf, ParameterInput *pin)
+BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 {
-  pmy_fluid = pf;
-  MeshBlock *pmb = pmy_fluid->pmy_block;
+  pmy_mblock_ = pmb;
 
 // Set BC function pointers for each of the 6 boundaries in turn -----------------------
 // Inner x1
@@ -178,7 +177,7 @@ FluidBCs::FluidBCs(Fluid *pf, ParameterInput *pin)
 
 // destructor
 
-FluidBCs::~FluidBCs()
+BoundaryValues::~BoundaryValues()
 {
 }
 
@@ -186,7 +185,7 @@ FluidBCs::~FluidBCs()
 //! \fn
 //  \brief
 
-void FluidBCs::EnrollBoundaryFunction(enum EdgeNames edge, BCFunc_t my_bc)
+void BoundaryValues::EnrollBoundaryFunction(enum EdgeNames edge, BValFluid_t my_bc)
 {
   switch(edge){
   case inner_x1:
@@ -220,26 +219,26 @@ void FluidBCs::EnrollBoundaryFunction(enum EdgeNames edge, BCFunc_t my_bc)
 //! \fn void FluidBCs::ApplyFluidBCs(AthenaArray<Real> &a)
 //  \brief Calls BC functions using appropriate function pointers to set ghost zones.  
 
-void FluidBCs::ApplyFluidBCs(AthenaArray<Real> &a)
+void BoundaryValues::ApplyBVals(AthenaArray<Real> &a)
 {
 
 // Boundary Conditions in x1-direction
 
-  (*(FluidInnerX1_))(pmy_fluid->pmy_block, a);
-  (*(FluidOuterX1_))(pmy_fluid->pmy_block, a);
+  (*(FluidInnerX1_))(pmy_mblock_, a);
+  (*(FluidOuterX1_))(pmy_mblock_, a);
 
 // Boundary Conditions in x2-direction 
 
-  if (pmy_fluid->pmy_block->block_size.nx2 > 1){
-    (*(FluidInnerX2_))(pmy_fluid->pmy_block, a);
-    (*(FluidOuterX2_))(pmy_fluid->pmy_block, a);
+  if (pmy_mblock_->block_size.nx2 > 1){
+    (*(FluidInnerX2_))(pmy_mblock_, a);
+    (*(FluidOuterX2_))(pmy_mblock_, a);
   }
 
 // Boundary Conditions in x3-direction 
 
-  if (pmy_fluid->pmy_block->block_size.nx3 > 1){
-    (*(FluidInnerX3_))(pmy_fluid->pmy_block, a);
-    (*(FluidOuterX3_))(pmy_fluid->pmy_block, a);
+  if (pmy_mblock_->block_size.nx3 > 1){
+    (*(FluidInnerX3_))(pmy_mblock_, a);
+    (*(FluidOuterX3_))(pmy_mblock_, a);
   }
 
   return;

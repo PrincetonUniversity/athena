@@ -18,9 +18,9 @@
 #include "bvals.hpp"
 
 // Athena headers
-#include "../../athena.hpp"         // macros, Real
-#include "../../athena_arrays.hpp"  // AthenaArray
-#include "../../mesh.hpp"           // MeshBlock
+#include "../athena.hpp"         // macros, Real
+#include "../athena_arrays.hpp"  // AthenaArray
+#include "../mesh.hpp"           // MeshBlock
 
 //======================================================================================
 //! \file periodic_fluid.cpp

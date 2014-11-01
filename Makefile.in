@@ -20,9 +20,9 @@ LIBRARY_FLAGS := -lm
 EXE_DIR := bin/
 EXECUTABLE := $(EXE_DIR)athena
 SRC_FILES := $(wildcard src/*.cpp) \
+	     $(wildcard src/bvals/*.cpp) \
 	     src/coordinates/$(COORDINATES_FILE) \
 	     $(wildcard src/fluid/*.cpp) \
-	     $(wildcard src/fluid/bvals/*.cpp) \
 	     $(wildcard src/fluid/srcterms/*.cpp) \
 	     src/fluid/eos/$(EOS_FILE) \
 	     $(wildcard src/fluid/integrators/*.cpp) \

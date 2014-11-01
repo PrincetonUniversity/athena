@@ -25,7 +25,6 @@
 // Athena headers
 #include "../athena.hpp"                // array access, macros, Real
 #include "../athena_arrays.hpp"         // AthenaArray
-#include "bvals/bvals.hpp"              // FluidBCs
 #include "eos/eos.hpp"                  // FluidEqnOfState
 #include "srcterms/srcterms.hpp"        // FluidSourceTerms
 #include "integrators/integrators.hpp"  // FluidIntegrator
@@ -79,7 +78,6 @@ Fluid::Fluid(MeshBlock *pmb, ParameterInput *pin)
 // Construct ptrs to objects of various classes needed to integrate fluid eqns 
 
   pf_integrator = new FluidIntegrator(this,pin);
-  pf_bcs = new FluidBCs(this,pin);
   pf_eos = new FluidEqnOfState(this,pin);
   pf_srcterms = new FluidSourceTerms(this,pin);
 }
@@ -100,7 +98,6 @@ Fluid::~Fluid()
   dt3_.DeleteAthenaArray();
 
   delete pf_integrator;
-  delete pf_bcs;
   delete pf_eos;
   delete pf_srcterms;
 }

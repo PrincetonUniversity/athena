@@ -19,6 +19,7 @@ class Mesh;
 class MeshDomain;
 class Coordinates;
 class Fluid;
+class BoundaryValues;
 
 //! \struct RegionSize
 //  \brief physical size and number of cells in a Mesh, MeshDomain or MeshBlock
@@ -55,6 +56,7 @@ public:
 
   Coordinates *pcoord;
   Fluid *pfluid;
+  BoundaryValues *pbval;
 };
 
 //! \class MeshDomain

@@ -7,7 +7,7 @@
 #include "../athena.hpp"                   // enums, Real
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../coordinates/coordinates.hpp"  // PrimToCons()
-#include "../fluid/bvals/bvals.hpp"        // EnrollBoundaryFunction()
+#include "../bvals/bvals.hpp"              // EnrollBoundaryFunction()
 #include "../fluid/eos/eos.hpp"            // GetGamma()
 #include "../mesh.hpp"                     // MeshBlock, MeshDomain, Mesh
 #include "../parameter_input.hpp"          // ParameterInput
@@ -106,8 +106,8 @@ void Fluid::InitFluid(ParameterInput *pin)
   m3_outer = pin->GetReal("problem", "m3_outer");
 
   // Enroll boundary functions
-  pb->pfluid->pf_bcs->EnrollBoundaryFunction(inner_x1, FixedInner);
-  pb->pfluid->pf_bcs->EnrollBoundaryFunction(outer_x1, FixedOuter);
+  pb->pbval->EnrollBoundaryFunction(inner_x1, FixedInner);
+  pb->pbval->EnrollBoundaryFunction(outer_x1, FixedOuter);
   return;
 }
 

@@ -38,7 +38,7 @@ public:
   AthenaArray<Real> ifov;  // internal fluid output variables for analysis
 
   FluidIntegrator *pf_integrator;  // integration algorithm
-  FluidBCs *pf_bcs;                // boundary conditions
+//  FluidBCs *pf_bcs;                // boundary conditions
   FluidEqnOfState *pf_eos;         // equation of state (including cons->prim func)
   FluidSourceTerms *pf_srcterms;   // physical source terms
 

@@ -1,18 +1,17 @@
-#ifndef BOUNDARY_CONDITIONS_HPP
-#define BOUNDARY_CONDITIONS_HPP
+#ifndef BOUNDARY_VALUES_HPP
+#define BOUNDARY_VALUES_HPP
 //======================================================================================
 /* Athena++ astrophysical MHD code
  * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
  * See LICENSE file for full public license information.
  *====================================================================================*/
 /*! \file bvals.hpp
- *  \brief defines class FluidBCs
- *  Contains data structures and functions related to BCs for the fluid
+ *  \brief defines BoundaryValues class used for setting BCs on all data types
  *====================================================================================*/
 
 // Athena headers
-#include "../../athena.hpp"         // Real
-#include "../../athena_arrays.hpp"  // AthenaArray
+#include "../athena.hpp"         // Real
+#include "../athena_arrays.hpp"  // AthenaArray
 
 // forward declarations
 class MeshBlock;
@@ -20,21 +19,21 @@ class Fluid;
 class ParameterInput;
 
 enum EdgeNames {inner_x1, outer_x1, inner_x2, outer_x2, inner_x3, outer_x3};
-typedef void (*BCFunc_t)(MeshBlock *pmb, AthenaArray<Real> &a);
+typedef void (*BValFluid_t)(MeshBlock *pmb, AthenaArray<Real> &a);
 
-//! \class FluidBCs
-//  \brief BCs data and functions for fluid
+//! \class BoundaryValues
+//  \brief BVals data and functions
 
-class FluidBCs {
+class BoundaryValues {
 public:
-  FluidBCs(Fluid *pf, ParameterInput *pin);
-  ~FluidBCs();
+  BoundaryValues(MeshBlock *pmb, ParameterInput *pin);
+  ~BoundaryValues();
 
-  void ApplyFluidBCs(AthenaArray<Real> &a);
-  void EnrollBoundaryFunction(enum EdgeNames edge, BCFunc_t my_bc);
+  void ApplyBVals(AthenaArray<Real> &a);
+  void EnrollBoundaryFunction(enum EdgeNames edge, BValFluid_t my_bc);
 
 private:
-  Fluid *pmy_fluid;  // ptr to Fluid containing this FluidBCs
+  MeshBlock *pmy_mblock_;  // ptr to MeshBlock containing this BVals
 
 // function pointers, set in Init function based on parameters in input file
 
