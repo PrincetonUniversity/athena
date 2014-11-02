@@ -8,11 +8,12 @@
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
+#include <iostream>
 
 // Primary header
 #include "../integrators.hpp"
@@ -28,34 +29,60 @@
 
 //======================================================================================
 //! \file hlle_mhd.cpp
-//  \brief MHD version of the HLLE Riemann solver.  See hydro HLLE solver for details.
+//  \brief HLLE Riemann solver for MHD.  See the hydro version for details.
 //======================================================================================
 
-void FluidIntegrator::RiemannSolver(const int k, const int j,
-  const int il, const int iu, const int ivx, const int ivy, const int ivz,
-  const AthenaArray<Real> *bl, const AthenaArray<Real> *br, const AthenaArray<Real> *bi,
-  const  AthenaArray<Real> *pwl, const AthenaArray<Real> *pwr, AthenaArray<Real> *pflx)
+void FluidIntegrator::RiemannSolver(const int k,const int j,const int il,const int iu,
+  const int ivx, const int ivy, const int ivz, AthenaArray<Real> *pbi,
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {
-  Real fl[NFLUID],fr[NFLUID],wli[NFLUID],wri[NFLUID],flxi[NFLUID];
+  Real wli[NFLUID],wri[NFLUID],wroe[NFLUID],fl[NFLUID],fr[NFLUID],flxi[NFLUID];
 
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    wli[IDN]=(*pwl)(IDN,i);
-    wli[IVX]=(*pwl)(ivx,i);
-    wli[IVY]=(*pwl)(ivy,i);
-    wli[IVZ]=(*pwl)(ivz,i);
-    if (NON_BAROTROPIC_EOS) wli[IEN]=(*pwl)(IEN,i);
+    wli[IDN]=wl(IDN,i);
+    wli[IVX]=wl(ivx,i);
+    wli[IVY]=wl(ivy,i);
+    wli[IVZ]=wl(ivz,i);
+    if (NON_BAROTROPIC_EOS) wli[IEN]=wl(IEN,i);
 
-    wri[IDN]=(*pwr)(IDN,i);
-    wri[IVX]=(*pwr)(ivx,i);
-    wri[IVY]=(*pwr)(ivy,i);
-    wri[IVZ]=(*pwr)(ivz,i);
-    if (NON_BAROTROPIC_EOS) wri[IEN]=(*pwr)(IEN,i);
+    wri[IDN]=wr(IDN,i);
+    wri[IVX]=wr(ivx,i);
+    wri[IVY]=wr(ivy,i);
+    wri[IVZ]=wr(ivz,i);
+    if (NON_BAROTROPIC_EOS) wri[IEN]=wr(IEN,i);
 
-// Compute the max/min wave speeds based on L/R values
+// compute Roe averaged state
 
-    Real al = wli[IVX] - pmy_fluid->pf_eos->FastSpeed(wli);
-    Real ar = wri[IVX] + pmy_fluid->pf_eos->FastSpeed(wri);
+    Real sqrtdl = sqrt(wli[IDN]);
+    Real sqrtdr = sqrt(wri[IDN]);
+    Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
+
+    wroe[IDN] = sqrtdl*sqrtdr;
+    wroe[IVX] = (sqrtdl*wli[IVX] + sqrtdr*wri[IVX])*isdlpdr;
+    wroe[IVY] = (sqrtdl*wli[IVY] + sqrtdr*wri[IVY])*isdlpdr;
+    wroe[IVZ] = (sqrtdl*wli[IVZ] + sqrtdr*wri[IVZ])*isdlpdr;
+
+    Real el,er,a;
+    if (NON_BAROTROPIC_EOS) {
+      el = wli[IEN]/(pmy_fluid->pf_eos->GetGamma() - 1.0) + 0.5*wli[IDN]*
+        (wli[IVX]*wli[IVX] + wli[IVY]*wli[IVY] + wli[IVZ]*wli[IVZ]);
+      er = wri[IEN]/(pmy_fluid->pf_eos->GetGamma() - 1.0) + 0.5*wri[IDN]*
+        (wri[IVX]*wri[IVX] + wri[IVY]*wri[IVY] + wri[IVZ]*wri[IVZ]);
+      wroe[IEN] = ((el + wli[IEN])/sqrtdl + (er + wri[IEN])/sqrtdr)*isdlpdr;
+
+      Real q = wroe[IEN] - 
+        0.5*(wroe[IVX]*wroe[IVX] + wroe[IVY]*wroe[IVY] + wroe[IVZ]*wroe[IVZ]);
+      if (q < 0.0) q=0.0;
+      a = sqrt((pmy_fluid->pf_eos->GetGamma() - 1.0)*q);
+    } else {
+      a = pmy_fluid->pf_eos->SoundSpeed(wroe);
+    }
+
+// Compute the max/min wave speeds based on L/R and Roe-averaged values
+
+    Real al = std::min((wroe[IVX]-a),(wli[IVX] - pmy_fluid->pf_eos->SoundSpeed(wli)));
+    Real ar = std::max((wroe[IVX]+a),(wri[IVX] + pmy_fluid->pf_eos->SoundSpeed(wri)));
 
     Real bp = ar > 0.0 ? ar : 0.0;
     Real bm = al < 0.0 ? al : 0.0;
@@ -77,14 +104,8 @@ void FluidIntegrator::RiemannSolver(const int k, const int j,
     if (NON_BAROTROPIC_EOS) {
       fl[IVX] += wli[IEN];
       fr[IVX] += wri[IEN];
-      fl[IEN] = wli[IEN]/(pmy_fluid->pf_eos->GetGamma() - 1.0) + 0.5*wli[IDN]*
-        (wli[IVX]*wli[IVX] + wli[IVY]*wli[IVY] + wli[IVZ]*wli[IVZ]);
-      fr[IEN] = wri[IEN]/(pmy_fluid->pf_eos->GetGamma() - 1.0) + 0.5*wri[IDN]*
-        (wri[IVX]*wri[IVX] + wri[IVY]*wri[IVY] + wri[IVZ]*wri[IVZ]);
-      fl[IEN] *= (wli[IVX] - bm);
-      fr[IEN] *= (wri[IVX] - bp);
-      fl[IEN] += wli[IEN]*wli[IVX];
-      fr[IEN] += wri[IEN]*wri[IVX];
+      fl[IEN] = el*(wli[IVX] - bm) + wli[IEN]*wli[IVX];
+      fr[IEN] = er*(wri[IVX] - bp) + wri[IEN]*wri[IVX];
     } else {
       Real iso_cs = pmy_fluid->pf_eos->SoundSpeed(wli);
       fl[IVX] += (iso_cs*iso_cs)*wli[IDN];
@@ -93,7 +114,12 @@ void FluidIntegrator::RiemannSolver(const int k, const int j,
 
 // Compute the HLLE flux at interface.
 
-    Real tmp = 0.5*(bp + bm)/(bp - bm);
+    Real tmp;
+    if (bp == bm) {
+      tmp = 0.0;
+    } else {
+      tmp = 0.5*(bp + bm)/(bp - bm);
+    }
 
     flxi[IDN] = 0.5*(fl[IDN]+fr[IDN]) + (fl[IDN]-fr[IDN])*tmp;
     flxi[IVX] = 0.5*(fl[IVX]+fr[IVX]) + (fl[IVX]-fr[IVX])*tmp;
@@ -101,11 +127,11 @@ void FluidIntegrator::RiemannSolver(const int k, const int j,
     flxi[IVZ] = 0.5*(fl[IVZ]+fr[IVZ]) + (fl[IVZ]-fr[IVZ])*tmp;
     if (NON_BAROTROPIC_EOS) flxi[IEN] = 0.5*(fl[IEN]+fr[IEN]) + (fl[IEN]-fr[IEN])*tmp;
 
-    (*pflx)(IDN,i) = flxi[IDN];
-    (*pflx)(ivx,i) = flxi[IVX];
-    (*pflx)(ivy,i) = flxi[IVY];
-    (*pflx)(ivz,i) = flxi[IVZ];
-    if (NON_BAROTROPIC_EOS) (*pflx)(IEN,i) = flxi[IEN];
+    flx(IDN,i) = flxi[IDN];
+    flx(ivx,i) = flxi[IVX];
+    flx(ivy,i) = flxi[IVY];
+    flx(ivz,i) = flxi[IVZ];
+    if (NON_BAROTROPIC_EOS) flx(IEN,i) = flxi[IEN];
   }
 
   return;

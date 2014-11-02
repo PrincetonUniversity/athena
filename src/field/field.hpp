@@ -25,6 +25,7 @@ class ParameterInput;
 //  \brief electric and magnetic field data and functions
 
 class Field {
+friend class FluidIntegrator;
 public:
   Field(MeshBlock *pmb, ParameterInput *pin);
   ~Field();

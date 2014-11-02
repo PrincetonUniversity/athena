@@ -25,6 +25,7 @@
 #include "../../athena_arrays.hpp"           // AthenaArray
 #include "../../coordinates/coordinates.hpp" // Coordinates
 #include "../fluid.hpp"                      // Fluid
+#include "../../field/field.hpp"             // Fields
 #include "../../mesh.hpp"                    // MeshBlock
 #include "../srcterms/srcterms.hpp"          // PhysicalSourceTerms()
 
@@ -52,7 +53,8 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
   AthenaArray<Real> u = pmb->pfluid->u.ShallowCopy();
   AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
   AthenaArray<Real> u1 = pmb->pfluid->u1.ShallowCopy();
-  AthenaArray<Real> w1 = pmb->pfluid->w1.ShallowCopy();
+
+  AthenaArray<Real> bc = pmb->pfield->bc.ShallowCopy();
 
 #pragma omp parallel default(shared) private(tid) num_threads(max_nthreads)
 {
@@ -78,6 +80,15 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
         for (int i=is; i<=ie+1; ++i){
           wl(n,i) = w(n,k,j,i-1);
           wr(n,i) = w(n,k,j,i  );
+        }
+      }
+      if (MAGNETIC_FIELDS_ENABLED) {
+#pragma simd
+        for (int i=is; i<=ie+1; ++i){
+          wl((NFLUID  ),i) = bc(1,k,j,i-1);
+          wl((NFLUID+1),i) = bc(2,k,j,i-1);
+          wr((NFLUID  ),i) = bc(1,k,j,i  );
+          wr((NFLUID+1),i) = bc(2,k,j,i  );
         }
       }
 
@@ -118,6 +129,15 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
           for (int i=is; i<=ie; ++i){
             wl(n,i) = w(n,k,j-1,i);
             wr(n,i) = w(n,k,j  ,i);
+          }
+        }
+        if (MAGNETIC_FIELDS_ENABLED) {
+#pragma simd
+          for (int i=is; i<=ie; ++i){
+            wl((NFLUID  ),i) = bc(2,k,j-1,i);
+            wl((NFLUID+1),i) = bc(0,k,j-1,i);
+            wr((NFLUID  ),i) = bc(2,k,j  ,i);
+            wr((NFLUID+1),i) = bc(0,k,j  ,i);
           }
         }
 
@@ -172,6 +192,15 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
           for (int i=is; i<=ie; ++i){
             wl(n,i) = w(n,k-1,j,i);
             wr(n,i) = w(n,k  ,j,i);
+          }
+        }
+        if (MAGNETIC_FIELDS_ENABLED) {
+#pragma simd
+          for (int i=is; i<=ie; ++i){
+            wl((NFLUID  ),i) = bc(0,k-1,j,i);
+            wl((NFLUID+1),i) = bc(1,k-1,j,i);
+            wr((NFLUID  ),i) = bc(0,k  ,j,i);
+            wr((NFLUID+1),i) = bc(1,k  ,j,i);
           }
         }
 
@@ -237,9 +266,10 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
   int max_nthreads = pmb->pmy_domain->pmy_mesh->nthreads_mesh;
 
   AthenaArray<Real> u = pmb->pfluid->u.ShallowCopy();
-  AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
   AthenaArray<Real> u1 = pmb->pfluid->u1.ShallowCopy();
   AthenaArray<Real> w1 = pmb->pfluid->w1.ShallowCopy();
+
+  AthenaArray<Real> bc1 = pmb->pfield->bc.ShallowCopy();
 
 #pragma omp parallel default(shared) private(tid) num_threads(max_nthreads)
 {
@@ -260,7 +290,13 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 #pragma omp for schedule(static)
     for (int j=js; j<=je; ++j){
 
-      ReconstructionFuncX1(k,j,is,ie+1,w1,wl,wr);
+      for (int n=0; n<NFLUID; ++n) {
+        ReconstructionFuncX1(n,n,k,j,w1,wl,wr);
+      }
+      if (MAGNETIC_FIELDS_ENABLED) {
+        ReconstructionFuncX1(1,(NFLUID  ),k,j,bc1,wl,wr);
+        ReconstructionFuncX1(2,(NFLUID+1),k,j,bc1,wl,wr);
+      }
 
       RiemannSolver(k,j,is,ie+1,IVX,IVY,IVZ,wl,wr,flx); 
 
@@ -293,7 +329,13 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 #pragma omp for schedule(static)
       for (int j=js; j<=je+1; ++j){
 
-        ReconstructionFuncX2(k,j,is,ie,w1,wl,wr);
+        for (int n=0; n<NFLUID; ++n) {
+          ReconstructionFuncX2(n,n,k,j,w1,wl,wr);
+        }
+      if (MAGNETIC_FIELDS_ENABLED) {
+        ReconstructionFuncX1(2,(NFLUID  ),k,j,bc1,wl,wr);
+        ReconstructionFuncX1(0,(NFLUID+1),k,j,bc1,wl,wr);
+      }
 
         RiemannSolver(k,j,is,ie,IVY,IVZ,IVX,wl,wr,flx); 
 
@@ -341,7 +383,13 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 #pragma omp for schedule(static)
       for (int j=js; j<=je; ++j){
 
-        ReconstructionFuncX3(k,j,is,ie,w1,wl,wr);
+        for (int n=0; n<NFLUID; ++n) {
+          ReconstructionFuncX3(n,n,k,j,w1,wl,wr);
+        }
+        if (MAGNETIC_FIELDS_ENABLED) {
+          ReconstructionFuncX1(0,(NFLUID  ),k,j,bc1,wl,wr);
+          ReconstructionFuncX1(1,(NFLUID+1),k,j,bc1,wl,wr);
+        }
 
         RiemannSolver(k,j,is,ie,IVZ,IVX,IVY,wl,wr,flx);
 

@@ -35,14 +35,14 @@ public:
     const int ivx, const int ivy, const int ivz,
     AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx);
 
-  void ReconstructionFuncX1(const int k, const int j, const int il, const int iu, 
-    const AthenaArray<Real> &w, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
+  void ReconstructionFuncX1(const int n, const int m, const int k, const int j,
+    const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
-  void ReconstructionFuncX2(const int k, const int j, const int il, const int iu, 
-    const AthenaArray<Real> &w, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
+  void ReconstructionFuncX2(const int n, const int m, const int k, const int j,
+    const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
-  void ReconstructionFuncX3(const int k, const int j, const int il, const int iu, 
-    const AthenaArray<Real> &w, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
+  void ReconstructionFuncX3(const int n, const int n, const int k, const int j, 
+    const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
 private:
 // scratch space used in integrator

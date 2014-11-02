@@ -37,12 +37,13 @@ FluidIntegrator::FluidIntegrator(Fluid *pf, ParameterInput *pin)
 
 // Allocate memory for scratch vectors
 
-  int ncells1 = pf->pmy_block->block_size.nx1 + 2*(NGHOST);
   int max_nthreads = pf->pmy_block->pmy_domain->pmy_mesh->nthreads_mesh;
+  int nvar = (NFLUID) + std::max(0,(NFIELD-1));
+  int ncells1 = pf->pmy_block->block_size.nx1 + 2*(NGHOST);
 
-  wl_.NewAthenaArray(max_nthreads,NFLUID,ncells1);
-  wr_.NewAthenaArray(max_nthreads,NFLUID,ncells1);
-  flx_.NewAthenaArray(max_nthreads,NFLUID,ncells1);
+  wl_.NewAthenaArray(max_nthreads,nvar,ncells1);
+  wr_.NewAthenaArray(max_nthreads,nvar,ncells1);
+  flx_.NewAthenaArray(max_nthreads,nvar,ncells1);
   src_.NewAthenaArray(max_nthreads,NFLUID,ncells1);
   face_area_.NewAthenaArray(max_nthreads,ncells1);
   cell_volume_.NewAthenaArray(max_nthreads,ncells1);

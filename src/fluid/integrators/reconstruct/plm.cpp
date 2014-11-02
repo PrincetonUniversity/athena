@@ -31,41 +31,40 @@
 //! \fn FluidIntegrator::ReconstructionFuncX1()
 //  \brief 
 
-void FluidIntegrator::ReconstructionFuncX1(
-  const int k, const int j, const int il, const int iu,
-  const AthenaArray<Real> &w, AthenaArray<Real> &wl, AthenaArray<Real> &wr)
+void FluidIntegrator::ReconstructionFuncX1(const int n, const int m, const int k,
+  const int j, const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
-  Real dw2, dwm;
-  for (int n=0; n<NFLUID; ++n){
+  int is = pmy_fluid->pmy_block->is, ie = pmy_fluid->pmy_block->ie;
+  Real dq2, dqm;
+
 #pragma simd
-    for (int i=il; i<=iu; ++i){
+  for (int i=is; i<=(ie+1); ++i){
 
-      Real dwl = (w(n,k,j,i-1) - w(n,k,j,i-2))/pmy_fluid->pmy_block->dx1v(i-2);
-      Real dwc = (w(n,k,j,i)   - w(n,k,j,i-1))/pmy_fluid->pmy_block->dx1v(i-1);
-      Real dwr = (w(n,k,j,i+1) - w(n,k,j,i)  )/pmy_fluid->pmy_block->dx1v(i  );
+    Real dql = (q(n,k,j,i-1) - q(n,k,j,i-2))/pmy_fluid->pmy_block->dx1v(i-2);
+    Real dqc = (q(n,k,j,i)   - q(n,k,j,i-1))/pmy_fluid->pmy_block->dx1v(i-1);
+    Real dqr = (q(n,k,j,i+1) - q(n,k,j,i)  )/pmy_fluid->pmy_block->dx1v(i  );
 
-// Apply monotonicity constraints to differences in primitive vars, compute wl_(i-1/2)
+// Apply monotonicity constraints to differences in primitive vars, compute ql_(i-1/2)
 
-      dw2 = dwl*dwc;
-      if (dw2 > 0.0) {
-        dwm = dw2/(dwl + dwc);
-      } else {
-        dwm  = 0.0;
-      }
-
-      wl(n,i) = w(n,k,j,i-1) + (pmy_fluid->pmy_block->dx1f(i-1))*dwm;
-    
-// Apply monotonicity constraints to differences in primitive vars, compute wr_(i-1/2)
-
-      dw2 = dwc*dwr;
-      if (dw2 > 0.0) {
-        dwm = dw2/(dwc + dwr);
-      } else {
-        dwm  = 0.0;
-      }
-
-      wr(n,i) = w(n,k,j,i) - (pmy_fluid->pmy_block->dx1f(i))*dwm;
+    dq2 = dql*dqc;
+    if (dq2 > 0.0) {
+      dqm = dq2/(dql + dqc);
+    } else {
+      dqm  = 0.0;
     }
+
+    ql(m,i) = q(n,k,j,i-1) + (pmy_fluid->pmy_block->dx1f(i-1))*dqm;
+    
+// Apply monotonicity constraints to differences in primitive vars, compute qr_(i-1/2)
+
+    dq2 = dqc*dqr;
+    if (dq2 > 0.0) {
+      dqm = dq2/(dqc + dqr);
+    } else {
+      dqm  = 0.0;
+    }
+
+    qr(m,i) = q(n,k,j,i) - (pmy_fluid->pmy_block->dx1f(i))*dqm;
   }
 
   return;
@@ -74,41 +73,40 @@ void FluidIntegrator::ReconstructionFuncX1(
 //! \fn FluidIntegrator::ReconstructionFuncX2()
 //  \brief 
 
-void FluidIntegrator::ReconstructionFuncX2(
-  const int k, const int j, const int il, const int iu,
-  const AthenaArray<Real> &w, AthenaArray<Real> &wl, AthenaArray<Real> &wr)
+void FluidIntegrator::ReconstructionFuncX2(const int n, const int m, const int k,
+  const int j, const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
-  Real dw2, dwm;
-  for (int n=0; n<NFLUID; ++n){
+  int is = pmy_fluid->pmy_block->is, ie = pmy_fluid->pmy_block->ie;
+  Real dq2, dqm;
+
 #pragma simd
-    for (int i=il; i<=iu; ++i){
+  for (int i=is; i<=ie; ++i){
 
-      Real dwl = (w(n,k,j-1,i) - w(n,k,j-2,i))/pmy_fluid->pmy_block->dx2v(j-2);
-      Real dwc = (w(n,k,j,i)   - w(n,k,j-1,i))/pmy_fluid->pmy_block->dx2v(j-1);
-      Real dwr = (w(n,k,j+1,i) - w(n,k,j,i)  )/pmy_fluid->pmy_block->dx2v(j  );
+    Real dql = (q(n,k,j-1,i) - q(n,k,j-2,i))/pmy_fluid->pmy_block->dx2v(j-2);
+    Real dqc = (q(n,k,j,i)   - q(n,k,j-1,i))/pmy_fluid->pmy_block->dx2v(j-1);
+    Real dqr = (q(n,k,j+1,i) - q(n,k,j,i)  )/pmy_fluid->pmy_block->dx2v(j  );
 
-// Apply monotonicity constraints to differences in primitive vars, compute wl_(i-1/2)
+// Apply monotonicity constraints to differences in primitive vars, compute ql_(i-1/2)
 
-      dw2 = dwl*dwc;
-      if (dw2 > 0.0) {
-        dwm = dw2/(dwl + dwc);
-      } else {
-        dwm  = 0.0;
-      }
-
-      wl(n,i) = w(n,k,j-1,i) + (pmy_fluid->pmy_block->dx2f(j-1))*dwm;
-    
-// Apply monotonicity constraints to differences in primitive vars, compute wr_(i-1/2)
-
-      dw2 = dwc*dwr;
-      if (dw2 > 0.0) {
-        dwm = dw2/(dwc + dwr);
-      } else {
-        dwm  = 0.0;
-      }
-
-      wr(n,i) = w(n,k,j,i) - (pmy_fluid->pmy_block->dx2f(j))*dwm;
+    dq2 = dql*dqc;
+    if (dq2 > 0.0) {
+      dqm = dq2/(dql + dqc);
+    } else {
+      dqm  = 0.0;
     }
+
+    ql(m,i) = q(n,k,j-1,i) + (pmy_fluid->pmy_block->dx2f(j-1))*dqm;
+    
+// Apply monotonicity constraints to differences in primitive vars, compute qr_(i-1/2)
+
+    dq2 = dqc*dqr;
+    if (dq2 > 0.0) {
+      dqm = dq2/(dqc + dqr);
+    } else {
+      dqm  = 0.0;
+    }
+
+    qr(m,i) = q(n,k,j,i) - (pmy_fluid->pmy_block->dx2f(j))*dqm;
   }
 
   return;
@@ -117,41 +115,40 @@ void FluidIntegrator::ReconstructionFuncX2(
 //! \fn FluidIntegrator::ReconstructionFuncX3()
 //  \brief 
 
-void FluidIntegrator::ReconstructionFuncX3(
-  const int k, const int j, const int il, const int iu,
-  const AthenaArray<Real> &w, AthenaArray<Real> &wl, AthenaArray<Real> &wr)
+void FluidIntegrator::ReconstructionFuncX3(const int n, const int m, const int k,
+  const int j, const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
-  Real dw2, dwm;
-  for (int n=0; n<NFLUID; ++n){
+  int is = pmy_fluid->pmy_block->is, ie = pmy_fluid->pmy_block->ie;
+  Real dq2, dqm;
+
 #pragma simd
-    for (int i=il; i<=iu; ++i){
+  for (int i=is; i<=ie; ++i){
 
-      Real dwl = (w(n,k-1,j,i) - w(n,k-2,j,i))/pmy_fluid->pmy_block->dx3v(k-2);
-      Real dwc = (w(n,k,j,i)   - w(n,k-1,j,i))/pmy_fluid->pmy_block->dx3v(k-1);
-      Real dwr = (w(n,k+1,j,i) - w(n,k,j,i)  )/pmy_fluid->pmy_block->dx3v(k  );
+    Real dql = (q(n,k-1,j,i) - q(n,k-2,j,i))/pmy_fluid->pmy_block->dx3v(k-2);
+    Real dqc = (q(n,k,j,i)   - q(n,k-1,j,i))/pmy_fluid->pmy_block->dx3v(k-1);
+    Real dqr = (q(n,k+1,j,i) - q(n,k,j,i)  )/pmy_fluid->pmy_block->dx3v(k  );
 
-// Apply monotonicity constraints to differences in primitive vars, compute wl_(i-1/2)
+// Apply monotonicity constraints to differences in primitive vars, compute ql_(i-1/2)
 
-      dw2 = dwl*dwc;
-      if (dw2 > 0.0) {
-        dwm = dw2/(dwl + dwc);
-      } else {
-        dwm  = 0.0;
-      }
-
-      wl(n,i) = w(n,k-1,j,i) + (pmy_fluid->pmy_block->dx3f(k-1))*dwm;
-    
-// Apply monotonicity constraints to differences in primitive vars, compute wr_(i-1/2)
-
-      dw2 = dwc*dwr;
-      if (dw2 > 0.0) {
-        dwm = dw2/(dwc + dwr);
-      } else {
-        dwm  = 0.0;
-      }
-
-      wr(n,i) = w(n,k,j,i) - (pmy_fluid->pmy_block->dx3f(k))*dwm;
+    dq2 = dql*dqc;
+    if (dq2 > 0.0) {
+      dqm = dq2/(dql + dqc);
+    } else {
+      dqm  = 0.0;
     }
+
+    ql(m,i) = q(n,k-1,j,i) + (pmy_fluid->pmy_block->dx3f(k-1))*dqm;
+    
+// Apply monotonicity constraints to differences in primitive vars, compute qr_(i-1/2)
+
+    dq2 = dqc*dqr;
+    if (dq2 > 0.0) {
+      dqm = dq2/(dqc + dqr);
+    } else {
+      dqm  = 0.0;
+    }
+
+    qr(m,i) = q(n,k,j,i) - (pmy_fluid->pmy_block->dx3f(k))*dqm;
   }
 
   return;
