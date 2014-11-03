@@ -26,6 +26,7 @@
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../fluid/fluid.hpp"
+#include "../field/field.hpp"
 #include "../mesh.hpp"
 #include "outputs.hpp"
 
@@ -52,7 +53,8 @@ HistoryOutput::HistoryOutput(OutputParameters oparams)
 
 void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 {
-  Fluid *pf = pmb->pfluid;;
+  Fluid *pfl = pmb->pfluid;;
+  Field *pfd = pmb->pfield;;
   Mesh *pmm = pmb->pmy_domain->pmy_mesh;
   int tid=0;
 
@@ -75,7 +77,7 @@ void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 
 // Add text for column headers to var_header
 
-  int nvars = 9;
+  int nvars = 12;
   if (NON_BAROTROPIC_EOS) nvars++;
 
   OutputVariable *pvar = new OutputVariable;
@@ -92,6 +94,11 @@ void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
   pvar->name.append("[8]=2-KE     ");
   pvar->name.append("[9]=3-KE     ");
   if (NON_BAROTROPIC_EOS) pvar->name.append("[10]=tot-E   ");
+  if (MAGNETIC_FIELDS_ENABLED) {
+    pvar->name.append("[11]=1-ME    ");
+    pvar->name.append("[12]=2-ME    ");
+    pvar->name.append("[13]=3-ME    ");
+  }
 
 // Add time, time step
 
@@ -109,14 +116,19 @@ void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pmb->pcoord->CellVolume(k,j,(pod->data_header.il),(pod->data_header.iu),vol);
 
     for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i) {
-      partial_sum[0] += vol(i)*pf->u(IDN,k,j,i);
-      partial_sum[1] += vol(i)*pf->u(IM1,k,j,i);
-      partial_sum[2] += vol(i)*pf->u(IM2,k,j,i);
-      partial_sum[3] += vol(i)*pf->u(IM3,k,j,i);
-      partial_sum[4] += vol(i)*pf->w(IDN,k,j,i)*pf->w(IM1,k,j,i)*pf->w(IM1,k,j,i);
-      partial_sum[5] += vol(i)*pf->w(IDN,k,j,i)*pf->w(IM2,k,j,i)*pf->w(IM2,k,j,i);
-      partial_sum[6] += vol(i)*pf->w(IDN,k,j,i)*pf->w(IM3,k,j,i)*pf->w(IM3,k,j,i);
-      if (NON_BAROTROPIC_EOS) partial_sum[7] += vol(i)*pf->u(IEN,k,j,i);
+      partial_sum[0] += vol(i)*pfl->u(IDN,k,j,i);
+      partial_sum[1] += vol(i)*pfl->u(IM1,k,j,i);
+      partial_sum[2] += vol(i)*pfl->u(IM2,k,j,i);
+      partial_sum[3] += vol(i)*pfl->u(IM3,k,j,i);
+      partial_sum[4] += vol(i)*pfl->w(IDN,k,j,i)*pfl->w(IM1,k,j,i)*pfl->w(IM1,k,j,i);
+      partial_sum[5] += vol(i)*pfl->w(IDN,k,j,i)*pfl->w(IM2,k,j,i)*pfl->w(IM2,k,j,i);
+      partial_sum[6] += vol(i)*pfl->w(IDN,k,j,i)*pfl->w(IM3,k,j,i)*pfl->w(IM3,k,j,i);
+      if (NON_BAROTROPIC_EOS) partial_sum[7] += vol(i)*pfl->u(IEN,k,j,i);
+      if (MAGNETIC_FIELDS_ENABLED) {
+        partial_sum[8]  += vol(i)*pfd->bc(0,k,j,i)*pfd->bc(0,k,j,i);
+        partial_sum[9]  += vol(i)*pfd->bc(1,k,j,i)*pfd->bc(1,k,j,i);
+        partial_sum[10] += vol(i)*pfd->bc(2,k,j,i)*pfd->bc(2,k,j,i);
+      }
     }
     for (int n=0; n<(nvars-2); ++n) pvar->data(n+2,0,0,0) += partial_sum[n];
 
