@@ -55,8 +55,9 @@ FluidEqnOfState::~FluidEqnOfState()
 // Notes:
 //   follows Noble et al. 2006, ApJ 641 626 (N)
 //   implements formulas assuming no magnetic field
-void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceBField &bi,
-    AthenaArray<Real> &prim_old, AthenaArray<Real> &prim, AthenaArray<Real> &bc)
+void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
+  const InterfaceBField &bi, const AthenaArray<Real> &prim_old,
+  AthenaArray<Real> &prim, AthenaArray<Real> &bc)
 {
   // Parameters
   const Real max_velocity = 1.0 - 1.0e-15;
@@ -110,18 +111,18 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceBFi
              &gi33 = g_inv_(I33,i);
 
         // Extract conserved quantities
-        Real &d = cons(IDN,k,j,i);
-        Real &e = cons(IEN,k,j,i);
-        Real &m1 = cons(IVX,k,j,i);
-        Real &m2 = cons(IVY,k,j,i);
-        Real &m3 = cons(IVZ,k,j,i);
+        const Real &d = cons(IDN,k,j,i);
+        const Real &e = cons(IEN,k,j,i);
+        const Real &m1 = cons(IVX,k,j,i);
+        const Real &m2 = cons(IVY,k,j,i);
+        const Real &m3 = cons(IVZ,k,j,i);
 
         // Extract old primitives
-        Real &rho_old = prim_old(IDN,k,j,i);
-        Real &pgas_old = prim_old(IEN,k,j,i);
-        Real &v1_old = prim_old(IVX,k,j,i);
-        Real &v2_old = prim_old(IVY,k,j,i);
-        Real &v3_old = prim_old(IVZ,k,j,i);
+        const Real &rho_old = prim_old(IDN,k,j,i);
+        const Real &pgas_old = prim_old(IEN,k,j,i);
+        const Real &v1_old = prim_old(IVX,k,j,i);
+        const Real &v2_old = prim_old(IVY,k,j,i);
+        const Real &v3_old = prim_old(IVZ,k,j,i);
 
         // Extract primitives
         Real &rho = prim(IDN,k,j,i);

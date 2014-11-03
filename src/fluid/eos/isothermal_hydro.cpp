@@ -49,8 +49,9 @@ FluidEqnOfState::~FluidEqnOfState()
 //   AthenaArray<Real> &prim_old, AthenaArray<Real> &prim)
 // \brief convert conserved to primitive variables for adiabatic hydro
 
-void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceBField &bi,
-  AthenaArray<Real> &prim_old, AthenaArray<Real> &prim, AthenaArray<Real> &bc)
+void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
+  const InterfaceBField &bi, const AthenaArray<Real> &prim_old,
+  AthenaArray<Real> &prim, AthenaArray<Real> &bc)
 {
   MeshBlock *pmb = pmy_fluid_->pmy_block;
   int jl = pmb->js; int ju = pmb->je;
@@ -64,8 +65,6 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceBFi
     ku += (NGHOST);
   }
 
-  AthenaArray<Real> lcons = cons.ShallowCopy();
-
 //--------------------------------------------------------------------------------------
 // Convert to Primitives
 
@@ -73,10 +72,10 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceBFi
   for (int j=jl; j<=ju; ++j){
 #pragma simd
     for (int i=pmb->is-(NGHOST); i<=pmb->ie+(NGHOST); ++i){
-      Real& u_d  = lcons(IDN,k,j,i);
-      Real& u_m1 = lcons(IVX,k,j,i);
-      Real& u_m2 = lcons(IVY,k,j,i);
-      Real& u_m3 = lcons(IVZ,k,j,i);
+      const Real& u_d  = cons(IDN,k,j,i);
+      const Real& u_m1 = cons(IVX,k,j,i);
+      const Real& u_m2 = cons(IVY,k,j,i);
+      const Real& u_m3 = cons(IVZ,k,j,i);
 
       Real di = 1.0/u_d;
       prim(IDN,k,j,i) = u_d;

@@ -26,11 +26,12 @@
 // Notes:
 //   implements HLLE algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
 //   prim_left, prim_right overwritten
-void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
-    const int iu, const int ivx, const int ivy, const int ivz,
-    AthenaArray<Real> &prim_left, AthenaArray<Real> &prim_right,
-    AthenaArray<Real> &flux)
+void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const int iu,
+  const int ivx, const AthenaArray<Real> &bx, const AthenaArray<Real> &prim_left,
+  const AthenaArray<Real> &prim_right, AthenaArray<Real> &flux)
 {
+  int ivy = IVX + ((ivx-IVX)+1)%3;
+  int ivz = IVX + ((ivx-IVX)+2)%3;
   // Extract ratio of specific heats
   const Real gamma_adi = pmy_fluid->pf_eos->GetGamma();
   const Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
@@ -58,18 +59,18 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   for (int i = il; i <= iu; i++)
   {
     // Extract left primitives
-    Real &rho_left = prim_left(IDN,i);
-    Real &pgas_left = prim_left(IEN,i);
-    Real &vx_left = prim_left(ivx,i);
-    Real &vy_left = prim_left(ivy,i);
-    Real &vz_left = prim_left(ivz,i);
+    const Real &rho_left = prim_left(IDN,i);
+    const Real &pgas_left = prim_left(IEN,i);
+    const Real &vx_left = prim_left(ivx,i);
+    const Real &vy_left = prim_left(ivy,i);
+    const Real &vz_left = prim_left(ivz,i);
 
     // Extract right primitives
-    Real &rho_right = prim_right(IDN,i);
-    Real &pgas_right = prim_right(IEN,i);
-    Real &vx_right = prim_right(ivx,i);
-    Real &vy_right = prim_right(ivy,i);
-    Real &vz_right = prim_right(ivz,i);
+    const Real &rho_right = prim_right(IDN,i);
+    const Real &pgas_right = prim_right(IEN,i);
+    const Real &vx_right = prim_right(ivx,i);
+    const Real &vy_right = prim_right(ivy,i);
+    const Real &vz_right = prim_right(ivz,i);
 
     // Extract fluxes
     Real &flux_d = flux(IDN,i);

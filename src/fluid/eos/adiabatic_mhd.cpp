@@ -52,8 +52,9 @@ FluidEqnOfState::~FluidEqnOfState()
 //   AthenaArray<Real> &prim_old, AthenaArray<Real> &prim)
 // \brief convert conserved to primitive variables for adiabatic hydro
 
-void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceBField &bi,
-  AthenaArray<Real> &prim_old, AthenaArray<Real> &prim, AthenaArray<Real> &bc)
+void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
+  const InterfaceBField &bi, const AthenaArray<Real> &prim_old,
+  AthenaArray<Real> &prim, AthenaArray<Real> &bc)
 {
   MeshBlock *pmb = pmy_fluid_->pmy_block;
   int jl = pmb->js; int ju = pmb->je;
@@ -67,11 +68,6 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceBFi
     ku += (NGHOST);
   }
 
-  AthenaArray<Real> lcons = cons.ShallowCopy();
-  AthenaArray<Real> bi_x1 = bi.x1.ShallowCopy();
-  AthenaArray<Real> bi_x2 = bi.x2.ShallowCopy();
-  AthenaArray<Real> bi_x3 = bi.x3.ShallowCopy();
-
 //--------------------------------------------------------------------------------------
 // Convert to Primitives
 
@@ -84,11 +80,11 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceBFi
   for (int j=jl; j<=ju; ++j){
 #pragma simd
     for (int i=pmb->is-(NGHOST); i<=pmb->ie+(NGHOST); ++i){
-      Real& u_d  = lcons(IDN,k,j,i);
-      Real& u_m1 = lcons(IVX,k,j,i);
-      Real& u_m2 = lcons(IVY,k,j,i);
-      Real& u_m3 = lcons(IVZ,k,j,i);
-      Real& u_e  = lcons(IEN,k,j,i);
+      const Real& u_d  = cons(IDN,k,j,i);
+      const Real& u_m1 = cons(IVX,k,j,i);
+      const Real& u_m2 = cons(IVY,k,j,i);
+      const Real& u_m3 = cons(IVZ,k,j,i);
+      const Real& u_e  = cons(IEN,k,j,i);
 
       Real di = 1.0/u_d;
       prim(IDN,k,j,i) = u_d;
@@ -96,9 +92,16 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceBFi
       prim(IVY,k,j,i) = u_m2*di;
       prim(IVZ,k,j,i) = u_m3*di;
 
-      bc(0,k,j,i) = 0.5*(bi_x1(k,j,i) + bi_x1(k,j,i+1));
-      bc(1,k,j,i) = 0.5*(bi_x2(k,j,i) + bi_x2(k,j+1,i));
-      bc(2,k,j,i) = 0.5*(bi_x3(k,j,i) + bi_x3(k+1,j,i));
+      const Real& b1_i   = bi.x1(k,j,i  );
+      const Real& b1_ip1 = bi.x1(k,j,i+1);
+      const Real& b2_j   = bi.x2(k,j  ,i);
+      const Real& b2_jp1 = bi.x2(k,j+1,i);
+      const Real& b3_k   = bi.x3(k  ,j,i);
+      const Real& b3_kp1 = bi.x3(k+1,j,i);
+
+      bc(0,k,j,i) = 0.5*(b1_i + b1_ip1);
+      bc(1,k,j,i) = 0.5*(b2_j + b2_jp1);
+      bc(2,k,j,i) = 0.5*(b3_k + b3_kp1);
 
       Real& bc1 = bc(0,k,j,i);
       Real& bc2 = bc(1,k,j,i);
@@ -115,10 +118,26 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceBFi
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn Real FluidEqnOfState::SoundSpeed(Real prim[5])
+// \!fn Real FluidEqnOfState::SoundSpeed(Real prim[])
 // \brief returns adiabatic sound speed given vector of primitive variables
 
 Real FluidEqnOfState::SoundSpeed(const Real prim[NFLUID])
 {
   return sqrt(GetGamma()*prim[IEN]/prim[IDN]);
+}
+
+//--------------------------------------------------------------------------------------
+// \!fn Real FluidEqnOfState::FastMagnetosonicSpeed(Real prim[])
+// \brief returns fast magnetosonic speed given vector of primitive variables
+// Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN 
+
+Real FluidEqnOfState::FastMagnetosonicSpeed(const Real bx, 
+  const Real prim[(NFLUID+NFIELD-1)])
+{
+  Real asq = GetGamma()*prim[IEN]/prim[IDN];
+  Real vaxsq = bx*bx/prim[IDN];
+  Real ct2 = (prim[IBY]*prim[IBY] + prim[IBZ]*prim[IBZ])/prim[IDN];
+  Real qsq = vaxsq + ct2 + asq;
+  Real tmp = vaxsq + ct2 - asq;
+  return sqrt(0.5*(qsq + sqrt(tmp*tmp + 4.0*asq*ct2)));
 }

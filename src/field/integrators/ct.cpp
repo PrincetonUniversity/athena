@@ -36,13 +36,13 @@
   for (k=ks; k<=ke; ++k) {
   for (j=js; j<=je+1; ++j) {
     for (i=is; i<=ie; ++i) {
-      b2i(k,j,i) += q1*(e3(k,j,i+1) - e3(k,j,i));
+      bi.x2(k,j,i) += q1*(e3(k,j,i+1) - e3(k,j,i));
     }
   }}
   for (k=ks; k<=ke+1; ++k) {
   for (j=js; j<=je; ++j) {
     for (i=is; i<=ie; ++i) {
-      b3i(k,j,i) -= q1*(e2(k,j,i+1) - e2(k,j,i));
+      bi.x3(k,j,i) -= q1*(e2(k,j,i+1) - e2(k,j,i));
     }
   }}
 
@@ -51,13 +51,13 @@
   for (k=ks; k<=ke; ++k) {
   for (j=js; j<=je; ++j) {
     for (i=is; i<=ie+1; ++i) {
-      b1i(k,j,i) -= q2*(e3(k,j+1,i) - e3(k,j,i));
+      bi.x1(k,j,i) -= q2*(e3(k,j+1,i) - e3(k,j,i));
     }
   }}
   for (k=ks; k<=ke+1; ++k) {
   for (j=js; j<=je; ++j) {
     for (i=is; i<=ie; ++i) {
-      b3i(k,j,i) += q2*(e1(k,j+1,i) - e1(k,j,i));
+      bi.x3(k,j,i) += q2*(e1(k,j+1,i) - e1(k,j,i));
     }
   }}
 
@@ -66,13 +66,13 @@
   for (k=ks; k<=ke; ++k) {
   for (j=js; j<=je; ++j) {
     for (i=is; i<=ie+1; ++i) {
-      b1i(k,j,i) += q3*(e2(k+1,j,i) - e2(k,j,i)) -
+      bi.x1(k,j,i) += q3*(e2(k+1,j,i) - e2(k,j,i)) -
     }
   }}
   for (k=ks; k<=ke; ++k) {
   for (j=js; j<=je+1; ++j) {
     for (i=is; i<=ie; ++i) {
-      b2i(k,j,i) -= q3*(e1(k+1,j,i) - e1(k,j,i));
+      bi.x2(k,j,i) -= q3*(e1(k+1,j,i) - e1(k,j,i));
     }
   }}
 

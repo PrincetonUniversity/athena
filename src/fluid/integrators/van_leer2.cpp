@@ -55,6 +55,9 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
   AthenaArray<Real> u1 = pmb->pfluid->u1.ShallowCopy();
 
   AthenaArray<Real> bc = pmb->pfield->bc.ShallowCopy();
+  AthenaArray<Real> b1i = pmb->pfield->bi.x1.ShallowCopy();
+  AthenaArray<Real> b2i = pmb->pfield->bi.x2.ShallowCopy();
+  AthenaArray<Real> b3i = pmb->pfield->bi.x3.ShallowCopy();
 
 #pragma omp parallel default(shared) private(tid) num_threads(max_nthreads)
 {
@@ -92,7 +95,7 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
         }
       }
 
-      RiemannSolver(k,j,is,ie+1,IVX,IVY,IVZ,wl,wr,flx);
+      RiemannSolver(k,j,is,ie+1,IVX,b1i,wl,wr,flx);
 
       pmb->pcoord->Face1Area(k,j,is,ie+1,area);
       pmb->pcoord->CellVolume(k,j,is,ie,vol);
@@ -141,7 +144,7 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
           }
         }
 
-        RiemannSolver(k,j,is,ie,IVY,IVZ,IVX,wl,wr,flx); 
+        RiemannSolver(k,j,is,ie,IVY,b2i,wl,wr,flx); 
 
         pmb->pcoord->Face2Area(k,j,is,ie,area);
 
@@ -204,7 +207,7 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
           }
         }
 
-        RiemannSolver(k,j,is,ie,IVZ,IVX,IVY,wl,wr,flx);
+        RiemannSolver(k,j,is,ie,IVZ,b3i,wl,wr,flx);
 
         pmb->pcoord->Face3Area(k,j,is,ie,area);
   
@@ -270,6 +273,9 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
   AthenaArray<Real> w1 = pmb->pfluid->w1.ShallowCopy();
 
   AthenaArray<Real> bc1 = pmb->pfield->bc.ShallowCopy();
+  AthenaArray<Real> b1i = pmb->pfield->bi.x1.ShallowCopy();
+  AthenaArray<Real> b2i = pmb->pfield->bi.x2.ShallowCopy();
+  AthenaArray<Real> b3i = pmb->pfield->bi.x3.ShallowCopy();
 
 #pragma omp parallel default(shared) private(tid) num_threads(max_nthreads)
 {
@@ -298,7 +304,7 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
         ReconstructionFuncX1(2,(NFLUID+1),k,j,bc1,wl,wr);
       }
 
-      RiemannSolver(k,j,is,ie+1,IVX,IVY,IVZ,wl,wr,flx); 
+      RiemannSolver(k,j,is,ie+1,IVX,b1i,wl,wr,flx); 
 
       pmb->pcoord->Face1Area(k,j,is,ie+1,area);
       pmb->pcoord->CellVolume(k,j,is,ie,vol);
@@ -337,7 +343,7 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
         ReconstructionFuncX1(0,(NFLUID+1),k,j,bc1,wl,wr);
       }
 
-        RiemannSolver(k,j,is,ie,IVY,IVZ,IVX,wl,wr,flx); 
+        RiemannSolver(k,j,is,ie,IVY,b2i,wl,wr,flx); 
 
         pmb->pcoord->Face2Area(k,j,is,ie,area);
 
@@ -391,7 +397,7 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
           ReconstructionFuncX1(1,(NFLUID+1),k,j,bc1,wl,wr);
         }
 
-        RiemannSolver(k,j,is,ie,IVZ,IVX,IVY,wl,wr,flx);
+        RiemannSolver(k,j,is,ie,IVZ,b3i,wl,wr,flx);
 
         pmb->pcoord->Face3Area(k,j,is,ie,area);
 

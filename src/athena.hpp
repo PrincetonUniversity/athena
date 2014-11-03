@@ -19,7 +19,7 @@ typedef struct ThreeVector {
 } ThreeVector;
 
 enum {IDN=0, IM1=1, IM2=2, IM3=3, IEN=4};
-enum {IVX=1, IVY=2, IVZ=3};
+enum {IVX=1, IVY=2, IVZ=3, IBY=(NFLUID), IBZ=(NFLUID+1)};
 
 enum {I00, I01, I02, I03, I11, I12, I13, I22, I23, I33, NMETRIC};
 

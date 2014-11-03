@@ -7,6 +7,7 @@ EOS_FILE = @EOS_FILE@
 PROBLEM_FILE = @PROBLEM_FILE@
 RECONSTRUCT_FILE = @RECONSTRUCT_FILE@
 RSOLVER_FILE = @RSOLVER_FILE@
+RSOLVER_DIR = @RSOLVER_DIR@
 FLUID_INT_FILE = @FLUID_INT_FILE@
 
 # General compiler specifications
@@ -28,7 +29,7 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     src/fluid/eos/$(EOS_FILE) \
 	     $(wildcard src/fluid/integrators/*.cpp) \
 	     src/fluid/integrators/reconstruct/$(RECONSTRUCT_FILE) \
-	     src/fluid/integrators/rsolvers/$(RSOLVER_FILE) \
+	     src/$(RSOLVER_DIR)$(RSOLVER_FILE) \
 	     $(wildcard src/outputs/*.cpp) \
 	     src/pgen/$(PROBLEM_FILE)
 SRC_DIR := $(dir $(SRC_FILES))

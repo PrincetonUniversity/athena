@@ -39,14 +39,20 @@
 //   for the HLLC Riemann Solver", SIAM J. Sci. & Stat. Comp. 18, 6, 1553-1570, (1997).
 //======================================================================================
 
-void FluidIntegrator::RiemannSolver(const int k, const int j,
-  const int il, const int iu, const int ivx, const int ivy, const int ivz,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx)
+void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const int iu,
+  const int ivx, const AthenaArray<Real> &bx, const AthenaArray<Real> &wl,
+  const AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {
-  Real fl[NFLUID],fr[NFLUID],wli[NFLUID],wri[NFLUID],flxi[NFLUID];
+  int ivy = IVX + ((ivx-IVX)+1)%3;
+  int ivz = IVX + ((ivx-IVX)+2)%3;
+  Real wli[NFLUID],wri[NFLUID],wroe[NFLUID],flxi[NFLUID],fl[NFLUID],fr[NFLUID];
+  Real gamma_m1 = pmy_fluid->pf_eos->GetGamma() - 1.0;
 
 #pragma simd
   for (int i=il; i<=iu; ++i){
+
+//--- Step 1.  Load L/R states into local variables
+
     wli[IDN]=wl(IDN,i);
     wli[IVX]=wl(ivx,i);
     wli[IVY]=wl(ivy,i);
@@ -59,13 +65,43 @@ void FluidIntegrator::RiemannSolver(const int k, const int j,
     wri[IVZ]=wr(ivz,i);
     wri[IEN]=wr(IEN,i);
 
-    Real al = wli[IVX] - pmy_fluid->pf_eos->SoundSpeed(wli);
-    Real ar = wri[IVX] + pmy_fluid->pf_eos->SoundSpeed(wri);
+//--- Step2.  Compute Roe-averaged state
+
+    Real sqrtdl = sqrt(wli[IDN]);
+    Real sqrtdr = sqrt(wri[IDN]);
+    Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
+
+    wroe[IDN] = sqrtdl*sqrtdr;
+    wroe[IVX] = (sqrtdl*wli[IVX] + sqrtdr*wri[IVX])*isdlpdr;
+    wroe[IVY] = (sqrtdl*wli[IVY] + sqrtdr*wri[IVY])*isdlpdr;
+    wroe[IVZ] = (sqrtdl*wli[IVZ] + sqrtdr*wri[IVZ])*isdlpdr;
+
+// Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
+// rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
+
+    Real el = wli[IEN]/gamma_m1 + 0.5*wli[IDN]*
+      (wli[IVX]*wli[IVX] + wli[IVY]*wli[IVY] + wli[IVZ]*wli[IVZ]);
+    Real er = wri[IEN]/gamma_m1 + 0.5*wri[IDN]*
+      (wri[IVX]*wri[IVX] + wri[IVY]*wri[IVY] + wri[IVZ]*wri[IVZ]);
+    Real hroe = ((el + wli[IEN])/sqrtdl + (er + wri[IEN])/sqrtdr)*isdlpdr;
+
+//--- Step 3.  Compute sound speed in L,R, and Roe-averaged states
+
+    Real cl = pmy_fluid->pf_eos->SoundSpeed(wli);
+    Real cr = pmy_fluid->pf_eos->SoundSpeed(wri);
+    Real q = hroe - 0.5*(wroe[IVX]*wroe[IVX]+wroe[IVY]*wroe[IVY]+wroe[IVZ]*wroe[IVZ]);
+    if (q < 0.0) q=0.0;
+    Real a = sqrt(gamma_m1*q);
+
+//--- Step 4.  Compute the max/min wave speeds based on L/R and Roe-averaged values
+
+    Real al = std::min((wroe[IVX] - a),(wli[IVX] - cl));
+    Real ar = std::max((wroe[IVX] + a),(wri[IVX] + cr));
 
     Real bp = ar > 0.0 ? ar : 0.0;
     Real bm = al < 0.0 ? al : 0.0;
 
-// Compute the contact wave speed and pressure
+//--- Step 5.  Compute the contact wave speed and pressure
 
     Real mxl = wli[IDN]*wli[IVX];
     Real mxr = wri[IDN]*wri[IVX];
@@ -82,7 +118,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j,
     Real cp = (ml*tr + mr*tl)/(ml + mr);
     cp = cp > 0.0 ? cp : 0.0;
 
-// Compute L/R fluxes along the line bm, bp
+//--- Step 6.  Compute L/R fluxes along the line bm, bp
 
     fl[IDN]  = mxl - bm*wli[IDN];
     fr[IDN]  = mxr - bp*wri[IDN];
@@ -105,7 +141,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j,
     fl[IEN] += wli[IEN]*wli[IVX];
     fr[IEN] += wri[IEN]*wri[IVX];
 
-// Compute flux weights or scales
+//--- Step 8.  Compute flux weights or scales
 
     Real sl,sr,sm;
     if (am >= 0.0) {
@@ -119,8 +155,8 @@ void FluidIntegrator::RiemannSolver(const int k, const int j,
       sm =  bp/(bp - am);
     }
 
-// Compute the HLLC flux at interface, including the weighted contribution of the flux
-// along the contact
+//--- Step 9.  Compute the HLLC flux at interface, including the weighted contribution
+// of the flux along the contact
 
     flxi[IDN] = sl*fl[IDN] + sr*fr[IDN];
     flxi[IVX] = sl*fl[IVX] + sr*fr[IVX] + sm*cp;
