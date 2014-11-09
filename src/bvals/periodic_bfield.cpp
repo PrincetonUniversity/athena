@@ -21,7 +21,7 @@
 #include "../athena.hpp"         // macros, Real
 #include "../athena_arrays.hpp"  // AthenaArray
 #include "../mesh.hpp"           // MeshBlock
-#include "../field/field.hpp"          // InterfaceBField
+#include "../field/field.hpp"          // InterfaceField
 
 //======================================================================================
 //! \file periodic_bfield.cpp
@@ -31,7 +31,7 @@
 //! \fn void PeriodicInnerX1()
 //  \brief  PERIODIC boundary conditions interface B, inner x1 boundary (ix1_bc=1)
 
-void PeriodicInnerX1(MeshBlock *pmb, InterfaceBField &a)
+void PeriodicInnerX1(MeshBlock *pmb, InterfaceField &a)
 {
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
@@ -56,7 +56,7 @@ void PeriodicInnerX1(MeshBlock *pmb, InterfaceBField &a)
 //! \fn void PeriodicOuterX1()
 //  \brief  PERIODIC boundary conditions interface B, outer x1 boundary (ox1_bc=1)
 
-void PeriodicOuterX1(MeshBlock *pmb, InterfaceBField &a)
+void PeriodicOuterX1(MeshBlock *pmb, InterfaceField &a)
 {
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
@@ -81,7 +81,7 @@ void PeriodicOuterX1(MeshBlock *pmb, InterfaceBField &a)
 //! \fn void PeriodicInnerX2()
 //  \brief  PERIODIC boundary conditions interface B, inner x2 boundary (ix2_bc=1)
 
-void PeriodicInnerX2(MeshBlock *pmb, InterfaceBField &a)
+void PeriodicInnerX2(MeshBlock *pmb, InterfaceField &a)
 {
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
@@ -106,7 +106,7 @@ void PeriodicInnerX2(MeshBlock *pmb, InterfaceBField &a)
 //! \fn void PeriodicOuterX2()
 //  \brief  PERIODIC boundary conditions interface B, outer x2 boundary (ox2_bc=1)
 
-void PeriodicOuterX2(MeshBlock *pmb, InterfaceBField &a)
+void PeriodicOuterX2(MeshBlock *pmb, InterfaceField &a)
 {
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
@@ -131,7 +131,7 @@ void PeriodicOuterX2(MeshBlock *pmb, InterfaceBField &a)
 //! \fn void PeriodicInnerX3()
 //  \brief  PERIODIC boundary conditions interface B, inner x3 boundary (ix3_bc=1)
 
-void PeriodicInnerX3(MeshBlock *pmb, InterfaceBField &a)
+void PeriodicInnerX3(MeshBlock *pmb, InterfaceField &a)
 {
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
@@ -156,7 +156,7 @@ void PeriodicInnerX3(MeshBlock *pmb, InterfaceBField &a)
 //! \fn void PeriodicOuterX3()
 //  \brief  PERIODIC boundary conditions interface B, outer x3 boundary (ox3_bc=1)
 
-void PeriodicOuterX3(MeshBlock *pmb, InterfaceBField &a)
+void PeriodicOuterX3(MeshBlock *pmb, InterfaceField &a)
 {
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;

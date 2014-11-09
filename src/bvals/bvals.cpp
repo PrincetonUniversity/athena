@@ -297,7 +297,7 @@ template<typename T> void BoundaryValues::ApplyBVals(T &input)
 }
 
 template void BoundaryValues::ApplyBVals< AthenaArray<Real> >(AthenaArray<Real> &input);
-template void BoundaryValues::ApplyBVals<InterfaceBField>(InterfaceBField &input);
+template void BoundaryValues::ApplyBVals<InterfaceField>(InterfaceField &input);
 
 template<> void BoundaryValues::BValsInnerX1_< AthenaArray<Real> >
   (MeshBlock *pmb, AthenaArray<Real> &input) {FluidInnerX1_(pmb,input);}
@@ -312,15 +312,15 @@ template<> void BoundaryValues::BValsOuterX2_< AthenaArray<Real> >
 template<> void BoundaryValues::BValsOuterX3_< AthenaArray<Real> >
   (MeshBlock *pmb, AthenaArray<Real> &input) {FluidOuterX3_(pmb,input);}
 
-template<> void BoundaryValues::BValsInnerX1_< InterfaceBField >
-  (MeshBlock *pmb, InterfaceBField &input) {BFieldInnerX1_(pmb,input);}
-template<> void BoundaryValues::BValsInnerX2_< InterfaceBField >
-  (MeshBlock *pmb, InterfaceBField &input) {BFieldInnerX2_(pmb,input);}
-template<> void BoundaryValues::BValsInnerX3_< InterfaceBField >
-  (MeshBlock *pmb, InterfaceBField &input) {BFieldInnerX3_(pmb,input);}
-template<> void BoundaryValues::BValsOuterX1_< InterfaceBField >
-  (MeshBlock *pmb, InterfaceBField &input) {BFieldOuterX1_(pmb,input);}
-template<> void BoundaryValues::BValsOuterX2_< InterfaceBField >
-  (MeshBlock *pmb, InterfaceBField &input) {BFieldOuterX2_(pmb,input);}
-template<> void BoundaryValues::BValsOuterX3_< InterfaceBField >
-  (MeshBlock *pmb, InterfaceBField &input) {BFieldOuterX3_(pmb,input);}
+template<> void BoundaryValues::BValsInnerX1_< InterfaceField >
+  (MeshBlock *pmb, InterfaceField &input) {BFieldInnerX1_(pmb,input);}
+template<> void BoundaryValues::BValsInnerX2_< InterfaceField >
+  (MeshBlock *pmb, InterfaceField &input) {BFieldInnerX2_(pmb,input);}
+template<> void BoundaryValues::BValsInnerX3_< InterfaceField >
+  (MeshBlock *pmb, InterfaceField &input) {BFieldInnerX3_(pmb,input);}
+template<> void BoundaryValues::BValsOuterX1_< InterfaceField >
+  (MeshBlock *pmb, InterfaceField &input) {BFieldOuterX1_(pmb,input);}
+template<> void BoundaryValues::BValsOuterX2_< InterfaceField >
+  (MeshBlock *pmb, InterfaceField &input) {BFieldOuterX2_(pmb,input);}
+template<> void BoundaryValues::BValsOuterX3_< InterfaceField >
+  (MeshBlock *pmb, InterfaceField &input) {BFieldOuterX3_(pmb,input);}

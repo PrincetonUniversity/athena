@@ -447,8 +447,8 @@ void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
 
     switch (action) {
 
-      case init_fluid: // call problem generator
-        pfl->InitFluid(pin);
+      case pgen: // call problem generator
+        ProblemGenerator(pfl,pfd,pin);
         break;
 
       case fluid_bcs_n: // set fluid BCs at t^n

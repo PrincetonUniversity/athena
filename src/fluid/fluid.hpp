@@ -24,7 +24,8 @@ class FluidSourceTerms;
 //  \brief fluid data and functions
 
 class Fluid {
-friend class FluidIntegrator;
+//friend class FluidIntegrator;
+friend class Field;
 public:
   Fluid(MeshBlock *pmb, ParameterInput *pin);
   ~Fluid();
@@ -42,7 +43,7 @@ public:
   FluidSourceTerms *pf_srcterms;   // physical source terms
 
   void NewTimeStep(MeshBlock *pmb);    // computes new timestep on a MeshBlock
-  void InitFluid(ParameterInput *pin); // problem generator function (files in /pgen)
+//  void InitFluid(ParameterInput *pin); // problem generator function (files in /pgen)
 
 private:
   AthenaArray<Real> dt1_,dt2_,dt3_;  // scratch arrays used in NewTimeStep

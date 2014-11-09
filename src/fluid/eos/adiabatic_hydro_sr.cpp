@@ -14,7 +14,7 @@
 #include "../../athena_arrays.hpp"    // AthenaArray
 #include "../../mesh.hpp"             // MeshBlock
 #include "../../parameter_input.hpp"  // GetReal()
-#include "../../field/field.hpp"      // InterfaceBField
+#include "../../field/field.hpp"      // InterfaceField
 
 // Constructor
 // Inputs:
@@ -58,7 +58,7 @@ FluidEqnOfState::~FluidEqnOfState() {}
 //          d0 = 1/2 * (x0 - sqrt(x0^2 - 4 a0))
 //          then |v|^2 + d1 |v| + d0 = 0
 //          |v| = 1/2 * (-d1 + sqrt(d1^2 - 4 d0))
-void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceBField &bi,
+void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceField &bi,
     AthenaArray<Real> &prim_old, AthenaArray<Real> &prim, AthenaArray<Real> &bc)
 {
   // Parameters

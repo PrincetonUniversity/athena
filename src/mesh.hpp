@@ -59,6 +59,7 @@ public:
   Fluid *pfluid;
   Field *pfield;
   BoundaryValues *pbval;
+
 };
 
 //! \class MeshDomain
@@ -92,5 +93,6 @@ public:
   MeshDomain *pdomain;
 
   void ForAllDomains(enum ActionOnDomain action, ParameterInput *pin);
+  void ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin); // files in /pgen
 };
 #endif

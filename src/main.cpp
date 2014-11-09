@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
 // Set initial conditions by calling problem generator on each MeshDomain/MeshBlock
 
   try {
-    pmesh->ForAllDomains(init_fluid,pinput);
+    pmesh->ForAllDomains(pgen,pinput);
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl << "memory allocation failed "

@@ -24,7 +24,7 @@ enum {IVX=1, IVY=2, IVZ=3, IBY=(NFLUID), IBZ=(NFLUID+1)};
 enum {I00, I01, I02, I03, I11, I12, I13, I22, I23, I33, NMETRIC};
 
 enum ActionOnDomain 
-  {init_fluid,    primitives_n, primitives_nhalf, new_timestep,
+  {pgen,          primitives_n, primitives_nhalf, new_timestep,
    fluid_predict, fluid_correct,   bfield_predict, bfield_correct,
    fluid_bcs_n,   fluid_bcs_nhalf, bfield_bcs_n,   bfield_bcs_nhalf};
 

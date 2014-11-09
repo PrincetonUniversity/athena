@@ -21,7 +21,7 @@
 #include "../athena.hpp"         // macros, Real
 #include "../athena_arrays.hpp"  // AthenaArray
 #include "../mesh.hpp"           // MeshBlock
-#include "../field/field.hpp"          // InterfaceBField
+#include "../field/field.hpp"          // InterfaceField
 
 //======================================================================================
 //! \file reflect_bfield.cpp
@@ -31,7 +31,7 @@
 //! \fn void ReflectInnerX1()
 //  \brief  REFLECTING boundary conditions interface B, inner x1 boundary (ix1_bc=1)
 
-void ReflectInnerX1(MeshBlock *pmb, InterfaceBField &a)
+void ReflectInnerX1(MeshBlock *pmb, InterfaceField &a)
 {
   int is = pmb->is;
   int js = pmb->js, je = pmb->je;
@@ -56,7 +56,7 @@ void ReflectInnerX1(MeshBlock *pmb, InterfaceBField &a)
 //! \fn void ReflectOuterX1()
 //  \brief  REFLECTING boundary conditions interface B, outer x1 boundary (ox1_bc=1)
 
-void ReflectOuterX1(MeshBlock *pmb, InterfaceBField &a)
+void ReflectOuterX1(MeshBlock *pmb, InterfaceField &a)
 {
   int ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
@@ -81,7 +81,7 @@ void ReflectOuterX1(MeshBlock *pmb, InterfaceBField &a)
 //! \fn void ReflectInnerX2()
 //  \brief  REFLECTING boundary conditions interface B, inner x2 boundary (ix2_bc=1)
 
-void ReflectInnerX2(MeshBlock *pmb, InterfaceBField &a)
+void ReflectInnerX2(MeshBlock *pmb, InterfaceField &a)
 {
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js;
@@ -106,7 +106,7 @@ void ReflectInnerX2(MeshBlock *pmb, InterfaceBField &a)
 //! \fn void ReflectOuterX2()
 //  \brief  REFLECTING boundary conditions interface B, outer x2 boundary (ox2_bc=1)
 
-void ReflectOuterX2(MeshBlock *pmb, InterfaceBField &a)
+void ReflectOuterX2(MeshBlock *pmb, InterfaceField &a)
 {
   int is = pmb->is, ie = pmb->ie;
   int je = pmb->je;
@@ -131,7 +131,7 @@ void ReflectOuterX2(MeshBlock *pmb, InterfaceBField &a)
 //! \fn void ReflectInnerX3()
 //  \brief  REFLECTING boundary conditions interface B, inner x3 boundary (ix3_bc=1)
 
-void ReflectInnerX3(MeshBlock *pmb, InterfaceBField &a)
+void ReflectInnerX3(MeshBlock *pmb, InterfaceField &a)
 {
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
@@ -156,7 +156,7 @@ void ReflectInnerX3(MeshBlock *pmb, InterfaceBField &a)
 //! \fn void ReflectOuterX3()
 //  \brief  REFLECTING boundary conditions interface B, outer x3 boundary (ox3_bc=1)
 
-void ReflectOuterX3(MeshBlock *pmb, InterfaceBField &a)
+void ReflectOuterX3(MeshBlock *pmb, InterfaceField &a)
 {
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;

@@ -21,7 +21,7 @@
 #include "../athena.hpp"         // macros, Real
 #include "../athena_arrays.hpp"  // AthenaArray
 #include "../mesh.hpp"           // MeshBlock
-#include "../field/field.hpp"          // InterfaceBField
+#include "../field/field.hpp"          // InterfaceField
 
 //======================================================================================
 //! \file outflow_bfield.cpp
@@ -31,7 +31,7 @@
 //! \fn void OutflowInnerX1()
 //  \brief  OUTFLOW boundary conditions interface B, inner x1 boundary (ix1_bc=1)
 
-void OutflowInnerX1(MeshBlock *pmb, InterfaceBField &a)
+void OutflowInnerX1(MeshBlock *pmb, InterfaceField &a)
 {
   int is = pmb->is;
   int js = pmb->js, je = pmb->je;
@@ -56,7 +56,7 @@ void OutflowInnerX1(MeshBlock *pmb, InterfaceBField &a)
 //! \fn void OutflowOuterX1()
 //  \brief  OUTFLOW boundary conditions interface B, outer x1 boundary (ox1_bc=1)
 
-void OutflowOuterX1(MeshBlock *pmb, InterfaceBField &a)
+void OutflowOuterX1(MeshBlock *pmb, InterfaceField &a)
 {
   int ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
@@ -81,7 +81,7 @@ void OutflowOuterX1(MeshBlock *pmb, InterfaceBField &a)
 //! \fn void OutflowInnerX2()
 //  \brief  OUTFLOW boundary conditions interface B, inner x2 boundary (ix2_bc=1)
 
-void OutflowInnerX2(MeshBlock *pmb, InterfaceBField &a)
+void OutflowInnerX2(MeshBlock *pmb, InterfaceField &a)
 {
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js;
@@ -106,7 +106,7 @@ void OutflowInnerX2(MeshBlock *pmb, InterfaceBField &a)
 //! \fn void OutflowOuterX2()
 //  \brief  OUTFLOW boundary conditions interface B, outer x2 boundary (ox2_bc=1)
 
-void OutflowOuterX2(MeshBlock *pmb, InterfaceBField &a)
+void OutflowOuterX2(MeshBlock *pmb, InterfaceField &a)
 {
   int is = pmb->is, ie = pmb->ie;
   int je = pmb->je;
@@ -131,7 +131,7 @@ void OutflowOuterX2(MeshBlock *pmb, InterfaceBField &a)
 //! \fn void OutflowInnerX3()
 //  \brief  OUTFLOW boundary conditions interface B, inner x3 boundary (ix3_bc=1)
 
-void OutflowInnerX3(MeshBlock *pmb, InterfaceBField &a)
+void OutflowInnerX3(MeshBlock *pmb, InterfaceField &a)
 {
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
@@ -156,7 +156,7 @@ void OutflowInnerX3(MeshBlock *pmb, InterfaceBField &a)
 //! \fn void OutflowOuterX3()
 //  \brief  OUTFLOW boundary conditions interface B, outer x3 boundary (ox3_bc=1)
 
-void OutflowOuterX3(MeshBlock *pmb, InterfaceBField &a)
+void OutflowOuterX3(MeshBlock *pmb, InterfaceField &a)
 {
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;

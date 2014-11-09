@@ -13,27 +13,35 @@
 #include "../athena.hpp"         // Real
 #include "../athena_arrays.hpp"  // AthenaArray
 
-typedef struct InterfaceBField {
+typedef struct InterfaceField {
   AthenaArray<Real> x1,x2,x3;
-} InterfaceBField;
+} InterfaceField;
+
+typedef struct EdgeField {
+  AthenaArray<Real> x1,x2,x3;
+} EdgeField;
 
 class MeshBlock;
 class ParameterInput;
+class Fluid;
 //class BFieldIntegrator;
 
 //! \class Field
 //  \brief electric and magnetic field data and functions
 
 class Field {
-friend class FluidIntegrator;
+friend class Fluid;
 public:
   Field(MeshBlock *pmb, ParameterInput *pin);
   ~Field();
 
-  InterfaceBField bi;    // interface magnetic fields
-  InterfaceBField bi1;   // interface magnetic fields at intermediate step
+  InterfaceField bi;     // interface magnetic fields
+  InterfaceField bi1;    // interface magnetic fields at intermediate step
   AthenaArray<Real> bc;  // cell-centered fields
   AthenaArray<Real> bc1; // cell-centered fields at intermediate step
+
+  InterfaceField ei;     // interface electric fields
+  EdgeField emf;         // edge electric fields used to update B using CT
 
 //  BFieldIntegrator *pb_integrator;   // integration algorithm (CT)
 

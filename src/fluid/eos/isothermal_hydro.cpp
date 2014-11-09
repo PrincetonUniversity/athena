@@ -23,7 +23,7 @@
 #include "../../athena_arrays.hpp"    // AthenaArray
 #include "../../mesh.hpp"             // MeshBlock
 #include "../../parameter_input.hpp"  // GetReal()
-#include "../../field/field.hpp"      // InterfaceBField
+#include "../../field/field.hpp"      // InterfaceField
 
 //======================================================================================
 //! \file isothermal_hydro.cpp
@@ -50,7 +50,7 @@ FluidEqnOfState::~FluidEqnOfState()
 // \brief convert conserved to primitive variables for adiabatic hydro
 
 void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
-  const InterfaceBField &bi, const AthenaArray<Real> &prim_old,
+  const InterfaceField &bi, const AthenaArray<Real> &prim_old,
   AthenaArray<Real> &prim, AthenaArray<Real> &bc)
 {
   MeshBlock *pmb = pmy_fluid_->pmy_block;
