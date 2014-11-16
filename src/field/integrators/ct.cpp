@@ -44,15 +44,33 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &bin, InterfaceField &bo
 
   ComputeCornerEMFs(pmb);
 
-//  AthenaArray<Real> b_x1f = b.x1f.ShallowCopy();
-//  AthenaArray<Real> b_x2f = b.x2f.ShallowCopy();
-//  AthenaArray<Real> b_x3f = b.x3f.ShallowCopy();
   AthenaArray<Real> emf1 = pmb->pfield->emf1.ShallowCopy();
   AthenaArray<Real> emf2 = pmb->pfield->emf2.ShallowCopy();
   AthenaArray<Real> emf3 = pmb->pfield->emf3.ShallowCopy();
 
   AthenaArray<Real> area = face_area_.ShallowCopy();
   AthenaArray<Real> len  = edge_length_.ShallowCopy();
+
+// First copy input into output
+
+  for (int k=ks; k<=ke; ++k) {
+  for (int j=js; j<=je; ++j) {
+    for (int i=is; i<=ie+1; ++i) {
+      bout.x1f(k,j,i) = bin.x1f(k,j,i);
+    }
+  }}
+  for (int k=ks; k<=ke; ++k) {
+  for (int j=js; j<=je+1; ++j) {
+    for (int i=is; i<=ie; ++i) {
+      bout.x2f(k,j,i) = bin.x2f(k,j,i);
+    }
+  }}
+  for (int k=ks; k<=ke+1; ++k) {
+  for (int j=js; j<=je; ++j) {
+    for (int i=is; i<=ie; ++i) {
+      bout.x3f(k,j,i) = bin.x3f(k,j,i);
+    }
+  }}
 
 //---- 1-D update
 
@@ -62,8 +80,7 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &bin, InterfaceField &bo
     pmb->pcoord->Edge3Length(k,j,is,ie+1,len);
 
     for (int i=is; i<=ie; ++i) {
-      bout.x2f(k,j,i) = bin.x2f(k,j,i) +
-        (dt/area(i))*(len(i+1)*emf3(k,j,i+1) - len(i)*emf3(k,j,i));
+      bout.x2f(k,j,i) += (dt/area(i))*(len(i+1)*emf3(k,j,i+1) - len(i)*emf3(k,j,i));
     }
 
   }}
@@ -74,8 +91,7 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &bin, InterfaceField &bo
     pmb->pcoord->Edge2Length(k,j,is,ie+1,len);
 
     for (int i=is; i<=ie; ++i) {
-      bout.x3f(k,j,i) = bin.x3f(k,j,i) -
-        (dt/area(i))*(len(i+1)*emf2(k,j,i+1) - len(i)*emf2(k,j,i));
+      bout.x3f(k,j,i) -= (dt/area(i))*(len(i+1)*emf2(k,j,i+1) - len(i)*emf2(k,j,i));
     }
 
   }}
