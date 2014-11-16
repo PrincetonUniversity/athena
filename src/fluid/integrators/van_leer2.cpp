@@ -18,7 +18,7 @@
 #include <iostream>
 
 // Primary header
-#include "integrators.hpp"
+#include "fluid_integrator.hpp"
 
 // Athena headers
 #include "../../athena.hpp"                  // enums, macros, Real
@@ -39,7 +39,7 @@
 //======================================================================================
 
 //--------------------------------------------------------------------------------------
-//! \fn  void FluidIntegrator::PredictVanLeer2
+//! \fn  void FluidIntegrator::Predict
 //  \brief predictor step for 2nd order VL integrator
 
 void FluidIntegrator::Predict(MeshBlock *pmb)
@@ -54,10 +54,13 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
   AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
   AthenaArray<Real> u1 = pmb->pfluid->u1.ShallowCopy();
 
-  AthenaArray<Real> bc = pmb->pfield->bc.ShallowCopy();
-  AthenaArray<Real> b1i = pmb->pfield->bi.x1.ShallowCopy();
-  AthenaArray<Real> b2i = pmb->pfield->bi.x2.ShallowCopy();
-  AthenaArray<Real> b3i = pmb->pfield->bi.x3.ShallowCopy();
+  AthenaArray<Real> bcc = pmb->pfield->bcc.ShallowCopy();
+  AthenaArray<Real> b1i = pmb->pfield->b.x1f.ShallowCopy();
+  AthenaArray<Real> b2i = pmb->pfield->b.x2f.ShallowCopy();
+  AthenaArray<Real> b3i = pmb->pfield->b.x3f.ShallowCopy();
+  AthenaArray<Real> e_x1f = pmb->pfield->e.x1f.ShallowCopy();
+  AthenaArray<Real> e_x2f = pmb->pfield->e.x2f.ShallowCopy();
+  AthenaArray<Real> e_x3f = pmb->pfield->e.x3f.ShallowCopy();
 
 #pragma omp parallel default(shared) private(tid) num_threads(max_nthreads)
 {
@@ -88,10 +91,10 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
       if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
         for (int i=is; i<=ie+1; ++i){
-          wl((NFLUID  ),i) = bc(1,k,j,i-1);
-          wl((NFLUID+1),i) = bc(2,k,j,i-1);
-          wr((NFLUID  ),i) = bc(1,k,j,i  );
-          wr((NFLUID+1),i) = bc(2,k,j,i  );
+          wl(IBY,i) = bcc(IB2,k,j,i-1);
+          wl(IBZ,i) = bcc(IB3,k,j,i-1);
+          wr(IBY,i) = bcc(IB2,k,j,i  );
+          wr(IBZ,i) = bcc(IB3,k,j,i  );
         }
       }
 
@@ -114,6 +117,15 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
           u1(n,k,j,i) = ui - 0.5*dt*(area_ip1*flxip1 - area_i*flxi)/dvol;
         }
       }
+
+      if (MAGNETIC_FIELDS_ENABLED) {
+#pragma simd
+        for (int i=is; i<=ie+1; ++i){
+          e_x1f(X1E2,k,j,i) = flx(IBZ,i);  // EMY = -(VzBx - VxBz) = flx(IBZ)
+          e_x1f(X1E3,k,j,i) = -1.0*flx(IBY,i); // EMZ = -(VxBy - VyBx) = -flx(IBY)
+        }
+      }
+
     }
   }
 
@@ -137,10 +149,10 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
         if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
           for (int i=is; i<=ie; ++i){
-            wl((NFLUID  ),i) = bc(2,k,j-1,i);
-            wl((NFLUID+1),i) = bc(0,k,j-1,i);
-            wr((NFLUID  ),i) = bc(2,k,j  ,i);
-            wr((NFLUID+1),i) = bc(0,k,j  ,i);
+            wl(((NFLUID)  ),i) = bcc(IB3,k,j-1,i);
+            wl(((NFLUID)+1),i) = bcc(IB1,k,j-1,i);
+            wr(((NFLUID)  ),i) = bcc(IB3,k,j  ,i);
+            wr(((NFLUID)+1),i) = bcc(IB1,k,j  ,i);
           }
         }
 
@@ -176,6 +188,14 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
           }
         }
 
+        if (MAGNETIC_FIELDS_ENABLED) {
+#pragma simd
+          for (int i=is; i<=ie; ++i){
+            e_x2f(X2E3,k,j,i) = flx((NFLUID)  ,i);
+            e_x2f(X2E1,k,j,i) = flx((NFLUID)+1,i);
+          }
+        }
+
       }
     }
   }
@@ -200,10 +220,10 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
         if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
           for (int i=is; i<=ie; ++i){
-            wl((NFLUID  ),i) = bc(0,k-1,j,i);
-            wl((NFLUID+1),i) = bc(1,k-1,j,i);
-            wr((NFLUID  ),i) = bc(0,k  ,j,i);
-            wr((NFLUID+1),i) = bc(1,k  ,j,i);
+            wl(((NFLUID)  ),i) = bcc(IB1,k-1,j,i);
+            wl(((NFLUID)+1),i) = bcc(IB2,k-1,j,i);
+            wr(((NFLUID)  ),i) = bcc(IB1,k  ,j,i);
+            wr(((NFLUID)+1),i) = bcc(IB2,k  ,j,i);
           }
         }
 
@@ -236,6 +256,14 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
 
               u1(n,k,j,i) += 0.5*dt*area_i*flxk/dvol;
             }
+          }
+        }
+
+        if (MAGNETIC_FIELDS_ENABLED) {
+#pragma simd
+          for (int i=is; i<=ie; ++i){
+            e_x3f(X3E1,k,j,i) = flx((NFLUID)  ,i);
+            e_x3f(X3E2,k,j,i) = flx((NFLUID)+1,i);
           }
         }
 
@@ -272,10 +300,15 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
   AthenaArray<Real> u1 = pmb->pfluid->u1.ShallowCopy();
   AthenaArray<Real> w1 = pmb->pfluid->w1.ShallowCopy();
 
-  AthenaArray<Real> bc1 = pmb->pfield->bc.ShallowCopy();
-  AthenaArray<Real> b1i = pmb->pfield->bi.x1.ShallowCopy();
-  AthenaArray<Real> b2i = pmb->pfield->bi.x2.ShallowCopy();
-  AthenaArray<Real> b3i = pmb->pfield->bi.x3.ShallowCopy();
+/************/
+  AthenaArray<Real> bcc1 = pmb->pfield->bcc1.ShallowCopy();
+  AthenaArray<Real> b1i1 = pmb->pfield->b1.x1f.ShallowCopy();
+  AthenaArray<Real> b1i2 = pmb->pfield->b1.x2f.ShallowCopy();
+  AthenaArray<Real> b1i3 = pmb->pfield->b1.x3f.ShallowCopy();
+/************/
+  AthenaArray<Real> e_x1f = pmb->pfield->e.x1f.ShallowCopy();
+  AthenaArray<Real> e_x2f = pmb->pfield->e.x2f.ShallowCopy();
+  AthenaArray<Real> e_x3f = pmb->pfield->e.x3f.ShallowCopy();
 
 #pragma omp parallel default(shared) private(tid) num_threads(max_nthreads)
 {
@@ -300,11 +333,11 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
         ReconstructionFuncX1(n,n,k,j,w1,wl,wr);
       }
       if (MAGNETIC_FIELDS_ENABLED) {
-        ReconstructionFuncX1(1,(NFLUID  ),k,j,bc1,wl,wr);
-        ReconstructionFuncX1(2,(NFLUID+1),k,j,bc1,wl,wr);
+        ReconstructionFuncX1(IB2,IBY,k,j,bcc1,wl,wr);
+        ReconstructionFuncX1(IB3,IBZ,k,j,bcc1,wl,wr);
       }
 
-      RiemannSolver(k,j,is,ie+1,IVX,b1i,wl,wr,flx); 
+      RiemannSolver(k,j,is,ie+1,IVX,b1i1,wl,wr,flx); 
 
       pmb->pcoord->Face1Area(k,j,is,ie+1,area);
       pmb->pcoord->CellVolume(k,j,is,ie,vol);
@@ -322,6 +355,15 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
           u(n,k,j,i) -= dt*(area_ip1*flxip1 - area_i*flxi)/dvol;
         }
       }
+
+      if (MAGNETIC_FIELDS_ENABLED) {
+#pragma simd
+        for (int i=is; i<=ie+1; ++i){
+          e_x1f(X1E2,k,j,i) = flx(IBZ,i);  // EMY = -(VzBx - VxBz) = flx(IBZ)
+          e_x1f(X1E3,k,j,i) = -1.0*flx(IBY,i); // EMZ = -(VxBy - VyBx) = -flx(IBY)
+        }
+      }
+
     }
   }
 
@@ -339,11 +381,11 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
           ReconstructionFuncX2(n,n,k,j,w1,wl,wr);
         }
       if (MAGNETIC_FIELDS_ENABLED) {
-        ReconstructionFuncX1(2,(NFLUID  ),k,j,bc1,wl,wr);
-        ReconstructionFuncX1(0,(NFLUID+1),k,j,bc1,wl,wr);
+        ReconstructionFuncX1(2,((NFLUID)  ),k,j,bcc1,wl,wr);
+        ReconstructionFuncX1(0,((NFLUID)+1),k,j,bcc1,wl,wr);
       }
 
-        RiemannSolver(k,j,is,ie,IVY,b2i,wl,wr,flx); 
+        RiemannSolver(k,j,is,ie,IVY,b1i2,wl,wr,flx); 
 
         pmb->pcoord->Face2Area(k,j,is,ie,area);
 
@@ -375,6 +417,14 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
           }
         }
 
+        if (MAGNETIC_FIELDS_ENABLED) {
+#pragma simd
+          for (int i=is; i<=ie; ++i){
+            e_x2f(X2E3,k,j,i) = flx(NFLUID  ,i);
+            e_x2f(X2E1,k,j,i) = flx(NFLUID+1,i);
+          }
+        }
+
       }
     }
   }
@@ -393,11 +443,11 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
           ReconstructionFuncX3(n,n,k,j,w1,wl,wr);
         }
         if (MAGNETIC_FIELDS_ENABLED) {
-          ReconstructionFuncX1(0,(NFLUID  ),k,j,bc1,wl,wr);
-          ReconstructionFuncX1(1,(NFLUID+1),k,j,bc1,wl,wr);
+          ReconstructionFuncX1(0,(NFLUID  ),k,j,bcc1,wl,wr);
+          ReconstructionFuncX1(1,(NFLUID+1),k,j,bcc1,wl,wr);
         }
 
-        RiemannSolver(k,j,is,ie,IVZ,b3i,wl,wr,flx);
+        RiemannSolver(k,j,is,ie,IVZ,b1i3,wl,wr,flx);
 
         pmb->pcoord->Face3Area(k,j,is,ie,area);
 
@@ -426,6 +476,14 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 
               u(n,k,j,i) += dt*area_i*flxk/dvol;
             }
+          }
+        }
+
+        if (MAGNETIC_FIELDS_ENABLED) {
+#pragma simd
+          for (int i=is; i<=ie; ++i){
+            e_x3f(X3E1,k,j,i) = flx(NFLUID  ,i);
+            e_x3f(X3E2,k,j,i) = flx(NFLUID+1,i);
           }
         }
 

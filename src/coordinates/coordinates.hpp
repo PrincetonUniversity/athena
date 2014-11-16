@@ -30,25 +30,31 @@ public:
   MeshBlock *pmy_block;  // ptr to MeshBlock containing this Coordinates
 
 // functions to compute length of edges, area of faces, and volumes of cells
-  Real Edge1Length();
-  Real Edge2Length();
-  Real Edge3Length();
+
+  void Edge1Length(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &len);
+  void Edge2Length(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &len);
+  void Edge3Length(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &len);
+
   void Face1Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &area);
   void Face2Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &area);
   void Face3Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &area);
+
   void CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &vol);
 
-// functions to compute physical width/spacing/distances
+// functions to compute physical widths
+
   Real CellPhysicalWidth1(const int k, const int j, const int i);
   Real CellPhysicalWidth2(const int k, const int j, const int i);
   Real CellPhysicalWidth3(const int k, const int j, const int i);
-  Real CellPhysicalSpacing1(const int k, const int j, const int i);
-  Real CellPhysicalSpacing2(const int k, const int j, const int i);
-  Real CellPhysicalSpacing3(const int k, const int j, const int i);
+
+// geometrical source terms
 
   void CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
     AthenaArray<Real> &cons);

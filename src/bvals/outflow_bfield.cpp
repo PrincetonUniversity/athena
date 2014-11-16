@@ -39,14 +39,26 @@ void OutflowInnerX1(MeshBlock *pmb, InterfaceField &a)
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
-
 #pragma simd
     for (int i=1; i<=(NGHOST); ++i) {
-      a.x1(k,j,(is-i)) = a.x1(k,j,is);
-      a.x2(k,j,(is-i)) = a.x2(k,j,is);
-      a.x3(k,j,(is-i)) = a.x3(k,j,is);
+      a.x1f(k,j,(is-i)) = a.x1f(k,j,is);
     }
+  }}
 
+  for (int k=ks; k<=ke; ++k) {
+  for (int j=js; j<=je+1; ++j) {
+#pragma simd
+    for (int i=1; i<=(NGHOST); ++i) {
+      a.x2f(k,j,(is-i)) = a.x2f(k,j,is);
+    }
+  }}
+
+  for (int k=ks; k<=ke+1; ++k) {
+  for (int j=js; j<=je; ++j) {
+#pragma simd
+    for (int i=1; i<=(NGHOST); ++i) {
+      a.x3f(k,j,(is-i)) = a.x3f(k,j,is);
+    }
   }}
 
   return;
@@ -64,14 +76,26 @@ void OutflowOuterX1(MeshBlock *pmb, InterfaceField &a)
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
-
 #pragma simd
     for (int i=1; i<=(NGHOST); ++i) {
-      a.x1(k,j,(ie+i+1)) = a.x1(k,j,(ie+1));
-      a.x2(k,j,(ie+i  )) = a.x2(k,j,(ie  ));
-      a.x3(k,j,(ie+i  )) = a.x3(k,j,(ie  ));
+      a.x1f(k,j,(ie+i+1)) = a.x1f(k,j,(ie+1));
     }
+  }}
 
+  for (int k=ks; k<=ke; ++k) {
+  for (int j=js; j<=je+1; ++j) {
+#pragma simd
+    for (int i=1; i<=(NGHOST); ++i) {
+      a.x2f(k,j,(ie+i  )) = a.x2f(k,j,(ie  ));
+    }
+  }}
+
+  for (int k=ks; k<=ke+1; ++k) {
+  for (int j=js; j<=je; ++j) {
+#pragma simd
+    for (int i=1; i<=(NGHOST); ++i) {
+      a.x3f(k,j,(ie+i  )) = a.x3f(k,j,(ie  ));
+    }
   }}
 
   return;
@@ -92,9 +116,9 @@ void OutflowInnerX2(MeshBlock *pmb, InterfaceField &a)
 
 #pragma simd
     for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-      a.x1(k,(js-j),i) = a.x1(k,js,i);
-      a.x2(k,(js-j),i) = a.x2(k,js,i);
-      a.x3(k,(js-j),i) = a.x3(k,js,i);
+      a.x1f(k,(js-j),i) = a.x1f(k,js,i);
+      a.x2f(k,(js-j),i) = a.x2f(k,js,i);
+      a.x3f(k,(js-j),i) = a.x3f(k,js,i);
     }
 
   }}
@@ -117,9 +141,9 @@ void OutflowOuterX2(MeshBlock *pmb, InterfaceField &a)
 
 #pragma simd
     for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-      a.x1(k,(je+j  ),i) = a.x1(k,(je  ),i);
-      a.x2(k,(je+j+1),i) = a.x2(k,(je+1),i);
-      a.x3(k,(je+j  ),i) = a.x3(k,(je  ),i);
+      a.x1f(k,(je+j  ),i) = a.x1f(k,(je  ),i);
+      a.x2f(k,(je+j+1),i) = a.x2f(k,(je+1),i);
+      a.x3f(k,(je+j  ),i) = a.x3f(k,(je  ),i);
     }
 
   }}
@@ -142,9 +166,9 @@ void OutflowInnerX3(MeshBlock *pmb, InterfaceField &a)
 
 #pragma simd
     for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-      a.x1((ks-k),j,i) = a.x1(ks,j,i);
-      a.x2((ks-k),j,i) = a.x2(ks,j,i);
-      a.x3((ks-k),j,i) = a.x3(ks,j,i);
+      a.x1f((ks-k),j,i) = a.x1f(ks,j,i);
+      a.x2f((ks-k),j,i) = a.x2f(ks,j,i);
+      a.x3f((ks-k),j,i) = a.x3f(ks,j,i);
     }
 
   }}
@@ -167,9 +191,9 @@ void OutflowOuterX3(MeshBlock *pmb, InterfaceField &a)
 
 #pragma simd
     for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-      a.x1((ke+k  ),j,i) = a.x1((ke  ),j,i);
-      a.x2((ke+k  ),j,i) = a.x2((ke  ),j,i);
-      a.x3((ke+k+1),j,i) = a.x3((ke+1),j,i);
+      a.x1f((ke+k  ),j,i) = a.x1f((ke  ),j,i);
+      a.x2f((ke+k  ),j,i) = a.x2f((ke  ),j,i);
+      a.x3f((ke+k+1),j,i) = a.x3f((ke+1),j,i);
     }
 
   }}

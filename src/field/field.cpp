@@ -26,6 +26,7 @@
 #include "../athena.hpp"                  // array access, macros, Real
 #include "../athena_arrays.hpp"           // AthenaArray
 #include "../mesh.hpp"                    // MeshBlock, Mesh
+#include "integrators/field_integrator.hpp"  // FieldIntegrator
 
 //======================================================================================
 //! \file field.cpp
@@ -36,42 +37,44 @@
 
 Field::Field(MeshBlock *pmb, ParameterInput *pin)
 {
-  pmy_mblock_ = pmb;
+  pmy_mblock = pmb;
 
 // Allocate memory for interface fields, but only when needed.
 
   if (MAGNETIC_FIELDS_ENABLED) {
-    int ncells1 = pmy_mblock_->block_size.nx1 + 2*(NGHOST);
+    int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
     int ncells2 = 1, ncells3 = 1;
-    if (pmy_mblock_->block_size.nx2 > 1)
-      ncells2 = pmy_mblock_->block_size.nx2 + 2*(NGHOST);
-    if (pmy_mblock_->block_size.nx3 > 1)
-      ncells3 = pmy_mblock_->block_size.nx3 + 2*(NGHOST);
+    if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
+    if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
 
 //  Note the extra cell in each longitudinal dirn for interface fields
 
-    bi.x1.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
-    bi.x2.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
-    bi.x3.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
+    b.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
+    b.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
+    b.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
 
-    bi1.x1.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
-    bi1.x2.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
-    bi1.x3.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
+    b1.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
+    b1.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
+    b1.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
 
-    bc.NewAthenaArray (NFIELD,ncells3,ncells2,ncells1);
-    bc1.NewAthenaArray(NFIELD,ncells3,ncells2,ncells1);
+    bcc.NewAthenaArray (NFIELD,ncells3,ncells2,ncells1);
+    bcc1.NewAthenaArray(NFIELD,ncells3,ncells2,ncells1);
 
-    ei.x1.NewAthenaArray((NFIELD-1), ncells3   , ncells2   ,(ncells1+1));
-    ei.x2.NewAthenaArray((NFIELD-1), ncells3   ,(ncells2+1), ncells1   );
-    ei.x3.NewAthenaArray((NFIELD-1),(ncells3+1), ncells2   , ncells1   );
+    e.x1f.NewAthenaArray((NFIELD-1), ncells3   , ncells2   ,(ncells1+1));
+    e.x2f.NewAthenaArray((NFIELD-1), ncells3   ,(ncells2+1), ncells1   );
+    e.x3f.NewAthenaArray((NFIELD-1),(ncells3+1), ncells2   , ncells1   );
 
-    emf.x1.NewAthenaArray((ncells3+1),(ncells2+1), ncells1   );
-    emf.x2.NewAthenaArray((ncells3+1), ncells2   ,(ncells1+1));
-    emf.x3.NewAthenaArray( ncells3   ,(ncells2+1),(ncells1+1));
+    wght.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
+    wght.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
+    wght.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
+
+    emf1.NewAthenaArray((ncells3+1),(ncells2+1), ncells1   );
+    emf2.NewAthenaArray((ncells3+1), ncells2   ,(ncells1+1));
+    emf3.NewAthenaArray( ncells3   ,(ncells2+1),(ncells1+1));
 
 // Construct ptrs to objects of various classes needed to integrate B-field
 
-//  pf_integrator = new FluidIntegrator(this);
+    pint = new FieldIntegrator(this, pin);
 
   }
 }
@@ -80,19 +83,22 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin)
 
 Field::~Field()
 {
-  bi.x1.DeleteAthenaArray();
-  bi.x2.DeleteAthenaArray();
-  bi.x3.DeleteAthenaArray();
-  bi1.x1.DeleteAthenaArray();
-  bi1.x2.DeleteAthenaArray();
-  bi1.x3.DeleteAthenaArray();
-  bc.DeleteAthenaArray();
-  bc1.DeleteAthenaArray();
+  b.x1f.DeleteAthenaArray();
+  b.x2f.DeleteAthenaArray();
+  b.x3f.DeleteAthenaArray();
+  b1.x1f.DeleteAthenaArray();
+  b1.x2f.DeleteAthenaArray();
+  b1.x3f.DeleteAthenaArray();
+  bcc.DeleteAthenaArray();
+  bcc1.DeleteAthenaArray();
 
-  ei.x1.DeleteAthenaArray();
-  ei.x2.DeleteAthenaArray();
-  ei.x3.DeleteAthenaArray();
-  emf.x1.DeleteAthenaArray();
-  emf.x2.DeleteAthenaArray();
-  emf.x3.DeleteAthenaArray();
+  e.x1f.DeleteAthenaArray();
+  e.x2f.DeleteAthenaArray();
+  e.x3f.DeleteAthenaArray();
+  wght.x1f.DeleteAthenaArray();
+  wght.x2f.DeleteAthenaArray();
+  wght.x3f.DeleteAthenaArray();
+  emf1.DeleteAthenaArray();
+  emf2.DeleteAthenaArray();
+  emf3.DeleteAthenaArray();
 }

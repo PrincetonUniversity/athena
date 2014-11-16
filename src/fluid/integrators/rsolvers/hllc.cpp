@@ -15,7 +15,7 @@
 //======================================================================================
 
 // Primary header
-#include "../integrators.hpp"
+#include "../fluid_integrator.hpp"
 
 // C++ headers
 #include <algorithm>  // max(), min()

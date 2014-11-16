@@ -113,8 +113,8 @@ Real FluidEqnOfState::SoundSpeed(const Real dummy_arg[NFLUID])
 // \brief returns fast magnetosonic speed given vector of primitive variables
 // Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN
 
-Real FluidEqnOfState::FastMagnetosonicSpeed(const Real bx,
-  const Real prim[(NFLUID+NFIELD-1)])
+Real FluidEqnOfState::FastMagnetosonicSpeed(const Real prim[((NFLUID)+(NFIELD)-1)],
+  const Real bx)
 {
   Real asq = (iso_sound_speed_*iso_sound_speed_);
   Real vaxsq = bx*bx/prim[IDN];

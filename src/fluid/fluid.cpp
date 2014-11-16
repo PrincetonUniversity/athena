@@ -27,9 +27,10 @@
 #include "../athena_arrays.hpp"         // AthenaArray
 #include "eos/eos.hpp"                  // FluidEqnOfState
 #include "srcterms/srcterms.hpp"        // FluidSourceTerms
-#include "integrators/integrators.hpp"  // FluidIntegrator
+#include "integrators/fluid_integrator.hpp"  // FluidIntegrator
 #include "../mesh.hpp"                  // MeshBlock, Mesh
 #include "../coordinates/coordinates.hpp" // CellPhysicalWidth()
+#include "../field/field.hpp"             // B-fields
 
 #include <omp.h>
 
@@ -112,6 +113,10 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
+  AthenaArray<Real> bcc = pmb->pfield->bcc.ShallowCopy();
+  AthenaArray<Real> b_x1f = pmb->pfield->b.x1f.ShallowCopy();
+  AthenaArray<Real> b_x2f = pmb->pfield->b.x2f.ShallowCopy();
+  AthenaArray<Real> b_x3f = pmb->pfield->b.x3f.ShallowCopy();
 
   int max_nthreads = pmb->pmy_domain->pmy_mesh->nthreads_mesh;
   Real *pthread_min_dt;
@@ -127,7 +132,7 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
   AthenaArray<Real> dt1 = dt1_.ShallowSlice(tid,1);
   AthenaArray<Real> dt2 = dt2_.ShallowSlice(tid,1);
   AthenaArray<Real> dt3 = dt3_.ShallowSlice(tid,1);
-  Real wi[NFLUID];
+  Real wi[(NFLUID)+((NFIELD)-1)];
 
   for (int k=ks; k<=ke; ++k){
 
@@ -145,14 +150,38 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
         Real& dx1  = pmb->dx1f(i);
 
         if (RELATIVISTIC_DYNAMICS) {
+
           dt1(i) = dx1;
           dt2(i) = dx2;
           dt3(i) = dx3;
+
+        } else if (MAGNETIC_FIELDS_ENABLED) {
+
+          wi[IBY] = bcc(IB2,k,j,i);
+          wi[IBZ] = bcc(IB3,k,j,i);
+          Real bx = b_x1f(k,j,i);
+          Real cf = pf_eos->FastMagnetosonicSpeed(wi,bx);
+          dt1(i)= pmy_block->pcoord->CellPhysicalWidth1(k,j,i)/(fabs(wi[IVX]) + cf);
+
+          wi[IBY] = bcc(IB3,k,j,i);
+          wi[IBZ] = bcc(IB1,k,j,i);
+          bx = b_x2f(k,j,i);
+          cf = pf_eos->FastMagnetosonicSpeed(wi,bx);
+          dt2(i)= pmy_block->pcoord->CellPhysicalWidth2(k,j,i)/(fabs(wi[IVY]) + cf);
+
+          wi[IBY] = bcc(IB1,k,j,i);
+          wi[IBZ] = bcc(IB2,k,j,i);
+          bx = b_x3f(k,j,i);
+          cf = pf_eos->FastMagnetosonicSpeed(wi,bx);
+          dt3(i)= pmy_block->pcoord->CellPhysicalWidth3(k,j,i)/(fabs(wi[IVZ]) + cf);
+
         } else {
+
           Real cs = pf_eos->SoundSpeed(wi);
           dt1(i)= pmy_block->pcoord->CellPhysicalWidth1(k,j,i)/(fabs(wi[IVX]) + cs);
           dt2(i)= pmy_block->pcoord->CellPhysicalWidth2(k,j,i)/(fabs(wi[IVY]) + cs);
           dt3(i)= pmy_block->pcoord->CellPhysicalWidth3(k,j,i)/(fabs(wi[IVZ]) + cs);
+
         }
       }
 

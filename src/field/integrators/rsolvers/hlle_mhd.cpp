@@ -16,7 +16,7 @@
 #include <iostream>
 
 // Primary header
-#include "../../../fluid/integrators/integrators.hpp"
+#include "../../../fluid/integrators/fluid_integrator.hpp"
 
 // C++ headers
 #include <algorithm>  // max(), min()
@@ -99,8 +99,8 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 
 //--- Step 3.  Compute fast magnetosonic speed in L,R, and Roe-averaged states
 
-    Real cl = pmy_fluid->pf_eos->FastMagnetosonicSpeed(bxi,wli);
-    Real cr = pmy_fluid->pf_eos->FastMagnetosonicSpeed(bxi,wri);
+    Real cl = pmy_fluid->pf_eos->FastMagnetosonicSpeed(wli,bxi);
+    Real cr = pmy_fluid->pf_eos->FastMagnetosonicSpeed(wri,bxi);
 
 // Compute fast-magnetosonic speed using eq. B18
     Real a;
@@ -119,7 +119,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
       Real cfsq = 0.5*(tsum + cf2_cs2);
       a = sqrt(cfsq);
     } else {
-      a = pmy_fluid->pf_eos->FastMagnetosonicSpeed(bxi,wroe);
+      a = pmy_fluid->pf_eos->FastMagnetosonicSpeed(wroe,bxi);
     }
 
 //--- Step 4.  Compute the max/min wave speeds based on L/R and Roe-averaged values
@@ -157,8 +157,8 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 
 // Add MHD terms
 
-    fl[IVX] -= 0.5*(bxi*bxi + wli[IBY]*wli[IBY] + wli[IBZ]*wli[IBZ]);
-    fr[IVX] -= 0.5*(bxi*bxi + wri[IBY]*wri[IBY] + wri[IBZ]*wri[IBZ]);
+    fl[IVX] -= 0.5*(bxi*bxi - wli[IBY]*wli[IBY] - wli[IBZ]*wli[IBZ]);
+    fr[IVX] -= 0.5*(bxi*bxi - wri[IBY]*wri[IBY] - wri[IBZ]*wri[IBZ]);
 
     fl[IVY] -= bxi*wli[IBY];
     fr[IVY] -= bxi*wri[IBY];
@@ -167,15 +167,15 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     fr[IVZ] -= bxi*wri[IBZ];
 
     if (NON_BAROTROPIC_EOS) {
-      fl[IEN] += pbl*wli[IVX] - bxi*(bxi*wli[IVX]+wli[IBY]*wli[IVY]+wli[IBZ]*wli[IVZ]);
-      fr[IEN] += pbr*wri[IVX] - bxi*(bxi*wri[IVX]+wri[IBY]*wri[IVY]+wri[IBZ]*wri[IVZ]);
+      fl[IEN] +=(pbl*wli[IVX] - bxi*(bxi*wli[IVX]+wli[IBY]*wli[IVY]+wli[IBZ]*wli[IVZ]));
+      fr[IEN] +=(pbr*wri[IVX] - bxi*(bxi*wri[IVX]+wri[IBY]*wri[IVY]+wri[IBZ]*wri[IVZ]));
     }
 
-    fl[IBY] = wli[IBY]*(wli[IVX] - bm) + bxi*wli[IVY];;
-    fr[IBY] = wri[IBY]*(wri[IVX] - bp) + bxi*wri[IVY];;
+    fl[IBY] = wli[IBY]*(wli[IVX] - bm) - bxi*wli[IVY];;
+    fr[IBY] = wri[IBY]*(wri[IVX] - bp) - bxi*wri[IVY];;
 
-    fl[IBZ] = wli[IBZ]*(wli[IVX] - bm) + bxi*wli[IVZ];;
-    fr[IBZ] = wri[IBZ]*(wri[IVX] - bp) + bxi*wri[IVZ];;
+    fl[IBZ] = wli[IBZ]*(wli[IVX] - bm) - bxi*wli[IVZ];;
+    fr[IBZ] = wri[IBZ]*(wri[IVX] - bp) - bxi*wri[IVZ];;
 
 //--- Step 6.  Compute the HLLE flux at interface.
 

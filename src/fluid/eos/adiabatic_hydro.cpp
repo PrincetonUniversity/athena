@@ -53,8 +53,8 @@ FluidEqnOfState::~FluidEqnOfState()
 // \brief convert conserved to primitive variables for adiabatic hydro
 
 void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
-  const InterfaceField &bi, const AthenaArray<Real> &prim_old,
-  AthenaArray<Real> &prim, AthenaArray<Real> &bc)
+  AthenaArray<Real> &prim, const AthenaArray<Real> &prim_old, const InterfaceField &b,
+  AthenaArray<Real> &bcc)
 {
   MeshBlock *pmb = pmy_fluid_->pmy_block;
   int jl = pmb->js; int ju = pmb->je;

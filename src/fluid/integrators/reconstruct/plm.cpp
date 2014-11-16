@@ -15,7 +15,7 @@
 //======================================================================================
 
 // Primary header
-#include "../integrators.hpp"
+#include "../fluid_integrator.hpp"
 
 // Athena headers
 #include "../../../athena.hpp"         // macros, Real

@@ -33,7 +33,8 @@
 #include "field/field.hpp"              // Field
 #include "bvals/bvals.hpp"              // BoundaryValues
 #include "fluid/eos/eos.hpp"              // FluidEqnOfState
-#include "fluid/integrators/integrators.hpp"  // FluidIntegrator
+#include "fluid/integrators/fluid_integrator.hpp"  // FluidIntegrator
+#include "field/integrators/field_integrator.hpp"  // FieldIntegrator
 #include "parameter_input.hpp"          // ParameterInput
 
 //======================================================================================
@@ -442,49 +443,59 @@ void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
 
   MeshBlock* pmb = pdomain->pblock;
   if (pmb != NULL)  {
-    Fluid* pfl = pdomain->pblock->pfluid;
-    Field* pfd = pdomain->pblock->pfield;
+    Fluid* pfluid = pdomain->pblock->pfluid;
+    Field* pfield = pdomain->pblock->pfield;
 
     switch (action) {
 
       case pgen: // call problem generator
-        ProblemGenerator(pfl,pfd,pin);
+        ProblemGenerator(pfluid,pfield,pin);
         break;
 
       case fluid_bcs_n: // set fluid BCs at t^n
-        pmb->pbval->ApplyBVals(pfl->u);
+        pmb->pbval->ApplyBVals(pfluid->u);
         break;
 
       case fluid_bcs_nhalf: // set fluid BCs at t^{intermediate}
-        pmb->pbval->ApplyBVals(pfl->u1);
+        pmb->pbval->ApplyBVals(pfluid->u1);
         break;
 
       case bfield_bcs_n: // set bfield BCs at t^n
-        pmb->pbval->ApplyBVals(pfd->bi);
+        pmb->pbval->ApplyBVals(pfield->b);
         break;
 
       case bfield_bcs_nhalf: // set bfield BCs at t^{intermediate}
-        pmb->pbval->ApplyBVals(pfd->bi1);
+        pmb->pbval->ApplyBVals(pfield->b1);
         break;
 
       case fluid_predict: // integrate fluid to intermediate step 
-        pfl->pf_integrator->Predict(pdomain->pblock);
+        pfluid->pf_integrator->Predict(pdomain->pblock);
         break;
 
       case fluid_correct: // integrate fluid for full timestep, t^n --> t^{n+1}
-        pfl->pf_integrator->Correct(pdomain->pblock);
+        pfluid->pf_integrator->Correct(pdomain->pblock);
+        break;
+
+      case bfield_predict: // integrate fluid to intermediate step 
+        pfield->pint->CT(pmb, pfield->b, pfield->b1, 0.5*dt);
+        break;
+
+      case bfield_correct: // integrate fluid for full timestep, t^n --> t^{n+1}
+        pfield->pint->CT(pmb, pfield->b, pfield->b, dt);
         break;
 
       case primitives_n: // compute primitives from conseerved at t^n
-        pfl->pf_eos->ConservedToPrimitive(pfl->u,pfd->bi,pfl->w1,pfl->w,pfd->bc);
+        pfluid->pf_eos->ConservedToPrimitive(pfluid->u,pfluid->w,pfluid->w1,
+           pfield->b, pfield->bcc);
         break;
 
       case primitives_nhalf: // compute primitives from conseerved at t^{intermediate}
-        pfl->pf_eos->ConservedToPrimitive(pfl->u1,pfd->bi1,pfl->w,pfl->w1,pfd->bc1);
+        pfluid->pf_eos->ConservedToPrimitive(pfluid->u1,pfluid->w1,pfluid->w,
+           pfield->b1, pfield->bcc1);
         break;
 
       case new_timestep: // calculate new time step
-        pfl->NewTimeStep(pdomain->pblock);
+        pfluid->NewTimeStep(pdomain->pblock);
         break;
 
     }

@@ -50,11 +50,11 @@ FluidEqnOfState::~FluidEqnOfState()
 //--------------------------------------------------------------------------------------
 // \!fn void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //   AthenaArray<Real> &prim_old, AthenaArray<Real> &prim)
-// \brief convert conserved to primitive variables for adiabatic hydro
+// \brief convert conserved to primitive variables for adiabatic MHD
 
 void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
-  const InterfaceField &bi, const AthenaArray<Real> &prim_old,
-  AthenaArray<Real> &prim, AthenaArray<Real> &bc)
+  AthenaArray<Real> &prim, const AthenaArray<Real> &prim_old, const InterfaceField &b, 
+  AthenaArray<Real> &bcc)
 {
   MeshBlock *pmb = pmy_fluid_->pmy_block;
   int jl = pmb->js; int ju = pmb->je;
@@ -92,20 +92,20 @@ void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
       prim(IVY,k,j,i) = u_m2*di;
       prim(IVZ,k,j,i) = u_m3*di;
 
-      const Real& b1_i   = bi.x1(k,j,i  );
-      const Real& b1_ip1 = bi.x1(k,j,i+1);
-      const Real& b2_j   = bi.x2(k,j  ,i);
-      const Real& b2_jp1 = bi.x2(k,j+1,i);
-      const Real& b3_k   = bi.x3(k  ,j,i);
-      const Real& b3_kp1 = bi.x3(k+1,j,i);
+      const Real& b1_i   = b.x1f(k,j,i  );
+      const Real& b1_ip1 = b.x1f(k,j,i+1);
+      const Real& b2_j   = b.x2f(k,j  ,i);
+      const Real& b2_jp1 = b.x2f(k,j+1,i);
+      const Real& b3_k   = b.x3f(k  ,j,i);
+      const Real& b3_kp1 = b.x3f(k+1,j,i);
 
-      bc(0,k,j,i) = 0.5*(b1_i + b1_ip1);
-      bc(1,k,j,i) = 0.5*(b2_j + b2_jp1);
-      bc(2,k,j,i) = 0.5*(b3_k + b3_kp1);
+      bcc(IB1,k,j,i) = 0.5*(b1_i + b1_ip1);
+      bcc(IB2,k,j,i) = 0.5*(b2_j + b2_jp1);
+      bcc(IB3,k,j,i) = 0.5*(b3_k + b3_kp1);
 
-      Real& bc1 = bc(0,k,j,i);
-      Real& bc2 = bc(1,k,j,i);
-      Real& bc3 = bc(2,k,j,i);
+      Real& bc1 = bcc(IB1,k,j,i);
+      Real& bc2 = bcc(IB2,k,j,i);
+      Real& bc3 = bcc(IB3,k,j,i);
 
       prim(IEN,k,j,i) = u_e - 0.5*di*(u_m1*u_m1 + u_m2*u_m2 + u_m3*u_m3);
       prim(IEN,k,j,i) -= 0.5*(bc1*bc1 + bc2*bc2 + bc3*bc3);
@@ -131,8 +131,8 @@ Real FluidEqnOfState::SoundSpeed(const Real prim[NFLUID])
 // \brief returns fast magnetosonic speed given vector of primitive variables
 // Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN 
 
-Real FluidEqnOfState::FastMagnetosonicSpeed(const Real bx, 
-  const Real prim[(NFLUID+NFIELD-1)])
+Real FluidEqnOfState::FastMagnetosonicSpeed(const Real prim[((NFLUID)+(NFIELD)-1)],
+  const Real bx)
 {
   Real asq = GetGamma()*prim[IEN]/prim[IDN];
   Real vaxsq = bx*bx/prim[IDN];

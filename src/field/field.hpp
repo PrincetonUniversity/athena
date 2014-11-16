@@ -14,17 +14,13 @@
 #include "../athena_arrays.hpp"  // AthenaArray
 
 typedef struct InterfaceField {
-  AthenaArray<Real> x1,x2,x3;
+  AthenaArray<Real> x1f,x2f,x3f;
 } InterfaceField;
-
-typedef struct EdgeField {
-  AthenaArray<Real> x1,x2,x3;
-} EdgeField;
 
 class MeshBlock;
 class ParameterInput;
 class Fluid;
-//class BFieldIntegrator;
+class FieldIntegrator;
 
 //! \class Field
 //  \brief electric and magnetic field data and functions
@@ -35,17 +31,19 @@ public:
   Field(MeshBlock *pmb, ParameterInput *pin);
   ~Field();
 
-  InterfaceField bi;     // interface magnetic fields
-  InterfaceField bi1;    // interface magnetic fields at intermediate step
-  AthenaArray<Real> bc;  // cell-centered fields
-  AthenaArray<Real> bc1; // cell-centered fields at intermediate step
+  MeshBlock* pmy_mblock;    // ptr to MeshBlock containing this Field
 
-  InterfaceField ei;     // interface electric fields
-  EdgeField emf;         // edge electric fields used to update B using CT
+  InterfaceField b;     // face-centered magnetic fields
+  InterfaceField b1;    // face-centered magnetic fields at intermediate step
+  AthenaArray<Real> bcc;   // cell-centered magnetic fields
+  AthenaArray<Real> bcc1;  // cell-centered magnetic fields at intermediate step
 
-//  BFieldIntegrator *pb_integrator;   // integration algorithm (CT)
+  InterfaceField e;     // face-centered electric fields (e.g. from Riemann solver)
+  InterfaceField wght;  // weights used to integrate E to corner using GS algorithm
+  AthenaArray<Real> emf1, emf2, emf3; // edge-centered electric fields used in CT
+
+  FieldIntegrator *pint;   // integration algorithm (CT)
 
 private:
-  MeshBlock* pmy_mblock_;    // ptr to MeshBlock containing this Field
 };
 #endif

@@ -125,9 +125,9 @@ void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       partial_sum[6] += vol(i)*pfl->w(IDN,k,j,i)*pfl->w(IM3,k,j,i)*pfl->w(IM3,k,j,i);
       if (NON_BAROTROPIC_EOS) partial_sum[7] += vol(i)*pfl->u(IEN,k,j,i);
       if (MAGNETIC_FIELDS_ENABLED) {
-        partial_sum[8]  += vol(i)*pfd->bc(0,k,j,i)*pfd->bc(0,k,j,i);
-        partial_sum[9]  += vol(i)*pfd->bc(1,k,j,i)*pfd->bc(1,k,j,i);
-        partial_sum[10] += vol(i)*pfd->bc(2,k,j,i)*pfd->bc(2,k,j,i);
+        partial_sum[8]  += vol(i)*pfd->bcc(IB1,k,j,i)*pfd->bcc(IB1,k,j,i);
+        partial_sum[9]  += vol(i)*pfd->bcc(IB2,k,j,i)*pfd->bcc(IB2,k,j,i);
+        partial_sum[10] += vol(i)*pfd->bcc(IB3,k,j,i)*pfd->bcc(IB3,k,j,i);
       }
     }
     for (int n=0; n<(nvars-2); ++n) pvar->data(n+2,0,0,0) += partial_sum[n];

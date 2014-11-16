@@ -443,7 +443,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov = new OutputVariable; 
     pov->type = "VECTORS";
     pov->name = "cell-centered B";
-    pov->data = pfd->bc.ShallowSlice(0,3);
+    pov->data = pfd->bcc.ShallowSlice(0,3);
     pod->AppendNode(pov); // magnetic field vector
     var_added = 1;
   }

@@ -27,11 +27,11 @@ public:
   FluidEqnOfState(Fluid *pf, ParameterInput *pin);
   ~FluidEqnOfState();
 
-  void ConservedToPrimitive(const AthenaArray<Real> &cons, const InterfaceField &bi,
-    const AthenaArray<Real> &prim_old, AthenaArray<Real> &prim, AthenaArray<Real> &bc);
+  void ConservedToPrimitive(const AthenaArray<Real> &cons, AthenaArray<Real> &prim,
+    const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &bcc);
 
   Real SoundSpeed(const Real prim[NFLUID]); 
-  Real FastMagnetosonicSpeed(const Real bx, const Real prim[(NFLUID+NFIELD-1)]); 
+  Real FastMagnetosonicSpeed(const Real prim[((NFLUID)+(NFIELD)-1)], const Real bx); 
   Real GetGamma() const {return gamma_;}
 
 private:

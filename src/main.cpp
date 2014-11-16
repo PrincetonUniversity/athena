@@ -221,8 +221,8 @@ int main(int argc, char *argv[])
 
 // predict step
 
-    pmesh->ForAllDomains( fluid_predict  ,pinput);
-    pmesh->ForAllDomains( fluid_bcs_nhalf,pinput);
+    pmesh->ForAllDomains(fluid_predict  ,pinput);
+    pmesh->ForAllDomains(fluid_bcs_nhalf,pinput);
 
     if (MAGNETIC_FIELDS_ENABLED) {
       pmesh->ForAllDomains(bfield_predict  ,pinput);
@@ -233,20 +233,20 @@ int main(int argc, char *argv[])
 
 // correct step
 
-    pmesh->ForAllDomains( fluid_correct,pinput);
-    pmesh->ForAllDomains( fluid_bcs_n,  pinput);
+    pmesh->ForAllDomains(fluid_correct,pinput);
+    pmesh->ForAllDomains(fluid_bcs_n,  pinput);
 
     if (MAGNETIC_FIELDS_ENABLED) {
       pmesh->ForAllDomains(bfield_correct,pinput);
       pmesh->ForAllDomains(bfield_bcs_n,  pinput);
     }
 
-    pmesh->ForAllDomains(primitives_n,  pinput);
+    pmesh->ForAllDomains(primitives_n,pinput);
 
 // new time step, outputs, diagnostics
 
     pmesh->ncycle++;
-    pmesh->time  += pmesh->dt;
+    pmesh->time += pmesh->dt;
 
     try {
       pouts->MakeOutputs(pmesh);
