@@ -44,9 +44,9 @@ void FieldIntegrator::ComputeCornerEMFs(MeshBlock *pmb)
   AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
   AthenaArray<Real> bcc = pmb->pfield->bcc.ShallowCopy();
 
-  AthenaArray<Real> emf1 = pmb->pfield->emf1.ShallowCopy();
-  AthenaArray<Real> emf2 = pmb->pfield->emf2.ShallowCopy();
-  AthenaArray<Real> emf3 = pmb->pfield->emf3.ShallowCopy();
+  AthenaArray<Real> e1 = pmb->pfield->e1.ShallowCopy();
+  AthenaArray<Real> e2 = pmb->pfield->e2.ShallowCopy();
+  AthenaArray<Real> e3 = pmb->pfield->e3.ShallowCopy();
   AthenaArray<Real> e_x1f = pmb->pfield->e.x1f.ShallowCopy();
   AthenaArray<Real> e_x2f = pmb->pfield->e.x2f.ShallowCopy();
   AthenaArray<Real> e_x3f = pmb->pfield->e.x3f.ShallowCopy();
@@ -59,21 +59,23 @@ void FieldIntegrator::ComputeCornerEMFs(MeshBlock *pmb)
 
   if (pmb->block_size.nx2 == 1) {
     for (int i=is; i<=ie+1; ++i) {
-      emf2(ks  ,js,i) = e_x1f(X1E2,ks,js,i);
-      emf2(ks+1,js,i) = e_x1f(X1E2,ks,js,i);
-      emf3(ks,js  ,i) = e_x1f(X1E3,ks,js,i);
-      emf3(ks,js+1,i) = e_x1f(X1E3,ks,js,i);
+      e2(ks  ,js,i) = e_x1f(X1E2,ks,js,i);
+      e2(ks+1,js,i) = e_x1f(X1E2,ks,js,i);
+      e3(ks,js  ,i) = e_x1f(X1E3,ks,js,i);
+      e3(ks,js+1,i) = e_x1f(X1E3,ks,js,i);
     }
     return;
   }
 
 //---- 2-D/3-D update:
-// compute cell-centered E3
+// Set BCs for face-centered E3, compute cell-centered E3
+
+  BoundaryValuesFaceCenteredE3(pmb);
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je+1; ++j) {
     for (int i=is; i<=ie+1; ++i) {
-      cc_emf3_(k,j,i) = w(IVX,k,j,i)*bcc(IB2,k,j,i) - w(IVY,k,j,i)*bcc(IB1,k,j,i);
+      cc_e3_(k,j,i) = w(IVX,k,j,i)*bcc(IB2,k,j,i) - w(IVY,k,j,i)*bcc(IB1,k,j,i);
     }
   }}
 
@@ -82,20 +84,20 @@ void FieldIntegrator::ComputeCornerEMFs(MeshBlock *pmb)
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je+1; ++j) {
     for (int i=is; i<=ie+1; ++i) {
-      Real de3_l2 = (1.0-w_x2f(k,j,i))*(e_x2f(X2E3,k,j,i  ) - cc_emf3_(k,j-1,i  )) +
-                    (    w_x2f(k,j,i))*(e_x2f(X2E3,k,j,i-1) - cc_emf3_(k,j-1,i-1));
+      Real de3_l2 = (1.0-w_x1f(k,j-1,i))*(e_x2f(X2E3,k,j,i  ) - cc_e3_(k,j-1,i  )) +
+                    (    w_x1f(k,j-1,i))*(e_x2f(X2E3,k,j,i-1) - cc_e3_(k,j-1,i-1));
 
-      Real de3_r2 = (1.0-w_x2f(k,j,i))*(e_x2f(X2E3,k,j,i  ) - cc_emf3_(k,j,i  )) +
-                    (    w_x2f(k,j,i))*(e_x2f(X2E3,k,j,i-1) - cc_emf3_(k,j,i-1));
+      Real de3_r2 = (1.0-w_x1f(k,j  ,i))*(e_x2f(X2E3,k,j,i  ) - cc_e3_(k,j,i  )) +
+                    (    w_x1f(k,j  ,i))*(e_x2f(X2E3,k,j,i-1) - cc_e3_(k,j,i-1));
 
-      Real de3_l1 = (1.0-w_x1f(k,j,i))*(e_x1f(X1E3,k,j  ,i) - cc_emf3_(k,j  ,i-1)) +
-                    (    w_x1f(k,j,i))*(e_x1f(X1E3,k,j-1,i) - cc_emf3_(k,j-1,i-1));
+      Real de3_l1 = (1.0-w_x2f(k,j,i-1))*(e_x1f(X1E3,k,j  ,i) - cc_e3_(k,j  ,i-1)) +
+                    (    w_x2f(k,j,i-1))*(e_x1f(X1E3,k,j-1,i) - cc_e3_(k,j-1,i-1));
 
-      Real de3_r1 = (1.0-w_x1f(k,j,i))*(e_x1f(X1E3,k,j  ,i) - cc_emf3_(k,j  ,i)) +
-                    (    w_x1f(k,j,i))*(e_x1f(X1E3,k,j-1,i) - cc_emf3_(k,j-1,i));
+      Real de3_r1 = (1.0-w_x2f(k,j,i  ))*(e_x1f(X1E3,k,j  ,i) - cc_e3_(k,j  ,i)) +
+                    (    w_x2f(k,j,i  ))*(e_x1f(X1E3,k,j-1,i) - cc_e3_(k,j-1,i));
 
-      emf3(k,j,i) = 0.25*(de3_l1 + de3_r1 + de3_l2 + de3_r2 +
-        e_x2f(X2E3,k,j,i-1) +e_x2f(X2E3,k,j,i) -e_x1f(X1E3,k,j-1,i) -e_x1f(X1E3,k,j,i));
+      e3(k,j,i) = 0.25*(de3_l1 + de3_r1 + de3_l2 + de3_r2 + e_x2f(X2E3,k,j,i-1) +
+        e_x2f(X2E3,k,j,i) + e_x1f(X1E3,k,j-1,i) + e_x1f(X1E3,k,j,i));
     }
   }}
 
@@ -104,20 +106,37 @@ void FieldIntegrator::ComputeCornerEMFs(MeshBlock *pmb)
   if (pmb->block_size.nx3 == 1) {
     for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie+1; ++i) {
-      emf2(ks  ,j,i) = e_x1f(X1E2,ks,j,i);
-      emf2(ks+1,j,i) = e_x1f(X1E2,ks,j,i);
+      e2(ks  ,j,i) = e_x1f(X1E2,ks,j,i);
+      e2(ks+1,j,i) = e_x1f(X1E2,ks,j,i);
     }}
     for (int j=js; j<=je+1; ++j) {
     for (int i=is; i<=ie; ++i) {
-      emf1(ks  ,j,i) = e_x2f(X2E1,ks,j,i);
-      emf1(ks+1,j,i) = e_x2f(X2E1,ks,j,i);
+      e1(ks  ,j,i) = e_x2f(X2E1,ks,j,i);
+      e1(ks+1,j,i) = e_x2f(X2E1,ks,j,i);
     }}
     return;
   }
 
 //---- 3-D update:
-// integrate E1 and E2 to corners (E3 already done above)
+// Set BCs for face-centered E1,E2, compute cell-centered E1,E2
 
+  BoundaryValuesFaceCenteredE1(pmb);
+  BoundaryValuesFaceCenteredE2(pmb);
+
+  for (int k=ks; k<=ke+1; ++k) {
+  for (int j=js; j<=je+1; ++j) {
+    for (int i=is; i<=ie; ++i) {
+      cc_e1_(k,j,i) = w(IVY,k,j,i)*bcc(IB3,k,j,i) - w(IVZ,k,j,i)*bcc(IB2,k,j,i);
+    }
+  }}
+  for (int k=ks; k<=ke+1; ++k) {
+  for (int j=js; j<=je; ++j) {
+    for (int i=is; i<=ie+1; ++i) {
+      cc_e2_(k,j,i) = w(IVZ,k,j,i)*bcc(IB1,k,j,i) - w(IVX,k,j,i)*bcc(IB3,k,j,i);
+    }
+  }}
+
+// integrate E1 and E2 to corners using GS07 (E3 already done above)
 
   return;
 }

@@ -40,7 +40,7 @@ public:
 
   InterfaceField e;     // face-centered electric fields (e.g. from Riemann solver)
   InterfaceField wght;  // weights used to integrate E to corner using GS algorithm
-  AthenaArray<Real> emf1, emf2, emf3; // edge-centered electric fields used in CT
+  AthenaArray<Real> e1, e2, e3; // edge-centered electric fields used in CT
 
   FieldIntegrator *pint;   // integration algorithm (CT)
 

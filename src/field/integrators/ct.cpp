@@ -44,12 +44,13 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &bin, InterfaceField &bo
 
   ComputeCornerEMFs(pmb);
 
-  AthenaArray<Real> emf1 = pmb->pfield->emf1.ShallowCopy();
-  AthenaArray<Real> emf2 = pmb->pfield->emf2.ShallowCopy();
-  AthenaArray<Real> emf3 = pmb->pfield->emf3.ShallowCopy();
+  AthenaArray<Real> e1 = pmb->pfield->e1.ShallowCopy();
+  AthenaArray<Real> e2 = pmb->pfield->e2.ShallowCopy();
+  AthenaArray<Real> e3 = pmb->pfield->e3.ShallowCopy();
 
   AthenaArray<Real> area = face_area_.ShallowCopy();
-  AthenaArray<Real> len  = edge_length_.ShallowCopy();
+  AthenaArray<Real> len   = edge_length_.ShallowCopy();
+  AthenaArray<Real> lenp1 = edge_lengthp1_.ShallowCopy();
 
 // First copy input into output
 
@@ -80,7 +81,7 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &bin, InterfaceField &bo
     pmb->pcoord->Edge3Length(k,j,is,ie+1,len);
 
     for (int i=is; i<=ie; ++i) {
-      bout.x2f(k,j,i) += (dt/area(i))*(len(i+1)*emf3(k,j,i+1) - len(i)*emf3(k,j,i));
+      bout.x2f(k,j,i) += (dt/area(i))*(len(i+1)*e3(k,j,i+1) - len(i)*e3(k,j,i));
     }
 
   }}
@@ -91,7 +92,7 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &bin, InterfaceField &bo
     pmb->pcoord->Edge2Length(k,j,is,ie+1,len);
 
     for (int i=is; i<=ie; ++i) {
-      bout.x3f(k,j,i) -= (dt/area(i))*(len(i+1)*emf2(k,j,i+1) - len(i)*emf2(k,j,i));
+      bout.x3f(k,j,i) -= (dt/area(i))*(len(i+1)*e2(k,j,i+1) - len(i)*e2(k,j,i));
     }
 
   }}
@@ -102,19 +103,21 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &bin, InterfaceField &bo
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       pmb->pcoord->Face1Area(k,j,is,ie,area);
-      pmb->pcoord->Edge3Length(k,j,is,ie,len);
+      pmb->pcoord->Edge3Length(k,j  ,is,ie,len);
+      pmb->pcoord->Edge3Length(k,j+1,is,ie,lenp1);
 
       for (int i=is; i<=ie+1; ++i) {
-        bout.x1f(k,j,i) -= (dt/area(i))*(emf3(k,j+1,i) - emf3(k,j,i));
+        bout.x1f(k,j,i) -= (dt/area(i))*(lenp1(i)*e3(k,j+1,i) - len(i)*e3(k,j,i));
       }
     }}
     for (int k=ks; k<=ke+1; ++k) {
     for (int j=js; j<=je; ++j) {
       pmb->pcoord->Face3Area(k,j,is,ie,area);
-      pmb->pcoord->Edge1Length(k,j,is,ie,len);
+      pmb->pcoord->Edge1Length(k,j  ,is,ie,len);
+      pmb->pcoord->Edge1Length(k,j+1,is,ie,lenp1);
 
       for (int i=is; i<=ie; ++i) {
-        bout.x3f(k,j,i) += (dt/area(i))*(emf1(k,j+1,i) - emf1(k,j,i));
+        bout.x3f(k,j,i) += (dt/area(i))*(lenp1(i)*e1(k,j+1,i) - len(i)*e1(k,j,i));
       }
     }}
   }
@@ -125,19 +128,21 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &bin, InterfaceField &bo
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       pmb->pcoord->Face1Area(k,j,is,ie,area);
-      pmb->pcoord->Edge2Length(k,j,is,ie,len);
+      pmb->pcoord->Edge2Length(k  ,j,is,ie,len);
+      pmb->pcoord->Edge2Length(k+1,j,is,ie,lenp1);
 
       for (int i=is; i<=ie+1; ++i) {
-        bout.x1f(k,j,i) += (dt/area(i))*(emf2(k+1,j,i) - emf2(k,j,i));
+        bout.x1f(k,j,i) += (dt/area(i))*(lenp1(i)*e2(k+1,j,i) - len(i)*e2(k,j,i));
       }
     }}
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je+1; ++j) {
       pmb->pcoord->Face2Area(k,j,is,ie,area);
-      pmb->pcoord->Edge1Length(k,j,is,ie,len);
+      pmb->pcoord->Edge2Length(k  ,j,is,ie,len);
+      pmb->pcoord->Edge2Length(k+1,j,is,ie,lenp1);
 
       for (int i=is; i<=ie; ++i) {
-        bout.x2f(k,j,i) -= (dt/area(i))*(emf1(k+1,j,i) - emf1(k,j,i));
+        bout.x2f(k,j,i) -= (dt/area(i))*(lenp1(i)*e1(k+1,j,i) - len(i)*e1(k,j,i));
       }
     }}
   }
