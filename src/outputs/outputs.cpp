@@ -378,7 +378,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov = new OutputVariable; 
     pov->type = "SCALARS";
     pov->name = "dens";
-    pov->data = pfl->u.ShallowSlice(IDN,1);
+    pfl->u.ShallowSlice(IDN,1,pov->data);
     pod->AppendNode(pov); // (lab-frame) density
     var_added = 1;
   }
@@ -388,7 +388,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov = new OutputVariable; 
     pov->type = "SCALARS";
     pov->name = "rho";
-    pov->data = pfl->w.ShallowSlice(IDN,1);
+    pfl->w.ShallowSlice(IDN,1,pov->data);
     pod->AppendNode(pov); // (rest-frame) density
     var_added = 1;
   }
@@ -399,7 +399,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       pov = new OutputVariable; 
       pov->type = "SCALARS";
       pov->name = "Etot";
-      pov->data = pfl->u.ShallowSlice(IEN,1);
+      pfl->u.ShallowSlice(IEN,1,pov->data);
       pod->AppendNode(pov); // total energy
       var_added = 1;
     }
@@ -411,7 +411,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       pov = new OutputVariable; 
       pov->type = "SCALARS";
       pov->name = "eint";
-      pov->data = pfl->w.ShallowSlice(IEN,1);
+      pfl->w.ShallowSlice(IEN,1,pov->data);
       pod->AppendNode(pov); // internal energy
       var_added = 1;
     }
@@ -422,7 +422,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov = new OutputVariable; 
     pov->type = "VECTORS";
     pov->name = "mom";
-    pov->data = pfl->u.ShallowSlice(IM1,3);
+    pfl->u.ShallowSlice(IM1,3,pov->data);
     pod->AppendNode(pov); // momentum vector
     var_added = 1;
   }
@@ -432,7 +432,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov = new OutputVariable; 
     pov->type = "VECTORS";
     pov->name = "vel";
-    pov->data = pfl->w.ShallowSlice(IM1,3);
+    pfl->w.ShallowSlice(IM1,3,pov->data);
     pod->AppendNode(pov); // velocity vector
     var_added = 1;
   }
@@ -443,7 +443,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov = new OutputVariable; 
     pov->type = "VECTORS";
     pov->name = "cell-centered B";
-    pov->data = pfd->bcc.ShallowSlice(0,3);
+    pfd->bcc.ShallowSlice(0,3,pov->data);
     pod->AppendNode(pov); // magnetic field vector
     var_added = 1;
   }
@@ -453,7 +453,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       pov = new OutputVariable; 
       pov->type = "SCALARS";
       pov->name = "ifov";
-      pov->data = pfl->ifov.ShallowSlice(n,1);
+      pfl->ifov.ShallowSlice(n,1,pov->data);
       pod->AppendNode(pov); // internal fluid outvars
     }
     var_added = 1;

@@ -28,8 +28,9 @@ public:
 
   Field *pmy_field;  // ptr to Field containing this FieldIntegrator
 
-  void CT(MeshBlock *pmb, InterfaceField &bin, InterfaceField &bout, Real dt);
-  void ComputeCornerEMFs(MeshBlock *pmb);
+  void CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w,
+    AthenaArray<Real> &bcc, Real dt);
+  void ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w, AthenaArray<Real> &bcc);
   void BoundaryValuesFaceCenteredE1(MeshBlock *pmb);
   void BoundaryValuesFaceCenteredE2(MeshBlock *pmb);
   void BoundaryValuesFaceCenteredE3(MeshBlock *pmb);

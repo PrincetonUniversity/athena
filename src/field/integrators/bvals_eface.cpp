@@ -43,6 +43,8 @@ void FieldIntegrator::BoundaryValuesFaceCenteredE3(MeshBlock *pmb)
 
   AthenaArray<Real> e_x1f = pmb->pfield->e.x1f.ShallowCopy();
   AthenaArray<Real> e_x2f = pmb->pfield->e.x2f.ShallowCopy();
+  AthenaArray<Real> w_x1f = pmb->pfield->wght.x1f.ShallowCopy();
+  AthenaArray<Real> w_x2f = pmb->pfield->wght.x2f.ShallowCopy();
 
 // boundary conditions for E3 on x2-face at inner/outer x1
 
@@ -51,12 +53,14 @@ void FieldIntegrator::BoundaryValuesFaceCenteredE3(MeshBlock *pmb)
       for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je+1; ++j) {
         e_x2f(X2E3,k,j,is-1) = e_x2f(X2E3,k,j,ie); 
+        w_x2f(k,j,is-1) = w_x2f(k,j,ie);
       }}
       break;
     default:
       for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je+1; ++j) {
         e_x2f(X2E3,k,j,is-1) = e_x2f(X2E3,k,j,is); 
+        w_x2f(k,j,is-1) = w_x2f(k,j,is);
       }}
   }
 
@@ -65,12 +69,14 @@ void FieldIntegrator::BoundaryValuesFaceCenteredE3(MeshBlock *pmb)
       for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je+1; ++j) {
         e_x2f(X2E3,k,j,ie+1) = e_x2f(X2E3,k,j,is); 
+        w_x2f(k,j,ie+1) = w_x2f(k,j,is);
       }}
       break;
     default:
       for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je+1; ++j) {
         e_x2f(X2E3,k,j,ie+1) = e_x2f(X2E3,k,j,ie); 
+        w_x2f(k,j,ie+1) = w_x2f(k,j,ie);
       }}
   }
 
@@ -81,12 +87,14 @@ void FieldIntegrator::BoundaryValuesFaceCenteredE3(MeshBlock *pmb)
       for (int k=ks; k<=ke; ++k) {
       for (int i=is; i<=ie+1; ++i) {
         e_x1f(X1E3,k,js-1,i) = e_x1f(X1E3,k,je,i); 
+        w_x1f(k,js-1,i) = w_x2f(k,je,i);
       }}
       break;
     default:
       for (int k=ks; k<=ke; ++k) {
       for (int i=is; i<=ie+1; ++i) {
         e_x1f(X1E3,k,js-1,i) = e_x1f(X1E3,k,js,i); 
+        w_x1f(k,js-1,i) = w_x2f(k,js,i);
       }}
   }
 
@@ -95,12 +103,14 @@ void FieldIntegrator::BoundaryValuesFaceCenteredE3(MeshBlock *pmb)
       for (int k=ks; k<=ke; ++k) {
       for (int i=is; i<=ie+1; ++i) {
         e_x1f(X1E3,k,je+1,i) = e_x1f(X1E3,k,js,i); 
+        w_x1f(k,je+1,i) = w_x2f(k,js,i);
       }}
       break;
     default:
       for (int k=ks; k<=ke; ++k) {
       for (int i=is; i<=ie+1; ++i) {
         e_x1f(X1E3,k,je+1,i) = e_x1f(X1E3,k,je,i); 
+        w_x1f(k,je+1,i) = w_x2f(k,je,i);
       }}
   }
 

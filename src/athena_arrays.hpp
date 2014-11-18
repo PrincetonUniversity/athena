@@ -69,7 +69,7 @@ public:
   AthenaArray(const AthenaArray<T>& t);
   AthenaArray<T> &operator= (const AthenaArray<T> &t);
   AthenaArray<T> ShallowCopy();
-  AthenaArray<T> ShallowSlice(const int indx, const int nvar);
+  AthenaArray<T> ShallowSlice(const int indx, const int nvar, AthenaArray<T> &dest);
 
 private:
   T *pdata_;
@@ -109,8 +109,21 @@ AthenaArray<T>::AthenaArray(const AthenaArray<T>& src) {
   }
 }
 
-// assignment operator (does a deep copy)
+// assignment operator (does a deep copy).  Does not allocate memory for destination.
+// THIS REQUIRES DESTINATION ARRAY BE ALREADY ALLOCATED AND SAME SIZE AS SOURCE
 
+template<typename T>
+AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
+  if (this != &src){
+    std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_);
+    for (std::size_t i=0; i<size; ++i) {
+      this->pdata_[i] = src.pdata_[i]; // copy data (not just addresses!)
+    } 
+  }
+  return *this;
+}
+
+/***
 template<typename T>
 AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
   if (this != &src){
@@ -128,6 +141,7 @@ AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
   }
   return *this;
 }
+***/
 
 //--------------------------------------------------------------------------------------
 //! \fn AthenaArray::ShallowCopy()
@@ -146,15 +160,14 @@ AthenaArray<T> AthenaArray<T>::ShallowCopy() {
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn AthenaArray::ShallowSlice(int indx, int nvar)
+//! \fn AthenaArray::ShallowSlice(int indx, int nvar, AthenaArray<T> &dest)
 //  \brief shallow copy of nvar elements in the largest dimension of an array, starting
 //  at index=indx.  Copies pointers to data, but not data itself.  Examples:
 //    4D array nvar=3: copy has size OUT(3,nx3,nx2,nx1) with OUT(0,*,*,*)=IN(indx,*,*,*)
 //    3D array nvar=1: copy has size OUT(1,1,nx2,nx1)   with OUT(0,0,*,*)=IN(0,indx,*,*)
 
 template<typename T>
-AthenaArray<T> AthenaArray<T>::ShallowSlice(const int indx, const int nvar) {
-  AthenaArray<T> dest;
+AthenaArray<T> AthenaArray<T>::ShallowSlice(const int indx, const int nvar, AthenaArray<T> &dest) {
   dest.nx1_=nx1_;
   dest.nx2_=nx2_;
   dest.nx3_=nx3_;
@@ -174,7 +187,6 @@ AthenaArray<T> AthenaArray<T>::ShallowSlice(const int indx, const int nvar) {
     dest.pdata_ += indx;
   }
   dest.scopy_ = 1;
-  return dest;
 }
 
 //--------------------------------------------------------------------------------------

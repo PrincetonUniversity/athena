@@ -129,9 +129,10 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
 #ifdef OPENMP_PARALLEL
   tid=omp_get_thread_num();
 #endif
-  AthenaArray<Real> dt1 = dt1_.ShallowSlice(tid,1);
-  AthenaArray<Real> dt2 = dt2_.ShallowSlice(tid,1);
-  AthenaArray<Real> dt3 = dt3_.ShallowSlice(tid,1);
+  AthenaArray<Real> dt1, dt2, dt3;
+  dt1_.ShallowSlice(tid,1,dt1);
+  dt2_.ShallowSlice(tid,1,dt2);
+  dt3_.ShallowSlice(tid,1,dt3);
   Real wi[(NFLUID)+((NFIELD)-1)];
 
   for (int k=ks; k<=ke; ++k){

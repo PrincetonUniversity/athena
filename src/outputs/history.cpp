@@ -62,7 +62,8 @@ void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
   AthenaArray<Real> cell_volume;
   cell_volume.NewAthenaArray(pmm->nthreads_mesh,ncells1);
 
-  AthenaArray<Real> vol = cell_volume.ShallowSlice(tid,1);
+  AthenaArray<Real> vol;
+  cell_volume.ShallowSlice(tid,1,vol);
 
 // add OutputData header
 

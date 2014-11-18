@@ -36,13 +36,14 @@
 //! \fn  void FieldIntegrator::ComputeCornerEMFs
 //  \brief
 
-void FieldIntegrator::ComputeCornerEMFs(MeshBlock *pmb)
+void FieldIntegrator::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w, 
+  AthenaArray<Real> &bcc)
 {
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
-  AthenaArray<Real> bcc = pmb->pfield->bcc.ShallowCopy();
+//  AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
+//  AthenaArray<Real> bcc = pmb->pfield->bcc.ShallowCopy();
 
   AthenaArray<Real> e1 = pmb->pfield->e1.ShallowCopy();
   AthenaArray<Real> e2 = pmb->pfield->e2.ShallowCopy();
@@ -73,8 +74,8 @@ void FieldIntegrator::ComputeCornerEMFs(MeshBlock *pmb)
   BoundaryValuesFaceCenteredE3(pmb);
 
   for (int k=ks; k<=ke; ++k) {
-  for (int j=js; j<=je+1; ++j) {
-    for (int i=is; i<=ie+1; ++i) {
+  for (int j=js-1; j<=je+1; ++j) {
+    for (int i=is-1; i<=ie+1; ++i) {
       cc_e3_(k,j,i) = w(IVX,k,j,i)*bcc(IB2,k,j,i) - w(IVY,k,j,i)*bcc(IB1,k,j,i);
     }
   }}
@@ -123,15 +124,15 @@ void FieldIntegrator::ComputeCornerEMFs(MeshBlock *pmb)
   BoundaryValuesFaceCenteredE1(pmb);
   BoundaryValuesFaceCenteredE2(pmb);
 
-  for (int k=ks; k<=ke+1; ++k) {
-  for (int j=js; j<=je+1; ++j) {
+  for (int k=ks-1; k<=ke+1; ++k) {
+  for (int j=js-1; j<=je+1; ++j) {
     for (int i=is; i<=ie; ++i) {
       cc_e1_(k,j,i) = w(IVY,k,j,i)*bcc(IB3,k,j,i) - w(IVZ,k,j,i)*bcc(IB2,k,j,i);
     }
   }}
-  for (int k=ks; k<=ke+1; ++k) {
+  for (int k=ks-1; k<=ke+1; ++k) {
   for (int j=js; j<=je; ++j) {
-    for (int i=is; i<=ie+1; ++i) {
+    for (int i=is-1; i<=ie+1; ++i) {
       cc_e2_(k,j,i) = w(IVZ,k,j,i)*bcc(IB1,k,j,i) - w(IVX,k,j,i)*bcc(IB3,k,j,i);
     }
   }}
