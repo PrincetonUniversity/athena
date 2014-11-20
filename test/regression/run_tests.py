@@ -2,6 +2,7 @@
 
 # Python modules
 import argparse
+import os
 import pkgutil
 import sys
 
@@ -30,6 +31,7 @@ def main(**kwargs):
       name_full = 'scripts.tests.' + name
       module = __import__(name_full, globals(), locals(), fromlist=['run_test'])
       test_results.append(module.run_test())
+      os.system('rm -r bin')
 
   # Restore any previously-existing files once runs are complete
   finally:
