@@ -28,7 +28,7 @@
 #include "../athena_arrays.hpp"    // AthenaArray
 #include "../mesh.hpp"             // MeshBlock
 #include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/eos/eos.hpp"    // ParameterInput
+#include "../fluid/eos/eos.hpp"    // GetGamma
 #include "../field/field.hpp"      // magnetic field
 
 //======================================================================================

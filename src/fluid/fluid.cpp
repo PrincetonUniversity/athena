@@ -29,7 +29,7 @@
 #include "srcterms/srcterms.hpp"        // FluidSourceTerms
 #include "integrators/fluid_integrator.hpp"  // FluidIntegrator
 #include "../mesh.hpp"                  // MeshBlock, Mesh
-#include "../coordinates/coordinates.hpp" // CellPhysicalWidth()
+#include "../coordinates/coordinates.hpp" // CenterWidth()
 #include "../field/field.hpp"             // B-fields
 
 #include <omp.h>
@@ -162,26 +162,26 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
           wi[IBZ] = bcc(IB3,k,j,i);
           Real bx = b_x1f(k,j,i);
           Real cf = pf_eos->FastMagnetosonicSpeed(wi,bx);
-          dt1(i)= pmy_block->pcoord->CellPhysicalWidth1(k,j,i)/(fabs(wi[IVX]) + cf);
+          dt1(i)= pmy_block->pcoord->CenterWidth1(k,j,i)/(fabs(wi[IVX]) + cf);
 
           wi[IBY] = bcc(IB3,k,j,i);
           wi[IBZ] = bcc(IB1,k,j,i);
           bx = b_x2f(k,j,i);
           cf = pf_eos->FastMagnetosonicSpeed(wi,bx);
-          dt2(i)= pmy_block->pcoord->CellPhysicalWidth2(k,j,i)/(fabs(wi[IVY]) + cf);
+          dt2(i)= pmy_block->pcoord->CenterWidth2(k,j,i)/(fabs(wi[IVY]) + cf);
 
           wi[IBY] = bcc(IB1,k,j,i);
           wi[IBZ] = bcc(IB2,k,j,i);
           bx = b_x3f(k,j,i);
           cf = pf_eos->FastMagnetosonicSpeed(wi,bx);
-          dt3(i)= pmy_block->pcoord->CellPhysicalWidth3(k,j,i)/(fabs(wi[IVZ]) + cf);
+          dt3(i)= pmy_block->pcoord->CenterWidth3(k,j,i)/(fabs(wi[IVZ]) + cf);
 
         } else {
 
           Real cs = pf_eos->SoundSpeed(wi);
-          dt1(i)= pmy_block->pcoord->CellPhysicalWidth1(k,j,i)/(fabs(wi[IVX]) + cs);
-          dt2(i)= pmy_block->pcoord->CellPhysicalWidth2(k,j,i)/(fabs(wi[IVY]) + cs);
-          dt3(i)= pmy_block->pcoord->CellPhysicalWidth3(k,j,i)/(fabs(wi[IVZ]) + cs);
+          dt1(i)= pmy_block->pcoord->CenterWidth1(k,j,i)/(fabs(wi[IVX]) + cs);
+          dt2(i)= pmy_block->pcoord->CenterWidth2(k,j,i)/(fabs(wi[IVY]) + cs);
+          dt3(i)= pmy_block->pcoord->CenterWidth3(k,j,i)/(fabs(wi[IVZ]) + cs);
 
         }
       }

@@ -3,19 +3,19 @@
 // TODO: make left and right inputs const
 
 // Primary header
-#include "../integrators.hpp"
+#include "../../fluid_integrator.hpp"
 
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
 // Athena headers
-#include "../../../athena.hpp"                   // enums, macros, Real
-#include "../../../athena_arrays.hpp"            // AthenaArray
-#include "../../eos/eos.hpp"                     // GetGamma()
-#include "../../fluid.hpp"                       // Fluid
-#include "../../../coordinates/coordinates.hpp"  // Coordinates
-#include "../../../mesh.hpp"                     // MeshBlock
+#include "../../../../athena.hpp"                   // enums, macros, Real
+#include "../../../../athena_arrays.hpp"            // AthenaArray
+#include "../../../eos/eos.hpp"                     // GetGamma()
+#include "../../../fluid.hpp"                       // Fluid
+#include "../../../../coordinates/coordinates.hpp"  // Coordinates
+#include "../../../../mesh.hpp"                     // MeshBlock
 
 // Riemann solver
 // Inputs:
@@ -25,11 +25,12 @@
 //   pflux: pointer to fluxes
 // Notes:
 //   implements HLLC algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
-void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
-    const int iu, const int ivx, const int ivy, const int ivz,
-    AthenaArray<Real> &prim_left, AthenaArray<Real> &prim_right,
-    AthenaArray<Real> &flux)
+void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const int iu,
+  const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &prim_left,
+  AthenaArray<Real> &prim_right, AthenaArray<Real> &flux)
 {
+  int ivy = IVX + ((ivx-IVX)+1)%3;
+  int ivz = IVX + ((ivx-IVX)+2)%3;
   // Extract ratio of specific heats
   const Real gamma_adi = pmy_fluid->pf_eos->GetGamma();
   const Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);

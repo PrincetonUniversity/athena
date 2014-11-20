@@ -56,8 +56,8 @@ FluidEqnOfState::~FluidEqnOfState()
 //   follows Noble et al. 2006, ApJ 641 626 (N)
 //   implements formulas assuming no magnetic field
 void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
-  const InterfaceField &bi, const AthenaArray<Real> &prim_old,
-  AthenaArray<Real> &prim, AthenaArray<Real> &bc)
+  const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
+  AthenaArray<Real> &bcc)
 {
   // Parameters
   const Real max_velocity = 1.0 - 1.0e-15;

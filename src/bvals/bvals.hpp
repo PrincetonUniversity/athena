@@ -76,8 +76,8 @@ public:
   ~BoundaryValues();
 
   template<typename T> void ApplyBVals(T &input);
-  void EnrollFluidBValFunction (enum EdgeNames edge, BValFluid_t  my_bc);
-  void EnrollBFieldBValFunction(enum EdgeNames edge, BValBField_t my_bc);
+  void EnrollFluidBoundaryFunction (enum EdgeNames edge, BValFluid_t  my_bc);
+  void EnrollFieldBoundaryFunction(enum EdgeNames edge, BValBField_t my_bc);
 
 private:
   MeshBlock *pmy_mblock_;  // ptr to MeshBlock containing this BVals

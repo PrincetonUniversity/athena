@@ -58,8 +58,9 @@ FluidEqnOfState::~FluidEqnOfState() {}
 //          d0 = 1/2 * (x0 - sqrt(x0^2 - 4 a0))
 //          then |v|^2 + d1 |v| + d0 = 0
 //          |v| = 1/2 * (-d1 + sqrt(d1^2 - 4 d0))
-void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons, InterfaceField &bi,
-    AthenaArray<Real> &prim_old, AthenaArray<Real> &prim, AthenaArray<Real> &bc)
+void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
+  const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
+  AthenaArray<Real> &bcc)
 {
   // Parameters
   const Real max_velocity = 1.0 - 1.0e-15;

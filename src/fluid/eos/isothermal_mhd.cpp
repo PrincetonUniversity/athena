@@ -45,13 +45,14 @@ FluidEqnOfState::~FluidEqnOfState()
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-//   AthenaArray<Real> &prim_old, AthenaArray<Real> &prim)
-// \brief convert conserved to primitive variables for adiabatic MHD
+// \!fn void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
+//  const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
+//  AthenaArray<Real> &bcc)
+// \brief Converts conserved into primitive variables in adiabatic hydro.
 
 void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
-  const InterfaceField &bi, const AthenaArray<Real> &prim_old,
-  AthenaArray<Real> &prim, AthenaArray<Real> &bc)
+  const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
+  AthenaArray<Real> &bcc)
 {
   MeshBlock *pmb = pmy_fluid_->pmy_block;
   int jl = pmb->js; int ju = pmb->je;
@@ -65,7 +66,6 @@ void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
     ku += (NGHOST);
   }
 
-//--------------------------------------------------------------------------------------
 // Convert to Primitives
 
   for (int k=kl; k<=ku; ++k){
@@ -77,22 +77,23 @@ void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
       const Real& u_m2 = cons(IVY,k,j,i);
       const Real& u_m3 = cons(IVZ,k,j,i);
 
-      Real di = 1.0/u_d;
       prim(IDN,k,j,i) = u_d;
+
+      Real di = 1.0/u_d;
       prim(IVX,k,j,i) = u_m1*di;
       prim(IVY,k,j,i) = u_m2*di;
       prim(IVZ,k,j,i) = u_m3*di;
 
-      const Real& b1_i   = bi.x1(k,j,i  );
-      const Real& b1_ip1 = bi.x1(k,j,i+1);
-      const Real& b2_j   = bi.x2(k,j  ,i);
-      const Real& b2_jp1 = bi.x2(k,j+1,i);
-      const Real& b3_k   = bi.x3(k  ,j,i);
-      const Real& b3_kp1 = bi.x3(k+1,j,i);
+      const Real& b1_i   = b.x1f(k,j,i  );
+      const Real& b1_ip1 = b.x1f(k,j,i+1);
+      const Real& b2_j   = b.x2f(k,j  ,i);
+      const Real& b2_jp1 = b.x2f(k,j+1,i);
+      const Real& b3_k   = b.x3f(k  ,j,i);
+      const Real& b3_kp1 = b.x3f(k+1,j,i);
 
-      bc(0,k,j,i) = 0.5*(b1_i + b1_ip1);
-      bc(1,k,j,i) = 0.5*(b2_j + b2_jp1);
-      bc(2,k,j,i) = 0.5*(b3_k + b3_kp1);
+      bcc(IB1,k,j,i) = 0.5*(b1_i + b1_ip1);
+      bcc(IB2,k,j,i) = 0.5*(b2_j + b2_jp1);
+      bcc(IB3,k,j,i) = 0.5*(b3_k + b3_kp1);
     }
   }}
 

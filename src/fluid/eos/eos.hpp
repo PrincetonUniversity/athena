@@ -27,8 +27,9 @@ public:
   FluidEqnOfState(Fluid *pf, ParameterInput *pin);
   ~FluidEqnOfState();
 
-  void ConservedToPrimitive(const AthenaArray<Real> &cons, AthenaArray<Real> &prim,
-    const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &bcc);
+  void ConservedToPrimitive(const AthenaArray<Real> &cons, 
+    const AthenaArray<Real> &prim_old, const InterfaceField &b,
+    AthenaArray<Real> &prim, AthenaArray<Real> &bcc);
 
   Real SoundSpeed(const Real prim[NFLUID]); 
   Real FastMagnetosonicSpeed(const Real prim[((NFLUID)+(NFIELD)-1)], const Real bx); 

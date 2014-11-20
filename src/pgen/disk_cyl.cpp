@@ -55,9 +55,9 @@ static Real ICden(const Real x1);
 static Real ICvel(const Real x1);
 static Real KeplerVel(const Real x1);
 
-void Fluid::InitFluid(ParameterInput *pin)
+void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
-  MeshBlock *pb = pmy_block;
+  MeshBlock *pb = pfl->pmy_block;
   std::stringstream msg;
 
   int is = pb->is; int js = pb->js; int ks = pb->ks;
@@ -95,12 +95,13 @@ void Fluid::InitFluid(ParameterInput *pin)
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         Real x1 = pb->x1v(i);
-        u(IDN,k,j,i) = ICden(x1);
-        u(IM1,k,j,i) = 0.0;
-        u(IM2,k,j,i) = ICvel(x1)*u(IDN,k,j,i);
-        u(IM3,k,j,i) = 0.0;
-	if(NON_BAROTROPIC_EOS) u(IEN,k,j,i) = pressure/(pf_eos->GetGamma() - 1.0) +
-				0.5*(SQR(u(IM1,k,j,i))+SQR(u(IM2,k,j,i))+SQR(u(IM3,k,j,i)))/u(IDN,k,j,i);
+        pfl->u(IDN,k,j,i) = ICden(x1);
+        pfl->u(IM1,k,j,i) = 0.0;
+        pfl->u(IM2,k,j,i) = ICvel(x1)*pfl->u(IDN,k,j,i);
+        pfl->u(IM3,k,j,i) = 0.0;
+	if(NON_BAROTROPIC_EOS) pfl->u(IEN,k,j,i)= pressure/(pfl->pf_eos->GetGamma()-1.0)
+          + 0.5*(SQR(pfl->u(IM1,k,j,i)) + SQR(pfl->u(IM2,k,j,i)) +
+                 SQR(pfl->u(IM3,k,j,i)))/pfl->u(IDN,k,j,i);
       }
     }
   }

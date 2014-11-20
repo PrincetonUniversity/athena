@@ -60,6 +60,62 @@ Coordinates::~Coordinates()
 {
 }
 
+//--------------------------------------------------------------------------------------
+// Edge Length functions: returns physical length at cell edges
+// Edge1(i,j,k) located at (i,j-1/2,k-1/2), i.e. (x1v(i), x2f(j), x3f(k))
+
+void Coordinates::Edge1Length(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = pmy_block->dx1f(i);
+  }
+  return;
+}
+
+// Edge2(i,j,k) located at (i-1/2,j,k-1/2), i.e. (x1f(i), x2v(j), x3f(k))
+
+void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = pmy_block->dx2f(j);
+  }
+  return;
+}
+
+// Edge3(i,j,k) located at (i-1/2,j-1/2,k), i.e. (x1f(i), x2f(j), x3v(k))
+
+void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = pmy_block->dx3f(k);
+  }
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+// Cell-center Width functions: returns physical width at cell-center
+
+Real Coordinates::CenterWidth1(const int k, const int j, const int i)
+{
+  return (pmy_block->dx1f(i));
+}
+
+Real Coordinates::CenterWidth2(const int k, const int j, const int i)
+{
+  return (pmy_block->dx2f(j));
+}
+
+Real Coordinates::CenterWidth3(const int k, const int j, const int i)
+{
+  return (pmy_block->dx3f(k));
+}
+
 // Function for computing areas orthogonal to x
 // Inputs:
 //   k: z-index
@@ -128,6 +184,7 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
   }
   return;
 }
+
 
 // Function for computing cell volumes
 // Inputs:

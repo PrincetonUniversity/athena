@@ -28,10 +28,10 @@ static void set_state(AthenaArray<Real> &prim, AthenaArray<Real> &cons, int i, i
 // Outputs: (none)
 // Notes:
 //   sets conserved variables according to input primitives
-void Fluid::InitFluid(ParameterInput *pin)
+void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   // Prepare index bounds
-  MeshBlock *pb = pmy_block;
+  MeshBlock *pb = pfl->pmy_block;
   int il = pb->is - NGHOST;
   int iu = pb->ie + NGHOST;
   int jl = pb->js;
@@ -50,7 +50,7 @@ void Fluid::InitFluid(ParameterInput *pin)
   }
 
   // Read and set ratio of specific heats
-  Real gamma_adi = pf_eos->GetGamma();
+  Real gamma_adi = pfl->pf_eos->GetGamma();
   Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Read and check shock direction and position
@@ -120,10 +120,10 @@ void Fluid::InitFluid(ParameterInput *pin)
               left_side = true;
         }
         if (left_side)
-          set_state(w, u, i, j, k, rho_left, pgas_left, vx_left, vy_left, vz_left,
+          set_state(pfl->w, pfl->u, i, j, k, rho_left, pgas_left, vx_left, vy_left, vz_left,
               gamma_adi, gamma_adi_red);
         else
-          set_state(w, u, i, j, k, rho_right, pgas_right, vx_right, vy_right, vz_right,
+          set_state(pfl->w, pfl->u, i, j, k, rho_right, pgas_right, vx_right, vy_right, vz_right,
               gamma_adi, gamma_adi_red);
       }
   return;

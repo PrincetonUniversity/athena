@@ -484,14 +484,14 @@ void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
         pfield->pint->CT(pmb, pfield->b, pfield->b, pfluid->w1, pfield->bcc1, dt);
         break;
 
-      case primitives_n: // compute primitives from conseerved at t^n
-        pfluid->pf_eos->ConservedToPrimitive(pfluid->u,pfluid->w,pfluid->w1,
-           pfield->b, pfield->bcc);
+      case primitives_n: // compute primitives from conserved at t^n
+        pfluid->pf_eos->ConservedToPrimitive(pfluid->u, pfluid->w1, pfield->b,
+          pfluid->w, pfield->bcc);
         break;
 
-      case primitives_nhalf: // compute primitives from conseerved at t^{intermediate}
-        pfluid->pf_eos->ConservedToPrimitive(pfluid->u1,pfluid->w1,pfluid->w,
-           pfield->b1, pfield->bcc1);
+      case primitives_nhalf: // compute primitives from conserved at t^{intermediate}
+        pfluid->pf_eos->ConservedToPrimitive(pfluid->u1, pfluid->w, pfield->b1,
+          pfluid->w1, pfield->bcc1);
         break;
 
       case new_timestep: // calculate new time step

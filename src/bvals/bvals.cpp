@@ -203,7 +203,7 @@ BoundaryValues::~BoundaryValues()
 //! \fn
 //  \brief
 
-void BoundaryValues::EnrollFluidBValFunction(enum EdgeNames edge, BValFluid_t my_bc)
+void BoundaryValues::EnrollFluidBoundaryFunction(enum EdgeNames edge, BValFluid_t my_bc)
 {
   switch(edge){
   case inner_x1:
@@ -226,7 +226,7 @@ void BoundaryValues::EnrollFluidBValFunction(enum EdgeNames edge, BValFluid_t my
     break;
   default:
     std::stringstream msg;
-    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
+    msg << "### FATAL ERROR in EnrollFluidBoundaryCondition function" << std::endl
         << "EdgeName = " << edge << " not valid" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
@@ -237,7 +237,7 @@ void BoundaryValues::EnrollFluidBValFunction(enum EdgeNames edge, BValFluid_t my
 //! \fn
 //  \brief
 
-void BoundaryValues::EnrollBFieldBValFunction(enum EdgeNames edge, BValBField_t my_bc)
+void BoundaryValues::EnrollFieldBoundaryFunction(enum EdgeNames edge,BValBField_t my_bc)
 {
   switch(edge){
   case inner_x1:
@@ -260,7 +260,7 @@ void BoundaryValues::EnrollBFieldBValFunction(enum EdgeNames edge, BValBField_t 
     break;
   default:
     std::stringstream msg;
-    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
+    msg << "### FATAL ERROR in EnrollFieldBoundaryCondition function" << std::endl
         << "EdgeName = " << edge << " not valid" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }

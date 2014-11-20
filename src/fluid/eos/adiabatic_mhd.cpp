@@ -48,12 +48,14 @@ FluidEqnOfState::~FluidEqnOfState()
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-//   AthenaArray<Real> &prim_old, AthenaArray<Real> &prim)
-// \brief convert conserved to primitive variables for adiabatic MHD
+// \!fn void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
+//  const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
+//  AthenaArray<Real> &bcc)
+// \brief For the Fluid, converts conserved into primitive variables in adiabatic MHD.
+//  For the Field, computes cell-centered from face-centered magnetic field.
 
 void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
-  AthenaArray<Real> &prim, const AthenaArray<Real> &prim_old, const InterfaceField &b, 
+  const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
   AthenaArray<Real> &bcc)
 {
   MeshBlock *pmb = pmy_fluid_->pmy_block;
@@ -68,7 +70,6 @@ void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
     ku += (NGHOST);
   }
 
-//--------------------------------------------------------------------------------------
 // Convert to Primitives
 
   int max_nthreads = pmb->pmy_domain->pmy_mesh->nthreads_mesh;
@@ -86,8 +87,9 @@ void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
       const Real& u_m3 = cons(IVZ,k,j,i);
       const Real& u_e  = cons(IEN,k,j,i);
 
-      Real di = 1.0/u_d;
       prim(IDN,k,j,i) = u_d;
+
+      Real di = 1.0/u_d;
       prim(IVX,k,j,i) = u_m1*di;
       prim(IVY,k,j,i) = u_m2*di;
       prim(IVZ,k,j,i) = u_m3*di;
@@ -118,7 +120,7 @@ void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn Real FluidEqnOfState::SoundSpeed(Real prim[])
+// \!fn Real FluidEqnOfState::SoundSpeed(const Real prim[NFLUID])
 // \brief returns adiabatic sound speed given vector of primitive variables
 
 Real FluidEqnOfState::SoundSpeed(const Real prim[NFLUID])
@@ -127,7 +129,7 @@ Real FluidEqnOfState::SoundSpeed(const Real prim[NFLUID])
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn Real FluidEqnOfState::FastMagnetosonicSpeed(Real prim[])
+// \!fn Real FluidEqnOfState::FastMagnetosonicSpeed(const Real prim[], const Real bx)
 // \brief returns fast magnetosonic speed given vector of primitive variables
 // Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN 
 

@@ -32,8 +32,8 @@ public:
   void Correct(MeshBlock *pmb);
 
   void RiemannSolver(const int k, const int j, const int il, const int iu,
-    const int ivx,  const AthenaArray<Real> &bx, const AthenaArray<Real> &wl,
-    const AthenaArray<Real> &wr, AthenaArray<Real> &flx);
+    const int ivx,  const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
+    AthenaArray<Real> &wr, AthenaArray<Real> &flx);
 
   void ReconstructionFuncX1(const int n, const int m, const int k, const int j,
     const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr);

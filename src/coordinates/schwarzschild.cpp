@@ -352,6 +352,63 @@ Coordinates::~Coordinates()
   trans_face3_j2_.DeleteAthenaArray();
 }
 
+//--------------------------------------------------------------------------------------
+// Edge Length functions: returns physical length at cell edges
+// Edge1(i,j,k) located at (i,j-1/2,k-1/2), i.e. (x1v(i), x2f(j), x3f(k))
+
+void Coordinates::Edge1Length(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = pmy_block->dx1f(i);
+  }
+  return;
+}
+
+// Edge2(i,j,k) located at (i-1/2,j,k-1/2), i.e. (x1f(i), x2v(j), x3f(k))
+
+void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = pmy_block->dx2f(j);
+  }
+  return;
+}
+
+// Edge3(i,j,k) located at (i-1/2,j-1/2,k), i.e. (x1f(i), x2f(j), x3v(k))
+
+void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = pmy_block->dx3f(k);
+  }
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+// Cell-center Width functions: returns physical width at cell-center
+
+Real Coordinates::CenterWidth1(const int k, const int j, const int i)
+{
+  return (pmy_block->dx1f(i));
+}
+
+Real Coordinates::CenterWidth2(const int k, const int j, const int i)
+{
+  return (pmy_block->dx2f(j));
+}
+
+Real Coordinates::CenterWidth3(const int k, const int j, const int i)
+{
+  return (pmy_block->dx3f(k));
+}
+
+
 // Function for computing areas orthogonal to r
 // Inputs:
 //   k: phi-index
@@ -736,9 +793,9 @@ void Coordinates::PrimToLocal3(const int k, const int j, AthenaArray<Real> &prim
 // Inputs:
 //   k: phi-index
 //   j: theta-index
-//   pflux: pointer to array of fluxes in 1D, using local coordinates
+//   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
-//   pflux: pointer to values overwritten in global coordinates
+//   flux: values overwritten in global coordinates
 void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flux)
 {
   // Go through 1D block of cells
@@ -770,11 +827,11 @@ void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flu
     Real f_m3 = m1x * g33 * m3z * txz;
 
     // Extract fluxes for writing
-    Real &d1 = (*pflux)(IDN,i);
-    Real &t10 = (*pflux)(IEN,i);
-    Real &t11 = (*pflux)(IM1,i);
-    Real &t12 = (*pflux)(IM2,i);
-    Real &t13 = (*pflux)(IM3,i);
+    Real &d1 = flux(IDN,i);
+    Real &t10 = flux(IEN,i);
+    Real &t11 = flux(IM1,i);
+    Real &t12 = flux(IM2,i);
+    Real &t13 = flux(IM3,i);
 
     // Set fluxes
     d1 = f_d;
@@ -790,9 +847,9 @@ void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flu
 // Inputs:
 //   k: phi-index
 //   j: theta-index
-//   pflux: pointer to array of fluxes in 1D, using local coordinates
+//   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
-//   pflux: pointer to values overwritten in global coordinates
+//   flux: values overwritten in global coordinates
 void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flux)
 {
   // Go through 1D block of cells

@@ -32,7 +32,7 @@
 
 //======================================================================================
 //! \file cylindrical.cpp
-//  \brief implements functions for cylindrical (r-z-phi) class Coordinates
+//  \brief implements Coordinates class functions for cylindrical (r-phi-z) coordinates
 //======================================================================================
 
 //--------------------------------------------------------------------------------------
@@ -113,15 +113,64 @@ Coordinates::~Coordinates()
 }
 
 //--------------------------------------------------------------------------------------
-// Edge Length functions
+// Edge Length functions: returns physical length at cell edges
+// Edge1(i,j,k) located at (i,j-1/2,k-1/2), i.e. (x1v(i), x2f(j), x3f(k))
+
+void Coordinates::Edge1Length(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = pmy_block->dx1f(i);
+  }
+  return;
+}
+
+// Edge2(i,j,k) located at (i-1/2,j,k-1/2), i.e. (x1f(i), x2v(j), x3f(k))
+
+void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = pmy_block->x1f(i)*pmy_block->dx2f(j);
+  }
+  return;
+}
+
+// Edge3(i,j,k) located at (i-1/2,j-1/2,k), i.e. (x1f(i), x2f(j), x3v(k))
+
+void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = pmy_block->dx3f(k);
+  }
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+// Cell-center Width functions: returns physical width at cell-center
+
+Real Coordinates::CenterWidth1(const int k, const int j, const int i)
+{
+  return (pmy_block->dx1f(i));
+}
+
+Real Coordinates::CenterWidth2(const int k, const int j, const int i)
+{
+  return (pmy_block->x1v(i)*pmy_block->dx2f(j));
+}
+
+Real Coordinates::CenterWidth3(const int k, const int j, const int i)
+{
+  return (pmy_block->dx3f(k));
+}
 
 
 //--------------------------------------------------------------------------------------
 // Face Area functions
-
-// \!fn void Coordinates::Area1Face(const int k,const int j, const int il, const int iu,
-//        AthenaArray<Real> &area)
-// \brief functions to compute area of cell faces in each direction
 
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
@@ -138,7 +187,7 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-// area3 = dr dz
+// area2 = dr dz
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
@@ -150,7 +199,7 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-// area2 = dr r dphi = d(r^2/2) dphi
+// area3 = dr r dphi = d(r^2/2) dphi
 #pragma simd
   for (int i=il; i<=iu; ++i){
     Real& area_i = area(i);
@@ -161,10 +210,6 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 
 //--------------------------------------------------------------------------------------
 // Cell Volume function
-
-// \!fn void Coordinates::CellVolume(const int k,const int j,const int il, const int iu,
-//        AthenaArray<Real> *pvol)
-// \brief function to compute cell volume
 
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &vol)
@@ -179,27 +224,9 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 }
 
 //--------------------------------------------------------------------------------------
-// Width and Distance functions
-
-Real Coordinates::CellPhysicalWidth1(const int k, const int j, const int i)
-{
-  return (pmy_block->dx1f(i));
-}
-
-Real Coordinates::CellPhysicalWidth2(const int k, const int j, const int i)
-{
-  return (pmy_block->x1v(i)*pmy_block->dx2f(j));
-}
-
-Real Coordinates::CellPhysicalWidth3(const int k, const int j, const int i)
-{
-  return (pmy_block->dx3f(k));
-}
-
-//--------------------------------------------------------------------------------------
-// \!fn void Coordinates::CoordinateSourceTerms(const int k, const int j,
-//        AthenaArray<Real> &prim, AthenaArray<Real> &src)
-// \brief function to compute coordinate source term
+// \!fn void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
+//           AthenaArray<Real> &cons)
+// \brief Adds coordinate source terms to conserved variables
 
 void Coordinates::CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
   AthenaArray<Real> &cons)

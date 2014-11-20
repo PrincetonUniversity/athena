@@ -29,8 +29,7 @@ public:
 
   MeshBlock *pmy_block;  // ptr to MeshBlock containing this Coordinates
 
-// functions to compute length of edges, area of faces, and volumes of cells
-
+// functions to compute length of edges
   void Edge1Length(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &len);
   void Edge2Length(const int k, const int j, const int il, const int iu,
@@ -38,6 +37,12 @@ public:
   void Edge3Length(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &len);
 
+// functions to compute physical width at cell center
+  Real CenterWidth1(const int k, const int j, const int i);
+  Real CenterWidth2(const int k, const int j, const int i);
+  Real CenterWidth3(const int k, const int j, const int i);
+
+// fundtions to compute area of faces
   void Face1Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &area);
   void Face2Area(const int k, const int j, const int il, const int iu,
@@ -45,22 +50,15 @@ public:
   void Face3Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &area);
 
+// function to compute volume of cells
   void CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &vol);
 
-// functions to compute physical widths
-
-  Real CellPhysicalWidth1(const int k, const int j, const int i);
-  Real CellPhysicalWidth2(const int k, const int j, const int i);
-  Real CellPhysicalWidth3(const int k, const int j, const int i);
-
-// geometrical source terms
-
+// function that adds geometrical source terms to conserved variables
   void CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
     AthenaArray<Real> &cons);
 
-  void CellMetric(const int k, const int j, AthenaArray<Real> &g,
-      AthenaArray<Real> &g_inv);
+  void CellMetric(const int k,const int j, AthenaArray<Real> &g, AthenaArray<Real> &gi);
   void PrimToLocal1(const int k, const int j, AthenaArray<Real> &prim);
   void PrimToLocal2(const int k, const int j, AthenaArray<Real> &prim);
   void PrimToLocal3(const int k, const int j, AthenaArray<Real> &prim);
@@ -70,7 +68,7 @@ public:
   void PrimToCons(AthenaArray<Real> &prim, AthenaArray<Real> &cons);
 
 private:
-// scratch arrays containing precomputed factors used in class functions
+// scratch arrays containing precomputed factors used by functions in this class
   AthenaArray<Real> face1_area_i_, face1_area_j_;
   AthenaArray<Real> face2_area_i_, face2_area_j_;
   AthenaArray<Real> face3_area_i_, face3_area_j_;

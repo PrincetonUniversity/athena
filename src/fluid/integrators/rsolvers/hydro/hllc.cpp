@@ -15,16 +15,16 @@
 //======================================================================================
 
 // Primary header
-#include "../fluid_integrator.hpp"
+#include "../../fluid_integrator.hpp"
 
 // C++ headers
 #include <algorithm>  // max(), min()
 
 // Athena headers
-#include "../../../athena.hpp"         // enums, macros, Real
-#include "../../../athena_arrays.hpp"  // AthenaArray
-#include "../../fluid.hpp"             // Fluid
-#include "../../eos/eos.hpp"           // GetGamma
+#include "../../../../athena.hpp"         // enums, macros, Real
+#include "../../../../athena_arrays.hpp"  // AthenaArray
+#include "../../../fluid.hpp"             // Fluid
+#include "../../../eos/eos.hpp"           // GetGamma
 
 //======================================================================================
 //! \file hllc.cpp
@@ -40,8 +40,8 @@
 //======================================================================================
 
 void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const int iu,
-  const int ivx, const AthenaArray<Real> &bx, const AthenaArray<Real> &wl,
-  const AthenaArray<Real> &wr, AthenaArray<Real> &flx)
+  const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
+  AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
