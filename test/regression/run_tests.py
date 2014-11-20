@@ -1,15 +1,14 @@
 # Regression test script
 
-# Modules
+# Python modules
 import argparse
-import os
 import pkgutil
 import sys
 
 # Prevent generation of .pyc files
 sys.dont_write_bytecode = True
 
-# Global variables
+# Athena++ modules
 import scripts.utils.athena as athena
 
 # Main function

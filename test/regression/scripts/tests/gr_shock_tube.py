@@ -22,8 +22,8 @@ def run_test():
       'mesh/nx1=400']
   athena.run('hydro_sr/athinput.mb_1', arguments)
   headings = ['x', 'D', 'E', 'M1', 'M2', 'M3']
-  data_ref = athena.read('data/gr_shock_tube.tab', headings)
-  data_new = athena.read('bin/gr_shock_tube.out1.0001.tab', headings)
+  data_ref = athena.read_tab('data/gr_shock_tube.tab', headings)
+  data_new = athena.read_tab('bin/gr_shock_tube.out1.0001.tab', headings)
   faces_ref = np.linspace(-0.5, 0.5, len(data_ref['x'])+1)
   faces_new = np.linspace(-0.5, 0.5, len(data_new['x'])+1)
   eps_d = comparison.l1_diff(faces_ref, data_ref['D'], faces_new, data_new['D'])
