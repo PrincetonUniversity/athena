@@ -6,15 +6,14 @@ problem_id  = BHThickDisk2D
 
 <output1>
 file_type   = tab
-variable    = prim
+variable    = cons
 data_format = %24.16e
 dt          = 1.0
 x2_slice    = 1.5707963267948966  # pi/2
 
 <output2>
 file_type   = vtk
-variable    = prim
-data_format = %24.16e
+variable    = cons
 dt          = 1.0
 
 <time>
@@ -23,29 +22,34 @@ nlim       = -1
 tlim       = 1.0
 
 <mesh>
-nx1    = 1000                  # number of zones in r-direction
-x1min  = 3.0                   # inner r
-x1max  = 100.0                 # outer r
-ix1_bc = 2                     # inner r boundary condition: outflow
-ox1_bc = 2                     # outer r boundary condition: outflow
+nx1    = 300                 # number of zones in r-direction
+x1min  = 3.0                 # inner r
+x1max  = 80.0                # outer r
+ix1_bc = 2                   # inner r boundary condition: outflow
+ox1_bc = 2                   # outer r boundary condition: outflow
 
-nx2    = 100                   # number of zones in theta-direction
-x2min  = 0.015707963267948967  # lower theta (pi/200)
-x2max  = 3.1258846903218442    # upper theta (199*pi/200)
-ix2_bc = 2                     # lower theta boundary condition: outflow
-ox2_bc = 2                     # upper theta boundary condition: outflow
+nx2    = 300                 # number of zones in theta-direction
+x2min  = 0.5235987755982988  # lower theta (pi/6)
+x2max  = 2.6179938779914944  # upper theta (5*pi/6)
+ix2_bc = 2                   # lower theta boundary condition: outflow
+ox2_bc = 2                   # upper theta boundary condition: outflow
 
-nx3    = 1                     # number of zones in phi-direction
-x3min  = -0.5                  # minimum phi
-x3max  = 0.5                   # maximum phi
-ix3_bc = 4                     # minimum phi boundary condition: periodic
-ox3_bc = 4                     # maximum phi boundary condition: periodic
+nx3    = 1                   # number of zones in phi-direction
+x3min  = -0.5                # minimum phi
+x3max  = 0.5                 # maximum phi
+ix3_bc = 4                   # minimum phi boundary condition: periodic
+ox3_bc = 4                   # maximum phi boundary condition: periodic
 
 <fluid>
 gamma = 1.6666666666666667  # Gamma = C_p/C_v
 
 <problem>
-mass       = 1.0      # black hole mass
-k          = 1.0      # p_gas = K * rho^Gamma
-l          = 1.5      # l = -u_3/u_0
-rho_floor  = 1.0e-10  # minimum density
+mass    = 1.0     # black hole mass
+k_adi   = 1.0     # p_gas = K * rho^Gamma
+r_edge  = 6.0     # radius of inner edge of disk
+r_peak  = 16.0    # radius of pressure maximum; use u0_u_3 instead if negative
+u0_u_3  = 0.0     # constant "angular momentum" u^t u_phi; only used if r_peak < 0
+rho_min = 1.0e-4  # value of density floor at r_inner
+rho_pow = -1.5    # density floor rho_min * (r/r_inner)^rho_pow
+eps_min = 1.0e-6  # value of internal energy floor at r_inner
+eps_pow = -2.5    # internal energy floor eps_min * (r/r_inner)^eps_pow
