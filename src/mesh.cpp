@@ -477,14 +477,11 @@ void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
         break;
 
       case bfield_predict: // integrate fluid to intermediate step 
-        pfield->b1.x1f = pfield->b.x1f;
-        pfield->b1.x2f = pfield->b.x2f;
-        pfield->b1.x3f = pfield->b.x3f;
-        pfield->pint->CT(pmb, pfield->b1, pfluid->w, pfield->bcc, 0.5*dt);
+        pfield->pint->CT(pmb, pfield->b, pfield->b1, pfluid->w, pfield->bcc, 0.5*dt);
         break;
 
       case bfield_correct: // integrate fluid for full timestep, t^n --> t^{n+1}
-        pfield->pint->CT(pmb, pfield->b, pfluid->w1, pfield->bcc1, dt);
+        pfield->pint->CT(pmb, pfield->b, pfield->b, pfluid->w1, pfield->bcc1, dt);
         break;
 
       case primitives_n: // compute primitives from conseerved at t^n

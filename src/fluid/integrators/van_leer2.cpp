@@ -14,8 +14,8 @@
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
 
-#include <stdio.h>
-#include <iostream>
+// C++ headers
+#include <algorithm>   // min,max
 
 // Primary header
 #include "fluid_integrator.hpp"
@@ -125,20 +125,14 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
       if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
         for (int i=is; i<=ie+1; ++i){
-          e_x1f(X1E3,k,j,i) = -flx(IBY,i); // EMZ = -(v1*b2 - v2*b1) = -flx(IBY)
-          e_x1f(X1E2,k,j,i) = flx(IBZ,i);  // EMY = -(v3*b1 - v1*b3) = flx(IBZ)
+          e_x1f(X1E3,k,j,i) = -flx(IBY,i); // flx(IBY) = (v1*b2 - v2*b1) = -EMFZ
+          e_x1f(X1E2,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v1*b3 - v3*b1) =  EMFY
 // estimate weight used to upwind electric fields in GS07 algorithm
           Real fac = (1024)*dt/pmb->pcoord->CellPhysicalWidth1(k,j,i);
           Real rat = std::min( 0.5, (fac*flx(IDN,i)/(u(IDN,k,j,i-1)+u(IDN,k,j,i))) );
           w_x1f(k,j,i) = 0.5 + std::max(-0.5,rat);
         }
       }
-/******
-for (int i=is; i<=ie+1; ++i){
-std::cout<<w_x1f(ks,js,i)<<std::endl;
-}
-std::cout<<std::endl;
-******/
 
     }
   }
@@ -205,8 +199,8 @@ std::cout<<std::endl;
         if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
           for (int i=is; i<=ie; ++i){
-            e_x2f(X2E1,k,j,i) = -flx(IBY,i); //  EMFX = -(v2*b3 - v3*b2) = -flx(IBY)
-            e_x2f(X2E3,k,j,i) = -flx(IBZ,i); //  EMFZ = -(v2*b1 - v1*b2) = -flx(IBZ)
+            e_x2f(X2E1,k,j,i) = -flx(IBY,i); // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
+            e_x2f(X2E3,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
 // estimate weight used to upwind electric fields in GS07 algorithm
             Real fac = (1024)*dt/pmb->pcoord->CellPhysicalWidth2(k,j,i);
             Real rat = std::min( 0.5, (fac*flx(IDN,i)/(u(IDN,k,j-1,i)+u(IDN,k,j,i))) );
@@ -217,12 +211,6 @@ std::cout<<std::endl;
       }
     }
   }
-/*****
-for (int i=is; i<=ie; ++i){
-std::cout<<e_x2f(X2E3,ks,js,i)<<" "<<e_x2f(X2E1,ks,js,i)<<" "<<b2i(ks,js,i)<<std::endl;
-}
-std::cout<<std::endl;
-******/
 
 //--------------------------------------------------------------------------------------
 // k-direction 
@@ -286,8 +274,8 @@ std::cout<<std::endl;
         if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
           for (int i=is; i<=ie; ++i){
-            e_x3f(X3E2,k,j,i) = -flx(IBY,i); //  EMFY = -(v3*b1 - v1*b3) = -flx(IBY)
-            e_x3f(X3E1,k,j,i) = flx(IBZ,i);  //  EMFX = -(v2*b3 - v3*b2) = flx(IBZ)
+            e_x3f(X3E2,k,j,i) = -flx(IBY,i); // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
+            e_x3f(X3E1,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
 // estimate weight used to upwind electric fields in GS07 algorithm
             Real fac = (1024)*dt/pmb->pcoord->CellPhysicalWidth3(k,j,i);
             Real rat = std::min( 0.5, (fac*flx(IDN,i)/(u(IDN,k-1,j,i)+u(IDN,k,j,i))) );
@@ -389,8 +377,8 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
       if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
         for (int i=is; i<=ie+1; ++i){
-          e_x1f(X1E3,k,j,i) = -flx(IBY,i); // EMZ = -(v1*b2 - v2*b1) = -flx(IBY)
-          e_x1f(X1E2,k,j,i) = flx(IBZ,i);  // EMY = -(v3*b1 - v1*b3) = flx(IBZ)
+          e_x1f(X1E3,k,j,i) = -flx(IBY,i); // flx(IBY) = (v1*b2 - v2*b1) = -EMFZ
+          e_x1f(X1E2,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v1*b3 - v3*b1) =  EMFY
 // estimate weight used to upwind electric fields in GS07 algorithm
           Real fac = (1024)*dt/pmb->pcoord->CellPhysicalWidth1(k,j,i);
           Real rat = std::min( 0.5, (fac*flx(IDN,i)/(u(IDN,k,j,i-1)+u(IDN,k,j,i))) );
@@ -415,8 +403,8 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
           ReconstructionFuncX2(n,n,k,j,w1,wl,wr);
         }
       if (MAGNETIC_FIELDS_ENABLED) {
-        ReconstructionFuncX1(IB3,IBY,k,j,bcc1,wl,wr);
-        ReconstructionFuncX1(IB1,IBZ,k,j,bcc1,wl,wr);
+        ReconstructionFuncX2(IB3,IBY,k,j,bcc1,wl,wr);
+        ReconstructionFuncX2(IB1,IBZ,k,j,bcc1,wl,wr);
       }
 
         RiemannSolver(k,j,is,ie,IVY,b1i2,wl,wr,flx); 
@@ -454,8 +442,8 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
         if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
           for (int i=is; i<=ie; ++i){
-            e_x2f(X2E1,k,j,i) = -flx(IBY,i); //  EMFX = -(v2*b3 - v3*b2) = -flx(IBY)
-            e_x2f(X2E3,k,j,i) = -flx(IBZ,i); //  EMFZ = -(v2*b1 - v1*b2) = -flx(IBZ)
+            e_x2f(X2E1,k,j,i) = -flx(IBY,i); // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
+            e_x2f(X2E3,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
 // estimate weight used to upwind electric fields in GS07 algorithm
             Real fac = (1024)*dt/pmb->pcoord->CellPhysicalWidth2(k,j,i);
             Real rat = std::min( 0.5, (fac*flx(IDN,i)/(u(IDN,k,j-1,i)+u(IDN,k,j,i))) );
@@ -481,8 +469,8 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
           ReconstructionFuncX3(n,n,k,j,w1,wl,wr);
         }
         if (MAGNETIC_FIELDS_ENABLED) {
-          ReconstructionFuncX1(IB1,IBY,k,j,bcc1,wl,wr);
-          ReconstructionFuncX1(IB2,IBZ,k,j,bcc1,wl,wr);
+          ReconstructionFuncX3(IB1,IBY,k,j,bcc1,wl,wr);
+          ReconstructionFuncX3(IB2,IBZ,k,j,bcc1,wl,wr);
         }
 
         RiemannSolver(k,j,is,ie,IVZ,b1i3,wl,wr,flx);
@@ -520,8 +508,8 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
         if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
           for (int i=is; i<=ie; ++i){
-            e_x3f(X3E1,k,j,i) = flx(IBZ,i);  //  EMFX = -(v2*b3 - v3*b2) = flx(IBZ)
-            e_x3f(X3E2,k,j,i) = -flx(IBY,i); //  EMFY = -(v3*b1 - v1*b3) = -flx(IBY)
+            e_x3f(X3E2,k,j,i) = -flx(IBY,i); // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
+            e_x3f(X3E1,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
 // estimate weight used to upwind electric fields in GS07 algorithm
             Real fac = (1024)*dt/pmb->pcoord->CellPhysicalWidth3(k,j,i);
             Real rat = std::min( 0.5, (fac*flx(IDN,i)/(u(IDN,k-1,j,i)+u(IDN,k,j,i))) );
