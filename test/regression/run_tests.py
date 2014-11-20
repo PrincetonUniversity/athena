@@ -1,4 +1,13 @@
 # Regression test script
+# Usage:
+#   From this directory, call this script with python:
+#       python run_tests.py
+# Notes:
+#   Requires Python 2.7+
+#   This file should not be modified when adding new scripts
+#   To add a new script, create a new .py file in the scripts/tests/ subdirectory
+#   See existing scripts in that directory for examples
+#   For more information, check online regression test documentation
 
 # Python modules
 import argparse
@@ -25,13 +34,18 @@ def main(**kwargs):
     test_names = [kwargs['single']]
 
   # Run tests
+  current_dir = os.getcwd()
   test_results = []
   try:
     for name in test_names:
       name_full = 'scripts.tests.' + name
-      module = __import__(name_full, globals(), locals(), fromlist=['run_test'])
-      test_results.append(module.run_test())
-      os.system('rm -r bin')
+      module = __import__(name_full, globals(), locals(),
+          fromlist=['prepare','run','analyze'])
+      os.system('rm -rf {0}/bin'.format(current_dir))
+      module.prepare()
+      module.run()
+      test_results.append(module.analyze())
+      os.system('rm -rf {0}/bin'.format(current_dir))
 
   # Restore any previously-existing files once runs are complete
   finally:
