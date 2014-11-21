@@ -49,7 +49,7 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   Real dt = pmb->pmy_domain->pmy_mesh->dt;
   int max_nthreads = pmb->pmy_domain->pmy_mesh->nthreads_mesh;
- 
+
   AthenaArray<Real> u = pmb->pfluid->u.ShallowCopy();
   AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
   AthenaArray<Real> u1 = pmb->pfluid->u1.ShallowCopy();
