@@ -41,7 +41,7 @@ public:
   void ReconstructionFuncX2(const int n, const int m, const int k, const int j,
     const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
-  void ReconstructionFuncX3(const int n, const int n, const int k, const int j, 
+  void ReconstructionFuncX3(const int n, const int m, const int k, const int j, 
     const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
 private:

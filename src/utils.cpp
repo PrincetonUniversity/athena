@@ -14,11 +14,14 @@
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
 
-#include <iostream>      // endl, ostream
-#include <sstream>       // stringstream
-#include <stdexcept>     // runtime error
-#include <sys/stat.h>    // mkdir
-#include <sys/types.h>   // mkdir
+// C++ headers
+#include <iostream>    // endl, ostream
+#include <sstream>     // stringstream
+#include <stdexcept>   // runtime_error
+#include <sys/stat.h>  // mkdir()
+#include <unistd.h>    // chdir()
+
+// Athena headers
 #include "athena.hpp"
 
 //======================================================================================
