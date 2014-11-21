@@ -1,18 +1,18 @@
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- *
- * This program is free software: you can redistribute and/or modify it under the terms
- * of the GNU General Public License (GPL) as published by the Free Software Foundation,
- * either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
- * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of GNU GPL in the file LICENSE included in the code
- * distribution.  If not see <http://www.gnu.org/licenses/>.
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+//
+// This program is free software: you can redistribute and/or modify it under the terms
+// of the GNU General Public License (GPL) as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of GNU GPL in the file LICENSE included in the code
+// distribution.  If not see <http://www.gnu.org/licenses/>.
+//======================================================================================
 
 #include <sstream>
 #include <iostream>
@@ -27,68 +27,68 @@
 #include "../parameter_input.hpp"
 #include "../mesh.hpp"
 #include "../fluid/fluid.hpp"
+#include "../field/field.hpp"
 #include "outputs.hpp"
 
 //======================================================================================
-/*! \file outputs.cpp
- *  \brief implements functions for Athena++ outputs
- *
- * The number and types of outputs are all controlled by the number and values of
- * parameters specified in <outputN> blocks in the input file.  Each output block must
- * be labelled by a unique integer "N".  Following the convention of the parser
- * implemented in the ParameterInput class, a second output block with the same integer
- * "N" of an earlier block will silently overwrite the values read by the first block.
- * The numbering of the output blocks does not need to be consecutive, and blocks may
- * appear in any order in the input file.  Moreover, unlike the C version of Athena, the
- * total number of <outputN> blocks does not need to be specified -- in Athena++ a new
- * output type will be created for each and every <outputN> block in the input file.
- *
- * Required parameters that must be specified in an <outputN> block are:
- *   - variable     = cons,prim,D,d,E,e,m,v
- *   - file_type    = tab,vtk,hst
- *   - dt           = problem time between outputs
- *
- * Optional parameters that may be specified in an <outputN> block are:
- *   - data_format  = format string used in writing data (e.g. %12.5e)
- *   - next_time    = time of next output (useful for restarts)
- *   - id           = any string
- *   - file_number  = any integer with up to 4 digits
- *   - x[123]_slice = specifies data should be a slice at x[123] position
- *   - x[123]_sum   = set to 1 to sum data along specified direction
- *   
- * EXAMPLE of an <outputN> block for a VTK dump:
- *   <output3>
- *   file_type   = tab       # Tabular data dump
- *   variable    = prim      # variables to be output
- *   data_format = %12.5e    # Optional data format string
- *   dt          = 0.01      # time increment between outputs
- *   x2_slice    = 0.0       # slice in x2
- *   x3_slice    = 0.0       # slice in x3
- *
- * Each <outputN> block will result in a new node being created in a linked list of
- * OutputType stored in the Outputs class.  During a simulation, outputs are made when
- * the simulation time satisfies the criteria implemented in the MakeOutputs() function.
- *
- * To implement a new type of output X, write a new derived OutputType class, and
- * construct an object of this class in the Outputs::InitOutputTypes() function.
- *====================================================================================*/
+//! \file outputs.cpp
+//  \brief implements functions for Athena++ outputs
+//
+// The number and types of outputs are all controlled by the number and values of
+// parameters specified in <outputN> blocks in the input file.  Each output block must
+// be labelled by a unique integer "N".  Following the convention of the parser
+// implemented in the ParameterInput class, a second output block with the same integer
+// "N" of an earlier block will silently overwrite the values read by the first block.
+// The numbering of the output blocks does not need to be consecutive, and blocks may
+// appear in any order in the input file.  Moreover, unlike the C version of Athena, the
+// total number of <outputN> blocks does not need to be specified -- in Athena++ a new
+// output type will be created for each and every <outputN> block in the input file.
+//
+// Required parameters that must be specified in an <outputN> block are:
+//   - variable     = cons,prim,D,d,E,e,m,v
+//   - file_type    = tab,vtk,hst
+//   - dt           = problem time between outputs
+//
+// Optional parameters that may be specified in an <outputN> block are:
+//   - data_format  = format string used in writing data (e.g. %12.5e)
+//   - next_time    = time of next output (useful for restarts)
+//   - id           = any string
+//   - file_number  = any integer with up to 4 digits
+//   - x[123]_slice = specifies data should be a slice at x[123] position
+//   - x[123]_sum   = set to 1 to sum data along specified direction
+//   
+// EXAMPLE of an <outputN> block for a VTK dump:
+//   <output3>
+//   file_type   = tab       # Tabular data dump
+//   variable    = prim      # variables to be output
+//   data_format = %12.5e    # Optional data format string
+//   dt          = 0.01      # time increment between outputs
+//   x2_slice    = 0.0       # slice in x2
+//   x3_slice    = 0.0       # slice in x3
+//
+// Each <outputN> block will result in a new node being created in a linked list of
+// OutputType stored in the Outputs class.  During a simulation, outputs are made when
+// the simulation time satisfies the criteria implemented in the MakeOutputs() function.
+//
+// To implement a new output type, write a new derived OutputType class, and construct
+// an object of this class in the Outputs constructor at the location indicated by the
+// text 'ADD NEW OUTPUT TYPES HERE'.
+//======================================================================================
 
 //--------------------------------------------------------------------------------------
 // OutputVariable constructor
 
-OutputVariable::OutputVariable(AthenaArray<Real> *parray, OutputVariableHeader vhead)
+OutputVariable::OutputVariable()
 {
-  var_header = vhead;
-  pdata = parray;
   pnext = NULL;
   pprev = NULL;
 }
 
-// destructor
+// destructor - iterates through linked list of OutputVariables and deletes nodes
 
 OutputVariable::~OutputVariable()
 {
-  if (!pdata->IsShallowCopy()) pdata->DeleteAthenaArray();
+  data.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------
@@ -118,7 +118,7 @@ OutputData::~OutputData()
 OutputType::OutputType(OutputParameters oparams)
 {
   output_params = oparams;
-  pnext = NULL; // Terminate linked list with NULL ptr
+  pnext_type = NULL; // Terminate linked list with NULL ptr
 }
 
 // destructor
@@ -262,7 +262,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
       op.data_format.insert(0," "); // prepend with blank to separate columns
 
 // Construct new OutputType according to file format
-// TODO: add any new output types here
+// ADD NEW OUTPUT TYPES HERE
 
       if (op.file_type.compare("tab") == 0) {
         pnew_type = new FormattedTableOutput(op);
@@ -271,8 +271,8 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
       } else if (op.file_type.compare("vtk") == 0) {
         pnew_type = new VTKOutput(op);
       } else {
-        msg << "### FATAL ERROR in function [Outputs::InitOutputTypes]"
-            << std::endl << "Unrecognized file format = '" << op.file_type 
+        msg << "### FATAL ERROR in Outputs constructor" << std::endl
+            << "Unrecognized file format = '" << op.file_type 
             << "' in output block '" << op.block_name << "'" << std::endl;
         throw std::runtime_error(msg.str().c_str());
       }
@@ -282,7 +282,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
       if (pfirst_type_ == NULL) {
         pfirst_type_ = pnew_type;
       } else {
-        plast->pnext = pnew_type;
+        plast->pnext_type = pnew_type;
       }
       plast = pnew_type;
     }
@@ -297,33 +297,29 @@ Outputs::~Outputs()
   OutputType *ptype = pfirst_type_;
   while(ptype != NULL) {
     OutputType *ptype_old = ptype;
-    ptype = ptype->pnext;
+    ptype = ptype->pnext_type;
     delete ptype_old;
   }
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void OutputData::AppendNode()
- *  \brief
- */
+//! \fn void OutputData::AppendNode()
+//  \brief
 
-void OutputData::AppendNode(AthenaArray<Real> *parray, OutputVariableHeader vhead)
+void OutputData::AppendNode(OutputVariable *pnew_var)
 {
-  OutputVariable *pnew_var = new OutputVariable(parray, vhead);
-
   if (pfirst_var == NULL)
-    pfirst_var = plast_var = pnew_var;
+    pfirst_var = pnew_var;
   else {
     pnew_var->pprev = plast_var;
     plast_var->pnext = pnew_var;
-    plast_var = pnew_var;
   }
+  plast_var = pnew_var;
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void OutputData::ReplaceNode()
- *  \brief
- */
+//! \fn void OutputData::ReplaceNode()
+//  \brief
 
 void OutputData::ReplaceNode(OutputVariable *pold, OutputVariable *pnew) 
 {
@@ -349,14 +345,13 @@ void OutputData::ReplaceNode(OutputVariable *pold, OutputVariable *pnew)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void OutputType::LoadOutputData(OutputData *pod)
- *  \brief initializes output data in OutputData container
- */
+//! \fn void OutputType::LoadOutputData(OutputData *pod)
+//  \brief initializes output data in OutputData container
 
 void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 {
-  OutputVariableHeader var_header;
-  Fluid *pf = pmb->pfluid;;
+  Fluid *pfl = pmb->pfluid;
+  Field *pfd = pmb->pfield;
   std::stringstream str;
 
 // Create OutputData header
@@ -376,29 +371,36 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 
 // Create linked list of OutputVariables containing requested data
 
+  OutputVariable *pov;
   int var_added = 0;
   if (output_params.variable.compare("D") == 0 || 
       output_params.variable.compare("cons") == 0) {
-    var_header.type = "SCALARS";
-    var_header.name = "dens";
-    pod->AppendNode(pf->u.ShallowSlice(IDN,1),var_header); // (lab-frame) density
+    pov = new OutputVariable; 
+    pov->type = "SCALARS";
+    pov->name = "dens";
+    pfl->u.ShallowSlice(IDN,1,pov->data);
+    pod->AppendNode(pov); // (lab-frame) density
     var_added = 1;
   }
 
   if (output_params.variable.compare("d") == 0 || 
       output_params.variable.compare("prim") == 0) {
-    var_header.type = "SCALARS";
-    var_header.name = "rho";
-    pod->AppendNode(pf->w.ShallowSlice(IDN,1),var_header); // (rest-frame) density
+    pov = new OutputVariable; 
+    pov->type = "SCALARS";
+    pov->name = "rho";
+    pfl->w.ShallowSlice(IDN,1,pov->data);
+    pod->AppendNode(pov); // (rest-frame) density
     var_added = 1;
   }
 
   if (NON_BAROTROPIC_EOS) {
     if (output_params.variable.compare("E") == 0 || 
         output_params.variable.compare("cons") == 0) {
-      var_header.type = "SCALARS";
-      var_header.name = "Etot";
-      pod->AppendNode(pf->u.ShallowSlice(IEN,1),var_header); // total energy
+      pov = new OutputVariable; 
+      pov->type = "SCALARS";
+      pov->name = "Etot";
+      pfl->u.ShallowSlice(IEN,1,pov->data);
+      pod->AppendNode(pov); // total energy
       var_added = 1;
     }
   }
@@ -406,34 +408,53 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
   if (NON_BAROTROPIC_EOS) {
     if (output_params.variable.compare("e") == 0 || 
         output_params.variable.compare("prim") == 0) {
-      var_header.type = "SCALARS";
-      var_header.name = "eint";
-      pod->AppendNode(pf->w.ShallowSlice(IEN,1),var_header); // internal energy
+      pov = new OutputVariable; 
+      pov->type = "SCALARS";
+      pov->name = "eint";
+      pfl->w.ShallowSlice(IEN,1,pov->data);
+      pod->AppendNode(pov); // internal energy
       var_added = 1;
     }
   }
 
   if (output_params.variable.compare("m") == 0 || 
       output_params.variable.compare("cons") == 0) {
-    var_header.type = "VECTORS";
-    var_header.name = "mom";
-    pod->AppendNode(pf->u.ShallowSlice(IM1,3),var_header); // momentum vector
+    pov = new OutputVariable; 
+    pov->type = "VECTORS";
+    pov->name = "mom";
+    pfl->u.ShallowSlice(IM1,3,pov->data);
+    pod->AppendNode(pov); // momentum vector
     var_added = 1;
   }
 
   if (output_params.variable.compare("v") == 0 || 
       output_params.variable.compare("prim") == 0) {
-    var_header.type = "VECTORS";
-    var_header.name = "vel";
-    pod->AppendNode(pf->w.ShallowSlice(IM1,3),var_header); // velocity vector
+    pov = new OutputVariable; 
+    pov->type = "VECTORS";
+    pov->name = "vel";
+    pfl->w.ShallowSlice(IM1,3,pov->data);
+    pod->AppendNode(pov); // velocity vector
+    var_added = 1;
+  }
+
+  if (output_params.variable.compare("b") == 0 || 
+      output_params.variable.compare("prim") == 0 ||
+      output_params.variable.compare("cons") == 0) {
+    pov = new OutputVariable; 
+    pov->type = "VECTORS";
+    pov->name = "cell-centered B";
+    pfd->bcc.ShallowSlice(0,3,pov->data);
+    pod->AppendNode(pov); // magnetic field vector
     var_added = 1;
   }
 
   if (output_params.variable.compare("ifov") == 0) {
     for (int n=0; n<(NIFOV); ++n) {
-      var_header.type = "SCALARS";
-      var_header.name = "ifov";
-      pod->AppendNode(pf->ifov.ShallowSlice(n,1),var_header); // internal fluid outvars
+      pov = new OutputVariable; 
+      pov->type = "SCALARS";
+      pov->name = "ifov";
+      pfl->ifov.ShallowSlice(n,1,pov->data);
+      pod->AppendNode(pov); // internal fluid outvars
     }
     var_added = 1;
   }
@@ -452,9 +473,8 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void OutputType::TransformOutputData()
- *  \brief 
- */
+//! \fn void OutputType::TransformOutputData()
+//  \brief 
 
 void OutputType::TransformOutputData(OutputData *pod, MeshBlock *pmb)
 {
@@ -480,9 +500,8 @@ void OutputType::TransformOutputData(OutputData *pod, MeshBlock *pmb)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void OutputType::Slice(OutputData* pod, int dim)
- *  \brief
- */
+//! \fn void OutputType::Slice(OutputData* pod, int dim)
+//  \brief
 
 void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
 {
@@ -533,48 +552,46 @@ void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
 
 // For each node in OutputData linked list, slice arrays containing output data  
 
-  OutputVariableHeader var_header;
-  OutputVariable *pvar;
+  OutputVariable *pvar,*pnew;
   pvar = pod->pfirst_var;
-  AthenaArray<Real> *pslice;
 
   while (pvar != NULL) {
-    var_header = pvar->var_header;
-    int nx4 = pvar->pdata->GetDim4();
-    int nx3 = pvar->pdata->GetDim3();
-    int nx2 = pvar->pdata->GetDim2();
-    int nx1 = pvar->pdata->GetDim1();
-    pslice = new AthenaArray<Real>;
+    pnew = new OutputVariable;
+    pnew->type = pvar->type;
+    pnew->name = pvar->name;
+    int nx4 = pvar->data.GetDim4();
+    int nx3 = pvar->data.GetDim3();
+    int nx2 = pvar->data.GetDim2();
+    int nx1 = pvar->data.GetDim1();
 
 // Loop over variables and dimensions, extract slice
 
     if (dim == 3) {
-      pslice->NewAthenaArray(nx4,1,nx2,nx1);
+      pnew->data.NewAthenaArray(nx4,1,nx2,nx1);
       for (int n=0; n<nx4; ++n){
       for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j){
         for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i){
-          (*pslice)(n,0,j,i) = (*pvar->pdata)(n,kslice,j,i);
+          pnew->data(n,0,j,i) = pvar->data(n,kslice,j,i);
         }
       }}
     } else if (dim == 2) {
-      pslice->NewAthenaArray(nx4,nx3,1,nx1);
+      pnew->data.NewAthenaArray(nx4,nx3,1,nx1);
       for (int n=0; n<nx4; ++n){
       for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k){
         for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i){
-          (*pslice)(n,k,0,i) = (*pvar->pdata)(n,k,jslice,i);
+          pnew->data(n,k,0,i) = pvar->data(n,k,jslice,i);
         }
       }}
     } else {
-      pslice->NewAthenaArray(nx4,nx3,nx2,1);
+      pnew->data.NewAthenaArray(nx4,nx3,nx2,1);
       for (int n=0; n<nx4; ++n){
       for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k){
         for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j){
-          (*pslice)(n,k,j,0) = (*pvar->pdata)(n,k,j,islice);
+          pnew->data(n,k,j,0) = pvar->data(n,k,j,islice);
         }
       }}
     }
 
-    OutputVariable *pnew = new OutputVariable(pslice, var_header);
     pod->ReplaceNode(pvar,pnew);
     pvar = pvar->pnext;
   }
@@ -604,61 +621,60 @@ void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void OutputType::Sum(OutputData* pod, int dim)
- *  \brief
- */
+//! \fn void OutputType::Sum(OutputData* pod, int dim)
+//  \brief
 
 void OutputType::Sum(OutputData* pod, MeshBlock* pmb, int dim)
 {
-  OutputVariableHeader var_header;
   AthenaArray<Real> *psum;
   std::stringstream str;
 
 // For each node in OutputData linked list, sum arrays containing output data  
 
-  OutputVariable *pvar;
+  OutputVariable *pvar,*pnew;
   pvar = pod->pfirst_var;
 
   while (pvar != NULL) {
-    var_header = pvar->var_header;
-    int nx4 = pvar->pdata->GetDim4();
-    int nx3 = pvar->pdata->GetDim3();
-    int nx2 = pvar->pdata->GetDim2();
-    int nx1 = pvar->pdata->GetDim1();
+    pnew = new OutputVariable;
+    pnew->type = pvar->type;
+    pnew->name = pvar->name;
+    int nx4 = pvar->data.GetDim4();
+    int nx3 = pvar->data.GetDim3();
+    int nx2 = pvar->data.GetDim2();
+    int nx1 = pvar->data.GetDim1();
     psum = new AthenaArray<Real>;
 
 // Loop over variables and dimensions, sum over specified dimension
 
     if (dim == 3) {
-      psum->NewAthenaArray(nx4,1,nx2,nx1);
+      pnew->data.NewAthenaArray(nx4,1,nx2,nx1);
       for (int n=0; n<nx4; ++n){
       for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k){
       for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j){
         for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i){
-          (*psum)(n,0,j,i) += (*pvar->pdata)(n,k,j,i);
+          pnew->data(n,0,j,i) += pvar->data(n,k,j,i);
         }
       }}}
     } else if (dim == 2) {
-      psum->NewAthenaArray(nx4,nx3,1,nx1);
+      pnew->data.NewAthenaArray(nx4,nx3,1,nx1);
       for (int n=0; n<nx4; ++n){
       for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k){
       for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j){
         for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i){
-          (*psum)(n,k,0,i) += (*pvar->pdata)(n,k,j,i);
+          pnew->data(n,k,0,i) += pvar->data(n,k,j,i);
         }
       }}}
     } else {
-      psum->NewAthenaArray(nx4,nx3,nx2,1);
+      pnew->data.NewAthenaArray(nx4,nx3,nx2,1);
       for (int n=0; n<nx4; ++n){
       for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k){
       for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j){
         for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i){
-          (*psum)(n,k,j,0) += (*pvar->pdata)(n,k,j,i);
+          pnew->data(n,k,j,0) += pvar->data(n,k,j,i);
         }
       }}}
     }
 
-    OutputVariable *pnew = new OutputVariable(psum, var_header);
     pod->ReplaceNode(pvar,pnew);
     pvar = pvar->pnext;
   }
@@ -684,9 +700,8 @@ void OutputType::Sum(OutputData* pod, MeshBlock* pmb, int dim)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn void Outputs::MakeOutputs()
- *  \brief scans through linked list of OutputTypes and makes any outputs needed.
- */
+//! \fn void Outputs::MakeOutputs()
+//  \brief scans through linked list of OutputTypes and makes any outputs needed.
 
 void Outputs::MakeOutputs(Mesh *pm)
 {
@@ -711,7 +726,7 @@ void Outputs::MakeOutputs(Mesh *pm)
         delete pod;
 
       }
-      ptype = ptype->pnext; // move to next OutputType in list
+      ptype = ptype->pnext_type; // move to next OutputType in list
     }
   }
 }

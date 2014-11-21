@@ -1,7 +1,7 @@
 // General relativistic Fishbone-Moncrief torus generator
 
 // Primary header
-#include "../fluid/fluid.hpp"
+#include "../mesh.hpp"
 
 // C++ headers
 #include <cmath>      // exp(), pow(), sin(), sqrt()
@@ -11,9 +11,9 @@
 #include "../athena.hpp"                   // enums, Real
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../coordinates/coordinates.hpp"  // PrimToCons()
+#include "../fluid/fluid.hpp"              // Fluid
 #include "../fluid/bvals/bvals.hpp"        // EnrollBoundaryFunction()
 #include "../fluid/eos/eos.hpp"            // GetGamma()
-#include "../mesh.hpp"                     // MeshBlock, MeshDomain, Mesh
 #include "../parameter_input.hpp"          // ParameterInput
 
 // Declarations
@@ -34,6 +34,8 @@ static Real M = 1.0;
 
 // Function for setting initial conditions
 // Inputs:
+//   pfl: Fluid
+//   pfd: Field (unused)
 //   pin: parameters
 // Outputs: (none)
 // Notes:
@@ -44,10 +46,10 @@ static Real M = 1.0;
 //              Fishbone 1977, ApJ 215 323 (F)
 //              Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 // TODO: only works in Schwarzschild (assumed metric)
-void Fluid::InitFluid(ParameterInput *pin)
+void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   // Prepare index bounds
-  MeshBlock *pmb = pmy_block;
+  MeshBlock *pb = pfl->pmy_block;
   int il = pmb->is - NGHOST;
   int iu = pmb->ie + NGHOST;
   int jl = pmb->js;
@@ -137,6 +139,8 @@ void Fluid::InitFluid(ParameterInput *pin)
           rho = rho_min * std::pow(r/r_edge, rho_pow);
           epsilon = eps_min * std::pow(r/r_edge, eps_pow);
           p_gas = (gamma_adi-1.0) * rho * epsilon;          // (HSW 94b)
+          // TODO: use alternate criterion below? or something else?
+          //   need exactly 2 of (rho floor, pgas floor, epsilon floor, k_adi)
           //rho = rho_min;
           //p_gas = k_adi * std::pow(rho_min, gamma_adi);
         }

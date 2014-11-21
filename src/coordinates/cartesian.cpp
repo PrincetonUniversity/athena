@@ -1,18 +1,18 @@
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- *
- * This program is free software: you can redistribute and/or modify it under the terms
- * of the GNU General Public License (GPL) as published by the Free Software Foundation,
- * either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
- * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of GNU GPL in the file LICENSE included in the code
- * distribution.  If not see <http://www.gnu.org/licenses/>.
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+//
+// This program is free software: you can redistribute and/or modify it under the terms
+// of the GNU General Public License (GPL) as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of GNU GPL in the file LICENSE included in the code
+// distribution.  If not see <http://www.gnu.org/licenses/>.
+//======================================================================================
 
 // Primary header
 #include "coordinates.hpp"
@@ -25,7 +25,7 @@
 
 //======================================================================================
 //! \file cartesian.cpp
-//  \brief implements functions in class Coordinates for Cartesian coordinates
+//  \brief implements Coordinates class functions for Cartesian (x-y-z) coordinates
 //======================================================================================
 
 //--------------------------------------------------------------------------------------
@@ -83,49 +83,96 @@ Coordinates::~Coordinates()
 }
 
 //--------------------------------------------------------------------------------------
-// Edge Length functions
+// Edge Length functions: returns physical length at cell edges
+// Edge1(i,j,k) located at (i,j-1/2,k-1/2), i.e. (x1v(i), x2f(j), x3f(k))
 
+void Coordinates::Edge1Length(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = pmy_block->dx1f(i);
+  }
+  return;
+}
+
+// Edge2(i,j,k) located at (i-1/2,j,k-1/2), i.e. (x1f(i), x2v(j), x3f(k))
+
+void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = pmy_block->dx2f(j);
+  }
+  return;
+}
+
+// Edge3(i,j,k) located at (i-1/2,j-1/2,k), i.e. (x1f(i), x2f(j), x3v(k))
+
+void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = pmy_block->dx3f(k);
+  }
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+// Cell-center Width functions: returns physical width at cell-center
+
+Real Coordinates::CenterWidth1(const int k, const int j, const int i)
+{
+  return (pmy_block->dx1f(i));
+}
+
+Real Coordinates::CenterWidth2(const int k, const int j, const int i)
+{
+  return (pmy_block->dx2f(j));
+}
+
+Real Coordinates::CenterWidth3(const int k, const int j, const int i)
+{
+  return (pmy_block->dx3f(k));
+}
 
 //--------------------------------------------------------------------------------------
 // Face Area functions
 
-/* \!fn void Coordinates::Face1Area(const int k,const int j, const int il, const int iu,
-      AthenaArray<Real> &area)
- * \brief  functions to compute area of cell faces in each direction    */
-
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> *parea)
+  AthenaArray<Real> &area)
 {
+// area1 = dy dz
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = (*parea)(i);
-    area_i = (pmy_block->dx2f(j))*(pmy_block->dx3f(k));  // dy*dz
+    Real& area_i = area(i);
+    area_i = (pmy_block->dx2f(j))*(pmy_block->dx3f(k));
   }
   return;
 }
 
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> *parea)
+  AthenaArray<Real> &area)
 {
-  AthenaArray<Real> dx1f = pmy_block->dx1f.ShallowCopy();
+// area2 = dx dz
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = (*parea)(i);
-    Real& dx1_i  = dx1f(i);
-    area_i = dx1_i*(pmy_block->dx3f(k));  // dx*dz
+    Real& area_i = area(i);
+    area_i = (pmy_block->dx1f(i))*(pmy_block->dx3f(k));
   }
   return;
 }
 
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> *parea)
+  AthenaArray<Real> &area)
 {
-  AthenaArray<Real> dx1f = pmy_block->dx1f.ShallowCopy();
+// area3 = dx dy
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = (*parea)(i);
-    Real& dx1_i  = dx1f(i);
-    area_i = dx1_i*(pmy_block->dx2f(j));  // dx*dy
+    Real& area_i = area(i);
+    area_i = (pmy_block->dx1f(i))*(pmy_block->dx2f(j));
   }
   return;
 }
@@ -133,57 +180,26 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 //--------------------------------------------------------------------------------------
 // Cell Volume function
 
-/* \!fn void Coordinates::CellVolume(const int k,const int j,const int il, const int iu,
- *   AthenaArray<Real> &vol)
- * \brief function to compute cell volume    */
-
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> *pvol)
+  AthenaArray<Real> &vol)
 {
-  AthenaArray<Real> dx1f = pmy_block->dx1f.ShallowCopy();
+// volume = dx dy dz
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& vol_i = (*pvol)(i);
-    Real& dx1_i = dx1f(i);
-    vol_i = dx1_i*(pmy_block->dx2f(j))*(pmy_block->dx3f(k));  // dx*dy*dz
+    Real& vol_i = vol(i);
+    vol_i = (pmy_block->dx1f(i))*(pmy_block->dx2f(j))*(pmy_block->dx3f(k));
   }
   return;
 }
 
-//--------------------------------------------------------------------------------------
-// Width and Distance functions
-
-Real Coordinates::CellPhysicalWidth1(const int k, const int j, const int i)
-{
-  return (pmy_block->dx1f(i));
-}
-
-Real Coordinates::CellPhysicalWidth2(const int k, const int j, const int i)
-{
-  return (pmy_block->dx2f(j));
-}
-
-Real Coordinates::CellPhysicalWidth3(const int k, const int j, const int i)
-{
-  return (pmy_block->dx3f(k));
-}
-
-ThreeVector Coordinates::VectorBetweenPoints(const ThreeVector p1, const ThreeVector p2)
-{
-  ThreeVector r;
-  r.x1 = p1.x1 - p2.x1;
-  r.x2 = p1.x2 - p2.x2;
-  r.x3 = p1.x3 - p2.x3;
-  return r;
-}
 
 //--------------------------------------------------------------------------------------
-/* \!fn void Coordinates::CoordinateSourceTerms(
- *   const int k, const int j, AthenaArray<Real> &prim, AthenaArray<Real> &src)
- * \brief function to compute coordinate source terms (no-op function for cartesian)  */
+// \!fn void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
+//           AthenaArray<Real> &cons)
+// \brief Adds coordinate source terms to conserved variables (no-op func in Cartesian)
 
 void Coordinates::CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
-  AthenaArray<Real> &src)
+  AthenaArray<Real> &cons)
 {
   return;
 }

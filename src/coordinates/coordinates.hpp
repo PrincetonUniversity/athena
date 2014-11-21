@@ -1,14 +1,14 @@
 #ifndef COORDINATES_HPP
 #define COORDINATES_HPP
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- * See LICENSE file for full public license information.
- *====================================================================================*/
-/*! \file coordinates.hpp
- *  \brief defines Coordinates class used to compute/store geometrical factors (areas,
- *  volumes, source terms) related to a Mesh
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+// See LICENSE file for full public license information.
+//======================================================================================
+//! \file coordinates.hpp
+//  \brief defines Coordinates class used to compute/store geometrical factors (areas,
+//  volumes, source terms) related to a Mesh
+//======================================================================================
 
 // Athena headers
 #include "../athena.hpp"         // macros, Real
@@ -23,48 +23,53 @@ class ParameterInput;
 
 class Coordinates {
 public:
+  friend class FluidSourceTerms;
   Coordinates(MeshBlock *pmb, ParameterInput *pin);
   ~Coordinates();
 
   MeshBlock *pmy_block;  // ptr to MeshBlock containing this Coordinates
 
-// functions to compute length of edges, area of faces, and volumes of cells
-  Real Edge1Length();
-  Real Edge2Length();
-  Real Edge3Length();
+// functions to compute length of edges
+  void Edge1Length(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &len);
+  void Edge2Length(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &len);
+  void Edge3Length(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &len);
+
+// functions to compute physical width at cell center
+  Real CenterWidth1(const int k, const int j, const int i);
+  Real CenterWidth2(const int k, const int j, const int i);
+  Real CenterWidth3(const int k, const int j, const int i);
+
+// fundtions to compute area of faces
   void Face1Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> *parea);
+    AthenaArray<Real> &area);
   void Face2Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> *parea);
+    AthenaArray<Real> &area);
   void Face3Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> *parea);
+    AthenaArray<Real> &area);
+
+// function to compute volume of cells
   void CellVolume(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> *pvol);
+    AthenaArray<Real> &vol);
 
-// functions to compute physical width/spacing/distances
-  Real CellPhysicalWidth1(const int k, const int j, const int i);
-  Real CellPhysicalWidth2(const int k, const int j, const int i);
-  Real CellPhysicalWidth3(const int k, const int j, const int i);
-  Real CellPhysicalSpacing1(const int k, const int j, const int i);
-  Real CellPhysicalSpacing2(const int k, const int j, const int i);
-  Real CellPhysicalSpacing3(const int k, const int j, const int i);
-  ThreeVector VectorBetweenPoints(const ThreeVector pt1, const ThreeVector pt2);
-
+// function that adds geometrical source terms to conserved variables
   void CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
     AthenaArray<Real> &cons);
 
-  void CellMetric(const int k, const int j, AthenaArray<Real> &g,
-      AthenaArray<Real> &g_inv);
-  void PrimToLocal1(const int k, const int j, AthenaArray<Real> *pprim);
-  void PrimToLocal2(const int k, const int j, AthenaArray<Real> *pprim);
-  void PrimToLocal3(const int k, const int j, AthenaArray<Real> *pprim);
-  void FluxToGlobal1(const int k, const int j, AthenaArray<Real> *pflux);
-  void FluxToGlobal2(const int k, const int j, AthenaArray<Real> *pflux);
-  void FluxToGlobal3(const int k, const int j, AthenaArray<Real> *pflux);
+  // Functions for use in general relativity
+  void CellMetric(const int k,const int j, AthenaArray<Real> &g, AthenaArray<Real> &gi);
+  void PrimToLocal1(const int k, const int j, AthenaArray<Real> &prim);
+  void PrimToLocal2(const int k, const int j, AthenaArray<Real> &prim);
+  void PrimToLocal3(const int k, const int j, AthenaArray<Real> &prim);
+  void FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flux);
+  void FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flux);
+  void FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flux);
   void PrimToCons(AthenaArray<Real> &prim, AthenaArray<Real> &cons);
 
 private:
-// scratch arrays containing precomputed factors used in class functions
+// scratch arrays containing precomputed factors used by functions in this class
   AthenaArray<Real> face1_area_i_, face1_area_j_;
   AthenaArray<Real> face2_area_i_, face2_area_j_;
   AthenaArray<Real> face3_area_i_, face3_area_j_;

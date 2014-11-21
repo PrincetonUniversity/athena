@@ -352,6 +352,60 @@ Coordinates::~Coordinates()
   trans_face3_j2_.DeleteAthenaArray();
 }
 
+//--------------------------------------------------------------------------------------
+// TODO: write function
+// Edge Length functions: returns physical length at cell edges
+// Edge1(i,j,k) located at (i,j-1/2,k-1/2), i.e. (x1v(i), x2f(j), x3f(k))
+void Coordinates::Edge1Length(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = pmy_block->dx1f(i);
+  }
+  return;
+}
+
+// TODO: write function
+// Edge2(i,j,k) located at (i-1/2,j,k-1/2), i.e. (x1f(i), x2v(j), x3f(k))
+void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = pmy_block->dx2f(j);
+  }
+  return;
+}
+
+// TODO: write function
+// Edge3(i,j,k) located at (i-1/2,j-1/2,k), i.e. (x1f(i), x2f(j), x3v(k))
+void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = pmy_block->dx3f(k);
+  }
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+// TODO: write functions
+// Cell-center Width functions: returns physical width at cell-center
+Real Coordinates::CenterWidth1(const int k, const int j, const int i)
+{
+  return (pmy_block->dx1f(i));
+}
+Real Coordinates::CenterWidth2(const int k, const int j, const int i)
+{
+  return (pmy_block->dx2f(j));
+}
+Real Coordinates::CenterWidth3(const int k, const int j, const int i)
+{
+  return (pmy_block->dx3f(k));
+}
+
 // Function for computing areas orthogonal to r
 // Inputs:
 //   k: phi-index
@@ -362,14 +416,14 @@ Coordinates::~Coordinates()
 // Notes:
 //   \Delta A = r^2 (-\Delta\cos\theta) \Delta\phi
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> *pareas)
+    AthenaArray<Real> &areas)
 {
   Real &neg_delta_cos_theta = face1_area_j_(j);
   Real &delta_phi = pmy_block->dx3f(k);
 #pragma simd
   for (int i = il; i <= iu; i++)
   {
-    Real &area = (*pareas)(i);
+    Real &area = areas(i);
     Real &r_sq = face1_area_i_(i);
     area = r_sq * neg_delta_cos_theta * delta_phi;
   }
@@ -386,14 +440,14 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 // Notes:
 //   \Delta A = 1/3 \Delta(r^3) \sin\theta \Delta\phi
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> *pareas)
+    AthenaArray<Real> &areas)
 {
   Real &sin_theta = face2_area_j_(j);
   Real &delta_phi = pmy_block->dx3f(k);
 #pragma simd
   for (int i = il; i <= iu; i++)
   {
-    Real &area = (*pareas)(i);
+    Real &area = areas(i);
     Real &third_delta_r_cb = face2_area_i_(i);
     area = third_delta_r_cb * sin_theta * delta_phi;
   }
@@ -410,13 +464,13 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 // Notes:
 //   \Delta A = 1/3 \Delta(r^3) (-\Delta\cos\theta)
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> *pareas)
+    AthenaArray<Real> &areas)
 {
   Real &neg_delta_cos_theta = face3_area_j_(j);
 #pragma simd
   for (int i = il; i <= iu; i++)
   {
-    Real &area = (*pareas)(i);
+    Real &area = areas(i);
     Real &third_delta_r_cb = face3_area_i_(i);
     area = third_delta_r_cb * neg_delta_cos_theta;
   }
@@ -433,35 +487,18 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 // Notes:
 //   \Delta A = 1/3 \Delta(r^3) (-\Delta\cos\theta) \Delta\phi
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> *pvolumes)
+    AthenaArray<Real> &volumes)
 {
   Real &neg_delta_cos_theta = volume_j_(j);
   Real &delta_phi = pmy_block->dx3f(k);
 #pragma simd
   for (int i = il; i <= iu; i++)
   {
-    Real &volume = (*pvolumes)(i);
+    Real &volume = volumes(i);
     Real &third_delta_r_cb = volume_i_(i);
     volume = third_delta_r_cb * neg_delta_cos_theta * delta_phi;
   }
   return;
-}
-
-// Function for computing displacement vector
-// Inputs:
-//   pt1, pt2: endpoints
-// Outputs:
-//   returned value: vector from pt1 to pt2
-// Notes:
-//   currently not implemented correctly
-//   TODO: implement?
-ThreeVector Coordinates::VectorBetweenPoints(const ThreeVector p1, const ThreeVector p2)
-{
-  ThreeVector r;
-  r.x1 = p1.x1 - p2.x1;
-  r.x2 = p1.x2 - p2.x2;
-  r.x3 = p1.x3 - p2.x3;
-  return r;
 }
 
 // Function for computing source terms
@@ -615,19 +652,19 @@ void Coordinates::CellMetric(const int k, const int j, AthenaArray<Real> &g,
 // Inputs:
 //   k: phi-index
 //   j: theta-index
-//   pprim: pointer to array of primitives in 1D, using global coordinates
+//   prim: array of primitives in 1D, using global coordinates
 // Outputs:
-//   pprim: pointer to values overwritten in local coordinates
-void Coordinates::PrimToLocal1(const int k, const int j, AthenaArray<Real> *pprim)
+//   prim: values overwritten in local coordinates
+void Coordinates::PrimToLocal1(const int k, const int j, AthenaArray<Real> &prim)
 {
   // Go through 1D block of cells
 #pragma simd
   for (int i = pmy_block->is; i <= pmy_block->ie+1; i++)
   {
     // Extract primitives
-    Real &v1 = (*pprim)(IVX,i);
-    Real &v2 = (*pprim)(IVY,i);
-    Real &v3 = (*pprim)(IVZ,i);
+    Real &v1 = prim(IVX,i);
+    Real &v2 = prim(IVY,i);
+    Real &v3 = prim(IVZ,i);
 
     // Extract geometric quantities
     Real &g00 = metric_face1_i1_(i);
@@ -664,16 +701,16 @@ void Coordinates::PrimToLocal1(const int k, const int j, AthenaArray<Real> *ppri
 //   pprim: pointer to array of primitives in 1D, using global coordinates
 // Outputs:
 //   pprim: pointer to values overwritten in local coordinates
-void Coordinates::PrimToLocal2(const int k, const int j, AthenaArray<Real> *pprim)
+void Coordinates::PrimToLocal2(const int k, const int j, AthenaArray<Real> &prim)
 {
   // Go through 1D block of cells
 #pragma simd
   for (int i = pmy_block->is; i <= pmy_block->ie; i++)
   {
     // Extract primitives
-    Real &v1 = (*pprim)(IVX,i);
-    Real &v2 = (*pprim)(IVY,i);
-    Real &v3 = (*pprim)(IVZ,i);
+    Real &v1 = prim(IVX,i);
+    Real &v2 = prim(IVY,i);
+    Real &v3 = prim(IVZ,i);
 
     // Extract geometric quantities
     Real &g00 = metric_face2_i1_(i);
@@ -710,16 +747,16 @@ void Coordinates::PrimToLocal2(const int k, const int j, AthenaArray<Real> *ppri
 //   pprim: pointer to array of primitives in 1D, using global coordinates
 // Outputs:
 //   pprim: pointer to values overwritten in local coordinates
-void Coordinates::PrimToLocal3(const int k, const int j, AthenaArray<Real> *pprim)
+void Coordinates::PrimToLocal3(const int k, const int j, AthenaArray<Real> &prim)
 {
   // Go through 1D block of cells
 #pragma simd
   for (int i = pmy_block->is; i <= pmy_block->ie; i++)
   {
     // Extract primitives
-    Real &v1 = (*pprim)(IVX,i);
-    Real &v2 = (*pprim)(IVY,i);
-    Real &v3 = (*pprim)(IVZ,i);
+    Real &v1 = prim(IVX,i);
+    Real &v2 = prim(IVY,i);
+    Real &v3 = prim(IVZ,i);
 
     // Extract geometric quantities
     Real &g00 = metric_face3_i1_(i);
@@ -753,21 +790,21 @@ void Coordinates::PrimToLocal3(const int k, const int j, AthenaArray<Real> *ppri
 // Inputs:
 //   k: phi-index
 //   j: theta-index
-//   pflux: pointer to array of fluxes in 1D, using local coordinates
+//   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
-//   pflux: pointer to values overwritten in global coordinates
-void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> *pflux)
+//   flux: values overwritten in global coordinates
+void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flux)
 {
   // Go through 1D block of cells
 #pragma simd
   for (int i = pmy_block->is; i <= pmy_block->ie+1; i++)
   {
     // Extract fluxes for reading
-    Real &dx = (*pflux)(IDN,i);
-    Real &txt = (*pflux)(IEN,i);
-    Real &txx = (*pflux)(IM1,i);
-    Real &txy = (*pflux)(IM2,i);
-    Real &txz = (*pflux)(IM3,i);
+    Real &dx = flux(IDN,i);
+    Real &txt = flux(IEN,i);
+    Real &txx = flux(IM1,i);
+    Real &txy = flux(IM2,i);
+    Real &txz = flux(IM3,i);
 
     // Extract geometric quantities
     Real &g00 = metric_face1_i1_(i);
@@ -787,11 +824,11 @@ void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> *pfl
     Real f_m3 = m1x * g33 * m3z * txz;
 
     // Extract fluxes for writing
-    Real &d1 = (*pflux)(IDN,i);
-    Real &t10 = (*pflux)(IEN,i);
-    Real &t11 = (*pflux)(IM1,i);
-    Real &t12 = (*pflux)(IM2,i);
-    Real &t13 = (*pflux)(IM3,i);
+    Real &d1 = flux(IDN,i);
+    Real &t10 = flux(IEN,i);
+    Real &t11 = flux(IM1,i);
+    Real &t12 = flux(IM2,i);
+    Real &t13 = flux(IM3,i);
 
     // Set fluxes
     d1 = f_d;
@@ -807,21 +844,21 @@ void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> *pfl
 // Inputs:
 //   k: phi-index
 //   j: theta-index
-//   pflux: pointer to array of fluxes in 1D, using local coordinates
+//   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
-//   pflux: pointer to values overwritten in global coordinates
-void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> *pflux)
+//   flux: values overwritten in global coordinates
+void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flux)
 {
   // Go through 1D block of cells
 #pragma simd
   for (int i = pmy_block->is; i <= pmy_block->ie; i++)
   {
     // Extract fluxes for reading
-    Real &dy = (*pflux)(IDN,i);
-    Real &tyt = (*pflux)(IEN,i);
-    Real &tyx = (*pflux)(IM1,i);
-    Real &tyy = (*pflux)(IM2,i);
-    Real &tyz = (*pflux)(IM3,i);
+    Real &dy = flux(IDN,i);
+    Real &tyt = flux(IEN,i);
+    Real &tyx = flux(IM1,i);
+    Real &tyy = flux(IM2,i);
+    Real &tyz = flux(IM3,i);
 
     // Extract geometric quantities
     Real &g00 = metric_face2_i1_(i);
@@ -841,11 +878,11 @@ void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> *pfl
     Real f_m3 = m2y * g33 * m3z * tyz;
 
     // Extract fluxes for writing
-    Real &d2 = (*pflux)(IDN,i);
-    Real &t20 = (*pflux)(IEN,i);
-    Real &t21 = (*pflux)(IM1,i);
-    Real &t22 = (*pflux)(IM2,i);
-    Real &t23 = (*pflux)(IM3,i);
+    Real &d2 = flux(IDN,i);
+    Real &t20 = flux(IEN,i);
+    Real &t21 = flux(IM1,i);
+    Real &t22 = flux(IM2,i);
+    Real &t23 = flux(IM3,i);
 
     // Set fluxes
     d2 = f_d;
@@ -864,18 +901,18 @@ void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> *pfl
 //   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
 //   flux: values overwritten in global coordinates
-void Coordinates::FluxToGlobal3(const int k, const int j, AthenaArray<Real> *pflux)
+void Coordinates::FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flux)
 {
   // Go through 1D block of cells
 #pragma simd
   for (int i = pmy_block->is; i <= pmy_block->ie; i++)
   {
     // Extract fluxes for reading
-    Real &dz = (*pflux)(IDN,i);
-    Real &tzt = (*pflux)(IEN,i);
-    Real &tzx = (*pflux)(IM1,i);
-    Real &tzy = (*pflux)(IM2,i);
-    Real &tzz = (*pflux)(IM3,i);
+    Real &dz = flux(IDN,i);
+    Real &tzt = flux(IEN,i);
+    Real &tzx = flux(IM1,i);
+    Real &tzy = flux(IM2,i);
+    Real &tzz = flux(IM3,i);
 
     // Extract geometric quantities
     Real &g00 = metric_face3_i1_(i);
@@ -895,11 +932,11 @@ void Coordinates::FluxToGlobal3(const int k, const int j, AthenaArray<Real> *pfl
     Real f_m3 = m3z * g33 * m3z * tzz;
 
     // Extract fluxes for writing
-    Real &d3 = (*pflux)(IDN,i);
-    Real &t30 = (*pflux)(IEN,i);
-    Real &t31 = (*pflux)(IM1,i);
-    Real &t32 = (*pflux)(IM2,i);
-    Real &t33 = (*pflux)(IM3,i);
+    Real &d3 = flux(IDN,i);
+    Real &t30 = flux(IEN,i);
+    Real &t31 = flux(IM1,i);
+    Real &t32 = flux(IM2,i);
+    Real &t33 = flux(IM3,i);
 
     // Set fluxes
     d3 = f_d;

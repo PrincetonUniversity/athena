@@ -1,13 +1,13 @@
 #ifndef FLUID_HPP
 #define FLUID_HPP
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- * See LICENSE file for full public license information.
- *====================================================================================*/
-/*! \file fluid.hpp
- *  \brief defines Fluid class which implements data and functions for thermal fluid
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+// See LICENSE file for full public license information.
+//======================================================================================
+//! \file fluid.hpp
+//  \brief defines Fluid class which implements data and functions for thermal fluid
+//======================================================================================
 
 // Athena headers
 #include "../athena.hpp"         // Real
@@ -24,7 +24,8 @@ class FluidSourceTerms;
 //  \brief fluid data and functions
 
 class Fluid {
-friend class FluidIntegrator;
+//friend class FluidIntegrator;
+friend class Field;
 public:
   Fluid(MeshBlock *pmb, ParameterInput *pin);
   ~Fluid();
@@ -38,12 +39,11 @@ public:
   AthenaArray<Real> ifov;  // internal fluid output variables for analysis
 
   FluidIntegrator *pf_integrator;  // integration algorithm
-  FluidBCs *pf_bcs;                // boundary conditions
   FluidEqnOfState *pf_eos;         // equation of state (including cons->prim func)
   FluidSourceTerms *pf_srcterms;   // physical source terms
 
   void NewTimeStep(MeshBlock *pmb);    // computes new timestep on a MeshBlock
-  void InitFluid(ParameterInput *pin); // problem generator function (files in /pgen)
+//  void InitFluid(ParameterInput *pin); // problem generator function (files in /pgen)
 
 private:
   AthenaArray<Real> dt1_,dt2_,dt3_;  // scratch arrays used in NewTimeStep

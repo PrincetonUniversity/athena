@@ -1,15 +1,15 @@
 // General relativistic black hole accretion generator, spherically symmetric flows
 
 // Primary header
-#include "../fluid/fluid.hpp"
+#include "../mesh.hpp"
 
 // Athena headers
 #include "../athena.hpp"                   // enums, Real
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../coordinates/coordinates.hpp"  // PrimToCons()
-#include "../fluid/bvals/bvals.hpp"        // EnrollBoundaryFunction()
+#include "../bvals/bvals.hpp"              // EnrollBoundaryFunction()
+#include "../fluid/fluid.hpp"              // Fluid
 #include "../fluid/eos/eos.hpp"            // GetGamma()
-#include "../mesh.hpp"                     // MeshBlock, MeshDomain, Mesh
 #include "../parameter_input.hpp"          // ParameterInput
 
 // Declarations
@@ -24,14 +24,16 @@ static Real d_outer, e_outer, m1_outer, m2_outer, m3_outer;
 
 // Function for setting initial conditions
 // Inputs:
+//   pfl: Fluid
+//   pfd: Field (unused)
 //   pin: parameters
 // Outputs: (none)
 // Notes:
 //   sets primitive and conserved variables according to input primitives
-void Fluid::InitFluid(ParameterInput *pin)
+void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   // Prepare index bounds
-  MeshBlock *pb = pmy_block;
+  MeshBlock *pb = pfl->pmy_block;
   int il = pb->is - NGHOST;
   int iu = pb->ie + NGHOST;
   int jl = pb->js;
@@ -50,7 +52,7 @@ void Fluid::InitFluid(ParameterInput *pin)
   }
 
   // Read and set ratio of specific heats
-  Real gamma_adi = pf_eos->GetGamma();
+  Real gamma_adi = pfl->pf_eos->GetGamma();
   Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // TODO: read and set mass
@@ -87,9 +89,9 @@ void Fluid::InitFluid(ParameterInput *pin)
         Real v1_init = v1_inner + v1_slope * displacement;
         Real v2_init = v2_inner + v2_slope * displacement;
         Real v3_init = v3_inner + v3_slope * displacement;
-        set_state(w, w1, i, j, k, rho_init, pgas_init, v1_init, v2_init, v3_init);
+        set_state(pfl->w, pfl->w1, i, j, k, rho_init, pgas_init, v1_init, v2_init, v3_init);
       }
-  pmy_block->pcoord->PrimToCons(w, u);
+  pfl->pmy_block->pcoord->PrimToCons(pfl->w, pfl->u);
 
   // Read inner boundary state
   d_inner = pin->GetReal("problem", "d_inner");
@@ -106,8 +108,8 @@ void Fluid::InitFluid(ParameterInput *pin)
   m3_outer = pin->GetReal("problem", "m3_outer");
 
   // Enroll boundary functions
-  pb->pfluid->pf_bcs->EnrollBoundaryFunction(inner_x1, FixedInner);
-  pb->pfluid->pf_bcs->EnrollBoundaryFunction(outer_x1, FixedOuter);
+  pb->pbval->EnrollFluidBoundaryFunction(inner_x1, FixedInner);
+  pb->pbval->EnrollFluidBoundaryFunction(outer_x1, FixedOuter);
   return;
 }
 

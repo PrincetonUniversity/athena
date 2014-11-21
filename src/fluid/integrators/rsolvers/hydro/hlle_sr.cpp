@@ -3,19 +3,19 @@
 // TODO: make left and right inputs const
 
 // Primary header
-#include "../integrators.hpp"
+#include "../../fluid_integrator.hpp"
 
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
 // Athena headers
-#include "../../eos/eos.hpp"                     // GetGamma()
-#include "../../fluid.hpp"                       // Fluid
-#include "../../../athena.hpp"                   // enums, macros, Real
-#include "../../../athena_arrays.hpp"            // AthenaArray
-#include "../../../coordinates/coordinates.hpp"  // Coordinates
-#include "../../../mesh.hpp"                     // MeshBlock
+#include "../../../eos/eos.hpp"                     // GetGamma()
+#include "../../../fluid.hpp"                       // Fluid
+#include "../../../../athena.hpp"                   // enums, macros, Real
+#include "../../../../athena_arrays.hpp"            // AthenaArray
+#include "../../../../coordinates/coordinates.hpp"  // Coordinates
+#include "../../../../mesh.hpp"                     // MeshBlock
 
 // Riemann solver
 // Inputs:
@@ -25,11 +25,14 @@
 //   pflux: pointer to fluxes
 // Notes:
 //   implements HLLC algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
-void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
-    const int iu, const int ivx, const int ivy, const int ivz,
-    AthenaArray<Real> *pprim_left, AthenaArray<Real> *pprim_right,
-    AthenaArray<Real> *pflux)
+void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const int iu,
+  const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &prim_left,
+  AthenaArray<Real> &prim_right, AthenaArray<Real> &flux)
 {
+  // Calculate cyclic permutations of indices
+  int ivy = IVX + ((ivx-IVX)+1)%3;
+  int ivz = IVX + ((ivx-IVX)+2)%3;
+
   // Extract ratio of specific heats
   const Real gamma_adi = pmy_fluid->pf_eos->GetGamma();
   const Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
@@ -39,25 +42,25 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   for (int i = il; i <= iu; i++)
   {
     // Extract left primitives
-    Real &rho_left = (*pprim_left)(IDN,i);
-    Real &pgas_left = (*pprim_left)(IEN,i);
-    Real &vx_left = (*pprim_left)(ivx,i);
-    Real &vy_left = (*pprim_left)(ivy,i);
-    Real &vz_left = (*pprim_left)(ivz,i);
+    Real &rho_left = prim_left(IDN,i);
+    Real &pgas_left = prim_left(IEN,i);
+    Real &vx_left = prim_left(ivx,i);
+    Real &vy_left = prim_left(ivy,i);
+    Real &vz_left = prim_left(ivz,i);
 
     // Extract right primitives
-    Real &rho_right = (*pprim_right)(IDN,i);
-    Real &pgas_right = (*pprim_right)(IEN,i);
-    Real &vx_right = (*pprim_right)(ivx,i);
-    Real &vy_right = (*pprim_right)(ivy,i);
-    Real &vz_right = (*pprim_right)(ivz,i);
+    Real &rho_right = prim_right(IDN,i);
+    Real &pgas_right = prim_right(IEN,i);
+    Real &vx_right = prim_right(ivx,i);
+    Real &vy_right = prim_right(ivy,i);
+    Real &vz_right = prim_right(ivz,i);
 
     // Extract fluxes
-    Real &flux_d = (*pflux)(IDN,i);
-    Real &flux_e = (*pflux)(IEN,i);
-    Real &flux_mx = (*pflux)(ivx,i);
-    Real &flux_my = (*pflux)(ivy,i);
-    Real &flux_mz = (*pflux)(ivz,i);
+    Real &flux_d = flux(IDN,i);
+    Real &flux_e = flux(IEN,i);
+    Real &flux_mx = flux(ivx,i);
+    Real &flux_my = flux(ivy,i);
+    Real &flux_mz = flux(ivz,i);
 
     // Calculate wavespeeds in left region
     Real rho_h_left = rho_left + gamma_adi_red * pgas_left;

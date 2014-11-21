@@ -1,18 +1,18 @@
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- *
- * This program is free software: you can redistribute and/or modify it under the terms
- * of the GNU General Public License (GPL) as published by the Free Software Foundation,
- * either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
- * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of GNU GPL in the file LICENSE included in the code
- * distribution.  If not see <http://www.gnu.org/licenses/>.
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+//
+// This program is free software: you can redistribute and/or modify it under the terms
+// of the GNU General Public License (GPL) as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of GNU GPL in the file LICENSE included in the code
+// distribution.  If not see <http://www.gnu.org/licenses/>.
+//======================================================================================
 
 // Primary header
 #include "athena.hpp"
@@ -38,20 +38,21 @@
 
 // function prototypes
 void ShowConfig();
+void ChangeToRunDir(const char *pdir);
 
 //======================================================================================
-/* //////////////////////////////// Athena++ Main Program \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
- *! \file main.cpp
- *  \brief Athena++ main program file.
- *
- *  Based on the Athena MHD code in C.  History:
- *    - 2003-2013: development of v1.0-v4.2 of Athena code in C
- *    - Jan 2014: start of Athena++ code project
- *====================================================================================*/
+/////////////////////////////////// Athena++ Main Program \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+//! \file main.cpp
+//  \brief Athena++ main program file.
+//
+//  Based on the Athena MHD code in C.  History:
+//    - 2003-2013: development of v1.0-v4.2 of Athena code in C
+//    - Jan 2014: start of Athena++ code project
+//======================================================================================
 
 //--------------------------------------------------------------------------------------
-/*! \fn int main(int argc, char *argv[]) 
- *  \brief Athena++ main program   */
+//! \fn int main(int argc, char *argv[]) 
+//  \brief Athena++ main program   */
 
 int main(int argc, char *argv[])
 {
@@ -165,7 +166,7 @@ int main(int argc, char *argv[])
 // Set initial conditions by calling problem generator on each MeshDomain/MeshBlock
 
   try {
-    pmesh->ForAllDomains(init_fluid,pinput);
+    pmesh->ForAllDomains(pgen,pinput);
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl << "memory allocation failed "
@@ -180,15 +181,16 @@ int main(int argc, char *argv[])
 // apply BCs, compute primitive from conserved variables, compute first timestep
 
   pmesh->ForAllDomains( fluid_bcs_n,pinput);
-  pmesh->ForAllDomains(bfield_bcs_n,pinput);
+  if (MAGNETIC_FIELDS_ENABLED) pmesh->ForAllDomains(bfield_bcs_n,pinput);
   pmesh->ForAllDomains(primitives_n,pinput);
   pmesh->ForAllDomains(new_timestep,pinput);
 
 //--- Step 6. --------------------------------------------------------------------------
-// Initialize outputs object, and make outputs of data on Mesh
+// Change to run directory, initialize outputs object, and make output of ICs
 
   Outputs *pouts;
   try {
+    ChangeToRunDir(prundir);
     pouts = new Outputs(pmesh, pinput);
     pouts->MakeOutputs(pmesh);
   } 
@@ -219,28 +221,32 @@ int main(int argc, char *argv[])
 
 // predict step
 
-    pmesh->ForAllDomains( fluid_predict  ,pinput);
-    pmesh->ForAllDomains( fluid_bcs_nhalf,pinput);
+    pmesh->ForAllDomains(fluid_predict  ,pinput);
+    pmesh->ForAllDomains(fluid_bcs_nhalf,pinput);
 
-    pmesh->ForAllDomains(bfield_predict  ,pinput);
-    pmesh->ForAllDomains(bfield_bcs_nhalf,pinput);
+    if (MAGNETIC_FIELDS_ENABLED) {
+      pmesh->ForAllDomains(bfield_predict  ,pinput);
+      pmesh->ForAllDomains(bfield_bcs_nhalf,pinput);
+    }
 
     pmesh->ForAllDomains(primitives_nhalf,pinput);
 
 // correct step
 
-    pmesh->ForAllDomains( fluid_correct,pinput);
-    pmesh->ForAllDomains( fluid_bcs_n,  pinput);
+    pmesh->ForAllDomains(fluid_correct,pinput);
+    pmesh->ForAllDomains(fluid_bcs_n,  pinput);
 
-    pmesh->ForAllDomains(bfield_correct,pinput);
-    pmesh->ForAllDomains(bfield_bcs_n,  pinput);
+    if (MAGNETIC_FIELDS_ENABLED) {
+      pmesh->ForAllDomains(bfield_correct,pinput);
+      pmesh->ForAllDomains(bfield_bcs_n,  pinput);
+    }
 
-    pmesh->ForAllDomains(primitives_n,  pinput);
+    pmesh->ForAllDomains(primitives_n,pinput);
 
 // new time step, outputs, diagnostics
 
     pmesh->ncycle++;
-    pmesh->time  += pmesh->dt;
+    pmesh->time += pmesh->dt;
 
     try {
       pouts->MakeOutputs(pmesh);

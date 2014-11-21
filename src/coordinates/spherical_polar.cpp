@@ -1,18 +1,18 @@
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- *
- * This program is free software: you can redistribute and/or modify it under the terms
- * of the GNU General Public License (GPL) as published by the Free Software Foundation,
- * either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
- * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of GNU GPL in the file LICENSE included in the code
- * distribution.  If not see <http://www.gnu.org/licenses/>.
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+//
+// This program is free software: you can redistribute and/or modify it under the terms
+// of the GNU General Public License (GPL) as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of GNU GPL in the file LICENSE included in the code
+// distribution.  If not see <http://www.gnu.org/licenses/>.
+//======================================================================================
 
 // Primary header
 #include "coordinates.hpp"
@@ -30,8 +30,7 @@
 
 //======================================================================================
 //! \file spherical_polar.cpp
-//  \brief implements functions in class Coordinates for 3D (r-theta-phi) spherical
-//    polar coordinates
+//  \brief implements Coordinates class functions for spherical polar (r-theta-phi)
 //======================================================================================
 
 //--------------------------------------------------------------------------------------
@@ -147,47 +146,95 @@ Coordinates::~Coordinates()
 }
 
 //--------------------------------------------------------------------------------------
-// Edge Length functions
+// Edge Length functions: returns physical length at cell edges
+// Edge1(i,j,k) located at (i,j-1/2,k-1/2), i.e. (x1v(i), x2f(j), x3f(k))
 
+void Coordinates::Edge1Length(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = pmy_block->dx1f(i);
+  }
+  return;
+}
+
+// Edge2(i,j,k) located at (i-1/2,j,k-1/2), i.e. (x1f(i), x2v(j), x3f(k))
+
+void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = (pmy_block->x1f(i)*pmy_block->dx2f(j));
+  }
+  return;
+}
+
+// Edge3(i,j,k) located at (i-1/2,j-1/2,k), i.e. (x1f(i), x2f(j), x3v(k))
+
+void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = (pmy_block->x1f(i)*sin(pmy_block->x2f(j))*pmy_block->dx3f(k));
+  }
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+// Cell-center Width functions: returns physical width at cell-center
+
+Real Coordinates::CenterWidth1(const int k, const int j, const int i)
+{
+  return (pmy_block->dx1f(i));
+}
+
+Real Coordinates::CenterWidth2(const int k, const int j, const int i)
+{
+  return (pmy_block->x1v(i)*pmy_block->dx2f(j));
+}
+
+Real Coordinates::CenterWidth3(const int k, const int j, const int i)
+{
+  return (pmy_block->x1v(i)*sin(pmy_block->x2v(j))*pmy_block->dx3f(k));
+}
 
 //--------------------------------------------------------------------------------------
 // Face Area functions
 
-// \!fn void Coordinates::Area1Face(const int k,const int j, const int il, const int iu,
-//        AthenaArray<Real> &area)
-// \brief functions to compute area of cell faces in each direction
-
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> *parea)
+  AthenaArray<Real> &area)
 {
 // area1 = r^2 sin[theta] dtheta dphi = r^2 d(-cos[theta]) dphi
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = (*parea)(i);
+    Real& area_i = area(i);
     area_i = face1_area_i_(i)*face1_area_j_(j)*(pmy_block->dx3f(k)); 
   }
   return;
 }
 
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> *parea)
+  AthenaArray<Real> &area)
 {
 // area2 = dr r sin[theta] dphi = d(r^2/2) sin[theta] dphi
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = (*parea)(i);
+    Real& area_i = area(i);
     area_i = face2_area_i_(i)*face2_area_j_(j)*(pmy_block->dx3f(k));
   }
   return;
 }
 
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> *parea)
+  AthenaArray<Real> &area)
 {
 // area3 = dr r dtheta = d(r^2/2) dtheta
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& area_i = (*parea)(i);
+    Real& area_i = area(i);
     area_i = face3_area_i_(i)*(pmy_block->dx2f(j));
   }
   return;
@@ -196,53 +243,22 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 //--------------------------------------------------------------------------------------
 // Cell Volume function
 
-// \!fn void Coordinates::CellVolume(const int k,const int j,const int il, const int iu,
-//        AthenaArray<Real> &vol)
-// \brief function to compute cell volume
-
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> *pvol)
+  AthenaArray<Real> &vol)
 {
 // volume = r^2 sin(theta) dr dtheta dphi = d(r^3/3) d(-cos theta) dphi
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    Real& vol_i = (*pvol)(i);
+    Real& vol_i = vol(i);
     vol_i = volume_i_(i)*volume_j_(j)*(pmy_block->dx3f(k));
   }
   return;
 }
 
 //--------------------------------------------------------------------------------------
-// Width and Distance functions
-
-Real Coordinates::CellPhysicalWidth1(const int k, const int j, const int i)
-{
-  return (pmy_block->dx1f(i));
-}
-
-Real Coordinates::CellPhysicalWidth2(const int k, const int j, const int i)
-{
-  return (pmy_block->x1v(i)*pmy_block->dx2f(j));
-}
-
-Real Coordinates::CellPhysicalWidth3(const int k, const int j, const int i)
-{
-  return (pmy_block->x1v(i)*sin(pmy_block->x2v(j))*pmy_block->dx3f(k));
-}
-
-ThreeVector Coordinates::VectorBetweenPoints(const ThreeVector p1, const ThreeVector p2)
-{
-  ThreeVector r;
-  r.x1 = p1.x1 - p2.x1*(sin(p1.x2)*sin(p2.x2)*cos(p1.x3-p2.x3) + cos(p1.x2)*cos(p2.x2));
-  r.x2 = p2.x1*(cos(p1.x2)*sin(p2.x2)*cos(p1.x3-p2.x3) - sin(p1.x2)*cos(p2.x2));
-  r.x3 = p2.x1*sin(p2.x2)*sin(p1.x3-p2.x3);;
-  return r;
-}
-
-//--------------------------------------------------------------------------------------
-// \!fn void Coordinates::CoordinateSourceTerms(const int k, const int j, Read dt,
-//        AthenaArray<Real> &prim, AthenaArray<Real> &cons)
-// \brief function to add coordinate source terms to input conserved variables
+// \!fn void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
+//           AthenaArray<Real> &cons)
+// \brief Adds coordinate source terms to conserved variables (no-op func in Cartesian)
 
 void Coordinates::CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
   AthenaArray<Real> &cons)

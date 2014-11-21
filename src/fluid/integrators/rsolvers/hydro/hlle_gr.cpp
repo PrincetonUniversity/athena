@@ -3,34 +3,37 @@
 // TODO: make left and right inputs const
 
 // Primary header
-#include "../integrators.hpp"
+#include "../../fluid_integrator.hpp"
 
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
 // Athena headers
-#include "../../eos/eos.hpp"                     // GetGamma()
-#include "../../fluid.hpp"                       // Fluid
-#include "../../../athena.hpp"                   // enums, macros, Real
-#include "../../../athena_arrays.hpp"            // AthenaArray
-#include "../../../coordinates/coordinates.hpp"  // Coordinates
-#include "../../../mesh.hpp"                     // MeshBlock
+#include "../../../eos/eos.hpp"                     // GetGamma()
+#include "../../../fluid.hpp"                       // Fluid
+#include "../../../../athena.hpp"                   // enums, macros, Real
+#include "../../../../athena_arrays.hpp"            // AthenaArray
+#include "../../../../coordinates/coordinates.hpp"  // Coordinates
+#include "../../../../mesh.hpp"                     // MeshBlock
 
 // Riemann solver
 // Inputs:
 //   il, iu: lower and upper indices for interfaces
-//   pprim_left, pprim_right: pointers to left and right primitive states
+//   prim_left, prim_right: left and right primitive states
 // Outputs:
-//   pflux: pointer to fluxes
+//   flux: fluxes
 // Notes:
 //   implements HLLE algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
-//   *pprim_left, *pprim_right overwritten
-void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
-    const int iu, const int ivx, const int ivy, const int ivz,
-    AthenaArray<Real> *pprim_left, AthenaArray<Real> *pprim_right,
-    AthenaArray<Real> *pflux)
+//   prim_left, prim_right overwritten
+void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const int iu,
+  const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &prim_left,
+  AthenaArray<Real> &prim_right, AthenaArray<Real> &flux)
 {
+  // Calculate cyclic permutations of indices
+  int ivy = IVX + ((ivx-IVX)+1)%3;
+  int ivz = IVX + ((ivx-IVX)+2)%3;
+
   // Extract ratio of specific heats
   const Real gamma_adi = pmy_fluid->pf_eos->GetGamma();
   const Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
@@ -40,16 +43,16 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   switch (ivx)
   {
     case IVX:
-      pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, pprim_left);
-      pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, pprim_right);
+      pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, prim_left);
+      pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, prim_right);
       break;
     case IVY:
-      pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, pprim_left);
-      pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, pprim_right);
+      pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, prim_left);
+      pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, prim_right);
       break;
     case IVZ:
-      pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, pprim_left);
-      pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, pprim_right);
+      pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, prim_left);
+      pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, prim_right);
       break;
   }
 
@@ -58,25 +61,25 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   for (int i = il; i <= iu; i++)
   {
     // Extract left primitives
-    Real &rho_left = (*pprim_left)(IDN,i);
-    Real &pgas_left = (*pprim_left)(IEN,i);
-    Real &vx_left = (*pprim_left)(ivx,i);
-    Real &vy_left = (*pprim_left)(ivy,i);
-    Real &vz_left = (*pprim_left)(ivz,i);
+    const Real &rho_left = prim_left(IDN,i);
+    const Real &pgas_left = prim_left(IEN,i);
+    const Real &vx_left = prim_left(ivx,i);
+    const Real &vy_left = prim_left(ivy,i);
+    const Real &vz_left = prim_left(ivz,i);
 
     // Extract right primitives
-    Real &rho_right = (*pprim_right)(IDN,i);
-    Real &pgas_right = (*pprim_right)(IEN,i);
-    Real &vx_right = (*pprim_right)(ivx,i);
-    Real &vy_right = (*pprim_right)(ivy,i);
-    Real &vz_right = (*pprim_right)(ivz,i);
+    const Real &rho_right = prim_right(IDN,i);
+    const Real &pgas_right = prim_right(IEN,i);
+    const Real &vx_right = prim_right(ivx,i);
+    const Real &vy_right = prim_right(ivy,i);
+    const Real &vz_right = prim_right(ivz,i);
 
     // Extract fluxes
-    Real &flux_d = (*pflux)(IDN,i);
-    Real &flux_e = (*pflux)(IEN,i);
-    Real &flux_mx = (*pflux)(ivx,i);
-    Real &flux_my = (*pflux)(ivy,i);
-    Real &flux_mz = (*pflux)(ivz,i);
+    Real &flux_d = flux(IDN,i);
+    Real &flux_e = flux(IEN,i);
+    Real &flux_mx = flux(ivx,i);
+    Real &flux_my = flux(ivy,i);
+    Real &flux_mz = flux(ivz,i);
 
     // Calculate wavespeeds in left region
     Real rho_h_left = rho_left + gamma_adi_red * pgas_left;
@@ -186,13 +189,13 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   switch (ivx)
   {
     case IVX:
-      pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, pflux);
+      pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, flux);
       break;
     case IVY:
-      pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, pflux);
+      pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, flux);
       break;
     case IVZ:
-      pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, pflux);
+      pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, flux);
       break;
   }
   return;

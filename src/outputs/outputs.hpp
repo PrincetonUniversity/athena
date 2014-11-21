@@ -1,40 +1,22 @@
 #ifndef OUTPUTS_HPP
 #define OUTPUTS_HPP
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- * See LICENSE file for full public license information.
- *====================================================================================*/
-/*! \file outputs.hpp
- *  \brief provides multiple classes to handle ALL types of data output (fluid, bfield,
- *  gravity, radiation, particles, etc.)
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+// See LICENSE file for full public license information.
+//======================================================================================
+//! \file outputs.hpp
+//  \brief provides multiple classes to handle ALL types of data output (fluid, bfield,
+//  gravity, radiation, particles, etc.)
+//======================================================================================
 
 class Mesh;
 class ParameterInput;
 
-//! \struct OutputDataHeader
-//  \brief metadata describing OutputData contained within an OutputType
-
-struct OutputDataHeader {
-  std::string descriptor; // time, cycle, variables in output
-  std::string transforms; // list of any transforms (sum, slice) applied to variables
-  int il,iu,jl,ju,kl,ku;  // range of data arrays
-  int ndata;              // number of data points in arrays
-};
-
-//! \struct OutputVariableHeader
-//  \brief metadata describing each OutputVariable contained in OutputData class
-
-struct OutputVariableHeader {
-  std::string type; // one of (SCALARS,VECTORS)
-  std::string name;
-};
-
 //! \struct OutputParameters
 //  \brief  control parameter values read from <output> block in the input file
 
-struct OutputParameters {
+typedef struct OutputParameters {
   Real next_time, dt;
   int block_number;
   int file_number;
@@ -47,21 +29,31 @@ struct OutputParameters {
   std::string variable;
   std::string file_type;
   std::string data_format;
-};
+} OutputParameters;
 
-//! \class OutputVariable
+//! \struct OutputVariable
 //  \brief node in a linked list of output variables in OutputData class
 
 class OutputVariable {
 public:
-  OutputVariable(AthenaArray<Real> *parray, OutputVariableHeader vhead);
+  OutputVariable();
   ~OutputVariable();
 
-  OutputVariableHeader var_header;
-  AthenaArray<Real> *pdata;
-
+  std::string type; // one of (SCALARS,VECTORS)
+  std::string name;
+  AthenaArray<Real> data;  // array containing data (may be shallow copy/slice)
   OutputVariable *pnext, *pprev; // ptrs to next and previous nodes in list
 };
+
+//! \struct OutputDataHeader
+//  \brief metadata describing OutputData contained within an OutputType
+
+typedef struct OutputDataHeader {
+  std::string descriptor; // time, cycle, variables in output
+  std::string transforms; // list of any transforms (sum, slice) applied to variables
+  int il,iu,jl,ju,kl,ku;  // range of data arrays
+  int ndata;              // number of data points in arrays
+} OutputDataHeader;
 
 //! \class OutputData
 //  \brief container for output data, composed of a header (metadata describing output),
@@ -76,7 +68,7 @@ public:
   OutputVariable *pfirst_var;  // ptr to first variable (node) in linked list
   OutputVariable *plast_var;   // ptr to last  variable (node) in linked list
 
-  void AppendNode(AthenaArray<Real> *parray, OutputVariableHeader vhead);
+  void AppendNode(OutputVariable *pvar);
   void ReplaceNode(OutputVariable *pold, OutputVariable *pnew);
 };
 
@@ -91,7 +83,6 @@ public:
   OutputType(OutputParameters oparams);
   ~OutputType();
   OutputParameters output_params; // control data read from <output> block 
-  OutputType *pnext;              // ptr to next node in linked list of OutputTypes
 
 // functions that operate on OutputData container
 
@@ -103,6 +94,8 @@ public:
 
   void Slice(OutputData* pod, MeshBlock *pmb, int dim);
   void Sum(OutputData* pod, MeshBlock *pmb, int dim);
+
+  OutputType *pnext_type;   // ptr to next node in linked list of OutputTypes
 };
 
 //! \class FormattedTableOutput
@@ -151,7 +144,6 @@ public:
   Outputs(Mesh *pm, ParameterInput *pin);
   ~Outputs();
 
-  void InitOutputTypes(ParameterInput *pin);
   void MakeOutputs(Mesh *pm);
 
 private:

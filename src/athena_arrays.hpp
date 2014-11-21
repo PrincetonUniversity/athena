@@ -1,17 +1,17 @@
 #ifndef ATHENA_ARRAYS_HPP
 #define ATHENA_ARRAYS_HPP
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- * See LICENSE file for full public license information.
- *====================================================================================*/
-/*! \file athena_arrays.hpp
- *  \brief provides array classes valid in 1D to 4D.
- *
- *  The operator() is overloaded, e.g. elements of a 4D array of size [N4xN3xN2xN1]
- *  are accessed as:  A(n,k,j,i) = A[i + N1*(j + N2*(k + N3*n))]
- *  NOTE THE TRAILING INDEX INSIDE THE PARENTHESES IS INDEXED FASTEST
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+// See LICENSE file for full public license information.
+//======================================================================================
+//! \file athena_arrays.hpp
+//  \brief provides array classes valid in 1D to 4D.
+//
+//  The operator() is overloaded, e.g. elements of a 4D array of size [N4xN3xN2xN1]
+//  are accessed as:  A(n,k,j,i) = A[i + N1*(j + N2*(k + N3*n))]
+//  NOTE THE TRAILING INDEX INSIDE THE PARENTHESES IS INDEXED FASTEST
+//======================================================================================
 
 // C++ headers
 #include <cstddef>  // size_t
@@ -69,7 +69,7 @@ public:
   AthenaArray(const AthenaArray<T>& t);
   AthenaArray<T> &operator= (const AthenaArray<T> &t);
   AthenaArray<T> ShallowCopy();
-  AthenaArray<T> *ShallowSlice(const int indx, const int nvar);
+  AthenaArray<T> ShallowSlice(const int indx, const int nvar, AthenaArray<T> &dest);
 
 private:
   T *pdata_;
@@ -109,8 +109,21 @@ AthenaArray<T>::AthenaArray(const AthenaArray<T>& src) {
   }
 }
 
-// assignment operator (does a deep copy)
+// assignment operator (does a deep copy).  Does not allocate memory for destination.
+// THIS REQUIRES DESTINATION ARRAY BE ALREADY ALLOCATED AND SAME SIZE AS SOURCE
 
+template<typename T>
+AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
+  if (this != &src){
+    std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_);
+    for (std::size_t i=0; i<size; ++i) {
+      this->pdata_[i] = src.pdata_[i]; // copy data (not just addresses!)
+    } 
+  }
+  return *this;
+}
+
+/***
 template<typename T>
 AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
   if (this != &src){
@@ -128,6 +141,7 @@ AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
   }
   return *this;
 }
+***/
 
 //--------------------------------------------------------------------------------------
 //! \fn AthenaArray::ShallowCopy()
@@ -146,35 +160,33 @@ AthenaArray<T> AthenaArray<T>::ShallowCopy() {
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn AthenaArray::ShallowSlice(int indx, int nvar)
+//! \fn AthenaArray::ShallowSlice(int indx, int nvar, AthenaArray<T> &dest)
 //  \brief shallow copy of nvar elements in the largest dimension of an array, starting
 //  at index=indx.  Copies pointers to data, but not data itself.  Examples:
 //    4D array nvar=3: copy has size OUT(3,nx3,nx2,nx1) with OUT(0,*,*,*)=IN(indx,*,*,*)
 //    3D array nvar=1: copy has size OUT(1,1,nx2,nx1)   with OUT(0,0,*,*)=IN(0,indx,*,*)
 
 template<typename T>
-AthenaArray<T> *AthenaArray<T>::ShallowSlice(const int indx, const int nvar) {
-  AthenaArray<T> *dest = new AthenaArray<T>;
-  dest->nx1_=nx1_;
-  dest->nx2_=nx2_;
-  dest->nx3_=nx3_;
-  dest->nx4_=nx4_;
-  dest->pdata_ = pdata_;
+AthenaArray<T> AthenaArray<T>::ShallowSlice(const int indx, const int nvar, AthenaArray<T> &dest) {
+  dest.nx1_=nx1_;
+  dest.nx2_=nx2_;
+  dest.nx3_=nx3_;
+  dest.nx4_=nx4_;
+  dest.pdata_ = pdata_;
   if (nx4_ > 1) {
-    dest->nx4_=nvar;
-    dest->pdata_ += indx * nx1_*nx2_*nx3_;
+    dest.nx4_=nvar;
+    dest.pdata_ += indx * nx1_*nx2_*nx3_;
   } else if (nx3_ > 1) {
-    dest->nx3_=nvar;
-    dest->pdata_ += indx * nx1_*nx2_;
+    dest.nx3_=nvar;
+    dest.pdata_ += indx * nx1_*nx2_;
   } else if (nx2_ > 1) {
-    dest->nx2_=nvar;
-    dest->pdata_ += indx * nx1_;
+    dest.nx2_=nvar;
+    dest.pdata_ += indx * nx1_;
   } else if (nx1_ > 1) {
-    dest->nx1_=nvar;
-    dest->pdata_ += indx;
+    dest.nx1_=nvar;
+    dest.pdata_ += indx;
   }
-  dest->scopy_ = 1;
-  return dest;
+  dest.scopy_ = 1;
 }
 
 //--------------------------------------------------------------------------------------
@@ -192,8 +204,8 @@ void AthenaArray<T>::NewAthenaArray(int nx1)
 }
  
 //--------------------------------------------------------------------------------------
-/*! \fn
- *  \brief 2d data allocation */
+//! \fn
+//  \brief 2d data allocation
 
 template<typename T>
 void AthenaArray<T>::NewAthenaArray(int nx2, int nx1)
@@ -206,8 +218,8 @@ void AthenaArray<T>::NewAthenaArray(int nx2, int nx1)
 }
  
 //--------------------------------------------------------------------------------------
-/*! \fn
- *  \brief 3d data allocation */
+//! \fn
+//  \brief 3d data allocation
 
 template<typename T>
 void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1)
@@ -220,8 +232,8 @@ void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1)
 }
  
 //--------------------------------------------------------------------------------------
-/*! \fn
- *  \brief 4d data allocation */
+//! \fn
+//  \brief 4d data allocation
 
 template<typename T>
 void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2, int nx1)
@@ -234,8 +246,8 @@ void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2, int nx1)
 }
 
 //--------------------------------------------------------------------------------------
-/*! \fn
- *  \brief  free memory allocated for data array */
+//! \fn
+//  \brief  free memory allocated for data array
 
 template<typename T>
 void AthenaArray<T>::DeleteAthenaArray()

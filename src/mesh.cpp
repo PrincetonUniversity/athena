@@ -1,18 +1,18 @@
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- *
- * This program is free software: you can redistribute and/or modify it under the terms
- * of the GNU General Public License (GPL) as published by the Free Software Foundation,
- * either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
- * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of GNU GPL in the file LICENSE included in the code
- * distribution.  If not see <http://www.gnu.org/licenses/>.
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+//
+// This program is free software: you can redistribute and/or modify it under the terms
+// of the GNU General Public License (GPL) as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of GNU GPL in the file LICENSE included in the code
+// distribution.  If not see <http://www.gnu.org/licenses/>.
+//======================================================================================
 
 // Primary header
 #include "mesh.hpp"
@@ -29,17 +29,18 @@
 #include "athena.hpp"                   // enums, macros, Real
 #include "athena_arrays.hpp"            // AthenaArray
 #include "coordinates/coordinates.hpp"  // Coordinates
-#include "fluid/fluid.hpp"                    // Fluid
-#include "fluid/bvals/bvals.hpp"              // FluidBCs
+#include "fluid/fluid.hpp"              // Fluid
+#include "field/field.hpp"              // Field
+#include "bvals/bvals.hpp"              // BoundaryValues
 #include "fluid/eos/eos.hpp"              // FluidEqnOfState
-#include "fluid/integrators/integrators.hpp"  // FluidIntegrator
-//#include "outputs/outputs.hpp"          // Outputs
+#include "fluid/integrators/fluid_integrator.hpp"  // FluidIntegrator
+#include "field/integrators/field_integrator.hpp"  // FieldIntegrator
 #include "parameter_input.hpp"          // ParameterInput
 
 //======================================================================================
-/*! \file mesh.cpp
- *  \brief implementation of functions in classes Mesh, MeshDomain, and MeshBlock
- *====================================================================================*/
+//! \file mesh.cpp
+//  \brief implementation of functions in classes Mesh, MeshDomain, and MeshBlock
+//======================================================================================
 
 //--------------------------------------------------------------------------------------
 // Mesh constructor, builds mesh at start of calculation using parameters in input file
@@ -156,7 +157,7 @@ Mesh::Mesh(ParameterInput *pin)
   }
 
 // read BC flags for each of the 6 boundaries in turn.  Error tests performed in
-// FluidBCs constructor
+// BoundaryValues constructor
 
   mesh_bcs.ix1_bc = pin->GetOrAddInteger("mesh","ix1_bc",0);
   mesh_bcs.ox1_bc = pin->GetOrAddInteger("mesh","ox1_bc",0);
@@ -203,7 +204,7 @@ MeshDomain::~MeshDomain()
 
 //--------------------------------------------------------------------------------------
 // MeshBlock constructor: builds 1D vectors of cell positions and spacings, and
-// constructs coordinate, boundary condition, and fluid objects.
+// constructs coordinate, boundary condition, fluid and field objects.
 
 MeshBlock::MeshBlock(RegionSize in_size, RegionBCs in_bcs, MeshDomain *pd,
   ParameterInput *pin)
@@ -400,8 +401,10 @@ MeshBlock::MeshBlock(RegionSize in_size, RegionBCs in_bcs, MeshDomain *pd,
 // initial conditions for the fluid are set in problem generator called from main, not
 // in the Fluid constructor
  
-  pcoord   = new Coordinates(this, pin);
-  pfluid   = new Fluid(this, pin);
+  pcoord = new Coordinates(this, pin);
+  pfluid = new Fluid(this, pin);
+  pfield = new Field(this, pin);
+  pbval  = new BoundaryValues(this, pin);
 
   return;
 }
@@ -425,6 +428,8 @@ MeshBlock::~MeshBlock()
 
   delete pcoord;
   delete pfluid;
+  delete pfield;
+  delete pbval;
 }
 
 //--------------------------------------------------------------------------------------
@@ -436,41 +441,61 @@ void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
 
 // Eventually this will be a loop over all domains
 
-  if (pdomain->pblock != NULL)  {
-    Fluid* pf = pdomain->pblock->pfluid;
+  MeshBlock* pmb = pdomain->pblock;
+  if (pmb != NULL)  {
+    Fluid* pfluid = pdomain->pblock->pfluid;
+    Field* pfield = pdomain->pblock->pfield;
 
     switch (action) {
 
-      case init_fluid: // call problem generator
-        pdomain->pblock->pfluid->InitFluid(pin);
+      case pgen: // call problem generator
+        ProblemGenerator(pfluid,pfield,pin);
         break;
 
       case fluid_bcs_n: // set fluid BCs at t^n
-        pdomain->pblock->pfluid->pf_bcs->ApplyFluidBCs(pf->u);
+        pmb->pbval->ApplyBVals(pfluid->u);
         break;
 
       case fluid_bcs_nhalf: // set fluid BCs at t^{intermediate}
-        pdomain->pblock->pfluid->pf_bcs->ApplyFluidBCs(pf->u1);
+        pmb->pbval->ApplyBVals(pfluid->u1);
+        break;
+
+      case bfield_bcs_n: // set bfield BCs at t^n
+        pmb->pbval->ApplyBVals(pfield->b);
+        break;
+
+      case bfield_bcs_nhalf: // set bfield BCs at t^{intermediate}
+        pmb->pbval->ApplyBVals(pfield->b1);
         break;
 
       case fluid_predict: // integrate fluid to intermediate step 
-        pdomain->pblock->pfluid->pf_integrator->Predict(pdomain->pblock);
+        pfluid->pf_integrator->Predict(pdomain->pblock);
         break;
 
       case fluid_correct: // integrate fluid for full timestep, t^n --> t^{n+1}
-        pdomain->pblock->pfluid->pf_integrator->Correct(pdomain->pblock);
+        pfluid->pf_integrator->Correct(pdomain->pblock);
         break;
 
-      case primitives_n: // compute primitives from conseerved at t^n
-        pdomain->pblock->pfluid->pf_eos->ConservedToPrimitive(pf->u,pf->w1,pf->w);
+      case bfield_predict: // integrate fluid to intermediate step 
+        pfield->pint->CT(pmb, pfield->b, pfield->b1, pfluid->w, pfield->bcc, 0.5*dt);
         break;
 
-      case primitives_nhalf: // compute primitives from conseerved at t^{intermediate}
-        pdomain->pblock->pfluid->pf_eos->ConservedToPrimitive(pf->u1,pf->w,pf->w1);
+      case bfield_correct: // integrate fluid for full timestep, t^n --> t^{n+1}
+        pfield->pint->CT(pmb, pfield->b, pfield->b, pfluid->w1, pfield->bcc1, dt);
+        break;
+
+      case primitives_n: // compute primitives from conserved at t^n
+        pfluid->pf_eos->ConservedToPrimitive(pfluid->u, pfluid->w1, pfield->b,
+          pfluid->w, pfield->bcc);
+        break;
+
+      case primitives_nhalf: // compute primitives from conserved at t^{intermediate}
+        pfluid->pf_eos->ConservedToPrimitive(pfluid->u1, pfluid->w, pfield->b1,
+          pfluid->w1, pfield->bcc1);
         break;
 
       case new_timestep: // calculate new time step
-        pdomain->pblock->pfluid->NewTimeStep(pdomain->pblock);
+        pfluid->NewTimeStep(pdomain->pblock);
         break;
 
     }

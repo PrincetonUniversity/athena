@@ -14,6 +14,7 @@
 #include "../../athena.hpp"                   // enums, macros, Real
 #include "../../athena_arrays.hpp"            // AthenaArray
 #include "../../coordinates/coordinates.hpp"  // Coordinates
+#include "../../field/field.hpp"              // InterfaceField
 #include "../../mesh.hpp"                     // MeshBlock
 #include "../../parameter_input.hpp"          // GetReal()
 
@@ -32,10 +33,9 @@ FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
 {
   pmy_fluid_ = pf;
   gamma_ = pin->GetReal("fluid", "gamma");
-  // TODO: find better way of getting g_ and g_inv_ to have correct size
-  //       note might be ok to have these arrays overlap with pf->g,g_inv in memory
-  g_ = pf->g;
-  g_inv_ = pf->g_inv;
+  int ncells1 = pf->pmy_block->block_size.nx1 + 2*NGHOST;
+  g_.NewAthenaArray(NMETRIC,ncells1);
+  g_inv_.NewAthenaArray(NMETRIC,ncells1);
 }
 
 // Destructor
@@ -54,8 +54,9 @@ FluidEqnOfState::~FluidEqnOfState()
 // Notes:
 //   follows Noble et al. 2006, ApJ 641 626 (N)
 //   implements formulas assuming no magnetic field
-void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-    AthenaArray<Real> &prim_old, AthenaArray<Real> &prim)
+void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
+  const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
+  AthenaArray<Real> &bcc)
 {
   // Parameters
   const Real max_velocity = 1.0 - 1.0e-15;
@@ -109,18 +110,18 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
              &gi33 = g_inv_(I33,i);
 
         // Extract conserved quantities
-        Real &d = cons(IDN,k,j,i);
-        Real &e = cons(IEN,k,j,i);
-        Real &m1 = cons(IVX,k,j,i);
-        Real &m2 = cons(IVY,k,j,i);
-        Real &m3 = cons(IVZ,k,j,i);
+        const Real &d = cons(IDN,k,j,i);
+        const Real &e = cons(IEN,k,j,i);
+        const Real &m1 = cons(IVX,k,j,i);
+        const Real &m2 = cons(IVY,k,j,i);
+        const Real &m3 = cons(IVZ,k,j,i);
 
         // Extract old primitives
-        Real &rho_old = prim_old(IDN,k,j,i);
-        Real &pgas_old = prim_old(IEN,k,j,i);
-        Real &v1_old = prim_old(IVX,k,j,i);
-        Real &v2_old = prim_old(IVY,k,j,i);
-        Real &v3_old = prim_old(IVZ,k,j,i);
+        const Real &rho_old = prim_old(IDN,k,j,i);
+        const Real &pgas_old = prim_old(IEN,k,j,i);
+        const Real &v1_old = prim_old(IVX,k,j,i);
+        const Real &v2_old = prim_old(IVY,k,j,i);
+        const Real &v3_old = prim_old(IVZ,k,j,i);
 
         // Extract primitives
         Real &rho = prim(IDN,k,j,i);

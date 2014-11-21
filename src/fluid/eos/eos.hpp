@@ -1,14 +1,14 @@
 #ifndef EOS_HPP
 #define EOS_HPP
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- * See LICENSE file for full public license information.
- *====================================================================================*/
-/*! \file eos.hpp
- *  \brief defines class FluidEqnOfState
- *  Contains data and functions that implement the equation of state for the fluid
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+// See LICENSE file for full public license information.
+//======================================================================================
+//! \file eos.hpp
+//  \brief defines class FluidEqnOfState
+//  Contains data and functions that implement the equation of state for the fluid
+//======================================================================================
 
 // Athena headers
 #include "../../athena.hpp"         // Real
@@ -17,6 +17,7 @@
 // Declarations
 class Fluid;
 class ParameterInput;
+struct InterfaceField;
 
 //! \class FluidEqnOfState
 //  \brief data and functions that implement EoS for fluid
@@ -26,10 +27,12 @@ public:
   FluidEqnOfState(Fluid *pf, ParameterInput *pin);
   ~FluidEqnOfState();
 
-  void ConservedToPrimitive(AthenaArray<Real> &cons, AthenaArray<Real> &prim_old,
-    AthenaArray<Real> &prim);
+  void ConservedToPrimitive(const AthenaArray<Real> &cons, 
+    const AthenaArray<Real> &prim_old, const InterfaceField &b,
+    AthenaArray<Real> &prim, AthenaArray<Real> &bcc);
 
   Real SoundSpeed(const Real prim[NFLUID]); 
+  Real FastMagnetosonicSpeed(const Real prim[((NFLUID)+(NFIELD)-1)], const Real bx); 
   Real GetGamma() const {return gamma_;}
 
 private:

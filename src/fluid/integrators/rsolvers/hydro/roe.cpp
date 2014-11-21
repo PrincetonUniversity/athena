@@ -1,18 +1,18 @@
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- *
- * This program is free software: you can redistribute and/or modify it under the terms
- * of the GNU General Public License (GPL) as published by the Free Software Foundation,
- * either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
- * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- * You should have received a copy of GNU GPL in the file LICENSE included in the code
- * distribution.  If not see <http://www.gnu.org/licenses/>.
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+//
+// This program is free software: you can redistribute and/or modify it under the terms
+// of the GNU General Public License (GPL) as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of GNU GPL in the file LICENSE included in the code
+// distribution.  If not see <http://www.gnu.org/licenses/>.
+//======================================================================================
 
 // Primary header
 #include "../integrators/integrators.hpp"
@@ -27,19 +27,19 @@
 #include "../fluid.hpp"          // Fluid
 
 //======================================================================================
-/*! \file  roe.cpp
- *  \brief Roe's linearized Riemann solver.
- *
- * Computes 1D fluxes using Roe's linearization.  When Roe's method fails because of
- * negative density or pressure in the intermediate states, the fluxes are computed with
- * the HLLE solver instead.
- *
- * REFERENCES:
- * - P. Roe, "Approximate Riemann solvers, parameter vectors, and difference schemes",
- *   JCP, 43, 357 (1981).
- *====================================================================================*/
+//! \file  roe.cpp
+//  \brief Roe's linearized Riemann solver.
+//
+// Computes 1D fluxes using Roe's linearization.  When Roe's method fails because of
+// negative density or pressure in the intermediate states, the fluxes are computed with
+// the HLLE solver instead.
+//
+// REFERENCES:
+// - P. Roe, "Approximate Riemann solvers, parameter vectors, and difference schemes",
+//   JCP, 43, 357 (1981).
+//======================================================================================
 
-/* maximum wavespeed used by H-correction, value passed from integrator */
+// maximum wavespeed used by H-correction, value passed from integrator
 Real etah=0.0;
 
 /*

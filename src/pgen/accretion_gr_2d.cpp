@@ -1,7 +1,7 @@
 // General relativistic black hole accretion generator, azimuthally symmetric flows
 
 // Primary header
-#include "../fluid/fluid.hpp"
+#include "../mesh.hpp"
 
 // C++ headers
 #include <cmath>  // pow(), sin(), sqrt()
@@ -10,9 +10,9 @@
 #include "../athena.hpp"                   // enums, Real
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../coordinates/coordinates.hpp"  // PrimToCons()
+#include "../fluid/fluid.hpp"              // Fluid
 #include "../fluid/bvals/bvals.hpp"        // EnrollBoundaryFunction()
 #include "../fluid/eos/eos.hpp"            // GetGamma()
-#include "../mesh.hpp"                     // MeshBlock, MeshDomain, Mesh
 #include "../parameter_input.hpp"          // ParameterInput
 
 // Declarations
@@ -31,16 +31,18 @@ static Real M = 1.0;
 
 // Function for setting initial conditions
 // Inputs:
+//   pfl: Fluid
+//   pfd: Field (unused)
 //   pin: parameters
 // Outputs: (none)
 // Notes:
 //   sets primitive and conserved variables according to input primitives
 //   calculates fat disk from Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 //   TODO: assumes Schwarzschild - is this okay?
-void Fluid::InitFluid(ParameterInput *pin)
+void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   // Prepare index bounds
-  pb = pmy_block;
+  MeshBlock *pb = pfl->pmy_block;
   int il = pb->is - NGHOST;
   int iu = pb->ie + NGHOST;
   int jl = pb->js;
@@ -107,12 +109,12 @@ void Fluid::InitFluid(ParameterInput *pin)
         Real u_3 = -l * u_0;
         Real u3 = g_inv(I33,i) * u_3;
         Real v3 = u3 / u0;
-        set_state(w, w1, i, j, k, rho, pgas, 0.0, 0.0, v3);
+        set_state(pfl->w, pfl->w1, i, j, k, rho, pgas, 0.0, 0.0, v3);
       }
     }
   g.DeleteAthenaArray();
   g_inv.DeleteAthenaArray();
-  pb->pcoord->PrimToCons(w, u);
+  pb->pcoord->PrimToCons(pfl->w, pfl->u);
 
   // Enroll boundary functions
   pb->pfluid->pf_bcs->EnrollBoundaryFunction(inner_x1, FixedInner);
