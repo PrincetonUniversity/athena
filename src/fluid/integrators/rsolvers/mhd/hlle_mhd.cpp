@@ -40,7 +40,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[NFLUID+NFIELD-1],wri[NFLUID+NFIELD-1],wroe[NFLUID+NFIELD-1];
   Real  fl[NFLUID+NFIELD-1], fr[NFLUID+NFIELD-1],flxi[NFLUID+NFIELD-1];
-  Real gamma_m1 = pmy_fluid->pf_eos->GetGamma() - 1.0;
+  Real gm1 = pmy_fluid->pf_eos->GetGamma() - 1.0;
 
 #pragma simd
   for (int i=il; i<=iu; ++i){
@@ -78,11 +78,9 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 // Note Roe average of magnetic field is different
     wroe[IBY] = (sqrtdr*wli[IBY] + sqrtdl*wri[IBY])*isdlpdr;
     wroe[IBZ] = (sqrtdr*wli[IBZ] + sqrtdl*wri[IBZ])*isdlpdr;
-    Real pbl = 0.5*(bxi*bxi + wli[IBY]*wli[IBY] + wli[IBZ]*wli[IBZ]);
+    Real pbl = 0.5*(bxi*bxi + SQR(wli[IBY]) + SQR(wli[IBZ]));
     Real pbr = 0.5*(bxi*bxi + wri[IBY]*wri[IBY] + wri[IBZ]*wri[IBZ]);
-    Real x = 0.5*((wli[IBY] - wri[IBY])*(wli[IBY] - wri[IBY]) 
-                + (wli[IBZ] - wri[IBZ])*(wli[IBZ] - wri[IBZ]))/
-                  ((sqrtdl + sqrtdr)*(sqrtdl + sqrtdr));
+    Real x = 0.5*(SQR(wli[IBY]-wri[IBY]) + SQR(wli[IBZ]-wri[IBZ]))/(SQR(sqrtdl+sqrtdr));
     Real y = 0.5*(wli[IDN] + wri[IDN])/wroe[IDN];
 
 // Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
@@ -90,10 +88,8 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 
     Real el,er,hroe;
     if (NON_BAROTROPIC_EOS) {
-      el = wli[IEN]/gamma_m1 + 0.5*wli[IDN]*
-        (wli[IVX]*wli[IVX] + wli[IVY]*wli[IVY] + wli[IVZ]*wli[IVZ]) + pbl;
-      er = wri[IEN]/gamma_m1 + 0.5*wri[IDN]*
-        (wri[IVX]*wri[IVX] + wri[IVY]*wri[IVY] + wri[IVZ]*wri[IVZ]) + pbr;
+      el = wli[IEN]/gm1 + 0.5*wli[IDN]*(SQR(wli[IVX])+SQR(wli[IVY])+SQR(wli[IVZ])) +pbl;
+      er = wri[IEN]/gm1 + 0.5*wri[IDN]*(SQR(wri[IVX])+SQR(wri[IVY])+SQR(wri[IVZ])) +pbr;
       hroe = ((el + wli[IEN] + pbl)/sqrtdl + (er + wri[IEN] + pbr)/sqrtdr)*isdlpdr;
     }
 
@@ -105,12 +101,12 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 // Compute fast-magnetosonic speed using eq. B18
     Real a;
     if (NON_BAROTROPIC_EOS) {
-      Real btsq = wroe[IBY]*wroe[IBY] + wroe[IBZ]*wroe[IBZ];
-      Real bt_starsq = (gamma_m1 - (gamma_m1 - 1.0)*y)*btsq;
+      Real btsq = SQR(wroe[IBY]) + SQR(wroe[IBZ]);
+      Real bt_starsq = (gm1 - (gm1 - 1.0)*y)*btsq;
       Real vaxsq = bxi*bxi/wroe[IDN];
       Real hp = hroe - (vaxsq + btsq/wroe[IDN]);
-      Real vsq = wroe[IVX]*wroe[IVX] + wroe[IVY]*wroe[IVY] + wroe[IVZ]*wroe[IVZ];
-      Real twid_asq = std::max((gamma_m1*(hp-0.5*vsq)-(gamma_m1-1.0)*x), 0.0);
+      Real vsq = SQR(wroe[IVX]) + SQR(wroe[IVY]) + SQR(wroe[IVZ]);
+      Real twid_asq = std::max((gm1*(hp-0.5*vsq)-(gm1-1.0)*x), 0.0);
       Real ct2 = bt_starsq/wroe[IDN];
       Real tsum = vaxsq + ct2 + twid_asq;
       Real tdif = vaxsq + ct2 - twid_asq;
@@ -157,8 +153,8 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 
 // Add MHD terms
 
-    fl[IVX] -= 0.5*(bxi*bxi - wli[IBY]*wli[IBY] - wli[IBZ]*wli[IBZ]);
-    fr[IVX] -= 0.5*(bxi*bxi - wri[IBY]*wri[IBY] - wri[IBZ]*wri[IBZ]);
+    fl[IVX] -= 0.5*(bxi*bxi - SQR(wli[IBY]) - SQR(wli[IBZ]));
+    fr[IVX] -= 0.5*(bxi*bxi - SQR(wri[IBY]) - SQR(wri[IBZ]));
 
     fl[IVY] -= bxi*wli[IBY];
     fr[IVY] -= bxi*wri[IBY];

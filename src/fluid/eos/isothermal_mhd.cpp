@@ -36,6 +36,7 @@ FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
 {
   pmy_fluid_ = pf;
   iso_sound_speed_ = pin->GetReal("fluid","iso_sound_speed"); // error if missing!
+  density_floor_  = pin->GetOrAddReal("fluid","dfloor",(1024*(FLT_MIN)));
 }
 
 // destructor
@@ -50,7 +51,7 @@ FluidEqnOfState::~FluidEqnOfState()
 //  AthenaArray<Real> &bcc)
 // \brief Converts conserved into primitive variables in adiabatic hydro.
 
-void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
+void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
   AthenaArray<Real> &bcc)
 {
@@ -77,6 +78,8 @@ void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
       const Real& u_m2 = cons(IVY,k,j,i);
       const Real& u_m3 = cons(IVZ,k,j,i);
 
+// apply density floor, without changing momentum or energy
+      cons(IDN,k,j,i) = std::max(cons(IDN,k,j,i), density_floor_);
       prim(IDN,k,j,i) = u_d;
 
       Real di = 1.0/u_d;

@@ -27,9 +27,8 @@ public:
   FluidEqnOfState(Fluid *pf, ParameterInput *pin);
   ~FluidEqnOfState();
 
-  void ConservedToPrimitive(const AthenaArray<Real> &cons, 
-    const AthenaArray<Real> &prim_old, const InterfaceField &b,
-    AthenaArray<Real> &prim, AthenaArray<Real> &bcc);
+  void ConservedToPrimitive(AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old,
+    const InterfaceField &b, AthenaArray<Real> &prim, AthenaArray<Real> &bcc);
 
   Real SoundSpeed(const Real prim[NFLUID]); 
   Real FastMagnetosonicSpeed(const Real prim[((NFLUID)+(NFIELD)-1)], const Real bx); 
@@ -39,5 +38,6 @@ private:
   Fluid *pmy_fluid_;             // ptr to Fluid containing this EqnOfState
   Real iso_sound_speed_, gamma_; // isothermal Cs, ratio of specific heats
   AthenaArray<Real> g_, g_inv_;  // metric and its inverse, used for cons->prim in GR
+  Real density_floor_, pressure_floor_; // density and pressure floors
 };
 #endif
