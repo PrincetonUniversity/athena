@@ -68,5 +68,6 @@
 #define TWO_3RD 0.6666666666666667
 #define TINY_NUMBER 1.0e-20
 #define HUGE_NUMBER 1.0e+36
+#define SQR(x) ( (x)*(x) )
 
 #endif

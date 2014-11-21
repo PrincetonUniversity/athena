@@ -19,6 +19,7 @@
 
 // C++ headers
 #include <cmath>   // sqrt()
+#include <cfloat>  // FLT_MIN
 
 // Athena headers
 #include "../fluid.hpp"               // Fluid
@@ -39,6 +40,8 @@ FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
 {
   pmy_fluid_ = pf;
   gamma_ = pin->GetReal("fluid","gamma");
+  density_floor_  = pin->GetOrAddReal("fluid","dfloor",(1024*(FLT_MIN)));
+  pressure_floor_ = pin->GetOrAddReal("fluid","pfloor",(1024*(FLT_MIN)));
 }
 
 // destructor
@@ -54,7 +57,7 @@ FluidEqnOfState::~FluidEqnOfState()
 // \brief For the Fluid, converts conserved into primitive variables in adiabatic MHD.
 //  For the Field, computes cell-centered from face-centered magnetic field.
 
-void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
+void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
   AthenaArray<Real> &bcc)
 {
@@ -69,6 +72,7 @@ void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
     kl -= (NGHOST);
     ku += (NGHOST);
   }
+  Real gm1 = GetGamma() - 1.0;
 
 // Convert to Primitives
 
@@ -87,6 +91,8 @@ void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
       const Real& u_m3 = cons(IVZ,k,j,i);
       const Real& u_e  = cons(IEN,k,j,i);
 
+// apply density floor, without changing momentum or energy
+      cons(IDN,k,j,i) = std::max(cons(IDN,k,j,i), density_floor_);
       prim(IDN,k,j,i) = u_d;
 
       Real di = 1.0/u_d;
@@ -109,9 +115,15 @@ void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
       Real& bc2 = bcc(IB2,k,j,i);
       Real& bc3 = bcc(IB3,k,j,i);
 
-      prim(IEN,k,j,i) = u_e - 0.5*di*(u_m1*u_m1 + u_m2*u_m2 + u_m3*u_m3);
-      prim(IEN,k,j,i) -= 0.5*(bc1*bc1 + bc2*bc2 + bc3*bc3);
-      prim(IEN,k,j,i) *= (GetGamma() - 1.0);
+      Real pb = 0.5*(SQR(bc1) + SQR(bc2) + SQR(bc3));
+      prim(IEN,k,j,i) = gm1*(u_e - 0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3)) - pb);
+
+// apply pressure floor, correct total energy
+      if (prim(IEN,k,j,i) < pressure_floor_) {
+        prim(IEN,k,j,i) = pressure_floor_;
+        cons(IEN,k,j,i) = (pressure_floor_/gm1) + pb + 
+                          0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3));
+      }
     }
   }}
 }
