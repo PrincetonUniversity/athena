@@ -171,14 +171,12 @@ void Fluid::InitFluid(ParameterInput *pin)
         if (w(IM3,k,j,i) > 0.0)
         {
           w(IDN,k,j,i) /= rho_peak;
+          // TODO: renormalize according to pgas = k_adi * rho^gamma_adi?
           w(IEN,k,j,i) /= rho_peak;
           //w(IEN,k,j,i) /= k_adi * std::pow(rho_peak, gamma_adi);
+          // TODO: better way to induce splash and crash
+          //w(IM3,k,j,i) /= 2.0;
         }
-//        else
-//        {
-//          w(IDN,k,j,i) = rho_min;
-//          w(IEN,k,j,i) = rho_peak;//k_adi * std::pow(rho_peak, gamma_adi);
-//        }
 
   // Initialize conserved values
   pmb->pcoord->PrimToCons(w, u);

@@ -17,18 +17,18 @@ variable    = cons
 dt          = 1.0
 
 <time>
-cfl_number = 0.4
+cfl_number = 0.1
 nlim       = -1
 tlim       = 1.0
 
 <mesh>
-nx1    = 300                 # number of zones in r-direction
+nx1    = 100                 # number of zones in r-direction
 x1min  = 3.0                 # inner r
 x1max  = 80.0                # outer r
 ix1_bc = 2                   # inner r boundary condition: outflow
 ox1_bc = 2                   # outer r boundary condition: outflow
 
-nx2    = 300                 # number of zones in theta-direction
+nx2    = 100                 # number of zones in theta-direction
 x2min  = 0.5235987755982988  # lower theta (pi/6)
 x2max  = 2.6179938779914944  # upper theta (5*pi/6)
 ix2_bc = 2                   # lower theta boundary condition: outflow

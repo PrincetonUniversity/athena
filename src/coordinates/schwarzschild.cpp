@@ -230,7 +230,7 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
           - 2.0 * cos_m * cos_p - std::cos(2.0*theta_p));
       src_terms_j2_(j) = 1.0/3.0 * (sin_m*sin_m*sin_m - sin_p*sin_p*sin_p)
           / (cos_m - cos_p);
-      src_terms_j3_(j) = tan(PI/2.0 - 0.5 * (theta_m + theta_p));
+      src_terms_j3_(j) = (sin_p - sin_m) / (cos_m - cos_p);  // cot((theta_p+theta_m)/2)
 
       // Cell-centered metric
       metric_cell_j1_(j) = sin_c*sin_c;
@@ -652,7 +652,7 @@ void Coordinates::PrimToLocal1(const int k, const int j, AthenaArray<Real> *ppri
     Real u3_new = mz3 * u3;
     v1 = u1_new / u0_new;
     v2 = u2_new / u0_new;
-    v2 = u3_new / u0_new;
+    v3 = u3_new / u0_new;
   }
   return;
 }
@@ -698,7 +698,7 @@ void Coordinates::PrimToLocal2(const int k, const int j, AthenaArray<Real> *ppri
     Real u3_new = mz3 * u3;
     v1 = u1_new / u0_new;
     v2 = u2_new / u0_new;
-    v2 = u3_new / u0_new;
+    v3 = u3_new / u0_new;
   }
   return;
 }
@@ -744,7 +744,7 @@ void Coordinates::PrimToLocal3(const int k, const int j, AthenaArray<Real> *ppri
     Real u3_new = mz3 * u3;
     v1 = u1_new / u0_new;
     v2 = u2_new / u0_new;
-    v2 = u3_new / u0_new;
+    v3 = u3_new / u0_new;
   }
   return;
 }

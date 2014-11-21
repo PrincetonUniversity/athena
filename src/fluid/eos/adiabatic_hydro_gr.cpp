@@ -17,8 +17,6 @@
 #include "../../mesh.hpp"                     // MeshBlock
 #include "../../parameter_input.hpp"          // GetReal()
 
-#include <iostream>
-
 // Declarations
 Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
     Real gamma_prime);
@@ -172,11 +170,11 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         gamma_sq = 1.0/(1.0 - v_norm_sq);
         Real gamma_rel = std::sqrt(gamma_sq);
         pgas = 1.0/gamma_prime * (w_true/gamma_sq - d_norm/gamma_rel);  // (N32)
-        // TODO: keep floor?
-        pgas = (pgas < 1.0e-7) ? 1.0e-7 : pgas;
+        // TODO: implement better floor
+        pgas = (pgas < 1.0e-9) ? 1.0e-9 : pgas;
         rho = w_true / gamma_sq - gamma_prime * pgas;
-        // TODO: keep floor?
-        rho = (rho < 1.0e-7) ? 1.0e-7 : rho;
+        // TODO: implement better floor
+        rho = (rho < 1.0e-9) ? 1.0e-9 : rho;
         Real u0 = d_norm / (alpha * rho);  // (N21)
         Real u_norm_1 = gamma_rel * q_norm_1 / w_true;  // (N31)
         Real u_norm_2 = gamma_rel * q_norm_2 / w_true;  // (N31)
