@@ -15,6 +15,7 @@
 //======================================================================================
 
 // Primary header
+#include "athena_arrays.hpp"
 #include "athena.hpp"
 
 // C headers

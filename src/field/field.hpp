@@ -13,10 +13,6 @@
 #include "../athena.hpp"         // Real
 #include "../athena_arrays.hpp"  // AthenaArray
 
-typedef struct InterfaceField {
-  AthenaArray<Real> x1f,x2f,x3f;
-} InterfaceField;
-
 class MeshBlock;
 class ParameterInput;
 class Fluid;

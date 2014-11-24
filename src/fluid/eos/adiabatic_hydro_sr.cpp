@@ -89,8 +89,9 @@ void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
   }
 
   // Make array copies for performance reasons
-  AthenaArray<Real> cons_copy = cons.ShallowCopy();
-  AthenaArray<Real> prim_copy = prim.ShallowCopy();
+  AthenaArray<Real> cons_copy, prim_copy;
+  cons_copy.InitWithShallowCopy(cons);
+  prim_copy.InitWithShallowCopy(prim);
 
   // Go through cells
   for (int k = kl; k <= ku; k++)

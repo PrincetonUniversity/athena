@@ -14,7 +14,9 @@
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
 
-// Primary header
+// Primary headers
+#include "athena_arrays.hpp"
+#include "athena.hpp"  // Real
 #include "parameter_input.hpp"
 
 // C++ headers
@@ -26,7 +28,6 @@
 #include <string>     // string
 
 // Athena headers
-#include "athena.hpp"  // Real
 
 //======================================================================================
 //! \file parameter_input.cpp

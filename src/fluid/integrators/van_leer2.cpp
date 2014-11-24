@@ -42,28 +42,31 @@
 //! \fn  void FluidIntegrator::Predict
 //  \brief predictor step for 2nd order VL integrator
 
-void FluidIntegrator::Predict(MeshBlock *pmb)
+void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<Real> &w,
+  InterfaceField &b, AthenaArray<Real> &bcc, const int step)
 {
   int tid=0;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  Real dt = pmb->pmy_domain->pmy_mesh->dt;
   int max_nthreads = pmb->pmy_domain->pmy_mesh->nthreads_mesh;
  
-  AthenaArray<Real> u = pmb->pfluid->u.ShallowCopy();
-  AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
-  AthenaArray<Real> u1 = pmb->pfluid->u1.ShallowCopy();
+  AthenaArray<Real> b1,b2,b3,e_x1f,e_x2f,e_x3f,w_x1f,w_x2f,w_x3f;
+  b1.InitWithShallowCopy(pmb->pfield->b.x1f);
+  b2.InitWithShallowCopy(pmb->pfield->b.x2f);
+  b3.InitWithShallowCopy(pmb->pfield->b.x3f);
+  e_x1f.InitWithShallowCopy(pmb->pfield->e.x1f);
+  e_x2f.InitWithShallowCopy(pmb->pfield->e.x2f);
+  e_x3f.InitWithShallowCopy(pmb->pfield->e.x3f);
+  w_x1f.InitWithShallowCopy(pmb->pfield->wght.x1f);
+  w_x2f.InitWithShallowCopy(pmb->pfield->wght.x2f);
+  w_x3f.InitWithShallowCopy(pmb->pfield->wght.x3f);
 
-  AthenaArray<Real> bcc = pmb->pfield->bcc.ShallowCopy();
-  AthenaArray<Real> b1i = pmb->pfield->b.x1f.ShallowCopy();
-  AthenaArray<Real> b2i = pmb->pfield->b.x2f.ShallowCopy();
-  AthenaArray<Real> b3i = pmb->pfield->b.x3f.ShallowCopy();
-  AthenaArray<Real> e_x1f = pmb->pfield->e.x1f.ShallowCopy();
-  AthenaArray<Real> e_x2f = pmb->pfield->e.x2f.ShallowCopy();
-  AthenaArray<Real> e_x3f = pmb->pfield->e.x3f.ShallowCopy();
-  AthenaArray<Real> w_x1f = pmb->pfield->wght.x1f.ShallowCopy();
-  AthenaArray<Real> w_x2f = pmb->pfield->wght.x2f.ShallowCopy();
-  AthenaArray<Real> w_x3f = pmb->pfield->wght.x3f.ShallowCopy();
+  Real dt;
+  if (step == 1) {
+    dt = 0.5*(pmb->pmy_domain->pmy_mesh->dt);
+  } else {
+    dt = (pmb->pmy_domain->pmy_mesh->dt);
+  }
 
 #pragma omp parallel default(shared) private(tid) num_threads(max_nthreads)
 {
@@ -71,11 +74,11 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
   tid=omp_get_thread_num();
 #endif
   AthenaArray<Real> wl, wr, flx, area, vol;
-  wl_.ShallowSlice(tid,1,wl);
-  wr_.ShallowSlice(tid,1,wr);
-  flx_.ShallowSlice(tid,1,flx);
-  face_area_.ShallowSlice(tid,1,area);
-  cell_volume_.ShallowSlice(tid,1,vol);
+  wl.InitWithShallowSlice(wl_,3,tid,1);
+  wr.InitWithShallowSlice(wr_,3,tid,1);
+  flx.InitWithShallowSlice(flx_,3,tid,1);
+  area.InitWithShallowSlice(face_area_,2,tid,1);
+  vol.InitWithShallowSlice(cell_volume_,2,tid,1);
 
 //--------------------------------------------------------------------------------------
 // i-direction
@@ -85,24 +88,33 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
 #pragma omp for schedule(static)
     for (int j=js; j<=je; ++j){
 
-      for (int n=0; n<NFLUID; ++n){
+      if (step == 1) {  // reconstruction for predict step
+        for (int n=0; n<NFLUID; ++n){
 #pragma simd
         for (int i=is; i<=ie+1; ++i){
           wl(n,i) = w(n,k,j,i-1);
           wr(n,i) = w(n,k,j,i  );
-        }
-      }
-      if (MAGNETIC_FIELDS_ENABLED) {
+        }}
+        if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
-        for (int i=is; i<=ie+1; ++i){
-          wl(IBY,i) = bcc(IB2,k,j,i-1);
-          wl(IBZ,i) = bcc(IB3,k,j,i-1);
-          wr(IBY,i) = bcc(IB2,k,j,i  );
-          wr(IBZ,i) = bcc(IB3,k,j,i  );
+          for (int i=is; i<=ie+1; ++i){
+            wl(IBY,i) = bcc(IB2,k,j,i-1);
+            wl(IBZ,i) = bcc(IB3,k,j,i-1);
+            wr(IBY,i) = bcc(IB2,k,j,i  );
+            wr(IBZ,i) = bcc(IB3,k,j,i  );
+          }
+        }
+      } else {  // reconstruction for correct step
+        for (int n=0; n<NFLUID; ++n) {
+          ReconstructionFuncX1(n,n,k,j,w,wl,wr);
+        }
+        if (MAGNETIC_FIELDS_ENABLED) {
+          ReconstructionFuncX1(IB2,IBY,k,j,bcc,wl,wr);
+          ReconstructionFuncX1(IB3,IBZ,k,j,bcc,wl,wr);
         }
       }
 
-      RiemannSolver(k,j,is,ie+1,IVX,b1i,wl,wr,flx);
+      RiemannSolver(k,j,is,ie+1,IVX,b1,wl,wr,flx);
 
       pmb->pcoord->Face1Area(k,j,is,ie+1,area);
       pmb->pcoord->CellVolume(k,j,is,ie,vol);
@@ -110,7 +122,7 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
       for (int n=0; n<NFLUID; ++n){
 #pragma simd
         for (int i=is; i<=ie; ++i){
-          Real& ui  = u (n,k,j,i);
+          Real& ui  = u(n,k,j,i);
           Real& flxi   = flx(n,  i);
           Real& flxip1 = flx(n,i+1);
 
@@ -118,258 +130,6 @@ void FluidIntegrator::Predict(MeshBlock *pmb)
           Real& area_ip1 = area(i+1);
           Real& dvol = vol(i);
  
-          u1(n,k,j,i) = ui - 0.5*dt*(area_ip1*flxip1 - area_i*flxi)/dvol;
-        }
-      }
-
-      if (MAGNETIC_FIELDS_ENABLED) {
-#pragma simd
-        for (int i=is; i<=ie+1; ++i){
-          e_x1f(X1E3,k,j,i) = -flx(IBY,i); // flx(IBY) = (v1*b2 - v2*b1) = -EMFZ
-          e_x1f(X1E2,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v1*b3 - v3*b1) =  EMFY
-// estimate weight used to upwind electric fields in GS07 algorithm
-          Real fac = (1024)*dt/pmb->pcoord->CenterWidth1(k,j,i);
-          Real rat = std::min( 0.5, (fac*flx(IDN,i)/(u(IDN,k,j,i-1)+u(IDN,k,j,i))) );
-          w_x1f(k,j,i) = 0.5 + std::max(-0.5,rat);
-        }
-      }
-
-    }
-  }
-
-//--------------------------------------------------------------------------------------
-// j-direction
-
-  if (pmb->block_size.nx2 > 1) {
-
-    for (int k=ks; k<=ke; ++k){
-
-#pragma omp for schedule(static)
-      for (int j=js; j<=je+1; ++j){
-
-        for (int n=0; n<NFLUID; ++n){
-#pragma simd
-          for (int i=is; i<=ie; ++i){
-            wl(n,i) = w(n,k,j-1,i);
-            wr(n,i) = w(n,k,j  ,i);
-          }
-        }
-        if (MAGNETIC_FIELDS_ENABLED) {
-#pragma simd
-          for (int i=is; i<=ie; ++i){
-            wl(IBY,i) = bcc(IB3,k,j-1,i);
-            wl(IBZ,i) = bcc(IB1,k,j-1,i);
-            wr(IBY,i) = bcc(IB3,k,j  ,i);
-            wr(IBZ,i) = bcc(IB1,k,j  ,i);
-          }
-        }
-
-        RiemannSolver(k,j,is,ie,IVY,b2i,wl,wr,flx); 
-
-        pmb->pcoord->Face2Area(k,j,is,ie,area);
-
-        if (j>js) {
-          pmb->pcoord->CellVolume(k,j-1,is,ie,vol);
-          for (int n=0; n<NFLUID; ++n){
-#pragma simd
-            for (int i=is; i<=ie; ++i){
-              Real& flxj  = flx(n,i);
-              Real& area_i   = area(i);
-              Real& dvol = vol(i);
-  
-              u1(n,k,j-1,i) -= 0.5*dt*area_i*flxj/dvol;
-            }
-          }
-        }
-
-        if (j<(je+1)) {
-          pmb->pcoord->CellVolume(k,j,is,ie,vol);
-          for (int n=0; n<NFLUID; ++n){
-#pragma simd
-            for (int i=is; i<=ie; ++i){
-              Real& flxj  = flx(n,i);
-              Real& area_i   = area(i);
-              Real& dvol = vol(i);
-
-              u1(n,k,j,i) += 0.5*dt*area_i*flxj/dvol;
-            }
-          }
-        }
-
-        if (MAGNETIC_FIELDS_ENABLED) {
-#pragma simd
-          for (int i=is; i<=ie; ++i){
-            e_x2f(X2E1,k,j,i) = -flx(IBY,i); // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
-            e_x2f(X2E3,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
-// estimate weight used to upwind electric fields in GS07 algorithm
-            Real fac = (1024)*dt/pmb->pcoord->CenterWidth2(k,j,i);
-            Real rat = std::min( 0.5, (fac*flx(IDN,i)/(u(IDN,k,j-1,i)+u(IDN,k,j,i))) );
-            w_x2f(k,j,i) = 0.5 + std::max(-0.5,rat);
-          }
-        }
-
-      }
-    }
-  }
-
-//--------------------------------------------------------------------------------------
-// k-direction 
-
-  if (pmb->block_size.nx3 > 1) {
-
-    for (int k=ks; k<=ke+1; ++k){
-
-#pragma omp for schedule(static)
-      for (int j=js; j<=je; ++j){
-
-        for (int n=0; n<NFLUID; ++n){
-#pragma simd
-          for (int i=is; i<=ie; ++i){
-            wl(n,i) = w(n,k-1,j,i);
-            wr(n,i) = w(n,k  ,j,i);
-          }
-        }
-        if (MAGNETIC_FIELDS_ENABLED) {
-#pragma simd
-          for (int i=is; i<=ie; ++i){
-            wl(IBY,i) = bcc(IB1,k-1,j,i);
-            wl(IBZ,i) = bcc(IB2,k-1,j,i);
-            wr(IBY,i) = bcc(IB1,k  ,j,i);
-            wr(IBZ,i) = bcc(IB2,k  ,j,i);
-          }
-        }
-
-        RiemannSolver(k,j,is,ie,IVZ,b3i,wl,wr,flx);
-
-        pmb->pcoord->Face3Area(k,j,is,ie,area);
-  
-        if (k>ks) {
-          pmb->pcoord->CellVolume(k-1,j,is,ie,vol);
-          for (int n=0; n<NFLUID; ++n){
-#pragma simd
-            for (int i=is; i<=ie; ++i){
-              Real& flxk = flx(n,i);
-              Real& area_i   = area(i);
-              Real& dvol = vol(i);
-
-              u1(n,k-1,j,i) -= 0.5*dt*area_i*flxk/dvol;
-            }
-          }
-        }
-
-        if (k<(ke+1)) {
-          pmb->pcoord->CellVolume(k,j,is,ie,vol);
-          for (int n=0; n<NFLUID; ++n){
-#pragma simd
-            for (int i=is; i<=ie; ++i){
-              Real& flxk = flx(n,i);
-              Real& area_i   = area(i);
-              Real& dvol = vol(i);
-
-              u1(n,k,j,i) += 0.5*dt*area_i*flxk/dvol;
-            }
-          }
-        }
-
-        if (MAGNETIC_FIELDS_ENABLED) {
-#pragma simd
-          for (int i=is; i<=ie; ++i){
-            e_x3f(X3E2,k,j,i) = -flx(IBY,i); // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
-            e_x3f(X3E1,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
-// estimate weight used to upwind electric fields in GS07 algorithm
-            Real fac = (1024)*dt/pmb->pcoord->CenterWidth3(k,j,i);
-            Real rat = std::min( 0.5, (fac*flx(IDN,i)/(u(IDN,k-1,j,i)+u(IDN,k,j,i))) );
-            w_x3f(k,j,i) = 0.5 + std::max(-0.5,rat);
-          }
-        }
-
-      }
-    }
-  }
-
-} // end of omp parallel region
-
-//--------------------------------------------------------------------------------------
-//  Add source terms for half a timestep
-
-  pmb->pcoord->CoordinateSourceTerms(0.5*dt,w,u1);
-  pmb->pfluid->pf_srcterms->PhysicalSourceTerms(pmb->pmy_domain->pmy_mesh->time,0.5*dt,w,u1);
-  if (pmb->pfluid->pf_srcterms->UserSourceTerm != NULL)
-    pmb->pfluid->pf_srcterms->UserSourceTerm(pmb->pmy_domain->pmy_mesh->time,0.5*dt,w,u1);
-
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-// \!fn 
-// \brief
-
-void FluidIntegrator::Correct(MeshBlock *pmb)
-{
-  int tid=0;
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  Real dt = pmb->pmy_domain->pmy_mesh->dt;
-  int max_nthreads = pmb->pmy_domain->pmy_mesh->nthreads_mesh;
-
-  AthenaArray<Real> u = pmb->pfluid->u.ShallowCopy();
-  AthenaArray<Real> u1 = pmb->pfluid->u1.ShallowCopy();
-  AthenaArray<Real> w1 = pmb->pfluid->w1.ShallowCopy();
-
-  AthenaArray<Real> bcc1 = pmb->pfield->bcc1.ShallowCopy();
-  AthenaArray<Real> b1i1 = pmb->pfield->b1.x1f.ShallowCopy();
-  AthenaArray<Real> b1i2 = pmb->pfield->b1.x2f.ShallowCopy();
-  AthenaArray<Real> b1i3 = pmb->pfield->b1.x3f.ShallowCopy();
-  AthenaArray<Real> e_x1f = pmb->pfield->e.x1f.ShallowCopy();
-  AthenaArray<Real> e_x2f = pmb->pfield->e.x2f.ShallowCopy();
-  AthenaArray<Real> e_x3f = pmb->pfield->e.x3f.ShallowCopy();
-  AthenaArray<Real> w_x1f = pmb->pfield->wght.x1f.ShallowCopy();
-  AthenaArray<Real> w_x2f = pmb->pfield->wght.x2f.ShallowCopy();
-  AthenaArray<Real> w_x3f = pmb->pfield->wght.x3f.ShallowCopy();
-
-#pragma omp parallel default(shared) private(tid) num_threads(max_nthreads)
-{
-#ifdef OPENMP_PARALLEL
-  tid=omp_get_thread_num();
-#endif
-  AthenaArray<Real> wl, wr, flx, area, vol;
-  wl_.ShallowSlice(tid,1,wl);
-  wr_.ShallowSlice(tid,1,wr);
-  flx_.ShallowSlice(tid,1,flx);
-  face_area_.ShallowSlice(tid,1,area);
-  cell_volume_.ShallowSlice(tid,1,vol);
-
-//--------------------------------------------------------------------------------------
-// i-direction 
-
-  for (int k=ks; k<=ke; ++k){
-
-#pragma omp for schedule(static)
-    for (int j=js; j<=je; ++j){
-
-      for (int n=0; n<NFLUID; ++n) {
-        ReconstructionFuncX1(n,n,k,j,w1,wl,wr);
-      }
-      if (MAGNETIC_FIELDS_ENABLED) {
-        ReconstructionFuncX1(IB2,IBY,k,j,bcc1,wl,wr);
-        ReconstructionFuncX1(IB3,IBZ,k,j,bcc1,wl,wr);
-      }
-
-      RiemannSolver(k,j,is,ie+1,IVX,b1i1,wl,wr,flx); 
-
-      pmb->pcoord->Face1Area(k,j,is,ie+1,area);
-      pmb->pcoord->CellVolume(k,j,is,ie,vol);
-
-      for (int n=0; n<NFLUID; ++n){
-#pragma simd
-        for (int i=is; i<=ie; ++i){
-          Real& flxi   = flx(n,  i);
-          Real& flxip1 = flx(n,i+1);
-
-          Real& area_i   = area(i);
-          Real& area_ip1 = area(i+1);
-          Real& dvol = vol(i);
-   
           u(n,k,j,i) -= dt*(area_ip1*flxip1 - area_i*flxi)/dvol;
         }
       }
@@ -399,19 +159,37 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 #pragma omp for schedule(static)
       for (int j=js; j<=je+1; ++j){
 
-        for (int n=0; n<NFLUID; ++n) {
-          ReconstructionFuncX2(n,n,k,j,w1,wl,wr);
+        if (step == 1) {  // reconstruction for predict step
+          for (int n=0; n<NFLUID; ++n){
+#pragma simd
+          for (int i=is; i<=ie; ++i){
+            wl(n,i) = w(n,k,j-1,i);
+            wr(n,i) = w(n,k,j  ,i);
+          }}
+          if (MAGNETIC_FIELDS_ENABLED) {
+#pragma simd
+            for (int i=is; i<=ie; ++i){
+              wl(IBY,i) = bcc(IB3,k,j-1,i);
+              wl(IBZ,i) = bcc(IB1,k,j-1,i);
+              wr(IBY,i) = bcc(IB3,k,j  ,i);
+              wr(IBZ,i) = bcc(IB1,k,j  ,i);
+            }
+          }
+        } else {  // reconstruction for correct step
+          for (int n=0; n<NFLUID; ++n) {
+            ReconstructionFuncX2(n,n,k,j,w,wl,wr);
+          }
+          if (MAGNETIC_FIELDS_ENABLED) {
+            ReconstructionFuncX2(IB3,IBY,k,j,bcc,wl,wr);
+            ReconstructionFuncX2(IB1,IBZ,k,j,bcc,wl,wr);
+          }
         }
-      if (MAGNETIC_FIELDS_ENABLED) {
-        ReconstructionFuncX2(IB3,IBY,k,j,bcc1,wl,wr);
-        ReconstructionFuncX2(IB1,IBZ,k,j,bcc1,wl,wr);
-      }
 
-        RiemannSolver(k,j,is,ie,IVY,b1i2,wl,wr,flx); 
+        RiemannSolver(k,j,is,ie,IVY,b2,wl,wr,flx); 
 
         pmb->pcoord->Face2Area(k,j,is,ie,area);
 
-        if (j>js){
+        if (j>js) {
           pmb->pcoord->CellVolume(k,j-1,is,ie,vol);
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
@@ -425,7 +203,7 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
           }
         }
 
-        if (j<(je+1)){
+        if (j<(je+1)) {
           pmb->pcoord->CellVolume(k,j,is,ie,vol);
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
@@ -433,7 +211,7 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
               Real& flxj  = flx(n,i);
               Real& area_i   = area(i);
               Real& dvol = vol(i);
-  
+
               u(n,k,j,i) += dt*area_i*flxj/dvol;
             }
           }
@@ -465,19 +243,37 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 #pragma omp for schedule(static)
       for (int j=js; j<=je; ++j){
 
-        for (int n=0; n<NFLUID; ++n) {
-          ReconstructionFuncX3(n,n,k,j,w1,wl,wr);
-        }
-        if (MAGNETIC_FIELDS_ENABLED) {
-          ReconstructionFuncX3(IB1,IBY,k,j,bcc1,wl,wr);
-          ReconstructionFuncX3(IB2,IBZ,k,j,bcc1,wl,wr);
+        if (step == 1) {  // reconstruction for correct step
+          for (int n=0; n<NFLUID; ++n){
+#pragma simd
+          for (int i=is; i<=ie; ++i){
+            wl(n,i) = w(n,k-1,j,i);
+            wr(n,i) = w(n,k  ,j,i);
+          }}
+          if (MAGNETIC_FIELDS_ENABLED) {
+#pragma simd
+            for (int i=is; i<=ie; ++i){
+              wl(IBY,i) = bcc(IB1,k-1,j,i);
+              wl(IBZ,i) = bcc(IB2,k-1,j,i);
+              wr(IBY,i) = bcc(IB1,k  ,j,i);
+              wr(IBZ,i) = bcc(IB2,k  ,j,i);
+            }
+          }
+        } else {  // reconstruction for correct step
+          for (int n=0; n<NFLUID; ++n) {
+            ReconstructionFuncX3(n,n,k,j,w,wl,wr);
+          }
+          if (MAGNETIC_FIELDS_ENABLED) {
+            ReconstructionFuncX3(IB1,IBY,k,j,bcc,wl,wr);
+            ReconstructionFuncX3(IB2,IBZ,k,j,bcc,wl,wr);
+          }
         }
 
-        RiemannSolver(k,j,is,ie,IVZ,b1i3,wl,wr,flx);
+        RiemannSolver(k,j,is,ie,IVZ,b3,wl,wr,flx);
 
         pmb->pcoord->Face3Area(k,j,is,ie,area);
-
-        if (k>ks){
+  
+        if (k>ks) {
           pmb->pcoord->CellVolume(k-1,j,is,ie,vol);
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
@@ -485,13 +281,13 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
               Real& flxk = flx(n,i);
               Real& area_i   = area(i);
               Real& dvol = vol(i);
-  
+
               u(n,k-1,j,i) -= dt*area_i*flxk/dvol;
             }
           }
         }
 
-        if (k<(ke+1)){
+        if (k<(ke+1)) {
           pmb->pcoord->CellVolume(k,j,is,ie,vol);
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
@@ -524,12 +320,12 @@ void FluidIntegrator::Correct(MeshBlock *pmb)
 } // end of omp parallel region
 
 //--------------------------------------------------------------------------------------
-//  Add source terms for a full timestep
+//  Add source terms for half a timestep
 
-  pmb->pcoord->CoordinateSourceTerms(dt,w1,u);
-  pmb->pfluid->pf_srcterms->PhysicalSourceTerms(pmb->pmy_domain->pmy_mesh->time,dt,w1,u);
+  pmb->pcoord->CoordinateSourceTerms(dt,w,u);
+  pmb->pfluid->pf_srcterms->PhysicalSourceTerms(pmb->pmy_domain->pmy_mesh->time,dt,w,u);
   if (pmb->pfluid->pf_srcterms->UserSourceTerm != NULL)
-    pmb->pfluid->pf_srcterms->UserSourceTerm(pmb->pmy_domain->pmy_mesh->time,dt,w1,u);
+    pmb->pfluid->pf_srcterms->UserSourceTerm(pmb->pmy_domain->pmy_mesh->time,dt,w,u);
 
   return;
 }

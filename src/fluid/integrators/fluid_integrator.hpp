@@ -28,8 +28,9 @@ public:
 
   Fluid *pmy_fluid;  // ptr to Fluid containing this FluidIntegrator
 
-  void Predict(MeshBlock *pmb);
-  void Correct(MeshBlock *pmb);
+  void OneStep(MeshBlock *pmb, AthenaArray<Real> &u, AthenaArray<Real> &w, 
+    InterfaceField &b, AthenaArray<Real> &bcc, const int step);
+//  void Correct(MeshBlock *pmb);
 
   void RiemannSolver(const int k, const int j, const int il, const int iu,
     const int ivx,  const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
