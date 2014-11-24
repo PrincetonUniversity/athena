@@ -142,10 +142,12 @@ definitions['MAGNETIC_FIELDS_ENABLED'] = '1' if args['b'] else '0'
 makefile_options['EOS_FILE'] += '_mhd' if args['b'] else '_hydro'
 if args['b']:
   definitions['NFIELD_VARIABLES'] = '3'
+  definitions['NFIELDM1_VARIABLES'] = '2'
   makefile_options['RSOLVER_FILE'] += '_mhd'
   makefile_options['RSOLVER_DIR'] = 'mhd/'
 else:
   definitions['NFIELD_VARIABLES'] = '0'
+  definitions['NFIELDM1_VARIABLES'] = '0'
   makefile_options['RSOLVER_DIR'] = 'hydro/'
 
 definitions['RELATIVISTIC_DYNAMICS'] = '1' if args['s'] or args['g'] else '0'

@@ -54,9 +54,10 @@
 //--------------------------------------------------------------------------------------
 // macros associated with numerical algorithm (rarely modified)
 
-#define NFLUID @NFLUID_VARIABLES@
-#define NFIELD @NFIELD_VARIABLES@
-#define NGHOST 2
+#define NFLUID   @NFLUID_VARIABLES@
+#define NFIELD   @NFIELD_VARIABLES@
+#define NFIELDM1 @NFIELDM1_VARIABLES@
+#define NGHOST   2
 
 //--------------------------------------------------------------------------------------
 // general purpose macros (never modified)
