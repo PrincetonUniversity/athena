@@ -36,23 +36,43 @@
 //! \fn  void FieldIntegrator::CT
 //  \brief Constrained Transport implementation of dB/dt = -Curl(E), where E=-(v X B)
 
-void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w,
+void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &bin, InterfaceField &bout, AthenaArray<Real> &w,
   AthenaArray<Real> &bcc, Real dt)
 {
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  AthenaArray<Real> e1,e2,e3,area,len,lenp1;
-  e1.InitWithShallowCopy(pmb->pfield->e1);
-  e2.InitWithShallowCopy(pmb->pfield->e2);
-  e3.InitWithShallowCopy(pmb->pfield->e3);
-  area.InitWithShallowCopy(face_area_);
-  len.InitWithShallowCopy(edge_length_);
-  lenp1.InitWithShallowCopy(edge_lengthp1_);
+  AthenaArray<Real> e1 = pmb->pfield->e1.ShallowCopy();
+  AthenaArray<Real> e2 = pmb->pfield->e2.ShallowCopy();
+  AthenaArray<Real> e3 = pmb->pfield->e3.ShallowCopy();
+
+  AthenaArray<Real> area = face_area_.ShallowCopy();
+  AthenaArray<Real> len   = edge_length_.ShallowCopy();
+  AthenaArray<Real> lenp1 = edge_lengthp1_.ShallowCopy();
 
   ComputeCornerE(pmb, w, bcc);
 
 // First copy input into output
+
+  for (int k=ks; k<=ke; ++k) {
+  for (int j=js; j<=je; ++j) {
+  for (int i=is; i<=ie+1; ++i) {
+    bout.x1f(k,j,i) = bin.x1f(k,j,i);
+  }}}
+      
+  for (int k=ks; k<=ke; ++k) {
+  for (int j=js; j<=je+1; ++j) {
+  for (int i=is; i<=ie; ++i) {
+    bout.x2f(k,j,i) = bin.x2f(k,j,i);
+  }}}
+      
+  for (int k=ks; k<=ke+1; ++k) {
+  for (int j=js; j<=je; ++j) {
+  for (int i=is; i<=ie; ++i) {
+    bout.x3f(k,j,i) = bin.x3f(k,j,i);
+  }}}
+      
+//---- 1-D update
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je+1; ++j) {
@@ -60,7 +80,7 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w
     pmb->pcoord->Edge3Length(k,j,is,ie+1,len);
 
     for (int i=is; i<=ie; ++i) {
-      b.x2f(k,j,i) += (dt/area(i))*(len(i+1)*e3(k,j,i+1) - len(i)*e3(k,j,i));
+      bout.x2f(k,j,i) += (dt/area(i))*(len(i+1)*e3(k,j,i+1) - len(i)*e3(k,j,i));
     }
 
   }}
@@ -71,7 +91,7 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w
     pmb->pcoord->Edge2Length(k,j,is,ie+1,len);
 
     for (int i=is; i<=ie; ++i) {
-      b.x3f(k,j,i) -= (dt/area(i))*(len(i+1)*e2(k,j,i+1) - len(i)*e2(k,j,i));
+      bout.x3f(k,j,i) -= (dt/area(i))*(len(i+1)*e2(k,j,i+1) - len(i)*e2(k,j,i));
     }
 
   }}
@@ -86,7 +106,7 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w
       pmb->pcoord->Edge3Length(k,j+1,is,ie+1,lenp1);
 
       for (int i=is; i<=ie+1; ++i) {
-        b.x1f(k,j,i) -= (dt/area(i))*(lenp1(i)*e3(k,j+1,i) - len(i)*e3(k,j,i));
+        bout.x1f(k,j,i) -= (dt/area(i))*(lenp1(i)*e3(k,j+1,i) - len(i)*e3(k,j,i));
       }
     }}
     for (int k=ks; k<=ke+1; ++k) {
@@ -96,7 +116,7 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w
       pmb->pcoord->Edge1Length(k,j+1,is,ie,lenp1);
 
       for (int i=is; i<=ie; ++i) {
-        b.x3f(k,j,i) += (dt/area(i))*(lenp1(i)*e1(k,j+1,i) - len(i)*e1(k,j,i));
+        bout.x3f(k,j,i) += (dt/area(i))*(lenp1(i)*e1(k,j+1,i) - len(i)*e1(k,j,i));
       }
     }}
   }
@@ -111,7 +131,7 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w
       pmb->pcoord->Edge2Length(k+1,j,is,ie+1,lenp1);
 
       for (int i=is; i<=ie+1; ++i) {
-        b.x1f(k,j,i) += (dt/area(i))*(lenp1(i)*e2(k+1,j,i) - len(i)*e2(k,j,i));
+        bout.x1f(k,j,i) += (dt/area(i))*(lenp1(i)*e2(k+1,j,i) - len(i)*e2(k,j,i));
       }
     }}
     for (int k=ks; k<=ke; ++k) {
@@ -121,7 +141,7 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w
       pmb->pcoord->Edge1Length(k+1,j,is,ie,lenp1);
 
       for (int i=is; i<=ie; ++i) {
-        b.x2f(k,j,i) -= (dt/area(i))*(lenp1(i)*e1(k+1,j,i) - len(i)*e1(k,j,i));
+        bout.x2f(k,j,i) -= (dt/area(i))*(lenp1(i)*e1(k+1,j,i) - len(i)*e1(k,j,i));
       }
     }}
   }

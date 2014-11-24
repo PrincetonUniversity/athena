@@ -41,11 +41,10 @@ void FieldIntegrator::BoundaryValuesFaceCenteredE3(MeshBlock *pmb)
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  AthenaArray<Real> e_x1f,e_x2f,w_x1f,w_x2f;
-  e_x1f.InitWithShallowCopy(pmb->pfield->e.x1f);
-  e_x2f.InitWithShallowCopy(pmb->pfield->e.x2f);
-  w_x1f.InitWithShallowCopy(pmb->pfield->wght.x1f);
-  w_x2f.InitWithShallowCopy(pmb->pfield->wght.x2f);
+  AthenaArray<Real> e_x1f = pmb->pfield->e.x1f.ShallowCopy();
+  AthenaArray<Real> e_x2f = pmb->pfield->e.x2f.ShallowCopy();
+  AthenaArray<Real> w_x1f = pmb->pfield->wght.x1f.ShallowCopy();
+  AthenaArray<Real> w_x2f = pmb->pfield->wght.x2f.ShallowCopy();
 
 // boundary conditions for E3 on x2-face at inner/outer x1
 
@@ -127,11 +126,10 @@ void FieldIntegrator::BoundaryValuesFaceCenteredE1(MeshBlock *pmb)
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  AthenaArray<Real> e_x2f,e_x3f,w_x2f,w_x3f;
-  e_x2f.InitWithShallowCopy(pmb->pfield->e.x2f);
-  e_x3f.InitWithShallowCopy(pmb->pfield->e.x3f);
-  w_x2f.InitWithShallowCopy(pmb->pfield->wght.x2f);
-  w_x3f.InitWithShallowCopy(pmb->pfield->wght.x3f);
+  AthenaArray<Real> e_x2f = pmb->pfield->e.x2f.ShallowCopy();
+  AthenaArray<Real> e_x3f = pmb->pfield->e.x3f.ShallowCopy();
+  AthenaArray<Real> w_x2f = pmb->pfield->wght.x2f.ShallowCopy();
+  AthenaArray<Real> w_x3f = pmb->pfield->wght.x3f.ShallowCopy();
 
 // boundary conditions for E1 on x3-face at inner/outer x2
 
@@ -214,11 +212,10 @@ void FieldIntegrator::BoundaryValuesFaceCenteredE2(MeshBlock *pmb)
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  AthenaArray<Real> e_x1f,e_x3f,w_x1f,w_x3f;
-  e_x1f.InitWithShallowCopy(pmb->pfield->e.x1f);
-  e_x3f.InitWithShallowCopy(pmb->pfield->e.x3f);
-  w_x1f.InitWithShallowCopy(pmb->pfield->wght.x1f);
-  w_x3f.InitWithShallowCopy(pmb->pfield->wght.x3f);
+  AthenaArray<Real> e_x1f = pmb->pfield->e.x1f.ShallowCopy();
+  AthenaArray<Real> e_x3f = pmb->pfield->e.x3f.ShallowCopy();
+  AthenaArray<Real> w_x1f = pmb->pfield->wght.x1f.ShallowCopy();
+  AthenaArray<Real> w_x3f = pmb->pfield->wght.x2f.ShallowCopy();
 
 // boundary conditions for E2 on x3-face at inner/outer x1
 

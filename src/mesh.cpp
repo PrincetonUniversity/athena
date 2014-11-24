@@ -14,9 +14,7 @@
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
 
-// Primary headers
-#include "athena_arrays.hpp"            // AthenaArray
-#include "athena.hpp"                   // enums, macros, Real
+// Primary header
 #include "mesh.hpp"
 
 // C++ headers
@@ -28,6 +26,8 @@
 #include <string>     // c_str()
 
 // Athena headers
+#include "athena.hpp"                   // enums, macros, Real
+#include "athena_arrays.hpp"            // AthenaArray
 #include "coordinates/coordinates.hpp"  // Coordinates
 #include "fluid/fluid.hpp"              // Fluid
 #include "field/field.hpp"              // Field
@@ -469,25 +469,19 @@ void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
         break;
 
       case fluid_predict: // integrate fluid to intermediate step 
-        pfluid->u1 = pfluid->u;
-        pfluid->pf_integrator->OneStep(pdomain->pblock, pfluid->u1, pfluid->w,
-          pfield->b, pfield->bcc, 1);
+        pfluid->pf_integrator->Predict(pdomain->pblock);
         break;
 
       case fluid_correct: // integrate fluid for full timestep, t^n --> t^{n+1}
-        pfluid->pf_integrator->OneStep(pdomain->pblock, pfluid->u, pfluid->w1,
-          pfield->b1, pfield->bcc1, 2);
+        pfluid->pf_integrator->Correct(pdomain->pblock);
         break;
 
       case bfield_predict: // integrate fluid to intermediate step 
-        pfield->b1.x1f = pfield->b.x1f;
-        pfield->b1.x2f = pfield->b.x2f;
-        pfield->b1.x3f = pfield->b.x3f;
-        pfield->pint->CT(pmb, pfield->b1, pfluid->w, pfield->bcc, 0.5*dt);
+        pfield->pint->CT(pmb, pfield->b, pfield->b1, pfluid->w, pfield->bcc, 0.5*dt);
         break;
 
       case bfield_correct: // integrate fluid for full timestep, t^n --> t^{n+1}
-        pfield->pint->CT(pmb, pfield->b, pfluid->w1, pfield->bcc1, dt);
+        pfield->pint->CT(pmb, pfield->b, pfield->b, pfluid->w1, pfield->bcc1, dt);
         break;
 
       case primitives_n: // compute primitives from conserved at t^n

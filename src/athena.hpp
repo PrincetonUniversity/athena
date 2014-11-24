@@ -10,18 +10,13 @@
 //======================================================================================
 
 #include "defs.hpp"
-#include "athena_arrays.hpp"
 #include <math.h>
 
 typedef double Real;
 
-typedef struct InterfaceField {
-  AthenaArray<Real> x1f,x2f,x3f;
-} InterfaceField;
-
-typedef struct EdgeField {
-  AthenaArray<Real> x1e,x2e,x3e;
-} EdgeField;
+typedef struct ThreeVector {
+  Real x1, x2, x3;
+} ThreeVector;
 
 enum {IDN=0, IM1=1, IM2=2, IM3=3, IEN=4};
 enum {IVX=1, IVY=2, IVZ=3, IBY=(NFLUID), IBZ=((NFLUID)+1)};

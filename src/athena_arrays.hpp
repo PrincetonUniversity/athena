@@ -64,15 +64,12 @@ public:
     return pdata_[i + nx1_*(j + nx2_*(k + nx3_*n))]; }
 
 // copy constructor and overloaded assignment operator (both do deep copies).
+// Shallow copy and slice functions are also provided.
 
   AthenaArray(const AthenaArray<T>& t);
   AthenaArray<T> &operator= (const AthenaArray<T> &t);
-
-// Functions that perform shallow copy, and slice along any dimension
-
-  void InitWithShallowCopy(AthenaArray<T> &src);
-  void InitWithShallowSlice(AthenaArray<T> &src, const int dim, const int indx,
-    const int nvar);
+  AthenaArray<T> ShallowCopy();
+  AthenaArray<T> ShallowSlice(const int indx, const int nvar, AthenaArray<T> &dest);
 
 private:
   T *pdata_;
@@ -126,57 +123,70 @@ AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
   return *this;
 }
 
+/***
+template<typename T>
+AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
+  if (this != &src){
+    this->nx1_ = src.nx1_;
+    this->nx2_ = src.nx2_;
+    this->nx3_ = src.nx3_;
+    this->nx4_ = src.nx4_;
+
+    delete[] this->pdata_;
+    std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_);
+    this->pdata_ = new T[size]; // allocate memory for array data
+    for (std::size_t i=0; i<size; ++i) {
+      this->pdata_[i] = src.pdata_[i]; // copy data (not just addresses!) into new mem
+    } 
+  }
+  return *this;
+}
+***/
+
 //--------------------------------------------------------------------------------------
-//! \fn AthenaArray::InitWithShallowCopy()
+//! \fn AthenaArray::ShallowCopy()
 //  \brief shallow copy of array (copies ptrs, but not data)
 
 template<typename T>
-void AthenaArray<T>::InitWithShallowCopy(AthenaArray<T> &src) {
-  nx1_=src.nx1_;
-  nx2_=src.nx2_;
-  nx3_=src.nx3_;
-  nx4_=src.nx4_;
-  pdata_ = src.pdata_;
-  scopy_ = 1;
-  return;
+AthenaArray<T> AthenaArray<T>::ShallowCopy() {
+  AthenaArray<T> dest;
+  dest.nx1_=nx1_;
+  dest.nx2_=nx2_;
+  dest.nx3_=nx3_;
+  dest.nx4_=nx4_;
+  dest.pdata_ = pdata_;
+  dest.scopy_ = 1;
+  return dest;
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn AthenaArray::InitWithShallowSlice(AthenaArray<T> &src)
-//  \brief
+//! \fn AthenaArray::ShallowSlice(int indx, int nvar, AthenaArray<T> &dest)
+//  \brief shallow copy of nvar elements in the largest dimension of an array, starting
+//  at index=indx.  Copies pointers to data, but not data itself.  Examples:
+//    4D array nvar=3: copy has size OUT(3,nx3,nx2,nx1) with OUT(0,*,*,*)=IN(indx,*,*,*)
+//    3D array nvar=1: copy has size OUT(1,1,nx2,nx1)   with OUT(0,0,*,*)=IN(0,indx,*,*)
 
 template<typename T>
-void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim, 
-  const int indx, const int nvar)
-{
-  pdata_=src.pdata_;
-  if (dim == 4) {
-    nx4_=nvar;
-    nx3_=src.nx3_;
-    nx2_=src.nx2_;
-    nx1_=src.nx1_;
-    pdata_ += indx*(nx1_*nx2_*nx3_);
-  } else if (dim == 3) {
-    nx4_=1;
-    nx3_=nvar;
-    nx2_=src.nx2_;
-    nx1_=src.nx1_;
-    pdata_ += indx*(nx1_*nx2_);
-  } else if (dim == 2) {
-    nx4_=1;
-    nx3_=1;
-    nx2_=nvar;
-    nx1_=src.nx1_;
-    pdata_ += indx*(nx1_);
-  } else if (dim == 1) {
-    nx4_=1;
-    nx3_=1;
-    nx2_=1;
-    nx1_=nvar;
-    pdata_ += indx;
+AthenaArray<T> AthenaArray<T>::ShallowSlice(const int indx, const int nvar, AthenaArray<T> &dest) {
+  dest.nx1_=nx1_;
+  dest.nx2_=nx2_;
+  dest.nx3_=nx3_;
+  dest.nx4_=nx4_;
+  dest.pdata_ = pdata_;
+  if (nx4_ > 1) {
+    dest.nx4_=nvar;
+    dest.pdata_ += indx * nx1_*nx2_*nx3_;
+  } else if (nx3_ > 1) {
+    dest.nx3_=nvar;
+    dest.pdata_ += indx * nx1_*nx2_;
+  } else if (nx2_ > 1) {
+    dest.nx2_=nvar;
+    dest.pdata_ += indx * nx1_;
+  } else if (nx1_ > 1) {
+    dest.nx1_=nvar;
+    dest.pdata_ += indx;
   }
-  scopy_ = 1;
-  return;
+  dest.scopy_ = 1;
 }
 
 //--------------------------------------------------------------------------------------
