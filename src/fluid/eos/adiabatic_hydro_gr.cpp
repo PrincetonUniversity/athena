@@ -49,14 +49,16 @@ FluidEqnOfState::~FluidEqnOfState()
 // Inputs:
 //   cons: conserved quantities
 //   prim_old: primitive quantities from previous half timestep
+//   b: face-centered magnetic field (unused)
 // Outputs:
 //   prim: primitives
+//   bcc: TODO
 // Notes:
 //   follows Noble et al. 2006, ApJ 641 626 (N)
 //   implements formulas assuming no magnetic field
-void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
-  const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
-  AthenaArray<Real> &bcc)
+void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
+    const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
+    AthenaArray<Real> &bcc)
 {
   // Parameters
   const Real max_velocity = 1.0 - 1.0e-15;
@@ -111,7 +113,7 @@ void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
 
         // Extract conserved quantities
         const Real &d = cons(IDN,k,j,i);
-        const Real &e = cons(IEN,k,j,i);
+        Real &e = cons(IEN,k,j,i);
         const Real &m1 = cons(IVX,k,j,i);
         const Real &m2 = cons(IVY,k,j,i);
         const Real &m3 = cons(IVZ,k,j,i);
@@ -171,11 +173,7 @@ void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
         gamma_sq = 1.0/(1.0 - v_norm_sq);
         Real gamma_rel = std::sqrt(gamma_sq);
         pgas = 1.0/gamma_prime * (w_true/gamma_sq - d_norm/gamma_rel);  // (N32)
-        // TODO: implement better floor
-        pgas = (pgas < 1.0e-9) ? 1.0e-9 : pgas;
         rho = w_true / gamma_sq - gamma_prime * pgas;
-        // TODO: implement better floor
-        rho = (rho < 1.0e-9) ? 1.0e-9 : rho;
         Real u0 = d_norm / (alpha * rho);  // (N21)
         Real u_norm_1 = gamma_rel * q_norm_1 / w_true;  // (N31)
         Real u_norm_2 = gamma_rel * q_norm_2 / w_true;  // (N31)
@@ -186,6 +184,27 @@ void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
         v1 = u1/u0;
         v2 = u2/u0;
         v3 = u3/u0;
+
+        // Apply density and pressure floors
+        bool floor_applied = false;
+        // TODO: set floors at runtime
+        const Real pgas_floor = 1.0e-9;
+        const Real rho_floor = 1.0e-8;
+        if (pgas < pgas_floor)
+        {
+          pgas = pgas_floor;
+          floor_applied = true;
+        }
+        if (rho < rho_floor)
+        {
+          rho = rho_floor;
+          floor_applied = true;
+        }
+        if (floor_applied)
+        {
+          Real u_0 = g00*u0 + g01*u1 + g02*u2 + g03*u3;
+          e = (rho + gamma_prime * pgas) * u0 * u_0 + pgas;
+        }
       }
     }
   return;
