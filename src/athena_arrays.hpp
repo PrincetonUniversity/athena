@@ -21,6 +21,9 @@ class AthenaArray {
 public:
   AthenaArray();
   ~AthenaArray();
+// define copy constructor and overload assignment operator (so both do deep copies).
+  AthenaArray(const AthenaArray<T>& t);
+  AthenaArray<T> &operator= (const AthenaArray<T> &t);
 
 // public functions to allocate/deallocate memory for 1D/2D/3D/4D data
 
@@ -63,13 +66,11 @@ public:
   T operator() (const int n, const int k, const int j, const int i) const { 
     return pdata_[i + nx1_*(j + nx2_*(k + nx3_*n))]; }
 
-// copy constructor and overloaded assignment operator (both do deep copies).
-// Shallow copy and slice functions are also provided.
+// functions that initialize an array with shallow copy or slice from another array
 
-  AthenaArray(const AthenaArray<T>& t);
-  AthenaArray<T> &operator= (const AthenaArray<T> &t);
   AthenaArray<T> ShallowCopy();
-  AthenaArray<T> ShallowSlice(const int indx, const int nvar, AthenaArray<T> &dest);
+  void InitWithShallowSlice(AthenaArray<T> &src, const int dim, const int indx,
+    const int nvar);
 
 private:
   T *pdata_;
@@ -167,26 +168,36 @@ AthenaArray<T> AthenaArray<T>::ShallowCopy() {
 //    3D array nvar=1: copy has size OUT(1,1,nx2,nx1)   with OUT(0,0,*,*)=IN(0,indx,*,*)
 
 template<typename T>
-AthenaArray<T> AthenaArray<T>::ShallowSlice(const int indx, const int nvar, AthenaArray<T> &dest) {
-  dest.nx1_=nx1_;
-  dest.nx2_=nx2_;
-  dest.nx3_=nx3_;
-  dest.nx4_=nx4_;
-  dest.pdata_ = pdata_;
-  if (nx4_ > 1) {
-    dest.nx4_=nvar;
-    dest.pdata_ += indx * nx1_*nx2_*nx3_;
-  } else if (nx3_ > 1) {
-    dest.nx3_=nvar;
-    dest.pdata_ += indx * nx1_*nx2_;
-  } else if (nx2_ > 1) {
-    dest.nx2_=nvar;
-    dest.pdata_ += indx * nx1_;
-  } else if (nx1_ > 1) {
-    dest.nx1_=nvar;
-    dest.pdata_ += indx;
+void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
+  const int indx, const int nvar)
+{
+  pdata_ = src.pdata_;
+  if (dim == 4) {
+    nx4_=nvar;
+    nx3_=src.nx3_;
+    nx2_=src.nx2_;
+    nx1_=src.nx1_;
+    pdata_ += indx*(nx1_*nx2_*nx3_);
+  } else if (dim == 3) {
+    nx4_=1;
+    nx3_=nvar;
+    nx2_=src.nx2_;
+    nx1_=src.nx1_;
+    pdata_ += indx*(nx1_*nx2_);
+  } else if (dim == 2) {
+    nx4_=1;
+    nx3_=1;
+    nx2_=nvar;
+    nx1_=src.nx1_;
+    pdata_ += indx*(nx1_);
+  } else if (dim == 1) {
+    nx4_=1;
+    nx3_=1;
+    nx2_=1;
+    nx1_=nvar;
+    pdata_ += indx;
   }
-  dest.scopy_ = 1;
+  scopy_ = 1;
 }
 
 //--------------------------------------------------------------------------------------

@@ -378,7 +378,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov = new OutputVariable; 
     pov->type = "SCALARS";
     pov->name = "dens";
-    pfl->u.ShallowSlice(IDN,1,pov->data);
+    pov->data.InitWithShallowSlice(pfl->u,4,IDN,1);
     pod->AppendNode(pov); // (lab-frame) density
     var_added = 1;
   }
@@ -388,7 +388,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov = new OutputVariable; 
     pov->type = "SCALARS";
     pov->name = "rho";
-    pfl->w.ShallowSlice(IDN,1,pov->data);
+    pov->data.InitWithShallowSlice(pfl->w,4,IDN,1);
     pod->AppendNode(pov); // (rest-frame) density
     var_added = 1;
   }
@@ -399,7 +399,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       pov = new OutputVariable; 
       pov->type = "SCALARS";
       pov->name = "Etot";
-      pfl->u.ShallowSlice(IEN,1,pov->data);
+      pov->data.InitWithShallowSlice(pfl->u,4,IEN,1);
       pod->AppendNode(pov); // total energy
       var_added = 1;
     }
@@ -411,7 +411,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       pov = new OutputVariable; 
       pov->type = "SCALARS";
       pov->name = "eint";
-      pfl->w.ShallowSlice(IEN,1,pov->data);
+      pov->data.InitWithShallowSlice(pfl->w,4,IEN,1);
       pod->AppendNode(pov); // internal energy
       var_added = 1;
     }
@@ -422,7 +422,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov = new OutputVariable; 
     pov->type = "VECTORS";
     pov->name = "mom";
-    pfl->u.ShallowSlice(IM1,3,pov->data);
+    pov->data.InitWithShallowSlice(pfl->u,4,IM1,3);
     pod->AppendNode(pov); // momentum vector
     var_added = 1;
   }
@@ -432,20 +432,22 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov = new OutputVariable; 
     pov->type = "VECTORS";
     pov->name = "vel";
-    pfl->w.ShallowSlice(IM1,3,pov->data);
+    pov->data.InitWithShallowSlice(pfl->w,4,IVX,3);
     pod->AppendNode(pov); // velocity vector
     var_added = 1;
   }
 
-  if (output_params.variable.compare("b") == 0 || 
-      output_params.variable.compare("prim") == 0 ||
-      output_params.variable.compare("cons") == 0) {
-    pov = new OutputVariable; 
-    pov->type = "VECTORS";
-    pov->name = "cell-centered B";
-    pfd->bcc.ShallowSlice(0,3,pov->data);
-    pod->AppendNode(pov); // magnetic field vector
-    var_added = 1;
+  if (MAGNETIC_FIELDS_ENABLED) {
+    if (output_params.variable.compare("b") == 0 || 
+        output_params.variable.compare("prim") == 0 ||
+        output_params.variable.compare("cons") == 0) {
+      pov = new OutputVariable; 
+      pov->type = "VECTORS";
+      pov->name = "cell-centered B";
+      pov->data.InitWithShallowSlice(pfd->bcc,4,IB1,3);
+      pod->AppendNode(pov); // magnetic field vector
+      var_added = 1;
+    }
   }
 
   if (output_params.variable.compare("ifov") == 0) {
@@ -453,7 +455,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       pov = new OutputVariable; 
       pov->type = "SCALARS";
       pov->name = "ifov";
-      pfl->ifov.ShallowSlice(n,1,pov->data);
+      pov->data.InitWithShallowSlice(pfl->ifov,4,n,1);
       pod->AppendNode(pov); // internal fluid outvars
     }
     var_added = 1;

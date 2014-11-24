@@ -77,11 +77,11 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
   tid=omp_get_thread_num();
 #endif
   AthenaArray<Real> wl, wr, flx, area, vol;
-  wl_.ShallowSlice(tid,1,wl);
-  wr_.ShallowSlice(tid,1,wr);
-  flx_.ShallowSlice(tid,1,flx);
-  face_area_.ShallowSlice(tid,1,area);
-  cell_volume_.ShallowSlice(tid,1,vol);
+  wl.InitWithShallowSlice(wl_,3,tid,1);
+  wr.InitWithShallowSlice(wr_,3,tid,1);
+  flx.InitWithShallowSlice(flx_,3,tid,1);
+  area.InitWithShallowSlice(face_area_,2,tid,1);
+  vol.InitWithShallowSlice(cell_volume_,2,tid,1);
 
 //--------------------------------------------------------------------------------------
 // i-direction
