@@ -43,9 +43,9 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
   AthenaArray<Real> e1,e2,e3,area,len,lenp1;
-  e1.InitWithShallowCopy(pmb->pfield->e1);
-  e2.InitWithShallowCopy(pmb->pfield->e2);
-  e3.InitWithShallowCopy(pmb->pfield->e3);
+  e1.InitWithShallowCopy(pmb->pfield->e.x1e);
+  e2.InitWithShallowCopy(pmb->pfield->e.x2e);
+  e3.InitWithShallowCopy(pmb->pfield->e.x3e);
   area.InitWithShallowCopy(face_area_);
   len.InitWithShallowCopy(edge_length_);
   lenp1.InitWithShallowCopy(edge_lengthp1_);

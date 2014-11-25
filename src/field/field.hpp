@@ -31,18 +31,18 @@ public:
   Field(MeshBlock *pmb, ParameterInput *pin);
   ~Field();
 
-  MeshBlock* pmy_mblock;    // ptr to MeshBlock containing this Field
+  MeshBlock* pmy_mblock;  // ptr to MeshBlock containing this Field
 
-  InterfaceField b;     // face-centered magnetic fields
-  InterfaceField b1;    // face-centered magnetic fields at intermediate step
-  AthenaArray<Real> bcc;   // cell-centered magnetic fields
-  AthenaArray<Real> bcc1;  // cell-centered magnetic fields at intermediate step
+  InterfaceField b;       // face-centered magnetic fields
+  InterfaceField b1;      // face-centered magnetic fields at intermediate step
+  AthenaArray<Real> bcc;  // cell-centered magnetic fields
+  AthenaArray<Real> bcc1; // cell-centered magnetic fields at intermediate step
 
-  InterfaceField e;     // face-centered electric fields (e.g. from Riemann solver)
-  InterfaceField wght;  // weights used to integrate E to corner using GS algorithm
-  AthenaArray<Real> e1, e2, e3; // edge-centered electric fields used in CT
+  EdgeField e;         // edge-centered electric fields used in CT
+  InterfaceField ei;   // face-centered electric fields (e.g. from Riemann solver)
+  InterfaceField wght; // weights used to integrate E to corner using GS algorithm
 
-  FieldIntegrator *pint;   // integration algorithm (CT)
+  FieldIntegrator *pint;  // integration algorithm (CT)
 
 private:
 };

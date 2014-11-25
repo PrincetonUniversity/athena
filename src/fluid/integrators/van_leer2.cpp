@@ -54,13 +54,13 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 //  AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
 //  AthenaArray<Real> bcc = pmb->pfield->bcc.ShallowCopy();
 
-  AthenaArray<Real> b1,b2,b3,e_x1f,e_x2f,e_x3f,w_x1f,w_x2f,w_x3f;
+  AthenaArray<Real> b1,b2,b3,ei_x1f,ei_x2f,ei_x3f,w_x1f,w_x2f,w_x3f;
   b1.InitWithShallowCopy(b.x1f);
   b2.InitWithShallowCopy(b.x2f);
   b3.InitWithShallowCopy(b.x3f);
-  e_x1f.InitWithShallowCopy(pmb->pfield->e.x1f);
-  e_x2f.InitWithShallowCopy(pmb->pfield->e.x2f);
-  e_x3f.InitWithShallowCopy(pmb->pfield->e.x3f);
+  ei_x1f.InitWithShallowCopy(pmb->pfield->ei.x1f);
+  ei_x2f.InitWithShallowCopy(pmb->pfield->ei.x2f);
+  ei_x3f.InitWithShallowCopy(pmb->pfield->ei.x3f);
   w_x1f.InitWithShallowCopy(pmb->pfield->wght.x1f);
   w_x2f.InitWithShallowCopy(pmb->pfield->wght.x2f);
   w_x3f.InitWithShallowCopy(pmb->pfield->wght.x3f);
@@ -140,8 +140,8 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
       if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
         for (int i=is; i<=ie+1; ++i){
-          e_x1f(X1E3,k,j,i) = -flx(IBY,i); // flx(IBY) = (v1*b2 - v2*b1) = -EMFZ
-          e_x1f(X1E2,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v1*b3 - v3*b1) =  EMFY
+          ei_x1f(X1E3,k,j,i) = -flx(IBY,i); // flx(IBY) = (v1*b2 - v2*b1) = -EMFZ
+          ei_x1f(X1E2,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v1*b3 - v3*b1) =  EMFY
 // estimate weight used to upwind electric fields in GS07 algorithm
           Real fac = (1024)*dt/pmb->pcoord->CenterWidth1(k,j,i);
           Real rat = std::min( 0.5, (fac*flx(IDN,i)/(u(IDN,k,j,i-1)+u(IDN,k,j,i))) );
@@ -223,8 +223,8 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
         if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
           for (int i=is; i<=ie; ++i){
-            e_x2f(X2E1,k,j,i) = -flx(IBY,i); // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
-            e_x2f(X2E3,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
+            ei_x2f(X2E1,k,j,i) = -flx(IBY,i); // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
+            ei_x2f(X2E3,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
 // estimate weight used to upwind electric fields in GS07 algorithm
             Real fac = (1024)*dt/pmb->pcoord->CenterWidth2(k,j,i);
             Real rat = std::min( 0.5, (fac*flx(IDN,i)/(u(IDN,k,j-1,i)+u(IDN,k,j,i))) );
@@ -307,8 +307,8 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
         if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
           for (int i=is; i<=ie; ++i){
-            e_x3f(X3E2,k,j,i) = -flx(IBY,i); // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
-            e_x3f(X3E1,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
+            ei_x3f(X3E2,k,j,i) = -flx(IBY,i); // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
+            ei_x3f(X3E1,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
 // estimate weight used to upwind electric fields in GS07 algorithm
             Real fac = (1024)*dt/pmb->pcoord->CenterWidth3(k,j,i);
             Real rat = std::min( 0.5, (fac*flx(IDN,i)/(u(IDN,k-1,j,i)+u(IDN,k,j,i))) );
