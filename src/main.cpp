@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
 // Set initial conditions by calling problem generator on each MeshDomain/MeshBlock
 
   try {
-    pmesh->ForAllDomains(pgen,pinput);
+    pmesh->ForAllMeshBlocks(pgen,pinput);
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl << "memory allocation failed "
@@ -180,10 +180,10 @@ int main(int argc, char *argv[])
 
 // apply BCs, compute primitive from conserved variables, compute first timestep
 
-  pmesh->ForAllDomains( fluid_bcs_n,pinput);
-  if (MAGNETIC_FIELDS_ENABLED) pmesh->ForAllDomains(bfield_bcs_n,pinput);
-  pmesh->ForAllDomains(primitives_n,pinput);
-  pmesh->ForAllDomains(new_timestep,pinput);
+  pmesh->ForAllMeshBlocks( fluid_bcs_n,pinput);
+  if (MAGNETIC_FIELDS_ENABLED) pmesh->ForAllMeshBlocks(bfield_bcs_n,pinput);
+  pmesh->ForAllMeshBlocks(primitives_n,pinput);
+  pmesh->ForAllMeshBlocks(new_timestep,pinput);
 
 //--- Step 6. --------------------------------------------------------------------------
 // Change to run directory, initialize outputs object, and make output of ICs
@@ -221,27 +221,27 @@ int main(int argc, char *argv[])
 
 // predict step
 
-    pmesh->ForAllDomains(fluid_predict  ,pinput);
-    pmesh->ForAllDomains(fluid_bcs_nhalf,pinput);
+    pmesh->ForAllMeshBlocks(fluid_predict  ,pinput);
+    pmesh->ForAllMeshBlocks(fluid_bcs_nhalf,pinput);
 
     if (MAGNETIC_FIELDS_ENABLED) {
-      pmesh->ForAllDomains(bfield_predict  ,pinput);
-      pmesh->ForAllDomains(bfield_bcs_nhalf,pinput);
+      pmesh->ForAllMeshBlocks(bfield_predict  ,pinput);
+      pmesh->ForAllMeshBlocks(bfield_bcs_nhalf,pinput);
     }
 
-    pmesh->ForAllDomains(primitives_nhalf,pinput);
+    pmesh->ForAllMeshBlocks(primitives_nhalf,pinput);
 
 // correct step
 
-    pmesh->ForAllDomains(fluid_correct,pinput);
-    pmesh->ForAllDomains(fluid_bcs_n,  pinput);
+    pmesh->ForAllMeshBlocks(fluid_correct,pinput);
+    pmesh->ForAllMeshBlocks(fluid_bcs_n,  pinput);
 
     if (MAGNETIC_FIELDS_ENABLED) {
-      pmesh->ForAllDomains(bfield_correct,pinput);
-      pmesh->ForAllDomains(bfield_bcs_n,  pinput);
+      pmesh->ForAllMeshBlocks(bfield_correct,pinput);
+      pmesh->ForAllMeshBlocks(bfield_bcs_n,  pinput);
     }
 
-    pmesh->ForAllDomains(primitives_n,pinput);
+    pmesh->ForAllMeshBlocks(primitives_n,pinput);
 
 // new time step, outputs, diagnostics
 
@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
       return(0);
     }
 
-    pmesh->ForAllDomains(new_timestep,pinput);
+    pmesh->ForAllMeshBlocks(new_timestep,pinput);
 
   } // END OF MAIN INTEGRATION LOOP ====================================================
 #ifdef OPENMP_PARALLEL

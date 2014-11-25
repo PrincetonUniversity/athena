@@ -124,28 +124,8 @@ AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
   return *this;
 }
 
-/***
-template<typename T>
-AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
-  if (this != &src){
-    this->nx1_ = src.nx1_;
-    this->nx2_ = src.nx2_;
-    this->nx3_ = src.nx3_;
-    this->nx4_ = src.nx4_;
-
-    delete[] this->pdata_;
-    std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_);
-    this->pdata_ = new T[size]; // allocate memory for array data
-    for (std::size_t i=0; i<size; ++i) {
-      this->pdata_[i] = src.pdata_[i]; // copy data (not just addresses!) into new mem
-    } 
-  }
-  return *this;
-}
-***/
-
 //--------------------------------------------------------------------------------------
-//! \fn AthenaArray::ShallowCopy()
+//! \fn AthenaArray::InitWithShallowCopy()
 //  \brief shallow copy of array (copies ptrs, but not data)
 
 template<typename T>
@@ -160,11 +140,9 @@ void AthenaArray<T>::InitWithShallowCopy(AthenaArray<T> &src) {
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn AthenaArray::ShallowSlice(int indx, int nvar, AthenaArray<T> &dest)
-//  \brief shallow copy of nvar elements in the largest dimension of an array, starting
-//  at index=indx.  Copies pointers to data, but not data itself.  Examples:
-//    4D array nvar=3: copy has size OUT(3,nx3,nx2,nx1) with OUT(0,*,*,*)=IN(indx,*,*,*)
-//    3D array nvar=1: copy has size OUT(1,1,nx2,nx1)   with OUT(0,0,*,*)=IN(0,indx,*,*)
+//! \fn AthenaArray::InitWithShallowSlice()
+//  \brief shallow copy of nvar elements in dimension dim of an array, starting at
+//  index=indx.  Copies pointers to data, but not data itself.
 
 template<typename T>
 void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,

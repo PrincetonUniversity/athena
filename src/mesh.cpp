@@ -39,7 +39,7 @@
 
 //======================================================================================
 //! \file mesh.cpp
-//  \brief implementation of functions in classes Mesh, MeshDomain, and MeshBlock
+//  \brief implementation of functions in classes Mesh, and MeshBlock
 //======================================================================================
 
 //--------------------------------------------------------------------------------------
@@ -70,7 +70,7 @@ Mesh::Mesh(ParameterInput *pin)
     throw std::runtime_error(msg.str().c_str());
   }
 
-// read number of grid cells in mesh (root domain) from input file.  
+// read number of grid cells in root level of mesh from input file.  
 
   mesh_size.nx1 = pin->GetInteger("mesh","nx1");
   if (mesh_size.nx1 < 4) {
@@ -102,7 +102,7 @@ Mesh::Mesh(ParameterInput *pin)
     throw std::runtime_error(msg.str().c_str());
   }
 
-// read physical size of mesh (root domain) from input file.  
+// read physical size of mesh (root level) from input file.  
 
   mesh_size.x1min = pin->GetReal("mesh","x1min");
   mesh_size.x2min = pin->GetReal("mesh","x2min");
@@ -166,38 +166,14 @@ Mesh::Mesh(ParameterInput *pin)
   mesh_bcs.ix3_bc = pin->GetOrAddInteger("mesh","ix3_bc",0);
   mesh_bcs.ox3_bc = pin->GetOrAddInteger("mesh","ox3_bc",0);
 
-// allocate root domain
+// allocate MeshBlock list 
 
-  pdomain = new MeshDomain(mesh_size, mesh_bcs, this, pin);
+  pblock = new MeshBlock(mesh_size, mesh_bcs, this, pin);
 }
 
 // destructor
 
 Mesh::~Mesh()
-{
-  delete pdomain;
-}
-
-//--------------------------------------------------------------------------------------
-// MeshDomain constructor: builds array of MeshBlocks based on input arguments.
-
-MeshDomain::MeshDomain(RegionSize in_size, RegionBCs in_bcs, Mesh* pm, ParameterInput *pin)
-{
-  pmy_mesh = pm;
-  domain_size = in_size;
-  domain_bcs  = in_bcs;
-
-// allocate block on this domain
-// In future w MPI: calculate array of blocks, set their region sizes, and initialize
-
-  pblock = new MeshBlock(domain_size, domain_bcs, this, pin);
-
-  return;
-}
-
-// destructor
-
-MeshDomain::~MeshDomain()
 {
   delete pblock;
 }
@@ -206,12 +182,12 @@ MeshDomain::~MeshDomain()
 // MeshBlock constructor: builds 1D vectors of cell positions and spacings, and
 // constructs coordinate, boundary condition, fluid and field objects.
 
-MeshBlock::MeshBlock(RegionSize in_size, RegionBCs in_bcs, MeshDomain *pd,
+MeshBlock::MeshBlock(RegionSize input_size, RegionBCs input_bcs, Mesh *pm,
   ParameterInput *pin)
 {
-  pmy_domain = pd;
-  block_size = in_size;
-  block_bcs  = in_bcs;
+  pmy_mesh = pm;
+  block_size = input_size;
+  block_bcs  = input_bcs;
 
 // initialize grid indices
 
@@ -433,18 +409,19 @@ MeshBlock::~MeshBlock()
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
-// \brief function that loops over all MeshDomains and calls MeshBlock functions
+// \!fn void Mesh::ForAllMeshBlocks(enum ActionOnBlock action, ParameterInput *pin)
+// \brief function that loops over all MeshBlocks and calls appropriate functions
 
-void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
+void Mesh::ForAllMeshBlocks(enum ActionOnBlock action, ParameterInput *pin)
 {
 
-// Eventually this will be a loop over all domains
+// Eventually this will be a loop over all blocks
 
-  MeshBlock* pmb = pdomain->pblock;
+  MeshBlock *pmb = pblock;
   if (pmb != NULL)  {
-    Fluid* pfluid = pdomain->pblock->pfluid;
-    Field* pfield = pdomain->pblock->pfield;
+
+    Fluid *pfluid = pmb->pfluid;
+    Field *pfield = pmb->pfield;
 
     switch (action) {
 
@@ -470,13 +447,13 @@ void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
 
       case fluid_predict: // integrate fluid to intermediate step 
         pfluid->u1 = pfluid->u;
-        pfluid->pf_integrator->OneStep(pdomain->pblock, pfluid->u1, pfluid->w,
-          pfield->b, pfield->bcc, 1);
+        pfluid->pf_integrator->OneStep(pmb, pfluid->u1, pfluid->w, pfield->b,
+          pfield->bcc, 1);
         break;
 
       case fluid_correct: // integrate fluid for full timestep, t^n --> t^{n+1}
-        pfluid->pf_integrator->OneStep(pdomain->pblock, pfluid->u, pfluid->w1,
-          pfield->b1, pfield->bcc1, 2);
+        pfluid->pf_integrator->OneStep(pmb, pfluid->u, pfluid->w1, pfield->b1,
+          pfield->bcc1, 2);
         break;
 
       case bfield_predict: // integrate fluid to intermediate step 
@@ -501,7 +478,7 @@ void Mesh::ForAllDomains(enum ActionOnDomain action, ParameterInput *pin)
         break;
 
       case new_timestep: // calculate new time step
-        pfluid->NewTimeStep(pdomain->pblock);
+        pfluid->NewTimeStep(pmb);
         break;
 
     }

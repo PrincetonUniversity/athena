@@ -55,7 +55,7 @@ void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 {
   Fluid *pfl = pmb->pfluid;;
   Field *pfd = pmb->pfield;;
-  Mesh *pmm = pmb->pmy_domain->pmy_mesh;
+  Mesh *pmm = pmb->pmy_mesh;
   int tid=0;
 
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
@@ -103,8 +103,8 @@ void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 
 // Add time, time step
 
-  pvar->data(0,0,0,0) = pmb->pmy_domain->pmy_mesh->time;
-  pvar->data(1,0,0,0) = pmb->pmy_domain->pmy_mesh->dt;
+  pvar->data(0,0,0,0) = pmb->pmy_mesh->time;
+  pvar->data(1,0,0,0) = pmb->pmy_mesh->dt;
 
 // Sum over cells, add mass, mom, KE, and total-E
 

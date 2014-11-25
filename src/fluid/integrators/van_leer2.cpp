@@ -48,7 +48,7 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
   int tid=0;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  int max_nthreads = pmb->pmy_domain->pmy_mesh->nthreads_mesh;
+  int max_nthreads = pmb->pmy_mesh->nthreads_mesh;
  
 //  AthenaArray<Real> u = pmb->pfluid->u.ShallowCopy();
 //  AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
@@ -67,9 +67,9 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 
   Real dt;
   if (step == 1) {
-    dt = 0.5*(pmb->pmy_domain->pmy_mesh->dt);
+    dt = 0.5*(pmb->pmy_mesh->dt);
   } else {
-    dt = (pmb->pmy_domain->pmy_mesh->dt);
+    dt = (pmb->pmy_mesh->dt);
   }
 
 #pragma omp parallel default(shared) private(tid) num_threads(max_nthreads)
@@ -326,9 +326,9 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 //  Add source terms for half a timestep
 
   pmb->pcoord->CoordinateSourceTerms(dt,w,u);
-  pmb->pfluid->pf_srcterms->PhysicalSourceTerms(pmb->pmy_domain->pmy_mesh->time,dt,w,u);
+  pmb->pfluid->pf_srcterms->PhysicalSourceTerms(pmb->pmy_mesh->time,dt,w,u);
   if (pmb->pfluid->pf_srcterms->UserSourceTerm != NULL)
-    pmb->pfluid->pf_srcterms->UserSourceTerm(pmb->pmy_domain->pmy_mesh->time,dt,w,u);
+    pmb->pfluid->pf_srcterms->UserSourceTerm(pmb->pmy_mesh->time,dt,w,u);
 
   return;
 }

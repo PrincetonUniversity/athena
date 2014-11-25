@@ -30,7 +30,7 @@ enum {X1E2=0, X1E3=1, X2E3=0, X2E1=1, X3E1=0, X3E2=1};
 
 enum {I00, I01, I02, I03, I11, I12, I13, I22, I23, I33, NMETRIC};
 
-enum ActionOnDomain 
+enum ActionOnBlock
   {pgen,          primitives_n, primitives_nhalf, new_timestep,
    fluid_predict, fluid_correct,   bfield_predict, bfield_correct,
    fluid_bcs_n,   fluid_bcs_nhalf, bfield_bcs_n,   bfield_bcs_nhalf};

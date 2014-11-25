@@ -54,20 +54,20 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 // parse shock location (must be inside grid)
 
   Real xshock = pin->GetReal("problem","xshock"); 
-  if (shk_dir == 1 && (xshock < pmb->pmy_domain->pmy_mesh->mesh_size.x1min ||
-                       xshock > pmb->pmy_domain->pmy_mesh->mesh_size.x1max)) {
+  if (shk_dir == 1 && (xshock < pmb->pmy_mesh->mesh_size.x1min ||
+                       xshock > pmb->pmy_mesh->mesh_size.x1max)) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl << "xshock="
         << xshock << " lies outside x1 domain for shkdir=" << shk_dir << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if (shk_dir == 2 && (xshock < pmb->pmy_domain->pmy_mesh->mesh_size.x2min ||
-                       xshock > pmb->pmy_domain->pmy_mesh->mesh_size.x2max)) {
+  if (shk_dir == 2 && (xshock < pmb->pmy_mesh->mesh_size.x2min ||
+                       xshock > pmb->pmy_mesh->mesh_size.x2max)) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl << "xshock="
         << xshock << " lies outside x2 domain for shkdir=" << shk_dir << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if (shk_dir == 3 && (xshock < pmb->pmy_domain->pmy_mesh->mesh_size.x3min ||
-                       xshock > pmb->pmy_domain->pmy_mesh->mesh_size.x3max)) {
+  if (shk_dir == 3 && (xshock < pmb->pmy_mesh->mesh_size.x3min ||
+                       xshock > pmb->pmy_mesh->mesh_size.x3max)) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl << "xshock="
         << xshock << " lies outside x3 domain for shkdir=" << shk_dir << std::endl;
     throw std::runtime_error(msg.str().c_str());

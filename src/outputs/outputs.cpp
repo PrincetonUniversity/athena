@@ -356,8 +356,8 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 
 // Create OutputData header
 
-  str << "# Athena++ data at time=" << pmb->pmy_domain->pmy_mesh->time
-      << "  cycle=" << pmb->pmy_domain->pmy_mesh->ncycle
+  str << "# Athena++ data at time=" << pmb->pmy_mesh->time
+      << "  cycle=" << pmb->pmy_mesh->ncycle 
       << "  variables=" << output_params.variable << std::endl;
   pod->data_header.descriptor.append(str.str());
   pod->data_header.il = pmb->is;
@@ -709,9 +709,9 @@ void Outputs::MakeOutputs(Mesh *pm)
 {
   OutputType* ptype = pfirst_type_;
 
-// Eventually this will be a loop over all domains
+// Eventually this will be a loop over all MeshBlocks
 
-  MeshBlock *pmb = pm->pdomain->pblock;
+  MeshBlock *pmb = pm->pblock;
   if (pmb != NULL)  {
 
     while (ptype != NULL) {

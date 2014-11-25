@@ -67,7 +67,7 @@ Fluid::Fluid(MeshBlock *pmb, ParameterInput *pin)
 
 // Allocate memory for scratch arrays
 
-  int max_nthreads = pmy_block->pmy_domain->pmy_mesh->nthreads_mesh;
+  int max_nthreads = pmy_block->pmy_mesh->nthreads_mesh;
   dt1_.NewAthenaArray(max_nthreads,ncells1);
   dt2_.NewAthenaArray(max_nthreads,ncells1);
   dt3_.NewAthenaArray(max_nthreads,ncells1);
@@ -119,7 +119,7 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
   b_x2f.InitWithShallowCopy(pmb->pfield->b.x2f);
   b_x3f.InitWithShallowCopy(pmb->pfield->b.x3f);
 
-  int max_nthreads = pmb->pmy_domain->pmy_mesh->nthreads_mesh;
+  int max_nthreads = pmb->pmy_mesh->nthreads_mesh;
   Real *pthread_min_dt;
   pthread_min_dt = new Real [max_nthreads];
 
@@ -222,7 +222,7 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
   for (int n=1; n<max_nthreads; ++n) min_dt = std::min(min_dt,pthread_min_dt[n]);
 
 // compute new global timestep
-  Mesh *pm = pmb->pmy_domain->pmy_mesh;
+  Mesh *pm = pmb->pmy_mesh;
   Real old_dt = pm->dt;
   pm->dt = std::min( ((pm->cfl_number)*min_dt) , (2.0*old_dt) );
 
