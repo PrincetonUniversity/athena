@@ -68,7 +68,7 @@ public:
 
 // functions that initialize an array with shallow copy or slice from another array
 
-  AthenaArray<T> ShallowCopy();
+  void InitWithShallowCopy(AthenaArray<T> &src);
   void InitWithShallowSlice(AthenaArray<T> &src, const int dim, const int indx,
     const int nvar);
 
@@ -149,15 +149,14 @@ AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
 //  \brief shallow copy of array (copies ptrs, but not data)
 
 template<typename T>
-AthenaArray<T> AthenaArray<T>::ShallowCopy() {
-  AthenaArray<T> dest;
-  dest.nx1_=nx1_;
-  dest.nx2_=nx2_;
-  dest.nx3_=nx3_;
-  dest.nx4_=nx4_;
-  dest.pdata_ = pdata_;
-  dest.scopy_ = 1;
-  return dest;
+void AthenaArray<T>::InitWithShallowCopy(AthenaArray<T> &src) {
+  nx1_=src.nx1_;
+  nx2_=src.nx2_;
+  nx3_=src.nx3_;
+  nx4_=src.nx4_;
+  pdata_ = src.pdata_;
+  scopy_ = 1;
+  return;
 }
 
 //--------------------------------------------------------------------------------------
@@ -198,6 +197,7 @@ void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
     pdata_ += indx;
   }
   scopy_ = 1;
+  return;
 }
 
 //--------------------------------------------------------------------------------------

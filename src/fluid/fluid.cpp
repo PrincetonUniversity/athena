@@ -112,11 +112,12 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
   int tid=0;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
-  AthenaArray<Real> bcc = pmb->pfield->bcc.ShallowCopy();
-  AthenaArray<Real> b_x1f = pmb->pfield->b.x1f.ShallowCopy();
-  AthenaArray<Real> b_x2f = pmb->pfield->b.x2f.ShallowCopy();
-  AthenaArray<Real> b_x3f = pmb->pfield->b.x3f.ShallowCopy();
+  AthenaArray<Real> w,bcc,b_x1f,b_x2f,b_x3f;
+  w.InitWithShallowCopy(pmb->pfluid->w);
+  bcc.InitWithShallowCopy(pmb->pfield->bcc);
+  b_x1f.InitWithShallowCopy(pmb->pfield->b.x1f);
+  b_x2f.InitWithShallowCopy(pmb->pfield->b.x2f);
+  b_x3f.InitWithShallowCopy(pmb->pfield->b.x3f);
 
   int max_nthreads = pmb->pmy_domain->pmy_mesh->nthreads_mesh;
   Real *pthread_min_dt;

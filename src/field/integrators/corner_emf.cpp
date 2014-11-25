@@ -42,15 +42,16 @@ void FieldIntegrator::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w,
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  AthenaArray<Real> e1 = pmb->pfield->e1.ShallowCopy();
-  AthenaArray<Real> e2 = pmb->pfield->e2.ShallowCopy();
-  AthenaArray<Real> e3 = pmb->pfield->e3.ShallowCopy();
-  AthenaArray<Real> e_x1f = pmb->pfield->e.x1f.ShallowCopy();
-  AthenaArray<Real> e_x2f = pmb->pfield->e.x2f.ShallowCopy();
-  AthenaArray<Real> e_x3f = pmb->pfield->e.x3f.ShallowCopy();
-  AthenaArray<Real> w_x1f = pmb->pfield->wght.x1f.ShallowCopy();
-  AthenaArray<Real> w_x2f = pmb->pfield->wght.x2f.ShallowCopy();
-  AthenaArray<Real> w_x3f = pmb->pfield->wght.x3f.ShallowCopy();
+  AthenaArray<Real> e1,e2,e3,e_x1f,e_x2f,e_x3f,w_x1f,w_x2f,w_x3f;
+  e1.InitWithShallowCopy(pmb->pfield->e1);
+  e2.InitWithShallowCopy(pmb->pfield->e2);
+  e3.InitWithShallowCopy(pmb->pfield->e3);
+  e_x1f.InitWithShallowCopy(pmb->pfield->e.x1f);
+  e_x2f.InitWithShallowCopy(pmb->pfield->e.x2f);
+  e_x3f.InitWithShallowCopy(pmb->pfield->e.x3f);
+  w_x1f.InitWithShallowCopy(pmb->pfield->wght.x1f);
+  w_x2f.InitWithShallowCopy(pmb->pfield->wght.x2f);
+  w_x3f.InitWithShallowCopy(pmb->pfield->wght.x3f);
  
 //---- 1-D update:
 //  copy face-centered E-fields to edges and return.

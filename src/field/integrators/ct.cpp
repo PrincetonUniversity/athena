@@ -42,13 +42,13 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  AthenaArray<Real> e1 = pmb->pfield->e1.ShallowCopy();
-  AthenaArray<Real> e2 = pmb->pfield->e2.ShallowCopy();
-  AthenaArray<Real> e3 = pmb->pfield->e3.ShallowCopy();
-
-  AthenaArray<Real> area = face_area_.ShallowCopy();
-  AthenaArray<Real> len   = edge_length_.ShallowCopy();
-  AthenaArray<Real> lenp1 = edge_lengthp1_.ShallowCopy();
+  AthenaArray<Real> e1,e2,e3,area,len,lenp1;
+  e1.InitWithShallowCopy(pmb->pfield->e1);
+  e2.InitWithShallowCopy(pmb->pfield->e2);
+  e3.InitWithShallowCopy(pmb->pfield->e3);
+  area.InitWithShallowCopy(face_area_);
+  len.InitWithShallowCopy(edge_length_);
+  lenp1.InitWithShallowCopy(edge_lengthp1_);
 
   ComputeCornerE(pmb, w, bcc);
 

@@ -54,15 +54,16 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 //  AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
 //  AthenaArray<Real> bcc = pmb->pfield->bcc.ShallowCopy();
 
-  AthenaArray<Real> b1 = b.x1f.ShallowCopy();
-  AthenaArray<Real> b2 = b.x2f.ShallowCopy();
-  AthenaArray<Real> b3 = b.x3f.ShallowCopy();
-  AthenaArray<Real> e_x1f = pmb->pfield->e.x1f.ShallowCopy();
-  AthenaArray<Real> e_x2f = pmb->pfield->e.x2f.ShallowCopy();
-  AthenaArray<Real> e_x3f = pmb->pfield->e.x3f.ShallowCopy();
-  AthenaArray<Real> w_x1f = pmb->pfield->wght.x1f.ShallowCopy();
-  AthenaArray<Real> w_x2f = pmb->pfield->wght.x2f.ShallowCopy();
-  AthenaArray<Real> w_x3f = pmb->pfield->wght.x3f.ShallowCopy();
+  AthenaArray<Real> b1,b2,b3,e_x1f,e_x2f,e_x3f,w_x1f,w_x2f,w_x3f;
+  b1.InitWithShallowCopy(b.x1f);
+  b2.InitWithShallowCopy(b.x2f);
+  b3.InitWithShallowCopy(b.x3f);
+  e_x1f.InitWithShallowCopy(pmb->pfield->e.x1f);
+  e_x2f.InitWithShallowCopy(pmb->pfield->e.x2f);
+  e_x3f.InitWithShallowCopy(pmb->pfield->e.x3f);
+  w_x1f.InitWithShallowCopy(pmb->pfield->wght.x1f);
+  w_x2f.InitWithShallowCopy(pmb->pfield->wght.x2f);
+  w_x3f.InitWithShallowCopy(pmb->pfield->wght.x3f);
 
   Real dt;
   if (step == 1) {
