@@ -38,8 +38,8 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
-  Real wli[NFLUID+NFIELD-1],wri[NFLUID+NFIELD-1],wroe[NFLUID+NFIELD-1];
-  Real  fl[NFLUID+NFIELD-1], fr[NFLUID+NFIELD-1],flxi[NFLUID+NFIELD-1];
+  Real wli[NFLUID+NFIELDM1],wri[NFLUID+NFIELDM1],wroe[NFLUID+NFIELDM1];
+  Real  fl[NFLUID+NFIELDM1], fr[NFLUID+NFIELDM1],flxi[NFLUID+NFIELDM1];
   Real gm1 = pmy_fluid->pf_eos->GetGamma() - 1.0;
 
 #pragma simd

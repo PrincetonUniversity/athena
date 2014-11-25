@@ -31,7 +31,7 @@ public:
     const InterfaceField &b, AthenaArray<Real> &prim, AthenaArray<Real> &bcc);
 
   Real SoundSpeed(const Real prim[NFLUID]); 
-  Real FastMagnetosonicSpeed(const Real prim[((NFLUID)+(NFIELD)-1)], const Real bx); 
+  Real FastMagnetosonicSpeed(const Real prim[((NFLUID)+(NFIELDM1))], const Real bx); 
   Real GetGamma() const {return gamma_;}
 
 private:

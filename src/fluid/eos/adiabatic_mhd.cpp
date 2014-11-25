@@ -145,7 +145,7 @@ Real FluidEqnOfState::SoundSpeed(const Real prim[NFLUID])
 // \brief returns fast magnetosonic speed given vector of primitive variables
 // Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN 
 
-Real FluidEqnOfState::FastMagnetosonicSpeed(const Real prim[((NFLUID)+(NFIELD)-1)],
+Real FluidEqnOfState::FastMagnetosonicSpeed(const Real prim[((NFLUID)+(NFIELDM1))],
   const Real bx)
 {
   Real asq = GetGamma()*prim[IEN]/prim[IDN];
