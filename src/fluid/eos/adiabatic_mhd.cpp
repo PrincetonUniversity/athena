@@ -132,20 +132,11 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn Real FluidEqnOfState::SoundSpeed(const Real prim[NFLUID])
-// \brief returns adiabatic sound speed given vector of primitive variables
-
-Real FluidEqnOfState::SoundSpeed(const Real prim[NFLUID])
-{
-  return sqrt(GetGamma()*prim[IEN]/prim[IDN]);
-}
-
-//--------------------------------------------------------------------------------------
 // \!fn Real FluidEqnOfState::FastMagnetosonicSpeed(const Real prim[], const Real bx)
 // \brief returns fast magnetosonic speed given vector of primitive variables
 // Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN 
 
-Real FluidEqnOfState::FastMagnetosonicSpeed(const Real prim[((NFLUID)+(NFIELDM1))],
+Real FluidEqnOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)],
   const Real bx)
 {
   Real asq = GetGamma()*prim[IEN]/prim[IDN];

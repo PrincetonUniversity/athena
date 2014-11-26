@@ -30,9 +30,10 @@ public:
   void ConservedToPrimitive(AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old,
     const InterfaceField &b, AthenaArray<Real> &prim, AthenaArray<Real> &bcc);
 
-  Real SoundSpeed(const Real prim[NFLUID]); 
-  Real FastMagnetosonicSpeed(const Real prim[((NFLUID)+(NFIELDM1))], const Real bx); 
+  Real SoundSpeed(const Real prim[(NFLUID)]); 
+  Real FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx); 
   Real GetGamma() const {return gamma_;}
+  Real GetIsoSoundSpeed() const {return iso_sound_speed_;}
 
 private:
   Fluid *pmy_fluid_;             // ptr to Fluid containing this EqnOfState
