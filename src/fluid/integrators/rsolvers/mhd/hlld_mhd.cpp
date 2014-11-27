@@ -114,8 +114,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     if(wli[IVX] <= wri[IVX]) {
       spd[0] = wli[IVX] - cfmax;
       spd[4] = wri[IVX] + cfmax;
-    }
-    else {
+    } else {
       spd[0] = wri[IVX] - cfmax;
       spd[4] = wli[IVX] + cfmax;
     }
@@ -194,8 +193,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 
         ulst.by = ul.by;
         ulst.bz = ul.bz;
-      }
-      else {
+      } else {
         // eqns (44) and (46) of M&K
         Real tmp = bxi*(sdl - sdml)/(ul.d*sdl*sdml - bxsq);
         ulst.my = ulst.d * (wli[IVY] - ul.by*tmp);
@@ -290,8 +288,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
         flxi[IEN] = fl.e  + spd[0]*(ulst.e  - ul.e);
         flxi[IBY] = fl.by + spd[0]*(ulst.by - ul.by);
         flxi[IBZ] = fl.bz + spd[0]*(ulst.bz - ul.bz);
-      }
-      else if(spd[2] >= 0.0) {
+      } else if(spd[2] >= 0.0) {
         // return Fl**
         Real tmp = spd[1] - spd[0];
         flxi[IDN] = fl.d  - spd[0]*ul.d  - tmp*ulst.d  + spd[1]*uldst.d;
@@ -301,8 +298,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
         flxi[IEN] = fl.e  - spd[0]*ul.e  - tmp*ulst.e  + spd[1]*uldst.e;
         flxi[IBY] = fl.by - spd[0]*ul.by - tmp*ulst.by + spd[1]*uldst.by;
         flxi[IBZ] = fl.bz - spd[0]*ul.bz - tmp*ulst.bz + spd[1]*uldst.bz;
-      }
-      else if(spd[3] > 0.0) {
+      } else if(spd[3] > 0.0) {
         // return Fr**
         Real tmp = spd[3] - spd[4];
         flxi[IDN] = fr.d  - spd[4]*ur.d  - tmp*urst.d  + spd[3]*urdst.d;
