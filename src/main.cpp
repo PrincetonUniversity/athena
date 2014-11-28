@@ -47,7 +47,10 @@ void ChangeToRunDir(const char *pdir);
 //
 //  Based on the Athena MHD code in C.  History:
 //    - 2003-2013: development of v1.0-v4.2 of Athena code in C
-//    - Jan 2014: start of Athena++ code project
+//    - jan-2014: start of Athena++ code project
+//    - may-2014: hydro implemented during KITP workshop
+//    - oct-2014: first Athena++ developer's meeting
+//    - nov-2014: mhd implemented
 //======================================================================================
 
 //--------------------------------------------------------------------------------------

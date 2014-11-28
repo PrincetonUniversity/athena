@@ -64,9 +64,9 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin)
     e.x2e.NewAthenaArray((ncells3+1), ncells2   ,(ncells1+1));
     e.x3e.NewAthenaArray( ncells3   ,(ncells2+1),(ncells1+1));
 
-    ei.x1f.NewAthenaArray((NFIELDM1), ncells3   , ncells2   ,(ncells1+1));
-    ei.x2f.NewAthenaArray((NFIELDM1), ncells3   ,(ncells2+1), ncells1   );
-    ei.x3f.NewAthenaArray((NFIELDM1),(ncells3+1), ncells2   , ncells1   );
+    ei.x1f.NewAthenaArray(((NFIELD)-1), ncells3   , ncells2   ,(ncells1+1));
+    ei.x2f.NewAthenaArray(((NFIELD)-1), ncells3   ,(ncells2+1), ncells1   );
+    ei.x3f.NewAthenaArray(((NFIELD)-1),(ncells3+1), ncells2   , ncells1   );
     wght.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
     wght.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
     wght.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );

@@ -8,7 +8,6 @@
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
@@ -50,7 +49,8 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
-  Real wli[NFLUID],wri[NFLUID],wroe[NFLUID],fl[NFLUID],fr[NFLUID],flxi[NFLUID];
+  Real wli[(NFLUID)],wri[(NFLUID)],wroe[(NFLUID)];
+  Real fl[(NFLUID)],fr[(NFLUID)],flxi[(NFLUID)];
   Real gamma_m1 = pmy_fluid->pf_eos->GetGamma() - 1.0;
 
 #pragma simd

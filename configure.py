@@ -62,7 +62,7 @@ parser.add_argument('--eos',
 # --flux=[name] argument
 parser.add_argument('--flux',
     default='hlle',
-    choices=['hlle','hllc'],
+    choices=['hlle','hllc','hlld'],
     help='selects Riemann solver')
 
 # -b argument
@@ -142,13 +142,19 @@ definitions['MAGNETIC_FIELDS_ENABLED'] = '1' if args['b'] else '0'
 makefile_options['EOS_FILE'] += '_mhd' if args['b'] else '_hydro'
 if args['b']:
   definitions['NFIELD_VARIABLES'] = '3'
-  definitions['NFIELDM1_VARIABLES'] = '2'
   makefile_options['RSOLVER_FILE'] += '_mhd'
   makefile_options['RSOLVER_DIR'] = 'mhd/'
+  if args['eos'] == 'adiabatic':
+    definitions['NWAVE_VALUE'] = '7'
+  else:
+    definitions['NWAVE_VALUE'] = '6'
 else:
   definitions['NFIELD_VARIABLES'] = '0'
-  definitions['NFIELDM1_VARIABLES'] = '0'
   makefile_options['RSOLVER_DIR'] = 'hydro/'
+  if args['eos'] == 'adiabatic':
+    definitions['NWAVE_VALUE'] = '5'
+  else:
+    definitions['NWAVE_VALUE'] = '4'
 
 definitions['RELATIVISTIC_DYNAMICS'] = '1' if args['s'] or args['g'] else '0'
 if args['s']:

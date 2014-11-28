@@ -134,7 +134,7 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
   dt1.InitWithShallowSlice(dt1_,2,tid,1);
   dt2.InitWithShallowSlice(dt2_,2,tid,1);
   dt3.InitWithShallowSlice(dt3_,2,tid,1);
-  Real wi[(NFLUID)+((NFIELDM1))];
+  Real wi[(NWAVE)];
 
   for (int k=ks; k<=ke; ++k){
 
