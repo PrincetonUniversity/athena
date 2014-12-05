@@ -406,13 +406,13 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
   }
 
   if (NON_BAROTROPIC_EOS) {
-    if (output_params.variable.compare("e") == 0 || 
+    if (output_params.variable.compare("p") == 0 || 
         output_params.variable.compare("prim") == 0) {
       pov = new OutputVariable; 
       pov->type = "SCALARS";
-      pov->name = "eint";
+      pov->name = "press";
       pov->data.InitWithShallowSlice(pfl->w,4,IEN,1);
-      pod->AppendNode(pov); // internal energy
+      pod->AppendNode(pov); // pressure
       var_added = 1;
     }
   }
