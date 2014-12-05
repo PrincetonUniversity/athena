@@ -18,7 +18,9 @@
 #   --fint=choice     use choice as the fluid time-integration algorithm
 #   --cxx=choice      use choice as the C++ compiler
 #   --ifov=N          enable N internal fluid output variables 
-#   --omp             enable parallelization with OpenMP
+#   --idlength=N      specify the length of the Block UID (default=1)
+#   -omp              enable parallelization with OpenMP
+#   -debug            enable debug flags (-g -O0); override other compiler options
 #---------------------------------------------------------------------------------------
 
 # Modules
@@ -105,13 +107,25 @@ parser.add_argument('--cxx',
 parser.add_argument('-omp',
     action='store_true',
     default=False,
-    help='enable parallelization with OpenMP')
+    help='enables parallelization with OpenMP')
 
 # -ifov=N argument
 parser.add_argument('--ifov',
     type=int,
     default=0,
     help='number of internal fluid output variables')
+
+# -idlength=N argument
+parser.add_argument('--idlength',
+    type=int,
+    default=1,
+    help='length of the block UID, default=1 ')
+
+# -debug argument
+parser.add_argument('-debug',
+    action='store_true',
+    default=False,
+    help='enables debug flags; override other compiler options')
 
 # Parse command-line inputs
 args = vars(parser.parse_args())
@@ -181,6 +195,16 @@ if args['cxx'] == 'g++':
   makefile_options['COMPILER_FLAGS'] = '-O3'
   definitions['COMPILER_FLAGS'] = '-O3'
 
+definitions['DEBUG'] = 'DEBUG' if args['debug'] \
+    else 'NOT_DEBUG'
+if args['debug']:
+  if args['cxx'] == 'g++':
+    makefile_options['COMPILER_FLAGS'] = ' -g -O0'
+    definitions['COMPILER_FLAGS'] += '  -g -O0'
+  if args['cxx'] == 'icc':
+    makefile_options['COMPILER_FLAGS'] += '  -g -O0'
+    definitions['COMPILER_FLAGS'] += '  -g -O0'
+
 definitions['OPENMP_OPTION'] = 'OPENMP_PARALLEL' if args['omp'] \
     else 'NOT_OPENMP_PARALLEL'
 if args['omp']:
@@ -192,6 +216,8 @@ if args['omp']:
     definitions['COMPILER_FLAGS'] += ' -openmp'
 
 definitions['NUM_IFOV'] = str(args['ifov'])
+
+definitions['ID_LENGTH'] = str(args['idlength'])
 
 # Read templates
 with open(defsfile_input, 'r') as current_file:
@@ -224,4 +250,6 @@ print('  Magnetic fields:         ' + ('enabled' if args['b'] else 'disabled'))
 print('  Special relativity:      ' + ('enabled' if args['s'] else 'disabled'))
 print('  General relativity:      ' + ('enabled' if args['g'] else 'disabled'))
 print('  OpenMP parallelism:      ' + ('enabled' if args['omp'] else 'disabled'))
+print('  Debug flags:             ' + ('enabled' if args['debug'] else 'disabled'))
 print('  Internal fluid outvars:  ' + str(args['ifov']))
+print('  UID Length:              ' + str(args['idlength']) + '  (maximum refinement level = ' + str(10*args['idlength']) + ')')
