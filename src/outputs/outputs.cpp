@@ -46,7 +46,7 @@
 //
 // Required parameters that must be specified in an <outputN> block are:
 //   - variable     = cons,prim,D,d,E,e,m,v
-//   - file_type    = tab,vtk,hst
+//   - file_type    = rst,tab,vtk,hst
 //   - dt           = problem time between outputs
 //
 // Optional parameters that may be specified in an <outputN> block are:
@@ -255,7 +255,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
 
 // set output variable and optional data format string used in formatted writes
 
-      if (op.file_type.compare("hst") != 0) {
+      if (op.file_type.compare("hst") != 0 && op.file_type.compare("rst") != 0) {
         op.variable = pin->GetString(op.block_name,"variable");
       }
       op.data_format = pin->GetOrAddString(op.block_name,"data_format","%12e.5");
@@ -264,7 +264,9 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
 // Construct new OutputType according to file format
 // ADD NEW OUTPUT TYPES HERE
 
-      if (op.file_type.compare("tab") == 0) {
+      if (op.file_type.compare("rst") == 0) {
+        pnew_type = new RestartOutput(op);
+      } else if (op.file_type.compare("tab") == 0) {
         pnew_type = new FormattedTableOutput(op);
       } else if (op.file_type.compare("hst") == 0) {
         pnew_type = new HistoryOutput(op);
@@ -702,33 +704,34 @@ void OutputType::Sum(OutputData* pod, MeshBlock* pmb, int dim)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void Outputs::MakeOutputs()
+//! \fn void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin)
 //  \brief scans through linked list of OutputTypes and makes any outputs needed.
 
-void Outputs::MakeOutputs(Mesh *pm)
+void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin)
 {
   OutputType* ptype = pfirst_type_;
+  MeshBlock *pmb;
 
-// Eventually this will be a loop over all MeshBlocks
 
-  MeshBlock *pmb = pm->pblock;
-  if (pmb != NULL)  {
+  while (ptype != NULL) {
+    if ((pm->time == pm->start_time) ||
+        (pm->time >= ptype->output_params.next_time) ||
+        (pm->time >= pm->tlim)) {
 
-    while (ptype != NULL) {
-      if ((pm->time == pm->start_time) ||
-          (pm->time >= ptype->output_params.next_time) ||
-          (pm->time >= pm->tlim)) {
-
-// Create new OutputData container, load and transform data, then write to file
-
+      ptype->Initialize(pm,pin);
+      pmb=pm->pblock;
+      while (pmb != NULL)  {
+        // Create new OutputData container, load and transform data, then write to file
         OutputData* pod = new OutputData;
         ptype->LoadOutputData(pod,pmb);
         ptype->TransformOutputData(pod,pmb);
         ptype->WriteOutputFile(pod,pmb);
         delete pod;
-
+        pmb=pmb->next;
       }
-      ptype = ptype->pnext_type; // move to next OutputType in list
+      ptype->Finalize();
     }
+    ptype = ptype->pnext_type; // move to next OutputType in list
   }
+
 }

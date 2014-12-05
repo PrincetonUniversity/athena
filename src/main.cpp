@@ -66,6 +66,7 @@ int main(int argc, char *argv[])
   int res_flag=0;     // gets set to 1 if -r        argument is on cmdline
   int narg_flag=0;    // gets set to 1 if -n        argument is on cmdline
   int iarg_flag=0;    // gets set to 1 if -i <file> argument is on cmdline
+  int test_flag=0;    // gets set to 1 if -g        argument is on cmdline
 
 //--- Step 1. --------------------------------------------------------------------------
 // Check for command line options and respond. 
@@ -82,7 +83,7 @@ int main(int argc, char *argv[])
       break;
       case 'r':                      // -r <restart_file>
         res_flag = 1;
-        prestart_file = argv[++i];
+        input_file = prestart_file = argv[++i];
         if(iarg_flag) input_file = prestart_file; // use restart if input file not set 
         break;
       case 'd':                      // -d <run_directory>
@@ -90,6 +91,9 @@ int main(int argc, char *argv[])
         break;
       case 'n':
         narg_flag = 1;
+        break;
+      case 'm':
+        test_flag = 1;
         break;
       case 'c':
         ShowConfig();
@@ -105,6 +109,7 @@ int main(int argc, char *argv[])
         std::cout<<"  -d <directory>  specify run dir [current dir]"<< std::endl;
         std::cout<<"  -n              parse input file and quit"<< std::endl;
         std::cout<<"  -c              show configuration and quit"<< std::endl;
+        std::cout<<"  -m              test mesh structure and quit"<< std::endl;
         std::cout<<"  -h              this help"<< std::endl;
         ShowConfig();
         return(0);
@@ -152,7 +157,10 @@ int main(int argc, char *argv[])
 
   Mesh *pmesh;
   try {
-    pmesh = new Mesh(pinput);
+    if(res_flag==0)
+      pmesh = new Mesh(pinput, test_flag);
+    else 
+      pmesh = new Mesh(pinput, prestart_file, test_flag);
   }
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl
@@ -165,20 +173,27 @@ int main(int argc, char *argv[])
     return(0);
   }
 
+  if (test_flag){
+    return(0);
+  }
+
 //--- Step 5. --------------------------------------------------------------------------
 // Set initial conditions by calling problem generator on each MeshDomain/MeshBlock
 
-  try {
-    pmesh->ForAllMeshBlocks(pgen,pinput);
-  } 
-  catch(std::bad_alloc& ba) {
-    std::cout << "### FATAL ERROR in main" << std::endl << "memory allocation failed "
-              << "in problem generator " << ba.what() << std::endl;
-    return(0);
-  }
-  catch(std::exception const& ex) {
-    std::cout << ex.what() << std::endl;  // prints diagnostic message 
-    return(0);
+  if(res_flag==0)
+  {
+    try {
+      pmesh->ForAllMeshBlocks(pgen,pinput);
+    } 
+    catch(std::bad_alloc& ba) {
+      std::cout << "### FATAL ERROR in main" << std::endl << "memory allocation failed "
+                << "in problem generator " << ba.what() << std::endl;
+      return(0);
+    }
+    catch(std::exception const& ex) {
+      std::cout << ex.what() << std::endl;  // prints diagnostic message 
+      return(0);
+    }
   }
 
 // apply BCs, compute primitive from conserved variables, compute first timestep
@@ -195,7 +210,7 @@ int main(int argc, char *argv[])
   try {
     ChangeToRunDir(prundir);
     pouts = new Outputs(pmesh, pinput);
-    pouts->MakeOutputs(pmesh);
+    pouts->MakeOutputs(pmesh,pinput);
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl
@@ -223,7 +238,6 @@ int main(int argc, char *argv[])
               << " time=" << pmesh->time << " dt=" << pmesh->dt << std::endl;
 
 // predict step
-
     pmesh->ForAllMeshBlocks(fluid_predict  ,pinput);
     pmesh->ForAllMeshBlocks(fluid_bcs_nhalf,pinput);
 
@@ -252,7 +266,7 @@ int main(int argc, char *argv[])
     pmesh->time += pmesh->dt;
 
     try {
-      pouts->MakeOutputs(pmesh);
+      pouts->MakeOutputs(pmesh,pinput);
     } 
     catch(std::bad_alloc& ba) {
       std::cout << "### FATAL ERROR in main" << std::endl

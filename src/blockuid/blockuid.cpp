@@ -12,48 +12,39 @@
 #include <sstream>
 #include <stdexcept>
 
-//--------------------------------------------------------------------------------------
-//! \fn BlockUID::BlockUID(int maxlevel)
-//  \brief the constructor of BlockUID, requires the maximum logical level of refinement
-BlockUID::BlockUID(int maxlevel)
-{
-  int length=(maxlevel+usize-1)/usize; // round up
-  uid.NewAthenaArray(length);
-}
-
-//--------------------------------------------------------------------------------------
-//! \fn BlockUID::~BlockUID()
-//  \brief the destructor of BlockUID
-BlockUID::~BlockUID()
-{
-  uid.DeleteAthenaArray();
-}
 
 //--------------------------------------------------------------------------------------
 //! \fn BlockUID& BlockUID::operator=(const BlockUID& bid)
 //  \brief override the assignment operator
 BlockUID& BlockUID::operator=(const BlockUID& bid)
 {
-  int length=uid.GetDim1();
-  level=bid.level;
-  for(int i=0; i<length; i++)
-  { uid(i)=bid.uid(i);}
+  if (this != &bid){
+    level=bid.level;
+    for(int i=0;i<IDLENGTH;i++)
+      uid[i]=bid.uid[i];
+  }
   return *this;
 }
 
+//! \fn BlockUID::BlockUID(const BlockUID& bid)
+//  \brief copy constructor
+BlockUID::BlockUID(const BlockUID& bid)
+{
+  level=bid.level;
+  for(int i=0;i<IDLENGTH;i++)
+    uid[i]=bid.uid[i];
+}
 
 //--------------------------------------------------------------------------------------
 //! \fn bool BlockUID::operator==(const BlockUID& bid)
 //  \brief override the comparison (equal) operator
-bool BlockUID::operator==(const BlockUID& bid)
+bool BlockUID::operator==(const BlockUID& bid) const
 {
-  int length;  
   if(level!=bid.level)
   {return false;}
-  length=uid.GetDim1();
-  for(int i=0; i<length; i++)
+  for(int i=0; i<IDLENGTH; i++)
   {
-    if(uid(i)!=bid.uid(i))
+    if(uid[i]!=bid.uid[i])
     { return false;}
   }
   return true;
@@ -62,43 +53,44 @@ bool BlockUID::operator==(const BlockUID& bid)
 //--------------------------------------------------------------------------------------
 //! \fn bool BlockUID::operator<(const BlockUID& bid)
 //  \brief override the comparison (less than) operator
-bool BlockUID::operator< (const BlockUID& bid)
+bool BlockUID::operator< (const BlockUID& bid) const
 {
-  int length=uid.GetDim1();
-  for(int i=0; i<length-1; i++)
+  if(level==0)  return true; // the logical root is always the smallest
+  for(int i=0; i<IDLENGTH-1; i++)
   {
-    if(uid(i)>bid.uid(i))
+    if(uid[i]>bid.uid[i])
     { return false;}
-    if(uid(i)<bid.uid(i))
+    if(uid[i]<bid.uid[i])
     { return true;}
   }
-  return uid(length-1)<bid.uid(length-1);
+  return uid[IDLENGTH-1]<bid.uid[IDLENGTH-1];
 }
 
 //--------------------------------------------------------------------------------------
 //! \fn bool BlockUID::&operator> (const BlockUID& bid)
 //  \brief override the comparison (larger than) operator
-bool BlockUID::operator> (const BlockUID& bid)
+bool BlockUID::operator> (const BlockUID& bid) const
 {
-  int length=uid.GetDim1();
-  for(int i=0; i<length-1; i++)
+  if(level==0)  return true; // the logical root is always the smallest
+  for(int i=0; i<IDLENGTH-1; i++)
   {
-    if(uid(i)<bid.uid(i))
+    if(uid[i]<bid.uid[i])
     { return false;}
-    if(uid(i)>bid.uid(i))
+    if(uid[i]>bid.uid[i])
     { return true;}
   }
-  return uid(length-1)>bid.uid(length-1);
+  return uid[IDLENGTH-1]>bid.uid[IDLENGTH-1];
 }
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BlockUID::SetUID(AthenaArray<ID_t> suid, int llevel)
+//! \fn void BlockUID::SetUID(ID_t *suid, int llevel)
 //  \brief set the unique ID directly, mainly used for restarting
-void BlockUID::SetUID(AthenaArray<ID_t> suid, int llevel)
+void BlockUID::SetUID(ID_t *suid, int llevel)
 {
-  uid=suid;
   level=llevel;
+  for(int i=0;i<IDLENGTH;i++)
+    uid[i]=suid[i];
   return;
 }
 
@@ -110,7 +102,6 @@ void BlockUID::SetUID(AthenaArray<ID_t> suid, int llevel)
 void BlockUID::CreateUIDfromLocation(int lx, int ly, int lz, int llevel)
 {
   long int maxid=1<<llevel;
-  int length=uid.GetDim1();
   int bx, by, bz, sh;
   ID_t pack;
   std::stringstream msg;
@@ -122,17 +113,20 @@ void BlockUID::CreateUIDfromLocation(int lx, int ly, int lz, int llevel)
     throw std::runtime_error(msg.str().c_str());
   }
   level=llevel;
-  for(int i=0; i<length; i++)
-  { uid(i)=0;}
+  if(llevel==0)  return;
+
+  for(int i=0; i<IDLENGTH; i++)  uid[i]=0;
+
+
   for(int l=1;l<=llevel;l++)
   {
     sh=llevel-l;
-    bx=(lx >> sh-2) & 4;
-    by=(ly >> sh-1) & 2;
-    bz=(lz >> sh) & 1;
+    bz=((lz >> sh) & 1) << 2;
+    by=((ly >> sh) & 1) << 1;
+    bx=(lx >> sh) & 1;
     pack=bx | by | bz;
     sh=(usize-(l-1)%usize-1)*3;
-    uid((l-1)/usize) |= (pack << sh);
+    uid[(l-1)/usize] |= (pack << sh);
   }
 }
 
@@ -146,9 +140,9 @@ void BlockUID::CreateUIDbyRefinement(BlockUID& coarse, int ox, int oy, int oz)
   int sh;
   *this=coarse;
   level++;
-  pack = (ox << 2) | (oy << 1) | oz;
+  pack = (oz << 2) | (oy << 1) | ox;
   sh=(usize-(level-1)%usize-1)*3;
-  uid((level-1)/usize) |= (pack << sh);
+  uid[(level-1)/usize] |= (pack << sh);
 }
 
 //--------------------------------------------------------------------------------------
@@ -161,12 +155,12 @@ void BlockUID::CreateUIDbyDerefinement(BlockUID& fine)
   *this=fine;
   level--;
   sh=(usize-level%usize-1)*3;
-  uid(level/usize) &= (mask << sh);
+  uid[level/usize] &= (mask << sh);
 }
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BlockUID::CreateUIDfromLocation(int lx, int ly, int lz, int llevel)
+//! \fn void BlockUID::GetLocation(int& lx, int& ly, int& lz, int& llevel)
 //  \brief get the location from the unique ID
 void BlockUID::GetLocation(int& lx, int& ly, int& lz, int& llevel)
 {
@@ -176,10 +170,10 @@ void BlockUID::GetLocation(int& lx, int& ly, int& lz, int& llevel)
   for(l=1;l<=level;l++)
   {
     sh=(usize-(l-1)%usize-1)*3;
-    pack = (uid((l-1)/usize) >> sh);
-    bx=(pack>>2) & 1;
+    pack = (uid[(l-1)/usize] >> sh);
+    bz=(pack>>2) & 1;
     by=(pack>>1) & 1;
-    bz=pack & 1;
+    bx=pack & 1;
     sh=llevel-l;
     lx|=(bx<<sh);
     ly|=(by<<sh);

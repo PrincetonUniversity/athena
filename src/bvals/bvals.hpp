@@ -21,6 +21,20 @@ struct InterfaceField;
 
 //-------------------- prototypes for all BC functions ---------------------------------
 
+void NeighborInnerX1(MeshBlock *pmb, AthenaArray<Real> &a);
+void NeighborInnerX2(MeshBlock *pmb, AthenaArray<Real> &a);
+void NeighborInnerX3(MeshBlock *pmb, AthenaArray<Real> &a);
+void NeighborOuterX1(MeshBlock *pmb, AthenaArray<Real> &a);
+void NeighborOuterX2(MeshBlock *pmb, AthenaArray<Real> &a);
+void NeighborOuterX3(MeshBlock *pmb, AthenaArray<Real> &a);
+
+void NeighborInnerX1(MeshBlock *pmb, InterfaceField &a);
+void NeighborInnerX2(MeshBlock *pmb, InterfaceField &a);
+void NeighborInnerX3(MeshBlock *pmb, InterfaceField &a);
+void NeighborOuterX1(MeshBlock *pmb, InterfaceField &a);
+void NeighborOuterX2(MeshBlock *pmb, InterfaceField &a);
+void NeighborOuterX3(MeshBlock *pmb, InterfaceField &a);
+
 void ReflectInnerX1(MeshBlock *pmb, AthenaArray<Real> &a);
 void ReflectInnerX2(MeshBlock *pmb, AthenaArray<Real> &a);
 void ReflectInnerX3(MeshBlock *pmb, AthenaArray<Real> &a);

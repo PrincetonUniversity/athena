@@ -27,9 +27,9 @@ enum {IDN=0, IM1=1, IM2=2, IM3=3, IEN=4};
 enum {IVX=1, IVY=2, IVZ=3, IBY=(NFLUID), IBZ=((NFLUID)+1)};
 enum {IB1=0, IB2=1, IB3=2};
 enum {X1E2=0, X1E3=1, X2E3=0, X2E1=1, X3E1=0, X3E2=1};
-
 enum {I00, I01, I02, I03, I11, I12, I13, I22, I23, I33, NMETRIC};
 
+enum direction {X1L=0, X1R=1, X2L=2, X2R=3, X3L=4, X3R=5};
 enum ActionOnBlock
   {pgen,          primitives_n, primitives_nhalf, new_timestep,
    fluid_predict, fluid_correct,   bfield_predict, bfield_correct,

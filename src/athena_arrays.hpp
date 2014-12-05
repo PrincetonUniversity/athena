@@ -40,6 +40,10 @@ public:
   int GetDim3() const { return nx3_; }
   int GetDim4() const { return nx4_; }
 
+// a function to get the total size of the array
+  int GetSize() const { return nx1_*nx2_*nx3_*nx4_; }
+  T *GetArrayPointer() const { return pdata_; } // a brute force approach
+
   bool IsShallowCopy() { return (scopy_ == 1); }
   T *data() { return pdata_; }
   const T *data() const	{ return pdata_; }

@@ -4,8 +4,8 @@
 //======================================================================================
 #ifndef BLOCKUID_HPP
 #define BLOCKUID_HPP
-#include "athena_arrays.hpp"  // AthenaArray
-
+#include "../athena_arrays.hpp"  // AthenaArray
+#include "../defs.hpp"
 
 typedef unsigned int ID_t;
 
@@ -16,19 +16,20 @@ static const int usize=sizeof(ID_t)*8/3;
 //  \brief the unique ID for MeshBlock and related functions
 class BlockUID
 {
-  private:
+private:
   int level;
-  AthenaArray<ID_t> uid;
-  public:
-  BlockUID(int maxlevel);
-  ~BlockUID();
-  void SetUID(AthenaArray<ID_t> suid, int llevel);
-  AthenaArray<ID_t> GetRawUID(void);
+  ID_t uid[IDLENGTH];
+public:
+  BlockUID() {};
+  ~BlockUID() {};
+  BlockUID(const BlockUID& bid);
+  void SetUID(ID_t *suid, int llevel);
+  void GetRawUID(ID_t *puid);
   int GetLevel(void);
   BlockUID &operator= (const BlockUID& bid);
-  bool operator== (const BlockUID& bid);
-  bool operator> (const BlockUID& bid);
-  bool operator< (const BlockUID& bid);
+  bool operator== (const BlockUID& bid) const;
+  bool operator> (const BlockUID& bid) const;
+  bool operator< (const BlockUID& bid) const;
   void CreateUIDfromLocation(int lx, int ly, int lz, int llevel);
   void CreateUIDbyRefinement(BlockUID& coarse, int ox, int oy, int oz);
   void CreateUIDbyDerefinement(BlockUID& fine);
@@ -37,11 +38,13 @@ class BlockUID
 
 
 //--------------------------------------------------------------------------------------
-//! \fn inline AthenaArray<int> BlockUID::GetRawUID(void)
+//! \fn inline void BlockUID::GetRawUID(ID_t *puid)
 //  \brief returns the unique ID as an integer array, mainly used for output
-inline AthenaArray<ID_t> BlockUID::GetRawUID(void)
+inline void BlockUID::GetRawUID(ID_t *puid)
 {
-  return uid;
+  for(int i=0;i<IDLENGTH;i++)
+    puid[i]=uid[i];
+  return;
 }
 
 //--------------------------------------------------------------------------------------

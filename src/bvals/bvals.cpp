@@ -1,3 +1,4 @@
+
 //======================================================================================
 // Athena++ astrophysical MHD code
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
@@ -46,6 +47,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 // Inner x1
 
   switch(pmb->block_bcs.ix1_bc){
+    case -1:
+      FluidInnerX1_ = NeighborInnerX1;
+      BFieldInnerX1_ = NeighborInnerX1;
+      break;
     case 1:
       FluidInnerX1_ = ReflectInnerX1;
       BFieldInnerX1_ = ReflectInnerX1;
@@ -70,6 +75,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 // Outer x1
 
   switch(pmb->block_bcs.ox1_bc){
+    case -1:
+      FluidOuterX1_ = NeighborOuterX1;
+      BFieldOuterX1_ = NeighborOuterX1;
+      break;
     case 1:
       FluidOuterX1_ = ReflectOuterX1;
       BFieldOuterX1_ = ReflectOuterX1;
@@ -95,6 +104,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 
   if (pmb->block_size.nx2 > 1) {
     switch(pmb->block_bcs.ix2_bc){
+      case -1:
+        FluidInnerX2_ = NeighborInnerX2;
+        BFieldInnerX2_ = NeighborInnerX2;
+        break;
       case 1:
         FluidInnerX2_ = ReflectInnerX2;
         BFieldInnerX2_ = ReflectInnerX2;
@@ -119,6 +132,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 // Outer x2
 
     switch(pmb->block_bcs.ox2_bc){
+      case -1:
+        FluidOuterX2_ = NeighborOuterX2;
+        BFieldOuterX2_ = NeighborOuterX2;
+        break;
       case 1:
         FluidOuterX2_ = ReflectOuterX2;
         BFieldOuterX2_ = ReflectOuterX2;
@@ -145,6 +162,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 
   if (pmb->block_size.nx3 > 1) {
     switch(pmb->block_bcs.ix3_bc){
+      case -1:
+        FluidInnerX3_ = NeighborInnerX3;
+        BFieldInnerX3_ = NeighborInnerX3;
+        break;
       case 1:
         FluidInnerX3_ = ReflectInnerX3;
         BFieldInnerX3_ = ReflectInnerX3;
@@ -169,6 +190,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 // Outer x3
 
     switch(pmb->block_bcs.ox3_bc){
+      case -1:
+        FluidOuterX3_ = NeighborOuterX3;
+        BFieldOuterX3_ = NeighborOuterX3;
+        break;
       case 1:
         FluidOuterX3_ = ReflectOuterX3;
         BFieldOuterX3_ = ReflectOuterX3;
@@ -273,7 +298,6 @@ void BoundaryValues::EnrollFieldBoundaryFunction(enum EdgeNames edge,BValBField_
 
 template<typename T> void BoundaryValues::ApplyBVals(T &input)
 {
-
 // Boundary Conditions in x1-direction
 
   BValsInnerX1_(pmy_mblock_, input);
