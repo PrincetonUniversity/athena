@@ -64,15 +64,16 @@ public:
   MeshBlock(int igid, BlockUID iuid, RegionSize input_size,
             RegionBCs input_bcs, Mesh *pm, ParameterInput *pin);
   MeshBlock(int igid, Mesh *pm, ParameterInput *pin, BlockUID *list,
-                     int *nslist, ResFile& resfile, ResSize_t offset, Real icost);
+            int *nslist, ResFile& resfile, ResSize_t offset, Real icost);
   ~MeshBlock();
-  size_t GetBlockSize(void);
+  size_t GetBlockSizeInBytes(void);
+
+  void SetNeighbor(enum direction, int nrank, int nid, int nlevel);
+  void SetNeighbor(enum direction, int nrank, int nid, int nlevel, int fb1, int fb2);
 
   RegionSize block_size;
   RegionBCs  block_bcs;
   Mesh *pmy_mesh;  // ptr to Mesh containing this MeshBlock
-  void SetNeighbor(enum direction, int nrank, int nid, int nlevel);
-  void SetNeighbor(enum direction, int nrank, int nid, int nlevel, int fb1, int fb2);
 
   AthenaArray<Real> dx1f, dx2f, dx3f, x1f, x2f, x3f; // face   spacing and positions
   AthenaArray<Real> dx1v, dx2v, dx3v, x1v, x2v, x3v; // volume spacing and positions
@@ -86,32 +87,24 @@ public:
   MeshBlock *prev, *next;
 };
 
-
-//! \class DefaultMeshFunctions
-//  \brief default functions which can be overridden by user-defined ones
-class DefaultMeshFunctions {
-public:
-  Real MeshGeneratorX1() {};
-  Real MeshGeneratorX2() {};
-  Real MeshGeneratorX3() {};
-  Real MeshGeneratorX1(Real rat1) {};
-  Real MeshGeneratorX2(Real rat2) {};
-  Real MeshGeneratorX3(Real rat3) {};
-  void MeshRestart() {};
-};
-
 //! \class Mesh
 //  \brief data/functions associated with the overall mesh
 
-class Mesh : public DefaultMeshFunctions {
+class Mesh {
 private:
   int root_level, max_level;
   int nbtotal, nblocal, nbstart, nbend;
+  Real MeshGeneratorX1(Real x, RegionSize rs);
+  Real MeshGeneratorX2(Real x, RegionSize rs);
+  Real MeshGeneratorX3(Real x, RegionSize rs);
+
   friend class RestartOutput;
+  friend class MeshBlock;
 public:
   Mesh(ParameterInput *pin, int test_flag=0);
   Mesh(ParameterInput *pin, const char *prestart_file, int test_flag=0);
   ~Mesh();
+
   RegionSize mesh_size;
   RegionBCs  mesh_bcs;
 
@@ -145,6 +138,64 @@ inline void MeshBlock::SetNeighbor(enum direction dir, int nrank, int nid, int n
   neighbor[dir][fb2][fb1].rank=nrank;
   neighbor[dir][fb2][fb1].gid=nid;
   neighbor[dir][fb2][fb1].level=nlevel;
+}
+
+
+//--------------------------------------------------------------------------------------
+// \!fn Real Mesh::MeshGeneratorX1(Real x, RegionSize rs)
+// \brief x1 mesh generator function, x is the logical location; x=i/nx1
+inline Real Mesh::MeshGeneratorX1(Real x, RegionSize rs)
+{
+  Real lw, rw;
+  if(rs.x1rat==1.0)
+    rw=x;
+  else
+  {
+    Real ratn=pow(rs.x1rat,rs.nx1);
+    Real rnx=pow(rs.x1rat,x*rs.nx1);
+    lw=(rnx-ratn)/(1.0-ratn);
+    rw=1.0-lw;
+  }
+  lw=1.0-rw;
+  return rs.x1min*lw+rs.x1max*rw;
+}
+
+//--------------------------------------------------------------------------------------
+// \!fn Real Mesh::MeshGeneratorX2(Real x, RegionSize rs)
+// \brief x2 mesh generator function, x is the logical location; x=j/nx2
+inline Real Mesh::MeshGeneratorX2(Real x, RegionSize rs)
+{
+  Real lw, rw;
+  if(rs.x2rat==1.0)
+    rw=x;
+  else
+  {
+    Real ratn=pow(rs.x2rat,rs.nx2);
+    Real rnx=pow(rs.x2rat,x*rs.nx2);
+    lw=(rnx-ratn)/(1.0-ratn);
+    rw=1.0-lw;
+  }
+  lw=1.0-rw;
+  return rs.x2min*lw+rs.x2max*rw;
+}
+
+//--------------------------------------------------------------------------------------
+// \!fn Real Mesh::MeshGeneratorX3(Real x, RegionSize rs)
+// \brief x3 mesh generator function, x is the logical location; x=k/nx3
+inline Real Mesh::MeshGeneratorX3(Real x, RegionSize rs)
+{
+  Real lw, rw;
+  if(rs.x3rat==1.0)
+    rw=x;
+  else
+  {
+    Real ratn=pow(rs.x3rat,rs.nx3);
+    Real rnx=pow(rs.x3rat,x*rs.nx3);
+    lw=(rnx-ratn)/(1.0-ratn);
+    rw=1.0-lw;
+  }
+  lw=1.0-rw;
+  return rs.x3min*lw+rs.x3max*rw;
 }
 
 #endif

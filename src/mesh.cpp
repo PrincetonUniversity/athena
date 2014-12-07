@@ -235,9 +235,9 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   // Mesh test only; do not create meshes
   if(test_flag==1)
   {
-    std::cout << "Physical Root Level = "<< root_level << std::endl;
-    std::cout << "Maximum Refinement Level = "<< max_level << std::endl;
-    std::cout << "List of Blocks" << std::endl;
+    std::cout << "Logical level of the physical root grid = "<< root_level << std::endl;
+    std::cout << "Logical level of maximum refinement = "<< max_level << std::endl;
+    std::cout << "List of MeshBlocks" << std::endl;
     int nbt=0;
     int *nb=new int [max_level-root_level+1];
     for(i=root_level;i<=max_level;i++)
@@ -248,7 +248,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
         if(buid[j].GetLevel()==i)
         {
           buid[j].GetLocation(lx1,lx2,lx3,ll);
-          std::cout << "Level " << i << ":  MeshBlock " << j << ", lx1 = "
+          std::cout << "Logical Level " << i << ":  MeshBlock " << j << ", lx1 = "
                     << lx1 << ", lx2 = " << lx2 <<", lx3 = " << lx3
                     << ", level = " << buid[j].GetLevel() << std::endl;
           nb[i-root_level]++; nbt++;
@@ -257,7 +257,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     }
     for(i=root_level;i<=max_level;i++)
     {
-      std::cout << "Level " << i << ": " << nb[i-root_level] << " Blocks" << std::endl;
+      std::cout << "Logical Level " << i << ": " << nb[i-root_level] << " Blocks" << std::endl;
     }
     std::cout << "In Total : " << nbt << " Blocks" << std::endl;
     delete [] nb;
@@ -279,15 +279,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     else
     {
       Real rx=(Real)lx1/(Real)(nrbx1*(ll-root_level+1));
-      if(mesh_size.x1rat == 1.0)
-        block_size.x1min=mesh_size.x1min*(1.0-rx)+mesh_size.x1max*rx;
-      else
-      {
-        Real ratn=pow(mesh_size.x1rat,mesh_size.nx1);
-        Real rnx=pow(mesh_size.x1rat,rx*mesh_size.nx1);
-        block_size.x1min=(mesh_size.x1min*(rnx-ratn)+mesh_size.x1max*(1.0-rnx))
-                             /(1.0-ratn);
-      }
+      block_size.x1min=MeshGeneratorX1(rx,mesh_size);
       block_bcs.ix1_bc=-1;
     }
     if(lx1==nrbx1-1)
@@ -298,15 +290,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     else
     {
       Real rx=(Real)(lx1+1)/(Real)(nrbx1*(ll-root_level+1));
-      if(mesh_size.x1rat == 1.0)
-        block_size.x1max=mesh_size.x1min*(1.0-rx)+mesh_size.x1max*rx;
-      else
-      {
-        Real ratn=pow(mesh_size.x1rat,mesh_size.nx1);
-        Real rnx=pow(mesh_size.x1rat,rx*mesh_size.nx1);
-        block_size.x1max=(mesh_size.x1min*(rnx-ratn)+mesh_size.x1max*(1.0-rnx))
-                             /(1.0-ratn); // map logical coord to physical coord
-      }
+      block_size.x1max=MeshGeneratorX1(rx,mesh_size);
       block_bcs.ox1_bc=-1;
     }
 
@@ -319,15 +303,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     else
     {
       Real rx=(Real)lx2/(Real)(nrbx2*(ll-root_level+1));
-      if(mesh_size.x2rat == 1.0)
-        block_size.x2min=mesh_size.x2min*(1.0-rx)+mesh_size.x2max*rx;
-      else
-      {
-        Real ratn=pow(mesh_size.x2rat,mesh_size.nx2);
-        Real rnx=pow(mesh_size.x2rat,rx*mesh_size.nx2);
-        block_size.x2min=(mesh_size.x2min*(rnx-ratn)+mesh_size.x2max*(1.0-rnx))
-                             /(1.0-ratn);
-      }
+      block_size.x2min=MeshGeneratorX2(rx,mesh_size);
       block_bcs.ix2_bc=-1;
     }
     if(lx2==nrbx2-1)
@@ -338,15 +314,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     else
     {
       Real rx=(Real)(lx2+1)/(Real)(nrbx2*(ll-root_level+1));
-      if(mesh_size.x2rat == 1.0)
-        block_size.x2max=mesh_size.x2min*(1.0-rx)+mesh_size.x2max*rx;
-      else
-      {
-        Real ratn=pow(mesh_size.x2rat,mesh_size.nx2);
-        Real rnx=pow(mesh_size.x2rat,rx*mesh_size.nx2);
-        block_size.x2max=(mesh_size.x2min*(rnx-ratn)+mesh_size.x2max*(1.0-rnx))
-                             /(1.0-ratn);
-      }
+      block_size.x2max=MeshGeneratorX2(rx,mesh_size);
       block_bcs.ox2_bc=-1;
     }
 
@@ -359,15 +327,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     else
     {
       Real rx=(Real)lx3/(Real)(nrbx3*(ll-root_level+1));
-      if(mesh_size.x3rat == 1.0)
-        block_size.x3min=mesh_size.x3min*(1.0-rx)+mesh_size.x3max*rx;
-      else
-      {
-        Real ratn=pow(mesh_size.x3rat,mesh_size.nx3);
-        Real rnx=pow(mesh_size.x3rat,rx*mesh_size.nx3);
-        block_size.x3min=(mesh_size.x3min*(rnx-ratn)+mesh_size.x3max*(1.0-rnx))
-                             /(1.0-ratn);
-      }
+      block_size.x3min=MeshGeneratorX3(rx,mesh_size);
       block_bcs.ix3_bc=-1;
     }
     if(lx3==nrbx3-1)
@@ -378,15 +338,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     else
     {
       Real rx=(Real)(lx3+1)/(Real)(nrbx3*(ll-root_level+1));
-      if(mesh_size.x3rat == 1.0)
-        block_size.x3max=mesh_size.x3min*(1.0-rx)+mesh_size.x3max*rx;
-      else
-      {
-        Real ratn=pow(mesh_size.x3rat,mesh_size.nx3);
-        Real rnx=pow(mesh_size.x3rat,rx*mesh_size.nx3);
-        block_size.x3max=(mesh_size.x3min*(rnx-ratn)+mesh_size.x3max*(1.0-rnx))
-                             /(1.0-ratn);
-      }
+      block_size.x3max=MeshGeneratorX3(rx,mesh_size);
       block_bcs.ox3_bc=-1;
     }
 
@@ -400,6 +352,9 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       pblock->next->prev = pblock;
       pblock = pblock->next;
     }
+
+    // search the neighboring block from the ID list.
+    // it should be replaced with a faster algorithm like bi-section
 
     // calculate the neighbor information, x1
     if(lx1==0)
@@ -663,9 +618,9 @@ Mesh::Mesh(ParameterInput *pin, const char *prestart_file, int test_flag)
   // Mesh test only; do not create meshes
   if(test_flag==1)
   {
-    std::cout << "Physical Root Level = "<< root_level << std::endl;
-    std::cout << "Maximum Refinement Level = "<< max_level << std::endl;
-    std::cout << "List of Blocks" << std::endl;
+    std::cout << "Logical level of the physical root grid = "<< root_level << std::endl;
+    std::cout << "Logical level of maximum refinement = "<< max_level << std::endl;
+    std::cout << "List of MeshBlocks" << std::endl;
     int nbt=0;
     int *nb=new int [max_level-root_level+1];
     for(i=root_level;i<=max_level;i++)
@@ -676,7 +631,7 @@ Mesh::Mesh(ParameterInput *pin, const char *prestart_file, int test_flag)
         if(buid[j].GetLevel()==i)
         {
           buid[j].GetLocation(lx1,lx2,lx3,ll);
-          std::cout << "Level " << i << ":  MeshBlock " << j << ", lx1 = "
+          std::cout << "Logical Level " << i << ":  MeshBlock " << j << ", lx1 = "
                     << lx1 << ", lx2 = " << lx2 <<", lx3 = " << lx3
                     << ", level = " << buid[j].GetLevel() << std::endl;
           nb[i-root_level]++; nbt++;
@@ -685,7 +640,7 @@ Mesh::Mesh(ParameterInput *pin, const char *prestart_file, int test_flag)
     }
     for(i=root_level;i<=max_level;i++)
     {
-      std::cout << "Level " << i << ": " << nb[i-root_level] << " Blocks" << std::endl;
+      std::cout << "Logical Level " << i << ": " << nb[i-root_level] << " Blocks" << std::endl;
     }
     std::cout << "In Total : " << nbt << " Blocks" << std::endl;
     delete [] nb;
@@ -804,139 +759,78 @@ MeshBlock::MeshBlock(int igid, BlockUID iuid, RegionSize input_block,
 
 // X1-DIRECTION: initialize sizes and positions of cell FACES (dx1f,x1f)
 
-  Real dx = block_size.x1max - block_size.x1min;
-  if (block_size.x1rat == 1.0) {
-    dx1f(is) = dx/(Real)block_size.nx1;
-  } else {
-    dx1f(is) = dx*(block_size.x1rat - 1.0)/(pow(block_size.x1rat,block_size.nx1) - 1.0);
+  for (int i=is-NGHOST; i<=ie+NGHOST+1; ++i) {
+    Real rx=(Real)(i-is)/Real(block_size.nx1);
+    x1f(i)=pm->MeshGeneratorX1(rx,block_size);
   }
-
   x1f(is) = block_size.x1min;
-  for (int i=is+1; i<=ie; ++i) {
-    x1f(i) = x1f(i-1) + dx1f(i-1);
-    dx1f(i) = dx1f(i-1)*block_size.x1rat;
-  }
   x1f(ie+1) = block_size.x1max;
+  for(int i=is-NGHOST; i<=ie+NGHOST; ++i)
+    dx1f(i)=x1f(i+1)-x1f(i);
 
-// cell face positions and spacing in ghost zones
-
+// correct cell face positions in ghost zones for reflecting boundary condition
   if (block_bcs.ix1_bc == 1) {
     for (int i=1; i<=(NGHOST); ++i) {
       dx1f(is-i) = dx1f(is+i-1);
        x1f(is-i) =  x1f(is-i+1) - dx1f(is-i);
     }
-  } else {
-    for (int i=1; i<=(NGHOST); ++i) {
-      dx1f(is-i) = dx1f(is-i+1)/block_size.x1rat;
-       x1f(is-i) =  x1f(is-i+1) - dx1f(is-i);
-    }
   }
-
   if (block_bcs.ox1_bc == 1) {
     for (int i=1; i<=(NGHOST); ++i) {
       dx1f(ie+i  ) = dx1f(ie-i+1);
-       x1f(ie+i+1) =  x1f(ie+i) + dx1f(ie+i);
-    }
-  } else {
-    for (int i=1; i<=(NGHOST); ++i) {
-      dx1f(ie+i  ) = dx1f(ie+i-1)*block_size.x1rat;
        x1f(ie+i+1) =  x1f(ie+i) + dx1f(ie+i);
     }
   }
 
 // X2-DIRECTION: initialize spacing and positions of cell FACES (dx2f,x2f)
 
-  dx = block_size.x2max - block_size.x2min;
-  if (block_size.nx2 == 1) {
-    dx2f(js) = dx;
-    x2f(js  ) = block_size.x2min;
-    x2f(je+1) = block_size.x2max;
-  } else {
-    if (block_size.x2rat == 1.0) {
-      dx2f(js) = dx/(Real)block_size.nx2;
-    } else {
-      dx2f(js)=dx*(block_size.x2rat - 1.0)/(pow(block_size.x2rat,block_size.nx2) - 1.0);
+  for (int j=js-NGHOST; j<=je+NGHOST+1; ++j) {
+    Real rx=(Real)(j-js)/Real(block_size.nx2);
+    x2f(j)=pm->MeshGeneratorX2(rx,block_size);
+  }
+  x2f(js) = block_size.x2min;
+  x2f(je+1) = block_size.x2max;
+  for(int j=js-NGHOST; j<=je+NGHOST; ++j)
+    dx2f(j)=x2f(j+1)-x2f(j);
+
+// correct cell face positions in ghost zones for reflecting boundary condition
+  if (block_bcs.ix2_bc == 1) {
+    for (int j=1; j<=(NGHOST); ++j) {
+      dx2f(js-j) = dx2f(js+j-1);
+       x2f(js-j) =  x2f(js-j+1) - dx2f(js-j);
     }
-
-    x2f(js) = block_size.x2min;
-    for (int j=js+1; j<=je; ++j) {
-      x2f(j) = x2f(j-1) + dx2f(j-1);
-      dx2f(j) = dx2f(j-1)*block_size.x2rat;
-    }
-    x2f(je+1) = block_size.x2max;
-
-// cell face positions and spacing in ghost zones
-
-    if (block_bcs.ix2_bc == 1) {
-      for (int j=1; j<=(NGHOST); ++j) {
-        dx2f(js-j) = dx2f(js+j-1);
-         x2f(js-j) =  x2f(js-j+1) - dx2f(js-j);
-      }
-    } else {
-      for (int j=1; j<=(NGHOST); ++j) {
-        dx2f(js-j) = dx2f(js-j+1)/block_size.x2rat;
-         x2f(js-j) =  x2f(js-j+1) - dx2f(js-j);
-      }
-    }
-
-    if (block_bcs.ox2_bc == 1) {
-      for (int j=1; j<=(NGHOST); ++j) {
-        dx2f(je+j  ) = dx2f(je-j+1);
-         x2f(je+j+1) =  x2f(je+j) + dx2f(je+j);
-      }
-    } else {
-      for (int j=1; j<=(NGHOST); ++j) {
-        dx2f(je+j  ) = dx2f(je+j-1)*block_size.x2rat;
-         x2f(je+j+1) =  x2f(je+j) + dx2f(je+j);
-      }
+  }
+  if (block_bcs.ox2_bc == 1) {
+    for (int j=1; j<=(NGHOST); ++j) {
+      dx2f(je+j  ) = dx2f(je-j+1);
+       x2f(je+j+1) =  x2f(je+j) + dx2f(je+j);
     }
   }
 
+
 // X3-DIRECTION: initialize spacing and positions of cell FACES (dx3f,x3f)
 
-  dx = block_size.x3max - block_size.x3min;
-  if (block_size.nx3 == 1) {
-    dx3f(ks) = dx;
-    x3f(ks  ) = block_size.x3min;
-    x3f(ke+1) = block_size.x3max;
-  } else {
-    if (block_size.x3rat == 1.0) {
-      dx3f(ks) = dx/(Real)block_size.nx3;
-    } else {
-      dx3f(ks)=dx*(block_size.x3rat - 1.0)/(pow(block_size.x3rat,block_size.nx3) - 1.0);
+
+  for (int k=ks-NGHOST; k<=ke+NGHOST+1; ++k) {
+    Real rx=(Real)(k-ks)/Real(block_size.nx3);
+    x3f(k)=pm->MeshGeneratorX3(rx,block_size);
+  }
+  x3f(ks) = block_size.x3min;
+  x3f(ke+1) = block_size.x3max;
+  for(int k=ks-NGHOST; k<=ke+NGHOST; ++k)
+    dx3f(k)=x3f(k+1)-x3f(k);
+
+// correct cell face positions in ghost zones for reflecting boundary condition
+  if (block_bcs.ix3_bc == 1) {
+    for (int k=1; k<=(NGHOST); ++k) {
+      dx3f(ks-k) = dx3f(ks+k-1);
+       x3f(ks-k) =  x3f(ks-k+1) - dx3f(ks-k);
     }
-
-    x3f(ks) = block_size.x3min;
-    for (int k=ks+1; k<=ke; ++k) {
-      x3f(k) = x3f(k-1) + dx3f(k-1);
-      dx3f(k) = dx3f(k-1)*block_size.x3rat;
-    }
-    x3f(ke+1) = block_size.x3max;
-
-// cell face positions and spacing in ghost zones
-
-    if (block_bcs.ix3_bc == 1) {
-      for (int k=1; k<=(NGHOST); ++k) {
-        dx3f(ks-k) = dx3f(ks+k-1);
-         x3f(ks-k) =  x3f(ks-k+1) - dx3f(ks-k);
-      }
-    } else {
-      for (int k=1; k<=(NGHOST); ++k) {
-        dx3f(ks-k) = dx3f(ks-k+1)/block_size.x3rat;
-         x3f(ks-k) =  x3f(ks-k+1) - dx3f(ks-k);
-      }
-    }
-
-    if (block_bcs.ox3_bc == 1) {
-      for (int k=1; k<=(NGHOST); ++k) {
-        dx3f(ke+k  ) = dx3f(ke-k+1);
-         x3f(ke+k+1) =  x3f(ke+k) + dx3f(ke+k);
-      }
-    } else {
-      for (int k=1; k<=(NGHOST); ++k) {
-        dx3f(ke+k  ) = dx3f(ke+k-1)*block_size.x3rat;
-         x3f(ke+k+1) =  x3f(ke+k) + dx3f(ke+k);
-      }
+  }
+  if (block_bcs.ox3_bc == 1) {
+    for (int k=1; k<=(NGHOST); ++k) {
+      dx3f(ke+k  ) = dx3f(ke-k+1);
+       x3f(ke+k+1) =  x3f(ke+k) + dx3f(ke+k);
     }
   }
 
@@ -1202,9 +1096,9 @@ void Mesh::ForAllMeshBlocks(enum ActionOnBlock action, ParameterInput *pin)
 
 
 //--------------------------------------------------------------------------------------
-//! \fn long int MeshBlock::GetBlockSize(void)
+//! \fn long int MeshBlock::GetBlockSizeInBytes(void)
 //  \brief Calculate the block data size required for restarting.
-size_t MeshBlock::GetBlockSize(void)
+size_t MeshBlock::GetBlockSizeInBytes(void)
 {
   size_t size;
 
@@ -1214,7 +1108,9 @@ size_t MeshBlock::GetBlockSize(void)
   if (MAGNETIC_FIELDS_ENABLED)
     size+=sizeof(Real)*(pfield->b.x1f.GetSize()+pfield->b.x2f.GetSize()
                        +pfield->b.x3f.GetSize());
+  // please add the size counter here when new physics is introduced
 
   return size;
 }
+
 

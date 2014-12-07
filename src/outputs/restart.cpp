@@ -59,10 +59,10 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pi)
   ResSize_t listsize, idlistoffset;
   ID_t rawid[IDLENGTH];
 
-  // create single output, filename:"file_basename"+"."+"file_id"+"."+XXXX+".rst",
-  // where XXXX = 4-digit file_number
-  char number[8]; // array to store 4-digit number and end-of-string char
-  sprintf(number,"%04d",output_params.file_number);
+  // create single output, filename:"file_basename"+"."+"file_id"+"."+XXXXX+".rst",
+  // where XXXXX = 5-digit file_number
+  char number[6]; // array to store 4-digit number and end-of-string char
+  sprintf(number,"%05d",output_params.file_number);
   fname.assign(output_params.file_basename);
   fname.append(".");
   fname.append(output_params.file_id);
@@ -110,7 +110,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pi)
   pmb=pM->pblock;
   while(pmb!=NULL) // must be parallelized for MPI
   {
-    blocksize[i]=pmb->GetBlockSize();
+    blocksize[i]=pmb->GetBlockSizeInBytes();
     i++;
     pmb=pmb->next;
   }
@@ -134,6 +134,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pi)
     level=pmb->uid.GetLevel();
     pmb->uid.GetRawUID(rawid);
 
+    // perhaps these data should be packed and dumped at once
     resfile.ResFileWrite(&(pmb->gid),sizeof(int),1);
     resfile.ResFileWrite(&level,sizeof(int),1);
     resfile.ResFileWrite(rawid,sizeof(ID_t),IDLENGTH);
