@@ -34,6 +34,8 @@ public:
   Real FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx); 
   Real GetGamma() const {return gamma_;}
   Real GetIsoSoundSpeed() const {return iso_sound_speed_;}
+  Real GetDensityFloor() const {return density_floor_;}
+  Real GetPressureFloor() const {return pressure_floor_;}
 
 private:
   Fluid *pmy_fluid_;             // ptr to Fluid containing this EqnOfState
