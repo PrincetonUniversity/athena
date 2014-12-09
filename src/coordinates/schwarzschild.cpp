@@ -652,10 +652,13 @@ void Coordinates::CellMetric(const int k, const int j, AthenaArray<Real> &g,
 // Inputs:
 //   k: phi-index
 //   j: theta-index
-//   prim: array of primitives in 1D, using global coordinates
+//   b: 3D array of transverse components B^1 of magnetic field, in global coordinates
+//   prim: 1D array of primitives, using global coordinates
 // Outputs:
+//   b: values in range overwritten in local coordinates
 //   prim: values overwritten in local coordinates
-void Coordinates::PrimToLocal1(const int k, const int j, AthenaArray<Real> &prim)
+void Coordinates::PrimToLocal1(const int k, const int j, AthenaArray<Real> &b,
+    AthenaArray<Real> &prim)
 {
   // Go through 1D block of cells
 #pragma simd
@@ -677,7 +680,7 @@ void Coordinates::PrimToLocal1(const int k, const int j, AthenaArray<Real> &prim
     Real mz3 = trans_face1_i3_(i) * trans_face1_j1_(j);
 
     // Construct 4-velocity
-    Real u0 = std::sqrt(-1.0 / (g00 + g11 * v1*v1 + g22 * v2*v2 + g33 * v3*v3));
+    Real u0 = std::sqrt(-1.0 / (g00 + g11*v1*v1 + g22*v2*v2 + g33*v3*v3));
     Real u1 = u0 * v1;
     Real u2 = u0 * v2;
     Real u3 = u0 * v3;
@@ -690,6 +693,32 @@ void Coordinates::PrimToLocal1(const int k, const int j, AthenaArray<Real> &prim
     v1 = u1_new / u0_new;
     v2 = u2_new / u0_new;
     v3 = u3_new / u0_new;
+
+    // Transform magnetic field if necessary
+    if (MAGNETIC_FIELDS_ENABLED)
+    {
+      // Extract magnetic field
+      Real &b1 = b(k,j,i);
+      Real &b2 = prim(IBY,i);
+      Real &b3 = prim(IBZ,i);
+
+      // Calculate covariant magnetic field
+      Real bcov0 = g11*b1*u1 + g22*b2*u2 + g33*b3*u3;
+      Real bcov1 = (b1 + bcov0 * u1) / u0;
+      Real bcov2 = (b2 + bcov0 * u2) / u0;
+      Real bcov3 = (b3 + bcov0 * u3) / u0;
+
+      // Transform field
+      Real bcov0_new = mt0 * bcov0;
+      Real bcov1_new = mx1 * bcov1;
+      Real bcov2_new = my2 * bcov2;
+      Real bcov3_new = mz3 * bcov3;
+
+      // Calculate standard magnetic field
+      b1 = u0_new * bcov1_new - u1_new * bcov0_new;
+      b2 = u0_new * bcov2_new - u2_new * bcov0_new;
+      b3 = u0_new * bcov3_new - u3_new * bcov0_new;
+    }
   }
   return;
 }
@@ -698,10 +727,13 @@ void Coordinates::PrimToLocal1(const int k, const int j, AthenaArray<Real> &prim
 // Inputs:
 //   k: phi-index
 //   j: theta-index
-//   pprim: pointer to array of primitives in 1D, using global coordinates
+//   b: 3D array of transverse components B^1 of magnetic field, in global coordinates
+//   prim: 1D array of primitives, using global coordinates
 // Outputs:
-//   pprim: pointer to values overwritten in local coordinates
-void Coordinates::PrimToLocal2(const int k, const int j, AthenaArray<Real> &prim)
+//   b: values in range overwritten in local coordinates
+//   prim: values overwritten in local coordinates
+void Coordinates::PrimToLocal2(const int k, const int j, AthenaArray<Real> &b,
+    AthenaArray<Real> &prim)
 {
   // Go through 1D block of cells
 #pragma simd
@@ -736,6 +768,32 @@ void Coordinates::PrimToLocal2(const int k, const int j, AthenaArray<Real> &prim
     v1 = u1_new / u0_new;
     v2 = u2_new / u0_new;
     v3 = u3_new / u0_new;
+
+    // Transform magnetic field if necessary
+    if (MAGNETIC_FIELDS_ENABLED)
+    {
+      // Extract magnetic field
+      Real &b2 = b(k,j,i);
+      Real &b3 = prim(IBY,i);
+      Real &b1 = prim(IBZ,i);
+
+      // Calculate covariant magnetic field
+      Real bcov0 = g11*b1*u1 + g22*b2*u2 + g33*b3*u3;
+      Real bcov1 = (b1 + bcov0 * u1) / u0;
+      Real bcov2 = (b2 + bcov0 * u2) / u0;
+      Real bcov3 = (b3 + bcov0 * u3) / u0;
+
+      // Transform field
+      Real bcov0_new = mt0 * bcov0;
+      Real bcov1_new = mx1 * bcov1;
+      Real bcov2_new = my2 * bcov2;
+      Real bcov3_new = mz3 * bcov3;
+
+      // Calculate standard magnetic field
+      b1 = u0_new * bcov1_new - u1_new * bcov0_new;
+      b2 = u0_new * bcov2_new - u2_new * bcov0_new;
+      b3 = u0_new * bcov3_new - u3_new * bcov0_new;
+    }
   }
   return;
 }
@@ -744,10 +802,13 @@ void Coordinates::PrimToLocal2(const int k, const int j, AthenaArray<Real> &prim
 // Inputs:
 //   k: phi-index
 //   j: theta-index
-//   pprim: pointer to array of primitives in 1D, using global coordinates
+//   b: 3D array of transverse components B^1 of magnetic field, in global coordinates
+//   prim: 1D array of primitives, using global coordinates
 // Outputs:
-//   pprim: pointer to values overwritten in local coordinates
-void Coordinates::PrimToLocal3(const int k, const int j, AthenaArray<Real> &prim)
+//   b: values in range overwritten in local coordinates
+//   prim: values overwritten in local coordinates
+void Coordinates::PrimToLocal3(const int k, const int j, AthenaArray<Real> &b,
+    AthenaArray<Real> &prim)
 {
   // Go through 1D block of cells
 #pragma simd
@@ -782,6 +843,32 @@ void Coordinates::PrimToLocal3(const int k, const int j, AthenaArray<Real> &prim
     v1 = u1_new / u0_new;
     v2 = u2_new / u0_new;
     v3 = u3_new / u0_new;
+
+    // Transform magnetic field if necessary
+    if (MAGNETIC_FIELDS_ENABLED)
+    {
+      // Extract magnetic field
+      Real &b3 = b(k,j,i);
+      Real &b1 = prim(IBY,i);
+      Real &b2 = prim(IBZ,i);
+
+      // Calculate covariant magnetic field
+      Real bcov0 = g11*b1*u1 + g22*b2*u2 + g33*b3*u3;
+      Real bcov1 = (b1 + bcov0 * u1) / u0;
+      Real bcov2 = (b2 + bcov0 * u2) / u0;
+      Real bcov3 = (b3 + bcov0 * u3) / u0;
+
+      // Transform field
+      Real bcov0_new = mt0 * bcov0;
+      Real bcov1_new = mx1 * bcov1;
+      Real bcov2_new = my2 * bcov2;
+      Real bcov3_new = mz3 * bcov3;
+
+      // Calculate standard magnetic field
+      b1 = u0_new * bcov1_new - u1_new * bcov0_new;
+      b2 = u0_new * bcov2_new - u2_new * bcov0_new;
+      b3 = u0_new * bcov3_new - u3_new * bcov0_new;
+    }
   }
   return;
 }
@@ -836,6 +923,15 @@ void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flu
     t11 = f_m1;
     t12 = f_m2;
     t13 = f_m3;
+
+    // Transform magnetic fluxes if necessary
+    if (MAGNETIC_FIELDS_ENABLED)
+    {
+      Real fby = flux(IBY,i);
+      Real fbz = flux(IBZ,i);
+      flux(IBY,i) = m1x * m2y * fby;
+      flux(IBZ,i) = m1x * m3z * fbz;
+    }
   }
   return;
 }
@@ -890,6 +986,15 @@ void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flu
     t21 = f_m1;
     t22 = f_m2;
     t23 = f_m3;
+
+    // Transform magnetic fluxes if necessary
+    if (MAGNETIC_FIELDS_ENABLED)
+    {
+      Real fbz = flux(IBY,i);
+      Real fbx = flux(IBZ,i);
+      flux(IBY,i) = m2y * m3z * fbz;
+      flux(IBZ,i) = m2y * m1x * fbx;
+    }
   }
   return;
 }
@@ -944,6 +1049,15 @@ void Coordinates::FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flu
     t31 = f_m1;
     t32 = f_m2;
     t33 = f_m3;
+
+    // Transform magnetic fluxes if necessary
+    if (MAGNETIC_FIELDS_ENABLED)
+    {
+      Real fbx = flux(IBY,i);
+      Real fby = flux(IBZ,i);
+      flux(IBY,i) = m3z * m1x * fbx;
+      flux(IBZ,i) = m3z * m2y * fby;
+    }
   }
   return;
 }
