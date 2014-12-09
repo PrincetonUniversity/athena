@@ -162,8 +162,12 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real gamma_sq = 1.0 / (1.0 - v_norm_sq);
         Real w_initial = gamma_sq * (rho_old + gamma_prime * pgas_old);
         for (int count = 0; count < initial_guess_multiplications; count++)
-          if (w_initial*w_initial <= q_norm_sq)  // v^2 >= 1 according to (N28)
+        {
+          if (w_initial*w_initial <= q_norm_sq)  // v^2 >= 1 according to (N 28)
             w_initial *= initial_guess_multiplier;
+          else
+            break;
+        }
 
         // Apply Newton-Raphson method to find new W
         Real w_true = find_root_nr(w_initial, d_norm, q_dot_n, q_norm_sq, gamma_prime);
