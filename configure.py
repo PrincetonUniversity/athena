@@ -109,7 +109,6 @@ parser.add_argument('--cxx',
 parser.add_argument('-omp',
     action='store_true',
     default=False,
-    help='enable parallelization with OpenMP')
     help='enables parallelization with OpenMP')
 
 # -ifov=N argument
