@@ -132,17 +132,17 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real &v2 = prim(IVY,k,j,i);
         Real &v3 = prim(IVZ,k,j,i);
 
-        // Calculate useful geometric quantities
+        // Calculate geometric quantities
         Real alpha = 1.0 / std::sqrt(-gi00);
         Real alpha_sq = alpha*alpha;
         Real beta_sq = g00 + alpha_sq;
 
-        // Calculate useful variations on conserved quantities
-        Real d_norm = alpha * d;  // (N21)
-        Real q0 = alpha * e;  // (N17)
-        Real q1 = alpha * m1;  // (N17)
-        Real q2 = alpha * m2;  // (N17)
-        Real q3 = alpha * m3;  // (N17)
+        // Calculate variations on conserved quantities
+        Real d_norm = alpha * d;  // (N 21)
+        Real q0 = alpha * e;  // (N 17)
+        Real q1 = alpha * m1;  // (N 17)
+        Real q2 = alpha * m2;  // (N 17)
+        Real q3 = alpha * m3;  // (N 17)
         Real q_dot_n = -alpha * gi00*q0 + gi01*q1 + gi02*q2 + gi03*q3;
         Real q_norm_1 = gi10*q0 + gi11*q1 + gi12*q2 + gi13*q3 - alpha * gi01 * q_dot_n;
         Real q_norm_2 = gi20*q0 + gi21*q1 + gi22*q2 + gi23*q3 - alpha * gi02 * q_dot_n;
@@ -162,22 +162,22 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real gamma_sq = 1.0 / (1.0 - v_norm_sq);
         Real w_initial = gamma_sq * (rho_old + gamma_prime * pgas_old);
         for (int count = 0; count < initial_guess_multiplications; count++)
-          if (w_initial*w_initial <= q_norm_sq)  // v^2 negative according to (N28)
+          if (w_initial*w_initial <= q_norm_sq)  // v^2 >= 1 according to (N28)
             w_initial *= initial_guess_multiplier;
 
         // Apply Newton-Raphson method to find new W
         Real w_true = find_root_nr(w_initial, d_norm, q_dot_n, q_norm_sq, gamma_prime);
 
         // Calculate primitives from W
-        v_norm_sq = q_norm_sq / (w_true*w_true);  // (N28)
+        v_norm_sq = q_norm_sq / (w_true*w_true);  // (N 28)
         gamma_sq = 1.0/(1.0 - v_norm_sq);
         Real gamma_rel = std::sqrt(gamma_sq);
-        pgas = 1.0/gamma_prime * (w_true/gamma_sq - d_norm/gamma_rel);  // (N32)
+        pgas = 1.0/gamma_prime * (w_true/gamma_sq - d_norm/gamma_rel);  // (N 32)
         rho = w_true / gamma_sq - gamma_prime * pgas;
-        Real u0 = d_norm / (alpha * rho);  // (N21)
-        Real u_norm_1 = gamma_rel * q_norm_1 / w_true;  // (N31)
-        Real u_norm_2 = gamma_rel * q_norm_2 / w_true;  // (N31)
-        Real u_norm_3 = gamma_rel * q_norm_3 / w_true;  // (N31)
+        Real u0 = d_norm / (alpha * rho);  // (N 21)
+        Real u_norm_1 = gamma_rel * q_norm_1 / w_true;  // (N 31)
+        Real u_norm_2 = gamma_rel * q_norm_2 / w_true;  // (N 31)
+        Real u_norm_3 = gamma_rel * q_norm_3 / w_true;  // (N 31)
         Real u1 = u_norm_1 - alpha * gamma_rel * gi01;
         Real u2 = u_norm_2 - alpha * gamma_rel * gi02;
         Real u3 = u_norm_3 - alpha * gamma_rel * gi03;
@@ -299,11 +299,11 @@ Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
 //   implements formulas assuming no magnetic field
 Real residual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq, Real gamma_prime)
 {
-  Real v_norm_sq = q_norm_sq / (w_guess*w_guess);  // (N28)
+  Real v_norm_sq = q_norm_sq / (w_guess*w_guess);  // (N 28)
   Real gamma_sq = 1.0/(1.0 - v_norm_sq);
   Real pgas = 1.0/gamma_prime
-      * (w_guess/gamma_sq - d_norm/std::sqrt(gamma_sq));  // (N32)
-  return -w_guess + pgas - q_dot_n;  // (N29)
+      * (w_guess/gamma_sq - d_norm/std::sqrt(gamma_sq));  // (N 32)
+  return -w_guess + pgas - q_dot_n;  // (N 29)
 }
 
 // Derivative of residual()
@@ -320,12 +320,12 @@ Real residual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq, Real gamm
 //   implements formulas assuming no magnetic field
 Real residual_derivative(Real w_guess, Real d_norm, Real q_norm_sq, Real gamma_prime)
 {
-  Real v_norm_sq = q_norm_sq / (w_guess*w_guess);  // (N28)
+  Real v_norm_sq = q_norm_sq / (w_guess*w_guess);  // (N 28)
   Real gamma_sq = 1.0/(1.0 - v_norm_sq);
   Real gamma_4 = gamma_sq*gamma_sq;
-  Real d_v_norm_sq_dw = -2.0 * q_norm_sq / (w_guess*w_guess*w_guess);  // (N28)
+  Real d_v_norm_sq_dw = -2.0 * q_norm_sq / (w_guess*w_guess*w_guess);
   Real d_gamma_sq_dw = gamma_4 * d_v_norm_sq_dw;
   Real dpgas_dw = 1.0/(gamma_prime * gamma_4) * (gamma_sq
-      + (0.5*d_norm*std::sqrt(gamma_sq) - w_guess) * d_gamma_sq_dw);  // (N32)
-  return -1.0 + dpgas_dw;  // (N29)
+      + (0.5*d_norm*std::sqrt(gamma_sq) - w_guess) * d_gamma_sq_dw);
+  return -1.0 + dpgas_dw;
 }
