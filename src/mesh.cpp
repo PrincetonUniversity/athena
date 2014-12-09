@@ -695,7 +695,11 @@ MeshBlock::MeshBlock(int igid, BlockUID iuid, RegionSize input_block,
                      RegionBCs input_bcs, Mesh *pm, ParameterInput *pin)
 {
   std::stringstream msg;
+  int lx1, lx2, lx3, ll, root_level;
+  RegionSize& mesh_size  = pm->mesh_size;
+  long long nrootmesh, noffset;
   pmy_mesh = pm;
+  root_level = pm->root_level;
   block_size = input_block;
   block_bcs  = input_bcs;
   prev=NULL;
@@ -723,7 +727,6 @@ MeshBlock::MeshBlock(int igid, BlockUID iuid, RegionSize input_block,
     ks = ke = 0;
   }
 
-  int lx1, lx2, lx3, ll;
   uid.GetLocation(lx1,lx2,lx3,ll);
   std::cout << "MeshBlock " << gid << ", lx1 = " << lx1 << ", lx2 = " << lx2
             <<", lx3 = " << lx3 << ", level = " << uid.GetLevel() << std::endl;
@@ -759,9 +762,12 @@ MeshBlock::MeshBlock(int igid, BlockUID iuid, RegionSize input_block,
 
 // X1-DIRECTION: initialize sizes and positions of cell FACES (dx1f,x1f)
 
+  nrootmesh=mesh_size.nx1*(1L<<(ll-root_level));
   for (int i=is-NGHOST; i<=ie+NGHOST+1; ++i) {
-    Real rx=(Real)(i-is)/Real(block_size.nx1);
-    x1f(i)=pm->MeshGeneratorX1(rx,block_size);
+     // if there are too many levels, this won't work or be precise enough
+    noffset=(i-is)+(long long)lx1*block_size.nx1;
+    Real rx=(Real)noffset/(Real)nrootmesh;
+    x1f(i)=pm->MeshGeneratorX1(rx,mesh_size);
   }
   x1f(is) = block_size.x1min;
   x1f(ie+1) = block_size.x1max;
@@ -784,9 +790,12 @@ MeshBlock::MeshBlock(int igid, BlockUID iuid, RegionSize input_block,
 
 // X2-DIRECTION: initialize spacing and positions of cell FACES (dx2f,x2f)
 
+  nrootmesh=mesh_size.nx2*(1L<<(ll-root_level));
   for (int j=js-NGHOST; j<=je+NGHOST+1; ++j) {
-    Real rx=(Real)(j-js)/Real(block_size.nx2);
-    x2f(j)=pm->MeshGeneratorX2(rx,block_size);
+     // if there are too many levels, this won't work or be precise enough
+    noffset=(j-js)+(long long)lx2*block_size.nx2;
+    Real rx=(Real)noffset/(Real)nrootmesh;
+    x2f(j)=pm->MeshGeneratorX2(rx,mesh_size);
   }
   x2f(js) = block_size.x2min;
   x2f(je+1) = block_size.x2max;
@@ -811,9 +820,12 @@ MeshBlock::MeshBlock(int igid, BlockUID iuid, RegionSize input_block,
 // X3-DIRECTION: initialize spacing and positions of cell FACES (dx3f,x3f)
 
 
+  nrootmesh=mesh_size.nx3*(1L<<(ll-root_level));
   for (int k=ks-NGHOST; k<=ke+NGHOST+1; ++k) {
-    Real rx=(Real)(k-ks)/Real(block_size.nx3);
-    x3f(k)=pm->MeshGeneratorX3(rx,block_size);
+     // if there are too many levels, this won't work or be precise enough
+    noffset=(k-ks)+(long long)lx3*block_size.nx3;
+    Real rx=(Real)noffset/(Real)nrootmesh;
+    x3f(k)=pm->MeshGeneratorX3(rx,mesh_size);
   }
   x3f(ks) = block_size.x3min;
   x3f(ke+1) = block_size.x3max;
