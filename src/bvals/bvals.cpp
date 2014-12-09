@@ -230,30 +230,37 @@ BoundaryValues::~BoundaryValues()
 
 void BoundaryValues::EnrollFluidBoundaryFunction(enum EdgeNames edge, BValFluid_t my_bc)
 {
-  switch(edge){
-  case inner_x1:
-    FluidInnerX1_ = my_bc;
-    break;
-  case outer_x1:
-    FluidOuterX1_ = my_bc;
-    break;
-  case inner_x2:
-    FluidInnerX2_ = my_bc;
-    break;
-  case outer_x2:
-    FluidOuterX2_ = my_bc;
-    break;
-  case inner_x3:
-    FluidInnerX3_ = my_bc;
-    break;
-  case outer_x3:
-    FluidOuterX3_ = my_bc;
-    break;
-  default:
+  if(edge<0 || edge>5)
+  {
     std::stringstream msg;
     msg << "### FATAL ERROR in EnrollFluidBoundaryCondition function" << std::endl
         << "EdgeName = " << edge << " not valid" << std::endl;
     throw std::runtime_error(msg.str().c_str());
+  }
+  if(pmy_mblock_->neighbor[edge][0][0].gid==-1)
+  {
+    switch(edge){
+    case inner_x1:
+        FluidInnerX1_ = my_bc;
+      break;
+    case outer_x1:
+      FluidOuterX1_ = my_bc;
+      break;
+    case inner_x2:
+      FluidInnerX2_ = my_bc;
+      break;
+    case outer_x2:
+      FluidOuterX2_ = my_bc;
+      break;
+    case inner_x3:
+      FluidInnerX3_ = my_bc;
+      break;
+    case outer_x3:
+      FluidOuterX3_ = my_bc;
+      break;
+    default:
+      break;
+    }
   }
   return;
 }
@@ -264,30 +271,37 @@ void BoundaryValues::EnrollFluidBoundaryFunction(enum EdgeNames edge, BValFluid_
 
 void BoundaryValues::EnrollFieldBoundaryFunction(enum EdgeNames edge,BValBField_t my_bc)
 {
-  switch(edge){
-  case inner_x1:
-    BFieldInnerX1_ = my_bc;
-    break;
-  case outer_x1:
-    BFieldOuterX1_ = my_bc;
-    break;
-  case inner_x2:
-    BFieldInnerX2_ = my_bc;
-    break;
-  case outer_x2:
-    BFieldOuterX2_ = my_bc;
-    break;
-  case inner_x3:
-    BFieldInnerX3_ = my_bc;
-    break;
-  case outer_x3:
-    BFieldOuterX3_ = my_bc;
-    break;
-  default:
+  if(edge<0 || edge>5)
+  {
     std::stringstream msg;
     msg << "### FATAL ERROR in EnrollFieldBoundaryCondition function" << std::endl
         << "EdgeName = " << edge << " not valid" << std::endl;
     throw std::runtime_error(msg.str().c_str());
+  }
+  if(pmy_mblock_->neighbor[edge][0][0].gid==-1)
+  {
+    switch(edge){
+    case inner_x1:
+      BFieldInnerX1_ = my_bc;
+      break;
+    case outer_x1:
+      BFieldOuterX1_ = my_bc;
+      break;
+    case inner_x2:
+      BFieldInnerX2_ = my_bc;
+      break;
+    case outer_x2:
+      BFieldOuterX2_ = my_bc;
+      break;
+    case inner_x3:
+      BFieldInnerX3_ = my_bc;
+      break;
+    case outer_x3:
+      BFieldOuterX3_ = my_bc;
+      break;
+    default:
+      break;
+    }
   }
   return;
 }
