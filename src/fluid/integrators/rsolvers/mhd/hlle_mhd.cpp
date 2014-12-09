@@ -8,12 +8,10 @@
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-#include <iostream>
 
 // Primary header
 #include "../../fluid_integrator.hpp"
@@ -38,8 +36,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
-  Real wli[NFLUID+NFIELD-1],wri[NFLUID+NFIELD-1],wroe[NFLUID+NFIELD-1];
-  Real  fl[NFLUID+NFIELD-1], fr[NFLUID+NFIELD-1],flxi[NFLUID+NFIELD-1];
+  Real wli[(NWAVE)],wri[(NWAVE)],wroe[(NWAVE)],fl[(NWAVE)],fr[(NWAVE)],flxi[(NWAVE)];
   Real gm1 = pmy_fluid->pf_eos->GetGamma() - 1.0;
 
 #pragma simd
@@ -78,14 +75,14 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 // Note Roe average of magnetic field is different
     wroe[IBY] = (sqrtdr*wli[IBY] + sqrtdl*wri[IBY])*isdlpdr;
     wroe[IBZ] = (sqrtdr*wli[IBZ] + sqrtdl*wri[IBZ])*isdlpdr;
-    Real pbl = 0.5*(bxi*bxi + SQR(wli[IBY]) + SQR(wli[IBZ]));
-    Real pbr = 0.5*(bxi*bxi + wri[IBY]*wri[IBY] + wri[IBZ]*wri[IBZ]);
     Real x = 0.5*(SQR(wli[IBY]-wri[IBY]) + SQR(wli[IBZ]-wri[IBZ]))/(SQR(sqrtdl+sqrtdr));
     Real y = 0.5*(wli[IDN] + wri[IDN])/wroe[IDN];
 
 // Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
 // rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
 
+    Real pbl = 0.5*(bxi*bxi + SQR(wli[IBY]) + SQR(wli[IBZ]));
+    Real pbr = 0.5*(bxi*bxi + SQR(wri[IBY]) + SQR(wri[IBZ]));
     Real el,er,hroe;
     if (NON_BAROTROPIC_EOS) {
       el = wli[IEN]/gm1 + 0.5*wli[IDN]*(SQR(wli[IVX])+SQR(wli[IVY])+SQR(wli[IVZ])) +pbl;
@@ -115,7 +112,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
       Real cfsq = 0.5*(tsum + cf2_cs2);
       a = sqrt(cfsq);
     } else {
-      a = pmy_fluid->pf_eos->FastMagnetosonicSpeed(wroe,bxi);
+      a = pmy_fluid->pf_eos->GetIsoSoundSpeed();
     }
 
 //--- Step 4.  Compute the max/min wave speeds based on L/R and Roe-averaged values
@@ -128,50 +125,36 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 
 //--- Step 5.  Compute L/R fluxes along the lines bm/bp: F_L - (S_L)U_L; F_R - (S_R)U_R
 
-    fl[IDN] = wli[IDN]*wli[IVX] - bm*wli[IDN];
-    fr[IDN] = wri[IDN]*wri[IVX] - bp*wri[IDN];
+    fl[IDN] = wli[IDN]*(wli[IVX] - bm);
+    fr[IDN] = wri[IDN]*(wri[IVX] - bp);
 
-    fl[IVX] = wli[IDN]*wli[IVX]*(wli[IVX] - bm);
-    fr[IVX] = wri[IDN]*wri[IVX]*(wri[IVX] - bp);
+    fl[IVX] = wli[IDN]*wli[IVX]*(wli[IVX] - bm) + pbl - SQR(bxi);
+    fr[IVX] = wri[IDN]*wri[IVX]*(wri[IVX] - bp) + pbr - SQR(bxi);
 
-    fl[IVY] = wli[IDN]*wli[IVY]*(wli[IVX] - bm);
-    fr[IVY] = wri[IDN]*wri[IVY]*(wri[IVX] - bp);
+    fl[IVY] = wli[IDN]*wli[IVY]*(wli[IVX] - bm) - bxi*wli[IBY];
+    fr[IVY] = wri[IDN]*wri[IVY]*(wri[IVX] - bp) - bxi*wri[IBY];
 
-    fl[IVZ] = wli[IDN]*wli[IVZ]*(wli[IVX] - bm);
-    fr[IVZ] = wri[IDN]*wri[IVZ]*(wri[IVX] - bp);
+    fl[IVZ] = wli[IDN]*wli[IVZ]*(wli[IVX] - bm) - bxi*wli[IBZ];
+    fr[IVZ] = wri[IDN]*wri[IVZ]*(wri[IVX] - bp) - bxi*wri[IBZ];
 
     if (NON_BAROTROPIC_EOS) {
       fl[IVX] += wli[IEN];
       fr[IVX] += wri[IEN];
-      fl[IEN] = el*(wli[IVX] - bm) + wli[IEN]*wli[IVX];
-      fr[IEN] = er*(wri[IVX] - bp) + wri[IEN]*wri[IVX];
+      fl[IEN] = el*(wli[IVX] - bm) + wli[IVX]*(wli[IEN] + pbl - bxi*bxi);
+      fr[IEN] = er*(wri[IVX] - bp) + wri[IVX]*(wri[IEN] + pbr - bxi*bxi);
+      fl[IEN] -= bxi*(wli[IBY]*wli[IVY] + wli[IBZ]*wli[IVZ]);
+      fr[IEN] -= bxi*(wri[IBY]*wri[IVY] + wri[IBZ]*wri[IVZ]);
     } else {
-      Real iso_cs = pmy_fluid->pf_eos->SoundSpeed(wli);
+      Real iso_cs = pmy_fluid->pf_eos->GetIsoSoundSpeed();
       fl[IVX] += (iso_cs*iso_cs)*wli[IDN];
       fr[IVX] += (iso_cs*iso_cs)*wri[IDN];
     }
 
-// Add MHD terms
+    fl[IBY] = wli[IBY]*(wli[IVX] - bm) - bxi*wli[IVY];
+    fr[IBY] = wri[IBY]*(wri[IVX] - bp) - bxi*wri[IVY];
 
-    fl[IVX] -= 0.5*(bxi*bxi - SQR(wli[IBY]) - SQR(wli[IBZ]));
-    fr[IVX] -= 0.5*(bxi*bxi - SQR(wri[IBY]) - SQR(wri[IBZ]));
-
-    fl[IVY] -= bxi*wli[IBY];
-    fr[IVY] -= bxi*wri[IBY];
-
-    fl[IVZ] -= bxi*wli[IBZ];
-    fr[IVZ] -= bxi*wri[IBZ];
-
-    if (NON_BAROTROPIC_EOS) {
-      fl[IEN] +=(pbl*wli[IVX] - bxi*(bxi*wli[IVX]+wli[IBY]*wli[IVY]+wli[IBZ]*wli[IVZ]));
-      fr[IEN] +=(pbr*wri[IVX] - bxi*(bxi*wri[IVX]+wri[IBY]*wri[IVY]+wri[IBZ]*wri[IVZ]));
-    }
-
-    fl[IBY] = wli[IBY]*(wli[IVX] - bm) - bxi*wli[IVY];;
-    fr[IBY] = wri[IBY]*(wri[IVX] - bp) - bxi*wri[IVY];;
-
-    fl[IBZ] = wli[IBZ]*(wli[IVX] - bm) - bxi*wli[IVZ];;
-    fr[IBZ] = wri[IBZ]*(wri[IVX] - bp) - bxi*wri[IVZ];;
+    fl[IBZ] = wli[IBZ]*(wli[IVX] - bm) - bxi*wli[IVZ];
+    fr[IBZ] = wri[IBZ]*(wri[IVX] - bp) - bxi*wri[IVZ];
 
 //--- Step 6.  Compute the HLLE flux at interface.
 

@@ -10,6 +10,9 @@
 //  gravity, radiation, particles, etc.)
 //======================================================================================
 
+#include <stdio.h> // size_t
+#include "wrapper.hpp"
+
 class Mesh;
 class ParameterInput;
 
@@ -86,9 +89,12 @@ public:
 
 // functions that operate on OutputData container
 
+  virtual void Initialize(Mesh *pM, ParameterInput *pin) {};
+  virtual void Finalize(void) {};
   virtual void LoadOutputData(OutputData *pod, MeshBlock *pmb);
   virtual void TransformOutputData(OutputData *pod, MeshBlock *pmb);
-  virtual void WriteOutputFile(OutputData *pod, MeshBlock *pmb) = 0;  // pure virtual!
+  virtual void WriteOutputFile(OutputData *pod, MeshBlock *pmb) = 0;
+          // pure virtual!
 
 // functions that implement useful transforms applied to each variable in OutputData
 
@@ -133,6 +139,27 @@ public:
 
   void WriteOutputFile(OutputData *pod, MeshBlock *pmb);
 };
+
+
+//! \class RestartOutput
+//  \brief derived OutputType class for restarting files
+
+class RestartOutput : public OutputType {
+private:
+  ResFile resfile;
+  ResSize_t *blocksize, *offset;
+
+public:
+  RestartOutput(OutputParameters oparams);
+  ~RestartOutput() {};
+  void Initialize(Mesh *pm, ParameterInput *pin);
+  void Finalize(void);
+  void LoadOutputData(OutputData *pod, MeshBlock *pmb) {};
+  void TransformOutputData(OutputData *pod, MeshBlock *pmb) {};
+
+  void WriteOutputFile(OutputData *pod, MeshBlock *pmb);
+};
+
 //--------------------- end of OutputTypes base and derived classes --------------------
 
 //! \class Outputs
@@ -144,7 +171,7 @@ public:
   Outputs(Mesh *pm, ParameterInput *pin);
   ~Outputs();
 
-  void MakeOutputs(Mesh *pm);
+  void MakeOutputs(Mesh *pm, ParameterInput *pin);
 
 private:
   OutputType *pfirst_type_; // ptr to first OutputType in linked list

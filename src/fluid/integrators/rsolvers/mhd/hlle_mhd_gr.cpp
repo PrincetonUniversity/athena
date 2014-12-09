@@ -21,11 +21,11 @@
 static void PrimToFluxFlat(Real gamma_adi_red, Real rho, Real pgas,
     Real ut, Real ux, Real uy, Real uz,
     Real bcovt, Real bcovx, Real bcovy, Real bcovz,
-    int ivx, int ivy, int ivz, Real flux[NFLUID+NFIELD-1]);
+    int ivx, int ivy, int ivz, Real flux[NWAVE]);
 static void PrimToConsFlat(Real gamma_adi_red, Real rho, Real pgas,
     Real ut, Real ux, Real uy, Real uz,
     Real bcovt, Real bcovx, Real bcovy, Real bcovz,
-    int ivx, int ivy, int ivz, Real cons[NFLUID+NFIELD-1]);
+    int ivx, int ivy, int ivz, Real cons[NWAVE]);
 
 // Riemann solver
 // Inputs:
@@ -133,7 +133,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     Real lambda_right = std::max(lambda_left_plus, lambda_right_plus);   // (MB2006 56)
 
     // Calculate L/R state fluxes
-    Real flux_left[NFLUID+NFIELD-1], flux_right[NFLUID+NFIELD-1];
+    Real flux_left[NWAVE], flux_right[NWAVE];
     PrimToFluxFlat(gamma_adi_red, rho_left, pgas_left,
         ut_left, ux_left, uy_left, uz_left,
         bcovt_left, bcovx_left, bcovy_left, bcovz_left,
@@ -146,7 +146,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     // Set fluxes if in L state
     if (lambda_left >= 0.0)
     {
-      for (int n = 0; n < NFLUID+NFIELD-1; ++n)
+      for (int n = 0; n < NWAVE; ++n)
         flux(n,i) = flux_left[n];
       continue;
     }
@@ -154,13 +154,13 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     // Set fluxes if in R state
     if (lambda_right <= 0.0)
     {
-      for (int n = 0; n < NFLUID+NFIELD-1; ++n)
+      for (int n = 0; n < NWAVE; ++n)
         flux(n,i) = flux_right[n];
       continue;
     }
 
     // Set fluxes in HLL state
-    Real cons_left[NFLUID+NFIELD-1], cons_right[NFLUID+NFIELD-1];
+    Real cons_left[NWAVE], cons_right[NWAVE];
     PrimToConsFlat(gamma_adi_red, rho_left, pgas_left,
         ut_left, ux_left, uy_left, uz_left,
         bcovt_left, bcovx_left, bcovy_left, bcovz_left,
@@ -169,7 +169,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
         ut_right, ux_right, uy_right, uz_right,
         bcovt_right, bcovx_right, bcovy_right, bcovz_right,
         ivx, ivy, ivz, cons_right);
-    for (int n = 0; n < NFLUID+NFIELD-1; ++n)
+    for (int n = 0; n < NWAVE; ++n)
       flux(n,i) = (lambda_right*flux_left[n] - lambda_left*flux_right[n]
           + lambda_right*lambda_left * (cons_right[n] - cons_left[n]))
           / (lambda_right-lambda_left);                                   // (MB2005 11)
@@ -198,7 +198,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
 static void PrimToFluxFlat(Real gamma_adi_red, Real rho, Real pgas,
     Real ut, Real ux, Real uy, Real uz,
     Real bcovt, Real bcovx, Real bcovy, Real bcovz,
-    int ivx, int ivy, int ivz, Real flux[NFLUID+NFIELD-1])
+    int ivx, int ivy, int ivz, Real flux[NWAVE])
 {
   Real bcov_sq = -SQR(bcovt) + SQR(bcovx) + SQR(bcovy) + SQR(bcovz);
   Real rho_h = rho + gamma_adi_red * pgas + bcov_sq;
@@ -219,7 +219,7 @@ static void PrimToFluxFlat(Real gamma_adi_red, Real rho, Real pgas,
 static void PrimToConsFlat(Real gamma_adi_red, Real rho, Real pgas,
     Real ut, Real ux, Real uy, Real uz,
     Real bcovt, Real bcovx, Real bcovy, Real bcovz,
-    int ivx, int ivy, int ivz, Real cons[NFLUID+NFIELD-1])
+    int ivx, int ivy, int ivz, Real cons[NWAVE])
 {
   Real bcov_sq = -SQR(bcovt) + SQR(bcovx) + SQR(bcovy) + SQR(bcovz);
   Real rho_h = rho + gamma_adi_red * pgas + bcov_sq;

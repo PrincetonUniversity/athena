@@ -51,14 +51,18 @@ void FormattedTableOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
   std::stringstream msg;
   if (pod->data_header.ndata == 0) return;  // slice out of range, etc.
 
-// create filename: "file_basename" + "." + "file_id" + "." + XXXX + ".tab",
-// where XXXX = 4-digit file_number
+// create filename: "file_basename"+ "."+"bloclid"+"."+"file_id"+"."+XXXXX+".tab",
+// where XXXXX = 5-digit file_number
 
   std::string fname;
-  char number[5];
-  sprintf(number,"%04d",output_params.file_number);
+  char number[6];
+  sprintf(number,"%05d",output_params.file_number);
+  char blockid[12];
+  sprintf(blockid,"block%d",pmb->gid);
 
   fname.assign(output_params.file_basename);
+  fname.append(".");
+  fname.append(blockid);
   fname.append(".");
   fname.append(output_params.file_id);
   fname.append(".");

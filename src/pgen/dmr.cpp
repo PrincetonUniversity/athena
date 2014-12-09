@@ -171,7 +171,7 @@ void dmrbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a)
   Real e0 = 291.25;
   Real u0 =  8.25*sqrt(3.0)/2.0;
   Real v0 = -8.25*0.5;
-  Real shock_pos = 0.1666666666 + (1. + 20.*pmb->pmy_domain->pmy_mesh->time)/sqrt(3.0);
+  Real shock_pos = 0.1666666666 + (1. + 20.*pmb->pmy_mesh->time)/sqrt(3.0);
 
   int is = pmb->is, ie = pmb->ie;
   int je = pmb->je;

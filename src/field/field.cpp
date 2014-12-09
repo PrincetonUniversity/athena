@@ -60,17 +60,16 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin)
     bcc.NewAthenaArray (NFIELD,ncells3,ncells2,ncells1);
     bcc1.NewAthenaArray(NFIELD,ncells3,ncells2,ncells1);
 
-    e.x1f.NewAthenaArray((NFIELD-1), ncells3   , ncells2   ,(ncells1+1));
-    e.x2f.NewAthenaArray((NFIELD-1), ncells3   ,(ncells2+1), ncells1   );
-    e.x3f.NewAthenaArray((NFIELD-1),(ncells3+1), ncells2   , ncells1   );
+    e.x1e.NewAthenaArray((ncells3+1),(ncells2+1), ncells1   );
+    e.x2e.NewAthenaArray((ncells3+1), ncells2   ,(ncells1+1));
+    e.x3e.NewAthenaArray( ncells3   ,(ncells2+1),(ncells1+1));
 
+    ei.x1f.NewAthenaArray(((NFIELD)-1), ncells3   , ncells2   ,(ncells1+1));
+    ei.x2f.NewAthenaArray(((NFIELD)-1), ncells3   ,(ncells2+1), ncells1   );
+    ei.x3f.NewAthenaArray(((NFIELD)-1),(ncells3+1), ncells2   , ncells1   );
     wght.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
     wght.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
     wght.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
-
-    e1.NewAthenaArray((ncells3+1),(ncells2+1), ncells1   );
-    e2.NewAthenaArray((ncells3+1), ncells2   ,(ncells1+1));
-    e3.NewAthenaArray( ncells3   ,(ncells2+1),(ncells1+1));
 
 // Construct ptrs to objects of various classes needed to integrate B-field
 
@@ -92,13 +91,13 @@ Field::~Field()
   bcc.DeleteAthenaArray();
   bcc1.DeleteAthenaArray();
 
-  e.x1f.DeleteAthenaArray();
-  e.x2f.DeleteAthenaArray();
-  e.x3f.DeleteAthenaArray();
+  e.x1e.DeleteAthenaArray();
+  e.x2e.DeleteAthenaArray();
+  e.x3e.DeleteAthenaArray();
+  ei.x1f.DeleteAthenaArray();
+  ei.x2f.DeleteAthenaArray();
+  ei.x3f.DeleteAthenaArray();
   wght.x1f.DeleteAthenaArray();
   wght.x2f.DeleteAthenaArray();
   wght.x3f.DeleteAthenaArray();
-  e1.DeleteAthenaArray();
-  e2.DeleteAthenaArray();
-  e3.DeleteAthenaArray();
 }

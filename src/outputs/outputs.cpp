@@ -46,7 +46,7 @@
 //
 // Required parameters that must be specified in an <outputN> block are:
 //   - variable     = cons,prim,D,d,E,e,m,v
-//   - file_type    = tab,vtk,hst
+//   - file_type    = rst,tab,vtk,hst
 //   - dt           = problem time between outputs
 //
 // Optional parameters that may be specified in an <outputN> block are:
@@ -255,7 +255,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
 
 // set output variable and optional data format string used in formatted writes
 
-      if (op.file_type.compare("hst") != 0) {
+      if (op.file_type.compare("hst") != 0 && op.file_type.compare("rst") != 0) {
         op.variable = pin->GetString(op.block_name,"variable");
       }
       op.data_format = pin->GetOrAddString(op.block_name,"data_format","%12e.5");
@@ -264,7 +264,9 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
 // Construct new OutputType according to file format
 // ADD NEW OUTPUT TYPES HERE
 
-      if (op.file_type.compare("tab") == 0) {
+      if (op.file_type.compare("rst") == 0) {
+        pnew_type = new RestartOutput(op);
+      } else if (op.file_type.compare("tab") == 0) {
         pnew_type = new FormattedTableOutput(op);
       } else if (op.file_type.compare("hst") == 0) {
         pnew_type = new HistoryOutput(op);
@@ -356,8 +358,8 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 
 // Create OutputData header
 
-  str << "# Athena++ data at time=" << pmb->pmy_domain->pmy_mesh->time
-      << "  cycle=" << pmb->pmy_domain->pmy_mesh->ncycle
+  str << "# Athena++ data at time=" << pmb->pmy_mesh->time
+      << "  cycle=" << pmb->pmy_mesh->ncycle 
       << "  variables=" << output_params.variable << std::endl;
   pod->data_header.descriptor.append(str.str());
   pod->data_header.il = pmb->is;
@@ -378,7 +380,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov = new OutputVariable; 
     pov->type = "SCALARS";
     pov->name = "dens";
-    pfl->u.ShallowSlice(IDN,1,pov->data);
+    pov->data.InitWithShallowSlice(pfl->u,4,IDN,1);
     pod->AppendNode(pov); // (lab-frame) density
     var_added = 1;
   }
@@ -388,7 +390,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov = new OutputVariable; 
     pov->type = "SCALARS";
     pov->name = "rho";
-    pfl->w.ShallowSlice(IDN,1,pov->data);
+    pov->data.InitWithShallowSlice(pfl->w,4,IDN,1);
     pod->AppendNode(pov); // (rest-frame) density
     var_added = 1;
   }
@@ -399,20 +401,20 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       pov = new OutputVariable; 
       pov->type = "SCALARS";
       pov->name = "Etot";
-      pfl->u.ShallowSlice(IEN,1,pov->data);
+      pov->data.InitWithShallowSlice(pfl->u,4,IEN,1);
       pod->AppendNode(pov); // total energy
       var_added = 1;
     }
   }
 
   if (NON_BAROTROPIC_EOS) {
-    if (output_params.variable.compare("e") == 0 || 
+    if (output_params.variable.compare("p") == 0 || 
         output_params.variable.compare("prim") == 0) {
       pov = new OutputVariable; 
       pov->type = "SCALARS";
-      pov->name = "eint";
-      pfl->w.ShallowSlice(IEN,1,pov->data);
-      pod->AppendNode(pov); // internal energy
+      pov->name = "press";
+      pov->data.InitWithShallowSlice(pfl->w,4,IEN,1);
+      pod->AppendNode(pov); // pressure
       var_added = 1;
     }
   }
@@ -422,7 +424,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov = new OutputVariable; 
     pov->type = "VECTORS";
     pov->name = "mom";
-    pfl->u.ShallowSlice(IM1,3,pov->data);
+    pov->data.InitWithShallowSlice(pfl->u,4,IM1,3);
     pod->AppendNode(pov); // momentum vector
     var_added = 1;
   }
@@ -432,20 +434,22 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov = new OutputVariable; 
     pov->type = "VECTORS";
     pov->name = "vel";
-    pfl->w.ShallowSlice(IM1,3,pov->data);
+    pov->data.InitWithShallowSlice(pfl->w,4,IVX,3);
     pod->AppendNode(pov); // velocity vector
     var_added = 1;
   }
 
-  if (output_params.variable.compare("b") == 0 || 
-      output_params.variable.compare("prim") == 0 ||
-      output_params.variable.compare("cons") == 0) {
-    pov = new OutputVariable; 
-    pov->type = "VECTORS";
-    pov->name = "cell-centered B";
-    pfd->bcc.ShallowSlice(0,3,pov->data);
-    pod->AppendNode(pov); // magnetic field vector
-    var_added = 1;
+  if (MAGNETIC_FIELDS_ENABLED) {
+    if (output_params.variable.compare("b") == 0 || 
+        output_params.variable.compare("prim") == 0 ||
+        output_params.variable.compare("cons") == 0) {
+      pov = new OutputVariable; 
+      pov->type = "VECTORS";
+      pov->name = "cell-centered B";
+      pov->data.InitWithShallowSlice(pfd->bcc,4,IB1,3);
+      pod->AppendNode(pov); // magnetic field vector
+      var_added = 1;
+    }
   }
 
   if (output_params.variable.compare("ifov") == 0) {
@@ -453,7 +457,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       pov = new OutputVariable; 
       pov->type = "SCALARS";
       pov->name = "ifov";
-      pfl->ifov.ShallowSlice(n,1,pov->data);
+      pov->data.InitWithShallowSlice(pfl->ifov,4,n,1);
       pod->AppendNode(pov); // internal fluid outvars
     }
     var_added = 1;
@@ -700,33 +704,34 @@ void OutputType::Sum(OutputData* pod, MeshBlock* pmb, int dim)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void Outputs::MakeOutputs()
+//! \fn void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin)
 //  \brief scans through linked list of OutputTypes and makes any outputs needed.
 
-void Outputs::MakeOutputs(Mesh *pm)
+void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin)
 {
   OutputType* ptype = pfirst_type_;
+  MeshBlock *pmb;
 
-// Eventually this will be a loop over all domains
 
-  MeshBlock *pmb = pm->pdomain->pblock;
-  if (pmb != NULL)  {
+  while (ptype != NULL) {
+    if ((pm->time == pm->start_time) ||
+        (pm->time >= ptype->output_params.next_time) ||
+        (pm->time >= pm->tlim)) {
 
-    while (ptype != NULL) {
-      if ((pm->time == pm->start_time) ||
-          (pm->time >= ptype->output_params.next_time) ||
-          (pm->time >= pm->tlim)) {
-
-// Create new OutputData container, load and transform data, then write to file
-
+      ptype->Initialize(pm,pin);
+      pmb=pm->pblock;
+      while (pmb != NULL)  {
+        // Create new OutputData container, load and transform data, then write to file
         OutputData* pod = new OutputData;
         ptype->LoadOutputData(pod,pmb);
         ptype->TransformOutputData(pod,pmb);
         ptype->WriteOutputFile(pod,pmb);
         delete pod;
-
+        pmb=pmb->next;
       }
-      ptype = ptype->pnext_type; // move to next OutputType in list
+      ptype->Finalize();
     }
+    ptype = ptype->pnext_type; // move to next OutputType in list
   }
+
 }

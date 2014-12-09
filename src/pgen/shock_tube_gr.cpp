@@ -64,16 +64,16 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   switch (shock_dir)
   {
     case 1:
-      min_bound = pb->pmy_domain->pmy_mesh->mesh_size.x1min;
-      max_bound = pb->pmy_domain->pmy_mesh->mesh_size.x1max;
+      min_bound = pb->pmy_mesh->mesh_size.x1min;
+      max_bound = pb->pmy_mesh->mesh_size.x1max;
       break;
     case 2:
-      min_bound = pb->pmy_domain->pmy_mesh->mesh_size.x2min;
-      max_bound = pb->pmy_domain->pmy_mesh->mesh_size.x2max;
+      min_bound = pb->pmy_mesh->mesh_size.x2min;
+      max_bound = pb->pmy_mesh->mesh_size.x2max;
       break;
     case 3:
-      min_bound = pb->pmy_domain->pmy_mesh->mesh_size.x3min;
-      max_bound = pb->pmy_domain->pmy_mesh->mesh_size.x3max;
+      min_bound = pb->pmy_mesh->mesh_size.x3min;
+      max_bound = pb->pmy_mesh->mesh_size.x3max;
       break;
     default:
       msg << "### FATAL ERROR in Problem Generator" << std::endl
