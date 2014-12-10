@@ -60,6 +60,7 @@ private:
   NeighborBlock neighbor[6][2][2];
   Real cost;
   friend class RestartOutput;
+  friend class BoundaryValues;
 public:
   MeshBlock(int igid, BlockUID iuid, RegionSize input_size,
             RegionBCs input_bcs, Mesh *pm, ParameterInput *pin);
