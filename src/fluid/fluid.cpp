@@ -107,7 +107,7 @@ Fluid::~Fluid()
 // \!fn 
 // \brief
 
-void Fluid::NewTimeStep(MeshBlock *pmb)
+void Fluid::NewBlockTimeStep(MeshBlock *pmb)
 {
   int tid=0;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
@@ -221,10 +221,7 @@ void Fluid::NewTimeStep(MeshBlock *pmb)
   Real min_dt = pthread_min_dt[0];
   for (int n=1; n<max_nthreads; ++n) min_dt = std::min(min_dt,pthread_min_dt[n]);
 
-// compute new global timestep
-  Mesh *pm = pmb->pmy_mesh;
-  Real old_dt = pm->dt;
-  pm->dt = std::min( ((pm->cfl_number)*min_dt) , (2.0*old_dt) );
+  pmb->block_dt=min_dt;
 
   delete[] pthread_min_dt;
 

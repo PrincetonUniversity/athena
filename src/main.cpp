@@ -198,10 +198,23 @@ int main(int argc, char *argv[])
 
 // apply BCs, compute primitive from conserved variables, compute first timestep
 
-  pmesh->ForAllMeshBlocks( fluid_bcs_n,pinput);
-  if (MAGNETIC_FIELDS_ENABLED) pmesh->ForAllMeshBlocks(bfield_bcs_n,pinput);
+  pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx1_n,pinput);
+  pmesh->ForAllMeshBlocks(fluid_recvset_bcsx1_n,pinput);
+  pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx2_n,pinput);
+  pmesh->ForAllMeshBlocks(fluid_recvset_bcsx2_n,pinput);
+  pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx3_n,pinput);
+  pmesh->ForAllMeshBlocks(fluid_recvset_bcsx3_n,pinput);
+  if (MAGNETIC_FIELDS_ENABLED) {
+    pmesh->ForAllMeshBlocks(field_loadsend_bcsx1_n,pinput);
+    pmesh->ForAllMeshBlocks(field_recvset_bcsx1_n,pinput);
+    pmesh->ForAllMeshBlocks(field_loadsend_bcsx2_n,pinput);
+    pmesh->ForAllMeshBlocks(field_recvset_bcsx2_n,pinput);
+    pmesh->ForAllMeshBlocks(field_loadsend_bcsx3_n,pinput);
+    pmesh->ForAllMeshBlocks(field_recvset_bcsx3_n,pinput);
+  }
   pmesh->ForAllMeshBlocks(primitives_n,pinput);
-  pmesh->ForAllMeshBlocks(new_timestep,pinput);
+  pmesh->ForAllMeshBlocks(new_blocktimestep,pinput);
+  pmesh->NewTimeStep();
 
 //--- Step 6. --------------------------------------------------------------------------
 // Change to run directory, initialize outputs object, and make output of ICs
@@ -239,11 +252,23 @@ int main(int argc, char *argv[])
 
 // predict step
     pmesh->ForAllMeshBlocks(fluid_predict  ,pinput);
-    pmesh->ForAllMeshBlocks(fluid_bcs_nhalf,pinput);
+
+    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx1_nhalf,pinput);
+    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx1_nhalf,pinput);
+    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx2_nhalf,pinput);
+    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx2_nhalf,pinput);
+    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx3_nhalf,pinput);
+    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx3_nhalf,pinput);
 
     if (MAGNETIC_FIELDS_ENABLED) {
-      pmesh->ForAllMeshBlocks(bfield_predict  ,pinput);
-      pmesh->ForAllMeshBlocks(bfield_bcs_nhalf,pinput);
+      pmesh->ForAllMeshBlocks(field_predict  ,pinput);
+
+      pmesh->ForAllMeshBlocks(field_loadsend_bcsx1_nhalf,pinput);
+      pmesh->ForAllMeshBlocks(field_recvset_bcsx1_nhalf,pinput);
+      pmesh->ForAllMeshBlocks(field_loadsend_bcsx2_nhalf,pinput);
+      pmesh->ForAllMeshBlocks(field_recvset_bcsx2_nhalf,pinput);
+      pmesh->ForAllMeshBlocks(field_loadsend_bcsx3_nhalf,pinput);
+      pmesh->ForAllMeshBlocks(field_recvset_bcsx3_nhalf,pinput);
     }
 
     pmesh->ForAllMeshBlocks(primitives_nhalf,pinput);
@@ -251,11 +276,23 @@ int main(int argc, char *argv[])
 // correct step
 
     pmesh->ForAllMeshBlocks(fluid_correct,pinput);
-    pmesh->ForAllMeshBlocks(fluid_bcs_n,  pinput);
+
+    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx1_n,pinput);
+    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx1_n,pinput);
+    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx2_n,pinput);
+    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx2_n,pinput);
+    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx3_n,pinput);
+    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx3_n,pinput);
 
     if (MAGNETIC_FIELDS_ENABLED) {
-      pmesh->ForAllMeshBlocks(bfield_correct,pinput);
-      pmesh->ForAllMeshBlocks(bfield_bcs_n,  pinput);
+      pmesh->ForAllMeshBlocks(field_correct,pinput);
+
+      pmesh->ForAllMeshBlocks(field_loadsend_bcsx1_n,pinput);
+      pmesh->ForAllMeshBlocks(field_recvset_bcsx1_n,pinput);
+      pmesh->ForAllMeshBlocks(field_loadsend_bcsx2_n,pinput);
+      pmesh->ForAllMeshBlocks(field_recvset_bcsx2_n,pinput);
+      pmesh->ForAllMeshBlocks(field_loadsend_bcsx3_n,pinput);
+      pmesh->ForAllMeshBlocks(field_recvset_bcsx3_n,pinput);
     }
 
     pmesh->ForAllMeshBlocks(primitives_n,pinput);
@@ -278,7 +315,8 @@ int main(int argc, char *argv[])
       return(0);
     }
 
-    pmesh->ForAllMeshBlocks(new_timestep,pinput);
+    pmesh->ForAllMeshBlocks(new_blocktimestep,pinput);
+    pmesh->NewTimeStep();
 
   } // END OF MAIN INTEGRATION LOOP ====================================================
 #ifdef OPENMP_PARALLEL

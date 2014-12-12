@@ -735,3 +735,13 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin)
   }
 
 }
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void OutputType::Finalize(void)
+//  \brief default finalizing procedure: count up the file number and time
+void OutputType::Finalize(void)
+{
+  output_params.file_number++;
+  output_params.next_time += output_params.dt;
+}

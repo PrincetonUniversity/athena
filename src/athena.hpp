@@ -29,10 +29,23 @@ enum {IB1=0, IB2=1, IB3=2};
 enum {X1E2=0, X1E3=1, X2E3=0, X2E1=1, X3E1=0, X3E2=1};
 enum {I00, I01, I02, I03, I11, I12, I13, I22, I23, I33, NMETRIC};
 
-enum direction {X1L=0, X1R=1, X2L=2, X2R=3, X3L=4, X3R=5};
+enum direction {inner_x1=0, outer_x1=1, inner_x2=2, outer_x2=3, inner_x3=4, outer_x3=5};
+enum face {x1face=0, x2face=1, x3face=2};
+
 enum ActionOnBlock
-  {pgen,          primitives_n, primitives_nhalf, new_timestep,
-   fluid_predict, fluid_correct,   bfield_predict, bfield_correct,
-   fluid_bcs_n,   fluid_bcs_nhalf, bfield_bcs_n,   bfield_bcs_nhalf};
+  {pgen,          primitives_n, primitives_nhalf, new_blocktimestep,
+  fluid_predict, fluid_correct,   field_predict, field_correct,
+  fluid_loadsend_bcsx1_n, fluid_loadsend_bcsx1_nhalf,
+  field_loadsend_bcsx1_n, field_loadsend_bcsx1_nhalf,
+  fluid_recvset_bcsx1_n,  fluid_recvset_bcsx1_nhalf,
+  field_recvset_bcsx1_n,  field_recvset_bcsx1_nhalf,
+  fluid_loadsend_bcsx2_n, fluid_loadsend_bcsx2_nhalf,
+  field_loadsend_bcsx2_n, field_loadsend_bcsx2_nhalf,
+  fluid_recvset_bcsx2_n,  fluid_recvset_bcsx2_nhalf, 
+  field_recvset_bcsx2_n,  field_recvset_bcsx2_nhalf,
+  fluid_loadsend_bcsx3_n, fluid_loadsend_bcsx3_nhalf, 
+  field_loadsend_bcsx3_n, field_loadsend_bcsx3_nhalf,
+  fluid_recvset_bcsx3_n,  fluid_recvset_bcsx3_nhalf,
+  field_recvset_bcsx3_n,  field_recvset_bcsx3_nhalf};
 
 #endif

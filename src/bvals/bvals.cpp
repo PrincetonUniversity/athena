@@ -23,6 +23,7 @@
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
+#include <cstring>    // memcpy
 
 // Athena headers
 #include "../athena.hpp"          // Real
@@ -31,39 +32,55 @@
 #include "../fluid/fluid.hpp"     // Fluid
 #include "../parameter_input.hpp" // ParameterInput
 
+
+// arrays of start and end points, created in InitBoundaryBuffer
+int fluid_send_se_[6][6];
+int fluid_recv_se_[6][6];
+int field_send_se_[6][3][6];
+int field_recv_se_[6][3][6];
+int fluid_bufsize_[6];
+int field_bufsize_[6];
+
+int myrank=0; // just for test
+
 //======================================================================================
 //! \file bvals.cpp
-//  \brief implements functions that initialize/apply BCs on each edge
+//  \brief implements functions that initialize/apply BCs on each dir
 //======================================================================================
 
 // BoundaryValues constructor - sets functions for the appropriate
-// boundary conditions at each of the 6 edges of a MeshBlock
+// boundary conditions at each of the 6 dirs of a MeshBlock
 
 BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_mblock_ = pmb;
+  int is = pmb->is, ie = pmb->ie;
+  int js = pmb->js, je = pmb->je;
+  int ks = pmb->ks, ke = pmb->ke;
 
 // Set BC functions for each of the 6 boundaries in turn -------------------------------
 // Inner x1
 
   switch(pmb->block_bcs.ix1_bc){
     case -1:
-      FluidInnerX1_ = NeighborInnerX1;
-      BFieldInnerX1_ = NeighborInnerX1;
+      FluidBoundary_[inner_x1] = NULL;
+      FieldBoundary_[inner_x1] = NULL;
       break;
     case 1:
-      FluidInnerX1_ = ReflectInnerX1;
-      BFieldInnerX1_ = ReflectInnerX1;
+      FluidBoundary_[inner_x1] = ReflectInnerX1;
+      FieldBoundary_[inner_x1] = ReflectInnerX1;
       break;
     case 2:
-      FluidInnerX1_ = OutflowInnerX1;
-      BFieldInnerX1_ = OutflowInnerX1;
+      FluidBoundary_[inner_x1] = OutflowInnerX1;
+      FieldBoundary_[inner_x1] = OutflowInnerX1;
       break;
     case 3: // do nothing, useful for user-enrolled BCs
+      FluidBoundary_[inner_x1] = NULL;
+      FieldBoundary_[inner_x1] = NULL;
       break;
     case 4:
-      FluidInnerX1_ = PeriodicInnerX1;
-      BFieldInnerX1_ = PeriodicInnerX1;
+      FluidBoundary_[inner_x1] = PeriodicInnerX1;
+      FieldBoundary_[inner_x1] = PeriodicInnerX1;
       break;
     default:
       std::stringstream msg;
@@ -76,22 +93,24 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 
   switch(pmb->block_bcs.ox1_bc){
     case -1:
-      FluidOuterX1_ = NeighborOuterX1;
-      BFieldOuterX1_ = NeighborOuterX1;
+      FluidBoundary_[outer_x1] = NULL;
+      FieldBoundary_[outer_x1] = NULL;
       break;
     case 1:
-      FluidOuterX1_ = ReflectOuterX1;
-      BFieldOuterX1_ = ReflectOuterX1;
+      FluidBoundary_[outer_x1] = ReflectOuterX1;
+      FieldBoundary_[outer_x1] = ReflectOuterX1;
       break;
     case 2:
-      FluidOuterX1_ = OutflowOuterX1;
-      BFieldOuterX1_ = OutflowOuterX1;
+      FluidBoundary_[outer_x1] = OutflowOuterX1;
+      FieldBoundary_[outer_x1] = OutflowOuterX1;
       break;
     case 3: // do nothing, useful for user-enrolled BCs
+      FluidBoundary_[outer_x1] = NULL;
+      FieldBoundary_[outer_x1] = NULL;
       break;
     case 4:
-      FluidOuterX1_ = PeriodicOuterX1;
-      BFieldOuterX1_ = PeriodicOuterX1;
+      FluidBoundary_[outer_x1] = PeriodicOuterX1;
+      FieldBoundary_[outer_x1] = PeriodicOuterX1;
       break;
     default:
       std::stringstream msg;
@@ -105,22 +124,24 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   if (pmb->block_size.nx2 > 1) {
     switch(pmb->block_bcs.ix2_bc){
       case -1:
-        FluidInnerX2_ = NeighborInnerX2;
-        BFieldInnerX2_ = NeighborInnerX2;
+        FluidBoundary_[inner_x2] = NULL;
+        FieldBoundary_[inner_x2] = NULL;
         break;
       case 1:
-        FluidInnerX2_ = ReflectInnerX2;
-        BFieldInnerX2_ = ReflectInnerX2;
+        FluidBoundary_[inner_x2] = ReflectInnerX2;
+        FieldBoundary_[inner_x2] = ReflectInnerX2;
         break;
       case 2:
-        FluidInnerX2_ = OutflowInnerX2;
-        BFieldInnerX2_ = OutflowInnerX2;
+        FluidBoundary_[inner_x2] = OutflowInnerX2;
+        FieldBoundary_[inner_x2] = OutflowInnerX2;
         break;
       case 3: // do nothing, useful for user-enrolled BCs
+        FluidBoundary_[inner_x2] = NULL;
+        FieldBoundary_[inner_x2] = NULL;
         break;
       case 4:
-        FluidInnerX2_ = PeriodicInnerX2;
-        BFieldInnerX2_ = PeriodicInnerX2;
+        FluidBoundary_[inner_x2] = PeriodicInnerX2;
+        FieldBoundary_[inner_x2] = PeriodicInnerX2;
         break;
       default:
         std::stringstream msg;
@@ -133,22 +154,24 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 
     switch(pmb->block_bcs.ox2_bc){
       case -1:
-        FluidOuterX2_ = NeighborOuterX2;
-        BFieldOuterX2_ = NeighborOuterX2;
+        FluidBoundary_[outer_x2] = NULL;
+        FieldBoundary_[outer_x2] = NULL;
         break;
       case 1:
-        FluidOuterX2_ = ReflectOuterX2;
-        BFieldOuterX2_ = ReflectOuterX2;
+        FluidBoundary_[outer_x2] = ReflectOuterX2;
+        FieldBoundary_[outer_x2] = ReflectOuterX2;
         break;
       case 2:
-        FluidOuterX2_ = OutflowOuterX2;
-        BFieldOuterX2_ = OutflowOuterX2;
+        FluidBoundary_[outer_x2] = OutflowOuterX2;
+        FieldBoundary_[outer_x2] = OutflowOuterX2;
         break;
       case 3: // do nothing, useful for user-enrolled BCs
+        FluidBoundary_[outer_x2] = NULL;
+        FieldBoundary_[outer_x2] = NULL;
         break;
       case 4:
-        FluidOuterX2_ = PeriodicOuterX2;
-        BFieldOuterX2_ = PeriodicOuterX2;
+        FluidBoundary_[outer_x2] = PeriodicOuterX2;
+        FieldBoundary_[outer_x2] = PeriodicOuterX2;
         break;
       default:
         std::stringstream msg;
@@ -163,22 +186,24 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   if (pmb->block_size.nx3 > 1) {
     switch(pmb->block_bcs.ix3_bc){
       case -1:
-        FluidInnerX3_ = NeighborInnerX3;
-        BFieldInnerX3_ = NeighborInnerX3;
+        FluidBoundary_[inner_x3] = NULL;
+        FieldBoundary_[inner_x3] = NULL;
         break;
       case 1:
-        FluidInnerX3_ = ReflectInnerX3;
-        BFieldInnerX3_ = ReflectInnerX3;
+        FluidBoundary_[inner_x3] = ReflectInnerX3;
+        FieldBoundary_[inner_x3] = ReflectInnerX3;
         break;
       case 2:
-        FluidInnerX3_ = OutflowInnerX3;
-        BFieldInnerX3_ = OutflowInnerX3;
+        FluidBoundary_[inner_x3] = OutflowInnerX3;
+        FieldBoundary_[inner_x3] = OutflowInnerX3;
         break;
       case 3: // do nothing, useful for user-enrolled BCs
+        FluidBoundary_[inner_x3] = NULL;
+        FieldBoundary_[inner_x3] = NULL;
         break;
       case 4:
-        FluidInnerX3_ = PeriodicInnerX3;
-        BFieldInnerX3_ = PeriodicInnerX3;
+        FluidBoundary_[inner_x3] = PeriodicInnerX3;
+        FieldBoundary_[inner_x3] = PeriodicInnerX3;
         break;
       default:
         std::stringstream msg;
@@ -191,22 +216,24 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 
     switch(pmb->block_bcs.ox3_bc){
       case -1:
-        FluidOuterX3_ = NeighborOuterX3;
-        BFieldOuterX3_ = NeighborOuterX3;
+        FluidBoundary_[outer_x3] = NULL;
+        FieldBoundary_[outer_x3] = NULL;
         break;
       case 1:
-        FluidOuterX3_ = ReflectOuterX3;
-        BFieldOuterX3_ = ReflectOuterX3;
+        FluidBoundary_[outer_x3] = ReflectOuterX3;
+        FieldBoundary_[outer_x3] = ReflectOuterX3;
         break;
       case 2:
-        FluidOuterX3_ = OutflowOuterX3;
-        BFieldOuterX3_ = OutflowOuterX3;
+        FluidBoundary_[outer_x3] = OutflowOuterX3;
+        FieldBoundary_[outer_x3] = OutflowOuterX3;
         break;
       case 3: // do nothing, useful for user-enrolled BCs
+        FluidBoundary_[outer_x3] = NULL;
+        FieldBoundary_[outer_x3] = NULL;
         break;
       case 4:
-        FluidOuterX3_ = PeriodicOuterX3;
-        BFieldOuterX3_ = PeriodicOuterX3;
+        FluidBoundary_[outer_x3] = PeriodicOuterX3;
+        FieldBoundary_[outer_x3] = PeriodicOuterX3;
         break;
       default:
         std::stringstream msg;
@@ -216,52 +243,75 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     }
   }
 
+  // Allocate Buffers
+  int r=2;
+  if(pmb->block_size.nx2 > 1) r=4;
+  if(pmb->block_size.nx3 > 1) r=6;
+  for(int i=0;i<r;i++)
+  {
+    fluid_send_[i]=new Real[fluid_bufsize_[i]];
+    fluid_recv_[i]=new Real[fluid_bufsize_[i]];
+  }
+
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for(int i=0;i<r;i++)
+    {
+      field_send_[i]=new Real[field_bufsize_[i]];
+      field_recv_[i]=new Real[field_bufsize_[i]];
+    }
+  }
+
+  // initialize flags
+  for(int i=0;i<6;i++) {
+    fluid_flag_[i][0][0]=false;
+    fluid_flag_[i][0][1]=false;
+    fluid_flag_[i][1][0]=false;
+    fluid_flag_[i][1][1]=false;
+  }
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for(int i=0;i<6;i++) {
+      field_flag_[i][0][0]=false;
+      field_flag_[i][0][1]=false;
+      field_flag_[i][1][0]=false;
+      field_flag_[i][1][1]=false;
+    }
+  }
 }
 
 // destructor
 
 BoundaryValues::~BoundaryValues()
 {
+  int r=2;
+  if(pmy_mblock_->block_size.nx2 > 1) r=4;
+  if(pmy_mblock_->block_size.nx3 > 1) r=6;
+  for(int i=0;i<r;i++) {
+    delete [] fluid_send_[i];
+    delete [] fluid_recv_[i];
+  }
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for(int i=0;i<r;i++) { 
+      delete [] field_send_[i];
+      delete [] field_recv_[i];
+    }
+  }
 }
 
 //--------------------------------------------------------------------------------------
 //! \fn
 //  \brief
 
-void BoundaryValues::EnrollFluidBoundaryFunction(enum EdgeNames edge, BValFluid_t my_bc)
+void BoundaryValues::EnrollFluidBoundaryFunction(enum direction dir, BValFluid_t my_bc)
 {
-  if(edge<0 || edge>5)
+  if(dir<0 || dir>5)
   {
     std::stringstream msg;
     msg << "### FATAL ERROR in EnrollFluidBoundaryCondition function" << std::endl
-        << "EdgeName = " << edge << " not valid" << std::endl;
+        << "dirName = " << dir << " not valid" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if(pmy_mblock_->neighbor[edge][0][0].gid==-1)
-  {
-    switch(edge){
-    case inner_x1:
-        FluidInnerX1_ = my_bc;
-      break;
-    case outer_x1:
-      FluidOuterX1_ = my_bc;
-      break;
-    case inner_x2:
-      FluidInnerX2_ = my_bc;
-      break;
-    case outer_x2:
-      FluidOuterX2_ = my_bc;
-      break;
-    case inner_x3:
-      FluidInnerX3_ = my_bc;
-      break;
-    case outer_x3:
-      FluidOuterX3_ = my_bc;
-      break;
-    default:
-      break;
-    }
-  }
+  if(pmy_mblock_->neighbor[dir][0][0].gid==-1)
+    FluidBoundary_[dir]=my_bc;
   return;
 }
 
@@ -269,96 +319,700 @@ void BoundaryValues::EnrollFluidBoundaryFunction(enum EdgeNames edge, BValFluid_
 //! \fn
 //  \brief
 
-void BoundaryValues::EnrollFieldBoundaryFunction(enum EdgeNames edge,BValBField_t my_bc)
+void BoundaryValues::EnrollFieldBoundaryFunction(enum direction dir,BValField_t my_bc)
 {
-  if(edge<0 || edge>5)
+  if(dir<0 || dir>5)
   {
     std::stringstream msg;
     msg << "### FATAL ERROR in EnrollFieldBoundaryCondition function" << std::endl
-        << "EdgeName = " << edge << " not valid" << std::endl;
+        << "dirName = " << dir << " not valid" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if(pmy_mblock_->neighbor[edge][0][0].gid==-1)
-  {
-    switch(edge){
-    case inner_x1:
-      BFieldInnerX1_ = my_bc;
-      break;
-    case outer_x1:
-      BFieldOuterX1_ = my_bc;
-      break;
-    case inner_x2:
-      BFieldInnerX2_ = my_bc;
-      break;
-    case outer_x2:
-      BFieldOuterX2_ = my_bc;
-      break;
-    case inner_x3:
-      BFieldInnerX3_ = my_bc;
-      break;
-    case outer_x3:
-      BFieldOuterX3_ = my_bc;
-      break;
-    default:
-      break;
+  if(pmy_mblock_->neighbor[dir][0][0].gid==-1)
+    FieldBoundary_[dir]=my_bc;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::LoadAndSendFluidBoundaryBuffer
+//                          (enum direction dir, AthenaArray<Real> &src)
+//  \brief Set boundary buffer for x1 direction using boundary functions
+//  note: some geometric boundaries (e.g. origin and pole) are not implemented yet
+void BoundaryValues::LoadAndSendFluidBoundaryBuffer
+                     (enum direction dir, AthenaArray<Real> &src)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pbl=pmb->pmy_mesh->pblock;
+  int oside;
+  std::stringstream msg;
+  Real *sendbuf=fluid_send_[dir];
+  int si, sj, sk, ei, ej, ek;
+
+  si=fluid_send_se_[dir][0];
+  ei=fluid_send_se_[dir][1];
+  sj=fluid_send_se_[dir][2];
+  ej=fluid_send_se_[dir][3];
+  sk=fluid_send_se_[dir][4];
+  ek=fluid_send_se_[dir][5];
+
+  if(pmb->neighbor[dir][0][0].gid==-1)
+    return; // do nothing for physical boundary
+
+  if(dir%2==0)
+    oside=dir+1;
+  else
+    oside=dir-1;
+
+  // Set buffers
+  int p=0;
+  for (int n=0; n<(NFLUID); ++n) {
+    for (int k=sk; k<=ek; ++k) {
+      for (int j=sj; j<=ej; ++j) {
+#pragma simd
+        for (int i=si; i<=ei; ++i) {
+          // buffer is always fully packed
+          sendbuf[p++]=src(n,k,j,i);
+        }
+      }
     }
+  }
+
+  // Send the buffer; modify this for MPI and AMR
+  if(pmb->neighbor[dir][0][0].rank == myrank) // myrank
+  {
+    while(pbl!=NULL)
+    {
+      if(pbl->gid==pmb->neighbor[dir][0][0].gid)
+        break;
+      pbl=pbl->next;
+    }
+    if(pbl==NULL)
+    {
+      msg << "### FATAL ERROR in SetFluidBoundary" << std::endl
+          << "In boundary " << dir << " of block "<<  pmb->gid
+          << ", neighbor block " << pmb->neighbor[dir][0][0].gid
+          << " is not found on the same process." << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+    std::memcpy(pbl->pbval->fluid_recv_[oside], fluid_send_[dir],
+                fluid_bufsize_[dir]*sizeof(Real));
+    pbl->pbval->fluid_flag_[oside][0][0]=true; // the other side
+  }
+  else // MPI
+  {
+      msg << "### FATAL ERROR in SetFluidBoundary" << std::endl
+          << "MPI is not implemented yet!!" << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+  }
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn bool BoundaryValues::ReceiveAndSetFluidBoundary(enum direction dir,
+//                                                      AthenaArray<Real> &dst)
+//  \brief load boundary buffer for x1 direction into the array
+bool BoundaryValues::ReceiveAndSetFluidBoundary(enum direction dir, AthenaArray<Real> &dst)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  std::stringstream msg;
+  Real *recvbuf=fluid_recv_[dir];
+  int si, sj, sk, ei, ej, ek;
+
+  if(pmb->neighbor[dir][0][0].gid==-1) // physical boundary
+    FluidBoundary_[dir](pmb,dst);
+  else // block boundary
+  {
+    if(fluid_flag_[dir][0][0] == false)
+    {
+      std::cout << "Not Ready: " << dir <<" from " << pmb->gid << std::endl;
+      return false; // return if it is not ready yet
+    }
+
+    si=fluid_recv_se_[dir][0];
+    ei=fluid_recv_se_[dir][1];
+    sj=fluid_recv_se_[dir][2];
+    ej=fluid_recv_se_[dir][3];
+    sk=fluid_recv_se_[dir][4];
+    ek=fluid_recv_se_[dir][5];
+
+    int p=0;
+    for (int n=0; n<(NFLUID); ++n) {
+      for (int k=sk; k<=ek; ++k) {
+        for (int j=sj; j<=ej; ++j) {
+#pragma simd
+          for (int i=si; i<=ei; ++i) {
+            // buffer is always fully packed
+            dst(n,k,j,i) = recvbuf[p++];
+          }
+        }
+      }
+    }
+    fluid_flag_[dir][0][0] = false; // clear the flag
+  }
+  return true;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::LoadAndSendFieldBoundaryBuffer
+//                           (enum direction dir, InterfaceField &src)
+//  \brief Set boundary buffer for x1 direction using boundary functions
+//  note: some geometric boundaries (e.g. origin and pole) are not implemented yet
+void BoundaryValues::LoadAndSendFieldBoundaryBuffer(enum direction dir,
+                                                    InterfaceField &src)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pbl=pmb->pmy_mesh->pblock;
+  int oside;
+  std::stringstream msg;
+  Real *sendbuf=field_send_[dir];
+  AthenaArray<Real>& x1src=src.x1f;
+  AthenaArray<Real>& x2src=src.x2f;
+  AthenaArray<Real>& x3src=src.x3f;
+  int si, sj, sk, ei, ej, ek;
+
+  if(pmb->neighbor[dir][0][0].gid==-1)
+    return; // do nothing for physical boundary
+
+  if(dir%2==0)
+    oside=dir+1;
+  else
+    oside=dir-1;
+
+  // Set buffers; x1f
+  int p=0;
+  si=field_send_se_[dir][x1face][0];
+  ei=field_send_se_[dir][x1face][1];
+  sj=field_send_se_[dir][x1face][2];
+  ej=field_send_se_[dir][x1face][3];
+  sk=field_send_se_[dir][x1face][4];
+  ek=field_send_se_[dir][x1face][5];
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
+#pragma simd
+      for (int i=si; i<=ei; ++i) {
+        // buffer is always fully packed
+        sendbuf[p++]=x1src(k,j,i);
+      }
+    }
+  }
+  // Set buffers; x2f
+  si=field_send_se_[dir][x2face][0];
+  ei=field_send_se_[dir][x2face][1];
+  sj=field_send_se_[dir][x2face][2];
+  ej=field_send_se_[dir][x2face][3];
+  sk=field_send_se_[dir][x2face][4];
+  ek=field_send_se_[dir][x2face][5];
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
+#pragma simd
+      for (int i=si; i<=ei; ++i) {
+        // buffer is always fully packed
+        sendbuf[p++]=x2src(k,j,i);
+      }
+    }
+  }
+  // Set buffers; x3f
+  si=field_send_se_[dir][x3face][0];
+  ei=field_send_se_[dir][x3face][1];
+  sj=field_send_se_[dir][x3face][2];
+  ej=field_send_se_[dir][x3face][3];
+  sk=field_send_se_[dir][x3face][4];
+  ek=field_send_se_[dir][x3face][5];
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
+#pragma simd
+      for (int i=si; i<=ei; ++i) {
+        // buffer is always fully packed
+        sendbuf[p++]=x3src(k,j,i);
+      }
+    }
+  }
+
+  // Send the buffer; modify this for MPI and AMR
+  if(pmb->neighbor[dir][0][0].rank == myrank) // myrank
+  {
+    while(pbl!=NULL)
+    {
+      if(pbl->gid==pmb->neighbor[dir][0][0].gid)
+        break;
+      pbl=pbl->next;
+    }
+    if(pbl==NULL)
+    {
+      msg << "### FATAL ERROR in SetFieldBoundary" << std::endl
+          << "In boundary " << dir << " of block "<<  pmb->gid
+          << ", neighbor block " << pmb->neighbor[dir][0][0].gid
+          << " is not found on the same process." << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+    std::memcpy(pbl->pbval->field_recv_[oside], field_send_[dir],
+                field_bufsize_[dir]*sizeof(Real));
+    pbl->pbval->field_flag_[oside][0][0]=true; // the other side
+  }
+  else // MPI
+  {
+      msg << "### FATAL ERROR in SetFieldBoundary" << std::endl
+          << "MPI is not implemented yet!!" << std::endl;
+      throw std::runtime_error(msg.str().c_str());
   }
   return;
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void FluidBCs::ApplyFluidBCs(AthenaArray<Real> &a)
-//  \brief Calls BC functions using appropriate function pointers to set ghost zones.  
-
-template<typename T> void BoundaryValues::ApplyBVals(T &input)
+//! \fn bool BoundaryValues::ReceiveAndSetFieldBoundary(enum direction dir,
+//                                                      InterfaceField &dst)
+//  \brief load boundary buffer for x1 direction into the array
+bool BoundaryValues::ReceiveAndSetFieldBoundary(enum direction dir, InterfaceField &dst)
 {
-// Boundary Conditions in x1-direction
+  MeshBlock *pmb=pmy_mblock_;
+  std::stringstream msg;
+  Real *recvbuf=field_recv_[dir];
+  AthenaArray<Real>& x1dst=dst.x1f;
+  AthenaArray<Real>& x2dst=dst.x2f;
+  AthenaArray<Real>& x3dst=dst.x3f;
+  int si, sj, sk, ei, ej, ek;
 
-  BValsInnerX1_(pmy_mblock_, input);
-  BValsOuterX1_(pmy_mblock_, input);
+  if(pmb->neighbor[dir][0][0].gid==-1) // physical boundary
+    FieldBoundary_[dir](pmb,dst);
+  else // block boundary
+  {
+    if(field_flag_[dir][0][0] == false)
+      return false; // return if it is not ready yet
 
-// Boundary Conditions in x2-direction 
-
-  if (pmy_mblock_->block_size.nx2 > 1){
-    BValsInnerX2_(pmy_mblock_, input);
-    BValsOuterX2_(pmy_mblock_, input);
+    // Load buffers; x1f
+    int p=0;
+    si=field_recv_se_[dir][x1face][0];
+    ei=field_recv_se_[dir][x1face][1];
+    sj=field_recv_se_[dir][x1face][2];
+    ej=field_recv_se_[dir][x1face][3];
+    sk=field_recv_se_[dir][x1face][4];
+    ek=field_recv_se_[dir][x1face][5];
+    for (int k=sk; k<=ek; ++k) {
+      for (int j=sj; j<=ej; ++j) {
+#pragma simd
+        for (int i=si; i<=ei; ++i) {
+          // buffer is always fully packed
+          x1dst(k,j,i)=recvbuf[p++];
+        }
+      }
+    }
+    // Load buffers; x2f
+    si=field_recv_se_[dir][x2face][0];
+    ei=field_recv_se_[dir][x2face][1];
+    sj=field_recv_se_[dir][x2face][2];
+    ej=field_recv_se_[dir][x2face][3];
+    sk=field_recv_se_[dir][x2face][4];
+    ek=field_recv_se_[dir][x2face][5];
+    for (int k=sk; k<=ek; ++k) {
+      for (int j=sj; j<=ej; ++j) {
+#pragma simd
+        for (int i=si; i<=ei; ++i) {
+          // buffer is always fully packed
+          x2dst(k,j,i)=recvbuf[p++];
+        }
+      }
+    }
+    // Load buffers; x3f
+    si=field_recv_se_[dir][x3face][0];
+    ei=field_recv_se_[dir][x3face][1];
+    sj=field_recv_se_[dir][x3face][2];
+    ej=field_recv_se_[dir][x3face][3];
+    sk=field_recv_se_[dir][x3face][4];
+    ek=field_recv_se_[dir][x3face][5];
+    for (int k=sk; k<=ek; ++k) {
+      for (int j=sj; j<=ej; ++j) {
+#pragma simd
+        for (int i=si; i<=ei; ++i) {
+          // buffer is always fully packed
+          x3dst(k,j,i)=recvbuf[p++];
+        }
+      }
+    }
+    field_flag_[dir][0][0] = false; // clear the flag
   }
 
-// Boundary Conditions in x3-direction 
+  return true;
+}
 
-  if (pmy_mblock_->block_size.nx3 > 1){
-    BValsInnerX3_(pmy_mblock_, input);
-    BValsOuterX3_(pmy_mblock_, input);
+
+void InitBoundaryBuffer(int nx1, int nx2, int nx3)
+{
+  int is, ie, js, je, ks, ke;
+
+  is = NGHOST;
+  ie = is + nx1 - 1;
+
+  if (nx2 > 1) {
+    js = NGHOST;
+    je = js + nx2 - 1;
+  } else {
+    js = je = 0;
   }
 
+  if (nx3 > 1) {
+    ks = NGHOST;
+    ke = ks + nx3 - 1;
+  } else {
+    ks = ke = 0;
+  }
+  fluid_send_se_[inner_x1][0]=is;
+  fluid_send_se_[inner_x1][1]=is+NGHOST-1;
+  fluid_send_se_[inner_x1][2]=js;
+  fluid_send_se_[inner_x1][3]=je;
+  fluid_send_se_[inner_x1][4]=ks;
+  fluid_send_se_[inner_x1][5]=ke;
+
+  fluid_send_se_[outer_x1][0]=ie-NGHOST+1;
+  fluid_send_se_[outer_x1][1]=ie;
+  fluid_send_se_[outer_x1][2]=js;
+  fluid_send_se_[outer_x1][3]=je;
+  fluid_send_se_[outer_x1][4]=ks;
+  fluid_send_se_[outer_x1][5]=ke;
+
+  fluid_send_se_[inner_x2][0]=0;
+  fluid_send_se_[inner_x2][1]=ie+NGHOST;
+  fluid_send_se_[inner_x2][2]=js;
+  fluid_send_se_[inner_x2][3]=js+NGHOST-1;
+  fluid_send_se_[inner_x2][4]=ks;
+  fluid_send_se_[inner_x2][5]=ke;
+
+  fluid_send_se_[outer_x2][0]=0;
+  fluid_send_se_[outer_x2][1]=ie+NGHOST;
+  fluid_send_se_[outer_x2][2]=je-NGHOST+1;
+  fluid_send_se_[outer_x2][3]=je;
+  fluid_send_se_[outer_x2][4]=ks;
+  fluid_send_se_[outer_x2][5]=ke;
+
+  fluid_send_se_[inner_x3][0]=0;
+  fluid_send_se_[inner_x3][1]=ie+NGHOST;
+  fluid_send_se_[inner_x3][2]=0;
+  fluid_send_se_[inner_x3][3]=je+NGHOST;
+  fluid_send_se_[inner_x3][4]=ks;
+  fluid_send_se_[inner_x3][5]=ks+NGHOST-1;
+
+  fluid_send_se_[outer_x3][0]=0;
+  fluid_send_se_[outer_x3][1]=ie+NGHOST;
+  fluid_send_se_[outer_x3][2]=0;
+  fluid_send_se_[outer_x3][3]=je+NGHOST;
+  fluid_send_se_[outer_x3][4]=ke-NGHOST+1;
+  fluid_send_se_[outer_x3][5]=ke;
+
+
+  fluid_recv_se_[inner_x1][0]=is-NGHOST;
+  fluid_recv_se_[inner_x1][1]=is-NGHOST+1;
+  fluid_recv_se_[inner_x1][2]=js;
+  fluid_recv_se_[inner_x1][3]=je;
+  fluid_recv_se_[inner_x1][4]=ks;
+  fluid_recv_se_[inner_x1][5]=ke;
+
+  fluid_recv_se_[outer_x1][0]=ie+1;
+  fluid_recv_se_[outer_x1][1]=ie+NGHOST;
+  fluid_recv_se_[outer_x1][2]=js;
+  fluid_recv_se_[outer_x1][3]=je;
+  fluid_recv_se_[outer_x1][4]=ks;
+  fluid_recv_se_[outer_x1][5]=ke;
+
+  fluid_recv_se_[inner_x2][0]=0;
+  fluid_recv_se_[inner_x2][1]=ie+NGHOST;
+  fluid_recv_se_[inner_x2][2]=js-NGHOST;
+  fluid_recv_se_[inner_x2][3]=js-NGHOST+1;
+  fluid_recv_se_[inner_x2][4]=ks;
+  fluid_recv_se_[inner_x2][5]=ke;
+
+  fluid_recv_se_[outer_x2][0]=0;
+  fluid_recv_se_[outer_x2][1]=ie+NGHOST;
+  fluid_recv_se_[outer_x2][2]=je+1;
+  fluid_recv_se_[outer_x2][3]=je+NGHOST;
+  fluid_recv_se_[outer_x2][4]=ks;
+  fluid_recv_se_[outer_x2][5]=ke;
+
+  fluid_recv_se_[inner_x3][0]=0;
+  fluid_recv_se_[inner_x3][1]=ie+NGHOST;
+  fluid_recv_se_[inner_x3][2]=0;
+  fluid_recv_se_[inner_x3][3]=je+NGHOST;
+  fluid_recv_se_[inner_x3][4]=ks-NGHOST;
+  fluid_recv_se_[inner_x3][5]=ks-NGHOST+1;
+
+  fluid_recv_se_[outer_x3][0]=0;
+  fluid_recv_se_[outer_x3][1]=ie+NGHOST;
+  fluid_recv_se_[outer_x3][2]=0;
+  fluid_recv_se_[outer_x3][3]=je+NGHOST;
+  fluid_recv_se_[outer_x3][4]=ke+1;
+  fluid_recv_se_[outer_x3][5]=ke+NGHOST;
+
+  fluid_bufsize_[inner_x1]=NGHOST*nx2*nx3*NFLUID;
+  fluid_bufsize_[outer_x1]=NGHOST*nx2*nx3*NFLUID;
+  fluid_bufsize_[inner_x2]=(nx1+2*NGHOST)*NGHOST*nx3*NFLUID;
+  fluid_bufsize_[outer_x2]=(nx1+2*NGHOST)*NGHOST*nx3*NFLUID;
+  fluid_bufsize_[inner_x3]=(nx1+2*NGHOST)*(nx2+2*NGHOST)*NGHOST*NFLUID;
+  fluid_bufsize_[outer_x3]=(nx1+2*NGHOST)*(nx2+2*NGHOST)*NGHOST*NFLUID;
+
+  if (MAGNETIC_FIELDS_ENABLED) {
+    field_send_se_[inner_x1][x1face][0]=is+1;
+    field_send_se_[inner_x1][x1face][1]=is+NGHOST;
+    field_send_se_[inner_x1][x1face][2]=js;
+    field_send_se_[inner_x1][x1face][3]=je;
+    field_send_se_[inner_x1][x1face][4]=ks;
+    field_send_se_[inner_x1][x1face][5]=ke;
+
+    field_send_se_[inner_x1][x2face][0]=is;
+    field_send_se_[inner_x1][x2face][1]=is+NGHOST-1;
+    field_send_se_[inner_x1][x2face][2]=js;
+    field_send_se_[inner_x1][x2face][3]=je+1;
+    field_send_se_[inner_x1][x2face][4]=ks;
+    field_send_se_[inner_x1][x2face][5]=ke;
+
+    field_send_se_[inner_x1][x3face][0]=is;
+    field_send_se_[inner_x1][x3face][1]=is+NGHOST-1;
+    field_send_se_[inner_x1][x3face][2]=js;
+    field_send_se_[inner_x1][x3face][3]=je;
+    field_send_se_[inner_x1][x3face][4]=ks;
+    field_send_se_[inner_x1][x3face][5]=ke+1;
+
+    field_send_se_[outer_x1][x1face][0]=ie-NGHOST+1;
+    field_send_se_[outer_x1][x1face][1]=ie;
+    field_send_se_[outer_x1][x1face][2]=js;
+    field_send_se_[outer_x1][x1face][3]=je;
+    field_send_se_[outer_x1][x1face][4]=ks;
+    field_send_se_[outer_x1][x1face][5]=ke;
+
+    field_send_se_[outer_x1][x2face][0]=ie-NGHOST+1;
+    field_send_se_[outer_x1][x2face][1]=ie;
+    field_send_se_[outer_x1][x2face][2]=js;
+    field_send_se_[outer_x1][x2face][3]=je+1;
+    field_send_se_[outer_x1][x2face][4]=ks;
+    field_send_se_[outer_x1][x2face][5]=ke;
+
+    field_send_se_[outer_x1][x3face][0]=ie-NGHOST+1;
+    field_send_se_[outer_x1][x3face][1]=ie;
+    field_send_se_[outer_x1][x3face][2]=js;
+    field_send_se_[outer_x1][x3face][3]=je;
+    field_send_se_[outer_x1][x3face][4]=ks;
+    field_send_se_[outer_x1][x3face][5]=ke+1;
+
+    field_send_se_[inner_x2][x1face][0]=0;
+    field_send_se_[inner_x2][x1face][1]=ie+NGHOST+1;
+    field_send_se_[inner_x2][x1face][2]=js;
+    field_send_se_[inner_x2][x1face][3]=js+NGHOST-1;
+    field_send_se_[inner_x2][x1face][4]=ks;
+    field_send_se_[inner_x2][x1face][5]=ke;
+
+    field_send_se_[inner_x2][x2face][0]=0;
+    field_send_se_[inner_x2][x2face][1]=ie+NGHOST;
+    field_send_se_[inner_x2][x2face][2]=js+1;
+    field_send_se_[inner_x2][x2face][3]=js+NGHOST;
+    field_send_se_[inner_x2][x2face][4]=ks;
+    field_send_se_[inner_x2][x2face][5]=ke;
+
+    field_send_se_[inner_x2][x3face][0]=0;
+    field_send_se_[inner_x2][x3face][1]=ie+NGHOST;
+    field_send_se_[inner_x2][x3face][2]=js;
+    field_send_se_[inner_x2][x3face][3]=js+NGHOST-1;
+    field_send_se_[inner_x2][x3face][4]=ks;
+    field_send_se_[inner_x2][x3face][5]=ke+1;
+
+    field_send_se_[outer_x2][x1face][0]=0;
+    field_send_se_[outer_x2][x1face][1]=ie+NGHOST+1;
+    field_send_se_[outer_x2][x1face][2]=je-NGHOST+1;
+    field_send_se_[outer_x2][x1face][3]=je;
+    field_send_se_[outer_x2][x1face][4]=ks;
+    field_send_se_[outer_x2][x1face][5]=ke;
+
+    field_send_se_[outer_x2][x2face][0]=0;
+    field_send_se_[outer_x2][x2face][1]=ie+NGHOST;
+    field_send_se_[outer_x2][x2face][2]=je-NGHOST+1;
+    field_send_se_[outer_x2][x2face][3]=je;
+    field_send_se_[outer_x2][x2face][4]=ks;
+    field_send_se_[outer_x2][x2face][5]=ke;
+
+    field_send_se_[outer_x2][x3face][0]=0;
+    field_send_se_[outer_x2][x3face][1]=ie+NGHOST;
+    field_send_se_[outer_x2][x3face][2]=je-NGHOST+1;
+    field_send_se_[outer_x2][x3face][3]=je;
+    field_send_se_[outer_x2][x3face][4]=ks;
+    field_send_se_[outer_x2][x3face][5]=ke+1;
+
+    field_send_se_[inner_x3][x1face][0]=0;
+    field_send_se_[inner_x3][x1face][1]=ie+NGHOST+1;
+    field_send_se_[inner_x3][x1face][2]=0;
+    field_send_se_[inner_x3][x1face][3]=je+NGHOST;
+    field_send_se_[inner_x3][x1face][4]=ks;
+    field_send_se_[inner_x3][x1face][5]=ks+NGHOST-1;
+
+    field_send_se_[inner_x3][x2face][0]=0;
+    field_send_se_[inner_x3][x2face][1]=ie+NGHOST;
+    field_send_se_[inner_x3][x2face][2]=0;
+    field_send_se_[inner_x3][x2face][3]=je+NGHOST+1;
+    field_send_se_[inner_x3][x2face][4]=ks;
+    field_send_se_[inner_x3][x2face][5]=ks+NGHOST-1;
+
+    field_send_se_[inner_x3][x3face][0]=0;
+    field_send_se_[inner_x3][x3face][1]=ie+NGHOST;
+    field_send_se_[inner_x3][x3face][2]=0;
+    field_send_se_[inner_x3][x3face][3]=je+NGHOST+1;
+    field_send_se_[inner_x3][x3face][4]=ks+1;
+    field_send_se_[inner_x3][x3face][5]=ks+NGHOST;
+
+    field_send_se_[outer_x3][x1face][0]=0;
+    field_send_se_[outer_x3][x1face][1]=ie+NGHOST+1;
+    field_send_se_[outer_x3][x1face][2]=0;
+    field_send_se_[outer_x3][x1face][3]=je+NGHOST;
+    field_send_se_[outer_x3][x1face][4]=ke-NGHOST+1;
+    field_send_se_[outer_x3][x1face][5]=ke;
+
+    field_send_se_[outer_x3][x2face][0]=0;
+    field_send_se_[outer_x3][x2face][1]=ie+NGHOST;
+    field_send_se_[outer_x3][x2face][2]=0;
+    field_send_se_[outer_x3][x2face][3]=je+NGHOST+1;
+    field_send_se_[outer_x3][x2face][4]=ke-NGHOST+1;
+    field_send_se_[outer_x3][x2face][5]=ke;
+
+    field_send_se_[outer_x3][x3face][0]=0;
+    field_send_se_[outer_x3][x3face][1]=ie+NGHOST;
+    field_send_se_[outer_x3][x3face][2]=0;
+    field_send_se_[outer_x3][x3face][3]=je+NGHOST+1;
+    field_send_se_[outer_x3][x3face][4]=ke-NGHOST+1;
+    field_send_se_[outer_x3][x3face][5]=ke;
+
+    field_recv_se_[inner_x1][x1face][0]=is-NGHOST;
+    field_recv_se_[inner_x1][x1face][1]=is-1;
+    field_recv_se_[inner_x1][x1face][2]=js;
+    field_recv_se_[inner_x1][x1face][3]=je;
+    field_recv_se_[inner_x1][x1face][4]=ks;
+    field_recv_se_[inner_x1][x1face][5]=ke;
+
+    field_recv_se_[inner_x1][x2face][0]=is-NGHOST;
+    field_recv_se_[inner_x1][x2face][1]=is-1;
+    field_recv_se_[inner_x1][x2face][2]=js;
+    field_recv_se_[inner_x1][x2face][3]=je+1;
+    field_recv_se_[inner_x1][x2face][4]=ks;
+    field_recv_se_[inner_x1][x2face][5]=ke;
+
+    field_recv_se_[inner_x1][x3face][0]=is-NGHOST;
+    field_recv_se_[inner_x1][x3face][1]=is-1;
+    field_recv_se_[inner_x1][x3face][2]=js;
+    field_recv_se_[inner_x1][x3face][3]=je;
+    field_recv_se_[inner_x1][x3face][4]=ks;
+    field_recv_se_[inner_x1][x3face][5]=ke+1;
+
+    field_recv_se_[outer_x1][x1face][0]=ie+2;
+    field_recv_se_[outer_x1][x1face][1]=ie+NGHOST+1;
+    field_recv_se_[outer_x1][x1face][2]=js;
+    field_recv_se_[outer_x1][x1face][3]=je;
+    field_recv_se_[outer_x1][x1face][4]=ks;
+    field_recv_se_[outer_x1][x1face][5]=ke;
+
+    field_recv_se_[outer_x1][x2face][0]=ie+1;
+    field_recv_se_[outer_x1][x2face][1]=ie+NGHOST;
+    field_recv_se_[outer_x1][x2face][2]=js;
+    field_recv_se_[outer_x1][x2face][3]=je+1;
+    field_recv_se_[outer_x1][x2face][4]=ks;
+    field_recv_se_[outer_x1][x2face][5]=ke;
+
+    field_recv_se_[outer_x1][x3face][0]=ie+1;
+    field_recv_se_[outer_x1][x3face][1]=ie+NGHOST;
+    field_recv_se_[outer_x1][x3face][2]=js;
+    field_recv_se_[outer_x1][x3face][3]=je;
+    field_recv_se_[outer_x1][x3face][4]=ks;
+    field_recv_se_[outer_x1][x3face][5]=ke+1;
+
+    field_recv_se_[inner_x2][x1face][0]=0;
+    field_recv_se_[inner_x2][x1face][1]=ie+NGHOST+1;
+    field_recv_se_[inner_x2][x1face][2]=js-NGHOST;
+    field_recv_se_[inner_x2][x1face][3]=js-1;
+    field_recv_se_[inner_x2][x1face][4]=ks;
+    field_recv_se_[inner_x2][x1face][5]=ke;
+
+    field_recv_se_[inner_x2][x2face][0]=0;
+    field_recv_se_[inner_x2][x2face][1]=ie+NGHOST;
+    field_recv_se_[inner_x2][x2face][2]=js-NGHOST;
+    field_recv_se_[inner_x2][x2face][3]=js-1;
+    field_recv_se_[inner_x2][x2face][4]=ks;
+    field_recv_se_[inner_x2][x2face][5]=ke;
+
+    field_recv_se_[inner_x2][x3face][0]=0;
+    field_recv_se_[inner_x2][x3face][1]=ie+NGHOST;
+    field_recv_se_[inner_x2][x3face][2]=js-NGHOST;
+    field_recv_se_[inner_x2][x3face][3]=js-1;
+    field_recv_se_[inner_x2][x3face][4]=ks;
+    field_recv_se_[inner_x2][x3face][5]=ke+1;
+
+    field_recv_se_[outer_x2][x1face][0]=0;
+    field_recv_se_[outer_x2][x1face][1]=ie+NGHOST+1;
+    field_recv_se_[outer_x2][x1face][2]=je+1;
+    field_recv_se_[outer_x2][x1face][3]=je+NGHOST;
+    field_recv_se_[outer_x2][x1face][4]=ks;
+    field_recv_se_[outer_x2][x1face][5]=ke;
+
+    field_recv_se_[outer_x2][x2face][0]=0;
+    field_recv_se_[outer_x2][x2face][1]=ie+NGHOST;
+    field_recv_se_[outer_x2][x2face][2]=je+2;
+    field_recv_se_[outer_x2][x2face][3]=je+NGHOST+1;
+    field_recv_se_[outer_x2][x2face][4]=ks;
+    field_recv_se_[outer_x2][x2face][5]=ke;
+
+    field_recv_se_[outer_x2][x3face][0]=0;
+    field_recv_se_[outer_x2][x3face][1]=ie+NGHOST;
+    field_recv_se_[outer_x2][x3face][2]=je+1;
+    field_recv_se_[outer_x2][x3face][3]=je+NGHOST;
+    field_recv_se_[outer_x2][x3face][4]=ks;
+    field_recv_se_[outer_x2][x3face][5]=ke+1;
+
+    field_recv_se_[inner_x3][x1face][0]=0;
+    field_recv_se_[inner_x3][x1face][1]=ie+NGHOST+1;
+    field_recv_se_[inner_x3][x1face][2]=0;
+    field_recv_se_[inner_x3][x1face][3]=je+NGHOST;
+    field_recv_se_[inner_x3][x1face][4]=ks-NGHOST;
+    field_recv_se_[inner_x3][x1face][5]=ks-1;
+
+    field_recv_se_[inner_x3][x2face][0]=0;
+    field_recv_se_[inner_x3][x2face][1]=ie+NGHOST;
+    field_recv_se_[inner_x3][x2face][2]=0;
+    field_recv_se_[inner_x3][x2face][3]=je+NGHOST+1;
+    field_recv_se_[inner_x3][x2face][4]=ks-NGHOST;
+    field_recv_se_[inner_x3][x2face][5]=ks-1;
+
+    field_recv_se_[inner_x3][x3face][0]=0;
+    field_recv_se_[inner_x3][x3face][1]=ie+NGHOST;
+    field_recv_se_[inner_x3][x3face][2]=0;
+    field_recv_se_[inner_x3][x3face][3]=je+NGHOST+1;
+    field_recv_se_[inner_x3][x3face][4]=ks-NGHOST;
+    field_recv_se_[inner_x3][x3face][5]=ks-1;
+
+    field_recv_se_[outer_x3][x1face][0]=0;
+    field_recv_se_[outer_x3][x1face][1]=ie+NGHOST+1;
+    field_recv_se_[outer_x3][x1face][2]=0;
+    field_recv_se_[outer_x3][x1face][3]=je+NGHOST;
+    field_recv_se_[outer_x3][x1face][4]=ke+1;
+    field_recv_se_[outer_x3][x1face][5]=ke+NGHOST;
+
+    field_recv_se_[outer_x3][x2face][0]=0;
+    field_recv_se_[outer_x3][x2face][1]=ie+NGHOST;
+    field_recv_se_[outer_x3][x2face][2]=0;
+    field_recv_se_[outer_x3][x2face][3]=je+NGHOST+1;
+    field_recv_se_[outer_x3][x2face][4]=ke+1;
+    field_recv_se_[outer_x3][x2face][5]=ke+NGHOST;
+
+    field_recv_se_[outer_x3][x3face][0]=0;
+    field_recv_se_[outer_x3][x3face][1]=ie+NGHOST;
+    field_recv_se_[outer_x3][x3face][2]=0;
+    field_recv_se_[outer_x3][x3face][3]=je+NGHOST+1;
+    field_recv_se_[outer_x3][x3face][4]=ke+2;
+    field_recv_se_[outer_x3][x3face][5]=ke+NGHOST+1;
+
+    field_bufsize_[inner_x1]=NGHOST*(nx2*nx3+(nx2+1)*nx3+nx2*(nx3+1));
+    field_bufsize_[outer_x1]=NGHOST*(nx2*nx3+(nx2+1)*nx3+nx2*(nx3+1));
+    field_bufsize_[inner_x2]=NGHOST*((nx1+2*NGHOST)*nx3+(nx1+2*NGHOST+1)*nx3
+                            +(nx1+2*NGHOST)*(nx3+1));
+    field_bufsize_[outer_x2]=NGHOST*((nx1+2*NGHOST)*nx3+(nx1+2*NGHOST+1)*nx3
+                            +(nx1+2*NGHOST)*(nx3+1));
+    field_bufsize_[inner_x3]=NGHOST*((nx1+2*NGHOST+1)*(nx2+2*NGHOST)
+                      +(nx1+2*NGHOST)*(nx2+2*NGHOST+1)+(nx1+2*NGHOST)*(nx2+2*NGHOST));
+    field_bufsize_[outer_x3]=NGHOST*((nx1+2*NGHOST+1)*(nx2+2*NGHOST)
+                      +(nx1+2*NGHOST)*(nx2+2*NGHOST+1)+(nx1+2*NGHOST)*(nx2+2*NGHOST));
+  }
   return;
 }
 
-template void BoundaryValues::ApplyBVals< AthenaArray<Real> >(AthenaArray<Real> &input);
-template void BoundaryValues::ApplyBVals<InterfaceField>(InterfaceField &input);
-
-template<> void BoundaryValues::BValsInnerX1_< AthenaArray<Real> >
-  (MeshBlock *pmb, AthenaArray<Real> &input) {FluidInnerX1_(pmb,input);}
-template<> void BoundaryValues::BValsInnerX2_< AthenaArray<Real> >
-  (MeshBlock *pmb, AthenaArray<Real> &input) {FluidInnerX2_(pmb,input);}
-template<> void BoundaryValues::BValsInnerX3_< AthenaArray<Real> >
-  (MeshBlock *pmb, AthenaArray<Real> &input) {FluidInnerX3_(pmb,input);}
-template<> void BoundaryValues::BValsOuterX1_< AthenaArray<Real> >
-  (MeshBlock *pmb, AthenaArray<Real> &input) {FluidOuterX1_(pmb,input);}
-template<> void BoundaryValues::BValsOuterX2_< AthenaArray<Real> >
-  (MeshBlock *pmb, AthenaArray<Real> &input) {FluidOuterX2_(pmb,input);}
-template<> void BoundaryValues::BValsOuterX3_< AthenaArray<Real> >
-  (MeshBlock *pmb, AthenaArray<Real> &input) {FluidOuterX3_(pmb,input);}
-
-template<> void BoundaryValues::BValsInnerX1_< InterfaceField >
-  (MeshBlock *pmb, InterfaceField &input) {BFieldInnerX1_(pmb,input);}
-template<> void BoundaryValues::BValsInnerX2_< InterfaceField >
-  (MeshBlock *pmb, InterfaceField &input) {BFieldInnerX2_(pmb,input);}
-template<> void BoundaryValues::BValsInnerX3_< InterfaceField >
-  (MeshBlock *pmb, InterfaceField &input) {BFieldInnerX3_(pmb,input);}
-template<> void BoundaryValues::BValsOuterX1_< InterfaceField >
-  (MeshBlock *pmb, InterfaceField &input) {BFieldOuterX1_(pmb,input);}
-template<> void BoundaryValues::BValsOuterX2_< InterfaceField >
-  (MeshBlock *pmb, InterfaceField &input) {BFieldOuterX2_(pmb,input);}
-template<> void BoundaryValues::BValsOuterX3_< InterfaceField >
-  (MeshBlock *pmb, InterfaceField &input) {BFieldOuterX3_(pmb,input);}
