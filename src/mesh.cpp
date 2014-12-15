@@ -41,7 +41,17 @@
 #include "field/integrators/field_integrator.hpp"  // FieldIntegrator
 #include "parameter_input.hpp"          // ParameterInput
 #include "blockuid/blockuid.hpp"        // BlockUID
-#include "outputs/wrapper.hpp"
+#include "wrapio.hpp"
+
+// MPI header
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#endif
+
+// OpenMP header
+#ifdef OPENMP_PARALLEL
+#include <omp.h>
+#endif
 
 //======================================================================================
 //! \file mesh.cpp
@@ -495,19 +505,14 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 //--------------------------------------------------------------------------------------
 // Mesh constructor for restarting. Load the restarting file
 
-Mesh::Mesh(ParameterInput *pin, const char *prestart_file, int test_flag)
+Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
 {
   std::stringstream msg;
   RegionSize block_size;
   MeshBlock *pfirst;
   int idl, i, j, lx1, lx2, lx3, ll, nerr;
   int *nslist;
-  unsigned int loc;
-  ResSize_t header=0, ret;
-  const int bufsize=8192;
-  char *buf = new char[bufsize]; // for header skipping
-  ResFile resfile;
-  ResSize_t *offset;
+  WrapIOSize_t *offset;
   Real *costs;
   Real totalcost;
   BlockUID *buid;
@@ -527,46 +532,23 @@ Mesh::Mesh(ParameterInput *pin, const char *prestart_file, int test_flag)
     throw std::runtime_error(msg.str().c_str());
   }
 
-  // open the restarting file (parallel in MPI)
-  resfile.ResFileOpen(prestart_file);
-
-  // skip the input parameters (serial)
-  do {
-    ret=resfile.ResFileRead(buf, sizeof(char), bufsize);
-    std::string str(buf);
-    loc=str.find("<par_end>",0);
-    if(loc!=std::string::npos)
-    {
-      header+=loc+10;
-      break;
-    }
-    header+=bufsize;
-  } while(ret == bufsize);
-  if(loc == std::string::npos)
-  {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Cannot find <par_end>; the restarting file is broken." << std::endl;
-    resfile.ResFileClose();
-    throw std::runtime_error(msg.str().c_str());
-  }
-  resfile.ResFileSeek(header);
-
-  // read from the restarting file (serial)
+  // read from the restarting file (everyone)
+  // the file is already open and the pointer is set to after <par_end>
   nerr=0;
-  if(resfile.ResFileRead(&nbtotal, sizeof(int), 1)!=1) nerr++;
-  if(resfile.ResFileRead(&idl, sizeof(int), 1)!=1) nerr++;
-  if(resfile.ResFileRead(&root_level, sizeof(int), 1)!=1) nerr++;
-  if(resfile.ResFileRead(&max_level, sizeof(int), 1)!=1) nerr++;
-  if(resfile.ResFileRead(&mesh_size, sizeof(RegionSize), 1)!=1) nerr++;
-  if(resfile.ResFileRead(&mesh_bcs, sizeof(RegionBCs), 1)!=1) nerr++;
-  if(resfile.ResFileRead(&time, sizeof(Real), 1)!=1) nerr++;
-  if(resfile.ResFileRead(&dt, sizeof(Real), 1)!=1) nerr++;
-  if(resfile.ResFileRead(&ncycle, sizeof(int), 1)!=1) nerr++;
+  if(resfile.Read(&nbtotal, sizeof(int), 1)!=1) nerr++;
+  if(resfile.Read(&idl, sizeof(int), 1)!=1) nerr++;
+  if(resfile.Read(&root_level, sizeof(int), 1)!=1) nerr++;
+  if(resfile.Read(&max_level, sizeof(int), 1)!=1) nerr++;
+  if(resfile.Read(&mesh_size, sizeof(RegionSize), 1)!=1) nerr++;
+  if(resfile.Read(&mesh_bcs, sizeof(RegionBCs), 1)!=1) nerr++;
+  if(resfile.Read(&time, sizeof(Real), 1)!=1) nerr++;
+  if(resfile.Read(&dt, sizeof(Real), 1)!=1) nerr++;
+  if(resfile.Read(&ncycle, sizeof(int), 1)!=1) nerr++;
   if(nerr>0)
   {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "The restarting file is broken." << std::endl;
-    resfile.ResFileClose();
+    resfile.Close();
     throw std::runtime_error(msg.str().c_str());
   }
 
@@ -580,7 +562,7 @@ Mesh::Mesh(ParameterInput *pin, const char *prestart_file, int test_flag)
 
   //initialize
   buid=new BlockUID[nbtotal];
-  offset=new ResSize_t[nbtotal];
+  offset=new WrapIOSize_t[nbtotal];
   costs=new Real[nbtotal];
   rawid=new ID_t[IDLENGTH];
   nslist=new int [1]; // nproc
@@ -598,19 +580,19 @@ Mesh::Mesh(ParameterInput *pin, const char *prestart_file, int test_flag)
   for(int i=0;i<nbtotal;i++)
   {
     int bgid,level;
-    if(resfile.ResFileRead(&bgid,sizeof(int),1)!=1) nerr++;
-    if(resfile.ResFileRead(&level,sizeof(int),1)!=1) nerr++;
-    if(resfile.ResFileRead(rawid,sizeof(ID_t),idl)!=idl) nerr++;
-    if(resfile.ResFileRead(&(costs[i]),sizeof(Real),1)!=1) nerr++;
-    if(resfile.ResFileRead(&(offset[i]),sizeof(ResSize_t),1)!=1) nerr++;
+    if(resfile.Read(&bgid,sizeof(int),1)!=1) nerr++;
+    if(resfile.Read(&level,sizeof(int),1)!=1) nerr++;
+    if(resfile.Read(rawid,sizeof(ID_t),idl)!=idl) nerr++;
+    if(resfile.Read(&(costs[i]),sizeof(Real),1)!=1) nerr++;
+    if(resfile.Read(&(offset[i]),sizeof(WrapIOSize_t),1)!=1) nerr++;
     buid[i].SetUID(rawid,level);
     totalcost+=costs[i];
   }
   if(nerr>0)
   {
-    msg << "### FATAL ERROR in MeshBlock constructor" << std::endl
+    msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "The restarting file is broken." << std::endl;
-    resfile.ResFileClose();
+    resfile.Close();
     throw std::runtime_error(msg.str().c_str());
   }
 
@@ -651,6 +633,11 @@ Mesh::Mesh(ParameterInput *pin, const char *prestart_file, int test_flag)
       std::cout << "Logical Level " << i << ": " << nb[i-root_level] << " Blocks" << std::endl;
     }
     std::cout << "In Total : " << nbt << " Blocks" << std::endl;
+    delete [] nslist;
+    delete [] buid;
+    delete [] offset;
+    delete [] costs;
+    delete [] rawid;
     delete [] nb;
     return;
   }
@@ -675,7 +662,6 @@ Mesh::Mesh(ParameterInput *pin, const char *prestart_file, int test_flag)
   pblock=pfirst;
 
 // clean up
-  resfile.ResFileClose();
   delete [] nslist;
   delete [] buid;
   delete [] offset;
@@ -871,7 +857,7 @@ MeshBlock::MeshBlock(int igid, BlockUID iuid, RegionSize input_block,
 // MeshBlock constructor for restarting
 
 MeshBlock::MeshBlock(int igid, Mesh *pm, ParameterInput *pin, BlockUID *list,
-                     int *nslist, ResFile& resfile, ResSize_t offset, Real icost)
+                     int *nslist, WrapIO& resfile, WrapIOSize_t offset, Real icost)
 {
   std::stringstream msg;
   pmy_mesh = pm;
@@ -884,20 +870,20 @@ MeshBlock::MeshBlock(int igid, Mesh *pm, ParameterInput *pin, BlockUID *list,
   int nerr=0;
 
   // seek the file
-  resfile.ResFileSeek(offset);
+  resfile.Seek(offset);
   // load block structure and neighbor
-  if(resfile.ResFileRead(&block_size, sizeof(RegionSize), 1)!=1)
+  if(resfile.Read(&block_size, sizeof(RegionSize), 1)!=1)
     nerr++;
-  if(resfile.ResFileRead(&block_bcs, sizeof(RegionBCs), 1)!=1)
+  if(resfile.Read(&block_bcs, sizeof(RegionBCs), 1)!=1)
     nerr++;
-  if(resfile.ResFileRead(&neighbor, sizeof(NeighborBlock), 6*2*2)!=6*2*2)
+  if(resfile.Read(&neighbor, sizeof(NeighborBlock), 6*2*2)!=6*2*2)
     nerr++;
 
   if(nerr>0)
   {
     msg << "### FATAL ERROR in MeshBlock constructor" << std::endl
         << "The restarting file is broken." << std::endl;
-    resfile.ResFileClose();
+    resfile.Close();
     throw std::runtime_error(msg.str().c_str());
   }
 
@@ -965,17 +951,17 @@ MeshBlock::MeshBlock(int igid, Mesh *pm, ParameterInput *pin, BlockUID *list,
 
   //load x1f, x2f, x3f
   nerr=0;
-  if(resfile.ResFileRead(x1f.GetArrayPointer(),sizeof(Real),x1f.GetDim1())
+  if(resfile.Read(x1f.GetArrayPointer(),sizeof(Real),x1f.GetDim1())
      !=x1f.GetDim1()) nerr++;
-  if(resfile.ResFileRead(x2f.GetArrayPointer(),sizeof(Real),x2f.GetDim1())
+  if(resfile.Read(x2f.GetArrayPointer(),sizeof(Real),x2f.GetDim1())
      !=x2f.GetDim1()) nerr++;
-  if(resfile.ResFileRead(x3f.GetArrayPointer(),sizeof(Real),x3f.GetDim1())
+  if(resfile.Read(x3f.GetArrayPointer(),sizeof(Real),x3f.GetDim1())
      !=x3f.GetDim1()) nerr++;
   if(nerr>0)
   {
     msg << "### FATAL ERROR in MeshBlock constructor" << std::endl
         << "The restarting file is broken." << std::endl;
-    resfile.ResFileClose();
+    resfile.Close();
     throw std::runtime_error(msg.str().c_str());
   }
 
@@ -995,21 +981,21 @@ MeshBlock::MeshBlock(int igid, Mesh *pm, ParameterInput *pin, BlockUID *list,
 
   // load fluid and field data
   nerr=0;
-  if(resfile.ResFileRead(pfluid->u.GetArrayPointer(),sizeof(Real),
+  if(resfile.Read(pfluid->u.GetArrayPointer(),sizeof(Real),
                          pfluid->u.GetSize())!=pfluid->u.GetSize()) nerr++;
   if (MAGNETIC_FIELDS_ENABLED) {
-    if(resfile.ResFileRead(pfield->b.x1f.GetArrayPointer(),sizeof(Real),
+    if(resfile.Read(pfield->b.x1f.GetArrayPointer(),sizeof(Real),
                pfield->b.x1f.GetSize())!=pfield->b.x1f.GetSize()) nerr++;
-    if(resfile.ResFileRead(pfield->b.x1f.GetArrayPointer(),sizeof(Real),
+    if(resfile.Read(pfield->b.x1f.GetArrayPointer(),sizeof(Real),
                pfield->b.x1f.GetSize())!=pfield->b.x1f.GetSize()) nerr++;
-    if(resfile.ResFileRead(pfield->b.x1f.GetArrayPointer(),sizeof(Real),
+    if(resfile.Read(pfield->b.x1f.GetArrayPointer(),sizeof(Real),
                pfield->b.x1f.GetSize())!=pfield->b.x1f.GetSize()) nerr++;
   }
   if(nerr>0)
   {
     msg << "### FATAL ERROR in MeshBlock constructor" << std::endl
         << "The restarting file is broken." << std::endl;
-    resfile.ResFileClose();
+    resfile.Close();
     throw std::runtime_error(msg.str().c_str());
   }
   return;

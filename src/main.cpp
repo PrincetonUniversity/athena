@@ -32,9 +32,20 @@
 #include "mesh.hpp"             // Mesh
 #include "parameter_input.hpp"  // ParameterInput
 #include "outputs/outputs.hpp"  // Outputs
+#include "wrapio.hpp"           // WrapIO
 
-// OpenMP headers
+
+int myrank=0;
+
+// MPI header and varaibles
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#endif
+
+// OpenMP header
+#ifdef OPENMP_PARALLEL
 #include <omp.h>
+#endif
 
 // function prototypes
 void ShowConfig();
@@ -61,15 +72,36 @@ int main(int argc, char *argv[])
 {
   std::string athena_version = "version 0.1 - February 2014";
   std::string input_file = "athinput";
-  char *prestart_file = NULL;
   char *prundir = NULL;
   int res_flag=0;     // gets set to 1 if -r        argument is on cmdline
   int narg_flag=0;    // gets set to 1 if -n        argument is on cmdline
   int iarg_flag=0;    // gets set to 1 if -i <file> argument is on cmdline
-  int test_flag=0;    // gets set to 1 if -g        argument is on cmdline
+  int test_flag=0;    // gets set to 1 if -m        argument is on cmdline
+
+#ifdef MPI_PARALLEL
+//--- Step 0. --------------------------------------------------------------------------
+// Initialize MPI environment, distribute input parameters to all ranks
+
+  if(MPI_SUCCESS != MPI_Init(&argc, &argv))
+  {
+    std::cout << "### FATAL ERROR in main" << std::endl
+              << "MPI Initialization failed." << std::endl;
+    return(0);
+  }
+
+/* Get proc id (rank) in MPI_COMM_WORLD, store as global variable */
+  if(MPI_SUCCESS != MPI_Comm_rank(MPI_COMM_WORLD, &myrank))
+  {
+    std::cout << "### FATAL ERROR in main" << std::endl
+              << "MPI_Comm_rank failed." << std::endl;
+    return(0);
+  }
+  std::cout << "my rank is :" << myrank << std::endl;
+#endif /* MPI_PARALLEL */
+
 
 //--- Step 1. --------------------------------------------------------------------------
-// Check for command line options and respond. 
+// Check for command line options and respond.
 
   for (int i=1; i<argc; i++) {
 
@@ -78,13 +110,13 @@ int main(int argc, char *argv[])
     if(*argv[i] == '-'  && *(argv[i]+1) != '\0' && *(argv[i]+2) == '\0'){
       switch(*(argv[i]+1)) {
       case 'i':                      // -i <input_file>
-        input_file = argv[++i];
+        ++i;
+        if(res_flag==0) input_file = argv[i];
         iarg_flag = 1;
       break;
       case 'r':                      // -r <restart_file>
         res_flag = 1;
-        input_file = prestart_file = argv[++i];
-        if(iarg_flag) input_file = prestart_file; // use restart if input file not set 
+        input_file = argv[++i];
         break;
       case 'd':                      // -d <run_directory>
         prundir = argv[++i];
@@ -121,12 +153,16 @@ int main(int argc, char *argv[])
 //--- Step 2. --------------------------------------------------------------------------
 // Construct object to store input parameters, then parse input file and command line
 // Note memory allocations and parameter input are protected by a simple error handler
+// The input is read by every process in parallel using MPI-IO.
 
   ParameterInput *pinput;
+  WrapIO input;
   try {
     pinput = new ParameterInput;
-    pinput->LoadFromFile(input_file);
+    input.Open(input_file.c_str());
+    pinput->LoadFromFile(input);
     pinput->ModifyFromCmdline(argc,argv);
+     // leave the file open
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl
@@ -146,10 +182,7 @@ int main(int argc, char *argv[])
     return(0);
   }
 
-//--- Step 3. --------------------------------------------------------------------------
-// Initialize MPI environment, distribute input parameters to all ranks
-
-//  g_comm_world_id = 0;
+  std::cout <<myrank << " :" <<   pinput->GetReal("meshblock","nx1") << std::endl;
 
 // Note steps 4-6 are protected by a simple error handler
 //--- Step 4. --------------------------------------------------------------------------
@@ -160,7 +193,8 @@ int main(int argc, char *argv[])
     if(res_flag==0)
       pmesh = new Mesh(pinput, test_flag);
     else 
-      pmesh = new Mesh(pinput, prestart_file, test_flag);
+      pmesh = new Mesh(pinput, input, test_flag);
+    input.Close(); // close the file here
   }
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl
@@ -354,6 +388,10 @@ int main(int argc, char *argv[])
   delete pinput;
   delete pmesh;
   delete pouts;
+
+#ifdef MPI_PARALLEL
+  MPI_Finalize();
+#endif /* MPI_PARALLEL */
 
   return(0); 
 }

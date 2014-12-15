@@ -19,6 +19,7 @@
 
 // Athena headers
 #include "athena.hpp"  // Real
+#include "wrapio.hpp"
 
 //! \struct InputLine
 //  \brief  node in a linked list of parameters contained within a single input block
@@ -56,6 +57,8 @@ public:
   ParameterInput();
   ~ParameterInput();
 
+  void LoadFromStream(std::istream &is);
+  void LoadFromFile(WrapIO &input);
   void LoadFromFile(std::string filename);
   void ModifyFromCmdline(int argc, char *argv[]);
   void ParameterDump(std::ostream& os);

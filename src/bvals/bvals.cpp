@@ -32,6 +32,11 @@
 #include "../fluid/fluid.hpp"     // Fluid
 #include "../parameter_input.hpp" // ParameterInput
 
+// MPI header
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#endif
+
 
 // arrays of start and end points, created in InitBoundaryBuffer
 int fluid_send_se_[6][6];
@@ -40,8 +45,6 @@ int field_send_se_[6][3][6];
 int field_recv_se_[6][3][6];
 int fluid_bufsize_[6];
 int field_bufsize_[6];
-
-int myrank=0; // just for test
 
 //======================================================================================
 //! \file bvals.cpp

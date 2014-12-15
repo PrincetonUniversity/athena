@@ -48,4 +48,6 @@ enum ActionOnBlock
   fluid_recvset_bcsx3_n,  fluid_recvset_bcsx3_nhalf,
   field_recvset_bcsx3_n,  field_recvset_bcsx3_nhalf};
 
+extern int myrank;
+
 #endif

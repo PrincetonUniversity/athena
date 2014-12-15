@@ -32,7 +32,15 @@
 #include "../coordinates/coordinates.hpp" // CenterWidth()
 #include "../field/field.hpp"             // B-fields
 
+// MPI header
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#endif
+
+// OpenMP header
+#ifdef OPENMP_PARALLEL
 #include <omp.h>
+#endif
 
 //======================================================================================
 //! \file fluid.cpp

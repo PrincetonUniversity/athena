@@ -14,7 +14,7 @@
 #include "athena.hpp"         // macros, Real
 #include "athena_arrays.hpp"  // AthenaArray
 #include "blockuid/blockuid.hpp"
-#include "outputs/wrapper.hpp"
+#include "wrapio.hpp"
 
 class ParameterInput;
 class Mesh;
@@ -65,7 +65,7 @@ public:
   MeshBlock(int igid, BlockUID iuid, RegionSize input_size,
             RegionBCs input_bcs, Mesh *pm, ParameterInput *pin);
   MeshBlock(int igid, Mesh *pm, ParameterInput *pin, BlockUID *list,
-            int *nslist, ResFile& resfile, ResSize_t offset, Real icost);
+            int *nslist, WrapIO& resfile, WrapIOSize_t offset, Real icost);
   ~MeshBlock();
   size_t GetBlockSizeInBytes(void);
 
@@ -99,13 +99,12 @@ private:
   Real MeshGeneratorX1(Real x, RegionSize rs);
   Real MeshGeneratorX2(Real x, RegionSize rs);
   Real MeshGeneratorX3(Real x, RegionSize rs);
-  void CreateSEList(int nx1, int nx2, int nx3);
 
   friend class RestartOutput;
   friend class MeshBlock;
 public:
   Mesh(ParameterInput *pin, int test_flag=0);
-  Mesh(ParameterInput *pin, const char *prestart_file, int test_flag=0);
+  Mesh(ParameterInput *pin, WrapIO &resfile, int test_flag=0);
   ~Mesh();
 
   RegionSize mesh_size;
