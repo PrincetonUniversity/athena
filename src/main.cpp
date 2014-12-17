@@ -19,6 +19,7 @@
 
 // C headers
 #include <stdint.h>  // int64_t
+#include <stdlib.h>  // strtol
 
 // C++ headers
 #include <ctime>      // clock(), CLOCKS_PER_SEC, clock_t
@@ -34,8 +35,8 @@
 #include "outputs/outputs.hpp"  // Outputs
 #include "wrapio.hpp"           // WrapIO
 
-
-int myrank=0;
+// MPI related global variables
+int myrank=0, nproc=1;
 
 // MPI header and varaibles
 #ifdef MPI_PARALLEL
@@ -71,12 +72,12 @@ void ChangeToRunDir(const char *pdir);
 int main(int argc, char *argv[])
 {
   std::string athena_version = "version 0.1 - February 2014";
-  std::string input_file = "athinput";
+  char *input_file;
   char *prundir = NULL;
   int res_flag=0;     // gets set to 1 if -r        argument is on cmdline
   int narg_flag=0;    // gets set to 1 if -n        argument is on cmdline
   int iarg_flag=0;    // gets set to 1 if -i <file> argument is on cmdline
-  int test_flag=0;    // gets set to 1 if -m        argument is on cmdline
+  int test_flag=0;    // gets set to <nproc> if -m <nproc> argument is on cmdline
 
 #ifdef MPI_PARALLEL
 //--- Step 0. --------------------------------------------------------------------------
@@ -89,14 +90,21 @@ int main(int argc, char *argv[])
     return(0);
   }
 
-/* Get proc id (rank) in MPI_COMM_WORLD, store as global variable */
+// Get proc id (rank) in MPI_COMM_WORLD
   if(MPI_SUCCESS != MPI_Comm_rank(MPI_COMM_WORLD, &myrank))
   {
     std::cout << "### FATAL ERROR in main" << std::endl
               << "MPI_Comm_rank failed." << std::endl;
     return(0);
   }
-  std::cout << "my rank is :" << myrank << std::endl;
+
+// 
+  if(MPI_SUCCESS != MPI_Comm_size(MPI_COMM_WORLD, &nproc))
+  {
+    std::cout << "### FATAL ERROR in main" << std::endl
+              << "MPI_Comm_size failed." << std::endl;
+    return(0);
+  }
 #endif /* MPI_PARALLEL */
 
 
@@ -125,7 +133,7 @@ int main(int argc, char *argv[])
         narg_flag = 1;
         break;
       case 'm':
-        test_flag = 1;
+        test_flag = strtol(argv[++i],NULL,10);
         break;
       case 'c':
         ShowConfig();
@@ -141,7 +149,7 @@ int main(int argc, char *argv[])
         std::cout<<"  -d <directory>  specify run dir [current dir]"<< std::endl;
         std::cout<<"  -n              parse input file and quit"<< std::endl;
         std::cout<<"  -c              show configuration and quit"<< std::endl;
-        std::cout<<"  -m              test mesh structure and quit"<< std::endl;
+        std::cout<<"  -m <nproc>      test mesh structure and quit"<< std::endl;
         std::cout<<"  -h              this help"<< std::endl;
         ShowConfig();
         return(0);
@@ -159,7 +167,7 @@ int main(int argc, char *argv[])
   WrapIO input;
   try {
     pinput = new ParameterInput;
-    input.Open(input_file.c_str());
+    input.Open(input_file,readmode);
     pinput->LoadFromFile(input);
     pinput->ModifyFromCmdline(argc,argv);
      // leave the file open
@@ -182,7 +190,6 @@ int main(int argc, char *argv[])
     return(0);
   }
 
-  std::cout <<myrank << " :" <<   pinput->GetReal("meshblock","nx1") << std::endl;
 
 // Note steps 4-6 are protected by a simple error handler
 //--- Step 4. --------------------------------------------------------------------------
@@ -207,7 +214,10 @@ int main(int argc, char *argv[])
     return(0);
   }
 
-  if (test_flag){
+  if (test_flag>0){
+#ifdef MPI_PARALLEL
+    MPI_Finalize();
+#endif /* MPI_PARALLEL */
     return(0);
   }
 

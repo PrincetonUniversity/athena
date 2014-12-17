@@ -403,9 +403,8 @@ void BoundaryValues::LoadAndSendFluidBoundaryBuffer
   }
   else // MPI
   {
-      msg << "### FATAL ERROR in SetFluidBoundary" << std::endl
-          << "MPI is not implemented yet!!" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+    std::cout << "Block " << pmb->gid << " on Rank " << myrank << " is sending to "
+     << " Block " << pmb->neighbor[dir][0][0].gid << " on Rank " << pmb->neighbor[dir][0][0].rank <<std::endl;
   }
   return;
 }
@@ -556,9 +555,8 @@ void BoundaryValues::LoadAndSendFieldBoundaryBuffer(enum direction dir,
   }
   else // MPI
   {
-      msg << "### FATAL ERROR in SetFieldBoundary" << std::endl
-          << "MPI is not implemented yet!!" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+    std::cout << "Block " << pmb->gid << " on Rank " << myrank << " is sending to "
+     << " Block " << pmb->neighbor[dir][0][0].gid << " on Rank " << pmb->neighbor[dir][0][0].rank <<std::endl;
   }
   return;
 }

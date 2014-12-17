@@ -628,7 +628,7 @@ std::string ParameterInput::GetOrAddString(std::string block, std::string name,
   return def_value;
 }
 
-z//--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
 //! \fn void ParameterInput::ParameterDump(std::ostream& os)
 //  \brief output entire InputBlock/InputLine hierarchy to specified stream
 

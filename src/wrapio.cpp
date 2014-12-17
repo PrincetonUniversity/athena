@@ -6,6 +6,7 @@
 // Wrapper Functions for MPI/Serial Output
 
 #include "wrapio.hpp"
+#include "athena.hpp"
 #include <sstream>
 #include <iostream>
 #include <string>
@@ -18,17 +19,32 @@
 #include <mpi.h>
 
 //--------------------------------------------------------------------------------------
-//! \fn void WrapIO::Open(char* fname)
+//! \fn int WrapIO::Open(const char* fname, enum rwmode rw)
 //  \brief wrap fopen + error check
-int WrapIO::Open(char* fname)
+int WrapIO::Open(const char* fname, enum rwmode rw)
 {
   std::stringstream msg;
-  if(MPI_File_Open(comm,fname,MPI_MODE_RDWR,&fh)!=MPI_SUCCESS) {
-    msg << "### FATAL ERROR in function [WrapIO:WrapIOOpen]"
-        << std::endl << "Output file '" << fname << "' could not be opened" <<std::endl;
-    throw std::runtime_error(msg.str().c_str());
-    return false;
+  if(rw==readmode) {
+    if(MPI_File_open(comm,const_cast<char*>(fname),MPI_MODE_RDONLY,MPI_INFO_NULL,&fh)
+       !=MPI_SUCCESS) {  // use const_cast to convince the compiler.
+      msg << "### FATAL ERROR in function [WrapIO:Open]"
+          << std::endl << "Output file '" << fname << "' could not be opened" <<std::endl;
+      throw std::runtime_error(msg.str().c_str());
+      return false;
+    }
   }
+  else if(rw==writemode) {
+    MPI_File_delete(const_cast<char*>(fname), MPI_INFO_NULL); // truncation
+    if(MPI_File_open(comm,const_cast<char*>(fname),MPI_MODE_WRONLY | MPI_MODE_CREATE,
+                     MPI_INFO_NULL,&fh)!=MPI_SUCCESS) {
+      msg << "### FATAL ERROR in function [WrapIO:Open]"
+          << std::endl << "Output file '" << fname << "' could not be opened" <<std::endl;
+      throw std::runtime_error(msg.str().c_str());
+      return false;
+    }
+  }
+  else 
+    return false;
   return true;
 }
 
@@ -37,7 +53,7 @@ int WrapIO::Open(char* fname)
 //  \brief wrap fseek
 int WrapIO::Seek(WrapIOSize_t offset)
 {
-  return MPI_File_Seek(fh,offset,MPI_SEEK_SET);
+  return MPI_File_seek(fh,offset,MPI_SEEK_SET);
 }
 
 //--------------------------------------------------------------------------------------
@@ -47,9 +63,9 @@ int WrapIO::Write(const void *buf, WrapIOSize_t size, WrapIOSize_t count)
 {
   MPI_Status status;
   int ierr, nwrite;
-  if(MPI_File_Write(fh,buf,count*size,MPI_BYTE,&status)!=MPI_SUCCSESS)
+  if(MPI_File_write(fh,const_cast<void*>(buf),count*size,MPI_BYTE,&status)!=MPI_SUCCESS)
     return -1;
-  if(MPI_Get_Count(status,MPI_BYTE,&nwrite)==MPI_UNDEFINED)
+  if(MPI_Get_count(&status,MPI_BYTE,&nwrite)==MPI_UNDEFINED)
     return -1;
   return nwrite/size;
 }
@@ -61,9 +77,9 @@ int WrapIO::Read(void *buf, WrapIOSize_t size, WrapIOSize_t count)
 {
   MPI_Status status;
   int ierr, nread;
-  if(MPI_File_Read(fh,buf,count*size,MPI_BYTE,&status)!=MPI_SUCCSESS)
+  if(MPI_File_read(fh,buf,count*size,MPI_BYTE,&status)!=MPI_SUCCESS)
     return -1;
-  if(MPI_Get_Count(status,MPI_BYTE,&nread)==MPI_UNDEFINED)
+  if(MPI_Get_count(&status,MPI_BYTE,&nread)==MPI_UNDEFINED)
     return -1;
   return nread/size;
 }
@@ -73,7 +89,7 @@ int WrapIO::Read(void *buf, WrapIOSize_t size, WrapIOSize_t count)
 //  \brief wrap fclose
 int WrapIO::Close(void)
 {
-  return MPI_File_Close(&fh);
+  return MPI_File_close(&fh);
 }
 
 //--------------------------------------------------------------------------------------
@@ -81,24 +97,36 @@ int WrapIO::Close(void)
 //  \brief wrap ftell
 WrapIOSize_t WrapIO::Tell(void)
 {
-  WrapIOSize_t tell;
+  MPI_Offset tell;
   MPI_File_get_position(fh,&tell);
   return tell;
 }
 
 #else // Serial
 //--------------------------------------------------------------------------------------
-//! \fn void WrapIO::Open(const char* fname)
+//! \fn int WrapIO::Open(const char* fname)
 //  \brief wrap fopen + error check
-int WrapIO::Open(const char* fname)
+int WrapIO::Open(const char* fname, enum rwmode rw)
 {
   std::stringstream msg;
-  if ((fh = fopen(fname,"rb+")) == NULL){
-    msg << "### FATAL ERROR in function [WrapIO:WrapIOOpen]"
-        << std::endl << "Output file '" << fname << "' could not be opened" <<std::endl;
-    throw std::runtime_error(msg.str().c_str());
-    return false;
+  if(rw==readmode) {
+    if ((fh = fopen(fname,"rb")) == NULL) {
+      msg << "### FATAL ERROR in function [WrapIO:Open]"
+          << std::endl << "Output file '" << fname << "' could not be opened" <<std::endl;
+      throw std::runtime_error(msg.str().c_str());
+      return false;
+    }
   }
+  else if(rw==writemode) {
+    if ((fh = fopen(fname,"wb")) == NULL) {
+      msg << "### FATAL ERROR in function [WrapIO:Open]"
+          << std::endl << "Output file '" << fname << "' could not be opened" <<std::endl;
+      throw std::runtime_error(msg.str().c_str());
+      return false;
+    }
+  }
+  else
+    return false;
   return true;
 }
 

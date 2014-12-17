@@ -30,7 +30,7 @@
 #include "../fluid/fluid.hpp"
 #include "../field/field.hpp"
 #include "outputs.hpp"
-#include "../blockuid/blockuid.hpp"
+#include "../blockuid.hpp"
 
 //======================================================================================
 //! \file restart.cpp
@@ -72,7 +72,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pi)
   // 
   pi->ParameterDump(ost);
 
-  resfile.Open(fname.c_str());
+  resfile.Open(fname.c_str(),writemode);
   std::string sbuf=ost.str();
   resfile.Write(sbuf.c_str(),sizeof(char),sbuf.size());
 

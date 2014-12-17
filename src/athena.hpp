@@ -23,6 +23,15 @@ typedef struct EdgeField {
   AthenaArray<Real> x1e,x2e,x3e;
 } EdgeField;
 
+
+//! \struct NeighborBlock
+//  \brief neighbor rank, level, and ids
+
+typedef struct NeighborBlock {
+  int rank, level, gid;
+  NeighborBlock() : rank(-1), level(-1), gid(-1) {};
+} NeighborBlock;
+
 enum {IDN=0, IM1=1, IM2=2, IM3=3, IEN=4};
 enum {IVX=1, IVY=2, IVZ=3, IBY=(NFLUID), IBZ=((NFLUID)+1)};
 enum {IB1=0, IB2=1, IB3=2};
@@ -31,6 +40,7 @@ enum {I00, I01, I02, I03, I11, I12, I13, I22, I23, I33, NMETRIC};
 
 enum direction {inner_x1=0, outer_x1=1, inner_x2=2, outer_x2=3, inner_x3=4, outer_x3=5};
 enum face {x1face=0, x2face=1, x3face=2};
+enum rwmode {readmode,writemode};
 
 enum ActionOnBlock
   {pgen,          primitives_n, primitives_nhalf, new_blocktimestep,
@@ -48,6 +58,6 @@ enum ActionOnBlock
   fluid_recvset_bcsx3_n,  fluid_recvset_bcsx3_nhalf,
   field_recvset_bcsx3_n,  field_recvset_bcsx3_nhalf};
 
-extern int myrank;
+extern int myrank, nproc;
 
 #endif

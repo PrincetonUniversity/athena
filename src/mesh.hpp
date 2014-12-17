@@ -13,7 +13,7 @@
 // Athena headers
 #include "athena.hpp"         // macros, Real
 #include "athena_arrays.hpp"  // AthenaArray
-#include "blockuid/blockuid.hpp"
+#include "blockuid.hpp"
 #include "wrapio.hpp"
 
 class ParameterInput;
@@ -43,14 +43,6 @@ typedef struct RegionBCs {
 } RegionBCs;
 
 
-//! \struct NeighborBlock
-//  \brief neighbor rank, level, and ids
-
-typedef struct NeighborBlock {
-  int rank, level, gid;
-  NeighborBlock() : rank(-1), level(-1), gid(-1) {};
-} NeighborBlock;
-
 //! \class MeshBlock
 //  \brief data/functions associated with a single block
 
@@ -65,7 +57,7 @@ public:
   MeshBlock(int igid, BlockUID iuid, RegionSize input_size,
             RegionBCs input_bcs, Mesh *pm, ParameterInput *pin);
   MeshBlock(int igid, Mesh *pm, ParameterInput *pin, BlockUID *list,
-            int *nslist, WrapIO& resfile, WrapIOSize_t offset, Real icost);
+            WrapIO& resfile, WrapIOSize_t offset, Real icost);
   ~MeshBlock();
   size_t GetBlockSizeInBytes(void);
 
@@ -99,6 +91,7 @@ private:
   Real MeshGeneratorX1(Real x, RegionSize rs);
   Real MeshGeneratorX2(Real x, RegionSize rs);
   Real MeshGeneratorX3(Real x, RegionSize rs);
+  bool adaptive;
 
   friend class RestartOutput;
   friend class MeshBlock;
