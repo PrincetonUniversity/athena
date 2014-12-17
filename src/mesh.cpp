@@ -364,7 +364,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     }
     else
     {
-      Real rx=(Real)lx1/(Real)(nrbx1*(ll-root_level+1));
+      Real rx=(Real)lx1/(Real)(nrbx1<<(ll-root_level));
       block_size.x1min=MeshGeneratorX1(rx,mesh_size);
       block_bcs.ix1_bc=-1;
     }
@@ -375,7 +375,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     }
     else
     {
-      Real rx=(Real)(lx1+1)/(Real)(nrbx1*(ll-root_level+1));
+      Real rx=(Real)(lx1+1)/(Real)(nrbx1<<(ll-root_level));
       block_size.x1max=MeshGeneratorX1(rx,mesh_size);
       block_bcs.ox1_bc=-1;
     }
@@ -388,7 +388,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     }
     else
     {
-      Real rx=(Real)lx2/(Real)(nrbx2*(ll-root_level+1));
+      Real rx=(Real)lx2/(Real)(nrbx2<<(ll-root_level));
       block_size.x2min=MeshGeneratorX2(rx,mesh_size);
       block_bcs.ix2_bc=-1;
     }
@@ -399,7 +399,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     }
     else
     {
-      Real rx=(Real)(lx2+1)/(Real)(nrbx2*(ll-root_level+1));
+      Real rx=(Real)(lx2+1)/(Real)(nrbx2<<(ll-root_level));
       block_size.x2max=MeshGeneratorX2(rx,mesh_size);
       block_bcs.ox2_bc=-1;
     }
@@ -412,7 +412,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     }
     else
     {
-      Real rx=(Real)lx3/(Real)(nrbx3*(ll-root_level+1));
+      Real rx=(Real)lx3/(Real)(nrbx3<<(ll-root_level));
       block_size.x3min=MeshGeneratorX3(rx,mesh_size);
       block_bcs.ix3_bc=-1;
     }
@@ -423,7 +423,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     }
     else
     {
-      Real rx=(Real)(lx3+1)/(Real)(nrbx3*(ll-root_level+1));
+      Real rx=(Real)(lx3+1)/(Real)(nrbx3<<(ll-root_level));
       block_size.x3max=MeshGeneratorX3(rx,mesh_size);
       block_bcs.ox3_bc=-1;
     }
@@ -440,11 +440,11 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     }
 
     // search the neighboring block from the ID list.
-    if(lx1==0)
+    if(lx1==0 && mesh_bcs.ix1_bc!=4)
       pblock->SetNeighbor(inner_x1,-1,-1,-1);
     else
     {
-      neibt=tree.FindNeighbor(inner_x1,buid[i]);
+      neibt=tree.FindNeighbor(inner_x1,buid[i],nrbx1,nrbx2,nrbx3,root_level);
       if(neibt==NULL)
       {
         msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -466,11 +466,11 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
         pblock->SetNeighbor(inner_x1,ranklist[nei.gid],nei.level,nei.gid,1,1);
       }
     }
-    if(lx1==(nrbx1<<(ll-root_level))-1)
+    if(lx1==(nrbx1<<(ll-root_level))-1 && mesh_bcs.ox1_bc!=4)
       pblock->SetNeighbor(outer_x1,-1,-1,-1);
     else
     {
-      neibt=tree.FindNeighbor(outer_x1,buid[i]);
+      neibt=tree.FindNeighbor(outer_x1,buid[i],nrbx1,nrbx2,nrbx3,root_level);
       if(neibt==NULL)
       {
         msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -493,11 +493,11 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       }
     }
 
-    if(lx2==0)
+    if(lx2==0 && mesh_bcs.ix2_bc!=4)
       pblock->SetNeighbor(inner_x2,-1,-1,-1);
     else
     {
-      neibt=tree.FindNeighbor(inner_x2,buid[i]);
+      neibt=tree.FindNeighbor(inner_x2,buid[i],nrbx1,nrbx2,nrbx3,root_level);
       if(neibt==NULL)
       {
         msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -519,11 +519,11 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
         pblock->SetNeighbor(inner_x2,ranklist[nei.gid],nei.level,nei.gid,1,1);
       }
     }
-    if(lx2==(nrbx2<<(ll-root_level))-1)
+    if(lx2==(nrbx2<<(ll-root_level))-1 && mesh_bcs.ox2_bc!=4)
       pblock->SetNeighbor(outer_x2,-1,-1,-1);
     else
     {
-      neibt=tree.FindNeighbor(outer_x2,buid[i]);
+      neibt=tree.FindNeighbor(outer_x2,buid[i],nrbx1,nrbx2,nrbx3,root_level);
       if(neibt==NULL)
       {
         msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -546,11 +546,11 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       }
     }
 
-    if(lx3==0)
+    if(lx3==0 && mesh_bcs.ix3_bc!=4)
       pblock->SetNeighbor(inner_x3,-1,-1,-1);
     else
     {
-      neibt=tree.FindNeighbor(inner_x3,buid[i]);
+      neibt=tree.FindNeighbor(inner_x3,buid[i],nrbx1,nrbx2,nrbx3,root_level);
       if(neibt==NULL)
       {
         msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -572,11 +572,11 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
         pblock->SetNeighbor(inner_x3,ranklist[nei.gid],nei.level,nei.gid,1,1);
       }
     }
-    if(lx3==(nrbx3<<(ll-root_level))-1)
+    if(lx3==(nrbx3<<(ll-root_level))-1 && mesh_bcs.ox3_bc!=4)
       pblock->SetNeighbor(outer_x3,-1,-1,-1);
     else
     {
-      neibt=tree.FindNeighbor(outer_x3,buid[i]);
+      neibt=tree.FindNeighbor(outer_x3,buid[i],nrbx1,nrbx2,nrbx3,root_level);
       if(neibt==NULL)
       {
         msg << "### FATAL ERROR in Mesh constructor" << std::endl

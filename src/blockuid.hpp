@@ -77,7 +77,8 @@ public:
   void Derefine(void);
   void AssignGID(int& id);
   void GetIDList(BlockUID *list, int& count);
-  BlockTree* FindNeighbor(enum direction dir, BlockUID id);
+  BlockTree* FindNeighbor(enum direction dir, BlockUID id,
+                          long int rbx, long int rby, long int rbz, int rl);
   BlockTree* GetLeaf(int ox, int oy, int oz);
   NeighborBlock GetNeighbor(void);
 };

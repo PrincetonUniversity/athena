@@ -379,11 +379,13 @@ void BlockTree::GetIDList(BlockUID *list, int& count)
 
 
 //--------------------------------------------------------------------------------------
-//! \fn BlockTree* BlockTree::FindNeighbor(enum direction dir, BlockUID id)
+//! \fn BlockTree* BlockTree::FindNeighbor(enum direction dir, BlockUID id,
+//                            long int rbx, long int rby, long int rbz, int rl)
 //  \brief find a neighboring block, called from the root of the tree
 //         If it is coarser or same level, return the pointer to that block.
 //         If it is a finer block, return the pointer to its parent.
-BlockTree* BlockTree::FindNeighbor(enum direction dir, BlockUID id)
+BlockTree* BlockTree::FindNeighbor(enum direction dir, BlockUID id,
+                                   long int rbx, long int rby, long int rbz, int rl)
 {
   long int lx, ly, lz;
   int ll, level;
@@ -416,6 +418,14 @@ BlockTree* BlockTree::FindNeighbor(enum direction dir, BlockUID id)
     default:
      return NULL;
   }
+  // periodic boundaries
+  if(lx<0) lx=(rbx<<(ll-rl))-1;
+  if(lx>=rbx<<(ll-rl)) lx=0;
+  if(ly<0) ly=(rby<<(ll-rl))-1;
+  if(ly>=rby<<(ll-rl)) ly=0;
+  if(lz<0) lz=(rbz<<(ll-rl))-1;
+  if(lz>=rbz<<(ll-rl)) lz=0;
+
   for(level=0;level<=ll;level++)
   {
     if(bt->flag==true) // leaf
