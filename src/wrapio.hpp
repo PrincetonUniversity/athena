@@ -16,7 +16,7 @@ typedef MPI_File WrapIOFile;
 typedef FILE * WrapIOFile;
 #endif
 
-typedef size_t WrapIOSize_t;
+typedef long int WrapIOSize_t;
 
 class WrapIO
 {

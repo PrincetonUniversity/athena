@@ -54,6 +54,8 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pi)
   std::stringstream ost;
   FILE *fp;
   MeshBlock *pmb;
+  int *nblocks, *displ;
+  WrapIOSize_t *myblocksize;
   int i, level;
   int idl=IDLENGTH;
   WrapIOSize_t listsize, idlistoffset;
@@ -73,52 +75,91 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pi)
   pi->ParameterDump(ost);
 
   resfile.Open(fname.c_str(),writemode);
-  std::string sbuf=ost.str();
-  resfile.Write(sbuf.c_str(),sizeof(char),sbuf.size());
 
-  // output Mesh information; this part is serial
-  resfile.Write(&(pM->nbtotal), sizeof(int), 1);
-  resfile.Write(&idl, sizeof(int), 1); // for extensibility
-  resfile.Write(&(pM->root_level), sizeof(int), 1);
-  resfile.Write(&(pM->max_level), sizeof(int), 1);
-  resfile.Write(&(pM->mesh_size), sizeof(RegionSize), 1);
-  resfile.Write(&(pM->mesh_bcs), sizeof(RegionBCs), 1);
-  resfile.Write(&(pM->time), sizeof(Real), 1);
-  resfile.Write(&(pM->dt), sizeof(Real), 1);
-  resfile.Write(&(pM->ncycle), sizeof(int), 1);
+  if(myrank==0) {
+    // output the input parameters; this part is serial
+    std::string sbuf=ost.str();
+    resfile.Write(sbuf.c_str(),sizeof(char),sbuf.size());
 
-  // output ID list: gid,uid(level+id),offset
-  // This part must be here in the "common" area
-  // in order to allow direct access through MPI.
-  // This part must be parallelized.
+    // output Mesh information; this part is serial
+    resfile.Write(&(pM->nbtotal), sizeof(int), 1);
+    resfile.Write(&idl, sizeof(int), 1); // for extensibility
+    resfile.Write(&(pM->root_level), sizeof(int), 1);
+    resfile.Write(&(pM->max_level), sizeof(int), 1);
+    resfile.Write(&(pM->mesh_size), sizeof(RegionSize), 1);
+    resfile.Write(&(pM->mesh_bcs), sizeof(RegionBCs), 1);
+    resfile.Write(&(pM->time), sizeof(Real), 1);
+    resfile.Write(&(pM->dt), sizeof(Real), 1);
+    resfile.Write(&(pM->ncycle), sizeof(int), 1);
+  }
+
+  // the size of an element of the ID list
   listsize=sizeof(int)*2+sizeof(ID_t)*IDLENGTH+sizeof(Real)+sizeof(WrapIOSize_t);
 
-  offset=new WrapIOSize_t[pM->nbtotal+1];
-  blocksize=new WrapIOSize_t[pM->nbtotal];
+  int mynb=pM->nbend-pM->nbstart+1;
+  nblocks = new int[nproc];
+  displ = new int[nproc];
+  if(myrank==0) myblocksize=new WrapIOSize_t[mynb+1];
+  else myblocksize=new WrapIOSize_t[mynb];
+  blocksize=new WrapIOSize_t[pM->nbtotal+1];
+  offset=new WrapIOSize_t[mynb];
+
+  // distribute the numbers of the blocks
+  if(MPI_Allgather(&mynb,1,MPI_INTEGER,nblocks,1,MPI_INTEGER,MPI_COMM_WORLD)
+                   !=MPI_SUCCESS) {
+    msg << "### FATAL ERROR in RestartOutput:Initialize" << std::endl
+        << "MPI_Allgather for nblocks failed." << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  nblocks[0]+=1; // for the first block
+  displ[0]=0;
+  for(i=1;i<nproc;i++)
+    displ[i]=displ[i-1]+nblocks[i-1];
+
+  if(myrank==0) {
+    for(i=0;i<nproc;i++)
+      std::cout << "rank " << i << " nblocks = " << nblocks[i] << std::endl;
+  }
+
   i=0;
+  if(myrank==0) {
+    myblocksize[0]=resfile.Tell();
+    i=1;
+  }
   pmb=pM->pblock;
   while(pmb!=NULL) // must be parallelized for MPI
   {
-    blocksize[i]=pmb->GetBlockSizeInBytes();
+    myblocksize[i]=pmb->GetBlockSizeInBytes();
     i++;
     pmb=pmb->next;
   }
 
-  if(myrank==0)
-    idlistoffset=resfile.Tell();
-  else {
-    // broadcast the offset via MPI 
+  // distribute the size of each block + header size
+  if(MPI_Allgatherv(myblocksize,nblocks[myrank],MPI_LONG,
+     blocksize,nblocks,displ,MPI_LONG,MPI_COMM_WORLD)!=MPI_SUCCESS) {
+    msg << "### FATAL ERROR in RestartOutput:Initialize" << std::endl
+        << "MPI_Allgatherv for blocksize failed." << std::endl;
+    throw std::runtime_error(msg.str().c_str());
   }
-  offset[0]=idlistoffset+listsize*pM->nbtotal;
-  for(i=1;i<pM->nbtotal;i++) // serial
-    offset[i]=offset[i-1]+blocksize[i-1];
 
-  // pack the offset to the head of the ID list in the last element of the offset array
-  offset[pM->nbtotal]=idlistoffset;
-  // the offset values must be distributed for MPI
+  if(myrank==0) {
+    for(i=0;i<=pM->nbtotal;i++)
+      std::cout << "block " << i-1 << " size= " << blocksize[i] << std::endl;
+  }
+
+  // blocksize[0] = offset to the end of the header
+  WrapIOSize_t firstoffset=blocksize[0]+listsize*pM->nbtotal; // end of the id list
+  for(i=0;i<pM->nbstart;i++)
+    firstoffset+=blocksize[i+1];
+  offset[0]=firstoffset;
+//  offset[0]=blocksize[0]+listsize*pM->nbtotal;
+  for(i=pM->nbstart;i<pM->nbend;i++) // calculate the offsets
+    offset[i-pM->nbstart+1]=offset[i-pM->nbstart]+blocksize[i+1]; // blocksize[i]=the size of i-1th block
 
   // seek to the head of the ID list of this process
-  resfile.Seek(idlistoffset+pM->nbstart*listsize);
+  resfile.Seek(blocksize[0]+pM->nbstart*listsize);
+  for(i=pM->nbstart;i<=pM->nbend;i++)
+    std::cout << "block " << i << " offset= " << offset[i-pM->nbstart] << std::endl;
 
   pmb=pM->pblock;
   i=0;
@@ -139,6 +180,11 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pi)
   // If any additional physics is implemented, modify here accordingly.
   // Especially, the offset from the top of the file must be recalculated.
   // For MPI-IO, it is important to know the absolute location in advance.
+
+  // clean up
+  delete [] myblocksize;
+  delete [] nblocks;
+  delete [] displ;
 
   // leave the file open; it will be closed in Finalize()
   return;
@@ -162,7 +208,7 @@ void RestartOutput::Finalize(void)
 
 void RestartOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 {
-  resfile.Seek(offset[pmb->gid]);
+  resfile.Seek(offset[pmb->gid - pmb->pmy_mesh->nbstart]);
   resfile.Write(&(pmb->block_size), sizeof(RegionSize), 1);
   resfile.Write(&(pmb->block_bcs), sizeof(RegionBCs), 1);
   resfile.Write(&(pmb->neighbor), sizeof(NeighborBlock), 6*2*2);

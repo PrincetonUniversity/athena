@@ -57,7 +57,7 @@ public:
   MeshBlock(int igid, BlockUID iuid, RegionSize input_size,
             RegionBCs input_bcs, Mesh *pm, ParameterInput *pin);
   MeshBlock(int igid, Mesh *pm, ParameterInput *pin, BlockUID *list,
-            WrapIO& resfile, WrapIOSize_t offset, Real icost);
+            WrapIO& resfile, WrapIOSize_t offset, Real icost, int *ranklist);
   ~MeshBlock();
   size_t GetBlockSizeInBytes(void);
 
@@ -87,7 +87,7 @@ public:
 class Mesh {
 private:
   int root_level, max_level;
-  int nbtotal, nblocal, nbstart, nbend;
+  int nbtotal, nbstart, nbend;
   Real MeshGeneratorX1(Real x, RegionSize rs);
   Real MeshGeneratorX2(Real x, RegionSize rs);
   Real MeshGeneratorX3(Real x, RegionSize rs);

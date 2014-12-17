@@ -800,19 +800,17 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
     return;
   }
 
-  // now let each process know nbstart, and ID list
-
   // load MeshBlocks (parallel)
   for(i=nbstart;i<=nbend;i++)
   {
     // create a block and add into the link list
     if(i==nbstart) {
-      pblock = new MeshBlock(i, this, pin, buid, resfile, offset[i], costlist[i]);
+      pblock = new MeshBlock(i, this, pin, buid, resfile, offset[i], costlist[i], ranklist);
       pfirst = pblock;
     }
     else {
       pblock->next = new MeshBlock(i, this, pin, buid, resfile,
-                                   offset[i], costlist[i]);
+                                   offset[i], costlist[i], ranklist);
       pblock->next->prev = pblock;
       pblock = pblock->next;
     }
@@ -1017,7 +1015,7 @@ MeshBlock::MeshBlock(int igid, BlockUID iuid, RegionSize input_block,
 // MeshBlock constructor for restarting
 
 MeshBlock::MeshBlock(int igid, Mesh *pm, ParameterInput *pin, BlockUID *list,
-                     WrapIO& resfile, WrapIOSize_t offset, Real icost)
+                     WrapIO& resfile, WrapIOSize_t offset, Real icost, int *ranklist)
 {
   std::stringstream msg;
   pmy_mesh = pm;
@@ -1038,6 +1036,15 @@ MeshBlock::MeshBlock(int igid, Mesh *pm, ParameterInput *pin, BlockUID *list,
     nerr++;
   if(resfile.Read(&neighbor, sizeof(NeighborBlock), 6*2*2)!=6*2*2)
     nerr++;
+
+  for(int k=0; k<6; k++) {
+    for(int j=0; j<=1; j++) {
+      for(int i=0; i<=1; i++) {
+        if(neighbor[k][j][i].gid!=-1)
+          neighbor[k][j][i].rank=ranklist[neighbor[k][j][i].gid];
+      }
+    }
+  }
 
   if(nerr>0)
   {
