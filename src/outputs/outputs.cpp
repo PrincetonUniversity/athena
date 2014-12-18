@@ -519,6 +519,7 @@ void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
       for (int i=pmb->is+1; i<=pmb->ie+1; ++i) {
         if (pmb->x1f(i) > output_params.x1_slice) {
            islice = i-1;
+           output_params.islice = islice;
           break;
         }
       }
@@ -532,6 +533,7 @@ void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
       for (int j=pmb->js+1; j<=pmb->je+1; ++j) {
         if (pmb->x2f(j) > output_params.x2_slice) {
            jslice = j-1;
+           output_params.jslice = jslice;
           break;
         }
       }
@@ -545,6 +547,7 @@ void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
       for (int k=pmb->ks+1; k<=pmb->ke+1; ++k) {
         if (pmb->x3f(k) > output_params.x3_slice) {
            kslice = k-1;
+           output_params.kslice = kslice;
           break;
         }
       }
