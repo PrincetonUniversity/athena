@@ -252,6 +252,10 @@ if args['omp']:
   if args['cxx'] == 'cray':
     makefile_options['COMPILER_FLAGS'] += ' -homp'
     definitions['COMPILER_FLAGS'] += ' -homp'
+else: 
+  if args['cxx'] == 'cray':
+    makefile_options['COMPILER_FLAGS'] += ' -hnoomp'
+    definitions['COMPILER_FLAGS'] += ' -hnoomp'
 
 
 # -ifov=N argument
