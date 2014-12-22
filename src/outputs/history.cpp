@@ -202,8 +202,6 @@ void HistoryOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 // close output file, increment output counter, update time of last output, clean up
 
   fclose(pfile);
-  output_params.file_number++;
-  output_params.next_time += output_params.dt;
 
   return;
 }

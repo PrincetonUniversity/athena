@@ -69,7 +69,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   tlim       = pin->GetReal("time","tlim");
   cfl_number = pin->GetReal("time","cfl_number");
   time = start_time;
-  dt   = (FLT_MAX);
+  dt   = (FLT_MAX*0.4);
 
   nlim = pin->GetOrAddInteger("time","nlim",-1);
   ncycle = 0;
@@ -194,6 +194,9 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
         << "the mesh must be evenly divisible by the meshblock" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
+
+// create lists of start and end points
+  InitBoundaryBuffer(block_size.nx1,block_size.nx2,block_size.nx3);
 
 // calculate the number of the blocks
   nrbx1=mesh_size.nx1/block_size.nx1;
@@ -358,7 +361,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
     // calculate the neighbor information, x1
     if(lx1==0)
-      pblock->SetNeighbor(X1L,-1,-1,-1);
+      pblock->SetNeighbor(inner_x1,-1,-1,-1);
     else
     {
       comp.CreateUIDfromLocation(lx1-1,lx2,lx3,ll);
@@ -366,7 +369,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       {
         if(buid[j]==comp)
         {
-          pblock->SetNeighbor(X1L,0,0,j);
+          pblock->SetNeighbor(inner_x1,0,root_level,j);
           break;
         }
       }
@@ -378,7 +381,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       }
     }
     if(lx1==nrbx1-1)
-      pblock->SetNeighbor(X1R,-1,-1,-1);
+      pblock->SetNeighbor(outer_x1,-1,-1,-1);
     else
     {
       comp.CreateUIDfromLocation(lx1+1,lx2,lx3,ll);
@@ -386,7 +389,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       {
         if(buid[j]==comp)
         {
-          pblock->SetNeighbor(X1R,0,0,j);
+          pblock->SetNeighbor(outer_x1,0,root_level,j);
           break;
         }
       }
@@ -400,7 +403,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
     // calculate the neighbor information, x2
     if(lx2==0)
-      pblock->SetNeighbor(X2L,-1,-1,-1);
+      pblock->SetNeighbor(inner_x2,-1,-1,-1);
     else
     {
       comp.CreateUIDfromLocation(lx1,lx2-1,lx3,ll);
@@ -408,7 +411,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       {
         if(buid[j]==comp)
         {
-          pblock->SetNeighbor(X2L,0,0,j);
+          pblock->SetNeighbor(inner_x2,0,root_level,j);
           break;
         }
       }
@@ -420,7 +423,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       }
     }
     if(lx2==nrbx2-1)
-      pblock->SetNeighbor(X2R,-1,-1,-1);
+      pblock->SetNeighbor(outer_x2,-1,-1,-1);
     else
     {
       comp.CreateUIDfromLocation(lx1,lx2+1,lx3,ll);
@@ -428,7 +431,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       {
         if(buid[j]==comp)
         {
-          pblock->SetNeighbor(X2R,0,0,j);
+          pblock->SetNeighbor(outer_x2,0,root_level,j);
           break;
         }
       }
@@ -442,7 +445,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
     // calculate the neighbor information, x3
     if(lx3==0)
-      pblock->SetNeighbor(X3L,-1,-1,-1);
+      pblock->SetNeighbor(inner_x3,-1,-1,-1);
     else
     {
       comp.CreateUIDfromLocation(lx1,lx2,lx3-1,ll);
@@ -450,7 +453,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       {
         if(buid[j]==comp)
         {
-          pblock->SetNeighbor(X3L,0,0,j);
+          pblock->SetNeighbor(inner_x3,0,root_level,j);
           break;
         }
       }
@@ -462,7 +465,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       }
     }
     if(lx3==nrbx3-1)
-      pblock->SetNeighbor(X3R,-1,-1,-1);
+      pblock->SetNeighbor(outer_x3,-1,-1,-1);
     else
     {
       comp.CreateUIDfromLocation(lx1,lx2,lx3+1,ll);
@@ -470,7 +473,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       {
         if(buid[j]==comp)
         {
-          pblock->SetNeighbor(X3R,0,0,j);
+          pblock->SetNeighbor(outer_x3,0,root_level,j);
           break;
         }
       }
@@ -582,6 +585,11 @@ Mesh::Mesh(ParameterInput *pin, const char *prestart_file, int test_flag)
   rawid=new ID_t[IDLENGTH];
   nslist=new int [1]; // nproc
   for(int i=0;i<IDLENGTH;i++) rawid[i]=0;
+
+  int nx1 = pin->GetOrAddReal("meshblock","nx1",mesh_size.nx1);
+  int nx2 = pin->GetOrAddReal("meshblock","nx2",mesh_size.nx2);
+  int nx3 = pin->GetOrAddReal("meshblock","nx3",mesh_size.nx3);
+  InitBoundaryBuffer(nx1,nx2,nx3);
 
   // read the id list (serial, because we need the costs for load balancing)
   // ... perhaps I should pack them.
@@ -707,6 +715,7 @@ MeshBlock::MeshBlock(int igid, BlockUID iuid, RegionSize input_block,
   gid=igid;
   uid=iuid;
   cost=1.0;
+  block_dt=(FLT_MAX*0.4);
 
 // initialize grid indices
 
@@ -871,6 +880,7 @@ MeshBlock::MeshBlock(int igid, Mesh *pm, ParameterInput *pin, BlockUID *list,
   gid=igid;
   uid=list[gid];
   cost=icost;
+  block_dt=(FLT_MAX*0.4);
   int nerr=0;
 
   // seek the file
@@ -1032,6 +1042,24 @@ MeshBlock::~MeshBlock()
 }
 
 //--------------------------------------------------------------------------------------
+// \!fn void Mesh::NewTimeStep(void)
+// \brief function that loops over all MeshBlocks and find new timestep
+void Mesh::NewTimeStep(void)
+{
+  MeshBlock *pmb = pblock;
+  Real min_dt=pmb->block_dt;
+  pmb=pmb->next;
+  while (pmb != NULL)  {
+    min_dt=std::min(min_dt,pmb->block_dt);
+    pmb=pmb->next;
+  }
+  // add MPI_AllReduce here
+
+  // set it
+  dt=std::min(min_dt*cfl_number,2.0*dt);
+}
+
+//--------------------------------------------------------------------------------------
 // \!fn void Mesh::ForAllMeshBlocks(enum ActionOnBlock action, ParameterInput *pin)
 // \brief function that loops over all MeshBlocks and calls appropriate functions
 
@@ -1049,20 +1077,124 @@ void Mesh::ForAllMeshBlocks(enum ActionOnBlock action, ParameterInput *pin)
         ProblemGenerator(pfluid,pfield,pin);
         break;
 
-      case fluid_bcs_n: // set fluid BCs at t^n
-        pmb->pbval->ApplyBVals(pfluid->u);
+      case fluid_loadsend_bcsx1_n:
+        pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x1,pfluid->u);
+        pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x1,pfluid->u);
         break;
 
-      case fluid_bcs_nhalf: // set fluid BCs at t^{intermediate}
-        pmb->pbval->ApplyBVals(pfluid->u1);
+      case fluid_recvset_bcsx1_n:
+        pmb->pbval->ReceiveAndSetFluidBoundary(inner_x1,pfluid->u);
+        pmb->pbval->ReceiveAndSetFluidBoundary(outer_x1,pfluid->u);
         break;
 
-      case bfield_bcs_n: // set bfield BCs at t^n
-        pmb->pbval->ApplyBVals(pfield->b);
+      case fluid_loadsend_bcsx1_nhalf:
+        pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x1,pfluid->u1);
+        pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x1,pfluid->u1);
         break;
 
-      case bfield_bcs_nhalf: // set bfield BCs at t^{intermediate}
-        pmb->pbval->ApplyBVals(pfield->b1);
+      case fluid_recvset_bcsx1_nhalf:
+        pmb->pbval->ReceiveAndSetFluidBoundary(inner_x1,pfluid->u1);
+        pmb->pbval->ReceiveAndSetFluidBoundary(outer_x1,pfluid->u1);
+        break;
+
+      case field_loadsend_bcsx1_n:
+        pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x1,pfield->b);
+        pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x1,pfield->b);
+        break;
+
+      case field_recvset_bcsx1_n:
+        pmb->pbval->ReceiveAndSetFieldBoundary(inner_x1,pfield->b);
+        pmb->pbval->ReceiveAndSetFieldBoundary(outer_x1,pfield->b);
+        break;
+
+      case field_loadsend_bcsx1_nhalf:
+        pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x1,pfield->b1);
+        pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x1,pfield->b1);
+        break;
+
+      case field_recvset_bcsx1_nhalf:
+        pmb->pbval->ReceiveAndSetFieldBoundary(inner_x1,pfield->b1);
+        pmb->pbval->ReceiveAndSetFieldBoundary(outer_x1,pfield->b1);
+        break;
+
+      case fluid_loadsend_bcsx2_n:
+        pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x2,pfluid->u);
+        pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x2,pfluid->u);
+        break;
+
+      case fluid_recvset_bcsx2_n:
+        pmb->pbval->ReceiveAndSetFluidBoundary(inner_x2,pfluid->u);
+        pmb->pbval->ReceiveAndSetFluidBoundary(outer_x2,pfluid->u);
+        break;
+
+      case fluid_loadsend_bcsx2_nhalf:
+        pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x2,pfluid->u1);
+        pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x2,pfluid->u1);
+        break;
+
+      case fluid_recvset_bcsx2_nhalf:
+        pmb->pbval->ReceiveAndSetFluidBoundary(inner_x2,pfluid->u1);
+        pmb->pbval->ReceiveAndSetFluidBoundary(outer_x2,pfluid->u1);
+        break;
+
+      case field_loadsend_bcsx2_n:
+        pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x2,pfield->b);
+        pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x2,pfield->b);
+        break;
+
+      case field_recvset_bcsx2_n:
+        pmb->pbval->ReceiveAndSetFieldBoundary(inner_x2,pfield->b);
+        pmb->pbval->ReceiveAndSetFieldBoundary(outer_x2,pfield->b);
+        break;
+
+      case field_loadsend_bcsx2_nhalf:
+        pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x2,pfield->b1);
+        pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x2,pfield->b1);
+        break;
+
+      case field_recvset_bcsx2_nhalf:
+        pmb->pbval->ReceiveAndSetFieldBoundary(inner_x2,pfield->b1);
+        pmb->pbval->ReceiveAndSetFieldBoundary(outer_x2,pfield->b1);
+        break;
+
+      case fluid_loadsend_bcsx3_n:
+        pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x3,pfluid->u);
+        pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x3,pfluid->u);
+        break;
+
+      case fluid_recvset_bcsx3_n:
+        pmb->pbval->ReceiveAndSetFluidBoundary(inner_x3,pfluid->u);
+        pmb->pbval->ReceiveAndSetFluidBoundary(outer_x3,pfluid->u);
+        break;
+
+      case fluid_loadsend_bcsx3_nhalf:
+        pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x3,pfluid->u1);
+        pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x3,pfluid->u1);
+        break;
+
+      case fluid_recvset_bcsx3_nhalf:
+        pmb->pbval->ReceiveAndSetFluidBoundary(inner_x3,pfluid->u1);
+        pmb->pbval->ReceiveAndSetFluidBoundary(outer_x3,pfluid->u1);
+        break;
+
+      case field_loadsend_bcsx3_n:
+        pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x3,pfield->b);
+        pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x3,pfield->b);
+        break;
+
+      case field_recvset_bcsx3_n:
+        pmb->pbval->ReceiveAndSetFieldBoundary(inner_x3,pfield->b);
+        pmb->pbval->ReceiveAndSetFieldBoundary(outer_x3,pfield->b);
+        break;
+
+      case field_loadsend_bcsx3_nhalf:
+        pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x3,pfield->b1);
+        pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x3,pfield->b1);
+        break;
+
+      case field_recvset_bcsx3_nhalf:
+        pmb->pbval->ReceiveAndSetFieldBoundary(inner_x3,pfield->b1);
+        pmb->pbval->ReceiveAndSetFieldBoundary(outer_x3,pfield->b1);
         break;
 
       case fluid_predict: // integrate fluid to intermediate step 
@@ -1076,14 +1208,14 @@ void Mesh::ForAllMeshBlocks(enum ActionOnBlock action, ParameterInput *pin)
           pfield->bcc1, 2);
         break;
 
-      case bfield_predict: // integrate fluid to intermediate step 
+      case field_predict: // integrate fluid to intermediate step 
         pfield->b1.x1f = pfield->b.x1f;
         pfield->b1.x2f = pfield->b.x2f;
         pfield->b1.x3f = pfield->b.x3f;
         pfield->pint->CT(pmb, pfield->b1, pfluid->w, pfield->bcc, 1);
         break;
 
-      case bfield_correct: // integrate fluid for full timestep, t^n --> t^{n+1}
+      case field_correct: // integrate fluid for full timestep, t^n --> t^{n+1}
         pfield->pint->CT(pmb, pfield->b, pfluid->w1, pfield->bcc1, 2);
         break;
 
@@ -1097,8 +1229,8 @@ void Mesh::ForAllMeshBlocks(enum ActionOnBlock action, ParameterInput *pin)
           pfluid->w1, pfield->bcc1);
         break;
 
-      case new_timestep: // calculate new time step
-        pfluid->NewTimeStep(pmb);
+      case new_blocktimestep: // calculate new time step
+        pfluid->NewBlockTimeStep(pmb);
         break;
 
     }

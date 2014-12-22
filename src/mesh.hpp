@@ -60,6 +60,7 @@ private:
   NeighborBlock neighbor[6][2][2];
   Real cost;
   friend class RestartOutput;
+  friend class BoundaryValues;
 public:
   MeshBlock(int igid, BlockUID iuid, RegionSize input_size,
             RegionBCs input_bcs, Mesh *pm, ParameterInput *pin);
@@ -68,8 +69,8 @@ public:
   ~MeshBlock();
   size_t GetBlockSizeInBytes(void);
 
-  void SetNeighbor(enum direction, int nrank, int nid, int nlevel);
-  void SetNeighbor(enum direction, int nrank, int nid, int nlevel, int fb1, int fb2);
+  void SetNeighbor(enum direction, int nrank, int nlevel, int nid);
+  void SetNeighbor(enum direction, int nrank, int nlevel, int nid, int fb1, int fb2);
 
   RegionSize block_size;
   RegionBCs  block_bcs;
@@ -79,6 +80,7 @@ public:
   AthenaArray<Real> dx1v, dx2v, dx3v, x1v, x2v, x3v; // volume spacing and positions
   int is,ie,js,je,ks,ke;
   int gid;
+  Real block_dt;
 
   Coordinates *pcoord;
   Fluid *pfluid;
@@ -97,6 +99,7 @@ private:
   Real MeshGeneratorX1(Real x, RegionSize rs);
   Real MeshGeneratorX2(Real x, RegionSize rs);
   Real MeshGeneratorX3(Real x, RegionSize rs);
+  void CreateSEList(int nx1, int nx2, int nx3);
 
   friend class RestartOutput;
   friend class MeshBlock;
@@ -116,28 +119,29 @@ public:
 
   void ForAllMeshBlocks(enum ActionOnBlock action, ParameterInput *pin);
   void ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin); // files in /pgen
+  void NewTimeStep(void);
 };
 
 //--------------------------------------------------------------------------------------
-// \!fn void MeshBlock::SetNeighbor(enum direction dir, int nrank, int nid, int nlevel)
+// \!fn void MeshBlock::SetNeighbor(enum direction dir, int nrank, int nlevel, int nid)
 // \brief set neighbor information, for the same or a coarser level
-inline void MeshBlock::SetNeighbor(enum direction dir, int nrank, int nid, int nlevel)
+inline void MeshBlock::SetNeighbor(enum direction dir, int nrank, int nlevel, int nid)
 {
   neighbor[dir][0][0].rank=nrank;
-  neighbor[dir][0][0].gid=nid;
   neighbor[dir][0][0].level=nlevel;
+  neighbor[dir][0][0].gid=nid;
 }
 
 //--------------------------------------------------------------------------------------
 // \!fn void MeshBlock::SetNeighbor(enum direction dir, int nrank, int nid, int nlevel,
 //                                  int fb1, int fb2)
 // \brief set neighbor information, for a finer level
-inline void MeshBlock::SetNeighbor(enum direction dir, int nrank, int nid, int nlevel,
+inline void MeshBlock::SetNeighbor(enum direction dir, int nrank, int nlevel, int nid, 
                                   int fb1, int fb2)
 {
   neighbor[dir][fb2][fb1].rank=nrank;
-  neighbor[dir][fb2][fb1].gid=nid;
   neighbor[dir][fb2][fb1].level=nlevel;
+  neighbor[dir][fb2][fb1].gid=nid;
 }
 
 

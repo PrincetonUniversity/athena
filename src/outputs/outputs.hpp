@@ -89,12 +89,11 @@ public:
 
 // functions that operate on OutputData container
 
-  virtual void Initialize(Mesh *pM, ParameterInput *pin) {};
-  virtual void Finalize(void) {};
+  virtual void Initialize(Mesh *pM, ParameterInput *pin) {} ;
+  virtual void Finalize(void);
   virtual void LoadOutputData(OutputData *pod, MeshBlock *pmb);
   virtual void TransformOutputData(OutputData *pod, MeshBlock *pmb);
-  virtual void WriteOutputFile(OutputData *pod, MeshBlock *pmb) = 0;
-          // pure virtual!
+  virtual void WriteOutputFile(OutputData *pod, MeshBlock *pmb) = 0; // pure virtual
 
 // functions that implement useful transforms applied to each variable in OutputData
 
