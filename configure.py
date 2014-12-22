@@ -102,7 +102,7 @@ parser.add_argument('--fint',
 # --cxx=[name] argument
 parser.add_argument('--cxx',
     default='g++',
-    choices=['g++','icc'],
+    choices=['g++','icc','cray'],
     help='selects C++ compiler')
 
 # -mpi argument
@@ -211,22 +211,34 @@ if args['cxx'] == 'icc':
 if args['cxx'] == 'g++':
   makefile_options['COMPILER_FLAGS'] = '-O3'
   definitions['COMPILER_FLAGS'] = '-O3'
+if args['cxx'] == 'cray':
+  makefile_options['COMPILER_CHOICE'] = 'CC'
+  makefile_options['COMPILER_FLAGS'] = '-O3 -lm -h aggress -h vector3 -hfp3'
+  definitions['COMPILER_FLAGS'] = '-O3 -lm -h aggress -h vector3 -hfp3'
+  
 
 definitions['MPI_OPTION'] = 'MPI_PARALLEL' if args['mpi'] \
     else 'NOT_MPI_PARALLEL'
 if args['mpi']:
-  makefile_options['COMPILER_CHOICE'] = 'mpicxx'
-  definitions['COMPILER_CHOICE'] = 'mpicxx'
+  if args['cxx'] == 'cray':
+    makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
+    definitions['COMPILER_FLAGS'] += ' -h mpi1'
+  else : 
+    makefile_options['COMPILER_CHOICE'] = 'mpicxx'
+    definitions['COMPILER_CHOICE'] = 'mpicxx'
 
 definitions['DEBUG'] = 'DEBUG' if args['debug'] \
     else 'NOT_DEBUG'
 if args['debug']:
   if args['cxx'] == 'g++':
     makefile_options['COMPILER_FLAGS'] = '-g -O0'
-    definitions['COMPILER_FLAGS'] += '-g -O0'
+    definitions['COMPILER_FLAGS'] = '-g -O0'
   if args['cxx'] == 'icc':
-    makefile_options['COMPILER_FLAGS'] += '-g -O0'
-    definitions['COMPILER_FLAGS'] += '-g -O0'
+    makefile_options['COMPILER_FLAGS'] = '-g -O0'
+    definitions['COMPILER_FLAGS'] = '-g -O0'
+  if args['cxx'] == 'cray':
+    makefile_options['COMPILER_FLAGS'] = '-O0'
+    definitions['COMPILER_FLAGS'] = '-O0'
 
 definitions['OPENMP_OPTION'] = 'OPENMP_PARALLEL' if args['omp'] \
     else 'NOT_OPENMP_PARALLEL'
@@ -237,6 +249,9 @@ if args['omp']:
   if args['cxx'] == 'icc':
     makefile_options['COMPILER_FLAGS'] += ' -openmp'
     definitions['COMPILER_FLAGS'] += ' -openmp'
+  if args['cxx'] == 'cray':
+    makefile_options['COMPILER_FLAGS'] += ' -homp'
+    definitions['COMPILER_FLAGS'] += ' -homp'
 
 
 # -ifov=N argument
