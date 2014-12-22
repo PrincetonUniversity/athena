@@ -334,15 +334,18 @@ void Coordinates::CellMetric(const int k, const int j, AthenaArray<Real> &g,
 // Inputs:
 //   k: z-index
 //   j: y-index
-//   b: 3D array of transverse components B^1 of magnetic field, in global coordinates
-//   prim: 1D array of primitives, using global coordinates
+//   b1_vals: 3D array of normal components B^1 of magnetic field, in global coordinates
+//   prim_left: 1D array of left primitives, using global coordinates
+//   prim_right: 1D array of right primitives, using global coordinates
 // Outputs:
-//   b: values in range overwritten in local coordinates
-//   prim: values overwritten in local coordinates
+//   prim_left: values overwritten in local coordinates
+//   prim_right: values overwritten in local coordinates
+//   bx: 1D array of longitudinal magnetic fields, in local coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::PrimToLocal1(const int k, const int j, AthenaArray<Real> &b,
-    AthenaArray<Real> &prim)
+void Coordinates::PrimToLocal1(const int k, const int j,
+    const AthenaArray<Real> &b1_vals, AthenaArray<Real> &prim_left,
+    AthenaArray<Real> &prim_right, AthenaArray<Real> &bx)
 {
   return;
 }
@@ -353,15 +356,18 @@ void Coordinates::PrimToLocal1(const int k, const int j, AthenaArray<Real> &b,
 // Inputs:
 //   k: z-index
 //   j: y-index
-//   b: 3D array of transverse components B^1 of magnetic field, in global coordinates
-//   prim: 1D array of primitives, using global coordinates
+//   b2_vals: 3D array of normal components B^2 of magnetic field, in global coordinates
+//   prim_left: 1D array of left primitives, using global coordinates
+//   prim_right: 1D array of right primitives, using global coordinates
 // Outputs:
-//   b: values in range overwritten in local coordinates
-//   prim: values overwritten in local coordinates
+//   prim_left: values overwritten in local coordinates
+//   prim_right: values overwritten in local coordinates
+//   by: 1D array of longitudinal magnetic fields, in local coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::PrimToLocal2(const int k, const int j, AthenaArray<Real> &b,
-    AthenaArray<Real> &prim)
+void Coordinates::PrimToLocal2(const int k, const int j,
+    const AthenaArray<Real> &b2_vals, AthenaArray<Real> &prim_left,
+    AthenaArray<Real> &prim_right, AthenaArray<Real> &by)
 {
   return;
 }
@@ -372,15 +378,18 @@ void Coordinates::PrimToLocal2(const int k, const int j, AthenaArray<Real> &b,
 // Inputs:
 //   k: z-index
 //   j: y-index
-//   b: 3D array of transverse components B^1 of magnetic field, in global coordinates
-//   prim: 1D array of primitives, using global coordinates
+//   b3_vals: 3D array of normal components B^3 of magnetic field, in global coordinates
+//   prim_left: 1D array of left primitives, using global coordinates
+//   prim_right: 1D array of right primitives, using global coordinates
 // Outputs:
-//   b: values in range overwritten in local coordinates
-//   prim: values overwritten in local coordinates
+//   prim_left: values overwritten in local coordinates
+//   prim_right: values overwritten in local coordinates
+//   bz: 1D array of longitudinal magnetic fields, in local coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::PrimToLocal3(const int k, const int j, AthenaArray<Real> &b,
-    AthenaArray<Real> &prim)
+void Coordinates::PrimToLocal3(const int k, const int j,
+    const AthenaArray<Real> &b3_vals, AthenaArray<Real> &prim_left,
+    AthenaArray<Real> &prim_right, AthenaArray<Real> &bz)
 {
   return;
 }

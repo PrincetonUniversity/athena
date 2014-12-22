@@ -1,7 +1,5 @@
 // HLLC Riemann solver for special relativistic hydro
 
-// TODO: make left and right inputs const
-
 // Primary header
 #include "../../fluid_integrator.hpp"
 

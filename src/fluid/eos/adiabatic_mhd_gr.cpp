@@ -382,7 +382,6 @@ void FluidEqnOfState::FastMagnetosonicSpeedsRelativistic(Real rho, Real pgas,
 //   returned value: calculated minus given value of q_dot_n
 // Notes:
 //   follows Noble et al. 2006, ApJ 641 626 (N)
-//   implements formulas assuming no magnetic field
 Real residual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq, Real b_norm_sq,
     Real q_dot_b_norm_sq, Real gamma_prime)
 {
@@ -410,7 +409,6 @@ Real residual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq, Real b_no
 //   returned value: derivative of calculated value of Q_mu n^mu
 // Notes:
 //   follows Noble et al. 2006, ApJ 641 626 (N)
-//   implements formulas assuming no magnetic field
 Real residual_derivative(Real w_guess, Real d_norm, Real q_norm_sq, Real b_norm_sq,
     Real q_dot_b_norm_sq, Real gamma_prime)
 {
@@ -449,7 +447,7 @@ Real residual_derivative(Real w_guess, Real d_norm, Real q_norm_sq, Real b_norm_
 // Notes:
 //   returns NAN in event of failure
 //   forces W to be positive
-Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
+static Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
     Real b_norm_sq, Real q_dot_b_norm_sq, Real gamma_prime)
 {
   // Parameters

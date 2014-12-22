@@ -45,6 +45,8 @@ def run(input_filename, arguments):
     run_string = './athena -i {0}'.format(input_filename_full)
     for arg in arguments:
       run_string += ' {0}'.format(arg)
+    print(run_string)
+    exit()
     os.system(run_string)
   finally:
     os.chdir(current_dir)

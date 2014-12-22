@@ -60,12 +60,15 @@ public:
 
   // Functions for use in general relativity
   void CellMetric(const int k,const int j, AthenaArray<Real> &g, AthenaArray<Real> &gi);
-  void PrimToLocal1(const int k, const int j, AthenaArray<Real> &b,
-      AthenaArray<Real> &prim);
-  void PrimToLocal2(const int k, const int j, AthenaArray<Real> &b,
-      AthenaArray<Real> &prim);
-  void PrimToLocal3(const int k, const int j, AthenaArray<Real> &b,
-      AthenaArray<Real> &prim);
+  void PrimToLocal1(const int k, const int j, const AthenaArray<Real> &b1_vals,
+      AthenaArray<Real> &prim_left, AthenaArray<Real> &prim_right,
+      AthenaArray<Real> &bx);
+  void PrimToLocal2(const int k, const int j, const AthenaArray<Real> &b2_vals,
+      AthenaArray<Real> &prim_left, AthenaArray<Real> &prim_right,
+      AthenaArray<Real> &by);
+  void PrimToLocal3(const int k, const int j, const AthenaArray<Real> &b3_vals,
+      AthenaArray<Real> &prim_left, AthenaArray<Real> &prim_right,
+      AthenaArray<Real> &bz);
   void FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flux);
   void FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flux);
   void FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flux);

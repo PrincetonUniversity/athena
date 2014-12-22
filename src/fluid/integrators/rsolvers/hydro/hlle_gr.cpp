@@ -27,7 +27,7 @@
 //   implements HLLE algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
 //   prim_left, prim_right overwritten
 void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const int iu,
-    const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &prim_left,
+    const int ivx, const AthenaArray<Real> &b, AthenaArray<Real> &prim_left,
     AthenaArray<Real> &prim_right, AthenaArray<Real> &flux)
 {
   // Calculate cyclic permutations of indices
@@ -43,16 +43,16 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
   switch (ivx)
   {
     case IVX:
-      pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, bx, prim_left);
-      pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, bx, prim_right);
+      pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, b, prim_left, prim_right,
+          b_normal_);
       break;
     case IVY:
-      pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, bx, prim_left);
-      pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, bx, prim_right);
+      pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, b, prim_left, prim_right,
+          b_normal_);
       break;
     case IVZ:
-      pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, bx, prim_left);
-      pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, bx, prim_right);
+      pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, b, prim_left, prim_right,
+          b_normal_);
       break;
   }
 
