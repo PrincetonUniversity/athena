@@ -20,6 +20,7 @@
 
 // C++ headers
 #include <iostream>   // endl
+#include <iomanip>
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
@@ -328,7 +329,7 @@ void BoundaryValues::EnrollFieldBoundaryFunction(enum direction dir,BValField_t 
   {
     std::stringstream msg;
     msg << "### FATAL ERROR in EnrollFieldBoundaryCondition function" << std::endl
-        << "dirName = " << dir << " not valid" << std::endl;
+        << "dirName = " << dir << " is not valid" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
   if(pmy_mblock_->neighbor[dir][0][0].gid==-1)
@@ -336,20 +337,75 @@ void BoundaryValues::EnrollFieldBoundaryFunction(enum direction dir,BValField_t 
   return;
 }
 
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::StartReceivingFluid(int flag)
+//  \brief initiate MPI_Irecv for fluid
+void BoundaryValues::StartReceivingFluid(int flag)
+{
+#ifdef MPI_PARALLEL
+  MeshBlock *pmb=pmy_mblock_;
+  int tag;
+  std::stringstream msg;
+  for(int i=0;i<6;i++) {
+    if(pmb->neighbor[i][0][0].gid!=-1) { 
+      tag=CreateMPITag(pmb->lid, flag, i, tag_fluid, 0, 0);
+      if(MPI_Irecv(fluid_recv_[i],fluid_bufsize_[i],MPI_ATHENA_REAL,
+          pmb->neighbor[i][0][0].rank,tag,MPI_COMM_WORLD,&req_fluid_recv_[i][0][0])!=MPI_SUCCESS)
+      {
+        msg << "### FATAL ERROR in StartReceivingFluid" << std::endl
+            << "Something wrong in MPI_Irecv" << std::endl;
+            throw std::runtime_error(msg.str().c_str());
+      }
+//      std::cout <<std::setw(3)<< tag << ": Face " << i << ",  to  Block " << pmb->neighbor[i][0][0].gid
+//      << " on Rank " << pmb->neighbor[i][0][0].gid << " from Block " << pmb->gid
+//      << " on Rank " << myrank << std::endl;
+    }
+  }
+#endif
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::StartReceivingField(int flag)
+//  \brief initiate MPI_Irecv for field
+void BoundaryValues::StartReceivingField(int flag)
+{
+#ifdef MPI_PARALLEL
+  MeshBlock *pmb=pmy_mblock_;
+  int tag;
+  for(int i=0;i<6;i++) {
+    if(pmb->neighbor[i][0][0].gid!=-1) {
+      tag=CreateMPITag(pmb->lid, flag, i, tag_field, 0, 0);
+      MPI_Irecv(field_recv_[i],field_bufsize_[i],MPI_ATHENA_REAL,
+          pmb->neighbor[i][0][0].rank,tag,MPI_COMM_WORLD,&req_field_recv_[i][0][0]);
+    }
+  }
+#endif
+  return;
+}
+
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::LoadAndSendFluidBoundaryBuffer
-//                          (enum direction dir, AthenaArray<Real> &src)
+//                          (enum direction dir, AthenaArray<Real> &src, int flag)
 //  \brief Set boundary buffer for x1 direction using boundary functions
 //  note: some geometric boundaries (e.g. origin and pole) are not implemented yet
 void BoundaryValues::LoadAndSendFluidBoundaryBuffer
-                     (enum direction dir, AthenaArray<Real> &src)
+                     (enum direction dir, AthenaArray<Real> &src, int flag)
 {
   MeshBlock *pmb=pmy_mblock_;
   MeshBlock *pbl=pmb->pmy_mesh->pblock;
   int oside;
   std::stringstream msg;
   Real *sendbuf=fluid_send_[dir];
-  int si, sj, sk, ei, ej, ek;
+  int si, sj, sk, ei, ej, ek, mylevel;
+#ifdef MPI_PARALLEL
+  int tag;
+#endif
+
+  if(pmb->neighbor[dir][0][0].gid==-1)
+    return; // do nothing for physical boundary
 
   si=fluid_send_se_[dir][0];
   ei=fluid_send_se_[dir][1];
@@ -357,9 +413,6 @@ void BoundaryValues::LoadAndSendFluidBoundaryBuffer
   ej=fluid_send_se_[dir][3];
   sk=fluid_send_se_[dir][4];
   ek=fluid_send_se_[dir][5];
-
-  if(pmb->neighbor[dir][0][0].gid==-1)
-    return; // do nothing for physical boundary
 
   if(dir%2==0)
     oside=dir+1;
@@ -391,20 +444,37 @@ void BoundaryValues::LoadAndSendFluidBoundaryBuffer
     }
     if(pbl==NULL)
     {
-      msg << "### FATAL ERROR in SetFluidBoundary" << std::endl
+      msg << "### FATAL ERROR in LoadAndSendFluidBoundaryBuffer" << std::endl
           << "In boundary " << dir << " of block "<<  pmb->gid
           << ", neighbor block " << pmb->neighbor[dir][0][0].gid
           << " is not found on the same process." << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
-    std::memcpy(pbl->pbval->fluid_recv_[oside], fluid_send_[dir],
+    std::memcpy(pbl->pbval->fluid_recv_[oside], sendbuf,
                 fluid_bufsize_[dir]*sizeof(Real));
     pbl->pbval->fluid_flag_[oside][0][0]=true; // the other side
   }
   else // MPI
   {
-    std::cout << "Block " << pmb->gid << " on Rank " << myrank << " is sending to "
-     << " Block " << pmb->neighbor[dir][0][0].gid << " on Rank " << pmb->neighbor[dir][0][0].rank <<std::endl;
+#ifdef MPI_PARALLEL
+    // on the same level
+    tag=CreateMPITag(pmb->neighbor[dir][0][0].lid, flag, oside, tag_fluid, 0, 0);
+    if(MPI_Isend(sendbuf,fluid_bufsize_[dir],MPI_ATHENA_REAL,
+        pmb->neighbor[dir][0][0].rank,tag,MPI_COMM_WORLD,&req_fluid_send_[dir][0][0])!=MPI_SUCCESS)
+    {
+      msg << "### FATAL ERROR in LoadAndSendFluidBoundaryBuffer" << std::endl
+          << "Something wrong in MPI_Isend" << std::endl;
+          throw std::runtime_error(msg.str().c_str());
+    }
+//    std::cout << std::setw(3) <<tag << ": Face " << dir << ", from Block " << pmb->gid << " on Rank " << myrank
+//    << "  to  Block " << pmb->neighbor[dir][0][0].gid << " on Rank "
+//    << pmb->neighbor[dir][0][0].gid <<  std::endl;
+#else
+    msg << "### FATAL ERROR in LoadAndSendFluidBoundaryBuffer" << std::endl
+        << "I was told that my neighbor is on another node, but MPI is off!"
+        << std::endl << "I'm afraid the grid structure is broken." << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+#endif
   }
   return;
 }
@@ -414,7 +484,8 @@ void BoundaryValues::LoadAndSendFluidBoundaryBuffer
 //! \fn bool BoundaryValues::ReceiveAndSetFluidBoundary(enum direction dir,
 //                                                      AthenaArray<Real> &dst)
 //  \brief load boundary buffer for x1 direction into the array
-bool BoundaryValues::ReceiveAndSetFluidBoundary(enum direction dir, AthenaArray<Real> &dst)
+bool BoundaryValues::ReceiveAndSetFluidBoundary(enum direction dir,
+                                                AthenaArray<Real> &dst)
 {
   MeshBlock *pmb=pmy_mblock_;
   std::stringstream msg;
@@ -427,8 +498,29 @@ bool BoundaryValues::ReceiveAndSetFluidBoundary(enum direction dir, AthenaArray<
   {
     if(fluid_flag_[dir][0][0] == false)
     {
-      std::cout << "Not Ready: " << dir <<" from " << pmb->gid << std::endl;
-      return false; // return if it is not ready yet
+      if(pmb->neighbor[dir][0][0].rank==myrank) {// on the same process
+        std::cout << "Buffer is not ready: this should not happen." << std::endl;
+        return false; // return if it is not ready yet
+      }
+      else { // MPI boundary
+#ifdef MPI_PARALLEL
+        // temporary: wait the communication
+        if(MPI_Wait(&req_fluid_recv_[dir][0][0],MPI_STATUS_IGNORE)!=MPI_SUCCESS)
+        {
+          msg << "### FATAL ERROR in ReceiveAndSetFluidBoundary" << std::endl
+              << "Something wrong in MPI_Wait" << std::endl;
+          throw std::runtime_error(msg.str().c_str());
+        }
+
+        // for the future interleaving: check if it is ready
+        //   return false; return if it is not ready yet ; for task implementation
+#else
+        msg << "### FATAL ERROR in ReceiveAndSetFluidBoundary" << std::endl
+            << "I was told that my neighbor is on another node, but MPI is off!"
+            << std::endl << "I'm afraid the grid structure is broken." << std::endl;
+        throw std::runtime_error(msg.str().c_str());
+#endif
+      }
     }
 
     si=fluid_recv_se_[dir][0];
@@ -455,14 +547,26 @@ bool BoundaryValues::ReceiveAndSetFluidBoundary(enum direction dir, AthenaArray<
   return true;
 }
 
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::WaitSendFluid(enum direction dir)
+//  \brief wait until MPI_Isend for fluid completes
+void BoundaryValues::WaitSendFluid(enum direction dir)
+{
+#ifdef MPI_PARALLEL
+  MeshBlock *pmb=pmy_mblock_;
+  if(pmb->neighbor[dir][0][0].rank!=-1 && pmb->neighbor[dir][0][0].rank!=myrank)
+    MPI_Wait(&req_fluid_send_[dir][0][0],MPI_STATUS_IGNORE);
+#endif
+  return;
+}
 
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::LoadAndSendFieldBoundaryBuffer
-//                           (enum direction dir, InterfaceField &src)
+//                           (enum direction dir, InterfaceField &src, int flag)
 //  \brief Set boundary buffer for x1 direction using boundary functions
 //  note: some geometric boundaries (e.g. origin and pole) are not implemented yet
 void BoundaryValues::LoadAndSendFieldBoundaryBuffer(enum direction dir,
-                                                    InterfaceField &src)
+                                                    InterfaceField &src, int flag)
 {
   MeshBlock *pmb=pmy_mblock_;
   MeshBlock *pbl=pmb->pmy_mesh->pblock;
@@ -473,6 +577,9 @@ void BoundaryValues::LoadAndSendFieldBoundaryBuffer(enum direction dir,
   AthenaArray<Real>& x2src=src.x2f;
   AthenaArray<Real>& x3src=src.x3f;
   int si, sj, sk, ei, ej, ek;
+#ifdef MPI_PARALLEL
+  int tag;
+#endif
 
   if(pmb->neighbor[dir][0][0].gid==-1)
     return; // do nothing for physical boundary
@@ -555,8 +662,17 @@ void BoundaryValues::LoadAndSendFieldBoundaryBuffer(enum direction dir,
   }
   else // MPI
   {
-    std::cout << "Block " << pmb->gid << " on Rank " << myrank << " is sending to "
-     << " Block " << pmb->neighbor[dir][0][0].gid << " on Rank " << pmb->neighbor[dir][0][0].rank <<std::endl;
+#ifdef MPI_PARALLEL
+    // on the same level
+    tag=CreateMPITag(pmb->neighbor[dir][0][0].lid, flag, oside, tag_field, 0, 0);
+    MPI_Isend(sendbuf,field_bufsize_[dir],MPI_ATHENA_REAL,
+        pmb->neighbor[dir][0][0].rank,tag,MPI_COMM_WORLD,&req_field_send_[dir][0][0]);
+#else
+    msg << "### FATAL ERROR in LoadAndSendFluidBoundaryBuffer" << std::endl
+        << "I was told that my neighbor is on another node, but MPI is off!"
+        << std::endl << "I'm afraid the grid structure is broken." << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+#endif
   }
   return;
 }
@@ -580,7 +696,26 @@ bool BoundaryValues::ReceiveAndSetFieldBoundary(enum direction dir, InterfaceFie
   else // block boundary
   {
     if(field_flag_[dir][0][0] == false)
-      return false; // return if it is not ready yet
+    {
+      if(pmb->neighbor[dir][0][0].rank==myrank) {// on the same process
+        std::cout << "Buffer is not ready: this should not happen." << std::endl;
+        return false; // return if it is not ready yet
+      }
+      else { // MPI boundary
+#ifdef MPI_PARALLEL
+        // temporary: wait the communication
+        MPI_Wait(&req_field_recv_[dir][0][0],MPI_STATUS_IGNORE);
+
+        // for the future interleaving: check if it is ready
+        //   return false; return if it is not ready yet ; for task implementation
+#else
+        msg << "### FATAL ERROR in ReceiveAndSetFieldBoundary" << std::endl
+            << "I was told that my neighbor is on another node, but MPI is off!"
+            << std::endl << "I'm afraid the grid structure is broken." << std::endl;
+        throw std::runtime_error(msg.str().c_str());
+#endif
+      }
+    }
 
     // Load buffers; x1f
     int p=0;
@@ -637,7 +772,23 @@ bool BoundaryValues::ReceiveAndSetFieldBoundary(enum direction dir, InterfaceFie
   return true;
 }
 
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::WaitSendField(enum direction dir)
+//  \brief wait until MPI_Isend for magnetic fields completes
+void BoundaryValues::WaitSendField(enum direction dir)
+{
+#ifdef MPI_PARALLEL
+  MeshBlock *pmb=pmy_mblock_;
+  if(pmb->neighbor[dir][0][0].rank!=-1 && pmb->neighbor[dir][0][0].rank!=myrank)
+    MPI_Wait(&req_field_send_[dir][0][0],MPI_STATUS_IGNORE);
+#endif
+  return;
+}
 
+
+//--------------------------------------------------------------------------------------
+//! \fn void InitBoundaryBuffer(int nx1, int nx2, int nx3)
+//  \brief creates a list of the sizes and offsets of boundary buffers
 void InitBoundaryBuffer(int nx1, int nx2, int nx3)
 {
   int is, ie, js, je, ks, ke;

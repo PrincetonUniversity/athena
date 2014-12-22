@@ -97,12 +97,14 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pi)
   listsize=sizeof(int)*2+sizeof(ID_t)*IDLENGTH+sizeof(Real)+sizeof(WrapIOSize_t);
 
   int mynb=pM->nbend-pM->nbstart+1;
+  blocksize=new WrapIOSize_t[pM->nbtotal+1];
+  offset=new WrapIOSize_t[mynb];
+
+#ifdef MPI_PARALLEL
   nblocks = new int[nproc];
   displ = new int[nproc];
   if(myrank==0) myblocksize=new WrapIOSize_t[mynb+1];
   else myblocksize=new WrapIOSize_t[mynb];
-  blocksize=new WrapIOSize_t[pM->nbtotal+1];
-  offset=new WrapIOSize_t[mynb];
 
   // distribute the numbers of the blocks
   if(MPI_Allgather(&mynb,1,MPI_INTEGER,nblocks,1,MPI_INTEGER,MPI_COMM_WORLD)
@@ -115,11 +117,6 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pi)
   displ[0]=0;
   for(i=1;i<nproc;i++)
     displ[i]=displ[i-1]+nblocks[i-1];
-
-  if(myrank==0) {
-    for(i=0;i<nproc;i++)
-      std::cout << "rank " << i << " nblocks = " << nblocks[i] << std::endl;
-  }
 
   i=0;
   if(myrank==0) {
@@ -141,11 +138,22 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pi)
         << "MPI_Allgatherv for blocksize failed." << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
+  // clean up
+  delete [] myblocksize;
+  delete [] nblocks;
+  delete [] displ;
 
-  if(myrank==0) {
-    for(i=0;i<=pM->nbtotal;i++)
-      std::cout << "block " << i-1 << " size= " << blocksize[i] << std::endl;
+#else // serial
+  pmb=pM->pblock;
+  blocksize[0]=resfile.Tell();
+  i=1;
+  while(pmb!=NULL) // must be parallelized for MPI
+  {
+    blocksize[i]=pmb->GetBlockSizeInBytes();
+    i++;
+    pmb=pmb->next;
   }
+#endif
 
   // blocksize[0] = offset to the end of the header
   WrapIOSize_t firstoffset=blocksize[0]+listsize*pM->nbtotal; // end of the id list
@@ -158,8 +166,6 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pi)
 
   // seek to the head of the ID list of this process
   resfile.Seek(blocksize[0]+pM->nbstart*listsize);
-  for(i=pM->nbstart;i<=pM->nbend;i++)
-    std::cout << "block " << i << " offset= " << offset[i-pM->nbstart] << std::endl;
 
   pmb=pM->pblock;
   i=0;
@@ -180,11 +186,6 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pi)
   // If any additional physics is implemented, modify here accordingly.
   // Especially, the offset from the top of the file must be recalculated.
   // For MPI-IO, it is important to know the absolute location in advance.
-
-  // clean up
-  delete [] myblocksize;
-  delete [] nblocks;
-  delete [] displ;
 
   // leave the file open; it will be closed in Finalize()
   return;

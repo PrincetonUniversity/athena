@@ -71,7 +71,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   MeshBlock *pfirst;
   RegionBCs  block_bcs;
   NeighborBlock nei;
-  int *ranklist;
+  int *ranklist, *nslist;
   Real *costlist;
   Real totalcost, maxcost, mincost, mycost, targetcost;
   int nbmax;
@@ -203,9 +203,9 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
 
 // read MeshBlock parameters
-  block_size.nx1 = pin->GetOrAddReal("meshblock","nx1",mesh_size.nx1);
-  block_size.nx2 = pin->GetOrAddReal("meshblock","nx2",mesh_size.nx2);
-  block_size.nx3 = pin->GetOrAddReal("meshblock","nx3",mesh_size.nx3);
+  block_size.nx1 = pin->GetOrAddInteger("meshblock","nx1",mesh_size.nx1);
+  block_size.nx2 = pin->GetOrAddInteger("meshblock","nx2",mesh_size.nx2);
+  block_size.nx3 = pin->GetOrAddInteger("meshblock","nx3",mesh_size.nx3);
 
 // check consistency of the block and mesh
   if(mesh_size.nx1%block_size.nx1 != 0
@@ -213,6 +213,12 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   || mesh_size.nx3%block_size.nx3 != 0) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "the mesh must be evenly divisible by the meshblock" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  if(block_size.nx1 <2 || (block_size.nx2<2 && mesh_size.nx2!=1)
+     || (block_size.nx3<2 && mesh_size.nx3!=1)) {
+    msg << "### FATAL ERROR in Mesh constructor" << std::endl
+        << "block_size must be larger than 1." << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
 
@@ -240,6 +246,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   tree.GetIDList(buid,nbtotal);
 
   ranklist=new int[nbtotal];
+  nslist=new int[nproc];
   costlist=new Real[nbtotal];
   maxcost=0.0;
   mincost=(FLT_MAX);
@@ -268,21 +275,20 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       targetcost=totalcost/(j+1);
     }
   }
-  j=-1;
-  nbend=nbtotal-1;
-  for(i=0;i<nbtotal;i++) // find my nbstart and nbend
+  nslist[0]=0;
+  j=0;
+  for(i=1;i<nbtotal;i++) // make the list of nbstart
   {
-    if(ranklist[i]==myrank && j!=myrank)
-    {
-      nbstart=i;
-      j=myrank;
-    }
-    if(ranklist[i]!=myrank && j== myrank)
-    {
-      nbend=i-1;
-      break;
-    }
+    if(ranklist[i]!=ranklist[i-1])
+      nslist[++j]=i;
   }
+
+  // store my nbstart and nbend
+  nbstart=nslist[myrank];
+  if(myrank+1==nproc)
+    nbend=nbtotal-1;
+  else 
+    nbend=nslist[myrank+1]-1;
 
 // check if there are sufficient blocks
 #ifdef MPI_PARALLEL
@@ -292,6 +298,12 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
         << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< nproc
         << ")" << std::endl;
     throw std::runtime_error(msg.str().c_str());
+  }
+  if(nbtotal % nproc != 0 && adaptive == false && maxcost == mincost && myrank==0)
+  {
+    std::cout << "### Warning in Mesh constructor" << std::endl
+              << "The number of MeshBlocks cannot be divided evenly. "
+              << "This will cause a poor load balance." << std::endl;
   }
 #endif
 
@@ -349,7 +361,6 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     delete [] nb;
     return;
   }
-
 
 // create MeshBlock list for this process
   for(i=nbstart;i<=nbend;i++)
@@ -430,18 +441,18 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
     // create a block and add into the link list
     if(i==nbstart) {
-      pblock = new MeshBlock(i, buid[i], block_size, block_bcs, this, pin);
+      pblock = new MeshBlock(i, i-nbstart, buid[i], block_size, block_bcs, this, pin);
       pfirst = pblock;
     }
     else {
-      pblock->next = new MeshBlock(i, buid[i], block_size, block_bcs, this, pin);
+      pblock->next = new MeshBlock(i, i-nbstart, buid[i], block_size, block_bcs, this, pin);
       pblock->next->prev = pblock;
       pblock = pblock->next;
     }
 
     // search the neighboring block from the ID list.
     if(lx1==0 && mesh_bcs.ix1_bc!=4)
-      pblock->SetNeighbor(inner_x1,-1,-1,-1);
+      pblock->SetNeighbor(inner_x1,-1,-1,-1,-1);
     else
     {
       neibt=tree.FindNeighbor(inner_x1,buid[i],nrbx1,nrbx2,nrbx3,root_level);
@@ -453,21 +464,26 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       }
       nei=neibt->GetNeighbor();
       if(nei.level==ll || nei.level==ll-1) // same or coarser
-        pblock->SetNeighbor(inner_x1,ranklist[nei.gid],nei.level,nei.gid);
+        pblock->SetNeighbor(inner_x1, ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]]);
       else // finer
       {
         nei= neibt->GetLeaf(1,0,0)->GetNeighbor();
-        pblock->SetNeighbor(inner_x1,ranklist[nei.gid],nei.level,nei.gid,0,0);
+        pblock->SetNeighbor(inner_x1, ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],0,0);
         nei= neibt->GetLeaf(1,0,1)->GetNeighbor();
-        pblock->SetNeighbor(inner_x1,ranklist[nei.gid],nei.level,nei.gid,0,1);
+        pblock->SetNeighbor(inner_x1, ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],0,1);
         nei= neibt->GetLeaf(1,1,0)->GetNeighbor();
-        pblock->SetNeighbor(inner_x1,ranklist[nei.gid],nei.level,nei.gid,1,0);
+        pblock->SetNeighbor(inner_x1, ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],1,0);
         nei= neibt->GetLeaf(1,1,1)->GetNeighbor();
-        pblock->SetNeighbor(inner_x1,ranklist[nei.gid],nei.level,nei.gid,1,1);
+        pblock->SetNeighbor(inner_x1, ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],1,1);
       }
     }
     if(lx1==(nrbx1<<(ll-root_level))-1 && mesh_bcs.ox1_bc!=4)
-      pblock->SetNeighbor(outer_x1,-1,-1,-1);
+      pblock->SetNeighbor(outer_x1,-1,-1,-1,-1);
     else
     {
       neibt=tree.FindNeighbor(outer_x1,buid[i],nrbx1,nrbx2,nrbx3,root_level);
@@ -479,22 +495,27 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       }
       nei=neibt->GetNeighbor();
       if(nei.level==ll || nei.level==ll-1) // same or coarser
-        pblock->SetNeighbor(outer_x1,ranklist[nei.gid],nei.level,nei.gid);
+        pblock->SetNeighbor(outer_x1, ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]]);
       else // finer
       {
         nei= neibt->GetLeaf(0,0,0)->GetNeighbor();
-        pblock->SetNeighbor(outer_x1,ranklist[nei.gid],nei.level,nei.gid,0,0);
+        pblock->SetNeighbor(outer_x1, ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],0,0);
         nei= neibt->GetLeaf(0,0,1)->GetNeighbor();
-        pblock->SetNeighbor(outer_x1,ranklist[nei.gid],nei.level,nei.gid,0,1);
+        pblock->SetNeighbor(outer_x1, ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],0,1);
         nei= neibt->GetLeaf(0,1,0)->GetNeighbor();
-        pblock->SetNeighbor(outer_x1,ranklist[nei.gid],nei.level,nei.gid,1,0);
+        pblock->SetNeighbor(outer_x1, ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],1,0);
         nei= neibt->GetLeaf(0,1,1)->GetNeighbor();
-        pblock->SetNeighbor(outer_x1,ranklist[nei.gid],nei.level,nei.gid,1,1);
+        pblock->SetNeighbor(outer_x1, ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],1,1);
       }
     }
 
     if(lx2==0 && mesh_bcs.ix2_bc!=4)
-      pblock->SetNeighbor(inner_x2,-1,-1,-1);
+      pblock->SetNeighbor(inner_x2,-1,-1,-1,-1);
     else
     {
       neibt=tree.FindNeighbor(inner_x2,buid[i],nrbx1,nrbx2,nrbx3,root_level);
@@ -506,21 +527,26 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       }
       nei=neibt->GetNeighbor();
       if(nei.level==ll || nei.level==ll-1) // same or coarser
-        pblock->SetNeighbor(inner_x2,ranklist[nei.gid],nei.level,nei.gid);
+        pblock->SetNeighbor(inner_x2,ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]]);
       else // finer
       {
         nei= neibt->GetLeaf(0,1,0)->GetNeighbor();
-        pblock->SetNeighbor(inner_x2,ranklist[nei.gid],nei.level,nei.gid,0,0);
+        pblock->SetNeighbor(inner_x2,ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],0,0);
         nei= neibt->GetLeaf(0,1,1)->GetNeighbor();
-        pblock->SetNeighbor(inner_x2,ranklist[nei.gid],nei.level,nei.gid,0,1);
+        pblock->SetNeighbor(inner_x2,ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],0,1);
         nei= neibt->GetLeaf(1,1,0)->GetNeighbor();
-        pblock->SetNeighbor(inner_x2,ranklist[nei.gid],nei.level,nei.gid,1,0);
+        pblock->SetNeighbor(inner_x2,ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],1,0);
         nei= neibt->GetLeaf(1,1,1)->GetNeighbor();
-        pblock->SetNeighbor(inner_x2,ranklist[nei.gid],nei.level,nei.gid,1,1);
+        pblock->SetNeighbor(inner_x2,ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],1,1);
       }
     }
     if(lx2==(nrbx2<<(ll-root_level))-1 && mesh_bcs.ox2_bc!=4)
-      pblock->SetNeighbor(outer_x2,-1,-1,-1);
+      pblock->SetNeighbor(outer_x2,-1,-1,-1,-1);
     else
     {
       neibt=tree.FindNeighbor(outer_x2,buid[i],nrbx1,nrbx2,nrbx3,root_level);
@@ -532,22 +558,27 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       }
       nei=neibt->GetNeighbor();
       if(nei.level==ll || nei.level==ll-1) // same or coarser
-        pblock->SetNeighbor(outer_x2,ranklist[nei.gid],nei.level,nei.gid);
+        pblock->SetNeighbor(outer_x2,ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]]);
       else // finer
       {
         nei= neibt->GetLeaf(0,0,0)->GetNeighbor();
-        pblock->SetNeighbor(outer_x2,ranklist[nei.gid],nei.level,nei.gid,0,0);
+        pblock->SetNeighbor(outer_x2,ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],0,0);
         nei= neibt->GetLeaf(0,0,1)->GetNeighbor();
-        pblock->SetNeighbor(outer_x2,ranklist[nei.gid],nei.level,nei.gid,0,1);
+        pblock->SetNeighbor(outer_x2,ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],0,1);
         nei= neibt->GetLeaf(1,0,0)->GetNeighbor();
-        pblock->SetNeighbor(outer_x2,ranklist[nei.gid],nei.level,nei.gid,1,0);
+        pblock->SetNeighbor(outer_x2,ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],1,0);
         nei= neibt->GetLeaf(1,0,1)->GetNeighbor();
-        pblock->SetNeighbor(outer_x2,ranklist[nei.gid],nei.level,nei.gid,1,1);
+        pblock->SetNeighbor(outer_x2,ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],1,1);
       }
     }
 
     if(lx3==0 && mesh_bcs.ix3_bc!=4)
-      pblock->SetNeighbor(inner_x3,-1,-1,-1);
+      pblock->SetNeighbor(inner_x3,-1,-1,-1,-1);
     else
     {
       neibt=tree.FindNeighbor(inner_x3,buid[i],nrbx1,nrbx2,nrbx3,root_level);
@@ -559,21 +590,26 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       }
       nei=neibt->GetNeighbor();
       if(nei.level==ll || nei.level==ll-1) // same or coarser
-        pblock->SetNeighbor(inner_x3,ranklist[nei.gid],nei.level,nei.gid);
+        pblock->SetNeighbor(inner_x3,ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]]);
       else // finer
       {
         nei= neibt->GetLeaf(0,0,1)->GetNeighbor();
-        pblock->SetNeighbor(inner_x3,ranklist[nei.gid],nei.level,nei.gid,0,0);
+        pblock->SetNeighbor(inner_x3,ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],0,0);
         nei= neibt->GetLeaf(0,1,1)->GetNeighbor();
-        pblock->SetNeighbor(inner_x3,ranklist[nei.gid],nei.level,nei.gid,0,1);
+        pblock->SetNeighbor(inner_x3,ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],0,1);
         nei= neibt->GetLeaf(1,0,1)->GetNeighbor();
-        pblock->SetNeighbor(inner_x3,ranklist[nei.gid],nei.level,nei.gid,1,0);
+        pblock->SetNeighbor(inner_x3,ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],1,0);
         nei= neibt->GetLeaf(1,1,1)->GetNeighbor();
-        pblock->SetNeighbor(inner_x3,ranklist[nei.gid],nei.level,nei.gid,1,1);
+        pblock->SetNeighbor(inner_x3,ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],1,1);
       }
     }
     if(lx3==(nrbx3<<(ll-root_level))-1 && mesh_bcs.ox3_bc!=4)
-      pblock->SetNeighbor(outer_x3,-1,-1,-1);
+      pblock->SetNeighbor(outer_x3,-1,-1,-1,-1);
     else
     {
       neibt=tree.FindNeighbor(outer_x3,buid[i],nrbx1,nrbx2,nrbx3,root_level);
@@ -585,17 +621,22 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       }
       nei=neibt->GetNeighbor();
       if(nei.level==ll || nei.level==ll-1) // same or coarser
-        pblock->SetNeighbor(outer_x3,ranklist[nei.gid],nei.level,nei.gid);
+        pblock->SetNeighbor(outer_x3,ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]]);
       else // finer
       {
         nei= neibt->GetLeaf(0,0,0)->GetNeighbor();
-        pblock->SetNeighbor(outer_x3,ranklist[nei.gid],nei.level,nei.gid,0,0);
+        pblock->SetNeighbor(outer_x3,ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],0,0);
         nei= neibt->GetLeaf(0,1,0)->GetNeighbor();
-        pblock->SetNeighbor(outer_x3,ranklist[nei.gid],nei.level,nei.gid,0,1);
+        pblock->SetNeighbor(outer_x3,ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],0,1);
         nei= neibt->GetLeaf(1,0,0)->GetNeighbor();
-        pblock->SetNeighbor(outer_x3,ranklist[nei.gid],nei.level,nei.gid,1,0);
+        pblock->SetNeighbor(outer_x3,ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],1,0);
         nei= neibt->GetLeaf(1,1,0)->GetNeighbor();
-        pblock->SetNeighbor(outer_x3,ranklist[nei.gid],nei.level,nei.gid,1,1);
+        pblock->SetNeighbor(outer_x3,ranklist[nei.gid], nei.level, nei.gid,
+                            nei.gid-nslist[ranklist[nei.gid]],1,1);
       }
     }
   }
@@ -603,6 +644,9 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
 // clean up the temporary block id array
   delete [] buid;
+  delete [] ranklist;
+  delete [] nslist;
+  delete [] costlist;
 }
 
 
@@ -618,7 +662,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   long int lx1, lx2, lx3;
   WrapIOSize_t *offset;
   Real *costlist;
-  int *ranklist;
+  int *ranklist, *nslist;
   Real totalcost, targetcost, maxcost, mincost, mycost;
   BlockUID *buid;
   ID_t *rawid;
@@ -674,6 +718,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   offset=new WrapIOSize_t[nbtotal];
   costlist=new Real[nbtotal];
   ranklist=new int[nbtotal];
+  nslist=new int[nproc];
   rawid=new ID_t[IDLENGTH];
   for(int i=0;i<IDLENGTH;i++) rawid[i]=0;
 
@@ -686,6 +731,8 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   // ... perhaps I should pack them.
   totalcost=0.0;
   nerr=0;
+  maxcost=0.0;
+  mincost=(FLT_MAX);
   for(int i=0;i<nbtotal;i++)
   {
     int bgid,level;
@@ -696,6 +743,8 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
     if(resfile.Read(&(offset[i]),sizeof(WrapIOSize_t),1)!=1) nerr++;
     buid[i].SetUID(rawid,level);
     totalcost+=costlist[i];
+    mincost=std::min(mincost,costlist[i]);
+    maxcost=std::max(maxcost,costlist[i]);
   }
   if(nerr>0)
   {
@@ -724,79 +773,93 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
       targetcost=totalcost/(j+1);
     }
   }
-  j=-1;
-  nbend=nbtotal-1;
-  for(i=0;i<nbtotal;i++) // find my nbstart and nbend
+
+  if(nbtotal < nproc && test_flag==0)
   {
-    if(ranklist[i]==myrank && j!=myrank)
-    {
-      nbstart=i;
-      j=myrank;
-    }
-    if(ranklist[i]!=myrank && j== myrank)
-    {
-      nbend=i-1;
-      break;
-    }
+    msg << "### FATAL ERROR in Mesh constructor" << std::endl
+        << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< nproc
+        << ")" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
   }
-  
+  if(nbtotal % nproc != 0 && adaptive == false && maxcost == mincost && myrank==0)
+  {
+    std::cout << "### Warning in Mesh constructor" << std::endl
+              << "The number of MeshBlocks cannot be divided evenly. "
+              << "This will cause a poor load balance." << std::endl;
+  }
+
+  nslist[0]=0;
+  j=0;
+  for(i=1;i<nbtotal;i++) // make the list of nbstart
+  {
+    if(ranklist[i]!=ranklist[i-1])
+      nslist[++j]=i;
+  }
+  // store my nbstart and nbend
+  nbstart=nslist[myrank];
+  if(myrank+1==nproc)
+    nbend=nbtotal-1;
+  else 
+    nbend=nslist[myrank+1]-1;
+
   // Mesh test only; do not create meshes
   if(test_flag>0)
   {
-    if(myrank!=0) return;
-    std::cout << "Logical level of the physical root grid = "<< root_level << std::endl;
-    std::cout << "Logical level of maximum refinement = "<< max_level << std::endl;
-    std::cout << "List of MeshBlocks" << std::endl;
-    int nbt=0;
-    int *nb=new int [max_level-root_level+1];
-    for(i=root_level;i<=max_level;i++)
-    {
-      nb[i-root_level]=0;
-      for(j=0;j<nbtotal;j++)
+    if(myrank==0) {
+      std::cout << "Logical level of the physical root grid = "<< root_level << std::endl;
+      std::cout << "Logical level of maximum refinement = "<< max_level << std::endl;
+      std::cout << "List of MeshBlocks" << std::endl;
+      int nbt=0;
+      int *nb=new int [max_level-root_level+1];
+      for(i=root_level;i<=max_level;i++)
       {
-        if(buid[j].GetLevel()==i)
+        nb[i-root_level]=0;
+        for(j=0;j<nbtotal;j++)
         {
-          buid[j].GetLocation(lx1,lx2,lx3,ll);
-          std::cout << "Logical Level " << i << ":  MeshBlock " << j << ", lx1 = "
-                    << lx1 << ", lx2 = " << lx2 <<", lx3 = " << lx3
-                    << ", level = " << ll << ", cost = " << costlist[j]
-                    << ", rank = " << ranklist[j] << std::endl;
-          nb[i-root_level]++; nbt++;
+          if(buid[j].GetLevel()==i)
+          {
+            buid[j].GetLocation(lx1,lx2,lx3,ll);
+            std::cout << "Logical Level " << i << ":  MeshBlock " << j << ", lx1 = "
+                      << lx1 << ", lx2 = " << lx2 <<", lx3 = " << lx3
+                      << ", level = " << ll << ", cost = " << costlist[j]
+                      << ", rank = " << ranklist[j] << std::endl;
+            nb[i-root_level]++; nbt++;
+          }
         }
       }
-    }
-    for(i=root_level;i<=max_level;i++)
-    {
-      std::cout << "Logical Level " << i << ": " << nb[i-root_level] << " Blocks" << std::endl;
-    }
-    std::cout << "In Total : " << nbt << " Blocks" << std::endl << std::endl;
-    std::cout << "Load Balance :" << std::endl;
-    std::cout << "Minimum cost = " << mincost << ", Maximum cost = " << maxcost << std::endl;
-    j=0;
-    mycost=0;
-    nbt=0;
-    for(i=0;i<nbtotal;i++)
-    {
-      if(ranklist[i]==j)
+      for(i=root_level;i<=max_level;i++)
       {
-        mycost+=costlist[i];
-        nbt++;
+        std::cout << "Logical Level " << i << ": " << nb[i-root_level] << " Blocks" << std::endl;
       }
-      else if(ranklist[i]!=j)
+      std::cout << "In Total : " << nbt << " Blocks" << std::endl << std::endl;
+      std::cout << "Load Balance :" << std::endl;
+      std::cout << "Minimum cost = " << mincost << ", Maximum cost = " << maxcost << std::endl;
+      j=0;
+      mycost=0;
+      nbt=0;
+      for(i=0;i<nbtotal;i++)
       {
-        std::cout << "Rank " << j << ": " << nbt <<" Blocks, cost = " << mycost << std::endl;
-        mycost=costlist[i];
-        nbt=1;
-        j++;
+        if(ranklist[i]==j)
+        {
+          mycost+=costlist[i];
+          nbt++;
+        }
+        else if(ranklist[i]!=j)
+        {
+          std::cout << "Rank " << j << ": " << nbt <<" Blocks, cost = " << mycost << std::endl;
+          mycost=costlist[i];
+          nbt=1;
+          j++;
+        }
       }
+      std::cout << "Rank " << j << ": " << nbt <<" Blocks, cost = " << mycost << std::endl;
+      delete [] nb;
     }
-    std::cout << "Rank " << j << ": " << nbt <<" Blocks, cost = " << mycost << std::endl;
     delete [] buid;
     delete [] offset;
     delete [] costlist;
     delete [] ranklist;
     delete [] rawid;
-    delete [] nb;
     return;
   }
 
@@ -805,12 +868,13 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   {
     // create a block and add into the link list
     if(i==nbstart) {
-      pblock = new MeshBlock(i, this, pin, buid, resfile, offset[i], costlist[i], ranklist);
+      pblock = new MeshBlock(i, i-nbstart, this, pin, buid, resfile, offset[i],
+                             costlist[i], ranklist, nslist);
       pfirst = pblock;
     }
     else {
-      pblock->next = new MeshBlock(i, this, pin, buid, resfile,
-                                   offset[i], costlist[i], ranklist);
+      pblock->next = new MeshBlock(i, i-nbstart, this, pin, buid, resfile,
+                                   offset[i], costlist[i], ranklist, nslist);
       pblock->next->prev = pblock;
       pblock = pblock->next;
     }
@@ -823,6 +887,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   delete [] costlist;
   delete [] ranklist;
   delete [] rawid;
+  delete [] nslist;
 }
 
 
@@ -841,7 +906,7 @@ Mesh::~Mesh()
 // MeshBlock constructor: builds 1D vectors of cell positions and spacings, and
 // constructs coordinate, boundary condition, fluid and field objects.
 
-MeshBlock::MeshBlock(int igid, BlockUID iuid, RegionSize input_block,
+MeshBlock::MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_block,
                      RegionBCs input_bcs, Mesh *pm, ParameterInput *pin)
 {
   std::stringstream msg;
@@ -856,9 +921,9 @@ MeshBlock::MeshBlock(int igid, BlockUID iuid, RegionSize input_block,
   prev=NULL;
   next=NULL;
   gid=igid;
+  lid=ilid;
   uid=iuid;
   cost=1.0;
-  block_dt=(FLT_MAX*0.4);
 
 // initialize grid indices
 
@@ -1014,17 +1079,17 @@ MeshBlock::MeshBlock(int igid, BlockUID iuid, RegionSize input_block,
 //--------------------------------------------------------------------------------------
 // MeshBlock constructor for restarting
 
-MeshBlock::MeshBlock(int igid, Mesh *pm, ParameterInput *pin, BlockUID *list,
-                     WrapIO& resfile, WrapIOSize_t offset, Real icost, int *ranklist)
+MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, BlockUID *list,
+           WrapIO& resfile, WrapIOSize_t offset, Real icost, int *ranklist, int *nslist)
 {
   std::stringstream msg;
   pmy_mesh = pm;
   prev=NULL;
   next=NULL;
   gid=igid;
+  lid=ilid;
   uid=list[gid];
   cost=icost;
-  block_dt=(FLT_MAX*0.4);
   int nerr=0;
 
   // seek the file
@@ -1037,21 +1102,23 @@ MeshBlock::MeshBlock(int igid, Mesh *pm, ParameterInput *pin, BlockUID *list,
   if(resfile.Read(&neighbor, sizeof(NeighborBlock), 6*2*2)!=6*2*2)
     nerr++;
 
-  for(int k=0; k<6; k++) {
-    for(int j=0; j<=1; j++) {
-      for(int i=0; i<=1; i++) {
-        if(neighbor[k][j][i].gid!=-1)
-          neighbor[k][j][i].rank=ranklist[neighbor[k][j][i].gid];
-      }
-    }
-  }
-
   if(nerr>0)
   {
     msg << "### FATAL ERROR in MeshBlock constructor" << std::endl
         << "The restarting file is broken." << std::endl;
     resfile.Close();
     throw std::runtime_error(msg.str().c_str());
+  }
+
+  // set rank and local id
+  for(int k=0; k<6; k++) {
+    for(int j=0; j<=1; j++) {
+      for(int i=0; i<=1; i++) {
+        if(neighbor[k][j][i].gid!=-1)
+          neighbor[k][j][i].rank=ranklist[neighbor[k][j][i].gid];
+          neighbor[k][j][i].lid=neighbor[k][j][i].gid-nslist[neighbor[k][j][i].rank];
+      }
+    }
   }
 
 // initialize grid indices
@@ -1193,13 +1260,22 @@ MeshBlock::~MeshBlock()
 void Mesh::NewTimeStep(void)
 {
   MeshBlock *pmb = pblock;
-  Real min_dt=pmb->block_dt;
+  std::stringstream msg;
+  Real min_dt=pmb->pfluid->NewBlockTimeStep(pmb);
   pmb=pmb->next;
   while (pmb != NULL)  {
-    min_dt=std::min(min_dt,pmb->block_dt);
+    min_dt=std::min(min_dt,pmb->pfluid->NewBlockTimeStep(pmb));
     pmb=pmb->next;
   }
-  // add MPI_AllReduce here
+
+#ifdef MPI_PARALLEL
+  if(MPI_Allreduce(MPI_IN_PLACE,&min_dt,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD)!=MPI_SUCCESS)
+  {
+    msg << "### FATAL ERROR in NewTimeStep" << std::endl
+        << "MPI_Allreduce failed" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+#endif
 
   // set it
   dt=std::min(min_dt*cfl_number,2.0*dt);
@@ -1223,9 +1299,25 @@ void Mesh::ForAllMeshBlocks(enum ActionOnBlock action, ParameterInput *pin)
         ProblemGenerator(pfluid,pfield,pin);
         break;
 
+      case fluid_start_recv_n:
+        pmb->pbval->StartReceivingFluid(0);
+        break;
+
+      case field_start_recv_n:
+        pmb->pbval->StartReceivingField(0);
+        break;
+
+      case fluid_start_recv_nhalf:
+        pmb->pbval->StartReceivingFluid(1);
+        break;
+
+      case field_start_recv_nhalf:
+        pmb->pbval->StartReceivingField(1);
+        break;
+
       case fluid_loadsend_bcsx1_n:
-        pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x1,pfluid->u);
-        pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x1,pfluid->u);
+        pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x1,pfluid->u,0);
+        pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x1,pfluid->u,0);
         break;
 
       case fluid_recvset_bcsx1_n:
@@ -1233,19 +1325,9 @@ void Mesh::ForAllMeshBlocks(enum ActionOnBlock action, ParameterInput *pin)
         pmb->pbval->ReceiveAndSetFluidBoundary(outer_x1,pfluid->u);
         break;
 
-      case fluid_loadsend_bcsx1_nhalf:
-        pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x1,pfluid->u1);
-        pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x1,pfluid->u1);
-        break;
-
-      case fluid_recvset_bcsx1_nhalf:
-        pmb->pbval->ReceiveAndSetFluidBoundary(inner_x1,pfluid->u1);
-        pmb->pbval->ReceiveAndSetFluidBoundary(outer_x1,pfluid->u1);
-        break;
-
       case field_loadsend_bcsx1_n:
-        pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x1,pfield->b);
-        pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x1,pfield->b);
+        pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x1,pfield->b,0);
+        pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x1,pfield->b,0);
         break;
 
       case field_recvset_bcsx1_n:
@@ -1253,9 +1335,113 @@ void Mesh::ForAllMeshBlocks(enum ActionOnBlock action, ParameterInput *pin)
         pmb->pbval->ReceiveAndSetFieldBoundary(outer_x1,pfield->b);
         break;
 
+      case fluid_loadsend_bcsx2_n:
+        if(pmb->pmy_mesh->mesh_size.nx2 > 1) {
+          pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x2,pfluid->u,0);
+          pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x2,pfluid->u,0);
+        }
+        break;
+
+      case fluid_recvset_bcsx2_n:
+        if(pmb->pmy_mesh->mesh_size.nx2 > 1) {
+          pmb->pbval->ReceiveAndSetFluidBoundary(inner_x2,pfluid->u);
+          pmb->pbval->ReceiveAndSetFluidBoundary(outer_x2,pfluid->u);
+        }
+        break;
+
+      case field_loadsend_bcsx2_n:
+        if(pmb->pmy_mesh->mesh_size.nx2 > 1) {
+          pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x2,pfield->b,0);
+          pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x2,pfield->b,0);
+        }
+        break;
+
+      case field_recvset_bcsx2_n:
+        if(pmb->pmy_mesh->mesh_size.nx2 > 1) {
+          pmb->pbval->ReceiveAndSetFieldBoundary(inner_x2,pfield->b);
+          pmb->pbval->ReceiveAndSetFieldBoundary(outer_x2,pfield->b);
+        }
+        break;
+
+      case fluid_loadsend_bcsx3_n:
+        if(pmb->pmy_mesh->mesh_size.nx3 > 1) {
+          pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x3,pfluid->u,0);
+          pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x3,pfluid->u,0);
+        }
+        break;
+
+      case fluid_recvset_bcsx3_n:
+        if(pmb->pmy_mesh->mesh_size.nx3 > 1) {
+          pmb->pbval->ReceiveAndSetFluidBoundary(inner_x3,pfluid->u);
+          pmb->pbval->ReceiveAndSetFluidBoundary(outer_x3,pfluid->u);
+        }
+        break;
+
+      case field_loadsend_bcsx3_n:
+        if(pmb->pmy_mesh->mesh_size.nx3 > 1) {
+          pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x3,pfield->b,0);
+          pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x3,pfield->b,0);
+        }
+        break;
+
+      case field_recvset_bcsx3_n:
+        if(pmb->pmy_mesh->mesh_size.nx3 > 1) {
+          pmb->pbval->ReceiveAndSetFieldBoundary(inner_x3,pfield->b);
+          pmb->pbval->ReceiveAndSetFieldBoundary(outer_x3,pfield->b);
+        }
+        break;
+
+      case fluid_waitsend_bcsx1:
+        pmb->pbval->WaitSendFluid(inner_x1);
+        pmb->pbval->WaitSendFluid(outer_x1);
+        break;
+
+      case field_waitsend_bcsx1:
+        pmb->pbval->WaitSendField(inner_x1);
+        pmb->pbval->WaitSendField(outer_x1);
+        break;
+
+      case fluid_waitsend_bcsx2:
+        if(pmb->pmy_mesh->mesh_size.nx2 > 1) {
+          pmb->pbval->WaitSendFluid(inner_x2);
+          pmb->pbval->WaitSendFluid(outer_x2);
+        }
+        break;
+
+      case field_waitsend_bcsx2:
+        if(pmb->pmy_mesh->mesh_size.nx2 > 1) {
+          pmb->pbval->WaitSendField(inner_x2);
+          pmb->pbval->WaitSendField(outer_x2);
+        }
+        break;
+
+      case fluid_waitsend_bcsx3:
+        if(pmb->pmy_mesh->mesh_size.nx3 > 1) {
+          pmb->pbval->WaitSendFluid(inner_x3);
+          pmb->pbval->WaitSendFluid(outer_x3);
+        }
+        break;
+
+      case field_waitsend_bcsx3:
+        if(pmb->pmy_mesh->mesh_size.nx3 > 1) {
+          pmb->pbval->WaitSendField(inner_x3);
+          pmb->pbval->WaitSendField(outer_x3);
+        }
+        break;
+
+      case fluid_loadsend_bcsx1_nhalf:
+        pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x1,pfluid->u1,1);
+        pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x1,pfluid->u1,1);
+        break;
+
+      case fluid_recvset_bcsx1_nhalf:
+        pmb->pbval->ReceiveAndSetFluidBoundary(inner_x1,pfluid->u1);
+        pmb->pbval->ReceiveAndSetFluidBoundary(outer_x1,pfluid->u1);
+        break;
+
       case field_loadsend_bcsx1_nhalf:
-        pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x1,pfield->b1);
-        pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x1,pfield->b1);
+        pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x1,pfield->b1,1);
+        pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x1,pfield->b1,1);
         break;
 
       case field_recvset_bcsx1_nhalf:
@@ -1263,84 +1449,60 @@ void Mesh::ForAllMeshBlocks(enum ActionOnBlock action, ParameterInput *pin)
         pmb->pbval->ReceiveAndSetFieldBoundary(outer_x1,pfield->b1);
         break;
 
-      case fluid_loadsend_bcsx2_n:
-        pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x2,pfluid->u);
-        pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x2,pfluid->u);
-        break;
-
-      case fluid_recvset_bcsx2_n:
-        pmb->pbval->ReceiveAndSetFluidBoundary(inner_x2,pfluid->u);
-        pmb->pbval->ReceiveAndSetFluidBoundary(outer_x2,pfluid->u);
-        break;
-
       case fluid_loadsend_bcsx2_nhalf:
-        pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x2,pfluid->u1);
-        pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x2,pfluid->u1);
+        if(pmb->pmy_mesh->mesh_size.nx2 > 1) {
+          pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x2,pfluid->u1,1);
+          pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x2,pfluid->u1,1);
+        }
         break;
 
       case fluid_recvset_bcsx2_nhalf:
-        pmb->pbval->ReceiveAndSetFluidBoundary(inner_x2,pfluid->u1);
-        pmb->pbval->ReceiveAndSetFluidBoundary(outer_x2,pfluid->u1);
-        break;
-
-      case field_loadsend_bcsx2_n:
-        pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x2,pfield->b);
-        pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x2,pfield->b);
-        break;
-
-      case field_recvset_bcsx2_n:
-        pmb->pbval->ReceiveAndSetFieldBoundary(inner_x2,pfield->b);
-        pmb->pbval->ReceiveAndSetFieldBoundary(outer_x2,pfield->b);
+        if(pmb->pmy_mesh->mesh_size.nx2 > 1) {
+          pmb->pbval->ReceiveAndSetFluidBoundary(inner_x2,pfluid->u1);
+          pmb->pbval->ReceiveAndSetFluidBoundary(outer_x2,pfluid->u1);
+        }
         break;
 
       case field_loadsend_bcsx2_nhalf:
-        pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x2,pfield->b1);
-        pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x2,pfield->b1);
+        if(pmb->pmy_mesh->mesh_size.nx2 > 1) {
+          pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x2,pfield->b1,1);
+          pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x2,pfield->b1,1);
+        }
         break;
 
       case field_recvset_bcsx2_nhalf:
-        pmb->pbval->ReceiveAndSetFieldBoundary(inner_x2,pfield->b1);
-        pmb->pbval->ReceiveAndSetFieldBoundary(outer_x2,pfield->b1);
-        break;
-
-      case fluid_loadsend_bcsx3_n:
-        pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x3,pfluid->u);
-        pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x3,pfluid->u);
-        break;
-
-      case fluid_recvset_bcsx3_n:
-        pmb->pbval->ReceiveAndSetFluidBoundary(inner_x3,pfluid->u);
-        pmb->pbval->ReceiveAndSetFluidBoundary(outer_x3,pfluid->u);
+        if(pmb->pmy_mesh->mesh_size.nx2 > 1) {
+          pmb->pbval->ReceiveAndSetFieldBoundary(inner_x2,pfield->b1);
+          pmb->pbval->ReceiveAndSetFieldBoundary(outer_x2,pfield->b1);
+        }
         break;
 
       case fluid_loadsend_bcsx3_nhalf:
-        pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x3,pfluid->u1);
-        pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x3,pfluid->u1);
+        if(pmb->pmy_mesh->mesh_size.nx3 > 1) {
+          pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x3,pfluid->u1,1);
+          pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x3,pfluid->u1,1);
+        }
         break;
 
       case fluid_recvset_bcsx3_nhalf:
-        pmb->pbval->ReceiveAndSetFluidBoundary(inner_x3,pfluid->u1);
-        pmb->pbval->ReceiveAndSetFluidBoundary(outer_x3,pfluid->u1);
-        break;
-
-      case field_loadsend_bcsx3_n:
-        pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x3,pfield->b);
-        pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x3,pfield->b);
-        break;
-
-      case field_recvset_bcsx3_n:
-        pmb->pbval->ReceiveAndSetFieldBoundary(inner_x3,pfield->b);
-        pmb->pbval->ReceiveAndSetFieldBoundary(outer_x3,pfield->b);
+        if(pmb->pmy_mesh->mesh_size.nx3 > 1) {
+          pmb->pbval->ReceiveAndSetFluidBoundary(inner_x3,pfluid->u1);
+          pmb->pbval->ReceiveAndSetFluidBoundary(outer_x3,pfluid->u1);
+        }
         break;
 
       case field_loadsend_bcsx3_nhalf:
-        pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x3,pfield->b1);
-        pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x3,pfield->b1);
+        if(pmb->pmy_mesh->mesh_size.nx3 > 1) {
+          pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x3,pfield->b1,1);
+          pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x3,pfield->b1,1);
+        }
         break;
 
       case field_recvset_bcsx3_nhalf:
-        pmb->pbval->ReceiveAndSetFieldBoundary(inner_x3,pfield->b1);
-        pmb->pbval->ReceiveAndSetFieldBoundary(outer_x3,pfield->b1);
+        if(pmb->pmy_mesh->mesh_size.nx3 > 1) {
+          pmb->pbval->ReceiveAndSetFieldBoundary(inner_x3,pfield->b1);
+          pmb->pbval->ReceiveAndSetFieldBoundary(outer_x3,pfield->b1);
+        }
         break;
 
       case fluid_predict: // integrate fluid to intermediate step 
@@ -1375,15 +1537,19 @@ void Mesh::ForAllMeshBlocks(enum ActionOnBlock action, ParameterInput *pin)
           pfluid->w1, pfield->bcc1);
         break;
 
-      case new_blocktimestep: // calculate new time step
-        pfluid->NewBlockTimeStep(pmb);
-        break;
-
     }
     pmb=pmb->next;
   }
 }
 
+
+//--------------------------------------------------------------------------------------
+//! \fn int64_t Mesh::GetTotalCells(void)
+//  \brief return the total number of cells for performance counting
+int64_t Mesh::GetTotalCells(void)
+{
+  return (int64_t)nbtotal*pblock->block_size.nx1*pblock->block_size.nx2*pblock->block_size.nx3;
+}
 
 //--------------------------------------------------------------------------------------
 //! \fn long int MeshBlock::GetBlockSizeInBytes(void)
