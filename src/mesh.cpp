@@ -1008,60 +1008,76 @@ MeshBlock::MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_block,
 
 // X2-DIRECTION: initialize spacing and positions of cell FACES (dx2f,x2f)
 
-  nrootmesh=mesh_size.nx2*(1L<<(ll-root_level));
-  for (int j=js-NGHOST; j<=je+NGHOST+1; ++j) {
-     // if there are too many levels, this won't work or be precise enough
-    noffset=(j-js)+(long long)lx2*block_size.nx2;
-    Real rx=(Real)noffset/(Real)nrootmesh;
-    x2f(j)=pm->MeshGeneratorX2(rx,mesh_size);
-  }
-  x2f(js) = block_size.x2min;
-  x2f(je+1) = block_size.x2max;
-  for(int j=js-NGHOST; j<=je+NGHOST; ++j)
-    dx2f(j)=x2f(j+1)-x2f(j);
+  if(block_size.nx2 > 1)
+  {
+    nrootmesh=mesh_size.nx2*(1L<<(ll-root_level));
+    for (int j=js-NGHOST; j<=je+NGHOST+1; ++j) {
+       // if there are too many levels, this won't work or be precise enough
+      noffset=(j-js)+(long long)lx2*block_size.nx2;
+      Real rx=(Real)noffset/(Real)nrootmesh;
+      x2f(j)=pm->MeshGeneratorX2(rx,mesh_size);
+    }
+    x2f(js) = block_size.x2min;
+    x2f(je+1) = block_size.x2max;
+    for(int j=js-NGHOST; j<=je+NGHOST; ++j)
+      dx2f(j)=x2f(j+1)-x2f(j);
 
-// correct cell face positions in ghost zones for reflecting boundary condition
-  if (block_bcs.ix2_bc == 1) {
-    for (int j=1; j<=(NGHOST); ++j) {
-      dx2f(js-j) = dx2f(js+j-1);
-       x2f(js-j) =  x2f(js-j+1) - dx2f(js-j);
+  // correct cell face positions in ghost zones for reflecting boundary condition
+    if (block_bcs.ix2_bc == 1) {
+      for (int j=1; j<=(NGHOST); ++j) {
+        dx2f(js-j) = dx2f(js+j-1);
+         x2f(js-j) =  x2f(js-j+1) - dx2f(js-j);
+      }
+    }
+    if (block_bcs.ox2_bc == 1) {
+      for (int j=1; j<=(NGHOST); ++j) {
+        dx2f(je+j  ) = dx2f(je-j+1);
+         x2f(je+j+1) =  x2f(je+j) + dx2f(je+j);
+      }
     }
   }
-  if (block_bcs.ox2_bc == 1) {
-    for (int j=1; j<=(NGHOST); ++j) {
-      dx2f(je+j  ) = dx2f(je-j+1);
-       x2f(je+j+1) =  x2f(je+j) + dx2f(je+j);
-    }
+  else {
+    dx2f(js) = block_size.x2max-block_size.x2min;
+    x2f(js  ) = block_size.x2min;
+    x2f(je+1) = block_size.x2max;
   }
 
 
 // X3-DIRECTION: initialize spacing and positions of cell FACES (dx3f,x3f)
 
 
-  nrootmesh=mesh_size.nx3*(1L<<(ll-root_level));
-  for (int k=ks-NGHOST; k<=ke+NGHOST+1; ++k) {
-     // if there are too many levels, this won't work or be precise enough
-    noffset=(k-ks)+(long long)lx3*block_size.nx3;
-    Real rx=(Real)noffset/(Real)nrootmesh;
-    x3f(k)=pm->MeshGeneratorX3(rx,mesh_size);
-  }
-  x3f(ks) = block_size.x3min;
-  x3f(ke+1) = block_size.x3max;
-  for(int k=ks-NGHOST; k<=ke+NGHOST; ++k)
-    dx3f(k)=x3f(k+1)-x3f(k);
+  if(block_size.nx3 > 1)
+  {
+    nrootmesh=mesh_size.nx3*(1L<<(ll-root_level));
+    for (int k=ks-NGHOST; k<=ke+NGHOST+1; ++k) {
+       // if there are too many levels, this won't work or be precise enough
+      noffset=(k-ks)+(long long)lx3*block_size.nx3;
+      Real rx=(Real)noffset/(Real)nrootmesh;
+      x3f(k)=pm->MeshGeneratorX3(rx,mesh_size);
+    }
+    x3f(ks) = block_size.x3min;
+    x3f(ke+1) = block_size.x3max;
+    for(int k=ks-NGHOST; k<=ke+NGHOST; ++k)
+      dx3f(k)=x3f(k+1)-x3f(k);
 
-// correct cell face positions in ghost zones for reflecting boundary condition
-  if (block_bcs.ix3_bc == 1) {
-    for (int k=1; k<=(NGHOST); ++k) {
-      dx3f(ks-k) = dx3f(ks+k-1);
-       x3f(ks-k) =  x3f(ks-k+1) - dx3f(ks-k);
+  // correct cell face positions in ghost zones for reflecting boundary condition
+    if (block_bcs.ix3_bc == 1) {
+      for (int k=1; k<=(NGHOST); ++k) {
+        dx3f(ks-k) = dx3f(ks+k-1);
+         x3f(ks-k) =  x3f(ks-k+1) - dx3f(ks-k);
+      }
+    }
+    if (block_bcs.ox3_bc == 1) {
+      for (int k=1; k<=(NGHOST); ++k) {
+        dx3f(ke+k  ) = dx3f(ke-k+1);
+         x3f(ke+k+1) =  x3f(ke+k) + dx3f(ke+k);
+      }
     }
   }
-  if (block_bcs.ox3_bc == 1) {
-    for (int k=1; k<=(NGHOST); ++k) {
-      dx3f(ke+k  ) = dx3f(ke-k+1);
-       x3f(ke+k+1) =  x3f(ke+k) + dx3f(ke+k);
-    }
+  else {
+    dx3f(ks) = block_size.x3max-block_size.x3min;
+    x3f(ks  ) = block_size.x3min;
+    x3f(ke+1) = block_size.x3max;
   }
 
 // construct Coordinates and Fluid objects stored in MeshBlock class.  Note that the
@@ -1195,10 +1211,20 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, BlockUID
   // calculate dx1f, dx2f, dx3f
   for (int i=is-NGHOST; i<=ie+NGHOST; ++i)
     dx1f(i) = x1f(i+1) - x1f(i);
-  for (int j=js-NGHOST; j<=je+NGHOST; ++j)
-    dx2f(j) = x2f(j+1) - x2f(j);
-  for (int k=ks-NGHOST; k<=ke+NGHOST; ++k)
-    dx3f(k) = x3f(k+1) - x3f(k);
+  if(block_size.nx2 > 1) {
+    for (int j=js-NGHOST; j<=je+NGHOST; ++j)
+      dx2f(j) = x2f(j+1) - x2f(j);
+  }
+  else {
+    dx2f(js)=x2f(je+1)-x2f(js);
+  }
+  if(block_size.nx3 > 1) {
+    for (int k=ks-NGHOST; k<=ke+NGHOST; ++k)
+      dx3f(k) = x3f(k+1) - x3f(k);
+  }
+  else {
+    dx3f(ks)=x3f(ke+1)-x3f(ks);
+  }
 
   // create coordinates, fluid, field, and boundary conditions
   pcoord = new Coordinates(this, pin);

@@ -249,25 +249,25 @@ int main(int argc, char *argv[])
     pmesh->ForAllMeshBlocks(field_start_recv_n, pinput);
 
   pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx1_n, pinput);
-  pmesh->ForAllMeshBlocks(fluid_recvset_bcsx1_n,  pinput);
   pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx1,  pinput);
+  pmesh->ForAllMeshBlocks(fluid_recvset_bcsx1_n,  pinput);
   pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx2_n, pinput);
-  pmesh->ForAllMeshBlocks(fluid_recvset_bcsx2_n,  pinput);
   pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx2,  pinput);
+  pmesh->ForAllMeshBlocks(fluid_recvset_bcsx2_n,  pinput);
   pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx3_n, pinput);
-  pmesh->ForAllMeshBlocks(fluid_recvset_bcsx3_n,  pinput);
   pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx3,  pinput);
+  pmesh->ForAllMeshBlocks(fluid_recvset_bcsx3_n,  pinput);
 
   if (MAGNETIC_FIELDS_ENABLED) {
     pmesh->ForAllMeshBlocks(field_loadsend_bcsx1_n, pinput);
-    pmesh->ForAllMeshBlocks(field_recvset_bcsx1_n,  pinput);
     pmesh->ForAllMeshBlocks(field_waitsend_bcsx1,  pinput);
+    pmesh->ForAllMeshBlocks(field_recvset_bcsx1_n,  pinput);
     pmesh->ForAllMeshBlocks(field_loadsend_bcsx2_n, pinput);
-    pmesh->ForAllMeshBlocks(field_recvset_bcsx2_n,  pinput);
     pmesh->ForAllMeshBlocks(field_waitsend_bcsx2,  pinput);
+    pmesh->ForAllMeshBlocks(field_recvset_bcsx2_n,  pinput);
     pmesh->ForAllMeshBlocks(field_loadsend_bcsx3_n, pinput);
-    pmesh->ForAllMeshBlocks(field_recvset_bcsx3_n,  pinput);
     pmesh->ForAllMeshBlocks(field_waitsend_bcsx3,  pinput);
+    pmesh->ForAllMeshBlocks(field_recvset_bcsx3_n,  pinput);
   }
 
   pmesh->ForAllMeshBlocks(primitives_n,pinput);
@@ -319,27 +319,27 @@ int main(int argc, char *argv[])
     pmesh->ForAllMeshBlocks(fluid_predict, pinput);
 
     pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx1_nhalf, pinput);
-    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx1_nhalf,  pinput);
     pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx1,  pinput);
+    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx1_nhalf,  pinput);
     pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx2_nhalf, pinput);
-    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx2_nhalf,  pinput);
     pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx2,  pinput);
+    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx2_nhalf,  pinput);
     pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx3_nhalf, pinput);
-    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx3_nhalf,  pinput);
     pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx3,  pinput);
+    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx3_nhalf,  pinput);
 
     if (MAGNETIC_FIELDS_ENABLED) {
       pmesh->ForAllMeshBlocks(field_predict, pinput);
 
       pmesh->ForAllMeshBlocks(field_loadsend_bcsx1_nhalf, pinput);
-      pmesh->ForAllMeshBlocks(field_recvset_bcsx1_nhalf,  pinput);
       pmesh->ForAllMeshBlocks(field_waitsend_bcsx1,  pinput);
+      pmesh->ForAllMeshBlocks(field_recvset_bcsx1_nhalf,  pinput);
       pmesh->ForAllMeshBlocks(field_loadsend_bcsx2_nhalf, pinput);
-      pmesh->ForAllMeshBlocks(field_recvset_bcsx2_nhalf,  pinput);
       pmesh->ForAllMeshBlocks(field_waitsend_bcsx2,  pinput);
+      pmesh->ForAllMeshBlocks(field_recvset_bcsx2_nhalf,  pinput);
       pmesh->ForAllMeshBlocks(field_loadsend_bcsx3_nhalf, pinput);
-      pmesh->ForAllMeshBlocks(field_recvset_bcsx3_nhalf,  pinput);
       pmesh->ForAllMeshBlocks(field_waitsend_bcsx3,  pinput);
+      pmesh->ForAllMeshBlocks(field_recvset_bcsx3_nhalf,  pinput);
     }
 
     pmesh->ForAllMeshBlocks(primitives_nhalf,pinput);
@@ -353,27 +353,27 @@ int main(int argc, char *argv[])
     pmesh->ForAllMeshBlocks(fluid_correct,pinput);
 
     pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx1_n, pinput);
-    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx1_n,  pinput);
     pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx1,  pinput);
+    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx1_n,  pinput);
     pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx2_n, pinput);
-    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx2_n,  pinput);
     pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx2,  pinput);
+    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx2_n,  pinput);
     pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx3_n, pinput);
-    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx3_n,  pinput);
     pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx3,  pinput);
+    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx3_n,  pinput);
 
     if (MAGNETIC_FIELDS_ENABLED) {
       pmesh->ForAllMeshBlocks(field_correct,pinput);
 
       pmesh->ForAllMeshBlocks(field_loadsend_bcsx1_n, pinput);
-      pmesh->ForAllMeshBlocks(field_recvset_bcsx1_n,  pinput);
       pmesh->ForAllMeshBlocks(field_waitsend_bcsx1,  pinput);
+      pmesh->ForAllMeshBlocks(field_recvset_bcsx1_n,  pinput);
       pmesh->ForAllMeshBlocks(field_loadsend_bcsx2_n, pinput);
-      pmesh->ForAllMeshBlocks(field_recvset_bcsx2_n,  pinput);
       pmesh->ForAllMeshBlocks(field_waitsend_bcsx2,  pinput);
+      pmesh->ForAllMeshBlocks(field_recvset_bcsx2_n,  pinput);
       pmesh->ForAllMeshBlocks(field_loadsend_bcsx3_n, pinput);
-      pmesh->ForAllMeshBlocks(field_recvset_bcsx3_n,  pinput);
       pmesh->ForAllMeshBlocks(field_waitsend_bcsx3,  pinput);
+      pmesh->ForAllMeshBlocks(field_recvset_bcsx3_n,  pinput);
     }
 
     pmesh->ForAllMeshBlocks(primitives_n,pinput);
