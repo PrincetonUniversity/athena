@@ -80,6 +80,7 @@ int main(int argc, char *argv[])
   int narg_flag=0;    // gets set to 1 if -n        argument is on cmdline
   int iarg_flag=0;    // gets set to 1 if -i <file> argument is on cmdline
   int test_flag=0;    // gets set to <nproc> if -m <nproc> argument is on cmdline
+  int ncstart=0;
 
 #ifdef MPI_PARALLEL
 //--- Step 0. --------------------------------------------------------------------------
@@ -202,8 +203,10 @@ int main(int argc, char *argv[])
   try {
     if(res_flag==0)
       pmesh = new Mesh(pinput, test_flag);
-    else 
+    else { 
       pmesh = new Mesh(pinput, input, test_flag);
+      ncstart=pmesh->ncycle;
+    }
     input.Close(); // close the file here
   }
   catch(std::bad_alloc& ba) {
@@ -420,11 +423,11 @@ int main(int argc, char *argv[])
 
     float cpu_time = (tstop>tstart ? (float)(tstop-tstart) : 1.0)/(float)CLOCKS_PER_SEC;
     int64_t zones = pmesh->GetTotalCells();
-    float zc_cpus = (float)(zones*pmesh->ncycle)/cpu_time;
+    float zc_cpus = (float)(zones*(pmesh->ncycle-ncstart))/cpu_time;
     std::cout << std::endl << "cpu time used  = " << cpu_time << std::endl;
     std::cout << "zone-cycles/cpu_second = " << zc_cpus << std::endl;
 #ifdef OPENMP_PARALLEL
-    float zc_omps = (float)(zones*pmesh->ncycle)/omp_time;
+    float zc_omps = (float)(zones*(pmesh->ncycle-ncstart))/omp_time;
     std::cout << std::endl << "omp wtime used = " << omp_time << std::endl;
     std::cout << "zone-cycles/omp_wsecond = " << zc_omps << std::endl;
 #endif

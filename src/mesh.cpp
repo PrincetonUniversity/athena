@@ -79,6 +79,9 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   int ll, i, j;
   long int nrbx1, nrbx2, nrbx3;
 
+// mesh test
+  if(test_flag>0) nproc=test_flag;
+
 // read time and cycle limits from input file
 
   start_time = pin->GetOrAddReal("time","start_time",0.0);
@@ -133,6 +136,20 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "In mesh block in input file: nx2=1, nx3=" << mesh_size.nx3 
         << ", 2D problems in x1-x3 plane not supported" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+
+// check cfl_number
+  if(cfl_number > 1.0 && mesh_size.nx2==1)
+  {
+    msg << "### FATAL ERROR in Mesh constructor" << std::endl
+        << "The CFL number must be smaller than 1.0 in 1D simulation" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  if(cfl_number > 0.5 && mesh_size.nx2 > 1)
+  {
+    msg << "### FATAL ERROR in Mesh constructor" << std::endl
+        << "The CFL number must be smaller than 0.5 in 2D/3D simulation" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
 
@@ -258,7 +275,6 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     mincost=std::min(mincost,costlist[i]);
     maxcost=std::max(maxcost,costlist[i]);
   }
-  if(test_flag>0) nproc=test_flag;
   j=nproc-1;
   targetcost=totalcost/nproc;
   mycost=0.0;
@@ -292,12 +308,20 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
 // check if there are sufficient blocks
 #ifdef MPI_PARALLEL
-  if(nbtotal < nproc && test_flag==0)
+  if(nbtotal < nproc)
   {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< nproc
-        << ")" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    if(test_flag==0) {
+      msg << "### FATAL ERROR in Mesh constructor" << std::endl
+          << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< nproc
+          << ")" << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+    else { // test
+      std::cout << "### Warning in Mesh constructor" << std::endl
+          << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< nproc
+          << ")" << std::endl;
+      return;
+    }
   }
   if(nbtotal % nproc != 0 && adaptive == false && maxcost == mincost && myrank==0)
   {
@@ -324,10 +348,20 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
         if(buid[j].GetLevel()==i)
         {
           buid[j].GetLocation(lx1,lx2,lx3,ll);
-          std::cout << "Logical Level " << i << ":  MeshBlock " << j << ", lx1 = "
+          std::cout << "MeshBlock " << j << ", lx1 = "
                     << lx1 << ", lx2 = " << lx2 <<", lx3 = " << lx3
-                    << ", level = " << ll << ", cost = " << costlist[j]
-                    << ", rank = " << ranklist[j] << std::endl;
+                    << ", logical level = " << ll << ", cost = " << costlist[j]
+                    << ", rank = " << ranklist[j] << ", neighbors = ";
+          int kmax=2;
+          if(mesh_size.nx2 > 1) kmax=4;
+          if(mesh_size.nx3 > 1) kmax=6;
+          for(int k=0;k<kmax;k++)
+          {
+            neibt=tree.FindNeighbor((enum direction)k,buid[j],nrbx1,nrbx2,nrbx3,root_level);
+            nei=neibt->GetNeighbor();
+            std::cout << nei.gid << " ";
+          }
+          std::cout << std::endl;
           nb[i-root_level]++; nbt++;
         }
       }
@@ -514,7 +548,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       }
     }
 
-    if(lx2==0 && mesh_bcs.ix2_bc!=4)
+    if((lx2==0 && mesh_bcs.ix2_bc!=4) || mesh_size.nx2 == 1)
       pblock->SetNeighbor(inner_x2,-1,-1,-1,-1);
     else
     {
@@ -545,7 +579,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
                             nei.gid-nslist[ranklist[nei.gid]],1,1);
       }
     }
-    if(lx2==(nrbx2<<(ll-root_level))-1 && mesh_bcs.ox2_bc!=4)
+    if((lx2==(nrbx2<<(ll-root_level))-1 && mesh_bcs.ox2_bc!=4) || mesh_size.nx2 == 1)
       pblock->SetNeighbor(outer_x2,-1,-1,-1,-1);
     else
     {
@@ -577,7 +611,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       }
     }
 
-    if(lx3==0 && mesh_bcs.ix3_bc!=4)
+    if((lx3==0 && mesh_bcs.ix3_bc!=4) || mesh_size.nx3 == 1)
       pblock->SetNeighbor(inner_x3,-1,-1,-1,-1);
     else
     {
@@ -608,7 +642,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
                             nei.gid-nslist[ranklist[nei.gid]],1,1);
       }
     }
-    if(lx3==(nrbx3<<(ll-root_level))-1 && mesh_bcs.ox3_bc!=4)
+    if((lx3==(nrbx3<<(ll-root_level))-1 && mesh_bcs.ox3_bc!=4) || mesh_size.nx3 == 1)
       pblock->SetNeighbor(outer_x3,-1,-1,-1,-1);
     else
     {
@@ -667,6 +701,9 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   BlockUID *buid;
   ID_t *rawid;
 
+// mesh test
+  if(test_flag>0) nproc=test_flag;
+
 // read time and cycle limits from input file
 
   start_time = pin->GetOrAddReal("time","start_time",0.0);
@@ -713,6 +750,20 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
     throw std::runtime_error(msg.str().c_str());
   }
 
+// check cfl_number
+  if(cfl_number > 1.0 && mesh_size.nx2==1)
+  {
+    msg << "### FATAL ERROR in Mesh constructor" << std::endl
+        << "The CFL number must be smaller than 1.0 in 1D simulation" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  if(cfl_number > 0.5 && mesh_size.nx2 > 1)
+  {
+    msg << "### FATAL ERROR in Mesh constructor" << std::endl
+        << "The CFL number must be smaller than 0.5 in 2D/3D simulation" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+
   //initialize
   buid=new BlockUID[nbtotal];
   offset=new WrapIOSize_t[nbtotal];
@@ -754,9 +805,32 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
     throw std::runtime_error(msg.str().c_str());
   }
 
+#ifdef MPI_PARALLEL
+  if(nbtotal < nproc)
+  {
+    if(test_flag==0) {
+      msg << "### FATAL ERROR in Mesh constructor" << std::endl
+          << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< nproc
+          << ")" << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+    else { // test
+      std::cout << "### Warning in Mesh constructor" << std::endl
+          << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< nproc
+          << ")" << std::endl;
+      return;
+    }
+  }
+  if(nbtotal % nproc != 0 && adaptive == false && maxcost == mincost && myrank==0)
+  {
+    std::cout << "### Warning in Mesh constructor" << std::endl
+              << "The number of MeshBlocks cannot be divided evenly. "
+              << "This will cause a poor load balance." << std::endl;
+  }
+#endif
+
   // divide the list evenly and distribute among the processes
   // note: ordering should be maintained, although it might not be optimal.
-  if(test_flag>0) nproc=test_flag;
   j=nproc-1;
   targetcost=totalcost/nproc;
   mycost=0.0;
@@ -819,10 +893,10 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
           if(buid[j].GetLevel()==i)
           {
             buid[j].GetLocation(lx1,lx2,lx3,ll);
-            std::cout << "Logical Level " << i << ":  MeshBlock " << j << ", lx1 = "
+            std::cout << "MeshBlock " << j << ", lx1 = "
                       << lx1 << ", lx2 = " << lx2 <<", lx3 = " << lx3
-                      << ", level = " << ll << ", cost = " << costlist[j]
-                      << ", rank = " << ranklist[j] << std::endl;
+                      << ", logical level = " << ll << ", cost = " << costlist[j]
+                      << ", rank = " << ranklist[j] << std::endl;;
             nb[i-root_level]++; nbt++;
           }
         }
