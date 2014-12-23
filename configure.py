@@ -19,9 +19,9 @@
 #   --fint=choice     use choice as the fluid time-integration algorithm
 #   --cxx=choice      use choice as the C++ compiler
 #   --ifov=N          enable N internal fluid output variables 
-#   --omp             enable parallelization with OpenMP
-#   --idlength=N      specify the length of the Block UID (default=1)
+#   -mpi              enable parallelization with MPI
 #   -omp              enable parallelization with OpenMP
+#   --idlength=N      specify the length of the Block UID (default=1)
 #   -debug            enable debug flags (-g -O0); override other compiler options
 #---------------------------------------------------------------------------------------
 
@@ -102,8 +102,14 @@ parser.add_argument('--fint',
 # --cxx=[name] argument
 parser.add_argument('--cxx',
     default='g++',
-    choices=['g++','icc'],
+    choices=['g++','icc','cray'],
     help='selects C++ compiler')
+
+# -mpi argument
+parser.add_argument('-mpi',
+    action='store_true',
+    default=False,
+    help='enables parallelization with MPI')
 
 # -omp argument
 parser.add_argument('-omp',
@@ -205,16 +211,34 @@ if args['cxx'] == 'icc':
 if args['cxx'] == 'g++':
   makefile_options['COMPILER_FLAGS'] = '-O3'
   definitions['COMPILER_FLAGS'] = '-O3'
+if args['cxx'] == 'cray':
+  makefile_options['COMPILER_CHOICE'] = 'CC'
+  makefile_options['COMPILER_FLAGS'] = '-O3 -lm -h aggress -h vector3 -hfp3'
+  definitions['COMPILER_FLAGS'] = '-O3 -lm -h aggress -h vector3 -hfp3'
+  
+
+definitions['MPI_OPTION'] = 'MPI_PARALLEL' if args['mpi'] \
+    else 'NOT_MPI_PARALLEL'
+if args['mpi']:
+  if args['cxx'] == 'cray':
+    makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
+    definitions['COMPILER_FLAGS'] += ' -h mpi1'
+  else : 
+    makefile_options['COMPILER_CHOICE'] = 'mpicxx'
+    definitions['COMPILER_CHOICE'] = 'mpicxx'
 
 definitions['DEBUG'] = 'DEBUG' if args['debug'] \
     else 'NOT_DEBUG'
 if args['debug']:
   if args['cxx'] == 'g++':
-    makefile_options['COMPILER_FLAGS'] = ' -g -O0'
-    definitions['COMPILER_FLAGS'] += '  -g -O0'
+    makefile_options['COMPILER_FLAGS'] = '-g -O0'
+    definitions['COMPILER_FLAGS'] = '-g -O0'
   if args['cxx'] == 'icc':
-    makefile_options['COMPILER_FLAGS'] += '  -g -O0'
-    definitions['COMPILER_FLAGS'] += '  -g -O0'
+    makefile_options['COMPILER_FLAGS'] = '-g -O0'
+    definitions['COMPILER_FLAGS'] = '-g -O0'
+  if args['cxx'] == 'cray':
+    makefile_options['COMPILER_FLAGS'] = '-O0'
+    definitions['COMPILER_FLAGS'] = '-O0'
 
 definitions['OPENMP_OPTION'] = 'OPENMP_PARALLEL' if args['omp'] \
     else 'NOT_OPENMP_PARALLEL'
@@ -225,6 +249,14 @@ if args['omp']:
   if args['cxx'] == 'icc':
     makefile_options['COMPILER_FLAGS'] += ' -openmp'
     definitions['COMPILER_FLAGS'] += ' -openmp'
+  if args['cxx'] == 'cray':
+    makefile_options['COMPILER_FLAGS'] += ' -homp'
+    definitions['COMPILER_FLAGS'] += ' -homp'
+else: 
+  if args['cxx'] == 'cray':
+    makefile_options['COMPILER_FLAGS'] += ' -hnoomp'
+    definitions['COMPILER_FLAGS'] += ' -hnoomp'
+
 
 # -ifov=N argument
 definitions['NUM_IFOV'] = str(args['ifov'])
@@ -267,11 +299,12 @@ print('  Equation of state:       ' + args['eos'])
 print('  Riemann solver:          ' + args['flux'])
 print('  Reconstruction method:   ' + args['order'])
 print('  Fluid integrator:        ' + args['fint'])
-print('  Compiler and flags:      ' + args['cxx'])
+print('  Compiler and flags:      ' + makefile_options['COMPILER_CHOICE'] + ' ' +makefile_options['COMPILER_FLAGS'])
 print('  Magnetic fields:         ' + ('enabled' if args['b'] else 'disabled'))
 print('  Special relativity:      ' + ('enabled' if args['s'] else 'disabled'))
 print('  General relativity:      ' + ('enabled' if args['g'] else 'disabled'))
+print('  MPI parallelism:         ' + ('enabled' if args['mpi'] else 'disabled'))
 print('  OpenMP parallelism:      ' + ('enabled' if args['omp'] else 'disabled'))
 print('  Debug flags:             ' + ('enabled' if args['debug'] else 'disabled'))
 print('  Internal fluid outvars:  ' + str(args['ifov']))
-print('  UID Length:              ' + str(args['idlength']) + '  (maximum refinement level = ' + str(10*args['idlength']) + ')')
+print('  UID Length:              ' + str(args['idlength']) + '  (maximum refinement level = ' + str(20*args['idlength']) + ')')

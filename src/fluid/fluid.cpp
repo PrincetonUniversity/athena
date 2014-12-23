@@ -32,7 +32,15 @@
 #include "../coordinates/coordinates.hpp" // CenterWidth()
 #include "../field/field.hpp"             // B-fields
 
+// MPI header
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#endif
+
+// OpenMP header
+#ifdef OPENMP_PARALLEL
 #include <omp.h>
+#endif
 
 //======================================================================================
 //! \file fluid.cpp
@@ -107,7 +115,7 @@ Fluid::~Fluid()
 // \!fn 
 // \brief
 
-void Fluid::NewBlockTimeStep(MeshBlock *pmb)
+Real Fluid::NewBlockTimeStep(MeshBlock *pmb)
 {
   int tid=0;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
@@ -221,9 +229,7 @@ void Fluid::NewBlockTimeStep(MeshBlock *pmb)
   Real min_dt = pthread_min_dt[0];
   for (int n=1; n<max_nthreads; ++n) min_dt = std::min(min_dt,pthread_min_dt[n]);
 
-  pmb->block_dt=min_dt;
-
   delete[] pthread_min_dt;
 
-  return;
+  return min_dt;
 }

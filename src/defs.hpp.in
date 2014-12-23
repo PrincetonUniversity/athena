@@ -44,6 +44,9 @@
 // compiler options
 #define COMPILED_WITH_OPTIONS "@COMPILER_FLAGS@"
 
+// MPI parallelization (MPI_PARALLEL or NOT_MPI_PARALLEL)
+#define @MPI_OPTION@
+
 // openMP parallelization (OPENMP_PARALLEL or NOT_OPENMP_PARALLEL)
 #define @OPENMP_OPTION@
 

@@ -13,6 +13,10 @@
 #include "../athena.hpp"         // Real
 #include "../athena_arrays.hpp"  // AthenaArray
 
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#endif
+
 // forward declarations
 class MeshBlock;
 class Fluid;
@@ -90,11 +94,16 @@ public:
   BoundaryValues(MeshBlock *pmb, ParameterInput *pin);
   ~BoundaryValues();
 
-  void StartReceiving(void);
-  void LoadAndSendFluidBoundaryBuffer(enum direction dir, AthenaArray<Real> &src);
+  void StartReceivingField(int flag = 0);
+  void StartReceivingFluid(int flag = 0);
+  void LoadAndSendFluidBoundaryBuffer(enum direction dir,
+                                      AthenaArray<Real> &src, int flag);
   bool ReceiveAndSetFluidBoundary(enum direction dir, AthenaArray<Real> &dst);
-  void LoadAndSendFieldBoundaryBuffer(enum direction dir, InterfaceField &src);
+  void WaitSendFluid(enum direction dir);
+  void LoadAndSendFieldBoundaryBuffer(enum direction dir,
+                                      InterfaceField &src, int flag);
   bool ReceiveAndSetFieldBoundary(enum direction dir, InterfaceField &dst);
+  void WaitSendField(enum direction dir);
 
   void EnrollFluidBoundaryFunction (enum direction edge, BValFluid_t  my_bc);
   void EnrollFieldBoundaryFunction(enum direction edge, BValField_t my_bc);
@@ -110,5 +119,19 @@ private:
   Real *fluid_recv_[6];
   Real *field_send_[6];
   Real *field_recv_[6];
+
+#ifdef MPI_PARALLEL
+  MPI_Request req_fluid_send_[6][2][2], req_fluid_recv_[6][2][2];
+  MPI_Request req_field_send_[6][2][2], req_field_recv_[6][2][2];
+#endif
 };
+
+#ifdef MPI_PARALLEL
+inline int CreateMPITag(int lid, int flag, int dir, int phys, int fb1 = 0, int fb2 = 0)
+{
+// tag = local id of destination (20) + flag (2) + dir (3) + face (2) + physics (4)
+  return (lid<<11) | (flag<<9) | (dir<<6) | (fb1<<5) | (fb2<<4) | phys;
+}
+#endif
+
 #endif
