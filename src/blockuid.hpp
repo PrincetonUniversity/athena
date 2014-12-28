@@ -4,8 +4,9 @@
 //======================================================================================
 #ifndef BLOCKUID_HPP
 #define BLOCKUID_HPP
-#include "../athena_arrays.hpp"  // AthenaArray
-#include "../defs.hpp"
+#include "athena.hpp"
+#include "athena_arrays.hpp"  // AthenaArray
+#include "defs.hpp"
 
 typedef unsigned int ID_t;
 
@@ -20,7 +21,7 @@ private:
   int level;
   ID_t uid[IDLENGTH];
 public:
-  BlockUID() {};
+  BlockUID() : level(0) {};
   ~BlockUID() {};
   BlockUID(const BlockUID& bid);
   void SetUID(ID_t *suid, int llevel);
@@ -30,10 +31,10 @@ public:
   bool operator== (const BlockUID& bid) const;
   bool operator> (const BlockUID& bid) const;
   bool operator< (const BlockUID& bid) const;
-  void CreateUIDfromLocation(int lx, int ly, int lz, int llevel);
+  void CreateUIDfromLocation(long int lx, long int ly, long int lz, int llevel);
   void CreateUIDbyRefinement(BlockUID& coarse, int ox, int oy, int oz);
   void CreateUIDbyDerefinement(BlockUID& fine);
-  void GetLocation(int& lx, int& ly, int& lz, int& llevel);
+  void GetLocation(long int& lx, long int& ly, long int& lz, int& llevel);
 };
 
 
@@ -55,6 +56,32 @@ inline int BlockUID::GetLevel(void)
   return level;
 }
 
+
+
+//! \class BlockTree
+//  \brief Construct AMR Block tree structure
+class BlockTree
+{
+private:
+  bool flag; // false: vitrual, has leaves, true: real, is a leaf
+  BlockTree* pparent;
+  BlockTree* pleaf[2][2][2];
+  BlockUID uid;
+  int gid;
+public:
+  BlockTree();
+  BlockTree(BlockTree *parent, int ox, int oy, int oz);
+  ~BlockTree();
+  void CreateRootGrid(long int nx, long int ny, long int nz, int nl);
+  void Refine(int dim);
+  void Derefine(void);
+  void AssignGID(int& id);
+  void GetIDList(BlockUID *list, int& count);
+  BlockTree* FindNeighbor(enum direction dir, BlockUID id,
+                          long int rbx, long int rby, long int rbz, int rl);
+  BlockTree* GetLeaf(int ox, int oy, int oz);
+  NeighborBlock GetNeighbor(void);
+};
 
 #endif
 

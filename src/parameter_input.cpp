@@ -97,6 +97,105 @@ InputBlock::~InputBlock()
 }
 
 //--------------------------------------------------------------------------------------
+//! \fn  void ParameterInput::LoadFromStream(std::istream &is)
+//  \brief Load input parameters from a stream
+//  Input block names are allocated and stored in a linked list of InputBlocks.  Within
+//  each InputBlock the names, values, and comments of each parameter are allocated and
+//  stored in a linked list of InputLines.
+
+void ParameterInput::LoadFromStream(std::istream &is)
+{
+  std::string line, block_name, param_name, param_value, param_comment;
+  std::size_t first_char,last_char;
+  std::stringstream msg;
+  InputBlock *pib;
+
+  while (is.good()) {
+    getline(is,line);
+    if (line.empty()) continue;                             // skip blank line
+    first_char = line.find_first_not_of(" ");               // skip white space
+    if (first_char == std::string::npos) continue;          // line is all white space
+    if (line.compare(first_char,1,"#") == 0) continue;      // skip comments
+    if (line.compare(first_char,9,"<par_end>") == 0) break; // stop on <par_end>
+
+    if (line.compare(first_char,1,"<") == 0) {              // a new block
+      first_char++;
+      last_char = (line.find_first_of(">",first_char));       
+      block_name.assign(line,first_char,last_char-1);       // extract block name
+
+      if (last_char == std::string::npos) {
+        msg << "### FATAL ERROR in function [ParameterInput::LoadFromStream]"
+            << std::endl << "Block name '" << block_name
+            << "' in the input stream'" << "' not properly ended";
+        throw std::runtime_error(msg.str().c_str());
+      }
+
+      pib = FindOrAddBlock(block_name);  // find or add block to linked list
+
+      if (pib == NULL) {
+        msg << "### FATAL ERROR in function [ParameterInput::LoadFromStream]"
+            << std::endl << "Block name '" << block_name
+            << "' could not be found/added";
+        throw std::runtime_error(msg.str().c_str());
+      }
+      continue;  // skip to next line if block name was found
+    }
+
+// if line does not contain a block name, it must contain a parameter value.  So parse
+// line and add name/value/comment strings (if found) to current block name
+
+    ParseLine(pib,line,param_name,param_value,param_comment);
+    AddParameter(pib,param_name,param_value,param_comment);
+  }
+
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn  void ParameterInput::LoadFromFile(WrapIO &input)
+//  \brief Read the parameters from an input file or restarting file.
+//         Return the position at the end of the header, which is used in restarting
+
+void ParameterInput::LoadFromFile(WrapIO &input)
+{
+  std::stringstream par, msg;
+  const int bufsize=4096;
+  char *buf=new char[bufsize];
+  WrapIOSize_t header=0, ret, loc;
+
+  // search <par_end> or EOF. 
+  do {
+    ret=input.Read(buf, sizeof(char), bufsize);
+    par.write(buf,ret); // add the buffer into the stream
+    header+=ret;
+    std::string sbuf = par.str(); // create string for search
+    loc=sbuf.find("<par_end>",0); // search from the top of the stream
+    if(loc!=std::string::npos) // found <par_end>
+    {
+      header=loc+10; // store the header length
+      break;
+    }
+    if(header > bufsize*10)
+    {
+      msg << "### FATAL ERROR in function [ParameterInput::LoadFromFile]"
+          << "<par_end> is not found in the first 40KBytes." << std::endl
+          << "Probably the file is broken or a wrong file is specified" << std::endl;
+      input.Close();
+      throw std::runtime_error(msg.str().c_str());
+    }
+  } while(ret == bufsize); // till EOF (or par_end is found)
+
+  // Now par contains the parameter inputs + some additional including <par_end>
+  // Read the stream and load the parameters
+  LoadFromStream(par);
+  // Seek the file to the end of the header
+  input.Seek(header);
+
+  delete [] buf;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
 //! \fn  void ParameterInput::LoadFromFile(std::string filename)
 //  \brief opens/reads/closes an input file.
 //  Input block names are allocated and stored in a linked list of InputBlocks.  Within

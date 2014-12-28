@@ -42,7 +42,7 @@ public:
   FluidEqnOfState *pf_eos;         // equation of state (including cons->prim func)
   FluidSourceTerms *pf_srcterms;   // physical source terms
 
-  void NewBlockTimeStep(MeshBlock *pmb);    // computes new timestep on a MeshBlock
+  Real NewBlockTimeStep(MeshBlock *pmb);    // computes new timestep on a MeshBlock
 //  void InitFluid(ParameterInput *pin); // problem generator function (files in /pgen)
 
 private:

@@ -29,6 +29,12 @@
 #include "../../mesh.hpp"                    // MeshBlock
 #include "../srcterms/srcterms.hpp"          // PhysicalSourceTerms()
 
+// MPI header
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#endif
+
+// OpenMP header
 #ifdef OPENMP_PARALLEL
 #include <omp.h>
 #endif

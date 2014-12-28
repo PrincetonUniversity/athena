@@ -11,7 +11,7 @@
 //======================================================================================
 
 #include <stdio.h> // size_t
-#include "wrapper.hpp"
+#include "../wrapio.hpp"
 
 class Mesh;
 class ParameterInput;
@@ -145,8 +145,8 @@ public:
 
 class RestartOutput : public OutputType {
 private:
-  ResFile resfile;
-  ResSize_t *blocksize, *offset;
+  WrapIO resfile;
+  WrapIOSize_t *blocksize, *offset;
 
 public:
   RestartOutput(OutputParameters oparams);

@@ -19,6 +19,7 @@
 
 // C headers
 #include <stdint.h>  // int64_t
+#include <stdlib.h>  // strtol
 
 // C++ headers
 #include <ctime>      // clock(), CLOCKS_PER_SEC, clock_t
@@ -32,9 +33,22 @@
 #include "mesh.hpp"             // Mesh
 #include "parameter_input.hpp"  // ParameterInput
 #include "outputs/outputs.hpp"  // Outputs
+#include "wrapio.hpp"           // WrapIO
 
-// OpenMP headers
+// MPI related global variables
+int myrank=0, nproc=1;
+// tag parameters: use 3 LSBs for direction, 4 for communication type, tag_mask = 0b1111111
+int tag_shift=7;
+
+// MPI header and varaibles
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#endif
+
+// OpenMP header
+#ifdef OPENMP_PARALLEL
 #include <omp.h>
+#endif
 
 // function prototypes
 void ShowConfig();
@@ -60,16 +74,46 @@ void ChangeToRunDir(const char *pdir);
 int main(int argc, char *argv[])
 {
   std::string athena_version = "version 0.1 - February 2014";
-  std::string input_file = "athinput";
-  char *prestart_file = NULL;
+  char *input_file;
   char *prundir = NULL;
   int res_flag=0;     // gets set to 1 if -r        argument is on cmdline
   int narg_flag=0;    // gets set to 1 if -n        argument is on cmdline
   int iarg_flag=0;    // gets set to 1 if -i <file> argument is on cmdline
-  int test_flag=0;    // gets set to 1 if -g        argument is on cmdline
+  int test_flag=0;    // gets set to <nproc> if -m <nproc> argument is on cmdline
+  int ncstart=0;
+
+#ifdef MPI_PARALLEL
+//--- Step 0. --------------------------------------------------------------------------
+// Initialize MPI environment, distribute input parameters to all ranks
+
+  if(MPI_SUCCESS != MPI_Init(&argc, &argv))
+  {
+    std::cout << "### FATAL ERROR in main" << std::endl
+              << "MPI Initialization failed." << std::endl;
+    return(0);
+  }
+
+// Get proc id (rank) in MPI_COMM_WORLD
+  if(MPI_SUCCESS != MPI_Comm_rank(MPI_COMM_WORLD, &myrank))
+  {
+    std::cout << "### FATAL ERROR in main" << std::endl
+              << "MPI_Comm_rank failed." << std::endl;
+    return(0);
+  }
+
+// Get the number of the processes 
+  if(MPI_SUCCESS != MPI_Comm_size(MPI_COMM_WORLD, &nproc))
+  {
+    std::cout << "### FATAL ERROR in main" << std::endl
+              << "MPI_Comm_size failed." << std::endl;
+    return(0);
+  }
+
+#endif /* MPI_PARALLEL */
+
 
 //--- Step 1. --------------------------------------------------------------------------
-// Check for command line options and respond. 
+// Check for command line options and respond.
 
   for (int i=1; i<argc; i++) {
 
@@ -78,13 +122,13 @@ int main(int argc, char *argv[])
     if(*argv[i] == '-'  && *(argv[i]+1) != '\0' && *(argv[i]+2) == '\0'){
       switch(*(argv[i]+1)) {
       case 'i':                      // -i <input_file>
-        input_file = argv[++i];
+        ++i;
+        if(res_flag==0) input_file = argv[i];
         iarg_flag = 1;
       break;
       case 'r':                      // -r <restart_file>
         res_flag = 1;
-        input_file = prestart_file = argv[++i];
-        if(iarg_flag) input_file = prestart_file; // use restart if input file not set 
+        input_file = argv[++i];
         break;
       case 'd':                      // -d <run_directory>
         prundir = argv[++i];
@@ -93,7 +137,7 @@ int main(int argc, char *argv[])
         narg_flag = 1;
         break;
       case 'm':
-        test_flag = 1;
+        test_flag = strtol(argv[++i],NULL,10);
         break;
       case 'c':
         ShowConfig();
@@ -109,7 +153,7 @@ int main(int argc, char *argv[])
         std::cout<<"  -d <directory>  specify run dir [current dir]"<< std::endl;
         std::cout<<"  -n              parse input file and quit"<< std::endl;
         std::cout<<"  -c              show configuration and quit"<< std::endl;
-        std::cout<<"  -m              test mesh structure and quit"<< std::endl;
+        std::cout<<"  -m <nproc>      test mesh structure and quit"<< std::endl;
         std::cout<<"  -h              this help"<< std::endl;
         ShowConfig();
         return(0);
@@ -121,12 +165,16 @@ int main(int argc, char *argv[])
 //--- Step 2. --------------------------------------------------------------------------
 // Construct object to store input parameters, then parse input file and command line
 // Note memory allocations and parameter input are protected by a simple error handler
+// The input is read by every process in parallel using MPI-IO.
 
   ParameterInput *pinput;
+  WrapIO input;
   try {
     pinput = new ParameterInput;
-    pinput->LoadFromFile(input_file);
+    input.Open(input_file,readmode);
+    pinput->LoadFromFile(input);
     pinput->ModifyFromCmdline(argc,argv);
+     // leave the file open
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl
@@ -146,10 +194,6 @@ int main(int argc, char *argv[])
     return(0);
   }
 
-//--- Step 3. --------------------------------------------------------------------------
-// Initialize MPI environment, distribute input parameters to all ranks
-
-//  g_comm_world_id = 0;
 
 // Note steps 4-6 are protected by a simple error handler
 //--- Step 4. --------------------------------------------------------------------------
@@ -159,8 +203,11 @@ int main(int argc, char *argv[])
   try {
     if(res_flag==0)
       pmesh = new Mesh(pinput, test_flag);
-    else 
-      pmesh = new Mesh(pinput, prestart_file, test_flag);
+    else { 
+      pmesh = new Mesh(pinput, input, test_flag);
+      ncstart=pmesh->ncycle;
+    }
+    input.Close(); // close the file here
   }
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl
@@ -173,7 +220,10 @@ int main(int argc, char *argv[])
     return(0);
   }
 
-  if (test_flag){
+  if (test_flag>0){
+#ifdef MPI_PARALLEL
+    MPI_Finalize();
+#endif /* MPI_PARALLEL */
     return(0);
   }
 
@@ -197,24 +247,33 @@ int main(int argc, char *argv[])
   }
 
 // apply BCs, compute primitive from conserved variables, compute first timestep
+  pmesh->ForAllMeshBlocks(fluid_start_recv_n, pinput);
+  if (MAGNETIC_FIELDS_ENABLED)
+    pmesh->ForAllMeshBlocks(field_start_recv_n, pinput);
 
-  pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx1_n,pinput);
-  pmesh->ForAllMeshBlocks(fluid_recvset_bcsx1_n,pinput);
-  pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx2_n,pinput);
-  pmesh->ForAllMeshBlocks(fluid_recvset_bcsx2_n,pinput);
-  pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx3_n,pinput);
-  pmesh->ForAllMeshBlocks(fluid_recvset_bcsx3_n,pinput);
+  pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx1_n, pinput);
+  pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx1,  pinput);
+  pmesh->ForAllMeshBlocks(fluid_recvset_bcsx1_n,  pinput);
+  pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx2_n, pinput);
+  pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx2,  pinput);
+  pmesh->ForAllMeshBlocks(fluid_recvset_bcsx2_n,  pinput);
+  pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx3_n, pinput);
+  pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx3,  pinput);
+  pmesh->ForAllMeshBlocks(fluid_recvset_bcsx3_n,  pinput);
+
   if (MAGNETIC_FIELDS_ENABLED) {
-    pmesh->ForAllMeshBlocks(field_loadsend_bcsx1_n,pinput);
-    pmesh->ForAllMeshBlocks(field_recvset_bcsx1_n,pinput);
-    pmesh->ForAllMeshBlocks(field_loadsend_bcsx2_n,pinput);
-    pmesh->ForAllMeshBlocks(field_recvset_bcsx2_n,pinput);
-    pmesh->ForAllMeshBlocks(field_loadsend_bcsx3_n,pinput);
-    pmesh->ForAllMeshBlocks(field_recvset_bcsx3_n,pinput);
+    pmesh->ForAllMeshBlocks(field_loadsend_bcsx1_n, pinput);
+    pmesh->ForAllMeshBlocks(field_waitsend_bcsx1,  pinput);
+    pmesh->ForAllMeshBlocks(field_recvset_bcsx1_n,  pinput);
+    pmesh->ForAllMeshBlocks(field_loadsend_bcsx2_n, pinput);
+    pmesh->ForAllMeshBlocks(field_waitsend_bcsx2,  pinput);
+    pmesh->ForAllMeshBlocks(field_recvset_bcsx2_n,  pinput);
+    pmesh->ForAllMeshBlocks(field_loadsend_bcsx3_n, pinput);
+    pmesh->ForAllMeshBlocks(field_waitsend_bcsx3,  pinput);
+    pmesh->ForAllMeshBlocks(field_recvset_bcsx3_n,  pinput);
   }
+
   pmesh->ForAllMeshBlocks(primitives_n,pinput);
-  pmesh->ForAllMeshBlocks(new_blocktimestep,pinput);
-  pmesh->NewTimeStep();
 
 //--- Step 6. --------------------------------------------------------------------------
 // Change to run directory, initialize outputs object, and make output of ICs
@@ -239,7 +298,8 @@ int main(int argc, char *argv[])
 //--- Step 9. === START OF MAIN INTEGRATION LOOP =======================================
 // For performance, there is no error handler protecting this step (except outputs)
 
-  std::cout<<std::endl<< "Setup complete, entering main loop..." <<std::endl<<std::endl;
+  if(myrank==0)
+    std::cout<<std::endl<< "Setup complete, entering main loop..." <<std::endl<<std::endl;
   clock_t tstart = clock();
 #ifdef OPENMP_PARALLEL
   double omp_time = omp_get_wtime();
@@ -247,52 +307,76 @@ int main(int argc, char *argv[])
 
   while ((pmesh->time < pmesh->tlim) && 
          (pmesh->nlim < 0 || pmesh->ncycle < pmesh->nlim)){
-    std::cout << "cycle=" << pmesh->ncycle << std::scientific << std::setprecision(5)
-              << " time=" << pmesh->time << " dt=" << pmesh->dt << std::endl;
+
+    pmesh->NewTimeStep();
+
+    if(myrank==0)
+      std::cout << "cycle=" << pmesh->ncycle << std::scientific << std::setprecision(5)
+                << " time=" << pmesh->time << " dt=" << pmesh->dt << std::endl;
 
 // predict step
-    pmesh->ForAllMeshBlocks(fluid_predict  ,pinput);
+    pmesh->ForAllMeshBlocks(fluid_start_recv_nhalf, pinput);
+    if (MAGNETIC_FIELDS_ENABLED)
+      pmesh->ForAllMeshBlocks(field_start_recv_nhalf, pinput);
 
-    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx1_nhalf,pinput);
-    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx1_nhalf,pinput);
-    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx2_nhalf,pinput);
-    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx2_nhalf,pinput);
-    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx3_nhalf,pinput);
-    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx3_nhalf,pinput);
+    pmesh->ForAllMeshBlocks(fluid_predict, pinput);
+
+    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx1_nhalf, pinput);
+    pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx1,  pinput);
+    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx1_nhalf,  pinput);
+    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx2_nhalf, pinput);
+    pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx2,  pinput);
+    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx2_nhalf,  pinput);
+    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx3_nhalf, pinput);
+    pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx3,  pinput);
+    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx3_nhalf,  pinput);
 
     if (MAGNETIC_FIELDS_ENABLED) {
-      pmesh->ForAllMeshBlocks(field_predict  ,pinput);
+      pmesh->ForAllMeshBlocks(field_predict, pinput);
 
-      pmesh->ForAllMeshBlocks(field_loadsend_bcsx1_nhalf,pinput);
-      pmesh->ForAllMeshBlocks(field_recvset_bcsx1_nhalf,pinput);
-      pmesh->ForAllMeshBlocks(field_loadsend_bcsx2_nhalf,pinput);
-      pmesh->ForAllMeshBlocks(field_recvset_bcsx2_nhalf,pinput);
-      pmesh->ForAllMeshBlocks(field_loadsend_bcsx3_nhalf,pinput);
-      pmesh->ForAllMeshBlocks(field_recvset_bcsx3_nhalf,pinput);
+      pmesh->ForAllMeshBlocks(field_loadsend_bcsx1_nhalf, pinput);
+      pmesh->ForAllMeshBlocks(field_waitsend_bcsx1,  pinput);
+      pmesh->ForAllMeshBlocks(field_recvset_bcsx1_nhalf,  pinput);
+      pmesh->ForAllMeshBlocks(field_loadsend_bcsx2_nhalf, pinput);
+      pmesh->ForAllMeshBlocks(field_waitsend_bcsx2,  pinput);
+      pmesh->ForAllMeshBlocks(field_recvset_bcsx2_nhalf,  pinput);
+      pmesh->ForAllMeshBlocks(field_loadsend_bcsx3_nhalf, pinput);
+      pmesh->ForAllMeshBlocks(field_waitsend_bcsx3,  pinput);
+      pmesh->ForAllMeshBlocks(field_recvset_bcsx3_nhalf,  pinput);
     }
 
     pmesh->ForAllMeshBlocks(primitives_nhalf,pinput);
 
 // correct step
 
+    pmesh->ForAllMeshBlocks(fluid_start_recv_n, pinput);
+    if (MAGNETIC_FIELDS_ENABLED)
+      pmesh->ForAllMeshBlocks(field_start_recv_n, pinput);
+
     pmesh->ForAllMeshBlocks(fluid_correct,pinput);
 
-    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx1_n,pinput);
-    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx1_n,pinput);
-    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx2_n,pinput);
-    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx2_n,pinput);
-    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx3_n,pinput);
-    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx3_n,pinput);
+    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx1_n, pinput);
+    pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx1,  pinput);
+    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx1_n,  pinput);
+    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx2_n, pinput);
+    pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx2,  pinput);
+    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx2_n,  pinput);
+    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx3_n, pinput);
+    pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx3,  pinput);
+    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx3_n,  pinput);
 
     if (MAGNETIC_FIELDS_ENABLED) {
       pmesh->ForAllMeshBlocks(field_correct,pinput);
 
-      pmesh->ForAllMeshBlocks(field_loadsend_bcsx1_n,pinput);
-      pmesh->ForAllMeshBlocks(field_recvset_bcsx1_n,pinput);
-      pmesh->ForAllMeshBlocks(field_loadsend_bcsx2_n,pinput);
-      pmesh->ForAllMeshBlocks(field_recvset_bcsx2_n,pinput);
-      pmesh->ForAllMeshBlocks(field_loadsend_bcsx3_n,pinput);
-      pmesh->ForAllMeshBlocks(field_recvset_bcsx3_n,pinput);
+      pmesh->ForAllMeshBlocks(field_loadsend_bcsx1_n, pinput);
+      pmesh->ForAllMeshBlocks(field_waitsend_bcsx1,  pinput);
+      pmesh->ForAllMeshBlocks(field_recvset_bcsx1_n,  pinput);
+      pmesh->ForAllMeshBlocks(field_loadsend_bcsx2_n, pinput);
+      pmesh->ForAllMeshBlocks(field_waitsend_bcsx2,  pinput);
+      pmesh->ForAllMeshBlocks(field_recvset_bcsx2_n,  pinput);
+      pmesh->ForAllMeshBlocks(field_loadsend_bcsx3_n, pinput);
+      pmesh->ForAllMeshBlocks(field_waitsend_bcsx3,  pinput);
+      pmesh->ForAllMeshBlocks(field_recvset_bcsx3_n,  pinput);
     }
 
     pmesh->ForAllMeshBlocks(primitives_n,pinput);
@@ -315,9 +399,6 @@ int main(int argc, char *argv[])
       return(0);
     }
 
-    pmesh->ForAllMeshBlocks(new_blocktimestep,pinput);
-    pmesh->NewTimeStep();
-
   } // END OF MAIN INTEGRATION LOOP ====================================================
 #ifdef OPENMP_PARALLEL
   omp_time = omp_get_wtime() - omp_time;;
@@ -325,35 +406,40 @@ int main(int argc, char *argv[])
   clock_t tstop = clock();
 
 // print diagnostic messages
+  if(myrank==0) {
+    std::cout << "cycle=" << pmesh->ncycle << std::scientific << std::setprecision(5)
+              << " time=" << pmesh->time << " dt=" << pmesh->dt << std::endl;
 
-  std::cout << "cycle=" << pmesh->ncycle << std::scientific << std::setprecision(5)
-            << " time=" << pmesh->time << " dt=" << pmesh->dt << std::endl;
+    if (pmesh->ncycle == pmesh->nlim) {
+      std::cout << std::endl << "Terminating on cycle limit" << std::endl;
+    } else {
+      std::cout << std::endl << "Terminating on time limit" << std::endl;
+    }
 
-  if (pmesh->ncycle == pmesh->nlim) {
-    std::cout << std::endl << "Terminating on cycle limit" << std::endl;
-  } else {
-    std::cout << std::endl << "Terminating on time limit" << std::endl;
-  }
-
-  std::cout << "time=" << pmesh->time << " cycle=" << pmesh->ncycle << std::endl;
-  std::cout << "tlim=" << pmesh->tlim << " nlim=" << pmesh->nlim << std::endl;
+    std::cout << "time=" << pmesh->time << " cycle=" << pmesh->ncycle << std::endl;
+    std::cout << "tlim=" << pmesh->tlim << " nlim=" << pmesh->nlim << std::endl;
 
 // Calculate and print the zone-cycles/cpu-second and wall-second
 
-  float cpu_time = (tstop>tstart ? (float)(tstop-tstart) : 1.0)/(float)CLOCKS_PER_SEC;
-  int64_t zones = (pmesh->mesh_size.nx1)*(pmesh->mesh_size.nx2)*(pmesh->mesh_size.nx3);
-  float zc_cpus = (float)(zones*pmesh->ncycle)/cpu_time;
-  std::cout << std::endl << "cpu time used  = " << cpu_time << std::endl;
-  std::cout << "zone-cycles/cpu_second = " << zc_cpus << std::endl;
+    float cpu_time = (tstop>tstart ? (float)(tstop-tstart) : 1.0)/(float)CLOCKS_PER_SEC;
+    int64_t zones = pmesh->GetTotalCells();
+    float zc_cpus = (float)(zones*(pmesh->ncycle-ncstart))/cpu_time;
+    std::cout << std::endl << "cpu time used  = " << cpu_time << std::endl;
+    std::cout << "zone-cycles/cpu_second = " << zc_cpus << std::endl;
 #ifdef OPENMP_PARALLEL
-  float zc_omps = (float)(zones*pmesh->ncycle)/omp_time;
-  std::cout << std::endl << "omp wtime used = " << omp_time << std::endl;
-  std::cout << "zone-cycles/omp_wsecond = " << zc_omps << std::endl;
+    float zc_omps = (float)(zones*(pmesh->ncycle-ncstart))/omp_time;
+    std::cout << std::endl << "omp wtime used = " << omp_time << std::endl;
+    std::cout << "zone-cycles/omp_wsecond = " << zc_omps << std::endl;
 #endif
+  }
 
   delete pinput;
   delete pmesh;
   delete pouts;
+
+#ifdef MPI_PARALLEL
+  MPI_Finalize();
+#endif /* MPI_PARALLEL */
 
   return(0); 
 }
