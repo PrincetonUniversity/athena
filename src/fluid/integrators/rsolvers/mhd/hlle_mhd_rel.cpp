@@ -1,4 +1,4 @@
-// HLLE Riemann solver for general relativistic magnetohydrodynamics
+// HLLE Riemann solver for relativistic magnetohydrodynamics
 
 // Primary header
 #include "../../fluid_integrator.hpp"
@@ -44,22 +44,23 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
 
-  // Transform primitives into locally flat coordinates
-  switch (ivx)
-  {
-    case IVX:
-      pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, b, prim_left, prim_right,
-          b_normal_);
-      break;
-    case IVY:
-      pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, b, prim_left, prim_right,
-          b_normal_);
-      break;
-    case IVZ:
-      pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, b, prim_left, prim_right,
-          b_normal_);
-      break;
-  }
+  // Transform primitives to locally flat coordinates if in GR
+  if (GENERAL_RELATIVITY)
+    switch (ivx)
+    {
+      case IVX:
+        pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, b, prim_left, prim_right,
+            b_normal_);
+        break;
+      case IVY:
+        pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, b, prim_left, prim_right,
+            b_normal_);
+        break;
+      case IVZ:
+        pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, b, prim_left, prim_right,
+            b_normal_);
+        break;
+    }
 
   // Extract ratio of specific heats
   const Real gamma_adi = pmy_fluid->pf_eos->GetGamma();
@@ -173,19 +174,20 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
           / (lambda_right-lambda_left);                                   // (MB2005 11)
   }
 
-  // Transform fluxes into global coordinates
-  switch (ivx)
-  {
-    case IVX:
-      pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, flux);
-      break;
-    case IVY:
-      pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, flux);
-      break;
-    case IVZ:
-      pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, flux);
-      break;
-  }
+  // Transform fluxes to global coordinates if in GR
+  if (GENERAL_RELATIVITY)
+    switch (ivx)
+    {
+      case IVX:
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, flux);
+        break;
+      case IVY:
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, flux);
+        break;
+      case IVZ:
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, flux);
+        break;
+    }
   return;
 }
 
