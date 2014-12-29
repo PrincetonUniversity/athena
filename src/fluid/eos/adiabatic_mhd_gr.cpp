@@ -28,8 +28,8 @@ static Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_
     Real b_norm_sq, Real q_dot_b_norm_sq, Real gamma_prime);
 static Real quadratic_root(Real a1, Real a0, bool greater_root);
 static Real cubic_root_real(Real a2, Real a1, Real a0);
-static void quartic_root_minmax(Real a3, Real a2, Real a1, Real a0, Real &min_value,
-    Real &max_value);
+static void quartic_root_minmax(Real a3, Real a2, Real a1, Real a0, Real *pmin_value,
+    Real *pmax_value);
 
 // Constructor
 // Inputs:
@@ -287,20 +287,21 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 }
 
 // Function for calculating relativistic fast wavespeeds
-// Inputs:
+// Inputs: TODO
 // Outputs:
-//   lambda_plus: most positive wavespeed
-//   lambda_minus: most negative wavespeed
+//   plambda_plus: value set to most positive wavespeed
+//   plambda_minus: value set to most negative wavespeed
 // Notes:
 //   inputs assume x is transverse direction
 //   references Mignone & Bodo 2005, MNRAS 364 126 (MB2005)
 //   references Mignone & Bodo 2006, MNRAS 368 1040 (MB2006)
-void FluidEqnOfState::FastMagnetosonicSpeedsRelativistic(Real rho, Real pgas,
+void FluidEqnOfState::FastMagnetosonicSpeedsRel(
+    Real rho, Real pgas,
     Real vx, Real vy, Real vz,
     Real ut, Real ux, Real uy, Real uz,
     Real bx, Real by, Real bz,
     Real bcovt, Real bcovx, Real bcovy, Real bcovz,
-    Real &lambda_plus, Real &lambda_minus)
+    Real *plambda_plus, Real *plambda_minus)
 {
   // Parameters
   const double v_limit = 1.0e-12;  // squared velocities less than this are considered 0
@@ -325,8 +326,8 @@ void FluidEqnOfState::FastMagnetosonicSpeedsRelativistic(Real rho, Real pgas,
     Real a1 = -(bcov_sq + cs_sq * (rho_h + bx_sq)) / denominator;
     Real a0 = cs_sq * bx_sq / denominator;
     Real lambda_sq = quadratic_root(a1, a0, true);                 // (MB2006 57)
-    lambda_plus = std::sqrt(lambda_sq);
-    lambda_minus = -lambda_plus;
+    *plambda_plus = std::sqrt(lambda_sq);
+    *plambda_minus = -*plambda_plus;
   }
   else  // nonzero velocity
   {
@@ -340,8 +341,8 @@ void FluidEqnOfState::FastMagnetosonicSpeedsRelativistic(Real rho, Real pgas,
           / denominator;
       Real a0 = (rho_h * (-cs_sq + gamma_rel_sq*vx_sq*(1.0-cs_sq)) - q)
           / denominator;
-      lambda_plus = quadratic_root(a1, a0, true);                         // (MB2006 58)
-      lambda_minus = quadratic_root(a1, a0, false);                       // (MB2006 58)
+      *plambda_plus = quadratic_root(a1, a0, true);                       // (MB2006 58)
+      *plambda_minus = quadratic_root(a1, a0, false);                     // (MB2006 58)
     }
     else  // nonzero normal magnetic field
     {
@@ -360,9 +361,9 @@ void FluidEqnOfState::FastMagnetosonicSpeedsRelativistic(Real rho, Real pgas,
           / denominator;
       Real a0 = (var_1*vx_4 - var_2*vx_sq + cs_sq*bcovx_sq)
         / denominator;
-      quartic_root_minmax(a3, a2, a1, a0, lambda_minus, lambda_plus);     // (MB2006 56)
-      lambda_minus = std::max(lambda_minus, -1.0);
-      lambda_plus = std::min(lambda_plus, 1.0);
+      quartic_root_minmax(a3, a2, a1, a0, plambda_minus, plambda_plus);   // (MB2006 56)
+      *plambda_minus = std::max(*plambda_minus, -1.0);
+      *plambda_plus = std::min(*plambda_plus, 1.0);
     }
   }
   return;
@@ -579,8 +580,8 @@ Real cubic_root_real(Real a2, Real a1, Real a0)
 //   a1: linear coefficient
 //   a0: constant coefficient
 // Outputs:
-//   min_value: least real root
-//   max_value: greatest real root
+//   pmin_value: value set to least real root
+//   pmax_value: value set to greatest real root
 // Notes:
 //   solves x^4 + a3 x^3 + a2 x^2 + a1 x + a0 = 0 for x
 //   uses following procedure:
@@ -592,8 +593,8 @@ Real cubic_root_real(Real a2, Real a1, Real a0)
 //          y^2 + e1 y + e0
 //     5) find roots of quadratics
 //     6) set minimum and maximum roots of original quartic
-void quartic_root_minmax(Real a3, Real a2, Real a1, Real a0, Real &min_value,
-    Real &max_value)
+void quartic_root_minmax(Real a3, Real a2, Real a1, Real a0, Real *pmin_value,
+    Real *pmax_value)
 {
   // Step 1: Find reduced quartic coefficients
   Real b2 = a2 - 3.0/8.0*a3*a3;
@@ -630,7 +631,7 @@ void quartic_root_minmax(Real a3, Real a2, Real a1, Real a0, Real &min_value,
   Real y4 = quadratic_root(e1, e0, true);
 
   // Step 6: Set original quartic roots
-  min_value = std::min(y1, y3) - a3/4.0;
-  max_value = std::max(y2, y4) - a3/4.0;
+  *pmin_value = std::min(y1, y3) - a3/4.0;
+  *pmax_value = std::max(y2, y4) - a3/4.0;
   return;
 }

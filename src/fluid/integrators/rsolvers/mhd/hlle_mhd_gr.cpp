@@ -112,21 +112,21 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
 
     // Calculate wavespeeds
     Real lambda_left_plus, lambda_left_minus;
-    pmy_fluid->pf_eos->FastMagnetosonicSpeedsRelativistic(
+    pmy_fluid->pf_eos->FastMagnetosonicSpeedsRel(
         rho_left, pgas_left,
         vx_left, vy_left, vz_left,
         ut_left, ux_left, uy_left, uz_left,
         bx, by_left, bz_left,
         bcovt_left, bcovx_left, bcovy_left, bcovz_left,
-        lambda_left_plus, lambda_left_minus);                            // (MB2006 56)
+        &lambda_left_plus, &lambda_left_minus);                          // (MB2006 56)
     Real lambda_right_plus, lambda_right_minus;
-    pmy_fluid->pf_eos->FastMagnetosonicSpeedsRelativistic(
+    pmy_fluid->pf_eos->FastMagnetosonicSpeedsRel(
         rho_right, pgas_right,
         vx_right, vy_right, vz_right,
         ut_right, ux_right, uy_right, uz_right,
         bx, by_right, bz_right,
         bcovt_right, bcovx_right, bcovy_right, bcovz_right,
-        lambda_right_plus, lambda_right_minus);                          // (MB2006 56)
+        &lambda_right_plus, &lambda_right_minus);                        // (MB2006 56)
     Real lambda_left = std::min(lambda_left_minus, lambda_right_minus);  // (MB2006 55)
     Real lambda_right = std::max(lambda_left_plus, lambda_right_plus);   // (MB2006 55)
 
