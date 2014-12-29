@@ -1,4 +1,4 @@
-# Test script for relativistic hydro shock tubes with HLLE
+# Test script for relativistic hydro shock tubes with HLLC
 
 # Modules
 import numpy as np
@@ -9,7 +9,8 @@ import scripts.utils.comparison as comparison
 def prepare():
   athena.configure('s',
       prob='shock_tube_sr',
-      coord='cartesian')
+      coord='cartesian',
+      flux='hllc')
   athena.make()
 
 # Run Athena++
@@ -42,7 +43,6 @@ def analyze():
       array_new = array_new[0,0,:] if len(header) == 1 else array_new[0,0,:,header[1]]
       eps = comparison.l1_diff(x_ref, array_ref, x_new, array_new)
       eps /= comparison.l1_norm(x_ref, array_ref)
-      eps = np.nan
       if eps >= tol or np.isnan(eps):
         return False
   return True
