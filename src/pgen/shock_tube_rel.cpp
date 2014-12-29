@@ -1,4 +1,4 @@
-// General relativistic shock tube generator
+// Relativistic shock tube generator
 
 // Primary header
 #include "../mesh.hpp"
@@ -204,7 +204,10 @@ static void SetPrimCons(AthenaArray<Real> &prim, AthenaArray<Real> &prim_half,
 
   // Set conserved quantities
   cons(IDN,k,j,i) = rho * ut;
-  cons(IEN,k,j,i) = -(rho_h + bcov_sq) * ut * ut + bcovt * bcovt + ptot;
+  if (GENERAL_RELATIVITY)  // account for sign difference between SR and GR
+    cons(IEN,k,j,i) = -(rho_h + bcov_sq) * ut * ut + bcovt * bcovt + ptot;
+  else
+    cons(IEN,k,j,i) = (rho_h + bcov_sq) * ut * ut - bcovt * bcovt - ptot;
   cons(IM1,k,j,i) = (rho_h + bcov_sq) * ut * ux - bcovt * bcovx;
   cons(IM2,k,j,i) = (rho_h + bcov_sq) * ut * uy - bcovt * bcovy;
   cons(IM3,k,j,i) = (rho_h + bcov_sq) * ut * uz - bcovt * bcovz;
