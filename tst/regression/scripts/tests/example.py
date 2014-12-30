@@ -44,7 +44,7 @@ def prepare():
   # be supplied. Note athena.configure() expects the values only to be quoted, e.g.
   # --<key>='<value>'.
   athena.configure('g',
-      prob='shock_tube_gr',
+      prob='shock_tube_rel',
       coord='minkowski')
 
   # Call make as though we ran

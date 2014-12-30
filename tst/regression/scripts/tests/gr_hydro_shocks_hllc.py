@@ -8,7 +8,7 @@ import scripts.utils.comparison as comparison
 # Prepare Athena++
 def prepare():
   athena.configure('g',
-      prob='shock_tube_gr',
+      prob='shock_tube_rel',
       coord='minkowski',
       flux='hllc')
   athena.make()
