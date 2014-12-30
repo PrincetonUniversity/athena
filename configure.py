@@ -48,74 +48,74 @@ pgen_choices = [choice[len(pgen_directory):-4] for choice in pgen_choices]
 parser.add_argument('--prob',
     default='shock_tube',
     choices=pgen_choices,
-    help='selects problem generator')
+    help='select problem generator')
 
 # --coord=[name] argument
 parser.add_argument('--coord',
     default='cartesian',
     choices=['cartesian','cylindrical','spherical_polar',\
         'minkowski','schwarzschild'],
-    help='selects coordinate system')
+    help='select coordinate system')
 
 # --eos=[name] argument
 parser.add_argument('--eos',
     default='adiabatic',
     choices=['adiabatic','isothermal'],
-    help='selects equation of state')
+    help='select equation of state')
 
 # --flux=[name] argument
 parser.add_argument('--flux',
     default='hlle',
     choices=['hlle','hllc','hlld'],
-    help='selects Riemann solver')
+    help='select Riemann solver')
 
 # -b argument
 parser.add_argument('-b',
     action='store_true',
     default=False,
-    help='enables magnetic field')
+    help='enable magnetic field')
 
 # -s argument
 parser.add_argument('-s',
     action='store_true',
     default=False,
-    help='enables special relativity')
+    help='enable special relativity')
 
 # -g argument
 parser.add_argument('-g',
     action='store_true',
     default=False,
-    help='enables general relativity')
+    help='enable general relativity')
 
 # --order=[name] argument
 parser.add_argument('--order',
     default='plm',
     choices=['plm'],
-    help='selects spatial reconstruction algorithm')
+    help='select spatial reconstruction algorithm')
 
 # --fint=[name] argument
 parser.add_argument('--fint',
     default='vl2',
     choices=['vl2'],
-    help='selects fluid time-integration algorithm')
+    help='select fluid time-integration algorithm')
 
 # --cxx=[name] argument
 parser.add_argument('--cxx',
     default='g++',
     choices=['g++','icc','cray'],
-    help='selects C++ compiler')
+    help='select C++ compiler')
 
 # -mpi argument
 parser.add_argument('-mpi',
     action='store_true',
     default=False,
-    help='enables parallelization with MPI')
+    help='enable parallelization with MPI')
 
 # -omp argument
 parser.add_argument('-omp',
     action='store_true',
     default=False,
-    help='enables parallelization with OpenMP')
+    help='enable parallelization with OpenMP')
 
 # -ifov=N argument
 parser.add_argument('--ifov',
@@ -133,7 +133,7 @@ parser.add_argument('--idlength',
 parser.add_argument('-debug',
     action='store_true',
     default=False,
-    help='enables debug flags; override other compiler options')
+    help='enable debug flags; override other compiler options')
 
 # Parse command-line inputs
 args = vars(parser.parse_args())
@@ -142,7 +142,17 @@ args = vars(parser.parse_args())
 definitions = {}
 makefile_options = {}
 
-#--- Step 3.  Set definitions and Makefile options based on above arguments ------------
+#--- Step 3.  Test for incompatible arguments ------------------------------------------
+
+if args['eos']=='isothermal' and args['flux']=='hllc':
+  print('### CONFIGURE ERROR: isothermal EOS cannot be used with HLLC flux')
+  raise SystemExit
+
+if args['flux']=='hllc' and args['b']:
+  print('### CONFIGURE ERROR: HLLC flux cannot be used with MHD')
+  raise SystemExit
+
+#--- Step 4.  Set definitions and Makefile options based on above arguments ------------
 
 # --prob=[name] argument
 definitions['PROBLEM'] = args['prob']
@@ -264,7 +274,7 @@ definitions['NUM_IFOV'] = str(args['ifov'])
 
 definitions['ID_LENGTH'] = str(args['idlength'])
 
-#--- Step 4.  Create new files, finish up ----------------------------------------------
+#--- Step 5.  Create new files, finish up ----------------------------------------------
 
 # terminate all filenames with .cpp extension
 makefile_options['PROBLEM_FILE'] += '.cpp'
