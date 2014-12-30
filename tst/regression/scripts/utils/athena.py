@@ -142,10 +142,11 @@ def read_vtk(filename):
   def read_cell_vectors():
     begin_index = skip_string('VECTORS ')
     end_of_word_index = begin_index + 1
-    while raw_data[end_of_word_index] != ' ':
+    while raw_data[end_of_word_index] != '\n':
       end_of_word_index += 1
     array_name = raw_data[begin_index:end_of_word_index]
-    string_to_skip = 'VECTORS {0} float\n'.format(array_name)
+    string_to_skip = 'VECTORS {0}\n'.format(array_name)
+    array_name = array_name[:-6]  # remove ' float'
     begin_index = skip_string(string_to_skip)
     format_string = '>' + 'f'*num_cells*3
     end_index = begin_index + 4*num_cells*3

@@ -185,14 +185,15 @@ else:
   else:
     definitions['NWAVE_VALUE'] = '4'
 
-# -s and -g argumens
+# -s and -g arguments
 definitions['RELATIVISTIC_DYNAMICS'] = '1' if args['s'] or args['g'] else '0'
+definitions['GENERAL_RELATIVITY'] = '1' if args['g'] else '0'
 if args['s']:
   makefile_options['EOS_FILE'] += '_sr'
-  makefile_options['RSOLVER_FILE'] += '_sr'
+  makefile_options['RSOLVER_FILE'] += '_rel'
 if args['g']:
   makefile_options['EOS_FILE'] += '_gr'
-  makefile_options['RSOLVER_FILE'] += '_gr'
+  makefile_options['RSOLVER_FILE'] += '_rel'
 
 # --order=[name] argument
 definitions['RECONSTRUCT'] = args['order']
@@ -299,7 +300,8 @@ print('  Equation of state:       ' + args['eos'])
 print('  Riemann solver:          ' + args['flux'])
 print('  Reconstruction method:   ' + args['order'])
 print('  Fluid integrator:        ' + args['fint'])
-print('  Compiler and flags:      ' + makefile_options['COMPILER_CHOICE'] + ' ' +makefile_options['COMPILER_FLAGS'])
+print('  Compiler and flags:      ' + makefile_options['COMPILER_CHOICE'] + ' ' \
+    + makefile_options['COMPILER_FLAGS'])
 print('  Magnetic fields:         ' + ('enabled' if args['b'] else 'disabled'))
 print('  Special relativity:      ' + ('enabled' if args['s'] else 'disabled'))
 print('  General relativity:      ' + ('enabled' if args['g'] else 'disabled'))
@@ -307,4 +309,5 @@ print('  MPI parallelism:         ' + ('enabled' if args['mpi'] else 'disabled')
 print('  OpenMP parallelism:      ' + ('enabled' if args['omp'] else 'disabled'))
 print('  Debug flags:             ' + ('enabled' if args['debug'] else 'disabled'))
 print('  Internal fluid outvars:  ' + str(args['ifov']))
-print('  UID Length:              ' + str(args['idlength']) + '  (maximum refinement level = ' + str(20*args['idlength']) + ')')
+print('  UID Length:              ' + str(args['idlength']) \
+    + '  (maximum refinement level = ' + str(20*args['idlength']) + ')')

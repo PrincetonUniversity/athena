@@ -1,6 +1,4 @@
-// HLLE Riemann solver for general relativistic magnetohydrodynamics
-
-// TODO: make left and right inputs const
+// HLLE Riemann solver for relativistic magnetohydrodynamics
 
 // Primary header
 #include "../../fluid_integrator.hpp"
@@ -38,7 +36,7 @@ static void PrimToConsFlat(Real gamma_adi_red, Real rho, Real pgas,
 //   implements HLLE algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB2005)
 //   references Mignone & Bodo 2006, MNRAS 368 1040 (MB2006)
 void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
-    const int iu, const int ivx, AthenaArray<Real> &bx_vals,
+    const int iu, const int ivx, const AthenaArray<Real> &b,
     AthenaArray<Real> &prim_left, AthenaArray<Real> &prim_right,
     AthenaArray<Real> &flux)
 {
@@ -46,22 +44,23 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
 
-  // Transform primitives into locally flat coordinates
-  switch (ivx)
-  {
-    case IVX:
-      pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, bx_vals, prim_left);
-      pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, bx_vals, prim_right);
-      break;
-    case IVY:
-      pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, bx_vals, prim_left);
-      pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, bx_vals, prim_right);
-      break;
-    case IVZ:
-      pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, bx_vals, prim_left);
-      pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, bx_vals, prim_right);
-      break;
-  }
+  // Transform primitives to locally flat coordinates if in GR
+  if (GENERAL_RELATIVITY)
+    switch (ivx)
+    {
+      case IVX:
+        pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, b, prim_left, prim_right,
+            b_normal_);
+        break;
+      case IVY:
+        pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, b, prim_left, prim_right,
+            b_normal_);
+        break;
+      case IVZ:
+        pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, b, prim_left, prim_right,
+            b_normal_);
+        break;
+    }
 
   // Extract ratio of specific heats
   const Real gamma_adi = pmy_fluid->pf_eos->GetGamma();
@@ -89,8 +88,8 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     Real &by_right = prim_right(IBY,i);
     Real &bz_right = prim_right(IBZ,i);
 
-    // Extract transverse magnetic field
-    Real &bx = bx_vals(k,j,i);
+    // Extract normal magnetic field
+    Real &bx = b_normal_(k,j,i);
 
     // Calculate covariant versions of left primitives
     Real ut_left = std::sqrt(1.0/(1.0-(SQR(vx_left)+SQR(vy_left)+SQR(vz_left))));
@@ -114,23 +113,23 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
 
     // Calculate wavespeeds
     Real lambda_left_plus, lambda_left_minus;
-    pmy_fluid->pf_eos->FastMagnetosonicSpeedsRelativistic(
+    pmy_fluid->pf_eos->FastMagnetosonicSpeedsRel(
         rho_left, pgas_left,
         vx_left, vy_left, vz_left,
         ut_left, ux_left, uy_left, uz_left,
         bx, by_left, bz_left,
         bcovt_left, bcovx_left, bcovy_left, bcovz_left,
-        lambda_left_plus, lambda_left_minus);
+        &lambda_left_plus, &lambda_left_minus);                          // (MB2006 56)
     Real lambda_right_plus, lambda_right_minus;
-    pmy_fluid->pf_eos->FastMagnetosonicSpeedsRelativistic(
+    pmy_fluid->pf_eos->FastMagnetosonicSpeedsRel(
         rho_right, pgas_right,
         vx_right, vy_right, vz_right,
         ut_right, ux_right, uy_right, uz_right,
         bx, by_right, bz_right,
         bcovt_right, bcovx_right, bcovy_right, bcovz_right,
-        lambda_right_plus, lambda_right_minus);
-    Real lambda_left = std::min(lambda_left_minus, lambda_right_minus);  // (MB2006 56)
-    Real lambda_right = std::max(lambda_left_plus, lambda_right_plus);   // (MB2006 56)
+        &lambda_right_plus, &lambda_right_minus);                        // (MB2006 56)
+    Real lambda_left = std::min(lambda_left_minus, lambda_right_minus);  // (MB2006 55)
+    Real lambda_right = std::max(lambda_left_plus, lambda_right_plus);   // (MB2006 55)
 
     // Calculate L/R state fluxes
     Real flux_left[NWAVE], flux_right[NWAVE];
@@ -175,19 +174,20 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
           / (lambda_right-lambda_left);                                   // (MB2005 11)
   }
 
-  // Transform fluxes into global coordinates
-  switch (ivx)
-  {
-    case IVX:
-      pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, flux);
-      break;
-    case IVY:
-      pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, flux);
-      break;
-    case IVZ:
-      pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, flux);
-      break;
-  }
+  // Transform fluxes to global coordinates if in GR
+  if (GENERAL_RELATIVITY)
+    switch (ivx)
+    {
+      case IVX:
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, flux);
+        break;
+      case IVY:
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, flux);
+        break;
+      case IVZ:
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, flux);
+        break;
+    }
   return;
 }
 

@@ -1,6 +1,4 @@
-// HLLE Riemann solver for general relativistic hydrodynamics
-
-// TODO: make left and right inputs const
+// HLLE Riemann solver for relativistic hydrodynamics
 
 // Primary header
 #include "../../fluid_integrator.hpp"
@@ -10,7 +8,7 @@
 #include <cmath>      // sqrt()
 
 // Athena headers
-#include "../../../eos/eos.hpp"                     // GetGamma()
+#include "../../../eos/eos.hpp"                     // GetGamma(), WavespeedsRel()
 #include "../../../fluid.hpp"                       // Fluid
 #include "../../../../athena.hpp"                   // enums, macros, Real
 #include "../../../../athena_arrays.hpp"            // AthenaArray
@@ -19,15 +17,18 @@
 
 // Riemann solver
 // Inputs:
-//   il, iu: lower and upper indices for interfaces
+//   k,j: x3- and x2-indices
+//   il,iu: lower and upper x1-indices
+//   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
+//   b: 3D array of normal magnetic fields (not used)
 //   prim_left, prim_right: left and right primitive states
 // Outputs:
-//   flux: fluxes
+//   flux: fluxes across interface
 // Notes:
 //   implements HLLE algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
 //   prim_left, prim_right overwritten
 void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const int iu,
-    const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &prim_left,
+    const int ivx, const AthenaArray<Real> &b, AthenaArray<Real> &prim_left,
     AthenaArray<Real> &prim_right, AthenaArray<Real> &flux)
 {
   // Calculate cyclic permutations of indices
@@ -38,23 +39,23 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
   const Real gamma_adi = pmy_fluid->pf_eos->GetGamma();
   const Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
-  // Transform primitives into locally flat coordinates
-  // TODO: should this be made 1 function call?
-  switch (ivx)
-  {
-    case IVX:
-      pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, bx, prim_left);
-      pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, bx, prim_right);
-      break;
-    case IVY:
-      pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, bx, prim_left);
-      pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, bx, prim_right);
-      break;
-    case IVZ:
-      pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, bx, prim_left);
-      pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, bx, prim_right);
-      break;
-  }
+  // Transform primitives to locally flat coordinates if in GR
+  if (GENERAL_RELATIVITY)
+    switch (ivx)
+    {
+      case IVX:
+        pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, b, prim_left, prim_right,
+            b_normal_);
+        break;
+      case IVY:
+        pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, b, prim_left, prim_right,
+            b_normal_);
+        break;
+      case IVZ:
+        pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, b, prim_left, prim_right,
+            b_normal_);
+        break;
+    }
 
   // Go through each interface
 #pragma simd
@@ -82,28 +83,22 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     Real &flux_mz = flux(ivz,i);
 
     // Calculate wavespeeds in left region
+    Real lambda_plus_left, lambda_minus_left;
     Real rho_h_left = rho_left + gamma_adi_red * pgas_left;
-    Real cs_sq = gamma_adi * pgas_left / rho_h_left;  // (MB 4)
-    Real v_sq_left = vx_left*vx_left + vy_left*vy_left + vz_left*vz_left;
-    Real gamma_sq_left = 1.0 / (1.0 - v_sq_left);
-    Real sigma_s = cs_sq / (gamma_sq_left * (1.0 - cs_sq));
-    Real relative_speed = std::sqrt(sigma_s * (1.0 + sigma_s - vx_left*vx_left));
-    Real lambda_plus_left = 1.0 / (1.0 + sigma_s) * (vx_left
-        + relative_speed);  // (MB 23)
-    Real lambda_minus_left = 1.0 / (1.0 + sigma_s) * (vx_left
-        - relative_speed);  // (MB 23)
+    Real v_sq_left = SQR(vx_left) + SQR(vy_left) + SQR(vz_left);
+    Real gamma_sq_left = 1.0/(1.0-v_sq_left);
+    pmy_fluid->pf_eos->WavespeedsRel(
+        rho_h_left, pgas_left, vx_left, gamma_sq_left,
+        &lambda_plus_left, &lambda_minus_left);                   // (MB 23)
 
     // Calculate wavespeeds in right region
+    Real lambda_plus_right, lambda_minus_right;
     Real rho_h_right = rho_right + gamma_adi_red * pgas_right;
-    cs_sq = gamma_adi * pgas_right / rho_h_right;  // (MB 4)
-    Real v_sq_right = vx_right*vx_right + vy_right*vy_right + vz_right*vz_right;
-    Real gamma_sq_right = 1.0 / (1.0 - v_sq_right);
-    sigma_s = cs_sq / (gamma_sq_right * (1.0 - cs_sq));
-    relative_speed = std::sqrt(sigma_s * (1.0 + sigma_s - vx_right*vx_right));
-    Real lambda_plus_right = 1.0 / (1.0 + sigma_s) * (vx_right
-        + relative_speed);  // (MB 23)
-    Real lambda_minus_right = 1.0 / (1.0 + sigma_s) * (vx_right
-        - relative_speed);  // (MB 23)
+    Real v_sq_right = SQR(vx_right) + SQR(vy_right) + SQR(vz_right);
+    Real gamma_sq_right = 1.0/(1.0-v_sq_right);
+    pmy_fluid->pf_eos->WavespeedsRel(
+        rho_h_right, pgas_right, vx_right, gamma_sq_right,
+        &lambda_plus_right, &lambda_minus_right);                     // (MB 23)
 
     // Calculate extremal wavespeeds
     Real lambda_left = std::min(lambda_minus_left, lambda_minus_right);
@@ -145,31 +140,35 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
       continue;
     }
 
-    // Calculate left conserved quantities and fluxes
+    // Calculate left conserved quantities (MB 3)
     Real gamma_sq_rho_h_left = gamma_sq_left * rho_h_left;
-    Real d_left = std::sqrt(gamma_sq_left) * rho_left;  // (MB 3)
-    Real e_left = gamma_sq_rho_h_left - pgas_left;      // (MB 3)
-    Real mx_left = gamma_sq_rho_h_left * vx_left;       // (MB 3)
-    Real my_left = gamma_sq_rho_h_left * vy_left;       // (MB 3)
-    Real mz_left = gamma_sq_rho_h_left * vz_left;       // (MB 3)
-    Real flux_d_left = d_left * vx_left;                // (MB 2)
-    Real flux_e_left = mx_left;                         // (MB 2)
-    Real flux_mx_left = mx_left * vx_left + pgas_left;  // (MB 2)
-    Real flux_my_left = my_left * vx_left;              // (MB 2)
-    Real flux_mz_left = mz_left * vx_left;              // (MB 2)
+    Real d_left = std::sqrt(gamma_sq_left) * rho_left;
+    Real e_left = gamma_sq_rho_h_left - pgas_left;
+    Real mx_left = gamma_sq_rho_h_left * vx_left;
+    Real my_left = gamma_sq_rho_h_left * vy_left;
+    Real mz_left = gamma_sq_rho_h_left * vz_left;
 
-    // Calculate right conserved quantities and fluxes
+    // Calculate right conserved quantities (MB 3)
     Real gamma_sq_rho_h_right = gamma_sq_right * rho_h_right;
-    Real d_right = std::sqrt(gamma_sq_right) * rho_right;   // (MB 3)
-    Real e_right = gamma_sq_rho_h_right - pgas_right;       // (MB 3)
-    Real mx_right = gamma_sq_rho_h_right * vx_right;        // (MB 3)
-    Real my_right = gamma_sq_rho_h_right * vy_right;        // (MB 3)
-    Real mz_right = gamma_sq_rho_h_right * vz_right;        // (MB 3)
-    Real flux_d_right = d_right * vx_right;                 // (MB 2)
-    Real flux_e_right = mx_right;                           // (MB 2)
-    Real flux_mx_right = mx_right * vx_right + pgas_right;  // (MB 2)
-    Real flux_my_right = my_right * vx_right;               // (MB 2)
-    Real flux_mz_right = mz_right * vx_right;               // (MB 2)
+    Real d_right = std::sqrt(gamma_sq_right) * rho_right;
+    Real e_right = gamma_sq_rho_h_right - pgas_right;
+    Real mx_right = gamma_sq_rho_h_right * vx_right;
+    Real my_right = gamma_sq_rho_h_right * vy_right;
+    Real mz_right = gamma_sq_rho_h_right * vz_right;
+
+    // Calculate left fluxes (MB 2)
+    Real flux_d_left = d_left * vx_left;
+    Real flux_e_left = mx_left;
+    Real flux_mx_left = mx_left * vx_left + pgas_left;
+    Real flux_my_left = my_left * vx_left;
+    Real flux_mz_left = mz_left * vx_left;
+
+    // Calculate right fluxes (MB 2)
+    Real flux_d_right = d_right * vx_right;
+    Real flux_e_right = mx_right;
+    Real flux_mx_right = mx_right * vx_right + pgas_right;
+    Real flux_my_right = my_right * vx_right;
+    Real flux_mz_right = mz_right * vx_right;
 
     // Set fluxes (MB 11)
     Real denom_inverse = 1.0 / (lambda_right - lambda_left);
@@ -185,18 +184,19 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
         * lambda_left * (mz_right - mz_left)) * denom_inverse;
   }
 
-  // Transform fluxes into global coordinates
-  switch (ivx)
-  {
-    case IVX:
-      pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, flux);
-      break;
-    case IVY:
-      pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, flux);
-      break;
-    case IVZ:
-      pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, flux);
-      break;
-  }
+  // Transform fluxes to global coordinates if in GR
+  if (GENERAL_RELATIVITY)
+    switch (ivx)
+    {
+      case IVX:
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, flux);
+        break;
+      case IVY:
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, flux);
+        break;
+      case IVZ:
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, flux);
+        break;
+    }
   return;
 }
