@@ -15,7 +15,7 @@
 //======================================================================================
 
 // Primary header
-#include "../fluid/fluid.hpp"
+#include "../mesh.hpp"
 
 // C++ headers
 #include <iostream>   // endl
@@ -26,10 +26,10 @@
 // Athena headers
 #include "../athena.hpp"           // enums, Real
 #include "../athena_arrays.hpp"    // AthenaArray
-#include "../mesh.hpp"             // MeshBlock
 #include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/eos/eos.hpp"    // Fluid
-#include "../field/field.hpp"  // Field
+#include "../fluid/fluid.hpp"      // Fluid
+#include "../fluid/eos/eos.hpp"    // EOS
+#include "../field/field.hpp"      // Field
 
 //======================================================================================
 //! \file linear_wave.c
@@ -44,9 +44,9 @@
 // with functions A1,2,3 which compute vector potentials
 static Real bx0, by0, bz0, dby, dbz;
 static int wave_flag;
-static Real ang_2, ang_3; /* Rotation angles about the y and z' axis */
+static Real ang_2, ang_3; // Rotation angles about the y and z' axis
 static Real sin_a2, cos_a2, sin_a3, cos_a3;
-static Real amp, lambda, k_par; /* amplitude, Wavelength, 2*PI/wavelength */
+static Real amp, lambda, k_par; // amplitude, Wavelength, 2*PI/wavelength
 static Real gm1,iso_cs;
 
 // functions to compute vector potential to initialize the solution
@@ -89,7 +89,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 //    For example, for 1D problem use ang_2 = ang_3 = 0.0
 //    For wavevector along grid diagonal, do not input values for ang_2/ang_3.
 // Code below will automatically calculate these imposing periodicity and exactly one
-// wavelength along each grid direction */
+// wavelength along each grid direction
 
 // User should never input -999.9 in angles
   if (ang_3 == -999.9) ang_3 = atan(x1size/x2size);
