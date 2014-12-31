@@ -49,6 +49,6 @@ private:
 // scratch space used in integrator
   AthenaArray<Real> wl_, wr_, flx_, src_; 
   AthenaArray<Real> face_area_, cell_volume_;
-  AthenaArray<Real> b_normal_;  // needed only in GRMHD
+  AthenaArray<Real> b_normal_;  // only used in SR/GRMHD
 };
 #endif

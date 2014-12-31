@@ -138,8 +138,8 @@ def analyze():
   # checking if the error is NaN, which also indicates something went wrong. The main
   # test script will record the result and delete tst/regression/bin/ before proceeding
   # on to the next test.
-  if error_rel_e >= 0.01 or np.isnan(error_rel_e):
+  if error_rel_e > 0.01 or np.isnan(error_rel_e):
     return False
-  if error_rel_mx >= 0.01 or np.isnan(error_rel_mx):
+  if error_rel_mx > 0.01 or np.isnan(error_rel_mx):
     return False
   return True
