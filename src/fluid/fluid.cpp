@@ -231,5 +231,6 @@ Real Fluid::NewBlockTimeStep(MeshBlock *pmb)
 
   delete[] pthread_min_dt;
 
+  pmb->new_block_dt=min_dt;
   return min_dt;
 }

@@ -28,6 +28,7 @@
 #include <algorithm>  // sort, find
 
 #include <stdlib.h>
+#include <string.h>  // memcpy
 
 // Athena headers
 #include "athena.hpp"                   // enums, macros, Real
@@ -249,6 +250,10 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   nbmax=(nrbx1>nrbx2)?nrbx1:nrbx2;
   nbmax=(nbmax>nrbx3)?nbmax:nrbx3;
 
+  if(myrank==0)
+    std::cout << "RootGrid = " << nrbx1 << " x " << nrbx2
+              << " x " << nrbx3 << std::endl;
+
 // calculate the logical root level and maximum level
   for(root_level=0;(1<<root_level)<nbmax;root_level++);
   max_level = pin->GetOrAddReal("mesh","nlevel",1)+root_level-1;
@@ -320,7 +325,6 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       std::cout << "### Warning in Mesh constructor" << std::endl
           << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< nproc
           << ")" << std::endl;
-      return;
     }
   }
   if(nbtotal % nproc != 0 && adaptive == false && maxcost == mincost && myrank==0)
@@ -998,6 +1002,7 @@ MeshBlock::MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_block,
   lid=ilid;
   uid=iuid;
   cost=1.0;
+  task=NULL;
 
 // initialize grid indices
 
@@ -1181,6 +1186,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, BlockUID
   uid=list[gid];
   cost=icost;
   int nerr=0;
+  task=NULL;
 
   // seek the file
   resfile.Seek(offset);
@@ -1352,25 +1358,28 @@ MeshBlock::~MeshBlock()
   delete pfluid;
   delete pfield;
   delete pbval;
+  if(task!=NULL)
+    delete [] task;
 }
 
 //--------------------------------------------------------------------------------------
 // \!fn void Mesh::NewTimeStep(void)
 // \brief function that loops over all MeshBlocks and find new timestep
+//        this assumes that pfluid->NewBlockTimeStep is already called
 void Mesh::NewTimeStep(void)
 {
   MeshBlock *pmb = pblock;
   std::stringstream msg;
-  Real min_dt=pmb->pfluid->NewBlockTimeStep(pmb);
+  Real min_dt=pmb->new_block_dt;
   pmb=pmb->next;
   while (pmb != NULL)  {
-    min_dt=std::min(min_dt,pmb->pfluid->NewBlockTimeStep(pmb));
+    min_dt=std::min(min_dt,pmb->new_block_dt);
     pmb=pmb->next;
   }
 
 #ifdef MPI_PARALLEL
-  if(MPI_Allreduce(MPI_IN_PLACE,&min_dt,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD)!=MPI_SUCCESS)
-  {
+  if(MPI_Allreduce(MPI_IN_PLACE,&min_dt,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD)
+     !=MPI_SUCCESS) {
     msg << "### FATAL ERROR in NewTimeStep" << std::endl
         << "MPI_Allreduce failed" << std::endl;
     throw std::runtime_error(msg.str().c_str());
@@ -1382,264 +1391,129 @@ void Mesh::NewTimeStep(void)
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn void Mesh::ForAllMeshBlocks(enum ActionOnBlock action, ParameterInput *pin)
-// \brief function that loops over all MeshBlocks and calls appropriate functions
+// \!fn void Mesh::Initialize(int res_flag, ParameterInput *pin)
+// \brief  initialization before the main loop
 
-void Mesh::ForAllMeshBlocks(enum ActionOnBlock action, ParameterInput *pin)
+void Mesh::Initialize(int res_flag, ParameterInput *pin)
 {
-  MeshBlock *pmb = pblock;
+  MeshBlock *pmb;
+  Fluid *pfluid;
+  Field *pfield;
+  BoundaryValues *pbval;
 
+  if(res_flag==0) {
+    pmb = pblock;
+    while (pmb != NULL)  {
+      pfluid=pmb->pfluid;
+      pfield=pmb->pfield;
+      ProblemGenerator(pfluid,pfield,pin);
+      pmb=pmb->next;
+    }
+  }
+
+  pmb = pblock;
   while (pmb != NULL)  {
-    Fluid *pfluid = pmb->pfluid;
-    Field *pfield = pmb->pfield;
+    pbval=pmb->pbval;
+    pbval->StartReceivingFluid(0);
+    if (MAGNETIC_FIELDS_ENABLED)
+      pbval->StartReceivingField(0);
+    pmb=pmb->next;
+  }
 
-    switch (action) {
-
-      case pgen: // call problem generator
-        ProblemGenerator(pfluid,pfield,pin);
-        break;
-
-      case fluid_start_recv_n:
-        pmb->pbval->StartReceivingFluid(0);
-        break;
-
-      case field_start_recv_n:
-        pmb->pbval->StartReceivingField(0);
-        break;
-
-      case fluid_start_recv_nhalf:
-        pmb->pbval->StartReceivingFluid(1);
-        break;
-
-      case field_start_recv_nhalf:
-        pmb->pbval->StartReceivingField(1);
-        break;
-
-      case fluid_loadsend_bcsx1_n:
-        pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x1,pfluid->u,0);
-        pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x1,pfluid->u,0);
-        break;
-
-      case fluid_recvset_bcsx1_n:
-        pmb->pbval->ReceiveAndSetFluidBoundary(inner_x1,pfluid->u);
-        pmb->pbval->ReceiveAndSetFluidBoundary(outer_x1,pfluid->u);
-        break;
-
-      case field_loadsend_bcsx1_n:
-        pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x1,pfield->b,0);
-        pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x1,pfield->b,0);
-        break;
-
-      case field_recvset_bcsx1_n:
-        pmb->pbval->ReceiveAndSetFieldBoundary(inner_x1,pfield->b);
-        pmb->pbval->ReceiveAndSetFieldBoundary(outer_x1,pfield->b);
-        break;
-
-      case fluid_loadsend_bcsx2_n:
-        if(pmb->pmy_mesh->mesh_size.nx2 > 1) {
-          pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x2,pfluid->u,0);
-          pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x2,pfluid->u,0);
-        }
-        break;
-
-      case fluid_recvset_bcsx2_n:
-        if(pmb->pmy_mesh->mesh_size.nx2 > 1) {
-          pmb->pbval->ReceiveAndSetFluidBoundary(inner_x2,pfluid->u);
-          pmb->pbval->ReceiveAndSetFluidBoundary(outer_x2,pfluid->u);
-        }
-        break;
-
-      case field_loadsend_bcsx2_n:
-        if(pmb->pmy_mesh->mesh_size.nx2 > 1) {
-          pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x2,pfield->b,0);
-          pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x2,pfield->b,0);
-        }
-        break;
-
-      case field_recvset_bcsx2_n:
-        if(pmb->pmy_mesh->mesh_size.nx2 > 1) {
-          pmb->pbval->ReceiveAndSetFieldBoundary(inner_x2,pfield->b);
-          pmb->pbval->ReceiveAndSetFieldBoundary(outer_x2,pfield->b);
-        }
-        break;
-
-      case fluid_loadsend_bcsx3_n:
-        if(pmb->pmy_mesh->mesh_size.nx3 > 1) {
-          pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x3,pfluid->u,0);
-          pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x3,pfluid->u,0);
-        }
-        break;
-
-      case fluid_recvset_bcsx3_n:
-        if(pmb->pmy_mesh->mesh_size.nx3 > 1) {
-          pmb->pbval->ReceiveAndSetFluidBoundary(inner_x3,pfluid->u);
-          pmb->pbval->ReceiveAndSetFluidBoundary(outer_x3,pfluid->u);
-        }
-        break;
-
-      case field_loadsend_bcsx3_n:
-        if(pmb->pmy_mesh->mesh_size.nx3 > 1) {
-          pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x3,pfield->b,0);
-          pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x3,pfield->b,0);
-        }
-        break;
-
-      case field_recvset_bcsx3_n:
-        if(pmb->pmy_mesh->mesh_size.nx3 > 1) {
-          pmb->pbval->ReceiveAndSetFieldBoundary(inner_x3,pfield->b);
-          pmb->pbval->ReceiveAndSetFieldBoundary(outer_x3,pfield->b);
-        }
-        break;
-
-      case fluid_waitsend_bcsx1:
-        pmb->pbval->WaitSendFluid(inner_x1);
-        pmb->pbval->WaitSendFluid(outer_x1);
-        break;
-
-      case field_waitsend_bcsx1:
-        pmb->pbval->WaitSendField(inner_x1);
-        pmb->pbval->WaitSendField(outer_x1);
-        break;
-
-      case fluid_waitsend_bcsx2:
-        if(pmb->pmy_mesh->mesh_size.nx2 > 1) {
-          pmb->pbval->WaitSendFluid(inner_x2);
-          pmb->pbval->WaitSendFluid(outer_x2);
-        }
-        break;
-
-      case field_waitsend_bcsx2:
-        if(pmb->pmy_mesh->mesh_size.nx2 > 1) {
-          pmb->pbval->WaitSendField(inner_x2);
-          pmb->pbval->WaitSendField(outer_x2);
-        }
-        break;
-
-      case fluid_waitsend_bcsx3:
-        if(pmb->pmy_mesh->mesh_size.nx3 > 1) {
-          pmb->pbval->WaitSendFluid(inner_x3);
-          pmb->pbval->WaitSendFluid(outer_x3);
-        }
-        break;
-
-      case field_waitsend_bcsx3:
-        if(pmb->pmy_mesh->mesh_size.nx3 > 1) {
-          pmb->pbval->WaitSendField(inner_x3);
-          pmb->pbval->WaitSendField(outer_x3);
-        }
-        break;
-
-      case fluid_loadsend_bcsx1_nhalf:
-        pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x1,pfluid->u1,1);
-        pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x1,pfluid->u1,1);
-        break;
-
-      case fluid_recvset_bcsx1_nhalf:
-        pmb->pbval->ReceiveAndSetFluidBoundary(inner_x1,pfluid->u1);
-        pmb->pbval->ReceiveAndSetFluidBoundary(outer_x1,pfluid->u1);
-        break;
-
-      case field_loadsend_bcsx1_nhalf:
-        pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x1,pfield->b1,1);
-        pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x1,pfield->b1,1);
-        break;
-
-      case field_recvset_bcsx1_nhalf:
-        pmb->pbval->ReceiveAndSetFieldBoundary(inner_x1,pfield->b1);
-        pmb->pbval->ReceiveAndSetFieldBoundary(outer_x1,pfield->b1);
-        break;
-
-      case fluid_loadsend_bcsx2_nhalf:
-        if(pmb->pmy_mesh->mesh_size.nx2 > 1) {
-          pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x2,pfluid->u1,1);
-          pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x2,pfluid->u1,1);
-        }
-        break;
-
-      case fluid_recvset_bcsx2_nhalf:
-        if(pmb->pmy_mesh->mesh_size.nx2 > 1) {
-          pmb->pbval->ReceiveAndSetFluidBoundary(inner_x2,pfluid->u1);
-          pmb->pbval->ReceiveAndSetFluidBoundary(outer_x2,pfluid->u1);
-        }
-        break;
-
-      case field_loadsend_bcsx2_nhalf:
-        if(pmb->pmy_mesh->mesh_size.nx2 > 1) {
-          pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x2,pfield->b1,1);
-          pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x2,pfield->b1,1);
-        }
-        break;
-
-      case field_recvset_bcsx2_nhalf:
-        if(pmb->pmy_mesh->mesh_size.nx2 > 1) {
-          pmb->pbval->ReceiveAndSetFieldBoundary(inner_x2,pfield->b1);
-          pmb->pbval->ReceiveAndSetFieldBoundary(outer_x2,pfield->b1);
-        }
-        break;
-
-      case fluid_loadsend_bcsx3_nhalf:
-        if(pmb->pmy_mesh->mesh_size.nx3 > 1) {
-          pmb->pbval->LoadAndSendFluidBoundaryBuffer(inner_x3,pfluid->u1,1);
-          pmb->pbval->LoadAndSendFluidBoundaryBuffer(outer_x3,pfluid->u1,1);
-        }
-        break;
-
-      case fluid_recvset_bcsx3_nhalf:
-        if(pmb->pmy_mesh->mesh_size.nx3 > 1) {
-          pmb->pbval->ReceiveAndSetFluidBoundary(inner_x3,pfluid->u1);
-          pmb->pbval->ReceiveAndSetFluidBoundary(outer_x3,pfluid->u1);
-        }
-        break;
-
-      case field_loadsend_bcsx3_nhalf:
-        if(pmb->pmy_mesh->mesh_size.nx3 > 1) {
-          pmb->pbval->LoadAndSendFieldBoundaryBuffer(inner_x3,pfield->b1,1);
-          pmb->pbval->LoadAndSendFieldBoundaryBuffer(outer_x3,pfield->b1,1);
-        }
-        break;
-
-      case field_recvset_bcsx3_nhalf:
-        if(pmb->pmy_mesh->mesh_size.nx3 > 1) {
-          pmb->pbval->ReceiveAndSetFieldBoundary(inner_x3,pfield->b1);
-          pmb->pbval->ReceiveAndSetFieldBoundary(outer_x3,pfield->b1);
-        }
-        break;
-
-      case fluid_predict: // integrate fluid to intermediate step 
-        pfluid->u1 = pfluid->u;
-        pfluid->pf_integrator->OneStep(pmb, pfluid->u1, pfluid->w, pfield->b,
-          pfield->bcc, 1);
-        break;
-
-      case fluid_correct: // integrate fluid for full timestep, t^n --> t^{n+1}
-        pfluid->pf_integrator->OneStep(pmb, pfluid->u, pfluid->w1, pfield->b1,
-          pfield->bcc1, 2);
-        break;
-
-      case field_predict: // integrate fluid to intermediate step 
-        pfield->b1.x1f = pfield->b.x1f;
-        pfield->b1.x2f = pfield->b.x2f;
-        pfield->b1.x3f = pfield->b.x3f;
-        pfield->pint->CT(pmb, pfield->b1, pfluid->w, pfield->bcc, 1);
-        break;
-
-      case field_correct: // integrate fluid for full timestep, t^n --> t^{n+1}
-        pfield->pint->CT(pmb, pfield->b, pfluid->w1, pfield->bcc1, 2);
-        break;
-
-      case primitives_n: // compute primitives from conserved at t^n
-        pfluid->pf_eos->ConservedToPrimitive(pfluid->u, pfluid->w1, pfield->b,
-          pfluid->w, pfield->bcc);
-        break;
-
-      case primitives_nhalf: // compute primitives from conserved at t^{intermediate}
-        pfluid->pf_eos->ConservedToPrimitive(pfluid->u1, pfluid->w, pfield->b1,
-          pfluid->w1, pfield->bcc1);
-        break;
-
+  pmb = pblock;
+  while (pmb != NULL)  {
+    pfluid=pmb->pfluid;
+    pfield=pmb->pfield;
+    pbval=pmb->pbval;
+    pbval->LoadAndSendFluidBoundaryBuffer(inner_x1,pfluid->u,0);
+    pbval->LoadAndSendFluidBoundaryBuffer(outer_x1,pfluid->u,0);
+    if (MAGNETIC_FIELDS_ENABLED) {
+      pbval->LoadAndSendFieldBoundaryBuffer(inner_x1,pfield->b,0);
+      pbval->LoadAndSendFieldBoundaryBuffer(outer_x1,pfield->b,0);
     }
     pmb=pmb->next;
   }
+
+  pmb = pblock;
+  while (pmb != NULL)  {
+    pfluid=pmb->pfluid;
+    pfield=pmb->pfield;
+    pbval=pmb->pbval;
+    pbval->ReceiveAndSetFluidBoundaryWithWait(inner_x1,pfluid->u, 0);
+    pbval->ReceiveAndSetFluidBoundaryWithWait(outer_x1,pfluid->u, 0);
+    if (MAGNETIC_FIELDS_ENABLED) {
+      pbval->ReceiveAndSetFieldBoundaryWithWait(inner_x1,pfield->b, 0);
+      pbval->ReceiveAndSetFieldBoundaryWithWait(outer_x1,pfield->b, 0);
+    }
+    if(mesh_size.nx2 > 1) {
+      pbval->LoadAndSendFluidBoundaryBuffer(inner_x2,pfluid->u,0);
+      pbval->LoadAndSendFluidBoundaryBuffer(outer_x2,pfluid->u,0);
+      if (MAGNETIC_FIELDS_ENABLED) {
+        pbval->LoadAndSendFieldBoundaryBuffer(inner_x2,pfield->b,0);
+        pbval->LoadAndSendFieldBoundaryBuffer(outer_x2,pfield->b,0);
+      }
+    }
+    pmb=pmb->next;
+  }
+
+  if(mesh_size.nx2 > 1) {
+    pmb = pblock;
+    while (pmb != NULL)  {
+      pfluid=pmb->pfluid;
+      pfield=pmb->pfield;
+      pbval=pmb->pbval;
+      pbval->ReceiveAndSetFluidBoundaryWithWait(inner_x2,pfluid->u ,0);
+      pbval->ReceiveAndSetFluidBoundaryWithWait(outer_x2,pfluid->u ,0);
+      if (MAGNETIC_FIELDS_ENABLED) {
+        pbval->ReceiveAndSetFieldBoundaryWithWait(inner_x2,pfield->b ,0);
+        pbval->ReceiveAndSetFieldBoundaryWithWait(outer_x2,pfield->b ,0);
+      }
+      if(mesh_size.nx3 > 1) {
+        pbval->LoadAndSendFluidBoundaryBuffer(inner_x3,pfluid->u,0);
+        pbval->LoadAndSendFluidBoundaryBuffer(outer_x3,pfluid->u,0);
+        if (MAGNETIC_FIELDS_ENABLED) {
+          pbval->LoadAndSendFieldBoundaryBuffer(inner_x3,pfield->b,0);
+          pbval->LoadAndSendFieldBoundaryBuffer(outer_x3,pfield->b,0);
+        }
+      }
+      pmb=pmb->next;
+    }
+  }
+
+  if(mesh_size.nx3 > 1) {
+    pmb = pblock;
+    while (pmb != NULL)  {
+      pfluid=pmb->pfluid;
+      pfield=pmb->pfield;
+      pbval=pmb->pbval;
+      pbval->ReceiveAndSetFluidBoundaryWithWait(inner_x3,pfluid->u ,0);
+      pbval->ReceiveAndSetFluidBoundaryWithWait(outer_x3,pfluid->u ,0);
+      if (MAGNETIC_FIELDS_ENABLED) {
+        pbval->ReceiveAndSetFieldBoundaryWithWait(inner_x3,pfield->b ,0);
+        pbval->ReceiveAndSetFieldBoundaryWithWait(outer_x3,pfield->b ,0);
+      }
+      pmb=pmb->next;
+    }
+  }
+
+  pmb = pblock;
+  while (pmb != NULL)  {
+    pfluid=pmb->pfluid;
+    pfield=pmb->pfield;
+    pfluid->pf_eos->ConservedToPrimitive(pfluid->u, pfluid->w1, pfield->b, 
+                                         pfluid->w, pfield->bcc);
+    pmb=pmb->next;
+  }
+
+  if(res_flag==0) {
+    pmb = pblock;
+    while (pmb != NULL)  {
+      pmb->pfluid->NewBlockTimeStep(pmb);
+      pmb=pmb->next;
+    }
+    this->NewTimeStep();
+  }
+  return;
 }
 
 
@@ -1667,6 +1541,315 @@ size_t MeshBlock::GetBlockSizeInBytes(void)
   // please add the size counter here when new physics is introduced
 
   return size;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void Mesh::UpdateOneStep(void)
+//  \brief process the task list and advance one time step
+void Mesh::UpdateOneStep(void)
+{
+  int nb=nbend-nbstart+1;
+  MeshBlock *pmb = pblock;
+  // initialize
+  while (pmb != NULL)  {
+    pmb->firsttask=0;
+    pmb->ntodo=pmb->ntask;
+    pmb->task_flag=0L;
+    pmb=pmb->next;
+  }
+  while(nb>0) {
+    pmb = pblock;
+    while (pmb != NULL)  {
+      if(pmb->DoOneTask()==complete) // task list completed
+        nb--;
+      pmb=pmb->next;
+    }
+  }
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void Mesh::SetTaskList(TaskList& tl)
+//  \brief set task list for all the meshblocks
+void Mesh::SetTaskList(TaskList& tl)
+{
+  MeshBlock *pmb = pblock;
+  while (pmb != NULL)  {
+    pmb->SetTaskList(tl);
+    pmb=pmb->next;
+  }
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void MeshBlock::SetTaskList(TaskList& tl)
+//  \brief set task list for the meshblock
+void MeshBlock::SetTaskList(TaskList& tl)
+{
+  if(task!=NULL)
+    delete [] task;
+  task=new Task[tl.ntask];
+  ntask=tl.ntask;
+  memcpy(task, tl.task, sizeof(Task)*ntask);
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn enum tlstatus MeshBlock::DoOneTask(void)
+//  \brief process one task (if possible), return true if the list is completed
+enum tlstatus MeshBlock::DoOneTask(void) {
+  int skip=0, success=0;
+  bool lf, rf;
+  std::stringstream msg;
+  if(ntodo==0) return nothing;
+  for(int i=firsttask; i<ntask; i++) {
+    if(((task[i].taskid & task_flag)==0L)) { // this task is not done
+      if (((task[i].depend & task_flag) == task[i].depend)) { // dependency clear
+        switch (task[i].taskid) {
+        case new_blocktimestep:
+          pfluid->NewBlockTimeStep(this);
+          success++;
+          break;
+
+        case primitives_0:
+          pfluid->pf_eos->ConservedToPrimitive(pfluid->u, pfluid->w1, pfield->b,
+                                               pfluid->w, pfield->bcc);
+          success++;
+          break;
+        case primitives_1:
+          pfluid->pf_eos->ConservedToPrimitive(pfluid->u1, pfluid->w, pfield->b1,
+                                               pfluid->w1, pfield->bcc1);
+          success++;
+          break;
+
+        case fluid_startrecv_0:
+          pbval->StartReceivingFluid(0);
+          success++;
+          break;
+
+        case field_startrecv_0:
+          pbval->StartReceivingField(0);
+          success++;
+          break;
+
+        case fluid_startrecv_1:
+          pbval->StartReceivingFluid(1);
+          success++;
+          break;
+
+        case field_startrecv_1:
+          pbval->StartReceivingField(1);
+          success++;
+          break;
+
+        case fluid_integrate_sendx1_0: // field correction
+          pfluid->pf_integrator->OneStep(this, pfluid->u, pfluid->w1, pfield->b1,
+                                         pfield->bcc1, 2);
+          pbval->LoadAndSendFluidBoundaryBuffer(inner_x1,pfluid->u,0);
+          pbval->LoadAndSendFluidBoundaryBuffer(outer_x1,pfluid->u,0);
+          success++;
+          break;
+
+        case fluid_integrate_sendx1_1: // fluid prediction
+          pfluid->u1 = pfluid->u;
+          pfluid->pf_integrator->OneStep(this, pfluid->u1, pfluid->w, pfield->b,
+                                         pfield->bcc, 1);
+          pbval->LoadAndSendFluidBoundaryBuffer(inner_x1,pfluid->u1,1);
+          pbval->LoadAndSendFluidBoundaryBuffer(outer_x1,pfluid->u1,1);
+          success++;
+          break;
+        
+        case field_integrate_sendx1_0: // field correction
+          pfield->pint->CT(this, pfield->b, pfluid->w1, pfield->bcc1, 2);
+          pbval->LoadAndSendFieldBoundaryBuffer(inner_x1,pfield->b,0);
+          pbval->LoadAndSendFieldBoundaryBuffer(outer_x1,pfield->b,0);
+          success++;
+          break;
+
+        case field_integrate_sendx1_1: // field prediction
+          pfield->b1.x1f = pfield->b.x1f;
+          pfield->b1.x2f = pfield->b.x2f;
+          pfield->b1.x3f = pfield->b.x3f;
+          pfield->pint->CT(this, pfield->b1, pfluid->w, pfield->bcc, 1);
+          pbval->LoadAndSendFieldBoundaryBuffer(inner_x1,pfield->b1,1);
+          pbval->LoadAndSendFieldBoundaryBuffer(outer_x1,pfield->b1,1);
+          success++;
+          break;
+
+        case fluid_recvx1_sendx2_0: // same as fluid_recvx1_0
+          lf=pbval->ReceiveAndSetFluidBoundary(inner_x1,pfluid->u,0);
+          rf=pbval->ReceiveAndSetFluidBoundary(outer_x1,pfluid->u,0);
+          if(lf==true && rf==true) {
+            success++;
+            if(pmy_mesh->mesh_size.nx2>1) { // 2D or 3D
+              pbval->LoadAndSendFluidBoundaryBuffer(inner_x2,pfluid->u,0);
+              pbval->LoadAndSendFluidBoundaryBuffer(outer_x2,pfluid->u,0);
+            }
+          }
+          else
+            skip++;
+          break;
+
+        case fluid_recvx1_sendx2_1:
+          lf=pbval->ReceiveAndSetFluidBoundary(inner_x1,pfluid->u1,1);
+          rf=pbval->ReceiveAndSetFluidBoundary(outer_x1,pfluid->u1,1);
+          if(lf==true && rf==true) {
+            success++;
+            if(pmy_mesh->mesh_size.nx2>1) { // 2D or 3D
+              pbval->LoadAndSendFluidBoundaryBuffer(inner_x2,pfluid->u1,1);
+              pbval->LoadAndSendFluidBoundaryBuffer(outer_x2,pfluid->u1,1);
+            }
+          }
+          else
+            skip++;
+          break;
+
+        case field_recvx1_sendx2_0: // same as field_recvx1_0
+          lf=pbval->ReceiveAndSetFieldBoundary(inner_x1,pfield->b,0);
+          rf=pbval->ReceiveAndSetFieldBoundary(outer_x1,pfield->b,0);
+          if(lf==true && rf==true) {
+            success++;
+            if(pmy_mesh->mesh_size.nx2>1) { // 2D or 3D
+              pbval->LoadAndSendFieldBoundaryBuffer(inner_x2,pfield->b,0);
+              pbval->LoadAndSendFieldBoundaryBuffer(outer_x2,pfield->b,0);
+            }
+          }
+          else
+            skip++;
+          break;
+
+        case field_recvx1_sendx2_1:
+          lf=pbval->ReceiveAndSetFieldBoundary(inner_x1,pfield->b1,1);
+          rf=pbval->ReceiveAndSetFieldBoundary(outer_x1,pfield->b1,1);
+          if(lf==true && rf==true) {
+            success++;
+            if(pmy_mesh->mesh_size.nx2>1) { // 2D or 3D
+              pbval->LoadAndSendFieldBoundaryBuffer(inner_x2,pfield->b1,1);
+              pbval->LoadAndSendFieldBoundaryBuffer(outer_x2,pfield->b1,1);
+            }
+          }
+          else
+            skip++;
+          break;
+
+        case fluid_recvx2_sendx3_0:
+          lf=pbval->ReceiveAndSetFluidBoundary(inner_x2,pfluid->u,0);
+          rf=pbval->ReceiveAndSetFluidBoundary(outer_x2,pfluid->u,0);
+          if(lf==true && rf==true) {
+            success++;
+            if(pmy_mesh->mesh_size.nx3>1) { // 3D
+              pbval->LoadAndSendFluidBoundaryBuffer(inner_x3,pfluid->u,0);
+              pbval->LoadAndSendFluidBoundaryBuffer(outer_x3,pfluid->u,0);
+            }
+          }
+          else
+            skip++;
+          break;
+
+        case fluid_recvx2_sendx3_1:
+          lf=pbval->ReceiveAndSetFluidBoundary(inner_x2,pfluid->u1,1);
+          rf=pbval->ReceiveAndSetFluidBoundary(outer_x2,pfluid->u1,1);
+          if(lf==true && rf==true) {
+            success++;
+            if(pmy_mesh->mesh_size.nx3>1) { // 3D
+              pbval->LoadAndSendFluidBoundaryBuffer(inner_x3,pfluid->u1,1);
+              pbval->LoadAndSendFluidBoundaryBuffer(outer_x3,pfluid->u1,1);
+            }
+          }
+          else
+            skip++;
+          break;
+
+        case field_recvx2_sendx3_0:
+          lf=pbval->ReceiveAndSetFieldBoundary(inner_x2,pfield->b,0);
+          rf=pbval->ReceiveAndSetFieldBoundary(outer_x2,pfield->b,0);
+          if(lf==true && rf==true) {
+            success++;
+            if(pmy_mesh->mesh_size.nx3>1) { // 3D
+              pbval->LoadAndSendFieldBoundaryBuffer(inner_x3,pfield->b,0);
+              pbval->LoadAndSendFieldBoundaryBuffer(outer_x3,pfield->b,0);
+            }
+          }
+          else
+            skip++;
+          break;
+
+        case field_recvx2_sendx3_1:
+          lf=pbval->ReceiveAndSetFieldBoundary(inner_x2,pfield->b1,1);
+          rf=pbval->ReceiveAndSetFieldBoundary(outer_x2,pfield->b1,1);
+          if(lf==true && rf==true) {
+            success++;
+            if(pmy_mesh->mesh_size.nx3>1) { // 3D
+              pbval->LoadAndSendFieldBoundaryBuffer(inner_x3,pfield->b1,1);
+              pbval->LoadAndSendFieldBoundaryBuffer(outer_x3,pfield->b1,1);
+            }
+          }
+          else
+            skip++;
+          break;
+
+        case fluid_recvx3_0:
+          lf=pbval->ReceiveAndSetFluidBoundary(inner_x3,pfluid->u,0);
+          rf=pbval->ReceiveAndSetFluidBoundary(outer_x3,pfluid->u,0);
+          if(lf==true && rf==true)
+            success++;
+          else
+            skip++;
+          break;
+
+        case fluid_recvx3_1:
+          lf=pbval->ReceiveAndSetFluidBoundary(inner_x3,pfluid->u1,1);
+          rf=pbval->ReceiveAndSetFluidBoundary(outer_x3,pfluid->u1,1);
+          if(lf==true && rf==true)
+            success++;
+          else
+            skip++;
+          break;
+
+        case field_recvx3_0:
+          lf=pbval->ReceiveAndSetFieldBoundary(inner_x3,pfield->b,0);
+          rf=pbval->ReceiveAndSetFieldBoundary(outer_x3,pfield->b,0);
+          if(lf==true && rf==true)
+            success++;
+          else
+            skip++;
+          break;
+
+        case field_recvx3_1:
+          lf=pbval->ReceiveAndSetFieldBoundary(inner_x3,pfield->b1,1);
+          rf=pbval->ReceiveAndSetFieldBoundary(outer_x3,pfield->b1,1);
+          if(lf==true && rf==true)
+            success++;
+          else
+            skip++;
+          break;
+
+        default:
+          msg << "### FATAL ERROR in DoOneTask" << std::endl
+              << "Invalid Task "<< task[i].taskid << " is specified" << std::endl;
+          throw std::runtime_error(msg.str().c_str());
+        }
+      }
+      else
+        skip++;
+    }
+    else if(skip==0) // this task is done and at the top of the list
+      firsttask++;
+    if(success>0) {
+      ntodo--;
+      task_flag |= task[i].taskid;
+      if(skip==0)
+        firsttask++;
+      break;
+    }
+  }
+  if(success==0)
+    return stuck;
+  if(ntodo==0)
+    return complete;
+  return running;
 }
 
 

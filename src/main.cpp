@@ -34,6 +34,7 @@
 #include "parameter_input.hpp"  // ParameterInput
 #include "outputs/outputs.hpp"  // Outputs
 #include "wrapio.hpp"           // WrapIO
+#include "tasklist.hpp"         // TaskList
 
 // MPI related global variables
 int myrank=0, nproc=1;
@@ -81,6 +82,7 @@ int main(int argc, char *argv[])
   int iarg_flag=0;    // gets set to 1 if -i <file> argument is on cmdline
   int test_flag=0;    // gets set to <nproc> if -m <nproc> argument is on cmdline
   int ncstart=0;
+  TaskList task_list;
 
 #ifdef MPI_PARALLEL
 //--- Step 0. --------------------------------------------------------------------------
@@ -230,50 +232,18 @@ int main(int argc, char *argv[])
 //--- Step 5. --------------------------------------------------------------------------
 // Set initial conditions by calling problem generator on each MeshDomain/MeshBlock
 
-  if(res_flag==0)
-  {
-    try {
-      pmesh->ForAllMeshBlocks(pgen,pinput);
-    } 
-    catch(std::bad_alloc& ba) {
-      std::cout << "### FATAL ERROR in main" << std::endl << "memory allocation failed "
-                << "in problem generator " << ba.what() << std::endl;
-      return(0);
-    }
-    catch(std::exception const& ex) {
-      std::cout << ex.what() << std::endl;  // prints diagnostic message 
-      return(0);
-    }
+  try {
+    pmesh->Initialize(res_flag, pinput);
+  } 
+  catch(std::bad_alloc& ba) {
+    std::cout << "### FATAL ERROR in main" << std::endl << "memory allocation failed "
+              << "in problem generator " << ba.what() << std::endl;
+    return(0);
   }
-
-// apply BCs, compute primitive from conserved variables, compute first timestep
-  pmesh->ForAllMeshBlocks(fluid_start_recv_n, pinput);
-  if (MAGNETIC_FIELDS_ENABLED)
-    pmesh->ForAllMeshBlocks(field_start_recv_n, pinput);
-
-  pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx1_n, pinput);
-  pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx1,  pinput);
-  pmesh->ForAllMeshBlocks(fluid_recvset_bcsx1_n,  pinput);
-  pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx2_n, pinput);
-  pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx2,  pinput);
-  pmesh->ForAllMeshBlocks(fluid_recvset_bcsx2_n,  pinput);
-  pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx3_n, pinput);
-  pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx3,  pinput);
-  pmesh->ForAllMeshBlocks(fluid_recvset_bcsx3_n,  pinput);
-
-  if (MAGNETIC_FIELDS_ENABLED) {
-    pmesh->ForAllMeshBlocks(field_loadsend_bcsx1_n, pinput);
-    pmesh->ForAllMeshBlocks(field_waitsend_bcsx1,  pinput);
-    pmesh->ForAllMeshBlocks(field_recvset_bcsx1_n,  pinput);
-    pmesh->ForAllMeshBlocks(field_loadsend_bcsx2_n, pinput);
-    pmesh->ForAllMeshBlocks(field_waitsend_bcsx2,  pinput);
-    pmesh->ForAllMeshBlocks(field_recvset_bcsx2_n,  pinput);
-    pmesh->ForAllMeshBlocks(field_loadsend_bcsx3_n, pinput);
-    pmesh->ForAllMeshBlocks(field_waitsend_bcsx3,  pinput);
-    pmesh->ForAllMeshBlocks(field_recvset_bcsx3_n,  pinput);
+  catch(std::exception const& ex) {
+    std::cout << ex.what() << std::endl;  // prints diagnostic message 
+    return(0);
   }
-
-  pmesh->ForAllMeshBlocks(primitives_n,pinput);
 
 //--- Step 6. --------------------------------------------------------------------------
 // Change to run directory, initialize outputs object, and make output of ICs
@@ -281,8 +251,11 @@ int main(int argc, char *argv[])
   Outputs *pouts;
   try {
     ChangeToRunDir(prundir);
-    pouts = new Outputs(pmesh, pinput);
-    pouts->MakeOutputs(pmesh,pinput);
+    if(res_flag==0)
+    {
+      pouts = new Outputs(pmesh, pinput);
+      pouts->MakeOutputs(pmesh,pinput);
+    }
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl
@@ -294,6 +267,96 @@ int main(int argc, char *argv[])
     std::cout << ex.what() << std::endl;  // prints diagnostic message  
     return(0);
   }
+
+
+//--- Step 8. Create and set the task list ---------------------------------------------
+// this is for a two-step integrator
+  task_list.AddTask(fluid_startrecv_1, none);
+  if (MAGNETIC_FIELDS_ENABLED)
+    task_list.AddTask(field_startrecv_1, none);
+  task_list.AddTask(fluid_integrate_sendx1_1, fluid_startrecv_1); // predict
+  if (MAGNETIC_FIELDS_ENABLED)
+    task_list.AddTask(field_integrate_sendx1_1, field_startrecv_1);
+  if(pmesh->mesh_size.nx2==1) {// 1D
+    task_list.AddTask(fluid_recvx1_1, fluid_integrate_sendx1_1);
+    if (MAGNETIC_FIELDS_ENABLED) {
+      task_list.AddTask(field_recvx1_1, field_integrate_sendx1_1);
+      task_list.AddTask(primitives_1, fluid_recvx1_1 | field_recvx1_1);
+    }
+    else
+      task_list.AddTask(primitives_1, fluid_recvx1_1);
+  }
+  else {
+    task_list.AddTask(fluid_recvx1_sendx2_1, fluid_integrate_sendx1_1);
+    if (MAGNETIC_FIELDS_ENABLED)
+      task_list.AddTask(field_recvx1_sendx2_1, field_integrate_sendx1_1);
+    if(pmesh->mesh_size.nx3==1) { // 2D
+      task_list.AddTask(fluid_recvx2_1, fluid_recvx1_sendx2_1);
+      if (MAGNETIC_FIELDS_ENABLED) {
+        task_list.AddTask(field_recvx1_1, field_recvx1_sendx2_1);
+        task_list.AddTask(primitives_1, fluid_recvx2_1 | field_recvx2_1);
+      }
+      else
+        task_list.AddTask(primitives_1, fluid_recvx2_1);
+    }
+    else { // 3D
+      task_list.AddTask(fluid_recvx2_sendx3_1, fluid_recvx1_sendx2_1);
+      if (MAGNETIC_FIELDS_ENABLED)
+        task_list.AddTask(field_recvx2_sendx3_1, field_recvx1_sendx2_1);
+      task_list.AddTask(fluid_recvx3_1, fluid_recvx2_sendx3_1);
+      if (MAGNETIC_FIELDS_ENABLED) {
+        task_list.AddTask(field_recvx3_1, field_recvx2_sendx3_1);
+        task_list.AddTask(primitives_1, fluid_recvx3_1 | field_recvx3_1);
+      }
+      else
+        task_list.AddTask(primitives_1, fluid_recvx3_1);
+    }
+  }
+  task_list.AddTask(fluid_startrecv_0, primitives_1);
+
+  task_list.AddTask(fluid_integrate_sendx1_0, fluid_startrecv_0); // correct
+  if (MAGNETIC_FIELDS_ENABLED)
+    task_list.AddTask(field_integrate_sendx1_0, field_startrecv_0);
+  if(pmesh->mesh_size.nx2==1) {// 1D
+    task_list.AddTask(fluid_recvx1_0, fluid_integrate_sendx1_0);
+    if (MAGNETIC_FIELDS_ENABLED) {
+      task_list.AddTask(field_recvx1_0, field_integrate_sendx1_0);
+      task_list.AddTask(primitives_0, fluid_recvx1_0 | field_recvx1_0);
+    }
+    else
+      task_list.AddTask(primitives_0, fluid_recvx1_0);
+  }
+  else {
+    task_list.AddTask(fluid_recvx1_sendx2_0, fluid_integrate_sendx1_0);
+    if (MAGNETIC_FIELDS_ENABLED)
+      task_list.AddTask(field_recvx1_sendx2_0, field_integrate_sendx1_0);
+    if(pmesh->mesh_size.nx3==1) { // 2D
+      task_list.AddTask(fluid_recvx2_0, fluid_recvx1_sendx2_0);
+      if (MAGNETIC_FIELDS_ENABLED) {
+        task_list.AddTask(field_recvx1_0, field_recvx1_sendx2_0);
+        task_list.AddTask(primitives_0, fluid_recvx2_0 | field_recvx2_0);
+      }
+      else
+        task_list.AddTask(primitives_0, fluid_recvx2_0);
+    }
+    else { // 3D
+      task_list.AddTask(fluid_recvx2_sendx3_0, fluid_recvx1_sendx2_0);
+      if (MAGNETIC_FIELDS_ENABLED)
+        task_list.AddTask(field_recvx2_sendx3_0, field_recvx1_sendx2_0);
+      task_list.AddTask(fluid_recvx3_0, fluid_recvx2_sendx3_0);
+      if (MAGNETIC_FIELDS_ENABLED) {
+        task_list.AddTask(field_recvx3_0, field_recvx2_sendx3_0);
+        task_list.AddTask(primitives_0, fluid_recvx3_0 | field_recvx3_0);
+      }
+      else
+        task_list.AddTask(primitives_0, fluid_recvx3_0);
+    }
+  }
+  
+  task_list.AddTask(new_blocktimestep,primitives_0);
+
+
+  pmesh->SetTaskList(task_list);
 
 //--- Step 9. === START OF MAIN INTEGRATION LOOP =======================================
 // For performance, there is no error handler protecting this step (except outputs)
@@ -308,83 +371,16 @@ int main(int argc, char *argv[])
   while ((pmesh->time < pmesh->tlim) && 
          (pmesh->nlim < 0 || pmesh->ncycle < pmesh->nlim)){
 
-    pmesh->NewTimeStep();
-
     if(myrank==0)
-      std::cout << "cycle=" << pmesh->ncycle << std::scientific << std::setprecision(5)
+      std::cout << "cycle=" << pmesh->ncycle << std::scientific << std::setprecision(6)
                 << " time=" << pmesh->time << " dt=" << pmesh->dt << std::endl;
 
-// predict step
-    pmesh->ForAllMeshBlocks(fluid_start_recv_nhalf, pinput);
-    if (MAGNETIC_FIELDS_ENABLED)
-      pmesh->ForAllMeshBlocks(field_start_recv_nhalf, pinput);
-
-    pmesh->ForAllMeshBlocks(fluid_predict, pinput);
-
-    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx1_nhalf, pinput);
-    pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx1,  pinput);
-    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx1_nhalf,  pinput);
-    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx2_nhalf, pinput);
-    pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx2,  pinput);
-    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx2_nhalf,  pinput);
-    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx3_nhalf, pinput);
-    pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx3,  pinput);
-    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx3_nhalf,  pinput);
-
-    if (MAGNETIC_FIELDS_ENABLED) {
-      pmesh->ForAllMeshBlocks(field_predict, pinput);
-
-      pmesh->ForAllMeshBlocks(field_loadsend_bcsx1_nhalf, pinput);
-      pmesh->ForAllMeshBlocks(field_waitsend_bcsx1,  pinput);
-      pmesh->ForAllMeshBlocks(field_recvset_bcsx1_nhalf,  pinput);
-      pmesh->ForAllMeshBlocks(field_loadsend_bcsx2_nhalf, pinput);
-      pmesh->ForAllMeshBlocks(field_waitsend_bcsx2,  pinput);
-      pmesh->ForAllMeshBlocks(field_recvset_bcsx2_nhalf,  pinput);
-      pmesh->ForAllMeshBlocks(field_loadsend_bcsx3_nhalf, pinput);
-      pmesh->ForAllMeshBlocks(field_waitsend_bcsx3,  pinput);
-      pmesh->ForAllMeshBlocks(field_recvset_bcsx3_nhalf,  pinput);
-    }
-
-    pmesh->ForAllMeshBlocks(primitives_nhalf,pinput);
-
-// correct step
-
-    pmesh->ForAllMeshBlocks(fluid_start_recv_n, pinput);
-    if (MAGNETIC_FIELDS_ENABLED)
-      pmesh->ForAllMeshBlocks(field_start_recv_n, pinput);
-
-    pmesh->ForAllMeshBlocks(fluid_correct,pinput);
-
-    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx1_n, pinput);
-    pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx1,  pinput);
-    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx1_n,  pinput);
-    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx2_n, pinput);
-    pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx2,  pinput);
-    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx2_n,  pinput);
-    pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx3_n, pinput);
-    pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx3,  pinput);
-    pmesh->ForAllMeshBlocks(fluid_recvset_bcsx3_n,  pinput);
-
-    if (MAGNETIC_FIELDS_ENABLED) {
-      pmesh->ForAllMeshBlocks(field_correct,pinput);
-
-      pmesh->ForAllMeshBlocks(field_loadsend_bcsx1_n, pinput);
-      pmesh->ForAllMeshBlocks(field_waitsend_bcsx1,  pinput);
-      pmesh->ForAllMeshBlocks(field_recvset_bcsx1_n,  pinput);
-      pmesh->ForAllMeshBlocks(field_loadsend_bcsx2_n, pinput);
-      pmesh->ForAllMeshBlocks(field_waitsend_bcsx2,  pinput);
-      pmesh->ForAllMeshBlocks(field_recvset_bcsx2_n,  pinput);
-      pmesh->ForAllMeshBlocks(field_loadsend_bcsx3_n, pinput);
-      pmesh->ForAllMeshBlocks(field_waitsend_bcsx3,  pinput);
-      pmesh->ForAllMeshBlocks(field_recvset_bcsx3_n,  pinput);
-    }
-
-    pmesh->ForAllMeshBlocks(primitives_n,pinput);
-
-// new time step, outputs, diagnostics
+    pmesh->UpdateOneStep();
 
     pmesh->ncycle++;
     pmesh->time += pmesh->dt;
+
+    pmesh->NewTimeStep();
 
     try {
       pouts->MakeOutputs(pmesh,pinput);

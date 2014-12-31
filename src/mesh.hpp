@@ -18,6 +18,7 @@
 #include "athena_arrays.hpp"  // AthenaArray
 #include "blockuid.hpp"
 #include "wrapio.hpp"
+#include "tasklist.hpp"
 
 class ParameterInput;
 class Mesh;
@@ -54,8 +55,14 @@ private:
   BlockUID uid;
   NeighborBlock neighbor[6][2][2];
   Real cost;
+  Real new_block_dt;
+  Task *task;
+  long int task_flag;
+  int ntask, firsttask, ntodo;
   friend class RestartOutput;
   friend class BoundaryValues;
+  friend class Mesh;
+  friend class Fluid;
 public:
   MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_size,
             RegionBCs input_bcs, Mesh *pm, ParameterInput *pin);
@@ -67,6 +74,9 @@ public:
   void SetNeighbor(enum direction, int nrank, int nlevel, int ngid, int nlid);
   void SetNeighbor(enum direction, int nrank, int nlevel, int ngid, int nlid,
                    int fb1, int fb2);
+
+  void SetTaskList(TaskList& tl);
+  enum tlstatus DoOneTask(void);
 
   RegionSize block_size;
   RegionBCs  block_bcs;
@@ -113,7 +123,9 @@ public:
   MeshBlock *pblock;
 
   int64_t GetTotalCells(void);
-  void ForAllMeshBlocks(enum ActionOnBlock action, ParameterInput *pin);
+  void Initialize(int res_flag, ParameterInput *pin);
+  void UpdateOneStep(void);
+  void SetTaskList(TaskList& tl);
   void ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin); // files in /pgen
   void NewTimeStep(void);
 };

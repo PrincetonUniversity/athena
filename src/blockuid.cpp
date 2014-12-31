@@ -28,6 +28,15 @@ BlockUID& BlockUID::operator=(const BlockUID& bid)
   return *this;
 }
 
+//! \fn BlockUID::BlockUID()
+//  \brief constructor
+BlockUID::BlockUID()
+{
+  level=0;
+  for(int i=0;i<IDLENGTH;i++)
+    uid[i]=0;
+}
+
 //! \fn BlockUID::BlockUID(const BlockUID& bid)
 //  \brief copy constructor
 BlockUID::BlockUID(const BlockUID& bid)
@@ -134,18 +143,21 @@ void BlockUID::CreateUIDfromLocation(long int lx, long int ly, long int lz, int 
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BlockUID::CreateUIDbyRefinement(BlockUID coarse, int ox, int oy, int oz)
+//! \fn void BlockUID::CreateUIDbyRefinement(BlockUID& coarse, int ox, int oy, int oz)
 //  \brief create the unique ID from the ID of the finer level, used for refinement
 //         ox, oy, oz indicate the location of the finer level (0=left, 1=right, etc.)
 void BlockUID::CreateUIDbyRefinement(BlockUID& coarse, int ox, int oy, int oz)
 {
   ID_t pack;
   int sh;
+  long int lx, ly, lz;
+  int ll;
   *this=coarse;
   level++;
   pack = (oz << 2) | (oy << 1) | ox;
   sh=(usize-(level-1)%usize-1)*3;
   uid[(level-1)/usize] |= (pack << sh);
+  this->GetLocation(lx, ly, lz, ll);
 }
 
 //--------------------------------------------------------------------------------------
@@ -153,7 +165,7 @@ void BlockUID::CreateUIDbyRefinement(BlockUID& coarse, int ox, int oy, int oz)
 //  \brief create the unique ID from the ID of the finer block, used for derefinement
 void BlockUID::CreateUIDbyDerefinement(BlockUID& fine)
 {
-  ID_t mask=~7;
+  ID_t mask=~7L;
   int sh;
   *this=fine;
   level--;
@@ -213,8 +225,6 @@ BlockTree::BlockTree(BlockTree *parent, int ox, int oy, int oz)
   gid=-1;
   pparent=parent;
   uid.CreateUIDbyRefinement(parent->uid,ox,oy,oz);
-  long int lx,ly,lz;
-  int ll;
   for(int k=0; k<=1; k++) {
     for(int j=0; j<=1; j++) {
       for(int i=0; i<=1; i++) {
@@ -245,10 +255,12 @@ BlockTree::~BlockTree()
 //  \brief create the root grid; the root grid can be incomplete (less than 8 leaves)
 void BlockTree::CreateRootGrid(long int nx, long int ny, long int nz, int nl)
 {
-  long int lx, ly, lz;
+  long int lx, ly, lz, mx, my, mz;
   int ll;
   uid.GetLocation(lx, ly, lz, ll);
-  if(ll == nl) return;
+  if(ll == nl) {
+    return;
+  }
   for(int k=0; k<=1; k++) {
     if((lz*2+k)*(1L<<(nl-ll-1)) < nz) {
       for(int j=0; j<=1; j++) {
@@ -326,26 +338,19 @@ void BlockTree::AssignGID(int& id)
   if(pparent==NULL) // clear id if this is the root of the tree
     id=0;
 
-  if(flag==true)
-  {
+  if(flag==true) {
     gid=id;
-    if(myrank==0)
-    {
-      long lx, ly, lz;
-      int ll;
-      uid.GetLocation(lx,ly,lz,ll);
-    }
     id++;
-    return;
   }
+  else {
+    gid=-1;
 
-  gid==-1;
-
-  for(int k=0; k<=1; k++) {
-    for(int j=0; j<=1; j++) {
-      for(int i=0; i<=1; i++) {
-        if(pleaf[k][j][i]!=NULL)
-          pleaf[k][j][i]->AssignGID(id); // depth-first search
+    for(int k=0; k<=1; k++) {
+      for(int j=0; j<=1; j++) {
+        for(int i=0; i<=1; i++) {
+          if(pleaf[k][j][i]!=NULL)
+            pleaf[k][j][i]->AssignGID(id); // depth-first search
+        }
       }
     }
   }
