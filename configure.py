@@ -181,12 +181,15 @@ makefile_options['EOS_FILE'] += '_mhd' if args['b'] else '_hydro'
 # set variety of macros based on whether MHD/hydro or adi/iso are defined
 if args['b']:
   definitions['NFIELD_VARIABLES'] = '3'
-  makefile_options['RSOLVER_FILE'] += '_mhd'
   makefile_options['RSOLVER_DIR'] = 'mhd/'
+  if args['flux'] == 'hlle':
+    makefile_options['RSOLVER_FILE'] += '_mhd'
   if args['eos'] == 'adiabatic':
     definitions['NWAVE_VALUE'] = '7'
   else:
     definitions['NWAVE_VALUE'] = '6'
+    if args['flux'] == 'hlld':
+      makefile_options['RSOLVER_FILE'] += '_iso'
 else:
   definitions['NFIELD_VARIABLES'] = '0'
   makefile_options['RSOLVER_DIR'] = 'hydro/'
