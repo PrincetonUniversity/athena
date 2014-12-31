@@ -61,6 +61,12 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
             b_normal_);
         break;
     }
+  else
+  {
+    #pragma simd
+    for (int i = il; i <= iu; i++)
+      b_normal_(i) = b(k,j,i);
+  }
 
   // Extract ratio of specific heats
   const Real gamma_adi = pmy_fluid->pf_eos->GetGamma();
@@ -71,25 +77,25 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   for (int i = il; i <= iu; ++i)
   {
     // Extract left primitives
-    Real &rho_left = prim_left(IDN,i);
-    Real &pgas_left = prim_left(IEN,i);
-    Real &vx_left = prim_left(ivx,i);
-    Real &vy_left = prim_left(ivy,i);
-    Real &vz_left = prim_left(ivz,i);
-    Real &by_left = prim_left(IBY,i);
-    Real &bz_left = prim_left(IBZ,i);
+    const Real &rho_left = prim_left(IDN,i);
+    const Real &pgas_left = prim_left(IEN,i);
+    const Real &vx_left = prim_left(ivx,i);
+    const Real &vy_left = prim_left(ivy,i);
+    const Real &vz_left = prim_left(ivz,i);
+    const Real &by_left = prim_left(IBY,i);
+    const Real &bz_left = prim_left(IBZ,i);
 
     // Extract right primitives
-    Real &rho_right = prim_right(IDN,i);
-    Real &pgas_right = prim_right(IEN,i);
-    Real &vx_right = prim_right(ivx,i);
-    Real &vy_right = prim_right(ivy,i);
-    Real &vz_right = prim_right(ivz,i);
-    Real &by_right = prim_right(IBY,i);
-    Real &bz_right = prim_right(IBZ,i);
+    const Real &rho_right = prim_right(IDN,i);
+    const Real &pgas_right = prim_right(IEN,i);
+    const Real &vx_right = prim_right(ivx,i);
+    const Real &vy_right = prim_right(ivy,i);
+    const Real &vz_right = prim_right(ivz,i);
+    const Real &by_right = prim_right(IBY,i);
+    const Real &bz_right = prim_right(IBZ,i);
 
     // Extract normal magnetic field
-    Real &bx = b_normal_(k,j,i);
+    const Real &bx = b_normal_(i);
 
     // Calculate covariant versions of left primitives
     Real ut_left = std::sqrt(1.0/(1.0-(SQR(vx_left)+SQR(vy_left)+SQR(vz_left))));

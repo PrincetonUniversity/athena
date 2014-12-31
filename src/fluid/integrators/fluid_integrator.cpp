@@ -46,8 +46,8 @@ FluidIntegrator::FluidIntegrator(Fluid *pf, ParameterInput *pin)
   src_.NewAthenaArray(max_nthreads,(NFLUID),ncells1);
   face_area_.NewAthenaArray(max_nthreads,ncells1);
   cell_volume_.NewAthenaArray(max_nthreads,ncells1);
-  if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in GRMHD
-    b_normal_.NewAthenaArray(max_nthreads,ncells1);
+  if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in SR/GRMHD
+    b_normal_.NewAthenaArray(ncells1);
 }
 
 // destructor
@@ -60,6 +60,6 @@ FluidIntegrator::~FluidIntegrator()
   src_.DeleteAthenaArray();
   face_area_.DeleteAthenaArray();
   cell_volume_.DeleteAthenaArray();
-  if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in GRMHD
+  if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in SR/GRMHD
     b_normal_.DeleteAthenaArray();
 }

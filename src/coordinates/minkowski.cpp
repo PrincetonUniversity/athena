@@ -347,6 +347,12 @@ void Coordinates::PrimToLocal1(const int k, const int j,
     const AthenaArray<Real> &b1_vals, AthenaArray<Real> &prim_left,
     AthenaArray<Real> &prim_right, AthenaArray<Real> &bx)
 {
+  if (MAGNETIC_FIELDS_ENABLED)
+  {
+    #pragma simd
+    for (int i = pmy_block->is; i <= pmy_block->ie+1; i++)
+      bx(i) = b1_vals(k,j,i);
+  }
   return;
 }
 
@@ -369,6 +375,12 @@ void Coordinates::PrimToLocal2(const int k, const int j,
     const AthenaArray<Real> &b2_vals, AthenaArray<Real> &prim_left,
     AthenaArray<Real> &prim_right, AthenaArray<Real> &by)
 {
+  if (MAGNETIC_FIELDS_ENABLED)
+  {
+    #pragma simd
+    for (int i = pmy_block->is; i <= pmy_block->ie; i++)
+      by(i) = b2_vals(k,j,i);
+  }
   return;
 }
 
@@ -391,6 +403,12 @@ void Coordinates::PrimToLocal3(const int k, const int j,
     const AthenaArray<Real> &b3_vals, AthenaArray<Real> &prim_left,
     AthenaArray<Real> &prim_right, AthenaArray<Real> &bz)
 {
+  if (MAGNETIC_FIELDS_ENABLED)
+  {
+    #pragma simd
+    for (int i = pmy_block->is; i <= pmy_block->ie; i++)
+      bz(i) = b3_vals(k,j,i);
+  }
   return;
 }
 

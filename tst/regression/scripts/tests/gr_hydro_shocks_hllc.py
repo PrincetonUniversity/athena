@@ -8,7 +8,7 @@ import scripts.utils.comparison as comparison
 # Prepare Athena++
 def prepare():
   athena.configure('g',
-      prob='shock_tube_gr',
+      prob='shock_tube_rel',
       coord='minkowski',
       flux='hllc')
   athena.make()
@@ -45,6 +45,6 @@ def analyze():
         array_new = -array_new   # sign difference between SR and GR
       eps = comparison.l1_diff(x_ref, array_ref, x_new, array_new)
       eps /= comparison.l1_norm(x_ref, array_ref)
-      if eps >= tol or np.isnan(eps):
+      if eps > tol or np.isnan(eps):
         return False
   return True

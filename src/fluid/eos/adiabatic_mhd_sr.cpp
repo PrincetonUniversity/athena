@@ -155,9 +155,44 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         vx = (mx + m_dot_b/w_true * bx) / (w_true + b_sq);           // (MM A10)
         vy = (my + m_dot_b/w_true * by) / (w_true + b_sq);           // (MM A10)
         vz = (mz + m_dot_b/w_true * bz) / (w_true + b_sq);           // (MM A10)
+
+        // Apply density and pressure floors
+        bool floor_applied = false;
+        // TODO: set floors at runtime
+        const Real pgas_floor = 1.0e-9;
+        const Real rho_floor = 1.0e-8;
+        if (pgas < pgas_floor)
+        {
+          pgas = pgas_floor;
+          floor_applied = true;
+        }
+        if (rho < rho_floor)
+        {
+          rho = rho_floor;
+          floor_applied = true;
+        }
+        if (floor_applied)
+        {
+          // TODO: determine if momentum should be updated
+          Real ut = std::sqrt(1.0 / (1.0 - (SQR(vx)+SQR(vy)+SQR(vz))));
+          Real ux = ut * vx;
+          Real uy = ut * vy;
+          Real uz = ut * vz;
+          Real bcovt = bx*ux + by*uy + bz*uz;
+          Real bcovx = (bx + bcovt * ux) / ut;
+          Real bcovy = (by + bcovt * uy) / ut;
+          Real bcovz = (bz + bcovt * uz) / ut;
+          Real bcov_sq = -SQR(bcovt) + SQR(bcovx) + SQR(bcovy) + SQR(bcovz);
+          Real rho_h = rho + gamma_prime * pgas;
+          Real ptot = pgas + 0.5*bcov_sq;
+          d = rho * ut;
+          e = (rho_h + bcov_sq) * ut * ut - bcovt * bcovt - ptot;
+          mx = (rho_h + bcov_sq) * ut * ux - bcovt * bcovx;
+          my = (rho_h + bcov_sq) * ut * uy - bcovt * bcovy;
+          mz = (rho_h + bcov_sq) * ut * uz - bcovt * bcovz;
+        }
       }
     }
-  // TODO: density/pressure floors
   return;
 }
 
