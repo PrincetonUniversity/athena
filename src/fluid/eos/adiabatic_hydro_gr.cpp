@@ -19,11 +19,12 @@
 #include "../../parameter_input.hpp"          // GetReal()
 
 // Declarations
-Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
+static Real FindRootNR(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
     Real gamma_prime);
-Real residual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq,
+static Real QNResidual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq,
     Real gamma_prime);
-Real residual_derivative(Real w_guess, Real d_norm, Real q_norm_sq, Real gamma_prime);
+static Real QNResidualPrime(Real w_guess, Real d_norm, Real q_norm_sq,
+    Real gamma_prime);
 
 // Constructor
 // Inputs:
@@ -170,7 +171,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         }
 
         // Apply Newton-Raphson method to find new W
-        Real w_true = find_root_nr(w_initial, d_norm, q_dot_n, q_norm_sq, gamma_prime);
+        Real w_true = FindRootNR(w_initial, d_norm, q_dot_n, q_norm_sq, gamma_prime);
 
         // Calculate primitives from W
         v_norm_sq = q_norm_sq / (w_true*w_true);  // (N 28)
@@ -249,7 +250,7 @@ void FluidEqnOfState::WavespeedsRel(
 // Notes:
 //   returns NAN in event of failure
 //   forces W to be positive
-Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
+static Real FindRootNR(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
     Real gamma_prime)
 {
   // Parameters
@@ -258,7 +259,7 @@ Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
   const Real tol_res = 1.0e-15;           // absolute tolerance in residual
 
   // Check if root has already been found
-  Real new_res = residual(w_initial, d_norm, q_dot_n, q_norm_sq, gamma_prime);
+  Real new_res = QNResidual(w_initial, d_norm, q_dot_n, q_norm_sq, gamma_prime);
   if (std::abs(new_res) < tol_res)
     return w_initial;
 
@@ -269,7 +270,7 @@ Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
     // Prepare needed values
     Real old_w = new_w;
     Real old_res = new_res;
-    Real derivative = residual_derivative(old_w, d_norm, q_norm_sq, gamma_prime);
+    Real derivative = QNResidualPrime(old_w, d_norm, q_norm_sq, gamma_prime);
     Real delta = -old_res / derivative;
 
     // Check that update makes sense
@@ -291,7 +292,7 @@ Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
     // Reduce step if new value is worse than old
     for (j = i; j < max_iterations; j++)
     {
-      new_res = residual(new_w, d_norm, q_dot_n, q_norm_sq, gamma_prime);
+      new_res = QNResidual(new_w, d_norm, q_dot_n, q_norm_sq, gamma_prime);
       if (std::abs(new_res) < std::abs(old_res))
         break;
       else
@@ -324,7 +325,8 @@ Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
 // Notes:
 //   follows Noble et al. 2006, ApJ 641 626 (N)
 //   implements formulas assuming no magnetic field
-Real residual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq, Real gamma_prime)
+static Real QNResidual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq,
+    Real gamma_prime)
 {
   Real v_norm_sq = q_norm_sq / (w_guess*w_guess);  // (N 28)
   Real gamma_sq = 1.0/(1.0 - v_norm_sq);
@@ -333,7 +335,7 @@ Real residual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq, Real gamm
   return -w_guess + pgas - q_dot_n;  // (N 29)
 }
 
-// Derivative of residual()
+// Derivative of QNResidual()
 // Inputs:
 //   w_guess: guess for total enthalpy W
 //   d_norm: D = alpha * rho * u^0
@@ -345,7 +347,7 @@ Real residual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq, Real gamm
 // Notes:
 //   follows Noble et al. 2006, ApJ 641 626 (N)
 //   implements formulas assuming no magnetic field
-Real residual_derivative(Real w_guess, Real d_norm, Real q_norm_sq, Real gamma_prime)
+static Real QNResidualPrime(Real w_guess, Real d_norm, Real q_norm_sq, Real gamma_prime)
 {
   Real v_norm_sq = q_norm_sq / (w_guess*w_guess);  // (N 28)
   Real gamma_sq = 1.0/(1.0 - v_norm_sq);
