@@ -40,10 +40,6 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     AthenaArray<Real> &prim_left, AthenaArray<Real> &prim_right,
     AthenaArray<Real> &flux)
 {
-  // Calculate cyclic permutations of indices
-  int ivy = IVX + ((ivx-IVX)+1)%3;
-  int ivz = IVX + ((ivx-IVX)+2)%3;
-
   // Transform primitives to locally flat coordinates if in GR
   if (GENERAL_RELATIVITY)
     switch (ivx)
@@ -61,12 +57,16 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
             b_normal_);
         break;
     }
-  else
+  else  // SR; need to populate 1D normal B array
   {
     #pragma simd
     for (int i = il; i <= iu; i++)
       b_normal_(i) = b(k,j,i);
   }
+
+  // Calculate cyclic permutations of indices
+  int ivy = IVX + ((ivx-IVX)+1)%3;
+  int ivz = IVX + ((ivx-IVX)+2)%3;
 
   // Extract ratio of specific heats
   const Real gamma_adi = pmy_fluid->pf_eos->GetGamma();
@@ -199,6 +199,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
 
 // Function for converting constant primitive state to flux state in flat spacetime
 // Notes:
+//   same function as in hlld_mhd_rel.cpp
 //   implements (15) from Mignone, Ugliano, & Bodo 2009, MNRAS 393 1141
 //     note B^i v^x - B^x v^i = b^i u^x - b^x u^i
 static void PrimToFluxFlat(Real gamma_adi_red, Real rho, Real pgas,
@@ -221,6 +222,7 @@ static void PrimToFluxFlat(Real gamma_adi_red, Real rho, Real pgas,
 
 // Function for converting primitive state to conserved state in flat spacetime
 // Notes:
+//   same function as in hlld_mhd_rel.cpp
 //   references Mignone, Ugliano, & Bodo 2009, MNRAS 393 1141 (MUB)
 static void PrimToConsFlat(Real gamma_adi_red, Real rho, Real pgas,
     Real ut, Real ux, Real uy, Real uz,

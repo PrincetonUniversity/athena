@@ -20,12 +20,12 @@
 #include "../../parameter_input.hpp"          // GetReal()
 
 // Declarations
-static Real residual(Real w_guess, Real d, Real e, Real m_sq, Real b_sq, Real s_sq,
+static Real EResidual(Real w_guess, Real d, Real e, Real m_sq, Real b_sq, Real s_sq,
     Real gamma_prime);
-static Real residual_derivative(Real w_guess, Real d, Real m_sq, Real b_sq, Real s_sq,
+static Real EResidualPrime(Real w_guess, Real d, Real m_sq, Real b_sq, Real s_sq,
     Real gamma_prime);
-static Real find_root_nr(Real w_initial, Real d, Real e, Real m_sq, Real b_sq,
-    Real s_sq, Real gamma_prime);
+static Real FindRootNR(Real w_initial, Real d, Real e, Real m_sq, Real b_sq, Real s_sq,
+    Real gamma_prime);
 static Real quadratic_root(Real a1, Real a0, bool greater_root);
 static Real cubic_root_real(Real a2, Real a1, Real a0);
 static void quartic_root_minmax(Real a3, Real a2, Real a1, Real a0, Real *pmin_value,
@@ -135,7 +135,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real w_initial = quadratic_root(a1, a0, true);
 
         // Apply Newton-Raphson method to find new W
-        Real w_true = find_root_nr(w_initial, d, e, m_sq, b_sq, s_sq, gamma_prime);
+        Real w_true = FindRootNR(w_initial, d, e, m_sq, b_sq, s_sq, gamma_prime);
 
         // Extract primitives
         Real &rho = prim(IDN,k,j,i);
@@ -294,7 +294,8 @@ void FluidEqnOfState::FastMagnetosonicSpeedsRel(
 // Notes:
 //   follows Mignone & McKinney 2007, MNRAS 378 1118 (MM)
 //   implementation follows that of hlld_sr.c in Athena 4.2
-static Real residual(Real w_guess, Real d, Real e, Real m_sq, Real b_sq, Real s_sq,
+//   same function as in hlld_mhd_rel.cpp
+static Real EResidual(Real w_guess, Real d, Real e, Real m_sq, Real b_sq, Real s_sq,
     Real gamma_prime)
 {
   Real v_sq = (m_sq + s_sq/SQR(w_guess) * (2.0*w_guess + b_sq))
@@ -308,7 +309,7 @@ static Real residual(Real w_guess, Real d, Real e, Real m_sq, Real b_sq, Real s_
   return e_calc - e;
 }
 
-// Derivative of residual()
+// Derivative of EResidual()
 // Inputs:
 //   w_guess: guess for total enthalpy W
 //   d: relativistic density D
@@ -321,7 +322,8 @@ static Real residual(Real w_guess, Real d, Real e, Real m_sq, Real b_sq, Real s_
 // Notes:
 //   follows Mignone & McKinney 2007, MNRAS 378 1118 (MM)
 //   implementation follows that of hlld_sr.c in Athena 4.2
-static Real residual_derivative(Real w_guess, Real d, Real m_sq, Real b_sq, Real s_sq,
+//   same function as in hlld_mhd_rel.cpp
+static Real EResidualPrime(Real w_guess, Real d, Real m_sq, Real b_sq, Real s_sq,
     Real gamma_prime)
 {
   Real v_sq = (m_sq + s_sq/SQR(w_guess) * (2.0*w_guess + b_sq))
@@ -356,8 +358,9 @@ static Real residual_derivative(Real w_guess, Real d, Real m_sq, Real b_sq, Real
 // Notes:
 //   returns NAN in event of failure
 //   forces W to be positive
-static Real find_root_nr(Real w_initial, Real d, Real e, Real m_sq, Real b_sq,
-    Real s_sq, Real gamma_prime)
+//   same function as in hlld_mhd_rel.cpp
+static Real FindRootNR(Real w_initial, Real d, Real e, Real m_sq, Real b_sq, Real s_sq,
+    Real gamma_prime)
 {
   // Parameters
   const int max_iterations = 100;         // maximum number of iterations
@@ -365,7 +368,7 @@ static Real find_root_nr(Real w_initial, Real d, Real e, Real m_sq, Real b_sq,
   const Real tol_res = 1.0e-15;           // absolute tolerance in residual
 
   // Check if root has already been found
-  Real new_res = residual(w_initial, d, e, m_sq, b_sq, s_sq, gamma_prime);
+  Real new_res = EResidual(w_initial, d, e, m_sq, b_sq, s_sq, gamma_prime);
   if (std::abs(new_res) < tol_res)
     return w_initial;
 
@@ -376,7 +379,7 @@ static Real find_root_nr(Real w_initial, Real d, Real e, Real m_sq, Real b_sq,
     // Prepare needed values
     Real old_w = new_w;
     Real old_res = new_res;
-    Real derivative = residual_derivative(old_w, d, m_sq, b_sq, s_sq, gamma_prime);
+    Real derivative = EResidualPrime(old_w, d, m_sq, b_sq, s_sq, gamma_prime);
     Real delta = -old_res / derivative;
 
     // Check that update makes sense
@@ -398,7 +401,7 @@ static Real find_root_nr(Real w_initial, Real d, Real e, Real m_sq, Real b_sq,
     // Reduce step if new value is worse than old
     for (j = i; j < max_iterations; j++)
     {
-      new_res = residual(new_w, d, e, m_sq, b_sq, s_sq, gamma_prime);
+      new_res = EResidual(new_w, d, e, m_sq, b_sq, s_sq, gamma_prime);
       if (std::abs(new_res) < std::abs(old_res))
         break;
       else
@@ -427,7 +430,7 @@ static Real find_root_nr(Real w_initial, Real d, Real e, Real m_sq, Real b_sq,
 // Outputs:
 //   returned value: desired root
 // Notes:
-//   same function as in adiabatic_mhd_gr.cpp
+//   same function as in adiabatic_mhd_gr.cpp and hlld_mhd_rel.cpp
 //   solves x^2 + a_1 x + a_0 = 0 for x
 //   returns abscissa of vertex if there are no real roots
 //   follows advice in Numerical Recipes, 3rd ed. (5.6) for avoiding large cancellations
