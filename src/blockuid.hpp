@@ -8,7 +8,7 @@
 #include "athena_arrays.hpp"  // AthenaArray
 #include "defs.hpp"
 
-typedef unsigned int ID_t;
+typedef unsigned long int ID_t;
 
 static const int usize=sizeof(ID_t)*8/3;
 
@@ -21,7 +21,7 @@ private:
   int level;
   ID_t uid[IDLENGTH];
 public:
-  BlockUID() : level(0) {};
+  BlockUID();
   ~BlockUID() {};
   BlockUID(const BlockUID& bid);
   void SetUID(ID_t *suid, int llevel);
