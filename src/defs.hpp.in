@@ -77,5 +77,6 @@
 #define TINY_NUMBER 1.0e-20
 #define HUGE_NUMBER 1.0e+36
 #define SQR(x) ( (x)*(x) )
+#define SIGN(x) ( ((x) < 0.0) ? -1.0 : 1.0 )
 
 #endif

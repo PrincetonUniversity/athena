@@ -28,6 +28,7 @@
 //  \brief  piecewise linear reconstruction
 //======================================================================================
 
+//--------------------------------------------------------------------------------------
 //! \fn FluidIntegrator::ReconstructionFuncX1()
 //  \brief 
 
@@ -70,6 +71,7 @@ void FluidIntegrator::ReconstructionFuncX1(const int n, const int m, const int k
   return;
 }
 
+//--------------------------------------------------------------------------------------
 //! \fn FluidIntegrator::ReconstructionFuncX2()
 //  \brief 
 
@@ -112,6 +114,7 @@ void FluidIntegrator::ReconstructionFuncX2(const int n, const int m, const int k
   return;
 }
 
+//--------------------------------------------------------------------------------------
 //! \fn FluidIntegrator::ReconstructionFuncX3()
 //  \brief 
 

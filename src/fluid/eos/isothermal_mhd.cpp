@@ -17,6 +17,10 @@
 // Primary header
 #include "eos.hpp"
 
+// C++ headers
+#include <cmath>   // sqrt()
+#include <cfloat>  // FLT_MIN
+
 // Athena headers
 #include "../fluid.hpp"               // Fluid
 #include "../../athena.hpp"           // enums, macros, Real
