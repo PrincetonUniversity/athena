@@ -4,6 +4,7 @@
 import numpy as np
 import os
 import struct
+import subprocess
 
 # Global variables
 athena_rel_path = '../../'
@@ -15,12 +16,16 @@ def configure(*args, **kwargs):
   current_dir = os.getcwd()
   os.chdir(athena_rel_path)
   try:
-    configure_string = 'python configure.py'
+    configure_command = ['python', 'configure.py']
     for arg in args:
-      configure_string += ' -{0}'.format(arg)
+      configure_command.append('-{0}'.format(arg))
     for key,val in kwargs.iteritems():
-      configure_string += ' --{0}={1}'.format(key,val)
-    os.system(configure_string)
+      configure_command.append('--{0}={1}'.format(key,val))
+    try:
+      subprocess.check_call(configure_command)
+    except subprocess.CalledProcessError as err:
+      raise AthenaError('Return code {0} from command \'{1}\''\
+          .format(err.returncode,' '.join(err.cmd)))
   finally:
     os.chdir(current_dir)
 
@@ -29,10 +34,16 @@ def make():
   current_dir = os.getcwd()
   os.chdir(athena_rel_path)
   try:
-    exe_dir = current_dir + '/bin/'
-    obj_dir = current_dir + '/obj/'
-    os.system('make clean EXE_DIR:={0} OBJ_DIR:={1}'.format(exe_dir,obj_dir))
-    os.system('make EXE_DIR:={0} OBJ_DIR:={1}'.format(exe_dir,obj_dir))
+    exe_dir = 'EXE_DIR:={0}/bin/'.format(current_dir)
+    obj_dir = 'OBJ_DIR:={0}/obj/'.format(current_dir)
+    clean_command = ['make', 'clean', exe_dir, obj_dir]
+    make_command = ['make', exe_dir, obj_dir]
+    try:
+      subprocess.check_call(clean_command)
+      subprocess.check_call(make_command)
+    except subprocess.CalledProcessError as err:
+      raise AthenaError('Return code {0} from command \'{1}\''\
+          .format(err.returncode,' '.join(err.cmd)))
   finally:
     os.chdir(current_dir)
 
@@ -42,10 +53,12 @@ def run(input_filename, arguments):
   os.chdir('bin')
   try:
     input_filename_full = '../' + athena_rel_path + 'inputs/' + input_filename
-    run_string = './athena -i {0}'.format(input_filename_full)
-    for arg in arguments:
-      run_string += ' {0}'.format(arg)
-    os.system(run_string)
+    run_command = ['./athena', '-i', input_filename_full]
+    try:
+      subprocess.check_call(run_command+arguments)
+    except subprocess.CalledProcessError as err:
+      raise AthenaError('Return code {0} from command \'{1}\''\
+          .format(err.returncode,' '.join(err.cmd)))
   finally:
     os.chdir(current_dir)
 
@@ -91,7 +104,7 @@ def read_vtk(filename):
   def skip_string(expected_string):
     expected_string_len = len(expected_string)
     if raw_data[current_index:current_index+expected_string_len] != expected_string:
-      raise IOError('File not formatted as expected')
+      raise AthenaError('File not formatted as expected')
     return current_index+expected_string_len
 
   # Read metadata
@@ -167,7 +180,7 @@ def read_vtk(filename):
     if raw_data[current_index:current_index+expected_string_len] == expected_string:
       current_index = read_cell_vectors()
       continue
-    raise IOError('File not formatted as expected')
+    raise AthenaError('File not formatted as expected')
   return x_faces,y_faces,z_faces,data
 
 # Function for saving configure-generated files that may already exist
@@ -190,3 +203,7 @@ def restore_files():
     else:
       with open(rel_path_to_file, 'w') as current_file:
         current_file.write(saved_file)
+
+# General exception class for these functions
+class AthenaError(RuntimeError):
+  pass
