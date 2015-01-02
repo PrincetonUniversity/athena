@@ -63,7 +63,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
   AthenaArray<Real> &prim_right, AthenaArray<Real> &flux)
 {
   // Parameters
-  const Real p_transition = 0.1;     // value delineating intial pressure regimes
+  const Real p_transition = 0.01;    // value delineating intial pressure regimes
   const Real vc_extension = 1.0e-6;  // use contact region if Alfven speeds smaller
 
   // Transform primitives to locally flat coordinates if in GR
@@ -215,15 +215,14 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 
     // Calculate initial guess for total pressure (MUB 53)
     Real ptot_initial;
-    Real ptot_hll = ConsToPFlat(cons_hll, bx, gamma_adi_red, ivx);
-    if (SQR(bx)/ptot_hll < p_transition)  // weak magnetic field
+    if (SQR(bx)/std::max(pgas_left,pgas_right) < p_transition)  // weak magnetic field
     {
       Real a1 = cons_hll[IEN] - flux_hll[ivx];
       Real a0 = cons_hll[ivx]*flux_hll[IEN] - flux_hll[ivx]*cons_hll[IEN];
       ptot_initial = quadratic_root(a1, a0, true);                          // (MUB 55)
     }
     else  // strong magnetic field
-      ptot_initial = ptot_hll;
+      ptot_initial = ConsToPFlat(cons_hll, bx, gamma_adi_red, ivx);
 
     // Apply secant method to find total pressure
     Real ptot_true = FindRootSecant(ptot_initial, bx, lambda_left, lambda_right,
@@ -244,7 +243,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
       continue;
     }
 
-    // Set fluxes if in aL state
+    // Set fluxes if in aR state
     Real vx_ar, vy_ar, vz_ar;
     Real kx_r, ky_r, kz_r, eta_r;
     Real cons_ar[NWAVE], flux_ar[NWAVE];
@@ -352,7 +351,7 @@ static Real ConsToPFlat(const Real cons[NWAVE], Real bx, Real gamma_adi_red, int
   // Calculate variations on conserved quantities
   Real m_sq = SQR(cons[ivx]) + SQR(cons[ivy]) + SQR(cons[ivz]);
   Real b_sq = SQR(bx) + SQR(cons[IBY]) + SQR(cons[IBZ]);
-  Real m_dot_b = cons[ivx]*bx + cons[ivy]*cons[IBY] + cons[ivz]*cons[IVZ];
+  Real m_dot_b = cons[ivx]*bx + cons[ivy]*cons[IBY] + cons[ivz]*cons[IBZ];
   Real s_sq = SQR(m_dot_b);
 
   // Construct initial guess for enthalpy W (cf. MM A26-A27)
@@ -618,7 +617,7 @@ static void CalculateCState(Real p, Real bx,
   Real vz_c = 0.5 * (vz_cl + vz_cr);
 
   // Set remaining conserved quantities
-  Real vc_dot_bc = (*pvx_c)*bx + vy_c*c_c[IBY] + vz_c*c_c[IVZ];
+  Real vc_dot_bc = (*pvx_c)*bx + vy_c*c_c[IBY] + vz_c*c_c[IBZ];
   if (*pvx_c >= 0.0)
   {
     c_c[IDN] = c_al[IDN] * (l_al-vx_al) / (l_al-(*pvx_c));               // (MUB 50)

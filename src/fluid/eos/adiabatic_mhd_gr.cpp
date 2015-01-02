@@ -65,8 +65,8 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     AthenaArray<Real> &bcc)
 {
   // Parameters
-  const Real initial_guess_multiplier = 10.0;
-  const int initial_guess_multiplications = 10;
+  const Real guess_multiplier = 10.0;    // factor to multiply enthalpy if too small
+  const int guess_multiplications = 10;  // max number of enthalpy adjustments
 
   // Calculate reduced ratio of specific heats
   const Real gamma_prime = gamma_/(gamma_-1.0);
@@ -191,14 +191,14 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real v_norm_sq = 1.0/alpha_sq * (v_sq + 2.0*beta_v + beta_sq);
         Real gamma_sq = 1.0 / (1.0 - v_norm_sq);
         Real w_initial = gamma_sq * (rho_old + gamma_prime * pgas_old);
-        for (int count = 0; count < initial_guess_multiplications; count++)
+        for (int count = 0; count < guess_multiplications; count++)
         {
           Real b_w_term_initial = b_norm_sq + w_initial;
           Real v_sq_initial = (q_norm_sq*SQR(w_initial)
               + q_dot_b_norm_sq*(b_norm_sq+2.0*w_initial))
               / SQR(w_initial * (b_norm_sq+w_initial));     // (N 28)
           if (v_sq_initial >= 1.0)  // guess for W leads to superluminal velocities
-            w_initial *= initial_guess_multiplier;
+            w_initial *= guess_multiplier;
           else
             break;
         }
