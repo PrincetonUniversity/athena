@@ -1055,16 +1055,28 @@ MeshBlock::MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_block,
 // X1-DIRECTION: initialize sizes and positions of cell FACES (dx1f,x1f)
 
   nrootmesh=mesh_size.nx1*(1L<<(ll-root_level));
-  for (int i=is-NGHOST; i<=ie+NGHOST+1; ++i) {
-     // if there are too many levels, this won't work or be precise enough
-    noffset=(i-is)+(long long)lx1*block_size.nx1;
-    Real rx=(Real)noffset/(Real)nrootmesh;
-    x1f(i)=pm->MeshGeneratorX1(rx,mesh_size);
+  if(block_size.x1rat == 1.0) { // uniform
+    Real dx=(block_size.x1max-block_size.x1min)/block_size.nx1;
+    for(int i=is-NGHOST; i<=ie+NGHOST; ++i)
+      dx1f(i)=dx;
+    x1f(is-NGHOST)=block_size.x1min*-NGHOST*dx;
+    for(int i=is-NGHOST+1;i<=ie+NGHOST+1;i++)
+      x1f(i)=x1f(i-1)+dx;
+    x1f(is) = block_size.x1min;
+    x1f(ie+1) = block_size.x1max;
   }
-  x1f(is) = block_size.x1min;
-  x1f(ie+1) = block_size.x1max;
-  for(int i=is-NGHOST; i<=ie+NGHOST; ++i)
-    dx1f(i)=x1f(i+1)-x1f(i);
+  else {
+    for (int i=is-NGHOST; i<=ie+NGHOST+1; ++i) {
+       // if there are too many levels, this won't work or be precise enough
+      noffset=(i-is)+(long long)lx1*block_size.nx1;
+      Real rx=(Real)noffset/(Real)nrootmesh;
+      x1f(i)=pm->MeshGeneratorX1(rx,mesh_size);
+    }
+    x1f(is) = block_size.x1min;
+    x1f(ie+1) = block_size.x1max;
+    for(int i=is-NGHOST; i<=ie+NGHOST; ++i)
+      dx1f(i)=x1f(i+1)-x1f(i);
+  }
 
 // correct cell face positions in ghost zones for reflecting boundary condition
   if (block_bcs.ix1_bc == 1) {
@@ -1085,16 +1097,28 @@ MeshBlock::MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_block,
   if(block_size.nx2 > 1)
   {
     nrootmesh=mesh_size.nx2*(1L<<(ll-root_level));
-    for (int j=js-NGHOST; j<=je+NGHOST+1; ++j) {
-       // if there are too many levels, this won't work or be precise enough
-      noffset=(j-js)+(long long)lx2*block_size.nx2;
-      Real rx=(Real)noffset/(Real)nrootmesh;
-      x2f(j)=pm->MeshGeneratorX2(rx,mesh_size);
+    if(block_size.x2rat == 1.0) { // uniform
+      Real dx=(block_size.x2max-block_size.x2min)/block_size.nx2;
+      for(int j=js-NGHOST; j<=je+NGHOST; ++j)
+        dx2f(j)=dx;
+      x2f(js-NGHOST)=block_size.x2min*-NGHOST*dx;
+      for(int j=js-NGHOST+1;j<=je+NGHOST+1;j++)
+        x2f(j)=x2f(j-1)+dx;
+      x2f(js) = block_size.x2min;
+      x2f(je+1) = block_size.x2max;
     }
-    x2f(js) = block_size.x2min;
-    x2f(je+1) = block_size.x2max;
-    for(int j=js-NGHOST; j<=je+NGHOST; ++j)
-      dx2f(j)=x2f(j+1)-x2f(j);
+    else {
+      for (int j=js-NGHOST; j<=je+NGHOST+1; ++j) {
+         // if there are too many levels, this won't work or be precise enough
+        noffset=(j-js)+(long long)lx2*block_size.nx2;
+        Real rx=(Real)noffset/(Real)nrootmesh;
+        x2f(j)=pm->MeshGeneratorX2(rx,mesh_size);
+      }
+      x2f(js) = block_size.x2min;
+      x2f(je+1) = block_size.x2max;
+      for(int j=js-NGHOST; j<=je+NGHOST; ++j)
+        dx2f(j)=x2f(j+1)-x2f(j);
+    }
 
   // correct cell face positions in ghost zones for reflecting boundary condition
     if (block_bcs.ix2_bc == 1) {
@@ -1123,16 +1147,28 @@ MeshBlock::MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_block,
   if(block_size.nx3 > 1)
   {
     nrootmesh=mesh_size.nx3*(1L<<(ll-root_level));
-    for (int k=ks-NGHOST; k<=ke+NGHOST+1; ++k) {
-       // if there are too many levels, this won't work or be precise enough
-      noffset=(k-ks)+(long long)lx3*block_size.nx3;
-      Real rx=(Real)noffset/(Real)nrootmesh;
-      x3f(k)=pm->MeshGeneratorX3(rx,mesh_size);
+    if(block_size.x3rat == 1.0) { // uniform
+      Real dx=(block_size.x3max-block_size.x3min)/block_size.nx3;
+      for(int k=ks-NGHOST; k<=ke+NGHOST; ++k)
+        dx3f(k)=dx;
+      x3f(ks-NGHOST)=block_size.x3min*-NGHOST*dx;
+      for(int k=ks-NGHOST+1;k<=ke+NGHOST+1;k++)
+        x3f(k)=x3f(k-1)+dx;
+      x3f(ks) = block_size.x3min;
+      x3f(ke+1) = block_size.x3max;
     }
-    x3f(ks) = block_size.x3min;
-    x3f(ke+1) = block_size.x3max;
-    for(int k=ks-NGHOST; k<=ke+NGHOST; ++k)
-      dx3f(k)=x3f(k+1)-x3f(k);
+    else {
+      for (int k=ks-NGHOST; k<=ke+NGHOST+1; ++k) {
+         // if there are too many levels, this won't work or be precise enough
+        noffset=(k-ks)+(long long)lx3*block_size.nx3;
+        Real rx=(Real)noffset/(Real)nrootmesh;
+        x3f(k)=pm->MeshGeneratorX3(rx,mesh_size);
+      }
+      x3f(ks) = block_size.x3min;
+      x3f(ke+1) = block_size.x3max;
+      for(int k=ks-NGHOST; k<=ke+NGHOST; ++k)
+        dx3f(k)=x3f(k+1)-x3f(k);
+    }
 
   // correct cell face positions in ghost zones for reflecting boundary condition
     if (block_bcs.ix3_bc == 1) {
