@@ -51,7 +51,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NFLUID)],wri[(NFLUID)],wroe[(NFLUID)];
   Real fl[(NFLUID)],fr[(NFLUID)],flxi[(NFLUID)];
-  Real gamma_m1 = pmy_fluid->pf_eos->GetGamma() - 1.0;
+  Real gm1 = pmy_fluid->pf_eos->GetGamma() - 1.0;
 
 #pragma simd
   for (int i=il; i<=iu; ++i){
@@ -81,15 +81,12 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     wroe[IVY] = (sqrtdl*wli[IVY] + sqrtdr*wri[IVY])*isdlpdr;
     wroe[IVZ] = (sqrtdl*wli[IVZ] + sqrtdr*wri[IVZ])*isdlpdr;
 
-// Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
-// rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
-
+    // Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
+    // rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
     Real el,er,hroe;
     if (NON_BAROTROPIC_EOS) {
-      el = wli[IEN]/gamma_m1 + 0.5*wli[IDN]*
-        (wli[IVX]*wli[IVX] + wli[IVY]*wli[IVY] + wli[IVZ]*wli[IVZ]);
-      er = wri[IEN]/gamma_m1 + 0.5*wri[IDN]*
-        (wri[IVX]*wri[IVX] + wri[IVY]*wri[IVY] + wri[IVZ]*wri[IVZ]);
+      el = wli[IEN]/gm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
+      er = wri[IEN]/gm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
       hroe = ((el + wli[IEN])/sqrtdl + (er + wri[IEN])/sqrtdr)*isdlpdr;
     }
 
@@ -101,7 +98,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     if (NON_BAROTROPIC_EOS) {
       Real q = hroe - 0.5*(wroe[IVX]*wroe[IVX]+wroe[IVY]*wroe[IVY]+wroe[IVZ]*wroe[IVZ]);
       if (q < 0.0) q=0.0;
-      a = sqrt(gamma_m1*q);
+      a = sqrt(gm1*q);
     } else {
       a = pmy_fluid->pf_eos->SoundSpeed(wroe);
     }

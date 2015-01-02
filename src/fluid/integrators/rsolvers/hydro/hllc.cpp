@@ -47,7 +47,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NFLUID)],wri[(NFLUID)],wroe[(NFLUID)];
   Real flxi[(NFLUID)],fl[(NFLUID)],fr[(NFLUID)];
-  Real gamma_m1 = pmy_fluid->pf_eos->GetGamma() - 1.0;
+  Real gm1 = pmy_fluid->pf_eos->GetGamma() - 1.0;
 
 #pragma simd
   for (int i=il; i<=iu; ++i){
@@ -77,14 +77,14 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     wroe[IVY] = (sqrtdl*wli[IVY] + sqrtdr*wri[IVY])*isdlpdr;
     wroe[IVZ] = (sqrtdl*wli[IVZ] + sqrtdr*wri[IVZ])*isdlpdr;
 
-// Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
-// rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
-
-    Real el = wli[IEN]/gamma_m1 + 0.5*wli[IDN]*
-      (wli[IVX]*wli[IVX] + wli[IVY]*wli[IVY] + wli[IVZ]*wli[IVZ]);
-    Real er = wri[IEN]/gamma_m1 + 0.5*wri[IDN]*
-      (wri[IVX]*wri[IVX] + wri[IVY]*wri[IVY] + wri[IVZ]*wri[IVZ]);
-    Real hroe = ((el + wli[IEN])/sqrtdl + (er + wri[IEN])/sqrtdr)*isdlpdr;
+    // Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
+    // rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
+    Real el,er,hroe;
+    if (NON_BAROTROPIC_EOS) {
+      el = wli[IEN]/gm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
+      er = wri[IEN]/gm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
+      hroe = ((el + wli[IEN])/sqrtdl + (er + wri[IEN])/sqrtdr)*isdlpdr;
+    }
 
 //--- Step 3.  Compute sound speed in L,R, and Roe-averaged states
 
@@ -92,7 +92,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     Real cr = pmy_fluid->pf_eos->SoundSpeed(wri);
     Real q = hroe - 0.5*(wroe[IVX]*wroe[IVX]+wroe[IVY]*wroe[IVY]+wroe[IVZ]*wroe[IVZ]);
     if (q < 0.0) q=0.0;
-    Real a = sqrt(gamma_m1*q);
+    Real a = sqrt(gm1*q);
 
 //--- Step 4.  Compute the max/min wave speeds based on L/R and Roe-averaged values
 
@@ -113,16 +113,16 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     Real ml =   mxl - wli[IDN]*al;
     Real mr = -(mxr - wri[IDN]*ar);
 
-// Determine the contact wave speed...
+    // Determine the contact wave speed...
     Real am = (tl - tr)/(ml + mr);
-// ...and the pressure at the contact surface
+    // ...and the pressure at the contact surface
     Real cp = (ml*tr + mr*tl)/(ml + mr);
     cp = cp > 0.0 ? cp : 0.0;
 
 //--- Step 6.  Compute L/R fluxes along the line bm, bp
 
-    fl[IDN]  = mxl - bm*wli[IDN];
-    fr[IDN]  = mxr - bp*wri[IDN];
+    fl[IDN] = mxl - bm*wli[IDN];
+    fr[IDN] = mxr - bp*wri[IDN];
 
     fl[IVX] = mxl*(wli[IVX] - bm) + wli[IEN];
     fr[IVX] = mxr*(wri[IVX] - bp) + wri[IEN];
@@ -133,10 +133,8 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     fl[IVZ] = wli[IDN]*wli[IVZ]*(wli[IVX] - bm);
     fr[IVZ] = wri[IDN]*wri[IVZ]*(wri[IVX] - bp);
 
-    fl[IEN] = wli[IEN]/(pmy_fluid->pf_eos->GetGamma() - 1.0) + 0.5*wli[IDN]*
-      (wli[IVX]*wli[IVX] + wli[IVY]*wli[IVY] + wli[IVZ]*wli[IVZ]);
-    fr[IEN] = wri[IEN]/(pmy_fluid->pf_eos->GetGamma() - 1.0) + 0.5*wri[IDN]*
-      (wri[IVX]*wri[IVX] + wri[IVY]*wri[IVY] + wri[IVZ]*wri[IVZ]);
+    fl[IEN] = wli[IEN]/gm1 + 0.5*wli[IDN]*(SQR(wli[IVX])+SQR(wli[IVY])+SQR(wli[IVZ]));
+    fr[IEN] = wri[IEN]/gm1 + 0.5*wri[IDN]*(SQR(wri[IVX])+SQR(wri[IVY])+SQR(wri[IVZ]));
     fl[IEN] *= (wli[IVX] - bm);
     fr[IEN] *= (wri[IVX] - bp);
     fl[IEN] += wli[IEN]*wli[IVX];

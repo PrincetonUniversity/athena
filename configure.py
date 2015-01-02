@@ -66,7 +66,7 @@ parser.add_argument('--eos',
 # --flux=[name] argument
 parser.add_argument('--flux',
     default='hlle',
-    choices=['hlle','hllc','hlld'],
+    choices=['hlle','hllc','hlld','roe'],
     help='select Riemann solver')
 
 # -b argument
