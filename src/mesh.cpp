@@ -1059,7 +1059,7 @@ MeshBlock::MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_block,
     Real dx=(block_size.x1max-block_size.x1min)/block_size.nx1;
     for(int i=is-NGHOST; i<=ie+NGHOST; ++i)
       dx1f(i)=dx;
-    x1f(is-NGHOST)=block_size.x1min*-NGHOST*dx;
+    x1f(is-NGHOST)=block_size.x1min-NGHOST*dx;
     for(int i=is-NGHOST+1;i<=ie+NGHOST+1;i++)
       x1f(i)=x1f(i-1)+dx;
     x1f(is) = block_size.x1min;
@@ -1101,7 +1101,7 @@ MeshBlock::MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_block,
       Real dx=(block_size.x2max-block_size.x2min)/block_size.nx2;
       for(int j=js-NGHOST; j<=je+NGHOST; ++j)
         dx2f(j)=dx;
-      x2f(js-NGHOST)=block_size.x2min*-NGHOST*dx;
+      x2f(js-NGHOST)=block_size.x2min-NGHOST*dx;
       for(int j=js-NGHOST+1;j<=je+NGHOST+1;j++)
         x2f(j)=x2f(j-1)+dx;
       x2f(js) = block_size.x2min;
@@ -1151,7 +1151,7 @@ MeshBlock::MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_block,
       Real dx=(block_size.x3max-block_size.x3min)/block_size.nx3;
       for(int k=ks-NGHOST; k<=ke+NGHOST; ++k)
         dx3f(k)=dx;
-      x3f(ks-NGHOST)=block_size.x3min*-NGHOST*dx;
+      x3f(ks-NGHOST)=block_size.x3min-NGHOST*dx;
       for(int k=ks-NGHOST+1;k<=ke+NGHOST+1;k++)
         x3f(k)=x3f(k-1)+dx;
       x3f(ks) = block_size.x3min;
