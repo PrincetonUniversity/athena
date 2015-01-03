@@ -6,7 +6,6 @@ configure = --prob=noh
 <job>
 problem_id      = Noh     # problem ID: basename of output filenames
 
-
 <output1>
 file_type  = hst       # History data dump
 dt         = 0.01      # time increment between outputs

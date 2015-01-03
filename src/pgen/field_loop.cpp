@@ -39,8 +39,7 @@
 //   -  problem/rad   = radius of field loop
 //   -  problem/amp   = amplitude of vector potential (and therefore B)
 //   -  problem/vflow = flow velocity
-//   -  problem/drat  = density ratio in loop.  Enables density advection and
-//                      thermal conduction tests.
+//   -  problem/drat  = density ratio in loop, to test density advection and conduction
 // The flow is automatically set to run along the diagonal. 
 //
 // Various test cases are possible:
@@ -49,10 +48,6 @@
 //   - (iprob=3): field loop in x3-x1 plane (cylinder in 3D) 
 //   - (iprob=4): rotated cylindrical field loop in 3D.
 //   - (iprob=5): spherical field loop in rotated plane
-//
-// A sphere of passive scalar can be added to test advection of scalars.
-//
-// The temperature in the loop can be changed using drat to test conduction.
 //
 // REFERENCE: T. Gardiner & J.M. Stone, "An unsplit Godunov method for ideal MHD via
 // constrined transport", JCP, 205, 509 (2005)
