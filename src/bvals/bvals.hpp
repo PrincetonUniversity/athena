@@ -86,6 +86,8 @@ typedef void (*BValField_t)(MeshBlock *pmb, InterfaceField &buf);
 
 void InitBoundaryBuffer(int nx1, int nx2, int nx3);
 
+const int nsweep = 2;
+
 //! \class BoundaryValues
 //  \brief BVals data and functions
 
@@ -94,8 +96,8 @@ public:
   BoundaryValues(MeshBlock *pmb, ParameterInput *pin);
   ~BoundaryValues();
 
-  void StartReceivingField(int flag);
-  void StartReceivingFluid(int flag);
+  void StartReceiving(int flag);
+  void StartReceivingAll(void);
   void LoadAndSendFluidBoundaryBuffer(enum direction dir,
                                       AthenaArray<Real> &src, int flag);
   bool ReceiveAndSetFluidBoundary(enum direction dir, AthenaArray<Real> &dst, int flag);
@@ -106,9 +108,9 @@ public:
   bool ReceiveAndSetFieldBoundary(enum direction dir, InterfaceField &dst, int flag);
   bool ReceiveAndSetFieldBoundaryWithWait(enum direction dir,
                                           InterfaceField &dst, int flag);
-
   void EnrollFluidBoundaryFunction (enum direction edge, BValFluid_t  my_bc);
   void EnrollFieldBoundaryFunction(enum direction edge, BValField_t my_bc);
+  void ClearBoundary(void);
 
 private:
   MeshBlock *pmy_mblock_;  // ptr to MeshBlock containing this BVals
@@ -116,15 +118,15 @@ private:
   BValFluid_t FluidBoundary_[6];
   BValField_t FieldBoundary_[6];
 
-  char fluid_flag_[2][6][2][2], field_flag_[2][6][2][2];
-  Real *fluid_send_[2][6];
-  Real *fluid_recv_[2][6];
-  Real *field_send_[2][6];
-  Real *field_recv_[2][6];
+  char fluid_flag_[nsweep][6][2][2], field_flag_[nsweep][6][2][2];
+  Real *fluid_send_[nsweep][6];
+  Real *fluid_recv_[nsweep][6];
+  Real *field_send_[nsweep][6];
+  Real *field_recv_[nsweep][6];
 
 #ifdef MPI_PARALLEL
-  MPI_Request req_fluid_send_[6][2][2], req_fluid_recv_[6][2][2];
-  MPI_Request req_field_send_[6][2][2], req_field_recv_[6][2][2];
+  MPI_Request req_fluid_send_[nsweep][6][2][2], req_fluid_recv_[nsweep][6][2][2];
+  MPI_Request req_field_send_[nsweep][6][2][2], req_field_recv_[nsweep][6][2][2];
 #endif
 };
 
