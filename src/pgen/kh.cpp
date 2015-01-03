@@ -42,8 +42,6 @@ static double ran2(long int *idum);  // internal random number generator
 void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pmb = pfl->pmy_block;
-  std::stringstream msg;
-
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
