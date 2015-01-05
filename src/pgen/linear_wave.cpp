@@ -188,7 +188,6 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     a1.DeleteAthenaArray();
     a2.DeleteAthenaArray();
     a3.DeleteAthenaArray();
-
   }
 
 // initialize conserved variables
@@ -210,9 +209,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       pfl->u(IM3,k,j,i) = mx*sin_a2                    + mz*cos_a2;
 
       if (NON_BAROTROPIC_EOS) {
-        pfl->u(IEN,k,j,i) = p0/gm1 + 0.5*d0*u0*u0;
+        pfl->u(IEN,k,j,i) = p0/gm1 + 0.5*d0*u0*u0 + amp*sn*rem[4][wave_flag];
         if (MAGNETIC_FIELDS_ENABLED) {
-          pfl->u(IEN,k,j,i) += 0.5*(bx0*bx0+by0*by0+bz0*bz0) + amp*sn*rem[4][wave_flag];
+          pfl->u(IEN,k,j,i) += 0.5*(bx0*bx0+by0*by0+bz0*bz0);
         }
       }
     }

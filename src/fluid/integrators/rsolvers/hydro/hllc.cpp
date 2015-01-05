@@ -90,8 +90,8 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 
     Real cl = pmy_fluid->pf_eos->SoundSpeed(wli);
     Real cr = pmy_fluid->pf_eos->SoundSpeed(wri);
-    Real q = hroe - 0.5*(wroe[IVX]*wroe[IVX]+wroe[IVY]*wroe[IVY]+wroe[IVZ]*wroe[IVZ]);
-    if (q < 0.0) q=0.0;
+    Real vsq = SQR(wroe[IVX]) + SQR(wroe[IVY]) + SQR(wroe[IVZ]);
+    Real q = std::max((hroe - 0.5*vsq),TINY_NUMBER);
     Real a = sqrt(gm1*q);
 
 //--- Step 4.  Compute the max/min wave speeds based on L/R and Roe-averaged values
