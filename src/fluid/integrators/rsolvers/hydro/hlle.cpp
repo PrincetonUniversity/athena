@@ -138,12 +138,8 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 
 //--- Step 6. Compute the HLLE flux at interface.
 
-    Real tmp;
-    if (bp == bm) {
-      tmp = 0.0;
-    } else {
-      tmp = 0.5*(bp + bm)/(bp - bm);
-    }
+    Real tmp=0.0;
+    if (bp != bm) tmp = 0.5*(bp + bm)/(bp - bm);
 
     flxi[IDN] = 0.5*(fl[IDN]+fr[IDN]) + (fl[IDN]-fr[IDN])*tmp;
     flxi[IVX] = 0.5*(fl[IVX]+fr[IVX]) + (fl[IVX]-fr[IVX])*tmp;
