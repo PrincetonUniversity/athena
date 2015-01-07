@@ -5,11 +5,18 @@
 //  \brief definition of the task list
 //======================================================================================
 
+#include "athena.hpp"
+#include "mesh.hpp"
+
+class MeshBlock;
+
+typedef bool (*TaskFunc_t)(MeshBlock*, int);
 
 struct Task {
-public:
   enum task taskid;
   unsigned long int depend;
+  TaskFunc_t TaskFunc;
+  int task_arg;
 };
 
 class TaskList {
@@ -23,13 +30,6 @@ public:
   void AddTask(enum task, unsigned long int dependence);
 };
 
-
-inline void TaskList::AddTask(enum task t, unsigned long int dependence)
-{
-  task[ntask].taskid=t;
-  task[ntask].depend=dependence;
-  ntask++;
-  return;
-}
+unsigned long int DependFlag(enum task);
 
 #endif

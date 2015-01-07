@@ -26,6 +26,8 @@ class Coordinates;
 class Fluid;
 class Field;
 class BoundaryValues;
+struct Task;
+class TaskList;
 
 //! \struct RegionSize
 //  \brief physical size and number of cells in a Mesh

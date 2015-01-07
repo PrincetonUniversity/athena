@@ -512,12 +512,15 @@ bool BoundaryValues::ReceiveAndSetFluidBoundary(enum direction dir,
       }
       else { // MPI boundary
 #ifdef MPI_PARALLEL
-        MPI_Wait(&req_fluid_recv_[flag][dir][0][0],MPI_STATUS_IGNORE);
-//        MPI_Test(&req_fluid_recv_[flag][dir][0][0],&test,MPI_STATUS_IGNORE);
-//        if(test==false) {
+//        MPI_Wait(&req_fluid_recv_[flag][dir][0][0],MPI_STATUS_IGNORE);
+//        do {
+//          MPI_Test(&req_fluid_recv_[flag][dir][0][0],&test,MPI_STATUS_IGNORE);
+//        } while(test==false);
+        MPI_Test(&req_fluid_recv_[flag][dir][0][0],&test,MPI_STATUS_IGNORE);
+        if(test==false) {
 //          std::cout << "MeshBlock "<< pmb->gid << " MPI boundary " << dir << " is not ready."<< std::endl; 
-//          return false;
-//        }
+          return false;
+        }
         fluid_flag_[flag][dir][0][0] = 1; // received
 #else
         msg << "### FATAL ERROR in ReceiveAndSetFluidBoundary" << std::endl
@@ -1016,7 +1019,7 @@ void InitBoundaryBuffer(int nx1, int nx2, int nx3)
 
 
   fluid_recv_se_[inner_x1][0]=is-NGHOST;
-  fluid_recv_se_[inner_x1][1]=is-NGHOST+1;
+  fluid_recv_se_[inner_x1][1]=is-1;
   fluid_recv_se_[inner_x1][2]=js;
   fluid_recv_se_[inner_x1][3]=je;
   fluid_recv_se_[inner_x1][4]=ks;
@@ -1032,7 +1035,7 @@ void InitBoundaryBuffer(int nx1, int nx2, int nx3)
   fluid_recv_se_[inner_x2][0]=0;
   fluid_recv_se_[inner_x2][1]=ie+NGHOST;
   fluid_recv_se_[inner_x2][2]=js-NGHOST;
-  fluid_recv_se_[inner_x2][3]=js-NGHOST+1;
+  fluid_recv_se_[inner_x2][3]=js-1;
   fluid_recv_se_[inner_x2][4]=ks;
   fluid_recv_se_[inner_x2][5]=ke;
 
@@ -1048,7 +1051,7 @@ void InitBoundaryBuffer(int nx1, int nx2, int nx3)
   fluid_recv_se_[inner_x3][2]=0;
   fluid_recv_se_[inner_x3][3]=je+NGHOST;
   fluid_recv_se_[inner_x3][4]=ks-NGHOST;
-  fluid_recv_se_[inner_x3][5]=ks-NGHOST+1;
+  fluid_recv_se_[inner_x3][5]=ks-1;
 
   fluid_recv_se_[outer_x3][0]=0;
   fluid_recv_se_[outer_x3][1]=ie+NGHOST;

@@ -46,33 +46,33 @@ enum face {x1face=0, x2face=1, x3face=2};
 enum rwmode {readmode,writemode};
 enum mpitag {tag_fluid=0, tag_field=1}; // mpitag must be < 16 and unique
 
-enum task {  // reserved for up to 4-step integrators
-  none=0L, new_blocktimestep=1L<<0,
-  primitives_0=1L<<1, primitives_1=1L<<2, primitives_2=1L<<3, primitives_3=1L<<4,
-  fluid_integrate_sendx1_0=1L<<5, fluid_integrate_sendx1_1=1L<<6,
-  fluid_integrate_sendx1_2=1L<<7, fluid_integrate_sendx1_3=1L<<8,
-  field_integrate_sendx1_0=1L<<9, field_integrate_sendx1_1=1L<<10,
-  field_integrate_sendx1_2=1L<<11, field_integrate_sendx1_3=1L<<12,
-  fluid_recvx1_0=1L<<13, fluid_recvx1_1=1L<<14, // for 1D
-  fluid_recvx1_2=1L<<15, fluid_recvx1_3=1L<<16,
-  field_recvx1_0=1L<<17, field_recvx1_1=1L<<18,
-  field_recvx1_2=1L<<19, field_recvx1_3=1L<<20,
-  fluid_recvx1_sendx2_0=1L<<13, fluid_recvx1_sendx2_1=1L<<14,
-  fluid_recvx1_sendx2_2=1L<<15, fluid_recvx1_sendx2_3=1L<<16,
-  field_recvx1_sendx2_0=1L<<17, field_recvx1_sendx2_1=1L<<18,
-  field_recvx1_sendx2_2=1L<<19, field_recvx1_sendx2_3=1L<<20,
-  fluid_recvx2_0=1L<<21, fluid_recvx2_1=1L<<22, // for 2D
-  fluid_recvx2_2=1L<<23, fluid_recvx2_3=1L<<24,
-  field_recvx2_0=1L<<25, field_recvx2_1=1L<<26,
-  field_recvx2_2=1L<<27, field_recvx2_3=1L<<28,
-  fluid_recvx2_sendx3_0=1L<<21, fluid_recvx2_sendx3_1=1L<<22,
-  fluid_recvx2_sendx3_2=1L<<23, fluid_recvx2_sendx3_3=1L<<24,
-  field_recvx2_sendx3_0=1L<<25, field_recvx2_sendx3_1=1L<<26,
-  field_recvx2_sendx3_2=1L<<27, field_recvx2_sendx3_3=1L<<28,
-  fluid_recvx3_0=1L<<29, fluid_recvx3_1=1L<<30,
-  fluid_recvx3_2=1L<<31, fluid_recvx3_3=1L<<32,
-  field_recvx3_0=1L<<33, field_recvx3_1=1L<<34,
-  field_recvx3_2=1L<<35, field_recvx3_3=1L<<36
+enum task {
+  none=0, 
+
+  primitives_0=1,
+  fluid_integrate_sendx1_0=2, field_integrate_sendx1_0=3,
+  fluid_recvx1_0=4, field_recvx1_0=5, // for 1D
+  fluid_recvx1_sendx2_0=4, field_recvx1_sendx2_0=5, 
+  fluid_recvx2_0=6, field_recvx2_0=7, // for2D
+  fluid_recvx2_sendx3_0=6, field_recvx2_sendx3_0=7,
+  fluid_recvx3_0=8, field_recvx3_0=9,
+
+  primitives_1=10,
+  fluid_integrate_sendx1_1=11, field_integrate_sendx1_1=12,
+  fluid_recvx1_1=13, field_recvx1_1=14, 
+  fluid_recvx1_sendx2_1=13, field_recvx1_sendx2_1=14,
+  fluid_recvx2_1=15, field_recvx2_1=16,
+  fluid_recvx2_sendx3_1=15, field_recvx2_sendx3_1=16,
+  fluid_recvx3_1=17, field_recvx3_1=18,
+
+  new_blocktimestep=19,
+//  primitives_2=4,
+//  fluid_integrate_sendx1_2=7, field_integrate_sendx1_2=10,
+//  fluid_recvx1_2=13, field_recvx1_2=16,
+//  fluid_recvx1_sendx2_2=13, field_recvx1_sendx2_2=16,
+//  fluid_recvx2_2=19, field_recvx2_2=22,
+//  fluid_recvx2_sendx3_2=19, field_recvx2_sendx3_2=22,
+//  fluid_recvx3_2=25, field_recvx3_2=28,
 };
 
 enum tlstatus { running, stuck, complete, nothing };
