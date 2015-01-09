@@ -142,22 +142,31 @@ int main(int argc, char *argv[])
         test_flag = strtol(argv[++i],NULL,10);
         break;
       case 'c':
-        ShowConfig();
+        if(myrank==0)
+          ShowConfig();
+#ifdef MPI_PARALLEL
+        MPI_Finalize();
+#endif
         return(0);
       break;
       case 'h':
       default:
-        std::cout<<"Athena++ "<< athena_version << std::endl;
-        std::cout<<"Usage: "<< argv[0] <<" [options] [block/par=value ...]"<< std::endl;
-        std::cout<<"Options:" << std::endl;
-        std::cout<<"  -i <file>       specify input file [athinput]"<< std::endl;
-        std::cout<<"  -r <file>       restart with this file"<< std::endl;
-        std::cout<<"  -d <directory>  specify run dir [current dir]"<< std::endl;
-        std::cout<<"  -n              parse input file and quit"<< std::endl;
-        std::cout<<"  -c              show configuration and quit"<< std::endl;
-        std::cout<<"  -m <nproc>      test mesh structure and quit"<< std::endl;
-        std::cout<<"  -h              this help"<< std::endl;
-        ShowConfig();
+        if(myrank==0) {
+          std::cout<<"Athena++ "<< athena_version << std::endl;
+          std::cout<<"Usage: "<< argv[0] <<" [options] [block/par=value ...]"<< std::endl;
+          std::cout<<"Options:" << std::endl;
+          std::cout<<"  -i <file>       specify input file [athinput]"<< std::endl;
+          std::cout<<"  -r <file>       restart with this file"<< std::endl;
+          std::cout<<"  -d <directory>  specify run dir [current dir]"<< std::endl;
+          std::cout<<"  -n              parse input file and quit"<< std::endl;
+          std::cout<<"  -c              show configuration and quit"<< std::endl;
+          std::cout<<"  -m <nproc>      test mesh structure and quit"<< std::endl;
+          std::cout<<"  -h              this help"<< std::endl;
+          ShowConfig();
+        }
+#ifdef MPI_PARALLEL
+        MPI_Finalize();
+#endif
         return(0);
         break;
       }
@@ -182,17 +191,30 @@ int main(int argc, char *argv[])
     std::cout << "### FATAL ERROR in main" << std::endl
               << "memory allocation failed initializing class ParameterInput: " 
               << ba.what() << std::endl;
+    input.Close();
+#ifdef MPI_PARALLEL
+    MPI_Finalize();
+#endif
     return(0);
   }
   catch(std::exception const& ex) {
     std::cout << ex.what() << std::endl;  // prints diagnostic message  
+    input.Close();
+#ifdef MPI_PARALLEL
+    MPI_Finalize();
+#endif
     return(0);
   }
 
 // Dump input parameters and quit if code was run with -n option.
 
   if (narg_flag){
-    pinput->ParameterDump(std::cout);
+    if(myrank==0)
+      pinput->ParameterDump(std::cout);
+    input.Close();
+#ifdef MPI_PARALLEL
+    MPI_Finalize();
+#endif
     return(0);
   }
 
@@ -215,10 +237,16 @@ int main(int argc, char *argv[])
     std::cout << "### FATAL ERROR in main" << std::endl
               << "memory allocation failed initializing class Mesh: " 
               << ba.what() << std::endl;
+#ifdef MPI_PARALLEL
+    MPI_Finalize();
+#endif
     return(0);
   }
   catch(std::exception const& ex) {
     std::cout << ex.what() << std::endl;  // prints diagnostic message
+#ifdef MPI_PARALLEL
+    MPI_Finalize();
+#endif
     return(0);
   }
 
@@ -238,10 +266,16 @@ int main(int argc, char *argv[])
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl << "memory allocation failed "
               << "in problem generator " << ba.what() << std::endl;
+#ifdef MPI_PARALLEL
+    MPI_Finalize();
+#endif
     return(0);
   }
   catch(std::exception const& ex) {
     std::cout << ex.what() << std::endl;  // prints diagnostic message 
+#ifdef MPI_PARALLEL
+    MPI_Finalize();
+#endif
     return(0);
   }
 
@@ -261,10 +295,16 @@ int main(int argc, char *argv[])
     std::cout << "### FATAL ERROR in main" << std::endl
               << "memory allocation failed setting initial conditions: " 
               << ba.what() << std::endl;
+#ifdef MPI_PARALLEL
+    MPI_Finalize();
+#endif
     return(0);
   }
   catch(std::exception const& ex) {
     std::cout << ex.what() << std::endl;  // prints diagnostic message  
+#ifdef MPI_PARALLEL
+    MPI_Finalize();
+#endif
     return(0);
   }
 
@@ -384,10 +424,16 @@ int main(int argc, char *argv[])
     catch(std::bad_alloc& ba) {
       std::cout << "### FATAL ERROR in main" << std::endl
                 << "memory allocation failed during output: " << ba.what() << std::endl;
+#ifdef MPI_PARALLEL
+      MPI_Finalize();
+#endif
       return(0);
     }
     catch(std::exception const& ex) {
       std::cout << ex.what() << std::endl;  // prints diagnostic message  
+#ifdef MPI_PARALLEL
+      MPI_Finalize();
+#endif
       return(0);
     }
 

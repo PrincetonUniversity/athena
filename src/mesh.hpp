@@ -61,6 +61,7 @@ private:
   Task *task;
   long int task_flag;
   int ntask, firsttask, ntodo;
+
   friend class RestartOutput;
   friend class BoundaryValues;
   friend class Mesh;
@@ -107,6 +108,8 @@ private:
   Real MeshGeneratorX2(Real x, RegionSize rs);
   Real MeshGeneratorX3(Real x, RegionSize rs);
   bool adaptive;
+
+  void MeshTest(BlockUID *buid, int *ranklist, Real *costlist);
 
   friend class RestartOutput;
   friend class MeshBlock;

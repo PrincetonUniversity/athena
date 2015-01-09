@@ -338,65 +338,12 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   // Mesh test only; do not create meshes
   if(test_flag>0)
   {
-    if(myrank!=0) return;
-    std::cout << "Logical level of the physical root grid = "<< root_level << std::endl;
-    std::cout << "Logical level of maximum refinement = "<< max_level << std::endl;
-    std::cout << "List of MeshBlocks" << std::endl;
-    int nbt=0;
-    int *nb=new int [max_level-root_level+1];
-    for(i=root_level;i<=max_level;i++)
-    {
-      nb[i-root_level]=0;
-      for(j=0;j<nbtotal;j++)
-      {
-        if(buid[j].GetLevel()==i)
-        {
-          buid[j].GetLocation(lx1,lx2,lx3,ll);
-          std::cout << "MeshBlock " << j << ", lx1 = "
-                    << lx1 << ", lx2 = " << lx2 <<", lx3 = " << lx3
-                    << ", logical level = " << ll << ", cost = " << costlist[j]
-                    << ", rank = " << ranklist[j] << ", neighbors = ";
-          int kmax=2;
-          if(mesh_size.nx2 > 1) kmax=4;
-          if(mesh_size.nx3 > 1) kmax=6;
-          for(int k=0;k<kmax;k++)
-          {
-            neibt=tree.FindNeighbor((enum direction)k,buid[j],nrbx1,nrbx2,nrbx3,root_level);
-            nei=neibt->GetNeighbor();
-            std::cout << nei.gid << " ";
-          }
-          std::cout << std::endl;
-          nb[i-root_level]++; nbt++;
-        }
-      }
-    }
-    for(i=root_level;i<=max_level;i++)
-    {
-      std::cout << "Logical Level " << i << ": " << nb[i-root_level] << " Blocks" << std::endl;
-    }
-    std::cout << "In Total : " << nbt << " Blocks" << std::endl << std::endl;
-    std::cout << "Load Balance :" << std::endl;
-    std::cout << "Minimum cost = " << mincost << ", Maximum cost = " << maxcost << std::endl;
-    j=0;
-    mycost=0;
-    nbt=0;
-    for(i=0;i<nbtotal;i++)
-    {
-      if(ranklist[i]==j)
-      {
-        mycost+=costlist[i];
-        nbt++;
-      }
-      else if(ranklist[i]!=j)
-      {
-        std::cout << "Rank " << j << ": " << nbt <<" Blocks, cost = " << mycost << std::endl;
-        mycost=costlist[i];
-        nbt=1;
-        j++;
-      }
-    }
-    std::cout << "Rank " << j << ": " << nbt <<" Blocks, cost = " << mycost << std::endl;
-    delete [] nb;
+    if(myrank==0)
+      MeshTest(buid,ranklist,costlist);
+    delete [] buid;
+    delete [] ranklist;
+    delete [] nslist;
+    delete [] costlist;
     return;
   }
 
@@ -808,6 +755,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
     resfile.Close();
     throw std::runtime_error(msg.str().c_str());
   }
+  delete [] rawid; // no longer needed
 
 #ifdef MPI_PARALLEL
   if(nbtotal < nproc)
@@ -883,61 +831,13 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   // Mesh test only; do not create meshes
   if(test_flag>0)
   {
-    if(myrank==0) {
-      std::cout << "Logical level of the physical root grid = "<< root_level << std::endl;
-      std::cout << "Logical level of maximum refinement = "<< max_level << std::endl;
-      std::cout << "List of MeshBlocks" << std::endl;
-      int nbt=0;
-      int *nb=new int [max_level-root_level+1];
-      for(i=root_level;i<=max_level;i++)
-      {
-        nb[i-root_level]=0;
-        for(j=0;j<nbtotal;j++)
-        {
-          if(buid[j].GetLevel()==i)
-          {
-            buid[j].GetLocation(lx1,lx2,lx3,ll);
-            std::cout << "MeshBlock " << j << ", lx1 = "
-                      << lx1 << ", lx2 = " << lx2 <<", lx3 = " << lx3
-                      << ", logical level = " << ll << ", cost = " << costlist[j]
-                      << ", rank = " << ranklist[j] << std::endl;;
-            nb[i-root_level]++; nbt++;
-          }
-        }
-      }
-      for(i=root_level;i<=max_level;i++)
-      {
-        std::cout << "Logical Level " << i << ": " << nb[i-root_level] << " Blocks" << std::endl;
-      }
-      std::cout << "In Total : " << nbt << " Blocks" << std::endl << std::endl;
-      std::cout << "Load Balance :" << std::endl;
-      std::cout << "Minimum cost = " << mincost << ", Maximum cost = " << maxcost << std::endl;
-      j=0;
-      mycost=0;
-      nbt=0;
-      for(i=0;i<nbtotal;i++)
-      {
-        if(ranklist[i]==j)
-        {
-          mycost+=costlist[i];
-          nbt++;
-        }
-        else if(ranklist[i]!=j)
-        {
-          std::cout << "Rank " << j << ": " << nbt <<" Blocks, cost = " << mycost << std::endl;
-          mycost=costlist[i];
-          nbt=1;
-          j++;
-        }
-      }
-      std::cout << "Rank " << j << ": " << nbt <<" Blocks, cost = " << mycost << std::endl;
-      delete [] nb;
-    }
+    if(myrank==0)
+      MeshTest(buid,ranklist,costlist);
     delete [] buid;
     delete [] offset;
     delete [] costlist;
     delete [] ranklist;
-    delete [] rawid;
+    delete [] nslist;
     return;
   }
 
@@ -964,7 +864,6 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   delete [] offset;
   delete [] costlist;
   delete [] ranklist;
-  delete [] rawid;
   delete [] nslist;
 }
 
@@ -979,6 +878,71 @@ Mesh::~Mesh()
     delete pblock->next;
   delete pblock;
 }
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void Mesh::MeshTest(BlockUID *buid, int *ranklist, Real *costlist)
+//  \brief print the mesh structure information
+void Mesh::MeshTest(BlockUID *buid, int *ranklist, Real *costlist)
+{
+  int i, j, nbt=0;
+  long int lx1, lx2, lx3;
+  int ll;
+  Real mycost=0, mincost=FLT_MAX, maxcost=0.0, totalcost;
+  int *nb=new int [max_level-root_level+1];
+  std::cout << "Logical level of the physical root grid = "<< root_level << std::endl;
+  std::cout << "Logical level of maximum refinement = "<< max_level << std::endl;
+  std::cout << "List of MeshBlocks" << std::endl;
+  for(i=root_level;i<=max_level;i++)
+  {
+    nb[i-root_level]=0;
+    for(j=0;j<nbtotal;j++)
+    {
+      if(buid[j].GetLevel()==i)
+      {
+        buid[j].GetLocation(lx1,lx2,lx3,ll);
+        std::cout << "MeshBlock " << j << ", lx1 = "
+                  << lx1 << ", lx2 = " << lx2 <<", lx3 = " << lx3
+                  << ", logical level = " << ll << ", cost = " << costlist[j]
+                  << ", rank = " << ranklist[j] << std::endl;
+        mincost=std::min(mincost,costlist[i]);
+        maxcost=std::max(maxcost,costlist[i]);
+        totalcost+=costlist[i];
+        nb[i-root_level]++;
+      }
+    }
+  }
+
+  for(i=root_level;i<=max_level;i++)
+    std::cout << "Logical Level " << i << ": " << nb[i-root_level] << " Blocks" << std::endl;
+
+  std::cout << "In Total : " << nbtotal << " Blocks" << std::endl << std::endl;
+  std::cout << "Load Balance :" << std::endl;
+  std::cout << "Minimum cost = " << mincost << ", Maximum cost = " << maxcost
+            << ", Average cost = " << totalcost/nbtotal << std::endl;
+  j=0;
+  nbt=0;
+  for(i=0;i<nbtotal;i++)
+  {
+    if(ranklist[i]==j)
+    {
+      mycost+=costlist[i];
+      nbt++;
+    }
+    else if(ranklist[i]!=j)
+    {
+      std::cout << "Rank " << j << ": " << nbt <<" Blocks, cost = " << mycost << std::endl;
+      mycost=costlist[i];
+      nbt=1;
+      j++;
+    }
+  }
+  std::cout << "Rank " << j << ": " << nbt <<" Blocks, cost = " << mycost << std::endl;
+
+  delete [] nb;
+  return;
+}
+
 
 //--------------------------------------------------------------------------------------
 // MeshBlock constructor: builds 1D vectors of cell positions and spacings, and
@@ -1546,7 +1510,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       pmb->pfluid->NewBlockTimeStep(pmb);
       pmb=pmb->next;
     }
-    this->NewTimeStep();
+    NewTimeStep();
   }
   return;
 }
