@@ -1449,6 +1449,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
 
   pmb = pblock;
   while (pmb != NULL)  {
+    pmb->pbval->Initialize();
     pmb->pbval->StartReceiving(0);
     pmb=pmb->next;
   }
@@ -1533,7 +1534,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
   while (pmb != NULL)  {
     pfluid=pmb->pfluid;
     pfield=pmb->pfield;
-    pmb->pbval->ClearBoundary();
+    pmb->pbval->ClearBoundary(0);
     pfluid->pf_eos->ConservedToPrimitive(pfluid->u, pfluid->w1, pfield->b, 
                                          pfluid->w, pfield->bcc);
     pmb=pmb->next;
@@ -1606,7 +1607,7 @@ void Mesh::UpdateOneStep(void)
 
   pmb = pblock;
   while (pmb != NULL)  {
-    pmb->pbval->ClearBoundary();
+    pmb->pbval->ClearBoundaryAll();
     pmb=pmb->next;
   }
   return;

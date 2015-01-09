@@ -96,6 +96,7 @@ public:
   BoundaryValues(MeshBlock *pmb, ParameterInput *pin);
   ~BoundaryValues();
 
+  void Initialize(void);
   void StartReceiving(int flag);
   void StartReceivingAll(void);
   void LoadAndSendFluidBoundaryBuffer(enum direction dir,
@@ -110,7 +111,8 @@ public:
                                           InterfaceField &dst, int flag);
   void EnrollFluidBoundaryFunction (enum direction edge, BValFluid_t  my_bc);
   void EnrollFieldBoundaryFunction(enum direction edge, BValField_t my_bc);
-  void ClearBoundary(void);
+  void ClearBoundary(int flag);
+  void ClearBoundaryAll(void);
 
 private:
   MeshBlock *pmy_mblock_;  // ptr to MeshBlock containing this BVals
