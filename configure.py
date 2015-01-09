@@ -66,7 +66,7 @@ parser.add_argument('--eos',
 # --flux=[name] argument
 parser.add_argument('--flux',
     default='hlle',
-    choices=['hlle','hllc','hlld','roe'],
+    choices=['hlle','hllc','hlld','roe','llf'],
     help='select Riemann solver')
 
 # -b argument
@@ -180,7 +180,7 @@ makefile_options['EOS_FILE'] += '_mhd' if args['b'] else '_hydro'
 if args['b']:
   definitions['NFIELD_VARIABLES'] = '3'
   makefile_options['RSOLVER_DIR'] = 'mhd/'
-  if args['flux'] == 'hlle':
+  if args['flux'] == 'hlle' or args['flux'] == 'llf':
     makefile_options['RSOLVER_FILE'] += '_mhd'
   if args['eos'] == 'adiabatic':
     definitions['NWAVE_VALUE'] = '7'
