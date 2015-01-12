@@ -72,10 +72,14 @@ public:
   void FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flux);
   void FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flux);
   void FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flux);
-  void PrimToCons(AthenaArray<Real> &prim, AthenaArray<Real> &cons);
+  void PrimToCons(const AthenaArray<Real> &prim, const AthenaArray<Real> &b,
+      AthenaArray<Real> &cons);
 
 private:
 // scratch arrays containing precomputed factors used by functions in this class
+  AthenaArray<Real> edge1_length_i_, edge1_length_j_;
+  AthenaArray<Real> edge2_length_i_, edge2_length_j_;
+  AthenaArray<Real> edge3_length_i_, edge3_length_j_;
   AthenaArray<Real> face1_area_i_, face1_area_j_;
   AthenaArray<Real> face2_area_i_, face2_area_j_;
   AthenaArray<Real> face3_area_i_, face3_area_j_;
