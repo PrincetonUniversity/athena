@@ -445,7 +445,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
         output_params.variable.compare("cons") == 0) {
       pov = new OutputVariable; 
       pov->type = "VECTORS";
-      pov->name = "cell-centered B";
+      pov->name = "cc-B";
       pov->data.InitWithShallowSlice(pfd->bcc,4,IB1,3);
       pod->AppendNode(pov); // magnetic field vector
       var_added = 1;
