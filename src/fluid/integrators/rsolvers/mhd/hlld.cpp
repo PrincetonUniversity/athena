@@ -156,7 +156,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
       flxi[IVY] = fr.my;
       flxi[IVZ] = fr.mz;
       flxi[IEN] = fr.e;
-      flxi[IBY] = fl.by;
+      flxi[IBY] = fr.by;
       flxi[IBZ] = fr.bz;
     } else {
 

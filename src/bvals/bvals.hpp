@@ -83,6 +83,7 @@ void PeriodicOuterX3(MeshBlock *pmb, InterfaceField &buf);
 
 typedef void (*BValFluid_t)(MeshBlock *pmb, AthenaArray<Real> &buf);
 typedef void (*BValField_t)(MeshBlock *pmb, InterfaceField &buf);
+typedef void (*BValEFace_t)(MeshBlock *pmb, InterfaceField &buf);
 
 void InitBoundaryBuffer(int nx1, int nx2, int nx3);
 
@@ -105,6 +106,13 @@ public:
   bool ReceiveAndSetFieldBoundary(enum direction dir, InterfaceField &dst);
   void WaitSendField(enum direction dir);
 
+  void StartReceivingEFace(int flag = 0);
+  void LoadAndSendEFluxBoundaryBuffer(InterfaceField &fdst, InterfaceField &wdst
+                                      int flag);
+  bool ReceiveAndSetEFluxBoundary(InterfaceField &fdst, InterfaceField &wdst);
+  void WaitSendEFlux();
+
+
   void EnrollFluidBoundaryFunction (enum direction edge, BValFluid_t  my_bc);
   void EnrollFieldBoundaryFunction(enum direction edge, BValField_t my_bc);
 
@@ -113,16 +121,22 @@ private:
 
   BValFluid_t FluidBoundary_[6];
   BValField_t FieldBoundary_[6];
+  BValEFace_t EFaceBoundary_[6];
 
-  bool fluid_flag_[6][2][2], field_flag_[6][2][2];
+  bool fluid_flag_[6][2][2], field_flag_[6][2][2], eflux_flag_[6][2][2];;
   Real *fluid_send_[6];
   Real *fluid_recv_[6];
   Real *field_send_[6];
   Real *field_recv_[6];
+  Real *eflux_send_[6];
+  Real *eflux_recv_[6];
+
+
 
 #ifdef MPI_PARALLEL
   MPI_Request req_fluid_send_[6][2][2], req_fluid_recv_[6][2][2];
   MPI_Request req_field_send_[6][2][2], req_field_recv_[6][2][2];
+  MPI_Request req_eflux_send_[6][2][2], req_eflux_recv_[6][2][2];
 #endif
 };
 
