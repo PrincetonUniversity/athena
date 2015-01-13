@@ -71,6 +71,7 @@ void FieldIntegrator::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w,
 
   BoundaryValuesFaceCenteredE3(pmb);
 
+  // E3=-(v X B)=VyBx-VxBy
   for (int k=ks; k<=ke; ++k) {
   for (int j=js-1; j<=je+1; ++j) {
     for (int i=is-1; i<=ie+1; ++i) {

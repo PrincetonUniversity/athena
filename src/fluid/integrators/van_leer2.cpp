@@ -148,12 +148,10 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
         for (int i=is; i<=ie+1; ++i){
           ei_x1f(X1E3,k,j,i) = -flx(IBY,i); // flx(IBY) = (v1*b2 - v2*b1) = -EMFZ
           ei_x1f(X1E2,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v1*b3 - v3*b1) =  EMFY
-// estimate weight used to upwind electric fields in GS07 algorithm
-//          Real fac = (1024)*dt/pmb->pcoord->CenterWidth1(k,j,i);
-//          Real rat = std::min( 0.5, (fac*flx(IDN,i)/(u(IDN,k,j,i-1)+u(IDN,k,j,i))) );
-//          w_x1f(k,j,i) = 0.5 + std::max(-0.5,rat);
-          w_x1f(k,j,i) = 0.0;
-          if (flx(IDN,i) > 0.0) w_x1f(k,j,i) = 1.0;
+          // estimate weight used to upwind electric fields in GS07 algorithm
+          Real fac = (1024)*dt/pmb->pcoord->CenterWidth1(k,j,i);
+          Real rat = std::min( 0.5, (fac*flx(IDN,i)/(u(IDN,k,j,i-1)+u(IDN,k,j,i))) );
+          w_x1f(k,j,i) = 0.5 + std::max(-0.5,rat);
         }
       }
 
@@ -233,12 +231,10 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
           for (int i=is; i<=ie; ++i){
             ei_x2f(X2E1,k,j,i) = -flx(IBY,i); // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
             ei_x2f(X2E3,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
-// estimate weight used to upwind electric fields in GS07 algorithm
-//            Real fac = (1024)*dt/pmb->pcoord->CenterWidth2(k,j,i);
-//            Real rat = std::min( 0.5, (fac*flx(IDN,i)/(u(IDN,k,j-1,i)+u(IDN,k,j,i))) );
-//            w_x2f(k,j,i) = 0.5 + std::max(-0.5,rat);
-          w_x2f(k,j,i) = 0.0;
-          if (flx(IDN,i) > 0.0) w_x2f(k,j,i) = 1.0;
+            // estimate weight used to upwind electric fields in GS07 algorithm
+            Real fac = (1024)*dt/pmb->pcoord->CenterWidth2(k,j,i);
+            Real rat = std::min( 0.5, (fac*flx(IDN,i)/(u(IDN,k,j-1,i)+u(IDN,k,j,i))) );
+            w_x2f(k,j,i) = 0.5 + std::max(-0.5,rat);
           }
         }
 
