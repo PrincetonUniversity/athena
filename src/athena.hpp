@@ -50,19 +50,23 @@ enum ActionOnBlock
   {pgen,          primitives_n, primitives_nhalf, new_blocktimestep,
   fluid_predict, fluid_correct,   field_predict, field_correct,
   fluid_start_recv_n, fluid_start_recv_nhalf, 
-  field_start_recv_n, field_start_recv_nhalf,
   fluid_loadsend_bcsx1_n, fluid_loadsend_bcsx2_n, fluid_loadsend_bcsx3_n,
   fluid_recvset_bcsx1_n, fluid_recvset_bcsx2_n, fluid_recvset_bcsx3_n,
-  field_loadsend_bcsx1_n, field_loadsend_bcsx2_n, field_loadsend_bcsx3_n,
-  field_recvset_bcsx1_n, field_recvset_bcsx2_n, field_recvset_bcsx3_n,
   fluid_loadsend_bcsx1_nhalf, fluid_loadsend_bcsx2_nhalf, fluid_loadsend_bcsx3_nhalf,
   fluid_recvset_bcsx1_nhalf, fluid_recvset_bcsx2_nhalf, fluid_recvset_bcsx3_nhalf,
+  fluid_waitsend_bcsx1, fluid_waitsend_bcsx2, fluid_waitsend_bcsx3,
+  field_start_recv_n, field_start_recv_nhalf,
+  field_loadsend_bcsx1_n, field_loadsend_bcsx2_n, field_loadsend_bcsx3_n,
+  field_recvset_bcsx1_n, field_recvset_bcsx2_n, field_recvset_bcsx3_n,
   field_loadsend_bcsx1_nhalf, field_loadsend_bcsx2_nhalf, field_loadsend_bcsx3_nhalf,
   field_recvset_bcsx1_nhalf, field_recvset_bcsx2_nhalf, field_recvset_bcsx3_nhalf,
-  fluid_waitsend_bcsx1, fluid_waitsend_bcsx2, fluid_waitsend_bcsx3,
-  field_waitsend_bcsx1, field_waitsend_bcsx2, field_waitsend_bcsx3
+  field_waitsend_bcsx1, field_waitsend_bcsx2, field_waitsend_bcsx3,
+  eflux_start_recv_n, eflux_start_recv_nhalf,
+  eflux_loadsend_bcs_n, eflux_loadsend_bcs_nhalf, 
+  eflux_recvset_bcs_n, eflux_recvset_bcs_nhalf, 
+  eflux_waitsend
   };
 
-extern int myrank, nproc, tag_shift;
+extern int myrank, nproc;
 
 #endif

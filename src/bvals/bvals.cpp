@@ -562,18 +562,18 @@ void BoundaryValues::WaitSendFluid(enum direction dir)
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::StartReceivingEFace(int flag)
+//! \fn void BoundaryValues::StartReceivingEFlux(int flag)
 //  \brief initiate MPI_Irecv for field
-void BoundaryValues::StartReceivingEFace(int flag)
+void BoundaryValues::StartReceivingEFlux(int flag)
 {
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_mblock_;
   int tag;
   for(int i=0;i<6;i++) {
     if(pmb->neighbor[i][0][0].gid!=-1 && pmb->neighbor[i][0][0].rank!=myrank) {
-      tag=CreateMPITag(pmb->lid, flag, i, tag_eface, 0, 0);
-      MPI_Irecv(eface_recv_[i],eface_bufsize_[i],MPI_ATHENA_REAL,
-          pmb->neighbor[i][0][0].rank,tag,MPI_COMM_WORLD,&req_eface_recv_[i][0][0]);
+      tag=CreateMPITag(pmb->lid, flag, i, tag_eflux, 0, 0);
+      MPI_Irecv(eflux_recv_[i],eflux_bufsize_[i],MPI_ATHENA_REAL,
+          pmb->neighbor[i][0][0].rank,tag,MPI_COMM_WORLD,&req_eflux_recv_[i][0][0]);
     }
   }
 #endif
@@ -895,10 +895,10 @@ bool BoundaryValues::ReceiveAndSetEFluxBoundary(InterfaceField &fdst, InterfaceF
   int dir=0;
   Real *recvbuf=field_recv_[dir];
   if(pmb->neighbor[dir][0][0].gid==-1) // physical boundary
-    EFaceBoundary_[dir](pmb,dst); //do something here
+    EFluxBoundary_[dir](pmb,dst); //do something here
   else // block boundary
   {
-    if(eface_flag_[dir][0][0] == false)
+    if(eflux_flag_[dir][0][0] == false)
     {
       if(pmb->neighbor[dir][0][0].rank==myrank) {// on the same process
         std::cout << "Buffer is not ready: this should not happen." << std::endl;
@@ -907,7 +907,7 @@ bool BoundaryValues::ReceiveAndSetEFluxBoundary(InterfaceField &fdst, InterfaceF
       else { // MPI boundary
 #ifdef MPI_PARALLEL
         // temporary: wait the communication
-        MPI_Wait(&req_eface_recv_[dir][0][0],MPI_STATUS_IGNORE);
+        MPI_Wait(&req_eflux_recv_[dir][0][0],MPI_STATUS_IGNORE);
 
         // for the future interleaving: check if it is ready
         //   return false; return if it is not ready yet ; for task implementation
@@ -929,7 +929,7 @@ bool BoundaryValues::ReceiveAndSetEFluxBoundary(InterfaceField &fdst, InterfaceF
         }
       }
     }
-    eface_flag_[dir][0][0] = false; // clear the flag
+    eflux_flag_[dir][0][0] = false; // clear the flag
   }
 
   return true;
@@ -937,15 +937,15 @@ bool BoundaryValues::ReceiveAndSetEFluxBoundary(InterfaceField &fdst, InterfaceF
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::WaitSendField(void)
-//  \brief wait until MPI_Isend for magnetic fields completes
-void BoundaryValues::WaitSendEFace(void)
+//! \fn void BoundaryValues::WaitSendEFlux(void)
+//  \brief wait until MPI_Isend completes for EFlux
+void BoundaryValues::WaitSendEFlux(void)
 {
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_mblock_;
   for(int dir=0;dir<6;dir++) {
     if(pmb->neighbor[dir][0][0].rank!=-1 && pmb->neighbor[dir][0][0].rank!=myrank)
-      MPI_Wait(&req_eface_send_[dir][0][0],MPI_STATUS_IGNORE);
+      MPI_Wait(&req_eflux_send_[dir][0][0],MPI_STATUS_IGNORE);
   }
 #endif
   return;

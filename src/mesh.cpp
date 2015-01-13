@@ -1673,6 +1673,40 @@ void Mesh::ForAllMeshBlocks(enum ActionOnBlock action, ParameterInput *pin)
           pfluid->w1, pfield->bcc1);
         break;
 
+      case eflux_start_recv_n:
+        pmb->pbval->StartReceivingEFlux(0);
+        break;
+
+      case eflux_loadsend_bcs_n:
+        pmb->pbval->LoadAndSendEFluxBoundaryBuffer(pfield->ei,pfield->wght,0);
+        pmb->pbval->LoadAndSendEFluxBoundaryBuffer(pfield->ei,pfield->wght,0);
+        break;
+
+      case eflux_recvset_bcs_n:
+        pmb->pbval->ReceiveAndSetEFluxBoundary(pfield->ei,pfield->wght);
+        pmb->pbval->ReceiveAndSetEFluxBoundary(pfield->ei,pfield->wght);
+        break;
+
+      case eflux_start_recv_nhalf:
+        pmb->pbval->StartReceivingEFlux(1);
+        break;
+
+      case eflux_loadsend_bcs_nhalf:
+        pmb->pbval->LoadAndSendEFluxBoundaryBuffer(pfield->ei,pfield->wght,1);
+        pmb->pbval->LoadAndSendEFluxBoundaryBuffer(pfield->ei,pfield->wght,1);
+        break;
+
+      case eflux_recvset_bcs_nhalf:
+        pmb->pbval->ReceiveAndSetEFluxBoundary(pfield->ei,pfield->wght);
+        pmb->pbval->ReceiveAndSetEFluxBoundary(pfield->ei,pfield->wght);
+        break;
+
+      case eflux_waitsend_bcs:
+        pmb->pbval->WaitSendEFlux();
+        pmb->pbval->WaitSendEFlux();
+        break;
+
+
     }
     pmb=pmb->next;
   }
