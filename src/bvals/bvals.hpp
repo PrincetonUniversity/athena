@@ -107,10 +107,10 @@ public:
   void WaitSendField(enum direction dir);
 
   void StartReceivingEFace(int flag = 0);
-  void LoadAndSendEFluxBoundaryBuffer(InterfaceField &fdst, InterfaceField &wdst
+  void LoadAndSendEFluxBoundaryBuffer(InterfaceField &fsrc, InterfaceField &wsrc,
                                       int flag);
   bool ReceiveAndSetEFluxBoundary(InterfaceField &fdst, InterfaceField &wdst);
-  void WaitSendEFlux();
+  void WaitSendEFlux(void);
 
 
   void EnrollFluidBoundaryFunction (enum direction edge, BValFluid_t  my_bc);

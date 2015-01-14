@@ -808,7 +808,8 @@ void BoundaryValues::WaitSendField(enum direction dir)
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::LoadAndSendEFluxBoundaryBuffer(InterfaceField &src,int flag)
+//! \fn void BoundaryValues::LoadAndSendEfluxBoundaryBuffer(InterfaceField &fsrc,
+//                                                      InterfaceField &wsrc, int flag)
 //  \brief Set boundary buffer for x1 direction using boundary functions
 //  note: some geometric boundaries (e.g. origin and pole) are not implemented yet
 void BoundaryValues::LoadAndSendEfluxBoundaryBuffer(InterfaceField &fsrc,
@@ -883,7 +884,8 @@ void BoundaryValues::LoadAndSendEfluxBoundaryBuffer(InterfaceField &fsrc,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::ReceiveAndSetEFluxBoundary(InterfaceField &dst)
+//! \fn bool BoundaryValues::ReceiveAndSetEFluxBoundary(InterfaceField &fdst,
+//                                                      InterfaceField &wdst);
 //  \brief load boundary buffer for x1 direction into the array
 bool BoundaryValues::ReceiveAndSetEFluxBoundary(InterfaceField &fdst, InterfaceField &wdst);
 
