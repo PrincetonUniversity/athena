@@ -21,13 +21,13 @@ nlim       = -1        # cycle limit
 tlim       = 5.0       # time limit
 
 <mesh>
-nx1        = 128       # Number of zones in X-direction
+nx1        = 256       # Number of zones in X-direction
 x1min      = 0.0       # minimum value of X
 x1max      = 2.236068  # maximum value of X
 ix1_bc     = 4         # inner-I (X) boundary flag
 ox1_bc     = 4         # outer-I (X) boundary flag
 
-nx2        = 64        # Number of zones in Y-direction
+nx2        = 128       # Number of zones in Y-direction
 x2min      = 0.0       # minimum value of Y
 x2max      = 1.118034  # maximum value of Y
 ix2_bc     = 4         # inner-J (Y) boundary flag

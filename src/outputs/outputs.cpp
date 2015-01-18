@@ -258,7 +258,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
       if (op.file_type.compare("hst") != 0 && op.file_type.compare("rst") != 0) {
         op.variable = pin->GetString(op.block_name,"variable");
       }
-      op.data_format = pin->GetOrAddString(op.block_name,"data_format","%12e.5");
+      op.data_format = pin->GetOrAddString(op.block_name,"data_format","%12.5e");
       op.data_format.insert(0," "); // prepend with blank to separate columns
 
 // Construct new OutputType according to file format
@@ -445,7 +445,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
         output_params.variable.compare("cons") == 0) {
       pov = new OutputVariable; 
       pov->type = "VECTORS";
-      pov->name = "cell-centered B";
+      pov->name = "cc-B";
       pov->data.InitWithShallowSlice(pfd->bcc,4,IB1,3);
       pod->AppendNode(pov); // magnetic field vector
       var_added = 1;
