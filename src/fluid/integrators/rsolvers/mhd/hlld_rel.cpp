@@ -10,20 +10,19 @@
 // Athena headers
 #include "../../../../athena.hpp"                   // enums, macros, Real
 #include "../../../../athena_arrays.hpp"            // AthenaArray
-#include "../../../eos/eos.hpp"                     // GetGamma()
+#include "../../../eos/eos.hpp"                     // GetGamma(),
+                                                    //     FastMagnetosonicSpeedsSR()
 #include "../../../fluid.hpp"                       // Fluid
 #include "../../../../coordinates/coordinates.hpp"  // Coordinates
 #include "../../../../mesh.hpp"                     // MeshBlock
 
 // Declarations
 static void PrimToFluxFlat(Real gamma_adi_red, Real rho, Real pgas,
-    Real ut, Real ux, Real uy, Real uz,
-    Real bcovt, Real bcovx, Real bcovy, Real bcovz,
-    int ivx, int ivy, int ivz, Real flux[NWAVE]);
+    const Real u_con[4], const Real b_con[4],
+    Real flux[NWAVE], int ivx, int ivy, int ivz);
 static void PrimToConsFlat(Real gamma_adi_red, Real rho, Real pgas,
-    Real ut, Real ux, Real uy, Real uz,
-    Real bcovt, Real bcovx, Real bcovy, Real bcovz,
-    int ivx, int ivy, int ivz, Real cons[NWAVE]);
+    const Real u_con[4], const Real b_con[4],
+    Real cons[NWAVE], int ivx, int ivy, int ivz);
 static Real ConsToPFlat(const Real cons[NWAVE], Real bx, Real gamma_adi_red, int ivx);
 static Real EResidual(Real w_guess, Real d, Real e, Real m_sq, Real b_sq, Real s_sq,
     Real gamma_prime);
@@ -123,42 +122,37 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     // Extract normal magnetic field
     const Real bx = b_normal_(i);
 
-    // Calculate covariant versions of left primitives
-    Real ut_left = std::sqrt(1.0/(1.0-(SQR(vx_left)+SQR(vy_left)+SQR(vz_left))));
-    Real ux_left = ut_left * vx_left;
-    Real uy_left = ut_left * vy_left;
-    Real uz_left = ut_left * vz_left;
-    Real bcovt_left = bx*ux_left + by_left*uy_left + bz_left*uz_left;
-    Real bcovx_left = (bx + bcovt_left * ux_left) / ut_left;
-    Real bcovy_left = (by_left + bcovt_left * uy_left) / ut_left;
-    Real bcovz_left = (bz_left + bcovt_left * uz_left) / ut_left;
+    // Calculate 4-vectors for left primitives
+    Real u_con_left[4], b_con_left[4];
+    u_con_left[0] = std::sqrt(1.0/(1.0-(SQR(vx_left)+SQR(vy_left)+SQR(vz_left))));
+    u_con_left[1] = u_con_left[0] * vx_left;
+    u_con_left[2] = u_con_left[0] * vy_left;
+    u_con_left[3] = u_con_left[0] * vz_left;
+    b_con_left[0] = bx*u_con_left[1] + by_left*u_con_left[2] + bz_left*u_con_left[3];
+    b_con_left[1] = (bx + b_con_left[0] * u_con_left[1]) / u_con_left[0];
+    b_con_left[2] = (by_left + b_con_left[0] * u_con_left[2]) / u_con_left[0];
+    b_con_left[3] = (bz_left + b_con_left[0] * u_con_left[3]) / u_con_left[0];
 
-    // Calculate covariant versions of right primitives
-    Real ut_right = std::sqrt(1.0/(1.0-(SQR(vx_right)+SQR(vy_right)+SQR(vz_right))));
-    Real ux_right = ut_right * vx_right;
-    Real uy_right = ut_right * vy_right;
-    Real uz_right = ut_right * vz_right;
-    Real bcovt_right = bx*ux_right + by_right*uy_right + bz_right*uz_right;
-    Real bcovx_right = (bx + bcovt_right * ux_right) / ut_right;
-    Real bcovy_right = (by_right + bcovt_right * uy_right) / ut_right;
-    Real bcovz_right = (bz_right + bcovt_right * uz_right) / ut_right;
+    // Calculate 4-vectors for right primitives
+    Real u_con_right[4], b_con_right[4];
+    u_con_right[0] = std::sqrt(1.0/(1.0-(SQR(vx_right)+SQR(vy_right)+SQR(vz_right))));
+    u_con_right[1] = u_con_right[0] * vx_right;
+    u_con_right[2] = u_con_right[0] * vy_right;
+    u_con_right[3] = u_con_right[0] * vz_right;
+    b_con_right[0] = bx*u_con_right[1] + by_right*u_con_right[2]
+        + bz_right*u_con_right[3];
+    b_con_right[1] = (bx + b_con_right[0] * u_con_right[1]) / u_con_right[0];
+    b_con_right[2] = (by_right + b_con_right[0] * u_con_right[2]) / u_con_right[0];
+    b_con_right[3] = (bz_right + b_con_right[0] * u_con_right[3]) / u_con_right[0];
 
     // Calculate wavespeeds
     Real lambda_left_plus, lambda_left_minus;
-    pmy_fluid->pf_eos->FastMagnetosonicSpeedsRel(
-        rho_left, pgas_left,
-        vx_left, vy_left, vz_left,
-        ut_left, ux_left, uy_left, uz_left,
-        bx, by_left, bz_left,
-        bcovt_left, bcovx_left, bcovy_left, bcovz_left,
+    pmy_fluid->pf_eos->FastMagnetosonicSpeedsSR(
+        rho_left, pgas_left, u_con_left, b_con_left,
         &lambda_left_plus, &lambda_left_minus);                          // (MB 56)
     Real lambda_right_plus, lambda_right_minus;
-    pmy_fluid->pf_eos->FastMagnetosonicSpeedsRel(
-        rho_right, pgas_right,
-        vx_right, vy_right, vz_right,
-        ut_right, ux_right, uy_right, uz_right,
-        bx, by_right, bz_right,
-        bcovt_right, bcovx_right, bcovy_right, bcovz_right,
+    pmy_fluid->pf_eos->FastMagnetosonicSpeedsSR(
+        rho_right, pgas_right, u_con_right, b_con_right,
         &lambda_right_plus, &lambda_right_minus);                        // (MB 56)
     Real lambda_left = std::min(lambda_left_minus, lambda_right_minus);  // (MB 55)
     Real lambda_right = std::max(lambda_left_plus, lambda_right_plus);   // (MB 55)
@@ -166,13 +160,11 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     // Calculate L/R state fluxes
     Real flux_left[NWAVE], flux_right[NWAVE];
     PrimToFluxFlat(gamma_adi_red, rho_left, pgas_left,
-        ut_left, ux_left, uy_left, uz_left,
-        bcovt_left, bcovx_left, bcovy_left, bcovz_left,
-        ivx, ivy, ivz, flux_left);
+        u_con_left, b_con_left,
+        flux_left, ivx, ivy, ivz);
     PrimToFluxFlat(gamma_adi_red, rho_right, pgas_right,
-        ut_right, ux_right, uy_right, uz_right,
-        bcovt_right, bcovx_right, bcovy_right, bcovz_right,
-        ivx, ivy, ivz, flux_right);
+        u_con_right, b_con_right,
+        flux_right, ivx, ivy, ivz);
 
     // Set fluxes if in L state
     if (lambda_left >= 0.0)
@@ -193,13 +185,11 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     // Calculate L/R state conserved quantities
     Real cons_left[NWAVE], cons_right[NWAVE];
     PrimToConsFlat(gamma_adi_red, rho_left, pgas_left,
-        ut_left, ux_left, uy_left, uz_left,
-        bcovt_left, bcovx_left, bcovy_left, bcovz_left,
-        ivx, ivy, ivz, cons_left);
+        u_con_left, b_con_left,
+        cons_left, ivx, ivy, ivz);
     PrimToConsFlat(gamma_adi_red, rho_right, pgas_right,
-        ut_right, ux_right, uy_right, uz_right,
-        bcovt_right, bcovx_right, bcovy_right, bcovz_right,
-        ivx, ivy, ivz, cons_right);
+        u_con_right, b_con_right,
+        cons_right, ivx, ivy, ivz);
 
     // Calculate fast wave jump quantities and HLL state and fluxes
     Real r_left[NWAVE], r_right[NWAVE];
@@ -299,20 +289,19 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 //   implements (15) from Mignone, Ugliano, & Bodo 2009, MNRAS 393 1141
 //     note B^i v^x - B^x v^i = b^i u^x - b^x u^i
 static void PrimToFluxFlat(Real gamma_adi_red, Real rho, Real pgas,
-    Real ut, Real ux, Real uy, Real uz,
-    Real bcovt, Real bcovx, Real bcovy, Real bcovz,
-    int ivx, int ivy, int ivz, Real flux[NWAVE])
+    const Real u_con[4], const Real b_con[4],
+    Real flux[NWAVE], int ivx, int ivy, int ivz)
 {
-  Real bcov_sq = -SQR(bcovt) + SQR(bcovx) + SQR(bcovy) + SQR(bcovz);
-  Real rho_h = rho + gamma_adi_red * pgas + bcov_sq;
-  Real ptot = pgas + 0.5*bcov_sq;
-  flux[IDN] = ux * rho;
-  flux[IEN] = rho_h * ut * ux - bcovt * bcovx;
-  flux[ivx] = rho_h * ux * ux - bcovx * bcovx + ptot;
-  flux[ivy] = rho_h * uy * ux - bcovy * bcovx;
-  flux[ivz] = rho_h * uz * ux - bcovz * bcovx;
-  flux[IBY] = bcovy * ux - bcovx * uy;
-  flux[IBZ] = bcovz * ux - bcovx * uz;
+  Real b_sq = -SQR(b_con[0]) + SQR(b_con[1]) + SQR(b_con[2]) + SQR(b_con[3]);
+  Real w = rho + gamma_adi_red * pgas + b_sq;
+  Real ptot = pgas + 0.5*b_sq;
+  flux[IDN] = rho*u_con[1];
+  flux[IEN] = w*u_con[0]*u_con[1] - b_con[0]*b_con[1];
+  flux[ivx] = w*u_con[1]*u_con[1] - b_con[1]*b_con[1] + ptot;
+  flux[ivy] = w*u_con[2]*u_con[1] - b_con[2]*b_con[1];
+  flux[ivz] = w*u_con[3]*u_con[1] - b_con[3]*b_con[1];
+  flux[IBY] = b_con[2]*u_con[1] - b_con[1]*u_con[2];
+  flux[IBZ] = b_con[3]*u_con[1] - b_con[1]*u_con[3];
   return;
 }
 
@@ -321,20 +310,19 @@ static void PrimToFluxFlat(Real gamma_adi_red, Real rho, Real pgas,
 //   same function as in hlle_mhd_rel.cpp
 //   references Mignone, Ugliano, & Bodo 2009, MNRAS 393 1141 (MUB)
 static void PrimToConsFlat(Real gamma_adi_red, Real rho, Real pgas,
-    Real ut, Real ux, Real uy, Real uz,
-    Real bcovt, Real bcovx, Real bcovy, Real bcovz,
-    int ivx, int ivy, int ivz, Real cons[NWAVE])
+    const Real u_con[4], const Real b_con[4],
+    Real cons[NWAVE], int ivx, int ivy, int ivz)
 {
-  Real bcov_sq = -SQR(bcovt) + SQR(bcovx) + SQR(bcovy) + SQR(bcovz);
-  Real rho_h = rho + gamma_adi_red * pgas + bcov_sq;
-  Real ptot = pgas + 0.5*bcov_sq;
-  cons[IDN] = ut * rho;
-  cons[IEN] = rho_h * ut * ut - bcovt * bcovt - ptot;  // (MUB 8)
-  cons[ivx] = rho_h * ux * ut - bcovx * bcovt;         // (MUB 8)
-  cons[ivy] = rho_h * uy * ut - bcovy * bcovt;         // (MUB 8)
-  cons[ivz] = rho_h * uz * ut - bcovz * bcovt;         // (MUB 8)
-  cons[IBY] = bcovy * ut - bcovt * uy;
-  cons[IBZ] = bcovz * ut - bcovt * uz;
+  Real b_sq = -SQR(b_con[0]) + SQR(b_con[1]) + SQR(b_con[2]) + SQR(b_con[3]);
+  Real w = rho + gamma_adi_red * pgas + b_sq;
+  Real ptot = pgas + 0.5*b_sq;
+  cons[IDN] = rho*u_con[0];
+  cons[IEN] = w*u_con[0]*u_con[0] - b_con[0]*b_con[0] - ptot;  // (MUB 8)
+  cons[ivx] = w*u_con[1]*u_con[0] - b_con[1]*b_con[0];         // (MUB 8)
+  cons[ivy] = w*u_con[2]*u_con[0] - b_con[2]*b_con[0];         // (MUB 8)
+  cons[ivz] = w*u_con[3]*u_con[0] - b_con[3]*b_con[0];         // (MUB 8)
+  cons[IBY] = b_con[2]*u_con[0] - b_con[0]*u_con[2];
+  cons[IBZ] = b_con[3]*u_con[0] - b_con[0]*u_con[3];
   return;
 }
 

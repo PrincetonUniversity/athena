@@ -60,6 +60,12 @@ public:
 
   // Functions for use in general relativity
   void CellMetric(const int k,const int j, AthenaArray<Real> &g, AthenaArray<Real> &gi);
+  void Face1Metric(const int k, const int j, AthenaArray<Real> &g,
+      AthenaArray<Real> &g_inv);
+  void Face2Metric(const int k, const int j, AthenaArray<Real> &g,
+      AthenaArray<Real> &g_inv);
+  void Face3Metric(const int k, const int j, AthenaArray<Real> &g,
+      AthenaArray<Real> &g_inv);
   void PrimToLocal1(const int k, const int j, const AthenaArray<Real> &b1_vals,
       AthenaArray<Real> &prim_left, AthenaArray<Real> &prim_right,
       AthenaArray<Real> &bx);

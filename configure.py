@@ -13,8 +13,9 @@
 #   --eos=choice      use choice as the equation of state
 #   --flux=choice     use choice as the Riemann solver
 #   -b                enable magnetic fields
-#   -s                enable special-relativity
-#   -g                enable general-relativity
+#   -s                enable special relativity
+#   -g                enable general relativity
+#   -t                enable interface frame transformations for GR
 #   --order=choice    use choice as the spatial reconstruction algorithm
 #   --fint=choice     use choice as the fluid time-integration algorithm
 #   --cxx=choice      use choice as the C++ compiler
@@ -86,6 +87,12 @@ parser.add_argument('-g',
     action='store_true',
     default=False,
     help='enable general relativity')
+
+# -t argument
+parser.add_argument('-t',
+    action='store_true',
+    default=False,
+    help='enable interface frame transformations for GR')
 
 # --order=[name] argument
 parser.add_argument('--order',
@@ -205,6 +212,8 @@ if args['s']:
 if args['g']:
   makefile_options['EOS_FILE'] += '_gr'
   makefile_options['RSOLVER_FILE'] += '_rel'
+  if not args['t']:
+    makefile_options['RSOLVER_FILE'] += '_no_transform'
 
 # --order=[name] argument
 definitions['RECONSTRUCT'] = args['order']
@@ -316,6 +325,7 @@ print('  Compiler and flags:      ' + makefile_options['COMPILER_CHOICE'] + ' ' 
 print('  Magnetic fields:         ' + ('enabled' if args['b'] else 'disabled'))
 print('  Special relativity:      ' + ('enabled' if args['s'] else 'disabled'))
 print('  General relativity:      ' + ('enabled' if args['g'] else 'disabled'))
+print('  Frame transformations:   ' + ('enabled' if args['t'] else 'disabled'))
 print('  MPI parallelism:         ' + ('enabled' if args['mpi'] else 'disabled'))
 print('  OpenMP parallelism:      ' + ('enabled' if args['omp'] else 'disabled'))
 print('  Debug flags:             ' + ('enabled' if args['debug'] else 'disabled'))

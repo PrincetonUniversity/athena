@@ -50,5 +50,6 @@ private:
   AthenaArray<Real> wl_, wr_, flx_, src_; 
   AthenaArray<Real> face_area_, cell_volume_;
   AthenaArray<Real> b_normal_;  // only used in SR/GRMHD
+  AthenaArray<Real> g_, g_inv_;  // metric and inverse, used in some GR Riemann solvers
 };
 #endif

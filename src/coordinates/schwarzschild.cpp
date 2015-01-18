@@ -108,12 +108,21 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   metric_face1_i1_.NewAthenaArray(n_cells_1);
   metric_face1_i2_.NewAthenaArray(n_cells_1);
   metric_face1_i3_.NewAthenaArray(n_cells_1);
+  metric_face1_i4_.NewAthenaArray(n_cells_1);
+  metric_face1_i5_.NewAthenaArray(n_cells_1);
+  metric_face1_i6_.NewAthenaArray(n_cells_1);
   metric_face2_i1_.NewAthenaArray(n_cells_1);
   metric_face2_i2_.NewAthenaArray(n_cells_1);
   metric_face2_i3_.NewAthenaArray(n_cells_1);
+  metric_face2_i4_.NewAthenaArray(n_cells_1);
+  metric_face2_i5_.NewAthenaArray(n_cells_1);
+  metric_face2_i6_.NewAthenaArray(n_cells_1);
   metric_face3_i1_.NewAthenaArray(n_cells_1);
   metric_face3_i2_.NewAthenaArray(n_cells_1);
   metric_face3_i3_.NewAthenaArray(n_cells_1);
+  metric_face3_i4_.NewAthenaArray(n_cells_1);
+  metric_face3_i5_.NewAthenaArray(n_cells_1);
+  metric_face3_i6_.NewAthenaArray(n_cells_1);
   trans_face1_i1_.NewAthenaArray(n_cells_1);
   trans_face1_i2_.NewAthenaArray(n_cells_1);
   trans_face1_i3_.NewAthenaArray(n_cells_1);
@@ -142,8 +151,11 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   metric_cell_j1_.NewAthenaArray(n_cells_2);
   metric_cell_j2_.NewAthenaArray(n_cells_2);
   metric_face1_j1_.NewAthenaArray(n_cells_2);
+  metric_face1_j2_.NewAthenaArray(n_cells_2);
   metric_face2_j1_.NewAthenaArray(n_cells_2);
+  metric_face2_j2_.NewAthenaArray(n_cells_2);
   metric_face3_j1_.NewAthenaArray(n_cells_2);
+  metric_face3_j2_.NewAthenaArray(n_cells_2);
   trans_face1_j1_.NewAthenaArray(n_cells_2);
   trans_face1_j2_.NewAthenaArray(n_cells_2);
   trans_face2_j1_.NewAthenaArray(n_cells_2);
@@ -190,12 +202,21 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
     metric_face1_i1_(i) = -(1.0 - 2.0*MASS / r_m);
     metric_face1_i2_(i) = 1.0 / (1.0 - 2.0*MASS / r_m);
     metric_face1_i3_(i) = r_m*r_m;
+    metric_face1_i4_(i) = 1.0 / metric_face1_i1_(i);
+    metric_face1_i5_(i) = 1.0 / metric_face1_i2_(i);
+    metric_face1_i6_(i) = 1.0 / metric_face1_i3_(i);
     metric_face2_i1_(i) = metric_cell_i1_(i);
     metric_face2_i2_(i) = metric_cell_i2_(i);
     metric_face2_i3_(i) = metric_cell_i3_(i);
+    metric_face2_i4_(i) = metric_cell_i4_(i);
+    metric_face2_i5_(i) = metric_cell_i5_(i);
+    metric_face2_i6_(i) = metric_cell_i6_(i);
     metric_face3_i1_(i) = metric_cell_i1_(i);
     metric_face3_i2_(i) = metric_cell_i2_(i);
     metric_face3_i3_(i) = metric_cell_i3_(i);
+    metric_face3_i4_(i) = metric_cell_i4_(i);
+    metric_face3_i5_(i) = metric_cell_i5_(i);
+    metric_face3_i6_(i) = metric_cell_i6_(i);
 
     // Coordinate transformations
     trans_face1_i1_(i) = std::sqrt(1.0 - 2.0*MASS/r_m);
@@ -250,8 +271,11 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
 
       // Face-centered metric
       metric_face1_j1_(j) = metric_cell_j1_(j);
+      metric_face1_j2_(j) = 1.0 / metric_face1_j1_(j);
       metric_face2_j1_(j) = sin_m*sin_m;
+      metric_face2_j2_(j) = 1.0 / metric_face2_j1_(j);
       metric_face3_j1_(j) = metric_cell_j1_(j);
+      metric_face3_j2_(j) = 1.0 / metric_face3_j1_(j);
 
       // Coordinate transformations
       trans_face1_j1_(j) = sin_c;
@@ -296,8 +320,11 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
 
     // Face-centered metric
     metric_face1_j1_(pb->js) = metric_cell_j1_(pb->js);
+    metric_face1_j2_(pb->js) = 1.0 / metric_face1_j1_(pb->js);
     metric_face2_j1_(pb->js) = sin_m*sin_m;
+    metric_face2_j2_(pb->js) = 1.0 / metric_face2_j1_(pb->js);
     metric_face3_j1_(pb->js) = metric_cell_j1_(pb->js);
+    metric_face3_j2_(pb->js) = 1.0 / metric_face3_j1_(pb->js);
 
     // Coordinate transformations
     trans_face1_j1_(pb->js) = sin_c;
@@ -344,15 +371,27 @@ Coordinates::~Coordinates()
   metric_face1_i1_.DeleteAthenaArray();
   metric_face1_i2_.DeleteAthenaArray();
   metric_face1_i3_.DeleteAthenaArray();
+  metric_face1_i4_.DeleteAthenaArray();
+  metric_face1_i5_.DeleteAthenaArray();
+  metric_face1_i6_.DeleteAthenaArray();
   metric_face1_j1_.DeleteAthenaArray();
+  metric_face1_j2_.DeleteAthenaArray();
   metric_face2_i1_.DeleteAthenaArray();
   metric_face2_i2_.DeleteAthenaArray();
   metric_face2_i3_.DeleteAthenaArray();
+  metric_face2_i4_.DeleteAthenaArray();
+  metric_face2_i5_.DeleteAthenaArray();
+  metric_face2_i6_.DeleteAthenaArray();
   metric_face2_j1_.DeleteAthenaArray();
+  metric_face2_j2_.DeleteAthenaArray();
   metric_face3_i1_.DeleteAthenaArray();
   metric_face3_i2_.DeleteAthenaArray();
   metric_face3_i3_.DeleteAthenaArray();
+  metric_face3_i4_.DeleteAthenaArray();
+  metric_face3_i5_.DeleteAthenaArray();
+  metric_face3_i6_.DeleteAthenaArray();
   metric_face3_j1_.DeleteAthenaArray();
+  metric_face3_j2_.DeleteAthenaArray();
   trans_face1_i1_.DeleteAthenaArray();
   trans_face1_i2_.DeleteAthenaArray();
   trans_face1_i3_.DeleteAthenaArray();
@@ -627,7 +666,7 @@ void Coordinates::CoordinateSourceTerms(Real dt, const AthenaArray<Real> &prim,
   return;
 }
 
-// Function for computing metric terms
+// Function for computing cell-centered metric coefficients
 // Inputs:
 //   k: phi-index
 //   j: theta-index
@@ -652,6 +691,156 @@ void Coordinates::CellMetric(const int k, const int j, AthenaArray<Real> &g,
     Real &t_inv_factor = metric_cell_i4_(i);
     Real &r_inv_factor = metric_cell_i5_(i);
     Real &r_inv_sq = metric_cell_i6_(i);
+
+    // Extract metric terms
+    Real &g00 = g(I00,i);
+    Real &g11 = g(I11,i);
+    Real &g22 = g(I22,i);
+    Real &g33 = g(I33,i);
+    Real &g_inv_00 = g_inv(I00,i);
+    Real &g_inv_11 = g_inv(I11,i);
+    Real &g_inv_22 = g_inv(I22,i);
+    Real &g_inv_33 = g_inv(I33,i);
+
+    // Set metric terms
+    // TODO: should 0's be set explicitly?
+    g00 = t_factor;
+    g11 = r_factor;
+    g22 = r_sq;
+    g33 = r_sq * sin_sq_theta;
+    g_inv_00 = t_inv_factor;
+    g_inv_11 = r_inv_factor;
+    g_inv_22 = r_inv_sq;
+    g_inv_33 = r_inv_sq * csc_sq_theta;
+  }
+  return;
+}
+
+// Function for computing face-centered metric coefficients: r-interface
+// Inputs:
+//   k: phi-index
+//   j: theta-index
+// Outputs:
+//   g: array of metric components in 1D
+//   g_inv: array of inverse metric components in 1D
+void Coordinates::Face1Metric(const int k, const int j, AthenaArray<Real> &g,
+    AthenaArray<Real> &g_inv)
+{
+  // Extract geometric quantities that do not depend on r
+  Real &sin_sq_theta = metric_face1_j1_(j);
+  Real &csc_sq_theta = metric_face1_j2_(j);
+
+  // Go through 1D block of faces
+#pragma simd
+  for (int i = pmy_block->is; i <= pmy_block->ie+1; i++)
+  {
+    // Extract remaining geometric quantities
+    Real &t_factor = metric_face1_i1_(i);
+    Real &r_factor = metric_face1_i2_(i);
+    Real &r_sq = metric_face1_i3_(i);
+    Real &t_inv_factor = metric_face1_i4_(i);
+    Real &r_inv_factor = metric_face1_i5_(i);
+    Real &r_inv_sq = metric_face1_i6_(i);
+
+    // Extract metric terms
+    Real &g00 = g(I00,i);
+    Real &g11 = g(I11,i);
+    Real &g22 = g(I22,i);
+    Real &g33 = g(I33,i);
+    Real &g_inv_00 = g_inv(I00,i);
+    Real &g_inv_11 = g_inv(I11,i);
+    Real &g_inv_22 = g_inv(I22,i);
+    Real &g_inv_33 = g_inv(I33,i);
+
+    // Set metric terms
+    // TODO: should 0's be set explicitly?
+    g00 = t_factor;
+    g11 = r_factor;
+    g22 = r_sq;
+    g33 = r_sq * sin_sq_theta;
+    g_inv_00 = t_inv_factor;
+    g_inv_11 = r_inv_factor;
+    g_inv_22 = r_inv_sq;
+    g_inv_33 = r_inv_sq * csc_sq_theta;
+  }
+  return;
+}
+
+// Function for computing face-centered metric coefficients: theta-interface
+// Inputs:
+//   k: phi-index
+//   j: theta-index
+// Outputs:
+//   g: array of metric components in 1D
+//   g_inv: array of inverse metric components in 1D
+void Coordinates::Face2Metric(const int k, const int j, AthenaArray<Real> &g,
+    AthenaArray<Real> &g_inv)
+{
+  // Extract geometric quantities that do not depend on r
+  Real &sin_sq_theta = metric_face2_j1_(j);
+  Real &csc_sq_theta = metric_face2_j2_(j);
+
+  // Go through 1D block of faces
+#pragma simd
+  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
+  {
+    // Extract remaining geometric quantities
+    Real &t_factor = metric_face2_i1_(i);
+    Real &r_factor = metric_face2_i2_(i);
+    Real &r_sq = metric_face2_i3_(i);
+    Real &t_inv_factor = metric_face2_i4_(i);
+    Real &r_inv_factor = metric_face2_i5_(i);
+    Real &r_inv_sq = metric_face2_i6_(i);
+
+    // Extract metric terms
+    Real &g00 = g(I00,i);
+    Real &g11 = g(I11,i);
+    Real &g22 = g(I22,i);
+    Real &g33 = g(I33,i);
+    Real &g_inv_00 = g_inv(I00,i);
+    Real &g_inv_11 = g_inv(I11,i);
+    Real &g_inv_22 = g_inv(I22,i);
+    Real &g_inv_33 = g_inv(I33,i);
+
+    // Set metric terms
+    // TODO: should 0's be set explicitly?
+    g00 = t_factor;
+    g11 = r_factor;
+    g22 = r_sq;
+    g33 = r_sq * sin_sq_theta;
+    g_inv_00 = t_inv_factor;
+    g_inv_11 = r_inv_factor;
+    g_inv_22 = r_inv_sq;
+    g_inv_33 = r_inv_sq * csc_sq_theta;
+  }
+  return;
+}
+
+// Function for computing face-centered metric coefficients: phi-interface
+// Inputs:
+//   k: phi-index
+//   j: theta-index
+// Outputs:
+//   g: array of metric components in 1D
+//   g_inv: array of inverse metric components in 1D
+void Coordinates::Face3Metric(const int k, const int j, AthenaArray<Real> &g,
+    AthenaArray<Real> &g_inv)
+{
+  // Extract geometric quantities that do not depend on r
+  Real &sin_sq_theta = metric_face3_j1_(j);
+  Real &csc_sq_theta = metric_face3_j2_(j);
+
+  // Go through 1D block of faces
+#pragma simd
+  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
+  {
+    // Extract remaining geometric quantities
+    Real &t_factor = metric_face3_i1_(i);
+    Real &r_factor = metric_face3_i2_(i);
+    Real &r_sq = metric_face3_i3_(i);
+    Real &t_inv_factor = metric_face3_i4_(i);
+    Real &r_inv_factor = metric_face3_i5_(i);
+    Real &r_inv_sq = metric_face3_i6_(i);
 
     // Extract metric terms
     Real &g00 = g(I00,i);

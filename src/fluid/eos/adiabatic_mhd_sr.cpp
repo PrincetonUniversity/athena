@@ -202,16 +202,12 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //   plambda_plus: value set to most positive wavespeed
 //   plambda_minus: value set to most negative wavespeed
 // Notes:
-//   inputs assume x is transverse direction
+//   inputs assume x is normal direction
 //   same function as in adiabatic_mhd_gr.cpp
 //   references Mignone & Bodo 2005, MNRAS 364 126 (MB2005)
 //   references Mignone & Bodo 2006, MNRAS 368 1040 (MB2006)
-void FluidEqnOfState::FastMagnetosonicSpeedsRel(
-    Real rho, Real pgas,
-    Real vx, Real vy, Real vz,
-    Real ut, Real ux, Real uy, Real uz,
-    Real bx, Real by, Real bz,
-    Real bcovt, Real bcovx, Real bcovy, Real bcovz,
+void FluidEqnOfState::FastMagnetosonicSpeedsSR(
+    Real rho, Real pgas, const Real u[4], const Real b[4],
     Real *plambda_plus, Real *plambda_minus)
 {
   // Parameters
@@ -222,12 +218,20 @@ void FluidEqnOfState::FastMagnetosonicSpeedsRel(
   const Real gamma_adi = gamma_;
   const Real gamma_adi_red = gamma_adi/(gamma_adi-1.0);
 
+  // Calculate 3-vector components
+  Real vx = u[1]/u[0];
+  Real vy = u[2]/u[0];
+  Real vz = u[3]/u[0];
+  Real bx = b[1]*u[0] - b[0]*u[1];
+  Real by = b[2]*u[0] - b[0]*u[2];
+  Real bz = b[3]*u[0] - b[0]*u[3];
+
   // Calculate intermediate quantities
   Real v_sq = SQR(vx) + SQR(vy) + SQR(vz);
   Real gamma_rel_sq = 1.0/(1.0-v_sq);
   Real rho_h = rho + gamma_adi_red * pgas;
-  Real cs_sq = gamma_adi * pgas / rho_h;                              // (MB2005 4)
-  Real bcov_sq = -SQR(bcovt) + SQR(bcovx) + SQR(bcovy) + SQR(bcovz);
+  Real cs_sq = gamma_adi * pgas / rho_h;                          // (MB2005 4)
+  Real bcov_sq = -SQR(b[0]) + SQR(b[1]) + SQR(b[2]) + SQR(b[3]);
   Real bx_sq = SQR(bx);
 
   // Case out on velocity and magnetic field
@@ -259,19 +263,19 @@ void FluidEqnOfState::FastMagnetosonicSpeedsRel(
     {
       Real vx_3 = vx_sq * vx;
       Real vx_4 = SQR(vx_sq);
-      Real bcovt_sq = SQR(bcovt);
-      Real bcovx_sq = SQR(bcovx);
+      Real bcovt_sq = SQR(b[0]);
+      Real bcovx_sq = SQR(b[1]);
       Real var_1 = SQR(gamma_rel_sq) * rho_h * (1.0-cs_sq);
       Real var_2 = gamma_rel_sq * (bcov_sq + rho_h * cs_sq);
       Real denominator = var_1 + var_2 - cs_sq * bcovt_sq;
-      Real a3 = (-(4.0*var_1+2.0*var_2)*vx + 2.0*cs_sq*bcovt*bcovx)
+      Real a3 = (-(4.0*var_1+2.0*var_2)*vx + 2.0*cs_sq*b[0]*b[1])
           / denominator;
       Real a2 = (6.0*var_1*vx_sq + var_2*(vx_sq-1.0)
           + cs_sq*(bcovt_sq-bcovx_sq)) / denominator;
-      Real a1 = (-4.0*var_1*vx_3 + 2.0*var_2*vx - 2.0*cs_sq*bcovt*bcovx)
+      Real a1 = (-4.0*var_1*vx_3 + 2.0*var_2*vx - 2.0*cs_sq*b[0]*b[1])
           / denominator;
       Real a0 = (var_1*vx_4 - var_2*vx_sq + cs_sq*bcovx_sq)
-        / denominator;
+          / denominator;
       quartic_root_minmax(a3, a2, a1, a0, plambda_minus, plambda_plus);   // (MB2006 56)
       *plambda_minus = std::max(*plambda_minus, -1.0);
       *plambda_plus = std::min(*plambda_plus, 1.0);

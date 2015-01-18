@@ -1,4 +1,4 @@
-# Test script for relativistic MHD shock tubes with HLLE
+# Test script for relativistic MHD shock tubes with LLF
 
 # Modules
 import numpy as np
@@ -9,7 +9,8 @@ import scripts.utils.comparison as comparison
 def prepare():
   athena.configure('bs',
       prob='shock_tube_rel',
-      coord='cartesian')
+      coord='cartesian',
+      flux='llf')
   athena.make()
 
 # Run Athena++
