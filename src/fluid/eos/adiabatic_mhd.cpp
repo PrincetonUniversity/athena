@@ -110,21 +110,21 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       const Real& b3_kp1 = b.x3f(k+1,j,i);
 
       // cell center B-fields are defined as spatial interpolation at the volume center
-      const Real& x1f_i  = pmb->x1v(i);
+      const Real& x1f_i  = pmb->x1f(i);
       const Real& x1f_ip = pmb->x1f(i+1);
       const Real& x1v_i  = pmb->x1v(i);
       const Real& dx1_i  = pmb->dx1f(i);
       lw=(x1f_ip-x1v_i)/dx1_i;
       rw=(x1v_i -x1f_i)/dx1_i;
       bcc(IB1,k,j,i) = lw*b1_i + rw*b1_ip1;
-      const Real& x2f_j  = pmb->x2v(j);
+      const Real& x2f_j  = pmb->x2f(j);
       const Real& x2f_jp = pmb->x2f(j+1);
       const Real& x2v_j  = pmb->x2v(j);
       const Real& dx2_j  = pmb->dx2f(j);
       lw=(x2f_jp-x2v_j)/dx2_j;
       rw=(x2v_j -x2f_j)/dx2_j;
       bcc(IB2,k,j,i) = lw*b2_j + rw*b2_jp1;
-      const Real& x3f_k  = pmb->x3v(k);
+      const Real& x3f_k  = pmb->x3f(k);
       const Real& x3f_kp = pmb->x3f(k+1);
       const Real& x3v_k  = pmb->x3v(k);
       const Real& dx3_k  = pmb->dx3f(k);
