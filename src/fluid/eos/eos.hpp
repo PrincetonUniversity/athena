@@ -32,15 +32,15 @@ public:
 
   Real SoundSpeed(const Real prim[(NFLUID)]); 
   Real FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx); 
-  void WavespeedsRel(
-      Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
+  void SoundSpeedsSR(Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
       Real *plambda_plus, Real *plambda_minus);
-  void FastMagnetosonicSpeedsRel(
-      Real rho, Real pgas,
-      Real vx, Real vy, Real vz,
-      Real ut, Real ux, Real uy, Real uz,
-      Real bx, Real by, Real bz,
-      Real bcovt, Real bcovx, Real bcovy, Real bcovz,
+  void FastMagnetosonicSpeedsSR(Real rho, Real pgas, const Real u[4], const Real b[4],
+      Real *plambda_plus, Real *plambda_minus);
+  void SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1,
+      Real g00, Real g01, Real g11,
+      Real *plambda_plus, Real *plambda_minus);
+  void FastMagnetosonicSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Real b_sq,
+      Real g00, Real g01, Real g11,
       Real *plambda_plus, Real *plambda_minus);
   Real GetGamma() const {return gamma_;}
   Real GetIsoSoundSpeed() const {return iso_sound_speed_;}

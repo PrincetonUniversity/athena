@@ -8,7 +8,7 @@
 #include <cmath>      // sqrt()
 
 // Athena headers
-#include "../../../eos/eos.hpp"                     // GetGamma(), WavespeedsRel()
+#include "../../../eos/eos.hpp"                     // GetGamma(), SoundSpeedsSR()
 #include "../../../fluid.hpp"                       // Fluid
 #include "../../../../athena.hpp"                   // enums, macros, Real
 #include "../../../../athena_arrays.hpp"            // AthenaArray
@@ -87,7 +87,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     Real rho_h_left = rho_left + gamma_adi_red * pgas_left;
     Real v_sq_left = SQR(vx_left) + SQR(vy_left) + SQR(vz_left);
     Real gamma_sq_left = 1.0/(1.0-v_sq_left);
-    pmy_fluid->pf_eos->WavespeedsRel(
+    pmy_fluid->pf_eos->SoundSpeedsSR(
         rho_h_left, pgas_left, vx_left, gamma_sq_left,
         &lambda_plus_left, &lambda_minus_left);                   // (MB 23)
 
@@ -96,7 +96,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     Real rho_h_right = rho_right + gamma_adi_red * pgas_right;
     Real v_sq_right = SQR(vx_right) + SQR(vy_right) + SQR(vz_right);
     Real gamma_sq_right = 1.0/(1.0-v_sq_right);
-    pmy_fluid->pf_eos->WavespeedsRel(
+    pmy_fluid->pf_eos->SoundSpeedsSR(
         rho_h_right, pgas_right, vx_right, gamma_sq_right,
         &lambda_plus_right, &lambda_minus_right);                     // (MB 23)
 

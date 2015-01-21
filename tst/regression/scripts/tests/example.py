@@ -1,7 +1,7 @@
 """
 Example test script.
 
-This is a complete, working example that is run as part of the test suite. It does a
+This is a complete, working example that can be run as part of the test suite. It does a
 simple test of a relativistic shock tube using the GR framework. There are many comments
 in order to make this file self-explanatory, but the actual working code is only 25-34
 lines long.
@@ -37,13 +37,13 @@ def prepare():
   """
 
   # Configure as though we ran
-  #     python configure.py -g --prob=shock_tube_gr --coord=minkowski
+  #     python configure.py -g -t --prob=shock_tube_gr --coord=minkowski
   # from the athena/ directory. Note that additional -<flag> command-line arguments can
   # be specified as additional '<flag>' arguments before the <key>='<value>' arguments
   # to athena.configure(). Any number of --<key>=<value> command-line arguments can also
   # be supplied. Note athena.configure() expects the values only to be quoted, e.g.
   # --<key>='<value>'.
-  athena.configure('g',
+  athena.configure('g', 't',
       prob='shock_tube_rel',
       coord='minkowski')
 

@@ -4,10 +4,11 @@
 #include "../../fluid_integrator.hpp"
 
 // C++ headers
+#include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
 // Athena headers
-#include "../../../eos/eos.hpp"                     // GetGamma()
+#include "../../../eos/eos.hpp"                     // GetGamma(), SoundSpeedsSR()
 #include "../../../fluid.hpp"                       // Fluid
 #include "../../../../athena.hpp"                   // enums, macros, Real
 #include "../../../../athena_arrays.hpp"            // AthenaArray
@@ -15,23 +16,23 @@
 #include "../../../../mesh.hpp"                     // MeshBlock
 
 // Declarations
-static void PrimToConsFlat(Real gamma_adi_red, Real rho, Real pgas,
-    Real ut, Real ux, Real uy, Real uz,
-    int ivx, int ivy, int ivz, Real cons[NWAVE]);
-static void PrimToFluxFlat(Real gamma_adi_red, Real rho, Real pgas,
-    Real ut, Real ux, Real uy, Real uz,
-    int ivx, int ivy, int ivz, Real flux[NWAVE]);
+static void PrimToFluxFlat(Real gamma_adi_red, Real rho, Real pgas, const Real u_con[4],
+    Real flux[NWAVE], int ivx, int ivy, int ivz);
+static void PrimToConsFlat(Real gamma_adi_red, Real rho, Real pgas, const Real u_con[4],
+    Real cons[NWAVE], int ivx, int ivy, int ivz);
 
 // Riemann solver
 // Inputs:
-//   il,iu: lower and upper indices for interfaces
+//   k,j: x3- and x2-indices
+//   il,iu: lower and upper x1-indices
+//   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
+//   b: 3D array of normal magnetic fields (not used)
 //   prim_left, prim_right: left and right primitive states
 // Outputs:
-//   flux: fluxes
+//   flux: fluxes across interface
 // Notes:
+//   implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
 //   prim_left, prim_right overwritten
-//   implements LLF scheme
-//   equivalent to HLLE with outer wavespeeds set to c
 void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     const int iu, const int ivx, const AthenaArray<Real> &b,
     AthenaArray<Real> &prim_left, AthenaArray<Real> &prim_right,
@@ -81,39 +82,59 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     const Real &vy_right = prim_right(ivy,i);
     const Real &vz_right = prim_right(ivz,i);
 
-    // Calculate covariant versions of left primitives
-    Real ut_left = std::sqrt(1.0/(1.0-(SQR(vx_left)+SQR(vy_left)+SQR(vz_left))));
-    Real ux_left = ut_left * vx_left;
-    Real uy_left = ut_left * vy_left;
-    Real uz_left = ut_left * vz_left;
+    // Calculate 4-velocity for left primitives
+    Real u_con_left[4];
+    u_con_left[0] = std::sqrt(1.0/(1.0-(SQR(vx_left)+SQR(vy_left)+SQR(vz_left))));
+    u_con_left[1] = u_con_left[0] * vx_left;
+    u_con_left[2] = u_con_left[0] * vy_left;
+    u_con_left[3] = u_con_left[0] * vz_left;
 
-    // Calculate covariant versions of right primitives
-    Real ut_right = std::sqrt(1.0/(1.0-(SQR(vx_right)+SQR(vy_right)+SQR(vz_right))));
-    Real ux_right = ut_right * vx_right;
-    Real uy_right = ut_right * vy_right;
-    Real uz_right = ut_right * vz_right;
+    // Calculate 4-velocity for right primitives
+    Real u_con_right[4];
+    u_con_right[0] = std::sqrt(1.0/(1.0-(SQR(vx_right)+SQR(vy_right)+SQR(vz_right))));
+    u_con_right[1] = u_con_right[0] * vx_right;
+    u_con_right[2] = u_con_right[0] * vy_right;
+    u_con_right[3] = u_con_right[0] * vz_right;
 
-    // Calculate L/R state conserved quantities
+    // Calculate wavespeeds in left region
+    Real lambda_plus_left, lambda_minus_left;
+    Real rho_h_left = rho_left + gamma_adi_red * pgas_left;
+    Real v_sq_left = SQR(vx_left) + SQR(vy_left) + SQR(vz_left);
+    Real gamma_sq_left = 1.0/(1.0-v_sq_left);
+    pmy_fluid->pf_eos->SoundSpeedsSR(
+        rho_h_left, pgas_left, vx_left, gamma_sq_left,
+        &lambda_plus_left, &lambda_minus_left);                   // (MB 23)
+
+    // Calculate wavespeeds in right region
+    Real lambda_plus_right, lambda_minus_right;
+    Real rho_h_right = rho_right + gamma_adi_red * pgas_right;
+    Real v_sq_right = SQR(vx_right) + SQR(vy_right) + SQR(vz_right);
+    Real gamma_sq_right = 1.0/(1.0-v_sq_right);
+    pmy_fluid->pf_eos->SoundSpeedsSR(
+        rho_h_right, pgas_right, vx_right, gamma_sq_right,
+        &lambda_plus_right, &lambda_minus_right);                     // (MB 23)
+
+    // Calculate extremal wavespeed
+    Real lambda_left = std::min(lambda_minus_left, lambda_minus_right);
+    Real lambda_right = std::max(lambda_plus_left, lambda_plus_right);
+    Real lambda = std::max(lambda_right, -lambda_left);
+
+    // Calculate L/R state conserved quantities and fluxes
     Real cons_left[NWAVE], cons_right[NWAVE];
-    PrimToConsFlat(gamma_adi_red, rho_left, pgas_left,
-        ut_left, ux_left, uy_left, uz_left,
-        ivx, ivy, ivz, cons_left);
-    PrimToConsFlat(gamma_adi_red, rho_right, pgas_right,
-        ut_right, ux_right, uy_right, uz_right,
-        ivx, ivy, ivz, cons_right);
-
-    // Calculate L/R state fluxes
+    PrimToConsFlat(gamma_adi_red, rho_left, pgas_left, u_con_left,
+        cons_left, ivx, ivy, ivz);
+    PrimToConsFlat(gamma_adi_red, rho_right, pgas_right, u_con_right,
+        cons_right, ivx, ivy, ivz);
     Real flux_left[NWAVE], flux_right[NWAVE];
-    PrimToFluxFlat(gamma_adi_red, rho_left, pgas_left,
-        ut_left, ux_left, uy_left, uz_left,
-        ivx, ivy, ivz, flux_left);
-    PrimToFluxFlat(gamma_adi_red, rho_right, pgas_right,
-        ut_right, ux_right, uy_right, uz_right,
-        ivx, ivy, ivz, flux_right);
+    PrimToFluxFlat(gamma_adi_red, rho_left, pgas_left, u_con_left,
+        flux_left, ivx, ivy, ivz);
+    PrimToFluxFlat(gamma_adi_red, rho_right, pgas_right, u_con_right,
+        flux_right, ivx, ivy, ivz);
 
     // Set fluxes
     for (int n = 0; n < NWAVE; ++n)
-      flux(n,i) = 0.5 * (flux_left[n] + flux_right[n] - cons_right[n] + cons_left[n]);
+      flux(n,i) = 0.5 * (flux_left[n] + flux_right[n]
+          - lambda * (cons_right[n] - cons_left[n]));
   }
 
   // Transform fluxes to global coordinates if in GR
@@ -133,34 +154,33 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   return;
 }
 
-// Function for converting primitive state to conserved state in flat spacetime
+// Function for converting constant primitive state to flux state in flat spacetime
 // Notes:
-//   implements (3) from Mignone & Bodo 2005, MNRAS 364 126 (MB)
-static void PrimToConsFlat(Real gamma_adi_red, Real rho, Real pgas,
-    Real ut, Real ux, Real uy, Real uz,
-    int ivx, int ivy, int ivz, Real cons[NWAVE])
+//   implements (15) from Mignone, Ugliano, & Bodo 2009, MNRAS 393 1141
+//   equivalent to (2) and (3) from Mignone & Bodo 2005, MNRAS 364 126
+static void PrimToFluxFlat(Real gamma_adi_red, Real rho, Real pgas, const Real u_con[4],
+    Real flux[NWAVE], int ivx, int ivy, int ivz)
 {
-  Real rho_h = rho + gamma_adi_red * pgas;
-  cons[IDN] = ut * rho;
-  cons[IEN] = rho_h * ut * ut - pgas;  // (MUB 8)
-  cons[ivx] = rho_h * ux * ut;         // (MUB 8)
-  cons[ivy] = rho_h * uy * ut;         // (MUB 8)
-  cons[ivz] = rho_h * uz * ut;         // (MUB 8)
+  Real w = rho + gamma_adi_red * pgas;
+  flux[IDN] = rho*u_con[1];
+  flux[IEN] = w*u_con[0]*u_con[1];
+  flux[ivx] = w*u_con[1]*u_con[1] + pgas;
+  flux[ivy] = w*u_con[2]*u_con[1];
+  flux[ivz] = w*u_con[3]*u_con[1];
   return;
 }
 
-// Function for converting constant primitive state to flux state in flat spacetime
+// Function for converting primitive state to conserved state in flat spacetime
 // Notes:
-//   implements (2) from Mignone & Bodo 2005, MNRAS 364 126 (MB)
-static void PrimToFluxFlat(Real gamma_adi_red, Real rho, Real pgas,
-    Real ut, Real ux, Real uy, Real uz,
-    int ivx, int ivy, int ivz, Real flux[NWAVE])
+//   implements (3) from Mignone & Bodo 2005, MNRAS 364 126
+static void PrimToConsFlat(Real gamma_adi_red, Real rho, Real pgas, const Real u_con[4],
+    Real cons[NWAVE], int ivx, int ivy, int ivz)
 {
-  Real rho_h = rho + gamma_adi_red * pgas;
-  flux[IDN] = ux * rho;
-  flux[IEN] = rho_h * ut * ux;
-  flux[ivx] = rho_h * ux * ux + pgas;
-  flux[ivy] = rho_h * uy * ux;
-  flux[ivz] = rho_h * uz * ux;
+  Real w = rho + gamma_adi_red * pgas;
+  cons[IDN] = rho*u_con[0];
+  cons[IEN] = w*u_con[0]*u_con[0] - pgas;
+  cons[ivx] = w*u_con[1]*u_con[0];
+  cons[ivy] = w*u_con[2]*u_con[0];
+  cons[ivz] = w*u_con[3]*u_con[0];
   return;
 }
