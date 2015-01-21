@@ -52,6 +52,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
   Real wli[(NFLUID)],wri[(NFLUID)],wroe[(NFLUID)];
   Real fl[(NFLUID)],fr[(NFLUID)],flxi[(NFLUID)];
   Real gm1 = pmy_fluid->pf_eos->GetGamma() - 1.0;
+  Real iso_cs = pmy_fluid->pf_eos->GetIsoSoundSpeed();
 
 #pragma simd
   for (int i=il; i<=iu; ++i){
@@ -94,13 +95,10 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 
     Real cl = pmy_fluid->pf_eos->SoundSpeed(wli);
     Real cr = pmy_fluid->pf_eos->SoundSpeed(wri);
-    Real a;
+    Real a  = iso_cs;
     if (NON_BAROTROPIC_EOS) {
-      Real q = hroe - 0.5*(wroe[IVX]*wroe[IVX]+wroe[IVY]*wroe[IVY]+wroe[IVZ]*wroe[IVZ]);
-      if (q < 0.0) q=0.0;
-      a = sqrt(gm1*q);
-    } else {
-      a = pmy_fluid->pf_eos->SoundSpeed(wroe);
+      Real q = hroe - 0.5*(SQR(wroe[IVX]) + SQR(wroe[IVY]) + SQR(wroe[IVZ]));
+      a = (q < 0.0) ? 0.0 : sqrt(gm1*q);
     }
 
 //--- Step 4. Compute the max/min wave speeds based on L/R and Roe-averaged values
@@ -113,25 +111,27 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 
 //-- Step 5. Compute L/R fluxes along the lines bm/bp: F_L - (S_L)U_L; F_R - (S_R)U_R
 
-    fl[IDN] = wli[IDN]*wli[IVX] - bm*wli[IDN];
-    fr[IDN] = wri[IDN]*wri[IVX] - bp*wri[IDN];
+    Real vxl = wli[IVX] - bm;
+    Real vxr = wri[IVX] - bp;
 
-    fl[IVX] = wli[IDN]*wli[IVX]*(wli[IVX] - bm);
-    fr[IVX] = wri[IDN]*wri[IVX]*(wri[IVX] - bp);
+    fl[IDN] = wli[IDN]*vxl;
+    fr[IDN] = wri[IDN]*vxr;
 
-    fl[IVY] = wli[IDN]*wli[IVY]*(wli[IVX] - bm);
-    fr[IVY] = wri[IDN]*wri[IVY]*(wri[IVX] - bp);
+    fl[IVX] = wli[IDN]*wli[IVX]*vxl;
+    fr[IVX] = wri[IDN]*wri[IVX]*vxr;
 
-    fl[IVZ] = wli[IDN]*wli[IVZ]*(wli[IVX] - bm);
-    fr[IVZ] = wri[IDN]*wri[IVZ]*(wri[IVX] - bp);
+    fl[IVY] = wli[IDN]*wli[IVY]*vxl;
+    fr[IVY] = wri[IDN]*wri[IVY]*vxr;
+
+    fl[IVZ] = wli[IDN]*wli[IVZ]*vxl;
+    fr[IVZ] = wri[IDN]*wri[IVZ]*vxr;
 
     if (NON_BAROTROPIC_EOS) {
       fl[IVX] += wli[IEN];
       fr[IVX] += wri[IEN];
-      fl[IEN] = el*(wli[IVX] - bm) + wli[IEN]*wli[IVX];
-      fr[IEN] = er*(wri[IVX] - bp) + wri[IEN]*wri[IVX];
+      fl[IEN] = el*vxl + wli[IEN]*wli[IVX];
+      fr[IEN] = er*vxr + wri[IEN]*wri[IVX];
     } else {
-      Real iso_cs = pmy_fluid->pf_eos->SoundSpeed(wli);
       fl[IVX] += (iso_cs*iso_cs)*wli[IDN];
       fr[IVX] += (iso_cs*iso_cs)*wri[IDN];
     }

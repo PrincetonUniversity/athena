@@ -71,25 +71,29 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     ku += (NGHOST);
   }
 
-// Convert to Primitives
-
+  // Convert to Primitives
   for (int k=kl; k<=ku; ++k){
   for (int j=jl; j<=ju; ++j){
 #pragma simd
     for (int i=pmb->is-(NGHOST); i<=pmb->ie+(NGHOST); ++i){
-      const Real& u_d  = cons(IDN,k,j,i);
-      const Real& u_m1 = cons(IVX,k,j,i);
-      const Real& u_m2 = cons(IVY,k,j,i);
-      const Real& u_m3 = cons(IVZ,k,j,i);
+      Real& u_d  = cons(IDN,k,j,i);
+      Real& u_m1 = cons(IVX,k,j,i);
+      Real& u_m2 = cons(IVY,k,j,i);
+      Real& u_m3 = cons(IVZ,k,j,i);
 
-// apply density floor, without changing momentum
-      cons(IDN,k,j,i) = std::max(cons(IDN,k,j,i), density_floor_);
-      prim(IDN,k,j,i) = u_d;
+      Real& w_d  = prim(IDN,k,j,i);
+      Real& w_vx = prim(IVX,k,j,i);
+      Real& w_vy = prim(IVY,k,j,i);
+      Real& w_vz = prim(IVZ,k,j,i);
+
+      // apply density floor, without changing momentum
+      u_d = (u_d > density_floor_) ?  u_d : density_floor_;
+      w_d = u_d;
 
       Real di = 1.0/u_d;
-      prim(IVX,k,j,i) = u_m1*di;
-      prim(IVY,k,j,i) = u_m2*di;
-      prim(IVZ,k,j,i) = u_m3*di;
+      w_vx = u_m1*di;
+      w_vy = u_m2*di;
+      w_vz = u_m3*di;
     }
   }}
 
