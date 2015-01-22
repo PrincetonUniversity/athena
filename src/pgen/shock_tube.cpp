@@ -250,7 +250,6 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       pfd->b.x3f(ke+1,j,i) = pfd->b.x3f(ke,j,i);
     }}
   }
-  std::cout << "here 1"<<std::endl;
 
   return;
 }

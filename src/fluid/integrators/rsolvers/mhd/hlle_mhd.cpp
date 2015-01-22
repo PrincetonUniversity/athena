@@ -38,24 +38,25 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NWAVE)],wri[(NWAVE)],wroe[(NWAVE)],fl[(NWAVE)],fr[(NWAVE)],flxi[(NWAVE)];
   Real gm1 = pmy_fluid->pf_eos->GetGamma() - 1.0;
+  Real iso_cs = pmy_fluid->pf_eos->GetIsoSoundSpeed();
 
 #pragma simd
   for (int i=il; i<=iu; ++i){
 
 //--- Step 1.  Load L/R states into local variables
 
+    wli[IDN]=wl(IDN,i);
     wli[IVX]=wl(ivx,i);
     wli[IVY]=wl(ivy,i);
     wli[IVZ]=wl(ivz,i);
-    wli[IDN]=wl(IDN,i);
     if (NON_BAROTROPIC_EOS) wli[IEN]=wl(IEN,i);
     wli[IBY]=wl(IBY,i);
     wli[IBZ]=wl(IBZ,i);
 
+    wri[IDN]=wr(IDN,i);
     wri[IVX]=wr(ivx,i);
     wri[IVY]=wr(ivy,i);
     wri[IVZ]=wr(ivz,i);
-    wri[IDN]=wr(IDN,i);
     if (NON_BAROTROPIC_EOS) wri[IEN]=wr(IEN,i);
     wri[IBY]=wr(IBY,i);
     wri[IBZ]=wr(IBZ,i);
@@ -72,15 +73,14 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     wroe[IVX] = (sqrtdl*wli[IVX] + sqrtdr*wri[IVX])*isdlpdr;
     wroe[IVY] = (sqrtdl*wli[IVY] + sqrtdr*wri[IVY])*isdlpdr;
     wroe[IVZ] = (sqrtdl*wli[IVZ] + sqrtdr*wri[IVZ])*isdlpdr;
-// Note Roe average of magnetic field is different
+    // Note Roe average of magnetic field is different
     wroe[IBY] = (sqrtdr*wli[IBY] + sqrtdl*wri[IBY])*isdlpdr;
     wroe[IBZ] = (sqrtdr*wli[IBZ] + sqrtdl*wri[IBZ])*isdlpdr;
     Real x = 0.5*(SQR(wli[IBY]-wri[IBY]) + SQR(wli[IBZ]-wri[IBZ]))/(SQR(sqrtdl+sqrtdr));
     Real y = 0.5*(wli[IDN] + wri[IDN])/wroe[IDN];
 
-// Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
-// rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
-
+    // Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
+    // rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
     Real pbl = 0.5*(bxi*bxi + SQR(wli[IBY]) + SQR(wli[IBZ]));
     Real pbr = 0.5*(bxi*bxi + SQR(wri[IBY]) + SQR(wri[IBZ]));
     Real el,er,hroe;
@@ -95,8 +95,8 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     Real cl = pmy_fluid->pf_eos->FastMagnetosonicSpeed(wli,bxi);
     Real cr = pmy_fluid->pf_eos->FastMagnetosonicSpeed(wri,bxi);
 
-// Compute fast-magnetosonic speed using eq. B18
-    Real a;
+    // Compute fast-magnetosonic speed using eq. B18
+    Real a = iso_cs;
     if (NON_BAROTROPIC_EOS) {
       Real btsq = SQR(wroe[IBY]) + SQR(wroe[IBZ]);
       Real bt_starsq = (gm1 - (gm1 - 1.0)*y)*btsq;
@@ -111,8 +111,6 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 
       Real cfsq = 0.5*(tsum + cf2_cs2);
       a = sqrt(cfsq);
-    } else {
-      a = pmy_fluid->pf_eos->GetIsoSoundSpeed();
     }
 
 //--- Step 4.  Compute the max/min wave speeds based on L/R and Roe-averaged values
@@ -124,46 +122,44 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     Real bm = al < 0.0 ? al : 0.0;
 
 //--- Step 5.  Compute L/R fluxes along the lines bm/bp: F_L - (S_L)U_L; F_R - (S_R)U_R
+ 
+    Real vxl = wli[IVX] - bm;
+    Real vxr = wri[IVX] - bp;
 
-    fl[IDN] = wli[IDN]*(wli[IVX] - bm);
-    fr[IDN] = wri[IDN]*(wri[IVX] - bp);
+    fl[IDN] = wli[IDN]*vxl;
+    fr[IDN] = wri[IDN]*vxr;
 
-    fl[IVX] = wli[IDN]*wli[IVX]*(wli[IVX] - bm) + pbl - SQR(bxi);
-    fr[IVX] = wri[IDN]*wri[IVX]*(wri[IVX] - bp) + pbr - SQR(bxi);
+    fl[IVX] = wli[IDN]*wli[IVX]*vxl + pbl - SQR(bxi);
+    fr[IVX] = wri[IDN]*wri[IVX]*vxr + pbr - SQR(bxi);
 
-    fl[IVY] = wli[IDN]*wli[IVY]*(wli[IVX] - bm) - bxi*wli[IBY];
-    fr[IVY] = wri[IDN]*wri[IVY]*(wri[IVX] - bp) - bxi*wri[IBY];
+    fl[IVY] = wli[IDN]*wli[IVY]*vxl - bxi*wli[IBY];
+    fr[IVY] = wri[IDN]*wri[IVY]*vxr - bxi*wri[IBY];
 
-    fl[IVZ] = wli[IDN]*wli[IVZ]*(wli[IVX] - bm) - bxi*wli[IBZ];
-    fr[IVZ] = wri[IDN]*wri[IVZ]*(wri[IVX] - bp) - bxi*wri[IBZ];
+    fl[IVZ] = wli[IDN]*wli[IVZ]*vxl - bxi*wli[IBZ];
+    fr[IVZ] = wri[IDN]*wri[IVZ]*vxr - bxi*wri[IBZ];
 
     if (NON_BAROTROPIC_EOS) {
       fl[IVX] += wli[IEN];
       fr[IVX] += wri[IEN];
-      fl[IEN] = el*(wli[IVX] - bm) + wli[IVX]*(wli[IEN] + pbl - bxi*bxi);
-      fr[IEN] = er*(wri[IVX] - bp) + wri[IVX]*(wri[IEN] + pbr - bxi*bxi);
+      fl[IEN] = el*vxl + wli[IVX]*(wli[IEN] + pbl - bxi*bxi);
+      fr[IEN] = er*vxr + wri[IVX]*(wri[IEN] + pbr - bxi*bxi);
       fl[IEN] -= bxi*(wli[IBY]*wli[IVY] + wli[IBZ]*wli[IVZ]);
       fr[IEN] -= bxi*(wri[IBY]*wri[IVY] + wri[IBZ]*wri[IVZ]);
     } else {
-      Real iso_cs = pmy_fluid->pf_eos->GetIsoSoundSpeed();
       fl[IVX] += (iso_cs*iso_cs)*wli[IDN];
       fr[IVX] += (iso_cs*iso_cs)*wri[IDN];
     }
 
-    fl[IBY] = wli[IBY]*(wli[IVX] - bm) - bxi*wli[IVY];
-    fr[IBY] = wri[IBY]*(wri[IVX] - bp) - bxi*wri[IVY];
+    fl[IBY] = wli[IBY]*vxl - bxi*wli[IVY];
+    fr[IBY] = wri[IBY]*vxr - bxi*wri[IVY];
 
-    fl[IBZ] = wli[IBZ]*(wli[IVX] - bm) - bxi*wli[IVZ];
-    fr[IBZ] = wri[IBZ]*(wri[IVX] - bp) - bxi*wri[IVZ];
+    fl[IBZ] = wli[IBZ]*vxl - bxi*wli[IVZ];
+    fr[IBZ] = wri[IBZ]*vxr - bxi*wri[IVZ];
 
 //--- Step 6.  Compute the HLLE flux at interface.
 
-    Real tmp;
-    if (bp == bm) {
-      tmp = 0.0;
-    } else {
-      tmp = 0.5*(bp + bm)/(bp - bm);
-    }
+    Real tmp=0.0;
+    if (bp != bm) tmp = 0.5*(bp + bm)/(bp - bm);
 
     flxi[IDN] = 0.5*(fl[IDN]+fr[IDN]) + (fl[IDN]-fr[IDN])*tmp;
     flxi[IVX] = 0.5*(fl[IVX]+fr[IVX]) + (fl[IVX]-fr[IVX])*tmp;

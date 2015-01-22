@@ -66,6 +66,7 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w
     pmb->pcoord->Face2Area(k,j,is,ie,area);
     pmb->pcoord->Edge3Length(k,j,is,ie+1,len);
 
+#pragma simd
     for (int i=is; i<=ie; ++i) {
       b.x2f(k,j,i) += (dt/area(i))*(len(i+1)*e3(k,j,i+1) - len(i)*e3(k,j,i));
     }
@@ -77,6 +78,7 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w
     pmb->pcoord->Face3Area(k,j,is,ie,area);
     pmb->pcoord->Edge2Length(k,j,is,ie+1,len);
 
+#pragma simd
     for (int i=is; i<=ie; ++i) {
       b.x3f(k,j,i) -= (dt/area(i))*(len(i+1)*e2(k,j,i+1) - len(i)*e2(k,j,i));
     }
@@ -92,6 +94,7 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w
       pmb->pcoord->Edge3Length(k,j  ,is,ie+1,len);
       pmb->pcoord->Edge3Length(k,j+1,is,ie+1,lenp1);
 
+#pragma simd
       for (int i=is; i<=ie+1; ++i) {
         b.x1f(k,j,i) -= (dt/area(i))*(lenp1(i)*e3(k,j+1,i) - len(i)*e3(k,j,i));
       }
@@ -102,6 +105,7 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w
       pmb->pcoord->Edge1Length(k,j  ,is,ie,len);
       pmb->pcoord->Edge1Length(k,j+1,is,ie,lenp1);
 
+#pragma simd
       for (int i=is; i<=ie; ++i) {
         b.x3f(k,j,i) += (dt/area(i))*(lenp1(i)*e1(k,j+1,i) - len(i)*e1(k,j,i));
       }
@@ -117,6 +121,7 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w
       pmb->pcoord->Edge2Length(k  ,j,is,ie+1,len);
       pmb->pcoord->Edge2Length(k+1,j,is,ie+1,lenp1);
 
+#pragma simd
       for (int i=is; i<=ie+1; ++i) {
         b.x1f(k,j,i) += (dt/area(i))*(lenp1(i)*e2(k+1,j,i) - len(i)*e2(k,j,i));
       }
@@ -127,6 +132,7 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w
       pmb->pcoord->Edge1Length(k  ,j,is,ie,len);
       pmb->pcoord->Edge1Length(k+1,j,is,ie,lenp1);
 
+#pragma simd
       for (int i=is; i<=ie; ++i) {
         b.x2f(k,j,i) -= (dt/area(i))*(lenp1(i)*e1(k+1,j,i) - len(i)*e1(k,j,i));
       }
