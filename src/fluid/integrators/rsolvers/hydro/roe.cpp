@@ -18,6 +18,7 @@
 #include "../../fluid_integrator.hpp"
 
 // C++ headers
+#include <algorithm>  // max()
 #include <cmath>      // sqrt()
 
 // Athena headers
@@ -293,16 +294,18 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 //--- Step 9.  Return LLF flux if any of intermediate states are negative
 
     if (llf_flag != 0) {
-      Real sl=ev[0];
-      Real sr=ev[NWAVE-1];
+//      Real sl=ev[0];
+//      Real sr=ev[NWAVE-1];
+      Real a = std::max(fabs(ev[0]), fabs(ev[NWAVE-1]));
 
-      flxi[IDN] = (sr*fl[IDN] - sl*fr[IDN] + sl*sr*du[IDN])/(sr - sl);
-      flxi[IVX] = (sr*fl[IVX] - sl*fr[IVX] + sl*sr*du[IVX])/(sr - sl);
-      flxi[IVY] = (sr*fl[IVY] - sl*fr[IVY] + sl*sr*du[IVY])/(sr - sl);
-      flxi[IVZ] = (sr*fl[IVZ] - sl*fr[IVZ] + sl*sr*du[IVZ])/(sr - sl);
+      flxi[IDN] = 0.5*(fl[IDN] + fr[IDN]) - a*du[IDN];
+      flxi[IVX] = 0.5*(fl[IVX] + fr[IVX]) - a*du[IVX];
+      flxi[IVY] = 0.5*(fl[IVY] + fr[IVY]) - a*du[IVY];
+      flxi[IVZ] = 0.5*(fl[IVZ] + fr[IVZ]) - a*du[IVZ];
       if (NON_BAROTROPIC_EOS) {
-        flxi[IEN] = (sr*fl[IEN] - sl*fr[IEN] + sl*sr*du[IEN])/(sr - sl);
+        flxi[IEN] = 0.5*(fl[IEN] + fr[IEN]) - a*du[IEN];
       }
+      llf_flag = 0;
     }
 
     flx(IDN,i) = flxi[IDN];
