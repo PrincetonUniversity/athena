@@ -199,54 +199,58 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=ks; k<=ke; ++k) {
-      for (int j=js; j<=je; ++j) {
-        for (int i=is; i<=ie; ++i) {
-          if (shk_dir==1 && pmb->x1v(i) < xshock) {
-            pfd->b.x1f(k,j,i) = wl[NFLUID  ];
-            pfd->b.x2f(k,j,i) = wl[NFLUID+1];
-            pfd->b.x3f(k,j,i) = wl[NFLUID+2];
-          } else if (shk_dir==2 && pmb->x2v(j) < xshock) {
-            pfd->b.x1f(k,j,i) = wl[NFLUID+2];
-            pfd->b.x2f(k,j,i) = wl[NFLUID  ];
-            pfd->b.x3f(k,j,i) = wl[NFLUID+1];
-          } else if (shk_dir==3 && pmb->x3v(k) < xshock) {
-            pfd->b.x1f(k,j,i) = wl[NFLUID+1];
-            pfd->b.x2f(k,j,i) = wl[NFLUID+2];
-            pfd->b.x3f(k,j,i) = wl[NFLUID];
-          }
-
-          if (shk_dir==1 && pmb->x1v(i) >= xshock) {
-            pfd->b.x1f(k,j,i) = wr[NFLUID  ];
-            pfd->b.x2f(k,j,i) = wr[NFLUID+1];
-            pfd->b.x3f(k,j,i) = wr[NFLUID+2];
-          } else if (shk_dir==2 && pmb->x2v(j) >= xshock) {
-            pfd->b.x1f(k,j,i) = wr[NFLUID+2];
-            pfd->b.x2f(k,j,i) = wr[NFLUID  ];
-            pfd->b.x3f(k,j,i) = wr[NFLUID+1];
-          } else if (shk_dir==3 && pmb->x3v(k) >= xshock)  {
-            pfd->b.x1f(k,j,i) = wr[NFLUID+1];
-            pfd->b.x2f(k,j,i) = wr[NFLUID+2];
-            pfd->b.x3f(k,j,i) = wr[NFLUID];
-          }
-          if (NON_BAROTROPIC_EOS) pfl->u(IEN,k,j,i) +=
-            0.5*(pfd->b.x1f(k,j,i)*pfd->b.x1f(k,j,i) +
-                 pfd->b.x2f(k,j,i)*pfd->b.x2f(k,j,i) +
-                 pfd->b.x3f(k,j,i)*pfd->b.x3f(k,j,i));
+    for (int j=js; j<=je; ++j) {
+      for (int i=is; i<=ie; ++i) {
+        if (shk_dir==1 && pmb->x1v(i) < xshock) {
+          pfd->b.x1f(k,j,i) = wl[NFLUID  ];
+          pfd->b.x2f(k,j,i) = wl[NFLUID+1];
+          pfd->b.x3f(k,j,i) = wl[NFLUID+2];
+        } else if (shk_dir==2 && pmb->x2v(j) < xshock) {
+          pfd->b.x1f(k,j,i) = wl[NFLUID+2];
+          pfd->b.x2f(k,j,i) = wl[NFLUID  ];
+          pfd->b.x3f(k,j,i) = wl[NFLUID+1];
+        } else if (shk_dir==3 && pmb->x3v(k) < xshock) {
+          pfd->b.x1f(k,j,i) = wl[NFLUID+1];
+          pfd->b.x2f(k,j,i) = wl[NFLUID+2];
+          pfd->b.x3f(k,j,i) = wl[NFLUID];
         }
+
+        if (shk_dir==1 && pmb->x1v(i) >= xshock) {
+          pfd->b.x1f(k,j,i) = wr[NFLUID  ];
+          pfd->b.x2f(k,j,i) = wr[NFLUID+1];
+          pfd->b.x3f(k,j,i) = wr[NFLUID+2];
+        } else if (shk_dir==2 && pmb->x2v(j) >= xshock) {
+          pfd->b.x1f(k,j,i) = wr[NFLUID+2];
+          pfd->b.x2f(k,j,i) = wr[NFLUID  ];
+          pfd->b.x3f(k,j,i) = wr[NFLUID+1];
+        } else if (shk_dir==3 && pmb->x3v(k) >= xshock)  {
+          pfd->b.x1f(k,j,i) = wr[NFLUID+1];
+          pfd->b.x2f(k,j,i) = wr[NFLUID+2];
+          pfd->b.x3f(k,j,i) = wr[NFLUID];
+        }
+        if (NON_BAROTROPIC_EOS) {
+          pfl->u(IEN,k,j,i) += 0.5*(SQR(pfd->b.x1f(k,j,i)) + SQR(pfd->b.x2f(k,j,i)) +
+             SQR(pfd->b.x3f(k,j,i)));
+        }
+      }
+    }}
 
 // end by adding bi.x1 at ie+1, bi.x2 at je+1, and bi.x3 at ke+1
 
-        pfd->b.x1f(k,j,ie+1) = pfd->b.x1f(k,j,ie);
-      }
-      for (int i=is; i<=ie; ++i) {
-        pfd->b.x2f(k,je+1,i) = pfd->b.x2f(k,je,i);
-      }
-    }
+    for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
+      pfd->b.x1f(k,j,ie+1) = pfd->b.x1f(k,j,ie);
+    }}
+    for (int k=ks; k<=ke; ++k) {
+    for (int i=is; i<=ie; ++i) {
+      pfd->b.x2f(k,je+1,i) = pfd->b.x2f(k,je,i);
+    }}
     for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie; ++i) {
       pfd->b.x3f(ke+1,j,i) = pfd->b.x3f(ke,j,i);
     }}
   }
+  std::cout << "here 1"<<std::endl;
 
   return;
 }

@@ -1003,7 +1003,7 @@ void InitBoundaryBuffer(int nx1, int nx2, int nx3)
     field_send_se_[inner_x3][x3face][0]=0;
     field_send_se_[inner_x3][x3face][1]=ie+NGHOST;
     field_send_se_[inner_x3][x3face][2]=0;
-    field_send_se_[inner_x3][x3face][3]=je+NGHOST+1;
+    field_send_se_[inner_x3][x3face][3]=je+NGHOST;
     field_send_se_[inner_x3][x3face][4]=ks+1;
     field_send_se_[inner_x3][x3face][5]=ks+NGHOST;
 
@@ -1024,7 +1024,7 @@ void InitBoundaryBuffer(int nx1, int nx2, int nx3)
     field_send_se_[outer_x3][x3face][0]=0;
     field_send_se_[outer_x3][x3face][1]=ie+NGHOST;
     field_send_se_[outer_x3][x3face][2]=0;
-    field_send_se_[outer_x3][x3face][3]=je+NGHOST+1;
+    field_send_se_[outer_x3][x3face][3]=je+NGHOST;
     field_send_se_[outer_x3][x3face][4]=ke-NGHOST+1;
     field_send_se_[outer_x3][x3face][5]=ke;
 
@@ -1129,7 +1129,7 @@ void InitBoundaryBuffer(int nx1, int nx2, int nx3)
     field_recv_se_[inner_x3][x3face][0]=0;
     field_recv_se_[inner_x3][x3face][1]=ie+NGHOST;
     field_recv_se_[inner_x3][x3face][2]=0;
-    field_recv_se_[inner_x3][x3face][3]=je+NGHOST+1;
+    field_recv_se_[inner_x3][x3face][3]=je+NGHOST;
     field_recv_se_[inner_x3][x3face][4]=ks-NGHOST;
     field_recv_se_[inner_x3][x3face][5]=ks-1;
 
@@ -1150,7 +1150,7 @@ void InitBoundaryBuffer(int nx1, int nx2, int nx3)
     field_recv_se_[outer_x3][x3face][0]=0;
     field_recv_se_[outer_x3][x3face][1]=ie+NGHOST;
     field_recv_se_[outer_x3][x3face][2]=0;
-    field_recv_se_[outer_x3][x3face][3]=je+NGHOST+1;
+    field_recv_se_[outer_x3][x3face][3]=je+NGHOST;
     field_recv_se_[outer_x3][x3face][4]=ke+2;
     field_recv_se_[outer_x3][x3face][5]=ke+NGHOST+1;
 

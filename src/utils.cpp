@@ -48,19 +48,19 @@ void ShowConfig(void)
   std::cout<<"  Fluid integrator:           " << FLUID_TIME_INTEGRATOR << std::endl;
   std::cout<<"  Compiler and flags:         " << COMPILED_WITH << std::endl;
   if (MAGNETIC_FIELDS_ENABLED) {
-    std::cout<<"  Magnetic fields:            enabled" << std::endl;
+    std::cout<<"  Magnetic fields:            ON" << std::endl;
   } else {
-    std::cout<<"  Magnetic fields:            disabled" << std::endl;
+    std::cout<<"  Magnetic fields:            OFF" << std::endl;
   }
   if (RELATIVISTIC_DYNAMICS) {
-    std::cout<<"  Relativistic dynamics:      enabled " << std::endl;
+    std::cout<<"  Relativistic dynamics:      ON " << std::endl;
   } else {
-    std::cout<<"  Relativistic dynamics:      disabled " << std::endl;
+    std::cout<<"  Relativistic dynamics:      OFF " << std::endl;
   }
 #ifdef OPENMP_PARALLEL
-  std::cout<<"  OpenMP parallelism:         enabled" << std::endl;
+  std::cout<<"  OpenMP parallelism:         ON" << std::endl;
 #else
-  std::cout<<"  OpenMP parallelism:         disabled" << std::endl;
+  std::cout<<"  OpenMP parallelism:         OFF" << std::endl;
 #endif
 
 
