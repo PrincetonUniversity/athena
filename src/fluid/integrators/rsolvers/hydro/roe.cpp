@@ -28,8 +28,7 @@
 #include "../../../eos/eos.hpp"           // GetGamma
 
 // function to compute eigenvalues and eigenvectors of Roe's matrix A
-inline void RoeEigensystem(const Real v1, const Real v2, const Real v3, const Real h,
-  Real eigenvalues[],
+inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
   Real right_eigenmatrix[][(NWAVE)], Real left_eigenmatrix[][(NWAVE)]);
 
 // (gamma-1) and isothermal sound speed made global so can be shared with eigensystem
@@ -53,7 +52,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
-  Real wli[NFLUID],wri[NFLUID],flxi[NFLUID],fl[NFLUID],fr[NFLUID];
+  Real wli[NWAVE],wri[NWAVE],wroe[NWAVE],fl[NWAVE],fr[NWAVE],flxi[NWAVE];
   gm1 = pmy_fluid->pf_eos->GetGamma() - 1.0;
   iso_cs = pmy_fluid->pf_eos->GetIsoSoundSpeed();
 
@@ -84,23 +83,23 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     Real sqrtdr = sqrt(wri[IDN]);
     Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
 
-    Real droe  = sqrtdl*sqrtdr;
-    Real v1roe = (sqrtdl*wli[IVX] + sqrtdr*wri[IVX])*isdlpdr;
-    Real v2roe = (sqrtdl*wli[IVY] + sqrtdr*wri[IVY])*isdlpdr;
-    Real v3roe = (sqrtdl*wli[IVZ] + sqrtdr*wri[IVZ])*isdlpdr;
+    wroe[IDN]  = sqrtdl*sqrtdr;
+    wroe[IVX] = (sqrtdl*wli[IVX] + sqrtdr*wri[IVX])*isdlpdr;
+    wroe[IVY] = (sqrtdl*wli[IVY] + sqrtdr*wri[IVY])*isdlpdr;
+    wroe[IVZ] = (sqrtdl*wli[IVZ] + sqrtdr*wri[IVZ])*isdlpdr;
 
     // Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
     // rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
-    Real el,er,hroe;
+    Real el,er;
     if (NON_BAROTROPIC_EOS) {
       el = wli[IEN]/gm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
       er = wri[IEN]/gm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
-      hroe = ((el + wli[IEN])/sqrtdl + (er + wri[IEN])/sqrtdr)*isdlpdr;
+      wroe[IEN] = ((el + wli[IEN])/sqrtdl + (er + wri[IEN])/sqrtdr)*isdlpdr;
     }
 
 //--- Step 3.  Compute eigenvalues and eigenmatrices using Roe-averaged values
 
-    RoeEigensystem(v1roe,v2roe,v3roe,hroe,ev,rem,lem);
+    RoeEigensystem(wroe,ev,rem,lem);
 
 //--- Step 4.  Compute L/R fluxes 
 
@@ -137,37 +136,37 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     du[IVZ] = wri[IDN]*wri[IVZ] - wli[IDN]*wli[IVZ];
     if (NON_BAROTROPIC_EOS) du[IEN] = er - el;
 
-    a[IDN]  = lem[IDN][0]*du[0];
-    a[IDN] += lem[IDN][1]*du[1];
-    a[IDN] += lem[IDN][2]*du[2];
-    a[IDN] += lem[IDN][3]*du[3];
+    a[IDN]  = lem[IDN][IDN]*du[IDN];
+    a[IDN] += lem[IDN][IVX]*du[IVX];
+    a[IDN] += lem[IDN][IVY]*du[IVY];
+    a[IDN] += lem[IDN][IVZ]*du[IVZ];
 
-    a[IVX]  = lem[IVX][0]*du[0];
-    a[IVX] += lem[IVX][1]*du[1];
-    a[IVX] += lem[IVX][2]*du[2];
-    a[IVX] += lem[IVX][3]*du[3];
+    a[IVX]  = lem[IVX][IDN]*du[IDN];
+    a[IVX] += lem[IVX][IVX]*du[IVX];
+    a[IVX] += lem[IVX][IVY]*du[IVY];
+    a[IVX] += lem[IVX][IVZ]*du[IVZ];
 
-    a[IVY]  = lem[IVY][0]*du[0];
-    a[IVY] += lem[IVY][1]*du[1];
-    a[IVY] += lem[IVY][2]*du[2];
-    a[IVY] += lem[IVY][3]*du[3];
+    a[IVY]  = lem[IVY][IDN]*du[IDN];
+    a[IVY] += lem[IVY][IVX]*du[IVX];
+    a[IVY] += lem[IVY][IVY]*du[IVY];
+    a[IVY] += lem[IVY][IVZ]*du[IVZ];
 
-    a[IVZ]  = lem[IVZ][0]*du[0];
-    a[IVZ] += lem[IVZ][1]*du[1];
-    a[IVZ] += lem[IVZ][2]*du[2];
-    a[IVZ] += lem[IVZ][3]*du[3];
+    a[IVZ]  = lem[IVZ][IDN]*du[IDN];
+    a[IVZ] += lem[IVZ][IVX]*du[IVX];
+    a[IVZ] += lem[IVZ][IVY]*du[IVY];
+    a[IVZ] += lem[IVZ][IVZ]*du[IVZ];
 
     if (NON_BAROTROPIC_EOS) {
-      a[IDN] += lem[IDN][4]*du[4];
-      a[IVX] += lem[IVX][4]*du[4];
-      a[IVY] += lem[IVY][4]*du[4];
-      a[IVZ] += lem[IVZ][4]*du[4];
+      a[IDN] += lem[IDN][IEN]*du[IEN];
+      a[IVX] += lem[IVX][IEN]*du[IEN];
+      a[IVY] += lem[IVY][IEN]*du[IEN];
+      a[IVZ] += lem[IVZ][IEN]*du[IEN];
 
-      a[IEN]  = lem[IEN][0]*du[0];
-      a[IEN] += lem[IEN][1]*du[1];
-      a[IEN] += lem[IEN][2]*du[2];
-      a[IEN] += lem[IEN][3]*du[3];
-      a[IEN] += lem[IEN][4]*du[4];
+      a[IEN]  = lem[IEN][IDN]*du[IDN];
+      a[IEN] += lem[IEN][IVX]*du[IVX];
+      a[IEN] += lem[IEN][IVY]*du[IVY];
+      a[IEN] += lem[IEN][IVZ]*du[IVZ];
+      a[IEN] += lem[IEN][IEN]*du[IEN];
     }
 
 //--- Step 6.  Check that the density and pressure in the intermediate states are
@@ -230,48 +229,48 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 
 //--- Step 7.  Compute Roe flux
 
-    coeff[0] = 0.5*fabs(ev[0])*a[0];
-    coeff[1] = 0.5*fabs(ev[1])*a[1];
-    coeff[2] = 0.5*fabs(ev[2])*a[2];
-    coeff[3] = 0.5*fabs(ev[3])*a[3];
+    coeff[IDN] = 0.5*fabs(ev[IDN])*a[IDN];
+    coeff[IVX] = 0.5*fabs(ev[IVX])*a[IVX];
+    coeff[IVY] = 0.5*fabs(ev[IVY])*a[IVY];
+    coeff[IVZ] = 0.5*fabs(ev[IVZ])*a[IVZ];
 
     flxi[IDN] = 0.5*(fl[IDN] + fr[IDN]);
-    flxi[IDN] -= coeff[0]*rem[IDN][0];
-    flxi[IDN] -= coeff[1]*rem[IDN][1];
-    flxi[IDN] -= coeff[2]*rem[IDN][2];
-    flxi[IDN] -= coeff[3]*rem[IDN][3];
+    flxi[IDN] -= coeff[IDN]*rem[IDN][IDN];
+    flxi[IDN] -= coeff[IVX]*rem[IDN][IVX];
+    flxi[IDN] -= coeff[IVY]*rem[IDN][IVY];
+    flxi[IDN] -= coeff[IVZ]*rem[IDN][IVZ];
 
     flxi[IVX] = 0.5*(fl[IVX] + fr[IVX]);
-    flxi[IVX] -= coeff[0]*rem[IVX][0];
-    flxi[IVX] -= coeff[1]*rem[IVX][1];
-    flxi[IVX] -= coeff[2]*rem[IVX][2];
-    flxi[IVX] -= coeff[3]*rem[IVX][3];
+    flxi[IVX] -= coeff[IDN]*rem[IVX][IDN];
+    flxi[IVX] -= coeff[IVX]*rem[IVX][IVX];
+    flxi[IVX] -= coeff[IVY]*rem[IVX][IVY];
+    flxi[IVX] -= coeff[IVZ]*rem[IVX][IVZ];
 
     flxi[IVY] = 0.5*(fl[IVY] + fr[IVY]);
-    flxi[IVY] -= coeff[0]*rem[IVY][0];
-    flxi[IVY] -= coeff[1]*rem[IVY][1];
-    flxi[IVY] -= coeff[2]*rem[IVY][2];
-    flxi[IVY] -= coeff[3]*rem[IVY][3];
+    flxi[IVY] -= coeff[IDN]*rem[IVY][IDN];
+    flxi[IVY] -= coeff[IVX]*rem[IVY][IVX];
+    flxi[IVY] -= coeff[IVY]*rem[IVY][IVY];
+    flxi[IVY] -= coeff[IVZ]*rem[IVY][IVZ];
 
     flxi[IVZ] = 0.5*(fl[IVZ] + fr[IVZ]);
-    flxi[IVZ] -= coeff[0]*rem[IVZ][0];
-    flxi[IVZ] -= coeff[1]*rem[IVZ][1];
-    flxi[IVZ] -= coeff[2]*rem[IVZ][2];
-    flxi[IVZ] -= coeff[3]*rem[IVZ][3];
+    flxi[IVZ] -= coeff[IDN]*rem[IVZ][IDN];
+    flxi[IVZ] -= coeff[IVX]*rem[IVZ][IVX];
+    flxi[IVZ] -= coeff[IVY]*rem[IVZ][IVY];
+    flxi[IVZ] -= coeff[IVZ]*rem[IVZ][IVZ];
 
     if (NON_BAROTROPIC_EOS) {
-      coeff[4] = 0.5*fabs(ev[4])*a[4];
-      flxi[IDN] -= coeff[4]*rem[IDN][4];
-      flxi[IVX] -= coeff[4]*rem[IVX][4];
-      flxi[IVY] -= coeff[4]*rem[IVY][4];
-      flxi[IVZ] -= coeff[4]*rem[IVZ][4];
+      coeff[IEN] = 0.5*fabs(ev[IEN])*a[IEN];
+      flxi[IDN] -= coeff[IEN]*rem[IDN][IEN];
+      flxi[IVX] -= coeff[IEN]*rem[IVX][IEN];
+      flxi[IVY] -= coeff[IEN]*rem[IVY][IEN];
+      flxi[IVZ] -= coeff[IEN]*rem[IVZ][IEN];
 
       flxi[IEN] = 0.5*(fl[IEN] + fr[IEN]);
-      flxi[IEN] -= coeff[0]*rem[IEN][0];
-      flxi[IEN] -= coeff[1]*rem[IEN][1];
-      flxi[IEN] -= coeff[2]*rem[IEN][2];
-      flxi[IEN] -= coeff[3]*rem[IEN][3];
-      flxi[IEN] -= coeff[4]*rem[IEN][4];
+      flxi[IEN] -= coeff[IDN]*rem[IEN][IDN];
+      flxi[IEN] -= coeff[IVX]*rem[IEN][IVX];
+      flxi[IEN] -= coeff[IVY]*rem[IEN][IVY];
+      flxi[IEN] -= coeff[IVZ]*rem[IEN][IVZ];
+      flxi[IEN] -= coeff[IEN]*rem[IEN][IEN];
     }
 
 //--- Step 8.  Overwrite with upwind flux if flow is supersonic
@@ -337,14 +336,18 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 //   astrophysical MHD", ApJS, (2008), Appendix B  Equation numbers refer to this paper.
 //--------------------------------------------------------------------------------------
 
-inline void RoeEigensystem(const Real v1, const Real v2, const Real v3, const Real h,
-  Real eigenvalues[],
+inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
   Real right_eigenmatrix[][(NWAVE)], Real left_eigenmatrix[][(NWAVE)])
 {
+  Real d  = wroe[IDN];
+  Real v1 = wroe[IVX];
+  Real v2 = wroe[IVY];
+  Real v3 = wroe[IVZ];
 
 // Adiabatic hydrodynamics
 
   if (NON_BAROTROPIC_EOS) {
+    Real h = wroe[IEN];
     Real vsq = v1*v1 + v2*v2 + v3*v3;
     Real q = h - 0.5*vsq;
     Real asq = (q < 0.0) ? 0.0 : gm1*q;

@@ -187,7 +187,7 @@ makefile_options['EOS_FILE'] += '_mhd' if args['b'] else '_hydro'
 if args['b']:
   definitions['NFIELD_VARIABLES'] = '3'
   makefile_options['RSOLVER_DIR'] = 'mhd/'
-  if args['flux'] == 'hlle' or args['flux'] == 'llf':
+  if args['flux'] == 'hlle' or args['flux'] == 'llf' or args['flux'] == 'roe':
     makefile_options['RSOLVER_FILE'] += '_mhd'
   if args['eos'] == 'adiabatic':
     definitions['NWAVE_VALUE'] = '7'
