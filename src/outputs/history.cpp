@@ -116,19 +116,32 @@ void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     for (int i=0; i<(nvars-2); ++i) partial_sum[i] = 0.0;
     pmb->pcoord->CellVolume(k,j,(pod->data_header.il),(pod->data_header.iu),vol);
 
+#pragma simd
     for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i) {
-      partial_sum[0] += vol(i)*pfl->u(IDN,k,j,i);
-      partial_sum[1] += vol(i)*pfl->u(IM1,k,j,i);
-      partial_sum[2] += vol(i)*pfl->u(IM2,k,j,i);
-      partial_sum[3] += vol(i)*pfl->u(IM3,k,j,i);
-      partial_sum[4] += vol(i)*pfl->w(IDN,k,j,i)*pfl->w(IM1,k,j,i)*pfl->w(IM1,k,j,i);
-      partial_sum[5] += vol(i)*pfl->w(IDN,k,j,i)*pfl->w(IM2,k,j,i)*pfl->w(IM2,k,j,i);
-      partial_sum[6] += vol(i)*pfl->w(IDN,k,j,i)*pfl->w(IM3,k,j,i)*pfl->w(IM3,k,j,i);
-      if (NON_BAROTROPIC_EOS) partial_sum[7] += vol(i)*pfl->u(IEN,k,j,i);
+      Real& u_d  = pfl->u(IDN,k,j,i);
+      Real& u_mx = pfl->u(IM1,k,j,i);
+      Real& u_my = pfl->u(IM2,k,j,i);
+      Real& u_mz = pfl->u(IM3,k,j,i);
+
+      partial_sum[0] += vol(i)*u_d;
+      partial_sum[1] += vol(i)*u_mx;
+      partial_sum[2] += vol(i)*u_my;
+      partial_sum[3] += vol(i)*u_mz;
+      partial_sum[4] += vol(i)*0.5*SQR(u_mx)/u_d;
+      partial_sum[5] += vol(i)*0.5*SQR(u_my)/u_d;
+      partial_sum[6] += vol(i)*0.5*SQR(u_mz)/u_d;
+
+      if (NON_BAROTROPIC_EOS) {
+        Real& u_e = pfl->u(IEN,k,j,i);;
+        partial_sum[7] += vol(i)*u_e;
+      }
       if (MAGNETIC_FIELDS_ENABLED) {
-        partial_sum[8]  += vol(i)*pfd->bcc(IB1,k,j,i)*pfd->bcc(IB1,k,j,i);
-        partial_sum[9]  += vol(i)*pfd->bcc(IB2,k,j,i)*pfd->bcc(IB2,k,j,i);
-        partial_sum[10] += vol(i)*pfd->bcc(IB3,k,j,i)*pfd->bcc(IB3,k,j,i);
+        Real& bcc1 = pfd->bcc(IB1,k,j,i);
+        Real& bcc2 = pfd->bcc(IB2,k,j,i);
+        Real& bcc3 = pfd->bcc(IB3,k,j,i);
+        partial_sum[8]  += vol(i)*0.5*bcc1*bcc1;
+        partial_sum[9]  += vol(i)*0.5*bcc2*bcc2;
+        partial_sum[10] += vol(i)*0.5*bcc3*bcc3;
       }
     }
     for (int n=0; n<(nvars-2); ++n) pvar->data(n+2,0,0,0) += partial_sum[n];
