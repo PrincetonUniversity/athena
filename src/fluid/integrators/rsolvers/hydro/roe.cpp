@@ -274,7 +274,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
       flxi[IEN] -= coeff[4]*rem[IEN][4];
     }
 
-//--- Step 8.  Return upwind flux if flow is supersonic
+//--- Step 8.  Overwrite with upwind flux if flow is supersonic
 
     if(ev[0] >= 0.0){
       flxi[IDN] = fl[IDN];
@@ -291,11 +291,9 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
       if (NON_BAROTROPIC_EOS) flxi[IEN] = fr[IEN];
     }
 
-//--- Step 9.  Return LLF flux if any of intermediate states are negative
+//--- Step 9.  Overwrite with LLF flux if any of intermediate states are negative
 
     if (llf_flag != 0) {
-//      Real sl=ev[0];
-//      Real sr=ev[NWAVE-1];
       Real a = std::max(fabs(ev[0]), fabs(ev[NWAVE-1]));
 
       flxi[IDN] = 0.5*(fl[IDN] + fr[IDN]) - a*du[IDN];
@@ -305,7 +303,6 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
       if (NON_BAROTROPIC_EOS) {
         flxi[IEN] = 0.5*(fl[IEN] + fr[IEN]) - a*du[IEN];
       }
-      llf_flag = 0;
     }
 
     flx(IDN,i) = flxi[IDN];
