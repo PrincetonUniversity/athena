@@ -39,21 +39,31 @@ void FluidIntegrator::ReconstructionFuncX1(const int n, const int m, const int k
 
 #pragma simd
   for (int i=is; i<=(ie+1); ++i){
-    Real dql = (q(n,k,j,i-1) - q(n,k,j,i-2))/pmy_fluid->pmy_block->dx1v(i-2);
-    Real dqc = (q(n,k,j,i  ) - q(n,k,j,i-1))/pmy_fluid->pmy_block->dx1v(i-1);
-    Real dqr = (q(n,k,j,i+1) - q(n,k,j,i  ))/pmy_fluid->pmy_block->dx1v(i  );
+    const Real& q_im2 = q(n,k,j,i-2);
+    const Real& q_im1 = q(n,k,j,i-1);
+    const Real& q_i   = q(n,k,j,i  );
+    const Real& q_ip1 = q(n,k,j,i+1);
+    Real& dx_im2 = pmy_fluid->pmy_block->dx1v(i-2);
+    Real& dx_im1 = pmy_fluid->pmy_block->dx1v(i-1);
+    Real& dx_i   = pmy_fluid->pmy_block->dx1v(i);
+
+    Real dql = (q_im1 - q_im2)/dx_im2;
+    Real dqc = (q_i   - q_im1)/dx_im1;
+    Real dqr = (q_ip1 - q_i  )/dx_i;
 
     // Apply monotonicity constraints, compute ql_(i-1/2)
     Real dq2 = dql*dqc;
     Real dqm = (dq2 > 0.0) ? dqm = dq2/(dql + dqc) : 0.0;
 
-    ql(m,i) = q(n,k,j,i-1) + (pmy_fluid->pmy_block->dx1f(i-1))*dqm;
+    Real& dxf_im1 = pmy_fluid->pmy_block->dx1f(i-1);
+    ql(m,i) = q_im1 + dxf_im1*dqm;
     
     // Apply monotonicity constraints, compute qr_(i-1/2)
     dq2 = dqc*dqr;
     dqm = (dq2 > 0.0) ? dqm = dq2/(dqc + dqr) : 0.0;
 
-    qr(m,i) = q(n,k,j,i) - (pmy_fluid->pmy_block->dx1f(i))*dqm;
+    Real& dxf_i = pmy_fluid->pmy_block->dx1f(i);
+    qr(m,i) = q_i   - dxf_i*dqm;
   }
 
   return;
@@ -73,21 +83,26 @@ void FluidIntegrator::ReconstructionFuncX2(const int n, const int m, const int k
 
 #pragma simd
   for (int i=is; i<=ie; ++i){
-    Real dql = (q(n,k,j-1,i) - q(n,k,j-2,i))*dx2jm2i;
-    Real dqc = (q(n,k,j  ,i) - q(n,k,j-1,i))*dx2jm1i;
-    Real dqr = (q(n,k,j+1,i) - q(n,k,j  ,i))*dx2ji;
+    const Real& q_jm2 = q(n,k,j-2,i);
+    const Real& q_jm1 = q(n,k,j-1,i);
+    const Real& q_j   = q(n,k,j  ,i);
+    const Real& q_jp1 = q(n,k,j+1,i);
+
+    Real dql = (q_jm1 - q_jm2)*dx2jm2i;
+    Real dqc = (q_j   - q_jm1)*dx2jm1i;
+    Real dqr = (q_jp1 - q_j  )*dx2ji;
 
     // Apply monotonicity constraints, compute ql_(i-1/2)
     Real dq2 = dql*dqc;
     Real dqm = (dq2 > 0.0) ? dqm = dq2/(dql + dqc) : 0.0;
 
-    ql(m,i) = q(n,k,j-1,i) + (pmy_fluid->pmy_block->dx2f(j-1))*dqm;
+    ql(m,i) = q_jm1 + (pmy_fluid->pmy_block->dx2f(j-1))*dqm;
     
     // Apply monotonicity constraints, compute qr_(i-1/2)
     dq2 = dqc*dqr;
     dqm = (dq2 > 0.0) ? dqm = dq2/(dqc + dqr) : 0.0;
 
-    qr(m,i) = q(n,k,j,i) - (pmy_fluid->pmy_block->dx2f(j))*dqm;
+    qr(m,i) = q_j   - (pmy_fluid->pmy_block->dx2f(j))*dqm;
   }
 
   return;
@@ -107,21 +122,26 @@ void FluidIntegrator::ReconstructionFuncX3(const int n, const int m, const int k
 
 #pragma simd
   for (int i=is; i<=ie; ++i){
-    Real dql = (q(n,k-1,j,i) - q(n,k-2,j,i))*dx3km2i;
-    Real dqc = (q(n,k  ,j,i) - q(n,k-1,j,i))*dx3km1i;
-    Real dqr = (q(n,k+1,j,i) - q(n,k  ,j,i))*dx3ki;
+    const Real& q_km2 = q(n,k-2,j,i);
+    const Real& q_km1 = q(n,k-1,j,i);
+    const Real& q_k   = q(n,k  ,j,i);
+    const Real& q_kp1 = q(n,k+1,j,i);
+
+    Real dql = (q_km1 - q_km2)*dx3km2i;
+    Real dqc = (q_k   - q_km1)*dx3km1i;
+    Real dqr = (q_kp1 - q_k  )*dx3ki;
 
     // Apply monotonicity constraints, compute ql_(i-1/2)
     Real dq2 = dql*dqc;
     Real dqm = (dq2 > 0.0) ? dqm = dq2/(dql + dqc) : 0.0;
 
-    ql(m,i) = q(n,k-1,j,i) + (pmy_fluid->pmy_block->dx3f(k-1))*dqm;
+    ql(m,i) = q_km1 + (pmy_fluid->pmy_block->dx3f(k-1))*dqm;
     
     // Apply monotonicity constraints, compute qr_(i-1/2)
     dq2 = dqc*dqr;
     dqm = (dq2 > 0.0) ? dqm = dq2/(dqc + dqr) : 0.0;
 
-    qr(m,i) = q(n,k,j,i) - (pmy_fluid->pmy_block->dx3f(k))*dqm;
+    qr(m,i) = q_k   - (pmy_fluid->pmy_block->dx3f(k))*dqm;
   }
 
   return;
