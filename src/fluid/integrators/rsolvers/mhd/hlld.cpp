@@ -27,13 +27,15 @@
 #include "../../../eos/eos.hpp"           // GetGamma
 
 // container to store (density, momentum, total energy, tranverse magnetic field)
-// provides compatibility with athena4.2 
+// minimizes changes required to adopt athena4.2 version of this solver 
 typedef struct Cons1D {
   Real d,mx,my,mz,e,by,bz;
 } Cons1D;
 
+#define SMALL_NUMBER 1.0e-8
+
 //======================================================================================
-//! \file hlld_adi.c
+//! \file hlld.cpp
 //  \brief HLLD Riemann solver for adiabatic MHD.
 //
 // REFERENCES:
@@ -41,16 +43,14 @@ typedef struct Cons1D {
 //   MHD", JCP, 208, 315 (2005)
 //======================================================================================
 
-#define SMALL_NUMBER 1.0e-8
-
 void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const int iu,
   const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
   AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
-  Real flxi[(NWAVE)];             // temporary variable to store total (output) flux
-  Real wli[(NWAVE)],wri[(NWAVE)]; // L/R states, primitive variables (input), flux
+  Real flxi[(NWAVE)];             // temporary variable to store flux
+  Real wli[(NWAVE)],wri[(NWAVE)]; // L/R states, primitive variables (input)
   Cons1D ul,ur;                   // L/R states, conserved variables (computed)
   Real spd[5];                    // signal speeds, left to right 
   Cons1D ulst,uldst,urdst,urst;   // Conserved variable for all states 
@@ -82,7 +82,6 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     Real bxi = bx(k,j,i);
 
     // Compute L/R states for selected conserved variables
-
     Real bxsq = bxi*bxi;
     Real pbl = 0.5*(bxsq + SQR(wli[IBY]) + SQR(wli[IBZ]));  // magnetic pressure (l/r)
     Real pbr = 0.5*(bxsq + SQR(wri[IBY]) + SQR(wri[IBZ]));
@@ -109,8 +108,11 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 
     Real cfl = pmy_fluid->pf_eos->FastMagnetosonicSpeed(wli,bxi);
     Real cfr = pmy_fluid->pf_eos->FastMagnetosonicSpeed(wri,bxi);
-    Real cfmax = std::max(cfl,cfr);
 
+    spd[0] = std::min( wli[IVX]-cfl, wri[IVX]-cfr );
+    spd[4] = std::max( wli[IVX]+cfl, wri[IVX]+cfr );
+/*
+    Real cfmax = std::max(cfl,cfr);
     if(wli[IVX] <= wri[IVX]) {
       spd[0] = wli[IVX] - cfmax;
       spd[4] = wri[IVX] + cfmax;
@@ -118,6 +120,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
       spd[0] = wri[IVX] - cfmax;
       spd[4] = wli[IVX] + cfmax;
     }
+*/
 
 //--- Step 3.  Compute L/R fluxes
 
@@ -198,8 +201,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 
       urst.by = ur.by;
       urst.bz = ur.bz;
-    }
-    else {
+    } else {
       // eqns (44) and (46) of M&K 
       Real tmp = bxi*(sdr - sdmr)/(ur.d*sdr*sdmr - bxsq);
       urst.my = urst.d * (wri[IVY] - ur.by*tmp);
