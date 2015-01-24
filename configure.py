@@ -227,8 +227,8 @@ makefile_options['FLUID_INT_FILE'] = args['fint']
 definitions['COMPILER_CHOICE'] = args['cxx']
 makefile_options['COMPILER_CHOICE'] = args['cxx']
 if args['cxx'] == 'icc':
-  makefile_options['COMPILER_FLAGS'] = '-O3 -xhost -ipo'
-  definitions['COMPILER_FLAGS'] = '-O3 -xhost -ipo'
+  makefile_options['COMPILER_FLAGS'] = '-O3 -xhost -ipo -inline-forceinline'
+  definitions['COMPILER_FLAGS'] = '-O3 -xhost -ipo -inline-forceinline'
 if args['cxx'] == 'g++':
   makefile_options['COMPILER_FLAGS'] = '-O3'
   definitions['COMPILER_FLAGS'] = '-O3'
@@ -281,7 +281,6 @@ else:
   if args['cxx'] == 'icc':
     makefile_options['COMPILER_FLAGS'] += ' -diag-disable 3180'
     definitions['COMPILER_FLAGS'] += ' -diag-disable 3180'
-
 
 # -ifov=N argument
 definitions['NUM_IFOV'] = str(args['ifov'])

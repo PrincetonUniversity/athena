@@ -29,7 +29,7 @@
 // container to store (density, momentum, tranverse magnetic field)
 // minimizes changes required to adopt athena4.2 version of this solver 
 typedef struct Cons1D {
-  Real d,mx,my,mz,e,by,bz;
+  Real d,mx,my,mz,by,bz;
 } Cons1D;
 
 #define SMALL_NUMBER 1.0e-8
@@ -64,36 +64,36 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 
 //--- Step 1.  Load L/R states into local variables
 
+    wli[IDN]=wl(IDN,i);
     wli[IVX]=wl(ivx,i);
     wli[IVY]=wl(ivy,i);
     wli[IVZ]=wl(ivz,i);
-    wli[IDN]=wl(IDN,i);
     wli[IBY]=wl(IBY,i);
     wli[IBZ]=wl(IBZ,i);
 
+    wri[IDN]=wr(IDN,i);
     wri[IVX]=wr(ivx,i);
     wri[IVY]=wr(ivy,i);
     wri[IVZ]=wr(ivz,i);
-    wri[IDN]=wr(IDN,i);
     wri[IBY]=wr(IBY,i);
     wri[IBZ]=wr(IBZ,i);
 
     Real bxi = bx(k,j,i);
 
     // Compute L/R states for selected conserved variables
-    ul.d  = wl(IDN,i);
-    ul.mx = wl(ivx,i)*ul.d;
-    ul.my = wl(ivy,i)*ul.d;
-    ul.mz = wl(ivz,i)*ul.d;
-    ul.by = wl(IBY,i);
-    ul.bz = wl(IBZ,i);
+    ul.d  = wli[IDN];
+    ul.mx = wli[IVX]*ul.d;
+    ul.my = wli[IVY]*ul.d;
+    ul.mz = wli[IVZ]*ul.d;
+    ul.by = wli[IBY];
+    ul.bz = wli[IBZ];
 
-    ur.d  = wr(IDN,i);
-    ur.mx = wr(ivx,i)*ur.d;
-    ur.my = wr(ivy,i)*ur.d;
-    ur.mz = wr(ivz,i)*ur.d;
-    ur.by = wr(IBY,i);
-    ur.bz = wr(IBZ,i);
+    ur.d  = wri[IDN];
+    ur.mx = wri[IVX]*ur.d;
+    ur.my = wri[IVY]*ur.d;
+    ur.mz = wri[IVZ]*ur.d;
+    ur.by = wri[IBY];
+    ur.bz = wri[IBZ];
 
 //--- Step 2.  Compute left & right wave speeds according to Miyoshi & Kusano, eqn. (67)
 
@@ -131,7 +131,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 
     // rho component of U^{hll} from Mignone eqn. (15); uses F_L and F_R from eqn. (6)
     Real dhll = (spd[4]*ur.d - spd[0]*ul.d - fr.d + fl.d)*idspd;
-    dhll = std::min(dhll, dfloor);
+    dhll = std::max(dhll, dfloor);
     Real sqrtdhll = sqrt(dhll);
 
     // rho and mx components of F^{hll} from Mignone eqn. (17)
