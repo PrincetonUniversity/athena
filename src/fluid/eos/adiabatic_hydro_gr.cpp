@@ -215,7 +215,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   return;
 }
 
-// Function for calculating relativistic wavespeeds
+// Function for calculating relativistic sound speeds
 // Inputs:
 // Outputs:
 //   plambda_plus: value set to most positive wavespeed
@@ -223,9 +223,8 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 // Notes:
 //   same function as in adiabatic_hydro_sr.cpp
 //     uses SR formula (should be called in locally flat coordinates)
-//   inputs assume x is transverse direction
 //   references Mignone & Bodo 2005, MNRAS 364 126 (MB)
-void FluidEqnOfState::WavespeedsRel(
+void FluidEqnOfState::SoundSpeedsSR(
     Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
     Real *plambda_plus, Real *plambda_minus)
 {
@@ -235,6 +234,49 @@ void FluidEqnOfState::WavespeedsRel(
   Real relative_speed = std::sqrt(sigma_s * (1.0 + sigma_s - SQR(vx)));
   *plambda_plus = 1.0/(1.0+sigma_s) * (vx + relative_speed);             // (MB 23)
   *plambda_minus = 1.0/(1.0+sigma_s) * (vx - relative_speed);            // (MB 23)
+  return;
+}
+
+// Function for calculating relativistic sound speeds in arbitrary coordinates
+// Inputs:
+// Outputs:
+//   plambda_plus: value set to most positive wavespeed
+//   plambda_minus: value set to most negative wavespeed
+// Notes:
+//   follows same general procedure as vchar() in phys.c in Harm
+//   variables are named as though 1 is normal direction
+void FluidEqnOfState::SoundSpeedsGR(
+    Real rho_h, Real pgas, Real u0, Real u1,
+    Real g00, Real g01, Real g11,
+    Real *plambda_plus, Real *plambda_minus)
+{
+  // Parameters and constants
+  const Real discriminant_tol = -1.0e-10;  // values between this and 0 are considered 0
+  const Real gamma_adi = gamma_;
+
+  // Calculate comoving sound speed
+  Real cs_sq = gamma_adi * pgas / rho_h;
+
+  // Set sound speeds in appropriate coordinates
+  Real a = SQR(u0) - (g00 + SQR(u0)) * cs_sq;
+  Real b = -2.0 * (u0*u1 - (g01 + u0*u1) * cs_sq);
+  Real c = SQR(u1) - (g11 + SQR(u1)) * cs_sq;
+  Real d = SQR(b) - 4.0*a*c;
+  if (d < 0.0 and d > discriminant_tol)
+    d = 0.0;
+  Real d_sqrt = std::sqrt(d);
+  Real root_1 = (-b + d_sqrt) / (2.0*a);
+  Real root_2 = (-b - d_sqrt) / (2.0*a);
+  if (root_1 > root_2)
+  {
+    *plambda_plus = root_1;
+    *plambda_minus = root_2;
+  }
+  else
+  {
+    *plambda_plus = root_2;
+    *plambda_minus = root_1;
+  }
   return;
 }
 

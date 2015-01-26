@@ -65,24 +65,27 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 
 // Initialize density, momentum, face-centered fields
 
+  for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
-    pfl->u(IDN,ks,j,i) = d0;
-    pfl->u(IM1,ks,j,i) = -d0*v0*sin(2.0*PI*pmb->x2v(j));
-    pfl->u(IM2,ks,j,i) =  d0*v0*sin(2.0*PI*pmb->x1v(i));
-    pfl->u(IM3,ks,j,i) = 0.0;
-  }}
+    pfl->u(IDN,k,j,i) = d0;
+    pfl->u(IM1,k,j,i) = -d0*v0*sin(2.0*PI*pmb->x2v(j));
+    pfl->u(IM2,k,j,i) =  d0*v0*sin(2.0*PI*pmb->x1v(i));
+    pfl->u(IM3,k,j,i) = 0.0;
+  }}}
 
 // initialize interface B
 
+  for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie+1; i++) {
-    pfd->b.x1f(ks,j,i) = (az(j+1,i) - az(j,i))/pmb->dx2f(j);
-  }}
+    pfd->b.x1f(k,j,i) = (az(j+1,i) - az(j,i))/pmb->dx2f(j);
+  }}}
+  for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je+1; j++) {
   for (int i=is; i<=ie; i++) {
-    pfd->b.x2f(ks,j,i) = (az(j,i) - az(j,i+1))/pmb->dx1f(i);
-  }}
+    pfd->b.x2f(k,j,i) = (az(j,i) - az(j,i+1))/pmb->dx1f(i);
+  }}}
   for (int k=ks; k<=ke+1; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
@@ -92,15 +95,16 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 // initialize total energy
 
   if (NON_BAROTROPIC_EOS) {
+    for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      pfl->u(IEN,ks,j,i) = p0/gm1 +
-          0.5*(SQR(0.5*(pfd->b.x1f(ks,j,i) + pfd->b.x1f(ks,j,i+1))) +
-               SQR(0.5*(pfd->b.x2f(ks,j,i) + pfd->b.x2f(ks,j+1,i))) +
-               SQR(0.5*(pfd->b.x3f(ks,j,i) + pfd->b.x3f(ks+1,j,i)))) + (0.5)*
-          (SQR(pfl->u(IM1,ks,j,i)) + SQR(pfl->u(IM2,ks,j,i)) + SQR(pfl->u(IM3,ks,j,i)))
-          /pfl->u(IDN,ks,j,i);
-    }}
+      pfl->u(IEN,k,j,i) = p0/gm1 +
+          0.5*(SQR(0.5*(pfd->b.x1f(k,j,i) + pfd->b.x1f(k,j,i+1))) +
+               SQR(0.5*(pfd->b.x2f(k,j,i) + pfd->b.x2f(k,j+1,i))) +
+               SQR(0.5*(pfd->b.x3f(k,j,i) + pfd->b.x3f(k+1,j,i)))) + (0.5)*
+          (SQR(pfl->u(IM1,k,j,i)) + SQR(pfl->u(IM2,k,j,i)) + SQR(pfl->u(IM3,k,j,i)))
+          /pfl->u(IDN,k,j,i);
+    }}}
   }
 
   az.DeleteAthenaArray();

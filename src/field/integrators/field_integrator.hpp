@@ -37,7 +37,7 @@ public:
 
 private:
 // scratch space used in integrator
-  AthenaArray<Real> cc_e1_, cc_e2_, cc_e3_;
+  AthenaArray<Real> cc_e_;
   AthenaArray<Real> face_area_, edge_length_, edge_lengthp1_;
 };
 #endif

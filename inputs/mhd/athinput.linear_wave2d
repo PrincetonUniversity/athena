@@ -1,0 +1,48 @@
+<comment>
+problem   = linear wave convergence
+reference =
+configure = -b --prob=linear_wave
+
+<job>
+problem_id = LinWave   # problem ID: basename of output filenames
+
+<output1>
+file_type  = hst       # History data dump
+dt         = 0.01      # time increment between outputs
+
+<output2>
+file_type  = vtk       # Binary data dump
+variable   = prim      # variables to be output
+dt         = 0.01       # time increment between outputs
+
+<time>
+cfl_number = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1        # cycle limit
+tlim       = 5.0       # time limit
+
+<mesh>
+nx1        = 256       # Number of zones in X-direction
+x1min      = 0.0       # minimum value of X
+x1max      = 2.236068  # maximum value of X
+ix1_bc     = 4         # inner-I (X) boundary flag
+ox1_bc     = 4         # outer-I (X) boundary flag
+
+nx2        = 128       # Number of zones in Y-direction
+x2min      = 0.0       # minimum value of Y
+x2max      = 1.118034  # maximum value of Y
+ix2_bc     = 4         # inner-J (Y) boundary flag
+ox2_bc     = 4         # outer-J (Y) boundary flag
+
+nx3        = 1         # Number of zones in X3-direction
+x3min      = -0.5      # minimum value of X3
+x3max      = 0.5       # maximum value of X3
+
+<fluid>
+gamma = 1.666666666666667 # gamma = C_p/C_v
+iso_csound = 1.0          # isothermal sound speed
+
+<problem>
+wave_flag = 0         # Wave family number (0 - 4 for adiabatic hydro)
+amp       = 1.0e-6    # Wave Amplitude
+vflow     = 0.0       # background flow velocity
+ang_2     = 0.0       # rotation of k around x2 axis

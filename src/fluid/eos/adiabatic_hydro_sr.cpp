@@ -180,16 +180,15 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   return;
 }
 
-// Function for calculating relativistic wavespeeds
+// Function for calculating relativistic sound speeds
 // Inputs:
 // Outputs:
 //   plambda_plus: value set to most positive wavespeed
 //   plambda_minus: value set to most negative wavespeed
 // Notes:
 //   same function as in adiabatic_hydro_gr.cpp
-//   inputs assume x is transverse direction
 //   references Mignone & Bodo 2005, MNRAS 364 126 (MB)
-void FluidEqnOfState::WavespeedsRel(
+void FluidEqnOfState::SoundSpeedsSR(
     Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
     Real *plambda_plus, Real *plambda_minus)
 {

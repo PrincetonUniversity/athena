@@ -13,8 +13,9 @@
 #   --eos=choice      use choice as the equation of state
 #   --flux=choice     use choice as the Riemann solver
 #   -b                enable magnetic fields
-#   -s                enable special-relativity
-#   -g                enable general-relativity
+#   -s                enable special relativity
+#   -g                enable general relativity
+#   -t                enable interface frame transformations for GR
 #   --order=choice    use choice as the spatial reconstruction algorithm
 #   --fint=choice     use choice as the fluid time-integration algorithm
 #   --cxx=choice      use choice as the C++ compiler
@@ -86,6 +87,12 @@ parser.add_argument('-g',
     action='store_true',
     default=False,
     help='enable general relativity')
+
+# -t argument
+parser.add_argument('-t',
+    action='store_true',
+    default=False,
+    help='enable interface frame transformations for GR')
 
 # --order=[name] argument
 parser.add_argument('--order',
@@ -180,7 +187,7 @@ makefile_options['EOS_FILE'] += '_mhd' if args['b'] else '_hydro'
 if args['b']:
   definitions['NFIELD_VARIABLES'] = '3'
   makefile_options['RSOLVER_DIR'] = 'mhd/'
-  if args['flux'] == 'hlle' or args['flux'] == 'llf':
+  if args['flux'] == 'hlle' or args['flux'] == 'llf' or args['flux'] == 'roe':
     makefile_options['RSOLVER_FILE'] += '_mhd'
   if args['eos'] == 'adiabatic':
     definitions['NWAVE_VALUE'] = '7'
@@ -205,6 +212,8 @@ if args['s']:
 if args['g']:
   makefile_options['EOS_FILE'] += '_gr'
   makefile_options['RSOLVER_FILE'] += '_rel'
+  if not args['t']:
+    makefile_options['RSOLVER_FILE'] += '_no_transform'
 
 # --order=[name] argument
 definitions['RECONSTRUCT'] = args['order']
@@ -218,8 +227,8 @@ makefile_options['FLUID_INT_FILE'] = args['fint']
 definitions['COMPILER_CHOICE'] = args['cxx']
 makefile_options['COMPILER_CHOICE'] = args['cxx']
 if args['cxx'] == 'icc':
-  makefile_options['COMPILER_FLAGS'] = '-O3 -xhost -ipo'
-  definitions['COMPILER_FLAGS'] = '-O3 -xhost -ipo'
+  makefile_options['COMPILER_FLAGS'] = '-O3 -xhost -ipo -inline-forceinline'
+  definitions['COMPILER_FLAGS'] = '-O3 -xhost -ipo -inline-forceinline'
 if args['cxx'] == 'g++':
   makefile_options['COMPILER_FLAGS'] = '-O3'
   definitions['COMPILER_FLAGS'] = '-O3'
@@ -268,12 +277,17 @@ else:
   if args['cxx'] == 'cray':
     makefile_options['COMPILER_FLAGS'] += ' -hnoomp'
     definitions['COMPILER_FLAGS'] += ' -hnoomp'
-
+  # turn off pragma omp warnings for Intel compiler
+  if args['cxx'] == 'icc':
+    makefile_options['COMPILER_FLAGS'] += ' -diag-disable 3180'
+    definitions['COMPILER_FLAGS'] += ' -diag-disable 3180'
 
 # -ifov=N argument
 definitions['NUM_IFOV'] = str(args['ifov'])
 
+# everything else
 definitions['ID_LENGTH'] = str(args['idlength'])
+makefile_options['LOADER_FLAGS'] = ' '
 
 #--- Step 5.  Create new files, finish up ----------------------------------------------
 
@@ -313,12 +327,13 @@ print('  Reconstruction method:   ' + args['order'])
 print('  Fluid integrator:        ' + args['fint'])
 print('  Compiler and flags:      ' + makefile_options['COMPILER_CHOICE'] + ' ' \
     + makefile_options['COMPILER_FLAGS'])
-print('  Magnetic fields:         ' + ('enabled' if args['b'] else 'disabled'))
-print('  Special relativity:      ' + ('enabled' if args['s'] else 'disabled'))
-print('  General relativity:      ' + ('enabled' if args['g'] else 'disabled'))
-print('  MPI parallelism:         ' + ('enabled' if args['mpi'] else 'disabled'))
-print('  OpenMP parallelism:      ' + ('enabled' if args['omp'] else 'disabled'))
-print('  Debug flags:             ' + ('enabled' if args['debug'] else 'disabled'))
+print('  Magnetic fields:         ' + ('ON' if args['b'] else 'OFF'))
+print('  Special relativity:      ' + ('ON' if args['s'] else 'OFF'))
+print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
+print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))
+print('  MPI parallelism:         ' + ('ON' if args['mpi'] else 'OFF'))
+print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
+print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
 print('  Internal fluid outvars:  ' + str(args['ifov']))
 print('  UID Length:              ' + str(args['idlength']) \
     + '  (maximum refinement level = ' + str(20*args['idlength']) + ')')

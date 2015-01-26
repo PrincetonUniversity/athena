@@ -300,7 +300,7 @@ void Coordinates::CoordinateSourceTerms(Real dt, const AthenaArray<Real> &prim,
 
 //--------------------------------------------------------------------------------------
 
-// Function for computing metric terms
+// Function for computing cell-centered metric coefficients
 // Inputs:
 //   k: z-index
 //   j: y-index
@@ -316,6 +316,87 @@ void Coordinates::CellMetric(const int k, const int j, AthenaArray<Real> &g,
   for (int i = pmy_block->is-NGHOST; i <= pmy_block->ie+NGHOST; ++i)
   {
     // TODO: should 0's be set explicitly?
+    g(I00,i) = -1.0;
+    g(I11,i) = 1.0;
+    g(I22,i) = 1.0;
+    g(I33,i) = 1.0;
+    g_inv(I00,i) = -1.0;
+    g_inv(I11,i) = 1.0;
+    g_inv(I22,i) = 1.0;
+    g_inv(I33,i) = 1.0;
+  }
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing face-centered metric coefficients: r-interface
+// Inputs:
+//   k: phi-index
+//   j: theta-index
+// Outputs:
+//   g: array of metric components in 1D
+//   g_inv: array of inverse metric components in 1D
+void Coordinates::Face1Metric(const int k, const int j, AthenaArray<Real> &g,
+    AthenaArray<Real> &g_inv)
+{
+  #pragma simd
+  for (int i = pmy_block->is; i <= pmy_block->ie+1; i++)
+  {
+    g(I00,i) = -1.0;
+    g(I11,i) = 1.0;
+    g(I22,i) = 1.0;
+    g(I33,i) = 1.0;
+    g_inv(I00,i) = -1.0;
+    g_inv(I11,i) = 1.0;
+    g_inv(I22,i) = 1.0;
+    g_inv(I33,i) = 1.0;
+  }
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing face-centered metric coefficients: theta-interface
+// Inputs:
+//   k: phi-index
+//   j: theta-index
+// Outputs:
+//   g: array of metric components in 1D
+//   g_inv: array of inverse metric components in 1D
+void Coordinates::Face2Metric(const int k, const int j, AthenaArray<Real> &g,
+    AthenaArray<Real> &g_inv)
+{
+  #pragma simd
+  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
+  {
+    g(I00,i) = -1.0;
+    g(I11,i) = 1.0;
+    g(I22,i) = 1.0;
+    g(I33,i) = 1.0;
+    g_inv(I00,i) = -1.0;
+    g_inv(I11,i) = 1.0;
+    g_inv(I22,i) = 1.0;
+    g_inv(I33,i) = 1.0;
+  }
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing face-centered metric coefficients: phi-interface
+// Inputs:
+//   k: phi-index
+//   j: theta-index
+// Outputs:
+//   g: array of metric components in 1D
+//   g_inv: array of inverse metric components in 1D
+void Coordinates::Face3Metric(const int k, const int j, AthenaArray<Real> &g,
+    AthenaArray<Real> &g_inv)
+{
+  #pragma simd
+  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
+  {
     g(I00,i) = -1.0;
     g(I11,i) = 1.0;
     g(I22,i) = 1.0;

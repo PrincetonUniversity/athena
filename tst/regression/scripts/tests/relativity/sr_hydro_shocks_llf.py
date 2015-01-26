@@ -1,4 +1,4 @@
-# Test script for relativistic hydro shock tubes with HLLC
+# Test script for relativistic hydro shock tubes with LLF
 
 # Modules
 import numpy as np
@@ -10,7 +10,7 @@ def prepare():
   athena.configure('s',
       prob='shock_tube_rel',
       coord='cartesian',
-      flux='hllc')
+      flux='llf')
   athena.make()
 
 # Run Athena++

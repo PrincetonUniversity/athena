@@ -18,7 +18,7 @@
 #include "../../fluid_integrator.hpp"
 
 // C++ headers
-#include <algorithm>  // max(), min()
+#include <algorithm>  // max()
 #include <cmath>      // sqrt()
 
 // Athena headers
@@ -28,8 +28,7 @@
 #include "../../../eos/eos.hpp"           // GetGamma
 
 // function to compute eigenvalues and eigenvectors of Roe's matrix A
-void RoeEigensystem(const Real v1, const Real v2, const Real v3, const Real h,
-  Real eigenvalues[],
+inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
   Real right_eigenmatrix[][(NWAVE)], Real left_eigenmatrix[][(NWAVE)]);
 
 // (gamma-1) and isothermal sound speed made global so can be shared with eigensystem
@@ -53,7 +52,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
-  Real wli[NFLUID],wri[NFLUID],flxi[NFLUID],fl[NFLUID],fr[NFLUID];
+  Real wli[NWAVE],wri[NWAVE],wroe[NWAVE],fl[NWAVE],fr[NWAVE],flxi[NWAVE];
   gm1 = pmy_fluid->pf_eos->GetGamma() - 1.0;
   iso_cs = pmy_fluid->pf_eos->GetIsoSoundSpeed();
 
@@ -61,6 +60,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
   Real ev[NWAVE],rem[NWAVE][NWAVE],lem[NWAVE][NWAVE];
   Real du[NWAVE],a[NWAVE],u[NWAVE];
 
+#pragma simd
   for (int i=il; i<=iu; ++i){
 
 //--- Step 1.  Load L/R states into local variables
@@ -83,31 +83,31 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     Real sqrtdr = sqrt(wri[IDN]);
     Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
 
-    Real droe  = sqrtdl*sqrtdr;
-    Real v1roe = (sqrtdl*wli[IVX] + sqrtdr*wri[IVX])*isdlpdr;
-    Real v2roe = (sqrtdl*wli[IVY] + sqrtdr*wri[IVY])*isdlpdr;
-    Real v3roe = (sqrtdl*wli[IVZ] + sqrtdr*wri[IVZ])*isdlpdr;
+    wroe[IDN]  = sqrtdl*sqrtdr;
+    wroe[IVX] = (sqrtdl*wli[IVX] + sqrtdr*wri[IVX])*isdlpdr;
+    wroe[IVY] = (sqrtdl*wli[IVY] + sqrtdr*wri[IVY])*isdlpdr;
+    wroe[IVZ] = (sqrtdl*wli[IVZ] + sqrtdr*wri[IVZ])*isdlpdr;
 
     // Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
     // rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
-    Real el,er,hroe;
+    Real el,er;
     if (NON_BAROTROPIC_EOS) {
       el = wli[IEN]/gm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
       er = wri[IEN]/gm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
-      hroe = ((el + wli[IEN])/sqrtdl + (er + wri[IEN])/sqrtdr)*isdlpdr;
+      wroe[IEN] = ((el + wli[IEN])/sqrtdl + (er + wri[IEN])/sqrtdr)*isdlpdr;
     }
 
 //--- Step 3.  Compute eigenvalues and eigenmatrices using Roe-averaged values
 
-    RoeEigensystem(v1roe,v2roe,v3roe,hroe,ev,rem,lem);
+    RoeEigensystem(wroe,ev,rem,lem);
 
 //--- Step 4.  Compute L/R fluxes 
 
     Real mxl = wli[IDN]*wli[IVX];
     Real mxr = wri[IDN]*wri[IVX];
 
-    fl[IDN]  = mxl;
-    fr[IDN]  = mxr;
+    fl[IDN] = mxl;
+    fr[IDN] = mxr;
 
     fl[IVX] = mxl*wli[IVX];
     fr[IVX] = mxr*wri[IVX];
@@ -119,16 +119,161 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     fr[IVZ] = mxr*wri[IVZ];
 
     if (NON_BAROTROPIC_EOS) {
-      fl[IEN] = (el + wli[IEN])*wli[IVX];
-      fr[IEN] = (er + wri[IEN])*wri[IVX];
       fl[IVX] += wli[IEN];
       fr[IVX] += wri[IEN];
+      fl[IEN] = (el + wli[IEN])*wli[IVX];
+      fr[IEN] = (er + wri[IEN])*wri[IVX];
     } else {
       fl[IVX] += (iso_cs*iso_cs)*wli[IDN];
       fr[IVX] += (iso_cs*iso_cs)*wri[IDN];
     }
 
-//--- Step 5.  Return upwind flux if flow is supersonic
+//--- Step 5.  Compute projection of dU onto L eigenvectors ("vector A")
+
+    du[IDN] = wri[IDN]          - wli[IDN];
+    du[IVX] = wri[IDN]*wri[IVX] - wli[IDN]*wli[IVX];
+    du[IVY] = wri[IDN]*wri[IVY] - wli[IDN]*wli[IVY];
+    du[IVZ] = wri[IDN]*wri[IVZ] - wli[IDN]*wli[IVZ];
+    if (NON_BAROTROPIC_EOS) du[IEN] = er - el;
+
+    a[IDN]  = lem[IDN][IDN]*du[IDN];
+    a[IDN] += lem[IDN][IVX]*du[IVX];
+    a[IDN] += lem[IDN][IVY]*du[IVY];
+    a[IDN] += lem[IDN][IVZ]*du[IVZ];
+
+    a[IVX]  = lem[IVX][IDN]*du[IDN];
+    a[IVX] += lem[IVX][IVX]*du[IVX];
+    a[IVX] += lem[IVX][IVY]*du[IVY];
+    a[IVX] += lem[IVX][IVZ]*du[IVZ];
+
+    a[IVY]  = lem[IVY][IDN]*du[IDN];
+    a[IVY] += lem[IVY][IVX]*du[IVX];
+    a[IVY] += lem[IVY][IVY]*du[IVY];
+    a[IVY] += lem[IVY][IVZ]*du[IVZ];
+
+    a[IVZ]  = lem[IVZ][IDN]*du[IDN];
+    a[IVZ] += lem[IVZ][IVX]*du[IVX];
+    a[IVZ] += lem[IVZ][IVY]*du[IVY];
+    a[IVZ] += lem[IVZ][IVZ]*du[IVZ];
+
+    if (NON_BAROTROPIC_EOS) {
+      a[IDN] += lem[IDN][IEN]*du[IEN];
+      a[IVX] += lem[IVX][IEN]*du[IEN];
+      a[IVY] += lem[IVY][IEN]*du[IEN];
+      a[IVZ] += lem[IVZ][IEN]*du[IEN];
+
+      a[IEN]  = lem[IEN][IDN]*du[IDN];
+      a[IEN] += lem[IEN][IVX]*du[IVX];
+      a[IEN] += lem[IEN][IVY]*du[IVY];
+      a[IEN] += lem[IEN][IVZ]*du[IVZ];
+      a[IEN] += lem[IEN][IEN]*du[IEN];
+    }
+
+//--- Step 6.  Check that the density and pressure in the intermediate states are
+// positive.  If not, set a flag that will be checked below.
+
+    int llf_flag = 0;
+    u[IDN] = wli[IDN];
+    u[IVX] = wli[IDN]*wli[IVX];
+    u[IVY] = wli[IDN]*wli[IVY];
+    u[IVZ] = wli[IDN]*wli[IVZ];
+    if (NON_BAROTROPIC_EOS) u[IEN] = el;
+
+    // jump across wave[0]
+    u[IDN] += a[0]*rem[IDN][0];
+    if (u[IDN] < 0.0) llf_flag=1;
+    if (NON_BAROTROPIC_EOS) {
+      u[IVX] += a[0]*rem[IVX][0];
+      u[IVY] += a[0]*rem[IVY][0];
+      u[IVZ] += a[0]*rem[IVZ][0];
+      u[IEN] += a[0]*rem[IEN][0];
+      Real p = u[IEN] - 0.5*(SQR(u[IVX])+SQR(u[IVY])+SQR(u[IVZ]))/u[IDN];
+      if (p < 0.0) llf_flag=2;
+    }
+
+    // jump across wave[1]
+    u[IDN] += a[1]*rem[IDN][1];
+    if (u[IDN] < 0.0) llf_flag=1;
+    if (NON_BAROTROPIC_EOS) {
+      u[IVX] += a[1]*rem[IVX][1];
+      u[IVY] += a[1]*rem[IVY][1];
+      u[IVZ] += a[1]*rem[IVZ][1];
+      u[IEN] += a[1]*rem[IEN][1];
+      Real p = u[IEN] - 0.5*(SQR(u[IVX])+SQR(u[IVY])+SQR(u[IVZ]))/u[IDN];
+      if (p < 0.0) llf_flag=2;
+    }
+
+    // jump across wave[2]
+    u[IDN] += a[2]*rem[IDN][2];
+    if (u[IDN] < 0.0) llf_flag=1;
+    if (NON_BAROTROPIC_EOS) {
+      u[IVX] += a[2]*rem[IVX][2];
+      u[IVY] += a[2]*rem[IVY][2];
+      u[IVZ] += a[2]*rem[IVZ][2];
+      u[IEN] += a[2]*rem[IEN][2];
+      Real p = u[IEN] - 0.5*(SQR(u[IVX])+SQR(u[IVY])+SQR(u[IVZ]))/u[IDN];
+      if (p < 0.0) llf_flag=2;
+    }
+
+    if (NON_BAROTROPIC_EOS) {
+      // jump across wave[3]
+      u[IDN] += a[3]*rem[IDN][3];
+      if (u[IDN] < 0.0) llf_flag=1;
+      u[IVX] += a[3]*rem[IVX][3];
+      u[IVY] += a[3]*rem[IVY][3];
+      u[IVZ] += a[3]*rem[IVZ][3];
+      u[IEN] += a[3]*rem[IEN][3];
+      Real p = u[IEN] - 0.5*(SQR(u[IVX])+SQR(u[IVY])+SQR(u[IVZ]))/u[IDN];
+      if (p < 0.0) llf_flag=2;
+    }
+
+//--- Step 7.  Compute Roe flux
+
+    coeff[IDN] = 0.5*fabs(ev[IDN])*a[IDN];
+    coeff[IVX] = 0.5*fabs(ev[IVX])*a[IVX];
+    coeff[IVY] = 0.5*fabs(ev[IVY])*a[IVY];
+    coeff[IVZ] = 0.5*fabs(ev[IVZ])*a[IVZ];
+
+    flxi[IDN] = 0.5*(fl[IDN] + fr[IDN]);
+    flxi[IDN] -= coeff[IDN]*rem[IDN][IDN];
+    flxi[IDN] -= coeff[IVX]*rem[IDN][IVX];
+    flxi[IDN] -= coeff[IVY]*rem[IDN][IVY];
+    flxi[IDN] -= coeff[IVZ]*rem[IDN][IVZ];
+
+    flxi[IVX] = 0.5*(fl[IVX] + fr[IVX]);
+    flxi[IVX] -= coeff[IDN]*rem[IVX][IDN];
+    flxi[IVX] -= coeff[IVX]*rem[IVX][IVX];
+    flxi[IVX] -= coeff[IVY]*rem[IVX][IVY];
+    flxi[IVX] -= coeff[IVZ]*rem[IVX][IVZ];
+
+    flxi[IVY] = 0.5*(fl[IVY] + fr[IVY]);
+    flxi[IVY] -= coeff[IDN]*rem[IVY][IDN];
+    flxi[IVY] -= coeff[IVX]*rem[IVY][IVX];
+    flxi[IVY] -= coeff[IVY]*rem[IVY][IVY];
+    flxi[IVY] -= coeff[IVZ]*rem[IVY][IVZ];
+
+    flxi[IVZ] = 0.5*(fl[IVZ] + fr[IVZ]);
+    flxi[IVZ] -= coeff[IDN]*rem[IVZ][IDN];
+    flxi[IVZ] -= coeff[IVX]*rem[IVZ][IVX];
+    flxi[IVZ] -= coeff[IVY]*rem[IVZ][IVY];
+    flxi[IVZ] -= coeff[IVZ]*rem[IVZ][IVZ];
+
+    if (NON_BAROTROPIC_EOS) {
+      coeff[IEN] = 0.5*fabs(ev[IEN])*a[IEN];
+      flxi[IDN] -= coeff[IEN]*rem[IDN][IEN];
+      flxi[IVX] -= coeff[IEN]*rem[IVX][IEN];
+      flxi[IVY] -= coeff[IEN]*rem[IVY][IEN];
+      flxi[IVZ] -= coeff[IEN]*rem[IVZ][IEN];
+
+      flxi[IEN] = 0.5*(fl[IEN] + fr[IEN]);
+      flxi[IEN] -= coeff[IDN]*rem[IEN][IDN];
+      flxi[IEN] -= coeff[IVX]*rem[IEN][IVX];
+      flxi[IEN] -= coeff[IVY]*rem[IEN][IVY];
+      flxi[IEN] -= coeff[IVZ]*rem[IEN][IVZ];
+      flxi[IEN] -= coeff[IEN]*rem[IEN][IEN];
+    }
+
+//--- Step 8.  Overwrite with upwind flux if flow is supersonic
 
     if(ev[0] >= 0.0){
       flxi[IDN] = fl[IDN];
@@ -136,116 +281,26 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
       flxi[IVY] = fl[IVY];
       flxi[IVZ] = fl[IVZ];
       if (NON_BAROTROPIC_EOS) flxi[IEN] = fl[IEN];
-    } else if(ev[NWAVE-1] <= 0.0){
+    }
+    if(ev[NWAVE-1] <= 0.0){
       flxi[IDN] = fr[IDN];
       flxi[IVX] = fr[IVX];
       flxi[IVY] = fr[IVY];
       flxi[IVZ] = fr[IVZ];
       if (NON_BAROTROPIC_EOS) flxi[IEN] = fr[IEN];
-    } else {
+    }
 
-//--- Step 6.  Compute projection of dU onto L eigenvectors ("vector A")
+//--- Step 9.  Overwrite with LLF flux if any of intermediate states are negative
 
-      du[IDN] = wri[IDN]          - wli[IDN];
-      du[IVX] = wri[IDN]*wri[IVX] - wli[IDN]*wli[IVX];
-      du[IVY] = wri[IDN]*wri[IVY] - wli[IDN]*wli[IVY];
-      du[IVZ] = wri[IDN]*wri[IVZ] - wli[IDN]*wli[IVZ];
-      if (NON_BAROTROPIC_EOS) du[IEN] = er - el;
+    if (llf_flag != 0) {
+      Real a = std::max(fabs(ev[0]), fabs(ev[NWAVE-1]));
 
-      a[IDN] = 0.0;
-      for (int m=0; m<NWAVE; ++m) a[IDN] += lem[IDN][m]*du[m];
-
-      a[IVX] = 0.0;
-      for (int m=0; m<NWAVE; ++m) a[IVX] += lem[IVX][m]*du[m];
-
-      a[IVY] = 0.0;
-      for (int m=0; m<NWAVE; ++m) a[IVY] += lem[IVY][m]*du[m];
-
-      a[IVZ] = 0.0;
-      for (int m=0; m<NWAVE; ++m) a[IVZ] += lem[IVZ][m]*du[m];
-
+      flxi[IDN] = 0.5*(fl[IDN] + fr[IDN]) - a*du[IDN];
+      flxi[IVX] = 0.5*(fl[IVX] + fr[IVX]) - a*du[IVX];
+      flxi[IVY] = 0.5*(fl[IVY] + fr[IVY]) - a*du[IVY];
+      flxi[IVZ] = 0.5*(fl[IVZ] + fr[IVZ]) - a*du[IVZ];
       if (NON_BAROTROPIC_EOS) {
-        a[IEN] = 0.0;
-        for (int m=0; m<NWAVE; ++m) a[IEN] += lem[IEN][m]*du[m];
-      }
-
-//--- Step 7.  Check that the density and pressure in the intermediate states are
-// positive.  If not, use LLF fluxes instead.
-
-      int llf_flag = 0;
-      u[IDN] = wli[IDN];
-      u[IVX] = wli[IDN]*wli[IVX];
-      u[IVY] = wli[IDN]*wli[IVY];
-      u[IVZ] = wli[IDN]*wli[IVZ];
-      if (NON_BAROTROPIC_EOS) u[IEN] = el;
-
-      // jump across wave[0]
-      for (int m=0; m<NWAVE; ++m) u[m] += a[0]*rem[m][0];
-      if (u[IDN] < 0.0) llf_flag=1;
-      if (NON_BAROTROPIC_EOS) {
-        Real p = u[IEN] - 0.5*(SQR(u[IVX])+SQR(u[IVY])+SQR(u[IVZ]))/u[IDN];
-        if (p < 0.0) llf_flag=2;
-      }
-
-      // jump across wave[1]
-      for (int m=0; m<NWAVE; ++m) u[m] += a[1]*rem[m][1];
-      if (u[IDN] < 0.0) llf_flag=1;
-      if (NON_BAROTROPIC_EOS) {
-        Real p = u[IEN] - 0.5*(SQR(u[IVX])+SQR(u[IVY])+SQR(u[IVZ]))/u[IDN];
-        if (p < 0.0) llf_flag=2;
-      }
-
-      // jump across wave[2]
-      for (int m=0; m<NWAVE; ++m) u[m] += a[2]*rem[m][2];
-      if (u[IDN] < 0.0) llf_flag=1;
-      if (NON_BAROTROPIC_EOS) {
-        Real p = u[IEN] - 0.5*(SQR(u[IVX])+SQR(u[IVY])+SQR(u[IVZ]))/u[IDN];
-        if (p < 0.0) llf_flag=2;
-      }
-
-      if (NON_BAROTROPIC_EOS) {
-        // jump across wave[3]
-        for (int m=0; m<NWAVE; ++m) u[m] += a[3]*rem[m][3];
-        if (u[IDN] < 0.0) llf_flag=1;
-        if (NON_BAROTROPIC_EOS) {
-          Real p = u[IEN] - 0.5*(SQR(u[IVX])+SQR(u[IVY])+SQR(u[IVZ]))/u[IDN];
-          if (p < 0.0) llf_flag=2;
-        }
-      }
-
-      if (llf_flag != 0) {
-        Real sl=ev[0];
-        Real sr=ev[NWAVE-1];
-
-        flxi[IDN] = (sr*fl[IDN] - sl*fr[IDN] + sl*sr*du[IDN])/(sr - sl);
-        flxi[IVX] = (sr*fl[IVX] - sl*fr[IVX] + sl*sr*du[IVX])/(sr - sl);
-        flxi[IVY] = (sr*fl[IVY] - sl*fr[IVY] + sl*sr*du[IVY])/(sr - sl);
-        flxi[IVZ] = (sr*fl[IVZ] - sl*fr[IVZ] + sl*sr*du[IVZ])/(sr - sl);
-        if (NON_BAROTROPIC_EOS) {
-          flxi[IEN] = (sr*fl[IEN] - sl*fr[IEN] + sl*sr*du[IEN])/(sr - sl);
-        }
-      } else {
-
-//--- Step 8.  Compute Roe flux
-
-        for (int m=0; m<NWAVE; ++m) coeff[m] = 0.5*fabs(ev[m])*a[m];
-
-        flxi[IDN] = 0.5*(fl[IDN] + fr[IDN]);
-        for (int m=0; m<NWAVE; ++m) flxi[IDN] -= coeff[m]*rem[IDN][m];
-
-        flxi[IVX] = 0.5*(fl[IVX] + fr[IVX]);
-        for (int m=0; m<NWAVE; ++m) flxi[IVX] -= coeff[m]*rem[IVX][m];
-
-        flxi[IVY] = 0.5*(fl[IVY] + fr[IVY]);
-        for (int m=0; m<NWAVE; ++m) flxi[IVY] -= coeff[m]*rem[IVY][m];
-
-        flxi[IVZ] = 0.5*(fl[IVZ] + fr[IVZ]);
-        for (int m=0; m<NWAVE; ++m) flxi[IVZ] -= coeff[m]*rem[IVZ][m];
-
-        if (NON_BAROTROPIC_EOS) {
-          flxi[IEN] = 0.5*(fl[IEN] + fr[IEN]);
-          for (int m=0; m<NWAVE; ++m) flxi[IEN] -= coeff[m]*rem[IEN][m];
-        }
+        flxi[IEN] = 0.5*(fl[IEN] + fr[IEN]) - a*du[IEN];
       }
     }
 
@@ -281,16 +336,21 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 //   astrophysical MHD", ApJS, (2008), Appendix B  Equation numbers refer to this paper.
 //--------------------------------------------------------------------------------------
 
-void RoeEigensystem(const Real v1, const Real v2, const Real v3, const Real h,
-  Real eigenvalues[],
+inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
   Real right_eigenmatrix[][(NWAVE)], Real left_eigenmatrix[][(NWAVE)])
 {
+  Real d  = wroe[IDN];
+  Real v1 = wroe[IVX];
+  Real v2 = wroe[IVY];
+  Real v3 = wroe[IVZ];
 
 // Adiabatic hydrodynamics
 
   if (NON_BAROTROPIC_EOS) {
+    Real h = wroe[IEN];
     Real vsq = v1*v1 + v2*v2 + v3*v3;
-    Real asq = gm1*std::max((h-0.5*vsq), TINY_NUMBER);
+    Real q = h - 0.5*vsq;
+    Real asq = (q < 0.0) ? 0.0 : gm1*q;
     Real a = sqrt(asq);
 
     // Compute eigenvalues (eq. B2)
@@ -395,7 +455,6 @@ void RoeEigensystem(const Real v1, const Real v2, const Real v3, const Real h,
     right_eigenmatrix[3][3] = v3;
 
     // Left-eigenvectors, stored as ROWS (eq. B7)
-
     left_eigenmatrix[0][0] = 0.5*(1.0 + v1/iso_cs);
     left_eigenmatrix[0][1] = -0.5/iso_cs;
     left_eigenmatrix[0][2] = 0.0;

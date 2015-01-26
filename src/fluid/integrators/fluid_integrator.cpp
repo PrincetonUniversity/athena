@@ -48,6 +48,11 @@ FluidIntegrator::FluidIntegrator(Fluid *pf, ParameterInput *pin)
   cell_volume_.NewAthenaArray(max_nthreads,ncells1);
   if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in SR/GRMHD
     b_normal_.NewAthenaArray(ncells1);
+  if (GENERAL_RELATIVITY)  // only used in GR (and only in certain Riemann solvers)
+  {
+    g_.NewAthenaArray(NMETRIC,ncells1);
+    g_inv_.NewAthenaArray(NMETRIC,ncells1);
+  }
 }
 
 // destructor
@@ -62,4 +67,9 @@ FluidIntegrator::~FluidIntegrator()
   cell_volume_.DeleteAthenaArray();
   if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in SR/GRMHD
     b_normal_.DeleteAthenaArray();
+  if (GENERAL_RELATIVITY)
+  {
+    g_.DeleteAthenaArray();
+    g_inv_.DeleteAthenaArray();
+  }
 }

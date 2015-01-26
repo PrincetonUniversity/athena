@@ -29,7 +29,7 @@ def run():
 # Analyze outputs
 def analyze():
   headers = [('dens',), ('Etot',), ('mom',0)]
-  tols = [[0.02,0.01,0.01], [0.01,0.01,0.01], [0.01,0.01,0.02], [0.5,0.01,0.02]]
+  tols = [[0.02,0.01,0.01], [0.01,0.01,0.02], [0.01,0.01,0.02], [0.5,0.01,0.02]]
   for i in range(1,5):
     x_ref,_,_,data_ref = athena.read_vtk('data/sr_hydro_shock{0}_hlle.vtk'.format(i))
     x_new,_,_,data_new = \
