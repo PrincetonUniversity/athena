@@ -25,20 +25,6 @@ struct InterfaceField;
 
 //-------------------- prototypes for all BC functions ---------------------------------
 
-void NeighborInnerX1(MeshBlock *pmb, AthenaArray<Real> &buf);
-void NeighborInnerX2(MeshBlock *pmb, AthenaArray<Real> &buf);
-void NeighborInnerX3(MeshBlock *pmb, AthenaArray<Real> &buf);
-void NeighborOuterX1(MeshBlock *pmb, AthenaArray<Real> &buf);
-void NeighborOuterX2(MeshBlock *pmb, AthenaArray<Real> &buf);
-void NeighborOuterX3(MeshBlock *pmb, AthenaArray<Real> &buf);
-
-void NeighborInnerX1(MeshBlock *pmb, InterfaceField &buf);
-void NeighborInnerX2(MeshBlock *pmb, InterfaceField &buf);
-void NeighborInnerX3(MeshBlock *pmb, InterfaceField &buf);
-void NeighborOuterX1(MeshBlock *pmb, InterfaceField &buf);
-void NeighborOuterX2(MeshBlock *pmb, InterfaceField &buf);
-void NeighborOuterX3(MeshBlock *pmb, InterfaceField &buf);
-
 void ReflectInnerX1(MeshBlock *pmb, AthenaArray<Real> &buf);
 void ReflectInnerX2(MeshBlock *pmb, AthenaArray<Real> &buf);
 void ReflectInnerX3(MeshBlock *pmb, AthenaArray<Real> &buf);
@@ -67,23 +53,16 @@ void OutflowOuterX1(MeshBlock *pmb, InterfaceField &buf);
 void OutflowOuterX2(MeshBlock *pmb, InterfaceField &buf);
 void OutflowOuterX3(MeshBlock *pmb, InterfaceField &buf);
 
-void PeriodicInnerX1(MeshBlock *pmb, AthenaArray<Real> &buf);
-void PeriodicInnerX2(MeshBlock *pmb, AthenaArray<Real> &buf);
-void PeriodicInnerX3(MeshBlock *pmb, AthenaArray<Real> &buf);
-void PeriodicOuterX1(MeshBlock *pmb, AthenaArray<Real> &buf);
-void PeriodicOuterX2(MeshBlock *pmb, AthenaArray<Real> &buf);
-void PeriodicOuterX3(MeshBlock *pmb, AthenaArray<Real> &buf);
-
-void PeriodicInnerX1(MeshBlock *pmb, InterfaceField &buf);
-void PeriodicInnerX2(MeshBlock *pmb, InterfaceField &buf);
-void PeriodicInnerX3(MeshBlock *pmb, InterfaceField &buf);
-void PeriodicOuterX1(MeshBlock *pmb, InterfaceField &buf);
-void PeriodicOuterX2(MeshBlock *pmb, InterfaceField &buf);
-void PeriodicOuterX3(MeshBlock *pmb, InterfaceField &buf);
+void DefaultEFluxInnerX1(MeshBlock *pmb, InterfaceField &ei, InterfaceField &w);
+void DefaultEFluxOuterX1(MeshBlock *pmb, InterfaceField &ei, InterfaceField &w);
+void DefaultEFluxInnerX2(MeshBlock *pmb, InterfaceField &ei, InterfaceField &w);
+void DefaultEFluxOuterX2(MeshBlock *pmb, InterfaceField &ei, InterfaceField &w);
+void DefaultEFluxInnerX3(MeshBlock *pmb, InterfaceField &ei, InterfaceField &w);
+void DefaultEFluxOuterX3(MeshBlock *pmb, InterfaceField &ei, InterfaceField &w);
 
 typedef void (*BValFluid_t)(MeshBlock *pmb, AthenaArray<Real> &buf);
 typedef void (*BValField_t)(MeshBlock *pmb, InterfaceField &buf);
-typedef void (*BValEFace_t)(MeshBlock *pmb, InterfaceField &buf);
+typedef void (*BValEFlux_t)(MeshBlock *pmb, InterfaceField &ei, InterfaceField &w);
 
 void InitBoundaryBuffer(int nx1, int nx2, int nx3);
 
@@ -106,7 +85,7 @@ public:
   bool ReceiveAndSetFieldBoundary(enum direction dir, InterfaceField &dst);
   void WaitSendField(enum direction dir);
 
-  void StartReceivingEFace(int flag = 0);
+  void StartReceivingEFlux(int flag = 0);
   void LoadAndSendEFluxBoundaryBuffer(InterfaceField &fsrc, InterfaceField &wsrc,
                                       int flag);
   bool ReceiveAndSetEFluxBoundary(InterfaceField &fdst, InterfaceField &wdst);
@@ -115,23 +94,22 @@ public:
 
   void EnrollFluidBoundaryFunction (enum direction edge, BValFluid_t  my_bc);
   void EnrollFieldBoundaryFunction(enum direction edge, BValField_t my_bc);
+  void EnrollEFluxBoundaryFunction(enum direction edge, BValEFlux_t my_bc);
 
 private:
   MeshBlock *pmy_mblock_;  // ptr to MeshBlock containing this BVals
 
   BValFluid_t FluidBoundary_[6];
   BValField_t FieldBoundary_[6];
-  BValEFace_t EFaceBoundary_[6];
+  BValEFlux_t EFluxBoundary_[6];
 
-  bool fluid_flag_[6][2][2], field_flag_[6][2][2], eflux_flag_[6][2][2];;
+  bool fluid_flag_[6][2][2], field_flag_[6][2][2], eflux_flag_[6][2][2];
   Real *fluid_send_[6];
   Real *fluid_recv_[6];
   Real *field_send_[6];
   Real *field_recv_[6];
   Real *eflux_send_[6];
   Real *eflux_recv_[6];
-
-
 
 #ifdef MPI_PARALLEL
   MPI_Request req_fluid_send_[6][2][2], req_fluid_recv_[6][2][2];

@@ -64,7 +64,7 @@ enum ActionOnBlock
   eflux_start_recv_n, eflux_start_recv_nhalf,
   eflux_loadsend_bcs_n, eflux_loadsend_bcs_nhalf, 
   eflux_recvset_bcs_n, eflux_recvset_bcs_nhalf, 
-  eflux_waitsend
+  eflux_waitsend_bcs
   };
 
 extern int myrank, nproc;

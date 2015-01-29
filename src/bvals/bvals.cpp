@@ -46,6 +46,7 @@ int field_send_se_[6][3][6];
 int field_recv_se_[6][3][6];
 int fluid_bufsize_[6];
 int field_bufsize_[6];
+int eflux_bufsize_[6];
 
 //======================================================================================
 //! \file bvals.cpp
@@ -64,185 +65,161 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 
 // Set BC functions for each of the 6 boundaries in turn -------------------------------
 // Inner x1
-
-  switch(pmb->block_bcs.ix1_bc){
-    case -1:
-      FluidBoundary_[inner_x1] = NULL;
-      FieldBoundary_[inner_x1] = NULL;
-      break;
+  switch(pmb->block_bcs[inner_x1]){
     case 1:
       FluidBoundary_[inner_x1] = ReflectInnerX1;
       FieldBoundary_[inner_x1] = ReflectInnerX1;
+      EFluxBoundary_[inner_x1] = DefaultEFluxInnerX1;
       break;
     case 2:
       FluidBoundary_[inner_x1] = OutflowInnerX1;
       FieldBoundary_[inner_x1] = OutflowInnerX1;
+      EFluxBoundary_[inner_x1] = DefaultEFluxInnerX1;
       break;
+    case -1: // block boundary
     case 3: // do nothing, useful for user-enrolled BCs
+    case 4: // periodic boundary
       FluidBoundary_[inner_x1] = NULL;
       FieldBoundary_[inner_x1] = NULL;
-      break;
-    case 4:
-      FluidBoundary_[inner_x1] = PeriodicInnerX1;
-      FieldBoundary_[inner_x1] = PeriodicInnerX1;
+      EFluxBoundary_[inner_x1] = NULL;
       break;
     default:
       std::stringstream msg;
-      msg << "### FATAL ERROR in FluidBCs constructor" << std::endl
-          << "Flag ix1_bc=" << pmb->block_bcs.ix1_bc << " not valid" << std::endl;
+      msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
+          << "Flag ix1_bc=" << pmb->block_bcs[inner_x1] << " not valid" << std::endl;
       throw std::runtime_error(msg.str().c_str());
    }
 
 // Outer x1
-
-  switch(pmb->block_bcs.ox1_bc){
-    case -1:
-      FluidBoundary_[outer_x1] = NULL;
-      FieldBoundary_[outer_x1] = NULL;
-      break;
+  switch(pmb->block_bcs[outer_x1]){
     case 1:
       FluidBoundary_[outer_x1] = ReflectOuterX1;
       FieldBoundary_[outer_x1] = ReflectOuterX1;
+      EFluxBoundary_[outer_x1] = DefaultEFluxOuterX1;
       break;
     case 2:
       FluidBoundary_[outer_x1] = OutflowOuterX1;
       FieldBoundary_[outer_x1] = OutflowOuterX1;
+      EFluxBoundary_[outer_x1] = DefaultEFluxOuterX1;
       break;
+    case -1: // block boundary
     case 3: // do nothing, useful for user-enrolled BCs
+    case 4: // periodic boundary
       FluidBoundary_[outer_x1] = NULL;
       FieldBoundary_[outer_x1] = NULL;
-      break;
-    case 4:
-      FluidBoundary_[outer_x1] = PeriodicOuterX1;
-      FieldBoundary_[outer_x1] = PeriodicOuterX1;
+      EFluxBoundary_[outer_x1] = NULL;
       break;
     default:
       std::stringstream msg;
-      msg << "### FATAL ERROR in FluidBCs constructor" << std::endl
-          << "Flag ox1_bc=" << pmb->block_bcs.ox1_bc << " not valid" << std::endl;
+      msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
+          << "Flag ox1_bc=" << pmb->block_bcs[outer_x1] << " not valid" << std::endl;
       throw std::runtime_error(msg.str().c_str());
   }
 
 // Inner x2
-
   if (pmb->block_size.nx2 > 1) {
-    switch(pmb->block_bcs.ix2_bc){
-      case -1:
-        FluidBoundary_[inner_x2] = NULL;
-        FieldBoundary_[inner_x2] = NULL;
-        break;
+    switch(pmb->block_bcs[inner_x2]){
       case 1:
         FluidBoundary_[inner_x2] = ReflectInnerX2;
         FieldBoundary_[inner_x2] = ReflectInnerX2;
+        EFluxBoundary_[inner_x2] = DefaultEFluxInnerX2;
         break;
       case 2:
         FluidBoundary_[inner_x2] = OutflowInnerX2;
         FieldBoundary_[inner_x2] = OutflowInnerX2;
+        EFluxBoundary_[inner_x2] = DefaultEFluxInnerX2;
         break;
+      case -1: // block boundary
       case 3: // do nothing, useful for user-enrolled BCs
+      case 4: // periodic boundary
         FluidBoundary_[inner_x2] = NULL;
         FieldBoundary_[inner_x2] = NULL;
-        break;
-      case 4:
-        FluidBoundary_[inner_x2] = PeriodicInnerX2;
-        FieldBoundary_[inner_x2] = PeriodicInnerX2;
+        EFluxBoundary_[inner_x2] = NULL;
         break;
       default:
         std::stringstream msg;
-        msg << "### FATAL ERROR in FluidBCs constructor" << std::endl
-            << "Flag ix2_bc=" << pmb->block_bcs.ix2_bc << " not valid" << std::endl;
+        msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
+            << "Flag ix2_bc=" << pmb->block_bcs[inner_x2] << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
      }
 
 // Outer x2
-
-    switch(pmb->block_bcs.ox2_bc){
-      case -1:
-        FluidBoundary_[outer_x2] = NULL;
-        FieldBoundary_[outer_x2] = NULL;
-        break;
+    switch(pmb->block_bcs[outer_x2]){
       case 1:
         FluidBoundary_[outer_x2] = ReflectOuterX2;
         FieldBoundary_[outer_x2] = ReflectOuterX2;
+        EFluxBoundary_[outer_x2] = DefaultEFluxOuterX2;
         break;
       case 2:
         FluidBoundary_[outer_x2] = OutflowOuterX2;
         FieldBoundary_[outer_x2] = OutflowOuterX2;
+        EFluxBoundary_[outer_x2] = DefaultEFluxOuterX2;
         break;
+      case -1: // block boundary
       case 3: // do nothing, useful for user-enrolled BCs
+      case 4: // periodic boundary
         FluidBoundary_[outer_x2] = NULL;
         FieldBoundary_[outer_x2] = NULL;
-        break;
-      case 4:
-        FluidBoundary_[outer_x2] = PeriodicOuterX2;
-        FieldBoundary_[outer_x2] = PeriodicOuterX2;
+        EFluxBoundary_[outer_x2] = NULL;
         break;
       default:
         std::stringstream msg;
-        msg << "### FATAL ERROR in FluidBCs constructor" << std::endl
-            << "Flag ox2_bc=" << pmb->block_bcs.ox2_bc << " not valid" << std::endl;
+        msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
+            << "Flag ox2_bc=" << pmb->block_bcs[outer_x2] << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
     }
   }
 
 // Inner x3
-
   if (pmb->block_size.nx3 > 1) {
-    switch(pmb->block_bcs.ix3_bc){
-      case -1:
-        FluidBoundary_[inner_x3] = NULL;
-        FieldBoundary_[inner_x3] = NULL;
-        break;
+    switch(pmb->block_bcs[inner_x3]){
       case 1:
         FluidBoundary_[inner_x3] = ReflectInnerX3;
         FieldBoundary_[inner_x3] = ReflectInnerX3;
+        EFluxBoundary_[inner_x3] = DefaultEFluxInnerX3;
         break;
       case 2:
         FluidBoundary_[inner_x3] = OutflowInnerX3;
         FieldBoundary_[inner_x3] = OutflowInnerX3;
+        EFluxBoundary_[inner_x3] = DefaultEFluxInnerX3;
         break;
+      case -1: // block boundary
       case 3: // do nothing, useful for user-enrolled BCs
+      case 4: // periodic boundary
         FluidBoundary_[inner_x3] = NULL;
         FieldBoundary_[inner_x3] = NULL;
-        break;
-      case 4:
-        FluidBoundary_[inner_x3] = PeriodicInnerX3;
-        FieldBoundary_[inner_x3] = PeriodicInnerX3;
+        EFluxBoundary_[inner_x3] = NULL;
         break;
       default:
         std::stringstream msg;
-        msg << "### FATAL ERROR in FluidBCs constructor" << std::endl
-            << "Flag ix3_bc=" << pmb->block_bcs.ix3_bc << " not valid" << std::endl;
+        msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
+            << "Flag ix3_bc=" << pmb->block_bcs[inner_x3] << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
      }
 
 // Outer x3
-
-    switch(pmb->block_bcs.ox3_bc){
-      case -1:
-        FluidBoundary_[outer_x3] = NULL;
-        FieldBoundary_[outer_x3] = NULL;
-        break;
+    switch(pmb->block_bcs[outer_x3]){
       case 1:
         FluidBoundary_[outer_x3] = ReflectOuterX3;
         FieldBoundary_[outer_x3] = ReflectOuterX3;
+        EFluxBoundary_[outer_x3] = DefaultEFluxOuterX3;
         break;
       case 2:
         FluidBoundary_[outer_x3] = OutflowOuterX3;
         FieldBoundary_[outer_x3] = OutflowOuterX3;
+        EFluxBoundary_[outer_x3] = DefaultEFluxOuterX3;
         break;
+      case -1: // block boundary
       case 3: // do nothing, useful for user-enrolled BCs
+      case 4: // periodic boundary
         FluidBoundary_[outer_x3] = NULL;
         FieldBoundary_[outer_x3] = NULL;
-        break;
-      case 4:
-        FluidBoundary_[outer_x3] = PeriodicOuterX3;
-        FieldBoundary_[outer_x3] = PeriodicOuterX3;
+        EFluxBoundary_[outer_x3] = NULL;
         break;
       default:
         std::stringstream msg;
-        msg << "### FATAL ERROR in FluidBCs constructor" << std::endl
-            << "Flag ox3_bc=" << pmb->block_bcs.ox3_bc << " not valid" << std::endl;
+        msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
+            << "Flag ox3_bc=" << pmb->block_bcs[outer_x3] << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
     }
   }
@@ -251,17 +228,21 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   int r=2;
   if(pmb->block_size.nx2 > 1) r=4;
   if(pmb->block_size.nx3 > 1) r=6;
-  for(int i=0;i<r;i++)
-  {
+  for(int i=0;i<r;i++) {
     fluid_send_[i]=new Real[fluid_bufsize_[i]];
     fluid_recv_[i]=new Real[fluid_bufsize_[i]];
   }
 
   if (MAGNETIC_FIELDS_ENABLED) {
-    for(int i=0;i<r;i++)
-    {
+    for(int i=0;i<r;i++) {
       field_send_[i]=new Real[field_bufsize_[i]];
       field_recv_[i]=new Real[field_bufsize_[i]];
+    }
+    if(pmb->block_size.nx2>1) { // 2D or 3D
+      for(int i=0;i<r;i++) {
+        eflux_send_[i]=new Real[eflux_bufsize_[i]];
+        eflux_recv_[i]=new Real[eflux_bufsize_[i]];
+      }
     }
   }
 
@@ -278,6 +259,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       field_flag_[i][0][1]=false;
       field_flag_[i][1][0]=false;
       field_flag_[i][1][1]=false;
+      eflux_flag_[i][0][0]=false;
+      eflux_flag_[i][0][1]=false;
+      eflux_flag_[i][1][0]=false;
+      eflux_flag_[i][1][1]=false;
     }
   }
 }
@@ -298,20 +283,33 @@ BoundaryValues::~BoundaryValues()
       delete [] field_send_[i];
       delete [] field_recv_[i];
     }
+    if(pmy_mblock_->block_size.nx2 > 1) {
+      for(int i=0;i<r;i++) { 
+        delete [] eflux_send_[i];
+        delete [] eflux_recv_[i];
+      }
+    }
   }
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn
-//  \brief
+//! \fn void BoundaryValues::EnrollFluidBoundaryFunction(enum direction dir,
+//                                                       BValFluid_t my_bc)
+//  \brief Enroll a user-defined boundary function for fluid
 
 void BoundaryValues::EnrollFluidBoundaryFunction(enum direction dir, BValFluid_t my_bc)
 {
+  std::stringstream msg;
   if(dir<0 || dir>5)
   {
-    std::stringstream msg;
     msg << "### FATAL ERROR in EnrollFluidBoundaryCondition function" << std::endl
         << "dirName = " << dir << " not valid" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  if(pmy_mblock_->pmy_mesh->mesh_bcs[dir]!=3) {
+    msg << "### FATAL ERROR in EnrollFluidBoundaryCondition function" << std::endl
+        << "A user-defined boundary condition flag (3) must be specified "
+        << "in the input file to use a user-defined boundary function." << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
   if(pmy_mblock_->neighbor[dir][0][0].gid==-1)
@@ -320,20 +318,53 @@ void BoundaryValues::EnrollFluidBoundaryFunction(enum direction dir, BValFluid_t
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn
-//  \brief
+//! \fn void BoundaryValues::EnrollFieldBoundaryFunction(enum direction dir,
+//                                                       BValField_t my_bc)
+//  \brief Enroll a user-defined boundary function for magnetic fields
 
 void BoundaryValues::EnrollFieldBoundaryFunction(enum direction dir,BValField_t my_bc)
 {
+  std::stringstream msg;
   if(dir<0 || dir>5)
   {
-    std::stringstream msg;
     msg << "### FATAL ERROR in EnrollFieldBoundaryCondition function" << std::endl
         << "dirName = " << dir << " is not valid" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
+  if(pmy_mblock_->pmy_mesh->mesh_bcs[dir]!=3) {
+    msg << "### FATAL ERROR in EnrollFieldBoundaryCondition function" << std::endl
+        << "A user-defined boundary condition flag (3) must be specified "
+        << "in the input file to use a user-defined boundary function." << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
   if(pmy_mblock_->neighbor[dir][0][0].gid==-1)
     FieldBoundary_[dir]=my_bc;
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::EnrollEFluxBoundaryFunction(enum direction dir,
+//                                                       BValEFlux_t my_bc)
+//  \brief Enroll a user-defined boundary function for electric fields
+
+void BoundaryValues::EnrollEFluxBoundaryFunction(enum direction dir,BValEFlux_t my_bc)
+{
+  std::stringstream msg;
+  if(dir<0 || dir>5)
+  {
+    msg << "### FATAL ERROR in EnrollEFluxBoundaryCondition function" << std::endl
+        << "dirName = " << dir << " is not valid" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  if(pmy_mblock_->pmy_mesh->mesh_bcs[dir]!=3) {
+    msg << "### FATAL ERROR in EnrollEFluxBoundaryCondition function" << std::endl
+        << "A user-defined boundary condition flag (3) must be specified "
+        << "in the input file to use a user-defined boundary function." << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  if(pmy_mblock_->neighbor[dir][0][0].gid==-1)
+    EFluxBoundary_[dir]=my_bc;
   return;
 }
 
@@ -346,20 +377,11 @@ void BoundaryValues::StartReceivingFluid(int flag)
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_mblock_;
   int tag;
-  std::stringstream msg;
   for(int i=0;i<6;i++) {
     if(pmb->neighbor[i][0][0].gid!=-1 && pmb->neighbor[i][0][0].rank!=myrank) { 
       tag=CreateMPITag(pmb->lid, flag, i, tag_fluid, 0, 0);
-      if(MPI_Irecv(fluid_recv_[i],fluid_bufsize_[i],MPI_ATHENA_REAL,
-          pmb->neighbor[i][0][0].rank,tag,MPI_COMM_WORLD,&req_fluid_recv_[i][0][0])!=MPI_SUCCESS)
-      {
-        msg << "### FATAL ERROR in StartReceivingFluid" << std::endl
-            << "Something wrong in MPI_Irecv" << std::endl;
-            throw std::runtime_error(msg.str().c_str());
-      }
-//      std::cout <<std::setw(3)<< tag << ": Face " << i << ",  to  Block " << pmb->neighbor[i][0][0].gid
-//      << " on Rank " << pmb->neighbor[i][0][0].gid << " from Block " << pmb->gid
-//      << " on Rank " << myrank << std::endl;
+      MPI_Irecv(fluid_recv_[i],fluid_bufsize_[i],MPI_ATHENA_REAL,
+        pmb->neighbor[i][0][0].rank,tag,MPI_COMM_WORLD,&req_fluid_recv_[i][0][0]);
     }
   }
 #endif
@@ -397,7 +419,6 @@ void BoundaryValues::LoadAndSendFluidBoundaryBuffer
   MeshBlock *pmb=pmy_mblock_;
   MeshBlock *pbl=pmb->pmy_mesh->pblock;
   int oside;
-  std::stringstream msg;
   Real *sendbuf=fluid_send_[dir];
   int si, sj, sk, ei, ej, ek, mylevel;
 #ifdef MPI_PARALLEL
@@ -442,14 +463,6 @@ void BoundaryValues::LoadAndSendFluidBoundaryBuffer
         break;
       pbl=pbl->next;
     }
-    if(pbl==NULL)
-    {
-      msg << "### FATAL ERROR in LoadAndSendFluidBoundaryBuffer" << std::endl
-          << "In boundary " << dir << " of block "<<  pmb->gid
-          << ", neighbor block " << pmb->neighbor[dir][0][0].gid
-          << " is not found on the same process." << std::endl;
-      throw std::runtime_error(msg.str().c_str());
-    }
     std::memcpy(pbl->pbval->fluid_recv_[oside], sendbuf,
                 fluid_bufsize_[dir]*sizeof(Real));
     pbl->pbval->fluid_flag_[oside][0][0]=true; // the other side
@@ -459,21 +472,8 @@ void BoundaryValues::LoadAndSendFluidBoundaryBuffer
 #ifdef MPI_PARALLEL
     // on the same level
     tag=CreateMPITag(pmb->neighbor[dir][0][0].lid, flag, oside, tag_fluid, 0, 0);
-    if(MPI_Isend(sendbuf,fluid_bufsize_[dir],MPI_ATHENA_REAL,
-        pmb->neighbor[dir][0][0].rank,tag,MPI_COMM_WORLD,&req_fluid_send_[dir][0][0])!=MPI_SUCCESS)
-    {
-      msg << "### FATAL ERROR in LoadAndSendFluidBoundaryBuffer" << std::endl
-          << "Something wrong in MPI_Isend" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
-    }
-//    std::cout << std::setw(3) <<tag << ": Face " << dir << ", from Block " << pmb->gid << " on Rank " << myrank
-//    << "  to  Block " << pmb->neighbor[dir][0][0].gid << " on Rank "
-//    << pmb->neighbor[dir][0][0].gid <<  std::endl;
-#else
-    msg << "### FATAL ERROR in LoadAndSendFluidBoundaryBuffer" << std::endl
-        << "I was told that my neighbor is on another node, but MPI is off!"
-        << std::endl << "I'm afraid the grid structure is broken." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    MPI_Isend(sendbuf,fluid_bufsize_[dir],MPI_ATHENA_REAL,
+      pmb->neighbor[dir][0][0].rank,tag,MPI_COMM_WORLD,&req_fluid_send_[dir][0][0]);
 #endif
   }
   return;
@@ -488,7 +488,6 @@ bool BoundaryValues::ReceiveAndSetFluidBoundary(enum direction dir,
                                                 AthenaArray<Real> &dst)
 {
   MeshBlock *pmb=pmy_mblock_;
-  std::stringstream msg;
   Real *recvbuf=fluid_recv_[dir];
   int si, sj, sk, ei, ej, ek;
 
@@ -496,32 +495,13 @@ bool BoundaryValues::ReceiveAndSetFluidBoundary(enum direction dir,
     FluidBoundary_[dir](pmb,dst);
   else // block boundary
   {
+#ifdef MPI_PARALLEL
     if(fluid_flag_[dir][0][0] == false)
     {
-      if(pmb->neighbor[dir][0][0].rank==myrank) {// on the same process
-        std::cout << "Buffer is not ready: this should not happen." << std::endl;
-        return false; // return if it is not ready yet
-      }
-      else { // MPI boundary
-#ifdef MPI_PARALLEL
-        // temporary: wait the communication
-        if(MPI_Wait(&req_fluid_recv_[dir][0][0],MPI_STATUS_IGNORE)!=MPI_SUCCESS)
-        {
-          msg << "### FATAL ERROR in ReceiveAndSetFluidBoundary" << std::endl
-              << "Something wrong in MPI_Wait" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
-        }
-
-        // for the future interleaving: check if it is ready
-        //   return false; return if it is not ready yet ; for task implementation
-#else
-        msg << "### FATAL ERROR in ReceiveAndSetFluidBoundary" << std::endl
-            << "I was told that my neighbor is on another node, but MPI is off!"
-            << std::endl << "I'm afraid the grid structure is broken." << std::endl;
-        throw std::runtime_error(msg.str().c_str());
-#endif
-      }
+      if(pmb->neighbor[dir][0][0].rank!=myrank) // MPI boundary
+        MPI_Wait(&req_fluid_recv_[dir][0][0],MPI_STATUS_IGNORE);
     }
+#endif
 
     si=fluid_recv_se_[dir][0];
     ei=fluid_recv_se_[dir][1];
@@ -566,17 +546,23 @@ void BoundaryValues::WaitSendFluid(enum direction dir)
 //  \brief initiate MPI_Irecv for field
 void BoundaryValues::StartReceivingEFlux(int flag)
 {
-#ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_mblock_;
-  int tag;
-  for(int i=0;i<6;i++) {
+  int tag, ndir;
+  if(pmb->block_size.nx2==1)
+    return; // 1D
+  ndir=4; // 2D
+  if(pmb->block_size.nx3>1)
+    ndir=6; // 3D
+  for(int i=0;i<ndir;i++) {
+    eflux_flag_[i][0][0]=0;
+#ifdef MPI_PARALLEL
     if(pmb->neighbor[i][0][0].gid!=-1 && pmb->neighbor[i][0][0].rank!=myrank) {
       tag=CreateMPITag(pmb->lid, flag, i, tag_eflux, 0, 0);
       MPI_Irecv(eflux_recv_[i],eflux_bufsize_[i],MPI_ATHENA_REAL,
           pmb->neighbor[i][0][0].rank,tag,MPI_COMM_WORLD,&req_eflux_recv_[i][0][0]);
+#endif
     }
   }
-#endif
   return;
 }
 
@@ -591,7 +577,6 @@ void BoundaryValues::LoadAndSendFieldBoundaryBuffer(enum direction dir,
   MeshBlock *pmb=pmy_mblock_;
   MeshBlock *pbl=pmb->pmy_mesh->pblock;
   int oside;
-  std::stringstream msg;
   Real *sendbuf=field_send_[dir];
   AthenaArray<Real>& x1src=src.x1f;
   AthenaArray<Real>& x2src=src.x2f;
@@ -668,14 +653,6 @@ void BoundaryValues::LoadAndSendFieldBoundaryBuffer(enum direction dir,
         break;
       pbl=pbl->next;
     }
-    if(pbl==NULL)
-    {
-      msg << "### FATAL ERROR in SetFieldBoundary" << std::endl
-          << "In boundary " << dir << " of block "<<  pmb->gid
-          << ", neighbor block " << pmb->neighbor[dir][0][0].gid
-          << " is not found on the same process." << std::endl;
-      throw std::runtime_error(msg.str().c_str());
-    }
     std::memcpy(pbl->pbval->field_recv_[oside], field_send_[dir],
                 field_bufsize_[dir]*sizeof(Real));
     pbl->pbval->field_flag_[oside][0][0]=true; // the other side
@@ -687,11 +664,6 @@ void BoundaryValues::LoadAndSendFieldBoundaryBuffer(enum direction dir,
     tag=CreateMPITag(pmb->neighbor[dir][0][0].lid, flag, oside, tag_field, 0, 0);
     MPI_Isend(sendbuf,field_bufsize_[dir],MPI_ATHENA_REAL,
         pmb->neighbor[dir][0][0].rank,tag,MPI_COMM_WORLD,&req_field_send_[dir][0][0]);
-#else
-    msg << "### FATAL ERROR in LoadAndSendFluidBoundaryBuffer" << std::endl
-        << "I was told that my neighbor is on another node, but MPI is off!"
-        << std::endl << "I'm afraid the grid structure is broken." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
 #endif
   }
   return;
@@ -704,7 +676,6 @@ void BoundaryValues::LoadAndSendFieldBoundaryBuffer(enum direction dir,
 bool BoundaryValues::ReceiveAndSetFieldBoundary(enum direction dir, InterfaceField &dst)
 {
   MeshBlock *pmb=pmy_mblock_;
-  std::stringstream msg;
   Real *recvbuf=field_recv_[dir];
   AthenaArray<Real>& x1dst=dst.x1f;
   AthenaArray<Real>& x2dst=dst.x2f;
@@ -715,27 +686,18 @@ bool BoundaryValues::ReceiveAndSetFieldBoundary(enum direction dir, InterfaceFie
     FieldBoundary_[dir](pmb,dst);
   else // block boundary
   {
+#ifdef MPI_PARALLEL
     if(field_flag_[dir][0][0] == false)
     {
-      if(pmb->neighbor[dir][0][0].rank==myrank) {// on the same process
-        std::cout << "Buffer is not ready: this should not happen." << std::endl;
-        return false; // return if it is not ready yet
-      }
-      else { // MPI boundary
-#ifdef MPI_PARALLEL
+      if(pmb->neighbor[dir][0][0].rank!=myrank) { // MPI boundary
         // temporary: wait the communication
         MPI_Wait(&req_field_recv_[dir][0][0],MPI_STATUS_IGNORE);
 
         // for the future interleaving: check if it is ready
         //   return false; return if it is not ready yet ; for task implementation
-#else
-        msg << "### FATAL ERROR in ReceiveAndSetFieldBoundary" << std::endl
-            << "I was told that my neighbor is on another node, but MPI is off!"
-            << std::endl << "I'm afraid the grid structure is broken." << std::endl;
-        throw std::runtime_error(msg.str().c_str());
-#endif
       }
     }
+#endif
 
     // Load buffers; x1f
     int p=0;
@@ -808,130 +770,364 @@ void BoundaryValues::WaitSendField(enum direction dir)
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::LoadAndSendEfluxBoundaryBuffer(InterfaceField &fsrc,
+//! \fn void BoundaryValues::LoadAndSendEFluxBoundaryBuffer(InterfaceField &fsrc,
 //                                                      InterfaceField &wsrc, int flag)
 //  \brief Set boundary buffer for x1 direction using boundary functions
 //  note: some geometric boundaries (e.g. origin and pole) are not implemented yet
-void BoundaryValues::LoadAndSendEfluxBoundaryBuffer(InterfaceField &fsrc,
+void BoundaryValues::LoadAndSendEFluxBoundaryBuffer(InterfaceField &fsrc,
                                                     InterfaceField &wsrc, int flag)
 {
   MeshBlock *pmb=pmy_mblock_;
-  MeshBlock *pbl=pmb->pmy_mesh->pblock;
-  int oside;
-  std::stringstream msg;
-  Real *sendbuf=field_send_[dir];
-  int si, sj, sk, ei, ej, ek;
+  int oside, p, dir, ndir;
+  int is = pmb->is, ie = pmb->ie;
+  int js = pmb->js, je = pmb->je;
+  int ks = pmb->ks, ke = pmb->ke;
 #ifdef MPI_PARALLEL
   int tag;
 #endif
 
-  // for x1-left
-  int dir=0;
-  if(pmb->neighbor[dir][0][0].gid==-1)
-    continue; // do nothing for physical boundary
-  if(dir%2==0)
-    oside=dir+1;
-  else
-    oside=dir-1;
-  
-  int p=0;
-  for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
-#pragma simd
-      for (int i=si; i<=ei; ++i) {
-        // write here please!
-        sendbuf[p++]=fsrc(k,j,i).x2f;
+  if(pmb->block_size.nx2==1)
+    return; // 1D
+  if(pmb->block_size.nx3==1) { // 2D
+    if(pmb->neighbor[inner_x1][0][0].gid!=-1) {
+      p=0;
+      for(int j=js; j<=je+1; j++)
+        eflux_send_[inner_x1][p++]=fsrc.x2f(X2E3,ks,j,is);
+      for(int j=js; j<=je+1; j++)
+        eflux_send_[inner_x1][p++]=wsrc.x2f(ks,j,is);
+    }
+    if(pmb->neighbor[outer_x1][0][0].gid!=-1) {
+      p=0;
+      for(int j=js; j<=je+1; j++)
+        eflux_send_[outer_x1][p++]=fsrc.x2f(X2E3,ks,j,ie);
+      for(int j=js; j<=je+1; j++)
+        eflux_send_[outer_x1][p++]=wsrc.x2f(ks,j,ie);
+    }
+    if(pmb->neighbor[inner_x2][0][0].gid!=-1) {
+      p=0;
+      for(int i=is; i<=ie+1; i++)
+        eflux_send_[inner_x2][p++]=fsrc.x1f(X1E3,ks,js,i);
+      for(int i=is; i<=ie+1; i++)
+        eflux_send_[inner_x2][p++]=wsrc.x1f(ks,js,i);
+    }
+    if(pmb->neighbor[outer_x2][0][0].gid!=-1) {
+      p=0;
+      for(int i=is; i<=ie+1; i++)
+        eflux_send_[outer_x2][p++]=fsrc.x1f(X1E3,ks,je,i);
+      for(int i=is; i<=ie+1; i++)
+        eflux_send_[outer_x2][p++]=wsrc.x1f(ks,je,i);
+    }
+  }
+  else {  // 3D
+    if(pmb->neighbor[inner_x1][0][0].gid!=-1) {
+      p=0;
+      for(int k=ks; k<=ke; k++) {
+        for(int j=js; j<=je+1; j++)
+          eflux_send_[inner_x1][p++]=fsrc.x2f(X2E3,k,j,is);
+      }
+      for(int k=ks; k<=ke; k++) {
+        for(int j=js; j<=je+1; j++)
+          eflux_send_[inner_x1][p++]=wsrc.x2f(k,j,is);
+      }
+      for(int k=ks; k<=ke+1; k++) {
+        for(int j=js; j<=je; j++)
+          eflux_send_[inner_x1][p++]=fsrc.x3f(X3E2,k,j,is);
+      }
+    }
+    if(pmb->neighbor[outer_x1][0][0].gid!=-1) {
+      p=0;
+      for(int k=ks; k<=ke; k++) {
+        for(int j=js; j<=je+1; j++)
+          eflux_send_[outer_x1][p++]=fsrc.x2f(X2E3,k,j,ie);
+      }
+      for(int k=ks; k<=ke; k++) {
+        for(int j=js; j<=je+1; j++)
+          eflux_send_[outer_x1][p++]=wsrc.x2f(k,j,ie);
+      }
+      for(int k=ks; k<=ke+1; k++) {
+        for(int j=js; j<=je; j++)
+          eflux_send_[outer_x1][p++]=fsrc.x3f(X3E2,k,j,ie);
+      }
+    }
+    if(pmb->neighbor[inner_x2][0][0].gid!=-1) {
+      p=0;
+      for(int k=ks; k<=ke; k++) {
+        for(int i=is; i<=ie+1; i++)
+          eflux_send_[inner_x2][p++]=fsrc.x1f(X1E3,k,js,i);
+      }
+      for(int k=ks; k<=ke; k++) {
+        for(int i=is; i<=ie+1; i++)
+          eflux_send_[inner_x2][p++]=wsrc.x1f(k,js,i);
+      }
+      for(int k=ks; k<=ke+1; k++) {
+        for(int i=is; i<=ie; i++)
+          eflux_send_[inner_x2][p++]=fsrc.x3f(X3E1,k,js,i);
+      }
+    }
+    if(pmb->neighbor[outer_x2][0][0].gid!=-1) {
+      p=0;
+      for(int k=ks; k<=ke; k++) {
+        for(int i=is; i<=ie+1; i++)
+          eflux_send_[outer_x2][p++]=fsrc.x1f(X1E3,k,je,i);
+      }
+      for(int k=ks; k<=ke; k++) {
+        for(int i=is; i<=ie+1; i++)
+          eflux_send_[outer_x2][p++]=wsrc.x1f(k,je,i);
+      }
+      for(int k=ks; k<=ke+1; k++) {
+        for(int i=is; i<=ie; i++)
+          eflux_send_[outer_x2][p++]=fsrc.x3f(X3E1,k,je,i);
+      }
+    }
+    if(pmb->neighbor[inner_x3][0][0].gid!=-1) {
+      p=0;
+      for(int j=js; j<=je; j++) {
+        for(int i=is; i<=ie+1; i++)
+          eflux_send_[inner_x3][p++]=fsrc.x1f(X1E2,ks,j,i);
+      }
+      for(int j=js; j<=je+1; j++) {
+        for(int i=is; i<=ie; i++)
+          eflux_send_[inner_x3][p++]=fsrc.x2f(X2E1,ks,j,i);
+      }
+      for(int j=js; j<=je+1; j++) {
+        for(int i=is; i<=ie; i++)
+          eflux_send_[inner_x3][p++]=wsrc.x3f(ks,j,i);
+      }
+    }
+    if(pmb->neighbor[outer_x3][0][0].gid!=-1) {
+      p=0;
+      for(int j=js; j<=je; j++) {
+        for(int i=is; i<=ie+1; i++)
+          eflux_send_[outer_x3][p++]=fsrc.x1f(X1E2,ke,j,i);
+      }
+      for(int j=js; j<=je+1; j++) {
+        for(int i=is; i<=ie; i++)
+          eflux_send_[outer_x3][p++]=fsrc.x2f(X2E1,ke,j,i);
+      }
+      for(int j=js; j<=je+1; j++) {
+        for(int i=is; i<=ie; i++)
+          eflux_send_[outer_x3][p++]=wsrc.x3f(ke,j,i);
       }
     }
   }
 
-  // Send the buffer; modify this for MPI and AMR
-  if(pmb->neighbor[dir][0][0].rank == myrank) // myrank
+  ndir=4;
+  if(pmb->block_size.nx3>1) // 3D
+    ndir=6;
+  for(dir=0;dir<ndir;dir++)
   {
-    while(pbl!=NULL)
+    if(pmb->neighbor[dir][0][0].gid==-1)
+      continue; // do nothing for physical boundary
+    if(dir%2==0)
+      oside=dir+1;
+    else
+      oside=dir-1;
+    // Send the buffer; modify this for MPI and AMR
+    if(pmb->neighbor[dir][0][0].rank == myrank) // myrank
     {
-      if(pbl->gid==pmb->neighbor[dir][0][0].gid)
-        break;
-      pbl=pbl->next;
+      MeshBlock *pbl=pmb->pmy_mesh->pblock;
+      while(pbl!=NULL)
+      {
+        if(pbl->gid==pmb->neighbor[dir][0][0].gid)
+          break;
+        pbl=pbl->next;
+      }
+      std::memcpy(pbl->pbval->eflux_recv_[oside], eflux_send_[dir],
+                  eflux_bufsize_[dir]*sizeof(Real));
+      pbl->pbval->eflux_flag_[oside][0][0]=true; // the other side
     }
-    if(pbl==NULL)
+    else // MPI
     {
-      msg << "### FATAL ERROR in SetFieldBoundary" << std::endl
-          << "In boundary " << dir << " of block "<<  pmb->gid
-          << ", neighbor block " << pmb->neighbor[dir][0][0].gid
-          << " is not found on the same process." << std::endl;
-      throw std::runtime_error(msg.str().c_str());
-    }
-    std::memcpy(pbl->pbval->eflux_recv_[oside], sendbuf,
-                field_bufsize_[dir]*sizeof(Real));
-    pbl->pbval->field_flag_[oside][0][0]=true; // the other side
-  }
-  else // MPI
-  {
 #ifdef MPI_PARALLEL
-    // on the same level
-    tag=CreateMPITag(pmb->neighbor[dir][0][0].lid, flag, oside, tag_eflux, 0, 0);
-    MPI_Isend(sendbuf,***BUFSIZE***,MPI_ATHENA_REAL,
-        pmb->neighbor[dir][0][0].rank,tag,MPI_COMM_WORLD,&req_eflux_send_[dir][0][0]);
-#else
-    msg << "### FATAL ERROR in LoadAndSendFluidBoundaryBuffer" << std::endl
-        << "I was told that my neighbor is on another node, but MPI is off!"
-        << std::endl << "I'm afraid the grid structure is broken." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+      // on the same level
+      tag=CreateMPITag(pmb->neighbor[dir][0][0].lid, flag, oside, tag_eflux, 0, 0);
+      MPI_Isend(eflux_send_[dir],eflux_bufsize_[dir],MPI_ATHENA_REAL,
+          pmb->neighbor[dir][0][0].rank,tag,MPI_COMM_WORLD,&req_eflux_send_[dir][0][0]);
 #endif
+    }
   }
   return;
 }
 
 //--------------------------------------------------------------------------------------
 //! \fn bool BoundaryValues::ReceiveAndSetEFluxBoundary(InterfaceField &fdst,
-//                                                      InterfaceField &wdst);
+//                                                      InterfaceField &wdst)
 //  \brief load boundary buffer for x1 direction into the array
-bool BoundaryValues::ReceiveAndSetEFluxBoundary(InterfaceField &fdst, InterfaceField &wdst);
-
+bool BoundaryValues::ReceiveAndSetEFluxBoundary(InterfaceField &fdst,
+                                                InterfaceField &wdst)
 {
   MeshBlock *pmb=pmy_mblock_;
-  std::stringstream msg;
-  int si, sj, sk, ei, ej, ek;
+  int dir, ndir, p;
+  int is = pmb->is, ie = pmb->ie;
+  int js = pmb->js, je = pmb->je;
+  int ks = pmb->ks, ke = pmb->ke;
 
-  int dir=0;
-  Real *recvbuf=field_recv_[dir];
-  if(pmb->neighbor[dir][0][0].gid==-1) // physical boundary
-    EFluxBoundary_[dir](pmb,dst); //do something here
-  else // block boundary
-  {
-    if(eflux_flag_[dir][0][0] == false)
-    {
-      if(pmb->neighbor[dir][0][0].rank==myrank) {// on the same process
-        std::cout << "Buffer is not ready: this should not happen." << std::endl;
-        return false; // return if it is not ready yet
-      }
-      else { // MPI boundary
+  if(pmb->block_size.nx2==1) // 1D
+    return true;
 #ifdef MPI_PARALLEL
-        // temporary: wait the communication
-        MPI_Wait(&req_eflux_recv_[dir][0][0],MPI_STATUS_IGNORE);
-
-        // for the future interleaving: check if it is ready
-        //   return false; return if it is not ready yet ; for task implementation
-#else
-        msg << "### FATAL ERROR in ReceiveAndSetFieldBoundary" << std::endl
-            << "I was told that my neighbor is on another node, but MPI is off!"
-            << std::endl << "I'm afraid the grid structure is broken." << std::endl;
-        throw std::runtime_error(msg.str().c_str());
+  ndir=4;
+  if(pmb->block_size.nx3>1) // 3D
+    ndir=6;
+  for(dir=0;dir<ndir;dir++) {
+    if(pmb->neighbor[dir][0][0].gid!=-1 && pmb->neighbor[dir][0][0].rank!=myrank) {
+      MPI_Wait(&req_eflux_recv_[dir][0][0],MPI_STATUS_IGNORE);
+      eflux_flag_[dir][0][0]=true;
+    }
+  }
 #endif
-      }
-    }
+  // at this point, all the buffers should be completed
 
-    // unpack it here
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
-#pragma simd
-        for (int i=si; i<=ei; ++i) {
-          
-        }
+  if(pmb->block_size.nx3==1) { // 2D
+    if(pmb->neighbor[inner_x1][0][0].gid==-1) // physical boundary
+      EFluxBoundary_[inner_x1](pmb,fdst,wdst);
+    else {
+      p=0;
+      for(int j=js; j<=je+1; j++)
+        fdst.x2f(X2E3,ks,j,is-1)=eflux_recv_[inner_x1][p++];
+      for(int j=js; j<=je+1; j++)
+        wdst.x2f(ks,j,is-1)=eflux_recv_[inner_x1][p++];
+    }
+    eflux_flag_[inner_x1][0][0] = false; // clear the flag
+    if(pmb->neighbor[outer_x1][0][0].gid==-1) // physical boundary
+      EFluxBoundary_[outer_x1](pmb,fdst,wdst);
+    else {
+      p=0;
+      for(int j=js; j<=je+1; j++)
+        fdst.x2f(X2E3,ks,j,ie+1)=eflux_recv_[outer_x1][p++];
+      for(int j=js; j<=je+1; j++)
+        wdst.x2f(ks,j,ie+1)=eflux_recv_[outer_x1][p++];
+    }
+    eflux_flag_[outer_x1][0][0] = false; // clear the flag
+    if(pmb->neighbor[inner_x2][0][0].gid==-1) // physical boundary
+      EFluxBoundary_[inner_x2](pmb,fdst,wdst);
+    else {
+      p=0;
+      for(int i=is; i<=ie+1; i++)
+        fdst.x1f(X1E3,ks,js-1,i)=eflux_recv_[inner_x2][p++];
+      for(int i=is; i<=ie+1; i++)
+        wdst.x1f(ks,js-1,i)=eflux_recv_[inner_x2][p++];
+    }
+    eflux_flag_[inner_x2][0][0] = false; // clear the flag
+    if(pmb->neighbor[outer_x2][0][0].gid==-1) // physical boundary
+      EFluxBoundary_[outer_x2](pmb,fdst,wdst);
+    else {
+      p=0;
+      for(int i=is; i<=ie+1; i++)
+        fdst.x1f(X1E3,ks,je+1,i)=eflux_recv_[outer_x2][p++];
+      for(int i=is; i<=ie+1; i++)
+        wdst.x1f(ks,je+1,i)=eflux_recv_[outer_x2][p++];
+    }
+    eflux_flag_[outer_x2][0][0] = false; // clear the flag
+  }
+  else { // 3D
+    if(pmb->neighbor[inner_x1][0][0].gid==-1) // physical boundary
+      EFluxBoundary_[inner_x1](pmb,fdst,wdst);
+    else {
+      p=0;
+      for(int k=ks; k<=ke; k++) {
+        for(int j=js; j<=je+1; j++)
+          fdst.x2f(X2E3,k,j,is-1)=eflux_recv_[inner_x1][p++];
+      }
+      for(int k=ks; k<=ke; k++) {
+        for(int j=js; j<=je+1; j++)
+          wdst.x2f(k,j,is-1)=eflux_recv_[inner_x1][p++];
+      }
+      for(int k=ks; k<=ke+1; k++) {
+        for(int j=js; j<=je; j++)
+          fdst.x3f(X3E2,k,j,is-1)=eflux_recv_[inner_x1][p++];
       }
     }
-    eflux_flag_[dir][0][0] = false; // clear the flag
+    eflux_flag_[inner_x1][0][0] = false; // clear the flag
+    if(pmb->neighbor[outer_x1][0][0].gid==-1) // physical boundary
+      EFluxBoundary_[outer_x1](pmb,fdst,wdst);
+    else {
+      p=0;
+      for(int k=ks; k<=ke; k++) {
+        for(int j=js; j<=je+1; j++)
+          fdst.x2f(X2E3,k,j,ie+1)=eflux_recv_[outer_x1][p++];
+      }
+      for(int k=ks; k<=ke; k++) {
+        for(int j=js; j<=je+1; j++)
+          wdst.x2f(k,j,ie+1)=eflux_recv_[outer_x1][p++];
+      }
+      for(int k=ks; k<=ke+1; k++) {
+        for(int j=js; j<=je; j++)
+          fdst.x3f(X3E2,k,j,ie+1)=eflux_recv_[outer_x1][p++];
+      }
+    }
+    eflux_flag_[outer_x1][0][0] = false; // clear the flag
+    if(pmb->neighbor[inner_x2][0][0].gid==-1) // physical boundary
+      EFluxBoundary_[inner_x2](pmb,fdst,wdst);
+    else {
+      p=0;
+      for(int k=ks; k<=ke; k++) {
+        for(int i=is; i<=ie+1; i++)
+          fdst.x1f(X1E3,k,js-1,i)=eflux_recv_[inner_x2][p++];
+      }
+      for(int k=ks; k<=ke; k++) {
+        for(int i=is; i<=ie+1; i++)
+          wdst.x1f(k,js-1,i)=eflux_recv_[inner_x2][p++];
+      }
+      for(int k=ks; k<=ke+1; k++) {
+        for(int i=is; i<=ie; i++)
+          fdst.x3f(X3E1,k,js-1,i)=eflux_recv_[inner_x2][p++];
+      }
+    }
+    eflux_flag_[inner_x2][0][0] = false; // clear the flag
+    if(pmb->neighbor[outer_x2][0][0].gid==-1) // physical boundary
+      EFluxBoundary_[outer_x2](pmb,fdst,wdst);
+    else {
+      p=0;
+      for(int k=ks; k<=ke; k++) {
+        for(int i=is; i<=ie+1; i++)
+          fdst.x1f(X1E3,k,je+1,i)=eflux_recv_[outer_x2][p++];
+      }
+      for(int k=ks; k<=ke; k++) {
+        for(int i=is; i<=ie+1; i++)
+          wdst.x1f(k,je+1,i)=eflux_recv_[outer_x2][p++];
+      }
+      for(int k=ks; k<=ke+1; k++) {
+        for(int i=is; i<=ie; i++)
+          fdst.x3f(X3E1,k,je+1,i)=eflux_recv_[outer_x2][p++];
+      }
+    }
+    eflux_flag_[outer_x2][0][0] = false; // clear the flag
+    if(pmb->neighbor[inner_x3][0][0].gid==-1) // physical boundary
+      EFluxBoundary_[inner_x3](pmb,fdst,wdst);
+    else {
+      p=0;
+      for(int j=js; j<=je; j++) {
+        for(int i=is; i<=ie+1; i++)
+          fdst.x1f(X1E2,ks-1,j,i)=eflux_recv_[inner_x3][p++];
+      }
+      for(int j=js; j<=je+1; j++) {
+        for(int i=is; i<=ie; i++)
+          fdst.x2f(X2E1,ks-1,j,i)=eflux_recv_[inner_x3][p++];
+      }
+      for(int j=js; j<=je+1; j++) {
+        for(int i=is; i<=ie; i++)
+          wdst.x3f(ks-1,j,i)=eflux_recv_[inner_x3][p++];
+      }
+    }
+    eflux_flag_[inner_x3][0][0] = false; // clear the flag
+    if(pmb->neighbor[outer_x3][0][0].gid==-1) // physical boundary
+      EFluxBoundary_[outer_x3](pmb,fdst,wdst);
+    else {
+      p=0;
+      for(int j=js; j<=je; j++) {
+        for(int i=is; i<=ie+1; i++)
+          fdst.x1f(X1E2,ke+1,j,i)=eflux_recv_[outer_x3][p++];
+      }
+      for(int j=js; j<=je+1; j++) {
+        for(int i=is; i<=ie; i++)
+          fdst.x2f(X2E1,ke+1,j,i)=eflux_recv_[outer_x3][p++];
+      }
+      for(int j=js; j<=je+1; j++) {
+        for(int i=is; i<=ie; i++)
+          wdst.x3f(ke+1,j,i)=eflux_recv_[outer_x3][p++];
+      }
+    }
+    eflux_flag_[outer_x3][0][0] = false; // clear the flag
   }
 
   return true;
@@ -941,11 +1137,15 @@ bool BoundaryValues::ReceiveAndSetEFluxBoundary(InterfaceField &fdst, InterfaceF
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::WaitSendEFlux(void)
 //  \brief wait until MPI_Isend completes for EFlux
-void BoundaryValues::WaitSendEFlux(void)
+void BoundaryValues::WaitSendEFlux(void) /***!!!something is wrong here!!!***/
 {
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_mblock_;
-  for(int dir=0;dir<6;dir++) {
+  int ndir=4, dir;
+  if(pmb->block_size.nx2==1) return; // 1D
+  if(pmb->block_size.nx3>1) // 3D
+    ndir=6;
+  for(dir=0;dir<ndir;dir++) {
     if(pmb->neighbor[dir][0][0].rank!=-1 && pmb->neighbor[dir][0][0].rank!=myrank)
       MPI_Wait(&req_eflux_send_[dir][0][0],MPI_STATUS_IGNORE);
   }
@@ -1322,16 +1522,25 @@ void InitBoundaryBuffer(int nx1, int nx2, int nx3)
     field_recv_se_[outer_x3][x3face][4]=ke+2;
     field_recv_se_[outer_x3][x3face][5]=ke+NGHOST+1;
 
-    field_bufsize_[inner_x1]=NGHOST*(nx2*nx3+(nx2+1)*nx3+nx2*(nx3+1));
-    field_bufsize_[outer_x1]=NGHOST*(nx2*nx3+(nx2+1)*nx3+nx2*(nx3+1));
-    field_bufsize_[inner_x2]=NGHOST*((nx1+2*NGHOST)*nx3+(nx1+2*NGHOST+1)*nx3
-                            +(nx1+2*NGHOST)*(nx3+1));
-    field_bufsize_[outer_x2]=NGHOST*((nx1+2*NGHOST)*nx3+(nx1+2*NGHOST+1)*nx3
-                            +(nx1+2*NGHOST)*(nx3+1));
-    field_bufsize_[inner_x3]=NGHOST*((nx1+2*NGHOST+1)*(nx2+2*NGHOST)
-                      +(nx1+2*NGHOST)*(nx2+2*NGHOST+1)+(nx1+2*NGHOST)*(nx2+2*NGHOST));
-    field_bufsize_[outer_x3]=NGHOST*((nx1+2*NGHOST+1)*(nx2+2*NGHOST)
-                      +(nx1+2*NGHOST)*(nx2+2*NGHOST+1)+(nx1+2*NGHOST)*(nx2+2*NGHOST));
+    field_bufsize_[inner_x1]=field_bufsize_[outer_x1]
+                            =NGHOST*(nx2*nx3+(nx2+1)*nx3+nx2*(nx3+1));
+    field_bufsize_[inner_x2]=field_bufsize_[outer_x2]=NGHOST*((nx1+2*NGHOST)*nx3
+                            +(nx1+2*NGHOST+1)*nx3+(nx1+2*NGHOST)*(nx3+1));
+    field_bufsize_[inner_x3]=field_bufsize_[outer_x3]
+                  =NGHOST*((nx1+2*NGHOST+1)*(nx2+2*NGHOST)
+                  +(nx1+2*NGHOST)*(nx2+2*NGHOST+1)+(nx1+2*NGHOST)*(nx2+2*NGHOST));
+    if(nx2==1) return; // 1D
+    else {
+      if(nx3==1) { // 2D
+        eflux_bufsize_[inner_x1]=eflux_bufsize_[outer_x1]=(nx2+1)*2;
+        eflux_bufsize_[inner_x2]=eflux_bufsize_[outer_x2]=(nx1+1)*2;
+      }
+      else { // 3D
+        eflux_bufsize_[inner_x1]=eflux_bufsize_[outer_x1]=(nx2+1)*nx3*2+nx2*(nx3+1);
+        eflux_bufsize_[inner_x2]=eflux_bufsize_[outer_x2]=(nx1+1)*nx3*2+nx1*(nx3+1);
+        eflux_bufsize_[inner_x3]=eflux_bufsize_[outer_x3]=(nx1+1)*nx2+nx1*(nx2+1)*2;
+      }
+    }
   }
   return;
 }
