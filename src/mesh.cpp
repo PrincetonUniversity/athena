@@ -888,7 +888,7 @@ void Mesh::MeshTest(BlockUID *buid, int *ranklist, Real *costlist)
   int i, j, nbt=0;
   long int lx1, lx2, lx3;
   int ll;
-  Real mycost=0, mincost=FLT_MAX, maxcost=0.0, totalcost;
+  Real mycost=0, mincost=FLT_MAX, maxcost=0.0, totalcost=0.0;
   int *nb=new int [max_level-root_level+1];
   std::cout << "Logical level of the physical root grid = "<< root_level << std::endl;
   std::cout << "Logical level of maximum refinement = "<< max_level << std::endl;

@@ -213,8 +213,8 @@ if args['cxx'] == 'g++':
   definitions['COMPILER_FLAGS'] = '-O3'
 if args['cxx'] == 'cray':
   makefile_options['COMPILER_CHOICE'] = 'CC'
-  makefile_options['COMPILER_FLAGS'] = '-O3 -lm -h aggress -h vector3 -hfp3'
-  definitions['COMPILER_FLAGS'] = '-O3 -lm -h aggress -h vector3 -hfp3'
+  makefile_options['COMPILER_FLAGS'] = '-O3 -lm -h aggress -h vector3 -hfp3 -hwp -hpl=obj/lib'
+  definitions['COMPILER_FLAGS'] = '-O3 -lm -h aggress -h vector3 -hfp3 -hwp -hpl=obj/lib'
   
 
 definitions['MPI_OPTION'] = 'MPI_PARALLEL' if args['mpi'] \

@@ -125,5 +125,5 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
 Real FluidEqnOfState::SoundSpeed(const Real prim[NFLUID])
 {
-  return sqrt(GetGamma()*prim[IEN]/prim[IDN]);
+  return sqrt(gamma_*prim[IEN]/prim[IDN]);
 }

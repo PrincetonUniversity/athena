@@ -41,15 +41,15 @@ bool FluidIntegrateSendX1(MeshBlock *pmb, int task_arg)
   if(task_arg==0) {
     pfluid->pf_integrator->OneStep(pmb, pfluid->u, pfluid->w1, pfield->b1,
                                    pfield->bcc1, 2);
-    pbval->LoadAndSendFluidBoundaryBuffer(inner_x1,pfluid->u,0);
     pbval->LoadAndSendFluidBoundaryBuffer(outer_x1,pfluid->u,0);
+    pbval->LoadAndSendFluidBoundaryBuffer(inner_x1,pfluid->u,0);
   }
   else if(task_arg==1) {
     pfluid->u1 = pfluid->u;
     pfluid->pf_integrator->OneStep(pmb, pfluid->u1, pfluid->w, pfield->b,
                                    pfield->bcc, 1);
-    pbval->LoadAndSendFluidBoundaryBuffer(inner_x1,pfluid->u1,1);
     pbval->LoadAndSendFluidBoundaryBuffer(outer_x1,pfluid->u1,1);
+    pbval->LoadAndSendFluidBoundaryBuffer(inner_x1,pfluid->u1,1);
   }
 
   return true;
@@ -62,16 +62,16 @@ bool FieldIntegrateSendX1(MeshBlock *pmb, int task_arg)
   BoundaryValues *pbval=pmb->pbval;
   if(task_arg==0) {
     pfield->pint->CT(pmb, pfield->b, pfluid->w1, pfield->bcc1, 2);
-    pbval->LoadAndSendFieldBoundaryBuffer(inner_x1,pfield->b,0);
     pbval->LoadAndSendFieldBoundaryBuffer(outer_x1,pfield->b,0);
+    pbval->LoadAndSendFieldBoundaryBuffer(inner_x1,pfield->b,0);
   }
   else if(task_arg==1) {
     pfield->b1.x1f = pfield->b.x1f;
     pfield->b1.x2f = pfield->b.x2f;
     pfield->b1.x3f = pfield->b.x3f;
     pfield->pint->CT(pmb, pfield->b1, pfluid->w, pfield->bcc, 1);
-    pbval->LoadAndSendFieldBoundaryBuffer(inner_x1,pfield->b1,1);
     pbval->LoadAndSendFieldBoundaryBuffer(outer_x1,pfield->b1,1);
+    pbval->LoadAndSendFieldBoundaryBuffer(inner_x1,pfield->b1,1);
   }
   return true;
 }
@@ -86,8 +86,8 @@ bool FluidRecvX1SendX2(MeshBlock *pmb, int task_arg)
     rf=pbval->ReceiveAndSetFluidBoundary(outer_x1,pfluid->u,0);
     if(lf==true && rf==true) {
       if(pmb->pmy_mesh->mesh_size.nx2>1) { // 2D or 3D
-        pbval->LoadAndSendFluidBoundaryBuffer(inner_x2,pfluid->u,0);
         pbval->LoadAndSendFluidBoundaryBuffer(outer_x2,pfluid->u,0);
+        pbval->LoadAndSendFluidBoundaryBuffer(inner_x2,pfluid->u,0);
       }
       return true;
     }
@@ -97,8 +97,8 @@ bool FluidRecvX1SendX2(MeshBlock *pmb, int task_arg)
     rf=pbval->ReceiveAndSetFluidBoundary(outer_x1,pfluid->u1,1);
     if(lf==true && rf==true) {
       if(pmb->pmy_mesh->mesh_size.nx2>1) { // 2D or 3D
-        pbval->LoadAndSendFluidBoundaryBuffer(inner_x2,pfluid->u1,1);
         pbval->LoadAndSendFluidBoundaryBuffer(outer_x2,pfluid->u1,1);
+        pbval->LoadAndSendFluidBoundaryBuffer(inner_x2,pfluid->u1,1);
       }
       return true;
     }
@@ -116,8 +116,8 @@ bool FieldRecvX1SendX2(MeshBlock *pmb, int task_arg)
     rf=pbval->ReceiveAndSetFieldBoundary(outer_x1,pfield->b,0);
     if(lf==true && rf==true) {
       if(pmb->pmy_mesh->mesh_size.nx2>1) { // 2D or 3D
-        pbval->LoadAndSendFieldBoundaryBuffer(inner_x2,pfield->b,0);
         pbval->LoadAndSendFieldBoundaryBuffer(outer_x2,pfield->b,0);
+        pbval->LoadAndSendFieldBoundaryBuffer(inner_x2,pfield->b,0);
       }
       return true;
     }
@@ -127,8 +127,8 @@ bool FieldRecvX1SendX2(MeshBlock *pmb, int task_arg)
     rf=pbval->ReceiveAndSetFieldBoundary(outer_x1,pfield->b1,1);
     if(lf==true && rf==true) {
       if(pmb->pmy_mesh->mesh_size.nx2>1) { // 2D or 3D
-        pbval->LoadAndSendFieldBoundaryBuffer(inner_x2,pfield->b1,1);
         pbval->LoadAndSendFieldBoundaryBuffer(outer_x2,pfield->b1,1);
+        pbval->LoadAndSendFieldBoundaryBuffer(inner_x2,pfield->b1,1);
       }
       return true;
     }
@@ -146,8 +146,8 @@ bool FluidRecvX2SendX3(MeshBlock *pmb, int task_arg)
     rf=pbval->ReceiveAndSetFluidBoundary(outer_x2,pfluid->u,0);
     if(lf==true && rf==true) {
       if(pmb->pmy_mesh->mesh_size.nx3>1) { // 3D
-        pbval->LoadAndSendFluidBoundaryBuffer(inner_x3,pfluid->u,0);
         pbval->LoadAndSendFluidBoundaryBuffer(outer_x3,pfluid->u,0);
+        pbval->LoadAndSendFluidBoundaryBuffer(inner_x3,pfluid->u,0);
       }
       return true;
     }
@@ -157,8 +157,8 @@ bool FluidRecvX2SendX3(MeshBlock *pmb, int task_arg)
     rf=pbval->ReceiveAndSetFluidBoundary(outer_x2,pfluid->u1,1);
     if(lf==true && rf==true) {
       if(pmb->pmy_mesh->mesh_size.nx3>1) { // 3D
-        pbval->LoadAndSendFluidBoundaryBuffer(inner_x3,pfluid->u1,1);
         pbval->LoadAndSendFluidBoundaryBuffer(outer_x3,pfluid->u1,1);
+        pbval->LoadAndSendFluidBoundaryBuffer(inner_x3,pfluid->u1,1);
       }
       return true;
     }
@@ -176,8 +176,8 @@ bool FieldRecvX2SendX3(MeshBlock *pmb, int task_arg)
     rf=pbval->ReceiveAndSetFieldBoundary(outer_x2,pfield->b,0);
     if(lf==true && rf==true) {
       if(pmb->pmy_mesh->mesh_size.nx3>1) { // 2D or 3D
-        pbval->LoadAndSendFieldBoundaryBuffer(inner_x3,pfield->b,0);
         pbval->LoadAndSendFieldBoundaryBuffer(outer_x3,pfield->b,0);
+        pbval->LoadAndSendFieldBoundaryBuffer(inner_x3,pfield->b,0);
       }
       return true;
     }
@@ -187,8 +187,8 @@ bool FieldRecvX2SendX3(MeshBlock *pmb, int task_arg)
     rf=pbval->ReceiveAndSetFieldBoundary(outer_x2,pfield->b1,1);
     if(lf==true && rf==true) {
       if(pmb->pmy_mesh->mesh_size.nx3>1) { // 3D
-        pbval->LoadAndSendFieldBoundaryBuffer(inner_x3,pfield->b1,1);
         pbval->LoadAndSendFieldBoundaryBuffer(outer_x3,pfield->b1,1);
+        pbval->LoadAndSendFieldBoundaryBuffer(inner_x3,pfield->b1,1);
       }
       return true;
     }

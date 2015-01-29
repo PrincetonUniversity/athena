@@ -55,7 +55,7 @@ $(OBJ_DIR):
 # Link objects into executable
 
 $(EXECUTABLE) : $(OBJ_FILES)
-	$(CXX) $(CXXFLAGS) $(LIBRARY_FLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBRARY_FLAGS) 
 
 # Create objects from source files
 
