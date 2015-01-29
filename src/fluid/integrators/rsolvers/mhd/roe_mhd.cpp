@@ -483,76 +483,67 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
 // Adiabatic MHD
 
   if (NON_BAROTROPIC_EOS) {
-    Real h = wroe[IEN];
-    Real vsq,btsq,bt_starsq,vaxsq,hp,twid_asq,cfsq,cf,cssq,cs;
-    Real bt,bt_star,bet2,bet3,bet2_star,bet3_star,bet_starsq,vbet,alpha_f,alpha_s;
-    Real isqrtd,sqrtd,s,twid_a,qf,qs,af_prime,as_prime,afpbb,aspbb,vax;
-    Real norm,cff,css,af,as,afpb,aspb,q2_star,q3_star,vqstr;
-    Real ct2,tsum,tdif,cf2_cs2;
-    Real qa,qb,qc,qd;
-    vsq = v1*v1 + v2*v2 + v3*v3;
-    btsq = b2*b2 + b3*b3;
-    bt_starsq = (gm1 - (gm1 - 1.0)*y)*btsq;
-    vaxsq = b1*b1/d;
-    hp = h - (vaxsq + btsq/d);
-    twid_asq = std::max((gm1*(hp-0.5*vsq)-(gm1-1.0)*x), TINY_NUMBER);
+    Real vsq = v1*v1 + v2*v2 + v3*v3;
+    Real btsq = b2*b2 + b3*b3;
+    Real bt_starsq = (gm1 - (gm1 - 1.0)*y)*btsq;
+    Real vaxsq = b1*b1/d;
+    Real hp = wroe[IEN] - (vaxsq + btsq/d);
+    Real twid_asq = std::max((gm1*(hp-0.5*vsq)-(gm1-1.0)*x), TINY_NUMBER);
 
     // Compute fast- and slow-magnetosonic speeds (eq. B18)
-    ct2 = bt_starsq/d;
-    tsum = vaxsq + ct2 + twid_asq;
-    tdif = vaxsq + ct2 - twid_asq;
-    cf2_cs2 = sqrt((double)(tdif*tdif + 4.0*twid_asq*ct2));
+    Real ct2 = bt_starsq/d;
+    Real tsum = vaxsq + ct2 + twid_asq;
+    Real tdif = vaxsq + ct2 - twid_asq;
+    Real cf2_cs2 = sqrt(tdif*tdif + 4.0*twid_asq*ct2);
 
-    cfsq = 0.5*(tsum + cf2_cs2);
-    cf = sqrt((double)cfsq);
+    Real cfsq = 0.5*(tsum + cf2_cs2);
+    Real cf = sqrt(cfsq);
 
-    cssq = twid_asq*vaxsq/cfsq;
-    cs = sqrt((double)cssq);
+    Real cssq = twid_asq*vaxsq/cfsq;
+    Real cs = sqrt(cssq);
 
     // Compute beta(s) (eqs. A17, B20, B28)
-    bt = sqrt(btsq);
-    bt_star = sqrt(bt_starsq);
-    if (bt == 0.0) {
-      bet2 = 1.0;
-      bet3 = 0.0;
-    } else {
+    Real bt = sqrt(btsq);
+    Real bt_star = sqrt(bt_starsq);
+    Real bet2=1.0;
+    Real bet3=0.0;
+    if (bt != 0.0) {
       bet2 = b2/bt;
       bet3 = b3/bt;
     }
-    bet2_star = bet2/sqrt(gm1 - (gm1-1.0)*y);
-    bet3_star = bet3/sqrt(gm1 - (gm1-1.0)*y);
-    bet_starsq = bet2_star*bet2_star + bet3_star*bet3_star;
-    vbet = v2*bet2_star + v3*bet3_star;
+    Real bet2_star = bet2/sqrt(gm1 - (gm1-1.0)*y);
+    Real bet3_star = bet3/sqrt(gm1 - (gm1-1.0)*y);
+    Real bet_starsq = bet2_star*bet2_star + bet3_star*bet3_star;
+    Real vbet = v2*bet2_star + v3*bet3_star;
 
     // Compute alpha(s) (eq. A16)
-    if ((cfsq-cssq) == 0.0) {
-      alpha_f = 1.0;
-      alpha_s = 0.0;
-    } else if ( (twid_asq - cssq) <= 0.0) {
+    Real alpha_f=1.0;
+    Real alpha_s=0.0;
+    if ((twid_asq - cssq) <= 0.0) {
       alpha_f = 0.0;
       alpha_s = 1.0;
-    } else if ( (cfsq - twid_asq) <= 0.0) {
+    } else if ((cfsq - twid_asq) <= 0.0) {
       alpha_f = 1.0;
       alpha_s = 0.0;
-    } else {
+    } else if ((cfsq-cssq) != 0.0){
       alpha_f = sqrt((twid_asq - cssq)/(cfsq - cssq));
       alpha_s = sqrt((cfsq - twid_asq)/(cfsq - cssq));
     }
 
     // Compute Q(s) and A(s) (eq. A14-15), etc.
-    sqrtd = sqrt(d);
-    isqrtd = 1.0/sqrtd;
-    s = SIGN(b1);
-    twid_a = sqrt(twid_asq);
-    qf = cf*alpha_f*s;
-    qs = cs*alpha_s*s;
-    af_prime = twid_a*alpha_f*isqrtd;
-    as_prime = twid_a*alpha_s*isqrtd;
-    afpbb = af_prime*bt_star*bet_starsq;
-    aspbb = as_prime*bt_star*bet_starsq;
+    Real sqrtd = sqrt(d);
+    Real isqrtd = 1.0/sqrtd;
+    Real s = SIGN(b1);
+    Real twid_a = sqrt(twid_asq);
+    Real qf = cf*alpha_f*s;
+    Real qs = cs*alpha_s*s;
+    Real af_prime = twid_a*alpha_f*isqrtd;
+    Real as_prime = twid_a*alpha_s*isqrtd;
+    Real afpbb = af_prime*bt_star*bet_starsq;
+    Real aspbb = as_prime*bt_star*bet_starsq;
 
     // Compute eigenvalues (eq. B17)
-    vax = sqrt(vaxsq);
+    Real vax = sqrt(vaxsq);
     eigenvalues[0] = v1 - cf;
     eigenvalues[1] = v1 - vax;
     eigenvalues[2] = v1 - cs;
@@ -578,10 +569,10 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
     right_eigenmatrix[1][5] = 0.0;
     right_eigenmatrix[1][6] = alpha_f*eigenvalues[6];
 
-    qa = alpha_f*v2;
-    qb = alpha_s*v2;
-    qc = qs*bet2_star;
-    qd = qf*bet2_star;
+    Real qa = alpha_f*v2;
+    Real qb = alpha_s*v2;
+    Real qc = qs*bet2_star;
+    Real qd = qf*bet2_star;
     right_eigenmatrix[2][0] = qa + qc;
     right_eigenmatrix[2][1] = -bet3;
     right_eigenmatrix[2][2] = qb - qd;
@@ -628,23 +619,23 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
 
     // Left-eigenvectors, stored as ROWS (eq. B29)
     // Normalize by 1/2a^{2}: quantities denoted by \hat{f}
-    norm = 0.5/twid_asq;
-    cff = norm*alpha_f*cf;
-    css = norm*alpha_s*cs;
+    Real norm = 0.5/twid_asq;
+    Real cff = norm*alpha_f*cf;
+    Real css = norm*alpha_s*cs;
     qf *= norm;
     qs *= norm;
-    af = norm*af_prime*d;
-    as = norm*as_prime*d;
-    afpb = norm*af_prime*bt_star;
-    aspb = norm*as_prime*bt_star;
+    Real af = norm*af_prime*d;
+    Real as = norm*as_prime*d;
+    Real afpb = norm*af_prime*bt_star;
+    Real aspb = norm*as_prime*bt_star;
   
     // Normalize by (gamma-1)/2a^{2}: quantities denoted by \bar{f}
     norm *= gm1;
     alpha_f *= norm;
     alpha_s *= norm;
-    q2_star = bet2_star/bet_starsq;
-    q3_star = bet3_star/bet_starsq;
-    vqstr = (v2*q2_star + v3*q3_star);
+    Real q2_star = bet2_star/bet_starsq;
+    Real q3_star = bet3_star/bet_starsq;
+    Real vqstr = (v2*q2_star + v3*q3_star);
     norm *= 2.0;
   
     left_eigenmatrix[0][0] = alpha_f*(vsq-hp) + cff*(cf+v1) - qs*vqstr - aspb;
@@ -706,70 +697,62 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
 // Isothermal MHD
 
   } else {
-    Real btsq,bt_starsq,vaxsq,twid_csq,cfsq,cf,cssq,cs;
-    Real bt,bt_star,bet2,bet3,bet2_star,bet3_star,bet_starsq,alpha_f,alpha_s;
-    Real sqrtd,s,twid_c,qf,qs,af_prime,as_prime,vax;
-    Real norm,cff,css,af,as,afpb,aspb,q2_star,q3_star,vqstr;
-    Real ct2,tsum,tdif,cf2_cs2;
     Real di = 1.0/d;
-    btsq = b2*b2 + b3*b3;
-    bt_starsq = btsq*y;
-    vaxsq = b1*b1*di;
-    twid_csq = (iso_cs*iso_cs) + x;
+    Real btsq = b2*b2 + b3*b3;
+    Real bt_starsq = btsq*y;
+    Real vaxsq = b1*b1*di;
+    Real twid_csq = (iso_cs*iso_cs) + x;
 
     // Compute fast- and slow-magnetosonic speeds (eq. B39)
-    ct2 = bt_starsq*di;
-    tsum = vaxsq + ct2 + twid_csq;
-    tdif = vaxsq + ct2 - twid_csq;
-    cf2_cs2 = sqrt((double)(tdif*tdif + 4.0*twid_csq*ct2));
+    Real ct2 = bt_starsq*di;
+    Real tsum = vaxsq + ct2 + twid_csq;
+    Real tdif = vaxsq + ct2 - twid_csq;
+    Real cf2_cs2 = sqrt(tdif*tdif + 4.0*twid_csq*ct2);
   
-    cfsq = 0.5*(tsum + cf2_cs2);
-    cf = sqrt((double)cfsq);
+    Real cfsq = 0.5*(tsum + cf2_cs2);
+    Real cf = sqrt(cfsq);
    
-    cssq = twid_csq*vaxsq/cfsq;
-    cs = sqrt((double)cssq);
+    Real cssq = twid_csq*vaxsq/cfsq;
+    Real cs = sqrt(cssq);
   
     // Compute beta's (eqs. A17, B28, B40)
-    bt = sqrt(btsq);
-    bt_star = sqrt(bt_starsq);
-    if (bt == 0.0) {
-      bet2 = 1.0;
-      bet3 = 0.0;
-    } 
-    else {
+    Real bt = sqrt(btsq);
+    Real bt_star = sqrt(bt_starsq);
+    Real bet2 = 1.0;
+    Real bet3 = 0.0;
+    if (bt != 0.0) {
       bet2 = b2/bt;
       bet3 = b3/bt;
     }
-    bet2_star = bet2/sqrt(y);
-    bet3_star = bet3/sqrt(y);
-    bet_starsq = bet2_star*bet2_star + bet3_star*bet3_star;
+    Real bet2_star = bet2/sqrt(y);
+    Real bet3_star = bet3/sqrt(y);
+    Real bet_starsq = bet2_star*bet2_star + bet3_star*bet3_star;
 
     // Compute alpha's (eq. A16)
-    if ((cfsq-cssq) == 0.0) {
-      alpha_f = 1.0;
-      alpha_s = 0.0;
-    } else if ((twid_csq - cssq) <= 0.0) {
+    Real alpha_f = 1.0;
+    Real alpha_s = 0.0;
+    if ((twid_csq - cssq) <= 0.0) {
       alpha_f = 0.0;
       alpha_s = 1.0;
     } else if ((cfsq - twid_csq) <= 0.0) {
       alpha_f = 1.0;
       alpha_s = 0.0;
-    } else {
+    } else if ((cfsq-cssq) != 0.0) {
       alpha_f = sqrt((twid_csq - cssq)/(cfsq - cssq));
       alpha_s = sqrt((cfsq - twid_csq)/(cfsq - cssq));
     }
 
     // Compute Q's (eq. A14-15), etc.
-    sqrtd = sqrt(d);
-    s = SIGN(b1);
-    twid_c = sqrt(twid_csq);
-    qf = cf*alpha_f*s;
-    qs = cs*alpha_s*s;
-    af_prime = twid_c*alpha_f/sqrtd;
-    as_prime = twid_c*alpha_s/sqrtd;
+    Real sqrtd = sqrt(d);
+    Real s = SIGN(b1);
+    Real twid_c = sqrt(twid_csq);
+    Real qf = cf*alpha_f*s;
+    Real qs = cs*alpha_s*s;
+    Real af_prime = twid_c*alpha_f/sqrtd;
+    Real as_prime = twid_c*alpha_s/sqrtd;
 
     // Compute eigenvalues (eq. B38)
-    vax  = sqrt(vaxsq);
+    Real vax  = sqrt(vaxsq);
     eigenvalues[0] = v1 - cf;
     eigenvalues[1] = v1 - vax;
     eigenvalues[2] = v1 - cs;
@@ -822,19 +805,19 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
 
     // Left-eigenvectors, stored as ROWS (eq. B41)
     // Normalize by 1/2a^{2}: quantities denoted by \hat{f}
-    norm = 0.5/twid_csq;
-    cff = norm*alpha_f*cf;
-    css = norm*alpha_s*cs;
+    Real norm = 0.5/twid_csq;
+    Real cff = norm*alpha_f*cf;
+    Real css = norm*alpha_s*cs;
     qf *= norm;
     qs *= norm;
-    af = norm*af_prime*d;
-    as = norm*as_prime*d;
-    afpb = norm*af_prime*bt_star;
-    aspb = norm*as_prime*bt_star;
+    Real af = norm*af_prime*d;
+    Real as = norm*as_prime*d;
+    Real afpb = norm*af_prime*bt_star;
+    Real aspb = norm*as_prime*bt_star;
 
-    q2_star = bet2_star/bet_starsq;
-    q3_star = bet3_star/bet_starsq;
-    vqstr = (v2*q2_star + v3*q3_star);
+    Real q2_star = bet2_star/bet_starsq;
+    Real q3_star = bet3_star/bet_starsq;
+    Real vqstr = (v2*q2_star + v3*q3_star);
   
     left_eigenmatrix[0][0] = cff*(cf+v1) - qs*vqstr - aspb;
     left_eigenmatrix[0][1] = -cff;
