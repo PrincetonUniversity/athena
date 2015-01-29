@@ -833,6 +833,10 @@ void BoundaryValues::LoadAndSendEFluxBoundaryBuffer(InterfaceField &fsrc,
         for(int j=js; j<=je; j++)
           eflux_send_[inner_x1][p++]=fsrc.x3f(X3E2,k,j,is);
       }
+      for(int k=ks; k<=ke+1; k++) {
+        for(int j=js; j<=je; j++)
+          eflux_send_[inner_x1][p++]=wsrc.x3f(k,j,is);
+      }
     }
     if(pmb->neighbor[outer_x1][0][0].gid!=-1) {
       p=0;
@@ -847,6 +851,10 @@ void BoundaryValues::LoadAndSendEFluxBoundaryBuffer(InterfaceField &fsrc,
       for(int k=ks; k<=ke+1; k++) {
         for(int j=js; j<=je; j++)
           eflux_send_[outer_x1][p++]=fsrc.x3f(X3E2,k,j,ie);
+      }
+      for(int k=ks; k<=ke+1; k++) {
+        for(int j=js; j<=je; j++)
+          eflux_send_[outer_x1][p++]=wsrc.x3f(k,j,ie);
       }
     }
     if(pmb->neighbor[inner_x2][0][0].gid!=-1) {
@@ -863,6 +871,10 @@ void BoundaryValues::LoadAndSendEFluxBoundaryBuffer(InterfaceField &fsrc,
         for(int i=is; i<=ie; i++)
           eflux_send_[inner_x2][p++]=fsrc.x3f(X3E1,k,js,i);
       }
+      for(int k=ks; k<=ke+1; k++) {
+        for(int i=is; i<=ie; i++)
+          eflux_send_[inner_x2][p++]=wsrc.x3f(k,js,i);
+      }
     }
     if(pmb->neighbor[outer_x2][0][0].gid!=-1) {
       p=0;
@@ -878,6 +890,10 @@ void BoundaryValues::LoadAndSendEFluxBoundaryBuffer(InterfaceField &fsrc,
         for(int i=is; i<=ie; i++)
           eflux_send_[outer_x2][p++]=fsrc.x3f(X3E1,k,je,i);
       }
+      for(int k=ks; k<=ke+1; k++) {
+        for(int i=is; i<=ie; i++)
+          eflux_send_[outer_x2][p++]=wsrc.x3f(k,je,i);
+      }
     }
     if(pmb->neighbor[inner_x3][0][0].gid!=-1) {
       p=0;
@@ -885,13 +901,17 @@ void BoundaryValues::LoadAndSendEFluxBoundaryBuffer(InterfaceField &fsrc,
         for(int i=is; i<=ie+1; i++)
           eflux_send_[inner_x3][p++]=fsrc.x1f(X1E2,ks,j,i);
       }
+      for(int j=js; j<=je; j++) {
+        for(int i=is; i<=ie+1; i++)
+          eflux_send_[inner_x3][p++]=wsrc.x1f(ks,j,i);
+      }
       for(int j=js; j<=je+1; j++) {
         for(int i=is; i<=ie; i++)
           eflux_send_[inner_x3][p++]=fsrc.x2f(X2E1,ks,j,i);
       }
       for(int j=js; j<=je+1; j++) {
         for(int i=is; i<=ie; i++)
-          eflux_send_[inner_x3][p++]=wsrc.x3f(ks,j,i);
+          eflux_send_[inner_x3][p++]=wsrc.x2f(ks,j,i);
       }
     }
     if(pmb->neighbor[outer_x3][0][0].gid!=-1) {
@@ -900,13 +920,17 @@ void BoundaryValues::LoadAndSendEFluxBoundaryBuffer(InterfaceField &fsrc,
         for(int i=is; i<=ie+1; i++)
           eflux_send_[outer_x3][p++]=fsrc.x1f(X1E2,ke,j,i);
       }
+      for(int j=js; j<=je; j++) {
+        for(int i=is; i<=ie+1; i++)
+          eflux_send_[outer_x3][p++]=wsrc.x1f(ke,j,i);
+      }
       for(int j=js; j<=je+1; j++) {
         for(int i=is; i<=ie; i++)
           eflux_send_[outer_x3][p++]=fsrc.x2f(X2E1,ke,j,i);
       }
       for(int j=js; j<=je+1; j++) {
         for(int i=is; i<=ie; i++)
-          eflux_send_[outer_x3][p++]=wsrc.x3f(ke,j,i);
+          eflux_send_[outer_x3][p++]=wsrc.x2f(ke,j,i);
       }
     }
   }
@@ -1036,6 +1060,10 @@ bool BoundaryValues::ReceiveAndSetEFluxBoundary(InterfaceField &fdst,
         for(int j=js; j<=je; j++)
           fdst.x3f(X3E2,k,j,is-1)=eflux_recv_[inner_x1][p++];
       }
+      for(int k=ks; k<=ke+1; k++) {
+        for(int j=js; j<=je; j++)
+          wdst.x3f(k,j,is-1)=eflux_recv_[inner_x1][p++];
+      }
     }
     eflux_flag_[inner_x1][0][0] = false; // clear the flag
     if(pmb->neighbor[outer_x1][0][0].gid==-1) // physical boundary
@@ -1053,6 +1081,10 @@ bool BoundaryValues::ReceiveAndSetEFluxBoundary(InterfaceField &fdst,
       for(int k=ks; k<=ke+1; k++) {
         for(int j=js; j<=je; j++)
           fdst.x3f(X3E2,k,j,ie+1)=eflux_recv_[outer_x1][p++];
+      }
+      for(int k=ks; k<=ke+1; k++) {
+        for(int j=js; j<=je; j++)
+          wdst.x3f(k,j,ie+1)=eflux_recv_[outer_x1][p++];
       }
     }
     eflux_flag_[outer_x1][0][0] = false; // clear the flag
@@ -1072,6 +1104,10 @@ bool BoundaryValues::ReceiveAndSetEFluxBoundary(InterfaceField &fdst,
         for(int i=is; i<=ie; i++)
           fdst.x3f(X3E1,k,js-1,i)=eflux_recv_[inner_x2][p++];
       }
+      for(int k=ks; k<=ke+1; k++) {
+        for(int i=is; i<=ie; i++)
+          wdst.x3f(k,js-1,i)=eflux_recv_[inner_x2][p++];
+      }
     }
     eflux_flag_[inner_x2][0][0] = false; // clear the flag
     if(pmb->neighbor[outer_x2][0][0].gid==-1) // physical boundary
@@ -1090,6 +1126,10 @@ bool BoundaryValues::ReceiveAndSetEFluxBoundary(InterfaceField &fdst,
         for(int i=is; i<=ie; i++)
           fdst.x3f(X3E1,k,je+1,i)=eflux_recv_[outer_x2][p++];
       }
+      for(int k=ks; k<=ke+1; k++) {
+        for(int i=is; i<=ie; i++)
+          wdst.x3f(k,je+1,i)=eflux_recv_[outer_x2][p++];
+      }
     }
     eflux_flag_[outer_x2][0][0] = false; // clear the flag
     if(pmb->neighbor[inner_x3][0][0].gid==-1) // physical boundary
@@ -1100,13 +1140,17 @@ bool BoundaryValues::ReceiveAndSetEFluxBoundary(InterfaceField &fdst,
         for(int i=is; i<=ie+1; i++)
           fdst.x1f(X1E2,ks-1,j,i)=eflux_recv_[inner_x3][p++];
       }
+      for(int j=js; j<=je; j++) {
+        for(int i=is; i<=ie+1; i++)
+          wdst.x1f(ks-1,j,i)=eflux_recv_[inner_x3][p++];
+      }
       for(int j=js; j<=je+1; j++) {
         for(int i=is; i<=ie; i++)
           fdst.x2f(X2E1,ks-1,j,i)=eflux_recv_[inner_x3][p++];
       }
       for(int j=js; j<=je+1; j++) {
         for(int i=is; i<=ie; i++)
-          wdst.x3f(ks-1,j,i)=eflux_recv_[inner_x3][p++];
+          wdst.x2f(ks-1,j,i)=eflux_recv_[inner_x3][p++];
       }
     }
     eflux_flag_[inner_x3][0][0] = false; // clear the flag
@@ -1118,13 +1162,17 @@ bool BoundaryValues::ReceiveAndSetEFluxBoundary(InterfaceField &fdst,
         for(int i=is; i<=ie+1; i++)
           fdst.x1f(X1E2,ke+1,j,i)=eflux_recv_[outer_x3][p++];
       }
+      for(int j=js; j<=je; j++) {
+        for(int i=is; i<=ie+1; i++)
+          wdst.x1f(ke+1,j,i)=eflux_recv_[outer_x3][p++];
+      }
       for(int j=js; j<=je+1; j++) {
         for(int i=is; i<=ie; i++)
           fdst.x2f(X2E1,ke+1,j,i)=eflux_recv_[outer_x3][p++];
       }
       for(int j=js; j<=je+1; j++) {
         for(int i=is; i<=ie; i++)
-          wdst.x3f(ke+1,j,i)=eflux_recv_[outer_x3][p++];
+          wdst.x2f(ke+1,j,i)=eflux_recv_[outer_x3][p++];
       }
     }
     eflux_flag_[outer_x3][0][0] = false; // clear the flag
@@ -1536,9 +1584,9 @@ void InitBoundaryBuffer(int nx1, int nx2, int nx3)
         eflux_bufsize_[inner_x2]=eflux_bufsize_[outer_x2]=(nx1+1)*2;
       }
       else { // 3D
-        eflux_bufsize_[inner_x1]=eflux_bufsize_[outer_x1]=(nx2+1)*nx3*2+nx2*(nx3+1);
-        eflux_bufsize_[inner_x2]=eflux_bufsize_[outer_x2]=(nx1+1)*nx3*2+nx1*(nx3+1);
-        eflux_bufsize_[inner_x3]=eflux_bufsize_[outer_x3]=(nx1+1)*nx2+nx1*(nx2+1)*2;
+        eflux_bufsize_[inner_x1]=eflux_bufsize_[outer_x1]=(nx2+1)*nx3*2+nx2*(nx3+1)*2;
+        eflux_bufsize_[inner_x2]=eflux_bufsize_[outer_x2]=(nx1+1)*nx3*2+nx1*(nx3+1)*2;
+        eflux_bufsize_[inner_x3]=eflux_bufsize_[outer_x3]=(nx1+1)*nx2*2+nx1*(nx2+1)*2;
       }
     }
   }
