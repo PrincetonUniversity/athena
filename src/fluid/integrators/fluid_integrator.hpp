@@ -36,19 +36,34 @@ public:
     const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
     AthenaArray<Real> &wr, AthenaArray<Real> &flx);
 
-  void ReconstructionFuncX1(const int n, const int m, const int k, const int j,
-    const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+  void PiecewiseLinearX1(const int k, const int j,
+    const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
+    AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
-  void ReconstructionFuncX2(const int n, const int m, const int k, const int j,
-    const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+  void PiecewiseLinearX2(const int k, const int j,
+    const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
+    AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
-  void ReconstructionFuncX3(const int n, const int m, const int k, const int j, 
-    const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+  void PiecewiseLinearX3(const int k, const int j,
+    const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
+    AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void DonorCellX1(const int k, const int j,
+    const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
+    AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void DonorCellX2(const int k, const int j,
+    const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
+    AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void DonorCellX3(const int k, const int j,
+    const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
+    AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
 private:
 // scratch space used in integrator
-  AthenaArray<Real> wl_, wr_, flx_, src_; 
-  AthenaArray<Real> face_area_, cell_volume_;
+  AthenaArray<Real> q_, wl_, wr_, flx_, jflx_, kflx_, src_; 
+  AthenaArray<Real> face_area_, face_area_m1_, cell_volume_;
   AthenaArray<Real> b_normal_;  // only used in SR/GRMHD
   AthenaArray<Real> g_, g_inv_;  // metric and inverse, used in some GR Riemann solvers
 };

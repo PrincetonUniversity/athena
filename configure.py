@@ -151,11 +151,14 @@ makefile_options = {}
 
 #--- Step 3.  Test for incompatible arguments ------------------------------------------
 
-if args['eos']=='isothermal' and args['flux']=='hllc':
-  raise SystemExit('### CONFIGURE ERROR: isothermal EOS cannot be used with HLLC flux')
+if args['flux']=='hllc' and args['eos']=='isothermal':
+  raise SystemExit('### CONFIGURE ERROR: HLLC flux cannot be used with isothermal EOS')
 
 if args['flux']=='hllc' and args['b']:
   raise SystemExit('### CONFIGURE ERROR: HLLC flux cannot be used with MHD')
+
+if args['flux']=='hlld' and not args['b']:
+  raise SystemExit('### CONFIGURE ERROR: HLLD flux can only be used with MHD')
 
 #--- Step 4.  Set definitions and Makefile options based on above arguments ------------
 
