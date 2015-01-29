@@ -28,8 +28,8 @@
 #include "../../../eos/eos.hpp"           // GetGamma
 
 // function to compute eigenvalues and eigenvectors of Roe's matrix A
-inline void RoeEigensystem(const Real wroe[], const Real b1, const Real x, const Real y,
-  Real eigenvalues[],
+inline static void RoeEigensystem(const Real wroe[], const Real b1, 
+  const Real x, const Real y, Real eigenvalues[],
   Real right_eigenmatrix[][(NWAVE)], Real left_eigenmatrix[][(NWAVE)]);
 
 // (gamma-1) and isothermal sound speed made global so can be shared with eigensystem
@@ -469,8 +469,8 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 //   astrophysical MHD", ApJS, (2008), Appendix B  Equation numbers refer to this paper.
 //--------------------------------------------------------------------------------------
 
-inline void RoeEigensystem(const Real wroe[], const Real b1, const Real x, const Real y,
-  Real eigenvalues[],
+inline static void RoeEigensystem(const Real wroe[], const Real b1, 
+  const Real x, const Real y, Real eigenvalues[],
   Real right_eigenmatrix[][(NWAVE)], Real left_eigenmatrix[][(NWAVE)])
 {
   Real d  = wroe[IDN];

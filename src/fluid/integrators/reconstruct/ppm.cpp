@@ -32,7 +32,8 @@
 //! \fn FluidIntegrator::ReconstructionFuncX1()
 //  \brief 
 
-void FluidIntegrator::ReconstructionFuncX1(const int n, const int m, const int k,
+/*
+void FluidIntegrator::PiecewiseParabolicX1(const int n, const int m, const int k,
   const int j, const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
 
@@ -79,7 +80,7 @@ void FluidIntegrator::ReconstructionFuncX1(const int n, const int m, const int k
 //! \fn FluidIntegrator::ReconstructionFuncX2()
 //  \brief 
 
-void FluidIntegrator::ReconstructionFuncX2(const int n, const int m, const int k,
+void FluidIntegrator::PiecewiseParabolicX2(const int n, const int m, const int k,
   const int j, const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
   return;
@@ -89,8 +90,9 @@ void FluidIntegrator::ReconstructionFuncX2(const int n, const int m, const int k
 //! \fn FluidIntegrator::ReconstructionFuncX3()
 //  \brief 
 
-void FluidIntegrator::ReconstructionFuncX3(const int n, const int m, const int k,
+void FluidIntegrator::PiecewiseParabolicX3(const int n, const int m, const int k,
   const int j, const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
   return;
 }
+*/
