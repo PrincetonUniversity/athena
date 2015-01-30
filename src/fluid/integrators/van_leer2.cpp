@@ -56,10 +56,6 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   int max_nthreads = pmb->pmy_mesh->nthreads_mesh;
  
-//  AthenaArray<Real> u = pmb->pfluid->u.ShallowCopy();
-//  AthenaArray<Real> w = pmb->pfluid->w.ShallowCopy();
-//  AthenaArray<Real> bcc = pmb->pfield->bcc.ShallowCopy();
-
   AthenaArray<Real> b1,b2,b3,ei_x1f,ei_x2f,ei_x3f,w_x1f,w_x2f,w_x3f;
   b1.InitWithShallowCopy(b.x1f);
   b2.InitWithShallowCopy(b.x2f);
@@ -83,45 +79,27 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 #ifdef OPENMP_PARALLEL
   tid=omp_get_thread_num();
 #endif
-  AthenaArray<Real> wl, wr, flx, area, vol;
+  AthenaArray<Real> wl, wr, flx, jflx_jm1, kflx_km1, area, area_m1, vol;
   wl.InitWithShallowSlice(wl_,3,tid,1);
   wr.InitWithShallowSlice(wr_,3,tid,1);
   flx.InitWithShallowSlice(flx_,3,tid,1);
+  jflx_jm1.InitWithShallowSlice(jflx_,3,tid,1);
+  kflx_km1.InitWithShallowSlice(kflx_,4,tid,1);
   area.InitWithShallowSlice(face_area_,2,tid,1);
+  area_m1.InitWithShallowSlice(face_area_m1_,2,tid,1);
   vol.InitWithShallowSlice(cell_volume_,2,tid,1);
 
 //--------------------------------------------------------------------------------------
 // i-direction
 
   for (int k=ks; k<=ke; ++k){ 
-
 #pragma omp for schedule(static)
     for (int j=js; j<=je; ++j){
 
       if (step == 1) {  // reconstruction in predict step
-        for (int n=0; n<NFLUID; ++n){
-#pragma simd
-        for (int i=is; i<=ie+1; ++i){
-          wl(n,i) = w(n,k,j,i-1);
-          wr(n,i) = w(n,k,j,i  );
-        }}
-        if (MAGNETIC_FIELDS_ENABLED) {
-#pragma simd
-          for (int i=is; i<=ie+1; ++i){
-            wl(IBY,i) = bcc(IB2,k,j,i-1);
-            wl(IBZ,i) = bcc(IB3,k,j,i-1);
-            wr(IBY,i) = bcc(IB2,k,j,i  );
-            wr(IBZ,i) = bcc(IB3,k,j,i  );
-          }
-        }
+        DonorCellX1(k,j,w,bcc,wl,wr);
       } else { // reconstruction in correct step
-        for (int n=0; n<NFLUID; ++n) {
-          ReconstructionFuncX1(n,n,k,j,w,wl,wr);
-        }
-        if (MAGNETIC_FIELDS_ENABLED) {
-          ReconstructionFuncX1(IB2,IBY,k,j,bcc,wl,wr);
-          ReconstructionFuncX1(IB3,IBZ,k,j,bcc,wl,wr);
-        }
+        PiecewiseLinearX1(k,j,w,bcc,wl,wr);
       }
 
       RiemannSolver(k,j,is,ie+1,IVX,b1,wl,wr,flx);
@@ -132,9 +110,8 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
       for (int n=0; n<NFLUID; ++n){
 #pragma simd
         for (int i=is; i<=ie; ++i){
-          Real& flxi   = flx(n,  i);
+          Real& flxi   = flx(n,i  );
           Real& flxip1 = flx(n,i+1);
-
           Real& area_i   = area(i);
           Real& area_ip1 = area(i+1);
           Real& dvol = vol(i);
@@ -148,10 +125,11 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
         for (int i=is; i<=ie+1; ++i){
           ei_x1f(X1E3,k,j,i) = -flx(IBY,i); // flx(IBY) = (v1*b2 - v2*b1) = -EMFZ
           ei_x1f(X1E2,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v1*b3 - v3*b1) =  EMFY
-// estimate weight used to upwind electric fields in GS07 algorithm
-          Real fac = (1024)*dt/pmb->pcoord->CenterWidth1(k,j,i);
-          Real rat = std::min( 0.5, (fac*flx(IDN,i)/(u(IDN,k,j,i-1)+u(IDN,k,j,i))) );
-          w_x1f(k,j,i) = 0.5 + std::max(-0.5,rat);
+          // estimate weight used to upwind electric fields in GS07 algorithm
+          const Real& dx = pmb->pcoord->CenterWidth1(k,j,i);
+          Real v_over_c = (1024)*dt*flx(IDN,i)/(dx*(wl(IDN,i) + wr(IDN,i)));
+          Real tmp_min = std::min(0.5,v_over_c);
+          w_x1f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
         }
       }
 
@@ -165,64 +143,53 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 
     for (int k=ks; k<=ke; ++k){
 
+      //--- Step 1 j-direction:  compute and store fluxes at j=js
+      if (step == 1) {  // reconstruction in predict step
+        DonorCellX2(k,js,w,bcc,wl,wr);
+      } else {  // reconstruction in correct step
+        PiecewiseLinearX2(k,js,w,bcc,wl,wr);
+      }
+      RiemannSolver(k,js,is,ie,IVY,b2,wl,wr,jflx_jm1); 
+
+      if (MAGNETIC_FIELDS_ENABLED) {
+#pragma simd
+        for (int i=is; i<=ie; ++i){
+          ei_x2f(X2E1,k,js,i) = -jflx_jm1(IBY,i); // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
+          ei_x2f(X2E3,k,js,i) =  jflx_jm1(IBZ,i); // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
+          // estimate weight used to upwind electric fields in GS07 algorithm
+          const Real& dx = pmb->pcoord->CenterWidth2(k,js,i);
+          Real v_over_c = (1024)*dt*jflx_jm1(IDN,i)/(dx*(wl(IDN,i) + wr(IDN,i)));
+          Real tmp_min = std::min(0.5,v_over_c);
+          w_x2f(k,js,i) = 0.5 + std::max(-0.5,tmp_min);
+        }
+      }
+
+      //--- Step 2 j-direction: compute fluxes over [js+1:je+1], update U[js:je] 
 #pragma omp for schedule(static)
-      for (int j=js; j<=je+1; ++j){
+      for (int j=js+1; j<=je+1; ++j){
 
         if (step == 1) {  // reconstruction in predict step
-          for (int n=0; n<NFLUID; ++n){
-#pragma simd
-          for (int i=is; i<=ie; ++i){
-            wl(n,i) = w(n,k,j-1,i);
-            wr(n,i) = w(n,k,j  ,i);
-          }}
-          if (MAGNETIC_FIELDS_ENABLED) {
-#pragma simd
-            for (int i=is; i<=ie; ++i){
-              wl(IBY,i) = bcc(IB3,k,j-1,i);
-              wl(IBZ,i) = bcc(IB1,k,j-1,i);
-              wr(IBY,i) = bcc(IB3,k,j  ,i);
-              wr(IBZ,i) = bcc(IB1,k,j  ,i);
-            }
-          }
+          DonorCellX2(k,j,w,bcc,wl,wr);
         } else {  // reconstruction in correct step
-          for (int n=0; n<NFLUID; ++n) {
-            ReconstructionFuncX2(n,n,k,j,w,wl,wr);
-          }
-          if (MAGNETIC_FIELDS_ENABLED) {
-            ReconstructionFuncX2(IB3,IBY,k,j,bcc,wl,wr);
-            ReconstructionFuncX2(IB1,IBZ,k,j,bcc,wl,wr);
-          }
+          PiecewiseLinearX2(k,j,w,bcc,wl,wr);
         }
 
         RiemannSolver(k,j,is,ie,IVY,b2,wl,wr,flx); 
 
-        pmb->pcoord->Face2Area(k,j,is,ie,area);
+        pmb->pcoord->Face2Area(k,j-1,is,ie,area_m1);
+        pmb->pcoord->Face2Area(k,j  ,is,ie,area   );
+        pmb->pcoord->CellVolume(k,j-1,is,ie,vol);
 
-        if (j>js) {
-          pmb->pcoord->CellVolume(k,j-1,is,ie,vol);
-          for (int n=0; n<NFLUID; ++n){
+        for (int n=0; n<NFLUID; ++n){
 #pragma simd
-            for (int i=is; i<=ie; ++i){
-              Real& flxj  = flx(n,i);
-              Real& area_i   = area(i);
-              Real& dvol = vol(i);
+          for (int i=is; i<=ie; ++i){
+            Real& flx_jm1 = jflx_jm1(n,i);
+            Real& flx_j   = flx(n,i);
+            Real& area_j   = area(i);
+            Real& area_jm1 = area_m1(i);
+            Real& dvol = vol(i);
   
-              u(n,k,j-1,i) -= dt*area_i*flxj/dvol;
-            }
-          }
-        }
-
-        if (j<(je+1)) {
-          pmb->pcoord->CellVolume(k,j,is,ie,vol);
-          for (int n=0; n<NFLUID; ++n){
-#pragma simd
-            for (int i=is; i<=ie; ++i){
-              Real& flxj  = flx(n,i);
-              Real& area_i   = area(i);
-              Real& dvol = vol(i);
-
-              u(n,k,j,i) += dt*area_i*flxj/dvol;
-            }
+            u(n,k,j-1,i) -= dt*(area_j*flx_j - area_jm1*flx_jm1)/dvol;
           }
         }
 
@@ -231,12 +198,15 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
           for (int i=is; i<=ie; ++i){
             ei_x2f(X2E1,k,j,i) = -flx(IBY,i); // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
             ei_x2f(X2E3,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
-// estimate weight used to upwind electric fields in GS07 algorithm
-            Real fac = (1024)*dt/pmb->pcoord->CenterWidth2(k,j,i);
-            Real rat = std::min( 0.5, (fac*flx(IDN,i)/(u(IDN,k,j-1,i)+u(IDN,k,j,i))) );
-            w_x2f(k,j,i) = 0.5 + std::max(-0.5,rat);
+            // estimate weight used to upwind electric fields in GS07 algorithm
+            const Real& dx = pmb->pcoord->CenterWidth2(k,j,i);
+            Real v_over_c = (1024)*dt*flx(IDN,i)/(dx*(wl(IDN,i) + wr(IDN,i)));
+            Real tmp_min = std::min(0.5,v_over_c);
+            w_x2f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
           }
         }
+
+        jflx_jm1 = flx; 
 
       }
     }
@@ -247,66 +217,63 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 
   if (pmb->block_size.nx3 > 1) {
 
-    for (int k=ks; k<=ke+1; ++k){
+    //--- Step 1 k-direction:  compute and store fluxes at k=ks over [js:je]
+    for (int j=js; j<=je; ++j){
+      if (step == 1) {  // reconstruction in predict step
+        DonorCellX3(ks,j,w,bcc,wl,wr);
+      } else {  // reconstruction in correct step
+        PiecewiseLinearX3(ks,j,w,bcc,wl,wr);
+      }
+      RiemannSolver(ks,j,is,ie,IVZ,b3,wl,wr,flx);
 
+      if (MAGNETIC_FIELDS_ENABLED) {
+#pragma simd
+        for (int i=is; i<=ie; ++i){
+          ei_x3f(X3E2,ks,j,i) = -flx(IBY,i); // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
+          ei_x3f(X3E1,ks,j,i) =  flx(IBZ,i); // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
+          // estimate weight used to upwind electric fields in GS07 algorithm
+          const Real& dx = pmb->pcoord->CenterWidth3(ks,j,i);
+          Real v_over_c = (1024)*dt*flx(IDN,i)/(dx*(wl(IDN,i) + wr(IDN,i)));
+          Real tmp_min = std::min(0.5,v_over_c);
+          w_x3f(ks,j,i) = 0.5 + std::max(-0.5,tmp_min);
+        }
+      }
+
+      for (int n=0; n<NFLUID; ++n){
+#pragma simd
+        for (int i=is; i<=ie; ++i){
+          kflx_km1(n,j,i) = flx(n,i);
+        }
+      }
+    }
+
+    //--- Step 2 k-direction: compute fluxes over [ks+1:ke+1], update U[ks:ke] 
+    for (int k=ks+1; k<=ke+1; ++k){
 #pragma omp for schedule(static)
       for (int j=js; j<=je; ++j){
 
         if (step == 1) {  // reconstruction in predict step
-          for (int n=0; n<NFLUID; ++n){
-#pragma simd
-          for (int i=is; i<=ie; ++i){
-            wl(n,i) = w(n,k-1,j,i);
-            wr(n,i) = w(n,k  ,j,i);
-          }}
-          if (MAGNETIC_FIELDS_ENABLED) {
-#pragma simd
-            for (int i=is; i<=ie; ++i){
-              wl(IBY,i) = bcc(IB1,k-1,j,i);
-              wl(IBZ,i) = bcc(IB2,k-1,j,i);
-              wr(IBY,i) = bcc(IB1,k  ,j,i);
-              wr(IBZ,i) = bcc(IB2,k  ,j,i);
-            }
-          }
+          DonorCellX3(k,j,w,bcc,wl,wr);
         } else {  // reconstruction in correct step
-          for (int n=0; n<NFLUID; ++n) {
-            ReconstructionFuncX3(n,n,k,j,w,wl,wr);
-          }
-          if (MAGNETIC_FIELDS_ENABLED) {
-            ReconstructionFuncX3(IB1,IBY,k,j,bcc,wl,wr);
-            ReconstructionFuncX3(IB2,IBZ,k,j,bcc,wl,wr);
-          }
+          PiecewiseLinearX3(k,j,w,bcc,wl,wr);
         }
 
         RiemannSolver(k,j,is,ie,IVZ,b3,wl,wr,flx);
 
-        pmb->pcoord->Face3Area(k,j,is,ie,area);
+        pmb->pcoord->Face3Area(k-1,j,is,ie,area_m1);
+        pmb->pcoord->Face3Area(k  ,j,is,ie,area   );
+        pmb->pcoord->CellVolume(k-1,j,is,ie,vol);
   
-        if (k>ks) {
-          pmb->pcoord->CellVolume(k-1,j,is,ie,vol);
-          for (int n=0; n<NFLUID; ++n){
+        for (int n=0; n<NFLUID; ++n){
 #pragma simd
-            for (int i=is; i<=ie; ++i){
-              Real& flxk = flx(n,i);
-              Real& area_i   = area(i);
-              Real& dvol = vol(i);
+          for (int i=is; i<=ie; ++i){
+            Real& flx_km1 = kflx_km1(n,j,i);
+            Real& flx_k   = flx(n,i);
+            Real& area_km1 = area_m1(i);
+            Real& area_k   = area(i);
+            Real& dvol = vol(i);
 
-              u(n,k-1,j,i) -= dt*area_i*flxk/dvol;
-            }
-          }
-        }
-
-        if (k<(ke+1)) {
-          pmb->pcoord->CellVolume(k,j,is,ie,vol);
-          for (int n=0; n<NFLUID; ++n){
-#pragma simd
-            for (int i=is; i<=ie; ++i){
-              Real& flxk = flx(n,i);
-              Real& area_i   = area(i);
-              Real& dvol = vol(i);
-
-              u(n,k,j,i) += dt*area_i*flxk/dvol;
-            }
+            u(n,k-1,j,i) -= dt*(area_k*flx_k - area_km1*flx_km1)/dvol;
           }
         }
 
@@ -315,10 +282,18 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
           for (int i=is; i<=ie; ++i){
             ei_x3f(X3E2,k,j,i) = -flx(IBY,i); // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
             ei_x3f(X3E1,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
-// estimate weight used to upwind electric fields in GS07 algorithm
-            Real fac = (1024)*dt/pmb->pcoord->CenterWidth3(k,j,i);
-            Real rat = std::min( 0.5, (fac*flx(IDN,i)/(u(IDN,k-1,j,i)+u(IDN,k,j,i))) );
-            w_x3f(k,j,i) = 0.5 + std::max(-0.5,rat);
+            // estimate weight used to upwind electric fields in GS07 algorithm
+            const Real& dx = pmb->pcoord->CenterWidth3(k,j,i);
+            Real v_over_c = (1024)*dt*flx(IDN,i)/(dx*(wl(IDN,i) + wr(IDN,i)));
+            Real tmp_min = std::min(0.5,v_over_c);
+            w_x3f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
+          }
+        }
+
+        for (int n=0; n<NFLUID; ++n){
+#pragma simd
+          for (int i=is; i<=ie; ++i){
+            kflx_km1(n,j,i) = flx(n,i);
           }
         }
 

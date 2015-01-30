@@ -5,16 +5,14 @@ problem = GR hydro accretion in radial direction
 problem_id  = BHBondi1D
 
 <output1>
-file_type   = tab
+file_type   = vtk
 variable    = prim
-data_format = %24.16e
-dt          = 1500.0
+dt          = 100.0
 
 <output2>
-file_type   = tab
+file_type   = vtk
 variable    = cons
-data_format = %24.16e
-dt          = 1500.0
+dt          = 100.0
 
 <time>
 cfl_number = 0.4

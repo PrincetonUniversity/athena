@@ -39,23 +39,46 @@ FluidIntegrator::FluidIntegrator(Fluid *pf, ParameterInput *pin)
 
   int max_nthreads = pf->pmy_block->pmy_mesh->nthreads_mesh;
   int ncells1 = pf->pmy_block->block_size.nx1 + 2*(NGHOST);
+  int ncells2 = pf->pmy_block->block_size.nx2 + 2*(NGHOST);
 
+  q_.NewAthenaArray(4,ncells1);
   wl_.NewAthenaArray(max_nthreads,(NWAVE),ncells1);
   wr_.NewAthenaArray(max_nthreads,(NWAVE),ncells1);
   flx_.NewAthenaArray(max_nthreads,(NWAVE),ncells1);
+  jflx_.NewAthenaArray(max_nthreads,(NWAVE),ncells1);
+  kflx_.NewAthenaArray(max_nthreads,(NWAVE),ncells2,ncells1);
   src_.NewAthenaArray(max_nthreads,(NFLUID),ncells1);
   face_area_.NewAthenaArray(max_nthreads,ncells1);
+  face_area_m1_.NewAthenaArray(max_nthreads,ncells1);
   cell_volume_.NewAthenaArray(max_nthreads,ncells1);
+  if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in SR/GRMHD
+    b_normal_.NewAthenaArray(ncells1);
+  if (GENERAL_RELATIVITY)  // only used in GR (and only in certain Riemann solvers)
+  {
+    g_.NewAthenaArray(NMETRIC,ncells1);
+    g_inv_.NewAthenaArray(NMETRIC,ncells1);
+  }
 }
 
 // destructor
 
 FluidIntegrator::~FluidIntegrator()
 {
+  q_.DeleteAthenaArray();
   wl_.DeleteAthenaArray();
   wr_.DeleteAthenaArray();
   flx_.DeleteAthenaArray();
+  jflx_.DeleteAthenaArray();
+  kflx_.DeleteAthenaArray();
   src_.DeleteAthenaArray();
   face_area_.DeleteAthenaArray();
+  face_area_m1_.DeleteAthenaArray();
   cell_volume_.DeleteAthenaArray();
+  if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in SR/GRMHD
+    b_normal_.DeleteAthenaArray();
+  if (GENERAL_RELATIVITY)
+  {
+    g_.DeleteAthenaArray();
+    g_inv_.DeleteAthenaArray();
+  }
 }

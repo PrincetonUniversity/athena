@@ -167,21 +167,21 @@ Real Fluid::NewBlockTimeStep(MeshBlock *pmb)
 
         } else if (MAGNETIC_FIELDS_ENABLED) {
 
+          Real bx = bcc(IB1,k,j,i) + fabs(b_x1f(k,j,i)-bcc(IB1,k,j,i));
           wi[IBY] = bcc(IB2,k,j,i);
           wi[IBZ] = bcc(IB3,k,j,i);
-          Real bx = b_x1f(k,j,i);
           Real cf = pf_eos->FastMagnetosonicSpeed(wi,bx);
           dt1(i)= pmy_block->pcoord->CenterWidth1(k,j,i)/(fabs(wi[IVX]) + cf);
 
           wi[IBY] = bcc(IB3,k,j,i);
           wi[IBZ] = bcc(IB1,k,j,i);
-          bx = b_x2f(k,j,i);
+          bx = bcc(IB2,k,j,i) + fabs(b_x2f(k,j,i)-bcc(IB2,k,j,i));
           cf = pf_eos->FastMagnetosonicSpeed(wi,bx);
           dt2(i)= pmy_block->pcoord->CenterWidth2(k,j,i)/(fabs(wi[IVY]) + cf);
 
           wi[IBY] = bcc(IB1,k,j,i);
           wi[IBZ] = bcc(IB2,k,j,i);
-          bx = b_x3f(k,j,i);
+          bx = bcc(IB3,k,j,i) + fabs(b_x3f(k,j,i)-bcc(IB3,k,j,i));
           cf = pf_eos->FastMagnetosonicSpeed(wi,bx);
           dt3(i)= pmy_block->pcoord->CenterWidth3(k,j,i)/(fabs(wi[IVZ]) + cf);
 

@@ -1,0 +1,73 @@
+<comment>
+problem = GRMHD accretion of spherically symmetric flow
+
+<job>
+problem_id  = MHDBlackHole
+
+<output1>
+file_type   = vtk
+variable    = prim
+dt          = 100.0
+
+<output2>
+file_type   = vtk
+variable    = cons
+dt          = 100.0
+
+<time>
+cfl_number = 0.4
+nlim       = -1
+tlim       = 100.0
+
+<mesh>
+nx1    = 100   # number of zones in r-direction
+x1min  = 3.0   # inner r
+x1max  = 20.0  # outer r
+ix1_bc = 2     # inner r boundary condition: outflow
+ox1_bc = 2     # outer r boundary condition: outflow
+
+nx2    = 100                 # number of zones in theta-direction
+x2min  = 0.7853981633974483  # upper theta (pi/4)
+x2max  = 2.356194490192345   # lower theta (3*pi/4)
+ix2_bc = 2                   # lower theta boundary condition: outflow
+ox2_bc = 2                   # upper theta boundary condition: outflow
+
+nx3    = 100                 # number of zones in phi-direction
+x3min  = -3.141592653589793  # minimum phi (-pi)
+x3max  = 3.141592653589793   # maximum phi (pi)
+ix3_bc = 4                   # minimum phi boundary condition: periodic
+ox3_bc = 4                   # maximum phi boundary condition: periodic
+
+<fluid>
+gamma = 1.6666666666666667  # Gamma = C_p/C_v
+
+<problem>
+mass = 1.0  # black hole mass
+
+rho_inner  = 0.13691571529049434    # initial density in inner cell
+pgas_inner = 0.036371021566097922   # initial gas pressure in inner cell
+v1_inner   = -0.075636117798301636  # initial velocity (r-direction) in inner cell
+v2_inner   = 0.0                    # initial velocity (theta-direction) in inner cell
+v3_inner   = 0.0                    # initial velocity (phi-direction) in inner cell
+
+rho_outer  = 0.0034470223774786661  # initial density in outer cell
+pgas_outer = 7.8657505859249104e-5  # initial gas pressure in outer cell
+v1_outer   = -0.11713831073283545   # initial velocity (r-direction) in outer cell
+v2_outer   = 0.0                    # initial velocity (theta-direction) in outer cell
+v3_outer   = 0.0                    # initial velocity (phi-direction) in outer cell
+
+b1_flux = 0.0  # initial value of B^r integrated over constant-r areas
+b2_flux = 0.0  # initial value of B^\theta integrated over constant-theta areas
+b3_flux = 0.5  # intitial value of B^\phi integrated over constant-phi areas
+
+d_inner = 0.236219706042337;      # fixed conserved density in inner cell
+e_inner = -0.20248863899055827;   # fixed energy in inner cell
+m1_inner = -0.14564987828029977;  # fixed momentum (r-direction) in inner cell
+m2_inner = 0.0;                   # fixed momentum (theta-direction) in inner cell
+m3_inner = 0.0;                   # fixed momentum (phi-direction) in inner cell
+
+d_outer = 0.0036655481577347556;    # fixed conserved density in outer cell
+e_outer = -0.0036278562451725026;   # fixed energy in outer cell
+m1_outer = -0.0005365248014230201;  # fixed momentum (r-direction) in outer cell
+m2_outer = 0.0;                     # fixed momentum (theta-direction) in outer cell
+m3_outer = 0.0;                     # fixed momentum (phi-direction) in outer cell

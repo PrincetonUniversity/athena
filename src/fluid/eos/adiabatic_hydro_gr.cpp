@@ -19,11 +19,12 @@
 #include "../../parameter_input.hpp"          // GetReal()
 
 // Declarations
-Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
+static Real FindRootNR(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
     Real gamma_prime);
-Real residual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq,
+static Real QNResidual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq,
     Real gamma_prime);
-Real residual_derivative(Real w_guess, Real d_norm, Real q_norm_sq, Real gamma_prime);
+static Real QNResidualPrime(Real w_guess, Real d_norm, Real q_norm_sq,
+    Real gamma_prime);
 
 // Constructor
 // Inputs:
@@ -170,7 +171,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         }
 
         // Apply Newton-Raphson method to find new W
-        Real w_true = find_root_nr(w_initial, d_norm, q_dot_n, q_norm_sq, gamma_prime);
+        Real w_true = FindRootNR(w_initial, d_norm, q_dot_n, q_norm_sq, gamma_prime);
 
         // Calculate primitives from W
         v_norm_sq = q_norm_sq / (w_true*w_true);  // (N 28)
@@ -214,6 +215,71 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   return;
 }
 
+// Function for calculating relativistic sound speeds
+// Inputs:
+// Outputs:
+//   plambda_plus: value set to most positive wavespeed
+//   plambda_minus: value set to most negative wavespeed
+// Notes:
+//   same function as in adiabatic_hydro_sr.cpp
+//     uses SR formula (should be called in locally flat coordinates)
+//   references Mignone & Bodo 2005, MNRAS 364 126 (MB)
+void FluidEqnOfState::SoundSpeedsSR(
+    Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
+    Real *plambda_plus, Real *plambda_minus)
+{
+  const Real gamma_adi = gamma_;
+  Real cs_sq = gamma_adi * pgas / rho_h;                                 // (MB 4)
+  Real sigma_s = cs_sq / (gamma_lorentz_sq * (1.0-cs_sq));
+  Real relative_speed = std::sqrt(sigma_s * (1.0 + sigma_s - SQR(vx)));
+  *plambda_plus = 1.0/(1.0+sigma_s) * (vx + relative_speed);             // (MB 23)
+  *plambda_minus = 1.0/(1.0+sigma_s) * (vx - relative_speed);            // (MB 23)
+  return;
+}
+
+// Function for calculating relativistic sound speeds in arbitrary coordinates
+// Inputs:
+// Outputs:
+//   plambda_plus: value set to most positive wavespeed
+//   plambda_minus: value set to most negative wavespeed
+// Notes:
+//   follows same general procedure as vchar() in phys.c in Harm
+//   variables are named as though 1 is normal direction
+void FluidEqnOfState::SoundSpeedsGR(
+    Real rho_h, Real pgas, Real u0, Real u1,
+    Real g00, Real g01, Real g11,
+    Real *plambda_plus, Real *plambda_minus)
+{
+  // Parameters and constants
+  const Real discriminant_tol = -1.0e-10;  // values between this and 0 are considered 0
+  const Real gamma_adi = gamma_;
+
+  // Calculate comoving sound speed
+  Real cs_sq = gamma_adi * pgas / rho_h;
+
+  // Set sound speeds in appropriate coordinates
+  Real a = SQR(u0) - (g00 + SQR(u0)) * cs_sq;
+  Real b = -2.0 * (u0*u1 - (g01 + u0*u1) * cs_sq);
+  Real c = SQR(u1) - (g11 + SQR(u1)) * cs_sq;
+  Real d = SQR(b) - 4.0*a*c;
+  if (d < 0.0 and d > discriminant_tol)
+    d = 0.0;
+  Real d_sqrt = std::sqrt(d);
+  Real root_1 = (-b + d_sqrt) / (2.0*a);
+  Real root_2 = (-b - d_sqrt) / (2.0*a);
+  if (root_1 > root_2)
+  {
+    *plambda_plus = root_1;
+    *plambda_minus = root_2;
+  }
+  else
+  {
+    *plambda_plus = root_2;
+    *plambda_minus = root_1;
+  }
+  return;
+}
+
 // Newton-Raphson root finder
 // Inputs:
 //   w_initial: initial guess for total enthalpy W
@@ -226,7 +292,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 // Notes:
 //   returns NAN in event of failure
 //   forces W to be positive
-Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
+static Real FindRootNR(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
     Real gamma_prime)
 {
   // Parameters
@@ -235,7 +301,7 @@ Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
   const Real tol_res = 1.0e-15;           // absolute tolerance in residual
 
   // Check if root has already been found
-  Real new_res = residual(w_initial, d_norm, q_dot_n, q_norm_sq, gamma_prime);
+  Real new_res = QNResidual(w_initial, d_norm, q_dot_n, q_norm_sq, gamma_prime);
   if (std::abs(new_res) < tol_res)
     return w_initial;
 
@@ -246,7 +312,7 @@ Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
     // Prepare needed values
     Real old_w = new_w;
     Real old_res = new_res;
-    Real derivative = residual_derivative(old_w, d_norm, q_norm_sq, gamma_prime);
+    Real derivative = QNResidualPrime(old_w, d_norm, q_norm_sq, gamma_prime);
     Real delta = -old_res / derivative;
 
     // Check that update makes sense
@@ -268,7 +334,7 @@ Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
     // Reduce step if new value is worse than old
     for (j = i; j < max_iterations; j++)
     {
-      new_res = residual(new_w, d_norm, q_dot_n, q_norm_sq, gamma_prime);
+      new_res = QNResidual(new_w, d_norm, q_dot_n, q_norm_sq, gamma_prime);
       if (std::abs(new_res) < std::abs(old_res))
         break;
       else
@@ -301,7 +367,8 @@ Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
 // Notes:
 //   follows Noble et al. 2006, ApJ 641 626 (N)
 //   implements formulas assuming no magnetic field
-Real residual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq, Real gamma_prime)
+static Real QNResidual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq,
+    Real gamma_prime)
 {
   Real v_norm_sq = q_norm_sq / (w_guess*w_guess);  // (N 28)
   Real gamma_sq = 1.0/(1.0 - v_norm_sq);
@@ -310,7 +377,7 @@ Real residual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq, Real gamm
   return -w_guess + pgas - q_dot_n;  // (N 29)
 }
 
-// Derivative of residual()
+// Derivative of QNResidual()
 // Inputs:
 //   w_guess: guess for total enthalpy W
 //   d_norm: D = alpha * rho * u^0
@@ -322,7 +389,7 @@ Real residual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq, Real gamm
 // Notes:
 //   follows Noble et al. 2006, ApJ 641 626 (N)
 //   implements formulas assuming no magnetic field
-Real residual_derivative(Real w_guess, Real d_norm, Real q_norm_sq, Real gamma_prime)
+static Real QNResidualPrime(Real w_guess, Real d_norm, Real q_norm_sq, Real gamma_prime)
 {
   Real v_norm_sq = q_norm_sq / (w_guess*w_guess);  // (N 28)
   Real gamma_sq = 1.0/(1.0 - v_norm_sq);

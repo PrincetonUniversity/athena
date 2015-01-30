@@ -258,7 +258,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
       if (op.file_type.compare("hst") != 0 && op.file_type.compare("rst") != 0) {
         op.variable = pin->GetString(op.block_name,"variable");
       }
-      op.data_format = pin->GetOrAddString(op.block_name,"data_format","%12e.5");
+      op.data_format = pin->GetOrAddString(op.block_name,"data_format","%12.5e");
       op.data_format.insert(0," "); // prepend with blank to separate columns
 
 // Construct new OutputType according to file format
@@ -445,7 +445,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
         output_params.variable.compare("cons") == 0) {
       pov = new OutputVariable; 
       pov->type = "VECTORS";
-      pov->name = "cell-centered B";
+      pov->name = "cc-B";
       pov->data.InitWithShallowSlice(pfd->bcc,4,IB1,3);
       pod->AppendNode(pov); // magnetic field vector
       var_added = 1;
@@ -519,6 +519,7 @@ void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
       for (int i=pmb->is+1; i<=pmb->ie+1; ++i) {
         if (pmb->x1f(i) > output_params.x1_slice) {
            islice = i-1;
+           output_params.islice = islice;
           break;
         }
       }
@@ -532,6 +533,7 @@ void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
       for (int j=pmb->js+1; j<=pmb->je+1; ++j) {
         if (pmb->x2f(j) > output_params.x2_slice) {
            jslice = j-1;
+           output_params.jslice = jslice;
           break;
         }
       }
@@ -545,6 +547,7 @@ void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
       for (int k=pmb->ks+1; k<=pmb->ke+1; ++k) {
         if (pmb->x3f(k) > output_params.x3_slice) {
            kslice = k-1;
+           output_params.kslice = kslice;
           break;
         }
       }

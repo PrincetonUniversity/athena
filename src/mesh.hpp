@@ -40,15 +40,6 @@ typedef struct RegionSize {
 } RegionSize;
 
 
-//! \struct RegionBCs
-//  \brief boundary condition flags for a Mesh or MeshBlock
-
-typedef struct RegionBCs {
-  int ix1_bc, ix2_bc, ix3_bc;  // inner-x (left edge) BC flags
-  int ox1_bc, ox2_bc, ox3_bc;  // outer-x (right edge) BC flags
-} RegionBCs;
-
-
 //! \class MeshBlock
 //  \brief data/functions associated with a single block
 
@@ -68,7 +59,7 @@ private:
   friend class Fluid;
 public:
   MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_size,
-            RegionBCs input_bcs, Mesh *pm, ParameterInput *pin);
+            int *input_bcs, Mesh *pm, ParameterInput *pin);
   MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, BlockUID *list,
   WrapIO& resfile, WrapIOSize_t offset, Real icost, int *ranklist, int *nslist);
   ~MeshBlock();
@@ -82,7 +73,7 @@ public:
   enum tlstatus DoOneTask(void);
 
   RegionSize block_size;
-  RegionBCs  block_bcs;
+  int block_bcs[6];
   Mesh *pmy_mesh;  // ptr to Mesh containing this MeshBlock
 
   AthenaArray<Real> dx1f, dx2f, dx3f, x1f, x2f, x3f; // face   spacing and positions
@@ -119,7 +110,7 @@ public:
   ~Mesh();
 
   RegionSize mesh_size;
-  RegionBCs  mesh_bcs;
+  int mesh_bcs[6];
 
   Real start_time, tlim, cfl_number, time, dt;
   int nlim, ncycle;

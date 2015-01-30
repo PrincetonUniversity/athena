@@ -1,0 +1,43 @@
+<comment>
+problem   = Noh's strong shock test in 2D
+reference = Liska, R. & Wendroff, B., SIAM J. Sci. Comput., 25, 995-1017 (2003), S4.5
+configure = --prob=noh
+
+<job>
+problem_id      = Noh     # problem ID: basename of output filenames
+
+<output1>
+file_type  = hst       # History data dump
+dt         = 0.01      # time increment between outputs
+
+<output2>
+file_type  = vtk       # Binary data dump
+variable   = prim      # variables to be output
+dt         = 0.01      # time increment between outputs
+
+<time>
+cfl_number = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1        # cycle limit
+tlim       = 2.0       # time limit
+
+<mesh>
+nx1        = 200       # Number of zones in X-direction
+x1min      = 0.0       # minimum value of X
+x1max      = 1.0       # maximum value of X
+ix1_bc     = 1         # inner-I (X) boundary flag
+ox1_bc     = 1         # outer-I (X) boundary flag
+
+nx2        = 200       # Number of zones in Y-direction
+x2min      = 0.0       # minimum value of Y
+x2max      = 1.0       # maximum value of Y
+ix2_bc     = 1         # inner-J (Y) boundary flag
+ox2_bc     = 1         # outer-J (Y) boundary flag
+
+nx3        = 1         # Number of zones in X3-direction
+x3min      = -0.5      # minimum value of X3
+x3max      = 0.5       # maximum value of X3
+ix3_bc     = 1         # inner-K (Z) boundary flag
+ox3_bc     = 1         # outer-K (Z) boundary flag
+
+<fluid>
+gamma   = 1.666666666667     # gamma = C_p/C_v

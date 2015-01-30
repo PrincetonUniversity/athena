@@ -73,12 +73,11 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   }
   Real gm1 = GetGamma() - 1.0;
 
-// Convert to Primitives
-
   int max_nthreads = pmb->pmy_mesh->nthreads_mesh;
 
 // #pragma omp parallel default(shared) num_threads(max_nthreads)
 {
+  // Convert to Primitives
   for (int k=kl; k<=ku; ++k){
 // #pragma omp for schedule(dynamic)
   for (int j=jl; j<=ju; ++j){
@@ -97,7 +96,11 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       Real& w_p  = prim(IEN,k,j,i);
 
       // apply density floor, without changing momentum or energy
+<<<<<<< HEAD
       u_d = std::max(u_d, density_floor_);
+=======
+      u_d = (u_d > density_floor_) ?  u_d : density_floor_;
+>>>>>>> remotes/origin/master
       w_d = u_d;
 
       Real di = 1.0/u_d;
@@ -105,6 +108,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       w_vy = u_m2*di;
       w_vz = u_m3*di;
 
+<<<<<<< HEAD
       w_p = gm1*( u_e - 0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3)) );
 
 // apply pressure floor, correct total energy
@@ -112,6 +116,14 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         w_p = pressure_floor_;
         u_e = (pressure_floor_/gm1) + 0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3));
       }
+=======
+      Real ke = 0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3));
+      w_p = gm1*(u_e - ke);
+
+      // apply pressure floor, correct total energy
+      u_e = (w_p > pressure_floor_) ?  u_e : ((pressure_floor_/gm1) + ke);
+      w_p = (w_p > pressure_floor_) ?  w_p : pressure_floor_;
+>>>>>>> remotes/origin/master
     }
   }}
 }
@@ -126,4 +138,13 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 Real FluidEqnOfState::SoundSpeed(const Real prim[NFLUID])
 {
   return sqrt(gamma_*prim[IEN]/prim[IDN]);
+}
+
+//--------------------------------------------------------------------------------------
+// \!fn Real FluidEqnOfState::FastMagnetosonicSpeed(const Real prim[], const Real bx)
+// \brief NoOp function required to prevent warnings from loader.
+
+Real FluidEqnOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx)
+{
+  return (FLT_MAX);
 }

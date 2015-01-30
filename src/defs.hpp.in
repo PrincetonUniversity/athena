@@ -26,8 +26,11 @@
 // include magnetic fields?  default=0 (false).
 #define MAGNETIC_FIELDS_ENABLED @MAGNETIC_FIELDS_ENABLED@
 
-// enable special or general relativity?  default=0 (false).
+// enable special or general relativity? default=0 (false)
 #define RELATIVISTIC_DYNAMICS @RELATIVISTIC_DYNAMICS@
+
+// enable general relativity? default=0 (false)
+#define GENERAL_RELATIVITY @GENERAL_RELATIVITY@
 
 // Riemann solver
 #define RIEMANN_SOLVER "@RSOLVER@"
@@ -74,5 +77,6 @@
 #define TINY_NUMBER 1.0e-20
 #define HUGE_NUMBER 1.0e+36
 #define SQR(x) ( (x)*(x) )
+#define SIGN(x) ( ((x) < 0.0) ? -1.0 : 1.0 )
 
 #endif

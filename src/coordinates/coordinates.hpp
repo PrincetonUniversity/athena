@@ -60,19 +60,32 @@ public:
 
   // Functions for use in general relativity
   void CellMetric(const int k,const int j, AthenaArray<Real> &g, AthenaArray<Real> &gi);
-  void PrimToLocal1(const int k, const int j, AthenaArray<Real> &b,
-      AthenaArray<Real> &prim);
-  void PrimToLocal2(const int k, const int j, AthenaArray<Real> &b,
-      AthenaArray<Real> &prim);
-  void PrimToLocal3(const int k, const int j, AthenaArray<Real> &b,
-      AthenaArray<Real> &prim);
+  void Face1Metric(const int k, const int j, AthenaArray<Real> &g,
+      AthenaArray<Real> &g_inv);
+  void Face2Metric(const int k, const int j, AthenaArray<Real> &g,
+      AthenaArray<Real> &g_inv);
+  void Face3Metric(const int k, const int j, AthenaArray<Real> &g,
+      AthenaArray<Real> &g_inv);
+  void PrimToLocal1(const int k, const int j, const AthenaArray<Real> &b1_vals,
+      AthenaArray<Real> &prim_left, AthenaArray<Real> &prim_right,
+      AthenaArray<Real> &bx);
+  void PrimToLocal2(const int k, const int j, const AthenaArray<Real> &b2_vals,
+      AthenaArray<Real> &prim_left, AthenaArray<Real> &prim_right,
+      AthenaArray<Real> &by);
+  void PrimToLocal3(const int k, const int j, const AthenaArray<Real> &b3_vals,
+      AthenaArray<Real> &prim_left, AthenaArray<Real> &prim_right,
+      AthenaArray<Real> &bz);
   void FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flux);
   void FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flux);
   void FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flux);
-  void PrimToCons(AthenaArray<Real> &prim, AthenaArray<Real> &cons);
+  void PrimToCons(const AthenaArray<Real> &prim, const AthenaArray<Real> &b,
+      AthenaArray<Real> &cons);
 
 private:
 // scratch arrays containing precomputed factors used by functions in this class
+  AthenaArray<Real> edge1_length_i_, edge1_length_j_;
+  AthenaArray<Real> edge2_length_i_, edge2_length_j_;
+  AthenaArray<Real> edge3_length_i_, edge3_length_j_;
   AthenaArray<Real> face1_area_i_, face1_area_j_;
   AthenaArray<Real> face2_area_i_, face2_area_j_;
   AthenaArray<Real> face3_area_i_, face3_area_j_;

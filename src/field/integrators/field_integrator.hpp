@@ -31,13 +31,10 @@ public:
   void CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w,
     AthenaArray<Real> &bcc, const int step);
   void ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w, AthenaArray<Real> &bcc);
-  void BoundaryValuesFaceCenteredE1(MeshBlock *pmb);
-  void BoundaryValuesFaceCenteredE2(MeshBlock *pmb);
-  void BoundaryValuesFaceCenteredE3(MeshBlock *pmb);
 
 private:
 // scratch space used in integrator
-  AthenaArray<Real> cc_e1_, cc_e2_, cc_e3_;
+  AthenaArray<Real> cc_e_;
   AthenaArray<Real> face_area_, edge_length_, edge_lengthp1_;
 };
 #endif

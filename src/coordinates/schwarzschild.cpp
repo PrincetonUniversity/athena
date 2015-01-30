@@ -92,6 +92,9 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   face1_area_i_.NewAthenaArray(n_cells_1);
   face2_area_i_.NewAthenaArray(n_cells_1);
   face3_area_i_.NewAthenaArray(n_cells_1);
+  edge1_length_i_.NewAthenaArray(n_cells_1);
+  edge2_length_i_.NewAthenaArray(n_cells_1);
+  edge3_length_i_.NewAthenaArray(n_cells_1);
   src_terms_i1_.NewAthenaArray(n_cells_1);
   src_terms_i2_.NewAthenaArray(n_cells_1);
   src_terms_i3_.NewAthenaArray(n_cells_1);
@@ -105,12 +108,21 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   metric_face1_i1_.NewAthenaArray(n_cells_1);
   metric_face1_i2_.NewAthenaArray(n_cells_1);
   metric_face1_i3_.NewAthenaArray(n_cells_1);
+  metric_face1_i4_.NewAthenaArray(n_cells_1);
+  metric_face1_i5_.NewAthenaArray(n_cells_1);
+  metric_face1_i6_.NewAthenaArray(n_cells_1);
   metric_face2_i1_.NewAthenaArray(n_cells_1);
   metric_face2_i2_.NewAthenaArray(n_cells_1);
   metric_face2_i3_.NewAthenaArray(n_cells_1);
+  metric_face2_i4_.NewAthenaArray(n_cells_1);
+  metric_face2_i5_.NewAthenaArray(n_cells_1);
+  metric_face2_i6_.NewAthenaArray(n_cells_1);
   metric_face3_i1_.NewAthenaArray(n_cells_1);
   metric_face3_i2_.NewAthenaArray(n_cells_1);
   metric_face3_i3_.NewAthenaArray(n_cells_1);
+  metric_face3_i4_.NewAthenaArray(n_cells_1);
+  metric_face3_i5_.NewAthenaArray(n_cells_1);
+  metric_face3_i6_.NewAthenaArray(n_cells_1);
   trans_face1_i1_.NewAthenaArray(n_cells_1);
   trans_face1_i2_.NewAthenaArray(n_cells_1);
   trans_face1_i3_.NewAthenaArray(n_cells_1);
@@ -130,14 +142,20 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   face1_area_j_.NewAthenaArray(n_cells_2);
   face2_area_j_.NewAthenaArray(n_cells_2);
   face3_area_j_.NewAthenaArray(n_cells_2);
+  edge1_length_j_.NewAthenaArray(n_cells_2);
+  edge2_length_j_.NewAthenaArray(n_cells_2);
+  edge3_length_j_.NewAthenaArray(n_cells_2);
   src_terms_j1_.NewAthenaArray(n_cells_2);
   src_terms_j2_.NewAthenaArray(n_cells_2);
   src_terms_j3_.NewAthenaArray(n_cells_2);
   metric_cell_j1_.NewAthenaArray(n_cells_2);
   metric_cell_j2_.NewAthenaArray(n_cells_2);
   metric_face1_j1_.NewAthenaArray(n_cells_2);
+  metric_face1_j2_.NewAthenaArray(n_cells_2);
   metric_face2_j1_.NewAthenaArray(n_cells_2);
+  metric_face2_j2_.NewAthenaArray(n_cells_2);
   metric_face3_j1_.NewAthenaArray(n_cells_2);
+  metric_face3_j2_.NewAthenaArray(n_cells_2);
   trans_face1_j1_.NewAthenaArray(n_cells_2);
   trans_face1_j2_.NewAthenaArray(n_cells_2);
   trans_face2_j1_.NewAthenaArray(n_cells_2);
@@ -154,11 +172,14 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
     Real r_m = pb->x1f(i);
     Real r_p = pb->x1f(i+1);
 
-    // Volumes and areas
+    // Volumes, areas, and lengths
     volume_i_(i) = 1.0/3.0 * (r_p*r_p*r_p - r_m*r_m*r_m);
     face1_area_i_(i) = r_m*r_m;
     face2_area_i_(i) = volume_i_(i);
     face3_area_i_(i) = volume_i_(i);
+    edge1_length_i_(i) = volume_i_(i);
+    edge2_length_i_(i) = face1_area_i_(i);
+    edge3_length_i_(i) = face1_area_i_(i);
 
     // Source terms
     src_terms_i1_(i) = 3.0*MASS / (r_p*r_p*r_p - r_m*r_m*r_m)
@@ -181,12 +202,21 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
     metric_face1_i1_(i) = -(1.0 - 2.0*MASS / r_m);
     metric_face1_i2_(i) = 1.0 / (1.0 - 2.0*MASS / r_m);
     metric_face1_i3_(i) = r_m*r_m;
+    metric_face1_i4_(i) = 1.0 / metric_face1_i1_(i);
+    metric_face1_i5_(i) = 1.0 / metric_face1_i2_(i);
+    metric_face1_i6_(i) = 1.0 / metric_face1_i3_(i);
     metric_face2_i1_(i) = metric_cell_i1_(i);
     metric_face2_i2_(i) = metric_cell_i2_(i);
     metric_face2_i3_(i) = metric_cell_i3_(i);
+    metric_face2_i4_(i) = metric_cell_i4_(i);
+    metric_face2_i5_(i) = metric_cell_i5_(i);
+    metric_face2_i6_(i) = metric_cell_i6_(i);
     metric_face3_i1_(i) = metric_cell_i1_(i);
     metric_face3_i2_(i) = metric_cell_i2_(i);
     metric_face3_i3_(i) = metric_cell_i3_(i);
+    metric_face3_i4_(i) = metric_cell_i4_(i);
+    metric_face3_i5_(i) = metric_cell_i5_(i);
+    metric_face3_i6_(i) = metric_cell_i6_(i);
 
     // Coordinate transformations
     trans_face1_i1_(i) = std::sqrt(1.0 - 2.0*MASS/r_m);
@@ -219,11 +249,14 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
       Real cos_m = std::cos(theta_m);
       Real cos_p = std::cos(theta_p);
 
-      // Volumes and areas
+      // Volumes, areas, and lengths
       volume_j_(j) = cos_m - cos_p;
       face1_area_j_(j) = volume_j_(j);
       face2_area_j_(j) = sin_m;
       face3_area_j_(j) = volume_j_(j);
+      edge1_length_j_(j) = face2_area_j_(j);
+      edge2_length_j_(j) = volume_j_(j);
+      edge3_length_j_(j) = face2_area_j_(j);
 
       // Source terms
       src_terms_j1_(j) = 1.0/6.0 * (4.0 - std::cos(2.0*theta_m)
@@ -238,8 +271,11 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
 
       // Face-centered metric
       metric_face1_j1_(j) = metric_cell_j1_(j);
+      metric_face1_j2_(j) = 1.0 / metric_face1_j1_(j);
       metric_face2_j1_(j) = sin_m*sin_m;
+      metric_face2_j2_(j) = 1.0 / metric_face2_j1_(j);
       metric_face3_j1_(j) = metric_cell_j1_(j);
+      metric_face3_j2_(j) = 1.0 / metric_face3_j1_(j);
 
       // Coordinate transformations
       trans_face1_j1_(j) = sin_c;
@@ -267,6 +303,9 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
     face1_area_j_(pb->js) = volume_j_(pb->js);
     face2_area_j_(pb->js) = sin_m;
     face3_area_j_(pb->js) = volume_j_(pb->js);
+    edge1_length_j_(pb->js) = face2_area_j_(pb->js);
+    edge2_length_j_(pb->js) = volume_j_(pb->js);
+    edge3_length_j_(pb->js) = face2_area_j_(pb->js);
 
     // Source terms
     src_terms_j1_(pb->js) = 1.0/6.0 * (4.0 - std::cos(2.0*theta_m)
@@ -281,8 +320,11 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
 
     // Face-centered metric
     metric_face1_j1_(pb->js) = metric_cell_j1_(pb->js);
+    metric_face1_j2_(pb->js) = 1.0 / metric_face1_j1_(pb->js);
     metric_face2_j1_(pb->js) = sin_m*sin_m;
+    metric_face2_j2_(pb->js) = 1.0 / metric_face2_j1_(pb->js);
     metric_face3_j1_(pb->js) = metric_cell_j1_(pb->js);
+    metric_face3_j2_(pb->js) = 1.0 / metric_face3_j1_(pb->js);
 
     // Coordinate transformations
     trans_face1_j1_(pb->js) = sin_c;
@@ -301,6 +343,9 @@ Coordinates::~Coordinates()
   face1_area_i_.DeleteAthenaArray();
   face2_area_i_.DeleteAthenaArray();
   face3_area_i_.DeleteAthenaArray();
+  edge1_length_i_.DeleteAthenaArray();
+  edge2_length_i_.DeleteAthenaArray();
+  edge3_length_i_.DeleteAthenaArray();
   src_terms_i1_.DeleteAthenaArray();
   src_terms_i2_.DeleteAthenaArray();
   src_terms_i3_.DeleteAthenaArray();
@@ -309,6 +354,9 @@ Coordinates::~Coordinates()
   face1_area_j_.DeleteAthenaArray();
   face2_area_j_.DeleteAthenaArray();
   face3_area_j_.DeleteAthenaArray();
+  edge1_length_j_.DeleteAthenaArray();
+  edge2_length_j_.DeleteAthenaArray();
+  edge3_length_j_.DeleteAthenaArray();
   src_terms_j1_.DeleteAthenaArray();
   src_terms_j2_.DeleteAthenaArray();
   src_terms_j3_.DeleteAthenaArray();
@@ -323,15 +371,27 @@ Coordinates::~Coordinates()
   metric_face1_i1_.DeleteAthenaArray();
   metric_face1_i2_.DeleteAthenaArray();
   metric_face1_i3_.DeleteAthenaArray();
+  metric_face1_i4_.DeleteAthenaArray();
+  metric_face1_i5_.DeleteAthenaArray();
+  metric_face1_i6_.DeleteAthenaArray();
   metric_face1_j1_.DeleteAthenaArray();
+  metric_face1_j2_.DeleteAthenaArray();
   metric_face2_i1_.DeleteAthenaArray();
   metric_face2_i2_.DeleteAthenaArray();
   metric_face2_i3_.DeleteAthenaArray();
+  metric_face2_i4_.DeleteAthenaArray();
+  metric_face2_i5_.DeleteAthenaArray();
+  metric_face2_i6_.DeleteAthenaArray();
   metric_face2_j1_.DeleteAthenaArray();
+  metric_face2_j2_.DeleteAthenaArray();
   metric_face3_i1_.DeleteAthenaArray();
   metric_face3_i2_.DeleteAthenaArray();
   metric_face3_i3_.DeleteAthenaArray();
+  metric_face3_i4_.DeleteAthenaArray();
+  metric_face3_i5_.DeleteAthenaArray();
+  metric_face3_i6_.DeleteAthenaArray();
   metric_face3_j1_.DeleteAthenaArray();
+  metric_face3_j2_.DeleteAthenaArray();
   trans_face1_i1_.DeleteAthenaArray();
   trans_face1_i2_.DeleteAthenaArray();
   trans_face1_i3_.DeleteAthenaArray();
@@ -352,40 +412,48 @@ Coordinates::~Coordinates()
   trans_face3_j2_.DeleteAthenaArray();
 }
 
-//--------------------------------------------------------------------------------------
-// TODO: write function
-// Edge Length functions: returns physical length at cell edges
-// Edge1(i,j,k) located at (i,j-1/2,k-1/2), i.e. (x1v(i), x2f(j), x3f(k))
+// Function for computing lengths of r-edges
 void Coordinates::Edge1Length(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &len)
+  AthenaArray<Real> &lengths)
 {
-#pragma simd
-  for (int i=il; i<=iu; ++i){
-    len(i) = pmy_block->dx1f(i);
+  Real &sin_theta = edge1_length_j_(j);
+  #pragma simd
+  for (int i = il; i <= iu; ++i)
+  {
+    Real &third_delta_r_cb = edge1_length_i_(i);
+    Real &length = lengths(i);
+    length = third_delta_r_cb * sin_theta;
   }
   return;
 }
 
-// TODO: write function
-// Edge2(i,j,k) located at (i-1/2,j,k-1/2), i.e. (x1f(i), x2v(j), x3f(k))
+// Function for computing lengths of theta-edges
 void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &len)
+  AthenaArray<Real> &lengths)
 {
-#pragma simd
-  for (int i=il; i<=iu; ++i){
-    len(i) = pmy_block->dx2f(j);
+  Real &neg_delta_cos_theta = edge2_length_j_(j);
+  #pragma simd
+  for (int i = il; i <= iu; ++i)
+  {
+    Real &r_sq = edge2_length_i_(i);
+    Real &length = lengths(i);
+    length = r_sq * neg_delta_cos_theta;
   }
   return;
 }
 
-// TODO: write function
-// Edge3(i,j,k) located at (i-1/2,j-1/2,k), i.e. (x1f(i), x2f(j), x3v(k))
+// Function for computing lengths of phi-edges
 void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &len)
+  AthenaArray<Real> &lengths)
 {
-#pragma simd
-  for (int i=il; i<=iu; ++i){
-    len(i) = pmy_block->dx3f(k);
+  Real &sin_theta = edge3_length_j_(j);
+  Real &delta_phi = pmy_block->dx3f(k);
+  #pragma simd
+  for (int i = il; i <= iu; ++i)
+  {
+    Real &r_sq = edge3_length_i_(i);
+    Real &length = lengths(i);
+    length = r_sq * sin_theta * delta_phi;
   }
   return;
 }
@@ -598,7 +666,7 @@ void Coordinates::CoordinateSourceTerms(Real dt, const AthenaArray<Real> &prim,
   return;
 }
 
-// Function for computing metric terms
+// Function for computing cell-centered metric coefficients
 // Inputs:
 //   k: phi-index
 //   j: theta-index
@@ -648,27 +716,175 @@ void Coordinates::CellMetric(const int k, const int j, AthenaArray<Real> &g,
   return;
 }
 
+// Function for computing face-centered metric coefficients: r-interface
+// Inputs:
+//   k: phi-index
+//   j: theta-index
+// Outputs:
+//   g: array of metric components in 1D
+//   g_inv: array of inverse metric components in 1D
+void Coordinates::Face1Metric(const int k, const int j, AthenaArray<Real> &g,
+    AthenaArray<Real> &g_inv)
+{
+  // Extract geometric quantities that do not depend on r
+  Real &sin_sq_theta = metric_face1_j1_(j);
+  Real &csc_sq_theta = metric_face1_j2_(j);
+
+  // Go through 1D block of faces
+#pragma simd
+  for (int i = pmy_block->is; i <= pmy_block->ie+1; i++)
+  {
+    // Extract remaining geometric quantities
+    Real &t_factor = metric_face1_i1_(i);
+    Real &r_factor = metric_face1_i2_(i);
+    Real &r_sq = metric_face1_i3_(i);
+    Real &t_inv_factor = metric_face1_i4_(i);
+    Real &r_inv_factor = metric_face1_i5_(i);
+    Real &r_inv_sq = metric_face1_i6_(i);
+
+    // Extract metric terms
+    Real &g00 = g(I00,i);
+    Real &g11 = g(I11,i);
+    Real &g22 = g(I22,i);
+    Real &g33 = g(I33,i);
+    Real &g_inv_00 = g_inv(I00,i);
+    Real &g_inv_11 = g_inv(I11,i);
+    Real &g_inv_22 = g_inv(I22,i);
+    Real &g_inv_33 = g_inv(I33,i);
+
+    // Set metric terms
+    // TODO: should 0's be set explicitly?
+    g00 = t_factor;
+    g11 = r_factor;
+    g22 = r_sq;
+    g33 = r_sq * sin_sq_theta;
+    g_inv_00 = t_inv_factor;
+    g_inv_11 = r_inv_factor;
+    g_inv_22 = r_inv_sq;
+    g_inv_33 = r_inv_sq * csc_sq_theta;
+  }
+  return;
+}
+
+// Function for computing face-centered metric coefficients: theta-interface
+// Inputs:
+//   k: phi-index
+//   j: theta-index
+// Outputs:
+//   g: array of metric components in 1D
+//   g_inv: array of inverse metric components in 1D
+void Coordinates::Face2Metric(const int k, const int j, AthenaArray<Real> &g,
+    AthenaArray<Real> &g_inv)
+{
+  // Extract geometric quantities that do not depend on r
+  Real &sin_sq_theta = metric_face2_j1_(j);
+  Real &csc_sq_theta = metric_face2_j2_(j);
+
+  // Go through 1D block of faces
+#pragma simd
+  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
+  {
+    // Extract remaining geometric quantities
+    Real &t_factor = metric_face2_i1_(i);
+    Real &r_factor = metric_face2_i2_(i);
+    Real &r_sq = metric_face2_i3_(i);
+    Real &t_inv_factor = metric_face2_i4_(i);
+    Real &r_inv_factor = metric_face2_i5_(i);
+    Real &r_inv_sq = metric_face2_i6_(i);
+
+    // Extract metric terms
+    Real &g00 = g(I00,i);
+    Real &g11 = g(I11,i);
+    Real &g22 = g(I22,i);
+    Real &g33 = g(I33,i);
+    Real &g_inv_00 = g_inv(I00,i);
+    Real &g_inv_11 = g_inv(I11,i);
+    Real &g_inv_22 = g_inv(I22,i);
+    Real &g_inv_33 = g_inv(I33,i);
+
+    // Set metric terms
+    // TODO: should 0's be set explicitly?
+    g00 = t_factor;
+    g11 = r_factor;
+    g22 = r_sq;
+    g33 = r_sq * sin_sq_theta;
+    g_inv_00 = t_inv_factor;
+    g_inv_11 = r_inv_factor;
+    g_inv_22 = r_inv_sq;
+    g_inv_33 = r_inv_sq * csc_sq_theta;
+  }
+  return;
+}
+
+// Function for computing face-centered metric coefficients: phi-interface
+// Inputs:
+//   k: phi-index
+//   j: theta-index
+// Outputs:
+//   g: array of metric components in 1D
+//   g_inv: array of inverse metric components in 1D
+void Coordinates::Face3Metric(const int k, const int j, AthenaArray<Real> &g,
+    AthenaArray<Real> &g_inv)
+{
+  // Extract geometric quantities that do not depend on r
+  Real &sin_sq_theta = metric_face3_j1_(j);
+  Real &csc_sq_theta = metric_face3_j2_(j);
+
+  // Go through 1D block of faces
+#pragma simd
+  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
+  {
+    // Extract remaining geometric quantities
+    Real &t_factor = metric_face3_i1_(i);
+    Real &r_factor = metric_face3_i2_(i);
+    Real &r_sq = metric_face3_i3_(i);
+    Real &t_inv_factor = metric_face3_i4_(i);
+    Real &r_inv_factor = metric_face3_i5_(i);
+    Real &r_inv_sq = metric_face3_i6_(i);
+
+    // Extract metric terms
+    Real &g00 = g(I00,i);
+    Real &g11 = g(I11,i);
+    Real &g22 = g(I22,i);
+    Real &g33 = g(I33,i);
+    Real &g_inv_00 = g_inv(I00,i);
+    Real &g_inv_11 = g_inv(I11,i);
+    Real &g_inv_22 = g_inv(I22,i);
+    Real &g_inv_33 = g_inv(I33,i);
+
+    // Set metric terms
+    // TODO: should 0's be set explicitly?
+    g00 = t_factor;
+    g11 = r_factor;
+    g22 = r_sq;
+    g33 = r_sq * sin_sq_theta;
+    g_inv_00 = t_inv_factor;
+    g_inv_11 = r_inv_factor;
+    g_inv_22 = r_inv_sq;
+    g_inv_33 = r_inv_sq * csc_sq_theta;
+  }
+  return;
+}
+
 // Function for transforming primitives to locally flat frame: r-interface
 // Inputs:
 //   k: phi-index
 //   j: theta-index
-//   b: 3D array of transverse components B^1 of magnetic field, in global coordinates
-//   prim: 1D array of primitives, using global coordinates
+//   b1_vals: 3D array of normal components B^1 of magnetic field, in global coordinates
+//   prim_left: 1D array of left primitives, using global coordinates
+//   prim_right: 1D array of right primitives, using global coordinates
 // Outputs:
-//   b: values in range overwritten in local coordinates
-//   prim: values overwritten in local coordinates
-void Coordinates::PrimToLocal1(const int k, const int j, AthenaArray<Real> &b,
-    AthenaArray<Real> &prim)
+//   prim_left: values overwritten in local coordinates
+//   prim_right: values overwritten in local coordinates
+//   bx: 1D array of longitudinal magnetic fields, in local coordinates
+void Coordinates::PrimToLocal1(const int k, const int j,
+    const AthenaArray<Real> &b1_vals, AthenaArray<Real> &prim_left,
+    AthenaArray<Real> &prim_right, AthenaArray<Real> &bx)
 {
   // Go through 1D block of cells
 #pragma simd
   for (int i = pmy_block->is; i <= pmy_block->ie+1; i++)
   {
-    // Extract primitives
-    Real &v1 = prim(IVX,i);
-    Real &v2 = prim(IVY,i);
-    Real &v3 = prim(IVZ,i);
-
     // Extract geometric quantities
     Real &g00 = metric_face1_i1_(i);
     Real &g11 = metric_face1_i2_(i);
@@ -679,45 +895,81 @@ void Coordinates::PrimToLocal1(const int k, const int j, AthenaArray<Real> &b,
     Real &my2 = trans_face1_i3_(i);
     Real mz3 = trans_face1_i3_(i) * trans_face1_j1_(j);
 
-    // Construct 4-velocity
-    Real u0 = std::sqrt(-1.0 / (g00 + g11*v1*v1 + g22*v2*v2 + g33*v3*v3));
-    Real u1 = u0 * v1;
-    Real u2 = u0 * v2;
-    Real u3 = u0 * v3;
+    // Extract global 3-velocities
+    Real &v1l = prim_left(IVX,i);
+    Real &v2l = prim_left(IVY,i);
+    Real &v3l = prim_left(IVZ,i);
+    Real &v1r = prim_right(IVX,i);
+    Real &v2r = prim_right(IVY,i);
+    Real &v3r = prim_right(IVZ,i);
 
-    // Transform 4-velocity
-    Real u0_new = mt0 * u0;
-    Real u1_new = mx1 * u1;
-    Real u2_new = my2 * u2;
-    Real u3_new = mz3 * u3;
-    v1 = u1_new / u0_new;
-    v2 = u2_new / u0_new;
-    v3 = u3_new / u0_new;
+    // Construct global 4-velocities
+    Real u0l = std::sqrt(-1.0 / (g00 + g11*v1l*v1l + g22*v2l*v2l + g33*v3l*v3l));
+    Real u1l = u0l * v1l;
+    Real u2l = u0l * v2l;
+    Real u3l = u0l * v3l;
+    Real u0r = std::sqrt(-1.0 / (g00 + g11*v1r*v1r + g22*v2r*v2r + g33*v3r*v3r));
+    Real u1r = u0r * v1r;
+    Real u2r = u0r * v2r;
+    Real u3r = u0r * v3r;
+
+    // Transform 4-velocities
+    Real utl = mt0 * u0l;
+    Real uxl = mx1 * u1l;
+    Real uyl = my2 * u2l;
+    Real uzl = mz3 * u3l;
+    Real utr = mt0 * u0r;
+    Real uxr = mx1 * u1r;
+    Real uyr = my2 * u2r;
+    Real uzr = mz3 * u3r;
+
+    // Set local 3-velocities
+    v1l = uxl / utl;
+    v2l = uyl / utl;
+    v3l = uzl / utl;
+    v1r = uxr / utr;
+    v2r = uyr / utr;
+    v3r = uzr / utr;
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED)
     {
-      // Extract magnetic field
-      Real &b1 = b(k,j,i);
-      Real &b2 = prim(IBY,i);
-      Real &b3 = prim(IBZ,i);
+      // Extract global magnetic fields
+      const Real &b1 = b1_vals(k,j,i);
+      Real &b2l = prim_left(IBY,i);
+      Real &b3l = prim_left(IBZ,i);
+      Real &b2r = prim_right(IBY,i);
+      Real &b3r = prim_right(IBZ,i);
 
-      // Calculate covariant magnetic field
-      Real bcov0 = g11*b1*u1 + g22*b2*u2 + g33*b3*u3;
-      Real bcov1 = (b1 + bcov0 * u1) / u0;
-      Real bcov2 = (b2 + bcov0 * u2) / u0;
-      Real bcov3 = (b3 + bcov0 * u3) / u0;
+      // Construct global covariant magnetic fields
+      Real bcov0l = g11*b1*u1l + g22*b2l*u2l + g33*b3l*u3l;
+      Real bcov1l = (b1 + bcov0l * u1l) / u0l;
+      Real bcov2l = (b2l + bcov0l * u2l) / u0l;
+      Real bcov3l = (b3l + bcov0l * u3l) / u0l;
+      Real bcov0r = g11*b1*u1r + g22*b2r*u2r + g33*b3r*u3r;
+      Real bcov1r = (b1 + bcov0r * u1r) / u0r;
+      Real bcov2r = (b2r + bcov0r * u2r) / u0r;
+      Real bcov3r = (b3r + bcov0r * u3r) / u0r;
 
-      // Transform field
-      Real bcov0_new = mt0 * bcov0;
-      Real bcov1_new = mx1 * bcov1;
-      Real bcov2_new = my2 * bcov2;
-      Real bcov3_new = mz3 * bcov3;
+      // Transform covariant magnetic fields
+      Real bcovtl = mt0 * bcov0l;
+      Real bcovxl = mx1 * bcov1l;
+      Real bcovyl = my2 * bcov2l;
+      Real bcovzl = mz3 * bcov3l;
+      Real bcovtr = mt0 * bcov0r;
+      Real bcovxr = mx1 * bcov1r;
+      Real bcovyr = my2 * bcov2r;
+      Real bcovzr = mz3 * bcov3r;
 
-      // Calculate standard magnetic field
-      b1 = u0_new * bcov1_new - u1_new * bcov0_new;
-      b2 = u0_new * bcov2_new - u2_new * bcov0_new;
-      b3 = u0_new * bcov3_new - u3_new * bcov0_new;
+      // Set local magnetic fields
+      // TODO: deal with possible inconsistent B^x (shouldn't happen here)
+      Real bxl = utl * bcovxl - uxl * bcovtl;
+      Real bxr = utr * bcovxr - uxr * bcovtr;
+      bx(i) = 0.5 * (bxl + bxr);
+      b2l = utl * bcovyl - uyl * bcovtl;
+      b3l = utl * bcovzl - uzl * bcovtl;
+      b2r = utr * bcovyr - uyr * bcovtr;
+      b3r = utr * bcovzr - uzr * bcovtr;
     }
   }
   return;
@@ -727,23 +979,21 @@ void Coordinates::PrimToLocal1(const int k, const int j, AthenaArray<Real> &b,
 // Inputs:
 //   k: phi-index
 //   j: theta-index
-//   b: 3D array of transverse components B^1 of magnetic field, in global coordinates
-//   prim: 1D array of primitives, using global coordinates
+//   b2_vals: 3D array of normal components B^2 of magnetic field, in global coordinates
+//   prim_left: 1D array of left primitives, using global coordinates
+//   prim_right: 1D array of right primitives, using global coordinates
 // Outputs:
-//   b: values in range overwritten in local coordinates
-//   prim: values overwritten in local coordinates
-void Coordinates::PrimToLocal2(const int k, const int j, AthenaArray<Real> &b,
-    AthenaArray<Real> &prim)
+//   prim_left: values overwritten in local coordinates
+//   prim_right: values overwritten in local coordinates
+//   by: 1D array of longitudinal magnetic fields, in local coordinates
+void Coordinates::PrimToLocal2(const int k, const int j,
+    const AthenaArray<Real> &b2_vals, AthenaArray<Real> &prim_left,
+    AthenaArray<Real> &prim_right, AthenaArray<Real> &by)
 {
   // Go through 1D block of cells
 #pragma simd
   for (int i = pmy_block->is; i <= pmy_block->ie; i++)
   {
-    // Extract primitives
-    Real &v1 = prim(IVX,i);
-    Real &v2 = prim(IVY,i);
-    Real &v3 = prim(IVZ,i);
-
     // Extract geometric quantities
     Real &g00 = metric_face2_i1_(i);
     Real &g11 = metric_face2_i2_(i);
@@ -754,45 +1004,81 @@ void Coordinates::PrimToLocal2(const int k, const int j, AthenaArray<Real> &b,
     Real &my2 = trans_face2_i3_(i);
     Real mz3 = trans_face2_i3_(i) * trans_face2_j1_(j);
 
-    // Construct 4-velocity
-    Real u0 = std::sqrt(-1.0 / (g00 + g11 * v1*v1 + g22 * v2*v2 + g33 * v3*v3));
-    Real u1 = u0 * v1;
-    Real u2 = u0 * v2;
-    Real u3 = u0 * v3;
+    // Extract global 3-velocities
+    Real &v1l = prim_left(IVX,i);
+    Real &v2l = prim_left(IVY,i);
+    Real &v3l = prim_left(IVZ,i);
+    Real &v1r = prim_right(IVX,i);
+    Real &v2r = prim_right(IVY,i);
+    Real &v3r = prim_right(IVZ,i);
 
-    // Transform 4-velocity
-    Real u0_new = mt0 * u0;
-    Real u1_new = mx1 * u1;
-    Real u2_new = my2 * u2;
-    Real u3_new = mz3 * u3;
-    v1 = u1_new / u0_new;
-    v2 = u2_new / u0_new;
-    v3 = u3_new / u0_new;
+    // Construct global 4-velocities
+    Real u0l = std::sqrt(-1.0 / (g00 + g11*v1l*v1l + g22*v2l*v2l + g33*v3l*v3l));
+    Real u1l = u0l * v1l;
+    Real u2l = u0l * v2l;
+    Real u3l = u0l * v3l;
+    Real u0r = std::sqrt(-1.0 / (g00 + g11*v1r*v1r + g22*v2r*v2r + g33*v3r*v3r));
+    Real u1r = u0r * v1r;
+    Real u2r = u0r * v2r;
+    Real u3r = u0r * v3r;
+
+    // Transform 4-velocities
+    Real utl = mt0 * u0l;
+    Real uxl = mx1 * u1l;
+    Real uyl = my2 * u2l;
+    Real uzl = mz3 * u3l;
+    Real utr = mt0 * u0r;
+    Real uxr = mx1 * u1r;
+    Real uyr = my2 * u2r;
+    Real uzr = mz3 * u3r;
+
+    // Set local 3-velocities
+    v1l = uxl / utl;
+    v2l = uyl / utl;
+    v3l = uzl / utl;
+    v1r = uxr / utr;
+    v2r = uyr / utr;
+    v3r = uzr / utr;
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED)
     {
-      // Extract magnetic field
-      Real &b2 = b(k,j,i);
-      Real &b3 = prim(IBY,i);
-      Real &b1 = prim(IBZ,i);
+      // Extract global magnetic fields
+      const Real &b2 = b2_vals(k,j,i);
+      Real &b3l = prim_left(IBY,i);
+      Real &b1l = prim_left(IBZ,i);
+      Real &b3r = prim_right(IBY,i);
+      Real &b1r = prim_right(IBZ,i);
 
-      // Calculate covariant magnetic field
-      Real bcov0 = g11*b1*u1 + g22*b2*u2 + g33*b3*u3;
-      Real bcov1 = (b1 + bcov0 * u1) / u0;
-      Real bcov2 = (b2 + bcov0 * u2) / u0;
-      Real bcov3 = (b3 + bcov0 * u3) / u0;
+      // Construct global covariant magnetic fields
+      Real bcov0l = g11*b1l*u1l + g22*b2*u2l + g33*b3l*u3l;
+      Real bcov1l = (b1l + bcov0l * u1l) / u0l;
+      Real bcov2l = (b2 + bcov0l * u2l) / u0l;
+      Real bcov3l = (b3l + bcov0l * u3l) / u0l;
+      Real bcov0r = g11*b1r*u1r + g22*b2*u2r + g33*b3r*u3r;
+      Real bcov1r = (b1r + bcov0r * u1r) / u0r;
+      Real bcov2r = (b2 + bcov0r * u2r) / u0r;
+      Real bcov3r = (b3r + bcov0r * u3r) / u0r;
 
-      // Transform field
-      Real bcov0_new = mt0 * bcov0;
-      Real bcov1_new = mx1 * bcov1;
-      Real bcov2_new = my2 * bcov2;
-      Real bcov3_new = mz3 * bcov3;
+      // Transform covariant magnetic fields
+      Real bcovtl = mt0 * bcov0l;
+      Real bcovxl = mx1 * bcov1l;
+      Real bcovyl = my2 * bcov2l;
+      Real bcovzl = mz3 * bcov3l;
+      Real bcovtr = mt0 * bcov0r;
+      Real bcovxr = mx1 * bcov1r;
+      Real bcovyr = my2 * bcov2r;
+      Real bcovzr = mz3 * bcov3r;
 
-      // Calculate standard magnetic field
-      b1 = u0_new * bcov1_new - u1_new * bcov0_new;
-      b2 = u0_new * bcov2_new - u2_new * bcov0_new;
-      b3 = u0_new * bcov3_new - u3_new * bcov0_new;
+      // Set local magnetic fields
+      // TODO: deal with possible inconsistent B^y (shouldn't happen here)
+      Real byl = utl * bcovyl - uyl * bcovtl;
+      Real byr = utr * bcovyr - uyr * bcovtr;
+      by(i) = 0.5 * (byl + byr);
+      b3l = utl * bcovzl - uzl * bcovtl;
+      b1l = utl * bcovxl - uxl * bcovtl;
+      b3r = utr * bcovzr - uzr * bcovtr;
+      b1r = utr * bcovxr - uxr * bcovtr;
     }
   }
   return;
@@ -802,23 +1088,21 @@ void Coordinates::PrimToLocal2(const int k, const int j, AthenaArray<Real> &b,
 // Inputs:
 //   k: phi-index
 //   j: theta-index
-//   b: 3D array of transverse components B^1 of magnetic field, in global coordinates
-//   prim: 1D array of primitives, using global coordinates
+//   b3_vals: 3D array of normal components B^3 of magnetic field, in global coordinates
+//   prim_left: 1D array of left primitives, using global coordinates
+//   prim_right: 1D array of right primitives, using global coordinates
 // Outputs:
-//   b: values in range overwritten in local coordinates
-//   prim: values overwritten in local coordinates
-void Coordinates::PrimToLocal3(const int k, const int j, AthenaArray<Real> &b,
-    AthenaArray<Real> &prim)
+//   prim_left: values overwritten in local coordinates
+//   prim_right: values overwritten in local coordinates
+//   bz: 1D array of longitudinal magnetic fields, in local coordinates
+void Coordinates::PrimToLocal3(const int k, const int j,
+    const AthenaArray<Real> &b3_vals, AthenaArray<Real> &prim_left,
+    AthenaArray<Real> &prim_right, AthenaArray<Real> &bz)
 {
   // Go through 1D block of cells
 #pragma simd
   for (int i = pmy_block->is; i <= pmy_block->ie; i++)
   {
-    // Extract primitives
-    Real &v1 = prim(IVX,i);
-    Real &v2 = prim(IVY,i);
-    Real &v3 = prim(IVZ,i);
-
     // Extract geometric quantities
     Real &g00 = metric_face3_i1_(i);
     Real &g11 = metric_face3_i2_(i);
@@ -829,45 +1113,81 @@ void Coordinates::PrimToLocal3(const int k, const int j, AthenaArray<Real> &b,
     Real &my2 = trans_face3_i3_(i);
     Real mz3 = trans_face3_i3_(i) * trans_face3_j1_(j);
 
-    // Construct 4-velocity
-    Real u0 = std::sqrt(-1.0 / (g00 + g11 * v1*v1 + g22 * v2*v2 + g33 * v3*v3));
-    Real u1 = u0 * v1;
-    Real u2 = u0 * v2;
-    Real u3 = u0 * v3;
+    // Extract global 3-velocities
+    Real &v1l = prim_left(IVX,i);
+    Real &v2l = prim_left(IVY,i);
+    Real &v3l = prim_left(IVZ,i);
+    Real &v1r = prim_right(IVX,i);
+    Real &v2r = prim_right(IVY,i);
+    Real &v3r = prim_right(IVZ,i);
 
-    // Transform 4-velocity
-    Real u0_new = mt0 * u0;
-    Real u1_new = mx1 * u1;
-    Real u2_new = my2 * u2;
-    Real u3_new = mz3 * u3;
-    v1 = u1_new / u0_new;
-    v2 = u2_new / u0_new;
-    v3 = u3_new / u0_new;
+    // Construct global 4-velocities
+    Real u0l = std::sqrt(-1.0 / (g00 + g11*v1l*v1l + g22*v2l*v2l + g33*v3l*v3l));
+    Real u1l = u0l * v1l;
+    Real u2l = u0l * v2l;
+    Real u3l = u0l * v3l;
+    Real u0r = std::sqrt(-1.0 / (g00 + g11*v1r*v1r + g22*v2r*v2r + g33*v3r*v3r));
+    Real u1r = u0r * v1r;
+    Real u2r = u0r * v2r;
+    Real u3r = u0r * v3r;
+
+    // Transform 4-velocities
+    Real utl = mt0 * u0l;
+    Real uxl = mx1 * u1l;
+    Real uyl = my2 * u2l;
+    Real uzl = mz3 * u3l;
+    Real utr = mt0 * u0r;
+    Real uxr = mx1 * u1r;
+    Real uyr = my2 * u2r;
+    Real uzr = mz3 * u3r;
+
+    // Set local 3-velocities
+    v1l = uxl / utl;
+    v2l = uyl / utl;
+    v3l = uzl / utl;
+    v1r = uxr / utr;
+    v2r = uyr / utr;
+    v3r = uzr / utr;
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED)
     {
-      // Extract magnetic field
-      Real &b3 = b(k,j,i);
-      Real &b1 = prim(IBY,i);
-      Real &b2 = prim(IBZ,i);
+      // Extract global magnetic fields
+      const Real &b3 = b3_vals(k,j,i);
+      Real &b1l = prim_left(IBY,i);
+      Real &b2l = prim_left(IBZ,i);
+      Real &b1r = prim_right(IBY,i);
+      Real &b2r = prim_right(IBZ,i);
 
-      // Calculate covariant magnetic field
-      Real bcov0 = g11*b1*u1 + g22*b2*u2 + g33*b3*u3;
-      Real bcov1 = (b1 + bcov0 * u1) / u0;
-      Real bcov2 = (b2 + bcov0 * u2) / u0;
-      Real bcov3 = (b3 + bcov0 * u3) / u0;
+      // Construct global covariant magnetic fields
+      Real bcov0l = g11*b1l*u1l + g22*b2l*u2l + g33*b3*u3l;
+      Real bcov1l = (b1l + bcov0l * u1l) / u0l;
+      Real bcov2l = (b2l + bcov0l * u2l) / u0l;
+      Real bcov3l = (b3 + bcov0l * u3l) / u0l;
+      Real bcov0r = g11*b1r*u1r + g22*b2r*u2r + g33*b3*u3r;
+      Real bcov1r = (b1r + bcov0r * u1r) / u0r;
+      Real bcov2r = (b2r + bcov0r * u2r) / u0r;
+      Real bcov3r = (b3 + bcov0r * u3r) / u0r;
 
-      // Transform field
-      Real bcov0_new = mt0 * bcov0;
-      Real bcov1_new = mx1 * bcov1;
-      Real bcov2_new = my2 * bcov2;
-      Real bcov3_new = mz3 * bcov3;
+      // Transform covariant magnetic fields
+      Real bcovtl = mt0 * bcov0l;
+      Real bcovxl = mx1 * bcov1l;
+      Real bcovyl = my2 * bcov2l;
+      Real bcovzl = mz3 * bcov3l;
+      Real bcovtr = mt0 * bcov0r;
+      Real bcovxr = mx1 * bcov1r;
+      Real bcovyr = my2 * bcov2r;
+      Real bcovzr = mz3 * bcov3r;
 
-      // Calculate standard magnetic field
-      b1 = u0_new * bcov1_new - u1_new * bcov0_new;
-      b2 = u0_new * bcov2_new - u2_new * bcov0_new;
-      b3 = u0_new * bcov3_new - u3_new * bcov0_new;
+      // Set local magnetic fields
+      // TODO: deal with possible inconsistent B^z (shouldn't happen here)
+      Real bzl = utl * bcovzl - uzl * bcovtl;
+      Real bzr = utr * bcovzr - uzr * bcovtr;
+      bz(i) = 0.5 * (bzl + bzr);
+      b1l = utl * bcovxl - uxl * bcovtl;
+      b2l = utl * bcovyl - uyl * bcovtl;
+      b1r = utr * bcovxr - uxr * bcovtr;
+      b2r = utr * bcovyr - uyr * bcovtr;
     }
   }
   return;
@@ -1065,9 +1385,11 @@ void Coordinates::FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flu
 // Function for converting all primitives to conserved variables
 // Inputs:
 //   prim: 3D array of primitives
+//   b: 3D array of cell-centered magnetic fields
 // Outputs:
 //   cons: 3D array of conserved variables
-void Coordinates::PrimToCons(AthenaArray<Real> &prim, AthenaArray<Real> &cons)
+void Coordinates::PrimToCons(const AthenaArray<Real> &prim, const AthenaArray<Real> &b,
+    AthenaArray<Real> &cons)
 {
   // Extract ratio of specific heats
   const Real gamma_adi = pmy_block->pfluid->pf_eos->GetGamma();
@@ -1104,36 +1426,56 @@ void Coordinates::PrimToCons(AthenaArray<Real> &prim, AthenaArray<Real> &cons)
         Real g33 = metric_cell_i3_(i) * metric_cell_j1_(j);
 
         // Extract primitives
-        Real &rho = prim(IDN,k,j,i);
-        Real &pgas = prim(IEN,k,j,i);
-        Real &v1 = prim(IVX,k,j,i);
-        Real &v2 = prim(IVY,k,j,i);
-        Real &v3 = prim(IVZ,k,j,i);
+        const Real &rho = prim(IDN,k,j,i);
+        const Real &pgas = prim(IEN,k,j,i);
+        const Real &v1 = prim(IVX,k,j,i);
+        const Real &v2 = prim(IVY,k,j,i);
+        const Real &v3 = prim(IVZ,k,j,i);
 
-        // Extract conserved quantities
-        Real &d = cons(IDN,k,j,i);
-        Real &e = cons(IEN,k,j,i);
-        Real &m1 = cons(IVX,k,j,i);
-        Real &m2 = cons(IVY,k,j,i);
-        Real &m3 = cons(IVZ,k,j,i);
+        // Extract magnetic fields
+        Real b1 = 0.0, b2 = 0.0, b3 = 0.0;
+        if (MAGNETIC_FIELDS_ENABLED)
+        {
+          b1 = b(IB1,k,j,i);
+          b2 = b(IB2,k,j,i);
+          b3 = b(IB3,k,j,i);
+        }
 
         // Calculate 4-velocity
         Real u0 = std::sqrt(-1.0 / (g00 + g11*v1*v1 + g22*v2*v2 + g33*v3*v3));
         Real u1 = u0 * v1;
         Real u2 = u0 * v2;
         Real u3 = u0 * v3;
-        Real u_lower_0 = g00 * u0;
-        Real u_lower_1 = g11 * u1;
-        Real u_lower_2 = g22 * u2;
-        Real u_lower_3 = g33 * u3;
+        Real u_0 = g00 * u0;
+        Real u_1 = g11 * u1;
+        Real u_2 = g22 * u2;
+        Real u_3 = g33 * u3;
 
-        // Calculate conserved quantities
-        d = rho * u0;
+        // Calculate covariant magnetic field
+        Real bcov0 = g11*b1*u1 + g22*b2*u2 + g33*b3*u3;
+        Real bcov1 = 1.0/u0 * (b1 + bcov0 * u1);
+        Real bcov2 = 1.0/u0 * (b2 + bcov0 * u2);
+        Real bcov3 = 1.0/u0 * (b3 + bcov0 * u3);
+        Real bcov_0 = g00 * bcov0;
+        Real bcov_1 = g11 * bcov1;
+        Real bcov_2 = g22 * bcov2;
+        Real bcov_3 = g33 * bcov3;
+        Real bcov_sq = bcov0*bcov_0 + bcov1*bcov_1 + bcov2*bcov_2 + bcov3*bcov_3;
+
+        // Extract conserved quantities
+        Real &rho_u0 = cons(IDN,k,j,i);
+        Real &t0_0 = cons(IEN,k,j,i);
+        Real &t0_1 = cons(IVX,k,j,i);
+        Real &t0_2 = cons(IVY,k,j,i);
+        Real &t0_3 = cons(IVZ,k,j,i);
+
+        // Set conserved quantities
+        rho_u0 = rho * u0;
         Real rho_h = rho + gamma_adi_red * pgas;
-        e = rho_h * u0 * u_lower_0 + pgas;
-        m1 = rho_h * u0 * u_lower_1;
-        m2 = rho_h * u0 * u_lower_2;
-        m3 = rho_h * u0 * u_lower_3;
+        t0_0 = (rho_h + bcov_sq) * u0 * u_0 - bcov0 * bcov_0 + pgas + 0.5*bcov_sq;
+        t0_1 = (rho_h + bcov_sq) * u0 * u_1 - bcov0 * bcov_1;
+        t0_2 = (rho_h + bcov_sq) * u0 * u_2 - bcov0 * bcov_2;
+        t0_3 = (rho_h + bcov_sq) * u0 * u_3 - bcov0 * bcov_3;
       }
   return;
 }

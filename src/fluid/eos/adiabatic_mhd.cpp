@@ -64,7 +64,6 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   MeshBlock *pmb = pmy_fluid_->pmy_block;
   int jl = pmb->js; int ju = pmb->je;
   int kl = pmb->ks; int ku = pmb->ke;
-  Real lw, rw;
 
   if (pmb->block_size.nx2 > 1) {
     jl -= (NGHOST);
@@ -76,31 +75,36 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   }
   Real gm1 = GetGamma() - 1.0;
 
-// Convert to Primitives
-
   int max_nthreads = pmb->pmy_mesh->nthreads_mesh;
 
 // #pragma omp parallel default(shared) num_threads(max_nthreads)
 {
+  // Convert to Primitives
   for (int k=kl; k<=ku; ++k){
 // #pragma omp for schedule(dynamic)
   for (int j=jl; j<=ju; ++j){
 #pragma simd
     for (int i=pmb->is-(NGHOST); i<=pmb->ie+(NGHOST); ++i){
-      const Real& u_d  = cons(IDN,k,j,i);
-      const Real& u_m1 = cons(IVX,k,j,i);
-      const Real& u_m2 = cons(IVY,k,j,i);
-      const Real& u_m3 = cons(IVZ,k,j,i);
-      const Real& u_e  = cons(IEN,k,j,i);
+      Real& u_d  = cons(IDN,k,j,i);
+      Real& u_m1 = cons(IVX,k,j,i);
+      Real& u_m2 = cons(IVY,k,j,i);
+      Real& u_m3 = cons(IVZ,k,j,i);
+      Real& u_e  = cons(IEN,k,j,i);
 
-// apply density floor, without changing momentum or energy
-      cons(IDN,k,j,i) = std::max(cons(IDN,k,j,i), density_floor_);
-      prim(IDN,k,j,i) = u_d;
+      Real& w_d  = prim(IDN,k,j,i);
+      Real& w_vx = prim(IVX,k,j,i);
+      Real& w_vy = prim(IVY,k,j,i);
+      Real& w_vz = prim(IVZ,k,j,i);
+      Real& w_p  = prim(IEN,k,j,i);
+
+      // apply density floor, without changing momentum or energy
+      u_d = (u_d > density_floor_) ?  u_d : density_floor_;
+      w_d = u_d;
 
       Real di = 1.0/u_d;
-      prim(IVX,k,j,i) = u_m1*di;
-      prim(IVY,k,j,i) = u_m2*di;
-      prim(IVZ,k,j,i) = u_m3*di;
+      w_vx = u_m1*di;
+      w_vy = u_m2*di;
+      w_vz = u_m3*di;
 
       const Real& b1_i   = b.x1f(k,j,i  );
       const Real& b1_ip1 = b.x1f(k,j,i+1);
@@ -109,42 +113,40 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       const Real& b3_k   = b.x3f(k  ,j,i);
       const Real& b3_kp1 = b.x3f(k+1,j,i);
 
+      Real& bcc1 = bcc(IB1,k,j,i);
+      Real& bcc2 = bcc(IB2,k,j,i);
+      Real& bcc3 = bcc(IB3,k,j,i);
+
       // cell center B-fields are defined as spatial interpolation at the volume center
-      const Real& x1f_i  = pmb->x1v(i);
+      const Real& x1f_i  = pmb->x1f(i);
       const Real& x1f_ip = pmb->x1f(i+1);
       const Real& x1v_i  = pmb->x1v(i);
       const Real& dx1_i  = pmb->dx1f(i);
-      lw=(x1f_ip-x1v_i)/dx1_i;
-      rw=(x1v_i -x1f_i)/dx1_i;
-      bcc(IB1,k,j,i) = lw*b1_i + rw*b1_ip1;
-      const Real& x2f_j  = pmb->x2v(j);
+      Real lw=(x1f_ip-x1v_i)/dx1_i;
+      Real rw=(x1v_i -x1f_i)/dx1_i;
+      bcc1 = lw*b1_i + rw*b1_ip1;
+      const Real& x2f_j  = pmb->x2f(j);
       const Real& x2f_jp = pmb->x2f(j+1);
       const Real& x2v_j  = pmb->x2v(j);
       const Real& dx2_j  = pmb->dx2f(j);
       lw=(x2f_jp-x2v_j)/dx2_j;
       rw=(x2v_j -x2f_j)/dx2_j;
-      bcc(IB2,k,j,i) = lw*b2_j + rw*b2_jp1;
-      const Real& x3f_k  = pmb->x3v(k);
+      bcc2 = lw*b2_j + rw*b2_jp1;
+      const Real& x3f_k  = pmb->x3f(k);
       const Real& x3f_kp = pmb->x3f(k+1);
       const Real& x3v_k  = pmb->x3v(k);
       const Real& dx3_k  = pmb->dx3f(k);
       lw=(x3f_kp-x3v_k)/dx3_k;
       rw=(x3v_k -x3f_k)/dx3_k;
-      bcc(IB3,k,j,i) = lw*b3_k + rw*b3_kp1;
+      bcc3 = lw*b3_k + rw*b3_kp1;
 
-      Real& bc1 = bcc(IB1,k,j,i);
-      Real& bc2 = bcc(IB2,k,j,i);
-      Real& bc3 = bcc(IB3,k,j,i);
+      Real pb = 0.5*(SQR(bcc1) + SQR(bcc2) + SQR(bcc3));
+      Real ke = 0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3));
+      w_p = gm1*(u_e - ke - pb);
 
-      Real pb = 0.5*(SQR(bc1) + SQR(bc2) + SQR(bc3));
-      prim(IEN,k,j,i) = gm1*(u_e - 0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3)) - pb);
-
-// apply pressure floor, correct total energy
-      if (prim(IEN,k,j,i) < pressure_floor_) {
-        prim(IEN,k,j,i) = pressure_floor_;
-        cons(IEN,k,j,i) = (pressure_floor_/gm1) + pb + 
-                          0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3));
-      }
+      // apply pressure floor, correct total energy
+      u_e = (w_p > pressure_floor_) ?  u_e : ((pressure_floor_/gm1) + ke + pb);
+      w_p = (w_p > pressure_floor_) ?  w_p : pressure_floor_;
     }
   }}
 }
@@ -153,12 +155,20 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 }
 
 //--------------------------------------------------------------------------------------
+// \!fn Real FluidEqnOfState::SoundSpeed(Real prim[NFLUID])
+// \brief returns adiabatic sound speed given vector of primitive variables
+
+Real FluidEqnOfState::SoundSpeed(const Real prim[NFLUID])
+{
+  return sqrt(GetGamma()*prim[IEN]/prim[IDN]);
+}
+
+//--------------------------------------------------------------------------------------
 // \!fn Real FluidEqnOfState::FastMagnetosonicSpeed(const Real prim[], const Real bx)
 // \brief returns fast magnetosonic speed given vector of primitive variables
 // Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN 
 
-Real FluidEqnOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)],
-  const Real bx)
+Real FluidEqnOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx)
 {
   Real asq = GetGamma()*prim[IEN]/prim[IDN];
   Real vaxsq = bx*bx/prim[IDN];

@@ -14,7 +14,7 @@ FLUID_INT_FILE = @FLUID_INT_FILE@
 
 CXX := @COMPILER_CHOICE@
 CXXFLAGS := @COMPILER_FLAGS@
-LIBRARY_FLAGS := -lm
+LIBRARY_FLAGS := @LOADER_FLAGS@
 
 # Preliminary definitions
 
@@ -29,7 +29,7 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/fluid/srcterms/*.cpp) \
 	     src/fluid/eos/$(EOS_FILE) \
 	     $(wildcard src/fluid/integrators/*.cpp) \
-	     src/fluid/integrators/reconstruct/$(RECONSTRUCT_FILE) \
+	     $(wildcard src/fluid/integrators/reconstruct/*.cpp) \
 	     src/fluid/integrators/rsolvers/$(RSOLVER_DIR)$(RSOLVER_FILE) \
 	     $(wildcard src/outputs/*.cpp) \
 	     src/pgen/$(PROBLEM_FILE)

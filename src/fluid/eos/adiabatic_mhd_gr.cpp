@@ -1,7 +1,6 @@
 // Conserved-to-primitive inversion for adiabatic MHD in general relativity
 
 // TODO: make inputs const?
-// TODO: manually inline functions?
 
 // Primary header
 #include "eos.hpp"
@@ -20,16 +19,16 @@
 #include "../../parameter_input.hpp"          // GetReal()
 
 // Declarations
-static Real residual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq,
+static Real QNResidual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq,
     Real b_norm_sq, Real q_dot_b_norm_sq, Real gamma_prime);
-static Real residual_derivative(Real w_guess, Real d_norm, Real q_norm_sq,
-    Real b_norm_sq, Real q_dot_b_norm_sq, Real gamma_prime);
-static Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
+static Real QNResidualPrime(Real w_guess, Real d_norm, Real q_norm_sq, Real b_norm_sq,
+    Real q_dot_b_norm_sq, Real gamma_prime);
+static Real FindRootNR(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
     Real b_norm_sq, Real q_dot_b_norm_sq, Real gamma_prime);
 static Real quadratic_root(Real a1, Real a0, bool greater_root);
 static Real cubic_root_real(Real a2, Real a1, Real a0);
-static void quartic_root_minmax(Real a3, Real a2, Real a1, Real a0, Real &min_value,
-    Real &max_value);
+static void quartic_root_minmax(Real a3, Real a2, Real a1, Real a0, Real *pmin_value,
+    Real *pmax_value);
 
 // Constructor
 // Inputs:
@@ -61,18 +60,16 @@ FluidEqnOfState::~FluidEqnOfState()
 //   bcc: cell-centered magnetic field
 // Notes:
 //   follows Noble et al. 2006, ApJ 641 626 (N)
-//   implements formulas assuming no magnetic field
 void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
     AthenaArray<Real> &bcc)
 {
   // Parameters
-  const Real max_velocity = 1.0 - 1.0e-15;
-  const Real initial_guess_multiplier = 10.0;
-  const int initial_guess_multiplications = 10;
+  const Real guess_multiplier = 10.0;    // factor to multiply enthalpy if too small
+  const int guess_multiplications = 10;  // max number of enthalpy adjustments
 
   // Calculate reduced ratio of specific heats
-  const Real gamma_prime = gamma_ / (gamma_ - 1.0);
+  const Real gamma_prime = gamma_/(gamma_-1.0);
 
   // Determine array bounds
   MeshBlock *pb = pmy_fluid_->pmy_block;
@@ -93,14 +90,12 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     ku += (NGHOST);
   }
 
-  static int call_number = 0;
-  call_number++;
   // Go through cells
   for (int k = kl; k <= ku; k++)
     for (int j = jl; j <= ju; j++)
     {
       pb->pcoord->CellMetric(k, j, g_, g_inv_);
-#pragma simd
+      #pragma simd
       for (int i = is-NGHOST; i <= ie+NGHOST; i++)
       {
         // Extract metric
@@ -123,6 +118,11 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         const Real &gi30 = g_inv_(I03,i), &gi31 = g_inv_(I13,i), &gi32 = g_inv_(I23,i),
             &gi33 = g_inv_(I33,i);
 
+        // Calculate geometric quantities
+        Real alpha = 1.0 / std::sqrt(-gi00);
+        Real alpha_sq = alpha*alpha;
+        Real beta_sq = g00 + alpha_sq;
+
         // Extract conserved quantities
         Real &d = cons(IDN,k,j,i);
         Real &e = cons(IEN,k,j,i);
@@ -131,44 +131,25 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real &m3 = cons(IM3,k,j,i);
 
         // Extract face-centered magnetic field
-        const Real &bf1_i = b.x1f(k,j,i);
-        const Real &bf1_ip1 = b.x1f(k,j,i+1);
-        const Real &bf2_j = b.x2f(k,j,i);
-        const Real &bf2_jp1 = b.x2f(k,j+1,i);
-        const Real &bf3_k = b.x3f(k,j,i);
-        const Real &bf3_kp1 = b.x3f(k+1,j,i);
+        const Real &bf1m = b.x1f(k,j,i);
+        const Real &bf1p = b.x1f(k,j,i+1);
+        const Real &bf2m = b.x2f(k,j,i);
+        const Real &bf2p = b.x2f(k,j+1,i);
+        const Real &bf3m = b.x3f(k,j,i);
+        const Real &bf3p = b.x3f(k+1,j,i);
 
         // Extract cell-centered magnetic field
         Real &b1 = bcc(IB1,k,j,i);
         Real &b2 = bcc(IB2,k,j,i);
         Real &b3 = bcc(IB3,k,j,i);
 
-        // Extract old primitives
-        const Real &rho_old = prim_old(IDN,k,j,i);
-        const Real &pgas_old = prim_old(IEN,k,j,i);
-        const Real &v1_old = prim_old(IVX,k,j,i);
-        const Real &v2_old = prim_old(IVY,k,j,i);
-        const Real &v3_old = prim_old(IVZ,k,j,i);
-
-        // Extract primitives
-        Real &rho = prim(IDN,k,j,i);
-        Real &pgas = prim(IEN,k,j,i);
-        Real &v1 = prim(IVX,k,j,i);
-        Real &v2 = prim(IVY,k,j,i);
-        Real &v3 = prim(IVZ,k,j,i);
-
-        // Calculate geometric quantities
-        Real alpha = 1.0 / std::sqrt(-gi00);
-        Real alpha_sq = alpha*alpha;
-        Real beta_sq = g00 + alpha_sq;
-
         // Calculate cell-centered magnetic field
         Real interp_param = (pb->x1v(i) - pb->x1f(i)) / pb->dx1f(i);
-        b1 = (1.0-interp_param) * bf1_i + interp_param * bf1_ip1;
+        b1 = (1.0-interp_param) * bf1m + interp_param * bf1p;
         interp_param = (pb->x2v(j) - pb->x2f(j)) / pb->dx2f(j);
-        b2 = (1.0-interp_param) * bf2_j + interp_param * bf2_jp1;
+        b2 = (1.0-interp_param) * bf2m + interp_param * bf2p;
         interp_param = (pb->x3v(k) - pb->x3f(k)) / pb->dx3f(k);
-        b3 = (1.0-interp_param) * bf3_k + interp_param * bf3_kp1;
+        b3 = (1.0-interp_param) * bf3m + interp_param * bf3p;
 
         // Calculate variations on conserved quantities
         Real d_norm = alpha * d;  // (N 21)
@@ -196,6 +177,13 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real q_dot_b_norm = alpha * (q1*b1 + q2*b2 + q3*b3);
         Real q_dot_b_norm_sq = SQR(q_dot_b_norm);
 
+        // Extract old primitives
+        const Real &rho_old = prim_old(IDN,k,j,i);
+        const Real &pgas_old = prim_old(IEN,k,j,i);
+        const Real &v1_old = prim_old(IVX,k,j,i);
+        const Real &v2_old = prim_old(IVY,k,j,i);
+        const Real &v3_old = prim_old(IVZ,k,j,i);
+
         // Construct initial guess for enthalpy W
         Real v_sq = g11*v1_old*v1_old + g22*v2_old*v2_old + g33*v3_old*v3_old
             + 2.0 * (g12*v1_old*v2_old + g13*v1_old*v3_old + g23*v2_old*v3_old);
@@ -203,21 +191,28 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real v_norm_sq = 1.0/alpha_sq * (v_sq + 2.0*beta_v + beta_sq);
         Real gamma_sq = 1.0 / (1.0 - v_norm_sq);
         Real w_initial = gamma_sq * (rho_old + gamma_prime * pgas_old);
-        for (int count = 0; count < initial_guess_multiplications; count++)
+        for (int count = 0; count < guess_multiplications; count++)
         {
           Real b_w_term_initial = b_norm_sq + w_initial;
           Real v_sq_initial = (q_norm_sq*SQR(w_initial)
               + q_dot_b_norm_sq*(b_norm_sq+2.0*w_initial))
               / SQR(w_initial * (b_norm_sq+w_initial));     // (N 28)
           if (v_sq_initial >= 1.0)  // guess for W leads to superluminal velocities
-            w_initial *= initial_guess_multiplier;
+            w_initial *= guess_multiplier;
           else
             break;
         }
 
         // Apply Newton-Raphson method to find new W
-        Real w_true = find_root_nr(w_initial, d_norm, q_dot_n, q_norm_sq, b_norm_sq,
+        Real w_true = FindRootNR(w_initial, d_norm, q_dot_n, q_norm_sq, b_norm_sq,
             q_dot_b_norm_sq, gamma_prime);
+
+        // Extract primitives
+        Real &rho = prim(IDN,k,j,i);
+        Real &pgas = prim(IEN,k,j,i);
+        Real &v1 = prim(IVX,k,j,i);
+        Real &v2 = prim(IVY,k,j,i);
+        Real &v3 = prim(IVZ,k,j,i);
 
         // Calculate primitives from W
         v_norm_sq = (q_norm_sq*SQR(w_true)
@@ -287,20 +282,19 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 }
 
 // Function for calculating relativistic fast wavespeeds
-// Inputs:
+// Inputs: TODO
 // Outputs:
-//   lambda_plus: most positive wavespeed
-//   lambda_minus: most negative wavespeed
+//   plambda_plus: value set to most positive wavespeed
+//   plambda_minus: value set to most negative wavespeed
 // Notes:
-//   inputs assume x is transverse direction
+//   inputs assume x is normal direction
+//   works in locally flat coordinates
+//   same function as in adiabatic_mhd_sr.cpp
 //   references Mignone & Bodo 2005, MNRAS 364 126 (MB2005)
 //   references Mignone & Bodo 2006, MNRAS 368 1040 (MB2006)
-void FluidEqnOfState::FastMagnetosonicSpeedsRelativistic(Real rho, Real pgas,
-    Real vx, Real vy, Real vz,
-    Real ut, Real ux, Real uy, Real uz,
-    Real bx, Real by, Real bz,
-    Real bcovt, Real bcovx, Real bcovy, Real bcovz,
-    Real &lambda_plus, Real &lambda_minus)
+void FluidEqnOfState::FastMagnetosonicSpeedsSR(
+    Real rho, Real pgas, const Real u[4], const Real b[4],
+    Real *plambda_plus, Real *plambda_minus)
 {
   // Parameters
   const double v_limit = 1.0e-12;  // squared velocities less than this are considered 0
@@ -310,12 +304,20 @@ void FluidEqnOfState::FastMagnetosonicSpeedsRelativistic(Real rho, Real pgas,
   const Real gamma_adi = gamma_;
   const Real gamma_adi_red = gamma_adi/(gamma_adi-1.0);
 
+  // Calculate 3-vector components
+  Real vx = u[1]/u[0];
+  Real vy = u[2]/u[0];
+  Real vz = u[3]/u[0];
+  Real bx = b[1]*u[0] - b[0]*u[1];
+  Real by = b[2]*u[0] - b[0]*u[2];
+  Real bz = b[3]*u[0] - b[0]*u[3];
+
   // Calculate intermediate quantities
   Real v_sq = SQR(vx) + SQR(vy) + SQR(vz);
   Real gamma_rel_sq = 1.0/(1.0-v_sq);
   Real rho_h = rho + gamma_adi_red * pgas;
-  Real cs_sq = gamma_adi * pgas / rho_h;                              // (MB2005 4)
-  Real bcov_sq = -SQR(bcovt) + SQR(bcovx) + SQR(bcovy) + SQR(bcovz);
+  Real cs_sq = gamma_adi * pgas / rho_h;                          // (MB2005 4)
+  Real bcov_sq = -SQR(b[0]) + SQR(b[1]) + SQR(b[2]) + SQR(b[3]);
   Real bx_sq = SQR(bx);
 
   // Case out on velocity and magnetic field
@@ -325,8 +327,8 @@ void FluidEqnOfState::FastMagnetosonicSpeedsRelativistic(Real rho, Real pgas,
     Real a1 = -(bcov_sq + cs_sq * (rho_h + bx_sq)) / denominator;
     Real a0 = cs_sq * bx_sq / denominator;
     Real lambda_sq = quadratic_root(a1, a0, true);                 // (MB2006 57)
-    lambda_plus = std::sqrt(lambda_sq);
-    lambda_minus = -lambda_plus;
+    *plambda_plus = std::sqrt(lambda_sq);
+    *plambda_minus = -*plambda_plus;
   }
   else  // nonzero velocity
   {
@@ -340,30 +342,75 @@ void FluidEqnOfState::FastMagnetosonicSpeedsRelativistic(Real rho, Real pgas,
           / denominator;
       Real a0 = (rho_h * (-cs_sq + gamma_rel_sq*vx_sq*(1.0-cs_sq)) - q)
           / denominator;
-      lambda_plus = quadratic_root(a1, a0, true);                         // (MB2006 58)
-      lambda_minus = quadratic_root(a1, a0, false);                       // (MB2006 58)
+      *plambda_plus = quadratic_root(a1, a0, true);                       // (MB2006 58)
+      *plambda_minus = quadratic_root(a1, a0, false);                     // (MB2006 58)
     }
     else  // nonzero normal magnetic field
     {
       Real vx_3 = vx_sq * vx;
       Real vx_4 = SQR(vx_sq);
-      Real bcovt_sq = SQR(bcovt);
-      Real bcovx_sq = SQR(bcovx);
+      Real bcovt_sq = SQR(b[0]);
+      Real bcovx_sq = SQR(b[1]);
       Real var_1 = SQR(gamma_rel_sq) * rho_h * (1.0-cs_sq);
       Real var_2 = gamma_rel_sq * (bcov_sq + rho_h * cs_sq);
       Real denominator = var_1 + var_2 - cs_sq * bcovt_sq;
-      Real a3 = (-(4.0*var_1+2.0*var_2)*vx + 2.0*cs_sq*bcovt*bcovx)
+      Real a3 = (-(4.0*var_1+2.0*var_2)*vx + 2.0*cs_sq*b[0]*b[1])
           / denominator;
       Real a2 = (6.0*var_1*vx_sq + var_2*(vx_sq-1.0)
           + cs_sq*(bcovt_sq-bcovx_sq)) / denominator;
-      Real a1 = (-4.0*var_1*vx_3 + 2.0*var_2*vx - 2.0*cs_sq*bcovt*bcovx)
+      Real a1 = (-4.0*var_1*vx_3 + 2.0*var_2*vx - 2.0*cs_sq*b[0]*b[1])
           / denominator;
       Real a0 = (var_1*vx_4 - var_2*vx_sq + cs_sq*bcovx_sq)
         / denominator;
-      quartic_root_minmax(a3, a2, a1, a0, lambda_minus, lambda_plus);     // (MB2006 56)
-      lambda_minus = std::max(lambda_minus, -1.0);
-      lambda_plus = std::min(lambda_plus, 1.0);
+      quartic_root_minmax(a3, a2, a1, a0, plambda_minus, plambda_plus);   // (MB2006 56)
+      *plambda_minus = std::max(*plambda_minus, -1.0);
+      *plambda_plus = std::min(*plambda_plus, 1.0);
     }
+  }
+  return;
+}
+
+// Function for calculating relativistic fast wavespeeds in arbitrary coordinates
+// Inputs:
+// Outputs:
+//   plambda_plus: value set to most positive wavespeed
+//   plambda_minus: value set to most negative wavespeed
+// Notes:
+//   follows same general procedure as vchar() in phys.c in Harm
+//   variables are named as though 1 is normal direction
+void FluidEqnOfState::FastMagnetosonicSpeedsGR(
+    Real rho_h, Real pgas, Real u0, Real u1, Real b_sq,
+    Real g00, Real g01, Real g11,
+    Real *plambda_plus, Real *plambda_minus)
+{
+  // Parameters and constants
+  const Real discriminant_tol = -1.0e-10;  // values between this and 0 are considered 0
+  const Real gamma_adi = gamma_;
+
+  // Calculate comoving fast magnetosonic speed
+  Real cs_sq = gamma_adi * pgas / rho_h;
+  Real va_sq = b_sq / (b_sq + rho_h);
+  Real cms_sq = cs_sq + va_sq - cs_sq * va_sq;
+
+  // Set fast magnetosonic speeds in appropriate coordinates
+  Real a = SQR(u0) - (g00 + SQR(u0)) * cms_sq;
+  Real b = -2.0 * (u0*u1 - (g01 + u0*u1) * cms_sq);
+  Real c = SQR(u1) - (g11 + SQR(u1)) * cms_sq;
+  Real d = SQR(b) - 4.0*a*c;
+  if (d < 0.0 and d > discriminant_tol)
+    d = 0.0;
+  Real d_sqrt = std::sqrt(d);
+  Real root_1 = (-b + d_sqrt) / (2.0*a);
+  Real root_2 = (-b - d_sqrt) / (2.0*a);
+  if (root_1 > root_2)
+  {
+    *plambda_plus = root_1;
+    *plambda_minus = root_2;
+  }
+  else
+  {
+    *plambda_plus = root_2;
+    *plambda_minus = root_1;
   }
   return;
 }
@@ -382,9 +429,8 @@ void FluidEqnOfState::FastMagnetosonicSpeedsRelativistic(Real rho, Real pgas,
 //   returned value: calculated minus given value of q_dot_n
 // Notes:
 //   follows Noble et al. 2006, ApJ 641 626 (N)
-//   implements formulas assuming no magnetic field
-Real residual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq, Real b_norm_sq,
-    Real q_dot_b_norm_sq, Real gamma_prime)
+static Real QNResidual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq,
+    Real b_norm_sq, Real q_dot_b_norm_sq, Real gamma_prime)
 {
   Real v_norm_sq = (q_norm_sq*SQR(w_guess)
       + q_dot_b_norm_sq*(b_norm_sq+2.0*w_guess))
@@ -397,7 +443,7 @@ Real residual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq, Real b_no
   return q_dot_n_calc - q_dot_n;
 }
 
-// Derivative of residual()
+// Derivative of QNResidual()
 // Inputs:
 //   w_guess: guess for total enthalpy W
 //   d_norm: D = alpha * rho * u^0
@@ -410,9 +456,8 @@ Real residual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq, Real b_no
 //   returned value: derivative of calculated value of Q_mu n^mu
 // Notes:
 //   follows Noble et al. 2006, ApJ 641 626 (N)
-//   implements formulas assuming no magnetic field
-Real residual_derivative(Real w_guess, Real d_norm, Real q_norm_sq, Real b_norm_sq,
-    Real q_dot_b_norm_sq, Real gamma_prime)
+static Real QNResidualPrime(Real w_guess, Real d_norm, Real q_norm_sq,
+    Real b_norm_sq, Real q_dot_b_norm_sq, Real gamma_prime)
 {
   Real w_sq = SQR(w_guess);
   Real w_cu = w_sq * w_guess;
@@ -446,10 +491,11 @@ Real residual_derivative(Real w_guess, Real d_norm, Real q_norm_sq, Real b_norm_
 //   q_dot_b_norm_sq: (Q_mu \mathcal{B}^mu)^2 = (alpha^2 T^0_mu B^mu)^2
 //   gamma_prime: reduced adiabatic gas constant Gamma' = Gamma/(Gamma-1)
 // Outputs:
+//   returned value: total enthalpy W
 // Notes:
 //   returns NAN in event of failure
 //   forces W to be positive
-Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
+static Real FindRootNR(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
     Real b_norm_sq, Real q_dot_b_norm_sq, Real gamma_prime)
 {
   // Parameters
@@ -458,7 +504,7 @@ Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
   const Real tol_res = 1.0e-15;           // absolute tolerance in residual
 
   // Check if root has already been found
-  Real new_res = residual(w_initial, d_norm, q_dot_n, q_norm_sq, b_norm_sq,
+  Real new_res = QNResidual(w_initial, d_norm, q_dot_n, q_norm_sq, b_norm_sq,
       q_dot_b_norm_sq, gamma_prime);
   if (std::abs(new_res) < tol_res)
     return w_initial;
@@ -470,7 +516,7 @@ Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
     // Prepare needed values
     Real old_w = new_w;
     Real old_res = new_res;
-    Real derivative = residual_derivative(old_w, d_norm, q_norm_sq, b_norm_sq,
+    Real derivative = QNResidualPrime(old_w, d_norm, q_norm_sq, b_norm_sq,
         q_dot_b_norm_sq, gamma_prime);
     Real delta = -old_res / derivative;
 
@@ -493,7 +539,7 @@ Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
     // Reduce step if new value is worse than old
     for (j = i; j < max_iterations; j++)
     {
-      new_res = residual(new_w, d_norm, q_dot_n, q_norm_sq, b_norm_sq, q_dot_b_norm_sq,
+      new_res = QNResidual(new_w, d_norm, q_dot_n, q_norm_sq, b_norm_sq, q_dot_b_norm_sq,
           gamma_prime);
       if (std::abs(new_res) < std::abs(old_res))
         break;
@@ -523,10 +569,11 @@ Real find_root_nr(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
 // Outputs:
 //   returned value: desired root
 // Notes:
+//   same function as in adiabatic_mhd_sr.cpp and hlld_mhd_rel.cpp
 //   solves x^2 + a_1 x + a_0 = 0 for x
 //   returns abscissa of vertex if there are no real roots
 //   follows advice in Numerical Recipes, 3rd ed. (5.6) for avoiding large cancellations
-Real quadratic_root(Real a1, Real a0, bool greater_root)
+static Real quadratic_root(Real a1, Real a0, bool greater_root)
 {
   if (a1*a1 < 4.0*a0)  // no real roots
     return -a1/2.0;
@@ -556,7 +603,7 @@ Real quadratic_root(Real a1, Real a0, bool greater_root)
 // Notes:
 //   solves x^3 + a_2 x^2 + a_1 x + a_0 = 0 for x
 //   references Numerical Recipes, 3rd ed. (NR)
-Real cubic_root_real(Real a2, Real a1, Real a0)
+static Real cubic_root_real(Real a2, Real a1, Real a0)
 {
   Real q = (a2*a2 - 3.0*a1) / 9.0;                       // (NR 5.6.10)
   Real r = (2.0*a2*a2*a2 - 9.0*a1*a2 + 27.0*a0) / 54.0;  // (NR 5.6.10)
@@ -581,8 +628,8 @@ Real cubic_root_real(Real a2, Real a1, Real a0)
 //   a1: linear coefficient
 //   a0: constant coefficient
 // Outputs:
-//   min_value: least real root
-//   max_value: greatest real root
+//   pmin_value: value set to least real root
+//   pmax_value: value set to greatest real root
 // Notes:
 //   solves x^4 + a3 x^3 + a2 x^2 + a1 x + a0 = 0 for x
 //   uses following procedure:
@@ -594,8 +641,8 @@ Real cubic_root_real(Real a2, Real a1, Real a0)
 //          y^2 + e1 y + e0
 //     5) find roots of quadratics
 //     6) set minimum and maximum roots of original quartic
-void quartic_root_minmax(Real a3, Real a2, Real a1, Real a0, Real &min_value,
-    Real &max_value)
+static void quartic_root_minmax(Real a3, Real a2, Real a1, Real a0, Real *pmin_value,
+    Real *pmax_value)
 {
   // Step 1: Find reduced quartic coefficients
   Real b2 = a2 - 3.0/8.0*a3*a3;
@@ -632,7 +679,7 @@ void quartic_root_minmax(Real a3, Real a2, Real a1, Real a0, Real &min_value,
   Real y4 = quadratic_root(e1, e0, true);
 
   // Step 6: Set original quartic roots
-  min_value = std::min(y1, y3) - a3/4.0;
-  max_value = std::max(y2, y4) - a3/4.0;
+  *pmin_value = std::min(y1, y3) - a3/4.0;
+  *pmax_value = std::max(y2, y4) - a3/4.0;
   return;
 }

@@ -15,7 +15,7 @@
 //======================================================================================
 
 // Primary header
-#include "../fluid/fluid.hpp"
+#include "../mesh.hpp"
 
 // C++ headers
 #include <iostream>   // endl
@@ -26,9 +26,9 @@
 // Athena headers
 #include "../athena.hpp"           // enums, Real
 #include "../athena_arrays.hpp"    // AthenaArray
-#include "../mesh.hpp"             // MeshBlock
 #include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/eos/eos.hpp"    // ParameterInput
+#include "../fluid/eos/eos.hpp"    // EOS
+#include "../fluid/fluid.hpp"      // Fluid
 
 //======================================================================================
 //! \file two_ibw.c

@@ -13,8 +13,9 @@
 #   --eos=choice      use choice as the equation of state
 #   --flux=choice     use choice as the Riemann solver
 #   -b                enable magnetic fields
-#   -s                enable special-relativity
-#   -g                enable general-relativity
+#   -s                enable special relativity
+#   -g                enable general relativity
+#   -t                enable interface frame transformations for GR
 #   --order=choice    use choice as the spatial reconstruction algorithm
 #   --fint=choice     use choice as the fluid time-integration algorithm
 #   --cxx=choice      use choice as the C++ compiler
@@ -48,74 +49,80 @@ pgen_choices = [choice[len(pgen_directory):-4] for choice in pgen_choices]
 parser.add_argument('--prob',
     default='shock_tube',
     choices=pgen_choices,
-    help='selects problem generator')
+    help='select problem generator')
 
 # --coord=[name] argument
 parser.add_argument('--coord',
     default='cartesian',
     choices=['cartesian','cylindrical','spherical_polar',\
         'minkowski','schwarzschild'],
-    help='selects coordinate system')
+    help='select coordinate system')
 
 # --eos=[name] argument
 parser.add_argument('--eos',
     default='adiabatic',
     choices=['adiabatic','isothermal'],
-    help='selects equation of state')
+    help='select equation of state')
 
 # --flux=[name] argument
 parser.add_argument('--flux',
     default='hlle',
-    choices=['hlle','hllc','hlld'],
-    help='selects Riemann solver')
+    choices=['hlle','hllc','hlld','roe','llf'],
+    help='select Riemann solver')
 
 # -b argument
 parser.add_argument('-b',
     action='store_true',
     default=False,
-    help='enables magnetic field')
+    help='enable magnetic field')
 
 # -s argument
 parser.add_argument('-s',
     action='store_true',
     default=False,
-    help='enables special relativity')
+    help='enable special relativity')
 
 # -g argument
 parser.add_argument('-g',
     action='store_true',
     default=False,
-    help='enables general relativity')
+    help='enable general relativity')
+
+# -t argument
+parser.add_argument('-t',
+    action='store_true',
+    default=False,
+    help='enable interface frame transformations for GR')
 
 # --order=[name] argument
 parser.add_argument('--order',
     default='plm',
     choices=['plm'],
-    help='selects spatial reconstruction algorithm')
+    help='select spatial reconstruction algorithm')
 
 # --fint=[name] argument
 parser.add_argument('--fint',
     default='vl2',
     choices=['vl2'],
-    help='selects fluid time-integration algorithm')
+    help='select fluid time-integration algorithm')
 
 # --cxx=[name] argument
 parser.add_argument('--cxx',
     default='g++',
     choices=['g++','icc','cray'],
-    help='selects C++ compiler')
+    help='select C++ compiler')
 
 # -mpi argument
 parser.add_argument('-mpi',
     action='store_true',
     default=False,
-    help='enables parallelization with MPI')
+    help='enable parallelization with MPI')
 
 # -omp argument
 parser.add_argument('-omp',
     action='store_true',
     default=False,
-    help='enables parallelization with OpenMP')
+    help='enable parallelization with OpenMP')
 
 # -ifov=N argument
 parser.add_argument('--ifov',
@@ -133,7 +140,7 @@ parser.add_argument('--idlength',
 parser.add_argument('-debug',
     action='store_true',
     default=False,
-    help='enables debug flags; override other compiler options')
+    help='enable debug flags; override other compiler options')
 
 # Parse command-line inputs
 args = vars(parser.parse_args())
@@ -142,7 +149,18 @@ args = vars(parser.parse_args())
 definitions = {}
 makefile_options = {}
 
-#--- Step 3.  Set definitions and Makefile options based on above arguments ------------
+#--- Step 3.  Test for incompatible arguments ------------------------------------------
+
+if args['flux']=='hllc' and args['eos']=='isothermal':
+  raise SystemExit('### CONFIGURE ERROR: HLLC flux cannot be used with isothermal EOS')
+
+if args['flux']=='hllc' and args['b']:
+  raise SystemExit('### CONFIGURE ERROR: HLLC flux cannot be used with MHD')
+
+if args['flux']=='hlld' and not args['b']:
+  raise SystemExit('### CONFIGURE ERROR: HLLD flux can only be used with MHD')
+
+#--- Step 4.  Set definitions and Makefile options based on above arguments ------------
 
 # --prob=[name] argument
 definitions['PROBLEM'] = args['prob']
@@ -171,12 +189,15 @@ makefile_options['EOS_FILE'] += '_mhd' if args['b'] else '_hydro'
 # set variety of macros based on whether MHD/hydro or adi/iso are defined
 if args['b']:
   definitions['NFIELD_VARIABLES'] = '3'
-  makefile_options['RSOLVER_FILE'] += '_mhd'
   makefile_options['RSOLVER_DIR'] = 'mhd/'
+  if args['flux'] == 'hlle' or args['flux'] == 'llf' or args['flux'] == 'roe':
+    makefile_options['RSOLVER_FILE'] += '_mhd'
   if args['eos'] == 'adiabatic':
     definitions['NWAVE_VALUE'] = '7'
   else:
     definitions['NWAVE_VALUE'] = '6'
+    if args['flux'] == 'hlld':
+      makefile_options['RSOLVER_FILE'] += '_iso'
 else:
   definitions['NFIELD_VARIABLES'] = '0'
   makefile_options['RSOLVER_DIR'] = 'hydro/'
@@ -185,14 +206,17 @@ else:
   else:
     definitions['NWAVE_VALUE'] = '4'
 
-# -s and -g argumens
+# -s and -g arguments
 definitions['RELATIVISTIC_DYNAMICS'] = '1' if args['s'] or args['g'] else '0'
+definitions['GENERAL_RELATIVITY'] = '1' if args['g'] else '0'
 if args['s']:
   makefile_options['EOS_FILE'] += '_sr'
-  makefile_options['RSOLVER_FILE'] += '_sr'
+  makefile_options['RSOLVER_FILE'] += '_rel'
 if args['g']:
   makefile_options['EOS_FILE'] += '_gr'
-  makefile_options['RSOLVER_FILE'] += '_gr'
+  makefile_options['RSOLVER_FILE'] += '_rel'
+  if not args['t']:
+    makefile_options['RSOLVER_FILE'] += '_no_transform'
 
 # --order=[name] argument
 definitions['RECONSTRUCT'] = args['order']
@@ -206,8 +230,8 @@ makefile_options['FLUID_INT_FILE'] = args['fint']
 definitions['COMPILER_CHOICE'] = args['cxx']
 makefile_options['COMPILER_CHOICE'] = args['cxx']
 if args['cxx'] == 'icc':
-  makefile_options['COMPILER_FLAGS'] = '-O3 -xhost -ipo'
-  definitions['COMPILER_FLAGS'] = '-O3 -xhost -ipo'
+  makefile_options['COMPILER_FLAGS'] = '-O3 -xhost -ipo -inline-forceinline'
+  definitions['COMPILER_FLAGS'] = '-O3 -xhost -ipo -inline-forceinline'
 if args['cxx'] == 'g++':
   makefile_options['COMPILER_FLAGS'] = '-O3'
   definitions['COMPILER_FLAGS'] = '-O3'
@@ -256,14 +280,19 @@ else:
   if args['cxx'] == 'cray':
     makefile_options['COMPILER_FLAGS'] += ' -hnoomp'
     definitions['COMPILER_FLAGS'] += ' -hnoomp'
-
+  # turn off pragma omp warnings for Intel compiler
+  if args['cxx'] == 'icc':
+    makefile_options['COMPILER_FLAGS'] += ' -diag-disable 3180'
+    definitions['COMPILER_FLAGS'] += ' -diag-disable 3180'
 
 # -ifov=N argument
 definitions['NUM_IFOV'] = str(args['ifov'])
 
+# everything else
 definitions['ID_LENGTH'] = str(args['idlength'])
+makefile_options['LOADER_FLAGS'] = ' '
 
-#--- Step 4.  Create new files, finish up ----------------------------------------------
+#--- Step 5.  Create new files, finish up ----------------------------------------------
 
 # terminate all filenames with .cpp extension
 makefile_options['PROBLEM_FILE'] += '.cpp'
@@ -299,12 +328,15 @@ print('  Equation of state:       ' + args['eos'])
 print('  Riemann solver:          ' + args['flux'])
 print('  Reconstruction method:   ' + args['order'])
 print('  Fluid integrator:        ' + args['fint'])
-print('  Compiler and flags:      ' + makefile_options['COMPILER_CHOICE'] + ' ' +makefile_options['COMPILER_FLAGS'])
-print('  Magnetic fields:         ' + ('enabled' if args['b'] else 'disabled'))
-print('  Special relativity:      ' + ('enabled' if args['s'] else 'disabled'))
-print('  General relativity:      ' + ('enabled' if args['g'] else 'disabled'))
-print('  MPI parallelism:         ' + ('enabled' if args['mpi'] else 'disabled'))
-print('  OpenMP parallelism:      ' + ('enabled' if args['omp'] else 'disabled'))
-print('  Debug flags:             ' + ('enabled' if args['debug'] else 'disabled'))
+print('  Compiler and flags:      ' + makefile_options['COMPILER_CHOICE'] + ' ' \
+    + makefile_options['COMPILER_FLAGS'])
+print('  Magnetic fields:         ' + ('ON' if args['b'] else 'OFF'))
+print('  Special relativity:      ' + ('ON' if args['s'] else 'OFF'))
+print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
+print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))
+print('  MPI parallelism:         ' + ('ON' if args['mpi'] else 'OFF'))
+print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
+print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
 print('  Internal fluid outvars:  ' + str(args['ifov']))
-print('  UID Length:              ' + str(args['idlength']) + '  (maximum refinement level = ' + str(20*args['idlength']) + ')')
+print('  UID Length:              ' + str(args['idlength']) \
+    + '  (maximum refinement level = ' + str(20*args['idlength']) + ')')

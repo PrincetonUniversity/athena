@@ -43,9 +43,7 @@ FieldIntegrator::FieldIntegrator(Field *pfield, ParameterInput *pin)
   if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
   if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
 
-  cc_e1_.NewAthenaArray(ncells3,ncells2,ncells1);
-  cc_e2_.NewAthenaArray(ncells3,ncells2,ncells1);
-  cc_e3_.NewAthenaArray(ncells3,ncells2,ncells1);
+  cc_e_.NewAthenaArray(ncells3,ncells2,ncells1);
 
   face_area_.NewAthenaArray(ncells1);
   edge_length_.NewAthenaArray(ncells1);
@@ -56,9 +54,7 @@ FieldIntegrator::FieldIntegrator(Field *pfield, ParameterInput *pin)
 
 FieldIntegrator::~FieldIntegrator()
 {
-  cc_e1_.DeleteAthenaArray();
-  cc_e2_.DeleteAthenaArray();
-  cc_e3_.DeleteAthenaArray();
+  cc_e_.DeleteAthenaArray();
   face_area_.DeleteAthenaArray();
   edge_length_.DeleteAthenaArray();
   edge_lengthp1_.DeleteAthenaArray();
