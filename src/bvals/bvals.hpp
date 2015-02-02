@@ -76,6 +76,7 @@ public:
 
   void StartReceivingField(int flag = 0);
   void StartReceivingFluid(int flag = 0);
+  void StartReceivingEFlux(int flag = 0);
   void LoadAndSendFluidBoundaryBuffer(enum direction dir,
                                       AthenaArray<Real> &src, int flag);
   bool ReceiveAndSetFluidBoundary(enum direction dir, AthenaArray<Real> &dst);
@@ -85,7 +86,6 @@ public:
   bool ReceiveAndSetFieldBoundary(enum direction dir, InterfaceField &dst);
   void WaitSendField(enum direction dir);
 
-  void StartReceivingEFlux(int flag = 0);
   void LoadAndSendEFluxBoundaryBuffer(InterfaceField &fsrc, InterfaceField &wsrc,
                                       int flag);
   bool ReceiveAndSetEFluxBoundary(InterfaceField &fdst, InterfaceField &wdst);

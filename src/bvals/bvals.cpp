@@ -408,6 +408,33 @@ void BoundaryValues::StartReceivingField(int flag)
   return;
 }
 
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::StartReceivingEFlux(int flag)
+//  \brief initiate MPI_Irecv for field
+void BoundaryValues::StartReceivingEFlux(int flag)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  int tag, ndir;
+  if(pmb->block_size.nx2==1)
+    return; // 1D
+  ndir=4; // 2D
+  if(pmb->block_size.nx3>1)
+    ndir=6; // 3D
+  for(int i=0;i<ndir;i++) {
+    eflux_flag_[i][0][0]=0;
+#ifdef MPI_PARALLEL
+    if(pmb->neighbor[i][0][0].gid!=-1 && pmb->neighbor[i][0][0].rank!=myrank) {
+      tag=CreateMPITag(pmb->lid, flag, i, tag_eflux, 0, 0);
+      MPI_Irecv(eflux_recv_[i],eflux_bufsize_[i],MPI_ATHENA_REAL,
+          pmb->neighbor[i][0][0].rank,tag,MPI_COMM_WORLD,&req_eflux_recv_[i][0][0]);
+    }
+#endif
+  }
+  return;
+}
+
+
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::LoadAndSendFluidBoundaryBuffer
 //                          (enum direction dir, AthenaArray<Real> &src, int flag)
@@ -540,31 +567,6 @@ void BoundaryValues::WaitSendFluid(enum direction dir)
   return;
 }
 
-
-//--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::StartReceivingEFlux(int flag)
-//  \brief initiate MPI_Irecv for field
-void BoundaryValues::StartReceivingEFlux(int flag)
-{
-  MeshBlock *pmb=pmy_mblock_;
-  int tag, ndir;
-  if(pmb->block_size.nx2==1)
-    return; // 1D
-  ndir=4; // 2D
-  if(pmb->block_size.nx3>1)
-    ndir=6; // 3D
-  for(int i=0;i<ndir;i++) {
-    eflux_flag_[i][0][0]=0;
-#ifdef MPI_PARALLEL
-    if(pmb->neighbor[i][0][0].gid!=-1 && pmb->neighbor[i][0][0].rank!=myrank) {
-      tag=CreateMPITag(pmb->lid, flag, i, tag_eflux, 0, 0);
-      MPI_Irecv(eflux_recv_[i],eflux_bufsize_[i],MPI_ATHENA_REAL,
-          pmb->neighbor[i][0][0].rank,tag,MPI_COMM_WORLD,&req_eflux_recv_[i][0][0]);
-#endif
-    }
-  }
-  return;
-}
 
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::LoadAndSendFieldBoundaryBuffer
