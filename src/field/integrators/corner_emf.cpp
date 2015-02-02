@@ -67,10 +67,6 @@ void FieldIntegrator::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w,
   }
 
 //---- 2-D/3-D update:
-// Set BCs for face-centered E3, compute cell-centered E3=-(v X B)=VyBx-VxBy
-
-  BoundaryValuesFaceCenteredE3(pmb);
-
   // E3=-(v X B)=VyBx-VxBy
   for (int k=ks; k<=ke; ++k) {
   for (int j=js-1; j<=je+1; ++j) {
@@ -123,11 +119,6 @@ void FieldIntegrator::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w,
   }
 
 //---- 3-D update:
-// Set BCs for face-centered E1,E2, compute cell-centered E1,E2
-
-  BoundaryValuesFaceCenteredE1(pmb);
-  BoundaryValuesFaceCenteredE2(pmb);
-
   // integrate E1 to corners using GS07 (E3 already done above)
   // E1=-(v X B)=VzBy-VyBz
   for (int k=ks-1; k<=ke+1; ++k) {

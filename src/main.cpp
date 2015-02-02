@@ -37,8 +37,6 @@
 
 // MPI related global variables
 int myrank=0, nproc=1;
-// tag parameters: use 3 LSBs for direction, 4 for communication type, tag_mask = 0b1111111
-int tag_shift=7;
 
 // MPI header and varaibles
 #ifdef MPI_PARALLEL
@@ -316,11 +314,18 @@ int main(int argc, char *argv[])
 
 // predict step
     pmesh->ForAllMeshBlocks(fluid_start_recv_nhalf, pinput);
-    if (MAGNETIC_FIELDS_ENABLED)
+    if (MAGNETIC_FIELDS_ENABLED) {
+      pmesh->ForAllMeshBlocks(eflux_start_recv_nhalf, pinput);
       pmesh->ForAllMeshBlocks(field_start_recv_nhalf, pinput);
+    }
 
     pmesh->ForAllMeshBlocks(fluid_predict, pinput);
 
+    if (MAGNETIC_FIELDS_ENABLED) {
+      pmesh->ForAllMeshBlocks(eflux_loadsend_bcs_nhalf, pinput);
+      pmesh->ForAllMeshBlocks(eflux_waitsend_bcs, pinput);
+      pmesh->ForAllMeshBlocks(eflux_recvset_bcs_nhalf,  pinput);
+    }
     pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx1_nhalf, pinput);
     pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx1,  pinput);
     pmesh->ForAllMeshBlocks(fluid_recvset_bcsx1_nhalf,  pinput);
@@ -350,10 +355,18 @@ int main(int argc, char *argv[])
 // correct step
 
     pmesh->ForAllMeshBlocks(fluid_start_recv_n, pinput);
-    if (MAGNETIC_FIELDS_ENABLED)
+    if (MAGNETIC_FIELDS_ENABLED) {
+      pmesh->ForAllMeshBlocks(eflux_start_recv_n, pinput);
       pmesh->ForAllMeshBlocks(field_start_recv_n, pinput);
+    }
 
     pmesh->ForAllMeshBlocks(fluid_correct,pinput);
+
+    if (MAGNETIC_FIELDS_ENABLED) {
+      pmesh->ForAllMeshBlocks(eflux_loadsend_bcs_n, pinput);
+      pmesh->ForAllMeshBlocks(eflux_waitsend_bcs, pinput);
+      pmesh->ForAllMeshBlocks(eflux_recvset_bcs_n,  pinput);
+    }
 
     pmesh->ForAllMeshBlocks(fluid_loadsend_bcsx1_n, pinput);
     pmesh->ForAllMeshBlocks(fluid_waitsend_bcsx1,  pinput);
