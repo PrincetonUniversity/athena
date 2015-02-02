@@ -51,7 +51,7 @@ void FluidIntegrator::DonorCellX1(const int k, const int j,
 
   if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
-    for (int i=is; i<=ie; ++i){
+    for (int i=is; i<=(ie+1); ++i){
       const Real& by_im1 = bcc(IB2,k,j,i-1);
       const Real& bz_im1 = bcc(IB3,k,j,i-1);
       const Real& by_i   = bcc(IB2,k,j,i  );
@@ -79,7 +79,7 @@ void FluidIntegrator::DonorCellX2(const int k, const int j,
 
   for (int n=0; n<NFLUID; ++n){
 #pragma simd
-    for (int i=is; i<=(ie+1); ++i){
+    for (int i=is; i<=ie; ++i){
       const Real& w_jm1 = w(n,k,j-1,i);
       const Real& w_j   = w(n,k,j  ,i);
 
@@ -118,7 +118,7 @@ void FluidIntegrator::DonorCellX3(const int k, const int j,
 
   for (int n=0; n<NFLUID; ++n){
 #pragma simd
-    for (int i=is; i<=(ie+1); ++i){
+    for (int i=is; i<=ie; ++i){
       const Real& w_km1 = w(n,k-1,j,i);
       const Real& w_k   = w(n,k  ,j,i);
 
