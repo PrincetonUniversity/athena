@@ -107,12 +107,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pi)
   else myblocksize=new WrapIOSize_t[mynb];
 
   // distribute the numbers of the blocks
-  if(MPI_Allgather(&mynb,1,MPI_INTEGER,nblocks,1,MPI_INTEGER,MPI_COMM_WORLD)
-                   !=MPI_SUCCESS) {
-    msg << "### FATAL ERROR in RestartOutput:Initialize" << std::endl
-        << "MPI_Allgather for nblocks failed." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
+  MPI_Allgather(&mynb,1,MPI_INTEGER,nblocks,1,MPI_INTEGER,MPI_COMM_WORLD);
   nblocks[0]+=1; // for the first block
   displ[0]=0;
   for(i=1;i<nproc;i++)
@@ -132,12 +127,9 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pi)
   }
 
   // distribute the size of each block + header size
-  if(MPI_Allgatherv(myblocksize,nblocks[myrank],MPI_LONG,
-     blocksize,nblocks,displ,MPI_LONG,MPI_COMM_WORLD)!=MPI_SUCCESS) {
-    msg << "### FATAL ERROR in RestartOutput:Initialize" << std::endl
-        << "MPI_Allgatherv for blocksize failed." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
+  MPI_Allgatherv(myblocksize,nblocks[myrank],MPI_LONG,
+     blocksize,nblocks,displ,MPI_LONG,MPI_COMM_WORLD);
+
   // clean up
   delete [] myblocksize;
   delete [] nblocks;
@@ -216,6 +208,9 @@ void RestartOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
   resfile.Write(pmb->x1f.GetArrayPointer(),sizeof(Real),pmb->x1f.GetSize());
   resfile.Write(pmb->x2f.GetArrayPointer(),sizeof(Real),pmb->x2f.GetSize());
   resfile.Write(pmb->x3f.GetArrayPointer(),sizeof(Real),pmb->x3f.GetSize());
+  resfile.Write(pmb->dx1f.GetArrayPointer(),sizeof(Real),pmb->dx1f.GetSize());
+  resfile.Write(pmb->dx2f.GetArrayPointer(),sizeof(Real),pmb->dx2f.GetSize());
+  resfile.Write(pmb->dx3f.GetArrayPointer(),sizeof(Real),pmb->dx3f.GetSize());
   resfile.Write(pmb->pfluid->u.GetArrayPointer(),sizeof(Real),
                        pmb->pfluid->u.GetSize());
   if (MAGNETIC_FIELDS_ENABLED) {

@@ -283,9 +283,9 @@ int main(int argc, char *argv[])
   Outputs *pouts;
   try {
     ChangeToRunDir(prundir);
+    pouts = new Outputs(pmesh, pinput);
     if(res_flag==0)
     {
-      pouts = new Outputs(pmesh, pinput);
       pouts->MakeOutputs(pmesh,pinput);
     }
   } 
@@ -460,7 +460,7 @@ int main(int argc, char *argv[])
 
 // print diagnostic messages
   if(myrank==0) {
-    std::cout << "cycle=" << pmesh->ncycle << std::scientific << std::setprecision(5)
+    std::cout << "cycle=" << pmesh->ncycle << std::scientific << std::setprecision(6)
               << " time=" << pmesh->time << " dt=" << pmesh->dt << std::endl;
 
     if (pmesh->ncycle == pmesh->nlim) {

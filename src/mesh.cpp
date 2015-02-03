@@ -25,6 +25,7 @@
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 #include <algorithm>  // sort, find
+#include <iomanip>
 
 #include <stdlib.h>
 #include <string.h>  // memcpy
@@ -1245,7 +1246,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, BlockUID
             << " x2max=" << block_size.x2max << std::endl;
   std::cout << "ks=" << ks << " ke=" << ke << " x3min=" << block_size.x3min
             << " x3max=" << block_size.x3max << std::endl;
-\
+
 // allocate arrays for sizes and positions of cells
 
   int ncells1 = block_size.nx1 + 2*(NGHOST);
@@ -1277,30 +1278,18 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, BlockUID
      !=x2f.GetDim1()) nerr++;
   if(resfile.Read(x3f.GetArrayPointer(),sizeof(Real),x3f.GetDim1())
      !=x3f.GetDim1()) nerr++;
+  if(resfile.Read(dx1f.GetArrayPointer(),sizeof(Real),dx1f.GetDim1())
+     !=dx1f.GetDim1()) nerr++;
+  if(resfile.Read(dx2f.GetArrayPointer(),sizeof(Real),dx2f.GetDim1())
+     !=dx2f.GetDim1()) nerr++;
+  if(resfile.Read(dx3f.GetArrayPointer(),sizeof(Real),dx3f.GetDim1())
+     !=dx3f.GetDim1()) nerr++;
   if(nerr>0)
   {
     msg << "### FATAL ERROR in MeshBlock constructor" << std::endl
         << "The restarting file is broken." << std::endl;
     resfile.Close();
     throw std::runtime_error(msg.str().c_str());
-  }
-
-  // calculate dx1f, dx2f, dx3f
-  for (int i=is-NGHOST; i<=ie+NGHOST; ++i)
-    dx1f(i) = x1f(i+1) - x1f(i);
-  if(block_size.nx2 > 1) {
-    for (int j=js-NGHOST; j<=je+NGHOST; ++j)
-      dx2f(j) = x2f(j+1) - x2f(j);
-  }
-  else {
-    dx2f(js)=x2f(je+1)-x2f(js);
-  }
-  if(block_size.nx3 > 1) {
-    for (int k=ks-NGHOST; k<=ke+NGHOST; ++k)
-      dx3f(k) = x3f(k+1) - x3f(k);
-  }
-  else {
-    dx3f(ks)=x3f(ke+1)-x3f(ks);
   }
 
   // create coordinates, fluid, field, and boundary conditions
@@ -1316,10 +1305,10 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, BlockUID
   if (MAGNETIC_FIELDS_ENABLED) {
     if(resfile.Read(pfield->b.x1f.GetArrayPointer(),sizeof(Real),
                pfield->b.x1f.GetSize())!=pfield->b.x1f.GetSize()) nerr++;
-    if(resfile.Read(pfield->b.x1f.GetArrayPointer(),sizeof(Real),
-               pfield->b.x1f.GetSize())!=pfield->b.x1f.GetSize()) nerr++;
-    if(resfile.Read(pfield->b.x1f.GetArrayPointer(),sizeof(Real),
-               pfield->b.x1f.GetSize())!=pfield->b.x1f.GetSize()) nerr++;
+    if(resfile.Read(pfield->b.x2f.GetArrayPointer(),sizeof(Real),
+               pfield->b.x2f.GetSize())!=pfield->b.x2f.GetSize()) nerr++;
+    if(resfile.Read(pfield->b.x3f.GetArrayPointer(),sizeof(Real),
+               pfield->b.x3f.GetSize())!=pfield->b.x3f.GetSize()) nerr++;
   }
   if(nerr>0)
   {
@@ -1366,23 +1355,15 @@ MeshBlock::~MeshBlock()
 void Mesh::NewTimeStep(void)
 {
   MeshBlock *pmb = pblock;
-  std::stringstream msg;
   Real min_dt=pmb->new_block_dt;
   pmb=pmb->next;
   while (pmb != NULL)  {
     min_dt=std::min(min_dt,pmb->new_block_dt);
     pmb=pmb->next;
   }
-
 #ifdef MPI_PARALLEL
-  if(MPI_Allreduce(MPI_IN_PLACE,&min_dt,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD)
-     !=MPI_SUCCESS) {
-    msg << "### FATAL ERROR in NewTimeStep" << std::endl
-        << "MPI_Allreduce failed" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
+  MPI_Allreduce(MPI_IN_PLACE,&min_dt,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD);
 #endif
-
   // set it
   dt=std::min(min_dt*cfl_number,2.0*dt);
 }
@@ -1532,6 +1513,7 @@ size_t MeshBlock::GetBlockSizeInBytes(void)
 
   size =sizeof(NeighborBlock)*6*2*2+sizeof(RegionSize)+sizeof(int)*6;
   size+=sizeof(Real)*(x1f.GetSize()+x2f.GetSize()+x3f.GetSize());
+  size+=sizeof(Real)*(dx1f.GetSize()+dx2f.GetSize()+dx3f.GetSize());
   size+=sizeof(Real)*pfluid->u.GetSize();
   if (MAGNETIC_FIELDS_ENABLED)
     size+=sizeof(Real)*(pfield->b.x1f.GetSize()+pfield->b.x2f.GetSize()
