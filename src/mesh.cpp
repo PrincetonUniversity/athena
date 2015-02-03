@@ -70,7 +70,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   BlockTree tree, *neibt;
   BlockUID comp;
   MeshBlock *pfirst;
-  RegionBCs  block_bcs;
+  int block_bcs[6];
   NeighborBlock nei;
   int *ranklist, *nslist;
   Real *costlist;
@@ -100,7 +100,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
 // read number of OpenMP threads for mesh
 
-  nthreads_mesh = pin->GetOrAddReal("mesh","max_num_threads",1);
+  nthreads_mesh = pin->GetOrAddInteger("mesh","max_num_threads",1);
   if (nthreads_mesh < 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "Number of OpenMP threads must be >= 1, but max_num_threads=" 
@@ -212,12 +212,12 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 // read BC flags for each of the 6 boundaries in turn.  Error tests performed in
 // BoundaryValues constructor
 
-  mesh_bcs.ix1_bc = pin->GetOrAddInteger("mesh","ix1_bc",0);
-  mesh_bcs.ox1_bc = pin->GetOrAddInteger("mesh","ox1_bc",0);
-  mesh_bcs.ix2_bc = pin->GetOrAddInteger("mesh","ix2_bc",0);
-  mesh_bcs.ox2_bc = pin->GetOrAddInteger("mesh","ox2_bc",0);
-  mesh_bcs.ix3_bc = pin->GetOrAddInteger("mesh","ix3_bc",0);
-  mesh_bcs.ox3_bc = pin->GetOrAddInteger("mesh","ox3_bc",0);
+  mesh_bcs[inner_x1] = pin->GetOrAddInteger("mesh","ix1_bc",0);
+  mesh_bcs[outer_x1] = pin->GetOrAddInteger("mesh","ox1_bc",0);
+  mesh_bcs[inner_x2] = pin->GetOrAddInteger("mesh","ix2_bc",0);
+  mesh_bcs[outer_x2] = pin->GetOrAddInteger("mesh","ox2_bc",0);
+  mesh_bcs[inner_x3] = pin->GetOrAddInteger("mesh","ix3_bc",0);
+  mesh_bcs[outer_x3] = pin->GetOrAddInteger("mesh","ox3_bc",0);
 
 
 // read MeshBlock parameters
@@ -256,7 +256,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
 // calculate the logical root level and maximum level
   for(root_level=0;(1<<root_level)<nbmax;root_level++);
-  max_level = pin->GetOrAddReal("mesh","nlevel",1)+root_level-1;
+  max_level = pin->GetOrAddInteger("mesh","nlevel",1)+root_level-1;
 
 // create Block UID list
   tree.CreateRootGrid(nrbx1,nrbx2,nrbx3,root_level);
@@ -356,72 +356,72 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     if(lx1==0)
     {
       block_size.x1min=mesh_size.x1min;
-      block_bcs.ix1_bc=mesh_bcs.ix1_bc;
+      block_bcs[inner_x1]=mesh_bcs[inner_x1];
     }
     else
     {
       Real rx=(Real)lx1/(Real)(nrbx1<<(ll-root_level));
       block_size.x1min=MeshGeneratorX1(rx,mesh_size);
-      block_bcs.ix1_bc=-1;
+      block_bcs[inner_x1]=-1;
     }
     if(lx1==(nrbx1<<(ll-root_level))-1)
     {
       block_size.x1max=mesh_size.x1max;
-      block_bcs.ox1_bc=mesh_bcs.ox1_bc;
+      block_bcs[outer_x1]=mesh_bcs[outer_x1];
     }
     else
     {
       Real rx=(Real)(lx1+1)/(Real)(nrbx1<<(ll-root_level));
       block_size.x1max=MeshGeneratorX1(rx,mesh_size);
-      block_bcs.ox1_bc=-1;
+      block_bcs[outer_x1]=-1;
     }
 
     // calculate physical block size, x2
     if(lx2==0)
     {
       block_size.x2min=mesh_size.x2min;
-      block_bcs.ix2_bc=mesh_bcs.ix2_bc;
+      block_bcs[inner_x2]=mesh_bcs[inner_x2];
     }
     else
     {
       Real rx=(Real)lx2/(Real)(nrbx2<<(ll-root_level));
       block_size.x2min=MeshGeneratorX2(rx,mesh_size);
-      block_bcs.ix2_bc=-1;
+      block_bcs[inner_x2]=-1;
     }
     if(lx2==(nrbx2<<(ll-root_level))-1)
     {
       block_size.x2max=mesh_size.x2max;
-      block_bcs.ox2_bc=mesh_bcs.ox2_bc;
+      block_bcs[outer_x2]=mesh_bcs[outer_x2];
     }
     else
     {
       Real rx=(Real)(lx2+1)/(Real)(nrbx2<<(ll-root_level));
       block_size.x2max=MeshGeneratorX2(rx,mesh_size);
-      block_bcs.ox2_bc=-1;
+      block_bcs[outer_x2]=-1;
     }
 
     // calculate physical block size, x3
     if(lx3==0)
     {
       block_size.x3min=mesh_size.x3min;
-      block_bcs.ix3_bc=mesh_bcs.ix3_bc;
+      block_bcs[inner_x3]=mesh_bcs[inner_x3];
     }
     else
     {
       Real rx=(Real)lx3/(Real)(nrbx3<<(ll-root_level));
       block_size.x3min=MeshGeneratorX3(rx,mesh_size);
-      block_bcs.ix3_bc=-1;
+      block_bcs[inner_x3]=-1;
     }
     if(lx3==(nrbx3<<(ll-root_level))-1)
     {
       block_size.x3max=mesh_size.x3max;
-      block_bcs.ox3_bc=mesh_bcs.ox3_bc;
+      block_bcs[outer_x3]=mesh_bcs[outer_x3];
     }
     else
     {
       Real rx=(Real)(lx3+1)/(Real)(nrbx3<<(ll-root_level));
       block_size.x3max=MeshGeneratorX3(rx,mesh_size);
-      block_bcs.ox3_bc=-1;
+      block_bcs[outer_x3]=-1;
     }
 
     // create a block and add into the link list
@@ -436,7 +436,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     }
 
     // search the neighboring block from the ID list.
-    if(lx1==0 && mesh_bcs.ix1_bc!=4)
+    if(lx1==0 && mesh_bcs[inner_x1]!=4)
       pblock->SetNeighbor(inner_x1,-1,-1,-1,-1);
     else
     {
@@ -467,7 +467,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
                             nei.gid-nslist[ranklist[nei.gid]],1,1);
       }
     }
-    if(lx1==(nrbx1<<(ll-root_level))-1 && mesh_bcs.ox1_bc!=4)
+    if(lx1==(nrbx1<<(ll-root_level))-1 && mesh_bcs[outer_x1]!=4)
       pblock->SetNeighbor(outer_x1,-1,-1,-1,-1);
     else
     {
@@ -499,7 +499,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       }
     }
 
-    if((lx2==0 && mesh_bcs.ix2_bc!=4) || mesh_size.nx2 == 1)
+    if((lx2==0 && mesh_bcs[inner_x2]!=4) || mesh_size.nx2 == 1)
       pblock->SetNeighbor(inner_x2,-1,-1,-1,-1);
     else
     {
@@ -530,7 +530,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
                             nei.gid-nslist[ranklist[nei.gid]],1,1);
       }
     }
-    if((lx2==(nrbx2<<(ll-root_level))-1 && mesh_bcs.ox2_bc!=4) || mesh_size.nx2 == 1)
+    if((lx2==(nrbx2<<(ll-root_level))-1 && mesh_bcs[outer_x2]!=4) || mesh_size.nx2 == 1)
       pblock->SetNeighbor(outer_x2,-1,-1,-1,-1);
     else
     {
@@ -562,7 +562,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       }
     }
 
-    if((lx3==0 && mesh_bcs.ix3_bc!=4) || mesh_size.nx3 == 1)
+    if((lx3==0 && mesh_bcs[inner_x3]!=4) || mesh_size.nx3 == 1)
       pblock->SetNeighbor(inner_x3,-1,-1,-1,-1);
     else
     {
@@ -593,7 +593,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
                             nei.gid-nslist[ranklist[nei.gid]],1,1);
       }
     }
-    if((lx3==(nrbx3<<(ll-root_level))-1 && mesh_bcs.ox3_bc!=4) || mesh_size.nx3 == 1)
+    if((lx3==(nrbx3<<(ll-root_level))-1 && mesh_bcs[outer_x3]!=4) || mesh_size.nx3 == 1)
       pblock->SetNeighbor(outer_x3,-1,-1,-1,-1);
     else
     {
@@ -681,7 +681,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   if(resfile.Read(&root_level, sizeof(int), 1)!=1) nerr++;
   if(resfile.Read(&max_level, sizeof(int), 1)!=1) nerr++;
   if(resfile.Read(&mesh_size, sizeof(RegionSize), 1)!=1) nerr++;
-  if(resfile.Read(&mesh_bcs, sizeof(RegionBCs), 1)!=1) nerr++;
+  if(resfile.Read(mesh_bcs, sizeof(int), 6)!=6) nerr++;
   if(resfile.Read(&time, sizeof(Real), 1)!=1) nerr++;
   if(resfile.Read(&dt, sizeof(Real), 1)!=1) nerr++;
   if(resfile.Read(&ncycle, sizeof(int), 1)!=1) nerr++;
@@ -949,7 +949,7 @@ void Mesh::MeshTest(BlockUID *buid, int *ranklist, Real *costlist)
 // constructs coordinate, boundary condition, fluid and field objects.
 
 MeshBlock::MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_block,
-                     RegionBCs input_bcs, Mesh *pm, ParameterInput *pin)
+                     int *input_bcs, Mesh *pm, ParameterInput *pin)
 {
   std::stringstream msg;
   long int lx1, lx2, lx3;
@@ -959,7 +959,7 @@ MeshBlock::MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_block,
   pmy_mesh = pm;
   root_level = pm->root_level;
   block_size = input_block;
-  block_bcs  = input_bcs;
+  for(int i=0; i<6; i++) block_bcs[i] = input_bcs[i];
   prev=NULL;
   next=NULL;
   gid=igid;
@@ -1048,13 +1048,13 @@ MeshBlock::MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_block,
   }
 
 // correct cell face positions in ghost zones for reflecting boundary condition
-  if (block_bcs.ix1_bc == 1) {
+  if (block_bcs[inner_x1] == 1) {
     for (int i=1; i<=(NGHOST); ++i) {
       dx1f(is-i) = dx1f(is+i-1);
        x1f(is-i) =  x1f(is-i+1) - dx1f(is-i);
     }
   }
-  if (block_bcs.ox1_bc == 1) {
+  if (block_bcs[outer_x1] == 1) {
     for (int i=1; i<=(NGHOST); ++i) {
       dx1f(ie+i  ) = dx1f(ie-i+1);
        x1f(ie+i+1) =  x1f(ie+i) + dx1f(ie+i);
@@ -1090,13 +1090,13 @@ MeshBlock::MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_block,
     }
 
   // correct cell face positions in ghost zones for reflecting boundary condition
-    if (block_bcs.ix2_bc == 1) {
+    if (block_bcs[inner_x2] == 1) {
       for (int j=1; j<=(NGHOST); ++j) {
         dx2f(js-j) = dx2f(js+j-1);
          x2f(js-j) =  x2f(js-j+1) - dx2f(js-j);
       }
     }
-    if (block_bcs.ox2_bc == 1) {
+    if (block_bcs[outer_x2] == 1) {
       for (int j=1; j<=(NGHOST); ++j) {
         dx2f(je+j  ) = dx2f(je-j+1);
          x2f(je+j+1) =  x2f(je+j) + dx2f(je+j);
@@ -1140,13 +1140,13 @@ MeshBlock::MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_block,
     }
 
   // correct cell face positions in ghost zones for reflecting boundary condition
-    if (block_bcs.ix3_bc == 1) {
+    if (block_bcs[inner_x3] == 1) {
       for (int k=1; k<=(NGHOST); ++k) {
         dx3f(ks-k) = dx3f(ks+k-1);
          x3f(ks-k) =  x3f(ks-k+1) - dx3f(ks-k);
       }
     }
-    if (block_bcs.ox3_bc == 1) {
+    if (block_bcs[outer_x3] == 1) {
       for (int k=1; k<=(NGHOST); ++k) {
         dx3f(ke+k  ) = dx3f(ke-k+1);
          x3f(ke+k+1) =  x3f(ke+k) + dx3f(ke+k);
@@ -1191,12 +1191,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, BlockUID
   // seek the file
   resfile.Seek(offset);
   // load block structure and neighbor
-  if(resfile.Read(&block_size, sizeof(RegionSize), 1)!=1)
-    nerr++;
-  if(resfile.Read(&block_bcs, sizeof(RegionBCs), 1)!=1)
-    nerr++;
-  if(resfile.Read(&neighbor, sizeof(NeighborBlock), 6*2*2)!=6*2*2)
-    nerr++;
+  if(resfile.Read(&block_size, sizeof(RegionSize), 1)!=1) nerr++;
+  if(resfile.Read(block_bcs, sizeof(int), 6)!=6) nerr++;
+  if(resfile.Read(&neighbor, sizeof(NeighborBlock), 6*2*2)!=6*2*2) nerr++;
 
   if(nerr>0)
   {
@@ -1406,7 +1403,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     while (pmb != NULL)  {
       pfluid=pmb->pfluid;
       pfield=pmb->pfield;
+      pbval=pmb->pbval;
       ProblemGenerator(pfluid,pfield,pin);
+      pbval->CheckBoundary();
       pmb=pmb->next;
     }
   }
@@ -1414,7 +1413,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
   pmb = pblock;
   while (pmb != NULL)  {
     pmb->pbval->Initialize();
-    pmb->pbval->StartReceiving(0);
+    pmb->pbval->StartReceivingForInit();
     pmb=pmb->next;
   }
 
@@ -1437,11 +1436,11 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     pfluid=pmb->pfluid;
     pfield=pmb->pfield;
     pbval=pmb->pbval;
-    pbval->ReceiveAndSetFluidBoundaryWithWait(inner_x1,pfluid->u, 0);
     pbval->ReceiveAndSetFluidBoundaryWithWait(outer_x1,pfluid->u, 0);
+    pbval->ReceiveAndSetFluidBoundaryWithWait(inner_x1,pfluid->u, 0);
     if (MAGNETIC_FIELDS_ENABLED) {
-      pbval->ReceiveAndSetFieldBoundaryWithWait(inner_x1,pfield->b, 0);
       pbval->ReceiveAndSetFieldBoundaryWithWait(outer_x1,pfield->b, 0);
+      pbval->ReceiveAndSetFieldBoundaryWithWait(inner_x1,pfield->b, 0);
     }
     if(mesh_size.nx2 > 1) {
       pbval->LoadAndSendFluidBoundaryBuffer(inner_x2,pfluid->u,0);
@@ -1460,11 +1459,11 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       pfluid=pmb->pfluid;
       pfield=pmb->pfield;
       pbval=pmb->pbval;
-      pbval->ReceiveAndSetFluidBoundaryWithWait(inner_x2,pfluid->u ,0);
       pbval->ReceiveAndSetFluidBoundaryWithWait(outer_x2,pfluid->u ,0);
+      pbval->ReceiveAndSetFluidBoundaryWithWait(inner_x2,pfluid->u ,0);
       if (MAGNETIC_FIELDS_ENABLED) {
-        pbval->ReceiveAndSetFieldBoundaryWithWait(inner_x2,pfield->b ,0);
         pbval->ReceiveAndSetFieldBoundaryWithWait(outer_x2,pfield->b ,0);
+        pbval->ReceiveAndSetFieldBoundaryWithWait(inner_x2,pfield->b ,0);
       }
       if(mesh_size.nx3 > 1) {
         pbval->LoadAndSendFluidBoundaryBuffer(inner_x3,pfluid->u,0);
@@ -1484,11 +1483,11 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       pfluid=pmb->pfluid;
       pfield=pmb->pfield;
       pbval=pmb->pbval;
-      pbval->ReceiveAndSetFluidBoundaryWithWait(inner_x3,pfluid->u ,0);
       pbval->ReceiveAndSetFluidBoundaryWithWait(outer_x3,pfluid->u ,0);
+      pbval->ReceiveAndSetFluidBoundaryWithWait(inner_x3,pfluid->u ,0);
       if (MAGNETIC_FIELDS_ENABLED) {
-        pbval->ReceiveAndSetFieldBoundaryWithWait(inner_x3,pfield->b ,0);
         pbval->ReceiveAndSetFieldBoundaryWithWait(outer_x3,pfield->b ,0);
+        pbval->ReceiveAndSetFieldBoundaryWithWait(inner_x3,pfield->b ,0);
       }
       pmb=pmb->next;
     }
@@ -1498,7 +1497,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
   while (pmb != NULL)  {
     pfluid=pmb->pfluid;
     pfield=pmb->pfield;
-    pmb->pbval->ClearBoundary(0);
+    pmb->pbval->ClearBoundaryForInit();
     pfluid->pf_eos->ConservedToPrimitive(pfluid->u, pfluid->w1, pfield->b, 
                                          pfluid->w, pfield->bcc);
     pmb=pmb->next;
@@ -1531,7 +1530,7 @@ size_t MeshBlock::GetBlockSizeInBytes(void)
 {
   size_t size;
 
-  size =sizeof(NeighborBlock)*6*2*2+sizeof(RegionSize)+sizeof(RegionBCs);
+  size =sizeof(NeighborBlock)*6*2*2+sizeof(RegionSize)+sizeof(int)*6;
   size+=sizeof(Real)*(x1f.GetSize()+x2f.GetSize()+x3f.GetSize());
   size+=sizeof(Real)*pfluid->u.GetSize();
   if (MAGNETIC_FIELDS_ENABLED)
@@ -1632,6 +1631,7 @@ enum tlstatus MeshBlock::DoOneTask(void) {
     else if(skip==0) // this task is done and at the top of the list
       firsttask++;
   }
+  
   return stuck;
 }
 

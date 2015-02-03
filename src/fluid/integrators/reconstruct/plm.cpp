@@ -40,21 +40,6 @@ void FluidIntegrator::PiecewiseLinearX1(const int k, const int j,
 
   for (int n=0; n<NWAVE; ++n) {
 #pragma simd
-<<<<<<< HEAD
-  for (int i=is; i<=(ie+1); ++i){
-
-    Real dql = (q(n,k,j,i-1) - q(n,k,j,i-2))/pmy_fluid->pmy_block->dx1v(i-2);
-    Real dqc = (q(n,k,j,i)   - q(n,k,j,i-1))/pmy_fluid->pmy_block->dx1v(i-1);
-    Real dqr = (q(n,k,j,i+1) - q(n,k,j,i)  )/pmy_fluid->pmy_block->dx1v(i);
-
-// Apply monotonicity constraints to differences in primitive vars, compute ql_(i-1/2)
-
-    Real dq2 = dql*dqc;
-    Real dqm = 0.0;
-    if (dq2 > 0.0) dqm = dq2/(dql + dqc);
-
-    ql(m,i) = q(n,k,j,i-1) + (pmy_fluid->pmy_block->dx1f(i-1))*dqm;
-=======
     for (int i=is; i<=(ie+1); ++i){
       Real& dx_im2 = pmy_fluid->pmy_block->dx1v(i-2);
       Real& dx_im1 = pmy_fluid->pmy_block->dx1v(i-1);
@@ -87,23 +72,14 @@ void FluidIntegrator::PiecewiseLinearX1(const int k, const int j,
 
       Real& dxf_im1 = pmy_fluid->pmy_block->dx1f(i-1);
       ql(n,i) = q_im1 + dxf_im1*dqm;
->>>>>>> remotes/origin/master
     
       // Apply monotonicity constraints, compute qr_(i-1/2)
       dq2 = dqc*dqr;
       dqm = (dq2 > 0.0) ? dqm = dq2/(dqc + dqr) : 0.0;
 
-<<<<<<< HEAD
-    dq2 = dqc*dqr;
-    dqm = 0.0;
-    if (dq2 > 0.0) dqm = dq2/(dqc + dqr);
-
-    qr(m,i) = q(n,k,j,i) - (pmy_fluid->pmy_block->dx1f(i))*dqm;
-=======
       Real& dxf_i = pmy_fluid->pmy_block->dx1f(i);
       qr(n,i) = q_i   - dxf_i*dqm;
     }
->>>>>>> remotes/origin/master
   }
 
   return;
@@ -124,29 +100,6 @@ void FluidIntegrator::PiecewiseLinearX2(const int k, const int j,
 
   for (int n=0; n<NWAVE; ++n) {
 #pragma simd
-<<<<<<< HEAD
-  for (int i=is; i<=ie; ++i){
-
-    Real dql = (q(n,k,j-1,i) - q(n,k,j-2,i))*dx2jm2i;
-    Real dqc = (q(n,k,j,i)   - q(n,k,j-1,i))*dx2jm1i;
-    Real dqr = (q(n,k,j+1,i) - q(n,k,j,i)  )*dx2ji;
-
-// Apply monotonicity constraints to differences in primitive vars, compute ql_(i-1/2)
-
-    Real dq2 = dql*dqc;
-    Real dqm = 0.0;
-    if (dq2 > 0.0) dqm = dq2/(dql + dqc);
-
-    ql(m,i) = q(n,k,j-1,i) + (pmy_fluid->pmy_block->dx2f(j-1))*dqm;
-    
-// Apply monotonicity constraints to differences in primitive vars, compute qr_(i-1/2)
-
-    dq2 = dqc*dqr;
-    dqm = 0.0;
-    if (dq2 > 0.0) dqm = dq2/(dqc + dqr);
-
-    qr(m,i) = q(n,k,j,i) - (pmy_fluid->pmy_block->dx2f(j))*dqm;
-=======
     for (int i=is; i<=ie; ++i){
       Real dql,dqr,dqc,q_jm1,q_j;
       if (n==NFLUID){
@@ -181,7 +134,6 @@ void FluidIntegrator::PiecewiseLinearX2(const int k, const int j,
 
       qr(n,i) = q_j   - (pmy_fluid->pmy_block->dx2f(j))*dqm;
     }
->>>>>>> remotes/origin/master
   }
 
   return;
@@ -202,21 +154,6 @@ void FluidIntegrator::PiecewiseLinearX3(const int k, const int j,
 
   for (int n=0; n<NWAVE; ++n) {
 #pragma simd
-<<<<<<< HEAD
-  for (int i=is; i<=ie; ++i){
-
-    Real dql = (q(n,k-1,j,i) - q(n,k-2,j,i))*dx3km2i;
-    Real dqc = (q(n,k,j,i)   - q(n,k-1,j,i))*dx3km1i;
-    Real dqr = (q(n,k+1,j,i) - q(n,k,j,i)  )*dx3ki;
-
-// Apply monotonicity constraints to differences in primitive vars, compute ql_(i-1/2)
-
-    Real dq2 = dql*dqc;
-    Real dqm = 0.0;
-    if (dq2 > 0.0) dqm = dq2/(dql + dqc);
-
-    ql(m,i) = q(n,k-1,j,i) + (pmy_fluid->pmy_block->dx3f(k-1))*dqm;
-=======
     for (int i=is; i<=ie; ++i){
       Real dql,dqr,dqc,q_km1,q_k;
       if (n==NFLUID){
@@ -244,22 +181,13 @@ void FluidIntegrator::PiecewiseLinearX3(const int k, const int j,
       Real dqm = (dq2 > 0.0) ? dqm = dq2/(dql + dqc) : 0.0;
 
       ql(n,i) = q_km1 + (pmy_fluid->pmy_block->dx3f(k-1))*dqm;
->>>>>>> remotes/origin/master
     
       // Apply monotonicity constraints, compute qr_(i-1/2)
       dq2 = dqc*dqr;
       dqm = (dq2 > 0.0) ? dqm = dq2/(dqc + dqr) : 0.0;
 
-<<<<<<< HEAD
-    dq2 = dqc*dqr;
-    dqm = 0.0;
-    if (dq2 > 0.0) dqm = dq2/(dqc + dqr);
-
-    qr(m,i) = q(n,k,j,i) - (pmy_fluid->pmy_block->dx3f(k))*dqm;
-=======
       qr(n,i) = q_k   - (pmy_fluid->pmy_block->dx3f(k))*dqm;
     }
->>>>>>> remotes/origin/master
   }
 
   return;

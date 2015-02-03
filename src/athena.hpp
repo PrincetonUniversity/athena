@@ -44,39 +44,36 @@ enum {I00, I01, I02, I03, I11, I12, I13, I22, I23, I33, NMETRIC};
 enum direction {inner_x1=0, outer_x1=1, inner_x2=2, outer_x2=3, inner_x3=4, outer_x3=5};
 enum face {x1face=0, x2face=1, x3face=2};
 enum rwmode {readmode,writemode};
-enum mpitag {tag_fluid=0, tag_field=1}; // mpitag must be < 16 and unique
+enum mpitag {tag_fluid=0, tag_field=1, tag_eflux=2}; // mpitag must be < 16 and unique
 
 enum task {
   none=0, 
 
   primitives_0=1,
-  fluid_integrate_sendx1_0=2, field_integrate_sendx1_0=3,
-  fluid_recvx1_0=4, field_recvx1_0=5, // for 1D
-  fluid_recvx1_sendx2_0=4, field_recvx1_sendx2_0=5, 
-  fluid_recvx2_0=6, field_recvx2_0=7, // for2D
-  fluid_recvx2_sendx3_0=6, field_recvx2_sendx3_0=7,
-  fluid_recvx3_0=8, field_recvx3_0=9,
+  fluid_integrate_sendx1_0=2,
+  eflux_recv_0=3,
+  field_integrate_sendx1_0=4,
+  fluid_recvx1_0=5, field_recvx1_0=6, // for 1D
+  fluid_recvx1_sendx2_0=5, field_recvx1_sendx2_0=6, 
+  fluid_recvx2_0=7, field_recvx2_0=8, // for2D
+  fluid_recvx2_sendx3_0=7, field_recvx2_sendx3_0=8,
+  fluid_recvx3_0=9, field_recvx3_0=10,
 
-  primitives_1=10,
-  fluid_integrate_sendx1_1=11, field_integrate_sendx1_1=12,
-  fluid_recvx1_1=13, field_recvx1_1=14, 
-  fluid_recvx1_sendx2_1=13, field_recvx1_sendx2_1=14,
-  fluid_recvx2_1=15, field_recvx2_1=16,
-  fluid_recvx2_sendx3_1=15, field_recvx2_sendx3_1=16,
-  fluid_recvx3_1=17, field_recvx3_1=18,
+  primitives_1=11,
+  fluid_integrate_sendx1_1=12,
+  eflux_recv_1=13,
+  field_integrate_sendx1_1=14,
+  fluid_recvx1_1=15, field_recvx1_1=16, 
+  fluid_recvx1_sendx2_1=15, field_recvx1_sendx2_1=16,
+  fluid_recvx2_1=17, field_recvx2_1=18,
+  fluid_recvx2_sendx3_1=17, field_recvx2_sendx3_1=18,
+  fluid_recvx3_1=19, field_recvx3_1=20,
 
-  new_blocktimestep=19,
-//  primitives_2=4,
-//  fluid_integrate_sendx1_2=7, field_integrate_sendx1_2=10,
-//  fluid_recvx1_2=13, field_recvx1_2=16,
-//  fluid_recvx1_sendx2_2=13, field_recvx1_sendx2_2=16,
-//  fluid_recvx2_2=19, field_recvx2_2=22,
-//  fluid_recvx2_sendx3_2=19, field_recvx2_sendx3_2=22,
-//  fluid_recvx3_2=25, field_recvx3_2=28,
+  new_blocktimestep=21
 };
 
 enum tlstatus { running, stuck, complete, nothing };
 
-extern int myrank, nproc, tag_shift;
+extern int myrank, nproc;
 
 #endif

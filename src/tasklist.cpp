@@ -41,6 +41,8 @@ bool FluidIntegrateSendX1(MeshBlock *pmb, int task_arg)
   if(task_arg==0) {
     pfluid->pf_integrator->OneStep(pmb, pfluid->u, pfluid->w1, pfield->b1,
                                    pfield->bcc1, 2);
+    if (MAGNETIC_FIELDS_ENABLED)
+      pbval->LoadAndSendEFluxBoundaryBuffer(pfield->ei,pfield->wght,0);
     pbval->LoadAndSendFluidBoundaryBuffer(outer_x1,pfluid->u,0);
     pbval->LoadAndSendFluidBoundaryBuffer(inner_x1,pfluid->u,0);
   }
@@ -48,12 +50,23 @@ bool FluidIntegrateSendX1(MeshBlock *pmb, int task_arg)
     pfluid->u1 = pfluid->u;
     pfluid->pf_integrator->OneStep(pmb, pfluid->u1, pfluid->w, pfield->b,
                                    pfield->bcc, 1);
+    if (MAGNETIC_FIELDS_ENABLED)
+      pbval->LoadAndSendEFluxBoundaryBuffer(pfield->ei,pfield->wght,1);
     pbval->LoadAndSendFluidBoundaryBuffer(outer_x1,pfluid->u1,1);
     pbval->LoadAndSendFluidBoundaryBuffer(inner_x1,pfluid->u1,1);
   }
 
   return true;
 }
+
+
+bool EFluxReceive(MeshBlock *pmb, int task_arg)
+{
+  Field *pfield=pmb->pfield;
+  BoundaryValues *pbval=pmb->pbval;
+  return pbval->ReceiveAndSetEFluxBoundary(pfield->ei,pfield->wght,task_arg);
+}
+
 
 bool FieldIntegrateSendX1(MeshBlock *pmb, int task_arg)
 {
@@ -262,6 +275,11 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
     task[ntask].task_arg=0;
     break;
 
+  case eflux_recv_0:
+    task[ntask].TaskFunc=taskfunc::EFluxReceive;
+    task[ntask].task_arg=0;
+    break;
+
   case field_integrate_sendx1_0: // field correction
     task[ntask].TaskFunc=taskfunc::FieldIntegrateSendX1;
     task[ntask].task_arg=0;
@@ -305,6 +323,11 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
 
   case fluid_integrate_sendx1_1: // fluid prediction
     task[ntask].TaskFunc=taskfunc::FluidIntegrateSendX1;
+    task[ntask].task_arg=1;
+    break;
+
+  case eflux_recv_1:
+    task[ntask].TaskFunc=taskfunc::EFluxReceive;
     task[ntask].task_arg=1;
     break;
   

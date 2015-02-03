@@ -38,8 +38,6 @@
 
 // MPI related global variables
 int myrank=0, nproc=1;
-// tag parameters: use 3 LSBs for direction, 4 for communication type, tag_mask = 0b1111111
-int tag_shift=7;
 
 // MPI header and varaibles
 #ifdef MPI_PARALLEL
@@ -312,8 +310,14 @@ int main(int argc, char *argv[])
 //--- Step 8. Create and set the task list ---------------------------------------------
 // this is for a two-step integrator
   task_list.AddTask(fluid_integrate_sendx1_1, DependFlag(none)); // predict
-  if (MAGNETIC_FIELDS_ENABLED)
-    task_list.AddTask(field_integrate_sendx1_1, DependFlag(none));
+  if (MAGNETIC_FIELDS_ENABLED) {
+    if(pmesh->mesh_size.nx2>1) {// 2D or 3D
+      task_list.AddTask(eflux_recv_1, DependFlag(fluid_integrate_sendx1_1));
+      task_list.AddTask(field_integrate_sendx1_1, DependFlag(eflux_recv_1));
+    }
+    else
+      task_list.AddTask(field_integrate_sendx1_1, DependFlag(fluid_integrate_sendx1_1));
+  }
   if(pmesh->mesh_size.nx2==1) {// 1D
     task_list.AddTask(fluid_recvx1_1, DependFlag(fluid_integrate_sendx1_1));
     if (MAGNETIC_FIELDS_ENABLED) {
@@ -330,7 +334,7 @@ int main(int argc, char *argv[])
     if(pmesh->mesh_size.nx3==1) { // 2D
       task_list.AddTask(fluid_recvx2_1, DependFlag(fluid_recvx1_sendx2_1));
       if (MAGNETIC_FIELDS_ENABLED) {
-        task_list.AddTask(field_recvx1_1, DependFlag(field_recvx1_sendx2_1));
+        task_list.AddTask(field_recvx2_1, DependFlag(field_recvx1_sendx2_1));
         task_list.AddTask(primitives_1, DependFlag(fluid_recvx2_1) | DependFlag(field_recvx2_1));
       }
       else
@@ -343,7 +347,8 @@ int main(int argc, char *argv[])
       task_list.AddTask(fluid_recvx3_1, DependFlag(fluid_recvx2_sendx3_1));
       if (MAGNETIC_FIELDS_ENABLED) {
         task_list.AddTask(field_recvx3_1, DependFlag(field_recvx2_sendx3_1));
-        task_list.AddTask(primitives_1, DependFlag(fluid_recvx3_1) | DependFlag(field_recvx3_1));
+        task_list.AddTask(primitives_1, DependFlag(fluid_recvx3_1)
+                          | DependFlag(field_recvx3_1));
       }
       else
         task_list.AddTask(primitives_1, DependFlag(fluid_recvx3_1));
@@ -351,26 +356,35 @@ int main(int argc, char *argv[])
   }
 
   task_list.AddTask(fluid_integrate_sendx1_0, DependFlag(primitives_1)); // correct
-  if (MAGNETIC_FIELDS_ENABLED)
-    task_list.AddTask(field_integrate_sendx1_0, DependFlag(primitives_1));
+  if (MAGNETIC_FIELDS_ENABLED) {
+    if(pmesh->mesh_size.nx2>1) {// 2D or 3D
+      task_list.AddTask(eflux_recv_0, DependFlag(fluid_integrate_sendx1_0));
+      task_list.AddTask(field_integrate_sendx1_0, DependFlag(eflux_recv_0));
+    }
+    else
+      task_list.AddTask(field_integrate_sendx1_0, DependFlag(fluid_integrate_sendx1_0));
+  }
   if(pmesh->mesh_size.nx2==1) {// 1D
     task_list.AddTask(fluid_recvx1_0, DependFlag(fluid_integrate_sendx1_0));
     if (MAGNETIC_FIELDS_ENABLED) {
       task_list.AddTask(field_recvx1_0, DependFlag(field_integrate_sendx1_0));
-      task_list.AddTask(primitives_0, DependFlag(fluid_recvx1_0) | DependFlag(field_recvx1_0));
+      task_list.AddTask(primitives_0, DependFlag(fluid_recvx1_0)
+                        | DependFlag(field_recvx1_0));
     }
     else
       task_list.AddTask(primitives_0, DependFlag(fluid_recvx1_0));
   }
   else {
     task_list.AddTask(fluid_recvx1_sendx2_0, DependFlag(fluid_integrate_sendx1_0));
-    if (MAGNETIC_FIELDS_ENABLED)
+    if (MAGNETIC_FIELDS_ENABLED) {
       task_list.AddTask(field_recvx1_sendx2_0, DependFlag(field_integrate_sendx1_0));
+    }
     if(pmesh->mesh_size.nx3==1) { // 2D
       task_list.AddTask(fluid_recvx2_0, DependFlag(fluid_recvx1_sendx2_0));
       if (MAGNETIC_FIELDS_ENABLED) {
-        task_list.AddTask(field_recvx1_0, DependFlag(field_recvx1_sendx2_0));
-        task_list.AddTask(primitives_0, DependFlag(fluid_recvx2_0) | DependFlag(field_recvx2_0));
+        task_list.AddTask(field_recvx2_0, DependFlag(field_recvx1_sendx2_0));
+        task_list.AddTask(primitives_0, DependFlag(fluid_recvx2_0)
+                          | DependFlag(field_recvx2_0));
       }
       else
         task_list.AddTask(primitives_0, DependFlag(fluid_recvx2_0));
@@ -382,7 +396,8 @@ int main(int argc, char *argv[])
       task_list.AddTask(fluid_recvx3_0, DependFlag(fluid_recvx2_sendx3_0));
       if (MAGNETIC_FIELDS_ENABLED) {
         task_list.AddTask(field_recvx3_0, DependFlag(field_recvx2_sendx3_0));
-        task_list.AddTask(primitives_0, DependFlag(fluid_recvx3_0) | DependFlag(field_recvx3_0));
+        task_list.AddTask(primitives_0, DependFlag(fluid_recvx3_0)
+                          | DependFlag(field_recvx3_0));
       }
       else
         task_list.AddTask(primitives_0, DependFlag(fluid_recvx3_0));
