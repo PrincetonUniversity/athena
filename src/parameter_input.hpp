@@ -65,8 +65,10 @@ public:
   int  DoesParameterExist(std::string block, std::string name);
   int  GetInteger(std::string block, std::string name);
   int  GetOrAddInteger(std::string block, std::string name, int value);
+  int  SetInteger(std::string block, std::string name, int value);
   Real GetReal(std::string block, std::string name);
   Real GetOrAddReal(std::string block, std::string name, Real value);
+  Real SetReal(std::string block, std::string name, Real value);
   std::string GetString(std::string block, std::string name);
   std::string GetOrAddString(std::string block, std::string name, std::string value);
 

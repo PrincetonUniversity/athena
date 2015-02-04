@@ -45,9 +45,9 @@ RestartOutput::RestartOutput(OutputParameters oparams)
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void RestartOutput::Initialize(Mesh *pM, ParameterInput *pi)
+//! \fn void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
 //  \brief open the restarting file, output the parameter and header blocks
-void RestartOutput::Initialize(Mesh *pM, ParameterInput *pi)
+void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
 {
   std::stringstream msg;
   std::string fname;
@@ -71,8 +71,13 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pi)
   fname.append(".");
   fname.append(number);
   fname.append(".rst");
-  // 
-  pi->ParameterDump(ost);
+
+  // cout up here for the restarting file.
+  output_params.file_number++;
+  output_params.next_time += output_params.dt;
+  pin->SetInteger(output_params.block_name, "file_number", output_params.file_number);
+  pin->SetReal(output_params.block_name, "next_time", output_params.next_time);
+  pin->ParameterDump(ost);
 
   resfile.Open(fname.c_str(),writemode);
 
@@ -185,12 +190,10 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pi)
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void RestartOutput::Finalize(void)
+//! \fn void RestartOutput::Finalize(ParameterInput *pin)
 //  \brief close the file
-void RestartOutput::Finalize(void)
+void RestartOutput::Finalize(ParameterInput *pin)
 {
-  output_params.file_number++;
-  output_params.next_time += output_params.dt;
   resfile.Close();
   delete [] blocksize;
   delete [] offset;

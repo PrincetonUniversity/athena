@@ -290,6 +290,37 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
     }
     pib = pib->pnext;  // move to next input block name
   }
+
+// Move the restarting block to the end of the list
+  int pos=0, found=0;
+  OutputType *pot=pfirst_type_, *prst;
+  while(pot!=NULL) {
+    if(pot->output_params.file_type.compare("rst")==0) {
+      prst=pot;
+      found=1;
+      if(pot->pnext_type==NULL) found=2;
+      break;
+    }
+    pos++;
+    pot=pot->pnext_type;
+  }
+  if(found==1) {
+    // remove the restarting block
+    pot=pfirst_type_;
+    if(pos==0) { // first block
+      pfirst_type_=pfirst_type_->pnext_type;
+    }
+    else {
+      for(int j=0; j<pos-1; j++) // seek the list
+        pot=pot->pnext_type;
+      pot->pnext_type=prst->pnext_type; // remove it
+    }
+    while(pot->pnext_type!=NULL)
+      pot=pot->pnext_type; // find the end
+    prst->pnext_type=NULL;
+    pot->pnext_type=prst;
+  }
+  // if found==2, do nothing; it's already at the end of the list
 }
 
 // destructor - iterates through linked list of OutputTypes and deletes nodes
@@ -732,19 +763,20 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin)
         delete pod;
         pmb=pmb->next;
       }
-      ptype->Finalize();
+      ptype->Finalize(pin);
     }
     ptype = ptype->pnext_type; // move to next OutputType in list
   }
 
 }
 
-
 //--------------------------------------------------------------------------------------
-//! \fn void OutputType::Finalize(void)
-//  \brief default finalizing procedure: count up the file number and time
-void OutputType::Finalize(void)
+//! \fn void OutputType::Finalize(ParameterInput *pin)
+//  \brief count up the file number and next output time
+void OutputType::Finalize(ParameterInput *pin)
 {
   output_params.file_number++;
   output_params.next_time += output_params.dt;
+  pin->SetInteger(output_params.block_name, "file_number", output_params.file_number);
+  pin->SetReal(output_params.block_name, "next_time", output_params.next_time);
 }

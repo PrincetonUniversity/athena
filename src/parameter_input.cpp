@@ -611,6 +611,36 @@ Real ParameterInput::GetOrAddReal(std::string block, std::string name, Real def_
 }
 
 //--------------------------------------------------------------------------------------
+//! \fn int ParameterInput::SetInteger(std::string block, std::string name, int value)
+//  \brief updates an integer parameter; creates it if it does not exist
+
+int ParameterInput::SetInteger(std::string block, std::string name, int value)
+{
+  InputBlock* pb;
+  std::stringstream ss_value;
+
+  pb = FindOrAddBlock(block);
+  ss_value << value;
+  AddParameter(pb, name, ss_value.str(), "# Updated during run time");
+  return value;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn Real ParameterInput::SetReal(std::string block, std::string name, Real value)
+//  \brief updates a real parameter; creates it if it does not exist
+
+Real ParameterInput::SetReal(std::string block, std::string name, Real value)
+{
+  InputBlock* pb;
+  std::stringstream ss_value;
+
+  pb = FindOrAddBlock(block);
+  ss_value << value;
+  AddParameter(pb, name, ss_value.str(), "# Updated during run time");
+  return value;
+}
+
+//--------------------------------------------------------------------------------------
 //! \fn std::string ParameterInput::GetOrAddString(std::string block, std::string name, 
 //std::string def_value)
 //  \brief returns string value stored in block/name if it exists, or creates and sets

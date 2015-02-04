@@ -89,8 +89,8 @@ public:
 
 // functions that operate on OutputData container
 
-  virtual void Initialize(Mesh *pM, ParameterInput *pin) {} ;
-  virtual void Finalize(void);
+  virtual void Initialize(Mesh *pM, ParameterInput *pin) {};
+  virtual void Finalize(ParameterInput *pin);
   virtual void LoadOutputData(OutputData *pod, MeshBlock *pmb);
   virtual void TransformOutputData(OutputData *pod, MeshBlock *pmb);
   virtual void WriteOutputFile(OutputData *pod, MeshBlock *pmb) = 0; // pure virtual
@@ -152,7 +152,7 @@ public:
   RestartOutput(OutputParameters oparams);
   ~RestartOutput() {};
   void Initialize(Mesh *pm, ParameterInput *pin);
-  void Finalize(void);
+  void Finalize(ParameterInput *pin);
   void LoadOutputData(OutputData *pod, MeshBlock *pmb) {};
   void TransformOutputData(OutputData *pod, MeshBlock *pmb) {};
 
