@@ -72,7 +72,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
   fname.append(number);
   fname.append(".rst");
 
-  // cout up here for the restarting file.
+  // count up here for the restarting file.
   output_params.file_number++;
   output_params.next_time += output_params.dt;
   pin->SetInteger(output_params.block_name, "file_number", output_params.file_number);
