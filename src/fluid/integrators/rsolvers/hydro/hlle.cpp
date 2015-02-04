@@ -52,10 +52,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
   Real wli[(NFLUID)],wri[(NFLUID)],wroe[(NFLUID)];
   Real fl[(NFLUID)],fr[(NFLUID)],flxi[(NFLUID)];
   Real gm1 = pmy_fluid->pf_eos->GetGamma() - 1.0;
-<<<<<<< HEAD
-=======
   Real iso_cs = pmy_fluid->pf_eos->GetIsoSoundSpeed();
->>>>>>> remotes/origin/master
 
 #pragma simd
   for (int i=il; i<=iu; ++i){
@@ -100,16 +97,8 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     Real cr = pmy_fluid->pf_eos->SoundSpeed(wri);
     Real a  = iso_cs;
     if (NON_BAROTROPIC_EOS) {
-<<<<<<< HEAD
-      Real q = hroe - 0.5*(wroe[IVX]*wroe[IVX]+wroe[IVY]*wroe[IVY]+wroe[IVZ]*wroe[IVZ]);
-      if (q < 0.0) q=0.0;
-      a = sqrt(gm1*q);
-    } else {
-      a = pmy_fluid->pf_eos->SoundSpeed(wroe);
-=======
       Real q = hroe - 0.5*(SQR(wroe[IVX]) + SQR(wroe[IVY]) + SQR(wroe[IVZ]));
       a = (q < 0.0) ? 0.0 : sqrt(gm1*q);
->>>>>>> remotes/origin/master
     }
 
 //--- Step 4. Compute the max/min wave speeds based on L/R and Roe-averaged values
