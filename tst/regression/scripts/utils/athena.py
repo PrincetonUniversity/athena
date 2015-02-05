@@ -130,9 +130,11 @@ def read_vtk(filename):
   z_faces,current_index = read_faces('Z', face_dimensions[2])
 
   # Prepare to read quantities defined on grid
-  cell_dimensions = np.array([max(dim-1,1) for dim in face_dimensions])
+  cell_dimensions = np.array([max(dim-1,1)
+      for dim in face_dimensions])
   num_cells = cell_dimensions.prod()
-  current_index = skip_string('CELL_DATA {0} \n'.format(num_cells))  # note trailing space
+  current_index = \
+      skip_string('CELL_DATA {0} \n'.format(num_cells))  # note trailing space
   data = {}
 
   # Function for reading scalar data

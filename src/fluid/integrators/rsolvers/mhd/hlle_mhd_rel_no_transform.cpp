@@ -132,23 +132,23 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     const Real &v1_right = prim_right(IVX,i);
     const Real &v2_right = prim_right(IVY,i);
     const Real &v3_right = prim_right(IVZ,i);
-    Real b1_left, b2_left, b3_left;
+    Real b1_right, b2_right, b3_right;
     switch (ivx)
     {
       case IVX:
-        b1_left = b(k,j,i);
-        b2_left = prim_left(IBY,i);
-        b3_left = prim_left(IBZ,i);
+        b1_right = b(k,j,i);
+        b2_right = prim_right(IBY,i);
+        b3_right = prim_right(IBZ,i);
         break;
       case IVY:
-        b2_left = b(k,j,i);
-        b3_left = prim_left(IBY,i);
-        b1_left = prim_left(IBZ,i);
+        b2_right = b(k,j,i);
+        b3_right = prim_right(IBY,i);
+        b1_right = prim_right(IBZ,i);
         break;
       case IVZ:
-        b3_left = b(k,j,i);
-        b1_left = prim_left(IBY,i);
-        b2_left = prim_left(IBZ,i);
+        b3_right = b(k,j,i);
+        b1_right = prim_right(IBY,i);
+        b2_right = prim_right(IBZ,i);
         break;
     }
 
@@ -236,13 +236,13 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     Real lambda_left_plus, lambda_left_minus;
     Real rho_h_left = rho_left + gamma_adi_red * pgas_left;
     pmy_fluid->pf_eos->FastMagnetosonicSpeedsGR(
-        rho_h_left, pgas_left, u_con_left[0], u_con_left[ivx], b_sq_left
+        rho_h_left, pgas_left, u_con_left[0], u_con_left[ivx], b_sq_left,
         g00, g_inv_off_diag, g_inv_diag,
         &lambda_left_plus, &lambda_left_minus);
     Real lambda_right_plus, lambda_right_minus;
     Real rho_h_right = rho_right + gamma_adi_red * pgas_right;
     pmy_fluid->pf_eos->FastMagnetosonicSpeedsGR(
-        rho_h_right, pgas_right, u_con_right[0], u_con_right[ivx], b_sq_right
+        rho_h_right, pgas_right, u_con_right[0], u_con_right[ivx], b_sq_right,
         g00, g_inv_off_diag, g_inv_diag,
         &lambda_right_plus, &lambda_right_minus);
     Real lambda_left = std::min(lambda_left_minus, lambda_right_minus);
@@ -250,11 +250,11 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
 
     // Calculate L/R state fluxes
     Real flux_left[NWAVE], flux_right[NWAVE];
-    PrimToFluxGR(gamma_adi_red, rho_left, pgas_left, Real b_sq_left,
-        u_con_left[4], u_cov_left[4], b_con_left[4], b_cov_left[4],
+    PrimToFluxGR(gamma_adi_red, rho_left, pgas_left, b_sq_left,
+        u_con_left, u_cov_left, b_con_left, b_cov_left,
         flux_left, ivx, ivy, ivz);
-    PrimToFluxGR(gamma_adi_red, rho_right, pgas_right, Real b_sq_right,
-        u_con_right[4], u_cov_right[4], b_con_right[4], b_cov_right[4],
+    PrimToFluxGR(gamma_adi_red, rho_right, pgas_right, b_sq_right,
+        u_con_right, u_cov_right, b_con_right, b_cov_right,
         flux_right, ivx, ivy, ivz);
 
     // Set fluxes if in L state
@@ -275,11 +275,11 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
 
     // Set fluxes in HLL state
     Real cons_left[NWAVE], cons_right[NWAVE];
-    PrimToConsGR(gamma_adi_red, rho_left, pgas_left, Real b_sq_left,
-        u_con_left[4], u_cov_left[4], b_con_left[4], b_cov_left[4],
+    PrimToConsGR(gamma_adi_red, rho_left, pgas_left, b_sq_left,
+        u_con_left, u_cov_left, b_con_left, b_cov_left,
         cons_left, ivy, ivz);
-    PrimToConsGR(gamma_adi_red, rho_right, pgas_right, Real b_sq_right,
-        u_con_right[4], u_cov_right[4], b_con_right[4], b_cov_right[4],
+    PrimToConsGR(gamma_adi_red, rho_right, pgas_right, b_sq_right,
+        u_con_right, u_cov_right, b_con_right, b_cov_right,
         cons_right, ivy, ivz);
     for (int n = 0; n < NWAVE; ++n)
       flux(n,i) = (lambda_right*flux_left[n] - lambda_left*flux_right[n]

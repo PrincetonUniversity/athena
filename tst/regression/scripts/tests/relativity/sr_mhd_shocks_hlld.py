@@ -34,13 +34,13 @@ def run():
 
 # Analyze outputs
 def analyze():
-  headers = [('dens',), ('Etot',), ('mom',0), ('mom',1), ('mom',2),
-      ('cell-centered B',0), ('cell-centered B',1), ('cell-centered B',2)]
+  headers = [('dens',), ('Etot',), ('mom',0), ('mom',1), ('mom',2), ('cc-B',0),
+      ('cc-B',1), ('cc-B',2)]
   tol_sets = [[0.02,  0.01,  0.02,  0.04, 0.0,   0.0, 0.01,  0.0],
-              [0.003, 0.002, 0.007, 0.01, 0.005, 0.0, 0.004, 0.005],
-              [0.002, 0.001, 0.02,  0.02, 0.004, 0.0, 0.001, 0.003]]
+              [0.003, 0.002, 0.007, 0.01, 0.005, 0.0, 0.004, 0.007],
+              [0.002, 0.001, 0.02,  0.03, 0.004, 0.0, 0.001, 0.003]]
   for i,tols in zip([1,2,4],tol_sets):
-    x_ref,_,_,data_ref = athena.read_vtk('data/sr_mhd_shock{0}_hlle.vtk'.format(i))
+    x_ref,_,_,data_ref = athena.read_vtk('data/sr_mhd_shock{0}_hlld.vtk'.format(i))
     x_new,_,_,data_new = \
         athena.read_vtk('bin/sr_mhd_shock{0}.block0.out1.00001.vtk'.format(i))
     for header,tol in zip(headers,tols):
