@@ -1535,7 +1535,7 @@ void Mesh::UpdateOneStep(void)
   while (pmb != NULL)  {
     pmb->firsttask=0;
     pmb->ntodo=pmb->ntask;
-    pmb->task_flag=1L;
+    pmb->task_flag=0L;
     pmb->pbval->StartReceivingAll();
     pmb=pmb->next;
   }
@@ -1595,11 +1595,11 @@ enum tlstatus MeshBlock::DoOneTask(void) {
   if(ntodo==0) return nothing;
   for(int i=firsttask; i<ntask; i++) {
     Task &ti=task[i];
-    if(((1L<<ti.taskid) & task_flag)==0L) { // this task is not done
+    if((ti.taskid & task_flag)==0L) { // this task is not done
       if (((ti.depend & task_flag) == ti.depend)) { // dependency clear
         if(ti.TaskFunc(this,ti.task_arg)==true) {
           ntodo--;
-          task_flag |= (1L<<ti.taskid);
+          task_flag |= ti.taskid;
           if(skip==0)
             firsttask++;
 //          std::cout << "MeshBlock " << gid << " task " << i << " " << ti.taskid << " done." << std::endl;

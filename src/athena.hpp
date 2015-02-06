@@ -49,27 +49,27 @@ enum mpitag {tag_fluid=0, tag_field=1, tag_eflux=2}; // mpitag must be < 16 and 
 enum task {
   none=0, 
 
-  primitives_0=1,
-  fluid_integrate_sendx1_0=2,
-  eflux_recv_0=3,
-  field_integrate_sendx1_0=4,
-  fluid_recvx1_0=5, field_recvx1_0=6, // for 1D
-  fluid_recvx1_sendx2_0=5, field_recvx1_sendx2_0=6, 
-  fluid_recvx2_0=7, field_recvx2_0=8, // for2D
-  fluid_recvx2_sendx3_0=7, field_recvx2_sendx3_0=8,
-  fluid_recvx3_0=9, field_recvx3_0=10,
+  primitives_0=1L<<0,
+  fluid_integrate_sendx1_0=1L<<1,
+  eflux_recv_0=1L<<2,
+  field_integrate_sendx1_0=1L<<3,
+  fluid_recvx1_0=1L<<4, field_recvx1_0=1L<<5, // for 1D
+  fluid_recvx1_sendx2_0=1L<<6, field_recvx1_sendx2_0=1L<<7, 
+  fluid_recvx2_0=1L<<8, field_recvx2_0=1L<<9, // for2D
+  fluid_recvx2_sendx3_0=1L<<8, field_recvx2_sendx3_0=1L<<9,
+  fluid_recvx3_0=1L<<10, field_recvx3_0=1L<<11,
 
-  primitives_1=11,
-  fluid_integrate_sendx1_1=12,
-  eflux_recv_1=13,
-  field_integrate_sendx1_1=14,
-  fluid_recvx1_1=15, field_recvx1_1=16, 
-  fluid_recvx1_sendx2_1=15, field_recvx1_sendx2_1=16,
-  fluid_recvx2_1=17, field_recvx2_1=18,
-  fluid_recvx2_sendx3_1=17, field_recvx2_sendx3_1=18,
-  fluid_recvx3_1=19, field_recvx3_1=20,
+  primitives_1=1L<<12,
+  fluid_integrate_sendx1_1=1L<<13,
+  eflux_recv_1=1L<<14,
+  field_integrate_sendx1_1=1L<<15,
+  fluid_recvx1_1=1L<<16, field_recvx1_1=1L<<17, 
+  fluid_recvx1_sendx2_1=1L<<16, field_recvx1_sendx2_1=1L<<17,
+  fluid_recvx2_1=1L<<18, field_recvx2_1=1L<<19,
+  fluid_recvx2_sendx3_1=1L<<18, field_recvx2_sendx3_1=1L<<19,
+  fluid_recvx3_1=1L<<20, field_recvx3_1=1L<<21,
 
-  new_blocktimestep=21
+  new_blocktimestep=1L<<22
 };
 
 enum tlstatus { running, stuck, complete, nothing };

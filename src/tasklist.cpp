@@ -253,10 +253,6 @@ bool NewBlockTimeStep(MeshBlock *pmb, int task_arg)
 
 } // namespace task
 
-unsigned long DependFlag(enum task dep)
-{
-  return 1L<<dep;
-}
 
 void TaskList::AddTask(enum task t, unsigned long int dependence)
 {
