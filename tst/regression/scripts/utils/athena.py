@@ -121,7 +121,7 @@ def read_vtk(filename):
     begin_index = skip_string(identifier_string)
     format_string = '>' + 'f'*num_faces
     end_index = begin_index + 4*num_faces
-    vals = struct.unpack(format_string, raw_data[begin_index:end_index])
+    vals = np.array(struct.unpack(format_string, raw_data[begin_index:end_index]))
     return vals,end_index+1
 
   # Read interface locations
