@@ -1,10 +1,13 @@
-// Minkowski spacetime, Cartesian coordinates
+// Minkowski spacetime, Minkowski (Cartesian) coordinates
 // Notes:
 //   coordinates: t, x, y, z
 //   metric: ds^2 = -dt^2 + dx^2 + dy^2 + dz^2
 
 // Primary header
 #include "coordinates.hpp"
+
+// C++ headers
+#include <cmath>  // sqrt()
 
 // Athena headers
 #include "../athena.hpp"         // enums, macros, Real
@@ -22,13 +25,13 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   // Set pointer to host MeshBlock
   pmy_block = pb;
 
-  // Initialize volume-averated positions and spacings: x-direction
+  // Initialize volume-averaged positions and spacings: x-direction
   for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST; ++i)
     pb->x1v(i) = 0.5 * (pb->x1f(i) + pb->x1f(i+1));
   for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST-1; ++i)
     pb->dx1v(i) = pb->x1v(i+1) - pb->x1v(i);
 
-  // Initialize volume-averated positions and spacings: y-direction
+  // Initialize volume-averaged positions and spacings: y-direction
   if (pb->block_size.nx2 == 1)  // no extent
   {
     pb->x2v(pb->js) = 0.5 * (pb->x2f(pb->js) + pb->x2f(pb->js+1));
@@ -42,7 +45,7 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
       pb->dx2v(j) = pb->x2v(j+1) - pb->x2v(j);
   }
 
-  // Initialize volume-averated positions and spacings: z-direction
+  // Initialize volume-averaged positions and spacings: z-direction
   if (pb->block_size.nx3 == 1)  // no extent
   {
     pb->x3v(pb->ks) = 0.5 * (pb->x3f(pb->ks) + pb->x3f(pb->ks+1));
@@ -66,118 +69,28 @@ Coordinates::~Coordinates()
 
 //--------------------------------------------------------------------------------------
 
-// Function for computing lengths of edges in the x-direction
+// Function for computing cell volumes
 // Inputs:
-//   k: z-index (unused)
-//   j: y-index (unused)
+//   k: z-index
+//   j: y-index
 //   il,iu: x-index bounds
 // Outputs:
-//   len: 1D array of edge lengths along x
+//   volumes: 1D array of cell volumes
 // Notes:
-//   edge is taken to be at indices (i,j-1/2,k-1/2), where (i,j,k) defines a cell
-void Coordinates::Edge1Length(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &len)
+//   \Delta V = \Delta x * \Delta y * \Delta z
+void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &volumes)
 {
+  const Real &delta_y = pmy_block->dx2f(j);
+  const Real &delta_z = pmy_block->dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
-    Real &length = pmy_block->dx1f(i);
-    len(i) = length;
+    const Real &delta_x = pmy_block->dx1f(i);
+    Real &volume = volumes(i);
+    volume = delta_x * delta_y * delta_z;
   }
   return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing lengths of edges in the y-direction
-// Inputs:
-//   k: z-index (unused)
-//   j: y-index
-//   il,iu: x-index bounds
-// Outputs:
-//   len: 1D array of edge lengths along y
-// Notes:
-//   edge is taken to be at indices (i-1/2,j,k-1/2), where (i,j,k) defines a cell
-void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &len)
-{
-  const Real &length = pmy_block->dx2f(j);
-  #pragma simd
-  for (int i = il; i <= iu; ++i)
-    len(i) = length;
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing lengths of edges in the z-direction
-// Inputs:
-//   k: z-index
-//   j: y-index (unused)
-//   il,iu: x-index bounds
-// Outputs:
-//   len: 1D array of edge lengths along z
-// Notes:
-//   edge is taken to be at indices (i-1/2,j-1/2,k), where (i,j,k) defines a cell
-void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &len)
-{
-  const Real &length = pmy_block->dx3f(k);
-  #pragma simd
-  for (int i = il; i <= iu; ++i)
-    len(i) = length;
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing widths of cells in the x-direction
-// Inputs:
-//   k: z-index (unused)
-//   j: y-index (unused)
-//   i: x-index
-// Outputs:
-//   returned value: width of cell (i,j,k)
-// Notes:
-//   this is the integral of \sqrt{-g} dx^1 along the line passing through the cell
-//       center and having x^0, x^2, and x^3 constant
-Real Coordinates::CenterWidth1(const int k, const int j, const int i)
-{
-  return pmy_block->dx1f(i);
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing widths of cells in the y-direction
-// Inputs:
-//   k: z-index (unused)
-//   j: y-index
-//   i: x-index (unused)
-// Outputs:
-//   returned value: width of cell (i,j,k)
-// Notes:
-//   this is the integral of \sqrt{-g} dx^2 along the line passing through the cell
-//       center and having x^0, x^1, and x^3 constant
-Real Coordinates::CenterWidth2(const int k, const int j, const int i)
-{
-  return pmy_block->dx2f(j);
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing widths of cells in the z-direction
-// Inputs:
-//   k: z-index
-//   j: y-index (unused)
-//   i: x-index (unused)
-// Outputs:
-//   returned value: width of cell (i,j,k)
-// Notes:
-//   this is the integral of \sqrt{-g} dx^3 along the line passing through the cell
-//       center and having x^0, x^1, and x^2 constant
-Real Coordinates::CenterWidth3(const int k, const int j, const int i)
-{
-  return pmy_block->dx3f(k);
 }
 
 //--------------------------------------------------------------------------------------
@@ -219,12 +132,12 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
-  Real &delta_z = pmy_block->dx3f(k);
+  const Real &delta_z = pmy_block->dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
+    const Real &delta_x = pmy_block->dx1f(i);
     Real &area = areas(i);
-    Real &delta_x = pmy_block->dx1f(i);
     area = delta_x * delta_z;
   }
   return;
@@ -244,12 +157,12 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
-  Real &delta_y = pmy_block->dx2f(j);
+  const Real &delta_y = pmy_block->dx2f(j);
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
+    const Real &delta_x = pmy_block->dx1f(i);
     Real &area = areas(i);
-    Real &delta_x = pmy_block->dx1f(i);
     area = delta_x * delta_y;
   }
   return;
@@ -257,28 +170,112 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 
 //--------------------------------------------------------------------------------------
 
-// Function for computing cell volumes
+// Function for computing lengths of edges in the x-direction
 // Inputs:
-//   k: z-index
+//   k: z-index (unused)
+//   j: y-index (unused)
+//   il,iu: x-index bounds
+// Outputs:
+//   len: 1D array of edge lengths along x
+// Notes:
+//   \Delta L = \Delta x
+void Coordinates::Edge1Length(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &len)
+{
+  #pragma simd
+  for (int i = il; i <= iu; ++i)
+    len(i) = pmy_block->dx1f(i);
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing lengths of edges in the y-direction
+// Inputs:
+//   k: z-index (unused)
 //   j: y-index
 //   il,iu: x-index bounds
 // Outputs:
-//   volumes: 1D array of cell volumes
+//   len: 1D array of edge lengths along y
 // Notes:
-//   \Delta V = \Delta x * \Delta y * \Delta z
-void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &volumes)
+//   \Delta L = \Delta y
+void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &len)
 {
-  Real &delta_y = pmy_block->dx2f(j);
-  Real &delta_z = pmy_block->dx3f(k);
+  const Real &length = pmy_block->dx2f(j);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    Real &volume = volumes(i);
-    Real &delta_x = pmy_block->dx1f(i);
-    volume = delta_x * delta_y * delta_z;
-  }
+    len(i) = length;
   return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing lengths of edges in the z-direction
+// Inputs:
+//   k: z-index
+//   j: y-index (unused)
+//   il,iu: x-index bounds
+// Outputs:
+//   len: 1D array of edge lengths along z
+// Notes:
+//   \Delta L = \Delta z
+void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &len)
+{
+  const Real &length = pmy_block->dx3f(k);
+  #pragma simd
+  for (int i = il; i <= iu; ++i)
+    len(i) = length;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing widths of cells in the x-direction
+// Inputs:
+//   k: z-index (unused)
+//   j: y-index (unused)
+//   i: x-index
+// Outputs:
+//   returned value: width of cell (i,j,k)
+// Notes:
+//   \Delta W = \Delta x
+Real Coordinates::CenterWidth1(const int k, const int j, const int i)
+{
+  return pmy_block->dx1f(i);
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing widths of cells in the y-direction
+// Inputs:
+//   k: z-index (unused)
+//   j: y-index
+//   i: x-index (unused)
+// Outputs:
+//   returned value: width of cell (i,j,k)
+// Notes:
+//   \Delta W = \Delta y
+Real Coordinates::CenterWidth2(const int k, const int j, const int i)
+{
+  return pmy_block->dx2f(j);
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing widths of cells in the z-direction
+// Inputs:
+//   k: z-index
+//   j: y-index (unused)
+//   i: x-index (unused)
+// Outputs:
+//   returned value: width of cell (i,j,k)
+// Notes:
+//   \Delta W = \Delta z
+Real Coordinates::CenterWidth3(const int k, const int j, const int i)
+{
+  return pmy_block->dx3f(k);
 }
 
 //--------------------------------------------------------------------------------------
@@ -307,15 +304,12 @@ void Coordinates::CoordinateSourceTerms(Real dt, const AthenaArray<Real> &prim,
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
-// Notes:
-//   both arrays assumed to be 0-initialized
 void Coordinates::CellMetric(const int k, const int j, AthenaArray<Real> &g,
     AthenaArray<Real> &g_inv)
 {
   #pragma simd
   for (int i = pmy_block->is-NGHOST; i <= pmy_block->ie+NGHOST; ++i)
   {
-    // TODO: should 0's be set explicitly?
     g(I00,i) = -1.0;
     g(I11,i) = 1.0;
     g(I22,i) = 1.0;
@@ -509,7 +503,7 @@ void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flu
   #pragma simd
   for (int i = pmy_block->is; i <= pmy_block->ie+1; ++i)
   {
-    Real &txt = flux(IEN,i);
+    const Real &txt = flux(IEN,i);
     Real &t10 = flux(IEN,i);
     t10 = -txt;
   }
@@ -532,7 +526,7 @@ void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flu
   #pragma simd
   for (int i = pmy_block->is; i <= pmy_block->ie; ++i)
   {
-    Real &tyt = flux(IEN,i);
+    const Real &tyt = flux(IEN,i);
     Real &t20 = flux(IEN,i);
     t20 = -tyt;
   }
@@ -555,9 +549,26 @@ void Coordinates::FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flu
   #pragma simd
   for (int i = pmy_block->is; i <= pmy_block->ie; ++i)
   {
-    Real &tzt = flux(IEN,i);
+    const Real &tzt = flux(IEN,i);
     Real &t30 = flux(IEN,i);
     t30 = -tzt;
   }
   return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for calculating distance between two points
+// Inputs:
+//   a1,a2,a3: global coordinates of first point
+//   bx,by,bz: Minkowski coordinates of second point
+// Outputs:
+//   returned value: Euclidean distance between a and b
+Real Coordinates::DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real by,
+    Real bz)
+{
+  Real ax = a1;
+  Real ay = a2;
+  Real az = a3;
+  return std::sqrt(SQR(ax-bx) + SQR(ay-by) + SQR(az-bz));
 }

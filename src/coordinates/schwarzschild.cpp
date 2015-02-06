@@ -34,7 +34,7 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   // Set pointer to host MeshBlock
   pmy_block = pb;
 
-  // Initialize volume-averated positions and spacings: r-direction
+  // Initialize volume-averaged positions and spacings: r-direction
   for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST; i++)
   {
     Real r_m = pb->x1f(i);
@@ -44,7 +44,7 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST-1; i++)
     pb->dx1v(i) = pb->x1v(i+1) - pb->x1v(i);
 
-  // Initialize volume-averated positions and spacings: theta-direction
+  // Initialize volume-averaged positions and spacings: theta-direction
   if (pb->block_size.nx2 == 1)  // no extent
   {
     Real theta_m = pb->x2f(pb->js);
@@ -64,7 +64,7 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
       pb->dx2v(j) = pb->x2v(j+1) - pb->x2v(j);
   }
 
-  // Initialize volume-averated positions and spacings: phi-direction
+  // Initialize volume-averaged positions and spacings: phi-direction
   if (pb->block_size.nx3 == 1)  // no extent
   {
     Real phi_m = pb->x3f(pb->ks);
@@ -84,10 +84,8 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
       pb->dx3v(k) = pb->x3v(k+1) - pb->x3v(k);
   }
 
-  // Allocate scratch arrays for integrator
-  int n_cells_1 = pb->block_size.nx1 + 2*NGHOST;
-
   // Allocate arrays for intermediate geometric quantities: r-direction
+  int n_cells_1 = pb->block_size.nx1 + 2*NGHOST;
   volume_i_.NewAthenaArray(n_cells_1);
   face1_area_i_.NewAthenaArray(n_cells_1);
   face2_area_i_.NewAthenaArray(n_cells_1);

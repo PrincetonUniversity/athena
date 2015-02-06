@@ -26,7 +26,7 @@ static void SetPrimCons(AthenaArray<Real> &prim, AthenaArray<Real> &prim_half,
 // Function for setting initial conditions
 // Inputs:
 //   pfl: Fluid
-//   pfd: Field (unused)
+//   pfd: Field
 //   pin: parameters
 // Outputs: (none)
 // Notes:
@@ -176,7 +176,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   return;
 }
 
-// Function for setting conserved variables in a cell given the primitives
+// Function for setting all variables in a cell given the primitives
 // TODO: only works for Minkowski Cartesian metric
 static void SetPrimCons(AthenaArray<Real> &prim, AthenaArray<Real> &prim_half,
     AthenaArray<Real> &cons, int i, int j, int k, Real rho, Real pgas, Real vx, Real vy,
