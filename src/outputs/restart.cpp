@@ -216,6 +216,12 @@ void RestartOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
   resfile.Write(pmb->dx3f.GetArrayPointer(),sizeof(Real),pmb->dx3f.GetSize());
   resfile.Write(pmb->pfluid->u.GetArrayPointer(),sizeof(Real),
                        pmb->pfluid->u.GetSize());
+  if (GENERAL_RELATIVITY) {
+    resfile.Write(pmb->pfluid->w.GetArrayPointer(),sizeof(Real),
+                         pmb->pfluid->w.GetSize());
+    resfile.Write(pmb->pfluid->w1.GetArrayPointer(),sizeof(Real),
+                         pmb->pfluid->w1.GetSize());
+  }
   if (MAGNETIC_FIELDS_ENABLED) {
     resfile.Write(pmb->pfield->b.x1f.GetArrayPointer(),sizeof(Real),
                          pmb->pfield->b.x1f.GetSize());

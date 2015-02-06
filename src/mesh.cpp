@@ -1208,9 +1208,10 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, BlockUID
   for(int k=0; k<6; k++) {
     for(int j=0; j<=1; j++) {
       for(int i=0; i<=1; i++) {
-        if(neighbor[k][j][i].gid!=-1)
+        if(neighbor[k][j][i].gid!=-1) {
           neighbor[k][j][i].rank=ranklist[neighbor[k][j][i].gid];
           neighbor[k][j][i].lid=neighbor[k][j][i].gid-nslist[neighbor[k][j][i].rank];
+        }
       }
     }
   }
@@ -1302,6 +1303,12 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, BlockUID
   nerr=0;
   if(resfile.Read(pfluid->u.GetArrayPointer(),sizeof(Real),
                          pfluid->u.GetSize())!=pfluid->u.GetSize()) nerr++;
+  if (GENERAL_RELATIVITY) {
+    if(resfile.Read(pfluid->w.GetArrayPointer(),sizeof(Real),
+                           pfluid->w.GetSize())!=pfluid->w.GetSize()) nerr++;
+    if(resfile.Read(pfluid->w1.GetArrayPointer(),sizeof(Real),
+                           pfluid->w1.GetSize())!=pfluid->w1.GetSize()) nerr++;
+  }
   if (MAGNETIC_FIELDS_ENABLED) {
     if(resfile.Read(pfield->b.x1f.GetArrayPointer(),sizeof(Real),
                pfield->b.x1f.GetSize())!=pfield->b.x1f.GetSize()) nerr++;
