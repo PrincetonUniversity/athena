@@ -30,6 +30,4 @@ public:
   void AddTask(enum task, unsigned long int dependence);
 };
 
-unsigned long int DependFlag(enum task);
-
 #endif
