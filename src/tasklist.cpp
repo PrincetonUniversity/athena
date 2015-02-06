@@ -368,7 +368,7 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
     break;
 
   default:
-    msg << "### FATAL ERROR in DoOneTask" << std::endl
+    msg << "### FATAL ERROR in AddTask" << std::endl
         << "Invalid Task "<< t << " is specified" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   
