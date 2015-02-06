@@ -54,22 +54,22 @@ enum task {
   eflux_recv_0=1L<<2,
   field_integrate_sendx1_0=1L<<3,
   fluid_recvx1_0=1L<<4, field_recvx1_0=1L<<5, // for 1D
-  fluid_recvx1_sendx2_0=1L<<6, field_recvx1_sendx2_0=1L<<7, 
-  fluid_recvx2_0=1L<<8, field_recvx2_0=1L<<9, // for2D
-  fluid_recvx2_sendx3_0=1L<<8, field_recvx2_sendx3_0=1L<<9,
-  fluid_recvx3_0=1L<<10, field_recvx3_0=1L<<11,
+  fluid_recvx1_sendx2_0=1L<<4, field_recvx1_sendx2_0=1L<<5, 
+  fluid_recvx2_0=1L<<6, field_recvx2_0=1L<<7, // for2D
+  fluid_recvx2_sendx3_0=1L<<6, field_recvx2_sendx3_0=1L<<7,
+  fluid_recvx3_0=1L<<8, field_recvx3_0=1L<<9,
 
-  primitives_1=1L<<12,
-  fluid_integrate_sendx1_1=1L<<13,
-  eflux_recv_1=1L<<14,
-  field_integrate_sendx1_1=1L<<15,
-  fluid_recvx1_1=1L<<16, field_recvx1_1=1L<<17, 
-  fluid_recvx1_sendx2_1=1L<<16, field_recvx1_sendx2_1=1L<<17,
-  fluid_recvx2_1=1L<<18, field_recvx2_1=1L<<19,
-  fluid_recvx2_sendx3_1=1L<<18, field_recvx2_sendx3_1=1L<<19,
-  fluid_recvx3_1=1L<<20, field_recvx3_1=1L<<21,
+  primitives_1=1L<<10,
+  fluid_integrate_sendx1_1=1L<<11,
+  eflux_recv_1=1L<<12,
+  field_integrate_sendx1_1=1L<<13,
+  fluid_recvx1_1=1L<<14, field_recvx1_1=1L<<15, 
+  fluid_recvx1_sendx2_1=1L<<14, field_recvx1_sendx2_1=1L<<15,
+  fluid_recvx2_1=1L<<16, field_recvx2_1=1L<<17,
+  fluid_recvx2_sendx3_1=1L<<16, field_recvx2_sendx3_1=1L<<17,
+  fluid_recvx3_1=1L<<18, field_recvx3_1=1L<<19,
 
-  new_blocktimestep=1L<<22
+  new_blocktimestep=1L<<20
 };
 
 enum tlstatus { running, stuck, complete, nothing };
