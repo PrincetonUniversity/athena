@@ -1522,6 +1522,10 @@ size_t MeshBlock::GetBlockSizeInBytes(void)
   size+=sizeof(Real)*(x1f.GetSize()+x2f.GetSize()+x3f.GetSize());
   size+=sizeof(Real)*(dx1f.GetSize()+dx2f.GetSize()+dx3f.GetSize());
   size+=sizeof(Real)*pfluid->u.GetSize();
+  if (GENERAL_RELATIVITY) {
+    size+=sizeof(Real)*pfluid->w.GetSize();
+    size+=sizeof(Real)*pfluid->w1.GetSize();
+  }
   if (MAGNETIC_FIELDS_ENABLED)
     size+=sizeof(Real)*(pfield->b.x1f.GetSize()+pfield->b.x2f.GetSize()
                        +pfield->b.x3f.GetSize());
