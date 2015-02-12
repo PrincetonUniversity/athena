@@ -37,7 +37,7 @@ def make():
     exe_dir = 'EXE_DIR:={0}/bin/'.format(current_dir)
     obj_dir = 'OBJ_DIR:={0}/obj/'.format(current_dir)
     clean_command = ['make', 'clean', exe_dir, obj_dir]
-    make_command = ['make', exe_dir, obj_dir]
+    make_command = ['make', '-j', exe_dir, obj_dir]
     try:
       subprocess.check_call(clean_command)
       subprocess.check_call(make_command)
