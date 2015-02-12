@@ -436,9 +436,13 @@ static Real EResidualPrime(Real w_guess, Real d, Real m_sq, Real b_sq, Real s_sq
 // Function whose value vanishes for correct total pressure
 // Notes:
 //   follows Mignone, Ugliano, & Bodo 2009, MNRAS 393 1141 (MUB)
+//   follows Athena 4.2, hlld_sr.c, in variable choices and magic numbers
 static Real PResidual(Real p, Real bx, Real l_l, Real l_r,
     const Real r_l[NWAVE], const Real r_r[NWAVE], int ivx)
 {
+  // Parameters
+  const Real delta_kx_augment_amount = 1.0e-12;
+
   // Calculate cyclic permutations of indices
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
@@ -495,24 +499,22 @@ static Real PResidual(Real p, Real bx, Real l_l, Real l_r,
   Real &l_al = kx_l;
   Real &l_ar = kx_r;
 
-  // Calculate B_c (MUB 45)
-  denominator = l_ar - l_al;
-  Real numerator_al = by_al * (l_al-vx_al) + bx*vy_al;
-  Real numerator_ar = by_ar * (l_ar-vx_ar) + bx*vy_ar;
-  Real by_c = (numerator_ar - numerator_al) / denominator;
-  numerator_al = bz_al * (l_al-vx_al) + bx*vz_al;
-  numerator_ar = bz_ar * (l_ar-vx_ar) + bx*vz_ar;
-  Real bz_c = (numerator_ar - numerator_al) / denominator;
+  // Calculate B_c (cf. MUB 45)
+  Real delta_kx = kx_r - kx_l + delta_kx_augment_amount;
+  Real bx_c_delta_kx = bx * delta_kx;
+  Real by_c_delta_kx = by_ar*(l_ar-vx_ar) - by_al*(l_al-vx_al) + bx*(vy_ar-vy_al);
+  Real bz_c_delta_kx = bz_ar*(l_ar-vx_ar) - bz_al*(l_al-vx_al) + bx*(vz_ar-vz_al);
 
   // Calculate residual
-  Real delta_kx = kx_r - kx_l;
   Real k_sq = SQR(kx_l) + SQR(ky_l) + SQR(kz_l);
-  Real k_dot_bc = kx_l*bx + ky_l*by_c + kz_l*bz_c;
-  Real y_l = (1.0-k_sq) / (delta_kx * (eta_l-k_dot_bc));  // (cf. MUB 49)
+  Real k_dot_bc_delta_kx = kx_l*bx_c_delta_kx + ky_l*by_c_delta_kx
+      + kz_l*bz_c_delta_kx;
+  Real y_l = (1.0-k_sq) / (eta_l*delta_kx - k_dot_bc_delta_kx);     // (MUB 49)
   k_sq = SQR(kx_r) + SQR(ky_r) + SQR(kz_r);
-  k_dot_bc = kx_r*bx + ky_r*by_c + kz_r*bz_c;
-  Real y_r = (1.0-k_sq) / (delta_kx * (eta_r-k_dot_bc));  // (cf. MUB 49)
-  return delta_kx * (1.0 - bx * (y_r-y_l));               // (MUB 48)
+  k_dot_bc_delta_kx = kx_r*bx_c_delta_kx + ky_r*by_c_delta_kx
+      + kz_r*bz_c_delta_kx;
+  Real y_r = (1.0-k_sq) / (eta_r*delta_kx - k_dot_bc_delta_kx);     // (MUB 49)
+  return delta_kx * (1.0 - bx * (y_r-y_l));                         // (MUB 48)
 }
 
 // Function for calculating variables between Alfven and fast waves
@@ -568,6 +570,7 @@ static void CalculateAState(
 // Function for calculating variables between Alfven waves
 // Notes:
 //   follows Mignone, Ugliano, & Bodo 2009, MNRAS 393 1141 (MUB)
+//   follows Athena 4.2, hlld_sr.c, in variable choices and magic numbers
 static void CalculateCState(Real p, Real bx,
     Real l_al, Real l_ar,
     Real vx_al, Real vy_al, Real vz_al, Real vx_ar, Real vy_ar, Real vz_ar,
@@ -576,12 +579,15 @@ static void CalculateCState(Real p, Real bx,
     const Real c_al[NWAVE], const Real c_ar[NWAVE], int ivx,
     Real *pvx_c, Real c_c[NWAVE])
 {
+  // Parameters
+  const Real delta_kx_augment_amount = 1.0e-12;
+
   // Calculate cyclic permutations of indices
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
 
   // Set B_c (MUB 45)
-  Real denominator = l_ar - l_al;
+  Real denominator = l_ar - l_al + delta_kx_augment_amount;
   Real numerator_al = c_al[IBY] * (l_al-vx_al) + bx*vy_al;
   Real numerator_ar = c_ar[IBY] * (l_ar-vx_ar) + bx*vy_ar;
   c_c[IBY] = (numerator_ar - numerator_al) / denominator;

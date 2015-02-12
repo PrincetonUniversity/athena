@@ -78,9 +78,18 @@ public:
   void FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flux);
   void FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flux);
   void FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flux);
-  void PrimToCons(const AthenaArray<Real> &prim, const AthenaArray<Real> &b,
+  void PrimToCons(
+      const AthenaArray<Real> &prim, const AthenaArray<Real> &b, Real gamma_adi_red,
       AthenaArray<Real> &cons);
   Real DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real by, Real bz);
+  void TransformVectorCell(Real at, Real ax, Real ay, Real az, int k, int j, int i,
+      Real *a0, Real *a1, Real *a2, Real *a3);
+  void TransformVectorFace1(Real at, Real ax, Real ay, Real az, int k, int j, int i,
+      Real *a0, Real *a1, Real *a2, Real *a3);
+  void TransformVectorFace2(Real at, Real ax, Real ay, Real az, int k, int j, int i,
+      Real *a0, Real *a1, Real *a2, Real *a3);
+  void TransformVectorFace3(Real at, Real ax, Real ay, Real az, int k, int j, int i,
+      Real *a0, Real *a1, Real *a2, Real *a3);
 
 private:
 // scratch arrays containing precomputed factors used by functions in this class

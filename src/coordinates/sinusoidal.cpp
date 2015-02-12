@@ -95,7 +95,7 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   trans_face2_i2_.NewAthenaArray(n_cells_1);
   trans_face3_i2_.NewAthenaArray(n_cells_1);
 
-  // Calculate intermediate geometric quantities: r-direction
+  // Calculate intermediate geometric quantities: x-direction
   #pragma simd
   for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST; i++)
   {
@@ -167,8 +167,7 @@ Coordinates::~Coordinates()
 
 // Function for computing cell volumes
 // Inputs:
-//   k: z-index
-//   j: y-index
+//   k,j: z- and y-indices
 //   il,iu: x-index bounds
 // Outputs:
 //   volumes: 1D array of cell volumes
@@ -193,8 +192,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 
 // Function for computing areas orthogonal to x
 // Inputs:
-//   k: z-index
-//   j: y-index
+//   k,j: z- and y-indices
 //   il,iu: x-index bounds
 // Outputs:
 //   areas: 1D array of interface areas orthogonal to x
@@ -218,8 +216,7 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 
 // Function for computing areas orthogonal to y
 // Inputs:
-//   k: z-index
-//   j: y-index
+//   k,j: z- and y-indices
 //   il,iu: x-index bounds
 // Outputs:
 //   areas: 1D array of interface areas orthogonal to y
@@ -243,8 +240,7 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 
 // Function for computing areas orthogonal to z
 // Inputs:
-//   k: z-index
-//   j: y-index
+//   k,j: z- and y-indices
 //   il,iu: x-index bounds
 // Outputs:
 //   areas: 1D array of interface areas orthogonal to z
@@ -268,8 +264,7 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 
 // Function for computing lengths of edges in the x-direction
 // Inputs:
-//   k: z-index (unused)
-//   j: y-index (unused)
+//   k,j: z- and y-indices (unused)
 //   il,iu: x-index bounds
 // Outputs:
 //   len: 1D array of edge lengths along x
@@ -330,8 +325,7 @@ void Coordinates::Edge3Length(const int k, const int j, const int il, const int 
 
 // Function for computing widths of cells in the x-direction
 // Inputs:
-//   k: z-index (unused)
-//   j: y-index (unused)
+//   k,j: z- and y-indices (unused)
 //   i: x-index
 // Outputs:
 //   returned value: width of cell (i,j,k)
@@ -363,8 +357,7 @@ Real Coordinates::CenterWidth2(const int k, const int j, const int i)
 // Function for computing widths of cells in the z-direction
 // Inputs:
 //   k: z-index
-//   j: y-index (unused)
-//   i: x-index (unused)
+//   j,i: y- and x-indices (unused)
 // Outputs:
 //   returned value: width of cell (i,j,k)
 // Notes:
@@ -402,7 +395,7 @@ void Coordinates::CoordinateSourceTerms(Real dt, const AthenaArray<Real> &prim,
         // Extract geometric quantities
         const Real g00 = -1.0;
         const Real &g11 = metric_cell_i1_(i);
-        const Real &g12 = metric_cell_i2_(i);
+        const Real g12 = -metric_cell_i2_(i);
         const Real g22 = 1.0;
         const Real g33 = 1.0;
         const Real &gamma_211 = src_terms_i1_(i);
@@ -442,8 +435,7 @@ void Coordinates::CoordinateSourceTerms(Real dt, const AthenaArray<Real> &prim,
 
 // Function for computing cell-centered metric coefficients
 // Inputs:
-//   k: z-index
-//   j: y-index
+//   k,j: z- and y-indices (unused)
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
@@ -486,10 +478,9 @@ void Coordinates::CellMetric(const int k, const int j, AthenaArray<Real> &g,
 
 //--------------------------------------------------------------------------------------
 
-// Function for computing face-centered metric coefficients: r-interface
+// Function for computing face-centered metric coefficients: x-interface
 // Inputs:
-//   k: phi-index
-//   j: theta-index
+//   k,j: z- and y-indices (unused)
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
@@ -532,10 +523,9 @@ void Coordinates::Face1Metric(const int k, const int j, AthenaArray<Real> &g,
 
 //--------------------------------------------------------------------------------------
 
-// Function for computing face-centered metric coefficients: theta-interface
+// Function for computing face-centered metric coefficients: y-interface
 // Inputs:
-//   k: phi-index
-//   j: theta-index
+//   k,j: z- and y-indices (unused)
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
@@ -578,10 +568,9 @@ void Coordinates::Face2Metric(const int k, const int j, AthenaArray<Real> &g,
 
 //--------------------------------------------------------------------------------------
 
-// Function for computing face-centered metric coefficients: phi-interface
+// Function for computing face-centered metric coefficients: z-interface
 // Inputs:
-//   k: phi-index
-//   j: theta-index
+//   k,j: z- and y-indices (unused)
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
@@ -626,8 +615,7 @@ void Coordinates::Face3Metric(const int k, const int j, AthenaArray<Real> &g,
 
 // Function for transforming primitives to locally flat frame: x-interface
 // Inputs:
-//   k: z-index
-//   j: y-index
+//   k,j: z- and y-indices
 //   b1_vals: 3D array of normal components B^1 of magnetic field, in global coordinates
 //   prim_left: 1D array of left primitives, using global coordinates
 //   prim_right: 1D array of right primitives, using global coordinates
@@ -747,8 +735,7 @@ void Coordinates::PrimToLocal1(const int k, const int j,
 
 // Function for transforming primitives to locally flat frame: y-interface
 // Inputs:
-//   k: z-index
-//   j: y-index
+//   k,j: z- and y-indices
 //   b2_vals: 3D array of normal components B^2 of magnetic field, in global coordinates
 //   prim_left: 1D array of left primitives, using global coordinates
 //   prim_right: 1D array of right primitives, using global coordinates
@@ -868,8 +855,7 @@ void Coordinates::PrimToLocal2(const int k, const int j,
 
 // Function for transforming primitives to locally flat frame: z-interface
 // Inputs:
-//   k: z-index
-//   j: y-index
+//   k,j: z- and y-indices
 //   b3_vals: 3D array of normal components B^3 of magnetic field, in global coordinates
 //   prim_left: 1D array of left primitives, using global coordinates
 //   prim_right: 1D array of right primitives, using global coordinates
@@ -989,8 +975,7 @@ void Coordinates::PrimToLocal3(const int k, const int j,
 
 // Function for transforming fluxes to global frame: x-interface
 // Inputs:
-//   k: z-index
-//   j: y-index
+//   k,j: z- and y-indices
 //   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
 //   flux: values overwritten in global coordinates
@@ -1062,8 +1047,7 @@ void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flu
 
 // Function for transforming fluxes to global frame: y-interface
 // Inputs:
-//   k: z-index
-//   j: y-index
+//   k,j: z- and y-indices
 //   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
 //   flux: values overwritten in global coordinates
@@ -1135,8 +1119,7 @@ void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flu
 
 // Function for transforming fluxes to global frame: z-interface
 // Inputs:
-//   k: z-index
-//   j: y-index
+//   k,j: z- and y-indices
 //   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
 //   flux: values overwritten in global coordinates
@@ -1206,6 +1189,109 @@ void Coordinates::FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flu
 
 //--------------------------------------------------------------------------------------
 
+// Function for converting all primitives to conserved variables
+// Inputs:
+//   prim: 3D array of primitives
+//   b: 3D array of cell-centered magnetic fields
+//   gamma_adi_red: \Gamma/(\Gamma-1) for ratio of specific heats \Gamma
+// Outputs:
+//   cons: 3D array of conserved variables
+void Coordinates::PrimToCons(
+    const AthenaArray<Real> &prim, const AthenaArray<Real> &b, Real gamma_adi_red,
+    AthenaArray<Real> &cons)
+{
+  // Prepare index bounds
+  int il = pmy_block->is - NGHOST;
+  int iu = pmy_block->ie + NGHOST;
+  int jl = pmy_block->js;
+  int ju = pmy_block->je;
+  if (pmy_block->block_size.nx2 > 1)
+  {
+    jl -= (NGHOST);
+    ju += (NGHOST);
+  }
+  int kl = pmy_block->ks;
+  int ku = pmy_block->ke;
+  if (pmy_block->block_size.nx3 > 1)
+  {
+    kl -= (NGHOST);
+    ku += (NGHOST);
+  }
+
+  // Go through all cells
+  for (int k = kl; k <= ku; k++)
+    for (int j = jl; j <= ju; j++)
+    {
+      #pragma simd
+      for (int i = il; i <= iu; i++)
+      {
+        // Extract geometric quantities
+        const Real g00 = -1.0;
+        const Real &g11 = metric_cell_i1_(i);
+        const Real g12 = -metric_cell_i2_(i);
+        const Real g22 = 1.0;
+        const Real g33 = 1.0;
+
+        // Extract primitives
+        const Real &rho = prim(IDN,k,j,i);
+        const Real &pgas = prim(IEN,k,j,i);
+        const Real &v1 = prim(IVX,k,j,i);
+        const Real &v2 = prim(IVY,k,j,i);
+        const Real &v3 = prim(IVZ,k,j,i);
+
+        // Extract magnetic fields
+        Real b1 = 0.0, b2 = 0.0, b3 = 0.0;
+        if (MAGNETIC_FIELDS_ENABLED)
+        {
+          b1 = b(IB1,k,j,i);
+          b2 = b(IB2,k,j,i);
+          b3 = b(IB3,k,j,i);
+        }
+
+        // Calculate 4-velocity
+        Real u0 = std::sqrt(-1.0 /
+            (g00 + g11*v1*v1 + 2.0*g12*v1*v2 + g22*v2*v2 + g33*v3*v3));
+        Real u1 = u0 * v1;
+        Real u2 = u0 * v2;
+        Real u3 = u0 * v3;
+        Real u_0 = g00*u0;
+        Real u_1 = g11*u1 + g12*u2;
+        Real u_2 = g12*u1 + g22*u2;
+        Real u_3 = g33*u3;
+
+        // Calculate 4-magnetic field
+        Real bcon0 = g11*b1*u1 + g12*b1*u2 + g12*b2*u1 + g22*b2*u2 + g33*b3*u3;
+        Real bcon1 = 1.0/u0 * (b1 + bcon0 * u1);
+        Real bcon2 = 1.0/u0 * (b2 + bcon0 * u2);
+        Real bcon3 = 1.0/u0 * (b3 + bcon0 * u3);
+        Real bcov0 = g00*bcon0;
+        Real bcov1 = g11*bcon1 + g12*bcon2;
+        Real bcov2 = g12*bcon1 + g22*bcon2;
+        Real bcov3 = g33*bcon3;
+        Real b_sq = bcon0*bcov0 + bcon1*bcov1 + bcon2*bcov2 + bcon3*bcov3;
+
+        // Extract conserved quantities
+        Real &rho_u0 = cons(IDN,k,j,i);
+        Real &t0_0 = cons(IEN,k,j,i);
+        Real &t0_1 = cons(IM1,k,j,i);
+        Real &t0_2 = cons(IM2,k,j,i);
+        Real &t0_3 = cons(IM3,k,j,i);
+
+        // Set conserved quantities
+        Real w = rho + gamma_adi_red * pgas + b_sq;
+        Real ptot = pgas + 0.5*b_sq;
+        rho_u0 = rho * u0;
+        t0_0 = w * u0 * u_0 - bcon0 * bcov0 + ptot;
+        t0_1 = w * u0 * u_1 - bcon0 * bcov1;
+        t0_2 = w * u0 * u_2 - bcon0 * bcov2;
+        t0_3 = w * u0 * u_3 - bcon0 * bcov3;
+      }
+    }
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
 // Function for calculating distance between two points
 // Inputs:
 //   a1,a2,a3: global coordinates of first point
@@ -1219,4 +1305,148 @@ Real Coordinates::DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real
   Real ay = a2 - A * std::sin(K * a1);
   Real az = a3;
   return std::sqrt(SQR(ax-bx) + SQR(ay-by) + SQR(az-bz));
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for transforming 4-vector from Minkowski to global: cell-centered
+// Inputs:
+//   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
+//   k,j: z- and y-indices (unused)
+//   i: x-index
+// Outputs:
+//   a0,a1,a2,a3: upper 4-vector components in global coordinates
+void Coordinates::TransformVectorCell(Real at, Real ax, Real ay, Real az, int k, int j, int i,
+    Real *a0, Real *a1, Real *a2, Real *a3)
+{
+  // Extract metric components
+  const Real &alpha_sq = metric_cell_i1_(i);
+  const Real &beta = metric_cell_i2_(i);
+
+  // Calculate lowered Minkowski components
+  Real a_t = -at;
+  Real a_x = ax;
+  Real a_y = ay;
+  Real a_z = az;
+
+  // Transform one-form
+  Real a_0 = a_t;
+  Real a_1 = a_x + beta * a_y;
+  Real a_2 = a_y;
+  Real a_3 = a_z;
+
+  // Set upper global components
+  *a0 = -a_0;
+  *a1 = alpha_sq * a_1 - beta * a_2;
+  *a2 = -beta * a_1 + a_2;
+  *a3 = a_3;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for transforming 4-vector from Minkowski to global: x-interface
+// Inputs:
+//   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
+//   k,j: z- and y-indices (unused)
+//   i: x-index
+// Outputs:
+//   a0,a1,a2,a3: upper 4-vector components in global coordinates
+void Coordinates::TransformVectorFace1(Real at, Real ax, Real ay, Real az, int k, int j, int i,
+    Real *a0, Real *a1, Real *a2, Real *a3)
+{
+  // Extract metric components
+  const Real &alpha_sq = metric_face1_i1_(i);
+  const Real &beta = metric_face1_i2_(i);
+
+  // Calculate lowered Minkowski components
+  Real a_t = -at;
+  Real a_x = ax;
+  Real a_y = ay;
+  Real a_z = az;
+
+  // Transform one-form
+  Real a_0 = a_t;
+  Real a_1 = a_x + beta * a_y;
+  Real a_2 = a_y;
+  Real a_3 = a_z;
+
+  // Set upper global components
+  *a0 = -a_0;
+  *a1 = alpha_sq * a_1 - beta * a_2;
+  *a2 = -beta * a_1 + a_2;
+  *a3 = a_3;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for transforming 4-vector from Minkowski to global: y-interface
+// Inputs:
+//   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
+//   k,j: z- and y-indices (unused)
+//   i: x-index
+// Outputs:
+//   a0,a1,a2,a3: upper 4-vector components in global coordinates
+void Coordinates::TransformVectorFace2(Real at, Real ax, Real ay, Real az, int k, int j, int i,
+    Real *a0, Real *a1, Real *a2, Real *a3)
+{
+  // Extract metric components
+  const Real &alpha_sq = metric_face2_i1_(i);
+  const Real &beta = metric_face2_i2_(i);
+
+  // Calculate lowered Minkowski components
+  Real a_t = -at;
+  Real a_x = ax;
+  Real a_y = ay;
+  Real a_z = az;
+
+  // Transform one-form
+  Real a_0 = a_t;
+  Real a_1 = a_x + beta * a_y;
+  Real a_2 = a_y;
+  Real a_3 = a_z;
+
+  // Set upper global components
+  *a0 = -a_0;
+  *a1 = alpha_sq * a_1 - beta * a_2;
+  *a2 = -beta * a_1 + a_2;
+  *a3 = a_3;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for transforming 4-vector from Minkowski to global: z-interface
+// Inputs:
+//   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
+//   k,j: z- and y-indices (unused)
+//   i: x-index
+// Outputs:
+//   a0,a1,a2,a3: upper 4-vector components in global coordinates
+void Coordinates::TransformVectorFace3(Real at, Real ax, Real ay, Real az, int k, int j, int i,
+    Real *a0, Real *a1, Real *a2, Real *a3)
+{
+  // Extract metric components
+  const Real &alpha_sq = metric_face3_i1_(i);
+  const Real &beta = metric_face3_i2_(i);
+
+  // Calculate lowered Minkowski components
+  Real a_t = -at;
+  Real a_x = ax;
+  Real a_y = ay;
+  Real a_z = az;
+
+  // Transform one-form
+  Real a_0 = a_t;
+  Real a_1 = a_x + beta * a_y;
+  Real a_2 = a_y;
+  Real a_3 = a_z;
+
+  // Set upper global components
+  *a0 = -a_0;
+  *a1 = alpha_sq * a_1 - beta * a_2;
+  *a2 = -beta * a_1 + a_2;
+  *a3 = a_3;
+  return;
 }

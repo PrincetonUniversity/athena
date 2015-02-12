@@ -1,0 +1,54 @@
+<comment>
+problem = GR MHD spherical blast wave
+
+<job>
+problem_id  = GRBlast
+
+<output1>
+file_type   = vtk
+variable    = prim
+dt          = 5.0
+
+<time>
+cfl_number = 0.2
+nlim       = -1
+tlim       = 50.1
+
+<mesh>
+nx1    = 600
+x1min  = -60.0
+x1max  = 60.0
+ix1_bc = 1       # 1: reflect
+ox1_bc = 1       # 1: reflect
+
+nx2    = 600
+x2min  = -60.0
+x2max  = 60.0
+ix2_bc = 1       # 1: reflect
+ox2_bc = 1       # 1: reflect
+
+nx3    = 1
+x3min  = -1.0
+x3max  = 1.0
+ix3_bc = 1     # 4: periodic
+ox3_bc = 1     # 4: periodic
+
+<fluid>
+gamma = 1.3333333333333333
+
+<problem>
+num_x = 5         # number of blast centers strictly to left and to right of central one
+num_y = 5         # number of blast centers strictly below and above central one
+x_spacing = 10.0  # separation of blast centers in x
+y_spacing = 10.0  # separation of blast centers in y
+radius = 2.0      # radius of blast centers
+
+rho_inner = 4.0   # density in blast center
+pgas_inner = 4.0  # gas pressure in blast center
+
+rho_outer = 1.0   # density outside blast center
+pgas_outer = 1.0  # gas pressure outside blast center
+
+bx = 0.0  # initial B^x everywhere
+by = 0.0  # initial B^y everywhere
+bz = 0.0  # initial B^z everywhere
