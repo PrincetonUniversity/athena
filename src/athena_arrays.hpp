@@ -6,7 +6,7 @@
 // See LICENSE file for full public license information.
 //======================================================================================
 //! \file athena_arrays.hpp
-//  \brief provides array classes valid in 1D to 4D.
+//  \brief provides array classes valid in 1D to 5D.
 //
 //  The operator() is overloaded, e.g. elements of a 4D array of size [N4xN3xN2xN1]
 //  are accessed as:  A(n,k,j,i) = A[i + N1*(j + N2*(k + N3*n))]
@@ -25,12 +25,13 @@ public:
   AthenaArray(const AthenaArray<T>& t);
   AthenaArray<T> &operator= (const AthenaArray<T> &t);
 
-// public functions to allocate/deallocate memory for 1D/2D/3D/4D data
+// public functions to allocate/deallocate memory for 1D-5D data
 
   void NewAthenaArray(int nx1);
   void NewAthenaArray(int nx2, int nx1);
   void NewAthenaArray(int nx3, int nx2, int nx1);
   void NewAthenaArray(int nx4, int nx3, int nx2, int nx1);
+  void NewAthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1);
   void DeleteAthenaArray();
 
 // functions to get array dimensions 
@@ -39,9 +40,10 @@ public:
   int GetDim2() const { return nx2_; }
   int GetDim3() const { return nx3_; }
   int GetDim4() const { return nx4_; }
+  int GetDim5() const { return nx5_; }
 
 // a function to get the total size of the array
-  int GetSize() const { return nx1_*nx2_*nx3_*nx4_; }
+  int GetSize() const { return nx1_*nx2_*nx3_*nx4_*nx5_; }
 
   T *GetArrayPointer() const { return pdata_; } // a brute force approach
 
@@ -49,7 +51,7 @@ public:
   T *data() { return pdata_; }
   const T *data() const	{ return pdata_; }
 
-// overload operator() to access 1d/2d/3d/4d data
+// overload operator() to access 1d-5d data
 
   T &operator() (const int n) { 
     return pdata_[n]; }
@@ -71,6 +73,11 @@ public:
   T operator() (const int n, const int k, const int j, const int i) const { 
     return pdata_[i + nx1_*(j + nx2_*(k + nx3_*n))]; }
 
+  T &operator() (const int m, const int n, const int k, const int j, const int i) { 
+    return pdata_[i + nx1_*(j + nx2_*(k + nx3_*(n + nx4_*m)))]; }
+  T operator() (const int m, const int n, const int k, const int j, const int i) const {
+    return pdata_[i + nx1_*(j + nx2_*(k + nx3_*(n + nx4_*m)))]; }
+
 // functions that initialize an array with shallow copy or slice from another array
 
   void InitWithShallowCopy(AthenaArray<T> &src);
@@ -79,7 +86,7 @@ public:
 
 private:
   T *pdata_;
-  int nx1_, nx2_, nx3_, nx4_;
+  int nx1_, nx2_, nx3_, nx4_, nx5_;
   int scopy_;  // =0 if shallow copy (prevents source from being deleted)
 };
 
@@ -87,7 +94,7 @@ private:
 
 template<typename T>
 AthenaArray<T>::AthenaArray()
-  : pdata_(0), nx1_(0), nx2_(0), nx3_(0), nx4_(0), scopy_(0)
+  : pdata_(0), nx1_(0), nx2_(0), nx3_(0), nx4_(0), nx5_(0), scopy_(0)
 {
 }
 
@@ -106,8 +113,9 @@ AthenaArray<T>::AthenaArray(const AthenaArray<T>& src) {
   nx2_ = src.nx2_;
   nx3_ = src.nx3_;
   nx4_ = src.nx4_;
+  nx5_ = src.nx5_;
   if (src.pdata_) {
-    std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_);
+    std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_)*(src.nx5_);
     pdata_ = new T[size]; // allocate memory for array data
     for (std::size_t i=0; i<size; ++i) {
       pdata_[i] = src.pdata_[i]; // copy data (not just addresses!) into new memory
@@ -121,7 +129,7 @@ AthenaArray<T>::AthenaArray(const AthenaArray<T>& src) {
 template<typename T>
 AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
   if (this != &src){
-    std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_);
+    std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_)*(src.nx5_);
     for (std::size_t i=0; i<size; ++i) {
       this->pdata_[i] = src.pdata_[i]; // copy data (not just addresses!)
     } 
@@ -139,6 +147,7 @@ void AthenaArray<T>::InitWithShallowCopy(AthenaArray<T> &src) {
   nx2_=src.nx2_;
   nx3_=src.nx3_;
   nx4_=src.nx4_;
+  nx5_=src.nx5_;
   pdata_ = src.pdata_;
   scopy_ = 1;
   return;
@@ -154,25 +163,37 @@ void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
   const int indx, const int nvar)
 {
   pdata_ = src.pdata_;
-  if (dim == 4) {
+
+  if (dim == 5) {
+    nx5_=nvar;
+    nx4_=src.nx4_;
+    nx3_=src.nx3_;
+    nx2_=src.nx2_;
+    nx1_=src.nx1_;
+    pdata_ += indx*(nx1_*nx2_*nx3_*nx4_);
+  } else if (dim == 4) {
+    nx5_=1;
     nx4_=nvar;
     nx3_=src.nx3_;
     nx2_=src.nx2_;
     nx1_=src.nx1_;
     pdata_ += indx*(nx1_*nx2_*nx3_);
   } else if (dim == 3) {
+    nx5_=1;
     nx4_=1;
     nx3_=nvar;
     nx2_=src.nx2_;
     nx1_=src.nx1_;
     pdata_ += indx*(nx1_*nx2_);
   } else if (dim == 2) {
+    nx5_=1;
     nx4_=1;
     nx3_=1;
     nx2_=nvar;
     nx1_=src.nx1_;
     pdata_ += indx*(nx1_);
   } else if (dim == 1) {
+    nx5_=1;
     nx4_=1;
     nx3_=1;
     nx2_=1;
@@ -194,6 +215,7 @@ void AthenaArray<T>::NewAthenaArray(int nx1)
   nx2_ = 1;
   nx3_ = 1;
   nx4_ = 1;
+  nx5_ = 1;
   pdata_ = new T[nx1](); // allocate memory (initialized to zero using () )
 }
  
@@ -208,6 +230,7 @@ void AthenaArray<T>::NewAthenaArray(int nx2, int nx1)
   nx2_ = nx2;
   nx3_ = 1;
   nx4_ = 1;
+  nx5_ = 1;
   pdata_ = new T[nx1*nx2](); // allocate memory (initialized to zero using () )
 }
  
@@ -222,6 +245,7 @@ void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1)
   nx2_ = nx2;
   nx3_ = nx3;
   nx4_ = 1;
+  nx5_ = 1;
   pdata_ = new T[nx1*nx2*nx3](); // allocate memory (initialized to zero using () )
 }
  
@@ -236,7 +260,23 @@ void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2, int nx1)
   nx2_ = nx2;
   nx3_ = nx3;
   nx4_ = nx4;
+  nx5_ = 1;
   pdata_ = new T[nx1*nx2*nx3*nx4](); // allocate memory (initialized to zero using () )
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn
+//  \brief 5d data allocation
+
+template<typename T>
+void AthenaArray<T>::NewAthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1)
+{
+  nx1_ = nx1;
+  nx2_ = nx2;
+  nx3_ = nx3;
+  nx4_ = nx4;
+  nx5_ = nx5;
+  pdata_ = new T[nx1*nx2*nx3*nx4*nx5](); // allocate memory (initialized to zero using () )
 }
 
 //--------------------------------------------------------------------------------------
