@@ -37,9 +37,8 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-// initialize volume-averaged positions and spacing
-// x1-direction: x1v = dx/2
-
+  // initialize volume-averaged positions and spacing
+  // x1-direction: x1v = dx/2
   for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
     pmb->x1v(i) = 0.5*(pmb->x1f(i+1) + pmb->x1f(i));
   }
@@ -47,8 +46,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     pmb->dx1v(i) = pmb->x1v(i+1) - pmb->x1v(i);
   }
 
-// x2-direction: x2v = dy/2
-
+  // x2-direction: x2v = dy/2
   if (pmb->block_size.nx2 == 1) {
     pmb->x2v(js) = 0.5*(pmb->x2f(js+1) + pmb->x2f(js));
     pmb->dx2v(js) = pmb->dx2f(js);
@@ -61,8 +59,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     }
   }
 
-// x3-direction: x3v = dz/2
-
+  // x3-direction: x3v = dz/2
   if (pmb->block_size.nx3 == 1) {
     pmb->x3v(ks) = 0.5*(pmb->x3f(ks+1) + pmb->x3f(ks));
     pmb->dx3v(ks) = pmb->dx3f(ks);
@@ -144,9 +141,9 @@ Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-// area1 = dy dz
 #pragma simd
   for (int i=il; i<=iu; ++i){
+    // area1 = dy dz
     Real& area_i = area(i);
     area_i = (pmy_block->dx2f(j))*(pmy_block->dx3f(k));
   }
@@ -156,9 +153,9 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-// area2 = dx dz
 #pragma simd
   for (int i=il; i<=iu; ++i){
+    // area2 = dx dz
     Real& area_i = area(i);
     area_i = (pmy_block->dx1f(i))*(pmy_block->dx3f(k));
   }
@@ -168,9 +165,9 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-// area3 = dx dy
 #pragma simd
   for (int i=il; i<=iu; ++i){
+    // area3 = dx dy
     Real& area_i = area(i);
     area_i = (pmy_block->dx1f(i))*(pmy_block->dx2f(j));
   }
@@ -183,23 +180,35 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &vol)
 {
-// volume = dx dy dz
 #pragma simd
   for (int i=il; i<=iu; ++i){
+    // volume = dx dy dz
     Real& vol_i = vol(i);
     vol_i = (pmy_block->dx1f(i))*(pmy_block->dx2f(j))*(pmy_block->dx3f(k));
   }
   return;
 }
 
-
 //--------------------------------------------------------------------------------------
-// \!fn void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
-//           AthenaArray<Real> &cons)
-// \brief Adds coordinate source terms to conserved variables (no-op func in Cartesian)
+// Coordinate (Geometric) source term functions
 
-void Coordinates::CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
-  AthenaArray<Real> &cons)
+void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
+  const AthenaArray<Real> &flx,
+  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
+{
+  return;
+}
+
+void Coordinates::CoordSrcTermsX2(const int k, const int j, const Real dt,
+  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_m1,
+  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
+{
+  return;
+}
+
+void Coordinates::CoordSrcTermsX3(const int k, const int j, const Real dt,
+  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_m1,
+  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
   return;
 }

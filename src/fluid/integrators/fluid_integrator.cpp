@@ -47,7 +47,6 @@ FluidIntegrator::FluidIntegrator(Fluid *pf, ParameterInput *pin)
   flx_.NewAthenaArray(max_nthreads,(NWAVE),ncells1);
   jflx_.NewAthenaArray(max_nthreads,(NWAVE),ncells1);
   kflx_.NewAthenaArray(max_nthreads,(NWAVE),ncells2,ncells1);
-  src_.NewAthenaArray(max_nthreads,(NFLUID),ncells1);
   face_area_.NewAthenaArray(max_nthreads,ncells1);
   face_area_m1_.NewAthenaArray(max_nthreads,ncells1);
   cell_volume_.NewAthenaArray(max_nthreads,ncells1);
@@ -70,7 +69,6 @@ FluidIntegrator::~FluidIntegrator()
   flx_.DeleteAthenaArray();
   jflx_.DeleteAthenaArray();
   kflx_.DeleteAthenaArray();
-  src_.DeleteAthenaArray();
   face_area_.DeleteAthenaArray();
   face_area_m1_.DeleteAthenaArray();
   cell_volume_.DeleteAthenaArray();

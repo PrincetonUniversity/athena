@@ -42,7 +42,7 @@ public:
   Real CenterWidth2(const int k, const int j, const int i);
   Real CenterWidth3(const int k, const int j, const int i);
 
-// fundtions to compute area of faces
+// functions to compute area of faces
   void Face1Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &area);
   void Face2Area(const int k, const int j, const int il, const int iu,
@@ -54,9 +54,18 @@ public:
   void CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &vol);
 
-// function that adds geometrical source terms to conserved variables
-  void CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
-    AthenaArray<Real> &cons);
+// function to compute geometrical source terms
+  void CoordSrcTermsX1(const int k, const int j, const Real dt,
+    const AthenaArray<Real> &flx,
+    const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
+
+  void CoordSrcTermsX2(const int k, const int j, const Real dt,
+    const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_m1,
+    const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
+
+  void CoordSrcTermsX3(const int k, const int j, const Real dt,
+    const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_m1,
+    const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
 
   // Functions for use in general relativity
   void CellMetric(const int k,const int j, AthenaArray<Real> &g, AthenaArray<Real> &gi);
@@ -93,15 +102,15 @@ public:
 
 private:
 // scratch arrays containing precomputed factors used by functions in this class
-  AthenaArray<Real> volume_i_,     volume_j_;
-  AthenaArray<Real> face1_area_i_, face1_area_j_;
-  AthenaArray<Real> face2_area_i_, face2_area_j_;
-  AthenaArray<Real> face3_area_i_, face3_area_j_;
+  AthenaArray<Real> coord_area1_i_, coord_area2_i_, coord_area3_i_;
+  AthenaArray<Real> coord_area1_j_, coord_area2_j_, coord_area3_j_;
+  AthenaArray<Real> coord_vol_i_,   coord_vol_j_;
+  AthenaArray<Real> coord_src1_i_,  coord_src2_i_;
+  AthenaArray<Real> coord_src1_j_,  coord_src2_j_;
   AthenaArray<Real> edge1_length_i_, edge1_length_j_;
   AthenaArray<Real> edge2_length_i_, edge2_length_j_;
   AthenaArray<Real> edge3_length_i_, edge3_length_j_;
   AthenaArray<Real> cell_width1_i_;
-  AthenaArray<Real> src_terms_i_,  src_terms_j_;
   AthenaArray<Real> src_terms_i1_, src_terms_i2_, src_terms_i3_, src_terms_i4_;
   AthenaArray<Real> src_terms_j1_, src_terms_j2_, src_terms_j3_;
   AthenaArray<Real> metric_cell_i1_, metric_cell_i2_, metric_cell_i3_, metric_cell_i4_,

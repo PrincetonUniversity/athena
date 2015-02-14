@@ -28,8 +28,6 @@
 #include "../fluid/fluid.hpp"     // Fluid
 #include "../fluid/eos/eos.hpp"   // SoundSpeed()
 
-#include <iostream>
-
 //======================================================================================
 //! \file cylindrical.cpp
 //  \brief implements Coordinates class functions for cylindrical (r-phi-z) coordinates
@@ -44,9 +42,8 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-// initialize volume-averaged positions and spacing
-// x1-direction: x1v = (\int r dV / \int dV) = d(r^3/3)d(r^2/2)
-
+  // initialize volume-averaged positions and spacing
+  // x1-direction: x1v = (\int r dV / \int dV) = d(r^3/3)d(r^2/2)
   for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
     pmb->x1v(i) = (2.0/3.0)*(pow(pmb->x1f(i+1),3) - pow(pmb->x1f(i),3))
                      /(pow(pmb->x1f(i+1),2) - pow(pmb->x1f(i),2));
@@ -55,8 +52,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     pmb->dx1v(i) = pmb->x1v(i+1) - pmb->x1v(i);
   }
 
-// x2-direction: x2v = (\int phi dV / \int dV) = dphi/2
-
+  // x2-direction: x2v = (\int phi dV / \int dV) = dphi/2
   if (pmb->block_size.nx2 == 1) {
     pmb->x2v(js) = 0.5*(pmb->x2f(js+1) + pmb->x2f(js));
     pmb->dx2v(js) = pmb->dx2f(js);
@@ -69,8 +65,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     }
   }
 
-// x3-direction: x3v = (\int z dV / \int dV) = dz/2
-
+  // x3-direction: x3v = (\int z dV / \int dV) = dz/2
   if (pmb->block_size.nx3 == 1) {
     pmb->x3v(ks) = 0.5*(pmb->x3f(ks+1) + pmb->x3f(ks));
     pmb->dx3v(ks) = pmb->dx3f(ks);
@@ -83,22 +78,27 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     }
   }
 
-// Allocate memory for scratch arrays used in integrator, and internal scratch arrays
-// Allocate only those local scratch arrays needed for cylindrical coordinates
-
+  // Allocate memory for scratch arrays used in integrator, and internal scratch arrays
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  face3_area_i_.NewAthenaArray(ncells1);
-  volume_i_.NewAthenaArray(ncells1);
-  src_terms_i_.NewAthenaArray(ncells1);
+  coord_area3_i_.NewAthenaArray(ncells1);
+  coord_vol_i_.NewAthenaArray(ncells1);
+  coord_src1_i_.NewAthenaArray(ncells1);
+  coord_src2_i_.NewAthenaArray(ncells1);
 
-// compute constant factors used to compute face-areas and cell volumes and store in
-// local scratch arrays.  This helps improve performance.
-
+  // Compute and store constant coefficients needed for face-areas, cell-volumes, etc.
+  // This helps improve performance.
 #pragma simd
   for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i){
-    face3_area_i_(i)= 0.5*(pmb->x1f(i+1)*pmb->x1f(i+1) - pmb->x1f(i)*pmb->x1f(i));
-    volume_i_(i)    = 0.5*(pmb->x1f(i+1)*pmb->x1f(i+1) - pmb->x1f(i)*pmb->x1f(i));
-    src_terms_i_(i) = pmb->dx1f(i)/volume_i_(i);
+    Real rm = pmb->x1f(i  );
+    Real rp = pmb->x1f(i+1);
+    // dV = 0.5*(R_{i+1}^2 - R_{i}^2)
+    coord_area3_i_(i)= 0.5*(rp*rp - rm*rm);
+    // dV = 0.5*(R_{i+1}^2 - R_{i}^2)
+    coord_vol_i_(i) = coord_area3_i_(i);
+    // (A1^{+} - A1^{-})/dV
+    coord_src1_i_(i) = pmb->dx1f(i)/coord_vol_i_(i);
+    // (dR/2)/(R_c dV)
+    coord_src2_i_(i) = pmb->dx1f(i)/((rm + rp)*coord_vol_i_(i));
   }
 
 }
@@ -107,9 +107,10 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 
 Coordinates::~Coordinates()
 {
-  face3_area_i_.DeleteAthenaArray();
-  volume_i_.DeleteAthenaArray();
-  src_terms_i_.DeleteAthenaArray();
+  coord_area3_i_.DeleteAthenaArray();
+  coord_vol_i_.DeleteAthenaArray();
+  coord_src1_i_.DeleteAthenaArray();
+  coord_src2_i_.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------
@@ -175,9 +176,9 @@ Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-// area1 = r dphi dz 
 #pragma simd
   for (int i=il; i<=iu; ++i){
+    // area1 = r dphi dz 
     Real& area_i = area(i);
     area_i = (pmy_block->x1f(i)*pmy_block->dx2f(j))*(pmy_block->dx3f(k));
   }
@@ -187,9 +188,9 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-// area2 = dr dz
 #pragma simd
   for (int i=il; i<=iu; ++i){
+    // area2 = dr dz
     Real& area_i = area(i);
     area_i = (pmy_block->dx1f(i))*(pmy_block->dx3f(k));
   }
@@ -199,11 +200,11 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-// area3 = dr r dphi = d(r^2/2) dphi
 #pragma simd
   for (int i=il; i<=iu; ++i){
+    // area3 = dr r dphi = d(r^2/2) dphi
     Real& area_i = area(i);
-    area_i = face3_area_i_(i)*(pmy_block->dx2f(j));
+    area_i = coord_area3_i_(i)*(pmy_block->dx2f(j));
   }
   return;
 }
@@ -214,49 +215,57 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &vol)
 {
-// volume = dr dz r dphi = d(r^2/2) dphi dz
 #pragma simd
   for (int i=il; i<=iu; ++i){
+    // volume = dr dz r dphi = d(r^2/2) dphi dz
     Real& vol_i = vol(i);
-    vol_i = volume_i_(i)*(pmy_block->dx2f(j))*(pmy_block->dx3f(k));
+    vol_i = coord_vol_i_(i)*(pmy_block->dx2f(j))*(pmy_block->dx3f(k));
   }
   return;
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn void Coordinates::CoordinateSourceTerms(Real dt, AthenaArray<Real> &prim,
-//           AthenaArray<Real> &cons)
-// \brief Adds coordinate source terms to conserved variables
+// Coordinate (Geometric) source term functions
 
-void Coordinates::CoordinateSourceTerms(const Real dt, const AthenaArray<Real> &prim,
-  AthenaArray<Real> &cons)
+void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
+  const AthenaArray<Real> &flx,
+  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
-  Real dummy_arg[NFLUID];
+  Real iso_cs = pmy_block->pfluid->pf_eos->GetIsoSoundSpeed();
 
-// src_1 = <M_{phi phi}><1/r> = M_{phi phi} dr/d(r^2/2)
-// src_2 = -< M_{phi r} ><1/r>  = -(<M_{pr}>) dr/d(r^2/2)
-
-  for (int k=(pmy_block->ks); k<=(pmy_block->ke); ++k) {
-  for (int j=(pmy_block->js); j<=(pmy_block->je); ++j) {
 #pragma simd
-    for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
-      Real m_pp = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM2,k,j,i);
-      if (NON_BAROTROPIC_EOS) {
-         m_pp += prim(IEN,k,j,i);
-      } else {
-         Real iso_cs = pmy_block->pfluid->pf_eos->SoundSpeed(dummy_arg);
-         m_pp += (iso_cs*iso_cs)*prim(IDN,k,j,i);
-      }
-      cons(IM1,k,j,i) += dt*(src_terms_i_(i)*m_pp);
+  for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
+    // src_1 = <M_{phi phi}><1/r>
+    Real m_pp = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM2,k,j,i);
+    if (NON_BAROTROPIC_EOS) {
+       m_pp += prim(IEN,k,j,i);
+    } else {
+       m_pp += (iso_cs*iso_cs)*prim(IDN,k,j,i);
     }
-    if (pmy_block->block_size.nx2 > 1) {
-#pragma simd
-      for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
-        Real m_pr = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM1,k,j,i);
-        cons(IM2,k,j,i) -= dt*(src_terms_i_(i)*m_pr);
-      }
+    if (MAGNETIC_FIELDS_ENABLED) {
+       m_pp += 0.5*( SQR(bcc(IB1,k,j,i)) - SQR(bcc(IB2,k,j,i)) + SQR(bcc(IB3,k,j,i)) );
     }
-  }}
+    u(IM1,k,j,i) += dt*coord_src1_i_(i)*m_pp;
 
+    // src_2 = -< M_{phi r} ><1/r>
+    Real& x_i   = pmy_block->x1f(i);
+    Real& x_ip1 = pmy_block->x1f(i+1);
+    u(IM2,k,j,i) -= dt*coord_src2_i_(i)*(x_i*flx(IM2,i) + x_ip1*flx(IM2,i+1));
+  }
+
+  return;
+}
+
+void Coordinates::CoordSrcTermsX2(const int k, const int j, const Real dt,
+  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_m1,
+  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
+{
+  return;
+}
+
+void Coordinates::CoordSrcTermsX3(const int k, const int j, const Real dt,
+  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_m1,
+  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
+{
   return;
 }
