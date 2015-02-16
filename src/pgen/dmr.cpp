@@ -29,7 +29,7 @@
 #include "../parameter_input.hpp"  // ParameterInput
 #include "../fluid/fluid.hpp"      // Fluid
 #include "../fluid/eos/eos.hpp"    // EOS
-#include "../bvals/bvals.hpp"      // EnrollFluidBValFunction
+#include "../bvals/bvals.hpp"      // EnrollFluidBoundaryFunction
 
 //======================================================================================
 //! \file dmr.cpp
@@ -91,9 +91,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 
 // Set boundary value function pointers
 
-  pmb->pbval->EnrollFluidBValFunction(inner_x1, dmrbv_iib);
-  pmb->pbval->EnrollFluidBValFunction(inner_x2, dmrbv_ijb);
-  pmb->pbval->EnrollFluidBValFunction(outer_x2, dmrbv_ojb);
+  pmb->pbval->EnrollFluidBoundaryFunction(inner_x1, dmrbv_iib);
+  pmb->pbval->EnrollFluidBoundaryFunction(inner_x2, dmrbv_ijb);
+  pmb->pbval->EnrollFluidBoundaryFunction(outer_x2, dmrbv_ojb);
 }
 
 //--------------------------------------------------------------------------------------

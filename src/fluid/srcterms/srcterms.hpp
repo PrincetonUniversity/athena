@@ -29,6 +29,11 @@ public:
   FluidSourceTerms(Fluid *pf, ParameterInput *pin);
   ~FluidSourceTerms();
 
+  Real GetGM() const {return gm_;}
+  Real GetG1() const {return g1_;}
+  Real GetG2() const {return g2_;}
+  Real GetG3() const {return g3_;}
+
   void PhysicalSourceTerms(const Real time, const Real dt, const AthenaArray<Real> &p,
     AthenaArray<Real> &c);
   void EnrollSrcTermFunction(SrcTermFunc_t my_func);
@@ -38,5 +43,6 @@ public:
 private:
   Fluid *pmy_fluid_;  // ptr to Fluid containing this FluidSourceTerms
   Real gm_;           // GM for point mass located at origin
+  Real g1_, g2_, g3_; // constant acc'n in each direction
 };
 #endif

@@ -31,11 +31,6 @@
 #include "../parameter_input.hpp"  // ParameterInput
 #include "../fluid/eos/eos.hpp"    // ParameterInput
 
-// inline functions
-inline Real SQR(Real x){
-  return ((x)*(x));
-}
-
 //======================================================================================
 //! \file disk_cyl.cpp
 //  \brief Problem generator for accretion disk problems.  

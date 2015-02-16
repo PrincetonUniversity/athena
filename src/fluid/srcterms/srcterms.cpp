@@ -37,6 +37,9 @@ FluidSourceTerms::FluidSourceTerms(Fluid *pf, ParameterInput *pin)
 {
   pmy_fluid_ = pf;
   gm_ = pin->GetOrAddReal("problem","GM",0.0);
+  g1_ = pin->GetOrAddReal("fluid","grav_acc1",0.0);
+  g2_ = pin->GetOrAddReal("fluid","grav_acc2",0.0);
+  g3_ = pin->GetOrAddReal("fluid","grav_acc3",0.0);
   UserSourceTerm = NULL;
 }
 
@@ -53,7 +56,7 @@ FluidSourceTerms::~FluidSourceTerms()
 void FluidSourceTerms::PhysicalSourceTerms(const Real time, const Real dt,
   const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
 {
-  if (gm_ == 0.0) return;
+  if (gm_==0.0 && g1_==0.0 && g2_==0.0 && g3_==0.0) return;
 
 // Source terms due to point mass gravity
 
@@ -62,9 +65,32 @@ void FluidSourceTerms::PhysicalSourceTerms(const Real time, const Real dt,
   for (int j=pmb->js; j<=pmb->je; ++j) {
 #pragma simd
     for (int i=pmb->is; i<=pmb->ie; ++i) {
-      Real src = dt*(pmb->pcoord->src_terms_i_(i))*(gm_*prim(IDN,k,j,i)/pmb->x1v(i));
-      cons(IM1,k,j,i) -= src;
-      if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) -= src*prim(IVX,k,j,i);
+      Real den = prim(IDN,k,j,i);
+
+      if (gm_!=0.0) {
+        Real src = dt*den*pmb->pcoord->coord_src1_i_(i)*gm_/pmb->x1v(i);
+        cons(IM1,k,j,i) -= src;
+        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) -= src*prim(IVX,k,j,i);
+      }
+
+      if (g1_!=0.0) {
+        Real src = dt*den*g1_;
+        cons(IM1,k,j,i) += src;
+        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVX,k,j,i);
+      }
+
+      if (g2_!=0.0) {
+        Real src = dt*den*g2_;
+        cons(IM2,k,j,i) += src;
+        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVY,k,j,i);
+      }
+
+      if (g3_!=0.0) {
+        Real src = dt*den*g3_;
+        cons(IM3,k,j,i) += src;
+        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVZ,k,j,i);
+      }
+
     }
   }}
 
