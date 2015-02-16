@@ -280,17 +280,62 @@ Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 
 //--------------------------------------------------------------------------------------
 
-// Function for computing source terms
+// Function for computing source terms using x-fluxes
 // Inputs:
+//   k,j: z- and y-indices
 //   dt: size of timestep
-//   prim: full grid of primitive values at beginning of half timestep
-//   cons: full grid of conserved variables at end of half timestep
+//   flux: 1D array of x-fluxes
+//   prim: 3D array of primitive values at beginning of half timestep
+//   bcc: 3D array of cell-centered magnetic fields
 // Outputs:
-//   cons: source terms added
+//   cons: source terms added to k,j-slice of 3D array of conserved variables
 // Notes:
 //   source terms all vanish identically
-void Coordinates::CoordinateSourceTerms(Real dt, const AthenaArray<Real> &prim,
-    AthenaArray<Real> &cons)
+void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
+  const AthenaArray<Real> &flux, const AthenaArray<Real> &prim,
+  const AthenaArray<Real> &bcc, AthenaArray<Real> &cons)
+{
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing source terms using y-fluxes
+// Inputs:
+//   k,j: z- and y-indices
+//   dt: size of timestep
+//   flux_j: 1D array of y-fluxes left of cells j
+//   flux_jp1: 1D array of y-fluxes right of cells j
+//   prim: 3D array of primitive values at beginning of half timestep
+//   bcc: 3D array of cell-centered magnetic fields
+// Outputs:
+//   cons: source terms added to k,j-slice of 3D array of conserved variables
+// Notes:
+//   source terms all vanish identically
+void Coordinates::CoordSrcTermsX2(const int k, const int j, const Real dt,
+  const AthenaArray<Real> &flux_j, const AthenaArray<Real> &flux_jp1,
+  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &cons)
+{
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing source terms using z-fluxes
+// Inputs:
+//   k,j: z- and y-indices
+//   dt: size of timestep
+//   flux_k: 2D array of z-fluxes left of cells k
+//   flux_kp1: 2D array of z-fluxes right of cells k
+//   prim: 3D array of primitive values at beginning of half timestep
+//   bcc: 3D array of cell-centered magnetic fields
+// Outputs:
+//   cons: source terms added to k,j-slice of 3D array of conserved variables
+// Notes:
+//   source terms all vanish identically
+void Coordinates::CoordSrcTermsX3(const int k, const int j, const Real dt,
+  const AthenaArray<Real> &flux_k, const AthenaArray<Real> &flux_kp1,
+  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &cons)
 {
   return;
 }
@@ -299,8 +344,7 @@ void Coordinates::CoordinateSourceTerms(Real dt, const AthenaArray<Real> &prim,
 
 // Function for computing cell-centered metric coefficients
 // Inputs:
-//   k: z-index
-//   j: y-index
+//   k,j: z- and y-indices
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
@@ -324,10 +368,9 @@ void Coordinates::CellMetric(const int k, const int j, AthenaArray<Real> &g,
 
 //--------------------------------------------------------------------------------------
 
-// Function for computing face-centered metric coefficients: r-interface
+// Function for computing face-centered metric coefficients: x-interface
 // Inputs:
-//   k: phi-index
-//   j: theta-index
+//   k,j: z- and y-indices
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
@@ -351,10 +394,9 @@ void Coordinates::Face1Metric(const int k, const int j, AthenaArray<Real> &g,
 
 //--------------------------------------------------------------------------------------
 
-// Function for computing face-centered metric coefficients: theta-interface
+// Function for computing face-centered metric coefficients: y-interface
 // Inputs:
-//   k: phi-index
-//   j: theta-index
+//   k,j: z- and y-indices
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
@@ -378,10 +420,9 @@ void Coordinates::Face2Metric(const int k, const int j, AthenaArray<Real> &g,
 
 //--------------------------------------------------------------------------------------
 
-// Function for computing face-centered metric coefficients: phi-interface
+// Function for computing face-centered metric coefficients: z-interface
 // Inputs:
-//   k: phi-index
-//   j: theta-index
+//   k,j: z- and y-indices
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
@@ -407,8 +448,7 @@ void Coordinates::Face3Metric(const int k, const int j, AthenaArray<Real> &g,
 
 // Function for transforming primitives to locally flat frame: x-interface
 // Inputs:
-//   k: z-index
-//   j: y-index
+//   k,j: z- and y-indices
 //   b1_vals: 3D array of normal components B^1 of magnetic field, in global coordinates
 //   prim_left: 1D array of left primitives, using global coordinates
 //   prim_right: 1D array of right primitives, using global coordinates
@@ -435,8 +475,7 @@ void Coordinates::PrimToLocal1(const int k, const int j,
 
 // Function for transforming primitives to locally flat frame: y-interface
 // Inputs:
-//   k: z-index
-//   j: y-index
+//   k,j: z- and y-indices
 //   b2_vals: 3D array of normal components B^2 of magnetic field, in global coordinates
 //   prim_left: 1D array of left primitives, using global coordinates
 //   prim_right: 1D array of right primitives, using global coordinates
@@ -463,8 +502,7 @@ void Coordinates::PrimToLocal2(const int k, const int j,
 
 // Function for transforming primitives to locally flat frame: z-interface
 // Inputs:
-//   k: z-index
-//   j: y-index
+//   k,j: z- and y-indices
 //   b3_vals: 3D array of normal components B^3 of magnetic field, in global coordinates
 //   prim_left: 1D array of left primitives, using global coordinates
 //   prim_right: 1D array of right primitives, using global coordinates
@@ -491,8 +529,7 @@ void Coordinates::PrimToLocal3(const int k, const int j,
 
 // Function for transforming fluxes to global frame: x-interface
 // Inputs:
-//   k: z-index
-//   j: y-index
+//   k,j: z- and y-indices
 //   pflux: pointer to array of fluxes in 1D, using local coordinates
 // Outputs:
 //   pflux: pointer to values overwritten in global coordinates
@@ -514,8 +551,7 @@ void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flu
 
 // Function for transforming fluxes to global frame: y-interface
 // Inputs:
-//   k: z-index
-//   j: y-index
+//   k,j: z- and y-indices
 //   pflux: pointer to array of fluxes in 1D, using local coordinates
 // Outputs:
 //   pflux: pointer to values overwritten in global coordinates
@@ -537,8 +573,7 @@ void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flu
 
 // Function for transforming fluxes to global frame: z-interface
 // Inputs:
-//   k: z-index
-//   j: y-index
+//   k,j: z- and y-indices
 //   pflux: pointer to array of fluxes in 1D, using local coordinates
 // Outputs:
 //   pflux: pointer to values overwritten in global coordinates
