@@ -62,9 +62,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   Real bx = 0.0, by = 0.0, bz = 0.0;
   if (MAGNETIC_FIELDS_ENABLED)
   {
-    Real bx = pin->GetReal("problem", "bx");
-    Real by = pin->GetReal("problem", "by");
-    Real bz = pin->GetReal("problem", "bz");
+    bx = pin->GetReal("problem", "bx");
+    by = pin->GetReal("problem", "by");
+    bz = pin->GetReal("problem", "bz");
   }
 
   // Prepare auxiliary arrays
