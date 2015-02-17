@@ -74,14 +74,14 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 #ifdef OPENMP_PARALLEL
   tid=omp_get_thread_num();
 #endif
-  AthenaArray<Real> wl, wr, flx, flx_jm1, flx_km1, area, area_m1, vol;
+  AthenaArray<Real> wl, wr, flx, jflx_j, kflx_k, area, area_p1, vol;
   wl.InitWithShallowSlice(wl_,3,tid,1);
   wr.InitWithShallowSlice(wr_,3,tid,1);
   flx.InitWithShallowSlice(flx_,3,tid,1);
-  flx_jm1.InitWithShallowSlice(jflx_,3,tid,1);
-  flx_km1.InitWithShallowSlice(kflx_,4,tid,1);
+  jflx_j.InitWithShallowSlice(jflx_j_,3,tid,1);
+  kflx_k.InitWithShallowSlice(kflx_k_,4,tid,1);
   area.InitWithShallowSlice(face_area_,2,tid,1);
-  area_m1.InitWithShallowSlice(face_area_m1_,2,tid,1);
+  area_p1.InitWithShallowSlice(face_area_p1_,2,tid,1);
   vol.InitWithShallowSlice(cell_volume_,2,tid,1);
 
 //--------------------------------------------------------------------------------------
@@ -150,68 +150,68 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
       }
 
       // compute and store fluxes at j=js
-      RiemannSolver(k,js,is,ie,IVY,b2,wl,wr,flx_jm1); 
+      RiemannSolver(k,js,is,ie,IVY,b2,wl,wr,jflx_j); 
       
       // store electric fields, compute weights for GS07 CT algorithm at j=js
       if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
         for (int i=is; i<=ie; ++i){
-          ei_x2f(X2E1,k,js,i) = -flx_jm1(IBY,i); // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
-          ei_x2f(X2E3,k,js,i) =  flx_jm1(IBZ,i); // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
+          ei_x2f(X2E1,k,js,i) = -jflx_j(IBY,i); // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
+          ei_x2f(X2E3,k,js,i) =  jflx_j(IBZ,i); // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
           const Real& dx = pmb->pcoord->CenterWidth2(k,js,i);
-          Real v_over_c = (1024)*dt*flx_jm1(IDN,i)/(dx*(wl(IDN,i) + wr(IDN,i)));
+          Real v_over_c = (1024)*dt*jflx_j(IDN,i)/(dx*(wl(IDN,i) + wr(IDN,i)));
           Real tmp_min = std::min(0.5,v_over_c);
           w_x2f(k,js,i) = 0.5 + std::max(-0.5,tmp_min);
         }
       }
 
 #pragma omp for schedule(static)
-      for (int j=js+1; j<=je+1; ++j){
+      for (int j=js; j<=je; ++j){
 
-        // reconstruct L/R states
+        // reconstruct L/R states at j+1
         if (step == 1) {
-          DonorCellX2(k,j,w,bcc,wl,wr);
+          DonorCellX2(k,j+1,w,bcc,wl,wr);
         } else {
-          PiecewiseLinearX2(k,j,w,bcc,wl,wr);
+          PiecewiseLinearX2(k,j+1,w,bcc,wl,wr);
         }
 
-        // compute fluxes
-        RiemannSolver(k,j,is,ie,IVY,b2,wl,wr,flx); 
+        // compute fluxes at j+1
+        RiemannSolver(k,j+1,is,ie,IVY,b2,wl,wr,flx); 
 
         // update conserved fluid variables
-        pmb->pcoord->Face2Area(k,j-1,is,ie,area_m1);
         pmb->pcoord->Face2Area(k,j  ,is,ie,area   );
-        pmb->pcoord->CellVolume(k,j-1,is,ie,vol);
+        pmb->pcoord->Face2Area(k,j+1,is,ie,area_p1);
+        pmb->pcoord->CellVolume(k,j,is,ie,vol);
         for (int n=0; n<NFLUID; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
-            Real& flx_ijm1 = flx_jm1(n,i);
-            Real& flx_ij   = flx(n,i);
+            Real& flx_j   = jflx_j(n,i);
+            Real& flx_jp1 = flx(n,i);
             Real& area_j   = area(i);
-            Real& area_jm1 = area_m1(i);
+            Real& area_jp1 = area_p1(i);
             Real& dvol = vol(i);
-            u(n,k,j-1,i) -= dt*(area_j*flx_ij - area_jm1*flx_ijm1)/dvol;
+            u(n,k,j,i) -= dt*(area_jp1*flx_jp1 - area_j*flx_j)/dvol;
           }
         }
 
         // add coordinate (geometric) source terms
-        pmb->pcoord->CoordSrcTermsX2(k,j,dt,flx,flx_jm1,w,bcc,u);
+        pmb->pcoord->CoordSrcTermsX2(k,j,dt,jflx_j,flx,w,bcc,u);
 
         // store electric fields, compute weights for GS07 CT algorithm
         if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
           for (int i=is; i<=ie; ++i){
-            ei_x2f(X2E1,k,j,i) = -flx(IBY,i); // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
-            ei_x2f(X2E3,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
+            ei_x2f(X2E1,k,j+1,i) = -flx(IBY,i); // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
+            ei_x2f(X2E3,k,j+1,i) =  flx(IBZ,i); // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
             const Real& dx = pmb->pcoord->CenterWidth2(k,j,i);
             Real v_over_c = (1024)*dt*flx(IDN,i)/(dx*(wl(IDN,i) + wr(IDN,i)));
             Real tmp_min = std::min(0.5,v_over_c);
-            w_x2f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
+            w_x2f(k,j+1,i) = 0.5 + std::max(-0.5,tmp_min);
           }
         }
 
         // store fluxes for j=j-1 in next iteration
-        flx_jm1 = flx; 
+        jflx_j = flx; 
 
       }
     }
@@ -251,54 +251,54 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
       for (int n=0; n<NFLUID; ++n){
 #pragma simd
         for (int i=is; i<=ie; ++i){
-          flx_km1(n,j,i) = flx(n,i);
+          kflx_k(n,j,i) = flx(n,i);
         }
       }
     }
 
-    for (int k=ks+1; k<=ke+1; ++k){
+    for (int k=ks; k<=ke; ++k){
 #pragma omp for schedule(static)
       for (int j=js; j<=je; ++j){
 
-        // reconstruct L/R states
+        // reconstruct L/R states at k+1
         if (step == 1) {
-          DonorCellX3(k,j,w,bcc,wl,wr);
+          DonorCellX3(k+1,j,w,bcc,wl,wr);
         } else {
-          PiecewiseLinearX3(k,j,w,bcc,wl,wr);
+          PiecewiseLinearX3(k+1,j,w,bcc,wl,wr);
         }
 
-        // compute fluxes
-        RiemannSolver(k,j,is,ie,IVZ,b3,wl,wr,flx);
+        // compute fluxes at k+1
+        RiemannSolver(k+1,j,is,ie,IVZ,b3,wl,wr,flx);
 
         // update conserved fluid variables
-        pmb->pcoord->Face3Area(k-1,j,is,ie,area_m1);
         pmb->pcoord->Face3Area(k  ,j,is,ie,area   );
-        pmb->pcoord->CellVolume(k-1,j,is,ie,vol);
+        pmb->pcoord->Face3Area(k+1,j,is,ie,area_p1);
+        pmb->pcoord->CellVolume(k,j,is,ie,vol);
         for (int n=0; n<NFLUID; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
-            Real& flx_ikm1 = flx_km1(n,j,i);
-            Real& flx_ik   = flx(n,i);
-            Real& area_km1 = area_m1(i);
+            Real& flx_k   = kflx_k(n,j,i);
+            Real& flx_kp1 = flx(n,i);
             Real& area_k   = area(i);
+            Real& area_kp1 = area_p1(i);
             Real& dvol = vol(i);
-            u(n,k-1,j,i) -= dt*(area_k*flx_ik - area_km1*flx_ikm1)/dvol;
+            u(n,k,j,i) -= dt*(area_kp1*flx_kp1 - area_k*flx_k)/dvol;
           }
         }
 
         // add coordinate (geometric) source terms
-        pmb->pcoord->CoordSrcTermsX3(k,j,dt,flx,flx_km1,w,bcc,u);
+        pmb->pcoord->CoordSrcTermsX3(k,j,dt,kflx_k,flx,w,bcc,u);
 
         // store electric fields, compute weights for GS07 CT algorithm
         if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
           for (int i=is; i<=ie; ++i){
-            ei_x3f(X3E2,k,j,i) = -flx(IBY,i); // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
-            ei_x3f(X3E1,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
+            ei_x3f(X3E2,k+1,j,i) = -flx(IBY,i); // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
+            ei_x3f(X3E1,k+1,j,i) =  flx(IBZ,i); // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
             const Real& dx = pmb->pcoord->CenterWidth3(k,j,i);
             Real v_over_c = (1024)*dt*flx(IDN,i)/(dx*(wl(IDN,i) + wr(IDN,i)));
             Real tmp_min = std::min(0.5,v_over_c);
-            w_x3f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
+            w_x3f(k+1,j,i) = 0.5 + std::max(-0.5,tmp_min);
           }
         }
 
@@ -306,7 +306,7 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
         for (int n=0; n<NFLUID; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
-            flx_km1(n,j,i) = flx(n,i);
+            kflx_k(n,j,i) = flx(n,i);
           }
         }
 
@@ -317,10 +317,10 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 } // end of omp parallel region
 
 //--------------------------------------------------------------------------------------
-//  Add source terms for half a timestep
+//  Add physical and user source terms
 
-//  pmb->pcoord->CoordinateSourceTerms(dt,w,u);
   pmb->pfluid->pf_srcterms->PhysicalSourceTerms(pmb->pmy_mesh->time,dt,w,u);
+
   if (pmb->pfluid->pf_srcterms->UserSourceTerm != NULL)
     pmb->pfluid->pf_srcterms->UserSourceTerm(pmb->pmy_mesh->time,dt,w,u);
 

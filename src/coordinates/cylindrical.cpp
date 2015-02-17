@@ -257,14 +257,14 @@ void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
 }
 
 void Coordinates::CoordSrcTermsX2(const int k, const int j, const Real dt,
-  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_m1,
+  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
   return;
 }
 
 void Coordinates::CoordSrcTermsX3(const int k, const int j, const Real dt,
-  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_m1,
+  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
   return;

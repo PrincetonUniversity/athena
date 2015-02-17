@@ -316,7 +316,7 @@ void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
 }
 
 void Coordinates::CoordSrcTermsX2(const int k, const int j, const Real dt,
-  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_m1,
+  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
   Real iso_cs = pmy_block->pfluid->pf_eos->GetIsoSoundSpeed();
@@ -337,14 +337,14 @@ void Coordinates::CoordSrcTermsX2(const int k, const int j, const Real dt,
 
     // src_3 = -< M_{phi theta} ><cot theta/r> 
     u(IM3,k,j,i) -= dt*coord_src2_j_(j)*
-      (coord_area2_j_(j)*flx_m1(IM3,i) + coord_area2_j_(j+1)*flx(IM3,i));
+      (coord_area2_j_(j)*flx(IM3,i) + coord_area2_j_(j+1)*flx_p1(IM3,i));
   }
 
   return;
 }
 
 void Coordinates::CoordSrcTermsX3(const int k, const int j, const Real dt,
-  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_m1,
+  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
   return;
