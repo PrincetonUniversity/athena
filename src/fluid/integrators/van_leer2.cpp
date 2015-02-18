@@ -107,12 +107,7 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
       for (int n=0; n<NFLUID; ++n){
 #pragma simd
         for (int i=is; i<=ie; ++i){
-          Real& flx_i   = flx(n,i  );
-          Real& flx_ip1 = flx(n,i+1);
-          Real& area_i   = area(i);
-          Real& area_ip1 = area(i+1);
-          Real& dvol = vol(i);
-          u(n,k,j,i) -= dt*(area_ip1*flx_ip1 - area_i*flx_i)/dvol;
+          u(n,k,j,i) -= dt*(area(i+1)*flx(n,i+1) - area(i)*flx(n,i))/vol(i);
         }
       }
 
@@ -185,12 +180,7 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
         for (int n=0; n<NFLUID; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
-            Real& flx_j   = jflx_j(n,i);
-            Real& flx_jp1 = flx(n,i);
-            Real& area_j   = area(i);
-            Real& area_jp1 = area_p1(i);
-            Real& dvol = vol(i);
-            u(n,k,j,i) -= dt*(area_jp1*flx_jp1 - area_j*flx_j)/dvol;
+            u(n,k,j,i) -= dt*(area_p1(i)*flx(n,i) - area(i)*jflx_j(n,i))/vol(i);
           }
         }
 
@@ -277,12 +267,7 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
         for (int n=0; n<NFLUID; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
-            Real& flx_k   = kflx_k(n,j,i);
-            Real& flx_kp1 = flx(n,i);
-            Real& area_k   = area(i);
-            Real& area_kp1 = area_p1(i);
-            Real& dvol = vol(i);
-            u(n,k,j,i) -= dt*(area_kp1*flx_kp1 - area_k*flx_k)/dvol;
+            u(n,k,j,i) -= dt*(area_p1(i)*flx(n,i) - area(i)*kflx_k(n,j,i))/vol(i);
           }
         }
 

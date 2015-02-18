@@ -235,8 +235,7 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 #pragma simd
   for (int i=il; i<=iu; ++i){
     // area1 = r^2 sin[theta] dtheta dphi = r^2 d(-cos[theta]) dphi
-    Real& area_i = area(i);
-    area_i = coord_area1_i_(i)*coord_area1_j_(j)*(pmy_block->dx3f(k)); 
+    area(i) = coord_area1_i_(i)*coord_area1_j_(j)*(pmy_block->dx3f(k)); 
   }
   return;
 }
@@ -247,8 +246,7 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 #pragma simd
   for (int i=il; i<=iu; ++i){
     // area2 = dr r sin[theta] dphi = d(r^2/2) sin[theta] dphi
-    Real& area_i = area(i);
-    area_i = coord_area2_i_(i)*coord_area2_j_(j)*(pmy_block->dx3f(k));
+    area(i) = coord_area2_i_(i)*coord_area2_j_(j)*(pmy_block->dx3f(k));
   }
   return;
 }
@@ -259,8 +257,7 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 #pragma simd
   for (int i=il; i<=iu; ++i){
     // area3 = dr r dtheta = d(r^2/2) dtheta
-    Real& area_i = area(i);
-    area_i = coord_area3_i_(i)*(pmy_block->dx2f(j));
+    area(i) = coord_area3_i_(i)*(pmy_block->dx2f(j));
   }
   return;
 }
@@ -274,8 +271,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 #pragma simd
   for (int i=il; i<=iu; ++i){
     // volume = r^2 sin(theta) dr dtheta dphi = d(r^3/3) d(-cos theta) dphi
-    Real& vol_i = vol(i);
-    vol_i = coord_vol_i_(i)*coord_vol_j_(j)*(pmy_block->dx3f(k));
+    vol(i) = coord_vol_i_(i)*coord_vol_j_(j)*(pmy_block->dx3f(k));
   }
   return;
 }

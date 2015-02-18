@@ -41,26 +41,18 @@ void FluidIntegrator::DonorCellX1(const int k, const int j,
   for (int n=0; n<NFLUID; ++n){
 #pragma simd
     for (int i=is; i<=(ie+1); ++i){
-      const Real& w_im1 = w(n,k,j,i-1);
-      const Real& w_i   = w(n,k,j,i  );
-
-      wl(n,i) = w_im1;
-      wr(n,i) = w_i;
+      wl(n,i) = w(n,k,j,i-1);
+      wr(n,i) = w(n,k,j,i  );
     }
   }
 
   if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
     for (int i=is; i<=(ie+1); ++i){
-      const Real& by_im1 = bcc(IB2,k,j,i-1);
-      const Real& bz_im1 = bcc(IB3,k,j,i-1);
-      const Real& by_i   = bcc(IB2,k,j,i  );
-      const Real& bz_i   = bcc(IB3,k,j,i  );
-
-      wl(IBY,i) = by_im1;
-      wl(IBZ,i) = bz_im1;
-      wr(IBY,i) = by_i;
-      wr(IBZ,i) = bz_i;
+      wl(IBY,i) = bcc(IB2,k,j,i-1);
+      wl(IBZ,i) = bcc(IB3,k,j,i-1);
+      wr(IBY,i) = bcc(IB2,k,j,i  );
+      wr(IBZ,i) = bcc(IB3,k,j,i  );
     }
   }
 
@@ -80,26 +72,18 @@ void FluidIntegrator::DonorCellX2(const int k, const int j,
   for (int n=0; n<NFLUID; ++n){
 #pragma simd
     for (int i=is; i<=ie; ++i){
-      const Real& w_jm1 = w(n,k,j-1,i);
-      const Real& w_j   = w(n,k,j  ,i);
-
-      wl(n,i) = w_jm1;
-      wr(n,i) = w_j;
+      wl(n,i) = w(n,k,j-1,i);
+      wr(n,i) = w(n,k,j  ,i);
     }
   }
 
   if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
     for (int i=is; i<=ie; ++i){
-      const Real& bz_jm1 = bcc(IB3,k,j-1,i);
-      const Real& bx_jm1 = bcc(IB1,k,j-1,i);
-      const Real& bz_j   = bcc(IB3,k,j  ,i);
-      const Real& bx_j   = bcc(IB1,k,j  ,i);
-
-      wl(IBY,i) = bz_jm1;
-      wl(IBZ,i) = bx_jm1;
-      wr(IBY,i) = bz_j;
-      wr(IBZ,i) = bx_j;
+      wl(IBY,i) = bcc(IB3,k,j-1,i);
+      wl(IBZ,i) = bcc(IB1,k,j-1,i);
+      wr(IBY,i) = bcc(IB3,k,j  ,i);
+      wr(IBZ,i) = bcc(IB1,k,j  ,i);
     }
   }
 
@@ -119,26 +103,18 @@ void FluidIntegrator::DonorCellX3(const int k, const int j,
   for (int n=0; n<NFLUID; ++n){
 #pragma simd
     for (int i=is; i<=ie; ++i){
-      const Real& w_km1 = w(n,k-1,j,i);
-      const Real& w_k   = w(n,k  ,j,i);
-
-      wl(n,i) = w_km1;
-      wr(n,i) = w_k;
+      wl(n,i) = w(n,k-1,j,i);
+      wr(n,i) = w(n,k  ,j,i);
     }
   }
 
   if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
     for (int i=is; i<=ie; ++i){
-      const Real& bx_km1 = bcc(IB1,k-1,j,i);
-      const Real& by_km1 = bcc(IB2,k-1,j,i);
-      const Real& bx_k   = bcc(IB1,k  ,j,i);
-      const Real& by_k   = bcc(IB2,k  ,j,i);
-
-      wl(IBY,i) = bx_km1;
-      wl(IBZ,i) = by_km1;
-      wr(IBY,i) = bx_k;
-      wr(IBZ,i) = by_k;
+      wl(IBY,i) = bcc(IB1,k-1,j,i);
+      wl(IBZ,i) = bcc(IB2,k-1,j,i);
+      wr(IBY,i) = bcc(IB1,k  ,j,i);
+      wr(IBZ,i) = bcc(IB2,k  ,j,i);
     }
   }
 
