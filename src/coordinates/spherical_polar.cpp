@@ -329,10 +329,10 @@ void Coordinates::CoordSrcTermsX2(const int k, const int j, const Real dt,
     if (MAGNETIC_FIELDS_ENABLED) {
        m_pp += 0.5*( SQR(bcc(IB1,k,j,i)) + SQR(bcc(IB2,k,j,i)) - SQR(bcc(IB3,k,j,i)) );
     }
-    u(IM2,k,j,i) += dt*coord_src1_j_(j)*m_pp;
+    u(IM2,k,j,i) += dt*coord_src1_i_(i)*coord_src1_j_(j)*m_pp;
 
     // src_3 = -< M_{phi theta} ><cot theta/r> 
-    u(IM3,k,j,i) -= dt*coord_src2_j_(j)*
+    u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src2_j_(j)*
       (coord_area2_j_(j)*flx(IM3,i) + coord_area2_j_(j+1)*flx_p1(IM3,i));
   }
 
