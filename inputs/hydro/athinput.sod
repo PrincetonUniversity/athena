@@ -43,6 +43,8 @@ x3max       = 0.5       # maximum value of X3
 ix3_bc      = 4         # Inner-X3 boundary condition flag
 ox3_bc      = 4         # Outer-X3 boundary condition flag
 
+num_threads = 1         # maximum number of OMP threads
+
 <fluid>
 gamma           = 1.4       # gamma = C_p/C_v
 iso_sound_speed = 1.0   # isothermal sound speed

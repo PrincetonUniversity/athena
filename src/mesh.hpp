@@ -95,6 +95,7 @@ class Mesh {
 private:
   int root_level, max_level;
   int nbtotal, nbstart, nbend;
+  int num_mesh_threads_;
   Real MeshGeneratorX1(Real x, RegionSize rs);
   Real MeshGeneratorX2(Real x, RegionSize rs);
   Real MeshGeneratorX3(Real x, RegionSize rs);
@@ -114,11 +115,11 @@ public:
 
   Real start_time, tlim, cfl_number, time, dt;
   int nlim, ncycle;
-  int nthreads_mesh;
 
   MeshBlock *pblock;
 
   int64_t GetTotalCells(void);
+  int GetNumMeshThreads() const {return num_mesh_threads_;}
   void Initialize(int res_flag, ParameterInput *pin);
   void UpdateOneStep(void);
   void SetTaskList(TaskList& tl);

@@ -101,11 +101,11 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
 // read number of OpenMP threads for mesh
 
-  nthreads_mesh = pin->GetOrAddInteger("mesh","max_num_threads",1);
-  if (nthreads_mesh < 1) {
+  num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
+  if (num_mesh_threads_ < 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Number of OpenMP threads must be >= 1, but max_num_threads=" 
-        << nthreads_mesh << std::endl;
+        << "Number of OpenMP threads must be >= 1, but num_threads=" 
+        << num_mesh_threads_ << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
 
@@ -662,11 +662,13 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   tlim       = pin->GetReal("time","tlim");
   cfl_number = pin->GetReal("time","cfl_number");
   nlim = pin->GetOrAddInteger("time","nlim",-1);
-  nthreads_mesh = pin->GetOrAddReal("mesh","max_num_threads",1);
-  if (nthreads_mesh < 1) {
+
+// read number of OpenMP threads for mesh
+  num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
+  if (num_mesh_threads_ < 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Number of OpenMP threads must be >= 1, but max_num_threads=" 
-        << nthreads_mesh << std::endl;
+        << "Number of OpenMP threads must be >= 1, but num_threads=" 
+        << num_mesh_threads_ << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
 
