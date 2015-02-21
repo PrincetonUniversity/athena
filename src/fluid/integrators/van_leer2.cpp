@@ -141,26 +141,26 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
       for (int j=js; j<=je; ++j){
 
         if (first_time_through_loop) {
-          // reconstruct L/R states at j=js
+          // reconstruct L/R states at j=jstart
           if (step == 1) {
-            DonorCellX2(k,js,w,bcc,wl,wr);
+            DonorCellX2(k,j,w,bcc,wl,wr);
           } else {
-            PiecewiseLinearX2(k,js,w,bcc,wl,wr);
+            PiecewiseLinearX2(k,j,w,bcc,wl,wr);
           }
 
-          // compute and store fluxes at j=js
-          RiemannSolver(k,js,is,ie,IVY,b2,wl,wr,jflx_j); 
+          // compute and store fluxes at j=jstart
+          RiemannSolver(k,j,is,ie,IVY,b2,wl,wr,jflx_j); 
       
-          // store electric fields, compute weights for GS07 CT algorithm at j=js
+          // store electric fields, compute weights for GS07 CT algorithm at j=jstart
           if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
             for (int i=is; i<=ie; ++i){
-              ei_x2f(X2E1,k,js,i) = -jflx_j(IBY,i); // flx(IBY)= (v2*b3 - v3*b2) = -EMFX
-              ei_x2f(X2E3,k,js,i) =  jflx_j(IBZ,i); // flx(IBZ)= (v2*b1 - v1*b2) =  EMFZ
-              const Real& dx = pmb->pcoord->CenterWidth2(k,js,i);
+              ei_x2f(X2E1,k,j,i) = -jflx_j(IBY,i); // flx(IBY)= (v2*b3 - v3*b2) = -EMFX
+              ei_x2f(X2E3,k,j,i) =  jflx_j(IBZ,i); // flx(IBZ)= (v2*b1 - v1*b2) =  EMFZ
+              const Real& dx = pmb->pcoord->CenterWidth2(k,j,i);
               Real v_over_c = (1024)*dt*jflx_j(IDN,i)/(dx*(wl(IDN,i) + wr(IDN,i)));
               Real tmp_min = std::min(0.5,v_over_c);
-              w_x2f(k,js,i) = 0.5 + std::max(-0.5,tmp_min);
+              w_x2f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
             }
           }
           first_time_through_loop = false;;
@@ -222,30 +222,30 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
       if (first_time_through_loop) {
         for (int j=js; j<=je; ++j){
 
-          // reconstruct L/R states at k=ks
+          // reconstruct L/R states at k=kstart
           if (step == 1) {
-            DonorCellX3(ks,j,w,bcc,wl,wr);
+            DonorCellX3(k,j,w,bcc,wl,wr);
           } else {
-            PiecewiseLinearX3(ks,j,w,bcc,wl,wr);
+            PiecewiseLinearX3(k,j,w,bcc,wl,wr);
           }
 
-          // compute and store fluxes at k=ks
-          RiemannSolver(ks,j,is,ie,IVZ,b3,wl,wr,flx);
+          // compute and store fluxes at k=kstart
+          RiemannSolver(k,j,is,ie,IVZ,b3,wl,wr,flx);
 
-          // store electric fields, compute weights for GS07 CT algorithm at k=ks
+          // store electric fields, compute weights for GS07 CT algorithm at k=kstart
           if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
             for (int i=is; i<=ie; ++i){
-              ei_x3f(X3E2,ks,j,i) = -flx(IBY,i); // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
-              ei_x3f(X3E1,ks,j,i) =  flx(IBZ,i); // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
-              const Real& dx = pmb->pcoord->CenterWidth3(ks,j,i);
+              ei_x3f(X3E2,k,j,i) = -flx(IBY,i); // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
+              ei_x3f(X3E1,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
+              const Real& dx = pmb->pcoord->CenterWidth3(k,j,i);
               Real v_over_c = (1024)*dt*flx(IDN,i)/(dx*(wl(IDN,i) + wr(IDN,i)));
               Real tmp_min = std::min(0.5,v_over_c);
-              w_x3f(ks,j,i) = 0.5 + std::max(-0.5,tmp_min);
+              w_x3f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
             }
           }
 
-          // store fluxes at k=ks over all i,j
+          // store fluxes at k=kstart over all i,j
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
