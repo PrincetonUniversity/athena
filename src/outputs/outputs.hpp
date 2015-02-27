@@ -12,6 +12,11 @@
 
 #include <stdio.h> // size_t
 #include "../wrapio.hpp"
+#include "../athena.hpp"
+
+#ifdef HDF5OUTPUT
+#include <hdf5.h>
+#endif
 
 class Mesh;
 class ParameterInput;
@@ -82,6 +87,8 @@ public:
 //  in a linked list created and stored in objects of the Outputs class.
 
 class OutputType {
+protected:
+  int var_added;
 public:
   OutputType(OutputParameters oparams);
   ~OutputType();
@@ -155,9 +162,27 @@ public:
   void Finalize(ParameterInput *pin);
   void LoadOutputData(OutputData *pod, MeshBlock *pmb) {};
   void TransformOutputData(OutputData *pod, MeshBlock *pmb) {};
-
   void WriteOutputFile(OutputData *pod, MeshBlock *pmb);
 };
+
+#ifdef HDF5OUTPUT
+//! \class ATHDF5Output
+//  \brief derived OutputType class for Athena HDF5 files
+
+class ATHDF5Output : public OutputType {
+private:
+  hid_t file;
+  int nbmax;
+  int mbsize[3];
+
+public:
+  ATHDF5Output(OutputParameters oparams);
+  ~ATHDF5Output() {};
+  void Initialize(Mesh *pm, ParameterInput *pin);
+  void Finalize(ParameterInput *pin);
+  void WriteOutputFile(OutputData *pod, MeshBlock *pmb);
+};
+#endif
 
 //--------------------- end of OutputTypes base and derived classes --------------------
 

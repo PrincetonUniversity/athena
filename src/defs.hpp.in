@@ -53,6 +53,9 @@
 // openMP parallelization (OPENMP_PARALLEL or NOT_OPENMP_PARALLEL)
 #define @OPENMP_OPTION@
 
+// HDF5 Output (HDF5OUTPUT or NO_HDF5OUTPUT)
+#define @HDF5_OPTION@
+
 // number of internal fluid output variables
 #define NIFOV  @NUM_IFOV@
 

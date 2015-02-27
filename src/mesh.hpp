@@ -57,6 +57,9 @@ private:
   friend class BoundaryValues;
   friend class Mesh;
   friend class Fluid;
+#ifdef HDF5OUTPUT
+  friend class ATHDF5Output;
+#endif
 public:
   MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_size,
             int *input_bcs, Mesh *pm, ParameterInput *pin);
@@ -96,6 +99,7 @@ private:
   int root_level, max_level;
   int nbtotal, nbstart, nbend;
   int num_mesh_threads_;
+  int *nslist, *nblist;
   Real MeshGeneratorX1(Real x, RegionSize rs);
   Real MeshGeneratorX2(Real x, RegionSize rs);
   Real MeshGeneratorX3(Real x, RegionSize rs);
@@ -105,6 +109,9 @@ private:
 
   friend class RestartOutput;
   friend class MeshBlock;
+#ifdef HDF5OUTPUT
+  friend class ATHDF5Output;
+#endif
 public:
   Mesh(ParameterInput *pin, int test_flag=0);
   Mesh(ParameterInput *pin, WrapIO &resfile, int test_flag=0);

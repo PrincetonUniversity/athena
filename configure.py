@@ -22,6 +22,7 @@
 #   --ifov=N          enable N internal fluid output variables 
 #   -mpi              enable parallelization with MPI
 #   -omp              enable parallelization with OpenMP
+#   -hdf5             enable HDF5 output (requires the HDF5 library)
 #   --idlength=N      specify the length of the Block UID (default=1)
 #   -debug            enable debug flags (-g -O0); override other compiler options
 #---------------------------------------------------------------------------------------
@@ -124,6 +125,12 @@ parser.add_argument('-omp',
     default=False,
     help='enable parallelization with OpenMP')
 
+# -hdf5 argument
+parser.add_argument('-hdf5',
+    action='store_true',
+    default=False,
+    help='enable HDF5 Output')
+
 # -ifov=N argument
 parser.add_argument('--ifov',
     type=int,
@@ -161,6 +168,9 @@ if args['flux']=='hlld' and not args['b']:
   raise SystemExit('### CONFIGURE ERROR: HLLD flux can only be used with MHD')
 
 #--- Step 4.  Set definitions and Makefile options based on above arguments ------------
+
+
+makefile_options['LOADER_FLAGS'] = ''
 
 # --prob=[name] argument
 definitions['PROBLEM'] = args['prob']
@@ -285,12 +295,18 @@ else:
     makefile_options['COMPILER_FLAGS'] += ' -diag-disable 3180'
     definitions['COMPILER_FLAGS'] += ' -diag-disable 3180'
 
+# -hdf5
+if args['hdf5']:
+  definitions['HDF5_OPTION'] = 'HDF5OUTPUT'
+  makefile_options['LOADER_FLAGS'] += ' -lhdf5'
+else:
+  definitions['HDF5_OPTION'] = 'NO_HDF5OUTPUT'
+
 # -ifov=N argument
 definitions['NUM_IFOV'] = str(args['ifov'])
 
 # everything else
 definitions['ID_LENGTH'] = str(args['idlength'])
-makefile_options['LOADER_FLAGS'] = ' '
 
 #--- Step 5.  Create new files, finish up ----------------------------------------------
 
@@ -330,12 +346,14 @@ print('  Reconstruction method:   ' + args['order'])
 print('  Fluid integrator:        ' + args['fint'])
 print('  Compiler and flags:      ' + makefile_options['COMPILER_CHOICE'] + ' ' \
     + makefile_options['COMPILER_FLAGS'])
+print('  Loader flags:            ' + makefile_options['LOADER_FLAGS'])
 print('  Magnetic fields:         ' + ('ON' if args['b'] else 'OFF'))
 print('  Special relativity:      ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))
 print('  MPI parallelism:         ' + ('ON' if args['mpi'] else 'OFF'))
 print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
+print('  HDF5 Output:             ' + ('ON' if args['hdf5'] else 'OFF'))
 print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
 print('  Internal fluid outvars:  ' + str(args['ifov']))
 print('  UID Length:              ' + str(args['idlength']) \

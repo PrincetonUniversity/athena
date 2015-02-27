@@ -73,7 +73,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   MeshBlock *pfirst;
   int block_bcs[6];
   NeighborBlock nei;
-  int *ranklist, *nslist;
+  int *ranklist;
   Real *costlist;
   Real totalcost, maxcost, mincost, mycost, targetcost;
   int nbmax;
@@ -270,6 +270,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
   ranklist=new int[nbtotal];
   nslist=new int[nproc];
+  nblist=new int[nproc];
   costlist=new Real[nbtotal];
   maxcost=0.0;
   mincost=(FLT_MAX);
@@ -301,9 +302,12 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   j=0;
   for(i=1;i<nbtotal;i++) // make the list of nbstart
   {
-    if(ranklist[i]!=ranklist[i-1])
+    if(ranklist[i]!=ranklist[i-1]) {
+      nblist[j]=i-nslist[j];
       nslist[++j]=i;
+    }
   }
+  nblist[j]=nbtotal-nslist[j];
 
   // store my nbstart and nbend
   nbstart=nslist[myrank];
@@ -343,7 +347,6 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       MeshTest(buid,ranklist,costlist);
     delete [] buid;
     delete [] ranklist;
-    delete [] nslist;
     delete [] costlist;
     return;
   }
@@ -631,7 +634,6 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 // clean up the temporary block id array
   delete [] buid;
   delete [] ranklist;
-  delete [] nslist;
   delete [] costlist;
 }
 
@@ -648,7 +650,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   long int lx1, lx2, lx3;
   WrapIOSize_t *offset;
   Real *costlist;
-  int *ranklist, *nslist;
+  int *ranklist;
   Real totalcost, targetcost, maxcost, mincost, mycost;
   BlockUID *buid;
   ID_t *rawid;
@@ -724,6 +726,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   costlist=new Real[nbtotal];
   ranklist=new int[nbtotal];
   nslist=new int[nproc];
+  nblist=new int[nproc];
   rawid=new ID_t[IDLENGTH];
   for(int i=0;i<IDLENGTH;i++) rawid[i]=0;
 
@@ -821,9 +824,12 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   j=0;
   for(i=1;i<nbtotal;i++) // make the list of nbstart
   {
-    if(ranklist[i]!=ranklist[i-1])
+    if(ranklist[i]!=ranklist[i-1]) {
+      nblist[j]=i-nslist[j];
       nslist[++j]=i;
+    }
   }
+  nblist[j]=nbtotal-nslist[j];
   // store my nbstart and nbend
   nbstart=nslist[myrank];
   if(myrank+1==nproc)
@@ -840,7 +846,6 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
     delete [] offset;
     delete [] costlist;
     delete [] ranklist;
-    delete [] nslist;
     return;
   }
 
@@ -867,7 +872,6 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   delete [] offset;
   delete [] costlist;
   delete [] ranklist;
-  delete [] nslist;
 }
 
 
@@ -880,6 +884,8 @@ Mesh::~Mesh()
   while(pblock->next != NULL)
     delete pblock->next;
   delete pblock;
+  delete [] nslist;
+  delete [] nblist;
 }
 
 

@@ -272,7 +272,13 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
         pnew_type = new HistoryOutput(op);
       } else if (op.file_type.compare("vtk") == 0) {
         pnew_type = new VTKOutput(op);
-      } else {
+      }
+#ifdef HDF5OUTPUT
+      else if (op.file_type.compare("ath5") == 0 || op.file_type.compare("hdf5") == 0) {
+        pnew_type = new ATHDF5Output(op);
+      }
+#endif
+      else {
         msg << "### FATAL ERROR in Outputs constructor" << std::endl
             << "Unrecognized file format = '" << op.file_type 
             << "' in output block '" << op.block_name << "'" << std::endl;
@@ -405,7 +411,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 // Create linked list of OutputVariables containing requested data
 
   OutputVariable *pov;
-  int var_added = 0;
+  var_added = 0;
   if (output_params.variable.compare("D") == 0 || 
       output_params.variable.compare("cons") == 0) {
     pov = new OutputVariable; 
@@ -413,7 +419,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov->name = "dens";
     pov->data.InitWithShallowSlice(pfl->u,4,IDN,1);
     pod->AppendNode(pov); // (lab-frame) density
-    var_added = 1;
+    var_added++;
   }
 
   if (output_params.variable.compare("d") == 0 || 
@@ -423,7 +429,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov->name = "rho";
     pov->data.InitWithShallowSlice(pfl->w,4,IDN,1);
     pod->AppendNode(pov); // (rest-frame) density
-    var_added = 1;
+    var_added++;
   }
 
   if (NON_BAROTROPIC_EOS) {
@@ -434,7 +440,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       pov->name = "Etot";
       pov->data.InitWithShallowSlice(pfl->u,4,IEN,1);
       pod->AppendNode(pov); // total energy
-      var_added = 1;
+      var_added++;
     }
   }
 
@@ -446,7 +452,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       pov->name = "press";
       pov->data.InitWithShallowSlice(pfl->w,4,IEN,1);
       pod->AppendNode(pov); // pressure
-      var_added = 1;
+      var_added++;
     }
   }
 
@@ -457,7 +463,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov->name = "mom";
     pov->data.InitWithShallowSlice(pfl->u,4,IM1,3);
     pod->AppendNode(pov); // momentum vector
-    var_added = 1;
+    var_added+=3;
   }
 
   if (output_params.variable.compare("v") == 0 || 
@@ -467,7 +473,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov->name = "vel";
     pov->data.InitWithShallowSlice(pfl->w,4,IVX,3);
     pod->AppendNode(pov); // velocity vector
-    var_added = 1;
+    var_added+=3;
   }
 
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -479,7 +485,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       pov->name = "cc-B";
       pov->data.InitWithShallowSlice(pfd->bcc,4,IB1,3);
       pod->AppendNode(pov); // magnetic field vector
-      var_added = 1;
+      var_added+=3;
     }
   }
 
@@ -491,12 +497,12 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       pov->data.InitWithShallowSlice(pfl->ifov,4,n,1);
       pod->AppendNode(pov); // internal fluid outvars
     }
-    var_added = 1;
+    var_added+=NIFOV;
   }
 
 // throw an error if output variable name not recognized
 
-  if (!var_added) {
+  if (var_added==0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in function [OutputType::LoadOutputData]" << std::endl
         << "Output variable '" << output_params.variable << "' not implemented"
