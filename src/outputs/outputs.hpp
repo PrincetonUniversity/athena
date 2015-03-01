@@ -171,7 +171,6 @@ public:
 
 class ATHDF5Output : public OutputType {
 private:
-  int nbt;
   hid_t file;
   int mbsize[3];
   hid_t *grpid, *x1fid, *x2fid, *x3fid, *rhoid, *eid;
