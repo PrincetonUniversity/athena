@@ -171,15 +171,19 @@ public:
 
 class ATHDF5Output : public OutputType {
 private:
+  int nbt;
   hid_t file;
-  int nbmax;
   int mbsize[3];
+  hid_t *grpid, *x1fid, *x2fid, *x3fid, *rhoid, *eid;
+  hid_t *mid[3], *bid[3], *ifovid[NIFOV];
+  hsize_t dim, dims[3];
 
 public:
   ATHDF5Output(OutputParameters oparams);
   ~ATHDF5Output() {};
   void Initialize(Mesh *pm, ParameterInput *pin);
   void Finalize(ParameterInput *pin);
+  void TransformOutputData(OutputData *pod, MeshBlock *pmb) {};
   void WriteOutputFile(OutputData *pod, MeshBlock *pmb);
 };
 #endif

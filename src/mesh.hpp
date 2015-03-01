@@ -104,8 +104,10 @@ private:
   Real MeshGeneratorX2(Real x, RegionSize rs);
   Real MeshGeneratorX3(Real x, RegionSize rs);
   bool adaptive;
+  BlockUID *buid;
+  BlockTree tree;
 
-  void MeshTest(BlockUID *buid, int *ranklist, Real *costlist);
+  void MeshTest(int *ranklist, Real *costlist);
 
   friend class RestartOutput;
   friend class MeshBlock;

@@ -67,8 +67,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 {
   std::stringstream msg;
   RegionSize block_size;
-  BlockUID *buid;
-  BlockTree tree, *neibt;
+  BlockTree *neibt;
   BlockUID comp;
   MeshBlock *pfirst;
   int block_bcs[6];
@@ -344,8 +343,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   if(test_flag>0)
   {
     if(myrank==0)
-      MeshTest(buid,ranklist,costlist);
-    delete [] buid;
+      MeshTest(ranklist,costlist);
     delete [] ranklist;
     delete [] costlist;
     return;
@@ -632,7 +630,6 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   pblock=pfirst;
 
 // clean up the temporary block id array
-  delete [] buid;
   delete [] ranklist;
   delete [] costlist;
 }
@@ -652,7 +649,6 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   Real *costlist;
   int *ranklist;
   Real totalcost, targetcost, maxcost, mincost, mycost;
-  BlockUID *buid;
   ID_t *rawid;
 
 // mesh test
@@ -841,8 +837,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   if(test_flag>0)
   {
     if(myrank==0)
-      MeshTest(buid,ranklist,costlist);
-    delete [] buid;
+      MeshTest(ranklist,costlist);
     delete [] offset;
     delete [] costlist;
     delete [] ranklist;
@@ -868,7 +863,6 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   pblock=pfirst;
 
 // clean up
-  delete [] buid;
   delete [] offset;
   delete [] costlist;
   delete [] ranklist;
@@ -886,13 +880,14 @@ Mesh::~Mesh()
   delete pblock;
   delete [] nslist;
   delete [] nblist;
+  delete [] buid;
 }
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void Mesh::MeshTest(BlockUID *buid, int *ranklist, Real *costlist)
+//! \fn void Mesh::MeshTest(int *ranklist, Real *costlist)
 //  \brief print the mesh structure information
-void Mesh::MeshTest(BlockUID *buid, int *ranklist, Real *costlist)
+void Mesh::MeshTest(int *ranklist, Real *costlist)
 {
   int i, j, nbt=0;
   long int lx1, lx2, lx3;
