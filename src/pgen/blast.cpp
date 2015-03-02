@@ -54,7 +54,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     b0 = pin->GetReal("problem","b0");
     theta = (PI/180.0)*pin->GetReal("problem","angle");
   }
-  Real gm1 = (pfl->pf_eos->GetGamma() - 1.0);
+  Real gamma = pfl->pf_eos->GetGamma();
+  Real gm1 = gamma - 1.0;
 
 // setup uniform ambient medium with spherical over-pressured region
 
@@ -73,6 +74,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       Real pres = pa;
       if (rad < rin) pres = prat*pa;
       pfl->u(IEN,k,j,i) = pres/gm1;
+      if (RELATIVISTIC_DYNAMICS)  // this should only ever be SR with this file
+        pfl->u(IEN,k,j,i) += den;
     }
   }}}
 
