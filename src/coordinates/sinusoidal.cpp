@@ -28,8 +28,8 @@
 // TODO: find better input method
 namespace globals
 {
-  const Real A = 10.0;
-  const Real K = 0.1;
+  const Real A = 1.0;
+  const Real K = 1.0;
 };
 using namespace globals;
 
@@ -389,48 +389,44 @@ void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
   const Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Go through cells
-  for (int k = pmy_block->ks; k <= pmy_block->ke; k++)
-    for (int j = pmy_block->js; j <= pmy_block->je; j++)
-    {
-      #pragma simd
-      for (int i = pmy_block->is; i <= pmy_block->ie; i++)
-      {
-        // Extract geometric quantities
-        const Real g00 = -1.0;
-        const Real &g11 = metric_cell_i1_(i);
-        const Real g12 = -metric_cell_i2_(i);
-        const Real g22 = 1.0;
-        const Real g33 = 1.0;
-        const Real &gamma_211 = src_terms_i1_(i);
+  #pragma simd
+  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
+  {
+    // Extract geometric quantities
+    const Real g00 = -1.0;
+    const Real &g11 = metric_cell_i1_(i);
+    const Real g12 = -metric_cell_i2_(i);
+    const Real g22 = 1.0;
+    const Real g33 = 1.0;
+    const Real &gamma_211 = src_terms_i1_(i);
 
-        // Extract primitives
-        const Real &rho = prim(IDN,k,j,i);
-        const Real &pgas = prim(IEN,k,j,i);
-        const Real &v1 = prim(IVX,k,j,i);
-        const Real &v2 = prim(IVY,k,j,i);
-        const Real &v3 = prim(IVZ,k,j,i);
+    // Extract primitives
+    const Real &rho = prim(IDN,k,j,i);
+    const Real &pgas = prim(IEN,k,j,i);
+    const Real &v1 = prim(IVX,k,j,i);
+    const Real &v2 = prim(IVY,k,j,i);
+    const Real &v3 = prim(IVZ,k,j,i);
 
-        // Calculate 4-velocity
-        Real u0 = std::sqrt(-1.0 /
-            (g00 + g11*v1*v1 + 2.0*g12*v1*v2 + g22*v2*v2 + g33*v3*v3));
-        Real u1 = u0 * v1;
-        Real u2 = u0 * v2;
-        Real u_2 = g12*u1 + g22*u2;
+    // Calculate 4-velocity
+    Real u0 = std::sqrt(-1.0 /
+        (g00 + g11*v1*v1 + 2.0*g12*v1*v2 + g22*v2*v2 + g33*v3*v3));
+    Real u1 = u0 * v1;
+    Real u2 = u0 * v2;
+    Real u_2 = g12*u1 + g22*u2;
 
-        // Calculate stress-energy tensor
-        Real rho_h = rho + gamma_adi_red * pgas;
-        Real t1_2 = rho_h * u1 * u_2;
+    // Calculate stress-energy tensor
+    Real rho_h = rho + gamma_adi_red * pgas;
+    Real t1_2 = rho_h * u1 * u_2;
 
-        // Calculate source terms
-        Real s1 = gamma_211 * t1_2;
+    // Calculate source terms
+    Real s1 = gamma_211 * t1_2;
 
-        // Extract conserved quantities
-        Real &m1 = cons(IM1,k,j,i);
+    // Extract conserved quantities
+    Real &m1 = cons(IM1,k,j,i);
 
-        // Add source terms to conserved quantities
-        m1 += dt * s1;
-      }
-    }
+    // Add source terms to conserved quantities
+    m1 += dt * s1;
+  }
   return;
 }
 
@@ -1376,14 +1372,14 @@ void Coordinates::TransformVectorCell(Real at, Real ax, Real ay, Real az, int k,
 
   // Transform one-form
   Real a_0 = a_t;
-  Real a_1 = a_x + beta * a_y;
+  Real a_1 = a_x - beta * a_y;
   Real a_2 = a_y;
   Real a_3 = a_z;
 
   // Set upper global components
   *a0 = -a_0;
-  *a1 = alpha_sq * a_1 - beta * a_2;
-  *a2 = -beta * a_1 + a_2;
+  *a1 = a_1 + beta * a_2;
+  *a2 = beta * a_1 + alpha_sq * a_2;
   *a3 = a_3;
   return;
 }
@@ -1412,14 +1408,14 @@ void Coordinates::TransformVectorFace1(Real at, Real ax, Real ay, Real az, int k
 
   // Transform one-form
   Real a_0 = a_t;
-  Real a_1 = a_x + beta * a_y;
+  Real a_1 = a_x - beta * a_y;
   Real a_2 = a_y;
   Real a_3 = a_z;
 
   // Set upper global components
   *a0 = -a_0;
-  *a1 = alpha_sq * a_1 - beta * a_2;
-  *a2 = -beta * a_1 + a_2;
+  *a1 = a_1 + beta * a_2;
+  *a2 = beta * a_1 + alpha_sq * a_2;
   *a3 = a_3;
   return;
 }
@@ -1448,14 +1444,14 @@ void Coordinates::TransformVectorFace2(Real at, Real ax, Real ay, Real az, int k
 
   // Transform one-form
   Real a_0 = a_t;
-  Real a_1 = a_x + beta * a_y;
+  Real a_1 = a_x - beta * a_y;
   Real a_2 = a_y;
   Real a_3 = a_z;
 
   // Set upper global components
   *a0 = -a_0;
-  *a1 = alpha_sq * a_1 - beta * a_2;
-  *a2 = -beta * a_1 + a_2;
+  *a1 = a_1 + beta * a_2;
+  *a2 = beta * a_1 + alpha_sq * a_2;
   *a3 = a_3;
   return;
 }
@@ -1484,14 +1480,14 @@ void Coordinates::TransformVectorFace3(Real at, Real ax, Real ay, Real az, int k
 
   // Transform one-form
   Real a_0 = a_t;
-  Real a_1 = a_x + beta * a_y;
+  Real a_1 = a_x - beta * a_y;
   Real a_2 = a_y;
   Real a_3 = a_z;
 
   // Set upper global components
   *a0 = -a_0;
-  *a1 = alpha_sq * a_1 - beta * a_2;
-  *a2 = -beta * a_1 + a_2;
+  *a1 = a_1 + beta * a_2;
+  *a2 = beta * a_1 + alpha_sq * a_2;
   *a3 = a_3;
   return;
 }

@@ -6,7 +6,8 @@
 #include "eos.hpp"
 
 // C++ headers
-#include <cmath>  // atan2(), cbrt(), cos(), sqrt()
+#include <cmath>   // atan2(), cbrt(), cos(), sqrt()
+#include <cfloat>  // FLT_MIN
 
 // Athena headers
 #include "../fluid.hpp"               // Fluid
@@ -24,6 +25,8 @@ FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
 {
   pmy_fluid_ = pf;
   gamma_ = pin->GetReal("fluid", "gamma");
+  density_floor_ = pin->GetOrAddReal("fluid", "dfloor", 1024*FLT_MIN);
+  pressure_floor_ = pin->GetOrAddReal("fluid", "pfloor", 1024*FLT_MIN);
 }
 
 // Destructor
@@ -103,9 +106,9 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         // Extract conserved quantities
         Real &d = cons_copy(IDN,k,j,i);
         Real &e = cons_copy(IEN,k,j,i);
-        Real &mx = cons_copy(IVX,k,j,i);
-        Real &my = cons_copy(IVY,k,j,i);
-        Real &mz = cons_copy(IVZ,k,j,i);
+        const Real &mx = cons_copy(IVX,k,j,i);
+        const Real &my = cons_copy(IVY,k,j,i);
+        const Real &mz = cons_copy(IVZ,k,j,i);
 
         // Extract primitives
         Real &rho = prim_copy(IDN,k,j,i);
@@ -115,62 +118,91 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real &vz = prim_copy(IVZ,k,j,i);
 
         // Calculate total momentum
-        Real m_sq = mx*mx + my*my + mz*mz;
+        Real m_sq = SQR(mx) + SQR(my) + SQR(mz);
 
         // Case out based on whether momentum vanishes
-        if (m_sq >= TINY_NUMBER*TINY_NUMBER)  // generic case, nonzero velocity
+        if (m_sq >= SQR(TINY_NUMBER))  // generic case, nonzero velocity
         {
           // Step 1: Prepare quartic coefficients
           Real m_abs = std::sqrt(m_sq);
-          Real denom_inverse = 1.0 / (gamma_adi_minus_1*gamma_adi_minus_1
-              * (d*d + m_sq));
+          Real denom_inverse = 1.0 / (SQR(gamma_adi_minus_1) * (SQR(d) + m_sq));
           Real a3 = -2.0 * gamma_adi * gamma_adi_minus_1 * m_abs * e * denom_inverse;
-          Real a2 = (gamma_adi*gamma_adi * e*e + 2.0 * gamma_adi_minus_1 * m_sq -
-              gamma_adi_minus_1*gamma_adi_minus_1 * d*d) * denom_inverse;
+          Real a2 = (SQR(gamma_adi) * SQR(e) + 2.0 * gamma_adi_minus_1 * m_sq -
+              SQR(gamma_adi_minus_1) * SQR(d)) * denom_inverse;
           Real a1 = -2.0 * gamma_adi * m_abs * e * denom_inverse;
           Real a0 = m_sq * denom_inverse;
 
           // Step 2: Find resolvent cubic coefficients
           Real b2 = -a2;
           Real b1 = -4.0*a0 + a1*a3;
-          Real b0 = 4.0*a0*a2 - a1*a1 - a0*a3*a3;
+          Real b0 = 4.0*a0*a2 - SQR(a1) - a0*SQR(a3);
 
           // Step 3: Eliminate quadratic term from cubic
-          Real c1 = b1/3.0 - b2*b2/9.0;
-          Real c2 = -b0/2.0 + b1*b2/6.0 - b2*b2*b2/27.0;
-          Real c3 = c1*c1*c1 + c2*c2;
+          Real c1 = b1/3.0 - SQR(b2)/9.0;
+          Real c2 = -b0/2.0 + b1*b2/6.0 - SQR(b2)*b2/27.0;
+          Real c3 = SQR(c1)*c1 + SQR(c2);
 
           // Step 4: Find real root of new cubic
           Real y0;
           if (c3 >= 0.0)
             y0 = cbrt(c2 + std::sqrt(c3)) + cbrt(c2 - std::sqrt(c3));
           else
-            y0 = 2.0 * cbrt(c2*c2 + c3)
+            y0 = 2.0 * cbrt(SQR(c2) + c3)
                 * std::cos(std::atan2(std::sqrt(-c3), c2) / 3.0);
 
           // Step 5: Find real root of original (resolvent) cubic:
           Real x0 = y0 - b2/3.0;
 
           // Step 6: Solve for (correct) root of original quartic
-          Real d1 = (a3 + std::sqrt(4.0*x0 - 4.0*a2 + a3*a3)) / 2.0;
-          Real d0 = (x0 - std::sqrt(x0*x0 - 4.0*a0)) / 2.0;
-          Real v_abs = (-d1 + std::sqrt(d1*d1 - 4.0*d0)) / 2.0;
+          Real d1 = (a3 + std::sqrt(4.0*x0 - 4.0*a2 + SQR(a3))) / 2.0;
+          Real d0 = (x0 - std::sqrt(SQR(x0) - 4.0*a0)) / 2.0;
+          Real v_abs = (-d1 + std::sqrt(SQR(d1) - 4.0*d0)) / 2.0;
 
           // Ensure velocity is physical
-          v_abs = (v_abs > 0.0) ? v_abs : 0.0;  // sets NaN to 0
+          v_abs = (v_abs > 0.0) ? v_abs : 0.0;                    // sets NaN to 0
           v_abs = (v_abs < max_velocity) ? v_abs : max_velocity;
 
-          // Set primitives
-          rho = d * std::sqrt(1.0 - v_abs*v_abs);
+          // Set density, correcting only conserved density if floor applied
+          Real gamma_rel = 1.0 / std::sqrt(1.0 - SQR(v_abs));
+          rho = d / gamma_rel;
+          if (rho < density_floor_)
+          {
+            rho = density_floor_;
+            d = gamma_rel * rho;
+          }
+
+          // Set velocity
           vx = mx * v_abs / m_abs;
           vy = my * v_abs / m_abs;
           vz = mz * v_abs / m_abs;
-          pgas = gamma_adi_minus_1 * (e - (mx * vx + my * vy + mz * vz) - rho);
+
+          // Set pressure, correcting only energy if floor applied
+          pgas = gamma_adi_minus_1 * (e - (mx*vx + my*vy + mz*vz) - rho);
+          if (pgas < pressure_floor_)
+          {
+            pgas = pressure_floor_;
+            e = pgas/gamma_adi_minus_1 + (mx*vx + my*vy + mz*vz) + rho;
+          }
         }
         else  // vanishing velocity
         {
+          // Set density, correcting only conserved density if floor applied
           rho = d;
+          if (rho < density_floor_)
+          {
+            rho = density_floor_;
+            d = rho;
+          }
+
+          // Set pressure, correcting only energy if floor applied
           pgas = gamma_adi_minus_1 * (e - rho);
+          if (pgas < pressure_floor_)
+          {
+            pgas = pressure_floor_;
+            e = pgas/gamma_adi_minus_1 + rho;
+          }
+
+          // Set velocity
           vx = 0.0;
           vy = 0.0;
           vz = 0.0;

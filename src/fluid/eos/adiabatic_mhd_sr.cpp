@@ -8,6 +8,7 @@
 
 // C++ headers
 #include <algorithm>  // max(), min()
+#include <cfloat>     // FLT_MIN
 #include <cmath>      // NAN, sqrt(), abs(), isfinite()
 
 // Athena headers
@@ -39,6 +40,8 @@ FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
 {
   pmy_fluid_ = pf;
   gamma_ = pin->GetReal("fluid", "gamma");
+  density_floor_ = pin->GetOrAddReal("fluid", "dfloor", 1024*FLT_MIN);
+  pressure_floor_ = pin->GetOrAddReal("fluid", "pfloor", 1024*FLT_MIN);
   int ncells1 = pf->pmy_block->block_size.nx1 + 2*NGHOST;
   g_.NewAthenaArray(NMETRIC,ncells1);
   g_inv_.NewAthenaArray(NMETRIC,ncells1);
@@ -98,9 +101,9 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         // Extract conserved quantities
         Real &d = cons(IDN,k,j,i);
         Real &e = cons(IEN,k,j,i);
-        Real &mx = cons(IM1,k,j,i);
-        Real &my = cons(IM2,k,j,i);
-        Real &mz = cons(IM3,k,j,i);
+        const Real &mx = cons(IM1,k,j,i);
+        const Real &my = cons(IM2,k,j,i);
+        const Real &mz = cons(IM3,k,j,i);
 
         // Extract face-centered magnetic field
         const Real &bxm = b.x1f(k,j,i);
@@ -144,52 +147,41 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real &vy = prim(IVY,k,j,i);
         Real &vz = prim(IVZ,k,j,i);
 
-        // Calculate primitives from W
+        // Set density, correcting only conserved density if floor applied
         Real v_sq = (m_sq + s_sq/SQR(w_true) * (2.0*w_true + b_sq))
             / SQR(w_true + b_sq);                                    // (cf. MM A3)
         Real gamma_sq = 1.0/(1.0-v_sq);
         Real gamma_lorentz = std::sqrt(gamma_sq);
-        Real chi = (1.0 - v_sq) * (w_true - gamma_lorentz * d);      // (cf. MM A11)
         rho = d/gamma_lorentz;                                       // (MM A12)
-        pgas = chi/gamma_prime;                                      // (MM A17)
-        vx = (mx + m_dot_b/w_true * bx) / (w_true + b_sq);           // (MM A10)
-        vy = (my + m_dot_b/w_true * by) / (w_true + b_sq);           // (MM A10)
-        vz = (mz + m_dot_b/w_true * bz) / (w_true + b_sq);           // (MM A10)
+        if (rho < density_floor_)
+        {
+          rho = density_floor_;
+          d = gamma_lorentz * rho;
+        }
 
-        // Apply density and pressure floors
-        bool floor_applied = false;
-        // TODO: set floors at runtime
-        const Real pgas_floor = 1.0e-9;
-        const Real rho_floor = 1.0e-8;
-        if (pgas < pgas_floor)
+        // Set velocity
+        vx = (mx + m_dot_b/w_true * bx) / (w_true + b_sq);  // (MM A10)
+        vy = (my + m_dot_b/w_true * by) / (w_true + b_sq);  // (MM A10)
+        vz = (mz + m_dot_b/w_true * bz) / (w_true + b_sq);  // (MM A10)
+
+        // Set pressure, correcting only energy if floor applied
+        Real chi = (1.0 - v_sq) * (w_true - gamma_lorentz * d);  // (cf. MM A11)
+        pgas = chi/gamma_prime;                                  // (MM A17)
+        if (pgas < pressure_floor_)
         {
-          pgas = pgas_floor;
-          floor_applied = true;
-        }
-        if (rho < rho_floor)
-        {
-          rho = rho_floor;
-          floor_applied = true;
-        }
-        if (floor_applied)
-        {
-          // TODO: determine if momentum should be updated
-          Real ut = std::sqrt(1.0 / (1.0 - (SQR(vx)+SQR(vy)+SQR(vz))));
+          pgas = pressure_floor_;
+          Real ut = gamma_lorentz;
           Real ux = ut * vx;
           Real uy = ut * vy;
           Real uz = ut * vz;
-          Real bcovt = bx*ux + by*uy + bz*uz;
-          Real bcovx = (bx + bcovt * ux) / ut;
-          Real bcovy = (by + bcovt * uy) / ut;
-          Real bcovz = (bz + bcovt * uz) / ut;
-          Real bcov_sq = -SQR(bcovt) + SQR(bcovx) + SQR(bcovy) + SQR(bcovz);
-          Real rho_h = rho + gamma_prime * pgas;
-          Real ptot = pgas + 0.5*bcov_sq;
-          d = rho * ut;
-          e = (rho_h + bcov_sq) * ut * ut - bcovt * bcovt - ptot;
-          mx = (rho_h + bcov_sq) * ut * ux - bcovt * bcovx;
-          my = (rho_h + bcov_sq) * ut * uy - bcovt * bcovy;
-          mz = (rho_h + bcov_sq) * ut * uz - bcovt * bcovz;
+          Real bcont = bx*ux + by*uy + bz*uz;
+          Real bconx = (bx + bcont * ux) / ut;
+          Real bcony = (by + bcont * uy) / ut;
+          Real bconz = (bz + bcont * uz) / ut;
+          Real b_sq = -SQR(bcont) + SQR(bconx) + SQR(bcony) + SQR(bconz);
+          Real w = rho + gamma_prime * pgas + b_sq;
+          Real ptot = pgas + 0.5*b_sq;
+          e = gamma_sq * w - SQR(bcont) - ptot;
         }
       }
     }
@@ -525,7 +517,7 @@ static void quartic_root_minmax(Real a3, Real a2, Real a1, Real a0, Real *pmin_v
   Real z0 = cubic_root_real(c2, c1, c0);
 
   // Step 4: Find quadratic coefficients
-  Real d1 = std::sqrt(z0 - b2);
+  Real d1 = (z0 - b2 > 0.0) ? std::sqrt(z0 - b2) : 0.0;
   Real e1 = -d1;
   Real d0, e0;
   if (b1 < 0)

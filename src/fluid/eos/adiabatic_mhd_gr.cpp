@@ -7,6 +7,7 @@
 
 // C++ headers
 #include <algorithm>  // max(), min()
+#include <cfloat>     // FLT_MIN
 #include <cmath>      // NAN, sqrt(), abs(), isfinite()
 
 // Athena headers
@@ -38,6 +39,8 @@ FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
 {
   pmy_fluid_ = pf;
   gamma_ = pin->GetReal("fluid", "gamma");
+  density_floor_ = pin->GetOrAddReal("fluid", "dfloor", 1024*FLT_MIN);
+  pressure_floor_ = pin->GetOrAddReal("fluid", "pfloor", 1024*FLT_MIN);
   int ncells1 = pf->pmy_block->block_size.nx1 + 2*NGHOST;
   g_.NewAthenaArray(NMETRIC,ncells1);
   g_inv_.NewAthenaArray(NMETRIC,ncells1);
@@ -170,9 +173,9 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real b_norm_1 = alpha * b1;  // (N 5)
         Real b_norm_2 = alpha * b2;  // (N 5)
         Real b_norm_3 = alpha * b3;  // (N 5)
-        Real b_norm_sq_a = gi11*b1*b1 + 2.0*gi12*b1*b2 + 2.0*gi13*b1*b3
-                         + gi22*b2*b2 + 2.0*gi23*b2*b3
-                         + gi33*b3*b3;
+        Real b_norm_sq_a = g11*b1*b1 + 2.0*g12*b1*b2 + 2.0*g13*b1*b3
+                         + g22*b2*b2 + 2.0*g23*b2*b3
+                         + g33*b3*b3;
         Real b_norm_sq = alpha_sq * b_norm_sq_a;
         Real q_dot_b_norm = alpha * (q1*b1 + q2*b2 + q3*b3);
         Real q_dot_b_norm_sq = SQR(q_dot_b_norm);
@@ -214,16 +217,21 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real &v2 = prim(IVY,k,j,i);
         Real &v3 = prim(IVZ,k,j,i);
 
-        // Calculate primitives from W
+        // Set density, correcting only conserved density if floor applied
         v_norm_sq = (q_norm_sq*SQR(w_true)
             + q_dot_b_norm_sq*(b_norm_sq+2.0*w_true))
-            / (SQR(w_true) * SQR(b_norm_sq + w_true));                // (N 28)
+            / (SQR(w_true) * SQR(b_norm_sq + w_true));  // (N 28)
         gamma_sq = 1.0/(1.0 - v_norm_sq);
         Real gamma_rel = std::sqrt(gamma_sq);
-        pgas = 1.0/gamma_prime
-            * (w_true/gamma_sq - d_norm/std::sqrt(gamma_sq));         // (N 32)
-        rho = w_true / gamma_sq - gamma_prime * pgas;
-        Real u0 = d_norm / (alpha * rho);                             // (N 21)
+        Real u0 = gamma_rel / alpha;                    // (N 21)
+        rho = d_norm / gamma_rel;                       // (N 21)
+        if (rho < density_floor_ or std::isnan(rho))
+        {
+          rho = density_floor_;
+          d = rho * u0;
+        }
+
+        // Set velocity
         Real u_norm_a = gamma_rel / (w_true + b_norm_sq);
         Real u_norm_b = q_dot_b_norm / w_true;
         Real u_norm_1 = u_norm_a * (q_norm_1 + u_norm_b * b_norm_1);  // (N 31)
@@ -232,49 +240,32 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real u1 = u_norm_1 - alpha * gamma_rel * gi01;
         Real u2 = u_norm_2 - alpha * gamma_rel * gi02;
         Real u3 = u_norm_3 - alpha * gamma_rel * gi03;
-        v1 = u1/u0;
-        v2 = u2/u0;
-        v3 = u3/u0;
+        v1 = u1 / u0;
+        v2 = u2 / u0;
+        v3 = u3 / u0;
 
-        // Apply density and pressure floors
-        bool floor_applied = false;
-        // TODO: set floors at runtime
-        const Real pgas_floor = 1.0e-9;
-        const Real rho_floor = 1.0e-8;
-        if (pgas < pgas_floor)
+        // Set pressure, correcting only energy if floor applied
+        pgas = 1.0/gamma_prime
+            * (w_true/gamma_sq - d_norm/gamma_rel);         // (N 32)
+        if (pgas < pressure_floor_ or std::isnan(pgas))
         {
-          pgas = pgas_floor;
-          floor_applied = true;
-        }
-        if (rho < rho_floor)
-        {
-          rho = rho_floor;
-          floor_applied = true;
-        }
-        if (floor_applied)
-        {
-          // TODO: determine if momentum should be updated
+          pgas = pressure_floor_;
           Real u_0 = g00*u0 + g01*u1 + g02*u2 + g03*u3;
-          //Real u_1 = g01*u0 + g11*u1 + g12*u2 + g13*u3;
-          //Real u_2 = g02*u0 + g12*u1 + g22*u2 + g23*u3;
-          //Real u_3 = g03*u0 + g13*u1 + g23*u2 + g33*u3;
-          Real b_cov0 = u0 * (g01*b1 + g02*b2 + g03*b3)
-                      + u1 * (g11*b1 + g12*b2 + g13*b3)
-                      + u2 * (g12*b1 + g22*b2 + g23*b3)
-                      + u3 * (g13*b1 + g23*b2 + g33*b3);
-          Real b_cov1 = (b1 + b_cov0 * u1) / u0;
-          Real b_cov2 = (b2 + b_cov0 * u2) / u0;
-          Real b_cov3 = (b3 + b_cov0 * u3) / u0;
-          Real b_cov_0 = g00*b_cov0 + g01*b_cov1 + g02*b_cov2 + g03*b_cov3;
-          Real b_cov_1 = g01*b_cov0 + g11*b_cov1 + g12*b_cov2 + g13*b_cov3;
-          Real b_cov_2 = g02*b_cov0 + g12*b_cov1 + g22*b_cov2 + g23*b_cov3;
-          Real b_cov_3 = g03*b_cov0 + g13*b_cov1 + g23*b_cov2 + g33*b_cov3;
-          Real b_sq = b_cov_0*b_cov0 + b_cov_1*b_cov1 + b_cov_2*b_cov2 + b_cov_3*b_cov3;
-          e = (rho + gamma_prime*pgas + b_sq) * u0*u_0 - b_cov0*b_cov_0
-              + pgas + 0.5*b_sq;
-          //m1 = (rho + gamma_prime*pgas + b_sq) * u0*u_1 - b_cov0*b_cov_1;
-          //m2 = (rho + gamma_prime*pgas + b_sq) * u0*u_2 - b_cov0*b_cov_2;
-          //m3 = (rho + gamma_prime*pgas + b_sq) * u0*u_3 - b_cov0*b_cov_3;
+          Real bcon0 = u0 * (g01*b1 + g02*b2 + g03*b3)
+                     + u1 * (g11*b1 + g12*b2 + g13*b3)
+                     + u2 * (g12*b1 + g22*b2 + g23*b3)
+                     + u3 * (g13*b1 + g23*b2 + g33*b3);
+          Real bcon1 = (b1 + bcon0 * u1) / u0;
+          Real bcon2 = (b2 + bcon0 * u2) / u0;
+          Real bcon3 = (b3 + bcon0 * u3) / u0;
+          Real bcov0 = g00*bcon0 + g01*bcon1 + g02*bcon2 + g03*bcon3;
+          Real bcov1 = g01*bcon0 + g11*bcon1 + g12*bcon2 + g13*bcon3;
+          Real bcov2 = g02*bcon0 + g12*bcon1 + g22*bcon2 + g23*bcon3;
+          Real bcov3 = g03*bcon0 + g13*bcon1 + g23*bcon2 + g33*bcon3;
+          Real b_sq = bcov0*bcon0 + bcov1*bcon1 + bcov2*bcon2 + bcov3*bcon3;
+          Real w = rho + gamma_prime * pgas + b_sq;
+          Real ptot = pgas + 0.5*b_sq;
+          e = w * u0 * u_0 - bcon0 * bcov0 + ptot;
         }
       }
     }
@@ -658,7 +649,7 @@ static void quartic_root_minmax(Real a3, Real a2, Real a1, Real a0, Real *pmin_v
   Real z0 = cubic_root_real(c2, c1, c0);
 
   // Step 4: Find quadratic coefficients
-  Real d1 = std::sqrt(z0 - b2);
+  Real d1 = (z0 - b2 > 0.0) ? std::sqrt(z0 - b2) : 0.0;
   Real e1 = -d1;
   Real d0, e0;
   if (b1 < 0)

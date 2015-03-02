@@ -7,7 +7,8 @@
 #include "eos.hpp"
 
 // C++ headers
-#include <cmath>  // NAN, sqrt(), abs(), isfinite()
+#include <cfloat>  // FLT_MIN
+#include <cmath>   // NAN, sqrt(), abs(), isfinite(), isnan()
 
 // Athena headers
 #include "../fluid.hpp"                       // Fluid
@@ -34,6 +35,8 @@ FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
 {
   pmy_fluid_ = pf;
   gamma_ = pin->GetReal("fluid", "gamma");
+  density_floor_ = pin->GetOrAddReal("fluid", "dfloor", 1024*FLT_MIN);
+  pressure_floor_ = pin->GetOrAddReal("fluid", "pfloor", 1024*FLT_MIN);
   int ncells1 = pf->pmy_block->block_size.nx1 + 2*NGHOST;
   g_.NewAthenaArray(NMETRIC,ncells1);
   g_inv_.NewAthenaArray(NMETRIC,ncells1);
@@ -53,7 +56,7 @@ FluidEqnOfState::~FluidEqnOfState()
 //   b: face-centered magnetic field (unused)
 // Outputs:
 //   prim: primitives
-//   bcc: TODO
+//   bcc: cell-centered magnetic fields (unused)
 // Notes:
 //   follows Noble et al. 2006, ApJ 641 626 (N)
 //   implements formulas assuming no magnetic field
@@ -93,7 +96,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     for (int j = jl; j <= ju; j++)
     {
       pb->pcoord->CellMetric(k, j, g_, g_inv_);
-#pragma simd
+      #pragma simd
       for (int i = is-NGHOST; i <= ie+NGHOST; i++)
       {
         // Extract metric
@@ -113,7 +116,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
              &gi33 = g_inv_(I33,i);
 
         // Extract conserved quantities
-        const Real &d = cons(IDN,k,j,i);
+        Real &d = cons(IDN,k,j,i);
         Real &e = cons(IEN,k,j,i);
         const Real &m1 = cons(IVX,k,j,i);
         const Real &m2 = cons(IVY,k,j,i);
@@ -173,40 +176,34 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         // Apply Newton-Raphson method to find new W
         Real w_true = FindRootNR(w_initial, d_norm, q_dot_n, q_norm_sq, gamma_prime);
 
-        // Calculate primitives from W
+        // Set density, correcting only conserved density if floor applied
         v_norm_sq = q_norm_sq / (w_true*w_true);  // (N 28)
         gamma_sq = 1.0/(1.0 - v_norm_sq);
         Real gamma_rel = std::sqrt(gamma_sq);
-        pgas = 1.0/gamma_prime * (w_true/gamma_sq - d_norm/gamma_rel);  // (N 32)
-        rho = w_true / gamma_sq - gamma_prime * pgas;
-        Real u0 = d_norm / (alpha * rho);  // (N 21)
+        Real u0 = gamma_rel / alpha;              // (N 21)
+        rho = d_norm / gamma_rel;                 // (N 21)
+        if (rho < density_floor_ or std::isnan(rho))
+        {
+          rho = density_floor_;
+          d = rho * u0;
+        }
+
+        // Set velocity
         Real u_norm_1 = gamma_rel * q_norm_1 / w_true;  // (N 31)
         Real u_norm_2 = gamma_rel * q_norm_2 / w_true;  // (N 31)
         Real u_norm_3 = gamma_rel * q_norm_3 / w_true;  // (N 31)
         Real u1 = u_norm_1 - alpha * gamma_rel * gi01;
         Real u2 = u_norm_2 - alpha * gamma_rel * gi02;
         Real u3 = u_norm_3 - alpha * gamma_rel * gi03;
-        v1 = u1/u0;
-        v2 = u2/u0;
-        v3 = u3/u0;
+        v1 = u1 / u0;
+        v2 = u2 / u0;
+        v3 = u3 / u0;
 
-        // Apply density and pressure floors
-        bool floor_applied = false;
-        // TODO: set floors at runtime
-        const Real pgas_floor = 1.0e-9;
-        const Real rho_floor = 1.0e-8;
-        if (pgas < pgas_floor)
+        // Set pressure, correcting only energy if floor applied
+        pgas = 1.0/gamma_prime * (w_true/gamma_sq - rho);  // (N 21,32)
+        if (pgas < pressure_floor_ or std::isnan(pgas))
         {
-          pgas = pgas_floor;
-          floor_applied = true;
-        }
-        if (rho < rho_floor)
-        {
-          rho = rho_floor;
-          floor_applied = true;
-        }
-        if (floor_applied)
-        {
+          pgas = pressure_floor_;
           Real u_0 = g00*u0 + g01*u1 + g02*u2 + g03*u3;
           e = (rho + gamma_prime * pgas) * u0 * u_0 + pgas;
         }
