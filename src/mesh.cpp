@@ -67,13 +67,12 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 {
   std::stringstream msg;
   RegionSize block_size;
-  BlockUID *buid;
-  BlockTree tree, *neibt;
+  BlockTree *neibt;
   BlockUID comp;
   MeshBlock *pfirst;
   int block_bcs[6];
   NeighborBlock nei;
-  int *ranklist, *nslist;
+  int *ranklist;
   Real *costlist;
   Real totalcost, maxcost, mincost, mycost, targetcost;
   int nbmax;
@@ -101,11 +100,11 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
 // read number of OpenMP threads for mesh
 
-  nthreads_mesh = pin->GetOrAddInteger("mesh","max_num_threads",1);
-  if (nthreads_mesh < 1) {
+  num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
+  if (num_mesh_threads_ < 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Number of OpenMP threads must be >= 1, but max_num_threads=" 
-        << nthreads_mesh << std::endl;
+        << "Number of OpenMP threads must be >= 1, but num_threads=" 
+        << num_mesh_threads_ << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
 
@@ -270,6 +269,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
   ranklist=new int[nbtotal];
   nslist=new int[nproc];
+  nblist=new int[nproc];
   costlist=new Real[nbtotal];
   maxcost=0.0;
   mincost=(FLT_MAX);
@@ -301,9 +301,12 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   j=0;
   for(i=1;i<nbtotal;i++) // make the list of nbstart
   {
-    if(ranklist[i]!=ranklist[i-1])
+    if(ranklist[i]!=ranklist[i-1]) {
+      nblist[j]=i-nslist[j];
       nslist[++j]=i;
+    }
   }
+  nblist[j]=nbtotal-nslist[j];
 
   // store my nbstart and nbend
   nbstart=nslist[myrank];
@@ -340,10 +343,8 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   if(test_flag>0)
   {
     if(myrank==0)
-      MeshTest(buid,ranklist,costlist);
-    delete [] buid;
+      MeshTest(ranklist,costlist);
     delete [] ranklist;
-    delete [] nslist;
     delete [] costlist;
     return;
   }
@@ -629,9 +630,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   pblock=pfirst;
 
 // clean up the temporary block id array
-  delete [] buid;
   delete [] ranklist;
-  delete [] nslist;
   delete [] costlist;
 }
 
@@ -648,9 +647,8 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   long int lx1, lx2, lx3;
   WrapIOSize_t *offset;
   Real *costlist;
-  int *ranklist, *nslist;
+  int *ranklist;
   Real totalcost, targetcost, maxcost, mincost, mycost;
-  BlockUID *buid;
   ID_t *rawid;
 
 // mesh test
@@ -662,11 +660,13 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   tlim       = pin->GetReal("time","tlim");
   cfl_number = pin->GetReal("time","cfl_number");
   nlim = pin->GetOrAddInteger("time","nlim",-1);
-  nthreads_mesh = pin->GetOrAddReal("mesh","max_num_threads",1);
-  if (nthreads_mesh < 1) {
+
+// read number of OpenMP threads for mesh
+  num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
+  if (num_mesh_threads_ < 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Number of OpenMP threads must be >= 1, but max_num_threads=" 
-        << nthreads_mesh << std::endl;
+        << "Number of OpenMP threads must be >= 1, but num_threads=" 
+        << num_mesh_threads_ << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
 
@@ -722,6 +722,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   costlist=new Real[nbtotal];
   ranklist=new int[nbtotal];
   nslist=new int[nproc];
+  nblist=new int[nproc];
   rawid=new ID_t[IDLENGTH];
   for(int i=0;i<IDLENGTH;i++) rawid[i]=0;
 
@@ -819,9 +820,12 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   j=0;
   for(i=1;i<nbtotal;i++) // make the list of nbstart
   {
-    if(ranklist[i]!=ranklist[i-1])
+    if(ranklist[i]!=ranklist[i-1]) {
+      nblist[j]=i-nslist[j];
       nslist[++j]=i;
+    }
   }
+  nblist[j]=nbtotal-nslist[j];
   // store my nbstart and nbend
   nbstart=nslist[myrank];
   if(myrank+1==nproc)
@@ -833,12 +837,10 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   if(test_flag>0)
   {
     if(myrank==0)
-      MeshTest(buid,ranklist,costlist);
-    delete [] buid;
+      MeshTest(ranklist,costlist);
     delete [] offset;
     delete [] costlist;
     delete [] ranklist;
-    delete [] nslist;
     return;
   }
 
@@ -861,11 +863,9 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   pblock=pfirst;
 
 // clean up
-  delete [] buid;
   delete [] offset;
   delete [] costlist;
   delete [] ranklist;
-  delete [] nslist;
 }
 
 
@@ -878,13 +878,16 @@ Mesh::~Mesh()
   while(pblock->next != NULL)
     delete pblock->next;
   delete pblock;
+  delete [] nslist;
+  delete [] nblist;
+  delete [] buid;
 }
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void Mesh::MeshTest(BlockUID *buid, int *ranklist, Real *costlist)
+//! \fn void Mesh::MeshTest(int *ranklist, Real *costlist)
 //  \brief print the mesh structure information
-void Mesh::MeshTest(BlockUID *buid, int *ranklist, Real *costlist)
+void Mesh::MeshTest(int *ranklist, Real *costlist)
 {
   int i, j, nbt=0;
   long int lx1, lx2, lx3;

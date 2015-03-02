@@ -38,6 +38,7 @@ FieldIntegrator::FieldIntegrator(Field *pfield, ParameterInput *pin)
 
 // Allocate memory for scratch vectors
 
+  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
   int ncells2 = 1, ncells3 = 1;
   if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
@@ -45,9 +46,9 @@ FieldIntegrator::FieldIntegrator(Field *pfield, ParameterInput *pin)
 
   cc_e_.NewAthenaArray(ncells3,ncells2,ncells1);
 
-  face_area_.NewAthenaArray(ncells1);
-  edge_length_.NewAthenaArray(ncells1);
-  edge_lengthp1_.NewAthenaArray(ncells1);
+  face_area_.NewAthenaArray(nthreads,ncells1);
+  edge_length_.NewAthenaArray(nthreads,ncells1);
+  edge_length_p1_.NewAthenaArray(nthreads,ncells1);
 }
 
 // destructor
@@ -57,5 +58,5 @@ FieldIntegrator::~FieldIntegrator()
   cc_e_.DeleteAthenaArray();
   face_area_.DeleteAthenaArray();
   edge_length_.DeleteAthenaArray();
-  edge_lengthp1_.DeleteAthenaArray();
+  edge_length_p1_.DeleteAthenaArray();
 }

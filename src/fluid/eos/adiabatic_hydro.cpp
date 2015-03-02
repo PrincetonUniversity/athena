@@ -73,13 +73,11 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   }
   Real gm1 = GetGamma() - 1.0;
 
-  int max_nthreads = pmb->pmy_mesh->nthreads_mesh;
-
-// #pragma omp parallel default(shared) num_threads(max_nthreads)
+  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
+#pragma omp parallel default(shared) num_threads(nthreads)
 {
-  // Convert to Primitives
   for (int k=kl; k<=ku; ++k){
-// #pragma omp for schedule(dynamic)
+#pragma omp for schedule(dynamic)
   for (int j=jl; j<=ju; ++j){
 #pragma simd
     for (int i=pmb->is-(NGHOST); i<=pmb->ie+(NGHOST); ++i){

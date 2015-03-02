@@ -75,10 +75,10 @@ Fluid::Fluid(MeshBlock *pmb, ParameterInput *pin)
 
 // Allocate memory for scratch arrays
 
-  int max_nthreads = pmy_block->pmy_mesh->nthreads_mesh;
-  dt1_.NewAthenaArray(max_nthreads,ncells1);
-  dt2_.NewAthenaArray(max_nthreads,ncells1);
-  dt3_.NewAthenaArray(max_nthreads,ncells1);
+  int nthreads = pmy_block->pmy_mesh->GetNumMeshThreads();
+  dt1_.NewAthenaArray(nthreads,ncells1);
+  dt2_.NewAthenaArray(nthreads,ncells1);
+  dt3_.NewAthenaArray(nthreads,ncells1);
 
 // Allocate memory for internal fluid output variables (if needed)
 
@@ -127,13 +127,13 @@ Real Fluid::NewBlockTimeStep(MeshBlock *pmb)
   b_x2f.InitWithShallowCopy(pmb->pfield->b.x2f);
   b_x3f.InitWithShallowCopy(pmb->pfield->b.x3f);
 
-  int max_nthreads = pmb->pmy_mesh->nthreads_mesh;
+  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
   Real *pthread_min_dt;
-  pthread_min_dt = new Real [max_nthreads];
+  pthread_min_dt = new Real [nthreads];
 
-  for (int n=0; n<max_nthreads; ++n) pthread_min_dt[n] = (FLT_MAX);
+  for (int n=0; n<nthreads; ++n) pthread_min_dt[n] = (FLT_MAX);
 
-#pragma omp parallel default(shared) private(tid) num_threads(max_nthreads)
+#pragma omp parallel default(shared) private(tid) num_threads(nthreads)
 {
 #ifdef OPENMP_PARALLEL
   tid=omp_get_thread_num();
@@ -227,7 +227,7 @@ Real Fluid::NewBlockTimeStep(MeshBlock *pmb)
 
 // compute minimum across all threads
   Real min_dt = pthread_min_dt[0];
-  for (int n=1; n<max_nthreads; ++n) min_dt = std::min(min_dt,pthread_min_dt[n]);
+  for (int n=1; n<nthreads; ++n) min_dt = std::min(min_dt,pthread_min_dt[n]);
 
   delete[] pthread_min_dt;
 

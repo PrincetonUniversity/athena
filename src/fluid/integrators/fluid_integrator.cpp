@@ -37,19 +37,18 @@ FluidIntegrator::FluidIntegrator(Fluid *pf, ParameterInput *pin)
 
 // Allocate memory for scratch vectors
 
-  int max_nthreads = pf->pmy_block->pmy_mesh->nthreads_mesh;
+  int nthreads = pf->pmy_block->pmy_mesh->GetNumMeshThreads();
   int ncells1 = pf->pmy_block->block_size.nx1 + 2*(NGHOST);
   int ncells2 = pf->pmy_block->block_size.nx2 + 2*(NGHOST);
 
-  q_.NewAthenaArray(4,ncells1);
-  wl_.NewAthenaArray(max_nthreads,(NWAVE),ncells1);
-  wr_.NewAthenaArray(max_nthreads,(NWAVE),ncells1);
-  flx_.NewAthenaArray(max_nthreads,(NWAVE),ncells1);
-  jflx_.NewAthenaArray(max_nthreads,(NWAVE),ncells1);
-  kflx_.NewAthenaArray(max_nthreads,(NWAVE),ncells2,ncells1);
-  face_area_.NewAthenaArray(max_nthreads,ncells1);
-  face_area_m1_.NewAthenaArray(max_nthreads,ncells1);
-  cell_volume_.NewAthenaArray(max_nthreads,ncells1);
+  wl_.NewAthenaArray(nthreads,(NWAVE),ncells1);
+  wr_.NewAthenaArray(nthreads,(NWAVE),ncells1);
+  flx_.NewAthenaArray(nthreads,(NWAVE),ncells1);
+  jflx_j_.NewAthenaArray(nthreads,(NWAVE),ncells1);
+  kflx_k_.NewAthenaArray(nthreads,(NWAVE),ncells2,ncells1);
+  face_area_.NewAthenaArray(nthreads,ncells1);
+  face_area_p1_.NewAthenaArray(nthreads,ncells1);
+  cell_volume_.NewAthenaArray(nthreads,ncells1);
   if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in SR/GRMHD
     b_normal_.NewAthenaArray(ncells1);
   if (GENERAL_RELATIVITY)  // only used in GR (and only in certain Riemann solvers)
@@ -63,14 +62,13 @@ FluidIntegrator::FluidIntegrator(Fluid *pf, ParameterInput *pin)
 
 FluidIntegrator::~FluidIntegrator()
 {
-  q_.DeleteAthenaArray();
   wl_.DeleteAthenaArray();
   wr_.DeleteAthenaArray();
   flx_.DeleteAthenaArray();
-  jflx_.DeleteAthenaArray();
-  kflx_.DeleteAthenaArray();
+  jflx_j_.DeleteAthenaArray();
+  kflx_k_.DeleteAthenaArray();
   face_area_.DeleteAthenaArray();
-  face_area_m1_.DeleteAthenaArray();
+  face_area_p1_.DeleteAthenaArray();
   cell_volume_.DeleteAthenaArray();
   if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in SR/GRMHD
     b_normal_.DeleteAthenaArray();

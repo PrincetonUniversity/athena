@@ -179,8 +179,7 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 #pragma simd
   for (int i=il; i<=iu; ++i){
     // area1 = r dphi dz 
-    Real& area_i = area(i);
-    area_i = (pmy_block->x1f(i)*pmy_block->dx2f(j))*(pmy_block->dx3f(k));
+    area(i) = pmy_block->x1f(i)*pmy_block->dx2f(j)*pmy_block->dx3f(k);
   }
   return;
 }
@@ -191,8 +190,7 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 #pragma simd
   for (int i=il; i<=iu; ++i){
     // area2 = dr dz
-    Real& area_i = area(i);
-    area_i = (pmy_block->dx1f(i))*(pmy_block->dx3f(k));
+    area(i) = (pmy_block->dx1f(i))*(pmy_block->dx3f(k));
   }
   return;
 }
@@ -203,8 +201,7 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 #pragma simd
   for (int i=il; i<=iu; ++i){
     // area3 = dr r dphi = d(r^2/2) dphi
-    Real& area_i = area(i);
-    area_i = coord_area3_i_(i)*(pmy_block->dx2f(j));
+    area(i) = coord_area3_i_(i)*(pmy_block->dx2f(j));
   }
   return;
 }
@@ -218,8 +215,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 #pragma simd
   for (int i=il; i<=iu; ++i){
     // volume = dr dz r dphi = d(r^2/2) dphi dz
-    Real& vol_i = vol(i);
-    vol_i = coord_vol_i_(i)*(pmy_block->dx2f(j))*(pmy_block->dx3f(k));
+    vol(i) = coord_vol_i_(i)*pmy_block->dx2f(j)*pmy_block->dx3f(k);
   }
   return;
 }
@@ -257,14 +253,14 @@ void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
 }
 
 void Coordinates::CoordSrcTermsX2(const int k, const int j, const Real dt,
-  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_m1,
+  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
   return;
 }
 
 void Coordinates::CoordSrcTermsX3(const int k, const int j, const Real dt,
-  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_m1,
+  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
   return;

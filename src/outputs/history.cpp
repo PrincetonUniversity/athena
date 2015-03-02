@@ -60,7 +60,7 @@ void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
   AthenaArray<Real> cell_volume;
-  cell_volume.NewAthenaArray(pmm->nthreads_mesh,ncells1);
+  cell_volume.NewAthenaArray((pmm->GetNumMeshThreads()),ncells1);
 
   AthenaArray<Real> vol;
   vol.InitWithShallowSlice(cell_volume,2,tid,1);

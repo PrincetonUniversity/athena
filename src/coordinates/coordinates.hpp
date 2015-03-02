@@ -60,11 +60,11 @@ public:
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
 
   void CoordSrcTermsX2(const int k, const int j, const Real dt,
-    const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_m1,
+    const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
 
   void CoordSrcTermsX3(const int k, const int j, const Real dt,
-    const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_m1,
+    const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
 
   // Functions for use in general relativity
