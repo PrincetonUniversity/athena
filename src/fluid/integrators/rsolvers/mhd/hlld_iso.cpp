@@ -156,8 +156,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     ulst.mx = mxhll; // eqn. (24) of Mignone
 
     Real tmp = (spd[0]-spd[1])*(spd[0]-spd[3]);
-    if (   (fabs(spd[0]/spd[1]-1.0) < (SMALL_NUMBER))
-        || (fabs(spd[0]/spd[3]-1.0) < (SMALL_NUMBER)) ) {
+    if (fabs(spd[0]-spd[1]) < (SMALL_NUMBER)*cs) {
       // degenerate case described below eqn. (39)
       ulst.my = ul.my;
       ulst.mz = ul.mz;
@@ -178,8 +177,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     urst.mx = mxhll; // eqn. (24) of Mignone
 
     tmp = (spd[4]-spd[1])*(spd[4]-spd[3]);
-    if (   (fabs(spd[4]/spd[1]-1.0) < (SMALL_NUMBER))
-        || (fabs(spd[4]/spd[3]-1.0) < (SMALL_NUMBER)) ) {
+    if (fabs(spd[4]-spd[3]) < (SMALL_NUMBER)*cs) {
       // degenerate case described below eqn. (39)
       urst.my = ur.my;
       urst.mz = ur.mz;
