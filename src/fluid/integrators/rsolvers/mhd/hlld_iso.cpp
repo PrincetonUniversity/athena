@@ -218,7 +218,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
       flxi[IVX] = fr.mx;
       flxi[IVY] = fr.my;
       flxi[IVZ] = fr.mz;
-      flxi[IBY] = fl.by;
+      flxi[IBY] = fr.by;
       flxi[IBZ] = fr.bz;
     } else if(spd[1] >= 0.0) {
       // return (Fl+Sl*(Ulst-Ul)), eqn. (38b) of Mignone
