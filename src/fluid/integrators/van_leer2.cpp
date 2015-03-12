@@ -48,7 +48,8 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 {
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
- 
+  int il, iu, jl, ju, kl, ku;
+
   AthenaArray<Real> b1,b2,b3,ei_x1f,ei_x2f,ei_x3f,w_x1f,w_x2f,w_x3f;
   b1.InitWithShallowCopy(b.x1f);
   b2.InitWithShallowCopy(b.x2f);
@@ -86,33 +87,41 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 
 //--------------------------------------------------------------------------------------
 // i-direction
-
-  for (int k=ks; k<=ke; ++k){ 
+  // set the loop limits
+  if(pmb->block_size.nx2 == 1) // 1D
+    jl=js, ju=je, kl=ks, ku=ke;
+  else if(pmb->block_size.nx3 == 1) // 2D
+    jl=js-1, ju=je+1, kl=ks, ku=ke;
+  else // 3D
+    jl=js-1, ju=je+1, kl=ks-1, ku=ke+1;
+  for (int k=kl; k<=ku; ++k){ 
 #pragma omp for schedule(static)
-    for (int j=js; j<=je; ++j){
+    for (int j=jl; j<=ju; ++j){
 
       // reconstruct L/R states
       if (step == 1) {
-        DonorCellX1(k,j,w,bcc,wl,wr);
+        DonorCellX1(k,j,is,ie+1,w,bcc,wl,wr);
       } else {
-        PiecewiseLinearX1(k,j,w,bcc,wl,wr);
+        PiecewiseLinearX1(k,j,is,ie+1,w,bcc,wl,wr);
       }
 
       // compute fluxes
       RiemannSolver(k,j,is,ie+1,IVX,b1,wl,wr,flx);
 
-      // update conserved fluid variables
-      pmb->pcoord->Face1Area(k,j,is,ie+1,area);
-      pmb->pcoord->CellVolume(k,j,is,ie,vol);
-      for (int n=0; n<NFLUID; ++n){
+      if(k>=ks && k<=ke && j>=js && j<=je) {
+        // update conserved fluid variables
+        pmb->pcoord->Face1Area(k,j,is,ie+1,area);
+        pmb->pcoord->CellVolume(k,j,is,ie,vol);
+        for (int n=0; n<NFLUID; ++n){
 #pragma simd
-        for (int i=is; i<=ie; ++i){
-          u(n,k,j,i) -= dt*(area(i+1)*flx(n,i+1) - area(i)*flx(n,i))/vol(i);
+          for (int i=is; i<=ie; ++i){
+            u(n,k,j,i) -= dt*(area(i+1)*flx(n,i+1) - area(i)*flx(n,i))/vol(i);
+          }
         }
-      }
 
-      // add coordinate (geometric) source terms
-      pmb->pcoord->CoordSrcTermsX1(k,j,dt,flx,w,bcc,u);
+        // add coordinate (geometric) source terms
+        pmb->pcoord->CoordSrcTermsX1(k,j,dt,flx,w,bcc,u);
+      }
 
       // store electric fields, compute weights for GS07 CT algorithm
       if (MAGNETIC_FIELDS_ENABLED) {
@@ -134,8 +143,12 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 // j-direction
 
   if (pmb->block_size.nx2 > 1) {
-
-    for (int k=ks; k<=ke; ++k){
+    // set the loop limits
+    if(pmb->block_size.nx3 == 1) // 2D
+      il=is-1, iu=ie+1, kl=ks, ku=ke;
+    else // 3D
+      il=is-1, iu=ie+1, kl=ks-1, ku=ke+1;
+    for (int k=kl; k<=ku; ++k){
       bool first_time_through_loop = true;
 #pragma omp for schedule(static)
       for (int j=js; j<=je; ++j){
@@ -143,18 +156,18 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
         if (first_time_through_loop) {
           // reconstruct L/R states at j=jstart
           if (step == 1) {
-            DonorCellX2(k,j,w,bcc,wl,wr);
+            DonorCellX2(k,j,il,iu,w,bcc,wl,wr);
           } else {
-            PiecewiseLinearX2(k,j,w,bcc,wl,wr);
+            PiecewiseLinearX2(k,j,il,iu,w,bcc,wl,wr);
           }
 
           // compute and store fluxes at j=jstart
-          RiemannSolver(k,j,is,ie,IVY,b2,wl,wr,jflx_j); 
+          RiemannSolver(k,j,il,iu,IVY,b2,wl,wr,jflx_j); 
       
           // store electric fields, compute weights for GS07 CT algorithm at j=jstart
           if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
-            for (int i=is; i<=ie; ++i){
+            for (int i=il; i<=iu; ++i){
               ei_x2f(X2E1,k,j,i) = -jflx_j(IBY,i); // flx(IBY)= (v2*b3 - v3*b2) = -EMFX
               ei_x2f(X2E3,k,j,i) =  jflx_j(IBZ,i); // flx(IBZ)= (v2*b1 - v1*b2) =  EMFZ
               const Real& dx = pmb->pcoord->CenterWidth2(k,j,i);
@@ -168,32 +181,34 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 
         // reconstruct L/R states at j+1
         if (step == 1) {
-          DonorCellX2(k,j+1,w,bcc,wl,wr);
+          DonorCellX2(k,j+1,il,iu,w,bcc,wl,wr);
         } else {
-          PiecewiseLinearX2(k,j+1,w,bcc,wl,wr);
+          PiecewiseLinearX2(k,j+1,il,iu,w,bcc,wl,wr);
         }
 
         // compute fluxes at j+1
-        RiemannSolver(k,j+1,is,ie,IVY,b2,wl,wr,flx); 
+        RiemannSolver(k,j+1,il,iu,IVY,b2,wl,wr,flx); 
 
         // update conserved fluid variables
         pmb->pcoord->Face2Area(k,j  ,is,ie,area   );
         pmb->pcoord->Face2Area(k,j+1,is,ie,area_p1);
         pmb->pcoord->CellVolume(k,j,is,ie,vol);
-        for (int n=0; n<NFLUID; ++n){
+        if(k>=ks && k<=ke) {
+          for (int n=0; n<NFLUID; ++n){
 #pragma simd
-          for (int i=is; i<=ie; ++i){
-            u(n,k,j,i) -= dt*(area_p1(i)*flx(n,i) - area(i)*jflx_j(n,i))/vol(i);
+            for (int i=is; i<=ie; ++i){
+              u(n,k,j,i) -= dt*(area_p1(i)*flx(n,i) - area(i)*jflx_j(n,i))/vol(i);
+            }
           }
-        }
 
-        // add coordinate (geometric) source terms
-        pmb->pcoord->CoordSrcTermsX2(k,j,dt,jflx_j,flx,w,bcc,u);
+          // add coordinate (geometric) source terms
+          pmb->pcoord->CoordSrcTermsX2(k,j,dt,jflx_j,flx,w,bcc,u);
+        }
 
         // store electric fields, compute weights for GS07 CT algorithm
         if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
-          for (int i=is; i<=ie; ++i){
+          for (int i=il; i<=iu; ++i){
             ei_x2f(X2E1,k,j+1,i) = -flx(IBY,i); // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
             ei_x2f(X2E3,k,j+1,i) =  flx(IBZ,i); // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
             const Real& dx = pmb->pcoord->CenterWidth2(k,j,i);
@@ -204,7 +219,8 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
         }
 
         // store fluxes for j=j-1 in next iteration
-        jflx_j = flx; 
+        if(j<je)
+          jflx_j = flx; 
 
       }
     }
@@ -214,28 +230,29 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 // k-direction 
 
   if (pmb->block_size.nx3 > 1) {
-
+    // set the loop limits
+    il=is-1, iu=ie+1, jl=js-1, ju=je+1;
     bool first_time_through_loop = true;
 #pragma omp for schedule(static)
     for (int k=ks; k<=ke; ++k){
 
       if (first_time_through_loop) {
-        for (int j=js; j<=je; ++j){
+        for (int j=jl; j<=ju; ++j){
 
           // reconstruct L/R states at k=kstart
           if (step == 1) {
-            DonorCellX3(k,j,w,bcc,wl,wr);
+            DonorCellX3(k,j,il,iu,w,bcc,wl,wr);
           } else {
-            PiecewiseLinearX3(k,j,w,bcc,wl,wr);
+            PiecewiseLinearX3(k,j,il,iu,w,bcc,wl,wr);
           }
 
           // compute and store fluxes at k=kstart
-          RiemannSolver(k,j,is,ie,IVZ,b3,wl,wr,flx);
+          RiemannSolver(k,j,il,iu,IVZ,b3,wl,wr,flx);
 
           // store electric fields, compute weights for GS07 CT algorithm at k=kstart
           if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
-            for (int i=is; i<=ie; ++i){
+            for (int i=il; i<=iu; ++i){
               ei_x3f(X3E2,k,j,i) = -flx(IBY,i); // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
               ei_x3f(X3E1,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
               const Real& dx = pmb->pcoord->CenterWidth3(k,j,i);
@@ -248,7 +265,7 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
           // store fluxes at k=kstart over all i,j
           for (int n=0; n<NFLUID; ++n){
 #pragma simd
-            for (int i=is; i<=ie; ++i){
+            for (int i=il; i<=iu; ++i){
               kflx_k(n,j,i) = flx(n,i);
             }
           }
@@ -256,36 +273,37 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
         first_time_through_loop = false;
       }
 
-      for (int j=js; j<=je; ++j){
+      for (int j=jl; j<=ju; ++j){
 
         // reconstruct L/R states at k+1
         if (step == 1) {
-          DonorCellX3(k+1,j,w,bcc,wl,wr);
+          DonorCellX3(k+1,j,il,iu,w,bcc,wl,wr);
         } else {
-          PiecewiseLinearX3(k+1,j,w,bcc,wl,wr);
+          PiecewiseLinearX3(k+1,j,il,iu,w,bcc,wl,wr);
         }
 
         // compute fluxes at k+1
-        RiemannSolver(k+1,j,is,ie,IVZ,b3,wl,wr,flx);
-
-        // update conserved fluid variables
-        pmb->pcoord->Face3Area(k  ,j,is,ie,area   );
-        pmb->pcoord->Face3Area(k+1,j,is,ie,area_p1);
-        pmb->pcoord->CellVolume(k,j,is,ie,vol);
-        for (int n=0; n<NFLUID; ++n){
+        RiemannSolver(k+1,j,il,iu,IVZ,b3,wl,wr,flx);
+        if(j>=js && j<=je) {
+          // update conserved fluid variables
+          pmb->pcoord->Face3Area(k  ,j,is,ie,area   );
+          pmb->pcoord->Face3Area(k+1,j,is,ie,area_p1);
+          pmb->pcoord->CellVolume(k,j,is,ie,vol);
+          for (int n=0; n<NFLUID; ++n){
 #pragma simd
-          for (int i=is; i<=ie; ++i){
-            u(n,k,j,i) -= dt*(area_p1(i)*flx(n,i) - area(i)*kflx_k(n,j,i))/vol(i);
+            for (int i=is; i<=ie; ++i){
+              u(n,k,j,i) -= dt*(area_p1(i)*flx(n,i) - area(i)*kflx_k(n,j,i))/vol(i);
+            }
           }
-        }
 
-        // add coordinate (geometric) source terms
-        pmb->pcoord->CoordSrcTermsX3(k,j,dt,kflx_k,flx,w,bcc,u);
+          // add coordinate (geometric) source terms
+          pmb->pcoord->CoordSrcTermsX3(k,j,dt,kflx_k,flx,w,bcc,u);
+        }
 
         // store electric fields, compute weights for GS07 CT algorithm
         if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
-          for (int i=is; i<=ie; ++i){
+          for (int i=il; i<=iu; ++i){
             ei_x3f(X3E2,k+1,j,i) = -flx(IBY,i); // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
             ei_x3f(X3E1,k+1,j,i) =  flx(IBZ,i); // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
             const Real& dx = pmb->pcoord->CenterWidth3(k,j,i);
@@ -296,10 +314,12 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
         }
 
         // store fluxes for k=k-1 in next iteration
-        for (int n=0; n<NFLUID; ++n){
+        if(k<ke) {
+          for (int n=0; n<NFLUID; ++n){
 #pragma simd
-          for (int i=is; i<=ie; ++i){
-            kflx_k(n,j,i) = flx(n,i);
+            for (int i=is; i<=ie; ++i){
+              kflx_k(n,j,i) = flx(n,i);
+            }
           }
         }
 

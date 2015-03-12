@@ -33,14 +33,13 @@
 //  \brief 
 
 void FluidIntegrator::DonorCellX1(const int k, const int j,
+  const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
-  int is = pmy_fluid->pmy_block->is, ie = pmy_fluid->pmy_block->ie;
-
   for (int n=0; n<NFLUID; ++n){
 #pragma simd
-    for (int i=is; i<=(ie+1); ++i){
+    for (int i=il; i<=iu; ++i){
       wl(n,i) = w(n,k,j,i-1);
       wr(n,i) = w(n,k,j,i  );
     }
@@ -48,7 +47,7 @@ void FluidIntegrator::DonorCellX1(const int k, const int j,
 
   if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
-    for (int i=is; i<=(ie+1); ++i){
+    for (int i=il; i<=iu; ++i){
       wl(IBY,i) = bcc(IB2,k,j,i-1);
       wl(IBZ,i) = bcc(IB3,k,j,i-1);
       wr(IBY,i) = bcc(IB2,k,j,i  );
@@ -64,14 +63,13 @@ void FluidIntegrator::DonorCellX1(const int k, const int j,
 //  \brief 
 
 void FluidIntegrator::DonorCellX2(const int k, const int j,
+  const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
-  int is = pmy_fluid->pmy_block->is, ie = pmy_fluid->pmy_block->ie;
-
   for (int n=0; n<NFLUID; ++n){
 #pragma simd
-    for (int i=is; i<=ie; ++i){
+    for (int i=il; i<=iu; ++i){
       wl(n,i) = w(n,k,j-1,i);
       wr(n,i) = w(n,k,j  ,i);
     }
@@ -79,7 +77,7 @@ void FluidIntegrator::DonorCellX2(const int k, const int j,
 
   if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
-    for (int i=is; i<=ie; ++i){
+    for (int i=il; i<=iu; ++i){
       wl(IBY,i) = bcc(IB3,k,j-1,i);
       wl(IBZ,i) = bcc(IB1,k,j-1,i);
       wr(IBY,i) = bcc(IB3,k,j  ,i);
@@ -95,14 +93,13 @@ void FluidIntegrator::DonorCellX2(const int k, const int j,
 //  \brief 
 
 void FluidIntegrator::DonorCellX3(const int k, const int j,
+  const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
-  int is = pmy_fluid->pmy_block->is, ie = pmy_fluid->pmy_block->ie;
-
   for (int n=0; n<NFLUID; ++n){
 #pragma simd
-    for (int i=is; i<=ie; ++i){
+    for (int i=il; i<=iu; ++i){
       wl(n,i) = w(n,k-1,j,i);
       wr(n,i) = w(n,k  ,j,i);
     }
@@ -110,7 +107,7 @@ void FluidIntegrator::DonorCellX3(const int k, const int j,
 
   if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
-    for (int i=is; i<=ie; ++i){
+    for (int i=il; i<=iu; ++i){
       wl(IBY,i) = bcc(IB1,k-1,j,i);
       wl(IBZ,i) = bcc(IB2,k-1,j,i);
       wr(IBY,i) = bcc(IB1,k  ,j,i);

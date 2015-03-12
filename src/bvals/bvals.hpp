@@ -52,16 +52,8 @@ void OutflowOuterX1(MeshBlock *pmb, InterfaceField &buf);
 void OutflowOuterX2(MeshBlock *pmb, InterfaceField &buf);
 void OutflowOuterX3(MeshBlock *pmb, InterfaceField &buf);
 
-void DefaultEFluxInnerX1(MeshBlock *pmb, InterfaceField &ei, InterfaceField &w);
-void DefaultEFluxOuterX1(MeshBlock *pmb, InterfaceField &ei, InterfaceField &w);
-void DefaultEFluxInnerX2(MeshBlock *pmb, InterfaceField &ei, InterfaceField &w);
-void DefaultEFluxOuterX2(MeshBlock *pmb, InterfaceField &ei, InterfaceField &w);
-void DefaultEFluxInnerX3(MeshBlock *pmb, InterfaceField &ei, InterfaceField &w);
-void DefaultEFluxOuterX3(MeshBlock *pmb, InterfaceField &ei, InterfaceField &w);
-
 typedef void (*BValFluid_t)(MeshBlock *pmb, AthenaArray<Real> &buf);
 typedef void (*BValField_t)(MeshBlock *pmb, InterfaceField &buf);
-typedef void (*BValEFlux_t)(MeshBlock *pmb, InterfaceField &ei, InterfaceField &w);
 
 void InitBoundaryBuffer(int nx1, int nx2, int nx3);
 
@@ -90,13 +82,8 @@ public:
   bool ReceiveAndSetFieldBoundaryWithWait(enum direction dir,
                                           InterfaceField &dst, int flag);
 
-  void LoadAndSendEFluxBoundaryBuffer(InterfaceField &fsrc, InterfaceField &wsrc,
-                                      int flag);
-  bool ReceiveAndSetEFluxBoundary(InterfaceField &fdst, InterfaceField &wdst, int flag);
-
   void EnrollFluidBoundaryFunction (enum direction edge, BValFluid_t  my_bc);
   void EnrollFieldBoundaryFunction(enum direction edge, BValField_t my_bc);
-  void EnrollEFluxBoundaryFunction(enum direction edge, BValEFlux_t my_bc);
 
   void ClearBoundaryForInit(void);
   void ClearBoundaryAll(void);
@@ -108,19 +95,15 @@ private:
 
   BValFluid_t FluidBoundary_[6];
   BValField_t FieldBoundary_[6];
-  BValEFlux_t EFluxBoundary_[6];
 
   char fluid_flag_[nsweep][6][2][2];
   char field_flag_[nsweep][6][2][2];
-  char eflux_flag_[nsweep][6][2][2];
   Real *fluid_send_[nsweep][6], *fluid_recv_[nsweep][6];
   Real *field_send_[nsweep][6], *field_recv_[nsweep][6];
-  Real *eflux_send_[nsweep][6], *eflux_recv_[nsweep][6];
 
 #ifdef MPI_PARALLEL
   MPI_Request req_fluid_send_[nsweep][6][2][2], req_fluid_recv_[nsweep][6][2][2];
   MPI_Request req_field_send_[nsweep][6][2][2], req_field_recv_[nsweep][6][2][2];
-  MPI_Request req_eflux_send_[nsweep][6][2][2], req_eflux_recv_[nsweep][6][2][2];
 #endif
 };
 

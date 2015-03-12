@@ -310,14 +310,8 @@ int main(int argc, char *argv[])
 //--- Step 8. Create and set the task list ---------------------------------------------
 // this is for a two-step integrator
   task_list.AddTask(fluid_integrate_sendx1_1, none); // predict
-  if (MAGNETIC_FIELDS_ENABLED) {
-    if(pmesh->mesh_size.nx2>1) {// 2D or 3D
-      task_list.AddTask(eflux_recv_1, fluid_integrate_sendx1_1);
-      task_list.AddTask(field_integrate_sendx1_1, eflux_recv_1);
-    }
-    else
-      task_list.AddTask(field_integrate_sendx1_1, fluid_integrate_sendx1_1);
-  }
+  if (MAGNETIC_FIELDS_ENABLED)
+    task_list.AddTask(field_integrate_sendx1_1, fluid_integrate_sendx1_1);
   if(pmesh->mesh_size.nx2==1) {// 1D
     task_list.AddTask(fluid_recvx1_1, fluid_integrate_sendx1_1);
     if (MAGNETIC_FIELDS_ENABLED) {
@@ -355,14 +349,8 @@ int main(int argc, char *argv[])
   }
 
   task_list.AddTask(fluid_integrate_sendx1_0, primitives_1); // correct
-  if (MAGNETIC_FIELDS_ENABLED) {
-    if(pmesh->mesh_size.nx2>1) {// 2D or 3D
-      task_list.AddTask(eflux_recv_0, fluid_integrate_sendx1_0);
-      task_list.AddTask(field_integrate_sendx1_0, eflux_recv_0);
-    }
-    else
-      task_list.AddTask(field_integrate_sendx1_0, fluid_integrate_sendx1_0);
-  }
+  if (MAGNETIC_FIELDS_ENABLED)
+    task_list.AddTask(field_integrate_sendx1_0, fluid_integrate_sendx1_0);
   if(pmesh->mesh_size.nx2==1) {// 1D
     task_list.AddTask(fluid_recvx1_0, fluid_integrate_sendx1_0);
     if (MAGNETIC_FIELDS_ENABLED) {
