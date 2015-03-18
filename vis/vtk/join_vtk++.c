@@ -355,7 +355,7 @@ static void init_domain_1d(void){
       printf("Z_COORDINATES %d float\n", nz);
       domain_1d[i].Z = (float*)malloc(nz*sizeof(float));
       for(j=0; j<nz; ++j){
-        if((nread = fread(&fcoord, sizeof(float), nz, fp)) != 1)
+        if((nread = fread(&fcoord, sizeof(float), 1, fp)) != 1)
                   join_error("reading Z_COORDINATES error\n");
         if(!big_end) Swap4Bytes(&fcoord);
         domain_1d[i].Z[j] = fcoord;
@@ -703,7 +703,7 @@ static void write_joined_vtk(const char *out_name){
       fwrite(&fcoord, sizeof(float), 1, fp_out);
     }
 
-    fprintf(fp_out,"\nCELL_DATA %d\n",nxt*nyt*nzt);
+    fprintf(fp_out,"\nCELL_DATA %d",nxt*nyt*nzt);
 
   }
 

@@ -170,7 +170,7 @@ void VTKOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 //  5. Data.  An arbitrary number of scalars and vectors can be written (every node in
 //  in the OutputData linked lists), all in binary floats format
 
-  fprintf(pfile,"\nCELL_DATA %d ", (ncells1)*(ncells2)*(ncells3));
+  fprintf(pfile,"\nCELL_DATA %d", (ncells1)*(ncells2)*(ncells3));
 
 // step through linked-list of data nodes and write out each data array
 
