@@ -36,5 +36,6 @@ private:
 // scratch space used in integrator
   AthenaArray<Real> cc_e_;
   AthenaArray<Real> face_area_, edge_length_, edge_length_p1_;
+  AthenaArray<Real> g_, gi_;                                    // only used in GR
 };
 #endif

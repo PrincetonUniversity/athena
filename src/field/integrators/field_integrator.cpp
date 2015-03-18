@@ -49,6 +49,11 @@ FieldIntegrator::FieldIntegrator(Field *pfield, ParameterInput *pin)
   face_area_.NewAthenaArray(nthreads,ncells1);
   edge_length_.NewAthenaArray(nthreads,ncells1);
   edge_length_p1_.NewAthenaArray(nthreads,ncells1);
+  if (GENERAL_RELATIVITY)
+  {
+    g_.NewAthenaArray(NMETRIC,ncells1);
+    gi_.NewAthenaArray(NMETRIC,ncells1);
+  }
 }
 
 // destructor
@@ -59,4 +64,9 @@ FieldIntegrator::~FieldIntegrator()
   face_area_.DeleteAthenaArray();
   edge_length_.DeleteAthenaArray();
   edge_length_p1_.DeleteAthenaArray();
+  if (GENERAL_RELATIVITY)
+  {
+    g_.DeleteAthenaArray();
+    gi_.DeleteAthenaArray();
+  }
 }

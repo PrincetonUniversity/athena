@@ -20,12 +20,14 @@
 
 // C++ headers
 #include <algorithm>  // max(), min()
+#include <cmath>      // sqrt()
 
 // Athena headers
-#include "../../athena.hpp"         // enums, macros, Real
-#include "../../athena_arrays.hpp"  // AthenaArray
-#include "../../mesh.hpp"           // MeshBlock
-#include "../../fluid/fluid.hpp"    // Fluid
+#include "../../athena.hpp"                   // enums, macros, Real
+#include "../../athena_arrays.hpp"            // AthenaArray
+#include "../../mesh.hpp"                     // MeshBlock
+#include "../../coordinates/coordinates.hpp"  // Coordinates
+#include "../../fluid/fluid.hpp"              // Fluid
 
 //======================================================================================
 //! \file corner_emf.cpp
@@ -75,9 +77,37 @@ void FieldIntegrator::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w,
   for (int k=ks; k<=ke; ++k) {
 #pragma omp for schedule(static)
   for (int j=js-1; j<=je+1; ++j) {
+    if (GENERAL_RELATIVITY)
+      pmb->pcoord->CellMetric(k, j, g_, gi_);
 #pragma simd
     for (int i=is-1; i<=ie+1; ++i) {
-      cc_e_(k,j,i) = w(IVY,k,j,i)*bcc(IB1,k,j,i) - w(IVX,k,j,i)*bcc(IB2,k,j,i);
+      if (GENERAL_RELATIVITY)
+      {
+        const Real &v1 = w(IVX,k,j,i);
+        const Real &v2 = w(IVY,k,j,i);
+        const Real &v3 = w(IVZ,k,j,i);
+        const Real &b1 = bcc(IB1,k,j,i);
+        const Real &b2 = bcc(IB2,k,j,i);
+        const Real &b3 = bcc(IB3,k,j,i);
+        Real u0_neg_inv_sq = g_(I00,i)
+            + 2.0 * (g_(I01,i)*v1 + g_(I02,i)*v2 + g_(I03,i)*v3)
+            + g_(I11,i)*SQR(v1) + 2.0*g_(I12,i)*v1*v2 + 2.0*g_(I13,i)*v1*v3
+            + g_(I22,i)*SQR(v2) + 2.0*g_(I23,i)*v2*v3
+            + g_(I33,i)*SQR(v3);
+        Real u0 = std::sqrt(-1.0 / u0_neg_inv_sq);
+        Real u1 = u0 * v1;
+        Real u2 = u0 * v2;
+        Real u3 = u0 * v3;
+        Real bcon0 = b1 * (g_(I01,i)*u0 + g_(I11,i)*u1 + g_(I12,i)*u2 + g_(I13,i)*u3)
+                   + b2 * (g_(I02,i)*u0 + g_(I12,i)*u1 + g_(I22,i)*u2 + g_(I23,i)*u3)
+                   + b3 * (g_(I03,i)*u0 + g_(I13,i)*u1 + g_(I23,i)*u2 + g_(I33,i)*u3);
+        Real bcon1 = (b1 + bcon0 * u1) / u0;
+        Real bcon2 = (b2 + bcon0 * u2) / u0;
+        Real bcon3 = (b3 + bcon0 * u3) / u0;
+        cc_e_(k,j,i) = bcon1 * u2 - bcon2 * u1;
+      }
+      else
+        cc_e_(k,j,i) = w(IVY,k,j,i)*bcc(IB1,k,j,i) - w(IVX,k,j,i)*bcc(IB2,k,j,i);
     }
   }}
 
@@ -126,9 +156,37 @@ void FieldIntegrator::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w,
 #pragma omp for schedule(static)
     for (int k=ks-1; k<=ke+1; ++k) {
     for (int j=js-1; j<=je+1; ++j) {
+      if (GENERAL_RELATIVITY)
+        pmb->pcoord->CellMetric(k, j, g_, gi_);
 #pragma simd
       for (int i=is; i<=ie; ++i) {
-        cc_e_(k,j,i) = w(IVZ,k,j,i)*bcc(IB2,k,j,i) - w(IVY,k,j,i)*bcc(IB3,k,j,i);
+        if (GENERAL_RELATIVITY)
+        {
+          const Real &v1 = w(IVX,k,j,i);
+          const Real &v2 = w(IVY,k,j,i);
+          const Real &v3 = w(IVZ,k,j,i);
+          const Real &b1 = bcc(IB1,k,j,i);
+          const Real &b2 = bcc(IB2,k,j,i);
+          const Real &b3 = bcc(IB3,k,j,i);
+          Real u0_neg_inv_sq = g_(I00,i)
+              + 2.0 * (g_(I01,i)*v1 + g_(I02,i)*v2 + g_(I03,i)*v3)
+              + g_(I11,i)*SQR(v1) + 2.0*g_(I12,i)*v1*v2 + 2.0*g_(I13,i)*v1*v3
+              + g_(I22,i)*SQR(v2) + 2.0*g_(I23,i)*v2*v3
+              + g_(I33,i)*SQR(v3);
+          Real u0 = std::sqrt(-1.0 / u0_neg_inv_sq);
+          Real u1 = u0 * v1;
+          Real u2 = u0 * v2;
+          Real u3 = u0 * v3;
+          Real bcon0 = b1 * (g_(I01,i)*u0 + g_(I11,i)*u1 + g_(I12,i)*u2 + g_(I13,i)*u3)
+                     + b2 * (g_(I02,i)*u0 + g_(I12,i)*u1 + g_(I22,i)*u2 + g_(I23,i)*u3)
+                     + b3 * (g_(I03,i)*u0 + g_(I13,i)*u1 + g_(I23,i)*u2 + g_(I33,i)*u3);
+          Real bcon1 = (b1 + bcon0 * u1) / u0;
+          Real bcon2 = (b2 + bcon0 * u2) / u0;
+          Real bcon3 = (b3 + bcon0 * u3) / u0;
+          cc_e_(k,j,i) = bcon2 * u3 - bcon3 * u2;
+        }
+        else
+          cc_e_(k,j,i) = w(IVZ,k,j,i)*bcc(IB2,k,j,i) - w(IVY,k,j,i)*bcc(IB3,k,j,i);
       }
     }}
 
@@ -159,9 +217,37 @@ void FieldIntegrator::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w,
 #pragma omp for schedule(static)
     for (int k=ks-1; k<=ke+1; ++k) {
     for (int j=js; j<=je; ++j) {
+      if (GENERAL_RELATIVITY)
+        pmb->pcoord->CellMetric(k, j, g_, gi_);
 #pragma simd
       for (int i=is-1; i<=ie+1; ++i) {
-        cc_e_(k,j,i) = w(IVX,k,j,i)*bcc(IB3,k,j,i) - w(IVZ,k,j,i)*bcc(IB1,k,j,i);
+        if (GENERAL_RELATIVITY)
+        {
+          const Real &v1 = w(IVX,k,j,i);
+          const Real &v2 = w(IVY,k,j,i);
+          const Real &v3 = w(IVZ,k,j,i);
+          const Real &b1 = bcc(IB1,k,j,i);
+          const Real &b2 = bcc(IB2,k,j,i);
+          const Real &b3 = bcc(IB3,k,j,i);
+          Real u0_neg_inv_sq = g_(I00,i)
+              + 2.0 * (g_(I01,i)*v1 + g_(I02,i)*v2 + g_(I03,i)*v3)
+              + g_(I11,i)*SQR(v1) + 2.0*g_(I12,i)*v1*v2 + 2.0*g_(I13,i)*v1*v3
+              + g_(I22,i)*SQR(v2) + 2.0*g_(I23,i)*v2*v3
+              + g_(I33,i)*SQR(v3);
+          Real u0 = std::sqrt(-1.0 / u0_neg_inv_sq);
+          Real u1 = u0 * v1;
+          Real u2 = u0 * v2;
+          Real u3 = u0 * v3;
+          Real bcon0 = b1 * (g_(I01,i)*u0 + g_(I11,i)*u1 + g_(I12,i)*u2 + g_(I13,i)*u3)
+                     + b2 * (g_(I02,i)*u0 + g_(I12,i)*u1 + g_(I22,i)*u2 + g_(I23,i)*u3)
+                     + b3 * (g_(I03,i)*u0 + g_(I13,i)*u1 + g_(I23,i)*u2 + g_(I33,i)*u3);
+          Real bcon1 = (b1 + bcon0 * u1) / u0;
+          Real bcon2 = (b2 + bcon0 * u2) / u0;
+          Real bcon3 = (b3 + bcon0 * u3) / u0;
+          cc_e_(k,j,i) = bcon3 * u1 - bcon1 * u3;
+        }
+        else
+          cc_e_(k,j,i) = w(IVX,k,j,i)*bcc(IB3,k,j,i) - w(IVZ,k,j,i)*bcc(IB1,k,j,i);
       }
     }}
 
