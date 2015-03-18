@@ -11,17 +11,13 @@
 #include <string>     // c_str()
 
 // Athena headers
-#include "../athena.hpp"           // enums, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../field/field.hpp"      // Field
-#include "../fluid/fluid.hpp"      // Fluid
-#include "../fluid/eos/eos.hpp"    // GetGamma()
-#include "../parameter_input.hpp"  // ParameterInput
-
-// Declarations
-static void SetPrimCons(AthenaArray<Real> &prim, AthenaArray<Real> &prim_half,
-    AthenaArray<Real> &cons, int i, int j, int k, Real rho, Real pgas, Real vx, Real vy,
-    Real vz, Real bx, Real by, Real bz, Real gamma_adi, Real gamma_adi_red);
+#include "../athena.hpp"                   // enums, Real
+#include "../athena_arrays.hpp"            // AthenaArray
+#include "../coordinates/coordinates.hpp"  // Coordinates
+#include "../field/field.hpp"              // Field
+#include "../fluid/fluid.hpp"              // Fluid
+#include "../fluid/eos/eos.hpp"            // GetGamma()
+#include "../parameter_input.hpp"          // ParameterInput
 
 // Function for setting initial conditions
 // Inputs:
@@ -31,6 +27,10 @@ static void SetPrimCons(AthenaArray<Real> &prim, AthenaArray<Real> &prim_half,
 // Outputs: (none)
 // Notes:
 //   sets conserved variables according to input primitives
+//   assigns fields based on cell-center positions, rather than interface positions
+//     this helps shock tube 2 from Mignone, Ugliano, & Bodo 2009, MNRAS 393 1141
+//     otherwise the middle interface would go to left variables, creating a
+//         particularly troublesome jump leading to NaN's
 void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   // Prepare index bounds
@@ -91,36 +91,56 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   // Read left state
   Real rho_left = pin->GetReal("problem", "dl");
   Real pgas_left = pin->GetReal("problem", "pl");
-  Real v1_left = pin->GetReal("problem", "ul");
-  Real v2_left = pin->GetReal("problem", "vl");
-  Real v3_left = pin->GetReal("problem", "wl");
-  Real b1_left = 0.0, b2_left = 0.0, b3_left = 0.0;
+  Real vx_left = pin->GetReal("problem", "ul");
+  Real vy_left = pin->GetReal("problem", "vl");
+  Real vz_left = pin->GetReal("problem", "wl");
+  Real bx_left = 0.0, by_left = 0.0, bz_left = 0.0;
   if (MAGNETIC_FIELDS_ENABLED)
   {
-    b1_left = pin->GetReal("problem", "bxl");
-    b2_left = pin->GetReal("problem", "byl");
-    b3_left = pin->GetReal("problem", "bzl");
+    bx_left = pin->GetReal("problem", "bxl");
+    by_left = pin->GetReal("problem", "byl");
+    bz_left = pin->GetReal("problem", "bzl");
   }
 
   // Read right state
   Real rho_right = pin->GetReal("problem", "dr");
   Real pgas_right = pin->GetReal("problem", "pr");
-  Real v1_right = pin->GetReal("problem", "ur");
-  Real v2_right = pin->GetReal("problem", "vr");
-  Real v3_right = pin->GetReal("problem", "wr");
-  Real b1_right = 0.0, b2_right = 0.0, b3_right = 0.0;
+  Real vx_right = pin->GetReal("problem", "ur");
+  Real vy_right = pin->GetReal("problem", "vr");
+  Real vz_right = pin->GetReal("problem", "wr");
+  Real bx_right = 0.0, by_right = 0.0, bz_right = 0.0;
   if (MAGNETIC_FIELDS_ENABLED)
   {
-    b1_right = pin->GetReal("problem", "bxr");
-    b2_right = pin->GetReal("problem", "byr");
-    b3_right = pin->GetReal("problem", "bzr");
+    bx_right = pin->GetReal("problem", "bxr");
+    by_right = pin->GetReal("problem", "byr");
+    bz_right = pin->GetReal("problem", "bzr");
   }
 
-  // Initialize the discontinuity
+  // Prepare auxiliary array
+  int ncells1 = pfl->pmy_block->block_size.nx1 + 2*NGHOST;
+  int ncells2 = pfl->pmy_block->block_size.nx2;
+  if (ncells2 > 1)
+    ncells2 += 2*NGHOST;
+  int ncells3 = pfl->pmy_block->block_size.nx3;
+  if (ncells3 > 1)
+    ncells3 += 2*NGHOST;
+  AthenaArray<Real> b;
+  b.NewAthenaArray(3,ncells3,ncells2,ncells1);
+
+  // Initialize hydro variables
   for (int k = kl; k <= ku; k++)
     for (int j = jl; j <= ju; j++)
       for (int i = il; i <= iu; i++)
       {
+        // Determine which variables to use
+        Real rho = rho_right;
+        Real pgas = pgas_right;
+        Real vx = vx_right;
+        Real vy = vy_right;
+        Real vz = vz_right;
+        Real bx = bx_right;
+        Real by = by_right;
+        Real bz = bz_right;
         bool left_side = false;
         switch(shock_dir)
         {
@@ -134,82 +154,168 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
             left_side = pb->x3v(k) < shock_pos;
             break;
         }
-        // TODO: should field locations be determined by x1f(i) instead of x1v(i)?
         if (left_side)
         {
-          SetPrimCons(pfl->w, pfl->w1, pfl->u, i, j, k, rho_left, pgas_left, v1_left,
-              v2_left, v3_left, b1_left, b2_left, b3_left, gamma_adi, gamma_adi_red);
-          if (MAGNETIC_FIELDS_ENABLED)
-          {
-            pfd->b.x1f(k,j,i) = b1_left;
-            pfd->b.x2f(k,j,i) = b2_left;
-            pfd->b.x3f(k,j,i) = b3_left;
-          }
+          rho = rho_left;
+          pgas = pgas_left;
+          vx = vx_left;
+          vy = vy_left;
+          vz = vz_left;
+          bx = bx_left;
+          by = by_left;
+          bz = bz_left;
+        }
+
+        // Construct 4-vectors
+        Real ut = std::sqrt(1.0 / (1.0 - (SQR(vx)+SQR(vy)+SQR(vz))));
+        Real ux = ut * vx;
+        Real uy = ut * vy;
+        Real uz = ut * vz;
+        Real bcont = bx*ux + by*uy + bz*uz;
+        Real bconx = (bx + bcont * ux) / ut;
+        Real bcony = (by + bcont * uy) / ut;
+        Real bconz = (bz + bcont * uz) / ut;
+
+        // Transform 4-vectors
+        Real u0, u1, u2, u3;
+        Real bcon0, bcon1, bcon2, bcon3;
+        if (GENERAL_RELATIVITY)
+        {
+          pb->pcoord->TransformVectorCell(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
+          pb->pcoord->TransformVectorCell(bcont, bconx, bcony, bconz, k, j, i,
+              &bcon0, &bcon1, &bcon2, &bcon3);
         }
         else
         {
-          SetPrimCons(pfl->w, pfl->w1, pfl->u, i, j, k, rho_right, pgas_right, v1_right,
-              v2_right, v3_right, b1_right, b2_right, b3_right, gamma_adi,
-              gamma_adi_red);
-          if (MAGNETIC_FIELDS_ENABLED)
+          u0 = ut;
+          u1 = ux;
+          u2 = uy;
+          u3 = uz;
+          bcon0 = bcont;
+          bcon1 = bconx;
+          bcon2 = bcony;
+          bcon3 = bconz;
+        }
+
+        // Set primitives
+        pfl->w(IDN,k,j,i) = pfl->w1(IDN,k,j,i) = rho;
+        pfl->w(IEN,k,j,i) = pfl->w1(IEN,k,j,i) = pgas;
+        pfl->w(IVX,k,j,i) = pfl->w1(IM1,k,j,i) = u1 / u0;
+        pfl->w(IVY,k,j,i) = pfl->w1(IM2,k,j,i) = u2 / u0;
+        pfl->w(IVZ,k,j,i) = pfl->w1(IM3,k,j,i) = u3 / u0;
+
+        // Set conserved variables
+        if (not GENERAL_RELATIVITY)
+        {
+          Real b_sq = -SQR(bcont) + SQR(bconx) + SQR(bcony) + SQR(bconz);
+          Real w_tot = rho + gamma_adi_red * pgas + b_sq;
+          Real p_tot = pgas + 0.5*b_sq;
+          pfl->u(IDN,k,j,i) = rho * u0;
+          pfl->u(IEN,k,j,i) = w_tot * u0 * u0 - bcon0 * bcon0 - p_tot;
+          pfl->u(IM1,k,j,i) = w_tot * u0 * u1 - bcon0 * bcon1;
+          pfl->u(IM2,k,j,i) = w_tot * u0 * u2 - bcon0 * bcon2;
+          pfl->u(IM3,k,j,i) = w_tot * u0 * u3 - bcon0 * bcon3;
+        }
+
+        // Set magnetic fields
+        b(IB1,k,j,i) = bcon1 * u0 - bcon0 * u1;
+        b(IB2,k,j,i) = bcon2 * u0 - bcon0 * u2;
+        b(IB3,k,j,i) = bcon3 * u0 - bcon0 * u3;
+      }
+  if (GENERAL_RELATIVITY)
+    pb->pcoord->PrimToCons(pfl->w, b, gamma_adi_red, pfl->u);
+
+  // Delete auxiliary array
+  b.DeleteAthenaArray();
+
+  // Initialize magnetic field
+  if (MAGNETIC_FIELDS_ENABLED)
+    for (int k = kl; k <= ku+1; k++)
+      for (int j = jl; j <= ju+1; j++)
+        for (int i = il; i <= iu+1; i++)
+        {
+          // Determine which variables to use
+          Real vx = vx_right;
+          Real vy = vy_right;
+          Real vz = vz_right;
+          Real bx = bx_right;
+          Real by = by_right;
+          Real bz = bz_right;
+          bool left_side = false;
+          switch(shock_dir)
           {
-            pfd->b.x1f(k,j,i) = b1_right;
-            pfd->b.x2f(k,j,i) = b2_right;
-            pfd->b.x3f(k,j,i) = b3_right;
+            case 1:
+              left_side = pb->x1v(i) < shock_pos;
+              break;
+            case 2:
+              left_side = pb->x2v(j) < shock_pos;
+              break;
+            case 3:
+              left_side = pb->x3v(k) < shock_pos;
+              break;
+          }
+          if (left_side)
+          {
+            vx = vx_left;
+            vy = vy_left;
+            vz = vz_left;
+            bx = bx_left;
+            by = by_left;
+            bz = bz_left;
+          }
+
+          // Construct 4-vectors
+          Real ut = std::sqrt(1.0 / (1.0 - (SQR(vx)+SQR(vy)+SQR(vz))));
+          Real ux = ut * vx;
+          Real uy = ut * vy;
+          Real uz = ut * vz;
+          Real bcont = bx*ux + by*uy + bz*uz;
+          Real bconx = (bx + bcont * ux) / ut;
+          Real bcony = (by + bcont * uy) / ut;
+          Real bconz = (bz + bcont * uz) / ut;
+
+          // Set magnetic fields
+          Real u0, u1, u2, u3;
+          Real bcon0, bcon1, bcon2, bcon3;
+          if (j != ju+1 && k != ku+1)
+          {
+            if (GENERAL_RELATIVITY)
+            {
+              pb->pcoord->TransformVectorFace1(ut, ux, uy, uz, k, j, i,
+                  &u0, &u1, &u2, &u3);
+              pb->pcoord->TransformVectorFace1(bcont, bconx, bcony, bconz, k, j, i,
+                  &bcon0, &bcon1, &bcon2, &bcon3);
+              pfd->b.x1f(k,j,i) = bcon1 * u0 - bcon0 * u1;
+            }
+            else
+              pfd->b.x1f(k,j,i) = bx;
+          }
+          if (i != iu+1 && k != ku+1)
+          {
+            if (GENERAL_RELATIVITY)
+            {
+              pb->pcoord->TransformVectorFace2(ut, ux, uy, uz, k, j, i,
+                  &u0, &u1, &u2, &u3);
+              pb->pcoord->TransformVectorFace2(bcont, bconx, bcony, bconz, k, j, i,
+                  &bcon0, &bcon1, &bcon2, &bcon3);
+              pfd->b.x2f(k,j,i) = bcon2 * u0 - bcon0 * u2;
+            }
+            else
+              pfd->b.x2f(k,j,i) = by;
+          }
+          if (i != iu+1 && j != ju+1)
+          {
+            if (GENERAL_RELATIVITY)
+            {
+              pb->pcoord->TransformVectorFace3(ut, ux, uy, uz, k, j, i,
+                  &u0, &u1, &u2, &u3);
+              pb->pcoord->TransformVectorFace3(bcont, bconx, bcony, bconz, k, j, i,
+                  &bcon0, &bcon1, &bcon2, &bcon3);
+              pfd->b.x3f(k,j,i) = bcon3 * u0 - bcon0 * u3;
+            }
+            else
+              pfd->b.x3f(k,j,i) = bz;
           }
         }
-      }
-
-  // Add magnetic fields at end faces
-  if (MAGNETIC_FIELDS_ENABLED)
-  {
-    for (int k = kl; k <= ku; k++)
-      for (int j = jl; j <= ju; j++)
-        pfd->b.x1f(k,j,iu+1) = pfd->b.x1f(k,j,iu);
-    for (int k = kl; k <= ku; k++)
-      for (int i = il; i <= iu; i++)
-        pfd->b.x2f(k,ju+1,i) = pfd->b.x2f(k,ju,i);
-    for (int j = jl; j <= ju; j++)
-      for (int i = il; i <= iu; i++)
-        pfd->b.x3f(ku+1,j,i) = pfd->b.x3f(ku,j,i);
-  }
-  return;
-}
-
-// Function for setting all variables in a cell given the primitives
-// TODO: only works for Minkowski Cartesian metric
-static void SetPrimCons(AthenaArray<Real> &prim, AthenaArray<Real> &prim_half,
-    AthenaArray<Real> &cons, int i, int j, int k, Real rho, Real pgas, Real vx, Real vy,
-    Real vz, Real bx, Real by, Real bz, Real gamma_adi, Real gamma_adi_red)
-{
-  // Set primitives
-  prim(IDN,k,j,i) = prim_half(IDN,k,j,i) = rho;
-  prim(IEN,k,j,i) = prim_half(IEN,k,j,i) = pgas;
-  prim(IM1,k,j,i) = prim_half(IM1,k,j,i) = vx;
-  prim(IM2,k,j,i) = prim_half(IM2,k,j,i) = vy;
-  prim(IM3,k,j,i) = prim_half(IM3,k,j,i) = vz;
-
-  // Calculate intermediate quantites
-  Real ut = std::sqrt(1.0 / (1.0 - (SQR(vx)+SQR(vy)+SQR(vz))));
-  Real ux = ut * vx;
-  Real uy = ut * vy;
-  Real uz = ut * vz;
-  Real bcovt = bx*ux + by*uy + bz*uz;
-  Real bcovx = (bx + bcovt * ux) / ut;
-  Real bcovy = (by + bcovt * uy) / ut;
-  Real bcovz = (bz + bcovt * uz) / ut;
-  Real bcov_sq = -SQR(bcovt) + SQR(bcovx) + SQR(bcovy) + SQR(bcovz);
-  Real rho_h = rho + gamma_adi_red * pgas;
-  Real ptot = pgas + 0.5*bcov_sq;
-
-  // Set conserved quantities
-  cons(IDN,k,j,i) = rho * ut;
-  if (GENERAL_RELATIVITY)  // account for sign difference between SR and GR
-    cons(IEN,k,j,i) = -(rho_h + bcov_sq) * ut * ut + bcovt * bcovt + ptot;
-  else
-    cons(IEN,k,j,i) = (rho_h + bcov_sq) * ut * ut - bcovt * bcovt - ptot;
-  cons(IM1,k,j,i) = (rho_h + bcov_sq) * ut * ux - bcovt * bcovx;
-  cons(IM2,k,j,i) = (rho_h + bcov_sq) * ut * uy - bcovt * bcovy;
-  cons(IM3,k,j,i) = (rho_h + bcov_sq) * ut * uz - bcovt * bcovz;
   return;
 }

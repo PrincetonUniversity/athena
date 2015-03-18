@@ -1,11 +1,10 @@
-// Spherical blast wave generator for general relativistic hydrodynamics
+// Spherical blast wave generator for GRMHD in flat spacetime
 
 // Primary header
 #include "../mesh.hpp"
 
 // C++ headers
 #include <algorithm>  // min()
-#include <cmath>      // sqrt()
 
 // Athena headers
 #include "../athena.hpp"                   // enums, Real
@@ -18,12 +17,10 @@
 
 // Function for setting initial conditions
 // Inputs:
-//   pfl: Fluid
-//   pfd: Field
 //   pin: parameters
-// Outputs: (none)
-// Notes:
-//   sets conserved variables according to input primitives
+// Outputs:
+//   pfl: fluid primitives, half-timestep primitives, and conserved variables set 
+//   pfd: magnetic field set
 void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   // Prepare index bounds
@@ -67,7 +64,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     bz = pin->GetReal("problem", "bz");
   }
 
-  // Prepare auxiliary arrays
+  // Prepare auxiliary array
   int ncells1 = pfl->pmy_block->block_size.nx1 + 2*NGHOST;
   int ncells2 = pfl->pmy_block->block_size.nx2;
   if (ncells2 > 1)
@@ -75,16 +72,12 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   int ncells3 = pfl->pmy_block->block_size.nx3;
   if (ncells3 > 1)
     ncells3 += 2*NGHOST;
-  AthenaArray<Real> b, g, gi;
+  AthenaArray<Real> b;
   b.NewAthenaArray(3,ncells3,ncells2,ncells1);
-  g.NewAthenaArray(NMETRIC,ncells1);
-  gi.NewAthenaArray(NMETRIC,ncells1);
 
   // Initialize hydro variables
   for (int k = kl; k <= ku; k++)
     for (int j = jl; j <= ju; j++)
-    {
-      pfl->pmy_block->pcoord->CellMetric(k, j, g, gi);
       for (int i = il; i <= iu; i++)
       {
         // Calculate distance to nearest blast center
@@ -143,13 +136,10 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         b(IB2,k,j,i) = bcon2 * u0 - bcon0 * u2;
         b(IB3,k,j,i) = bcon3 * u0 - bcon0 * u3;
       }
-    }
   pb->pcoord->PrimToCons(pfl->w, b, gamma_adi_red, pfl->u);
 
-  // Delete auxiliary arrays
+  // Delete auxiliary array
   b.DeleteAthenaArray();
-  g.DeleteAthenaArray();
-  gi.DeleteAthenaArray();
 
   // Initialize magnetic field
   if (MAGNETIC_FIELDS_ENABLED)
