@@ -28,8 +28,9 @@
 // TODO: find better input method
 namespace globals
 {
-  const Real A = 1.0;
-  const Real K = 1.0;
+  const Real A = 0.05;
+  const Real K = 2.6166666666666667;
+  const Real u0_max = 1000.0;
 };
 using namespace globals;
 
@@ -330,7 +331,7 @@ void Coordinates::Edge3Length(const int k, const int j, const int il, const int 
 // Outputs:
 //   returned value: width of cell (i,j,k)
 // Notes:
-//   \Delta W <= \sqrt(1 + a^2 k^2) \Delta x
+//   returns lower bound on \Delta x
 Real Coordinates::CenterWidth1(const int k, const int j, const int i)
 {
   return cell_width1_i_(i);
@@ -346,7 +347,7 @@ Real Coordinates::CenterWidth1(const int k, const int j, const int i)
 // Outputs:
 //   returned value: width of cell (i,j,k)
 // Notes:
-//   \Delta W = \Delta y
+//   returns \Delta y
 Real Coordinates::CenterWidth2(const int k, const int j, const int i)
 {
   return pmy_block->dx2f(j);
@@ -361,7 +362,7 @@ Real Coordinates::CenterWidth2(const int k, const int j, const int i)
 // Outputs:
 //   returned value: width of cell (i,j,k)
 // Notes:
-//   \Delta W = \Delta z
+//   returns \Delta z
 Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 {
   return pmy_block->dx3f(k);
@@ -752,11 +753,11 @@ void Coordinates::PrimToLocal1(const int k, const int j,
       // Transform contravariant magnetic fields
       Real bcontl = mt0*bcon0l;
       Real bconxl = mx1*bcon1l;
-      Real bconyl = my2*bcon2l;
+      Real bconyl = my1*bcon1l + my2*bcon2l;
       Real bconzl = mz3*bcon3l;
       Real bcontr = mt0*bcon0r;
       Real bconxr = mx1*bcon1r;
-      Real bconyr = my2*bcon2r;
+      Real bconyr = my1*bcon1r + my2*bcon2r;
       Real bconzr = mz3*bcon3r;
 
       // Set local magnetic fields
@@ -789,11 +790,11 @@ void Coordinates::PrimToLocal1(const int k, const int j,
 //   expects B2 in b2_vals
 //   expects B3/B1 in IBY/IBZ slots
 //   puts vx/vy/vz in IVY/IVZ/IVX slots
-//   puts By in by
-//   puts Bz/Bx in IBY/IBZ slots
+//   puts Bx in bx
+//   puts By/Bz in IBY/IBZ slots
 void Coordinates::PrimToLocal2(const int k, const int j,
     const AthenaArray<Real> &b2_vals, AthenaArray<Real> &prim_left,
-    AthenaArray<Real> &prim_right, AthenaArray<Real> &by)
+    AthenaArray<Real> &prim_right, AthenaArray<Real> &bx)
 {
   // Go through 1D block of cells
   #pragma simd
@@ -880,13 +881,13 @@ void Coordinates::PrimToLocal2(const int k, const int j,
       Real bconzr = mz1*bcon1r + mz2*bcon2r;
 
       // Set local magnetic fields
-      Real byl = utl * bconyl - uyl * bcontl;
-      Real byr = utr * bconyr - uyr * bcontr;
-      by(i) = 0.5 * (byl + byr);
-      b3l = utl * bconzl - uzl * bcontl;
-      b1l = utl * bconxl - uxl * bcontl;
-      b3r = utr * bconzr - uzr * bcontr;
-      b1r = utr * bconxr - uxr * bcontr;
+      Real bxl = utl * bconxl - uxl * bcontl;
+      Real bxr = utr * bconxr - uxr * bcontr;
+      bx(i) = 0.5 * (bxl + bxr);
+      b3l = utl * bconyl - uyl * bcontl;
+      b1l = utl * bconzl - uzl * bcontl;
+      b3r = utr * bconyr - uyr * bcontr;
+      b1r = utr * bconzr - uzr * bcontr;
     }
   }
   return;
@@ -909,11 +910,11 @@ void Coordinates::PrimToLocal2(const int k, const int j,
 //   expects B3 in b3_vals
 //   expects B1/B2 in IBY/IBZ slots
 //   puts vx/vy/vz in IVZ/IVX/IVY slots
-//   puts Bz in bz
-//   puts Bx/By in IBY/IBZ slots
+//   puts Bx in bx
+//   puts By/Bz in IBY/IBZ slots
 void Coordinates::PrimToLocal3(const int k, const int j,
     const AthenaArray<Real> &b3_vals, AthenaArray<Real> &prim_left,
-    AthenaArray<Real> &prim_right, AthenaArray<Real> &bz)
+    AthenaArray<Real> &prim_right, AthenaArray<Real> &bx)
 {
   // Go through 1D block of cells
   #pragma simd
@@ -1000,11 +1001,11 @@ void Coordinates::PrimToLocal3(const int k, const int j,
       Real bconzr = mz1*bcon1r + mz2*bcon2r;
 
       // Set local magnetic fields
-      Real bzl = utl * bconzl - uzl * bcontl;
-      Real bzr = utr * bconzr - uzr * bcontr;
-      bz(i) = 0.5 * (bzl + bzr);
-      b1l = utl * bconxl - uxl * bcontl;
-      b2l = utl * bconyl - uyl * bcontl;
+      Real bxl = utl * bconxl - uxl * bcontl;
+      Real bxr = utr * bconxr - uxr * bcontr;
+      bx(i) = 0.5 * (bxl + bxr);
+      b1l = utl * bconyl - uyl * bcontl;
+      b2l = utl * bconzl - uzl * bcontl;
       b1r = utr * bconyr - uyr * bcontr;
       b2r = utr * bconzr - uzr * bcontr;
     }

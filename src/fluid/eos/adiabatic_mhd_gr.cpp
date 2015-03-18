@@ -8,7 +8,7 @@
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cfloat>     // FLT_MIN
-#include <cmath>      // NAN, sqrt(), abs(), isfinite()
+#include <cmath>      // NAN, sqrt(), abs(), isfinite(), isnan()
 
 // Athena headers
 #include "../fluid.hpp"                       // Fluid
@@ -160,7 +160,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real q1 = alpha * m1;  // (N 17)
         Real q2 = alpha * m2;  // (N 17)
         Real q3 = alpha * m3;  // (N 17)
-        Real q_dot_n = -alpha * gi00*q0 + gi01*q1 + gi02*q2 + gi03*q3;
+        Real q_dot_n = -alpha * (gi00*q0 + gi01*q1 + gi02*q2 + gi03*q3);
         Real q_norm_1 = gi10*q0 + gi11*q1 + gi12*q2 + gi13*q3 - alpha * gi01 * q_dot_n;
         Real q_norm_2 = gi20*q0 + gi21*q1 + gi22*q2 + gi23*q3 - alpha * gi02 * q_dot_n;
         Real q_norm_3 = gi30*q0 + gi31*q1 + gi32*q2 + gi33*q3 - alpha * gi03 * q_dot_n;
@@ -209,6 +209,11 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         // Apply Newton-Raphson method to find new W
         Real w_true = FindRootNR(w_initial, d_norm, q_dot_n, q_norm_sq, b_norm_sq,
             q_dot_b_norm_sq, gamma_prime);
+        v_norm_sq = (q_norm_sq*SQR(w_true)
+            + q_dot_b_norm_sq*(b_norm_sq+2.0*w_true))
+            / (SQR(w_true) * SQR(b_norm_sq + w_true));  // (N 28)
+        gamma_sq = 1.0/(1.0 - v_norm_sq);
+        Real gamma_rel = std::sqrt(gamma_sq);
 
         // Extract primitives
         Real &rho = prim(IDN,k,j,i);
@@ -218,11 +223,6 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real &v3 = prim(IVZ,k,j,i);
 
         // Set density, correcting only conserved density if floor applied
-        v_norm_sq = (q_norm_sq*SQR(w_true)
-            + q_dot_b_norm_sq*(b_norm_sq+2.0*w_true))
-            / (SQR(w_true) * SQR(b_norm_sq + w_true));  // (N 28)
-        gamma_sq = 1.0/(1.0 - v_norm_sq);
-        Real gamma_rel = std::sqrt(gamma_sq);
         Real u0 = gamma_rel / alpha;                    // (N 21)
         rho = d_norm / gamma_rel;                       // (N 21)
         if (rho < density_floor_ or std::isnan(rho))
@@ -490,9 +490,9 @@ static Real FindRootNR(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq
     Real b_norm_sq, Real q_dot_b_norm_sq, Real gamma_prime)
 {
   // Parameters
-  const int max_iterations = 100;         // maximum number of iterations
-  const Real tol_w = 1.0e-8 * w_initial;  // absolute tolerance in W
-  const Real tol_res = 1.0e-15;           // absolute tolerance in residual
+  const int max_iterations = 100;  // maximum number of iterations
+  const Real tol_w = 1.0e-6;       // absolute tolerance in W
+  const Real tol_res = 1.0e-6;     // absolute tolerance in residual
 
   // Check if root has already been found
   Real new_res = QNResidual(w_initial, d_norm, q_dot_n, q_norm_sq, b_norm_sq,
