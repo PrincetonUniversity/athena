@@ -134,7 +134,7 @@ def read_vtk(filename):
       for dim in face_dimensions])
   num_cells = cell_dimensions.prod()
   current_index = \
-      skip_string('CELL_DATA {0}\n'.format(num_cells))  # note trailing space
+      skip_string('CELL_DATA {0}\n'.format(num_cells))
   data = {}
 
   # Function for reading scalar data
