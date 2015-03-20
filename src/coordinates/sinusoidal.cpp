@@ -331,10 +331,10 @@ void Coordinates::Edge3Length(const int k, const int j, const int il, const int 
 // Outputs:
 //   returned value: width of cell (i,j,k)
 // Notes:
-//   returns lower bound on \Delta x
+//   \Delta W >= \Delta x
 Real Coordinates::CenterWidth1(const int k, const int j, const int i)
 {
-  return cell_width1_i_(i);
+  return pmy_block->dx1f(i);
 }
 
 //--------------------------------------------------------------------------------------
@@ -347,7 +347,7 @@ Real Coordinates::CenterWidth1(const int k, const int j, const int i)
 // Outputs:
 //   returned value: width of cell (i,j,k)
 // Notes:
-//   returns \Delta y
+//   \Delta W = \Delta y
 Real Coordinates::CenterWidth2(const int k, const int j, const int i)
 {
   return pmy_block->dx2f(j);
@@ -362,7 +362,7 @@ Real Coordinates::CenterWidth2(const int k, const int j, const int i)
 // Outputs:
 //   returned value: width of cell (i,j,k)
 // Notes:
-//   returns \Delta z
+//   \Delta W = \Delta z
 Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 {
   return pmy_block->dx3f(k);
