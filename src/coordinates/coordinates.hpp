@@ -101,32 +101,34 @@ public:
       Real *a0, Real *a1, Real *a2, Real *a3);
 
 private:
-// scratch arrays containing precomputed factors used by functions in this class
-  AthenaArray<Real> coord_area1_i_, coord_area2_i_, coord_area3_i_;
-  AthenaArray<Real> coord_area1_j_, coord_area2_j_, coord_area3_j_;
-  AthenaArray<Real> coord_vol_i_,   coord_vol_j_;
-  AthenaArray<Real> coord_src1_i_,  coord_src2_i_;
-  AthenaArray<Real> coord_src1_j_,  coord_src2_j_;
-  AthenaArray<Real> edge1_length_i_, edge1_length_j_;
-  AthenaArray<Real> edge2_length_i_, edge2_length_j_;
-  AthenaArray<Real> edge3_length_i_, edge3_length_j_;
-  AthenaArray<Real> cell_width1_i_;
-  AthenaArray<Real> src_terms_i1_, src_terms_i2_, src_terms_i3_, src_terms_i4_;
-  AthenaArray<Real> src_terms_j1_, src_terms_j2_, src_terms_j3_;
-  AthenaArray<Real> metric_cell_i1_, metric_cell_i2_, metric_cell_i3_, metric_cell_i4_,
-      metric_cell_i5_, metric_cell_i6_;
-  AthenaArray<Real> metric_cell_j1_, metric_cell_j2_;
-  AthenaArray<Real> metric_face1_i1_, metric_face1_i2_, metric_face1_i3_;
-  AthenaArray<Real> metric_face1_j1_;
-  AthenaArray<Real> metric_face2_i1_, metric_face2_i2_, metric_face2_i3_;
-  AthenaArray<Real> metric_face2_j1_;
-  AthenaArray<Real> metric_face3_i1_, metric_face3_i2_, metric_face3_i3_;
-  AthenaArray<Real> metric_face3_j1_;
-  AthenaArray<Real> trans_face1_i1_, trans_face1_i2_, trans_face1_i3_, trans_face1_i4_;
-  AthenaArray<Real> trans_face1_j1_, trans_face1_j2_;
-  AthenaArray<Real> trans_face2_i1_, trans_face2_i2_, trans_face2_i3_, trans_face2_i4_;
-  AthenaArray<Real> trans_face2_j1_, trans_face2_j2_;
-  AthenaArray<Real> trans_face3_i1_, trans_face3_i2_, trans_face3_i3_, trans_face3_i4_;
-  AthenaArray<Real> trans_face3_j1_, trans_face3_j2_;
+
+  // Scratch arrays for coordinate factors
+  // Format: coord_<type>[<direction>]_<index>[<count>]_
+  //   type: vol[ume], area, etc.
+  //   direction: 1/2/3 depending on which face, edge, etc. is in play
+  //   index: i/j/k indicating which coordinate indexes 1D array
+  //   count: 1/2/... in case multiple arrays are needed for different terms
+  AthenaArray<Real> coord_vol_i_, coord_vol_j_;
+  AthenaArray<Real> coord_area1_i_, coord_area1_j_;
+  AthenaArray<Real> coord_area2_i_, coord_area2_j_;
+  AthenaArray<Real> coord_area3_i_, coord_area3_j_;
+  AthenaArray<Real> coord_len1_i_, coord_len1_j_;
+  AthenaArray<Real> coord_len2_i_, coord_len2_j_;
+  AthenaArray<Real> coord_len3_i_, coord_len3_j_;
+  AthenaArray<Real> coord_width1_i_;
+  AthenaArray<Real> coord_width3_j_;
+  AthenaArray<Real> coord_src1_i_, coord_src1_j_;
+  AthenaArray<Real> coord_src2_i_, coord_src2_j_;
+  AthenaArray<Real> coord_src_i1_, coord_src_i2_, coord_src_i3_, coord_src_i4_;
+  AthenaArray<Real> coord_src_j1_, coord_src_j2_, coord_src_j3_;
+
+  // GR-specific scratch arrays
+  AthenaArray<Real> metric_cell_i1_, metric_cell_i2_, metric_cell_j1_;
+  AthenaArray<Real> metric_face1_i1_, metric_face1_i2_, metric_face1_j1_;
+  AthenaArray<Real> metric_face2_i1_, metric_face2_i2_, metric_face2_j1_;
+  AthenaArray<Real> metric_face3_i1_, metric_face3_i2_, metric_face3_j1_;
+  AthenaArray<Real> trans_face1_i1_, trans_face1_i2_, trans_face1_j1_;
+  AthenaArray<Real> trans_face2_i1_, trans_face2_i2_, trans_face2_j1_;
+  AthenaArray<Real> trans_face3_i1_, trans_face3_i2_, trans_face3_j1_;
 };
 #endif

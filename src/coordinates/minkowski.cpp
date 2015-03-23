@@ -176,15 +176,19 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 //   j: y-index (unused)
 //   il,iu: x-index bounds
 // Outputs:
-//   len: 1D array of edge lengths along x
+//   lengths: 1D array of edge lengths along x
 // Notes:
 //   \Delta L = \Delta x
 void Coordinates::Edge1Length(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &len)
+    AthenaArray<Real> &lengths)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    len(i) = pmy_block->dx1f(i);
+  {
+    const Real &delta_x = pmy_block->dx1f(i);
+    Real &length = lengths(i);
+    length = delta_x;
+  }
   return;
 }
 
@@ -196,16 +200,19 @@ void Coordinates::Edge1Length(const int k, const int j, const int il, const int 
 //   j: y-index
 //   il,iu: x-index bounds
 // Outputs:
-//   len: 1D array of edge lengths along y
+//   lengths: 1D array of edge lengths along y
 // Notes:
 //   \Delta L = \Delta y
 void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &len)
+    AthenaArray<Real> &lengths)
 {
-  const Real &length = pmy_block->dx2f(j);
+  const Real &delta_y = pmy_block->dx2f(j);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    len(i) = length;
+  {
+    Real &length = lengths(i);
+    length = delta_y;
+  }
   return;
 }
 
@@ -217,16 +224,19 @@ void Coordinates::Edge2Length(const int k, const int j, const int il, const int 
 //   j: y-index (unused)
 //   il,iu: x-index bounds
 // Outputs:
-//   len: 1D array of edge lengths along z
+//   lengths: 1D array of edge lengths along z
 // Notes:
 //   \Delta L = \Delta z
 void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &len)
+    AthenaArray<Real> &lengths)
 {
-  const Real &length = pmy_block->dx3f(k);
+  const Real &delta_z = pmy_block->dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    len(i) = length;
+  {
+    Real &length = lengths(i);
+    length = delta_z;
+  }
   return;
 }
 
@@ -238,7 +248,7 @@ void Coordinates::Edge3Length(const int k, const int j, const int il, const int 
 //   j: y-index (unused)
 //   i: x-index
 // Outputs:
-//   returned value: width of cell (i,j,k)
+//   returned value: x-width of cell (i,j,k)
 // Notes:
 //   \Delta W = \Delta x
 Real Coordinates::CenterWidth1(const int k, const int j, const int i)
@@ -254,7 +264,7 @@ Real Coordinates::CenterWidth1(const int k, const int j, const int i)
 //   j: y-index
 //   i: x-index (unused)
 // Outputs:
-//   returned value: width of cell (i,j,k)
+//   returned value: y-width of cell (i,j,k)
 // Notes:
 //   \Delta W = \Delta y
 Real Coordinates::CenterWidth2(const int k, const int j, const int i)
@@ -270,7 +280,7 @@ Real Coordinates::CenterWidth2(const int k, const int j, const int i)
 //   j: y-index (unused)
 //   i: x-index (unused)
 // Outputs:
-//   returned value: width of cell (i,j,k)
+//   returned value: z-width of cell (i,j,k)
 // Notes:
 //   \Delta W = \Delta z
 Real Coordinates::CenterWidth3(const int k, const int j, const int i)

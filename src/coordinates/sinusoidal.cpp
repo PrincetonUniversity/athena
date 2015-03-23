@@ -81,8 +81,7 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
 
   // Allocate arrays for intermediate geometric quantities: x-direction
   int n_cells_1 = pb->block_size.nx1 + 2*NGHOST;
-  cell_width1_i_.NewAthenaArray(n_cells_1);
-  src_terms_i1_.NewAthenaArray(n_cells_1);
+  coord_src_i1_.NewAthenaArray(n_cells_1);
   metric_cell_i1_.NewAthenaArray(n_cells_1);
   metric_cell_i2_.NewAthenaArray(n_cells_1);
   metric_face1_i1_.NewAthenaArray(n_cells_1);
@@ -116,12 +115,8 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
     Real beta_m = A*K * cos_m;
     Real beta_p = A*K * cos_p;
 
-    // Volumes, areas, lengths, and widths
-    cell_width1_i_(i) = 1.0/(4.0*(1.0+SQR(A)*SQR(K)))
-        * (2.0*K*(2.0+SQR(A)*SQR(K)) * pb->dx1f(i) - SQR(A)*SQR(K) * (sin_2m - sin_2p));
-
     // Source terms
-    src_terms_i1_(i) = (beta_m - beta_p) / pb->dx1f(i);
+    coord_src_i1_(i) = (beta_m - beta_p) / pb->dx1f(i);
 
     // Cell-centered metric
     metric_cell_i1_(i) = alpha_sq_c;
@@ -148,8 +143,7 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
 // Destructor
 Coordinates::~Coordinates()
 {
-  cell_width1_i_.DeleteAthenaArray();
-  src_terms_i1_.DeleteAthenaArray();
+  coord_src_i1_.DeleteAthenaArray();
   metric_cell_i1_.DeleteAthenaArray();
   metric_cell_i2_.DeleteAthenaArray();
   metric_face1_i1_.DeleteAthenaArray();
@@ -268,15 +262,19 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 //   k,j: z- and y-indices (unused)
 //   il,iu: x-index bounds
 // Outputs:
-//   len: 1D array of edge lengths along x
+//   lengths: 1D array of edge lengths along x
 // Notes:
 //   \Delta L = \Delta x
 void Coordinates::Edge1Length(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &len)
+    AthenaArray<Real> &lengths)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    len(i) = pmy_block->dx1f(i);
+  {
+    const Real &delta_x = pmy_block->dx1f(i);
+    Real &length = lengths(i);
+    length = delta_x;
+  }
   return;
 }
 
@@ -288,16 +286,19 @@ void Coordinates::Edge1Length(const int k, const int j, const int il, const int 
 //   j: y-index
 //   il,iu: x-index bounds
 // Outputs:
-//   len: 1D array of edge lengths along y
+//   lengths: 1D array of edge lengths along y
 // Notes:
 //   \Delta L = \Delta y
 void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &len)
+    AthenaArray<Real> &lengths)
 {
-  const Real &length = pmy_block->dx2f(j);
+  const Real &delta_y = pmy_block->dx2f(j);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    len(i) = length;
+  {
+    Real &length = lengths(i);
+    length = delta_y;
+  }
   return;
 }
 
@@ -309,16 +310,19 @@ void Coordinates::Edge2Length(const int k, const int j, const int il, const int 
 //   j: y-index (unused)
 //   il,iu: x-index bounds
 // Outputs:
-//   len: 1D array of edge lengths along z
+//   lengths: 1D array of edge lengths along z
 // Notes:
 //   \Delta L = \Delta z
 void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &len)
+    AthenaArray<Real> &lengths)
 {
-  const Real &length = pmy_block->dx3f(k);
+  const Real &delta_z = pmy_block->dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    len(i) = length;
+  {
+    Real &length = lengths(i);
+    length = delta_z;
+  }
   return;
 }
 
@@ -329,7 +333,7 @@ void Coordinates::Edge3Length(const int k, const int j, const int il, const int 
 //   k,j: z- and y-indices (unused)
 //   i: x-index
 // Outputs:
-//   returned value: width of cell (i,j,k)
+//   returned value: x-width of cell (i,j,k)
 // Notes:
 //   \Delta W >= \Delta x
 Real Coordinates::CenterWidth1(const int k, const int j, const int i)
@@ -345,7 +349,7 @@ Real Coordinates::CenterWidth1(const int k, const int j, const int i)
 //   j: y-index
 //   i: x-index (unused)
 // Outputs:
-//   returned value: width of cell (i,j,k)
+//   returned value: y-width of cell (i,j,k)
 // Notes:
 //   \Delta W = \Delta y
 Real Coordinates::CenterWidth2(const int k, const int j, const int i)
@@ -360,7 +364,7 @@ Real Coordinates::CenterWidth2(const int k, const int j, const int i)
 //   k: z-index
 //   j,i: y- and x-indices (unused)
 // Outputs:
-//   returned value: width of cell (i,j,k)
+//   returned value: z-width of cell (i,j,k)
 // Notes:
 //   \Delta W = \Delta z
 Real Coordinates::CenterWidth3(const int k, const int j, const int i)
@@ -380,7 +384,7 @@ Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 // Outputs:
 //   cons: source terms added to k,j-slice of 3D array of conserved variables
 // Notes:
-//   computing all source terms in this function
+//   all source terms computed in this function
 void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
   const AthenaArray<Real> &flux, const AthenaArray<Real> &prim,
   const AthenaArray<Real> &bcc, AthenaArray<Real> &cons)
@@ -397,9 +401,10 @@ void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
     const Real g00 = -1.0;
     const Real &g11 = metric_cell_i1_(i);
     const Real g12 = -metric_cell_i2_(i);
+    const Real g21 = -metric_cell_i2_(i);
     const Real g22 = 1.0;
     const Real g33 = 1.0;
-    const Real &gamma_211 = src_terms_i1_(i);
+    const Real &gamma2_11 = coord_src_i1_(i);
 
     // Extract primitives
     const Real &rho = prim(IDN,k,j,i);
@@ -410,17 +415,36 @@ void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
 
     // Calculate 4-velocity
     Real u0 = std::sqrt(-1.0 /
-        (g00 + g11*v1*v1 + 2.0*g12*v1*v2 + g22*v2*v2 + g33*v3*v3));
+        (g00 + g11*v1*v1 + g12*v1*v2 + g21*v2*v1 + g22*v2*v2 + g33*v3*v3));
     Real u1 = u0 * v1;
     Real u2 = u0 * v2;
-    Real u_2 = g12*u1 + g22*u2;
+    Real u3 = u0 * v3;
+    Real u_2 = g21*u1 + g22*u2;
+
+    // Extract and calculate magnetic field
+    Real bcon1 = 0.0, bcov2 = 0.0, b_sq = 0.0;
+    if (MAGNETIC_FIELDS_ENABLED)
+    {
+      const Real &b1 = bcc(IB1,k,j,i);
+      const Real &b2 = bcc(IB2,k,j,i);
+      const Real &b3 = bcc(IB3,k,j,i);
+      Real bcon0 = g11*b1*u1 + g12*b1*u2 + g21*b2*u1 + g22*b2*u2 + g33*b3*u3;
+      bcon1 = (b1 + bcon0 * u1) / u0;
+      Real bcon2 = (b2 + bcon0 * u2) / u0;
+      Real bcon3 = (b3 + bcon0 * u3) / u0;
+      Real bcov0 = g00*bcon0;
+      Real bcov1 = g11*bcon1 + g12*bcon2;
+      bcov2 = g21*bcon1 + g22*bcon2;
+      Real bcov3 = g33*bcon3;
+      b_sq = bcov0*bcon0 + bcov1*bcon1 + bcov2*bcon2 + bcov3*bcon3;
+    }
 
     // Calculate stress-energy tensor
-    Real rho_h = rho + gamma_adi_red * pgas;
-    Real t1_2 = rho_h * u1 * u_2;
+    Real w = rho + gamma_adi_red * pgas + b_sq;
+    Real t1_2 = w*u1*u_2 - bcon1*bcov2;
 
     // Calculate source terms
-    Real s1 = gamma_211 * t1_2;
+    Real s1 = gamma2_11 * t1_2;
 
     // Extract conserved quantities
     Real &m1 = cons(IM1,k,j,i);
