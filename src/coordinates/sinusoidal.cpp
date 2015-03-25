@@ -30,7 +30,6 @@ namespace globals
 {
   const Real A = 0.05;
   const Real K = 2.6166666666666667;
-  const Real u0_max = 1000.0;
 };
 using namespace globals;
 
