@@ -74,30 +74,30 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
   // Determine array bounds
   MeshBlock *pb = pmy_fluid_->pmy_block;
-  int is = pb->is;
-  int ie = pb->ie;
+  int il = pb->is - NGHOST;
+  int iu = pb->ie + NGHOST;
   int jl = pb->js;
   int ju = pb->je;
   int kl = pb->ks;
   int ku = pb->ke;
   if (pb->block_size.nx2 > 1)
   {
-    jl -= (NGHOST);
-    ju += (NGHOST);
+    jl -= NGHOST;
+    ju += NGHOST;
   }
   if (pb->block_size.nx3 > 1)
   {
-    kl -= (NGHOST);
-    ku += (NGHOST);
+    kl -= NGHOST;
+    ku += NGHOST;
   }
 
   // Go through cells
   for (int k = kl; k <= ku; k++)
     for (int j = jl; j <= ju; j++)
     {
-      pb->pcoord->CellMetric(k, j, g_, g_inv_);
+      pb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
       #pragma simd
-      for (int i = is-NGHOST; i <= ie+NGHOST; i++)
+      for (int i = il; i <= iu; i++)
       {
         // Extract metric
         Real &g00 = g_(I00,i), &g01 = g_(I01,i), &g02 = g_(I02,i), &g03 = g_(I03,i);

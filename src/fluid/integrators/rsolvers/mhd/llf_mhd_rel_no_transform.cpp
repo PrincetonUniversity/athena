@@ -50,13 +50,13 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   switch (ivx)
   {
     case IVX:
-      pmy_fluid->pmy_block->pcoord->Face1Metric(k, j, g_, g_inv_);
+      pmy_fluid->pmy_block->pcoord->Face1Metric(k, j, il, iu, g_, g_inv_);
       break;
     case IVY:
-      pmy_fluid->pmy_block->pcoord->Face2Metric(k, j, g_, g_inv_);
+      pmy_fluid->pmy_block->pcoord->Face2Metric(k, j, il, iu, g_, g_inv_);
       break;
     case IVZ:
-      pmy_fluid->pmy_block->pcoord->Face3Metric(k, j, g_, g_inv_);
+      pmy_fluid->pmy_block->pcoord->Face3Metric(k, j, il, iu, g_, g_inv_);
       break;
   }
 

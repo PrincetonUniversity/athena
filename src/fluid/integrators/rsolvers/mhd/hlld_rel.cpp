@@ -70,16 +70,16 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     switch (ivx)
     {
       case IVX:
-        pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, b, prim_left, prim_right,
-            b_normal_);
+        pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, il, iu, b,
+            prim_left, prim_right, b_normal_);
         break;
       case IVY:
-        pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, b, prim_left, prim_right,
-            b_normal_);
+        pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, il, iu, b,
+            prim_left, prim_right, b_normal_);
         break;
       case IVZ:
-        pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, b, prim_left, prim_right,
-            b_normal_);
+        pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, il, iu, b,
+            prim_left, prim_right, b_normal_);
         break;
     }
   else  // SR; need to populate 1D normal B array
@@ -271,13 +271,13 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     switch (ivx)
     {
       case IVX:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, flux);
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, il, iu, flux);
         break;
       case IVY:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, flux);
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, il, iu, flux);
         break;
       case IVZ:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, flux);
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, il, iu, flux);
         break;
     }
   return;

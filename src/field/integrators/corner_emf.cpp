@@ -78,7 +78,7 @@ void FieldIntegrator::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w,
 #pragma omp for schedule(static)
   for (int j=js-1; j<=je+1; ++j) {
     if (GENERAL_RELATIVITY)
-      pmb->pcoord->CellMetric(k, j, g_, gi_);
+      pmb->pcoord->CellMetric(k, j, is-1, ie+1, g_, gi_);
 #pragma simd
     for (int i=is-1; i<=ie+1; ++i) {
       if (GENERAL_RELATIVITY)
@@ -157,7 +157,7 @@ void FieldIntegrator::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w,
     for (int k=ks-1; k<=ke+1; ++k) {
     for (int j=js-1; j<=je+1; ++j) {
       if (GENERAL_RELATIVITY)
-        pmb->pcoord->CellMetric(k, j, g_, gi_);
+        pmb->pcoord->CellMetric(k, j, is, ie, g_, gi_);
 #pragma simd
       for (int i=is; i<=ie; ++i) {
         if (GENERAL_RELATIVITY)
@@ -218,7 +218,7 @@ void FieldIntegrator::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w,
     for (int k=ks-1; k<=ke+1; ++k) {
     for (int j=js; j<=je; ++j) {
       if (GENERAL_RELATIVITY)
-        pmb->pcoord->CellMetric(k, j, g_, gi_);
+        pmb->pcoord->CellMetric(k, j, is, ie, g_, gi_);
 #pragma simd
       for (int i=is-1; i<=ie+1; ++i) {
         if (GENERAL_RELATIVITY)

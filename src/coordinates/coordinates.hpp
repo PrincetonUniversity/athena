@@ -68,25 +68,29 @@ public:
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
 
   // Functions for use in general relativity
-  void CellMetric(const int k,const int j, AthenaArray<Real> &g, AthenaArray<Real> &gi);
-  void Face1Metric(const int k, const int j, AthenaArray<Real> &g,
-      AthenaArray<Real> &g_inv);
-  void Face2Metric(const int k, const int j, AthenaArray<Real> &g,
-      AthenaArray<Real> &g_inv);
-  void Face3Metric(const int k, const int j, AthenaArray<Real> &g,
-      AthenaArray<Real> &g_inv);
-  void PrimToLocal1(const int k, const int j, const AthenaArray<Real> &b1_vals,
-      AthenaArray<Real> &prim_left, AthenaArray<Real> &prim_right,
-      AthenaArray<Real> &bx);
-  void PrimToLocal2(const int k, const int j, const AthenaArray<Real> &b2_vals,
-      AthenaArray<Real> &prim_left, AthenaArray<Real> &prim_right,
-      AthenaArray<Real> &by);
-  void PrimToLocal3(const int k, const int j, const AthenaArray<Real> &b3_vals,
-      AthenaArray<Real> &prim_left, AthenaArray<Real> &prim_right,
-      AthenaArray<Real> &bz);
-  void FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flux);
-  void FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flux);
-  void FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flux);
+  void CellMetric(const int k,const int j, const int il, const int iu,
+      AthenaArray<Real> &g, AthenaArray<Real> &gi);
+  void Face1Metric(const int k, const int j, const int il, const int iu,
+      AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
+  void Face2Metric(const int k, const int j, const int il, const int iu,
+      AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
+  void Face3Metric(const int k, const int j, const int il, const int iu,
+      AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
+  void PrimToLocal1(const int k, const int j, const int il, const int iu,
+      const AthenaArray<Real> &b1_vals, AthenaArray<Real> &prim_left,
+      AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
+  void PrimToLocal2(const int k, const int j, const int il, const int iu,
+      const AthenaArray<Real> &b2_vals, AthenaArray<Real> &prim_left,
+      AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
+  void PrimToLocal3(const int k, const int j, const int il, const int iu,
+      const AthenaArray<Real> &b3_vals, AthenaArray<Real> &prim_left,
+      AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
+  void FluxToGlobal1(const int k, const int j, const int il, const int iu,
+      AthenaArray<Real> &flux);
+  void FluxToGlobal2(const int k, const int j, const int il, const int iu,
+      AthenaArray<Real> &flux);
+  void FluxToGlobal3(const int k, const int j, const int il, const int iu,
+      AthenaArray<Real> &flux);
   void PrimToCons(
       const AthenaArray<Real> &prim, const AthenaArray<Real> &b, Real gamma_adi_red,
       AthenaArray<Real> &cons);

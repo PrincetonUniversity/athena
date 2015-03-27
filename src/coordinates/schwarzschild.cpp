@@ -37,13 +37,13 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   pmy_block = pb;
 
   // Initialize volume-averaged positions and spacings: r-direction
-  for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST; i++)
+  for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST; ++i)
   {
     Real r_m = pb->x1f(i);
     Real r_p = pb->x1f(i+1);
     pb->x1v(i) = std::cbrt(0.5 * (r_m*r_m*r_m + r_p*r_p*r_p));
   }
-  for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST-1; i++)
+  for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST-1; ++i)
     pb->dx1v(i) = pb->x1v(i+1) - pb->x1v(i);
 
   // Initialize volume-averaged positions and spacings: theta-direction
@@ -131,7 +131,7 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
 
   // Calculate intermediate geometric quantities: r-direction
   #pragma simd
-  for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST; i++)
+  for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST; ++i)
   {
     // Useful quantities
     Real r_c = pb->x1v(i);
@@ -354,7 +354,7 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
   const Real &neg_delta_cos_theta = coord_area1_j_(j);
   const Real &delta_phi = pmy_block->dx3f(k);
   #pragma simd
-  for (int i = il; i <= iu; i++)
+  for (int i = il; i <= iu; ++i)
   {
     const Real &r_sq = coord_area1_i_(i);
     Real &area = areas(i);
@@ -379,7 +379,7 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
   const Real &sin_theta = coord_area2_j_(j);
   const Real &delta_phi = pmy_block->dx3f(k);
   #pragma simd
-  for (int i = il; i <= iu; i++)
+  for (int i = il; i <= iu; ++i)
   {
     const Real &third_delta_r_cb = coord_area2_i_(i);
     Real &area = areas(i);
@@ -403,7 +403,7 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 {
   const Real &neg_delta_cos_theta = coord_area3_j_(j);
   #pragma simd
-  for (int i = il; i <= iu; i++)
+  for (int i = il; i <= iu; ++i)
   {
     const Real &third_delta_r_cb = coord_area3_i_(i);
     Real &area = areas(i);
@@ -563,7 +563,7 @@ void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
 
   // Go through cells
   #pragma simd
-  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
+  for (int i = pmy_block->is; i <= pmy_block->ie; ++i)
   {
     // Extract remaining geometric quantities
     const Real &alpha_sq = metric_cell_i1_(i);
@@ -704,18 +704,19 @@ void Coordinates::CoordSrcTermsX3(const int k, const int j, const Real dt,
 // Function for computing cell-centered metric coefficients
 // Inputs:
 //   k,j: phi- and theta-indices
+//   il,iu: r-index bounds
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
-void Coordinates::CellMetric(const int k, const int j, AthenaArray<Real> &g,
-    AthenaArray<Real> &g_inv)
+void Coordinates::CellMetric(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
 {
   // Extract geometric quantities that do not depend on r
   const Real &sin_sq_theta = metric_cell_j1_(j);
 
   // Go through 1D block of cells
   #pragma simd
-  for (int i = pmy_block->is-NGHOST; i <= pmy_block->ie+NGHOST; ++i)
+  for (int i = il; i <= iu; ++i)
   {
     // Extract remaining geometric quantities
     const Real &alpha_sq = metric_cell_i1_(i);
@@ -750,18 +751,19 @@ void Coordinates::CellMetric(const int k, const int j, AthenaArray<Real> &g,
 // Function for computing face-centered metric coefficients: r-interface
 // Inputs:
 //   k,j: phi- and theta-indices
+//   il,iu: r-index bounds
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
-void Coordinates::Face1Metric(const int k, const int j, AthenaArray<Real> &g,
-    AthenaArray<Real> &g_inv)
+void Coordinates::Face1Metric(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
 {
   // Extract geometric quantities that do not depend on r
   const Real &sin_sq_theta = metric_face1_j1_(j);
 
   // Go through 1D block of cells
   #pragma simd
-  for (int i = pmy_block->is-NGHOST; i <= pmy_block->ie+NGHOST; ++i)
+  for (int i = il; i <= iu; ++i)
   {
     // Extract remaining geometric quantities
     const Real &alpha_sq = metric_face1_i1_(i);
@@ -796,18 +798,19 @@ void Coordinates::Face1Metric(const int k, const int j, AthenaArray<Real> &g,
 // Function for computing face-centered metric coefficients: theta-interface
 // Inputs:
 //   k,j: phi- and theta-indices
+//   il,iu: r-index bounds
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
-void Coordinates::Face2Metric(const int k, const int j, AthenaArray<Real> &g,
-    AthenaArray<Real> &g_inv)
+void Coordinates::Face2Metric(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
 {
   // Extract geometric quantities that do not depend on r
   const Real &sin_sq_theta = metric_face2_j1_(j);
 
   // Go through 1D block of cells
   #pragma simd
-  for (int i = pmy_block->is-NGHOST; i <= pmy_block->ie+NGHOST; ++i)
+  for (int i = il; i <= iu; ++i)
   {
     // Extract remaining geometric quantities
     const Real &alpha_sq = metric_face2_i1_(i);
@@ -842,18 +845,19 @@ void Coordinates::Face2Metric(const int k, const int j, AthenaArray<Real> &g,
 // Function for computing face-centered metric coefficients: phi-interface
 // Inputs:
 //   k,j: phi- and theta-indices
+//   il,iu: r-index bounds
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
-void Coordinates::Face3Metric(const int k, const int j, AthenaArray<Real> &g,
-    AthenaArray<Real> &g_inv)
+void Coordinates::Face3Metric(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
 {
   // Extract geometric quantities that do not depend on r
   const Real &sin_sq_theta = metric_face3_j1_(j);
 
   // Go through 1D block of cells
   #pragma simd
-  for (int i = pmy_block->is-NGHOST; i <= pmy_block->ie+NGHOST; ++i)
+  for (int i = il; i <= iu; ++i)
   {
     // Extract remaining geometric quantities
     const Real &alpha_sq = metric_face3_i1_(i);
@@ -888,6 +892,7 @@ void Coordinates::Face3Metric(const int k, const int j, AthenaArray<Real> &g,
 // Function for transforming primitives to locally flat frame: r-interface
 // Inputs:
 //   k,j: phi- and theta-indices
+//   il,iu: r-index bounds
 //   b1_vals: 3D array of normal components B^1 of magnetic field, in global coordinates
 //   prim_left: 1D array of left primitives, using global coordinates
 //   prim_right: 1D array of right primitives, using global coordinates
@@ -902,7 +907,7 @@ void Coordinates::Face3Metric(const int k, const int j, AthenaArray<Real> &g,
 //   puts vx/vy/vz in IVX/IVY/IVZ
 //   puts Bx in bx
 //   puts By/Bz in IBY/IBZ slots
-void Coordinates::PrimToLocal1(const int k, const int j,
+void Coordinates::PrimToLocal1(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &b1_vals, AthenaArray<Real> &prim_left,
     AthenaArray<Real> &prim_right, AthenaArray<Real> &bx)
 {
@@ -912,7 +917,7 @@ void Coordinates::PrimToLocal1(const int k, const int j,
 
   // Go through 1D block of cells
   #pragma simd
-  for (int i = pmy_block->is; i <= pmy_block->ie+1; i++)
+  for (int i = il; i <= iu; ++i)
   {
     // Extract remaining geometric quantities
     const Real &alpha_sq = metric_face1_i1_(i);
@@ -1012,6 +1017,7 @@ void Coordinates::PrimToLocal1(const int k, const int j,
 // Function for transforming primitives to locally flat frame: theta-interface
 // Inputs:
 //   k,j: phi- and theta-indices
+//   il,iu: r-index bounds
 //   b2_vals: 3D array of normal components B^2 of magnetic field, in global coordinates
 //   prim_left: 1D array of left primitives, using global coordinates
 //   prim_right: 1D array of right primitives, using global coordinates
@@ -1026,7 +1032,7 @@ void Coordinates::PrimToLocal1(const int k, const int j,
 //   puts vx/vy/vz in IVY/IVZ/IVX slots
 //   puts Bx in bx
 //   puts By/Bz in IBY/IBZ slots
-void Coordinates::PrimToLocal2(const int k, const int j,
+void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &b2_vals, AthenaArray<Real> &prim_left,
     AthenaArray<Real> &prim_right, AthenaArray<Real> &bx)
 {
@@ -1036,7 +1042,7 @@ void Coordinates::PrimToLocal2(const int k, const int j,
 
   // Go through 1D block of cells
   #pragma simd
-  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
+  for (int i = il; i <= iu; ++i)
   {
     // Extract geometric quantities
     const Real &alpha_sq = metric_face2_i1_(i);
@@ -1136,6 +1142,7 @@ void Coordinates::PrimToLocal2(const int k, const int j,
 // Function for transforming primitives to locally flat frame: phi-interface
 // Inputs:
 //   k,j: phi- and theta-indices
+//   il,iu: r-index bounds
 //   b3_vals: 3D array of normal components B^3 of magnetic field, in global coordinates
 //   prim_left: 1D array of left primitives, using global coordinates
 //   prim_right: 1D array of right primitives, using global coordinates
@@ -1150,7 +1157,7 @@ void Coordinates::PrimToLocal2(const int k, const int j,
 //   puts vx/vy/vz in IVZ/IVX/IVY slots
 //   puts Bx in bx
 //   puts By/Bz in IBY/IBZ slots
-void Coordinates::PrimToLocal3(const int k, const int j,
+void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &b3_vals, AthenaArray<Real> &prim_left,
     AthenaArray<Real> &prim_right, AthenaArray<Real> &bx)
 {
@@ -1160,7 +1167,7 @@ void Coordinates::PrimToLocal3(const int k, const int j,
 
   // Go through 1D block of cells
   #pragma simd
-  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
+  for (int i = il; i <= iu; ++i)
   {
     // Extract geometric quantities
     const Real &alpha_sq = metric_face3_i1_(i);
@@ -1260,6 +1267,7 @@ void Coordinates::PrimToLocal3(const int k, const int j,
 // Function for transforming fluxes to global frame: r-interface
 // Inputs:
 //   k,j: phi- and theta-indices
+//   il,iu: r-index bounds
 //   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
 //   flux: values overwritten in global coordinates
@@ -1268,7 +1276,8 @@ void Coordinates::PrimToLocal3(const int k, const int j,
 //   expects values and x-fluxes of By/Bz in IBY/IBZ slots
 //   puts r-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
 //   puts r-fluxes of B2/B3 in IBY/IBZ slots
-void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flux)
+void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &flux)
 {
   // Extract geometric quantities that do not depend on r
   const Real &sin_sq_theta = metric_face1_j1_(j);
@@ -1276,7 +1285,7 @@ void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flu
 
   // Go through 1D block of cells
   #pragma simd
-  for (int i = pmy_block->is; i <= pmy_block->ie+1; i++)
+  for (int i = il; i <= iu; ++i)
   {
     // Extract geometric quantities
     const Real &alpha_sq = metric_face1_i1_(i);
@@ -1338,6 +1347,7 @@ void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flu
 // Function for transforming fluxes to global frame: theta-interface
 // Inputs:
 //   k,j: phi- and theta-indices
+//   il,iu: r-index bounds
 //   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
 //   flux: values overwritten in global coordinates
@@ -1346,7 +1356,8 @@ void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flu
 //   expects values and x-fluxes of By/Bz in IBY/IBZ slots
 //   puts theta-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
 //   puts theta-fluxes of B3/B1 in IBY/IBZ slots
-void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flux)
+void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &flux)
 {
   // Extract geometric quantities that do not depend on r
   const Real &sin_sq_theta = metric_face2_j1_(j);
@@ -1354,7 +1365,7 @@ void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flu
 
   // Go through 1D block of cells
   #pragma simd
-  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
+  for (int i = il; i <= iu; ++i)
   {
     // Extract geometric quantities
     const Real &alpha_sq = metric_face2_i1_(i);
@@ -1416,6 +1427,7 @@ void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flu
 // Function for transforming fluxes to global frame: phi-interface
 // Inputs:
 //   k,j: phi- and theta-indices
+//   il,iu: r-index bounds
 //   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
 //   flux: values overwritten in global coordinates
@@ -1424,7 +1436,8 @@ void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flu
 //   expects values and x-fluxes of By/Bz in IBY/IBZ slots
 //   puts phi-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
 //   puts phi-fluxes of B1/B2 in IBY/IBZ slots
-void Coordinates::FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flux)
+void Coordinates::FluxToGlobal3(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &flux)
 {
   // Extract geometric quantities that do not depend on r
   const Real &sin_sq_theta = metric_face3_j1_(j);
@@ -1432,7 +1445,7 @@ void Coordinates::FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flu
 
   // Go through 1D block of cells
   #pragma simd
-  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
+  for (int i = il; i <= iu; ++i)
   {
     // Extract geometric quantities
     const Real &alpha_sq = metric_face3_i1_(i);
@@ -1528,7 +1541,7 @@ void Coordinates::PrimToCons(
       const Real &sin_sq_theta = metric_cell_j1_(j);
 
       #pragma simd
-      for (int i = il; i <= iu; i++)
+      for (int i = il; i <= iu; ++i)
       {
         // Extract remaining geometric quantities
         const Real &alpha_sq = metric_cell_i1_(i);

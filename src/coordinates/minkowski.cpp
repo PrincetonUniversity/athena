@@ -355,14 +355,15 @@ void Coordinates::CoordSrcTermsX3(const int k, const int j, const Real dt,
 // Function for computing cell-centered metric coefficients
 // Inputs:
 //   k,j: z- and y-indices
+//   il,iu: x-index bounds
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
-void Coordinates::CellMetric(const int k, const int j, AthenaArray<Real> &g,
-    AthenaArray<Real> &g_inv)
+void Coordinates::CellMetric(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
 {
   #pragma simd
-  for (int i = pmy_block->is-NGHOST; i <= pmy_block->ie+NGHOST; ++i)
+  for (int i = il; i <= iu; ++i)
   {
     g(I00,i) = -1.0;
     g(I11,i) = 1.0;
@@ -381,14 +382,15 @@ void Coordinates::CellMetric(const int k, const int j, AthenaArray<Real> &g,
 // Function for computing face-centered metric coefficients: x-interface
 // Inputs:
 //   k,j: z- and y-indices
+//   il,iu: x-index bounds
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
-void Coordinates::Face1Metric(const int k, const int j, AthenaArray<Real> &g,
-    AthenaArray<Real> &g_inv)
+void Coordinates::Face1Metric(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
 {
   #pragma simd
-  for (int i = pmy_block->is; i <= pmy_block->ie+1; i++)
+  for (int i = il; i <= iu; ++i)
   {
     g(I00,i) = -1.0;
     g(I11,i) = 1.0;
@@ -407,14 +409,15 @@ void Coordinates::Face1Metric(const int k, const int j, AthenaArray<Real> &g,
 // Function for computing face-centered metric coefficients: y-interface
 // Inputs:
 //   k,j: z- and y-indices
+//   il,iu: x-index bounds
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
-void Coordinates::Face2Metric(const int k, const int j, AthenaArray<Real> &g,
-    AthenaArray<Real> &g_inv)
+void Coordinates::Face2Metric(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
 {
   #pragma simd
-  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
+  for (int i = il; i <= iu; ++i)
   {
     g(I00,i) = -1.0;
     g(I11,i) = 1.0;
@@ -433,14 +436,15 @@ void Coordinates::Face2Metric(const int k, const int j, AthenaArray<Real> &g,
 // Function for computing face-centered metric coefficients: z-interface
 // Inputs:
 //   k,j: z- and y-indices
+//   il,iu: x-index bounds
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
-void Coordinates::Face3Metric(const int k, const int j, AthenaArray<Real> &g,
-    AthenaArray<Real> &g_inv)
+void Coordinates::Face3Metric(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
 {
   #pragma simd
-  for (int i = pmy_block->is; i <= pmy_block->ie; i++)
+  for (int i = il; i <= iu; ++i)
   {
     g(I00,i) = -1.0;
     g(I11,i) = 1.0;
@@ -459,6 +463,7 @@ void Coordinates::Face3Metric(const int k, const int j, AthenaArray<Real> &g,
 // Function for transforming primitives to locally flat frame: x-interface
 // Inputs:
 //   k,j: z- and y-indices
+//   il,iu: x-index bounds
 //   b1_vals: 3D array of normal components B^1 of magnetic field, in global coordinates
 //   prim_left: 1D array of left primitives, using global coordinates
 //   prim_right: 1D array of right primitives, using global coordinates
@@ -468,14 +473,14 @@ void Coordinates::Face3Metric(const int k, const int j, AthenaArray<Real> &g,
 //   bx: 1D array of longitudinal magnetic fields, in local coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::PrimToLocal1(const int k, const int j,
+void Coordinates::PrimToLocal1(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &b1_vals, AthenaArray<Real> &prim_left,
     AthenaArray<Real> &prim_right, AthenaArray<Real> &bx)
 {
   if (MAGNETIC_FIELDS_ENABLED)
   {
     #pragma simd
-    for (int i = pmy_block->is; i <= pmy_block->ie+1; i++)
+    for (int i = il; i <= iu; ++i)
       bx(i) = b1_vals(k,j,i);
   }
   return;
@@ -486,24 +491,25 @@ void Coordinates::PrimToLocal1(const int k, const int j,
 // Function for transforming primitives to locally flat frame: y-interface
 // Inputs:
 //   k,j: z- and y-indices
+//   il,iu: x-index bounds
 //   b2_vals: 3D array of normal components B^2 of magnetic field, in global coordinates
 //   prim_left: 1D array of left primitives, using global coordinates
 //   prim_right: 1D array of right primitives, using global coordinates
 // Outputs:
 //   prim_left: values overwritten in local coordinates
 //   prim_right: values overwritten in local coordinates
-//   by: 1D array of longitudinal magnetic fields, in local coordinates
+//   bx: 1D array of longitudinal magnetic fields, in local coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::PrimToLocal2(const int k, const int j,
+void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &b2_vals, AthenaArray<Real> &prim_left,
-    AthenaArray<Real> &prim_right, AthenaArray<Real> &by)
+    AthenaArray<Real> &prim_right, AthenaArray<Real> &bx)
 {
   if (MAGNETIC_FIELDS_ENABLED)
   {
     #pragma simd
-    for (int i = pmy_block->is; i <= pmy_block->ie; i++)
-      by(i) = b2_vals(k,j,i);
+    for (int i = il; i <= iu; ++i)
+      bx(i) = b2_vals(k,j,i);
   }
   return;
 }
@@ -513,24 +519,25 @@ void Coordinates::PrimToLocal2(const int k, const int j,
 // Function for transforming primitives to locally flat frame: z-interface
 // Inputs:
 //   k,j: z- and y-indices
+//   il,iu: x-index bounds
 //   b3_vals: 3D array of normal components B^3 of magnetic field, in global coordinates
 //   prim_left: 1D array of left primitives, using global coordinates
 //   prim_right: 1D array of right primitives, using global coordinates
 // Outputs:
 //   prim_left: values overwritten in local coordinates
 //   prim_right: values overwritten in local coordinates
-//   bz: 1D array of longitudinal magnetic fields, in local coordinates
+//   bx: 1D array of longitudinal magnetic fields, in local coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::PrimToLocal3(const int k, const int j,
+void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &b3_vals, AthenaArray<Real> &prim_left,
-    AthenaArray<Real> &prim_right, AthenaArray<Real> &bz)
+    AthenaArray<Real> &prim_right, AthenaArray<Real> &bx)
 {
   if (MAGNETIC_FIELDS_ENABLED)
   {
     #pragma simd
-    for (int i = pmy_block->is; i <= pmy_block->ie; i++)
-      bz(i) = b3_vals(k,j,i);
+    for (int i = il; i <= iu; ++i)
+      bx(i) = b3_vals(k,j,i);
   }
   return;
 }
@@ -540,15 +547,17 @@ void Coordinates::PrimToLocal3(const int k, const int j,
 // Function for transforming fluxes to global frame: x-interface
 // Inputs:
 //   k,j: z- and y-indices
+//   il,iu: x-index bounds
 //   pflux: pointer to array of fluxes in 1D, using local coordinates
 // Outputs:
 //   pflux: pointer to values overwritten in global coordinates
 // Notes:
 //   transformation is trivial except for sign change from lowering time index
-void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flux)
+void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &flux)
 {
   #pragma simd
-  for (int i = pmy_block->is; i <= pmy_block->ie+1; ++i)
+  for (int i = il; i <= iu; ++i)
   {
     const Real &txt = flux(IEN,i);
     Real &t10 = flux(IEN,i);
@@ -562,15 +571,17 @@ void Coordinates::FluxToGlobal1(const int k, const int j, AthenaArray<Real> &flu
 // Function for transforming fluxes to global frame: y-interface
 // Inputs:
 //   k,j: z- and y-indices
+//   il,iu: x-index bounds
 //   pflux: pointer to array of fluxes in 1D, using local coordinates
 // Outputs:
 //   pflux: pointer to values overwritten in global coordinates
 // Notes:
 //   transformation is trivial except for sign change from lowering time index
-void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flux)
+void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &flux)
 {
   #pragma simd
-  for (int i = pmy_block->is; i <= pmy_block->ie; ++i)
+  for (int i = il; i <= iu; ++i)
   {
     const Real &tyt = flux(IEN,i);
     Real &t20 = flux(IEN,i);
@@ -584,15 +595,17 @@ void Coordinates::FluxToGlobal2(const int k, const int j, AthenaArray<Real> &flu
 // Function for transforming fluxes to global frame: z-interface
 // Inputs:
 //   k,j: z- and y-indices
+//   il,iu: x-index bounds
 //   pflux: pointer to array of fluxes in 1D, using local coordinates
 // Outputs:
 //   pflux: pointer to values overwritten in global coordinates
 // Notes:
 //   transformation is trivial except for sign change from lowering time index
-void Coordinates::FluxToGlobal3(const int k, const int j, AthenaArray<Real> &flux)
+void Coordinates::FluxToGlobal3(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &flux)
 {
   #pragma simd
-  for (int i = pmy_block->is; i <= pmy_block->ie; ++i)
+  for (int i = il; i <= iu; ++i)
   {
     const Real &tzt = flux(IEN,i);
     Real &t30 = flux(IEN,i);
@@ -637,7 +650,7 @@ void Coordinates::PrimToCons(
     for (int j = jl; j <= ju; j++)
     {
       #pragma simd
-      for (int i = il; i <= iu; i++)
+      for (int i = il; i <= iu; ++i)
       {
         // Extract geometric quantities
         const Real g00 = -1.0;
