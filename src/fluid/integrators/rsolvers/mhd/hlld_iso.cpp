@@ -230,12 +230,12 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
       flxi[IBZ] = fl.bz + spd[0]*(ulst.bz - ul.bz);
     } else if(spd[3] <= 0.0) {
       // return (Fr+Sr*(Urst-Ur)), eqn. (38d) of Mignone
-      flxi[IDN] = fr.d  + spd[4]*(ulst.d  - ul.d);
-      flxi[IVX] = fr.mx + spd[4]*(ulst.mx - ul.mx);
-      flxi[IVY] = fr.my + spd[4]*(ulst.my - ul.my);
-      flxi[IVZ] = fr.mz + spd[4]*(ulst.mz - ul.mz);
-      flxi[IBY] = fr.by + spd[4]*(ulst.by - ul.by);
-      flxi[IBZ] = fr.bz + spd[4]*(ulst.bz - ul.bz);
+      flxi[IDN] = fr.d  + spd[4]*(urst.d  - ur.d);
+      flxi[IVX] = fr.mx + spd[4]*(urst.mx - ur.mx);
+      flxi[IVY] = fr.my + spd[4]*(urst.my - ur.my);
+      flxi[IVZ] = fr.mz + spd[4]*(urst.mz - ur.mz);
+      flxi[IBY] = fr.by + spd[4]*(urst.by - ur.by);
+      flxi[IBZ] = fr.bz + spd[4]*(urst.bz - ur.bz);
     } else {
       // return Fcst, eqn. (38c) of Mignone, using eqn. (24)
       flxi[IDN] = dhll*ustar;
