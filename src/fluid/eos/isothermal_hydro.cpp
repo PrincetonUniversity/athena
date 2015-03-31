@@ -108,12 +108,3 @@ Real FluidEqnOfState::SoundSpeed(const Real dummy_arg[NFLUID])
 {
   return iso_sound_speed_;
 }
-
-//--------------------------------------------------------------------------------------
-// \!fn Real FluidEqnOfState::FastMagnetosonicSpeed(const Real prim[], const Real bx)
-// \brief NoOp function required to prevent warnings from loader.
-
-Real FluidEqnOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx)
-{
-  return (FLT_MAX);
-}

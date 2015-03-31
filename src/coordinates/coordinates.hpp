@@ -68,41 +68,78 @@ public:
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
 
   // Functions for use in general relativity
-  void CellMetric(const int k,const int j, const int il, const int iu,
-      AthenaArray<Real> &g, AthenaArray<Real> &gi);
-  void Face1Metric(const int k, const int j, const int il, const int iu,
-      AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
-  void Face2Metric(const int k, const int j, const int il, const int iu,
-      AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
-  void Face3Metric(const int k, const int j, const int il, const int iu,
-      AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
-  void PrimToLocal1(const int k, const int j, const int il, const int iu,
-      const AthenaArray<Real> &b1_vals, AthenaArray<Real> &prim_left,
-      AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
-  void PrimToLocal2(const int k, const int j, const int il, const int iu,
-      const AthenaArray<Real> &b2_vals, AthenaArray<Real> &prim_left,
-      AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
-  void PrimToLocal3(const int k, const int j, const int il, const int iu,
-      const AthenaArray<Real> &b3_vals, AthenaArray<Real> &prim_left,
-      AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
-  void FluxToGlobal1(const int k, const int j, const int il, const int iu,
-      AthenaArray<Real> &flux);
-  void FluxToGlobal2(const int k, const int j, const int il, const int iu,
-      AthenaArray<Real> &flux);
-  void FluxToGlobal3(const int k, const int j, const int il, const int iu,
-      AthenaArray<Real> &flux);
-  void PrimToCons(
-      const AthenaArray<Real> &prim, const AthenaArray<Real> &b, Real gamma_adi_red,
-      AthenaArray<Real> &cons);
-  Real DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real by, Real bz);
-  void TransformVectorCell(Real at, Real ax, Real ay, Real az, int k, int j, int i,
-      Real *a0, Real *a1, Real *a2, Real *a3);
-  void TransformVectorFace1(Real at, Real ax, Real ay, Real az, int k, int j, int i,
-      Real *a0, Real *a1, Real *a2, Real *a3);
-  void TransformVectorFace2(Real at, Real ax, Real ay, Real az, int k, int j, int i,
-      Real *a0, Real *a1, Real *a2, Real *a3);
-  void TransformVectorFace3(Real at, Real ax, Real ay, Real az, int k, int j, int i,
-      Real *a0, Real *a1, Real *a2, Real *a3);
+  #if GENERAL_RELATIVITY  // declare, but do not define, in GR case
+    void CellMetric(const int k, const int j, const int il, const int iu,
+        AthenaArray<Real> &g, AthenaArray<Real> &gi);
+    void Face1Metric(const int k, const int j, const int il, const int iu,
+        AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
+    void Face2Metric(const int k, const int j, const int il, const int iu,
+        AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
+    void Face3Metric(const int k, const int j, const int il, const int iu,
+        AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
+    void PrimToLocal1(const int k, const int j, const int il, const int iu,
+        const AthenaArray<Real> &b1_vals, AthenaArray<Real> &prim_left,
+        AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
+    void PrimToLocal2(const int k, const int j, const int il, const int iu,
+        const AthenaArray<Real> &b2_vals, AthenaArray<Real> &prim_left,
+        AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
+    void PrimToLocal3(const int k, const int j, const int il, const int iu,
+        const AthenaArray<Real> &b3_vals, AthenaArray<Real> &prim_left,
+        AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
+    void FluxToGlobal1(const int k, const int j, const int il, const int iu,
+        AthenaArray<Real> &flux);
+    void FluxToGlobal2(const int k, const int j, const int il, const int iu,
+        AthenaArray<Real> &flux);
+    void FluxToGlobal3(const int k, const int j, const int il, const int iu,
+        AthenaArray<Real> &flux);
+    void PrimToCons(
+        const AthenaArray<Real> &prim, const AthenaArray<Real> &b, Real gamma_adi_red,
+        AthenaArray<Real> &cons);
+    Real DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real by, Real bz);
+    void TransformVectorCell(Real at, Real ax, Real ay, Real az, int k, int j, int i,
+        Real *a0, Real *a1, Real *a2, Real *a3);
+    void TransformVectorFace1(Real at, Real ax, Real ay, Real az, int k, int j, int i,
+        Real *a0, Real *a1, Real *a2, Real *a3);
+    void TransformVectorFace2(Real at, Real ax, Real ay, Real az, int k, int j, int i,
+        Real *a0, Real *a1, Real *a2, Real *a3);
+    void TransformVectorFace3(Real at, Real ax, Real ay, Real az, int k, int j, int i,
+        Real *a0, Real *a1, Real *a2, Real *a3);
+  #else  // define no-op functions otherwise not defined in non-GR case
+    void CellMetric(const int, const int, const int, const int, AthenaArray<Real> &,
+        AthenaArray<Real> &) {return;}
+    void Face1Metric(const int, const int, const int, const int, AthenaArray<Real> &,
+        AthenaArray<Real> &) {return;}
+    void Face2Metric(const int, const int, const int, const int, AthenaArray<Real> &,
+        AthenaArray<Real> &) {return;}
+    void Face3Metric(const int, const int, const int, const int, AthenaArray<Real> &,
+        AthenaArray<Real> &) {return;}
+    void PrimToLocal1(const int, const int, const int, const int,
+        const AthenaArray<Real> &, AthenaArray<Real> &, AthenaArray<Real> &,
+        AthenaArray<Real> &) {return;}
+    void PrimToLocal2(const int, const int, const int, const int,
+        const AthenaArray<Real> &, AthenaArray<Real> &, AthenaArray<Real> &,
+        AthenaArray<Real> &) {return;}
+    void PrimToLocal3(const int, const int, const int, const int,
+        const AthenaArray<Real> &, AthenaArray<Real> &, AthenaArray<Real> &,
+        AthenaArray<Real> &) {return;}
+    void FluxToGlobal1(const int, const int, const int, const int, AthenaArray<Real> &)
+        {return;}
+    void FluxToGlobal2(const int, const int, const int, const int, AthenaArray<Real> &)
+        {return;}
+    void FluxToGlobal3(const int, const int, const int, const int, AthenaArray<Real> &)
+        {return;}
+    void PrimToCons(const AthenaArray<Real> &, const AthenaArray<Real> &, Real,
+        AthenaArray<Real> &) {return;}
+    Real DistanceBetweenPoints(Real, Real, Real, Real, Real, Real) {return 0.0;}
+    void TransformVectorCell(Real, Real, Real, Real, int, int, int, Real *, Real *,
+        Real *, Real *) {return;}
+    void TransformVectorFace1(Real, Real, Real, Real, int, int, int, Real *, Real *,
+        Real *, Real *) {return;}
+    void TransformVectorFace2(Real, Real, Real, Real, int, int, int, Real *, Real *,
+        Real *, Real *) {return;}
+    void TransformVectorFace3(Real, Real, Real, Real, int, int, int, Real *, Real *,
+        Real *, Real *) {return;}
+  #endif  // GENERAL_RELATIVITY
 
 private:
 
@@ -135,4 +172,5 @@ private:
   AthenaArray<Real> trans_face2_i1_, trans_face2_i2_, trans_face2_j1_;
   AthenaArray<Real> trans_face3_i1_, trans_face3_i2_, trans_face3_j1_;
 };
+
 #endif
