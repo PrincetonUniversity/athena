@@ -235,6 +235,7 @@ makefile_options['RECONSTRUCT_FILE'] = args['order']
 # --fint=[name] argument
 definitions['FLUID_INTEGRATOR'] = args['fint']
 makefile_options['FLUID_INT_FILE'] = args['fint']
+definitions['NSTEP'] = 2
 
 # --cxx=[name] argument
 definitions['COMPILER_CHOICE'] = args['cxx']
