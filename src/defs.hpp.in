@@ -63,11 +63,12 @@
 //--------------------------------------------------------------------------------------
 // macros associated with numerical algorithm (rarely modified)
 
-#define NFLUID  @NFLUID_VARIABLES@
-#define NFIELD  @NFIELD_VARIABLES@
-#define NWAVE   @NWAVE_VALUE@
+#define NFLUID  (@NFLUID_VARIABLES@)
+#define NFIELD  (@NFIELD_VARIABLES@)
+#define NWAVE   (@NWAVE_VALUE@)
 #define NGHOST   2
-#define IDLENGTH @ID_LENGTH@
+#define IDLENGTH (@ID_LENGTH@)
+#define NSTEP (@NSTEP@)
 
 //--------------------------------------------------------------------------------------
 // general purpose macros (never modified)

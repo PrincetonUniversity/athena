@@ -57,8 +57,6 @@ typedef void (*BValField_t)(MeshBlock *pmb, InterfaceField &buf);
 
 void InitBoundaryBuffer(int nx1, int nx2, int nx3);
 
-const int nsweep = 2;
-
 //! \class BoundaryValues
 //  \brief BVals data and functions
 
@@ -96,14 +94,14 @@ private:
   BValFluid_t FluidBoundary_[6];
   BValField_t FieldBoundary_[6];
 
-  char fluid_flag_[nsweep][6][2][2];
-  char field_flag_[nsweep][6][2][2];
-  Real *fluid_send_[nsweep][6], *fluid_recv_[nsweep][6];
-  Real *field_send_[nsweep][6], *field_recv_[nsweep][6];
+  char fluid_flag_[NSTEP][6][2][2];
+  char field_flag_[NSTEP][6][2][2];
+  Real *fluid_send_[NSTEP][6], *fluid_recv_[NSTEP][6];
+  Real *field_send_[NSTEP][6], *field_recv_[NSTEP][6];
 
 #ifdef MPI_PARALLEL
-  MPI_Request req_fluid_send_[nsweep][6][2][2], req_fluid_recv_[nsweep][6][2][2];
-  MPI_Request req_field_send_[nsweep][6][2][2], req_field_recv_[nsweep][6][2][2];
+  MPI_Request req_fluid_send_[NSTEP][6][2][2], req_fluid_recv_[NSTEP][6][2][2];
+  MPI_Request req_field_send_[NSTEP][6][2][2], req_field_recv_[NSTEP][6][2][2];
 #endif
 };
 
