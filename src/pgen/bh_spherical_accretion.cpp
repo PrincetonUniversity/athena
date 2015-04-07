@@ -9,10 +9,10 @@
 // Athena headers
 #include "../athena.hpp"                   // enums, Real
 #include "../athena_arrays.hpp"            // AthenaArray
-#include "../coordinates/coordinates.hpp"  // PrimToCons()
-#include "../bvals/bvals.hpp"              // EnrollBoundaryFunction()
+#include "../coordinates/coordinates.hpp"  // Coordinates
+#include "../bvals/bvals.hpp"              // BoundaryValues
 #include "../fluid/fluid.hpp"              // Fluid
-#include "../fluid/eos/eos.hpp"            // GetGamma()
+#include "../fluid/eos/eos.hpp"            // FluidEqnOfState
 #include "../field/field.hpp"              // Field
 #include "../parameter_input.hpp"          // ParameterInput
 
@@ -66,13 +66,14 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     ku += (NGHOST);
   }
 
-  // Read and set ratio of specific heats
+  // Get mass
+  const Real m = pb->pcoord->GetMass();
+
+  // Get ratio of specific heats
   Real gamma_adi = pfl->pf_eos->GetGamma();
   Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
   Real n_adi = 1.0/(gamma_adi-1.0);
 
-  // TODO: read and set mass
-  Real m = 1.0;
   // Read problem parameters
   Real k_adi = pin->GetReal("fluid", "k_adi");
   Real r_crit = pin->GetReal("problem", "r_crit");

@@ -38,10 +38,12 @@ x3max  = 0.5                 # maximum phi
 ix3_bc = 4                   # 4: periodic
 ox3_bc = 4                   # 4: periodic
 
+<coord>
+m = 1.0  # black hole mass M
+
 <fluid>
 gamma = 1.3333333333333333  # \Gamma = C_p/C_V
 k_adi = 1.0                 # p = K \rho^\Gamma
 
 <problem>
-mass = 1.0    # black hole mass
 r_crit = 8.0  # sonic point radius, in units of mass

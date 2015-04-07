@@ -33,6 +33,10 @@ x3max  = 0.5
 ix3_bc = 4     # 4: periodic
 ox3_bc = 4     # 4: periodic
 
+<coord>
+a = 0.0  # amplitude for sinusoidal coordinates
+k = 0.0  # wavenumber for sinusoidal coordinates
+
 <fluid>
 gamma = 1.6666666666666666
 

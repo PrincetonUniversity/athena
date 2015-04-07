@@ -14,18 +14,12 @@
 #include <cmath>  // acos(), cos(), log(), sin(), sqrt()
 
 // Athena headers
-#include "../athena.hpp"         // enums, macros, Real
-#include "../athena_arrays.hpp"  // AthenaArray
-#include "../fluid/eos/eos.hpp"  // GetGamma()
-#include "../fluid/fluid.hpp"    // Fluid
-#include "../mesh.hpp"           // MeshBlock
-
-// TODO: find better input method
-namespace globals
-{
-  const Real M = 1.0;
-};
-using namespace globals;
+#include "../athena.hpp"           // enums, macros, Real
+#include "../athena_arrays.hpp"    // AthenaArray
+#include "../fluid/eos/eos.hpp"    // FluidEqnOfState
+#include "../fluid/fluid.hpp"      // Fluid
+#include "../mesh.hpp"             // MeshBlock
+#include "../parameter_input.hpp"  // ParameterInput
 
 // Constructor
 // Inputs:
@@ -33,6 +27,10 @@ using namespace globals;
 //   pin: pointer to runtime inputs
 Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
 {
+  // Set parameters
+  bh_mass_ = pin->GetReal("coord", "m");
+  const Real &m = bh_mass_;
+
   // Set pointer to host MeshBlock
   pmy_block = pb;
 
@@ -137,9 +135,9 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
     Real r_c = pb->x1v(i);
     Real r_m = pb->x1f(i);
     Real r_p = pb->x1f(i+1);
-    Real alpha_c = std::sqrt(1.0 - 2.0*M/r_c);
-    Real alpha_m = std::sqrt(1.0 - 2.0*M/r_m);
-    Real alpha_p = std::sqrt(1.0 - 2.0*M/r_p);
+    Real alpha_c = std::sqrt(1.0 - 2.0*m/r_c);
+    Real alpha_m = std::sqrt(1.0 - 2.0*m/r_m);
+    Real alpha_p = std::sqrt(1.0 - 2.0*m/r_p);
     Real r_p_cu = r_p*r_p*r_p;
     Real r_m_cu = r_m*r_m*r_m;
 
@@ -152,14 +150,14 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
     coord_len2_i_(i) = coord_area1_i_(i);
     coord_len3_i_(i) = coord_area1_i_(i);
     coord_width1_i_(i) = r_p*alpha_p - r_m*alpha_m
-        + M * std::log((r_p*(1.0+alpha_p)-M) / (r_m*(1.0+alpha_m)-M));
+        + m * std::log((r_p*(1.0+alpha_p)-m) / (r_m*(1.0+alpha_m)-m));
 
     // Source terms
-    coord_src_i1_(i) = 3.0*M / (r_p_cu - r_m_cu)
-        * (r_p - r_m + 2.0*M * std::log((r_p-2.0*M) / (r_m-2.0*M)));
-    coord_src_i2_(i) = 3.0*M / (r_p_cu - r_m_cu)
-        * (r_p - r_m - 2.0*M * std::log(r_p/r_m));
-    coord_src_i3_(i) = 2.0*M - 3.0/4.0 * (r_m + r_p) * (SQR(r_m) + SQR(r_p))
+    coord_src_i1_(i) = 3.0*m / (r_p_cu - r_m_cu)
+        * (r_p - r_m + 2.0*m * std::log((r_p-2.0*m) / (r_m-2.0*m)));
+    coord_src_i2_(i) = 3.0*m / (r_p_cu - r_m_cu)
+        * (r_p - r_m - 2.0*m * std::log(r_p/r_m));
+    coord_src_i3_(i) = 2.0*m - 3.0/4.0 * (r_m + r_p) * (SQR(r_m) + SQR(r_p))
         / (SQR(r_m) + r_m * r_p + SQR(r_p));
     coord_src_i4_(i) = 3.0/2.0 * (r_m + r_p) / (SQR(r_m) + r_m * r_p + SQR(r_p));
 
