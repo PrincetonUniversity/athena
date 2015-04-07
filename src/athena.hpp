@@ -26,15 +26,6 @@ typedef struct EdgeField {
   AthenaArray<Real> x1e,x2e,x3e;
 } EdgeField;
 
-
-//! \struct NeighborBlock
-//  \brief neighbor rank, level, and ids
-
-typedef struct NeighborBlock {
-  int rank, level, gid, lid;
-  NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1) {};
-} NeighborBlock;
-
 enum {IDN=0, IM1=1, IM2=2, IM3=3, IEN=4};
 enum {IVX=1, IVY=2, IVZ=3, IBY=(NFLUID), IBZ=((NFLUID)+1)};
 enum {IB1=0, IB2=1, IB3=2};
@@ -45,34 +36,37 @@ enum direction {inner_x1=0, outer_x1=1, inner_x2=2, outer_x2=3, inner_x3=4, oute
 enum face {x1face=0, x2face=1, x3face=2};
 enum rwmode {readmode,writemode};
 enum mpitag {tag_fluid=0, tag_field=1}; // mpitag must be < 16 and unique
+enum neighbor_type {neighbor_none, neighbor_face, neighbor_edge, neighbor_corner};
 
 enum task {
   none=0, 
 
-  primitives_0=1L<<0,
-  fluid_integrate_sendx1_0=1L<<1,
-  eflux_recv_0=1L<<2,
-  field_integrate_sendx1_0=1L<<3,
-  fluid_recvx1_0=1L<<4, field_recvx1_0=1L<<5, // for 1D
-  fluid_recvx1_sendx2_0=1L<<4, field_recvx1_sendx2_0=1L<<5, 
-  fluid_recvx2_0=1L<<6, field_recvx2_0=1L<<7, // for2D
-  fluid_recvx2_sendx3_0=1L<<6, field_recvx2_sendx3_0=1L<<7,
-  fluid_recvx3_0=1L<<8, field_recvx3_0=1L<<9,
+  fluid_integrate_1=1L<<0, field_integrate_1=1L<<1,
+  fluid_send_1=1L<<2, fluid_recv_1=1L<<3,
+  flux_correction_send_1=1L<<4, flux_correction_recv_1=1L<<5,
+  fluid_prolongation_1=1L<<6, fluid_boundary_1=1L<<7,
+  field_send_1=1L<<8, field_recv_1=1L<<9,
+  emf_correction_send_1=1L<<10, emf_correction_recv_1=1L<<11,
+  field_prolongation_1=1L<<12, field_boundary_1=1L<<13,
+  primitives_1=1L<<14,
 
-  primitives_1=1L<<10,
-  fluid_integrate_sendx1_1=1L<<11,
-  eflux_recv_1=1L<<12,
-  field_integrate_sendx1_1=1L<<13,
-  fluid_recvx1_1=1L<<14, field_recvx1_1=1L<<15, 
-  fluid_recvx1_sendx2_1=1L<<14, field_recvx1_sendx2_1=1L<<15,
-  fluid_recvx2_1=1L<<16, field_recvx2_1=1L<<17,
-  fluid_recvx2_sendx3_1=1L<<16, field_recvx2_sendx3_1=1L<<17,
-  fluid_recvx3_1=1L<<18, field_recvx3_1=1L<<19,
+  fluid_integrate_0=1L<<15, field_integrate_0=1L<<16,
+  fluid_send_0=1L<<17, fluid_recv_0=1L<<18,
+  flux_correction_send_0=1L<<19, flux_correction_recv_0=1L<<20,
+  fluid_prolongation_0=1L<<21, fluid_boundary_0=1L<<22,
+  field_send_0=1L<<23, field_recv_0=1L<<24,
+  emf_correction_send_0=1L<<25, emf_correction_recv_0=1L<<26,
+  field_prolongation_0=1L<<27, field_boundary_0=1L<<28,
+  primitives_0=1L<<29,
 
-  new_blocktimestep=1L<<20
+  new_blocktimestep=1L<<30
 };
 
-enum tlstatus { running, stuck, complete, nothing };
+enum tasklist_status { tl_running, tl_stuck, tl_complete, tl_nothing };
+
+enum task_status { task_failure, task_success, task_donext};
+
+enum boundary_status {boundary_waiting, boundary_arrived, boundary_completed};
 
 extern int myrank, nproc;
 
