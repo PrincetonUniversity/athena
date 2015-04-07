@@ -166,8 +166,8 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
       Real mfact = bxi*(ustar-wli[IVX])/tmp;
       Real bfact = (ul.d*SQR(spd[0]-wli[IVX]) - bxsq)/(dhll*tmp);
 
-      ulst.my = dhll*wli[IBY] - ul.by*mfact; // eqn. (30) of Mignone
-      ulst.mz = dhll*wli[IBZ] - ul.bz*mfact; // eqn. (31) of Mignone
+      ulst.my = dhll*wli[IVY] - ul.by*mfact; // eqn. (30) of Mignone
+      ulst.mz = dhll*wli[IVZ] - ul.bz*mfact; // eqn. (31) of Mignone
       ulst.by = ul.by*bfact; // eqn. (32) of Mignone
       ulst.bz = ul.bz*bfact; // eqn. (33) of Mignone
     }
