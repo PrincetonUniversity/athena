@@ -196,8 +196,20 @@ void BlockUID::GetLocation(long int& lx, long int& ly, long int& lz, int& llevel
     ly|=(by<<sh);
     lz|=(bz<<sh);
   }
+  return;
 }
 
+//--------------------------------------------------------------------------------------
+//! \fn void BlockUID::GetLeafIndex(int& mx, int& my, int& mz, int llevel)
+//  \brief get the leaf index at llevel
+void BlockUID::GetLeafIndex(int& mx, int& my, int& mz, int llevel)
+{
+  int sh=(usize-llevel%usize-1)*3;
+  mx=(int)((uid[llevel/usize] >> sh) & 1L);
+  my=(int)((uid[llevel/usize] >> (sh+1)) & 1L);
+  mz=(int)((uid[llevel/usize] >> (sh+2)) & 1L);
+  return;
+}
 
 //--------------------------------------------------------------------------------------
 //! \fn BlockTree::BlockTree()
@@ -280,30 +292,87 @@ void BlockTree::CreateRootGrid(long int nx, long int ny, long int nz, int nl)
   return;
 }
 
+
 //--------------------------------------------------------------------------------------
-//! \fn void BlockTree::Refine(int dim)
-//  \brief make finer leaves
-void BlockTree::Refine(int dim)
+//! \fn void BlockTree::AddMeshBlock(BlockTree& root, BlockUID id, int dim,
+//                      int* mesh_bcs, long int rbx, long int rby, long int rbz, int rl)
+//  \brief add a MeshBlock to the tree, also creates neighboring blocks
+void BlockTree::AddMeshBlock(BlockTree& root, BlockUID id, int dim, int* mesh_bcs,
+                             long int rbx, long int rby, long int rbz, int rl)
 {
-  if(dim==1)
-  {
-    for(int i=0; i<=1; i++) {
-      pleaf[0][0][i] = new BlockTree(this, i, 0, 0);
-    }
-  }
-  else if(dim==2) {
-    for(int j=0; j<=1; j++) {
-      for(int i=0; i<=1; i++) {
-        pleaf[0][j][i] = new BlockTree(this, i, j, 0);
+  int mx, my, mz;
+  int lev=uid.GetLevel();
+  if(lev==id.GetLevel()) // done
+    return;
+  if(flag==true) // leaf -> create the finer level
+    Refine(root,dim,mesh_bcs,rbx,rby,rbz,rl);
+  id.GetLeafIndex(mx,my,mz, lev);
+  pleaf[mz][my][mx]->AddMeshBlock(root,id,dim,mesh_bcs,rbx,rby,rbz,rl);
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void BlockTree::Refine(BlockTree& root, int dim, int* mesh_bcs,
+//                             long int rbx, long int rby, long int rbz, int rl)
+//  \brief make finer leaves
+void BlockTree::Refine(BlockTree& root, int dim, int* mesh_bcs,
+                       long int rbx, long int rby, long int rbz, int rl)
+{
+  long int lx, ly, lz;
+  int ll;
+  long int nx,ny,nz,nxmax,nymax,nzmax;
+  long int ox, oy, oz, oxmin, oxmax, oymin, oymax, ozmin, ozmax;
+  int xmax,ymax,zmax;
+  BlockUID nid;
+  uid.GetLocation(lx,ly,lz,ll);
+
+  xmax=1, oxmin=-1, oxmax=1, nxmax=(rbx<<(ll-rl));
+  if(dim>=2) ymax=1, oymin=-1, oymax=1, nymax=(rby<<(ll-rl));
+  else       ymax=0, oymin=0,  oymax=0, nymax=1;
+  if(dim==3) zmax=1, ozmin=-1, ozmax=1, nzmax=(rbz<<(ll-rl));
+  else       zmax=0, ozmin=0,  ozmax=0, nzmax=1;
+
+  for(int k=0; k<=zmax; k++) {
+    for(int j=0; j<=ymax; j++) {
+      for(int i=0; i<=xmax; i++) {
+        pleaf[k][j][i] = new BlockTree(this, i, j, k);
       }
     }
   }
-  else {
-    for(int k=0; k<=1; k++) {
-      for(int j=0; j<=1; j++) {
-        for(int i=0; i<=1; i++) {
-          pleaf[k][j][i] = new BlockTree(this, i, j, k);
+
+  for(oz=ozmin;oz<=ozmax;oz++) {
+    nz=lz+oz;
+    if(nz<0) {
+      if(mesh_bcs[inner_x3]!=4) continue;
+      else nz=nzmax-1;
+    }
+    if(nz>=nzmax) {
+      if(mesh_bcs[outer_x3]!=4) continue;
+      else nz=0;
+    }
+    for(oy=oymin;oy<=oymax;oy++) {
+      ny=ly+oy;
+      if(ny<0) {
+        if(mesh_bcs[inner_x2]!=4) continue;
+        else ny=nymax-1;
+      }
+      if(ny>=nymax) {
+        if(mesh_bcs[outer_x2]!=4) continue;
+        else ny=0;
+      }
+      for(ox=oxmin;ox<=oxmax;ox++) {
+        if(ox==0 && oy==0 && oz==0) continue;
+        nx=lx+ox;
+        if(nx<0) {
+          if(mesh_bcs[inner_x1]!=4) continue;
+          else nx=nxmax-1;
         }
+        if(nx>=nxmax) {
+          if(mesh_bcs[outer_x1]!=4) continue;
+          else nx=0;
+        }
+        nid.CreateUIDfromLocation(nx,ny,nz,ll);
+        root.AddMeshBlock(root,nid,dim,mesh_bcs,rbx,rby,rbz,rl);
       }
     }
   }
@@ -389,9 +458,10 @@ void BlockTree::GetIDList(BlockUID *list, int& count)
 //  \brief find a neighboring block, called from the root of the tree
 //         If it is coarser or same level, return the pointer to that block.
 //         If it is a finer block, return the pointer to its parent.
-BlockTree* BlockTree::FindNeighbor(enum direction dir, BlockUID id,
+BlockTree* BlockTree::FindNeighbor(BlockUID id, int ox1, int ox2, int ox3, int *bcs,
                                    long int rbx, long int rby, long int rbz, int rl)
 {
+  std::stringstream msg;
   long int lx, ly, lz;
   int ll, level;
   int ox,oy,oz;
@@ -400,36 +470,32 @@ BlockTree* BlockTree::FindNeighbor(enum direction dir, BlockUID id,
 
   if(ll<1) return this; // single grid; return itself
 
-  switch(dir)
-  {
-    case inner_x1:
-      lx--;
-      break;
-    case outer_x1:
-      lx++;
-      break;
-    case inner_x2:
-      ly--;
-      break;
-    case outer_x2:
-      ly++;
-      break;
-    case inner_x3:
-      lz--;
-      break;
-    case outer_x3:
-      lz++;
-      break;
-    default:
-     return NULL;
-  }
+  lx+=ox1; ly+=ox2; lz+=ox3;
   // periodic boundaries
-  if(lx<0) lx=(rbx<<(ll-rl))-1;
-  if(lx>=rbx<<(ll-rl)) lx=0;
-  if(ly<0) ly=(rby<<(ll-rl))-1;
-  if(ly>=rby<<(ll-rl)) ly=0;
-  if(lz<0) lz=(rbz<<(ll-rl))-1;
-  if(lz>=rbz<<(ll-rl)) lz=0;
+  if(lx<0) {
+    if(bcs[inner_x1]==4) lx=(rbx<<(ll-rl))-1;
+    else return NULL;
+  }
+  if(lx>=rbx<<(ll-rl)) {;
+    if(bcs[outer_x1]==4) lx=0;
+    else return NULL;
+  }
+  if(ly<0) {
+    if(bcs[inner_x2==4]) ly=(rby<<(ll-rl))-1;
+    else return NULL;
+  }
+  if(ly>=rby<<(ll-rl)) {
+    if(bcs[outer_x2==4]) ly=0;
+    else return NULL;
+  }
+  if(lz<0) {
+    if(bcs[inner_x3==4]) lz=(rbz<<(ll-rl))-1;
+    else return NULL;
+  }
+  if(lz>=rbz<<(ll-rl)) {
+    if(bcs[outer_x3==4]) lz=0;
+    else return NULL;
+  }
 
   for(level=0;level<=ll;level++)
   {
@@ -437,8 +503,12 @@ BlockTree* BlockTree::FindNeighbor(enum direction dir, BlockUID id,
     {
       if(level == ll || level == ll-1)
         return bt;
-      else
+      else {
+        msg << "### FATAL ERROR in FindNeighbor" << std::endl
+            << "Neighbor search failed. The Block Tree is broken." << std::endl;
+        throw std::runtime_error(msg.str().c_str());
         return NULL;
+      }
     }
     // find a leaf in the next level
     int sh=ll-level-1;
@@ -446,18 +516,32 @@ BlockTree* BlockTree::FindNeighbor(enum direction dir, BlockUID id,
     oy=(ly>>sh) & 1L;
     oz=(lz>>sh) & 1L;
     bt=bt->pleaf[oz][oy][ox];
-    if(bt==NULL) return NULL;
+    if(bt==NULL) {
+      msg << "### FATAL ERROR in FindNeighbor" << std::endl
+          << "Neighbor search failed. The Block Tree is broken." << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+      return NULL;
+    }
   }
-  // one level finer: check if they are leaves
-  if(bt->pleaf[0][0][0]->flag==true)
+  if(bt->flag==true) // leaf on the same level
     return bt;
+  ox=oy=oz=0;
+  // one level finer: check if they are leaves
+  if(dir==inner_x1) ox=1;
+  if(dir==inner_x2) oy=1;
+  if(dir==inner_x3) oz=1;
+  if(bt->pleaf[oz][oy][ox]->flag==true)
+    return bt;  // return this block
+  msg << "### FATAL ERROR in FindNeighbor" << std::endl
+      << "Neighbor search failed. The Block Tree is broken." << std::endl;
+  throw std::runtime_error(msg.str().c_str());
   return NULL;
 }
 
 
 
 //--------------------------------------------------------------------------------------
-//! \fn BlockTree* BlockTree::GetIDLeaf(int ox, int oy, int oz)
+//! \fn BlockTree* BlockTree::GetLeaf(int ox, int oy, int oz)
 //  \brief returns the pointer to a leaf
 BlockTree* BlockTree::GetLeaf(int ox, int oy, int oz)
 {
