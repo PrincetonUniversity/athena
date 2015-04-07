@@ -3,6 +3,9 @@
 // Primary header
 #include "../mesh.hpp"
 
+// C++ headers
+#include <cmath>  // abs(), NAN, pow(), sqrt()
+
 // Athena headers
 #include "../athena.hpp"                   // enums, Real
 #include "../athena_arrays.hpp"            // AthenaArray
@@ -16,8 +19,14 @@
 // Declarations
 void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons);
 void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons);
-static void set_state(Real rho, Real pgas, Real v1, Real v2, Real v3,
-    AthenaArray<Real> &prim, AthenaArray<Real> &prim_half, int i, int j, int k);
+static void set_state(
+    Real rho, Real pgas, Real v1, Real v2, Real v3, int k, int j, int i,
+    AthenaArray<Real> &prim, AthenaArray<Real> &prim_half);
+static Real TemperatureResidual(Real t, Real m, Real n_adi, Real r, Real c1, Real c2);
+static Real TemperatureMin(Real m, Real n_adi, Real r, Real c1, Real c2, Real t_min,
+    Real t_max);
+static Real TemperatureBisect(Real t_min, Real t_max, Real m, Real n_adi, Real r,
+    Real c1, Real c2);
 
 // Global variables
 static Real d_inner, e_inner, m1_inner, m2_inner, m3_inner;
@@ -31,8 +40,13 @@ static Real d_outer, e_outer, m1_outer, m2_outer, m3_outer;
 // Outputs: (none)
 // Notes:
 //   sets primitive and conserved variables according to input primitives
+//   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
+  // Parameters
+  const Real t_min = 1.0e-2;  // lesser temperature root must be greater than this
+  const Real t_max = 1.0e1;   // greater temperature root must be less than this
+
   // Prepare index bounds
   MeshBlock *pb = pfl->pmy_block;
   int il = pb->is - NGHOST;
@@ -55,38 +69,22 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   // Read and set ratio of specific heats
   Real gamma_adi = pfl->pf_eos->GetGamma();
   Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
+  Real n_adi = 1.0/(gamma_adi-1.0);
 
   // TODO: read and set mass
-
-  // Read inner initial hydro state
-  Real rho_inner = pin->GetReal("problem", "rho_inner");
-  Real pgas_inner = pin->GetReal("problem", "pgas_inner");
-  Real v1_inner = pin->GetReal("problem", "v1_inner");
-  Real v2_inner = pin->GetReal("problem", "v2_inner");
-  Real v3_inner = pin->GetReal("problem", "v3_inner");
-
-  // Read outer initial hydro state
-  Real rho_outer = pin->GetReal("problem", "rho_outer");
-  Real pgas_outer = pin->GetReal("problem", "pgas_outer");
-  Real v1_outer = pin->GetReal("problem", "v1_outer");
-  Real v2_outer = pin->GetReal("problem", "v2_outer");
-  Real v3_outer = pin->GetReal("problem", "v3_outer");
+  Real m = 1.0;
+  // Read problem parameters
+  Real k_adi = pin->GetReal("fluid", "k_adi");
+  Real r_crit = pin->GetReal("problem", "r_crit");
 
   // Read initial magnetic field
-  Real b1_flux, b2_flux, b3_flux;
+  Real b1_flux = 0.0, b2_flux = 0.0, b3_flux = 0.0;
   if (MAGNETIC_FIELDS_ENABLED)
   {
     b1_flux = pin->GetReal("problem", "b1_flux");
     b2_flux = pin->GetReal("problem", "b2_flux");
     b3_flux = pin->GetReal("problem", "b3_flux");
   }
-
-  // Calculate hydro slopes
-  Real rho_slope = (rho_outer - rho_inner) / (pb->x1v(iu) - pb->x1v(il));
-  Real pgas_slope = (pgas_outer - pgas_inner) / (pb->x1v(iu) - pb->x1v(il));
-  Real v1_slope = (v1_outer - v1_inner) / (pb->x1v(iu) - pb->x1v(il));
-  Real v2_slope = (v2_outer - v2_inner) / (pb->x1v(iu) - pb->x1v(il));
-  Real v3_slope = (v3_outer - v3_inner) / (pb->x1v(iu) - pb->x1v(il));
 
   // Prepare arrays for areas and magnetic fields
   AthenaArray<Real> a1, a2m, a2p, a3m, a3p, b;
@@ -95,14 +93,14 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   a2p.NewAthenaArray(iu);
   a3m.NewAthenaArray(iu);
   a3p.NewAthenaArray(iu);
-  b.NewAthenaArray(3,ku+1,ju+1,iu+1);
+  b.NewAthenaArray(3,ku+2,ju+2,iu+2);
 
   // Initialize magnetic field
   if (MAGNETIC_FIELDS_ENABLED)
-    for (int k = kl; k <= ku; k++)
+    for (int k = kl; k <= ku+1; ++k)
     {
       Real interp_param_k = (pb->x3v(k) - pb->x3f(k)) / pb->dx3f(k);
-      for (int j = jl; j <= ju; j++)
+      for (int j = jl; j <= ju+1; ++j)
       {
         Real interp_param_j = (pb->x2v(j) - pb->x2f(j)) / pb->dx2f(j);
         pb->pcoord->Face1Area(k, j, il, iu+1, a1);
@@ -110,7 +108,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         pb->pcoord->Face2Area(k, j+1, il, iu, a2p);
         pb->pcoord->Face3Area(k, j, il, iu, a3m);
         pb->pcoord->Face3Area(k+1, j, il, iu, a3p);
-        for (int i = il; i <= iu; i++)
+        for (int i = il; i <= iu+1; ++i)
         {
           Real interp_param_i = (pb->x1v(i) - pb->x1f(i)) / pb->dx1f(i);
           Real b1m = b1_flux / a1(i);
@@ -135,23 +133,46 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       }
     }
 
+  // Prepare various constants for determining primitives
+  Real u_crit_sq = m / (2.0*r_crit);                         // (HSW 71)
+  Real u_crit = -std::sqrt(u_crit_sq);
+  Real t_crit = n_adi/(n_adi+1.0) * u_crit_sq
+      / (1.0 - (n_adi+3.0) * u_crit_sq);
+  Real c1 = std::pow(t_crit, n_adi) * u_crit * SQR(r_crit);  // (cf. HSW 69)
+  Real c2 = SQR(1.0 + (n_adi+1.0) * t_crit)
+      * (1.0 - 3.0*m / (2.0*r_crit));                        // (cf. HSW 68)
+
   // Initialize primitives
   for (int k = kl; k <= ku; k++)
     for (int j = jl; j <= ju; j++)
       for (int i = il; i <= iu; i++)
       {
-        Real displacement = pb->x1v(i) - pb->x1v(il);
-        Real rho_init = rho_inner + rho_slope * displacement;
-        Real pgas_init = pgas_inner + pgas_slope * displacement;
-        Real v1_init = v1_inner + v1_slope * displacement;
-        Real v2_init = v2_inner + v2_slope * displacement;
-        Real v3_init = v3_inner + v3_slope * displacement;
-        set_state(rho_init, pgas_init, v1_init, v2_init, v3_init,
-            pfl->w, pfl->w1, i, j, k);
+        // Get radius
+        Real r = pb->x1v(i);
+
+        // Calculate solution to (HSW 76)
+        Real t_neg_res = TemperatureMin(m, n_adi, r, c1, c2, t_min, t_max);
+        Real temperature;
+        if (r <= r_crit)  // use lesser of two roots
+          temperature = TemperatureBisect(t_min, t_neg_res, m, n_adi, r, c1, c2);
+        else  // user greater of two roots
+          temperature = TemperatureBisect(t_neg_res, t_max, m, n_adi, r, c1, c2);
+
+        // Calculate primitives
+        Real u1 = c1 / (SQR(r) * std::pow(temperature, n_adi));  // (HSW 75)
+        Real u0 = std::sqrt(1.0/SQR(1.0 - 2.0*m/r) * SQR(u1)
+            + 1.0/(1.0 - 2.0*m/r));
+        Real v1 = u1 / u0;
+        Real v2 = 0.0;
+        Real v3 = 0.0;
+        Real rho = std::pow(temperature/k_adi, n_adi);           // not same K as HSW
+        Real pgas = temperature * rho;
+        set_state(rho, pgas, v1, v2, v3, k, j, i,
+            pfl->w, pfl->w1);
       }
 
   // Initialize conserved variables
-  pb->pcoord->PrimToCons(pfl->w, b, pfl->u);
+  pb->pcoord->PrimToCons(pfl->w, b, gamma_adi_red, pfl->u);
 
   // Delete area and magnetic field arrays
   a1.DeleteAthenaArray();
@@ -161,19 +182,19 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   a3p.DeleteAthenaArray();
   b.DeleteAthenaArray();
 
-  // Read inner boundary state
-  d_inner = pin->GetReal("problem", "d_inner");
-  e_inner = pin->GetReal("problem", "e_inner");
-  m1_inner = pin->GetReal("problem", "m1_inner");
-  m2_inner = pin->GetReal("problem", "m2_inner");
-  m3_inner = pin->GetReal("problem", "m3_inner");
+  // Save inner boundary state
+  d_inner = pfl->u(IDN,pb->ks,pb->js,pb->is);
+  e_inner = pfl->u(IEN,pb->ks,pb->js,pb->is);
+  m1_inner = pfl->u(IM1,pb->ks,pb->js,pb->is);
+  m2_inner = pfl->u(IM2,pb->ks,pb->js,pb->is);
+  m3_inner = pfl->u(IM3,pb->ks,pb->js,pb->is);
 
-  // Read outer boundary state
-  d_outer = pin->GetReal("problem", "d_outer");
-  e_outer = pin->GetReal("problem", "e_outer");
-  m1_outer = pin->GetReal("problem", "m1_outer");
-  m2_outer = pin->GetReal("problem", "m2_outer");
-  m3_outer = pin->GetReal("problem", "m3_outer");
+  // Save outer boundary state
+  d_outer = pfl->u(IDN,pb->ks,pb->js,pb->ie);
+  e_outer = pfl->u(IEN,pb->ks,pb->js,pb->ie);
+  m1_outer = pfl->u(IM1,pb->ks,pb->js,pb->ie);
+  m2_outer = pfl->u(IM2,pb->ks,pb->js,pb->ie);
+  m3_outer = pfl->u(IM3,pb->ks,pb->js,pb->ie);
 
   // Enroll boundary functions
   pb->pbval->EnrollFluidBoundaryFunction(inner_x1, FixedInner);
@@ -230,8 +251,16 @@ void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons)
 }
 
 // Function for setting conserved variables in a cell given the primitives
-static void set_state(Real rho, Real pgas, Real v1, Real v2, Real v3,
-    AthenaArray<Real> &prim, AthenaArray<Real> &prim_half, int i, int j, int k)
+// Inputs:
+//   rho: density
+//   pgas: gas pressure
+//   v1,v2,v3: 3-velocity components
+//   k,j,i: indices for cell
+// Outputs:
+//   prim,prim_half: primitives in cell set
+static void set_state(
+    Real rho, Real pgas, Real v1, Real v2, Real v3, int k, int j, int i,
+    AthenaArray<Real> &prim, AthenaArray<Real> &prim_half)
 {
   prim(IDN,k,j,i) = prim_half(IDN,k,j,i) = rho;
   prim(IEN,k,j,i) = prim_half(IEN,k,j,i) = pgas;
@@ -239,4 +268,133 @@ static void set_state(Real rho, Real pgas, Real v1, Real v2, Real v3,
   prim(IM2,k,j,i) = prim_half(IM2,k,j,i) = v2;
   prim(IM3,k,j,i) = prim_half(IM3,k,j,i) = v3;
   return;
+}
+
+// Function whose value vanishes for correct temperature
+// Notes:
+//   implements (76) from Hawley, Smarr, & Wilson 1984, ApJ 277 296
+static Real TemperatureResidual(Real t, Real m, Real n_adi, Real r, Real c1, Real c2)
+{
+  return SQR(1.0 + (n_adi+1.0) * t)
+      * (1.0 - 2.0*m/r + SQR(c1) / (SQR(SQR(r)) * std::pow(t, 2.0*n_adi))) - c2;
+}
+
+// Function for finding temperature at which residual is minimized
+// Inputs:
+//   m: black hole mass
+//   n_adi: polytropic index n = 1/(1-\Gamma)
+//   r: Schwarzschild radius
+//   c1,c2: constants as defined by (HSW 68,69)
+//   t_min,t_max: bounds between which minimum must occur
+// Outputs:
+//   returned value: some temperature for which residual of (HSW 76) is negative
+// Notes:
+//   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
+//   performs golden section search (cf. Numerical Recipes, 3rd ed., 10.2)
+static Real TemperatureMin(Real m, Real n_adi, Real r, Real c1, Real c2, Real t_min,
+    Real t_max)
+{
+  // Parameters
+  const Real ratio = 0.3819660112501051;  // (3+\sqrt{5})/2
+  const int max_iterations = 30;          // maximum number of iterations
+
+  // Initialize values
+  Real t_mid = t_min + ratio * (t_max - t_min);
+  Real res_mid = TemperatureResidual(t_mid, m, n_adi, r, c1, c2);
+
+  // Apply golden section method
+  bool larger_to_right = true;  // flag indicating larger subinterval is on right
+  for (int n = 0; n < max_iterations; ++n)
+  {
+    if (res_mid < 0.0)
+      return t_mid;
+    Real t_new;
+    if (larger_to_right)
+    {
+      t_new = t_mid + ratio * (t_max - t_mid);
+      Real res_new = TemperatureResidual(t_new, m, n_adi, r, c1, c2);
+      if (res_new < res_mid)
+      {
+        t_min = t_mid;
+        t_mid = t_new;
+        res_mid = res_new;
+      }
+      else
+      {
+        t_max = t_new;
+        larger_to_right = false;
+      }
+    }
+    else
+    {
+      t_new = t_mid - ratio * (t_mid - t_min);
+      Real res_new = TemperatureResidual(t_new, m, n_adi, r, c1, c2);
+      if (res_new < res_mid)
+      {
+        t_max = t_mid;
+        t_mid = t_new;
+        res_mid = res_new;
+      }
+      else
+      {
+        t_min = t_new;
+        larger_to_right = true;
+      }
+    }
+  }
+  return NAN;
+}
+
+// Bisection root finder
+// Inputs:
+//   t_min,t_max: bounds between which root must occur
+//   m: black hole mass
+//   n_adi: polytropic index n = 1/(1-\Gamma)
+//   r: Schwarzschild radius
+//   c1,c2: constants as defined by (HSW 68,69)
+// Outputs:
+//   returned value: temperature that satisfies (HSW 76)
+// Notes:
+//   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
+//   performs bisection search
+static Real TemperatureBisect(Real t_min, Real t_max, Real m, Real n_adi, Real r,
+    Real c1, Real c2)
+{
+  // Parameters
+  const int max_iterations = 20;
+  const Real tol_residual = 1.0e-6;
+  const Real tol_temperature = 1.0e-6;
+
+  // Find initial residuals
+  Real res_min = TemperatureResidual(t_min, m, n_adi, r, c1, c2);
+  Real res_max = TemperatureResidual(t_max, m, n_adi, r, c1, c2);
+  if (std::abs(res_min) < tol_residual)
+    return t_min;
+  if (std::abs(res_max) < tol_residual)
+    return t_max;
+  if ((res_min < 0.0 and res_max < 0.0) or (res_min > 0.0 and res_max > 0.0))
+    return NAN;
+
+  // Iterate to find root
+  Real t_mid;
+  for (int i = 0; i < max_iterations; ++i)
+  {
+    t_mid = (t_min + t_max) / 2.0;
+    if (t_max - t_min < tol_temperature)
+      return t_mid;
+    Real res_mid = TemperatureResidual(t_mid, m, n_adi, r, c1, c2);
+    if (std::abs(res_mid) < tol_residual)
+      return t_mid;
+    if ((res_mid < 0.0 and res_min < 0.0) or (res_mid > 0.0 and res_min > 0.0))
+    {
+      t_min = t_mid;
+      res_min = res_mid;
+    }
+    else
+    {
+      t_max = t_mid;
+      res_max = res_mid;
+    }
+  }
+  return t_mid;
 }

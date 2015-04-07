@@ -11,7 +11,7 @@
 #include "coordinates.hpp"
 
 // C++ headers
-#include <cmath>  // acos(), cbrt(), cos(), log(), sin(), sqrt()
+#include <cmath>  // acos(), cos(), log(), sin(), sqrt()
 
 // Athena headers
 #include "../athena.hpp"         // enums, macros, Real
@@ -41,7 +41,7 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   {
     Real r_m = pb->x1f(i);
     Real r_p = pb->x1f(i+1);
-    pb->x1v(i) = std::cbrt(0.5 * (r_m*r_m*r_m + r_p*r_p*r_p));
+    pb->x1v(i) = std::pow(0.5 * (r_m*r_m*r_m + r_p*r_p*r_p), 1.0/3.0);
   }
   for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST-1; ++i)
     pb->dx1v(i) = pb->x1v(i+1) - pb->x1v(i);
@@ -110,7 +110,7 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
 
   // Allocate arrays for intermediate geometric quantities: theta-direction
   int n_cells_2 = (pb->block_size.nx2 > 1) ? pb->block_size.nx2 + 2*NGHOST : 1;
-  volume_j_.NewAthenaArray(n_cells_2);
+  coord_vol_j_.NewAthenaArray(n_cells_2);
   coord_area1_j_.NewAthenaArray(n_cells_2);
   coord_area2_j_.NewAthenaArray(n_cells_2);
   coord_area3_j_.NewAthenaArray(n_cells_2);
@@ -196,12 +196,12 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
       Real sin_p_cu = SQR(sin_p)*sin_p;
 
       // Volumes, areas, lengths, and widths
-      volume_j_(j) = cos_m - cos_p;
-      coord_area1_j_(j) = volume_j_(j);
+      coord_vol_j_(j) = cos_m - cos_p;
+      coord_area1_j_(j) = coord_vol_j_(j);
       coord_area2_j_(j) = sin_m;
-      coord_area3_j_(j) = volume_j_(j);
+      coord_area3_j_(j) = coord_vol_j_(j);
       coord_len1_j_(j) = coord_area2_j_(j);
-      coord_len2_j_(j) = volume_j_(j);
+      coord_len2_j_(j) = coord_vol_j_(j);
       coord_len3_j_(j) = coord_area2_j_(j);
       coord_width3_j_(j) = sin_c;
 
@@ -242,12 +242,12 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
     Real sin_p_cu = SQR(sin_p)*sin_p;
 
     // Volumes and areas
-    volume_j_(pb->js) = cos_m - cos_p;
-    coord_area1_j_(pb->js) = volume_j_(pb->js);
+    coord_vol_j_(pb->js) = cos_m - cos_p;
+    coord_area1_j_(pb->js) = coord_vol_j_(pb->js);
     coord_area2_j_(pb->js) = sin_m;
-    coord_area3_j_(pb->js) = volume_j_(pb->js);
+    coord_area3_j_(pb->js) = coord_vol_j_(pb->js);
     coord_len1_j_(pb->js) = coord_area2_j_(pb->js);
-    coord_len2_j_(pb->js) = volume_j_(pb->js);
+    coord_len2_j_(pb->js) = coord_vol_j_(pb->js);
     coord_len3_j_(pb->js) = coord_area2_j_(pb->js);
 
     // Source terms
@@ -286,7 +286,7 @@ Coordinates::~Coordinates()
   coord_src_i2_.DeleteAthenaArray();
   coord_src_i3_.DeleteAthenaArray();
   coord_src_i4_.DeleteAthenaArray();
-  volume_j_.DeleteAthenaArray();
+  coord_vol_j_.DeleteAthenaArray();
   coord_area1_j_.DeleteAthenaArray();
   coord_area2_j_.DeleteAthenaArray();
   coord_area3_j_.DeleteAthenaArray();
@@ -326,7 +326,7 @@ Coordinates::~Coordinates()
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &volumes)
 {
-  const Real &neg_delta_cos_theta = volume_j_(j);
+  const Real &neg_delta_cos_theta = coord_vol_j_(j);
   const Real &delta_phi = pmy_block->dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
@@ -557,9 +557,9 @@ void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
 
   // Extract geometric quantities that do not depend on r
   const Real &sin_sq_theta = metric_cell_j1_(j);
-  const Real &gamma_233 = coord_src_j2_(j);
-  const Real &gamma_323 = coord_src_j3_(j);
-  const Real &gamma_332 = gamma_323;
+  const Real &gamma2_33 = coord_src_j2_(j);
+  const Real &gamma3_23 = coord_src_j3_(j);
+  const Real &gamma3_32 = gamma3_23;
 
   // Go through cells
   #pragma simd
@@ -1378,7 +1378,7 @@ void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const in
     const Real g33 = r_sq * sin_sq_theta;
     const Real m0_t = 1.0/alpha;
     const Real m1_z = alpha;
-    const Real m2_x = 1.0/r
+    const Real m2_x = 1.0/r;
     const Real m3_y = 1.0 / (r * sin_theta);
 
     // Extract local conserved quantities and fluxes
