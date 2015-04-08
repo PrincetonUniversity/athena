@@ -1,0 +1,49 @@
+<comment>
+problem = GR hydro accretion in radial direction
+
+<job>
+problem_id = Bondi
+
+<output1>
+file_type = vtk
+variable  = prim
+dt        = 100.0
+
+<output2>
+file_type = vtk
+variable  = cons
+dt        = 100.0
+
+<time>
+cfl_number = 0.4
+nlim       = -1
+tlim       = 100.0
+
+<mesh>
+nx1    = 100   # number of zones in r-direction
+x1min  = 3.0   # inner r
+x1max  = 20.0  # outer r
+ix1_bc = 3     # 3: custom
+ox1_bc = 3     # 3: custom
+
+nx2    = 1                   # number of zones in theta-direction
+x2min  = 1.0707963267948966  # lower theta (pi/2 - 1/2)
+x2max  = 2.0707963267948966  # upper theta (pi/2 + 1/2)
+ix2_bc = 4                   # 4: periodic
+ox2_bc = 4                   # 4: periodic
+
+nx3    = 1                   # number of zones in phi-direction
+x3min  = -0.5                # minimum phi
+x3max  = 0.5                 # maximum phi
+ix3_bc = 4                   # 4: periodic
+ox3_bc = 4                   # 4: periodic
+
+<coord>
+m = 1.0  # black hole mass M
+
+<fluid>
+gamma = 1.3333333333333333  # \Gamma = C_p/C_V
+k_adi = 1.0                 # p = K \rho^\Gamma
+
+<problem>
+r_crit = 8.0  # sonic point radius, in units of mass

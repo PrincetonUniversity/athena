@@ -19,19 +19,12 @@
 #include <cmath>  // cos(), sin(), sqrt()
 
 // Athena headers
-#include "../athena.hpp"         // enums, macros, Real
-#include "../athena_arrays.hpp"  // AthenaArray
-#include "../fluid/eos/eos.hpp"  // GetGamma()
-#include "../fluid/fluid.hpp"    // Fluid
-#include "../mesh.hpp"           // MeshBlock
-
-// TODO: find better input method
-namespace globals
-{
-  const Real A = 0.05;
-  const Real K = 2.6166666666666667;
-};
-using namespace globals;
+#include "../athena.hpp"           // enums, macros, Real
+#include "../athena_arrays.hpp"    // AthenaArray
+#include "../fluid/eos/eos.hpp"    // FluidEqnofState
+#include "../fluid/fluid.hpp"      // Fluid
+#include "../mesh.hpp"             // MeshBlock
+#include "../parameter_input.hpp"  // ParameterInput
 
 //--------------------------------------------------------------------------------------
 
@@ -41,6 +34,12 @@ using namespace globals;
 //   pin: pointer to runtime inputs
 Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
 {
+  // Set parameters
+  sinu_amplitude_ = pin->GetReal("coord", "a");
+  sinu_wavenumber_ = pin->GetReal("coord", "k");
+  const Real &a = sinu_amplitude_;
+  const Real &k = sinu_wavenumber_;
+
   // Set pointer to host MeshBlock
   pmy_block = pb;
 
@@ -102,17 +101,17 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
     Real r_c = pb->x1v(i);
     Real r_m = pb->x1f(i);
     Real r_p = pb->x1f(i+1);
-    Real sin_2m = std::sin(2.0*K*r_m);
-    Real sin_2p = std::sin(2.0*K*r_p);
-    Real cos_c = std::cos(K*r_c);
-    Real cos_m = std::cos(K*r_m);
-    Real cos_p = std::cos(K*r_p);
-    Real alpha_sq_c = 1.0 + SQR(A)*SQR(K) * SQR(cos_c);
-    Real alpha_sq_m = 1.0 + SQR(A)*SQR(K) * SQR(cos_m);
+    Real sin_2m = std::sin(2.0*k*r_m);
+    Real sin_2p = std::sin(2.0*k*r_p);
+    Real cos_c = std::cos(k*r_c);
+    Real cos_m = std::cos(k*r_m);
+    Real cos_p = std::cos(k*r_p);
+    Real alpha_sq_c = 1.0 + SQR(a)*SQR(k) * SQR(cos_c);
+    Real alpha_sq_m = 1.0 + SQR(a)*SQR(k) * SQR(cos_m);
     Real alpha_c = std::sqrt(alpha_sq_c);
-    Real beta_c = A*K * cos_c;
-    Real beta_m = A*K * cos_m;
-    Real beta_p = A*K * cos_p;
+    Real beta_c = a*k * cos_c;
+    Real beta_m = a*k * cos_m;
+    Real beta_p = a*k * cos_p;
 
     // Source terms
     coord_src_i1_(i) = (beta_m - beta_p) / pb->dx1f(i);
@@ -1379,8 +1378,10 @@ void Coordinates::PrimToCons(
 Real Coordinates::DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real by,
     Real bz)
 {
+  const Real &a = sinu_amplitude_;
+  const Real &k = sinu_wavenumber_;
   Real ax = a1;
-  Real ay = a2 - A * std::sin(K * a1);
+  Real ay = a2 - a * std::sin(k * a1);
   Real az = a3;
   return std::sqrt(SQR(ax-bx) + SQR(ay-by) + SQR(az-bz));
 }

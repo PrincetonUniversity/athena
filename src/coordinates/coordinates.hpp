@@ -29,6 +29,9 @@ public:
 
   MeshBlock *pmy_block;  // ptr to MeshBlock containing this Coordinates
 
+  // Functions for returning private variables
+  Real GetMass() const {return bh_mass_;}
+
 // functions to compute length of edges
   void Edge1Length(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &len);
@@ -142,6 +145,12 @@ public:
   #endif  // GENERAL_RELATIVITY
 
 private:
+
+  // Constant parameters for various coordinate systems
+  Real bh_mass_;          // M: Schwarzschild
+  Real bh_spin_;          // a (dimensionless): Schwarzschild
+  Real sinu_amplitude_;   // a: sinusoidal
+  Real sinu_wavenumber_;  // k: sinusoidal
 
   // Scratch arrays for coordinate factors
   // Format: coord_<type>[<direction>]_<index>[<count>]_
