@@ -27,15 +27,13 @@
 //  \brief implements outflow BCs in each dimension for conserved fluid variables
 //======================================================================================
 //--------------------------------------------------------------------------------------
-//! \fn void OutflowInnerX1(MeshBlock *pmb)
+//! \fn void OutflowInnerX1(MeshBlock *pmb, AthenaArray<Real> &a,
+//                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief  OUTFLOW  boundary conditions conserved vars, inner x1 boundary (ix1_bc=2)
 
-void OutflowInnerX1(MeshBlock *pmb, AthenaArray<Real> &a)
+void OutflowInnerX1(MeshBlock *pmb, AthenaArray<Real> &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
     for (int n=0; n<(NFLUID); ++n) {
@@ -50,15 +48,13 @@ void OutflowInnerX1(MeshBlock *pmb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void OutflowOuterX1(MeshBlock *pmb)
+//! \fn void OutflowOuterX1(MeshBlock *pmb, AthenaArray<Real> &a,
+//                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief  OUTFLOW  boundary conditions conserved vars, outer x1 boundary (ox1_bc=2)
 
-void OutflowOuterX1(MeshBlock *pmb, AthenaArray<Real> &a)
+void OutflowOuterX1(MeshBlock *pmb, AthenaArray<Real> &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
     for (int n=0; n<(NFLUID); ++n) {
@@ -73,15 +69,13 @@ void OutflowOuterX1(MeshBlock *pmb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void OutflowInnerX2(MeshBlock *pmb)
+//! \fn void OutflowInnerX2(MeshBlock *pmb, AthenaArray<Real> &a,
+//                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief  OUTFLOW  boundary conditions conserved vars, inner x2 boundary (ix2_bc=2)
 
-void OutflowInnerX2(MeshBlock *pmb, AthenaArray<Real> &a)
+void OutflowInnerX2(MeshBlock *pmb, AthenaArray<Real> &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
     for (int n=0; n<(NFLUID); ++n) {
@@ -96,15 +90,13 @@ void OutflowInnerX2(MeshBlock *pmb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void OutflowOuterX2(MeshBlock *pmb)
+//! \fn void OutflowOuterX2(MeshBlock *pmb, AthenaArray<Real> &a,
+//                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief  OUTFLOW  boundary conditions conserved vars, outer x2 boundary (ox2_bc=2)
 
-void OutflowOuterX2(MeshBlock *pmb, AthenaArray<Real> &a)
+void OutflowOuterX2(MeshBlock *pmb, AthenaArray<Real> &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
     for (int n=0; n<(NFLUID); ++n) {
@@ -119,15 +111,13 @@ void OutflowOuterX2(MeshBlock *pmb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void OutflowInnerX3(MeshBlock *pmb)
+//! \fn void OutflowInnerX3(MeshBlock *pmb, AthenaArray<Real> &a,
+//                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief  OUTFLOW  boundary conditions conserved vars, inner x3 boundary (ix3_bc=2)
 
-void OutflowInnerX3(MeshBlock *pmb, AthenaArray<Real> &a)
+void OutflowInnerX3(MeshBlock *pmb, AthenaArray<Real> &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks;
-
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
     for (int n=0; n<(NFLUID); ++n) {
@@ -142,15 +132,13 @@ void OutflowInnerX3(MeshBlock *pmb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void OutflowOuterX3(MeshBlock *pmb)
+//! \fn void OutflowOuterX3(MeshBlock *pmb, AthenaArray<Real> &a,
+//                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief  OUTFLOW  boundary conditions conserved vars, outer x3 boundary (ox3_bc=2)
 
-void OutflowOuterX3(MeshBlock *pmb, AthenaArray<Real> &a)
+void OutflowOuterX3(MeshBlock *pmb, AthenaArray<Real> &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ke = pmb->ke;
-
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
     for (int n=0; n<(NFLUID); ++n) {

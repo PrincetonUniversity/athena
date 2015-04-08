@@ -31,12 +31,9 @@
 //! \fn void ReflectInnerX1()
 //  \brief  REFLECTING boundary conditions interface B, inner x1 boundary (ix1_bc=1)
 
-void ReflectInnerX1(MeshBlock *pmb, InterfaceField &a)
+void ReflectInnerX1(MeshBlock *pmb, InterfaceField &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
 #pragma simd
@@ -68,12 +65,9 @@ void ReflectInnerX1(MeshBlock *pmb, InterfaceField &a)
 //! \fn void ReflectOuterX1()
 //  \brief  REFLECTING boundary conditions interface B, outer x1 boundary (ox1_bc=1)
 
-void ReflectOuterX1(MeshBlock *pmb, InterfaceField &a)
+void ReflectOuterX1(MeshBlock *pmb, InterfaceField &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
 #pragma simd
@@ -105,12 +99,9 @@ void ReflectOuterX1(MeshBlock *pmb, InterfaceField &a)
 //! \fn void ReflectInnerX2()
 //  \brief  REFLECTING boundary conditions interface B, inner x2 boundary (ix2_bc=1)
 
-void ReflectInnerX2(MeshBlock *pmb, InterfaceField &a)
+void ReflectInnerX2(MeshBlock *pmb, InterfaceField &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
 #pragma simd
@@ -142,12 +133,9 @@ void ReflectInnerX2(MeshBlock *pmb, InterfaceField &a)
 //! \fn void ReflectOuterX2()
 //  \brief  REFLECTING boundary conditions interface B, outer x2 boundary (ox2_bc=1)
 
-void ReflectOuterX2(MeshBlock *pmb, InterfaceField &a)
+void ReflectOuterX2(MeshBlock *pmb, InterfaceField &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
 #pragma simd
@@ -179,12 +167,9 @@ void ReflectOuterX2(MeshBlock *pmb, InterfaceField &a)
 //! \fn void ReflectInnerX3()
 //  \brief  REFLECTING boundary conditions interface B, inner x3 boundary (ix3_bc=1)
 
-void ReflectInnerX3(MeshBlock *pmb, InterfaceField &a)
+void ReflectInnerX3(MeshBlock *pmb, InterfaceField &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks;
-
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
 #pragma simd
@@ -216,12 +201,9 @@ void ReflectInnerX3(MeshBlock *pmb, InterfaceField &a)
 //! \fn void ReflectOuterX3()
 //  \brief  REFLECTING boundary conditions interface B, outer x3 boundary (ox3_bc=1)
 
-void ReflectOuterX3(MeshBlock *pmb, InterfaceField &a)
+void ReflectOuterX3(MeshBlock *pmb, InterfaceField &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ke = pmb->ke;
-
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
 #pragma simd
