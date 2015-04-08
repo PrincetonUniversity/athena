@@ -17,10 +17,14 @@
 #include "../parameter_input.hpp"          // ParameterInput
 
 // Declarations
-void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons);
-void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons);
-void FixedTop(MeshBlock *pmb, AthenaArray<Real> &cons);
-void FixedBottom(MeshBlock *pmb, AthenaArray<Real> &cons);
+void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons,
+                int is, int ie, int js, int je, int ks, int ke);
+void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons,
+                int is, int ie, int js, int je, int ks, int ke);
+void FixedTop(MeshBlock *pmb, AthenaArray<Real> &cons,
+              int is, int ie, int js, int je, int ks, int ke);
+void FixedBottom(MeshBlock *pmb, AthenaArray<Real> &cons,
+                 int is, int ie, int js, int je, int ks, int ke);
 static Real calculate_l(Real r);
 static Real log_h_aux(Real r, Real sin_theta);
 static void set_state(AthenaArray<Real> &prim, AthenaArray<Real> &prim_half, int i,
@@ -201,16 +205,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 // Notes:
 //   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 // TODO: only works in Schwarzschild (assumed metric)
-void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons)
+void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons,
+                int is, int ie, int js, int je, int ks, int ke)
 {
-  // Extract boundary indices
-  int il = pmb->is - NGHOST;
-  int iu = pmb->is;
-  int jl = pmb->js;
-  int ju = pmb->je;
-  int kl = pmb->ks;
-  int ku = pmb->ke;
-
   // Set conserved values
   Real r = pmb->x1v(iu);
   Real d, e;
@@ -236,16 +233,9 @@ void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons)
 // Notes:
 //   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 // TODO: only works in Schwarzschild (assumed metric)
-void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons)
+void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons,
+                int is, int ie, int js, int je, int ks, int ke)
 {
-  // Extract boundary indices
-  int il = pmb->ie;
-  int iu = pmb->ie + NGHOST;
-  int jl = pmb->js;
-  int ju = pmb->je;
-  int kl = pmb->ks;
-  int ku = pmb->ke;
-
   // Set conserved values
   Real r = pmb->x1v(il);
   Real d, e;
@@ -271,16 +261,9 @@ void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons)
 // Notes:
 //   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 // TODO: only works in Schwarzschild (assumed metric)
-void FixedTop(MeshBlock *pmb, AthenaArray<Real> &cons)
+void FixedTop(MeshBlock *pmb, AthenaArray<Real> &cons,
+              int is, int ie, int js, int je, int ks, int ke)
 {
-  // Extract boundary indices
-  int il = pmb->is;
-  int iu = pmb->ie;
-  int jl = pmb->js - NGHOST;
-  int ju = pmb->js;
-  int kl = pmb->ks;
-  int ku = pmb->ke;
-
   // Set conserved values
   for (int k = kl; k <= ku; k++)
     for (int j = jl; j <= ju; j++)
@@ -306,16 +289,9 @@ void FixedTop(MeshBlock *pmb, AthenaArray<Real> &cons)
 // Notes:
 //   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 // TODO: only works in Schwarzschild (assumed metric)
-void FixedBottom(MeshBlock *pmb, AthenaArray<Real> &cons)
+void FixedBottom(MeshBlock *pmb, AthenaArray<Real> &cons,
+                int is, int ie, int js, int je, int ks, int ke)
 {
-  // Extract boundary indices
-  int il = pmb->is;
-  int iu = pmb->ie;
-  int jl = pmb->je;
-  int ju = pmb->je + NGHOST;
-  int kl = pmb->ks;
-  int ku = pmb->ke;
-
   // Set conserved values
   for (int k = kl; k <= ku; k++)
     for (int j = jl; j <= ju; j++)

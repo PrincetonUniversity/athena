@@ -26,9 +26,12 @@
 #include "../bvals/bvals.hpp"      // Boundary Enroll
 
 // BCs on outer edges of grid in each dimension
-void noh3d_oib(MeshBlock *pmb, AthenaArray<Real> &a);
-void noh3d_ojb(MeshBlock *pmb, AthenaArray<Real> &a);
-void noh3d_okb(MeshBlock *pmb, AthenaArray<Real> &a);
+void noh3d_oib(MeshBlock *pmb, AthenaArray<Real> &a,
+               int is, int ie, int js, int je, int ks, int ke);
+void noh3d_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
+               int is, int ie, int js, int je, int ks, int ke);
+void noh3d_okb(MeshBlock *pmb, AthenaArray<Real> &a,
+               int is, int ie, int js, int je, int ks, int ke);
 
 // made global to share with BC functions
 static Real gmma, gmma1;
@@ -91,12 +94,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 //
 // Quantities at this boundary are held fixed at the time-dependent upstream state
 
-void noh3d_oib(MeshBlock *pmb, AthenaArray<Real> &a)
+void noh3d_oib(MeshBlock *pmb, AthenaArray<Real> &a,
+               int is, int ie, int js, int je, int ks, int ke)
 {
-  int ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
     for (int i=1;  i<=(NGHOST); ++i) {
@@ -130,12 +130,9 @@ void noh3d_oib(MeshBlock *pmb, AthenaArray<Real> &a)
 //
 // Quantities at this boundary are held fixed at the time-dependent upstream state
 
-void noh3d_ojb(MeshBlock *pmb, AthenaArray<Real> &a)
+void noh3d_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
+               int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
     for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
@@ -169,12 +166,9 @@ void noh3d_ojb(MeshBlock *pmb, AthenaArray<Real> &a)
 //
 // Quantities at this boundary are held fixed at the time-dependent upstream state
 
-void noh3d_okb(MeshBlock *pmb, AthenaArray<Real> &a)
+void noh3d_okb(MeshBlock *pmb, AthenaArray<Real> &a,
+               int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ke = pmb->ke;
-
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
     for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {

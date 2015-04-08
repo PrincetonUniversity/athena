@@ -45,9 +45,12 @@
 // dmrbv_ijb() - sets BCs on inner-x2 (bottom edge) of grid.  
 // dmrbv_ojb() - sets BCs on outer-x2 (top edge) of grid.  
 
-void dmrbv_iib(MeshBlock *pmb, AthenaArray<Real> &a);
-void dmrbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a);
-void dmrbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a);
+void dmrbv_iib(MeshBlock *pmb, AthenaArray<Real> &a,
+               int is, int ie, int js, int je, int ks, int ke);
+void dmrbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a,
+               int is, int ie, int js, int je, int ks, int ke);
+void dmrbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
+               int is, int ie, int js, int je, int ks, int ke);
 
 // problem generator
 
@@ -101,16 +104,13 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 //  \brief Sets boundary condition on left X boundary (iib) for dmr test
 //  Quantities at this boundary are held fixed at the downstream state
 
-void dmrbv_iib(MeshBlock *pmb, AthenaArray<Real> &a)
+void dmrbv_iib(MeshBlock *pmb, AthenaArray<Real> &a,
+               int is, int ie, int js, int je, int ks, int ke)
 {
   Real d0 = 8.0;
   Real e0 = 291.25;
   Real u0 =  8.25*sqrt(3.0)/2.0;
   Real v0 = -8.25*0.5;
-
-  int is = pmb->is;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks;
 
   for (int j=js; j<=je; ++j) {
     for (int i=1;  i<=(NGHOST); ++i) {
@@ -128,16 +128,13 @@ void dmrbv_iib(MeshBlock *pmb, AthenaArray<Real> &a)
 //  Quantaties at this boundary are held fixed at the downstream state for
 //  x1 < 0.16666666, and are reflected for x1 > 0.16666666
 
-void dmrbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a)
+void dmrbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a,
+               int is, int ie, int js, int je, int ks, int ke)
 {
   Real d0 = 8.0;
   Real e0 = 291.25;
   Real u0 =  8.25*sqrt(3.0)/2.0;
   Real v0 = -8.25*0.5;
-
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js;
-  int ks = pmb->ks;
 
   for (int j=1;  j<=(NGHOST); ++j) {
     for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
@@ -165,17 +162,14 @@ void dmrbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a)
 //  x1 < 0.16666666+v1_shock*time, and at the upstream state for
 //  x1 > 0.16666666+v1_shock*time
 
-void dmrbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a)
+void dmrbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
+               int is, int ie, int js, int je, int ks, int ke)
 {
   Real d0 = 8.0;
   Real e0 = 291.25;
   Real u0 =  8.25*sqrt(3.0)/2.0;
   Real v0 = -8.25*0.5;
   Real shock_pos = 0.1666666666 + (1. + 20.*pmb->pmy_mesh->time)/sqrt(3.0);
-
-  int is = pmb->is, ie = pmb->ie;
-  int je = pmb->je;
-  int ks = pmb->ks;
 
   for (int j=1;  j<=(NGHOST); ++j) {
     for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {

@@ -28,10 +28,14 @@
 #include "../fluid/srcterms/srcterms.hpp"  // GetG2, GetG3
 
 double ran2(long int *idum); // random number generator from NR
-void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a);
-void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a);
-void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a);
-void reflect_ox3(MeshBlock *pmb, AthenaArray<Real> &a);
+void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke);
+void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke);
+void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke);
+void reflect_ox3(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke);
 
 // made global to share with BC functions
 static Real gm1;
@@ -219,12 +223,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 //! \fn void reflect_ix2()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a)
+void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
     for (int n=0; n<(NFLUID); ++n) {
@@ -257,12 +258,9 @@ void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a)
 //! \fn void reflect_ox2()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a)
+void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
     for (int n=0; n<(NFLUID); ++n) {
@@ -295,12 +293,9 @@ void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a)
 //! \fn void reflect_ix3()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a)
+void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks;
-
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
     for (int n=0; n<(NFLUID); ++n) {
@@ -333,12 +328,9 @@ void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a)
 //! \fn void reflect_ox3()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void reflect_ox3(MeshBlock *pmb, AthenaArray<Real> &a)
+void reflect_ox3(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ke = pmb->ke;
-
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
     for (int n=0; n<(NFLUID); ++n) {
