@@ -30,18 +30,63 @@ public:
   void ConservedToPrimitive(AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old,
     const InterfaceField &b, AthenaArray<Real> &prim, AthenaArray<Real> &bcc);
 
-  Real SoundSpeed(const Real prim[(NFLUID)]); 
-  Real FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx); 
-  void SoundSpeedsSR(Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
-      Real *plambda_plus, Real *plambda_minus);
-  void FastMagnetosonicSpeedsSR(Real rho, Real pgas, const Real u[4], const Real b[4],
-      Real *plambda_plus, Real *plambda_minus);
-  void SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1,
-      Real g00, Real g01, Real g11,
-      Real *plambda_plus, Real *plambda_minus);
-  void FastMagnetosonicSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Real b_sq,
-      Real g00, Real g01, Real g11,
-      Real *plambda_plus, Real *plambda_minus);
+  // Sound speed functions in different regimes
+  #if !RELATIVISTIC_DYNAMICS  // Newtonian: SR, GR defined as no-op
+    Real SoundSpeed(const Real prim[(NFLUID)]);
+    #if !MAGNETIC_FIELDS_ENABLED  // hydro: MHD defined as no-op
+      Real FastMagnetosonicSpeed(const Real [], const Real) {return 0.0;}
+    #else  // MHD
+      Real FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx);
+    #endif  // !MAGNETIC_FIELDS_ENABLED
+    void SoundSpeedsSR(Real, Real, Real, Real, Real *, Real *) {return;}
+    void FastMagnetosonicSpeedsSR(Real, Real, const Real [], const Real [], Real *,
+        Real *) {return;}
+    void SoundSpeedsGR(Real, Real, Real, Real, Real, Real, Real, Real *, Real *)
+        {return;}
+    void FastMagnetosonicSpeedsGR(Real, Real, Real, Real, Real, Real, Real, Real, Real *,
+        Real *) {return;}
+  #elif !GENERAL_RELATIVITY  // SR: Newtonian, GR defined as no-op
+    Real SoundSpeed(const Real []) {return 0.0;}
+    Real FastMagnetosonicSpeed(const Real [], const Real) {return 0.0;}
+    #if !MAGNETIC_FIELDS_ENABLED  // hydro: MHD defined as no-op
+      void SoundSpeedsSR(Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
+          Real *plambda_plus, Real *plambda_minus);
+      void FastMagnetosonicSpeedsSR(Real, Real, const Real [], const Real [], Real *,
+          Real *) {return;}
+    #else  // MHD: hydro defined as no-op
+      void SoundSpeedsSR(Real, Real, Real, Real, Real *, Real *) {return;}
+      void FastMagnetosonicSpeedsSR(Real rho, Real pgas, const Real u[4], const Real b[4],
+          Real *plambda_plus, Real *plambda_minus);
+    #endif  // !MAGNETIC_FIELDS_ENABLED
+    void SoundSpeedsGR(Real, Real, Real, Real, Real, Real, Real, Real *, Real *)
+        {return;}
+    void FastMagnetosonicSpeedsGR(Real, Real, Real, Real, Real, Real, Real, Real,
+        Real *, Real *) {return;}
+  #else  // GR: Newtonian defined as no-op
+    Real SoundSpeed(const Real []) {return 0.0;}
+    Real FastMagnetosonicSpeed(const Real [], const Real) {return 0.0;}
+    #if !MAGNETIC_FIELDS_ENABLED  // hydro: MHD defined as no-op
+      void SoundSpeedsSR(Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
+          Real *plambda_plus, Real *plambda_minus);
+      void FastMagnetosonicSpeedsSR(Real, Real, const Real [], const Real [], Real *,
+          Real *) {return;}
+      void SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1,
+          Real g00, Real g01, Real g11,
+          Real *plambda_plus, Real *plambda_minus);
+      void FastMagnetosonicSpeedsGR(Real, Real, Real, Real, Real, Real, Real, Real,
+          Real *, Real *) {return;}
+    #else  // MHD: hydro defined as no-op
+      void SoundSpeedsSR(Real, Real, Real, Real, Real *, Real *) {return;}
+      void FastMagnetosonicSpeedsSR(Real rho, Real pgas, const Real u[4], const Real b[4],
+          Real *plambda_plus, Real *plambda_minus);
+      void SoundSpeedsGR(Real, Real, Real, Real, Real, Real, Real, Real *, Real *)
+          {return;}
+      void FastMagnetosonicSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Real b_sq,
+          Real g00, Real g01, Real g11,
+          Real *plambda_plus, Real *plambda_minus);
+    #endif  // !MAGNETIC_FIELDS_ENABLED
+  #endif  // !RELATIVISTIC_DYNAMICS
+
   Real GetGamma() const {return gamma_;}
   Real GetIsoSoundSpeed() const {return iso_sound_speed_;}
   Real GetDensityFloor() const {return density_floor_;}
@@ -53,4 +98,5 @@ private:
   AthenaArray<Real> g_, g_inv_;  // metric and its inverse, used for cons->prim in GR
   Real density_floor_, pressure_floor_; // density and pressure floors
 };
+
 #endif

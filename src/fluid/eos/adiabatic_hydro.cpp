@@ -123,12 +123,3 @@ Real FluidEqnOfState::SoundSpeed(const Real prim[NFLUID])
 {
   return sqrt(gamma_*prim[IEN]/prim[IDN]);
 }
-
-//--------------------------------------------------------------------------------------
-// \!fn Real FluidEqnOfState::FastMagnetosonicSpeed(const Real prim[], const Real bx)
-// \brief NoOp function required to prevent warnings from loader.
-
-Real FluidEqnOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx)
-{
-  return (FLT_MAX);
-}
