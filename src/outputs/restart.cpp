@@ -90,7 +90,6 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
     resfile.Write(&(pM->nbtotal), sizeof(int), 1);
     resfile.Write(&idl, sizeof(int), 1); // for extensibility
     resfile.Write(&(pM->root_level), sizeof(int), 1);
-    resfile.Write(&(pM->max_level), sizeof(int), 1);
     resfile.Write(&(pM->mesh_size), sizeof(RegionSize), 1);
     resfile.Write(pM->mesh_bcs, sizeof(int), 6);
     resfile.Write(&(pM->time), sizeof(Real), 1);
@@ -207,7 +206,6 @@ void RestartOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
   resfile.Seek(offset[pmb->gid - pmb->pmy_mesh->nbstart]);
   resfile.Write(&(pmb->block_size), sizeof(RegionSize), 1);
   resfile.Write(pmb->block_bcs, sizeof(int), 6);
-  resfile.Write(&(pmb->neighbor), sizeof(NeighborBlock), 6*2*2);
   resfile.Write(pmb->x1f.GetArrayPointer(),sizeof(Real),pmb->x1f.GetSize());
   resfile.Write(pmb->x2f.GetArrayPointer(),sizeof(Real),pmb->x2f.GetSize());
   resfile.Write(pmb->x3f.GetArrayPointer(),sizeof(Real),pmb->x3f.GetSize());

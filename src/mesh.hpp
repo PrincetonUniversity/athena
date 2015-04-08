@@ -28,6 +28,23 @@ class Field;
 class BoundaryValues;
 struct Task;
 class TaskList;
+class BlockUID;
+class BlockTree;
+
+
+//! \struct NeighborBlock
+//  \brief neighbor rank, level, and ids
+
+typedef struct NeighborBlock {
+  int rank, level, gid, lid, ox1, ox2, ox3, bufid, fi1, fi2;
+  enum neighbor_type type;
+  NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1),
+    ox1(-1), ox2(-1), ox3(-1), bufid(-1), fi1(-1), fi2(-1), type(neighbor_none) {};
+  void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2, int iox3,
+                   enum neighbor_type itype, int ibid, int ifi1, int ifi2);
+} NeighborBlock;
+
+
 
 //! \struct RegionSize
 //  \brief physical size and number of cells in a Mesh
@@ -46,12 +63,12 @@ typedef struct RegionSize {
 class MeshBlock {
 private:
   BlockUID uid;
-  NeighborBlock neighbor[6][2][2];
+  NeighborBlock neighbor[56];
   Real cost;
   Real new_block_dt;
   Task *task;
   long int task_flag;
-  int ntask, firsttask, ntodo;
+  int ntask, firsttask, ntodo, nneighbor;
 
   friend class RestartOutput;
   friend class BoundaryValues;
@@ -67,13 +84,10 @@ public:
   WrapIO& resfile, WrapIOSize_t offset, Real icost, int *ranklist, int *nslist);
   ~MeshBlock();
   size_t GetBlockSizeInBytes(void);
-
-  void SetNeighbor(enum direction, int nrank, int nlevel, int ngid, int nlid);
-  void SetNeighbor(enum direction, int nrank, int nlevel, int ngid, int nlid,
-                   int fb1, int fb2);
-
+  void SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslist);
   void SetTaskList(TaskList& tl);
-  enum tlstatus DoOneTask(void);
+  enum tasklist_status DoOneTask(void);
+  void SetCoarserCoordinates(void);
 
   RegionSize block_size;
   int block_bcs[6];
@@ -83,6 +97,13 @@ public:
   AthenaArray<Real> dx1v, dx2v, dx3v, x1v, x2v, x3v; // volume spacing and positions
   int is,ie,js,je,ks,ke;
   int gid, lid;
+
+  AthenaArray<Real> coarse_dx1f, coarse_dx2f, coarse_dx3f;
+  AthenaArray<Real> coarse_x1f, coarse_x2f, coarse_x3f;
+  AthenaArray<Real> coarse_dx1v, coarse_dx2v, coarse_dx3v;
+  AthenaArray<Real> coarse_x1v, coarse_x2v, coarse_x3v;
+  AthenaArray<Real> coarse_data;
+  int cis,cie,cjs,cje,cks,cke,cnghost;
 
   Coordinates *pcoord;
   Fluid *pfluid;
@@ -103,14 +124,16 @@ private:
   Real MeshGeneratorX1(Real x, RegionSize rs);
   Real MeshGeneratorX2(Real x, RegionSize rs);
   Real MeshGeneratorX3(Real x, RegionSize rs);
-  bool adaptive;
+  bool adaptive, multilevel, face_only;
   BlockUID *buid;
   BlockTree tree;
+  long int nrbx1, nrbx2, nrbx3;
 
-  void MeshTest(int *ranklist, Real *costlist);
+  void MeshTest(int *ranklist, Real *costlist, int dim);
 
   friend class RestartOutput;
   friend class MeshBlock;
+  friend class BoundaryValues;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
@@ -134,33 +157,8 @@ public:
   void SetTaskList(TaskList& tl);
   void ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin); // files in /pgen
   void NewTimeStep(void);
+  MeshBlock* FindMeshBlock(int tgid);
 };
-
-//--------------------------------------------------------------------------------------
-// \!fn void MeshBlock::SetNeighbor(enum direction dir, int nrank, int nlevel,
-//                                  int ngid, int nlid)
-// \brief set neighbor information, for the same or a coarser level
-inline void MeshBlock::SetNeighbor(enum direction dir, int nrank, int nlevel,
-                                   int ngid, int nlid)
-{
-  neighbor[dir][0][0].rank=nrank;
-  neighbor[dir][0][0].level=nlevel;
-  neighbor[dir][0][0].gid=ngid;
-  neighbor[dir][0][0].lid=nlid;
-}
-
-//--------------------------------------------------------------------------------------
-// \!fn void MeshBlock::SetNeighbor(enum direction dir, int nrank, int nlevel,
-//                                  int ngid, int nlid, int fb1, int fb2)
-// \brief set neighbor information, for a finer level
-inline void MeshBlock::SetNeighbor(enum direction dir, int nrank, int nlevel,
-                                  int ngid, int nlid, int fb1, int fb2)
-{
-  neighbor[dir][fb2][fb1].rank=nrank;
-  neighbor[dir][fb2][fb1].level=nlevel;
-  neighbor[dir][fb2][fb1].gid=ngid;
-  neighbor[dir][fb2][fb1].lid=nlid;
-}
 
 
 //--------------------------------------------------------------------------------------

@@ -309,87 +309,37 @@ int main(int argc, char *argv[])
 
 //--- Step 8. Create and set the task list ---------------------------------------------
 // this is for a two-step integrator
-  task_list.AddTask(fluid_integrate_sendx1_1, none); // predict
-  if (MAGNETIC_FIELDS_ENABLED)
-    task_list.AddTask(field_integrate_sendx1_1, fluid_integrate_sendx1_1);
-  if(pmesh->mesh_size.nx2==1) {// 1D
-    task_list.AddTask(fluid_recvx1_1, fluid_integrate_sendx1_1);
-    if (MAGNETIC_FIELDS_ENABLED) {
-      task_list.AddTask(field_recvx1_1, field_integrate_sendx1_1);
-      task_list.AddTask(primitives_1, fluid_recvx1_1 | field_recvx1_1);
-    }
-    else
-      task_list.AddTask(primitives_1, fluid_recvx1_1);
+  task_list.AddTask(fluid_integrate_1, none); // predict fluid
+  task_list.AddTask(fluid_send_1, fluid_integrate_1); // send block boundaries
+  if (MAGNETIC_FIELDS_ENABLED) {
+    task_list.AddTask(field_integrate_1, fluid_integrate_1); // predict b-field
+    task_list.AddTask(field_send_1, field_integrate_1); // send block boundaries
   }
-  else {
-    task_list.AddTask(fluid_recvx1_sendx2_1, fluid_integrate_sendx1_1);
-    if (MAGNETIC_FIELDS_ENABLED)
-      task_list.AddTask(field_recvx1_sendx2_1, field_integrate_sendx1_1);
-    if(pmesh->mesh_size.nx3==1) { // 2D
-      task_list.AddTask(fluid_recvx2_1, fluid_recvx1_sendx2_1);
-      if (MAGNETIC_FIELDS_ENABLED) {
-        task_list.AddTask(field_recvx2_1, field_recvx1_sendx2_1);
-        task_list.AddTask(primitives_1, fluid_recvx2_1 | field_recvx2_1);
-      }
-      else
-        task_list.AddTask(primitives_1, fluid_recvx2_1);
-    }
-    else { // 3D
-      task_list.AddTask(fluid_recvx2_sendx3_1, fluid_recvx1_sendx2_1);
-      if (MAGNETIC_FIELDS_ENABLED)
-        task_list.AddTask(field_recvx2_sendx3_1, field_recvx1_sendx2_1);
-      task_list.AddTask(fluid_recvx3_1, fluid_recvx2_sendx3_1);
-      if (MAGNETIC_FIELDS_ENABLED) {
-        task_list.AddTask(field_recvx3_1, field_recvx2_sendx3_1);
-        task_list.AddTask(primitives_1, fluid_recvx3_1 | field_recvx3_1);
-      }
-      else
-        task_list.AddTask(primitives_1, fluid_recvx3_1);
-    }
+  task_list.AddTask(fluid_recv_1, none); // receive block boundaries
+  task_list.AddTask(fluid_boundary_1, fluid_recv_1 | fluid_integrate_1); // physical boundaries
+  if (MAGNETIC_FIELDS_ENABLED) {
+    task_list.AddTask(field_recv_1, none); // receive block boundaries
+    task_list.AddTask(field_boundary_1, field_recv_1 | field_integrate_1); // physical boundaries
+    task_list.AddTask(primitives_1, fluid_boundary_1 | field_boundary_1);
   }
+  else task_list.AddTask(primitives_1, fluid_boundary_1);
 
-  task_list.AddTask(fluid_integrate_sendx1_0, primitives_1); // correct
-  if (MAGNETIC_FIELDS_ENABLED)
-    task_list.AddTask(field_integrate_sendx1_0, fluid_integrate_sendx1_0);
-  if(pmesh->mesh_size.nx2==1) {// 1D
-    task_list.AddTask(fluid_recvx1_0, fluid_integrate_sendx1_0);
-    if (MAGNETIC_FIELDS_ENABLED) {
-      task_list.AddTask(field_recvx1_0, field_integrate_sendx1_0);
-      task_list.AddTask(primitives_0, fluid_recvx1_0 | field_recvx1_0);
-    }
-    else
-      task_list.AddTask(primitives_0, fluid_recvx1_0);
+  task_list.AddTask(fluid_integrate_0, primitives_1); // correct fluid
+  task_list.AddTask(fluid_send_0, fluid_integrate_0); // send block boundaries
+  if (MAGNETIC_FIELDS_ENABLED) {
+    task_list.AddTask(field_integrate_0, fluid_integrate_0); // correct b-field
+    task_list.AddTask(field_send_0, field_integrate_0); // send block boundaries
   }
-  else {
-    task_list.AddTask(fluid_recvx1_sendx2_0, fluid_integrate_sendx1_0);
-    if (MAGNETIC_FIELDS_ENABLED) {
-      task_list.AddTask(field_recvx1_sendx2_0, field_integrate_sendx1_0);
-    }
-    if(pmesh->mesh_size.nx3==1) { // 2D
-      task_list.AddTask(fluid_recvx2_0, fluid_recvx1_sendx2_0);
-      if (MAGNETIC_FIELDS_ENABLED) {
-        task_list.AddTask(field_recvx2_0, field_recvx1_sendx2_0);
-        task_list.AddTask(primitives_0, fluid_recvx2_0 | field_recvx2_0);
-      }
-      else
-        task_list.AddTask(primitives_0, fluid_recvx2_0);
-    }
-    else { // 3D
-      task_list.AddTask(fluid_recvx2_sendx3_0, fluid_recvx1_sendx2_0);
-      if (MAGNETIC_FIELDS_ENABLED)
-        task_list.AddTask(field_recvx2_sendx3_0, field_recvx1_sendx2_0);
-      task_list.AddTask(fluid_recvx3_0, fluid_recvx2_sendx3_0);
-      if (MAGNETIC_FIELDS_ENABLED) {
-        task_list.AddTask(field_recvx3_0, field_recvx2_sendx3_0);
-        task_list.AddTask(primitives_0, fluid_recvx3_0 | field_recvx3_0);
-      }
-      else
-        task_list.AddTask(primitives_0, fluid_recvx3_0);
-    }
+  task_list.AddTask(fluid_recv_0, none); // receive block boundaries
+  task_list.AddTask(fluid_boundary_0, fluid_recv_0 | fluid_integrate_0); // physical boundaries
+  if (MAGNETIC_FIELDS_ENABLED) {
+    task_list.AddTask(field_recv_0, none); // receive block boundaries
+    task_list.AddTask(field_boundary_0, field_recv_0 | field_integrate_0); // physical boundaries
+    task_list.AddTask(primitives_0, fluid_boundary_0 | field_boundary_0);
   }
-  
+  else task_list.AddTask(primitives_0, fluid_boundary_0);
+
   task_list.AddTask(new_blocktimestep,primitives_0);
-
 
   pmesh->SetTaskList(task_list);
 

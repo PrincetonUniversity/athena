@@ -69,6 +69,7 @@ private:
   BlockTree* pleaf[2][2][2];
   BlockUID uid;
   int gid;
+  friend class MeshBlock;
 public:
   BlockTree();
   BlockTree(BlockTree *parent, int ox, int oy, int oz);
@@ -77,14 +78,14 @@ public:
   void AddMeshBlock(BlockTree& root, BlockUID id, int dim, int* mesh_bcs,
                     long int rbx, long int rby, long int rbz, int rl);
   void Refine(BlockTree& root, int dim, int* mesh_bcs,
-              long int rbx, long int rby, long int rbz, int rl, int* bcs);
+              long int rbx, long int rby, long int rbz, int rl);
   void Derefine(void);
   void AssignGID(int& id);
   void GetIDList(BlockUID *list, int& count);
-  BlockTree* FindNeighbor(enum direction dir, BlockUID id,
-                          long int rbx, long int rby, long int rbz, int rl);
+  BlockTree* FindNeighbor(BlockUID id, int ox1, int ox2, int ox3, int *bcs,
+                         long int rbx, long int rby, long int rbz, int rl);
   BlockTree* GetLeaf(int ox, int oy, int oz);
-  NeighborBlock GetNeighbor(void);
+  void GetLevelAndGID(int &level, int &id);
 };
 
 #endif

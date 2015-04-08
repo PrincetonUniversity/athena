@@ -23,7 +23,6 @@ enum task_status FluidIntegrate(MeshBlock *pmb, int task_arg)
 {
   Fluid *pfluid=pmb->pfluid;
   Field *pfield=pmb->pfield;
-  BoundaryValues *pbval=pmb->pbval;
   if(task_arg==0) {
     pfluid->pf_integrator->OneStep(pmb, pfluid->u, pfluid->w1, pfield->b1,
                                    pfield->bcc1, 2);
@@ -41,7 +40,6 @@ enum task_status FieldIntegrate(MeshBlock *pmb, int task_arg)
 {
   Fluid *pfluid=pmb->pfluid;
   Field *pfield=pmb->pfield;
-  BoundaryValues *pbval=pmb->pbval;
   if(task_arg==0) {
     pfield->pint->CT(pmb, pfield->b, pfluid->w1, pfield->bcc1, 2);
   }
@@ -79,36 +77,29 @@ enum task_status FluidReceive(MeshBlock *pmb, int task_arg)
   return task_failure;
 }
 
-enum task_status FluidPhysicalBoundary(MeshBlock *pmb, int task_arg)
-{
-  if(task_arg==0)
-    FluidPhysicalBoundaries(pfluid->u);
-  else if(task_arg==1)
-    FluidPhysicalBoundaries(pfluid->u1);
-  return task_success;
-}
-
-enum task_status FieldPhysicalBoundary(MeshBlock *pmb, int task_arg)
-{
-  if(task_arg==0)
-    FieldPhysicalBoundaries(pfluid->b);
-  else if(task_arg==1)
-    FieldPhysicalBoundaries(pfluid->b1);
-  return task_success;
-}
-
 enum task_status FluxCorrectionSend(MeshBlock *pmb, int task_arg)
 {
   return task_success;
 }
 
-enum task_status FluxCorrectionRecv(MeshBlock *pmb, int task_arg)
+enum task_status FluxCorrectionReceive(MeshBlock *pmb, int task_arg)
 {
   return task_success;
 }
 
 enum task_status FluidProlongation(MeshBlock *pmb, int task_arg)
 {
+  return task_success;
+}
+
+enum task_status FluidPhysicalBoundary(MeshBlock *pmb, int task_arg)
+{
+  Fluid *pfluid=pmb->pfluid;
+  BoundaryValues *pbval=pmb->pbval;
+  if(task_arg==0)
+    pbval->FluidPhysicalBoundaries(pfluid->u);
+  else if(task_arg==1)
+    pbval->FluidPhysicalBoundaries(pfluid->u1);
   return task_success;
 }
 
@@ -131,7 +122,7 @@ enum task_status FieldReceive(MeshBlock *pmb, int task_arg)
   if(task_arg==0)
     ret=pbval->ReceiveFieldBoundaryBuffers(pfield->b,0);
   else if(task_arg==1)
-    ret=pbval->ReceiveFluidBoundaryBuffers(pfield->b1,1);
+    ret=pbval->ReceiveFieldBoundaryBuffers(pfield->b1,1);
   if(ret==true)
     return task_success;
   return task_failure;
@@ -142,13 +133,24 @@ enum task_status EMFCorrectionSend(MeshBlock *pmb, int task_arg)
   return task_success;
 }
 
-enum task_status EMFCorrectionRecv(MeshBlock *pmb, int task_arg)
+enum task_status EMFCorrectionReceive(MeshBlock *pmb, int task_arg)
 {
   return task_success;
 }
 
 enum task_status FieldProlongation(MeshBlock *pmb, int task_arg)
 {
+  return task_success;
+}
+
+enum task_status FieldPhysicalBoundary(MeshBlock *pmb, int task_arg)
+{
+  Field *pfield=pmb->pfield;
+  BoundaryValues *pbval=pmb->pbval;
+  if(task_arg==0)
+    pbval->FieldPhysicalBoundaries(pfield->b);
+  else if(task_arg==1)
+    pbval->FieldPhysicalBoundaries(pfield->b1);
   return task_success;
 }
 
@@ -169,7 +171,7 @@ enum task_status Primitives(MeshBlock *pmb, int task_arg)
 enum task_status NewBlockTimeStep(MeshBlock *pmb, int task_arg)
 {
   pmb->pfluid->NewBlockTimeStep(pmb);
-  return true;
+  return task_success;
 }
 
 } // namespace task
@@ -198,7 +200,7 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
     break;
 
   case fluid_recv_1:
-    task[ntask].TaskFunc=taskfunc::FluidRecv;
+    task[ntask].TaskFunc=taskfunc::FluidReceive;
     task[ntask].task_arg=1;
     break;
 
@@ -208,7 +210,7 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
     break;
 
   case flux_correction_recv_1:
-    task[ntask].TaskFunc=taskfunc::FluxCorrectionRecv;
+    task[ntask].TaskFunc=taskfunc::FluxCorrectionReceive;
     task[ntask].task_arg=1;
     break;
 
@@ -228,7 +230,7 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
     break;
 
   case field_recv_1:
-    task[ntask].TaskFunc=taskfunc::FieldRecv;
+    task[ntask].TaskFunc=taskfunc::FieldReceive;
     task[ntask].task_arg=1;
     break;
 
@@ -238,7 +240,7 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
     break;
 
   case emf_correction_recv_1:
-    task[ntask].TaskFunc=taskfunc::EMFCorrectionRecv;
+    task[ntask].TaskFunc=taskfunc::EMFCorrectionReceive;
     task[ntask].task_arg=1;
     break;
 
@@ -273,7 +275,7 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
     break;
 
   case fluid_recv_0:
-    task[ntask].TaskFunc=taskfunc::FluidRecv;
+    task[ntask].TaskFunc=taskfunc::FluidReceive;
     task[ntask].task_arg=0;
     break;
 
@@ -283,7 +285,7 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
     break;
 
   case flux_correction_recv_0:
-    task[ntask].TaskFunc=taskfunc::FluxCorrectionRecv;
+    task[ntask].TaskFunc=taskfunc::FluxCorrectionReceive;
     task[ntask].task_arg=0;
     break;
 
@@ -303,7 +305,7 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
     break;
 
   case field_recv_0:
-    task[ntask].TaskFunc=taskfunc::FieldRecv;
+    task[ntask].TaskFunc=taskfunc::FieldReceive;
     task[ntask].task_arg=0;
     break;
 
@@ -313,7 +315,7 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
     break;
 
   case emf_correction_recv_0:
-    task[ntask].TaskFunc=taskfunc::EMFCorrectionRecv;
+    task[ntask].TaskFunc=taskfunc::EMFCorrectionReceive;
     task[ntask].task_arg=0;
     break;
 

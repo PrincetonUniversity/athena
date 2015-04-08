@@ -527,9 +527,9 @@ BlockTree* BlockTree::FindNeighbor(BlockUID id, int ox1, int ox2, int ox3, int *
     return bt;
   ox=oy=oz=0;
   // one level finer: check if they are leaves
-  if(dir==inner_x1) ox=1;
-  if(dir==inner_x2) oy=1;
-  if(dir==inner_x3) oz=1;
+  if(ox1<0) ox=1;
+  if(ox2<0) oy=1;
+  if(ox3<0) oz=1;
   if(bt->pleaf[oz][oy][ox]->flag==true)
     return bt;  // return this block
   msg << "### FATAL ERROR in FindNeighbor" << std::endl
@@ -549,16 +549,10 @@ BlockTree* BlockTree::GetLeaf(int ox, int oy, int oz)
 }
 
 
-//--------------------------------------------------------------------------------------
-//! \fn BlockTree* BlockTree::FindNeighbor(enum direction dir, BlockUID id)
-//  \brief find a neighboring block, called from the root of the tree
-//         If it is coarser or same level, return the pointer to that block.
-//         If it is a finer block...
-NeighborBlock BlockTree::GetNeighbor(void)
+void BlockTree::GetLevelAndGID(int &level, int &id)
 {
-  NeighborBlock nei;
-  nei.gid=gid;
-  nei.level=uid.GetLevel();
-  return nei;
+  level=uid.GetLevel();
+  id=gid;
+  return;
 }
 
