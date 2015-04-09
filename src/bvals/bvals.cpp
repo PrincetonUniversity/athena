@@ -369,6 +369,7 @@ void BoundaryValues::Initialize(void)
 #ifdef MPI_PARALLEL
   MeshBlock* pmb=pmy_mblock_;
   int mylevel=pmb->uid.GetLevel();
+  int tag;
   int cng1, cng2, cng3;
   cng1=pmb->cnghost;
   cng2=(pmb->block_size.nx2>1)?cng1:0;
@@ -405,7 +406,7 @@ void BoundaryValues::Initialize(void)
         tag=CreateMPITag(nb.lid, l, tag_fluid, -nb.ox1, -nb.ox2, -nb.ox3, 0, 0);
         MPI_Send_init(fluid_send_[l][nb.bufid],ssize,MPI_ATHENA_REAL,
                       nb.rank,tag,MPI_COMM_WORLD,&req_fluid_send_[l][nb.bufid]);
-        tag=CreateMPITag(nb.lid, l, tag_fluid, nb.ox1, nb.ox2, nb.ox3, 0, 0);
+        tag=CreateMPITag(pmb->lid, l, tag_fluid, nb.ox1, nb.ox2, nb.ox3, 0, 0);
         MPI_Recv_init(fluid_recv_[l][nb.bufid],rsize,MPI_ATHENA_REAL,
                       nb.rank,tag,MPI_COMM_WORLD,&req_fluid_recv_[l][nb.bufid]);
       }
@@ -430,7 +431,7 @@ void BoundaryValues::Initialize(void)
           tag=CreateMPITag(nb.lid, l, tag_field, -nb.ox1, -nb.ox2, -nb.ox3, 0, 0);
           MPI_Send_init(field_send_[l][nb.bufid],ssize,MPI_ATHENA_REAL,
                         nb.rank,tag,MPI_COMM_WORLD,&req_field_send_[l][nb.bufid]);
-          tag=CreateMPITag(nb.lid, l, tag_field, nb.ox1, nb.ox2, nb.ox3, 0, 0);
+          tag=CreateMPITag(pmb->lid, l, tag_field, nb.ox1, nb.ox2, nb.ox3, 0, 0);
           MPI_Recv_init(field_recv_[l][nb.bufid],rsize,MPI_ATHENA_REAL,
                         nb.rank,tag,MPI_COMM_WORLD,&req_field_recv_[l][nb.bufid]);
         }
@@ -455,6 +456,7 @@ void BoundaryValues::EnrollFluidBoundaryFunction(enum direction dir, BValFluid_t
         << "dirName = " << dir << " not valid" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
+  if(pmy_mblock_->block_bcs[dir]==-1) return;
   if(pmy_mblock_->block_bcs[dir]!=3) {
     msg << "### FATAL ERROR in EnrollFluidBoundaryCondition function" << std::endl
         << "A user-defined boundary condition flag (3) must be specified "
@@ -480,6 +482,7 @@ void BoundaryValues::EnrollFieldBoundaryFunction(enum direction dir,BValField_t 
         << "dirName = " << dir << " is not valid" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
+  if(pmy_mblock_->block_bcs[dir]==-1) return;
   if(pmy_mblock_->block_bcs[dir]!=3) {
     msg << "### FATAL ERROR in EnrollFieldBoundaryCondition function" << std::endl
         << "A user-defined boundary condition flag (3) must be specified "
@@ -583,6 +586,8 @@ int BoundaryValues::LoadFluidBoundaryBufferSameLevel(AthenaArray<Real> &src, Rea
   sk=(nb.ox3>0)?(pmb->ke-NGHOST+1):pmb->ks;
   ek=(nb.ox3<0)?(pmb->ks+NGHOST-1):pmb->ke;
 
+//  std::cout << "Sending direction: " << nb.ox1 << " " << nb.ox2 << " " << nb.ox3 << " "
+//  << "indexes: " << si << " " << ei << " " << sj << " " << ej << " " << sk << " " << ek << std::endl; 
   // Set buffers
   int p=0;
   for (int n=0; n<(NFLUID); ++n) {
@@ -680,6 +685,9 @@ void BoundaryValues::SetFluidBoundarySameLevel(AthenaArray<Real> &dst, Real *buf
   if(nb.ox3==0)     sk=pmb->ks,        ek=pmb->ke;
   else if(nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
+
+//  std::cout << "Receiving direction: " << nb.ox1 << " " << nb.ox2 << " " << nb.ox3 << " "
+//  << "indexes: " << si << " " << ei << " " << sj << " " << ej << " " << sk << " " << ek << std::endl; 
 
   // Set buffers
   int p=0;
@@ -826,7 +834,7 @@ void BoundaryValues::ClearBoundaryForInit(void)
     if (MAGNETIC_FIELDS_ENABLED)
       field_flag_[0][nb.bufid] = boundary_waiting;
 #ifdef MPI_PARALLEL
-    if((nb.rank!=myrank) && (nb.gid!=-1)) {
+    if(nb.rank!=myrank) {
       MPI_Wait(&req_fluid_send_[0][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
       if (MAGNETIC_FIELDS_ENABLED)
         MPI_Wait(&req_field_send_[0][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
@@ -850,7 +858,7 @@ void BoundaryValues::ClearBoundaryAll(void)
       if (MAGNETIC_FIELDS_ENABLED)
         field_flag_[l][nb.bufid] = boundary_waiting;
 #ifdef MPI_PARALLEL
-      if((nb.rank!=myrank) && (nb.gid!=-1)) {
+      if(nb.rank!=myrank) {
         MPI_Wait(&req_fluid_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
         if (MAGNETIC_FIELDS_ENABLED)
           MPI_Wait(&req_field_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
@@ -939,8 +947,7 @@ void BoundaryValues::FieldPhysicalBoundaries(InterfaceField &dst)
 //  \brief calculate a buffer identifier
 int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2)
 {
-  int dir=(((ox1+1)<<4)|((ox1+1)<<2)|(ox3+1));
-  return (dir<<2) | (fi1<<1) | fi2;
+  return ((((ox1+1)<<6)|((ox2+1)<<4)|(ox3+1))<<2) | (fi1<<1) | fi2;
 }
 
 
@@ -1036,8 +1043,10 @@ void CalculateTargetBufferID(int dim, bool multilevel, bool face_only)
       for(int f1=0;f1<nf1;f1++) {
         int tid=CreateBufferID(-n,0,0,f1,f2);
         for(int i=0;i<b;i++) {
-          if(tid==bufid[i])
+          if(tid==bufid[i]) {
             target_bufid_[t++]=i;
+            break;
+          }
         }
       }
     }
@@ -1049,8 +1058,10 @@ void CalculateTargetBufferID(int dim, bool multilevel, bool face_only)
       for(int f1=0;f1<nf1;f1++) {
         int tid=CreateBufferID(0,-n,0,f1,f2);
         for(int i=0;i<b;i++) {
-          if(tid==bufid[i])
+          if(tid==bufid[i]) {
             target_bufid_[t++]=i;
+            break;
+          }
         }
       }
     }
@@ -1062,14 +1073,15 @@ void CalculateTargetBufferID(int dim, bool multilevel, bool face_only)
         for(int f1=0;f1<nf1;f1++) {
           int tid=CreateBufferID(0,0,-n,f1,f2);
           for(int i=0;i<b;i++) {
-            if(tid==bufid[i])
+            if(tid==bufid[i]) {
               target_bufid_[t++]=i;
+              break;
+            }
           }
         }
       }
     }
   }
-  if(face_only==true) return;
   // edges
   // x1x2
   for(int m=-1; m<=1; m+=2) {
@@ -1077,21 +1089,24 @@ void CalculateTargetBufferID(int dim, bool multilevel, bool face_only)
       for(int f1=0;f1<nf1;f1++) {
         int tid=CreateBufferID(-n,-m,0,f1,0);
         for(int i=0;i<b;i++) {
-          if(tid==bufid[i])
+          if(tid==bufid[i]) {
             target_bufid_[t++]=i;
+            break;
+          }
         }
       }
     }
   }
-  if(dim==2) return;
   // x1x3
   for(int m=-1; m<=1; m+=2) {
     for(int n=-1; n<=1; n+=2) {
       for(int f1=0;f1<nf1;f1++) {
         int tid=CreateBufferID(-n,0,-m,f1,0);
         for(int i=0;i<b;i++) {
-          if(tid==bufid[i])
+          if(tid==bufid[i]) {
             target_bufid_[t++]=i;
+            break;
+          }
         }
       }
     }
@@ -1102,8 +1117,10 @@ void CalculateTargetBufferID(int dim, bool multilevel, bool face_only)
       for(int f1=0;f1<nf1;f1++) {
         int tid=CreateBufferID(0,-n,-m,f1,0);
         for(int i=0;i<b;i++) {
-          if(tid==bufid[i])
+          if(tid==bufid[i]) {
             target_bufid_[t++]=i;
+            break;
+          }
         }
       }
     }
@@ -1114,8 +1131,10 @@ void CalculateTargetBufferID(int dim, bool multilevel, bool face_only)
       for(int n=-1; n<=1; n+=2) {
         int tid=CreateBufferID(-n,-m,-l,0,0);
         for(int i=0;i<b;i++) {
-          if(tid==bufid[i])
+          if(tid==bufid[i]) {
             target_bufid_[t++]=i;
+            break;
+          }
         }
       }
     }

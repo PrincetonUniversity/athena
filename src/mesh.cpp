@@ -136,14 +136,12 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   }
 
 // check cfl_number
-  if(cfl_number > 1.0 && mesh_size.nx2==1)
-  {
+  if(cfl_number > 1.0 && mesh_size.nx2==1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "The CFL number must be smaller than 1.0 in 1D simulation" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if(cfl_number > 0.5 && mesh_size.nx2 > 1)
-  {
+  if(cfl_number > 0.5 && mesh_size.nx2 > 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "The CFL number must be smaller than 0.5 in 2D/3D simulation" << std::endl;
     throw std::runtime_error(msg.str().c_str());
@@ -660,14 +658,12 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   if(mesh_size.nx3>1) dim=3;
 
 // check cfl_number
-  if(cfl_number > 1.0 && mesh_size.nx2==1)
-  {
+  if(cfl_number > 1.0 && mesh_size.nx2==1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "The CFL number must be smaller than 1.0 in 1D simulation" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if(cfl_number > 0.5 && mesh_size.nx2 > 1)
-  {
+  if(cfl_number > 0.5 && mesh_size.nx2 > 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "The CFL number must be smaller than 0.5 in 2D/3D simulation" << std::endl;
     throw std::runtime_error(msg.str().c_str());
@@ -1619,6 +1615,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       pfluid->pf_eos->ConservedToPrimitive(pfluid->u, pfluid->w1, pfield->b, 
                                            pfluid->w, pfield->bcc);
       pbval->CheckBoundary();
+      std::cout << "MeshBlock " << pmb->gid << ": pgen" << std::endl;
       pmb=pmb->next;
     }
   }
@@ -1627,6 +1624,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
   while (pmb != NULL)  {
     pmb->pbval->Initialize();
     pmb->pbval->StartReceivingForInit();
+    std::cout << "MeshBlock " << pmb->gid << ": boundary init" << std::endl;
     pmb=pmb->next;
   }
 
@@ -1638,6 +1636,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     pbval->SendFluidBoundaryBuffers(pfluid->u,0);
     if (MAGNETIC_FIELDS_ENABLED)
       pbval->SendFieldBoundaryBuffers(pfield->b,0);
+    std::cout << "MeshBlock " << pmb->gid << ": boundary send" << std::endl;
     pmb=pmb->next;
   }
 
@@ -1649,6 +1648,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     pbval->ReceiveFluidBoundaryBuffersWithWait(pfluid->u ,0);
     if (MAGNETIC_FIELDS_ENABLED)
       pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b ,0);
+    std::cout << "MeshBlock " << pmb->gid << ": boundary recv" << std::endl;
     pmb=pmb->next;
   }
 
@@ -1657,8 +1657,12 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     pfluid=pmb->pfluid;
     pfield=pmb->pfield;
     pmb->pbval->ClearBoundaryForInit();
+    pbval->FluidPhysicalBoundaries(pfluid->u);
+    pbval->FieldPhysicalBoundaries(pfield->b);
+    std::cout << "MeshBlock " << pmb->gid << ": physical boundary" << std::endl;
     pfluid->pf_eos->ConservedToPrimitive(pfluid->u, pfluid->w1, pfield->b, 
                                          pfluid->w, pfield->bcc);
+    std::cout << "MeshBlock " << pmb->gid << ": cons 2 prim" << std::endl;
     pmb=pmb->next;
   }
 
@@ -1666,6 +1670,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     pmb = pblock;
     while (pmb != NULL)  {
       pmb->pfluid->NewBlockTimeStep(pmb);
+      std::cout << "MeshBlock " << pmb->gid << ": block timestep" << std::endl;
       pmb=pmb->next;
     }
     NewTimeStep();
@@ -1823,7 +1828,7 @@ enum tasklist_status MeshBlock::DoOneTask(void) {
 void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
   int iox1, int iox2, int iox3, enum neighbor_type itype, int ibid, int ifi1=0, int ifi2=0)
 {
-  rank=irank; level=ilevel; gid=igid; lid=ilid; ox1=iox1; ox2=iox2; type=itype;
+  rank=irank; level=ilevel; gid=igid; lid=ilid; ox1=iox1; ox2=iox2; ox3=iox3; type=itype;
   bufid=ibid; fi1=ifi1; fi2=ifi2;
   return;
 }
@@ -2027,7 +2032,7 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
       }
     }
   }
-
+  
   return;
 }
 

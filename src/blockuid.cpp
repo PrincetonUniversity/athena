@@ -468,8 +468,6 @@ BlockTree* BlockTree::FindNeighbor(BlockUID id, int ox1, int ox2, int ox3, int *
   BlockTree *bt = this;
   id.GetLocation(lx,ly,lz,ll);
 
-  if(ll<1) return this; // single grid; return itself
-
   lx+=ox1; ly+=ox2; lz+=ox3;
   // periodic boundaries
   if(lx<0) {
@@ -481,26 +479,27 @@ BlockTree* BlockTree::FindNeighbor(BlockUID id, int ox1, int ox2, int ox3, int *
     else return NULL;
   }
   if(ly<0) {
-    if(bcs[inner_x2==4]) ly=(rby<<(ll-rl))-1;
+    if(bcs[inner_x2]==4) ly=(rby<<(ll-rl))-1;
     else return NULL;
   }
   if(ly>=rby<<(ll-rl)) {
-    if(bcs[outer_x2==4]) ly=0;
+    if(bcs[outer_x2]==4) ly=0;
     else return NULL;
   }
   if(lz<0) {
-    if(bcs[inner_x3==4]) lz=(rbz<<(ll-rl))-1;
+    if(bcs[inner_x3]==4) lz=(rbz<<(ll-rl))-1;
     else return NULL;
   }
   if(lz>=rbz<<(ll-rl)) {
-    if(bcs[outer_x3==4]) lz=0;
+    if(bcs[outer_x3]==4) lz=0;
     else return NULL;
   }
 
-  for(level=0;level<=ll;level++)
-  {
-    if(bt->flag==true) // leaf
-    {
+  if(ll<1) return this; // single grid; return itself
+
+
+  for(level=0;level<=ll;level++) {
+    if(bt->flag==true) { // leaf
       if(level == ll || level == ll-1)
         return bt;
       else {
