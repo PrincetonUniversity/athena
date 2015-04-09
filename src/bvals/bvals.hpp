@@ -110,16 +110,16 @@ public:
   void SetFluidBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf, NeighborBlock& nb);
   bool ReceiveFluidBoundaryBuffers(AthenaArray<Real> &dst, int step);
   void ReceiveFluidBoundaryBuffersWithWait(AthenaArray<Real> &dst, int step);
-//  int LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *buf,
-//                                       NeighborBlock& nb);
-//  int LoadFieldBoundaryBufferToCoarser(InterfaceField &src, Real *buf,
-//                                       NeighborBlock& nb);
-//  int LoadFieldBoundaryBufferToFiner(InterfaceField &src, Real *buf,
-//                                     NeighborBlock& nb);
+  int LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *buf,
+                                       NeighborBlock& nb);
+  int LoadFieldBoundaryBufferToCoarser(InterfaceField &src, Real *buf,
+                                       NeighborBlock& nb);
+  int LoadFieldBoundaryBufferToFiner(InterfaceField &src, Real *buf,
+                                     NeighborBlock& nb);
   void SendFieldBoundaryBuffers(InterfaceField &src, int step);
-//  void SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf, NeighborBlock& nb);
-//  void SetFieldBoundaryFromCoarser(Real *buf, NeighborBlock& nb);
-//  void SetFieldBoundaryFromFiner(InterfaceField &dst, Real *buf, NeighborBlock& nb);
+  void SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf, NeighborBlock& nb);
+  void SetFieldBoundaryFromCoarser(Real *buf, NeighborBlock& nb);
+  void SetFieldBoundaryFromFiner(InterfaceField &dst, Real *buf, NeighborBlock& nb);
   bool ReceiveFieldBoundaryBuffers(InterfaceField &dst, int step);
   void ReceiveFieldBoundaryBuffersWithWait(InterfaceField &dst, int step);
 
@@ -148,6 +148,6 @@ private:
 
 int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
 int CreateMPITag(int lid, int flag, int phys, int ox1, int ox2, int ox3, int fi1, int fi2);
-void CalculateTargetBufferID(int dim, bool multilevel, bool face_only);
+int BufferID(int dim, bool multilevel, bool face_only);
 
 #endif

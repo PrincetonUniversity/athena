@@ -119,6 +119,7 @@ class Mesh {
 private:
   int root_level, max_level;
   int nbtotal, nbstart, nbend;
+  int maxneighbor_;
   int num_mesh_threads_;
   int *nslist, *nblist;
   Real MeshGeneratorX1(Real x, RegionSize rs);

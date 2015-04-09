@@ -40,7 +40,13 @@
 
 
 // arrays of start and end points, created in InitBoundaryBuffer
+typedef struct NeighborIndexes
+{
+  int ox1, ox2, ox3, fi1, fi2;
+} NeighborIndexes;
+
 static int target_bufid_[56];
+static NeighborIndexes ni_[56];
 
 //======================================================================================
 //! \file bvals.cpp
@@ -53,10 +59,6 @@ static int target_bufid_[56];
 BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_mblock_ = pmb;
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
-  int nx1=ie-is+1, nx2=je-js+1, nx3=ke-ks+1;
 
 // Set BC functions for each of the 6 boundaries in turn -------------------------------
 // Inner x1
@@ -215,112 +217,49 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   // Allocate Buffers
   int nface=1, nedge=1, cng=(NGHOST+1)/2+1, cng1=0, cng2=0, cng3=0;
   if(pmb->pmy_mesh->multilevel==true) {
-    if(pmb->block_size.nx2>1) nface=2, cng1=cng, cng2=cng;
-    if(pmb->block_size.nx3>1) nface=4, nedge=2, cng3=cng;
+    if(pmb->block_size.nx2>1) cng1=cng, cng2=cng;
+    if(pmb->block_size.nx3>1) cng3=cng;
   }
   for(int l=0;l<NSTEP;l++) {
-    int p=0, size;
-    // x1 face
-    size=nx2*nx3*NGHOST;
-    if(pmb->pmy_mesh->multilevel==true) {
-      int f2c=((nx2+1)/2)*((nx3+1)/2)*NGHOST;
-      int c2f=((nx2+1)/2+cng2)*((nx3+1)/2+cng3)*cng;
-      size=std::max(size,c2f);
-      size=std::max(size,f2c);
-    }
-    size*=NFLUID;
-    for(int i=0;i<nface*2;i++) {
-      fluid_send_[l][p]=new Real[size];
-      fluid_recv_[l][p]=new Real[size];
-      p++;
-    }
-    if(pmb->block_size.nx2==1) continue; // 1D
-    // x2 face
-    size=nx1*nx3*NGHOST;
-    if(pmb->pmy_mesh->multilevel==true) {
-      int f2c=((nx1+1)/2)*((nx3+1)/2)*NGHOST;
-      int c2f=((nx1+1)/2+cng1)*((nx3+1)/2+cng3)*cng;
-      size=std::max(size,c2f);
-      size=std::max(size,f2c);
-    }
-    size*=NFLUID;
-    for(int i=0;i<nface*2;i++) {
-      fluid_send_[l][p]=new Real[size];
-      fluid_recv_[l][p]=new Real[size];
-      p++;
-    }
-    if(pmb->block_size.nx3>1) {
-      // x3 face
-      size=nx1*nx2*NGHOST;
+    for(int n=0;n<pmb->pmy_mesh->maxneighbor_;n++) {
+      int size=((ni_[n].ox1==0)?pmb->block_size.nx1:NGHOST)
+              *((ni_[n].ox2==0)?pmb->block_size.nx2:NGHOST)
+              *((ni_[n].ox3==0)?pmb->block_size.nx3:NGHOST);
       if(pmb->pmy_mesh->multilevel==true) {
-        int f2c=((nx1+1)/2)*((nx2+1)/2)*NGHOST;
-        int c2f=((nx1+1)/2+cng1)*((nx2+1)/2+cng2)*cng;
+        int f2c=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2):NGHOST)
+               *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2):NGHOST)
+               *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2):NGHOST);
+        int c2f=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng1):cng)
+               *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng)
+               *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng);
         size=std::max(size,c2f);
         size=std::max(size,f2c);
       }
       size*=NFLUID;
-      for(int i=0;i<nface*2;i++) {
-        fluid_send_[l][p]=new Real[size];
-        fluid_recv_[l][p]=new Real[size];
-        p++;
-      }
-    }
-    if(pmb->pmy_mesh->face_only==true) continue;
-    // x1x2 edges
-    size=nx3*SQR(NGHOST);
-    if(pmb->pmy_mesh->multilevel==true) {
-      int f2c=((nx3+1)/2)*SQR(NGHOST);
-      int c2f=((nx3+1)/2+cng3)*SQR(cng);
-      size=std::max(size,c2f);
-      size=std::max(size,f2c);
-    }
-    size*=NFLUID;
-    for(int e=0;e<4*nedge;e++) {
-      fluid_send_[l][p]=new Real[size];
-      fluid_recv_[l][p]=new Real[size];
-      p++;
-    }
-    if(pmb->block_size.nx3==1) continue;
-    // 3D only
-    // x1x3 edges
-    size=nx2*SQR(NGHOST);
-    if(pmb->pmy_mesh->multilevel==true) {
-      int f2c=(nx2/2)*NGHOST*NGHOST;
-      int c2f=(nx2/2+cng)*cng;
-      size=std::max(size,c2f);
-      size=std::max(size,f2c);
-    }
-    size*=NFLUID;
-    for(int e=0;e<4*nedge;e++) {
-      fluid_send_[l][p]=new Real[size];
-      fluid_recv_[l][p]=new Real[size];
-      p++;
-    }
-    // x2x3 edges
-    size=nx2*SQR(NGHOST);
-    if(pmb->pmy_mesh->multilevel==true) {
-      int f2c=(nx1/2)*NGHOST*NGHOST;
-      int c2f=(nx1/2+cng)*cng;
-      size=std::max(size,c2f);
-      size=std::max(size,f2c);
-    }
-    size*=NFLUID;
-    for(int e=0;e<4*nedge;e++) {
-      fluid_send_[l][p]=new Real[size];
-      fluid_recv_[l][p]=new Real[size];
-      p++;
-    }
-    // corners
-    size=SQR(std::max(NGHOST,cng))*NFLUID;
-    for(int i=0;i<8;i++) {
-      fluid_send_[l][p]=new Real[size];
-      fluid_recv_[l][p]=new Real[size];
-      p++;
+      fluid_send_[l][n]=new Real[size];
+      fluid_recv_[l][n]=new Real[size];
     }
   }
-
   if (MAGNETIC_FIELDS_ENABLED) {
-  // add magnetic field buffers here
+    for(int l=0;l<NSTEP;l++) {
+      for(int n=0;n<pmb->pmy_mesh->maxneighbor_;n++) {
+        int size1=((ni_[n].ox1==0)?(pmb->block_size.nx1+1):NGHOST)
+                 *((ni_[n].ox2==0)?(pmb->block_size.nx2):NGHOST)
+                 *((ni_[n].ox3==0)?(pmb->block_size.nx3):NGHOST);
+        int size2=((ni_[n].ox1==0)?(pmb->block_size.nx1):NGHOST)
+                 *((ni_[n].ox2==0)?(pmb->block_size.nx2+1):NGHOST)
+                 *((ni_[n].ox3==0)?(pmb->block_size.nx3):NGHOST);
+        int size3=((ni_[n].ox1==0)?(pmb->block_size.nx1):NGHOST)
+                 *((ni_[n].ox2==0)?(pmb->block_size.nx2):NGHOST)
+                 *((ni_[n].ox3==0)?(pmb->block_size.nx3+1):NGHOST);
+        if(pmb->pmy_mesh->multilevel==true) {
+          // *** need to implement
+        }
+        int size=size1+size2+size3;
+        field_send_[l][n]=new Real[size];
+        field_recv_[l][n]=new Real[size];
+      }
+    }
   }
 }
 
@@ -329,21 +268,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 BoundaryValues::~BoundaryValues()
 {
   MeshBlock *pmb=pmy_mblock_;
-  int r=2;
-  if(pmb->pmy_mesh->multilevel) {
-    if(pmb->block_size.nx2>1) r=12;
-    if(pmb->block_size.nx3>1) r=56;
-  }
-  else {
-    if(pmb->pmy_mesh->face_only) {
-      if(pmb->block_size.nx2>1) r=4;
-      if(pmb->block_size.nx3>1) r=6;
-    }
-    else {
-      if(pmb->block_size.nx2>1) r=8;
-      if(pmb->block_size.nx3>1) r=26;
-    }
-  }
+  int r=pmb->pmy_mesh->maxneighbor_;
   for(int l=0;l<NSTEP;l++) {
     for(int i=0;i<r;i++) {
       delete [] fluid_send_[l][i];
@@ -418,14 +343,28 @@ void BoundaryValues::Initialize(void)
         NeighborBlock& nb=pmb->neighbor[n];
         if(nb.rank!=myrank) {
           int ssize, rsize;
-          if(nb.level==mylevel) { // same
-            // ****** need to implement ******
+          if(pmb->pmy_mesh->multilevel==false) { // uniform
+            int size1=((nb.ox1==0)?(pmb->block_size.nx1+1):NGHOST)
+                     *((nb.ox2==0)?(pmb->block_size.nx2):NGHOST)
+                     *((nb.ox3==0)?(pmb->block_size.nx3):NGHOST);
+            int size2=((nb.ox1==0)?(pmb->block_size.nx1):NGHOST)
+                     *((nb.ox2==0)?(pmb->block_size.nx2+1):NGHOST)
+                     *((nb.ox3==0)?(pmb->block_size.nx3):NGHOST);
+            int size3=((nb.ox1==0)?(pmb->block_size.nx1):NGHOST)
+                     *((nb.ox2==0)?(pmb->block_size.nx2):NGHOST)
+                     *((nb.ox3==0)?(pmb->block_size.nx3+1):NGHOST);
+            ssize=rsize=size1+size2+size3;
           }
-          else if(nb.level<mylevel) { // coarser
-            // ****** need to implement ******
-          }
-          else { // finer
-            // ****** need to implement ******
+          else {
+            if(nb.level==mylevel) { // same
+              // ****** need to implement ******
+            }
+            else if(nb.level<mylevel) { // coarser
+              // ****** need to implement ******
+            }
+            else { // finer
+              // ****** need to implement ******
+            }
           }
           // specify the offsets in the view point of the target block: flip ox? signs
           tag=CreateMPITag(nb.lid, l, tag_field, -nb.ox1, -nb.ox2, -nb.ox3, 0, 0);
@@ -570,7 +509,7 @@ void BoundaryValues::StartReceivingAll(void)
 //--------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadFluidBoundaryBufferSameLevel(AthenaArray<Real> &src,
 //                                                 Real *buf, NeighborBlock& nb)
-//  \brief Set boundary buffers for sending to a block on the same level
+//  \brief Set fluid boundary buffers for sending to a block on the same level
 int BoundaryValues::LoadFluidBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
                                                      NeighborBlock& nb)
 {
@@ -604,7 +543,7 @@ int BoundaryValues::LoadFluidBoundaryBufferSameLevel(AthenaArray<Real> &src, Rea
 //--------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadFluidBoundaryBufferToCoarser(AthenaArray<Real> &src,
 //                                                 Real *buf, NeighborBlock& nb)
-//  \brief Set boundary buffers for sending to a block on the coarser level
+//  \brief Set fluid boundary buffers for sending to a block on the coarser level
 int BoundaryValues::LoadFluidBoundaryBufferToCoarser(AthenaArray<Real> &src, Real *buf,
                                                      NeighborBlock& nb)
 {
@@ -617,7 +556,7 @@ int BoundaryValues::LoadFluidBoundaryBufferToCoarser(AthenaArray<Real> &src, Rea
 //--------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadFluidBoundaryBufferToFiner(AthenaArray<Real> &src,
 //                                                 Real *buf, NeighborBlock& nb)
-//  \brief Set boundary buffers for sending to a block on the finer level
+//  \brief Set fluid boundary buffers for sending to a block on the finer level
 int BoundaryValues::LoadFluidBoundaryBufferToFiner(AthenaArray<Real> &src, Real *buf,
                                                    NeighborBlock& nb)
 {
@@ -665,7 +604,7 @@ void BoundaryValues::SendFluidBoundaryBuffers(AthenaArray<Real> &src, int step)
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetFluidBoundarySameLevel(AthenaArray<Real> &dst,
 //                                                     Real *buf, NeighborBlock& nb)
-//  \brief Set boundary received from a block on the same level
+//  \brief Set fluid boundary received from a block on the same level
 void BoundaryValues::SetFluidBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
                                                NeighborBlock& nb)
 {
@@ -701,7 +640,7 @@ void BoundaryValues::SetFluidBoundarySameLevel(AthenaArray<Real> &dst, Real *buf
 
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetFluidBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
-//  \brief Set prolongation buffer received from a block on the same level
+//  \brief Set fluid prolongation buffer received from a block on the same level
 void BoundaryValues::SetFluidBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_mblock_;
@@ -711,7 +650,7 @@ void BoundaryValues::SetFluidBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetFluidBoundaryFromFiner(AthenaArray<Real> &dst,
 //                                                     Real *buf, NeighborBlock& nb)
-//  \brief Set boundary received from a block on the same level
+//  \brief Set fluid boundary received from a block on the same level
 void BoundaryValues::SetFluidBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf,
                                                NeighborBlock& nb)
 {
@@ -786,13 +725,151 @@ void BoundaryValues::ReceiveFluidBoundaryBuffersWithWait(AthenaArray<Real> &dst,
   return;
 }
 
+
+//--------------------------------------------------------------------------------------
+//! \fn int BoundaryValues::LoadFieldBoundaryBufferSameLevel(InterfaceField &src,
+//                                                 Real *buf, NeighborBlock& nb)
+//  \brief Set field boundary buffers for sending to a block on the same level
+int BoundaryValues::LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *buf,
+                                                     NeighborBlock& nb)
+{
+  int si, sj, sk, ei, ej, ek;
+
+  si=(nb.ox1>0)?(pmb->ie-NGHOST+1):pmb->is;
+  ei=(nb.ox1<0)?(pmb->is+NGHOST-1):pmb->ie;
+  sj=(nb.ox2>0)?(pmb->je-NGHOST+1):pmb->js;
+  ej=(nb.ox2<0)?(pmb->js+NGHOST-1):pmb->je;
+  sk=(nb.ox3>0)?(pmb->ke-NGHOST+1):pmb->ks;
+  ek=(nb.ox3<0)?(pmb->ks+NGHOST-1):pmb->ke;
+
+  // Set buffers
+  int p=0;
+  // bx1
+  for (int n=0; n<(NFLUID); ++n) {
+    for (int k=sk; k<=ek; ++k) {
+      for (int j=sj; j<=ej; ++j) {
+#pragma simd
+        for (int i=si; i<=ei; ++i) {
+          // buffer is always fully packed
+          buf[p++]=src.x1f(k,j,i);
+        }
+      }
+    }
+  }
+  // bx2
+  for (int n=0; n<(NFLUID); ++n) {
+    for (int k=sk; k<=ek; ++k) {
+      for (int j=sj; j<=ej; ++j) {
+#pragma simd
+        for (int i=si; i<=ei; ++i) {
+          // buffer is always fully packed
+          buf[p++]=src.x2f(k,j,i);
+        }
+      }
+    }
+  }
+  // bx3
+  for (int n=0; n<(NFLUID); ++n) {
+    for (int k=sk; k<=ek; ++k) {
+      for (int j=sj; j<=ej; ++j) {
+#pragma simd
+        for (int i=si; i<=ei; ++i) {
+          // buffer is always fully packed
+          buf[p++]=src.x3f(k,j,i);
+        }
+      }
+    }
+  }
+
+  return p;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn int BoundaryValues::LoadFieldBoundaryBufferToCoarser(InterfaceField &src,
+//                                                 Real *buf, NeighborBlock& nb)
+//  \brief Set field boundary buffers for sending to a block on the coarser level
+int BoundaryValues::LoadFieldBoundaryBufferToCoarser(InterfaceField &src, Real *buf,
+                                                     NeighborBlock& nb)
+{
+  return 0;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn int BoundaryValues::LoadFieldBoundaryBufferToFiner(InterfaceField &src, 
+//                                                 Real *buf, NeighborBlock& nb)
+//  \brief Set field boundary buffers for sending to a block on the finer level
+int BoundaryValues::LoadFieldBoundaryBufferToFiner(InterfaceField &src, Real *buf,
+                                                   NeighborBlock& nb)
+{
+  return 0;
+}
+
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SendFieldBoundaryBuffers(InterfaceField &src, int step)
 //  \brief Send field boundary buffers
 void BoundaryValues::SendFieldBoundaryBuffers(InterfaceField &src, int step)
 {
+  MeshBlock *pmb=pmy_mblock_;
+  int mylevel=pmb->uid.GetLevel();
+
+  for(int n=0; n<pmb->nneighbor; n++) {
+    NeighborBlock& nb=pmb->neighbor[n];
+    int ssize;
+    if(nb.level==mylevel)
+      ssize=LoadFieldBoundaryBufferSameLevel(src, field_send_[step][nb.bufid],nb);
+    else if(nb.level<mylevel)
+      ssize=LoadFieldBoundaryBufferToCoarser(src, field_send_[step][nb.bufid],nb);
+    else
+      ssize=LoadFieldBoundaryBufferToFiner(src, field_send_[step][nb.bufid], nb);
+    if(nb.rank == myrank) { // on the same process
+      MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
+      // find target buffer
+      int target = target_bufid_[nb.bufid];
+      std::memcpy(pbl->pbval->field_recv_[step][target],
+                  field_send_[step][nb.bufid], ssize*sizeof(Real));
+      pbl->pbval->field_flag_[step][target]=boundary_arrived;
+    }
+#ifdef MPI_PARALLEL
+    else // MPI
+      MPI_Start(&req_field_send_[step][nb.bufid]);
+#endif
+  }
+
   return;
 }
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst,
+//                                                     Real *buf, NeighborBlock& nb)
+//  \brief Set field boundary received from a block on the same level
+void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf,
+                                               NeighborBlock& nb)
+{
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
+//  \brief Set field prolongation buffer received from a block on the same level
+void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
+{
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::SetFielBoundaryFromFiner(InterfaceField &dst,
+//                                                     Real *buf, NeighborBlock& nb)
+//  \brief Set field boundary received from a block on the same level
+void BoundaryValues::SetFieldBoundaryFromFiner(InterfaceField &dst, Real *buf,
+                                               NeighborBlock& nb)
+{
+  return;
+}
+
 
 //--------------------------------------------------------------------------------------
 //! \fn bool BoundaryValues::ReceiveFieldBoundaryBuffers(InterfaceField &dst, int step)
@@ -957,9 +1034,9 @@ int CreateMPITag(int lid, int flag, int phys, int ox1, int ox2, int ox3,
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void CalculateTargetBufferID(int dim, bool multilevel, bool face_only)
-//  \brief calculate and store IDs of the target buffers = buffers on the other side
-void CalculateTargetBufferID(int dim, bool multilevel, bool face_only)
+//! \fn int BufferID(int dim, bool multilevel, bool face_only)
+//  \brief calculate neighbor indexes and target buffer IDs
+int BufferID(int dim, bool multilevel, bool face_only)
 {
   int bufid[56];
   int nf1=1, nf2=1;
@@ -971,89 +1048,21 @@ void CalculateTargetBufferID(int dim, bool multilevel, bool face_only)
   // x1 face
   for(int n=-1; n<=1; n+=2) {
     for(int f2=0;f2<nf2;f2++) {
-      for(int f1=0;f1<nf1;f1++)
-        bufid[b++]=CreateBufferID(n,0,0,f1,f2);
+      for(int f1=0;f1<nf1;f1++) {
+        ni_[b].ox1=n; ni_[b].ox2=0; ni_[b].ox3=0;
+        ni_[b].fi1=f1; ni_[b].fi2=f2;
+        b++;
+      }
     }
   }
   // x2 face
   if(dim>=2) {
     for(int n=-1; n<=1; n+=2) {
       for(int f2=0;f2<nf2;f2++) {
-        for(int f1=0;f1<nf1;f1++)
-          bufid[b++]=CreateBufferID(0,n,0,f1,f2);
-      }
-    }
-  }
-  if(dim==3) {
-    // x3 face
-    for(int n=-1; n<=1; n+=2) {
-      for(int f2=0;f2<nf2;f2++) {
-        for(int f1=0;f1<nf1;f1++)
-          bufid[b++]=CreateBufferID(0,0,n,f1,f2);
-      }
-    }
-  }
-  // edges
-  // x1x2
-  if(dim>=2) {
-    for(int m=-1; m<=1; m+=2) {
-      for(int n=-1; n<=1; n+=2) {
-        for(int f1=0;f1<nf1;f1++)
-          bufid[b++]=CreateBufferID(n,m,0,f1,0);
-      }
-    }
-  }
-  if(dim==3) {
-    // x1x3
-    for(int m=-1; m<=1; m+=2) {
-      for(int n=-1; n<=1; n+=2) {
-        for(int f1=0;f1<nf1;f1++)
-          bufid[b++]=CreateBufferID(n,0,m,f1,0);
-      }
-    }
-    // x2x3
-    for(int m=-1; m<=1; m+=2) {
-      for(int n=-1; n<=1; n+=2) {
-        for(int f1=0;f1<nf1;f1++)
-          bufid[b++]=CreateBufferID(0,n,m,f1,0);
-      }
-    }
-    // corners
-    for(int l=-1; l<=1; l+=2) {
-      for(int m=-1; m<=1; m+=2) {
-        for(int n=-1; n<=1; n+=2)
-          bufid[b++]=CreateBufferID(n,m,l,0,0);
-      }
-    }
-  }
-
-  // search buffer IDs
-  int t=0;
-  // x1 face
-  for(int n=-1; n<=1; n+=2) {
-    for(int f2=0;f2<nf2;f2++) {
-      for(int f1=0;f1<nf1;f1++) {
-        int tid=CreateBufferID(-n,0,0,f1,f2);
-        for(int i=0;i<b;i++) {
-          if(tid==bufid[i]) {
-            target_bufid_[t++]=i;
-            break;
-          }
-        }
-      }
-    }
-  }
-  if(dim==1) return;
-  // x2 face
-  for(int n=-1; n<=1; n+=2) {
-    for(int f2=0;f2<nf2;f2++) {
-      for(int f1=0;f1<nf1;f1++) {
-        int tid=CreateBufferID(0,-n,0,f1,f2);
-        for(int i=0;i<b;i++) {
-          if(tid==bufid[i]) {
-            target_bufid_[t++]=i;
-            break;
-          }
+        for(int f1=0;f1<nf1;f1++) {
+          ni_[b].ox1=0; ni_[b].ox2=n; ni_[b].ox3=0;
+          ni_[b].fi1=f1; ni_[b].fi2=f2;
+          b++;
         }
       }
     }
@@ -1063,74 +1072,73 @@ void CalculateTargetBufferID(int dim, bool multilevel, bool face_only)
     for(int n=-1; n<=1; n+=2) {
       for(int f2=0;f2<nf2;f2++) {
         for(int f1=0;f1<nf1;f1++) {
-          int tid=CreateBufferID(0,0,-n,f1,f2);
-          for(int i=0;i<b;i++) {
-            if(tid==bufid[i]) {
-              target_bufid_[t++]=i;
-              break;
-            }
-          }
+          ni_[b].ox1=0; ni_[b].ox2=0; ni_[b].ox3=n;
+          ni_[b].fi1=f1; ni_[b].fi2=f2;
+          b++;
         }
       }
     }
   }
   // edges
   // x1x2
-  for(int m=-1; m<=1; m+=2) {
-    for(int n=-1; n<=1; n+=2) {
-      for(int f1=0;f1<nf1;f1++) {
-        int tid=CreateBufferID(-n,-m,0,f1,0);
-        for(int i=0;i<b;i++) {
-          if(tid==bufid[i]) {
-            target_bufid_[t++]=i;
-            break;
-          }
-        }
-      }
-    }
-  }
-  // x1x3
-  for(int m=-1; m<=1; m+=2) {
-    for(int n=-1; n<=1; n+=2) {
-      for(int f1=0;f1<nf1;f1++) {
-        int tid=CreateBufferID(-n,0,-m,f1,0);
-        for(int i=0;i<b;i++) {
-          if(tid==bufid[i]) {
-            target_bufid_[t++]=i;
-            break;
-          }
-        }
-      }
-    }
-  }
-  // x2x3
-  for(int m=-1; m<=1; m+=2) {
-    for(int n=-1; n<=1; n+=2) {
-      for(int f1=0;f1<nf1;f1++) {
-        int tid=CreateBufferID(0,-n,-m,f1,0);
-        for(int i=0;i<b;i++) {
-          if(tid==bufid[i]) {
-            target_bufid_[t++]=i;
-            break;
-          }
-        }
-      }
-    }
-  }
-  // corners
-  for(int l=-1; l<=1; l+=2) {
+  if(dim>=2) {
     for(int m=-1; m<=1; m+=2) {
       for(int n=-1; n<=1; n+=2) {
-        int tid=CreateBufferID(-n,-m,-l,0,0);
-        for(int i=0;i<b;i++) {
-          if(tid==bufid[i]) {
-            target_bufid_[t++]=i;
-            break;
-          }
+        for(int f1=0;f1<nf1;f1++) {
+          ni_[b].ox1=n; ni_[b].ox2=m; ni_[b].ox3=0;
+          ni_[b].fi1=f1; ni_[b].fi2=0;
+          b++;
         }
       }
     }
   }
-  return;
+  if(dim==3) {
+    // x1x3
+    for(int m=-1; m<=1; m+=2) {
+      for(int n=-1; n<=1; n+=2) {
+        for(int f1=0;f1<nf1;f1++) {
+          ni_[b].ox1=n; ni_[b].ox2=0; ni_[b].ox3=m;
+          ni_[b].fi1=f1; ni_[b].fi2=0;
+          b++;
+        }
+      }
+    }
+    // x2x3
+    for(int m=-1; m<=1; m+=2) {
+      for(int n=-1; n<=1; n+=2) {
+        for(int f1=0;f1<nf1;f1++) {
+          ni_[b].ox1=0; ni_[b].ox2=n; ni_[b].ox3=m;
+          ni_[b].fi1=f1; ni_[b].fi2=0;
+          b++;
+        }
+      }
+    }
+    // corners
+    for(int l=-1; l<=1; l+=2) {
+      for(int m=-1; m<=1; m+=2) {
+        for(int n=-1; n<=1; n+=2) {
+          ni_[b].ox1=n; ni_[b].ox2=m; ni_[b].ox3=l;
+          ni_[b].fi1=0; ni_[b].fi2=0;
+          b++;
+        }
+      }
+    }
+  }
+
+  for(int n=0;n<b;n++)
+    bufid[n]=CreateBufferID(ni_[n].ox1, ni_[n].ox2, ni_[n].ox3, ni_[n].fi1, ni_[n].fi2);
+
+  // search buffer IDs
+  int t=0;
+  for(int n=0;n<b;n++) {
+    int tid=CreateBufferID(-ni_[n].ox1, -ni_[n].ox2, -ni_[n].ox3, ni_[n].fi1, ni_[n].fi2);
+    for(int i=0;i<b;i++) {
+      if(tid==bufid[i]) {
+        target_bufid_[n]=i;
+        break;
+      }
+    }
+  }
+  return b;
 }
 

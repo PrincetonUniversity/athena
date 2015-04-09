@@ -407,7 +407,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   if (MAGNETIC_FIELDS_ENABLED || multilevel==true)
     face_only=false;
 
-  CalculateTargetBufferID(dim, multilevel, face_only);
+  maxneighbor_=BufferID(dim, multilevel, face_only);
 
   // initial mesh hierarchy construction is completed here
 
@@ -725,7 +725,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   if (MAGNETIC_FIELDS_ENABLED || multilevel==true)
     face_only=false;
 
-  CalculateTargetBufferID(dim, multilevel, face_only);
+  maxneighbor_=BufferID(dim, multilevel, face_only);
 
   // rebuild the Block Tree
   for(int i=0;i<nbtotal;i++)
