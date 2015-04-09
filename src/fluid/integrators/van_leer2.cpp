@@ -88,12 +88,13 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 //--------------------------------------------------------------------------------------
 // i-direction
   // set the loop limits
-  if(pmb->block_size.nx2 == 1) // 1D
-    jl=js, ju=je, kl=ks, ku=ke;
-  else if(pmb->block_size.nx3 == 1) // 2D
-    jl=js-1, ju=je+1, kl=ks, ku=ke;
-  else // 3D
-    jl=js-1, ju=je+1, kl=ks-1, ku=ke+1;
+  jl=js, ju=je, kl=ks, ku=ke;
+  if (MAGNETIC_FIELDS_ENABLED) {
+    if(pmb->block_size.nx3 == 1) // 2D
+      jl=js-1, ju=je+1, kl=ks, ku=ke;
+    else // 3D
+      jl=js-1, ju=je+1, kl=ks-1, ku=ke+1;
+  }
   for (int k=kl; k<=ku; ++k){ 
 #pragma omp for schedule(static)
     for (int j=jl; j<=ju; ++j){
@@ -144,10 +145,13 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 
   if (pmb->block_size.nx2 > 1) {
     // set the loop limits
-    if(pmb->block_size.nx3 == 1) // 2D
-      il=is-1, iu=ie+1, kl=ks, ku=ke;
-    else // 3D
-      il=is-1, iu=ie+1, kl=ks-1, ku=ke+1;
+    il=is, iu=ie, kl=ks, ku=ke;
+    if (MAGNETIC_FIELDS_ENABLED) {
+      if(pmb->block_size.nx3 == 1) // 2D
+        il=is-1, iu=ie+1, kl=ks, ku=ke;
+      else // 3D
+        il=is-1, iu=ie+1, kl=ks-1, ku=ke+1;
+    }
     for (int k=kl; k<=ku; ++k){
       bool first_time_through_loop = true;
 #pragma omp for schedule(static)
@@ -231,7 +235,9 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 
   if (pmb->block_size.nx3 > 1) {
     // set the loop limits
-    il=is-1, iu=ie+1, jl=js-1, ju=je+1;
+    il=is, iu=ie, jl=js, ju=je;
+    if (MAGNETIC_FIELDS_ENABLED)
+      il=is-1, iu=ie+1, jl=js-1, ju=je+1;
     bool first_time_through_loop = true;
 #pragma omp for schedule(static)
     for (int k=ks; k<=ke; ++k){
