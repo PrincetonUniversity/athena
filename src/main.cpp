@@ -86,24 +86,21 @@ int main(int argc, char *argv[])
 //--- Step 0. --------------------------------------------------------------------------
 // Initialize MPI environment, distribute input parameters to all ranks
 
-  if(MPI_SUCCESS != MPI_Init(&argc, &argv))
-  {
+  if(MPI_SUCCESS != MPI_Init(&argc, &argv)) {
     std::cout << "### FATAL ERROR in main" << std::endl
               << "MPI Initialization failed." << std::endl;
     return(0);
   }
 
 // Get proc id (rank) in MPI_COMM_WORLD
-  if(MPI_SUCCESS != MPI_Comm_rank(MPI_COMM_WORLD, &myrank))
-  {
+  if(MPI_SUCCESS != MPI_Comm_rank(MPI_COMM_WORLD, &myrank)) {
     std::cout << "### FATAL ERROR in main" << std::endl
               << "MPI_Comm_rank failed." << std::endl;
     return(0);
   }
 
 // Get the number of the processes 
-  if(MPI_SUCCESS != MPI_Comm_size(MPI_COMM_WORLD, &nproc))
-  {
+  if(MPI_SUCCESS != MPI_Comm_size(MPI_COMM_WORLD, &nproc)) {
     std::cout << "### FATAL ERROR in main" << std::endl
               << "MPI_Comm_size failed." << std::endl;
     return(0);
@@ -284,8 +281,7 @@ int main(int argc, char *argv[])
   try {
     ChangeToRunDir(prundir);
     pouts = new Outputs(pmesh, pinput);
-    if(res_flag==0)
-    {
+    if(res_flag==0) {
       pouts->MakeOutputs(pmesh,pinput);
     }
   } 
@@ -357,7 +353,7 @@ int main(int argc, char *argv[])
          (pmesh->nlim < 0 || pmesh->ncycle < pmesh->nlim)){
 
     if(myrank==0)
-      std::cout << "cycle=" << pmesh->ncycle << std::scientific << std::setprecision(6)
+      std::cout << "cycle=" << pmesh->ncycle << std::scientific << std::setprecision(14)
                 << " time=" << pmesh->time << " dt=" << pmesh->dt << std::endl;
 
     pmesh->UpdateOneStep();

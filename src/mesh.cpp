@@ -69,7 +69,6 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   std::stringstream msg;
   RegionSize block_size;
   BlockTree *neibt;
-  BlockUID comp;
   MeshBlock *pfirst;
   int block_bcs[6];
   int *ranklist;
@@ -255,7 +254,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
 // calculate the logical root level and maximum level
   for(root_level=0;(1<<root_level)<nbmax;root_level++);
-  max_level = pin->GetOrAddInteger("mesh","nlevel",1)+root_level-1;
+  max_level = pin->GetOrAddInteger("mesh","maxlevel",1)+root_level-1;
 
 // create Block UID list
   tree.CreateRootGrid(nrbx1,nrbx2,nrbx3,root_level);
@@ -519,6 +518,8 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     if(dim==1) {
       block_size.x2min=mesh_size.x2min;
       block_size.x2max=mesh_size.x2max;
+      block_bcs[inner_x2]=mesh_bcs[inner_x2];
+      block_bcs[outer_x2]=mesh_bcs[outer_x2];
     }
     else {
       if(lx2==0) {
@@ -545,6 +546,8 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     if(dim<=2) {
       block_size.x3min=mesh_size.x3min;
       block_size.x3max=mesh_size.x3max;
+      block_bcs[inner_x3]=mesh_bcs[inner_x3];
+      block_bcs[outer_x3]=mesh_bcs[outer_x3];
     }
     else {
       if(lx3==0) {
@@ -629,24 +632,21 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   if(resfile.Read(&nbtotal, sizeof(int), 1)!=1) nerr++;
   if(resfile.Read(&idl, sizeof(int), 1)!=1) nerr++;
   if(resfile.Read(&root_level, sizeof(int), 1)!=1) nerr++;
-  if(resfile.Read(&max_level, sizeof(int), 1)!=1) nerr++;
   if(resfile.Read(&mesh_size, sizeof(RegionSize), 1)!=1) nerr++;
   if(resfile.Read(mesh_bcs, sizeof(int), 6)!=6) nerr++;
   if(resfile.Read(&time, sizeof(Real), 1)!=1) nerr++;
   if(resfile.Read(&dt, sizeof(Real), 1)!=1) nerr++;
   if(resfile.Read(&ncycle, sizeof(int), 1)!=1) nerr++;
-  if(nerr>0)
-  {
+  if(nerr>0) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "The restarting file is broken." << std::endl;
     resfile.Close();
     throw std::runtime_error(msg.str().c_str());
   }
 
-  max_level = pin->GetOrAddInteger("mesh","maxlevel",0)+root_level;
+  max_level = pin->GetOrAddInteger("mesh","maxlevel",1)+root_level-1;
 
-  if(idl>IDLENGTH)
-  {
+  if(idl>IDLENGTH) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "IDLENGTH in the restarting files is larger than the current configuration"
         << std::endl << "Please reconfigure the code accordingly." << std::endl;
@@ -708,8 +708,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
     mincost=std::min(mincost,costlist[i]);
     maxcost=std::max(maxcost,costlist[i]);
   }
-  if(nerr>0)
-  {
+  if(nerr>0) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "The restarting file is broken." << std::endl;
     resfile.Close();
@@ -727,6 +726,18 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
     face_only=false;
 
   CalculateTargetBufferID(dim, multilevel, face_only);
+
+  // rebuild the Block Tree
+  for(int i=0;i<nbtotal;i++)
+    tree.AddMeshBlock(tree,buid[i],dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level);
+  int nnb;
+  tree.AssignGID(nnb); // count blocks at the same time
+  if(nnb!=nbtotal) {
+    msg << "### FATAL ERROR in Mesh constructor" << std::endl
+        << "Tree reconstruction failed. The total numbers of the blocks do not match. ("
+        << nbtotal << " != " << nnb << ")" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
 
 #ifdef MPI_PARALLEL
   if(nbtotal < nproc) {
@@ -819,6 +830,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
       pblock->next->prev = pblock;
       pblock = pblock->next;
     }
+    pblock->SearchAndSetNeighbors(tree, ranklist, nslist);
   }
   pblock=pfirst;
 
@@ -1205,14 +1217,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, BlockUID
     throw std::runtime_error(msg.str().c_str());
   }
 
-  // set rank and local id
-  for(int n=0;n<56;n++) {
-    if(neighbor[n].gid!=-1) {
-      neighbor[n].rank=ranklist[neighbor[n].gid];
-      neighbor[n].lid=neighbor[n].gid-nslist[neighbor[n].rank];
-    }
-  }
-
 // initialize grid indices
 
   is = NGHOST;
@@ -1316,8 +1320,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, BlockUID
     if(resfile.Read(pfield->b.x3f.GetArrayPointer(),sizeof(Real),
                pfield->b.x3f.GetSize())!=pfield->b.x3f.GetSize()) nerr++;
   }
-  if(nerr>0)
-  {
+  if(nerr>0) {
     msg << "### FATAL ERROR in MeshBlock constructor" << std::endl
         << "The restarting file is broken." << std::endl;
     resfile.Close();
@@ -1365,8 +1368,7 @@ MeshBlock::~MeshBlock()
   delete pfluid;
   delete pfield;
   delete pbval;
-  if(task!=NULL)
-    delete [] task;
+  delete [] task;
 }
 
 
@@ -1612,10 +1614,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       pfield=pmb->pfield;
       pbval=pmb->pbval;
       ProblemGenerator(pfluid,pfield,pin);
-      pfluid->pf_eos->ConservedToPrimitive(pfluid->u, pfluid->w1, pfield->b, 
-                                           pfluid->w, pfield->bcc);
       pbval->CheckBoundary();
-      std::cout << "MeshBlock " << pmb->gid << ": pgen" << std::endl;
       pmb=pmb->next;
     }
   }
@@ -1624,7 +1623,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
   while (pmb != NULL)  {
     pmb->pbval->Initialize();
     pmb->pbval->StartReceivingForInit();
-    std::cout << "MeshBlock " << pmb->gid << ": boundary init" << std::endl;
     pmb=pmb->next;
   }
 
@@ -1636,7 +1634,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     pbval->SendFluidBoundaryBuffers(pfluid->u,0);
     if (MAGNETIC_FIELDS_ENABLED)
       pbval->SendFieldBoundaryBuffers(pfield->b,0);
-    std::cout << "MeshBlock " << pmb->gid << ": boundary send" << std::endl;
     pmb=pmb->next;
   }
 
@@ -1648,21 +1645,12 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     pbval->ReceiveFluidBoundaryBuffersWithWait(pfluid->u ,0);
     if (MAGNETIC_FIELDS_ENABLED)
       pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b ,0);
-    std::cout << "MeshBlock " << pmb->gid << ": boundary recv" << std::endl;
-    pmb=pmb->next;
-  }
-
-  pmb = pblock;
-  while (pmb != NULL)  {
-    pfluid=pmb->pfluid;
-    pfield=pmb->pfield;
     pmb->pbval->ClearBoundaryForInit();
     pbval->FluidPhysicalBoundaries(pfluid->u);
-    pbval->FieldPhysicalBoundaries(pfield->b);
-    std::cout << "MeshBlock " << pmb->gid << ": physical boundary" << std::endl;
+    if (MAGNETIC_FIELDS_ENABLED)
+      pbval->FieldPhysicalBoundaries(pfield->b);
     pfluid->pf_eos->ConservedToPrimitive(pfluid->u, pfluid->w1, pfield->b, 
                                          pfluid->w, pfield->bcc);
-    std::cout << "MeshBlock " << pmb->gid << ": cons 2 prim" << std::endl;
     pmb=pmb->next;
   }
 
@@ -1670,7 +1658,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     pmb = pblock;
     while (pmb != NULL)  {
       pmb->pfluid->NewBlockTimeStep(pmb);
-      std::cout << "MeshBlock " << pmb->gid << ": block timestep" << std::endl;
       pmb=pmb->next;
     }
     NewTimeStep();

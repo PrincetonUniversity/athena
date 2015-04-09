@@ -450,8 +450,7 @@ void BoundaryValues::Initialize(void)
 void BoundaryValues::EnrollFluidBoundaryFunction(enum direction dir, BValFluid_t my_bc)
 {
   std::stringstream msg;
-  if(dir<0 || dir>5)
-  {
+  if(dir<0 || dir>5) {
     msg << "### FATAL ERROR in EnrollFluidBoundaryCondition function" << std::endl
         << "dirName = " << dir << " not valid" << std::endl;
     throw std::runtime_error(msg.str().c_str());
@@ -476,8 +475,7 @@ void BoundaryValues::EnrollFluidBoundaryFunction(enum direction dir, BValFluid_t
 void BoundaryValues::EnrollFieldBoundaryFunction(enum direction dir,BValField_t my_bc)
 {
   std::stringstream msg;
-  if(dir<0 || dir>5)
-  {
+  if(dir<0 || dir>5) {
     msg << "### FATAL ERROR in EnrollFieldBoundaryCondition function" << std::endl
         << "dirName = " << dir << " is not valid" << std::endl;
     throw std::runtime_error(msg.str().c_str());
@@ -586,8 +584,6 @@ int BoundaryValues::LoadFluidBoundaryBufferSameLevel(AthenaArray<Real> &src, Rea
   sk=(nb.ox3>0)?(pmb->ke-NGHOST+1):pmb->ks;
   ek=(nb.ox3<0)?(pmb->ks+NGHOST-1):pmb->ke;
 
-//  std::cout << "Sending direction: " << nb.ox1 << " " << nb.ox2 << " " << nb.ox3 << " "
-//  << "indexes: " << si << " " << ei << " " << sj << " " << ej << " " << sk << " " << ek << std::endl; 
   // Set buffers
   int p=0;
   for (int n=0; n<(NFLUID); ++n) {
@@ -686,9 +682,6 @@ void BoundaryValues::SetFluidBoundarySameLevel(AthenaArray<Real> &dst, Real *buf
   else if(nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
 
-//  std::cout << "Receiving direction: " << nb.ox1 << " " << nb.ox2 << " " << nb.ox3 << " "
-//  << "indexes: " << si << " " << ei << " " << sj << " " << ej << " " << sk << " " << ek << std::endl; 
-
   // Set buffers
   int p=0;
   for (int n=0; n<(NFLUID); ++n) {
@@ -744,7 +737,6 @@ bool BoundaryValues::ReceiveFluidBoundaryBuffers(AthenaArray<Real> &dst, int ste
 #ifdef MPI_PARALLEL
       else { // MPI boundary
         int test;
-        MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
         MPI_Test(&req_fluid_recv_[step][nb.bufid],&test,MPI_STATUS_IGNORE);
         if(test==false) continue;

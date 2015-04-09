@@ -123,8 +123,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
     i=1;
   }
   pmb=pM->pblock;
-  while(pmb!=NULL) // must be parallelized for MPI
-  {
+  while(pmb!=NULL) {
     myblocksize[i]=pmb->GetBlockSizeInBytes();
     i++;
     pmb=pmb->next;
@@ -143,8 +142,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
   pmb=pM->pblock;
   blocksize[0]=resfile.Tell();
   i=1;
-  while(pmb!=NULL) // must be parallelized for MPI
-  {
+  while(pmb!=NULL) {
     blocksize[i]=pmb->GetBlockSizeInBytes();
     i++;
     pmb=pmb->next;
@@ -165,8 +163,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
 
   pmb=pM->pblock;
   i=0;
-  while(pmb!=NULL)
-  {
+  while(pmb!=NULL) {
     level=pmb->uid.GetLevel();
     pmb->uid.GetRawUID(rawid);
 
