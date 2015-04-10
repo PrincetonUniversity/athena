@@ -95,23 +95,26 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     Real cl = pmy_fluid->pf_eos->FastMagnetosonicSpeed(wli,bxi);
     Real cr = pmy_fluid->pf_eos->FastMagnetosonicSpeed(wri,bxi);
 
-    // Compute fast-magnetosonic speed using eq. B18
-    Real a = iso_cs;
+    // Compute fast-magnetosonic speed using eq. B18 (adiabatic) or B39 (isothermal)
+    Real btsq = SQR(wroe[IBY]) + SQR(wroe[IBZ]);
+    Real vaxsq = bxi*bxi/wroe[IDN];
+    Real bt_starsq, twid_asq;
     if (NON_BAROTROPIC_EOS) {
-      Real btsq = SQR(wroe[IBY]) + SQR(wroe[IBZ]);
-      Real bt_starsq = (gm1 - (gm1 - 1.0)*y)*btsq;
-      Real vaxsq = bxi*bxi/wroe[IDN];
+      bt_starsq = (gm1 - (gm1 - 1.0)*y)*btsq;
       Real hp = hroe - (vaxsq + btsq/wroe[IDN]);
       Real vsq = SQR(wroe[IVX]) + SQR(wroe[IVY]) + SQR(wroe[IVZ]);
-      Real twid_asq = std::max((gm1*(hp-0.5*vsq)-(gm1-1.0)*x), 0.0);
-      Real ct2 = bt_starsq/wroe[IDN];
-      Real tsum = vaxsq + ct2 + twid_asq;
-      Real tdif = vaxsq + ct2 - twid_asq;
-      Real cf2_cs2 = sqrt(tdif*tdif + 4.0*twid_asq*ct2);
-
-      Real cfsq = 0.5*(tsum + cf2_cs2);
-      a = sqrt(cfsq);
+      twid_asq = std::max((gm1*(hp-0.5*vsq)-(gm1-1.0)*x), 0.0);
+    } else {
+      bt_starsq = btsq*y;
+      twid_asq = iso_cs*iso_cs + x;
     }
+    Real ct2 = bt_starsq/wroe[IDN];
+    Real tsum = vaxsq + ct2 + twid_asq;
+    Real tdif = vaxsq + ct2 - twid_asq;
+    Real cf2_cs2 = sqrt(tdif*tdif + 4.0*twid_asq*ct2);
+
+    Real cfsq = 0.5*(tsum + cf2_cs2);
+    Real a = sqrt(cfsq);
 
 //--- Step 4.  Compute the max/min wave speeds based on L/R and Roe-averaged values
 
