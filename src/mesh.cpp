@@ -1376,6 +1376,8 @@ void Mesh::NewTimeStep(void)
 #endif
   // set it
   dt=std::min(min_dt*cfl_number,2.0*dt);
+  if (time < tlim && tlim-time < dt)  // timestep would take us past desired endpoint
+    dt = tlim-time;
 }
 
 //--------------------------------------------------------------------------------------
