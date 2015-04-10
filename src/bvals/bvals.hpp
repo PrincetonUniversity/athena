@@ -146,8 +146,8 @@ private:
 #endif
 };
 
-int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
-int CreateMPITag(int lid, int flag, int phys, int ox1, int ox2, int ox3, int fi1, int fi2);
+unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
+unsigned int CreateMPITag(int lid, int flag, int phys, int ox1, int ox2, int ox3, int fi1, int fi2);
 int BufferID(int dim, bool multilevel, bool face_only);
 
 #endif

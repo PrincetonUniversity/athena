@@ -272,16 +272,15 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 BoundaryValues::~BoundaryValues()
 {
   MeshBlock *pmb=pmy_mblock_;
-  int r=pmb->pmy_mesh->maxneighbor_;
   for(int l=0;l<NSTEP;l++) {
-    for(int i=0;i<r;i++) {
+    for(int i=0;i<pmb->pmy_mesh->maxneighbor_;i++) {
       delete [] fluid_send_[l][i];
       delete [] fluid_recv_[l][i];
     }
   }
   if (MAGNETIC_FIELDS_ENABLED) {
     for(int l=0;l<NSTEP;l++) {
-      for(int i=0;i<r;i++) { 
+      for(int i=0;i<pmb->pmy_mesh->maxneighbor_;i++) { 
         delete [] field_send_[l][i];
         delete [] field_recv_[l][i];
       }
@@ -300,6 +299,7 @@ void BoundaryValues::Initialize(void)
   int mylevel=pmb->uid.GetLevel();
   int tag;
   int cng1, cng2, cng3;
+  int ssize, rsize;
   cng1=pmb->cnghost;
   cng2=(pmb->block_size.nx2>1)?cng1:0;
   cng3=(pmb->block_size.nx3>1)?cng1:0;
@@ -308,7 +308,6 @@ void BoundaryValues::Initialize(void)
     for(int n=0;n<pmb->nneighbor;n++) {
       NeighborBlock& nb=pmb->neighbor[n];
       if(nb.rank!=myrank) {
-        int ssize, rsize;
         if(nb.level==mylevel) { // same
           ssize=rsize=((nb.ox1==0)?pmb->block_size.nx1:NGHOST)
                      *((nb.ox2==0)?pmb->block_size.nx2:NGHOST)
@@ -332,32 +331,25 @@ void BoundaryValues::Initialize(void)
         }
         ssize*=NFLUID; rsize*=NFLUID;
         // specify the offsets in the view point of the target block: flip ox? signs
-        tag=CreateMPITag(nb.lid, l, tag_fluid, -nb.ox1, -nb.ox2, -nb.ox3, 0, 0);
+        tag=CreateMPITag(nb.lid, l, tag_fluid, -nb.ox1, -nb.ox2, -nb.ox3, nb.fi1, nb.fi2);
         MPI_Send_init(fluid_send_[l][nb.bufid],ssize,MPI_ATHENA_REAL,
                       nb.rank,tag,MPI_COMM_WORLD,&req_fluid_send_[l][nb.bufid]);
-        tag=CreateMPITag(pmb->lid, l, tag_fluid, nb.ox1, nb.ox2, nb.ox3, 0, 0);
+        tag=CreateMPITag(pmb->lid, l, tag_fluid, nb.ox1, nb.ox2, nb.ox3, nb.fi1, nb.fi2);
         MPI_Recv_init(fluid_recv_[l][nb.bufid],rsize,MPI_ATHENA_REAL,
                       nb.rank,tag,MPI_COMM_WORLD,&req_fluid_recv_[l][nb.bufid]);
-      }
-    }
-  }
-  if (MAGNETIC_FIELDS_ENABLED) {
-    for(int l=0;l<NSTEP;l++) {
-      for(int n=0;n<pmb->nneighbor;n++) {
-        NeighborBlock& nb=pmb->neighbor[n];
-        if(nb.rank!=myrank) {
-          int ssize, rsize;
+
+        if (MAGNETIC_FIELDS_ENABLED) {
+          int size1, size2, size3;
           if(pmb->pmy_mesh->multilevel==false) { // uniform
-            int size1=((nb.ox1==0)?(pmb->block_size.nx1+1):NGHOST)
-                     *((nb.ox2==0)?(pmb->block_size.nx2):NGHOST)
-                     *((nb.ox3==0)?(pmb->block_size.nx3):NGHOST);
-            int size2=((nb.ox1==0)?(pmb->block_size.nx1):NGHOST)
-                     *((nb.ox2==0)?(pmb->block_size.nx2+1):NGHOST)
-                     *((nb.ox3==0)?(pmb->block_size.nx3):NGHOST);
-            int size3=((nb.ox1==0)?(pmb->block_size.nx1):NGHOST)
-                     *((nb.ox2==0)?(pmb->block_size.nx2):NGHOST)
-                     *((nb.ox3==0)?(pmb->block_size.nx3+1):NGHOST);
-            ssize=rsize=size1+size2+size3;
+            size1=((nb.ox1==0)?(pmb->block_size.nx1+1):NGHOST)
+                 *((nb.ox2==0)?(pmb->block_size.nx2):NGHOST)
+                 *((nb.ox3==0)?(pmb->block_size.nx3):NGHOST);
+            size2=((nb.ox1==0)?(pmb->block_size.nx1):NGHOST)
+                 *((nb.ox2==0)?(pmb->block_size.nx2+1):NGHOST)
+                 *((nb.ox3==0)?(pmb->block_size.nx3):NGHOST);
+            size3=((nb.ox1==0)?(pmb->block_size.nx1):NGHOST)
+                 *((nb.ox2==0)?(pmb->block_size.nx2):NGHOST)
+                 *((nb.ox3==0)?(pmb->block_size.nx3+1):NGHOST);
           }
           else {
             if(nb.level==mylevel) { // same
@@ -370,11 +362,12 @@ void BoundaryValues::Initialize(void)
               // ****** need to implement ******
             }
           }
+          ssize=size1+size2+size3; rsize=ssize;
           // specify the offsets in the view point of the target block: flip ox? signs
-          tag=CreateMPITag(nb.lid, l, tag_field, -nb.ox1, -nb.ox2, -nb.ox3, 0, 0);
+          tag=CreateMPITag(nb.lid, l, tag_field, -nb.ox1, -nb.ox2, -nb.ox3, nb.fi1, nb.fi2);
           MPI_Send_init(field_send_[l][nb.bufid],ssize,MPI_ATHENA_REAL,
                         nb.rank,tag,MPI_COMM_WORLD,&req_field_send_[l][nb.bufid]);
-          tag=CreateMPITag(pmb->lid, l, tag_field, nb.ox1, nb.ox2, nb.ox3, 0, 0);
+          tag=CreateMPITag(pmb->lid, l, tag_field, nb.ox1, nb.ox2, nb.ox3, nb.fi1, nb.fi2);
           MPI_Recv_init(field_recv_[l][nb.bufid],rsize,MPI_ATHENA_REAL,
                         nb.rank,tag,MPI_COMM_WORLD,&req_field_recv_[l][nb.bufid]);
         }
@@ -527,7 +520,6 @@ int BoundaryValues::LoadFluidBoundaryBufferSameLevel(AthenaArray<Real> &src, Rea
   sk=(nb.ox3>0)?(pmb->ke-NGHOST+1):pmb->ks;
   ek=(nb.ox3<0)?(pmb->ks+NGHOST-1):pmb->ke;
 
-  // Set buffers
   int p=0;
   for (int n=0; n<(NFLUID); ++n) {
     for (int k=sk; k<=ek; ++k) {
@@ -625,7 +617,6 @@ void BoundaryValues::SetFluidBoundarySameLevel(AthenaArray<Real> &dst, Real *buf
   else if(nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
 
-  // Set buffers
   int p=0;
   for (int n=0; n<(NFLUID); ++n) {
     for (int k=sk; k<=ek; ++k) {
@@ -740,48 +731,61 @@ int BoundaryValues::LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *
   MeshBlock *pmb=pmy_mblock_;
   int si, sj, sk, ei, ej, ek;
 
-  si=(nb.ox1>0)?(pmb->ie-NGHOST+1):pmb->is;
-  ei=(nb.ox1<0)?(pmb->is+NGHOST-1):pmb->ie;
-  sj=(nb.ox2>0)?(pmb->je-NGHOST+1):pmb->js;
-  ej=(nb.ox2<0)?(pmb->js+NGHOST-1):pmb->je;
-  sk=(nb.ox3>0)?(pmb->ke-NGHOST+1):pmb->ks;
-  ek=(nb.ox3<0)?(pmb->ks+NGHOST-1):pmb->ke;
-
-  // Set buffers
   int p=0;
   // bx1
-  for (int n=0; n<(NFLUID); ++n) {
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
+  if(pmb->pmy_mesh->multilevel==false) {
+    if(nb.ox1==0)     si=pmb->is,          ei=pmb->ie+1;
+    else if(nb.ox1>0) si=pmb->ie-NGHOST+1, ei=pmb->ie;
+    else              si=pmb->is+1,        ei=pmb->is+NGHOST;
+    if(nb.ox2==0)     sj=pmb->js,          ej=pmb->je;
+    else if(nb.ox2>0) sj=pmb->je-NGHOST+1, ej=pmb->je;
+    else              sj=pmb->js,          ej=pmb->js+NGHOST-1;
+    if(nb.ox3==0)     sk=pmb->ks,          ek=pmb->ke;
+    else if(nb.ox3>0) sk=pmb->ke-NGHOST+1, ek=pmb->ke;
+    else              sk=pmb->ks,          ek=pmb->ks+NGHOST-1;
+  }
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
 #pragma simd
-        for (int i=si; i<=ei; ++i) {
-          // buffer is always fully packed
-          buf[p++]=src.x1f(k,j,i);
-        }
+      for (int i=si; i<=ei; ++i) {
+        // buffer is always fully packed
+        buf[p++]=src.x1f(k,j,i);
       }
     }
   }
   // bx2
-  for (int n=0; n<(NFLUID); ++n) {
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
+  if(pmb->pmy_mesh->multilevel==false) {
+    if(nb.ox1==0)     si=pmb->is,          ei=pmb->ie;
+    else if(nb.ox1>0) si=pmb->ie-NGHOST+1, ei=pmb->ie;
+    else              si=pmb->is,          ei=pmb->is+NGHOST-1;
+    if(nb.ox2==0)     sj=pmb->js,          ej=pmb->je+1;
+    else if(nb.ox2>0) sj=pmb->je-NGHOST+1, ej=pmb->je;
+    else              sj=pmb->js+1,        ej=pmb->js+NGHOST;
+  }
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
 #pragma simd
-        for (int i=si; i<=ei; ++i) {
-          // buffer is always fully packed
-          buf[p++]=src.x2f(k,j,i);
-        }
+      for (int i=si; i<=ei; ++i) {
+        // buffer is always fully packed
+        buf[p++]=src.x2f(k,j,i);
       }
     }
   }
   // bx3
-  for (int n=0; n<(NFLUID); ++n) {
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
+  if(pmb->pmy_mesh->multilevel==false) {
+    if(nb.ox2==0)     sj=pmb->js,          ej=pmb->je;
+    else if(nb.ox2>0) sj=pmb->je-NGHOST+1, ej=pmb->je;
+    else              sj=pmb->js,          ej=pmb->js+NGHOST-1;
+    if(nb.ox3==0)     sk=pmb->ks,          ek=pmb->ke+1;
+    else if(nb.ox3>0) sk=pmb->ke-NGHOST+1, ek=pmb->ke;
+    else              sk=pmb->ks+1,        ek=pmb->ks+NGHOST;
+  }
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
 #pragma simd
-        for (int i=si; i<=ei; ++i) {
-          // buffer is always fully packed
-          buf[p++]=src.x3f(k,j,i);
-        }
+      for (int i=si; i<=ei; ++i) {
+        // buffer is always fully packed
+        buf[p++]=src.x3f(k,j,i);
       }
     }
   }
@@ -844,7 +848,6 @@ void BoundaryValues::SendFieldBoundaryBuffers(InterfaceField &src, int step)
   return;
 }
 
-
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst,
 //                                                     Real *buf, NeighborBlock& nb)
@@ -852,6 +855,68 @@ void BoundaryValues::SendFieldBoundaryBuffers(InterfaceField &src, int step)
 void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf,
                                                NeighborBlock& nb)
 {
+  MeshBlock *pmb=pmy_mblock_;
+  int si, sj, sk, ei, ej, ek;
+
+  int p=0;
+  // bx1
+  if(pmb->pmy_mesh->multilevel==false) {
+    if(nb.ox1==0)     si=pmb->is,        ei=pmb->ie+1;
+    else if(nb.ox1>0) si=pmb->ie+2,      ei=pmb->ie+NGHOST+1;
+    else              si=pmb->is-NGHOST, ei=pmb->is-1;
+    if(nb.ox2==0)     sj=pmb->js,        ej=pmb->je;
+    else if(nb.ox2>0) sj=pmb->je+1,      ej=pmb->je+NGHOST;
+    else              sj=pmb->js-NGHOST, ej=pmb->js-1;
+    if(nb.ox3==0)     sk=pmb->ks,        ek=pmb->ke;
+    else if(nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
+    else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
+  }
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
+#pragma simd
+      for (int i=si; i<=ei; ++i) {
+        // buffer is always fully packed
+        dst.x1f(k,j,i)=buf[p++];
+      }
+    }
+  }
+  // bx2
+  if(pmb->pmy_mesh->multilevel==false) {
+    if(nb.ox1==0)     si=pmb->is,        ei=pmb->ie;
+    else if(nb.ox1>0) si=pmb->ie+1,      ei=pmb->ie+NGHOST;
+    else              si=pmb->is-NGHOST, ei=pmb->is-1;
+    if(nb.ox2==0)     sj=pmb->js,        ej=pmb->je+1;
+    else if(nb.ox2>0) sj=pmb->je+2,      ej=pmb->je+NGHOST+1;
+    else              sj=pmb->js-NGHOST, ej=pmb->js-1;
+  }
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
+#pragma simd
+      for (int i=si; i<=ei; ++i) {
+        // buffer is always fully packed
+        dst.x2f(k,j,i)=buf[p++];
+      }
+    }
+  }
+  // bx3
+  if(pmb->pmy_mesh->multilevel==false) {
+    if(nb.ox2==0)     sj=pmb->js,        ej=pmb->je;
+    else if(nb.ox2>0) sj=pmb->je+1,      ej=pmb->je+NGHOST;
+    else              sj=pmb->js-NGHOST, ej=pmb->js-1;
+    if(nb.ox3==0)     sk=pmb->ks,        ek=pmb->ke+1;
+    else if(nb.ox3>0) sk=pmb->ke+2,      ek=pmb->ke+NGHOST+1;
+    else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
+  }
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
+#pragma simd
+      for (int i=si; i<=ei; ++i) {
+        // buffer is always fully packed
+        dst.x3f(k,j,i)=buf[p++];
+      }
+    }
+  }
+
   return;
 }
 
@@ -881,7 +946,39 @@ void BoundaryValues::SetFieldBoundaryFromFiner(InterfaceField &dst, Real *buf,
 //  \brief load boundary buffer for x1 direction into the array
 bool BoundaryValues::ReceiveFieldBoundaryBuffers(InterfaceField &dst, int step)
 {
-  // implement me
+  MeshBlock *pmb=pmy_mblock_;
+  int mylevel=pmb->uid.GetLevel();
+  int nc=0;
+
+  for(int n=0; n<pmb->nneighbor; n++) {
+    NeighborBlock& nb= pmb->neighbor[n];
+    if(field_flag_[step][nb.bufid]==boundary_completed) { nc++; continue;}
+    if(field_flag_[step][nb.bufid]==boundary_waiting) {
+      if(nb.rank==myrank) // on the same process
+        continue;
+#ifdef MPI_PARALLEL
+      else { // MPI boundary
+        int test;
+        MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
+        MPI_Test(&req_field_recv_[step][nb.bufid],&test,MPI_STATUS_IGNORE);
+        if(test==false) continue;
+        field_flag_[step][nb.bufid] = boundary_arrived;
+      }
+#endif
+    }
+    if(nb.level==mylevel)
+      SetFieldBoundarySameLevel(dst, field_recv_[step][nb.bufid], nb);
+    else if(nb.level<mylevel)
+      SetFieldBoundaryFromCoarser(field_recv_[step][nb.bufid], nb);
+    else
+      SetFieldBoundaryFromFiner(dst, field_recv_[step][nb.bufid], nb);
+
+    field_flag_[step][nb.bufid] = boundary_completed; // completed
+    nc++;
+  }
+
+  if(nc<pmb->nneighbor)
+    return false;
   return true;
 }
 
@@ -891,7 +988,23 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(InterfaceField &dst, int step)
 //  \brief load boundary buffer for x1 direction into the array
 void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(InterfaceField &dst, int step)
 {
-  // implement me
+  MeshBlock *pmb=pmy_mblock_;
+  int mylevel=pmb->uid.GetLevel();
+
+  for(int n=0; n<pmb->nneighbor; n++) {
+    NeighborBlock& nb= pmb->neighbor[n];
+#ifdef MPI_PARALLEL
+    if(nb.rank!=myrank)
+      MPI_Wait(&req_field_recv_[0][nb.bufid],MPI_STATUS_IGNORE);
+#endif
+    if(nb.level==mylevel)
+      SetFieldBoundarySameLevel(dst, field_recv_[0][nb.bufid], nb);
+    else if(nb.level<mylevel)
+      SetFieldBoundaryFromCoarser(field_recv_[0][nb.bufid], nb);
+    else
+      SetFieldBoundaryFromFiner(dst, field_recv_[0][nb.bufid], nb);
+    field_flag_[0][nb.bufid] = boundary_completed; // completed
+  }
   return;
 }
 
@@ -1017,20 +1130,23 @@ void BoundaryValues::FieldPhysicalBoundaries(InterfaceField &dst)
 
 
 //--------------------------------------------------------------------------------------
-//! \fn int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2)
+//! \fn unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2)
 //  \brief calculate a buffer identifier
-int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2)
+unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2)
 {
-  return ((((ox1+1)<<6)|((ox2+1)<<4)|(ox3+1))<<2) | (fi1<<1) | fi2;
+  unsigned int ux1=(unsigned)(ox1+1);
+  unsigned int ux2=(unsigned)(ox2+1);
+  unsigned int ux3=(unsigned)(ox3+1);
+  return (ux1<<6) | (ux2<<4) | (ux3<<2) | (fi1<<1) | fi2;
 }
 
 
 //--------------------------------------------------------------------------------------
-//! \fn int CreateMPITag(int lid, int flag, int phys, int ox1, int ox2, int ox3,
+//! \fn unsigned int CreateMPITag(int lid, int flag, int phys, int ox1, int ox2, int ox3,
 //                       int fi1, int fi2)
 //  \brief calculate an MPI tag
-int CreateMPITag(int lid, int flag, int phys, int ox1, int ox2, int ox3,
-                 int fi1=0, int fi2=0)
+unsigned int CreateMPITag(int lid, int flag, int phys, int ox1, int ox2, int ox3,
+                          int fi1=0, int fi2=0)
 {
   int dir=CreateBufferID(ox1, ox2, ox3, fi1, fi2);
 // tag = local id of destination (17) + flag (2) + physics (4) + dir (6+2)

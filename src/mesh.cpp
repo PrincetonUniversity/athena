@@ -2001,7 +2001,7 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
   for(int l=-1; l<=1; l+=2) {
     for(int m=-1; m<=1; m+=2) {
       for(int n=-1; n<=1; n+=2) {
-        neibt=tree.FindNeighbor(uid,0,n,m,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
+        neibt=tree.FindNeighbor(uid,n,m,l,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
         if(neibt==NULL) { bufid++; continue;}
         if(neibt->flag==false) { // finer
           int ff1=1-(n+1)/2; // 0 for outer_x1, 1 for inner_x1
@@ -2012,7 +2012,7 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
         int nlevel=neibt->uid.GetLevel();
         if(nlevel>=ll || (myox1==n && myox2==m && myox3==l)) {
           neighbor[nneighbor].SetNeighbor(ranklist[neibt->gid], nlevel, neibt->gid,
-            neibt->gid-nslist[ranklist[neibt->gid]], 0, n, m, neighbor_edge, bufid);
+            neibt->gid-nslist[ranklist[neibt->gid]], n, m, l, neighbor_edge, bufid);
           nneighbor++;
         }
         bufid++;
