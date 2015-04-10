@@ -29,6 +29,7 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
 {
   // Set parameters
   bh_mass_ = pin->GetReal("coord", "m");
+  bh_spin_ = 0.0;
   const Real &m = bh_mass_;
 
   // Set pointer to host MeshBlock
@@ -1604,5 +1605,23 @@ void Coordinates::PrimToCons(
         t0_3 = w * u0 * u_3 - bcon0 * bcov3;
       }
     }
+  return;
+}
+
+// Function for returning Boyer-Lindquist coordinates of given cell
+// Inputs:
+//   k,j,i: indices of cell for which coordinates are desired
+// Outputs:
+//   pr: pointer to stored value of r
+//   ptheta: pointer to stored value of theta
+//   pphi: pointer to stored value of phi
+// Notes:
+//   Schwarzschild (r,theta,phi) match Boyer-Lindquist (r,theta,phi) when a = 0
+void Coordinates::GetBoyerLindquist(int k, int j, int i,
+    Real *pr, Real *ptheta, Real *pphi)
+{
+  *pr = pmy_block->x1v(i);
+  *ptheta = pmy_block->x2v(j);
+  *pphi = pmy_block->x3v(k);
   return;
 }

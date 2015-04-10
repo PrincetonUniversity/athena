@@ -1,19 +1,13 @@
 <comment>
-problem = GR hydro thick disk in (r,theta)-plane
+problem = Fishbone-Moncrief equilibrium torus
+reference = Fishbone & Moncrief 1976, ApJ 207 962 (FM)
 
 <job>
-problem_id  = BHThickDisk2D
+problem_id  = FMTorus
 
 <output1>
-file_type   = tab
-variable    = cons
-data_format = %24.16e
-dt          = 1.0
-x2_slice    = 1.5707963267948966  # pi/2
-
-<output2>
 file_type   = vtk
-variable    = cons
+variable    = prim
 dt          = 1.0
 
 <time>
@@ -40,6 +34,10 @@ x3max  = 0.5                 # maximum phi
 ix3_bc = 4                   # minimum phi boundary condition: periodic
 ox3_bc = 4                   # maximum phi boundary condition: periodic
 
+<coord>
+m = 1.0  # black hole mass M
+a = 0.0  # black hole spin (0 <= a/M < 1)
+
 <fluid>
 gamma = 1.6666666666666667  # Gamma = C_p/C_v
 
@@ -47,9 +45,11 @@ gamma = 1.6666666666666667  # Gamma = C_p/C_v
 mass    = 1.0     # black hole mass
 k_adi   = 1.0     # p_gas = K * rho^Gamma
 r_edge  = 6.0     # radius of inner edge of disk
-r_peak  = 16.0    # radius of pressure maximum; use u0_u_3 instead if negative
-u0_u_3  = 0.0     # constant "angular momentum" u^t u_phi; only used if r_peak < 0
-rho_min = 1.0e-4  # value of density floor at r_inner
-rho_pow = -1.5    # density floor rho_min * (r/r_inner)^rho_pow
-eps_min = 1.0e-6  # value of internal energy floor at r_inner
-eps_pow = -2.5    # internal energy floor eps_min * (r/r_inner)^eps_pow
+r_peak  = 16.0    # radius of pressure maximum; use l instead if negative
+l       = 0.0     # constant ang. mom. per unit mass u^t u_phi; only used if r_peak < 0
+rho_max = 1.0     # if greater than 0, rescale density to have this peak, and rescale
+                  # pressure by same factor
+rho_min = 1.0e-4  # value of density floor at r_edge
+rho_pow = -1.5    # density floor rho_min * (r/r_edge)^rho_pow
+u_min   = 1.0e-6  # value of internal energy floor at r_edge
+u_pow   = -2.5    # internal energy floor u_min * (r/r_edge)^u_pow
