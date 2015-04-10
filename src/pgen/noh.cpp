@@ -135,7 +135,7 @@ void noh3d_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
 {
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+    for (int i=is; i<=ie; ++i) {
       Real rad,f_t;
       if (pmb->block_size.nx3 > 1) {
         rad = sqrt(SQR(pmb->x1v(i)) + SQR(pmb->x2v(je+j)) + SQR(pmb->x3v(k)));
@@ -170,8 +170,8 @@ void noh3d_okb(MeshBlock *pmb, AthenaArray<Real> &a,
                int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+  for (int j=js; j<=je; ++j) {
+    for (int i=is; i<=ie; ++i) {
       Real rad = sqrt(SQR(pmb->x1v(i)) + SQR(pmb->x2v(j)) + SQR(pmb->x3v(ke+k)));
       Real f_t = SQR(1.0 + pmb->pmy_mesh->time/rad);
       Real d0 = 1.0*f_t;

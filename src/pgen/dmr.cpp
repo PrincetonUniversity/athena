@@ -137,7 +137,7 @@ void dmrbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a,
   Real v0 = -8.25*0.5;
 
   for (int j=1;  j<=(NGHOST); ++j) {
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+    for (int i=is; i<=ie; ++i) {
       if (pmb->x1v(i) < 0.1666666666) {
 // fixed at downstream state
         a(IDN,ks,js-j,i) = d0;
@@ -172,7 +172,7 @@ void dmrbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
   Real shock_pos = 0.1666666666 + (1. + 20.*pmb->pmy_mesh->time)/sqrt(3.0);
 
   for (int j=1;  j<=(NGHOST); ++j) {
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+    for (int i=is; i<=ie; ++i) {
       if (pmb->x1v(i) < shock_pos) {
 // fixed at downstream state
         a(IDN,ks,je+j,i) = d0;

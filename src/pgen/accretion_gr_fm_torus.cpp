@@ -212,9 +212,9 @@ void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons,
   Real r = pmb->x1v(iu);
   Real d, e;
   calculate_conserved(r, d, e);
-  for (int k = kl; k <= ku; k++)
-    for (int j = jl; j <= ju; j++)
-      for (int i = il; i <= iu; i++)
+  for (int k = ks; k <= ke; k++)
+    for (int j = js; j <= je; j++)
+      for (int i = is; i <= ie; i++)
       {
         cons(IDN,k,j,i) = d;
         cons(IEN,k,j,i) = e;
@@ -240,9 +240,9 @@ void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons,
   Real r = pmb->x1v(il);
   Real d, e;
   calculate_conserved(r, d, e);
-  for (int k = kl; k <= ku; k++)
-    for (int j = jl; j <= ju; j++)
-      for (int i = il; i <= iu; i++)
+  for (int k = ks; k <= ke; k++)
+    for (int j = js; j <= je; j++)
+      for (int i = is; i <= ie; i++)
       {
         cons(IDN,k,j,i) = d;
         cons(IEN,k,j,i) = e;
@@ -265,9 +265,9 @@ void FixedTop(MeshBlock *pmb, AthenaArray<Real> &cons,
               int is, int ie, int js, int je, int ks, int ke)
 {
   // Set conserved values
-  for (int k = kl; k <= ku; k++)
-    for (int j = jl; j <= ju; j++)
-      for (int i = il; i <= iu; i++)
+  for (int k = ks; k <= ke; k++)
+    for (int j = js; j <= je; j++)
+      for (int i = is; i <= ie; i++)
       {
         Real r = pmb->x1v(i);
         Real d, e;
@@ -293,9 +293,9 @@ void FixedBottom(MeshBlock *pmb, AthenaArray<Real> &cons,
                 int is, int ie, int js, int je, int ks, int ke)
 {
   // Set conserved values
-  for (int k = kl; k <= ku; k++)
-    for (int j = jl; j <= ju; j++)
-      for (int i = il; i <= iu; i++)
+  for (int k = ks; k <= ke; k++)
+    for (int j = js; j <= je; j++)
+      for (int i = is; i <= ie; i++)
       {
         Real r = pmb->x1v(i);
         Real d, e;

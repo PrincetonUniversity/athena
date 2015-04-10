@@ -105,7 +105,7 @@ void ReflectInnerX2(MeshBlock *pmb, InterfaceField &a,
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST+1); ++i) {
+    for (int i=is; i<=ie+1; ++i) {
       a.x1f(k,(js-j),i) =  a.x1f(k,(js+j-1),i);
     }
   }}
@@ -113,7 +113,7 @@ void ReflectInnerX2(MeshBlock *pmb, InterfaceField &a,
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+    for (int i=is; i<=ie; ++i) {
       a.x2f(k,(js-j),i) = -a.x2f(k,(js+j  ),i);  // reflect 2-field
     }
   }}
@@ -121,7 +121,7 @@ void ReflectInnerX2(MeshBlock *pmb, InterfaceField &a,
   for (int k=ks; k<=ke+1; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+    for (int i=is; i<=ie; ++i) {
       a.x3f(k,(js-j),i) =  a.x3f(k,(js+j-1),i);
     }
   }}
@@ -139,7 +139,7 @@ void ReflectOuterX2(MeshBlock *pmb, InterfaceField &a,
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST+1); ++i) {
+    for (int i=is; i<=ie+1; ++i) {
       a.x1f(k,(je+j  ),i) =  a.x1f(k,(je-j+1),i);
     }
   }}
@@ -147,7 +147,7 @@ void ReflectOuterX2(MeshBlock *pmb, InterfaceField &a,
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+    for (int i=is; i<=ie; ++i) {
       a.x2f(k,(je+j+1),i) = -a.x2f(k,(je-j+1),i);  // reflect 2-field
     }
   }}
@@ -155,7 +155,7 @@ void ReflectOuterX2(MeshBlock *pmb, InterfaceField &a,
   for (int k=ks; k<=ke+1; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+    for (int i=is; i<=ie; ++i) {
       a.x3f(k,(je+j  ),i) =  a.x3f(k,(je-j+1),i);
     }
   }}
@@ -171,25 +171,25 @@ void ReflectInnerX3(MeshBlock *pmb, InterfaceField &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
+  for (int j=js; j<=je; ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST+1); ++i) {
+    for (int i=is; i<=ie+1; ++i) {
       a.x1f((ks-k),j,i) =  a.x1f((ks+k-1),j,i);
     }
   }}
 
   for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js-(NGHOST); j<=je+(NGHOST+1); ++j) {
+  for (int j=js; j<=je+1; ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+    for (int i=is; i<=ie; ++i) {
       a.x2f((ks-k),j,i) =  a.x2f((ks+k-1),j,i);
     }
   }}
 
   for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
+  for (int j=js; j<=je; ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+    for (int i=is; i<=ie; ++i) {
       a.x3f((ks-k),j,i) = -a.x3f((ks+k  ),j,i);  // reflect 3-field
     }
   }}
@@ -205,15 +205,15 @@ void ReflectOuterX3(MeshBlock *pmb, InterfaceField &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
+  for (int j=js; j<=je; ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST+1); ++i) {
+    for (int i=is; i<=ie+1; ++i) {
       a.x1f((ke+k  ),j,i) =  a.x1f((ke-k+1),j,i);
     }
   }}
 
   for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js-(NGHOST); j<=je+(NGHOST+1); ++j) {
+  for (int j=js; j<=je+1; ++j) {
 #pragma simd
     for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
       a.x2f((ke+k  ),j,i) =  a.x2f((ke-k+1),j,i);
@@ -221,9 +221,9 @@ void ReflectOuterX3(MeshBlock *pmb, InterfaceField &a,
   }}
 
   for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
+  for (int j=js; j<=je; ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+    for (int i=is; i<=ie; ++i) {
       a.x3f((ke+k+1),j,i) = -a.x3f((ke-k+1),j,i);  // reflect 3-mom
     }
   }}

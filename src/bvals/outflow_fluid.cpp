@@ -80,7 +80,7 @@ void OutflowInnerX2(MeshBlock *pmb, AthenaArray<Real> &a,
   for (int j=1; j<=(NGHOST); ++j) {
     for (int n=0; n<(NFLUID); ++n) {
 #pragma simd
-      for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+      for (int i=is; i<=ie; ++i) {
         a(n,k,js-j,i) = a(n,k,js,i);
       }
     }
@@ -101,7 +101,7 @@ void OutflowOuterX2(MeshBlock *pmb, AthenaArray<Real> &a,
   for (int j=1; j<=(NGHOST); ++j) {
     for (int n=0; n<(NFLUID); ++n) {
 #pragma simd
-      for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+      for (int i=is; i<=ie; ++i) {
         a(n,k,je+j,i) = a(n,k,je,i);
       }
     }
@@ -119,10 +119,10 @@ void OutflowInnerX3(MeshBlock *pmb, AthenaArray<Real> &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
+  for (int j=js; j<=je; ++j) {
     for (int n=0; n<(NFLUID); ++n) {
 #pragma simd
-      for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+      for (int i=is; i<=ie; ++i) {
         a(n,ks-k,j,i) = a(n,ks,j,i);
       }
     }
@@ -140,10 +140,10 @@ void OutflowOuterX3(MeshBlock *pmb, AthenaArray<Real> &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
+  for (int j=js; j<=je; ++j) {
     for (int n=0; n<(NFLUID); ++n) {
 #pragma simd
-      for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+      for (int i=is; i<=ie; ++i) {
         a(n,ke+k,j,i) = a(n,ke,j,i);
       }
     }

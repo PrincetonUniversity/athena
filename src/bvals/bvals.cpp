@@ -208,6 +208,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     for(int i=0;i<56;i++){
       fluid_flag_[l][i]=boundary_waiting;
       field_flag_[l][i]=boundary_waiting;
+      fluid_send_[l][i]=NULL;
+      fluid_recv_[l][i]=NULL;
+      field_send_[l][i]=NULL;
+      field_recv_[l][i]=NULL;
 #ifdef MPI_PARALLEL
       req_fluid_send_[l][i]=MPI_REQUEST_NULL;
       req_fluid_recv_[l][i]=MPI_REQUEST_NULL;
@@ -733,6 +737,7 @@ void BoundaryValues::ReceiveFluidBoundaryBuffersWithWait(AthenaArray<Real> &dst,
 int BoundaryValues::LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *buf,
                                                      NeighborBlock& nb)
 {
+  MeshBlock *pmb=pmy_mblock_;
   int si, sj, sk, ei, ej, ek;
 
   si=(nb.ox1>0)?(pmb->ie-NGHOST+1):pmb->is;

@@ -218,7 +218,7 @@ void stbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a,
 
   for (k=ks; k<=ke; k++) {
     for (j=1; j<=(NGHOST); j++) {
-      for (i=is-(NGHOST); i<=ie+(NGHOST); i++) {
+      for (i=is; i<=ie; i++) {
         a(IDN,k,js-j,i) = a(IDN,k,js,i);
         a(IM1,k,js-j,i) = a(IM1,k,js,i);
         a(IM3,k,js-j,i) = a(IM3,k,js,i);
@@ -244,7 +244,7 @@ void stbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
 
   for (k=ks; k<=ke; k++) {
     for (j=1; j<=(NGHOST); j++) {
-      for (i=is-(NGHOST); i<=ie+(NGHOST); i++) {
+      for (i=is; i<=ie; i++) {
         a(IDN,k,je+j,i) = a(IDN,k,je,i);
         a(IM1,k,je+j,i) = a(IM1,k,je,i);
         a(IM3,k,je+j,i) = a(IM3,k,je,i);
