@@ -68,17 +68,17 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     ku += (NGHOST);
   }
 
-  // Get mass
+  // Get mass of black hole
   const Real m = pb->pcoord->GetMass();
 
   // Get ratio of specific heats
-  Real gamma_adi = pfl->pf_eos->GetGamma();
-  Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
-  Real n_adi = 1.0/(gamma_adi-1.0);
+  const Real gamma_adi = pfl->pf_eos->GetGamma();
+  const Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
+  const Real n_adi = 1.0/(gamma_adi-1.0);
 
   // Read problem parameters
-  Real k_adi = pin->GetReal("fluid", "k_adi");
-  Real r_crit = pin->GetReal("problem", "r_crit");
+  const Real k_adi = pin->GetReal("fluid", "k_adi");
+  const Real r_crit = pin->GetReal("problem", "r_crit");
 
   // Read initial magnetic field
   Real b1_flux = 0.0, b2_flux = 0.0, b3_flux = 0.0;

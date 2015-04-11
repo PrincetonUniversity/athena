@@ -31,6 +31,7 @@ public:
 
   // Functions for returning private variables
   Real GetMass() const {return bh_mass_;}
+  Real GetSpin() const {return bh_spin_;}
 
 // functions to compute length of edges
   void Edge1Length(const int k, const int j, const int il, const int iu,
@@ -107,6 +108,7 @@ public:
         Real *a0, Real *a1, Real *a2, Real *a3);
     void TransformVectorFace3(Real at, Real ax, Real ay, Real az, int k, int j, int i,
         Real *a0, Real *a1, Real *a2, Real *a3);
+    void GetBoyerLindquist(int k, int j, int i, Real *pr, Real *ptheta, Real *pphi);
   #else  // define no-op functions otherwise not defined in non-GR case
     void CellMetric(const int, const int, const int, const int, AthenaArray<Real> &,
         AthenaArray<Real> &) {return;}
