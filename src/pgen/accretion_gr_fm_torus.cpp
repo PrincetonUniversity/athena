@@ -17,10 +17,14 @@
 #include "../fluid/eos/eos.hpp"            // FluidEqnOfState
 
 // Declarations
-//void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons);
-//void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons);
-//void FixedTop(MeshBlock *pmb, AthenaArray<Real> &cons);
-//void FixedBottom(MeshBlock *pmb, AthenaArray<Real> &cons);
+//void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons,
+//                int is, int ie, int js, int je, int ks, int ke);
+//void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons,
+//                int is, int ie, int js, int je, int ks, int ke);
+//void FixedTop(MeshBlock *pmb, AthenaArray<Real> &cons,
+//                int is, int ie, int js, int je, int ks, int ke);
+//void FixedBottom(MeshBlock *pmb, AthenaArray<Real> &cons,
+//                int is, int ie, int js, int je, int ks, int ke);
 static void reset_l_from_r_peak();
 static Real log_h_aux(Real r, Real sin_sq_theta);
 static void set_state(
@@ -204,15 +208,16 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 //// Notes:
 ////   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 //// TODO: only works in Schwarzschild (assumed metric)
-//void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons)
+//void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons,
+//                int is, int ie, int js, int je, int ks, int ke)
 //{
 //  // Extract boundary indices
-//  int il = pmb->is - NGHOST;
-//  int iu = pmb->is;
-//  int jl = pmb->js;
-//  int ju = pmb->je;
-//  int kl = pmb->ks;
-//  int ku = pmb->ke;
+//  int il = is - NGHOST;
+//  int iu = is;
+//  int jl = js;
+//  int ju = je;
+//  int kl = ks;
+//  int ku = ke;
 //
 //  // Set conserved values
 //  Real r = pmb->x1v(iu);
@@ -239,15 +244,16 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 //// Notes:
 ////   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 //// TODO: only works in Schwarzschild (assumed metric)
-//void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons)
+//void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons,
+//                int is, int ie, int js, int je, int ks, int ke)
 //{
 //  // Extract boundary indices
-//  int il = pmb->ie;
-//  int iu = pmb->ie + NGHOST;
-//  int jl = pmb->js;
-//  int ju = pmb->je;
-//  int kl = pmb->ks;
-//  int ku = pmb->ke;
+//  int il = ie;
+//  int iu = ie + NGHOST;
+//  int jl = js;
+//  int ju = je;
+//  int kl = ks;
+//  int ku = ke;
 //
 //  // Set conserved values
 //  Real r = pmb->x1v(il);
@@ -274,15 +280,16 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 //// Notes:
 ////   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 //// TODO: only works in Schwarzschild (assumed metric)
-//void FixedTop(MeshBlock *pmb, AthenaArray<Real> &cons)
+//void FixedTop(MeshBlock *pmb, AthenaArray<Real> &cons,
+//                int is, int ie, int js, int je, int ks, int ke)
 //{
 //  // Extract boundary indices
-//  int il = pmb->is;
-//  int iu = pmb->ie;
-//  int jl = pmb->js - NGHOST;
-//  int ju = pmb->js;
-//  int kl = pmb->ks;
-//  int ku = pmb->ke;
+//  int il = is;
+//  int iu = ie;
+//  int jl = js - NGHOST;
+//  int ju = js;
+//  int kl = ks;
+//  int ku = ke;
 //
 //  // Set conserved values
 //  for (int k = kl; k <= ku; k++)
@@ -309,15 +316,16 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 //// Notes:
 ////   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 //// TODO: only works in Schwarzschild (assumed metric)
-//void FixedBottom(MeshBlock *pmb, AthenaArray<Real> &cons)
+//void FixedBottom(MeshBlock *pmb, AthenaArray<Real> &cons,
+//                int is, int ie, int js, int je, int ks, int ke)
 //{
 //  // Extract boundary indices
-//  int il = pmb->is;
-//  int iu = pmb->ie;
-//  int jl = pmb->je;
-//  int ju = pmb->je + NGHOST;
-//  int kl = pmb->ks;
-//  int ku = pmb->ke;
+//  int il = is;
+//  int iu = ie;
+//  int jl = je;
+//  int ju = je + NGHOST;
+//  int kl = ks;
+//  int ku = ke;
 //
 //  // Set conserved values
 //  for (int k = kl; k <= ku; k++)
