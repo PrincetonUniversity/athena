@@ -311,6 +311,28 @@ void BlockTree::AddMeshBlock(BlockTree& root, BlockUID id, int dim, int* mesh_bc
   return;
 }
 
+
+//--------------------------------------------------------------------------------------
+//! \fn void BlockTree::AddMeshBlockWithoutRefine(BlockTree& root, BlockUID id, int dim,
+//                      int* mesh_bcs, long int rbx, long int rby, long int rbz, int rl)
+//  \brief add a MeshBlock to the tree, also creates neighboring blocks
+void BlockTree::AddMeshBlockWithoutRefine(BlockTree& root, BlockUID id, int dim,
+                       int* mesh_bcs, long int rbx, long int rby, long int rbz, int rl)
+{
+  int mx, my, mz;
+  int lev=uid.GetLevel();
+  if(lev==id.GetLevel()) // done
+    return;
+  if(flag==true) // leaf -> create the finer level
+    flag=false;
+  id.GetLeafIndex(mx,my,mz, lev);
+  if(pleaf[mz][my][mx]==NULL)
+    pleaf[mz][my][mx] = new BlockTree(this, mx, my, mz);
+  pleaf[mz][my][mx]->AddMeshBlockWithoutRefine(root,id,dim,mesh_bcs,rbx,rby,rbz,rl);
+  return;
+}
+
+
 //--------------------------------------------------------------------------------------
 //! \fn void BlockTree::Refine(BlockTree& root, int dim, int* mesh_bcs,
 //                             long int rbx, long int rby, long int rbz, int rl)
@@ -334,9 +356,8 @@ void BlockTree::Refine(BlockTree& root, int dim, int* mesh_bcs,
 
   for(int k=0; k<=zmax; k++) {
     for(int j=0; j<=ymax; j++) {
-      for(int i=0; i<=xmax; i++) {
+      for(int i=0; i<=xmax; i++)
         pleaf[k][j][i] = new BlockTree(this, i, j, k);
-      }
     }
   }
 

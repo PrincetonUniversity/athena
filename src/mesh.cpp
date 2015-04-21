@@ -729,7 +729,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
 
   // rebuild the Block Tree
   for(int i=0;i<nbtotal;i++)
-    tree.AddMeshBlock(tree,buid[i],dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level);
+    tree.AddMeshBlockWithoutRefine(tree,buid[i],dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level);
   int nnb;
   tree.AssignGID(nnb); // count blocks at the same time
   if(nnb!=nbtotal) {

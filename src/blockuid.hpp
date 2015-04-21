@@ -77,6 +77,8 @@ public:
   void CreateRootGrid(long int nx, long int ny, long int nz, int nl);
   void AddMeshBlock(BlockTree& root, BlockUID id, int dim, int* mesh_bcs,
                     long int rbx, long int rby, long int rbz, int rl);
+  void AddMeshBlockWithoutRefine(BlockTree& root, BlockUID id, int dim,
+                   int* mesh_bcs, long int rbx, long int rby, long int rbz, int rl);
   void Refine(BlockTree& root, int dim, int* mesh_bcs,
               long int rbx, long int rby, long int rbz, int rl);
   void Derefine(void);
