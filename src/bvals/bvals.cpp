@@ -1063,13 +1063,16 @@ void BoundaryValues::ClearBoundaryAll(void)
 void BoundaryValues::FluidPhysicalBoundaries(AthenaArray<Real> &dst)
 {
   MeshBlock *pmb=pmy_mblock_;
-  int bis=pmb->is-NGHOST, bie=pmb->ie+NGHOST;
-  int bjs=pmb->js, bje=pmb->je, bks=pmb->ks, bke=pmb->ke;
+  int bis=pmb->is, bie=pmb->ie, bjs=pmb->js, bje=pmb->je, bks=pmb->ks, bke=pmb->ke;
 
-  if(FluidBoundary_[inner_x2]==NULL && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
-  if(FluidBoundary_[outer_x2]==NULL && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
-  if(FluidBoundary_[inner_x3]==NULL && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
-  if(FluidBoundary_[outer_x3]==NULL && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
+  if(pmb->pmy_mesh->face_only==false) {
+    if(FluidBoundary_[inner_x1]==NULL) bis=pmb->is-NGHOST;
+    if(FluidBoundary_[outer_x1]==NULL) bie=pmb->ie+NGHOST;
+    if(FluidBoundary_[inner_x2]==NULL && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
+    if(FluidBoundary_[outer_x2]==NULL && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
+    if(FluidBoundary_[inner_x3]==NULL && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
+    if(FluidBoundary_[outer_x3]==NULL && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
+  }
 
   if(FluidBoundary_[inner_x1]!=NULL)
     FluidBoundary_[inner_x1](pmb, dst, pmb->is, pmb->ie, bjs, bje, bks, bke);
