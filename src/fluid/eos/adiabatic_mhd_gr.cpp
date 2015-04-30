@@ -560,7 +560,7 @@ static Real FindRootNR(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq
 // Outputs:
 //   returned value: desired root
 // Notes:
-//   same function as in adiabatic_mhd_sr.cpp and hlld_mhd_rel.cpp
+//   same function as in adiabatic_mhd_sr.cpp, hlld_rel.cpp, and linear_wave_rel.cpp
 //   solves x^2 + a_1 x + a_0 = 0 for x
 //   returns abscissa of vertex if there are no real roots
 //   follows advice in Numerical Recipes, 3rd ed. (5.6) for avoiding large cancellations
@@ -593,6 +593,7 @@ static Real quadratic_root(Real a1, Real a0, bool greater_root)
 //   returned value: a real root
 // Notes:
 //   solves x^3 + a_2 x^2 + a_1 x + a_0 = 0 for x
+//   same function as in adiabatic_mhd_sr.cpp and linear_wave_rel.cpp
 //   references Numerical Recipes, 3rd ed. (NR)
 static Real cubic_root_real(Real a2, Real a1, Real a0)
 {

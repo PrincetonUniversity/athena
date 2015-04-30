@@ -1,0 +1,48 @@
+<comment>
+problem = 1D linear wave
+
+<job>
+problem_id = linear_wave_hydro
+
+<output1>
+file_type   = tab
+variable    = prim
+data_format = %24.16e
+dt          = 10.0
+
+<time>
+cfl_number = 0.8
+nlim       = -1
+tlim       = 10.0
+
+<mesh>
+nx1    = 100
+x1min  = -0.5
+x1max  = 0.5
+ix1_bc = 4     # 4: periodic
+ox1_bc = 4     # 4: periodic
+
+nx2    = 1
+x2min  = -0.5
+x2max  = 0.5
+ix2_bc = 4     # 4: periodic
+ox2_bc = 4     # 4: periodic
+
+nx3    = 1
+x3min  = -0.5
+x3max  = 0.5
+ix3_bc = 4     # 4: periodic
+ox3_bc = 4     # 4: periodic
+
+<fluid>
+gamma = 1.3333333333333333
+
+<problem>
+wave_flag = 1       # 0/4 for left/right sound waves; 1-3 for entropy
+amp       = 1.0e-6
+
+rho  = 4.0
+pgas = 1.0
+vx   = 0.1
+vy   = 0.3
+vz   = -0.05

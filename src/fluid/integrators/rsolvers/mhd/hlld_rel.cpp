@@ -773,7 +773,8 @@ static Real FindRootSecant(
 // Outputs:
 //   returned value: desired root
 // Notes:
-//   same function as in adiabatic_mhd_gr.cpp and hlld_mhd_rel.cpp
+//   same function as in adiabatic_mhd_sr.cpp, adiabatic_mhd_gr.cpp, and
+//       linear_wave_rel.cpp
 //   solves x^2 + a_1 x + a_0 = 0 for x
 //   returns abscissa of vertex if there are no real roots
 //   follows advice in Numerical Recipes, 3rd ed. (5.6) for avoiding large cancellations
