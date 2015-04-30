@@ -90,10 +90,12 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
   // set the loop limits
   jl=js, ju=je, kl=ks, ku=ke;
   if (MAGNETIC_FIELDS_ENABLED) {
-    if(pmb->block_size.nx3 == 1) // 2D
-      jl=js-1, ju=je+1, kl=ks, ku=ke;
-    else // 3D
-      jl=js-1, ju=je+1, kl=ks-1, ku=ke+1;
+    if(pmb->block_size.nx2 > 1) {
+      if(pmb->block_size.nx3 == 1) // 2D
+        jl=js-1, ju=je+1, kl=ks, ku=ke;
+      else // 3D
+        jl=js-1, ju=je+1, kl=ks-1, ku=ke+1;
+    }
   }
   for (int k=kl; k<=ku; ++k){ 
 #pragma omp for schedule(static)
