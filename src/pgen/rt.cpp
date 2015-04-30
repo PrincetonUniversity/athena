@@ -28,10 +28,14 @@
 #include "../fluid/srcterms/srcterms.hpp"  // GetG2, GetG3
 
 double ran2(long int *idum); // random number generator from NR
-void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a);
-void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a);
-void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a);
-void reflect_ox3(MeshBlock *pmb, AthenaArray<Real> &a);
+void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke);
+void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke);
+void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke);
+void reflect_ox3(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke);
 
 // made global to share with BC functions
 static Real gm1;
@@ -219,30 +223,27 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 //! \fn void reflect_ix2()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a)
+void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
     for (int n=0; n<(NFLUID); ++n) {
 
       if (n==(IM2)) {
 #pragma simd
-        for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+        for (int i=is; i<=ie; ++i) {
           a(IM2,k,js-j,i) = -a(IM2,k,js+j-1,i);  // reflect 2-mom
         }
       } else if (n==(IEN)) {
 #pragma simd
-        for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+        for (int i=is; i<=ie; ++i) {
           a(IEN,k,js-j,i) = a(IEN,k,js+j-1,i) 
              - a(IDN,k,js+j-1,i)*grav_acc*(2*j-1)*pmb->dx2f(j)/gm1;
         }
       } else {
 #pragma simd
-        for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+        for (int i=is; i<=ie; ++i) {
           a(n,k,js-j,i) = a(n,k,js+j-1,i);
         }
       }
@@ -257,30 +258,27 @@ void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a)
 //! \fn void reflect_ox2()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a)
+void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
     for (int n=0; n<(NFLUID); ++n) {
 
       if (n==(IM2)) {
 #pragma simd
-        for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+        for (int i=is; i<=ie; ++i) {
           a(IM2,k,je+j,i) = -a(IM2,k,je-j+1,i);  // reflect 2-mom
         }
       } else if (n==(IEN)) {
 #pragma simd
-        for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+        for (int i=is; i<=ie; ++i) {
           a(IEN,k,je+j,i) = a(IEN,k,je-j+1,i) 
              + a(IDN,k,je-j+1,i)*grav_acc*(2*j-1)*pmb->dx2f(j)/gm1;
         }
       } else {
 #pragma simd
-        for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+        for (int i=is; i<=ie; ++i) {
           a(n,k,je+j,i) = a(n,k,je-j+1,i);
         }
       }
@@ -295,30 +293,27 @@ void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a)
 //! \fn void reflect_ix3()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a)
+void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks;
-
   for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
+  for (int j=js; j<=je; ++j) {
     for (int n=0; n<(NFLUID); ++n) {
 
       if (n==(IM3)) {
 #pragma simd
-        for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+        for (int i=is; i<=ie; ++i) {
           a(IM3,ks-k,j,i) = -a(IM3,ks+k-1,j,i);  // reflect 3-mom
         }
       } else if (n==(IEN)) {
 #pragma simd
-        for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+        for (int i=is; i<=ie; ++i) {
           a(IEN,ks-k,j,i) = a(IEN,ks+k-1,j,i) 
              - a(IDN,ks+k-1,j,i)*grav_acc*(2*k-1)*pmb->dx3f(k)/gm1;
         }
       } else {
 #pragma simd
-        for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+        for (int i=is; i<=ie; ++i) {
           a(n,ks-k,j,i) = a(n,ks+k-1,j,i);
         }
       }
@@ -333,30 +328,27 @@ void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a)
 //! \fn void reflect_ox3()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void reflect_ox3(MeshBlock *pmb, AthenaArray<Real> &a)
+void reflect_ox3(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ke = pmb->ke;
-
   for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
+  for (int j=js; j<=je; ++j) {
     for (int n=0; n<(NFLUID); ++n) {
 
       if (n==(IM3)) {
 #pragma simd
-        for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+        for (int i=is; i<=ie; ++i) {
           a(IM3,ke+k,j,i) = -a(IM3,ke-k+1,j,i);  // reflect 3-mom
         }
       } else if (n==(IEN)) {
 #pragma simd
-        for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+        for (int i=is; i<=ie; ++i) {
           a(IEN,ke+k,j,i) = a(IEN,ke-k+1,j,i)
              + a(IDN,ke-k+1,j,i)*grav_acc*(2*k-1)*pmb->dx3f(k)/gm1;
         }
       } else {
 #pragma simd
-        for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+        for (int i=is; i<=ie; ++i) {
           a(n,ke+k,j,i) = a(n,ke-k+1,j,i);
         }
       }

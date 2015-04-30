@@ -17,8 +17,10 @@
 #include "../parameter_input.hpp"          // ParameterInput
 
 // Declarations
-void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons);
-void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons);
+void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons,
+                int is, int ie, int js, int je, int ks, int ke);
+void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons,
+                int is, int ie, int js, int je, int ks, int ke);
 static void set_state(
     Real rho, Real pgas, Real v1, Real v2, Real v3, int k, int j, int i,
     AthenaArray<Real> &prim, AthenaArray<Real> &prim_half);
@@ -216,15 +218,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 }
 
 // Inner boundary condition
-void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons)
+void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons,
+                int is, int ie, int js, int je, int ks, int ke)
 {
-  // Extract boundary indices
-  int is = pmb->is;
-  int js = pmb->js;
-  int je = pmb->je;
-  int ks = pmb->ks;
-  int ke = pmb->ke;
-
   // Set conserved values
   for (int k = ks; k <= ke; k++)
     for (int j = js; j <= je; j++)
@@ -244,15 +240,9 @@ void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons)
 }
 
 // Outer boundary condition
-void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons)
+void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons,
+                int is, int ie, int js, int je, int ks, int ke)
 {
-  // Extract boundary indices
-  int ie = pmb->ie;
-  int js = pmb->js;
-  int je = pmb->je;
-  int ks = pmb->ks;
-  int ke = pmb->ke;
-
   // Set conserved values
   for (int k = ks; k <= ke; k++)
     for (int j = js; j <= je; j++)

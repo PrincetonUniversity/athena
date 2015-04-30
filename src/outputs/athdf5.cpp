@@ -160,7 +160,6 @@ void ATHDF5Output::Initialize(Mesh *pM, ParameterInput *pin)
     char mbid[8];
     sprintf(mbid,"%d",b);
     gname.append(mbid);
-    int idx=b-nbs;
     tgid = H5Gcreate(file, gname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
     pM->buid[b].GetLocation(lx[0], lx[1], lx[2], ll);

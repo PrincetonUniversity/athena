@@ -39,10 +39,14 @@ inline Real MAX(Real x, Real y){
 
 /*----------------------------------------------------------------------------*/
 /* function prototypes and global variables*/
-void stbv_iib(MeshBlock *pmb, AthenaArray<Real> &a); //sets BCs on inner-x1 (left edge) of grid.
-void stbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a); //sets BCs on inner-x2 (bottom edge) of grid.
-void stbv_oib(MeshBlock *pmb, AthenaArray<Real> &a); //sets BCs on outer-x1 (right edge) of grid.
-void stbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a); //sets BCs on outer-x2 (top edge) of grid.
+void stbv_iib(MeshBlock *pmb, AthenaArray<Real> &a,
+              int is, int ie, int js, int je, int ks, int ke); //sets BCs on inner-x1 (left edge) of grid.
+void stbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a,
+              int is, int ie, int js, int je, int ks, int ke); //sets BCs on inner-x2 (bottom edge) of grid.
+void stbv_oib(MeshBlock *pmb, AthenaArray<Real> &a,
+              int is, int ie, int js, int je, int ks, int ke); //sets BCs on outer-x1 (right edge) of grid.
+void stbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
+              int is, int ie, int js, int je, int ks, int ke); //sets BCs on outer-x2 (top edge) of grid.
 
 //problem generator
 void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
@@ -146,11 +150,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 
 
 /*  Boundary Condtions, outflowing, ix1, ox1, ix2, ox2  */
-void stbv_iib(MeshBlock *pmb, AthenaArray<Real> &a)
+void stbv_iib(MeshBlock *pmb, AthenaArray<Real> &a,
+              int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
   int i,j,k;
 #ifdef MHD
   int ju, ku; /* j-upper, k-upper */
@@ -179,11 +181,9 @@ void stbv_iib(MeshBlock *pmb, AthenaArray<Real> &a)
 }
 
 
-void stbv_oib(MeshBlock *pmb, AthenaArray<Real> &a)
+void stbv_oib(MeshBlock *pmb, AthenaArray<Real> &a,
+              int is, int ie, int js, int je, int ks, int ke))
 {
-  int ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
   int i,j,k;
 #ifdef MHD
   int ju, ku; /* j-upper, k-upper */
@@ -208,11 +208,9 @@ void stbv_oib(MeshBlock *pmb, AthenaArray<Real> &a)
 }
 
 
-void stbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a)
+void stbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a,
+              int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js;
-  int ks = pmb->ks, ke = pmb->ke;
   int i,j,k;
 #ifdef MHD
   int ku; /* k-upper */
@@ -220,7 +218,7 @@ void stbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a)
 
   for (k=ks; k<=ke; k++) {
     for (j=1; j<=(NGHOST); j++) {
-      for (i=is-(NGHOST); i<=ie+(NGHOST); i++) {
+      for (i=is; i<=ie; i++) {
         a(IDN,k,js-j,i) = a(IDN,k,js,i);
         a(IM1,k,js-j,i) = a(IM1,k,js,i);
         a(IM3,k,js-j,i) = a(IM3,k,js,i);
@@ -236,11 +234,9 @@ void stbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a)
 }
 
 
-void stbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a)
+void stbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
+              int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
   int i,j,k;
 #ifdef MHD
   int ku; /* k-upper */
@@ -248,7 +244,7 @@ void stbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a)
 
   for (k=ks; k<=ke; k++) {
     for (j=1; j<=(NGHOST); j++) {
-      for (i=is-(NGHOST); i<=ie+(NGHOST); i++) {
+      for (i=is; i<=ie; i++) {
         a(IDN,k,je+j,i) = a(IDN,k,je,i);
         a(IM1,k,je+j,i) = a(IM1,k,je,i);
         a(IM3,k,je+j,i) = a(IM3,k,je,i);

@@ -17,10 +17,14 @@
 #include "../fluid/eos/eos.hpp"            // FluidEqnOfState
 
 // Declarations
-void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons);
-void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons);
-void FixedTop(MeshBlock *pmb, AthenaArray<Real> &cons);
-void FixedBottom(MeshBlock *pmb, AthenaArray<Real> &cons);
+void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons,
+                int is, int ie, int js, int je, int ks, int ke);
+void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons,
+                int is, int ie, int js, int je, int ks, int ke);
+void FixedTop(MeshBlock *pmb, AthenaArray<Real> &cons,
+                int is, int ie, int js, int je, int ks, int ke);
+void FixedBottom(MeshBlock *pmb, AthenaArray<Real> &cons,
+                int is, int ie, int js, int je, int ks, int ke);
 static void reset_l_from_r_peak();
 static Real log_h_aux(Real r, Real sin_sq_theta);
 static void set_state(
@@ -213,24 +217,34 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 //   pmb: pointer to block
 // Outputs:
 //   cons: conserved quantities set along inner x1-boundary
-void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons)
+// Notes:
+//   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
+// TODO: only works in Schwarzschild (assumed metric)
+void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons,
+                int is, int ie, int js, int je, int ks, int ke)
 {
   // Extract boundary indices
-  int il = pmb->is - NGHOST;
-  int iu = pmb->is - 1;
-  int jl = pmb->js;
-  int ju = pmb->je;
-  int kl = pmb->ks;
-  int ku = pmb->ke;
-
-  // Get ratio of specific heats
-  const Real gamma_adi = pmb->pfluid->pf_eos->GetGamma();
+  int il = is - NGHOST;
+  int iu = is;
+  int jl = js;
+  int ju = je;
+  int kl = ks;
+  int ku = ke;
 
   // Set conserved values
+  Real r = pmb->x1v(iu);
+  Real d, e;
+  calculate_conserved(r, d, e);
   for (int k = kl; k <= ku; k++)
     for (int j = jl; j <= ju; j++)
       for (int i = il; i <= iu; i++)
-        set_conserved_cell(pmb, gamma_adi, k, j, i, cons);
+      {
+        cons(IDN,k,j,i) = d;
+        cons(IEN,k,j,i) = e;
+        cons(IM1,k,j,i) = 0.0;
+        cons(IM2,k,j,i) = 0.0;
+        cons(IM3,k,j,i) = 0.0;
+      }
   return;
 }
 
@@ -242,24 +256,31 @@ void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons)
 // Notes:
 //   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 // TODO: only works in Schwarzschild (assumed metric)
-void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons)
+void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons,
+                int is, int ie, int js, int je, int ks, int ke)
 {
   // Extract boundary indices
-  int il = pmb->ie + 1;
-  int iu = pmb->ie + NGHOST;
-  int jl = pmb->js;
-  int ju = pmb->je;
-  int kl = pmb->ks;
-  int ku = pmb->ke;
-
-  // Get ratio of specific heats
-  const Real gamma_adi = pmb->pfluid->pf_eos->GetGamma();
+  int il = ie;
+  int iu = ie + NGHOST;
+  int jl = js;
+  int ju = je;
+  int kl = ks;
+  int ku = ke;
 
   // Set conserved values
+  Real r = pmb->x1v(il);
+  Real d, e;
+  calculate_conserved(r, d, e);
   for (int k = kl; k <= ku; k++)
     for (int j = jl; j <= ju; j++)
       for (int i = il; i <= iu; i++)
-        set_conserved_cell(pmb, gamma_adi, k, j, i, cons);
+      {
+        cons(IDN,k,j,i) = d;
+        cons(IEN,k,j,i) = e;
+        cons(IM1,k,j,i) = 0.0;
+        cons(IM2,k,j,i) = 0.0;
+        cons(IM3,k,j,i) = 0.0;
+      }
   return;
 }
 
@@ -271,24 +292,31 @@ void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons)
 // Notes:
 //   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 // TODO: only works in Schwarzschild (assumed metric)
-void FixedTop(MeshBlock *pmb, AthenaArray<Real> &cons)
+void FixedTop(MeshBlock *pmb, AthenaArray<Real> &cons,
+              int is, int ie, int js, int je, int ks, int ke)
 {
   // Extract boundary indices
-  int il = pmb->is;
-  int iu = pmb->ie;
-  int jl = pmb->js - NGHOST;
-  int ju = pmb->js - 1;
-  int kl = pmb->ks;
-  int ku = pmb->ke;
-
-  // Get ratio of specific heats
-  const Real gamma_adi = pmb->pfluid->pf_eos->GetGamma();
+  int il = is;
+  int iu = ie;
+  int jl = js - NGHOST;
+  int ju = js;
+  int kl = ks;
+  int ku = ke;
 
   // Set conserved values
   for (int k = kl; k <= ku; k++)
     for (int j = jl; j <= ju; j++)
       for (int i = il; i <= iu; i++)
-        set_conserved_cell(pmb, gamma_adi, k, j, i, cons);
+      {
+        Real r = pmb->x1v(i);
+        Real d, e;
+        calculate_conserved(r, d, e);
+        cons(IDN,k,j,i) = d;
+        cons(IEN,k,j,i) = e;
+        cons(IM1,k,j,i) = 0.0;
+        cons(IM2,k,j,i) = 0.0;
+        cons(IM3,k,j,i) = 0.0;
+      }
   return;
 }
 
@@ -300,24 +328,31 @@ void FixedTop(MeshBlock *pmb, AthenaArray<Real> &cons)
 // Notes:
 //   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 // TODO: only works in Schwarzschild (assumed metric)
-void FixedBottom(MeshBlock *pmb, AthenaArray<Real> &cons)
+void FixedBottom(MeshBlock *pmb, AthenaArray<Real> &cons,
+                 int is, int ie, int js, int je, int ks, int ke)
 {
   // Extract boundary indices
-  int il = pmb->is;
-  int iu = pmb->ie;
-  int jl = pmb->je + 1;
-  int ju = pmb->je + NGHOST;
-  int kl = pmb->ks;
-  int ku = pmb->ke;
-
-  // Get ratio of specific heats
-  const Real gamma_adi = pmb->pfluid->pf_eos->GetGamma();
+  int il = is;
+  int iu = ie;
+  int jl = je;
+  int ju = je + NGHOST;
+  int kl = ks;
+  int ku = ke;
 
   // Set conserved values
   for (int k = kl; k <= ku; k++)
     for (int j = jl; j <= ju; j++)
       for (int i = il; i <= iu; i++)
-        set_conserved_cell(pmb, gamma_adi, k, j, i, cons);
+      {
+        Real r = pmb->x1v(i);
+        Real d, e;
+        calculate_conserved(r, d, e);
+        cons(IDN,k,j,i) = d;
+        cons(IEN,k,j,i) = e;
+        cons(IM1,k,j,i) = 0.0;
+        cons(IM2,k,j,i) = 0.0;
+        cons(IM3,k,j,i) = 0.0;
+      }
   return;
 }
 

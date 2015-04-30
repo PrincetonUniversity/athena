@@ -27,15 +27,13 @@
 //  \brief implements reflecting BCs in each dimension for conserved fluid variables
 //======================================================================================
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectInnerX1(MeshBlock *pmb)
+//! \fn void ReflectInnerX1(MeshBlock *pmb, AthenaArray<Real> &a,
+//                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief  REFLECTING boundary conditions conserved vars, inner x1 boundary (ix1_bc=1)
 
-void ReflectInnerX1(MeshBlock *pmb, AthenaArray<Real> &a)
+void ReflectInnerX1(MeshBlock *pmb, AthenaArray<Real> &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
     for (int n=0; n<(NFLUID); ++n) {
@@ -60,15 +58,13 @@ void ReflectInnerX1(MeshBlock *pmb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectOuterX1(MeshBlock *pmb)
+//! \fn void ReflectOuterX1(MeshBlock *pmb, AthenaArray<Real> &a,
+//                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief  REFLECTING boundary conditions conserved vars, outer x1 boundary (ox1_bc=1)
 
-void ReflectOuterX1(MeshBlock *pmb, AthenaArray<Real> &a)
+void ReflectOuterX1(MeshBlock *pmb, AthenaArray<Real> &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
     for (int n=0; n<(NFLUID); ++n) {
@@ -93,28 +89,26 @@ void ReflectOuterX1(MeshBlock *pmb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectInnerX2(MeshBlock *pmb)
+//! \fn void ReflecInnerX2(MeshBlock *pmb, AthenaArray<Real> &a,
+//                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief  REFLECTING boundary conditions conserved vars, inner x2 boundary (ix2_bc=1)
 
-void ReflectInnerX2(MeshBlock *pmb, AthenaArray<Real> &a)
+void ReflectInnerX2(MeshBlock *pmb, AthenaArray<Real> &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
     for (int n=0; n<(NFLUID); ++n) {
 
       if (n==(IM2)) {
 #pragma simd
-        for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+        for (int i=is; i<=ie; ++i) {
           a(IM2,k,js-j,i) = -a(IM2,k,js+j-1,i);  // reflect 2-mom
         }
 
       } else {
 #pragma simd
-        for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+        for (int i=is; i<=ie; ++i) {
           a(n,k,js-j,i) = a(n,k,js+j-1,i);
         }
       }
@@ -126,28 +120,26 @@ void ReflectInnerX2(MeshBlock *pmb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectOuterX2(MeshBlock *pmb)
+//! \fn void ReflectOuterX2(MeshBlock *pmb, AthenaArray<Real> &a,
+//                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief  REFLECTING boundary conditions conserved vars, outer x2 boundary (ox2_bc=1)
 
-void ReflectOuterX2(MeshBlock *pmb, AthenaArray<Real> &a)
+void ReflectOuterX2(MeshBlock *pmb, AthenaArray<Real> &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
     for (int n=0; n<(NFLUID); ++n) {
 
       if (n==(IM2)) {
 #pragma simd
-        for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+        for (int i=is; i<=ie; ++i) {
           a(IM2,k,je+j,i) = -a(IM2,k,je-j+1,i);  // reflect 2-mom
         }
 
       } else {
 #pragma simd
-        for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+        for (int i=is; i<=ie; ++i) {
           a(n,k,je+j,i) = a(n,k,je-j+1,i);
         }
       }
@@ -162,25 +154,22 @@ void ReflectOuterX2(MeshBlock *pmb, AthenaArray<Real> &a)
 //! \fn void ReflectInnerX3(MeshBlock *pmb)
 //  \brief  REFLECTING boundary conditions conserved vars, inner x3 boundary (ix3_bc=1)
 
-void ReflectInnerX3(MeshBlock *pmb, AthenaArray<Real> &a)
+void ReflectInnerX3(MeshBlock *pmb, AthenaArray<Real> &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks;
-
   for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
+  for (int j=js; j<=je; ++j) {
     for (int n=0; n<(NFLUID); ++n) {
 
       if (n==(IM3)) {
 #pragma simd
-        for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+        for (int i=is; i<=ie; ++i) {
           a(IM3,ks-k,j,i) = -a(IM3,ks+k-1,j,i);  // reflect 3-mom
         }
 
       } else {
 #pragma simd
-        for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+        for (int i=is; i<=ie; ++i) {
           a(n,ks-k,j,i) = a(n,ks+k-1,j,i);
         }
       }
@@ -192,28 +181,26 @@ void ReflectInnerX3(MeshBlock *pmb, AthenaArray<Real> &a)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectOuterX3(MeshBlock *pmb)
+//! \fn void ReflectOuterX3(MeshBlock *pmb, AthenaArray<Real> &a,
+//                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief  REFLECTING boundary conditions conserved vars, outer x3 boundary (ox3_bc=1)
 
-void ReflectOuterX3(MeshBlock *pmb, AthenaArray<Real> &a)
+void ReflectOuterX3(MeshBlock *pmb, AthenaArray<Real> &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ke = pmb->ke;
-
   for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
+  for (int j=js; j<=je; ++j) {
     for (int n=0; n<(NFLUID); ++n) {
 
       if (n==(IM3)) {
 #pragma simd
-        for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+        for (int i=is; i<=ie; ++i) {
           a(IM3,ke+k,j,i) = -a(IM3,ke-k+1,j,i);  // reflect 3-mom
         }
 
       } else {
 #pragma simd
-        for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+        for (int i=is; i<=ie; ++i) {
           a(n,ke+k,j,i) = a(n,ke-k+1,j,i);
         }
       }

@@ -10,7 +10,7 @@
 
 class MeshBlock;
 
-typedef bool (*TaskFunc_t)(MeshBlock*, int);
+typedef enum task_status (*TaskFunc_t)(MeshBlock*, int);
 
 struct Task {
   enum task taskid;

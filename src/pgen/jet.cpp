@@ -27,8 +27,10 @@
 #include "../bvals/bvals.hpp"      // Boundary Enroll
 
 // BCs on L-x1 (left edge) of grid with jet inflow conditions
-void jet_fluid_iib(MeshBlock *pmb, AthenaArray<Real> &a);
-void jet_field_iib(MeshBlock *pmb, InterfaceField &a);
+void jet_fluid_iib(MeshBlock *pmb, AthenaArray<Real> &a,
+                   int is, int ie, int js, int je, int ks, int ke);
+void jet_field_iib(MeshBlock *pmb, InterfaceField &a,
+                   int is, int ie, int js, int je, int ks, int ke);
 
 // Make radius of jet and jet variables global so they can be accessed by BC functions
 static Real r_jet,d_jet,p_jet,vx_jet,vy_jet,vz_jet,bx_jet,by_jet,bz_jet;
@@ -127,12 +129,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 //! \fn void jet_fluid_iib()
 //  \brief Sets boundary condition for fluid on left X boundary (iib) for jet problem
 
-void jet_fluid_iib(MeshBlock *pmb, AthenaArray<Real> &a)
+void jet_fluid_iib(MeshBlock *pmb, AthenaArray<Real> &a,
+                   int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for(int k=ks; k<=ke; ++k){
   for(int j=js; j<=je; ++j){
     for(int i=1; i<=(NGHOST); ++i){
@@ -161,12 +160,9 @@ void jet_fluid_iib(MeshBlock *pmb, AthenaArray<Real> &a)
 //! \fn void jet_field_iib()
 //  \brief Sets boundary condition for B field on left X boundary (iib) for jet problem
 
-void jet_field_iib(MeshBlock *pmb, InterfaceField &a)
+void jet_field_iib(MeshBlock *pmb, InterfaceField &a,
+                   int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for(int k=ks; k<=ke; ++k){
   for(int j=js; j<=je; ++j){
 #pragma simd

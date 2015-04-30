@@ -31,12 +31,9 @@
 //! \fn void OutflowInnerX1()
 //  \brief  OUTFLOW boundary conditions interface B, inner x1 boundary (ix1_bc=1)
 
-void OutflowInnerX1(MeshBlock *pmb, InterfaceField &a)
+void OutflowInnerX1(MeshBlock *pmb, InterfaceField &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
 #pragma simd
@@ -68,12 +65,9 @@ void OutflowInnerX1(MeshBlock *pmb, InterfaceField &a)
 //! \fn void OutflowOuterX1()
 //  \brief  OUTFLOW boundary conditions interface B, outer x1 boundary (ox1_bc=1)
 
-void OutflowOuterX1(MeshBlock *pmb, InterfaceField &a)
+void OutflowOuterX1(MeshBlock *pmb, InterfaceField &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
 #pragma simd
@@ -105,16 +99,13 @@ void OutflowOuterX1(MeshBlock *pmb, InterfaceField &a)
 //! \fn void OutflowInnerX2()
 //  \brief  OUTFLOW boundary conditions interface B, inner x2 boundary (ix2_bc=1)
 
-void OutflowInnerX2(MeshBlock *pmb, InterfaceField &a)
+void OutflowInnerX2(MeshBlock *pmb, InterfaceField &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST+1); ++i) {
+    for (int i=is; i<=ie+1; ++i) {
       a.x1f(k,(js-j),i) = a.x1f(k,js,i);
     }
   }}
@@ -122,7 +113,7 @@ void OutflowInnerX2(MeshBlock *pmb, InterfaceField &a)
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+    for (int i=is; i<=ie; ++i) {
       a.x2f(k,(js-j),i) = a.x2f(k,js,i);
     }
   }}
@@ -130,7 +121,7 @@ void OutflowInnerX2(MeshBlock *pmb, InterfaceField &a)
   for (int k=ks; k<=ke+1; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+    for (int i=is; i<=ie; ++i) {
       a.x3f(k,(js-j),i) = a.x3f(k,js,i);
     }
   }}
@@ -142,16 +133,13 @@ void OutflowInnerX2(MeshBlock *pmb, InterfaceField &a)
 //! \fn void OutflowOuterX2()
 //  \brief  OUTFLOW boundary conditions interface B, outer x2 boundary (ox2_bc=1)
 
-void OutflowOuterX2(MeshBlock *pmb, InterfaceField &a)
+void OutflowOuterX2(MeshBlock *pmb, InterfaceField &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
-
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST+1); ++i) {
+    for (int i=is; i<=ie+1; ++i) {
       a.x1f(k,(je+j  ),i) = a.x1f(k,(je  ),i);
     }
   }}
@@ -159,7 +147,7 @@ void OutflowOuterX2(MeshBlock *pmb, InterfaceField &a)
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+    for (int i=is; i<=ie; ++i) {
       a.x2f(k,(je+j+1),i) = a.x2f(k,(je+1),i);
     }
   }}
@@ -167,7 +155,7 @@ void OutflowOuterX2(MeshBlock *pmb, InterfaceField &a)
   for (int k=ks; k<=ke+1; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+    for (int i=is; i<=ie; ++i) {
       a.x3f(k,(je+j  ),i) = a.x3f(k,(je  ),i);
     }
   }}
@@ -179,32 +167,29 @@ void OutflowOuterX2(MeshBlock *pmb, InterfaceField &a)
 //! \fn void OutflowInnerX3()
 //  \brief  OUTFLOW boundary conditions interface B, inner x3 boundary (ix3_bc=1)
 
-void OutflowInnerX3(MeshBlock *pmb, InterfaceField &a)
+void OutflowInnerX3(MeshBlock *pmb, InterfaceField &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks;
-
   for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
+  for (int j=js; j<=je; ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST+1); ++i) {
+    for (int i=is; i<=ie+1; ++i) {
       a.x1f((ks-k),j,i) = a.x1f(ks,j,i);
     }
   }}
 
   for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js-(NGHOST); j<=je+(NGHOST+1); ++j) {
+  for (int j=js; j<=je+1; ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+    for (int i=is; i<=ie; ++i) {
       a.x2f((ks-k),j,i) = a.x2f(ks,j,i);
     }
   }}
 
   for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
+  for (int j=js; j<=je; ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+    for (int i=is; i<=ie; ++i) {
       a.x3f((ks-k),j,i) = a.x3f(ks,j,i);
     }
   }}
@@ -216,32 +201,29 @@ void OutflowInnerX3(MeshBlock *pmb, InterfaceField &a)
 //! \fn void OutflowOuterX3()
 //  \brief  OUTFLOW boundary conditions interface B, outer x3 boundary (ox3_bc=1)
 
-void OutflowOuterX3(MeshBlock *pmb, InterfaceField &a)
+void OutflowOuterX3(MeshBlock *pmb, InterfaceField &a,
+                    int is, int ie, int js, int je, int ks, int ke)
 {
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ke = pmb->ke;
-
   for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
+  for (int j=js; j<=je; ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST+1); ++i) {
+    for (int i=is; i<=ie+1; ++i) {
       a.x1f((ke+k  ),j,i) = a.x1f((ke  ),j,i);
     }
   }}
 
   for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js-(NGHOST); j<=je+(NGHOST+1); ++j) {
+  for (int j=js; j<=je; ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+    for (int i=is; i<=ie; ++i) {
       a.x2f((ke+k  ),j,i) = a.x2f((ke  ),j,i);
     }
   }}
 
   for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
+  for (int j=js; j<=je; ++j) {
 #pragma simd
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+    for (int i=is; i<=ie; ++i) {
       a.x3f((ke+k+1),j,i) = a.x3f((ke+1),j,i);
     }
   }}

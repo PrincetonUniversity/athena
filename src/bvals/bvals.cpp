@@ -40,12 +40,13 @@
 
 
 // arrays of start and end points, created in InitBoundaryBuffer
-static int fluid_send_se_[6][6];
-static int fluid_recv_se_[6][6];
-static int field_send_se_[6][3][6];
-static int field_recv_se_[6][3][6];
-static int fluid_bufsize_[6];
-static int field_bufsize_[6];
+typedef struct NeighborIndexes
+{
+  int ox1, ox2, ox3, fi1, fi2;
+} NeighborIndexes;
+
+static int target_bufid_[56];
+static NeighborIndexes ni_[56];
 
 //======================================================================================
 //! \file bvals.cpp
@@ -58,9 +59,6 @@ static int field_bufsize_[6];
 BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_mblock_ = pmb;
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
 
 // Set BC functions for each of the 6 boundaries in turn -------------------------------
 // Inner x1
@@ -205,34 +203,65 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     }
   }
 
+  // Clear flags and requests
+  for(int l=0;l<NSTEP;l++) {
+    for(int i=0;i<56;i++){
+      fluid_flag_[l][i]=boundary_waiting;
+      field_flag_[l][i]=boundary_waiting;
+      fluid_send_[l][i]=NULL;
+      fluid_recv_[l][i]=NULL;
+      field_send_[l][i]=NULL;
+      field_recv_[l][i]=NULL;
+#ifdef MPI_PARALLEL
+      req_fluid_send_[l][i]=MPI_REQUEST_NULL;
+      req_fluid_recv_[l][i]=MPI_REQUEST_NULL;
+#endif
+    }
+  }
   // Allocate Buffers
-  int r=2;
-  if(pmb->block_size.nx2 > 1) r=4;
-  if(pmb->block_size.nx3 > 1) r=6;
-  for(int l=0;l<nsweep;l++) {
-    for(int i=0;i<r;i++) {
-      fluid_send_[l][i]=new Real[fluid_bufsize_[i]];
-      fluid_recv_[l][i]=new Real[fluid_bufsize_[i]];
-    }
+  int nface=1, nedge=1, cng=(NGHOST+1)/2+1, cng1=0, cng2=0, cng3=0;
+  if(pmb->pmy_mesh->multilevel==true) {
+    if(pmb->block_size.nx2>1) cng1=cng, cng2=cng;
+    if(pmb->block_size.nx3>1) cng3=cng;
   }
-
-  if (MAGNETIC_FIELDS_ENABLED) {
-    for(int l=0;l<nsweep;l++) {
-      for(int i=0;i<r;i++) {
-        field_send_[l][i]=new Real[field_bufsize_[i]];
-        field_recv_[l][i]=new Real[field_bufsize_[i]];
+  for(int l=0;l<NSTEP;l++) {
+    for(int n=0;n<pmb->pmy_mesh->maxneighbor_;n++) {
+      int size=((ni_[n].ox1==0)?pmb->block_size.nx1:NGHOST)
+              *((ni_[n].ox2==0)?pmb->block_size.nx2:NGHOST)
+              *((ni_[n].ox3==0)?pmb->block_size.nx3:NGHOST);
+      if(pmb->pmy_mesh->multilevel==true) {
+        int f2c=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2):NGHOST)
+               *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2):NGHOST)
+               *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2):NGHOST);
+        int c2f=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng1):cng)
+               *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng)
+               *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng);
+        size=std::max(size,c2f);
+        size=std::max(size,f2c);
       }
+      size*=NFLUID;
+      fluid_send_[l][n]=new Real[size];
+      fluid_recv_[l][n]=new Real[size];
     }
   }
-
-  // initialize flags
-  for(int l=0;l<nsweep;l++) {
-    for(int k=0;k<6;k++) {
-      for(int j=0;j<2;j++) {
-        for(int i=0;i<2;i++) {
-          fluid_flag_[l][k][j][i]=0;
-          field_flag_[l][k][j][i]=0;
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for(int l=0;l<NSTEP;l++) {
+      for(int n=0;n<pmb->pmy_mesh->maxneighbor_;n++) {
+        int size1=((ni_[n].ox1==0)?(pmb->block_size.nx1+1):NGHOST)
+                 *((ni_[n].ox2==0)?(pmb->block_size.nx2):NGHOST)
+                 *((ni_[n].ox3==0)?(pmb->block_size.nx3):NGHOST);
+        int size2=((ni_[n].ox1==0)?(pmb->block_size.nx1):NGHOST)
+                 *((ni_[n].ox2==0)?(pmb->block_size.nx2+1):NGHOST)
+                 *((ni_[n].ox3==0)?(pmb->block_size.nx3):NGHOST);
+        int size3=((ni_[n].ox1==0)?(pmb->block_size.nx1):NGHOST)
+                 *((ni_[n].ox2==0)?(pmb->block_size.nx2):NGHOST)
+                 *((ni_[n].ox3==0)?(pmb->block_size.nx3+1):NGHOST);
+        if(pmb->pmy_mesh->multilevel==true) {
+          // *** need to implement
         }
+        int size=size1+size2+size3;
+        field_send_[l][n]=new Real[size];
+        field_recv_[l][n]=new Real[size];
       }
     }
   }
@@ -242,18 +271,16 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 
 BoundaryValues::~BoundaryValues()
 {
-  int r=2;
-  if(pmy_mblock_->block_size.nx2 > 1) r=4;
-  if(pmy_mblock_->block_size.nx3 > 1) r=6;
-  for(int l=0;l<nsweep;l++) {
-    for(int i=0;i<r;i++) {
+  MeshBlock *pmb=pmy_mblock_;
+  for(int l=0;l<NSTEP;l++) {
+    for(int i=0;i<pmb->pmy_mesh->maxneighbor_;i++) {
       delete [] fluid_send_[l][i];
       delete [] fluid_recv_[l][i];
     }
   }
   if (MAGNETIC_FIELDS_ENABLED) {
-    for(int l=0;l<nsweep;l++) {
-      for(int i=0;i<r;i++) { 
+    for(int l=0;l<NSTEP;l++) {
+      for(int i=0;i<pmb->pmy_mesh->maxneighbor_;i++) { 
         delete [] field_send_[l][i];
         delete [] field_recv_[l][i];
       }
@@ -269,45 +296,86 @@ void BoundaryValues::Initialize(void)
 {
 #ifdef MPI_PARALLEL
   MeshBlock* pmb=pmy_mblock_;
-  int oside, tag;
-  int r=2;
-  if(pmb->block_size.nx2 > 1) r=4;
-  if(pmb->block_size.nx3 > 1) r=6;
-  for(int l=0;l<nsweep;l++) {
-    for(int i=0;i<r;i++) {
-      req_fluid_send_[l][i][0][0]=MPI_REQUEST_NULL;
-      req_fluid_recv_[l][i][0][0]=MPI_REQUEST_NULL;
-      if((pmb->neighbor[i][0][0].rank!=-1) && (pmb->neighbor[i][0][0].rank!=myrank)) {
-        if(i%2==0) oside=i+1;
-        else oside=i-1;
-        tag=CreateMPITag(pmb->neighbor[i][0][0].lid, l, oside, tag_fluid, 0, 0);
-        MPI_Send_init(fluid_send_[l][i],fluid_bufsize_[i],MPI_ATHENA_REAL,
-          pmb->neighbor[i][0][0].rank,tag,MPI_COMM_WORLD,&req_fluid_send_[l][i][0][0]);
-        tag=CreateMPITag(pmb->lid, l, i, tag_fluid, 0, 0);
-        MPI_Recv_init(fluid_recv_[l][i],fluid_bufsize_[i],MPI_ATHENA_REAL,
-          pmb->neighbor[i][0][0].rank,tag,MPI_COMM_WORLD,&req_fluid_recv_[l][i][0][0]);
-      }
-    }
-  }
-  if (MAGNETIC_FIELDS_ENABLED) {
-    for(int l=0;l<nsweep;l++) {
-      for(int i=0;i<r;i++) {
-        req_field_send_[l][i][0][0]=MPI_REQUEST_NULL;
-        req_field_recv_[l][i][0][0]=MPI_REQUEST_NULL;
-        if((pmb->neighbor[i][0][0].rank!=-1) && (pmb->neighbor[i][0][0].rank!=myrank)) {
-          if(i%2==0) oside=i+1;
-          else oside=i-1;
-          tag=CreateMPITag(pmb->neighbor[i][0][0].lid, l, oside, tag_field, 0, 0);
-          MPI_Send_init(field_send_[l][i],field_bufsize_[i],MPI_ATHENA_REAL,
-          pmb->neighbor[i][0][0].rank,tag,MPI_COMM_WORLD,&req_field_send_[l][i][0][0]);
-          tag=CreateMPITag(pmb->lid, l, i, tag_field, 0, 0);
-          MPI_Recv_init(field_recv_[l][i],field_bufsize_[i],MPI_ATHENA_REAL,
-          pmb->neighbor[i][0][0].rank,tag,MPI_COMM_WORLD,&req_field_recv_[l][i][0][0]);
+  int mylevel=pmb->uid.GetLevel();
+  int tag;
+  int cng1, cng2, cng3;
+  int ssize, rsize;
+  cng1=pmb->cnghost;
+  cng2=(pmb->block_size.nx2>1)?cng1:0;
+  cng3=(pmb->block_size.nx3>1)?cng1:0;
+  
+  for(int l=0;l<NSTEP;l++) {
+    for(int n=0;n<pmb->nneighbor;n++) {
+      NeighborBlock& nb=pmb->neighbor[n];
+      if(nb.rank!=myrank) {
+        if(nb.level==mylevel) { // same
+          ssize=rsize=((nb.ox1==0)?pmb->block_size.nx1:NGHOST)
+                     *((nb.ox2==0)?pmb->block_size.nx2:NGHOST)
+                     *((nb.ox3==0)?pmb->block_size.nx3:NGHOST);
+        }
+        else if(nb.level<mylevel) { // coarser
+          ssize=((nb.ox1==0)?((pmb->block_size.nx1+1)/2):NGHOST)
+               *((nb.ox2==0)?((pmb->block_size.nx2+1)/2):NGHOST)
+               *((nb.ox3==0)?((pmb->block_size.nx3+1)/2):NGHOST);
+          rsize=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+cng1):cng1)
+               *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng2)
+               *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng3);
+        }
+        else { // finer
+          ssize=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+cng1):cng1)
+               *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng2)
+               *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng3);
+          rsize=((nb.ox1==0)?((pmb->block_size.nx1+1)/2):NGHOST)
+               *((nb.ox2==0)?((pmb->block_size.nx2+1)/2):NGHOST)
+               *((nb.ox3==0)?((pmb->block_size.nx3+1)/2):NGHOST);
+        }
+        ssize*=NFLUID; rsize*=NFLUID;
+        // specify the offsets in the view point of the target block: flip ox? signs
+        tag=CreateMPITag(nb.lid, l, tag_fluid, -nb.ox1, -nb.ox2, -nb.ox3, nb.fi1, nb.fi2);
+        MPI_Send_init(fluid_send_[l][nb.bufid],ssize,MPI_ATHENA_REAL,
+                      nb.rank,tag,MPI_COMM_WORLD,&req_fluid_send_[l][nb.bufid]);
+        tag=CreateMPITag(pmb->lid, l, tag_fluid, nb.ox1, nb.ox2, nb.ox3, nb.fi1, nb.fi2);
+        MPI_Recv_init(fluid_recv_[l][nb.bufid],rsize,MPI_ATHENA_REAL,
+                      nb.rank,tag,MPI_COMM_WORLD,&req_fluid_recv_[l][nb.bufid]);
+
+        if (MAGNETIC_FIELDS_ENABLED) {
+          int size1, size2, size3;
+          if(pmb->pmy_mesh->multilevel==false) { // uniform
+            size1=((nb.ox1==0)?(pmb->block_size.nx1+1):NGHOST)
+                 *((nb.ox2==0)?(pmb->block_size.nx2):NGHOST)
+                 *((nb.ox3==0)?(pmb->block_size.nx3):NGHOST);
+            size2=((nb.ox1==0)?(pmb->block_size.nx1):NGHOST)
+                 *((nb.ox2==0)?(pmb->block_size.nx2+1):NGHOST)
+                 *((nb.ox3==0)?(pmb->block_size.nx3):NGHOST);
+            size3=((nb.ox1==0)?(pmb->block_size.nx1):NGHOST)
+                 *((nb.ox2==0)?(pmb->block_size.nx2):NGHOST)
+                 *((nb.ox3==0)?(pmb->block_size.nx3+1):NGHOST);
+          }
+          else {
+            if(nb.level==mylevel) { // same
+              // ****** need to implement ******
+            }
+            else if(nb.level<mylevel) { // coarser
+              // ****** need to implement ******
+            }
+            else { // finer
+              // ****** need to implement ******
+            }
+          }
+          ssize=size1+size2+size3; rsize=ssize;
+          // specify the offsets in the view point of the target block: flip ox? signs
+          tag=CreateMPITag(nb.lid, l, tag_field, -nb.ox1, -nb.ox2, -nb.ox3, nb.fi1, nb.fi2);
+          MPI_Send_init(field_send_[l][nb.bufid],ssize,MPI_ATHENA_REAL,
+                        nb.rank,tag,MPI_COMM_WORLD,&req_field_send_[l][nb.bufid]);
+          tag=CreateMPITag(pmb->lid, l, tag_field, nb.ox1, nb.ox2, nb.ox3, nb.fi1, nb.fi2);
+          MPI_Recv_init(field_recv_[l][nb.bufid],rsize,MPI_ATHENA_REAL,
+                        nb.rank,tag,MPI_COMM_WORLD,&req_field_recv_[l][nb.bufid]);
         }
       }
     }
   }
 #endif
+  return;
 }
 
 //--------------------------------------------------------------------------------------
@@ -318,20 +386,19 @@ void BoundaryValues::Initialize(void)
 void BoundaryValues::EnrollFluidBoundaryFunction(enum direction dir, BValFluid_t my_bc)
 {
   std::stringstream msg;
-  if(dir<0 || dir>5)
-  {
+  if(dir<0 || dir>5) {
     msg << "### FATAL ERROR in EnrollFluidBoundaryCondition function" << std::endl
         << "dirName = " << dir << " not valid" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if(pmy_mblock_->pmy_mesh->mesh_bcs[dir]!=3) {
+  if(pmy_mblock_->block_bcs[dir]==-1) return;
+  if(pmy_mblock_->block_bcs[dir]!=3) {
     msg << "### FATAL ERROR in EnrollFluidBoundaryCondition function" << std::endl
         << "A user-defined boundary condition flag (3) must be specified "
         << "in the input file to use a user-defined boundary function." << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if(pmy_mblock_->neighbor[dir][0][0].gid==-1)
-    FluidBoundary_[dir]=my_bc;
+  FluidBoundary_[dir]=my_bc;
   return;
 }
 
@@ -344,613 +411,21 @@ void BoundaryValues::EnrollFluidBoundaryFunction(enum direction dir, BValFluid_t
 void BoundaryValues::EnrollFieldBoundaryFunction(enum direction dir,BValField_t my_bc)
 {
   std::stringstream msg;
-  if(dir<0 || dir>5)
-  {
+  if(dir<0 || dir>5) {
     msg << "### FATAL ERROR in EnrollFieldBoundaryCondition function" << std::endl
         << "dirName = " << dir << " is not valid" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if(pmy_mblock_->pmy_mesh->mesh_bcs[dir]!=3) {
+  if(pmy_mblock_->block_bcs[dir]==-1) return;
+  if(pmy_mblock_->block_bcs[dir]!=3) {
     msg << "### FATAL ERROR in EnrollFieldBoundaryCondition function" << std::endl
         << "A user-defined boundary condition flag (3) must be specified "
         << "in the input file to use a user-defined boundary function." << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if(pmy_mblock_->neighbor[dir][0][0].gid==-1)
-    FieldBoundary_[dir]=my_bc;
+  FieldBoundary_[dir]=my_bc;
   return;
 }
-
-
-//--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::StartReceivingForInit(void)
-//  \brief initiate MPI_Irecv for initialization
-void BoundaryValues::StartReceivingForInit(void)
-{
-#ifdef MPI_PARALLEL
-  MeshBlock *pmb=pmy_mblock_;
-  int tag;
-  for(int i=0;i<6;i++) {
-    if((pmb->neighbor[i][0][0].gid!=-1) && (pmb->neighbor[i][0][0].rank!=myrank)) { 
-      MPI_Start(&req_fluid_recv_[0][i][0][0]);
-      if (MAGNETIC_FIELDS_ENABLED)
-        MPI_Start(&req_field_recv_[0][i][0][0]);
-    }
-  }
-#endif
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::StartReceivingAll(void)
-//  \brief initiate MPI_Irecv for all the sweeps
-void BoundaryValues::StartReceivingAll(void)
-{
-#ifdef MPI_PARALLEL
-  MeshBlock *pmb=pmy_mblock_;
-  int tag;
-  int r=2;
-  if(pmb->block_size.nx2 > 1) // 2D
-    r=4;
-  if(pmb->block_size.nx3 > 1) // 3D
-    r=6;
-  for(int l=0;l<nsweep;l++) {
-    for(int i=0;i<r;i++) {
-      if((pmb->neighbor[i][0][0].gid!=-1) && (pmb->neighbor[i][0][0].rank!=myrank)) { 
-        MPI_Start(&req_fluid_recv_[l][i][0][0]);
-        if (MAGNETIC_FIELDS_ENABLED) {
-          MPI_Start(&req_field_recv_[l][i][0][0]);
-        }
-      }
-    }
-  }
-#endif
-  return;
-}
-
-
-//--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::LoadAndSendFluidBoundaryBuffer
-//                          (enum direction dir, AthenaArray<Real> &src, int flag)
-//  \brief Set boundary buffer for x1 direction using boundary functions
-//  note: some geometric boundaries (e.g. origin and pole) are not implemented yet
-void BoundaryValues::LoadAndSendFluidBoundaryBuffer
-                     (enum direction dir, AthenaArray<Real> &src, int flag)
-{
-  MeshBlock *pmb=pmy_mblock_;
-  MeshBlock *pbl=pmb->pmy_mesh->pblock;
-  int oside;
-  Real *sendbuf=fluid_send_[flag][dir];
-  int si, sj, sk, ei, ej, ek, mylevel;
-#ifdef MPI_PARALLEL
-  int tag;
-#endif
-
-  if(pmb->neighbor[dir][0][0].gid==-1) {
-    fluid_flag_[flag][dir][0][0]=1;
-    return; // do nothing for physical boundary
-  }
-
-  si=fluid_send_se_[dir][0];
-  ei=fluid_send_se_[dir][1];
-  sj=fluid_send_se_[dir][2];
-  ej=fluid_send_se_[dir][3];
-  sk=fluid_send_se_[dir][4];
-  ek=fluid_send_se_[dir][5];
-
-  if(dir%2==0)
-    oside=dir+1;
-  else
-    oside=dir-1;
-
-  // Set buffers
-  int p=0;
-  for (int n=0; n<(NFLUID); ++n) {
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
-#pragma simd
-        for (int i=si; i<=ei; ++i) {
-          // buffer is always fully packed
-          sendbuf[p++]=src(n,k,j,i);
-        }
-      }
-    }
-  }
-
-  // Send the buffer; modify this for MPI and AMR
-  if(pmb->neighbor[dir][0][0].rank == myrank) // myrank
-  {
-    while(pbl!=NULL)
-    {
-      if(pbl->gid==pmb->neighbor[dir][0][0].gid)
-        break;
-      pbl=pbl->next;
-    }
-    std::memcpy(pbl->pbval->fluid_recv_[flag][oside], sendbuf,
-                fluid_bufsize_[dir]*sizeof(Real));
-    pbl->pbval->fluid_flag_[flag][oside][0][0]=1; // the other side
-  }
-#ifdef MPI_PARALLEL
-  else // MPI
-  {
-    // on the same level
-    MPI_Start(&req_fluid_send_[flag][dir][0][0]);
-  }
-#endif
-  return;
-}
-
-
-//--------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::ReceiveAndSetFluidBoundary(enum direction dir,
-//                                                     AthenaArray<Real> &dst, int flag)
-//  \brief load boundary buffer for x1 direction into the array
-bool BoundaryValues::ReceiveAndSetFluidBoundary(enum direction dir,
-                                                AthenaArray<Real> &dst, int flag)
-{
-  MeshBlock *pmb=pmy_mblock_;
-  Real *recvbuf=fluid_recv_[flag][dir];
-  int si, sj, sk, ei, ej, ek, test;
-
-  if(fluid_flag_[flag][dir][0][0] == 2) // already done
-    return true;
-  if(pmb->neighbor[dir][0][0].gid==-1) // physical boundary
-    FluidBoundary_[dir](pmb,dst);
-  else // block boundary
-  {
-    if(fluid_flag_[flag][dir][0][0] == 0) // not received
-    {
-      if(pmb->neighbor[dir][0][0].rank==myrank) // on the same process
-        return false;
-#ifdef MPI_PARALLEL
-      else { // MPI boundary
-        MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-        MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-        MPI_Test(&req_fluid_recv_[flag][dir][0][0],&test,MPI_STATUS_IGNORE);
-        if(test==false)
-          return false;
-        fluid_flag_[flag][dir][0][0] = 1; // received
-      }
-#endif
-    }
-
-    si=fluid_recv_se_[dir][0];
-    ei=fluid_recv_se_[dir][1];
-    sj=fluid_recv_se_[dir][2];
-    ej=fluid_recv_se_[dir][3];
-    sk=fluid_recv_se_[dir][4];
-    ek=fluid_recv_se_[dir][5];
-
-    int p=0;
-    for (int n=0; n<(NFLUID); ++n) {
-      for (int k=sk; k<=ek; ++k) {
-        for (int j=sj; j<=ej; ++j) {
-#pragma simd
-          for (int i=si; i<=ei; ++i) {
-            // buffer is always fully packed
-            dst(n,k,j,i) = recvbuf[p++];
-          }
-        }
-      }
-    }
-  }
-  fluid_flag_[flag][dir][0][0] = 2; // completed
-
-  return true;
-}
-
-//--------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::ReceiveAndSetFluidBoundaryWithWait(enum direction dir,
-//                                                     AthenaArray<Real> &dst, int flag)
-//  \brief load boundary buffer for x1 direction into the array
-bool BoundaryValues::ReceiveAndSetFluidBoundaryWithWait(enum direction dir,
-                                                       AthenaArray<Real> &dst, int flag)
-{
-  MeshBlock *pmb=pmy_mblock_;
-  std::stringstream msg;
-  Real *recvbuf=fluid_recv_[flag][dir];
-  int si, sj, sk, ei, ej, ek;
-
-  if(pmb->neighbor[dir][0][0].gid==-1) // physical boundary
-    FluidBoundary_[dir](pmb,dst);
-  else // block boundary
-  {
-    if(fluid_flag_[flag][dir][0][0] == 0) // not received
-    {
-      if(pmb->neighbor[dir][0][0].rank==myrank) {// on the same process
-        msg << "### FATAL ERROR in ReceiveAndSetFieldBoundary" << std::endl
-            << "MeshBlock " << pmb->gid << " Boundary " << dir << " is not ready."
-            << std::endl << "This should not happen." << std::endl;
-        throw std::runtime_error(msg.str().c_str());
-        return false;
-      }
-      else { // MPI boundary
-#ifdef MPI_PARALLEL
-        MPI_Wait(&req_fluid_recv_[flag][dir][0][0],MPI_STATUS_IGNORE);
-        fluid_flag_[flag][dir][0][0] = 1; // received
-#else
-        msg << "### FATAL ERROR in ReceiveAndSetFluidBoundary" << std::endl
-            << "I was told that my neighbor is on another node, but MPI is off!"
-            << std::endl << "I'm afraid the grid structure is broken." << std::endl;
-        throw std::runtime_error(msg.str().c_str());
-#endif
-      }
-    }
-
-    si=fluid_recv_se_[dir][0];
-    ei=fluid_recv_se_[dir][1];
-    sj=fluid_recv_se_[dir][2];
-    ej=fluid_recv_se_[dir][3];
-    sk=fluid_recv_se_[dir][4];
-    ek=fluid_recv_se_[dir][5];
-
-    int p=0;
-    for (int n=0; n<(NFLUID); ++n) {
-      for (int k=sk; k<=ek; ++k) {
-        for (int j=sj; j<=ej; ++j) {
-#pragma simd
-          for (int i=si; i<=ei; ++i) {
-            // buffer is always fully packed
-            dst(n,k,j,i) = recvbuf[p++];
-          }
-        }
-      }
-    }
-  }
-  fluid_flag_[flag][dir][0][0] = 2; // completed
-
-  return true;
-}
-
-//--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::LoadAndSendFieldBoundaryBuffer
-//                           (enum direction dir, InterfaceField &src, int flag)
-//  \brief Set boundary buffer for x1 direction using boundary functions
-//  note: some geometric boundaries (e.g. origin and pole) are not implemented yet
-void BoundaryValues::LoadAndSendFieldBoundaryBuffer(enum direction dir,
-                                                    InterfaceField &src, int flag)
-{
-  MeshBlock *pmb=pmy_mblock_;
-  MeshBlock *pbl=pmb->pmy_mesh->pblock;
-  int oside;
-  Real *sendbuf=field_send_[flag][dir];
-  AthenaArray<Real>& x1src=src.x1f;
-  AthenaArray<Real>& x2src=src.x2f;
-  AthenaArray<Real>& x3src=src.x3f;
-  int si, sj, sk, ei, ej, ek;
-#ifdef MPI_PARALLEL
-  int tag;
-#endif
-
-  if(pmb->neighbor[dir][0][0].gid==-1)
-    return; // do nothing for physical boundary
-
-  if(dir%2==0)
-    oside=dir+1;
-  else
-    oside=dir-1;
-
-  // Set buffers; x1f
-  int p=0;
-  si=field_send_se_[dir][x1face][0];
-  ei=field_send_se_[dir][x1face][1];
-  sj=field_send_se_[dir][x1face][2];
-  ej=field_send_se_[dir][x1face][3];
-  sk=field_send_se_[dir][x1face][4];
-  ek=field_send_se_[dir][x1face][5];
-  for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
-#pragma simd
-      for (int i=si; i<=ei; ++i) {
-        // buffer is always fully packed
-        sendbuf[p++]=x1src(k,j,i);
-      }
-    }
-  }
-  // Set buffers; x2f
-  si=field_send_se_[dir][x2face][0];
-  ei=field_send_se_[dir][x2face][1];
-  sj=field_send_se_[dir][x2face][2];
-  ej=field_send_se_[dir][x2face][3];
-  sk=field_send_se_[dir][x2face][4];
-  ek=field_send_se_[dir][x2face][5];
-  for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
-#pragma simd
-      for (int i=si; i<=ei; ++i) {
-        // buffer is always fully packed
-        sendbuf[p++]=x2src(k,j,i);
-      }
-    }
-  }
-  // Set buffers; x3f
-  si=field_send_se_[dir][x3face][0];
-  ei=field_send_se_[dir][x3face][1];
-  sj=field_send_se_[dir][x3face][2];
-  ej=field_send_se_[dir][x3face][3];
-  sk=field_send_se_[dir][x3face][4];
-  ek=field_send_se_[dir][x3face][5];
-  for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
-#pragma simd
-      for (int i=si; i<=ei; ++i) {
-        // buffer is always fully packed
-        sendbuf[p++]=x3src(k,j,i);
-      }
-    }
-  }
-
-  // Send the buffer; modify this for MPI and AMR
-  if(pmb->neighbor[dir][0][0].rank == myrank) // myrank
-  {
-    while(pbl!=NULL)
-    {
-      if(pbl->gid==pmb->neighbor[dir][0][0].gid)
-        break;
-      pbl=pbl->next;
-    }
-    std::memcpy(pbl->pbval->field_recv_[flag][oside], sendbuf,
-                field_bufsize_[dir]*sizeof(Real));
-    pbl->pbval->field_flag_[flag][oside][0][0]=1; // the other side
-  }
-#ifdef MPI_PARALLEL
-  else // MPI
-  {
-    // on the same level
-    MPI_Start(&req_field_send_[flag][dir][0][0]);
-  }
-#endif
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::ReceiveAndSetFieldBoundary(enum direction dir,
-//                                                      InterfaceField &dst, int flag)
-//  \brief load boundary buffer for x1 direction into the array
-bool BoundaryValues::ReceiveAndSetFieldBoundary(enum direction dir, InterfaceField &dst,
-                                                int flag)
-{
-  MeshBlock *pmb=pmy_mblock_;
-  Real *recvbuf=field_recv_[flag][dir];
-  AthenaArray<Real>& x1dst=dst.x1f;
-  AthenaArray<Real>& x2dst=dst.x2f;
-  AthenaArray<Real>& x3dst=dst.x3f;
-  int si, sj, sk, ei, ej, ek, test;
-
-  if(field_flag_[flag][dir][0][0] == 2) // already done
-    return true;
-  if(pmb->neighbor[dir][0][0].gid==-1)// physical boundary
-      FieldBoundary_[dir](pmb,dst);
-  else // block boundary
-  {
-    if(field_flag_[flag][dir][0][0] == 0) // not copied
-    {
-      if(pmb->neighbor[dir][0][0].rank==myrank) {// on the same process
-        return false; // return if it is not ready yet
-      }
-#ifdef MPI_PARALLEL
-      else { // MPI boundary
-        MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-        MPI_Test(&req_field_recv_[flag][dir][0][0],&test,MPI_STATUS_IGNORE);
-        if(test==false)
-          return false;
-        field_flag_[flag][dir][0][0] = 1; // received
-      }
-#endif
-    }
-
-    // Load buffers; x1f
-    int p=0;
-    si=field_recv_se_[dir][x1face][0];
-    ei=field_recv_se_[dir][x1face][1];
-    sj=field_recv_se_[dir][x1face][2];
-    ej=field_recv_se_[dir][x1face][3];
-    sk=field_recv_se_[dir][x1face][4];
-    ek=field_recv_se_[dir][x1face][5];
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
-#pragma simd
-        for (int i=si; i<=ei; ++i) {
-          // buffer is always fully packed
-          x1dst(k,j,i)=recvbuf[p++];
-        }
-      }
-    }
-    // Load buffers; x2f
-    si=field_recv_se_[dir][x2face][0];
-    ei=field_recv_se_[dir][x2face][1];
-    sj=field_recv_se_[dir][x2face][2];
-    ej=field_recv_se_[dir][x2face][3];
-    sk=field_recv_se_[dir][x2face][4];
-    ek=field_recv_se_[dir][x2face][5];
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
-#pragma simd
-        for (int i=si; i<=ei; ++i) {
-          // buffer is always fully packed
-          x2dst(k,j,i)=recvbuf[p++];
-        }
-      }
-    }
-    // Load buffers; x3f
-    si=field_recv_se_[dir][x3face][0];
-    ei=field_recv_se_[dir][x3face][1];
-    sj=field_recv_se_[dir][x3face][2];
-    ej=field_recv_se_[dir][x3face][3];
-    sk=field_recv_se_[dir][x3face][4];
-    ek=field_recv_se_[dir][x3face][5];
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
-#pragma simd
-        for (int i=si; i<=ei; ++i) {
-          // buffer is always fully packed
-          x3dst(k,j,i)=recvbuf[p++];
-        }
-      }
-    }
-  }
-  field_flag_[flag][dir][0][0] = 2; // completed
-
-  return true;
-}
-
-//--------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::ReceiveAndSetFieldBoundaryWithWait(enum direction dir,
-//                                                     InterfaceField &dst, int flag)
-//  \brief load boundary buffer for x1 direction into the array
-bool BoundaryValues::ReceiveAndSetFieldBoundaryWithWait(enum direction dir,
-                                                        InterfaceField &dst, int flag)
-{
-  MeshBlock *pmb=pmy_mblock_;
-  std::stringstream msg;
-  Real *recvbuf=field_recv_[flag][dir];
-  AthenaArray<Real>& x1dst=dst.x1f;
-  AthenaArray<Real>& x2dst=dst.x2f;
-  AthenaArray<Real>& x3dst=dst.x3f;
-  int si, sj, sk, ei, ej, ek;
-
-  if(pmb->neighbor[dir][0][0].gid==-1)// physical boundary
-      FieldBoundary_[dir](pmb,dst);
-  else // block boundary
-  {
-    if(field_flag_[flag][dir][0][0] == 0) // not copied
-    {
-      if(pmb->neighbor[dir][0][0].rank==myrank) {// on the same process
-        msg << "### FATAL ERROR in ReceiveAndSetFieldBoundary" << std::endl
-            << "MeshBlock " << pmb->gid << " Boundary " << dir << " is not ready."
-            << std::endl << "This should not happen." << std::endl;
-        throw std::runtime_error(msg.str().c_str());
-        return false; // return if it is not ready yet
-      }
-      else { // MPI boundary
-#ifdef MPI_PARALLEL
-        MPI_Wait(&req_field_recv_[flag][dir][0][0],MPI_STATUS_IGNORE);
-        field_flag_[flag][dir][0][0] = 1; // received
-#else
-        msg << "### FATAL ERROR in ReceiveAndSetFieldBoundary" << std::endl
-            << "I was told that my neighbor is on another node, but MPI is off!"
-            << std::endl << "I'm afraid the grid structure is broken." << std::endl;
-        throw std::runtime_error(msg.str().c_str());
-#endif
-      }
-    }
-
-    // Load buffers; x1f
-    int p=0;
-    si=field_recv_se_[dir][x1face][0];
-    ei=field_recv_se_[dir][x1face][1];
-    sj=field_recv_se_[dir][x1face][2];
-    ej=field_recv_se_[dir][x1face][3];
-    sk=field_recv_se_[dir][x1face][4];
-    ek=field_recv_se_[dir][x1face][5];
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
-#pragma simd
-        for (int i=si; i<=ei; ++i) {
-          // buffer is always fully packed
-          x1dst(k,j,i)=recvbuf[p++];
-        }
-      }
-    }
-    // Load buffers; x2f
-    si=field_recv_se_[dir][x2face][0];
-    ei=field_recv_se_[dir][x2face][1];
-    sj=field_recv_se_[dir][x2face][2];
-    ej=field_recv_se_[dir][x2face][3];
-    sk=field_recv_se_[dir][x2face][4];
-    ek=field_recv_se_[dir][x2face][5];
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
-#pragma simd
-        for (int i=si; i<=ei; ++i) {
-          // buffer is always fully packed
-          x2dst(k,j,i)=recvbuf[p++];
-        }
-      }
-    }
-    // Load buffers; x3f
-    si=field_recv_se_[dir][x3face][0];
-    ei=field_recv_se_[dir][x3face][1];
-    sj=field_recv_se_[dir][x3face][2];
-    ej=field_recv_se_[dir][x3face][3];
-    sk=field_recv_se_[dir][x3face][4];
-    ek=field_recv_se_[dir][x3face][5];
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
-#pragma simd
-        for (int i=si; i<=ei; ++i) {
-          // buffer is always fully packed
-          x3dst(k,j,i)=recvbuf[p++];
-        }
-      }
-    }
-  }
-  field_flag_[flag][dir][0][0] = 2; // completed
-
-  return true;
-}
-
-
-//--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ClearBoundaryForInit(void)
-//  \brief clean up the boundary flags for initialization
-void BoundaryValues::ClearBoundaryForInit(void)
-{
-  MeshBlock *pmb=pmy_mblock_;
-  int r=2;
-  if(pmb->block_size.nx2 > 1) // 2D
-    r=4;
-  if(pmb->block_size.nx3 > 1) // 3D
-    r=6;
-  for(int i=0;i<r;i++) {
-    fluid_flag_[0][i][0][0] = 0;
-#ifdef MPI_PARALLEL
-    if((pmb->neighbor[i][0][0].rank!=myrank) && (pmb->neighbor[i][0][0].gid!=-1))
-      MPI_Wait(&req_fluid_send_[0][i][0][0],MPI_STATUS_IGNORE); // Wait for Isend
-#endif
-    if (MAGNETIC_FIELDS_ENABLED) {
-      field_flag_[0][i][0][0] = 0;
-#ifdef MPI_PARALLEL
-      if((pmb->neighbor[i][0][0].rank!=myrank) && (pmb->neighbor[i][0][0].gid!=-1))
-        MPI_Wait(&req_field_send_[0][i][0][0],MPI_STATUS_IGNORE); // Wait for Isend
-#endif
-    }
-  }
-  return;
-}
-
-
-//--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ClearBoundaryAll(void)
-//  \brief clean up the boundary flags after each loop
-void BoundaryValues::ClearBoundaryAll(void)
-{
-  MeshBlock *pmb=pmy_mblock_;
-  int r=2;
-  if(pmb->block_size.nx2 > 1) // 2D
-    r=4;
-  if(pmb->block_size.nx3 > 1) // 3D
-    r=6;
-  for(int l=0;l<nsweep;l++) {
-    for(int i=0;i<r;i++) {
-      fluid_flag_[l][i][0][0] = 0;
-#ifdef MPI_PARALLEL
-      if((pmb->neighbor[i][0][0].rank!=myrank) && (pmb->neighbor[i][0][0].gid!=-1))
-        MPI_Wait(&req_fluid_send_[l][i][0][0],MPI_STATUS_IGNORE); // Wait for Isend
-#endif
-      if (MAGNETIC_FIELDS_ENABLED) {
-        field_flag_[l][i][0][0] = 0;
-#ifdef MPI_PARALLEL
-        if((pmb->neighbor[i][0][0].rank!=myrank) && (pmb->neighbor[i][0][0].gid!=-1)) {
-          MPI_Wait(&req_field_send_[l][i][0][0],MPI_STATUS_IGNORE); // Wait for Isend
-        }
-#endif
-      }
-    }
-  }
-  return;
-}
-
 
 
 //--------------------------------------------------------------------------------------
@@ -988,381 +463,806 @@ void BoundaryValues::CheckBoundary(void)
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void InitBoundaryBuffer(int nx1, int nx2, int nx3)
-//  \brief creates a list of the sizes and offsets of boundary buffers
-void InitBoundaryBuffer(int nx1, int nx2, int nx3)
+//! \fn void BoundaryValues::StartReceivingForInit(void)
+//  \brief initiate MPI_Irecv for initialization
+void BoundaryValues::StartReceivingForInit(void)
 {
-  int is, ie, js, je, ks, ke;
+#ifdef MPI_PARALLEL
+  MeshBlock *pmb=pmy_mblock_;
+  for(int n=0;n<pmb->nneighbor;n++) {
+    NeighborBlock& nb=pmb->neighbor[n];
+    if(nb.rank!=myrank) { 
+      MPI_Start(&req_fluid_recv_[0][nb.bufid]);
+      if (MAGNETIC_FIELDS_ENABLED)
+        MPI_Start(&req_field_recv_[0][nb.bufid]);
+    }
+  }
+#endif
+  return;
+}
 
-  is = NGHOST;
-  ie = is + nx1 - 1;
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::StartReceivingAll(void)
+//  \brief initiate MPI_Irecv for all the sweeps
+void BoundaryValues::StartReceivingAll(void)
+{
+#ifdef MPI_PARALLEL
+  MeshBlock *pmb=pmy_mblock_;
+  for(int l=0;l<NSTEP;l++) {
+    for(int n=0;n<pmb->nneighbor;n++) {
+      NeighborBlock& nb=pmb->neighbor[n];
+      if(nb.rank!=myrank) { 
+        MPI_Start(&req_fluid_recv_[l][nb.bufid]);
+        if (MAGNETIC_FIELDS_ENABLED)
+          MPI_Start(&req_field_recv_[l][nb.bufid]);
+      }
+    }
+  }
+#endif
+  return;
+}
 
-  if (nx2 > 1) {
-    js = NGHOST;
-    je = js + nx2 - 1;
-  } else {
-    js = je = 0;
+
+//--------------------------------------------------------------------------------------
+//! \fn int BoundaryValues::LoadFluidBoundaryBufferSameLevel(AthenaArray<Real> &src,
+//                                                 Real *buf, NeighborBlock& nb)
+//  \brief Set fluid boundary buffers for sending to a block on the same level
+int BoundaryValues::LoadFluidBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
+                                                     NeighborBlock& nb)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  int si, sj, sk, ei, ej, ek;
+
+  si=(nb.ox1>0)?(pmb->ie-NGHOST+1):pmb->is;
+  ei=(nb.ox1<0)?(pmb->is+NGHOST-1):pmb->ie;
+  sj=(nb.ox2>0)?(pmb->je-NGHOST+1):pmb->js;
+  ej=(nb.ox2<0)?(pmb->js+NGHOST-1):pmb->je;
+  sk=(nb.ox3>0)?(pmb->ke-NGHOST+1):pmb->ks;
+  ek=(nb.ox3<0)?(pmb->ks+NGHOST-1):pmb->ke;
+
+  int p=0;
+  for (int n=0; n<(NFLUID); ++n) {
+    for (int k=sk; k<=ek; ++k) {
+      for (int j=sj; j<=ej; ++j) {
+#pragma simd
+        for (int i=si; i<=ei; ++i) {
+          // buffer is always fully packed
+          buf[p++]=src(n,k,j,i);
+        }
+      }
+    }
+  }
+  return p;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn int BoundaryValues::LoadFluidBoundaryBufferToCoarser(AthenaArray<Real> &src,
+//                                                 Real *buf, NeighborBlock& nb)
+//  \brief Set fluid boundary buffers for sending to a block on the coarser level
+int BoundaryValues::LoadFluidBoundaryBufferToCoarser(AthenaArray<Real> &src, Real *buf,
+                                                     NeighborBlock& nb)
+{
+  int p=0;
+// *** not implemented yet ***
+  return p;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn int BoundaryValues::LoadFluidBoundaryBufferToFiner(AthenaArray<Real> &src,
+//                                                 Real *buf, NeighborBlock& nb)
+//  \brief Set fluid boundary buffers for sending to a block on the finer level
+int BoundaryValues::LoadFluidBoundaryBufferToFiner(AthenaArray<Real> &src, Real *buf,
+                                                   NeighborBlock& nb)
+{
+  int p=0;
+// *** not implemented yet ***
+  return p;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::SendFluidBoundaryBuffers(AthenaArray<Real> &src, int step)
+//  \brief Send boundary buffers
+void BoundaryValues::SendFluidBoundaryBuffers(AthenaArray<Real> &src, int step)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  int mylevel=pmb->uid.GetLevel();
+
+  for(int n=0; n<pmb->nneighbor; n++) {
+    NeighborBlock& nb=pmb->neighbor[n];
+    int ssize;
+    if(nb.level==mylevel)
+      ssize=LoadFluidBoundaryBufferSameLevel(src, fluid_send_[step][nb.bufid],nb);
+    else if(nb.level<mylevel)
+      ssize=LoadFluidBoundaryBufferToCoarser(src, fluid_send_[step][nb.bufid],nb);
+    else
+      ssize=LoadFluidBoundaryBufferToFiner(src, fluid_send_[step][nb.bufid], nb);
+    if(nb.rank == myrank) { // on the same process
+      MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
+      // find target buffer
+      int target = target_bufid_[nb.bufid];
+      std::memcpy(pbl->pbval->fluid_recv_[step][target],
+                  fluid_send_[step][nb.bufid], ssize*sizeof(Real));
+      pbl->pbval->fluid_flag_[step][target]=boundary_arrived;
+    }
+#ifdef MPI_PARALLEL
+    else // MPI
+      MPI_Start(&req_fluid_send_[step][nb.bufid]);
+#endif
   }
 
-  if (nx3 > 1) {
-    ks = NGHOST;
-    ke = ks + nx3 - 1;
-  } else {
-    ks = ke = 0;
-  }
-  fluid_send_se_[inner_x1][0]=is;
-  fluid_send_se_[inner_x1][1]=is+NGHOST-1;
-  fluid_send_se_[inner_x1][2]=js;
-  fluid_send_se_[inner_x1][3]=je;
-  fluid_send_se_[inner_x1][4]=ks;
-  fluid_send_se_[inner_x1][5]=ke;
-
-  fluid_send_se_[outer_x1][0]=ie-NGHOST+1;
-  fluid_send_se_[outer_x1][1]=ie;
-  fluid_send_se_[outer_x1][2]=js;
-  fluid_send_se_[outer_x1][3]=je;
-  fluid_send_se_[outer_x1][4]=ks;
-  fluid_send_se_[outer_x1][5]=ke;
-
-  fluid_send_se_[inner_x2][0]=0;
-  fluid_send_se_[inner_x2][1]=ie+NGHOST;
-  fluid_send_se_[inner_x2][2]=js;
-  fluid_send_se_[inner_x2][3]=js+NGHOST-1;
-  fluid_send_se_[inner_x2][4]=ks;
-  fluid_send_se_[inner_x2][5]=ke;
-
-  fluid_send_se_[outer_x2][0]=0;
-  fluid_send_se_[outer_x2][1]=ie+NGHOST;
-  fluid_send_se_[outer_x2][2]=je-NGHOST+1;
-  fluid_send_se_[outer_x2][3]=je;
-  fluid_send_se_[outer_x2][4]=ks;
-  fluid_send_se_[outer_x2][5]=ke;
-
-  fluid_send_se_[inner_x3][0]=0;
-  fluid_send_se_[inner_x3][1]=ie+NGHOST;
-  fluid_send_se_[inner_x3][2]=0;
-  fluid_send_se_[inner_x3][3]=je+NGHOST;
-  fluid_send_se_[inner_x3][4]=ks;
-  fluid_send_se_[inner_x3][5]=ks+NGHOST-1;
-
-  fluid_send_se_[outer_x3][0]=0;
-  fluid_send_se_[outer_x3][1]=ie+NGHOST;
-  fluid_send_se_[outer_x3][2]=0;
-  fluid_send_se_[outer_x3][3]=je+NGHOST;
-  fluid_send_se_[outer_x3][4]=ke-NGHOST+1;
-  fluid_send_se_[outer_x3][5]=ke;
+  return;
+}
 
 
-  fluid_recv_se_[inner_x1][0]=is-NGHOST;
-  fluid_recv_se_[inner_x1][1]=is-1;
-  fluid_recv_se_[inner_x1][2]=js;
-  fluid_recv_se_[inner_x1][3]=je;
-  fluid_recv_se_[inner_x1][4]=ks;
-  fluid_recv_se_[inner_x1][5]=ke;
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::SetFluidBoundarySameLevel(AthenaArray<Real> &dst,
+//                                                     Real *buf, NeighborBlock& nb)
+//  \brief Set fluid boundary received from a block on the same level
+void BoundaryValues::SetFluidBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
+                                               NeighborBlock& nb)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  int si, sj, sk, ei, ej, ek;
 
-  fluid_recv_se_[outer_x1][0]=ie+1;
-  fluid_recv_se_[outer_x1][1]=ie+NGHOST;
-  fluid_recv_se_[outer_x1][2]=js;
-  fluid_recv_se_[outer_x1][3]=je;
-  fluid_recv_se_[outer_x1][4]=ks;
-  fluid_recv_se_[outer_x1][5]=ke;
+  if(nb.ox1==0)     si=pmb->is,        ei=pmb->ie;
+  else if(nb.ox1>0) si=pmb->ie+1,      ei=pmb->ie+NGHOST;
+  else              si=pmb->is-NGHOST, ei=pmb->is-1;
+  if(nb.ox2==0)     sj=pmb->js,        ej=pmb->je;
+  else if(nb.ox2>0) sj=pmb->je+1,      ej=pmb->je+NGHOST;
+  else              sj=pmb->js-NGHOST, ej=pmb->js-1;
+  if(nb.ox3==0)     sk=pmb->ks,        ek=pmb->ke;
+  else if(nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
+  else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
 
-  fluid_recv_se_[inner_x2][0]=0;
-  fluid_recv_se_[inner_x2][1]=ie+NGHOST;
-  fluid_recv_se_[inner_x2][2]=js-NGHOST;
-  fluid_recv_se_[inner_x2][3]=js-1;
-  fluid_recv_se_[inner_x2][4]=ks;
-  fluid_recv_se_[inner_x2][5]=ke;
-
-  fluid_recv_se_[outer_x2][0]=0;
-  fluid_recv_se_[outer_x2][1]=ie+NGHOST;
-  fluid_recv_se_[outer_x2][2]=je+1;
-  fluid_recv_se_[outer_x2][3]=je+NGHOST;
-  fluid_recv_se_[outer_x2][4]=ks;
-  fluid_recv_se_[outer_x2][5]=ke;
-
-  fluid_recv_se_[inner_x3][0]=0;
-  fluid_recv_se_[inner_x3][1]=ie+NGHOST;
-  fluid_recv_se_[inner_x3][2]=0;
-  fluid_recv_se_[inner_x3][3]=je+NGHOST;
-  fluid_recv_se_[inner_x3][4]=ks-NGHOST;
-  fluid_recv_se_[inner_x3][5]=ks-1;
-
-  fluid_recv_se_[outer_x3][0]=0;
-  fluid_recv_se_[outer_x3][1]=ie+NGHOST;
-  fluid_recv_se_[outer_x3][2]=0;
-  fluid_recv_se_[outer_x3][3]=je+NGHOST;
-  fluid_recv_se_[outer_x3][4]=ke+1;
-  fluid_recv_se_[outer_x3][5]=ke+NGHOST;
-
-  fluid_bufsize_[inner_x1]=NGHOST*nx2*nx3*NFLUID;
-  fluid_bufsize_[outer_x1]=NGHOST*nx2*nx3*NFLUID;
-  fluid_bufsize_[inner_x2]=(nx1+2*NGHOST)*NGHOST*nx3*NFLUID;
-  fluid_bufsize_[outer_x2]=(nx1+2*NGHOST)*NGHOST*nx3*NFLUID;
-  fluid_bufsize_[inner_x3]=(nx1+2*NGHOST)*(nx2+2*NGHOST)*NGHOST*NFLUID;
-  fluid_bufsize_[outer_x3]=(nx1+2*NGHOST)*(nx2+2*NGHOST)*NGHOST*NFLUID;
-
-  if (MAGNETIC_FIELDS_ENABLED) {
-    field_send_se_[inner_x1][x1face][0]=is+1;
-    field_send_se_[inner_x1][x1face][1]=is+NGHOST;
-    field_send_se_[inner_x1][x1face][2]=js;
-    field_send_se_[inner_x1][x1face][3]=je;
-    field_send_se_[inner_x1][x1face][4]=ks;
-    field_send_se_[inner_x1][x1face][5]=ke;
-
-    field_send_se_[inner_x1][x2face][0]=is;
-    field_send_se_[inner_x1][x2face][1]=is+NGHOST-1;
-    field_send_se_[inner_x1][x2face][2]=js;
-    field_send_se_[inner_x1][x2face][3]=je+1;
-    field_send_se_[inner_x1][x2face][4]=ks;
-    field_send_se_[inner_x1][x2face][5]=ke;
-
-    field_send_se_[inner_x1][x3face][0]=is;
-    field_send_se_[inner_x1][x3face][1]=is+NGHOST-1;
-    field_send_se_[inner_x1][x3face][2]=js;
-    field_send_se_[inner_x1][x3face][3]=je;
-    field_send_se_[inner_x1][x3face][4]=ks;
-    field_send_se_[inner_x1][x3face][5]=ke+1;
-
-    field_send_se_[outer_x1][x1face][0]=ie-NGHOST+1;
-    field_send_se_[outer_x1][x1face][1]=ie;
-    field_send_se_[outer_x1][x1face][2]=js;
-    field_send_se_[outer_x1][x1face][3]=je;
-    field_send_se_[outer_x1][x1face][4]=ks;
-    field_send_se_[outer_x1][x1face][5]=ke;
-
-    field_send_se_[outer_x1][x2face][0]=ie-NGHOST+1;
-    field_send_se_[outer_x1][x2face][1]=ie;
-    field_send_se_[outer_x1][x2face][2]=js;
-    field_send_se_[outer_x1][x2face][3]=je+1;
-    field_send_se_[outer_x1][x2face][4]=ks;
-    field_send_se_[outer_x1][x2face][5]=ke;
-
-    field_send_se_[outer_x1][x3face][0]=ie-NGHOST+1;
-    field_send_se_[outer_x1][x3face][1]=ie;
-    field_send_se_[outer_x1][x3face][2]=js;
-    field_send_se_[outer_x1][x3face][3]=je;
-    field_send_se_[outer_x1][x3face][4]=ks;
-    field_send_se_[outer_x1][x3face][5]=ke+1;
-
-    field_send_se_[inner_x2][x1face][0]=0;
-    field_send_se_[inner_x2][x1face][1]=ie+NGHOST+1;
-    field_send_se_[inner_x2][x1face][2]=js;
-    field_send_se_[inner_x2][x1face][3]=js+NGHOST-1;
-    field_send_se_[inner_x2][x1face][4]=ks;
-    field_send_se_[inner_x2][x1face][5]=ke;
-
-    field_send_se_[inner_x2][x2face][0]=0;
-    field_send_se_[inner_x2][x2face][1]=ie+NGHOST;
-    field_send_se_[inner_x2][x2face][2]=js+1;
-    field_send_se_[inner_x2][x2face][3]=js+NGHOST;
-    field_send_se_[inner_x2][x2face][4]=ks;
-    field_send_se_[inner_x2][x2face][5]=ke;
-
-    field_send_se_[inner_x2][x3face][0]=0;
-    field_send_se_[inner_x2][x3face][1]=ie+NGHOST;
-    field_send_se_[inner_x2][x3face][2]=js;
-    field_send_se_[inner_x2][x3face][3]=js+NGHOST-1;
-    field_send_se_[inner_x2][x3face][4]=ks;
-    field_send_se_[inner_x2][x3face][5]=ke+1;
-
-    field_send_se_[outer_x2][x1face][0]=0;
-    field_send_se_[outer_x2][x1face][1]=ie+NGHOST+1;
-    field_send_se_[outer_x2][x1face][2]=je-NGHOST+1;
-    field_send_se_[outer_x2][x1face][3]=je;
-    field_send_se_[outer_x2][x1face][4]=ks;
-    field_send_se_[outer_x2][x1face][5]=ke;
-
-    field_send_se_[outer_x2][x2face][0]=0;
-    field_send_se_[outer_x2][x2face][1]=ie+NGHOST;
-    field_send_se_[outer_x2][x2face][2]=je-NGHOST+1;
-    field_send_se_[outer_x2][x2face][3]=je;
-    field_send_se_[outer_x2][x2face][4]=ks;
-    field_send_se_[outer_x2][x2face][5]=ke;
-
-    field_send_se_[outer_x2][x3face][0]=0;
-    field_send_se_[outer_x2][x3face][1]=ie+NGHOST;
-    field_send_se_[outer_x2][x3face][2]=je-NGHOST+1;
-    field_send_se_[outer_x2][x3face][3]=je;
-    field_send_se_[outer_x2][x3face][4]=ks;
-    field_send_se_[outer_x2][x3face][5]=ke+1;
-
-    field_send_se_[inner_x3][x1face][0]=0;
-    field_send_se_[inner_x3][x1face][1]=ie+NGHOST+1;
-    field_send_se_[inner_x3][x1face][2]=0;
-    field_send_se_[inner_x3][x1face][3]=je+NGHOST;
-    field_send_se_[inner_x3][x1face][4]=ks;
-    field_send_se_[inner_x3][x1face][5]=ks+NGHOST-1;
-
-    field_send_se_[inner_x3][x2face][0]=0;
-    field_send_se_[inner_x3][x2face][1]=ie+NGHOST;
-    field_send_se_[inner_x3][x2face][2]=0;
-    field_send_se_[inner_x3][x2face][3]=je+NGHOST+1;
-    field_send_se_[inner_x3][x2face][4]=ks;
-    field_send_se_[inner_x3][x2face][5]=ks+NGHOST-1;
-
-    field_send_se_[inner_x3][x3face][0]=0;
-    field_send_se_[inner_x3][x3face][1]=ie+NGHOST;
-    field_send_se_[inner_x3][x3face][2]=0;
-    field_send_se_[inner_x3][x3face][3]=je+NGHOST;
-    field_send_se_[inner_x3][x3face][4]=ks+1;
-    field_send_se_[inner_x3][x3face][5]=ks+NGHOST;
-
-    field_send_se_[outer_x3][x1face][0]=0;
-    field_send_se_[outer_x3][x1face][1]=ie+NGHOST+1;
-    field_send_se_[outer_x3][x1face][2]=0;
-    field_send_se_[outer_x3][x1face][3]=je+NGHOST;
-    field_send_se_[outer_x3][x1face][4]=ke-NGHOST+1;
-    field_send_se_[outer_x3][x1face][5]=ke;
-
-    field_send_se_[outer_x3][x2face][0]=0;
-    field_send_se_[outer_x3][x2face][1]=ie+NGHOST;
-    field_send_se_[outer_x3][x2face][2]=0;
-    field_send_se_[outer_x3][x2face][3]=je+NGHOST+1;
-    field_send_se_[outer_x3][x2face][4]=ke-NGHOST+1;
-    field_send_se_[outer_x3][x2face][5]=ke;
-
-    field_send_se_[outer_x3][x3face][0]=0;
-    field_send_se_[outer_x3][x3face][1]=ie+NGHOST;
-    field_send_se_[outer_x3][x3face][2]=0;
-    field_send_se_[outer_x3][x3face][3]=je+NGHOST;
-    field_send_se_[outer_x3][x3face][4]=ke-NGHOST+1;
-    field_send_se_[outer_x3][x3face][5]=ke;
-
-    field_recv_se_[inner_x1][x1face][0]=is-NGHOST;
-    field_recv_se_[inner_x1][x1face][1]=is-1;
-    field_recv_se_[inner_x1][x1face][2]=js;
-    field_recv_se_[inner_x1][x1face][3]=je;
-    field_recv_se_[inner_x1][x1face][4]=ks;
-    field_recv_se_[inner_x1][x1face][5]=ke;
-
-    field_recv_se_[inner_x1][x2face][0]=is-NGHOST;
-    field_recv_se_[inner_x1][x2face][1]=is-1;
-    field_recv_se_[inner_x1][x2face][2]=js;
-    field_recv_se_[inner_x1][x2face][3]=je+1;
-    field_recv_se_[inner_x1][x2face][4]=ks;
-    field_recv_se_[inner_x1][x2face][5]=ke;
-
-    field_recv_se_[inner_x1][x3face][0]=is-NGHOST;
-    field_recv_se_[inner_x1][x3face][1]=is-1;
-    field_recv_se_[inner_x1][x3face][2]=js;
-    field_recv_se_[inner_x1][x3face][3]=je;
-    field_recv_se_[inner_x1][x3face][4]=ks;
-    field_recv_se_[inner_x1][x3face][5]=ke+1;
-
-    field_recv_se_[outer_x1][x1face][0]=ie+2;
-    field_recv_se_[outer_x1][x1face][1]=ie+NGHOST+1;
-    field_recv_se_[outer_x1][x1face][2]=js;
-    field_recv_se_[outer_x1][x1face][3]=je;
-    field_recv_se_[outer_x1][x1face][4]=ks;
-    field_recv_se_[outer_x1][x1face][5]=ke;
-
-    field_recv_se_[outer_x1][x2face][0]=ie+1;
-    field_recv_se_[outer_x1][x2face][1]=ie+NGHOST;
-    field_recv_se_[outer_x1][x2face][2]=js;
-    field_recv_se_[outer_x1][x2face][3]=je+1;
-    field_recv_se_[outer_x1][x2face][4]=ks;
-    field_recv_se_[outer_x1][x2face][5]=ke;
-
-    field_recv_se_[outer_x1][x3face][0]=ie+1;
-    field_recv_se_[outer_x1][x3face][1]=ie+NGHOST;
-    field_recv_se_[outer_x1][x3face][2]=js;
-    field_recv_se_[outer_x1][x3face][3]=je;
-    field_recv_se_[outer_x1][x3face][4]=ks;
-    field_recv_se_[outer_x1][x3face][5]=ke+1;
-
-    field_recv_se_[inner_x2][x1face][0]=0;
-    field_recv_se_[inner_x2][x1face][1]=ie+NGHOST+1;
-    field_recv_se_[inner_x2][x1face][2]=js-NGHOST;
-    field_recv_se_[inner_x2][x1face][3]=js-1;
-    field_recv_se_[inner_x2][x1face][4]=ks;
-    field_recv_se_[inner_x2][x1face][5]=ke;
-
-    field_recv_se_[inner_x2][x2face][0]=0;
-    field_recv_se_[inner_x2][x2face][1]=ie+NGHOST;
-    field_recv_se_[inner_x2][x2face][2]=js-NGHOST;
-    field_recv_se_[inner_x2][x2face][3]=js-1;
-    field_recv_se_[inner_x2][x2face][4]=ks;
-    field_recv_se_[inner_x2][x2face][5]=ke;
-
-    field_recv_se_[inner_x2][x3face][0]=0;
-    field_recv_se_[inner_x2][x3face][1]=ie+NGHOST;
-    field_recv_se_[inner_x2][x3face][2]=js-NGHOST;
-    field_recv_se_[inner_x2][x3face][3]=js-1;
-    field_recv_se_[inner_x2][x3face][4]=ks;
-    field_recv_se_[inner_x2][x3face][5]=ke+1;
-
-    field_recv_se_[outer_x2][x1face][0]=0;
-    field_recv_se_[outer_x2][x1face][1]=ie+NGHOST+1;
-    field_recv_se_[outer_x2][x1face][2]=je+1;
-    field_recv_se_[outer_x2][x1face][3]=je+NGHOST;
-    field_recv_se_[outer_x2][x1face][4]=ks;
-    field_recv_se_[outer_x2][x1face][5]=ke;
-
-    field_recv_se_[outer_x2][x2face][0]=0;
-    field_recv_se_[outer_x2][x2face][1]=ie+NGHOST;
-    field_recv_se_[outer_x2][x2face][2]=je+2;
-    field_recv_se_[outer_x2][x2face][3]=je+NGHOST+1;
-    field_recv_se_[outer_x2][x2face][4]=ks;
-    field_recv_se_[outer_x2][x2face][5]=ke;
-
-    field_recv_se_[outer_x2][x3face][0]=0;
-    field_recv_se_[outer_x2][x3face][1]=ie+NGHOST;
-    field_recv_se_[outer_x2][x3face][2]=je+1;
-    field_recv_se_[outer_x2][x3face][3]=je+NGHOST;
-    field_recv_se_[outer_x2][x3face][4]=ks;
-    field_recv_se_[outer_x2][x3face][5]=ke+1;
-
-    field_recv_se_[inner_x3][x1face][0]=0;
-    field_recv_se_[inner_x3][x1face][1]=ie+NGHOST+1;
-    field_recv_se_[inner_x3][x1face][2]=0;
-    field_recv_se_[inner_x3][x1face][3]=je+NGHOST;
-    field_recv_se_[inner_x3][x1face][4]=ks-NGHOST;
-    field_recv_se_[inner_x3][x1face][5]=ks-1;
-
-    field_recv_se_[inner_x3][x2face][0]=0;
-    field_recv_se_[inner_x3][x2face][1]=ie+NGHOST;
-    field_recv_se_[inner_x3][x2face][2]=0;
-    field_recv_se_[inner_x3][x2face][3]=je+NGHOST+1;
-    field_recv_se_[inner_x3][x2face][4]=ks-NGHOST;
-    field_recv_se_[inner_x3][x2face][5]=ks-1;
-
-    field_recv_se_[inner_x3][x3face][0]=0;
-    field_recv_se_[inner_x3][x3face][1]=ie+NGHOST;
-    field_recv_se_[inner_x3][x3face][2]=0;
-    field_recv_se_[inner_x3][x3face][3]=je+NGHOST;
-    field_recv_se_[inner_x3][x3face][4]=ks-NGHOST;
-    field_recv_se_[inner_x3][x3face][5]=ks-1;
-
-    field_recv_se_[outer_x3][x1face][0]=0;
-    field_recv_se_[outer_x3][x1face][1]=ie+NGHOST+1;
-    field_recv_se_[outer_x3][x1face][2]=0;
-    field_recv_se_[outer_x3][x1face][3]=je+NGHOST;
-    field_recv_se_[outer_x3][x1face][4]=ke+1;
-    field_recv_se_[outer_x3][x1face][5]=ke+NGHOST;
-
-    field_recv_se_[outer_x3][x2face][0]=0;
-    field_recv_se_[outer_x3][x2face][1]=ie+NGHOST;
-    field_recv_se_[outer_x3][x2face][2]=0;
-    field_recv_se_[outer_x3][x2face][3]=je+NGHOST+1;
-    field_recv_se_[outer_x3][x2face][4]=ke+1;
-    field_recv_se_[outer_x3][x2face][5]=ke+NGHOST;
-
-    field_recv_se_[outer_x3][x3face][0]=0;
-    field_recv_se_[outer_x3][x3face][1]=ie+NGHOST;
-    field_recv_se_[outer_x3][x3face][2]=0;
-    field_recv_se_[outer_x3][x3face][3]=je+NGHOST;
-    field_recv_se_[outer_x3][x3face][4]=ke+2;
-    field_recv_se_[outer_x3][x3face][5]=ke+NGHOST+1;
-
-    field_bufsize_[inner_x1]=field_bufsize_[outer_x1]
-                            =NGHOST*(nx2*nx3+(nx2+1)*nx3+nx2*(nx3+1));
-    field_bufsize_[inner_x2]=field_bufsize_[outer_x2]=NGHOST*((nx1+2*NGHOST)*nx3
-                            +(nx1+2*NGHOST+1)*nx3+(nx1+2*NGHOST)*(nx3+1));
-    field_bufsize_[inner_x3]=field_bufsize_[outer_x3]
-                  =NGHOST*((nx1+2*NGHOST+1)*(nx2+2*NGHOST)
-                  +(nx1+2*NGHOST)*(nx2+2*NGHOST+1)+(nx1+2*NGHOST)*(nx2+2*NGHOST));
+  int p=0;
+  for (int n=0; n<(NFLUID); ++n) {
+    for (int k=sk; k<=ek; ++k) {
+      for (int j=sj; j<=ej; ++j) {
+#pragma simd
+        for (int i=si; i<=ei; ++i) {
+          // buffer is always fully packed
+          dst(n,k,j,i) = buf[p++];
+        }
+      }
+    }
   }
   return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::SetFluidBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
+//  \brief Set fluid prolongation buffer received from a block on the same level
+void BoundaryValues::SetFluidBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
+{
+  MeshBlock *pmb=pmy_mblock_;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::SetFluidBoundaryFromFiner(AthenaArray<Real> &dst,
+//                                                     Real *buf, NeighborBlock& nb)
+//  \brief Set fluid boundary received from a block on the same level
+void BoundaryValues::SetFluidBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf,
+                                               NeighborBlock& nb)
+{
+  MeshBlock *pmb=pmy_mblock_;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn bool BoundaryValues::ReceiveFluidBoundaryBuffers(AthenaArray<Real> &dst, int step)
+//  \brief receive the boundary data
+bool BoundaryValues::ReceiveFluidBoundaryBuffers(AthenaArray<Real> &dst, int step)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  int mylevel=pmb->uid.GetLevel();
+  int nc=0;
+
+  for(int n=0; n<pmb->nneighbor; n++) {
+    NeighborBlock& nb= pmb->neighbor[n];
+    if(fluid_flag_[step][nb.bufid]==boundary_completed) { nc++; continue;}
+    if(fluid_flag_[step][nb.bufid]==boundary_waiting) {
+      if(nb.rank==myrank) // on the same process
+        continue;
+#ifdef MPI_PARALLEL
+      else { // MPI boundary
+        int test;
+        MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
+        MPI_Test(&req_fluid_recv_[step][nb.bufid],&test,MPI_STATUS_IGNORE);
+        if(test==false) continue;
+        fluid_flag_[step][nb.bufid] = boundary_arrived;
+      }
+#endif
+    }
+    if(nb.level==mylevel)
+      SetFluidBoundarySameLevel(dst, fluid_recv_[step][nb.bufid], nb);
+    else if(nb.level<mylevel)
+      SetFluidBoundaryFromCoarser(fluid_recv_[step][nb.bufid], nb);
+    else
+      SetFluidBoundaryFromFiner(dst, fluid_recv_[step][nb.bufid], nb);
+
+    fluid_flag_[step][nb.bufid] = boundary_completed; // completed
+    nc++;
+  }
+
+  if(nc<pmb->nneighbor)
+    return false;
+  return true;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::ReceiveFluidBoundaryBuffersWithWait(AthenaArray<Real> &dst,
+//                                                               int step)
+//  \brief receive the boundary data for initialization
+void BoundaryValues::ReceiveFluidBoundaryBuffersWithWait(AthenaArray<Real> &dst, int step)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  int mylevel=pmb->uid.GetLevel();
+
+  for(int n=0; n<pmb->nneighbor; n++) {
+    NeighborBlock& nb= pmb->neighbor[n];
+#ifdef MPI_PARALLEL
+    if(nb.rank!=myrank)
+      MPI_Wait(&req_fluid_recv_[0][nb.bufid],MPI_STATUS_IGNORE);
+#endif
+    if(nb.level==mylevel)
+      SetFluidBoundarySameLevel(dst, fluid_recv_[0][nb.bufid], nb);
+    else if(nb.level<mylevel)
+      SetFluidBoundaryFromCoarser(fluid_recv_[0][nb.bufid], nb);
+    else
+      SetFluidBoundaryFromFiner(dst, fluid_recv_[0][nb.bufid], nb);
+    fluid_flag_[0][nb.bufid] = boundary_completed; // completed
+  }
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn int BoundaryValues::LoadFieldBoundaryBufferSameLevel(InterfaceField &src,
+//                                                 Real *buf, NeighborBlock& nb)
+//  \brief Set field boundary buffers for sending to a block on the same level
+int BoundaryValues::LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *buf,
+                                                     NeighborBlock& nb)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  int si, sj, sk, ei, ej, ek;
+
+  int p=0;
+  // bx1
+  if(pmb->pmy_mesh->multilevel==false) {
+    if(nb.ox1==0)     si=pmb->is,          ei=pmb->ie+1;
+    else if(nb.ox1>0) si=pmb->ie-NGHOST+1, ei=pmb->ie;
+    else              si=pmb->is+1,        ei=pmb->is+NGHOST;
+    if(nb.ox2==0)     sj=pmb->js,          ej=pmb->je;
+    else if(nb.ox2>0) sj=pmb->je-NGHOST+1, ej=pmb->je;
+    else              sj=pmb->js,          ej=pmb->js+NGHOST-1;
+    if(nb.ox3==0)     sk=pmb->ks,          ek=pmb->ke;
+    else if(nb.ox3>0) sk=pmb->ke-NGHOST+1, ek=pmb->ke;
+    else              sk=pmb->ks,          ek=pmb->ks+NGHOST-1;
+  }
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
+#pragma simd
+      for (int i=si; i<=ei; ++i) {
+        // buffer is always fully packed
+        buf[p++]=src.x1f(k,j,i);
+      }
+    }
+  }
+  // bx2
+  if(pmb->pmy_mesh->multilevel==false) {
+    if(nb.ox1==0)     si=pmb->is,          ei=pmb->ie;
+    else if(nb.ox1>0) si=pmb->ie-NGHOST+1, ei=pmb->ie;
+    else              si=pmb->is,          ei=pmb->is+NGHOST-1;
+    if(nb.ox2==0)     sj=pmb->js,          ej=pmb->je+1;
+    else if(nb.ox2>0) sj=pmb->je-NGHOST+1, ej=pmb->je;
+    else              sj=pmb->js+1,        ej=pmb->js+NGHOST;
+  }
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
+#pragma simd
+      for (int i=si; i<=ei; ++i) {
+        // buffer is always fully packed
+        buf[p++]=src.x2f(k,j,i);
+      }
+    }
+  }
+  // bx3
+  if(pmb->pmy_mesh->multilevel==false) {
+    if(nb.ox2==0)     sj=pmb->js,          ej=pmb->je;
+    else if(nb.ox2>0) sj=pmb->je-NGHOST+1, ej=pmb->je;
+    else              sj=pmb->js,          ej=pmb->js+NGHOST-1;
+    if(nb.ox3==0)     sk=pmb->ks,          ek=pmb->ke+1;
+    else if(nb.ox3>0) sk=pmb->ke-NGHOST+1, ek=pmb->ke;
+    else              sk=pmb->ks+1,        ek=pmb->ks+NGHOST;
+  }
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
+#pragma simd
+      for (int i=si; i<=ei; ++i) {
+        // buffer is always fully packed
+        buf[p++]=src.x3f(k,j,i);
+      }
+    }
+  }
+
+  return p;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn int BoundaryValues::LoadFieldBoundaryBufferToCoarser(InterfaceField &src,
+//                                                 Real *buf, NeighborBlock& nb)
+//  \brief Set field boundary buffers for sending to a block on the coarser level
+int BoundaryValues::LoadFieldBoundaryBufferToCoarser(InterfaceField &src, Real *buf,
+                                                     NeighborBlock& nb)
+{
+  return 0;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn int BoundaryValues::LoadFieldBoundaryBufferToFiner(InterfaceField &src, 
+//                                                 Real *buf, NeighborBlock& nb)
+//  \brief Set field boundary buffers for sending to a block on the finer level
+int BoundaryValues::LoadFieldBoundaryBufferToFiner(InterfaceField &src, Real *buf,
+                                                   NeighborBlock& nb)
+{
+  return 0;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::SendFieldBoundaryBuffers(InterfaceField &src, int step)
+//  \brief Send field boundary buffers
+void BoundaryValues::SendFieldBoundaryBuffers(InterfaceField &src, int step)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  int mylevel=pmb->uid.GetLevel();
+
+  for(int n=0; n<pmb->nneighbor; n++) {
+    NeighborBlock& nb=pmb->neighbor[n];
+    int ssize;
+    if(nb.level==mylevel)
+      ssize=LoadFieldBoundaryBufferSameLevel(src, field_send_[step][nb.bufid],nb);
+    else if(nb.level<mylevel)
+      ssize=LoadFieldBoundaryBufferToCoarser(src, field_send_[step][nb.bufid],nb);
+    else
+      ssize=LoadFieldBoundaryBufferToFiner(src, field_send_[step][nb.bufid], nb);
+    if(nb.rank == myrank) { // on the same process
+      MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
+      // find target buffer
+      int target = target_bufid_[nb.bufid];
+      std::memcpy(pbl->pbval->field_recv_[step][target],
+                  field_send_[step][nb.bufid], ssize*sizeof(Real));
+      pbl->pbval->field_flag_[step][target]=boundary_arrived;
+    }
+#ifdef MPI_PARALLEL
+    else // MPI
+      MPI_Start(&req_field_send_[step][nb.bufid]);
+#endif
+  }
+
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst,
+//                                                     Real *buf, NeighborBlock& nb)
+//  \brief Set field boundary received from a block on the same level
+void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf,
+                                               NeighborBlock& nb)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  int si, sj, sk, ei, ej, ek;
+
+  int p=0;
+  // bx1
+  if(pmb->pmy_mesh->multilevel==false) {
+    if(nb.ox1==0)     si=pmb->is,        ei=pmb->ie+1;
+    else if(nb.ox1>0) si=pmb->ie+2,      ei=pmb->ie+NGHOST+1;
+    else              si=pmb->is-NGHOST, ei=pmb->is-1;
+    if(nb.ox2==0)     sj=pmb->js,        ej=pmb->je;
+    else if(nb.ox2>0) sj=pmb->je+1,      ej=pmb->je+NGHOST;
+    else              sj=pmb->js-NGHOST, ej=pmb->js-1;
+    if(nb.ox3==0)     sk=pmb->ks,        ek=pmb->ke;
+    else if(nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
+    else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
+  }
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
+#pragma simd
+      for (int i=si; i<=ei; ++i) {
+        // buffer is always fully packed
+        dst.x1f(k,j,i)=buf[p++];
+      }
+    }
+  }
+  // bx2
+  if(pmb->pmy_mesh->multilevel==false) {
+    if(nb.ox1==0)     si=pmb->is,        ei=pmb->ie;
+    else if(nb.ox1>0) si=pmb->ie+1,      ei=pmb->ie+NGHOST;
+    else              si=pmb->is-NGHOST, ei=pmb->is-1;
+    if(nb.ox2==0)     sj=pmb->js,        ej=pmb->je+1;
+    else if(nb.ox2>0) sj=pmb->je+2,      ej=pmb->je+NGHOST+1;
+    else              sj=pmb->js-NGHOST, ej=pmb->js-1;
+  }
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
+#pragma simd
+      for (int i=si; i<=ei; ++i) {
+        // buffer is always fully packed
+        dst.x2f(k,j,i)=buf[p++];
+      }
+    }
+  }
+  // bx3
+  if(pmb->pmy_mesh->multilevel==false) {
+    if(nb.ox2==0)     sj=pmb->js,        ej=pmb->je;
+    else if(nb.ox2>0) sj=pmb->je+1,      ej=pmb->je+NGHOST;
+    else              sj=pmb->js-NGHOST, ej=pmb->js-1;
+    if(nb.ox3==0)     sk=pmb->ks,        ek=pmb->ke+1;
+    else if(nb.ox3>0) sk=pmb->ke+2,      ek=pmb->ke+NGHOST+1;
+    else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
+  }
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
+#pragma simd
+      for (int i=si; i<=ei; ++i) {
+        // buffer is always fully packed
+        dst.x3f(k,j,i)=buf[p++];
+      }
+    }
+  }
+
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
+//  \brief Set field prolongation buffer received from a block on the same level
+void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
+{
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::SetFielBoundaryFromFiner(InterfaceField &dst,
+//                                                     Real *buf, NeighborBlock& nb)
+//  \brief Set field boundary received from a block on the same level
+void BoundaryValues::SetFieldBoundaryFromFiner(InterfaceField &dst, Real *buf,
+                                               NeighborBlock& nb)
+{
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn bool BoundaryValues::ReceiveFieldBoundaryBuffers(InterfaceField &dst, int step)
+//  \brief load boundary buffer for x1 direction into the array
+bool BoundaryValues::ReceiveFieldBoundaryBuffers(InterfaceField &dst, int step)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  int mylevel=pmb->uid.GetLevel();
+  int nc=0;
+
+  for(int n=0; n<pmb->nneighbor; n++) {
+    NeighborBlock& nb= pmb->neighbor[n];
+    if(field_flag_[step][nb.bufid]==boundary_completed) { nc++; continue;}
+    if(field_flag_[step][nb.bufid]==boundary_waiting) {
+      if(nb.rank==myrank) // on the same process
+        continue;
+#ifdef MPI_PARALLEL
+      else { // MPI boundary
+        int test;
+        MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
+        MPI_Test(&req_field_recv_[step][nb.bufid],&test,MPI_STATUS_IGNORE);
+        if(test==false) continue;
+        field_flag_[step][nb.bufid] = boundary_arrived;
+      }
+#endif
+    }
+    if(nb.level==mylevel)
+      SetFieldBoundarySameLevel(dst, field_recv_[step][nb.bufid], nb);
+    else if(nb.level<mylevel)
+      SetFieldBoundaryFromCoarser(field_recv_[step][nb.bufid], nb);
+    else
+      SetFieldBoundaryFromFiner(dst, field_recv_[step][nb.bufid], nb);
+
+    field_flag_[step][nb.bufid] = boundary_completed; // completed
+    nc++;
+  }
+
+  if(nc<pmb->nneighbor)
+    return false;
+  return true;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(InterfaceField &dst,
+//                                                               int step)
+//  \brief load boundary buffer for x1 direction into the array
+void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(InterfaceField &dst, int step)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  int mylevel=pmb->uid.GetLevel();
+
+  for(int n=0; n<pmb->nneighbor; n++) {
+    NeighborBlock& nb= pmb->neighbor[n];
+#ifdef MPI_PARALLEL
+    if(nb.rank!=myrank)
+      MPI_Wait(&req_field_recv_[0][nb.bufid],MPI_STATUS_IGNORE);
+#endif
+    if(nb.level==mylevel)
+      SetFieldBoundarySameLevel(dst, field_recv_[0][nb.bufid], nb);
+    else if(nb.level<mylevel)
+      SetFieldBoundaryFromCoarser(field_recv_[0][nb.bufid], nb);
+    else
+      SetFieldBoundaryFromFiner(dst, field_recv_[0][nb.bufid], nb);
+    field_flag_[0][nb.bufid] = boundary_completed; // completed
+  }
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::ClearBoundaryForInit(void)
+//  \brief clean up the boundary flags for initialization
+void BoundaryValues::ClearBoundaryForInit(void)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  for(int n=0;n<pmb->nneighbor;n++) {
+    NeighborBlock& nb=pmb->neighbor[n];
+    fluid_flag_[0][nb.bufid] = boundary_waiting;
+    if (MAGNETIC_FIELDS_ENABLED)
+      field_flag_[0][nb.bufid] = boundary_waiting;
+#ifdef MPI_PARALLEL
+    if(nb.rank!=myrank) {
+      MPI_Wait(&req_fluid_send_[0][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
+      if (MAGNETIC_FIELDS_ENABLED)
+        MPI_Wait(&req_field_send_[0][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
+    }
+#endif
+  }
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::ClearBoundaryAll(void)
+//  \brief clean up the boundary flags after each loop
+void BoundaryValues::ClearBoundaryAll(void)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  for(int l=0;l<NSTEP;l++) {
+    for(int n=0;n<pmb->nneighbor;n++) {
+      NeighborBlock& nb=pmb->neighbor[n];
+      fluid_flag_[l][nb.bufid] = boundary_waiting;
+      if (MAGNETIC_FIELDS_ENABLED)
+        field_flag_[l][nb.bufid] = boundary_waiting;
+#ifdef MPI_PARALLEL
+      if(nb.rank!=myrank) {
+        MPI_Wait(&req_fluid_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
+        if (MAGNETIC_FIELDS_ENABLED)
+          MPI_Wait(&req_field_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
+      }
+#endif
+    }
+  }
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::FluidPhysicalBoundaries(AthenaArray<Real> &dst)
+//  \brief Apply physical boundary conditions for fluid
+void BoundaryValues::FluidPhysicalBoundaries(AthenaArray<Real> &dst)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  int bis=pmb->is, bie=pmb->ie, bjs=pmb->js, bje=pmb->je, bks=pmb->ks, bke=pmb->ke;
+
+  if(pmb->pmy_mesh->face_only==false) {
+    if(FluidBoundary_[inner_x1]==NULL) bis=pmb->is-NGHOST;
+    if(FluidBoundary_[outer_x1]==NULL) bie=pmb->ie+NGHOST;
+    if(FluidBoundary_[inner_x2]==NULL && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
+    if(FluidBoundary_[outer_x2]==NULL && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
+    if(FluidBoundary_[inner_x3]==NULL && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
+    if(FluidBoundary_[outer_x3]==NULL && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
+  }
+
+  if(FluidBoundary_[inner_x1]!=NULL)
+    FluidBoundary_[inner_x1](pmb, dst, pmb->is, pmb->ie, bjs, bje, bks, bke);
+  if(FluidBoundary_[outer_x1]!=NULL)
+    FluidBoundary_[outer_x1](pmb, dst, pmb->is, pmb->ie, bjs, bje, bks, bke);
+  if(pmb->block_size.nx2>1) { // 2D or 3D
+    if(FluidBoundary_[inner_x2]!=NULL)
+      FluidBoundary_[inner_x2](pmb, dst, bis, bie, pmb->js, pmb->je, bks, bke);
+    if(FluidBoundary_[outer_x2]!=NULL)
+      FluidBoundary_[outer_x2](pmb, dst, bis, bie, pmb->js, pmb->je, bks, bke);
+  }
+  if(pmb->block_size.nx3>1) { // 3D
+    bjs=pmb->js-NGHOST;
+    bje=pmb->je+NGHOST;
+    if(FluidBoundary_[inner_x3]!=NULL)
+      FluidBoundary_[inner_x3](pmb, dst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
+    if(FluidBoundary_[outer_x3]!=NULL)
+      FluidBoundary_[outer_x3](pmb, dst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
+  }
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::FieldPhysicalBoundaries(AthenaArray<Real> &dst)
+//  \brief Apply physical boundary conditions for field
+void BoundaryValues::FieldPhysicalBoundaries(InterfaceField &dst)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  int bis=pmb->is-NGHOST, bie=pmb->ie+NGHOST;
+  int bjs=pmb->js, bje=pmb->je, bks=pmb->ks, bke=pmb->ke;
+
+  if(FieldBoundary_[inner_x2]==NULL && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
+  if(FieldBoundary_[outer_x2]==NULL && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
+  if(FieldBoundary_[inner_x3]==NULL && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
+  if(FieldBoundary_[outer_x3]==NULL && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
+
+  if(FieldBoundary_[inner_x1]!=NULL)
+    FieldBoundary_[inner_x1](pmb, dst, pmb->is, pmb->ie, bjs, bje, bks, bke);
+  if(FieldBoundary_[outer_x1]!=NULL)
+    FieldBoundary_[outer_x1](pmb, dst, pmb->is, pmb->ie, bjs, bje, bks, bke);
+  if(pmb->block_size.nx2>1) { // 2D or 3D
+    if(FieldBoundary_[inner_x2]!=NULL)
+      FieldBoundary_[inner_x2](pmb, dst, bis, bie, pmb->js, pmb->je, bks, bke);
+    if(FieldBoundary_[outer_x2]!=NULL)
+      FieldBoundary_[outer_x2](pmb, dst, bis, bie, pmb->js, pmb->je, bks, bke);
+  }
+  if(pmb->block_size.nx3>1) { // 3D
+    bjs=pmb->js-NGHOST;
+    bje=pmb->je+NGHOST;
+    if(FieldBoundary_[inner_x3]!=NULL)
+      FieldBoundary_[inner_x3](pmb, dst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
+    if(FieldBoundary_[outer_x3]!=NULL)
+      FieldBoundary_[outer_x3](pmb, dst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
+  }
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2)
+//  \brief calculate a buffer identifier
+unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2)
+{
+  unsigned int ux1=(unsigned)(ox1+1);
+  unsigned int ux2=(unsigned)(ox2+1);
+  unsigned int ux3=(unsigned)(ox3+1);
+  return (ux1<<6) | (ux2<<4) | (ux3<<2) | (fi1<<1) | fi2;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn unsigned int CreateMPITag(int lid, int flag, int phys, int ox1, int ox2, int ox3,
+//                       int fi1, int fi2)
+//  \brief calculate an MPI tag
+unsigned int CreateMPITag(int lid, int flag, int phys, int ox1, int ox2, int ox3,
+                          int fi1=0, int fi2=0)
+{
+  int dir=CreateBufferID(ox1, ox2, ox3, fi1, fi2);
+// tag = local id of destination (17) + flag (2) + physics (4) + dir (6+2)
+  return (lid<<14) | (flag<<12) | (phys<<8) | dir;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn int BufferID(int dim, bool multilevel, bool face_only)
+//  \brief calculate neighbor indexes and target buffer IDs
+int BufferID(int dim, bool multilevel, bool face_only)
+{
+  int bufid[56];
+  int nf1=1, nf2=1;
+  if(multilevel==true) {
+    if(dim>=2) nf1=2;
+    if(dim>=3) nf2=2;
+  }
+  int b=0;
+  // x1 face
+  for(int n=-1; n<=1; n+=2) {
+    for(int f2=0;f2<nf2;f2++) {
+      for(int f1=0;f1<nf1;f1++) {
+        ni_[b].ox1=n; ni_[b].ox2=0; ni_[b].ox3=0;
+        ni_[b].fi1=f1; ni_[b].fi2=f2;
+        b++;
+      }
+    }
+  }
+  // x2 face
+  if(dim>=2) {
+    for(int n=-1; n<=1; n+=2) {
+      for(int f2=0;f2<nf2;f2++) {
+        for(int f1=0;f1<nf1;f1++) {
+          ni_[b].ox1=0; ni_[b].ox2=n; ni_[b].ox3=0;
+          ni_[b].fi1=f1; ni_[b].fi2=f2;
+          b++;
+        }
+      }
+    }
+  }
+  if(dim==3) {
+    // x3 face
+    for(int n=-1; n<=1; n+=2) {
+      for(int f2=0;f2<nf2;f2++) {
+        for(int f1=0;f1<nf1;f1++) {
+          ni_[b].ox1=0; ni_[b].ox2=0; ni_[b].ox3=n;
+          ni_[b].fi1=f1; ni_[b].fi2=f2;
+          b++;
+        }
+      }
+    }
+  }
+  // edges
+  // x1x2
+  if(dim>=2) {
+    for(int m=-1; m<=1; m+=2) {
+      for(int n=-1; n<=1; n+=2) {
+        for(int f1=0;f1<nf1;f1++) {
+          ni_[b].ox1=n; ni_[b].ox2=m; ni_[b].ox3=0;
+          ni_[b].fi1=f1; ni_[b].fi2=0;
+          b++;
+        }
+      }
+    }
+  }
+  if(dim==3) {
+    // x1x3
+    for(int m=-1; m<=1; m+=2) {
+      for(int n=-1; n<=1; n+=2) {
+        for(int f1=0;f1<nf1;f1++) {
+          ni_[b].ox1=n; ni_[b].ox2=0; ni_[b].ox3=m;
+          ni_[b].fi1=f1; ni_[b].fi2=0;
+          b++;
+        }
+      }
+    }
+    // x2x3
+    for(int m=-1; m<=1; m+=2) {
+      for(int n=-1; n<=1; n+=2) {
+        for(int f1=0;f1<nf1;f1++) {
+          ni_[b].ox1=0; ni_[b].ox2=n; ni_[b].ox3=m;
+          ni_[b].fi1=f1; ni_[b].fi2=0;
+          b++;
+        }
+      }
+    }
+    // corners
+    for(int l=-1; l<=1; l+=2) {
+      for(int m=-1; m<=1; m+=2) {
+        for(int n=-1; n<=1; n+=2) {
+          ni_[b].ox1=n; ni_[b].ox2=m; ni_[b].ox3=l;
+          ni_[b].fi1=0; ni_[b].fi2=0;
+          b++;
+        }
+      }
+    }
+  }
+
+  for(int n=0;n<b;n++)
+    bufid[n]=CreateBufferID(ni_[n].ox1, ni_[n].ox2, ni_[n].ox3, ni_[n].fi1, ni_[n].fi2);
+
+  // search buffer IDs
+  int t=0;
+  for(int n=0;n<b;n++) {
+    int tid=CreateBufferID(-ni_[n].ox1, -ni_[n].ox2, -ni_[n].ox3, ni_[n].fi1, ni_[n].fi2);
+    for(int i=0;i<b;i++) {
+      if(tid==bufid[i]) {
+        target_bufid_[n]=i;
+        break;
+      }
+    }
+  }
+  return b;
 }
 
