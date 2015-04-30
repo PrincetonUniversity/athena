@@ -1608,6 +1608,55 @@ void Coordinates::PrimToCons(
   return;
 }
 
+// Function for transforming 4-vector from Boyer-Lindquist to Schwarzschild
+// Inputs:
+//   a0_BL,a1_BL,a2_BL,a3_BL: upper 4-vector components in Boyer-Lindquist coordinates
+//   k,j,i: indices of cell in which transformation is desired
+// Outputs:
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Schwarzschild coordinates
+// Notes:
+//   Schwarzschild coordinates match Boyer-Lindquist when a = 0
+void Coordinates::TransformVectorCell(
+    Real a0_BL, Real a1_BL, Real a2_BL, Real a3_BL, int k, int j, int i,
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+{
+  *pa0 = a0_BL;
+  *pa1 = a1_BL;
+  *pa2 = a2_BL;
+  *pa3 = a3_BL;
+  return;
+}
+
+// Function for lowering contravariant components of a vector
+// Inputs:
+//   a0,a1,a2,a3: contravariant components of vector
+//   k,j,i: indices of cell in which transformation is desired
+// Outputs:
+//   pa_0,pa_1,pa_2,pa_3: pointers to covariant 4-vector components
+void Coordinates::LowerVectorCell(
+    Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
+    Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3)
+{
+  // Extract geometric quantities
+  const Real &sin_sq_theta = metric_cell_j1_(j);
+  const Real &alpha_sq = metric_cell_i1_(i);
+  const Real &r = pmy_block->x1v(i);
+  Real r_sq = SQR(r);
+
+  // Calculate metric terms
+  Real g_00 = -alpha_sq;
+  Real g_11 = 1.0/alpha_sq;
+  Real g_22 = r_sq;
+  Real g_33 = r_sq * sin_sq_theta;
+
+  // Transform vector
+  *pa_0 = g_00 * a0;
+  *pa_1 = g_11 * a1;
+  *pa_2 = g_22 * a2;
+  *pa_3 = g_33 * a3;
+  return;
+}
+
 // Function for returning Boyer-Lindquist coordinates of given cell
 // Inputs:
 //   k,j,i: indices of cell for which coordinates are desired
@@ -1617,7 +1666,7 @@ void Coordinates::PrimToCons(
 //   pphi: pointer to stored value of phi
 // Notes:
 //   Schwarzschild (r,theta,phi) match Boyer-Lindquist (r,theta,phi) when a = 0
-void Coordinates::GetBoyerLindquist(int k, int j, int i,
+void Coordinates::GetBoyerLindquistCoordinates(int k, int j, int i,
     Real *pr, Real *ptheta, Real *pphi)
 {
   *pr = pmy_block->x1v(i);

@@ -1395,7 +1395,8 @@ Real Coordinates::DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real
 //   i: x-index
 // Outputs:
 //   a0,a1,a2,a3: upper 4-vector components in global coordinates
-void Coordinates::TransformVectorCell(Real at, Real ax, Real ay, Real az, int k, int j, int i,
+void Coordinates::TransformVectorCell(
+    Real at, Real ax, Real ay, Real az, int k, int j, int i,
     Real *a0, Real *a1, Real *a2, Real *a3)
 {
   // Extract metric components
@@ -1431,7 +1432,8 @@ void Coordinates::TransformVectorCell(Real at, Real ax, Real ay, Real az, int k,
 //   i: x-index
 // Outputs:
 //   a0,a1,a2,a3: upper 4-vector components in global coordinates
-void Coordinates::TransformVectorFace1(Real at, Real ax, Real ay, Real az, int k, int j, int i,
+void Coordinates::TransformVectorFace1(
+    Real at, Real ax, Real ay, Real az, int k, int j, int i,
     Real *a0, Real *a1, Real *a2, Real *a3)
 {
   // Extract metric components
@@ -1467,7 +1469,8 @@ void Coordinates::TransformVectorFace1(Real at, Real ax, Real ay, Real az, int k
 //   i: x-index
 // Outputs:
 //   a0,a1,a2,a3: upper 4-vector components in global coordinates
-void Coordinates::TransformVectorFace2(Real at, Real ax, Real ay, Real az, int k, int j, int i,
+void Coordinates::TransformVectorFace2(
+    Real at, Real ax, Real ay, Real az, int k, int j, int i,
     Real *a0, Real *a1, Real *a2, Real *a3)
 {
   // Extract metric components
@@ -1503,7 +1506,8 @@ void Coordinates::TransformVectorFace2(Real at, Real ax, Real ay, Real az, int k
 //   i: x-index
 // Outputs:
 //   a0,a1,a2,a3: upper 4-vector components in global coordinates
-void Coordinates::TransformVectorFace3(Real at, Real ax, Real ay, Real az, int k, int j, int i,
+void Coordinates::TransformVectorFace3(
+    Real at, Real ax, Real ay, Real az, int k, int j, int i,
     Real *a0, Real *a1, Real *a2, Real *a3)
 {
   // Extract metric components

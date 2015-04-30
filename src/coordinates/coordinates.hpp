@@ -108,7 +108,10 @@ public:
         Real *a0, Real *a1, Real *a2, Real *a3);
     void TransformVectorFace3(Real at, Real ax, Real ay, Real az, int k, int j, int i,
         Real *a0, Real *a1, Real *a2, Real *a3);
-    void GetBoyerLindquist(int k, int j, int i, Real *pr, Real *ptheta, Real *pphi);
+    void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
+        Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3);
+    void GetBoyerLindquistCoordinates(int k, int j, int i,
+        Real *pr, Real *ptheta, Real *pphi);
   #else  // define no-op functions otherwise not defined in non-GR case
     void CellMetric(const int, const int, const int, const int, AthenaArray<Real> &,
         AthenaArray<Real> &) {return;}

@@ -4,8 +4,8 @@
 #include "../mesh.hpp"
 
 // C++ headers
-#include <iostream>   // endl
 #include <cmath>      // sqrt()
+#include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()

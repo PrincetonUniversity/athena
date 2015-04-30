@@ -29,8 +29,10 @@ static Real TemperatureBisect(Real t_min, Real t_max, Real m, Real n_adi, Real r
     Real c1, Real c2);
 
 // Global variables
-static Real d_inner, e_inner, m1_inner, m2_inner, m3_inner;
-static Real d_outer, e_outer, m1_outer, m2_outer, m3_outer;
+static Real d_inner_1, e_inner_1, m1_inner_1, m2_inner_1, m3_inner_1;
+static Real d_inner_2, e_inner_2, m1_inner_2, m2_inner_2, m3_inner_2;
+static Real d_outer_1, e_outer_1, m1_outer_1, m2_outer_1, m3_outer_1;
+static Real d_outer_2, e_outer_2, m1_outer_2, m2_outer_2, m3_outer_2;
 
 // Function for setting initial conditions
 // Inputs:
@@ -184,18 +186,28 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   b.DeleteAthenaArray();
 
   // Save inner boundary state
-  d_inner = pfl->u(IDN,pb->ks,pb->js,pb->is);
-  e_inner = pfl->u(IEN,pb->ks,pb->js,pb->is);
-  m1_inner = pfl->u(IM1,pb->ks,pb->js,pb->is);
-  m2_inner = pfl->u(IM2,pb->ks,pb->js,pb->is);
-  m3_inner = pfl->u(IM3,pb->ks,pb->js,pb->is);
+  d_inner_1 = pfl->u(IDN,pb->ks,pb->js,pb->is-1);
+  e_inner_1 = pfl->u(IEN,pb->ks,pb->js,pb->is-1);
+  m1_inner_1 = pfl->u(IM1,pb->ks,pb->js,pb->is-1);
+  m2_inner_1 = pfl->u(IM2,pb->ks,pb->js,pb->is-1);
+  m3_inner_1 = pfl->u(IM3,pb->ks,pb->js,pb->is-1);
+  d_inner_2 = pfl->u(IDN,pb->ks,pb->js,pb->is-2);
+  e_inner_2 = pfl->u(IEN,pb->ks,pb->js,pb->is-2);
+  m1_inner_2 = pfl->u(IM1,pb->ks,pb->js,pb->is-2);
+  m2_inner_2 = pfl->u(IM2,pb->ks,pb->js,pb->is-2);
+  m3_inner_2 = pfl->u(IM3,pb->ks,pb->js,pb->is-2);
 
   // Save outer boundary state
-  d_outer = pfl->u(IDN,pb->ks,pb->js,pb->ie);
-  e_outer = pfl->u(IEN,pb->ks,pb->js,pb->ie);
-  m1_outer = pfl->u(IM1,pb->ks,pb->js,pb->ie);
-  m2_outer = pfl->u(IM2,pb->ks,pb->js,pb->ie);
-  m3_outer = pfl->u(IM3,pb->ks,pb->js,pb->ie);
+  d_outer_1 = pfl->u(IDN,pb->ks,pb->js,pb->ie+1);
+  e_outer_1 = pfl->u(IEN,pb->ks,pb->js,pb->ie+1);
+  m1_outer_1 = pfl->u(IM1,pb->ks,pb->js,pb->ie+1);
+  m2_outer_1 = pfl->u(IM2,pb->ks,pb->js,pb->ie+1);
+  m3_outer_1 = pfl->u(IM3,pb->ks,pb->js,pb->ie+1);
+  d_outer_2 = pfl->u(IDN,pb->ks,pb->js,pb->ie+2);
+  e_outer_2 = pfl->u(IEN,pb->ks,pb->js,pb->ie+2);
+  m1_outer_2 = pfl->u(IM1,pb->ks,pb->js,pb->ie+2);
+  m2_outer_2 = pfl->u(IM2,pb->ks,pb->js,pb->ie+2);
+  m3_outer_2 = pfl->u(IM3,pb->ks,pb->js,pb->ie+2);
 
   // Enroll boundary functions
   pb->pbval->EnrollFluidBoundaryFunction(inner_x1, FixedInner);
@@ -216,14 +228,18 @@ void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons)
   // Set conserved values
   for (int k = ks; k <= ke; k++)
     for (int j = js; j <= je; j++)
-      for (int i = is-NGHOST; i <= is; i++)
-      {
-        cons(IDN,k,j,i) = d_inner;
-        cons(IEN,k,j,i) = e_inner;
-        cons(IM1,k,j,i) = m1_inner;
-        cons(IM2,k,j,i) = m2_inner;
-        cons(IM3,k,j,i) = m3_inner;
-      }
+    {
+      cons(IDN,k,j,is-1) = d_inner_1;
+      cons(IEN,k,j,is-1) = e_inner_1;
+      cons(IM1,k,j,is-1) = m1_inner_1;
+      cons(IM2,k,j,is-1) = m2_inner_1;
+      cons(IM3,k,j,is-1) = m3_inner_1;
+      cons(IDN,k,j,is-2) = d_inner_2;
+      cons(IEN,k,j,is-2) = e_inner_2;
+      cons(IM1,k,j,is-2) = m1_inner_2;
+      cons(IM2,k,j,is-2) = m2_inner_2;
+      cons(IM3,k,j,is-2) = m3_inner_2;
+    }
   return;
 }
 
@@ -240,14 +256,18 @@ void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons)
   // Set conserved values
   for (int k = ks; k <= ke; k++)
     for (int j = js; j <= je; j++)
-      for (int i = ie; i <= ie+NGHOST; i++)
-      {
-        cons(IDN,k,j,i) = d_outer;
-        cons(IEN,k,j,i) = e_outer;
-        cons(IM1,k,j,i) = m1_outer;
-        cons(IM2,k,j,i) = m2_outer;
-        cons(IM3,k,j,i) = m3_outer;
-      }
+    {
+      cons(IDN,k,j,ie+1) = d_outer_1;
+      cons(IEN,k,j,ie+1) = e_outer_1;
+      cons(IM1,k,j,ie+1) = m1_outer_1;
+      cons(IM2,k,j,ie+1) = m2_outer_1;
+      cons(IM3,k,j,ie+1) = m3_outer_1;
+      cons(IDN,k,j,ie+2) = d_outer_2;
+      cons(IEN,k,j,ie+2) = e_outer_2;
+      cons(IM1,k,j,ie+2) = m1_outer_2;
+      cons(IM2,k,j,ie+2) = m2_outer_2;
+      cons(IM3,k,j,ie+2) = m3_outer_2;
+    }
   return;
 }
 
