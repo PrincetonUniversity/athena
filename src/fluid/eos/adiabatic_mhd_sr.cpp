@@ -95,7 +95,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   for (int k = kl; k <= ku; k++)
     for (int j = jl; j <= ju; j++)
     {
-      #pragma simd
+//#pragma simd
       for (int i = is-NGHOST; i <= ie+NGHOST; i++)
       {
         // Extract conserved quantities

@@ -98,7 +98,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     for (int j = jl; j <= ju; j++)
     {
       pb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
-      #pragma simd
+//#pragma simd
       for (int i = il; i <= iu; i++)
       {
         // Extract metric

@@ -81,7 +81,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   for (int k=kl; k<=ku; ++k){
 #pragma omp for schedule(dynamic)
   for (int j=jl; j<=ju; ++j){
-#pragma simd
+//#pragma simd
     for (int i=pmb->is-(NGHOST); i<=pmb->ie+(NGHOST); ++i){
       Real& u_d  = cons(IDN,k,j,i);
       Real& u_m1 = cons(IVX,k,j,i);

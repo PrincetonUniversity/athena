@@ -145,6 +145,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     // Enroll special BCs
     pmb->pbval->EnrollFluidBoundaryFunction(inner_x2, reflect_ix2);
     pmb->pbval->EnrollFluidBoundaryFunction(outer_x2, reflect_ox2);
+    pmb->pbval->EnrollFieldBoundaryFunction(inner_x2, ReflectInnerX2);
+    pmb->pbval->EnrollFieldBoundaryFunction(outer_x2, ReflectOuterX2);
 
 // 3D PROBLEM ----------------------------------------------------------------
 
@@ -213,6 +215,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     // Enroll special BCs
     pmb->pbval->EnrollFluidBoundaryFunction(inner_x3, reflect_ix3);
     pmb->pbval->EnrollFluidBoundaryFunction(outer_x3, reflect_ox3);
+    pmb->pbval->EnrollFieldBoundaryFunction(inner_x3, ReflectInnerX3);
+    pmb->pbval->EnrollFieldBoundaryFunction(outer_x3, ReflectOuterX3);
 
   } /* end of 3D initialization */
 
