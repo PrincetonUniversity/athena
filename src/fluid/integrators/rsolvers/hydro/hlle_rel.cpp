@@ -26,7 +26,7 @@ static void PrimToConsFlat(Real gamma_adi_red, Real rho, Real pgas, const Real u
 //   k,j: x3- and x2-indices
 //   il,iu: lower and upper x1-indices
 //   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
-//   b: 3D array of normal magnetic fields (not used)
+//   b: 3D array of normal magnetic fields (unused)
 //   prim_left, prim_right: left and right primitive states
 // Outputs:
 //   flux: fluxes across interface
@@ -118,39 +118,51 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     Real lambda_left = std::min(lambda_minus_left, lambda_minus_right);
     Real lambda_right = std::max(lambda_plus_left, lambda_plus_right);
 
-    // Calculate L/R state fluxes
+    // Calculate conserved quantities and fluxes in L/R states
+    Real cons_left[NWAVE], cons_right[NWAVE];
+    PrimToConsFlat(gamma_adi_red, rho_left, pgas_left, u_con_left,
+        cons_left, ivx, ivy, ivz);
+    PrimToConsFlat(gamma_adi_red, rho_right, pgas_right, u_con_right,
+        cons_right, ivx, ivy, ivz);
     Real flux_left[NWAVE], flux_right[NWAVE];
     PrimToFluxFlat(gamma_adi_red, rho_left, pgas_left, u_con_left,
         flux_left, ivx, ivy, ivz);
     PrimToFluxFlat(gamma_adi_red, rho_right, pgas_right, u_con_right,
         flux_right, ivx, ivy, ivz);
 
-    // Set fluxes if in L state
-    if (lambda_left >= 0.0)
-    {
-      for (int n = 0; n < NWAVE; ++n)
-        flux(n,i) = flux_left[n];
-      continue;
-    }
-
-    // Set fluxes if in R state
-    if (lambda_right <= 0.0)
-    {
-      for (int n = 0; n < NWAVE; ++n)
-        flux(n,i) = flux_right[n];
-      continue;
-    }
-
-    // Set fluxes in HLL state
-    Real cons_left[NWAVE], cons_right[NWAVE];
-    PrimToConsFlat(gamma_adi_red, rho_left, pgas_left, u_con_left,
-        cons_left, ivx, ivy, ivz);
-    PrimToConsFlat(gamma_adi_red, rho_right, pgas_right, u_con_right,
-        cons_right, ivx, ivy, ivz);
+    // Calculate conserved quantities (MB 9) and fluxes (MB 11) in HLL state
+    Real cons_hll[NWAVE], flux_hll[NWAVE];
     for (int n = 0; n < NWAVE; ++n)
-      flux(n,i) = (lambda_right*flux_left[n] - lambda_left*flux_right[n]
-          + lambda_right*lambda_left * (cons_right[n] - cons_left[n]))
-          / (lambda_right-lambda_left);                                   // (MB 11)
+    {
+      cons_hll[n] = (lambda_right*cons_right[n] - lambda_left*cons_left[n]
+          + flux_left[n] - flux_right[n]) / (lambda_right - lambda_left);
+      flux_hll[n] = (lambda_right*flux_left[n] - lambda_left*flux_right[n]
+          + lambda_left*lambda_right * (cons_right[n] - cons_left[n]))
+          / (lambda_right - lambda_left);
+    }
+
+    // Set fluxes
+    for (int n = 0; n < NWAVE; ++n)
+    {
+      if (lambda_left >= 0.0)  // L state
+        flux(n,i) = flux_left[n];
+      else if (lambda_right <= 0.0)  // R state
+        flux(n,i) = flux_right[n];
+      else  // HLL state
+        flux(n,i) = flux_hll[n];
+    }
+
+    // Set conserved quantities in GR
+    if (GENERAL_RELATIVITY)
+      for (int n = 0; n < NWAVE; ++n)
+      {
+        if (lambda_left >= 0.0)  // L state
+          cons_(n,i) = cons_left[n];
+        else if (lambda_right <= 0.0)  // R state
+          cons_(n,i) = cons_right[n];
+        else  // HLL state
+          cons_(n,i) = cons_hll[n];
+      }
   }
 
   // Transform fluxes to global coordinates if in GR
@@ -158,13 +170,16 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     switch (ivx)
     {
       case IVX:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, il, iu, flux);
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, il, iu, cons_, b_normal_,
+            flux);
         break;
       case IVY:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, il, iu, flux);
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, il, iu, cons_, b_normal_,
+            flux);
         break;
       case IVZ:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, il, iu, flux);
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, il, iu, cons_, b_normal_,
+            flux);
         break;
     }
   return;

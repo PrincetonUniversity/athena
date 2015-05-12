@@ -55,6 +55,7 @@ FluidIntegrator::FluidIntegrator(Fluid *pf, ParameterInput *pin)
   {
     g_.NewAthenaArray(NMETRIC,ncells1);
     g_inv_.NewAthenaArray(NMETRIC,ncells1);
+    cons_.NewAthenaArray(NWAVE,ncells1);
   }
 }
 
@@ -76,5 +77,6 @@ FluidIntegrator::~FluidIntegrator()
   {
     g_.DeleteAthenaArray();
     g_inv_.DeleteAthenaArray();
+    cons_.DeleteAthenaArray();
   }
 }

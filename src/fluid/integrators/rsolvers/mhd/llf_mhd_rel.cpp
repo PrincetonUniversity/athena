@@ -159,13 +159,16 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     switch (ivx)
     {
       case IVX:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, il, iu, flux);
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, il, iu, cons_, b_normal_,
+            flux);
         break;
       case IVY:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, il, iu, flux);
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, il, iu, cons_, b_normal_,
+            flux);
         break;
       case IVZ:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, il, iu, flux);
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, il, iu, cons_, b_normal_,
+            flux);
         break;
     }
   return;

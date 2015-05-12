@@ -1267,6 +1267,8 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
 // Inputs:
 //   k,j: phi- and theta-indices
 //   il,iu: r-index bounds
+//   cons: array of conserved quantities in 1D, using local coordinates (unused)
+//   bx: 1D array of longitudinal magnetic fields, in local coordinates (unused)
 //   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
 //   flux: values overwritten in global coordinates
@@ -1276,7 +1278,7 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
 //   puts r-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
 //   puts r-fluxes of B2/B3 in IBY/IBZ slots
 void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bx, AthenaArray<Real> &flux)
 {
   // Extract geometric quantities that do not depend on r
   const Real &sin_sq_theta = metric_face1_j1_(j);
@@ -1347,6 +1349,8 @@ void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const in
 // Inputs:
 //   k,j: phi- and theta-indices
 //   il,iu: r-index bounds
+//   cons: array of conserved quantities in 1D, using local coordinates (unused)
+//   bx: 1D array of longitudinal magnetic fields, in local coordinates (unused)
 //   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
 //   flux: values overwritten in global coordinates
@@ -1356,7 +1360,7 @@ void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const in
 //   puts theta-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
 //   puts theta-fluxes of B3/B1 in IBY/IBZ slots
 void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bx, AthenaArray<Real> &flux)
 {
   // Extract geometric quantities that do not depend on r
   const Real &sin_sq_theta = metric_face2_j1_(j);
@@ -1427,6 +1431,8 @@ void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const in
 // Inputs:
 //   k,j: phi- and theta-indices
 //   il,iu: r-index bounds
+//   cons: array of conserved quantities in 1D, using local coordinates (unused)
+//   bx: 1D array of longitudinal magnetic fields, in local coordinates (unused)
 //   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
 //   flux: values overwritten in global coordinates
@@ -1436,7 +1442,7 @@ void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const in
 //   puts phi-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
 //   puts phi-fluxes of B1/B2 in IBY/IBZ slots
 void Coordinates::FluxToGlobal3(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bx, AthenaArray<Real> &flux)
 {
   // Extract geometric quantities that do not depend on r
   const Real &sin_sq_theta = metric_face3_j1_(j);

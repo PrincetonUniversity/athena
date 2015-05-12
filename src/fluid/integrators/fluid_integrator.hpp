@@ -70,7 +70,8 @@ private:
   // scratch space used in integrator
   AthenaArray<Real> wl_, wr_, flx_, jflx_j_, kflx_k_; 
   AthenaArray<Real> face_area_, face_area_p1_, cell_volume_;
-  AthenaArray<Real> b_normal_;  // only used in SR/GRMHD
+  AthenaArray<Real> b_normal_;   // only used in SR/GRMHD
   AthenaArray<Real> g_, g_inv_;  // metric and inverse, used in some GR Riemann solvers
+  AthenaArray<Real> cons_;       // conserved state, used in some GR Riemann solvers
 };
 #endif

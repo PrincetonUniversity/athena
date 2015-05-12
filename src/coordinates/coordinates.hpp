@@ -91,10 +91,13 @@ public:
         const AthenaArray<Real> &b3_vals, AthenaArray<Real> &prim_left,
         AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
     void FluxToGlobal1(const int k, const int j, const int il, const int iu,
+        const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
         AthenaArray<Real> &flux);
     void FluxToGlobal2(const int k, const int j, const int il, const int iu,
+        const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
         AthenaArray<Real> &flux);
     void FluxToGlobal3(const int k, const int j, const int il, const int iu,
+        const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
         AthenaArray<Real> &flux);
     void PrimToCons(
         const AthenaArray<Real> &prim, const AthenaArray<Real> &b, Real gamma_adi_red,
@@ -130,11 +133,14 @@ public:
     void PrimToLocal3(const int, const int, const int, const int,
         const AthenaArray<Real> &, AthenaArray<Real> &, AthenaArray<Real> &,
         AthenaArray<Real> &) {return;}
-    void FluxToGlobal1(const int, const int, const int, const int, AthenaArray<Real> &)
+    void FluxToGlobal1(const int, const int, const int, const int,
+        const AthenaArray<Real> &, const AthenaArray<Real> &, AthenaArray<Real> &)
         {return;}
-    void FluxToGlobal2(const int, const int, const int, const int, AthenaArray<Real> &)
+    void FluxToGlobal2(const int, const int, const int, const int,
+        const AthenaArray<Real> &, const AthenaArray<Real> &, AthenaArray<Real> &)
         {return;}
-    void FluxToGlobal3(const int, const int, const int, const int, AthenaArray<Real> &)
+    void FluxToGlobal3(const int, const int, const int, const int,
+        const AthenaArray<Real> &, const AthenaArray<Real> &, AthenaArray<Real> &)
         {return;}
     void PrimToCons(const AthenaArray<Real> &, const AthenaArray<Real> &, Real,
         AthenaArray<Real> &) {return;}
@@ -156,6 +162,7 @@ private:
   Real bh_spin_;          // a (dimensionless): Schwarzschild
   Real sinu_amplitude_;   // a: sinusoidal
   Real sinu_wavenumber_;  // k: sinusoidal
+  Real tilted_a_;         // a: tilted
 
   // Scratch arrays for coordinate factors
   // Format: coord_<type>[<direction>]_<index>[<count>]_

@@ -5,7 +5,7 @@
 
 // C++ headers
 #include <algorithm>  // max(), min()
-#include <cmath>      // sqrt()
+#include <cmath>      // abs(), isfinite(), NAN, sqrt()
 
 // Athena headers
 #include "../../../../athena.hpp"                   // enums, macros, Real
@@ -157,32 +157,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     Real lambda_left = std::min(lambda_left_minus, lambda_right_minus);  // (MB 55)
     Real lambda_right = std::max(lambda_left_plus, lambda_right_plus);   // (MB 55)
 
-    // Calculate L/R state fluxes
-    Real flux_left[NWAVE], flux_right[NWAVE];
-    PrimToFluxFlat(gamma_adi_red, rho_left, pgas_left,
-        u_con_left, b_con_left,
-        flux_left, ivx, ivy, ivz);
-    PrimToFluxFlat(gamma_adi_red, rho_right, pgas_right,
-        u_con_right, b_con_right,
-        flux_right, ivx, ivy, ivz);
-
-    // Set fluxes if in L state
-    if (lambda_left >= 0.0)
-    {
-      for (int n = 0; n < NWAVE; ++n)
-        flux(n,i) = flux_left[n];
-      continue;
-    }
-
-    // Set fluxes if in R state
-    if (lambda_right <= 0.0)
-    {
-      for (int n = 0; n < NWAVE; ++n)
-        flux(n,i) = flux_right[n];
-      continue;
-    }
-
-    // Calculate L/R state conserved quantities
+    // Calculate conserved quantities and fluxes in L/R states
     Real cons_left[NWAVE], cons_right[NWAVE];
     PrimToConsFlat(gamma_adi_red, rho_left, pgas_left,
         u_con_left, b_con_left,
@@ -190,6 +165,13 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     PrimToConsFlat(gamma_adi_red, rho_right, pgas_right,
         u_con_right, b_con_right,
         cons_right, ivx, ivy, ivz);
+    Real flux_left[NWAVE], flux_right[NWAVE];
+    PrimToFluxFlat(gamma_adi_red, rho_left, pgas_left,
+        u_con_left, b_con_left,
+        flux_left, ivx, ivy, ivz);
+    PrimToFluxFlat(gamma_adi_red, rho_right, pgas_right,
+        u_con_right, b_con_right,
+        flux_right, ivx, ivy, ivz);
 
     // Calculate fast wave jump quantities and HLL state and fluxes
     Real r_left[NWAVE], r_right[NWAVE];
@@ -218,7 +200,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     Real ptot_true = FindRootSecant(ptot_initial, bx, lambda_left, lambda_right,
         r_left, r_right, ivx);
 
-    // Set fluxes if in aL state
+    // Calculate conserved quantities and fluxes in aL state
     Real vx_al, vy_al, vz_al;
     Real kx_l, ky_l, kz_l, eta_l;
     Real cons_al[NWAVE], flux_al[NWAVE];
@@ -226,14 +208,14 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
         &vx_al, &vy_al, &vz_al, &kx_l, &ky_l, &kz_l, &eta_l,
         cons_al, flux_al);
     Real lambda_al = kx_l;
-    if (lambda_al >= -vc_extension)
+    /*if (lambda_al >= -vc_extension)
     {
       for (int n = 0; n < NWAVE; ++n)
         flux(n,i) = flux_al[n];
       continue;
-    }
+    }*/
 
-    // Set fluxes if in aR state
+    // Calculate conserved quantities and fluxes in aR state
     Real vx_ar, vy_ar, vz_ar;
     Real kx_r, ky_r, kz_r, eta_r;
     Real cons_ar[NWAVE], flux_ar[NWAVE];
@@ -241,14 +223,14 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
         &vx_ar, &vy_ar, &vz_ar, &kx_r, &ky_r, &kz_r, &eta_r,
         cons_ar, flux_ar);
     Real lambda_ar = kx_r;
-    if (lambda_ar <= vc_extension)
+    /*if (lambda_ar <= vc_extension)
     {
       for (int n = 0; n < NWAVE; ++n)
         flux(n,i) = flux_ar[n];
       continue;
-    }
+    }*/
 
-    // Set fluxes in c state
+    // Calculate conserved quantities in c state
     Real vx_c;
     Real cons_c[NWAVE];
     CalculateCState(ptot_true, bx,
@@ -258,12 +240,47 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
         eta_l, eta_r,
         cons_al, cons_ar, ivx,
         &vx_c, cons_c);
-    if (vx_c >= 0.0)
+
+    // Calculate fluxes in c state (MUB 11)
+    Real flux_c[NWAVE];
+    for (int n = 0; n < NWAVE; ++n)
+    {
+      if (vx_c >= 0.0)  // cL state
+        flux_c[n] = flux_al[n] + lambda_al * (cons_c[n] - cons_al[n]);
+      else  // cR state
+        flux_c[n] = flux_ar[n] + lambda_ar * (cons_c[n] - cons_ar[n]);
+    }
+
+    // Set fluxes
+    for (int n = 0; n < NWAVE; ++n)
+    {
+      if (lambda_left >= 0.0)  // L state
+        flux(n,i) = flux_left[n];
+      else if (lambda_right <= 0.0)  // R state
+        flux(n,i) = flux_right[n];
+      else if (lambda_al >= -vc_extension)  // aL state
+        flux(n,i) = flux_al[n];
+      else if (lambda_ar <= vc_extension)  // aR state
+        flux(n,i) = flux_ar[n];
+      else  // c state
+        flux(n,i) = flux_c[n];
+    }
+
+    // Set conserved quantities in GR
+    if (GENERAL_RELATIVITY)
       for (int n = 0; n < NWAVE; ++n)
-        flux(n,i) = flux_al[n] + lambda_al * (cons_c[n] - cons_al[n]);  // (MUB 11)
-    else
-      for (int n = 0; n < NWAVE; ++n)
-        flux(n,i) = flux_ar[n] + lambda_ar * (cons_c[n] - cons_ar[n]);  // (MUB 11)
+      {
+        if (lambda_left >= 0.0)  // L state
+          cons_(n,i) = cons_left[n];
+        else if (lambda_right <= 0.0)  // R state
+          cons_(n,i) = cons_right[n];
+        else if (lambda_al >= -vc_extension)  // aL state
+          cons_(n,i) = cons_al[n];
+        else if (lambda_ar <= vc_extension)  // aR state
+          cons_(n,i) = cons_ar[n];
+        else  // c state
+          cons_(n,i) = cons_c[n];
+      }
   }
 
   // Transform fluxes to global coordinates if in GR
@@ -271,13 +288,16 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     switch (ivx)
     {
       case IVX:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, il, iu, flux);
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, il, iu, cons_, b_normal_,
+            flux);
         break;
       case IVY:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, il, iu, flux);
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, il, iu, cons_, b_normal_,
+            flux);
         break;
       case IVZ:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, il, iu, flux);
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, il, iu, cons_, b_normal_,
+            flux);
         break;
     }
   return;

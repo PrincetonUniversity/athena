@@ -20,7 +20,7 @@
 //   k,j: x3- and x2-indices
 //   il,iu: lower and upper x1-indices
 //   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
-//   b: 3D array of normal magnetic fields (not used)
+//   b: 3D array of normal magnetic fields (unused)
 //   prim_left, prim_right: left and right primitive states
 // Outputs:
 //   flux: fluxes across interface
@@ -37,7 +37,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
 
   // Extract ratio of specific heats
   const Real gamma_adi = pmy_fluid->pf_eos->GetGamma();
-  const Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
+  const Real gamma_prime = gamma_adi / (gamma_adi - 1.0);
 
   // Transform primitives to locally flat coordinates if in GR
   if (GENERAL_RELATIVITY)
@@ -58,7 +58,7 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     }
 
   // Go through each interface
-#pragma simd
+  #pragma simd
   for (int i = il; i <= iu; i++)
   {
     // Extract left primitives
@@ -75,190 +75,151 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     const Real &vy_right = prim_right(ivy,i);
     const Real &vz_right = prim_right(ivz,i);
 
-    // Extract fluxes
-    Real &flux_d = flux(IDN,i);
-    Real &flux_e = flux(IEN,i);
-    Real &flux_mx = flux(ivx,i);
-    Real &flux_my = flux(ivy,i);
-    Real &flux_mz = flux(ivz,i);
-
-    // Calculate wavespeeds in left region
+    // Calculate wavespeeds in left state
     Real lambda_plus_left, lambda_minus_left;
-    Real rho_h_left = rho_left + gamma_adi_red * pgas_left;
+    Real wgas_left = rho_left + gamma_prime * pgas_left;
     Real v_sq_left = SQR(vx_left) + SQR(vy_left) + SQR(vz_left);
     Real gamma_sq_left = 1.0/(1.0-v_sq_left);
     pmy_fluid->pf_eos->SoundSpeedsSR(
-        rho_h_left, pgas_left, vx_left, gamma_sq_left,
+        wgas_left, pgas_left, vx_left, gamma_sq_left,
         &lambda_plus_left, &lambda_minus_left);                   // (MB 23)
 
-    // Calculate wavespeeds in right region
+    // Calculate wavespeeds in right state
     Real lambda_plus_right, lambda_minus_right;
-    Real rho_h_right = rho_right + gamma_adi_red * pgas_right;
+    Real wgas_right = rho_right + gamma_prime * pgas_right;
     Real v_sq_right = SQR(vx_right) + SQR(vy_right) + SQR(vz_right);
     Real gamma_sq_right = 1.0/(1.0-v_sq_right);
     pmy_fluid->pf_eos->SoundSpeedsSR(
-        rho_h_right, pgas_right, vx_right, gamma_sq_right,
+        wgas_right, pgas_right, vx_right, gamma_sq_right,
         &lambda_plus_right, &lambda_minus_right);                     // (MB 23)
 
     // Calculate extremal wavespeeds
     Real lambda_left = std::min(lambda_minus_left, lambda_minus_right);
     Real lambda_right = std::max(lambda_plus_left, lambda_plus_right);
 
-    // Set fluxes in extremal cases
-    if (lambda_left >= 0.0)  // left region
-    {
-      // Calculate intermediate quantities (MB 3)
-      Real gamma_sq_rho_h = gamma_sq_left * rho_h_left;
-      Real d = std::sqrt(gamma_sq_left) * rho_left;
-      Real mx = gamma_sq_rho_h * vx_left;
-      Real my = gamma_sq_rho_h * vy_left;
-      Real mz = gamma_sq_rho_h * vz_left;
+    // Calculate conserved quantities in L state (MB 3)
+    Real cons_left[NWAVE];
+    cons_left[IDN] = std::sqrt(gamma_sq_left) * rho_left;
+    cons_left[IEN] = gamma_sq_left * wgas_left - pgas_left;
+    cons_left[ivx] = gamma_sq_left * wgas_left * vx_left;
+    cons_left[ivy] = gamma_sq_left * wgas_left * vy_left;
+    cons_left[ivz] = gamma_sq_left * wgas_left * vz_left;
 
-      // Set fluxes (MB 2)
-      flux_d = d * vx_left;
-      flux_e = mx;
-      flux_mx = mx * vx_left + pgas_left;
-      flux_my = my * vx_left;
-      flux_mz = mz * vx_left;
-      continue;
-    }
-    if (lambda_right <= 0.0)  // right region
-    {
-      // Calculate intermediate quantities (MB 3)
-      Real gamma_sq_rho_h = gamma_sq_right * rho_h_right;
-      Real d = std::sqrt(gamma_sq_right) * rho_right;
-      Real mx = gamma_sq_rho_h * vx_right;
-      Real my = gamma_sq_rho_h * vy_right;
-      Real mz = gamma_sq_rho_h * vz_right;
+    // Calculate conserved quantities in R state (MB 3)
+    Real cons_right[NWAVE];
+    cons_right[IDN] = std::sqrt(gamma_sq_right) * rho_right;
+    cons_right[IEN] = gamma_sq_right * wgas_right - pgas_right;
+    cons_right[ivx] = gamma_sq_right * wgas_right * vx_right;
+    cons_right[ivy] = gamma_sq_right * wgas_right * vy_right;
+    cons_right[ivz] = gamma_sq_right * wgas_right * vz_right;
 
-      // Set fluxes (MB 2)
-      flux_d = d * vx_right;
-      flux_e = mx;
-      flux_mx = mx * vx_right + pgas_right;
-      flux_my = my * vx_right;
-      flux_mz = mz * vx_right;
-      continue;
-    }
+    // Calculate fluxes in L state (MB 2)
+    Real flux_left[NWAVE];
+    flux_left[IDN] = cons_left[IDN] * vx_left;
+    flux_left[IEN] = cons_left[ivx];
+    flux_left[ivx] = cons_left[ivx] * vx_left + pgas_left;
+    flux_left[ivy] = cons_left[ivy] * vx_left;
+    flux_left[ivz] = cons_left[ivz] * vx_left;
 
-    // Calculate select left conserved quantities and fluxes
-    Real gamma_sq_rho_h_left = gamma_sq_left * rho_h_left;
-    Real e_left = gamma_sq_rho_h_left - pgas_left;      // (MB 3)
-    Real mx_left = gamma_sq_rho_h_left * vx_left;       // (MB 3)
-    Real flux_e_left = mx_left;                         // (MB 2)
-    Real flux_mx_left = mx_left * vx_left + pgas_left;  // (MB 2)
+    // Calculate fluxes in R state (MB 2)
+    Real flux_right[NWAVE];
+    flux_right[IDN] = cons_right[IDN] * vx_right;
+    flux_right[IEN] = cons_right[ivx];
+    flux_right[ivx] = cons_right[ivx] * vx_right + pgas_right;
+    flux_right[ivy] = cons_right[ivy] * vx_right;
+    flux_right[ivz] = cons_right[ivz] * vx_right;
 
-    // Calculate select right conserved quantities and fluxes
-    Real gamma_sq_rho_h_right = gamma_sq_right * rho_h_right;
-    Real e_right = gamma_sq_rho_h_right - pgas_right;       // (MB 3)
-    Real mx_right = gamma_sq_rho_h_right * vx_right;        // (MB 3)
-    Real flux_e_right = mx_right;                           // (MB 2)
-    Real flux_mx_right = mx_right * vx_right + pgas_right;  // (MB 2)
-
-    // Calculate select HLL conserved quantities and fluxes
-    Real denom_inverse_lr = 1.0/(lambda_right-lambda_left);
-    Real e_hll = (lambda_right * e_right - lambda_left * e_left
-        + flux_e_left - flux_e_right) * denom_inverse_lr;                     // (MB 9)
-    Real mx_hll = (lambda_right * mx_right - lambda_left * mx_left
-        + flux_mx_left - flux_mx_right) * denom_inverse_lr;                   // (MB 9)
-    Real flux_e_hll = (lambda_right * flux_e_left
-        - lambda_left * flux_e_right
-        + lambda_right*lambda_left * (e_right-e_left)) * denom_inverse_lr;    // (MB 11)
-    Real flux_mx_hll = (lambda_right * flux_mx_left
-        - lambda_left * flux_mx_right
-        + lambda_right*lambda_left * (mx_right-mx_left)) * denom_inverse_lr;  // (MB 11)
+    // Calculate select HLL conserved quantities (MB 9) and fluxes (MB 11)
+    Real e_hll = (lambda_right*cons_right[IEN] - lambda_left*cons_left[IEN]
+        + flux_left[IEN] - flux_right[IEN]) / (lambda_right-lambda_left);
+    Real mx_hll = (lambda_right*cons_right[ivx] - lambda_left*cons_left[ivx]
+        + flux_left[ivx] - flux_right[ivx]) / (lambda_right-lambda_left);
+    Real flux_e_hll = (lambda_right*flux_left[IEN] - lambda_left*flux_right[IEN]
+        + lambda_right*lambda_left * (cons_right[IEN]-cons_left[IEN]))
+        / (lambda_right-lambda_left);
+    Real flux_mx_hll = (lambda_right*flux_left[ivx] - lambda_left*flux_right[ivx]
+        + lambda_right*lambda_left * (cons_right[ivx]-cons_left[ivx]))
+        / (lambda_right-lambda_left);
 
     // Calculate contact wavespeed (MB 18)
     Real lambda_star;
     if (flux_e_hll > TINY_NUMBER || flux_e_hll < -TINY_NUMBER)  // use quadratic formula
     {
       // Follows algorithm in Numerical Recipes (section 5.6) for avoiding cancellations
-      Real quad_a = flux_e_hll;
-      Real quad_b = -(e_hll + flux_mx_hll);
-      Real quad_c = mx_hll;
-      // TODO: figure out why old Athena used commented out lines instead
-      // old lines should give wrong root for b > 0
-      // but if b is always negative why do we worry about its sign?
-      /*if (quad_b <= 0.0)
-      {
-        Real quad_q = -0.5 * (quad_b - sqrt(quad_b*quad_b - 4.0 * quad_a * quad_c));
-        lambda_star = quad_c / quad_q;
-      }
-      else
-      {
-        Real quad_q = -0.5 * (quad_b + sqrt(quad_b*quad_b - 4.0 * quad_a * quad_c));
-        lambda_star = quad_q / quad_a;
-      }*/
-      Real quad_q = -0.5 * (quad_b
-          + copysign(std::sqrt(quad_b*quad_b - 4.0 * quad_a * quad_c), quad_b));
-      lambda_star = quad_c / quad_q;
+      Real a = flux_e_hll;
+      Real b = -(e_hll + flux_mx_hll);
+      Real c = mx_hll;
+      Real q = -0.5 * (b - std::sqrt(SQR(b) - 4.0*a*c));
+      lambda_star = c / q;
     }
     else  // no quadratic term
       lambda_star = mx_hll / (e_hll + flux_mx_hll);
 
     // Calculate contact pressure (MB 17)
-    Real a = lambda_left * e_left - mx_left;
-    Real b = mx_left * (lambda_left - vx_left) - pgas_left;
-    Real p_star_left = (a * lambda_star - b) / (1.0 - lambda_left * lambda_star);
-    a = lambda_right * e_right - mx_right;
-    b = mx_right * (lambda_right - vx_right) - pgas_right;
-    Real p_star_right = (a * lambda_star - b) / (1.0 - lambda_right * lambda_star);
-    Real p_star = 0.5 * (p_star_left + p_star_right);
+    Real a = lambda_left * cons_left[IEN] - cons_left[ivx];
+    Real b = cons_left[ivx] * (lambda_left - vx_left) - pgas_left;
+    Real pgas_star_left = (a * lambda_star - b) / (1.0 - lambda_left * lambda_star);
+    a = lambda_right * cons_right[IEN] - cons_right[ivx];
+    b = cons_right[ivx] * (lambda_right - vx_right) - pgas_right;
+    Real pgas_star_right = (a * lambda_star - b) / (1.0 - lambda_right * lambda_star);
+    Real pgas_star = 0.5 * (pgas_star_left + pgas_star_right);
 
-    // Set fluxes in contact cases
-    if (lambda_star >= 0.0)  // left contact region
+    // Calculate conserved quantities in L* state (MB 16)
+    Real cons_left_star[NWAVE];
+    for (int n = 0; n < NWAVE; ++n)
+      cons_left_star[n] = cons_left[n] * (lambda_left-vx_left);
+    cons_left_star[IEN] += pgas_star*lambda_star - pgas_left*vx_left;
+    cons_left_star[ivx] += pgas_star - pgas_left;
+    for (int n = 0; n < NWAVE; ++n)
+      cons_left_star[n] /= lambda_left - lambda_star;
+
+    // Calculate conserved quantities in R* state (MB 16)
+    Real cons_right_star[NWAVE];
+    for (int n = 0; n < NWAVE; ++n)
+      cons_right_star[n] = cons_right[n] * (lambda_right-vx_right);
+    cons_right_star[IEN] += pgas_star*lambda_star - pgas_right*vx_right;
+    cons_right_star[ivx] += pgas_star - pgas_right;
+    for (int n = 0; n < NWAVE; ++n)
+      cons_right_star[n] /= lambda_right - lambda_star;
+
+    // Calculate fluxes in L* state
+    Real flux_left_star[NWAVE];
+    for (int n = 0; n < NWAVE; ++n)
+      flux_left_star[n] = flux_left[n]
+          + lambda_left * (cons_left_star[n] - cons_left[n]);
+
+    // Calculate fluxes in R* state
+    Real flux_right_star[NWAVE];
+    for (int n = 0; n < NWAVE; ++n)
+      flux_right_star[n] = flux_right[n]
+          + lambda_right * (cons_right_star[n] - cons_right[n]);
+
+    // Set fluxes
+    for (int n = 0; n < NWAVE; ++n)
     {
-      // Calculate remaining left conserved quantities and fluxes
-      Real d_left = std::sqrt(gamma_sq_left) * rho_left;  // (MB 3)
-      Real my_left = gamma_sq_rho_h_left * vy_left;       // (MB 3)
-      Real mz_left = gamma_sq_rho_h_left * vz_left;       // (MB 3)
-      Real flux_d_left = d_left * vx_left;                // (MB 2)
-      Real flux_my_left = my_left * vx_left;              // (MB 2)
-      Real flux_mz_left = mz_left * vx_left;              // (MB 2)
-
-      // Calculate contact conserved quantities (MB 16)
-      Real denom_inverse_leftstar = 1.0 / (lambda_left - lambda_star);
-      Real d_star = d_left * (lambda_left - vx_left) * denom_inverse_leftstar;
-      Real e_star = (e_left * (lambda_left - vx_left) + p_star * lambda_star - pgas_left
-          * vx_left) * denom_inverse_leftstar;
-      Real mx_star = (mx_left * (lambda_left - vx_left) + p_star - pgas_left)
-          * denom_inverse_leftstar;
-      Real my_star = my_left * (lambda_left - vx_left) * denom_inverse_leftstar;
-      Real mz_star = mz_left * (lambda_left - vx_left) * denom_inverse_leftstar;
-
-      // Set fluxes (MB 14)
-      flux_d = flux_d_left + lambda_left * (d_star - d_left);
-      flux_e = flux_e_left + lambda_left * (e_star - e_left);
-      flux_mx = flux_mx_left + lambda_left * (mx_star - mx_left);
-      flux_my = flux_my_left + lambda_left * (my_star - my_left);
-      flux_mz = flux_mz_left + lambda_left * (mz_star - mz_left);
+      if (lambda_left >= 0.0)  // L state
+        flux(n,i) = flux_left[n];
+      else if (lambda_right <= 0.0)  // R state
+        flux(n,i) = flux_right[n];
+      else if (lambda_star >= 0.0)  // L* state
+        flux(n,i) = flux_left_star[n];
+      else  // R* state
+        flux(n,i) = flux_right_star[n];
     }
-    else  // right contact region
-    {
-      // Calculate remaining right conserved quantities and fluxes
-      Real d_right = std::sqrt(gamma_sq_right) * rho_right;  // (MB 3)
-      Real my_right = gamma_sq_rho_h_right * vy_right;       // (MB 3)
-      Real mz_right = gamma_sq_rho_h_right * vz_right;       // (MB 3)
-      Real flux_d_right = d_right * vx_right;                // (MB 2)
-      Real flux_my_right = my_right * vx_right;              // (MB 2)
-      Real flux_mz_right = mz_right * vx_right;         // (MB 2)
 
-      // Calculate contact conserved quantities (MB 16)
-      Real denom_inverse_rightstar = 1.0 / (lambda_right - lambda_star);
-      Real d_star = d_right * (lambda_right - vx_right) * denom_inverse_rightstar;
-      Real e_star = (e_right * (lambda_right - vx_right) + p_star * lambda_star
-          - pgas_right * vx_right) * denom_inverse_rightstar;
-      Real mx_star = (mx_right * (lambda_right - vx_right) + p_star - pgas_right)
-          * denom_inverse_rightstar;
-      Real my_star = my_right * (lambda_right - vx_right) * denom_inverse_rightstar;
-      Real mz_star = mz_right * (lambda_right - vx_right) * denom_inverse_rightstar;
-
-      // Set fluxes (MB 14)
-      flux_d = flux_d_right + lambda_right * (d_star - d_right);
-      flux_e = flux_e_right + lambda_right * (e_star - e_right);
-      flux_mx = flux_mx_right + lambda_right * (mx_star - mx_right);
-      flux_my = flux_my_right + lambda_right * (my_star - my_right);
-      flux_mz = flux_mz_right + lambda_right * (mz_star - mz_right);
-    }
+    // Set conserved quantities in GR
+    if (GENERAL_RELATIVITY)
+      for (int n = 0; n < NWAVE; ++n)
+      {
+        if (lambda_left >= 0.0)  // L state
+          cons_(n,i) = cons_left[n];
+        else if (lambda_right <= 0.0)  // R state
+          cons_(n,i) = cons_right[n];
+        else if (lambda_star >= 0.0)  // L* state
+          cons_(n,i) = cons_left_star[n];
+        else  // R* state
+          cons_(n,i) = cons_right_star[n];
+      }
   }
 
   // Transform fluxes to global coordinates if in GR
@@ -266,13 +227,16 @@ void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const
     switch (ivx)
     {
       case IVX:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, il, iu, flux);
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, il, iu, cons_, b_normal_,
+            flux);
         break;
       case IVY:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, il, iu, flux);
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, il, iu, cons_, b_normal_,
+            flux);
         break;
       case IVZ:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, il, iu, flux);
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, il, iu, cons_, b_normal_,
+            flux);
         break;
     }
   return;
