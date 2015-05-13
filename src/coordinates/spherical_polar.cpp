@@ -81,6 +81,43 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     }
   }
 
+  if(pmb->pmy_mesh->multilevel==true) { // calc coarse coodinates
+    int cis = pmb->cis; int cjs = pmb->cjs; int cks = pmb->cks;
+    int cie = pmb->cie; int cje = pmb->cje; int cke = pmb->cke;
+    for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost); ++i) {
+      pmb->coarse_x1v(i) = 0.75*(pow(pmb->coarse_x1f(i+1),4) - pow(pmb->coarse_x1f(i),4))
+                               /(pow(pmb->coarse_x1f(i+1),3) - pow(pmb->coarse_x1f(i),3));
+    }
+    for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost)-1; ++i) {
+      pmb->coarse_dx1v(i) = pmb->coarse_x1v(i+1) - pmb->coarse_x1v(i);
+    }
+    if (pmb->block_size.nx2 == 1) {
+      pmb->coarse_x2v(cjs) = 0.5*(pmb->coarse_x2f(cjs+1) + pmb->coarse_x2f(cjs));
+      pmb->coarse_dx2v(cjs) = pmb->coarse_dx2f(cjs);
+    } else {
+      for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost); ++j) {
+        pmb->coarse_x2v(j) = 
+            ((sin(pmb->coarse_x2f(j+1)) - pmb->coarse_x2f(j+1)*cos(pmb->coarse_x2f(j+1))) 
+            -(sin(pmb->coarse_x2f(j  )) - pmb->coarse_x2f(j  )*cos(pmb->coarse_x2f(j  ))))
+            /(cos(pmb->coarse_x2f(j  )) - cos(pmb->coarse_x2f(j+1)));
+      }
+      for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost)-1; ++j) {
+        pmb->coarse_dx2v(j) = pmb->coarse_x2v(j+1) - pmb->coarse_x2v(j);
+      }
+    }
+    if (pmb->block_size.nx3 == 1) {
+      pmb->coarse_x3v(cks) = 0.5*(pmb->coarse_x3f(cks+1) + pmb->coarse_x3f(cks));
+      pmb->coarse_dx3v(cks) = pmb->coarse_dx3f(cks);
+    } else {
+      for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost); ++k) {
+        pmb->coarse_x3v(k) = 0.5*(pmb->coarse_x3f(k+1) + pmb->coarse_x3f(k));
+      }
+      for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost)-1; ++k) {
+        pmb->coarse_dx3v(k) = pmb->coarse_x3v(k+1) - pmb->coarse_x3v(k);
+      }
+    }
+  }
+
   // Allocate memory for scratch arrays used in integrator, and internal scratch arrays
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
   coord_area1_i_.NewAthenaArray(ncells1);

@@ -58,6 +58,40 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
     for (int k = pb->ks-NGHOST; k <= pb->ke+NGHOST-1; ++k)
       pb->dx3v(k) = pb->x3v(k+1) - pb->x3v(k);
   }
+
+  if(pb->pmy_mesh->multilevel==true) { // calc coarse coodinates
+    int cis = pb->cis; int cjs = pb->cjs; int cks = pb->cks;
+    int cie = pb->cie; int cje = pb->cje; int cke = pb->cke;
+    for (int i=cis-(pb->cnghost); i<=cie+(pb->cnghost); ++i) {
+      pb->coarse_x1v(i) = 0.5*(pb->coarse_x1f(i+1) + pb->coarse_x1f(i));
+    }
+    for (int i=cis-(pb->cnghost); i<=cie+(pb->cnghost)-1; ++i) {
+      pb->coarse_dx1v(i) = pb->coarse_x1v(i+1) - pb->coarse_x1v(i);
+    }
+    if (pb->block_size.nx2 == 1) {
+      pb->coarse_x2v(cjs) = 0.5*(pb->coarse_x2f(cjs+1) + pb->coarse_x2f(cjs));
+      pb->coarse_dx2v(cjs) = pb->coarse_dx2f(cjs);
+    } else {
+      for (int j=cjs-(pb->cnghost); j<=cje+(pb->cnghost); ++j) {
+        pb->coarse_x2v(j) = 0.5*(pb->coarse_x2f(j+1) + pb->coarse_x2f(j));
+      }
+      for (int j=cjs-(pb->cnghost); j<=cje+(pb->cnghost)-1; ++j) {
+        pb->coarse_dx2v(j) = pb->coarse_x2v(j+1) - pb->coarse_x2v(j);
+      }
+    }
+    if (pb->block_size.nx3 == 1) {
+      pb->coarse_x3v(cks) = 0.5*(pb->coarse_x3f(cks+1) + pb->coarse_x3f(cks));
+      pb->coarse_dx3v(cks) = pb->coarse_dx3f(cks);
+    } else {
+      for (int k=cks-(pb->cnghost); k<=cke+(pb->cnghost); ++k) {
+        pb->coarse_x3v(k) = 0.5*(pb->coarse_x3f(k+1) + pb->coarse_x3f(k));
+      }
+      for (int k=cks-(pb->cnghost); k<=cke+(pb->cnghost)-1; ++k) {
+        pb->coarse_dx3v(k) = pb->coarse_x3v(k+1) - pb->coarse_x3v(k);
+      }
+    }
+  }
+
 }
 
 //--------------------------------------------------------------------------------------
