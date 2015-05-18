@@ -34,6 +34,9 @@ x3max  = 0.5
 ix3_bc = 4     # 4: periodic
 ox3_bc = 4     # 4: periodic
 
+<coord>  # in case of GR
+a = 0.0
+
 <fluid>
 gamma = 1.3333333333333333
 

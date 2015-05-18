@@ -103,6 +103,8 @@ public:
         const AthenaArray<Real> &prim, const AthenaArray<Real> &b, Real gamma_adi_red,
         AthenaArray<Real> &cons);
     Real DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real by, Real bz);
+    void MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3,
+        Real *pt, Real *px, Real *py, Real *pz);
     void TransformVectorCell(Real at, Real ax, Real ay, Real az, int k, int j, int i,
         Real *a0, Real *a1, Real *a2, Real *a3);
     void TransformVectorFace1(Real at, Real ax, Real ay, Real az, int k, int j, int i,
@@ -145,6 +147,8 @@ public:
     void PrimToCons(const AthenaArray<Real> &, const AthenaArray<Real> &, Real,
         AthenaArray<Real> &) {return;}
     Real DistanceBetweenPoints(Real, Real, Real, Real, Real, Real) {return 0.0;}
+    void MinkowskiCoordinates(Real, Real, Real, Real, Real *, Real *, Real *, Real *)
+        {return;}
     void TransformVectorCell(Real, Real, Real, Real, int, int, int, Real *, Real *,
         Real *, Real *) {return;}
     void TransformVectorFace1(Real, Real, Real, Real, int, int, int, Real *, Real *,
@@ -153,6 +157,8 @@ public:
         Real *, Real *) {return;}
     void TransformVectorFace3(Real, Real, Real, Real, int, int, int, Real *, Real *,
         Real *, Real *) {return;}
+    void LowerVectorCell(Real, Real, Real, Real, int, int, int, Real *, Real *, Real *,
+        Real *) {return;}
   #endif  // GENERAL_RELATIVITY
 
 private:

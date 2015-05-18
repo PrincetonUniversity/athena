@@ -740,12 +740,31 @@ Real Coordinates::DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real
 
 //--------------------------------------------------------------------------------------
 
+// Function for calculating Minkowski coordinates of cell
+// Inputs:
+//   x0,x1,x2,x3: Minkowski coordinates
+// Outputs:
+//   pt,px,py,pz: Minkowski coordinate values set
+// Notes:
+//   transformation is trivial
+void Coordinates::MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3,
+    Real *pt, Real *px, Real *py, Real *pz)
+{
+  *pt = x0;
+  *px = x1;
+  *py = x2;
+  *pz = x3;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
 // Function for transforming 4-vector from Minkowski to global: cell-centered
 // Inputs:
 //   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
 //   k,j,i: z-, y-, and x-indices (unused)
 // Outputs:
-//   *pa0,*pa1,*pa2,*pa3: pointers to upper 4-vector components in global coordinates
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
 void Coordinates::TransformVectorCell(
@@ -766,7 +785,7 @@ void Coordinates::TransformVectorCell(
 //   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
 //   k,j,i: z-, y-, and x-indices (unused)
 // Outputs:
-//   *pa0,*pa1,*pa2,*pa3: pointers to upper 4-vector components in global coordinates
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
 void Coordinates::TransformVectorFace1(
@@ -787,7 +806,7 @@ void Coordinates::TransformVectorFace1(
 //   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
 //   k,j,i: z-, y-, and x-indices (unused)
 // Outputs:
-//   *pa0,*pa1,*pa2,*pa3: pointers to upper 4-vector components in global coordinates
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
 void Coordinates::TransformVectorFace2(
@@ -808,7 +827,7 @@ void Coordinates::TransformVectorFace2(
 //   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
 //   k,j,i: z-, y-, and x-indices (unused)
 // Outputs:
-//   *pa0,*pa1,*pa2,*pa3: pointers to upper 4-vector components in global coordinates
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
 void Coordinates::TransformVectorFace3(
@@ -819,5 +838,24 @@ void Coordinates::TransformVectorFace3(
   *pa1 = ax;
   *pa2 = ay;
   *pa3 = az;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for lowering contravariant components of a vector
+// Inputs:
+//   a0,a1,a2,a3: contravariant components of vector
+//   k,j,i: indices of cell in which transformation is desired
+// Outputs:
+//   pa_0,pa_1,pa_2,pa_3: pointers to covariant 4-vector components
+void Coordinates::LowerVectorCell(
+    Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
+    Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3)
+{
+  *pa_0 = -a0;
+  *pa_1 = a1;
+  *pa_2 = a2;
+  *pa_3 = a3;
   return;
 }

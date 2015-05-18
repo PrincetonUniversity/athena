@@ -5,9 +5,9 @@
 //   metric:
 //     ds^2 = -(1-a^2)/(1+a^2) dt'^2 + 2a/(1+a^2) (dt'dx' + dx'dt')
 //        + (1-a^2)/(1+a^2) dx'^2 + dy^2 + dz^2
-//   relation to Minkowsk (t, x, y, z):
-//     t' = (t + ax) / \sqrt{1 + a^2}
-//     x' = (x - at) / \sqrt{1 + a^2}
+//   relation to Minkowski (t, x, y, z):
+//     t' = (t + a x) / \sqrt{1 + a^2}
+//     x' = (x - a t) / \sqrt{1 + a^2}
 
 // Primary header
 #include "coordinates.hpp"
@@ -556,13 +556,13 @@ void Coordinates::PrimToLocal1(const int k, const int j, const int il, const int
 
       // Construct global contravariant magnetic fields
       Real b0l = g_10*bb1*u0l + g_11*bb1*u1l + g_22*bb2l*u2l + g_33*bb3l*u3l;
-      Real b1l = (bb1 + bcon0l * u1l) / u0l;
-      Real b2l = (bb2l + bcon0l * u2l) / u0l;
-      Real b3l = (bb3l + bcon0l * u3l) / u0l;
+      Real b1l = (bb1 + b0l * u1l) / u0l;
+      Real b2l = (bb2l + b0l * u2l) / u0l;
+      Real b3l = (bb3l + b0l * u3l) / u0l;
       Real b0r = g_10*bb1*u0r + g_11*bb1*u1r + g_22*bb2r*u2r + g_33*bb3r*u3r;
-      Real b1r = (bb1 + bcon0r * u1r) / u0r;
-      Real b2r = (bb2r + bcon0r * u2r) / u0r;
-      Real b3r = (bb3r + bcon0r * u3r) / u0r;
+      Real b1r = (bb1 + b0r * u1r) / u0r;
+      Real b2r = (bb2r + b0r * u2r) / u0r;
+      Real b3r = (bb3r + b0r * u3r) / u0r;
 
       // Transform contravariant magnetic fields
       Real btl = mt_0*b0l;
@@ -643,7 +643,7 @@ void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int
     Real u2l = u0l * v2l;
     Real u3l = u0l * v3l;
     Real u0r = std::sqrt(-1.0 /
-        (g_00 + 2.0*g_101*v1r + g_11*v1r*v1r + g_22*v2r*v2r + g_33*v3r*v3r));
+        (g_00 + 2.0*g_01*v1r + g_11*v1r*v1r + g_22*v2r*v2r + g_33*v3r*v3r));
     Real u1r = u0r * v1r;
     Real u2r = u0r * v2r;
     Real u3r = u0r * v3r;
@@ -677,11 +677,11 @@ void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int
       Real &bb1r = prim_right(IBZ,i);
 
       // Construct global contravariant magnetic fields
-      Real b0l = g_10*bb1*u0l + g_11*bb1*u1l + g_22*bb2l*u2l + g_33*bb3l*u3l;
+      Real b0l = g_10*bb1l*u0l + g_11*bb1l*u1l + g_22*bb2*u2l + g_33*bb3l*u3l;
       Real b1l = (bb1l + b0l * u1l) / u0l;
       Real b2l = (bb2 + b0l * u2l) / u0l;
       Real b3l = (bb3l + b0l * u3l) / u0l;
-      Real b0r = g_10*bb1*u0r + g_11*bb1*u1r + g_22*bb2r*u2r + g_33*bb3r*u3r;
+      Real b0r = g_10*bb1r*u0r + g_11*bb1r*u1r + g_22*bb2*u2r + g_33*bb3r*u3r;
       Real b1r = (bb1r + b0r * u1r) / u0r;
       Real b2r = (bb2 + b0r * u2r) / u0r;
       Real b3r = (bb3r + b0r * u3r) / u0r;
@@ -799,11 +799,11 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
       Real &bb2r = prim_right(IBZ,i);
 
       // Construct global contravariant magnetic fields
-      Real b0l = g_10*bb1*u0l + g_11*bb1*u1l + g_22*bb2l*u2l + g_33*bb3l*u3l;
+      Real b0l = g_10*bb1l*u0l + g_11*bb1l*u1l + g_22*bb2l*u2l + g_33*bb3*u3l;
       Real b1l = (bb1l + b0l * u1l) / u0l;
       Real b2l = (bb2l + b0l * u2l) / u0l;
       Real b3l = (bb3 + b0l * u3l) / u0l;
-      Real b0r = g_10*bb1*u0r + g_11*bb1*u1r + g_22*bb2r*u2r + g_33*bb3r*u3r;
+      Real b0r = g_10*bb1r*u0r + g_11*bb1r*u1r + g_22*bb2r*u2r + g_33*bb3*u3r;
       Real b1r = (bb1r + b0r * u1r) / u0r;
       Real b2r = (bb2r + b0r * u2r) / u0r;
       Real b3r = (bb3 + b0r * u3r) / u0r;
@@ -1144,8 +1144,8 @@ void Coordinates::PrimToCons(
         }
 
         // Calculate 4-velocity
-        Real u0 =
-            std::sqrt(-1.0 / (g00 + 2.0*g01*v1 + g11*v1*v1 + g22*v2*v2 + g33*v3*v3));
+        Real u0 = std::sqrt(-1.0
+            / (g_00 + 2.0*g_01*v1 + g_11*v1*v1 + g_22*v2*v2 + g_33*v3*v3));
         Real u1 = u0 * v1;
         Real u2 = u0 * v2;
         Real u3 = u0 * v3;
@@ -1155,10 +1155,10 @@ void Coordinates::PrimToCons(
         Real u_3 = g_33*u3;
 
         // Calculate 4-magnetic field
-        Real b0 = g10*bb1*u0 + g11*bb1*u1 + g22*bb2*u2 + g33*bb3*u3;
-        Real b1 = 1.0/u0 * (bb1 + bcon0 * u1);
-        Real b2 = 1.0/u0 * (bb2 + bcon0 * u2);
-        Real b3 = 1.0/u0 * (bb3 + bcon0 * u3);
+        Real b0 = g_10*bb1*u0 + g_11*bb1*u1 + g_22*bb2*u2 + g_33*bb3*u3;
+        Real b1 = 1.0/u0 * (bb1 + b0 * u1);
+        Real b2 = 1.0/u0 * (bb2 + b0 * u2);
+        Real b3 = 1.0/u0 * (bb3 + b0 * u3);
         Real b_0 = g_00*b0 + g_01*b1;
         Real b_1 = g_10*b0 + g_11*b1;
         Real b_2 = g_22*b2;
@@ -1203,12 +1203,33 @@ Real Coordinates::DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real
 
 //--------------------------------------------------------------------------------------
 
+// Function for calculating Minkowski coordinates of cell
+// Inputs:
+//   x0,x1,x2,x3: tilted coordinates
+// Outputs:
+//   pt,px,py,pz: Minkowski coordinate values set
+// Notes:
+//   transformation given by:
+//     t = (t' - a x') / \alpha
+//     x = (x' + a t') / \alpha
+void Coordinates::MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3,
+    Real *pt, Real *px, Real *py, Real *pz)
+{
+  *pt = (x0 - tilted_a_ * x1) / alpha;
+  *px = (x1 + tilted_a_ * x0) / alpha;
+  *py = x2;
+  *pz = x3;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
 // Function for transforming 4-vector from Minkowski to global: cell-centered
 // Inputs:
 //   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
-//   k,j,i: z-, y-, and x-indices (unused)
+//   k,j,i: z-, y-, and x'-indices (unused)
 // Outputs:
-//   *pa0,*pa1,*pa2,*pa3: pointers to upper 4-vector components in global coordinates
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
 void Coordinates::TransformVectorCell(
@@ -1227,9 +1248,9 @@ void Coordinates::TransformVectorCell(
 // Function for transforming 4-vector from Minkowski to global: x-interface
 // Inputs:
 //   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
-//   k,j,i: z-, y-, and x-indices (unused)
+//   k,j,i: z-, y-, and x'-indices (unused)
 // Outputs:
-//   *pa0,*pa1,*pa2,*pa3: pointers to upper 4-vector components in global coordinates
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
 void Coordinates::TransformVectorFace1(
@@ -1248,9 +1269,9 @@ void Coordinates::TransformVectorFace1(
 // Function for transforming 4-vector from Minkowski to global: y-interface
 // Inputs:
 //   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
-//   k,j,i: z-, y-, and x-indices (unused)
+//   k,j,i: z-, y-, and x'-indices (unused)
 // Outputs:
-//   *pa0,*pa1,*pa2,*pa3: pointers to upper 4-vector components in global coordinates
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
 void Coordinates::TransformVectorFace2(
@@ -1269,9 +1290,9 @@ void Coordinates::TransformVectorFace2(
 // Function for transforming 4-vector from Minkowski to global: z-interface
 // Inputs:
 //   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
-//   k,j,i: z-, y-, and x-indices (unused)
+//   k,j,i: z-, y-, and x'-indices (unused)
 // Outputs:
-//   *pa0,*pa1,*pa2,*pa3: pointers to upper 4-vector components in global coordinates
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
 void Coordinates::TransformVectorFace3(
@@ -1282,5 +1303,33 @@ void Coordinates::TransformVectorFace3(
   *pa1 = -tilted_a_/alpha * at + 1.0/alpha * ax;
   *pa2 = ay;
   *pa3 = az;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for lowering contravariant components of a vector
+// Inputs:
+//   a0,a1,a2,a3: contravariant components of vector
+//   k,j,i: indices of cell in which transformation is desired
+// Outputs:
+//   pa_0,pa_1,pa_2,pa_3: pointers to covariant 4-vector components
+void Coordinates::LowerVectorCell(
+    Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
+    Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3)
+{
+  // Extract geometric quantities
+  Real g_00 = -SQR(beta) / SQR(alpha);
+  Real g_01 = 2.0 * tilted_a_ / SQR(alpha);
+  Real g_10 = g_01;
+  Real g_11 = SQR(beta) / SQR(alpha);
+  Real g_22 = 1.0;
+  Real g_33 = 1.0;
+
+  // Set lowered components
+  *pa_0 = g_00*a0 + g_01*a1;
+  *pa_1 = g_10*a0 + g_11*a1;
+  *pa_2 = g_22*a2;
+  *pa_3 = g_33*a3;
   return;
 }
