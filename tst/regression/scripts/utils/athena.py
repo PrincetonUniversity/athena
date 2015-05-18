@@ -63,22 +63,52 @@ def run(input_filename, arguments):
     os.chdir(current_dir)
 
 # Function for reading Athena++ tabular data
-def read_tab(filename, headings=None):
+def read_tab(filename, headings=None, dimensions=1):
+  if dimensions != 1 and dimensions !=2 and dimensions != 3:
+    raise RuntimeError('Improper number of dimensions')
   with open(filename, 'r') as data_file:
     raw_data = data_file.readlines()
   data_array = []
+  first_line = True
+  last_line_number = len(raw_data)
+  line_number = 0
   for line in raw_data:
+    line_number += 1
     if line.split()[0][0] == '#':
       continue
     row = []
-    for val in line.split()[1:]:
-      row.append(float(val))
+    col = 0
+    for val in line.split():
+      col += 1
+      if col == 1:
+        if first_line:
+          i_min = int(val)
+        if line_number == last_line_number:
+          i_max = int(val)
+      elif col == 3 and dimensions >= 2:
+        if first_line:
+          j_min = int(val)
+        if line_number == last_line_number:
+          j_max = int(val)
+      elif col == 5 and dimensions == 3:
+        if first_line:
+          k_min = int(val)
+        if line_number == last_line_number:
+          j_max = int(val)
+      else:
+        row.append(float(val))
+    first_line = False
     data_array.append(row)
-  data_array = np.array(data_array)
+  if dimensions == 1:
+    j_min = j_max = 0
+  if dimensions <= 2:
+    k_min = k_max = 0
+  array_shape = (k_max-k_min+1,j_max-j_min+1,i_max-i_min+1,len(row))
+  data_array = np.reshape(data_array, array_shape)
   if headings is not None:
     data_dict = {}
-    for i in range(len(headings)):
-      data_dict[headings[i]] = data_array[:,i]
+    for n in range(len(headings)):
+      data_dict[headings[n]] = data_array[:,:,:,n]
     return data_dict
   else:
     return data_array
