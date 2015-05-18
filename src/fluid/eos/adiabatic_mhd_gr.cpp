@@ -490,9 +490,9 @@ static Real FindRootNR(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq
     Real b_norm_sq, Real q_dot_b_norm_sq, Real gamma_prime)
 {
   // Parameters
-  const int max_iterations = 100;  // maximum number of iterations
-  const Real tol_w = 1.0e-6;       // absolute tolerance in W
-  const Real tol_res = 1.0e-6;     // absolute tolerance in residual
+  const int max_iterations = 100;         // maximum number of iterations
+  const Real tol_w = 1.0e-8 * w_initial;  // absolute tolerance in W
+  const Real tol_res = 1.0e-15;           // absolute tolerance in residual
 
   // Check if root has already been found
   Real new_res = QNResidual(w_initial, d_norm, q_dot_n, q_norm_sq, b_norm_sq,
