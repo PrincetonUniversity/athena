@@ -13,7 +13,8 @@ dt         = 0.01      # time increment between outputs
 <output2>
 file_type  = vtk       # Binary data dump
 variable   = prim      # variables to be output
-dt         = 0.01       # time increment between outputs
+dt         = 0.01      # time increment between outputs
+data_format = %24.16e  # format for tab files
 
 <time>
 cfl_number = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
@@ -46,3 +47,4 @@ wave_flag = 0         # Wave family number (0 - 4 for adiabatic hydro)
 amp       = 1.0e-6    # Wave Amplitude
 vflow     = 0.0       # background flow velocity
 ang_2     = 0.0       # rotation of k around x2 axis
+ang_3     = 0.0       # rotation of k around x3 axis

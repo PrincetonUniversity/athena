@@ -1,4 +1,4 @@
-# Test script for relativistic MHD convergence
+# Test script for relativistic MHD linear wave convergence
 
 # Modules
 import numpy as np
@@ -7,7 +7,7 @@ import scripts.utils.athena as athena
 import scripts.utils.comparison as comparison
 
 # Parameters
-wave_flags = range(3,7)
+wave_flags = range(7)
 res_low = 64
 res_high = 512
 cutoff = 1.8
