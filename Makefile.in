@@ -9,6 +9,7 @@ RECONSTRUCT_FILE = @RECONSTRUCT_FILE@
 RSOLVER_FILE = @RSOLVER_FILE@
 RSOLVER_DIR = @RSOLVER_DIR@
 FLUID_INT_FILE = @FLUID_INT_FILE@
+VIS_FILE = @VIS_FILE@
 
 # General compiler specifications
 
@@ -27,6 +28,7 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/field/integrators/*.cpp) \
 	     $(wildcard src/fluid/*.cpp) \
 	     $(wildcard src/fluid/srcterms/*.cpp) \
+	     $(wildcard src/fluid/viscosity/$(VIS_FILE)) \
 	     src/fluid/eos/$(EOS_FILE) \
 	     $(wildcard src/fluid/integrators/*.cpp) \
 	     $(wildcard src/fluid/integrators/reconstruct/*.cpp) \

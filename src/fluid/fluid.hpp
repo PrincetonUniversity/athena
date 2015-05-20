@@ -19,6 +19,7 @@ class FluidIntegrator;
 class FluidBCs;
 class FluidEqnOfState;
 class FluidSourceTerms;
+class Viscosity;
 
 //! \class Fluid
 //  \brief fluid data and functions
@@ -41,6 +42,8 @@ public:
   FluidIntegrator *pf_integrator;  // integration algorithm
   FluidEqnOfState *pf_eos;         // equation of state (including cons->prim func)
   FluidSourceTerms *pf_srcterms;   // physical source terms
+
+  Viscosity *pf_viscosity; // Viscosity terms
 
   Real NewBlockTimeStep(MeshBlock *pmb);    // computes new timestep on a MeshBlock
 //  void InitFluid(ParameterInput *pin); // problem generator function (files in /pgen)

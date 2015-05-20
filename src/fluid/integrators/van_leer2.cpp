@@ -28,6 +28,7 @@
 #include "../../field/field.hpp"             // Fields
 #include "../../mesh.hpp"                    // MeshBlock
 #include "../srcterms/srcterms.hpp"          // PhysicalSourceTerms()
+#include "../viscosity/viscosity.hpp"        // Viscosity
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL
@@ -84,6 +85,9 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
   area.InitWithShallowSlice(face_area_,2,tid,1);
   area_p1.InitWithShallowSlice(face_area_p1_,2,tid,1);
   vol.InitWithShallowSlice(cell_volume_,2,tid,1);
+
+//----------Viscosity update
+  if(VISCOSITY) pmb->pfluid->pf_viscosity->ViscosityTerms(dt,w,u);
 
 //--------------------------------------------------------------------------------------
 // i-direction
