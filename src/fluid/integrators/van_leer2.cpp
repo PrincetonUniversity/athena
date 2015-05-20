@@ -124,6 +124,8 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 
         // add coordinate (geometric) source terms
         pmb->pcoord->CoordSrcTermsX1(k,j,dt,flx,w,bcc,u);
+        // add physical source terms for a point mass potential
+        pmb->pfluid->pf_srcterms->PhysicalSourceTermsX1(k,j,dt,flx,w,u);
       }
 
       // store electric fields, compute weights for GS07 CT algorithm
@@ -209,6 +211,8 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 
           // add coordinate (geometric) source terms
           pmb->pcoord->CoordSrcTermsX2(k,j,dt,jflx_j,flx,w,bcc,u);
+          // add physical source terms for a point mass potential
+          pmb->pfluid->pf_srcterms->PhysicalSourceTermsX2(k,j,dt,jflx_j,flx,w,u);
         }
 
         // store electric fields, compute weights for GS07 CT algorithm
@@ -306,6 +310,8 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 
           // add coordinate (geometric) source terms
           pmb->pcoord->CoordSrcTermsX3(k,j,dt,kflx_k,flx,w,bcc,u);
+	  // add physical source terms for a point mass potential
+	  pmb->pfluid->pf_srcterms->PhysicalSourceTermsX3(k,j,dt,kflx_k,flx,w,u);
         }
 
         // store electric fields, compute weights for GS07 CT algorithm
@@ -338,9 +344,7 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 } // end of omp parallel region
 
 //--------------------------------------------------------------------------------------
-//  Add physical and user source terms
-
-  pmb->pfluid->pf_srcterms->PhysicalSourceTerms(pmb->pmy_mesh->time,dt,w,u);
+//  Add user source terms
 
   if (pmb->pfluid->pf_srcterms->UserSourceTerm != NULL)
     pmb->pfluid->pf_srcterms->UserSourceTerm(pmb->pmy_mesh->time,dt,w,u);

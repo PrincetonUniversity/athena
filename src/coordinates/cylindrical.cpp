@@ -84,6 +84,8 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
   coord_vol_i_.NewAthenaArray(ncells1);
   coord_src1_i_.NewAthenaArray(ncells1);
   coord_src2_i_.NewAthenaArray(ncells1);
+  phy_src1_i_.NewAthenaArray(ncells1);
+  phy_src2_i_.NewAthenaArray(ncells1);
 
   // Compute and store constant coefficients needed for face-areas, cell-volumes, etc.
   // This helps improve performance.
@@ -99,6 +101,13 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     coord_src1_i_(i) = pmb->dx1f(i)/coord_vol_i_(i);
     // (dR/2)/(R_c dV)
     coord_src2_i_(i) = pmb->dx1f(i)/((rm + rp)*coord_vol_i_(i));
+    // Rf_{i}/R_{i}/Rf_{i}^2
+    phy_src1_i_(i) = 1.0/(pmb->x1v(i)*pmb->x1f(i));
+  }
+#pragma simd
+  for (int i=is-(NGHOST); i<=ie+(NGHOST-1); ++i){
+     // Rf_{i+1}/R_{i}/Rf_{i+1}^2 
+    phy_src2_i_(i) = 1.0/(pmb->x1v(i)*pmb->x1f(i+1));
   }
 
 }
@@ -111,6 +120,8 @@ Coordinates::~Coordinates()
   coord_vol_i_.DeleteAthenaArray();
   coord_src1_i_.DeleteAthenaArray();
   coord_src2_i_.DeleteAthenaArray();
+  phy_src1_i_.DeleteAthenaArray();
+  phy_src2_i_.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------

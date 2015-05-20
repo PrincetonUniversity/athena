@@ -189,6 +189,7 @@ private:
   AthenaArray<Real> coord_src2_i_, coord_src2_j_;
   AthenaArray<Real> coord_src_i1_, coord_src_i2_, coord_src_i3_, coord_src_i4_;
   AthenaArray<Real> coord_src_j1_, coord_src_j2_, coord_src_j3_;
+  AthenaArray<Real> phy_src1_i_, phy_src2_i_;
 
   // GR-specific scratch arrays
   AthenaArray<Real> metric_cell_i1_, metric_cell_i2_, metric_cell_j1_;

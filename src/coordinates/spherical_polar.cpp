@@ -89,6 +89,8 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
   coord_vol_i_.NewAthenaArray(ncells1);
   coord_src1_i_.NewAthenaArray(ncells1);
   coord_src2_i_.NewAthenaArray(ncells1);
+  phy_src1_i_.NewAthenaArray(ncells1);
+  phy_src2_i_.NewAthenaArray(ncells1);
 
   int ncells2 = 1;
   if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
@@ -116,7 +118,12 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     coord_src1_i_(i) = coord_area2_i_(i)/coord_vol_i_(i);
     // (dR/2)/(R_c dV)
     coord_src2_i_(i) = pmb->dx1f(i)/((rm + rp)*coord_vol_i_(i));
+    // Rf_{i}^2/R_{i}^2/Rf_{i}^2
+    phy_src1_i_(i) = 1.0/SQR(pmb->x1v(i));
+    // Rf_{i+1}^2/R_{i}^2/Rf_{i+1}^2
+    phy_src2_i_(i) = phy_src1_i_(i);
   }
+
   if (pmb->block_size.nx2 > 1) {
 #pragma simd
     for (int j=js-(NGHOST); j<=je+(NGHOST); ++j){
@@ -159,6 +166,8 @@ Coordinates::~Coordinates()
   coord_vol_i_.DeleteAthenaArray();
   coord_src1_i_.DeleteAthenaArray();
   coord_src2_i_.DeleteAthenaArray();
+  phy_src1_i_.DeleteAthenaArray();
+  phy_src2_i_.DeleteAthenaArray();
 
   coord_area1_j_.DeleteAthenaArray();
   coord_area2_j_.DeleteAthenaArray();
