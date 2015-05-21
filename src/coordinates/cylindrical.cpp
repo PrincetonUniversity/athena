@@ -475,9 +475,7 @@ void Coordinates::VisSrcTermsX2(const int k, const int j, const Real dt,
   #pragma simd
   for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
     // src_1 = -<M_{phi phi}><1/r>
-    Real& x_i   = pmy_block->x1f(i);
-    Real& x_ip1 = pmy_block->x1f(i+1);
-    u(IM1,k,j,i) -= dt*coord_src2_i_(i)*(x_i*flx(IM2,i) + x_ip1*flx(IM2,i+1));
+    u(IM1,k,j,i) -= dt*coord_src1_i_(i)*0.5*(flx(IM2,i) + flx_p1(IM2,i));
   }
 
   return;
