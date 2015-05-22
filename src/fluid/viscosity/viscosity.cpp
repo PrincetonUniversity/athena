@@ -86,7 +86,7 @@ void Viscosity::ViscosityTerms(const Real dt,
   MeshBlock *pmb = pmy_fluid_->pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  Real rr=1., tt=1., pp=1., rt=1., rp=1., tp=1.;
+  Real s11=1., s22=1., s33=1., s12=1., s13=1., s23=1.;
   Real denf, nu;
 
   if(nuiso_ == 0.0) return;
@@ -110,9 +110,9 @@ void Viscosity::ViscosityTerms(const Real dt,
       for (int i=is; i<=ie+1; ++i){
         nu = nuiso1(IM1, k,j,i);
         denf = 0.5*(prim(IDN,k,j,i)+prim(IDN,k,j,i-1));
-        visflx_(IM1,i) = denf*nu*(2.*dx_(i)+0.5*cnuiso2(k,j,i)*(divv_(i)+divv_(i-1)))*rr;
-        visflx_(IM2,i) = denf*nu*dy_(i)*rt;
-        visflx_(IM3,i) = denf*nu*dz_(i)*rp;
+        visflx_(IM1,i) = denf*nu*(2.*dx_(i)+0.5*cnuiso2(k,j,i)*(divv_(i)+divv_(i-1)))*s11;
+        visflx_(IM2,i) = denf*nu*dy_(i)*s12;
+        visflx_(IM3,i) = denf*nu*dz_(i)*s13;
 	if (NON_BAROTROPIC_EOS) 
           visflx_(IEN,i) = 0.5*((prim(IM1,k,j,i-1)+prim(IM1,k,j,i))*visflx_(IM1,i) +
 				(prim(IM2,k,j,i-1)+prim(IM2,k,j,i))*visflx_(IM2,i) +
@@ -145,10 +145,10 @@ void Viscosity::ViscosityTerms(const Real dt,
           for (int i=is; i<=ie; ++i){
 	    nu = nuiso1(IM2,k,j,i);
 	    denf = 0.5*(prim(IDN,k,j,i)+prim(IDN,k,j-1,i));
-            jvisflx_j_(IM1,i) = denf*nu*dx_(i)*rt;
+            jvisflx_j_(IM1,i) = denf*nu*dx_(i)*s12;
             jvisflx_j_(IM2,i) = denf*nu*
-                                (2.*dy_(i)+0.5*cnuiso2(k,j,i)*(divv_(k,j,i)+divv_(k,j-1,i)))*tt;
-            jvisflx_j_(IM3,i) = denf*nu*dz_(i)*tp;
+                                (2.*dy_(i)+0.5*cnuiso2(k,j,i)*(divv_(k,j,i)+divv_(k,j-1,i)))*s22;
+            jvisflx_j_(IM3,i) = denf*nu*dz_(i)*s23;
 	    if (NON_BAROTROPIC_EOS) 
               jvisflx_j_(IEN,i) = 0.5*((prim(IM1,k,j-1,i)+prim(IM1,k,j,i))*jvisflx_j_(IM1,i) +
                                        (prim(IM2,k,j-1,i)+prim(IM2,k,j,i))*jvisflx_j_(IM2,i) +
@@ -163,10 +163,10 @@ void Viscosity::ViscosityTerms(const Real dt,
         for (int i=is; i<=ie; ++i){
           nu = nuiso1(IM2,k,j+1,i);
           denf = 0.5*(prim(IDN,k,j+1,i)+prim(IDN,k,j,i));
-          visflx_(IM1,i) = denf*nu*dx_(i)*rt;
+          visflx_(IM1,i) = denf*nu*dx_(i)*s12;
           visflx_(IM2,i) = denf*nu*
-                           (2.*dy_(i)+0.5*cnuiso2(k,j+1,i)*(divv_(k,j+1,i)+divv_(k,j,i)))*tt;
-          visflx_(IM3,i) = denf*nu*dz_(i)*tp;
+                           (2.*dy_(i)+0.5*cnuiso2(k,j+1,i)*(divv_(k,j+1,i)+divv_(k,j,i)))*s22;
+          visflx_(IM3,i) = denf*nu*dz_(i)*s23;
 	  if (NON_BAROTROPIC_EOS)
             visflx_(IEN,i) = 0.5*((prim(IM1,k,j,i)+prim(IM1,k,j+1,i))*visflx_(IM1,i) +
                                   (prim(IM2,k,j,i)+prim(IM2,k,j+1,i))*visflx_(IM2,i) +
@@ -203,10 +203,10 @@ void Viscosity::ViscosityTerms(const Real dt,
           for (int i=is; i<=ie; ++i){
 	    nu = nuiso1(IM3,k,j,i);
 	    denf = 0.5*(prim(IDN,k,j,i)+prim(IDN,k-1,j,i));
-            kvisflx_k_(IM1,j,i) = denf*nu*dx_(i)*rp;
-            kvisflx_k_(IM2,j,i) = denf*nu*dy_(i)*tp;
+            kvisflx_k_(IM1,j,i) = denf*nu*dx_(i)*s13;
+            kvisflx_k_(IM2,j,i) = denf*nu*dy_(i)*s23;
             kvisflx_k_(IM3,j,i) = denf*nu*
-                                   (2.*dz_(i)+0.5*cnuiso2(k,j,i)*(divv_(k,j,i)+divv_(k-1,j,i)))*pp; 
+                                   (2.*dz_(i)+0.5*cnuiso2(k,j,i)*(divv_(k,j,i)+divv_(k-1,j,i)))*s33; 
             if (NON_BAROTROPIC_EOS)
               kvisflx_k_(IEN,j,i) = 0.5*((prim(IM1,k-1,j,i)+prim(IM1,k,j,i))*kvisflx_k_(IM1,j,i) +
                                          (prim(IM2,k-1,j,i)+prim(IM2,k,j,i))*kvisflx_k_(IM2,j,i) +
@@ -221,10 +221,10 @@ void Viscosity::ViscosityTerms(const Real dt,
         for (int i=is; i<=ie; ++i){
 	  nu = nuiso1(IM3,k+1,j,i);
           denf = 0.5*(prim(IDN,k+1,j,i)+prim(IDN,k,j,i));
-          visflx_(IM1,i) = denf*nu*dx_(i)*rp;
-          visflx_(IM2,i) = denf*nu*dy_(i)*tp;
+          visflx_(IM1,i) = denf*nu*dx_(i)*s13;
+          visflx_(IM2,i) = denf*nu*dy_(i)*s23;
           visflx_(IM3,i) = denf*nu*
-                           (2.*dz_(i)+0.5*cnuiso2(k+1,j,i)*(divv_(k+1,j,i)+divv_(k,j,i)))*pp;                       
+                           (2.*dz_(i)+0.5*cnuiso2(k+1,j,i)*(divv_(k+1,j,i)+divv_(k,j,i)))*s33;                       
 	  if (NON_BAROTROPIC_EOS)
             visflx_(IEN,i) = 0.5*((prim(IM1,k,j,i)+prim(IM1,k+1,j,i))*visflx_(IM1,i) +
                                   (prim(IM2,k,j,i)+prim(IM2,k+1,j,i))*visflx_(IM2,i) +

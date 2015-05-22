@@ -581,10 +581,10 @@ void Coordinates::VisSrcTermsX3(const int k, const int j, const Real dt,
 #pragma simd
   for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
     // src_1 = -<M_{phi phi} ><1/r>
-    u(IM1,k,j,i) -= dt*coord_src1_i_(i)*0.5*(flx(IM3,i)+flx_p1(IM3,i));
+    u(IM1,k,j,i) -= dt*coord_src1_i_(i)*0.5*(flx(IM3,j,i)+flx_p1(IM3,i));
 
     // src_2 = -< M_{phi phi} ><cot theta/r>
-    u(IM2,k,j,i) -= dt*coord_src1_i_(i)*coord_src1_j_(j)*0.5*(flx(IM3,i)+flx_p1(IM3,i));
+    u(IM2,k,j,i) -= dt*coord_src1_i_(i)*coord_src1_j_(j)*0.5*(flx(IM3,j,i)+flx_p1(IM3,i));
   }
 
   return;
