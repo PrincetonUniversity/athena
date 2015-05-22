@@ -43,20 +43,20 @@ enum task {
 
   fluid_integrate_1=1L<<0, field_integrate_1=1L<<1,
   fluid_send_1=1L<<2, fluid_recv_1=1L<<3,
-  flux_correction_send_1=1L<<4, flux_correction_recv_1=1L<<5,
-  fluid_prolongation_1=1L<<6, fluid_boundary_1=1L<<7,
+  flux_correct_send_1=1L<<4, flux_correct_recv_1=1L<<5,
+  fluid_prolong_1=1L<<6, fluid_boundary_1=1L<<7,
   field_send_1=1L<<8, field_recv_1=1L<<9,
-  emf_correction_send_1=1L<<10, emf_correction_recv_1=1L<<11,
-  field_prolongation_1=1L<<12, field_boundary_1=1L<<13,
+  emf_correct_send_1=1L<<10, emf_correct_recv_1=1L<<11,
+  field_prolong_1=1L<<12, field_boundary_1=1L<<13,
   primitives_1=1L<<14,
 
   fluid_integrate_0=1L<<15, field_integrate_0=1L<<16,
   fluid_send_0=1L<<17, fluid_recv_0=1L<<18,
-  flux_correction_send_0=1L<<19, flux_correction_recv_0=1L<<20,
-  fluid_prolongation_0=1L<<21, fluid_boundary_0=1L<<22,
+  flux_correct_send_0=1L<<19, flux_correct_recv_0=1L<<20,
+  fluid_prolong_0=1L<<21, fluid_boundary_0=1L<<22,
   field_send_0=1L<<23, field_recv_0=1L<<24,
-  emf_correction_send_0=1L<<25, emf_correction_recv_0=1L<<26,
-  field_prolongation_0=1L<<27, field_boundary_0=1L<<28,
+  emf_correct_send_0=1L<<25, emf_correct_recv_0=1L<<26,
+  field_prolong_0=1L<<27, field_boundary_0=1L<<28,
   primitives_0=1L<<29,
 
   new_blocktimestep=1L<<30

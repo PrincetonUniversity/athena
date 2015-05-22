@@ -89,6 +89,12 @@ enum task_status FluxCorrectionReceive(MeshBlock *pmb, int task_arg)
 
 enum task_status FluidProlongation(MeshBlock *pmb, int task_arg)
 {
+  Fluid *pfluid=pmb->pfluid;
+  BoundaryValues *pbval=pmb->pbval;
+  if(task_arg==0)
+    pbval->ProlongateFluidBoundaries(pfluid->u);
+  else if(task_arg==1)
+    pbval->ProlongateFluidBoundaries(pfluid->u1);
   return task_success;
 }
 
@@ -204,17 +210,17 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
     task[ntask].task_arg=1;
     break;
 
-  case flux_correction_send_1:
+  case flux_correct_send_1:
     task[ntask].TaskFunc=taskfunc::FluxCorrectionSend;
     task[ntask].task_arg=1;
     break;
 
-  case flux_correction_recv_1:
+  case flux_correct_recv_1:
     task[ntask].TaskFunc=taskfunc::FluxCorrectionReceive;
     task[ntask].task_arg=1;
     break;
 
-  case fluid_prolongation_1:
+  case fluid_prolong_1:
     task[ntask].TaskFunc=taskfunc::FluidProlongation;
     task[ntask].task_arg=1;
     break;
@@ -234,17 +240,17 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
     task[ntask].task_arg=1;
     break;
 
-  case emf_correction_send_1:
+  case emf_correct_send_1:
     task[ntask].TaskFunc=taskfunc::EMFCorrectionSend;
     task[ntask].task_arg=1;
     break;
 
-  case emf_correction_recv_1:
+  case emf_correct_recv_1:
     task[ntask].TaskFunc=taskfunc::EMFCorrectionReceive;
     task[ntask].task_arg=1;
     break;
 
-  case field_prolongation_1:
+  case field_prolong_1:
     task[ntask].TaskFunc=taskfunc::FieldProlongation;
     task[ntask].task_arg=1;
     break;
@@ -279,17 +285,17 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
     task[ntask].task_arg=0;
     break;
 
-  case flux_correction_send_0:
+  case flux_correct_send_0:
     task[ntask].TaskFunc=taskfunc::FluxCorrectionSend;
     task[ntask].task_arg=0;
     break;
 
-  case flux_correction_recv_0:
+  case flux_correct_recv_0:
     task[ntask].TaskFunc=taskfunc::FluxCorrectionReceive;
     task[ntask].task_arg=0;
     break;
 
-  case fluid_prolongation_0:
+  case fluid_prolong_0:
     task[ntask].TaskFunc=taskfunc::FluidProlongation;
     task[ntask].task_arg=0;
     break;
@@ -309,17 +315,17 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
     task[ntask].task_arg=0;
     break;
 
-  case emf_correction_send_0:
+  case emf_correct_send_0:
     task[ntask].TaskFunc=taskfunc::EMFCorrectionSend;
     task[ntask].task_arg=0;
     break;
 
-  case emf_correction_recv_0:
+  case emf_correct_recv_0:
     task[ntask].TaskFunc=taskfunc::EMFCorrectionReceive;
     task[ntask].task_arg=0;
     break;
 
-  case field_prolongation_0:
+  case field_prolong_0:
     task[ntask].TaskFunc=taskfunc::FieldProlongation;
     task[ntask].task_arg=0;
     break;

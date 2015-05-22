@@ -254,13 +254,20 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
 // calculate the logical root level and maximum level
   for(root_level=0;(1<<root_level)<nbmax;root_level++);
-  max_level = pin->GetOrAddInteger("mesh","maxlevel",1)+root_level-1;
 
 // create Block UID list
   tree.CreateRootGrid(nrbx1,nrbx2,nrbx3,root_level);
 
 // SMR / AMR: create finer grids here
   multilevel=false;
+  adaptive=false;
+  if(pin->GetOrAddString("mesh","refinement","static")=="adaptive")
+    adaptive=true, multilevel=true;
+  if(adaptive==true)
+    max_level = pin->GetOrAddInteger("mesh","maxlevel",1)+root_level-1;
+  else
+    max_level = IDLENGTH*10;
+
   InputBlock *pib = pin->pfirst_block;
   while (pib != NULL) {
     if (pib->block_name.compare(0,10,"refinement") == 0) {
@@ -295,7 +302,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       }
       if(lrlev > max_level) {
         msg << "### FATAL ERROR in Mesh constructor" << std::endl
-            << "Refinement level exceeds the maximum level (specify maxlevel in <mesh>)."
+            << "Refinement level exceeds the maximum level (specify maxlevel in <mesh> if adaptive)."
             << std::endl;
         throw std::runtime_error(msg.str().c_str());
       }
@@ -388,10 +395,6 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     }
     pib=pib->pnext;
   }
-
-  adaptive=false;
-  if(pin->GetOrAddString("mesh","refinement","static")=="adaptive")
-    adaptive=true, multilevel=true;
 
   if(multilevel==true) {
     if(block_size.nx1%2==1 || (block_size.nx2%2==1 && block_size.nx2>1)
@@ -1453,7 +1456,7 @@ void MeshBlock::SetCoarserCoordinates(void) {
   else {
     if(block_size.x1rat==1.0) { //uniform
       for(int i=1; i<=cnghost; i++) {
-        coarse_dx1f(cie+i) = coarse_dx1f(cis+i-1);
+        coarse_dx1f(cie+i) = coarse_dx1f(cie+i-1);
         coarse_x1f(cie+i+1) =  coarse_x1f(cie+i) + coarse_dx1f(cie+i);
       }
     }
@@ -1507,7 +1510,7 @@ void MeshBlock::SetCoarserCoordinates(void) {
   else {
     if(block_size.x2rat==1.0) { //uniform
       for(int j=1; j<=cnghost; j++) {
-        coarse_dx2f(cje+j) = coarse_dx2f(cjs+j-1);
+        coarse_dx2f(cje+j) = coarse_dx2f(cje+j-1);
         coarse_x2f(cje+j+1) =  coarse_x2f(cje+j) + coarse_dx2f(cje+j);
       }
     }
@@ -1561,7 +1564,7 @@ void MeshBlock::SetCoarserCoordinates(void) {
   else {
     if(block_size.x3rat==1.0) { //uniform
       for(int k=1; k<=cnghost; k++) {
-        coarse_dx3f(cke+k) = coarse_dx3f(cks+k-1);
+        coarse_dx3f(cke+k) = coarse_dx3f(cke+k-1);
         coarse_x3f(cke+k+1) =  coarse_x3f(cke+k) + coarse_dx3f(cke+k);
       }
     }
@@ -1649,8 +1652,13 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b ,0);
     pmb->pbval->ClearBoundaryForInit();
     pbval->FluidPhysicalBoundaries(pfluid->u);
-    if (MAGNETIC_FIELDS_ENABLED)
+    if(multilevel==true)
+      pbval->ProlongateFluidBoundaries(pfluid->u);
+    if (MAGNETIC_FIELDS_ENABLED) {
       pbval->FieldPhysicalBoundaries(pfield->b);
+//      if(multilevel==true)
+//        pbval->ProlongateFieldBoundaries(pfield->b);
+    }
     pfluid->pf_eos->ConservedToPrimitive(pfluid->u, pfluid->w1, pfield->b, 
                                          pfluid->w, pfield->bcc);
     pmb=pmb->next;
@@ -1790,6 +1798,7 @@ enum tasklist_status MeshBlock::DoOneTask(void) {
     if((ti.taskid & task_flag)==0L) { // this task is not done
       if (((ti.depend & task_flag) == ti.depend)) { // dependency clear
         ret=ti.TaskFunc(this,ti.task_arg);
+//        std::cout << "Meshblock " << gid << " task "<< ti.taskid << " returns " << ret << std::endl;
         if(ret!=task_failure) { // success
           ntodo--;
           task_flag |= ti.taskid;
@@ -1812,13 +1821,14 @@ enum tasklist_status MeshBlock::DoOneTask(void) {
 //--------------------------------------------------------------------------------------
 // \!fn void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
 //                          int iox1, int iox2, int iox3, enum neighbor_type itype,
-//                          int ibid, int ifi1=0, int ifi2=0)
+//                          int ibid, int itargetid, int ifi1=0, int ifi2=0)
 // \brief Set neighbor information
 void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
-  int iox1, int iox2, int iox3, enum neighbor_type itype, int ibid, int ifi1=0, int ifi2=0)
+  int iox1, int iox2, int iox3, enum neighbor_type itype, int ibid, int itargetid,
+  int ifi1=0, int ifi2=0)
 {
   rank=irank; level=ilevel; gid=igid; lid=ilid; ox1=iox1; ox2=iox2; ox3=iox3; type=itype;
-  bufid=ibid; fi1=ifi1; fi2=ifi2;
+  bufid=ibid; targetid=itargetid; fi1=ifi1; fi2=ifi2;
   return;
 }
 
@@ -1829,11 +1839,14 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
 {
   BlockTree* neibt;
   long int lx1, lx2, lx3;
-  int ll, myox1, myox2, myox3;
+  int ll, myox1, myox2, myox3, myfx1, myfx2, myfx3;
   uid.GetLocation(lx1,lx2,lx3,ll);
   myox1=((int)(lx1&1L))*2-1;
-  myox2=((int)(lx1&1L))*2-1;
-  myox3=((int)(lx1&1L))*2-1;
+  myox2=((int)(lx2&1L))*2-1;
+  myox3=((int)(lx3&1L))*2-1;
+  myfx1=(int)(lx1&1L);
+  myfx2=(int)(lx2&1L);
+  myfx3=(int)(lx3&1L);
   long int nrbx1=pmy_mesh->nrbx1, nrbx2=pmy_mesh->nrbx2, nrbx3=pmy_mesh->nrbx3;
 
   int nf1=1, nf2=1;
@@ -1843,26 +1856,35 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
   }
   int bufid=0;
   nneighbor=0;
+  nblevel[1][1][1]=ll;
   // x1 face
   for(int n=-1; n<=1; n+=2) {
     neibt=tree.FindNeighbor(uid,n,0,0,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-    if(neibt==NULL) { bufid+=nf1*nf2; continue;}
+    if(neibt==NULL) { bufid+=nf1*nf2; nblevel[1][1][n+1]=-1; continue;}
     if(neibt->flag==false) { // finer
       int fface=1-(n+1)/2; // 0 for outer_x3, 1 for inner_x3
+      nblevel[1][1][n+1]=neibt->uid.GetLevel()+1;
       for(int f2=0;f2<nf2;f2++) {
         for(int f1=0;f1<nf1;f1++) {
-          neibt=neibt->GetLeaf(fface,f1,f2);
-          int nlevel=neibt->uid.GetLevel();
-          neighbor[nneighbor].SetNeighbor(ranklist[neibt->gid], nlevel, neibt->gid,
-            neibt->gid-nslist[ranklist[neibt->gid]], n, 0, 0, neighbor_face, bufid, f1, f2);
+          BlockTree* nf=neibt->GetLeaf(fface,f1,f2);
+          int fid = nf->gid;
+          int nlevel=nf->uid.GetLevel();
+          int tbid=FindBufferID(-n,0,0,0,0,pmy_mesh->maxneighbor_);
+          neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
+            fid-nslist[ranklist[fid]], n, 0, 0, neighbor_face, bufid, tbid, f1, f2);
           bufid++; nneighbor++;
         }
       }
     }
     else {
       int nlevel=neibt->uid.GetLevel();
-      neighbor[nneighbor].SetNeighbor(ranklist[neibt->gid], nlevel, neibt->gid,
-        neibt->gid-nslist[ranklist[neibt->gid]], n, 0, 0, neighbor_face, bufid);
+      int nid=neibt->gid;
+      nblevel[1][1][n+1]=nlevel;
+      int tbid;
+      if(nlevel==ll) tbid=FindBufferID(-n,0,0,0,0,pmy_mesh->maxneighbor_);
+      else tbid=FindBufferID(-n,0,0,myfx2,myfx3,pmy_mesh->maxneighbor_);
+      neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
+        nid-nslist[ranklist[nid]], n, 0, 0, neighbor_face, bufid, tbid);
       bufid+=nf1*nf2; nneighbor++;
     }
   }
@@ -1870,23 +1892,31 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
   // x2 face
   for(int n=-1; n<=1; n+=2) {
     neibt=tree.FindNeighbor(uid,0,n,0,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-    if(neibt==NULL) { bufid+=nf1*nf2; continue;}
+    if(neibt==NULL) { bufid+=nf1*nf2; nblevel[1][n+1][1]=-1; continue;}
     if(neibt->flag==false) { // finer
       int fface=1-(n+1)/2; // 0 for outer_x3, 1 for inner_x3
+      nblevel[1][n+1][1]=neibt->uid.GetLevel()+1;
       for(int f2=0;f2<nf2;f2++) {
         for(int f1=0;f1<nf1;f1++) {
-          neibt=neibt->GetLeaf(f1,fface,f2);
-          int nlevel=neibt->uid.GetLevel();
-          neighbor[nneighbor].SetNeighbor(ranklist[neibt->gid], nlevel, neibt->gid,
-            neibt->gid-nslist[ranklist[neibt->gid]], 0, n, 0, neighbor_face, bufid, f1, f2);
+          BlockTree* nf=neibt->GetLeaf(f1,fface,f2);
+          int fid = nf->gid;
+          int nlevel=nf->uid.GetLevel();
+          int tbid=FindBufferID(0,-n,0,0,0,pmy_mesh->maxneighbor_);
+          neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
+            fid-nslist[ranklist[fid]], 0, n, 0, neighbor_face, bufid, tbid, f1, f2);
           bufid++; nneighbor++;
         }
       }
     }
     else {
       int nlevel=neibt->uid.GetLevel();
-      neighbor[nneighbor].SetNeighbor(ranklist[neibt->gid], nlevel, neibt->gid,
-        neibt->gid-nslist[ranklist[neibt->gid]], 0, n, 0, neighbor_face, bufid);
+      int nid=neibt->gid;
+      nblevel[1][n+1][1]=nlevel;
+      int tbid;
+      if(nlevel==ll) tbid=FindBufferID(0,-n,0,0,0,pmy_mesh->maxneighbor_);
+      else tbid=FindBufferID(0,-n,0,myfx1,myfx3,pmy_mesh->maxneighbor_);
+      neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
+        nid-nslist[ranklist[nid]], 0, n, 0, neighbor_face, bufid, tbid);
       bufid+=nf1*nf2; nneighbor++;
     }
   }
@@ -1894,23 +1924,31 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
     // x3 face
     for(int n=-1; n<=1; n+=2) {
       neibt=tree.FindNeighbor(uid,0,0,n,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-      if(neibt==NULL) { bufid+=nf1*nf2; continue;}
+      if(neibt==NULL) { bufid+=nf1*nf2; nblevel[n+1][1][1]=-1; continue;}
       if(neibt->flag==false) { // finer
         int fface=1-(n+1)/2; // 0 for outer_x3, 1 for inner_x3
+        nblevel[n+1][1][1]=neibt->uid.GetLevel()+1;
         for(int f2=0;f2<nf2;f2++) {
           for(int f1=0;f1<nf1;f1++) {
-            neibt=neibt->GetLeaf(f1,f2,fface);
-            int nlevel=neibt->uid.GetLevel();
-            neighbor[nneighbor].SetNeighbor(ranklist[neibt->gid], nlevel, neibt->gid,
-              neibt->gid-nslist[ranklist[neibt->gid]], 0, 0, n, neighbor_face, bufid, f1, f2);
+            BlockTree* nf=neibt->GetLeaf(f1,f2,fface);
+            int fid = nf->gid;
+            int nlevel=nf->uid.GetLevel();
+            int tbid=FindBufferID(0,0,-n,0,0,pmy_mesh->maxneighbor_);
+            neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
+              fid-nslist[ranklist[fid]], 0, 0, n, neighbor_face, bufid, tbid, f1, f2);
             bufid++; nneighbor++;
           }
         }
       }
       else {
         int nlevel=neibt->uid.GetLevel();
-        neighbor[nneighbor].SetNeighbor(ranklist[neibt->gid], nlevel, neibt->gid,
-          neibt->gid-nslist[ranklist[neibt->gid]], 0, 0, n, neighbor_face, bufid);
+        int nid=neibt->gid;
+        nblevel[n+1][1][1]=nlevel;
+        int tbid;
+        if(nlevel==ll) tbid=FindBufferID(0,0,-n,0,0,pmy_mesh->maxneighbor_);
+        else tbid=FindBufferID(0,0,-n,myfx1,myfx2,pmy_mesh->maxneighbor_);
+        neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
+          nid-nslist[ranklist[nid]], 0, 0, n, neighbor_face, bufid, tbid);
         bufid+=nf1*nf2; nneighbor++;
       }
     }
@@ -1921,23 +1959,31 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
   for(int m=-1; m<=1; m+=2) {
     for(int n=-1; n<=1; n+=2) {
       neibt=tree.FindNeighbor(uid,n,m,0,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-      if(neibt==NULL) { bufid+=nf1; continue;}
+      if(neibt==NULL) { bufid+=nf1; nblevel[1][m+1][n+1]=-1; continue;}
       if(neibt->flag==false) { // finer
         int ff1=1-(n+1)/2; // 0 for outer_x1, 1 for inner_x1
-        int ff2=1-(m+1)/2; // 0 for outer_x3, 1 for inner_x3
+        int ff2=1-(m+1)/2; // 0 for outer_x2, 1 for inner_x2
+        nblevel[1][m+1][n+1]=neibt->uid.GetLevel()+1;
         for(int f1=0;f1<nf1;f1++) {
-          neibt=neibt->GetLeaf(ff1,ff2,f1);
-          int nlevel=neibt->uid.GetLevel();
-          neighbor[nneighbor].SetNeighbor(ranklist[neibt->gid], nlevel, neibt->gid,
-            neibt->gid-nslist[ranklist[neibt->gid]], n, m, 0, neighbor_edge, bufid, f1, 0);
+          BlockTree* nf=neibt->GetLeaf(ff1,ff2,f1);
+          int fid = nf->gid;
+          int nlevel=nf->uid.GetLevel();
+          int tbid=FindBufferID(-n,-m,0,0,0,pmy_mesh->maxneighbor_);
+          neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
+            fid-nslist[ranklist[fid]], n, m, 0, neighbor_edge, bufid, tbid, f1, 0);
           bufid++; nneighbor++;
         }
       }
       else {
         int nlevel=neibt->uid.GetLevel();
+        int nid=neibt->gid;
+        nblevel[1][m+1][n+1]=nlevel;
+        int tbid;
+        if(nlevel==ll) tbid=FindBufferID(-n,-m,0,0,0,pmy_mesh->maxneighbor_);
+        else tbid=FindBufferID(-n,-m,0,myfx3,0,pmy_mesh->maxneighbor_);
         if(nlevel>=ll || (myox1==n && myox2==m)) {
-          neighbor[nneighbor].SetNeighbor(ranklist[neibt->gid], nlevel, neibt->gid,
-            neibt->gid-nslist[ranklist[neibt->gid]], n, m, 0, neighbor_edge, bufid);
+          neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
+            nid-nslist[ranklist[nid]], n, m, 0, neighbor_edge, bufid, tbid);
           nneighbor++;
         }
         bufid+=nf1;
@@ -1949,23 +1995,31 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
   for(int m=-1; m<=1; m+=2) {
     for(int n=-1; n<=1; n+=2) {
       neibt=tree.FindNeighbor(uid,n,0,m,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-      if(neibt==NULL) { bufid+=nf1; continue;}
+      if(neibt==NULL) { bufid+=nf1; nblevel[m+1][1][n+1]=-1; continue;}
       if(neibt->flag==false) { // finer
         int ff1=1-(n+1)/2; // 0 for outer_x1, 1 for inner_x1
         int ff2=1-(m+1)/2; // 0 for outer_x3, 1 for inner_x3
+        nblevel[m+1][1][n+1]=neibt->uid.GetLevel()+1;
         for(int f1=0;f1<nf1;f1++) {
-          neibt=neibt->GetLeaf(ff1,f1,ff2);
-          int nlevel=neibt->uid.GetLevel();
-          neighbor[nneighbor].SetNeighbor(ranklist[neibt->gid], nlevel, neibt->gid,
-            neibt->gid-nslist[ranklist[neibt->gid]], n, 0, m, neighbor_edge, bufid, f1, 0);
+          BlockTree* nf=neibt->GetLeaf(ff1,f1,ff2);
+          int fid = nf->gid;
+          int nlevel=nf->uid.GetLevel();
+          int tbid=FindBufferID(-n,0,-m,0,0,pmy_mesh->maxneighbor_);
+          neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
+            fid-nslist[ranklist[fid]], n, 0, m, neighbor_edge, bufid, tbid, f1, 0);
           bufid++; nneighbor++;
         }
       }
       else {
         int nlevel=neibt->uid.GetLevel();
+        int nid=neibt->gid;
+        nblevel[m+1][1][n+1]=nlevel;
+        int tbid;
+        if(nlevel==ll) tbid=FindBufferID(-n,0,-m,0,0,pmy_mesh->maxneighbor_);
+        else tbid=FindBufferID(-n,0,-m,myfx2,0,pmy_mesh->maxneighbor_);
         if(nlevel>=ll || (myox1==n && myox3==m)) {
-          neighbor[nneighbor].SetNeighbor(ranklist[neibt->gid], nlevel, neibt->gid,
-            neibt->gid-nslist[ranklist[neibt->gid]], n, 0, m, neighbor_edge, bufid);
+          neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
+            nid-nslist[ranklist[nid]], n, 0, m, neighbor_edge, bufid, tbid);
           nneighbor++;
         }
         bufid+=nf1;
@@ -1976,23 +2030,31 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
   for(int m=-1; m<=1; m+=2) {
     for(int n=-1; n<=1; n+=2) {
       neibt=tree.FindNeighbor(uid,0,n,m,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-      if(neibt==NULL) { bufid+=nf1; continue;}
+      if(neibt==NULL) { bufid+=nf1; nblevel[m+1][n+1][1]=-1; continue;}
       if(neibt->flag==false) { // finer
         int ff1=1-(n+1)/2; // 0 for outer_x1, 1 for inner_x1
         int ff2=1-(m+1)/2; // 0 for outer_x3, 1 for inner_x3
+        nblevel[m+1][n+1][1]=neibt->uid.GetLevel()+1;
         for(int f1=0;f1<nf1;f1++) {
-          neibt=neibt->GetLeaf(f1,ff1,ff2);
-          int nlevel=neibt->uid.GetLevel();
-          neighbor[nneighbor].SetNeighbor(ranklist[neibt->gid], nlevel, neibt->gid,
-            neibt->gid-nslist[ranklist[neibt->gid]], 0, n, m, neighbor_edge, bufid, f1, 0);
+          BlockTree* nf=neibt->GetLeaf(f1,ff1,ff2);
+          int fid = nf->gid;
+          int nlevel=nf->uid.GetLevel();
+          int tbid=FindBufferID(0,-n,-m,0,0,pmy_mesh->maxneighbor_);
+          neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
+            fid-nslist[ranklist[fid]], 0, n, m, neighbor_edge, bufid, tbid, f1, 0);
           bufid++; nneighbor++;
         }
       }
       else {
         int nlevel=neibt->uid.GetLevel();
+        int nid=neibt->gid;
+        nblevel[m+1][n+1][1]=nlevel;
+        int tbid;
+        if(nlevel==ll) tbid=FindBufferID(0,-n,-m,0,0,pmy_mesh->maxneighbor_);
+        else tbid=FindBufferID(0,-n,-m,myfx1,0,pmy_mesh->maxneighbor_);
         if(nlevel>=ll || (myox2==n && myox3==m)) {
-          neighbor[nneighbor].SetNeighbor(ranklist[neibt->gid], nlevel, neibt->gid,
-            neibt->gid-nslist[ranklist[neibt->gid]], 0, n, m, neighbor_edge, bufid);
+          neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
+            nid-nslist[ranklist[nid]], 0, n, m, neighbor_edge, bufid, tbid);
           nneighbor++;
         }
         bufid+=nf1;
@@ -2004,7 +2066,7 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
     for(int m=-1; m<=1; m+=2) {
       for(int n=-1; n<=1; n+=2) {
         neibt=tree.FindNeighbor(uid,n,m,l,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-        if(neibt==NULL) { bufid++; continue;}
+        if(neibt==NULL) { bufid++; nblevel[l+1][m+1][n+1]=-1; continue;}
         if(neibt->flag==false) { // finer
           int ff1=1-(n+1)/2; // 0 for outer_x1, 1 for inner_x1
           int ff2=1-(m+1)/2; // 0 for outer_x2, 1 for inner_x2
@@ -2012,16 +2074,18 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
           neibt=neibt->GetLeaf(ff1,ff2,ff3);
         }
         int nlevel=neibt->uid.GetLevel();
+        nblevel[l+1][m+1][n+1]=nlevel;
         if(nlevel>=ll || (myox1==n && myox2==m && myox3==l)) {
-          neighbor[nneighbor].SetNeighbor(ranklist[neibt->gid], nlevel, neibt->gid,
-            neibt->gid-nslist[ranklist[neibt->gid]], n, m, l, neighbor_edge, bufid);
+          int nid=neibt->gid;
+          int tbid=FindBufferID(-n,-m,-l,0,0,pmy_mesh->maxneighbor_);
+          neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
+            nid-nslist[ranklist[nid]], n, m, l, neighbor_corner, bufid, tbid);
           nneighbor++;
         }
         bufid++;
       }
     }
   }
-  
   return;
 }
 

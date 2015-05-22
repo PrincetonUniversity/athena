@@ -305,36 +305,48 @@ int main(int argc, char *argv[])
 
 //--- Step 8. Create and set the task list ---------------------------------------------
 // this is for a two-step integrator
-  task_list.AddTask(fluid_integrate_1, none); // predict fluid
-  task_list.AddTask(fluid_send_1, fluid_integrate_1); // send block boundaries
-  if (MAGNETIC_FIELDS_ENABLED) {
+  if (MAGNETIC_FIELDS_ENABLED) { // MHD
+    task_list.AddTask(fluid_integrate_1, none); // predict fluid
+    task_list.AddTask(fluid_send_1, fluid_integrate_1); // send block boundaries
     task_list.AddTask(field_integrate_1, fluid_integrate_1); // predict b-field
     task_list.AddTask(field_send_1, field_integrate_1); // send block boundaries
-  }
-  task_list.AddTask(fluid_recv_1, none); // receive block boundaries
-  task_list.AddTask(fluid_boundary_1, fluid_recv_1 | fluid_integrate_1); // physical boundaries
-  if (MAGNETIC_FIELDS_ENABLED) {
+    task_list.AddTask(fluid_recv_1, none); // receive block boundaries
+    task_list.AddTask(fluid_boundary_1, fluid_recv_1 | fluid_integrate_1); // physical boundaries
     task_list.AddTask(field_recv_1, none); // receive block boundaries
     task_list.AddTask(field_boundary_1, field_recv_1 | field_integrate_1); // physical boundaries
     task_list.AddTask(primitives_1, fluid_boundary_1 | field_boundary_1);
-  }
-  else task_list.AddTask(primitives_1, fluid_boundary_1);
-
-  task_list.AddTask(fluid_integrate_0, primitives_1); // correct fluid
-  task_list.AddTask(fluid_send_0, fluid_integrate_0); // send block boundaries
-  if (MAGNETIC_FIELDS_ENABLED) {
-    task_list.AddTask(field_integrate_0, fluid_integrate_0); // correct b-field
+    task_list.AddTask(fluid_integrate_0, primitives_1); // predict correct
+    task_list.AddTask(fluid_send_0, fluid_integrate_0); // send block boundaries
+    task_list.AddTask(field_integrate_0, fluid_integrate_0); // predict b-field
     task_list.AddTask(field_send_0, field_integrate_0); // send block boundaries
-  }
-  task_list.AddTask(fluid_recv_0, none); // receive block boundaries
-  task_list.AddTask(fluid_boundary_0, fluid_recv_0 | fluid_integrate_0); // physical boundaries
-  if (MAGNETIC_FIELDS_ENABLED) {
+    task_list.AddTask(fluid_recv_0, none); // receive block boundaries
+    task_list.AddTask(fluid_boundary_0, fluid_recv_0 | fluid_integrate_0); // physical boundaries
     task_list.AddTask(field_recv_0, none); // receive block boundaries
     task_list.AddTask(field_boundary_0, field_recv_0 | field_integrate_0); // physical boundaries
     task_list.AddTask(primitives_0, fluid_boundary_0 | field_boundary_0);
   }
-  else task_list.AddTask(primitives_0, fluid_boundary_0);
-
+  else { // hydro
+    task_list.AddTask(fluid_integrate_1, none); // predict fluid
+    task_list.AddTask(fluid_send_1, fluid_integrate_1); // send block boundaries
+    task_list.AddTask(fluid_recv_1, none); // receive block boundaries
+    task_list.AddTask(fluid_boundary_1, fluid_recv_1 | fluid_integrate_1); // physical boundaries
+    if(pmesh->multilevel==true) { // SMR or AMR
+      task_list.AddTask(fluid_prolong_1, fluid_boundary_1);
+      task_list.AddTask(primitives_1, fluid_prolong_1);
+    }
+    else
+      task_list.AddTask(primitives_1, fluid_boundary_1);
+    task_list.AddTask(fluid_integrate_0, primitives_1); // predict correct
+    task_list.AddTask(fluid_send_0, fluid_integrate_0); // send block boundaries
+    task_list.AddTask(fluid_recv_0, primitives_1); // receive block boundaries
+    task_list.AddTask(fluid_boundary_0, fluid_recv_0 | fluid_integrate_0); // physical boundaries
+    if(pmesh->multilevel==true) { // SMR or AMR
+      task_list.AddTask(fluid_prolong_0, fluid_boundary_0);
+      task_list.AddTask(primitives_0, fluid_prolong_0);
+    }
+    else
+      task_list.AddTask(primitives_0, fluid_boundary_0);
+  }
   task_list.AddTask(new_blocktimestep,primitives_0);
 
   pmesh->SetTaskList(task_list);

@@ -110,6 +110,9 @@ public:
   void SetFluidBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf, NeighborBlock& nb);
   bool ReceiveFluidBoundaryBuffers(AthenaArray<Real> &dst, int step);
   void ReceiveFluidBoundaryBuffersWithWait(AthenaArray<Real> &dst, int step);
+  void RestrictFluid(AthenaArray<Real> &src,
+                     int si, int ei, int sj, int ej, int sk, int ek);
+  void ProlongateFluidBoundaries(AthenaArray<Real> &dst);
   int LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *buf,
                                        NeighborBlock& nb);
   int LoadFieldBoundaryBufferToCoarser(InterfaceField &src, Real *buf,
@@ -139,6 +142,9 @@ private:
   enum boundary_status fluid_flag_[NSTEP][56], field_flag_[NSTEP][56];
   Real *fluid_send_[NSTEP][56], *fluid_recv_[NSTEP][56];
   Real *field_send_[NSTEP][56], *field_recv_[NSTEP][56];
+  AthenaArray<Real> rawflux_[NSTEP][6];
+  AthenaArray<Real> coarse_cons_, coarse_prim_;
+  AthenaArray<Real> fvol_[2][2];
 
 #ifdef MPI_PARALLEL
   MPI_Request req_fluid_send_[NSTEP][56], req_fluid_recv_[NSTEP][56];
@@ -147,7 +153,15 @@ private:
 };
 
 unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
-unsigned int CreateMPITag(int lid, int flag, int phys, int ox1, int ox2, int ox3, int fi1, int fi2);
+unsigned int CreateMPITag(int lid, int flag, int phys, int bufid);
 int BufferID(int dim, bool multilevel, bool face_only);
+int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2, int bmax);
+
+typedef struct NeighborIndexes
+{
+  int ox1, ox2, ox3, fi1, fi2;
+  enum neighbor_type type;
+} NeighborIndexes;
+
 
 #endif

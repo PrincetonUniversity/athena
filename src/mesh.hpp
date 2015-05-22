@@ -36,12 +36,12 @@ class BlockTree;
 //  \brief neighbor rank, level, and ids
 
 typedef struct NeighborBlock {
-  int rank, level, gid, lid, ox1, ox2, ox3, bufid, fi1, fi2;
+  int rank, level, gid, lid, ox1, ox2, ox3, fi1, fi2, bufid, targetid;
   enum neighbor_type type;
   NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1),
-    ox1(-1), ox2(-1), ox3(-1), bufid(-1), fi1(-1), fi2(-1), type(neighbor_none) {};
+    ox1(-1), ox2(-1), ox3(-1), bufid(-1), targetid(-1), fi1(-1), fi2(-1), type(neighbor_none) {};
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2, int iox3,
-                   enum neighbor_type itype, int ibid, int ifi1, int ifi2);
+                   enum neighbor_type itype, int ibid, int itargetid, int ifi1, int ifi2);
 } NeighborBlock;
 
 
@@ -69,6 +69,7 @@ private:
   Task *task;
   long int task_flag;
   int ntask, firsttask, ntodo, nneighbor;
+  int nblevel[3][3][3];
 
   friend class RestartOutput;
   friend class BoundaryValues;
@@ -125,7 +126,6 @@ private:
   Real MeshGeneratorX1(Real x, RegionSize rs);
   Real MeshGeneratorX2(Real x, RegionSize rs);
   Real MeshGeneratorX3(Real x, RegionSize rs);
-  bool adaptive, multilevel, face_only;
   BlockUID *buid;
   BlockTree tree;
   long int nrbx1, nrbx2, nrbx3;
@@ -148,6 +148,7 @@ public:
 
   Real start_time, tlim, cfl_number, time, dt;
   int nlim, ncycle;
+  bool adaptive, multilevel, face_only;
 
   MeshBlock *pblock;
 
