@@ -880,7 +880,7 @@ void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const in
     Real txz = flux(IM3,i);
 
     // Transform stress-energy tensor
-    Real t10 = m1_t*m0_t*ttt + m1_x*m0_t*ttx;
+    Real t10 = m1_t*m0_t*ttt + m1_x*m0_t*txt;
     Real t11 = m1_t*m1_t*ttt + m1_t*m1_x*ttx + m1_x*m1_t*txt + m1_x*m1_x*txx;
     Real t12 = m1_t*m2_y*tty + m1_x*m2_y*txy;
     Real t13 = m1_t*m3_z*ttz + m1_x*m3_z*txz;

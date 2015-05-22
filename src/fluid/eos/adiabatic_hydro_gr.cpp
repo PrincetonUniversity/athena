@@ -147,7 +147,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real q1 = alpha * m1;  // (N 17)
         Real q2 = alpha * m2;  // (N 17)
         Real q3 = alpha * m3;  // (N 17)
-        Real q_dot_n = -alpha * gi00*q0 + gi01*q1 + gi02*q2 + gi03*q3;
+        Real q_dot_n = -alpha * (gi00*q0 + gi01*q1 + gi02*q2 + gi03*q3);
         Real q_norm_1 = gi10*q0 + gi11*q1 + gi12*q2 + gi13*q3 - alpha * gi01 * q_dot_n;
         Real q_norm_2 = gi20*q0 + gi21*q1 + gi22*q2 + gi23*q3 - alpha * gi02 * q_dot_n;
         Real q_norm_3 = gi30*q0 + gi31*q1 + gi32*q2 + gi33*q3 - alpha * gi03 * q_dot_n;
