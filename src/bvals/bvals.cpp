@@ -549,7 +549,7 @@ void BoundaryValues::RestrictFluid(AthenaArray<Real> &src,
                              int csi, int cei, int csj, int cej, int csk, int cek)
 {
   MeshBlock *pmb=pmy_mblock_;
-  int si=(csi-pmb->cis)*2+pmb->is, ei=(cei-pmb->cis)*2+pmb->is;
+  int si=(csi-pmb->cis)*2+pmb->is, ei=(cei-pmb->cis)*2+pmb->is+1;
 
   // store the restricted data in the prolongation buffer for later use
   // note: this is actually redundant; this is only needed for face neighbors
@@ -862,8 +862,8 @@ void BoundaryValues::SetFluidBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf
 
   if(nb.ox1==0) {
     si=pmb->is, ei=pmb->ie;
-    if(nb.fi1==1) si+=pmb->block_size.nx1/2;
-    else ei-=pmb->block_size.nx1/2;
+    if(nb.fi1==1)   si+=pmb->block_size.nx1/2;
+    else            ei-=pmb->block_size.nx1/2;
   }
   else if(nb.ox1>0) si=pmb->ie+1,      ei=pmb->ie+NGHOST;
   else              si=pmb->is-NGHOST, ei=pmb->is-1;
@@ -871,11 +871,11 @@ void BoundaryValues::SetFluidBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf
     sj=pmb->js, ej=pmb->je;
     if(nb.ox1!=0) {
       if(nb.fi1==1) sj+=pmb->block_size.nx2/2;
-      else ej-=pmb->block_size.nx2/2;
+      else          ej-=pmb->block_size.nx2/2;
     }
     else {
       if(nb.fi2==1) sj+=pmb->block_size.nx2/2;
-      else ej-=pmb->block_size.nx2/2;
+      else          ej-=pmb->block_size.nx2/2;
     }
   }
   else if(nb.ox2>0) sj=pmb->je+1,      ej=pmb->je+NGHOST;
@@ -884,11 +884,11 @@ void BoundaryValues::SetFluidBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf
     sk=pmb->ks, ek=pmb->ke;
     if(nb.ox1!=0 && nb.ox2!=0) {
       if(nb.fi1==1) sk+=pmb->block_size.nx3/2;
-      else ek-=pmb->block_size.nx3/2;
+      else          ek-=pmb->block_size.nx3/2;
     }
     else {
       if(nb.fi2==1) sk+=pmb->block_size.nx3/2;
-      else ek-=pmb->block_size.nx3/2;
+      else          ek-=pmb->block_size.nx3/2;
     }
   }
   else if(nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
