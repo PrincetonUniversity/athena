@@ -404,7 +404,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   }
 
   face_only=true;
-  if (MAGNETIC_FIELDS_ENABLED || multilevel==true)
+  if (MAGNETIC_FIELDS_ENABLED || multilevel==true || VISCOSITY)
     face_only=false;
 
   maxneighbor_=BufferID(dim, multilevel, face_only);
@@ -722,7 +722,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   delete [] rawid; // no longer needed
 
   face_only=true;
-  if (MAGNETIC_FIELDS_ENABLED || multilevel==true)
+  if (MAGNETIC_FIELDS_ENABLED || multilevel==true || VISCOSITY)
     face_only=false;
 
   maxneighbor_=BufferID(dim, multilevel, face_only);

@@ -71,6 +71,42 @@ public:
     const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
 
+// Functions to calculate covariant derivatives at faces, for viscosity calculations  
+  void FaceXdx(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceXdy(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceXdz(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceYdx(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceYdy(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceYdz(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceZdx(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceZdy(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceZdz(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+
+// function to compute Divv
+  void Divv(const AthenaArray<Real> &prim, AthenaArray<Real> &divv);
+
+// function to compute viscous source terms
+  void VisSrcTermsX1(const int k, const int j, const Real dt,
+    const AthenaArray<Real> &flx,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &u);
+
+  void VisSrcTermsX2(const int k, const int j, const Real dt,
+    const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &u);
+
+  void VisSrcTermsX3(const int k, const int j, const Real dt,
+    const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &u);
+
   // Functions for use in general relativity
   #if GENERAL_RELATIVITY  // declare, but do not define, in GR case
     void CellMetric(const int k, const int j, const int il, const int iu,
@@ -189,6 +225,7 @@ private:
   AthenaArray<Real> coord_src2_i_, coord_src2_j_;
   AthenaArray<Real> coord_src_i1_, coord_src_i2_, coord_src_i3_, coord_src_i4_;
   AthenaArray<Real> coord_src_j1_, coord_src_j2_, coord_src_j3_;
+  AthenaArray<Real> phy_src1_i_, phy_src2_i_;
 
   // GR-specific scratch arrays
   AthenaArray<Real> metric_cell_i1_, metric_cell_i2_, metric_cell_j1_;

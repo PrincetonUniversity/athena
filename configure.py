@@ -25,6 +25,7 @@
 #   -hdf5             enable HDF5 output (requires the HDF5 library)
 #   --idlength=N      specify the length of the Block UID (default=1)
 #   -debug            enable debug flags (-g -O0); override other compiler options
+#   -vis              enable viscosity
 #---------------------------------------------------------------------------------------
 
 # Modules
@@ -149,6 +150,12 @@ parser.add_argument('-debug',
     default=False,
     help='enable debug flags; override other compiler options')
 
+# -vis argument
+parser.add_argument('-vis',
+    action='store_true',
+    default=False,
+    help='enable viscosity')
+
 # Parse command-line inputs
 args = vars(parser.parse_args())
 
@@ -227,6 +234,13 @@ if args['g']:
   makefile_options['RSOLVER_FILE'] += '_rel'
   if not args['t']:
     makefile_options['RSOLVER_FILE'] += '_no_transform'
+
+# -vis argument
+definitions['VISCOSITY'] = '1' if args['vis'] else '0'
+if args['vis']:
+  makefile_options['VIS_FILE'] = '*.cpp'
+else:
+  makefile_options['VIS_FILE'] = ' '
 
 # --order=[name] argument
 definitions['RECONSTRUCT'] = args['order']
@@ -356,6 +370,7 @@ print('  MPI parallelism:         ' + ('ON' if args['mpi'] else 'OFF'))
 print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
 print('  HDF5 Output:             ' + ('ON' if args['hdf5'] else 'OFF'))
 print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
+print('  Viscosity:               ' + ('ON' if args['vis'] else 'OFF'))
 print('  Internal fluid outvars:  ' + str(args['ifov']))
 print('  UID Length:              ' + str(args['idlength']) \
     + '  (maximum refinement level = ' + str(20*args['idlength']) + ')')

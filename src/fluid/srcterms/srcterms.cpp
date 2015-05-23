@@ -53,7 +53,8 @@ FluidSourceTerms::~FluidSourceTerms()
 //! \fn
 //  \brief
 
-void FluidSourceTerms::PhysicalSourceTerms(const Real time, const Real dt,
+void FluidSourceTerms::PhysicalSourceTermsX1(int k, int j, const Real dt,
+  const AthenaArray<Real> &flx,
   const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
 {
   if (gm_==0.0 && g1_==0.0 && g2_==0.0 && g3_==0.0) return;
@@ -61,8 +62,6 @@ void FluidSourceTerms::PhysicalSourceTerms(const Real time, const Real dt,
 // Source terms due to point mass gravity
 
   MeshBlock *pmb = pmy_fluid_->pmy_block;
-  for (int k=pmb->ks; k<=pmb->ke; ++k) {
-  for (int j=pmb->js; j<=pmb->je; ++j) {
 #pragma simd
     for (int i=pmb->is; i<=pmb->ie; ++i) {
       Real den = prim(IDN,k,j,i);
@@ -70,7 +69,8 @@ void FluidSourceTerms::PhysicalSourceTerms(const Real time, const Real dt,
       if (gm_!=0.0) {
         Real src = dt*den*pmb->pcoord->coord_src1_i_(i)*gm_/pmb->x1v(i);
         cons(IM1,k,j,i) -= src;
-        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) -= src*prim(IVX,k,j,i);
+        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) -= dt*0.5*(pmb->pcoord->phy_src1_i_(i)*flx(IDN,i)*gm_
+                                                           +pmb->pcoord->phy_src2_i_(i)*flx(IDN,i+1)*gm_);
       }
 
       if (g1_!=0.0) {
@@ -92,10 +92,24 @@ void FluidSourceTerms::PhysicalSourceTerms(const Real time, const Real dt,
       }
 
     }
-  }}
 
   return;
 }
+
+void FluidSourceTerms::PhysicalSourceTermsX2(int k, int j, const Real dt,
+  const AthenaArray<Real> &flx, const AthenaArray<Real> &flx_p1,
+  const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
+{
+  return;
+}
+
+void FluidSourceTerms::PhysicalSourceTermsX3(int k, int j, const Real dt,
+  const AthenaArray<Real> &flx, const AthenaArray<Real> &flx_p1,
+  const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
+{
+  return;
+}
+
 
 //--------------------------------------------------------------------------------------
 //! \fn

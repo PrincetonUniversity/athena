@@ -34,8 +34,14 @@ public:
   Real GetG2() const {return g2_;}
   Real GetG3() const {return g3_;}
 
-  void PhysicalSourceTerms(const Real time, const Real dt, const AthenaArray<Real> &p,
-    AthenaArray<Real> &c);
+  void PhysicalSourceTermsX1(int k, int j, const Real dt, 
+    const AthenaArray<Real> &flx, const AthenaArray<Real> &p, AthenaArray<Real> &c);
+  void PhysicalSourceTermsX2(int k, int j, const Real dt, 
+    const AthenaArray<Real> &flx,
+    const AthenaArray<Real> &flx_p1, const AthenaArray<Real> &p, AthenaArray<Real> &c);
+  void PhysicalSourceTermsX3(int k, int j, const Real dt,
+    const AthenaArray<Real> &flx,
+    const AthenaArray<Real> &flx_p1, const AthenaArray<Real> &p, AthenaArray<Real> &c);
   void EnrollSrcTermFunction(SrcTermFunc_t my_func);
   void (*UserSourceTerm)(const Real time, const Real dt, const AthenaArray<Real> &prim,
     AthenaArray<Real> &cons);

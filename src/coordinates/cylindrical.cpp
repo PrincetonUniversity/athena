@@ -84,6 +84,8 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
   coord_vol_i_.NewAthenaArray(ncells1);
   coord_src1_i_.NewAthenaArray(ncells1);
   coord_src2_i_.NewAthenaArray(ncells1);
+  phy_src1_i_.NewAthenaArray(ncells1);
+  phy_src2_i_.NewAthenaArray(ncells1);
 
   // Compute and store constant coefficients needed for face-areas, cell-volumes, etc.
   // This helps improve performance.
@@ -99,6 +101,13 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     coord_src1_i_(i) = pmb->dx1f(i)/coord_vol_i_(i);
     // (dR/2)/(R_c dV)
     coord_src2_i_(i) = pmb->dx1f(i)/((rm + rp)*coord_vol_i_(i));
+    // Rf_{i}/R_{i}/Rf_{i}^2
+    phy_src1_i_(i) = 1.0/(pmb->x1v(i)*pmb->x1f(i));
+  }
+#pragma simd
+  for (int i=is-(NGHOST); i<=ie+(NGHOST-1); ++i){
+     // Rf_{i+1}/R_{i}/Rf_{i+1}^2 
+    phy_src2_i_(i) = 1.0/(pmb->x1v(i)*pmb->x1f(i+1));
   }
 
 }
@@ -111,6 +120,8 @@ Coordinates::~Coordinates()
   coord_vol_i_.DeleteAthenaArray();
   coord_src1_i_.DeleteAthenaArray();
   coord_src2_i_.DeleteAthenaArray();
+  phy_src1_i_.DeleteAthenaArray();
+  phy_src2_i_.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------
@@ -265,3 +276,215 @@ void Coordinates::CoordSrcTermsX3(const int k, const int j, const Real dt,
 {
   return;
 }
+
+//-------------------------------------------------------------------------------------
+// Calculate Divv 
+void Coordinates::Divv(const AthenaArray<Real> &prim, AthenaArray<Real> &divv)
+{
+
+  int is = pmy_block->is; int js = pmy_block->js; int ks = pmy_block->ks;
+  int ie = pmy_block->ie; int je = pmy_block->je; int ke = pmy_block->ke;
+  int il = is-1; int iu = ie+1;
+  int jl, ju, kl, ku;
+  Real area_p1, area, vol;
+  Real vel_p1, vel;
+
+  if(pmy_block->block_size.nx2 == 1) // 1D
+    jl=js, ju=je, kl=ks, ku=ke;
+  else if(pmy_block->block_size.nx3 == 1) // 2D
+    jl=js-1, ju=je+1, kl=ks, ku=ke;
+  else // 3D
+    jl=js-1, ju=je+1, kl=ks-1, ku=ke+1;
+
+  for (int k=kl; k<=ku; ++k){
+    for (int j=jl; j<=ju; ++j){
+#pragma simd
+      for (int i=il; i<=iu; ++i){
+        area_p1 = pmy_block->x1f(i+1)*pmy_block->dx2f(j)*pmy_block->dx3f(k); 
+        area = pmy_block->x1f(i)*pmy_block->dx2f(j)*pmy_block->dx3f(k);
+        vel_p1 = 0.5*(prim(IM1,k,j,i+1)+prim(IM1,k,j,i));
+        vel = 0.5*(prim(IM1,k,j,i)+prim(IM1,k,j,i-1));
+        divv(k,j,i) = area_p1*vel_p1 - area*vel;
+      }
+      if (pmy_block->block_size.nx2 > 1) {
+        for (int i=il; i<=iu; ++i){
+          area_p1 = pmy_block->dx1f(i)*pmy_block->dx3f(k); 
+          area = area_p1;
+          vel_p1 = 0.5*(prim(IM2,k,j+1,i)+prim(IM2,k,j,i));
+          vel = 0.5*(prim(IM2,k,j,i)+prim(IM2,k,j-1,i));
+          divv(k,j,i) += area_p1*vel_p1 - area*vel;
+        }
+      }
+      if (pmy_block->block_size.nx3 > 1) {
+        for (int i=il; i<=iu; ++i){
+          area_p1 = coord_area3_i_(i)*(pmy_block->dx2f(j)); 
+          area = area_p1;
+          vel_p1 = 0.5*(prim(IM3,k+1,j,i)+prim(IM3,k,j,i));
+          vel = 0.5*(prim(IM3,k,j,i)+prim(IM3,k-1,j,i));
+          divv(k,j,i) += area_p1*vel_p1 - area*vel;
+        }
+      }
+      for (int i=il; i<=iu; ++i){
+        vol = coord_vol_i_(i)*pmy_block->dx2f(j)*pmy_block->dx3f(k); 
+        divv(k,j,i) = divv(k,j,i)/vol;
+      }
+    }
+  }
+
+  return;
+}
+
+// v_{x1;x1}  covariant derivative at x1 interface
+void Coordinates::FaceXdx(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = (prim(IM1,k,j,i)-prim(IM1,k,j,i-1))/pmy_block->dx1v(i-1);
+  }
+  return;
+}
+
+// v_{x2;x1}+v_{x1;x2}  covariant derivative at x1 interface
+void Coordinates::FaceXdy(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = pmy_block->x1f(i)*(prim(IM2,k,j,i)/pmy_block->x1v(i)
+                                -prim(IM2,k,j,i-1)/pmy_block->x1v(i-1))/pmy_block->dx1v(i-1)
+             +0.5*(prim(IM1,k,j+1,i)+prim(IM1,k,j+1,i-1)-prim(IM1,k,j-1,i)-prim(IM1,k,j-1,i-1))
+              /pmy_block->x1f(i)/(pmy_block->dx2v(j-1)+pmy_block->dx2v(j));
+  }
+  return;
+}
+
+// v_{x3;x1}+v_{x1;x3}  covariant derivative at x1 interface
+void Coordinates::FaceXdz(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = (prim(IM3,k,j,i)-prim(IM3,k,j,i-1))/pmy_block->dx1v(i-1)
+             +0.5*(prim(IM1,k+1,j,i)+prim(IM1,k+1,j,i-1)-prim(IM1,k-1,j,i)-prim(IM1,k-1,j,i-1))
+              /(pmy_block->dx3v(k-1)+pmy_block->dx3v(k));
+  }
+  return;
+}
+
+// v_{x1;x2}+v_{x2;x1}  covariant derivative at x2 interface
+void Coordinates::FaceYdx(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = (prim(IM1,k,j,i)-prim(IM1,k,j-1,i))/pmy_block->x1v(i)/pmy_block->dx2v(j-1)
+             +pmy_block->x1v(i)*0.5*((prim(IM2,k,j,i+1)+prim(IM2,k,j-1,i+1))/pmy_block->x1v(i+1)
+                                     -(prim(IM2,k,j,i-1)+prim(IM2,k,j-1,i-1))/pmy_block->x1v(i-1))
+              /(pmy_block->dx1v(i-1)+pmy_block->dx1v(i));
+  }
+  return;
+}
+
+// v_{x2;x2}  covariant derivative at x2 interface
+void Coordinates::FaceYdy(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = (prim(IM2,k,j,i)-prim(IM2,k,j-1,i))/pmy_block->x1v(i)/pmy_block->dx2v(j-1) 
+              +0.5*(prim(IM1,k,j,i)+prim(IM1,k,j-1,i))/pmy_block->x1v(i);
+  }
+  return;
+}
+
+// v_{x3;x2}+v_{x2;x3}  covariant derivative at x2 interface
+void Coordinates::FaceYdz(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = (prim(IM3,k,j,i)-prim(IM3,k,j-1,i))/pmy_block->x1v(i)/pmy_block->dx2v(j-1)
+             +0.5*(prim(IM2,k+1,j,i)+prim(IM2,k+1,j-1,i)-prim(IM2,k-1,j,i)-prim(IM2,k-1,j-1,i))
+              /(pmy_block->dx3v(k-1)+pmy_block->dx3v(k));
+  }
+  return;
+}
+
+// v_{x1;x3}+v_{x3;x1}  covariant derivative at x3 interface
+void Coordinates::FaceZdx(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = (prim(IM1,k,j,i)-prim(IM1,k-1,j,i))/pmy_block->dx3v(k-1)
+             +0.5*(prim(IM3,k,j,i+1)+prim(IM3,k-1,j,i+1)-prim(IM3,k,j,i-1)-prim(IM3,k-1,j,i-1))
+              /(pmy_block->dx1v(i-1)+pmy_block->dx1v(i));
+  }
+  return;
+}
+
+// v_{x2;x3}+v_{x3;x2}  covariant derivative at x3 interface
+void Coordinates::FaceZdy(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = (prim(IM2,k,j,i)-prim(IM2,k-1,j,i))/pmy_block->dx3v(k-1)
+             +0.5*(prim(IM3,k,j+1,i)+prim(IM3,k-1,j+1,i)-prim(IM3,k,j-1,i)-prim(IM3,k-1,j-1,i))
+              /pmy_block->x1v(i)/(pmy_block->dx2v(j-1)+pmy_block->dx2v(j));
+  } 
+  return;
+}
+    
+// v_{x3;x3}  covariant derivative at x3 interface
+void Coordinates::FaceZdz(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len)
+{   
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    len(i) = (prim(IM3,k,j,i)-prim(IM3,k-1,j,i))/pmy_block->dx3v(k-1);
+  }
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+// Viscous (Geometric) source term functions
+
+void Coordinates::VisSrcTermsX1(const int k, const int j, const Real dt,
+  const AthenaArray<Real> &flx,
+  const AthenaArray<Real> &prim, AthenaArray<Real> &u)
+{
+  Real iso_cs = pmy_block->pfluid->pf_eos->GetIsoSoundSpeed();
+
+#pragma simd
+  for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
+    // src_2 = < M_{phi r} ><1/r>
+    Real& x_i   = pmy_block->x1f(i);
+    Real& x_ip1 = pmy_block->x1f(i+1);
+    u(IM2,k,j,i) += dt*coord_src2_i_(i)*(x_i*flx(IM2,i) + x_ip1*flx(IM2,i+1));
+  }
+
+  return;
+}
+
+void Coordinates::VisSrcTermsX2(const int k, const int j, const Real dt,
+  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
+  const AthenaArray<Real> &prim, AthenaArray<Real> &u)
+{
+  #pragma simd
+  for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
+    // src_1 = -<M_{phi phi}><1/r>
+    u(IM1,k,j,i) -= dt*coord_src1_i_(i)*0.5*(flx(IM2,i) + flx_p1(IM2,i));
+  }
+
+  return;
+}
+
+void Coordinates::VisSrcTermsX3(const int k, const int j, const Real dt,
+  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
+  const AthenaArray<Real> &prim, AthenaArray<Real> &u)
+{
+  return;
+}
+
