@@ -1,4 +1,4 @@
-# Test script for Newtonian MHD linear wave convergence
+# Test script for Newtonian MHD linear wave convergence in 1D
 
 # Modules
 import numpy as np
@@ -20,7 +20,7 @@ def prepare():
   athena.configure('b',
       prob='linear_wave',
       coord='cartesian',
-      flux='hlle')
+      flux='hlld')
   athena.make()
 
 # Run Athena++
