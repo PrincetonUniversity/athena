@@ -1633,6 +1633,63 @@ void Coordinates::TransformVectorCell(
   return;
 }
 
+// Function for transforming 4-vector from Boyer-Lindquist to Schwarzschild
+// Inputs:
+//   a0_BL,a1_BL,a2_BL,a3_BL: upper 4-vector components in Boyer-Lindquist coordinates
+//   k,j,i: indices of x1-face in which transformation is desired
+// Outputs:
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Schwarzschild coordinates
+// Notes:
+//   Schwarzschild coordinates match Boyer-Lindquist when a = 0
+void Coordinates::TransformVectorFace1(
+    Real a0_BL, Real a1_BL, Real a2_BL, Real a3_BL, int k, int j, int i,
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+{
+  *pa0 = a0_BL;
+  *pa1 = a1_BL;
+  *pa2 = a2_BL;
+  *pa3 = a3_BL;
+  return;
+}
+
+// Function for transforming 4-vector from Boyer-Lindquist to Schwarzschild
+// Inputs:
+//   a0_BL,a1_BL,a2_BL,a3_BL: upper 4-vector components in Boyer-Lindquist coordinates
+//   k,j,i: indices of x2-face in which transformation is desired
+// Outputs:
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Schwarzschild coordinates
+// Notes:
+//   Schwarzschild coordinates match Boyer-Lindquist when a = 0
+void Coordinates::TransformVectorFace2(
+    Real a0_BL, Real a1_BL, Real a2_BL, Real a3_BL, int k, int j, int i,
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+{
+  *pa0 = a0_BL;
+  *pa1 = a1_BL;
+  *pa2 = a2_BL;
+  *pa3 = a3_BL;
+  return;
+}
+
+// Function for transforming 4-vector from Boyer-Lindquist to Schwarzschild
+// Inputs:
+//   a0_BL,a1_BL,a2_BL,a3_BL: upper 4-vector components in Boyer-Lindquist coordinates
+//   k,j,i: indices of x3-face in which transformation is desired
+// Outputs:
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Schwarzschild coordinates
+// Notes:
+//   Schwarzschild coordinates match Boyer-Lindquist when a = 0
+void Coordinates::TransformVectorFace3(
+    Real a0_BL, Real a1_BL, Real a2_BL, Real a3_BL, int k, int j, int i,
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+{
+  *pa0 = a0_BL;
+  *pa1 = a1_BL;
+  *pa2 = a2_BL;
+  *pa3 = a3_BL;
+  return;
+}
+
 // Function for lowering contravariant components of a vector
 // Inputs:
 //   a0,a1,a2,a3: contravariant components of vector
@@ -1665,18 +1722,18 @@ void Coordinates::LowerVectorCell(
 
 // Function for returning Boyer-Lindquist coordinates of given cell
 // Inputs:
-//   k,j,i: indices of cell for which coordinates are desired
+//   x1,x2,x3: Schwarzschild coordinates to be converted
 // Outputs:
 //   pr: pointer to stored value of r
 //   ptheta: pointer to stored value of theta
 //   pphi: pointer to stored value of phi
 // Notes:
-//   Schwarzschild (r,theta,phi) match Boyer-Lindquist (r,theta,phi) when a = 0
-void Coordinates::GetBoyerLindquistCoordinates(int k, int j, int i,
+//   Schwarzschild (x1,x2,x3) match Boyer-Lindquist (r,theta,phi) when a = 0
+void Coordinates::GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3,
     Real *pr, Real *ptheta, Real *pphi)
 {
-  *pr = pmy_block->x1v(i);
-  *ptheta = pmy_block->x2v(j);
-  *pphi = pmy_block->x3v(k);
+  *pr = x1;
+  *ptheta = x2;
+  *pphi = x3;
   return;
 }

@@ -60,3 +60,4 @@ rho_min = 1.0e-6  # value of density floor at r_edge
 rho_pow = -1.5    # density floor rho_min * (r/r_edge)^rho_pow
 u_min   = 1.0e-8  # value of internal energy floor at r_edge
 u_pow   = -2.5    # internal energy floor u_min * (r/r_edge)^u_pow
+cutoff  = 0.2     # density relative to peak at which vector potential vanishes
