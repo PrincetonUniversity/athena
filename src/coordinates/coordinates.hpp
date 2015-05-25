@@ -59,6 +59,7 @@ public:
 // function to compute volume of cells
   void CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &vol);
+  Real GetCellVolume(const int k, const int j, const int i);
 
 // function to compute geometrical source terms
   void CoordSrcTermsX1(const int k, const int j, const Real dt,

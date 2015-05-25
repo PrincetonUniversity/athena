@@ -228,6 +228,11 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
   return;
 }
 
+Real Coordinates::GetCellVolume(const int k, const int j, const int i)
+{
+  return pmy_block->dx1f(i)*pmy_block->dx2f(j)*pmy_block->dx3f(k);
+}
+
 //--------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term functions
 
