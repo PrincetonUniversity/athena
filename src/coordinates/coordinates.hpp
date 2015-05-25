@@ -54,6 +54,8 @@ public:
   void Face3Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &area);
 
+  Real GetFace1Area(const int k, const int j, const int i);
+
 // function to compute volume of cells
   void CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &vol);

@@ -448,6 +448,13 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
   return;
 }
 
+
+Real Coordinates::GetFace1Area(const int k, const int j, const int i)
+{
+  return coord_area1_i_(i)*coord_area1_j_(j)*pmy_block->dx3f(k);
+}
+
+
 //--------------------------------------------------------------------------------------
 
 // Function for computing lengths of edges in the r-direction

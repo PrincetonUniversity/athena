@@ -207,6 +207,12 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
   return;
 }
 
+
+Real Coordinates::GetFace1Area(const int k, const int j, const int i)
+{
+  return (pmy_block->dx2f(j))*(pmy_block->dx3f(k));
+}
+
 //--------------------------------------------------------------------------------------
 // Cell Volume function
 
