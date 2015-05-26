@@ -91,6 +91,7 @@ public:
   enum tasklist_status DoOneTask(void);
   void SetCoarserCoordinates(void);
   int FindNeighborGID(int ox1, int ox2, int ox3);
+  void IntegrateConservative(Real *tcons);
 
   RegionSize block_size;
   int block_bcs[6];
@@ -163,6 +164,7 @@ public:
   void ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin); // files in /pgen
   void NewTimeStep(void);
   MeshBlock* FindMeshBlock(int tgid);
+  void TestConservation(void);
 };
 
 

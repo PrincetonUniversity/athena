@@ -379,6 +379,7 @@ int main(int argc, char *argv[])
     if(myrank==0)
       std::cout << "cycle=" << pmesh->ncycle << std::scientific << std::setprecision(14)
                 << " time=" << pmesh->time << " dt=" << pmesh->dt << std::endl;
+    pmesh->TestConservation();
 
     pmesh->UpdateOneStep();
 

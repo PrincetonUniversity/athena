@@ -1587,6 +1587,7 @@ void Mesh::NewTimeStep(void)
   dt=std::min(min_dt*cfl_number,2.0*dt);
   if (time < tlim && tlim-time < dt)  // timestep would take us past desired endpoint
     dt = tlim-time;
+  return;
 }
 
 //--------------------------------------------------------------------------------------
@@ -2085,3 +2086,47 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
   return;
 }
 
+
+//--------------------------------------------------------------------------------------
+// \!fn void Mesh::TestConservation(void)
+// \brief Calculate and print the total of conservative variables
+void Mesh::TestConservation(void)
+{
+  MeshBlock *pmb = pblock;
+  Real tcons[NFLUID];
+  for(int n=0;n<NFLUID;n++) tcons[n]=0.0;
+  while(pmb!=NULL) {
+    pmb->IntegrateConservative(tcons);
+    pmb=pmb->next;
+  }
+
+#ifdef MPI_PARALLEL
+  MPI_Allreduce(MPI_IN_PLACE,tcons,NFLUID,MPI_ATHENA_REAL,MPI_SUM,MPI_COMM_WORLD);
+#endif
+
+  if(myrank==0) {
+    std::cout << "Total Conservative : " ;
+    for(int n=0;n<NFLUID;n++)
+      std::cout << tcons[n] << " ";
+    std::cout << std::endl;
+  }
+
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+// \!fn void MeshBlock::IntegrateConservative(Real *tcons)
+// \brief Calculate and print the total of conservative variables
+void MeshBlock::IntegrateConservative(Real *tcons)
+{
+  for(int n=0;n<NFLUID;n++) {
+    for(int k=ks;k<=ke;k++) {
+      for(int j=js;j<=je;j++) {
+        for(int i=is;i<=ie;i++)
+          tcons[n]+=pfluid->u(n,k,j,i)*pcoord->GetCellVolume(k,j,i);
+      }
+    }
+  }
+  return;
+}
