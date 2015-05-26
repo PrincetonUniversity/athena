@@ -79,12 +79,21 @@ enum task_status FluidReceive(MeshBlock *pmb, int task_arg)
 
 enum task_status FluxCorrectionSend(MeshBlock *pmb, int task_arg)
 {
+  pmb->pbval->SendFluxCorrection(task_arg);
   return task_success;
 }
 
 enum task_status FluxCorrectionReceive(MeshBlock *pmb, int task_arg)
 {
-  return task_success;
+  Fluid *pfluid=pmb->pfluid;
+  BoundaryValues *pbval=pmb->pbval;
+  bool ret;
+  if(task_arg==0)
+    ret=pbval->ReceiveFluxCorrection(pfluid->u,0);
+  else if(task_arg==1)
+    ret=pbval->ReceiveFluxCorrection(pfluid->u1,1);
+  if(ret==true) return task_donext;
+  return task_failure;
 }
 
 enum task_status FluidProlongation(MeshBlock *pmb, int task_arg)

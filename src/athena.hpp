@@ -32,10 +32,10 @@ enum {IB1=0, IB2=1, IB3=2};
 enum {X1E2=0, X1E3=1, X2E3=0, X2E1=1, X3E1=0, X3E2=1};
 enum {I00, I01, I02, I03, I11, I12, I13, I22, I23, I33, NMETRIC};
 
-enum direction {inner_x1=0, outer_x1=1, inner_x2=2, outer_x2=3, inner_x3=4, outer_x3=5};
+enum direction {inner_x1=0, outer_x1=1, inner_x2=2, outer_x2=3, inner_x3=4, outer_x3=5, dir_undefined=-1};
 enum face {x1face=0, x2face=1, x3face=2};
 enum rwmode {readmode,writemode};
-enum mpitag {tag_fluid=0, tag_field=1}; // mpitag must be < 16 and unique
+enum mpitag {tag_fluid=0, tag_field=1, tag_flcor=2}; // mpitag must be < 16 and unique
 enum neighbor_type {neighbor_none, neighbor_face, neighbor_edge, neighbor_corner};
 
 enum task {

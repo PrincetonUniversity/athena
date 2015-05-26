@@ -20,6 +20,7 @@
 // forward declarations
 class MeshBlock;
 class Fluid;
+class FluidIntegrator;
 class ParameterInput;
 struct InterfaceField;
 struct NeighborBlock;
@@ -112,6 +113,8 @@ public:
   void ReceiveFluidBoundaryBuffersWithWait(AthenaArray<Real> &dst, int step);
   void RestrictFluid(AthenaArray<Real> &src,
                      int si, int ei, int sj, int ej, int sk, int ek);
+  void SendFluxCorrection(int step);
+  bool ReceiveFluxCorrection(AthenaArray<Real> &dst, int step);
   void ProlongateFluidBoundaries(AthenaArray<Real> &dst);
   int LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *buf,
                                        NeighborBlock& nb);
@@ -140,16 +143,21 @@ private:
   BValField_t FieldBoundary_[6];
 
   enum boundary_status fluid_flag_[NSTEP][56], field_flag_[NSTEP][56];
+  enum boundary_status flcor_flag_[NSTEP][6][2][2];
   Real *fluid_send_[NSTEP][56], *fluid_recv_[NSTEP][56];
   Real *field_send_[NSTEP][56], *field_recv_[NSTEP][56];
-  AthenaArray<Real> rawflux_[NSTEP][6];
+  Real *flcor_send_[NSTEP][6],  *flcor_recv_[NSTEP][6][2][2];
   AthenaArray<Real> coarse_cons_, coarse_prim_;
-  AthenaArray<Real> fvol_[2][2];
+  AthenaArray<Real> fvol_[2][2], sarea_[2];
+  AthenaArray<Real> surface_flux_[6];
 
 #ifdef MPI_PARALLEL
   MPI_Request req_fluid_send_[NSTEP][56], req_fluid_recv_[NSTEP][56];
   MPI_Request req_field_send_[NSTEP][56], req_field_recv_[NSTEP][56];
+  MPI_Request req_flcor_send_[NSTEP][6],  req_flcor_recv_[NSTEP][6][2][2];
 #endif
+
+  friend class FluidIntegrator;
 };
 
 unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);

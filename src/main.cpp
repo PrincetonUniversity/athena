@@ -327,7 +327,13 @@ int main(int argc, char *argv[])
   }
   else { // hydro
     task_list.AddTask(fluid_integrate_1, none); // predict fluid
-    task_list.AddTask(fluid_send_1, fluid_integrate_1); // send block boundaries
+    if(pmesh->multilevel==true) { // SMR or AMR
+      task_list.AddTask(flux_correct_send_1, fluid_integrate_1);
+      task_list.AddTask(flux_correct_recv_1, fluid_integrate_1);
+      task_list.AddTask(fluid_send_1, flux_correct_recv_1); // send block boundaries
+    }
+    else
+      task_list.AddTask(fluid_send_1, fluid_integrate_1); // send block boundaries
     task_list.AddTask(fluid_recv_1, none); // receive block boundaries
     task_list.AddTask(fluid_boundary_1, fluid_recv_1 | fluid_integrate_1); // physical boundaries
     if(pmesh->multilevel==true) { // SMR or AMR
@@ -337,7 +343,13 @@ int main(int argc, char *argv[])
     else
       task_list.AddTask(primitives_1, fluid_boundary_1);
     task_list.AddTask(fluid_integrate_0, primitives_1); // predict correct
-    task_list.AddTask(fluid_send_0, fluid_integrate_0); // send block boundaries
+    if(pmesh->multilevel==true) { // SMR or AMR
+      task_list.AddTask(flux_correct_send_0, fluid_integrate_0);
+      task_list.AddTask(flux_correct_recv_0, fluid_integrate_0);
+      task_list.AddTask(fluid_send_0, flux_correct_recv_0); // send block boundaries
+    }
+    else
+      task_list.AddTask(fluid_send_0, fluid_integrate_0); // send block boundaries
     task_list.AddTask(fluid_recv_0, primitives_1); // receive block boundaries
     task_list.AddTask(fluid_boundary_0, fluid_recv_0 | fluid_integrate_0); // physical boundaries
     if(pmesh->multilevel==true) { // SMR or AMR

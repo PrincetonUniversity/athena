@@ -212,6 +212,20 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       req_fluid_recv_[l][i]=MPI_REQUEST_NULL;
 #endif
     }
+    for(int i=0;i<6;i++){
+      flcor_send_[l][i]=NULL;
+#ifdef MPI_PARALLEL
+      req_flcor_send_[l][i]=MPI_REQUEST_NULL;
+#endif
+      for(int j=0;j<=1;j++) {
+        for(int k=0;k<=1;k++) {
+          flcor_recv_[l][i][j][k]=NULL;
+#ifdef MPI_PARALLEL
+          req_flcor_recv_[l][i][j][k]=MPI_REQUEST_NULL;
+#endif
+        }
+      }
+    }
   }
   // Allocate Buffers
   for(int l=0;l<NSTEP;l++) {
@@ -261,10 +275,56 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 
   if(pmb->pmy_mesh->multilevel==true) { // SMR or AMR
     // allocate arrays for volumes in the finer level
-    fvol_[0][0].NewAthenaArray(pmb->block_size.nx1+2*NGHOST);
-    fvol_[0][1].NewAthenaArray(pmb->block_size.nx1+2*NGHOST);
-    fvol_[1][0].NewAthenaArray(pmb->block_size.nx1+2*NGHOST);
-    fvol_[1][1].NewAthenaArray(pmb->block_size.nx1+2*NGHOST);
+    int nc1=pmb->block_size.nx1+2*NGHOST;
+    int nc2=pmb->block_size.nx2+2*NGHOST;
+    int nc3=pmb->block_size.nx3+2*NGHOST;
+    fvol_[0][0].NewAthenaArray(nc1);
+    fvol_[0][1].NewAthenaArray(nc1);
+    fvol_[1][0].NewAthenaArray(nc1);
+    fvol_[1][1].NewAthenaArray(nc1);
+    sarea_[0].NewAthenaArray(nc1);
+    sarea_[1].NewAthenaArray(nc1);
+    int size[6], im, jm, km;
+    // allocate flux correction buffer
+    size[0]=size[1]=(pmb->block_size.nx2+1)/2*(pmb->block_size.nx3+1)/2*NFLUID;
+    size[2]=size[3]=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx3+1)/2*NFLUID;
+    size[4]=size[5]=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx2+1)/2*NFLUID;
+    if(pmb->block_size.nx3>1) { // 3D
+      im=6, jm=2, km=2;
+      for(int n=0;n<NSTEP;n++) {
+        surface_flux_[inner_x1].NewAthenaArray(NFLUID, nc3, nc2);
+        surface_flux_[outer_x1].NewAthenaArray(NFLUID, nc3, nc2);
+        surface_flux_[inner_x2].NewAthenaArray(NFLUID, nc3, nc1);
+        surface_flux_[outer_x2].NewAthenaArray(NFLUID, nc3, nc1);
+        surface_flux_[inner_x3].NewAthenaArray(NFLUID, nc2, nc1);
+        surface_flux_[outer_x3].NewAthenaArray(NFLUID, nc2, nc1);
+      }
+    }
+    else if(pmb->block_size.nx2>1) { // 2D
+      im=4, jm=1, km=2;
+      for(int n=0;n<NSTEP;n++) {
+        surface_flux_[inner_x1].NewAthenaArray(NFLUID, 1, nc2);
+        surface_flux_[outer_x1].NewAthenaArray(NFLUID, 1, nc2);
+        surface_flux_[inner_x2].NewAthenaArray(NFLUID, 1, nc1);
+        surface_flux_[outer_x2].NewAthenaArray(NFLUID, 1, nc1);
+      }
+    }
+    else { // 1D
+      im=2, jm=1, km=1;
+      for(int n=0;n<NSTEP;n++) {
+        surface_flux_[inner_x1].NewAthenaArray(NFLUID, 1, 1);
+        surface_flux_[outer_x1].NewAthenaArray(NFLUID, 1, 1);
+      }
+    }
+    for(int l=0;l<NSTEP;l++) {
+      for(int i=0;i<im;i++){
+        flcor_send_[l][i]=new Real[size[i]];
+        for(int j=0;j<jm;j++) {
+          for(int k=0;k<km;k++)
+            flcor_recv_[l][i][j][k]=new Real[size[i]];
+        }
+      }
+    }
     // allocate prolongation buffer
     int ncc1=pmb->block_size.nx1/2+2*pmb->cnghost;
     int ncc2=1;
@@ -317,6 +377,19 @@ BoundaryValues::~BoundaryValues()
     fvol_[0][1].DeleteAthenaArray();
     fvol_[1][0].DeleteAthenaArray();
     fvol_[1][1].DeleteAthenaArray();
+    sarea_[0].DeleteAthenaArray();
+    sarea_[1].DeleteAthenaArray();
+    for(int r=0;r>6;r++)
+      surface_flux_[r].DeleteAthenaArray();
+    for(int l=0;l<NSTEP;l++) {
+      for(int i=0;i<6;i++){
+        delete [] flcor_send_[l][i];
+        for(int j=0;j<2;j++) {
+          for(int k=0;k<2;k++)
+            delete [] flcor_recv_[l][i][j][k];
+        }
+      }
+    }
     coarse_cons_.DeleteAthenaArray();
 //  coarse_prim_.DeleteAthenaArray();
   }
@@ -375,6 +448,28 @@ void BoundaryValues::Initialize(void)
         tag=CreateMPITag(pmb->lid, l, tag_fluid, nb.bufid);
         MPI_Recv_init(fluid_recv_[l][nb.bufid],rsize,MPI_ATHENA_REAL,
                       nb.rank,tag,MPI_COMM_WORLD,&req_fluid_recv_[l][nb.bufid]);
+
+        // flux correction
+        if(pmb->pmy_mesh->multilevel==true && nb.type==neighbor_face) {
+          int fi1, fi2, size;
+          if(nb.fid==0 || nb.fid==1)
+            fi1=myox2, fi2=myox3, size=((pmb->block_size.nx2+1)/2)*((pmb->block_size.nx3+1)/2);
+          else if(nb.fid==2 || nb.fid==3)
+            fi1=myox1, fi2=myox3, size=((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx3+1)/2);
+          else if(nb.fid==4 || nb.fid==5)
+            fi1=myox1, fi2=myox2, size=((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx2+1)/2);
+          size*=NFLUID;
+          if(nb.level<mylevel) { // send to coarser
+            tag=CreateMPITag(nb.lid, l, tag_flcor, ((nb.fid^1)<<2)|(fi2<<1)|fi1);
+            MPI_Send_init(flcor_send_[l][nb.fid],size,MPI_ATHENA_REAL,
+                nb.rank,tag,MPI_COMM_WORLD,&req_flcor_send_[l][nb.fid]);
+          }
+          else if(nb.level>mylevel) { // receive from finer
+            tag=CreateMPITag(pmb->lid, l, tag_flcor, (nb.fid<<2)|(nb.fi2<<1)|nb.fi1);
+            MPI_Recv_init(flcor_recv_[l][nb.fid][nb.fi2][nb.fi1],size,MPI_ATHENA_REAL,
+                nb.rank,tag,MPI_COMM_WORLD,&req_flcor_recv_[l][nb.fid][nb.fi2][nb.fi1]);
+          }
+        }
 
         if (MAGNETIC_FIELDS_ENABLED) {
           int size1, size2, size3;
@@ -507,6 +602,7 @@ void BoundaryValues::StartReceivingForInit(void)
 {
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_mblock_;
+  int mylevel=pmb->uid.GetLevel();
   for(int n=0;n<pmb->nneighbor;n++) {
     NeighborBlock& nb=pmb->neighbor[n];
     if(nb.rank!=myrank) { 
@@ -526,11 +622,14 @@ void BoundaryValues::StartReceivingAll(void)
 {
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_mblock_;
+  int mylevel=pmb->uid.GetLevel();
   for(int l=0;l<NSTEP;l++) {
     for(int n=0;n<pmb->nneighbor;n++) {
       NeighborBlock& nb=pmb->neighbor[n];
       if(nb.rank!=myrank) { 
         MPI_Start(&req_fluid_recv_[l][nb.bufid]);
+        if(nb.type==neighbor_face && nb.level>mylevel)
+          MPI_Start(&req_flcor_recv_[l][nb.fid][nb.fi2][nb.fi1]);
         if (MAGNETIC_FIELDS_ENABLED)
           MPI_Start(&req_field_recv_[l][nb.bufid]);
       }
@@ -973,6 +1072,238 @@ void BoundaryValues::ReceiveFluidBoundaryBuffersWithWait(AthenaArray<Real> &dst,
     fluid_flag_[0][nb.bufid] = boundary_completed; // completed
   }
   return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::SendFluxCorrection(int step)
+//  \brief Restrict, pack and send the surace flux to the coarse neighbor(s)
+void BoundaryValues::SendFluxCorrection(int step)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  long int lx1, lx2, lx3;
+  int mylevel;
+  pmb->uid.GetLocation(lx1,lx2,lx3,mylevel);
+  int fx1=lx1&1L, fx2=lx2&1L, fx3=lx3&1L;
+  int fi1, fi2;
+
+  for(int n=0; n<pmb->nneighbor; n++) {
+    NeighborBlock& nb= pmb->neighbor[n];
+    if(nb.type!=neighbor_face) break;
+    if(nb.level==mylevel-1) {
+      int p=0;
+      // x1 direction
+      if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+        int i=pmb->is+(pmb->ie-pmb->is+1)*nb.fid;
+        fi1=fx2, fi2=fx3;
+        if(pmb->block_size.nx3>1) { // 3D
+          for(int nn=0; nn<NFLUID; nn++) {
+            for(int k=pmb->ks; k<=pmb->ke; k+=2) {
+              for(int j=pmb->js; j<=pmb->je; j+=2) {
+                Real amm=pmb->pcoord->GetFace1Area(k,   j,   i);
+                Real amp=pmb->pcoord->GetFace1Area(k,   j+1, i);
+                Real apm=pmb->pcoord->GetFace1Area(k+1, j,   i);
+                Real app=pmb->pcoord->GetFace1Area(k+1, j+1, i);
+                Real tarea=amm+amp+apm+app;
+                flcor_send_[step][nb.fid][p++]=
+                           (surface_flux_[nb.fid](nn, k  , j  )*amm
+                           +surface_flux_[nb.fid](nn, k  , j+1)*amp
+                           +surface_flux_[nb.fid](nn, k+1, j  )*apm
+                           +surface_flux_[nb.fid](nn, k+1, j+1)*app)/tarea;
+              }
+            }
+          }
+        }
+        else if(pmb->block_size.nx2>1) { // 2D
+          for(int nn=0; nn<NFLUID; nn++) {
+            for(int j=pmb->js; j<=pmb->je; j+=2) {
+              Real am=pmb->pcoord->GetFace1Area(0, j,   i);
+              Real ap=pmb->pcoord->GetFace1Area(0, j+1, i);
+              Real tarea=am+ap;
+              flcor_send_[step][nb.fid][p++]=
+                         (surface_flux_[nb.fid](nn, 0, j  )*am
+                         +surface_flux_[nb.fid](nn, 0, j+1)*ap)/tarea;
+            }
+          }
+        }
+        else { // 1D
+          for(int nn=0; nn<NFLUID; nn++)
+            flcor_send_[step][nb.fid][p++]=surface_flux_[nb.fid](nn, 0, 0);
+        }
+      }
+      // x2 direction
+      else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+        int j=pmb->js+(pmb->je-pmb->js+1)*(nb.fid&1);
+        fi1=fx1, fi2=fx3;
+        if(pmb->block_size.nx3>1) { // 3D
+          for(int nn=0; nn<NFLUID; nn++) {
+            for(int k=pmb->ks; k<=pmb->ke; k+=2) {
+              pmb->pcoord->Face2Area(k  , j, pmb->is, pmb->ie, sarea_[0]);
+              pmb->pcoord->Face2Area(k+1, j, pmb->is, pmb->ie, sarea_[1]);
+              for(int i=pmb->is; i<=pmb->ie; i+=2) {
+                Real tarea=sarea_[0](i)+sarea_[0](i+1)+sarea_[1](i)+sarea_[1](i+1);
+                flcor_send_[step][nb.fid][p++]=
+                           (surface_flux_[nb.fid](nn, k  , i  )*sarea_[0](i  )
+                           +surface_flux_[nb.fid](nn, k  , i+1)*sarea_[0](i+1)
+                           +surface_flux_[nb.fid](nn, k+1, i  )*sarea_[1](i  )
+                           +surface_flux_[nb.fid](nn, k+1, i+1)*sarea_[1](i+1))/tarea;
+              }
+            }
+          }
+        }
+        else if(pmb->block_size.nx2>1) { // 2D
+          for(int nn=0; nn<NFLUID; nn++) {
+            pmb->pcoord->Face2Area(0, j, pmb->is ,pmb->ie, sarea_[0]);
+            for(int i=pmb->is; i<=pmb->ie; i+=2) {
+              Real tarea=sarea_[0](i)+sarea_[0](i+1);
+              flcor_send_[step][nb.fid][p++]=
+                         (surface_flux_[nb.fid](nn, 0, i  )*sarea_[0](i  )
+                         +surface_flux_[nb.fid](nn, 0, i+1)*sarea_[0](i+1))/tarea;
+            }
+          }
+        }
+      }
+      // x3 direction - 3D only
+      else if(nb.fid==inner_x3 || nb.fid==outer_x3) {
+        int k=pmb->ks+(pmb->ke-pmb->ks+1)*(nb.fid&1);
+        fi1=fx1, fi2=fx2;
+        for(int nn=0; nn<NFLUID; nn++) {
+          for(int j=pmb->js; j<=pmb->je; j+=2) {
+            pmb->pcoord->Face3Area(k, j,   pmb->is, pmb->ie, sarea_[0]);
+            pmb->pcoord->Face3Area(k, j+1, pmb->is, pmb->ie, sarea_[1]);
+            for(int i=pmb->is; i<=pmb->ie; i+=2) {
+              Real tarea=sarea_[0](i)+sarea_[0](i+1)+sarea_[1](i)+sarea_[1](i+1);
+              flcor_send_[step][nb.fid][p++]=
+                         (surface_flux_[nb.fid](nn, j  , i  )*sarea_[0](i  )
+                         +surface_flux_[nb.fid](nn, j  , i+1)*sarea_[0](i+1)
+                         +surface_flux_[nb.fid](nn, j+1, i  )*sarea_[1](i  )
+                         +surface_flux_[nb.fid](nn, j+1, i+1)*sarea_[1](i+1))/tarea;
+            }
+          }
+        }
+      }
+      if(nb.rank==myrank) { // on the same node
+        MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
+        std::memcpy(pbl->pbval->flcor_recv_[step][(nb.fid^1)][fi2][fi1],
+                    flcor_send_[step][nb.fid], p*sizeof(Real));
+        pbl->pbval->flcor_flag_[step][(nb.fid^1)][fi2][fi1]=boundary_arrived;
+      }
+#ifdef MPI_PARALLEL
+      else
+        MPI_Start(&req_flcor_send_[step][nb.fid]);
+#endif
+    }
+  }
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn bool BoundaryValues::ReceiveFluxCorrection(AthenaArray<Real> &dst, int step)
+//  \brief Receive and apply the surace flux from the finer neighbor(s)
+bool BoundaryValues::ReceiveFluxCorrection(AthenaArray<Real> &dst, int step)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  int mylevel=pmb->uid.GetLevel();
+  int nc=0, nff=0;
+  Real dt=pmb->pmy_mesh->dt;
+  if(step==1) dt*=0.5;
+
+  // count the number of finer faces.
+  for(int n=0; n<pmb->nneighbor; n++) {
+    NeighborBlock& nb= pmb->neighbor[n];
+    if(nb.type==neighbor_face && nb.level==mylevel+1) nff++;
+    if(nb.type!=neighbor_face) break;
+  }
+
+  for(int n=0; n<pmb->nneighbor; n++) {
+    NeighborBlock& nb= pmb->neighbor[n];
+    if(nb.type!=neighbor_face) break;
+    if(nb.level==mylevel+1) {
+      if(flcor_flag_[step][nb.fid][nb.fi2][nb.fi1]==boundary_completed) { nc++; continue; }
+      if(flcor_flag_[step][nb.fid][nb.fi2][nb.fi1]==boundary_waiting) {
+        if(nb.rank==myrank) // on the same process
+          continue;
+#ifdef MPI_PARALLEL
+        else { // MPI boundary
+          int test;
+          MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
+          MPI_Test(&req_flcor_recv_[step][nb.fid][nb.fi2][nb.fi1],&test,MPI_STATUS_IGNORE);
+          if(test==false) continue;
+          flcor_flag_[step][nb.fid][nb.fi2][nb.fi1] = boundary_arrived;
+        }
+#endif
+      }
+      // boundary arrived; apply flux correction
+      Real *buf=flcor_recv_[step][nb.fid][nb.fi2][nb.fi1];
+      int p=0;
+      if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+        int ic=pmb->is+(pmb->ie-pmb->is)*nb.fid;
+        int is=ic+nb.fid;
+        int js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
+        if(nb.fi1==0) je-=pmb->block_size.nx2/2;
+        else          js+=pmb->block_size.nx2/2;
+        if(nb.fi2==0) ke-=pmb->block_size.nx3/2;
+        else          ks+=pmb->block_size.nx3/2;
+        Real sign=(Real)(nb.fid*2-1); // -1 for inner, +1 for outer
+        for(int nn=0; nn<NFLUID; nn++) {
+          for(int k=ks; k<=ke; k++) {
+            for(int j=js; j<=je; j++) {
+              Real area=pmb->pcoord->GetFace1Area(k,j,is);
+              Real vol=pmb->pcoord->GetCellVolume(k,j,ic);
+              dst(nn,k,j,ic)+=sign*dt*area*(surface_flux_[nb.fid](nn,k,j)-buf[p++])/vol;
+            }
+          }
+        }
+      }
+      else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+        int jc=pmb->js+(pmb->je-pmb->js)*(nb.fid&1);
+        int js=jc+(nb.fid&1);
+        int is=pmb->is, ie=pmb->ie, ks=pmb->ks, ke=pmb->ke;
+        if(nb.fi1==0) ie-=pmb->block_size.nx1/2;
+        else          is+=pmb->block_size.nx1/2;
+        if(nb.fi2==0) ke-=pmb->block_size.nx3/2;
+        else          ks+=pmb->block_size.nx3/2;
+        Real sign=(Real)((nb.fid&1)*2-1); // -1 for inner, +1 for outer
+        for(int nn=0; nn<NFLUID; nn++) {
+          for(int k=ks; k<=ke; k++) {
+            pmb->pcoord->Face2Area(k,js,is,ie,sarea_[0]);
+            pmb->pcoord->CellVolume(k,jc,is,ie,fvol_[0][0]);
+            for(int i=is; i<=ie; i++)
+              dst(nn,k,jc,i)+=dt*sign*sarea_[0](i)
+                            *(surface_flux_[nb.fid](nn,k,i)-buf[p++])/fvol_[0][0](i);
+          }
+        }
+      }
+      else if(nb.fid==inner_x3 || nb.fid==outer_x3) {
+        int kc=pmb->ks+(pmb->ke-pmb->ks)*(nb.fid&1);
+        int ks=kc+(nb.fid&1);
+        int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je;
+        if(nb.fi1==0) ie-=pmb->block_size.nx1/2;
+        else          is+=pmb->block_size.nx1/2;
+        if(nb.fi2==0) je-=pmb->block_size.nx2/2;
+        else          js+=pmb->block_size.nx2/2;
+        Real sign=(Real)((nb.fid&1)*2-1); // -1 for inner, +1 for outer
+        for(int nn=0; nn<NFLUID; nn++) {
+          for(int j=js; j<=je; j++) {
+            pmb->pcoord->Face3Area(ks,j,is,ie,sarea_[0]);
+            pmb->pcoord->CellVolume(kc,j,is,ie,fvol_[0][0]);
+            for(int i=is; i<=ie; i++) {
+              dst(nn,kc,j,i)+=dt*sign*sarea_[0](i)
+                            *(surface_flux_[nb.fid](nn,j,i)-buf[p++])/fvol_[0][0](i);
+            }
+          }
+        }
+      }
+
+      flcor_flag_[step][nb.fid][nb.fi2][nb.fi1] = boundary_completed;
+      nc++;
+    }
+  }
+
+  if(nc<nff)
+    return false;
+  return true;
 }
 
 //--------------------------------------------------------------------------------------
@@ -1522,6 +1853,8 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(InterfaceField &dst, in
 void BoundaryValues::ClearBoundaryForInit(void)
 {
   MeshBlock *pmb=pmy_mblock_;
+  int mylevel=pmb->uid.GetLevel();
+
   for(int n=0;n<pmb->nneighbor;n++) {
     NeighborBlock& nb=pmb->neighbor[n];
     fluid_flag_[0][nb.bufid] = boundary_waiting;
@@ -1545,15 +1878,20 @@ void BoundaryValues::ClearBoundaryForInit(void)
 void BoundaryValues::ClearBoundaryAll(void)
 {
   MeshBlock *pmb=pmy_mblock_;
+  int mylevel=pmb->uid.GetLevel();
   for(int l=0;l<NSTEP;l++) {
     for(int n=0;n<pmb->nneighbor;n++) {
       NeighborBlock& nb=pmb->neighbor[n];
       fluid_flag_[l][nb.bufid] = boundary_waiting;
+      if(nb.type==neighbor_face)
+        flcor_flag_[l][nb.fid][nb.fi2][nb.fi1] = boundary_waiting;
       if (MAGNETIC_FIELDS_ENABLED)
         field_flag_[l][nb.bufid] = boundary_waiting;
 #ifdef MPI_PARALLEL
       if(nb.rank!=myrank) {
         MPI_Wait(&req_fluid_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
+        if(nb.type==neighbor_face && nb.level<mylevel)
+          MPI_Wait(&req_flcor_send_[l][nb.fid],MPI_STATUS_IGNORE); // Wait for Isend
         if (MAGNETIC_FIELDS_ENABLED)
           MPI_Wait(&req_field_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
       }
@@ -1572,9 +1910,9 @@ void BoundaryValues::FluidPhysicalBoundaries(AthenaArray<Real> &dst)
   MeshBlock *pmb=pmy_mblock_;
   int bis=pmb->is, bie=pmb->ie, bjs=pmb->js, bje=pmb->je, bks=pmb->ks, bke=pmb->ke;
 
-  if(pmb->pmy_mesh->face_only==false) {
-    if(FluidBoundary_[inner_x1]==NULL) bis=pmb->is-NGHOST;
-    if(FluidBoundary_[outer_x1]==NULL) bie=pmb->ie+NGHOST;
+  if(pmb->pmy_mesh->face_only==false) { // extend the ghost zone
+    bis=pmb->is-NGHOST;
+    bie=pmb->ie+NGHOST;
     if(FluidBoundary_[inner_x2]==NULL && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
     if(FluidBoundary_[outer_x2]==NULL && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
     if(FluidBoundary_[inner_x3]==NULL && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
@@ -1658,7 +1996,7 @@ unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2)
 //  \brief calculate an MPI tag
 unsigned int CreateMPITag(int lid, int flag, int phys, int bufid)
 {
-// tag = local id of destination (17) + flag (2) + physics (4) + bufid(7)
+// tag = local id of destination (18) + flag (2) + physics (4) + bufid(7)
   return (lid<<13) | (flag<<11) | (phys<<7) | bufid;
 }
 

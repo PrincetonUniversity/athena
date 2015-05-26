@@ -38,8 +38,9 @@ class BlockTree;
 typedef struct NeighborBlock {
   int rank, level, gid, lid, ox1, ox2, ox3, fi1, fi2, bufid, targetid;
   enum neighbor_type type;
-  NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1),
-    ox1(-1), ox2(-1), ox3(-1), bufid(-1), targetid(-1), fi1(-1), fi2(-1), type(neighbor_none) {};
+  enum direction fid;
+  NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1), ox1(-1), ox2(-1), ox3(-1),
+    bufid(-1), targetid(-1), fi1(-1), fi2(-1), type(neighbor_none), fid(dir_undefined) {};
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2, int iox3,
                    enum neighbor_type itype, int ibid, int itargetid, int ifi1, int ifi2);
 } NeighborBlock;
@@ -89,6 +90,7 @@ public:
   void SetTaskList(TaskList& tl);
   enum tasklist_status DoOneTask(void);
   void SetCoarserCoordinates(void);
+  int FindNeighborGID(int ox1, int ox2, int ox3);
 
   RegionSize block_size;
   int block_bcs[6];
@@ -122,7 +124,8 @@ private:
   int nbtotal, nbstart, nbend;
   int maxneighbor_;
   int num_mesh_threads_;
-  int *nslist, *nblist;
+  int *nslist, *nblist, *ranklist;
+  Real *costlist;
   Real MeshGeneratorX1(Real x, RegionSize rs);
   Real MeshGeneratorX2(Real x, RegionSize rs);
   Real MeshGeneratorX3(Real x, RegionSize rs);
@@ -130,7 +133,7 @@ private:
   BlockTree tree;
   long int nrbx1, nrbx2, nrbx3;
 
-  void MeshTest(int *ranklist, Real *costlist, int dim);
+  void MeshTest(int dim);
 
   friend class RestartOutput;
   friend class MeshBlock;
