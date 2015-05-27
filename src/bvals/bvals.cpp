@@ -1288,10 +1288,9 @@ bool BoundaryValues::ReceiveFluxCorrection(AthenaArray<Real> &dst, int step)
           for(int j=js; j<=je; j++) {
             pmb->pcoord->Face3Area(ks,j,is,ie,sarea_[0]);
             pmb->pcoord->CellVolume(kc,j,is,ie,fvol_[0][0]);
-            for(int i=is; i<=ie; i++) {
+            for(int i=is; i<=ie; i++)
               dst(nn,kc,j,i)+=dt*sign*sarea_[0](i)
                             *(surface_flux_[nb.fid](nn,j,i)-buf[p++])/fvol_[0][0](i);
-            }
           }
         }
       }
