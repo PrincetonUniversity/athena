@@ -264,7 +264,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   if(adaptive==true)
     max_level = pin->GetOrAddInteger("mesh","maxlevel",1)+root_level-1;
   else
-    max_level = IDLENGTH*10;
+    max_level = IDLENGTH*20;
 
   InputBlock *pib = pin->pfirst_block;
   while (pib != NULL) {

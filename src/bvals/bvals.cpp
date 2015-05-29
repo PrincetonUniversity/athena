@@ -332,24 +332,6 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     int ncc3=1;
     if(pmb->block_size.nx3>1) ncc3=pmb->block_size.nx3/2+2*pmb->cnghost;
     coarse_cons_.NewAthenaArray(NFLUID,ncc3,ncc2,ncc1);
-    //  coarse_prim_.NewAthenaArray(NFLUID,ncc3,ncc2,ncc1);
-    // fill it with some safe density and energy
-    for(int k=0;k<ncc3;k++) {
-      for(int j=0;j<ncc2;j++) {
-        for(int i=0;i<ncc3;i++) {
-          coarse_cons_(IDN,k,j,i)=1e-10;
-        }
-      }
-    }
-    if (NON_BAROTROPIC_EOS) {
-      for(int k=0;k<ncc3;k++) {
-        for(int j=0;j<ncc2;j++) {
-          for(int i=0;i<ncc3;i++) {
-            coarse_cons_(IEN,k,j,i)=1e-10;
-          }
-        }
-      }
-    }
   }
 }
 
