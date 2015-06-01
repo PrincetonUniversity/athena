@@ -40,6 +40,7 @@ void FluidIntegrator::PiecewiseLinearX1(const int k, const int j,
   Real dql,dqr,dqc,q_im1,q_i;
   for (int n=0; n<NWAVE; ++n) {
     if (n==NFLUID){
+#pragma simd
       for (int i=il; i<=iu; ++i){
         Real& dx_im2 = pmy_fluid->pmy_block->dx1v(i-2);
         Real& dx_im1 = pmy_fluid->pmy_block->dx1v(i-1);
@@ -102,6 +103,7 @@ void FluidIntegrator::PiecewiseLinearX1(const int k, const int j,
         }
       }
     } else {
+#pragma simd
       for (int i=il; i<=iu; ++i){
         Real& dx_im2 = pmy_fluid->pmy_block->dx1v(i-2);
         Real& dx_im1 = pmy_fluid->pmy_block->dx1v(i-1);
@@ -160,6 +162,7 @@ void FluidIntegrator::PiecewiseLinearX2(const int k, const int j,
 
   for (int n=0; n<NWAVE; ++n) {
     if (n==NFLUID){
+#pragma simd
       for (int i=il; i<=iu; ++i){
         q_jm1 = bcc(IB3,k,j-1,i);
         q_j   = bcc(IB3,k,j  ,i);
@@ -179,6 +182,7 @@ void FluidIntegrator::PiecewiseLinearX2(const int k, const int j,
           qr(n,i) -= dxfl*dq2*(cfp*dqc+cbp*dqr)/(dqc*dqc+(cfp+cbp-2.0)*dq2+dqr*dqr);
       }
     } else if (n==(NFLUID+1)) {
+#pragma simd
       for (int i=il; i<=iu; ++i){
         q_jm1 = bcc(IB1,k,j-1,i);
         q_j   = bcc(IB1,k,j  ,i);
@@ -198,6 +202,7 @@ void FluidIntegrator::PiecewiseLinearX2(const int k, const int j,
           qr(n,i) -= dxfl*dq2*(cfp*dqc+cbp*dqr)/(dqc*dqc+(cfp+cbp-2.0)*dq2+dqr*dqr);
       }
     } else {
+#pragma simd
       for (int i=il; i<=iu; ++i){
         q_jm1 = q(n,k,j-1,i);
         q_j   = q(n,k,j  ,i);
@@ -245,6 +250,7 @@ void FluidIntegrator::PiecewiseLinearX3(const int k, const int j,
 
   for (int n=0; n<NWAVE; ++n) {
     if (n==NFLUID){
+#pragma simd
       for (int i=il; i<=iu; ++i){
         q_km1 = bcc(IB1,k-1,j,i);
         q_k   = bcc(IB1,k  ,j,i);
@@ -265,6 +271,7 @@ void FluidIntegrator::PiecewiseLinearX3(const int k, const int j,
           qr(n,i) -= dxfl*dq2*(cfp*dqc+cbp*dqr)/(dqc*dqc+(cfp+cbp-2.0)*dq2+dqr*dqr);
       }
     } else if (n==(NFLUID+1)) {
+#pragma simd
       for (int i=il; i<=iu; ++i){
         q_km1 = bcc(IB2,k-1,j,i);
         q_k   = bcc(IB2,k  ,j,i);
@@ -285,6 +292,7 @@ void FluidIntegrator::PiecewiseLinearX3(const int k, const int j,
           qr(n,i) -= dxfl*dq2*(cfp*dqc+cbp*dqr)/(dqc*dqc+(cfp+cbp-2.0)*dq2+dqr*dqr);
       }
     } else {
+#pragma simd
       for (int i=il; i<=iu; ++i){
         q_km1 = q(n,k-1,j,i);
         q_k   = q(n,k  ,j,i);

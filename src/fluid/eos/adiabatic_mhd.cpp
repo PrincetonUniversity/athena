@@ -20,7 +20,6 @@
 // C++ headers
 #include <cmath>   // sqrt()
 #include <cfloat>  // FLT_MIN
-#include <iostream>
 
 // Athena headers
 #include "../fluid.hpp"               // Fluid
