@@ -82,25 +82,44 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   int ju = pb->je;
   int kl = pb->ks;
   int ku = pb->ke;
-  if (pb->block_size.nx2 > 1)
-  {
+  if (pb->block_size.nx2 > 1) {
     jl -= NGHOST;
     ju += NGHOST;
   }
-  if (pb->block_size.nx3 > 1)
-  {
+  if (pb->block_size.nx3 > 1) {
     kl -= NGHOST;
     ku += NGHOST;
   }
 
   // Go through cells
-  for (int k = kl; k <= ku; k++)
-    for (int j = jl; j <= ju; j++)
-    {
+  for (int k = kl; k <= ku; k++) {
+    for (int j = jl; j <= ju; j++) {
       pb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
-//#pragma simd
-      for (int i = il; i <= iu; i++)
-      {
+#pragma simd
+      for (int i = il; i <= iu; i++) {
+        // Extract face-centered magnetic field
+        const Real &bf1m = b.x1f(k,j,i);
+        const Real &bf1p = b.x1f(k,j,i+1);
+        const Real &bf2m = b.x2f(k,j,i);
+        const Real &bf2p = b.x2f(k,j+1,i);
+        const Real &bf3m = b.x3f(k,j,i);
+        const Real &bf3p = b.x3f(k+1,j,i);
+
+        // Extract cell-centered magnetic field
+        Real &b1 = bcc(IB1,k,j,i);
+        Real &b2 = bcc(IB2,k,j,i);
+        Real &b3 = bcc(IB3,k,j,i);
+
+        // Calculate cell-centered magnetic field
+        Real interp_param = (pb->x1v(i) - pb->x1f(i)) / pb->dx1f(i);
+        b1 = (1.0-interp_param) * bf1m + interp_param * bf1p;
+        interp_param = (pb->x2v(j) - pb->x2f(j)) / pb->dx2f(j);
+        b2 = (1.0-interp_param) * bf2m + interp_param * bf2p;
+        interp_param = (pb->x3v(k) - pb->x3f(k)) / pb->dx3f(k);
+        b3 = (1.0-interp_param) * bf3m + interp_param * bf3p;
+      }
+#pragma simd
+      for (int i = il; i <= iu; i++) {
         // Extract metric
         const Real &g00 = g_(I00,i), &g01 = g_(I01,i), &g02 = g_(I02,i),
             &g03 = g_(I03,i);
@@ -133,26 +152,10 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real &m2 = cons(IM2,k,j,i);
         Real &m3 = cons(IM3,k,j,i);
 
-        // Extract face-centered magnetic field
-        const Real &bf1m = b.x1f(k,j,i);
-        const Real &bf1p = b.x1f(k,j,i+1);
-        const Real &bf2m = b.x2f(k,j,i);
-        const Real &bf2p = b.x2f(k,j+1,i);
-        const Real &bf3m = b.x3f(k,j,i);
-        const Real &bf3p = b.x3f(k+1,j,i);
-
         // Extract cell-centered magnetic field
-        Real &b1 = bcc(IB1,k,j,i);
-        Real &b2 = bcc(IB2,k,j,i);
-        Real &b3 = bcc(IB3,k,j,i);
-
-        // Calculate cell-centered magnetic field
-        Real interp_param = (pb->x1v(i) - pb->x1f(i)) / pb->dx1f(i);
-        b1 = (1.0-interp_param) * bf1m + interp_param * bf1p;
-        interp_param = (pb->x2v(j) - pb->x2f(j)) / pb->dx2f(j);
-        b2 = (1.0-interp_param) * bf2m + interp_param * bf2p;
-        interp_param = (pb->x3v(k) - pb->x3f(k)) / pb->dx3f(k);
-        b3 = (1.0-interp_param) * bf3m + interp_param * bf3p;
+        const Real &b1 = bcc(IB1,k,j,i);
+        const Real &b2 = bcc(IB2,k,j,i);
+        const Real &b3 = bcc(IB3,k,j,i);
 
         // Calculate variations on conserved quantities
         Real d_norm = alpha * d;  // (N 21)
@@ -194,8 +197,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real v_norm_sq = 1.0/alpha_sq * (v_sq + 2.0*beta_v + beta_sq);
         Real gamma_sq = 1.0 / (1.0 - v_norm_sq);
         Real w_initial = gamma_sq * (rho_old + gamma_prime * pgas_old);
-        for (int count = 0; count < guess_multiplications; count++)
-        {
+        for (int count = 0; count < guess_multiplications; count++) {
           Real b_w_term_initial = b_norm_sq + w_initial;
           Real v_sq_initial = (q_norm_sq*SQR(w_initial)
               + q_dot_b_norm_sq*(b_norm_sq+2.0*w_initial))
@@ -225,8 +227,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         // Set density, correcting only conserved density if floor applied
         Real u0 = gamma_rel / alpha;                    // (N 21)
         rho = d_norm / gamma_rel;                       // (N 21)
-        if (rho < density_floor_ or std::isnan(rho))
-        {
+        if (rho < density_floor_ or std::isnan(rho)) {
           rho = density_floor_;
           d = rho * u0;
         }
@@ -247,8 +248,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         // Set pressure, correcting only energy if floor applied
         pgas = 1.0/gamma_prime
             * (w_true/gamma_sq - d_norm/gamma_rel);         // (N 32)
-        if (pgas < pressure_floor_ or std::isnan(pgas))
-        {
+        if (pgas < pressure_floor_ or std::isnan(pgas)) {
           pgas = pressure_floor_;
           Real u_0 = g00*u0 + g01*u1 + g02*u2 + g03*u3;
           Real bcon0 = u0 * (g01*b1 + g02*b2 + g03*b3)
@@ -269,6 +269,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         }
       }
     }
+  }
   return;
 }
 

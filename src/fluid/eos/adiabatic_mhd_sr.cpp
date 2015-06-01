@@ -80,31 +80,20 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   int ju = pb->je;
   int kl = pb->ks;
   int ku = pb->ke;
-  if (pb->block_size.nx2 > 1)
-  {
+  if (pb->block_size.nx2 > 1) {
     jl -= (NGHOST);
     ju += (NGHOST);
   }
-  if (pb->block_size.nx3 > 1)
-  {
+  if (pb->block_size.nx3 > 1) {
     kl -= (NGHOST);
     ku += (NGHOST);
   }
 
   // Go through cells
-  for (int k = kl; k <= ku; k++)
-    for (int j = jl; j <= ju; j++)
-    {
-//#pragma simd
-      for (int i = is-NGHOST; i <= ie+NGHOST; i++)
-      {
-        // Extract conserved quantities
-        Real &d = cons(IDN,k,j,i);
-        Real &e = cons(IEN,k,j,i);
-        const Real &mx = cons(IM1,k,j,i);
-        const Real &my = cons(IM2,k,j,i);
-        const Real &mz = cons(IM3,k,j,i);
-
+  for (int k = kl; k <= ku; k++) {
+    for (int j = jl; j <= ju; j++) {
+#pragma simd
+      for (int i = is-NGHOST; i <= ie+NGHOST; i++) {
         // Extract face-centered magnetic field
         const Real &bxm = b.x1f(k,j,i);
         const Real &bxp = b.x1f(k,j,i+1);
@@ -125,6 +114,20 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         by = (1.0-interp_param) * bym + interp_param * byp;
         interp_param = (pb->x3v(k) - pb->x3f(k)) / pb->dx3f(k);
         bz = (1.0-interp_param) * bzm + interp_param * bzp;
+      }
+#pragma simd
+      for (int i = is-NGHOST; i <= ie+NGHOST; i++) {
+        // Extract conserved quantities
+        Real &d = cons(IDN,k,j,i);
+        Real &e = cons(IEN,k,j,i);
+        const Real &mx = cons(IM1,k,j,i);
+        const Real &my = cons(IM2,k,j,i);
+        const Real &mz = cons(IM3,k,j,i);
+
+        // Extract cell-centered magnetic field
+        const Real &bx = bcc(IB1,k,j,i);
+        const Real &by = bcc(IB2,k,j,i);
+        const Real &bz = bcc(IB3,k,j,i);
 
         // Calculate variations on conserved quantities
         Real m_sq = SQR(mx) + SQR(my) + SQR(mz);
@@ -153,8 +156,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real gamma_sq = 1.0/(1.0-v_sq);
         Real gamma_lorentz = std::sqrt(gamma_sq);
         rho = d/gamma_lorentz;                                       // (MM A12)
-        if (rho < density_floor_)
-        {
+        if (rho < density_floor_) {
           rho = density_floor_;
           d = gamma_lorentz * rho;
         }
@@ -167,8 +169,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         // Set pressure, correcting only energy if floor applied
         Real chi = (1.0 - v_sq) * (w_true - gamma_lorentz * d);  // (cf. MM A11)
         pgas = chi/gamma_prime;                                  // (MM A17)
-        if (pgas < pressure_floor_)
-        {
+        if (pgas < pressure_floor_) {
           pgas = pressure_floor_;
           Real ut = gamma_lorentz;
           Real ux = ut * vx;
@@ -185,6 +186,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         }
       }
     }
+  }
   return;
 }
 

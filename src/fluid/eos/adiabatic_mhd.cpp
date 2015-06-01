@@ -20,6 +20,7 @@
 // C++ headers
 #include <cmath>   // sqrt()
 #include <cfloat>  // FLT_MIN
+#include <iostream>
 
 // Athena headers
 #include "../fluid.hpp"               // Fluid
@@ -81,29 +82,10 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   for (int k=kl; k<=ku; ++k){
 #pragma omp for schedule(dynamic)
   for (int j=jl; j<=ju; ++j){
-//#pragma simd
+
+  // calc cell centered fields first
+#pragma simd
     for (int i=pmb->is-(NGHOST); i<=pmb->ie+(NGHOST); ++i){
-      Real& u_d  = cons(IDN,k,j,i);
-      Real& u_m1 = cons(IVX,k,j,i);
-      Real& u_m2 = cons(IVY,k,j,i);
-      Real& u_m3 = cons(IVZ,k,j,i);
-      Real& u_e  = cons(IEN,k,j,i);
-
-      Real& w_d  = prim(IDN,k,j,i);
-      Real& w_vx = prim(IVX,k,j,i);
-      Real& w_vy = prim(IVY,k,j,i);
-      Real& w_vz = prim(IVZ,k,j,i);
-      Real& w_p  = prim(IEN,k,j,i);
-
-      // apply density floor, without changing momentum or energy
-      u_d = (u_d > density_floor_) ?  u_d : density_floor_;
-      w_d = u_d;
-
-      Real di = 1.0/u_d;
-      w_vx = u_m1*di;
-      w_vy = u_m2*di;
-      w_vz = u_m3*di;
-
       const Real& b1_i   = b.x1f(k,j,i  );
       const Real& b1_ip1 = b.x1f(k,j,i+1);
       const Real& b2_j   = b.x2f(k,j  ,i);
@@ -137,6 +119,34 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       lw=(x3f_kp-x3v_k)/dx3_k;
       rw=(x3v_k -x3f_k)/dx3_k;
       bcc3 = lw*b3_k + rw*b3_kp1;
+    }
+
+#pragma simd
+    for (int i=pmb->is-(NGHOST); i<=pmb->ie+(NGHOST); ++i){
+      Real& u_d  = cons(IDN,k,j,i);
+      Real& u_m1 = cons(IVX,k,j,i);
+      Real& u_m2 = cons(IVY,k,j,i);
+      Real& u_m3 = cons(IVZ,k,j,i);
+      Real& u_e  = cons(IEN,k,j,i);
+
+      Real& w_d  = prim(IDN,k,j,i);
+      Real& w_vx = prim(IVX,k,j,i);
+      Real& w_vy = prim(IVY,k,j,i);
+      Real& w_vz = prim(IVZ,k,j,i);
+      Real& w_p  = prim(IEN,k,j,i);
+
+      // apply density floor, without changing momentum or energy
+      u_d = (u_d > density_floor_) ?  u_d : density_floor_;
+      w_d = u_d;
+
+      Real di = 1.0/u_d;
+      w_vx = u_m1*di;
+      w_vy = u_m2*di;
+      w_vz = u_m3*di;
+
+      const Real& bcc1 = bcc(IB1,k,j,i);
+      const Real& bcc2 = bcc(IB2,k,j,i);
+      const Real& bcc3 = bcc(IB3,k,j,i);
 
       Real pb = 0.5*(SQR(bcc1) + SQR(bcc2) + SQR(bcc3));
       Real ke = 0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3));
