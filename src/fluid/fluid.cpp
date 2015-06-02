@@ -27,6 +27,7 @@
 #include "../athena_arrays.hpp"         // AthenaArray
 #include "eos/eos.hpp"                  // FluidEqnOfState
 #include "srcterms/srcterms.hpp"        // FluidSourceTerms
+#include "viscosity/viscosity.hpp"      // Viscosity 
 #include "integrators/fluid_integrator.hpp"  // FluidIntegrator
 #include "../mesh.hpp"                  // MeshBlock, Mesh
 #include "../coordinates/coordinates.hpp" // CenterWidth()
@@ -89,6 +90,7 @@ Fluid::Fluid(MeshBlock *pmb, ParameterInput *pin)
   pf_integrator = new FluidIntegrator(this,pin);
   pf_eos = new FluidEqnOfState(this,pin);
   pf_srcterms = new FluidSourceTerms(this,pin);
+  if(VISCOSITY) pf_viscosity = new Viscosity(this,pin);
 }
 
 // destructor
@@ -109,6 +111,7 @@ Fluid::~Fluid()
   delete pf_integrator;
   delete pf_eos;
   delete pf_srcterms;
+  if(VISCOSITY) delete pf_viscosity;
 }
 
 //--------------------------------------------------------------------------------------
@@ -192,6 +195,11 @@ Real Fluid::NewBlockTimeStep(MeshBlock *pmb)
           dt2(i)= pmy_block->pcoord->CenterWidth2(k,j,i)/(fabs(wi[IVY]) + cs);
           dt3(i)= pmy_block->pcoord->CenterWidth3(k,j,i)/(fabs(wi[IVZ]) + cs);
 
+        }
+        if(VISCOSITY){
+          dt1(i)=std::min(pmb->pfluid->pf_viscosity->VisDt(pmy_block->pcoord->CenterWidth1(k,j,i),k,j,i),dt1(i));
+          dt2(i)=std::min(pmb->pfluid->pf_viscosity->VisDt(pmy_block->pcoord->CenterWidth2(k,j,i),k,j,i),dt2(i));
+          dt3(i)=std::min(pmb->pfluid->pf_viscosity->VisDt(pmy_block->pcoord->CenterWidth3(k,j,i),k,j,i),dt3(i));
         }
       }
 

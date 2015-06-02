@@ -74,6 +74,42 @@ public:
     const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
 
+// Functions to calculate covariant derivatives at faces, for viscosity calculations  
+  void FaceXdx(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceXdy(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceXdz(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceYdx(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceYdy(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceYdz(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceZdx(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceZdy(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  void FaceZdz(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+
+// function to compute Divv
+  void Divv(const AthenaArray<Real> &prim, AthenaArray<Real> &divv);
+
+// function to compute viscous source terms
+  void VisSrcTermsX1(const int k, const int j, const Real dt,
+    const AthenaArray<Real> &flx,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &u);
+
+  void VisSrcTermsX2(const int k, const int j, const Real dt,
+    const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &u);
+
+  void VisSrcTermsX3(const int k, const int j, const Real dt,
+    const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &u);
+
   // Functions for use in general relativity
   #if GENERAL_RELATIVITY  // declare, but do not define, in GR case
     void CellMetric(const int k, const int j, const int il, const int iu,
@@ -94,15 +130,20 @@ public:
         const AthenaArray<Real> &b3_vals, AthenaArray<Real> &prim_left,
         AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
     void FluxToGlobal1(const int k, const int j, const int il, const int iu,
+        const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
         AthenaArray<Real> &flux);
     void FluxToGlobal2(const int k, const int j, const int il, const int iu,
+        const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
         AthenaArray<Real> &flux);
     void FluxToGlobal3(const int k, const int j, const int il, const int iu,
+        const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
         AthenaArray<Real> &flux);
     void PrimToCons(
         const AthenaArray<Real> &prim, const AthenaArray<Real> &b, Real gamma_adi_red,
         AthenaArray<Real> &cons);
     Real DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real by, Real bz);
+    void MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3,
+        Real *pt, Real *px, Real *py, Real *pz);
     void TransformVectorCell(Real at, Real ax, Real ay, Real az, int k, int j, int i,
         Real *a0, Real *a1, Real *a2, Real *a3);
     void TransformVectorFace1(Real at, Real ax, Real ay, Real az, int k, int j, int i,
@@ -113,7 +154,7 @@ public:
         Real *a0, Real *a1, Real *a2, Real *a3);
     void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
         Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3);
-    void GetBoyerLindquistCoordinates(int k, int j, int i,
+    void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3,
         Real *pr, Real *ptheta, Real *pphi);
   #else  // define no-op functions otherwise not defined in non-GR case
     void CellMetric(const int, const int, const int, const int, AthenaArray<Real> &,
@@ -133,15 +174,20 @@ public:
     void PrimToLocal3(const int, const int, const int, const int,
         const AthenaArray<Real> &, AthenaArray<Real> &, AthenaArray<Real> &,
         AthenaArray<Real> &) {return;}
-    void FluxToGlobal1(const int, const int, const int, const int, AthenaArray<Real> &)
+    void FluxToGlobal1(const int, const int, const int, const int,
+        const AthenaArray<Real> &, const AthenaArray<Real> &, AthenaArray<Real> &)
         {return;}
-    void FluxToGlobal2(const int, const int, const int, const int, AthenaArray<Real> &)
+    void FluxToGlobal2(const int, const int, const int, const int,
+        const AthenaArray<Real> &, const AthenaArray<Real> &, AthenaArray<Real> &)
         {return;}
-    void FluxToGlobal3(const int, const int, const int, const int, AthenaArray<Real> &)
+    void FluxToGlobal3(const int, const int, const int, const int,
+        const AthenaArray<Real> &, const AthenaArray<Real> &, AthenaArray<Real> &)
         {return;}
     void PrimToCons(const AthenaArray<Real> &, const AthenaArray<Real> &, Real,
         AthenaArray<Real> &) {return;}
     Real DistanceBetweenPoints(Real, Real, Real, Real, Real, Real) {return 0.0;}
+    void MinkowskiCoordinates(Real, Real, Real, Real, Real *, Real *, Real *, Real *)
+        {return;}
     void TransformVectorCell(Real, Real, Real, Real, int, int, int, Real *, Real *,
         Real *, Real *) {return;}
     void TransformVectorFace1(Real, Real, Real, Real, int, int, int, Real *, Real *,
@@ -150,6 +196,8 @@ public:
         Real *, Real *) {return;}
     void TransformVectorFace3(Real, Real, Real, Real, int, int, int, Real *, Real *,
         Real *, Real *) {return;}
+    void LowerVectorCell(Real, Real, Real, Real, int, int, int, Real *, Real *, Real *,
+        Real *) {return;}
   #endif  // GENERAL_RELATIVITY
 
 private:
@@ -159,6 +207,7 @@ private:
   Real bh_spin_;          // a (dimensionless): Schwarzschild
   Real sinu_amplitude_;   // a: sinusoidal
   Real sinu_wavenumber_;  // k: sinusoidal
+  Real tilted_a_;         // a: tilted
 
   // Scratch arrays for coordinate factors
   // Format: coord_<type>[<direction>]_<index>[<count>]_
@@ -179,6 +228,7 @@ private:
   AthenaArray<Real> coord_src2_i_, coord_src2_j_;
   AthenaArray<Real> coord_src_i1_, coord_src_i2_, coord_src_i3_, coord_src_i4_;
   AthenaArray<Real> coord_src_j1_, coord_src_j2_, coord_src_j3_;
+  AthenaArray<Real> phy_src1_i_, phy_src2_i_;
 
   // GR-specific scratch arrays
   AthenaArray<Real> metric_cell_i1_, metric_cell_i2_, metric_cell_j1_;

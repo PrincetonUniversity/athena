@@ -29,6 +29,7 @@
 #include "../../mesh.hpp"                    // MeshBlock
 #include "../srcterms/srcterms.hpp"          // PhysicalSourceTerms()
 #include "../../bvals/bvals.hpp"             // BoundaryValues
+#include "../viscosity/viscosity.hpp"        // Viscosity
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL
@@ -87,6 +88,9 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
   area_p1.InitWithShallowSlice(face_area_p1_,2,tid,1);
   vol.InitWithShallowSlice(cell_volume_,2,tid,1);
 
+//----------Viscosity update
+  if(VISCOSITY) pmb->pfluid->pf_viscosity->ViscosityTerms(dt,w,u);
+
 //--------------------------------------------------------------------------------------
 // i-direction
   // set the loop limits
@@ -126,6 +130,8 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 
         // add coordinate (geometric) source terms
         pmb->pcoord->CoordSrcTermsX1(k,j,dt,flx,w,bcc,u);
+        // add physical source terms for a point mass potential
+        pmb->pfluid->pf_srcterms->PhysicalSourceTermsX1(k,j,dt,flx,w,u);
 
         // store the surface flux for flux correction
         if(pmb->pmy_mesh->multilevel==true) {
@@ -228,6 +234,8 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 
           // add coordinate (geometric) source terms
           pmb->pcoord->CoordSrcTermsX2(k,j,dt,jflx_j,flx,w,bcc,u);
+          // add physical source terms for a point mass potential
+          pmb->pfluid->pf_srcterms->PhysicalSourceTermsX2(k,j,dt,jflx_j,flx,w,u);
         }
 
         // store the surface flux for flux correction
@@ -341,6 +349,8 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 
           // add coordinate (geometric) source terms
           pmb->pcoord->CoordSrcTermsX3(k,j,dt,kflx_k,flx,w,bcc,u);
+	  // add physical source terms for a point mass potential
+	  pmb->pfluid->pf_srcterms->PhysicalSourceTermsX3(k,j,dt,kflx_k,flx,w,u);
         }
 
         // store the surface flux for flux correction
@@ -381,9 +391,7 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 } // end of omp parallel region
 
 //--------------------------------------------------------------------------------------
-//  Add physical and user source terms
-
-  pmb->pfluid->pf_srcterms->PhysicalSourceTerms(pmb->pmy_mesh->time,dt,w,u);
+//  Add user source terms
 
   if (pmb->pfluid->pf_srcterms->UserSourceTerm != NULL)
     pmb->pfluid->pf_srcterms->UserSourceTerm(pmb->pmy_mesh->time,dt,w,u);

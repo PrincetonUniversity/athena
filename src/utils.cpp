@@ -58,6 +58,11 @@ void ShowConfig(void)
   } else {
     std::cout<<"  Relativistic dynamics:      OFF " << std::endl;
   }
+  if (VISCOSITY) {
+    std::cout<<"  Viscosity:                  ON " << std::endl;
+  } else {
+    std::cout<<"  Viscosity:                  OFF " << std::endl;
+  }
 #ifdef OPENMP_PARALLEL
   std::cout<<"  OpenMP parallelism:         ON" << std::endl;
 #else

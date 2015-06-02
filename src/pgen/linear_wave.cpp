@@ -672,7 +672,7 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
     }
   } else {
 
-//--- Adiabatic Hydrodynamcis ---
+//--- Adiabatic Hydrodynamics ---
 
     if (NON_BAROTROPIC_EOS) {
       Real vsq = v1*v1 + v2*v2 + v3*v3;

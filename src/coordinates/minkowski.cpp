@@ -594,13 +594,15 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
 // Inputs:
 //   k,j: z- and y-indices
 //   il,iu: x-index bounds
-//   pflux: pointer to array of fluxes in 1D, using local coordinates
+//   cons: array of conserved quantities in 1D, using local coordinates (unused)
+//   bx: 1D array of longitudinal magnetic fields, in local coordinates (unused)
+//   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
-//   pflux: pointer to values overwritten in global coordinates
+//   flux: values overwritten in global coordinates
 // Notes:
 //   transformation is trivial except for sign change from lowering time index
 void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bx, AthenaArray<Real> &flux)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
@@ -618,13 +620,15 @@ void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const in
 // Inputs:
 //   k,j: z- and y-indices
 //   il,iu: x-index bounds
-//   pflux: pointer to array of fluxes in 1D, using local coordinates
+//   cons: array of conserved quantities in 1D, using local coordinates (unused)
+//   bx: 1D array of longitudinal magnetic fields, in local coordinates (unused)
+//   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
-//   pflux: pointer to values overwritten in global coordinates
+//   flux: values overwritten in global coordinates
 // Notes:
 //   transformation is trivial except for sign change from lowering time index
 void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bx, AthenaArray<Real> &flux)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
@@ -642,13 +646,15 @@ void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const in
 // Inputs:
 //   k,j: z- and y-indices
 //   il,iu: x-index bounds
-//   pflux: pointer to array of fluxes in 1D, using local coordinates
+//   cons: array of conserved quantities in 1D, using local coordinates (unused)
+//   bx: 1D array of longitudinal magnetic fields, in local coordinates (unused)
+//   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
-//   pflux: pointer to values overwritten in global coordinates
+//   flux: values overwritten in global coordinates
 // Notes:
 //   transformation is trivial except for sign change from lowering time index
 void Coordinates::FluxToGlobal3(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bx, AthenaArray<Real> &flux)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
@@ -780,22 +786,41 @@ Real Coordinates::DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real
 
 //--------------------------------------------------------------------------------------
 
+// Function for calculating Minkowski coordinates of cell
+// Inputs:
+//   x0,x1,x2,x3: Minkowski coordinates
+// Outputs:
+//   pt,px,py,pz: Minkowski coordinate values set
+// Notes:
+//   transformation is trivial
+void Coordinates::MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3,
+    Real *pt, Real *px, Real *py, Real *pz)
+{
+  *pt = x0;
+  *px = x1;
+  *py = x2;
+  *pz = x3;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
 // Function for transforming 4-vector from Minkowski to global: cell-centered
 // Inputs:
 //   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
-//   k,j: z- and y-indices (unused)
-//   i: x-index
+//   k,j,i: z-, y-, and x-indices (unused)
 // Outputs:
-//   a0,a1,a2,a3: upper 4-vector components in global coordinates
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::TransformVectorCell(Real at, Real ax, Real ay, Real az, int k, int j, int i,
-    Real *a0, Real *a1, Real *a2, Real *a3)
+void Coordinates::TransformVectorCell(
+    Real at, Real ax, Real ay, Real az, int k, int j, int i,
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
-  *a0 = at;
-  *a1 = ax;
-  *a2 = ay;
-  *a3 = az;
+  *pa0 = at;
+  *pa1 = ax;
+  *pa2 = ay;
+  *pa3 = az;
   return;
 }
 
@@ -804,19 +829,19 @@ void Coordinates::TransformVectorCell(Real at, Real ax, Real ay, Real az, int k,
 // Function for transforming 4-vector from Minkowski to global: x-interface
 // Inputs:
 //   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
-//   k,j: z- and y-indices (unused)
-//   i: x-index
+//   k,j,i: z-, y-, and x-indices (unused)
 // Outputs:
-//   a0,a1,a2,a3: upper 4-vector components in global coordinates
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::TransformVectorFace1(Real at, Real ax, Real ay, Real az, int k, int j, int i,
-    Real *a0, Real *a1, Real *a2, Real *a3)
+void Coordinates::TransformVectorFace1(
+    Real at, Real ax, Real ay, Real az, int k, int j, int i,
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
-  *a0 = at;
-  *a1 = ax;
-  *a2 = ay;
-  *a3 = az;
+  *pa0 = at;
+  *pa1 = ax;
+  *pa2 = ay;
+  *pa3 = az;
   return;
 }
 
@@ -825,19 +850,19 @@ void Coordinates::TransformVectorFace1(Real at, Real ax, Real ay, Real az, int k
 // Function for transforming 4-vector from Minkowski to global: y-interface
 // Inputs:
 //   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
-//   k,j: z- and y-indices (unused)
-//   i: x-index
+//   k,j,i: z-, y-, and x-indices (unused)
 // Outputs:
-//   a0,a1,a2,a3: upper 4-vector components in global coordinates
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::TransformVectorFace2(Real at, Real ax, Real ay, Real az, int k, int j, int i,
-    Real *a0, Real *a1, Real *a2, Real *a3)
+void Coordinates::TransformVectorFace2(
+    Real at, Real ax, Real ay, Real az, int k, int j, int i,
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
-  *a0 = at;
-  *a1 = ax;
-  *a2 = ay;
-  *a3 = az;
+  *pa0 = at;
+  *pa1 = ax;
+  *pa2 = ay;
+  *pa3 = az;
   return;
 }
 
@@ -846,18 +871,37 @@ void Coordinates::TransformVectorFace2(Real at, Real ax, Real ay, Real az, int k
 // Function for transforming 4-vector from Minkowski to global: z-interface
 // Inputs:
 //   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
-//   k,j: z- and y-indices (unused)
-//   i: x-index
+//   k,j,i: z-, y-, and x-indices (unused)
 // Outputs:
-//   a0,a1,a2,a3: upper 4-vector components in global coordinates
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::TransformVectorFace3(Real at, Real ax, Real ay, Real az, int k, int j, int i,
-    Real *a0, Real *a1, Real *a2, Real *a3)
+void Coordinates::TransformVectorFace3(
+    Real at, Real ax, Real ay, Real az, int k, int j, int i,
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
-  *a0 = at;
-  *a1 = ax;
-  *a2 = ay;
-  *a3 = az;
+  *pa0 = at;
+  *pa1 = ax;
+  *pa2 = ay;
+  *pa3 = az;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for lowering contravariant components of a vector
+// Inputs:
+//   a0,a1,a2,a3: contravariant components of vector
+//   k,j,i: indices of cell in which transformation is desired
+// Outputs:
+//   pa_0,pa_1,pa_2,pa_3: pointers to covariant 4-vector components
+void Coordinates::LowerVectorCell(
+    Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
+    Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3)
+{
+  *pa_0 = -a0;
+  *pa_1 = a1;
+  *pa_2 = a2;
+  *pa_3 = a3;
   return;
 }
