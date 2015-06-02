@@ -72,6 +72,7 @@ void FluidIntegrator::PiecewiseLinearX1(const int k, const int j,
         }
       }
     } else if (n==(NFLUID+1)) {
+#pragma simd
       for (int i=il; i<=iu; ++i){
         Real& dx_im2 = pmy_fluid->pmy_block->dx1v(i-2);
         Real& dx_im1 = pmy_fluid->pmy_block->dx1v(i-1);
