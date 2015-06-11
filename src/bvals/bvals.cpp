@@ -1065,9 +1065,9 @@ void BoundaryValues::FluidPhysicalBoundaries(AthenaArray<Real> &dst)
   MeshBlock *pmb=pmy_mblock_;
   int bis=pmb->is, bie=pmb->ie, bjs=pmb->js, bje=pmb->je, bks=pmb->ks, bke=pmb->ke;
 
-  if(pmb->pmy_mesh->face_only==false) {
-    if(FluidBoundary_[inner_x1]==NULL) bis=pmb->is-NGHOST;
-    if(FluidBoundary_[outer_x1]==NULL) bie=pmb->ie+NGHOST;
+  if(pmb->pmy_mesh->face_only==false) { // extend the ghost zone
+    bis=pmb->is-NGHOST;
+    bie=pmb->ie+NGHOST;
     if(FluidBoundary_[inner_x2]==NULL && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
     if(FluidBoundary_[outer_x2]==NULL && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
     if(FluidBoundary_[inner_x3]==NULL && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
@@ -1085,8 +1085,10 @@ void BoundaryValues::FluidPhysicalBoundaries(AthenaArray<Real> &dst)
       FluidBoundary_[outer_x2](pmb, dst, bis, bie, pmb->js, pmb->je, bks, bke);
   }
   if(pmb->block_size.nx3>1) { // 3D
-    bjs=pmb->js-NGHOST;
-    bje=pmb->je+NGHOST;
+    if(pmb->pmy_mesh->face_only==false) {
+      bjs=pmb->js-NGHOST;
+      bje=pmb->je+NGHOST;
+    }
     if(FluidBoundary_[inner_x3]!=NULL)
       FluidBoundary_[inner_x3](pmb, dst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
     if(FluidBoundary_[outer_x3]!=NULL)
