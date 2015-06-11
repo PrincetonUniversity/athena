@@ -244,11 +244,11 @@ private:
   // GR-specific scratch arrays
   AthenaArray<Real> metric_cell_i1_, metric_cell_i2_;
   AthenaArray<Real> metric_cell_j1_, metric_cell_j2_;
-  AthenaArray<Real> metric_face1_i1_, metric_face1_i2_
+  AthenaArray<Real> metric_face1_i1_, metric_face1_i2_;
   AthenaArray<Real> metric_face1_j1_, metric_face1_j2_;
-  AthenaArray<Real> metric_face2_i1_, metric_face2_i2_
+  AthenaArray<Real> metric_face2_i1_, metric_face2_i2_;
   AthenaArray<Real> metric_face2_j1_, metric_face2_j2_;
-  AthenaArray<Real> metric_face3_i1_, metric_face3_i2_
+  AthenaArray<Real> metric_face3_i1_, metric_face3_i2_;
   AthenaArray<Real> metric_face3_j1_, metric_face3_j2_;
   AthenaArray<Real> trans_face1_i1_, trans_face1_i2_;
   AthenaArray<Real> trans_face1_j1_;
