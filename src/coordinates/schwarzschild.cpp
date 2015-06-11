@@ -87,14 +87,14 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
 
   // Allocate arrays for intermediate geometric quantities: r-direction
   int n_cells_1 = pb->block_size.nx1 + 2*NGHOST;
-  coord_vol_i_.NewAthenaArray(n_cells_1);
-  coord_area1_i_.NewAthenaArray(n_cells_1);
-  coord_area2_i_.NewAthenaArray(n_cells_1);
-  coord_area3_i_.NewAthenaArray(n_cells_1);
-  coord_len1_i_.NewAthenaArray(n_cells_1);
-  coord_len2_i_.NewAthenaArray(n_cells_1);
-  coord_len3_i_.NewAthenaArray(n_cells_1);
-  coord_width1_i_.NewAthenaArray(n_cells_1);
+  coord_vol_i1_.NewAthenaArray(n_cells_1);
+  coord_area1_i1_.NewAthenaArray(n_cells_1);
+  coord_area2_i1_.NewAthenaArray(n_cells_1);
+  coord_area3_i1_.NewAthenaArray(n_cells_1);
+  coord_len1_i1_.NewAthenaArray(n_cells_1);
+  coord_len2_i1_.NewAthenaArray(n_cells_1);
+  coord_len3_i1_.NewAthenaArray(n_cells_1);
+  coord_width1_i1_.NewAthenaArray(n_cells_1);
   coord_src_i1_.NewAthenaArray(n_cells_1);
   coord_src_i2_.NewAthenaArray(n_cells_1);
   coord_src_i3_.NewAthenaArray(n_cells_1);
@@ -109,14 +109,14 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
 
   // Allocate arrays for intermediate geometric quantities: theta-direction
   int n_cells_2 = (pb->block_size.nx2 > 1) ? pb->block_size.nx2 + 2*NGHOST : 1;
-  coord_vol_j_.NewAthenaArray(n_cells_2);
-  coord_area1_j_.NewAthenaArray(n_cells_2);
-  coord_area2_j_.NewAthenaArray(n_cells_2);
-  coord_area3_j_.NewAthenaArray(n_cells_2);
-  coord_len1_j_.NewAthenaArray(n_cells_2);
-  coord_len2_j_.NewAthenaArray(n_cells_2);
-  coord_len3_j_.NewAthenaArray(n_cells_2);
-  coord_width3_j_.NewAthenaArray(n_cells_2);
+  coord_vol_j1_.NewAthenaArray(n_cells_2);
+  coord_area1_j1_.NewAthenaArray(n_cells_2);
+  coord_area2_j1_.NewAthenaArray(n_cells_2);
+  coord_area3_j1_.NewAthenaArray(n_cells_2);
+  coord_len1_j1_.NewAthenaArray(n_cells_2);
+  coord_len2_j1_.NewAthenaArray(n_cells_2);
+  coord_len3_j1_.NewAthenaArray(n_cells_2);
+  coord_width3_j1_.NewAthenaArray(n_cells_2);
   coord_src_j1_.NewAthenaArray(n_cells_2);
   coord_src_j2_.NewAthenaArray(n_cells_2);
   coord_src_j3_.NewAthenaArray(n_cells_2);
@@ -143,14 +143,14 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
     Real r_m_cu = r_m*r_m*r_m;
 
     // Volumes, areas, lengths, and widths
-    coord_vol_i_(i) = 1.0/3.0 * (r_p_cu - r_m_cu);
-    coord_area1_i_(i) = SQR(r_m);
-    coord_area2_i_(i) = coord_vol_i_(i);
-    coord_area3_i_(i) = coord_vol_i_(i);
-    coord_len1_i_(i) = coord_vol_i_(i);
-    coord_len2_i_(i) = coord_area1_i_(i);
-    coord_len3_i_(i) = coord_area1_i_(i);
-    coord_width1_i_(i) = r_p*alpha_p - r_m*alpha_m
+    coord_vol_i1_(i) = 1.0/3.0 * (r_p_cu - r_m_cu);
+    coord_area1_i1_(i) = SQR(r_m);
+    coord_area2_i1_(i) = coord_vol_i1_(i);
+    coord_area3_i1_(i) = coord_vol_i1_(i);
+    coord_len1_i1_(i) = coord_vol_i1_(i);
+    coord_len2_i1_(i) = coord_area1_i1_(i);
+    coord_len3_i1_(i) = coord_area1_i1_(i);
+    coord_width1_i1_(i) = r_p*alpha_p - r_m*alpha_m
         + m * std::log((r_p*(1.0+alpha_p)-m) / (r_m*(1.0+alpha_m)-m));
 
     // Source terms
@@ -195,14 +195,14 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
       Real sin_p_cu = SQR(sin_p)*sin_p;
 
       // Volumes, areas, lengths, and widths
-      coord_vol_j_(j) = cos_m - cos_p;
-      coord_area1_j_(j) = coord_vol_j_(j);
-      coord_area2_j_(j) = sin_m;
-      coord_area3_j_(j) = coord_vol_j_(j);
-      coord_len1_j_(j) = coord_area2_j_(j);
-      coord_len2_j_(j) = coord_vol_j_(j);
-      coord_len3_j_(j) = coord_area2_j_(j);
-      coord_width3_j_(j) = sin_c;
+      coord_vol_j1_(j) = cos_m - cos_p;
+      coord_area1_j1_(j) = coord_vol_j1_(j);
+      coord_area2_j1_(j) = sin_m;
+      coord_area3_j1_(j) = coord_vol_j1_(j);
+      coord_len1_j1_(j) = coord_area2_j1_(j);
+      coord_len2_j1_(j) = coord_vol_j1_(j);
+      coord_len3_j1_(j) = coord_area2_j1_(j);
+      coord_width3_j1_(j) = sin_c;
 
       // Source terms
       coord_src_j1_(j) = 1.0/6.0
@@ -241,13 +241,13 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
     Real sin_p_cu = SQR(sin_p)*sin_p;
 
     // Volumes and areas
-    coord_vol_j_(pb->js) = cos_m - cos_p;
-    coord_area1_j_(pb->js) = coord_vol_j_(pb->js);
-    coord_area2_j_(pb->js) = sin_m;
-    coord_area3_j_(pb->js) = coord_vol_j_(pb->js);
-    coord_len1_j_(pb->js) = coord_area2_j_(pb->js);
-    coord_len2_j_(pb->js) = coord_vol_j_(pb->js);
-    coord_len3_j_(pb->js) = coord_area2_j_(pb->js);
+    coord_vol_j1_(pb->js) = cos_m - cos_p;
+    coord_area1_j1_(pb->js) = coord_vol_j1_(pb->js);
+    coord_area2_j1_(pb->js) = sin_m;
+    coord_area3_j1_(pb->js) = coord_vol_j1_(pb->js);
+    coord_len1_j1_(pb->js) = coord_area2_j1_(pb->js);
+    coord_len2_j1_(pb->js) = coord_vol_j1_(pb->js);
+    coord_len3_j1_(pb->js) = coord_area2_j1_(pb->js);
 
     // Source terms
     coord_src_j1_(pb->js) = 1.0/6.0
@@ -273,26 +273,26 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
 // Destructor
 Coordinates::~Coordinates()
 {
-  coord_vol_i_.DeleteAthenaArray();
-  coord_area1_i_.DeleteAthenaArray();
-  coord_area2_i_.DeleteAthenaArray();
-  coord_area3_i_.DeleteAthenaArray();
-  coord_len1_i_.DeleteAthenaArray();
-  coord_len2_i_.DeleteAthenaArray();
-  coord_len3_i_.DeleteAthenaArray();
-  coord_width1_i_.DeleteAthenaArray();
+  coord_vol_i1_.DeleteAthenaArray();
+  coord_area1_i1_.DeleteAthenaArray();
+  coord_area2_i1_.DeleteAthenaArray();
+  coord_area3_i1_.DeleteAthenaArray();
+  coord_len1_i1_.DeleteAthenaArray();
+  coord_len2_i1_.DeleteAthenaArray();
+  coord_len3_i1_.DeleteAthenaArray();
+  coord_width1_i1_.DeleteAthenaArray();
   coord_src_i1_.DeleteAthenaArray();
   coord_src_i2_.DeleteAthenaArray();
   coord_src_i3_.DeleteAthenaArray();
   coord_src_i4_.DeleteAthenaArray();
-  coord_vol_j_.DeleteAthenaArray();
-  coord_area1_j_.DeleteAthenaArray();
-  coord_area2_j_.DeleteAthenaArray();
-  coord_area3_j_.DeleteAthenaArray();
-  coord_len1_j_.DeleteAthenaArray();
-  coord_len2_j_.DeleteAthenaArray();
-  coord_len3_j_.DeleteAthenaArray();
-  coord_width3_j_.DeleteAthenaArray();
+  coord_vol_j1_.DeleteAthenaArray();
+  coord_area1_j1_.DeleteAthenaArray();
+  coord_area2_j1_.DeleteAthenaArray();
+  coord_area3_j1_.DeleteAthenaArray();
+  coord_len1_j1_.DeleteAthenaArray();
+  coord_len2_j1_.DeleteAthenaArray();
+  coord_len3_j1_.DeleteAthenaArray();
+  coord_width3_j1_.DeleteAthenaArray();
   coord_src_j1_.DeleteAthenaArray();
   coord_src_j2_.DeleteAthenaArray();
   coord_src_j3_.DeleteAthenaArray();
@@ -325,12 +325,12 @@ Coordinates::~Coordinates()
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &volumes)
 {
-  const Real &neg_delta_cos_theta = coord_vol_j_(j);
+  const Real &neg_delta_cos_theta = coord_vol_j1_(j);
   const Real &delta_phi = pmy_block->dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
-    const Real &third_delta_r_cb = coord_vol_i_(i);
+    const Real &third_delta_r_cb = coord_vol_i1_(i);
     Real &volume = volumes(i);
     volume = third_delta_r_cb * neg_delta_cos_theta * delta_phi;
   }
@@ -350,12 +350,12 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
-  const Real &neg_delta_cos_theta = coord_area1_j_(j);
+  const Real &neg_delta_cos_theta = coord_area1_j1_(j);
   const Real &delta_phi = pmy_block->dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
-    const Real &r_sq = coord_area1_i_(i);
+    const Real &r_sq = coord_area1_i1_(i);
     Real &area = areas(i);
     area = r_sq * neg_delta_cos_theta * delta_phi;
   }
@@ -375,12 +375,12 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
-  const Real &sin_theta = coord_area2_j_(j);
+  const Real &sin_theta = coord_area2_j1_(j);
   const Real &delta_phi = pmy_block->dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
-    const Real &third_delta_r_cb = coord_area2_i_(i);
+    const Real &third_delta_r_cb = coord_area2_i1_(i);
     Real &area = areas(i);
     area = third_delta_r_cb * sin_theta * delta_phi;
   }
@@ -400,11 +400,11 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
-  const Real &neg_delta_cos_theta = coord_area3_j_(j);
+  const Real &neg_delta_cos_theta = coord_area3_j1_(j);
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
-    const Real &third_delta_r_cb = coord_area3_i_(i);
+    const Real &third_delta_r_cb = coord_area3_i1_(i);
     Real &area = areas(i);
     area = third_delta_r_cb * neg_delta_cos_theta;
   }
@@ -424,11 +424,11 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 void Coordinates::Edge1Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &lengths)
 {
-  const Real &sin_theta = coord_len1_j_(j);
+  const Real &sin_theta = coord_len1_j1_(j);
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
-    const Real &third_delta_r_cb = coord_len1_i_(i);
+    const Real &third_delta_r_cb = coord_len1_i1_(i);
     Real &length = lengths(i);
     length = third_delta_r_cb * sin_theta;
   }
@@ -448,11 +448,11 @@ void Coordinates::Edge1Length(const int k, const int j, const int il, const int 
 void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &lengths)
 {
-  const Real &neg_delta_cos_theta = coord_len2_j_(j);
+  const Real &neg_delta_cos_theta = coord_len2_j1_(j);
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
-    const Real &r_sq = coord_len2_i_(i);
+    const Real &r_sq = coord_len2_i1_(i);
     Real &length = lengths(i);
     length = r_sq * neg_delta_cos_theta;
   }
@@ -472,12 +472,12 @@ void Coordinates::Edge2Length(const int k, const int j, const int il, const int 
 void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &lengths)
 {
-  const Real &sin_theta = coord_len3_j_(j);
+  const Real &sin_theta = coord_len3_j1_(j);
   const Real &delta_phi = pmy_block->dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
-    const Real &r_sq = coord_len3_i_(i);
+    const Real &r_sq = coord_len3_i1_(i);
     Real &length = lengths(i);
     length = r_sq * sin_theta * delta_phi;
   }
@@ -496,7 +496,7 @@ void Coordinates::Edge3Length(const int k, const int j, const int il, const int 
 //   \Delta W = \Delta(r \alpha) + M \Delta\log(r(1+\alpha)-M)
 Real Coordinates::CenterWidth1(const int k, const int j, const int i)
 {
-  return coord_width1_i_(i);
+  return coord_width1_i1_(i);
 }
 
 //--------------------------------------------------------------------------------------
@@ -528,7 +528,7 @@ Real Coordinates::CenterWidth2(const int k, const int j, const int i)
 Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 {
   const Real &r = pmy_block->x1v(i);
-  const Real &sin_theta = coord_width3_j_(j);
+  const Real &sin_theta = coord_width3_j1_(j);
   const Real &delta_phi = pmy_block->dx1f(k);
   return r * sin_theta * delta_phi;
 }

@@ -205,31 +205,63 @@ private:
   // Format: coord_<type>[<direction>]_<index>[<count>]_
   //   type: vol[ume], area, etc.
   //   direction: 1/2/3 depending on which face, edge, etc. is in play
-  //   index: i/j/k indicating which coordinate indexes 1D array
+  //   index: i/j/k indicating which coordinates index array
   //   count: 1/2/... in case multiple arrays are needed for different terms
-  AthenaArray<Real> coord_vol_i_, coord_vol_j_;
-  AthenaArray<Real> coord_area1_i_, coord_area1_j_;
-  AthenaArray<Real> coord_area2_i_, coord_area2_j_;
-  AthenaArray<Real> coord_area3_i_, coord_area3_j_;
-  AthenaArray<Real> coord_len1_i_, coord_len1_j_;
-  AthenaArray<Real> coord_len2_i_, coord_len2_j_;
-  AthenaArray<Real> coord_len3_i_, coord_len3_j_;
-  AthenaArray<Real> coord_width1_i_;
-  AthenaArray<Real> coord_width3_j_;
-  AthenaArray<Real> coord_src1_i_, coord_src1_j_;
-  AthenaArray<Real> coord_src2_i_, coord_src2_j_;
+  AthenaArray<Real> coord_vol_i_, coord_vol_i1_, coord_vol_i2;
+  AthenaArray<Real> coord_vol_j_, coord_vol_j1_, coord_vol_j2;
+  AthenaArray<Real> coord_vol_k1_;
+  AthenaArray<Real> coord_area1_i_, coord_area1_i1_;
+  AthenaArray<Real> coord_area1_j_, coord_area1_j1_, coord_area1_j2;
+  AthenaArray<Real> coord_area1_k1;
+  AthenaArray<Real> coord_area2_i_, coord_area2_i1_, coord_area2_i2;
+  AthenaArray<Real> coord_area2_j_, coord_area2_j1_, coord_area2_j2;
+  AthenaArray<Real> coord_area2_k1;
+  AthenaArray<Real> coord_area3_i_, coord_area3_i1_, coord_area3_i2;
+  AthenaArray<Real> coord_area3_j1_, coord_area3_j2;
+  AthenaArray<Real> coord_len1_i1_, coord_len1_i2;
+  AthenaArray<Real> coord_len1_j1_, coord_len1_j2;
+  AthenaArray<Real> coord_len2_i1_;
+  AthenaArray<Real> coord_len2_j1_, coord_len2_j2;
+  AthenaArray<Real> coord_len3_i1_;
+  AthenaArray<Real> coord_len3_j1_, coord_len3_j2;
+  AthenaArray<Real> coord_len3_k1_;
+  AthenaArray<Real> coord_width1_i1_;
+  AthenaArray<Real> coord_width2_i1_;
+  AthenaArray<Real> coord_width2_j1_;
+  AthenaArray<Real> coord_width3_j1_;
+  AthenaArray<Real> coord_width3_k1_;
+  AthenaArray<Real> coord_width3_ji1_;
   AthenaArray<Real> coord_src_i1_, coord_src_i2_, coord_src_i3_, coord_src_i4_;
   AthenaArray<Real> coord_src_j1_, coord_src_j2_, coord_src_j3_;
+  AthenaArray<Real> coord_src1_i_;
+  AthenaArray<Real> coord_src1_j_;
+  AthenaArray<Real> coord_src2_i_;
+  AthenaArray<Real> coord_src2_j_;
+
+  // Scratch arrays for physical source terms
   AthenaArray<Real> phy_src1_i_, phy_src2_i_;
 
   // GR-specific scratch arrays
-  AthenaArray<Real> metric_cell_i1_, metric_cell_i2_, metric_cell_j1_;
-  AthenaArray<Real> metric_face1_i1_, metric_face1_i2_, metric_face1_j1_;
-  AthenaArray<Real> metric_face2_i1_, metric_face2_i2_, metric_face2_j1_;
-  AthenaArray<Real> metric_face3_i1_, metric_face3_i2_, metric_face3_j1_;
-  AthenaArray<Real> trans_face1_i1_, trans_face1_i2_, trans_face1_j1_;
-  AthenaArray<Real> trans_face2_i1_, trans_face2_i2_, trans_face2_j1_;
-  AthenaArray<Real> trans_face3_i1_, trans_face3_i2_, trans_face3_j1_;
+  AthenaArray<Real> metric_cell_i1_, metric_cell_i2_;
+  AthenaArray<Real> metric_cell_j1_, metric_cell_j2_;
+  AthenaArray<Real> metric_face1_i1_, metric_face1_i2_
+  AthenaArray<Real> metric_face1_j1_, metric_face1_j2_;
+  AthenaArray<Real> metric_face2_i1_, metric_face2_i2_
+  AthenaArray<Real> metric_face2_j1_, metric_face2_j2_;
+  AthenaArray<Real> metric_face3_i1_, metric_face3_i2_
+  AthenaArray<Real> metric_face3_j1_, metric_face3_j2_;
+  AthenaArray<Real> trans_face1_i1_, trans_face1_i2_;
+  AthenaArray<Real> trans_face1_j1_;
+  AthenaArray<Real> trans_face1_ji1_, trans_face1_ji2_, trans_face1_ji3_,
+      trans_face1_ji4_, trans_face1_ji5_, trans_face1_ji6_, trans_face1_ji7_;
+  AthenaArray<Real> trans_face2_i1_, trans_face2_i2_;
+  AthenaArray<Real> trans_face2_j1_;
+  AthenaArray<Real> trans_face2_ji1_, trans_face2_ji2_, trans_face2_ji3_,
+      trans_face2_ji4_, trans_face2_ji5_, trans_face2_ji6_;
+  AthenaArray<Real> trans_face3_i1_, trans_face3_i2_;
+  AthenaArray<Real> trans_face3_j1_;
+  AthenaArray<Real> trans_face3_ji1_, trans_face3_ji2_, trans_face3_ji3_,
+      trans_face3_ji4_, trans_face3_ji5_, trans_face3_ji6_;
   AthenaArray<Real> g_, gi_;
 };
 
