@@ -27,13 +27,13 @@
 //   pin: pointer to runtime inputs
 Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
 {
+  // Set pointer to host MeshBlock
+  pmy_block = pb;
+
   // Set parameters
   bh_mass_ = pin->GetReal("coord", "m");
   bh_spin_ = 0.0;
   const Real &m = bh_mass_;
-
-  // Set pointer to host MeshBlock
-  pmy_block = pb;
 
   // Initialize volume-averaged positions and spacings: r-direction
   for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST; ++i)
@@ -116,7 +116,7 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   coord_len1_j_.NewAthenaArray(n_cells_2);
   coord_len2_j_.NewAthenaArray(n_cells_2);
   coord_len3_j_.NewAthenaArray(n_cells_2);
-  coord_width3_j_.NewAthenaArray(n_cells_1);
+  coord_width3_j_.NewAthenaArray(n_cells_2);
   coord_src_j1_.NewAthenaArray(n_cells_2);
   coord_src_j2_.NewAthenaArray(n_cells_2);
   coord_src_j3_.NewAthenaArray(n_cells_2);
@@ -321,7 +321,7 @@ Coordinates::~Coordinates()
 // Outputs:
 //   volumes: 1D array of cell volumes
 // Notes:
-//   \Delta V = 1/3 \Delta(r^3) (-\Delta\cos\theta) \Delta\phi
+//   \Delta V = 1/3 * \Delta(r^3) (-\Delta\cos\theta) \Delta\phi
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &volumes)
 {
@@ -621,19 +621,20 @@ void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
     }
 
     // Calculate stress-energy tensor
-    Real w = rho + gamma_adi_red * pgas + b_sq;
-    Real t0_0 = w*u0*u_0 - bcon0*bcov0 + pgas;
-    Real t0_1 = w*u0*u_1 - bcon0*bcov1;
-    Real t1_0 = w*u1*u_0 - bcon1*bcov0;
-    Real t1_1 = w*u1*u_1 - bcon1*bcov1 + pgas;
-    Real t1_2 = w*u1*u_2 - bcon1*bcov2;
-    Real t1_3 = w*u1*u_3 - bcon1*bcov3;
-    Real t2_1 = w*u2*u_1 - bcon2*bcov1;
-    Real t2_2 = w*u2*u_2 - bcon2*bcov2 + pgas;
-    Real t2_3 = w*u2*u_3 - bcon2*bcov3;
-    Real t3_1 = w*u3*u_1 - bcon3*bcov1;
-    Real t3_2 = w*u3*u_2 - bcon3*bcov2;
-    Real t3_3 = w*u3*u_3 - bcon3*bcov3 + pgas;
+    Real wtot = rho + gamma_adi_red * pgas + b_sq;
+    Real ptot = pgas + 0.5 * b_sq;
+    Real t0_0 = wtot*u0*u_0 - bcon0*bcov0 + ptot;
+    Real t0_1 = wtot*u0*u_1 - bcon0*bcov1;
+    Real t1_0 = wtot*u1*u_0 - bcon1*bcov0;
+    Real t1_1 = wtot*u1*u_1 - bcon1*bcov1 + ptot;
+    Real t1_2 = wtot*u1*u_2 - bcon1*bcov2;
+    Real t1_3 = wtot*u1*u_3 - bcon1*bcov3;
+    Real t2_1 = wtot*u2*u_1 - bcon2*bcov1;
+    Real t2_2 = wtot*u2*u_2 - bcon2*bcov2 + ptot;
+    Real t2_3 = wtot*u2*u_3 - bcon2*bcov3;
+    Real t3_1 = wtot*u3*u_1 - bcon3*bcov1;
+    Real t3_2 = wtot*u3*u_2 - bcon3*bcov2;
+    Real t3_3 = wtot*u3*u_3 - bcon3*bcov3 + ptot;
 
     // Calculate source terms
     Real s0 = gamma0_10 * t1_0 + gamma1_00 * t0_1;
@@ -1509,184 +1510,79 @@ void Coordinates::FluxToGlobal3(const int k, const int j, const int il, const in
 
 //--------------------------------------------------------------------------------------
 
-// Function for converting all primitives to conserved variables
-// Inputs:
-//   prim: 3D array of primitives
-//   b: 3D array of cell-centered magnetic fields
-//   gamma_adi_red: \Gamma/(\Gamma-1) for ratio of specific heats \Gamma
-// Outputs:
-//   cons: 3D array of conserved variables
-void Coordinates::PrimToCons(
-    const AthenaArray<Real> &prim, const AthenaArray<Real> &b, Real gamma_adi_red,
-    AthenaArray<Real> &cons)
-{
-  // Prepare index bounds
-  int il = pmy_block->is - NGHOST;
-  int iu = pmy_block->ie + NGHOST;
-  int jl = pmy_block->js;
-  int ju = pmy_block->je;
-  if (pmy_block->block_size.nx2 > 1)
-  {
-    jl -= (NGHOST);
-    ju += (NGHOST);
-  }
-  int kl = pmy_block->ks;
-  int ku = pmy_block->ke;
-  if (pmy_block->block_size.nx3 > 1)
-  {
-    kl -= (NGHOST);
-    ku += (NGHOST);
-  }
-
-  // Go through all cells
-  for (int k = kl; k <= ku; k++)
-    for (int j = jl; j <= ju; j++)
-    {
-      // Extract geometric quantities that do not depend on r
-      const Real &sin_sq_theta = metric_cell_j1_(j);
-
-      #pragma simd
-      for (int i = il; i <= iu; ++i)
-      {
-        // Extract remaining geometric quantities
-        const Real &alpha_sq = metric_cell_i1_(i);
-        const Real &r = pmy_block->x1v(i);
-        const Real r_sq = SQR(r);
-        const Real g00 = -alpha_sq;
-        const Real g11 = 1.0/alpha_sq;
-        const Real g22 = r_sq;
-        const Real g33 = r_sq * sin_sq_theta;
-
-        // Extract primitives
-        const Real &rho = prim(IDN,k,j,i);
-        const Real &pgas = prim(IEN,k,j,i);
-        const Real &v1 = prim(IVX,k,j,i);
-        const Real &v2 = prim(IVY,k,j,i);
-        const Real &v3 = prim(IVZ,k,j,i);
-
-        // Extract magnetic fields
-        Real b1 = 0.0, b2 = 0.0, b3 = 0.0;
-        if (MAGNETIC_FIELDS_ENABLED)
-        {
-          b1 = b(IB1,k,j,i);
-          b2 = b(IB2,k,j,i);
-          b3 = b(IB3,k,j,i);
-        }
-
-        // Calculate 4-velocity
-        Real u0 = std::sqrt(-1.0 / (g00 + g11*v1*v1 + g22*v2*v2 + g33*v3*v3));
-        Real u1 = u0 * v1;
-        Real u2 = u0 * v2;
-        Real u3 = u0 * v3;
-        Real u_0 = g00*u0;
-        Real u_1 = g11*u1;
-        Real u_2 = g22*u2;
-        Real u_3 = g33*u3;
-
-        // Calculate 4-magnetic field
-        Real bcon0 = g11*b1*u1 + g22*b2*u2 + g33*b3*u3;
-        Real bcon1 = 1.0/u0 * (b1 + bcon0 * u1);
-        Real bcon2 = 1.0/u0 * (b2 + bcon0 * u2);
-        Real bcon3 = 1.0/u0 * (b3 + bcon0 * u3);
-        Real bcov0 = g00*bcon0;
-        Real bcov1 = g11*bcon1;
-        Real bcov2 = g22*bcon2;
-        Real bcov3 = g33*bcon3;
-        Real b_sq = bcov0*bcon0 + bcov1*bcon1 + bcov2*bcon2 + bcov3*bcon3;
-
-        // Extract conserved quantities
-        Real &rho_u0 = cons(IDN,k,j,i);
-        Real &t0_0 = cons(IEN,k,j,i);
-        Real &t0_1 = cons(IM1,k,j,i);
-        Real &t0_2 = cons(IM2,k,j,i);
-        Real &t0_3 = cons(IM3,k,j,i);
-
-        // Set conserved quantities
-        Real w = rho + gamma_adi_red * pgas + b_sq;
-        Real ptot = pgas + 0.5*b_sq;
-        rho_u0 = rho * u0;
-        t0_0 = w * u0 * u_0 - bcon0 * bcov0 + ptot;
-        t0_1 = w * u0 * u_1 - bcon0 * bcov1;
-        t0_2 = w * u0 * u_2 - bcon0 * bcov2;
-        t0_3 = w * u0 * u_3 - bcon0 * bcov3;
-      }
-    }
-  return;
-}
-
 // Function for transforming 4-vector from Boyer-Lindquist to Schwarzschild
 // Inputs:
-//   a0_BL,a1_BL,a2_BL,a3_BL: upper 4-vector components in Boyer-Lindquist coordinates
+//   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
 //   k,j,i: indices of cell in which transformation is desired
 // Outputs:
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Schwarzschild coordinates
 // Notes:
 //   Schwarzschild coordinates match Boyer-Lindquist when a = 0
 void Coordinates::TransformVectorCell(
-    Real a0_BL, Real a1_BL, Real a2_BL, Real a3_BL, int k, int j, int i,
+    Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, int k, int j, int i,
     Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
-  *pa0 = a0_BL;
-  *pa1 = a1_BL;
-  *pa2 = a2_BL;
-  *pa3 = a3_BL;
+  *pa0 = a0_bl;
+  *pa1 = a1_bl;
+  *pa2 = a2_bl;
+  *pa3 = a3_bl;
   return;
 }
 
 // Function for transforming 4-vector from Boyer-Lindquist to Schwarzschild
 // Inputs:
-//   a0_BL,a1_BL,a2_BL,a3_BL: upper 4-vector components in Boyer-Lindquist coordinates
+//   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
 //   k,j,i: indices of x1-face in which transformation is desired
 // Outputs:
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Schwarzschild coordinates
 // Notes:
 //   Schwarzschild coordinates match Boyer-Lindquist when a = 0
 void Coordinates::TransformVectorFace1(
-    Real a0_BL, Real a1_BL, Real a2_BL, Real a3_BL, int k, int j, int i,
+    Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, int k, int j, int i,
     Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
-  *pa0 = a0_BL;
-  *pa1 = a1_BL;
-  *pa2 = a2_BL;
-  *pa3 = a3_BL;
+  *pa0 = a0_bl;
+  *pa1 = a1_bl;
+  *pa2 = a2_bl;
+  *pa3 = a3_bl;
   return;
 }
 
 // Function for transforming 4-vector from Boyer-Lindquist to Schwarzschild
 // Inputs:
-//   a0_BL,a1_BL,a2_BL,a3_BL: upper 4-vector components in Boyer-Lindquist coordinates
+//   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
 //   k,j,i: indices of x2-face in which transformation is desired
 // Outputs:
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Schwarzschild coordinates
 // Notes:
 //   Schwarzschild coordinates match Boyer-Lindquist when a = 0
 void Coordinates::TransformVectorFace2(
-    Real a0_BL, Real a1_BL, Real a2_BL, Real a3_BL, int k, int j, int i,
+    Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, int k, int j, int i,
     Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
-  *pa0 = a0_BL;
-  *pa1 = a1_BL;
-  *pa2 = a2_BL;
-  *pa3 = a3_BL;
+  *pa0 = a0_bl;
+  *pa1 = a1_bl;
+  *pa2 = a2_bl;
+  *pa3 = a3_bl;
   return;
 }
 
 // Function for transforming 4-vector from Boyer-Lindquist to Schwarzschild
 // Inputs:
-//   a0_BL,a1_BL,a2_BL,a3_BL: upper 4-vector components in Boyer-Lindquist coordinates
+//   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
 //   k,j,i: indices of x3-face in which transformation is desired
 // Outputs:
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Schwarzschild coordinates
 // Notes:
 //   Schwarzschild coordinates match Boyer-Lindquist when a = 0
 void Coordinates::TransformVectorFace3(
-    Real a0_BL, Real a1_BL, Real a2_BL, Real a3_BL, int k, int j, int i,
+    Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, int k, int j, int i,
     Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
-  *pa0 = a0_BL;
-  *pa1 = a1_BL;
-  *pa2 = a2_BL;
-  *pa3 = a3_BL;
+  *pa0 = a0_bl;
+  *pa1 = a1_bl;
+  *pa2 = a2_bl;
+  *pa3 = a3_bl;
   return;
 }
 

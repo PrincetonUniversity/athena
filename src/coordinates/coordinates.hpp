@@ -135,9 +135,6 @@ public:
     void FluxToGlobal3(const int k, const int j, const int il, const int iu,
         const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
         AthenaArray<Real> &flux);
-    void PrimToCons(
-        const AthenaArray<Real> &prim, const AthenaArray<Real> &b, Real gamma_adi_red,
-        AthenaArray<Real> &cons);
     Real DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real by, Real bz);
     void MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3,
         Real *pt, Real *px, Real *py, Real *pz);
@@ -180,8 +177,6 @@ public:
     void FluxToGlobal3(const int, const int, const int, const int,
         const AthenaArray<Real> &, const AthenaArray<Real> &, AthenaArray<Real> &)
         {return;}
-    void PrimToCons(const AthenaArray<Real> &, const AthenaArray<Real> &, Real,
-        AthenaArray<Real> &) {return;}
     Real DistanceBetweenPoints(Real, Real, Real, Real, Real, Real) {return 0.0;}
     void MinkowskiCoordinates(Real, Real, Real, Real, Real *, Real *, Real *, Real *)
         {return;}
@@ -235,6 +230,7 @@ private:
   AthenaArray<Real> trans_face1_i1_, trans_face1_i2_, trans_face1_j1_;
   AthenaArray<Real> trans_face2_i1_, trans_face2_i2_, trans_face2_j1_;
   AthenaArray<Real> trans_face3_i1_, trans_face3_i2_, trans_face3_j1_;
+  AthenaArray<Real> g_, gi_;
 };
 
 #endif

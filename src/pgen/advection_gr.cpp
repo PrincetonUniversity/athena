@@ -105,7 +105,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         b(IB2,k,j,i) = bcon2 * u0 - bcon0 * u2;
         b(IB3,k,j,i) = bcon3 * u0 - bcon0 * u3;
       }
-  pb->pcoord->PrimToCons(pfl->w, b, gamma_adi_red, pfl->u);
+  pb->pfluid->pf_eos->PrimitiveToConserved(pfl->w, b, pfl->u);  
 
   // Delete auxiliary array
   b.DeleteAthenaArray();

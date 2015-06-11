@@ -68,10 +68,6 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   // Parameters
   const Real max_velocity = 1.0 - 1.0e-15;
 
-  // Extract ratio of specific heats
-  const Real gamma_adi = GetGamma();
-  const Real gamma_adi_minus_1 = gamma_adi - 1.0;
-
   // Determine array bounds
   MeshBlock *pb = pmy_fluid_->pmy_block;
   int is = pb->is;
@@ -91,6 +87,10 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     ku += (NGHOST);
   }
 
+  // Extract ratio of specific heats
+  const Real gamma_adi = GetGamma();
+  const Real gamma_adi_minus_1 = gamma_adi - 1.0;
+
   // Make array copies for performance reasons
   AthenaArray<Real> cons_copy,prim_copy;
   cons_copy.InitWithShallowCopy(cons);
@@ -100,7 +100,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   for (int k = kl; k <= ku; k++)
     for (int j = jl; j <= ju; j++)
     {
-#pragma simd
+      #pragma simd
       for (int i = is - (NGHOST); i <= ie + (NGHOST); i++)
       {
         // Extract conserved quantities
@@ -207,6 +207,76 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
           vy = 0.0;
           vz = 0.0;
         }
+      }
+    }
+  return;
+}
+
+// Function for converting all primitives to conserved variables
+// Inputs:
+//   prim: 3D array of primitives
+//   b: 3D array of cell-centered magnetic fields (unused)
+// Outputs:
+//   cons: 3D array of conserved variables
+void FluidEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+    const AthenaArray<Real> &b, AthenaArray<Real> &cons)
+{
+  // Prepare index bounds
+  MeshBlock *pb = pmy_fluid_->pmy_block;
+  int il = pb->is - NGHOST;
+  int iu = pb->ie + NGHOST;
+  int jl = pb->js;
+  int ju = pb->je;
+  if (pb->block_size.nx2 > 1)
+  {
+    jl -= (NGHOST);
+    ju += (NGHOST);
+  }
+  int kl = pb->ks;
+  int ku = pb->ke;
+  if (pb->block_size.nx3 > 1)
+  {
+    kl -= (NGHOST);
+    ku += (NGHOST);
+  }
+
+  // Calculate reduced ratio of specific heats
+  Real gamma_adi_red = gamma_ / (gamma_ - 1.0);
+
+  // Go through all cells
+  for (int k = kl; k <= ku; ++k)
+    for (int j = jl; j <= ju; ++j)
+    {
+      #pragma simd
+      for (int i = il; i <= iu; ++i)
+      {
+        // Extract primitives
+        const Real &rho = prim(IDN,k,j,i);
+        const Real &pgas = prim(IEN,k,j,i);
+        const Real &v1 = prim(IVX,k,j,i);
+        const Real &v2 = prim(IVY,k,j,i);
+        const Real &v3 = prim(IVZ,k,j,i);
+
+        // Calculate 4-velocity
+        Real u0 = 1.0 / std::sqrt(1.0 - SQR(v1) - SQR(v2) - SQR(v3));
+        Real u1 = u0 * v1;
+        Real u2 = u0 * v2;
+        Real u3 = u0 * v3;
+
+        // Extract conserved quantities
+        Real &d = cons(IDN,k,j,i);
+        Real &e = cons(IEN,k,j,i);
+        Real &m1 = cons(IM1,k,j,i);
+        Real &m2 = cons(IM2,k,j,i);
+        Real &m3 = cons(IM3,k,j,i);
+
+        // Set conserved quantities
+        Real wgas = rho + gamma_adi_red * pgas;
+        d = rho * u0;
+        e = wgas * u0 * u0 - pgas;
+        m1 = wgas * u0 * u1;
+        m2 = wgas * u0 * u2;
+        m3 = wgas * u0 * u3;
       }
     }
   return;

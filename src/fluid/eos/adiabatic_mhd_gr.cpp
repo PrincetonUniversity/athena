@@ -272,6 +272,99 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   return;
 }
 
+// Function for converting all primitives to conserved variables
+// Inputs:
+//   prim: 3D array of primitives
+//   b: 3D array of cell-centered magnetic fields
+// Outputs:
+//   cons: 3D array of conserved variables
+void FluidEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+    const AthenaArray<Real> &b, AthenaArray<Real> &cons)
+{
+  // Prepare index bounds
+  MeshBlock *pb = pmy_fluid_->pmy_block;
+  int il = pb->is - NGHOST;
+  int iu = pb->ie + NGHOST;
+  int jl = pb->js;
+  int ju = pb->je;
+  if (pb->block_size.nx2 > 1)
+  {
+    jl -= (NGHOST);
+    ju += (NGHOST);
+  }
+  int kl = pb->ks;
+  int ku = pb->ke;
+  if (pb->block_size.nx3 > 1)
+  {
+    kl -= (NGHOST);
+    ku += (NGHOST);
+  }
+
+  // Calculate reduced ratio of specific heats
+  Real gamma_adi_red = gamma_ / (gamma_ - 1.0);
+
+  // Go through all cells
+  for (int k = kl; k <= ku; ++k)
+    for (int j = jl; j <= ju; ++j)
+    {
+      pb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
+      #pragma simd
+      for (int i = il; i <= iu; ++i)
+      {
+        // Extract primitives and magnetic fields
+        const Real &rho = prim(IDN,k,j,i);
+        const Real &pgas = prim(IEN,k,j,i);
+        const Real &v1 = prim(IVX,k,j,i);
+        const Real &v2 = prim(IVY,k,j,i);
+        const Real &v3 = prim(IVZ,k,j,i);
+        const Real &bb1 = b(IB1,k,j,i);
+        const Real &bb2 = b(IB2,k,j,i);
+        const Real &bb3 = b(IB3,k,j,i);
+
+        // Calculate 4-velocity
+        Real tmp = g_(I00,i) + 2.0 * (g_(I01,i)*v1 + g_(I02,i)*v2 + g_(I03,i)*v3)
+            + g_(I11,i)*v1*v1 + 2.0*g_(I12,i)*v1*v2 + 2.0*g_(I13,i)*v1*v3
+            + g_(I22,i)*v2*v2 + 2.0*g_(I23,i)*v2*v3
+            + g_(I33,i)*v3*v3;
+        Real u0 = std::sqrt(-1.0/tmp);
+        Real u1 = u0 * v1;
+        Real u2 = u0 * v2;
+        Real u3 = u0 * v3;
+        Real u_0, u_1, u_2, u_3;
+        pb->pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
+
+        // Calculate 4-magnetic field
+        Real b0 = g_(I01,i)*u0*bb1 + g_(I02,i)*u0*bb2 + g_(I03,i)*u0*bb3
+                + g_(I11,i)*u1*bb1 + g_(I12,i)*u1*bb2 + g_(I13,i)*u1*bb3
+                + g_(I12,i)*u2*bb1 + g_(I22,i)*u2*bb2 + g_(I23,i)*u2*bb3
+                + g_(I13,i)*u3*bb1 + g_(I23,i)*u3*bb2 + g_(I33,i)*u3*bb3;
+        Real b1 = (bb1 + b0 * u1) / u0;
+        Real b2 = (bb2 + b0 * u2) / u0;
+        Real b3 = (bb3 + b0 * u3) / u0;
+        Real b_0, b_1, b_2, b_3;
+        pb->pcoord->LowerVectorCell(b0, b1, b2, b3, k, j, i, &b_0, &b_1, &b_2, &b_3);
+        Real b_sq = b0*b_0 + b1*b_1 + b2*b_2 + b3*b_3;
+
+        // Extract conserved quantities
+        Real &d0 = cons(IDN,k,j,i);
+        Real &t0_0 = cons(IEN,k,j,i);
+        Real &t0_1 = cons(IM1,k,j,i);
+        Real &t0_2 = cons(IM2,k,j,i);
+        Real &t0_3 = cons(IM3,k,j,i);
+
+        // Set conserved quantities
+        Real wtot = rho + gamma_adi_red * pgas + b_sq;
+        Real ptot = pgas + 0.5 * b_sq;
+        d0 = rho * u0;
+        t0_0 = wtot * u0 * u_0 - b0 * b_0 + ptot;
+        t0_1 = wtot * u0 * u_1 - b0 * b_1;
+        t0_2 = wtot * u0 * u_2 - b0 * b_2;
+        t0_3 = wtot * u0 * u_3 - b0 * b_3;
+      }
+    }
+  return;
+}
+
 // Function for calculating relativistic fast wavespeeds
 // Inputs: TODO
 // Outputs:

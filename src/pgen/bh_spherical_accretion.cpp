@@ -177,7 +177,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       }
 
   // Initialize conserved variables
-  pb->pcoord->PrimToCons(pfl->w, b, gamma_adi_red, pfl->u);
+  pb->pfluid->pf_eos->PrimitiveToConserved(pfl->w, b, pfl->u);  
 
   // Delete area and magnetic field arrays
   a1.DeleteAthenaArray();
