@@ -164,9 +164,9 @@ Real Fluid::NewBlockTimeStep(MeshBlock *pmb)
 
         if (RELATIVISTIC_DYNAMICS) {
 
-          dt1(i) = dx1;
-          dt2(i) = dx2;
-          dt3(i) = dx3;
+          dt1(i) = pmy_block->pcoord->CenterWidth1(k,j,i);
+          dt2(i) = pmy_block->pcoord->CenterWidth2(k,j,i);
+          dt3(i) = pmy_block->pcoord->CenterWidth3(k,j,i);
 
         } else if (MAGNETIC_FIELDS_ENABLED) {
 

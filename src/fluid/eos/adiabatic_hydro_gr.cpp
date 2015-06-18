@@ -212,6 +212,83 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   return;
 }
 
+// Function for converting all primitives to conserved variables
+// Inputs:
+//   prim: 3D array of primitives
+//   b: 3D array of cell-centered magnetic fields (unused)
+// Outputs:
+//   cons: 3D array of conserved variables
+void FluidEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+    const AthenaArray<Real> &b, AthenaArray<Real> &cons)
+{
+  // Prepare index bounds
+  MeshBlock *pb = pmy_fluid_->pmy_block;
+  int il = pb->is - NGHOST;
+  int iu = pb->ie + NGHOST;
+  int jl = pb->js;
+  int ju = pb->je;
+  if (pb->block_size.nx2 > 1)
+  {
+    jl -= (NGHOST);
+    ju += (NGHOST);
+  }
+  int kl = pb->ks;
+  int ku = pb->ke;
+  if (pb->block_size.nx3 > 1)
+  {
+    kl -= (NGHOST);
+    ku += (NGHOST);
+  }
+
+  // Calculate reduced ratio of specific heats
+  Real gamma_adi_red = gamma_ / (gamma_ - 1.0);
+
+  // Go through all cells
+  for (int k = kl; k <= ku; ++k)
+    for (int j = jl; j <= ju; ++j)
+    {
+      pb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
+      #pragma simd
+      for (int i = il; i <= iu; ++i)
+      {
+        // Extract primitives
+        const Real &rho = prim(IDN,k,j,i);
+        const Real &pgas = prim(IEN,k,j,i);
+        const Real &v1 = prim(IVX,k,j,i);
+        const Real &v2 = prim(IVY,k,j,i);
+        const Real &v3 = prim(IVZ,k,j,i);
+
+        // Calculate 4-velocity
+        Real tmp = g_(I00,i) + 2.0 * (g_(I01,i)*v1 + g_(I02,i)*v2 + g_(I03,i)*v3)
+            + g_(I11,i)*v1*v1 + 2.0*g_(I12,i)*v1*v2 + 2.0*g_(I13,i)*v1*v3
+            + g_(I22,i)*v2*v2 + 2.0*g_(I23,i)*v2*v3
+            + g_(I33,i)*v3*v3;
+        Real u0 = std::sqrt(-1.0/tmp);
+        Real u1 = u0 * v1;
+        Real u2 = u0 * v2;
+        Real u3 = u0 * v3;
+        Real u_0, u_1, u_2, u_3;
+        pb->pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
+
+        // Extract conserved quantities
+        Real &d0 = cons(IDN,k,j,i);
+        Real &t0_0 = cons(IEN,k,j,i);
+        Real &t0_1 = cons(IM1,k,j,i);
+        Real &t0_2 = cons(IM2,k,j,i);
+        Real &t0_3 = cons(IM3,k,j,i);
+
+        // Set conserved quantities
+        Real wgas = rho + gamma_adi_red * pgas;
+        d0 = rho * u0;
+        t0_0 = wgas * u0 * u_0 + pgas;
+        t0_1 = wgas * u0 * u_1;
+        t0_2 = wgas * u0 * u_2;
+        t0_3 = wgas * u0 * u_3;
+      }
+    }
+  return;
+}
+
 // Function for calculating relativistic sound speeds
 // Inputs:
 // Outputs:

@@ -15,7 +15,6 @@
 // Athena headers
 #include "../athena.hpp"           // enums, Real
 #include "../athena_arrays.hpp"    // AthenaArray
-#include "../coordinates/coordinates.hpp"  // PrimToCons()
 #include "../mesh.hpp"             // MeshBlock
 #include "../parameter_input.hpp"  // ParameterInput
 #include "../fluid/eos/eos.hpp"    // ParameterInput

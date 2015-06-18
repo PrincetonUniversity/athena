@@ -190,6 +190,87 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   return;
 }
 
+// Function for converting all primitives to conserved variables
+// Inputs:
+//   prim: 3D array of primitives
+//   b: 3D array of cell-centered magnetic fields
+// Outputs:
+//   cons: 3D array of conserved variables
+void FluidEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+    const AthenaArray<Real> &b, AthenaArray<Real> &cons)
+{
+  // Prepare index bounds
+  MeshBlock *pb = pmy_fluid_->pmy_block;
+  int il = pb->is - NGHOST;
+  int iu = pb->ie + NGHOST;
+  int jl = pb->js;
+  int ju = pb->je;
+  if (pb->block_size.nx2 > 1)
+  {
+    jl -= (NGHOST);
+    ju += (NGHOST);
+  }
+  int kl = pb->ks;
+  int ku = pb->ke;
+  if (pb->block_size.nx3 > 1)
+  {
+    kl -= (NGHOST);
+    ku += (NGHOST);
+  }
+
+  // Calculate reduced ratio of specific heats
+  Real gamma_adi_red = gamma_ / (gamma_ - 1.0);
+
+  // Go through all cells
+  for (int k = kl; k <= ku; ++k)
+    for (int j = jl; j <= ju; ++j)
+    {
+      #pragma simd
+      for (int i = il; i <= iu; ++i)
+      {
+        // Extract primitives and magnetic fields
+        const Real &rho = prim(IDN,k,j,i);
+        const Real &pgas = prim(IEN,k,j,i);
+        const Real &v1 = prim(IVX,k,j,i);
+        const Real &v2 = prim(IVY,k,j,i);
+        const Real &v3 = prim(IVZ,k,j,i);
+        const Real &bb1 = b(IB1,k,j,i);
+        const Real &bb2 = b(IB2,k,j,i);
+        const Real &bb3 = b(IB3,k,j,i);
+
+        // Calculate 4-velocity
+        Real u0 = 1.0 / std::sqrt(1.0 - SQR(v1) - SQR(v2) - SQR(v3));
+        Real u1 = u0 * v1;
+        Real u2 = u0 * v2;
+        Real u3 = u0 * v3;
+
+        // Calculate 4-magnetic field
+        Real b0 = bb1*u1 + bb2*u2 + bb3*u3;
+        Real b1 = (bb1 + b0 * u1) / u0;
+        Real b2 = (bb2 + b0 * u2) / u0;
+        Real b3 = (bb3 + b0 * u3) / u0;
+        Real b_sq = -SQR(b0) + SQR(b1) + SQR(b2) + SQR(b3);
+
+        // Extract conserved quantities
+        Real &d = cons(IDN,k,j,i);
+        Real &e = cons(IEN,k,j,i);
+        Real &m1 = cons(IM1,k,j,i);
+        Real &m2 = cons(IM2,k,j,i);
+        Real &m3 = cons(IM3,k,j,i);
+
+        // Set conserved quantities
+        Real wtot = rho + gamma_adi_red * pgas + b_sq;
+        Real ptot = pgas + 0.5 * b_sq;
+        d = rho * u0;
+        e = wtot * u0 * u0 - b0 * b0 - ptot;
+        m1 = wtot * u0 * u1 - b0 * b1;
+        m2 = wtot * u0 * u2 - b0 * b2;
+        m3 = wtot * u0 * u3 - b0 * b3;
+      }
+    }
+  return;
+}
+
 // Function for calculating relativistic fast wavespeeds
 // Inputs: TODO
 // Outputs:

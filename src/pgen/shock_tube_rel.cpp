@@ -204,26 +204,12 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         pfl->w(IVY,k,j,i) = pfl->w1(IM2,k,j,i) = u2 / u0;
         pfl->w(IVZ,k,j,i) = pfl->w1(IM3,k,j,i) = u3 / u0;
 
-        // Set conserved variables
-        if (not GENERAL_RELATIVITY)
-        {
-          Real b_sq = -SQR(bcont) + SQR(bconx) + SQR(bcony) + SQR(bconz);
-          Real w_tot = rho + gamma_adi_red * pgas + b_sq;
-          Real p_tot = pgas + 0.5*b_sq;
-          pfl->u(IDN,k,j,i) = rho * u0;
-          pfl->u(IEN,k,j,i) = w_tot * u0 * u0 - bcon0 * bcon0 - p_tot;
-          pfl->u(IM1,k,j,i) = w_tot * u0 * u1 - bcon0 * bcon1;
-          pfl->u(IM2,k,j,i) = w_tot * u0 * u2 - bcon0 * bcon2;
-          pfl->u(IM3,k,j,i) = w_tot * u0 * u3 - bcon0 * bcon3;
-        }
-
         // Set magnetic fields
         b(IB1,k,j,i) = bcon1 * u0 - bcon0 * u1;
         b(IB2,k,j,i) = bcon2 * u0 - bcon0 * u2;
         b(IB3,k,j,i) = bcon3 * u0 - bcon0 * u3;
       }
-  if (GENERAL_RELATIVITY)
-    pb->pcoord->PrimToCons(pfl->w, b, gamma_adi_red, pfl->u);
+  pb->pfluid->pf_eos->PrimitiveToConserved(pfl->w, b, pfl->u);
 
   // Delete auxiliary array
   b.DeleteAthenaArray();
