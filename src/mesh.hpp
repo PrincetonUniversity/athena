@@ -76,6 +76,7 @@ private:
   friend class BoundaryValues;
   friend class Mesh;
   friend class Fluid;
+  friend class Coordinates;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
@@ -89,7 +90,6 @@ public:
   void SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslist);
   void SetTaskList(TaskList& tl);
   enum tasklist_status DoOneTask(void);
-  void SetCoarserCoordinates(void);
   int FindNeighborGID(int ox1, int ox2, int ox3);
   void IntegrateConservative(Real *tcons);
 
@@ -97,16 +97,9 @@ public:
   int block_bcs[6];
   Mesh *pmy_mesh;  // ptr to Mesh containing this MeshBlock
 
-  AthenaArray<Real> dx1f, dx2f, dx3f, x1f, x2f, x3f; // face   spacing and positions
-  AthenaArray<Real> dx1v, dx2v, dx3v, x1v, x2v, x3v; // volume spacing and positions
   int is,ie,js,je,ks,ke;
   int gid, lid;
 
-  AthenaArray<Real> coarse_dx1f, coarse_dx2f, coarse_dx3f;
-  AthenaArray<Real> coarse_x1f, coarse_x2f, coarse_x3f;
-  AthenaArray<Real> coarse_dx1v, coarse_dx2v, coarse_dx3v;
-  AthenaArray<Real> coarse_x1v, coarse_x2v, coarse_x3v;
-  AthenaArray<Real> coarse_data;
   int cis,cie,cjs,cje,cks,cke,cnghost;
 
   Coordinates *pcoord;
@@ -139,6 +132,7 @@ private:
   friend class RestartOutput;
   friend class MeshBlock;
   friend class BoundaryValues;
+  friend class Coordinates;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif

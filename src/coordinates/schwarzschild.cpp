@@ -30,6 +30,9 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   // Set pointer to host MeshBlock
   pmy_block = pb;
 
+  // Set face centered positions and distances
+  AllocateAndSetBasicCoordinates();
+
   // Set parameters
   bh_mass_ = pin->GetReal("coord", "m");
   bh_spin_ = 0.0;
@@ -38,86 +41,86 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   // Initialize volume-averaged positions and spacings: r-direction
   for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST; ++i)
   {
-    Real r_m = pb->x1f(i);
-    Real r_p = pb->x1f(i+1);
-    pb->x1v(i) = std::pow(0.5 * (r_m*r_m*r_m + r_p*r_p*r_p), 1.0/3.0);
+    Real r_m = x1f(i);
+    Real r_p = x1f(i+1);
+    x1v(i) = std::pow(0.5 * (r_m*r_m*r_m + r_p*r_p*r_p), 1.0/3.0);
   }
   for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST-1; ++i)
-    pb->dx1v(i) = pb->x1v(i+1) - pb->x1v(i);
+    dx1v(i) = x1v(i+1) - x1v(i);
 
   // Initialize volume-averaged positions and spacings: theta-direction
   if (pb->block_size.nx2 == 1)  // no extent
   {
-    Real theta_m = pb->x2f(pb->js);
-    Real theta_p = pb->x2f(pb->js+1);
-    pb->x2v(pb->js) = std::acos(0.5 * (std::cos(theta_m) + std::cos(theta_p)));
-    pb->dx2v(pb->js) = pb->dx2f(pb->js);
+    Real theta_m = x2f(pb->js);
+    Real theta_p = x2f(pb->js+1);
+    x2v(pb->js) = std::acos(0.5 * (std::cos(theta_m) + std::cos(theta_p)));
+    dx2v(pb->js) = dx2f(pb->js);
   }
   else  // extended
   {
     for (int j = pb->js-NGHOST; j <= pb->je+NGHOST; j++)
     {
-      Real theta_m = pb->x2f(j);
-      Real theta_p = pb->x2f(j+1);
-      pb->x2v(j) = std::acos(0.5 * (std::cos(theta_m) + std::cos(theta_p)));
+      Real theta_m = x2f(j);
+      Real theta_p = x2f(j+1);
+      x2v(j) = std::acos(0.5 * (std::cos(theta_m) + std::cos(theta_p)));
     }
     for (int j = pb->js-NGHOST; j <= pb->je+NGHOST-1; j++)
-      pb->dx2v(j) = pb->x2v(j+1) - pb->x2v(j);
+      dx2v(j) = x2v(j+1) - x2v(j);
   }
 
   // Initialize volume-averaged positions and spacings: phi-direction
   if (pb->block_size.nx3 == 1)  // no extent
   {
-    Real phi_m = pb->x3f(pb->ks);
-    Real phi_p = pb->x3f(pb->ks+1);
-    pb->x3v(pb->ks) = 0.5 * (phi_m + phi_p);
-    pb->dx3v(pb->ks) = pb->dx3f(pb->ks);
+    Real phi_m = x3f(pb->ks);
+    Real phi_p = x3f(pb->ks+1);
+    x3v(pb->ks) = 0.5 * (phi_m + phi_p);
+    dx3v(pb->ks) = dx3f(pb->ks);
   }
   else  // extended
   {
     for (int k = pb->ks-NGHOST; k <= pb->ke+NGHOST; k++)
     {
-      Real phi_m = pb->x3f(k);
-      Real phi_p = pb->x3f(k+1);
-      pb->x3v(k) = 0.5 * (phi_m + phi_p);
+      Real phi_m = x3f(k);
+      Real phi_p = x3f(k+1);
+      x3v(k) = 0.5 * (phi_m + phi_p);
     }
     for (int k = pb->ks-NGHOST; k <= pb->ke+NGHOST-1; k++)
-      pb->dx3v(k) = pb->x3v(k+1) - pb->x3v(k);
+      dx3v(k) = x3v(k+1) - x3v(k);
   }
 
   if(pb->pmy_mesh->multilevel==true) { // calc coarse coodinates
     int cis = pb->cis; int cjs = pb->cjs; int cks = pb->cks;
     int cie = pb->cie; int cje = pb->cje; int cke = pb->cke;
     for (int i=cis-(pb->cnghost); i<=cie+(pb->cnghost); ++i) {
-      Real r_m = pb->coarse_x1f(i);
-      Real r_p = pb->coarse_x1f(i+1);
-      pb->coarse_x1v(i) = std::pow(0.5 * (r_m*r_m*r_m + r_p*r_p*r_p), 1.0/3.0);
+      Real r_m = coarse_x1f(i);
+      Real r_p = coarse_x1f(i+1);
+      coarse_x1v(i) = std::pow(0.5 * (r_m*r_m*r_m + r_p*r_p*r_p), 1.0/3.0);
     }
     for (int i=cis-(pb->cnghost); i<=cie+(pb->cnghost)-1; ++i) {
-      pb->coarse_dx1v(i) = pb->coarse_x1v(i+1) - pb->coarse_x1v(i);
+      coarse_dx1v(i) = coarse_x1v(i+1) - coarse_x1v(i);
     }
     if (pb->block_size.nx2 == 1) {
-      pb->coarse_x2v(cjs) = 0.5*(pb->coarse_x2f(cjs+1) + pb->coarse_x2f(cjs));
-      pb->coarse_dx2v(cjs) = pb->coarse_dx2f(cjs);
+      coarse_x2v(cjs) = 0.5*(coarse_x2f(cjs+1) + coarse_x2f(cjs));
+      coarse_dx2v(cjs) = coarse_dx2f(cjs);
     } else {
       for (int j=cjs-(pb->cnghost); j<=cje+(pb->cnghost); ++j) {
-        Real theta_m = pb->coarse_x2f(j);
-        Real theta_p = pb->coarse_x2f(j+1);
-        pb->coarse_x2v(j) = std::acos(0.5 * (std::cos(theta_m) + std::cos(theta_p)));
+        Real theta_m = coarse_x2f(j);
+        Real theta_p = coarse_x2f(j+1);
+        coarse_x2v(j) = std::acos(0.5 * (std::cos(theta_m) + std::cos(theta_p)));
       }
       for (int j=cjs-(pb->cnghost); j<=cje+(pb->cnghost)-1; ++j) {
-        pb->coarse_dx2v(j) = pb->coarse_x2v(j+1) - pb->coarse_x2v(j);
+        coarse_dx2v(j) = coarse_x2v(j+1) - coarse_x2v(j);
       }
     }
     if (pb->block_size.nx3 == 1) {
-      pb->coarse_x3v(cks) = 0.5*(pb->coarse_x3f(cks+1) + pb->coarse_x3f(cks));
-      pb->coarse_dx3v(cks) = pb->coarse_dx3f(cks);
+      coarse_x3v(cks) = 0.5*(coarse_x3f(cks+1) + coarse_x3f(cks));
+      coarse_dx3v(cks) = coarse_dx3f(cks);
     } else {
       for (int k=cks-(pb->cnghost); k<=cke+(pb->cnghost); ++k) {
-        pb->coarse_x3v(k) = 0.5*(pb->coarse_x3f(k+1) + pb->coarse_x3f(k));
+        coarse_x3v(k) = 0.5*(coarse_x3f(k+1) + coarse_x3f(k));
       }
       for (int k=cks-(pb->cnghost); k<=cke+(pb->cnghost)-1; ++k) {
-        pb->coarse_dx3v(k) = pb->coarse_x3v(k+1) - pb->coarse_x3v(k);
+        coarse_dx3v(k) = coarse_x3v(k+1) - coarse_x3v(k);
       }
     }
   }
@@ -170,9 +173,9 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST; ++i)
   {
     // Useful quantities
-    Real r_c = pb->x1v(i);
-    Real r_m = pb->x1f(i);
-    Real r_p = pb->x1f(i+1);
+    Real r_c = x1v(i);
+    Real r_m = x1f(i);
+    Real r_p = x1f(i+1);
     Real alpha_c = std::sqrt(1.0 - 2.0*m/r_c);
     Real alpha_m = std::sqrt(1.0 - 2.0*m/r_m);
     Real alpha_p = std::sqrt(1.0 - 2.0*m/r_p);
@@ -218,9 +221,9 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
     for (int j = pb->js-NGHOST; j <= pb->je+NGHOST; j++)
     {
       // Useful quantities
-      Real theta_c = pb->x2v(j);
-      Real theta_m = pb->x2f(j);
-      Real theta_p = pb->x2f(j+1);
+      Real theta_c = x2v(j);
+      Real theta_m = x2f(j);
+      Real theta_p = x2f(j+1);
       Real sin_c = std::sin(theta_c);
       Real sin_m = std::sin(theta_m);
       Real sin_p = std::sin(theta_p);
@@ -264,9 +267,9 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   else  // no extent
   {
     // Useful quantities
-    Real theta_c = pb->x2v(pb->js);
-    Real theta_m = pb->x2f(pb->js);
-    Real theta_p = pb->x2f(pb->js+1);
+    Real theta_c = x2v(pb->js);
+    Real theta_m = x2f(pb->js);
+    Real theta_p = x2f(pb->js+1);
     Real sin_c = std::sin(theta_c);
     Real sin_m = std::sin(theta_m);
     Real sin_p = std::sin(theta_p);
@@ -310,6 +313,8 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
 // Destructor
 Coordinates::~Coordinates()
 {
+  DeleteBasicCoordinates();
+
   coord_vol_i1_.DeleteAthenaArray();
   coord_area1_i1_.DeleteAthenaArray();
   coord_area2_i1_.DeleteAthenaArray();
@@ -363,7 +368,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
     AthenaArray<Real> &volumes)
 {
   const Real &neg_delta_cos_theta = coord_vol_j1_(j);
-  const Real &delta_phi = pmy_block->dx3f(k);
+  const Real &delta_phi = dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
@@ -376,7 +381,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 
 Real Coordinates::GetCellVolume(const int k, const int j, const int i)
 {
-  return coord_vol_i_(i)*coord_vol_j_(j)*pmy_block->dx3f(k);
+  return coord_vol_i_(i)*coord_vol_j_(j)*dx3f(k);
 }
 
 //--------------------------------------------------------------------------------------
@@ -393,7 +398,7 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
     AthenaArray<Real> &areas)
 {
   const Real &neg_delta_cos_theta = coord_area1_j1_(j);
-  const Real &delta_phi = pmy_block->dx3f(k);
+  const Real &delta_phi = dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
@@ -418,7 +423,7 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
     AthenaArray<Real> &areas)
 {
   const Real &sin_theta = coord_area2_j1_(j);
-  const Real &delta_phi = pmy_block->dx3f(k);
+  const Real &delta_phi = dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
@@ -456,7 +461,7 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 
 Real Coordinates::GetFace1Area(const int k, const int j, const int i)
 {
-  return coord_area1_i_(i)*coord_area1_j_(j)*pmy_block->dx3f(k);
+  return coord_area1_i_(i)*coord_area1_j_(j)*dx3f(k);
 }
 
 
@@ -522,7 +527,7 @@ void Coordinates::Edge3Length(const int k, const int j, const int il, const int 
   AthenaArray<Real> &lengths)
 {
   const Real &sin_theta = coord_len3_j1_(j);
-  const Real &delta_phi = pmy_block->dx3f(k);
+  const Real &delta_phi = dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
@@ -560,8 +565,8 @@ Real Coordinates::CenterWidth1(const int k, const int j, const int i)
 //   \Delta W = r \Delta\theta
 Real Coordinates::CenterWidth2(const int k, const int j, const int i)
 {
-  const Real &r = pmy_block->x1v(i);
-  const Real &delta_theta = pmy_block->dx1f(j);
+  const Real &r = x1v(i);
+  const Real &delta_theta = dx1f(j);
   return r * delta_theta;
 }
 
@@ -576,9 +581,9 @@ Real Coordinates::CenterWidth2(const int k, const int j, const int i)
 //   \Delta W = r \sin\theta \Delta\phi
 Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 {
-  const Real &r = pmy_block->x1v(i);
+  const Real &r = x1v(i);
   const Real &sin_theta = coord_width3_j1_(j);
-  const Real &delta_phi = pmy_block->dx1f(k);
+  const Real &delta_phi = dx1f(k);
   return r * sin_theta * delta_phi;
 }
 
@@ -615,7 +620,7 @@ void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
   {
     // Extract remaining geometric quantities
     const Real &alpha_sq = metric_cell_i1_(i);
-    const Real &r = pmy_block->x1v(i);
+    const Real &r = x1v(i);
     const Real r_sq = SQR(r);
     const Real g00 = -alpha_sq;
     const Real &g11 = 1.0/alpha_sq;
@@ -769,7 +774,7 @@ void Coordinates::CellMetric(const int k, const int j, const int il, const int i
   {
     // Extract remaining geometric quantities
     const Real &alpha_sq = metric_cell_i1_(i);
-    const Real &r = pmy_block->x1v(i);
+    const Real &r = x1v(i);
     Real r_sq = SQR(r);
 
     // Extract metric terms
@@ -816,7 +821,7 @@ void Coordinates::Face1Metric(const int k, const int j, const int il, const int 
   {
     // Extract remaining geometric quantities
     const Real &alpha_sq = metric_face1_i1_(i);
-    const Real &r = pmy_block->x1f(i);
+    const Real &r = x1f(i);
     Real r_sq = SQR(r);
 
     // Extract metric terms
@@ -863,7 +868,7 @@ void Coordinates::Face2Metric(const int k, const int j, const int il, const int 
   {
     // Extract remaining geometric quantities
     const Real &alpha_sq = metric_face2_i1_(i);
-    const Real &r = pmy_block->x1v(i);
+    const Real &r = x1v(i);
     Real r_sq = SQR(r);
 
     // Extract metric terms
@@ -910,7 +915,7 @@ void Coordinates::Face3Metric(const int k, const int j, const int il, const int 
   {
     // Extract remaining geometric quantities
     const Real &alpha_sq = metric_face3_i1_(i);
-    const Real &r = pmy_block->x1v(i);
+    const Real &r = x1v(i);
     Real r_sq = SQR(r);
 
     // Extract metric terms
@@ -970,7 +975,7 @@ void Coordinates::PrimToLocal1(const int k, const int j, const int il, const int
   {
     // Extract remaining geometric quantities
     const Real &alpha_sq = metric_face1_i1_(i);
-    const Real &r = pmy_block->x1f(i);
+    const Real &r = x1f(i);
     const Real r_sq = SQR(r);
     const Real &alpha = trans_face1_i1_(i);
     const Real g00 = -alpha_sq;
@@ -1095,7 +1100,7 @@ void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int
   {
     // Extract geometric quantities
     const Real &alpha_sq = metric_face2_i1_(i);
-    const Real &r = pmy_block->x1v(i);
+    const Real &r = x1v(i);
     const Real r_sq = SQR(r);
     const Real &alpha = trans_face2_i1_(i);
     const Real g00 = -alpha_sq;
@@ -1220,7 +1225,7 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
   {
     // Extract geometric quantities
     const Real &alpha_sq = metric_face3_i1_(i);
-    const Real &r = pmy_block->x1v(i);
+    const Real &r = x1v(i);
     const Real r_sq = SQR(r);
     const Real &alpha = trans_face3_i1_(i);
     const Real g00 = -alpha_sq;
@@ -1340,7 +1345,7 @@ void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const in
   {
     // Extract geometric quantities
     const Real &alpha_sq = metric_face1_i1_(i);
-    const Real &r = pmy_block->x1f(i);
+    const Real &r = x1f(i);
     const Real r_sq = SQR(r);
     const Real &alpha = trans_face1_i1_(i);
     const Real g00 = -alpha_sq;
@@ -1422,7 +1427,7 @@ void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const in
   {
     // Extract geometric quantities
     const Real &alpha_sq = metric_face2_i1_(i);
-    const Real &r = pmy_block->x1v(i);
+    const Real &r = x1v(i);
     const Real r_sq = SQR(r);
     const Real &alpha = trans_face2_i1_(i);
     const Real g00 = -alpha_sq;
@@ -1504,7 +1509,7 @@ void Coordinates::FluxToGlobal3(const int k, const int j, const int il, const in
   {
     // Extract geometric quantities
     const Real &alpha_sq = metric_face3_i1_(i);
-    const Real &r = pmy_block->x1v(i);
+    const Real &r = x1v(i);
     const Real r_sq = SQR(r);
     const Real &alpha = trans_face3_i1_(i);
     const Real g00 = -alpha_sq;
@@ -1648,7 +1653,7 @@ void Coordinates::LowerVectorCell(
   // Extract geometric quantities
   const Real &sin_sq_theta = metric_cell_j1_(j);
   const Real &alpha_sq = metric_cell_i1_(i);
-  const Real &r = pmy_block->x1v(i);
+  const Real &r = x1v(i);
   Real r_sq = SQR(r);
 
   // Calculate metric terms

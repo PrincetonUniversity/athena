@@ -29,6 +29,19 @@ public:
 
   MeshBlock *pmy_block;  // ptr to MeshBlock containing this Coordinates
 
+  // coordinate arrays
+  AthenaArray<Real> dx1f, dx2f, dx3f, x1f, x2f, x3f; // face   spacing and positions
+  AthenaArray<Real> dx1v, dx2v, dx3v, x1v, x2v, x3v; // volume spacing and positions
+
+  // arrays for mesh refinement
+  AthenaArray<Real> coarse_dx1f, coarse_dx2f, coarse_dx3f;
+  AthenaArray<Real> coarse_x1f,  coarse_x2f,  coarse_x3f;
+  AthenaArray<Real> coarse_dx1v, coarse_dx2v, coarse_dx3v;
+  AthenaArray<Real> coarse_x1v,  coarse_x2v,  coarse_x3v;
+
+  void AllocateAndSetBasicCoordinates(void);
+  void DeleteBasicCoordinates(void);
+
   // Functions for returning private variables
   Real GetMass() const {return bh_mass_;}
   Real GetSpin() const {return bh_spin_;}
@@ -267,5 +280,401 @@ private:
       trans_face3_ji4_, trans_face3_ji5_, trans_face3_ji6_;
   AthenaArray<Real> g_, gi_;
 };
+
+
+Coordinates::AllocateAndSetBasicCoordinates(void)
+{
+  RegionSize& block_size = pmy_block->block_size;
+  Mesh *pm=pmy->block->pmy_mesh;
+
+  // allocate arrays for sizes and positions of cells
+  int ncells1 = block_size.nx1 + 2*(NGHOST);
+  int ncells2 = 1, ncells3 = 1;
+  if (block_size.nx2 > 1) ncells2 = block_size.nx2 + 2*(NGHOST);
+  if (block_size.nx3 > 1) ncells3 = block_size.nx3 + 2*(NGHOST);
+
+  // cell sizes
+  dx1f.NewAthenaArray(ncells1);
+  dx2f.NewAthenaArray(ncells2);
+  dx3f.NewAthenaArray(ncells3);
+  dx1v.NewAthenaArray(ncells1);
+  dx2v.NewAthenaArray(ncells2);
+  dx3v.NewAthenaArray(ncells3);
+
+  // cell positions. Note the extra element for cell face positions
+  x1f.NewAthenaArray((ncells1+1));
+  x2f.NewAthenaArray((ncells2+1));
+  x3f.NewAthenaArray((ncells3+1));
+  x1v.NewAthenaArray(ncells1);
+  x2v.NewAthenaArray(ncells2);
+  x3v.NewAthenaArray(ncells3);
+
+  if(pmy_block->multilevel==true) {
+    int cnghost=pmy_block->cnghost;
+    int ncc1=block_size.nx1/2+2*cnghost;
+    int ncc2=1, ncc3=1;
+    if(block_size.nx2>1) // 2D or 3D
+      ncc2=block_size.nx2/2+2*cnghost;
+    if(block_size.nx3>1) // 3D
+      ncc3=block_size.nx3/2+2*cnghost;
+
+    // cell sizes
+    coarse_dx1f.NewAthenaArray(ncc1);
+    coarse_dx2f.NewAthenaArray(ncc2);
+    coarse_dx3f.NewAthenaArray(ncc3);
+    coarse_dx1v.NewAthenaArray(ncc1);
+    coarse_dx2v.NewAthenaArray(ncc2);
+    coarse_dx3v.NewAthenaArray(ncc3);
+    // cell positions. Note the extra element for cell face positions
+    coarse_x1f.NewAthenaArray((ncc1+1));
+    coarse_x2f.NewAthenaArray((ncc2+1));
+    coarse_x3f.NewAthenaArray((ncc3+1));
+    coarse_x1v.NewAthenaArray(ncc1);
+    coarse_x2v.NewAthenaArray(ncc2);
+    coarse_x3v.NewAthenaArray(ncc3);
+  }
+
+  int is=pmy_block->is, js=pmy_block->js, ks=pmy_block->ks;
+  int ie=pmy_block->ie, je=pmy_block->je, ke=pmy_block->ke;
+  RegionSize& mesh_size  = pmy_block->pmy_mesh->mesh_size;
+  long long nrootmesh, noffset;
+  long int lx1, lx2, lx3;
+  int ll, root_level;
+  pmy_block->uid.GetLocation(lx1,lx2,lx3,ll);
+
+// X1-DIRECTION: initialize sizes and positions of cell FACES (dx1f,x1f)
+  nrootmesh=mesh_size.nx1*(1L<<(ll-pM->root_level));
+  if(block_size.x1rat == 1.0) { // uniform
+    Real dx=(block_size.x1max-block_size.x1min)/block_size.nx1;
+    for(int i=is-NGHOST; i<=ie+NGHOST; ++i)
+      dx1f(i)=dx;
+    x1f(is-NGHOST)=block_size.x1min-NGHOST*dx;
+    for(int i=is-NGHOST+1;i<=ie+NGHOST+1;i++)
+      x1f(i)=x1f(i-1)+dx;
+    x1f(is) = block_size.x1min;
+    x1f(ie+1) = block_size.x1max;
+  }
+  else {
+    for (int i=is-NGHOST; i<=ie+NGHOST+1; ++i) {
+       // if there are too many levels, this won't work or be precise enough
+      noffset=(i-is)+(long long)lx1*block_size.nx1;
+      Real rx=(Real)noffset/(Real)nrootmesh;
+      x1f(i)=pm->MeshGeneratorX1(rx,mesh_size);
+    }
+    x1f(is) = block_size.x1min;
+    x1f(ie+1) = block_size.x1max;
+    for(int i=is-NGHOST; i<=ie+NGHOST; ++i)
+      dx1f(i)=x1f(i+1)-x1f(i);
+  }
+
+// correct cell face positions in ghost zones for reflecting boundary condition
+  if (block_bcs[inner_x1] == 1) {
+    for (int i=1; i<=(NGHOST); ++i) {
+      dx1f(is-i) = dx1f(is+i-1);
+       x1f(is-i) =  x1f(is-i+1) - dx1f(is-i);
+    }
+  }
+  if (block_bcs[outer_x1] == 1) {
+    for (int i=1; i<=(NGHOST); ++i) {
+      dx1f(ie+i  ) = dx1f(ie-i+1);
+       x1f(ie+i+1) =  x1f(ie+i) + dx1f(ie+i);
+    }
+  }
+
+// X2-DIRECTION: initialize spacing and positions of cell FACES (dx2f,x2f)
+  if(block_size.nx2 > 1) {
+    nrootmesh=mesh_size.nx2*(1L<<(ll-root_level));
+    if(block_size.x2rat == 1.0) { // uniform
+      Real dx=(block_size.x2max-block_size.x2min)/block_size.nx2;
+      for(int j=js-NGHOST; j<=je+NGHOST; ++j)
+        dx2f(j)=dx;
+      x2f(js-NGHOST)=block_size.x2min-NGHOST*dx;
+      for(int j=js-NGHOST+1;j<=je+NGHOST+1;j++)
+        x2f(j)=x2f(j-1)+dx;
+      x2f(js) = block_size.x2min;
+      x2f(je+1) = block_size.x2max;
+    }
+    else {
+      for (int j=js-NGHOST; j<=je+NGHOST+1; ++j) {
+         // if there are too many levels, this won't work or be precise enough
+        noffset=(j-js)+(long long)lx2*block_size.nx2;
+        Real rx=(Real)noffset/(Real)nrootmesh;
+        x2f(j)=pm->MeshGeneratorX2(rx,mesh_size);
+      }
+      x2f(js) = block_size.x2min;
+      x2f(je+1) = block_size.x2max;
+      for(int j=js-NGHOST; j<=je+NGHOST; ++j)
+        dx2f(j)=x2f(j+1)-x2f(j);
+    }
+
+  // correct cell face positions in ghost zones for reflecting boundary condition
+    if (block_bcs[inner_x2] == 1) {
+      for (int j=1; j<=(NGHOST); ++j) {
+        dx2f(js-j) = dx2f(js+j-1);
+         x2f(js-j) =  x2f(js-j+1) - dx2f(js-j);
+      }
+    }
+    if (block_bcs[outer_x2] == 1) {
+      for (int j=1; j<=(NGHOST); ++j) {
+        dx2f(je+j  ) = dx2f(je-j+1);
+         x2f(je+j+1) =  x2f(je+j) + dx2f(je+j);
+      }
+    }
+  }
+  else {
+    dx2f(js) = block_size.x2max-block_size.x2min;
+    x2f(js  ) = block_size.x2min;
+    x2f(je+1) = block_size.x2max;
+  }
+
+
+// X3-DIRECTION: initialize spacing and positions of cell FACES (dx3f,x3f)
+  if(block_size.nx3 > 1) {
+    nrootmesh=mesh_size.nx3*(1L<<(ll-root_level));
+    if(block_size.x3rat == 1.0) { // uniform
+      Real dx=(block_size.x3max-block_size.x3min)/block_size.nx3;
+      for(int k=ks-NGHOST; k<=ke+NGHOST; ++k)
+        dx3f(k)=dx;
+      x3f(ks-NGHOST)=block_size.x3min-NGHOST*dx;
+      for(int k=ks-NGHOST+1;k<=ke+NGHOST+1;k++)
+        x3f(k)=x3f(k-1)+dx;
+      x3f(ks) = block_size.x3min;
+      x3f(ke+1) = block_size.x3max;
+    }
+    else {
+      for (int k=ks-NGHOST; k<=ke+NGHOST+1; ++k) {
+         // if there are too many levels, this won't work or be precise enough
+        noffset=(k-ks)+(long long)lx3*block_size.nx3;
+        Real rx=(Real)noffset/(Real)nrootmesh;
+        x3f(k)=pm->MeshGeneratorX3(rx,mesh_size);
+      }
+      x3f(ks) = block_size.x3min;
+      x3f(ke+1) = block_size.x3max;
+      for(int k=ks-NGHOST; k<=ke+NGHOST; ++k)
+        dx3f(k)=x3f(k+1)-x3f(k);
+    }
+
+  // correct cell face positions in ghost zones for reflecting boundary condition
+    if (block_bcs[inner_x3] == 1) {
+      for (int k=1; k<=(NGHOST); ++k) {
+        dx3f(ks-k) = dx3f(ks+k-1);
+         x3f(ks-k) =  x3f(ks-k+1) - dx3f(ks-k);
+      }
+    }
+    if (block_bcs[outer_x3] == 1) {
+      for (int k=1; k<=(NGHOST); ++k) {
+        dx3f(ke+k  ) = dx3f(ke-k+1);
+         x3f(ke+k+1) =  x3f(ke+k) + dx3f(ke+k);
+      }
+    }
+  }
+  else {
+    dx3f(ks) = block_size.x3max-block_size.x3min;
+    x3f(ks  ) = block_size.x3min;
+    x3f(ke+1) = block_size.x3max;
+  }
+
+  if(pmb->pm->multilevel==true) {// set coarse coordinates for SMR/AMR
+    int cnghost=pmy_block->cnghost;
+    int cis=pmy_block->cis, cjs=pmy_block->cjs, cks=pmy_block->cks;
+    int cie=pmy_block->cie, cje=pmy_block->cje, cke=pmy_block->cke;
+
+    // x1
+    for(int i=cis; i<=cie; i++) { // active region
+      int ifl=(i-cis)*2+is;
+      coarse_dx1f(i)=dx1f(ifl)+dx1f(ifl+1);
+      coarse_x1f(i)=x1f(ifl);
+    }
+    coarse_x1f(cie+1)=x1f(ie+1);
+    // left ghost zone
+    if(block_bcs[inner_x1]==1) { // reflecting
+      for(int i=1; i<=cnghost; i++) {
+        coarse_dx1f(cis-i) = coarse_dx1f(cis+i-1);
+        coarse_x1f(cis-i) =  coarse_x1f(cis-i+1) - coarse_dx1f(cis-i);
+      }
+    }
+    else {
+      if(block_size.x1rat==1.0) { // uniform
+        for(int i=1; i<=cnghost; i++) {
+          coarse_dx1f(cis-i) = coarse_dx1f(cis-i+1);
+          coarse_x1f(cis-i) =  coarse_x1f(cis-i+1) - coarse_dx1f(cis-i);
+        }
+      }
+      else {
+        for(int i=1; i<=cnghost; i++) { 
+          noffset=(long long)lx1*block_size.nx1-i*2;
+          Real rx=(Real)noffset/(Real)nrootmesh;
+          coarse_x1f(cis-i)=pm->MeshGeneratorX1(rx,pm->mesh_size);
+          coarse_dx1f(cis-i) = coarse_x1f(cis-i+1)-coarse_x1f(cis-i);
+        }
+      }
+    }
+    // right ghost zone
+    if(block_bcs[outer_x1]==1) { // reflecting
+      for(int i=1; i<=cnghost; i++) {
+        coarse_dx1f(cie+i) = coarse_dx1f(cie-i+1);
+        coarse_x1f(cie+i+1) =  coarse_x1f(cie+i) + coarse_dx1f(cie+i);
+      }
+    }
+    else {
+      if(block_size.x1rat==1.0) { // uniform
+        for(int i=1; i<=cnghost; i++) {
+          coarse_dx1f(cie+i) = coarse_dx1f(cie+i-1);
+          coarse_x1f(cie+i+1) =  coarse_x1f(cie+i) + coarse_dx1f(cie+i);
+        }
+      }
+      else {
+        for(int i=1; i<=cnghost; i++) { 
+          noffset=(long long)(lx1+1L)*block_size.nx1+i*2;
+          Real rx=(Real)noffset/(Real)nrootmesh;
+          coarse_x1f(cie+i+1)=pm->MeshGeneratorX1(rx,pm->mesh_size);
+          coarse_dx1f(cie+i) = coarse_x1f(cie+i+1)-coarse_x1f(cie+i);
+        }
+      }
+    }
+
+    // x2
+    for(int j=cjs; j<=cje; j++) { // active region
+      int jfl=(j-cjs)*2+js;
+      coarse_dx2f(j)=dx2f(jfl)+dx2f(jfl+1);
+      coarse_x2f(j)=x2f(jfl);
+    }
+    coarse_x2f(cje+1)=x2f(je+1);
+    // left ghost zone
+    if(block_bcs[inner_x2]==1) { // reflecting
+      for(int j=1; j<=cnghost; j++) {
+        coarse_dx2f(cjs-j) = coarse_dx2f(cjs+j-1);
+        coarse_x2f(cjs-j) =  coarse_x2f(cjs-j+1) - coarse_dx2f(cjs-j);
+      }
+    }
+    else {
+      if(block_size.x2rat==1.0) { // uniform
+        for(int j=1; j<=cnghost; j++) {
+          coarse_dx2f(cjs-j) = coarse_dx2f(cjs-j+1);
+          coarse_x2f(cjs-j) =  coarse_x2f(cjs-j+1) - coarse_dx2f(cjs-j);
+        }
+      }
+      else {
+        for(int j=1; j<=cnghost; j++) { 
+          noffset=(long long)lx2*block_size.nx2-j*2;
+          Real rx=(Real)noffset/(Real)nrootmesh;
+          coarse_x2f(cjs-j)=pm->MeshGeneratorX2(rx,pm->mesh_size);
+          coarse_dx2f(cjs-j) = coarse_x2f(cjs-j+1)-coarse_x2f(cjs-j);
+        }
+      }
+    }
+    // right ghost zone
+    if(block_bcs[outer_x2]==1) { // reflecting
+      for(int j=1; j<=cnghost; j++) {
+        coarse_dx2f(cje+j) = coarse_dx2f(cje-j+1);
+        coarse_x2f(cje+j+1) =  coarse_x2f(cje+j) + coarse_dx2f(cje+j);
+      }
+    }
+    else {
+      if(block_size.x2rat==1.0) { // uniform
+        for(int j=1; j<=cnghost; j++) {
+          coarse_dx2f(cje+j) = coarse_dx2f(cje+j-1);
+          coarse_x2f(cje+j+1) =  coarse_x2f(cje+j) + coarse_dx2f(cje+j);
+        }
+      }
+      else {
+        for(int j=1; j<=cnghost; j++) { 
+          noffset=(long long)(lx2+1L)*block_size.nx2+j*2;
+          Real rx=(Real)noffset/(Real)nrootmesh;
+          coarse_x2f(cje+j+1)=pm->MeshGeneratorX2(rx,pm->mesh_size);
+          coarse_dx2f(cje+j) = coarse_x2f(cje+j+1)-coarse_x2f(cje+j);
+        }
+      }
+    }
+
+    // x3
+    for(int k=cks; k<=cke; k++) { // active region
+      int kfl=(k-cks)*2+ks;
+      coarse_dx3f(k)=dx3f(kfl)+dx3f(kfl+1);
+      coarse_x3f(k)=x3f(kfl);
+    }
+    coarse_x3f(cke+1)=x3f(ke+1);
+    // left ghost zone
+    if(block_bcs[inner_x3]==1) { // reflecting
+      for(int k=1; k<=cnghost; k++) {
+        coarse_dx3f(cks-k) = coarse_dx3f(cks+k-1);
+        coarse_x3f(cks-k) =  coarse_x3f(cks-k+1) - coarse_dx3f(cks-k);
+      }
+    }
+    else {
+      if(block_size.x3rat==1.0) { // uniform
+        for(int k=1; k<=cnghost; k++) {
+          coarse_dx3f(cks-k) = coarse_dx3f(cks-k+1);
+          coarse_x3f(cks-k) =  coarse_x3f(cks-k+1) - coarse_dx3f(cks-k);
+        }
+      }
+      else {
+        for(int k=1; k<=cnghost; k++) { 
+          noffset=(long long)lx3*block_size.nx3-k*2;
+          Real rx=(Real)noffset/(Real)nrootmesh;
+          coarse_x3f(cks-k)=pm->MeshGeneratorX3(rx,pm->mesh_size);
+          coarse_dx3f(cks-k) = coarse_x3f(cks-k+1)-coarse_x3f(cks-k);
+        }
+      }
+    }
+    // right ghost zone
+    if(block_bcs[outer_x3]==1) { // reflecting
+      for(int k=1; k<=cnghost; k++) {
+        coarse_dx3f(cke+k) = coarse_dx3f(cke-k+1);
+        coarse_x3f(cke+k+1) =  coarse_x3f(cke+k) + coarse_dx3f(cke+k);
+      }
+    }
+    else {
+      if(block_size.x3rat==1.0) { // uniform
+        for(int k=1; k<=cnghost; k++) {
+          coarse_dx3f(cke+k) = coarse_dx3f(cke+k-1);
+          coarse_x3f(cke+k+1) =  coarse_x3f(cke+k) + coarse_dx3f(cke+k);
+        }
+      }
+      else {
+        for(int k=1; k<=cnghost; k++) { 
+          noffset=(long long)(lx3+1L)*block_size.nx3+k*2;
+          Real rx=(Real)noffset/(Real)nrootmesh;
+          coarse_x3f(cke+k+1)=pm->MeshGeneratorX3(rx,pm->mesh_size);
+          coarse_dx3f(cke+k) = coarse_x3f(cke+k+1)-coarse_x3f(cke+k);
+        }
+      }
+    }
+  }
+  return;
+}
+
+
+Coordinates::DeleteBasicCoordinates(void)
+{
+  //destroy AthenaArrays
+  dx1f.DeleteAthenaArray();
+  dx2f.DeleteAthenaArray();
+  dx3f.DeleteAthenaArray();
+  dx1v.DeleteAthenaArray();
+  dx2v.DeleteAthenaArray();
+  dx3v.DeleteAthenaArray();
+  x1f.DeleteAthenaArray();
+  x2f.DeleteAthenaArray();
+  x3f.DeleteAthenaArray();
+  x1v.DeleteAthenaArray();
+  x2v.DeleteAthenaArray();
+  x3v.DeleteAthenaArray();
+  if(pmy_mesh->multilevel==true) {
+    coarse_dx1f.DeleteAthenaArray();
+    coarse_dx2f.DeleteAthenaArray();
+    coarse_dx3f.DeleteAthenaArray();
+    coarse_dx1v.DeleteAthenaArray();
+    coarse_dx2v.DeleteAthenaArray();
+    coarse_dx3v.DeleteAthenaArray();
+    coarse_x1f.DeleteAthenaArray();
+    coarse_x2f.DeleteAthenaArray();
+    coarse_x3f.DeleteAthenaArray();
+    coarse_x1v.DeleteAthenaArray();
+    coarse_x2v.DeleteAthenaArray();
+    coarse_x3v.DeleteAthenaArray();
+    coarse_data.DeleteAthenaArray();
+  }
+}
 
 #endif

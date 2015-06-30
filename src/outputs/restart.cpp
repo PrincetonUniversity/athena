@@ -203,12 +203,6 @@ void RestartOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
   resfile.Seek(offset[pmb->gid - pmb->pmy_mesh->nbstart]);
   resfile.Write(&(pmb->block_size), sizeof(RegionSize), 1);
   resfile.Write(pmb->block_bcs, sizeof(int), 6);
-  resfile.Write(pmb->x1f.GetArrayPointer(),sizeof(Real),pmb->x1f.GetSize());
-  resfile.Write(pmb->x2f.GetArrayPointer(),sizeof(Real),pmb->x2f.GetSize());
-  resfile.Write(pmb->x3f.GetArrayPointer(),sizeof(Real),pmb->x3f.GetSize());
-  resfile.Write(pmb->dx1f.GetArrayPointer(),sizeof(Real),pmb->dx1f.GetSize());
-  resfile.Write(pmb->dx2f.GetArrayPointer(),sizeof(Real),pmb->dx2f.GetSize());
-  resfile.Write(pmb->dx3f.GetArrayPointer(),sizeof(Real),pmb->dx3f.GetSize());
   resfile.Write(pmb->pfluid->u.GetArrayPointer(),sizeof(Real),
                        pmb->pfluid->u.GetSize());
   if (GENERAL_RELATIVITY) {
