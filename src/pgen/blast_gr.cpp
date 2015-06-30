@@ -81,9 +81,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       for (int i = il; i <= iu; i++)
       {
         // Calculate distance to nearest blast center
-        Real x1 = pb->x1v(i);
-        Real x2 = pb->x2v(j);
-        Real x3 = pb->x3v(k);
+        Real x1 = pb->pcoord->x1v(i);
+        Real x2 = pb->pcoord->x2v(j);
+        Real x3 = pb->pcoord->x3v(k);
         Real min_separation = pb->pcoord->DistanceBetweenPoints(x1, x2, x3, 0.0, 0.0,
             0.0);
         for (int x_index = -num_x; x_index <= num_x; ++x_index)

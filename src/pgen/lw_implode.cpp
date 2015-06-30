@@ -59,7 +59,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 	pfl->u(IM2,k,j,i) = 0.0;
 	pfl->u(IM3,k,j,i) = 0.0;
 
-	if(pmb->x2v(j) > (y0 - pmb->x1v(i))) {
+	if(pmb->pcoord->x2v(j) > (y0 - pmb->pcoord->x1v(i))) {
 	  pfl->u(IDN,k,j,i) = d_out;
 	  pfl->u(IEN,k,j,i) = p_out/gm1;
 	} else {

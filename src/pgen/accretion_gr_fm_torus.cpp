@@ -123,8 +123,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     {
       // Get Boyer-Lindquist coordinates of cell
       Real r, theta, phi;
-      pb->pcoord->GetBoyerLindquistCoordinates(pb->x1v(i), pb->x2v(j), pb->x3v(kl),
-          &r, &theta, &phi);
+      pb->pcoord->GetBoyerLindquistCoordinates(
+          pb->pcoord->x1v(i), pb->pcoord->x2v(j), pb->pcoord->x3v(kl), &r, &theta, &phi);
       Real sin_theta = std::sin(theta);
 
       // Determine if we are in the torus
@@ -185,8 +185,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       {
         // Get Boyer-Lindquist coordinates
         Real r, theta, phi;
-        pb->pcoord->GetBoyerLindquistCoordinates(pb->x1v(i), pb->x2v(j), pb->x3v(kl),
-            &r, &theta, &phi);
+        pb->pcoord->GetBoyerLindquistCoordinates(
+            pb->pcoord->x1v(i), pb->pcoord->x2v(j), pb->pcoord->x3v(kl), &r, &theta, &phi);
         Real sin_theta = std::sin(theta);
 
         // Calculate A_phi as proportional to rho
@@ -209,8 +209,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       {
         // Get Boyer-Lindquist coordinates
         Real r, theta, phi;
-        pb->pcoord->GetBoyerLindquistCoordinates(pb->x1f(i), pb->x2f(j), pb->x3v(kl),
-            &r, &theta, &phi);
+        pb->pcoord->GetBoyerLindquistCoordinates(
+            pb->pcoord->x1v(i), pb->pcoord->x2v(j), pb->pcoord->x3v(kl), &r, &theta, &phi);
 
         // Calculate A_phi as proportional to rho
         if (r >= r_edge)
@@ -248,13 +248,13 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
           {
             Real r, theta, phi;
             pb->pcoord->GetBoyerLindquistCoordinates(
-                pb->x1f(i), pb->x2v(j), pb->x3v(k), &r, &theta, &phi);
+                pb->pcoord->x1f(i), pb->pcoord->x2v(j), pb->pcoord->x3v(k), &r, &theta, &phi);
             Real r_1, theta_1, phi_1;
             pb->pcoord->GetBoyerLindquistCoordinates(
-                pb->x1f(i), pb->x2f(j), pb->x3v(k), &r_1, &theta_1, &phi_1);
+                pb->pcoord->x1f(i), pb->pcoord->x2v(j), pb->pcoord->x3v(k), &r_1, &theta_1, &phi_1);
             Real r_2, theta_2, phi_2;
             pb->pcoord->GetBoyerLindquistCoordinates(
-                pb->x1f(i), pb->x2f(j+1), pb->x3v(k), &r_2, &theta_2, &phi_2);
+                pb->pcoord->x1f(i), pb->pcoord->x2f(j+1), pb->pcoord->x3v(k), &r_2, &theta_2, &phi_2);
             Real bbr = (a_phi_edges(j+1,i) - a_phi_edges(j,i)) / (theta_2 - theta_1);
             Real a_phi_1, a_phi_2;
             if (i == il)
@@ -263,14 +263,14 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
               a_phi_2 = a_phi_cells(j,i);
               r_1 = r;
               pb->pcoord->GetBoyerLindquistCoordinates(
-                  pb->x1v(i), pb->x2v(j), pb->x3v(k), &r_2, &theta_2, &phi_2);
+                  pb->pcoord->x1v(i), pb->pcoord->x2v(j), pb->pcoord->x3v(k), &r_2, &theta_2, &phi_2);
             }
             else if (i == iu+1)
             {
               a_phi_1 = a_phi_cells(j,i-1);
               a_phi_2 = 0.5 * (a_phi_edges(j,i) + a_phi_edges(j+1,i));
               pb->pcoord->GetBoyerLindquistCoordinates(
-                  pb->x1v(i-1), pb->x2v(j), pb->x3v(k), &r_1, &theta_1, &phi_1);
+                  pb->pcoord->x1v(i-1), pb->pcoord->x2v(j), pb->pcoord->x3v(k), &r_1, &theta_1, &phi_1);
               r_2 = r;
             }
             else
@@ -278,9 +278,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
               a_phi_1 = a_phi_cells(j,i-1);
               a_phi_2 = a_phi_cells(j,i);
               pb->pcoord->GetBoyerLindquistCoordinates(
-                  pb->x1v(i-1), pb->x2v(j), pb->x3v(k), &r_1, &theta_1, &phi_1);
+                  pb->pcoord->x1v(i-1), pb->pcoord->x2v(j), pb->pcoord->x3v(k), &r_1, &theta_1, &phi_1);
               pb->pcoord->GetBoyerLindquistCoordinates(
-                  pb->x1v(i), pb->x2v(j), pb->x3v(k), &r_2, &theta_2, &phi_2);
+                  pb->pcoord->x1v(i), pb->pcoord->x2v(j), pb->pcoord->x3v(k), &r_2, &theta_2, &phi_2);
             }
             Real bbtheta = (a_phi_2 - a_phi_1) / (r_2 - r_1);
             Real ut, uphi;
@@ -306,13 +306,13 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
           {
             Real r, theta, phi;
             pb->pcoord->GetBoyerLindquistCoordinates(
-                pb->x1v(i), pb->x2f(j), pb->x3v(k), &r, &theta, &phi);
+                pb->pcoord->x1v(i), pb->pcoord->x2f(j), pb->pcoord->x3v(k), &r, &theta, &phi);
             Real r_1, theta_1, phi_1;
             pb->pcoord->GetBoyerLindquistCoordinates(
-                pb->x1f(i), pb->x2f(j), pb->x3v(k), &r_1, &theta_1, &phi_1);
+                pb->pcoord->x1f(i), pb->pcoord->x2f(j), pb->pcoord->x3v(k), &r_1, &theta_1, &phi_1);
             Real r_2, theta_2, phi_2;
             pb->pcoord->GetBoyerLindquistCoordinates(
-                pb->x1f(i+1), pb->x2f(j), pb->x3v(k), &r_2, &theta_2, &phi_2);
+                pb->pcoord->x1f(i+1), pb->pcoord->x2f(j), pb->pcoord->x3v(k), &r_2, &theta_2, &phi_2);
             Real bbtheta = (a_phi_edges(j,i+1) - a_phi_edges(j,i)) / (r_2 - r_1);
             Real a_phi_1, a_phi_2;
             if (j == jl)
@@ -321,14 +321,14 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
               a_phi_2 = a_phi_cells(j,i);
               theta_1 = theta;
               pb->pcoord->GetBoyerLindquistCoordinates(
-                  pb->x1v(i), pb->x2v(j), pb->x3v(k), &r_2, &theta_2, &phi_2);
+                  pb->pcoord->x1v(i), pb->pcoord->x2v(j), pb->pcoord->x3v(k), &r_2, &theta_2, &phi_2);
             }
             else if (j == ju+1)
             {
               a_phi_1 = a_phi_cells(j-1,i);
               a_phi_2 = 0.5 * (a_phi_edges(j,i) + a_phi_edges(j,i+1));
               pb->pcoord->GetBoyerLindquistCoordinates(
-                  pb->x1v(i), pb->x2v(j-1), pb->x3v(k), &r_1, &theta_1, &phi_1);
+                  pb->pcoord->x1v(i), pb->pcoord->x2v(j-1), pb->pcoord->x3v(k), &r_1, &theta_1, &phi_1);
               theta_2 = theta;
             }
             else
@@ -336,9 +336,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
               a_phi_1 = a_phi_cells(j-1,i);
               a_phi_2 = a_phi_cells(j,i);
               pb->pcoord->GetBoyerLindquistCoordinates(
-                  pb->x1v(i), pb->x2v(j-1), pb->x3v(k), &r_1, &theta_1, &phi_1);
+                  pb->pcoord->x1v(i), pb->pcoord->x2v(j-1), pb->pcoord->x3v(k), &r_1, &theta_1, &phi_1);
               pb->pcoord->GetBoyerLindquistCoordinates(
-                  pb->x1v(i), pb->x2v(j), pb->x3v(k), &r_2, &theta_2, &phi_2);
+                  pb->pcoord->x1v(i), pb->pcoord->x2v(j), pb->pcoord->x3v(k), &r_2, &theta_2, &phi_2);
             }
             Real bbr = (a_phi_2 - a_phi_1) / (theta_2 - theta_1);
             Real ut, uphi;
@@ -405,11 +405,11 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
           const Real &bbf3p = pfd->b.x3f(k+1,j,i);
 
           // Calculate cell-centered magnetic field
-          Real interp_param = (pb->x1v(i) - pb->x1f(i)) / pb->dx1f(i);
+          Real interp_param = (pb->pcoord->x1v(i) - pb->pcoord->x1f(i)) / pb->pcoord->dx1f(i);
           bb(IB1,k,j,i) = (1.0-interp_param) * bbf1m + interp_param * bbf1p;
-          interp_param = (pb->x2v(j) - pb->x2f(j)) / pb->dx2f(j);
+          interp_param = (pb->pcoord->x2v(j) - pb->pcoord->x2f(j)) / pb->pcoord->dx2f(j);
           bb(IB2,k,j,i) = (1.0-interp_param) * bbf2m + interp_param * bbf2p;
-          interp_param = (pb->x3v(k) - pb->x3f(k)) / pb->dx3f(k);
+          interp_param = (pb->pcoord->x3v(k) - pb->pcoord->x3f(k)) / pb->pcoord->dx3f(k);
           bb(IB3,k,j,i) = (1.0-interp_param) * bbf3m + interp_param * bbf3p;
         }
 

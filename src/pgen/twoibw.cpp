@@ -41,6 +41,7 @@
 void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pmb = pfl->pmy_block;
+  Coordinates *pco = pmb->pcoord;
 
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
@@ -63,14 +64,14 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       pfl->u(IM1,k,j,i) = 0.0;
       pfl->u(IM2,k,j,i) = 0.0;
       pfl->u(IM3,k,j,i) = 0.0;
-      if ((shk_dir==1 && pmb->x1v(i) < 0.1) ||
-          (shk_dir==2 && pmb->x2v(j) < 0.1) ||
-          (shk_dir==3 && pmb->x3v(k) < 0.1)) {
+      if ((shk_dir==1 && pco->x1v(i) < 0.1) ||
+          (shk_dir==2 && pco->x2v(j) < 0.1) ||
+          (shk_dir==3 && pco->x3v(k) < 0.1)) {
         pfl->u(IEN,k,j,i)= 1.0e3/(pfl->pf_eos->GetGamma() - 1.0);
       }
-      else if ((shk_dir==1 && pmb->x1v(i) > 0.9) ||
-               (shk_dir==2 && pmb->x2v(j) > 0.9) ||
-               (shk_dir==3 && pmb->x3v(k) > 0.9)) {
+      else if ((shk_dir==1 && pco->x1v(i) > 0.9) ||
+               (shk_dir==2 && pco->x2v(j) > 0.9) ||
+               (shk_dir==3 && pco->x3v(k) > 0.9)) {
         pfl->u(IEN,k,j,i)= 1.0e2/(pfl->pf_eos->GetGamma() - 1.0);
       }
       else {

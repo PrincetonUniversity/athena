@@ -104,10 +104,10 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   if (MAGNETIC_FIELDS_ENABLED)
     for (int k = kl; k <= ku+1; ++k)
     {
-      Real interp_param_k = (pb->x3v(k) - pb->x3f(k)) / pb->dx3f(k);
+      Real interp_param_k = (pb->pcoord->x3v(k) - pb->pcoord->x3f(k)) / pb->pcoord->dx3f(k);
       for (int j = jl; j <= ju+1; ++j)
       {
-        Real interp_param_j = (pb->x2v(j) - pb->x2f(j)) / pb->dx2f(j);
+        Real interp_param_j = (pb->pcoord->x2v(j) - pb->pcoord->x2f(j)) / pb->pcoord->dx2f(j);
         pb->pcoord->Face1Area(k, j, il, iu+1, a1);
         pb->pcoord->Face2Area(k, j, il, iu, a2m);
         pb->pcoord->Face2Area(k, j+1, il, iu, a2p);
@@ -115,7 +115,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         pb->pcoord->Face3Area(k+1, j, il, iu, a3p);
         for (int i = il; i <= iu+1; ++i)
         {
-          Real interp_param_i = (pb->x1v(i) - pb->x1f(i)) / pb->dx1f(i);
+          Real interp_param_i = (pb->pcoord->x1v(i) - pb->pcoord->x1f(i)) / pb->pcoord->dx1f(i);
           Real b1m = b1_flux / a1(i);
           Real b1p = b1_flux / a1(i+1);
           Real b2m = b2_flux / a2m(i);
@@ -153,7 +153,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       for (int i = il; i <= iu; i++)
       {
         // Get radius
-        Real r = pb->x1v(i);
+        Real r = pb->pcoord->x1v(i);
 
         // Calculate solution to (HSW 76)
         Real t_neg_res = TemperatureMin(m, n_adi, r, c1, c2, t_min, t_max);
