@@ -24,6 +24,7 @@
 #include "../fluid/fluid.hpp"      // Fluid
 #include "../field/field.hpp"      // Field
 #include "../fluid/eos/eos.hpp"    // EOS
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file blast.cpp

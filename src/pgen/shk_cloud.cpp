@@ -31,6 +31,7 @@
 #include "../fluid/fluid.hpp"      // Fluid
 #include "../field/field.hpp"      // Field
 #include "../bvals/bvals.hpp"      // Enroll bval functions
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 // postshock flow variables are shared with IIB function
 static Real gmma1,dl,pl,ul;

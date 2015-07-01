@@ -28,6 +28,7 @@
 #include "../../mesh.hpp"             // MeshBlock
 #include "../../parameter_input.hpp"  // GetReal()
 #include "../../field/field.hpp"      // BFields
+#include "../../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file isothermal_mhd.cpp
@@ -60,6 +61,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   AthenaArray<Real> &bcc)
 {
   MeshBlock *pmb = pmy_fluid_->pmy_block;
+  Coordinates *pco = pmb->pcoord;
   int jl = pmb->js; int ju = pmb->je;
   int kl = pmb->ks; int ku = pmb->ke;
 
@@ -89,24 +91,24 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       Real& bcc3 = bcc(IB3,k,j,i);
 
       // cell center B-fields are defined as spatial interpolation at the volume center
-      const Real& x1f_i  = pmb->x1f(i);
-      const Real& x1f_ip = pmb->x1f(i+1);
-      const Real& x1v_i  = pmb->x1v(i);
-      const Real& dx1_i  = pmb->dx1f(i);
+      const Real& x1f_i  = pco->x1f(i);
+      const Real& x1f_ip = pco->x1f(i+1);
+      const Real& x1v_i  = pco->x1v(i);
+      const Real& dx1_i  = pco->dx1f(i);
       Real lw=(x1f_ip-x1v_i)/dx1_i;
       Real rw=(x1v_i -x1f_i)/dx1_i;
       bcc1 = lw*b1_i + rw*b1_ip1;
-      const Real& x2f_j  = pmb->x2f(j);
-      const Real& x2f_jp = pmb->x2f(j+1);
-      const Real& x2v_j  = pmb->x2v(j);
-      const Real& dx2_j  = pmb->dx2f(j);
+      const Real& x2f_j  = pco->x2f(j);
+      const Real& x2f_jp = pco->x2f(j+1);
+      const Real& x2v_j  = pco->x2v(j);
+      const Real& dx2_j  = pco->dx2f(j);
       lw=(x2f_jp-x2v_j)/dx2_j;
       rw=(x2v_j -x2f_j)/dx2_j;
       bcc2 = lw*b2_j + rw*b2_jp1;
-      const Real& x3f_k  = pmb->x3f(k);
-      const Real& x3f_kp = pmb->x3f(k+1);
-      const Real& x3v_k  = pmb->x3v(k);
-      const Real& dx3_k  = pmb->dx3f(k);
+      const Real& x3f_k  = pco->x3f(k);
+      const Real& x3f_kp = pco->x3f(k+1);
+      const Real& x3v_k  = pco->x3v(k);
+      const Real& dx3_k  = pco->dx3f(k);
       lw=(x3f_kp-x3v_k)/dx3_k;
       rw=(x3v_k -x3f_k)/dx3_k;
       bcc3 = lw*b3_k + rw*b3_kp1;

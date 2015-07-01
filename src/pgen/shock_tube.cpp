@@ -30,6 +30,7 @@
 #include "../fluid/fluid.hpp"      // Fluid
 #include "../fluid/eos/eos.hpp"    // GetGamma
 #include "../field/field.hpp"      // magnetic field
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file shock_tube.cpp

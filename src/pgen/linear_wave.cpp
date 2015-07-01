@@ -30,6 +30,7 @@
 #include "../fluid/fluid.hpp"      // Fluid
 #include "../fluid/eos/eos.hpp"    // EOS
 #include "../field/field.hpp"      // Field
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file linear_wave.c

@@ -991,7 +991,7 @@ MeshBlock::MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_block,
     ks = ke = 0;
   }
 
-  if(pm->multilevel==true) `
+  if(pm->multilevel==true) {
     cis=cnghost; cie=cis+block_size.nx1/2-1;
     cjs=cje=cks=cke=0;
     if(block_size.nx2>1) // 2D or 3D
@@ -1072,7 +1072,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, BlockUID
     ks = ke = 0;
   }
 
-  if(pm->multilevel==true) `
+  if(pm->multilevel==true) {
     cnghost=(NGHOST+1)/2+1;
     cis=cnghost; cie=cis+block_size.nx1/2-1;
     cjs=cje=cks=cke=0;

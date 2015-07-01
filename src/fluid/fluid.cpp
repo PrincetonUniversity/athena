@@ -151,8 +151,6 @@ Real Fluid::NewBlockTimeStep(MeshBlock *pmb)
 
 #pragma omp for schedule(static)
     for (int j=js; j<=je; ++j){
-      Real& dx2 = pmb->dx2f(j);
-      Real& dx3 = pmb->dx3f(k);
 #pragma simd
       for (int i=is; i<=ie; ++i){
         wi[IDN]=w(IDN,k,j,i);
@@ -160,7 +158,6 @@ Real Fluid::NewBlockTimeStep(MeshBlock *pmb)
         wi[IVY]=w(IVY,k,j,i);
         wi[IVZ]=w(IVZ,k,j,i);
         if (NON_BAROTROPIC_EOS) wi[IEN]=w(IEN,k,j,i);
-        Real& dx1  = pmb->dx1f(i);
 
         if (RELATIVISTIC_DYNAMICS) {
 

@@ -18,6 +18,7 @@
 #include "../../field/field.hpp"              // InterfaceField
 #include "../../mesh.hpp"                     // MeshBlock
 #include "../../parameter_input.hpp"          // GetReal()
+#include "../../coordinates/coordinates.hpp" // Coordinates
 
 // Declarations
 static Real QNResidual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq,
@@ -76,6 +77,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
   // Determine array bounds
   MeshBlock *pb = pmy_fluid_->pmy_block;
+  Coordinates *pco = pb->pcoord;
   int il = pb->is - NGHOST;
   int iu = pb->ie + NGHOST;
   int jl = pb->js;
@@ -111,11 +113,11 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real &b3 = bcc(IB3,k,j,i);
 
         // Calculate cell-centered magnetic field
-        Real interp_param = (pb->x1v(i) - pb->x1f(i)) / pb->dx1f(i);
+        Real interp_param = (pco->x1v(i) - pco->x1f(i)) / pco->dx1f(i);
         b1 = (1.0-interp_param) * bf1m + interp_param * bf1p;
-        interp_param = (pb->x2v(j) - pb->x2f(j)) / pb->dx2f(j);
+        interp_param = (pco->x2v(j) - pco->x2f(j)) / pco->dx2f(j);
         b2 = (1.0-interp_param) * bf2m + interp_param * bf2p;
-        interp_param = (pb->x3v(k) - pb->x3f(k)) / pb->dx3f(k);
+        interp_param = (pco->x3v(k) - pco->x3f(k)) / pco->dx3f(k);
         b3 = (1.0-interp_param) * bf3m + interp_param * bf3p;
       }
 #pragma simd

@@ -30,6 +30,7 @@
 #include "../mesh.hpp"             // MeshBlock
 #include "../parameter_input.hpp"  // ParameterInput
 #include "../fluid/eos/eos.hpp"    // ParameterInput
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file disk_cyl.cpp

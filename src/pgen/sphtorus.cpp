@@ -19,6 +19,7 @@
 #include "../parameter_input.hpp"  // ParameterInput
 #include "../fluid/eos/eos.hpp"    // ParameterInput
 #include "../bvals/bvals.hpp" // EnrollFluidBValFunction
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 
 #ifdef ISOTHERMAL

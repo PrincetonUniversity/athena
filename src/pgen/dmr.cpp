@@ -30,6 +30,7 @@
 #include "../fluid/fluid.hpp"      // Fluid
 #include "../fluid/eos/eos.hpp"    // EOS
 #include "../bvals/bvals.hpp"      // EnrollFluidBoundaryFunction
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file dmr.cpp

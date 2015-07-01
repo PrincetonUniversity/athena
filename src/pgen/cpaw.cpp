@@ -30,6 +30,7 @@
 #include "../fluid/eos/eos.hpp"    // eos
 #include "../fluid/fluid.hpp"      // Fluid
 #include "../field/field.hpp"      // Field
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file cpaw.c
