@@ -24,6 +24,7 @@
 #include "../fluid/fluid.hpp"      // Fluid
 #include "../fluid/eos/eos.hpp"    // GetGamma
 #include "../bvals/bvals.hpp"      // Boundary Enroll
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 // BCs on outer edges of grid in each dimension
 void noh3d_oib(MeshBlock *pmb, AthenaArray<Real> &a,

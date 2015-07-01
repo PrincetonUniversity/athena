@@ -67,7 +67,7 @@ void FluidSourceTerms::PhysicalSourceTermsX1(int k, int j, const Real dt,
       Real den = prim(IDN,k,j,i);
 
       if (gm_!=0.0) {
-        Real src = dt*den*pmb->pcoord->coord_src1_i_(i)*gm_/pmb->x1v(i);
+        Real src = dt*den*pmb->pcoord->coord_src1_i_(i)*gm_/pmb->pcoord->x1v(i);
         cons(IM1,k,j,i) -= src;
         if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) -= dt*0.5*(pmb->pcoord->phy_src1_i_(i)*flx(IDN,i)*gm_
                                                            +pmb->pcoord->phy_src2_i_(i)*flx(IDN,i+1)*gm_);

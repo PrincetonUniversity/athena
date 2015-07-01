@@ -29,6 +29,7 @@
 #include "../parameter_input.hpp"  // ParameterInput
 #include "../fluid/eos/eos.hpp"    // EOS
 #include "../fluid/fluid.hpp"      // Fluid
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file two_ibw.c

@@ -26,6 +26,7 @@
 #include "../parameter_input.hpp"  // ParameterInput
 #include "../fluid/fluid.hpp"      // Fluid
 #include "../fluid/eos/eos.hpp"    // GetGamma
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file shu_osher.cpp

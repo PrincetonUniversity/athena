@@ -25,6 +25,7 @@
 #include "../fluid/eos/eos.hpp"    // GetGamma
 #include "../field/field.hpp"      // magnetic field
 #include "../bvals/bvals.hpp"      // Boundary Enroll
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 // BCs on L-x1 (left edge) of grid with jet inflow conditions
 void jet_fluid_iib(MeshBlock *pmb, AthenaArray<Real> &a,

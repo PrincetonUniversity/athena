@@ -26,6 +26,7 @@
 #include "../field/field.hpp"      // magnetic field
 #include "../bvals/bvals.hpp"      // EnrollFluidBoundaryFunction
 #include "../fluid/srcterms/srcterms.hpp"  // GetG2, GetG3
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 double ran2(long int *idum); // random number generator from NR
 void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a,

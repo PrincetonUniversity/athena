@@ -27,6 +27,7 @@
 #include "../mesh.hpp"
 #include "../fluid/fluid.hpp"
 #include "outputs.hpp"
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //--------------------------------------------------------------------------------------
 // Functions to detect big endian machine, and to byte-swap 32-bit words.  The vtk
@@ -136,7 +137,7 @@ void VTKOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 
   fprintf(pfile,"X_COORDINATES %d float\n",ncoord1);
   for (int i=(pod->data_header.il); i<=(pod->data_header.iu)+1; ++i) {
-    data[i-(pod->data_header.il)] = (float)pmb->x1f(i);
+    data[i-(pod->data_header.il)] = (float)(pmb->pcoord->x1f(i));
   }
   if (!big_end) {for (int i=0; i<ncoord1; ++i) Swap4Bytes(&data[i]);}
   fwrite(data,sizeof(float),(size_t)ncoord1,pfile);
@@ -145,10 +146,10 @@ void VTKOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 
   fprintf(pfile,"\nY_COORDINATES %d float\n",ncoord2);
   if (ncells2 == 1) {
-      data[0] = (float)pmb->x2v(pod->data_header.jl);
+      data[0] = (float)(pmb->pcoord->x2v(pod->data_header.jl));
   } else {
     for (int j=(pod->data_header.jl); j<=(pod->data_header.ju)+1; ++j) {
-      data[j-(pod->data_header.jl)] = (float)pmb->x2f(j);
+      data[j-(pod->data_header.jl)] = (float)(pmb->pcoord->x2f(j));
     }
   }
   if (!big_end) {for (int i=0; i<ncoord2; ++i) Swap4Bytes(&data[i]);}
@@ -158,10 +159,10 @@ void VTKOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 
   fprintf(pfile,"\nZ_COORDINATES %d float\n",ncoord3);
   if (ncells3 == 1) {
-      data[0] = (float)pmb->x3v(pod->data_header.kl);
+      data[0] = (float)(pmb->pcoord->x3v(pod->data_header.kl));
   } else {
     for (int k=(pod->data_header.kl); k<=(pod->data_header.ku)+1; ++k) {
-      data[k-(pod->data_header.kl)] = (float)pmb->x3f(k);
+      data[k-(pod->data_header.kl)] = (float)(pmb->pcoord->x3f(k));
     }
   }
   if (!big_end) {for (int i=0; i<ncoord3; ++i) Swap4Bytes(&data[i]);}

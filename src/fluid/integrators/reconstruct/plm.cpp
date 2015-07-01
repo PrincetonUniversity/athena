@@ -22,6 +22,7 @@
 #include "../../../athena_arrays.hpp"  // AthenaArray
 #include "../../fluid.hpp"          // Fluid
 #include "../../../mesh.hpp"           // Block
+#include "../../../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file plm.cpp
@@ -37,14 +38,15 @@ void FluidIntegrator::PiecewiseLinearX1(const int k, const int j,
   const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
+  Coordinates *pco = pmy_fluid->pmy_block->pcoord;
   Real dql,dqr,dqc,q_im1,q_i;
   for (int n=0; n<NWAVE; ++n) {
     if (n==NFLUID){
 #pragma simd
       for (int i=il; i<=iu; ++i){
-        Real& dx_im2 = pmy_fluid->pmy_block->dx1v(i-2);
-        Real& dx_im1 = pmy_fluid->pmy_block->dx1v(i-1);
-        Real& dx_i   = pmy_fluid->pmy_block->dx1v(i);
+        Real& dx_im2 = pco->dx1v(i-2);
+        Real& dx_im1 = pco->dx1v(i-1);
+        Real& dx_i   = pco->dx1v(i);
 
         q_im1 = bcc(IB2,k,j,i-1);
         q_i   = bcc(IB2,k,j,i  );
@@ -55,9 +57,9 @@ void FluidIntegrator::PiecewiseLinearX1(const int k, const int j,
         Real dq2 = dql*dqc;
         ql(n,i) = q_im1;
         if(dq2>0.0) {
-          Real dxfr=pmy_fluid->pmy_block->x1f(i)-pmy_fluid->pmy_block->x1v(i-1);
+          Real dxfr=pco->x1f(i)-pco->x1v(i-1);
           Real cf=dx_im1/dxfr;
-          Real cb=dx_im2/(pmy_fluid->pmy_block->x1v(i-1)-pmy_fluid->pmy_block->x1f(i-1));
+          Real cb=dx_im2/(pco->x1v(i-1)-pco->x1f(i-1));
           ql(n,i) += dxfr*dq2*(cf*dql+cb*dqc)/(dql*dql+(cf+cb-2.0)*dq2+dqc*dqc);
         }
 
@@ -65,8 +67,8 @@ void FluidIntegrator::PiecewiseLinearX1(const int k, const int j,
         dq2 = dqc*dqr;
         qr(n,i) = q_i;
         if(dq2>0.0) {
-          Real dxfl=pmy_fluid->pmy_block->x1v(i)-pmy_fluid->pmy_block->x1f(i);
-          Real cf=dx_i/(pmy_fluid->pmy_block->x1f(i+1)-pmy_fluid->pmy_block->x1v(i));
+          Real dxfl=pco->x1v(i)-pco->x1f(i);
+          Real cf=dx_i/(pco->x1f(i+1)-pco->x1v(i));
           Real cb=dx_im1/dxfl;
           qr(n,i) -= dxfl*dq2*(cf*dqc+cb*dqr)/(dqc*dqc+(cf+cb-2.0)*dq2+dqr*dqr);
         }
@@ -74,9 +76,9 @@ void FluidIntegrator::PiecewiseLinearX1(const int k, const int j,
     } else if (n==(NFLUID+1)) {
 #pragma simd
       for (int i=il; i<=iu; ++i){
-        Real& dx_im2 = pmy_fluid->pmy_block->dx1v(i-2);
-        Real& dx_im1 = pmy_fluid->pmy_block->dx1v(i-1);
-        Real& dx_i   = pmy_fluid->pmy_block->dx1v(i);
+        Real& dx_im2 = pco->dx1v(i-2);
+        Real& dx_im1 = pco->dx1v(i-1);
+        Real& dx_i   = pco->dx1v(i);
 
         q_im1 = bcc(IB3,k,j,i-1);
         q_i   = bcc(IB3,k,j,i  );
@@ -87,9 +89,9 @@ void FluidIntegrator::PiecewiseLinearX1(const int k, const int j,
         Real dq2 = dql*dqc;
         ql(n,i) = q_im1;
         if(dq2>0.0) {
-          Real dxfr=pmy_fluid->pmy_block->x1f(i)-pmy_fluid->pmy_block->x1v(i-1);
+          Real dxfr=pco->x1f(i)-pco->x1v(i-1);
           Real cf=dx_im1/dxfr;
-          Real cb=dx_im2/(pmy_fluid->pmy_block->x1v(i-1)-pmy_fluid->pmy_block->x1f(i-1));
+          Real cb=dx_im2/(pco->x1v(i-1)-pco->x1f(i-1));
           ql(n,i) += dxfr*dq2*(cf*dql+cb*dqc)/(dql*dql+(cf+cb-2.0)*dq2+dqc*dqc);
         }
 
@@ -97,8 +99,8 @@ void FluidIntegrator::PiecewiseLinearX1(const int k, const int j,
         dq2 = dqc*dqr;
         qr(n,i) = q_i;
         if(dq2>0.0) {
-          Real dxfl=pmy_fluid->pmy_block->x1v(i)-pmy_fluid->pmy_block->x1f(i);
-          Real cf=dx_i/(pmy_fluid->pmy_block->x1f(i+1)-pmy_fluid->pmy_block->x1v(i));
+          Real dxfl=pco->x1v(i)-pco->x1f(i);
+          Real cf=dx_i/(pco->x1f(i+1)-pco->x1v(i));
           Real cb=dx_im1/dxfl;
           qr(n,i) -= dxfl*dq2*(cf*dqc+cb*dqr)/(dqc*dqc+(cf+cb-2.0)*dq2+dqr*dqr);
         }
@@ -106,9 +108,9 @@ void FluidIntegrator::PiecewiseLinearX1(const int k, const int j,
     } else {
 #pragma simd
       for (int i=il; i<=iu; ++i){
-        Real& dx_im2 = pmy_fluid->pmy_block->dx1v(i-2);
-        Real& dx_im1 = pmy_fluid->pmy_block->dx1v(i-1);
-        Real& dx_i   = pmy_fluid->pmy_block->dx1v(i);
+        Real& dx_im2 = pco->dx1v(i-2);
+        Real& dx_im1 = pco->dx1v(i-1);
+        Real& dx_i   = pco->dx1v(i);
 
         q_im1 = q(n,k,j,i-1);
         q_i   = q(n,k,j,i  );
@@ -119,9 +121,9 @@ void FluidIntegrator::PiecewiseLinearX1(const int k, const int j,
         Real dq2 = dql*dqc;
         ql(n,i) = q_im1;
         if(dq2>0.0) {
-          Real dxfr=pmy_fluid->pmy_block->x1f(i)-pmy_fluid->pmy_block->x1v(i-1);
+          Real dxfr=pco->x1f(i)-pco->x1v(i-1);
           Real cf=dx_im1/dxfr;
-          Real cb=dx_im2/(pmy_fluid->pmy_block->x1v(i-1)-pmy_fluid->pmy_block->x1f(i-1));
+          Real cb=dx_im2/(pco->x1v(i-1)-pco->x1f(i-1));
           ql(n,i) += dxfr*dq2*(cf*dql+cb*dqc)/(dql*dql+(cf+cb-2.0)*dq2+dqc*dqc);
         }
 
@@ -129,8 +131,8 @@ void FluidIntegrator::PiecewiseLinearX1(const int k, const int j,
         dq2 = dqc*dqr;
         qr(n,i) = q_i;
         if(dq2>0.0) {
-          Real dxfl=pmy_fluid->pmy_block->x1v(i)-pmy_fluid->pmy_block->x1f(i);
-          Real cf=dx_i/(pmy_fluid->pmy_block->x1f(i+1)-pmy_fluid->pmy_block->x1v(i));
+          Real dxfl=pco->x1v(i)-pco->x1f(i);
+          Real cf=dx_i/(pco->x1f(i+1)-pco->x1v(i));
           Real cb=dx_im1/dxfl;
           qr(n,i) -= dxfl*dq2*(cf*dqc+cb*dqr)/(dqc*dqc+(cf+cb-2.0)*dq2+dqr*dqr);
         }
@@ -150,15 +152,16 @@ void FluidIntegrator::PiecewiseLinearX2(const int k, const int j,
   const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
-  Real dx2jm2i = 1.0/pmy_fluid->pmy_block->dx2v(j-2);
-  Real dx2jm1i = 1.0/pmy_fluid->pmy_block->dx2v(j-1);
-  Real dx2ji   = 1.0/pmy_fluid->pmy_block->dx2v(j);
-  Real dxfr=pmy_fluid->pmy_block->x2f(j)-pmy_fluid->pmy_block->x2v(j-1);
-  Real dxfl=pmy_fluid->pmy_block->x2v(j)-pmy_fluid->pmy_block->x2f(j);
-  Real cfm=pmy_fluid->pmy_block->dx2v(j-1)/dxfr;
-  Real cbm=pmy_fluid->pmy_block->dx2v(j-2)/(pmy_fluid->pmy_block->x2v(j-1)-pmy_fluid->pmy_block->x2f(j-1));
-  Real cfp=pmy_fluid->pmy_block->dx2v(j)/(pmy_fluid->pmy_block->x2f(j+1)-pmy_fluid->pmy_block->x2v(j));
-  Real cbp=pmy_fluid->pmy_block->dx2v(j-1)/dxfl;
+  Coordinates *pco = pmy_fluid->pmy_block->pcoord;
+  Real dx2jm2i = 1.0/pco->dx2v(j-2);
+  Real dx2jm1i = 1.0/pco->dx2v(j-1);
+  Real dx2ji   = 1.0/pco->dx2v(j);
+  Real dxfr=pco->x2f(j)-pco->x2v(j-1);
+  Real dxfl=pco->x2v(j)-pco->x2f(j);
+  Real cfm=pco->dx2v(j-1)/dxfr;
+  Real cbm=pco->dx2v(j-2)/(pco->x2v(j-1)-pco->x2f(j-1));
+  Real cfp=pco->dx2v(j)/(pco->x2f(j+1)-pco->x2v(j));
+  Real cbp=pco->dx2v(j-1)/dxfl;
   Real dql,dqr,dqc,q_jm1,q_j;
 
   for (int n=0; n<NWAVE; ++n) {
@@ -238,15 +241,16 @@ void FluidIntegrator::PiecewiseLinearX3(const int k, const int j,
   const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
-  Real dx3km2i = 1.0/pmy_fluid->pmy_block->dx3v(k-2);
-  Real dx3km1i = 1.0/pmy_fluid->pmy_block->dx3v(k-1);
-  Real dx3ki   = 1.0/pmy_fluid->pmy_block->dx3v(k);
-  Real dxfr=pmy_fluid->pmy_block->x3f(k)-pmy_fluid->pmy_block->x3v(k-1);
-  Real dxfl=pmy_fluid->pmy_block->x3v(k)-pmy_fluid->pmy_block->x3f(k);
-  Real cfm=pmy_fluid->pmy_block->dx3v(k-1)/dxfr;
-  Real cbm=pmy_fluid->pmy_block->dx3v(k-2)/(pmy_fluid->pmy_block->x3v(k-1)-pmy_fluid->pmy_block->x3f(k-1));
-  Real cfp=pmy_fluid->pmy_block->dx3v(k)/(pmy_fluid->pmy_block->x3f(k+1)-pmy_fluid->pmy_block->x3v(k));
-  Real cbp=pmy_fluid->pmy_block->dx3v(k-1)/dxfl;
+  Coordinates *pco = pmy_fluid->pmy_block->pcoord;
+  Real dx3km2i = 1.0/pco->dx3v(k-2);
+  Real dx3km1i = 1.0/pco->dx3v(k-1);
+  Real dx3ki   = 1.0/pco->dx3v(k);
+  Real dxfr=pco->x3f(k)-pco->x3v(k-1);
+  Real dxfl=pco->x3v(k)-pco->x3f(k);
+  Real cfm=pco->dx3v(k-1)/dxfr;
+  Real cbm=pco->dx3v(k-2)/(pco->x3v(k-1)-pco->x3f(k-1));
+  Real cfp=pco->dx3v(k)/(pco->x3f(k+1)-pco->x3v(k));
+  Real cbp=pco->dx3v(k-1)/dxfl;
   Real dql,dqr,dqc,q_km1,q_k;
 
   for (int n=0; n<NWAVE; ++n) {

@@ -23,6 +23,7 @@
 #include "../parameter_input.hpp"  // ParameterInput
 #include "../fluid/fluid.hpp"      // Fluid
 #include "../fluid/eos/eos.hpp"    // EOS
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file lw_implode.cpp

@@ -24,6 +24,7 @@
 #include "../fluid/fluid.hpp"      // Fluid
 #include "../fluid/eos/eos.hpp"    // GetGamma
 #include "../field/field.hpp"      // magnetic field
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 double ran2(long int *idum);  // random number generator from NR
 

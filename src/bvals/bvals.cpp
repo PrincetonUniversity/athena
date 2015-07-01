@@ -1293,6 +1293,7 @@ bool BoundaryValues::ReceiveFluxCorrection(AthenaArray<Real> &dst, int step)
 void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
 {
   MeshBlock *pmb=pmy_mblock_;
+  Coordinates *pco=pmb->pcoord;
   int mylevel;
   long int lx1, lx2, lx3;
   pmb->uid.GetLocation(lx1, lx2, lx3, mylevel);
@@ -1372,42 +1373,42 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
       if(pmb->block_size.nx3 > 1) { // 3D
         for(int n=0; n<NFLUID; n++) {
           for(int k=sk; k<=ek; k++) {
-            Real& x3m = pmb->coarse_x3v(k-1);
-            Real& x3c = pmb->coarse_x3v(k);
-            Real& x3p = pmb->coarse_x3v(k+1);
-            Real& x3fm = pmb->coarse_x3f(k);
-            Real& x3fp = pmb->coarse_x3f(k+1);
-            Real& dx3m = pmb->coarse_dx3v(k-1);
-            Real& dx3p = pmb->coarse_dx3v(k);
+            Real& x3m = pco->coarse_x3v(k-1);
+            Real& x3c = pco->coarse_x3v(k);
+            Real& x3p = pco->coarse_x3v(k+1);
+            Real& x3fm = pco->coarse_x3f(k);
+            Real& x3fp = pco->coarse_x3f(k+1);
+            Real& dx3m = pco->coarse_dx3v(k-1);
+            Real& dx3p = pco->coarse_dx3v(k);
             int fk=(k-pmb->cks)*2+pmb->ks;
-            Real& fx3m = pmb->x3v(fk);
-            Real& fx3p = pmb->x3v(fk+1);
+            Real& fx3m = pco->x3v(fk);
+            Real& fx3p = pco->x3v(fk+1);
             Real dx3fm= x3c-fx3m;
             Real dx3fp= fx3p-x3c;
             for(int j=sj; j<=ej; j++) {
-              Real& x2m = pmb->coarse_x2v(j-1);
-              Real& x2c = pmb->coarse_x2v(j);
-              Real& x2p = pmb->coarse_x2v(j+1);
-              Real& x2fm = pmb->coarse_x2f(j);
-              Real& x2fp = pmb->coarse_x2f(j+1);
-              Real& dx2m = pmb->coarse_dx2v(j-1);
-              Real& dx2p = pmb->coarse_dx2v(j);
+              Real& x2m = pco->coarse_x2v(j-1);
+              Real& x2c = pco->coarse_x2v(j);
+              Real& x2p = pco->coarse_x2v(j+1);
+              Real& x2fm = pco->coarse_x2f(j);
+              Real& x2fp = pco->coarse_x2f(j+1);
+              Real& dx2m = pco->coarse_dx2v(j-1);
+              Real& dx2p = pco->coarse_dx2v(j);
               int fj=(j-pmb->cjs)*2+pmb->js;
-              Real& fx2m = pmb->x2v(fj);
-              Real& fx2p = pmb->x2v(fj+1);
+              Real& fx2m = pco->x2v(fj);
+              Real& fx2p = pco->x2v(fj+1);
               Real dx2fm= x2c-fx2m;
               Real dx2fp= fx2p-x2c;
               for(int i=si; i<=ei; i++) {
-                Real& x1m = pmb->coarse_x1v(i-1);
-                Real& x1c = pmb->coarse_x1v(i);
-                Real& x1p = pmb->coarse_x1v(i+1);
-                Real& x1fm = pmb->coarse_x1f(i);
-                Real& x1fp = pmb->coarse_x1f(i+1);
-                Real& dx1m = pmb->coarse_dx1v(i-1);
-                Real& dx1p = pmb->coarse_dx1v(i);
+                Real& x1m = pco->coarse_x1v(i-1);
+                Real& x1c = pco->coarse_x1v(i);
+                Real& x1p = pco->coarse_x1v(i+1);
+                Real& x1fm = pco->coarse_x1f(i);
+                Real& x1fp = pco->coarse_x1f(i+1);
+                Real& dx1m = pco->coarse_dx1v(i-1);
+                Real& dx1p = pco->coarse_dx1v(i);
                 int fi=(i-pmb->cis)*2+pmb->is;
-                Real& fx1m = pmb->x1v(fi);
-                Real& fx1p = pmb->x1v(fi+1);
+                Real& fx1m = pco->x1v(fi);
+                Real& fx1p = pco->x1v(fi+1);
                 Real dx1fm= x1c-fx1m;
                 Real dx1fp= fx1p-x1c;
                 Real ccval=coarse_cons_(n,k,j,i);
@@ -1460,29 +1461,29 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
         int k=sk, fk=sk;
         for(int n=0; n<NFLUID; n++) {
           for(int j=sj; j<=ej; j++) {
-            Real& x2m = pmb->coarse_x2v(j-1);
-            Real& x2c = pmb->coarse_x2v(j);
-            Real& x2p = pmb->coarse_x2v(j+1);
-            Real& x2fm = pmb->coarse_x2f(j);
-            Real& x2fp = pmb->coarse_x2f(j+1);
-            Real& dx2m = pmb->coarse_dx2v(j-1);
-            Real& dx2p = pmb->coarse_dx2v(j);
+            Real& x2m = pco->coarse_x2v(j-1);
+            Real& x2c = pco->coarse_x2v(j);
+            Real& x2p = pco->coarse_x2v(j+1);
+            Real& x2fm = pco->coarse_x2f(j);
+            Real& x2fp = pco->coarse_x2f(j+1);
+            Real& dx2m = pco->coarse_dx2v(j-1);
+            Real& dx2p = pco->coarse_dx2v(j);
             int fj=(sj-pmb->cjs)*2+NGHOST;
-            Real& fx2m = pmb->x2v(fj);
-            Real& fx2p = pmb->x2v(fj+1);
+            Real& fx2m = pco->x2v(fj);
+            Real& fx2p = pco->x2v(fj+1);
             Real dx2fm= x2c-fx2m;
             Real dx2fp= fx2p-x2c;
             for(int i=si; i<=ei; i++) {
-              Real& x1m = pmb->coarse_x1v(i-1);
-              Real& x1c = pmb->coarse_x1v(i);
-              Real& x1p = pmb->coarse_x1v(i+1);
-              Real& x1fm = pmb->coarse_x1f(i);
-              Real& x1fp = pmb->coarse_x1f(i+1);
-              Real& dx1m = pmb->coarse_dx1v(i-1);
-              Real& dx1p = pmb->coarse_dx1v(i);
+              Real& x1m = pco->coarse_x1v(i-1);
+              Real& x1c = pco->coarse_x1v(i);
+              Real& x1p = pco->coarse_x1v(i+1);
+              Real& x1fm = pco->coarse_x1f(i);
+              Real& x1fp = pco->coarse_x1f(i+1);
+              Real& dx1m = pco->coarse_dx1v(i-1);
+              Real& dx1p = pco->coarse_dx1v(i);
               int fi=(si-pmb->cis)*2+NGHOST;
-              Real& fx1m = pmb->x1v(fi);
-              Real& fx1p = pmb->x1v(fi+1);
+              Real& fx1m = pco->x1v(fi);
+              Real& fx1p = pco->x1v(fi+1);
               Real dx1fm= x1c-fx1m;
               Real dx1fp= fx1p-x1c;
               Real ccval=coarse_cons_(n,k,j,i);
@@ -1520,16 +1521,16 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
         int k=sk, fk=sk, j=sj, fj=sj;
         for(int n=0; n<NFLUID; n++) {
           for(int i=si; i<=ei; i++) {
-            Real& x1m = pmb->coarse_x1v(i-1);
-            Real& x1c = pmb->coarse_x1v(i);
-            Real& x1p = pmb->coarse_x1v(i+1);
-            Real& x1fm = pmb->coarse_x1f(i);
-            Real& x1fp = pmb->coarse_x1f(i+1);
-            Real& dx1m = pmb->coarse_dx1v(i-1);
-            Real& dx1p = pmb->coarse_dx1v(i);
+            Real& x1m = pco->coarse_x1v(i-1);
+            Real& x1c = pco->coarse_x1v(i);
+            Real& x1p = pco->coarse_x1v(i+1);
+            Real& x1fm = pco->coarse_x1f(i);
+            Real& x1fp = pco->coarse_x1f(i+1);
+            Real& dx1m = pco->coarse_dx1v(i-1);
+            Real& dx1p = pco->coarse_dx1v(i);
             int fi=(si-pmb->cis)*2+NGHOST;
-            Real& fx1m = pmb->x1v(fi);
-            Real& fx1p = pmb->x1v(fi+1);
+            Real& fx1m = pco->x1v(fi);
+            Real& fx1p = pco->x1v(fi+1);
             Real dx1fm= x1c-fx1m;
             Real dx1fp= fx1p-x1c;
             Real ccval=coarse_cons_(n,k,j,i);

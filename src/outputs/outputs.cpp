@@ -29,6 +29,7 @@
 #include "../fluid/fluid.hpp"
 #include "../field/field.hpp"
 #include "outputs.hpp"
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file outputs.cpp
@@ -554,7 +555,7 @@ void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
     if (output_params.x1_slice >= pmb->block_size.x1min && 
         output_params.x1_slice < pmb->block_size.x1max) {
       for (int i=pmb->is+1; i<=pmb->ie+1; ++i) {
-        if (pmb->x1f(i) > output_params.x1_slice) {
+        if (pmb->pcoord->x1f(i) > output_params.x1_slice) {
            islice = i-1;
            output_params.islice = islice;
           break;
@@ -568,7 +569,7 @@ void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
     if (output_params.x2_slice >= pmb->block_size.x2min &&
         output_params.x2_slice < pmb->block_size.x2max) {
       for (int j=pmb->js+1; j<=pmb->je+1; ++j) {
-        if (pmb->x2f(j) > output_params.x2_slice) {
+        if (pmb->pcoord->x2f(j) > output_params.x2_slice) {
            jslice = j-1;
            output_params.jslice = jslice;
           break;
@@ -582,7 +583,7 @@ void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
     if (output_params.x3_slice >= pmb->block_size.x3min &&
         output_params.x3_slice < pmb->block_size.x3max) {
       for (int k=pmb->ks+1; k<=pmb->ke+1; ++k) {
-        if (pmb->x3f(k) > output_params.x3_slice) {
+        if (pmb->pcoord->x3f(k) > output_params.x3_slice) {
            kslice = k-1;
            output_params.kslice = kslice;
           break;
@@ -644,17 +645,17 @@ void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
 
   std::stringstream str;
   if (dim == 3) {
-    str << "# Slice at x3=" << pmb->x3v(output_params.kslice)
+    str << "# Slice at x3=" << pmb->pcoord->x3v(output_params.kslice)
         << "  (k-ks)=" << (output_params.kslice - pmb->ks) << std::endl;
     pod->data_header.kl = 0;
     pod->data_header.ku = 0;
   } else if (dim == 2) {
-    str << "# Slice at x2=" << pmb->x2v(output_params.jslice)
+    str << "# Slice at x2=" << pmb->pcoord->x2v(output_params.jslice)
         << "  (j-js)=" << (output_params.jslice - pmb->js) << std::endl;
     pod->data_header.jl = 0;
     pod->data_header.ju = 0;
   } else {
-    str << "# Slice at x1=" << pmb->x1v(output_params.islice)
+    str << "# Slice at x1=" << pmb->pcoord->x1v(output_params.islice)
         << "  (i-is)=" << (output_params.islice - pmb->is) << std::endl;
     pod->data_header.il = 0;
     pod->data_header.iu = 0;

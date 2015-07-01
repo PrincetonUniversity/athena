@@ -35,6 +35,7 @@
 #include "../field/field.hpp"
 #include "outputs.hpp"
 #include "../blockuid.hpp"
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file athdf5.cpp
@@ -529,16 +530,16 @@ void ATHDF5Output::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 
   // coordinates
   for (int i=(pod->data_header.il); i<=(pod->data_header.iu)+1; ++i)
-    data[i-(pod->data_header.il)] = (float)pmb->x1f(i);
+    data[i-(pod->data_header.il)] = (float)(pmb->pcoord->x1f(i));
   H5Dwrite(x1fid[pmb->lid], H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
   H5Dclose(x1fid[pmb->lid]);
   for (int j=(pod->data_header.jl); j<=(pod->data_header.ju)+1; ++j)
-    data[j-(pod->data_header.jl)] = (float)pmb->x2f(j);
+    data[j-(pod->data_header.jl)] = (float)(pmb->pcoord->x2f(j));
   H5Dwrite(x2fid[pmb->lid], H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
   H5Dclose(x2fid[pmb->lid]);
   if(dim==3) {
     for (int k=(pod->data_header.kl); k<=(pod->data_header.ku)+1; ++k)
-      data[k-(pod->data_header.kl)] = (float)pmb->x3f(k);
+      data[k-(pod->data_header.kl)] = (float)(pmb->pcoord->x3f(k));
     H5Dwrite(x3fid[pmb->lid], H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
     H5Dclose(x3fid[pmb->lid]);
   }

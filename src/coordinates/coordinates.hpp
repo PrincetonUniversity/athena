@@ -13,6 +13,7 @@
 // Athena headers
 #include "../athena.hpp"         // macros, Real
 #include "../athena_arrays.hpp"  // AthenaArray
+#include "../mesh.hpp"           // RegionSize
 
 // forward declarations
 class MeshBlock;
@@ -282,10 +283,10 @@ private:
 };
 
 
-Coordinates::AllocateAndSetBasicCoordinates(void)
+inline void Coordinates::AllocateAndSetBasicCoordinates(void)
 {
   RegionSize& block_size = pmy_block->block_size;
-  Mesh *pm=pmy->block->pmy_mesh;
+  Mesh *pm=pmy_block->pmy_mesh;
 
   // allocate arrays for sizes and positions of cells
   int ncells1 = block_size.nx1 + 2*(NGHOST);
@@ -309,7 +310,7 @@ Coordinates::AllocateAndSetBasicCoordinates(void)
   x2v.NewAthenaArray(ncells2);
   x3v.NewAthenaArray(ncells3);
 
-  if(pmy_block->multilevel==true) {
+  if(pm->multilevel==true) {
     int cnghost=pmy_block->cnghost;
     int ncc1=block_size.nx1/2+2*cnghost;
     int ncc2=1, ncc3=1;
@@ -343,7 +344,7 @@ Coordinates::AllocateAndSetBasicCoordinates(void)
   pmy_block->uid.GetLocation(lx1,lx2,lx3,ll);
 
 // X1-DIRECTION: initialize sizes and positions of cell FACES (dx1f,x1f)
-  nrootmesh=mesh_size.nx1*(1L<<(ll-pM->root_level));
+  nrootmesh=mesh_size.nx1*(1L<<(ll-pm->root_level));
   if(block_size.x1rat == 1.0) { // uniform
     Real dx=(block_size.x1max-block_size.x1min)/block_size.nx1;
     for(int i=is-NGHOST; i<=ie+NGHOST; ++i)
@@ -368,13 +369,13 @@ Coordinates::AllocateAndSetBasicCoordinates(void)
   }
 
 // correct cell face positions in ghost zones for reflecting boundary condition
-  if (block_bcs[inner_x1] == 1) {
+  if (pmy_block->block_bcs[inner_x1] == 1) {
     for (int i=1; i<=(NGHOST); ++i) {
       dx1f(is-i) = dx1f(is+i-1);
        x1f(is-i) =  x1f(is-i+1) - dx1f(is-i);
     }
   }
-  if (block_bcs[outer_x1] == 1) {
+  if (pmy_block->block_bcs[outer_x1] == 1) {
     for (int i=1; i<=(NGHOST); ++i) {
       dx1f(ie+i  ) = dx1f(ie-i+1);
        x1f(ie+i+1) =  x1f(ie+i) + dx1f(ie+i);
@@ -408,13 +409,13 @@ Coordinates::AllocateAndSetBasicCoordinates(void)
     }
 
   // correct cell face positions in ghost zones for reflecting boundary condition
-    if (block_bcs[inner_x2] == 1) {
+    if (pmy_block->block_bcs[inner_x2] == 1) {
       for (int j=1; j<=(NGHOST); ++j) {
         dx2f(js-j) = dx2f(js+j-1);
          x2f(js-j) =  x2f(js-j+1) - dx2f(js-j);
       }
     }
-    if (block_bcs[outer_x2] == 1) {
+    if (pmy_block->block_bcs[outer_x2] == 1) {
       for (int j=1; j<=(NGHOST); ++j) {
         dx2f(je+j  ) = dx2f(je-j+1);
          x2f(je+j+1) =  x2f(je+j) + dx2f(je+j);
@@ -455,13 +456,13 @@ Coordinates::AllocateAndSetBasicCoordinates(void)
     }
 
   // correct cell face positions in ghost zones for reflecting boundary condition
-    if (block_bcs[inner_x3] == 1) {
+    if (pmy_block->block_bcs[inner_x3] == 1) {
       for (int k=1; k<=(NGHOST); ++k) {
         dx3f(ks-k) = dx3f(ks+k-1);
          x3f(ks-k) =  x3f(ks-k+1) - dx3f(ks-k);
       }
     }
-    if (block_bcs[outer_x3] == 1) {
+    if (pmy_block->block_bcs[outer_x3] == 1) {
       for (int k=1; k<=(NGHOST); ++k) {
         dx3f(ke+k  ) = dx3f(ke-k+1);
          x3f(ke+k+1) =  x3f(ke+k) + dx3f(ke+k);
@@ -474,7 +475,7 @@ Coordinates::AllocateAndSetBasicCoordinates(void)
     x3f(ke+1) = block_size.x3max;
   }
 
-  if(pmb->pm->multilevel==true) {// set coarse coordinates for SMR/AMR
+  if(pm->multilevel==true) {// set coarse coordinates for SMR/AMR
     int cnghost=pmy_block->cnghost;
     int cis=pmy_block->cis, cjs=pmy_block->cjs, cks=pmy_block->cks;
     int cie=pmy_block->cie, cje=pmy_block->cje, cke=pmy_block->cke;
@@ -487,7 +488,7 @@ Coordinates::AllocateAndSetBasicCoordinates(void)
     }
     coarse_x1f(cie+1)=x1f(ie+1);
     // left ghost zone
-    if(block_bcs[inner_x1]==1) { // reflecting
+    if(pmy_block->block_bcs[inner_x1]==1) { // reflecting
       for(int i=1; i<=cnghost; i++) {
         coarse_dx1f(cis-i) = coarse_dx1f(cis+i-1);
         coarse_x1f(cis-i) =  coarse_x1f(cis-i+1) - coarse_dx1f(cis-i);
@@ -510,7 +511,7 @@ Coordinates::AllocateAndSetBasicCoordinates(void)
       }
     }
     // right ghost zone
-    if(block_bcs[outer_x1]==1) { // reflecting
+    if(pmy_block->block_bcs[outer_x1]==1) { // reflecting
       for(int i=1; i<=cnghost; i++) {
         coarse_dx1f(cie+i) = coarse_dx1f(cie-i+1);
         coarse_x1f(cie+i+1) =  coarse_x1f(cie+i) + coarse_dx1f(cie+i);
@@ -541,7 +542,7 @@ Coordinates::AllocateAndSetBasicCoordinates(void)
     }
     coarse_x2f(cje+1)=x2f(je+1);
     // left ghost zone
-    if(block_bcs[inner_x2]==1) { // reflecting
+    if(pmy_block->block_bcs[inner_x2]==1) { // reflecting
       for(int j=1; j<=cnghost; j++) {
         coarse_dx2f(cjs-j) = coarse_dx2f(cjs+j-1);
         coarse_x2f(cjs-j) =  coarse_x2f(cjs-j+1) - coarse_dx2f(cjs-j);
@@ -564,7 +565,7 @@ Coordinates::AllocateAndSetBasicCoordinates(void)
       }
     }
     // right ghost zone
-    if(block_bcs[outer_x2]==1) { // reflecting
+    if(pmy_block->block_bcs[outer_x2]==1) { // reflecting
       for(int j=1; j<=cnghost; j++) {
         coarse_dx2f(cje+j) = coarse_dx2f(cje-j+1);
         coarse_x2f(cje+j+1) =  coarse_x2f(cje+j) + coarse_dx2f(cje+j);
@@ -595,7 +596,7 @@ Coordinates::AllocateAndSetBasicCoordinates(void)
     }
     coarse_x3f(cke+1)=x3f(ke+1);
     // left ghost zone
-    if(block_bcs[inner_x3]==1) { // reflecting
+    if(pmy_block->block_bcs[inner_x3]==1) { // reflecting
       for(int k=1; k<=cnghost; k++) {
         coarse_dx3f(cks-k) = coarse_dx3f(cks+k-1);
         coarse_x3f(cks-k) =  coarse_x3f(cks-k+1) - coarse_dx3f(cks-k);
@@ -618,7 +619,7 @@ Coordinates::AllocateAndSetBasicCoordinates(void)
       }
     }
     // right ghost zone
-    if(block_bcs[outer_x3]==1) { // reflecting
+    if(pmy_block->block_bcs[outer_x3]==1) { // reflecting
       for(int k=1; k<=cnghost; k++) {
         coarse_dx3f(cke+k) = coarse_dx3f(cke-k+1);
         coarse_x3f(cke+k+1) =  coarse_x3f(cke+k) + coarse_dx3f(cke+k);
@@ -645,7 +646,7 @@ Coordinates::AllocateAndSetBasicCoordinates(void)
 }
 
 
-Coordinates::DeleteBasicCoordinates(void)
+inline void Coordinates::DeleteBasicCoordinates(void)
 {
   //destroy AthenaArrays
   dx1f.DeleteAthenaArray();
@@ -660,7 +661,7 @@ Coordinates::DeleteBasicCoordinates(void)
   x1v.DeleteAthenaArray();
   x2v.DeleteAthenaArray();
   x3v.DeleteAthenaArray();
-  if(pmy_mesh->multilevel==true) {
+  if(pmy_block->pmy_mesh->multilevel==true) {
     coarse_dx1f.DeleteAthenaArray();
     coarse_dx2f.DeleteAthenaArray();
     coarse_dx3f.DeleteAthenaArray();
@@ -673,7 +674,6 @@ Coordinates::DeleteBasicCoordinates(void)
     coarse_x1v.DeleteAthenaArray();
     coarse_x2v.DeleteAthenaArray();
     coarse_x3v.DeleteAthenaArray();
-    coarse_data.DeleteAthenaArray();
   }
 }
 
