@@ -35,10 +35,13 @@ public:
   AthenaArray<Real> dx1v, dx2v, dx3v, x1v, x2v, x3v; // volume spacing and positions
 
   // arrays for mesh refinement
-  AthenaArray<Real> coarse_dx1f, coarse_dx2f, coarse_dx3f;
   AthenaArray<Real> coarse_x1f,  coarse_x2f,  coarse_x3f;
-  AthenaArray<Real> coarse_dx1v, coarse_dx2v, coarse_dx3v;
   AthenaArray<Real> coarse_x1v,  coarse_x2v,  coarse_x3v;
+
+  // arrays for MHD mesh refinement
+  AthenaArray<Real> x1s2, x1s3, x2s1, x2s3, x3s1, x3s2; // area averaged positions
+  AthenaArray<Real> coarse_x1s2, coarse_x1s3, coarse_x2s1,
+                    coarse_x2s3, coarse_x3s1, coarse_x3s2;
 
   void AllocateAndSetBasicCoordinates(void);
   void DeleteBasicCoordinates(void);
@@ -319,20 +322,29 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
     if(block_size.nx3>1) // 3D
       ncc3=block_size.nx3/2+2*cnghost;
 
-    // cell sizes
-    coarse_dx1f.NewAthenaArray(ncc1);
-    coarse_dx2f.NewAthenaArray(ncc2);
-    coarse_dx3f.NewAthenaArray(ncc3);
-    coarse_dx1v.NewAthenaArray(ncc1);
-    coarse_dx2v.NewAthenaArray(ncc2);
-    coarse_dx3v.NewAthenaArray(ncc3);
     // cell positions. Note the extra element for cell face positions
-    coarse_x1f.NewAthenaArray((ncc1+1));
-    coarse_x2f.NewAthenaArray((ncc2+1));
-    coarse_x3f.NewAthenaArray((ncc3+1));
+    coarse_x1f.NewAthenaArray(ncc1+1);
+    coarse_x2f.NewAthenaArray(ncc2+1);
+    coarse_x3f.NewAthenaArray(ncc3+1);
     coarse_x1v.NewAthenaArray(ncc1);
     coarse_x2v.NewAthenaArray(ncc2);
     coarse_x3v.NewAthenaArray(ncc3);
+
+    if (MAGNETIC_FIELDS_ENABLED) {
+      // area weighted positions for AMR/SMR MHD
+      x1s2.NewAthenaArray(ncells1);
+      x1s3.NewAthenaArray(ncells1);
+      x2s1.NewAthenaArray(ncells2);
+      x2s3.NewAthenaArray(ncells2);
+      x3s1.NewAthenaArray(ncells3);
+      x3s2.NewAthenaArray(ncells3);
+      coarse_x1s2.NewAthenaArray(ncc1);
+      coarse_x1s3.NewAthenaArray(ncc1);
+      coarse_x2s1.NewAthenaArray(ncc2);
+      coarse_x2s3.NewAthenaArray(ncc2);
+      coarse_x3s1.NewAthenaArray(ncc3);
+      coarse_x3s2.NewAthenaArray(ncc3);
+    }
   }
 
   int is=pmy_block->is, js=pmy_block->js, ks=pmy_block->ks;
@@ -483,53 +495,46 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
     // x1
     for(int i=cis; i<=cie; i++) { // active region
       int ifl=(i-cis)*2+is;
-      coarse_dx1f(i)=dx1f(ifl)+dx1f(ifl+1);
       coarse_x1f(i)=x1f(ifl);
     }
     coarse_x1f(cie+1)=x1f(ie+1);
     // left ghost zone
     if(pmy_block->block_bcs[inner_x1]==1) { // reflecting
       for(int i=1; i<=cnghost; i++) {
-        coarse_dx1f(cis-i) = coarse_dx1f(cis+i-1);
-        coarse_x1f(cis-i) =  coarse_x1f(cis-i+1) - coarse_dx1f(cis-i);
+        Real dx1=coarse_x1f(cis+i)-coarse_x1f(cis+i-1);
+        coarse_x1f(cis-i) =  coarse_x1f(cis-i+1) - dx1;
       }
     }
     else {
       if(block_size.x1rat==1.0) { // uniform
-        for(int i=1; i<=cnghost; i++) {
-          coarse_dx1f(cis-i) = coarse_dx1f(cis-i+1);
-          coarse_x1f(cis-i) =  coarse_x1f(cis-i+1) - coarse_dx1f(cis-i);
-        }
+        for(int i=1; i<=cnghost; i++)
+          coarse_x1f(cis-i) =  2.0* coarse_x1f(cis-i+1) - coarse_x1f(cis-i+2);
       }
       else {
         for(int i=1; i<=cnghost; i++) { 
           noffset=(long long)lx1*block_size.nx1-i*2;
           Real rx=(Real)noffset/(Real)nrootmesh;
           coarse_x1f(cis-i)=pm->MeshGeneratorX1(rx,pm->mesh_size);
-          coarse_dx1f(cis-i) = coarse_x1f(cis-i+1)-coarse_x1f(cis-i);
         }
       }
     }
     // right ghost zone
     if(pmy_block->block_bcs[outer_x1]==1) { // reflecting
       for(int i=1; i<=cnghost; i++) {
-        coarse_dx1f(cie+i) = coarse_dx1f(cie-i+1);
-        coarse_x1f(cie+i+1) =  coarse_x1f(cie+i) + coarse_dx1f(cie+i);
+        Real dx1=coarse_x1f(cie-i+2)-coarse_x1f(cie-i+1);
+        coarse_x1f(cie+i+1) =  coarse_x1f(cie+i) + dx1;
       }
     }
     else {
       if(block_size.x1rat==1.0) { // uniform
-        for(int i=1; i<=cnghost; i++) {
-          coarse_dx1f(cie+i) = coarse_dx1f(cie+i-1);
-          coarse_x1f(cie+i+1) =  coarse_x1f(cie+i) + coarse_dx1f(cie+i);
-        }
+        for(int i=1; i<=cnghost; i++)
+          coarse_x1f(cie+i+1) = 2.0*coarse_x1f(cie+i) - coarse_x1f(cie+i-1);
       }
       else {
         for(int i=1; i<=cnghost; i++) { 
           noffset=(long long)(lx1+1L)*block_size.nx1+i*2;
           Real rx=(Real)noffset/(Real)nrootmesh;
           coarse_x1f(cie+i+1)=pm->MeshGeneratorX1(rx,pm->mesh_size);
-          coarse_dx1f(cie+i) = coarse_x1f(cie+i+1)-coarse_x1f(cie+i);
         }
       }
     }
@@ -537,53 +542,46 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
     // x2
     for(int j=cjs; j<=cje; j++) { // active region
       int jfl=(j-cjs)*2+js;
-      coarse_dx2f(j)=dx2f(jfl)+dx2f(jfl+1);
       coarse_x2f(j)=x2f(jfl);
     }
     coarse_x2f(cje+1)=x2f(je+1);
     // left ghost zone
     if(pmy_block->block_bcs[inner_x2]==1) { // reflecting
       for(int j=1; j<=cnghost; j++) {
-        coarse_dx2f(cjs-j) = coarse_dx2f(cjs+j-1);
-        coarse_x2f(cjs-j) =  coarse_x2f(cjs-j+1) - coarse_dx2f(cjs-j);
+        Real dx2=coarse_x2f(cjs+j)-coarse_x2f(cjs+j-1);
+        coarse_x2f(cjs-j) =  coarse_x2f(cjs-j+1) - dx2;
       }
     }
     else {
       if(block_size.x2rat==1.0) { // uniform
-        for(int j=1; j<=cnghost; j++) {
-          coarse_dx2f(cjs-j) = coarse_dx2f(cjs-j+1);
-          coarse_x2f(cjs-j) =  coarse_x2f(cjs-j+1) - coarse_dx2f(cjs-j);
-        }
+        for(int j=1; j<=cnghost; j++)
+          coarse_x2f(cjs-j) =  2.0* coarse_x2f(cjs-j+1) - coarse_x2f(cjs-j+2);
       }
       else {
         for(int j=1; j<=cnghost; j++) { 
           noffset=(long long)lx2*block_size.nx2-j*2;
           Real rx=(Real)noffset/(Real)nrootmesh;
           coarse_x2f(cjs-j)=pm->MeshGeneratorX2(rx,pm->mesh_size);
-          coarse_dx2f(cjs-j) = coarse_x2f(cjs-j+1)-coarse_x2f(cjs-j);
         }
       }
     }
     // right ghost zone
     if(pmy_block->block_bcs[outer_x2]==1) { // reflecting
       for(int j=1; j<=cnghost; j++) {
-        coarse_dx2f(cje+j) = coarse_dx2f(cje-j+1);
-        coarse_x2f(cje+j+1) =  coarse_x2f(cje+j) + coarse_dx2f(cje+j);
+        Real dx2=coarse_x2f(cje-j+2)-coarse_x2f(cje-j+1);
+        coarse_x2f(cje+j+1) =  coarse_x2f(cje+j) + dx2;
       }
     }
     else {
       if(block_size.x2rat==1.0) { // uniform
-        for(int j=1; j<=cnghost; j++) {
-          coarse_dx2f(cje+j) = coarse_dx2f(cje+j-1);
-          coarse_x2f(cje+j+1) =  coarse_x2f(cje+j) + coarse_dx2f(cje+j);
-        }
+        for(int j=1; j<=cnghost; j++)
+          coarse_x2f(cje+j+1) = 2.0*coarse_x2f(cje+j) - coarse_x2f(cje+j-1);
       }
       else {
         for(int j=1; j<=cnghost; j++) { 
           noffset=(long long)(lx2+1L)*block_size.nx2+j*2;
           Real rx=(Real)noffset/(Real)nrootmesh;
           coarse_x2f(cje+j+1)=pm->MeshGeneratorX2(rx,pm->mesh_size);
-          coarse_dx2f(cje+j) = coarse_x2f(cje+j+1)-coarse_x2f(cje+j);
         }
       }
     }
@@ -591,53 +589,46 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
     // x3
     for(int k=cks; k<=cke; k++) { // active region
       int kfl=(k-cks)*2+ks;
-      coarse_dx3f(k)=dx3f(kfl)+dx3f(kfl+1);
       coarse_x3f(k)=x3f(kfl);
     }
     coarse_x3f(cke+1)=x3f(ke+1);
     // left ghost zone
     if(pmy_block->block_bcs[inner_x3]==1) { // reflecting
       for(int k=1; k<=cnghost; k++) {
-        coarse_dx3f(cks-k) = coarse_dx3f(cks+k-1);
-        coarse_x3f(cks-k) =  coarse_x3f(cks-k+1) - coarse_dx3f(cks-k);
+        Real dx3=coarse_x3f(cks+k)-coarse_x3f(cks+k-1);
+        coarse_x3f(cks-k) =  coarse_x3f(cks-k+1) - dx3;
       }
     }
     else {
       if(block_size.x3rat==1.0) { // uniform
-        for(int k=1; k<=cnghost; k++) {
-          coarse_dx3f(cks-k) = coarse_dx3f(cks-k+1);
-          coarse_x3f(cks-k) =  coarse_x3f(cks-k+1) - coarse_dx3f(cks-k);
-        }
+        for(int k=1; k<=cnghost; k++)
+          coarse_x3f(cks-k) =  2.0* coarse_x3f(cks-k+1) - coarse_x3f(cks-k+2);
       }
       else {
         for(int k=1; k<=cnghost; k++) { 
           noffset=(long long)lx3*block_size.nx3-k*2;
           Real rx=(Real)noffset/(Real)nrootmesh;
           coarse_x3f(cks-k)=pm->MeshGeneratorX3(rx,pm->mesh_size);
-          coarse_dx3f(cks-k) = coarse_x3f(cks-k+1)-coarse_x3f(cks-k);
         }
       }
     }
     // right ghost zone
     if(pmy_block->block_bcs[outer_x3]==1) { // reflecting
       for(int k=1; k<=cnghost; k++) {
-        coarse_dx3f(cke+k) = coarse_dx3f(cke-k+1);
-        coarse_x3f(cke+k+1) =  coarse_x3f(cke+k) + coarse_dx3f(cke+k);
+        Real dx3=coarse_x3f(cke-k+2)-coarse_x3f(cke-k+1);
+        coarse_x3f(cke+k+1) =  coarse_x3f(cke+k) + dx3;
       }
     }
     else {
       if(block_size.x3rat==1.0) { // uniform
-        for(int k=1; k<=cnghost; k++) {
-          coarse_dx3f(cke+k) = coarse_dx3f(cke+k-1);
-          coarse_x3f(cke+k+1) =  coarse_x3f(cke+k) + coarse_dx3f(cke+k);
-        }
+        for(int k=1; k<=cnghost; k++)
+          coarse_x3f(cke+k+1) = 2.0*coarse_x3f(cke+k) - coarse_x3f(cke+k-1);
       }
       else {
         for(int k=1; k<=cnghost; k++) { 
           noffset=(long long)(lx3+1L)*block_size.nx3+k*2;
           Real rx=(Real)noffset/(Real)nrootmesh;
           coarse_x3f(cke+k+1)=pm->MeshGeneratorX3(rx,pm->mesh_size);
-          coarse_dx3f(cke+k) = coarse_x3f(cke+k+1)-coarse_x3f(cke+k);
         }
       }
     }
@@ -662,18 +653,27 @@ inline void Coordinates::DeleteBasicCoordinates(void)
   x2v.DeleteAthenaArray();
   x3v.DeleteAthenaArray();
   if(pmy_block->pmy_mesh->multilevel==true) {
-    coarse_dx1f.DeleteAthenaArray();
-    coarse_dx2f.DeleteAthenaArray();
-    coarse_dx3f.DeleteAthenaArray();
-    coarse_dx1v.DeleteAthenaArray();
-    coarse_dx2v.DeleteAthenaArray();
-    coarse_dx3v.DeleteAthenaArray();
     coarse_x1f.DeleteAthenaArray();
     coarse_x2f.DeleteAthenaArray();
     coarse_x3f.DeleteAthenaArray();
     coarse_x1v.DeleteAthenaArray();
     coarse_x2v.DeleteAthenaArray();
     coarse_x3v.DeleteAthenaArray();
+
+    if (MAGNETIC_FIELDS_ENABLED) {
+      x1s2.DeleteAthenaArray();
+      x1s3.DeleteAthenaArray();
+      x2s1.DeleteAthenaArray();
+      x2s3.DeleteAthenaArray();
+      x3s1.DeleteAthenaArray();
+      x3s2.DeleteAthenaArray();
+      coarse_x1s2.DeleteAthenaArray();
+      coarse_x1s3.DeleteAthenaArray();
+      coarse_x2s1.DeleteAthenaArray();
+      coarse_x2s3.DeleteAthenaArray();
+      coarse_x3s1.DeleteAthenaArray();
+      coarse_x3s2.DeleteAthenaArray();
+    }
   }
 }
 

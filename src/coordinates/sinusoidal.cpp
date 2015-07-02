@@ -86,29 +86,18 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
     for (int i=cis-(pb->cnghost); i<=cie+(pb->cnghost); ++i) {
       coarse_x1v(i) = 0.5*(coarse_x1f(i+1) + coarse_x1f(i));
     }
-    for (int i=cis-(pb->cnghost); i<=cie+(pb->cnghost)-1; ++i) {
-      coarse_dx1v(i) = coarse_x1v(i+1) - coarse_x1v(i);
-    }
     if (pb->block_size.nx2 == 1) {
       coarse_x2v(cjs) = 0.5*(coarse_x2f(cjs+1) + coarse_x2f(cjs));
-      coarse_dx2v(cjs) = coarse_dx2f(cjs);
     } else {
       for (int j=cjs-(pb->cnghost); j<=cje+(pb->cnghost); ++j) {
         coarse_x2v(j) = 0.5*(coarse_x2f(j+1) + coarse_x2f(j));
       }
-      for (int j=cjs-(pb->cnghost); j<=cje+(pb->cnghost)-1; ++j) {
-        coarse_dx2v(j) = coarse_x2v(j+1) - coarse_x2v(j);
-      }
     }
     if (pb->block_size.nx3 == 1) {
       coarse_x3v(cks) = 0.5*(coarse_x3f(cks+1) + coarse_x3f(cks));
-      coarse_dx3v(cks) = coarse_dx3f(cks);
     } else {
       for (int k=cks-(pb->cnghost); k<=cke+(pb->cnghost); ++k) {
         coarse_x3v(k) = 0.5*(coarse_x3f(k+1) + coarse_x3f(k));
-      }
-      for (int k=cks-(pb->cnghost); k<=cke+(pb->cnghost)-1; ++k) {
-        coarse_dx3v(k) = coarse_x3v(k+1) - coarse_x3v(k);
       }
     }
   }
