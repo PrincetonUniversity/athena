@@ -39,6 +39,7 @@ public:
   AthenaArray<Real> coarse_x1v,  coarse_x2v,  coarse_x3v;
 
   // arrays for MHD mesh refinement
+  //note: only x1s2 and x1s3 in spherical and schwarzschild coordinates are non trivial
   AthenaArray<Real> x1s2, x1s3, x2s1, x2s3, x3s1, x3s2; // area averaged positions
   AthenaArray<Real> coarse_x1s2, coarse_x1s3, coarse_x2s1,
                     coarse_x2s3, coarse_x3s1, coarse_x3s2;

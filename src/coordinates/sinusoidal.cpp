@@ -100,6 +100,33 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
         coarse_x3v(k) = 0.5*(coarse_x3f(k+1) + coarse_x3f(k));
       }
     }
+
+    if (MAGNETIC_FIELDS_ENABLED) {
+      for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i)
+        x1s2(i) = x1s3(i) = x1v(i);
+      for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost); ++i)
+        coarse_x1s2(i) = coarse_x1s3(i) = coarse_x1v(i);
+      if (pmb->block_size.nx2 == 1) {
+        x2s1(js) = x2s3(js) = x2v(js);
+        coarse_x2s1(js) = coarse_x2s3(js) = coarse_x2v(js);
+      }
+      else {
+        for (int j=js-(NGHOST); j<=je+(NGHOST); ++j)
+          x2s1(j) = x2s3(j) = x2v(j);
+        for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost); ++j)
+          coarse_x2s1(j) = coarse_x2s3(j) = coarse_x2v(j);
+      }
+      if (pmb->block_size.nx3 == 1) {
+        x3s1(ks) = x3s2(ks) = x3v(ks);
+        coarse_x3s1(ks) = coarse_x3s2(ks) = coarse_x3v(ks);
+      }
+      else {
+        for (int k=ks-(NGHOST); k<=ke+(NGHOST); ++k)
+          x3s1(k) = x3s2(k) = x3v(k);
+        for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost); ++k)
+          coarse_x3s1(k) = coarse_x3s2(k) = coarse_x3v(k);
+      }
+    }
   }
 
   // Allocate arrays for intermediate geometric quantities: x-direction
