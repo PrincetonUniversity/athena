@@ -58,17 +58,31 @@ void ShowConfig(void)
   } else {
     std::cout<<"  Relativistic dynamics:      OFF " << std::endl;
   }
+  if (GENERAL_RELATIVITY) {
+    std::cout<<"  General Relativity:         ON " << std::endl;
+  } else {
+    std::cout<<"  General Relativity:         OFF " << std::endl;
+  }
   if (VISCOSITY) {
     std::cout<<"  Viscosity:                  ON " << std::endl;
   } else {
     std::cout<<"  Viscosity:                  OFF " << std::endl;
   }
+#ifdef MPI_PARALLEL
+  std::cout<<"  MPI parallelism:            ON" << std::endl;
+#else
+  std::cout<<"  MPI parallelism:            OFF" << std::endl;
+#endif
 #ifdef OPENMP_PARALLEL
   std::cout<<"  OpenMP parallelism:         ON" << std::endl;
 #else
   std::cout<<"  OpenMP parallelism:         OFF" << std::endl;
 #endif
-
+#ifdef HDF5OUTPUT
+  std::cout<<"  HDF5 Output:                ON" << std::endl;
+#else
+  std::cout<<"  HDF5 Output:                OFF" << std::endl;
+#endif
 
   return;
 }

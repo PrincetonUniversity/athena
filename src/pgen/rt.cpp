@@ -26,6 +26,7 @@
 #include "../field/field.hpp"      // magnetic field
 #include "../bvals/bvals.hpp"      // EnrollFluidBoundaryFunction
 #include "../fluid/srcterms/srcterms.hpp"  // GetG2, GetG3
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 double ran2(long int *idum); // random number generator from NR
 void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a,
@@ -72,6 +73,7 @@ static Real grav_acc;
 void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pmb = pfl->pmy_block;
+  Coordinates *pco = pmb->pcoord;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
@@ -97,19 +99,19 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
         Real den=1.0;
-        if (pmb->x2v(j) > 0.0) den *= drat;
+        if (pco->x2v(j) > 0.0) den *= drat;
 
         if (iprob == 1) {
-          pfl->u(IM2,k,j,i) = (1.0+cos(kx*pmb->x1v(i)))*(1.0+cos(ky*pmb->x2v(j)))/4.0;
+          pfl->u(IM2,k,j,i) = (1.0+cos(kx*pco->x1v(i)))*(1.0+cos(ky*pco->x2v(j)))/4.0;
         } else {
-          pfl->u(IM2,k,j,i) = (ran2(&iseed) - 0.5)*(1.0+cos(ky*pmb->x2v(j)));
+          pfl->u(IM2,k,j,i) = (ran2(&iseed) - 0.5)*(1.0+cos(ky*pco->x2v(j)));
         }
 
         pfl->u(IDN,k,j,i) = den;
         pfl->u(IM1,k,j,i) = 0.0;
         pfl->u(IM2,k,j,i) *= (den*amp);
         pfl->u(IM3,k,j,i) = 0.0;
-        pfl->u(IEN,k,j,i) = (1.0/gamma + grav_acc*den*(pmb->x2v(j)))/gm1;
+        pfl->u(IEN,k,j,i) = (1.0/gamma + grav_acc*den*(pco->x2v(j)))/gm1;
         pfl->u(IEN,k,j,i) += 0.5*SQR(pfl->u(IM2,k,j,i))/den;
       }
     }}
@@ -156,20 +158,20 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
         Real den=1.0;
-        if (pmb->x3v(k) > 0.0) den *= drat;
+        if (pco->x3v(k) > 0.0) den *= drat;
 
         if (iprob == 1) {
-          pfl->u(IM3,k,j,i) = (1.0+cos(kx*(pmb->x1v(i))))/8.0
-                     *(1.0+cos(ky*pmb->x2v(j)))*(1.0+cos(kz*pmb->x3v(k)));
+          pfl->u(IM3,k,j,i) = (1.0+cos(kx*(pco->x1v(i))))/8.0
+                     *(1.0+cos(ky*pco->x2v(j)))*(1.0+cos(kz*pco->x3v(k)));
         } else {
-          pfl->u(IM3,k,j,i) = amp*(ran2(&iseed) - 0.5)*(1.0+cos(kz*pmb->x3v(k)));
+          pfl->u(IM3,k,j,i) = amp*(ran2(&iseed) - 0.5)*(1.0+cos(kz*pco->x3v(k)));
         }
 
         pfl->u(IDN,k,j,i) = den;
         pfl->u(IM1,k,j,i) = 0.0;
         pfl->u(IM2,k,j,i) = 0.0;
         pfl->u(IM3,k,j,i) *= (den*amp);
-        pfl->u(IEN,k,j,i) = (1.0/gamma + grav_acc*den*(pmb->x3v(k)))/gm1;
+        pfl->u(IEN,k,j,i) = (1.0/gamma + grav_acc*den*(pco->x3v(k)))/gm1;
         pfl->u(IEN,k,j,i) += 0.5*SQR(pfl->u(IM3,k,j,i))/den;
       }
     }}
@@ -183,7 +185,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie+1; i++) {
-        if (pmb->x3v(k) > 0.0) {
+        if (pco->x3v(k) > 0.0) {
           pfd->b.x1f(k,j,i) = b0;
         } else {
           pfd->b.x1f(k,j,i) = b0*cos(angle);
@@ -192,7 +194,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je+1; j++) {
       for (int i=is; i<=ie; i++) {
-        if (pmb->x3v(k) > 0.0) {
+        if (pco->x3v(k) > 0.0) {
           pfd->b.x2f(k,j,i) = 0.0;
         } else {
           pfd->b.x2f(k,j,i) = b0*sin(angle);
@@ -230,6 +232,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a,
                  int is, int ie, int js, int je, int ks, int ke)
 {
+  Coordinates *pco = pmb->pcoord;
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
     for (int n=0; n<(NFLUID); ++n) {
@@ -243,7 +246,7 @@ void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a,
 #pragma simd
         for (int i=is; i<=ie; ++i) {
           a(IEN,k,js-j,i) = a(IEN,k,js+j-1,i) 
-             - a(IDN,k,js+j-1,i)*grav_acc*(2*j-1)*pmb->dx2f(j)/gm1;
+             - a(IDN,k,js+j-1,i)*grav_acc*(2*j-1)*pco->dx2f(j)/gm1;
         }
       } else {
 #pragma simd
@@ -265,6 +268,7 @@ void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a,
 void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a,
                  int is, int ie, int js, int je, int ks, int ke)
 {
+  Coordinates *pco = pmb->pcoord;
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
     for (int n=0; n<(NFLUID); ++n) {
@@ -278,7 +282,7 @@ void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a,
 #pragma simd
         for (int i=is; i<=ie; ++i) {
           a(IEN,k,je+j,i) = a(IEN,k,je-j+1,i) 
-             + a(IDN,k,je-j+1,i)*grav_acc*(2*j-1)*pmb->dx2f(j)/gm1;
+             + a(IDN,k,je-j+1,i)*grav_acc*(2*j-1)*pco->dx2f(j)/gm1;
         }
       } else {
 #pragma simd
@@ -300,6 +304,7 @@ void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a,
 void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a,
                  int is, int ie, int js, int je, int ks, int ke)
 {
+  Coordinates *pco = pmb->pcoord;
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js; j<=je; ++j) {
     for (int n=0; n<(NFLUID); ++n) {
@@ -313,7 +318,7 @@ void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a,
 #pragma simd
         for (int i=is; i<=ie; ++i) {
           a(IEN,ks-k,j,i) = a(IEN,ks+k-1,j,i) 
-             - a(IDN,ks+k-1,j,i)*grav_acc*(2*k-1)*pmb->dx3f(k)/gm1;
+             - a(IDN,ks+k-1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k)/gm1;
         }
       } else {
 #pragma simd
@@ -335,6 +340,7 @@ void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a,
 void reflect_ox3(MeshBlock *pmb, AthenaArray<Real> &a,
                  int is, int ie, int js, int je, int ks, int ke)
 {
+  Coordinates *pco = pmb->pcoord;
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js; j<=je; ++j) {
     for (int n=0; n<(NFLUID); ++n) {
@@ -348,7 +354,7 @@ void reflect_ox3(MeshBlock *pmb, AthenaArray<Real> &a,
 #pragma simd
         for (int i=is; i<=ie; ++i) {
           a(IEN,ke+k,j,i) = a(IEN,ke-k+1,j,i)
-             + a(IDN,ke-k+1,j,i)*grav_acc*(2*k-1)*pmb->dx3f(k)/gm1;
+             + a(IDN,ke-k+1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k)/gm1;
         }
       } else {
 #pragma simd

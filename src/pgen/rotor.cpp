@@ -30,6 +30,7 @@
 #include "../fluid/eos/eos.hpp"    // eos
 #include "../fluid/fluid.hpp"      // Fluid
 #include "../field/field.hpp"      // Field
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file rotor.c
@@ -44,6 +45,7 @@
 void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pmb = pfl->pmy_block;
+  Coordinates *pco = pmb->pcoord;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   Real gm1 = (pfl->pf_eos->GetGamma() - 1.0);
@@ -69,11 +71,11 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 
 // reset density, velocity if cell is inside rotor
 
-      Real rad = sqrt(SQR(pmb->x1v(i)) + SQR(pmb->x2v(j)));
+      Real rad = sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(j)));
       if (rad <= r0) {
         pfl->u(IDN,k,j,i) = 10.0;
-        pfl->u(IM1,k,j,i) = -100.0*v0*pmb->x2v(j);
-        pfl->u(IM2,k,j,i) = 100.0*v0*pmb->x1v(i);
+        pfl->u(IM1,k,j,i) = -100.0*v0*pco->x2v(j);
+        pfl->u(IM2,k,j,i) = 100.0*v0*pco->x1v(i);
       } else {
 
 // smooth solution between r0 and r1.  For no smoothing, set r1<0 in input
@@ -81,8 +83,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         if (rad <= r1) {
           Real frac = (0.115 - rad)/(0.015);
           pfl->u(IDN,k,j,i) = 1.0 + 9.0*frac;
-          pfl->u(IM1,k,j,i) = -frac*100.0*v0*pmb->x2v(j);
-          pfl->u(IM2,k,j,i) =  frac*100.0*v0*pmb->x1v(i);
+          pfl->u(IM1,k,j,i) = -frac*100.0*v0*pco->x2v(j);
+          pfl->u(IM2,k,j,i) =  frac*100.0*v0*pco->x1v(i);
         }
       }
 

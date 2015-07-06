@@ -30,6 +30,7 @@
 #include "../fluid/fluid.hpp"      // Fluid
 #include "../fluid/eos/eos.hpp"    // EOS
 #include "../bvals/bvals.hpp"      // EnrollFluidBoundaryFunction
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file dmr.cpp
@@ -76,14 +77,14 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   Real v0 = -8.25*0.5;
   for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie; ++i) {
-      Real shock_pos = 0.1666666666 + pmb->x2v(j)/sqrt((double)3.0);
+      Real shock_pos = 0.1666666666 + pmb->pcoord->x2v(j)/sqrt((double)3.0);
 // upstream conditions
       pfl->u(IDN,ks,j,i) = 1.4;
       pfl->u(IEN,ks,j,i) = 2.5;
       pfl->u(IM1,ks,j,i) = 0.0;
       pfl->u(IM2,ks,j,i) = 0.0;
 // downstream conditions
-      if (pmb->x1v(i) < shock_pos) {
+      if (pmb->pcoord->x1v(i) < shock_pos) {
         pfl->u(IDN,ks,j,i) = d0;
         pfl->u(IEN,ks,j,i) = e0 + 0.5*d0*(u0*u0+v0*v0);
         pfl->u(IM1,ks,j,i) = d0*u0;
@@ -138,7 +139,7 @@ void dmrbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a,
 
   for (int j=1;  j<=(NGHOST); ++j) {
     for (int i=is; i<=ie; ++i) {
-      if (pmb->x1v(i) < 0.1666666666) {
+      if (pmb->pcoord->x1v(i) < 0.1666666666) {
 // fixed at downstream state
         a(IDN,ks,js-j,i) = d0;
         a(IM1,ks,js-j,i) = d0*u0;
@@ -173,7 +174,7 @@ void dmrbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
 
   for (int j=1;  j<=(NGHOST); ++j) {
     for (int i=is; i<=ie; ++i) {
-      if (pmb->x1v(i) < shock_pos) {
+      if (pmb->pcoord->x1v(i) < shock_pos) {
 // fixed at downstream state
         a(IDN,ks,je+j,i) = d0;
         a(IM1,ks,je+j,i) = d0*u0;

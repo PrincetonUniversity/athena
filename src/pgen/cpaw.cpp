@@ -30,6 +30,7 @@
 #include "../fluid/eos/eos.hpp"    // eos
 #include "../fluid/fluid.hpp"      // Fluid
 #include "../field/field.hpp"      // Field
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file cpaw.c
@@ -65,6 +66,7 @@ static Real A3(const Real x1, const Real x2, const Real x3);
 void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pmb = pfl->pmy_block;
+  Coordinates *pco = pmb->pcoord;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   Real gm1 = (pfl->pf_eos->GetGamma() - 1.0);
@@ -122,30 +124,30 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie+1; i++) {
-      pfd->b.x1f(k,j,i) = (A3(pmb->x1f(i),pmb->x2f(j+1),pmb->x3v(k  )) -
-                           A3(pmb->x1f(i),pmb->x2f(j  ),pmb->x3v(k  )))/pmb->dx2f(j) -
-                          (A2(pmb->x1f(i),pmb->x2v(j  ),pmb->x3f(k+1)) -
-                           A2(pmb->x1f(i),pmb->x2v(j  ),pmb->x3f(k  )))/pmb->dx3f(k);
+      pfd->b.x1f(k,j,i) = (A3(pco->x1f(i),pco->x2f(j+1),pco->x3v(k  )) -
+                           A3(pco->x1f(i),pco->x2f(j  ),pco->x3v(k  )))/pco->dx2f(j) -
+                          (A2(pco->x1f(i),pco->x2v(j  ),pco->x3f(k+1)) -
+                           A2(pco->x1f(i),pco->x2v(j  ),pco->x3f(k  )))/pco->dx3f(k);
     }
   }}
 
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je+1; j++) {
     for (int i=is; i<=ie; i++) {
-      pfd->b.x2f(k,j,i) = (A1(pmb->x1v(i  ),pmb->x2f(j),pmb->x3f(k+1)) -
-                           A1(pmb->x1v(i  ),pmb->x2f(j),pmb->x3f(k  )))/pmb->dx3f(k) -
-                          (A3(pmb->x1f(i+1),pmb->x2f(j),pmb->x3v(k  )) -
-                           A3(pmb->x1f(i  ),pmb->x2f(j),pmb->x3v(k  )))/pmb->dx1f(i);
+      pfd->b.x2f(k,j,i) = (A1(pco->x1v(i  ),pco->x2f(j),pco->x3f(k+1)) -
+                           A1(pco->x1v(i  ),pco->x2f(j),pco->x3f(k  )))/pco->dx3f(k) -
+                          (A3(pco->x1f(i+1),pco->x2f(j),pco->x3v(k  )) -
+                           A3(pco->x1f(i  ),pco->x2f(j),pco->x3v(k  )))/pco->dx1f(i);
     }
   }}
 
   for (int k=ks; k<=ke+1; k++) {
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      pfd->b.x3f(k,j,i) = (A2(pmb->x1f(i+1),pmb->x2v(j  ),pmb->x3f(k)) -
-                           A2(pmb->x1f(i  ),pmb->x2v(j  ),pmb->x3f(k)))/pmb->dx1f(i) -
-                          (A1(pmb->x1v(i  ),pmb->x2f(j+1),pmb->x3f(k)) -
-                           A1(pmb->x1v(i  ),pmb->x2f(j  ),pmb->x3f(k)))/pmb->dx2f(j);
+      pfd->b.x3f(k,j,i) = (A2(pco->x1f(i+1),pco->x2v(j  ),pco->x3f(k)) -
+                           A2(pco->x1f(i  ),pco->x2v(j  ),pco->x3f(k)))/pco->dx1f(i) -
+                          (A1(pco->x1v(i  ),pco->x2f(j+1),pco->x3f(k)) -
+                           A1(pco->x1v(i  ),pco->x2f(j  ),pco->x3f(k)))/pco->dx2f(j);
     }
   }}
 
@@ -154,7 +156,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      Real x = cos_a2*(pmb->x1v(i)*cos_a3 + pmb->x2v(j)*sin_a3) + pmb->x3v(k)*sin_a2;
+      Real x = cos_a2*(pco->x1v(i)*cos_a3 + pco->x2v(j)*sin_a3) + pco->x3v(k)*sin_a2;
       Real sn = sin(k_par*x);
       Real cs = fac*cos(k_par*x);
 

@@ -25,6 +25,7 @@
 #include "../athena.hpp"
 #include "../mesh.hpp"
 #include "outputs.hpp"
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file formatted_table.cpp
@@ -92,17 +93,17 @@ void FormattedTableOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 
     if (pod->data_header.il != pod->data_header.iu) {
       fprintf(pfile,"%04d",i);
-      fprintf(pfile,output_params.data_format.c_str(),pmb->x1v(i));
+      fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x1v(i));
     }
 
     if (pod->data_header.jl != pod->data_header.ju) {
       fprintf(pfile," %04d",j);  // note extra space for formatting
-      fprintf(pfile,output_params.data_format.c_str(),pmb->x2v(j));
+      fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x2v(j));
     }
 
     if (pod->data_header.kl != pod->data_header.ku) {
       fprintf(pfile," %04d",k);  // note extra space for formatting
-      fprintf(pfile,output_params.data_format.c_str(),pmb->x3v(k));
+      fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x3v(k));
     }
 
 // step through linked-list of variables and write data on same line

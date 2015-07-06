@@ -31,6 +31,7 @@
 #include "../fluid/fluid.hpp"      // Fluid
 #include "../field/field.hpp"      // Field
 #include "../bvals/bvals.hpp"      // Enroll bval functions
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 // postshock flow variables are shared with IIB function
 static Real gmma1,dl,pl,ul;
@@ -59,6 +60,7 @@ void shk_cloud_iib(MeshBlock *pmb, AthenaArray<Real> &a,
 void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pmb = pfl->pmy_block;
+  Coordinates *pco = pmb->pcoord;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   Real gmma  = pfl->pf_eos->GetGamma();
@@ -95,7 +97,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
     // postshock flow
-    if(pmb->x1v(i) < xshock) {
+    if(pco->x1v(i) < xshock) {
       pfl->u(IDN,k,j,i) = dl;
       pfl->u(IM1,k,j,i) = ul*dl;
       pfl->u(IM2,k,j,i) = 0.0;
@@ -112,7 +114,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     }
 
     // cloud interior
-    Real diag = sqrt(SQR(pmb->x1v(i)) + SQR(pmb->x2v(j)) + SQR(pmb->x3v(k)));
+    Real diag = sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(j)) + SQR(pco->x3v(k)));
     if (diag < rad) {
       pfl->u(IDN,k,j,i) = dr*drat;
       pfl->u(IM1,k,j,i) = ur*dr*drat;
@@ -135,7 +137,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie+1; i++) {
-      if(pmb->x1v(i) < xshock) {
+      if(pco->x1v(i) < xshock) {
         pfd->b.x1f(k,j,i) = bxl;
       } else {
         pfd->b.x1f(k,j,i) = bxr;
@@ -144,7 +146,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je+1; j++) {
     for (int i=is; i<=ie; i++) {
-      if(pmb->x1v(i) < xshock) {
+      if(pco->x1v(i) < xshock) {
         pfd->b.x2f(k,j,i) = byl;
       } else {
         pfd->b.x2f(k,j,i) = byr;
@@ -153,7 +155,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     for (int k=ks; k<=ke+1; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      if(pmb->x1v(i) < xshock) {
+      if(pco->x1v(i) < xshock) {
         pfd->b.x3f(k,j,i) = bzl;
       } else {
         pfd->b.x3f(k,j,i) = bzr;
@@ -165,7 +167,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      if(pmb->x1v(i) < xshock) {
+      if(pco->x1v(i) < xshock) {
         pfl->u(IEN,k,j,i) += 0.5*(bxl*bxl + byl*byl + bzl*bzl);
       } else {
         pfl->u(IEN,k,j,i) += 0.5*(bxr*bxr + byr*byr + bxr*bzr);

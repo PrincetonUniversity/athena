@@ -30,6 +30,7 @@
 #include "../mesh.hpp"             // MeshBlock
 #include "../parameter_input.hpp"  // ParameterInput
 #include "../fluid/eos/eos.hpp"    // ParameterInput
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file disk_cyl.cpp
@@ -89,7 +90,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
-        Real x1 = pb->x1v(i);
+        Real x1 = pb->pcoord->x1v(i);
         pfl->u(IDN,k,j,i) = ICden(x1);
         pfl->u(IM1,k,j,i) = 0.0;
         pfl->u(IM2,k,j,i) = ICvel(x1)*pfl->u(IDN,k,j,i);

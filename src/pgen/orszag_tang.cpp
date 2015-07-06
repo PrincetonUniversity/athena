@@ -30,6 +30,7 @@
 #include "../fluid/eos/eos.hpp"    // eos
 #include "../fluid/fluid.hpp"      // Fluid
 #include "../field/field.hpp"      // Field
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file orszag-tang.c
@@ -42,6 +43,7 @@
 void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pmb = pfl->pmy_block;
+  Coordinates *pco = pmb->pcoord;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   Real gm1 = (pfl->pf_eos->GetGamma() - 1.0);
@@ -60,7 +62,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 
   for (int j=js; j<=je+1; ++j) {
   for (int i=is; i<=ie+1; ++i) {
-    az(j,i) = B0/(4.0*PI)*cos(4.0*PI*pmb->x1f(i)) + B0/(2.0*PI)*cos(2.0*PI*pmb->x2f(j));
+    az(j,i) = B0/(4.0*PI)*cos(4.0*PI*pco->x1f(i)) + B0/(2.0*PI)*cos(2.0*PI*pco->x2f(j));
   }}
 
 // Initialize density, momentum, face-centered fields
@@ -69,8 +71,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
     pfl->u(IDN,k,j,i) = d0;
-    pfl->u(IM1,k,j,i) = -d0*v0*sin(2.0*PI*pmb->x2v(j));
-    pfl->u(IM2,k,j,i) =  d0*v0*sin(2.0*PI*pmb->x1v(i));
+    pfl->u(IM1,k,j,i) = -d0*v0*sin(2.0*PI*pco->x2v(j));
+    pfl->u(IM2,k,j,i) =  d0*v0*sin(2.0*PI*pco->x1v(i));
     pfl->u(IM3,k,j,i) = 0.0;
   }}}
 
@@ -79,12 +81,12 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie+1; i++) {
-    pfd->b.x1f(k,j,i) = (az(j+1,i) - az(j,i))/pmb->dx2f(j);
+    pfd->b.x1f(k,j,i) = (az(j+1,i) - az(j,i))/pco->dx2f(j);
   }}}
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je+1; j++) {
   for (int i=is; i<=ie; i++) {
-    pfd->b.x2f(k,j,i) = (az(j,i) - az(j,i+1))/pmb->dx1f(i);
+    pfd->b.x2f(k,j,i) = (az(j,i) - az(j,i+1))/pco->dx1f(i);
   }}}
   for (int k=ks; k<=ke+1; k++) {
   for (int j=js; j<=je; j++) {

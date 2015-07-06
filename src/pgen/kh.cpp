@@ -24,6 +24,7 @@
 #include "../fluid/fluid.hpp"      // Fluid
 #include "../fluid/eos/eos.hpp"    // GetGamma
 #include "../field/field.hpp"      // magnetic field
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 double ran2(long int *idum);  // random number generator from NR
 
@@ -39,6 +40,7 @@ double ran2(long int *idum);  // random number generator from NR
 void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pmb = pfl->pmy_block;
+  Coordinates *pco = pmb->pcoord;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
@@ -62,7 +64,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       pfl->u(IM1,k,j,i) = vflow + amp*(ran2(&iseed) - 0.5);
       pfl->u(IM2,k,j,i) = amp*(ran2(&iseed) - 0.5);
       pfl->u(IM3,k,j,i) = 0.0;
-      if (fabs(pmb->x2v(j)) < 0.25) {
+      if (fabs(pco->x2v(j)) < 0.25) {
         pfl->u(IDN,k,j,i) = drat;
         pfl->u(IM1,k,j,i) = -drat*(vflow + amp*(ran2(&iseed) - 0.5));
         pfl->u(IM2,k,j,i) = drat*amp*(ran2(&iseed) - 0.5);
@@ -84,9 +86,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
       pfl->u(IDN,k,j,i) = 1.0;
-      pfl->u(IM1,k,j,i) = vflow*tanh((pmb->x2v(j))/a);
-      pfl->u(IM2,k,j,i) = amp*sin(2.0*PI*pmb->x1v(i))
-        *exp(-(SQR(pmb->x2v(j)))/SQR(sigma));
+      pfl->u(IM1,k,j,i) = vflow*tanh((pco->x2v(j))/a);
+      pfl->u(IM2,k,j,i) = amp*sin(2.0*PI*pco->x1v(i))
+        *exp(-(SQR(pco->x2v(j)))/SQR(sigma));
       pfl->u(IM3,k,j,i) = 0.0;
       if (NON_BAROTROPIC_EOS) {
         pfl->u(IEN,k,j,i) = 1.0/gm1 + 0.5*(SQR(pfl->u(IM1,k,j,i)) +
@@ -103,11 +105,11 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      pfl->u(IDN,k,j,i) = 0.505 + 0.495*tanh((fabs(pmb->x2v(j))-0.5)/a);
-      pfl->u(IM1,k,j,i) = vflow*tanh((fabs(pmb->x2v(j))-0.5)/a);
-      pfl->u(IM2,k,j,i) = amp*vflow*sin(2.0*PI*pmb->x1v(i))
-               *exp(-((fabs(pmb->x2v(j))-0.5)*(fabs(pmb->x2v(j))-0.5))/(sigma*sigma));
-      if (pmb->x2v(j) < 0.0) pfl->u(IM2,k,j,i) *= -1.0;
+      pfl->u(IDN,k,j,i) = 0.505 + 0.495*tanh((fabs(pco->x2v(j))-0.5)/a);
+      pfl->u(IM1,k,j,i) = vflow*tanh((fabs(pco->x2v(j))-0.5)/a);
+      pfl->u(IM2,k,j,i) = amp*vflow*sin(2.0*PI*pco->x1v(i))
+               *exp(-((fabs(pco->x2v(j))-0.5)*(fabs(pco->x2v(j))-0.5))/(sigma*sigma));
+      if (pco->x2v(j) < 0.0) pfl->u(IM2,k,j,i) *= -1.0;
       pfl->u(IM1,k,j,i) *= pfl->u(IDN,k,j,i);
       pfl->u(IM2,k,j,i) *= pfl->u(IDN,k,j,i);
       pfl->u(IM3,k,j,i) = 0.0;

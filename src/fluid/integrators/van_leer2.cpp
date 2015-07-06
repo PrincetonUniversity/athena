@@ -28,12 +28,14 @@
 #include "../../field/field.hpp"             // Fields
 #include "../../mesh.hpp"                    // MeshBlock
 #include "../srcterms/srcterms.hpp"          // PhysicalSourceTerms()
+#include "../../bvals/bvals.hpp"             // BoundaryValues
 #include "../viscosity/viscosity.hpp"        // Viscosity
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL
 #include <omp.h>
 #endif
+
 
 //======================================================================================
 //! \file van_leer2.cpp
@@ -130,6 +132,14 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
         pmb->pcoord->CoordSrcTermsX1(k,j,dt,flx,w,bcc,u);
         // add physical source terms for a point mass potential
         pmb->pfluid->pf_srcterms->PhysicalSourceTermsX1(k,j,dt,flx,w,u);
+
+        // store the surface flux for flux correction
+        if(pmb->pmy_mesh->multilevel==true) {
+          for(int n=0; n<NFLUID; ++n) {
+            pmb->pbval->surface_flux_[inner_x1](n,k,j)=flx(n,is);
+            pmb->pbval->surface_flux_[outer_x1](n,k,j)=flx(n,ie+1);
+          }
+        }
       }
 
       // store electric fields, compute weights for GS07 CT algorithm
@@ -176,6 +186,14 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
           // compute and store fluxes at j=jstart
           RiemannSolver(k,j,il,iu,IVY,b2,wl,wr,jflx_j); 
       
+          // store the surface flux for flux correction
+          if(pmb->pmy_mesh->multilevel==true) {
+            for(int n=0; n<NFLUID; ++n) {
+              for(int i=is; i<=ie; ++i)
+                pmb->pbval->surface_flux_[inner_x2](n,k,i)=jflx_j(n,i);
+            }
+          }
+
           // store electric fields, compute weights for GS07 CT algorithm at j=jstart
           if (MAGNETIC_FIELDS_ENABLED) {
 #pragma simd
@@ -188,6 +206,7 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
               w_x2f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
             }
           }
+
           first_time_through_loop = false;;
         }
 
@@ -217,6 +236,14 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
           pmb->pcoord->CoordSrcTermsX2(k,j,dt,jflx_j,flx,w,bcc,u);
           // add physical source terms for a point mass potential
           pmb->pfluid->pf_srcterms->PhysicalSourceTermsX2(k,j,dt,jflx_j,flx,w,u);
+        }
+
+        // store the surface flux for flux correction
+        if(pmb->pmy_mesh->multilevel==true && j==je) {
+          for(int n=0; n<NFLUID; ++n) {
+            for(int i=is; i<=ie; ++i)
+              pmb->pbval->surface_flux_[outer_x2](n,k,i)=flx(n,i);
+          }
         }
 
         // store electric fields, compute weights for GS07 CT algorithm
@@ -264,6 +291,14 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 
           // compute and store fluxes at k=kstart
           RiemannSolver(k,j,il,iu,IVZ,b3,wl,wr,flx);
+
+          // store the surface flux for flux correction
+          if(pmb->pmy_mesh->multilevel==true) {
+            for(int n=0; n<NFLUID; ++n) {
+              for(int i=is; i<=ie; ++i)
+                pmb->pbval->surface_flux_[inner_x3](n,j,i)=flx(n,i);
+            }
+          }
 
           // store electric fields, compute weights for GS07 CT algorithm at k=kstart
           if (MAGNETIC_FIELDS_ENABLED) {
@@ -316,6 +351,14 @@ void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
           pmb->pcoord->CoordSrcTermsX3(k,j,dt,kflx_k,flx,w,bcc,u);
 	  // add physical source terms for a point mass potential
 	  pmb->pfluid->pf_srcterms->PhysicalSourceTermsX3(k,j,dt,kflx_k,flx,w,u);
+        }
+
+        // store the surface flux for flux correction
+        if(pmb->pmy_mesh->multilevel==true && k==ke) {
+          for(int n=0; n<NFLUID; ++n) {
+            for(int i=is; i<=ie; ++i)
+              pmb->pbval->surface_flux_[outer_x3](n,j,i)=flx(n,i);
+          }
         }
 
         // store electric fields, compute weights for GS07 CT algorithm

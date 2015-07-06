@@ -519,9 +519,9 @@ BlockTree* BlockTree::FindNeighbor(BlockUID id, int ox1, int ox2, int ox3, int *
   if(ll<1) return this; // single grid; return itself
 
 
-  for(level=0;level<=ll;level++) {
+  for(level=0;level<ll;level++) {
     if(bt->flag==true) { // leaf
-      if(level == ll || level == ll-1)
+      if(level == ll-1)
         return bt;
       else {
         msg << "### FATAL ERROR in FindNeighbor" << std::endl

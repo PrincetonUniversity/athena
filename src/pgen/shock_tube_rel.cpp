@@ -35,6 +35,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   // Prepare index bounds
   MeshBlock *pb = pfl->pmy_block;
+  Coordinates *pco = pb->pcoord;
   int il = pb->is - NGHOST;
   int iu = pb->ie + NGHOST;
   int jl = pb->js;
@@ -145,13 +146,13 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         switch(shock_dir)
         {
           case 1:
-            left_side = pb->x1v(i) < shock_pos;
+            left_side = pco->x1v(i) < shock_pos;
             break;
           case 2:
-            left_side = pb->x2v(j) < shock_pos;
+            left_side = pco->x2v(j) < shock_pos;
             break;
           case 3:
-            left_side = pb->x3v(k) < shock_pos;
+            left_side = pco->x3v(k) < shock_pos;
             break;
         }
         if (left_side)
@@ -231,13 +232,13 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
           switch(shock_dir)
           {
             case 1:
-              left_side = pb->x1v(i) < shock_pos;
+              left_side = pco->x1v(i) < shock_pos;
               break;
             case 2:
-              left_side = pb->x2v(j) < shock_pos;
+              left_side = pco->x2v(j) < shock_pos;
               break;
             case 3:
-              left_side = pb->x3v(k) < shock_pos;
+              left_side = pco->x3v(k) < shock_pos;
               break;
           }
           if (left_side)

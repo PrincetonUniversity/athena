@@ -41,6 +41,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   // Prepare index bounds
   MeshBlock *pmb = pfl->pmy_block;
+  Coordinates *pco = pmb->pcoord;
   int il = pmb->is - NGHOST;
   int iu = pmb->ie + NGHOST;
   int jl = pmb->js;
@@ -464,12 +465,12 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         // Find location of cell in spacetime
         Real t, x, y, z;
         if (GENERAL_RELATIVITY)
-          pmb->pcoord->MinkowskiCoordinates(0.0, pmb->x1v(i), pmb->x2v(j), pmb->x3v(k),
+          pmb->pcoord->MinkowskiCoordinates(0.0, pco->x1v(i), pco->x2v(j), pco->x3v(k),
               &t, &x, &y, &z);
         else
         {
           t = 0.0;
-          x = pmb->x1v(i);
+          x = pco->x1v(i);
         }
 
         // Calculate scalar perturbations
@@ -573,7 +574,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
             {
               Real t, x, y, z;
               pmb->pcoord->MinkowskiCoordinates(
-                  0.0, pmb->x1f(i), pmb->x2v(j), pmb->x3v(k), &t, &x, &y, &z);
+                  0.0, pco->x1f(i), pco->x2v(j), pco->x3v(k), &t, &x, &y, &z);
               Real local_amp = amp * std::sin(wavenumber * (x - lambda * t));
               Real u_mink[4], b_mink[4];
               for (int mu = 0; mu < 4; ++mu)
@@ -596,7 +597,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
             {
               Real t, x, y, z;
               pmb->pcoord->MinkowskiCoordinates(
-                  0.0, pmb->x1v(i), pmb->x2f(j), pmb->x3v(k), &t, &x, &y, &z);
+                  0.0, pco->x1v(i), pco->x2f(j), pco->x3v(k), &t, &x, &y, &z);
               Real local_amp = amp * std::sin(wavenumber * (x - lambda * t));
               Real u_mink[4], b_mink[4];
               for (int mu = 0; mu < 4; ++mu)
@@ -619,7 +620,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
             {
               Real t, x, y, z;
               pmb->pcoord->MinkowskiCoordinates(
-                  0.0, pmb->x1v(i), pmb->x2v(j), pmb->x3f(k), &t, &x, &y, &z);
+                  0.0, pco->x1v(i), pco->x2v(j), pco->x3f(k), &t, &x, &y, &z);
               Real local_amp = amp * std::sin(wavenumber * (x - lambda * t));
               Real u_mink[4], b_mink[4];
               for (int mu = 0; mu < 4; ++mu)
@@ -639,7 +640,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
           }
           else
           {
-            Real local_amp = amp * std::sin(wavenumber * pmb->x1v(i));
+            Real local_amp = amp * std::sin(wavenumber * pco->x1v(i));
             Real u_local[4], b_local[4];
             for (int mu = 0; mu < 4; ++mu)
             {

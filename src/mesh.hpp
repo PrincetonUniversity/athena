@@ -36,12 +36,13 @@ class BlockTree;
 //  \brief neighbor rank, level, and ids
 
 typedef struct NeighborBlock {
-  int rank, level, gid, lid, ox1, ox2, ox3, bufid, fi1, fi2;
+  int rank, level, gid, lid, ox1, ox2, ox3, fi1, fi2, bufid, targetid;
   enum neighbor_type type;
-  NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1),
-    ox1(-1), ox2(-1), ox3(-1), bufid(-1), fi1(-1), fi2(-1), type(neighbor_none) {};
+  enum direction fid;
+  NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1), ox1(-1), ox2(-1), ox3(-1),
+    bufid(-1), targetid(-1), fi1(-1), fi2(-1), type(neighbor_none), fid(dir_undefined) {};
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2, int iox3,
-                   enum neighbor_type itype, int ibid, int ifi1, int ifi2);
+                   enum neighbor_type itype, int ibid, int itargetid, int ifi1, int ifi2);
 } NeighborBlock;
 
 
@@ -69,11 +70,13 @@ private:
   Task *task;
   long int task_flag;
   int ntask, firsttask, ntodo, nneighbor;
+  int nblevel[3][3][3];
 
   friend class RestartOutput;
   friend class BoundaryValues;
   friend class Mesh;
   friend class Fluid;
+  friend class Coordinates;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
@@ -87,22 +90,16 @@ public:
   void SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslist);
   void SetTaskList(TaskList& tl);
   enum tasklist_status DoOneTask(void);
-  void SetCoarserCoordinates(void);
+  int FindNeighborGID(int ox1, int ox2, int ox3);
+  void IntegrateConservative(Real *tcons);
 
   RegionSize block_size;
   int block_bcs[6];
   Mesh *pmy_mesh;  // ptr to Mesh containing this MeshBlock
 
-  AthenaArray<Real> dx1f, dx2f, dx3f, x1f, x2f, x3f; // face   spacing and positions
-  AthenaArray<Real> dx1v, dx2v, dx3v, x1v, x2v, x3v; // volume spacing and positions
   int is,ie,js,je,ks,ke;
   int gid, lid;
 
-  AthenaArray<Real> coarse_dx1f, coarse_dx2f, coarse_dx3f;
-  AthenaArray<Real> coarse_x1f, coarse_x2f, coarse_x3f;
-  AthenaArray<Real> coarse_dx1v, coarse_dx2v, coarse_dx3v;
-  AthenaArray<Real> coarse_x1v, coarse_x2v, coarse_x3v;
-  AthenaArray<Real> coarse_data;
   int cis,cie,cjs,cje,cks,cke,cnghost;
 
   Coordinates *pcoord;
@@ -121,20 +118,21 @@ private:
   int nbtotal, nbstart, nbend;
   int maxneighbor_;
   int num_mesh_threads_;
-  int *nslist, *nblist;
+  int *nslist, *nblist, *ranklist;
+  Real *costlist;
   Real MeshGeneratorX1(Real x, RegionSize rs);
   Real MeshGeneratorX2(Real x, RegionSize rs);
   Real MeshGeneratorX3(Real x, RegionSize rs);
-  bool adaptive, multilevel, face_only;
   BlockUID *buid;
   BlockTree tree;
   long int nrbx1, nrbx2, nrbx3;
 
-  void MeshTest(int *ranklist, Real *costlist, int dim);
+  void MeshTest(int dim);
 
   friend class RestartOutput;
   friend class MeshBlock;
   friend class BoundaryValues;
+  friend class Coordinates;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
@@ -148,6 +146,7 @@ public:
 
   Real start_time, tlim, cfl_number, time, dt;
   int nlim, ncycle;
+  bool adaptive, multilevel, face_only;
 
   MeshBlock *pblock;
 
@@ -159,6 +158,7 @@ public:
   void ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin); // files in /pgen
   void NewTimeStep(void);
   MeshBlock* FindMeshBlock(int tgid);
+  void TestConservation(void);
 };
 
 

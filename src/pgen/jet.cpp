@@ -25,6 +25,7 @@
 #include "../fluid/eos/eos.hpp"    // GetGamma
 #include "../field/field.hpp"      // magnetic field
 #include "../bvals/bvals.hpp"      // Boundary Enroll
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 // BCs on L-x1 (left edge) of grid with jet inflow conditions
 void jet_fluid_iib(MeshBlock *pmb, AthenaArray<Real> &a,
@@ -135,7 +136,7 @@ void jet_fluid_iib(MeshBlock *pmb, AthenaArray<Real> &a,
   for(int k=ks; k<=ke; ++k){
   for(int j=js; j<=je; ++j){
     for(int i=1; i<=(NGHOST); ++i){
-      Real rad = sqrt(SQR(pmb->x2v(j) - x2_0) + SQR(pmb->x3v(k) - x3_0));
+      Real rad = sqrt(SQR(pmb->pcoord->x2v(j) - x2_0) + SQR(pmb->pcoord->x3v(k) - x3_0));
       if(rad <= r_jet){
         a(IDN,k,j,is-i) = d_jet;
         a(IM1,k,j,is-i) = d_jet*vx_jet;
@@ -167,7 +168,7 @@ void jet_field_iib(MeshBlock *pmb, InterfaceField &a,
   for(int j=js; j<=je; ++j){
 #pragma simd
     for(int i=1; i<=(NGHOST); ++i){
-      Real rad = sqrt(SQR(pmb->x2v(j) - x2_0) + SQR(pmb->x3v(k) - x3_0));
+      Real rad = sqrt(SQR(pmb->pcoord->x2v(j) - x2_0) + SQR(pmb->pcoord->x3v(k) - x3_0));
       if(rad <= r_jet){
         a.x1f(k,j,is-i) = bx_jet;
       } else{
@@ -180,7 +181,7 @@ void jet_field_iib(MeshBlock *pmb, InterfaceField &a,
   for (int j=js; j<=je+1; ++j) {
 #pragma simd
     for (int i=1; i<=(NGHOST); ++i) {
-      Real rad = sqrt(SQR(pmb->x2v(j) - x2_0) + SQR(pmb->x3v(k) - x3_0));
+      Real rad = sqrt(SQR(pmb->pcoord->x2v(j) - x2_0) + SQR(pmb->pcoord->x3v(k) - x3_0));
       if(rad <= r_jet){
         a.x2f(k,j,is-i) = by_jet;
       } else{
@@ -193,7 +194,7 @@ void jet_field_iib(MeshBlock *pmb, InterfaceField &a,
   for (int j=js; j<=je; ++j) {
 #pragma simd
     for (int i=1; i<=(NGHOST); ++i) {
-      Real rad = sqrt(SQR(pmb->x2v(j) - x2_0) + SQR(pmb->x3v(k) - x3_0));
+      Real rad = sqrt(SQR(pmb->pcoord->x2v(j) - x2_0) + SQR(pmb->pcoord->x3v(k) - x3_0));
       if(rad <= r_jet){
         a.x3f(k,j,is-i) = bz_jet;
       } else{

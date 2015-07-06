@@ -42,39 +42,77 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
+  // Set face centered positions and distances
+  AllocateAndSetBasicCoordinates();
+
   // initialize volume-averaged positions and spacing
   // x1-direction: x1v = (\int r dV / \int dV) = d(r^3/3)d(r^2/2)
   for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-    pmb->x1v(i) = (2.0/3.0)*(pow(pmb->x1f(i+1),3) - pow(pmb->x1f(i),3))
-                     /(pow(pmb->x1f(i+1),2) - pow(pmb->x1f(i),2));
+    x1v(i) = (2.0/3.0)*(pow(x1f(i+1),3) - pow(x1f(i),3))
+                      /(pow(x1f(i+1),2) - pow(x1f(i),2));
   }
   for (int i=is-(NGHOST); i<=ie+(NGHOST)-1; ++i) {
-    pmb->dx1v(i) = pmb->x1v(i+1) - pmb->x1v(i);
+    dx1v(i) = x1v(i+1) - x1v(i);
   }
 
   // x2-direction: x2v = (\int phi dV / \int dV) = dphi/2
   if (pmb->block_size.nx2 == 1) {
-    pmb->x2v(js) = 0.5*(pmb->x2f(js+1) + pmb->x2f(js));
-    pmb->dx2v(js) = pmb->dx2f(js);
+    x2v(js) = 0.5*(x2f(js+1) + x2f(js));
+    dx2v(js) = dx2f(js);
   } else {
     for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
-      pmb->x2v(j) = 0.5*(pmb->x2f(j+1) + pmb->x2f(j));
+      x2v(j) = 0.5*(x2f(j+1) + x2f(j));
     }
     for (int j=js-(NGHOST); j<=je+(NGHOST)-1; ++j) {
-      pmb->dx2v(j) = pmb->x2v(j+1) - pmb->x2v(j);
+      dx2v(j) = x2v(j+1) - x2v(j);
     }
   }
 
   // x3-direction: x3v = (\int z dV / \int dV) = dz/2
   if (pmb->block_size.nx3 == 1) {
-    pmb->x3v(ks) = 0.5*(pmb->x3f(ks+1) + pmb->x3f(ks));
-    pmb->dx3v(ks) = pmb->dx3f(ks);
+    x3v(ks) = 0.5*(x3f(ks+1) + x3f(ks));
+    dx3v(ks) = dx3f(ks);
   } else {
     for (int k=ks-(NGHOST); k<=ke+(NGHOST); ++k) {
-      pmb->x3v(k) = 0.5*(pmb->x3f(k+1) + pmb->x3f(k));
+      x3v(k) = 0.5*(x3f(k+1) + x3f(k));
     }
     for (int k=ks-(NGHOST); k<=ke+(NGHOST)-1; ++k) {
-      pmb->dx3v(k) = pmb->x3v(k+1) - pmb->x3v(k);
+      dx3v(k) = x3v(k+1) - x3v(k);
+    }
+  }
+
+  if(pmb->pmy_mesh->multilevel==true) { // calc coarse coodinates
+    int cis = pmb->cis; int cjs = pmb->cjs; int cks = pmb->cks;
+    int cie = pmb->cie; int cje = pmb->cje; int cke = pmb->cke;
+    for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost); ++i) {
+      coarse_x1v(i) = (2.0/3.0)
+                     *(pow(coarse_x1f(i+1),3) - pow(coarse_x1f(i),3))
+                     /(pow(coarse_x1f(i+1),2) - pow(coarse_x1f(i),2));
+}
+    for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost)-1; ++i) {
+      coarse_dx1v(i) = coarse_x1v(i+1) - coarse_x1v(i);
+    }
+    if (pmb->block_size.nx2 == 1) {
+      coarse_x2v(cjs) = 0.5*(coarse_x2f(cjs+1) + coarse_x2f(cjs));
+      coarse_dx2v(cjs) = coarse_dx2f(cjs);
+    } else {
+      for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost); ++j) {
+        coarse_x2v(j) = 0.5*(coarse_x2f(j+1) + coarse_x2f(j));
+      }
+      for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost)-1; ++j) {
+        coarse_dx2v(j) = coarse_x2v(j+1) - coarse_x2v(j);
+      }
+    }
+    if (pmb->block_size.nx3 == 1) {
+      coarse_x3v(cks) = 0.5*(coarse_x3f(cks+1) + coarse_x3f(cks));
+      coarse_dx3v(cks) = coarse_dx3f(cks);
+    } else {
+      for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost); ++k) {
+        coarse_x3v(k) = 0.5*(coarse_x3f(k+1) + coarse_x3f(k));
+      }
+      for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost)-1; ++k) {
+        coarse_dx3v(k) = coarse_x3v(k+1) - coarse_x3v(k);
+      }
     }
   }
 
@@ -91,23 +129,23 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
   // This helps improve performance.
 #pragma simd
   for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i){
-    Real rm = pmb->x1f(i  );
-    Real rp = pmb->x1f(i+1);
+    Real rm = x1f(i  );
+    Real rp = x1f(i+1);
     // dV = 0.5*(R_{i+1}^2 - R_{i}^2)
     coord_area3_i_(i)= 0.5*(rp*rp - rm*rm);
     // dV = 0.5*(R_{i+1}^2 - R_{i}^2)
     coord_vol_i_(i) = coord_area3_i_(i);
     // (A1^{+} - A1^{-})/dV
-    coord_src1_i_(i) = pmb->dx1f(i)/coord_vol_i_(i);
+    coord_src1_i_(i) = dx1f(i)/coord_vol_i_(i);
     // (dR/2)/(R_c dV)
-    coord_src2_i_(i) = pmb->dx1f(i)/((rm + rp)*coord_vol_i_(i));
+    coord_src2_i_(i) = dx1f(i)/((rm + rp)*coord_vol_i_(i));
     // Rf_{i}/R_{i}/Rf_{i}^2
-    phy_src1_i_(i) = 1.0/(pmb->x1v(i)*pmb->x1f(i));
+    phy_src1_i_(i) = 1.0/(x1v(i)*x1f(i));
   }
 #pragma simd
   for (int i=is-(NGHOST); i<=ie+(NGHOST-1); ++i){
      // Rf_{i+1}/R_{i}/Rf_{i+1}^2 
-    phy_src2_i_(i) = 1.0/(pmb->x1v(i)*pmb->x1f(i+1));
+    phy_src2_i_(i) = 1.0/(x1v(i)*x1f(i+1));
   }
 
 }
@@ -116,6 +154,8 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 
 Coordinates::~Coordinates()
 {
+  DeleteBasicCoordinates();
+
   coord_area3_i_.DeleteAthenaArray();
   coord_vol_i_.DeleteAthenaArray();
   coord_src1_i_.DeleteAthenaArray();
@@ -133,7 +173,7 @@ void Coordinates::Edge1Length(const int k, const int j, const int il, const int 
 {
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    len(i) = pmy_block->dx1f(i);
+    len(i) = dx1f(i);
   }
   return;
 }
@@ -145,7 +185,7 @@ void Coordinates::Edge2Length(const int k, const int j, const int il, const int 
 {
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    len(i) = pmy_block->x1f(i)*pmy_block->dx2f(j);
+    len(i) = x1f(i)*dx2f(j);
   }
   return;
 }
@@ -157,7 +197,7 @@ void Coordinates::Edge3Length(const int k, const int j, const int il, const int 
 {
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    len(i) = pmy_block->dx3f(k);
+    len(i) = dx3f(k);
   }
   return;
 }
@@ -167,17 +207,17 @@ void Coordinates::Edge3Length(const int k, const int j, const int il, const int 
 
 Real Coordinates::CenterWidth1(const int k, const int j, const int i)
 {
-  return (pmy_block->dx1f(i));
+  return dx1f(i);
 }
 
 Real Coordinates::CenterWidth2(const int k, const int j, const int i)
 {
-  return (pmy_block->x1v(i)*pmy_block->dx2f(j));
+  return x1v(i)*dx2f(j);
 }
 
 Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 {
-  return (pmy_block->dx3f(k));
+  return dx3f(k);
 }
 
 
@@ -190,7 +230,7 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 #pragma simd
   for (int i=il; i<=iu; ++i){
     // area1 = r dphi dz 
-    area(i) = pmy_block->x1f(i)*pmy_block->dx2f(j)*pmy_block->dx3f(k);
+    area(i) = x1f(i)*dx2f(j)*dx3f(k);
   }
   return;
 }
@@ -201,7 +241,7 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 #pragma simd
   for (int i=il; i<=iu; ++i){
     // area2 = dr dz
-    area(i) = (pmy_block->dx1f(i))*(pmy_block->dx3f(k));
+    area(i) = dx1f(i)*dx3f(k);
   }
   return;
 }
@@ -212,10 +252,16 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 #pragma simd
   for (int i=il; i<=iu; ++i){
     // area3 = dr r dphi = d(r^2/2) dphi
-    area(i) = coord_area3_i_(i)*(pmy_block->dx2f(j));
+    area(i) = coord_area3_i_(i)*dx2f(j);
   }
   return;
 }
+
+Real Coordinates::GetFace1Area(const int k, const int j, const int i)
+{
+  return x1f(i)*dx2f(j)*dx3f(k);
+}
+
 
 //--------------------------------------------------------------------------------------
 // Cell Volume function
@@ -226,9 +272,14 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 #pragma simd
   for (int i=il; i<=iu; ++i){
     // volume = dr dz r dphi = d(r^2/2) dphi dz
-    vol(i) = coord_vol_i_(i)*pmy_block->dx2f(j)*pmy_block->dx3f(k);
+    vol(i) = coord_vol_i_(i)*dx2f(j)*dx3f(k);
   }
   return;
+}
+
+Real Coordinates::GetCellVolume(const int k, const int j, const int i)
+{
+  return coord_vol_i_(i)*dx2f(j)*dx3f(k)
 }
 
 //--------------------------------------------------------------------------------------
@@ -255,8 +306,8 @@ void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
     u(IM1,k,j,i) += dt*coord_src1_i_(i)*m_pp;
 
     // src_2 = -< M_{phi r} ><1/r>
-    Real& x_i   = pmy_block->x1f(i);
-    Real& x_ip1 = pmy_block->x1f(i+1);
+    Real& x_i   = x1f(i);
+    Real& x_ip1 = x1f(i+1);
     u(IM2,k,j,i) -= dt*coord_src2_i_(i)*(x_i*flx(IM2,i) + x_ip1*flx(IM2,i+1));
   }
 
@@ -300,15 +351,15 @@ void Coordinates::Divv(const AthenaArray<Real> &prim, AthenaArray<Real> &divv)
     for (int j=jl; j<=ju; ++j){
 #pragma simd
       for (int i=il; i<=iu; ++i){
-        area_p1 = pmy_block->x1f(i+1)*pmy_block->dx2f(j)*pmy_block->dx3f(k); 
-        area = pmy_block->x1f(i)*pmy_block->dx2f(j)*pmy_block->dx3f(k);
+        area_p1 = x1f(i+1)*dx2f(j)*dx3f(k); 
+        area = x1f(i)*dx2f(j)*dx3f(k);
         vel_p1 = 0.5*(prim(IM1,k,j,i+1)+prim(IM1,k,j,i));
         vel = 0.5*(prim(IM1,k,j,i)+prim(IM1,k,j,i-1));
         divv(k,j,i) = area_p1*vel_p1 - area*vel;
       }
       if (pmy_block->block_size.nx2 > 1) {
         for (int i=il; i<=iu; ++i){
-          area_p1 = pmy_block->dx1f(i)*pmy_block->dx3f(k); 
+          area_p1 = dx1f(i)*dx3f(k); 
           area = area_p1;
           vel_p1 = 0.5*(prim(IM2,k,j+1,i)+prim(IM2,k,j,i));
           vel = 0.5*(prim(IM2,k,j,i)+prim(IM2,k,j-1,i));
@@ -317,7 +368,7 @@ void Coordinates::Divv(const AthenaArray<Real> &prim, AthenaArray<Real> &divv)
       }
       if (pmy_block->block_size.nx3 > 1) {
         for (int i=il; i<=iu; ++i){
-          area_p1 = coord_area3_i_(i)*(pmy_block->dx2f(j)); 
+          area_p1 = coord_area3_i_(i)*(dx2f(j)); 
           area = area_p1;
           vel_p1 = 0.5*(prim(IM3,k+1,j,i)+prim(IM3,k,j,i));
           vel = 0.5*(prim(IM3,k,j,i)+prim(IM3,k-1,j,i));
@@ -325,7 +376,7 @@ void Coordinates::Divv(const AthenaArray<Real> &prim, AthenaArray<Real> &divv)
         }
       }
       for (int i=il; i<=iu; ++i){
-        vol = coord_vol_i_(i)*pmy_block->dx2f(j)*pmy_block->dx3f(k); 
+        vol = coord_vol_i_(i)*dx2f(j)*dx3f(k); 
         divv(k,j,i) = divv(k,j,i)/vol;
       }
     }
@@ -340,7 +391,7 @@ void Coordinates::FaceXdx(const int k, const int j, const int il, const int iu,
 {
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    len(i) = (prim(IM1,k,j,i)-prim(IM1,k,j,i-1))/pmy_block->dx1v(i-1);
+    len(i) = (prim(IM1,k,j,i)-prim(IM1,k,j,i-1))/dx1v(i-1);
   }
   return;
 }
@@ -351,10 +402,10 @@ void Coordinates::FaceXdy(const int k, const int j, const int il, const int iu,
 {
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    len(i) = pmy_block->x1f(i)*(prim(IM2,k,j,i)/pmy_block->x1v(i)
-                                -prim(IM2,k,j,i-1)/pmy_block->x1v(i-1))/pmy_block->dx1v(i-1)
+    len(i) = x1f(i)*(prim(IM2,k,j,i)/x1v(i)
+                    -prim(IM2,k,j,i-1)/x1v(i-1))/dx1v(i-1)
              +0.5*(prim(IM1,k,j+1,i)+prim(IM1,k,j+1,i-1)-prim(IM1,k,j-1,i)-prim(IM1,k,j-1,i-1))
-              /pmy_block->x1f(i)/(pmy_block->dx2v(j-1)+pmy_block->dx2v(j));
+              /x1f(i)/(dx2v(j-1)+dx2v(j));
   }
   return;
 }
@@ -365,9 +416,9 @@ void Coordinates::FaceXdz(const int k, const int j, const int il, const int iu,
 {
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    len(i) = (prim(IM3,k,j,i)-prim(IM3,k,j,i-1))/pmy_block->dx1v(i-1)
+    len(i) = (prim(IM3,k,j,i)-prim(IM3,k,j,i-1))/dx1v(i-1)
              +0.5*(prim(IM1,k+1,j,i)+prim(IM1,k+1,j,i-1)-prim(IM1,k-1,j,i)-prim(IM1,k-1,j,i-1))
-              /(pmy_block->dx3v(k-1)+pmy_block->dx3v(k));
+             /(dx3v(k-1)+dx3v(k));
   }
   return;
 }
@@ -378,10 +429,10 @@ void Coordinates::FaceYdx(const int k, const int j, const int il, const int iu,
 {
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    len(i) = (prim(IM1,k,j,i)-prim(IM1,k,j-1,i))/pmy_block->x1v(i)/pmy_block->dx2v(j-1)
-             +pmy_block->x1v(i)*0.5*((prim(IM2,k,j,i+1)+prim(IM2,k,j-1,i+1))/pmy_block->x1v(i+1)
-                                     -(prim(IM2,k,j,i-1)+prim(IM2,k,j-1,i-1))/pmy_block->x1v(i-1))
-              /(pmy_block->dx1v(i-1)+pmy_block->dx1v(i));
+    len(i) = (prim(IM1,k,j,i)-prim(IM1,k,j-1,i))/x1v(i)/dx2v(j-1)
+             +x1v(i)*0.5*((prim(IM2,k,j,i+1)+prim(IM2,k,j-1,i+1))/x1v(i+1)
+                         -(prim(IM2,k,j,i-1)+prim(IM2,k,j-1,i-1))/x1v(i-1))
+             /(dx1v(i-1)+dx1v(i));
   }
   return;
 }
@@ -392,8 +443,8 @@ void Coordinates::FaceYdy(const int k, const int j, const int il, const int iu,
 {
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    len(i) = (prim(IM2,k,j,i)-prim(IM2,k,j-1,i))/pmy_block->x1v(i)/pmy_block->dx2v(j-1) 
-              +0.5*(prim(IM1,k,j,i)+prim(IM1,k,j-1,i))/pmy_block->x1v(i);
+    len(i) = (prim(IM2,k,j,i)-prim(IM2,k,j-1,i))/x1v(i)/dx2v(j-1) 
+              +0.5*(prim(IM1,k,j,i)+prim(IM1,k,j-1,i))/x1v(i);
   }
   return;
 }
@@ -404,9 +455,9 @@ void Coordinates::FaceYdz(const int k, const int j, const int il, const int iu,
 {
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    len(i) = (prim(IM3,k,j,i)-prim(IM3,k,j-1,i))/pmy_block->x1v(i)/pmy_block->dx2v(j-1)
+    len(i) = (prim(IM3,k,j,i)-prim(IM3,k,j-1,i))/x1v(i)/dx2v(j-1)
              +0.5*(prim(IM2,k+1,j,i)+prim(IM2,k+1,j-1,i)-prim(IM2,k-1,j,i)-prim(IM2,k-1,j-1,i))
-              /(pmy_block->dx3v(k-1)+pmy_block->dx3v(k));
+             /(dx3v(k-1)+dx3v(k));
   }
   return;
 }
@@ -417,9 +468,9 @@ void Coordinates::FaceZdx(const int k, const int j, const int il, const int iu,
 {
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    len(i) = (prim(IM1,k,j,i)-prim(IM1,k-1,j,i))/pmy_block->dx3v(k-1)
+    len(i) = (prim(IM1,k,j,i)-prim(IM1,k-1,j,i))/dx3v(k-1)
              +0.5*(prim(IM3,k,j,i+1)+prim(IM3,k-1,j,i+1)-prim(IM3,k,j,i-1)-prim(IM3,k-1,j,i-1))
-              /(pmy_block->dx1v(i-1)+pmy_block->dx1v(i));
+             /(dx1v(i-1)+dx1v(i));
   }
   return;
 }
@@ -430,9 +481,9 @@ void Coordinates::FaceZdy(const int k, const int j, const int il, const int iu,
 {
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    len(i) = (prim(IM2,k,j,i)-prim(IM2,k-1,j,i))/pmy_block->dx3v(k-1)
+    len(i) = (prim(IM2,k,j,i)-prim(IM2,k-1,j,i))/dx3v(k-1)
              +0.5*(prim(IM3,k,j+1,i)+prim(IM3,k-1,j+1,i)-prim(IM3,k,j-1,i)-prim(IM3,k-1,j-1,i))
-              /pmy_block->x1v(i)/(pmy_block->dx2v(j-1)+pmy_block->dx2v(j));
+             /x1v(i)/(dx2v(j-1)+dx2v(j));
   } 
   return;
 }
@@ -443,7 +494,7 @@ void Coordinates::FaceZdz(const int k, const int j, const int il, const int iu,
 {   
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    len(i) = (prim(IM3,k,j,i)-prim(IM3,k-1,j,i))/pmy_block->dx3v(k-1);
+    len(i) = (prim(IM3,k,j,i)-prim(IM3,k-1,j,i))/dx3v(k-1);
   }
   return;
 }
@@ -460,8 +511,8 @@ void Coordinates::VisSrcTermsX1(const int k, const int j, const Real dt,
 #pragma simd
   for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
     // src_2 = < M_{phi r} ><1/r>
-    Real& x_i   = pmy_block->x1f(i);
-    Real& x_ip1 = pmy_block->x1f(i+1);
+    Real& x_i   = x1f(i);
+    Real& x_ip1 = x1f(i+1);
     u(IM2,k,j,i) += dt*coord_src2_i_(i)*(x_i*flx(IM2,i) + x_ip1*flx(IM2,i+1));
   }
 

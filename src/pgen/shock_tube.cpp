@@ -30,6 +30,7 @@
 #include "../fluid/fluid.hpp"      // Fluid
 #include "../fluid/eos/eos.hpp"    // GetGamma
 #include "../field/field.hpp"      // magnetic field
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file shock_tube.cpp
@@ -42,6 +43,7 @@
 void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pmb = pfl->pmy_block;
+  Coordinates *pco = pmb->pcoord;
   std::stringstream msg;
 
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
@@ -110,7 +112,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
-        if (pmb->x1v(i) < xshock) {
+        if (pco->x1v(i) < xshock) {
           pfl->u(IDN,k,j,i) = wl[IDN];
           pfl->u(IM1,k,j,i) = wl[IVX]*wl[IDN];
           pfl->u(IM2,k,j,i) = wl[IVY]*wl[IDN];
@@ -135,7 +137,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   case 2:
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
-      if (pmb->x2v(j) < xshock) {
+      if (pco->x2v(j) < xshock) {
         for (int i=is; i<=ie; ++i) {
           pfl->u(IDN,k,j,i) = wl[IDN];
           pfl->u(IM2,k,j,i) = wl[IVX]*wl[IDN];
@@ -163,7 +165,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 
   case 3:
     for (int k=ks; k<=ke; ++k) {
-      if (pmb->x3v(k) < xshock) {
+      if (pco->x3v(k) < xshock) {
         for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
           pfl->u(IDN,k,j,i) = wl[IDN];
@@ -201,29 +203,29 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
-        if (shk_dir==1 && pmb->x1v(i) < xshock) {
+        if (shk_dir==1 && pco->x1v(i) < xshock) {
           pfd->b.x1f(k,j,i) = wl[NFLUID  ];
           pfd->b.x2f(k,j,i) = wl[NFLUID+1];
           pfd->b.x3f(k,j,i) = wl[NFLUID+2];
-        } else if (shk_dir==2 && pmb->x2v(j) < xshock) {
+        } else if (shk_dir==2 && pco->x2v(j) < xshock) {
           pfd->b.x1f(k,j,i) = wl[NFLUID+2];
           pfd->b.x2f(k,j,i) = wl[NFLUID  ];
           pfd->b.x3f(k,j,i) = wl[NFLUID+1];
-        } else if (shk_dir==3 && pmb->x3v(k) < xshock) {
+        } else if (shk_dir==3 && pco->x3v(k) < xshock) {
           pfd->b.x1f(k,j,i) = wl[NFLUID+1];
           pfd->b.x2f(k,j,i) = wl[NFLUID+2];
           pfd->b.x3f(k,j,i) = wl[NFLUID];
         }
 
-        if (shk_dir==1 && pmb->x1v(i) >= xshock) {
+        if (shk_dir==1 && pco->x1v(i) >= xshock) {
           pfd->b.x1f(k,j,i) = wr[NFLUID  ];
           pfd->b.x2f(k,j,i) = wr[NFLUID+1];
           pfd->b.x3f(k,j,i) = wr[NFLUID+2];
-        } else if (shk_dir==2 && pmb->x2v(j) >= xshock) {
+        } else if (shk_dir==2 && pco->x2v(j) >= xshock) {
           pfd->b.x1f(k,j,i) = wr[NFLUID+2];
           pfd->b.x2f(k,j,i) = wr[NFLUID  ];
           pfd->b.x3f(k,j,i) = wr[NFLUID+1];
-        } else if (shk_dir==3 && pmb->x3v(k) >= xshock)  {
+        } else if (shk_dir==3 && pco->x3v(k) >= xshock)  {
           pfd->b.x1f(k,j,i) = wr[NFLUID+1];
           pfd->b.x2f(k,j,i) = wr[NFLUID+2];
           pfd->b.x3f(k,j,i) = wr[NFLUID];

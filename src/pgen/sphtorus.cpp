@@ -19,6 +19,7 @@
 #include "../parameter_input.hpp"  // ParameterInput
 #include "../fluid/eos/eos.hpp"    // ParameterInput
 #include "../bvals/bvals.hpp" // EnrollFluidBValFunction
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 
 #ifdef ISOTHERMAL
@@ -51,6 +52,7 @@ void stbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
 void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pmb = pfl->pmy_block;
+  Coordinates *pco = pmb->pcoord;
   int i, is = pmb->is, ie = pmb->ie;
   int j, js = pmb->js, je = pmb->je;
   int k, ks = pmb->ks, ke = pmb->ke;
@@ -92,7 +94,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         pfl->u(IM1,k,j,i) = 0.0;
         pfl->u(IM2,k,j,i) = 0.0;
         pfl->u(IM3,k,j,i) = 0.0;
-        pr(k,j,i)=d0/pmb->x1v(i);
+        pr(k,j,i)=d0/pco->x1v(i);
       }
     }
   }
@@ -105,12 +107,12 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         ftorus=0;
         vt=0.0;
         for(jj=0;jj<10;jj++) {
-          tp=pmb->x2f(j)+pmb->dx2f(j)*0.1*(jj+1);
-          tm=pmb->x2f(j)+pmb->dx2f(j)*0.1*jj;
+          tp=pco->x2f(j)+pco->dx2f(j)*0.1*(jj+1);
+          tm=pco->x2f(j)+pco->dx2f(j)*0.1*jj;
           tv=0.5*(tp+tm)+(1.0-0.5*(tp-tm)/tan(0.5*(tp-tm)))/tan(0.5*(tp+tm));
           for(ii=0;ii<10;ii++) {
-            rp = pmb->x1f(i)+pmb->dx1f(i)*0.1*(ii+1);
-            rm = pmb->x1f(i)+pmb->dx1f(i)*0.1*ii;
+            rp = pco->x1f(i)+pco->dx1f(i)*0.1*(ii+1);
+            rm = pco->x1f(i)+pco->dx1f(i)*0.1*ii;
             rv= ((SQR(SQR(rp))-SQR(SQR(rm)))/4.0)/((CUBE(rp)-CUBE(rm))/3.0);
             lv= 1.0/3.0*(CUBE(rp)-CUBE(rm))*(cos(tm)-cos(tp));
             vt+=lv;
@@ -133,11 +135,11 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         }
         if(ftorus==1)
         {
-          vv= 1.0/3.0*(CUBE(pmb->x1f(i+1))-CUBE(pmb->x1f(i)))*(cos(pmb->x2f(j))-cos(pmb->x2f(j+1)));
+          vv= 1.0/3.0*(CUBE(pco->x1f(i+1))-CUBE(pco->x1f(i)))*(cos(pco->x2f(j))-cos(pco->x2f(j+1)));
           ld/=vv; lm/=vv;
           pfl->u(IDN,k,j,i) = ld;
           pfl->u(IM3,k,j,i) = lm;
-          pr(k,j,i)=MAX(acons*pow(ld,gmgas),d0/pmb->x1v(i))*(1+amp*((double)rand()/(double)RAND_MAX-0.5));
+          pr(k,j,i)=MAX(acons*pow(ld,gmgas),d0/pco->x1v(i))*(1+amp*((double)rand()/(double)RAND_MAX-0.5));
         }
         pfl->u(IEN,k,j,i)=pr(k,j,i)*en+0.5*SQR(pfl->u(IM3,k,j,i))/pfl->u(IDN,k,j,i);
       }
@@ -152,6 +154,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 void stbv_iib(MeshBlock *pmb, AthenaArray<Real> &a,
               int is, int ie, int js, int je, int ks, int ke)
 {
+  Coordinates *pco = pmb->pcoord;
   int i,j,k;
 #ifdef MHD
   int ju, ku; /* j-upper, k-upper */
@@ -170,7 +173,7 @@ void stbv_iib(MeshBlock *pmb, AthenaArray<Real> &a,
         a(IM2,k,j,is-i) = 0.0;
         a(IM3,k,j,is-i) = 0.0;
         pg = (a(IEN,k,j,is-i+1)-0.5*(SQR(a(IM1,k,j,is-i+1))+SQR(a(IM2,k,j,is-i+1))+SQR(a(IM3,k,j,is-i+1)))/a(IDN,k,j,is-i+1))*(gmgas-1.0);
-        pg-=gm/SQR(pmb->x1f(is-i+1))*a(IDN,k,j,is-i+1)*pmb->dx1v(is-i);
+        pg-=gm/SQR(pco->x1f(is-i+1))*a(IDN,k,j,is-i+1)*pco->dx1v(is-i);
         a(IEN,k,j,is-i)=pg/(gmgas-1.0)+0.5*SQR(a(IM1,k,j,is-i))/a(IDN,k,j,is-i);
       }
     }

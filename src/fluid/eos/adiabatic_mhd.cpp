@@ -28,6 +28,7 @@
 #include "../../mesh.hpp"             // MeshBlock
 #include "../../parameter_input.hpp"  // GetReal()
 #include "../../field/field.hpp"      // BFields
+#include "../../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file adiabatic_mhd.cpp
@@ -62,6 +63,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   AthenaArray<Real> &bcc)
 {
   MeshBlock *pmb = pmy_fluid_->pmy_block;
+  Coordinates *pco = pmb->pcoord;
   int jl = pmb->js; int ju = pmb->je;
   int kl = pmb->ks; int ku = pmb->ke;
 
@@ -81,7 +83,46 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   for (int k=kl; k<=ku; ++k){
 #pragma omp for schedule(dynamic)
   for (int j=jl; j<=ju; ++j){
-//#pragma simd
+
+  // calc cell centered fields first
+#pragma simd
+    for (int i=pmb->is-(NGHOST); i<=pmb->ie+(NGHOST); ++i){
+      const Real& b1_i   = b.x1f(k,j,i  );
+      const Real& b1_ip1 = b.x1f(k,j,i+1);
+      const Real& b2_j   = b.x2f(k,j  ,i);
+      const Real& b2_jp1 = b.x2f(k,j+1,i);
+      const Real& b3_k   = b.x3f(k  ,j,i);
+      const Real& b3_kp1 = b.x3f(k+1,j,i);
+
+      Real& bcc1 = bcc(IB1,k,j,i);
+      Real& bcc2 = bcc(IB2,k,j,i);
+      Real& bcc3 = bcc(IB3,k,j,i);
+
+      // cell center B-fields are defined as spatial interpolation at the volume center
+      const Real& x1f_i  = pco->x1f(i);
+      const Real& x1f_ip = pco->x1f(i+1);
+      const Real& x1v_i  = pco->x1v(i);
+      const Real& dx1_i  = pco->dx1f(i);
+      Real lw=(x1f_ip-x1v_i)/dx1_i;
+      Real rw=(x1v_i -x1f_i)/dx1_i;
+      bcc1 = lw*b1_i + rw*b1_ip1;
+      const Real& x2f_j  = pco->x2f(j);
+      const Real& x2f_jp = pco->x2f(j+1);
+      const Real& x2v_j  = pco->x2v(j);
+      const Real& dx2_j  = pco->dx2f(j);
+      lw=(x2f_jp-x2v_j)/dx2_j;
+      rw=(x2v_j -x2f_j)/dx2_j;
+      bcc2 = lw*b2_j + rw*b2_jp1;
+      const Real& x3f_k  = pco->x3f(k);
+      const Real& x3f_kp = pco->x3f(k+1);
+      const Real& x3v_k  = pco->x3v(k);
+      const Real& dx3_k  = pco->dx3f(k);
+      lw=(x3f_kp-x3v_k)/dx3_k;
+      rw=(x3v_k -x3f_k)/dx3_k;
+      bcc3 = lw*b3_k + rw*b3_kp1;
+    }
+
+#pragma simd
     for (int i=pmb->is-(NGHOST); i<=pmb->ie+(NGHOST); ++i){
       Real& u_d  = cons(IDN,k,j,i);
       Real& u_m1 = cons(IVX,k,j,i);
@@ -104,39 +145,9 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       w_vy = u_m2*di;
       w_vz = u_m3*di;
 
-      const Real& b1_i   = b.x1f(k,j,i  );
-      const Real& b1_ip1 = b.x1f(k,j,i+1);
-      const Real& b2_j   = b.x2f(k,j  ,i);
-      const Real& b2_jp1 = b.x2f(k,j+1,i);
-      const Real& b3_k   = b.x3f(k  ,j,i);
-      const Real& b3_kp1 = b.x3f(k+1,j,i);
-
-      Real& bcc1 = bcc(IB1,k,j,i);
-      Real& bcc2 = bcc(IB2,k,j,i);
-      Real& bcc3 = bcc(IB3,k,j,i);
-
-      // cell center B-fields are defined as spatial interpolation at the volume center
-      const Real& x1f_i  = pmb->x1f(i);
-      const Real& x1f_ip = pmb->x1f(i+1);
-      const Real& x1v_i  = pmb->x1v(i);
-      const Real& dx1_i  = pmb->dx1f(i);
-      Real lw=(x1f_ip-x1v_i)/dx1_i;
-      Real rw=(x1v_i -x1f_i)/dx1_i;
-      bcc1 = lw*b1_i + rw*b1_ip1;
-      const Real& x2f_j  = pmb->x2f(j);
-      const Real& x2f_jp = pmb->x2f(j+1);
-      const Real& x2v_j  = pmb->x2v(j);
-      const Real& dx2_j  = pmb->dx2f(j);
-      lw=(x2f_jp-x2v_j)/dx2_j;
-      rw=(x2v_j -x2f_j)/dx2_j;
-      bcc2 = lw*b2_j + rw*b2_jp1;
-      const Real& x3f_k  = pmb->x3f(k);
-      const Real& x3f_kp = pmb->x3f(k+1);
-      const Real& x3v_k  = pmb->x3v(k);
-      const Real& dx3_k  = pmb->dx3f(k);
-      lw=(x3f_kp-x3v_k)/dx3_k;
-      rw=(x3v_k -x3f_k)/dx3_k;
-      bcc3 = lw*b3_k + rw*b3_kp1;
+      const Real& bcc1 = bcc(IB1,k,j,i);
+      const Real& bcc2 = bcc(IB2,k,j,i);
+      const Real& bcc3 = bcc(IB3,k,j,i);
 
       Real pb = 0.5*(SQR(bcc1) + SQR(bcc2) + SQR(bcc3));
       Real ke = 0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3));

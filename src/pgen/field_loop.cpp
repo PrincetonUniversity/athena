@@ -30,6 +30,7 @@
 #include "../fluid/eos/eos.hpp"    // eos
 #include "../fluid/fluid.hpp"      // Fluid
 #include "../field/field.hpp"      // Field
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file field_loop.c
@@ -61,6 +62,7 @@
 void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pmb = pfl->pmy_block;
+  Coordinates *pco = pmb->pcoord;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   Real gm1 = (pfl->pf_eos->GetGamma() - 1.0);
@@ -118,8 +120,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     if(iprob==1) {  
       ax(k,j,i) = 0.0;
       ay(k,j,i) = 0.0;
-      if ((SQR(pmb->x1f(i)) + SQR(pmb->x2f(j))) < rad*rad) {
-        az(k,j,i) = amp*(rad - sqrt(SQR(pmb->x1f(i)) + SQR(pmb->x2f(j))));
+      if ((SQR(pco->x1f(i)) + SQR(pco->x2f(j))) < rad*rad) {
+        az(k,j,i) = amp*(rad - sqrt(SQR(pco->x1f(i)) + SQR(pco->x2f(j))));
       } else {
         az(k,j,i) = 0.0;
       }
@@ -127,8 +129,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 
     // (iprob=2): field loop in x2-x3 plane (cylinder in 3D)
     if(iprob==2) {  
-      if ((SQR(pmb->x2f(j)) + SQR(pmb->x3f(k))) < rad*rad) {
-        ax(k,j,i) = amp*(rad - sqrt(SQR(pmb->x2f(j)) + SQR(pmb->x3f(k))));
+      if ((SQR(pco->x2f(j)) + SQR(pco->x3f(k))) < rad*rad) {
+        ax(k,j,i) = amp*(rad - sqrt(SQR(pco->x2f(j)) + SQR(pco->x3f(k))));
       } else {
         ax(k,j,i) = 0.0;
       }
@@ -138,8 +140,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 
     // (iprob=3): field loop in x3-x1 plane (cylinder in 3D)
     if(iprob==3) {  
-      if ((SQR(pmb->x1f(i)) + SQR(pmb->x3f(k))) < rad*rad) {
-        ay(k,j,i) = amp*(rad - sqrt(SQR(pmb->x1f(i)) + SQR(pmb->x3f(k))));
+      if ((SQR(pco->x1f(i)) + SQR(pco->x3f(k))) < rad*rad) {
+        ay(k,j,i) = amp*(rad - sqrt(SQR(pco->x1f(i)) + SQR(pco->x3f(k))));
       } else {
         ay(k,j,i) = 0.0;
       }
@@ -158,8 +160,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     //    x2  = y
     //    x3  = x*sin(ang_2) + z*cos(ang_2)
     if(iprob==4) {
-      Real x = pmb->x1v(i)*cos_a2 + pmb->x3f(k)*sin_a2;
-      Real y = pmb->x2f(j);
+      Real x = pco->x1v(i)*cos_a2 + pco->x3f(k)*sin_a2;
+      Real y = pco->x2f(j);
       // shift x back to the domain -0.5*lambda <= x <= 0.5*lambda
       while(x >  0.5*lambda) x -= lambda;
       while(x < -0.5*lambda) x += lambda;
@@ -170,8 +172,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       }
       ay(k,j,i) = 0.0;
 
-      x = pmb->x1f(i)*cos_a2 + pmb->x3v(k)*sin_a2;
-      y = pmb->x2f(j);
+      x = pco->x1f(i)*cos_a2 + pco->x3v(k)*sin_a2;
+      y = pco->x2f(j);
       // shift x back to the domain -0.5*lambda <= x <= 0.5*lambda
       while(x >  0.5*lambda) x -= lambda;
       while(x < -0.5*lambda) x += lambda;
@@ -185,13 +187,13 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     // (iprob=5): spherical field loop in rotated plane
     if(iprob==5) { 
       ax(k,j,i) = 0.0;
-      if ((SQR(pmb->x1f(i)) + SQR(pmb->x2v(j)) + SQR(pmb->x3f(k))) < rad*rad) {
-        ay(k,j,i) = amp*(rad-sqrt(SQR(pmb->x1f(i))+SQR(pmb->x2v(j))+SQR(pmb->x3f(k))));
+      if ((SQR(pco->x1f(i)) + SQR(pco->x2v(j)) + SQR(pco->x3f(k))) < rad*rad) {
+        ay(k,j,i) = amp*(rad-sqrt(SQR(pco->x1f(i))+SQR(pco->x2v(j))+SQR(pco->x3f(k))));
       } else {
         ay(k,j,i) = 0.0;
       }
-      if ((SQR(pmb->x1f(i)) + SQR(pmb->x2f(j)) + SQR(pmb->x3v(k))) < rad*rad) {
-        az(k,j,i) = amp*(rad-sqrt(SQR(pmb->x1f(i))+SQR(pmb->x2f(j))+SQR(pmb->x3v(k))));
+      if ((SQR(pco->x1f(i)) + SQR(pco->x2f(j)) + SQR(pco->x3v(k))) < rad*rad) {
+        az(k,j,i) = amp*(rad-sqrt(SQR(pco->x1f(i))+SQR(pco->x2f(j))+SQR(pco->x3v(k))));
       } else {
         az(k,j,i) = 0.0;
       }
@@ -214,7 +216,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
      pfl->u(IM2,k,j,i) = pfl->u(IDN,k,j,i)*vflow*x2size/diag;
      pfl->u(IM3,k,j,i) = pfl->u(IDN,k,j,i)*vflow*x3size/diag;
 
-     if ((SQR(pmb->x1v(i)) + SQR(pmb->x2v(j)) + SQR(pmb->x3v(k))) < rad*rad) {
+     if ((SQR(pco->x1v(i)) + SQR(pco->x2v(j)) + SQR(pco->x3v(k))) < rad*rad) {
        pfl->u(IDN,k,j,i) = drat;
        pfl->u(IM1,k,j,i) = pfl->u(IDN,k,j,i)*vflow*x1size/diag;
        pfl->u(IM2,k,j,i) = pfl->u(IDN,k,j,i)*vflow*x2size/diag;
@@ -227,20 +229,20 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie+1; i++) {
-    pfd->b.x1f(k,j,i) = (az(k,j+1,i) - az(k,j,i))/pmb->dx2f(j) -
-                        (ay(k+1,j,i) - ay(k,j,i))/pmb->dx3f(k);
+    pfd->b.x1f(k,j,i) = (az(k,j+1,i) - az(k,j,i))/pco->dx2f(j) -
+                        (ay(k+1,j,i) - ay(k,j,i))/pco->dx3f(k);
   }}}
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je+1; j++) {
   for (int i=is; i<=ie; i++) {
-    pfd->b.x2f(k,j,i) = (ax(k+1,j,i) - ax(k,j,i))/pmb->dx3f(k) -
-                        (az(k,j,i+1) - az(k,j,i))/pmb->dx1f(i);
+    pfd->b.x2f(k,j,i) = (ax(k+1,j,i) - ax(k,j,i))/pco->dx3f(k) -
+                        (az(k,j,i+1) - az(k,j,i))/pco->dx1f(i);
   }}}
   for (int k=ks; k<=ke+1; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
-    pfd->b.x3f(k,j,i) = (ay(k,j,i+1) - ay(k,j,i))/pmb->dx1f(i) -
-                        (ax(k,j+1,i) - ax(k,j,i))/pmb->dx2f(j);
+    pfd->b.x3f(k,j,i) = (ay(k,j,i+1) - ay(k,j,i))/pco->dx1f(i) -
+                        (ax(k,j+1,i) - ax(k,j,i))/pco->dx2f(j);
   }}}
 
 // initialize total energy
