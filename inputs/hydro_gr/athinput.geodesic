@@ -1,0 +1,57 @@
+<comment>
+problem = Geodesic infall
+
+<job>
+problem_id = Infall
+
+<output1>
+file_type = vtk
+variable  = prim
+dt        = 1.0
+
+<output2>
+file_type = vtk
+variable  = cons
+dt        = 1.0
+
+<time>
+cfl_number = 0.4
+nlim       = -1
+tlim       = 1.0
+
+<mesh>
+nx1    = 100
+x1min  = 1.96
+x1max  = 20.0
+ix1_bc = 3     # 3: special
+ox1_bc = 3     # 3: special
+
+nx2    = 100
+x2min  = 0.5235987755982988  # pi/6
+x2max  = 2.6179938779914944  # 5*pi/6
+ix2_bc = 1                   # 1: reflecting
+ox2_bc = 1                   # 1: reflecting
+
+nx3    = 1
+x3min  = -0.5
+x3max  = 0.5
+ix3_bc = 4     # 4: periodic
+ox3_bc = 4     # 4: periodic
+
+<coord>
+m = 1.0  # black hole mass M
+a = 0.0  # black hole spin (0 <= a/M < 1)
+
+<fluid>
+gamma     = 1.3333333333333333
+dfloor    = 1.0e-6
+pfloor    = 1.0e-8
+rho_min   = 1.0e-4
+rho_pow   = -1.5
+u_min     = 1.0e-4
+u_pow     = -2.5
+gamma_max = 50.0
+
+<problem>
+energy = 1.0  # E/m for particles
+l_z    = 0.0  # L_z/m for particles
