@@ -166,11 +166,11 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     u_cov_left[0] = g_00*u_con_left[0] + g_01*u_con_left[1] + g_02*u_con_left[2]
         + g_03*u_con_left[3];
     u_cov_left[1] = g_10*u_con_left[0] + g_11*u_con_left[1] + g_12*u_con_left[2]
-        + g_03*u_con_left[3];
+        + g_13*u_con_left[3];
     u_cov_left[2] = g_20*u_con_left[0] + g_21*u_con_left[1] + g_22*u_con_left[2]
-        + g_03*u_con_left[3];
+        + g_23*u_con_left[3];
     u_cov_left[3] = g_30*u_con_left[0] + g_31*u_con_left[1] + g_32*u_con_left[2]
-        + g_03*u_con_left[3];
+        + g_33*u_con_left[3];
 
     // Calculate 4-velocity for right primitives
     Real u_con_right[4], u_cov_right[4];
@@ -186,11 +186,11 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     u_cov_right[0] = g_00*u_con_right[0] + g_01*u_con_right[1] + g_02*u_con_right[2]
         + g_03*u_con_right[3];
     u_cov_right[1] = g_10*u_con_right[0] + g_11*u_con_right[1] + g_12*u_con_right[2]
-        + g_03*u_con_right[3];
+        + g_13*u_con_right[3];
     u_cov_right[2] = g_20*u_con_right[0] + g_21*u_con_right[1] + g_22*u_con_right[2]
-        + g_03*u_con_right[3];
+        + g_23*u_con_right[3];
     u_cov_right[3] = g_30*u_con_right[0] + g_31*u_con_right[1] + g_32*u_con_right[2]
-        + g_03*u_con_right[3];
+        + g_33*u_con_right[3];
 
     // Calculate 4-magnetic field for left primitives
     Real b_con_left[4], b_cov_left[4];
