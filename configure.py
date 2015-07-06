@@ -57,7 +57,7 @@ parser.add_argument('--prob',
 parser.add_argument('--coord',
     default='cartesian',
     choices=['cartesian','cylindrical','spherical_polar',\
-        'minkowski','sinusoidal','tilted','schwarzschild'],
+        'minkowski','sinusoidal','tilted','schwarzschild','kerr-schild'],
     help='select coordinate system')
 
 # --eos=[name] argument
