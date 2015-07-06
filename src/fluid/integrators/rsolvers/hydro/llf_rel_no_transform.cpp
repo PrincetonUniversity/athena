@@ -85,6 +85,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
          &g23 = g_inv_(I23,i);
     const Real &g30 = g_inv_(I03,i), &g31 = g_inv_(I13,i), &g32 = g_inv_(I23,i),
          &g33 = g_inv_(I33,i);
+    Real alpha = std::sqrt(-1.0/g00);
     Real g_inv_diag, g_inv_off_diag;
     switch (ivx)
     {
@@ -105,56 +106,56 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     // Extract left primitives
     const Real &rho_left = prim_left(IDN,i);
     const Real &pgas_left = prim_left(IEN,i);
-    const Real &v1_left = prim_left(IVX,i);
-    const Real &v2_left = prim_left(IVY,i);
-    const Real &v3_left = prim_left(IVZ,i);
+    const Real &unorm1_left = prim_left(IVX,i);
+    const Real &unorm2_left = prim_left(IVY,i);
+    const Real &unorm3_left = prim_left(IVZ,i);
 
     // Extract right primitives
     const Real &rho_right = prim_right(IDN,i);
     const Real &pgas_right = prim_right(IEN,i);
-    const Real &v1_right = prim_right(IVX,i);
-    const Real &v2_right = prim_right(IVY,i);
-    const Real &v3_right = prim_right(IVZ,i);
+    const Real &unorm1_right = prim_right(IVX,i);
+    const Real &unorm2_right = prim_right(IVY,i);
+    const Real &unorm3_right = prim_right(IVZ,i);
 
     // Calculate 4-velocity for left primitives
     Real u_con_left[4], u_cov_left[4];
-    Real neg_inv_u0_sq = g_00 + 2.0*g_01*v1_left + 2.0*g_02*v2_left + 2.0*g_03*v3_left
-                       + g_11*SQR(v1_left) + 2.0*g_12*v1_left*v2_left
-                           + 2.0*g_13*v1_left*v3_left
-                       + g_22*SQR(v2_left) + 2.0*g_23*v2_left*v3_left
-                       + g_33*SQR(v3_left);
-    u_con_left[0] = std::sqrt(-1.0/neg_inv_u0_sq);
-    u_con_left[1] = u_con_left[0] * v1_left;
-    u_con_left[2] = u_con_left[0] * v2_left;
-    u_con_left[3] = u_con_left[0] * v3_left;
+    Real tmp = g_11*unorm1_left*unorm1_left + 2.0*g_12*unorm1_left*unorm2_left
+                 + 2.0*g_13*unorm1_left*unorm3_left
+             + g_22*unorm2_left*unorm2_left + 2.0*g_23*unorm2_left*unorm3_left
+             + g_33*unorm3_left*unorm3_left;
+    Real gamma = std::sqrt(1.0 + tmp);
+    u_con_left[0] = gamma / alpha;
+    u_con_left[1] = unorm1_left - alpha * gamma * g01;
+    u_con_left[2] = unorm2_left - alpha * gamma * g02;
+    u_con_left[3] = unorm3_left - alpha * gamma * g03;
     u_cov_left[0] = g_00*u_con_left[0] + g_01*u_con_left[1] + g_02*u_con_left[2]
         + g_03*u_con_left[3];
     u_cov_left[1] = g_10*u_con_left[0] + g_11*u_con_left[1] + g_12*u_con_left[2]
-        + g_03*u_con_left[3];
+        + g_13*u_con_left[3];
     u_cov_left[2] = g_20*u_con_left[0] + g_21*u_con_left[1] + g_22*u_con_left[2]
-        + g_03*u_con_left[3];
+        + g_23*u_con_left[3];
     u_cov_left[3] = g_30*u_con_left[0] + g_31*u_con_left[1] + g_32*u_con_left[2]
-        + g_03*u_con_left[3];
+        + g_33*u_con_left[3];
 
     // Calculate 4-velocity for right primitives
     Real u_con_right[4], u_cov_right[4];
-    neg_inv_u0_sq = g_00 + 2.0*g_01*v1_right + 2.0*g_02*v2_right + 2.0*g_03*v3_right
-                  + g_11*SQR(v1_right) + 2.0*g_12*v1_right*v2_right
-                      + 2.0*g_13*v1_right*v3_right
-                  + g_22*SQR(v2_right) + 2.0*g_23*v2_right*v3_right
-                  + g_33*SQR(v3_right);
-    u_con_right[0] = std::sqrt(-1.0/neg_inv_u0_sq);
-    u_con_right[1] = u_con_right[0] * v1_right;
-    u_con_right[2] = u_con_right[0] * v2_right;
-    u_con_right[3] = u_con_right[0] * v3_right;
+    tmp = g_11*unorm1_right*unorm1_right + 2.0*g_12*unorm1_right*unorm2_right
+            + 2.0*g_13*unorm1_right*unorm3_right
+        + g_22*unorm2_right*unorm2_right + 2.0*g_23*unorm2_right*unorm3_right
+        + g_33*unorm3_right*unorm3_right;
+    gamma = std::sqrt(1.0 + tmp);
+    u_con_right[0] = gamma / alpha;
+    u_con_right[1] = unorm1_right - alpha * gamma * g01;
+    u_con_right[2] = unorm2_right - alpha * gamma * g02;
+    u_con_right[3] = unorm3_right - alpha * gamma * g03;
     u_cov_right[0] = g_00*u_con_right[0] + g_01*u_con_right[1] + g_02*u_con_right[2]
         + g_03*u_con_right[3];
     u_cov_right[1] = g_10*u_con_right[0] + g_11*u_con_right[1] + g_12*u_con_right[2]
-        + g_03*u_con_right[3];
+        + g_13*u_con_right[3];
     u_cov_right[2] = g_20*u_con_right[0] + g_21*u_con_right[1] + g_22*u_con_right[2]
-        + g_03*u_con_right[3];
+        + g_23*u_con_right[3];
     u_cov_right[3] = g_30*u_con_right[0] + g_31*u_con_right[1] + g_32*u_con_right[2]
-        + g_03*u_con_right[3];
+        + g_33*u_con_right[3];
 
     // Calculate wavespeeds in left region
     Real lambda_plus_left, lambda_minus_left;
