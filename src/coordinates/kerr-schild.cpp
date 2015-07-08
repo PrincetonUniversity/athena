@@ -33,12 +33,12 @@
 
 // Constructor
 // Inputs:
-//   pb: pointer to MeshBlock containing this grid
+//   pmb: pointer to MeshBlock containing this grid
 //   pin: pointer to runtime inputs
-Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
+Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 {
   // Set pointer to host MeshBlock
-  pmy_block = pb;
+  pmy_block = pmb;
 
   // Set face centered positions and distances
   AllocateAndSetBasicCoordinates();
@@ -50,52 +50,52 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   const Real &a = bh_spin_;
 
   // Initialize volume-averaged positions and spacings: r-direction
-  for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST; ++i)
+  for (int i = pmb->is-NGHOST; i <= pmb->ie+NGHOST; ++i)
   {
     Real r_m = x1f(i);
     Real r_p = x1f(i+1);
     x1v(i) = 0.5 * (r_m + r_p);  // approximate
   }
-  for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST-1; ++i)
+  for (int i = pmb->is-NGHOST; i <= pmb->ie+NGHOST-1; ++i)
     dx1v(i) = x1v(i+1) - x1v(i);
 
   // Initialize volume-averaged positions and spacings: theta-direction
-  if (pb->block_size.nx2 == 1)  // no extent
+  if (pmb->block_size.nx2 == 1)  // no extent
   {
-    Real theta_m = x2f(pb->js);
-    Real theta_p = x2f(pb->js+1);
-    x2v(pb->js) = 0.5 * (theta_m + theta_p);  // approximate
-    dx2v(pb->js) = dx2f(pb->js);
+    Real theta_m = x2f(pmb->js);
+    Real theta_p = x2f(pmb->js+1);
+    x2v(pmb->js) = 0.5 * (theta_m + theta_p);  // approximate
+    dx2v(pmb->js) = dx2f(pmb->js);
   }
   else  // extended
   {
-    for (int j = pb->js-NGHOST; j <= pb->je+NGHOST; j++)
+    for (int j = pmb->js-NGHOST; j <= pmb->je+NGHOST; j++)
     {
       Real theta_m = x2f(j);
       Real theta_p = x2f(j+1);
       x2v(j) = 0.5 * (theta_m + theta_p);  // approximate
     }
-    for (int j = pb->js-NGHOST; j <= pb->je+NGHOST-1; j++)
+    for (int j = pmb->js-NGHOST; j <= pmb->je+NGHOST-1; j++)
       dx2v(j) = x2v(j+1) - x2v(j);
   }
 
   // Initialize volume-averaged positions and spacings: phi-direction
-  if (pb->block_size.nx3 == 1)  // no extent
+  if (pmb->block_size.nx3 == 1)  // no extent
   {
-    Real phi_m = x3f(pb->ks);
-    Real phi_p = x3f(pb->ks+1);
-    x3v(pb->ks) = 0.5 * (phi_m + phi_p);
-    dx3v(pb->ks) = dx3f(pb->ks);
+    Real phi_m = x3f(pmb->ks);
+    Real phi_p = x3f(pmb->ks+1);
+    x3v(pmb->ks) = 0.5 * (phi_m + phi_p);
+    dx3v(pmb->ks) = dx3f(pmb->ks);
   }
   else  // extended
   {
-    for (int k = pb->ks-NGHOST; k <= pb->ke+NGHOST; k++)
+    for (int k = pmb->ks-NGHOST; k <= pmb->ke+NGHOST; k++)
     {
       Real phi_m = x3f(k);
       Real phi_p = x3f(k+1);
       x3v(k) = 0.5 * (phi_m + phi_p);
     }
-    for (int k = pb->ks-NGHOST; k <= pb->ke+NGHOST-1; k++)
+    for (int k = pmb->ks-NGHOST; k <= pmb->ke+NGHOST-1; k++)
       dx3v(k) = x3v(k+1) - x3v(k);
   }
 
@@ -133,7 +133,7 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   }
 
   // Allocate arrays for intermediate geometric quantities: r-direction
-  int n_cells_1 = pb->block_size.nx1 + 2*NGHOST;
+  int n_cells_1 = pmb->block_size.nx1 + 2*NGHOST;
   coord_vol_i1_.NewAthenaArray(n_cells_1);
   coord_vol_i2_.NewAthenaArray(n_cells_1);
   coord_area1_i1_.NewAthenaArray(n_cells_1);
@@ -156,7 +156,7 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   gi_.NewAthenaArray(NMETRIC, n_cells_1);
 
   // Allocate arrays for intermediate geometric quantities: theta-direction
-  int n_cells_2 = (pb->block_size.nx2 > 1) ? pb->block_size.nx2 + 2*NGHOST : 1;
+  int n_cells_2 = (pmb->block_size.nx2 > 1) ? pmb->block_size.nx2 + 2*NGHOST : 1;
   coord_vol_j1_.NewAthenaArray(n_cells_2);
   coord_vol_j2_.NewAthenaArray(n_cells_2);
   coord_area1_j1_.NewAthenaArray(n_cells_2);
@@ -187,7 +187,7 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   metric_face3_j2_.NewAthenaArray(n_cells_2);
 
   // Allocate arrays for intermediate geometric quantities: phi-direction
-  int n_cells_3 = (pb->block_size.nx3 > 1) ? pb->block_size.nx3 + 2*NGHOST : 1;
+  int n_cells_3 = (pmb->block_size.nx3 > 1) ? pmb->block_size.nx3 + 2*NGHOST : 1;
   coord_vol_k1_.NewAthenaArray(n_cells_3);
   coord_area1_k1_.NewAthenaArray(n_cells_3);
   coord_area2_k1_.NewAthenaArray(n_cells_3);
@@ -217,8 +217,8 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   trans_face3_ji6_.NewAthenaArray(n_cells_2, n_cells_1);
 
   // Calculate intermediate geometric quantities: r-direction
-  int il = pb->is - NGHOST;
-  int iu = pb->ie + NGHOST;
+  int il = pmb->is - NGHOST;
+  int iu = pmb->ie + NGHOST;
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
@@ -263,13 +263,13 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   int jl, ju;
   if (n_cells_2 > 1)  // extended
   {
-    jl = pb->js - NGHOST;
-    ju = pb->je + NGHOST;
+    jl = pmb->js - NGHOST;
+    ju = pmb->je + NGHOST;
   }
   else  // no extent
   {
-    jl = pb->js;
-    ju = pb->js;
+    jl = pmb->js;
+    ju = pmb->js;
   }
   #pragma simd
   for (int j = jl; j <= ju; ++j)
@@ -331,13 +331,13 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   int kl, ku;
   if (n_cells_3 > 1)  // extended
   {
-    kl = pb->ks - NGHOST;
-    ku = pb->ke + NGHOST;
+    kl = pmb->ks - NGHOST;
+    ku = pmb->ke + NGHOST;
   }
   else  // no extent
   {
-    kl = pb->ks;
-    ku = pb->ks;
+    kl = pmb->ks;
+    ku = pmb->ks;
   }
   #pragma simd
   for (int k = kl; k <= ku; ++k)
@@ -360,9 +360,9 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
       Real a2 = SQR(a);
       Real r_c = x1v(i);
       Real r_m = x1f(i);
-      Real r_c_sq = SQR(r_c)
-      Real r_m_sq = SQR(r_m)
-      Real r_m_qu = SQR(r_m_sq)
+      Real r_c_sq = SQR(r_c);
+      Real r_m_sq = SQR(r_m);
+      Real r_m_qu = SQR(r_m_sq);
       Real theta_c = x2v(j);
       Real theta_m = x2f(j);
       Real sin_c = std::sin(theta_c);
@@ -508,6 +508,7 @@ Coordinates::~Coordinates()
 //   \Delta V = 1/3 * (r_+ - r_-) (\cos\theta_- - \cos\theta_+) (\phi_+ - \phi_-)
 //       * (r_-^2 + r_- r_+ + r_+^2
 //       + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
+//   cf. GetCellVolume()
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &volumes)
 {
@@ -516,6 +517,24 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
     volumes(i) = 1.0/3.0 * coord_vol_i1_(i) * coord_vol_j1_(j) * coord_vol_k1_(k)
         * (coord_vol_i2_(i) + coord_vol_j2_(j));
   return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing single cell volume
+// Inputs:
+//   k,j,i: phi-, theta-, and r-indices
+// Outputs:
+//   returned value: cell volumes
+// Notes:
+//   \Delta V = 1/3 * (r_+ - r_-) (\cos\theta_- - \cos\theta_+) (\phi_+ - \phi_-)
+//       * (r_-^2 + r_- r_+ + r_+^2
+//       + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
+//   cf. CellVolume()
+Real Coordinates::GetCellVolume(const int k, const int j, const int i)
+{
+  return 1.0/3.0 * coord_vol_i1_(i) * coord_vol_j1_(j) * coord_vol_k1_(k)
+      * (coord_vol_i2_(i) + coord_vol_j2_(j));
 }
 
 //--------------------------------------------------------------------------------------
@@ -529,6 +548,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 // Notes:
 //   \Delta A = 1/3 * (\cos\theta_- - \cos\theta_+) (\phi_+ - \phi_-)
 //       * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
+//   cf. GetFace1Area()
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
@@ -537,6 +557,23 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
     areas(i) = coord_area1_j1_(j) * coord_area1_k1_(k)
         * (coord_area1_i1_(i) + 1.0/3.0 * coord_area1_j2_(j));
   return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing single area orthogonal to r
+// Inputs:
+//   k,j,i: phi-, theta-, and r-indices
+// Outputs:
+//   returned value: interface area orthogonal to r
+// Notes:
+//   \Delta A = 1/3 * (\cos\theta_- - \cos\theta_+) (\phi_+ - \phi_-)
+//       * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
+//   cf. Face1Area()
+Real Coordinates::GetFace1Area(const int k, const int j, const int i)
+{
+  return coord_area1_j1_(j) * coord_area1_k1_(k)
+      * (coord_area1_i1_(i) + 1.0/3.0 * coord_area1_j2_(j));
 }
 
 //--------------------------------------------------------------------------------------

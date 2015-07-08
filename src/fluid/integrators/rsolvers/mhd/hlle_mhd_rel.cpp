@@ -8,59 +8,53 @@
 #include <cmath>      // sqrt()
 
 // Athena headers
-#include "../../../eos/eos.hpp"                     // GetGamma(),
-                                                    //     FastMagnetosonicSpeedsSR()
 #include "../../../fluid.hpp"                       // Fluid
+#include "../../../eos/eos.hpp"                     // FluidEqnOfState
 #include "../../../../athena.hpp"                   // enums, macros, Real
 #include "../../../../athena_arrays.hpp"            // AthenaArray
-#include "../../../../coordinates/coordinates.hpp"  // Coordinates
 #include "../../../../mesh.hpp"                     // MeshBlock
-
-// Declarations
-static void PrimToFluxFlat(Real gamma_adi_red, Real rho, Real pgas,
-    const Real u_con[4], const Real b_con[4],
-    Real flux[NWAVE], int ivx, int ivy, int ivz);
-static void PrimToConsFlat(Real gamma_adi_red, Real rho, Real pgas,
-    const Real u_con[4], const Real b_con[4],
-    Real cons[NWAVE], int ivx, int ivy, int ivz);
+#include "../../../../coordinates/coordinates.hpp"  // Coordinates
 
 // Riemann solver
 // Inputs:
-//   il,iu: lower and upper indices for interfaces
-//   prim_left, prim_right: left and right primitive states
+//   k,j: x3- and x2-indices
+//   il,iu: lower and upper x1-indices
+//   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
+//   bb: 3D array of normal magnetic fields
+//   prim_l, prim_r: left and right primitive states
 // Outputs:
-//   flux: fluxes
+//   flux: fluxes across interface
 // Notes:
-//   prim_left, prim_right overwritten
+//   prim_l, prim_r overwritten
 //   implements HLLE algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB2005)
 //   references Mignone & Bodo 2006, MNRAS 368 1040 (MB2006)
+//   references Mignone, Ugliano, & Bodo 2009, MNRAS 393 1141 (MUB)
 void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
-    const int iu, const int ivx, const AthenaArray<Real> &b,
-    AthenaArray<Real> &prim_left, AthenaArray<Real> &prim_right,
-    AthenaArray<Real> &flux)
+    const int iu, const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
+    AthenaArray<Real> &prim_r, AthenaArray<Real> &flux)
 {
   // Transform primitives to locally flat coordinates if in GR
   if (GENERAL_RELATIVITY)
     switch (ivx)
     {
       case IVX:
-        pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, il, iu, b,
-            prim_left, prim_right, b_normal_);
+        pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r,
+            bb_normal_);
         break;
       case IVY:
-        pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, il, iu, b,
-            prim_left, prim_right, b_normal_);
+        pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, il, iu, bb, prim_l, prim_r,
+            bb_normal_);
         break;
       case IVZ:
-        pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, il, iu, b,
-            prim_left, prim_right, b_normal_);
+        pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r,
+            bb_normal_);
         break;
     }
   else  // SR; need to populate 1D normal B array
   {
     #pragma simd
-    for (int i = il; i <= iu; i++)
-      b_normal_(i) = b(k,j,i);
+    for (int i = il; i <= iu; ++i)
+      bb_normal_(i) = bb(k,j,i);
   }
 
   // Calculate cyclic permutations of indices
@@ -69,117 +63,172 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
 
   // Extract ratio of specific heats
   const Real gamma_adi = pmy_fluid->pf_eos->GetGamma();
-  const Real gamma_adi_red = gamma_adi/(gamma_adi-1.0);
 
   // Go through each interface
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
     // Extract left primitives
-    const Real &rho_left = prim_left(IDN,i);
-    const Real &pgas_left = prim_left(IEN,i);
-    const Real &vx_left = prim_left(ivx,i);
-    const Real &vy_left = prim_left(ivy,i);
-    const Real &vz_left = prim_left(ivz,i);
-    const Real &by_left = prim_left(IBY,i);
-    const Real &bz_left = prim_left(IBZ,i);
+    const Real &rho_l = prim_l(IDN,i);
+    const Real &pgas_l = prim_l(IEN,i);
+    Real u_l[4];
+    if (GENERAL_RELATIVITY)
+    {
+      u_l[1] = prim_l(ivx,i);
+      u_l[2] = prim_l(ivy,i);
+      u_l[3] = prim_l(ivz,i);
+      u_l[0] = std::sqrt(1.0 + SQR(u_l[1]) + SQR(u_l[2]) + SQR(u_l[3]));
+    }
+    else  // SR
+    {
+      const Real &vx_l = prim_l(ivx,i);
+      const Real &vy_l = prim_l(ivy,i);
+      const Real &vz_l = prim_l(ivz,i);
+      u_l[0] = std::sqrt(1.0 / (1.0 - SQR(vx_l) - SQR(vy_l) - SQR(vz_l)));
+      u_l[1] = u_l[0] * vx_l;
+      u_l[2] = u_l[0] * vy_l;
+      u_l[3] = u_l[0] * vz_l;
+    }
+    const Real &bb2_l = prim_l(IBY,i);
+    const Real &bb3_l = prim_l(IBZ,i);
 
     // Extract right primitives
-    const Real &rho_right = prim_right(IDN,i);
-    const Real &pgas_right = prim_right(IEN,i);
-    const Real &vx_right = prim_right(ivx,i);
-    const Real &vy_right = prim_right(ivy,i);
-    const Real &vz_right = prim_right(ivz,i);
-    const Real &by_right = prim_right(IBY,i);
-    const Real &bz_right = prim_right(IBZ,i);
+    const Real &rho_r = prim_r(IDN,i);
+    const Real &pgas_r = prim_r(IEN,i);
+    Real u_r[4];
+    if (GENERAL_RELATIVITY)
+    {
+      u_r[1] = prim_r(ivx,i);
+      u_r[2] = prim_r(ivy,i);
+      u_r[3] = prim_r(ivz,i);
+      u_r[0] = std::sqrt(1.0 + SQR(u_r[1]) + SQR(u_r[2]) + SQR(u_r[3]));
+    }
+    else  // SR
+    {
+      const Real &vx_r = prim_r(ivx,i);
+      const Real &vy_r = prim_r(ivy,i);
+      const Real &vz_r = prim_r(ivz,i);
+      u_r[0] = std::sqrt(1.0 / (1.0 - SQR(vx_r) - SQR(vy_r) - SQR(vz_r)));
+      u_r[1] = u_r[0] * vx_r;
+      u_r[2] = u_r[0] * vy_r;
+      u_r[3] = u_r[0] * vz_r;
+    }
+    const Real &bb2_r = prim_r(IBY,i);
+    const Real &bb3_r = prim_r(IBZ,i);
 
     // Extract normal magnetic field
-    const Real &bx = b_normal_(i);
+    const Real &bb1 = bb(k,j,i);
 
-    // Calculate 4-vectors for left primitives
-    Real u_con_left[4], b_con_left[4];
-    u_con_left[0] = std::sqrt(1.0/(1.0-(SQR(vx_left)+SQR(vy_left)+SQR(vz_left))));
-    u_con_left[1] = u_con_left[0] * vx_left;
-    u_con_left[2] = u_con_left[0] * vy_left;
-    u_con_left[3] = u_con_left[0] * vz_left;
-    b_con_left[0] = bx*u_con_left[1] + by_left*u_con_left[2] + bz_left*u_con_left[3];
-    b_con_left[1] = (bx + b_con_left[0] * u_con_left[1]) / u_con_left[0];
-    b_con_left[2] = (by_left + b_con_left[0] * u_con_left[2]) / u_con_left[0];
-    b_con_left[3] = (bz_left + b_con_left[0] * u_con_left[3]) / u_con_left[0];
+    // Calculate 4-magnetic field in left state
+    Real b_l[4];
+    b_l[0] = bb1*u_l[1] + bb2_l*u_l[2] + bb3_l*u_l[3];
+    b_l[1] = (bb1 + b_l[0] * u_l[1]) / u_l[0];
+    b_l[2] = (bb2_l + b_l[0] * u_l[2]) / u_l[0];
+    b_l[3] = (bb3_l + b_l[0] * u_l[3]) / u_l[0];
+    Real b_sq_l = -SQR(b_l[0]) + SQR(b_l[1]) + SQR(b_l[2]) + SQR(b_l[3]);
 
-    // Calculate 4-vectors for right primitives
-    Real u_con_right[4], b_con_right[4];
-    u_con_right[0] = std::sqrt(1.0/(1.0-(SQR(vx_right)+SQR(vy_right)+SQR(vz_right))));
-    u_con_right[1] = u_con_right[0] * vx_right;
-    u_con_right[2] = u_con_right[0] * vy_right;
-    u_con_right[3] = u_con_right[0] * vz_right;
-    b_con_right[0] = bx*u_con_right[1] + by_right*u_con_right[2]
-        + bz_right*u_con_right[3];
-    b_con_right[1] = (bx + b_con_right[0] * u_con_right[1]) / u_con_right[0];
-    b_con_right[2] = (by_right + b_con_right[0] * u_con_right[2]) / u_con_right[0];
-    b_con_right[3] = (bz_right + b_con_right[0] * u_con_right[3]) / u_con_right[0];
+    // Calculate 4-magnetic field in right state
+    Real b_r[4];
+    b_r[0] = bb1*u_r[1] + bb2_r*u_r[2] + bb3_r*u_r[3];
+    b_r[1] = (bb1 + b_r[0] * u_r[1]) / u_r[0];
+    b_r[2] = (bb2_r + b_r[0] * u_r[2]) / u_r[0];
+    b_r[3] = (bb3_r + b_r[0] * u_r[3]) / u_r[0];
+    Real b_sq_r = -SQR(b_r[0]) + SQR(b_r[1]) + SQR(b_r[2]) + SQR(b_r[3]);
 
-    // Calculate wavespeeds
-    Real lambda_left_plus, lambda_left_minus;
-    pmy_fluid->pf_eos->FastMagnetosonicSpeedsSR(
-        rho_left, pgas_left, u_con_left, b_con_left,
-        &lambda_left_plus, &lambda_left_minus);                          // (MB2006 56)
-    Real lambda_right_plus, lambda_right_minus;
-    pmy_fluid->pf_eos->FastMagnetosonicSpeedsSR(
-        rho_right, pgas_right, u_con_right, b_con_right,
-        &lambda_right_plus, &lambda_right_minus);                        // (MB2006 56)
-    Real lambda_left = std::min(lambda_left_minus, lambda_right_minus);  // (MB2006 55)
-    Real lambda_right = std::max(lambda_left_plus, lambda_right_plus);   // (MB2006 55)
+    // Calculate wavespeeds in left state (MB2006 56)
+    Real lambda_p_l, lambda_m_l;
+    pmy_fluid->pf_eos->FastMagnetosonicSpeedsSR(rho_l, pgas_l, u_l, b_l, &lambda_p_l,
+        &lambda_m_l);
 
-    // Calculate conserved quantities and fluxes in L/R states
-    Real cons_left[NWAVE], cons_right[NWAVE];
-    PrimToConsFlat(gamma_adi_red, rho_left, pgas_left,
-        u_con_left, b_con_left,
-        cons_left, ivx, ivy, ivz);
-    PrimToConsFlat(gamma_adi_red, rho_right, pgas_right,
-        u_con_right, b_con_right,
-        cons_right, ivx, ivy, ivz);
-    Real flux_left[NWAVE], flux_right[NWAVE];
-    PrimToFluxFlat(gamma_adi_red, rho_left, pgas_left,
-        u_con_left, b_con_left,
-        flux_left, ivx, ivy, ivz);
-    PrimToFluxFlat(gamma_adi_red, rho_right, pgas_right,
-        u_con_right, b_con_right,
-        flux_right, ivx, ivy, ivz);
+    // Calculate wavespeeds in right state (MB2006 56)
+    Real lambda_p_r, lambda_m_r;
+    pmy_fluid->pf_eos->FastMagnetosonicSpeedsSR(rho_r, pgas_r, u_r, b_r, &lambda_p_r,
+        &lambda_m_r);
 
-    // Calculate conserved quantities (MB2005 9) and fluxes (MB2005 11) in HLL state
-    Real cons_hll[NWAVE], flux_hll[NWAVE];
+    // Calculate extremal wavespeeds (MB2006 55)
+    Real lambda_l = std::min(lambda_m_l, lambda_m_r);
+    Real lambda_r = std::max(lambda_p_l, lambda_p_r);
+
+    // Calculate conserved quantities in L region (MUB 8)
+    Real cons_l[NWAVE];
+    Real wtot_l = rho_l + gamma_adi/(gamma_adi-1.0) * pgas_l + b_sq_l;
+    Real ptot_l = pgas_l + 0.5*b_sq_l;
+    cons_l[IDN] = rho_l * u_l[0];
+    cons_l[IEN] = wtot_l * u_l[0] * u_l[0] - b_l[0] * b_l[0] - ptot_l;
+    cons_l[ivx] = wtot_l * u_l[1] * u_l[0] - b_l[1] * b_l[0];
+    cons_l[ivy] = wtot_l * u_l[2] * u_l[0] - b_l[2] * b_l[0];
+    cons_l[ivz] = wtot_l * u_l[3] * u_l[0] - b_l[3] * b_l[0];
+    cons_l[IBY] = b_l[2] * u_l[0] - b_l[0] * u_l[2];
+    cons_l[IBZ] = b_l[3] * u_l[0] - b_l[0] * u_l[3];
+
+    // Calculate fluxes in L region (MUB 15)
+    Real flux_l[NWAVE];
+    flux_l[IDN] = rho_l * u_l[1];
+    flux_l[IEN] = wtot_l * u_l[0] * u_l[1] - b_l[0] * b_l[1];
+    flux_l[ivx] = wtot_l * u_l[1] * u_l[1] - b_l[1] * b_l[1] + ptot_l;
+    flux_l[ivy] = wtot_l * u_l[2] * u_l[1] - b_l[2] * b_l[1];
+    flux_l[ivz] = wtot_l * u_l[3] * u_l[1] - b_l[3] * b_l[1];
+    flux_l[IBY] = b_l[2] * u_l[1] - b_l[1] * u_l[2];
+    flux_l[IBZ] = b_l[3] * u_l[1] - b_l[1] * u_l[3];
+
+    // Calculate conserved quantities in R region (MUB 8)
+    Real cons_r[NWAVE];
+    Real wtot_r = rho_r + gamma_adi/(gamma_adi-1.0) * pgas_r + b_sq_r;
+    Real ptot_r = pgas_r + 0.5*b_sq_r;
+    cons_r[IDN] = rho_r * u_r[0];
+    cons_r[IEN] = wtot_r * u_r[0] * u_r[0] - b_r[0] * b_r[0] - ptot_r;
+    cons_r[ivx] = wtot_r * u_r[1] * u_r[0] - b_r[1] * b_r[0];
+    cons_r[ivy] = wtot_r * u_r[2] * u_r[0] - b_r[2] * b_r[0];
+    cons_r[ivz] = wtot_r * u_r[3] * u_r[0] - b_r[3] * b_r[0];
+    cons_r[IBY] = b_r[2] * u_r[0] - b_r[0] * u_r[2];
+    cons_r[IBZ] = b_r[3] * u_r[0] - b_r[0] * u_r[3];
+
+    // Calculate fluxes in R region (MUB 15)
+    Real flux_r[NWAVE];
+    flux_r[IDN] = rho_r * u_r[1];
+    flux_r[IEN] = wtot_r * u_r[0] * u_r[1] - b_r[0] * b_r[1];
+    flux_r[ivx] = wtot_r * u_r[1] * u_r[1] - b_r[1] * b_r[1] + ptot_r;
+    flux_r[ivy] = wtot_r * u_r[2] * u_r[1] - b_r[2] * b_r[1];
+    flux_r[ivz] = wtot_r * u_r[3] * u_r[1] - b_r[3] * b_r[1];
+    flux_r[IBY] = b_r[2] * u_r[1] - b_r[1] * u_r[2];
+    flux_r[IBZ] = b_r[3] * u_r[1] - b_r[1] * u_r[3];
+
+    // Calculate conserved quantities in HLL region in GR (MB2005 9)
+    Real cons_hll[NWAVE];
+    if (GENERAL_RELATIVITY)
+      for (int n = 0; n < NWAVE; ++n)
+        cons_hll[n] = (lambda_r*cons_r[n] - lambda_l*cons_l[n] + flux_l[n] - flux_r[n])
+            / (lambda_r-lambda_l);
+
+    // Calculate fluxes in HLL region (MB2005 11)
+    Real flux_hll[NWAVE];
     for (int n = 0; n < NWAVE; ++n)
-    {
-      cons_hll[n] = (lambda_right*cons_right[n] - lambda_left*cons_left[n]
-          + flux_left[n] - flux_right[n]) / (lambda_right - lambda_left);
-      flux_hll[n] = (lambda_right*flux_left[n] - lambda_left*flux_right[n]
-          + lambda_left*lambda_right * (cons_right[n] - cons_left[n]))
-          / (lambda_right - lambda_left);
-    }
-
-    // Set fluxes
-    for (int n = 0; n < NWAVE; ++n)
-    {
-      if (lambda_left >= 0.0)  // L state
-        flux(n,i) = flux_left[n];
-      else if (lambda_right <= 0.0)  // R state
-        flux(n,i) = flux_right[n];
-      else  // HLL state
-        flux(n,i) = flux_hll[n];
-    }
+      flux_hll[n] = (lambda_r*flux_l[n] - lambda_l*flux_r[n]
+          + lambda_l*lambda_r * (cons_r[n] - cons_l[n]))
+          / (lambda_r-lambda_l);
 
     // Set conserved quantities in GR
     if (GENERAL_RELATIVITY)
       for (int n = 0; n < NWAVE; ++n)
       {
-        if (lambda_left >= 0.0)  // L state
-          cons_(n,i) = cons_left[n];
-        else if (lambda_right <= 0.0)  // R state
-          cons_(n,i) = cons_right[n];
-        else  // HLL state
+        if (lambda_left >= 0.0)  // L region
+          cons_(n,i) = cons_l[n];
+        else if (lambda_right <= 0.0)  // R region
+          cons_(n,i) = cons_r[n];
+        else  // HLL region
           cons_(n,i) = cons_hll[n];
       }
+
+    // Set fluxes
+    for (int n = 0; n < NWAVE; ++n)
+    {
+      if (lambda_left >= 0.0)  // L region
+        flux(n,i) = flux_l[n];
+      else if (lambda_right <= 0.0)  // R region
+        flux(n,i) = flux_r[n];
+      else  // HLL region
+        flux(n,i) = flux_hll[n];
+    }
   }
 
   // Transform fluxes to global coordinates if in GR
@@ -187,60 +236,17 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     switch (ivx)
     {
       case IVX:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, il, iu, cons_, b_normal_,
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, il, iu, cons_, bb_normal_,
             flux);
         break;
       case IVY:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, il, iu, cons_, b_normal_,
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, il, iu, cons_, bb_normal_,
             flux);
         break;
       case IVZ:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, il, iu, cons_, b_normal_,
+        pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, il, iu, cons_, bb_normal_,
             flux);
         break;
     }
-  return;
-}
-
-// Function for converting constant primitive state to flux state in flat spacetime
-// Notes:
-//   same function as in hlld_mhd_rel.cpp
-//   implements (15) from Mignone, Ugliano, & Bodo 2009, MNRAS 393 1141
-//     note B^i v^x - B^x v^i = b^i u^x - b^x u^i
-static void PrimToFluxFlat(Real gamma_adi_red, Real rho, Real pgas,
-    const Real u_con[4], const Real b_con[4],
-    Real flux[NWAVE], int ivx, int ivy, int ivz)
-{
-  Real b_sq = -SQR(b_con[0]) + SQR(b_con[1]) + SQR(b_con[2]) + SQR(b_con[3]);
-  Real w = rho + gamma_adi_red * pgas + b_sq;
-  Real ptot = pgas + 0.5*b_sq;
-  flux[IDN] = rho*u_con[1];
-  flux[IEN] = w*u_con[0]*u_con[1] - b_con[0]*b_con[1];
-  flux[ivx] = w*u_con[1]*u_con[1] - b_con[1]*b_con[1] + ptot;
-  flux[ivy] = w*u_con[2]*u_con[1] - b_con[2]*b_con[1];
-  flux[ivz] = w*u_con[3]*u_con[1] - b_con[3]*b_con[1];
-  flux[IBY] = b_con[2]*u_con[1] - b_con[1]*u_con[2];
-  flux[IBZ] = b_con[3]*u_con[1] - b_con[1]*u_con[3];
-  return;
-}
-
-// Function for converting primitive state to conserved state in flat spacetime
-// Notes:
-//   same function as in hlld_rel.cpp
-//   references Mignone, Ugliano, & Bodo 2009, MNRAS 393 1141 (MUB)
-static void PrimToConsFlat(Real gamma_adi_red, Real rho, Real pgas,
-    const Real u_con[4], const Real b_con[4],
-    Real cons[NWAVE], int ivx, int ivy, int ivz)
-{
-  Real b_sq = -SQR(b_con[0]) + SQR(b_con[1]) + SQR(b_con[2]) + SQR(b_con[3]);
-  Real w = rho + gamma_adi_red * pgas + b_sq;
-  Real ptot = pgas + 0.5*b_sq;
-  cons[IDN] = rho*u_con[0];
-  cons[IEN] = w*u_con[0]*u_con[0] - b_con[0]*b_con[0] - ptot;  // (MUB 8)
-  cons[ivx] = w*u_con[1]*u_con[0] - b_con[1]*b_con[0];         // (MUB 8)
-  cons[ivy] = w*u_con[2]*u_con[0] - b_con[2]*b_con[0];         // (MUB 8)
-  cons[ivz] = w*u_con[3]*u_con[0] - b_con[3]*b_con[0];         // (MUB 8)
-  cons[IBY] = b_con[2]*u_con[0] - b_con[0]*u_con[2];
-  cons[IBZ] = b_con[3]*u_con[0] - b_con[0]*u_con[3];
   return;
 }

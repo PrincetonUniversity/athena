@@ -22,7 +22,7 @@
 // Declarations
 static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim,
     const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int i,
-    MeshBlock *pb, Real gamma_prime, AthenaArray<Real> &cons);
+    MeshBlock *pmb, Real gamma_prime, AthenaArray<Real> &cons);
 static Real FindRootNR(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
     Real gamma_prime);
 static void neighbor_average(AthenaArray<Real> &prim, AthenaArray<bool> &problem, int n,
@@ -89,19 +89,19 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const Real gamma_prime = gamma_ / (gamma_ - 1.0);
 
   // Determine array bounds
-  MeshBlock *pb = pmy_fluid_->pmy_block;
-  int il = pb->is - NGHOST;
-  int iu = pb->ie + NGHOST;
-  int jl = pb->js;
-  int ju = pb->je;
-  int kl = pb->ks;
-  int ku = pb->ke;
-  if (pb->block_size.nx2 > 1)
+  MeshBlock *pmb = pmy_fluid_->pmy_block;
+  int il = pmb->is - NGHOST;
+  int iu = pmb->ie + NGHOST;
+  int jl = pmb->js;
+  int ju = pmb->je;
+  int kl = pmb->ks;
+  int ku = pmb->ke;
+  if (pmb->block_size.nx2 > 1)
   {
     jl -= NGHOST;
     ju += NGHOST;
   }
-  if (pb->block_size.nx3 > 1)
+  if (pmb->block_size.nx3 > 1)
   {
     kl -= NGHOST;
     ku += NGHOST;
@@ -111,7 +111,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   for (int k = kl; k <= ku; k++)
     for (int j = jl; j <= ju; j++)
     {
-      pb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
+      pmb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
       #pragma simd
       for (int i = il; i <= iu; i++)
       {
@@ -216,10 +216,10 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         unorm3 = gamma_rel * q_norm_3 / w_true;  // (N 31)
 
         // Apply floors to density and pressure
-        Real density_floor_local = rho_min_ * std::pow(pb->x1v(i), rho_pow_);
+        Real density_floor_local = rho_min_ * std::pow(pmb->pcoord->x1v(i), rho_pow_);
         density_floor_local = std::max(density_floor_local, density_floor_);
         Real pressure_floor_local =
-            (gamma_-1.0) * u_min_ * std::pow(pb->x1v(i), u_pow_);
+            (gamma_-1.0) * u_min_ * std::pow(pmb->pcoord->x1v(i), u_pow_);
         pressure_floor_local = std::max(pressure_floor_local, pressure_floor_);
         if (rho < density_floor_local or std::isnan(rho))
         {
@@ -248,11 +248,11 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   for (int k = kl; k <= ku; ++k)
     for (int j = jl; j <= ju; ++j)
     {
-      pb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
+      pmb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
       for (int i = il; i <= iu; ++i)
         if (fixed_(k,j,i))
         {
-          PrimitiveToConservedSingle(prim, g_, g_inv_, k, j, i, pb, gamma_prime, cons);
+          PrimitiveToConservedSingle(prim, g_, g_inv_, k, j, i, pmb, gamma_prime, cons);
           fixed_(k,j,i) = false;
         }
     }
@@ -270,19 +270,19 @@ void FluidEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
     const AthenaArray<Real> &b, AthenaArray<Real> &cons)
 {
   // Prepare index bounds
-  MeshBlock *pb = pmy_fluid_->pmy_block;
-  int il = pb->is - NGHOST;
-  int iu = pb->ie + NGHOST;
-  int jl = pb->js;
-  int ju = pb->je;
-  if (pb->block_size.nx2 > 1)
+  MeshBlock *pmb = pmy_fluid_->pmy_block;
+  int il = pmb->is - NGHOST;
+  int iu = pmb->ie + NGHOST;
+  int jl = pmb->js;
+  int ju = pmb->je;
+  if (pmb->block_size.nx2 > 1)
   {
     jl -= (NGHOST);
     ju += (NGHOST);
   }
-  int kl = pb->ks;
-  int ku = pb->ke;
-  if (pb->block_size.nx3 > 1)
+  int kl = pmb->ks;
+  int ku = pmb->ke;
+  if (pmb->block_size.nx3 > 1)
   {
     kl -= (NGHOST);
     ku += (NGHOST);
@@ -295,10 +295,10 @@ void FluidEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
   for (int k = kl; k <= ku; ++k)
     for (int j = jl; j <= ju; ++j)
     {
-      pb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
+      pmb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
       #pragma simd
       for (int i = il; i <= iu; ++i)
-        PrimitiveToConservedSingle(prim, g_, g_inv_, k, j, i, pb, gamma_prime, cons);
+        PrimitiveToConservedSingle(prim, g_, g_inv_, k, j, i, pmb, gamma_prime, cons);
     }
   return;
 }
@@ -308,13 +308,13 @@ void FluidEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //   prim: 3D array of primitives
 //   g,gi: 1D arrays of metric covariant and contravariant coefficients
 //   k,j,i: indices of cell
-//   pb: pointer to MeshBlock
+//   pmb: pointer to MeshBlock
 //   gamma_prime: reduced ratio of specific heats \Gamma/(\Gamma-1)
 // Outputs:
 //   cons: conserved variables set in desired cell
 static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim,
     const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int i,
-    MeshBlock *pb, Real gamma_prime, AthenaArray<Real> &cons)
+    MeshBlock *pmb, Real gamma_prime, AthenaArray<Real> &cons)
 {
   // Extract primitives
   const Real &rho = prim(IDN,k,j,i);
@@ -335,7 +335,7 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim,
   Real u2 = unorm2 - alpha * gamma * gi(I02,i);
   Real u3 = unorm3 - alpha * gamma * gi(I03,i);
   Real u_0, u_1, u_2, u_3;
-  pb->pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
+  pmb->pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
 
   // Extract conserved quantities
   Real &d0 = cons(IDN,k,j,i);
