@@ -144,8 +144,8 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
   // This helps improve performance.
 #pragma simd
   for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i){
-    Real rm = pmb->x1f(i  );
-    Real rp = pmb->x1f(i+1);
+    Real rm = x1f(i  );
+    Real rp = x1f(i+1);
     // R^2
     coord_area1_i_(i) = rm*rm;
     // 0.5*(R_{i+1}^2 - R_{i}^2)
@@ -157,9 +157,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     // (A1^{+} - A1^{-})/dV
     coord_src1_i_(i) = coord_area2_i_(i)/coord_vol_i_(i);
     // (dR/2)/(R_c dV)
-    coord_src2_i_(i) = pmb->dx1f(i)/((rm + rp)*coord_vol_i_(i));
+    coord_src2_i_(i) = dx1f(i)/((rm + rp)*coord_vol_i_(i));
     // Rf_{i}^2/R_{i}^2/Rf_{i}^2
-    phy_src1_i_(i) = 1.0/SQR(pmb->x1v(i));
+    phy_src1_i_(i) = 1.0/SQR(x1v(i));
     // Rf_{i+1}^2/R_{i}^2/Rf_{i+1}^2
     phy_src2_i_(i) = phy_src1_i_(i);
   }
@@ -167,10 +167,10 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
   if (pmb->block_size.nx2 > 1) {
 #pragma simd
     for (int j=js-(NGHOST); j<=je+(NGHOST); ++j){
-      Real sm = sin(pmb->x2f(j  ));
-      Real sp = sin(pmb->x2f(j+1));
-      Real cm = cos(pmb->x2f(j  ));
-      Real cp = cos(pmb->x2f(j+1));
+      Real sm = sin(x2f(j  ));
+      Real sp = sin(x2f(j+1));
+      Real cm = cos(x2f(j  ));
+      Real cp = cos(x2f(j+1));
       // d(sin theta) = d(-cos theta)
       coord_area1_j_(j) = cm - cp;
       // sin theta
@@ -183,10 +183,10 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
       coord_src2_j_(j) = (sp - sm)/((sm + sp)*coord_vol_j_(j));
     }
   } else {
-    Real sm = sin(pmb->x2f(js  ));
-    Real sp = sin(pmb->x2f(js+1));
-    Real cm = cos(pmb->x2f(js  ));
-    Real cp = cos(pmb->x2f(js+1));
+    Real sm = sin(x2f(js  ));
+    Real sp = sin(x2f(js+1));
+    Real cm = cos(x2f(js  ));
+    Real cp = cos(x2f(js+1));
     coord_area1_j_(js) = cm - cp;
     coord_area2_j_(js) = sm;
     coord_vol_j_(js) = coord_area1_j_(js);
