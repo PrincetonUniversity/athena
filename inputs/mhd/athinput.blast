@@ -1,0 +1,58 @@
+<comment>
+problem   = spherical blast wave
+reference = Gardiner. T.A. & Stone, J.M., JCP, 205, 509 (2005)
+configure = -b --prob=blast
+
+<job>
+problem_id = blast
+
+<output1>
+file_type = hst
+dt        = 0.1
+
+<output2>
+file_type = vtk
+variable  = prim
+dt        = 0.1
+
+<time>
+cfl_number = 0.4
+nlim       = -1
+tlim       = 1.0
+
+<mesh>
+nx1    = 128
+x1min  = -0.5
+x1max  = 0.5
+ix1_bc = 4     # 4: periodic
+ox1_bc = 4     # 4: periodic
+
+nx2    = 192
+x2min  = -0.75
+x2max  = 0.75
+ix2_bc = 4      # 4: periodic
+ox2_bc = 4      # 4: periodic
+
+nx3    = 64
+x3min  = -0.25
+x3max  = 0.25
+ix3_bc = 4      # 4: periodic
+ox3_bc = 4      # 4: periodic
+
+<meshblock>
+nx1 = 64
+nx2 = 64
+nx3 = 64
+
+<fluid>
+gamma      = 1.6666666666666667
+iso_csound = 0.4082482905        # equavalent to sqrt(gamma*p/d) for p=0.1, d=1
+
+<problem>
+pamb   = 0.1
+prat   = 100.0
+damb   = 1.0
+drat   = 1.0
+radius = 0.1
+b0     = 1.0
+angle  = 30

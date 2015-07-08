@@ -95,10 +95,14 @@ public:
   Real GetPressureFloor() const {return pressure_floor_;}
 
 private:
-  Fluid *pmy_fluid_;             // ptr to Fluid containing this EqnOfState
-  Real iso_sound_speed_, gamma_; // isothermal Cs, ratio of specific heats
-  AthenaArray<Real> g_, g_inv_;  // metric and its inverse, used for cons->prim in GR
-  Real density_floor_, pressure_floor_; // density and pressure floors
+  Fluid *pmy_fluid_;                     // ptr to Fluid containing this EqnOfState
+  Real iso_sound_speed_, gamma_;         // isothermal Cs, ratio of specific heats
+  Real density_floor_, pressure_floor_;  // density and pressure floors
+  Real gamma_max_;                       // maximum Lorentz factor
+  Real rho_min_, rho_pow_;               // variables to control power-law denity floor
+  Real u_min_, u_pow_;                   // variables to control power-law energy floor
+  AthenaArray<Real> g_, g_inv_;          // metric and its inverse, used in GR
+  AthenaArray<bool> fixed_;              // array for flagging fixed cells, used in GR
 };
 
 #endif

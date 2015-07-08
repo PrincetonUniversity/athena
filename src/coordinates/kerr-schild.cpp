@@ -33,12 +33,12 @@
 
 // Constructor
 // Inputs:
-//   pb: pointer to MeshBlock containing this grid
+//   pmb: pointer to MeshBlock containing this grid
 //   pin: pointer to runtime inputs
-Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
+Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 {
   // Set pointer to host MeshBlock
-  pmy_block = pb;
+  pmy_block = pmb;
 
   // Set face centered positions and distances
   AllocateAndSetBasicCoordinates();
@@ -50,52 +50,52 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   const Real &a = bh_spin_;
 
   // Initialize volume-averaged positions and spacings: r-direction
-  for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST; ++i)
+  for (int i = pmb->is-NGHOST; i <= pmb->ie+NGHOST; ++i)
   {
     Real r_m = x1f(i);
     Real r_p = x1f(i+1);
     x1v(i) = 0.5 * (r_m + r_p);  // approximate
   }
-  for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST-1; ++i)
+  for (int i = pmb->is-NGHOST; i <= pmb->ie+NGHOST-1; ++i)
     dx1v(i) = x1v(i+1) - x1v(i);
 
   // Initialize volume-averaged positions and spacings: theta-direction
-  if (pb->block_size.nx2 == 1)  // no extent
+  if (pmb->block_size.nx2 == 1)  // no extent
   {
-    Real theta_m = x2f(pb->js);
-    Real theta_p = x2f(pb->js+1);
-    x2v(pb->js) = 0.5 * (theta_m + theta_p);  // approximate
-    dx2v(pb->js) = dx2f(pb->js);
+    Real theta_m = x2f(pmb->js);
+    Real theta_p = x2f(pmb->js+1);
+    x2v(pmb->js) = 0.5 * (theta_m + theta_p);  // approximate
+    dx2v(pmb->js) = dx2f(pmb->js);
   }
   else  // extended
   {
-    for (int j = pb->js-NGHOST; j <= pb->je+NGHOST; j++)
+    for (int j = pmb->js-NGHOST; j <= pmb->je+NGHOST; j++)
     {
       Real theta_m = x2f(j);
       Real theta_p = x2f(j+1);
       x2v(j) = 0.5 * (theta_m + theta_p);  // approximate
     }
-    for (int j = pb->js-NGHOST; j <= pb->je+NGHOST-1; j++)
+    for (int j = pmb->js-NGHOST; j <= pmb->je+NGHOST-1; j++)
       dx2v(j) = x2v(j+1) - x2v(j);
   }
 
   // Initialize volume-averaged positions and spacings: phi-direction
-  if (pb->block_size.nx3 == 1)  // no extent
+  if (pmb->block_size.nx3 == 1)  // no extent
   {
-    Real phi_m = x3f(pb->ks);
-    Real phi_p = x3f(pb->ks+1);
-    x3v(pb->ks) = 0.5 * (phi_m + phi_p);
-    dx3v(pb->ks) = dx3f(pb->ks);
+    Real phi_m = x3f(pmb->ks);
+    Real phi_p = x3f(pmb->ks+1);
+    x3v(pmb->ks) = 0.5 * (phi_m + phi_p);
+    dx3v(pmb->ks) = dx3f(pmb->ks);
   }
   else  // extended
   {
-    for (int k = pb->ks-NGHOST; k <= pb->ke+NGHOST; k++)
+    for (int k = pmb->ks-NGHOST; k <= pmb->ke+NGHOST; k++)
     {
       Real phi_m = x3f(k);
       Real phi_p = x3f(k+1);
       x3v(k) = 0.5 * (phi_m + phi_p);
     }
-    for (int k = pb->ks-NGHOST; k <= pb->ke+NGHOST-1; k++)
+    for (int k = pmb->ks-NGHOST; k <= pmb->ke+NGHOST-1; k++)
       dx3v(k) = x3v(k+1) - x3v(k);
   }
 
@@ -149,7 +149,7 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   }
 
   // Allocate arrays for intermediate geometric quantities: r-direction
-  int n_cells_1 = pb->block_size.nx1 + 2*NGHOST;
+  int n_cells_1 = pmb->block_size.nx1 + 2*NGHOST;
   coord_vol_i1_.NewAthenaArray(n_cells_1);
   coord_vol_i2_.NewAthenaArray(n_cells_1);
   coord_area1_i1_.NewAthenaArray(n_cells_1);
@@ -168,11 +168,11 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   metric_face1_i1_.NewAthenaArray(n_cells_1);
   metric_face2_i1_.NewAthenaArray(n_cells_1);
   metric_face3_i1_.NewAthenaArray(n_cells_1);
-  g_.NewAthenaArray(n_cells_1);
-  gi_.NewAthenaArray(n_cells_1);
+  g_.NewAthenaArray(NMETRIC, n_cells_1);
+  gi_.NewAthenaArray(NMETRIC, n_cells_1);
 
   // Allocate arrays for intermediate geometric quantities: theta-direction
-  int n_cells_2 = (pb->block_size.nx2 > 1) ? pb->block_size.nx2 + 2*NGHOST : 1;
+  int n_cells_2 = (pmb->block_size.nx2 > 1) ? pmb->block_size.nx2 + 2*NGHOST : 1;
   coord_vol_j1_.NewAthenaArray(n_cells_2);
   coord_vol_j2_.NewAthenaArray(n_cells_2);
   coord_area1_j1_.NewAthenaArray(n_cells_2);
@@ -189,6 +189,8 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   coord_len3_j2_.NewAthenaArray(n_cells_2);
   coord_width2_j1_.NewAthenaArray(n_cells_2);
   coord_width3_j1_.NewAthenaArray(n_cells_2);
+  coord_width3_j2_.NewAthenaArray(n_cells_2);
+  coord_width3_j3_.NewAthenaArray(n_cells_2);
   coord_src_j1_.NewAthenaArray(n_cells_2);
   coord_src_j2_.NewAthenaArray(n_cells_2);
   metric_cell_j1_.NewAthenaArray(n_cells_2);
@@ -201,7 +203,7 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   metric_face3_j2_.NewAthenaArray(n_cells_2);
 
   // Allocate arrays for intermediate geometric quantities: phi-direction
-  int n_cells_3 = (pb->block_size.nx3 > 1) ? pb->block_size.nx3 + 2*NGHOST : 1;
+  int n_cells_3 = (pmb->block_size.nx3 > 1) ? pmb->block_size.nx3 + 2*NGHOST : 1;
   coord_vol_k1_.NewAthenaArray(n_cells_3);
   coord_area1_k1_.NewAthenaArray(n_cells_3);
   coord_area2_k1_.NewAthenaArray(n_cells_3);
@@ -231,8 +233,8 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   trans_face3_ji6_.NewAthenaArray(n_cells_2, n_cells_1);
 
   // Calculate intermediate geometric quantities: r-direction
-  int il = pb->is - NGHOST;
-  int iu = pb->ie + NGHOST;
+  int il = pmb->is - NGHOST;
+  int iu = pmb->ie + NGHOST;
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
@@ -242,7 +244,7 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
     Real r_p = x1f(i+1);
     Real r_c_sq = SQR(r_c);
     Real r_m_sq = SQR(r_m);
-    Real r_p_sq = SQR(p_m);
+    Real r_p_sq = SQR(r_p);
     Real r_m_cu = r_m * r_m_sq;
     Real r_p_cu = r_p * r_p_cu;
     Real rm_m = std::sqrt(r_m_sq + SQR(m));
@@ -277,13 +279,13 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   int jl, ju;
   if (n_cells_2 > 1)  // extended
   {
-    jl = pb->js - NGHOST;
-    ju = pb->je + NGHOST;
+    jl = pmb->js - NGHOST;
+    ju = pmb->je + NGHOST;
   }
   else  // no extent
   {
-    jl = pb->js;
-    ju = pb->js;
+    jl = pmb->js;
+    ju = pmb->js;
   }
   #pragma simd
   for (int j = jl; j <= ju; ++j)
@@ -343,15 +345,15 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
 
   // Calculate intermediate geometric quantities: phi-direction
   int kl, ku;
-  if (n_cells_2 > 1)  // extended
+  if (n_cells_3 > 1)  // extended
   {
-    kl = pb->ks - NGHOST;
-    ku = pb->ke + NGHOST;
+    kl = pmb->ks - NGHOST;
+    ku = pmb->ke + NGHOST;
   }
   else  // no extent
   {
-    kl = pb->ks;
-    ku = pb->ks;
+    kl = pmb->ks;
+    ku = pmb->ks;
   }
   #pragma simd
   for (int k = kl; k <= ku; ++k)
@@ -374,9 +376,9 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
       Real a2 = SQR(a);
       Real r_c = x1v(i);
       Real r_m = x1f(i);
-      Real r_c_sq = SQR(r_c)
-      Real r_m_sq = SQR(r_m)
-      Real r_m_qu = SQR(r_m_sq)
+      Real r_c_sq = SQR(r_c);
+      Real r_m_sq = SQR(r_m);
+      Real r_m_qu = SQR(r_m_sq);
       Real theta_c = x2v(j);
       Real theta_m = x2f(j);
       Real sin_c = std::sin(theta_c);
@@ -471,6 +473,8 @@ Coordinates::~Coordinates()
   coord_len3_j2_.DeleteAthenaArray();
   coord_width2_j1_.DeleteAthenaArray();
   coord_width3_j1_.DeleteAthenaArray();
+  coord_width3_j2_.DeleteAthenaArray();
+  coord_width3_j3_.DeleteAthenaArray();
   coord_src_j1_.DeleteAthenaArray();
   coord_src_j2_.DeleteAthenaArray();
   metric_cell_j1_.DeleteAthenaArray();
@@ -520,6 +524,7 @@ Coordinates::~Coordinates()
 //   \Delta V = 1/3 * (r_+ - r_-) (\cos\theta_- - \cos\theta_+) (\phi_+ - \phi_-)
 //       * (r_-^2 + r_- r_+ + r_+^2
 //       + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
+//   cf. GetCellVolume()
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &volumes)
 {
@@ -528,6 +533,24 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
     volumes(i) = 1.0/3.0 * coord_vol_i1_(i) * coord_vol_j1_(j) * coord_vol_k1_(k)
         * (coord_vol_i2_(i) + coord_vol_j2_(j));
   return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing single cell volume
+// Inputs:
+//   k,j,i: phi-, theta-, and r-indices
+// Outputs:
+//   returned value: cell volumes
+// Notes:
+//   \Delta V = 1/3 * (r_+ - r_-) (\cos\theta_- - \cos\theta_+) (\phi_+ - \phi_-)
+//       * (r_-^2 + r_- r_+ + r_+^2
+//       + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
+//   cf. CellVolume()
+Real Coordinates::GetCellVolume(const int k, const int j, const int i)
+{
+  return 1.0/3.0 * coord_vol_i1_(i) * coord_vol_j1_(j) * coord_vol_k1_(k)
+      * (coord_vol_i2_(i) + coord_vol_j2_(j));
 }
 
 //--------------------------------------------------------------------------------------
@@ -541,6 +564,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 // Notes:
 //   \Delta A = 1/3 * (\cos\theta_- - \cos\theta_+) (\phi_+ - \phi_-)
 //       * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
+//   cf. GetFace1Area()
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
@@ -549,6 +573,23 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
     areas(i) = coord_area1_j1_(j) * coord_area1_k1_(k)
         * (coord_area1_i1_(i) + 1.0/3.0 * coord_area1_j2_(j));
   return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing single area orthogonal to r
+// Inputs:
+//   k,j,i: phi-, theta-, and r-indices
+// Outputs:
+//   returned value: interface area orthogonal to r
+// Notes:
+//   \Delta A = 1/3 * (\cos\theta_- - \cos\theta_+) (\phi_+ - \phi_-)
+//       * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
+//   cf. Face1Area()
+Real Coordinates::GetFace1Area(const int k, const int j, const int i)
+{
+  return coord_area1_j1_(j) * coord_area1_k1_(k)
+      * (coord_area1_i1_(i) + 1.0/3.0 * coord_area1_j2_(j));
 }
 
 //--------------------------------------------------------------------------------------
@@ -760,22 +801,27 @@ void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
     const Real &g_31 = g_(I13,i);
     const Real &g_32 = g_(I23,i);
     const Real &g_33 = g_(I33,i);
+    const Real &g01 = gi_(I01,i);
+    const Real &g02 = gi_(I02,i);
+    const Real &g03 = gi_(I03,i);
+    Real alpha = std::sqrt(-1.0/gi_(I00,i));
 
     // Extract primitives
     const Real &rho = prim(IDN,k,j,i);
     const Real &pgas = prim(IEN,k,j,i);
-    const Real &v1 = prim(IVX,k,j,i);
-    const Real &v2 = prim(IVY,k,j,i);
-    const Real &v3 = prim(IVZ,k,j,i);
+    const Real &unorm1 = prim(IVX,k,j,i);
+    const Real &unorm2 = prim(IVY,k,j,i);
+    const Real &unorm3 = prim(IVZ,k,j,i);
 
     // Calculate 4-velocity
-    Real u0 = std::sqrt(-1.0 / (g_00 + 2.0 * (g_01*v1 + g_02*v2 + g_03*v3)
-        + g_11*v1*v1 + g_12*v1*v2 + g_13*v1*v3
-        + g_21*v2*v1 + g_22*v2*v2 + g_23*v2*v3
-        + g_31*v3*v1 + g_32*v3*v2 + g_33*v3*v3));
-    Real u1 = u0 * v1;
-    Real u2 = u0 * v2;
-    Real u3 = u0 * v3;
+    Real tmp = g_11*unorm1*unorm1 + 2.0*g_12*unorm1*unorm2 + 2.0*g_13*unorm1*unorm3
+             + g_22*unorm2*unorm2 + 2.0*g_23*unorm2*unorm3
+             + g_33*unorm3*unorm3;
+    Real gamma = std::sqrt(1.0 + tmp);
+    Real u0 = gamma / alpha;
+    Real u1 = unorm1 - alpha * gamma * g01;
+    Real u2 = unorm2 - alpha * gamma * g02;
+    Real u3 = unorm3 - alpha * gamma * g03;
     Real u_0 = g_00*u0 + g_01*u1 + g_02*u2 + g_03*u3;
     Real u_1 = g_10*u0 + g_11*u1 + g_12*u2 + g_13*u3;
     Real u_2 = g_20*u0 + g_21*u1 + g_22*u2 + g_23*u3;
@@ -1203,47 +1249,15 @@ void Coordinates::PrimToLocal1(const int k, const int j, const int il, const int
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
-    // Extract metric coefficients
-    const Real &g_00 = g_(I00,i);
-    const Real &g_01 = g_(I01,i);
-    const Real &g_02 = g_(I02,i);
-    const Real &g_03 = g_(I03,i);
-    const Real &g_10 = g_(I01,i);
-    const Real &g_11 = g_(I11,i);
-    const Real &g_12 = g_(I12,i);
-    const Real &g_13 = g_(I13,i);
-    const Real &g_20 = g_(I02,i);
-    const Real &g_21 = g_(I12,i);
-    const Real &g_22 = g_(I22,i);
-    const Real &g_23 = g_(I23,i);
-    const Real &g_30 = g_(I03,i);
-    const Real &g_31 = g_(I13,i);
-    const Real &g_32 = g_(I23,i);
-    const Real &g_33 = g_(I33,i);
-
-    // Extract global 3-velocities
-    Real &v1l = prim_left(IVX,i);
-    Real &v2l = prim_left(IVY,i);
-    Real &v3l = prim_left(IVZ,i);
-    Real &v1r = prim_right(IVX,i);
-    Real &v2r = prim_right(IVY,i);
-    Real &v3r = prim_right(IVZ,i);
-
-    // Construct global 4-velocities
-    Real u0l = std::sqrt(-1.0 / (g_00 + 2.0 * (g_01*v1l + g_02*v2l + g_03*v3l)
-        + g_11*v1l*v1l + g_12*v1l*v2l + g_13*v1l*v3l
-        + g_21*v2l*v1l + g_22*v2l*v2l + g_23*v2l*v3l
-        + g_31*v3l*v1l + g_32*v3l*v2l + g_33*v3l*v3l));
-    Real u1l = u0l * v1l;
-    Real u2l = u0l * v2l;
-    Real u3l = u0l * v3l;
-    Real u0r = std::sqrt(-1.0 / (g_00 + 2.0 * (g_01*v1r + g_02*v2r + g_03*v3r)
-        + g_11*v1r*v1r + g_12*v1r*v2r + g_13*v1r*v3r
-        + g_21*v2r*v1r + g_22*v2r*v2r + g_23*v2r*v3r
-        + g_31*v3r*v1r + g_32*v3r*v2r + g_33*v3r*v3r));
-    Real u1r = u0r * v1r;
-    Real u2r = u0r * v2r;
-    Real u3r = u0r * v3r;
+    // Extract global normal 4-velocities
+    Real unorm0l = 0.0;
+    Real unorm1l = prim_left(IVX,i);
+    Real unorm2l = prim_left(IVY,i);
+    Real unorm3l = prim_left(IVZ,i);
+    Real unorm0r = 0.0;
+    Real unorm1r = prim_right(IVX,i);
+    Real unorm2r = prim_right(IVY,i);
+    Real unorm3r = prim_right(IVZ,i);
 
     // Extract transformation coefficients
     const Real &mt_0 = trans_face1_ji1_(j,i);
@@ -1254,27 +1268,68 @@ void Coordinates::PrimToLocal1(const int k, const int j, const int il, const int
     const Real &mz_1 = trans_face1_ji7_(j,i);
     const Real &mz_3 = trans_face1_ji4_(j,i);
 
-    // Transform 4-velocities
-    Real utl = mt_0*u0l;
-    Real uxl = mx_0*u0l + mx_1*u1l;
-    Real uyl = my_2*u2l;
-    Real uzl = mz_0*u0l + mz_1*u1l + mz_3*u3l;
-    Real utr = mt_0*u0r;
-    Real uxr = mx_0*u0r + mx_1*u1r;
-    Real uyr = my_2*u2r;
-    Real uzr = mz_0*u0r + mz_1*u1r + mz_3*u3r;
+    // Transform normal 4-velocities
+    Real unormtl = mt_0*unorm0l;
+    Real unormxl = mx_0*unorm0l + mx_1*unorm1l;
+    Real unormyl = my_2*unorm2l;
+    Real unormzl = mz_0*unorm0l + mz_1*unorm1l + mz_3*unorm3l;
+    Real unormtr = mt_0*unorm0r;
+    Real unormxr = mx_0*unorm0r + mx_1*unorm1r;
+    Real unormyr = my_2*unorm2r;
+    Real unormzr = mz_0*unorm0r + mz_1*unorm1r + mz_3*unorm3r;
 
-    // Set local 3-velocities
-    v1l = uxl / utl;
-    v2l = uyl / utl;
-    v3l = uzl / utl;
-    v1r = uxr / utr;
-    v2r = uyr / utr;
-    v3r = uzr / utr;
+    // Set local normal 4-velocities
+    prim_left(IVX,i) = unormxl;
+    prim_left(IVY,i) = unormyl;
+    prim_left(IVZ,i) = unormzl;
+    prim_right(IVX,i) = unormxr;
+    prim_right(IVY,i) = unormyr;
+    prim_right(IVZ,i) = unormzr;
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED)
     {
+      // Extract metric coefficients
+      const Real &g_00 = g_(I00,i);
+      const Real &g_01 = g_(I01,i);
+      const Real &g_02 = g_(I02,i);
+      const Real &g_03 = g_(I03,i);
+      const Real &g_10 = g_(I01,i);
+      const Real &g_11 = g_(I11,i);
+      const Real &g_12 = g_(I12,i);
+      const Real &g_13 = g_(I13,i);
+      const Real &g_20 = g_(I02,i);
+      const Real &g_21 = g_(I12,i);
+      const Real &g_22 = g_(I22,i);
+      const Real &g_23 = g_(I23,i);
+      const Real &g_30 = g_(I03,i);
+      const Real &g_31 = g_(I13,i);
+      const Real &g_32 = g_(I23,i);
+      const Real &g_33 = g_(I33,i);
+      const Real &g01 = gi_(I01,i);
+      const Real &g02 = gi_(I02,i);
+      const Real &g03 = gi_(I03,i);
+      Real alpha = std::sqrt(-1.0/gi_(I00,i));
+
+      // Calculate global 4-velocities
+      Real tmp = g_11*unorm1l*unorm1l + 2.0*g_12*unorm1l*unorm2l
+                   + 2.0*g_13*unorm1l*unorm3l
+               + g_22*unorm2l*unorm2l + 2.0*g_23*unorm2l*unorm3l
+               + g_33*unorm3l*unorm3l;
+      Real gamma = std::sqrt(1.0 + tmp);
+      Real u0l = gamma / alpha;
+      Real u1l = unorm1l - alpha * gamma * g01;
+      Real u2l = unorm2l - alpha * gamma * g02;
+      Real u3l = unorm3l - alpha * gamma * g03;
+      tmp = g_11*unorm1r*unorm1r + 2.0*g_12*unorm1r*unorm2r + 2.0*g_13*unorm1r*unorm3r
+          + g_22*unorm2r*unorm2r + 2.0*g_23*unorm2r*unorm3r
+          + g_33*unorm3r*unorm3r;
+      gamma = std::sqrt(1.0 + tmp);
+      Real u0r = gamma / alpha;
+      Real u1r = unorm1r - alpha * gamma * g01;
+      Real u2r = unorm2r - alpha * gamma * g02;
+      Real u3r = unorm3r - alpha * gamma * g03;
+
       // Extract global magnetic fields
       const Real &bb1l = b1_vals(k,j,i);
       const Real &bb1r = b1_vals(k,j,i);
@@ -1284,18 +1339,28 @@ void Coordinates::PrimToLocal1(const int k, const int j, const int il, const int
       Real &bb3r = prim_right(IBZ,i);
 
       // Construct global contravariant magnetic fields
-      b0l = g_10*bb1l*u0l + g_11*bb1l*u1l + g_12*bb1l*u2l + g_13*bb1l*u3l
-          + g_20*bb2l*u0l + g_21*bb2l*u1l + g_22*bb2l*u2l + g_23*bb2l*u3l
-          + g_30*bb3l*u0l + g_31*bb3l*u1l + g_32*bb3l*u2l + g_33*bb3l*u3l;
-      b1l = (bb1l + b0l * u1l) / u0l;
-      b2l = (bb2l + b0l * u2l) / u0l;
-      b3l = (bb3l + b0l * u3l) / u0l;
-      b0r = g_10*bb1r*u0r + g_11*bb1r*u1r + g_12*bb1r*u2r + g_13*bb1r*u3r
-          + g_20*bb2r*u0r + g_21*bb2r*u1r + g_22*bb2r*u2r + g_23*bb2r*u3r
-          + g_30*bb3r*u0r + g_31*bb3r*u1r + g_32*bb3r*u2r + g_33*bb3r*u3r;
-      b1r = (bb1r + b0r * u1r) / u0r;
-      b2r = (bb2r + b0r * u2r) / u0r;
-      b3r = (bb3r + b0r * u3r) / u0r;
+      Real b0l = g_10*bb1l*u0l + g_11*bb1l*u1l + g_12*bb1l*u2l + g_13*bb1l*u3l
+               + g_20*bb2l*u0l + g_21*bb2l*u1l + g_22*bb2l*u2l + g_23*bb2l*u3l
+               + g_30*bb3l*u0l + g_31*bb3l*u1l + g_32*bb3l*u2l + g_33*bb3l*u3l;
+      Real b1l = (bb1l + b0l * u1l) / u0l;
+      Real b2l = (bb2l + b0l * u2l) / u0l;
+      Real b3l = (bb3l + b0l * u3l) / u0l;
+      Real b0r = g_10*bb1r*u0r + g_11*bb1r*u1r + g_12*bb1r*u2r + g_13*bb1r*u3r
+               + g_20*bb2r*u0r + g_21*bb2r*u1r + g_22*bb2r*u2r + g_23*bb2r*u3r
+               + g_30*bb3r*u0r + g_31*bb3r*u1r + g_32*bb3r*u2r + g_33*bb3r*u3r;
+      Real b1r = (bb1r + b0r * u1r) / u0r;
+      Real b2r = (bb2r + b0r * u2r) / u0r;
+      Real b3r = (bb3r + b0r * u3r) / u0r;
+
+      // Transform 4-velocities
+      Real utl = mt_0*u0l;
+      Real uxl = mx_0*u0l + mx_1*u1l;
+      Real uyl = my_2*u2l;
+      Real uzl = mz_0*u0l + mz_1*u1l + mz_3*u3l;
+      Real utr = mt_0*u0r;
+      Real uxr = mx_0*u0r + mx_1*u1r;
+      Real uyr = my_2*u2r;
+      Real uzr = mz_0*u0r + mz_1*u1r + mz_3*u3r;
 
       // Transform contravariant magnetic fields
       Real btl = mt_0*b0l;
@@ -1351,47 +1416,15 @@ void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
-    // Extract metric coefficients
-    const Real &g_00 = g_(I00,i);
-    const Real &g_01 = g_(I01,i);
-    const Real &g_02 = g_(I02,i);
-    const Real &g_03 = g_(I03,i);
-    const Real &g_10 = g_(I01,i);
-    const Real &g_11 = g_(I11,i);
-    const Real &g_12 = g_(I12,i);
-    const Real &g_13 = g_(I13,i);
-    const Real &g_20 = g_(I02,i);
-    const Real &g_21 = g_(I12,i);
-    const Real &g_22 = g_(I22,i);
-    const Real &g_23 = g_(I23,i);
-    const Real &g_30 = g_(I03,i);
-    const Real &g_31 = g_(I13,i);
-    const Real &g_32 = g_(I23,i);
-    const Real &g_33 = g_(I33,i);
-
-    // Extract global 3-velocities
-    Real &v1l = prim_left(IVX,i);
-    Real &v2l = prim_left(IVY,i);
-    Real &v3l = prim_left(IVZ,i);
-    Real &v1r = prim_right(IVX,i);
-    Real &v2r = prim_right(IVY,i);
-    Real &v3r = prim_right(IVZ,i);
-
-    // Construct global 4-velocities
-    Real u0l = std::sqrt(-1.0 / (g_00 + 2.0 * (g_01*v1l + g_02*v2l + g_03*v3l)
-        + g_11*v1l*v1l + g_12*v1l*v2l + g_13*v1l*v3l
-        + g_21*v2l*v1l + g_22*v2l*v2l + g_23*v2l*v3l
-        + g_31*v3l*v1l + g_32*v3l*v2l + g_33*v3l*v3l));
-    Real u1l = u0l * v1l;
-    Real u2l = u0l * v2l;
-    Real u3l = u0l * v3l;
-    Real u0r = std::sqrt(-1.0 / (g_00 + 2.0 * (g_01*v1r + g_02*v2r + g_03*v3r)
-        + g_11*v1r*v1r + g_12*v1r*v2r + g_13*v1r*v3r
-        + g_21*v2r*v1r + g_22*v2r*v2r + g_23*v2r*v3r
-        + g_31*v3r*v1r + g_32*v3r*v2r + g_33*v3r*v3r));
-    Real u1r = u0r * v1r;
-    Real u2r = u0r * v2r;
-    Real u3r = u0r * v3r;
+    // Extract global normal 4-velocities
+    Real unorm0l = 0.0;
+    Real unorm1l = prim_left(IVX,i);
+    Real unorm2l = prim_left(IVY,i);
+    Real unorm3l = prim_left(IVZ,i);
+    Real unorm0r = 0.0;
+    Real unorm1r = prim_right(IVX,i);
+    Real unorm2r = prim_right(IVY,i);
+    Real unorm3r = prim_right(IVZ,i);
 
     // Extract transformation coefficients
     const Real &mt_0 = trans_face2_ji1_(j,i);
@@ -1401,27 +1434,68 @@ void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int
     const Real &mz_1 = trans_face2_ji2_(j,i);
     const Real &mz_3 = trans_face2_ji6_(j,i);
 
-    // Transform 4-velocities
-    Real utl = mt_0*u0l;
-    Real uxl = mx_2*u2l;
-    Real uyl = my_3*u3l;
-    Real uzl = mz_0*u0l + mz_1*u1l + mz_3*u3l;
-    Real utr = mt_0*u0r;
-    Real uxr = mx_2*u2r;
-    Real uyr = my_3*u3r;
-    Real uzr = mz_0*u0r + mz_1*u1r + mz_3*u3r;
+    // Transform normal 4-velocities
+    Real unormtl = mt_0*unorm0l;
+    Real unormxl = mx_2*unorm2l;
+    Real unormyl = my_3*unorm3l;
+    Real unormzl = mz_0*unorm0l + mz_1*unorm1l + mz_3*unorm3l;
+    Real unormtr = mt_0*unorm0r;
+    Real unormxr = mx_2*unorm2r;
+    Real unormyr = my_3*unorm3r;
+    Real unormzr = mz_0*unorm0r + mz_1*unorm1r + mz_3*unorm3r;
 
-    // Set local 3-velocities
-    v2l = uxl / utl;
-    v3l = uyl / utl;
-    v1l = uzl / utl;
-    v2r = uxr / utr;
-    v3r = uyr / utr;
-    v1r = uzr / utr;
+    // Set local normal 4-velocities
+    prim_left(IVY,i) = unormxl;
+    prim_left(IVZ,i) = unormyl;
+    prim_left(IVX,i) = unormzl;
+    prim_right(IVY,i) = unormxr;
+    prim_right(IVZ,i) = unormyr;
+    prim_right(IVX,i) = unormzr;
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED)
     {
+      // Extract metric coefficients
+      const Real &g_00 = g_(I00,i);
+      const Real &g_01 = g_(I01,i);
+      const Real &g_02 = g_(I02,i);
+      const Real &g_03 = g_(I03,i);
+      const Real &g_10 = g_(I01,i);
+      const Real &g_11 = g_(I11,i);
+      const Real &g_12 = g_(I12,i);
+      const Real &g_13 = g_(I13,i);
+      const Real &g_20 = g_(I02,i);
+      const Real &g_21 = g_(I12,i);
+      const Real &g_22 = g_(I22,i);
+      const Real &g_23 = g_(I23,i);
+      const Real &g_30 = g_(I03,i);
+      const Real &g_31 = g_(I13,i);
+      const Real &g_32 = g_(I23,i);
+      const Real &g_33 = g_(I33,i);
+      const Real &g01 = gi_(I01,i);
+      const Real &g02 = gi_(I02,i);
+      const Real &g03 = gi_(I03,i);
+      Real alpha = std::sqrt(-1.0/gi_(I00,i));
+
+      // Calculate global 4-velocities
+      Real tmp = g_11*unorm1l*unorm1l + 2.0*g_12*unorm1l*unorm2l
+                   + 2.0*g_13*unorm1l*unorm3l
+               + g_22*unorm2l*unorm2l + 2.0*g_23*unorm2l*unorm3l
+               + g_33*unorm3l*unorm3l;
+      Real gamma = std::sqrt(1.0 + tmp);
+      Real u0l = gamma / alpha;
+      Real u1l = unorm1l - alpha * gamma * g01;
+      Real u2l = unorm2l - alpha * gamma * g02;
+      Real u3l = unorm3l - alpha * gamma * g03;
+      tmp = g_11*unorm1r*unorm1r + 2.0*g_12*unorm1r*unorm2r + 2.0*g_13*unorm1r*unorm3r
+          + g_22*unorm2r*unorm2r + 2.0*g_23*unorm2r*unorm3r
+          + g_33*unorm3r*unorm3r;
+      gamma = std::sqrt(1.0 + tmp);
+      Real u0r = gamma / alpha;
+      Real u1r = unorm1r - alpha * gamma * g01;
+      Real u2r = unorm2r - alpha * gamma * g02;
+      Real u3r = unorm3r - alpha * gamma * g03;
+
       // Extract global magnetic fields
       const Real &bb2l = b2_vals(k,j,i);
       const Real &bb2r = b2_vals(k,j,i);
@@ -1431,18 +1505,28 @@ void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int
       Real &bb1r = prim_right(IBZ,i);
 
       // Construct global contravariant magnetic fields
-      b0l = g_10*bb1l*u0l + g_11*bb1l*u1l + g_12*bb1l*u2l + g_13*bb1l*u3l
-          + g_20*bb2l*u0l + g_21*bb2l*u1l + g_22*bb2l*u2l + g_23*bb2l*u3l
-          + g_30*bb3l*u0l + g_31*bb3l*u1l + g_32*bb3l*u2l + g_33*bb3l*u3l;
-      b1l = (bb1l + b0l * u1l) / u0l;
-      b2l = (bb2l + b0l * u2l) / u0l;
-      b3l = (bb3l + b0l * u3l) / u0l;
-      b0r = g_10*bb1r*u0r + g_11*bb1r*u1r + g_12*bb1r*u2r + g_13*bb1r*u3r
-          + g_20*bb2r*u0r + g_21*bb2r*u1r + g_22*bb2r*u2r + g_23*bb2r*u3r
-          + g_30*bb3r*u0r + g_31*bb3r*u1r + g_32*bb3r*u2r + g_33*bb3r*u3r;
-      b1r = (bb1r + b0r * u1r) / u0r;
-      b2r = (bb2r + b0r * u2r) / u0r;
-      b3r = (bb3r + b0r * u3r) / u0r;
+      Real b0l = g_10*bb1l*u0l + g_11*bb1l*u1l + g_12*bb1l*u2l + g_13*bb1l*u3l
+               + g_20*bb2l*u0l + g_21*bb2l*u1l + g_22*bb2l*u2l + g_23*bb2l*u3l
+               + g_30*bb3l*u0l + g_31*bb3l*u1l + g_32*bb3l*u2l + g_33*bb3l*u3l;
+      Real b1l = (bb1l + b0l * u1l) / u0l;
+      Real b2l = (bb2l + b0l * u2l) / u0l;
+      Real b3l = (bb3l + b0l * u3l) / u0l;
+      Real b0r = g_10*bb1r*u0r + g_11*bb1r*u1r + g_12*bb1r*u2r + g_13*bb1r*u3r
+               + g_20*bb2r*u0r + g_21*bb2r*u1r + g_22*bb2r*u2r + g_23*bb2r*u3r
+               + g_30*bb3r*u0r + g_31*bb3r*u1r + g_32*bb3r*u2r + g_33*bb3r*u3r;
+      Real b1r = (bb1r + b0r * u1r) / u0r;
+      Real b2r = (bb2r + b0r * u2r) / u0r;
+      Real b3r = (bb3r + b0r * u3r) / u0r;
+
+      // Transform 4-velocities
+      Real utl = mt_0*u0l;
+      Real uxl = mx_2*u2l;
+      Real uyl = my_3*u3l;
+      Real uzl = mz_0*u0l + mz_1*u1l + mz_3*u3l;
+      Real utr = mt_0*u0r;
+      Real uxr = mx_2*u2r;
+      Real uyr = my_3*u3r;
+      Real uzr = mz_0*u0r + mz_1*u1r + mz_3*u3r;
 
       // Transform contravariant magnetic fields
       Real btl = mt_0*b0l;
@@ -1498,47 +1582,15 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
-    // Extract metric coefficients
-    const Real &g_00 = g_(I00,i);
-    const Real &g_01 = g_(I01,i);
-    const Real &g_02 = g_(I02,i);
-    const Real &g_03 = g_(I03,i);
-    const Real &g_10 = g_(I01,i);
-    const Real &g_11 = g_(I11,i);
-    const Real &g_12 = g_(I12,i);
-    const Real &g_13 = g_(I13,i);
-    const Real &g_20 = g_(I02,i);
-    const Real &g_21 = g_(I12,i);
-    const Real &g_22 = g_(I22,i);
-    const Real &g_23 = g_(I23,i);
-    const Real &g_30 = g_(I03,i);
-    const Real &g_31 = g_(I13,i);
-    const Real &g_32 = g_(I23,i);
-    const Real &g_33 = g_(I33,i);
-
-    // Extract global 3-velocities
-    Real &v1l = prim_left(IVX,i);
-    Real &v2l = prim_left(IVY,i);
-    Real &v3l = prim_left(IVZ,i);
-    Real &v1r = prim_right(IVX,i);
-    Real &v2r = prim_right(IVY,i);
-    Real &v3r = prim_right(IVZ,i);
-
-    // Construct global 4-velocities
-    Real u0l = std::sqrt(-1.0 / (g_00 + 2.0 * (g_01*v1l + g_02*v2l + g_03*v3l)
-        + g_11*v1l*v1l + g_12*v1l*v2l + g_13*v1l*v3l
-        + g_21*v2l*v1l + g_22*v2l*v2l + g_23*v2l*v3l
-        + g_31*v3l*v1l + g_32*v3l*v2l + g_33*v3l*v3l));
-    Real u1l = u0l * v1l;
-    Real u2l = u0l * v2l;
-    Real u3l = u0l * v3l;
-    Real u0r = std::sqrt(-1.0 / (g_00 + 2.0 * (g_01*v1r + g_02*v2r + g_03*v3r)
-        + g_11*v1r*v1r + g_12*v1r*v2r + g_13*v1r*v3r
-        + g_21*v2r*v1r + g_22*v2r*v2r + g_23*v2r*v3r
-        + g_31*v3r*v1r + g_32*v3r*v2r + g_33*v3r*v3r));
-    Real u1r = u0r * v1r;
-    Real u2r = u0r * v2r;
-    Real u3r = u0r * v3r;
+    // Extract global normal 4-velocities
+    Real unorm0l = 0.0;
+    Real unorm1l = prim_left(IVX,i);
+    Real unorm2l = prim_left(IVY,i);
+    Real unorm3l = prim_left(IVZ,i);
+    Real unorm0r = 0.0;
+    Real unorm1r = prim_right(IVX,i);
+    Real unorm2r = prim_right(IVY,i);
+    Real unorm3r = prim_right(IVZ,i);
 
     // Extract transformation coefficients
     const Real &mt_0 = trans_face3_ji1_(j,i);
@@ -1548,27 +1600,68 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
     const Real &my_3 = trans_face3_ji6_(j,i);
     const Real &mz_2 = trans_face3_ji3_(j,i);
 
-    // Transform 4-velocities
-    Real utl = mt_0*u0l;
-    Real uxl = mx_3*u3l;
-    Real uyl = my_0*u0l + my_1*u1l + my_3*u3l;
-    Real uzl = mz_2*u2l;
-    Real utr = mt_0*u0r;
-    Real uxr = mx_3*u3r;
-    Real uyr = my_0*u0r + my_1*u1r + my_3*u3r;
-    Real uzr = mz_2*u2r;
+    // Transform normal 4-velocities
+    Real unormtl = mt_0*unorm0l;
+    Real unormxl = mx_3*unorm3l;
+    Real unormyl = my_0*unorm0l + my_1*unorm1l + my_3*unorm3l;
+    Real unormzl = mz_2*unorm2l;
+    Real unormtr = mt_0*unorm0r;
+    Real unormxr = mx_3*unorm3r;
+    Real unormyr = my_0*unorm0r + my_1*unorm1r + my_3*unorm3r;
+    Real unormzr = mz_2*unorm2r;
 
-    // Set local 3-velocities
-    v3l = uxl / utl;
-    v1l = uyl / utl;
-    v2l = uzl / utl;
-    v3r = uxr / utr;
-    v1r = uyr / utr;
-    v2r = uzr / utr;
+    // Set local normal 4-velocities
+    prim_left(IVZ,i) = unormxl;
+    prim_left(IVX,i) = unormyl;
+    prim_left(IVY,i) = unormzl;
+    prim_right(IVZ,i) = unormxr;
+    prim_right(IVX,i) = unormyr;
+    prim_right(IVY,i) = unormzr;
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED)
     {
+      // Extract metric coefficients
+      const Real &g_00 = g_(I00,i);
+      const Real &g_01 = g_(I01,i);
+      const Real &g_02 = g_(I02,i);
+      const Real &g_03 = g_(I03,i);
+      const Real &g_10 = g_(I01,i);
+      const Real &g_11 = g_(I11,i);
+      const Real &g_12 = g_(I12,i);
+      const Real &g_13 = g_(I13,i);
+      const Real &g_20 = g_(I02,i);
+      const Real &g_21 = g_(I12,i);
+      const Real &g_22 = g_(I22,i);
+      const Real &g_23 = g_(I23,i);
+      const Real &g_30 = g_(I03,i);
+      const Real &g_31 = g_(I13,i);
+      const Real &g_32 = g_(I23,i);
+      const Real &g_33 = g_(I33,i);
+      const Real &g01 = gi_(I01,i);
+      const Real &g02 = gi_(I02,i);
+      const Real &g03 = gi_(I03,i);
+      Real alpha = std::sqrt(-1.0/gi_(I00,i));
+
+      // Calculate global 4-velocities
+      Real tmp = g_11*unorm1l*unorm1l + 2.0*g_12*unorm1l*unorm2l
+                   + 2.0*g_13*unorm1l*unorm3l
+               + g_22*unorm2l*unorm2l + 2.0*g_23*unorm2l*unorm3l
+               + g_33*unorm3l*unorm3l;
+      Real gamma = std::sqrt(1.0 + tmp);
+      Real u0l = gamma / alpha;
+      Real u1l = unorm1l - alpha * gamma * g01;
+      Real u2l = unorm2l - alpha * gamma * g02;
+      Real u3l = unorm3l - alpha * gamma * g03;
+      tmp = g_11*unorm1r*unorm1r + 2.0*g_12*unorm1r*unorm2r + 2.0*g_13*unorm1r*unorm3r
+          + g_22*unorm2r*unorm2r + 2.0*g_23*unorm2r*unorm3r
+          + g_33*unorm3r*unorm3r;
+      gamma = std::sqrt(1.0 + tmp);
+      Real u0r = gamma / alpha;
+      Real u1r = unorm1r - alpha * gamma * g01;
+      Real u2r = unorm2r - alpha * gamma * g02;
+      Real u3r = unorm3r - alpha * gamma * g03;
+
       // Extract global magnetic fields
       const Real &bb3l = b3_vals(k,j,i);
       const Real &bb3r = b3_vals(k,j,i);
@@ -1578,18 +1671,28 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
       Real &bb2r = prim_right(IBZ,i);
 
       // Construct global contravariant magnetic fields
-      b0l = g_10*bb1l*u0l + g_11*bb1l*u1l + g_12*bb1l*u2l + g_13*bb1l*u3l
-          + g_20*bb2l*u0l + g_21*bb2l*u1l + g_22*bb2l*u2l + g_23*bb2l*u3l
-          + g_30*bb3l*u0l + g_31*bb3l*u1l + g_32*bb3l*u2l + g_33*bb3l*u3l;
-      b1l = (bb1l + b0l * u1l) / u0l;
-      b2l = (bb2l + b0l * u2l) / u0l;
-      b3l = (bb3l + b0l * u3l) / u0l;
-      b0r = g_10*bb1r*u0r + g_11*bb1r*u1r + g_12*bb1r*u2r + g_13*bb1r*u3r
-          + g_20*bb2r*u0r + g_21*bb2r*u1r + g_22*bb2r*u2r + g_23*bb2r*u3r
-          + g_30*bb3r*u0r + g_31*bb3r*u1r + g_32*bb3r*u2r + g_33*bb3r*u3r;
-      b1r = (bb1r + b0r * u1r) / u0r;
-      b2r = (bb2r + b0r * u2r) / u0r;
-      b3r = (bb3r + b0r * u3r) / u0r;
+      Real b0l = g_10*bb1l*u0l + g_11*bb1l*u1l + g_12*bb1l*u2l + g_13*bb1l*u3l
+               + g_20*bb2l*u0l + g_21*bb2l*u1l + g_22*bb2l*u2l + g_23*bb2l*u3l
+               + g_30*bb3l*u0l + g_31*bb3l*u1l + g_32*bb3l*u2l + g_33*bb3l*u3l;
+      Real b1l = (bb1l + b0l * u1l) / u0l;
+      Real b2l = (bb2l + b0l * u2l) / u0l;
+      Real b3l = (bb3l + b0l * u3l) / u0l;
+      Real b0r = g_10*bb1r*u0r + g_11*bb1r*u1r + g_12*bb1r*u2r + g_13*bb1r*u3r
+               + g_20*bb2r*u0r + g_21*bb2r*u1r + g_22*bb2r*u2r + g_23*bb2r*u3r
+               + g_30*bb3r*u0r + g_31*bb3r*u1r + g_32*bb3r*u2r + g_33*bb3r*u3r;
+      Real b1r = (bb1r + b0r * u1r) / u0r;
+      Real b2r = (bb2r + b0r * u2r) / u0r;
+      Real b3r = (bb3r + b0r * u3r) / u0r;
+
+      // Transform 4-velocities
+      Real utl = mt_0*u0l;
+      Real uxl = mx_3*u3l;
+      Real uyl = my_0*u0l + my_1*u1l + my_3*u3l;
+      Real uzl = mz_2*u2l;
+      Real utr = mt_0*u0r;
+      Real uxr = mx_3*u3r;
+      Real uyr = my_0*u0r + my_1*u1r + my_3*u3r;
+      Real uzr = mz_2*u2r;
 
       // Transform contravariant magnetic fields
       Real btl = mt_0*b0l;
@@ -2020,11 +2123,10 @@ void Coordinates::LowerVectorCell(
   // Extract and calculate useful quantities
   const Real &m = bh_mass_;
   const Real &a = bh_spin_;
-  Real a2 = SQR(a);
   const Real &r = metric_cell_i1_(i);
-  Real r2 = SQR(r);
   const Real &sin2 = metric_cell_j1_(j);
-  Real sigma = r2 + a2 * cos2;
+  const Real &cos2 = metric_cell_j2_(j);
+  Real sigma = SQR(r) + SQR(a) * cos2;
 
   // Calculate metric coefficients
   Real g_00 = -(1.0 - 2.0*m*r/sigma);
@@ -2036,7 +2138,7 @@ void Coordinates::LowerVectorCell(
   Real g_13 = -(1.0 + 2.0*m*r/sigma) * a * sin2;
   Real g_22 = sigma;
   Real g_23 = 0.0;
-  Real g_33 = (r2 + a2 + 2.0*m*a2*r/sigma * sin2) * sin2;
+  Real g_33 = (SQR(r) + SQR(a) + 2.0*m*SQR(a)*r/sigma * sin2) * sin2;
   const Real &g_10 = g_01;
   const Real &g_20 = g_02;
   const Real &g_21 = g_12;

@@ -21,12 +21,17 @@
 #include "../../coordinates/coordinates.hpp" // Coordinates
 
 // Declarations
+static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim,
+    const AthenaArray<Real> &bb, const AthenaArray<Real> &g, int k, int j, int i,
+    MeshBlock *pb, Real gamma_prime, AthenaArray<Real> &cons);
 static Real QNResidual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq,
     Real b_norm_sq, Real q_dot_b_norm_sq, Real gamma_prime);
 static Real QNResidualPrime(Real w_guess, Real d_norm, Real q_norm_sq, Real b_norm_sq,
     Real q_dot_b_norm_sq, Real gamma_prime);
 static Real FindRootNR(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
     Real b_norm_sq, Real q_dot_b_norm_sq, Real gamma_prime);
+static void neighbor_average(AthenaArray<Real> &prim, int n, int k, int j, int i,
+    int kl, int ku, int jl, int ju, int il, int iu);
 static Real quadratic_root(Real a1, Real a0, bool greater_root);
 static Real cubic_root_real(Real a2, Real a1, Real a0);
 static void quartic_root_minmax(Real a3, Real a2, Real a1, Real a0, Real *pmin_value,
@@ -219,20 +224,11 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         gamma_sq = 1.0/(1.0 - v_norm_sq);
         Real gamma_rel = std::sqrt(gamma_sq);
 
-        // Extract primitives
-        Real &rho = prim(IDN,k,j,i);
-        Real &pgas = prim(IEN,k,j,i);
-        Real &v1 = prim(IVX,k,j,i);
-        Real &v2 = prim(IVY,k,j,i);
-        Real &v3 = prim(IVZ,k,j,i);
-
-        // Set density, correcting only conserved density if floor applied
-        Real u0 = gamma_rel / alpha;                    // (N 21)
-        rho = d_norm / gamma_rel;                       // (N 21)
-        if (rho < density_floor_ or std::isnan(rho)) {
-          rho = density_floor_;
-          d = rho * u0;
-        }
+        // Set density and pressure
+        Real u0 = gamma_rel / alpha;                 // (N 21)
+        prim(IDN,k,j,i) = d_norm / gamma_rel;        // (N 21)
+        prim(IEN,k,j,i) = 1.0/gamma_prime
+            * (w_true/gamma_sq - d_norm/gamma_rel);  // (N 32)
 
         // Set velocity
         Real u_norm_a = gamma_rel / (w_true + b_norm_sq);
@@ -243,32 +239,67 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real u1 = u_norm_1 - alpha * gamma_rel * gi01;
         Real u2 = u_norm_2 - alpha * gamma_rel * gi02;
         Real u3 = u_norm_3 - alpha * gamma_rel * gi03;
-        v1 = u1 / u0;
-        v2 = u2 / u0;
-        v3 = u3 / u0;
+        prim(IVX,k,j,i) = u1 / u0;
+        prim(IVY,k,j,i) = u2 / u0;
+        prim(IVZ,k,j,i) = u3 / u0;
+      }
+    }
 
-        // Set pressure, correcting only energy if floor applied
-        pgas = 1.0/gamma_prime
-            * (w_true/gamma_sq - d_norm/gamma_rel);         // (N 32)
-        if (pgas < pressure_floor_ or std::isnan(pgas)) {
-          pgas = pressure_floor_;
-          Real u_0 = g00*u0 + g01*u1 + g02*u2 + g03*u3;
-          Real bcon0 = u0 * (g01*b1 + g02*b2 + g03*b3)
-                     + u1 * (g11*b1 + g12*b2 + g13*b3)
-                     + u2 * (g12*b1 + g22*b2 + g23*b3)
-                     + u3 * (g13*b1 + g23*b2 + g33*b3);
-          Real bcon1 = (b1 + bcon0 * u1) / u0;
-          Real bcon2 = (b2 + bcon0 * u2) / u0;
-          Real bcon3 = (b3 + bcon0 * u3) / u0;
-          Real bcov0 = g00*bcon0 + g01*bcon1 + g02*bcon2 + g03*bcon3;
-          Real bcov1 = g01*bcon0 + g11*bcon1 + g12*bcon2 + g13*bcon3;
-          Real bcov2 = g02*bcon0 + g12*bcon1 + g22*bcon2 + g23*bcon3;
-          Real bcov3 = g03*bcon0 + g13*bcon1 + g23*bcon2 + g33*bcon3;
-          Real b_sq = bcov0*bcon0 + bcov1*bcon1 + bcov2*bcon2 + bcov3*bcon3;
-          Real w = rho + gamma_prime * pgas + b_sq;
-          Real ptot = pgas + 0.5*b_sq;
-          e = w * u0 * u_0 - bcon0 * bcov0 + ptot;
+  // Fix cells
+  for (int k = kl; k <= ku; ++k)
+    for (int j = jl; j <= ju; ++j)
+    {
+      pb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
+      for (int i = il; i <= iu; ++i)
+      {
+        // Prepare flag indicating cell has been altered
+        bool fixed = false;
+
+        // Extract primitives
+        Real &rho = prim(IDN,k,j,i);
+        Real &pgas = prim(IEN,k,j,i);
+        Real &v1 = prim(IVX,k,j,i);
+        Real &v2 = prim(IVY,k,j,i);
+        Real &v3 = prim(IVZ,k,j,i);
+
+        // Average from neighbors
+        if (std::isnan(rho))
+        {
+          for (int n = 0; n < NFLUID; ++n)
+            neighbor_average(prim, n, k, j, i, kl, ku, jl, ju, il, iu);
+          fixed = true;
         }
+
+        // Enforce floors and check for remaining bad values
+        if (rho < density_floor_ or std::isnan(rho))
+        {
+          rho = density_floor_;
+          fixed = true;
+        }
+        if (pgas < pressure_floor_ or std::isnan(pgas))
+        {
+          pgas = pressure_floor_;
+          fixed = true;
+        }
+        if (std::isnan(v1))
+        {
+          v1 = g_inv_(I01,i) / g_inv_(I00,i);
+          fixed = true;
+        }
+        if (std::isnan(v2))
+        {
+          v2 = g_inv_(I02,i) / g_inv_(I00,i);
+          fixed = true;
+        }
+        if (std::isnan(v3))
+        {
+          v3 = g_inv_(I03,i) / g_inv_(I00,i);
+          fixed = true;
+        }
+
+        // Fix corresponding conserved values if any changes made
+        if (fixed)
+          PrimitiveToConservedSingle(prim, bcc, g_, k, j, i, pb, gamma_prime, cons);
       }
     }
   }
@@ -304,7 +335,7 @@ void FluidEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
   }
 
   // Calculate reduced ratio of specific heats
-  Real gamma_adi_red = gamma_ / (gamma_ - 1.0);
+  Real gamma_prime = gamma_/(gamma_-1.0);
 
   // Go through all cells
   for (int k = kl; k <= ku; ++k)
@@ -313,58 +344,74 @@ void FluidEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
       pb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
       #pragma simd
       for (int i = il; i <= iu; ++i)
-      {
-        // Extract primitives and magnetic fields
-        const Real &rho = prim(IDN,k,j,i);
-        const Real &pgas = prim(IEN,k,j,i);
-        const Real &v1 = prim(IVX,k,j,i);
-        const Real &v2 = prim(IVY,k,j,i);
-        const Real &v3 = prim(IVZ,k,j,i);
-        const Real &bb1 = b(IB1,k,j,i);
-        const Real &bb2 = b(IB2,k,j,i);
-        const Real &bb3 = b(IB3,k,j,i);
-
-        // Calculate 4-velocity
-        Real tmp = g_(I00,i) + 2.0 * (g_(I01,i)*v1 + g_(I02,i)*v2 + g_(I03,i)*v3)
-            + g_(I11,i)*v1*v1 + 2.0*g_(I12,i)*v1*v2 + 2.0*g_(I13,i)*v1*v3
-            + g_(I22,i)*v2*v2 + 2.0*g_(I23,i)*v2*v3
-            + g_(I33,i)*v3*v3;
-        Real u0 = std::sqrt(-1.0/tmp);
-        Real u1 = u0 * v1;
-        Real u2 = u0 * v2;
-        Real u3 = u0 * v3;
-        Real u_0, u_1, u_2, u_3;
-        pb->pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
-
-        // Calculate 4-magnetic field
-        Real b0 = g_(I01,i)*u0*bb1 + g_(I02,i)*u0*bb2 + g_(I03,i)*u0*bb3
-                + g_(I11,i)*u1*bb1 + g_(I12,i)*u1*bb2 + g_(I13,i)*u1*bb3
-                + g_(I12,i)*u2*bb1 + g_(I22,i)*u2*bb2 + g_(I23,i)*u2*bb3
-                + g_(I13,i)*u3*bb1 + g_(I23,i)*u3*bb2 + g_(I33,i)*u3*bb3;
-        Real b1 = (bb1 + b0 * u1) / u0;
-        Real b2 = (bb2 + b0 * u2) / u0;
-        Real b3 = (bb3 + b0 * u3) / u0;
-        Real b_0, b_1, b_2, b_3;
-        pb->pcoord->LowerVectorCell(b0, b1, b2, b3, k, j, i, &b_0, &b_1, &b_2, &b_3);
-        Real b_sq = b0*b_0 + b1*b_1 + b2*b_2 + b3*b_3;
-
-        // Extract conserved quantities
-        Real &d0 = cons(IDN,k,j,i);
-        Real &t0_0 = cons(IEN,k,j,i);
-        Real &t0_1 = cons(IM1,k,j,i);
-        Real &t0_2 = cons(IM2,k,j,i);
-        Real &t0_3 = cons(IM3,k,j,i);
-
-        // Set conserved quantities
-        Real wtot = rho + gamma_adi_red * pgas + b_sq;
-        Real ptot = pgas + 0.5 * b_sq;
-        d0 = rho * u0;
-        t0_0 = wtot * u0 * u_0 - b0 * b_0 + ptot;
-        t0_1 = wtot * u0 * u_1 - b0 * b_1;
-        t0_2 = wtot * u0 * u_2 - b0 * b_2;
-        t0_3 = wtot * u0 * u_3 - b0 * b_3;
-      }
+        PrimitiveToConservedSingle(prim, b, g_, k, j, i, pb, gamma_prime, cons);
     }
+  return;
+}
+
+// Function for converting primitives to conserved variables in a single cell
+// Inputs:
+//   prim: 3D array of primitives
+//   bb: 3D array of cell-centered magnetic fields
+//   g: 1D array of metric coefficients
+//   k,j,i: indices of cell
+//   pb: pointer to MeshBlock
+//   gamma_prime: reduced ratio of specific heats \Gamma/(\Gamma-1)
+// Outputs:
+//   cons: conserved variables set in desired cell
+static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim,
+    const AthenaArray<Real> &bb, const AthenaArray<Real> &g, int k, int j, int i,
+    MeshBlock *pb, Real gamma_prime, AthenaArray<Real> &cons)
+{
+  // Extract primitives and magnetic fields
+  const Real &rho = prim(IDN,k,j,i);
+  const Real &pgas = prim(IEN,k,j,i);
+  const Real &v1 = prim(IVX,k,j,i);
+  const Real &v2 = prim(IVY,k,j,i);
+  const Real &v3 = prim(IVZ,k,j,i);
+  const Real &bb1 = bb(IB1,k,j,i);
+  const Real &bb2 = bb(IB2,k,j,i);
+  const Real &bb3 = bb(IB3,k,j,i);
+
+  // Calculate 4-velocity
+  Real tmp = g(I00,i) + 2.0 * (g(I01,i)*v1 + g(I02,i)*v2 + g(I03,i)*v3)
+      + g(I11,i)*v1*v1 + 2.0*g(I12,i)*v1*v2 + 2.0*g(I13,i)*v1*v3
+      + g(I22,i)*v2*v2 + 2.0*g(I23,i)*v2*v3
+      + g(I33,i)*v3*v3;
+  Real u0 = std::sqrt(-1.0/tmp);
+  Real u1 = u0 * v1;
+  Real u2 = u0 * v2;
+  Real u3 = u0 * v3;
+  Real u_0, u_1, u_2, u_3;
+  pb->pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
+
+  // Calculate 4-magnetic field
+  Real b0 = g(I01,i)*u0*bb1 + g(I02,i)*u0*bb2 + g(I03,i)*u0*bb3
+          + g(I11,i)*u1*bb1 + g(I12,i)*u1*bb2 + g(I13,i)*u1*bb3
+          + g(I12,i)*u2*bb1 + g(I22,i)*u2*bb2 + g(I23,i)*u2*bb3
+          + g(I13,i)*u3*bb1 + g(I23,i)*u3*bb2 + g(I33,i)*u3*bb3;
+  Real b1 = (bb1 + b0 * u1) / u0;
+  Real b2 = (bb2 + b0 * u2) / u0;
+  Real b3 = (bb3 + b0 * u3) / u0;
+  Real b_0, b_1, b_2, b_3;
+  pb->pcoord->LowerVectorCell(b0, b1, b2, b3, k, j, i, &b_0, &b_1, &b_2, &b_3);
+  Real b_sq = b0*b_0 + b1*b_1 + b2*b_2 + b3*b_3;
+
+  // Extract conserved quantities
+  Real &d0 = cons(IDN,k,j,i);
+  Real &t0_0 = cons(IEN,k,j,i);
+  Real &t0_1 = cons(IM1,k,j,i);
+  Real &t0_2 = cons(IM2,k,j,i);
+  Real &t0_3 = cons(IM3,k,j,i);
+
+  // Set conserved quantities
+  Real wtot = rho + gamma_prime * pgas + b_sq;
+  Real ptot = pgas + 0.5 * b_sq;
+  d0 = rho * u0;
+  t0_0 = wtot * u0 * u_0 - b0 * b_0 + ptot;
+  t0_1 = wtot * u0 * u_1 - b0 * b_1;
+  t0_2 = wtot * u0 * u_2 - b0 * b_2;
+  t0_3 = wtot * u0 * u_3 - b0 * b_3;
   return;
 }
 
@@ -645,6 +692,58 @@ static Real FindRootNR(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq
 
   // Indicate failure to converge
   return NAN;
+}
+
+// Function for replacing primitive value in cell with average of neighbors
+// Inputs:
+//   prim: array of primitives
+//   n: IDN, IEN, IVX, IVY, or IVZ
+//   k,j,i: indices of cell
+//   kl,ku,jl,ju,il,ju: limits of array
+// Outputs:
+//   prim(index,k,j,i) modified
+// Notes
+//   average will only include in-bounds, non-NAN neighbors
+//   if no such neighbors exist, value will be unmodified
+//   same function as in adiabatic_hydro_gr.cpp
+static void neighbor_average(AthenaArray<Real> &prim, int n, int k, int j, int i,
+    int kl, int ku, int jl, int ju, int il, int iu)
+{
+  Real neighbor_sum = 0.0;
+  int num_neighbors = 0;
+  if (i > il and not std::isnan(prim(n,k,j,i-1)))
+  {
+    neighbor_sum += prim(n,k,j,i-1);
+    num_neighbors += 1;
+  }
+  if (i < iu and not std::isnan(prim(n,k,j,i+1)))
+  {
+    neighbor_sum += prim(n,k,j,i+1);
+    num_neighbors += 1;
+  }
+  if (j > jl and not std::isnan(prim(n,k,j-1,i)))
+  {
+    neighbor_sum += prim(n,k,j-1,i);
+    num_neighbors += 1;
+  }
+  if (j < ju and not std::isnan(prim(n,k,j+1,i)))
+  {
+    neighbor_sum += prim(n,k,j+1,i);
+    num_neighbors += 1;
+  }
+  if (k > kl and not std::isnan(prim(n,k-1,j,i)))
+  {
+    neighbor_sum += prim(n,k-1,j,i);
+    num_neighbors += 1;
+  }
+  if (k < ku and not std::isnan(prim(n,k+1,j,i)))
+  {
+    neighbor_sum += prim(n,k+1,j,i);
+    num_neighbors += 1;
+  }
+  if (num_neighbors > 0)
+    prim(n,k,j,i) = neighbor_sum / num_neighbors;
+  return;
 }
 
 // Function for finding root of monic quadratic equation

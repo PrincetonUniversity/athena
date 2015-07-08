@@ -49,12 +49,12 @@ FluidIntegrator::FluidIntegrator(Fluid *pf, ParameterInput *pin)
   face_area_.NewAthenaArray(nthreads,ncells1);
   face_area_p1_.NewAthenaArray(nthreads,ncells1);
   cell_volume_.NewAthenaArray(nthreads,ncells1);
-  if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in SR/GRMHD
-    b_normal_.NewAthenaArray(ncells1);
-  if (GENERAL_RELATIVITY)  // only used in GR (and only in certain Riemann solvers)
+  if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in (SR/GR)MHD
+    bb_normal_.NewAthenaArray(ncells1);
+  if (GENERAL_RELATIVITY)  // only used in GR
   {
     g_.NewAthenaArray(NMETRIC,ncells1);
-    g_inv_.NewAthenaArray(NMETRIC,ncells1);
+    gi_.NewAthenaArray(NMETRIC,ncells1);
     cons_.NewAthenaArray(NWAVE,ncells1);
   }
 }
@@ -71,12 +71,12 @@ FluidIntegrator::~FluidIntegrator()
   face_area_.DeleteAthenaArray();
   face_area_p1_.DeleteAthenaArray();
   cell_volume_.DeleteAthenaArray();
-  if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in SR/GRMHD
-    b_normal_.DeleteAthenaArray();
+  if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in (SR/GR)MHD
+    bb_normal_.DeleteAthenaArray();
   if (GENERAL_RELATIVITY)
   {
     g_.DeleteAthenaArray();
-    g_inv_.DeleteAthenaArray();
+    gi_.DeleteAthenaArray();
     cons_.DeleteAthenaArray();
   }
 }

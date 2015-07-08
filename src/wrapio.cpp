@@ -28,7 +28,7 @@ int WrapIO::Open(const char* fname, enum rwmode rw)
     if(MPI_File_open(comm,const_cast<char*>(fname),MPI_MODE_RDONLY,MPI_INFO_NULL,&fh)
        !=MPI_SUCCESS) {  // use const_cast to convince the compiler.
       msg << "### FATAL ERROR in function [WrapIO:Open]"
-          << std::endl << "Output file '" << fname << "' could not be opened" <<std::endl;
+          << std::endl << "Input file '" << fname << "' could not be opened" <<std::endl;
       throw std::runtime_error(msg.str().c_str());
       return false;
     }
@@ -112,7 +112,7 @@ int WrapIO::Open(const char* fname, enum rwmode rw)
   if(rw==readmode) {
     if ((fh = fopen(fname,"rb")) == NULL) {
       msg << "### FATAL ERROR in function [WrapIO:Open]"
-          << std::endl << "Output file '" << fname << "' could not be opened" <<std::endl;
+          << std::endl << "Input file '" << fname << "' could not be opened" <<std::endl;
       throw std::runtime_error(msg.str().c_str());
       return false;
     }

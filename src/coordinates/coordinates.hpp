@@ -228,28 +228,28 @@ private:
   //   direction: 1/2/3 depending on which face, edge, etc. is in play
   //   index: i/j/k indicating which coordinates index array
   //   count: 1/2/... in case multiple arrays are needed for different terms
-  AthenaArray<Real> coord_vol_i_, coord_vol_i1_, coord_vol_i2;
-  AthenaArray<Real> coord_vol_j_, coord_vol_j1_, coord_vol_j2;
+  AthenaArray<Real> coord_vol_i_, coord_vol_i1_, coord_vol_i2_;
+  AthenaArray<Real> coord_vol_j_, coord_vol_j1_, coord_vol_j2_;
   AthenaArray<Real> coord_vol_k1_;
   AthenaArray<Real> coord_area1_i_, coord_area1_i1_;
-  AthenaArray<Real> coord_area1_j_, coord_area1_j1_, coord_area1_j2;
-  AthenaArray<Real> coord_area1_k1;
-  AthenaArray<Real> coord_area2_i_, coord_area2_i1_, coord_area2_i2;
-  AthenaArray<Real> coord_area2_j_, coord_area2_j1_, coord_area2_j2;
-  AthenaArray<Real> coord_area2_k1;
-  AthenaArray<Real> coord_area3_i_, coord_area3_i1_, coord_area3_i2;
-  AthenaArray<Real> coord_area3_j1_, coord_area3_j2;
-  AthenaArray<Real> coord_len1_i1_, coord_len1_i2;
-  AthenaArray<Real> coord_len1_j1_, coord_len1_j2;
+  AthenaArray<Real> coord_area1_j_, coord_area1_j1_, coord_area1_j2_;
+  AthenaArray<Real> coord_area1_k1_;
+  AthenaArray<Real> coord_area2_i_, coord_area2_i1_, coord_area2_i2_;
+  AthenaArray<Real> coord_area2_j_, coord_area2_j1_, coord_area2_j2_;
+  AthenaArray<Real> coord_area2_k1_;
+  AthenaArray<Real> coord_area3_i_, coord_area3_i1_, coord_area3_i2_;
+  AthenaArray<Real> coord_area3_j1_, coord_area3_j2_;
+  AthenaArray<Real> coord_len1_i1_, coord_len1_i2_;
+  AthenaArray<Real> coord_len1_j1_, coord_len1_j2_;
   AthenaArray<Real> coord_len2_i1_;
-  AthenaArray<Real> coord_len2_j1_, coord_len2_j2;
+  AthenaArray<Real> coord_len2_j1_, coord_len2_j2_;
   AthenaArray<Real> coord_len3_i1_;
-  AthenaArray<Real> coord_len3_j1_, coord_len3_j2;
+  AthenaArray<Real> coord_len3_j1_, coord_len3_j2_;
   AthenaArray<Real> coord_len3_k1_;
   AthenaArray<Real> coord_width1_i1_;
   AthenaArray<Real> coord_width2_i1_;
   AthenaArray<Real> coord_width2_j1_;
-  AthenaArray<Real> coord_width3_j1_;
+  AthenaArray<Real> coord_width3_j1_, coord_width3_j2_, coord_width3_j3_;
   AthenaArray<Real> coord_width3_k1_;
   AthenaArray<Real> coord_width3_ji1_;
   AthenaArray<Real> coord_src_i1_, coord_src_i2_, coord_src_i3_, coord_src_i4_;

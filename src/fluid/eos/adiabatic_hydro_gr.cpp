@@ -20,8 +20,13 @@
 #include "../../parameter_input.hpp"          // GetReal()
 
 // Declarations
+static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim,
+    const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int i,
+    MeshBlock *pmb, Real gamma_prime, AthenaArray<Real> &cons);
 static Real FindRootNR(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
     Real gamma_prime);
+static void neighbor_average(AthenaArray<Real> &prim, AthenaArray<bool> &problem, int n,
+    int k, int j, int i, int kl, int ku, int jl, int ju, int il, int iu);
 static Real QNResidual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq,
     Real gamma_prime);
 static Real QNResidualPrime(Real w_guess, Real d_norm, Real q_norm_sq,
@@ -37,9 +42,19 @@ FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
   gamma_ = pin->GetReal("fluid", "gamma");
   density_floor_ = pin->GetOrAddReal("fluid", "dfloor", 1024*FLT_MIN);
   pressure_floor_ = pin->GetOrAddReal("fluid", "pfloor", 1024*FLT_MIN);
+  rho_min_ = pin->GetOrAddReal("fluid", "rho_min", density_floor_);
+  rho_pow_ = pin->GetOrAddReal("fluid", "rho_pow", 0.0);
+  u_min_ = pin->GetOrAddReal("fluid", "u_min", pressure_floor_/(gamma_-1.0));
+  u_pow_ = pin->GetOrAddReal("fluid", "u_pow", 0.0);
+  gamma_max_ = pin->GetOrAddReal("fluid", "gamma_max", 1000.0);
   int ncells1 = pf->pmy_block->block_size.nx1 + 2*NGHOST;
-  g_.NewAthenaArray(NMETRIC,ncells1);
-  g_inv_.NewAthenaArray(NMETRIC,ncells1);
+  g_.NewAthenaArray(NMETRIC, ncells1);
+  g_inv_.NewAthenaArray(NMETRIC, ncells1);
+  int ncells2 = (pf->pmy_block->block_size.nx2 > 1) ?
+      pf->pmy_block->block_size.nx2 + 2*NGHOST : 1;
+  int ncells3 = (pf->pmy_block->block_size.nx3 > 1) ?
+      pf->pmy_block->block_size.nx3 + 2*NGHOST : 1;
+  fixed_.NewAthenaArray(ncells3, ncells2, ncells1);
 }
 
 // Destructor
@@ -47,6 +62,7 @@ FluidEqnOfState::~FluidEqnOfState()
 {
   g_.DeleteAthenaArray();
   g_inv_.DeleteAthenaArray();
+  fixed_.DeleteAthenaArray();
 }
 
 // Variable inverter
@@ -65,7 +81,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     AthenaArray<Real> &bcc)
 {
   // Parameters
-  const Real max_velocity = 1.0 - 1.0e-15;
+  const Real max_w = 1.0e8;
   const Real initial_guess_multiplier = 10.0;
   const int initial_guess_multiplications = 10;
 
@@ -73,19 +89,19 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const Real gamma_prime = gamma_ / (gamma_ - 1.0);
 
   // Determine array bounds
-  MeshBlock *pb = pmy_fluid_->pmy_block;
-  int il = pb->is - NGHOST;
-  int iu = pb->ie + NGHOST;
-  int jl = pb->js;
-  int ju = pb->je;
-  int kl = pb->ks;
-  int ku = pb->ke;
-  if (pb->block_size.nx2 > 1)
+  MeshBlock *pmb = pmy_fluid_->pmy_block;
+  int il = pmb->is - NGHOST;
+  int iu = pmb->ie + NGHOST;
+  int jl = pmb->js;
+  int ju = pmb->je;
+  int kl = pmb->ks;
+  int ku = pmb->ke;
+  if (pmb->block_size.nx2 > 1)
   {
     jl -= NGHOST;
     ju += NGHOST;
   }
-  if (pb->block_size.nx3 > 1)
+  if (pmb->block_size.nx3 > 1)
   {
     kl -= NGHOST;
     ku += NGHOST;
@@ -95,7 +111,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   for (int k = kl; k <= ku; k++)
     for (int j = jl; j <= ju; j++)
     {
-      pb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
+      pmb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
       #pragma simd
       for (int i = il; i <= iu; i++)
       {
@@ -125,16 +141,16 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         // Extract old primitives
         const Real &rho_old = prim_old(IDN,k,j,i);
         const Real &pgas_old = prim_old(IEN,k,j,i);
-        const Real &v1_old = prim_old(IVX,k,j,i);
-        const Real &v2_old = prim_old(IVY,k,j,i);
-        const Real &v3_old = prim_old(IVZ,k,j,i);
+        const Real &unorm1_old = prim_old(IVX,k,j,i);
+        const Real &unorm2_old = prim_old(IVY,k,j,i);
+        const Real &unorm3_old = prim_old(IVZ,k,j,i);
 
         // Extract primitives
         Real &rho = prim(IDN,k,j,i);
         Real &pgas = prim(IEN,k,j,i);
-        Real &v1 = prim(IVX,k,j,i);
-        Real &v2 = prim(IVY,k,j,i);
-        Real &v3 = prim(IVZ,k,j,i);
+        Real &unorm1 = prim(IVX,k,j,i);
+        Real &unorm2 = prim(IVY,k,j,i);
+        Real &unorm3 = prim(IVZ,k,j,i);
 
         // Calculate geometric quantities
         Real alpha = 1.0 / std::sqrt(-gi00);
@@ -159,11 +175,10 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real q_norm_sq = q_norm_sq_a + q_norm_sq_b*q_norm_sq_b;
 
         // Construct initial guess for enthalpy W
-        Real v_sq = g11*v1_old*v1_old + g22*v2_old*v2_old + g33*v3_old*v3_old
-            + 2.0 * (g12*v1_old*v2_old + g13*v1_old*v3_old + g23*v2_old*v3_old);
-        Real beta_v = g01*v1_old + g02*v2_old + g03*v3_old;
-        Real v_norm_sq = 1.0/alpha_sq * (v_sq + 2.0*beta_v + beta_sq);
-        Real gamma_sq = 1.0 / (1.0 - v_norm_sq);
+        Real tmp = g11*unorm1*unorm1 + 2.0*g12*unorm1*unorm2 + 2.0*g13*unorm1*unorm3
+                 + g22*unorm2*unorm2 + 2.0*g23*unorm2*unorm3
+                 + g33*unorm3*unorm3;
+        Real gamma_sq = 1.0 + tmp;
         Real w_initial = gamma_sq * (rho_old + gamma_prime * pgas_old);
         for (int count = 0; count < initial_guess_multiplications; count++)
         {
@@ -175,40 +190,73 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
         // Apply Newton-Raphson method to find new W
         Real w_true = FindRootNR(w_initial, d_norm, q_dot_n, q_norm_sq, gamma_prime);
-
-        // Set density, correcting only conserved density if floor applied
-        v_norm_sq = q_norm_sq / (w_true*w_true);  // (N 28)
+        if (not (w_true > 0.0 and w_true < max_w))
+        {
+          fixed_(k,j,i) = true;
+          w_true = w_initial;
+        }
+        Real v_norm_sq = q_norm_sq / (w_true*w_true);  // (N 28)
         gamma_sq = 1.0/(1.0 - v_norm_sq);
         Real gamma_rel = std::sqrt(gamma_sq);
-        Real u0 = gamma_rel / alpha;              // (N 21)
-        rho = d_norm / gamma_rel;                 // (N 21)
-        if (rho < density_floor_ or std::isnan(rho))
+        if (std::isnan(gamma_rel) or not std::isfinite(gamma_rel) or gamma_rel < 1.0)
         {
-          rho = density_floor_;
-          d = rho * u0;
+          fixed_(k,j,i) = true;
+          gamma_rel = 1.0;
+          gamma_sq = SQR(gamma_rel);
         }
+        Real u0 = gamma_rel / alpha;              // (N 21)
+
+        // Set density and pressure
+        rho = d_norm / gamma_rel;                 // (N 21)
+        pgas = 1.0/gamma_prime * (w_true/gamma_sq - rho);  // (N 21,32)
 
         // Set velocity
-        Real u_norm_1 = gamma_rel * q_norm_1 / w_true;  // (N 31)
-        Real u_norm_2 = gamma_rel * q_norm_2 / w_true;  // (N 31)
-        Real u_norm_3 = gamma_rel * q_norm_3 / w_true;  // (N 31)
-        Real u1 = u_norm_1 - alpha * gamma_rel * gi01;
-        Real u2 = u_norm_2 - alpha * gamma_rel * gi02;
-        Real u3 = u_norm_3 - alpha * gamma_rel * gi03;
-        v1 = u1 / u0;
-        v2 = u2 / u0;
-        v3 = u3 / u0;
+        unorm1 = gamma_rel * q_norm_1 / w_true;  // (N 31)
+        unorm2 = gamma_rel * q_norm_2 / w_true;  // (N 31)
+        unorm3 = gamma_rel * q_norm_3 / w_true;  // (N 31)
 
-        // Set pressure, correcting only energy if floor applied
-        pgas = 1.0/gamma_prime * (w_true/gamma_sq - rho);  // (N 21,32)
-        if (pgas < pressure_floor_ or std::isnan(pgas))
+        // Apply floors to density and pressure
+        Real density_floor_local = rho_min_ * std::pow(pmb->pcoord->x1v(i), rho_pow_);
+        density_floor_local = std::max(density_floor_local, density_floor_);
+        Real pressure_floor_local =
+            (gamma_-1.0) * u_min_ * std::pow(pmb->pcoord->x1v(i), u_pow_);
+        pressure_floor_local = std::max(pressure_floor_local, pressure_floor_);
+        if (rho < density_floor_local or std::isnan(rho))
         {
-          pgas = pressure_floor_;
-          Real u_0 = g00*u0 + g01*u1 + g02*u2 + g03*u3;
-          e = (rho + gamma_prime * pgas) * u0 * u_0 + pgas;
+          rho = density_floor_local;
+          fixed_(k,j,i) = true;
+        }
+        if (pgas < pressure_floor_local or std::isnan(pgas))
+        {
+          pgas = pressure_floor_local;
+          fixed_(k,j,i) = true;
+        }
+
+        // Apply ceiling to velocity
+        if (gamma_rel > gamma_max_)
+        {
+          Real factor = std::sqrt((SQR(gamma_max_)-1.0) / (SQR(gamma_rel)-1.0));
+          unorm1 *= factor;
+          unorm2 *= factor;
+          unorm3 *= factor;
+          fixed_(k,j,i) = true;
         }
       }
     }
+
+  // Fix corresponding conserved values if any changes made
+  for (int k = kl; k <= ku; ++k)
+    for (int j = jl; j <= ju; ++j)
+    {
+      pmb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
+      for (int i = il; i <= iu; ++i)
+        if (fixed_(k,j,i))
+        {
+          PrimitiveToConservedSingle(prim, g_, g_inv_, k, j, i, pmb, gamma_prime, cons);
+          fixed_(k,j,i) = false;
+        }
+    }
+
   return;
 }
 
@@ -222,70 +270,87 @@ void FluidEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
     const AthenaArray<Real> &b, AthenaArray<Real> &cons)
 {
   // Prepare index bounds
-  MeshBlock *pb = pmy_fluid_->pmy_block;
-  int il = pb->is - NGHOST;
-  int iu = pb->ie + NGHOST;
-  int jl = pb->js;
-  int ju = pb->je;
-  if (pb->block_size.nx2 > 1)
+  MeshBlock *pmb = pmy_fluid_->pmy_block;
+  int il = pmb->is - NGHOST;
+  int iu = pmb->ie + NGHOST;
+  int jl = pmb->js;
+  int ju = pmb->je;
+  if (pmb->block_size.nx2 > 1)
   {
     jl -= (NGHOST);
     ju += (NGHOST);
   }
-  int kl = pb->ks;
-  int ku = pb->ke;
-  if (pb->block_size.nx3 > 1)
+  int kl = pmb->ks;
+  int ku = pmb->ke;
+  if (pmb->block_size.nx3 > 1)
   {
     kl -= (NGHOST);
     ku += (NGHOST);
   }
 
   // Calculate reduced ratio of specific heats
-  Real gamma_adi_red = gamma_ / (gamma_ - 1.0);
+  Real gamma_prime = gamma_/(gamma_-1.0);
 
   // Go through all cells
   for (int k = kl; k <= ku; ++k)
     for (int j = jl; j <= ju; ++j)
     {
-      pb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
+      pmb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
       #pragma simd
       for (int i = il; i <= iu; ++i)
-      {
-        // Extract primitives
-        const Real &rho = prim(IDN,k,j,i);
-        const Real &pgas = prim(IEN,k,j,i);
-        const Real &v1 = prim(IVX,k,j,i);
-        const Real &v2 = prim(IVY,k,j,i);
-        const Real &v3 = prim(IVZ,k,j,i);
-
-        // Calculate 4-velocity
-        Real tmp = g_(I00,i) + 2.0 * (g_(I01,i)*v1 + g_(I02,i)*v2 + g_(I03,i)*v3)
-            + g_(I11,i)*v1*v1 + 2.0*g_(I12,i)*v1*v2 + 2.0*g_(I13,i)*v1*v3
-            + g_(I22,i)*v2*v2 + 2.0*g_(I23,i)*v2*v3
-            + g_(I33,i)*v3*v3;
-        Real u0 = std::sqrt(-1.0/tmp);
-        Real u1 = u0 * v1;
-        Real u2 = u0 * v2;
-        Real u3 = u0 * v3;
-        Real u_0, u_1, u_2, u_3;
-        pb->pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
-
-        // Extract conserved quantities
-        Real &d0 = cons(IDN,k,j,i);
-        Real &t0_0 = cons(IEN,k,j,i);
-        Real &t0_1 = cons(IM1,k,j,i);
-        Real &t0_2 = cons(IM2,k,j,i);
-        Real &t0_3 = cons(IM3,k,j,i);
-
-        // Set conserved quantities
-        Real wgas = rho + gamma_adi_red * pgas;
-        d0 = rho * u0;
-        t0_0 = wgas * u0 * u_0 + pgas;
-        t0_1 = wgas * u0 * u_1;
-        t0_2 = wgas * u0 * u_2;
-        t0_3 = wgas * u0 * u_3;
-      }
+        PrimitiveToConservedSingle(prim, g_, g_inv_, k, j, i, pmb, gamma_prime, cons);
     }
+  return;
+}
+
+// Function for converting primitives to conserved variables in a single cell
+// Inputs:
+//   prim: 3D array of primitives
+//   g,gi: 1D arrays of metric covariant and contravariant coefficients
+//   k,j,i: indices of cell
+//   pmb: pointer to MeshBlock
+//   gamma_prime: reduced ratio of specific heats \Gamma/(\Gamma-1)
+// Outputs:
+//   cons: conserved variables set in desired cell
+static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim,
+    const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int i,
+    MeshBlock *pmb, Real gamma_prime, AthenaArray<Real> &cons)
+{
+  // Extract primitives
+  const Real &rho = prim(IDN,k,j,i);
+  const Real &pgas = prim(IEN,k,j,i);
+  const Real &unorm1 = prim(IVX,k,j,i);
+  const Real &unorm2 = prim(IVY,k,j,i);
+  const Real &unorm3 = prim(IVZ,k,j,i);
+
+  // Calculate 4-velocity
+  Real alpha = std::sqrt(-1.0/gi(I00,i));
+  Real tmp = g(I11,i)*unorm1*unorm1 + 2.0*g(I12,i)*unorm1*unorm2
+               + 2.0*g(I13,i)*unorm1*unorm3
+           + g(I22,i)*unorm2*unorm2 + 2.0*g(I23,i)*unorm2*unorm3
+           + g(I33,i)*unorm3*unorm3;
+  Real gamma = std::sqrt(1.0 + tmp);
+  Real u0 = gamma / alpha;
+  Real u1 = unorm1 - alpha * gamma * gi(I01,i);
+  Real u2 = unorm2 - alpha * gamma * gi(I02,i);
+  Real u3 = unorm3 - alpha * gamma * gi(I03,i);
+  Real u_0, u_1, u_2, u_3;
+  pmb->pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
+
+  // Extract conserved quantities
+  Real &d0 = cons(IDN,k,j,i);
+  Real &t0_0 = cons(IEN,k,j,i);
+  Real &t0_1 = cons(IM1,k,j,i);
+  Real &t0_2 = cons(IM2,k,j,i);
+  Real &t0_3 = cons(IM3,k,j,i);
+
+  // Set conserved quantities
+  Real wgas = rho + gamma_prime * pgas;
+  d0 = rho * u0;
+  t0_0 = wgas * u0 * u_0 + pgas;
+  t0_1 = wgas * u0 * u_1;
+  t0_2 = wgas * u0 * u_2;
+  t0_3 = wgas * u0 * u_3;
   return;
 }
 
@@ -426,6 +491,60 @@ static Real FindRootNR(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq
 
   // Indicate failure to converge
   return NAN;
+}
+
+// Function for replacing primitive value in cell with average of neighbors
+// Inputs:
+//   prim: array of primitives
+//   problem: array of flags of problem cells
+//   n: IDN, IEN, IVX, IVY, or IVZ
+//   k,j,i: indices of cell
+//   kl,ku,jl,ju,il,ju: limits of array
+// Outputs:
+//   prim(index,k,j,i) modified
+// Notes
+//   average will only include in-bounds, non-NAN neighbors
+//   if no such neighbors exist, value will be unmodified
+//   same function as in adiabatic_mhd_gr.cpp
+//   TODO: decide if function should be kept/implemented
+static void neighbor_average(AthenaArray<Real> &prim, AthenaArray<bool> &problem, int n,
+    int k, int j, int i, int kl, int ku, int jl, int ju, int il, int iu)
+{
+  Real neighbor_sum = 0.0;
+  int num_neighbors = 0;
+  if (i > il and not std::isnan(prim(n,k,j,i-1)) and not problem(k,j,i-1))
+  {
+    neighbor_sum += prim(n,k,j,i-1);
+    num_neighbors += 1;
+  }
+  if (i < iu and not std::isnan(prim(n,k,j,i+1)) and not problem(k,j,i+1))
+  {
+    neighbor_sum += prim(n,k,j,i+1);
+    num_neighbors += 1;
+  }
+  if (j > jl and not std::isnan(prim(n,k,j-1,i)) and not problem(k,j-1,i))
+  {
+    neighbor_sum += prim(n,k,j-1,i);
+    num_neighbors += 1;
+  }
+  if (j < ju and not std::isnan(prim(n,k,j+1,i)) and not problem(k,j+1,i))
+  {
+    neighbor_sum += prim(n,k,j+1,i);
+    num_neighbors += 1;
+  }
+  if (k > kl and not std::isnan(prim(n,k-1,j,i)) and not problem(k-1,j,i))
+  {
+    neighbor_sum += prim(n,k-1,j,i);
+    num_neighbors += 1;
+  }
+  if (k < ku and not std::isnan(prim(n,k+1,j,i)) and not problem(k+1,j,i))
+  {
+    neighbor_sum += prim(n,k+1,j,i);
+    num_neighbors += 1;
+  }
+  if (num_neighbors > 0)
+    prim(n,k,j,i) = neighbor_sum / num_neighbors;
+  return;
 }
 
 // Function whose value vanishes for correct enthalpy
