@@ -9,7 +9,7 @@
 
 // Athena headers
 #include "../../../fluid.hpp"                       // Fluid
-#include "../../../eos/eos.hpp"                     // GetGamma()
+#include "../../../eos/eos.hpp"                     // FluidEqnOfState
 #include "../../../../athena.hpp"                   // enums, macros, Real
 #include "../../../../athena_arrays.hpp"            // AthenaArray
 #include "../../../../mesh.hpp"                     // MeshBlock
@@ -99,7 +99,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     const Real &w2_r = prim_r(IVY,i);
     const Real &w3_r = prim_r(IVZ,i);
 
-    // Calculate 4-velocity for left primitives
+    // Calculate 4-velocity in left state
     Real ucon_l[4], ucov_l[4];
     Real tmp = g_11*SQR(w1_l) + 2.0*g_12*w1_l*w2_l + 2.0*g_13*w1_l*w3_l
              + g_22*SQR(w2_l) + 2.0*g_23*w2_l*w3_l
@@ -114,7 +114,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     ucov_l[2] = g_20*ucon_l[0] + g_21*ucon_l[1] + g_22*ucon_l[2] + g_23*ucon_l[3];
     ucov_l[3] = g_30*ucon_l[0] + g_31*ucon_l[1] + g_32*ucon_l[2] + g_33*ucon_l[3];
 
-    // Calculate 4-velocity for right primitives
+    // Calculate 4-velocity in right state
     Real ucon_r[4], ucov_r[4];
     tmp = g_11*SQR(w1_r) + 2.0*g_12*w1_r*w2_r + 2.0*g_13*w1_r*w3_r
         + g_22*SQR(w2_r) + 2.0*g_23*w2_r*w3_r
@@ -129,13 +129,13 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     ucov_r[2] = g_20*ucon_r[0] + g_21*ucon_r[1] + g_22*ucon_r[2] + g_23*ucon_r[3];
     ucov_r[3] = g_30*ucon_r[0] + g_31*ucon_r[1] + g_32*ucon_r[2] + g_33*ucon_r[3];
 
-    // Calculate wavespeeds in left region
+    // Calculate wavespeeds in left state
     Real lambda_p_l, lambda_m_l;
     Real wgas_l = rho_l + gamma_adi/(gamma_adi-1.0) * pgas_l;
     pmy_fluid->pf_eos->SoundSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[ivx], g00, g0i,
         gii, &lambda_p_l, &lambda_m_l);
 
-    // Calculate wavespeeds in right region
+    // Calculate wavespeeds in right state
     Real lambda_p_r, lambda_m_r;
     Real wgas_r = rho_r + gamma_adi/(gamma_adi-1.0) * pgas_r;
     pmy_fluid->pf_eos->SoundSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[ivx], g00, g0i,
@@ -146,7 +146,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     Real lambda_r = std::max(lambda_p_l, lambda_p_r);
     Real lambda = std::max(lambda_r, -lambda_l);
 
-    // Calculate conserved quantities in L region
+    // Calculate conserved quantities in L region (rho u^0 and T^0_\mu)
     Real cons_l[NWAVE];
     cons_l[IDN] = rho_l * ucon_l[0];
     cons_l[IEN] = wgas_l * ucon_l[0] * ucov_l[0] + pgas_l;
@@ -154,15 +154,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     cons_l[IVY] = wgas_l * ucon_l[0] * ucov_l[2];
     cons_l[IVZ] = wgas_l * ucon_l[0] * ucov_l[3];
 
-    // Calculate conserved quantities in R region
-    Real cons_r[NWAVE];
-    cons_r[IDN] = rho_r * ucon_r[0];
-    cons_r[IEN] = wgas_r * ucon_r[0] * ucov_r[0] + pgas_r;
-    cons_r[IVX] = wgas_r * ucon_r[0] * ucov_r[1];
-    cons_r[IVY] = wgas_r * ucon_r[0] * ucov_r[2];
-    cons_r[IVZ] = wgas_r * ucon_r[0] * ucov_r[3];
-
-    // Calculate fluxes in L region
+    // Calculate fluxes in L region (rho u^i and T^i_\mu, where i = ivx)
     Real flux_l[NWAVE];
     flux_l[IDN] = rho_l * ucon_l[ivx];
     flux_l[IEN] = wgas_l * ucon_l[ivx] * ucov_l[0];
@@ -171,7 +163,15 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     flux_l[IVZ] = wgas_l * ucon_l[ivx] * ucov_l[3];
     flux_l[ivx] += pgas_l;
 
-    // Calculate fluxes in R region
+    // Calculate conserved quantities in R region (rho u^0 and T^0_\mu)
+    Real cons_r[NWAVE];
+    cons_r[IDN] = rho_r * ucon_r[0];
+    cons_r[IEN] = wgas_r * ucon_r[0] * ucov_r[0] + pgas_r;
+    cons_r[IVX] = wgas_r * ucon_r[0] * ucov_r[1];
+    cons_r[IVY] = wgas_r * ucon_r[0] * ucov_r[2];
+    cons_r[IVZ] = wgas_r * ucon_r[0] * ucov_r[3];
+
+    // Calculate fluxes in R region (rho u^i and T^i_\mu, where i = ivx)
     Real flux_r[NWAVE];
     flux_r[IDN] = rho_r * ucon_r[ivx];
     flux_r[IEN] = wgas_r * ucon_r[ivx] * ucov_r[0];
@@ -180,7 +180,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     flux_r[IVZ] = wgas_r * ucon_r[ivx] * ucov_r[3];
     flux_r[ivx] += pgas_r;
 
-    // Set fluxes in HLL state
+    // Set fluxes
     for (int n = 0; n < NWAVE; ++n)
       flux(n,i) = 0.5 * (flux_l[n] + flux_r[n] - lambda * (cons_r[n] - cons_l[n]));
   }
