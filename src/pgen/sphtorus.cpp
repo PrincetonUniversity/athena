@@ -165,13 +165,15 @@ void stbv_iib(MeshBlock *pmb, AthenaArray<Real> &a,
     for (j=js; j<=je; j++) {
       for (i=1; i<=(NGHOST); i++) {
         a(IDN,k,j,is-i) = a(IDN,k,j,is);
+        a(IM1,k,j,is-i) = a(IM1,k,j,is);
         if(a(IM1,k,j,is-i) > 0.0)
         {
           a(IM1,k,j,is-i) = 0.0;
         }
-//        a(IM1,k,j,is-i) = 0.0;
         a(IM2,k,j,is-i) = 0.0;
+//        a(IM2,k,j,is-i) = a(IM2,k,j,is);
         a(IM3,k,j,is-i) = 0.0;
+//        a(IM3,k,j,is-i) = a(IM3,k,j,is);
         pg = (a(IEN,k,j,is-i+1)-0.5*(SQR(a(IM1,k,j,is-i+1))+SQR(a(IM2,k,j,is-i+1))+SQR(a(IM3,k,j,is-i+1)))/a(IDN,k,j,is-i+1))*(gmgas-1.0);
         pg-=gm/SQR(pco->x1f(is-i+1))*a(IDN,k,j,is-i+1)*pco->dx1v(is-i);
         a(IEN,k,j,is-i)=pg/(gmgas-1.0)+0.5*SQR(a(IM1,k,j,is-i))/a(IDN,k,j,is-i);
@@ -184,7 +186,7 @@ void stbv_iib(MeshBlock *pmb, AthenaArray<Real> &a,
 
 
 void stbv_oib(MeshBlock *pmb, AthenaArray<Real> &a,
-              int is, int ie, int js, int je, int ks, int ke))
+              int is, int ie, int js, int je, int ks, int ke)
 {
   int i,j,k;
 #ifdef MHD
@@ -195,8 +197,10 @@ void stbv_oib(MeshBlock *pmb, AthenaArray<Real> &a,
     for (j=js; j<=je; j++) {
       for (i=1; i<=(NGHOST); i++) {
         a(IDN,k,j,ie+i) = a(IDN,k,j,ie);
+        a(IM1,k,j,ie+i) = a(IM1,k,j,ie);
         a(IM2,k,j,ie+i) = a(IM2,k,j,ie);
         a(IM3,k,j,ie+i) = a(IM3,k,j,ie);
+        a(IEN,k,j,ie+i) = a(IEN,k,j,ie);
         if(a(IM1,k,j,ie+i) < 0.0)
         {
           a(IEN,k,j,ie+i) -= 0.5*SQR(a(IM1,k,j,ie+i))/a(IDN,k,j,ie+i);
@@ -223,7 +227,9 @@ void stbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a,
       for (i=is; i<=ie; i++) {
         a(IDN,k,js-j,i) = a(IDN,k,js,i);
         a(IM1,k,js-j,i) = a(IM1,k,js,i);
+        a(IM2,k,js-j,i) = a(IM2,k,js,i);
         a(IM3,k,js-j,i) = a(IM3,k,js,i);
+        a(IEN,k,js-j,i) = a(IEN,k,js,i);
         if(a(IM2,k,js-j,i) > 0.0)
         {
           a(IEN,k,js-j,i) -= 0.5*SQR(a(IM2,k,js-j,i))/a(IDN,k,js-j,i);
@@ -249,7 +255,9 @@ void stbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
       for (i=is; i<=ie; i++) {
         a(IDN,k,je+j,i) = a(IDN,k,je,i);
         a(IM1,k,je+j,i) = a(IM1,k,je,i);
+        a(IM2,k,je+j,i) = a(IM2,k,je,i);
         a(IM3,k,je+j,i) = a(IM3,k,je,i);
+        a(IEN,k,je+j,i) = a(IEN,k,je,i);
         if(a(IM2,k,je+j,i) < 0.0)
         {
           a(IEN,k,je+j,i) -= 0.5*SQR(a(IM2,k,je+j,i))/a(IDN,k,je+j,i);
