@@ -10,9 +10,9 @@
 #include <cmath>  // sqrt()
 
 // Athena headers
-#include "../athena.hpp"         // enums, macros, Real
-#include "../athena_arrays.hpp"  // AthenaArray
-#include "../mesh.hpp"           // MeshBlock
+#include "../athena.hpp"           // enums, macros, Real
+#include "../athena_arrays.hpp"    // AthenaArray
+#include "../mesh.hpp"             // MeshBlock
 
 //--------------------------------------------------------------------------------------
 
@@ -346,14 +346,14 @@ Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 //   dt: size of timestep
 //   flux: 1D array of x-fluxes
 //   prim: 3D array of primitive values at beginning of half timestep
-//   bcc: 3D array of cell-centered magnetic fields
+//   bb_cc: 3D array of cell-centered magnetic fields
 // Outputs:
 //   cons: source terms added to k,j-slice of 3D array of conserved variables
 // Notes:
 //   source terms all vanish identically
 void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
   const AthenaArray<Real> &flux, const AthenaArray<Real> &prim,
-  const AthenaArray<Real> &bcc, AthenaArray<Real> &cons)
+  const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons)
 {
   return;
 }
@@ -514,24 +514,24 @@ void Coordinates::Face3Metric(const int k, const int j, const int il, const int 
 // Inputs:
 //   k,j: z- and y-indices
 //   il,iu: x-index bounds
-//   b1_vals: 3D array of normal components B^1 of magnetic field, in global coordinates
-//   prim_left: 1D array of left primitives, using global coordinates
-//   prim_right: 1D array of right primitives, using global coordinates
+//   bb1: 3D array of normal components B^1 of magnetic field, in global coordinates
+//   prim_l: 1D array of left primitives, using global coordinates
+//   prim_r: 1D array of right primitives, using global coordinates
 // Outputs:
-//   prim_left: values overwritten in local coordinates
-//   prim_right: values overwritten in local coordinates
-//   bx: 1D array of longitudinal magnetic fields, in local coordinates
+//   prim_l: values overwritten in local coordinates
+//   prim_r: values overwritten in local coordinates
+//   bbx: 1D array of normal magnetic fields, in local coordinates
 // Notes:
 //   transformation is trivial
 void Coordinates::PrimToLocal1(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &b1_vals, AthenaArray<Real> &prim_left,
-    AthenaArray<Real> &prim_right, AthenaArray<Real> &bx)
+    const AthenaArray<Real> &bb1, AthenaArray<Real> &prim_l,
+    AthenaArray<Real> &prim_r, AthenaArray<Real> &bbx)
 {
   if (MAGNETIC_FIELDS_ENABLED)
   {
     #pragma simd
     for (int i = il; i <= iu; ++i)
-      bx(i) = b1_vals(k,j,i);
+      bbx(i) = bb1(k,j,i);
   }
   return;
 }
@@ -542,24 +542,24 @@ void Coordinates::PrimToLocal1(const int k, const int j, const int il, const int
 // Inputs:
 //   k,j: z- and y-indices
 //   il,iu: x-index bounds
-//   b2_vals: 3D array of normal components B^2 of magnetic field, in global coordinates
-//   prim_left: 1D array of left primitives, using global coordinates
-//   prim_right: 1D array of right primitives, using global coordinates
+//   bb2: 3D array of normal components B^2 of magnetic field, in global coordinates
+//   prim_l: 1D array of left primitives, using global coordinates
+//   prim_r: 1D array of right primitives, using global coordinates
 // Outputs:
-//   prim_left: values overwritten in local coordinates
-//   prim_right: values overwritten in local coordinates
-//   bx: 1D array of longitudinal magnetic fields, in local coordinates
+//   prim_l: values overwritten in local coordinates
+//   prim_r: values overwritten in local coordinates
+//   bbx: 1D array of normal magnetic fields, in local coordinates
 // Notes:
 //   transformation is trivial
 void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &b2_vals, AthenaArray<Real> &prim_left,
-    AthenaArray<Real> &prim_right, AthenaArray<Real> &bx)
+    const AthenaArray<Real> &bb2, AthenaArray<Real> &prim_l,
+    AthenaArray<Real> &prim_r, AthenaArray<Real> &bbx)
 {
   if (MAGNETIC_FIELDS_ENABLED)
   {
     #pragma simd
     for (int i = il; i <= iu; ++i)
-      bx(i) = b2_vals(k,j,i);
+      bbx(i) = bb2(k,j,i);
   }
   return;
 }
@@ -570,24 +570,24 @@ void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int
 // Inputs:
 //   k,j: z- and y-indices
 //   il,iu: x-index bounds
-//   b3_vals: 3D array of normal components B^3 of magnetic field, in global coordinates
-//   prim_left: 1D array of left primitives, using global coordinates
-//   prim_right: 1D array of right primitives, using global coordinates
+//   bb3: 3D array of normal components B^3 of magnetic field, in global coordinates
+//   prim_l: 1D array of left primitives, using global coordinates
+//   prim_r: 1D array of right primitives, using global coordinates
 // Outputs:
-//   prim_left: values overwritten in local coordinates
-//   prim_right: values overwritten in local coordinates
-//   bx: 1D array of longitudinal magnetic fields, in local coordinates
+//   prim_l: values overwritten in local coordinates
+//   prim_r: values overwritten in local coordinates
+//   bbx: 1D array of normal magnetic fields, in local coordinates
 // Notes:
 //   transformation is trivial
 void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &b3_vals, AthenaArray<Real> &prim_left,
-    AthenaArray<Real> &prim_right, AthenaArray<Real> &bx)
+    const AthenaArray<Real> &bb3, AthenaArray<Real> &prim_l,
+    AthenaArray<Real> &prim_r, AthenaArray<Real> &bbx)
 {
   if (MAGNETIC_FIELDS_ENABLED)
   {
     #pragma simd
     for (int i = il; i <= iu; ++i)
-      bx(i) = b3_vals(k,j,i);
+      bbx(i) = bb3(k,j,i);
   }
   return;
 }
@@ -599,14 +599,15 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
 //   k,j: z- and y-indices
 //   il,iu: x-index bounds
 //   cons: array of conserved quantities in 1D, using local coordinates (unused)
-//   bx: 1D array of longitudinal magnetic fields, in local coordinates (unused)
+//   bbx: 1D array of longitudinal magnetic fields, in local coordinates (unused)
 //   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
 //   flux: values overwritten in global coordinates
 // Notes:
 //   transformation is trivial except for sign change from lowering time index
 void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bx, AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
+    AthenaArray<Real> &flux)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
@@ -625,14 +626,15 @@ void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const in
 //   k,j: z- and y-indices
 //   il,iu: x-index bounds
 //   cons: array of conserved quantities in 1D, using local coordinates (unused)
-//   bx: 1D array of longitudinal magnetic fields, in local coordinates (unused)
+//   bbx: 1D array of longitudinal magnetic fields, in local coordinates (unused)
 //   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
 //   flux: values overwritten in global coordinates
 // Notes:
 //   transformation is trivial except for sign change from lowering time index
 void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bx, AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
+    AthenaArray<Real> &flux)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
@@ -651,14 +653,15 @@ void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const in
 //   k,j: z- and y-indices
 //   il,iu: x-index bounds
 //   cons: array of conserved quantities in 1D, using local coordinates (unused)
-//   bx: 1D array of longitudinal magnetic fields, in local coordinates (unused)
+//   bbx: 1D array of longitudinal magnetic fields, in local coordinates (unused)
 //   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
 //   flux: values overwritten in global coordinates
 // Notes:
 //   transformation is trivial except for sign change from lowering time index
 void Coordinates::FluxToGlobal3(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bx, AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
+    AthenaArray<Real> &flux)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)

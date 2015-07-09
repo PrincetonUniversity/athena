@@ -18,10 +18,10 @@
 // Athena headers
 #include "../athena.hpp"           // enums, macros, Real
 #include "../athena_arrays.hpp"    // AthenaArray
-#include "../fluid/eos/eos.hpp"    // FluidEqnOfState
-#include "../fluid/fluid.hpp"      // Fluid
 #include "../mesh.hpp"             // MeshBlock
 #include "../parameter_input.hpp"  // ParameterInput
+#include "../fluid/fluid.hpp"      // Fluid
+#include "../fluid/eos/eos.hpp"    // FluidEqnOfState
 
 // Global variables
 static Real alpha;  // \sqrt{1+a^2}
@@ -352,14 +352,14 @@ Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 //   dt: size of timestep
 //   flux: 1D array of x'-fluxes
 //   prim: 3D array of primitive values at beginning of half timestep
-//   bcc: 3D array of cell-centered magnetic fields
+//   bb_cc: 3D array of cell-centered magnetic fields
 // Outputs:
 //   cons: source terms added to k,j-slice of 3D array of conserved variables
 // Notes:
 //   source terms all vanish identically
 void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
   const AthenaArray<Real> &flux, const AthenaArray<Real> &prim,
-  const AthenaArray<Real> &bcc, AthenaArray<Real> &cons)
+  const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons)
 {
   return;
 }
@@ -508,31 +508,30 @@ void Coordinates::Face3Metric(const int k, const int j, const int il, const int 
 // Inputs:
 //   k,j: z- and y-indices
 //   il,iu: x'-index bounds
-//   b1_vals: 3D array of normal components B^1 of magnetic field, in global coordinates
-//   prim_left: 1D array of left primitives, using global coordinates
-//   prim_right: 1D array of right primitives, using global coordinates
+//   bb1: 3D array of normal components B^1 of magnetic field, in global coordinates
+//   prim_l: 1D array of left primitives, using global coordinates
+//   prim_r: 1D array of right primitives, using global coordinates
 // Outputs:
-//   prim_left: values overwritten in local coordinates
-//   prim_right: values overwritten in local coordinates
-//   bx: 1D array of normal magnetic fields, in local coordinates
+//   prim_l: values overwritten in local coordinates
+//   prim_r: values overwritten in local coordinates
+//   bbx: 1D array of normal magnetic fields, in local coordinates
 // Notes:
-//   expects v1/v2/v3 in IVX/IVY/IVZ slots
-//   expects B1 in b1_vals
-//   expects B2/B3 in IBY/IBZ slots
-//   puts vx/vy/vz in IVX/IVY/IVZ
-//   puts Bx in bx
-//   puts By/Bz in IBY/IBZ slots
+//   expects \tilde{u}^1/\tilde{u}^2/\tilde{u}^3 in IVX/IVY/IVZ slots
+//   expects B^1 in bb1
+//   expects B^2/B^3 in IBY/IBZ slots
+//   puts \tilde{u}^x/\tilde{u}^y/\tilde{u}^z in IVX/IVY/IVZ
+//   puts B^x in bbx
+//   puts B^y/B^z in IBY/IBZ slots
+//   \tilde{u}^\hat{i} = u^\hat{i}
 void Coordinates::PrimToLocal1(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &b1_vals, AthenaArray<Real> &prim_left,
-    AthenaArray<Real> &prim_right, AthenaArray<Real> &bx)
+    const AthenaArray<Real> &bb1, AthenaArray<Real> &prim_l,
+    AthenaArray<Real> &prim_r, AthenaArray<Real> &bbx)
 {
-  // Prepare geometric quantities
-  const Real g_00 = -SQR(beta) / SQR(alpha);
-  const Real g_01 = 2.0*tilted_a_ / SQR(alpha);
-  const Real g_10 = g_01;
-  const Real g_11 = SQR(beta) / SQR(alpha);
-  const Real g_22 = 1.0;
-  const Real g_33 = 1.0;
+  // Calculate metric coefficients
+  if (MAGNETIC_FIELDS_ENABLED)
+    Face1Metric(k, j, il, iu, g_, gi_);
+
+  // Extract transformation coefficients
   const Real mt_0 = alpha/beta;
   const Real mx_0 = 2.0*tilted_a_ / (alpha*beta);
   const Real mx_1 = beta/alpha;
@@ -543,82 +542,125 @@ void Coordinates::PrimToLocal1(const int k, const int j, const int il, const int
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
-    // Extract global 3-velocities
-    Real &v1l = prim_left(IVX,i);
-    Real &v2l = prim_left(IVY,i);
-    Real &v3l = prim_left(IVZ,i);
-    Real &v1r = prim_right(IVX,i);
-    Real &v2r = prim_right(IVY,i);
-    Real &v3r = prim_right(IVZ,i);
+    // Extract global projected 4-velocities
+    Real uu0_l = 0.0;
+    Real uu1_l = prim_l(IVX,i);
+    Real uu2_l = prim_l(IVY,i);
+    Real uu3_l = prim_l(IVZ,i);
+    Real uu0_r = 0.0;
+    Real uu1_r = prim_r(IVX,i);
+    Real uu2_r = prim_r(IVY,i);
+    Real uu3_r = prim_r(IVZ,i);
 
-    // Construct global 4-velocities
-    Real u0l = std::sqrt(-1.0 /
-        (g_00 + 2.0*g_01*v1l + g_11*v1l*v1l + g_22*v2l*v2l + g_33*v3l*v3l));
-    Real u1l = u0l * v1l;
-    Real u2l = u0l * v2l;
-    Real u3l = u0l * v3l;
-    Real u0r = std::sqrt(-1.0 /
-        (g_00 + 2.0*g_01*v1r + g_11*v1r*v1r + g_22*v2r*v2r + g_33*v3r*v3r));
-    Real u1r = u0r * v1r;
-    Real u2r = u0r * v2r;
-    Real u3r = u0r * v3r;
+    // Transform projected 4-velocities
+    Real uux_l = mx_0*uu0_l + mx_1*uu1_l;
+    Real uuy_l = my_2*uu2_l;
+    Real uuz_l = mz_3*uu3_l;
+    Real uux_r = mx_0*uu0_r + mx_1*uu1_r;
+    Real uuy_r = my_2*uu2_r;
+    Real uuz_r = mz_3*uu3_r;
 
-    // Transform 4-velocities
-    Real utl = mt_0*u0l;
-    Real uxl = mx_0*u0l + mx_1*u1l;
-    Real uyl = my_2*u2l;
-    Real uzl = mz_3*u3l;
-    Real utr = mt_0*u0r;
-    Real uxr = mx_0*u0r + mx_1*u1r;
-    Real uyr = my_2*u2r;
-    Real uzr = mz_3*u3r;
-
-    // Set local 3-velocities
-    v1l = uxl / utl;
-    v2l = uyl / utl;
-    v3l = uzl / utl;
-    v1r = uxr / utr;
-    v2r = uyr / utr;
-    v3r = uzr / utr;
+    // Set local projected 4-velocities
+    prim_l(IVX,i) = uux_l;
+    prim_l(IVY,i) = uuy_l;
+    prim_l(IVZ,i) = uuz_l;
+    prim_r(IVX,i) = uux_r;
+    prim_r(IVY,i) = uuy_r;
+    prim_r(IVZ,i) = uuz_r;
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED)
     {
+      // Extract metric coefficients
+      const Real &g_00 = g_(I00,i);
+      const Real &g_01 = g_(I01,i);
+      const Real &g_02 = 0.0;
+      const Real &g_03 = 0.0;
+      const Real &g_10 = g_(I01,i);
+      const Real &g_11 = g_(I11,i);
+      const Real &g_12 = 0.0;
+      const Real &g_13 = 0.0;
+      const Real &g_20 = 0.0;
+      const Real &g_21 = 0.0;
+      const Real &g_22 = g_(I22,i);
+      const Real &g_23 = 0.0;
+      const Real &g_30 = 0.0;
+      const Real &g_31 = 0.0;
+      const Real &g_32 = 0.0;
+      const Real &g_33 = g_(I33,i);
+      const Real &g01 = gi_(I01,i);
+      const Real &g02 = 0.0;
+      const Real &g03 = 0.0;
+      Real alpha = std::sqrt(-1.0/gi_(I00,i));
+
+      // Calculate global 4-velocities
+      Real tmp = g_11*uu1_l*uu1_l + 2.0*g_12*uu1_l*uu2_l + 2.0*g_13*uu1_l*uu3_l
+               + g_22*uu2_l*uu2_l + 2.0*g_23*uu2_l*uu3_l
+               + g_33*uu3_l*uu3_l;
+      Real gamma_l = std::sqrt(1.0 + tmp);
+      Real u0_l = gamma_l / alpha;
+      Real u1_l = uu1_l - alpha * gamma_l * g01;
+      Real u2_l = uu2_l - alpha * gamma_l * g02;
+      Real u3_l = uu3_l - alpha * gamma_l * g03;
+      tmp = g_11*uu1_r*uu1_r + 2.0*g_12*uu1_r*uu2_r + 2.0*g_13*uu1_r*uu3_r
+          + g_22*uu2_r*uu2_r + 2.0*g_23*uu2_r*uu3_r
+          + g_33*uu3_r*uu3_r;
+      Real gamma_r = std::sqrt(1.0 + tmp);
+      Real u0_r = gamma_r / alpha;
+      Real u1_r = uu1_r - alpha * gamma_r * g01;
+      Real u2_r = uu2_r - alpha * gamma_r * g02;
+      Real u3_r = uu3_r - alpha * gamma_r * g03;
+
       // Extract global magnetic fields
-      const Real &bb1 = b1_vals(k,j,i);
-      Real &bb2l = prim_left(IBY,i);
-      Real &bb3l = prim_left(IBZ,i);
-      Real &bb2r = prim_right(IBY,i);
-      Real &bb3r = prim_right(IBZ,i);
+      const Real &bb1_l = bb1(k,j,i);
+      const Real &bb1_r = bb1(k,j,i);
+      Real &bb2_l = prim_l(IBY,i);
+      Real &bb3_l = prim_l(IBZ,i);
+      Real &bb2_r = prim_r(IBY,i);
+      Real &bb3_r = prim_r(IBZ,i);
 
-      // Construct global contravariant magnetic fields
-      Real b0l = g_10*bb1*u0l + g_11*bb1*u1l + g_22*bb2l*u2l + g_33*bb3l*u3l;
-      Real b1l = (bb1 + b0l * u1l) / u0l;
-      Real b2l = (bb2l + b0l * u2l) / u0l;
-      Real b3l = (bb3l + b0l * u3l) / u0l;
-      Real b0r = g_10*bb1*u0r + g_11*bb1*u1r + g_22*bb2r*u2r + g_33*bb3r*u3r;
-      Real b1r = (bb1 + b0r * u1r) / u0r;
-      Real b2r = (bb2r + b0r * u2r) / u0r;
-      Real b3r = (bb3r + b0r * u3r) / u0r;
+      // Calculate global 4-magnetic fields
+      Real b0_l = g_10*bb1_l*u0_l + g_11*bb1_l*u1_l + g_12*bb1_l*u2_l + g_13*bb1_l*u3_l
+                + g_20*bb2_l*u0_l + g_21*bb2_l*u1_l + g_22*bb2_l*u2_l + g_23*bb2_l*u3_l
+                + g_30*bb3_l*u0_l + g_31*bb3_l*u1_l + g_32*bb3_l*u2_l + g_33*bb3_l*u3_l;
+      Real b1_l = (bb1_l + b0_l * u1_l) / u0_l;
+      Real b2_l = (bb2_l + b0_l * u2_l) / u0_l;
+      Real b3_l = (bb3_l + b0_l * u3_l) / u0_l;
+      Real b0_r = g_10*bb1_r*u0_r + g_11*bb1_r*u1_r + g_12*bb1_r*u2_r + g_13*bb1_r*u3_r
+                + g_20*bb2_r*u0_r + g_21*bb2_r*u1_r + g_22*bb2_r*u2_r + g_23*bb2_r*u3_r
+                + g_30*bb3_r*u0_r + g_31*bb3_r*u1_r + g_32*bb3_r*u2_r + g_33*bb3_r*u3_r;
+      Real b1_r = (bb1_r + b0_r * u1_r) / u0_r;
+      Real b2_r = (bb2_r + b0_r * u2_r) / u0_r;
+      Real b3_r = (bb3_r + b0_r * u3_r) / u0_r;
 
-      // Transform contravariant magnetic fields
-      Real btl = mt_0*b0l;
-      Real bxl = mx_0*b0l + mx_1*b1l;
-      Real byl = my_2*b2l;
-      Real bzl = mz_3*b3l;
-      Real btr = mt_0*b0r;
-      Real bxr = mx_0*b0r + mx_1*b1r;
-      Real byr = my_2*b2r;
-      Real bzr = mz_3*b3r;
+      // Transform 4-velocities
+      Real ut_l = mt_0*u0_l;
+      Real ux_l = mx_0*u0_l + mx_1*u1_l;
+      Real uy_l = my_2*u2_l;
+      Real uz_l = mz_3*u3_l;
+      Real ut_r = mt_0*u0_r;
+      Real ux_r = mx_0*u0_r + mx_1*u1_r;
+      Real uy_r = my_2*u2_r;
+      Real uz_r = mz_3*u3_r;
+
+      // Transform 4-magnetic fields
+      Real bt_l = mt_0*b0_l;
+      Real bx_l = mx_0*b0_l + mx_1*b1_l;
+      Real by_l = my_2*b2_l;
+      Real bz_l = mz_3*b3_l;
+      Real bt_r = mt_0*b0_r;
+      Real bx_r = mx_0*b0_r + mx_1*b1_r;
+      Real by_r = my_2*b2_r;
+      Real bz_r = mz_3*b3_r;
 
       // Set local magnetic fields
-      Real bbxl = utl * bxl - uxl * btl;
-      Real bbxr = utr * bxr - uxr * btr;
-      bx(i) = 0.5 * (bbxl + bbxr);
-      bb2l = utl * byl - uyl * btl;
-      bb3l = utl * bzl - uzl * btl;
-      bb2r = utr * byr - uyr * btr;
-      bb3r = utr * bzr - uzr * btr;
+      Real bbx_l = ut_l * bx_l - ux_l * bt_l;
+      Real bbx_r = ut_r * bx_r - ux_r * bt_r;
+      bbx(i) = 0.5 * (bbx_l + bbx_r);
+      bb2_l = ut_l * by_l - uy_l * bt_l;
+      bb3_l = ut_l * bz_l - uz_l * bt_l;
+      bb2_r = ut_r * by_r - uy_r * bt_r;
+      bb3_r = ut_r * bz_r - uz_r * bt_r;
     }
   }
   return;
@@ -630,31 +672,30 @@ void Coordinates::PrimToLocal1(const int k, const int j, const int il, const int
 // Inputs:
 //   k,j: z- and y-indices
 //   il,iu: x'-index bounds
-//   b2_vals: 3D array of normal components B^2 of magnetic field, in global coordinates
-//   prim_left: 1D array of left primitives, using global coordinates
-//   prim_right: 1D array of right primitives, using global coordinates
+//   bb2: 3D array of normal components B^2 of magnetic field, in global coordinates
+//   prim_l: 1D array of left primitives, using global coordinates
+//   prim_r: 1D array of right primitives, using global coordinates
 // Outputs:
-//   prim_left: values overwritten in local coordinates
-//   prim_right: values overwritten in local coordinates
-//   by: 1D array of normal magnetic fields, in local coordinates
+//   prim_l: values overwritten in local coordinates
+//   prim_r: values overwritten in local coordinates
+//   bbx: 1D array of normal magnetic fields, in local coordinates
 // Notes:
-//   expects v1/v2/v3 in IVX/IVY/IVZ slots
-//   expects B2 in b2_vals
-//   expects B3/B1 in IBY/IBZ slots
-//   puts vx/vy/vz in IVY/IVZ/IVX slots
-//   puts Bx in bx
-//   puts By/Bz in IBY/IBZ slots
+//   expects \tilde{u}^1/\tilde{u}^2/\tilde{u}^3 in IVX/IVY/IVZ slots
+//   expects B^2 in bb2
+//   expects B^3/B^1 in IBY/IBZ slots
+//   puts \tilde{u}^x/\tilde{u}^y/\tilde{u}^z in IVY/IVZ/IVX slots
+//   puts B^x in bbx
+//   puts B^y/B^z in IBY/IBZ slots
+//   \tilde{u}^\hat{i} = u^\hat{i}
 void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &b2_vals, AthenaArray<Real> &prim_left,
-    AthenaArray<Real> &prim_right, AthenaArray<Real> &bx)
+    const AthenaArray<Real> &bb2, AthenaArray<Real> &prim_l,
+    AthenaArray<Real> &prim_r, AthenaArray<Real> &bbx)
 {
-  // Prepare geometric quantities
-  const Real g_00 = -SQR(beta) / SQR(alpha);
-  const Real g_01 = 2.0*tilted_a_ / SQR(alpha);
-  const Real g_10 = g_01;
-  const Real g_11 = SQR(beta) / SQR(alpha);
-  const Real g_22 = 1.0;
-  const Real g_33 = 1.0;
+  // Calculate metric coefficients
+  if (MAGNETIC_FIELDS_ENABLED)
+    Face2Metric(k, j, il, iu, g_, gi_);
+
+  // Extract transformation coefficients
   const Real mt_0 = alpha/beta;
   const Real mx_2 = 1.0;
   const Real my_3 = 1.0;
@@ -665,82 +706,125 @@ void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
-    // Extract global 3-velocities
-    Real &v1l = prim_left(IVX,i);
-    Real &v2l = prim_left(IVY,i);
-    Real &v3l = prim_left(IVZ,i);
-    Real &v1r = prim_right(IVX,i);
-    Real &v2r = prim_right(IVY,i);
-    Real &v3r = prim_right(IVZ,i);
+    // Extract global projected 4-velocities
+    Real uu0_l = 0.0;
+    Real uu1_l = prim_l(IVX,i);
+    Real uu2_l = prim_l(IVY,i);
+    Real uu3_l = prim_l(IVZ,i);
+    Real uu0_r = 0.0;
+    Real uu1_r = prim_r(IVX,i);
+    Real uu2_r = prim_r(IVY,i);
+    Real uu3_r = prim_r(IVZ,i);
 
-    // Construct global 4-velocities
-    Real u0l = std::sqrt(-1.0 /
-        (g_00 + 2.0*g_01*v1l + g_11*v1l*v1l + g_22*v2l*v2l + g_33*v3l*v3l));
-    Real u1l = u0l * v1l;
-    Real u2l = u0l * v2l;
-    Real u3l = u0l * v3l;
-    Real u0r = std::sqrt(-1.0 /
-        (g_00 + 2.0*g_01*v1r + g_11*v1r*v1r + g_22*v2r*v2r + g_33*v3r*v3r));
-    Real u1r = u0r * v1r;
-    Real u2r = u0r * v2r;
-    Real u3r = u0r * v3r;
+    // Transform projected 4-velocities
+    Real uux_l = mx_2*uu2_l;
+    Real uuy_l = my_3*uu3_l;
+    Real uuz_l = mz_0*uu0_l + mz_1*uu1_l;
+    Real uux_r = mx_2*uu2_r;
+    Real uuy_r = my_3*uu3_r;
+    Real uuz_r = mz_0*uu0_r + mz_1*uu1_r;
 
-    // Transform 4-velocities
-    Real utl = mt_0*u0l;
-    Real uxl = mx_2*u2l;
-    Real uyl = my_3*u3l;
-    Real uzl = mz_0*u0l + mz_1*u1l;
-    Real utr = mt_0*u0r;
-    Real uxr = mx_2*u2r;
-    Real uyr = my_3*u3r;
-    Real uzr = mz_0*u0r + mz_1*u1r;
-
-    // Set local 3-velocities
-    v2l = uxl / utl;
-    v3l = uyl / utl;
-    v1l = uzl / utl;
-    v2r = uxr / utr;
-    v3r = uyr / utr;
-    v1r = uzr / utr;
+    // Set local projected 4-velocities
+    prim_l(IVY,i) = uux_l;
+    prim_l(IVZ,i) = uuy_l;
+    prim_l(IVX,i) = uuz_l;
+    prim_r(IVY,i) = uux_r;
+    prim_r(IVZ,i) = uuy_r;
+    prim_r(IVX,i) = uuz_r;
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED)
     {
+      // Extract metric coefficients
+      const Real &g_00 = g_(I00,i);
+      const Real &g_01 = g_(I01,i);
+      const Real &g_02 = 0.0;
+      const Real &g_03 = 0.0;
+      const Real &g_10 = g_(I01,i);
+      const Real &g_11 = g_(I11,i);
+      const Real &g_12 = 0.0;
+      const Real &g_13 = 0.0;
+      const Real &g_20 = 0.0;
+      const Real &g_21 = 0.0;
+      const Real &g_22 = g_(I22,i);
+      const Real &g_23 = 0.0;
+      const Real &g_30 = 0.0;
+      const Real &g_31 = 0.0;
+      const Real &g_32 = 0.0;
+      const Real &g_33 = g_(I33,i);
+      const Real &g01 = gi_(I01,i);
+      const Real &g02 = 0.0;
+      const Real &g03 = 0.0;
+      Real alpha = std::sqrt(-1.0/gi_(I00,i));
+
+      // Calculate global 4-velocities
+      Real tmp = g_11*uu1_l*uu1_l + 2.0*g_12*uu1_l*uu2_l + 2.0*g_13*uu1_l*uu3_l
+               + g_22*uu2_l*uu2_l + 2.0*g_23*uu2_l*uu3_l
+               + g_33*uu3_l*uu3_l;
+      Real gamma_l = std::sqrt(1.0 + tmp);
+      Real u0_l = gamma_l / alpha;
+      Real u1_l = uu1_l - alpha * gamma_l * g01;
+      Real u2_l = uu2_l - alpha * gamma_l * g02;
+      Real u3_l = uu3_l - alpha * gamma_l * g03;
+      tmp = g_11*uu1_r*uu1_r + 2.0*g_12*uu1_r*uu2_r + 2.0*g_13*uu1_r*uu3_r
+          + g_22*uu2_r*uu2_r + 2.0*g_23*uu2_r*uu3_r
+          + g_33*uu3_r*uu3_r;
+      Real gamma_r = std::sqrt(1.0 + tmp);
+      Real u0_r = gamma_r / alpha;
+      Real u1_r = uu1_r - alpha * gamma_r * g01;
+      Real u2_r = uu2_r - alpha * gamma_r * g02;
+      Real u3_r = uu3_r - alpha * gamma_r * g03;
+
       // Extract global magnetic fields
-      const Real &bb2 = b2_vals(k,j,i);
-      Real &bb3l = prim_left(IBY,i);
-      Real &bb1l = prim_left(IBZ,i);
-      Real &bb3r = prim_right(IBY,i);
-      Real &bb1r = prim_right(IBZ,i);
+      const Real &bb2_l = bb2(k,j,i);
+      const Real &bb2_r = bb2(k,j,i);
+      Real &bb3_l = prim_l(IBY,i);
+      Real &bb1_l = prim_l(IBZ,i);
+      Real &bb3_r = prim_r(IBY,i);
+      Real &bb1_r = prim_r(IBZ,i);
 
-      // Construct global contravariant magnetic fields
-      Real b0l = g_10*bb1l*u0l + g_11*bb1l*u1l + g_22*bb2*u2l + g_33*bb3l*u3l;
-      Real b1l = (bb1l + b0l * u1l) / u0l;
-      Real b2l = (bb2 + b0l * u2l) / u0l;
-      Real b3l = (bb3l + b0l * u3l) / u0l;
-      Real b0r = g_10*bb1r*u0r + g_11*bb1r*u1r + g_22*bb2*u2r + g_33*bb3r*u3r;
-      Real b1r = (bb1r + b0r * u1r) / u0r;
-      Real b2r = (bb2 + b0r * u2r) / u0r;
-      Real b3r = (bb3r + b0r * u3r) / u0r;
+      // Calculate global 4-magnetic fields
+      Real b0_l = g_10*bb1_l*u0_l + g_11*bb1_l*u1_l + g_12*bb1_l*u2_l + g_13*bb1_l*u3_l
+                + g_20*bb2_l*u0_l + g_21*bb2_l*u1_l + g_22*bb2_l*u2_l + g_23*bb2_l*u3_l
+                + g_30*bb3_l*u0_l + g_31*bb3_l*u1_l + g_32*bb3_l*u2_l + g_33*bb3_l*u3_l;
+      Real b1_l = (bb1_l + b0_l * u1_l) / u0_l;
+      Real b2_l = (bb2_l + b0_l * u2_l) / u0_l;
+      Real b3_l = (bb3_l + b0_l * u3_l) / u0_l;
+      Real b0_r = g_10*bb1_r*u0_r + g_11*bb1_r*u1_r + g_12*bb1_r*u2_r + g_13*bb1_r*u3_r
+                + g_20*bb2_r*u0_r + g_21*bb2_r*u1_r + g_22*bb2_r*u2_r + g_23*bb2_r*u3_r
+                + g_30*bb3_r*u0_r + g_31*bb3_r*u1_r + g_32*bb3_r*u2_r + g_33*bb3_r*u3_r;
+      Real b1_r = (bb1_r + b0_r * u1_r) / u0_r;
+      Real b2_r = (bb2_r + b0_r * u2_r) / u0_r;
+      Real b3_r = (bb3_r + b0_r * u3_r) / u0_r;
 
-      // Transform contravariant magnetic fields
-      Real btl = mt_0*b0l;
-      Real bxl = mx_2*b2l;
-      Real byl = my_3*b3l;
-      Real bzl = mz_0*b0l + mz_1*b1l;
-      Real btr = mt_0*b0r;
-      Real bxr = mx_2*b2r;
-      Real byr = my_3*b3r;
-      Real bzr = mz_0*b0r + mz_1*b1r;
+      // Transform 4-velocities
+      Real ut_l = mt_0*u0_l;
+      Real ux_l = mx_2*u2_l;
+      Real uy_l = my_3*u3_l;
+      Real uz_l = mz_0*u0_l + mz_1*u1_l;
+      Real ut_r = mt_0*u0_r;
+      Real ux_r = mx_2*u2_r;
+      Real uy_r = my_3*u3_r;
+      Real uz_r = mz_0*u0_r + mz_1*u1_r;
+
+      // Transform 4-magnetic fields
+      Real bt_l = mt_0*b0_l;
+      Real bx_l = mx_2*b2_l;
+      Real by_l = my_3*b3_l;
+      Real bz_l = mz_0*b0_l + mz_1*b1_l;
+      Real bt_r = mt_0*b0_r;
+      Real bx_r = mx_2*b2_r;
+      Real by_r = my_3*b3_r;
+      Real bz_r = mz_0*b0_r + mz_1*b1_r;
 
       // Set local magnetic fields
-      Real bbxl = utl * bxl - uxl * btl;
-      Real bbxr = utr * bxr - uxr * btr;
-      bx(i) = 0.5 * (bbxl + bbxr);
-      bb3l = utl * byl - uyl * btl;
-      bb1l = utl * bzl - uzl * btl;
-      bb3r = utr * byr - uyr * btr;
-      bb1r = utr * bzr - uzr * btr;
+      Real bbx_l = ut_l * bx_l - ux_l * bt_l;
+      Real bbx_r = ut_r * bx_r - ux_r * bt_r;
+      bbx(i) = 0.5 * (bbx_l + bbx_r);
+      bb3_l = ut_l * by_l - uy_l * bt_l;
+      bb1_l = ut_l * bz_l - uz_l * bt_l;
+      bb3_r = ut_r * by_r - uy_r * bt_r;
+      bb1_r = ut_r * bz_r - uz_r * bt_r;
     }
   }
   return;
@@ -752,31 +836,30 @@ void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int
 // Inputs:
 //   k,j: z- and y-indices
 //   il,iu: x'-index bounds
-//   b3_vals: 3D array of normal components B^3 of magnetic field, in global coordinates
-//   prim_left: 1D array of left primitives, using global coordinates
-//   prim_right: 1D array of right primitives, using global coordinates
+//   bb3: 3D array of normal components B^3 of magnetic field, in global coordinates
+//   prim_l: 1D array of left primitives, using global coordinates
+//   prim_r: 1D array of right primitives, using global coordinates
 // Outputs:
-//   prim_left: values overwritten in local coordinates
-//   prim_right: values overwritten in local coordinates
-//   bz: 1D array of normal magnetic fields, in local coordinates
+//   prim_l: values overwritten in local coordinates
+//   prim_r: values overwritten in local coordinates
+//   bbx: 1D array of normal magnetic fields, in local coordinates
 // Notes:
-//   expects v1/v2/v3 in IVX/IVY/IVZ slots
-//   expects B3 in b3_vals
-//   expects B1/B2 in IBY/IBZ slots
-//   puts vx/vy/vz in IVZ/IVX/IVY slots
-//   puts Bx in bx
-//   puts By/Bz in IBY/IBZ slots
+//   expects \tilde{u}^1/\tilde{u}^2/\tilde{u}^3 in IVX/IVY/IVZ slots
+//   expects B^3 in bb3
+//   expects B^1/B^2 in IBY/IBZ slots
+//   puts \tilde{u}^x/\tilde{u}^y/\tilde{u}^z in IVZ/IVX/IVY slots
+//   puts B^x in bbx
+//   puts B^y/B^z in IBY/IBZ slots
+//   \tilde{u}^\hat{i} = u^\hat{i}
 void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &b3_vals, AthenaArray<Real> &prim_left,
-    AthenaArray<Real> &prim_right, AthenaArray<Real> &bx)
+    const AthenaArray<Real> &bb3, AthenaArray<Real> &prim_l,
+    AthenaArray<Real> &prim_r, AthenaArray<Real> &bbx)
 {
-  // Prepare geometric quantities
-  const Real g_00 = -SQR(beta) / SQR(alpha);
-  const Real g_01 = 2.0*tilted_a_ / SQR(alpha);
-  const Real g_10 = g_01;
-  const Real g_11 = SQR(beta) / SQR(alpha);
-  const Real g_22 = 1.0;
-  const Real g_33 = 1.0;
+  // Calculate metric coefficients
+  if (MAGNETIC_FIELDS_ENABLED)
+    Face3Metric(k, j, il, iu, g_, gi_);
+
+  // Extract transformation coefficients
   const Real mt_0 = alpha/beta;
   const Real mx_3 = 1.0;
   const Real my_0 = 2.0*tilted_a_ / (alpha*beta);
@@ -787,82 +870,125 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
-    // Extract global 3-velocities
-    Real &v1l = prim_left(IVX,i);
-    Real &v2l = prim_left(IVY,i);
-    Real &v3l = prim_left(IVZ,i);
-    Real &v1r = prim_right(IVX,i);
-    Real &v2r = prim_right(IVY,i);
-    Real &v3r = prim_right(IVZ,i);
+    // Extract global projected 4-velocities
+    Real uu0_l = 0.0;
+    Real uu1_l = prim_l(IVX,i);
+    Real uu2_l = prim_l(IVY,i);
+    Real uu3_l = prim_l(IVZ,i);
+    Real uu0_r = 0.0;
+    Real uu1_r = prim_r(IVX,i);
+    Real uu2_r = prim_r(IVY,i);
+    Real uu3_r = prim_r(IVZ,i);
 
-    // Construct global 4-velocities
-    Real u0l = std::sqrt(-1.0 /
-        (g_00 + 2.0*g_01*v1l + g_11*v1l*v1l + g_22*v2l*v2l + g_33*v3l*v3l));
-    Real u1l = u0l * v1l;
-    Real u2l = u0l * v2l;
-    Real u3l = u0l * v3l;
-    Real u0r = std::sqrt(-1.0 /
-        (g_00 + 2.0*g_01*v1r + g_11*v1r*v1r + g_22*v2r*v2r + g_33*v3r*v3r));
-    Real u1r = u0r * v1r;
-    Real u2r = u0r * v2r;
-    Real u3r = u0r * v3r;
+    // Transform projected 4-velocities
+    Real uux_l = mx_3*uu3_l;
+    Real uuy_l = my_0*uu0_l + my_1*uu1_l;
+    Real uuz_l = mz_2*uu2_l;
+    Real uux_r = mx_3*uu3_r;
+    Real uuy_r = my_0*uu0_r + my_1*uu1_r;
+    Real uuz_r = mz_2*uu2_r;
 
-    // Transform 4-velocities
-    Real utl = mt_0*u0l;
-    Real uxl = mx_3*u3l;
-    Real uyl = my_0*u0l + my_1*u1l;
-    Real uzl = mz_2*u2l;
-    Real utr = mt_0*u0r;
-    Real uxr = mx_3*u3r;
-    Real uyr = my_0*u0r + my_1*u1r;
-    Real uzr = mz_2*u2r;
-
-    // Set local 3-velocities
-    v3l = uxl / utl;
-    v1l = uyl / utl;
-    v2l = uzl / utl;
-    v3r = uxr / utr;
-    v1r = uyr / utr;
-    v2r = uzr / utr;
+    // Set local projected 4-velocities
+    prim_l(IVZ,i) = uux_l;
+    prim_l(IVX,i) = uuy_l;
+    prim_l(IVY,i) = uuz_l;
+    prim_r(IVZ,i) = uux_r;
+    prim_r(IVX,i) = uuy_r;
+    prim_r(IVY,i) = uuz_r;
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED)
     {
+      // Extract metric coefficients
+      const Real &g_00 = g_(I00,i);
+      const Real &g_01 = g_(I01,i);
+      const Real &g_02 = 0.0;
+      const Real &g_03 = 0.0;
+      const Real &g_10 = g_(I01,i);
+      const Real &g_11 = g_(I11,i);
+      const Real &g_12 = 0.0;
+      const Real &g_13 = 0.0;
+      const Real &g_20 = 0.0;
+      const Real &g_21 = 0.0;
+      const Real &g_22 = g_(I22,i);
+      const Real &g_23 = 0.0;
+      const Real &g_30 = 0.0;
+      const Real &g_31 = 0.0;
+      const Real &g_32 = 0.0;
+      const Real &g_33 = g_(I33,i);
+      const Real &g01 = gi_(I01,i);
+      const Real &g02 = 0.0;
+      const Real &g03 = 0.0;
+      Real alpha = std::sqrt(-1.0/gi_(I00,i));
+
+      // Calculate global 4-velocities
+      Real tmp = g_11*uu1_l*uu1_l + 2.0*g_12*uu1_l*uu2_l + 2.0*g_13*uu1_l*uu3_l
+               + g_22*uu2_l*uu2_l + 2.0*g_23*uu2_l*uu3_l
+               + g_33*uu3_l*uu3_l;
+      Real gamma_l = std::sqrt(1.0 + tmp);
+      Real u0_l = gamma_l / alpha;
+      Real u1_l = uu1_l - alpha * gamma_l * g01;
+      Real u2_l = uu2_l - alpha * gamma_l * g02;
+      Real u3_l = uu3_l - alpha * gamma_l * g03;
+      tmp = g_11*uu1_r*uu1_r + 2.0*g_12*uu1_r*uu2_r + 2.0*g_13*uu1_r*uu3_r
+          + g_22*uu2_r*uu2_r + 2.0*g_23*uu2_r*uu3_r
+          + g_33*uu3_r*uu3_r;
+      Real gamma_r = std::sqrt(1.0 + tmp);
+      Real u0_r = gamma_r / alpha;
+      Real u1_r = uu1_r - alpha * gamma_r * g01;
+      Real u2_r = uu2_r - alpha * gamma_r * g02;
+      Real u3_r = uu3_r - alpha * gamma_r * g03;
+
       // Extract global magnetic fields
-      const Real &bb3 = b3_vals(k,j,i);
-      Real &bb1l = prim_left(IBY,i);
-      Real &bb2l = prim_left(IBZ,i);
-      Real &bb1r = prim_right(IBY,i);
-      Real &bb2r = prim_right(IBZ,i);
+      const Real &bb3_l = bb3(k,j,i);
+      const Real &bb3_r = bb3(k,j,i);
+      Real &bb1_l = prim_l(IBY,i);
+      Real &bb2_l = prim_l(IBZ,i);
+      Real &bb1_r = prim_r(IBY,i);
+      Real &bb2_r = prim_r(IBZ,i);
 
-      // Construct global contravariant magnetic fields
-      Real b0l = g_10*bb1l*u0l + g_11*bb1l*u1l + g_22*bb2l*u2l + g_33*bb3*u3l;
-      Real b1l = (bb1l + b0l * u1l) / u0l;
-      Real b2l = (bb2l + b0l * u2l) / u0l;
-      Real b3l = (bb3 + b0l * u3l) / u0l;
-      Real b0r = g_10*bb1r*u0r + g_11*bb1r*u1r + g_22*bb2r*u2r + g_33*bb3*u3r;
-      Real b1r = (bb1r + b0r * u1r) / u0r;
-      Real b2r = (bb2r + b0r * u2r) / u0r;
-      Real b3r = (bb3 + b0r * u3r) / u0r;
+      // Calculate global 4-magnetic fields
+      Real b0_l = g_10*bb1_l*u0_l + g_11*bb1_l*u1_l + g_12*bb1_l*u2_l + g_13*bb1_l*u3_l
+                + g_20*bb2_l*u0_l + g_21*bb2_l*u1_l + g_22*bb2_l*u2_l + g_23*bb2_l*u3_l
+                + g_30*bb3_l*u0_l + g_31*bb3_l*u1_l + g_32*bb3_l*u2_l + g_33*bb3_l*u3_l;
+      Real b1_l = (bb1_l + b0_l * u1_l) / u0_l;
+      Real b2_l = (bb2_l + b0_l * u2_l) / u0_l;
+      Real b3_l = (bb3_l + b0_l * u3_l) / u0_l;
+      Real b0_r = g_10*bb1_r*u0_r + g_11*bb1_r*u1_r + g_12*bb1_r*u2_r + g_13*bb1_r*u3_r
+                + g_20*bb2_r*u0_r + g_21*bb2_r*u1_r + g_22*bb2_r*u2_r + g_23*bb2_r*u3_r
+                + g_30*bb3_r*u0_r + g_31*bb3_r*u1_r + g_32*bb3_r*u2_r + g_33*bb3_r*u3_r;
+      Real b1_r = (bb1_r + b0_r * u1_r) / u0_r;
+      Real b2_r = (bb2_r + b0_r * u2_r) / u0_r;
+      Real b3_r = (bb3_r + b0_r * u3_r) / u0_r;
 
-      // Transform contravariant magnetic fields
-      Real btl = mt_0*b0l;
-      Real bxl = mx_3*b3l;
-      Real byl = my_0*b0l + my_1*b1l;
-      Real bzl = mz_2*b2l;
-      Real btr = mt_0*b0r;
-      Real bxr = mx_3*b3r;
-      Real byr = my_0*b0r + my_1*b1r;
-      Real bzr = mz_2*b2r;
+      // Transform 4-velocities
+      Real ut_l = mt_0*u0_l;
+      Real ux_l = mx_3*u3_l;
+      Real uy_l = my_0*u0_l + my_1*u1_l;
+      Real uz_l = mz_2*u2_l;
+      Real ut_r = mt_0*u0_r;
+      Real ux_r = mx_3*u3_r;
+      Real uy_r = my_0*u0_r + my_1*u1_r;
+      Real uz_r = mz_2*u2_r;
+
+      // Transform 4-magnetic fields
+      Real bt_l = mt_0*b0_l;
+      Real bx_l = mx_3*b3_l;
+      Real by_l = my_0*b0_l + my_1*b1_l;
+      Real bz_l = mz_2*b2_l;
+      Real bt_r = mt_0*b0_r;
+      Real bx_r = mx_3*b3_r;
+      Real by_r = my_0*b0_r + my_1*b1_r;
+      Real bz_r = mz_2*b2_r;
 
       // Set local magnetic fields
-      Real bbxl = utl * bxl - uxl * btl;
-      Real bbxr = utr * bxr - uxr * btr;
-      bx(i) = 0.5 * (bbxl + bbxr);
-      bb1l = utl * byl - uyl * btl;
-      bb2l = utl * bzl - uzl * btl;
-      bb1r = utr * byr - uyr * btr;
-      bb2r = utr * bzr - uzr * btr;
+      Real bbx_l = ut_l * bx_l - ux_l * bt_l;
+      Real bbx_r = ut_r * bx_r - ux_r * bt_r;
+      bbx(i) = 0.5 * (bbx_l + bbx_r);
+      bb1_l = ut_l * by_l - uy_l * bt_l;
+      bb2_l = ut_l * bz_l - uz_l * bt_l;
+      bb1_r = ut_r * by_r - uy_r * bt_r;
+      bb2_r = ut_r * bz_r - uz_r * bt_r;
     }
   }
   return;
@@ -875,7 +1001,7 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
 //   k,j: z- and y-indices
 //   il,iu: x'-index bounds
 //   cons: array of conserved quantities in 1D, using local coordinates
-//   bx: 1D array of longitudinal magnetic fields, in local coordinates (unused)
+//   bbx: 1D array of longitudinal magnetic fields, in local coordinates (unused)
 //   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
 //   flux: values overwritten in global coordinates
@@ -885,7 +1011,8 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
 //   puts x1-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
 //   puts x1-fluxes of B2/B3 in IBY/IBZ slots
 void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bx, AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
+    AthenaArray<Real> &flux)
 {
   // Prepare geometric quantities
   const Real g_00 = -SQR(beta) / SQR(alpha);
@@ -959,7 +1086,7 @@ void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const in
 //   k,j: z- and y-indices
 //   il,iu: x'-index bounds
 //   cons: array of conserved quantities in 1D, using local coordinates
-//   bx: 1D array of longitudinal magnetic fields, in local coordinates
+//   bbx: 1D array of longitudinal magnetic fields, in local coordinates
 //   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
 //   flux: values overwritten in global coordinates
@@ -969,7 +1096,8 @@ void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const in
 //   puts x2-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
 //   puts x2-fluxes of B3/B1 in IBY/IBZ slots
 void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bx, AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
+    AthenaArray<Real> &flux)
 {
   // Prepare geometric quantities
   const Real g_00 = -SQR(beta) / SQR(alpha);
@@ -1023,7 +1151,7 @@ void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const in
     // Transform magnetic fluxes if necessary
     if (MAGNETIC_FIELDS_ENABLED)
     {
-      Real ftx = -bx(i);
+      Real ftx = -bbx(i);
       Real fyx = flux(IBY,i);
       Real fzx = flux(IBZ,i);
       Real &f32 = flux(IBY,i);
@@ -1042,7 +1170,7 @@ void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const in
 //   k,j: z- and y-indices
 //   il,iu: x'-index bounds
 //   cons: array of conserved quantities in 1D, using local coordinates
-//   bx: 1D array of longitudinal magnetic fields, in local coordinates
+//   bbx: 1D array of longitudinal magnetic fields, in local coordinates
 //   flux: array of fluxes in 1D, using local coordinates
 // Outputs:
 //   flux: values overwritten in global coordinates
@@ -1052,7 +1180,8 @@ void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const in
 //   puts x3-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
 //   puts x3-fluxes of B1/B2 in IBY/IBZ slots
 void Coordinates::FluxToGlobal3(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bx, AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
+    AthenaArray<Real> &flux)
 {
   // Prepare geometric quantities
   const Real g_00 = -SQR(beta) / SQR(alpha);
@@ -1106,7 +1235,7 @@ void Coordinates::FluxToGlobal3(const int k, const int j, const int il, const in
     // Transform magnetic fluxes if necessary
     if (MAGNETIC_FIELDS_ENABLED)
     {
-      Real ftx = -bx(i);
+      Real ftx = -bbx(i);
       Real fyx = flux(IBY,i);
       Real fzx = flux(IBZ,i);
       Real &f13 = flux(IBY,i);
