@@ -1272,27 +1272,26 @@ void Coordinates::PrimToLocal1(const int k, const int j, const int il, const int
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED)
     {
-      // TODO: 0's
       // Extract metric coefficients
       const Real &g_00 = g_(I00,i);
       const Real &g_01 = g_(I01,i);
-      const Real &g_02 = g_(I02,i);
+      const Real &g_02 = 0.0;
       const Real &g_03 = g_(I03,i);
       const Real &g_10 = g_(I01,i);
       const Real &g_11 = g_(I11,i);
-      const Real &g_12 = g_(I12,i);
+      const Real &g_12 = 0.0;
       const Real &g_13 = g_(I13,i);
-      const Real &g_20 = g_(I02,i);
-      const Real &g_21 = g_(I12,i);
+      const Real &g_20 = 0.0;
+      const Real &g_21 = 0.0;
       const Real &g_22 = g_(I22,i);
-      const Real &g_23 = g_(I23,i);
+      const Real &g_23 = 0.0;
       const Real &g_30 = g_(I03,i);
       const Real &g_31 = g_(I13,i);
-      const Real &g_32 = g_(I23,i);
+      const Real &g_32 = 0.0;
       const Real &g_33 = g_(I33,i);
       const Real &g01 = gi_(I01,i);
-      const Real &g02 = gi_(I02,i);
-      const Real &g03 = gi_(I03,i);
+      const Real &g02 = 0.0;
+      const Real &g03 = 0.0;
       Real alpha = std::sqrt(-1.0/gi_(I00,i));
 
       // Calculate global 4-velocities
@@ -1441,23 +1440,23 @@ void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int
       // Extract metric coefficients
       const Real &g_00 = g_(I00,i);
       const Real &g_01 = g_(I01,i);
-      const Real &g_02 = g_(I02,i);
+      const Real &g_02 = 0.0;
       const Real &g_03 = g_(I03,i);
       const Real &g_10 = g_(I01,i);
       const Real &g_11 = g_(I11,i);
-      const Real &g_12 = g_(I12,i);
+      const Real &g_12 = 0.0;
       const Real &g_13 = g_(I13,i);
-      const Real &g_20 = g_(I02,i);
-      const Real &g_21 = g_(I12,i);
+      const Real &g_20 = 0.0;
+      const Real &g_21 = 0.0;
       const Real &g_22 = g_(I22,i);
-      const Real &g_23 = g_(I23,i);
+      const Real &g_23 = 0.0;
       const Real &g_30 = g_(I03,i);
       const Real &g_31 = g_(I13,i);
-      const Real &g_32 = g_(I23,i);
+      const Real &g_32 = 0.0;
       const Real &g_33 = g_(I33,i);
       const Real &g01 = gi_(I01,i);
-      const Real &g02 = gi_(I02,i);
-      const Real &g03 = gi_(I03,i);
+      const Real &g02 = 0.0;
+      const Real &g03 = 0.0;
       Real alpha = std::sqrt(-1.0/gi_(I00,i));
 
       // Calculate global 4-velocities
@@ -1607,23 +1606,23 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
       // Extract metric coefficients
       const Real &g_00 = g_(I00,i);
       const Real &g_01 = g_(I01,i);
-      const Real &g_02 = g_(I02,i);
+      const Real &g_02 = 0.0;
       const Real &g_03 = g_(I03,i);
       const Real &g_10 = g_(I01,i);
       const Real &g_11 = g_(I11,i);
-      const Real &g_12 = g_(I12,i);
+      const Real &g_12 = 0.0;
       const Real &g_13 = g_(I13,i);
-      const Real &g_20 = g_(I02,i);
-      const Real &g_21 = g_(I12,i);
+      const Real &g_20 = 0.0;
+      const Real &g_21 = 0.0;
       const Real &g_22 = g_(I22,i);
-      const Real &g_23 = g_(I23,i);
+      const Real &g_23 = 0.0;
       const Real &g_30 = g_(I03,i);
       const Real &g_31 = g_(I13,i);
-      const Real &g_32 = g_(I23,i);
+      const Real &g_32 = 0.0;
       const Real &g_33 = g_(I33,i);
       const Real &g01 = gi_(I01,i);
-      const Real &g02 = gi_(I02,i);
-      const Real &g03 = gi_(I03,i);
+      const Real &g02 = 0.0;
+      const Real &g03 = 0.0;
       Real alpha = std::sqrt(-1.0/gi_(I00,i));
 
       // Calculate global 4-velocities
