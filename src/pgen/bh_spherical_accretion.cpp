@@ -7,23 +7,22 @@
 #include <cmath>  // abs(), NAN, pow(), sqrt()
 
 // Athena headers
-#include "../athena.hpp"                   // enums, Real
+#include "../athena.hpp"                   // macros, enums, Real
 #include "../athena_arrays.hpp"            // AthenaArray
+#include "../parameter_input.hpp"          // ParameterInput
+#include "../bvals/bvals.hpp"              // BoundaryValues, InterfaceField
 #include "../coordinates/coordinates.hpp"  // Coordinates
-#include "../bvals/bvals.hpp"              // BoundaryValues
+#include "../field/field.hpp"              // Field
 #include "../fluid/fluid.hpp"              // Fluid
 #include "../fluid/eos/eos.hpp"            // FluidEqnOfState
-#include "../field/field.hpp"              // Field
-#include "../parameter_input.hpp"          // ParameterInput
 
 // Declarations
 void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons,
                 int is, int ie, int js, int je, int ks, int ke);
 void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons,
                 int is, int ie, int js, int je, int ks, int ke);
-static void set_state(
-    Real rho, Real pgas, Real v1, Real v2, Real v3, int k, int j, int i,
-    AthenaArray<Real> &prim, AthenaArray<Real> &prim_half);
+static void set_state(Real rho, Real pgas, Real uu1, Real uu2, Real uu3, int k, int j,
+    int i, AthenaArray<Real> &prim, AthenaArray<Real> &prim_half);
 static Real TemperatureResidual(Real t, Real m, Real n_adi, Real r, Real c1, Real c2);
 static Real TemperatureMin(Real m, Real n_adi, Real r, Real c1, Real c2, Real t_min,
     Real t_max);
@@ -91,23 +90,27 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     b3_flux = pin->GetReal("problem", "b3_flux");
   }
 
-  // Prepare arrays for areas and magnetic fields
-  AthenaArray<Real> a1, a2m, a2p, a3m, a3p, b;
+  // Prepare temporary arrays
+  AthenaArray<Real> a1, a2m, a2p, a3m, a3p, b, g, gi;
   a1.NewAthenaArray(iu+1);
   a2m.NewAthenaArray(iu);
   a2p.NewAthenaArray(iu);
   a3m.NewAthenaArray(iu);
   a3p.NewAthenaArray(iu);
-  b.NewAthenaArray(3,ku+2,ju+2,iu+2);
+  b.NewAthenaArray(3, ku+2, ju+2, iu+2);
+  g.NewAthenaArray(NMETRIC, iu+1);
+  gi.NewAthenaArray(NMETRIC, iu+1);
 
   // Initialize magnetic field
   if (MAGNETIC_FIELDS_ENABLED)
     for (int k = kl; k <= ku+1; ++k)
     {
-      Real interp_param_k = (pb->pcoord->x3v(k) - pb->pcoord->x3f(k)) / pb->pcoord->dx3f(k);
+      Real interp_param_k = (pb->pcoord->x3v(k) - pb->pcoord->x3f(k))
+          / pb->pcoord->dx3f(k);
       for (int j = jl; j <= ju+1; ++j)
       {
-        Real interp_param_j = (pb->pcoord->x2v(j) - pb->pcoord->x2f(j)) / pb->pcoord->dx2f(j);
+        Real interp_param_j = (pb->pcoord->x2v(j) - pb->pcoord->x2f(j))
+            / pb->pcoord->dx2f(j);
         pb->pcoord->Face1Area(k, j, il, iu+1, a1);
         pb->pcoord->Face2Area(k, j, il, iu, a2m);
         pb->pcoord->Face2Area(k, j+1, il, iu, a2p);
@@ -115,7 +118,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         pb->pcoord->Face3Area(k+1, j, il, iu, a3p);
         for (int i = il; i <= iu+1; ++i)
         {
-          Real interp_param_i = (pb->pcoord->x1v(i) - pb->pcoord->x1f(i)) / pb->pcoord->dx1f(i);
+          Real interp_param_i = (pb->pcoord->x1v(i) - pb->pcoord->x1f(i))
+              / pb->pcoord->dx1f(i);
           Real b1m = b1_flux / a1(i);
           Real b1p = b1_flux / a1(i+1);
           Real b2m = b2_flux / a2m(i);
@@ -148,9 +152,11 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       * (1.0 - 3.0*m / (2.0*r_crit));                        // (cf. HSW 68)
 
   // Initialize primitives
-  for (int k = kl; k <= ku; k++)
-    for (int j = jl; j <= ju; j++)
-      for (int i = il; i <= iu; i++)
+  for (int k = kl; k <= ku; ++k)
+    for (int j = jl; j <= ju; ++j)
+    {
+      pmb->pcoord->CellMetric(k, j, il, iu, g, gi);
+      for (int i = il; i <= iu; ++i)
       {
         // Get radius
         Real r = pb->pcoord->x1v(i);
@@ -164,28 +170,33 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
           temperature = TemperatureBisect(t_neg_res, t_max, m, n_adi, r, c1, c2);
 
         // Calculate primitives
+        Real rho = std::pow(temperature/k_adi, n_adi);           // not same K as HSW
+        Real pgas = temperature * rho;
         Real u1 = c1 / (SQR(r) * std::pow(temperature, n_adi));  // (HSW 75)
         Real u0 = std::sqrt(1.0/SQR(1.0 - 2.0*m/r) * SQR(u1)
             + 1.0/(1.0 - 2.0*m/r));
-        Real v1 = u1 / u0;
-        Real v2 = 0.0;
-        Real v3 = 0.0;
-        Real rho = std::pow(temperature/k_adi, n_adi);           // not same K as HSW
-        Real pgas = temperature * rho;
-        set_state(rho, pgas, v1, v2, v3, k, j, i,
-            pfl->w, pfl->w1);
+        Real u2 = 0.0;
+        Real u3 = 0.0;
+        Real uu1 = u1 - gi(I01,i)/gi(I00,i) * u0;
+        Real uu2 = u2 - gi(I02,i)/gi(I00,i) * u0;
+        Real uu3 = u3 - gi(I03,i)/gi(I00,i) * u0;
+        set_state(rho, pgas, uu1, uu2, uu3, k, j, i, pfl->w,
+            pfl->w1);
       }
+    }
 
   // Initialize conserved variables
   pb->pfluid->pf_eos->PrimitiveToConserved(pfl->w, b, pfl->u);  
 
-  // Delete area and magnetic field arrays
+  // Delete temporary arrays
   a1.DeleteAthenaArray();
   a2m.DeleteAthenaArray();
   a2p.DeleteAthenaArray();
   a3m.DeleteAthenaArray();
   a3p.DeleteAthenaArray();
   b.DeleteAthenaArray();
+  g.DeleteAthenaArray();
+  gi.DeleteAthenaArray();
 
   // Save inner boundary state
   d_inner_1 = pfl->u(IDN,pb->ks,pb->js,pb->is-1);
@@ -222,8 +233,8 @@ void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons,
                 int is, int ie, int js, int je, int ks, int ke)
 {
   // Set conserved values
-  for (int k = ks; k <= ke; k++)
-    for (int j = js; j <= je; j++)
+  for (int k = ks; k <= ke; ++k)
+    for (int j = js; j <= je; ++j)
     {
       cons(IDN,k,j,is-1) = d_inner_1;
       cons(IEN,k,j,is-1) = e_inner_1;
@@ -244,8 +255,8 @@ void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons,
                 int is, int ie, int js, int je, int ks, int ke)
 {
   // Set conserved values
-  for (int k = ks; k <= ke; k++)
-    for (int j = js; j <= je; j++)
+  for (int k = ks; k <= ke; ++k)
+    for (int j = js; j <= je; ++j)
     {
       cons(IDN,k,j,ie+1) = d_outer_1;
       cons(IEN,k,j,ie+1) = e_outer_1;
@@ -265,19 +276,18 @@ void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons,
 // Inputs:
 //   rho: density
 //   pgas: gas pressure
-//   v1,v2,v3: 3-velocity components
+//   uu1,uu2,uu3: projected 4-velocity compontents \tilde{u}^i
 //   k,j,i: indices for cell
 // Outputs:
 //   prim,prim_half: primitives in cell set
-static void set_state(
-    Real rho, Real pgas, Real v1, Real v2, Real v3, int k, int j, int i,
-    AthenaArray<Real> &prim, AthenaArray<Real> &prim_half)
+static void set_state(Real rho, Real pgas, Real uu1, Real uu2, Real uu3, int k, int j,
+    int i, AthenaArray<Real> &prim, AthenaArray<Real> &prim_half)
 {
   prim(IDN,k,j,i) = prim_half(IDN,k,j,i) = rho;
   prim(IEN,k,j,i) = prim_half(IEN,k,j,i) = pgas;
-  prim(IM1,k,j,i) = prim_half(IM1,k,j,i) = v1;
-  prim(IM2,k,j,i) = prim_half(IM2,k,j,i) = v2;
-  prim(IM3,k,j,i) = prim_half(IM3,k,j,i) = v3;
+  prim(IM1,k,j,i) = prim_half(IM1,k,j,i) = uu1;
+  prim(IM2,k,j,i) = prim_half(IM2,k,j,i) = uu2;
+  prim(IM3,k,j,i) = prim_half(IM3,k,j,i) = uu3;
   return;
 }
 

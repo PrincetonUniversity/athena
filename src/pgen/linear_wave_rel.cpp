@@ -4,17 +4,18 @@
 #include "../mesh.hpp"
 
 // C++ headers
-#include <cmath>      // sin(), sqrt()
+#include <algorithm>  // max(), min()
+#include <cmath>      // abs(), sin(), sqrt()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
 // Athena headers
-#include "../athena.hpp"                   // enums, Real
+#include "../athena.hpp"                   // macros, enums, Real
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../parameter_input.hpp"          // ParameterInput
-#include "../bvals/bvals.hpp"              // BoundaryValues
+#include "../bvals/bvals.hpp"              // BoundaryValues, InterfaceField
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // Field
 #include "../fluid/fluid.hpp"              // Fluid
@@ -458,8 +459,18 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   Real wavenumber = 2.0*PI / (arg_max - arg_min);
 
   // Initialize hydro variables
+  AthenaArray<Real> g, gi;
+  if (GENERAL_RELATIVITY)
+  {
+    int ncells1 = pfl->pmy_block->block_size.nx1 + 2*NGHOST;
+    g.NewAthenaArray(NMETRIC, ncells1);
+    gi.NewAthenaArray(NMETRIC, ncells1);
+  }
   for (int k = kl; k <= ku; ++k)
     for (int j = jl; j <= ju; ++j)
+    {
+      if (GENERAL_RELATIVITY)
+        pmb->pcoord->CellMetric(k, j, il, iu, g, gi);
       for (int i = il; i <= iu; ++i)
       {
         // Find location of cell in spacetime
@@ -535,9 +546,21 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         // Set primitive hydro variables
         pfl->w(IDN,k,j,i) = pfl->w1(IDN,k,j,i) = rho_local;
         pfl->w(IEN,k,j,i) = pfl->w1(IEN,k,j,i) = pgas_local;
-        pfl->w(IVX,k,j,i) = pfl->w1(IVX,k,j,i) = u_local[1] / u_local[0];
-        pfl->w(IVY,k,j,i) = pfl->w1(IVY,k,j,i) = u_local[2] / u_local[0];
-        pfl->w(IVZ,k,j,i) = pfl->w1(IVZ,k,j,i) = u_local[3] / u_local[0];
+        if (GENERAL_RELATIVITY)
+        {
+          Real uu1 = u_local[1] - gi(I01,i)/gi(I00,i) * u_local[0];
+          Real uu2 = u_local[2] - gi(I02,i)/gi(I00,i) * u_local[0];
+          Real uu3 = u_local[3] - gi(I03,i)/gi(I00,i) * u_local[0];
+          pfl->w(IVX,k,j,i) = pfl->w1(IVX,k,j,i) = uu1;
+          pfl->w(IVY,k,j,i) = pfl->w1(IVY,k,j,i) = uu2;
+          pfl->w(IVZ,k,j,i) = pfl->w1(IVZ,k,j,i) = uu3;
+        }
+        else
+        {
+          pfl->w(IVX,k,j,i) = pfl->w1(IVX,k,j,i) = u_local[1] / u_local[0];
+          pfl->w(IVY,k,j,i) = pfl->w1(IVY,k,j,i) = u_local[2] / u_local[0];
+          pfl->w(IVZ,k,j,i) = pfl->w1(IVZ,k,j,i) = u_local[3] / u_local[0];
+        }
 
         // Set conserved hydro variables
         pfl->u(IDN,k,j,i) = u_local[0] * rho_local;
@@ -561,6 +584,12 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
           pfl->u(IM3,k,j,i) = wtot_local*u_local[0]*u_local[3] - b_local[0]*b_local[3];
         }
       }
+    }
+  if (GENERAL_RELATIVITY)
+  {
+    g.DeleteAthenaArray();
+    gi.DeleteAthenaArray();
+  }
 
   // Initialize magnetic fields
   if (MAGNETIC_FIELDS_ENABLED)

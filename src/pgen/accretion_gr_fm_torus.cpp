@@ -5,18 +5,18 @@
 
 // C++ headers
 #include <algorithm>  // max(), min()
-#include <cmath>      // exp(), pow(), sin(), sqrt()
+#include <cmath>      // exp(), log(), pow(), sin(), sqrt()
 #include <limits>     // numeric_limits::max()
 
 // Athena headers
-#include "../athena.hpp"                   // enums, Real
+#include "../athena.hpp"                   // macros, enums, Real
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../parameter_input.hpp"          // ParameterInput
 #include "../bvals/bvals.hpp"              // BoundaryValues, InterfaceField
 #include "../coordinates/coordinates.hpp"  // Coordinates
+#include "../field/field.hpp"              // Field
 #include "../fluid/fluid.hpp"              // Fluid
 #include "../fluid/eos/eos.hpp"            // FluidEqnOfState
-#include "../field/field.hpp"              // Field
 
 // TODO: remove with boundary hack
 #include <cassert>
@@ -103,24 +103,23 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   // Prepare scratch arrays
   AthenaArray<bool> in_torus;
   in_torus.NewAthenaArray(ju+1, iu+1);
-  AthenaArray<Real> g, g_inv;
+  AthenaArray<Real> g, gi;
   g.NewAthenaArray(NMETRIC, iu+1);
-  g_inv.NewAthenaArray(NMETRIC, iu+1);
+  gi.NewAthenaArray(NMETRIC, iu+1);
 
   // Initialize primitive values
   Real log_h_edge = log_h_aux(r_edge, 1.0);
   Real rho_peak = 0.0;
-  for (int j = jl; j <= ju; j++)
+  for (int j = jl; j <= ju; ++j)
   {
-    pmb->pcoord->CellMetric(kl, j, il, iu, g, g_inv);
-    for (int i = il; i <= iu; i++)
+    pmb->pcoord->CellMetric(kl, j, il, iu, g, gi);
+    for (int i = il; i <= iu; ++i)
     {
       // Get Boyer-Lindquist coordinates of cell
       Real r, theta, phi;
       pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1v(i), pmb->pcoord->x2v(j),
           pmb->pcoord->x3v(kl), &r, &theta, &phi);
       Real sin_theta = std::sin(theta);
-      Real alpha_sq = -1.0 / g_inv(I00,i);
 
       // Determine if we are in the torus
       Real log_h;
@@ -133,7 +132,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       }
 
       // Calculate primitives depending on location
-      Real rho, pgas, unorm1, unorm2, unorm3;
+      Real rho, pgas, uu1, uu2, uu3;
       if (in_torus(j,i))
       {
         Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1);
@@ -145,28 +144,28 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         Real u0_pref, u1_pref, u2_pref, u3_pref;
         pmb->pcoord->TransformVectorCell(u0, 0.0, 0.0, u3, kl, j, i,
             &u0_pref, &u1_pref, &u2_pref, &u3_pref);
-        unorm1 = u1_pref + alpha_sq * g_inv(I01,i) * u0_pref;
-        unorm2 = u2_pref + alpha_sq * g_inv(I02,i) * u0_pref;
-        unorm3 = u3_pref + alpha_sq * g_inv(I03,i) * u0_pref;
+        uu1 = u1_pref - gi(I01,i)/gi(I00,i) * u0_pref;
+        uu2 = u2_pref - gi(I02,i)/gi(I00,i) * u0_pref;
+        uu3 = u3_pref - gi(I03,i)/gi(I00,i) * u0_pref;
       }
       else
       {
         rho = rho_min * std::pow(r, rho_pow);
         Real u = u_min * std::pow(r, u_pow);
         pgas = (gamma_adi-1.0) * u;
-        unorm1 = 0.0;
-        unorm2 = 0.0;
-        unorm3 = 0.0;
+        uu1 = 0.0;
+        uu2 = 0.0;
+        uu3 = 0.0;
       }
 
       // Set primitive values
-      for (int k = kl; k <= ku; k++)
+      for (int k = kl; k <= ku; ++k)
       {
         pfl->w(IDN,k,j,i) = pfl->w1(IDN,k,j,i) = rho;
         pfl->w(IEN,k,j,i) = pfl->w1(IEN,k,j,i) = pgas;
-        pfl->w(IVX,k,j,i) = pfl->w1(IM1,k,j,i) = unorm1;
-        pfl->w(IVY,k,j,i) = pfl->w1(IM2,k,j,i) = unorm2;
-        pfl->w(IVZ,k,j,i) = pfl->w1(IM3,k,j,i) = unorm3;
+        pfl->w(IVX,k,j,i) = pfl->w1(IM1,k,j,i) = uu1;
+        pfl->w(IVY,k,j,i) = pfl->w1(IM2,k,j,i) = uu2;
+        pfl->w(IVZ,k,j,i) = pfl->w1(IM3,k,j,i) = uu3;
       }
     }
   }
@@ -180,8 +179,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     a_phi_edges.NewAthenaArray(ju+2, iu+2);
 
     // Go through 2D slice, setting vector potential in cells
-    for (int j = jl; j <= ju; j++)
-      for (int i = il; i <= iu; i++)
+    for (int j = jl; j <= ju; ++j)
+      for (int i = il; i <= iu; ++i)
       {
         // Get Boyer-Lindquist coordinates
         Real r, theta, phi;
@@ -204,8 +203,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       }
 
     // Go through 2D slice, setting vector potential at edges
-    for (int j = jl; j <= ju+1; j++)
-      for (int i = il; i <= iu+1; i++)
+    for (int j = jl; j <= ju+1; ++j)
+      for (int i = il; i <= iu+1; ++i)
       {
         // Get Boyer-Lindquist coordinates
         Real r, theta, phi;
@@ -228,11 +227,11 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       }
 
     // Normalize vector potential
-    for (int j = jl; j <= ju; j++)
-      for (int i = il; i <= iu; i++)
+    for (int j = jl; j <= ju; ++j)
+      for (int i = il; i <= iu; ++i)
         a_phi_cells(j,i) = std::max(a_phi_cells(j,i)/rho_peak - potential_cutoff, 0.0);
-    for (int j = jl; j <= ju+1; j++)
-      for (int i = il; i <= iu+1; i++)
+    for (int j = jl; j <= ju+1; ++j)
+      for (int i = il; i <= iu+1; ++i)
         a_phi_edges(j,i) = std::max(a_phi_edges(j,i)/rho_peak - potential_cutoff, 0.0);
 
     // Set magnetic fields according to vector potential
@@ -437,22 +436,21 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     for (int k = kl; k <= ku; ++k)
       for (int j = jl; j <= ju; ++j)
       {
-        pmb->pcoord->CellMetric(k, j, il, iu, g, g_inv);
+        pmb->pcoord->CellMetric(k, j, il, iu, g, gi);
         for (int i = il; i <= iu; ++i)
         {
-          Real alpha = std::sqrt(-1.0/g_inv(I00,i));
-          Real unorm1 = pfl->w(IVX,k,j,i);
-          Real unorm2 = pfl->w(IVY,k,j,i);
-          Real unorm3 = pfl->w(IVZ,k,j,i);
-          Real tmp = g(I11,i)*unorm1*unorm1 + 2.0*g(I12,i)*unorm1*unorm2
-                       + 2.0*g(I13,i)*unorm1*unorm3
-                   + g(I22,i)*unorm2*unorm2 + 2.0*g(I23,i)*unorm2*unorm3
-                   + g(I33,i)*unorm3*unorm3;
+          Real alpha = std::sqrt(-1.0/gi(I00,i));
+          Real uu1 = pfl->w(IVX,k,j,i);
+          Real uu2 = pfl->w(IVY,k,j,i);
+          Real uu3 = pfl->w(IVZ,k,j,i);
+          Real tmp = g(I11,i)*uu1*uu1 + 2.0*g(I12,i)*uu1*uu2 + 2.0*g(I13,i)*uu1*uu3
+                   + g(I22,i)*uu2*uu2 + 2.0*g(I23,i)*uu2*uu3
+                   + g(I33,i)*uu3*uu3;
           Real gamma = std::sqrt(1.0 + tmp);
           Real u0 = gamma / alpha;
-          Real u1 = unorm1 - alpha * gamma * g_inv(I01,i);
-          Real u2 = unorm2 - alpha * gamma * g_inv(I02,i);
-          Real u3 = unorm3 - alpha * gamma * g_inv(I03,i);
+          Real u1 = uu1 - alpha * gamma * gi(I01,i);
+          Real u2 = uu2 - alpha * gamma * gi(I02,i);
+          Real u3 = uu3 - alpha * gamma * gi(I03,i);
           Real bb1 = bb(IB1,k,j,i);
           Real bb2 = bb(IB2,k,j,i);
           Real bb3 = bb(IB3,k,j,i);
@@ -474,7 +472,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   // Free scratch arrays
   in_torus.DeleteAthenaArray();
   g.DeleteAthenaArray();
-  g_inv.DeleteAthenaArray();
+  gi.DeleteAthenaArray();
 
   // Normalize magnetic field to have desired beta
   if (MAGNETIC_FIELDS_ENABLED)
@@ -535,34 +533,33 @@ void OutflowPrimInnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons,
   else
     assert(0);
   AthenaArray<Real> g, gi;
-  g.NewAthenaArray(NMETRIC,is);
-  gi.NewAthenaArray(NMETRIC,is);
+  g.NewAthenaArray(NMETRIC, is);
+  gi.NewAthenaArray(NMETRIC, is);
   for (int k = ks; k <= ke; ++k)
     for (int j = js; j <= je; ++j)
     {
       pmb->pcoord->CellMetric(k, j, is-NGHOST, is-1, g, gi);
-      Real unorm1 = (*pprim)(IVX,k,j,is);
-      Real unorm2 = (*pprim)(IVY,k,j,is);
-      Real unorm3 = (*pprim)(IVZ,k,j,is);
+      Real uu1 = (*pprim)(IVX,k,j,is);
+      Real uu2 = (*pprim)(IVY,k,j,is);
+      Real uu3 = (*pprim)(IVZ,k,j,is);
       for (int i = is-NGHOST; i <= is-1; ++i)
       {
         Real &rho = (*pprim)(IDN,k,j,i);
         Real &pgas = (*pprim)(IEN,k,j,i);
         rho = (*pprim)(IDN,k,j,is);
         pgas = (*pprim)(IEN,k,j,is);
-        (*pprim)(IVX,k,j,i) = unorm1;
-        (*pprim)(IVY,k,j,i) = unorm2;
-        (*pprim)(IVZ,k,j,i) = unorm3;
+        (*pprim)(IVX,k,j,i) = uu1;
+        (*pprim)(IVY,k,j,i) = uu2;
+        (*pprim)(IVZ,k,j,i) = uu3;
         Real alpha = std::sqrt(-1.0/gi(I00,i));
-        Real tmp = g(I11,i)*unorm1*unorm1 + 2.0*g(I12,i)*unorm1*unorm2
-                     + 2.0*g(I13,i)*unorm1*unorm3
-                 + g(I22,i)*unorm2*unorm2 + 2.0*g(I23,i)*unorm2*unorm3
-                 + g(I33,i)*unorm3*unorm3;
+        Real tmp = g(I11,i)*uu1*uu1 + 2.0*g(I12,i)*uu1*uu2 + 2.0*g(I13,i)*uu1*uu3
+                 + g(I22,i)*uu2*uu2 + 2.0*g(I23,i)*uu2*uu3
+                 + g(I33,i)*uu3*uu3;
         Real gamma = std::sqrt(1.0 + tmp);
         Real u0 = gamma / alpha;
-        Real u1 = unorm1 - alpha * gamma * gi(I01,i);
-        Real u2 = unorm2 - alpha * gamma * gi(I02,i);
-        Real u3 = unorm3 - alpha * gamma * gi(I03,i);
+        Real u1 = uu1 - alpha * gamma * gi(I01,i);
+        Real u2 = uu2 - alpha * gamma * gi(I02,i);
+        Real u3 = uu3 - alpha * gamma * gi(I03,i);
         Real u_0, u_1, u_2, u_3;
         pmb->pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
         Real gamma_adi = pmb->pfluid->pf_eos->GetGamma();
@@ -605,28 +602,27 @@ void OutflowPrimOuterFluid(MeshBlock *pmb, AthenaArray<Real> &cons,
     for (int j = js; j <= je; ++j)
     {
       pmb->pcoord->CellMetric(k, j, ie+1, ie+NGHOST, g, gi);
-      Real unorm1 = (*pprim)(IVX,k,j,ie);
-      Real unorm2 = (*pprim)(IVY,k,j,ie);
-      Real unorm3 = (*pprim)(IVZ,k,j,ie);
+      Real uu1 = (*pprim)(IVX,k,j,ie);
+      Real uu2 = (*pprim)(IVY,k,j,ie);
+      Real uu3 = (*pprim)(IVZ,k,j,ie);
       for (int i = ie+1; i <= ie+NGHOST; ++i)
       {
         Real &rho = (*pprim)(IDN,k,j,i);
         Real &pgas = (*pprim)(IEN,k,j,i);
         rho = (*pprim)(IDN,k,j,ie);
         pgas = (*pprim)(IEN,k,j,ie);
-        (*pprim)(IVX,k,j,i) = unorm1;
-        (*pprim)(IVY,k,j,i) = unorm2;
-        (*pprim)(IVZ,k,j,i) = unorm3;
+        (*pprim)(IVX,k,j,i) = uu1;
+        (*pprim)(IVY,k,j,i) = uu2;
+        (*pprim)(IVZ,k,j,i) = uu3;
         Real alpha = std::sqrt(-1.0/gi(I00,i));
-        Real tmp = g(I11,i)*unorm1*unorm1 + 2.0*g(I12,i)*unorm1*unorm2
-                     + 2.0*g(I13,i)*unorm1*unorm3
-                 + g(I22,i)*unorm2*unorm2 + 2.0*g(I23,i)*unorm2*unorm3
-                 + g(I33,i)*unorm3*unorm3;
+        Real tmp = g(I11,i)*uu1*uu1 + 2.0*g(I12,i)*uu1*uu2 + 2.0*g(I13,i)*uu1*uu3
+                 + g(I22,i)*uu2*uu2 + 2.0*g(I23,i)*uu2*uu3
+                 + g(I33,i)*uu3*uu3;
         Real gamma = std::sqrt(1.0 + tmp);
         Real u0 = gamma / alpha;
-        Real u1 = unorm1 - alpha * gamma * gi(I01,i);
-        Real u2 = unorm2 - alpha * gamma * gi(I02,i);
-        Real u3 = unorm3 - alpha * gamma * gi(I03,i);
+        Real u1 = uu1 - alpha * gamma * gi(I01,i);
+        Real u2 = uu2 - alpha * gamma * gi(I02,i);
+        Real u3 = uu3 - alpha * gamma * gi(I03,i);
         Real u_0, u_1, u_2, u_3;
         pmb->pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
         Real gamma_adi = pmb->pfluid->pf_eos->GetGamma();
