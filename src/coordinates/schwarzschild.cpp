@@ -364,24 +364,29 @@ Coordinates::~Coordinates()
 //   volumes: 1D array of cell volumes
 // Notes:
 //   \Delta V = 1/3 * \Delta(r^3) (-\Delta\cos\theta) \Delta\phi
+//   cf. GetCellVolume()
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &volumes)
 {
-  const Real &neg_delta_cos_theta = coord_vol_j1_(j);
-  const Real &delta_phi = dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    const Real &third_delta_r_cb = coord_vol_i1_(i);
-    Real &volume = volumes(i);
-    volume = third_delta_r_cb * neg_delta_cos_theta * delta_phi;
-  }
+    volumes(i) = coord_vol_i1_(i) * coord_vol_j1_(j) * dx3f(k);
   return;
 }
 
+//--------------------------------------------------------------------------------------
+
+// Function for computing single cell volume
+// Inputs:
+//   k,j,i: phi-, theta-, and r-indices
+// Outputs:
+//   returned value: cell volume
+// Notes:
+//   \Delta V = 1/3 * \Delta(r^3) (-\Delta\cos\theta) \Delta\phi
+//   cf. CellVolume()
 Real Coordinates::GetCellVolume(const int k, const int j, const int i)
 {
-  return coord_vol_i_(i)*coord_vol_j_(j)*dx3f(k);
+  return coord_vol_i1_(i) * coord_vol_j1_(j) * dx3f(k);
 }
 
 //--------------------------------------------------------------------------------------
@@ -394,19 +399,29 @@ Real Coordinates::GetCellVolume(const int k, const int j, const int i)
 //   areas: 1D array of interface areas orthogonal to r
 // Notes:
 //   \Delta A = r^2 (-\Delta\cos\theta) \Delta\phi
+//   cf. GetFace1Area()
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
-  const Real &neg_delta_cos_theta = coord_area1_j1_(j);
-  const Real &delta_phi = dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    const Real &r_sq = coord_area1_i1_(i);
-    Real &area = areas(i);
-    area = r_sq * neg_delta_cos_theta * delta_phi;
-  }
+    areas(i) = coord_area1_i1_(i) * coord_area1_j1_(j) * dx3f(k);
   return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing single area orthogonal to r
+// Inputs:
+//   k,j,i: phi-, theta-, and r-indices
+// Outputs:
+//   returned value: interface area orthogonal to r
+// Notes:
+//   \Delta A = r^2 (-\Delta\cos\theta) \Delta\phi
+//   cf. Face1Area()
+Real Coordinates::GetFace1Area(const int k, const int j, const int i)
+{
+  return coord_area1_i1_(i) * coord_area1_j1_(j) * dx3f(k);
 }
 
 //--------------------------------------------------------------------------------------
@@ -422,15 +437,9 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
-  const Real &sin_theta = coord_area2_j1_(j);
-  const Real &delta_phi = dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    const Real &third_delta_r_cb = coord_area2_i1_(i);
-    Real &area = areas(i);
-    area = third_delta_r_cb * sin_theta * delta_phi;
-  }
+    areas(i) = coord_area2_i1_(i) * coord_area2_j1_(j) * dx3f(k);
   return;
 }
 
@@ -447,23 +456,11 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
-  const Real &neg_delta_cos_theta = coord_area3_j1_(j);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    const Real &third_delta_r_cb = coord_area3_i1_(i);
-    Real &area = areas(i);
-    area = third_delta_r_cb * neg_delta_cos_theta;
-  }
+    areas(i) = coord_area3_i1_(i) * coord_area3_j1_(j);
   return;
 }
-
-
-Real Coordinates::GetFace1Area(const int k, const int j, const int i)
-{
-  return coord_area1_i_(i)*coord_area1_j_(j)*dx3f(k);
-}
-
 
 //--------------------------------------------------------------------------------------
 
@@ -478,14 +475,9 @@ Real Coordinates::GetFace1Area(const int k, const int j, const int i)
 void Coordinates::Edge1Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &lengths)
 {
-  const Real &sin_theta = coord_len1_j1_(j);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    const Real &third_delta_r_cb = coord_len1_i1_(i);
-    Real &length = lengths(i);
-    length = third_delta_r_cb * sin_theta;
-  }
+    lengths(i) = coord_len1_i1_(i) * coord_len1_j1_(j);
   return;
 }
 
@@ -502,14 +494,9 @@ void Coordinates::Edge1Length(const int k, const int j, const int il, const int 
 void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &lengths)
 {
-  const Real &neg_delta_cos_theta = coord_len2_j1_(j);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    const Real &r_sq = coord_len2_i1_(i);
-    Real &length = lengths(i);
-    length = r_sq * neg_delta_cos_theta;
-  }
+    lengths(i) = coord_len2_i1_(i) * coord_len2_j1_(j);
   return;
 }
 
@@ -526,15 +513,9 @@ void Coordinates::Edge2Length(const int k, const int j, const int il, const int 
 void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &lengths)
 {
-  const Real &sin_theta = coord_len3_j1_(j);
-  const Real &delta_phi = dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    const Real &r_sq = coord_len3_i1_(i);
-    Real &length = lengths(i);
-    length = r_sq * sin_theta * delta_phi;
-  }
+    lengths(i) = coord_len3_i1_(i) * coord_len3_j1_(j) * dx3f(k);
   return;
 }
 
@@ -565,9 +546,7 @@ Real Coordinates::CenterWidth1(const int k, const int j, const int i)
 //   \Delta W = r \Delta\theta
 Real Coordinates::CenterWidth2(const int k, const int j, const int i)
 {
-  const Real &r = x1v(i);
-  const Real &delta_theta = dx1f(j);
-  return r * delta_theta;
+  return x1v(i) * dx1f(j);
 }
 
 //--------------------------------------------------------------------------------------
@@ -581,10 +560,7 @@ Real Coordinates::CenterWidth2(const int k, const int j, const int i)
 //   \Delta W = r \sin\theta \Delta\phi
 Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 {
-  const Real &r = x1v(i);
-  const Real &sin_theta = coord_width3_j1_(j);
-  const Real &delta_phi = dx1f(k);
-  return r * sin_theta * delta_phi;
+  return x1v(i) * coord_width3_j1_(j) * dx3f(k);
 }
 
 //--------------------------------------------------------------------------------------
@@ -999,6 +975,7 @@ void Coordinates::PrimToLocal1(const int k, const int j, const int il, const int
   for (int i = il; i <= iu; ++i)
   {
     // Extract transformation coefficients
+    const Real &r = x1f(i);
     const Real &alpha = trans_face1_i1_(i);
     const Real mt_0 = alpha;
     const Real mx_1 = 1.0/alpha;
@@ -1167,6 +1144,7 @@ void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int
   for (int i = il; i <= iu; ++i)
   {
     // Extract transformation coefficients
+    const Real &r = x1v(i);
     const Real &alpha = trans_face2_i1_(i);
     const Real mt_0 = alpha;
     const Real mx_2 = 1.0/r;
@@ -1335,6 +1313,7 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
   for (int i = il; i <= iu; ++i)
   {
     // Extract transformation coefficients
+    const Real &r = x1v(i);
     const Real &alpha = trans_face3_i1_(i);
     const Real mt_0 = alpha;
     const Real mx_3 = r * sin_theta;
@@ -1414,10 +1393,10 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
       // Extract global magnetic fields
       const Real &bb3_l = bb3(k,j,i);
       const Real &bb3_r = bb3(k,j,i);
-      Real &bb1_l = prim_left(IBY,i);
-      Real &bb2_l = prim_left(IBZ,i);
-      Real &bb1_r = prim_right(IBY,i);
-      Real &bb2_r = prim_right(IBZ,i);
+      Real &bb1_l = prim_l(IBY,i);
+      Real &bb2_l = prim_l(IBZ,i);
+      Real &bb1_r = prim_r(IBY,i);
+      Real &bb2_r = prim_r(IBZ,i);
 
       // Calculate global 4-magnetic fields
       Real b0_l = g_10*bb1_l*u0_l + g_11*bb1_l*u1_l + g_12*bb1_l*u2_l + g_13*bb1_l*u3_l
@@ -1798,9 +1777,8 @@ void Coordinates::TransformVectorFace3(
 //   k,j,i: indices of cell in which transformation is desired
 // Outputs:
 //   pa_0,pa_1,pa_2,pa_3: pointers to covariant 4-vector components
-void Coordinates::LowerVectorCell(
-    Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
-    Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3)
+void Coordinates::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j,
+    int i, Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3)
 {
   // Extract geometric quantities
   const Real &sin_sq_theta = metric_cell_j1_(j);

@@ -31,9 +31,9 @@ static Real beta;   // \sqrt{1-a^2}
 
 // Constructor
 // Inputs:
-//   pb: pointer to block containing this grid
+//   pmb: pointer to block containing this grid
 //   pin: pointer to runtime inputs
-Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
+Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 {
   // Set face centered positions and distances
   AllocateAndSetBasicCoordinates();
@@ -45,39 +45,39 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   beta = std::sqrt(1.0 - SQR(a));
 
   // Set pointer to host MeshBlock
-  pmy_block = pb;
+  pmy_block = pmb;
 
   // Initialize volume-averaged positions and spacings: x'-direction
-  for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST; ++i)
+  for (int i = pmb->is-NGHOST; i <= pmb->ie+NGHOST; ++i)
     x1v(i) = 0.5 * (x1f(i) + x1f(i+1));
-  for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST-1; ++i)
+  for (int i = pmb->is-NGHOST; i <= pmb->ie+NGHOST-1; ++i)
     dx1v(i) = x1v(i+1) - x1v(i);
 
   // Initialize volume-averaged positions and spacings: y-direction
-  if (pb->block_size.nx2 == 1)  // no extent
+  if (pmb->block_size.nx2 == 1)  // no extent
   {
-    x2v(pb->js) = 0.5 * (x2f(pb->js) + x2f(pb->js+1));
-    dx2v(pb->js) = dx2f(pb->js);
+    x2v(pmb->js) = 0.5 * (x2f(pmb->js) + x2f(pmb->js+1));
+    dx2v(pmb->js) = dx2f(pmb->js);
   }
   else  // extended
   {
-    for (int j = pb->js-NGHOST; j <= pb->je+NGHOST; ++j)
+    for (int j = pmb->js-NGHOST; j <= pmb->je+NGHOST; ++j)
       x2v(j) = 0.5 * (x2f(j) + x2f(j+1));
-    for (int j = pb->js-NGHOST; j <= pb->je+NGHOST-1; ++j)
+    for (int j = pmb->js-NGHOST; j <= pmb->je+NGHOST-1; ++j)
       dx2v(j) = x2v(j+1) - x2v(j);
   }
 
   // Initialize volume-averaged positions and spacings: z-direction
-  if (pb->block_size.nx3 == 1)  // no extent
+  if (pmb->block_size.nx3 == 1)  // no extent
   {
-    x3v(pb->ks) = 0.5 * (x3f(pb->ks) + x3f(pb->ks+1));
-    dx3v(pb->ks) = dx3f(pb->ks);
+    x3v(pmb->ks) = 0.5 * (x3f(pmb->ks) + x3f(pmb->ks+1));
+    dx3v(pmb->ks) = dx3f(pmb->ks);
   }
   else  // extended
   {
-    for (int k = pb->ks-NGHOST; k <= pb->ke+NGHOST; ++k)
+    for (int k = pmb->ks-NGHOST; k <= pmb->ke+NGHOST; ++k)
       x3v(k) = 0.5 * (x3f(k) + x3f(k+1));
-    for (int k = pb->ks-NGHOST; k <= pb->ke+NGHOST-1; ++k)
+    for (int k = pmb->ks-NGHOST; k <= pmb->ke+NGHOST-1; ++k)
       dx3v(k) = x3v(k+1) - x3v(k);
   }
 
@@ -134,19 +134,29 @@ Coordinates::~Coordinates()
 //   volumes: 1D array of cell volumes
 // Notes:
 //   \Delta V = \Delta x' * \Delta y * \Delta z
+//   cf. GetCellVolume()
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &volumes)
 {
-  const Real &delta_y = dx2f(j);
-  const Real &delta_z = dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    const Real &delta_x = dx1f(i);
-    Real &volume = volumes(i);
-    volume = delta_x * delta_y * delta_z;
-  }
+    volumes(i) = dx1f(i) * dx2f(j) * dx3f(k);
   return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing single cell volume
+// Inputs:
+//   k,j,i: z-, y-, and x'-indices
+// Outputs:
+//   returned value: cell volume
+// Notes:
+//   \Delta V = \Delta x' * \Delta y * \Delta z
+//   cf. CellVolume()
+Real Coordinates::GetCellVolume(const int k, const int j, const int i)
+{
+    return dx1f(i) * dx2f(j) * dx3f(k);
 }
 
 //--------------------------------------------------------------------------------------
@@ -160,18 +170,29 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 //   areas: 1D array of interface areas orthogonal to x'
 // Notes:
 //   \Delta A = \Delta y * \Delta z
+//   cf. GetFace1Area()
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
-  const Real &delta_y = dx2f(j);
-  const Real &delta_z = dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    Real &area = areas(i);
-    area = delta_y * delta_z;
-  }
+    areas(i) = dx2f(j) * dx3f(k);
   return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing single area orthogonal to x'
+// Inputs:
+//   k,j,i: z-, y-, and x'-indices
+// Outputs:
+//   returned value: interface area orthogonal to x'
+// Notes:
+//   \Delta A = \Delta y * \Delta z
+//   cf. Face1Area()
+Real Coordinates::GetFace1Area(const int k, const int j, const int i)
+{
+  return dx2f(j) * dx3f(k);
 }
 
 //--------------------------------------------------------------------------------------
@@ -188,14 +209,9 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
-  const Real &delta_z = dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    const Real &delta_x = dx1f(i);
-    Real &area = areas(i);
-    area = delta_x * delta_z;
-  }
+    areas(i) = dx1f(i) * dx3f(k);
   return;
 }
 
@@ -213,14 +229,9 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
-  const Real &delta_y = dx2f(j);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    const Real &delta_x = dx1f(i);
-    Real &area = areas(i);
-    area = delta_x * delta_y;
-  }
+    areas(i) = dx1f(i) * dx2f(j);
   return;
 }
 
@@ -240,11 +251,7 @@ void Coordinates::Edge1Length(const int k, const int j, const int il, const int 
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    const Real &delta_x = dx1f(i);
-    Real &length = lengths(i);
-    length = delta_x;
-  }
+    lengths(i) = dx1f(i);
   return;
 }
 
@@ -262,13 +269,9 @@ void Coordinates::Edge1Length(const int k, const int j, const int il, const int 
 void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &lengths)
 {
-  const Real &delta_y = dx2f(j);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    Real &length = lengths(i);
-    length = delta_y;
-  }
+    lengths(i) = dx2f(j);
   return;
 }
 
@@ -286,13 +289,9 @@ void Coordinates::Edge2Length(const int k, const int j, const int il, const int 
 void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &lengths)
 {
-  const Real &delta_z = dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    Real &length = lengths(i);
-    length = delta_z;
-  }
+    lengths(i) = dx3f(k);
   return;
 }
 
@@ -1376,9 +1375,8 @@ void Coordinates::TransformVectorFace3(
 //   k,j,i: indices of cell in which transformation is desired
 // Outputs:
 //   pa_0,pa_1,pa_2,pa_3: pointers to covariant 4-vector components
-void Coordinates::LowerVectorCell(
-    Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
-    Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3)
+void Coordinates::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j,
+    int i, Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3)
 {
   // Extract geometric quantities
   Real g_00 = -SQR(beta) / SQR(alpha);

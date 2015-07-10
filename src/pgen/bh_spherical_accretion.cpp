@@ -51,26 +51,26 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   const Real t_max = 1.0e1;   // greater temperature root must be less than this
 
   // Prepare index bounds
-  MeshBlock *pb = pfl->pmy_block;
-  int il = pb->is - NGHOST;
-  int iu = pb->ie + NGHOST;
-  int jl = pb->js;
-  int ju = pb->je;
-  if (pb->block_size.nx2 > 1)
+  MeshBlock *pmb = pfl->pmy_block;
+  int il = pmb->is - NGHOST;
+  int iu = pmb->ie + NGHOST;
+  int jl = pmb->js;
+  int ju = pmb->je;
+  if (pmb->block_size.nx2 > 1)
   {
     jl -= (NGHOST);
     ju += (NGHOST);
   }
-  int kl = pb->ks;
-  int ku = pb->ke;
-  if (pb->block_size.nx3 > 1)
+  int kl = pmb->ks;
+  int ku = pmb->ke;
+  if (pmb->block_size.nx3 > 1)
   {
     kl -= (NGHOST);
     ku += (NGHOST);
   }
 
   // Get mass of black hole
-  const Real m = pb->pcoord->GetMass();
+  const Real m = pmb->pcoord->GetMass();
 
   // Get ratio of specific heats
   const Real gamma_adi = pfl->pf_eos->GetGamma();
@@ -105,21 +105,21 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   if (MAGNETIC_FIELDS_ENABLED)
     for (int k = kl; k <= ku+1; ++k)
     {
-      Real interp_param_k = (pb->pcoord->x3v(k) - pb->pcoord->x3f(k))
-          / pb->pcoord->dx3f(k);
+      Real interp_param_k = (pmb->pcoord->x3v(k) - pmb->pcoord->x3f(k))
+          / pmb->pcoord->dx3f(k);
       for (int j = jl; j <= ju+1; ++j)
       {
-        Real interp_param_j = (pb->pcoord->x2v(j) - pb->pcoord->x2f(j))
-            / pb->pcoord->dx2f(j);
-        pb->pcoord->Face1Area(k, j, il, iu+1, a1);
-        pb->pcoord->Face2Area(k, j, il, iu, a2m);
-        pb->pcoord->Face2Area(k, j+1, il, iu, a2p);
-        pb->pcoord->Face3Area(k, j, il, iu, a3m);
-        pb->pcoord->Face3Area(k+1, j, il, iu, a3p);
+        Real interp_param_j = (pmb->pcoord->x2v(j) - pmb->pcoord->x2f(j))
+            / pmb->pcoord->dx2f(j);
+        pmb->pcoord->Face1Area(k, j, il, iu+1, a1);
+        pmb->pcoord->Face2Area(k, j, il, iu, a2m);
+        pmb->pcoord->Face2Area(k, j+1, il, iu, a2p);
+        pmb->pcoord->Face3Area(k, j, il, iu, a3m);
+        pmb->pcoord->Face3Area(k+1, j, il, iu, a3p);
         for (int i = il; i <= iu+1; ++i)
         {
-          Real interp_param_i = (pb->pcoord->x1v(i) - pb->pcoord->x1f(i))
-              / pb->pcoord->dx1f(i);
+          Real interp_param_i = (pmb->pcoord->x1v(i) - pmb->pcoord->x1f(i))
+              / pmb->pcoord->dx1f(i);
           Real b1m = b1_flux / a1(i);
           Real b1p = b1_flux / a1(i+1);
           Real b2m = b2_flux / a2m(i);
@@ -159,7 +159,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       for (int i = il; i <= iu; ++i)
       {
         // Get radius
-        Real r = pb->pcoord->x1v(i);
+        Real r = pmb->pcoord->x1v(i);
 
         // Calculate solution to (HSW 76)
         Real t_neg_res = TemperatureMin(m, n_adi, r, c1, c2, t_min, t_max);
@@ -186,7 +186,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     }
 
   // Initialize conserved variables
-  pb->pfluid->pf_eos->PrimitiveToConserved(pfl->w, b, pfl->u);  
+  pmb->pfluid->pf_eos->PrimitiveToConserved(pfl->w, b, pfl->u);  
 
   // Delete temporary arrays
   a1.DeleteAthenaArray();
@@ -199,32 +199,32 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   gi.DeleteAthenaArray();
 
   // Save inner boundary state
-  d_inner_1 = pfl->u(IDN,pb->ks,pb->js,pb->is-1);
-  e_inner_1 = pfl->u(IEN,pb->ks,pb->js,pb->is-1);
-  m1_inner_1 = pfl->u(IM1,pb->ks,pb->js,pb->is-1);
-  m2_inner_1 = pfl->u(IM2,pb->ks,pb->js,pb->is-1);
-  m3_inner_1 = pfl->u(IM3,pb->ks,pb->js,pb->is-1);
-  d_inner_2 = pfl->u(IDN,pb->ks,pb->js,pb->is-2);
-  e_inner_2 = pfl->u(IEN,pb->ks,pb->js,pb->is-2);
-  m1_inner_2 = pfl->u(IM1,pb->ks,pb->js,pb->is-2);
-  m2_inner_2 = pfl->u(IM2,pb->ks,pb->js,pb->is-2);
-  m3_inner_2 = pfl->u(IM3,pb->ks,pb->js,pb->is-2);
+  d_inner_1 = pfl->u(IDN,pmb->ks,pmb->js,pmb->is-1);
+  e_inner_1 = pfl->u(IEN,pmb->ks,pmb->js,pmb->is-1);
+  m1_inner_1 = pfl->u(IM1,pmb->ks,pmb->js,pmb->is-1);
+  m2_inner_1 = pfl->u(IM2,pmb->ks,pmb->js,pmb->is-1);
+  m3_inner_1 = pfl->u(IM3,pmb->ks,pmb->js,pmb->is-1);
+  d_inner_2 = pfl->u(IDN,pmb->ks,pmb->js,pmb->is-2);
+  e_inner_2 = pfl->u(IEN,pmb->ks,pmb->js,pmb->is-2);
+  m1_inner_2 = pfl->u(IM1,pmb->ks,pmb->js,pmb->is-2);
+  m2_inner_2 = pfl->u(IM2,pmb->ks,pmb->js,pmb->is-2);
+  m3_inner_2 = pfl->u(IM3,pmb->ks,pmb->js,pmb->is-2);
 
   // Save outer boundary state
-  d_outer_1 = pfl->u(IDN,pb->ks,pb->js,pb->ie+1);
-  e_outer_1 = pfl->u(IEN,pb->ks,pb->js,pb->ie+1);
-  m1_outer_1 = pfl->u(IM1,pb->ks,pb->js,pb->ie+1);
-  m2_outer_1 = pfl->u(IM2,pb->ks,pb->js,pb->ie+1);
-  m3_outer_1 = pfl->u(IM3,pb->ks,pb->js,pb->ie+1);
-  d_outer_2 = pfl->u(IDN,pb->ks,pb->js,pb->ie+2);
-  e_outer_2 = pfl->u(IEN,pb->ks,pb->js,pb->ie+2);
-  m1_outer_2 = pfl->u(IM1,pb->ks,pb->js,pb->ie+2);
-  m2_outer_2 = pfl->u(IM2,pb->ks,pb->js,pb->ie+2);
-  m3_outer_2 = pfl->u(IM3,pb->ks,pb->js,pb->ie+2);
+  d_outer_1 = pfl->u(IDN,pmb->ks,pmb->js,pmb->ie+1);
+  e_outer_1 = pfl->u(IEN,pmb->ks,pmb->js,pmb->ie+1);
+  m1_outer_1 = pfl->u(IM1,pmb->ks,pmb->js,pmb->ie+1);
+  m2_outer_1 = pfl->u(IM2,pmb->ks,pmb->js,pmb->ie+1);
+  m3_outer_1 = pfl->u(IM3,pmb->ks,pmb->js,pmb->ie+1);
+  d_outer_2 = pfl->u(IDN,pmb->ks,pmb->js,pmb->ie+2);
+  e_outer_2 = pfl->u(IEN,pmb->ks,pmb->js,pmb->ie+2);
+  m1_outer_2 = pfl->u(IM1,pmb->ks,pmb->js,pmb->ie+2);
+  m2_outer_2 = pfl->u(IM2,pmb->ks,pmb->js,pmb->ie+2);
+  m3_outer_2 = pfl->u(IM3,pmb->ks,pmb->js,pmb->ie+2);
 
   // Enroll boundary functions
-  pb->pbval->EnrollFluidBoundaryFunction(inner_x1, FixedInner);
-  pb->pbval->EnrollFluidBoundaryFunction(outer_x1, FixedOuter);
+  pmb->pbval->EnrollFluidBoundaryFunction(inner_x1, FixedInner);
+  pmb->pbval->EnrollFluidBoundaryFunction(outer_x1, FixedOuter);
   return;
 }
 

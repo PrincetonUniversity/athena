@@ -20,7 +20,7 @@
 // Declarations
 static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma_adi,
     const AthenaArray<Real> &bb_cc, const AthenaArray<Real> &g,
-    const AthenaArray<Real> &gi, int k, int j, int i, MeshBlock *pb,
+    const AthenaArray<Real> &gi, int k, int j, int i, MeshBlock *pmb,
     AthenaArray<Real> &cons);
 static Real FindRootNR(Real w_initial, Real d_norm, Real q_dot_n, Real q_norm_sq,
     Real bbb_sq, Real q_bbb_sq, Real gamma_prime);
@@ -123,7 +123,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     for (int j = jl; j <= ju; ++j)
     {
       // Calculate metric
-      pb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
+      pmb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
 
       // Set cell-centered magnetic field
       #pragma simd
@@ -143,11 +143,14 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real &bb3 = bb_cc(IB3,k,j,i);
 
         // Set cell-centered magnetic field
-        Real interp_param = (pco->x1v(i) - pco->x1f(i)) / pco->dx1f(i);
+        Real interp_param = (pmb->pcoord->x1v(i) - pmb->pcoord->x1f(i))
+            / pmb->pcoord->dx1f(i);
         bb1 = (1.0-interp_param) * bb1m + interp_param * bb1p;
-        interp_param = (pco->x2v(j) - pco->x2f(j)) / pco->dx2f(j);
+        interp_param = (pmb->pcoord->x2v(j) - pmb->pcoord->x2f(j))
+            / pmb->pcoord->dx2f(j);
         bb2 = (1.0-interp_param) * bb2m + interp_param * bb2p;
-        interp_param = (pco->x3v(k) - pco->x3f(k)) / pco->dx3f(k);
+        interp_param = (pmb->pcoord->x3v(k) - pmb->pcoord->x3f(k))
+            / pmb->pcoord->dx3f(k);
         bb3 = (1.0-interp_param) * bb3m + interp_param * bb3p;
       }
 
@@ -229,7 +232,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
           Real vv_sq = (qq_sq*SQR(wgas_rel_init)
               + q_bbb_sq*(bbb_sq+2.0*wgas_rel_init))
               / SQR(wgas_rel_init*(bbb_sq+wgas_rel_init));  // (N 28)
-          if (v_sq >= 1.0)  // guess for W leads to superluminal velocities
+          if (vv_sq >= 1.0)  // guess for W leads to superluminal velocities
             wgas_rel_init *= initial_guess_multiplier;
           else
             break;
@@ -327,19 +330,19 @@ void FluidEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
     const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons)
 {
   // Prepare index bounds
-  MeshBlock *pb = pmy_fluid_->pmy_block;
-  int il = pb->is - NGHOST;
-  int iu = pb->ie + NGHOST;
-  int jl = pb->js;
-  int ju = pb->je;
-  if (pb->block_size.nx2 > 1)
+  MeshBlock *pmb = pmy_fluid_->pmy_block;
+  int il = pmb->is - NGHOST;
+  int iu = pmb->ie + NGHOST;
+  int jl = pmb->js;
+  int ju = pmb->je;
+  if (pmb->block_size.nx2 > 1)
   {
     jl -= (NGHOST);
     ju += (NGHOST);
   }
-  int kl = pb->ks;
-  int ku = pb->ke;
-  if (pb->block_size.nx3 > 1)
+  int kl = pmb->ks;
+  int ku = pmb->ke;
+  if (pmb->block_size.nx3 > 1)
   {
     kl -= (NGHOST);
     ku += (NGHOST);
@@ -349,10 +352,10 @@ void FluidEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
   for (int k = kl; k <= ku; ++k)
     for (int j = jl; j <= ju; ++j)
     {
-      pb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
+      pmb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
       #pragma simd
       for (int i = il; i <= iu; ++i)
-        PrimitiveToConservedSingle(prim, gamma_, bb_cc, g_, g_inv_, k, j, i, pb, cons);
+        PrimitiveToConservedSingle(prim, gamma_, bb_cc, g_, g_inv_, k, j, i, pmb, cons);
     }
   return;
 }
@@ -364,12 +367,12 @@ void FluidEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //   bb_cc: 3D array of cell-centered magnetic field
 //   g,gi: 1D arrays of metric covariant and contravariant coefficients
 //   k,j,i: indices of cell
-//   pb: pointer to MeshBlock
+//   pmb: pointer to MeshBlock
 // Outputs:
 //   cons: conserved variables set in desired cell
 static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma_adi,
     const AthenaArray<Real> &bb_cc, const AthenaArray<Real> &g,
-    const AthenaArray<Real> &gi, int k, int j, int i, MeshBlock *pb,
+    const AthenaArray<Real> &gi, int k, int j, int i, MeshBlock *pmb,
     AthenaArray<Real> &cons)
 {
   // Extract primitives and magnetic fields
@@ -404,7 +407,7 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
   Real b2 = (bb2 + b0 * u2) / u0;
   Real b3 = (bb3 + b0 * u3) / u0;
   Real b_0, b_1, b_2, b_3;
-  pb->pcoord->LowerVectorCell(b0, b1, b2, b3, k, j, i, &b_0, &b_1, &b_2, &b_3);
+  pmb->pcoord->LowerVectorCell(b0, b1, b2, b3, k, j, i, &b_0, &b_1, &b_2, &b_3);
   Real b_sq = b0*b_0 + b1*b_1 + b2*b_2 + b3*b_3;
 
   // Extract conserved quantities

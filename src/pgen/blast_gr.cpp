@@ -24,19 +24,19 @@
 void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   // Prepare index bounds
-  MeshBlock *pb = pfl->pmy_block;
-  int il = pb->is - NGHOST;
-  int iu = pb->ie + NGHOST;
-  int jl = pb->js;
-  int ju = pb->je;
-  if (pb->block_size.nx2 > 1)
+  MeshBlock *pmb = pfl->pmy_block;
+  int il = pmb->is - NGHOST;
+  int iu = pmb->ie + NGHOST;
+  int jl = pmb->js;
+  int ju = pmb->je;
+  if (pmb->block_size.nx2 > 1)
   {
     jl -= (NGHOST);
     ju += (NGHOST);
   }
-  int kl = pb->ks;
-  int ku = pb->ke;
-  if (pb->block_size.nx3 > 1)
+  int kl = pmb->ks;
+  int ku = pmb->ke;
+  if (pmb->block_size.nx3 > 1)
   {
     kl -= (NGHOST);
     ku += (NGHOST);
@@ -85,10 +85,10 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       for (int i = il; i <= iu; ++i)
       {
         // Calculate distance to nearest blast center
-        Real x1 = pb->pcoord->x1v(i);
-        Real x2 = pb->pcoord->x2v(j);
-        Real x3 = pb->pcoord->x3v(k);
-        Real min_separation = pb->pcoord->DistanceBetweenPoints(x1, x2, x3, 0.0, 0.0,
+        Real x1 = pmb->pcoord->x1v(i);
+        Real x2 = pmb->pcoord->x2v(j);
+        Real x3 = pmb->pcoord->x3v(k);
+        Real min_separation = pmb->pcoord->DistanceBetweenPoints(x1, x2, x3, 0.0, 0.0,
             0.0);
         for (int x_index = -num_x; x_index <= num_x; ++x_index)
         {
@@ -98,8 +98,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
             if (x_index == 0 && y_index == 0)
               continue;
             Real center_y = y_index * y_spacing; 
-            min_separation = std::min(min_separation,
-                pb->pcoord->DistanceBetweenPoints(x1, x2, x3, center_x, center_y, 0.0));
+            Real separation = pmb->pcoord->DistanceBetweenPoints(x1, x2, x3, center_x,
+                center_y, 0.0);
+            min_separation = std::min(min_separation, separation);
           }
         }
 
@@ -122,7 +123,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         Real uy = 0.0;
         Real uz = 0.0;
         Real u0, u1, u2, u3;
-        pb->pcoord->TransformVectorCell(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
+        pmb->pcoord->TransformVectorCell(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
         pfl->w(IDN,k,j,i) = pfl->w1(IDN,k,j,i) = rho;
         pfl->w(IEN,k,j,i) = pfl->w1(IEN,k,j,i) = pgas;
         pfl->w(IVX,k,j,i) = pfl->w1(IVX,k,j,i) = u1 - gi(I01,i)/gi(I00,i) * u0;
@@ -135,14 +136,14 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         Real bcony = by;
         Real bconz = bz;
         Real bcon0, bcon1, bcon2, bcon3;
-        pb->pcoord->TransformVectorCell(bcont, bconx, bcony, bconz, k, j, i, &bcon0,
+        pmb->pcoord->TransformVectorCell(bcont, bconx, bcony, bconz, k, j, i, &bcon0,
             &bcon1, &bcon2, &bcon3);
         b(IB1,k,j,i) = bcon1 * u0 - bcon0 * u1;
         b(IB2,k,j,i) = bcon2 * u0 - bcon0 * u2;
         b(IB3,k,j,i) = bcon3 * u0 - bcon0 * u3;
       }
     }
-  pb->pfluid->pf_eos->PrimitiveToConserved(pfl->w, b, pfl->u);
+  pmb->pfluid->pf_eos->PrimitiveToConserved(pfl->w, b, pfl->u);
 
   // Delete auxiliary array
   b.DeleteAthenaArray();
@@ -167,25 +168,25 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
           Real bcon0, bcon1, bcon2, bcon3;
           if (j != ju+1 && k != ku+1)
           {
-            pb->pcoord->TransformVectorFace1(ut, ux, uy, uz, k, j, i,
+            pmb->pcoord->TransformVectorFace1(ut, ux, uy, uz, k, j, i,
                 &u0, &u1, &u2, &u3);
-            pb->pcoord->TransformVectorFace1(bcont, bconx, bcony, bconz, k, j, i,
+            pmb->pcoord->TransformVectorFace1(bcont, bconx, bcony, bconz, k, j, i,
                 &bcon0, &bcon1, &bcon2, &bcon3);
             pfd->b.x1f(k,j,i) = bcon1 * u0 - bcon0 * u1;
           }
           if (i != iu+1 && k != ku+1)
           {
-            pb->pcoord->TransformVectorFace2(ut, ux, uy, uz, k, j, i,
+            pmb->pcoord->TransformVectorFace2(ut, ux, uy, uz, k, j, i,
                 &u0, &u1, &u2, &u3);
-            pb->pcoord->TransformVectorFace2(bcont, bconx, bcony, bconz, k, j, i,
+            pmb->pcoord->TransformVectorFace2(bcont, bconx, bcony, bconz, k, j, i,
                 &bcon0, &bcon1, &bcon2, &bcon3);
             pfd->b.x2f(k,j,i) = bcon2 * u0 - bcon0 * u2;
           }
           if (i != iu+1 && j != ju+1)
           {
-            pb->pcoord->TransformVectorFace3(ut, ux, uy, uz, k, j, i,
+            pmb->pcoord->TransformVectorFace3(ut, ux, uy, uz, k, j, i,
                 &u0, &u1, &u2, &u3);
-            pb->pcoord->TransformVectorFace3(bcont, bconx, bcony, bconz, k, j, i,
+            pmb->pcoord->TransformVectorFace3(bcont, bconx, bcony, bconz, k, j, i,
                 &bcon0, &bcon1, &bcon2, &bcon3);
             pfd->b.x3f(k,j,i) = bcon3 * u0 - bcon0 * u3;
           }

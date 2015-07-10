@@ -192,6 +192,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     Real pgas_star = 0.5 * (pgas_lstar + pgas_rstar);
 
     // Calculate conserved quantities in L* region (MB 16)
+    Real cons_lstar[NWAVE];
     for (int n = 0; n < NWAVE; ++n)
       cons_lstar[n] = cons_l[n] * (lambda_l-vx_l);
     cons_lstar[IEN] += pgas_star*lambda_star - pgas_l*vx_l;

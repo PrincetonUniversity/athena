@@ -116,24 +116,29 @@ Coordinates::~Coordinates()
 //   volumes: 1D array of cell volumes
 // Notes:
 //   \Delta V = \Delta x * \Delta y * \Delta z
+//   cf. GetCellVolume()
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &volumes)
 {
-  const Real &delta_y = dx2f(j);
-  const Real &delta_z = dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    const Real &delta_x = dx1f(i);
-    Real &volume = volumes(i);
-    volume = delta_x * delta_y * delta_z;
-  }
+    volumes(i) = dx1f(i) * dx2f(j) * dx3f(k);
   return;
 }
 
+//--------------------------------------------------------------------------------------
+
+// Function for computing single cell volume
+// Inputs:
+//   k,j,i: z-, y-, and x-indices
+// Outputs:
+//   returned value: cell volume
+// Notes:
+//   \Delta V = \Delta x * \Delta y * \Delta z
+//   cf. CellVolume()
 Real Coordinates::GetCellVolume(const int k, const int j, const int i)
 {
-  return dx1f(i)*dx2f(j)*dx3f(k)
+  return dx1f(i) * dx2f(j) * dx3f(k);
 }
 
 //--------------------------------------------------------------------------------------
@@ -147,18 +152,29 @@ Real Coordinates::GetCellVolume(const int k, const int j, const int i)
 //   areas: 1D array of interface areas orthogonal to x
 // Notes:
 //   \Delta A = \Delta y * \Delta z
+//   cf. GetFace1Area()
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
-  const Real &delta_y = dx2f(j);
-  const Real &delta_z = dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    Real &area = areas(i);
-    area = delta_y * delta_z;
-  }
+    areas(i) = dx2f(j) * dx3f(k);
   return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing single area orthogonal to x
+// Inputs:
+//   k,j,i: z-, y-, and x-indices
+// Outputs:
+//   returned value: interface area orthogonal to x
+// Notes:
+//   \Delta A = \Delta y * \Delta z
+//   cf. Face1Area()
+Real Coordinates::GetFace1Area(const int k, const int j, const int i)
+{
+  return dx2f(j) * dx3f(k);
 }
 
 //--------------------------------------------------------------------------------------
@@ -175,14 +191,9 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
-  const Real &delta_z = dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    const Real &delta_x = dx1f(i);
-    Real &area = areas(i);
-    area = delta_x * delta_z;
-  }
+    areas(i) = dx1f(i) * dx3f(k);
   return;
 }
 
@@ -200,23 +211,11 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
-  const Real &delta_y = dx2f(j);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    const Real &delta_x = dx1f(i);
-    Real &area = areas(i);
-    area = delta_x * delta_y;
-  }
+    areas(i) = dx1f(i) * dx2f(j);
   return;
 }
-
-
-Real Coordinates::GetFace1Area(const int k, const int j, const int i)
-{
-  return dx2f(j)*dx3f(k);
-}
-
 
 //--------------------------------------------------------------------------------------
 
@@ -234,11 +233,7 @@ void Coordinates::Edge1Length(const int k, const int j, const int il, const int 
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    const Real &delta_x = dx1f(i);
-    Real &length = lengths(i);
-    length = delta_x;
-  }
+    lengths(i) = dx1f(i);
   return;
 }
 
@@ -256,13 +251,9 @@ void Coordinates::Edge1Length(const int k, const int j, const int il, const int 
 void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &lengths)
 {
-  const Real &delta_y = dx2f(j);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    Real &length = lengths(i);
-    length = delta_y;
-  }
+    lengths(i) = dx2f(j);
   return;
 }
 
@@ -280,13 +271,9 @@ void Coordinates::Edge2Length(const int k, const int j, const int il, const int 
 void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &lengths)
 {
-  const Real &delta_z = dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    Real &length = lengths(i);
-    length = delta_z;
-  }
+    lengths(k) = dx3f(k);
   return;
 }
 
@@ -801,9 +788,8 @@ void Coordinates::TransformVectorFace3(
 //   k,j,i: indices of cell in which transformation is desired
 // Outputs:
 //   pa_0,pa_1,pa_2,pa_3: pointers to covariant 4-vector components
-void Coordinates::LowerVectorCell(
-    Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
-    Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3)
+void Coordinates::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j,
+    int i, Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3)
 {
   *pa_0 = -a0;
   *pa_1 = a1;

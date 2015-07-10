@@ -34,20 +34,20 @@
 void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   // Prepare index bounds
-  MeshBlock *pb = pfl->pmy_block;
-  Coordinates *pco = pb->pcoord;
-  int il = pb->is - NGHOST;
-  int iu = pb->ie + NGHOST;
-  int jl = pb->js;
-  int ju = pb->je;
-  if (pb->block_size.nx2 > 1)
+  MeshBlock *pmb = pfl->pmy_block;
+  Coordinates *pco = pmb->pcoord;
+  int il = pmb->is - NGHOST;
+  int iu = pmb->ie + NGHOST;
+  int jl = pmb->js;
+  int ju = pmb->je;
+  if (pmb->block_size.nx2 > 1)
   {
     jl -= (NGHOST);
     ju += (NGHOST);
   }
-  int kl = pb->ks;
-  int ku = pb->ke;
-  if (pb->block_size.nx3 > 1)
+  int kl = pmb->ks;
+  int ku = pmb->ke;
+  if (pmb->block_size.nx3 > 1)
   {
     kl -= (NGHOST);
     ku += (NGHOST);
@@ -65,16 +65,16 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   switch (shock_dir)
   {
     case 1:
-      min_bound = pb->pmy_mesh->mesh_size.x1min;
-      max_bound = pb->pmy_mesh->mesh_size.x1max;
+      min_bound = pmb->pmy_mesh->mesh_size.x1min;
+      max_bound = pmb->pmy_mesh->mesh_size.x1max;
       break;
     case 2:
-      min_bound = pb->pmy_mesh->mesh_size.x2min;
-      max_bound = pb->pmy_mesh->mesh_size.x2max;
+      min_bound = pmb->pmy_mesh->mesh_size.x2min;
+      max_bound = pmb->pmy_mesh->mesh_size.x2max;
       break;
     case 3:
-      min_bound = pb->pmy_mesh->mesh_size.x3min;
-      max_bound = pb->pmy_mesh->mesh_size.x3max;
+      min_bound = pmb->pmy_mesh->mesh_size.x3min;
+      max_bound = pmb->pmy_mesh->mesh_size.x3max;
       break;
     default:
       msg << "### FATAL ERROR in Problem Generator" << std::endl
@@ -190,9 +190,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         Real bcon0, bcon1, bcon2, bcon3;
         if (GENERAL_RELATIVITY)
         {
-          pb->pcoord->TransformVectorCell(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
-          pb->pcoord->TransformVectorCell(bcont, bconx, bcony, bconz, k, j, i,
-              &bcon0, &bcon1, &bcon2, &bcon3);
+          pmb->pcoord->TransformVectorCell(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
+          pmb->pcoord->TransformVectorCell(bcont, bconx, bcony, bconz, k, j, i, &bcon0,
+              &bcon1, &bcon2, &bcon3);
         }
         else
         {
@@ -211,9 +211,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         pfl->w(IEN,k,j,i) = pfl->w1(IEN,k,j,i) = pgas;
         if (GENERAL_RELATIVITY)
         {
-          Real uu1 = u_local[1] - gi(I01,i)/gi(I00,i) * u_local[0];
-          Real uu2 = u_local[2] - gi(I02,i)/gi(I00,i) * u_local[0];
-          Real uu3 = u_local[3] - gi(I03,i)/gi(I00,i) * u_local[0];
+          Real uu1 = u1 - gi(I01,i)/gi(I00,i) * u0;
+          Real uu2 = u2 - gi(I02,i)/gi(I00,i) * u0;
+          Real uu3 = u3 - gi(I03,i)/gi(I00,i) * u0;
           pfl->w(IVX,k,j,i) = pfl->w1(IVX,k,j,i) = uu1;
           pfl->w(IVY,k,j,i) = pfl->w1(IVY,k,j,i) = uu2;
           pfl->w(IVZ,k,j,i) = pfl->w1(IVZ,k,j,i) = uu3;
@@ -231,7 +231,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         b(IB3,k,j,i) = bcon3 * u0 - bcon0 * u3;
       }
     }
-  pb->pfluid->pf_eos->PrimitiveToConserved(pfl->w, b, pfl->u);
+  pmb->pfluid->pf_eos->PrimitiveToConserved(pfl->w, b, pfl->u);
 
   // Delete auxiliary arrays
   b.DeleteAthenaArray();
@@ -294,9 +294,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
           {
             if (GENERAL_RELATIVITY)
             {
-              pb->pcoord->TransformVectorFace1(ut, ux, uy, uz, k, j, i,
-                  &u0, &u1, &u2, &u3);
-              pb->pcoord->TransformVectorFace1(bcont, bconx, bcony, bconz, k, j, i,
+              pmb->pcoord->TransformVectorFace1(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2,
+                  &u3);
+              pmb->pcoord->TransformVectorFace1(bcont, bconx, bcony, bconz, k, j, i,
                   &bcon0, &bcon1, &bcon2, &bcon3);
               pfd->b.x1f(k,j,i) = bcon1 * u0 - bcon0 * u1;
             }
@@ -307,9 +307,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
           {
             if (GENERAL_RELATIVITY)
             {
-              pb->pcoord->TransformVectorFace2(ut, ux, uy, uz, k, j, i,
-                  &u0, &u1, &u2, &u3);
-              pb->pcoord->TransformVectorFace2(bcont, bconx, bcony, bconz, k, j, i,
+              pmb->pcoord->TransformVectorFace2(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2,
+                  &u3);
+              pmb->pcoord->TransformVectorFace2(bcont, bconx, bcony, bconz, k, j, i,
                   &bcon0, &bcon1, &bcon2, &bcon3);
               pfd->b.x2f(k,j,i) = bcon2 * u0 - bcon0 * u2;
             }
@@ -320,9 +320,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
           {
             if (GENERAL_RELATIVITY)
             {
-              pb->pcoord->TransformVectorFace3(ut, ux, uy, uz, k, j, i,
-                  &u0, &u1, &u2, &u3);
-              pb->pcoord->TransformVectorFace3(bcont, bconx, bcony, bconz, k, j, i,
+              pmb->pcoord->TransformVectorFace3(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2,
+                  &u3);
+              pmb->pcoord->TransformVectorFace3(bcont, bconx, bcony, bconz, k, j, i,
                   &bcon0, &bcon1, &bcon2, &bcon3);
               pfd->b.x3f(k,j,i) = bcon3 * u0 - bcon0 * u3;
             }

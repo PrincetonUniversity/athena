@@ -30,9 +30,9 @@
 
 // Constructor
 // Inputs:
-//   pb: pointer to block containing this grid
+//   pmb: pointer to block containing this grid
 //   pin: pointer to runtime inputs
-Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
+Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 {
   // Set face centered positions and distances
   AllocateAndSetBasicCoordinates();
@@ -44,77 +44,77 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   const Real &k = sinu_wavenumber_;
 
   // Set pointer to host MeshBlock
-  pmy_block = pb;
+  pmy_block = pmb;
 
   // Initialize volume-averaged positions and spacings: x-direction
-  for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST; ++i)
+  for (int i = pmb->is-NGHOST; i <= pmb->ie+NGHOST; ++i)
     x1v(i) = 0.5 * (x1f(i) + x1f(i+1));
-  for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST-1; ++i)
+  for (int i = pmb->is-NGHOST; i <= pmb->ie+NGHOST-1; ++i)
     dx1v(i) = x1v(i+1) - x1v(i);
 
   // Initialize volume-averaged positions and spacings: y-direction
-  if (pb->block_size.nx2 == 1)  // no extent
+  if (pmb->block_size.nx2 == 1)  // no extent
   {
-    x2v(pb->js) = 0.5 * (x2f(pb->js) + x2f(pb->js+1));
-    dx2v(pb->js) = dx2f(pb->js);
+    x2v(pmb->js) = 0.5 * (x2f(pmb->js) + x2f(pmb->js+1));
+    dx2v(pmb->js) = dx2f(pmb->js);
   }
   else  // extended
   {
-    for (int j = pb->js-NGHOST; j <= pb->je+NGHOST; ++j)
+    for (int j = pmb->js-NGHOST; j <= pmb->je+NGHOST; ++j)
       x2v(j) = 0.5 * (x2f(j) + x2f(j+1));
-    for (int j = pb->js-NGHOST; j <= pb->je+NGHOST-1; ++j)
+    for (int j = pmb->js-NGHOST; j <= pmb->je+NGHOST-1; ++j)
       dx2v(j) = x2v(j+1) - x2v(j);
   }
 
   // Initialize volume-averaged positions and spacings: z-direction
-  if (pb->block_size.nx3 == 1)  // no extent
+  if (pmb->block_size.nx3 == 1)  // no extent
   {
-    x3v(pb->ks) = 0.5 * (x3f(pb->ks) + x3f(pb->ks+1));
-    dx3v(pb->ks) = dx3f(pb->ks);
+    x3v(pmb->ks) = 0.5 * (x3f(pmb->ks) + x3f(pmb->ks+1));
+    dx3v(pmb->ks) = dx3f(pmb->ks);
   }
   else  // extended
   {
-    for (int k = pb->ks-NGHOST; k <= pb->ke+NGHOST; ++k)
+    for (int k = pmb->ks-NGHOST; k <= pmb->ke+NGHOST; ++k)
       x3v(k) = 0.5 * (x3f(k) + x3f(k+1));
-    for (int k = pb->ks-NGHOST; k <= pb->ke+NGHOST-1; ++k)
+    for (int k = pmb->ks-NGHOST; k <= pmb->ke+NGHOST-1; ++k)
       dx3v(k) = x3v(k+1) - x3v(k);
   }
 
-  if(pb->pmy_mesh->multilevel==true) { // calc coarse coodinates
-    int cis = pb->cis; int cjs = pb->cjs; int cks = pb->cks;
-    int cie = pb->cie; int cje = pb->cje; int cke = pb->cke;
-    for (int i=cis-(pb->cnghost); i<=cie+(pb->cnghost); ++i) {
+  if(pmb->pmy_mesh->multilevel==true) { // calc coarse coodinates
+    int cis = pmb->cis; int cjs = pmb->cjs; int cks = pmb->cks;
+    int cie = pmb->cie; int cje = pmb->cje; int cke = pmb->cke;
+    for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost); ++i) {
       coarse_x1v(i) = 0.5*(coarse_x1f(i+1) + coarse_x1f(i));
     }
-    for (int i=cis-(pb->cnghost); i<=cie+(pb->cnghost)-1; ++i) {
+    for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost)-1; ++i) {
       coarse_dx1v(i) = coarse_x1v(i+1) - coarse_x1v(i);
     }
-    if (pb->block_size.nx2 == 1) {
+    if (pmb->block_size.nx2 == 1) {
       coarse_x2v(cjs) = 0.5*(coarse_x2f(cjs+1) + coarse_x2f(cjs));
       coarse_dx2v(cjs) = coarse_dx2f(cjs);
     } else {
-      for (int j=cjs-(pb->cnghost); j<=cje+(pb->cnghost); ++j) {
+      for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost); ++j) {
         coarse_x2v(j) = 0.5*(coarse_x2f(j+1) + coarse_x2f(j));
       }
-      for (int j=cjs-(pb->cnghost); j<=cje+(pb->cnghost)-1; ++j) {
+      for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost)-1; ++j) {
         coarse_dx2v(j) = coarse_x2v(j+1) - coarse_x2v(j);
       }
     }
-    if (pb->block_size.nx3 == 1) {
+    if (pmb->block_size.nx3 == 1) {
       coarse_x3v(cks) = 0.5*(coarse_x3f(cks+1) + coarse_x3f(cks));
       coarse_dx3v(cks) = coarse_dx3f(cks);
     } else {
-      for (int k=cks-(pb->cnghost); k<=cke+(pb->cnghost); ++k) {
+      for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost); ++k) {
         coarse_x3v(k) = 0.5*(coarse_x3f(k+1) + coarse_x3f(k));
       }
-      for (int k=cks-(pb->cnghost); k<=cke+(pb->cnghost)-1; ++k) {
+      for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost)-1; ++k) {
         coarse_dx3v(k) = coarse_x3v(k+1) - coarse_x3v(k);
       }
     }
   }
 
   // Allocate arrays for intermediate geometric quantities: x-direction
-  int n_cells_1 = pb->block_size.nx1 + 2*NGHOST;
+  int n_cells_1 = pmb->block_size.nx1 + 2*NGHOST;
   coord_src_i1_.NewAthenaArray(n_cells_1);
   metric_cell_i1_.NewAthenaArray(n_cells_1);
   metric_cell_i2_.NewAthenaArray(n_cells_1);
@@ -131,7 +131,7 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
 
   // Calculate intermediate geometric quantities: x-direction
   #pragma simd
-  for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST; ++i)
+  for (int i = pmb->is-NGHOST; i <= pmb->ie+NGHOST; ++i)
   {
     // Useful quantities
     Real r_c = x1v(i);
@@ -204,26 +204,30 @@ Coordinates::~Coordinates()
 //   volumes: 1D array of cell volumes
 // Notes:
 //   \Delta V = \Delta x * \Delta y * \Delta z
+//   cf. GetCellVolume()
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &volumes)
 {
-  const Real &delta_y = dx2f(j);
-  const Real &delta_z = dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    const Real &delta_x = dx1f(i);
-    Real &volume = volumes(i);
-    volume = delta_x * delta_y * delta_z;
-  }
+    volumes(i) = dx1f(i) * dx2f(j) * dx3f(k);
   return;
 }
 
+//--------------------------------------------------------------------------------------
+
+// Function for computing single cell volume
+// Inputs:
+//   k,j,i: z-, y-, and x-indices
+// Outputs:
+//   returned value: cell volume
+// Notes:
+//   \Delta V = \Delta x * \Delta y * \Delta z
+//   cf. CellVolume()
 Real Coordinates::GetCellVolume(const int k, const int j, const int i)
 {
-  return dx1f(i)*dx2f(j)*dx3f(k);
+  return dx1f(i) * dx2f(j) * dx3f(k);
 }
-
 
 //--------------------------------------------------------------------------------------
 
@@ -235,18 +239,29 @@ Real Coordinates::GetCellVolume(const int k, const int j, const int i)
 //   areas: 1D array of interface areas orthogonal to x
 // Notes:
 //   \Delta A = \Delta y * \Delta z
+//   cf. GetFace1Area()
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
-  const Real &delta_y = dx2f(j);
-  const Real &delta_z = dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    Real &area = areas(i);
-    area = delta_y * delta_z;
-  }
+    areas(i) = dx2f(j) * dx3f(k);
   return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing single area orthogonal to x
+// Inputs:
+//   k,j,i: z-, y-, and x-indices
+// Outputs:
+//   returned value: interface area orthogonal to x
+// Notes:
+//   \Delta A = \Delta y * \Delta z
+//   cf. Face1Area()
+Real Coordinates::GetFace1Area(const int k, const int j, const int i)
+{
+  return dx2f(j) * dx3f(k);
 }
 
 //--------------------------------------------------------------------------------------
@@ -262,14 +277,9 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
-  const Real &delta_z = dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    const Real &delta_x = dx1f(i);
-    Real &area = areas(i);
-    area = delta_x * delta_z;
-  }
+    areas(i) = dx1f(i) * dx3f(k);
   return;
 }
 
@@ -286,21 +296,10 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
-  const Real &delta_y = dx2f(j);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    const Real &delta_x = dx1f(i);
-    Real &area = areas(i);
-    area = delta_x * delta_y;
-  }
+    areas(i) = dx1f(i) * dx2f(j);
   return;
-}
-
-
-Real Coordinates::GetFace1Area(const int k, const int j, const int i)
-{
-  return dx2f(j)*dx3f(k);
 }
 
 //--------------------------------------------------------------------------------------
@@ -318,11 +317,7 @@ void Coordinates::Edge1Length(const int k, const int j, const int il, const int 
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    const Real &delta_x = dx1f(i);
-    Real &length = lengths(i);
-    length = delta_x;
-  }
+    lengths(i) = dx1f(i);
   return;
 }
 
@@ -340,13 +335,9 @@ void Coordinates::Edge1Length(const int k, const int j, const int il, const int 
 void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &lengths)
 {
-  const Real &delta_y = dx2f(j);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    Real &length = lengths(i);
-    length = delta_y;
-  }
+    lengths(i) = dx2f(j);
   return;
 }
 
@@ -364,13 +355,9 @@ void Coordinates::Edge2Length(const int k, const int j, const int il, const int 
 void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &lengths)
 {
-  const Real &delta_z = dx3f(k);
   #pragma simd
   for (int i = il; i <= iu; ++i)
-  {
-    Real &length = lengths(i);
-    length = delta_z;
-  }
+    lengths(i) = dx3f(k);
   return;
 }
 
@@ -974,12 +961,12 @@ void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int
     Real uu3_r = prim_r(IVZ,i);
 
     // Transform projected 4-velocities
-    Real uux_l = mx2*uu2_l;
-    Real uuy_l = my3*uu3_l;
-    Real uuz_l = mz1*uu1_l + mz2*uu2_l;
-    Real uux_r = mx2*uu2_r;
-    Real uuy_r = my3*uu3_r;
-    Real uuz_r = mz1*uu1_r + mz2*uu2_r;
+    Real uux_l = mx_2*uu2_l;
+    Real uuy_l = my_3*uu3_l;
+    Real uuz_l = mz_1*uu1_l + mz_2*uu2_l;
+    Real uux_r = mx_2*uu2_r;
+    Real uuy_r = my_3*uu3_r;
+    Real uuz_r = mz_1*uu1_r + mz_2*uu2_r;
 
     // Set local projected 4-velocities
     prim_l(IVY,i) = uux_l;
@@ -1138,12 +1125,12 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
     Real uu3_r = prim_r(IVZ,i);
 
     // Transform projected 4-velocities
-    Real uux_l = mx3*uu3_l;
-    Real uuy_l = my1*uu1_l;
-    Real uuz_l = mz1*uu1_l + mz2*uu2_l;
-    Real uux_r = mx3*uu3_r;
-    Real uuy_r = my1*uu1_r;
-    Real uuz_r = mz1*uu1_r + mz2*uu2_r;
+    Real uux_l = mx_3*uu3_l;
+    Real uuy_l = my_1*uu1_l;
+    Real uuz_l = mz_1*uu1_l + mz_2*uu2_l;
+    Real uux_r = mx_3*uu3_r;
+    Real uuy_r = my_1*uu1_r;
+    Real uuz_r = mz_1*uu1_r + mz_2*uu2_r;
 
     // Set local projected 4-velocities
     prim_l(IVZ,i) = uux_l;
@@ -1241,7 +1228,7 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
       // Set local magnetic fields
       Real bbx_l = ut_l * bx_l - ux_l * bt_l;
       Real bbx_r = ut_r * bx_r - ux_r * bt_r;
-      bx(i) = 0.5 * (bbx_l + bbx_r);
+      bbx(i) = 0.5 * (bbx_l + bbx_r);
       bb1_l = ut_l * by_l - uy_l * bt_l;
       bb2_l = ut_l * bz_l - uz_l * bt_l;
       bb1_r = ut_r * by_r - uy_r * bt_r;
@@ -1582,5 +1569,30 @@ void Coordinates::TransformVectorFace3(
   *pa1 = ax;
   *pa2 = beta * ax + ay;
   *pa3 = az;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for lowering contravariant components of a vector
+// Inputs:
+//   a0,a1,a2,a3: contravariant components of vector
+//   k,j,i: indices of cell in which transformation is desired
+// Outputs:
+//   pa_0,pa_1,pa_2,pa_3: pointers to covariant 4-vector components
+void Coordinates::LowerVectorCell(
+    Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
+    Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3)
+{
+  Real g_00 = -1.0;
+  const Real &g_11 = metric_cell_i1_(i);
+  Real g_12 = -metric_cell_i2_(i);
+  const Real &g_21 = g_12;
+  Real g_22 = 1.0;
+  Real g_33 = 1.0;
+  *pa_0 = g_00*a0;
+  *pa_1 = g_11*a1 + g_12*a2;
+  *pa_2 = g_21*a1 + g_22*a2;
+  *pa_3 = g_33*a3;
   return;
 }

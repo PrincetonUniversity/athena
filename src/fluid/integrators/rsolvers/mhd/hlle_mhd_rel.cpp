@@ -211,9 +211,9 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     if (GENERAL_RELATIVITY)
       for (int n = 0; n < NWAVE; ++n)
       {
-        if (lambda_left >= 0.0)  // L region
+        if (lambda_l >= 0.0)  // L region
           cons_(n,i) = cons_l[n];
-        else if (lambda_right <= 0.0)  // R region
+        else if (lambda_r <= 0.0)  // R region
           cons_(n,i) = cons_r[n];
         else  // HLL region
           cons_(n,i) = cons_hll[n];
@@ -222,9 +222,9 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     // Set fluxes
     for (int n = 0; n < NWAVE; ++n)
     {
-      if (lambda_left >= 0.0)  // L region
+      if (lambda_l >= 0.0)  // L region
         flux(n,i) = flux_l[n];
-      else if (lambda_right <= 0.0)  // R region
+      else if (lambda_r <= 0.0)  // R region
         flux(n,i) = flux_r[n];
       else  // HLL region
         flux(n,i) = flux_hll[n];

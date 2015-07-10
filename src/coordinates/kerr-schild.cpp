@@ -525,7 +525,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 // Inputs:
 //   k,j,i: phi-, theta-, and r-indices
 // Outputs:
-//   returned value: cell volumes
+//   returned value: cell volume
 // Notes:
 //   \Delta V = 1/3 * (r_+ - r_-) (\cos\theta_- - \cos\theta_+) (\phi_+ - \phi_-)
 //       * (r_-^2 + r_- r_+ + r_+^2
@@ -2101,9 +2101,8 @@ void Coordinates::TransformVectorFace3(
 //   k,j,i: indices of cell in which transformation is desired
 // Outputs:
 //   pa_0,pa_1,pa_2,pa_3: pointers to covariant 4-vector components
-void Coordinates::LowerVectorCell(
-    Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
-    Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3)
+void Coordinates::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j,
+    int i, Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3)
 {
   // Extract and calculate useful quantities
   const Real &m = bh_mass_;
