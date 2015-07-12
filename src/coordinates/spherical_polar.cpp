@@ -278,6 +278,17 @@ void Coordinates::Edge3Length(const int k, const int j, const int il, const int 
   return;
 }
 
+// GetEdge?Length functions: return one edge length at i
+Real Coordinates::GetEdge2Length(const int k, const int j, const int i)
+{
+  return x1f(i)*dx2f(j);
+}
+
+Real Coordinates::GetEdge3Length(const int k, const int j, const int i)
+{
+  return x1f(i)*coord_area2_j_(j)*dx3f(k);
+}
+
 //--------------------------------------------------------------------------------------
 // Cell-center Width functions: returns physical width at cell-center
 
@@ -332,6 +343,7 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
   return;
 }
 
+// GetFace1Area returns only one Face1Area at i
 Real Coordinates::GetFace1Area(const int k, const int j, const int i)
 {
   return coord_area1_i_(i)*coord_area1_j_(j)*dx3f(k);
@@ -351,6 +363,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
   return;
 }
 
+// GetCellVolume returns only one CellVolume at i
 Real Coordinates::GetCellVolume(const int k, const int j, const int i)
 {
   return coord_vol_i_(i)*coord_vol_j_(j)*dx3f(k);

@@ -165,6 +165,12 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
   return;
 }
 
+// GetCellVolume returns only one CellVolume at i
+Real Coordinates::GetCellVolume(const int k, const int j, const int i)
+{
+  return dx1f(i)*dx2f(j)*dx3f(k);
+}
+
 //--------------------------------------------------------------------------------------
 
 // Function for computing areas orthogonal to x'
@@ -240,6 +246,13 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
   return;
 }
 
+
+// GetFace1Area returns only one Face1Area at i
+Real Coordinates::GetFace1Area(const int k, const int j, const int i)
+{
+  return dx2f(j)*dx3f(k);
+}
+
 //--------------------------------------------------------------------------------------
 
 // Function for computing lengths of edges in the x'-direction
@@ -310,6 +323,17 @@ void Coordinates::Edge3Length(const int k, const int j, const int il, const int 
     length = delta_z;
   }
   return;
+}
+
+// GetEdge?Length functions: return one edge length at i
+Real Coordinates::GetEdge2Length(const int k, const int j, const int i)
+{
+  return dx2f(j);
+}
+
+Real Coordinates::GetEdge3Length(const int k, const int j, const int i)
+{
+  return dx3f(k);
 }
 
 //--------------------------------------------------------------------------------------

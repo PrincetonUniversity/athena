@@ -696,6 +696,19 @@ void Coordinates::Edge3Length(const int k, const int j, const int il, const int 
   return;
 }
 
+
+// GetEdge?Length functions: return one edge length at i
+Real Coordinates::GetEdge2Length(const int k, const int j, const int i)
+{
+  return coord_len2_j1_(j) * (coord_len2_i1_(i) + 1.0/3.0 * coord_len2_j2_(j));
+}
+
+Real Coordinates::GetEdge3Length(const int k, const int j, const int i)
+{
+  return  coord_len3_k1_(k) * coord_len3_j1_(j)
+        *(coord_len3_i1_(i) + coord_len3_j2_(j));
+}
+
 //--------------------------------------------------------------------------------------
 
 // Function for computing widths of cells in the r-direction

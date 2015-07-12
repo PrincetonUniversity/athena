@@ -59,10 +59,13 @@ public:
   void Edge3Length(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &len);
 
+  inline Real GetEdge2Length(const int k, const int j, const int i);
+  inline Real GetEdge3Length(const int k, const int j, const int i);
+
 // functions to compute physical width at cell center
-  Real CenterWidth1(const int k, const int j, const int i);
-  Real CenterWidth2(const int k, const int j, const int i);
-  Real CenterWidth3(const int k, const int j, const int i);
+  inline Real CenterWidth1(const int k, const int j, const int i);
+  inline Real CenterWidth2(const int k, const int j, const int i);
+  inline Real CenterWidth3(const int k, const int j, const int i);
 
 // functions to compute area of faces
   void Face1Area(const int k, const int j, const int il, const int iu,
@@ -72,12 +75,12 @@ public:
   void Face3Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &area);
 
-  Real GetFace1Area(const int k, const int j, const int i);
+  inline Real GetFace1Area(const int k, const int j, const int i);
 
 // function to compute volume of cells
   void CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &vol);
-  Real GetCellVolume(const int k, const int j, const int i);
+  inline Real GetCellVolume(const int k, const int j, const int i);
 
 // function to compute geometrical source terms
   void CoordSrcTermsX1(const int k, const int j, const Real dt,
