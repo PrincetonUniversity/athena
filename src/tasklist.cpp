@@ -36,6 +36,17 @@ enum task_status FluidIntegrate(MeshBlock *pmb, int task_arg)
   return task_donext;
 }
 
+enum task_status CalculateEMF(MeshBlock *pmb, int task_arg)
+{
+  Fluid *pfluid=pmb->pfluid;
+  Field *pfield=pmb->pfield;
+  if(task_arg==0)
+    pfield->pint->ComputeCornerE(pmb, pfluid->w1, pfield->bcc1);
+  else if(task_arg==1)
+    pfield->pint->ComputeCornerE(pmb, pfluid->w, pfield->bcc);
+  return task_donext;
+}
+
 enum task_status FieldIntegrate(MeshBlock *pmb, int task_arg)
 {
   Fluid *pfluid=pmb->pfluid;
@@ -145,12 +156,15 @@ enum task_status FieldReceive(MeshBlock *pmb, int task_arg)
 
 enum task_status EMFCorrectionSend(MeshBlock *pmb, int task_arg)
 {
+  pmb->pbval->SendEMFCorrection(task_arg);
   return task_success;
 }
 
 enum task_status EMFCorrectionReceive(MeshBlock *pmb, int task_arg)
 {
-  return task_success;
+  BoundaryValues *pbval=pmb->pbval;
+  if(pbval->ReceiveEMFCorrection(task_arg)==true) return task_donext;
+  else return task_failure;
 }
 
 enum task_status FieldProlongation(MeshBlock *pmb, int task_arg)
@@ -201,6 +215,11 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
   {
   case fluid_integrate_1:
     task[ntask].TaskFunc=taskfunc::FluidIntegrate;
+    task[ntask].task_arg=1;
+    break;
+
+  case calculate_emf_1:
+    task[ntask].TaskFunc=taskfunc::CalculateEMF;
     task[ntask].task_arg=1;
     break;
 
@@ -276,6 +295,11 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
 
   case fluid_integrate_0:
     task[ntask].TaskFunc=taskfunc::FluidIntegrate;
+    task[ntask].task_arg=0;
+    break;
+
+  case calculate_emf_0:
+    task[ntask].TaskFunc=taskfunc::CalculateEMF;
     task[ntask].task_arg=0;
     break;
 

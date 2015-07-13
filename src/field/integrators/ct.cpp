@@ -52,8 +52,6 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w
   e2.InitWithShallowCopy(pmb->pfield->e.x2e);
   e3.InitWithShallowCopy(pmb->pfield->e.x3e);
 
-  ComputeCornerE(pmb, w, bcc);
-
   Real dt;
   if (step == 1) {
     dt = 0.5*(pmb->pmy_mesh->dt);

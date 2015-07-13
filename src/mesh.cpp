@@ -1400,6 +1400,11 @@ void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
     else if(ox3==-1) fid=inner_x3;
     else if(ox3==1)  fid=outer_x3;
   }
+  if(type==neighbor_edge) {
+    if(ox3==0)  eid=((ox1+1)>>1) | ((ox2+1)&2);
+    else if(ox2==0) eid=4+(((ox1+1)>>1) | ((ox3+1)&2));
+    else if(ox3==0) eid=8+(((ox2+1)>>1) | ((ox3+1)&2));
+  }
   return;
 }
 
