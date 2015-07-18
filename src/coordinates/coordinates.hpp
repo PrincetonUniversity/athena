@@ -135,22 +135,22 @@ public:
     void Face3Metric(const int k, const int j, const int il, const int iu,
         AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
     void PrimToLocal1(const int k, const int j, const int il, const int iu,
-        const AthenaArray<Real> &b1_vals, AthenaArray<Real> &prim_left,
-        AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
+        const AthenaArray<Real> &bb1, AthenaArray<Real> &prim_l,
+        AthenaArray<Real> &prim_r, AthenaArray<Real> &bbx);
     void PrimToLocal2(const int k, const int j, const int il, const int iu,
-        const AthenaArray<Real> &b2_vals, AthenaArray<Real> &prim_left,
-        AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
+        const AthenaArray<Real> &bb2, AthenaArray<Real> &prim_l,
+        AthenaArray<Real> &prim_r, AthenaArray<Real> &bbx);
     void PrimToLocal3(const int k, const int j, const int il, const int iu,
-        const AthenaArray<Real> &b3_vals, AthenaArray<Real> &prim_left,
-        AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
+        const AthenaArray<Real> &bb3, AthenaArray<Real> &prim_l,
+        AthenaArray<Real> &prim_r, AthenaArray<Real> &bbx);
     void FluxToGlobal1(const int k, const int j, const int il, const int iu,
-        const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
+        const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
         AthenaArray<Real> &flux);
     void FluxToGlobal2(const int k, const int j, const int il, const int iu,
-        const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
+        const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
         AthenaArray<Real> &flux);
     void FluxToGlobal3(const int k, const int j, const int il, const int iu,
-        const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
+        const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
         AthenaArray<Real> &flux);
     Real DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real by, Real bz);
     void MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3,
