@@ -52,6 +52,28 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   const Real vc_extension = 1.0e-6;   // use contact region if Alfven speeds smaller
   const Real delta_kx_aug = 1.0e-12;  // amount to add to \Delta K^x
 
+  // Calculate metric if in GR
+  int i01, i11;
+  if (GENERAL_RELATIVITY)
+    switch (ivx)
+    {
+      case IVX:
+        pmy_fluid->pmy_block->pcoord->Face1Metric(k, j, il, iu, g_, gi_);
+        i01 = I01;
+        i11 = I11;
+        break;
+      case IVY:
+        pmy_fluid->pmy_block->pcoord->Face2Metric(k, j, il, iu, g_, gi_);
+        i01 = I02;
+        i11 = I22;
+        break;
+      case IVZ:
+        pmy_fluid->pmy_block->pcoord->Face3Metric(k, j, il, iu, g_, gi_);
+        i01 = I03;
+        i11 = I33;
+        break;
+    }
+
   // Transform primitives to locally flat coordinates if in GR
   if (GENERAL_RELATIVITY)
     switch (ivx)
@@ -87,6 +109,11 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
+    // Calculate interface velocity
+    Real v_interface = 0.0;
+    if (GENERAL_RELATIVITY)
+      v_interface = gi_(i01,i) / std::sqrt(SQR(gi_(i01,i)) - gi_(I00,i)*gi_(i11,i));
+
     // Extract left primitives
     const Real &rho_l = prim_l(IDN,i);
     const Real &pgas_l = prim_l(IEN,i);
@@ -398,13 +425,13 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     if (GENERAL_RELATIVITY)
       for (int n = 0; n < NWAVE; ++n)
       {
-        if (lambda_l >= 0.0)  // L region
+        if (lambda_l >= v_interface)  // L region
           cons_(n,i) = cons_l[n];
-        else if (lambda_r <= 0.0)  // R region
+        else if (lambda_r <= v_interface)  // R region
           cons_(n,i) = cons_r[n];
-        else if (lambda_al >= -vc_extension)  // aL region
+        else if (lambda_al >= v_interface-vc_extension)  // aL region
           cons_(n,i) = cons_al[n];
-        else if (lambda_ar <= vc_extension)  // aR region
+        else if (lambda_ar <= v_interface+vc_extension)  // aR region
           cons_(n,i) = cons_ar[n];
         else  // c region
           cons_(n,i) = cons_c[n];
@@ -413,13 +440,13 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     // Set fluxes
     for (int n = 0; n < NWAVE; ++n)
     {
-      if (lambda_l >= 0.0)  // L region
+      if (lambda_l >= v_interface)  // L region
         flux(n,i) = flux_l[n];
-      else if (lambda_r <= 0.0)  // R region
+      else if (lambda_r <= v_interface)  // R region
         flux(n,i) = flux_r[n];
-      else if (lambda_al >= -vc_extension)  // aL region
+      else if (lambda_al >= v_interface-vc_extension)  // aL region
         flux(n,i) = flux_al[n];
-      else if (lambda_ar <= vc_extension)  // aR region
+      else if (lambda_ar <= v_interface+vc_extension)  // aR region
         flux(n,i) = flux_ar[n];
       else  // c region
         flux(n,i) = flux_c[n];
