@@ -117,8 +117,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     {
       // Get Boyer-Lindquist coordinates of cell
       Real r, theta, phi;
-      pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1v(i), pmb->pcoord->x2v(j),
-          pmb->pcoord->x3v(kl), &r, &theta, &phi);
+      pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1v(i),
+          pmb->pcoord->x2v(j), pmb->pcoord->x3v(kl), &r, &theta, &phi);
       Real sin_theta = std::sin(theta);
 
       // Determine if we are in the torus
@@ -184,8 +184,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       {
         // Get Boyer-Lindquist coordinates
         Real r, theta, phi;
-        pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1v(i), pmb->pcoord->x2v(j),
-            pmb->pcoord->x3v(kl), &r, &theta, &phi);
+        pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1v(i),
+            pmb->pcoord->x2v(j), pmb->pcoord->x3v(kl), &r, &theta, &phi);
         Real sin_theta = std::sin(theta);
 
         // Calculate A_phi as proportional to rho
@@ -208,8 +208,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       {
         // Get Boyer-Lindquist coordinates
         Real r, theta, phi;
-        pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1f(i), pmb->pcoord->x2f(j),
-            pmb->pcoord->x3v(kl), &r, &theta, &phi);
+        pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1f(i),
+            pmb->pcoord->x2f(j), pmb->pcoord->x3v(kl), &r, &theta, &phi);
 
         // Calculate A_phi as proportional to rho
         if (r >= r_edge)

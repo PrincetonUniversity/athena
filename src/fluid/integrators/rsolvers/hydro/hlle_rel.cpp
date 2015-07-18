@@ -215,6 +215,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
       else  // HLL region
         flux(n,i) = flux_hll[n];
     }
+  }
 
   // Transform fluxes to global coordinates if in GR
   if (GENERAL_RELATIVITY)

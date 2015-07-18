@@ -212,8 +212,8 @@ public:
 private:
 
   // Constant parameters for various coordinate systems
-  Real bh_mass_;          // M: Schwarzschild
-  Real bh_spin_;          // a (dimensionless): Schwarzschild
+  Real bh_mass_;          // M: Schwarzschild, Kerr-Schild
+  Real bh_spin_;          // a: Kerr-Schild (same dimension as M)
   Real sinu_amplitude_;   // a: sinusoidal
   Real sinu_wavenumber_;  // k: sinusoidal
   Real tilted_a_;         // a: tilted
