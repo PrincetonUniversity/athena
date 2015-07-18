@@ -146,6 +146,8 @@ Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
   trans_face1_i1_.NewAthenaArray(n_cells_1);
   trans_face2_i1_.NewAthenaArray(n_cells_1);
   trans_face3_i1_.NewAthenaArray(n_cells_1);
+  g_.NewAthenaArray(NMETRIC, n_cells_1);
+  gi_.NewAthenaArray(NMETRIC, n_cells_1);
 
   // Allocate arrays for intermediate geometric quantities: theta-direction
   int n_cells_2 = (pb->block_size.nx2 > 1) ? pb->block_size.nx2 + 2*NGHOST : 1;
@@ -352,6 +354,8 @@ Coordinates::~Coordinates()
   trans_face2_j1_.DeleteAthenaArray();
   trans_face3_i1_.DeleteAthenaArray();
   trans_face3_j1_.DeleteAthenaArray();
+  g_.DeleteAthenaArray();
+  gi_.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------

@@ -83,28 +83,28 @@ void FieldIntegrator::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w,
     for (int i=is-1; i<=ie+1; ++i) {
       if (GENERAL_RELATIVITY)
       {
-        const Real &v1 = w(IVX,k,j,i);
-        const Real &v2 = w(IVY,k,j,i);
-        const Real &v3 = w(IVZ,k,j,i);
-        const Real &b1 = bcc(IB1,k,j,i);
-        const Real &b2 = bcc(IB2,k,j,i);
-        const Real &b3 = bcc(IB3,k,j,i);
-        Real u0_neg_inv_sq = g_(I00,i)
-            + 2.0 * (g_(I01,i)*v1 + g_(I02,i)*v2 + g_(I03,i)*v3)
-            + g_(I11,i)*SQR(v1) + 2.0*g_(I12,i)*v1*v2 + 2.0*g_(I13,i)*v1*v3
-            + g_(I22,i)*SQR(v2) + 2.0*g_(I23,i)*v2*v3
-            + g_(I33,i)*SQR(v3);
-        Real u0 = std::sqrt(-1.0 / u0_neg_inv_sq);
-        Real u1 = u0 * v1;
-        Real u2 = u0 * v2;
-        Real u3 = u0 * v3;
-        Real bcon0 = b1 * (g_(I01,i)*u0 + g_(I11,i)*u1 + g_(I12,i)*u2 + g_(I13,i)*u3)
-                   + b2 * (g_(I02,i)*u0 + g_(I12,i)*u1 + g_(I22,i)*u2 + g_(I23,i)*u3)
-                   + b3 * (g_(I03,i)*u0 + g_(I13,i)*u1 + g_(I23,i)*u2 + g_(I33,i)*u3);
-        Real bcon1 = (b1 + bcon0 * u1) / u0;
-        Real bcon2 = (b2 + bcon0 * u2) / u0;
-        Real bcon3 = (b3 + bcon0 * u3) / u0;
-        cc_e_(k,j,i) = bcon1 * u2 - bcon2 * u1;
+        const Real &uu1 = w(IVX,k,j,i);
+        const Real &uu2 = w(IVY,k,j,i);
+        const Real &uu3 = w(IVZ,k,j,i);
+        const Real &bb1 = bcc(IB1,k,j,i);
+        const Real &bb2 = bcc(IB2,k,j,i);
+        const Real &bb3 = bcc(IB3,k,j,i);
+        Real alpha = std::sqrt(-1.0/gi_(I00,i));
+        Real tmp = g_(I11,i)*SQR(uu1) + 2.0*g_(I12,i)*uu1*uu2 + 2.0*g_(I13,i)*uu1*uu3
+                 + g_(I22,i)*SQR(uu2) + 2.0*g_(I23,i)*uu2*uu3
+                 + g_(I33,i)*SQR(uu3);
+        Real gamma = std::sqrt(1.0 + tmp);
+        Real u0 = gamma / alpha;
+        Real u1 = uu1 - alpha * gamma * gi_(I01,i);
+        Real u2 = uu2 - alpha * gamma * gi_(I02,i);
+        Real u3 = uu3 - alpha * gamma * gi_(I03,i);
+        Real b0 = bb1 * (g_(I01,i)*u0 + g_(I11,i)*u1 + g_(I12,i)*u2 + g_(I13,i)*u3)
+                + bb2 * (g_(I02,i)*u0 + g_(I12,i)*u1 + g_(I22,i)*u2 + g_(I23,i)*u3)
+                + bb3 * (g_(I03,i)*u0 + g_(I13,i)*u1 + g_(I23,i)*u2 + g_(I33,i)*u3);
+        Real b1 = (bb1 + b0 * u1) / u0;
+        Real b2 = (bb2 + b0 * u2) / u0;
+        Real b3 = (bb3 + b0 * u3) / u0;
+        cc_e_(k,j,i) = b1 * u2 - b2 * u1;
       }
       else
         cc_e_(k,j,i) = w(IVY,k,j,i)*bcc(IB1,k,j,i) - w(IVX,k,j,i)*bcc(IB2,k,j,i);
@@ -162,28 +162,28 @@ void FieldIntegrator::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w,
       for (int i=is; i<=ie; ++i) {
         if (GENERAL_RELATIVITY)
         {
-          const Real &v1 = w(IVX,k,j,i);
-          const Real &v2 = w(IVY,k,j,i);
-          const Real &v3 = w(IVZ,k,j,i);
-          const Real &b1 = bcc(IB1,k,j,i);
-          const Real &b2 = bcc(IB2,k,j,i);
-          const Real &b3 = bcc(IB3,k,j,i);
-          Real u0_neg_inv_sq = g_(I00,i)
-              + 2.0 * (g_(I01,i)*v1 + g_(I02,i)*v2 + g_(I03,i)*v3)
-              + g_(I11,i)*SQR(v1) + 2.0*g_(I12,i)*v1*v2 + 2.0*g_(I13,i)*v1*v3
-              + g_(I22,i)*SQR(v2) + 2.0*g_(I23,i)*v2*v3
-              + g_(I33,i)*SQR(v3);
-          Real u0 = std::sqrt(-1.0 / u0_neg_inv_sq);
-          Real u1 = u0 * v1;
-          Real u2 = u0 * v2;
-          Real u3 = u0 * v3;
-          Real bcon0 = b1 * (g_(I01,i)*u0 + g_(I11,i)*u1 + g_(I12,i)*u2 + g_(I13,i)*u3)
-                     + b2 * (g_(I02,i)*u0 + g_(I12,i)*u1 + g_(I22,i)*u2 + g_(I23,i)*u3)
-                     + b3 * (g_(I03,i)*u0 + g_(I13,i)*u1 + g_(I23,i)*u2 + g_(I33,i)*u3);
-          Real bcon1 = (b1 + bcon0 * u1) / u0;
-          Real bcon2 = (b2 + bcon0 * u2) / u0;
-          Real bcon3 = (b3 + bcon0 * u3) / u0;
-          cc_e_(k,j,i) = bcon2 * u3 - bcon3 * u2;
+          const Real &uu1 = w(IVX,k,j,i);
+          const Real &uu2 = w(IVY,k,j,i);
+          const Real &uu3 = w(IVZ,k,j,i);
+          const Real &bb1 = bcc(IB1,k,j,i);
+          const Real &bb2 = bcc(IB2,k,j,i);
+          const Real &bb3 = bcc(IB3,k,j,i);
+          Real alpha = std::sqrt(-1.0/gi_(I00,i));
+          Real tmp = g_(I11,i)*SQR(uu1) + 2.0*g_(I12,i)*uu1*uu2 + 2.0*g_(I13,i)*uu1*uu3
+                   + g_(I22,i)*SQR(uu2) + 2.0*g_(I23,i)*uu2*uu3
+                   + g_(I33,i)*SQR(uu3);
+          Real gamma = std::sqrt(1.0 + tmp);
+          Real u0 = gamma / alpha;
+          Real u1 = uu1 - alpha * gamma * gi_(I01,i);
+          Real u2 = uu2 - alpha * gamma * gi_(I02,i);
+          Real u3 = uu3 - alpha * gamma * gi_(I03,i);
+          Real b0 = bb1 * (g_(I01,i)*u0 + g_(I11,i)*u1 + g_(I12,i)*u2 + g_(I13,i)*u3)
+                  + bb2 * (g_(I02,i)*u0 + g_(I12,i)*u1 + g_(I22,i)*u2 + g_(I23,i)*u3)
+                  + bb3 * (g_(I03,i)*u0 + g_(I13,i)*u1 + g_(I23,i)*u2 + g_(I33,i)*u3);
+          Real b1 = (bb1 + b0 * u1) / u0;
+          Real b2 = (bb2 + b0 * u2) / u0;
+          Real b3 = (bb3 + b0 * u3) / u0;
+          cc_e_(k,j,i) = b2 * u3 - b3 * u2;
         }
         else
           cc_e_(k,j,i) = w(IVZ,k,j,i)*bcc(IB2,k,j,i) - w(IVY,k,j,i)*bcc(IB3,k,j,i);
@@ -223,28 +223,28 @@ void FieldIntegrator::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w,
       for (int i=is-1; i<=ie+1; ++i) {
         if (GENERAL_RELATIVITY)
         {
-          const Real &v1 = w(IVX,k,j,i);
-          const Real &v2 = w(IVY,k,j,i);
-          const Real &v3 = w(IVZ,k,j,i);
-          const Real &b1 = bcc(IB1,k,j,i);
-          const Real &b2 = bcc(IB2,k,j,i);
-          const Real &b3 = bcc(IB3,k,j,i);
-          Real u0_neg_inv_sq = g_(I00,i)
-              + 2.0 * (g_(I01,i)*v1 + g_(I02,i)*v2 + g_(I03,i)*v3)
-              + g_(I11,i)*SQR(v1) + 2.0*g_(I12,i)*v1*v2 + 2.0*g_(I13,i)*v1*v3
-              + g_(I22,i)*SQR(v2) + 2.0*g_(I23,i)*v2*v3
-              + g_(I33,i)*SQR(v3);
-          Real u0 = std::sqrt(-1.0 / u0_neg_inv_sq);
-          Real u1 = u0 * v1;
-          Real u2 = u0 * v2;
-          Real u3 = u0 * v3;
-          Real bcon0 = b1 * (g_(I01,i)*u0 + g_(I11,i)*u1 + g_(I12,i)*u2 + g_(I13,i)*u3)
-                     + b2 * (g_(I02,i)*u0 + g_(I12,i)*u1 + g_(I22,i)*u2 + g_(I23,i)*u3)
-                     + b3 * (g_(I03,i)*u0 + g_(I13,i)*u1 + g_(I23,i)*u2 + g_(I33,i)*u3);
-          Real bcon1 = (b1 + bcon0 * u1) / u0;
-          Real bcon2 = (b2 + bcon0 * u2) / u0;
-          Real bcon3 = (b3 + bcon0 * u3) / u0;
-          cc_e_(k,j,i) = bcon3 * u1 - bcon1 * u3;
+          const Real &uu1 = w(IVX,k,j,i);
+          const Real &uu2 = w(IVY,k,j,i);
+          const Real &uu3 = w(IVZ,k,j,i);
+          const Real &bb1 = bcc(IB1,k,j,i);
+          const Real &bb2 = bcc(IB2,k,j,i);
+          const Real &bb3 = bcc(IB3,k,j,i);
+          Real alpha = std::sqrt(-1.0/gi_(I00,i));
+          Real tmp = g_(I11,i)*SQR(uu1) + 2.0*g_(I12,i)*uu1*uu2 + 2.0*g_(I13,i)*uu1*uu3
+                   + g_(I22,i)*SQR(uu2) + 2.0*g_(I23,i)*uu2*uu3
+                   + g_(I33,i)*SQR(uu3);
+          Real gamma = std::sqrt(1.0 + tmp);
+          Real u0 = gamma / alpha;
+          Real u1 = uu1 - alpha * gamma * gi_(I01,i);
+          Real u2 = uu2 - alpha * gamma * gi_(I02,i);
+          Real u3 = uu3 - alpha * gamma * gi_(I03,i);
+          Real b0 = bb1 * (g_(I01,i)*u0 + g_(I11,i)*u1 + g_(I12,i)*u2 + g_(I13,i)*u3)
+                  + bb2 * (g_(I02,i)*u0 + g_(I12,i)*u1 + g_(I22,i)*u2 + g_(I23,i)*u3)
+                  + bb3 * (g_(I03,i)*u0 + g_(I13,i)*u1 + g_(I23,i)*u2 + g_(I33,i)*u3);
+          Real b1 = (bb1 + b0 * u1) / u0;
+          Real b2 = (bb2 + b0 * u2) / u0;
+          Real b3 = (bb3 + b0 * u3) / u0;
+          cc_e_(k,j,i) = b3 * u1 - b1 * u3;
         }
         else
           cc_e_(k,j,i) = w(IVX,k,j,i)*bcc(IB3,k,j,i) - w(IVZ,k,j,i)*bcc(IB1,k,j,i);
