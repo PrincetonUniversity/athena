@@ -652,7 +652,7 @@ void BoundaryValues::RestrictFluid(AthenaArray<Real> &src,
             coarse_cons_(n,ck,cj,ci)=
               (src(n,k  ,j  ,i)*fvol_[0][0](i)+src(n,k  ,j  ,i+1)*fvol_[0][0](i+1)
               +src(n,k  ,j+1,i)*fvol_[0][1](i)+src(n,k  ,j+1,i+1)*fvol_[0][1](i+1)
-              +src(n,k+1,j  ,i)*fvol_[1][0](i)+src(n,k+1,j  ,i+1)*fvol_[1][0](i+1)
+              +	src(n,k+1,j  ,i)*fvol_[1][0](i)+src(n,k+1,j  ,i+1)*fvol_[1][0](i+1)
               +src(n,k+1,j+1,i)*fvol_[1][1](i)+src(n,k+1,j+1,i+1)*fvol_[1][1](i+1))/tvol;
           }
         }
@@ -663,7 +663,7 @@ void BoundaryValues::RestrictFluid(AthenaArray<Real> &src,
     for (int n=0; n<(NFLUID); ++n) {
       for (int cj=csj; cj<=cej; cj++) {
         int j=(cj-pmb->cjs)*2+pmb->js;
-        pmb->pcoord->CellVolume(0,j,si,ei,fvol_[0][0]);
+        pmb->pcoord->CellVolume(0,j  ,si,ei,fvol_[0][0]);
         pmb->pcoord->CellVolume(0,j+1,si,ei,fvol_[0][1]);
         for (int ci=csi; ci<=cei; ci++) {
           int i=(ci-pmb->cis)*2+pmb->is;
@@ -676,13 +676,14 @@ void BoundaryValues::RestrictFluid(AthenaArray<Real> &src,
     }
   }
   else { // 1D
+    int j=pmb->js, cj=pmb->cjs, k=pmb->ks, ck=pmb->cks; 
     for (int n=0; n<(NFLUID); ++n) {
-      pmb->pcoord->CellVolume(0,0,si,ei,fvol_[0][0]);
+      pmb->pcoord->CellVolume(k,j,si,ei,fvol_[0][0]);
       for (int ci=csi; ci<=cei; ci++) {
         int i=(ci-pmb->cis)*2+pmb->is;
         Real tvol=fvol_[0][0](i)+fvol_[0][0](i+1);
-        coarse_cons_(n,0,0,ci)
-          =(src(n,0,0,i)*fvol_[0][0](i)+src(n,0,0,i+1)*fvol_[0][0](i+1))/tvol;
+        coarse_cons_(n,ck,cj,ci)
+          =(src(n,k,j,i)*fvol_[0][0](i)+src(n,k,j,i+1)*fvol_[0][0](i+1))/tvol;
       }
     }
   }
@@ -742,7 +743,6 @@ int BoundaryValues::LoadFluidBoundaryBufferToCoarser(AthenaArray<Real> &src, Rea
   RestrictFluid(src, si, ei, sj, ej, sk, ek);
 
   int p=0;
-
   for (int n=0; n<(NFLUID); ++n) {
     for (int k=sk; k<=ek; k++) {
       for (int j=sj; j<=ej; j++) {
@@ -780,7 +780,7 @@ int BoundaryValues::LoadFluidBoundaryBufferToFiner(AthenaArray<Real> &src, Real 
     if(nb.fi1==1)   si+=pmb->block_size.nx1/2-pmb->cnghost;
     else            ei-=pmb->block_size.nx1/2-pmb->cnghost;
   }
-  if(nb.ox2==0) {
+  if(nb.ox2==0 && pmb->block_size.nx2 > 1) {
     if(nb.ox1!=0) {
       if(nb.fi1==1) sj+=pmb->block_size.nx2/2-pmb->cnghost;
       else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
@@ -790,7 +790,7 @@ int BoundaryValues::LoadFluidBoundaryBufferToFiner(AthenaArray<Real> &src, Real 
       else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
     }
   }
-  if(nb.ox3==0) {
+  if(nb.ox3==0 && pmb->block_size.nx3 > 1) {
     if(nb.ox1!=0 && nb.ox2!=0) {
       if(nb.fi1==1) sk+=pmb->block_size.nx3/2-pmb->cnghost;
       else          ek-=pmb->block_size.nx3/2-pmb->cnghost;
@@ -903,15 +903,19 @@ void BoundaryValues::SetFluidBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
   else               si=pmb->cis-cng, ei=pmb->cis-1;
   if(nb.ox2==0) {
     sj=pmb->cjs, ej=pmb->cje;
-    if((lx2&1L)==0L) ej+=cng;
-    else             sj-=cng; 
+    if(pmb->block_size.nx2 > 1) {
+      if((lx2&1L)==0L) ej+=cng;
+      else             sj-=cng; 
+    }
   }
   else if(nb.ox2>0)  sj=pmb->cje+1,   ej=pmb->cje+cng;
   else               sj=pmb->cjs-cng, ej=pmb->cjs-1;
   if(nb.ox3==0) {
     sk=pmb->cks, ek=pmb->cke;
-    if((lx3&1L)==0L) ek+=cng;
-    else             sk-=cng; 
+    if(pmb->block_size.nx3 > 1) {
+      if((lx3&1L)==0L) ek+=cng;
+      else             sk-=cng; 
+    }
   }
   else if(nb.ox3>0)  sk=pmb->cke+1,   ek=pmb->cke+cng;
   else               sk=pmb->cks-cng, ek=pmb->cks-1;
@@ -950,26 +954,30 @@ void BoundaryValues::SetFluidBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf
   else              si=pmb->is-NGHOST, ei=pmb->is-1;
   if(nb.ox2==0) {
     sj=pmb->js, ej=pmb->je;
-    if(nb.ox1!=0) {
-      if(nb.fi1==1) sj+=pmb->block_size.nx2/2;
-      else          ej-=pmb->block_size.nx2/2;
-    }
-    else {
-      if(nb.fi2==1) sj+=pmb->block_size.nx2/2;
-      else          ej-=pmb->block_size.nx2/2;
+    if(pmb->block_size.nx2 > 1) {
+      if(nb.ox1!=0) {
+        if(nb.fi1==1) sj+=pmb->block_size.nx2/2;
+        else          ej-=pmb->block_size.nx2/2;
+      }
+      else {
+        if(nb.fi2==1) sj+=pmb->block_size.nx2/2;
+        else          ej-=pmb->block_size.nx2/2;
+      }
     }
   }
   else if(nb.ox2>0) sj=pmb->je+1,      ej=pmb->je+NGHOST;
   else              sj=pmb->js-NGHOST, ej=pmb->js-1;
   if(nb.ox3==0) {
     sk=pmb->ks, ek=pmb->ke;
-    if(nb.ox1!=0 && nb.ox2!=0) {
-      if(nb.fi1==1) sk+=pmb->block_size.nx3/2;
-      else          ek-=pmb->block_size.nx3/2;
-    }
-    else {
-      if(nb.fi2==1) sk+=pmb->block_size.nx3/2;
-      else          ek-=pmb->block_size.nx3/2;
+    if(pmb->block_size.nx3 > 1) {
+      if(nb.ox1!=0 && nb.ox2!=0) {
+        if(nb.fi1==1) sk+=pmb->block_size.nx3/2;
+        else          ek-=pmb->block_size.nx3/2;
+      }
+      else {
+        if(nb.fi2==1) sk+=pmb->block_size.nx3/2;
+        else          ek-=pmb->block_size.nx3/2;
+      }
     }
   }
   else if(nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
@@ -1020,7 +1028,6 @@ bool BoundaryValues::ReceiveFluidBoundaryBuffers(AthenaArray<Real> &dst, int ste
       SetFluidBoundaryFromCoarser(fluid_recv_[step][nb.bufid], nb);
     else
       SetFluidBoundaryFromFiner(dst, fluid_recv_[step][nb.bufid], nb);
-
     fluid_flag_[step][nb.bufid] = boundary_completed; // completed
     nc++;
   }
@@ -1050,7 +1057,7 @@ void BoundaryValues::ReceiveFluidBoundaryBuffersWithWait(AthenaArray<Real> &dst,
     else if(nb.level<mylevel)
       SetFluidBoundaryFromCoarser(fluid_recv_[0][nb.bufid], nb);
     else
-      SetFluidBoundaryFromFiner(dst, fluid_recv_[0][nb.bufid], nb);
+     SetFluidBoundaryFromFiner(dst, fluid_recv_[0][nb.bufid], nb);
     fluid_flag_[0][nb.bufid] = boundary_completed; // completed
   }
   return;
@@ -1304,7 +1311,8 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
       // fill the required ghost-ghost zone
       int nis, nie, njs, nje, nks, nke;
       nis=std::max(nb.ox1-1,-1), nie=std::min(nb.ox1+1,1);
-      njs=std::max(nb.ox2-1,-1), nje=std::min(nb.ox2+1,1);
+      if(pmb->block_size.nx2==1) njs=0, nje=0;
+      else njs=std::max(nb.ox2-1,-1), nje=std::min(nb.ox2+1,1);
       if(pmb->block_size.nx3==1) nks=0, nke=0;
       else nks=std::max(nb.ox3-1,-1), nke=std::min(nb.ox3+1,1);
       for(int nk=nks; nk<=nke; nk++) {
@@ -1357,15 +1365,19 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
       else              si=pmb->cis-cn, ei=pmb->cis-1;
       if(nb.ox2==0) {
         sj=pmb->cjs, ej=pmb->cje;
-        if((lx2&1L)==0L) ej++;
-        else             sj--;
+        if(pmb->block_size.nx2 > 1) {
+          if((lx2&1L)==0L) ej++;
+          else             sj--;
+        }
       }
       else if(nb.ox2>0) sj=pmb->cje+1,  ej=pmb->cje+cn;
       else              sj=pmb->cjs-cn, ej=pmb->cjs-1;
       if(nb.ox3==0) {
         sk=pmb->cks, ek=pmb->cke;
-        if((lx3&1L)==0L) ek++;
-        else             sk--;
+        if(pmb->block_size.nx3 > 1) {
+          if((lx3&1L)==0L) ek++;
+          else             sk--;
+        }
       }
       else if(nb.ox3>0) sk=pmb->cke+1,  ek=pmb->cke+cn;
       else              sk=pmb->cks-cn, ek=pmb->cks-1;
@@ -1468,7 +1480,7 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
             Real& x2fp = pco->coarse_x2f(j+1);
             Real& dx2m = pco->coarse_dx2v(j-1);
             Real& dx2p = pco->coarse_dx2v(j);
-            int fj=(sj-pmb->cjs)*2+NGHOST;
+            int fj=(j-pmb->cjs)*2+NGHOST;
             Real& fx2m = pco->x2v(fj);
             Real& fx2p = pco->x2v(fj+1);
             Real dx2fm= x2c-fx2m;
@@ -1481,7 +1493,7 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
               Real& x1fp = pco->coarse_x1f(i+1);
               Real& dx1m = pco->coarse_dx1v(i-1);
               Real& dx1p = pco->coarse_dx1v(i);
-              int fi=(si-pmb->cis)*2+NGHOST;
+              int fi=(i-pmb->cis)*2+NGHOST;
               Real& fx1m = pco->x1v(fi);
               Real& fx1p = pco->x1v(fi+1);
               Real dx1fm= x1c-fx1m;
@@ -1528,7 +1540,7 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
             Real& x1fp = pco->coarse_x1f(i+1);
             Real& dx1m = pco->coarse_dx1v(i-1);
             Real& dx1p = pco->coarse_dx1v(i);
-            int fi=(si-pmb->cis)*2+NGHOST;
+            int fi=(i-pmb->cis)*2+NGHOST;
             Real& fx1m = pco->x1v(fi);
             Real& fx1p = pco->x1v(fi+1);
             Real dx1fm= x1c-fx1m;
@@ -2033,7 +2045,7 @@ int BufferID(int dim, bool multilevel, bool face_only)
   if(dim>=2) {
     for(int m=-1; m<=1; m+=2) {
       for(int n=-1; n<=1; n+=2) {
-        for(int f1=0;f1<nf1;f1++) {
+        for(int f1=0;f1<nf2;f1++) {
           ni_[b].ox1=n; ni_[b].ox2=m; ni_[b].ox3=0;
           ni_[b].fi1=f1; ni_[b].fi2=0; ni_[b].type=neighbor_edge;
           b++;
