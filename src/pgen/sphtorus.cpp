@@ -4,8 +4,6 @@
  *
  * PURPOSE: Problem generator for the torus problem (Stone et al. 1999)
 /*============================================================================*/
-// Primary header
-#include "../fluid/fluid.hpp"
 
 // C++ headers
 #include <iostream>   // endl
@@ -13,29 +11,22 @@
 #include <cstdlib>    // srand
 
 // Athena headers
+#include "../defs.hpp"
 #include "../athena.hpp"           // enums, Real
 #include "../athena_arrays.hpp"    // AthenaArray
 #include "../mesh.hpp"             // MeshBlock
 #include "../parameter_input.hpp"  // ParameterInput
 #include "../fluid/eos/eos.hpp"    // ParameterInput
+#include "../fluid/fluid.hpp"      // Fluid
+#include "../field/field.hpp"      // Field
 #include "../bvals/bvals.hpp" // EnrollFluidBValFunction
 #include "../coordinates/coordinates.hpp" // Coordinates
+#include "../fluid/integrators/fluid_integrator.hpp"  // FieldIntegrator  
 
-
-#ifdef ISOTHERMAL
-#error "Isothermal EOS cannot be used."
-#endif
-
-static Real gm,gmgas;
-
-
-inline Real CUBE(Real x){
-  return ((x)*(x)*(x));
-}
-
-inline Real MAX(Real x, Real y){
-	return (x>y?x:y);
-}
+using namespace std;
+// #ifdef ISOTHERMAL
+// #error "Isothermal EOS cannot be used."
+// #endif
 
 /*----------------------------------------------------------------------------*/
 /* function prototypes and global variables*/
@@ -48,21 +39,102 @@ void stbv_oib(MeshBlock *pmb, AthenaArray<Real> &a,
 void stbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
               int is, int ie, int js, int je, int ks, int ke); //sets BCs on outer-x2 (top edge) of grid.
 
+Real A1(  Real x1,   Real x2,   Real x3);
+Real A2(  Real x1,   Real x2,   Real x3);
+Real A3(  Real x1,   Real x2,   Real x3);
+Real magr(MeshBlock *pmb,   int i,   int j,   int k);
+Real magt(MeshBlock *pmb,   int i,   int j,   int k);
+Real magp(MeshBlock *pmb,   int i,   int j,   int k);
+Real en, cprime, w0, rg, dist, acons, d0, amp,beta;
+static Real gm,gmgas;
+
+inline Real CUBE(Real x){
+  return ((x)*(x)*(x));
+}
+
+inline Real MAX(Real x, Real y){
+  return (x>y?x:y);
+}
+
+Real A1(Real x1, Real x2,Real x3)
+{
+  return 0.0;
+}
+
+Real A2(Real x1, Real x2,Real x3) 
+{
+  return 0.0;
+}
+
+Real A3(Real x1, Real x2,Real x3)
+{
+  Real eq29,w;
+  Real a=0.0;
+  Real dens;
+  w=x1*sin(x2);
+  eq29 = gm/(w0*(en + 1.))*(w0/x1-0.5*SQR(w0/w) - cprime);
+  //cout << "eq29: "<<eq29 << endl;
+  if (eq29 > 0.0) {
+    dens  = pow(eq29/acons,en);
+    if (dens > 100.0*d0)
+	//cout<< "Inside torus dens: "<<dens<<endl;
+      a = SQR(dens)/(beta);
+  }
+  //cout << "A3: "<<a << endl;
+  return a;
+}
+
+#define ND 100
+
+Real magr(MeshBlock *pmb,   int i,   int j,   int k)
+{
+  Real r,t,p,s,a,d,rd;
+  Coordinates *pco = pmb->pcoord;
+  int n;
+  r = pco->x1f(i);
+  t = pco->x2f(j);
+  p = pco->x3f(k);
+  s=2.0*SQR(r)*sin(t+0.5*pco->dx2f(j))*sin(0.5*pco->dx2f(j))*pco->dx3f(k);
+  a=(A3(r,t+pco->dx2f(j),p+0.5*pco->dx3f(k))*sin(t+pco->dx2f(j))-A3(r,t,p+0.5*pco->dx3f(k))*sin(t))*r*pco->dx3f(k);
+  return a/s;
+}
+
+Real magt(MeshBlock *pmb, int i, int j, int k)
+{
+  Coordinates *pco = pmb->pcoord;
+  Real r,t,p,s,a,d,rd;
+  int n;
+  r = pco->x1f(i);
+  t = pco->x2f(j);
+  p = pco->x3f(k);
+  s=(r+0.5*pco->dx1f(i))*pco->dx1f(i)*sin(t)*pco->dx3f(k);
+  a=(A3(r+pco->dx1f(i),t,p+0.5*pco->dx3f(k))*(r+pco->dx1f(i))-A3(r,t,p+0.5*pco->dx3f(k))*r)*sin(t)*pco->dx3f(k);
+  return -a/s;
+}
+
+Real magp(MeshBlock *pmb, int i, int j, int k)
+{
+  return 0.0;
+}
+
 //problem generator
 void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
+
   MeshBlock *pmb = pfl->pmy_block;
   Coordinates *pco = pmb->pcoord;
   int i, is = pmb->is, ie = pmb->ie;
   int j, js = pmb->js, je = pmb->je;
   int k, ks = pmb->ks, ke = pmb->ke;
   int ii,jj,ftorus;
-  Real en, cprime, w0, rg, dist, acons, d0, amp;
+  // Real en, cprime, w0, rg, dist, acons, d0, amp,beta
   Real ld, lm, lv, vv, rp, rm, tp, tm, tv, rv, vt, pp,eq29,dens,wt;
-  AthenaArray<Real> pr;
 
-  /* initialize a random seed */
-  std::srand(0);             
+  AthenaArray<Real> pr;
+  std::srand(pmb->gid);       
+
+  /* allocate memory for the gas pressure */
+  pr.NewAthenaArray(pmb->block_size.nx3+2*(NGHOST),pmb->block_size.nx2+2*(NGHOST),pmb->block_size.nx1+2*(NGHOST));
   
   /* read parameters */
   gm = pin->GetReal("problem","GM");
@@ -71,8 +143,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   rg = pin->GetReal("problem","rg");
   d0= pin->GetReal("problem","d0");
   amp= pin->GetReal("problem","amp");
+  if (MAGNETIC_FIELDS_ENABLED)
+    beta = pin->GetReal("problem","beta");
   
-  /* calculate some constant values */
   w0 = 1.0;
   cprime = 0.5/dist;
   en = 1.0/(gmgas-1.0);
@@ -84,8 +157,13 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   pmb->pbval->EnrollFluidBoundaryFunction(outer_x1, stbv_oib);
   pmb->pbval->EnrollFluidBoundaryFunction(outer_x2, stbv_ojb);
 
-  /* allocate memory for the gas pressure */
-  pr.NewAthenaArray(pmb->block_size.nx3+2*(NGHOST),pmb->block_size.nx2+2*(NGHOST),pmb->block_size.nx1+2*(NGHOST));
+  if (MAGNETIC_FIELDS_ENABLED) {
+    pmb->pbval->EnrollFieldBoundaryFunction(inner_x1, OutflowInnerX1);
+    pmb->pbval->EnrollFieldBoundaryFunction(inner_x2, OutflowInnerX2);
+    pmb->pbval->EnrollFieldBoundaryFunction(outer_x1, OutflowOuterX1);
+    pmb->pbval->EnrollFieldBoundaryFunction(outer_x2, OutflowOuterX2);
+  }
+
   /* Background */ 
   for (k=ks; k<=ke; k++) {
     for (j=js; j<=je; j++) {
@@ -133,15 +211,56 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
               ld+=d0*lv;
           }
         }
-        if(ftorus==1)
-        {
-          vv= 1.0/3.0*(CUBE(pco->x1f(i+1))-CUBE(pco->x1f(i)))*(cos(pco->x2f(j))-cos(pco->x2f(j+1)));
-          ld/=vv; lm/=vv;
+        vv= 1.0/3.0*(CUBE(pco->x1f(i+1))-CUBE(pco->x1f(i)))*(cos(pco->x2f(j))-cos(pco->x2f(j+1)));
+        ld/=vv; lm/=vv;
+        if(ftorus==1) {
           pfl->u(IDN,k,j,i) = ld;
           pfl->u(IM3,k,j,i) = lm;
+	  //cout << "ld torus: "<<ld <<endl;
           pr(k,j,i)=MAX(acons*pow(ld,gmgas),d0/pco->x1v(i))*(1+amp*((double)rand()/(double)RAND_MAX-0.5));
         }
+      }
+    }
+  }
+
+
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for (k=ks; k<=ke; k++) {
+      for (j=js; j<=je; j++) {
+        for (i=is; i<=ie+1; i++) {
+          pfd->b.x1f(k,j,i)  = magr(pmb,i,j,k);
+        }
+      }
+    }
+    for (k=ks; k<=ke; k++) {
+      for (j=js; j<=je+1; j++) {
+        for (i=is; i<=ie; i++) {
+          pfd->b.x2f(k,j,i)  = magt(pmb,i,j,k);
+        }
+      }
+    }
+    for (k=ks; k<=ke+1; k++) {
+      for (j=js; j<=je; j++) {
+        for (i=is; i<=ie; i++) {
+          pfd->b.x3f(k,j,i) = 0.0;
+        }
+      }
+    }
+  }
+
+  for (k=ks; k<=ke; k++) {
+    for (j=js; j<=je; j++) {
+      for (i=is; i<=ie; i++) {
         pfl->u(IEN,k,j,i)=pr(k,j,i)*en+0.5*SQR(pfl->u(IM3,k,j,i))/pfl->u(IDN,k,j,i);
+        // //Adding the magnetic energy contributions onto the internal energy 
+        if (MAGNETIC_FIELDS_ENABLED) {
+          Real bx = ((pco->x1f(i+1)-pco->x1v(i))*pfd->b.x1f(k,j,i)
+             +  (pco->x1v(i)-pco->x1f(i))*pfd->b.x1f(k,j,i+1))/pco->dx1f(i);
+          Real by = ((pco->x2f(j+1)-pco->x2v(j))*pfd->b.x2f(k,j,i)
+             +  (pco->x2v(j)-pco->x2f(j))*pfd->b.x2f(k,j+1,i))/pco->dx2f(j);
+          Real bz = (pfd->b.x3f(k,j,i) + pfd->b.x3f(k+1,j,i))*0.5;
+          pfl->u(IEN,k,j,i) += 0.5*(SQR(bx)+SQR(by)+SQR(bz));
+        }
       }
     }
   }
@@ -156,47 +275,37 @@ void stbv_iib(MeshBlock *pmb, AthenaArray<Real> &a,
 {
   Coordinates *pco = pmb->pcoord;
   int i,j,k;
-#ifdef MHD
-  int ju, ku; /* j-upper, k-upper */
-#endif
   Real pg;
-
   for (k=ks; k<=ke; k++) {
     for (j=js; j<=je; j++) {
       for (i=1; i<=(NGHOST); i++) {
         a(IDN,k,j,is-i) = a(IDN,k,j,is);
-        if(a(IM1,k,j,is-i) > 0.0)
-        {
-          a(IM1,k,j,is-i) = 0.0;
-        }
-//        a(IM1,k,j,is-i) = 0.0;
-        a(IM2,k,j,is-i) = 0.0;
-        a(IM3,k,j,is-i) = 0.0;
-        pg = (a(IEN,k,j,is-i+1)-0.5*(SQR(a(IM1,k,j,is-i+1))+SQR(a(IM2,k,j,is-i+1))+SQR(a(IM3,k,j,is-i+1)))/a(IDN,k,j,is-i+1))*(gmgas-1.0);
+        a(IM1,k,j,is-i) = 0.0;
+        a(IM2,k,j,is-i) = a(IM2,k,j,is); //corotating ghost region
+        a(IM3,k,j,is-i) = a(IM3,k,j,is);
+        pg = (a(IEN,k,j,is-i+1)-0.5*(SQR(a(IM1,k,j,is-i+1))+SQR(a(IM2,k,j,is-i+1))+SQR(a(IM3,k,j,is-i+1)))/a(IDN,k,j,is-i+1)-0.5*(SQR(a(IB1,k,j,is-i+1))+SQR(a(IB2,k,j,is-i+1))+SQR(a(IB3,k,j,is-i+1))))*(gmgas-1.0);
         pg-=gm/SQR(pco->x1f(is-i+1))*a(IDN,k,j,is-i+1)*pco->dx1v(is-i);
         a(IEN,k,j,is-i)=pg/(gmgas-1.0)+0.5*SQR(a(IM1,k,j,is-i))/a(IDN,k,j,is-i);
       }
     }
   }
-
   return;
 }
 
 
 void stbv_oib(MeshBlock *pmb, AthenaArray<Real> &a,
-              int is, int ie, int js, int je, int ks, int ke))
+              int is, int ie, int js, int je, int ks, int ke)
 {
   int i,j,k;
-#ifdef MHD
-  int ju, ku; /* j-upper, k-upper */
-#endif
 
   for (k=ks; k<=ke; k++) {
     for (j=js; j<=je; j++) {
       for (i=1; i<=(NGHOST); i++) {
         a(IDN,k,j,ie+i) = a(IDN,k,j,ie);
+        a(IM1,k,j,ie+i) = a(IM1,k,j,ie);
         a(IM2,k,j,ie+i) = a(IM2,k,j,ie);
         a(IM3,k,j,ie+i) = a(IM3,k,j,ie);
+        a(IEN,k,j,ie+i) = a(IEN,k,j,ie);
         if(a(IM1,k,j,ie+i) < 0.0)
         {
           a(IEN,k,j,ie+i) -= 0.5*SQR(a(IM1,k,j,ie+i))/a(IDN,k,j,ie+i);
@@ -205,7 +314,6 @@ void stbv_oib(MeshBlock *pmb, AthenaArray<Real> &a,
       }
     }
   }
-
   return;
 }
 
@@ -214,16 +322,15 @@ void stbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a,
               int is, int ie, int js, int je, int ks, int ke)
 {
   int i,j,k;
-#ifdef MHD
-  int ku; /* k-upper */
-#endif
 
   for (k=ks; k<=ke; k++) {
     for (j=1; j<=(NGHOST); j++) {
       for (i=is; i<=ie; i++) {
         a(IDN,k,js-j,i) = a(IDN,k,js,i);
         a(IM1,k,js-j,i) = a(IM1,k,js,i);
+        a(IM2,k,js-j,i) = a(IM2,k,js,i);
         a(IM3,k,js-j,i) = a(IM3,k,js,i);
+        a(IEN,k,js-j,i) = a(IEN,k,js,i);
         if(a(IM2,k,js-j,i) > 0.0)
         {
           a(IEN,k,js-j,i) -= 0.5*SQR(a(IM2,k,js-j,i))/a(IDN,k,js-j,i);
@@ -240,16 +347,15 @@ void stbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
               int is, int ie, int js, int je, int ks, int ke)
 {
   int i,j,k;
-#ifdef MHD
-  int ku; /* k-upper */
-#endif
 
   for (k=ks; k<=ke; k++) {
     for (j=1; j<=(NGHOST); j++) {
       for (i=is; i<=ie; i++) {
         a(IDN,k,je+j,i) = a(IDN,k,je,i);
         a(IM1,k,je+j,i) = a(IM1,k,je,i);
+        a(IM2,k,je+j,i) = a(IM2,k,je,i);
         a(IM3,k,je+j,i) = a(IM3,k,je,i);
+        a(IEN,k,je+j,i) = a(IEN,k,je,i);
         if(a(IM2,k,je+j,i) < 0.0)
         {
           a(IEN,k,je+j,i) -= 0.5*SQR(a(IM2,k,je+j,i))/a(IDN,k,je+j,i);
