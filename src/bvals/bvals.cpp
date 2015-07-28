@@ -930,7 +930,6 @@ void BoundaryValues::SetFluidBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
       }
     }
   }
-//  std::cout << pmb->gid << " from " << nb.ox1 <<" " <<nb.ox2 <<" " <<nb.ox3 << " : " << si << " " << ei << " " << sj << " " << ej << " " <<sk << " " <<ek << std::endl;
   return;
 }
 
@@ -1314,7 +1313,6 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
       NeighborBlock& nb= pmb->neighbor[n];
       if(nb.level >= mylevel) continue;
       int mytype=std::abs(nb.ox1)+std::abs(nb.ox2)+std::abs(nb.ox3);
-//      std::cout << "MeshBlock " << pmb->gid << " boundary " << nb.ox1 << " " << nb.ox2 << " " << nb.ox3 << " mylevel= "<< mylevel <<std::endl; 
       // fill the required ghost-ghost zone
       int nis, nie, njs, nje, nks, nke;
       nis=std::max(nb.ox1-1,-1), nie=std::min(nb.ox1+1,1);
@@ -1326,7 +1324,6 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
         for(int nj=njs; nj<=nje; nj++) {
           for(int ni=nis; ni<=nie; ni++) {
             int ntype=std::abs(ni)+std::abs(nj)+std::abs(nk);
-//            std::cout << "ghost-ghost zone: " << ni << " " << nj << " " << nk << " "<< mytype << " " << ntype << " " <<pmb->nblevel[nk+1][nj+1][ni+1] << std::endl;
             if(ntype==0) continue; // skip myself
             if(pmb->nblevel[nk+1][nj+1][ni+1]!=mylevel
             && pmb->nblevel[nk+1][nj+1][ni+1]!=-1)
@@ -1397,7 +1394,6 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
       else if(nb.ox3>0) sk=pmb->cke+1,  ek=pmb->cke+cn;
       else              sk=pmb->cks-cn, ek=pmb->cks-1;
 
-//      std::cout << "prolongating " <<   si << " " << ei << " " << sj << " " << ej << " " << sk << " " << ek << std::endl; 
       if(pmb->block_size.nx3 > 1) { // 3D
         for(int n=0; n<NFLUID; n++) {
           for(int k=sk; k<=ek; k++) {
@@ -1602,8 +1598,6 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
               Real fac=1.0;
               if(pdiff>TINY_NUMBER && ndiff <-TINY_NUMBER)
                 fac=std::min(pdiff/std::max(pdiff,mpdiff),ndiff/std::min(ndiff,mndiff));
-              if(fac!=1.0)
-//              std::cout << "gradients before correction: " << gx1c << " " << gx2c << " after correction: " << gx1c*fac << " " << gx2c*fac << " " << fac << std::endl;
               gx1c*=fac; gx2c*=fac;
 
               // interpolate on to the finer grid
