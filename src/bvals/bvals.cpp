@@ -361,7 +361,7 @@ BoundaryValues::~BoundaryValues()
     fvol_[1][1].DeleteAthenaArray();
     sarea_[0].DeleteAthenaArray();
     sarea_[1].DeleteAthenaArray();
-    for(int r=0;r>6;r++)
+    for(int r=0;r<6;r++)
       surface_flux_[r].DeleteAthenaArray();
     for(int l=0;l<NSTEP;l++) {
       for(int i=0;i<6;i++){
@@ -930,6 +930,7 @@ void BoundaryValues::SetFluidBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
       }
     }
   }
+//  std::cout << pmb->gid << " from " << nb.ox1 <<" " <<nb.ox2 <<" " <<nb.ox3 << " : " << si << " " << ei << " " << sj << " " << ej << " " <<sk << " " <<ek << std::endl;
   return;
 }
 
@@ -1303,11 +1304,17 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
   Coordinates *pco=pmb->pcoord;
   int mylevel;
   long int lx1, lx2, lx3;
+  int mox1, mox2, mox3;
   pmb->uid.GetLocation(lx1, lx2, lx3, mylevel);
+  mox1=((int)(lx1&1L)<<1)-1;
+  mox2=((int)(lx2&1L)<<1)-1;
+  mox3=((int)(lx3&1L)<<1)-1;
   if(pmb->block_size.nx2>1) {  // only in 2D or 3D
     for(int n=0; n<pmb->nneighbor; n++) {
       NeighborBlock& nb= pmb->neighbor[n];
       if(nb.level >= mylevel) continue;
+      int mytype=std::abs(nb.ox1)+std::abs(nb.ox2)+std::abs(nb.ox3);
+//      std::cout << "MeshBlock " << pmb->gid << " boundary " << nb.ox1 << " " << nb.ox2 << " " << nb.ox3 << " mylevel= "<< mylevel <<std::endl; 
       // fill the required ghost-ghost zone
       int nis, nie, njs, nje, nks, nke;
       nis=std::max(nb.ox1-1,-1), nie=std::min(nb.ox1+1,1);
@@ -1318,10 +1325,18 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
       for(int nk=nks; nk<=nke; nk++) {
         for(int nj=njs; nj<=nje; nj++) {
           for(int ni=nis; ni<=nie; ni++) {
-            if(ni==0 && nj==0 && nk==0) continue; // skip myself
+            int ntype=std::abs(ni)+std::abs(nj)+std::abs(nk);
+//            std::cout << "ghost-ghost zone: " << ni << " " << nj << " " << nk << " "<< mytype << " " << ntype << " " <<pmb->nblevel[nk+1][nj+1][ni+1] << std::endl;
+            if(ntype==0) continue; // skip myself
             if(pmb->nblevel[nk+1][nj+1][ni+1]!=mylevel
             && pmb->nblevel[nk+1][nj+1][ni+1]!=-1)
               continue; // physical boundary will also be restricted
+            if(ntype>mytype) {
+              if(pmb->block_size.nx3 > 1) // 3D
+                if(((mox1==ni)+(mox2==nj)+(mox3==nk)) != ntype) continue;
+              else if(pmb->block_size.nx2 > 1) // 2D
+                if(((mox1==ni)+(mox2==nj)) != ntype) continue;
+            }
 
             // this neighbor block is on the same level
             // and needs to be restricted for prolongation
@@ -1382,6 +1397,7 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
       else if(nb.ox3>0) sk=pmb->cke+1,  ek=pmb->cke+cn;
       else              sk=pmb->cks-cn, ek=pmb->cks-1;
 
+//      std::cout << "prolongating " <<   si << " " << ei << " " << sj << " " << ej << " " << sk << " " << ek << std::endl; 
       if(pmb->block_size.nx3 > 1) { // 3D
         for(int n=0; n<NFLUID; n++) {
           for(int k=sk; k<=ek; k++) {
@@ -1425,8 +1441,10 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
                 Real dx1fp= fx1p-x1c;
                 Real ccval=coarse_cons_(n,k,j,i);
                 // calculate 3D gradients using Mignone 2014's modified van-Leer limiter
-                Real gx1m = (ccval-coarse_cons_(n,k,j,i-1))/dx1m;
-                Real gx1p = (coarse_cons_(n,k,j,i+1)-ccval)/dx1p;
+                Real x1dm=ccval-coarse_cons_(n,k,j,i-1);
+                Real x1dp=coarse_cons_(n,k,j,i+1)-ccval;
+                Real gx1m = x1dm/dx1m;
+                Real gx1p = x1dp/dx1p;
                 Real gx1c = gx1m*gx1p;
                 if(gx1c>0.0) {
                   Real cf=dx1p/(x1fp-x1c);
@@ -1435,8 +1453,10 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
                 }
                 else gx1c=0.0;
 
-                Real gx2m = (ccval-coarse_cons_(n,k,j-1,i))/dx2m;
-                Real gx2p = (coarse_cons_(n,k,j+1,i)-ccval)/dx2p;
+                Real x2dm=ccval-coarse_cons_(n,k,j-1,i);
+                Real x2dp=coarse_cons_(n,k,j+1,i)-ccval;
+                Real gx2m = x2dm/dx2m;
+                Real gx2p = x2dp/dx2p;
                 Real gx2c = gx2m*gx2p;
                 if(gx2c>0.0) {
                   Real cf=dx2p/(x2fp-x2c);
@@ -1445,8 +1465,10 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
                 }
                 else gx2c=0.0;
   
-                Real gx3m = (ccval-coarse_cons_(n,k-1,j,i))/dx3m;
-                Real gx3p = (coarse_cons_(n,k+1,j,i)-ccval)/dx3p;
+                Real x3dm=ccval-coarse_cons_(n,k-1,j,i);
+                Real x3dp=coarse_cons_(n,k+1,j,i)-ccval;
+                Real gx3m = x3dm/dx3m;
+                Real gx3p = x3dp/dx3p;
                 Real gx3c = gx3m*gx3p;
                 if(gx3c>0.0) {
                   Real cf=dx3p/(x3fp-x3c);
@@ -1454,6 +1476,38 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
                   gx3c=gx3c*(cf*gx3m+cb*gx3p)/(gx3m*gx3m+(cf+cb-2.0)*gx3c+gx3p*gx3p);
                 }
                 else gx3c=0.0;
+
+                // calculate the minimum differences between neighboring cells 
+                Real ndiff=-HUGE_NUMBER, pdiff=HUGE_NUMBER;
+                if(x1dm<0.0) pdiff=std::min(pdiff,-x1dm);
+                else         ndiff=std::max(ndiff,-x1dm);
+                if(x1dp>0.0) pdiff=std::min(pdiff, x1dp);
+                else         ndiff=std::max(ndiff, x1dp);
+                if(x2dm<0.0) pdiff=std::min(pdiff,-x2dm);
+                else         ndiff=std::max(ndiff,-x2dm);
+                if(x2dp>0.0) pdiff=std::min(pdiff, x2dp);
+                else         ndiff=std::max(ndiff, x2dp);
+                if(x3dm<0.0) pdiff=std::min(pdiff,-x3dm);
+                else         ndiff=std::max(ndiff,-x3dm);
+                if(x3dp>0.0) pdiff=std::min(pdiff, x3dp);
+                else         ndiff=std::max(ndiff, x3dp);
+                pdiff*=0.5;
+                ndiff*=0.5;
+
+                // calculate maximum differences for the partially-limited slopes
+                Real mpdiff, mndiff;
+                if(gx1c>=0.0) mpdiff = gx1c*dx1fp, mndiff =-gx1c*dx1fm;
+                else          mpdiff =-gx1c*dx1fm, mndiff = gx1c*dx1fp;
+                if(gx2c>=0.0) mpdiff+= gx2c*dx2fp, mndiff+=-gx2c*dx2fm;
+                else          mpdiff+=-gx2c*dx2fm, mndiff+= gx2c*dx2fp;
+                if(gx3c>=0.0) mpdiff+= gx3c*dx3fp, mndiff+=-gx3c*dx3fm;
+                else          mpdiff+=-gx3c*dx3fm, mndiff+= gx3c*dx3fp;
+
+                // calculate the reduction factor to derive the 3D limited slopes
+                Real fac=1.0;
+                if(pdiff>TINY_NUMBER && ndiff <-TINY_NUMBER)
+                  fac=std::min(pdiff/std::max(pdiff,mpdiff),ndiff/std::min(ndiff,mndiff));
+                gx1c*=fac; gx2c*=fac; ; gx3c*=fac;
 
                 // interpolate onto the finer grid
                 dst(n,fk  ,fj  ,fi  )=ccval-gx1c*dx1fm-gx2c*dx2fm-gx3c*dx3fm;
@@ -1470,7 +1524,7 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
         }
       }
       else if(pmb->block_size.nx2 > 1) { // 2D
-        int k=sk, fk=sk;
+        int k=pmb->cks, fk=pmb->ks;
         for(int n=0; n<NFLUID; n++) {
           for(int j=sj; j<=ej; j++) {
             Real& x2m = pco->coarse_x2v(j-1);
@@ -1480,7 +1534,7 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
             Real& x2fp = pco->coarse_x2f(j+1);
             Real& dx2m = pco->coarse_dx2v(j-1);
             Real& dx2p = pco->coarse_dx2v(j);
-            int fj=(j-pmb->cjs)*2+NGHOST;
+            int fj=(j-pmb->cjs)*2+pmb->js;
             Real& fx2m = pco->x2v(fj);
             Real& fx2p = pco->x2v(fj+1);
             Real dx2fm= x2c-fx2m;
@@ -1493,15 +1547,17 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
               Real& x1fp = pco->coarse_x1f(i+1);
               Real& dx1m = pco->coarse_dx1v(i-1);
               Real& dx1p = pco->coarse_dx1v(i);
-              int fi=(i-pmb->cis)*2+NGHOST;
+              int fi=(i-pmb->cis)*2+pmb->is;
               Real& fx1m = pco->x1v(fi);
               Real& fx1p = pco->x1v(fi+1);
               Real dx1fm= x1c-fx1m;
               Real dx1fp= fx1p-x1c;
               Real ccval=coarse_cons_(n,k,j,i);
               // calculate 2D gradients using Mignone 2014's modified van-Leer limiter
-              Real gx1m = (ccval-coarse_cons_(n,k,j,i-1))/dx1m;
-              Real gx1p = (coarse_cons_(n,k,j,i+1)-ccval)/dx1p;
+              Real x1dm=ccval-coarse_cons_(n,k,j,i-1);
+              Real x1dp=coarse_cons_(n,k,j,i+1)-ccval;
+              Real gx1m = x1dm/dx1m;
+              Real gx1p = x1dp/dx1p;
               Real gx1c = gx1m*gx1p;
               if(gx1c>0.0) {
                 Real cf=dx1p/(x1fp-x1c);
@@ -1510,8 +1566,10 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
               }
               else gx1c=0.0;
 
-              Real gx2m = (ccval-coarse_cons_(n,k,j-1,i))/dx2m;
-              Real gx2p = (coarse_cons_(n,k,j+1,i)-ccval)/dx2p;
+              Real x2dm=ccval-coarse_cons_(n,k,j-1,i);
+              Real x2dp=coarse_cons_(n,k,j+1,i)-ccval;
+              Real gx2m = x2dm/dx2m;
+              Real gx2p = x2dp/dx2p;
               Real gx2c = gx2m*gx2p;
               if(gx2c>0.0) {
                 Real cf=dx2p/(x2fp-x2c);
@@ -1519,6 +1577,34 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
                 gx2c=gx2c*(cf*gx2m+cb*gx2p)/(gx2m*gx2m+(cf+cb-2.0)*gx2c+gx2p*gx2p);
               }
               else gx2c=0.0;
+
+              // calculate the minimum differences between neighboring cells 
+              Real ndiff=-HUGE_NUMBER, pdiff=HUGE_NUMBER;
+              if(x1dm<0.0) pdiff=std::min(pdiff,-x1dm);
+              else         ndiff=std::max(ndiff,-x1dm);
+              if(x1dp>0.0) pdiff=std::min(pdiff, x1dp);
+              else         ndiff=std::max(ndiff, x1dp);
+              if(x2dm<0.0) pdiff=std::min(pdiff,-x2dm);
+              else         ndiff=std::max(ndiff,-x2dm);
+              if(x2dp>0.0) pdiff=std::min(pdiff, x2dp);
+              else         ndiff=std::max(ndiff, x2dp);
+              pdiff*=0.5;
+              ndiff*=0.5;
+
+              // calculate maximum differences for the partially-limited slopes
+              Real mpdiff, mndiff;
+              if(gx1c>=0.0) mpdiff = gx1c*dx1fp, mndiff =-gx1c*dx1fm;
+              else          mpdiff =-gx1c*dx1fm, mndiff = gx1c*dx1fp;
+              if(gx2c>=0.0) mpdiff+= gx2c*dx2fp, mndiff+=-gx2c*dx2fm;
+              else          mpdiff+=-gx2c*dx2fm, mndiff+= gx2c*dx2fp;
+
+              // calculate the reduction factor to derive the 3D limited slopes
+              Real fac=1.0;
+              if(pdiff>TINY_NUMBER && ndiff <-TINY_NUMBER)
+                fac=std::min(pdiff/std::max(pdiff,mpdiff),ndiff/std::min(ndiff,mndiff));
+              if(fac!=1.0)
+//              std::cout << "gradients before correction: " << gx1c << " " << gx2c << " after correction: " << gx1c*fac << " " << gx2c*fac << " " << fac << std::endl;
+              gx1c*=fac; gx2c*=fac;
 
               // interpolate on to the finer grid
               dst(n,fk  ,fj  ,fi  )=ccval-gx1c*dx1fm-gx2c*dx2fm;
@@ -1530,7 +1616,7 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
         }
       }
       else { // 1D
-        int k=sk, fk=sk, j=sj, fj=sj;
+        int k=pmb->cks, fk=pmb->ks, j=pmb->cjs, fj=pmb->js;
         for(int n=0; n<NFLUID; n++) {
           for(int i=si; i<=ei; i++) {
             Real& x1m = pco->coarse_x1v(i-1);
@@ -1540,7 +1626,7 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
             Real& x1fp = pco->coarse_x1f(i+1);
             Real& dx1m = pco->coarse_dx1v(i-1);
             Real& dx1p = pco->coarse_dx1v(i);
-            int fi=(i-pmb->cis)*2+NGHOST;
+            int fi=(i-pmb->cis)*2+pmb->is;
             Real& fx1m = pco->x1v(fi);
             Real& fx1p = pco->x1v(fi+1);
             Real dx1fm= x1c-fx1m;
