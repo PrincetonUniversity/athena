@@ -481,6 +481,7 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
     int cie=pmy_block->cie, cje=pmy_block->cje, cke=pmy_block->cke;
 
     // x1
+    nrootmesh=mesh_size.nx1*(1L<<(ll-pm->root_level));
     for(int i=cis; i<=cie; i++) { // active region
       int ifl=(i-cis)*2+is;
       coarse_dx1f(i)=dx1f(ifl)+dx1f(ifl+1);
@@ -535,6 +536,7 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
     }
 
     // x2
+    nrootmesh=mesh_size.nx2*(1L<<(ll-pm->root_level));
     if(pmy_block->block_size.nx2 > 1) { // 2D or 3D
       for(int j=cjs; j<=cje; j++) { // active region
         int jfl=(j-cjs)*2+js;
@@ -594,7 +596,9 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
       coarse_x2f(js)=x2f(js);
       coarse_x2f(js+1)=x2f(js+1);
     }
+
     // x3
+    nrootmesh=mesh_size.nx3*(1L<<(ll-pm->root_level));
     if(pmy_block->block_size.nx3 > 1) { // 3D
       for(int k=cks; k<=cke; k++) { // active region
         int kfl=(k-cks)*2+ks;
