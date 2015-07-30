@@ -26,6 +26,7 @@
 #include <string>     // c_str()
 #include <cstring>    // memcpy
 #include <cstdlib>
+#include <cmath>
 
 // Athena headers
 #include "../athena.hpp"          // Real
@@ -1436,74 +1437,34 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
                 Real dx1fm= x1c-fx1m;
                 Real dx1fp= fx1p-x1c;
                 Real ccval=coarse_cons_(n,k,j,i);
-                // calculate 3D gradients using Mignone 2014's modified van-Leer limiter
-                Real x1dm=ccval-coarse_cons_(n,k,j,i-1);
-                Real x1dp=coarse_cons_(n,k,j,i+1)-ccval;
-                Real gx1m = x1dm/dx1m;
-                Real gx1p = x1dp/dx1p;
-                Real gx1c = gx1m*gx1p;
-                if(gx1c>0.0) {
-                  Real cf=dx1p/(x1fp-x1c);
-                  Real cb=dx1m/(x1c-x1fm);
-                  gx1c=gx1c*(cf*gx1m+cb*gx1p)/(gx1m*gx1m+(cf+cb-2.0)*gx1c+gx1p*gx1p);
+
+                // calculate 3D gradients using the minmod limiter
+                Real gx1m = (ccval-coarse_cons_(n,k,j,i-1))/dx1m;
+                Real gx1p = (coarse_cons_(n,k,j,i+1)-ccval)/dx1p;
+                Real gx1c = 0.5*(SIGN(gx1m)+SIGN(gx1p))*std::min(std::abs(gx1m),std::abs(gx1p));
+                Real gx2m = (ccval-coarse_cons_(n,k,j-1,i))/dx2m;
+                Real gx2p = (coarse_cons_(n,k,j+1,i)-ccval)/dx2p;
+                Real gx2c = 0.5*(SIGN(gx2m)+SIGN(gx2p))*std::min(std::abs(gx2m),std::abs(gx2p));
+                Real gx3m = (ccval-coarse_cons_(n,k-1,j,i))/dx3m;
+                Real gx3p = (coarse_cons_(n,k+1,j,i)-ccval)/dx3p;
+                Real gx3c = 0.5*(SIGN(gx3m)+SIGN(gx3p))*std::min(std::abs(gx3m),std::abs(gx3p));
+                Real xdt = std::abs(gx1c)*std::max(dx1m,dx1p)
+                         + std::abs(gx2c)*std::max(dx2m,dx2p)
+                         + std::abs(gx3c)*std::max(dx3m,dx3p);
+
+                Real nmax = ccval, nmin = ccval;
+                nmax=std::max(nmax,std::max(coarse_cons_(n,k,j,i+1),coarse_cons_(n,k,j,i-1)));
+                nmax=std::max(nmax,std::max(coarse_cons_(n,k,j+1,i),coarse_cons_(n,k,j-1,i)));
+                nmax=std::max(nmax,std::max(coarse_cons_(n,k+1,j,i),coarse_cons_(n,k-1,j,i)));
+                nmin=std::min(nmin,std::min(coarse_cons_(n,k,j,i+1),coarse_cons_(n,k,j,i-1)));
+                nmin=std::min(nmin,std::min(coarse_cons_(n,k,j+1,i),coarse_cons_(n,k,j-1,i)));
+                nmin=std::min(nmin,std::min(coarse_cons_(n,k+1,j,i),coarse_cons_(n,k-1,j,i)));
+
+                Real maxdiff = std::min(nmax-ccval,ccval-nmin);
+                if(xdt > maxdiff) {
+                  Real fac=maxdiff/xdt;
+                  gx1c *= fac; gx2c *= fac; gx3c *= fac;
                 }
-                else gx1c=0.0;
-
-                Real x2dm=ccval-coarse_cons_(n,k,j-1,i);
-                Real x2dp=coarse_cons_(n,k,j+1,i)-ccval;
-                Real gx2m = x2dm/dx2m;
-                Real gx2p = x2dp/dx2p;
-                Real gx2c = gx2m*gx2p;
-                if(gx2c>0.0) {
-                  Real cf=dx2p/(x2fp-x2c);
-                  Real cb=dx2m/(x2c-x2fm);
-                  gx2c=gx2c*(cf*gx2m+cb*gx2p)/(gx2m*gx2m+(cf+cb-2.0)*gx2c+gx2p*gx2p);
-                }
-                else gx2c=0.0;
-  
-                Real x3dm=ccval-coarse_cons_(n,k-1,j,i);
-                Real x3dp=coarse_cons_(n,k+1,j,i)-ccval;
-                Real gx3m = x3dm/dx3m;
-                Real gx3p = x3dp/dx3p;
-                Real gx3c = gx3m*gx3p;
-                if(gx3c>0.0) {
-                  Real cf=dx3p/(x3fp-x3c);
-                  Real cb=dx3m/(x3c-x3fm);
-                  gx3c=gx3c*(cf*gx3m+cb*gx3p)/(gx3m*gx3m+(cf+cb-2.0)*gx3c+gx3p*gx3p);
-                }
-                else gx3c=0.0;
-
-                // calculate the minimum differences between neighboring cells 
-                Real ndiff=-HUGE_NUMBER, pdiff=HUGE_NUMBER;
-                if(x1dm<0.0) pdiff=std::min(pdiff,-x1dm);
-                else         ndiff=std::max(ndiff,-x1dm);
-                if(x1dp>0.0) pdiff=std::min(pdiff, x1dp);
-                else         ndiff=std::max(ndiff, x1dp);
-                if(x2dm<0.0) pdiff=std::min(pdiff,-x2dm);
-                else         ndiff=std::max(ndiff,-x2dm);
-                if(x2dp>0.0) pdiff=std::min(pdiff, x2dp);
-                else         ndiff=std::max(ndiff, x2dp);
-                if(x3dm<0.0) pdiff=std::min(pdiff,-x3dm);
-                else         ndiff=std::max(ndiff,-x3dm);
-                if(x3dp>0.0) pdiff=std::min(pdiff, x3dp);
-                else         ndiff=std::max(ndiff, x3dp);
-                pdiff*=0.5;
-                ndiff*=0.5;
-
-                // calculate maximum differences for the partially-limited slopes
-                Real mpdiff, mndiff;
-                if(gx1c>=0.0) mpdiff = gx1c*dx1fp, mndiff =-gx1c*dx1fm;
-                else          mpdiff =-gx1c*dx1fm, mndiff = gx1c*dx1fp;
-                if(gx2c>=0.0) mpdiff+= gx2c*dx2fp, mndiff+=-gx2c*dx2fm;
-                else          mpdiff+=-gx2c*dx2fm, mndiff+= gx2c*dx2fp;
-                if(gx3c>=0.0) mpdiff+= gx3c*dx3fp, mndiff+=-gx3c*dx3fm;
-                else          mpdiff+=-gx3c*dx3fm, mndiff+= gx3c*dx3fp;
-
-                // calculate the reduction factor to derive the 3D limited slopes
-                Real fac=1.0;
-                if(pdiff>TINY_NUMBER && ndiff <-TINY_NUMBER)
-                  fac=std::min(pdiff/std::max(pdiff,mpdiff),ndiff/std::min(ndiff,mndiff));
-                gx1c*=fac; gx2c*=fac; ; gx3c*=fac;
 
                 // interpolate onto the finer grid
                 dst(n,fk  ,fj  ,fi  )=ccval-gx1c*dx1fm-gx2c*dx2fm-gx3c*dx3fm;
@@ -1549,56 +1510,28 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
               Real dx1fm= x1c-fx1m;
               Real dx1fp= fx1p-x1c;
               Real ccval=coarse_cons_(n,k,j,i);
-              // calculate 2D gradients using Mignone 2014's modified van-Leer limiter
-              Real x1dm=ccval-coarse_cons_(n,k,j,i-1);
-              Real x1dp=coarse_cons_(n,k,j,i+1)-ccval;
-              Real gx1m = x1dm/dx1m;
-              Real gx1p = x1dp/dx1p;
-              Real gx1c = gx1m*gx1p;
-              if(gx1c>0.0) {
-                Real cf=dx1p/(x1fp-x1c);
-                Real cb=dx1m/(x1c-x1fm);
-                gx1c=gx1c*(cf*gx1m+cb*gx1p)/(gx1m*gx1m+(cf+cb-2.0)*gx1c+gx1p*gx1p);
+
+              // calculate 2D gradients using the minmod limiter
+              Real gx1m = (ccval-coarse_cons_(n,k,j,i-1))/dx1m;
+              Real gx1p = (coarse_cons_(n,k,j,i+1)-ccval)/dx1p;
+              Real gx1c = 0.5*(SIGN(gx1m)+SIGN(gx1p))*std::min(std::abs(gx1m),std::abs(gx1p));
+              Real gx2m = (ccval-coarse_cons_(n,k,j-1,i))/dx2m;
+              Real gx2p = (coarse_cons_(n,k,j+1,i)-ccval)/dx2p;
+              Real gx2c = 0.5*(SIGN(gx2m)+SIGN(gx2p))*std::min(std::abs(gx2m),std::abs(gx2p));
+              Real xdt = std::abs(gx1c)*std::max(dx1m,dx1p)
+                       + std::abs(gx2c)*std::max(dx2m,dx2p);
+
+              Real nmax = ccval, nmin = ccval;
+              nmax=std::max(nmax,std::max(coarse_cons_(n,k,j,i+1),coarse_cons_(n,k,j,i-1)));
+              nmax=std::max(nmax,std::max(coarse_cons_(n,k,j+1,i),coarse_cons_(n,k,j-1,i)));
+              nmin=std::min(nmin,std::min(coarse_cons_(n,k,j,i+1),coarse_cons_(n,k,j,i-1)));
+              nmin=std::min(nmin,std::min(coarse_cons_(n,k,j+1,i),coarse_cons_(n,k,j-1,i)));
+
+              Real maxdiff = std::min(nmax-ccval,ccval-nmin);
+              if(xdt > maxdiff) {
+                Real fac=maxdiff/xdt;
+                gx1c *= fac; gx2c *= fac;
               }
-              else gx1c=0.0;
-
-              Real x2dm=ccval-coarse_cons_(n,k,j-1,i);
-              Real x2dp=coarse_cons_(n,k,j+1,i)-ccval;
-              Real gx2m = x2dm/dx2m;
-              Real gx2p = x2dp/dx2p;
-              Real gx2c = gx2m*gx2p;
-              if(gx2c>0.0) {
-                Real cf=dx2p/(x2fp-x2c);
-                Real cb=dx2m/(x2c-x2fm);
-                gx2c=gx2c*(cf*gx2m+cb*gx2p)/(gx2m*gx2m+(cf+cb-2.0)*gx2c+gx2p*gx2p);
-              }
-              else gx2c=0.0;
-
-              // calculate the minimum differences between neighboring cells 
-              Real ndiff=-HUGE_NUMBER, pdiff=HUGE_NUMBER;
-              if(x1dm<0.0) pdiff=std::min(pdiff,-x1dm);
-              else         ndiff=std::max(ndiff,-x1dm);
-              if(x1dp>0.0) pdiff=std::min(pdiff, x1dp);
-              else         ndiff=std::max(ndiff, x1dp);
-              if(x2dm<0.0) pdiff=std::min(pdiff,-x2dm);
-              else         ndiff=std::max(ndiff,-x2dm);
-              if(x2dp>0.0) pdiff=std::min(pdiff, x2dp);
-              else         ndiff=std::max(ndiff, x2dp);
-              pdiff*=0.5;
-              ndiff*=0.5;
-
-              // calculate maximum differences for the partially-limited slopes
-              Real mpdiff, mndiff;
-              if(gx1c>=0.0) mpdiff = gx1c*dx1fp, mndiff =-gx1c*dx1fm;
-              else          mpdiff =-gx1c*dx1fm, mndiff = gx1c*dx1fp;
-              if(gx2c>=0.0) mpdiff+= gx2c*dx2fp, mndiff+=-gx2c*dx2fm;
-              else          mpdiff+=-gx2c*dx2fm, mndiff+= gx2c*dx2fp;
-
-              // calculate the reduction factor to derive the 3D limited slopes
-              Real fac=1.0;
-              if(pdiff>TINY_NUMBER && ndiff <-TINY_NUMBER)
-                fac=std::min(pdiff/std::max(pdiff,mpdiff),ndiff/std::min(ndiff,mndiff));
-              gx1c*=fac; gx2c*=fac;
 
               // interpolate on to the finer grid
               dst(n,fk  ,fj  ,fi  )=ccval-gx1c*dx1fm-gx2c*dx2fm;
@@ -1626,6 +1559,7 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
             Real dx1fm= x1c-fx1m;
             Real dx1fp= fx1p-x1c;
             Real ccval=coarse_cons_(n,k,j,i);
+
             // calculate 1D gradient using Mignone 2014's modified van-Leer limiter
             Real gx1m = (ccval-coarse_cons_(n,k,j,i-1))/dx1m;
             Real gx1p = (coarse_cons_(n,k,j,i+1)-ccval)/dx1p;
