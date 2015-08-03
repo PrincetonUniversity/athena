@@ -281,10 +281,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     int nc1=pmb->block_size.nx1+2*NGHOST;
     int nc2=pmb->block_size.nx2+2*NGHOST;
     int nc3=pmb->block_size.nx3+2*NGHOST;
-    fvol_[0][0].NewAthenaArray(nc1);
-    fvol_[0][1].NewAthenaArray(nc1);
-    fvol_[1][0].NewAthenaArray(nc1);
-    fvol_[1][1].NewAthenaArray(nc1);
+    fvol_[0][0].NewAthenaArray(nc1+1);
+    fvol_[0][1].NewAthenaArray(nc1+1);
+    fvol_[1][0].NewAthenaArray(nc1+1);
+    fvol_[1][1].NewAthenaArray(nc1+1);
     sarea_[0].NewAthenaArray(nc1);
     sarea_[1].NewAthenaArray(nc1);
     int size[6], im, jm, km;
@@ -331,6 +331,9 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     coarse_cons_.NewAthenaArray(NFLUID,ncc3,ncc2,ncc1);
 
     if (MAGNETIC_FIELDS_ENABLED) {
+      coarse_b_.x1f.NewAthenaArray(ncc3,ncc2,ncc1+1);
+      coarse_b_.x2f.NewAthenaArray(ncc3,ncc2+1,ncc1);
+      coarse_b_.x3f.NewAthenaArray(ncc3+1,ncc2,ncc1);
       int fsize[6], esize[12];
       // allocate EMF correction buffer
       if(pmb->block_size.nx3>1) { // 3D
@@ -410,6 +413,11 @@ BoundaryValues::~BoundaryValues()
     }
     coarse_cons_.DeleteAthenaArray();
 //  coarse_prim_.DeleteAthenaArray();
+    if (MAGNETIC_FIELDS_ENABLED) {
+      coarse_b_.x1f.DeleteAthenaArray();
+      coarse_b_.x2f.DeleteAthenaArray();
+      coarse_b_.x3f.DeleteAthenaArray();
+    }
   }
 }
 
@@ -770,8 +778,6 @@ void BoundaryValues::RestrictFluid(AthenaArray<Real> &src,
   int si=(csi-pmb->cis)*2+pmb->is, ei=(cei-pmb->cis)*2+pmb->is+1;
 
   // store the restricted data in the prolongation buffer for later use
-  // note: this is actually redundant; this is only needed for face neighbors
-  //       but for now I leave this as the redundancy should be small
   if(pmb->block_size.nx3>1) { // 3D
     for (int n=0; n<(NFLUID); ++n) {
       for (int ck=csk; ck<=cek; ck++) {
@@ -917,7 +923,7 @@ int BoundaryValues::LoadFluidBoundaryBufferToFiner(AthenaArray<Real> &src, Real 
     if(nb.fi1==1)   si+=pmb->block_size.nx1/2-pmb->cnghost;
     else            ei-=pmb->block_size.nx1/2-pmb->cnghost;
   }
-  if(nb.ox2==0) {
+  if(nb.ox2==0 && pmb->block_size.nx2 > 1) {
     if(nb.ox1!=0) {
       if(nb.fi1==1) sj+=pmb->block_size.nx2/2-pmb->cnghost;
       else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
@@ -927,7 +933,7 @@ int BoundaryValues::LoadFluidBoundaryBufferToFiner(AthenaArray<Real> &src, Real 
       else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
     }
   }
-  if(nb.ox3==0) {
+  if(nb.ox3==0 && pmb->block_size.nx3 > 1) {
     if(nb.ox1!=0 && nb.ox2!=0) {
       if(nb.fi1==1) sk+=pmb->block_size.nx3/2-pmb->cnghost;
       else          ek-=pmb->block_size.nx3/2-pmb->cnghost;
@@ -1040,15 +1046,19 @@ void BoundaryValues::SetFluidBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
   else               si=pmb->cis-cng, ei=pmb->cis-1;
   if(nb.ox2==0) {
     sj=pmb->cjs, ej=pmb->cje;
-    if((lx2&1L)==0L) ej+=cng;
-    else             sj-=cng; 
+    if(pmb->block_size.nx2 > 1) {
+      if((lx2&1L)==0L) ej+=cng;
+      else             sj-=cng; 
+    }
   }
   else if(nb.ox2>0)  sj=pmb->cje+1,   ej=pmb->cje+cng;
   else               sj=pmb->cjs-cng, ej=pmb->cjs-1;
   if(nb.ox3==0) {
     sk=pmb->cks, ek=pmb->cke;
-    if((lx3&1L)==0L) ek+=cng;
-    else             sk-=cng; 
+    if(pmb->block_size.nx3 > 1) {
+      if((lx3&1L)==0L) ek+=cng;
+      else             sk-=cng; 
+    }
   }
   else if(nb.ox3>0)  sk=pmb->cke+1,   ek=pmb->cke+cng;
   else               sk=pmb->cks-cng, ek=pmb->cks-1;
@@ -1087,26 +1097,30 @@ void BoundaryValues::SetFluidBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf
   else              si=pmb->is-NGHOST, ei=pmb->is-1;
   if(nb.ox2==0) {
     sj=pmb->js, ej=pmb->je;
-    if(nb.ox1!=0) {
-      if(nb.fi1==1) sj+=pmb->block_size.nx2/2;
-      else          ej-=pmb->block_size.nx2/2;
-    }
-    else {
-      if(nb.fi2==1) sj+=pmb->block_size.nx2/2;
-      else          ej-=pmb->block_size.nx2/2;
+    if(pmb->block_size.nx2 > 1) {
+      if(nb.ox1!=0) {
+        if(nb.fi1==1) sj+=pmb->block_size.nx2/2;
+        else          ej-=pmb->block_size.nx2/2;
+      }
+      else {
+        if(nb.fi2==1) sj+=pmb->block_size.nx2/2;
+        else          ej-=pmb->block_size.nx2/2;
+      }
     }
   }
   else if(nb.ox2>0) sj=pmb->je+1,      ej=pmb->je+NGHOST;
   else              sj=pmb->js-NGHOST, ej=pmb->js-1;
   if(nb.ox3==0) {
     sk=pmb->ks, ek=pmb->ke;
-    if(nb.ox1!=0 && nb.ox2!=0) {
-      if(nb.fi1==1) sk+=pmb->block_size.nx3/2;
-      else          ek-=pmb->block_size.nx3/2;
-    }
-    else {
-      if(nb.fi2==1) sk+=pmb->block_size.nx3/2;
-      else          ek-=pmb->block_size.nx3/2;
+    if(pmb->block_size.nx3 > 1) {
+      if(nb.ox1!=0 && nb.ox2!=0) {
+        if(nb.fi1==1) sk+=pmb->block_size.nx3/2;
+        else          ek-=pmb->block_size.nx3/2;
+      }
+      else {
+        if(nb.fi2==1) sk+=pmb->block_size.nx3/2;
+        else          ek-=pmb->block_size.nx3/2;
+      }
     }
   }
   else if(nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
@@ -1693,6 +1707,178 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
 }
 
 //--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::RestrictFieldX1(AthenaArray<Real> &bx1f,
+//                           int csi, int cei, int csj, int cej, int csk, int cek)
+//  \brief restrict the x1 field data and set them into the coarse buffer
+void BoundaryValues::RestrictFieldX1(AthenaArray<Real> &bx1f, 
+                             int csi, int cei, int csj, int cej, int csk, int cek)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  int si=(csi-pmb->cis)*2+pmb->is, ei=(cei-pmb->cis)*2+pmb->is;
+
+  // store the restricted data in the prolongation buffer for later use
+  if(pmb->block_size.nx3>1) { // 3D
+    for (int ck=csk; ck<=cek; ck++) {
+      int k=(ck-pmb->cks)*2+pmb->ks;
+      for (int cj=csj; cj<=cej; cj++) {
+        int j=(cj-pmb->cjs)*2+pmb->js;
+        // reuse fvol_ arrays as surface area
+        pmb->pcoord->Face1Area(k,   j,   si, ei, fvol_[0][0]);
+        pmb->pcoord->Face1Area(k,   j+1, si, ei, fvol_[0][1]);
+        pmb->pcoord->Face1Area(k+1, j,   si, ei, fvol_[1][0]);
+        pmb->pcoord->Face1Area(k+1, j+1, si, ei, fvol_[1][1]);
+        for (int ci=csi; ci<=cei; ci++) {
+          int i=(ci-pmb->cis)*2+pmb->is;
+          Real tarea=fvol_[0][0](i)+fvol_[0][1](i)+fvol_[1][0](i)+fvol_[1][1](i);
+          coarse_b_.x1f(ck,cj,ci)=
+            (bx1f(k  ,j,i)*fvol_[0][0](i)+bx1f(k  ,j+1,i)*fvol_[0][1](i)
+            +bx1f(k+1,j,i)*fvol_[1][0](i)+bx1f(k+1,j+1,i)*fvol_[1][1](i))/tarea;
+        }
+      }
+    }
+  }
+  else if(pmb->block_size.nx2>1) { // 2D
+    int k=pmb->ks
+    for (int cj=csj; cj<=cej; cj++) {
+      int j=(cj-pmb->cjs)*2+pmb->js;
+      // reuse fvol_ arrays as surface area
+      pmb->pcoord->Face1Area(k,  j,   si, ei, fvol_[0][0]);
+      pmb->pcoord->Face1Area(k,  j+1, si, ei, fvol_[0][1]);
+      for (int ci=csi; ci<=cei; ci++) {
+        int i=(ci-pmb->cis)*2+pmb->is;
+        Real tarea=fvol_[0][0](i)+fvol_[0][1](i);
+        coarse_b_.x1f(csk,cj,ci)=
+          (bx1f(k,j,i)*fvol_[0][0](i)+bx1f(k,j+1,i)*fvol_[0][1](i))/tarea;
+      }
+    }
+  }
+  else { // 1D - no restriction, just copy 
+    for (int ci=csi; ci<=cei; ci++) {
+      int i=(ci-pmb->cis)*2+pmb->is;
+      coarse_b_.x1f(csk,csj,ci)=bx1f(pmb->csk,pmb->csj,i);
+    }
+  }
+
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::RestrictFieldX2(AthenaArray<Real> &bx2f,
+//                           int csi, int cei, int csj, int cej, int csk, int cek)
+//  \brief restrict the x2 field data and set them into the coarse buffer
+void BoundaryValues::RestrictFieldX2(AthenaArray<Real> &bx2f, 
+                             int csi, int cei, int csj, int cej, int csk, int cek)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  int si=(csi-pmb->cis)*2+pmb->is, ei=(cei-pmb->cis)*2+pmb->is+1;
+
+  // store the restricted data in the prolongation buffer for later use
+  if(pmb->block_size.nx3>1) { // 3D
+    for (int ck=csk; ck<=cek; ck++) {
+      int k=(ck-pmb->cks)*2+pmb->ks;
+      for (int cj=csj; cj<=cej; cj++) {
+        int j=(cj-pmb->cjs)*2+pmb->js;
+        // reuse fvol_ arrays as surface area
+        pmb->pcoord->Face2Area(k,   j,  si, ei, fvol_[0][0]);
+        pmb->pcoord->Face2Area(k+1, j,  si, ei, fvol_[0][1]);
+        for (int ci=csi; ci<=cei; ci++) {
+          int i=(ci-pmb->cis)*2+pmb->is;
+          Real tarea=fvol_[0][0](i)+fvol_[0][0](i+1)+fvol_[0][1](i)+fvol_[0][1](i+1);
+          coarse_b_.x2f(ck,cj,ci)=
+            (bx2f(k  ,j,i)*fvol_[0][0](i)+bx2f(k  ,j,i+1)*fvol_[0][0](i+1)
+            +bx2f(k+1,j,i)*fvol_[0][1](i)+bx2f(k+1,j,i+1)*fvol_[0][1](i+1))/tarea;
+        }
+      }
+    }
+  }
+  else if(pmb->block_size.nx2>1) { // 2D
+    int k=pmb->ks
+    for (int cj=csj; cj<=cej; cj++) {
+      int j=(cj-pmb->cjs)*2+pmb->js;
+      // reuse fvol_ arrays as surface area
+      pmb->pcoord->Face2Area(k, j, si, ei, fvol_[0][0]);
+      for (int ci=csi; ci<=cei; ci++) {
+        int i=(ci-pmb->cis)*2+pmb->is;
+        Real tarea=fvol_[0][0](i)+fvol_[0][0](i+1);
+        coarse_b_.x2f(pmb->cks,cj,ci)=
+          (bx2f(k,j,i)*fvol_[0][0](i)+bx2f(k,j,i+1)*fvol_[0][0](i+1))/tarea;
+      }
+    }
+  }
+  else { // 1D - no restriction, just copy 
+    int k=pmb->ks, j=pmb->js;
+    pmb->pcoord->Face2Area(k, j, si, ei, fvol_[0][0]);
+    for (int ci=csi; ci<=cei; ci++) {
+      int i=(ci-pmb->cis)*2+pmb->is;
+        Real tarea=fvol_[0][0](i)+fvol_[0][0](i+1);
+        coarse_b_.x2f(pmb->cks,pmb->cjs,ci)=
+          (bx2f(k,j,i)*fvol_[0][0](i)+bx2f(k,j,i+1)*fvol_[0][0](i+1))/tarea;
+    }
+  }
+
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::RestrictFieldX3(AthenaArray<Real> &bx3f,
+//                           int csi, int cei, int csj, int cej, int csk, int cek)
+//  \brief restrict the x3 field data and set them into the coarse buffer
+void BoundaryValues::RestrictFieldX3(AthenaArray<Real> &bx3f, 
+                             int csi, int cei, int csj, int cej, int csk, int cek)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  int si=(csi-pmb->cis)*2+pmb->is, ei=(cei-pmb->cis)*2+pmb->is+1;
+
+  // store the restricted data in the prolongation buffer for later use
+  if(pmb->block_size.nx3>1) { // 3D
+    for (int ck=csk; ck<=cek; ck++) {
+      int k=(ck-pmb->cks)*2+pmb->ks;
+      for (int cj=csj; cj<=cej; cj++) {
+        int j=(cj-pmb->cjs)*2+pmb->js;
+        // reuse fvol_ arrays as surface area
+        pmb->pcoord->Face3Area(k,   j,  si, ei, fvol_[0][0]);
+        pmb->pcoord->Face3Area(k, j+1,  si, ei, fvol_[0][1]);
+        for (int ci=csi; ci<=cei; ci++) {
+          int i=(ci-pmb->cis)*2+pmb->is;
+          Real tarea=fvol_[0][0](i)+fvol_[0][0](i+1)+fvol_[0][1](i)+fvol_[0][1](i+1);
+          coarse_b_.x3f(ck,cj,ci)=
+            (bx3f(k,j  ,i)*fvol_[0][0](i)+bx3f(k,j  ,i+1)*fvol_[0][0](i+1)
+            +bx3f(k,j+1,i)*fvol_[0][1](i)+bx3f(k,j+1,i+1)*fvol_[0][1](i+1))/tarea;
+        }
+      }
+    }
+  }
+  else if(pmb->block_size.nx2>1) { // 2D
+    int k=pmb->ks
+    for (int cj=csj; cj<=cej; cj++) {
+      int j=(cj-pmb->cjs)*2+pmb->js;
+      // reuse fvol_ arrays as surface area
+      pmb->pcoord->Face3Area(k,   j, si, ei, fvol_[0][0]);
+      pmb->pcoord->Face3Area(k, j+1, si, ei, fvol_[0][1]);
+      for (int ci=csi; ci<=cei; ci++) {
+        int i=(ci-pmb->cis)*2+pmb->is;
+        Real tarea=fvol_[0][0](i)+fvol_[0][0](i+1)+fvol_[0][1](i)+fvol_[0][1](i+1);
+        coarse_b_.x3f(pmb->cks,cj,ci)=
+            (bx3f(k,j  ,i)*fvol_[0][0](i)+bx3f(k,j  ,i+1)*fvol_[0][0](i+1)
+            +bx3f(k,j+1,i)*fvol_[0][1](i)+bx3f(k,j+1,i+1)*fvol_[0][1](i+1))/tarea;
+      }
+    }
+  }
+  else { // 1D - no restriction, just copy 
+    int k=pmb->ks, j=pmb->js;
+    pmb->pcoord->Face3Area(k, j, si, ei, fvol_[0][0]);
+    for (int ci=csi; ci<=cei; ci++) {
+      int i=(ci-pmb->cis)*2+pmb->is;
+        Real tarea=fvol_[0][0](i)+fvol_[0][0](i+1);
+        coarse_b_.x3f(pmb->cks,pmb->cjs,ci)=
+          (bx3f(k,j,i)*fvol_[0][0](i)+bx3f(k,j,i+1)*fvol_[0][0](i+1))/tarea;
+    }
+  }
+
+  return;
+}
+
+//--------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadFieldBoundaryBufferSameLevel(InterfaceField &src,
 //                                                 Real *buf, NeighborBlock& nb)
 //  \brief Set field boundary buffers for sending to a block on the same level
@@ -1701,19 +1887,22 @@ int BoundaryValues::LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *
 {
   MeshBlock *pmb=pmy_mblock_;
   int si, sj, sk, ei, ej, ek;
-
   int p=0;
+
   // bx1
-  if(pmb->pmy_mesh->multilevel==false) {
-    if(nb.ox1==0)     si=pmb->is,          ei=pmb->ie+1;
-    else if(nb.ox1>0) si=pmb->ie-NGHOST+1, ei=pmb->ie;
-    else              si=pmb->is+1,        ei=pmb->is+NGHOST;
-    if(nb.ox2==0)     sj=pmb->js,          ej=pmb->je;
-    else if(nb.ox2>0) sj=pmb->je-NGHOST+1, ej=pmb->je;
-    else              sj=pmb->js,          ej=pmb->js+NGHOST-1;
-    if(nb.ox3==0)     sk=pmb->ks,          ek=pmb->ke;
-    else if(nb.ox3>0) sk=pmb->ke-NGHOST+1, ek=pmb->ke;
-    else              sk=pmb->ks,          ek=pmb->ks+NGHOST-1;
+  if(nb.ox1==0)     si=pmb->is,          ei=pmb->ie+1;
+  else if(nb.ox1>0) si=pmb->ie-NGHOST+1, ei=pmb->ie;
+  else              si=pmb->is+1,        ei=pmb->is+NGHOST;
+  if(nb.ox2==0)     sj=pmb->js,          ej=pmb->je;
+  else if(nb.ox2>0) sj=pmb->je-NGHOST+1, ej=pmb->je;
+  else              sj=pmb->js,          ej=pmb->js+NGHOST-1;
+  if(nb.ox3==0)     sk=pmb->ks,          ek=pmb->ke;
+  else if(nb.ox3>0) sk=pmb->ke-NGHOST+1, ek=pmb->ke;
+  else              sk=pmb->ks,          ek=pmb->ks+NGHOST-1;
+  // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
+  if(pmb->pmy_mesh->multilevel==true && nb.type != neighbor_face) {
+    if(nb.ox1>0) ei++;
+    if(nb.ox1<0) si--;
   }
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
@@ -1723,13 +1912,16 @@ int BoundaryValues::LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *
     }
   }
   // bx2
-  if(pmb->pmy_mesh->multilevel==false) {
-    if(nb.ox1==0)     si=pmb->is,          ei=pmb->ie;
-    else if(nb.ox1>0) si=pmb->ie-NGHOST+1, ei=pmb->ie;
-    else              si=pmb->is,          ei=pmb->is+NGHOST-1;
-    if(nb.ox2==0)     sj=pmb->js,          ej=pmb->je+1;
-    else if(nb.ox2>0) sj=pmb->je-NGHOST+1, ej=pmb->je;
-    else              sj=pmb->js+1,        ej=pmb->js+NGHOST;
+  if(nb.ox1==0)      si=pmb->is,          ei=pmb->ie;
+  else if(nb.ox1>0)  si=pmb->ie-NGHOST+1, ei=pmb->ie;
+  else               si=pmb->is,          ei=pmb->is+NGHOST-1;
+  if(pmb->block_size.nx2==1) sj=pmb->js,  ej=pmb->je;
+  else if(nb.ox2==0) sj=pmb->js,          ej=pmb->je+1;
+  else if(nb.ox2>0)  sj=pmb->je-NGHOST+1, ej=pmb->je;
+  else               sj=pmb->js+1,        ej=pmb->js+NGHOST;
+  if(pmb->pmy_mesh->multilevel==true && nb.type != neighbor_face) {
+    if(nb.ox2>0) ej++;
+    else if(nb.ox2<0) sj--;
   }
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
@@ -1739,13 +1931,16 @@ int BoundaryValues::LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *
     }
   }
   // bx3
-  if(pmb->pmy_mesh->multilevel==false) {
-    if(nb.ox2==0)     sj=pmb->js,          ej=pmb->je;
-    else if(nb.ox2>0) sj=pmb->je-NGHOST+1, ej=pmb->je;
-    else              sj=pmb->js,          ej=pmb->js+NGHOST-1;
-    if(nb.ox3==0)     sk=pmb->ks,          ek=pmb->ke+1;
-    else if(nb.ox3>0) sk=pmb->ke-NGHOST+1, ek=pmb->ke;
-    else              sk=pmb->ks+1,        ek=pmb->ks+NGHOST;
+  if(nb.ox2==0)      sj=pmb->js,          ej=pmb->je;
+  else if(nb.ox2>0)  sj=pmb->je-NGHOST+1, ej=pmb->je;
+  else               sj=pmb->js,          ej=pmb->js+NGHOST-1;
+  if(pmb->block_size.nx3==1) sk=pmb->ks,  ek=pmb->ke;
+  else if(nb.ox3==0) sk=pmb->ks,          ek=pmb->ke+1;
+  else if(nb.ox3>0)  sk=pmb->ke-NGHOST+1, ek=pmb->ke;
+  else               sk=pmb->ks+1,        ek=pmb->ks+NGHOST;
+  if(pmb->pmy_mesh->multilevel==true && nb.type != neighbor_face) {
+    if(nb.ox3>0) ek++;
+    else if(nb.ox3<0) sk--;
   }
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
@@ -1765,7 +1960,58 @@ int BoundaryValues::LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *
 int BoundaryValues::LoadFieldBoundaryBufferToCoarser(InterfaceField &src, Real *buf,
                                                      NeighborBlock& nb)
 {
-  return 0;
+  MeshBlock *pmb=pmy_mblock_;
+  int si, sj, sk, ei, ej, ek;
+  int cn=pmb->cnghost-1;
+  int p=0;
+
+  // restrict the data before sending
+  si=(nb.ox1>0)?(pmb->cie-cn):pmb->cis;
+  ei=(nb.ox1<0)?(pmb->cis+cn):pmb->cie;
+  sj=(nb.ox2>0)?(pmb->cje-cn):pmb->cjs;
+  ej=(nb.ox2<0)?(pmb->cjs+cn):pmb->cje;
+  sk=(nb.ox3>0)?(pmb->cke-cn):pmb->cks;
+  ek=(nb.ox3<0)?(pmb->cks+cn):pmb->cke;
+  RestrictFieldX1(src, si, ei, sj, ej, sk, ek);
+  for (int k=sk; k<=ek; k++) {
+    for (int j=sj; j<=ej; j++) {
+#pragma simd
+      for (int i=si; i<=ei; i++)
+          buf[p++]=coarse_b_.x1f(k,j,i);
+    }
+  }
+
+  si=(nb.ox1>0)?(pmb->cie-cn):pmb->cis;
+  ei=(nb.ox1<0)?(pmb->cis+cn):pmb->cie;
+  sj=(nb.ox2>0)?(pmb->cje-cn):pmb->cjs;
+  ej=(nb.ox2<0)?(pmb->cjs+cn):pmb->cje;
+  sk=(nb.ox3>0)?(pmb->cke-cn):pmb->cks;
+  ek=(nb.ox3<0)?(pmb->cks+cn):pmb->cke;
+  RestrictFieldX2(src, si, ei, sj, ej, sk, ek);
+  for (int k=sk; k<=ek; k++) {
+    for (int j=sj; j<=ej; j++) {
+#pragma simd
+      for (int i=si; i<=ei; i++)
+          buf[p++]=coarse_b_.x2f(k,j,i);
+    }
+  }
+
+  si=(nb.ox1>0)?(pmb->cie-cn):pmb->cis;
+  ei=(nb.ox1<0)?(pmb->cis+cn):pmb->cie;
+  sj=(nb.ox2>0)?(pmb->cje-cn):pmb->cjs;
+  ej=(nb.ox2<0)?(pmb->cjs+cn):pmb->cje;
+  sk=(nb.ox3>0)?(pmb->cke-cn):pmb->cks;
+  ek=(nb.ox3<0)?(pmb->cks+cn):pmb->cke;
+  RestrictFieldX3(src, si, ei, sj, ej, sk, ek);
+  for (int k=sk; k<=ek; k++) {
+    for (int j=sj; j<=ej; j++) {
+#pragma simd
+      for (int i=si; i<=ei; i++)
+          buf[p++]=coarse_b_.x3f(k,j,i);
+    }
+  }
+
+  return p;
 }
 
 //--------------------------------------------------------------------------------------
@@ -1775,7 +2021,130 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(InterfaceField &src, Real *
 int BoundaryValues::LoadFieldBoundaryBufferToFiner(InterfaceField &src, Real *buf,
                                                    NeighborBlock& nb)
 {
-  return 0;
+  MeshBlock *pmb=pmy_mblock_;
+  int si, sj, sk, ei, ej, ek;
+  int cn=pmb->cnghost-1;
+  int p=0;
+
+  // send the data first and later prolongate on the target block
+  // need to add edges for faces, add corners for edges
+  // bx1
+  if(nb.ox1==0) {
+    if(nb.fi1==1)   si=pmb->is+pmb->block_size.nx1/2-pmb->cnghost, ei=pmb->ie+1;
+    else            si=pmb->is, ei=pmb->ie+1-pmb->block_size.nx1/2+pmb->cnghost;
+  }
+  else if(nb.ox1>0) si=pmb->ie-cn, ei=pmb->ie;
+  else              si=pmb->is+1,  ei=pmb->is+cn+1;
+  if(nb.ox2==0) {
+    sj=pmb->js,    ej=pmb->je;
+    if(pmb->block_size.nx2 > 1) {
+      if(nb.ox1!=0) {
+        if(nb.fi1==1) sj+=pmb->block_size.nx2/2-pmb->cnghost;
+        else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
+      }
+      else {
+        if(nb.fi2==1) sj+=pmb->block_size.nx2/2-pmb->cnghost;
+        else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
+      }
+    }
+  }
+  else if(nb.ox2>0) sj=pmb->je-cn, ej=pmb->je;
+  else              sj=pmb->js,    ej=pmb->js+cn;
+  if(nb.ox3==0) {
+    sk=pmb->ks,    ek=pmb->ke;
+    if(pmb->block_size.nx3 > 1) {
+      if(nb.ox1!=0 && nb.ox2!=0) {
+        if(nb.fi1==1) sk+=pmb->block_size.nx3/2-pmb->cnghost;
+        else          ek-=pmb->block_size.nx3/2-pmb->cnghost;
+      }
+      else {
+        if(nb.fi2==1) sk+=pmb->block_size.nx3/2-pmb->cnghost;
+        else          ek-=pmb->block_size.nx3/2-pmb->cnghost;
+      }
+    }
+  }
+  else if(nb.ox3>0) sk=pmb->ke-cn, ek=pmb->ke;
+  else              sk=pmb->ks,    ek=pmb->ks+cn;
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
+#pragma simd
+      for (int i=si; i<=ei; ++i)
+        buf[p++]=src.x1f(k,j,i);
+    }
+  }
+
+  // bx2
+  if(nb.ox1==0) {
+    if(nb.fi1==1)   si=pmb->is+pmb->block_size.nx1/2-pmb->cnghost, ei=pmb->ie;
+    else            si=pmb->is, ei=pmb->ie-pmb->block_size.nx1/2+pmb->cnghost;
+  }
+  else if(nb.ox1>0) si=pmb->ie-cn, ei=pmb->ie;
+  else              si=pmb->is,    ei=pmb->is+cn;
+  if(nb.ox2==0) {
+    sj=pmb->js,    ej=pmb->je;
+    if(pmb->block_size.nx2 > 1) {
+      ej++;
+      if(nb.ox1!=0) {
+        if(nb.fi1==1) sj+=pmb->block_size.nx2/2-pmb->cnghost;
+        else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
+      }
+      else {
+        if(nb.fi2==1) sj+=pmb->block_size.nx2/2-pmb->cnghost;
+        else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
+      }
+    }
+  }
+  else if(nb.ox2>0) sj=pmb->je-cn, ej=pmb->je;
+  else              sj=pmb->js+1,  ej=pmb->js+cn+1;
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
+#pragma simd
+      for (int i=si; i<=ei; ++i)
+        buf[p++]=src.x2f(k,j,i);
+    }
+  }
+
+  // bx3
+  if(nb.ox2==0) {
+    sj=pmb->js,    ej=pmb->je;
+    if(pmb->block_size.nx2 > 1) {
+      if(nb.ox1!=0) {
+        if(nb.fi1==1) sj+=pmb->block_size.nx2/2-pmb->cnghost;
+        else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
+      }
+      else {
+        if(nb.fi2==1) sj+=pmb->block_size.nx2/2-pmb->cnghost;
+        else          ej-=pmb->block_size.nx2/2-pmb->cnghost;
+      }
+    }
+  }
+  else if(nb.ox2>0) sj=pmb->je-cn, ej=pmb->je;
+  else              sj=pmb->js,    ej=pmb->js+cn;
+  if(nb.ox3==0) {
+    sk=pmb->ks,    ek=pmb->ke;
+    if(pmb->block_size.nx3 > 1) {
+      ek++;
+      if(nb.ox1!=0 && nb.ox2!=0) {
+        if(nb.fi1==1) sk+=pmb->block_size.nx3/2-pmb->cnghost;
+        else          ek-=pmb->block_size.nx3/2-pmb->cnghost;
+      }
+      else {
+        if(nb.fi2==1) sk+=pmb->block_size.nx3/2-pmb->cnghost;
+        else          ek-=pmb->block_size.nx3/2-pmb->cnghost;
+      }
+    }
+  }
+  else if(nb.ox3>0) sk=pmb->ke-cn, ek=pmb->ke;
+  else              sk=pmb->ks+1,  ek=pmb->ks+cn+1;
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
+#pragma simd
+      for (int i=si; i<=ei; ++i)
+        buf[p++]=src.x3f(k,j,i);
+    }
+  }
+
+  return p;
 }
 
 //--------------------------------------------------------------------------------------
@@ -1823,16 +2192,20 @@ void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf,
 
   int p=0;
   // bx1
-  if(pmb->pmy_mesh->multilevel==false) {
-    if(nb.ox1==0)     si=pmb->is,        ei=pmb->ie+1;
-    else if(nb.ox1>0) si=pmb->ie+2,      ei=pmb->ie+NGHOST+1;
-    else              si=pmb->is-NGHOST, ei=pmb->is-1;
-    if(nb.ox2==0)     sj=pmb->js,        ej=pmb->je;
-    else if(nb.ox2>0) sj=pmb->je+1,      ej=pmb->je+NGHOST;
-    else              sj=pmb->js-NGHOST, ej=pmb->js-1;
-    if(nb.ox3==0)     sk=pmb->ks,        ek=pmb->ke;
-    else if(nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
-    else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
+  // for uniform grid: face-neighbors take care of the overlapping faces
+  if(nb.ox1==0)     si=pmb->is,        ei=pmb->ie+1;
+  else if(nb.ox1>0) si=pmb->ie+2,      ei=pmb->ie+NGHOST+1;
+  else              si=pmb->is-NGHOST, ei=pmb->is-1;
+  if(nb.ox2==0)     sj=pmb->js,        ej=pmb->je;
+  else if(nb.ox2>0) sj=pmb->je+1,      ej=pmb->je+NGHOST;
+  else              sj=pmb->js-NGHOST, ej=pmb->js-1;
+  if(nb.ox3==0)     sk=pmb->ks,        ek=pmb->ke;
+  else if(nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
+  else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
+  // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
+  if(pmb->pmy_mesh->multilevel==true && nb.type != neighbor_face) {
+    if(nb.ox1>0) si--;
+    else if(nb.ox1<0) ei++;
   }
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
@@ -1842,13 +2215,17 @@ void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf,
     }
   }
   // bx2
-  if(pmb->pmy_mesh->multilevel==false) {
-    if(nb.ox1==0)     si=pmb->is,        ei=pmb->ie;
-    else if(nb.ox1>0) si=pmb->ie+1,      ei=pmb->ie+NGHOST;
-    else              si=pmb->is-NGHOST, ei=pmb->is-1;
-    if(nb.ox2==0)     sj=pmb->js,        ej=pmb->je+1;
-    else if(nb.ox2>0) sj=pmb->je+2,      ej=pmb->je+NGHOST+1;
-    else              sj=pmb->js-NGHOST, ej=pmb->js-1;
+  if(nb.ox1==0)      si=pmb->is,         ei=pmb->ie;
+  else if(nb.ox1>0)  si=pmb->ie+1,       ei=pmb->ie+NGHOST;
+  else               si=pmb->is-NGHOST,  ei=pmb->is-1;
+  if(pmb->block_size.nx2==1) sj=pmb->js, ej=pmb->je;
+  else if(nb.ox2==0) sj=pmb->js,         ej=pmb->je+1;
+  else if(nb.ox2>0)  sj=pmb->je+2,       ej=pmb->je+NGHOST+1;
+  else               sj=pmb->js-NGHOST,  ej=pmb->js-1;
+  // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
+  if(pmb->pmy_mesh->multilevel==true && nb.type != neighbor_face) {
+    if(nb.ox2>0) sj--;
+    else if(nb.ox2<0) ej++;
   }
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
@@ -1857,20 +2234,36 @@ void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf,
         dst.x2f(k,j,i)=buf[p++];
     }
   }
+  if(pmb->block_size.nx2==1) { // 1D
+#pragma simd
+    for (int i=si; i<=ei; ++i)
+      dst.x2f(sk,sj+1,i)=dst.x2f(sk,sj,i);
+  }
   // bx3
-  if(pmb->pmy_mesh->multilevel==false) {
-    if(nb.ox2==0)     sj=pmb->js,        ej=pmb->je;
-    else if(nb.ox2>0) sj=pmb->je+1,      ej=pmb->je+NGHOST;
-    else              sj=pmb->js-NGHOST, ej=pmb->js-1;
-    if(nb.ox3==0)     sk=pmb->ks,        ek=pmb->ke+1;
-    else if(nb.ox3>0) sk=pmb->ke+2,      ek=pmb->ke+NGHOST+1;
-    else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
+  if(nb.ox2==0)      sj=pmb->js,         ej=pmb->je;
+  else if(nb.ox2>0)  sj=pmb->je+1,       ej=pmb->je+NGHOST;
+  else               sj=pmb->js-NGHOST,  ej=pmb->js-1;
+  if(pmb->block_size.nx3==1) sk=pmb->ks, ek=pmb->ke;
+  else if(nb.ox3==0) sk=pmb->ks,         ek=pmb->ke+1;
+  else if(nb.ox3>0)  sk=pmb->ke+2,       ek=pmb->ke+NGHOST+1;
+  else               sk=pmb->ks-NGHOST,  ek=pmb->ks-1;
+  // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
+  if(pmb->pmy_mesh->multilevel==true && nb.type != neighbor_face) {
+    if(nb.ox3>0) sk--;
+    else if(nb.ox3<0) ek++;
   }
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
 #pragma simd
       for (int i=si; i<=ei; ++i)
         dst.x3f(k,j,i)=buf[p++];
+    }
+  }
+  if(pmb->block_size.nx3==1) { // 1D or 2D
+    for (int j=sj; j<=ej; ++j) {
+#pragma simd
+      for (int i=si; i<=ei; ++i)
+        dst.x3f(sk+1,j,i)=dst.x3f(sk,j,i);
     }
   }
 
@@ -1883,6 +2276,109 @@ void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf,
 //  \brief Set field prolongation buffer received from a block on the same level
 void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
 {
+  int si, sj, sk, ei, ej, ek, ll;
+  long int lx1, lx2, lx3;
+  pmb->uid.GetLocation(lx1,lx2,lx3,ll);
+  int cng=pmb->cnghost;
+  int p=0;
+
+  // bx1
+  if(nb.ox1==0) {
+    si=pmb->cis, ei=pmb->cie+1;
+    if((lx1&1L)==0L) ei+=cng;
+    else             si-=cng; 
+  }
+  else if(nb.ox1>0)  si=pmb->cie+2,   ei=pmb->cie+cng+1;
+  else               si=pmb->cis-cng, ei=pmb->cis-1;
+  if(nb.ox2==0) {
+    sj=pmb->cjs, ej=pmb->cje;
+    if(pmb->block_size.nx2 > 1) {
+      if((lx2&1L)==0L) ej+=cng;
+      else             sj-=cng; 
+    }
+  }
+  else if(nb.ox2>0)  sj=pmb->cje+1,   ej=pmb->cje+cng;
+  else               sj=pmb->cjs-cng, ej=pmb->cjs-1;
+  if(nb.ox3==0) {
+    sk=pmb->cks, ek=pmb->cke;
+    if(pmb->block_size.nx3 > 1) {
+      if((lx3&1L)==0L) ek+=cng;
+      else             sk-=cng; 
+    }
+  }
+  else if(nb.ox3>0)  sk=pmb->cke+1,   ek=pmb->cke+cng;
+  else               sk=pmb->cks-cng, ek=pmb->cks-1;
+
+  for (int n=0; n<(NFLUID); ++n) {
+    for (int k=sk; k<=ek; ++k) {
+      for (int j=sj; j<=ej; ++j) {
+#pragma simd
+        for (int i=si; i<=ei; ++i)
+          coarse_b_.x1f(k,j,i) = buf[p++];
+      }
+    }
+  }
+
+  // bx2
+  if(nb.ox1==0) {
+    si=pmb->cis, ei=pmb->cie+1;
+    if((lx1&1L)==0L) ei+=cng;
+    else             si-=cng; 
+  }
+  else if(nb.ox1>0)  si=pmb->cie+1,   ei=pmb->cie+cng;
+  else               si=pmb->cis-cng, ei=pmb->cis-1;
+  if(nb.ox2==0) {
+    sj=pmb->cjs, ej=pmb->cje;
+    if(pmb->block_size.nx2 > 1) {
+      ej++;
+      if((lx2&1L)==0L) ej+=cng;
+      else             sj-=cng; 
+    }
+  }
+  else if(nb.ox2>0)  sj=pmb->cje+2,   ej=pmb->cje+cng+1;
+  else               sj=pmb->cjs-cng, ej=pmb->cjs-1;
+
+  for (int n=0; n<(NFLUID); ++n) {
+    for (int k=sk; k<=ek; ++k) {
+      for (int j=sj; j<=ej; ++j) {
+#pragma simd
+        for (int i=si; i<=ei; ++i)
+          coarse_b_.x2f(k,j,i) = buf[p++];
+      }
+    }
+  }
+
+  // bx3
+  if(nb.ox2==0) {
+    sj=pmb->cjs, ej=pmb->cje;
+    if(pmb->block_size.nx2 > 1) {
+      if((lx2&1L)==0L) ej+=cng;
+      else             sj-=cng; 
+    }
+  }
+  else if(nb.ox2>0)  sj=pmb->cje+1,   ej=pmb->cje+cng;
+  else               sj=pmb->cjs-cng, ej=pmb->cjs-1;
+  if(nb.ox3==0) {
+    sk=pmb->cks, ek=pmb->cke;
+    if(pmb->block_size.nx3 > 1) {
+      ek++;
+      if((lx3&1L)==0L) ek+=cng;
+      else             sk-=cng; 
+    }
+  }
+  else if(nb.ox3>0)  sk=pmb->cke+2,   ek=pmb->cke+cng+1;
+  else               sk=pmb->cks-cng, ek=pmb->cks-1;
+
+  for (int n=0; n<(NFLUID); ++n) {
+    for (int k=sk; k<=ek; ++k) {
+      for (int j=sj; j<=ej; ++j) {
+#pragma simd
+        for (int i=si; i<=ei; ++i)
+          coarse_b_.x3f(k,j,i) = buf[p++];
+      }
+    }
+  }
+
   return;
 }
 

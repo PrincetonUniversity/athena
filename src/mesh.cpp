@@ -992,12 +992,13 @@ MeshBlock::MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_block,
   }
 
   if(pm->multilevel==true) {
+    cnghost=(NGHOST+1)/2+1;
     cis=cnghost; cie=cis+block_size.nx1/2-1;
     cjs=cje=cks=cke=0;
     if(block_size.nx2>1) // 2D or 3D
-      cjs=cnghost; cje=cjs+block_size.nx2/2-1;
+      cjs=cnghost, cje=cjs+block_size.nx2/2-1;
     if(block_size.nx3>1) // 3D
-      cks=cnghost; cke=cks+block_size.nx3/2-1;
+      cks=cnghost, cke=cks+block_size.nx3/2-1;
   }
 
   uid.GetLocation(lx1,lx2,lx3,ll);

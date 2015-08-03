@@ -128,6 +128,13 @@ public:
   void SetFieldBoundaryFromFiner(InterfaceField &dst, Real *buf, NeighborBlock& nb);
   bool ReceiveFieldBoundaryBuffers(InterfaceField &dst, int step);
   void ReceiveFieldBoundaryBuffersWithWait(InterfaceField &dst, int step);
+  void RestrictFieldX1(AthenaArray<Real> &bx1f,
+                       int si, int ei, int sj, int ej, int sk, int ek);
+  void RestrictFieldX2(AthenaArray<Real> &bx2f,
+                       int si, int ei, int sj, int ej, int sk, int ek);
+  void RestrictFieldX3(AthenaArray<Real> &bx3f,
+                       int si, int ei, int sj, int ej, int sk, int ek);
+  void ProlongateFieldBoundaries(AthenaArray<Real> &dst);
   void SendEMFCorrection(int step);
   bool ReceiveEMFCorrection(int step);
 
@@ -159,6 +166,7 @@ private:
   AthenaArray<Real> coarse_cons_, coarse_prim_;
   AthenaArray<Real> fvol_[2][2], sarea_[2];
   AthenaArray<Real> surface_flux_[6];
+  InterfaceField coarse_b_;
 
 #ifdef MPI_PARALLEL
   MPI_Request req_fluid_send_[NSTEP][56],   req_fluid_recv_[NSTEP][56];
