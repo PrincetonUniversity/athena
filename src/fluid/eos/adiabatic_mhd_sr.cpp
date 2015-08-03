@@ -274,7 +274,11 @@ void FluidEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 }
 
 // Function for calculating relativistic fast wavespeeds
-// Inputs: TODO
+// Inputs:
+//   rho: density
+//   pgas: gas pressure
+//   u: contravariant components of 4-velocity
+//   b: contravariant components of 4-magnetic field
 // Outputs:
 //   plambda_plus: value set to most positive wavespeed
 //   plambda_minus: value set to most negative wavespeed
@@ -283,9 +287,8 @@ void FluidEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //   same function as in adiabatic_mhd_gr.cpp
 //   references Mignone & Bodo 2005, MNRAS 364 126 (MB2005)
 //   references Mignone & Bodo 2006, MNRAS 368 1040 (MB2006)
-void FluidEqnOfState::FastMagnetosonicSpeedsSR(
-    Real rho, Real pgas, const Real u[4], const Real b[4],
-    Real *plambda_plus, Real *plambda_minus)
+void FluidEqnOfState::FastMagnetosonicSpeedsSR(Real rho, Real pgas, const Real u[4],
+    const Real b[4], Real *plambda_plus, Real *plambda_minus)
 {
   // Parameters
   const double v_limit = 1.0e-12;  // squared velocities less than this are considered 0

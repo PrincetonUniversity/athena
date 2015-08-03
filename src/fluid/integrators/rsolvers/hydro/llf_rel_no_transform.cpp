@@ -88,27 +88,27 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     // Extract left primitives
     const Real &rho_l = prim_l(IDN,i);
     const Real &pgas_l = prim_l(IEN,i);
-    const Real &w1_l = prim_l(IVX,i);
-    const Real &w2_l = prim_l(IVY,i);
-    const Real &w3_l = prim_l(IVZ,i);
+    const Real &uu1_l = prim_l(IVX,i);
+    const Real &uu2_l = prim_l(IVY,i);
+    const Real &uu3_l = prim_l(IVZ,i);
 
     // Extract right primitives
     const Real &rho_r = prim_r(IDN,i);
     const Real &pgas_r = prim_r(IEN,i);
-    const Real &w1_r = prim_r(IVX,i);
-    const Real &w2_r = prim_r(IVY,i);
-    const Real &w3_r = prim_r(IVZ,i);
+    const Real &uu1_r = prim_r(IVX,i);
+    const Real &uu2_r = prim_r(IVY,i);
+    const Real &uu3_r = prim_r(IVZ,i);
 
     // Calculate 4-velocity in left state
     Real ucon_l[4], ucov_l[4];
-    Real tmp = g_11*SQR(w1_l) + 2.0*g_12*w1_l*w2_l + 2.0*g_13*w1_l*w3_l
-             + g_22*SQR(w2_l) + 2.0*g_23*w2_l*w3_l
-             + g_33*SQR(w3_l);
+    Real tmp = g_11*SQR(uu1_l) + 2.0*g_12*uu1_l*uu2_l + 2.0*g_13*uu1_l*uu3_l
+             + g_22*SQR(uu2_l) + 2.0*g_23*uu2_l*uu3_l
+             + g_33*SQR(uu3_l);
     Real gamma_l = std::sqrt(1.0 + tmp);
     ucon_l[0] = gamma_l / alpha;
-    ucon_l[1] = w1_l - alpha * gamma_l * g01;
-    ucon_l[2] = w2_l - alpha * gamma_l * g02;
-    ucon_l[3] = w3_l - alpha * gamma_l * g03;
+    ucon_l[1] = uu1_l - alpha * gamma_l * g01;
+    ucon_l[2] = uu2_l - alpha * gamma_l * g02;
+    ucon_l[3] = uu3_l - alpha * gamma_l * g03;
     ucov_l[0] = g_00*ucon_l[0] + g_01*ucon_l[1] + g_02*ucon_l[2] + g_03*ucon_l[3];
     ucov_l[1] = g_10*ucon_l[0] + g_11*ucon_l[1] + g_12*ucon_l[2] + g_13*ucon_l[3];
     ucov_l[2] = g_20*ucon_l[0] + g_21*ucon_l[1] + g_22*ucon_l[2] + g_23*ucon_l[3];
@@ -116,14 +116,14 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
 
     // Calculate 4-velocity in right state
     Real ucon_r[4], ucov_r[4];
-    tmp = g_11*SQR(w1_r) + 2.0*g_12*w1_r*w2_r + 2.0*g_13*w1_r*w3_r
-        + g_22*SQR(w2_r) + 2.0*g_23*w2_r*w3_r
-        + g_33*SQR(w3_r);
+    tmp = g_11*SQR(uu1_r) + 2.0*g_12*uu1_r*uu2_r + 2.0*g_13*uu1_r*uu3_r
+        + g_22*SQR(uu2_r) + 2.0*g_23*uu2_r*uu3_r
+        + g_33*SQR(uu3_r);
     Real gamma_r = std::sqrt(1.0 + tmp);
     ucon_r[0] = gamma_r / alpha;
-    ucon_r[1] = w1_r - alpha * gamma_r * g01;
-    ucon_r[2] = w2_r - alpha * gamma_r * g02;
-    ucon_r[3] = w3_r - alpha * gamma_r * g03;
+    ucon_r[1] = uu1_r - alpha * gamma_r * g01;
+    ucon_r[2] = uu2_r - alpha * gamma_r * g02;
+    ucon_r[3] = uu3_r - alpha * gamma_r * g03;
     ucov_r[0] = g_00*ucon_r[0] + g_01*ucon_r[1] + g_02*ucon_r[2] + g_03*ucon_r[3];
     ucov_r[1] = g_10*ucon_r[0] + g_11*ucon_r[1] + g_12*ucon_r[2] + g_13*ucon_r[3];
     ucov_r[2] = g_20*ucon_r[0] + g_21*ucon_r[1] + g_22*ucon_r[2] + g_23*ucon_r[3];

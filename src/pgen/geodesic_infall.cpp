@@ -34,27 +34,27 @@ void FixedOuterFluid(MeshBlock *pmb, AthenaArray<Real> &cons,
 void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   // Prepare index bounds
-  MeshBlock *pb = pfl->pmy_block;
-  int il = pb->is - NGHOST;
-  int iu = pb->ie + NGHOST;
-  int jl = pb->js;
-  int ju = pb->je;
-  if (pb->block_size.nx2 > 1)
+  MeshBlock *pmb = pfl->pmy_block;
+  int il = pmb->is - NGHOST;
+  int iu = pmb->ie + NGHOST;
+  int jl = pmb->js;
+  int ju = pmb->je;
+  if (pmb->block_size.nx2 > 1)
   {
     jl -= (NGHOST);
     ju += (NGHOST);
   }
-  int kl = pb->ks;
-  int ku = pb->ke;
-  if (pb->block_size.nx3 > 1)
+  int kl = pmb->ks;
+  int ku = pmb->ke;
+  if (pmb->block_size.nx3 > 1)
   {
     kl -= (NGHOST);
     ku += (NGHOST);
   }
 
   // Get mass and spin of black hole
-  Real m = pb->pcoord->GetMass();
-  Real a = pb->pcoord->GetSpin();
+  Real m = pmb->pcoord->GetMass();
+  Real a = pmb->pcoord->GetSpin();
   Real a2 = SQR(a);
 
   // Get ratio of specific heats
@@ -74,13 +74,13 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   gi.NewAthenaArray(NMETRIC, iu+1);
   for (int j = jl; j <= ju; j++)
   {
-    pb->pcoord->CellMetric(kl, j, il, iu, g, gi);
+    pmb->pcoord->CellMetric(kl, j, il, iu, g, gi);
     for (int i = il; i <= iu; i++)
     {
       // Get Boyer-Lindquist coordinates of cell
       Real r, theta, phi;
-      pb->pcoord->GetBoyerLindquistCoordinates(pb->x1v(i), pb->x2v(j), pb->x3v(kl),
-          &r, &theta, &phi);
+      pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1v(i),
+          pmb->pcoord->x2v(j), pmb->pcoord->x3v(kl), &r, &theta, &phi);
       /*Real r2 = SQR(r);
       Real sin = std::sin(theta);
       Real sin2 = SQR(sin);
@@ -99,23 +99,23 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       Real u2_bl = 0.0;
       Real u3_bl = 1.0/sigma * (-(a * e - lz / sin2) + a/delta * (rr - pp));
       Real u0, u1, u2, u3;
-      pb->pcoord->TransformVectorCell(u0_bl, u1_bl, u2_bl, u3_bl, pb->ks, j, i,
+      pmb->pcoord->TransformVectorCell(u0_bl, u1_bl, u2_bl, u3_bl, pmb->ks, j, i,
           &u0, &u1, &u2, &u3);
       Real v1 = u1 / u0;
       Real v2 = u2 / u0;
       Real v3 = u3 / u0;*/
-      Real v1 = gi(I01,i) / gi(I00,i);
-      Real v2 = gi(I02,i) / gi(I00,i);
-      Real v3 = gi(I03,i) / gi(I00,i);
+      Real uu1 = 0.0;
+      Real uu2 = 0.0;
+      Real uu3 = 0.0;
 
       // Set primitive values
       for (int k = kl; k <= ku; k++)
       {
         pfl->w(IDN,k,j,i) = pfl->w1(IDN,k,j,i) = rho;
         pfl->w(IEN,k,j,i) = pfl->w1(IEN,k,j,i) = pgas;
-        pfl->w(IVX,k,j,i) = pfl->w1(IM1,k,j,i) = v1;
-        pfl->w(IVY,k,j,i) = pfl->w1(IM2,k,j,i) = v2;
-        pfl->w(IVZ,k,j,i) = pfl->w1(IM3,k,j,i) = v3;
+        pfl->w(IVX,k,j,i) = pfl->w1(IM1,k,j,i) = uu1;
+        pfl->w(IVY,k,j,i) = pfl->w1(IM2,k,j,i) = uu2;
+        pfl->w(IVZ,k,j,i) = pfl->w1(IM3,k,j,i) = uu3;
       }
     }
   }
@@ -125,12 +125,12 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   // Initialize conserved values
   AthenaArray<Real> bb;
   bb.NewAthenaArray(3, ku+1, ju+1, iu+1);
-  pb->pfluid->pf_eos->PrimitiveToConserved(pfl->w, bb, pfl->u);  
+  pmb->pfluid->pf_eos->PrimitiveToConserved(pfl->w, bb, pfl->u);  
   bb.DeleteAthenaArray();
 
   // Enroll boundary functions
-  pb->pbval->EnrollFluidBoundaryFunction(inner_x1, OutflowPrimInnerFluid);
-  pb->pbval->EnrollFluidBoundaryFunction(outer_x1, FixedOuterFluid);
+  pmb->pbval->EnrollFluidBoundaryFunction(inner_x1, OutflowPrimInnerFluid);
+  pmb->pbval->EnrollFluidBoundaryFunction(outer_x1, FixedOuterFluid);
   return;
 }
 
@@ -141,6 +141,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 //   cons: conserved quantities set along inner x1-boundary
 // Notes:
 //   TODO: remove prim hack
+//   TODO: note hack is wrong (assumes wrong primitives)
 void OutflowPrimInnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons,
     int is, int ie, int js, int je, int ks, int ke)
 {

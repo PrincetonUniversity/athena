@@ -1,4 +1,4 @@
-# Test script for relativistic hydro shock tubes in GR with HLLE
+# Test script for relativistic hydro shock tubes in GR with HLLC
 
 # Modules
 import numpy as np

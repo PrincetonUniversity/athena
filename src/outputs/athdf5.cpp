@@ -39,7 +39,7 @@
 
 //======================================================================================
 //! \file athdf5.cpp
-//  \brief writes Athena HDF5 (.ath5) files. note: C binding is used.
+//  \brief writes Athena HDF5 (.athdf) files. note: C binding is used.
 //======================================================================================
 
 ATHDF5Output::ATHDF5Output(OutputParameters oparams)
@@ -62,7 +62,7 @@ void ATHDF5Output::Initialize(Mesh *pM, ParameterInput *pin)
   int nbe=pM->nbend;
   int nbl=nbe-nbs+1;
 
-  // create single output, filename:"file_basename"+"."+"file_id"+"."+XXXXX+".ath5",
+  // create single output, filename:"file_basename"+"."+"file_id"+"."+XXXXX+".athdf",
   // where XXXXX = 5-digit file_number
   char number[6]; // array to store 4-digit number and end-of-string char
   sprintf(number,"%05d",output_params.file_number);
@@ -71,7 +71,7 @@ void ATHDF5Output::Initialize(Mesh *pM, ParameterInput *pin)
   fname.append(output_params.file_id);
   fname.append(".");
   fname.append(number);
-  fname.append(".ath5");
+  fname.append(".athdf");
 
   // create a new file
 #ifdef MPI_PARALLEL

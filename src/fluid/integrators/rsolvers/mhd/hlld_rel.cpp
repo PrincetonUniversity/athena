@@ -52,6 +52,28 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   const Real vc_extension = 1.0e-6;   // use contact region if Alfven speeds smaller
   const Real delta_kx_aug = 1.0e-12;  // amount to add to \Delta K^x
 
+  // Calculate metric if in GR
+  int i01, i11;
+  if (GENERAL_RELATIVITY)
+    switch (ivx)
+    {
+      case IVX:
+        pmy_fluid->pmy_block->pcoord->Face1Metric(k, j, il, iu, g_, gi_);
+        i01 = I01;
+        i11 = I11;
+        break;
+      case IVY:
+        pmy_fluid->pmy_block->pcoord->Face2Metric(k, j, il, iu, g_, gi_);
+        i01 = I02;
+        i11 = I22;
+        break;
+      case IVZ:
+        pmy_fluid->pmy_block->pcoord->Face3Metric(k, j, il, iu, g_, gi_);
+        i01 = I03;
+        i11 = I33;
+        break;
+    }
+
   // Transform primitives to locally flat coordinates if in GR
   if (GENERAL_RELATIVITY)
     switch (ivx)
@@ -87,6 +109,11 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
+    // Calculate interface velocity
+    Real v_interface = 0.0;
+    if (GENERAL_RELATIVITY)
+      v_interface = gi_(i01,i) / std::sqrt(SQR(gi_(i01,i)) - gi_(I00,i)*gi_(i11,i));
+
     // Extract left primitives
     const Real &rho_l = prim_l(IDN,i);
     const Real &pgas_l = prim_l(IEN,i);
@@ -108,8 +135,8 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
       u_l[2] = u_l[0] * vy_l;
       u_l[3] = u_l[0] * vz_l;
     }
-    const Real &bb2_l = prim_l(IBY,i);
-    const Real &bb3_l = prim_l(IBZ,i);
+    const Real &bby_l = prim_l(IBY,i);
+    const Real &bbz_l = prim_l(IBZ,i);
 
     // Extract right primitives
     const Real &rho_r = prim_r(IDN,i);
@@ -132,26 +159,26 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
       u_r[2] = u_r[0] * vy_r;
       u_r[3] = u_r[0] * vz_r;
     }
-    const Real &bb2_r = prim_r(IBY,i);
-    const Real &bb3_r = prim_r(IBZ,i);
+    const Real &bby_r = prim_r(IBY,i);
+    const Real &bbz_r = prim_r(IBZ,i);
 
     // Extract normal magnetic field
-    const Real &bb1 = bb(k,j,i);
+    const Real &bbx = bb(k,j,i);
 
     // Calculate 4-magnetic field in left state
     Real b_l[4];
-    b_l[0] = bb1*u_l[1] + bb2_l*u_l[2] + bb3_l*u_l[3];
-    b_l[1] = (bb1 + b_l[0] * u_l[1]) / u_l[0];
-    b_l[2] = (bb2_l + b_l[0] * u_l[2]) / u_l[0];
-    b_l[3] = (bb3_l + b_l[0] * u_l[3]) / u_l[0];
+    b_l[0] = bbx*u_l[1] + bby_l*u_l[2] + bbz_l*u_l[3];
+    b_l[1] = (bbx + b_l[0] * u_l[1]) / u_l[0];
+    b_l[2] = (bby_l + b_l[0] * u_l[2]) / u_l[0];
+    b_l[3] = (bbz_l + b_l[0] * u_l[3]) / u_l[0];
     Real b_sq_l = -SQR(b_l[0]) + SQR(b_l[1]) + SQR(b_l[2]) + SQR(b_l[3]);
 
     // Calculate 4-magnetic field in right state
     Real b_r[4];
-    b_r[0] = bb1*u_r[1] + bb2_r*u_r[2] + bb3_r*u_r[3];
-    b_r[1] = (bb1 + b_r[0] * u_r[1]) / u_r[0];
-    b_r[2] = (bb2_r + b_r[0] * u_r[2]) / u_r[0];
-    b_r[3] = (bb3_r + b_r[0] * u_r[3]) / u_r[0];
+    b_r[0] = bbx*u_r[1] + bby_r*u_r[2] + bbz_r*u_r[3];
+    b_r[1] = (bbx + b_r[0] * u_r[1]) / u_r[0];
+    b_r[2] = (bby_r + b_r[0] * u_r[2]) / u_r[0];
+    b_r[3] = (bbz_r + b_r[0] * u_r[3]) / u_r[0];
     Real b_sq_r = -SQR(b_r[0]) + SQR(b_r[1]) + SQR(b_r[2]) + SQR(b_r[3]);
 
     // Calculate wavespeeds in left state (MB 56)
@@ -228,7 +255,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
       cons_hll[n] = (r_r[n]-r_l[n]) / (lambda_r-lambda_l);
 
     // Calculate fluxes in HLL region (MB 31)
-    Real cons_hll[NWAVE];
+    Real flux_hll[NWAVE];
     for (int n = 0; n < NWAVE; ++n)
       flux_hll[n] = (lambda_l*r_r[n] - lambda_r*r_l[n]) / (lambda_r-lambda_l);
 
@@ -237,7 +264,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
 
     // Calculate initial guess for total pressure (MUB 53)
     Real ptot_init;
-    if (SQR(bb1)/ptot_hll < p_transition)  // weak magnetic field
+    if (SQR(bbx)/ptot_hll < p_transition)  // weak magnetic field
     {
       Real a1 = cons_hll[IEN] - flux_hll[ivx];
       Real a0 = cons_hll[ivx]*flux_hll[IEN] - flux_hll[ivx]*cons_hll[IEN];
@@ -264,25 +291,25 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
         + r_l[IBZ] * (cl + bbx * (lambda_l*r_l[ivx]-r_l[IEN]))) / xl;        // (MUB 24)
 
     // Calculate auxiliary quantites in aL region
-    Real v_rm = vx_al*r_l[ivx] + vy_al*r_l[ivy]
+    Real v_rm_l = vx_al*r_l[ivx] + vy_al*r_l[ivy]
         + vz_al*r_l[ivz];
-    Real wtot_al = ptot_true + (r_l[IEN]-v_rm)
-        / (lambda_l-vx_al);                                   // (MUB 31)
-    Real eta_l = -copysign(std::sqrt(wtot_al), bbx);          // (MUB 35)
-    Real denom_al = lambda*ptot_true + r_l[IEN] + bbx*eta_l;
-    Real kx_l = (r_l[ivx] + ptot_true + lambda_l*bbx*eta_l)   // R_{B^x} = \lambda B^x
-        / denom_al;                                           // (MUB 43)
-    Real ky_l = (r_l[ivy] + r_l[IBY]*eta_l) / denom_al;       // (MUB 43)
-    Real kz_l = (r_l[ivz] + r_l[IBZ]*eta_l) / denom_al;       // (MUB 43)
+    Real wtot_al = ptot_true + (r_l[IEN]-v_rm_l)
+        / (lambda_l-vx_al);                                     // (MUB 31)
+    Real eta_l = -copysign(std::sqrt(wtot_al), bbx);            // (MUB 35)
+    Real denom_al = lambda_l*ptot_true + r_l[IEN] + bbx*eta_l;
+    Real kx_l = (r_l[ivx] + ptot_true + lambda_l*bbx*eta_l)     // R_{B^x} = \lambda B^x
+        / denom_al;                                             // (MUB 43)
+    Real ky_l = (r_l[ivy] + r_l[IBY]*eta_l) / denom_al;         // (MUB 43)
+    Real kz_l = (r_l[ivz] + r_l[IBZ]*eta_l) / denom_al;         // (MUB 43)
     Real &lambda_al = kx_l;
 
     // Calculate conserved quantities in aL region
     Real cons_al[NWAVE];
-    cons_al[IBY] = (r[IBY] - bbx*vy_al) / (lambda_l-vx_al);              // (MUB 21)
-    cons_al[IBZ] = (r[IBZ] - bbx*vz_al) / (lambda_l-vx_al);              // (MUB 21)
+    cons_al[IBY] = (r_l[IBY] - bbx*vy_al) / (lambda_l-vx_al);            // (MUB 21)
+    cons_al[IBZ] = (r_l[IBZ] - bbx*vz_al) / (lambda_l-vx_al);            // (MUB 21)
     Real v_bb_al = vx_al*bbx + vy_al*cons_al[IBY] + vz_al*cons_al[IBZ];
-    cons_al[IDN] = r[IDN] / (lambda_l-vx_al);                            // (MUB 32)
-    cons_al[IEN] = (r[IEN] + ptot_true*vx_al - v_bb_al*bbx)
+    cons_al[IDN] = r_l[IDN] / (lambda_l-vx_al);                          // (MUB 32)
+    cons_al[IEN] = (r_l[IEN] + ptot_true*vx_al - v_bb_al*bbx)
         / (lambda_l-vx_al);                                              // (MUB 33)
     cons_al[ivx] = (cons_al[IEN] + ptot_true) * vx_al - v_bb_al * bbx;   // (MUB 34)
     cons_al[ivy] = (cons_al[IEN] + ptot_true) * vy_al
@@ -296,39 +323,39 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
       flux_al[n] = lambda_l * cons_al[n] - r_l[n];
 
     // Calculate velocity in aR region
-    Real al = r_r[ivx] - lambda_r*r_r[IEN] + ptot_true*(1.0-SQR(lambda_r));  // (MUB 26)
-    Real gl = SQR(r_r[IBY]) + SQR(r_r[IBZ]);                                 // (MUB 27)
-    Real cl = r_r[ivy]*r_r[IBY] + r_r[ivz]*r_r[IBZ];                         // (MUB 28)
-    Real ql = -al - gl + SQR(bbx)*(1.0-SQR(lambda_r));                       // (MUB 29)
-    Real xl = bbx * (al*lambda_r*bbx+cl)
-        - (al+gl) * (lambda_r*ptot_true+r_r[IEN]);                           // (MUB 30)
-    Real vx_ar = (bbx * (al*bbx+lambda_r*cl)
-        - (al+gl) * (ptot_true+r_r[ivx])) / xl;                              // (MUB 23)
-    Real vy_ar = (ql*r_r[ivy]
-        + r_r[IBY] * (cl + bbx * (lambda_r*r_r[ivx]-r_r[IEN]))) / xl;        // (MUB 24)
-    Real vz_ar = (ql*r_r[ivz]
-        + r_r[IBZ] * (cl + bbx * (lambda_r*r_r[ivx]-r_r[IEN]))) / xl;        // (MUB 24)
+    Real ar = r_r[ivx] - lambda_r*r_r[IEN] + ptot_true*(1.0-SQR(lambda_r));  // (MUB 26)
+    Real gr = SQR(r_r[IBY]) + SQR(r_r[IBZ]);                                 // (MUB 27)
+    Real cr = r_r[ivy]*r_r[IBY] + r_r[ivz]*r_r[IBZ];                         // (MUB 28)
+    Real qr = -ar - gr + SQR(bbx)*(1.0-SQR(lambda_r));                       // (MUB 29)
+    Real xr = bbx * (ar*lambda_r*bbx+cr)
+        - (ar+gr) * (lambda_r*ptot_true+r_r[IEN]);                           // (MUB 30)
+    Real vx_ar = (bbx * (ar*bbx+lambda_r*cr)
+        - (ar+gr) * (ptot_true+r_r[ivx])) / xr;                              // (MUB 23)
+    Real vy_ar = (qr*r_r[ivy]
+        + r_r[IBY] * (cr + bbx * (lambda_r*r_r[ivx]-r_r[IEN]))) / xr;        // (MUB 24)
+    Real vz_ar = (qr*r_r[ivz]
+        + r_r[IBZ] * (cr + bbx * (lambda_r*r_r[ivx]-r_r[IEN]))) / xr;        // (MUB 24)
 
     // Calculate auxiliary quantites in aR region
-    Real v_rm = vx_ar*r_r[ivx] + vy_ar*r_r[ivy]
+    Real v_rm_r = vx_ar*r_r[ivx] + vy_ar*r_r[ivy]
         + vz_ar*r_r[ivz];
-    Real wtot_ar = ptot_true + (r_r[IEN]-v_rm)
-        / (lambda_r-vx_ar);                                   // (MUB 31)
-    Real eta_r = copysign(std::sqrt(wtot_ar), bbx);           // (MUB 35)
-    Real denom_ar = lambda*ptot_true + r_r[IEN] + bbx*eta_r;
-    Real kx_r = (r_r[ivx] + ptot_true + lambda_r*bbx*eta_r)   // R_{B^x} = \lambda B^x
-        / denom_ar;                                           // (MUB 43)
-    Real ky_r = (r_r[ivy] + r_r[IBY]*eta_r) / denom_ar;       // (MUB 43)
-    Real kz_r = (r_r[ivz] + r_r[IBZ]*eta_r) / denom_ar;       // (MUB 43)
+    Real wtot_ar = ptot_true + (r_r[IEN]-v_rm_r)
+        / (lambda_r-vx_ar);                                     // (MUB 31)
+    Real eta_r = copysign(std::sqrt(wtot_ar), bbx);             // (MUB 35)
+    Real denom_ar = lambda_r*ptot_true + r_r[IEN] + bbx*eta_r;
+    Real kx_r = (r_r[ivx] + ptot_true + lambda_r*bbx*eta_r)     // R_{B^x} = \lambda B^x
+        / denom_ar;                                             // (MUB 43)
+    Real ky_r = (r_r[ivy] + r_r[IBY]*eta_r) / denom_ar;         // (MUB 43)
+    Real kz_r = (r_r[ivz] + r_r[IBZ]*eta_r) / denom_ar;         // (MUB 43)
     Real &lambda_ar = kx_r;
 
     // Calculate conserved quantities in aR region
     Real cons_ar[NWAVE];
-    cons_ar[IBY] = (r[IBY] - bbx*vy_ar) / (lambda_r-vx_ar);              // (MUB 21)
-    cons_ar[IBZ] = (r[IBZ] - bbx*vz_ar) / (lambda_r-vx_ar);              // (MUB 21)
+    cons_ar[IBY] = (r_r[IBY] - bbx*vy_ar) / (lambda_r-vx_ar);            // (MUB 21)
+    cons_ar[IBZ] = (r_r[IBZ] - bbx*vz_ar) / (lambda_r-vx_ar);            // (MUB 21)
     Real v_bb_ar = vx_ar*bbx + vy_ar*cons_ar[IBY] + vz_ar*cons_ar[IBZ];
-    cons_ar[IDN] = r[IDN] / (lambda_r-vx_ar);                            // (MUB 32)
-    cons_ar[IEN] = (r[IEN] + ptot_true*vx_ar - v_bb_ar*bbx)
+    cons_ar[IDN] = r_r[IDN] / (lambda_r-vx_ar);                          // (MUB 32)
+    cons_ar[IEN] = (r_r[IEN] + ptot_true*vx_ar - v_bb_ar*bbx)
         / (lambda_r-vx_ar);                                              // (MUB 33)
     cons_ar[ivx] = (cons_ar[IEN] + ptot_true) * vx_ar - v_bb_ar * bbx;   // (MUB 34)
     cons_ar[ivy] = (cons_ar[IEN] + ptot_true) * vy_ar
@@ -368,17 +395,17 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
 
     // Calculate remaining conserved quantities in c region
     Real v_bb_c = vx_c*bbx + vy_c*cons_c[IBY] + vz_c*cons_c[IBZ];
-    if (*pvx_c >= 0.0)  // cL region
+    if (vx_c >= 0.0)  // cL region
     {
-      cons_c[IDN] = cons_al[IDN] * (l_al-vx_al) / (l_al-vx_c);          // (MUB 50)
-      cons_c[IEN] = (l_al*cons_al[IEN] - cons_al[ivx] + ptot_true*vx_c
-          - v_bb_c*bbx) / (l_al-vx_c);                                  // (MUB 51)
+      cons_c[IDN] = cons_al[IDN] * (lambda_al-vx_al) / (lambda_al-vx_c);     // (MUB 50)
+      cons_c[IEN] = (lambda_al*cons_al[IEN] - cons_al[ivx] + ptot_true*vx_c
+          - v_bb_c*bbx) / (lambda_al-vx_c);                                  // (MUB 51)
     }
     else  // cR region
     {
-      cons_c[IDN] = cons_ar[IDN] * (l_ar-vx_ar) / (l_ar-vx_c);          // (MUB 50)
-      cons_c[IEN] = (l_ar*cons_ar[IEN] - cons_ar[ivx] + ptot_true*vx_c
-          - v_bb_c*bbx) / (l_ar-vx_c);                                  // (MUB 51)
+      cons_c[IDN] = cons_ar[IDN] * (lambda_ar-vx_ar) / (lambda_ar-vx_c);     // (MUB 50)
+      cons_c[IEN] = (lambda_ar*cons_ar[IEN] - cons_ar[ivx] + ptot_true*vx_c
+          - v_bb_c*bbx) / (lambda_ar-vx_c);                                  // (MUB 51)
     }
     cons_c[ivx] = (cons_c[IEN] + ptot_true) * vx_c - v_bb_c * bbx;          // (MUB 52)
     cons_c[ivy] = (cons_c[IEN] + ptot_true) * vy_c - v_bb_c * cons_c[IBY];  // (MUB 52)
@@ -398,13 +425,13 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     if (GENERAL_RELATIVITY)
       for (int n = 0; n < NWAVE; ++n)
       {
-        if (lambda_l >= 0.0)  // L region
+        if (lambda_l >= v_interface)  // L region
           cons_(n,i) = cons_l[n];
-        else if (lambda_r <= 0.0)  // R region
+        else if (lambda_r <= v_interface)  // R region
           cons_(n,i) = cons_r[n];
-        else if (lambda_al >= -vc_extension)  // aL region
+        else if (lambda_al >= v_interface-vc_extension)  // aL region
           cons_(n,i) = cons_al[n];
-        else if (lambda_ar <= vc_extension)  // aR region
+        else if (lambda_ar <= v_interface+vc_extension)  // aR region
           cons_(n,i) = cons_ar[n];
         else  // c region
           cons_(n,i) = cons_c[n];
@@ -413,13 +440,13 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     // Set fluxes
     for (int n = 0; n < NWAVE; ++n)
     {
-      if (lambda_l >= 0.0)  // L region
+      if (lambda_l >= v_interface)  // L region
         flux(n,i) = flux_l[n];
-      else if (lambda_r <= 0.0)  // R region
+      else if (lambda_r <= v_interface)  // R region
         flux(n,i) = flux_r[n];
-      else if (lambda_al >= -vc_extension)  // aL region
+      else if (lambda_al >= v_interface-vc_extension)  // aL region
         flux(n,i) = flux_al[n];
-      else if (lambda_ar <= vc_extension)  // aR region
+      else if (lambda_ar <= v_interface+vc_extension)  // aR region
         flux(n,i) = flux_ar[n];
       else  // c region
         flux(n,i) = flux_c[n];

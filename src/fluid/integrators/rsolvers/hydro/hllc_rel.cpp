@@ -5,7 +5,7 @@
 
 // C++ headers
 #include <algorithm>  // max(), min()
-#include <cmath>      // sqrt()
+#include <cmath>      // abs(), sqrt()
 
 // Athena headers
 #include "../../../fluid.hpp"                       // Fluid
@@ -26,11 +26,34 @@
 //   flux: fluxes across interface
 // Notes:
 //   prim_l, prim_r overwritten
-//   implements HLLC algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
+//   implements HLLC algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB2005)
+//   references Mignone & Bodo 2006, MNRAS 368 1040 (MB2006)
 void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     const int iu, const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
     AthenaArray<Real> &prim_r, AthenaArray<Real> &flux)
 {
+  // Calculate metric if in GR
+  int i01, i11;
+  if (GENERAL_RELATIVITY)
+    switch (ivx)
+    {
+      case IVX:
+        pmy_fluid->pmy_block->pcoord->Face1Metric(k, j, il, iu, g_, gi_);
+        i01 = I01;
+        i11 = I11;
+        break;
+      case IVY:
+        pmy_fluid->pmy_block->pcoord->Face2Metric(k, j, il, iu, g_, gi_);
+        i01 = I02;
+        i11 = I22;
+        break;
+      case IVZ:
+        pmy_fluid->pmy_block->pcoord->Face3Metric(k, j, il, iu, g_, gi_);
+        i01 = I03;
+        i11 = I33;
+        break;
+    }
+
   // Transform primitives to locally flat coordinates if in GR
   if (GENERAL_RELATIVITY)
     switch (ivx)
@@ -60,6 +83,11 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
+    // Calculate interface velocity
+    Real v_interface = 0.0;
+    if (GENERAL_RELATIVITY)
+      v_interface = gi_(i01,i) / std::sqrt(SQR(gi_(i01,i)) - gi_(I00,i)*gi_(i11,i));
+
     // Extract left primitives
     const Real &rho_l = prim_l(IDN,i);
     const Real &pgas_l = prim_l(IEN,i);
@@ -104,13 +132,13 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
       u_r[3] = u_r[0] * vz_r;
     }
 
-    // Calculate wavespeeds in left state (MB 23)
+    // Calculate wavespeeds in left state (MB2005 23)
     Real lambda_p_l, lambda_m_l;
     Real wgas_l = rho_l + gamma_adi/(gamma_adi-1.0) * pgas_l;
     pmy_fluid->pf_eos->SoundSpeedsSR(wgas_l, pgas_l, u_l[1]/u_l[0], SQR(u_l[0]),
         &lambda_p_l, &lambda_m_l);
 
-    // Calculate wavespeeds in right state (MB 23)
+    // Calculate wavespeeds in right state (MB2005 23)
     Real lambda_p_r, lambda_m_r;
     Real wgas_r = rho_r + gamma_adi/(gamma_adi-1.0) * pgas_r;
     pmy_fluid->pf_eos->SoundSpeedsSR(wgas_r, pgas_r, u_r[1]/u_r[0], SQR(u_r[0]),
@@ -120,7 +148,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     Real lambda_l = std::min(lambda_m_l, lambda_m_r);
     Real lambda_r = std::max(lambda_p_l, lambda_p_r);
 
-    // Calculate conserved quantities in L region (MB 3)
+    // Calculate conserved quantities in L region (MB2005 3)
     Real cons_l[NWAVE];
     cons_l[IDN] = rho_l * u_l[0];
     cons_l[IEN] = wgas_l * u_l[0] * u_l[0] - pgas_l;
@@ -128,7 +156,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     cons_l[ivy] = wgas_l * u_l[2] * u_l[0];
     cons_l[ivz] = wgas_l * u_l[3] * u_l[0];
 
-    // Calculate fluxes in L region (MB 2,3)
+    // Calculate fluxes in L region (MB2005 2,3)
     Real flux_l[NWAVE];
     flux_l[IDN] = rho_l * u_l[1];
     flux_l[IEN] = wgas_l * u_l[0] * u_l[1];
@@ -136,7 +164,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     flux_l[ivy] = wgas_l * u_l[2] * u_l[1];
     flux_l[ivz] = wgas_l * u_l[3] * u_l[1];
 
-    // Calculate conserved quantities in R region (MB 3)
+    // Calculate conserved quantities in R region (MB2005 3)
     Real cons_r[NWAVE];
     cons_r[IDN] = rho_r * u_r[0];
     cons_r[IEN] = wgas_r * u_r[0] * u_r[0] - pgas_r;
@@ -144,7 +172,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     cons_r[ivy] = wgas_r * u_r[2] * u_r[0];
     cons_r[ivz] = wgas_r * u_r[3] * u_r[0];
 
-    // Calculate fluxes in R region (MB 2,3)
+    // Calculate fluxes in R region (MB2005 2,3)
     Real flux_r[NWAVE];
     flux_r[IDN] = rho_r * u_r[1];
     flux_r[IEN] = wgas_r * u_r[0] * u_r[1];
@@ -152,46 +180,40 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     flux_r[ivy] = wgas_r * u_r[2] * u_r[1];
     flux_r[ivz] = wgas_r * u_r[3] * u_r[1];
 
-    // Calculate conserved quantities in HLL region (MB 9)
-    Real e_hll = (lambda_r*cons_r[IEN] - lambda_l*cons_l[IEN]
-        + flux_l[IEN] - flux_r[IEN]) / (lambda_r-lambda_l);
-    Real mx_hll = (lambda_r*cons_r[ivx] - lambda_l*cons_l[ivx]
-        + flux_l[ivx] - flux_r[ivx]) / (lambda_r-lambda_l);
+    // Calculate conserved quantities in HLL region in GR (MB2005 9)
+    Real cons_hll[NWAVE];
+    for (int n = 0; n < NWAVE; ++n)
+      cons_hll[n] = (lambda_r*cons_r[n] - lambda_l*cons_l[n] + flux_l[n] - flux_r[n])
+          / (lambda_r-lambda_l);
 
-    // Calculate fluxes in HLL region (MB 11)
-    Real flux_e_hll = (lambda_r*flux_l[IEN] - lambda_l*flux_r[IEN]
-        + lambda_r*lambda_l * (cons_r[IEN]-cons_l[IEN]))
-        / (lambda_r-lambda_l);
-    Real flux_mx_hll = (lambda_r*flux_l[ivx] - lambda_l*flux_r[ivx]
-        + lambda_r*lambda_l * (cons_r[ivx]-cons_l[ivx]))
-        / (lambda_r-lambda_l);
+    // Calculate fluxes in HLL region (MB2005 11)
+    Real flux_hll[NWAVE];
+    for (int n = 0; n < NWAVE; ++n)
+      flux_hll[n] = (lambda_r*flux_l[n] - lambda_l*flux_r[n]
+          + lambda_l*lambda_r * (cons_r[n] - cons_l[n]))
+          / (lambda_r-lambda_l);
 
-    // Calculate contact wavespeed (MB 18)
+    // Calculate contact wavespeed (MB2005 18)
     Real lambda_star;
-    if (flux_e_hll > TINY_NUMBER || flux_e_hll < -TINY_NUMBER)  // use quadratic formula
+    if (std::abs(flux_hll[IEN]) > TINY_NUMBER)  // use quadratic formula
     {
       // Follows algorithm in Numerical Recipes (section 5.6) for avoiding cancellations
-      Real a = flux_e_hll;
-      Real b = -(e_hll + flux_mx_hll);
-      Real c = mx_hll;
+      Real a = flux_hll[IEN];
+      Real b = -(cons_hll[IEN] + flux_hll[ivx]);
+      Real c = cons_hll[ivx];
       Real q = -0.5 * (b - std::sqrt(SQR(b) - 4.0*a*c));
       lambda_star = c / q;
     }
     else  // no quadratic term
-      lambda_star = mx_hll / (e_hll + flux_mx_hll);
+      lambda_star = cons_hll[ivx] / (cons_hll[IEN] + flux_hll[ivx]);
 
-    // Calculate contact pressure (MB 17)
+    // Calculate contact pressure (MB2006 48)
+    // Note: Could also use (MB2005 17), but note the first minus sign there is wrong.
+    Real pgas_star = -flux_hll[IEN] * lambda_star + flux_hll[ivx];
+
+    // Calculate conserved quantities in L* region (MB2005 16)
+    Real cons_lstar[NWAVE];
     Real vx_l = u_l[1] / u_l[0];
-    Real a_l = lambda_l * cons_l[IEN] - cons_l[ivx];
-    Real b_l = cons_l[ivx] * (lambda_l - vx_l) - pgas_l;
-    Real pgas_lstar = (a_l * lambda_star - b_l) / (1.0 - lambda_l * lambda_star);
-    Real vx_r = u_r[1] / u_r[0];
-    Real a_r = lambda_r * cons_r[IEN] - cons_r[ivx];
-    Real b_r = cons_r[ivx] * (lambda_r - vx_r) - pgas_r;
-    Real pgas_rstar = (a_r * lambda_star - b_r) / (1.0 - lambda_r * lambda_star);
-    Real pgas_star = 0.5 * (pgas_lstar + pgas_rstar);
-
-    // Calculate conserved quantities in L* region (MB 16)
     for (int n = 0; n < NWAVE; ++n)
       cons_lstar[n] = cons_l[n] * (lambda_l-vx_l);
     cons_lstar[IEN] += pgas_star*lambda_star - pgas_l*vx_l;
@@ -199,13 +221,14 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     for (int n = 0; n < NWAVE; ++n)
       cons_lstar[n] /= lambda_l - lambda_star;
 
-    // Calculate fluxes in L* region (MB 14)
+    // Calculate fluxes in L* region (MB2005 14)
     Real flux_lstar[NWAVE];
     for (int n = 0; n < NWAVE; ++n)
       flux_lstar[n] = flux_l[n] + lambda_l * (cons_lstar[n] - cons_l[n]);
 
-    // Calculate conserved quantities in R* region (MB 16)
+    // Calculate conserved quantities in R* region (MB2005 16)
     Real cons_rstar[NWAVE];
+    Real vx_r = u_r[1] / u_r[0];
     for (int n = 0; n < NWAVE; ++n)
       cons_rstar[n] = cons_r[n] * (lambda_r-vx_r);
     cons_rstar[IEN] += pgas_star*lambda_star - pgas_r*vx_r;
@@ -213,37 +236,37 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     for (int n = 0; n < NWAVE; ++n)
       cons_rstar[n] /= lambda_r - lambda_star;
 
-    // Calculate fluxes in R* region (MB 14)
+    // Calculate fluxes in R* region (MB2005 14)
     Real flux_rstar[NWAVE];
     for (int n = 0; n < NWAVE; ++n)
       flux_rstar[n] = flux_r[n] + lambda_r * (cons_rstar[n] - cons_r[n]);
-
-    // Set fluxes
-    for (int n = 0; n < NWAVE; ++n)
-    {
-      if (lambda_l >= 0.0)  // L region
-        flux(n,i) = flux_l[n];
-      else if (lambda_r <= 0.0)  // R region
-        flux(n,i) = flux_r[n];
-      else if (lambda_star >= 0.0)  // L* region
-        flux(n,i) = flux_lstar[n];
-      else  // R* region
-        flux(n,i) = flux_rstar[n];
-    }
 
     // Set conserved quantities in GR
     if (GENERAL_RELATIVITY)
       for (int n = 0; n < NWAVE; ++n)
       {
-        if (lambda_l >= 0.0)  // L region
+        if (lambda_l >= v_interface)  // L region
           cons_(n,i) = cons_l[n];
-        else if (lambda_r <= 0.0)  // R region
+        else if (lambda_r <= v_interface)  // R region
           cons_(n,i) = cons_r[n];
-        else if (lambda_star >= 0.0)  // L* region
+        else if (lambda_star >= v_interface)  // L* region
           cons_(n,i) = cons_lstar[n];
         else  // R* region
           cons_(n,i) = cons_rstar[n];
       }
+
+    // Set fluxes
+    for (int n = 0; n < NWAVE; ++n)
+    {
+      if (lambda_l >= v_interface)  // L region
+        flux(n,i) = flux_l[n];
+      else if (lambda_r <= v_interface)  // R region
+        flux(n,i) = flux_r[n];
+      else if (lambda_star >= v_interface)  // L* region
+        flux(n,i) = flux_lstar[n];
+      else  // R* region
+        flux(n,i) = flux_rstar[n];
+    }
   }
 
   // Transform fluxes to global coordinates if in GR

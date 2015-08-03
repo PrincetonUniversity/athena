@@ -26,6 +26,7 @@
 #include <string>     // c_str()
 #include <cstring>    // memcpy
 #include <cstdlib>
+#include <cmath>
 
 // Athena headers
 #include "../athena.hpp"          // Real
@@ -806,7 +807,7 @@ void BoundaryValues::RestrictFluid(AthenaArray<Real> &src,
     for (int n=0; n<(NFLUID); ++n) {
       for (int cj=csj; cj<=cej; cj++) {
         int j=(cj-pmb->cjs)*2+pmb->js;
-        pmb->pcoord->CellVolume(0,j,si,ei,fvol_[0][0]);
+        pmb->pcoord->CellVolume(0,j  ,si,ei,fvol_[0][0]);
         pmb->pcoord->CellVolume(0,j+1,si,ei,fvol_[0][1]);
         for (int ci=csi; ci<=cei; ci++) {
           int i=(ci-pmb->cis)*2+pmb->is;
@@ -819,13 +820,14 @@ void BoundaryValues::RestrictFluid(AthenaArray<Real> &src,
     }
   }
   else { // 1D
+    int j=pmb->js, cj=pmb->cjs, k=pmb->ks, ck=pmb->cks; 
     for (int n=0; n<(NFLUID); ++n) {
-      pmb->pcoord->CellVolume(0,0,si,ei,fvol_[0][0]);
+      pmb->pcoord->CellVolume(k,j,si,ei,fvol_[0][0]);
       for (int ci=csi; ci<=cei; ci++) {
         int i=(ci-pmb->cis)*2+pmb->is;
         Real tvol=fvol_[0][0](i)+fvol_[0][0](i+1);
-        coarse_cons_(n,0,0,ci)
-          =(src(n,0,0,i)*fvol_[0][0](i)+src(n,0,0,i+1)*fvol_[0][0](i+1))/tvol;
+        coarse_cons_(n,ck,cj,ci)
+          =(src(n,k,j,i)*fvol_[0][0](i)+src(n,k,j,i+1)*fvol_[0][0](i+1))/tvol;
       }
     }
   }
@@ -885,7 +887,6 @@ int BoundaryValues::LoadFluidBoundaryBufferToCoarser(AthenaArray<Real> &src, Rea
   RestrictFluid(src, si, ei, sj, ej, sk, ek);
 
   int p=0;
-
   for (int n=0; n<(NFLUID); ++n) {
     for (int k=sk; k<=ek; k++) {
       for (int j=sj; j<=ej; j++) {
@@ -1171,7 +1172,6 @@ bool BoundaryValues::ReceiveFluidBoundaryBuffers(AthenaArray<Real> &dst, int ste
       SetFluidBoundaryFromCoarser(fluid_recv_[step][nb.bufid], nb);
     else
       SetFluidBoundaryFromFiner(dst, fluid_recv_[step][nb.bufid], nb);
-
     fluid_flag_[step][nb.bufid] = boundary_completed; // completed
     nc++;
   }
@@ -1447,24 +1447,37 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
   Coordinates *pco=pmb->pcoord;
   int mylevel;
   long int lx1, lx2, lx3;
+  int mox1, mox2, mox3;
   pmb->uid.GetLocation(lx1, lx2, lx3, mylevel);
+  mox1=((int)(lx1&1L)<<1)-1;
+  mox2=((int)(lx2&1L)<<1)-1;
+  mox3=((int)(lx3&1L)<<1)-1;
   if(pmb->block_size.nx2>1) {  // only in 2D or 3D
     for(int n=0; n<pmb->nneighbor; n++) {
       NeighborBlock& nb= pmb->neighbor[n];
       if(nb.level >= mylevel) continue;
+      int mytype=std::abs(nb.ox1)+std::abs(nb.ox2)+std::abs(nb.ox3);
       // fill the required ghost-ghost zone
       int nis, nie, njs, nje, nks, nke;
       nis=std::max(nb.ox1-1,-1), nie=std::min(nb.ox1+1,1);
-      njs=std::max(nb.ox2-1,-1), nje=std::min(nb.ox2+1,1);
+      if(pmb->block_size.nx2==1) njs=0, nje=0;
+      else njs=std::max(nb.ox2-1,-1), nje=std::min(nb.ox2+1,1);
       if(pmb->block_size.nx3==1) nks=0, nke=0;
       else nks=std::max(nb.ox3-1,-1), nke=std::min(nb.ox3+1,1);
       for(int nk=nks; nk<=nke; nk++) {
         for(int nj=njs; nj<=nje; nj++) {
           for(int ni=nis; ni<=nie; ni++) {
-            if(ni==0 && nj==0 && nk==0) continue; // skip myself
+            int ntype=std::abs(ni)+std::abs(nj)+std::abs(nk);
+            if(ntype==0) continue; // skip myself
             if(pmb->nblevel[nk+1][nj+1][ni+1]!=mylevel
             && pmb->nblevel[nk+1][nj+1][ni+1]!=-1)
               continue; // physical boundary will also be restricted
+            if(ntype>mytype) {
+              if(pmb->block_size.nx3 > 1) // 3D
+                if(((mox1==ni)+(mox2==nj)+(mox3==nk)) != ntype) continue;
+              else if(pmb->block_size.nx2 > 1) // 2D
+                if(((mox1==ni)+(mox2==nj)) != ntype) continue;
+            }
 
             // this neighbor block is on the same level
             // and needs to be restricted for prolongation
@@ -1508,15 +1521,19 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
       else              si=pmb->cis-cn, ei=pmb->cis-1;
       if(nb.ox2==0) {
         sj=pmb->cjs, ej=pmb->cje;
-        if((lx2&1L)==0L) ej++;
-        else             sj--;
+        if(pmb->block_size.nx2 > 1) {
+          if((lx2&1L)==0L) ej++;
+          else             sj--;
+        }
       }
       else if(nb.ox2>0) sj=pmb->cje+1,  ej=pmb->cje+cn;
       else              sj=pmb->cjs-cn, ej=pmb->cjs-1;
       if(nb.ox3==0) {
         sk=pmb->cks, ek=pmb->cke;
-        if((lx3&1L)==0L) ek++;
-        else             sk--;
+        if(pmb->block_size.nx3 > 1) {
+          if((lx3&1L)==0L) ek++;
+          else             sk--;
+        }
       }
       else if(nb.ox3>0) sk=pmb->cke+1,  ek=pmb->cke+cn;
       else              sk=pmb->cks-cn, ek=pmb->cks-1;
@@ -1529,8 +1546,8 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
             Real& x3p = pco->coarse_x3v(k+1);
             Real& x3fm = pco->coarse_x3f(k);
             Real& x3fp = pco->coarse_x3f(k+1);
-            Real& dx3m = pco->coarse_x3v(k  )-pco->coarse_x3v(k-1);
-            Real& dx3p = pco->coarse_x3v(k+1)-pco->coarse_x3v(k  );
+            Real& dx3m = pco->coarse_x3v(k) - pco->coarse_x3v(k-1);
+            Real& dx3p = pco->coarse_x3v(k+1) - pco->coarse_x3v(k);
             int fk=(k-pmb->cks)*2+pmb->ks;
             Real& fx3m = pco->x3v(fk);
             Real& fx3p = pco->x3v(fk+1);
@@ -1542,8 +1559,8 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
               Real& x2p = pco->coarse_x2v(j+1);
               Real& x2fm = pco->coarse_x2f(j);
               Real& x2fp = pco->coarse_x2f(j+1);
-              Real& dx2m = pco->coarse_x2v(j  )-pco->coarse_x2v(j-1);
-              Real& dx2p = pco->coarse_x2v(j+1)-pco->coarse_x2v(j  );
+              Real& dx2m = pco->coarse_x2v(j) - pco->coarse_x2v(j-1);
+              Real& dx2p = pco->coarse_x2v(j+1) - pco->coarse_x2v(j);
               int fj=(j-pmb->cjs)*2+pmb->js;
               Real& fx2m = pco->x2v(fj);
               Real& fx2p = pco->x2v(fj+1);
@@ -1555,44 +1572,42 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
                 Real& x1p = pco->coarse_x1v(i+1);
                 Real& x1fm = pco->coarse_x1f(i);
                 Real& x1fp = pco->coarse_x1f(i+1);
-                Real& dx1m = pco->coarse_x1v(i  )-pco->coarse_x1v(i-1);
-                Real& dx1p = pco->coarse_x1v(i+1)-pco->coarse_x1v(i  );
+                Real& dx1m = pco->coarse_x1v(i) - pco->coarse_x1v(i-1);
+                Real& dx1p = pco->coarse_x1v(i+1) - pco->coarse_x1v(i);
                 int fi=(i-pmb->cis)*2+pmb->is;
                 Real& fx1m = pco->x1v(fi);
                 Real& fx1p = pco->x1v(fi+1);
                 Real dx1fm= x1c-fx1m;
                 Real dx1fp= fx1p-x1c;
                 Real ccval=coarse_cons_(n,k,j,i);
-                // calculate 3D gradients using Mignone 2014's modified van-Leer limiter
+
+                // calculate 3D gradients using the minmod limiter
                 Real gx1m = (ccval-coarse_cons_(n,k,j,i-1))/dx1m;
                 Real gx1p = (coarse_cons_(n,k,j,i+1)-ccval)/dx1p;
-                Real gx1c = gx1m*gx1p;
-                if(gx1c>0.0) {
-                  Real cf=dx1p/(x1fp-x1c);
-                  Real cb=dx1m/(x1c-x1fm);
-                  gx1c=gx1c*(cf*gx1m+cb*gx1p)/(gx1m*gx1m+(cf+cb-2.0)*gx1c+gx1p*gx1p);
-                }
-                else gx1c=0.0;
-
+                Real gx1c = 0.5*(SIGN(gx1m)+SIGN(gx1p))*std::min(std::abs(gx1m),std::abs(gx1p));
                 Real gx2m = (ccval-coarse_cons_(n,k,j-1,i))/dx2m;
                 Real gx2p = (coarse_cons_(n,k,j+1,i)-ccval)/dx2p;
-                Real gx2c = gx2m*gx2p;
-                if(gx2c>0.0) {
-                  Real cf=dx2p/(x2fp-x2c);
-                  Real cb=dx2m/(x2c-x2fm);
-                  gx2c=gx2c*(cf*gx2m+cb*gx2p)/(gx2m*gx2m+(cf+cb-2.0)*gx2c+gx2p*gx2p);
-                }
-                else gx2c=0.0;
-  
+                Real gx2c = 0.5*(SIGN(gx2m)+SIGN(gx2p))*std::min(std::abs(gx2m),std::abs(gx2p));
                 Real gx3m = (ccval-coarse_cons_(n,k-1,j,i))/dx3m;
                 Real gx3p = (coarse_cons_(n,k+1,j,i)-ccval)/dx3p;
-                Real gx3c = gx3m*gx3p;
-                if(gx3c>0.0) {
-                  Real cf=dx3p/(x3fp-x3c);
-                  Real cb=dx3m/(x3c-x3fm);
-                  gx3c=gx3c*(cf*gx3m+cb*gx3p)/(gx3m*gx3m+(cf+cb-2.0)*gx3c+gx3p*gx3p);
+                Real gx3c = 0.5*(SIGN(gx3m)+SIGN(gx3p))*std::min(std::abs(gx3m),std::abs(gx3p));
+                Real xdt = std::abs(gx1c)*std::max(dx1m,dx1p)
+                         + std::abs(gx2c)*std::max(dx2m,dx2p)
+                         + std::abs(gx3c)*std::max(dx3m,dx3p);
+
+                Real nmax = ccval, nmin = ccval;
+                nmax=std::max(nmax,std::max(coarse_cons_(n,k,j,i+1),coarse_cons_(n,k,j,i-1)));
+                nmax=std::max(nmax,std::max(coarse_cons_(n,k,j+1,i),coarse_cons_(n,k,j-1,i)));
+                nmax=std::max(nmax,std::max(coarse_cons_(n,k+1,j,i),coarse_cons_(n,k-1,j,i)));
+                nmin=std::min(nmin,std::min(coarse_cons_(n,k,j,i+1),coarse_cons_(n,k,j,i-1)));
+                nmin=std::min(nmin,std::min(coarse_cons_(n,k,j+1,i),coarse_cons_(n,k,j-1,i)));
+                nmin=std::min(nmin,std::min(coarse_cons_(n,k+1,j,i),coarse_cons_(n,k-1,j,i)));
+
+                Real maxdiff = std::min(nmax-ccval,ccval-nmin);
+                if(xdt > maxdiff) {
+                  Real fac=maxdiff/xdt;
+                  gx1c *= fac; gx2c *= fac; gx3c *= fac;
                 }
-                else gx3c=0.0;
 
                 // interpolate onto the finer grid
                 dst(n,fk  ,fj  ,fi  )=ccval-gx1c*dx1fm-gx2c*dx2fm-gx3c*dx3fm;
@@ -1609,7 +1624,7 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
         }
       }
       else if(pmb->block_size.nx2 > 1) { // 2D
-        int k=sk, fk=sk;
+        int k=pmb->cks, fk=pmb->ks;
         for(int n=0; n<NFLUID; n++) {
           for(int j=sj; j<=ej; j++) {
             Real& x2m = pco->coarse_x2v(j-1);
@@ -1617,9 +1632,9 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
             Real& x2p = pco->coarse_x2v(j+1);
             Real& x2fm = pco->coarse_x2f(j);
             Real& x2fp = pco->coarse_x2f(j+1);
-            Real& dx2m = pco->coarse_x2v(j  )-pco->coarse_x2v(j-1);
-            Real& dx2p = pco->coarse_x2v(j+1)-pco->coarse_x2v(j  );
-            int fj=(sj-pmb->cjs)*2+NGHOST;
+            Real& dx2m = pco->coarse_x2v(j) - pco->coarse_x2v(j-1);
+            Real& dx2p = pco->coarse_x2v(j+1) - pco->coarse_x2v(j);
+            int fj=(j-pmb->cjs)*2+pmb->js;
             Real& fx2m = pco->x2v(fj);
             Real& fx2p = pco->x2v(fj+1);
             Real dx2fm= x2c-fx2m;
@@ -1630,34 +1645,36 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
               Real& x1p = pco->coarse_x1v(i+1);
               Real& x1fm = pco->coarse_x1f(i);
               Real& x1fp = pco->coarse_x1f(i+1);
-              Real& dx1m = pco->coarse_x1v(i  )-pco->coarse_x1v(i-1);
-              Real& dx1p = pco->coarse_x1v(i+1)-pco->coarse_x1v(i  );
-              int fi=(si-pmb->cis)*2+NGHOST;
+              Real& dx1m = pco->coarse_x1v(i) - pco->coarse_x1v(i-1);
+              Real& dx1p = pco->coarse_x1v(i+1) - pco->coarse_x1v(i);
+              int fi=(i-pmb->cis)*2+pmb->is;
               Real& fx1m = pco->x1v(fi);
               Real& fx1p = pco->x1v(fi+1);
               Real dx1fm= x1c-fx1m;
               Real dx1fp= fx1p-x1c;
               Real ccval=coarse_cons_(n,k,j,i);
-              // calculate 2D gradients using Mignone 2014's modified van-Leer limiter
+
+              // calculate 2D gradients using the minmod limiter
               Real gx1m = (ccval-coarse_cons_(n,k,j,i-1))/dx1m;
               Real gx1p = (coarse_cons_(n,k,j,i+1)-ccval)/dx1p;
-              Real gx1c = gx1m*gx1p;
-              if(gx1c>0.0) {
-                Real cf=dx1p/(x1fp-x1c);
-                Real cb=dx1m/(x1c-x1fm);
-                gx1c=gx1c*(cf*gx1m+cb*gx1p)/(gx1m*gx1m+(cf+cb-2.0)*gx1c+gx1p*gx1p);
-              }
-              else gx1c=0.0;
-
+              Real gx1c = 0.5*(SIGN(gx1m)+SIGN(gx1p))*std::min(std::abs(gx1m),std::abs(gx1p));
               Real gx2m = (ccval-coarse_cons_(n,k,j-1,i))/dx2m;
               Real gx2p = (coarse_cons_(n,k,j+1,i)-ccval)/dx2p;
-              Real gx2c = gx2m*gx2p;
-              if(gx2c>0.0) {
-                Real cf=dx2p/(x2fp-x2c);
-                Real cb=dx2m/(x2c-x2fm);
-                gx2c=gx2c*(cf*gx2m+cb*gx2p)/(gx2m*gx2m+(cf+cb-2.0)*gx2c+gx2p*gx2p);
+              Real gx2c = 0.5*(SIGN(gx2m)+SIGN(gx2p))*std::min(std::abs(gx2m),std::abs(gx2p));
+              Real xdt = std::abs(gx1c)*std::max(dx1m,dx1p)
+                       + std::abs(gx2c)*std::max(dx2m,dx2p);
+
+              Real nmax = ccval, nmin = ccval;
+              nmax=std::max(nmax,std::max(coarse_cons_(n,k,j,i+1),coarse_cons_(n,k,j,i-1)));
+              nmax=std::max(nmax,std::max(coarse_cons_(n,k,j+1,i),coarse_cons_(n,k,j-1,i)));
+              nmin=std::min(nmin,std::min(coarse_cons_(n,k,j,i+1),coarse_cons_(n,k,j,i-1)));
+              nmin=std::min(nmin,std::min(coarse_cons_(n,k,j+1,i),coarse_cons_(n,k,j-1,i)));
+
+              Real maxdiff = std::min(nmax-ccval,ccval-nmin);
+              if(xdt > maxdiff) {
+                Real fac=maxdiff/xdt;
+                gx1c *= fac; gx2c *= fac;
               }
-              else gx2c=0.0;
 
               // interpolate on to the finer grid
               dst(n,fk  ,fj  ,fi  )=ccval-gx1c*dx1fm-gx2c*dx2fm;
@@ -1669,7 +1686,7 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
         }
       }
       else { // 1D
-        int k=sk, fk=sk, j=sj, fj=sj;
+        int k=pmb->cks, fk=pmb->ks, j=pmb->cjs, fj=pmb->js;
         for(int n=0; n<NFLUID; n++) {
           for(int i=si; i<=ei; i++) {
             Real& x1m = pco->coarse_x1v(i-1);
@@ -1677,14 +1694,15 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
             Real& x1p = pco->coarse_x1v(i+1);
             Real& x1fm = pco->coarse_x1f(i);
             Real& x1fp = pco->coarse_x1f(i+1);
-            Real& dx1m = pco->coarse_x1v(i  )-pco->coarse_x1v(i-1);
-            Real& dx1p = pco->coarse_x1v(i+1)-pco->coarse_x1v(i  );
-            int fi=(si-pmb->cis)*2+NGHOST;
+            Real& dx1m = pco->coarse_x1v(i) - pco->coarse_x1v(i-1);
+            Real& dx1p = pco->coarse_x1v(i+1) - pco->coarse_x1v(i);
+            int fi=(i-pmb->cis)*2+pmb->is;
             Real& fx1m = pco->x1v(fi);
             Real& fx1p = pco->x1v(fi+1);
             Real dx1fm= x1c-fx1m;
             Real dx1fp= fx1p-x1c;
             Real ccval=coarse_cons_(n,k,j,i);
+
             // calculate 1D gradient using Mignone 2014's modified van-Leer limiter
             Real gx1m = (ccval-coarse_cons_(n,k,j,i-1))/dx1m;
             Real gx1p = (coarse_cons_(n,k,j,i+1)-ccval)/dx1p;
@@ -3123,7 +3141,7 @@ int BufferID(int dim, bool multilevel, bool face_only)
   if(dim>=2) {
     for(int m=-1; m<=1; m+=2) {
       for(int n=-1; n<=1; n+=2) {
-        for(int f1=0;f1<nf1;f1++) {
+        for(int f1=0;f1<nf2;f1++) {
           ni_[b].ox1=n; ni_[b].ox2=m; ni_[b].ox3=0;
           ni_[b].fi1=f1; ni_[b].fi2=0; ni_[b].type=neighbor_edge;
           b++;
