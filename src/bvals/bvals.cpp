@@ -1440,7 +1440,7 @@ bool BoundaryValues::ReceiveFluxCorrection(AthenaArray<Real> &dst, int step)
 
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
-//  \brief Prolongate the ghost zones from the prolongation buffer
+//  \brief Prolongate the fluid in the ghost zones from the prolongation buffer
 void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
 {
   MeshBlock *pmb=pmy_mblock_;
@@ -1452,180 +1452,106 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
   mox1=((int)(lx1&1L)<<1)-1;
   mox2=((int)(lx2&1L)<<1)-1;
   mox3=((int)(lx3&1L)<<1)-1;
-  if(pmb->block_size.nx2>1) {  // only in 2D or 3D
-    for(int n=0; n<pmb->nneighbor; n++) {
-      NeighborBlock& nb= pmb->neighbor[n];
-      if(nb.level >= mylevel) continue;
-      int mytype=std::abs(nb.ox1)+std::abs(nb.ox2)+std::abs(nb.ox3);
-      // fill the required ghost-ghost zone
-      int nis, nie, njs, nje, nks, nke;
-      nis=std::max(nb.ox1-1,-1), nie=std::min(nb.ox1+1,1);
-      if(pmb->block_size.nx2==1) njs=0, nje=0;
-      else njs=std::max(nb.ox2-1,-1), nje=std::min(nb.ox2+1,1);
-      if(pmb->block_size.nx3==1) nks=0, nke=0;
-      else nks=std::max(nb.ox3-1,-1), nke=std::min(nb.ox3+1,1);
-      for(int nk=nks; nk<=nke; nk++) {
-        for(int nj=njs; nj<=nje; nj++) {
-          for(int ni=nis; ni<=nie; ni++) {
-            int ntype=std::abs(ni)+std::abs(nj)+std::abs(nk);
-            if(ntype==0) continue; // skip myself
-            if(pmb->nblevel[nk+1][nj+1][ni+1]!=mylevel
-            && pmb->nblevel[nk+1][nj+1][ni+1]!=-1)
-              continue; // physical boundary will also be restricted
-            if(ntype>mytype) {
-              if(pmb->block_size.nx3 > 1) // 3D
-                if(((mox1==ni)+(mox2==nj)+(mox3==nk)) != ntype) continue;
-              else if(pmb->block_size.nx2 > 1) // 2D
-                if(((mox1==ni)+(mox2==nj)) != ntype) continue;
-            }
-
-            // this neighbor block is on the same level
-            // and needs to be restricted for prolongation
-            int ris, rie, rjs, rje, rks, rke;
-            if(ni==0) {
-              ris=pmb->cis, rie=pmb->cie;
-              if(nb.ox1==1) ris=pmb->cie;
-              else if(nb.ox1==-1) rie=pmb->cis;
-            }
-            else if(ni== 1) ris=pmb->cie+1, rie=pmb->cie+1;
-            else if(ni==-1) ris=pmb->cis-1, rie=pmb->cis-1;
-            if(nj==0) {
-              rjs=pmb->cjs, rje=pmb->cje;
-              if(nb.ox2==1) rjs=pmb->cje;
-              else if(nb.ox2==-1) rje=pmb->cjs;
-            }
-            else if(nj== 1) rjs=pmb->cje+1, rje=pmb->cje+1;
-            else if(nj==-1) rjs=pmb->cjs-1, rje=pmb->cjs-1;
-            if(nk==0) {
-              rks=pmb->cks, rke=pmb->cke;
-              if(nb.ox3==1) rks=pmb->cke;
-              else if(nb.ox3==-1) rke=pmb->cks;
-            }
-            else if(nk== 1) rks=pmb->cke+1, rke=pmb->cke+1;
-            else if(nk==-1) rks=pmb->cks-1, rke=pmb->cks-1;
-            RestrictFluid(dst, ris, rie, rjs, rje, rks, rke);
+  for(int n=0; n<pmb->nneighbor; n++) {
+    NeighborBlock& nb= pmb->neighbor[n];
+    if(nb.level >= mylevel) continue;
+    int mytype=std::abs(nb.ox1)+std::abs(nb.ox2)+std::abs(nb.ox3);
+    // fill the required ghost-ghost zone
+    int nis, nie, njs, nje, nks, nke;
+    nis=std::max(nb.ox1-1,-1), nie=std::min(nb.ox1+1,1);
+    if(pmb->block_size.nx2==1) njs=0, nje=0;
+    else njs=std::max(nb.ox2-1,-1), nje=std::min(nb.ox2+1,1);
+    if(pmb->block_size.nx3==1) nks=0, nke=0;
+    else nks=std::max(nb.ox3-1,-1), nke=std::min(nb.ox3+1,1);
+    for(int nk=nks; nk<=nke; nk++) {
+      for(int nj=njs; nj<=nje; nj++) {
+        for(int ni=nis; ni<=nie; ni++) {
+          int ntype=std::abs(ni)+std::abs(nj)+std::abs(nk);
+          if(ntype==0) continue; // skip myself
+          if(pmb->nblevel[nk+1][nj+1][ni+1]!=mylevel
+          && pmb->nblevel[nk+1][nj+1][ni+1]!=-1)
+            continue; // physical boundary will also be restricted
+          if(ntype>mytype) {
+            if(pmb->block_size.nx3 > 1) // 3D
+              if(((mox1==ni)+(mox2==nj)+(mox3==nk)) != ntype) continue;
+            else if(pmb->block_size.nx2 > 1) // 2D
+              if(((mox1==ni)+(mox2==nj)) != ntype) continue;
           }
-        }
-      }
 
-      // now that the ghost-ghost zones are filled
-      // calculate the slope with a limiter and interpolate the data
-      int cn = (NGHOST+1)/2;
-      int si, ei, sj, ej, sk, ek;
-      if(nb.ox1==0) {
-        si=pmb->cis, ei=pmb->cie;
-        if((lx1&1L)==0L) ei++;
-        else             si--;
-      }
-      else if(nb.ox1>0) si=pmb->cie+1,  ei=pmb->cie+cn;
-      else              si=pmb->cis-cn, ei=pmb->cis-1;
-      if(nb.ox2==0) {
-        sj=pmb->cjs, ej=pmb->cje;
-        if(pmb->block_size.nx2 > 1) {
-          if((lx2&1L)==0L) ej++;
-          else             sj--;
-        }
-      }
-      else if(nb.ox2>0) sj=pmb->cje+1,  ej=pmb->cje+cn;
-      else              sj=pmb->cjs-cn, ej=pmb->cjs-1;
-      if(nb.ox3==0) {
-        sk=pmb->cks, ek=pmb->cke;
-        if(pmb->block_size.nx3 > 1) {
-          if((lx3&1L)==0L) ek++;
-          else             sk--;
-        }
-      }
-      else if(nb.ox3>0) sk=pmb->cke+1,  ek=pmb->cke+cn;
-      else              sk=pmb->cks-cn, ek=pmb->cks-1;
-
-      if(pmb->block_size.nx3 > 1) { // 3D
-        for(int n=0; n<NFLUID; n++) {
-          for(int k=sk; k<=ek; k++) {
-            Real& x3m = pco->coarse_x3v(k-1);
-            Real& x3c = pco->coarse_x3v(k);
-            Real& x3p = pco->coarse_x3v(k+1);
-            Real& x3fm = pco->coarse_x3f(k);
-            Real& x3fp = pco->coarse_x3f(k+1);
-            Real dx3m = x3c - x3m;
-            Real dx3p = x3p - x3c;
-            int fk=(k-pmb->cks)*2+pmb->ks;
-            Real& fx3m = pco->x3v(fk);
-            Real& fx3p = pco->x3v(fk+1);
-            Real dx3fm= x3c-fx3m;
-            Real dx3fp= fx3p-x3c;
-            for(int j=sj; j<=ej; j++) {
-              Real& x2m = pco->coarse_x2v(j-1);
-              Real& x2c = pco->coarse_x2v(j);
-              Real& x2p = pco->coarse_x2v(j+1);
-              Real& x2fm = pco->coarse_x2f(j);
-              Real& x2fp = pco->coarse_x2f(j+1);
-              Real dx2m = x2c - x2m;
-              Real dx2p = x2p - x2c;
-              int fj=(j-pmb->cjs)*2+pmb->js;
-              Real& fx2m = pco->x2v(fj);
-              Real& fx2p = pco->x2v(fj+1);
-              Real dx2fm= x2c-fx2m;
-              Real dx2fp= fx2p-x2c;
-              for(int i=si; i<=ei; i++) {
-                Real& x1m = pco->coarse_x1v(i-1);
-                Real& x1c = pco->coarse_x1v(i);
-                Real& x1p = pco->coarse_x1v(i+1);
-                Real& x1fm = pco->coarse_x1f(i);
-                Real& x1fp = pco->coarse_x1f(i+1);
-                Real dx1m = x1c - x1m;
-                Real dx1p = x1p - x1c;
-                int fi=(i-pmb->cis)*2+pmb->is;
-                Real& fx1m = pco->x1v(fi);
-                Real& fx1p = pco->x1v(fi+1);
-                Real dx1fm= x1c-fx1m;
-                Real dx1fp= fx1p-x1c;
-                Real ccval=coarse_cons_(n,k,j,i);
-
-                // calculate 3D gradients using the minmod limiter
-                Real gx1m = (ccval-coarse_cons_(n,k,j,i-1))/dx1m;
-                Real gx1p = (coarse_cons_(n,k,j,i+1)-ccval)/dx1p;
-                Real gx1c = 0.5*(SIGN(gx1m)+SIGN(gx1p))*std::min(std::abs(gx1m),std::abs(gx1p));
-                Real gx2m = (ccval-coarse_cons_(n,k,j-1,i))/dx2m;
-                Real gx2p = (coarse_cons_(n,k,j+1,i)-ccval)/dx2p;
-                Real gx2c = 0.5*(SIGN(gx2m)+SIGN(gx2p))*std::min(std::abs(gx2m),std::abs(gx2p));
-                Real gx3m = (ccval-coarse_cons_(n,k-1,j,i))/dx3m;
-                Real gx3p = (coarse_cons_(n,k+1,j,i)-ccval)/dx3p;
-                Real gx3c = 0.5*(SIGN(gx3m)+SIGN(gx3p))*std::min(std::abs(gx3m),std::abs(gx3p));
-                Real xdt = std::abs(gx1c)*std::max(dx1m,dx1p)
-                         + std::abs(gx2c)*std::max(dx2m,dx2p)
-                         + std::abs(gx3c)*std::max(dx3m,dx3p);
-
-                Real nmax = ccval, nmin = ccval;
-                nmax=std::max(nmax,std::max(coarse_cons_(n,k,j,i+1),coarse_cons_(n,k,j,i-1)));
-                nmax=std::max(nmax,std::max(coarse_cons_(n,k,j+1,i),coarse_cons_(n,k,j-1,i)));
-                nmax=std::max(nmax,std::max(coarse_cons_(n,k+1,j,i),coarse_cons_(n,k-1,j,i)));
-                nmin=std::min(nmin,std::min(coarse_cons_(n,k,j,i+1),coarse_cons_(n,k,j,i-1)));
-                nmin=std::min(nmin,std::min(coarse_cons_(n,k,j+1,i),coarse_cons_(n,k,j-1,i)));
-                nmin=std::min(nmin,std::min(coarse_cons_(n,k+1,j,i),coarse_cons_(n,k-1,j,i)));
-
-                Real maxdiff = std::min(nmax-ccval,ccval-nmin);
-                if(xdt > maxdiff) {
-                  Real fac=maxdiff/xdt;
-                  gx1c *= fac; gx2c *= fac; gx3c *= fac;
-                }
-
-                // interpolate onto the finer grid
-                dst(n,fk  ,fj  ,fi  )=ccval-gx1c*dx1fm-gx2c*dx2fm-gx3c*dx3fm;
-                dst(n,fk  ,fj  ,fi+1)=ccval+gx1c*dx1fp-gx2c*dx2fm-gx3c*dx3fm;
-                dst(n,fk  ,fj+1,fi  )=ccval-gx1c*dx1fm+gx2c*dx2fp-gx3c*dx3fm;
-                dst(n,fk  ,fj+1,fi+1)=ccval+gx1c*dx1fp+gx2c*dx2fp-gx3c*dx3fm;
-                dst(n,fk+1,fj  ,fi  )=ccval-gx1c*dx1fm-gx2c*dx2fm+gx3c*dx3fp;
-                dst(n,fk+1,fj  ,fi+1)=ccval+gx1c*dx1fp-gx2c*dx2fm+gx3c*dx3fp;
-                dst(n,fk+1,fj+1,fi  )=ccval-gx1c*dx1fm+gx2c*dx2fp+gx3c*dx3fp;
-                dst(n,fk+1,fj+1,fi+1)=ccval+gx1c*dx1fp+gx2c*dx2fp+gx3c*dx3fp;
-              }
-            }
+          // this neighbor block is on the same level
+          // and needs to be restricted for prolongation
+          int ris, rie, rjs, rje, rks, rke;
+          if(ni==0) {
+            ris=pmb->cis, rie=pmb->cie;
+            if(nb.ox1==1) ris=pmb->cie;
+            else if(nb.ox1==-1) rie=pmb->cis;
           }
+          else if(ni== 1) ris=pmb->cie+1, rie=pmb->cie+1;
+          else if(ni==-1) ris=pmb->cis-1, rie=pmb->cis-1;
+          if(nj==0) {
+            rjs=pmb->cjs, rje=pmb->cje;
+            if(nb.ox2==1) rjs=pmb->cje;
+            else if(nb.ox2==-1) rje=pmb->cjs;
+          }
+          else if(nj== 1) rjs=pmb->cje+1, rje=pmb->cje+1;
+          else if(nj==-1) rjs=pmb->cjs-1, rje=pmb->cjs-1;
+          if(nk==0) {
+            rks=pmb->cks, rke=pmb->cke;
+            if(nb.ox3==1) rks=pmb->cke;
+            else if(nb.ox3==-1) rke=pmb->cks;
+          }
+          else if(nk== 1) rks=pmb->cke+1, rke=pmb->cke+1;
+          else if(nk==-1) rks=pmb->cks-1, rke=pmb->cks-1;
+          RestrictFluid(dst, ris, rie, rjs, rje, rks, rke);
         }
       }
-      else if(pmb->block_size.nx2 > 1) { // 2D
-        int k=pmb->cks, fk=pmb->ks;
-        for(int n=0; n<NFLUID; n++) {
+    }
+
+    // now that the ghost-ghost zones are filled
+    // calculate the slope with a limiter and interpolate the data
+    int cn = (NGHOST+1)/2;
+    int si, ei, sj, ej, sk, ek;
+    if(nb.ox1==0) {
+      si=pmb->cis, ei=pmb->cie;
+      if((lx1&1L)==0L) ei++;
+      else             si--;
+    }
+    else if(nb.ox1>0) si=pmb->cie+1,  ei=pmb->cie+cn;
+    else              si=pmb->cis-cn, ei=pmb->cis-1;
+    if(nb.ox2==0) {
+      sj=pmb->cjs, ej=pmb->cje;
+      if(pmb->block_size.nx2 > 1) {
+        if((lx2&1L)==0L) ej++;
+        else             sj--;
+      }
+    }
+    else if(nb.ox2>0) sj=pmb->cje+1,  ej=pmb->cje+cn;
+    else              sj=pmb->cjs-cn, ej=pmb->cjs-1;
+    if(nb.ox3==0) {
+      sk=pmb->cks, ek=pmb->cke;
+      if(pmb->block_size.nx3 > 1) {
+        if((lx3&1L)==0L) ek++;
+        else             sk--;
+      }
+    }
+    else if(nb.ox3>0) sk=pmb->cke+1,  ek=pmb->cke+cn;
+    else              sk=pmb->cks-cn, ek=pmb->cks-1;
+
+    if(pmb->block_size.nx3 > 1) { // 3D
+      for(int n=0; n<NFLUID; n++) {
+        for(int k=sk; k<=ek; k++) {
+          Real& x3m = pco->coarse_x3v(k-1);
+          Real& x3c = pco->coarse_x3v(k);
+          Real& x3p = pco->coarse_x3v(k+1);
+          Real& x3fm = pco->coarse_x3f(k);
+          Real& x3fp = pco->coarse_x3f(k+1);
+          Real dx3m = x3c - x3m;
+          Real dx3p = x3p - x3c;
+          int fk=(k-pmb->cks)*2+pmb->ks;
+          Real& fx3m = pco->x3v(fk);
+          Real& fx3p = pco->x3v(fk+1);
+          Real dx3fm= x3c-fx3m;
+          Real dx3fp= fx3p-x3c;
           for(int j=sj; j<=ej; j++) {
             Real& x2m = pco->coarse_x2v(j-1);
             Real& x2c = pco->coarse_x2v(j);
@@ -1654,40 +1580,68 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
               Real dx1fp= fx1p-x1c;
               Real ccval=coarse_cons_(n,k,j,i);
 
-              // calculate 2D gradients using the minmod limiter
+              // calculate 3D gradients using the minmod limiter
+              Real gx1c, gx2c, gx3c;
               Real gx1m = (ccval-coarse_cons_(n,k,j,i-1))/dx1m;
               Real gx1p = (coarse_cons_(n,k,j,i+1)-ccval)/dx1p;
-              Real gx1c = 0.5*(SIGN(gx1m)+SIGN(gx1p))*std::min(std::abs(gx1m),std::abs(gx1p));
+              if(gx1m*gx1p>0.0) gx1c=std::min(std::abs(gx1m),std::abs(gx1p));
+              else gx1c=0.0;
               Real gx2m = (ccval-coarse_cons_(n,k,j-1,i))/dx2m;
               Real gx2p = (coarse_cons_(n,k,j+1,i)-ccval)/dx2p;
-              Real gx2c = 0.5*(SIGN(gx2m)+SIGN(gx2p))*std::min(std::abs(gx2m),std::abs(gx2p));
+              if(gx2m*gx2p>0.0) gx2c=std::min(std::abs(gx2m),std::abs(gx2p));
+              else gx2c=0.0;
+              Real gx3m = (ccval-coarse_cons_(n,k-1,j,i))/dx3m;
+              Real gx3p = (coarse_cons_(n,k+1,j,i)-ccval)/dx3p;
+              if(gx3m*gx3p>0.0) gx3c=std::min(std::abs(gx3m),std::abs(gx3p));
+              else gx3c=0.0;
               Real xdt = std::abs(gx1c)*std::max(dx1m,dx1p)
-                       + std::abs(gx2c)*std::max(dx2m,dx2p);
+                       + std::abs(gx2c)*std::max(dx2m,dx2p)
+                       + std::abs(gx3c)*std::max(dx3m,dx3p);
 
               Real nmax = ccval, nmin = ccval;
               nmax=std::max(nmax,std::max(coarse_cons_(n,k,j,i+1),coarse_cons_(n,k,j,i-1)));
               nmax=std::max(nmax,std::max(coarse_cons_(n,k,j+1,i),coarse_cons_(n,k,j-1,i)));
+              nmax=std::max(nmax,std::max(coarse_cons_(n,k+1,j,i),coarse_cons_(n,k-1,j,i)));
               nmin=std::min(nmin,std::min(coarse_cons_(n,k,j,i+1),coarse_cons_(n,k,j,i-1)));
               nmin=std::min(nmin,std::min(coarse_cons_(n,k,j+1,i),coarse_cons_(n,k,j-1,i)));
+              nmin=std::min(nmin,std::min(coarse_cons_(n,k+1,j,i),coarse_cons_(n,k-1,j,i)));
 
               Real maxdiff = std::min(nmax-ccval,ccval-nmin);
               if(xdt > maxdiff) {
                 Real fac=maxdiff/xdt;
-                gx1c *= fac; gx2c *= fac;
+                gx1c *= fac; gx2c *= fac; gx3c *= fac;
               }
 
-              // interpolate on to the finer grid
-              dst(n,fk  ,fj  ,fi  )=ccval-gx1c*dx1fm-gx2c*dx2fm;
-              dst(n,fk  ,fj  ,fi+1)=ccval+gx1c*dx1fp-gx2c*dx2fm;
-              dst(n,fk  ,fj+1,fi  )=ccval-gx1c*dx1fm+gx2c*dx2fp;
-              dst(n,fk  ,fj+1,fi+1)=ccval+gx1c*dx1fp+gx2c*dx2fp;
+              // interpolate onto the finer grid
+              dst(n,fk  ,fj  ,fi  )=ccval-gx1c*dx1fm-gx2c*dx2fm-gx3c*dx3fm;
+              dst(n,fk  ,fj  ,fi+1)=ccval+gx1c*dx1fp-gx2c*dx2fm-gx3c*dx3fm;
+              dst(n,fk  ,fj+1,fi  )=ccval-gx1c*dx1fm+gx2c*dx2fp-gx3c*dx3fm;
+              dst(n,fk  ,fj+1,fi+1)=ccval+gx1c*dx1fp+gx2c*dx2fp-gx3c*dx3fm;
+              dst(n,fk+1,fj  ,fi  )=ccval-gx1c*dx1fm-gx2c*dx2fm+gx3c*dx3fp;
+              dst(n,fk+1,fj  ,fi+1)=ccval+gx1c*dx1fp-gx2c*dx2fm+gx3c*dx3fp;
+              dst(n,fk+1,fj+1,fi  )=ccval-gx1c*dx1fm+gx2c*dx2fp+gx3c*dx3fp;
+              dst(n,fk+1,fj+1,fi+1)=ccval+gx1c*dx1fp+gx2c*dx2fp+gx3c*dx3fp;
             }
           }
         }
       }
-      else { // 1D
-        int k=pmb->cks, fk=pmb->ks, j=pmb->cjs, fj=pmb->js;
-        for(int n=0; n<NFLUID; n++) {
+    }
+    else if(pmb->block_size.nx2 > 1) { // 2D
+      int k=pmb->cks, fk=pmb->ks;
+      for(int n=0; n<NFLUID; n++) {
+        for(int j=sj; j<=ej; j++) {
+          Real& x2m = pco->coarse_x2v(j-1);
+          Real& x2c = pco->coarse_x2v(j);
+          Real& x2p = pco->coarse_x2v(j+1);
+          Real& x2fm = pco->coarse_x2f(j);
+          Real& x2fp = pco->coarse_x2f(j+1);
+          Real dx2m = x2c - x2m;
+          Real dx2p = x2p - x2c;
+          int fj=(j-pmb->cjs)*2+pmb->js;
+          Real& fx2m = pco->x2v(fj);
+          Real& fx2p = pco->x2v(fj+1);
+          Real dx2fm= x2c-fx2m;
+          Real dx2fp= fx2p-x2c;
           for(int i=si; i<=ei; i++) {
             Real& x1m = pco->coarse_x1v(i-1);
             Real& x1c = pco->coarse_x1v(i);
@@ -1703,21 +1657,68 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
             Real dx1fp= fx1p-x1c;
             Real ccval=coarse_cons_(n,k,j,i);
 
-            // calculate 1D gradient using Mignone 2014's modified van-Leer limiter
+            // calculate 2D gradients using the minmod limiter
+            Real gx1c, gx2c;
             Real gx1m = (ccval-coarse_cons_(n,k,j,i-1))/dx1m;
             Real gx1p = (coarse_cons_(n,k,j,i+1)-ccval)/dx1p;
-            Real gx1c = gx1m*gx1p;
-            if(gx1c>0.0) {
-              Real cf=dx1p/(x1fp-x1c);
-              Real cb=dx1m/(x1c-x1fm);
-              gx1c=gx1c*(cf*gx1m+cb*gx1p)/(gx1m*gx1m+(cf+cb-2.0)*gx1c+gx1p*gx1p);
-            }
+            if(gx1m*gx1p>0.0) gx1c=std::min(std::abs(gx1m),std::abs(gx1p));
             else gx1c=0.0;
+            Real gx2m = (ccval-coarse_cons_(n,k,j-1,i))/dx2m;
+            Real gx2p = (coarse_cons_(n,k,j+1,i)-ccval)/dx2p;
+            if(gx2m*gx2p>0.0) gx2c=std::min(std::abs(gx2m),std::abs(gx2p));
+            else gx2c=0.0;
+            Real xdt = std::abs(gx1c)*std::max(dx1m,dx1p)
+                     + std::abs(gx2c)*std::max(dx2m,dx2p);
+
+            Real nmax = ccval, nmin = ccval;
+            nmax=std::max(nmax,std::max(coarse_cons_(n,k,j,i+1),coarse_cons_(n,k,j,i-1)));
+            nmax=std::max(nmax,std::max(coarse_cons_(n,k,j+1,i),coarse_cons_(n,k,j-1,i)));
+            nmin=std::min(nmin,std::min(coarse_cons_(n,k,j,i+1),coarse_cons_(n,k,j,i-1)));
+            nmin=std::min(nmin,std::min(coarse_cons_(n,k,j+1,i),coarse_cons_(n,k,j-1,i)));
+
+            Real maxdiff = std::min(nmax-ccval,ccval-nmin);
+            if(xdt > maxdiff) {
+              Real fac=maxdiff/xdt;
+              gx1c *= fac; gx2c *= fac;
+            }
 
             // interpolate on to the finer grid
-            dst(n,fk  ,fj  ,fi  )=ccval-gx1c*dx1fm;
-            dst(n,fk  ,fj  ,fi+1)=ccval+gx1c*dx1fp;
+            dst(n,fk  ,fj  ,fi  )=ccval-gx1c*dx1fm-gx2c*dx2fm;
+            dst(n,fk  ,fj  ,fi+1)=ccval+gx1c*dx1fp-gx2c*dx2fm;
+            dst(n,fk  ,fj+1,fi  )=ccval-gx1c*dx1fm+gx2c*dx2fp;
+            dst(n,fk  ,fj+1,fi+1)=ccval+gx1c*dx1fp+gx2c*dx2fp;
           }
+        }
+      }
+    }
+    else { // 1D
+      int k=pmb->cks, fk=pmb->ks, j=pmb->cjs, fj=pmb->js;
+      for(int n=0; n<NFLUID; n++) {
+        for(int i=si; i<=ei; i++) {
+          Real& x1m = pco->coarse_x1v(i-1);
+          Real& x1c = pco->coarse_x1v(i);
+          Real& x1p = pco->coarse_x1v(i+1);
+          Real& x1fm = pco->coarse_x1f(i);
+          Real& x1fp = pco->coarse_x1f(i+1);
+          Real dx1m = x1c - x1m;
+          Real dx1p = x1p - x1c;
+          int fi=(i-pmb->cis)*2+pmb->is;
+          Real& fx1m = pco->x1v(fi);
+          Real& fx1p = pco->x1v(fi+1);
+          Real dx1fm= x1c-fx1m;
+          Real dx1fp= fx1p-x1c;
+          Real ccval=coarse_cons_(n,k,j,i);
+
+          // calculate 1D gradient using the min-mod limiter
+          Real gx1c;
+          Real gx1m = (ccval-coarse_cons_(n,k,j,i-1))/dx1m;
+          Real gx1p = (coarse_cons_(n,k,j,i+1)-ccval)/dx1p;
+          if(gx1m*gx1p>0.0) gx1c=std::min(std::abs(gx1m),std::abs(gx1p));
+          else gx1c=0.0;
+
+          // interpolate on to the finer grid
+          dst(n,fk  ,fj  ,fi  )=ccval-gx1c*dx1fm;
+          dst(n,fk  ,fj  ,fi+1)=ccval+gx1c*dx1fp;
         }
       }
     }
@@ -1920,7 +1921,7 @@ int BoundaryValues::LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *
   // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
   if(pmb->pmy_mesh->multilevel==true && nb.type != neighbor_face) {
     if(nb.ox1>0) ei++;
-    if(nb.ox1<0) si--;
+    else if(nb.ox1<0) si--;
   }
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
@@ -1929,6 +1930,7 @@ int BoundaryValues::LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *
         buf[p++]=src.x1f(k,j,i);
     }
   }
+
   // bx2
   if(nb.ox1==0)      si=pmb->is,          ei=pmb->ie;
   else if(nb.ox1>0)  si=pmb->ie-NGHOST+1, ei=pmb->ie;
@@ -1948,6 +1950,7 @@ int BoundaryValues::LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *
         buf[p++]=src.x2f(k,j,i);
     }
   }
+
   // bx3
   if(nb.ox2==0)      sj=pmb->js,          ej=pmb->je;
   else if(nb.ox2>0)  sj=pmb->je-NGHOST+1, ej=pmb->je;
@@ -1980,16 +1983,24 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(InterfaceField &src, Real *
 {
   MeshBlock *pmb=pmy_mblock_;
   int si, sj, sk, ei, ej, ek;
-  int cn=pmb->cnghost-1;
+  int cng=pmb->cnghost;
   int p=0;
 
-  // restrict the data before sending
-  si=(nb.ox1>0)?(pmb->cie-cn):pmb->cis;
-  ei=(nb.ox1<0)?(pmb->cis+cn):pmb->cie;
-  sj=(nb.ox2>0)?(pmb->cje-cn):pmb->cjs;
-  ej=(nb.ox2<0)?(pmb->cjs+cn):pmb->cje;
-  sk=(nb.ox3>0)?(pmb->cke-cn):pmb->cks;
-  ek=(nb.ox3<0)?(pmb->cks+cn):pmb->cke;
+  // bx1
+  if(nb.ox1==0)     si=pmb->cis,       ei=pmb->cie+1;
+  else if(nb.ox1>0) si=pmb->cie-cng+1, ei=pmb->cie;
+  else              si=pmb->cis+1,     ei=pmb->cis+cng;
+  if(nb.ox2==0)     sj=pmb->cjs,       ej=pmb->cje;
+  else if(nb.ox2>0) sj=pmb->cje-cng+1, ej=pmb->cje;
+  else              sj=pmb->cjs,       ej=pmb->cjs+cng-1;
+  if(nb.ox3==0)     sk=pmb->cks,       ek=pmb->cke;
+  else if(nb.ox3>0) sk=pmb->cke-cng+1, ek=pmb->cke;
+  else              sk=pmb->cks,       ek=pmb->cks+cng-1;
+  // include the overlapping faces in edge and corner boundaries
+  if(nb.type != neighbor_face) {
+    if(nb.ox1>0) ei++;
+    else if(nb.ox1<0) si--;
+  }
   RestrictFieldX1(src, si, ei, sj, ej, sk, ek);
   for (int k=sk; k<=ek; k++) {
     for (int j=sj; j<=ej; j++) {
@@ -1999,12 +2010,18 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(InterfaceField &src, Real *
     }
   }
 
-  si=(nb.ox1>0)?(pmb->cie-cn):pmb->cis;
-  ei=(nb.ox1<0)?(pmb->cis+cn):pmb->cie;
-  sj=(nb.ox2>0)?(pmb->cje-cn):pmb->cjs;
-  ej=(nb.ox2<0)?(pmb->cjs+cn):pmb->cje;
-  sk=(nb.ox3>0)?(pmb->cke-cn):pmb->cks;
-  ek=(nb.ox3<0)?(pmb->cks+cn):pmb->cke;
+  // bx2
+  if(nb.ox1==0)      si=pmb->cis,       ei=pmb->cie;
+  else if(nb.ox1>0)  si=pmb->cie-cng+1, ei=pmb->cie;
+  else               si=pmb->cis,       ei=pmb->cis+cng-1;
+  if(pmb->block_size.nx2==1) sj=pmb->cjs, ej=pmb->cje;
+  else if(nb.ox2==0) sj=pmb->cjs,       ej=pmb->cje+1;
+  else if(nb.ox2>0)  sj=pmb->cje-cng+1, ej=pmb->cje;
+  else               sj=pmb->cjs+1,     ej=pmb->cjs+cng;
+  if(nb.type != neighbor_face) {
+    if(nb.ox2>0) ej++;
+    else if(nb.ox2<0) sj--;
+  }
   RestrictFieldX2(src, si, ei, sj, ej, sk, ek);
   for (int k=sk; k<=ek; k++) {
     for (int j=sj; j<=ej; j++) {
@@ -2014,12 +2031,18 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(InterfaceField &src, Real *
     }
   }
 
-  si=(nb.ox1>0)?(pmb->cie-cn):pmb->cis;
-  ei=(nb.ox1<0)?(pmb->cis+cn):pmb->cie;
-  sj=(nb.ox2>0)?(pmb->cje-cn):pmb->cjs;
-  ej=(nb.ox2<0)?(pmb->cjs+cn):pmb->cje;
-  sk=(nb.ox3>0)?(pmb->cke-cn):pmb->cks;
-  ek=(nb.ox3<0)?(pmb->cks+cn):pmb->cke;
+  // bx3
+  if(nb.ox2==0)      sj=pmb->cjs,       ej=pmb->cje;
+  else if(nb.ox2>0)  sj=pmb->cje-cng+1, ej=pmb->cje;
+  else               sj=pmb->cjs,       ej=pmb->cjs+cng-1;
+  if(pmb->block_size.nx3==1) sk=pmb->cks,  ek=pmb->cke;
+  else if(nb.ox3==0) sk=pmb->cks,       ek=pmb->cke+1;
+  else if(nb.ox3>0)  sk=pmb->cke-cng+1, ek=pmb->cke;
+  else               sk=pmb->cks+1,     ek=pmb->cks+cng;
+  if(nb.type != neighbor_face) {
+    if(nb.ox3>0) ek++;
+    else if(nb.ox3<0) sk--;
+  }
   RestrictFieldX3(src, si, ei, sj, ej, sk, ek);
   for (int k=sk; k<=ek; k++) {
     for (int j=sj; j<=ej; j++) {
@@ -2408,6 +2431,147 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
 void BoundaryValues::SetFieldBoundaryFromFiner(InterfaceField &dst, Real *buf,
                                                NeighborBlock& nb)
 {
+  MeshBlock *pmb=pmy_mblock_;
+  // receive already restricted data
+  int si, sj, sk, ei, ej, ek;
+  int p=0;
+
+  // bx1
+  if(nb.ox1==0) {
+    si=pmb->is, ei=pmb->ie+1;
+    if(nb.fi1==1)   si+=pmb->block_size.nx1/2;
+    else            ei-=pmb->block_size.nx1/2;
+  }
+  else if(nb.ox1>0) si=pmb->ie+2,      ei=pmb->ie+NGHOST+1;
+  else              si=pmb->is-NGHOST, ei=pmb->is-1;
+  // include the overlapping faces in edge and corner boundaries
+  if(nb.type != neighbor_face) {
+    if(nb.ox1>0) si--;
+    else if(nb.ox1<0) ei++;
+  }
+  if(nb.ox2==0) {
+    sj=pmb->js, ej=pmb->je;
+    if(pmb->block_size.nx2 > 1) {
+      if(nb.ox1!=0) {
+        if(nb.fi1==1) sj+=pmb->block_size.nx2/2;
+        else          ej-=pmb->block_size.nx2/2;
+      }
+      else {
+        if(nb.fi2==1) sj+=pmb->block_size.nx2/2;
+        else          ej-=pmb->block_size.nx2/2;
+      }
+    }
+  }
+  else if(nb.ox2>0) sj=pmb->je+1,      ej=pmb->je+NGHOST;
+  else              sj=pmb->js-NGHOST, ej=pmb->js-1;
+  if(nb.ox3==0) {
+    sk=pmb->ks, ek=pmb->ke;
+    if(pmb->block_size.nx3 > 1) {
+      if(nb.ox1!=0 && nb.ox2!=0) {
+        if(nb.fi1==1) sk+=pmb->block_size.nx3/2;
+        else          ek-=pmb->block_size.nx3/2;
+      }
+      else {
+        if(nb.fi2==1) sk+=pmb->block_size.nx3/2;
+        else          ek-=pmb->block_size.nx3/2;
+      }
+    }
+  }
+  else if(nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
+  else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
+
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
+#pragma simd
+      for (int i=si; i<=ei; ++i)
+        dst.x1f(k,j,i) = buf[p++];
+    }
+  }
+
+  // bx2
+  if(nb.ox1==0) {
+    si=pmb->is, ei=pmb->ie;
+    if(nb.fi1==1)   si+=pmb->block_size.nx1/2;
+    else            ei-=pmb->block_size.nx1/2;
+  }
+  else if(nb.ox1>0) si=pmb->ie+1,      ei=pmb->ie+NGHOST;
+  else              si=pmb->is-NGHOST, ei=pmb->is-1;
+  if(nb.ox2==0) {
+    sj=pmb->js, ej=pmb->je;
+    if(pmb->block_size.nx2 > 1) {
+      ej++;
+      if(nb.ox1!=0) {
+        if(nb.fi1==1) sj+=pmb->block_size.nx2/2;
+        else          ej-=pmb->block_size.nx2/2;
+      }
+      else {
+        if(nb.fi2==1) sj+=pmb->block_size.nx2/2;
+        else          ej-=pmb->block_size.nx2/2;
+      }
+    }
+  }
+  else if(nb.ox2>0) sj=pmb->je+2,      ej=pmb->je+NGHOST+1;
+  else              sj=pmb->js-NGHOST, ej=pmb->js-1;
+  // include the overlapping faces in edge and corner boundaries
+  if(nb.type != neighbor_face) {
+    if(nb.ox2>0) sj--;
+    else if(nb.ox2<0) ej++;
+  }
+
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
+#pragma simd
+      for (int i=si; i<=ei; ++i)
+        dst.x2f(k,j,i) = buf[p++];
+    }
+  }
+
+  // bx3
+  if(nb.ox2==0) {
+    sj=pmb->js, ej=pmb->je;
+    if(pmb->block_size.nx2 > 1) {
+      if(nb.ox1!=0) {
+        if(nb.fi1==1) sj+=pmb->block_size.nx2/2;
+        else          ej-=pmb->block_size.nx2/2;
+      }
+      else {
+        if(nb.fi2==1) sj+=pmb->block_size.nx2/2;
+        else          ej-=pmb->block_size.nx2/2;
+      }
+    }
+  }
+  else if(nb.ox2>0) sj=pmb->je+1,      ej=pmb->je+NGHOST;
+  else              sj=pmb->js-NGHOST, ej=pmb->js-1;
+  if(nb.ox3==0) {
+    sk=pmb->ks, ek=pmb->ke;
+    if(pmb->block_size.nx3 > 1) {
+      ek++;
+      if(nb.ox1!=0 && nb.ox2!=0) {
+        if(nb.fi1==1) sk+=pmb->block_size.nx3/2;
+        else          ek-=pmb->block_size.nx3/2;
+      }
+      else {
+        if(nb.fi2==1) sk+=pmb->block_size.nx3/2;
+        else          ek-=pmb->block_size.nx3/2;
+      }
+    }
+  }
+  else if(nb.ox3>0) sk=pmb->ke+2,      ek=pmb->ke+NGHOST+1;
+  else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
+  // include the overlapping faces in edge and corner boundaries
+  if(nb.type != neighbor_face) {
+    if(nb.ox3>0) sk--;
+    else if(nb.ox3<0) ek++;
+  }
+
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
+#pragma simd
+      for (int i=si; i<=ei; ++i)
+        dst.x3f(k,j,i) = buf[p++];
+    }
+  }
+
   return;
 }
 
@@ -2930,6 +3094,101 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
   if(nc<nff)
     return false;
   return true;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
+//  \brief Prolongate the fields in the ghost zones from the prolongation buffer
+void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  Coordinates *pco=pmb->pcoord;
+  int mylevel;
+  long int lx1, lx2, lx3;
+  int mox1, mox2, mox3;
+  pmb->uid.GetLocation(lx1, lx2, lx3, mylevel);
+  mox1=((int)(lx1&1L)<<1)-1;
+  mox2=((int)(lx2&1L)<<1)-1;
+  mox3=((int)(lx3&1L)<<1)-1;
+  for(int n=0; n<pmb->nneighbor; n++) {
+    NeighborBlock& nb= pmb->neighbor[n];
+    if(nb.level >= mylevel) continue;
+    int mytype=std::abs(nb.ox1)+std::abs(nb.ox2)+std::abs(nb.ox3);
+    // fill the required ghost-ghost zone
+    int nis, nie, njs, nje, nks, nke;
+    nis=std::max(nb.ox1-1,-1), nie=std::min(nb.ox1+1,1);
+    if(pmb->block_size.nx2==1) njs=0, nje=0;
+    else njs=std::max(nb.ox2-1,-1), nje=std::min(nb.ox2+1,1);
+    if(pmb->block_size.nx3==1) nks=0, nke=0;
+    else nks=std::max(nb.ox3-1,-1), nke=std::min(nb.ox3+1,1);
+    for(int nk=nks; nk<=nke; nk++) {
+      for(int nj=njs; nj<=nje; nj++) {
+        for(int ni=nis; ni<=nie; ni++) {
+          int ntype=std::abs(ni)+std::abs(nj)+std::abs(nk);
+          if(ntype==0) continue; // skip myself
+          if(pmb->nblevel[nk+1][nj+1][ni+1]!=mylevel
+          && pmb->nblevel[nk+1][nj+1][ni+1]!=-1)
+            continue; // physical boundary will also be restricted
+          if(ntype>mytype) {
+            if(pmb->block_size.nx3 > 1) // 3D
+              if(((mox1==ni)+(mox2==nj)+(mox3==nk)) != ntype) continue;
+            else if(pmb->block_size.nx2 > 1) // 2D
+              if(((mox1==ni)+(mox2==nj)) != ntype) continue;
+          }
+
+          // this neighbor block is on the same level
+          // and needs to be restricted for prolongation
+          int ris, rie, rjs, rje, rks, rke;
+          if(ni==0) {
+            ris=pmb->cis, rie=pmb->cie;
+            if(nb.ox1==1) ris=pmb->cie;
+            else if(nb.ox1==-1) rie=pmb->cis;
+          }
+          else if(ni== 1) ris=pmb->cie+1, rie=pmb->cie+1;
+          else if(ni==-1) ris=pmb->cis-1, rie=pmb->cis-1;
+          if(nj==0) {
+            rjs=pmb->cjs, rje=pmb->cje;
+            if(nb.ox2==1) rjs=pmb->cje;
+            else if(nb.ox2==-1) rje=pmb->cjs;
+          }
+          else if(nj== 1) rjs=pmb->cje+1, rje=pmb->cje+1;
+          else if(nj==-1) rjs=pmb->cjs-1, rje=pmb->cjs-1;
+          if(nk==0) {
+            rks=pmb->cks, rke=pmb->cke;
+            if(nb.ox3==1) rks=pmb->cke;
+            else if(nb.ox3==-1) rke=pmb->cks;
+          }
+          else if(nk== 1) rks=pmb->cke+1, rke=pmb->cke+1;
+          else if(nk==-1) rks=pmb->cks-1, rke=pmb->cks-1;
+
+          // these indexes indicate which cells (not surface) need to be restricted
+          // only tangential neighbors need restriction
+          // note that in 1D none of these conditions are satisfied
+          if(ni==nb.ox1)
+            RestrictFieldX1(dst, ris, rie+1, rjs, rje, rks, rke);
+          if(nj==nb.ox2)
+            RestrictFieldX2(dst, ris, rie, rjs, rje+1, rks, rke);
+          if(nk==nb.ox3) {
+            if(pmb->block_size.nx3 > 1) // 3D
+              RestrictFieldX3(dst, ris, rie, rjs, rje, rks, rke+1);
+            else // 1D
+              RestrictFieldX3(dst, ris, rie, rjs, rje, rks, rke);
+          }
+        }
+      }
+    }
+    // now that the ghost-ghost zones are filled
+    // reconstruct finer magnetic fields using the Li & Li 2004 method
+    if(pmb->block_size.nx3 > 1) { // 3D
+    }
+    else if(pmb->block_size.nx2 > 1) { // 2D
+    }
+    else { // 1D
+      // bx1 - no prolongation is needed
+    }
+  }
+
+  return;
 }
 
 //--------------------------------------------------------------------------------------
