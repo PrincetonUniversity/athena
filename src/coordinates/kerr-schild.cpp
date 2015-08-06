@@ -592,6 +592,15 @@ Real Coordinates::GetFace1Area(const int k, const int j, const int i)
       * (coord_area1_i1_(i) + 1.0/3.0 * coord_area1_j2_(j));
 }
 
+
+Real Coordinates::GetCoarseFace1Area(const int k, const int j, const int i)
+{
+  Real cosm=cos(coarse_x2f(j));
+  Real cosp=cos(coarse_x2f(j+1));
+  return (cosm-cosp) * (coarse_x3f(k+1)-coarse_x3f(k))
+      * (SQR(coarse_x1f(i)) + SQR(bh_spin_)*(SQR(cosm)+cosm*cosp+SQR(cosp))/3.0);
+}
+
 //--------------------------------------------------------------------------------------
 
 // Function for computing areas orthogonal to theta
