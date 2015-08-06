@@ -349,13 +349,6 @@ Real Coordinates::GetFace1Area(const int k, const int j, const int i)
   return coord_area1_i_(i)*coord_area1_j_(j)*dx3f(k);
 }
 
-// GetCoarseFace1Area returns only one Face1Area at i
-Real Coordinates::GetCoarseFace1Area(const int k, const int j, const int i)
-{
-  return SQR(coarse_x1f(i))*(cos(coarse_x2f(j))-cos(coarse_x2f(j+1)))
-                           *(coarse_x3f(k+1)-coarse_x3f(k));
-}
-
 //--------------------------------------------------------------------------------------
 // Cell Volume function
 
