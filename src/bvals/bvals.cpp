@@ -288,6 +288,22 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     fvol_[1][1].NewAthenaArray(nc1+1);
     sarea_[0].NewAthenaArray(nc1);
     sarea_[1].NewAthenaArray(nc1);
+    sarea_x1_[0][0].NewAthenaArray(nc1+1);
+    sarea_x1_[0][1].NewAthenaArray(nc1+1);
+    sarea_x1_[1][0].NewAthenaArray(nc1+1);
+    sarea_x1_[1][1].NewAthenaArray(nc1+1);
+    sarea_x2_[0][0].NewAthenaArray(nc1);
+    sarea_x2_[0][1].NewAthenaArray(nc1);
+    sarea_x2_[0][2].NewAthenaArray(nc1);
+    sarea_x2_[1][0].NewAthenaArray(nc1);
+    sarea_x2_[1][1].NewAthenaArray(nc1);
+    sarea_x2_[1][2].NewAthenaArray(nc1);
+    sarea_x3_[0][0].NewAthenaArray(nc1);
+    sarea_x3_[0][1].NewAthenaArray(nc1);
+    sarea_x3_[1][0].NewAthenaArray(nc1);
+    sarea_x3_[1][1].NewAthenaArray(nc1);
+    sarea_x3_[2][0].NewAthenaArray(nc1);
+    sarea_x3_[2][1].NewAthenaArray(nc1);
     int size[6], im, jm, km;
     // allocate flux correction buffer
     size[0]=size[1]=(pmb->block_size.nx2+1)/2*(pmb->block_size.nx3+1)/2*NFLUID;
@@ -335,6 +351,12 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       coarse_b_.x1f.NewAthenaArray(ncc3,ncc2,ncc1+1);
       coarse_b_.x2f.NewAthenaArray(ncc3,ncc2+1,ncc1);
       coarse_b_.x3f.NewAthenaArray(ncc3+1,ncc2,ncc1);
+      // slope buffers
+      if(pmb->block_size.nx3>1) {
+        cb1g2.NewAthenaArray(ncc3,ncc2,ncc1+1);
+        cb1g3.NewAthenaArray(ncc3,ncc2,ncc1+1);
+        cb2g3.NewAthenaArray(ncc3,ncc2+1,ncc1);
+      }
       int fsize[6], esize[12];
       // allocate EMF correction buffer
       if(pmb->block_size.nx3>1) { // 3D
@@ -401,6 +423,22 @@ BoundaryValues::~BoundaryValues()
     fvol_[1][1].DeleteAthenaArray();
     sarea_[0].DeleteAthenaArray();
     sarea_[1].DeleteAthenaArray();
+    sarea_x1_[0][0].DeleteAthenaArray();
+    sarea_x1_[0][1].DeleteAthenaArray();
+    sarea_x1_[1][0].DeleteAthenaArray();
+    sarea_x1_[1][1].DeleteAthenaArray();
+    sarea_x2_[0][0].DeleteAthenaArray();
+    sarea_x2_[0][1].DeleteAthenaArray();
+    sarea_x2_[0][2].DeleteAthenaArray();
+    sarea_x2_[1][0].DeleteAthenaArray();
+    sarea_x2_[1][1].DeleteAthenaArray();
+    sarea_x2_[1][2].DeleteAthenaArray();
+    sarea_x3_[0][0].DeleteAthenaArray();
+    sarea_x3_[0][1].DeleteAthenaArray();
+    sarea_x3_[1][0].DeleteAthenaArray();
+    sarea_x3_[1][1].DeleteAthenaArray();
+    sarea_x3_[2][0].DeleteAthenaArray();
+    sarea_x3_[2][1].DeleteAthenaArray();
     for(int r=0;r<nface_;r++)
       surface_flux_[r].DeleteAthenaArray();
     for(int l=0;l<NSTEP;l++) {
@@ -418,6 +456,11 @@ BoundaryValues::~BoundaryValues()
       coarse_b_.x1f.DeleteAthenaArray();
       coarse_b_.x2f.DeleteAthenaArray();
       coarse_b_.x3f.DeleteAthenaArray();
+      if(pmb->block_size.nx3>1) {
+        cb1g2.DeleteAthenaArray();
+        cb1g3.DeleteAthenaArray();
+        cb2g3.DeleteAthenaArray();
+      }
     }
   }
 }
@@ -1540,40 +1583,34 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
     if(pmb->block_size.nx3 > 1) { // 3D
       for(int n=0; n<NFLUID; n++) {
         for(int k=sk; k<=ek; k++) {
+          int fk=(k-pmb->cks)*2+pmb->ks;
           Real& x3m = pco->coarse_x3v(k-1);
           Real& x3c = pco->coarse_x3v(k);
           Real& x3p = pco->coarse_x3v(k+1);
-          Real& x3fm = pco->coarse_x3f(k);
-          Real& x3fp = pco->coarse_x3f(k+1);
           Real dx3m = x3c - x3m;
           Real dx3p = x3p - x3c;
-          int fk=(k-pmb->cks)*2+pmb->ks;
           Real& fx3m = pco->x3v(fk);
           Real& fx3p = pco->x3v(fk+1);
           Real dx3fm= x3c-fx3m;
           Real dx3fp= fx3p-x3c;
           for(int j=sj; j<=ej; j++) {
+            int fj=(j-pmb->cjs)*2+pmb->js;
             Real& x2m = pco->coarse_x2v(j-1);
             Real& x2c = pco->coarse_x2v(j);
             Real& x2p = pco->coarse_x2v(j+1);
-            Real& x2fm = pco->coarse_x2f(j);
-            Real& x2fp = pco->coarse_x2f(j+1);
             Real dx2m = x2c - x2m;
             Real dx2p = x2p - x2c;
-            int fj=(j-pmb->cjs)*2+pmb->js;
             Real& fx2m = pco->x2v(fj);
             Real& fx2p = pco->x2v(fj+1);
             Real dx2fm= x2c-fx2m;
             Real dx2fp= fx2p-x2c;
             for(int i=si; i<=ei; i++) {
+              int fi=(i-pmb->cis)*2+pmb->is;
               Real& x1m = pco->coarse_x1v(i-1);
               Real& x1c = pco->coarse_x1v(i);
               Real& x1p = pco->coarse_x1v(i+1);
-              Real& x1fm = pco->coarse_x1f(i);
-              Real& x1fp = pco->coarse_x1f(i+1);
               Real dx1m = x1c - x1m;
               Real dx1p = x1p - x1c;
-              int fi=(i-pmb->cis)*2+pmb->is;
               Real& fx1m = pco->x1v(fi);
               Real& fx1p = pco->x1v(fi+1);
               Real dx1fm= x1c-fx1m;
@@ -1630,27 +1667,23 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
       int k=pmb->cks, fk=pmb->ks;
       for(int n=0; n<NFLUID; n++) {
         for(int j=sj; j<=ej; j++) {
+          int fj=(j-pmb->cjs)*2+pmb->js;
           Real& x2m = pco->coarse_x2v(j-1);
           Real& x2c = pco->coarse_x2v(j);
           Real& x2p = pco->coarse_x2v(j+1);
-          Real& x2fm = pco->coarse_x2f(j);
-          Real& x2fp = pco->coarse_x2f(j+1);
           Real dx2m = x2c - x2m;
           Real dx2p = x2p - x2c;
-          int fj=(j-pmb->cjs)*2+pmb->js;
           Real& fx2m = pco->x2v(fj);
           Real& fx2p = pco->x2v(fj+1);
           Real dx2fm= x2c-fx2m;
           Real dx2fp= fx2p-x2c;
           for(int i=si; i<=ei; i++) {
+            int fi=(i-pmb->cis)*2+pmb->is;
             Real& x1m = pco->coarse_x1v(i-1);
             Real& x1c = pco->coarse_x1v(i);
             Real& x1p = pco->coarse_x1v(i+1);
-            Real& x1fm = pco->coarse_x1f(i);
-            Real& x1fp = pco->coarse_x1f(i+1);
             Real dx1m = x1c - x1m;
             Real dx1p = x1p - x1c;
-            int fi=(i-pmb->cis)*2+pmb->is;
             Real& fx1m = pco->x1v(fi);
             Real& fx1p = pco->x1v(fi+1);
             Real dx1fm= x1c-fx1m;
@@ -1695,14 +1728,12 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
       int k=pmb->cks, fk=pmb->ks, j=pmb->cjs, fj=pmb->js;
       for(int n=0; n<NFLUID; n++) {
         for(int i=si; i<=ei; i++) {
+          int fi=(i-pmb->cis)*2+pmb->is;
           Real& x1m = pco->coarse_x1v(i-1);
           Real& x1c = pco->coarse_x1v(i);
           Real& x1p = pco->coarse_x1v(i+1);
-          Real& x1fm = pco->coarse_x1f(i);
-          Real& x1fp = pco->coarse_x1f(i+1);
           Real dx1m = x1c - x1m;
           Real dx1p = x1p - x1c;
-          int fi=(i-pmb->cis)*2+pmb->is;
           Real& fx1m = pco->x1v(fi);
           Real& fx1p = pco->x1v(fi+1);
           Real dx1fm= x1c-fx1m;
@@ -2658,6 +2689,7 @@ void BoundaryValues::SendEMFCorrection(int step)
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
+  // use the surface area aray as the edge length array
   AthenaArray<Real> &le1=sarea_[0];
   AthenaArray<Real> &le2=sarea_[1];
 
@@ -3110,6 +3142,7 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
   mox1=((int)(lx1&1L)<<1)-1;
   mox2=((int)(lx2&1L)<<1)-1;
   mox3=((int)(lx3&1L)<<1)-1;
+
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb= pmb->neighbor[n];
     if(nb.level >= mylevel) continue;
@@ -3179,12 +3212,525 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
     }
     // now that the ghost-ghost zones are filled
     // reconstruct finer magnetic fields using the Li & Li 2004 method
+    // caculate the loop indexes of the cells that must be refined.
+    int cn = (NGHOST+1)/2;
+    int si, ei, sj, ej, sk, ek;
+    if(nb.ox1==0) {
+      si=pmb->cis, ei=pmb->cie;
+      if((lx1&1L)==0L) ei++;
+      else             si--;
+    }
+    else if(nb.ox1>0) si=pmb->cie+1,  ei=pmb->cie+cn;
+    else              si=pmb->cis-cn, ei=pmb->cis-1;
+    if(nb.ox2==0) {
+      sj=pmb->cjs, ej=pmb->cje;
+      if(pmb->block_size.nx2 > 1) {
+        if((lx2&1L)==0L) ej++;
+        else             sj--;
+      }
+    }
+    else if(nb.ox2>0) sj=pmb->cje+1,  ej=pmb->cje+cn;
+    else              sj=pmb->cjs-cn, ej=pmb->cjs-1;
+    if(nb.ox3==0) {
+      sk=pmb->cks, ek=pmb->cke;
+      if(pmb->block_size.nx3 > 1) {
+        if((lx3&1L)==0L) ek++;
+        else             sk--;
+      }
+    }
+    else if(nb.ox3>0) sk=pmb->cke+1,  ek=pmb->cke+cn;
+    else              sk=pmb->cks-cn, ek=pmb->cks-1;
+
     if(pmb->block_size.nx3 > 1) { // 3D
+      int kl=sk, ku=ek+1;
+      if((nb.ox3>=0) && (pmb->nblevel[nb.ox3  ][nb.ox2+1][nb.ox1+1]>=mylevel)) kl++;
+      if((nb.ox3<=0) && (pmb->nblevel[nb.ox3+2][nb.ox2+1][nb.ox1+1]>=mylevel)) ku--;
+      int jl=sj, ju=ej+1;
+      if((nb.ox2>=0) && (pmb->nblevel[nb.ox3+1][nb.ox2  ][nb.ox1+1]>=mylevel)) jl++;
+      if((nb.ox2<=0) && (pmb->nblevel[nb.ox3+1][nb.ox2+2][nb.ox1+1]>=mylevel)) ju--;
+      int il=si, iu=ei+1;
+      if((nb.ox1>=0) && (pmb->nblevel[nb.ox3+1][nb.ox2+1][nb.ox1  ]>=mylevel)) il++;
+      if((nb.ox1<=0) && (pmb->nblevel[nb.ox3+1][nb.ox2+1][nb.ox1+2]>=mylevel)) iu--;
+      // step 1. calculate x3 outer surface fields and slopes
+      for(int k=sk; k<=ek+1; k++) {
+        int fk=(k-pmb->cks)*2+pmb->ks;
+        for(int j=sj; j<=ej; j++) {
+          int fj=(j-pmb->cjs)*2+pmb->js;
+          Real& x2m = pco->coarse_x2s3(j-1);
+          Real& x2c = pco->coarse_x2s3(j);
+          Real& x2p = pco->coarse_x2s3(j+1);
+          Real dx2m = x2c - x2m;
+          Real dx2p = x2p - x2c;
+          Real& fx2m = pco->x2s3(fj);
+          Real& fx2p = pco->x2s3(fj+1);
+          for(int i=si; i<=ei; i++) {
+            int fi=(i-pmb->cis)*2+pmb->is;
+            Real& x1m = pco->coarse_x1s3(i-1);
+            Real& x1c = pco->coarse_x1s3(i);
+            Real& x1p = pco->coarse_x1s3(i+1);
+            Real dx1m = x1c - x1m;
+            Real dx1p = x1p - x1c;
+            Real& fx1m = pco->x1s3(fi);
+            Real& fx1p = pco->x1s3(fi+1);
+            Real ccval=coarse_b_.x3f(k,j,i);
+
+            Real gx1c, gx2c;
+            Real gx1m = (ccval-coarse_b_.x3f(k,j,i-1))/dx1m;
+            Real gx1p = (coarse_b_.x3f(k,j,i+1)-ccval)/dx1p;
+            if(gx1m*gx1p>0.0) gx1c=std::min(std::abs(gx1m),std::abs(gx1p));
+            else gx1c=0.0;
+            Real gx2m = (ccval-coarse_b_.x3f(k,j-1,i))/dx2m;
+            Real gx2p = (coarse_b_.x3f(k,j+1,i)-ccval)/dx2p;
+            if(gx2m*gx2p>0.0) gx2c=std::min(std::abs(gx2m),std::abs(gx2p));
+            else gx2c=0.0;
+
+            Real xdt = std::abs(gx1c)*std::max(dx1m,dx1p)
+                     + std::abs(gx2c)*std::max(dx2m,dx2p);
+
+            Real nmax = ccval, nmin = ccval;
+            nmax=std::max(nmax,std::max(coarse_b_.x3f(k,j,i+1),coarse_b_.x3f(k,j,i-1)));
+            nmax=std::max(nmax,std::max(coarse_b_.x3f(k,j+1,i),coarse_b_.x3f(k,j-1,i)));
+            nmin=std::min(nmin,std::min(coarse_b_.x3f(k,j,i+1),coarse_b_.x3f(k,j,i-1)));
+            nmin=std::min(nmin,std::min(coarse_b_.x3f(k,j+1,i),coarse_b_.x3f(k,j-1,i)));
+
+            Real maxdiff = std::min(nmax-ccval,ccval-nmin);
+            if(xdt > maxdiff) {
+              Real fac=maxdiff/xdt;
+              gx1c *= fac; gx2c *= fac;
+            }
+
+            cb3g1(k,j,i)=gx1c; cb3g2(k,j,i)=gx2c;
+
+            if(k>=kl && k<=ku) {
+              dst.x3f(fk,fj  ,fi  )=ccval-gx1c*(x1c-fx1m)-gx2c*(x2c-fx2m);
+              dst.x3f(fk,fj  ,fi+1)=ccval+gx1c*(fx1p-x1c)-gx2c*(x2c-fx2m);
+              dst.x3f(fk,fj+1,fi  )=ccval-gx1c*(x1c-fx1m)+gx2c*(fx2p-x2c);
+              dst.x3f(fk,fj+1,fi+1)=ccval+gx1c*(fx1p-x1c)+gx2c*(fx2p-x2c);
+            }
+          }
+        }
+      }
+      // step 2. calculate x2 outer surface fields and slopes
+      for(int k=sk; k<=ek; k++) {
+        int fk=(k-pmb->cks)*2+pmb->ks;
+        Real& x3m = pco->coarse_x3s2(k-1);
+        Real& x3c = pco->coarse_x3s2(k);
+        Real& x3p = pco->coarse_x3s2(k+1);
+        Real dx3m = x3c - x3m;
+        Real dx3p = x3p - x3c;
+        Real& fx3m = pco->x3s2(fk);
+        Real& fx3p = pco->x3s2(fk+1);
+        for(int j=sj; j<=ej+1; j++) {
+          int fj=(j-pmb->cjs)*2+pmb->js;
+          for(int i=si; i<=ei; i++) {
+            int fi=(i-pmb->cis)*2+pmb->is;
+            Real& x1m = pco->coarse_x1s2(i-1);
+            Real& x1c = pco->coarse_x1s2(i);
+            Real& x1p = pco->coarse_x1s2(i+1);
+            Real dx1m = x1c - x1m;
+            Real dx1p = x1p - x1c;
+            Real& fx1m = pco->x1s2(fi);
+            Real& fx1p = pco->x1s2(fi+1);
+            Real ccval=coarse_b_.x2f(k,j,i);
+
+            Real gx1c, gx3c;
+            Real gx1m = (ccval-coarse_b_.x2f(k,j,i-1))/dx1m;
+            Real gx1p = (coarse_b_.x2f(k,j,i+1)-ccval)/dx1p;
+            if(gx1m*gx1p>0.0) gx1c=std::min(std::abs(gx1m),std::abs(gx1p));
+            else gx1c=0.0;
+            Real gx3m = (ccval-coarse_b_.x2f(k-1,j,i))/dx3m;
+            Real gx3p = (coarse_b_.x2f(k+1,j,i)-ccval)/dx3p;
+            if(gx3m*gx3p>0.0) gx3c=std::min(std::abs(gx3m),std::abs(gx3p));
+
+            Real xdt = std::abs(gx1c)*std::max(dx1m,dx1p)
+                     + std::abs(gx3c)*std::max(dx3m,dx3p);
+
+            Real nmax = ccval, nmin = ccval;
+            nmax=std::max(nmax,std::max(coarse_b_.x2f(k,j,i+1),coarse_b_.x2f(k,j,i-1)));
+            nmax=std::max(nmax,std::max(coarse_b_.x2f(k+1,j,i),coarse_b_.x2f(k-1,j,i)));
+            nmin=std::min(nmin,std::min(coarse_b_.x2f(k,j,i+1),coarse_b_.x2f(k,j,i-1)));
+            nmin=std::min(nmin,std::min(coarse_b_.x2f(k+1,j,i),coarse_b_.x2f(k-1,j,i)));
+
+            Real maxdiff = std::min(nmax-ccval,ccval-nmin);
+            if(xdt > maxdiff) {
+              Real fac=maxdiff/xdt;
+              gx1c *= fac; gx3c *= fac;
+            }
+
+            cb2g1(k,j,i)=gx1c; cb2g3(k,j,i)=gx3c;
+
+            if(j>=jl && j<=ju) {
+              dst.x2f(fk  ,fj,fi  )=ccval-gx1c*(x1c-fx1m)-gx3c*(x3c-fx3m);
+              dst.x2f(fk  ,fj,fi+1)=ccval+gx1c*(fx1p-x1c)-gx3c*(x3c-fx3m);
+              dst.x2f(fk+1,fj,fi  )=ccval-gx1c*(x1c-fx1m)+gx3c*(fx3p-x3c);
+              dst.x2f(fk+1,fj,fi+1)=ccval+gx1c*(fx1p-x1c)+gx3c*(fx3p-x3c);
+            }
+          }
+        }
+      }
+      // step 3. calculate x1 outer surface fields and slopes
+      for(int k=sk; k<=ek; k++) {
+        int fk=(k-pmb->cks)*2+pmb->ks;
+        Real& x3m = pco->coarse_x3s1(k-1);
+        Real& x3c = pco->coarse_x3s1(k);
+        Real& x3p = pco->coarse_x3s1(k+1);
+        Real dx3m = x3c - x3m;
+        Real dx3p = x3p - x3c;
+        Real& fx3m = pco->x3s1(fk);
+        Real& fx3p = pco->x3s1(fk+1);
+        for(int j=sj; j<=ej; j++) {
+          int fj=(j-pmb->cjs)*2+pmb->js;
+          Real& x2m = pco->coarse_x2s1(j-1);
+          Real& x2c = pco->coarse_x2s1(j);
+          Real& x2p = pco->coarse_x2s1(j+1);
+          Real dx2m = x2c - x2m;
+          Real dx2p = x2p - x2c;
+          Real& fx2m = pco->x2s1(fj);
+          Real& fx2p = pco->x2s1(fj+1);
+          for(int i=si; i<=ei+1; i++) {
+            int fi=(i-pmb->cis)*2+pmb->is;
+            Real ccval=coarse_b_.x1f(k,j,i);
+
+            Real gx2c, gx3c;
+            Real gx2m = (ccval-coarse_b_.x1f(k,j-1,i))/dx2m;
+            Real gx2p = (coarse_b_.x1f(k,j+1,i)-ccval)/dx2p;
+            if(gx2m*gx2p>0.0) gx2c=std::min(std::abs(gx2m),std::abs(gx2p));
+            else gx2c=0.0;
+            Real gx3m = (ccval-coarse_b_.x1f(k-1,j,i))/dx3m;
+            Real gx3p = (coarse_b_.x1f(k+1,j,i)-ccval)/dx3p;
+            if(gx3m*gx3p>0.0) gx3c=std::min(std::abs(gx3m),std::abs(gx3p));
+            else gx3c=0.0;
+
+            Real xdt = std::abs(gx2c)*std::max(dx2m,dx2p)
+                     + std::abs(gx3c)*std::max(dx3m,dx3p);
+
+            Real nmax = ccval, nmin = ccval;
+            nmax=std::max(nmax,std::max(coarse_b_.x1f(k,j+1,i),coarse_b_.x1f(k,j-1,i)));
+            nmax=std::max(nmax,std::max(coarse_b_.x1f(k+1,j,i),coarse_b_.x1f(k-1,j,i)));
+            nmin=std::min(nmin,std::min(coarse_b_.x1f(k,j+1,i),coarse_b_.x1f(k,j-1,i)));
+            nmin=std::min(nmin,std::min(coarse_b_.x1f(k+1,j,i),coarse_b_.x1f(k-1,j,i)));
+
+            Real maxdiff = std::min(nmax-ccval,ccval-nmin);
+            if(xdt > maxdiff) {
+              Real fac=maxdiff/xdt;
+              gx2c *= fac; gx3c *= fac;
+            }
+
+            cb1g2(k,j,i)=gx2c; cb1g3(k,j,i)=gx3c;
+
+            if(i>=il && i<=iu) {
+              dst.x1f(fk  ,fj  ,fi)=ccval-gx2c*(x2c-fx2m)-gx3c*(x3c-fx3m);
+              dst.x1f(fk  ,fj+1,fi)=ccval+gx2c*(fx2p-x2c)-gx3c*(x3c-fx3m);
+              dst.x1f(fk+1,fj  ,fi)=ccval-gx2c*(x2c-fx2m)+gx3c*(fx3p-x3c);
+              dst.x1f(fk+1,fj+1,fi)=ccval+gx2c*(fx2p-x2c)+gx3c*(fx3p-x3c);
+            }
+          }
+        }
+      }
+      // step 4. calculate the internal finer x1 field
+      // step 5. calculate the internal finer x2 field
+      // step 6. calculate the internal finer x3 field
+      for(int k=sk; k<=ek; k++) {
+        int fk=(k-pmb->cks)*2+pmb->ks;
+        Real& x3m = pco->coarse_x3s1(k-1);
+        Real& x3c = pco->coarse_x3s1(k);
+        Real& x3p = pco->coarse_x3s1(k+1);
+        Real& fx3m = pco->x3v(fk);
+        Real& fx3p = pco->x3v(fk+1);
+        for(int j=sj; j<=ej; j++) {
+          int fj=(j-pmb->cjs)*2+pmb->js;
+          int fsi=(si-pmb->cis)*2+pmb->is, fei=(ei-pmb->cis)*2+pmb->is+1;
+          Real& x2m = pco->coarse_x2s1(j-1);
+          Real& x2c = pco->coarse_x2s1(j);
+          Real& x2p = pco->coarse_x2s1(j+1);
+          Real& fx2m = pco->x2v(fj);
+          Real& fx2p = pco->x2v(fj+1);
+          pco->Face1Area(fk  ,fj  ,fsi,fei+1,sarea_x1_[0][0]);
+          pco->Face1Area(fk  ,fj+1,fsi,fei+1,sarea_x1_[0][1]);
+          pco->Face1Area(fk+1,fj  ,fsi,fei+1,sarea_x1_[1][0]);
+          pco->Face1Area(fk+1,fj+1,fsi,fei+1,sarea_x1_[1][1]);
+          pco->Face2Area(fk  ,fj  ,fsi,fei,sarea_x2_[0][0]);
+          pco->Face2Area(fk  ,fj+1,fsi,fei,sarea_x2_[0][1]);
+          pco->Face2Area(fk  ,fj+2,fsi,fei,sarea_x2_[0][2]);
+          pco->Face2Area(fk+1,fj  ,fsi,fei,sarea_x2_[1][0]);
+          pco->Face2Area(fk+1,fj+1,fsi,fei,sarea_x2_[1][1]);
+          pco->Face2Area(fk+1,fj+2,fsi,fei,sarea_x2_[1][2]);
+          pco->Face3Area(fk  ,fj  ,fsi,fei,sarea_x3_[0][0]);
+          pco->Face3Area(fk  ,fj+1,fsi,fei,sarea_x3_[0][1]);
+          pco->Face3Area(fk+1,fj  ,fsi,fei,sarea_x3_[1][0]);
+          pco->Face3Area(fk+1,fj+1,fsi,fei,sarea_x3_[1][1]);
+          pco->Face3Area(fk+2,fj  ,fsi,fei,sarea_x3_[2][0]);
+          pco->Face3Area(fk+2,fj+1,fsi,fei,sarea_x3_[2][1]);
+          for(int i=si; i<=ei; i++) {
+            int fi=(i-pmb->cis)*2+pmb->is;
+            // step 4. bx1
+            Real dx1l=pco->x1f(fi+1)-pco->x1f(fi);
+            Real dx1r=pco->x1f(fi+2)-pco->x1f(fi+1);
+            Real sx1l = sarea_x1_[0][0](fi)+sarea_x1_[0][1](fi)+sarea_x1_[1][0](fi)+sarea_x1_[1][1](fi);
+            Real sx1c = sarea_x1_[0][0](fi+1)+sarea_x1_[0][1](fi+1)+sarea_x1_[1][0](fi+1)+sarea_x1_[1][1](fi+1);
+            Real bx1c = (dst.x2f(fk,fj  ,fi)*sarea_x2_[0][0](fi)+dst.x2f(fk+1,fj  ,fi)*sarea_x2_[1][0](fi)
+                        -dst.x2f(fk,fj+2,fi)*sarea_x2_[0][2](fi)-dst.x2f(fk+1,fj+2,fi)*sarea_x2_[1][2](fi)
+                        +dst.x3f(fk  ,fj,fi)*sarea_x3_[0][0](fi)+dst.x3f(fk  ,fj+1,fi)*sarea_x3_[0][1](fi)
+                        -dst.x3f(fk+2,fj,fi)*sarea_x3_[2][0](fi)-dst.x3f(fk+2,fj+1,fi)*sarea_x3_[2][1](fi)
+                        +sx1l*coarse_b_.x1f(k,j,i))/sx1c;
+            Real sl1c2 = (cb1g2(k,j,i)*dx1r+cb1g2(k,j,i+1)*dx1l)/(dx1l+dx1r);
+            Real sl1c3 = (cb1g3(k,j,i)*dx1r+cb1g3(k,j,i+1)*dx1l)/(dx1l+dx1r);
+            dst.x1f(fk  ,fj  ,fi+1)=bx1c-slc2*(x2c-fx2m)-slc3*(x3c-fx3m);
+            dst.x1f(fk  ,fj+1,fi+1)=bx1c+slc2*(fx2p-x2c)-slc3*(x3c-fx3m);
+            dst.x1f(fk+1,fj  ,fi+1)=bx1c-slc2*(x2c-fx2m)+slc3*(fx3p-x3c);
+            dst.x1f(fk+1,fj+1,fi+1)=bx1c+slc2*(fx2p-x2c)+slc3*(fx3p-x3c);
+            // step 5. bx2
+            Real dx2l=pco->x2f(fj+1)-pco->x2f(fj);
+            Real dx2r=pco->x2f(fj+2)-pco->x2f(fj+1);
+            Real sl2c3 = (cb2g3(k,j,i)*dx2r+cb2g3(k,j,i+1)*dx2l)/(dx2l+dx2r);
+            // left
+            Real bx2l = (dst.x1f(fk,fj,fi  )*sarea_x1_[0][0](fi  )+dst.x1f(fk+1,fj,fi  )*sarea_x1_[1][0](fi  )
+                        -dst.x1f(fk,fj,fi+1)*sarea_x1_[0][0](fi+1)-dst.x1f(fk+1,fj,fi+1)*sarea_x1_[1][0](fi+1)
+                        +dst.x3f(fk,fj,fi  )*sarea_x3_[0][0](fi  )-dst.x3f(fk+2,fj,fi  )*sarea_x3_[2][0](fi)
+                        +dst.x2f(fk,fj,fi  )*sarea_x2_[0][0](fi  )+dst.x2f(fk+1,fj,fi  )*sarea_x2_[1][0](fi))
+                        /(sarea_x2_[0][1](fi)+sarea_x2_[1][1](fi));
+            dst.x2f(fk  ,fj+1,fi)=bx2l-sl2c3*(x3c-fx3m);
+            dst.x2f(fk+1,fj+1,fi)=bx2l+sl2c3*(fx3p-x3c);
+            // right
+            Real bx2r = (dst.x1f(fk,fj,fi+1)*sarea_x1_[0][0](fi+1)+dst.x1f(fk+1,fj,fi+1)*sarea_x1_[1][0](fi+1)
+                        -dst.x1f(fk,fj,fi+2)*sarea_x1_[0][0](fi+2)-dst.x1f(fk+1,fj,fi+2)*sarea_x1_[1][0](fi+2)
+                        +dst.x3f(fk,fj,fi+1)*sarea_x3_[0][0](fi+1)-dst.x3f(fk+2,fj,fi+1)*sarea_x3_[2][0](fi+1)
+                        +dst.x2f(fk,fj,fi+1)*sarea_x2_[0][0](fi+1)+dst.x2f(fk+1,fj,fi+1)*sarea_x2_[1][0](fi+1))
+                        /(sarea_x2_[0][1](fi+1)+sarea_x2_[1][1](fi+1));
+            dst.x2f(fk  ,fj+1,fi+1)=bx2r-sl2c3*(x3c-fx3m);
+            dst.x2f(fk+1,fj+1,fi+1)=bx2r+sl2c3*(fx3p-x3c);
+            // step 6. bx3
+            // ll
+            dst.x3f(fk+1,fj  ,fi  ) = (dst.x1f(fk,fj,fi)*sarea_x1_[0][0](fi)-dst.x1f(fk,fj,fi+1)*sarea_x1_[0][0](fi+1)
+                                      +dst.x2f(fk,fj,fi)*sarea_x2_[0][0](fi)-dst.x2f(fk,fj+1,fi)*sarea_x2_[0][1](fi)
+                                      +dst.x3f(fk,fj,fi)*sarea_x3_[0][0](fi))/sarea_x3_[1][0](fi);
+            // lr
+            dst.x3f(fk+1,fj  ,fi+1) = (dst.x1f(fk,fj,fi+1)*sarea_x1_[0][0](fi+1)-dst.x1f(fk,fj  ,fi+2)*sarea_x1_[0][0](fi+2)
+                                      +dst.x2f(fk,fj,fi+1)*sarea_x2_[0][0](fi+1)-dst.x2f(fk,fj+1,fi+1)*sarea_x2_[0][1](fi+1)
+                                      +dst.x3f(fk,fj,fi+1)*sarea_x3_[0][0](fi+1))/sarea_x3_[1][0](fi+1);
+            // rl
+            dst.x3f(fk+1,fj+1,fi  ) = (dst.x1f(fk,fj+1,fi)*sarea_x1_[0][1](fi)-dst.x1f(fk,fj+1,fi+1)*sarea_x1_[0][1](fi+1)
+                                      +dst.x2f(fk,fj+1,fi)*sarea_x2_[0][1](fi)-dst.x2f(fk,fj+2,fi  )*sarea_x2_[0][2](fi)
+                                      +dst.x3f(fk,fj+1,fi)*sarea_x3_[0][1](fi))/sarea_x3_[1][1](fi);
+            // rr
+            dst.x3f(fk+1,fj+1,fi+1) = (dst.x1f(fk,fj+1,fi+1)*sarea_x1_[0][1](fi+1)-dst.x1f(fk,fj+1,fi+2)*sarea_x1_[0][1](fi+2)
+                                      +dst.x2f(fk,fj+1,fi+1)*sarea_x2_[0][1](fi+1)-dst.x2f(fk,fj+2,fi+1)*sarea_x2_[0][2](fi+1)
+                                      +dst.x3f(fk,fj+1,fi+1)*sarea_x3_[0][1](fi+1))/sarea_x3_[1][1](fi+1);
+          }
+        }
+      }
     }
     else if(pmb->block_size.nx2 > 1) { // 2D
+      int k=pmb->cks, fk=pmb->ks;
+      int jl=sj, ju=ej+1;
+      if((nb.ox2>=0) && (pmb->nblevel[1][nb.ox2  ][nb.ox1+1]>=mylevel)) jl++;
+      if((nb.ox2<=0) && (pmb->nblevel[1][nb.ox2+2][nb.ox1+1]>=mylevel)) ju--;
+      int il=si, iu=ei+1;
+      if((nb.ox1>=0) && (pmb->nblevel[1][nb.ox2+1][nb.ox1  ]>=mylevel)) il++;
+      if((nb.ox1<=0) && (pmb->nblevel[1][nb.ox2+1][nb.ox1+2]>=mylevel)) iu--;
+      // step 1. calculate outer-face x2 fields where needed
+      for(int j=jl; j<=ju; j++) {
+        int fj=(j-pmb->cjs)*2+pmb->js;
+        for(int i=si; i<=ei; i++) {
+          int fi=(i-pmb->cis)*2+pmb->is;
+          Real& x1m = pco->coarse_x1s2(i-1);
+          Real& x1c = pco->coarse_x1s2(i);
+          Real& x1p = pco->coarse_x1s2(i+1);
+          Real& fx1m = pco->x1s2(fi);
+          Real& fx1p = pco->x1s2(fi+1);
+          Real ccval=coarse_b_.x2f(k,j,i);
+          Real gx1m = (ccval-coarse_b_.x2f(k,j,i-1))/(x1c-x1m);
+          Real gx1p = (coarse_b_.x2f(k,j,i+1)-ccval)/(x1p-x1c);
+          if(gx1m*gx1p>0.0) gx1c=std::min(std::abs(gx1m),std::abs(gx1p));
+          else gx1c=0.0;
+          dst.x2f(fk,fj  ,fi)=ccval-gx1c*(x1c-fx1m);
+          dst.x2f(fk,fj+1,fi)=ccval+gx1c*(fx1p-x1c);
+        }
+      }
+      // step 2. calculate the finer x1 fields
+      // and step 3. calculate the finer x2 fields
+      for(int j=js; j<=je; j++) {
+        int fj=(j-pmb->cjs)*2+pmb->js;
+        Real& x2m = pco->coarse_x2s1(j-1);
+        Real& x2c = pco->coarse_x2s1(j);
+        Real& x2p = pco->coarse_x2s1(j+1);
+        Real& fx2m = pco->x2v(fj);
+        Real& fx2p = pco->x2v(fj+1);
+        // use the fvol_ array to store the x1 surface area
+        int fsi=(si-pmb->cis)*2+pmb->is, fei=(ei+1-pmb->cis)*2+pmb->is;
+        pco->Face1Area(fk,fj  ,fsi,fei,sarea_x1_[0][0]);
+        pco->Face1Area(fk,fj+1,fsi,fei,sarea_x1_[0][1]);
+        pco->Face2Area(fk,fj  ,fsi,fei,sarea_x2_[0][0]);
+        pco->Face2Area(fk,fj+1,fsi,fei,sarea_x2_[0][1]);
+        pco->Face2Area(fk,fj+2,fsi,fei,sarea_x2_[0][2]);
+        // the first cell
+        i=si;
+        int fi=(i-pmb->cis)*2+pmb->is;
+        Real sl1, sl2;
+        // left slope
+        Real gx2m = (coarse_b_.x1f(k,j,i)-coarse_b_.x1f(k,j-1,i))/(x2c-x2m);
+        Real gx2p = (coarse_b_.x1f(k,j+1,i)-coarse_b_.x1f(k,j,i))/(x2p-x2c);
+        if(gx2m*gx2p>0.0) sl1=std::min(std::abs(gx2m),std::abs(gx2p));
+        else sl1=0.0;
+        // right slope
+        gx2m = (coarse_b_.x1f(k,j,i+1)-coarse_b_.x1f(k,j-1,i+1))/(x2c-x2m);
+        gx2p = (coarse_b_.x1f(k,j+1,i+1)-coarse_b_.x1f(k,j,i+1))/(x2p-x2c);
+        if(gx2m*gx2p>0.0) sl2=std::min(std::abs(gx2m),std::abs(gx2p));
+        else sl2=0.0;
+        // left surface
+        if(i>=il) {
+          dst.x1f(fk,fj  ,fi)=coarse_b_.x1f(k,j,i)-sl1*(x2c-fx2m);
+          dst.x1f(fk,fj+1,fi)=coarse_b_.x1f(k,j,i)+sl1*(fx2p-x2c);
+        }
+        // internal surface
+        Real dx1l=pco->x1f(fi+1)-pco->x1f(fi);
+        Real dx1r=pco->x1f(fi+2)-pco->x1f(fi+1);
+        Real slc = (sl1*dx1r+sl2*dx1l)/(dx1l+dx1r);
+        Real bx1c = ((sarea_x1_[0][0](fi)+sarea_x1_[0][1](fi))*coarse_b_.x1f(k,j,i)
+                     -sarea_x2_[0][2](fi)*dst.x2f(fk,fj,fi+2)+sarea_x2_[0][0](fi)*dst.x2f(fk,fj,fi))
+                     /(sarea_x1_[0][0](fi+1)+sarea_x1_[0][1](fi+1));
+        dst.x1f(fk,fj  ,fi+1)=bx1c-slc*(x2c-fx2m);
+        dst.x1f(fk,fj+1,fi+1)=bx1c+slc*(fx2p-x2c);
+        // right surface
+        if(i<=iu) {
+          dst.x1f(fk,fj  ,fi+2)=coarse_b_.x1f(k,j,i+1)-sl2*(x2c-fx2m);
+          dst.x1f(fk,fj+1,fi+2)=coarse_b_.x1f(k,j,i+1)+sl2*(fx2p-x2c);
+        }
+        // x2 field
+        dst.x2f(fk,fj+1,fi  )=(dst.x1f(fk,fj,fi  )*sarea_x1_[0][0](fi  )
+                              -dst.x1f(fk,fj,fi+1)*sarea_x1_[0][0](fi+1)
+                              +dst.x2f(fk,fj,fi  )*sarea_x2_[0][0](fi)  )/sarea_x2_[0][1](fi)
+        dst.x2f(fk,fj+1,fi+1)=(dst.x1f(fk,fj,fi+1)*sarea_x1_[0][0](fi+1)
+                              -dst.x1f(fk,fj,fi+2)*sarea_x1_[0][0](fi+2)
+                              +dst.x2f(fk,fj,fi+1)*sarea_x2_[0][0](fi+1))/sarea_x2_[0][1](fi+1)
+        // the rest
+        for(int i=si+1; i<=ei; i++) {
+          int fi=(i-pmb->cis)*2+pmb->is;
+          // left slope
+          sl1=sl2;
+          // right slope
+          gx2m = (coarse_b_.x1f(k,j,i+1)-coarse_b_.x1f(k,j-1,i+1))/(x2c-x2m);
+          gx2p = (coarse_b_.x1f(k,j+1,i+1)-coarse_b_.x1f(k,j,i+1))/(x2p-x2c);
+          if(gx2m*gx2p>0.0) sl2=std::min(std::abs(gx2m),std::abs(gx2p));
+          else sl2=0.0;
+          // internal surface
+          Real dx1l=pco->x1f(fi+1)-pco->coarse_x1f(i);
+          Real dx1r=pco->coarse_x1f(i+1)-pco->x1f(fi+1);
+          Real slc = (sl1*dx1r+sl2*dx1l)/(dx1l+dx1r);
+          Real bx1c = ((sarea_x1_[0][0](fi)+sarea_x1_[0][1](fi))*coarse_b_.x1f(k,j,i)
+                       -sarea_x2_[0][2](fi)*dst.x2f(fk,fj,fi+2)+sarea_x2_[0][0](fi)*dst.x2f(fk,fj,fi))
+                       /(sarea_x1_[0][0](fi+1)+sarea_x1_[0][1](fi+1));
+          dst.x1f(fk,fj  ,fi+1)=bx1c-slc*(x2c-fx2m);
+          dst.x1f(fk,fj+1,fi+1)=bx1c+slc*(fx2p-x2c);
+          // right surface
+          if(i<=iu) {
+            dst.x1f(fk,fj  ,fi+2)=coarse_b_.x1f(k,j,i+1)-sl2*(x2c-fx2m);
+            dst.x1f(fk,fj+1,fi+2)=coarse_b_.x1f(k,j,i+1)+sl2*(fx2p-x2c);
+          }
+          // x2 field
+          dst.x2f(fk,fj+1,fi  )=(dst.x1f(fk,fj,fi  )*sarea_x1_[0][0](fi  )
+                                -dst.x1f(fk,fj,fi+1)*sarea_x1_[0][0](fi+1)
+                                +dst.x2f(fk,fj,fi  )*sarea_x2_[0][0](fi)  )/sarea_x2_[0][1](fi)
+          dst.x2f(fk,fj+1,fi+1)=(dst.x1f(fk,fj,fi+1)*sarea_x1_[0][0](fi+1)
+                                -dst.x1f(fk,fj,fi+2)*sarea_x1_[0][0](fi+2)
+                                +dst.x2f(fk,fj,fi+1)*sarea_x2_[0][0](fi+1))/sarea_x2_[0][1](fi+1)
+        }
+      }
+      // step 4. calculate the finer x3 fields (independent from x1 and x2)
+      for(int j=sj; j<=ej; j++) {
+        int fj=(j-pmb->cjs)*2+pmb->js;
+        Real& x2m = pco->coarse_x2s3(j-1);
+        Real& x2c = pco->coarse_x2s3(j);
+        Real& x2p = pco->coarse_x2s3(j+1);
+        Real dx2m = x2c - x2m;
+        Real dx2p = x2p - x2c;
+        Real& fx2m = pco->x2s3(fj);
+        Real& fx2p = pco->x2s3(fj+1);
+        Real dx2fm= x2c-fx2m;
+        Real dx2fp= fx2p-x2c;
+        for(int i=si; i<=ei; i++) {
+          int fi=(i-pmb->cis)*2+pmb->is;
+          Real& x1m = pco->coarse_x1s3(i-1);
+          Real& x1c = pco->coarse_x1s3(i);
+          Real& x1p = pco->coarse_x1s3(i+1);
+          Real dx1m = x1c - x1m;
+          Real dx1p = x1p - x1c;
+          Real& fx1m = pco->x1s3(fi);
+          Real& fx1p = pco->x1s3(fi+1);
+          Real dx1fm= x1c-fx1m;
+          Real dx1fp= fx1p-x1c;
+          Real ccval=coarse_b_x3f(k,j,i);
+
+          // calculate 2D gradients using the minmod limiter
+          Real gx1c, gx2c;
+          Real gx1m = (ccval-coarse_b_.x3f(k,j,i-1))/dx1m;
+          Real gx1p = (coarse_b_.x3f(k,j,i+1)-ccval)/dx1p;
+          if(gx1m*gx1p>0.0) gx1c=std::min(std::abs(gx1m),std::abs(gx1p));
+          else gx1c=0.0;
+          Real gx2m = (ccval-coarse_b_.x3f(k,j-1,i))/dx2m;
+          Real gx2p = (coarse_b_.x3f(k,j+1,i)-ccval)/dx2p;
+          if(gx2m*gx2p>0.0) gx2c=std::min(std::abs(gx2m),std::abs(gx2p));
+          else gx2c=0.0;
+          Real xdt = std::abs(gx1c)*std::max(dx1m,dx1p)
+                   + std::abs(gx2c)*std::max(dx2m,dx2p);
+
+          Real nmax = ccval, nmin = ccval;
+          nmax=std::max(nmax,std::max(coarse_b_.x3f(k,j,i+1),coarse_b_.x3f(k,j,i-1)));
+          nmax=std::max(nmax,std::max(coarse_b_.x3f(k,j+1,i),coarse_b_.x3f(k,j-1,i)));
+          nmin=std::min(nmin,std::min(coarse_b_.x3f(k,j,i+1),coarse_b_.x3f(k,j,i-1)));
+          nmin=std::min(nmin,std::min(coarse_b_.x3f(k,j+1,i),coarse_b_.x3f(k,j-1,i)));
+
+          Real maxdiff = std::min(nmax-ccval,ccval-nmin);
+          if(xdt > maxdiff) {
+            Real fac=maxdiff/xdt;
+            gx1c *= fac; gx2c *= fac;
+          }
+
+          // interpolate on to the finer grid
+          dst.x3f(fk,fj  ,fi  )=dst.x3f(fk+1,fj  ,fi  )=ccval-gx1c*dx1fm-gx2c*dx2fm;
+          dst.x3f(fk,fj  ,fi+1)=dst.x3f(fk+1,fj  ,fi+1)=ccval+gx1c*dx1fp-gx2c*dx2fm;
+          dst.x3f(fk,fj+1,fi  )=dst.x3f(fk+1,fj+1,fi  )=ccval-gx1c*dx1fm+gx2c*dx2fp;
+          dst.x3f(fk,fj+1,fi+1)=dst.x3f(fk+1,fj+1,fi+1)=ccval+gx1c*dx1fp+gx2c*dx2fp;
+        }
+      }
     }
     else { // 1D
-      // bx1 - no prolongation is needed
+      // bx1 - no prolongation, just divergence condition
+      if(nb.ox1==1) {
+        int fi=(si-pmb->cis)*2+pmb->is;
+        Real ph=pco->GetFace1Area(0,0,fi)*dst.x1f(0,0,fi);
+        dst.x1f(0,0,fi+1)=ph/pco->GetFace1Area(0,0,fi+1);
+        dst.x1f(0,0,fi+2)=ph/pco->GetFace1Area(0,0,fi+2);
+      }
+      else if(nb.ox1==-1) {
+        int fi=(ei+1-pmb->cis)*2+pmb->is;
+        Real ph=pco->GetFace1Area(0,0,fi)*dst.x1f(0,0,fi);
+        dst.x1f(0,0,fi-1)=ph/pco->GetFace1Area(0,0,fi-1);
+        dst.x1f(0,0,fi-2)=ph/pco->GetFace1Area(0,0,fi-2);
+      }
+      int fi=(si-pmb->cis)*2+pmb->is;
+      // bx2 and bx3 - interpolation
+      Real gxc;
+      Real gxm = (coarse_b_.x2f(0,0,si)-coarse_b_.x2f(0,0,si-1))
+                 /(pco->coarse_x1s2(si)-pco->coarse_x1s2(si-1));
+      Real gxp = (coarse_b_.x2f(0,0,si+1)-coarse_b_.x2f(0,0,si))
+                 /(pco->coarse_x1s2(si+1)-pco->coarse_x1s2(si));
+      if(gxm*gxp>0.0) gxc=std::min(std::abs(gxm),std::abs(gxp));
+      else gxc=0.0;
+      dst.x2f(0,0,fi  )=dst.x2f(0,1,fi  )
+                       =coarse_b_.x2f(0,0,si)-gxc*(pco->coarse_x1s2(si)-pco->x1s2(fi));
+      dst.x2f(0,0,fi+1)=dst.x2f(0,1,fi+1)
+                       =coarse_b_.x2f(0,0,si)+gxc*(pco->x1s2(fi+1)-pco->coarse_x1s2(si));
+      gxm = (coarse_b_.x3f(0,0,si)-coarse_b_.x3f(0,0,si-1))
+            /(pco->coarse_x1s3(si)-pco->coarse_x1s3(si-1));
+      gxp = (coarse_b_.x3f(0,0,si+1)-coarse_b_.x3f(0,0,si))
+            /(pco->coarse_x1s3(si+1)-pco->coarse_x1s3(si));
+      if(gxm*gxp>0.0) gxc=std::min(std::abs(gxm),std::abs(gxp));
+      else gxc=0.0;
+      dst.x3f(0,0,fi  )=dst.x3f(1,0,fi  )
+                       =coarse_b_.x3f(0,0,si)-gxc*(pco->coarse_x1s3(si)-pco->x1s3(fi));
+      dst.x3f(0,0,fi+1)=dst.x3f(1,0,fi+1)
+                       =coarse_b_.x3f(0,0,si)+gxc*(pco->x1s3(fi+1)-pco->coarse_x1s3(si));
     }
   }
 

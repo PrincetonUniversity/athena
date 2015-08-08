@@ -165,7 +165,9 @@ private:
   Real *emfcor_esend_[NSTEP][12], *emfcor_erecv_[NSTEP][12][2];
   AthenaArray<Real> coarse_cons_, coarse_prim_;
   AthenaArray<Real> fvol_[2][2], sarea_[2];
+  AthenaArray<Real> sarea_x1_[2][2], sarea_x2_[2][3], sarea_x3_[3][2];
   AthenaArray<Real> surface_flux_[6];
+  AthenaArray<Real> cb1g2, cb1g3, cb2g3;
   InterfaceField coarse_b_;
 
 #ifdef MPI_PARALLEL

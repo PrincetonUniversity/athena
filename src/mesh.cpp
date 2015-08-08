@@ -1222,8 +1222,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       pbval->ProlongateFluidBoundaries(pfluid->u);
     if (MAGNETIC_FIELDS_ENABLED) {
       pbval->FieldPhysicalBoundaries(pfield->b);
-//      if(multilevel==true)
-//        pbval->ProlongateFieldBoundaries(pfield->b);
+      if(multilevel==true)
+        pbval->ProlongateFieldBoundaries(pfield->b);
     }
     pfluid->pf_eos->ConservedToPrimitive(pfluid->u, pfluid->w1, pfield->b, 
                                          pfluid->w, pfield->bcc);
