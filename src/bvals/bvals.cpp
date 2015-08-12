@@ -55,6 +55,12 @@ static int bufid_[56];
 BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_mblock_ = pmb;
+  int cng=pmb->cnghost, cng1=0, cng2=0, cng3=0;
+  if(pmb->block_size.nx2>1) cng1=cng, cng2=cng;
+  if(pmb->block_size.nx3>1) cng3=cng;
+  int f2d=0, f3d=0;
+  if(pmb->block_size.nx2 > 1) f2d=1;
+  if(pmb->block_size.nx3 > 1) f3d=1;
 
 // Set BC functions for each of the 6 boundaries in turn -------------------------------
 // Inner x1
@@ -238,9 +244,6 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
               *((ni_[n].ox2==0)?pmb->block_size.nx2:NGHOST)
               *((ni_[n].ox3==0)?pmb->block_size.nx3:NGHOST);
       if(pmb->pmy_mesh->multilevel==true) {
-        int cng=pmb->cnghost, cng1=0, cng2=0, cng3=0;
-        if(pmb->block_size.nx2>1) cng1=cng, cng2=cng;
-        if(pmb->block_size.nx3>1) cng3=cng;
         int f2c=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2):NGHOST)
                *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2):NGHOST)
                *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2):NGHOST);
@@ -262,15 +265,39 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
                  *((ni_[n].ox2==0)?(pmb->block_size.nx2):NGHOST)
                  *((ni_[n].ox3==0)?(pmb->block_size.nx3):NGHOST);
         int size2=((ni_[n].ox1==0)?(pmb->block_size.nx1):NGHOST)
-                 *((ni_[n].ox2==0)?(pmb->block_size.nx2+1):NGHOST)
+                 *((ni_[n].ox2==0)?(pmb->block_size.nx2+f2d):NGHOST)
                  *((ni_[n].ox3==0)?(pmb->block_size.nx3):NGHOST);
         int size3=((ni_[n].ox1==0)?(pmb->block_size.nx1):NGHOST)
                  *((ni_[n].ox2==0)?(pmb->block_size.nx2):NGHOST)
-                 *((ni_[n].ox3==0)?(pmb->block_size.nx3+1):NGHOST);
-        if(pmb->pmy_mesh->multilevel==true) {
-          // *** need to implement
-        }
+                 *((ni_[n].ox3==0)?(pmb->block_size.nx3+f3d):NGHOST);
         int size=size1+size2+size3;
+        if(pmb->pmy_mesh->multilevel==true) {
+          if(nb.ox1!=0) size1=size1/NGHOST*(NGHOST+1);
+          if(nb.ox2!=0) size2=size2/NGHOST*(NGHOST+1);
+          if(nb.ox3!=0) size3=size3/NGHOST*(NGHOST+1);
+          size=size1+size2+size3;
+          int f2c1=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+1):cng)
+                  *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2):cng)
+                  *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2):cng);
+          int f2c2=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2):cng)
+                  *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d):cng)
+                  *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2):cng);
+          int f2c3=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2):cng)
+                  *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2):cng)
+                  *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+f3d):cng);
+          int fsize=f2c1+f2c2+f2c3;
+          int c2f1=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+1+cng):cng)
+                  *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng*f2d):cng)
+                  *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
+          int c2f2=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
+                  *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d+cng*f2d):cng)
+                  *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
+          int c2f3=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
+                  *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d*cng):cng)
+                  *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+f3d+cng*f3d):cng);
+          int csize=c2f1+c2f2+c2f3;
+          size=std::max(size,std::max(csize,fsize));
+        }
         field_send_[l][n]=new Real[size];
         field_recv_[l][n]=new Real[size];
       }
@@ -340,11 +367,11 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       }
     }
     // allocate prolongation buffer
-    int ncc1=pmb->block_size.nx1/2+2*pmb->cnghost;
+    int ncc1=pmb->block_size.nx1/2+2*cng;
     int ncc2=1;
-    if(pmb->block_size.nx2>1) ncc2=pmb->block_size.nx2/2+2*pmb->cnghost;
+    if(pmb->block_size.nx2>1) ncc2=pmb->block_size.nx2/2+2*cng;
     int ncc3=1;
-    if(pmb->block_size.nx3>1) ncc3=pmb->block_size.nx3/2+2*pmb->cnghost;
+    if(pmb->block_size.nx3>1) ncc3=pmb->block_size.nx3/2+2*cng;
     coarse_cons_.NewAthenaArray(NFLUID,ncc3,ncc2,ncc1);
 
     if (MAGNETIC_FIELDS_ENABLED) {
@@ -475,15 +502,18 @@ void BoundaryValues::Initialize(void)
   long int lx1, lx2, lx3;
   int mylevel,myox1, myox2, myox3;
   int tag;
-  int cng1, cng2, cng3;
+  int cng, cng1, cng2, cng3;
   int ssize, rsize;
-  cng1=pmb->cnghost;
-  cng2=(pmb->block_size.nx2>1)?cng1:0;
-  cng3=(pmb->block_size.nx3>1)?cng1:0;
+  cng=cng1=pmb->cnghost;
+  cng2=(pmb->block_size.nx2>1)?cng:0;
+  cng3=(pmb->block_size.nx3>1)?cng:0;
   pmb->uid.GetLocation(lx1,lx2,lx3,mylevel);
   myox1=((int)(lx1&1L));
   myox2=((int)(lx2&1L));
   myox3=((int)(lx3&1L));
+  int f2d=0, f3d=0;
+  if(pmb->block_size.nx2 > 1) f2d=1;
+  if(pmb->block_size.nx3 > 1) f3d=1;
 
   // check edge neighbors
   if(pmb->pmy_mesh->multilevel==true) {
@@ -565,31 +595,51 @@ void BoundaryValues::Initialize(void)
         }
 
         if (MAGNETIC_FIELDS_ENABLED) {
-          int size1, size2, size3;
-          if(pmb->pmy_mesh->multilevel==false) { // uniform
-            size1=((nb.ox1==0)?(pmb->block_size.nx1+1):NGHOST)
-                 *((nb.ox2==0)?(pmb->block_size.nx2):NGHOST)
-                 *((nb.ox3==0)?(pmb->block_size.nx3):NGHOST);
-            size2=((nb.ox1==0)?(pmb->block_size.nx1):NGHOST)
-                 *((nb.ox2==0)?(pmb->block_size.nx2+1):NGHOST)
-                 *((nb.ox3==0)?(pmb->block_size.nx3):NGHOST);
-            size3=((nb.ox1==0)?(pmb->block_size.nx1):NGHOST)
-                 *((nb.ox2==0)?(pmb->block_size.nx2):NGHOST)
-                 *((nb.ox3==0)?(pmb->block_size.nx3+1):NGHOST);
+          int size, csize, fsize;
+          int size1=((ni_[n].ox1==0)?(pmb->block_size.nx1+1):NGHOST)
+                   *((ni_[n].ox2==0)?(pmb->block_size.nx2):NGHOST)
+                   *((ni_[n].ox3==0)?(pmb->block_size.nx3):NGHOST);
+          int size2=((ni_[n].ox1==0)?(pmb->block_size.nx1):NGHOST)
+                   *((ni_[n].ox2==0)?(pmb->block_size.nx2+f2d):NGHOST)
+                   *((ni_[n].ox3==0)?(pmb->block_size.nx3):NGHOST);
+          int size3=((ni_[n].ox1==0)?(pmb->block_size.nx1):NGHOST)
+                   *((ni_[n].ox2==0)?(pmb->block_size.nx2):NGHOST)
+                   *((ni_[n].ox3==0)?(pmb->block_size.nx3+f3d):NGHOST);
+          int size=size1+size2+size3;
+          if(pmb->pmy_mesh->multilevel==true) {
+            if(nb.ox1!=0) size1=size1/NGHOST*(NGHOST+1);
+            if(nb.ox2!=0) size2=size2/NGHOST*(NGHOST+1);
+            if(nb.ox3!=0) size3=size3/NGHOST*(NGHOST+1);
+            size=size1+size2+size3;
+            int f2c1=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+1):cng)
+                    *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2):cng)
+                    *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2):cng);
+            int f2c2=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2):cng)
+                    *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d):cng)
+                    *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2):cng);
+            int f2c3=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2):cng)
+                    *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2):cng)
+                    *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+f3d):cng);
+            fsize=f2c1+f2c2+f2c3;
+            int c2f1=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+1+cng):cng)
+                    *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng*f2d):cng)
+                    *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
+            int c2f2=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
+                    *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d+cng*f2d):cng)
+                    *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
+            int c2f3=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
+                    *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d*cng):cng)
+                    *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+f3d+cng*f3d):cng);
+            csize=c2f1+c2f2+c2f3;
           }
-          else {
-            if(nb.level==mylevel) { // same
-              // ****** need to implement ******
-            }
-            else if(nb.level<mylevel) { // coarser
-              // ****** need to implement ******
-            }
-            else { // finer
-              // ****** need to implement ******
-            }
-          }
-          ssize=size1+size2+size3; rsize=ssize;
-          // specify the offsets in the view point of the target block: flip ox? signs
+          if(nb.level==mylevel) // same
+            ssize=size, rsize=size;
+          else if(nb.level<mylevel) // coarser
+            ssize=fsize, rsize=csize;
+          else // finer
+            ssize=csize, rsize=fsize;
+
+         // specify the offsets in the view point of the target block: flip ox? signs
           tag=CreateMPITag(nb.lid, l, tag_field, nb.targetid);
           MPI_Send_init(field_send_[l][nb.bufid],ssize,MPI_ATHENA_REAL,
                         nb.rank,tag,MPI_COMM_WORLD,&req_field_send_[l][nb.bufid]);
