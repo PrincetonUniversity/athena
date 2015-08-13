@@ -6,17 +6,23 @@ reference = Fishbone & Moncrief 1976, ApJ 207 962 (FM)
 problem_id = FMTorus
 
 <output1>
-file_type = vtk
-variable  = prim
-dt        = 1.0
+file_type   = vtk
+variable    = prim
+dt          = 1.0
+data_format = %24.16e
 
 <output2>
-file_type = vtk
-variable  = cons
-dt        = 1.0
+file_type   = vtk
+variable    = cons
+dt          = 1.0
+data_format = %24.16e
+
+<output3>
+file_type = rst
+dt        = 100.0
 
 <time>
-cfl_number = 0.1
+cfl_number = 0.2
 nlim       = -1
 tlim       = 1.0
 
@@ -24,14 +30,15 @@ tlim       = 1.0
 nx1    = 64    # number of zones in r-direction
 x1min  = 1.96  # inner r
 x1max  = 20.0  # outer r
+x1rat  = 1.0   # ratio setting r-spacing
 ix1_bc = 3     # 3: special
 ox1_bc = 3     # 3: special
 
 nx2    = 64                  # number of zones in theta-direction
 x2min  = 0.7853981633974483  # lower theta (1/4 pi)
 x2max  = 2.356194490192345   # upper theta (3/4 pi)
-ix2_bc = 1                   # 1: reflecting
-ox2_bc = 1                   # 1: reflecting
+ix2_bc = 3                   # 3: special
+ox2_bc = 3                   # 3: special
 
 nx3    = 1                  # number of zones in phi-direction
 x3min  = 0.0                # minimum phi
@@ -66,4 +73,5 @@ l        = 0.0    # constant ang. mom. per unit mass u^t u_phi; only used if r_p
 rho_max  = 1.0    # if greater than 0, rescale density to have this peak, and rescale
                   # pressure by same factor
 cutoff   = 0.2    # density relative to peak at which vector potential vanishes
-beta_min = 100.0  # desired minimum ratio of gas pressure to magnetic pressure
+beta_min = 100.0  # desired minimum ratio of gas pressure to magnetic pressure; magnetic
+                  # field zeroed if negative
