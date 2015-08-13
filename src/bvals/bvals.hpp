@@ -24,6 +24,7 @@ class FluidIntegrator;
 class ParameterInput;
 struct InterfaceField;
 struct NeighborBlock;
+class Field;
 
 //-------------------- prototypes for all BC functions ---------------------------------
 void ReflectInnerX1(MeshBlock *pmb, AthenaArray<Real> &buf,
@@ -134,7 +135,7 @@ public:
                        int si, int ei, int sj, int ej, int sk, int ek);
   void RestrictFieldX3(AthenaArray<Real> &bx3f,
                        int si, int ei, int sj, int ej, int sk, int ek);
-  void ProlongateFieldBoundaries(AthenaArray<Real> &dst);
+  void ProlongateFieldBoundaries(InterfaceField &dst);
   void SendEMFCorrection(int step);
   bool ReceiveEMFCorrection(int step);
 
@@ -175,7 +176,7 @@ private:
   MPI_Request req_field_send_[NSTEP][56],   req_field_recv_[NSTEP][56];
   MPI_Request req_flcor_send_[NSTEP][6],    req_flcor_recv_[NSTEP][6][2][2];
   MPI_Request req_emfcor_fsend_[NSTEP][6],  req_emfcor_frecv_[NSTEP][6][2][2];
-  MPI_Request req_emfcor_fsend_[NSTEP][12], req_emfcor_frecv_[NSTEP][12][2];
+  MPI_Request req_emfcor_esend_[NSTEP][12], req_emfcor_erecv_[NSTEP][12][2];
 #endif
 
   friend class FluidIntegrator;
