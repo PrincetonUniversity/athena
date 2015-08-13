@@ -117,7 +117,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     const Real &bb3_r = prim_r(IBZ,i);
 
     // Extract normal magnetic field
-    const Real &bb1 = bb(k,j,i);
+    const Real &bb1 = bb_normal_(i);
 
     // Calculate 4-magnetic field in left state
     Real b_l[4];

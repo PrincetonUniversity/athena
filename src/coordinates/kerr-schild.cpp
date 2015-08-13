@@ -230,7 +230,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     Real r_m_sq = SQR(r_m);
     Real r_p_sq = SQR(r_p);
     Real r_m_cu = r_m * r_m_sq;
-    Real r_p_cu = r_p * r_p_cu;
     Real rm_m = std::sqrt(r_m_sq + SQR(m));
     Real rm_p = std::sqrt(r_p_sq + SQR(m));
 
@@ -306,7 +305,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     coord_len2_j1_(j) = coord_vol_j1_(j);
     coord_len2_j2_(j) = coord_vol_j2_(j);
     coord_len3_j1_(j) = coord_area2_j1_(j);
-    coord_len3_j1_(j) = coord_area2_j2_(j);
+    coord_len3_j2_(j) = coord_area2_j2_(j);
     coord_width2_j1_(j) = dx2f(j);
     coord_width3_j1_(j) = sin_c;
     coord_width3_j2_(j) = SQR(a) * sin_c_sq;
