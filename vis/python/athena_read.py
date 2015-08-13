@@ -176,8 +176,8 @@ def vtk(filename):
 
 #=======================================================================================
 
-def ath5(filename, data=None, quantities=None):
-  """Read .ath5 files and populate dict of arrays of data."""
+def athdf(filename, data=None, quantities=None):
+  """Read .athdf files and populate dict of arrays of data."""
 
   # Open file
   with h5py.File(filename, 'r') as f:
