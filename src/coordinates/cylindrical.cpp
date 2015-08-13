@@ -279,7 +279,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 
 Real Coordinates::GetCellVolume(const int k, const int j, const int i)
 {
-  return coord_vol_i_(i)*dx2f(j)*dx3f(k)
+  return coord_vol_i_(i)*dx2f(j)*dx3f(k);
 }
 
 //--------------------------------------------------------------------------------------
