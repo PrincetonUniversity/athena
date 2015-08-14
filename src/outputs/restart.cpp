@@ -105,20 +105,16 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
   offset=new WrapIOSize_t[mynb];
 
 #ifdef MPI_PARALLEL
-  nblocks = new int[nproc];
   displ = new int[nproc];
-  if(myrank==0) myblocksize=new WrapIOSize_t[mynb+1];
-  else myblocksize=new WrapIOSize_t[mynb];
+  if(myrank==0) mynb++; // the first process includes the information block
+  myblocksize=new WrapIOSize_t[mynb];
 
-  // distribute the numbers of the blocks
-  MPI_Allgather(&mynb,1,MPI_INTEGER,nblocks,1,MPI_INTEGER,MPI_COMM_WORLD);
-  nblocks[0]+=1; // for the first block
   displ[0]=0;
   for(i=1;i<nproc;i++)
-    displ[i]=displ[i-1]+nblocks[i-1];
+    displ[i]=pM->nslist[i]+1;
 
   i=0;
-  if(myrank==0) {
+  if(myrank==0) { // the information block
     myblocksize[0]=resfile.Tell();
     i=1;
   }
@@ -130,12 +126,13 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
   }
 
   // distribute the size of each block + header size
-  MPI_Allgatherv(myblocksize,nblocks[myrank],MPI_LONG,
-     blocksize,nblocks,displ,MPI_LONG,MPI_COMM_WORLD);
+  pM->nblist[0]++; // include the information block
+  MPI_Allgatherv(myblocksize,mynb,MPI_LONG,
+     blocksize,pM->nblist,displ,MPI_LONG,MPI_COMM_WORLD);
+  pM->nblist[0]--; // recover the original list
 
   // clean up
   delete [] myblocksize;
-  delete [] nblocks;
   delete [] displ;
 
 #else // serial
