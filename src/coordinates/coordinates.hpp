@@ -550,42 +550,44 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
     }
     coarse_x2f(cje+1)=x2f(je+1);
     // left ghost zone
-    if(pmy_block->block_bcs[inner_x2]==1) { // reflecting
-      for(int j=1; j<=cnghost; j++) {
-        Real dx2=coarse_x2f(cjs+j)-coarse_x2f(cjs+j-1);
-        coarse_x2f(cjs-j) =  coarse_x2f(cjs-j+1) - dx2;
-      }
-    }
-    else {
-      if(block_size.x2rat==1.0) { // uniform
-        for(int j=1; j<=cnghost; j++)
-          coarse_x2f(cjs-j) =  2.0* coarse_x2f(cjs-j+1) - coarse_x2f(cjs-j+2);
-      }
-      else {
-        for(int j=1; j<=cnghost; j++) { 
-          noffset=(long long)lx2*block_size.nx2-j*2;
-          Real rx=(Real)noffset/(Real)nrootmesh;
-          coarse_x2f(cjs-j)=pm->MeshGeneratorX2(rx,pm->mesh_size);
+    if(block_size.nx2 > 1) {
+      if(pmy_block->block_bcs[inner_x2]==1) { // reflecting
+        for(int j=1; j<=cnghost; j++) {
+          Real dx2=coarse_x2f(cjs+j)-coarse_x2f(cjs+j-1);
+          coarse_x2f(cjs-j) =  coarse_x2f(cjs-j+1) - dx2;
         }
       }
-    }
-    // right ghost zone
-    if(pmy_block->block_bcs[outer_x2]==1) { // reflecting
-      for(int j=1; j<=cnghost; j++) {
-        Real dx2=coarse_x2f(cje-j+2)-coarse_x2f(cje-j+1);
-        coarse_x2f(cje+j+1) =  coarse_x2f(cje+j) + dx2;
+      else {
+        if(block_size.x2rat==1.0) { // uniform
+          for(int j=1; j<=cnghost; j++)
+            coarse_x2f(cjs-j) =  2.0* coarse_x2f(cjs-j+1) - coarse_x2f(cjs-j+2);
+        }
+        else {
+          for(int j=1; j<=cnghost; j++) { 
+            noffset=(long long)lx2*block_size.nx2-j*2;
+            Real rx=(Real)noffset/(Real)nrootmesh;
+            coarse_x2f(cjs-j)=pm->MeshGeneratorX2(rx,pm->mesh_size);
+          }
+        }
       }
-    }
-    else {
-      if(block_size.x2rat==1.0) { // uniform
-        for(int j=1; j<=cnghost; j++)
-          coarse_x2f(cje+j+1) = 2.0*coarse_x2f(cje+j) - coarse_x2f(cje+j-1);
+      // right ghost zone
+      if(pmy_block->block_bcs[outer_x2]==1) { // reflecting
+        for(int j=1; j<=cnghost; j++) {
+          Real dx2=coarse_x2f(cje-j+2)-coarse_x2f(cje-j+1);
+          coarse_x2f(cje+j+1) =  coarse_x2f(cje+j) + dx2;
+        }
       }
       else {
-        for(int j=1; j<=cnghost; j++) { 
-          noffset=(long long)(lx2+1L)*block_size.nx2+j*2;
-          Real rx=(Real)noffset/(Real)nrootmesh;
-          coarse_x2f(cje+j+1)=pm->MeshGeneratorX2(rx,pm->mesh_size);
+        if(block_size.x2rat==1.0) { // uniform
+          for(int j=1; j<=cnghost; j++)
+            coarse_x2f(cje+j+1) = 2.0*coarse_x2f(cje+j) - coarse_x2f(cje+j-1);
+        }
+        else {
+          for(int j=1; j<=cnghost; j++) { 
+            noffset=(long long)(lx2+1L)*block_size.nx2+j*2;
+            Real rx=(Real)noffset/(Real)nrootmesh;
+            coarse_x2f(cje+j+1)=pm->MeshGeneratorX2(rx,pm->mesh_size);
+          }
         }
       }
     }
@@ -596,43 +598,45 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
       coarse_x3f(k)=x3f(kfl);
     }
     coarse_x3f(cke+1)=x3f(ke+1);
-    // left ghost zone
-    if(pmy_block->block_bcs[inner_x3]==1) { // reflecting
-      for(int k=1; k<=cnghost; k++) {
-        Real dx3=coarse_x3f(cks+k)-coarse_x3f(cks+k-1);
-        coarse_x3f(cks-k) =  coarse_x3f(cks-k+1) - dx3;
-      }
-    }
-    else {
-      if(block_size.x3rat==1.0) { // uniform
-        for(int k=1; k<=cnghost; k++)
-          coarse_x3f(cks-k) =  2.0* coarse_x3f(cks-k+1) - coarse_x3f(cks-k+2);
-      }
-      else {
-        for(int k=1; k<=cnghost; k++) { 
-          noffset=(long long)lx3*block_size.nx3-k*2;
-          Real rx=(Real)noffset/(Real)nrootmesh;
-          coarse_x3f(cks-k)=pm->MeshGeneratorX3(rx,pm->mesh_size);
+    if(block_size.nx3 > 1) {
+      // left ghost zone
+      if(pmy_block->block_bcs[inner_x3]==1) { // reflecting
+        for(int k=1; k<=cnghost; k++) {
+          Real dx3=coarse_x3f(cks+k)-coarse_x3f(cks+k-1);
+          coarse_x3f(cks-k) =  coarse_x3f(cks-k+1) - dx3;
         }
       }
-    }
-    // right ghost zone
-    if(pmy_block->block_bcs[outer_x3]==1) { // reflecting
-      for(int k=1; k<=cnghost; k++) {
-        Real dx3=coarse_x3f(cke-k+2)-coarse_x3f(cke-k+1);
-        coarse_x3f(cke+k+1) =  coarse_x3f(cke+k) + dx3;
+      else if(block_size.nx3 > 1) {
+        if(block_size.x3rat==1.0) { // uniform
+          for(int k=1; k<=cnghost; k++)
+            coarse_x3f(cks-k) =  2.0* coarse_x3f(cks-k+1) - coarse_x3f(cks-k+2);
+        }
+        else {
+          for(int k=1; k<=cnghost; k++) { 
+            noffset=(long long)lx3*block_size.nx3-k*2;
+            Real rx=(Real)noffset/(Real)nrootmesh;
+            coarse_x3f(cks-k)=pm->MeshGeneratorX3(rx,pm->mesh_size);
+          }
+        }
       }
-    }
-    else {
-      if(block_size.x3rat==1.0) { // uniform
-        for(int k=1; k<=cnghost; k++)
-          coarse_x3f(cke+k+1) = 2.0*coarse_x3f(cke+k) - coarse_x3f(cke+k-1);
+      // right ghost zone
+      if(pmy_block->block_bcs[outer_x3]==1) { // reflecting
+        for(int k=1; k<=cnghost; k++) {
+          Real dx3=coarse_x3f(cke-k+2)-coarse_x3f(cke-k+1);
+          coarse_x3f(cke+k+1) =  coarse_x3f(cke+k) + dx3;
+        }
       }
       else {
-        for(int k=1; k<=cnghost; k++) { 
-          noffset=(long long)(lx3+1L)*block_size.nx3+k*2;
-          Real rx=(Real)noffset/(Real)nrootmesh;
-          coarse_x3f(cke+k+1)=pm->MeshGeneratorX3(rx,pm->mesh_size);
+        if(block_size.x3rat==1.0) { // uniform
+          for(int k=1; k<=cnghost; k++)
+            coarse_x3f(cke+k+1) = 2.0*coarse_x3f(cke+k) - coarse_x3f(cke+k-1);
+        }
+        else {
+          for(int k=1; k<=cnghost; k++) { 
+            noffset=(long long)(lx3+1L)*block_size.nx3+k*2;
+            Real rx=(Real)noffset/(Real)nrootmesh;
+            coarse_x3f(cke+k+1)=pm->MeshGeneratorX3(rx,pm->mesh_size);
+          }
         }
       }
     }
