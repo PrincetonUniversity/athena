@@ -169,6 +169,12 @@ enum task_status EMFCorrectionReceive(MeshBlock *pmb, int task_arg)
 
 enum task_status FieldProlongation(MeshBlock *pmb, int task_arg)
 {
+  Field *pfield=pmb->pfield;
+  BoundaryValues *pbval=pmb->pbval;
+  if(task_arg==0)
+    pbval->ProlongateFieldBoundaries(pfield->b);
+  else if(task_arg==1)
+    pbval->ProlongateFieldBoundaries(pfield->b1);
   return task_success;
 }
 
