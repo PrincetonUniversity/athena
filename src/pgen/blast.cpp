@@ -63,7 +63,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
-    Real rad = sqrt(SQR(pmb->pcoord->d1v(i)) + SQR(pmb->pcoord->d2v(j)) + SQR(pmb->pcoord->d3v(k)));
+    Real rad = sqrt(SQR(pmb->pcoord->x1v(i)) + SQR(pmb->pcoord->x2v(j)) + SQR(pmb->pcoord->x3v(k)));
     Real den = da;
     if (rad < rin) den = drat*da;
 
