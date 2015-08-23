@@ -287,15 +287,15 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
                   *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2):cng)
                   *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+f3d):cng);
           int fsize=f2c1+f2c2+f2c3;
-          int c2f1=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+1+cng):1)
+          int c2f1=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+1+cng):2)
                   *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng*f2d):cng)
                   *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
           int c2f2=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
-                  *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d+cng*f2d):1)
+                  *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d+cng*f2d):2)
                   *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
           int c2f3=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
                   *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d*cng):cng)
-                  *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+f3d+cng*f3d):1);
+                  *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+f3d+cng*f3d):2);
           int csize=c2f1+c2f2+c2f3;
           size=std::max(size,std::max(csize,fsize));
         }
@@ -641,15 +641,15 @@ void BoundaryValues::Initialize(void)
                     *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2):cng)
                     *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+f3d):cng);
             fsize=f2c1+f2c2+f2c3;
-            int c2f1=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+1+cng):1)
+            int c2f1=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+1+cng):2)
                     *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng*f2d):cng)
                     *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
             int c2f2=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
-                    *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d+cng*f2d):1)
+                    *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d+cng*f2d):2)
                     *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
             int c2f3=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
                     *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d*cng):cng)
-                    *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+f3d+cng*f3d):1);
+                    *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+f3d+cng*f3d):2);
             csize=c2f1+c2f2+c2f3;
           }
           if(nb.level==mylevel) // same
@@ -1697,7 +1697,7 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
               Real gx3m = (ccval-coarse_cons_(n,k-1,j,i))/dx3m;
               Real gx3p = (coarse_cons_(n,k+1,j,i)-ccval)/dx3p;
               Real gx3c = 0.5*(SIGN(gx3m)+SIGN(gx3p))*std::min(std::abs(gx3m),std::abs(gx3p));
-              Real xdt = std::abs(gx1c)*std::max(dx1m,dx1p)
+/*              Real xdt = std::abs(gx1c)*std::max(dx1m,dx1p)
                        + std::abs(gx2c)*std::max(dx2m,dx2p)
                        + std::abs(gx3c)*std::max(dx3m,dx3p);
 
@@ -1713,7 +1713,7 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
               if(xdt > maxdiff) {
                 Real fac=maxdiff/xdt;
                 gx1c *= fac; gx2c *= fac; gx3c *= fac;
-              }
+              }*/
 
               // interpolate onto the finer grid
               dst(n,fk  ,fj  ,fi  )=ccval-gx1c*dx1fm-gx2c*dx2fm-gx3c*dx3fm;
@@ -1763,7 +1763,7 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
             Real gx2m = (ccval-coarse_cons_(n,k,j-1,i))/dx2m;
             Real gx2p = (coarse_cons_(n,k,j+1,i)-ccval)/dx2p;
             Real gx2c = 0.5*(SIGN(gx2m)+SIGN(gx2p))*std::min(std::abs(gx2m),std::abs(gx2p));
-            Real xdt = std::abs(gx1c)*std::max(dx1m,dx1p)
+/*            Real xdt = std::abs(gx1c)*std::max(dx1m,dx1p)
                      + std::abs(gx2c)*std::max(dx2m,dx2p);
 
             Real nmax = ccval, nmin = ccval;
@@ -1777,7 +1777,7 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
               Real fac=maxdiff/xdt;
               gx1c *= fac; gx2c *= fac;
             }
-
+*/
             // interpolate on to the finer grid
             dst(n,fk  ,fj  ,fi  )=ccval-gx1c*dx1fm-gx2c*dx2fm;
             dst(n,fk  ,fj  ,fi+1)=ccval+gx1c*dx1fp-gx2c*dx2fm;
@@ -1916,7 +1916,7 @@ void BoundaryValues::RestrictFieldX2(AthenaArray<Real> &bx2f,
       }
     }
   }
-  else { // 1D - no restriction, just copy 
+  else { // 1D 
     int k=pmb->ks, j=pmb->js;
     pmb->pcoord->Face2Area(k, j, si, ei, fvol_[0][0]);
     for (int ci=csi; ci<=cei; ci++) {
@@ -1975,7 +1975,7 @@ void BoundaryValues::RestrictFieldX3(AthenaArray<Real> &bx3f,
       }
     }
   }
-  else { // 1D - no restriction, just copy 
+  else { // 1D 
     int k=pmb->ks, j=pmb->js;
     pmb->pcoord->Face3Area(k, j, si, ei, fvol_[0][0]);
     for (int ci=csi; ci<=cei; ci++) {
@@ -2074,7 +2074,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(InterfaceField &src, Real *
                                                      NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_mblock_;
-  int si, sj, sk, ei, ej, ek, rs, re;
+  int si, sj, sk, ei, ej, ek;
   int cng=pmb->cnghost;
   int p=0;
 
@@ -2093,13 +2093,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(InterfaceField &src, Real *
     if(nb.ox1>0) ei++;
     else if(nb.ox1<0) si--;
   }
-  // restriction including the surface field
-  rs=si, re=ei;
-  if(nb.type==neighbor_face) {
-    if(nb.ox1>0) re++;
-    else if(nb.ox1<0) rs--;
-  }
-  RestrictFieldX1(src.x1f, rs, re, sj, ej, sk, ek);
+  RestrictFieldX1(src.x1f, si, ei, sj, ej, sk, ek);
   for (int k=sk; k<=ek; k++) {
     for (int j=sj; j<=ej; j++) {
 #pragma simd
@@ -2120,13 +2114,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(InterfaceField &src, Real *
     if(nb.ox2>0) ej++;
     else if(nb.ox2<0) sj--;
   }
-  // restriction including the surface field
-  rs=sj, re=ej;
-  if(nb.type==neighbor_face) {
-    if(nb.ox2>0) re++;
-    else if(nb.ox2<0) rs--;
-  }
-  RestrictFieldX2(src.x2f, si, ei, rs, re, sk, ek);
+  RestrictFieldX2(src.x2f, si, ei, sj, ej, sk, ek);
   for (int k=sk; k<=ek; k++) {
     for (int j=sj; j<=ej; j++) {
 #pragma simd
@@ -2147,13 +2135,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(InterfaceField &src, Real *
     if(nb.ox3>0) ek++;
     else if(nb.ox3<0) sk--;
   }
-  // restriction including the surface field
-  rs=sk, re=ek;
-  if(nb.type==neighbor_face) {
-    if(nb.ox3>0) re++;
-    else if(nb.ox3<0) rs--;
-  }
-  RestrictFieldX3(src.x3f, si, ei, sj, ej, rs, re);
+  RestrictFieldX3(src.x3f, si, ei, sj, ej, sk, ek);
   for (int k=sk; k<=ek; k++) {
     for (int j=sj; j<=ej; j++) {
 #pragma simd
@@ -2184,8 +2166,8 @@ int BoundaryValues::LoadFieldBoundaryBufferToFiner(InterfaceField &src, Real *bu
     if(nb.fi1==1)   si=pmb->is+pmb->block_size.nx1/2-pmb->cnghost, ei=pmb->ie+1;
     else            si=pmb->is, ei=pmb->ie+1-pmb->block_size.nx1/2+pmb->cnghost;
   }
-  else if(nb.ox1>0) si=pmb->ie,   ei=pmb->ie;
-  else              si=pmb->is+1, ei=pmb->is+1;
+  else if(nb.ox1>0) si=pmb->ie, ei=pmb->ie+1;
+  else              si=pmb->is, ei=pmb->is+1;
   if(nb.ox2==0) {
     sj=pmb->js,    ej=pmb->je;
     if(pmb->block_size.nx2 > 1) {
@@ -2245,8 +2227,8 @@ int BoundaryValues::LoadFieldBoundaryBufferToFiner(InterfaceField &src, Real *bu
       }
     }
   }
-  else if(nb.ox2>0) sj=pmb->je,   ej=pmb->je;
-  else              sj=pmb->js+1, ej=pmb->js+1;
+  else if(nb.ox2>0) sj=pmb->je, ej=pmb->je+1;
+  else              sj=pmb->js, ej=pmb->js+1;
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
 #pragma simd
@@ -2285,8 +2267,8 @@ int BoundaryValues::LoadFieldBoundaryBufferToFiner(InterfaceField &src, Real *bu
       }
     }
   }
-  else if(nb.ox3>0) sk=pmb->ke,   ek=pmb->ke;
-  else              sk=pmb->ks+1, ek=pmb->ks+1;
+  else if(nb.ox3>0) sk=pmb->ke, ek=pmb->ke+1;
+  else              sk=pmb->ks, ek=pmb->ks+1;
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
 #pragma simd
@@ -2440,8 +2422,8 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
     if((lx1&1L)==0L) ei+=cng;
     else             si-=cng; 
   }
-  else if(nb.ox1>0)  si=pmb->cie+2, ei=pmb->cie+2;
-  else               si=pmb->cis-1, ei=pmb->cis-1;
+  else if(nb.ox1>0)  si=pmb->cie+1, ei=pmb->cie+2;
+  else               si=pmb->cis-1, ei=pmb->cis;
   if(nb.ox2==0) {
     sj=pmb->cjs, ej=pmb->cje;
     if(pmb->block_size.nx2 > 1) {
@@ -2485,8 +2467,8 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
       else             sj-=cng; 
     }
   }
-  else if(nb.ox2>0)  sj=pmb->cje+2, ej=pmb->cje+2;
-  else               sj=pmb->cjs-1, ej=pmb->cjs-1;
+  else if(nb.ox2>0)  sj=pmb->cje+1, ej=pmb->cje+2;
+  else               sj=pmb->cjs-1, ej=pmb->cjs;
 
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
@@ -2514,8 +2496,8 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
       else             sk-=cng; 
     }
   }
-  else if(nb.ox3>0)  sk=pmb->cke+2, ek=pmb->cke+2;
-  else               sk=pmb->cks-1, ek=pmb->cks-1;
+  else if(nb.ox3>0)  sk=pmb->cke+1, ek=pmb->cke+2;
+  else               sk=pmb->cks-1, ek=pmb->cks;
 
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
@@ -2880,10 +2862,9 @@ void BoundaryValues::SendEMFCorrection(int step)
             else j=pmb->je+1;
             // restrict and pack e1
             pco->Edge1Length(k, j, pmb->is, pmb->ie, le1);
-            for(int i=pmb->is; i<=pmb->ie; i+=2) {
+            for(int i=pmb->is; i<=pmb->ie; i+=2)
               emfcor_fsend_[step][nb.fid][p++]
                           =(e1(k,j,i)*le1(i)+e1(k,j,i+1)*le1(i+1))/(le1(i)+le1(i+1));
-            }
             // pack e3
             for(int i=pmb->is; i<=pmb->ie+1; i+=2)
               emfcor_fsend_[step][nb.fid][p++]=e3(k,j,i);
@@ -3036,7 +3017,7 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
         if(pmb->block_size.nx3 > 1) { // 3D
           // x1 direction
           if(nb.fid==inner_x1 || nb.fid==inner_x2) {
-            int i, jl=pmb->js, ju=pmb->je+1, kl=pmb->ks, ku=pmb->ke+1;
+            int i, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
             if(nb.fid==inner_x1) i=pmb->is;
             else i=pmb->ie+1;
             if(nb.fi1==0) ju=pmb->js+pmb->block_size.nx2/2-1;
@@ -3056,7 +3037,7 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
           }
           // x2 direction
           else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
-            int j, il=pmb->is, iu=pmb->ie+1, kl=pmb->ks, ku=pmb->ke+1;
+            int j, il=pmb->is, iu=pmb->ie, kl=pmb->ks, ku=pmb->ke;
             if(nb.fid==inner_x2) j=pmb->js;
             else j=pmb->je+1;
             if(nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
@@ -3076,7 +3057,7 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
           }
           // x3 direction
           else if(nb.fid==inner_x3 || nb.fid==outer_x3) {
-            int k, il=pmb->is, iu=pmb->ie+1, jl=pmb->js, ju=pmb->je+1;
+            int k, il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je;
             if(nb.fid==inner_x3) k=pmb->ks;
             else k=pmb->ke+1;
             if(nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
@@ -3099,39 +3080,31 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
           int k=pmb->ks;
           // x1 direction
           if(nb.fid==inner_x1 || nb.fid==outer_x1) {
-            int i, jl=pmb->js, ju=pmb->je+1;
+            int i, jl=pmb->js, ju=pmb->je;
             if(nb.fid==inner_x1) i=pmb->is;
             else i=pmb->ie+1;
             if(nb.fi1==0) ju=pmb->js+pmb->block_size.nx2/2-1;
             else jl=pmb->js+pmb->block_size.nx2/2;
             // unpack e2
-            for(int j=jl; j<=ju; j++) {
-              std::cout << "x1face-edge-e2 " << pmb->gid << " " << j << " " << i << " " << e2(k,j,i) << " -> " << buf[p] << std::endl;
+            for(int j=jl; j<=ju; j++)
               e2(k+1,j,i)=e2(k,j,i)=buf[p++];
-            }
             // unpack e3
-            for(int j=jl; j<=ju+1; j++) {
-              std::cout << "x1face-edge-e3 " << pmb->gid << " " << j << " " << i << " " << e3(k,j,i) << " -> " << buf[p] << std::endl;
+            for(int j=jl; j<=ju+1; j++)
               e3(k,j,i)=buf[p++];
-            }
           }
           // x2 direction
           else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
-            int j, il=pmb->is, iu=pmb->ie+1;
+            int j, il=pmb->is, iu=pmb->ie;
             if(nb.fid==inner_x2) j=pmb->js;
             else j=pmb->je+1;
             if(nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
             else il=pmb->is+pmb->block_size.nx1/2;
             // unpack e1
-            for(int i=il; i<=iu; i++) {
-              std::cout << "x2face-edge-e1 " << pmb->gid << " " << j << " " << i << " " << e1(k,j,i) << " -> " << buf[p] << std::endl;
+            for(int i=il; i<=iu; i++)
               e1(k+1,j,i)=e1(k,j,i)=buf[p++];
-            }
             // unpack e3
-            for(int i=il; i<=iu+1; i++) {
-              std::cout << "x2face-edge-e3 " << pmb->gid << " " << j << " " << i << " " << e3(k,j,i) << " -> " << buf[p] << std::endl;
+            for(int i=il; i<=iu+1; i++)
               e3(k,j,i)=buf[p++];
-            }
           }
         }
         else { // 1D
@@ -3168,7 +3141,7 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
         if(pmb->block_size.nx3 > 1) { // 3D
           // x1x2 edge
           if(nb.eid>=0 && nb.eid<4) {
-            int i, j, kl=pmb->ks, ku=pmb->ke+1;
+            int i, j, kl=pmb->ks, ku=pmb->ke;
             if((nb.eid&1)==0) i=pmb->is;
             else i=pmb->ie+1;
             if((nb.eid&2)==0) j=pmb->js;
@@ -3181,7 +3154,7 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
           }
           // x1x3 edge
           else if(nb.eid>=4 && nb.eid<8) {
-            int i, k, jl=pmb->js, ju=pmb->je+1;
+            int i, k, jl=pmb->js, ju=pmb->je;
             if((nb.eid&1)==0) i=pmb->is;
             else i=pmb->ie+1;
             if((nb.eid&2)==0) k=pmb->ks;
@@ -3194,7 +3167,7 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
           }
           // x2x3 edge
           else if(nb.eid>=8 && nb.eid<12) {
-            int j, k, il=pmb->is, iu=pmb->ie+1;
+            int j, k, il=pmb->is, iu=pmb->ie;
             if((nb.eid&1)==0) j=pmb->js;
             else j=pmb->je+1;
             if((nb.eid&2)==0) k=pmb->ks;
@@ -3213,7 +3186,6 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
           if((nb.eid&2)==0) j=pmb->js;
           else j=pmb->je+1;
           // unpack e3
-          std::cout << "x1x2corner-e1 " << pmb->gid << " " << j << " " << i << " " << e3(k,j,i) << " -> " << buf[p] << std::endl;
           e3(k,j,i)=buf[p++];
         }
         emfcor_eflag_[step][nb.eid][nb.fi1] = boundary_completed;
@@ -3242,6 +3214,7 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
   mox1=((int)(lx1&1L)<<1)-1;
   mox2=((int)(lx2&1L)<<1)-1;
   mox3=((int)(lx3&1L)<<1)-1;
+  int cng=pmb->cnghost;
 
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb= pmb->neighbor[n];
@@ -3295,11 +3268,11 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
           else if(nk==-1) rks=pmb->cks-1, rke=pmb->cks-1;
 
           RestrictFieldX1(dst.x1f, ris, rie+1, rjs, rje, rks, rke);
-          if(pmb->block_size.nx2 > 1)// 2D
+          if(pmb->block_size.nx2 > 1)
             RestrictFieldX2(dst.x2f, ris, rie, rjs, rje+1, rks, rke);
-          else
+          else 
             RestrictFieldX2(dst.x2f, ris, rie, rjs, rje, rks, rke);
-          if(pmb->block_size.nx3 > 1) // 3D
+          if(pmb->block_size.nx3 > 1)
             RestrictFieldX3(dst.x3f, ris, rie, rjs, rje, rks, rke+1);
           else
             RestrictFieldX3(dst.x3f, ris, rie, rjs, rje, rks, rke);
@@ -3308,7 +3281,7 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
     }
     // now that the ghost-ghost zones are filled
     // reconstruct finer magnetic fields using the Li & Li 2004 method
-    // caculate the loop indexes of the cells that must be refined.
+    // caculate the loop indexes of the *cells* to be refined.
     int cn = (NGHOST+1)/2;
     int si, ei, sj, ej, sk, ek;
     if(nb.ox1==0) {
@@ -3377,7 +3350,7 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
             Real gx2p = (coarse_b_.x3f(k,j+1,i)-ccval)/dx2p;
             Real gx2c = 0.5*(SIGN(gx2m)+SIGN(gx2p))*std::min(std::abs(gx2m),std::abs(gx2p));
 
-            Real xdt = std::abs(gx1c)*std::max(dx1m,dx1p)
+/*            Real xdt = std::abs(gx1c)*std::max(dx1m,dx1p)
                      + std::abs(gx2c)*std::max(dx2m,dx2p);
 
             Real nmax = ccval, nmin = ccval;
@@ -3391,7 +3364,7 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
               Real fac=maxdiff/xdt;
               gx1c *= fac; gx2c *= fac;
             }
-
+*/
             // store the gradients; not needed for bx3
             // cb3g1(k,j,i)=gx1c; cb3g2(k,j,i)=gx2c;
 
@@ -3434,7 +3407,7 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
             Real gx3p = (coarse_b_.x2f(k+1,j,i)-ccval)/dx3p;
             Real gx3c = 0.5*(SIGN(gx3m)+SIGN(gx3p))*std::min(std::abs(gx3m),std::abs(gx3p));
 
-            Real xdt = std::abs(gx1c)*std::max(dx1m,dx1p)
+/*            Real xdt = std::abs(gx1c)*std::max(dx1m,dx1p)
                      + std::abs(gx3c)*std::max(dx3m,dx3p);
 
             Real nmax = ccval, nmin = ccval;
@@ -3448,7 +3421,7 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
               Real fac=maxdiff/xdt;
               gx1c *= fac; gx3c *= fac;
             }
-
+*/
             // store the gradients; only x3 slope
             cb2g3(k,j,i)=gx3c; // cb2g1(k,j,i)=gx1c; 
 
@@ -3491,7 +3464,7 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
             Real gx3p = (coarse_b_.x1f(k+1,j,i)-ccval)/dx3p;
             Real gx3c = 0.5*(SIGN(gx3m)+SIGN(gx3p))*std::min(std::abs(gx3m),std::abs(gx3p));
 
-            Real xdt = std::abs(gx2c)*std::max(dx2m,dx2p)
+/*            Real xdt = std::abs(gx2c)*std::max(dx2m,dx2p)
                      + std::abs(gx3c)*std::max(dx3m,dx3p);
 
             Real nmax = ccval, nmin = ccval;
@@ -3505,7 +3478,7 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
               Real fac=maxdiff/xdt;
               gx2c *= fac; gx3c *= fac;
             }
-
+*/
             cb1g2(k,j,i)=gx2c; cb1g3(k,j,i)=gx3c;
 
             if(i>=il && i<=iu) {
@@ -3618,7 +3591,7 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
       int il=si, iu=ei+1;
       if((nb.ox1>=0) && (pmb->nblevel[1][nb.ox2+1][nb.ox1  ]>=mylevel)) il++;
       if((nb.ox1<=0) && (pmb->nblevel[1][nb.ox2+1][nb.ox1+2]>=mylevel)) iu--;
-      // step 1. calculate x2 outer surface fields and slopes
+      // step 1. calculate x2 outer surface fields
       for(int j=sj; j<=ej+1; j++) {
         int fj=(j-pmb->cjs)*2+pmb->js;
         for(int i=si; i<=ei; i++) {
@@ -3626,19 +3599,16 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
           Real& x1m = pco->coarse_x1s2(i-1);
           Real& x1c = pco->coarse_x1s2(i);
           Real& x1p = pco->coarse_x1s2(i+1);
-          Real dx1m = x1c - x1m;
-          Real dx1p = x1p - x1c;
           Real& fx1m = pco->x1s2(fi);
           Real& fx1p = pco->x1s2(fi+1);
           Real ccval=coarse_b_.x2f(k,j,i);
 
-          Real gx1m = (ccval-coarse_b_.x2f(k,j,i-1))/dx1m;
-          Real gx1p = (coarse_b_.x2f(k,j,i+1)-ccval)/dx1p;
+          Real gx1m = (ccval-coarse_b_.x2f(k,j,i-1))/(x1c - x1m);
+          Real gx1p = (coarse_b_.x2f(k,j,i+1)-ccval)/(x1p - x1c);
           Real gx1c = 0.5*(SIGN(gx1m)+SIGN(gx1p))*std::min(std::abs(gx1m),std::abs(gx1p));
-
           if(j>=jl && j<=ju) {
-            dst.x2f(fk  ,fj,fi  )=ccval-gx1c*(x1c-fx1m);
-            dst.x2f(fk  ,fj,fi+1)=ccval+gx1c*(fx1p-x1c);
+            dst.x2f(fk,fj,fi  )=ccval-gx1c*(x1c-fx1m);
+            dst.x2f(fk,fj,fi+1)=ccval+gx1c*(fx1p-x1c);
           }
         }
       }
@@ -3659,12 +3629,11 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
           Real gx2m = (ccval-coarse_b_.x1f(k,j-1,i))/dx2m;
           Real gx2p = (coarse_b_.x1f(k,j+1,i)-ccval)/dx2p;
           Real gx2c = 0.5*(SIGN(gx2m)+SIGN(gx2p))*std::min(std::abs(gx2m),std::abs(gx2p));
-
           cb1g2(k,j,i)=gx2c;
 
           if(i>=il && i<=iu) {
-            dst.x1f(fk  ,fj  ,fi)=ccval-gx2c*(x2c-fx2m);
-            dst.x1f(fk  ,fj+1,fi)=ccval+gx2c*(fx2p-x2c);
+            dst.x1f(fk,fj  ,fi)=ccval-gx2c*(x2c-fx2m);
+            dst.x1f(fk,fj+1,fi)=ccval+gx2c*(fx2p-x2c);
           }
         }
       }
@@ -3676,8 +3645,8 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
         Real& x2m = pco->coarse_x2s1(j-1);
         Real& x2c = pco->coarse_x2s1(j);
         Real& x2p = pco->coarse_x2s1(j+1);
-        Real& fx2m = pco->x2v(fj);
-        Real& fx2p = pco->x2v(fj+1);
+        Real& fx2m = pco->x2s1(fj);
+        Real& fx2p = pco->x2s1(fj+1);
         pco->Face1Area(fk,fj  ,fsi,fei+1,sarea_x1_[0][0]);
         pco->Face1Area(fk,fj+1,fsi,fei+1,sarea_x1_[0][1]);
         pco->Face2Area(fk,fj  ,fsi,fei,sarea_x2_[0][0]);
@@ -3685,15 +3654,16 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
         pco->Face2Area(fk,fj+2,fsi,fei,sarea_x2_[0][2]);
         for(int i=si; i<=ei; i++) {
           int fi=(i-pmb->cis)*2+pmb->is;
+
           // step 3. bx1
           Real dx1l=pco->x1f(fi+1)-pco->x1f(fi);
           Real dx1r=pco->x1f(fi+2)-pco->x1f(fi+1);
           Real slc = (cb1g2(k,j,i)*dx1r+cb1g2(k,j,i+1)*dx1l)/(dx1l+dx1r);
-          Real bx1c = ((sarea_x1_[0][0](fi)+sarea_x1_[0][1](fi))*coarse_b_.x1f(k,j,i)
+          Real bx1c = (sarea_x1_[0][0](fi)*dst.x1f(fk,fj,fi)+sarea_x1_[0][1](fi)*dst.x1f(fk,fj+1,fi)
                       -sarea_x2_[0][2](fi)*dst.x2f(fk,fj+2,fi)+sarea_x2_[0][0](fi)*dst.x2f(fk,fj,fi))
                       /(sarea_x1_[0][0](fi+1)+sarea_x1_[0][1](fi+1));
-          dst.x1f(fk  ,fj  ,fi+1)=bx1c-slc*(x2c-fx2m);
-          dst.x1f(fk  ,fj+1,fi+1)=bx1c+slc*(fx2p-x2c);
+          dst.x1f(fk,fj  ,fi+1)=bx1c-slc*(x2c-fx2m);
+          dst.x1f(fk,fj+1,fi+1)=bx1c+slc*(fx2p-x2c);
           // step 4. bx2
           dst.x2f(fk,fj+1,fi  )=(dst.x1f(fk,fj,fi  )*sarea_x1_[0][0](fi  )
                                 -dst.x1f(fk,fj,fi+1)*sarea_x1_[0][0](fi+1)
@@ -3735,7 +3705,7 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
           Real gx2m = (ccval-coarse_b_.x3f(k,j-1,i))/dx2m;
           Real gx2p = (coarse_b_.x3f(k,j+1,i)-ccval)/dx2p;
           Real gx2c = 0.5*(SIGN(gx2m)+SIGN(gx2p))*std::min(std::abs(gx2m),std::abs(gx2p));
-          Real xdt = std::abs(gx1c)*std::max(dx1m,dx1p)
+/*          Real xdt = std::abs(gx1c)*std::max(dx1m,dx1p)
                    + std::abs(gx2c)*std::max(dx2m,dx2p);
 
           Real nmax = ccval, nmin = ccval;
@@ -3749,6 +3719,7 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
             Real fac=maxdiff/xdt;
             gx1c *= fac; gx2c *= fac;
           }
+*/
 
           // interpolate on to the finer grid
           dst.x3f(fk,fj  ,fi  )=dst.x3f(fk+1,fj  ,fi  )=ccval-gx1c*dx1fm-gx2c*dx2fm;
@@ -3794,7 +3765,6 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
                        =coarse_b_.x3f(0,0,si)+gxc*(pco->x1s3(fi+1)-pco->coarse_x1s3(si));
     }
   }
-
   return;
 }
 
