@@ -22,14 +22,22 @@
 #include <cassert>
 
 // Declarations
-void OutflowPrimInnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons,
-    int is, int ie, int js, int je, int ks, int ke);
-void OutflowPrimOuterFluid(MeshBlock *pmb, AthenaArray<Real> &cons,
-    int is, int ie, int js, int je, int ks, int ke);
-void FixedInnerField(MeshBlock *pmb, InterfaceField &b,
-    int is, int ie, int js, int je, int ks, int ke);
-void FixedOuterField(MeshBlock *pmb, InterfaceField &b,
-    int is, int ie, int js, int je, int ks, int ke);
+void InnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+    int ks, int ke);
+void OuterFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+    int ks, int ke);
+void TopFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+    int ks, int ke);
+void BottomFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js,
+    int je, int ks, int ke);
+void InnerField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
+    int ks, int ke);
+void OuterField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
+    int ks, int ke);
+void TopField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
+    int ks, int ke);
+void BottomField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
+    int ks, int ke);
 static void reset_l_from_r_peak();
 static Real log_h_aux(Real r, Real sin_theta);
 static void calculate_velocity_in_torus(Real r, Real sin_theta, Real *pu0, Real *pu3);
@@ -254,7 +262,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
             Real r_2, theta_2, phi_2;
             pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1f(i),
                 pmb->pcoord->x2f(j+1), pmb->pcoord->x3v(k), &r_2, &theta_2, &phi_2);
-            Real bbr = (a_phi_edges(j+1,i) - a_phi_edges(j,i)) / (theta_2 - theta_1);
+            Real bbr = -(a_phi_edges(j+1,i) - a_phi_edges(j,i)) / (theta_2 - theta_1);
             Real a_phi_1, a_phi_2;
             if (i == il)
             {
@@ -477,7 +485,11 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   // Normalize magnetic field to have desired beta
   if (MAGNETIC_FIELDS_ENABLED)
   {
-    Real normalization = std::sqrt(beta_actual/beta_min);
+    Real normalization;
+    if (beta_min < 0.0)
+      normalization = 0.0;
+    else
+      normalization = std::sqrt(beta_actual/beta_min);
     for (int k = kl; k <= ku+1; ++k)
       for (int j = jl; j <= ju+1; ++j)
         for (int i = il; i <= iu+1; ++i)
@@ -504,165 +516,139 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   bb.DeleteAthenaArray();
 
   // Enroll boundary functions
-  pmb->pbval->EnrollFluidBoundaryFunction(inner_x1, OutflowPrimInnerFluid);
-  pmb->pbval->EnrollFluidBoundaryFunction(outer_x1, OutflowPrimOuterFluid);
+  pmb->pbval->EnrollFluidBoundaryFunction(inner_x1, InnerFluid);
+  pmb->pbval->EnrollFluidBoundaryFunction(outer_x1, OuterFluid);
+  pmb->pbval->EnrollFluidBoundaryFunction(inner_x2, TopFluid);
+  pmb->pbval->EnrollFluidBoundaryFunction(outer_x2, BottomFluid);
   if (MAGNETIC_FIELDS_ENABLED)
   {
-    pmb->pbval->EnrollFieldBoundaryFunction(inner_x1, FixedInnerField);
-    pmb->pbval->EnrollFieldBoundaryFunction(outer_x1, FixedOuterField);
+    pmb->pbval->EnrollFieldBoundaryFunction(inner_x1, InnerField);
+    pmb->pbval->EnrollFieldBoundaryFunction(outer_x1, OuterField);
+    pmb->pbval->EnrollFieldBoundaryFunction(inner_x2, TopField);
+    pmb->pbval->EnrollFieldBoundaryFunction(outer_x2, BottomField);
   }
   return;
 }
 
 // Inner fluid boundary condition
-// Inputs:
-//   pmb: pointer to block
-// Outputs:
-//   cons: conserved quantities set along inner x1-boundary
-// Notes:
-//   TODO: remove prim hack
-//   TODO: only works in hydro
-void OutflowPrimInnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons,
-    int is, int ie, int js, int je, int ks, int ke)
+// TODO: implement when not hacking inversion
+void InnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+    int ks, int ke)
 {
-  AthenaArray<Real> *pprim;
-  if (&cons == &pmb->pfluid->u)
-    pprim = &pmb->pfluid->w;
-  else if (&cons == &pmb->pfluid->u1)
-    pprim = &pmb->pfluid->w1;
-  else
-    assert(0);
-  AthenaArray<Real> g, gi;
-  g.NewAthenaArray(NMETRIC, is);
-  gi.NewAthenaArray(NMETRIC, is);
-  for (int k = ks; k <= ke; ++k)
-    for (int j = js; j <= je; ++j)
-    {
-      pmb->pcoord->CellMetric(k, j, is-NGHOST, is-1, g, gi);
-      Real uu1 = (*pprim)(IVX,k,j,is);
-      Real uu2 = (*pprim)(IVY,k,j,is);
-      Real uu3 = (*pprim)(IVZ,k,j,is);
-      for (int i = is-NGHOST; i <= is-1; ++i)
-      {
-        Real &rho = (*pprim)(IDN,k,j,i);
-        Real &pgas = (*pprim)(IEN,k,j,i);
-        rho = (*pprim)(IDN,k,j,is);
-        pgas = (*pprim)(IEN,k,j,is);
-        (*pprim)(IVX,k,j,i) = uu1;
-        (*pprim)(IVY,k,j,i) = uu2;
-        (*pprim)(IVZ,k,j,i) = uu3;
-        Real alpha = std::sqrt(-1.0/gi(I00,i));
-        Real tmp = g(I11,i)*uu1*uu1 + 2.0*g(I12,i)*uu1*uu2 + 2.0*g(I13,i)*uu1*uu3
-                 + g(I22,i)*uu2*uu2 + 2.0*g(I23,i)*uu2*uu3
-                 + g(I33,i)*uu3*uu3;
-        Real gamma = std::sqrt(1.0 + tmp);
-        Real u0 = gamma / alpha;
-        Real u1 = uu1 - alpha * gamma * gi(I01,i);
-        Real u2 = uu2 - alpha * gamma * gi(I02,i);
-        Real u3 = uu3 - alpha * gamma * gi(I03,i);
-        Real u_0, u_1, u_2, u_3;
-        pmb->pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
-        Real gamma_adi = pmb->pfluid->pf_eos->GetGamma();
-        Real gamma_prime = gamma_adi/(gamma_adi-1.0);
-        Real wgas = rho + gamma_prime * pgas;
-        cons(IDN,k,j,i) = rho * u0;
-        cons(IEN,k,j,i) = wgas * u0 * u_0 + pgas;
-        cons(IM1,k,j,i) = wgas * u0 * u_1;
-        cons(IM2,k,j,i) = wgas * u0 * u_2;
-        cons(IM3,k,j,i) = wgas * u0 * u_3;
-      }
-    }
-  g.DeleteAthenaArray();
-  gi.DeleteAthenaArray();
   return;
 }
 
 // Outer fluid boundary condition
-// Inputs:
-//   pmb: pointer to block
-// Outputs:
-//   cons: conserved quantities set along outer x1-boundary
-// Notes:
-//   TODO: remove prim hack
-//   TODO: only works in hydro
-void OutflowPrimOuterFluid(MeshBlock *pmb, AthenaArray<Real> &cons,
-    int is, int ie, int js, int je, int ks, int ke)
+// TODO: implement when not hacking inversion
+void OuterFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+    int ks, int ke)
 {
-  AthenaArray<Real> *pprim;
-  if (&cons == &pmb->pfluid->u)
-    pprim = &pmb->pfluid->w;
-  else if (&cons == &pmb->pfluid->u1)
-    pprim = &pmb->pfluid->w1;
-  else
-    assert(0);
-  AthenaArray<Real> g, gi;
-  g.NewAthenaArray(NMETRIC,ie+NGHOST+1);
-  gi.NewAthenaArray(NMETRIC,ie+NGHOST+1);
+  return;
+}
+
+// Top fluid boundary condition
+void TopFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+    int ks, int ke)
+{
   for (int k = ks; k <= ke; ++k)
-    for (int j = js; j <= je; ++j)
-    {
-      pmb->pcoord->CellMetric(k, j, ie+1, ie+NGHOST, g, gi);
-      Real uu1 = (*pprim)(IVX,k,j,ie);
-      Real uu2 = (*pprim)(IVY,k,j,ie);
-      Real uu3 = (*pprim)(IVZ,k,j,ie);
-      for (int i = ie+1; i <= ie+NGHOST; ++i)
+    for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
+      for (int n = 0; n < NFLUID; ++n)
       {
-        Real &rho = (*pprim)(IDN,k,j,i);
-        Real &pgas = (*pprim)(IEN,k,j,i);
-        rho = (*pprim)(IDN,k,j,ie);
-        pgas = (*pprim)(IEN,k,j,ie);
-        (*pprim)(IVX,k,j,i) = uu1;
-        (*pprim)(IVY,k,j,i) = uu2;
-        (*pprim)(IVZ,k,j,i) = uu3;
-        Real alpha = std::sqrt(-1.0/gi(I00,i));
-        Real tmp = g(I11,i)*uu1*uu1 + 2.0*g(I12,i)*uu1*uu2 + 2.0*g(I13,i)*uu1*uu3
-                 + g(I22,i)*uu2*uu2 + 2.0*g(I23,i)*uu2*uu3
-                 + g(I33,i)*uu3*uu3;
-        Real gamma = std::sqrt(1.0 + tmp);
-        Real u0 = gamma / alpha;
-        Real u1 = uu1 - alpha * gamma * gi(I01,i);
-        Real u2 = uu2 - alpha * gamma * gi(I02,i);
-        Real u3 = uu3 - alpha * gamma * gi(I03,i);
-        Real u_0, u_1, u_2, u_3;
-        pmb->pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
-        Real gamma_adi = pmb->pfluid->pf_eos->GetGamma();
-        Real gamma_prime = gamma_adi/(gamma_adi-1.0);
-        Real wgas = rho + gamma_prime * pgas;
-        cons(IDN,k,j,i) = rho * u0;
-        cons(IEN,k,j,i) = wgas * u0 * u_0 + pgas;
-        cons(IM1,k,j,i) = wgas * u0 * u_1;
-        cons(IM2,k,j,i) = wgas * u0 * u_2;
-        cons(IM3,k,j,i) = wgas * u0 * u_3;
+        Real sign = (n == IM2 or n == IM3) ? -1.0 : 1.0;
+        for (int i = is; i <= ie; ++i)
+          cons(n,k,js-j_offset,i) = sign * cons(n,k,js+j_offset-1,i);
       }
-    }
-  g.DeleteAthenaArray();
-  gi.DeleteAthenaArray();
+  return;
+}
+
+// Bottom fluid boundary condition
+void BottomFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js,
+    int je, int ks, int ke)
+{
+  for (int k = ks; k <= ke; ++k)
+    for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
+      for (int n = 0; n < NFLUID; ++n)
+      {
+        Real sign = (n == IM2 or n == IM3) ? -1.0 : 1.0;
+        for (int i = is; i <= ie; ++i)
+          cons(n,k,je+j_offset,i) = sign * cons(n,k,je-j_offset+1,i);
+      }
   return;
 }
 
 // Inner field boundary condition
-// Inputs:
-//   pmb: pointer to block
-// Outputs:
-//   b: magnetic field
-// Notes:
-//   does nothing
-void FixedInnerField(MeshBlock *pmb, InterfaceField &b,
-    int is, int ie, int js, int je, int ks, int ke)
+void InnerField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
+    int ks, int ke)
 {
+  for (int k = ks; k <= ke; ++k)
+    for (int j = js; j <= je; ++j)
+      for (int i_offset = 1; i_offset <= NGHOST; ++i_offset)
+        bb.x1f(k,j,is-i_offset) = bb.x1f(k,j,is);
+  for (int k = ks; k <= ke; ++k)
+    for (int j = js; j <= je+1; ++j)
+      for (int i_offset=1; i_offset <= NGHOST; ++i_offset)
+        bb.x2f(k,j,is-i_offset) = bb.x2f(k,j,is);
+  for (int k = ks; k <= ke+1; ++k)
+    for (int j = js; j <= je; ++j)
+      for (int i_offset=1; i_offset <= NGHOST; ++i_offset)
+        bb.x3f(k,j,is-i_offset) = bb.x3f(k,j,is);
   return;
 }
 
 // Outer field boundary condition
-// Inputs:
-//   pmb: pointer to block
-// Outputs:
-//   b: magnetic field
-// Notes:
-//   does nothing
-void FixedOuterField(MeshBlock *pmb, InterfaceField &b,
-    int is, int ie, int js, int je, int ks, int ke)
+void OuterField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
+    int ks, int ke)
 {
+  for (int k = ks; k <= ke; ++k)
+    for (int j = js; j <= je; ++j)
+      for (int i_offset = 1; i_offset <= NGHOST; ++i_offset)
+        bb.x1f(k,j,ie+1+i_offset) = bb.x1f(k,j,ie+1);
+  for (int k = ks; k <= ke; ++k)
+    for (int j = js; j <= je+1; ++j)
+      for (int i_offset=1; i_offset <= NGHOST; ++i_offset)
+        bb.x2f(k,j,ie+i_offset) = bb.x2f(k,j,ie);
+  for (int k = ks; k <= ke+1; ++k)
+    for (int j = js; j <= je; ++j)
+      for (int i_offset=1; i_offset <= NGHOST; ++i_offset)
+        bb.x3f(k,j,ie+i_offset) = bb.x3f(k,j,ie);
+  return;
+}
+
+// Top field boundary condition
+void TopField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
+    int ks, int ke)
+{
+  for (int k = ks; k <= ke; ++k)
+    for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
+      for (int i = is; i <= ie+1; ++i)
+        bb.x1f(k,js-j_offset,i) = bb.x1f(k,js+j_offset-1,i);
+  for (int k = ks; k <= ke; ++k)
+    for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
+      for (int i = is; i <= ie; ++i)
+        bb.x2f(k,js-j_offset,i) = -bb.x2f(k,js+j_offset,i);
+  for (int k = ks; k <= ke+1; ++k)
+    for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
+      for (int i = is; i <= ie; ++i)
+        bb.x3f(k,js-j_offset,i) = -bb.x3f(k,js+j_offset-1,i);
+  return;
+}
+
+// Bottom field boundary condition
+void BottomField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
+    int ks, int ke)
+{
+  for (int k = ks; k <= ke; ++k)
+    for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
+      for (int i = is; i <= ie+1; ++i)
+        bb.x1f(k,je+j_offset,i) = bb.x1f(k,je-j_offset+1,i);
+  for (int k = ks; k <= ke; ++k)
+    for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
+      for (int i = is; i <= ie; ++i)
+        bb.x2f(k,je+1+j_offset,i) = -bb.x2f(k,je+1-j_offset,i);
+  for (int k = ks; k <= ke+1; ++k)
+    for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
+      for (int i = is; i <= ie; ++i)
+        bb.x3f(k,je+j_offset,i) = -bb.x3f(k,je-j_offset+1,i);
   return;
 }
 

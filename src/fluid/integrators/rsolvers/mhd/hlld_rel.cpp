@@ -109,6 +109,9 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
   #pragma simd
   for (int i = il; i <= iu; ++i)
   {
+    // Prepare flag indicating HLLD should be abandoned in favor of HLLE
+    bool switch_to_hlle = false;
+
     // Calculate interface velocity
     Real v_interface = 0.0;
     if (GENERAL_RELATIVITY)
@@ -163,7 +166,7 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     const Real &bbz_r = prim_r(IBZ,i);
 
     // Extract normal magnetic field
-    const Real &bbx = bb(k,j,i);
+    const Real &bbx = bb_normal_(i);
 
     // Calculate 4-magnetic field in left state
     Real b_l[4];
@@ -268,13 +271,17 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     {
       Real a1 = cons_hll[IEN] - flux_hll[ivx];
       Real a0 = cons_hll[ivx]*flux_hll[IEN] - flux_hll[ivx]*cons_hll[IEN];
-      ptot_init= quadratic_root(a1, a0, true);                              // (MUB 55)
+      ptot_init = quadratic_root(a1, a0, true);                              // (MUB 55)
     }
     else  // strong magnetic field
       ptot_init = ptot_hll;
+    if (not std::isfinite(ptot_init) or ptot_init <= 0.0)
+      switch_to_hlle = true;
 
     // Apply secant method to find total pressure
     Real ptot_true = FindRootSecant(ptot_init, bbx, lambda_l, lambda_r, r_l, r_r, ivx);
+    if (not std::isfinite(ptot_true) or ptot_true <= 0.0)
+      switch_to_hlle = true;
 
     // Calculate velocity in aL region
     Real al = r_l[ivx] - lambda_l*r_l[IEN] + ptot_true*(1.0-SQR(lambda_l));  // (MUB 26)
@@ -429,6 +436,8 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
           cons_(n,i) = cons_l[n];
         else if (lambda_r <= v_interface)  // R region
           cons_(n,i) = cons_r[n];
+        else if (switch_to_hlle)  // HLL region
+          cons_(n,i) = cons_hll[n];
         else if (lambda_al >= v_interface-vc_extension)  // aL region
           cons_(n,i) = cons_al[n];
         else if (lambda_ar <= v_interface+vc_extension)  // aR region
@@ -444,6 +453,8 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
         flux(n,i) = flux_l[n];
       else if (lambda_r <= v_interface)  // R region
         flux(n,i) = flux_r[n];
+      else if (switch_to_hlle)  // HLL region
+        flux(n,i) = flux_hll[n];
       else if (lambda_al >= v_interface-vc_extension)  // aL region
         flux(n,i) = flux_al[n];
       else if (lambda_ar <= v_interface+vc_extension)  // aR region
