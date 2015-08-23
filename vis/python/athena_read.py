@@ -222,13 +222,33 @@ def athdf(filename, data=None, quantities=None):
     # Prepare arrays if needed
     if data is None:
       nx1 = block_size[0] * len(edges_unique[0])
-      nx2 = block_size[1] * len(edges_unique[1]) if dims > 1 else 1
-      nx3 = block_size[2] * len(edges_unique[2]) if dims > 2 else 1
+      nx2 = block_size[1] * len(edges_unique[1]) if dims >= 2 else 1
+      nx3 = block_size[2] * len(edges_unique[2]) if dims >= 3 else 1
       data = {}
+      data[u'x1f'] = np.empty(nx1+1)
+      if dims >= 2:
+        data[u'x2f'] = np.empty(nx2+1)
+      if dims >= 3:
+        data[u'x3f'] = np.empty(nx3+1)
       for q in quantities:
         data[q] = np.empty((nx3,nx2,nx1))
 
-    # Read data
+    # Read interface data
+    for n,block_name in zip(range(num_blocks),f.keys()):
+      for dim,coord in zip(range(dims),coords):
+        need_interfaces = True
+        for dim_other in range(dims):
+          if dim_other == dim:
+            continue
+          if indices[n,dim_other,0] != 0:
+            need_interfaces = False
+        if not need_interfaces:
+          continue
+        data[coord][indices[n,dim,0]:indices[n,dim,1]] = f[block_name][coord][:-1]
+        if indices[n,dim,1] == block_size[dim] * len(edges_unique[dim]):
+          data[coord][indices[n,dim,1]] = f[block_name][coord][-1]
+
+    # Read value data
     for n,block_name in zip(range(num_blocks),f.keys()):
       for q in quantities:
         data[q][indices[n,2,0]:indices[n,2,1],indices[n,1,0]:indices[n,1,1],\
