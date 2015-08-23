@@ -41,8 +41,9 @@ public:
       Real FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx);
     #endif  // !MAGNETIC_FIELDS_ENABLED
     void SoundSpeedsSR(Real, Real, Real, Real, Real *, Real *) {return;}
-    void FastMagnetosonicSpeedsSR(Real, Real, const Real [], const Real [], Real *,
-        Real *) {return;}
+    void FastMagnetosonicSpeedsSR(const AthenaArray<Real> &,
+        const AthenaArray<Real> &, int, int, int, AthenaArray<Real> &,
+        AthenaArray<Real> &) {return;}
     void SoundSpeedsGR(Real, Real, Real, Real, Real, Real, Real, Real *, Real *)
         {return;}
     void FastMagnetosonicSpeedsGR(Real, Real, Real, Real, Real, Real, Real, Real, Real *,
@@ -53,12 +54,14 @@ public:
     #if !MAGNETIC_FIELDS_ENABLED  // hydro: MHD defined as no-op
       void SoundSpeedsSR(Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
           Real *plambda_plus, Real *plambda_minus);
-      void FastMagnetosonicSpeedsSR(Real, Real, const Real [], const Real [], Real *,
-          Real *) {return;}
+      void FastMagnetosonicSpeedsSR(const AthenaArray<Real> &,
+          const AthenaArray<Real> &, int, int, int, AthenaArray<Real> &,
+          AthenaArray<Real> &) {return;}
     #else  // MHD: hydro defined as no-op
       void SoundSpeedsSR(Real, Real, Real, Real, Real *, Real *) {return;}
-      void FastMagnetosonicSpeedsSR(Real rho, Real pgas, const Real u[4], const Real b[4],
-          Real *plambda_plus, Real *plambda_minus);
+      void FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
+          const AthenaArray<Real> &bbx_vals, int il, int iu, int ivx,
+          AthenaArray<Real> &lambdas_p, AthenaArray<Real> &lambdas_m);
     #endif  // !MAGNETIC_FIELDS_ENABLED
     void SoundSpeedsGR(Real, Real, Real, Real, Real, Real, Real, Real *, Real *)
         {return;}
@@ -70,8 +73,9 @@ public:
     #if !MAGNETIC_FIELDS_ENABLED  // hydro: MHD defined as no-op
       void SoundSpeedsSR(Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
           Real *plambda_plus, Real *plambda_minus);
-      void FastMagnetosonicSpeedsSR(Real, Real, const Real [], const Real [], Real *,
-          Real *) {return;}
+      void FastMagnetosonicSpeedsSR(const AthenaArray<Real> &,
+          const AthenaArray<Real> &, int, int, int, AthenaArray<Real> &,
+          AthenaArray<Real> &) {return;}
       void SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1,
           Real g00, Real g01, Real g11,
           Real *plambda_plus, Real *plambda_minus);
@@ -79,8 +83,9 @@ public:
           Real *, Real *) {return;}
     #else  // MHD: hydro defined as no-op
       void SoundSpeedsSR(Real, Real, Real, Real, Real *, Real *) {return;}
-      void FastMagnetosonicSpeedsSR(Real rho, Real pgas, const Real u[4], const Real b[4],
-          Real *plambda_plus, Real *plambda_minus);
+      void FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
+          const AthenaArray<Real> &bbx_vals, int il, int iu, int ivx,
+          AthenaArray<Real> &lambdas_p, AthenaArray<Real> &lambdas_m);
       void SoundSpeedsGR(Real, Real, Real, Real, Real, Real, Real, Real *, Real *)
           {return;}
       void FastMagnetosonicSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Real b_sq,

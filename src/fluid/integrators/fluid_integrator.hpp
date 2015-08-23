@@ -70,8 +70,12 @@ private:
   // scratch space used in integrator
   AthenaArray<Real> wl_, wr_, flx_, jflx_j_, kflx_k_; 
   AthenaArray<Real> face_area_, face_area_p1_, cell_volume_;
-  AthenaArray<Real> bb_normal_;  // normal magnetic field, used in (SR/GR)MHD
-  AthenaArray<Real> g_, gi_;     // metric and inverse, used in some GR Riemann solvers
-  AthenaArray<Real> cons_;       // conserved state, used in some GR Riemann solvers
+  AthenaArray<Real> bb_normal_;    // normal magnetic field, for (SR/GR)MHD
+  AthenaArray<Real> lambdas_p_l_;  // most positive wavespeeds in left state
+  AthenaArray<Real> lambdas_m_l_;  // most negative wavespeeds in left state
+  AthenaArray<Real> lambdas_p_r_;  // most positive wavespeeds in right state
+  AthenaArray<Real> lambdas_m_r_;  // most negative wavespeeds in right state
+  AthenaArray<Real> g_, gi_;       // metric and inverse, for some GR Riemann solvers
+  AthenaArray<Real> cons_;         // conserved state, for some GR Riemann solvers
 };
 #endif

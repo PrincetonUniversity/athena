@@ -30,10 +30,6 @@ static Real QNResidualPrime(Real w_guess, Real d_norm, Real q_norm_sq, Real bbb_
     Real q_bbb_sq, Real gamma_prime);
 static void neighbor_average(AthenaArray<Real> &prim, int n, int k, int j, int i,
     int kl, int ku, int jl, int ju, int il, int iu);
-static Real quadratic_root(Real a1, Real a0, bool greater_root);
-static Real cubic_root_real(Real a2, Real a1, Real a0);
-static void quartic_root_minmax(Real a3, Real a2, Real a1, Real a0, Real *pmin_value,
-    Real *pmax_value);
 
 // Constructor
 // Inputs:
@@ -430,91 +426,196 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
 
 // Function for calculating relativistic fast wavespeeds
 // Inputs:
-//   rho: density
-//   pgas: gas pressure
-//   u: contravariant components of 4-velocity
-//   b: contravariant components of 4-magnetic field
+//   prim: 1D array of primitive states
+//   bbx_vals: 1D array of B^x
+//   il,iu: lower and upper x1-indices
+//   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
 // Outputs:
-//   plambda_plus: value set to most positive wavespeed
-//   plambda_minus: value set to most negative wavespeed
+//   lambdas_p,lambdas_m: 1D arrays set to +/- wavespeeds
 // Notes:
-//   inputs assume x is normal direction
-//   works in locally flat coordinates
-//   same function as in adiabatic_mhd_sr.cpp
 //   references Mignone & Bodo 2005, MNRAS 364 126 (MB2005)
 //   references Mignone & Bodo 2006, MNRAS 368 1040 (MB2006)
-void FluidEqnOfState::FastMagnetosonicSpeedsSR(Real rho, Real pgas, const Real u[4],
-    const Real b[4], Real *plambda_plus, Real *plambda_minus)
+//   references Numerical Recipes, 3rd ed. (NR)
+//   follows advice in NR for avoiding large cancellations in solving quadratics
+//   same function as in adiabatic_mhd_sr.cpp
+void FluidEqnOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
+    const AthenaArray<Real> &bbx_vals, int il, int iu, int ivx,
+    AthenaArray<Real> &lambdas_p, AthenaArray<Real> &lambdas_m)
 {
   // Parameters
   const double v_limit = 1.0e-12;  // squared velocities less than this are considered 0
   const double b_limit = 1.0e-14;  // squared B^x less than this is considered 0
 
+  // Calculate cyclic permutations of indices
+  int ivy = IVX + ((ivx-IVX)+1)%3;
+  int ivz = IVX + ((ivx-IVX)+2)%3;
+
   // Calculate ratio of specific heats
   const Real gamma_adi = gamma_;
   const Real gamma_adi_red = gamma_adi/(gamma_adi-1.0);
 
-  // Calculate 3-vector components
-  Real vx = u[1]/u[0];
-  Real vy = u[2]/u[0];
-  Real vz = u[3]/u[0];
-  Real bx = b[1]*u[0] - b[0]*u[1];
-  Real by = b[2]*u[0] - b[0]*u[2];
-  Real bz = b[3]*u[0] - b[0]*u[3];
-
-  // Calculate intermediate quantities
-  Real v_sq = SQR(vx) + SQR(vy) + SQR(vz);
-  Real gamma_rel_sq = 1.0/(1.0-v_sq);
-  Real rho_h = rho + gamma_adi_red * pgas;
-  Real cs_sq = gamma_adi * pgas / rho_h;                          // (MB2005 4)
-  Real bcov_sq = -SQR(b[0]) + SQR(b[1]) + SQR(b[2]) + SQR(b[3]);
-  Real bx_sq = SQR(bx);
-
-  // Case out on velocity and magnetic field
-  if (v_sq < v_limit)  // vanishing velocity
+  // Go through states
+  #pragma simd
+  for (int i = il; i <= iu; ++i)
   {
-    Real denominator = rho_h + bcov_sq;
-    Real a1 = -(bcov_sq + cs_sq * (rho_h + bx_sq)) / denominator;
-    Real a0 = cs_sq * bx_sq / denominator;
-    Real lambda_sq = quadratic_root(a1, a0, true);                 // (MB2006 57)
-    *plambda_plus = std::sqrt(lambda_sq);
-    *plambda_minus = -*plambda_plus;
-  }
-  else  // nonzero velocity
-  {
-    Real vx_sq = SQR(vx);
-    if (bx_sq < b_limit)  // vanishing normal magnetic field
+    // Extract primitives
+    const Real &rho = prim(IDN,i);
+    const Real &pgas = prim(IEN,i);
+    Real u[4], vx, vy, vz;
+    if (GENERAL_RELATIVITY)
     {
-      Real v_dot_b_perp = vy*by + vz*bz;
-      Real q = bcov_sq - cs_sq*SQR(v_dot_b_perp);
-      Real denominator = rho_h * (cs_sq + gamma_rel_sq*(1.0-cs_sq)) + q;
-      Real a1 = -2.0 * rho_h * gamma_rel_sq * vx * (1.0-cs_sq)
-          / denominator;
-      Real a0 = (rho_h * (-cs_sq + gamma_rel_sq*vx_sq*(1.0-cs_sq)) - q)
-          / denominator;
-      *plambda_plus = quadratic_root(a1, a0, true);                       // (MB2006 58)
-      *plambda_minus = quadratic_root(a1, a0, false);                     // (MB2006 58)
+      u[1] = prim(ivx,i);
+      u[2] = prim(ivy,i);
+      u[3] = prim(ivz,i);
+      u[0] = std::sqrt(1.0 + SQR(u[1]) + SQR(u[2]) + SQR(u[3]));
+      vx = u[1]/u[0];
+      vy = u[2]/u[0];
+      vz = u[3]/u[0];
     }
-    else  // nonzero normal magnetic field
+    else  // SR
     {
-      Real vx_3 = vx_sq * vx;
-      Real vx_4 = SQR(vx_sq);
-      Real bcovt_sq = SQR(b[0]);
-      Real bcovx_sq = SQR(b[1]);
-      Real var_1 = SQR(gamma_rel_sq) * rho_h * (1.0-cs_sq);
-      Real var_2 = gamma_rel_sq * (bcov_sq + rho_h * cs_sq);
-      Real denominator = var_1 + var_2 - cs_sq * bcovt_sq;
-      Real a3 = (-(4.0*var_1+2.0*var_2)*vx + 2.0*cs_sq*b[0]*b[1])
-          / denominator;
-      Real a2 = (6.0*var_1*vx_sq + var_2*(vx_sq-1.0)
-          + cs_sq*(bcovt_sq-bcovx_sq)) / denominator;
-      Real a1 = (-4.0*var_1*vx_3 + 2.0*var_2*vx - 2.0*cs_sq*b[0]*b[1])
-          / denominator;
-      Real a0 = (var_1*vx_4 - var_2*vx_sq + cs_sq*bcovx_sq)
-        / denominator;
-      quartic_root_minmax(a3, a2, a1, a0, plambda_minus, plambda_plus);   // (MB2006 56)
-      *plambda_minus = std::max(*plambda_minus, -1.0);
-      *plambda_plus = std::min(*plambda_plus, 1.0);
+      vx = prim(ivx,i);
+      vy = prim(ivy,i);
+      vz = prim(ivz,i);
+      u[0] = std::sqrt(1.0 / (1.0 - SQR(vx) - SQR(vy) - SQR(vz)));
+      u[1] = u[0]*vx;
+      u[2] = u[0]*vy;
+      u[3] = u[0]*vz;
+    }
+    const Real &bbx = bbx_vals(i);
+    const Real &bby = prim(IBY,i);
+    const Real &bbz = prim(IBZ,i);
+
+    // Calculate contravariant magnetic field
+    Real b[4];
+    b[0] = bbx*u[1] + bby*u[2] + bbz*u[3];
+    b[1] = (bbx + b[0] * u[1]) / u[0];
+    b[2] = (bby + b[0] * u[2]) / u[0];
+    b[3] = (bbz + b[0] * u[3]) / u[0];
+
+    // Calculate intermediate quantities
+    Real v_sq = SQR(vx) + SQR(vy) + SQR(vz);
+    Real gamma_rel_sq = 1.0/(1.0-v_sq);
+    Real w_gas = rho + gamma_adi_red * pgas;
+    Real cs_sq = gamma_adi * pgas / w_gas;                       // (MB2005 4)
+    Real b_sq = -SQR(b[0]) + SQR(b[1]) + SQR(b[2]) + SQR(b[3]);
+    Real bbx_sq = SQR(bbx);
+
+    // Calculate wavespeeds in vanishing velocity case (MB2006 57)
+    Real lambda_plus_no_v, lambda_minus_no_v;
+    {
+      Real w_tot = w_gas + b_sq;
+      Real a1 = -(b_sq + cs_sq * (w_gas + bbx_sq)) / w_tot;
+      Real a0 = cs_sq * bbx_sq / w_tot;
+      Real lambda_sq = 0.5 * (-a1 + std::sqrt(SQR(a1) - 4.0*a0));
+      lambda_plus_no_v = std::sqrt(lambda_sq);
+      lambda_minus_no_v = -lambda_plus_no_v;
+    }
+
+    // Calculate wavespeeds in vanishing normal field case (MB2006 58)
+    Real lambda_plus_no_bbx, lambda_minus_no_bbx;
+    {
+      Real vx_sq = SQR(vx);
+      Real v_dot_bb_perp = vy*bby + vz*bbz;
+      Real q = b_sq - cs_sq*SQR(v_dot_bb_perp);
+      Real denominator = w_gas * (cs_sq + gamma_rel_sq*(1.0-cs_sq)) + q;
+      Real a1 = -2.0 * w_gas * gamma_rel_sq * vx * (1.0-cs_sq) / denominator;
+      Real a0 = (w_gas * (-cs_sq + gamma_rel_sq*vx_sq*(1.0-cs_sq)) - q) / denominator;
+      Real s = std::sqrt(SQR(a1) - 4.0*a0);
+      lambda_plus_no_bbx = (a1 >= 0.0) ? -2.0*a0/(a1+s) : (-a1+s)/2.0;
+      lambda_minus_no_bbx = (a1 >= 0.0) ? (-a1-s)/2.0 : -2.0*a0/(a1-s);
+    }
+
+    // Calculate wavespeeds in general case (MB2006 56)
+    Real lambda_plus, lambda_minus;
+    {
+      // Calculate quartic coefficients
+      Real vx2 = SQR(vx);
+      Real vx3 = vx2 * vx;
+      Real vx4 = SQR(vx2);
+      Real bt_sq = SQR(b[0]);
+      Real bx_sq = SQR(b[1]);
+      Real tmp1 = SQR(gamma_rel_sq) * w_gas * (1.0-cs_sq);
+      Real tmp2 = gamma_rel_sq * (b_sq + w_gas * cs_sq);
+      Real denominator = tmp1 + tmp2 - cs_sq * bt_sq;
+      Real a3 = (-(4.0*tmp1+2.0*tmp2)*vx + 2.0*cs_sq*b[0]*b[1]) / denominator;
+      Real a2 = (6.0*tmp1*vx2 + tmp2*(vx2-1.0) + cs_sq*(bt_sq-bx_sq)) / denominator;
+      Real a1 = (-4.0*tmp1*vx3 + 2.0*tmp2*vx - 2.0*cs_sq*b[0]*b[1]) / denominator;
+      Real a0 = (tmp1*vx4 - tmp2*vx2 + cs_sq*bx_sq) / denominator;
+
+      // Calculate reduced quartic coefficients
+      Real b2 = a2 - 3.0/8.0*SQR(a3);
+      Real b1 = a1 - 1.0/2.0*a2*a3 + 1.0/8.0*a3*SQR(a3);
+      Real b0 = a0 - 1.0/4.0*a1*a3 + 1.0/16.0*a2*SQR(a3) - 3.0/256.0*SQR(SQR(a3));
+
+      // Solve reduced quartic equation
+      Real y1, y2, y3, y4;
+      {
+        // Calculate resolvent cubic coefficients
+        Real c2 = -b2;
+        Real c1 = -4.0*b0;
+        Real c0 = 4.0*b0*b2 - SQR(b1);
+
+        // Solve resolvent cubic equation
+        Real q = (c2*c2 - 3.0*c1) / 9.0;                       // (NR 5.6.10)
+        Real r = (2.0*c2*c2*c2 - 9.0*c1*c2 + 27.0*c0) / 54.0;  // (NR 5.6.10)
+        Real q3 = q*q*q;
+        Real r2 = SQR(r);
+        Real s2 = r2 - q3;
+        Real z0;
+        if (s2 < 0.0)
+        {
+          Real theta = std::acos(r/std::sqrt(q3));             // (NR 5.6.11)
+          z0 = -2.0 * std::sqrt(q) * cos(theta/3.0) - c2/3.0;  // (NR 5.6.12)
+        }
+        else
+        {
+          Real s = std::sqrt(s2);
+          Real aa = -copysign(1.0, r) * cbrt(std::abs(r) + s);  // (NR 5.6.15)
+          Real bb = (aa != 0.0) ? q/aa : 0.0;                   // (NR 5.6.16)
+          z0 = aa + bb - c2/3.0;
+        }
+
+        // Calculate quadratic coefficients
+        Real d1 = (z0-b2 > 0.0) ? std::sqrt(z0-b2) : 0.0;
+        Real e1 = -d1;
+        Real s = std::sqrt(SQR(z0)/4.0 - b0);
+        Real d0 = (b1 < 0) ? 0.5*z0+s : 0.5*z0-s;
+        Real e0 = (b1 < 0) ? 0.5*z0-s : 0.5*z0+s;
+
+        // Solve quadratic equations
+        s = std::sqrt(SQR(d1) - 4.0*d0);
+        y1 = (d1 >= 0.0) ? (-d1-s)/2.0 : -2.0*d0/(d1-s);
+        y2 = (d1 >= 0.0) ? -2.0*d0/(d1+s) : (-d1+s)/2.0;
+        s = std::sqrt(SQR(e1) - 4.0*e0);
+        y3 = (e1 >= 0.0) ? (-e1-s)/2.0 : -2.0*e0/(e1-s);
+        y4 = (e1 >= 0.0) ? -2.0*e0/(e1+s) : (-e1+s)/2.0;
+      }
+
+      // Calculate extremal original quartic roots
+      lambda_minus = std::min(y1, y3) - a3/4.0;
+      lambda_plus = std::max(y2, y4) - a3/4.0;
+
+      // Ensure wavespeeds are not superluminal
+      lambda_minus = std::max(lambda_minus, -1.0);
+      lambda_plus = std::min(lambda_plus, 1.0);
+    }
+
+    // Set wavespeeds based on velocity and magnetic field
+    if (v_sq < v_limit)
+    {
+      lambdas_p(i) = lambda_plus_no_v;
+      lambdas_m(i) = lambda_minus_no_v;
+    }
+    else if (bbx_sq < b_limit)
+    {
+      lambdas_p(i) = lambda_plus_no_bbx;
+      lambdas_m(i) = lambda_minus_no_bbx;
+    }
+    else
+    {
+      lambdas_p(i) = lambda_plus;
+      lambdas_m(i) = lambda_minus;
     }
   }
   return;
@@ -760,130 +861,5 @@ static void neighbor_average(AthenaArray<Real> &prim, int n, int k, int j, int i
   }
   if (num_neighbors > 0)
     prim(n,k,j,i) = neighbor_sum / num_neighbors;
-  return;
-}
-
-// Function for finding root of monic quadratic equation
-// Inputs:
-//   a1: linear coefficient
-//   a0: constant coefficient
-//   greater_root: flag indicating that larger root is to be returned
-//     "larger" does not mean absolute value
-// Outputs:
-//   returned value: desired root
-// Notes:
-//   same function as in adiabatic_mhd_sr.cpp, hlld_rel.cpp, and linear_wave_rel.cpp
-//   solves x^2 + a_1 x + a_0 = 0 for x
-//   returns abscissa of vertex if there are no real roots
-//   follows advice in Numerical Recipes, 3rd ed. (5.6) for avoiding large cancellations
-static Real quadratic_root(Real a1, Real a0, bool greater_root)
-{
-  if (a1*a1 < 4.0*a0)  // no real roots
-    return -a1/2.0;
-  if (greater_root)
-  {
-    if (a1 >= 0.0)
-      return -2.0*a0 / (a1 + std::sqrt(a1*a1 - 4.0*a0));
-    else
-      return (-a1 + std::sqrt(a1*a1 - 4.0*a0)) / 2.0;
-  }
-  else
-  {
-    if (a1 >= 0.0)
-      return (-a1 - std::sqrt(a1*a1 - 4.0*a0)) / 2.0;
-    else
-      return -2.0*a0 / (a1 - std::sqrt(a1*a1 - 4.0*a0));
-  }
-}
-
-// Function for finding real root of monic cubic equation
-// Inputs:
-//   a2: quadratic coefficient
-//   a1: linear coefficient
-//   a0: constant coefficient
-// Outputs:
-//   returned value: a real root
-// Notes:
-//   solves x^3 + a_2 x^2 + a_1 x + a_0 = 0 for x
-//   same function as in adiabatic_mhd_sr.cpp and linear_wave_rel.cpp
-//   references Numerical Recipes, 3rd ed. (NR)
-static Real cubic_root_real(Real a2, Real a1, Real a0)
-{
-  Real q = (a2*a2 - 3.0*a1) / 9.0;                       // (NR 5.6.10)
-  Real r = (2.0*a2*a2*a2 - 9.0*a1*a2 + 27.0*a0) / 54.0;  // (NR 5.6.10)
-  if (r*r - q*q*q < 0.0)
-  {
-    Real theta = acos(r/std::sqrt(q*q*q));                 // (NR 5.6.11)
-    return -2.0 * std::sqrt(q) * cos(theta/3.0) - a2/3.0;  // (NR 5.6.12)
-  }
-  else
-  {
-    Real a = -copysign(1.0, r)
-        * cbrt(std::abs(r) + std::sqrt(r*r - q*q*q));  // (NR 5.6.15)
-    Real b = (a != 0.0) ? q/a : 0.0;                   // (NR 5.6.16)
-    return a + b - a2/3.0;
-  }
-}
-
-// Function for finding extremal real roots of monic quartic equation
-// Inputs:
-//   a3: cubic coefficient
-//   a2: quadratic coefficient
-//   a1: linear coefficient
-//   a0: constant coefficient
-// Outputs:
-//   pmin_value: value set to least real root
-//   pmax_value: value set to greatest real root
-// Notes:
-//   solves x^4 + a3 x^3 + a2 x^2 + a1 x + a0 = 0 for x
-//   uses following procedure:
-//     1) eliminate cubic term y^4 + b2 y^2 + b1 y + b0
-//     2) construct resolvent cubic z^3 + c2 z^2 + c1 z + c0
-//     3) find real root z0 of cubic
-//     4) construct quadratics:
-//          y^2 + d1 y + d0
-//          y^2 + e1 y + e0
-//     5) find roots of quadratics
-//     6) set minimum and maximum roots of original quartic
-static void quartic_root_minmax(Real a3, Real a2, Real a1, Real a0, Real *pmin_value,
-    Real *pmax_value)
-{
-  // Step 1: Find reduced quartic coefficients
-  Real b2 = a2 - 3.0/8.0*a3*a3;
-  Real b1 = a1 - a2*a3/2.0 + a3*a3*a3/8.0;
-  Real b0 = a0 - a1*a3/4.0 + a2*a3*a3/16.0 - 3.0/256.0*a3*a3*a3*a3;
-
-  // Step 2: Find resolvent cubic coefficients
-  Real c2 = -b2;
-  Real c1 = -4.0*b0;
-  Real c0 = 4.0*b0*b2 - b1*b1;
-
-  // Step 3: Solve cubic
-  Real z0 = cubic_root_real(c2, c1, c0);
-
-  // Step 4: Find quadratic coefficients
-  Real d1 = (z0 - b2 > 0.0) ? std::sqrt(z0 - b2) : 0.0;
-  Real e1 = -d1;
-  Real d0, e0;
-  if (b1 < 0)
-  {
-    d0 = z0/2.0 + std::sqrt(z0*z0/4.0 - b0);
-    e0 = z0/2.0 - std::sqrt(z0*z0/4.0 - b0);
-  }
-  else
-  {
-    d0 = z0/2.0 - std::sqrt(z0*z0/4.0 - b0);
-    e0 = z0/2.0 + std::sqrt(z0*z0/4.0 - b0);
-  }
-
-  // Step 5: Solve quadratics
-  Real y1 = quadratic_root(d1, d0, false);
-  Real y2 = quadratic_root(d1, d0, true);
-  Real y3 = quadratic_root(e1, e0, false);
-  Real y4 = quadratic_root(e1, e0, true);
-
-  // Step 6: Set original quartic roots
-  *pmin_value = std::min(y1, y3) - a3/4.0;
-  *pmax_value = std::max(y2, y4) - a3/4.0;
   return;
 }
