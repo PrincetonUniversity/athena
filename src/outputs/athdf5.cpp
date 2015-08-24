@@ -108,11 +108,27 @@ void ATHDF5Output::Initialize(Mesh *pM, ParameterInput *pin)
   if(dim==2) dims[0]=mbsize[1], dims[1]=mbsize[0], dims[2]=1;
   if(dim==3) dims[0]=mbsize[2], dims[1]=mbsize[1], dims[2]=mbsize[0];
 
+  int rgs[3];
+  rgs[0]=pM->mesh_size.nx1, rgs[1]=pM->mesh_size.nx2, rgs[2]=pM->mesh_size.nx3;
 
+  // MeshBlockSize
   sz=3;
   dsid = H5Screate_simple(1, &sz, NULL);
   aid=H5Acreate2(file,"MeshBlockSize",H5T_STD_I32BE,dsid,H5P_DEFAULT,H5P_DEFAULT);
   H5Awrite(aid, H5T_NATIVE_INT, mbsize);
+  H5Aclose(aid); H5Sclose(dsid);
+  // RootGridSize
+  sz=3;
+  dsid = H5Screate_simple(1, &sz, NULL);
+  aid=H5Acreate2(file,"RootGridSize",H5T_STD_I32BE,dsid,H5P_DEFAULT,H5P_DEFAULT);
+  H5Awrite(aid, H5T_NATIVE_INT, rgs);
+  H5Aclose(aid); H5Sclose(dsid);
+  // MaxLevel
+  int ml=pM->current_level - pM->root_level;
+  sz=1;
+  dsid = H5Screate_simple(1, &sz, NULL);
+  aid=H5Acreate2(file,"MaxLevel",H5T_STD_I32BE,dsid,H5P_DEFAULT,H5P_DEFAULT);
+  H5Awrite(aid, H5T_NATIVE_INT, &ml);
   H5Aclose(aid); H5Sclose(dsid);
   // ncycle
   sz=1;
@@ -131,12 +147,6 @@ void ATHDF5Output::Initialize(Mesh *pM, ParameterInput *pin)
   dsid = H5Screate_simple(1, &sz, NULL);
   aid=H5Acreate2(file,"NVariables",H5T_STD_I32BE,dsid,H5P_DEFAULT,H5P_DEFAULT);
   H5Awrite(aid, H5T_NATIVE_INT, &var_added);
-  H5Aclose(aid); H5Sclose(dsid);
-  // myrank
-  sz=1;
-  dsid = H5Screate_simple(1, &sz, NULL);
-  aid=H5Acreate2(file,"Myrank",H5T_STD_I32BE,dsid,H5P_DEFAULT,H5P_DEFAULT);
-  H5Awrite(aid, H5T_NATIVE_INT, &myrank);
   H5Aclose(aid); H5Sclose(dsid);
 
   grpid = new hid_t[nbl];

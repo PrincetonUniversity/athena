@@ -116,7 +116,7 @@ public:
 
 class Mesh {
 private:
-  int root_level, max_level;
+  int root_level, max_level, current_level;
   int nbtotal, nbstart, nbend;
   int maxneighbor_;
   int num_mesh_threads_;

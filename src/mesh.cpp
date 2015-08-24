@@ -252,6 +252,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
 // calculate the logical root level and maximum level
   for(root_level=0;(1<<root_level)<nbmax;root_level++);
+  current_level=root_level;
 
 // create Block UID list
   tree.CreateRootGrid(nrbx1,nrbx2,nrbx3,root_level);
@@ -290,6 +291,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       }
       int ref_lev=pin->GetReal(pib->block_name,"level");
       int lrlev=ref_lev+root_level;
+      if(lrlev>current_level) current_level=lrlev;
       if(lrlev!=root_level)
         multilevel=true;
       // range check
@@ -625,6 +627,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   if(resfile.Read(&nbtotal, sizeof(int), 1)!=1) nerr++;
   if(resfile.Read(&idl, sizeof(int), 1)!=1) nerr++;
   if(resfile.Read(&root_level, sizeof(int), 1)!=1) nerr++;
+  current_level=root_level;
   if(resfile.Read(&mesh_size, sizeof(RegionSize), 1)!=1) nerr++;
   if(resfile.Read(mesh_bcs, sizeof(int), 6)!=6) nerr++;
   if(resfile.Read(&time, sizeof(Real), 1)!=1) nerr++;
@@ -693,6 +696,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
     if(resfile.Read(&bgid,sizeof(int),1)!=1) nerr++;
     if(resfile.Read(&level,sizeof(int),1)!=1) nerr++;
     if(level!=root_level) multilevel=true;
+    if(level>current_level) current_level=level;
     if(resfile.Read(rawid,sizeof(ID_t),idl)!=idl) nerr++;
     if(resfile.Read(&(costlist[i]),sizeof(Real),1)!=1) nerr++;
     if(resfile.Read(&(offset[i]),sizeof(WrapIOSize_t),1)!=1) nerr++;
@@ -867,7 +871,7 @@ void Mesh::MeshTest(int dim)
   }
 
   std::cout << "Logical level of the physical root grid = "<< root_level << std::endl;
-  std::cout << "Logical level of maximum refinement = "<< max_level << std::endl;
+  std::cout << "Logical level of maximum refinement = "<< current_level << std::endl;
   std::cout << "List of MeshBlocks" << std::endl;
   for(i=root_level;i<=max_level;i++) {
     Real dx=1.0/(Real)(1L<<i);
