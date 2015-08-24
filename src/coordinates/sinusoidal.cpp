@@ -1,7 +1,7 @@
 // Minkowski spacetime, sinusoidal ("snake") coordinates
 // Notes:
 //   coordinates: t, x, y, z
-//   parameters: a, k
+//   parameters: a (aa in code), k (kk in code)
 //   metric:
 //     ds^2 = -dt^2 + \alpha^2 dx^2 - 2 \beta dx dy + dy^2 + dz^2
 //     alpha = \sqrt(1 + a^2 k^2 \cos^2(k x))
@@ -34,17 +34,17 @@
 //   pin: pointer to runtime inputs
 Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 {
+  // Set pointer to host MeshBlock
+  pmy_block = pmb;
+
   // Set face centered positions and distances
   AllocateAndSetBasicCoordinates();
 
   // Set parameters
   sinu_amplitude_ = pin->GetReal("coord", "a");
   sinu_wavenumber_ = pin->GetReal("coord", "k");
-  const Real &a = sinu_amplitude_;
-  const Real &k = sinu_wavenumber_;
-
-  // Set pointer to host MeshBlock
-  pmy_block = pmb;
+  const Real &aa = sinu_amplitude_;
+  const Real &kk = sinu_wavenumber_;
 
   // Initialize volume-averaged positions and spacings: x-direction
   for (int i = pmb->is-NGHOST; i <= pmb->ie+NGHOST; ++i)
@@ -80,36 +80,42 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
       dx3v(k) = x3v(k+1) - x3v(k);
   }
 
-  if(pmb->pmy_mesh->multilevel==true) { // calc coarse coodinates
-    int cis = pmb->cis; int cjs = pmb->cjs; int cks = pmb->cks;
-    int cie = pmb->cie; int cje = pmb->cje; int cke = pmb->cke;
-    for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost); ++i) {
-      coarse_x1v(i) = 0.5*(coarse_x1f(i+1) + coarse_x1f(i));
-    }
-    for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost)-1; ++i) {
+  // Calculate coarse coordinates
+  if (pmb->pmy_mesh->multilevel == true)
+  {
+    int cis = pmb->cis;
+    int cie = pmb->cie;
+    int cjs = pmb->cjs;
+    int cje = pmb->cje;
+    int cks = pmb->cks;
+    int cke = pmb->cke;
+    for (int i = cis-(pmb->cnghost); i <= cie+(pmb->cnghost); ++i)
+      coarse_x1v(i) = 0.5 * (coarse_x1f(i+1) + coarse_x1f(i));
+    for (int i = cis-(pmb->cnghost); i <= cie+(pmb->cnghost)-1; ++i)
       coarse_dx1v(i) = coarse_x1v(i+1) - coarse_x1v(i);
-    }
-    if (pmb->block_size.nx2 == 1) {
-      coarse_x2v(cjs) = 0.5*(coarse_x2f(cjs+1) + coarse_x2f(cjs));
+    if (pmb->block_size.nx2 == 1)
+    {
+      coarse_x2v(cjs) = 0.5 * (coarse_x2f(cjs+1) + coarse_x2f(cjs));
       coarse_dx2v(cjs) = coarse_dx2f(cjs);
-    } else {
-      for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost); ++j) {
-        coarse_x2v(j) = 0.5*(coarse_x2f(j+1) + coarse_x2f(j));
-      }
-      for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost)-1; ++j) {
-        coarse_dx2v(j) = coarse_x2v(j+1) - coarse_x2v(j);
-      }
     }
-    if (pmb->block_size.nx3 == 1) {
-      coarse_x3v(cks) = 0.5*(coarse_x3f(cks+1) + coarse_x3f(cks));
+    else
+    {
+      for (int j = cjs-(pmb->cnghost); j <= cje+(pmb->cnghost); ++j)
+        coarse_x2v(j) = 0.5 * (coarse_x2f(j+1) + coarse_x2f(j));
+      for (int j = cjs-(pmb->cnghost); j <= cje+(pmb->cnghost)-1; ++j)
+        coarse_dx2v(j) = coarse_x2v(j+1) - coarse_x2v(j);
+    }
+    if (pmb->block_size.nx3 == 1)
+    {
+      coarse_x3v(cks) = 0.5 * (coarse_x3f(cks+1) + coarse_x3f(cks));
       coarse_dx3v(cks) = coarse_dx3f(cks);
-    } else {
-      for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost); ++k) {
-        coarse_x3v(k) = 0.5*(coarse_x3f(k+1) + coarse_x3f(k));
-      }
-      for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost)-1; ++k) {
+    }
+    else
+    {
+      for (int k = cks-(pmb->cnghost); k <= cke+(pmb->cnghost); ++k)
+        coarse_x3v(k) = 0.5 * (coarse_x3f(k+1) + coarse_x3f(k));
+      for (int k = cks-(pmb->cnghost); k <= cke+(pmb->cnghost)-1; ++k)
         coarse_dx3v(k) = coarse_x3v(k+1) - coarse_x3v(k);
-      }
     }
   }
 
@@ -128,6 +134,8 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
   trans_face2_i1_.NewAthenaArray(n_cells_1);
   trans_face2_i2_.NewAthenaArray(n_cells_1);
   trans_face3_i2_.NewAthenaArray(n_cells_1);
+  g_.NewAthenaArray(NMETRIC, n_cells_1);
+  gi_.NewAthenaArray(NMETRIC, n_cells_1);
 
   // Calculate intermediate geometric quantities: x-direction
   #pragma simd
@@ -137,17 +145,17 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     Real r_c = x1v(i);
     Real r_m = x1f(i);
     Real r_p = x1f(i+1);
-    Real sin_2m = std::sin(2.0*k*r_m);
-    Real sin_2p = std::sin(2.0*k*r_p);
-    Real cos_c = std::cos(k*r_c);
-    Real cos_m = std::cos(k*r_m);
-    Real cos_p = std::cos(k*r_p);
-    Real alpha_sq_c = 1.0 + SQR(a)*SQR(k) * SQR(cos_c);
-    Real alpha_sq_m = 1.0 + SQR(a)*SQR(k) * SQR(cos_m);
+    Real sin_2m = std::sin(2.0*kk*r_m);
+    Real sin_2p = std::sin(2.0*kk*r_p);
+    Real cos_c = std::cos(kk*r_c);
+    Real cos_m = std::cos(kk*r_m);
+    Real cos_p = std::cos(kk*r_p);
+    Real alpha_sq_c = 1.0 + SQR(aa)*SQR(kk) * SQR(cos_c);
+    Real alpha_sq_m = 1.0 + SQR(aa)*SQR(kk) * SQR(cos_m);
     Real alpha_c = std::sqrt(alpha_sq_c);
-    Real beta_c = a*k * cos_c;
-    Real beta_m = a*k * cos_m;
-    Real beta_p = a*k * cos_p;
+    Real beta_c = aa*kk * cos_c;
+    Real beta_m = aa*kk * cos_m;
+    Real beta_p = aa*kk * cos_p;
 
     // Source terms
     coord_src_i1_(i) = (beta_m - beta_p) / dx1f(i);
@@ -178,7 +186,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 Coordinates::~Coordinates()
 {
   DeleteBasicCoordinates();
-
   coord_src_i1_.DeleteAthenaArray();
   metric_cell_i1_.DeleteAthenaArray();
   metric_cell_i2_.DeleteAthenaArray();
@@ -192,6 +199,8 @@ Coordinates::~Coordinates()
   trans_face2_i1_.DeleteAthenaArray();
   trans_face2_i2_.DeleteAthenaArray();
   trans_face3_i2_.DeleteAthenaArray();
+  g_.DeleteAthenaArray();
+  gi_.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------
@@ -1480,10 +1489,10 @@ void Coordinates::FluxToGlobal3(const int k, const int j, const int il, const in
 Real Coordinates::DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real by,
     Real bz)
 {
-  const Real &a = sinu_amplitude_;
-  const Real &k = sinu_wavenumber_;
+  const Real &aa = sinu_amplitude_;
+  const Real &kk = sinu_wavenumber_;
   Real ax = a1;
-  Real ay = a2 - a * std::sin(k * a1);
+  Real ay = a2 - aa * std::sin(kk * a1);
   Real az = a3;
   return std::sqrt(SQR(ax-bx) + SQR(ay-by) + SQR(az-bz));
 }

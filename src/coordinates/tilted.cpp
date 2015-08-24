@@ -35,6 +35,9 @@ static Real beta;   // \sqrt{1-a^2}
 //   pin: pointer to runtime inputs
 Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 {
+  // Set pointer to host MeshBlock
+  pmy_block = pmb;
+
   // Set face centered positions and distances
   AllocateAndSetBasicCoordinates();
 
@@ -43,9 +46,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
   const Real &a = tilted_a_;
   alpha = std::sqrt(1.0 + SQR(a));
   beta = std::sqrt(1.0 - SQR(a));
-
-  // Set pointer to host MeshBlock
-  pmy_block = pmb;
 
   // Initialize volume-averaged positions and spacings: x'-direction
   for (int i = pmb->is-NGHOST; i <= pmb->ie+NGHOST; ++i)
@@ -81,38 +81,49 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
       dx3v(k) = x3v(k+1) - x3v(k);
   }
 
-  if(pmb->pmy_mesh->multilevel==true) { // calc coarse coodinates
-    int cis = pmb->cis; int cjs = pmb->cjs; int cks = pmb->cks;
-    int cie = pmb->cie; int cje = pmb->cje; int cke = pmb->cke;
-    for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost); ++i) {
-      coarse_x1v(i) = 0.5*(coarse_x1f(i+1) + coarse_x1f(i));
-    }
-    for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost)-1; ++i) {
+  // Calculate coarse coordinates
+  if (pmy_block->pmy_mesh->multilevel == true)
+  {
+    int cis = pmb->cis;
+    int cie = pmb->cie;
+    int cjs = pmb->cjs;
+    int cje = pmb->cje;
+    int cks = pmb->cks;
+    int cke = pmb->cke;
+    for (int i = cis-(pmb->cnghost); i <= cie+(pmb->cnghost); ++i)
+      coarse_x1v(i) = 0.5 * (coarse_x1f(i+1) + coarse_x1f(i));
+    for (int i = cis-(pmb->cnghost); i <= cie+(pmb->cnghost)-1; ++i)
       coarse_dx1v(i) = coarse_x1v(i+1) - coarse_x1v(i);
-    }
-    if (pmb->block_size.nx2 == 1) {
-      coarse_x2v(cjs) = 0.5*(coarse_x2f(cjs+1) + coarse_x2f(cjs));
+    if (pmb->block_size.nx2 == 1)
+    {
+      coarse_x2v(cjs) = 0.5 * (coarse_x2f(cjs+1) + coarse_x2f(cjs));
       coarse_dx2v(cjs) = coarse_dx2f(cjs);
-    } else {
-      for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost); ++j) {
-        coarse_x2v(j) = 0.5*(coarse_x2f(j+1) + coarse_x2f(j));
-      }
-      for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost)-1; ++j) {
-        coarse_dx2v(j) = coarse_x2v(j+1) - coarse_x2v(j);
-      }
     }
-    if (pmb->block_size.nx3 == 1) {
-      coarse_x3v(cks) = 0.5*(coarse_x3f(cks+1) + coarse_x3f(cks));
+    else
+    {
+      for (int j = cjs-(pmb->cnghost); j <= cje+(pmb->cnghost); ++j)
+        coarse_x2v(j) = 0.5 * (coarse_x2f(j+1) + coarse_x2f(j));
+      for (int j = cjs-(pmb->cnghost); j <= cje+(pmb->cnghost)-1; ++j)
+        coarse_dx2v(j) = coarse_x2v(j+1) - coarse_x2v(j);
+    }
+    if (pmb->block_size.nx3 == 1)
+    {
+      coarse_x3v(cks) = 0.5 * (coarse_x3f(cks+1) + coarse_x3f(cks));
       coarse_dx3v(cks) = coarse_dx3f(cks);
-    } else {
-      for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost); ++k) {
-        coarse_x3v(k) = 0.5*(coarse_x3f(k+1) + coarse_x3f(k));
-      }
-      for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost)-1; ++k) {
+    }
+    else
+    {
+      for (int k = cks-(pmb->cnghost); k <= cke+(pmb->cnghost); ++k)
+        coarse_x3v(k) = 0.5 * (coarse_x3f(k+1) + coarse_x3f(k));
+      for (int k = cks-(pmb->cnghost); k <= cke+(pmb->cnghost)-1; ++k)
         coarse_dx3v(k) = coarse_x3v(k+1) - coarse_x3v(k);
-      }
     }
   }
+
+  // Allocate arrays for intermediate geometric quantities: x'-direction
+  int n_cells_1 = pmb->block_size.nx1 + 2*NGHOST;
+  g_.NewAthenaArray(NMETRIC, n_cells_1);
+  gi_.NewAthenaArray(NMETRIC, n_cells_1);
 }
 
 //--------------------------------------------------------------------------------------
@@ -121,6 +132,8 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 Coordinates::~Coordinates()
 {
   DeleteBasicCoordinates();
+  g_.DeleteAthenaArray();
+  gi_.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------

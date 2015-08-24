@@ -99,36 +99,42 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
       dx3v(k) = x3v(k+1) - x3v(k);
   }
 
-  if(pmb->pmy_mesh->multilevel==true) { // calc coarse coodinates
-    int cis = pmb->cis; int cjs = pmb->cjs; int cks = pmb->cks;
-    int cie = pmb->cie; int cje = pmb->cje; int cke = pmb->cke;
-    for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost); ++i) {
-      coarse_x1v(i) = 0.5*(coarse_x1f(i+1) + coarse_x1f(i));
-    }
-    for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost)-1; ++i) {
+  // Calculate coarse coordinates
+  if (pmb->pmy_mesh->multilevel == true)
+  {
+    int cis = pmb->cis;
+    int cie = pmb->cie;
+    int cjs = pmb->cjs;
+    int cje = pmb->cje;
+    int cks = pmb->cks;
+    int cke = pmb->cke;
+    for (int i = cis-(pmb->cnghost); i <= cie+(pmb->cnghost); ++i)
+      coarse_x1v(i) = 0.5 * (coarse_x1f(i+1) + coarse_x1f(i));
+    for (int i = cis-(pmb->cnghost); i <= cie+(pmb->cnghost)-1; ++i)
       coarse_dx1v(i) = coarse_x1v(i+1) - coarse_x1v(i);
-    }
-    if (pmb->block_size.nx2 == 1) {
-      coarse_x2v(cjs) = 0.5*(coarse_x2f(cjs+1) + coarse_x2f(cjs));
+    if (pmb->block_size.nx2 == 1)
+    {
+      coarse_x2v(cjs) = 0.5 * (coarse_x2f(cjs+1) + coarse_x2f(cjs));
       coarse_dx2v(cjs) = coarse_dx2f(cjs);
-    } else {
-      for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost); ++j) {
-        coarse_x2v(j) = 0.5*(coarse_x2f(j+1) + coarse_x2f(j));
-      }
-      for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost)-1; ++j) {
-        coarse_dx2v(j) = coarse_x2v(j+1) - coarse_x2v(j);
-      }
     }
-    if (pmb->block_size.nx3 == 1) {
-      coarse_x3v(cks) = 0.5*(coarse_x3f(cks+1) + coarse_x3f(cks));
+    else
+    {
+      for (int j = cjs-(pmb->cnghost); j <= cje+(pmb->cnghost); ++j)
+        coarse_x2v(j) = 0.5 * (coarse_x2f(j+1) + coarse_x2f(j));
+      for (int j = cjs-(pmb->cnghost); j <= cje+(pmb->cnghost)-1; ++j)
+        coarse_dx2v(j) = coarse_x2v(j+1) - coarse_x2v(j);
+    }
+    if (pmb->block_size.nx3 == 1)
+    {
+      coarse_x3v(cks) = 0.5 * (coarse_x3f(cks+1) + coarse_x3f(cks));
       coarse_dx3v(cks) = coarse_dx3f(cks);
-    } else {
-      for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost); ++k) {
-        coarse_x3v(k) = 0.5*(coarse_x3f(k+1) + coarse_x3f(k));
-      }
-      for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost)-1; ++k) {
+    }
+    else
+    {
+      for (int k = cks-(pmb->cnghost); k <= cke+(pmb->cnghost); ++k)
+        coarse_x3v(k) = 0.5 * (coarse_x3f(k+1) + coarse_x3f(k));
+      for (int k = cks-(pmb->cnghost); k <= cke+(pmb->cnghost)-1; ++k)
         coarse_dx3v(k) = coarse_x3v(k+1) - coarse_x3v(k);
-      }
     }
   }
 
@@ -419,7 +425,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 Coordinates::~Coordinates()
 {
   DeleteBasicCoordinates();
-
   coord_vol_i1_.DeleteAthenaArray();
   coord_vol_i2_.DeleteAthenaArray();
   coord_area1_i1_.DeleteAthenaArray();
