@@ -1408,7 +1408,7 @@ void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
   if(type==neighbor_edge) {
     if(ox3==0)  eid=(edgeid)(((ox1+1)>>1) | ((ox2+1)&2));
     else if(ox2==0) eid=(edgeid)(4+(((ox1+1)>>1) | ((ox3+1)&2)));
-    else if(ox3==0) eid=(edgeid)(8+(((ox2+1)>>1) | ((ox3+1)&2)));
+    else if(ox1==0) eid=(edgeid)(8+(((ox2+1)>>1) | ((ox3+1)&2)));
   }
   return;
 }
