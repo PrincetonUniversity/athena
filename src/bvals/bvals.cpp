@@ -246,7 +246,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     for(int i=0;i<12;i++){
       emfcor_esend_[l][i]=NULL;
 #ifdef MPI_PARALLEL
-      req_emfcor_fsend_[l][i]=MPI_REQUEST_NULL;
+      req_emfcor_esend_[l][i]=MPI_REQUEST_NULL;
 #endif
       for(int j=0;j<=1;j++) {
         emfcor_erecv_[l][i][j]=NULL;
@@ -408,6 +408,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       // slope buffers
       if(pmb->block_size.nx2>1) 
         cb1g2.NewAthenaArray(ncc3,ncc2,ncc1+1);
+        cb2g1.NewAthenaArray(ncc3,ncc2,ncc1+1);
       if(pmb->block_size.nx3>1) {
         cb1g3.NewAthenaArray(ncc3,ncc2,ncc1+1);
         cb2g3.NewAthenaArray(ncc3,ncc2+1,ncc1);
@@ -513,6 +514,7 @@ BoundaryValues::~BoundaryValues()
       coarse_b_.x3f.DeleteAthenaArray();
       if(pmb->block_size.nx2>1)
         cb1g2.DeleteAthenaArray();
+        cb2g1.DeleteAthenaArray();
       if(pmb->block_size.nx3>1) {
         cb1g3.DeleteAthenaArray();
         cb2g3.DeleteAthenaArray();
@@ -629,12 +631,12 @@ void BoundaryValues::Initialize(void)
             fi1=myox1, fi2=myox2, size=((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx2+1)/2);
           size*=NFLUID;
           if(nb.level<mylevel) { // send to coarser
-            tag=CreateMPITag(nb.lid, l, tag_flcor, ((nb.fid^1)<<2)|(fi2<<1)|fi1);
+            tag=CreateMPITag(nb.lid, l, tag_flcor, nb.targetid);
             MPI_Send_init(flcor_send_[l][nb.fid],size,MPI_ATHENA_REAL,
                 nb.rank,tag,MPI_COMM_WORLD,&req_flcor_send_[l][nb.fid]);
           }
           else if(nb.level>mylevel) { // receive from finer
-            tag=CreateMPITag(pmb->lid, l, tag_flcor, (nb.fid<<2)|(nb.fi2<<1)|nb.fi1);
+            tag=CreateMPITag(pmb->lid, l, tag_flcor, nb.bufid);
             MPI_Recv_init(flcor_recv_[l][nb.fid][nb.fi2][nb.fi1],size,MPI_ATHENA_REAL,
                 nb.rank,tag,MPI_COMM_WORLD,&req_flcor_recv_[l][nb.fid][nb.fi2][nb.fi1]);
           }
@@ -734,19 +736,18 @@ void BoundaryValues::Initialize(void)
                 size=2; fi1=0; fi2=0;
               }
               if(nb.level<mylevel) { // send to coarser
-                tag=CreateMPITag(nb.lid, l, tag_emfcor_face, ((nb.fid^1)<<2)|(fi2<<1)|fi1);
+                tag=CreateMPITag(nb.lid, l, tag_emfcor_face, nb.targetid);
                 MPI_Send_init(emfcor_fsend_[l][nb.fid],size,MPI_ATHENA_REAL,
                     nb.rank,tag,MPI_COMM_WORLD,&req_emfcor_fsend_[l][nb.fid]);
               }
               else if(nb.level>mylevel) { // receive from finer
-                tag=CreateMPITag(pmb->lid, l, tag_emfcor_face, (nb.fid<<2)|(nb.fi2<<1)|nb.fi1);
+                tag=CreateMPITag(pmb->lid, l, tag_emfcor_face, nb.bufid);
                 MPI_Recv_init(emfcor_frecv_[l][nb.fid][nb.fi2][nb.fi1],size,MPI_ATHENA_REAL,
                     nb.rank,tag,MPI_COMM_WORLD,&req_emfcor_frecv_[l][nb.fid][nb.fi2][nb.fi1]);
               }
             }
-            else if(nb.type==neighbor_edge) { // edge
+            else if(nb.type==neighbor_edge && edge_flag_[nb.eid]==true) { // edge
               int fi1, size;
-              if(edge_flag_[nb.eid]==false) continue;
               if(pmb->block_size.nx3 > 1) { // 3D
                 if(nb.eid>=0 && nb.eid<4) {
                   size=pmb->block_size.nx3/2;
@@ -765,12 +766,12 @@ void BoundaryValues::Initialize(void)
                 size=1; fi1=0;
               }
               if(nb.level<mylevel) { // send to coarser
-                tag=CreateMPITag(nb.lid, l, tag_emfcor_edge, ((nb.eid^3)<<1)|fi1);
+                tag=CreateMPITag(nb.lid, l, tag_emfcor_edge, nb.targetid);
                 MPI_Send_init(emfcor_esend_[l][nb.eid],size,MPI_ATHENA_REAL,
                     nb.rank,tag,MPI_COMM_WORLD,&req_emfcor_esend_[l][nb.eid]);
               }
               else if(nb.level>mylevel) { // receive from finer
-                tag=CreateMPITag(pmb->lid, l, tag_emfcor_edge, (nb.eid<<1)|nb.fi1);
+                tag=CreateMPITag(pmb->lid, l, tag_emfcor_edge, nb.bufid);
                 MPI_Recv_init(emfcor_erecv_[l][nb.eid][nb.fi1],size,MPI_ATHENA_REAL,
                     nb.rank,tag,MPI_COMM_WORLD,&req_emfcor_erecv_[l][nb.eid][nb.fi1]);
               }
@@ -2740,7 +2741,6 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(InterfaceField &dst, int step)
       SetFieldBoundaryFromCoarser(field_recv_[step][nb.bufid], nb);
     else
       SetFieldBoundaryFromFiner(dst, field_recv_[step][nb.bufid], nb);
-
     field_flag_[step][nb.bufid] = boundary_completed; // completed
     nc++;
   }
@@ -3626,7 +3626,7 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
       int il=si, iu=ei+1;
       if((nb.ox1>=0) && (pmb->nblevel[1][nb.ox2+1][nb.ox1  ]>=mylevel)) il++;
       if((nb.ox1<=0) && (pmb->nblevel[1][nb.ox2+1][nb.ox1+2]>=mylevel)) iu--;
-      // step 1. calculate x2 outer surface fields
+      // step 1. calculate x2 outer surface fields and slopes
       for(int j=sj; j<=ej+1; j++) {
         int fj=(j-pmb->cjs)*2+pmb->js;
         for(int i=si; i<=ei; i++) {
@@ -3641,6 +3641,8 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
           Real gx1m = (ccval-coarse_b_.x2f(k,j,i-1))/(x1c - x1m);
           Real gx1p = (coarse_b_.x2f(k,j,i+1)-ccval)/(x1p - x1c);
           Real gx1c = 0.5*(SIGN(gx1m)+SIGN(gx1p))*std::min(std::abs(gx1m),std::abs(gx1p));
+          cb2g1(k,j,i)=gx1c;
+
           if(j>=jl && j<=ju) {
             dst.x2f(fk,fj,fi  )=ccval-gx1c*(x1c-fx1m);
             dst.x2f(fk,fj,fi+1)=ccval+gx1c*(fx1p-x1c);
@@ -3672,40 +3674,92 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
           }
         }
       }
-      // step 3. calculate the internal finer x1 field
-      // step 4. calculate the internal finer x2 field
       int fsi=(si-pmb->cis)*2+pmb->is, fei=(ei-pmb->cis)*2+pmb->is+1;
-      for(int j=sj; j<=ej; j++) {
-        int fj=(j-pmb->cjs)*2+pmb->js;
-        Real& x2m = pco->coarse_x2s1(j-1);
-        Real& x2c = pco->coarse_x2s1(j);
-        Real& x2p = pco->coarse_x2s1(j+1);
-        Real& fx2m = pco->x2s1(fj);
-        Real& fx2p = pco->x2s1(fj+1);
-        pco->Face1Area(fk,fj  ,fsi,fei+1,sarea_x1_[0][0]);
-        pco->Face1Area(fk,fj+1,fsi,fei+1,sarea_x1_[0][1]);
-        pco->Face2Area(fk,fj  ,fsi,fei,sarea_x2_[0][0]);
-        pco->Face2Area(fk,fj+1,fsi,fei,sarea_x2_[0][1]);
-        pco->Face2Area(fk,fj+2,fsi,fei,sarea_x2_[0][2]);
-        for(int i=si; i<=ei; i++) {
-          int fi=(i-pmb->cis)*2+pmb->is;
+      if(nb.ox1!=0) { // x1 surface or edge
+        // step 3. calculate the internal finer x1 fields using the near side loop
+        // step 4. calculate the internal finer x2 fields
+        int is1=-nb.ox1, is2=(1-nb.ox1)/2;
+        for(int j=sj; j<=ej; j++) {
+          int fj=(j-pmb->cjs)*2+pmb->js;
+          Real& x2c = pco->coarse_x2s1(j);
+          Real& fx2m = pco->x2s1(fj);
+          Real& fx2p = pco->x2s1(fj+1);
+          pco->Face1Area(fk,fj  ,fsi,fei+1,sarea_x1_[0][0]);
+          pco->Face1Area(fk,fj+1,fsi,fei+1,sarea_x1_[0][1]);
+          pco->Face2Area(fk,fj  ,fsi,fei,sarea_x2_[0][0]);
+          pco->Face2Area(fk,fj+1,fsi,fei,sarea_x2_[0][1]);
+          pco->Face2Area(fk,fj+2,fsi,fei,sarea_x2_[0][2]);
+          for(int i=si; i<=ei; i++) {
+            int fi=(i-pmb->cis)*2+pmb->is;
+            int fc=fi+1;
+            int fo1=fc+is1, fo2=fi+is2; // fo=left for right neighbor, right for left neighbor
+            Real dx1l=pco->x1f(fi+1)-pco->x1f(fi);
+            Real dx1r=pco->x1f(fi+2)-pco->x1f(fi+1);
 
-          // step 3. bx1
-          Real dx1l=pco->x1f(fi+1)-pco->x1f(fi);
-          Real dx1r=pco->x1f(fi+2)-pco->x1f(fi+1);
-          Real slc = (cb1g2(k,j,i)*dx1r+cb1g2(k,j,i+1)*dx1l)/(dx1l+dx1r);
-          Real bx1c = (sarea_x1_[0][0](fi)*dst.x1f(fk,fj,fi)+sarea_x1_[0][1](fi)*dst.x1f(fk,fj+1,fi)
-                      -sarea_x2_[0][2](fi)*dst.x2f(fk,fj+2,fi)+sarea_x2_[0][0](fi)*dst.x2f(fk,fj,fi))
-                      /(sarea_x1_[0][0](fi+1)+sarea_x1_[0][1](fi+1));
-          dst.x1f(fk,fj  ,fi+1)=bx1c-slc*(x2c-fx2m);
-          dst.x1f(fk,fj+1,fi+1)=bx1c+slc*(fx2p-x2c);
-          // step 4. bx2
-          dst.x2f(fk,fj+1,fi  )=(dst.x1f(fk,fj,fi  )*sarea_x1_[0][0](fi  )
-                                -dst.x1f(fk,fj,fi+1)*sarea_x1_[0][0](fi+1)
-                                +dst.x2f(fk,fj,fi  )*sarea_x2_[0][0](fi)  )/sarea_x2_[0][1](fi);
-          dst.x2f(fk,fj+1,fi+1)=(dst.x1f(fk,fj,fi+1)*sarea_x1_[0][0](fi+1)
-                                -dst.x1f(fk,fj,fi+2)*sarea_x1_[0][0](fi+2)
-                                +dst.x2f(fk,fj,fi+1)*sarea_x2_[0][0](fi+1))/sarea_x2_[0][1](fi+1);
+            // step 3. bx1
+            Real slc = (cb1g2(k,j,i)*dx1r+cb1g2(k,j,i+1)*dx1l)/(dx1l+dx1r);
+            // calculate the x1 surface field using the near side loop
+            Real bx1c = (sarea_x1_[0][0](fo1)*dst.x1f(fk,fj,fo1)+sarea_x1_[0][1](fo1)*dst.x1f(fk,fj+1,fo1)
+                        +is1*(sarea_x2_[0][2](fo2)*dst.x2f(fk,fj+2,fo2)-sarea_x2_[0][0](fo2)*dst.x2f(fk,fj,fo2)))
+                        /(sarea_x1_[0][0](fc)+sarea_x1_[0][1](fc));
+            dst.x1f(fk,fj  ,fi+1)=bx1c-slc*(x2c-fx2m);
+            dst.x1f(fk,fj+1,fi+1)=bx1c+slc*(fx2p-x2c);
+
+            // step 4. bx2
+            dst.x2f(fk,fj+1,fi  )=(dst.x2f(fk,fj,fi  )*sarea_x2_[0][0](fi)
+                                  -dst.x1f(fk,fj,fi+1)*sarea_x1_[0][0](fi+1)
+                                  +dst.x1f(fk,fj,fi  )*sarea_x1_[0][0](fi  ))/sarea_x2_[0][1](fi);
+            dst.x2f(fk,fj+1,fi+1)=(dst.x2f(fk,fj,fi+1)*sarea_x2_[0][0](fi+1)
+                                  -dst.x1f(fk,fj,fi+2)*sarea_x1_[0][0](fi+2)
+                                  +dst.x1f(fk,fj,fi+1)*sarea_x1_[0][0](fi+1))/sarea_x2_[0][1](fi+1);
+
+            std::cout << pmb->gid << " " << j << " " << i << " cdivb " << coarse_b_.x2f(k,j+1,i) - coarse_b_.x2f(k,j,i) + coarse_b_.x1f(k,j,i+1) - coarse_b_.x1f(k,j,i) 
+              << " " << coarse_b_.x2f(k,j+1,i) << " " <<  coarse_b_.x2f(k,j,i) << " " <<  coarse_b_.x1f(k,j,i+1) << " " <<  coarse_b_.x1f(k,j,i) << std::endl;
+          }
+        }
+      }
+      else { // x2 surface
+        // step 3. calculate the internal finer x2 fields using the near side loop
+        // step 4. calculate the internal finer x1 fields
+        int js1=-nb.ox2, js2=(1-nb.ox2)/2;
+        for(int j=sj; j<=ej; j++) {
+          int fj=(j-pmb->cjs)*2+pmb->js;
+          int fc=fj+1;
+          int fo1=fc+js1, fo2=fj+js2;
+          pco->Face1Area(fk,fj  ,fsi,fei+1,sarea_x1_[0][0]);
+          pco->Face1Area(fk,fj+1,fsi,fei+1,sarea_x1_[0][1]);
+          pco->Face2Area(fk,fj  ,fsi,fei,sarea_x2_[0][0]);
+          pco->Face2Area(fk,fj+1,fsi,fei,sarea_x2_[0][1]);
+          pco->Face2Area(fk,fj+2,fsi,fei,sarea_x2_[0][2]);
+          Real dx2l=pco->x2f(fj+1)-pco->x2f(fj);
+          Real dx2r=pco->x2f(fj+2)-pco->x2f(fj+1);
+          for(int i=si; i<=ei; i++) {
+            int fi=(i-pmb->cis)*2+pmb->is;
+            Real& x1c = pco->coarse_x1s2(i);
+            Real& fx1m = pco->x1s2(fi);
+            Real& fx1p = pco->x1s2(fi+1);
+
+            // step 3. bx2
+            Real slc = (cb2g1(k,j,i)*dx2r+cb2g1(k,j+1,i)*dx2l)/(dx2l+dx2r);
+            // calculate the x1 surface field using the near side loop
+            Real bx2c = (sarea_x2_[0][js1+1](fi)*dst.x2f(fk,fo1,fi)+sarea_x2_[0][js1+1](fi+1)*dst.x2f(fk,fo1,fi+1)
+                        +js2*(sarea_x1_[0][js2](fi+2)*dst.x1f(fk,fo2,fi+2)-sarea_x1_[0][js2](fi)*dst.x1f(fk,fo2,fi)))
+                        /(sarea_x2_[0][1](fi)+sarea_x2_[0][1](fi+1));
+            std::cout << pmb->gid  << " "  << bx2c*2-dst.x2f(fk,fj,fi)-dst.x2f(fk,fj,fi+1)+dst.x1f(fk,fj,fi+2)-dst.x1f(fk,fj,fi) << " " << dst.x2f(fk,fj+2,fi)+dst.x2f(fk,fj+2,fi+1)-bx2c*2+dst.x1f(fk,fj+1,fi+2)-dst.x1f(fk,fj+1,fi) <<std::endl;
+            dst.x2f(fk,fj+1,fi  )=bx2c-slc*(x1c-fx1m);
+            dst.x2f(fk,fj+1,fi+1)=bx2c+slc*(fx1p-x1c);
+
+            // step 4. bx1
+            dst.x1f(fk,fj  ,fi+1)=(dst.x1f(fk,fj  ,fi)*sarea_x1_[0][0](fi)
+                                  +dst.x2f(fk,fj  ,fi)*sarea_x2_[0][0](fi)
+                                  -dst.x2f(fk,fj+1,fi)*sarea_x2_[0][1](fi))/sarea_x1_[0][0](fi+1);
+            dst.x1f(fk,fj+1,fi+1)=(dst.x1f(fk,fj+1,fi)*sarea_x1_[0][1](fi)
+                                  +dst.x2f(fk,fj+1,fi)*sarea_x2_[0][1](fi)
+                                  -dst.x2f(fk,fj+2,fi)*sarea_x2_[0][2](fi))/sarea_x1_[0][1](fi+1);
+
+            std::cout << pmb->gid << " " << j << " " << i << " cdivb " << coarse_b_.x2f(k,j+1,i) - coarse_b_.x2f(k,j,i) + coarse_b_.x1f(k,j,i+1) - coarse_b_.x1f(k,j,i) 
+              << " " << coarse_b_.x2f(k,j+1,i) << " " <<  coarse_b_.x2f(k,j,i) << " " <<  coarse_b_.x1f(k,j,i+1) << " " <<  coarse_b_.x1f(k,j,i) << std::endl;
+          }
         }
       }
       // step 5. calculate the finer x3 fields (independent from x1 and x2)
@@ -3845,7 +3899,7 @@ void BoundaryValues::ClearBoundaryAll(void)
         field_flag_[l][nb.bufid] = boundary_waiting;
         if(nb.type==neighbor_face)
           emfcor_fflag_[l][nb.fid][nb.fi2][nb.fi1] = boundary_waiting;
-        if(nb.type==neighbor_edge)
+        if(nb.type==neighbor_edge && edge_flag_[nb.eid]==true)
           emfcor_eflag_[l][nb.eid][nb.fi1] = boundary_waiting;
       }
 #ifdef MPI_PARALLEL
