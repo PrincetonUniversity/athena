@@ -141,15 +141,16 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         // Construct initial guess for enthalpy W (cf. MM A26-A27)
         Real a1 = 4.0/3.0 * (b_sq - e);
         Real a0 = 1.0/3.0 * (m_sq + b_sq * (b_sq - 2.0*e));
-        Real w_init = quadratic_root(a1, a0, true);
+        Real s2 = SQR(a1) - 4.0*a0;
+        Real s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
+        Real w_init = (s2 >= 0.0 and a1 >= 0.0) ? -2.0*a0/(a1+s) : (-a1+s)/2.0;
 
         // Apply Newton-Raphson method to find new W
-        const int max_iterations = 5;
+        const int num_iterations = 5;
         Real w_new = w_init;
         Real res_new = EResidual(w_new, d, e, m_sq, b_sq, s_sq, gamma_prime);
-        for (int n = 0; n < max_iterations; ++n)
+        for (int n = 0; n < num_iterations; ++n)
         {
-          // Prepare needed values
           Real w_old = w_new;
           Real res_old = res_new;
           Real derivative = EResidualPrime(w_old, d, m_sq, b_sq, s_sq, gamma_prime);
@@ -371,7 +372,9 @@ void FluidEqnOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
       Real w_tot = w_gas + b_sq;
       Real a1 = -(b_sq + cs_sq * (w_gas + bbx_sq)) / w_tot;
       Real a0 = cs_sq * bbx_sq / w_tot;
-      Real lambda_sq = 0.5 * (-a1 + std::sqrt(SQR(a1) - 4.0*a0));
+      Real s2 = SQR(a1) - 4.0*a0;
+      Real s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
+      Real lambda_sq = 0.5 * (-a1 + s);
       lambda_plus_no_v = std::sqrt(lambda_sq);
       lambda_minus_no_v = -lambda_plus_no_v;
     }
@@ -385,9 +388,10 @@ void FluidEqnOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
       Real denominator = w_gas * (cs_sq + gamma_rel_sq*(1.0-cs_sq)) + q;
       Real a1 = -2.0 * w_gas * gamma_rel_sq * vx * (1.0-cs_sq) / denominator;
       Real a0 = (w_gas * (-cs_sq + gamma_rel_sq*vx_sq*(1.0-cs_sq)) - q) / denominator;
-      Real s = std::sqrt(SQR(a1) - 4.0*a0);
-      lambda_plus_no_bbx = (a1 >= 0.0) ? -2.0*a0/(a1+s) : (-a1+s)/2.0;
-      lambda_minus_no_bbx = (a1 >= 0.0) ? (-a1-s)/2.0 : -2.0*a0/(a1-s);
+      Real s2 = SQR(a1) - 4.0*a0;
+      Real s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
+      lambda_plus_no_bbx = (s2 >= 0.0 and a1 >= 0.0) ? -2.0*a0/(a1+s) : (-a1+s)/2.0;
+      lambda_minus_no_bbx = (s2 >= 0.0 and a1 < 0.0) ? -2.0*a0/(a1-s) : (-a1-s)/2.0;
     }
 
     // Calculate wavespeeds in general case (MB2006 56)
@@ -448,12 +452,14 @@ void FluidEqnOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
         Real e0 = (b1 < 0) ? 0.5*z0-s : 0.5*z0+s;
 
         // Solve quadratic equations
-        s = std::sqrt(SQR(d1) - 4.0*d0);
-        y1 = (d1 >= 0.0) ? (-d1-s)/2.0 : -2.0*d0/(d1-s);
-        y2 = (d1 >= 0.0) ? -2.0*d0/(d1+s) : (-d1+s)/2.0;
-        s = std::sqrt(SQR(e1) - 4.0*e0);
-        y3 = (e1 >= 0.0) ? (-e1-s)/2.0 : -2.0*e0/(e1-s);
-        y4 = (e1 >= 0.0) ? -2.0*e0/(e1+s) : (-e1+s)/2.0;
+        s2 = SQR(d1) - 4.0*d0;
+        s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
+        y1 = (s2 >= 0.0 and d1 < 0.0) ? -2.0*d0/(d1-s) : (-d1-s)/2.0;
+        y2 = (s2 >= 0.0 and d1 >= 0.0) ? -2.0*d0/(d1+s) : (-d1+s)/2.0;
+        s2 = SQR(e1) - 4.0*e0;
+        s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
+        y3 = (s2 >= 0.0 and e1 < 0.0) ? -2.0*e0/(e1-s) : (-e1-s)/2.0;
+        y4 = (s2 >= 0.0 and e1 >= 0.0) ? -2.0*e0/(e1+s) : (-e1+s)/2.0;
       }
 
       // Calculate extremal original quartic roots
