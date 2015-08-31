@@ -17,23 +17,26 @@
 #include "../fluid/eos/eos.hpp"            // FluidEqnOfState
 
 // Declarations
-void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons,
-                int is, int ie, int js, int je, int ks, int ke);
-void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons,
-                int is, int ie, int js, int je, int ks, int ke);
-static void set_state(Real rho, Real pgas, Real uu1, Real uu2, Real uu3, int k, int j,
-    int i, AthenaArray<Real> &prim, AthenaArray<Real> &prim_half);
+void InnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+    int ks, int ke);
+void OuterFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+    int ks, int ke);
+void InnerField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
+    int ks, int ke);
+void OuterField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
+    int ks, int ke);
+static void CalculatePrimitives(Real r, Real temp_min, Real temp_max, Real *prho,
+    Real *ppgas, Real *put, Real *pur);
+static Real TemperatureMin(Real r, Real t_min, Real t_max);
+static Real TemperatureBisect(Real r, Real t_min, Real t_max);
 static Real TemperatureResidual(Real t, Real m, Real n_adi, Real r, Real c1, Real c2);
-static Real TemperatureMin(Real m, Real n_adi, Real r, Real c1, Real c2, Real t_min,
-    Real t_max);
-static Real TemperatureBisect(Real t_min, Real t_max, Real m, Real n_adi, Real r,
-    Real c1, Real c2);
 
 // Global variables
-static Real d_inner_1, e_inner_1, m1_inner_1, m2_inner_1, m3_inner_1;
-static Real d_inner_2, e_inner_2, m1_inner_2, m2_inner_2, m3_inner_2;
-static Real d_outer_1, e_outer_1, m1_outer_1, m2_outer_1, m3_outer_1;
-static Real d_outer_2, e_outer_2, m1_outer_2, m2_outer_2, m3_outer_2;
+static Real m;             // black hole mass
+static Real n_adi, k_adi;  // fluid parameters
+static Real r_crit;        // sonic point radius
+static Real c1, c2;        // useful constants
+static Real bsq_over_rho;  // b^2/rho at inner radius
 
 // Function for setting initial conditions
 // Inputs:
@@ -47,8 +50,8 @@ static Real d_outer_2, e_outer_2, m1_outer_2, m2_outer_2, m3_outer_2;
 void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 {
   // Parameters
-  const Real t_min = 1.0e-2;  // lesser temperature root must be greater than this
-  const Real t_max = 1.0e1;   // greater temperature root must be less than this
+  const Real temp_min = 1.0e-2;  // lesser temperature root must be greater than this
+  const Real temp_max = 1.0e1;   // greater temperature root must be less than this
 
   // Prepare index bounds
   MeshBlock *pmb = pfl->pmy_block;
@@ -70,250 +73,258 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   }
 
   // Get mass of black hole
-  const Real m = pmb->pcoord->GetMass();
+  m = pmb->pcoord->GetMass();
 
   // Get ratio of specific heats
-  const Real gamma_adi = pfl->pf_eos->GetGamma();
-  const Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
-  const Real n_adi = 1.0/(gamma_adi-1.0);
+  Real gamma_adi = pfl->pf_eos->GetGamma();
+  n_adi = 1.0/(gamma_adi-1.0);
 
   // Read problem parameters
-  const Real k_adi = pin->GetReal("fluid", "k_adi");
-  const Real r_crit = pin->GetReal("problem", "r_crit");
-
-  // Read initial magnetic field
-  Real b1_flux = 0.0, b2_flux = 0.0, b3_flux = 0.0;
+  k_adi = pin->GetReal("fluid", "k_adi");
+  r_crit = pin->GetReal("problem", "r_crit");
+  bsq_over_rho = 0.0;
   if (MAGNETIC_FIELDS_ENABLED)
-  {
-    b1_flux = pin->GetReal("problem", "b1_flux");
-    b2_flux = pin->GetReal("problem", "b2_flux");
-    b3_flux = pin->GetReal("problem", "b3_flux");
-  }
+    bsq_over_rho = pin->GetReal("problem", "bsq_over_rho");
 
-  // Prepare temporary arrays
-  AthenaArray<Real> a1, a2m, a2p, a3m, a3p, b, g, gi;
-  a1.NewAthenaArray(iu+1);
-  a2m.NewAthenaArray(iu);
-  a2p.NewAthenaArray(iu);
-  a3m.NewAthenaArray(iu);
-  a3p.NewAthenaArray(iu);
-  b.NewAthenaArray(3, ku+2, ju+2, iu+2);
+  // Prepare scratch arrays
+  AthenaArray<Real> g, gi;
   g.NewAthenaArray(NMETRIC, iu+1);
   gi.NewAthenaArray(NMETRIC, iu+1);
 
-  // Initialize magnetic field
-  if (MAGNETIC_FIELDS_ENABLED)
-    for (int k = kl; k <= ku+1; ++k)
-    {
-      Real interp_param_k = (pmb->pcoord->x3v(k) - pmb->pcoord->x3f(k))
-          / pmb->pcoord->dx3f(k);
-      for (int j = jl; j <= ju+1; ++j)
-      {
-        Real interp_param_j = (pmb->pcoord->x2v(j) - pmb->pcoord->x2f(j))
-            / pmb->pcoord->dx2f(j);
-        pmb->pcoord->Face1Area(k, j, il, iu+1, a1);
-        pmb->pcoord->Face2Area(k, j, il, iu, a2m);
-        pmb->pcoord->Face2Area(k, j+1, il, iu, a2p);
-        pmb->pcoord->Face3Area(k, j, il, iu, a3m);
-        pmb->pcoord->Face3Area(k+1, j, il, iu, a3p);
-        for (int i = il; i <= iu+1; ++i)
-        {
-          Real interp_param_i = (pmb->pcoord->x1v(i) - pmb->pcoord->x1f(i))
-              / pmb->pcoord->dx1f(i);
-          Real b1m = b1_flux / a1(i);
-          Real b1p = b1_flux / a1(i+1);
-          Real b2m = b2_flux / a2m(i);
-          Real b2p = b3_flux / a2p(i);
-          Real b3m = b3_flux / a3m(i);
-          Real b3p = b3_flux / a3p(i);
-          b(IB1,k,j,i) = (1.0-interp_param_i) * b1m + interp_param_i * b1p;
-          b(IB2,k,j,i) = (1.0-interp_param_j) * b2m + interp_param_j * b2p;
-          b(IB3,k,j,i) = (1.0-interp_param_k) * b3m + interp_param_k * b3p;
-          pfd->b.x1f(k,j,i) = b1m;
-          if (i == iu)
-            pfd->b.x1f(k,j,i+1) = b1p;
-          pfd->b.x2f(k,j,i) = b2m;
-          if (j == ju)
-            pfd->b.x2f(k,j+1,i) = b2p;
-          pfd->b.x3f(k,j,i) = b3m;
-          if (k == ku)
-            pfd->b.x3f(k+1,j,i) = b3p;
-        }
-      }
-    }
-
   // Prepare various constants for determining primitives
-  Real u_crit_sq = m / (2.0*r_crit);                         // (HSW 71)
+  Real u_crit_sq = m/(2.0*r_crit);                                          // (HSW 71)
   Real u_crit = -std::sqrt(u_crit_sq);
-  Real t_crit = n_adi/(n_adi+1.0) * u_crit_sq
-      / (1.0 - (n_adi+3.0) * u_crit_sq);
-  Real c1 = std::pow(t_crit, n_adi) * u_crit * SQR(r_crit);  // (cf. HSW 69)
-  Real c2 = SQR(1.0 + (n_adi+1.0) * t_crit)
-      * (1.0 - 3.0*m / (2.0*r_crit));                        // (cf. HSW 68)
+  Real t_crit = n_adi/(n_adi+1.0) * u_crit_sq/(1.0-(n_adi+3.0)*u_crit_sq);  // (HSW 74)
+  c1 = std::pow(t_crit, n_adi) * u_crit * SQR(r_crit);                      // (HSW 68)
+  c2 = SQR(1.0 + (n_adi+1.0) * t_crit) * (1.0 - 3.0*m/(2.0*r_crit));        // (HSW 69)
 
-  // Initialize primitives
+  // Initialize primitive values
   for (int k = kl; k <= ku; ++k)
     for (int j = jl; j <= ju; ++j)
     {
       pmb->pcoord->CellMetric(k, j, il, iu, g, gi);
       for (int i = il; i <= iu; ++i)
       {
-        // Get radius
-        Real r = pmb->pcoord->x1v(i);
-
-        // Calculate solution to (HSW 76)
-        Real t_neg_res = TemperatureMin(m, n_adi, r, c1, c2, t_min, t_max);
-        Real temperature;
-        if (r <= r_crit)  // use lesser of two roots
-          temperature = TemperatureBisect(t_min, t_neg_res, m, n_adi, r, c1, c2);
-        else  // user greater of two roots
-          temperature = TemperatureBisect(t_neg_res, t_max, m, n_adi, r, c1, c2);
-
-        // Calculate primitives
-        Real rho = std::pow(temperature/k_adi, n_adi);           // not same K as HSW
-        Real pgas = temperature * rho;
-        Real u1 = c1 / (SQR(r) * std::pow(temperature, n_adi));  // (HSW 75)
-        Real u0 = std::sqrt(1.0/SQR(1.0 - 2.0*m/r) * SQR(u1)
-            + 1.0/(1.0 - 2.0*m/r));
-        Real u2 = 0.0;
-        Real u3 = 0.0;
+        Real r, theta, phi;
+        pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1v(i),
+            pmb->pcoord->x2v(j), pmb->pcoord->x3v(k), &r, &theta, &phi);
+        Real rho, pgas, ut, ur;
+        CalculatePrimitives(r, temp_min, temp_max, &rho, &pgas, &ut, &ur);
+        Real u0, u1, u2, u3;
+        pmb->pcoord->TransformVectorCell(ut, ur, 0.0, 0.0, k, j, i, &u0, &u1, &u2, &u3);
         Real uu1 = u1 - gi(I01,i)/gi(I00,i) * u0;
         Real uu2 = u2 - gi(I02,i)/gi(I00,i) * u0;
         Real uu3 = u3 - gi(I03,i)/gi(I00,i) * u0;
-        set_state(rho, pgas, uu1, uu2, uu3, k, j, i, pfl->w,
-            pfl->w1);
+        pfl->w(IDN,k,j,i) = pfl->w1(IDN,k,j,i) = rho;
+        pfl->w(IEN,k,j,i) = pfl->w1(IEN,k,j,i) = pgas;
+        pfl->w(IM1,k,j,i) = pfl->w1(IM1,k,j,i) = uu1;
+        pfl->w(IM2,k,j,i) = pfl->w1(IM2,k,j,i) = uu2;
+        pfl->w(IM3,k,j,i) = pfl->w1(IM3,k,j,i) = uu3;
       }
     }
 
-  // Initialize conserved variables
-  pmb->pfluid->pf_eos->PrimitiveToConserved(pfl->w, b, pfl->u);  
+  // Initialize magnetic field
+  if (MAGNETIC_FIELDS_ENABLED)
+  {
+    // Find normalization
+    Real r, theta, phi;
+    pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1f(pmb->is),
+        pmb->pcoord->x2v((jl+ju)/2), pmb->pcoord->x3v((kl+ku)/2), &r, &theta, &phi);
+    Real rho, pgas, ut, ur;
+    CalculatePrimitives(r, temp_min, temp_max, &rho, &pgas, &ut, &ur);
+    Real bbr = 1.0/SQR(r);
+    Real bt = 1.0/(1.0-2.0*m/r) * bbr * ur;
+    Real br = (bbr + bt * ur) / ut;
+    Real bsq = -(1.0-2.0*m/r) * SQR(bt) + 1.0/(1.0-2.0*m/r) * SQR(br);
+    Real bsq_over_rho_actual = bsq/rho;
+    Real normalization = std::sqrt(bsq_over_rho/bsq_over_rho_actual);
 
-  // Delete temporary arrays
-  a1.DeleteAthenaArray();
-  a2m.DeleteAthenaArray();
-  a2p.DeleteAthenaArray();
-  a3m.DeleteAthenaArray();
-  a3p.DeleteAthenaArray();
-  b.DeleteAthenaArray();
+    // Set field
+    for (int k = kl; k <= ku+1; ++k)
+      for (int j = jl; j <= ju+1; ++j)
+        for (int i = il; i <= iu+1; ++i)
+        {
+          // Set B^1
+          if (j != ju+1 and k != ku+1)
+          {
+            pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1f(i),
+                pmb->pcoord->x2v(j), pmb->pcoord->x3v(k), &r, &theta, &phi);
+            CalculatePrimitives(r, temp_min, temp_max, &rho, &pgas, &ut, &ur);
+            bbr = normalization/SQR(r);
+            bt = 1.0/(1.0-2.0*m/r) * bbr * ur;
+            br = (bbr + bt * ur) / ut;
+            Real u0, u1, u2, u3;
+            pmb->pcoord->TransformVectorFace1(ut, ur, 0.0, 0.0, k, j, i, &u0, &u1, &u2,
+                &u3);
+            Real b0, b1, b2, b3;
+            pmb->pcoord->TransformVectorFace1(bt, br, 0.0, 0.0, k, j, i, &b0, &b1, &b2,
+                &b3);
+            pfd->b.x1f(k,j,i) = b1 * u0 - b0 * u1;
+          }
+
+          // Set B^2
+          if (i != iu+1 and k != ku+1)
+          {
+            pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1v(i),
+                pmb->pcoord->x2f(j), pmb->pcoord->x3v(k), &r, &theta, &phi);
+            CalculatePrimitives(r, temp_min, temp_max, &rho, &pgas, &ut, &ur);
+            bbr = normalization/SQR(r);
+            bt = 1.0/(1.0-2.0*m/r) * bbr * ur;
+            br = (bbr + bt * ur) / ut;
+            Real u0, u1, u2, u3;
+            pmb->pcoord->TransformVectorFace2(ut, ur, 0.0, 0.0, k, j, i, &u0, &u1, &u2,
+                &u3);
+            Real b0, b1, b2, b3;
+            pmb->pcoord->TransformVectorFace2(bt, br, 0.0, 0.0, k, j, i, &b0, &b1, &b2,
+                &b3);
+            pfd->b.x2f(k,j,i) = b2 * u0 - b0 * u2;
+          }
+
+          // Set B^3
+          if (i != iu+1 and j != ju+1)
+          {
+            pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1v(i),
+                pmb->pcoord->x2v(j), pmb->pcoord->x3f(k), &r, &theta, &phi);
+            CalculatePrimitives(r, temp_min, temp_max, &rho, &pgas, &ut, &ur);
+            bbr = normalization/SQR(r);
+            bt = 1.0/(1.0-2.0*m/r) * bbr * ur;
+            br = (bbr + bt * ur) / ut;
+            Real u0, u1, u2, u3;
+            pmb->pcoord->TransformVectorFace3(ut, ur, 0.0, 0.0, k, j, i, &u0, &u1, &u2,
+                &u3);
+            Real b0, b1, b2, b3;
+            pmb->pcoord->TransformVectorFace3(bt, br, 0.0, 0.0, k, j, i, &b0, &b1, &b2,
+                &b3);
+            pfd->b.x3f(k,j,i) = b3 * u0 - b0 * u3;
+          }
+        }
+  }
+
+  // Calculate cell-centered magnetic field
+  AthenaArray<Real> bb;
+  bb.NewAthenaArray(3, ku+1, ju+1, iu+1);
+  if (MAGNETIC_FIELDS_ENABLED)
+    for (int k = kl; k <= ku; ++k)
+      for (int j = jl; j <= ju; ++j)
+        for (int i = il; i <= iu; ++i)
+        {
+          // Extract face-centered magnetic field
+          const Real &bbf1m = pfd->b.x1f(k,j,i);
+          const Real &bbf1p = pfd->b.x1f(k,j,i+1);
+          const Real &bbf2m = pfd->b.x2f(k,j,i);
+          const Real &bbf2p = pfd->b.x2f(k,j+1,i);
+          const Real &bbf3m = pfd->b.x3f(k,j,i);
+          const Real &bbf3p = pfd->b.x3f(k+1,j,i);
+
+          // Calculate cell-centered magnetic field
+          Real tmp = (pmb->pcoord->x1v(i) - pmb->pcoord->x1f(i)) / pmb->pcoord->dx1f(i);
+          bb(IB1,k,j,i) = (1.0-tmp) * bbf1m + tmp * bbf1p;
+          tmp = (pmb->pcoord->x2v(j) - pmb->pcoord->x2f(j)) / pmb->pcoord->dx2f(j);
+          bb(IB2,k,j,i) = (1.0-tmp) * bbf2m + tmp * bbf2p;
+          tmp = (pmb->pcoord->x3v(k) - pmb->pcoord->x3f(k)) / pmb->pcoord->dx3f(k);
+          bb(IB3,k,j,i) = (1.0-tmp) * bbf3m + tmp * bbf3p;
+       }
+
+  // Initialize conserved variables
+  pmb->pfluid->pf_eos->PrimitiveToConserved(pfl->w, bb, pfl->u);
+
+  // Free scratch arrays
   g.DeleteAthenaArray();
   gi.DeleteAthenaArray();
-
-  // Save inner boundary state
-  d_inner_1 = pfl->u(IDN,pmb->ks,pmb->js,pmb->is-1);
-  e_inner_1 = pfl->u(IEN,pmb->ks,pmb->js,pmb->is-1);
-  m1_inner_1 = pfl->u(IM1,pmb->ks,pmb->js,pmb->is-1);
-  m2_inner_1 = pfl->u(IM2,pmb->ks,pmb->js,pmb->is-1);
-  m3_inner_1 = pfl->u(IM3,pmb->ks,pmb->js,pmb->is-1);
-  d_inner_2 = pfl->u(IDN,pmb->ks,pmb->js,pmb->is-2);
-  e_inner_2 = pfl->u(IEN,pmb->ks,pmb->js,pmb->is-2);
-  m1_inner_2 = pfl->u(IM1,pmb->ks,pmb->js,pmb->is-2);
-  m2_inner_2 = pfl->u(IM2,pmb->ks,pmb->js,pmb->is-2);
-  m3_inner_2 = pfl->u(IM3,pmb->ks,pmb->js,pmb->is-2);
-
-  // Save outer boundary state
-  d_outer_1 = pfl->u(IDN,pmb->ks,pmb->js,pmb->ie+1);
-  e_outer_1 = pfl->u(IEN,pmb->ks,pmb->js,pmb->ie+1);
-  m1_outer_1 = pfl->u(IM1,pmb->ks,pmb->js,pmb->ie+1);
-  m2_outer_1 = pfl->u(IM2,pmb->ks,pmb->js,pmb->ie+1);
-  m3_outer_1 = pfl->u(IM3,pmb->ks,pmb->js,pmb->ie+1);
-  d_outer_2 = pfl->u(IDN,pmb->ks,pmb->js,pmb->ie+2);
-  e_outer_2 = pfl->u(IEN,pmb->ks,pmb->js,pmb->ie+2);
-  m1_outer_2 = pfl->u(IM1,pmb->ks,pmb->js,pmb->ie+2);
-  m2_outer_2 = pfl->u(IM2,pmb->ks,pmb->js,pmb->ie+2);
-  m3_outer_2 = pfl->u(IM3,pmb->ks,pmb->js,pmb->ie+2);
+  bb.DeleteAthenaArray();
 
   // Enroll boundary functions
-  pmb->pbval->EnrollFluidBoundaryFunction(inner_x1, FixedInner);
-  pmb->pbval->EnrollFluidBoundaryFunction(outer_x1, FixedOuter);
+  pmb->pbval->EnrollFluidBoundaryFunction(inner_x1, InnerFluid);
+  pmb->pbval->EnrollFluidBoundaryFunction(outer_x1, OuterFluid);
+  if (MAGNETIC_FIELDS_ENABLED)
+  {
+    pmb->pbval->EnrollFieldBoundaryFunction(inner_x1, InnerField);
+    pmb->pbval->EnrollFieldBoundaryFunction(outer_x1, OuterField);
+  }
   return;
 }
 
-// Inner boundary condition
-void FixedInner(MeshBlock *pmb, AthenaArray<Real> &cons,
-                int is, int ie, int js, int je, int ks, int ke)
+// Inner fluid boundary condition
+// TODO: change when interface changes
+void InnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+    int ks, int ke)
 {
-  // Set conserved values
-  for (int k = ks; k <= ke; ++k)
-    for (int j = js; j <= je; ++j)
-    {
-      cons(IDN,k,j,is-1) = d_inner_1;
-      cons(IEN,k,j,is-1) = e_inner_1;
-      cons(IM1,k,j,is-1) = m1_inner_1;
-      cons(IM2,k,j,is-1) = m2_inner_1;
-      cons(IM3,k,j,is-1) = m3_inner_1;
-      cons(IDN,k,j,is-2) = d_inner_2;
-      cons(IEN,k,j,is-2) = e_inner_2;
-      cons(IM1,k,j,is-2) = m1_inner_2;
-      cons(IM2,k,j,is-2) = m2_inner_2;
-      cons(IM3,k,j,is-2) = m3_inner_2;
-    }
   return;
 }
 
-// Outer boundary condition
-void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &cons,
-                int is, int ie, int js, int je, int ks, int ke)
+// Outer fluid boundary condition
+// TODO: change when interface changes
+void OuterFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+    int ks, int ke)
 {
-  // Set conserved values
-  for (int k = ks; k <= ke; ++k)
-    for (int j = js; j <= je; ++j)
-    {
-      cons(IDN,k,j,ie+1) = d_outer_1;
-      cons(IEN,k,j,ie+1) = e_outer_1;
-      cons(IM1,k,j,ie+1) = m1_outer_1;
-      cons(IM2,k,j,ie+1) = m2_outer_1;
-      cons(IM3,k,j,ie+1) = m3_outer_1;
-      cons(IDN,k,j,ie+2) = d_outer_2;
-      cons(IEN,k,j,ie+2) = e_outer_2;
-      cons(IM1,k,j,ie+2) = m1_outer_2;
-      cons(IM2,k,j,ie+2) = m2_outer_2;
-      cons(IM3,k,j,ie+2) = m3_outer_2;
-    }
   return;
 }
 
-// Function for setting conserved variables in a cell given the primitives
+// Inner field boundary condition
+// TODO: comment
+void InnerField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
+    int ks, int ke)
+{
+  return;
+}
+
+// Outer field boundary condition
+// TODO: comment
+void OuterField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
+    int ks, int ke)
+{
+  return;
+}
+
+// Function for calculating primitives given radius
 // Inputs:
-//   rho: density
-//   pgas: gas pressure
-//   uu1,uu2,uu3: projected 4-velocity compontents \tilde{u}^i
-//   k,j,i: indices for cell
+//   r: Schwarzschild radius
+//   temp_min,temp_max: bounds on temperature
 // Outputs:
-//   prim,prim_half: primitives in cell set
-static void set_state(Real rho, Real pgas, Real uu1, Real uu2, Real uu3, int k, int j,
-    int i, AthenaArray<Real> &prim, AthenaArray<Real> &prim_half)
-{
-  prim(IDN,k,j,i) = prim_half(IDN,k,j,i) = rho;
-  prim(IEN,k,j,i) = prim_half(IEN,k,j,i) = pgas;
-  prim(IM1,k,j,i) = prim_half(IM1,k,j,i) = uu1;
-  prim(IM2,k,j,i) = prim_half(IM2,k,j,i) = uu2;
-  prim(IM3,k,j,i) = prim_half(IM3,k,j,i) = uu3;
-  return;
-}
-
-// Function whose value vanishes for correct temperature
+//   prho: value set to density
+//   ppgas: value set to gas pressure
+//   put: value set to u^t in Schwarzschild coordinates
+//   pur: value set to u^r in Schwarzschild coordinates
 // Notes:
-//   implements (76) from Hawley, Smarr, & Wilson 1984, ApJ 277 296
-static Real TemperatureResidual(Real t, Real m, Real n_adi, Real r, Real c1, Real c2)
+//   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
+static void CalculatePrimitives(Real r, Real temp_min, Real temp_max, Real *prho,
+    Real *ppgas, Real *put, Real *pur)
 {
-  return SQR(1.0 + (n_adi+1.0) * t)
-      * (1.0 - 2.0*m/r + SQR(c1) / (SQR(SQR(r)) * std::pow(t, 2.0*n_adi))) - c2;
+  // Calculate solution to (HSW 76)
+  Real temp_neg_res = TemperatureMin(r, temp_min, temp_max);
+  Real temp;
+  if (r <= r_crit)  // use lesser of two roots
+    temp = TemperatureBisect(r, temp_min, temp_neg_res);
+  else  // user greater of two roots
+    temp = TemperatureBisect(r, temp_neg_res, temp_max);
+
+  // Calculate primitives
+  Real rho = std::pow(temp/k_adi, n_adi);             // not same K as HSW
+  eeal rho = std::pow(temp/k_adi, n_adi);             // not same K as HSW
+  Real pgas = temp * rho;
+  Real pgas = temp * rho;
+  Real ur = c1 / (SQR(r) * std::pow(temp, n_adi));    // (HSW 75)
+  Real ut = std::sqrt(1.0/SQR(1.0-2.0*m/r) * SQR(ur)
+      + 1.0/(1.0-2.0*m/r));
+
+  // Set primitives
+  *prho = rho;
+  *ppgas = pgas;
+  *put = ut;
+  *pur = ur;
+  return;
 }
 
 // Function for finding temperature at which residual is minimized
 // Inputs:
-//   m: black hole mass
-//   n_adi: polytropic index n = 1/(1-\Gamma)
 //   r: Schwarzschild radius
-//   c1,c2: constants as defined by (HSW 68,69)
 //   t_min,t_max: bounds between which minimum must occur
 // Outputs:
 //   returned value: some temperature for which residual of (HSW 76) is negative
 // Notes:
 //   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 //   performs golden section search (cf. Numerical Recipes, 3rd ed., 10.2)
-static Real TemperatureMin(Real m, Real n_adi, Real r, Real c1, Real c2, Real t_min,
-    Real t_max)
+static Real TemperatureMin(Real r, Real t_min, Real t_max)
 {
   // Parameters
   const Real ratio = 0.3819660112501051;  // (3+\sqrt{5})/2
@@ -368,18 +379,14 @@ static Real TemperatureMin(Real m, Real n_adi, Real r, Real c1, Real c2, Real t_
 
 // Bisection root finder
 // Inputs:
-//   t_min,t_max: bounds between which root must occur
-//   m: black hole mass
-//   n_adi: polytropic index n = 1/(1-\Gamma)
 //   r: Schwarzschild radius
-//   c1,c2: constants as defined by (HSW 68,69)
+//   t_min,t_max: bounds between which root must occur
 // Outputs:
 //   returned value: temperature that satisfies (HSW 76)
 // Notes:
 //   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 //   performs bisection search
-static Real TemperatureBisect(Real t_min, Real t_max, Real m, Real n_adi, Real r,
-    Real c1, Real c2)
+static Real TemperatureBisect(Real r, Real t_min, Real t_max)
 {
   // Parameters
   const int max_iterations = 20;
@@ -418,4 +425,13 @@ static Real TemperatureBisect(Real t_min, Real t_max, Real m, Real n_adi, Real r
     }
   }
   return t_mid;
+}
+
+// Function whose value vanishes for correct temperature
+// Notes:
+//   implements (76) from Hawley, Smarr, & Wilson 1984, ApJ 277 296
+static Real TemperatureResidual(Real t, Real m, Real n_adi, Real r, Real c1, Real c2)
+{
+  return SQR(1.0 + (n_adi+1.0) * t)
+      * (1.0 - 2.0*m/r + SQR(c1) / (SQR(SQR(r)) * std::pow(t, 2.0*n_adi))) - c2;
 }
