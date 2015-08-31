@@ -122,8 +122,9 @@ def vtk(filename):
   cell_dimensions = np.array([max(dim-1,1)
       for dim in face_dimensions])
   num_cells = cell_dimensions.prod()
-  current_index = \
-      skip_string('CELL_DATA {0}\n'.format(num_cells))
+  current_index = skip_string('CELL_DATA {0}\n'.format(num_cells))
+  if raw_data[current_index:current_index+1] == '\n':
+    current_index = skip_string('\n')  # extra newline inserted by join script
   data = {}
 
   # Function for reading scalar data
