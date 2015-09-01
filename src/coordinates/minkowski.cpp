@@ -18,67 +18,67 @@
 
 // Constructor
 // Inputs:
-//   pb: pointer to block containing this grid
+//   pmb: pointer to block containing this grid
 //   pin: pointer to runtime inputs
-Coordinates::Coordinates(MeshBlock *pb, ParameterInput *pin)
+Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 {
   // Set pointer to host MeshBlock
-  pmy_block = pb;
+  pmy_block = pmb;
 
   // Set face centered positions and distances
   AllocateAndSetBasicCoordinates();
 
   // Initialize volume-averaged positions and spacings: x-direction
-  for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST; ++i)
+  for (int i = pmb->is-NGHOST; i <= pmb->ie+NGHOST; ++i)
     x1v(i) = 0.5 * (x1f(i) + x1f(i+1));
-  for (int i = pb->is-NGHOST; i <= pb->ie+NGHOST-1; ++i)
+  for (int i = pmb->is-NGHOST; i <= pmb->ie+NGHOST-1; ++i)
     dx1v(i) = x1v(i+1) - x1v(i);
 
   // Initialize volume-averaged positions and spacings: y-direction
-  if (pb->block_size.nx2 == 1)  // no extent
+  if (pmb->block_size.nx2 == 1)  // no extent
   {
-    x2v(pb->js) = 0.5 * (x2f(pb->js) + x2f(pb->js+1));
-    dx2v(pb->js) = dx2f(pb->js);
+    x2v(pmb->js) = 0.5 * (x2f(pmb->js) + x2f(pmb->js+1));
+    dx2v(pmb->js) = dx2f(pmb->js);
   }
   else  // extended
   {
-    for (int j = pb->js-NGHOST; j <= pb->je+NGHOST; ++j)
+    for (int j = pmb->js-NGHOST; j <= pmb->je+NGHOST; ++j)
       x2v(j) = 0.5 * (x2f(j) + x2f(j+1));
-    for (int j = pb->js-NGHOST; j <= pb->je+NGHOST-1; ++j)
+    for (int j = pmb->js-NGHOST; j <= pmb->je+NGHOST-1; ++j)
       dx2v(j) = x2v(j+1) - x2v(j);
   }
 
   // Initialize volume-averaged positions and spacings: z-direction
-  if (pb->block_size.nx3 == 1)  // no extent
+  if (pmb->block_size.nx3 == 1)  // no extent
   {
-    x3v(pb->ks) = 0.5 * (x3f(pb->ks) + x3f(pb->ks+1));
-    dx3v(pb->ks) = dx3f(pb->ks);
+    x3v(pmb->ks) = 0.5 * (x3f(pmb->ks) + x3f(pmb->ks+1));
+    dx3v(pmb->ks) = dx3f(pmb->ks);
   }
   else  // extended
   {
-    for (int k = pb->ks-NGHOST; k <= pb->ke+NGHOST; ++k)
+    for (int k = pmb->ks-NGHOST; k <= pmb->ke+NGHOST; ++k)
       x3v(k) = 0.5 * (x3f(k) + x3f(k+1));
-    for (int k = pb->ks-NGHOST; k <= pb->ke+NGHOST-1; ++k)
+    for (int k = pmb->ks-NGHOST; k <= pmb->ke+NGHOST-1; ++k)
       dx3v(k) = x3v(k+1) - x3v(k);
   }
 
-  if(pb->pmy_mesh->multilevel==true) { // calc coarse coodinates
-    int cis = pb->cis; int cjs = pb->cjs; int cks = pb->cks;
-    int cie = pb->cie; int cje = pb->cje; int cke = pb->cke;
-    for (int i=cis-(pb->cnghost); i<=cie+(pb->cnghost); ++i) {
+  if(pmb->pmy_mesh->multilevel==true) { // calc coarse coodinates
+    int cis = pmb->cis; int cjs = pmb->cjs; int cks = pmb->cks;
+    int cie = pmb->cie; int cje = pmb->cje; int cke = pmb->cke;
+    for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost); ++i) {
       coarse_x1v(i) = 0.5*(coarse_x1f(i+1) + coarse_x1f(i));
     }
-    if (pb->block_size.nx2 == 1) {
+    if (pmb->block_size.nx2 == 1) {
       coarse_x2v(cjs) = 0.5*(coarse_x2f(cjs+1) + coarse_x2f(cjs));
     } else {
-      for (int j=cjs-(pb->cnghost); j<=cje+(pb->cnghost); ++j) {
+      for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost); ++j) {
         coarse_x2v(j) = 0.5*(coarse_x2f(j+1) + coarse_x2f(j));
       }
     }
-    if (pb->block_size.nx3 == 1) {
+    if (pmb->block_size.nx3 == 1) {
       coarse_x3v(cks) = 0.5*(coarse_x3f(cks+1) + coarse_x3f(cks));
     } else {
-      for (int k=cks-(pb->cnghost); k<=cke+(pb->cnghost); ++k) {
+      for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost); ++k) {
         coarse_x3v(k) = 0.5*(coarse_x3f(k+1) + coarse_x3f(k));
       }
     }

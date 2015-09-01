@@ -1,7 +1,7 @@
 // Minkowski spacetime, sinusoidal ("snake") coordinates
 // Notes:
 //   coordinates: t, x, y, z
-//   parameters: a, k
+//   parameters: a (aa in code), k (kk in code)
 //   metric:
 //     ds^2 = -dt^2 + \alpha^2 dx^2 - 2 \beta dx dy + dy^2 + dz^2
 //     alpha = \sqrt(1 + a^2 k^2 \cos^2(k x))
@@ -34,17 +34,17 @@
 //   pin: pointer to runtime inputs
 Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 {
+  // Set pointer to host MeshBlock
+  pmy_block = pmb;
+
   // Set face centered positions and distances
   AllocateAndSetBasicCoordinates();
 
   // Set parameters
   sinu_amplitude_ = pin->GetReal("coord", "a");
   sinu_wavenumber_ = pin->GetReal("coord", "k");
-  const Real &a = sinu_amplitude_;
-  const Real &k = sinu_wavenumber_;
-
-  // Set pointer to host MeshBlock
-  pmy_block = pmb;
+  const Real &aa = sinu_amplitude_;
+  const Real &kk = sinu_wavenumber_;
 
   // Initialize volume-averaged positions and spacings: x-direction
   for (int i = pmb->is-NGHOST; i <= pmb->ie+NGHOST; ++i)
@@ -144,6 +144,8 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
   trans_face2_i1_.NewAthenaArray(n_cells_1);
   trans_face2_i2_.NewAthenaArray(n_cells_1);
   trans_face3_i2_.NewAthenaArray(n_cells_1);
+  g_.NewAthenaArray(NMETRIC, n_cells_1);
+  gi_.NewAthenaArray(NMETRIC, n_cells_1);
 
   // Calculate intermediate geometric quantities: x-direction
   #pragma simd
@@ -153,17 +155,17 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     Real r_c = x1v(i);
     Real r_m = x1f(i);
     Real r_p = x1f(i+1);
-    Real sin_2m = std::sin(2.0*k*r_m);
-    Real sin_2p = std::sin(2.0*k*r_p);
-    Real cos_c = std::cos(k*r_c);
-    Real cos_m = std::cos(k*r_m);
-    Real cos_p = std::cos(k*r_p);
-    Real alpha_sq_c = 1.0 + SQR(a)*SQR(k) * SQR(cos_c);
-    Real alpha_sq_m = 1.0 + SQR(a)*SQR(k) * SQR(cos_m);
+    Real sin_2m = std::sin(2.0*kk*r_m);
+    Real sin_2p = std::sin(2.0*kk*r_p);
+    Real cos_c = std::cos(kk*r_c);
+    Real cos_m = std::cos(kk*r_m);
+    Real cos_p = std::cos(kk*r_p);
+    Real alpha_sq_c = 1.0 + SQR(aa)*SQR(kk) * SQR(cos_c);
+    Real alpha_sq_m = 1.0 + SQR(aa)*SQR(kk) * SQR(cos_m);
     Real alpha_c = std::sqrt(alpha_sq_c);
-    Real beta_c = a*k * cos_c;
-    Real beta_m = a*k * cos_m;
-    Real beta_p = a*k * cos_p;
+    Real beta_c = aa*kk * cos_c;
+    Real beta_m = aa*kk * cos_m;
+    Real beta_p = aa*kk * cos_p;
 
     // Source terms
     coord_src_i1_(i) = (beta_m - beta_p) / dx1f(i);
@@ -208,6 +210,8 @@ Coordinates::~Coordinates()
   trans_face2_i1_.DeleteAthenaArray();
   trans_face2_i2_.DeleteAthenaArray();
   trans_face3_i2_.DeleteAthenaArray();
+  g_.DeleteAthenaArray();
+  gi_.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------

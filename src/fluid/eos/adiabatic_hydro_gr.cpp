@@ -21,7 +21,6 @@
 static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma_adi,
     const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int i,
     MeshBlock *pmb, AthenaArray<Real> &cons);
-static Real FindRootNR(Real w_initial, Real d, Real q_n, Real qq_sq, Real gamma_adi);
 static Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_adi);
 static Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi);
 static void neighbor_average(AthenaArray<Real> &prim, AthenaArray<bool> &problem, int n,
@@ -179,7 +178,19 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         }
 
         // Apply Newton-Raphson method to find new W
-        Real wgas_rel_true = FindRootNR(wgas_rel_init, d, q_n, qq_sq, gamma_adi);
+        const int num_iterations = 5;
+        Real wgas_rel_new = wgas_rel_init;
+        Real res_new = QNResidual(wgas_rel_new, d, q_n, qq_sq, gamma_adi);
+        for (int n = 0; n < num_iterations; ++n)
+        {
+          Real wgas_rel_old = wgas_rel_new;
+          Real res_old = res_new;
+          Real derivative = QNResidualPrime(wgas_rel_old, d, qq_sq, gamma_adi);
+          Real delta = -res_old / derivative;
+          wgas_rel_new = wgas_rel_old + delta;
+          res_new = QNResidual(wgas_rel_new, d, q_n, qq_sq, gamma_adi);
+        }
+        Real wgas_rel_true = wgas_rel_new;
         if (not (wgas_rel_true > 0.0 and wgas_rel_true < max_wgas_rel))
         {
           fixed_(k,j,i) = true;
@@ -213,11 +224,14 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         uu3 = gamma_rel * qq3 / wgas_rel_true;  // (N 31)
 
         // Apply floors to density and pressure
-        Real density_floor_local = rho_min_ * std::pow(pmb->pcoord->x1v(i), rho_pow_);
-        density_floor_local = std::max(density_floor_local, density_floor_);
-        Real pressure_floor_local =
-            (gamma_-1.0) * u_min_ * std::pow(pmb->pcoord->x1v(i), u_pow_);
-        pressure_floor_local = std::max(pressure_floor_local, pressure_floor_);
+        Real density_floor_local = density_floor_;
+        if (rho_pow_ != 0.0)
+          density_floor_local = std::max(density_floor_local,
+              rho_min_*std::pow(pmb->pcoord->x1v(i),rho_pow_));
+        Real pressure_floor_local = pressure_floor_;
+        if (u_pow_ != 0.0)
+          pressure_floor_local = std::max(pressure_floor_local,
+              (gamma_-1.0)*u_min_*std::pow(pmb->pcoord->x1v(i),u_pow_));
         if (rho < density_floor_local or std::isnan(rho))
         {
           rho = density_floor_local;
@@ -406,79 +420,6 @@ void FluidEqnOfState::SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Rea
     *plambda_minus = root_1;
   }
   return;
-}
-
-// Newton-Raphson root finder
-// Inputs:
-//   w_initial: initial guess for total enthalpy W
-//   d: D = alpha * rho * u^0
-//   q_n: Q_mu n^mu = -alpha^2 g^{mu 0} T^0_mu
-//   qq_sq: \tilde{Q}^2 = alpha^2 g^{mu nu} T^0_mu T^0_nu
-//                          + alpha^4 (g^{0 mu} T^0_mu)^2
-//   gamma_adi: ratio of specific heats
-// Outputs:
-// Notes:
-//   returns NAN in event of failure
-//   forces W to be positive
-static Real FindRootNR(Real w_initial, Real d, Real q_n, Real qq_sq, Real gamma_adi)
-{
-  // Parameters
-  const int max_iterations = 100;         // maximum number of iterations
-  const Real tol_w = 1.0e-8 * w_initial;  // absolute tolerance in W
-  const Real tol_res = 1.0e-15;           // absolute tolerance in residual
-
-  // Check if root has already been found
-  Real new_res = QNResidual(w_initial, d, q_n, qq_sq, gamma_adi);
-  if (std::abs(new_res) < tol_res)
-    return w_initial;
-
-  // Iterate to find root
-  Real new_w = w_initial;
-  for (int i = 0; i < max_iterations; ++i)
-  {
-    // Prepare needed values
-    Real old_w = new_w;
-    Real old_res = new_res;
-    Real derivative = QNResidualPrime(old_w, d, qq_sq, gamma_adi);
-    Real delta = -old_res / derivative;
-
-    // Check that update makes sense
-    if (!std::isfinite(delta))
-      return NAN;
-
-    // Reduce step if root goes out of bounds
-    int j;
-    for (j = i; j < max_iterations; ++j)
-    {
-      new_w = old_w + delta;
-      if (new_w > 0.0)
-        break;
-      else
-        delta /= 2.0;
-    }
-    i = j;
-
-    // Reduce step if new value is worse than old
-    for (j = i; j < max_iterations; ++j)
-    {
-      new_res = QNResidual(new_w, d, q_n, qq_sq, gamma_adi);
-      if (std::abs(new_res) < std::abs(old_res))
-        break;
-      else
-      {
-        delta /= 2.0;
-        new_w = old_w + delta;
-      }
-    }
-    i = j;
-
-    // Check if root found
-    if (std::abs(new_res) < tol_res || std::abs(delta) < tol_w)
-      return new_w;
-  }
-
-  // Indicate failure to converge
-  return NAN;
 }
 
 // Function whose value vanishes for correct enthalpy

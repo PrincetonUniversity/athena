@@ -79,6 +79,12 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
       bb_normal_(i) = bb(k,j,i);
   }
 
+  // Calculate wavespeeds
+  pmy_fluid->pf_eos->FastMagnetosonicSpeedsSR(prim_l, bb_normal_, il, iu, ivx,
+      lambdas_p_l_, lambdas_m_l_);
+  pmy_fluid->pf_eos->FastMagnetosonicSpeedsSR(prim_r, bb_normal_, il, iu, ivx,
+      lambdas_p_r_, lambdas_m_r_);
+
   // Calculate cyclic permutations of indices
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
@@ -162,19 +168,9 @@ void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
     b_r[3] = (bb3_r + b_r[0] * u_r[3]) / u_r[0];
     Real b_sq_r = -SQR(b_r[0]) + SQR(b_r[1]) + SQR(b_r[2]) + SQR(b_r[3]);
 
-    // Calculate wavespeeds in left state (MB2006 56)
-    Real lambda_p_l, lambda_m_l;
-    pmy_fluid->pf_eos->FastMagnetosonicSpeedsSR(rho_l, pgas_l, u_l, b_l, &lambda_p_l,
-        &lambda_m_l);
-
-    // Calculate wavespeeds in right state (MB2006 56)
-    Real lambda_p_r, lambda_m_r;
-    pmy_fluid->pf_eos->FastMagnetosonicSpeedsSR(rho_r, pgas_r, u_r, b_r, &lambda_p_r,
-        &lambda_m_r);
-
     // Calculate extremal wavespeeds (MB2006 55)
-    Real lambda_l = std::min(lambda_m_l, lambda_m_r);
-    Real lambda_r = std::max(lambda_p_l, lambda_p_r);
+    Real lambda_l = std::min(lambdas_m_l_(i), lambdas_m_r_(i));
+    Real lambda_r = std::max(lambdas_p_l_(i), lambdas_p_r_(i));
 
     // Calculate conserved quantities in L region (MUB 8)
     Real cons_l[NWAVE];

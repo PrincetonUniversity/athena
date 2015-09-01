@@ -35,6 +35,9 @@ static Real beta;   // \sqrt{1-a^2}
 //   pin: pointer to runtime inputs
 Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 {
+  // Set pointer to host MeshBlock
+  pmy_block = pmb;
+
   // Set face centered positions and distances
   AllocateAndSetBasicCoordinates();
 
@@ -43,9 +46,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
   const Real &a = tilted_a_;
   alpha = std::sqrt(1.0 + SQR(a));
   beta = std::sqrt(1.0 - SQR(a));
-
-  // Set pointer to host MeshBlock
-  pmy_block = pmb;
 
   // Initialize volume-averaged positions and spacings: x'-direction
   for (int i = pmb->is-NGHOST; i <= pmb->ie+NGHOST; ++i)
@@ -129,6 +129,11 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
       }
     }
   }
+
+  // Allocate arrays for intermediate geometric quantities: x'-direction
+  int n_cells_1 = pmb->block_size.nx1 + 2*NGHOST;
+  g_.NewAthenaArray(NMETRIC, n_cells_1);
+  gi_.NewAthenaArray(NMETRIC, n_cells_1);
 }
 
 //--------------------------------------------------------------------------------------
@@ -137,6 +142,8 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 Coordinates::~Coordinates()
 {
   DeleteBasicCoordinates();
+  g_.DeleteAthenaArray();
+  gi_.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------

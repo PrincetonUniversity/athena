@@ -50,7 +50,13 @@ FluidIntegrator::FluidIntegrator(Fluid *pf, ParameterInput *pin)
   face_area_p1_.NewAthenaArray(nthreads,ncells1);
   cell_volume_.NewAthenaArray(nthreads,ncells1);
   if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in (SR/GR)MHD
+  {
     bb_normal_.NewAthenaArray(ncells1);
+    lambdas_p_l_.NewAthenaArray(ncells1);
+    lambdas_m_l_.NewAthenaArray(ncells1);
+    lambdas_p_r_.NewAthenaArray(ncells1);
+    lambdas_m_r_.NewAthenaArray(ncells1);
+  }
   if (GENERAL_RELATIVITY)  // only used in GR
   {
     g_.NewAthenaArray(NMETRIC,ncells1);
@@ -72,7 +78,13 @@ FluidIntegrator::~FluidIntegrator()
   face_area_p1_.DeleteAthenaArray();
   cell_volume_.DeleteAthenaArray();
   if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in (SR/GR)MHD
+  {
     bb_normal_.DeleteAthenaArray();
+    lambdas_p_l_.DeleteAthenaArray();
+    lambdas_m_l_.DeleteAthenaArray();
+    lambdas_p_r_.DeleteAthenaArray();
+    lambdas_m_r_.DeleteAthenaArray();
+  }
   if (GENERAL_RELATIVITY)
   {
     g_.DeleteAthenaArray();

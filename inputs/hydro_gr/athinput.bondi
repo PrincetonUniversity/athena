@@ -14,6 +14,18 @@ file_type = vtk
 variable  = cons
 dt        = 100.0
 
+<output3>
+file_type   = tab
+data_format = %24.16e
+variable    = prim
+dt          = 100.0
+
+<output4>
+file_type   = tab
+data_format = %24.16e
+variable    = cons
+dt          = 100.0
+
 <time>
 cfl_number = 0.4
 nlim       = -1
@@ -40,10 +52,12 @@ ox3_bc = 4                   # 4: periodic
 
 <coord>
 m = 1.0  # black hole mass M
+a = 0.0  # black hole spin
 
 <fluid>
 gamma = 1.3333333333333333  # \Gamma = C_p/C_V
 k_adi = 1.0                 # p = K \rho^\Gamma
 
 <problem>
-r_crit = 8.0  # sonic point radius, in units of mass
+r_crit       = 8.0  # sonic point radius, in units of mass
+bsq_over_rho = 0.0  # value of b^2/rho at inner radius

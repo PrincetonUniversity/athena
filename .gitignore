@@ -28,7 +28,9 @@ athena
 # Athena output files
 *.tab
 *.vtk
+*.athdf
 *.hst
+*.rst
 
 # Visualization package files
 .smhist
