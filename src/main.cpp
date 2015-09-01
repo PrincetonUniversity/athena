@@ -311,17 +311,16 @@ int main(int argc, char *argv[])
       task_list.AddTask(flux_correct_send_1, fluid_integrate_1);
       task_list.AddTask(flux_correct_recv_1, fluid_integrate_1);
       task_list.AddTask(fluid_send_1, flux_correct_recv_1); // send block boundaries
-    }
-    else
-      task_list.AddTask(fluid_send_1, fluid_integrate_1); // send block boundaries
-    task_list.AddTask(calculate_emf_1, fluid_integrate_1); // calculate EMF
-    if(pmesh->multilevel==true) { // SMR or AMR
+      task_list.AddTask(calculate_emf_1, none); // calculate EMF
       task_list.AddTask(emf_correct_send_1, calculate_emf_1);
       task_list.AddTask(emf_correct_recv_1, calculate_emf_1);
       task_list.AddTask(field_integrate_1, emf_correct_recv_1); // predict b-field
     }
-    else
+    else {
+      task_list.AddTask(fluid_send_1, fluid_integrate_1); // send block boundaries
+      task_list.AddTask(calculate_emf_1, fluid_integrate_1); // calculate EMF
       task_list.AddTask(field_integrate_1, calculate_emf_1); // predict b-field
+    }
     task_list.AddTask(field_send_1, field_integrate_1); // send block boundaries
     task_list.AddTask(fluid_recv_1, none); // receive block boundaries
     task_list.AddTask(fluid_boundary_1, fluid_recv_1 | fluid_integrate_1); // physical boundaries
@@ -341,17 +340,16 @@ int main(int argc, char *argv[])
       task_list.AddTask(flux_correct_send_0, fluid_integrate_0);
       task_list.AddTask(flux_correct_recv_0, fluid_integrate_0);
       task_list.AddTask(fluid_send_0, flux_correct_recv_0); // send block boundaries
-    }
-    else
-      task_list.AddTask(fluid_send_0, fluid_integrate_0); // send block boundaries
-    task_list.AddTask(calculate_emf_0, fluid_integrate_0); // calculate EMF
-    if(pmesh->multilevel==true) { // SMR or AMR
+      task_list.AddTask(calculate_emf_0, primitives_1); // calculate EMF
       task_list.AddTask(emf_correct_send_0, calculate_emf_0);
       task_list.AddTask(emf_correct_recv_0, calculate_emf_0);
-      task_list.AddTask(field_integrate_0, emf_correct_recv_0);  // correct b-field
+      task_list.AddTask(field_integrate_0, emf_correct_recv_0); // predict b-field
     }
-    else
-      task_list.AddTask(field_integrate_0, calculate_emf_0); // correct b-field
+    else {
+      task_list.AddTask(fluid_send_0, fluid_integrate_0); // send block boundaries
+      task_list.AddTask(calculate_emf_0, fluid_integrate_0); // calculate EMF
+      task_list.AddTask(field_integrate_0, calculate_emf_0); // predict b-field
+    }
     task_list.AddTask(field_send_0, field_integrate_0); // send block boundaries
     task_list.AddTask(fluid_recv_0, primitives_1); // receive block boundaries
     task_list.AddTask(fluid_boundary_0, fluid_recv_0 | fluid_integrate_0); // physical boundaries

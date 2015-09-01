@@ -3525,95 +3525,59 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
           }
         }
       }
-      // step 4. calculate the internal finer x1 field
-      // step 5. calculate the internal finer x2 field
-      // step 6. calculate the internal finer x3 field
+      // step 4. calculate the internal finer fields using the Toth & Roe method
       int fsi=(si-pmb->cis)*2+pmb->is, fei=(ei-pmb->cis)*2+pmb->is+1;
       for(int k=sk; k<=ek; k++) {
         int fk=(k-pmb->cks)*2+pmb->ks;
-        Real& x3m = pco->coarse_x3s1(k-1);
-        Real& x3c = pco->coarse_x3s1(k);
-        Real& x3p = pco->coarse_x3s1(k+1);
-        Real& fx3m = pco->x3v(fk);
-        Real& fx3p = pco->x3v(fk+1);
         for(int j=sj; j<=ej; j++) {
           int fj=(j-pmb->cjs)*2+pmb->js;
-          Real& x2m = pco->coarse_x2s1(j-1);
-          Real& x2c = pco->coarse_x2s1(j);
-          Real& x2p = pco->coarse_x2s1(j+1);
-          Real& fx2m = pco->x2v(fj);
-          Real& fx2p = pco->x2v(fj+1);
-          pco->Face1Area(fk  ,fj  ,fsi,fei+1,sarea_x1_[0][0]);
-          pco->Face1Area(fk  ,fj+1,fsi,fei+1,sarea_x1_[0][1]);
-          pco->Face1Area(fk+1,fj  ,fsi,fei+1,sarea_x1_[1][0]);
-          pco->Face1Area(fk+1,fj+1,fsi,fei+1,sarea_x1_[1][1]);
-          pco->Face2Area(fk  ,fj  ,fsi,fei,sarea_x2_[0][0]);
-          pco->Face2Area(fk  ,fj+1,fsi,fei,sarea_x2_[0][1]);
-          pco->Face2Area(fk  ,fj+2,fsi,fei,sarea_x2_[0][2]);
-          pco->Face2Area(fk+1,fj  ,fsi,fei,sarea_x2_[1][0]);
-          pco->Face2Area(fk+1,fj+1,fsi,fei,sarea_x2_[1][1]);
-          pco->Face2Area(fk+1,fj+2,fsi,fei,sarea_x2_[1][2]);
-          pco->Face3Area(fk  ,fj  ,fsi,fei,sarea_x3_[0][0]);
-          pco->Face3Area(fk  ,fj+1,fsi,fei,sarea_x3_[0][1]);
-          pco->Face3Area(fk+1,fj  ,fsi,fei,sarea_x3_[1][0]);
-          pco->Face3Area(fk+1,fj+1,fsi,fei,sarea_x3_[1][1]);
-          pco->Face3Area(fk+2,fj  ,fsi,fei,sarea_x3_[2][0]);
-          pco->Face3Area(fk+2,fj+1,fsi,fei,sarea_x3_[2][1]);
           for(int i=si; i<=ei; i++) {
             int fi=(i-pmb->cis)*2+pmb->is;
-            // step 4. bx1
-            Real dx1l=pco->x1f(fi+1)-pco->x1f(fi);
-            Real dx1r=pco->x1f(fi+2)-pco->x1f(fi+1);
-            Real sx1l = sarea_x1_[0][0](fi)+sarea_x1_[0][1](fi)+sarea_x1_[1][0](fi)+sarea_x1_[1][1](fi);
-            Real sx1c = sarea_x1_[0][0](fi+1)+sarea_x1_[0][1](fi+1)+sarea_x1_[1][0](fi+1)+sarea_x1_[1][1](fi+1);
-            Real bx1c = (dst.x2f(fk,fj  ,fi)*sarea_x2_[0][0](fi)+dst.x2f(fk+1,fj  ,fi)*sarea_x2_[1][0](fi)
-                        -dst.x2f(fk,fj+2,fi)*sarea_x2_[0][2](fi)-dst.x2f(fk+1,fj+2,fi)*sarea_x2_[1][2](fi)
-                        +dst.x3f(fk  ,fj,fi)*sarea_x3_[0][0](fi)+dst.x3f(fk  ,fj+1,fi)*sarea_x3_[0][1](fi)
-                        -dst.x3f(fk+2,fj,fi)*sarea_x3_[2][0](fi)-dst.x3f(fk+2,fj+1,fi)*sarea_x3_[2][1](fi)
-                        +sx1l*coarse_b_.x1f(k,j,i))/sx1c;
-            Real sl1c2 = (cb1g2(k,j,i)*dx1r+cb1g2(k,j,i+1)*dx1l)/(dx1l+dx1r);
-            Real sl1c3 = (cb1g3(k,j,i)*dx1r+cb1g3(k,j,i+1)*dx1l)/(dx1l+dx1r);
-            dst.x1f(fk  ,fj  ,fi+1)=bx1c-sl1c2*(x2c-fx2m)-sl1c3*(x3c-fx3m);
-            dst.x1f(fk  ,fj+1,fi+1)=bx1c+sl1c2*(fx2p-x2c)-sl1c3*(x3c-fx3m);
-            dst.x1f(fk+1,fj  ,fi+1)=bx1c-sl1c2*(x2c-fx2m)+sl1c3*(fx3p-x3c);
-            dst.x1f(fk+1,fj+1,fi+1)=bx1c+sl1c2*(fx2p-x2c)+sl1c3*(fx3p-x3c);
-            // step 5. bx2
-            Real dx2l=pco->x2f(fj+1)-pco->x2f(fj);
-            Real dx2r=pco->x2f(fj+2)-pco->x2f(fj+1);
-            Real sl2c3 = (cb2g3(k,j,i)*dx2r+cb2g3(k,j,i+1)*dx2l)/(dx2l+dx2r);
-            // left
-            Real bx2l = (dst.x1f(fk,fj,fi  )*sarea_x1_[0][0](fi  )+dst.x1f(fk+1,fj,fi  )*sarea_x1_[1][0](fi  )
-                        -dst.x1f(fk,fj,fi+1)*sarea_x1_[0][0](fi+1)-dst.x1f(fk+1,fj,fi+1)*sarea_x1_[1][0](fi+1)
-                        +dst.x3f(fk,fj,fi  )*sarea_x3_[0][0](fi  )-dst.x3f(fk+2,fj,fi  )*sarea_x3_[2][0](fi)
-                        +dst.x2f(fk,fj,fi  )*sarea_x2_[0][0](fi  )+dst.x2f(fk+1,fj,fi  )*sarea_x2_[1][0](fi))
-                        /(sarea_x2_[0][1](fi)+sarea_x2_[1][1](fi));
-            dst.x2f(fk  ,fj+1,fi)=bx2l-sl2c3*(x3c-fx3m);
-            dst.x2f(fk+1,fj+1,fi)=bx2l+sl2c3*(fx3p-x3c);
-            // right
-            Real bx2r = (dst.x1f(fk,fj,fi+1)*sarea_x1_[0][0](fi+1)+dst.x1f(fk+1,fj,fi+1)*sarea_x1_[1][0](fi+1)
-                        -dst.x1f(fk,fj,fi+2)*sarea_x1_[0][0](fi+2)-dst.x1f(fk+1,fj,fi+2)*sarea_x1_[1][0](fi+2)
-                        +dst.x3f(fk,fj,fi+1)*sarea_x3_[0][0](fi+1)-dst.x3f(fk+2,fj,fi+1)*sarea_x3_[2][0](fi+1)
-                        +dst.x2f(fk,fj,fi+1)*sarea_x2_[0][0](fi+1)+dst.x2f(fk+1,fj,fi+1)*sarea_x2_[1][0](fi+1))
-                        /(sarea_x2_[0][1](fi+1)+sarea_x2_[1][1](fi+1));
-            dst.x2f(fk  ,fj+1,fi+1)=bx2r-sl2c3*(x3c-fx3m);
-            dst.x2f(fk+1,fj+1,fi+1)=bx2r+sl2c3*(fx3p-x3c);
-            // step 6. bx3
-            // ll
-            dst.x3f(fk+1,fj  ,fi  ) = (dst.x1f(fk,fj,fi)*sarea_x1_[0][0](fi)-dst.x1f(fk,fj,fi+1)*sarea_x1_[0][0](fi+1)
-                                      +dst.x2f(fk,fj,fi)*sarea_x2_[0][0](fi)-dst.x2f(fk,fj+1,fi)*sarea_x2_[0][1](fi)
-                                      +dst.x3f(fk,fj,fi)*sarea_x3_[0][0](fi))/sarea_x3_[1][0](fi);
-            // lr
-            dst.x3f(fk+1,fj  ,fi+1) = (dst.x1f(fk,fj,fi+1)*sarea_x1_[0][0](fi+1)-dst.x1f(fk,fj  ,fi+2)*sarea_x1_[0][0](fi+2)
-                                      +dst.x2f(fk,fj,fi+1)*sarea_x2_[0][0](fi+1)-dst.x2f(fk,fj+1,fi+1)*sarea_x2_[0][1](fi+1)
-                                      +dst.x3f(fk,fj,fi+1)*sarea_x3_[0][0](fi+1))/sarea_x3_[1][0](fi+1);
-            // rl
-            dst.x3f(fk+1,fj+1,fi  ) = (dst.x1f(fk,fj+1,fi)*sarea_x1_[0][1](fi)-dst.x1f(fk,fj+1,fi+1)*sarea_x1_[0][1](fi+1)
-                                      +dst.x2f(fk,fj+1,fi)*sarea_x2_[0][1](fi)-dst.x2f(fk,fj+2,fi  )*sarea_x2_[0][2](fi)
-                                      +dst.x3f(fk,fj+1,fi)*sarea_x3_[0][1](fi))/sarea_x3_[1][1](fi);
-            // rr
-            dst.x3f(fk+1,fj+1,fi+1) = (dst.x1f(fk,fj+1,fi+1)*sarea_x1_[0][1](fi+1)-dst.x1f(fk,fj+1,fi+2)*sarea_x1_[0][1](fi+2)
-                                      +dst.x2f(fk,fj+1,fi+1)*sarea_x2_[0][1](fi+1)-dst.x2f(fk,fj+2,fi+1)*sarea_x2_[0][2](fi+1)
-                                      +dst.x3f(fk,fj+1,fi+1)*sarea_x3_[0][1](fi+1))/sarea_x3_[1][1](fi+1);
+            Real Uxx = 0.0, Vyy = 0.0, Wzz = 0.0;
+            Real Uxyz = 0.0, Vxyz = 0.0, Wxyz = 0.0;
+#pragma unroll
+            for(int jj=0; jj<2; jj++){
+              int js=2*jj-1, fjp=fj+2*jj;
+#pragma unroll
+              for(int ii=0; ii<2; ii++){
+                int is=2*ii-1, fip=fi+2*ii;
+                Uxx += is*(js*(dst.x2f(fk,fjp,fi) + dst.x2f(fk+1,fjp,fi))
+                             +(dst.x3f(fk+2,fj,fi) - dst.x3f(fk,fj,fi)));
+                Vyy += js*((dst.x3f(fk+2,fj,fi) - dst.x3f(fk,fj,fi)) +
+                        is*(dst.x1f(fk,fj,fip) + dst.x1f(fk+1,fj,fip)));
+                Wzz += is*(dst.x1f(fk+1,fj,fip) - dst.x1f(fk,fj,fip))
+                      +js*(dst.x2f(fk+1,fjp,fi) - dst.x2f(fk,fjp,fi));
+                Uxyz += js*js*(dst.x1f(fk+1,fj,fip) - dst.x1f(fk,fj,fip));
+                Vxyz += is*js*(dst.x2f(fk+1,fjp,fi) - dst.x2f(fk,fjp,fi));
+                Wxyz += is*js*(dst.x2f(fk+2,fj,fi) - dst.x2f(fk,fj,fi));
+              }
+            }
+            Uxx *= 0.125; Vyy *= 0.125; Wzz *= 0.125;
+            Uxyz *= 0.0625; Vxyz *= 0.0635; Wxyz *= 0.0625;
+            dst.x1f(fk  ,fj  ,fi+1)=0.5*(dst.x1f(fk  ,fj  ,fi  )+dst.x1f(fk  ,fj  ,fi+2))
+                                   + Uxx - Vxyz - Wxyz;
+            dst.x1f(fk  ,fj+1,fi+1)=0.5*(dst.x1f(fk  ,fj+1,fi  )+dst.x1f(fk  ,fj+1,fi+2))
+                                   + Uxx - Vxyz + Wxyz;
+            dst.x1f(fk+1,fj  ,fi+1)=0.5*(dst.x1f(fk+1,fj  ,fi  )+dst.x1f(fk+1,fj  ,fi+2))
+                                   + Uxx + Vxyz - Wxyz;
+            dst.x1f(fk+1,fj+1,fi+1)=0.5*(dst.x1f(fk+1,fj+1,fi  )+dst.x1f(fk+1,fj+1,fi+2))
+                                   + Uxx + Vxyz + Wxyz;
+            dst.x2f(fk  ,fj+1,fi  )=0.5*(dst.x2f(fk  ,fj  ,fi  )+dst.x2f(fk  ,fj+2,fi  ))
+                                   + Vyy - Uxyz - Wxyz;
+            dst.x2f(fk  ,fj+1,fi+1)=0.5*(dst.x2f(fk  ,fj  ,fi+1)+dst.x2f(fk  ,fj+2,fi+1))
+                                   + Vyy - Uxyz + Wxyz;
+            dst.x2f(fk+1,fj+1,fi  )=0.5*(dst.x2f(fk+1,fj  ,fi  )+dst.x2f(fk+1,fj+2,fi  ))
+                                   + Vyy + Uxyz - Wxyz;
+            dst.x2f(fk+1,fj+1,fi+1)=0.5*(dst.x2f(fk+1,fj  ,fi+1)+dst.x2f(fk+1,fj+2,fi+1))
+                                   + Vyy + Uxyz + Wxyz;
+            dst.x3f(fk+1,fj  ,fi  )=0.5*(dst.x3f(fk+2,fj  ,fi  )+dst.x3f(fk  ,fj  ,fi  ))
+                                   + Wzz - Uxyz - Vxyz;
+            dst.x3f(fk+1,fj  ,fi+1)=0.5*(dst.x3f(fk+2,fj  ,fi+1)+dst.x3f(fk  ,fj  ,fi+1))
+                                   + Wzz - Uxyz + Vxyz;
+            dst.x3f(fk+1,fj+1,fi  )=0.5*(dst.x3f(fk+2,fj+1,fi  )+dst.x3f(fk  ,fj+1,fi  ))
+                                   + Wzz + Uxyz - Vxyz;
+            dst.x3f(fk+1,fj+1,fi+1)=0.5*(dst.x3f(fk+2,fj+1,fi+1)+dst.x3f(fk  ,fj+1,fi+1))
+                                   + Wzz + Uxyz + Vxyz;
           }
         }
       }
@@ -3675,94 +3639,22 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
         }
       }
       int fsi=(si-pmb->cis)*2+pmb->is, fei=(ei-pmb->cis)*2+pmb->is+1;
-      if(nb.ox1!=0) { // x1 surface or edge
-        // step 3. calculate the internal finer x1 fields using the near side loop
-        // step 4. calculate the internal finer x2 fields
-        int is1=-nb.ox1, is2=(1-nb.ox1)/2;
-        for(int j=sj; j<=ej; j++) {
-          int fj=(j-pmb->cjs)*2+pmb->js;
-          Real& x2c = pco->coarse_x2s1(j);
-          Real& fx2m = pco->x2s1(fj);
-          Real& fx2p = pco->x2s1(fj+1);
-          pco->Face1Area(fk,fj  ,fsi,fei+1,sarea_x1_[0][0]);
-          pco->Face1Area(fk,fj+1,fsi,fei+1,sarea_x1_[0][1]);
-          pco->Face2Area(fk,fj  ,fsi,fei,sarea_x2_[0][0]);
-          pco->Face2Area(fk,fj+1,fsi,fei,sarea_x2_[0][1]);
-          pco->Face2Area(fk,fj+2,fsi,fei,sarea_x2_[0][2]);
-          for(int i=si; i<=ei; i++) {
-            int fi=(i-pmb->cis)*2+pmb->is;
-            int fc=fi+1;
-            int fo1=fc+is1, fo2=fi+is2; // fo=left for right neighbor, right for left neighbor
-            Real dx1l=pco->x1f(fi+1)-pco->x1f(fi);
-            Real dx1r=pco->x1f(fi+2)-pco->x1f(fi+1);
-
-            // step 3. bx1
-            Real slc = (cb1g2(k,j,i)*dx1r+cb1g2(k,j,i+1)*dx1l)/(dx1l+dx1r);
-            // calculate the x1 surface field using the near side loop
-            Real bx1c = (sarea_x1_[0][0](fo1)*dst.x1f(fk,fj,fo1)+sarea_x1_[0][1](fo1)*dst.x1f(fk,fj+1,fo1)
-                        +is1*(sarea_x2_[0][2](fo2)*dst.x2f(fk,fj+2,fo2)-sarea_x2_[0][0](fo2)*dst.x2f(fk,fj,fo2)))
-                        /(sarea_x1_[0][0](fc)+sarea_x1_[0][1](fc));
-            dst.x1f(fk,fj  ,fi+1)=bx1c-slc*(x2c-fx2m);
-            dst.x1f(fk,fj+1,fi+1)=bx1c+slc*(fx2p-x2c);
-
-            // step 4. bx2
-            dst.x2f(fk,fj+1,fi  )=(dst.x2f(fk,fj,fi  )*sarea_x2_[0][0](fi)
-                                  -dst.x1f(fk,fj,fi+1)*sarea_x1_[0][0](fi+1)
-                                  +dst.x1f(fk,fj,fi  )*sarea_x1_[0][0](fi  ))/sarea_x2_[0][1](fi);
-            dst.x2f(fk,fj+1,fi+1)=(dst.x2f(fk,fj,fi+1)*sarea_x2_[0][0](fi+1)
-                                  -dst.x1f(fk,fj,fi+2)*sarea_x1_[0][0](fi+2)
-                                  +dst.x1f(fk,fj,fi+1)*sarea_x1_[0][0](fi+1))/sarea_x2_[0][1](fi+1);
-
-            std::cout << pmb->gid << " " << j << " " << i << " cdivb " << coarse_b_.x2f(k,j+1,i) - coarse_b_.x2f(k,j,i) + coarse_b_.x1f(k,j,i+1) - coarse_b_.x1f(k,j,i) 
-              << " " << coarse_b_.x2f(k,j+1,i) << " " <<  coarse_b_.x2f(k,j,i) << " " <<  coarse_b_.x1f(k,j,i+1) << " " <<  coarse_b_.x1f(k,j,i) << std::endl;
-          }
+      // step 3. calculate the internal finer fields using the Toth & Roe method
+      for(int j=sj; j<=ej; j++) {
+        int fj=(j-pmb->cjs)*2+pmb->js;
+        for(int i=si; i<=ei; i++) {
+          int fi=(i-pmb->cis)*2+pmb->is;
+          Real tmp1=0.25*(dst.x2f(fk,fj+2,fi+1)-dst.x2f(fk,fj,fi+1)
+                         -dst.x2f(fk,fj+2,fi)+dst.x2f(fk,fj,fi));
+          Real tmp2=0.25*(dst.x1f(fk,fj,fi)-dst.x1f(fk,fj,fi+2)
+                         -dst.x1f(fk,fj+1,fi)+dst.x1f(fj+1,fi+2));
+          dst.x1f(fk,fj  ,fi+1)=0.5*(dst.x1f(fk,fj,fi)+dst.x1f(fk,fj,fi+2))+tmp1;
+          dst.x1f(fk,fj+1,fi+1)=0.5*(dst.x1f(fk,fj+1,fi)+dst.x1f(fk,fj+1,fi+2))+tmp1;
+          dst.x2f(fk,fj+1,fi  )=0.5*(dst.x2f(fk,fj,fi)+dst.x2f(fk,fj+2,fi))+tmp2;
+          dst.x2f(fk,fj+1,fi+1)=0.5*(dst.x2f(fk,fj,fi+1)+dst.x2f(fk,fj+2,fi+1))+tmp2;
         }
       }
-      else { // x2 surface
-        // step 3. calculate the internal finer x2 fields using the near side loop
-        // step 4. calculate the internal finer x1 fields
-        int js1=-nb.ox2, js2=(1-nb.ox2)/2;
-        for(int j=sj; j<=ej; j++) {
-          int fj=(j-pmb->cjs)*2+pmb->js;
-          int fc=fj+1;
-          int fo1=fc+js1, fo2=fj+js2;
-          pco->Face1Area(fk,fj  ,fsi,fei+1,sarea_x1_[0][0]);
-          pco->Face1Area(fk,fj+1,fsi,fei+1,sarea_x1_[0][1]);
-          pco->Face2Area(fk,fj  ,fsi,fei,sarea_x2_[0][0]);
-          pco->Face2Area(fk,fj+1,fsi,fei,sarea_x2_[0][1]);
-          pco->Face2Area(fk,fj+2,fsi,fei,sarea_x2_[0][2]);
-          Real dx2l=pco->x2f(fj+1)-pco->x2f(fj);
-          Real dx2r=pco->x2f(fj+2)-pco->x2f(fj+1);
-          for(int i=si; i<=ei; i++) {
-            int fi=(i-pmb->cis)*2+pmb->is;
-            Real& x1c = pco->coarse_x1s2(i);
-            Real& fx1m = pco->x1s2(fi);
-            Real& fx1p = pco->x1s2(fi+1);
-
-            // step 3. bx2
-            Real slc = (cb2g1(k,j,i)*dx2r+cb2g1(k,j+1,i)*dx2l)/(dx2l+dx2r);
-            // calculate the x1 surface field using the near side loop
-            Real bx2c = (sarea_x2_[0][js1+1](fi)*dst.x2f(fk,fo1,fi)+sarea_x2_[0][js1+1](fi+1)*dst.x2f(fk,fo1,fi+1)
-                        +js2*(sarea_x1_[0][js2](fi+2)*dst.x1f(fk,fo2,fi+2)-sarea_x1_[0][js2](fi)*dst.x1f(fk,fo2,fi)))
-                        /(sarea_x2_[0][1](fi)+sarea_x2_[0][1](fi+1));
-            std::cout << pmb->gid  << " "  << bx2c*2-dst.x2f(fk,fj,fi)-dst.x2f(fk,fj,fi+1)+dst.x1f(fk,fj,fi+2)-dst.x1f(fk,fj,fi) << " " << dst.x2f(fk,fj+2,fi)+dst.x2f(fk,fj+2,fi+1)-bx2c*2+dst.x1f(fk,fj+1,fi+2)-dst.x1f(fk,fj+1,fi) <<std::endl;
-            dst.x2f(fk,fj+1,fi  )=bx2c-slc*(x1c-fx1m);
-            dst.x2f(fk,fj+1,fi+1)=bx2c+slc*(fx1p-x1c);
-
-            // step 4. bx1
-            dst.x1f(fk,fj  ,fi+1)=(dst.x1f(fk,fj  ,fi)*sarea_x1_[0][0](fi)
-                                  +dst.x2f(fk,fj  ,fi)*sarea_x2_[0][0](fi)
-                                  -dst.x2f(fk,fj+1,fi)*sarea_x2_[0][1](fi))/sarea_x1_[0][0](fi+1);
-            dst.x1f(fk,fj+1,fi+1)=(dst.x1f(fk,fj+1,fi)*sarea_x1_[0][1](fi)
-                                  +dst.x2f(fk,fj+1,fi)*sarea_x2_[0][1](fi)
-                                  -dst.x2f(fk,fj+2,fi)*sarea_x2_[0][2](fi))/sarea_x1_[0][1](fi+1);
-
-            std::cout << pmb->gid << " " << j << " " << i << " cdivb " << coarse_b_.x2f(k,j+1,i) - coarse_b_.x2f(k,j,i) + coarse_b_.x1f(k,j,i+1) - coarse_b_.x1f(k,j,i) 
-              << " " << coarse_b_.x2f(k,j+1,i) << " " <<  coarse_b_.x2f(k,j,i) << " " <<  coarse_b_.x1f(k,j,i+1) << " " <<  coarse_b_.x1f(k,j,i) << std::endl;
-          }
-        }
-      }
-      // step 5. calculate the finer x3 fields (independent from x1 and x2)
+      // step 4. calculate the finer x3 fields (independent from x1 and x2)
       for(int j=sj; j<=ej; j++) {
         int fj=(j-pmb->cjs)*2+pmb->js;
         Real& x2m = pco->coarse_x2s3(j-1);
