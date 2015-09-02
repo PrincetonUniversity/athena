@@ -3302,13 +3302,24 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
           else if(nk== 1) rks=pmb->cke+1, rke=pmb->cke+1;
           else if(nk==-1) rks=pmb->cks-1, rke=pmb->cks-1;
 
-          RestrictFieldX1(dst.x1f, ris, rie+1, rjs, rje, rks, rke);
-          if(pmb->block_size.nx2 > 1)
-            RestrictFieldX2(dst.x2f, ris, rie, rjs, rje+1, rks, rke);
+          int rs=ris, re=rie+1;
+          if(rs==pmb->cis && pmb->nblevel[nk+1][nj+1][ni]<mylevel) rs++;
+          if(re==pmb->cie+1 && pmb->nblevel[nk+1][nj+1][ni+2]<mylevel) re--;
+          RestrictFieldX1(dst.x1f, rs, re, rjs, rje, rks, rke);
+          if(pmb->block_size.nx2 > 1) {
+            rs=rjs, re=rje+1;
+            if(rs==pmb->cjs && pmb->nblevel[nk+1][nj][ni+1]<mylevel) rs++;
+            if(re==pmb->cje+1 && pmb->nblevel[nk+1][nj+2][ni+1]<mylevel) re--;
+            RestrictFieldX2(dst.x2f, ris, rie, rs, re, rks, rke);
+          }
           else 
             RestrictFieldX2(dst.x2f, ris, rie, rjs, rje, rks, rke);
-          if(pmb->block_size.nx3 > 1)
-            RestrictFieldX3(dst.x3f, ris, rie, rjs, rje, rks, rke+1);
+          if(pmb->block_size.nx3 > 1) {
+            rs=rks, re=rke+1;
+            if(rs==pmb->cks && pmb->nblevel[nk][nj+1][ni+1]<mylevel) rs++;
+            if(re==pmb->cke+1 && pmb->nblevel[nk+2][nj+1][ni+1]<mylevel) re--;
+            RestrictFieldX3(dst.x3f, ris, rie, rjs, rje, rs, re);
+          }
           else
             RestrictFieldX3(dst.x3f, ris, rie, rjs, rje, rks, rke);
         }
@@ -3578,6 +3589,9 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
                                    + Wzz + Uxyz - Vxyz;
             dst.x3f(fk+1,fj+1,fi+1)=0.5*(dst.x3f(fk+2,fj+1,fi+1)+dst.x3f(fk  ,fj+1,fi+1))
                                    + Wzz + Uxyz + Vxyz;
+            Real cdivb=coarse_b_.x3f(k+1,j,i)-coarse_b_.x3f(k,j,i)+coarse_b_.x2f(k,j+1,i)-coarse_b_.x2f(k,j,i)+coarse_b_.x1f(k,j,i+1)-coarse_b_.x1f(k,j,i);
+            if(std::abs(cdivb)>1e-12)
+              std::cout << pmb->gid << " " << k << " " << j << " " << i << " " << cdivb << std::endl;
           }
         }
       }
