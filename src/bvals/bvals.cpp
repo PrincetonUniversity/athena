@@ -3793,41 +3793,68 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
   bool flag=true;
 
   if(firsttime_[step]==true) {
-    firsttime_[step]=false;
-    ClearEMFBoundary();
-  }
-
-  for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
-    if(nb.type!=neighbor_face && nb.type!=neighbor_edge) break;
-    if((nb.level>mylevel) || ((nb.level==mylevel) && ((nb.type==neighbor_face)
-    || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true))))) {
-      if(emfcor_flag_[step][nb.bufid]==boundary_completed) continue;
-      if(emfcor_flag_[step][nb.bufid]==boundary_waiting) {
-        if(nb.rank==myrank) {// on the same process
-          flag=false;
-          continue;
-        }
-#ifdef MPI_PARALLEL
-        else { // MPI boundary
-          int test;
-          MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-          MPI_Test(&req_emfcor_recv_[step][nb.bufid],&test,MPI_STATUS_IGNORE);
-          if(test==false) {
+    for(int n=0; n<pmb->nneighbor; n++) { // first correct the same level
+      NeighborBlock& nb = pmb->neighbor[n];
+      if(nb.type!=neighbor_face && nb.type!=neighbor_edge) break;
+      if(nb.level!=mylevel) continue;
+      if((nb.type==neighbor_face) || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true))) {
+        if(emfcor_flag_[step][nb.bufid]==boundary_completed) continue;
+        if(emfcor_flag_[step][nb.bufid]==boundary_waiting) {
+          if(nb.rank==myrank) {// on the same process
             flag=false;
             continue;
           }
-          emfcor_flag_[step][nb.bufid] = boundary_arrived;
+  #ifdef MPI_PARALLEL
+          else { // MPI boundary
+            int test;
+            MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
+            MPI_Test(&req_emfcor_recv_[step][nb.bufid],&test,MPI_STATUS_IGNORE);
+            if(test==false) {
+              flag=false;
+              continue;
+            }
+            emfcor_flag_[step][nb.bufid] = boundary_arrived;
+          }
+  #endif
         }
-#endif
-      }
-      // boundary arrived; apply EMF correction
-      if(nb.level > mylevel)
-        SetEMFBoundaryFromFiner(emfcor_recv_[step][nb.bufid], nb);
-      else
+        // boundary arrived; apply EMF correction
         SetEMFBoundarySameLevel(emfcor_recv_[step][nb.bufid], nb);
-      emfcor_flag_[step][nb.bufid] = boundary_completed;
+        emfcor_flag_[step][nb.bufid] = boundary_completed;
+      }
     }
+
+    if(flag==false) return flag;
+
+    ClearEMFBoundary();
+    firsttime_[step]=false;
+  }
+
+  for(int n=0; n<pmb->nneighbor; n++) { // then from finer
+    NeighborBlock& nb = pmb->neighbor[n];
+    if(nb.type!=neighbor_face && nb.type!=neighbor_edge) break;
+    if(nb.level!=mylevel+1) continue;
+    if(emfcor_flag_[step][nb.bufid]==boundary_completed) continue;
+    if(emfcor_flag_[step][nb.bufid]==boundary_waiting) {
+      if(nb.rank==myrank) {// on the same process
+        flag=false;
+        continue;
+      }
+#ifdef MPI_PARALLEL
+      else { // MPI boundary
+        int test;
+        MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
+        MPI_Test(&req_emfcor_recv_[step][nb.bufid],&test,MPI_STATUS_IGNORE);
+        if(test==false) {
+          flag=false;
+          continue;
+        }
+        emfcor_flag_[step][nb.bufid] = boundary_arrived;
+      }
+#endif
+    }
+    // boundary arrived; apply EMF correction
+    SetEMFBoundaryFromFiner(emfcor_recv_[step][nb.bufid], nb);
+    emfcor_flag_[step][nb.bufid] = boundary_completed;
   }
 
   if(flag==true)
