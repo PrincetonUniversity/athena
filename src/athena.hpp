@@ -37,7 +37,7 @@ enum edgeid {edgeid_undefined = -1, em2m1=0, em2p1=1, ep2m1=2, ep2p2=3,
                 em3m1=4, em3p1=5, ep3m1=6, ep3p1=7, em3m2=8, em3p2=9, ep3m2=10, ep3p2=11};
 enum face {x1face=0, x2face=1, x3face=2};
 enum rwmode {readmode,writemode};
-enum mpitag {tag_fluid=0, tag_field=1, tag_flcor=2, tag_emfcor_face=3, tag_emfcor_edge=4}; // mpitag must be < 16 and unique
+enum mpitag {tag_fluid=0, tag_field=1, tag_flcor=2, tag_emfcor=3}; // mpitag must be < 16 and unique
 enum neighbor_type {neighbor_none, neighbor_face, neighbor_edge, neighbor_corner};
 
 enum task {

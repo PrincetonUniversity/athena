@@ -223,37 +223,28 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       req_fluid_recv_[l][i]=MPI_REQUEST_NULL;
 #endif
     }
+    for(int i=0;i<48;i++){
+      emfcor_send_[l][i]=NULL;
+      emfcor_recv_[l][i]=NULL;
+      emfcor_flag_[l][i]=boundary_waiting;
+#ifdef MPI_PARALLEL
+      req_emfcor_send_[l][i]=MPI_REQUEST_NULL;
+      req_emfcor_recv_[l][i]=MPI_REQUEST_NULL;
+#endif
+    }
     for(int i=0;i<6;i++){
       flcor_send_[l][i]=NULL;
-      emfcor_fsend_[l][i]=NULL;
 #ifdef MPI_PARALLEL
       req_flcor_send_[l][i]=MPI_REQUEST_NULL;
-      req_emfcor_fsend_[l][i]=MPI_REQUEST_NULL;
 #endif
       for(int j=0;j<=1;j++) {
         for(int k=0;k<=1;k++) {
           flcor_recv_[l][i][j][k]=NULL;
           flcor_flag_[l][i][j][k]=boundary_waiting;
-          emfcor_frecv_[l][i][j][k]=NULL;
-          emfcor_fflag_[l][i][j][k]=boundary_waiting;
 #ifdef MPI_PARALLEL
           req_flcor_recv_[l][i][j][k]=MPI_REQUEST_NULL;
-          req_emfcor_frecv_[l][i][j][k]=MPI_REQUEST_NULL;
 #endif
         }
-      }
-    }
-    for(int i=0;i<12;i++){
-      emfcor_esend_[l][i]=NULL;
-#ifdef MPI_PARALLEL
-      req_emfcor_esend_[l][i]=MPI_REQUEST_NULL;
-#endif
-      for(int j=0;j<=1;j++) {
-        emfcor_erecv_[l][i][j]=NULL;
-        emfcor_eflag_[l][i][j]=boundary_waiting;
-#ifdef MPI_PARALLEL
-        req_emfcor_erecv_[l][i][j]=MPI_REQUEST_NULL;
-#endif
       }
     }
   }
@@ -416,19 +407,19 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       int fsize[6], esize[12];
       // allocate EMF correction buffer
       if(pmb->block_size.nx3>1) { // 3D
-        fsize[0]=fsize[1]=(pmb->block_size.nx2/2+1)*(pmb->block_size.nx3/2)
-                         +(pmb->block_size.nx2/2)*(pmb->block_size.nx3/2+1);
-        fsize[2]=fsize[3]=(pmb->block_size.nx1/2+1)*(pmb->block_size.nx3/2)
-                         +(pmb->block_size.nx1/2)*(pmb->block_size.nx3/2+1);
-        fsize[4]=fsize[5]=(pmb->block_size.nx1/2+1)*(pmb->block_size.nx2/2)
-                         +(pmb->block_size.nx1/2)*(pmb->block_size.nx2/2+1);
-        esize[0]=esize[1]=esize[2]=esize[3]=pmb->block_size.nx3/2;
-        esize[4]=esize[5]=esize[6]=esize[7]=pmb->block_size.nx2/2;
-        esize[8]=esize[9]=esize[10]=esize[11]=pmb->block_size.nx1/2;
+        fsize[0]=fsize[1]=(pmb->block_size.nx2+1)*(pmb->block_size.nx3)
+                         +(pmb->block_size.nx2)*(pmb->block_size.nx3+1);
+        fsize[2]=fsize[3]=(pmb->block_size.nx1+1)*(pmb->block_size.nx3)
+                         +(pmb->block_size.nx1)*(pmb->block_size.nx3+1);
+        fsize[4]=fsize[5]=(pmb->block_size.nx1+1)*(pmb->block_size.nx2)
+                         +(pmb->block_size.nx1)*(pmb->block_size.nx2+1);
+        esize[0]=esize[1]=esize[2]=esize[3]=pmb->block_size.nx3;
+        esize[4]=esize[5]=esize[6]=esize[7]=pmb->block_size.nx2;
+        esize[8]=esize[9]=esize[10]=esize[11]=pmb->block_size.nx1;
       }
       else if(pmb->block_size.nx2>1) { // 2D
-        fsize[0]=fsize[1]=(pmb->block_size.nx2/2+1)+pmb->block_size.nx2/2;
-        fsize[2]=fsize[3]=(pmb->block_size.nx1/2+1)+pmb->block_size.nx1/2;
+        fsize[0]=fsize[1]=(pmb->block_size.nx2+1)+pmb->block_size.nx2;
+        fsize[2]=fsize[3]=(pmb->block_size.nx1+1)+pmb->block_size.nx1;
         for(int i=0; i<nedge_; i++)
           esize[i]=1;
       }
@@ -436,17 +427,41 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         fsize[0]=fsize[1]=2;
       }
       for(int l=0;l<NSTEP;l++) {
-        for(int i=0;i<nface_;i++){
-          emfcor_fsend_[l][i]=new Real[fsize[i]];
-          for(int j=0;j<jm;j++) {
-            for(int k=0;k<km;k++)
-              emfcor_frecv_[l][i][j][k]=new Real[fsize[i]];
+        for(int i=0;i<pmb->pmy_mesh->maxneighbor_;i++){
+          int size;
+          if(ni_[i].type==neighbor_face) {
+            if(pmb->block_size.nx3>1) { // 3D
+              if(ni_[i].ox1==0)
+                size=(pmb->block_size.nx2+1)*(pmb->block_size.nx3)
+                    +(pmb->block_size.nx2)*(pmb->block_size.nx3+1);
+              else if(ni_[i].ox2==0)
+                size=(pmb->block_size.nx1+1)*(pmb->block_size.nx3)
+                    +(pmb->block_size.nx1)*(pmb->block_size.nx3+1);
+              else
+                size=(pmb->block_size.nx1+1)*(pmb->block_size.nx2)
+                    +(pmb->block_size.nx1)*(pmb->block_size.nx2+1);
+            }
+            else if(pmb->block_size.nx2>1) { // 2D
+              if(ni_[i].ox1==0)
+                size=(pmb->block_size.nx2+1)+pmb->block_size.nx2;
+              else 
+               size=(pmb->block_size.nx1/2+1)+pmb->block_size.nx1/2;
+            }
+            else // 1D
+              size=2;
           }
-        }
-        for(int i=0;i<nedge_;i++){
-          emfcor_esend_[l][i]=new Real[esize[i]];
-          for(int j=0;j<jm;j++)
-            emfcor_erecv_[l][i][j]=new Real[esize[i]];
+          else if(ni_[i].type==neighbor_edge) {
+            if(pmb->block_size.nx3>1) { // 3D
+              if(ni_[i].ox3==0) size=pmb->block_size.nx3;
+              if(ni_[i].ox2==0) size=pmb->block_size.nx2;
+              if(ni_[i].ox1==0) size=pmb->block_size.nx1;
+            }
+            else if(pmb->block_size.nx2>1)
+              size=1;
+          }
+          else continue;
+          emfcor_send_[l][i]=new Real[size];
+          emfcor_recv_[l][i]=new Real[size];
         }
       }
     }
@@ -523,17 +538,11 @@ BoundaryValues::~BoundaryValues()
       if(pmb->block_size.nx2 > 1) km=2;
       if(pmb->block_size.nx3 > 1) jm=2;
       for(int l=0;l<NSTEP;l++) {
-        for(int i=0;i<nface_;i++) {
-          delete [] emfcor_fsend_[l][i];
-          for(int j=0;j<jm;j++) {
-            for(int k=0;k<km;k++)
-              delete [] emfcor_frecv_[l][i][j][k];
+        for(int i=0;i<pmb->pmy_mesh->maxneighbor_;i++) {
+          if(ni_[i].type==neighbor_face || ni_[i].type==neighbor_edge) {
+            delete [] emfcor_send_[l][i];
+            delete [] emfcor_recv_[l][i];
           }
-        }
-        for(int i=0;i<nedge_;i++){
-          delete [] emfcor_esend_[l][i];
-          for(int j=0;j<jm;j++)
-            delete [] emfcor_erecv_[l][i][j];
         }
       }
     }
@@ -563,32 +572,71 @@ void BoundaryValues::Initialize(void)
   if(pmb->block_size.nx2 > 1) f2d=1;
   if(pmb->block_size.nx3 > 1) f3d=1;
 
-  // check edge neighbors
-  if(pmb->pmy_mesh->multilevel==true) {
-    for(int n=0;n<pmb->nneighbor;n++) {
-      NeighborBlock& nb=pmb->neighbor[n];
-      if(nb.type==neighbor_edge) {
-        int nlev=std::max(nb.level,mylevel);
-        edge_flag_[nb.eid]=true;
-        if(nb.eid>=0 && nb.eid<4) {
-          if(pmb->nblevel[1][nb.ox2+1][1]==nlev
-          || pmb->nblevel[1][1][nb.ox1+1]==nlev) edge_flag_[nb.eid]=false; // already corrected by face
+
+  // count the number of the fine meshblocks contacting on each edge
+  int eid=0;
+  if(pmb->block_size.nx2 > 1) {
+    for(int ox2=-1;ox2<=1;ox2+=2) {
+      for(int ox1=-1;ox1<=1;ox1+=2) {
+        int nis, nie, njs, nje;
+        nis=std::max(ox1-1,-1), nie=std::min(ox1+1,1);
+        njs=std::max(ox2-1,-1), nje=std::min(ox2+1,1);
+        int nf=0, fl=mylevel;
+        for(int nj=njs; nj<=nje; nj++) {
+          for(int ni=nis; ni<=nie; ni++) {
+            if(pmb->nblevel[1][nj+1][ni+1] > fl)
+              fl++, nf=0;
+            if(pmb->nblevel[1][nj+1][ni+1]==fl)
+              nf++;
+          }
         }
-        else if(nb.eid>=4 && nb.eid<8) {
-          if(pmb->nblevel[nb.ox3+1][1][1]==nlev
-          || pmb->nblevel[1][1][nb.ox1+1]==nlev) edge_flag_[nb.eid]=false; // already corrected by face
+        edge_flag_[eid]=(fl==mylevel);
+        nedge_fine_[eid++]=nf;
+      }
+    }
+  }
+  if(pmb->block_size.nx3 > 1) {
+    for(int ox3=-1;ox3<=1;ox3+=2) {
+      for(int ox1=-1;ox1<=1;ox1+=2) {
+        int nis, nie, nks, nke;
+        nis=std::max(ox1-1,-1), nie=std::min(ox1+1,1);
+        nks=std::max(ox3-1,-1), nke=std::min(ox3+1,1);
+        int nf=0, fl=mylevel;
+        for(int nk=nks; nk<=nke; nk++) {
+          for(int ni=nis; ni<=nie; ni++) {
+            if(pmb->nblevel[nk+1][1][ni+1] > fl)
+              fl++, nf=0;
+            if(pmb->nblevel[nk+1][1][ni+1]==fl)
+              nf++;
+          }
         }
-        else if(nb.eid>=8 && nb.eid<12) {
-          if(pmb->nblevel[nb.ox3+1][1][1]==nlev
-          || pmb->nblevel[1][nb.ox2+1][1]==nlev) edge_flag_[nb.eid]=false; // already corrected by face
+        edge_flag_[eid]=(fl==mylevel);
+        nedge_fine_[eid++]=nf;
+      }
+    }
+    for(int ox3=-1;ox3<=1;ox3+=2) {
+      for(int ox2=-1;ox2<=1;ox2+=2) {
+        int njs, nje, nks, nke;
+        njs=std::max(ox2-1,-1), nje=std::min(ox2+1,1);
+        nks=std::max(ox3-1,-1), nke=std::min(ox3+1,1);
+        int nf=0, fl=mylevel;
+        for(int nk=nks; nk<=nke; nk++) {
+          for(int nj=njs; nj<=nje; nj++) {
+            if(pmb->nblevel[nk+1][nj+1][1] > fl)
+              fl++, nf=0;
+            if(pmb->nblevel[nk+1][nj+1][1]==fl)
+              nf++;
+          }
         }
+        edge_flag_[eid]=(fl==mylevel);
+        nedge_fine_[eid++]=nf;
       }
     }
   }
 
   for(int l=0;l<NSTEP;l++) {
     for(int n=0;n<pmb->nneighbor;n++) {
-      NeighborBlock& nb=pmb->neighbor[n];
+      NeighborBlock& nb = pmb->neighbor[n];
       if(nb.rank!=myrank) {
         if(nb.level==mylevel) { // same
           ssize=rsize=((nb.ox1==0)?pmb->block_size.nx1:NGHOST)
@@ -703,78 +751,84 @@ void BoundaryValues::Initialize(void)
                         nb.rank,tag,MPI_COMM_WORLD,&req_field_recv_[l][nb.bufid]);
           // EMF correction
           if(pmb->pmy_mesh->multilevel==true) {
+            int fi1, fi2, f2csize, size;
             if(nb.type==neighbor_face) { // face
-              int fi1, fi2, size;
               if(pmb->block_size.nx3 > 1) { // 3D
                 if(nb.fid==inner_x1 || nb.fid==outer_x1) {
-                  fi1=myox2; fi2=myox3;
-                  size=(pmb->block_size.nx2/2+1)*(pmb->block_size.nx3/2)
+                  size=(pmb->block_size.nx2+1)*(pmb->block_size.nx3)
+                      +(pmb->block_size.nx2)*(pmb->block_size.nx3+1);
+                  f2csize=(pmb->block_size.nx2/2+1)*(pmb->block_size.nx3/2)
                       +(pmb->block_size.nx2/2)*(pmb->block_size.nx3/2+1);
                 }
                 else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
-                  fi1=myox1; fi2=myox3;
-                  size=(pmb->block_size.nx1/2+1)*(pmb->block_size.nx3/2)
+                  size=(pmb->block_size.nx1+1)*(pmb->block_size.nx3)
+                      +(pmb->block_size.nx1)*(pmb->block_size.nx3+1);
+                  f2csize=(pmb->block_size.nx1/2+1)*(pmb->block_size.nx3/2)
                       +(pmb->block_size.nx1/2)*(pmb->block_size.nx3/2+1);
                 }
                 else if(nb.fid==inner_x3 || nb.fid==outer_x3) {
-                  fi1=myox1; fi2=myox2;
-                  size=(pmb->block_size.nx1/2+1)*(pmb->block_size.nx2/2)
+                  size=(pmb->block_size.nx1+1)*(pmb->block_size.nx2)
+                      +(pmb->block_size.nx1)*(pmb->block_size.nx2+1);
+                  f2csize=(pmb->block_size.nx1/2+1)*(pmb->block_size.nx2/2)
                       +(pmb->block_size.nx1/2)*(pmb->block_size.nx2/2+1);
                 }
               }
               else if(pmb->block_size.nx2 > 1) { // 2D
                 if(nb.fid==inner_x1 || nb.fid==outer_x1) {
-                  size=(pmb->block_size.nx2/2+1)+pmb->block_size.nx2/2;
-                  fi1=myox2; fi2=0;
+                  size=(pmb->block_size.nx2+1)+pmb->block_size.nx2;
+                  f2csize=(pmb->block_size.nx2/2+1)+pmb->block_size.nx2/2;
                 }
                 else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
                   size=(pmb->block_size.nx1/2+1)+pmb->block_size.nx1/2;
-                  fi1=myox1; fi2=0;
+                  f2csize=(pmb->block_size.nx1/2+1)+pmb->block_size.nx1/2;
                 }
               }
-              else { // 1D
-                size=2; fi1=0; fi2=0;
-              }
-              if(nb.level<mylevel) { // send to coarser
-                tag=CreateMPITag(nb.lid, l, tag_emfcor_face, nb.targetid);
-                MPI_Send_init(emfcor_fsend_[l][nb.fid],size,MPI_ATHENA_REAL,
-                    nb.rank,tag,MPI_COMM_WORLD,&req_emfcor_fsend_[l][nb.fid]);
-              }
-              else if(nb.level>mylevel) { // receive from finer
-                tag=CreateMPITag(pmb->lid, l, tag_emfcor_face, nb.bufid);
-                MPI_Recv_init(emfcor_frecv_[l][nb.fid][nb.fi2][nb.fi1],size,MPI_ATHENA_REAL,
-                    nb.rank,tag,MPI_COMM_WORLD,&req_emfcor_frecv_[l][nb.fid][nb.fi2][nb.fi1]);
-              }
+              else // 1D
+                size=f2csize=2;
             }
-            else if(nb.type==neighbor_edge && edge_flag_[nb.eid]==true) { // edge
-              int fi1, size;
+            else if(nb.type==neighbor_edge) { // edge
               if(pmb->block_size.nx3 > 1) { // 3D
                 if(nb.eid>=0 && nb.eid<4) {
-                  size=pmb->block_size.nx3/2;
-                  fi1=myox3;
+                  size=pmb->block_size.nx3;
+                  f2csize=pmb->block_size.nx3/2;
                 }
                 else if(nb.eid>=4 && nb.eid<8) {
-                  size=pmb->block_size.nx2/2;
-                  fi1=myox2;
+                  size=pmb->block_size.nx2;
+                  f2csize=pmb->block_size.nx2/2;
                 }
                 else if(nb.eid>=8 && nb.eid<12) {
-                  size=pmb->block_size.nx1/2;
-                  fi1=myox1;
+                  size=pmb->block_size.nx1;
+                  f2csize=pmb->block_size.nx1/2;
                 }
               }
-              else if(pmb->block_size.nx2 > 1) { // 2D
-                size=1; fi1=0;
+              else if(pmb->block_size.nx2 > 1) // 2D
+                size=f2csize=1;
+            }
+            else // corner
+              continue;
+            if(nb.level==mylevel) ssize=rsize=size;
+            else if(nb.level>mylevel) ssize=0, rsize=f2csize;
+            else if(nb.level<mylevel) ssize=f2csize, rsize=0;
+
+            if(nb.level==mylevel) { // the same level
+              if((nb.type==neighbor_face) || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true))) {
+                tag=CreateMPITag(nb.lid, l, tag_emfcor, nb.targetid);
+                MPI_Send_init(emfcor_send_[l][nb.bufid],ssize,MPI_ATHENA_REAL,
+                              nb.rank,tag,MPI_COMM_WORLD,&req_emfcor_send_[l][nb.bufid]);
+                tag=CreateMPITag(pmb->lid, l, tag_emfcor, nb.bufid);
+                MPI_Recv_init(emfcor_recv_[l][nb.bufid],rsize,MPI_ATHENA_REAL,
+                              nb.rank,tag,MPI_COMM_WORLD,&req_emfcor_recv_[l][nb.bufid]);
               }
-              if(nb.level<mylevel) { // send to coarser
-                tag=CreateMPITag(nb.lid, l, tag_emfcor_edge, nb.targetid);
-                MPI_Send_init(emfcor_esend_[l][nb.eid],size,MPI_ATHENA_REAL,
-                    nb.rank,tag,MPI_COMM_WORLD,&req_emfcor_esend_[l][nb.eid]);
-              }
-              else if(nb.level>mylevel) { // receive from finer
-                tag=CreateMPITag(pmb->lid, l, tag_emfcor_edge, nb.bufid);
-                MPI_Recv_init(emfcor_erecv_[l][nb.eid][nb.fi1],size,MPI_ATHENA_REAL,
-                    nb.rank,tag,MPI_COMM_WORLD,&req_emfcor_erecv_[l][nb.eid][nb.fi1]);
-              }
+            }
+            if(nb.level>mylevel) { // finer neighbor
+              tag=CreateMPITag(pmb->lid, l, tag_emfcor, nb.bufid);
+              MPI_Recv_init(emfcor_recv_[l][nb.bufid],rsize,MPI_ATHENA_REAL,
+                            nb.rank,tag,MPI_COMM_WORLD,&req_emfcor_recv_[l][nb.bufid]);
+            }
+            if(nb.level<mylevel) { // coarser neighbor
+              tag=CreateMPITag(nb.lid, l, tag_emfcor, nb.targetid);
+              MPI_Send_init(emfcor_send_[l][nb.bufid],ssize,MPI_ATHENA_REAL,
+                            nb.rank,tag,MPI_COMM_WORLD,&req_emfcor_send_[l][nb.bufid]);
             }
           }
         }
@@ -874,7 +928,7 @@ void BoundaryValues::StartReceivingForInit(void)
   MeshBlock *pmb=pmy_mblock_;
   int mylevel=pmb->uid.GetLevel();
   for(int n=0;n<pmb->nneighbor;n++) {
-    NeighborBlock& nb=pmb->neighbor[n];
+    NeighborBlock& nb = pmb->neighbor[n];
     if(nb.rank!=myrank) { 
       MPI_Start(&req_fluid_recv_[0][nb.bufid]);
       if (MAGNETIC_FIELDS_ENABLED)
@@ -894,18 +948,20 @@ void BoundaryValues::StartReceivingAll(void)
   MeshBlock *pmb=pmy_mblock_;
   int mylevel=pmb->uid.GetLevel();
   for(int l=0;l<NSTEP;l++) {
+    firsttime_[l]=true;
     for(int n=0;n<pmb->nneighbor;n++) {
-      NeighborBlock& nb=pmb->neighbor[n];
+      NeighborBlock& nb = pmb->neighbor[n];
       if(nb.rank!=myrank) { 
         MPI_Start(&req_fluid_recv_[l][nb.bufid]);
         if(nb.type==neighbor_face && nb.level>mylevel)
           MPI_Start(&req_flcor_recv_[l][nb.fid][nb.fi2][nb.fi1]);
         if (MAGNETIC_FIELDS_ENABLED) {
           MPI_Start(&req_field_recv_[l][nb.bufid]);
-          if(nb.type==neighbor_face && nb.level>mylevel)
-            MPI_Start(&req_emfcor_frecv_[l][nb.fid][nb.fi2][nb.fi1]);
-          if(nb.type==neighbor_edge && nb.level>mylevel && edge_flag_[nb.eid]==true)
-            MPI_Start(&req_emfcor_erecv_[l][nb.eid][nb.fi1]);
+          if(pmb->pmy_mesh->multilevel==true) {
+            if((nb.level>mylevel) || ((nb.level==mylevel) && ((nb.type==neighbor_face)
+            || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true)))))
+              MPI_Start(&req_emfcor_recv_[l][nb.bufid]);
+          }
         }
       }
     }
@@ -923,6 +979,7 @@ void BoundaryValues::RestrictFluid(AthenaArray<Real> &src,
                              int csi, int cei, int csj, int cej, int csk, int cek)
 {
   MeshBlock *pmb=pmy_mblock_;
+  Coordinates *pco=pmb->pcoord;
   int si=(csi-pmb->cis)*2+pmb->is, ei=(cei-pmb->cis)*2+pmb->is+1;
 
   // store the restricted data in the prolongation buffer for later use
@@ -932,10 +989,10 @@ void BoundaryValues::RestrictFluid(AthenaArray<Real> &src,
         int k=(ck-pmb->cks)*2+pmb->ks;
         for (int cj=csj; cj<=cej; cj++) {
           int j=(cj-pmb->cjs)*2+pmb->js;
-          pmb->pcoord->CellVolume(k,j,si,ei,fvol_[0][0]);
-          pmb->pcoord->CellVolume(k,j+1,si,ei,fvol_[0][1]);
-          pmb->pcoord->CellVolume(k+1,j,si,ei,fvol_[1][0]);
-          pmb->pcoord->CellVolume(k+1,j+1,si,ei,fvol_[1][1]);
+          pco->CellVolume(k,j,si,ei,fvol_[0][0]);
+          pco->CellVolume(k,j+1,si,ei,fvol_[0][1]);
+          pco->CellVolume(k+1,j,si,ei,fvol_[1][0]);
+          pco->CellVolume(k+1,j+1,si,ei,fvol_[1][1]);
           for (int ci=csi; ci<=cei; ci++) {
             int i=(ci-pmb->cis)*2+pmb->is;
             Real tvol=fvol_[0][0](i)+fvol_[0][0](i+1)+fvol_[0][1](i)+fvol_[0][1](i+1)
@@ -954,8 +1011,8 @@ void BoundaryValues::RestrictFluid(AthenaArray<Real> &src,
     for (int n=0; n<(NFLUID); ++n) {
       for (int cj=csj; cj<=cej; cj++) {
         int j=(cj-pmb->cjs)*2+pmb->js;
-        pmb->pcoord->CellVolume(0,j  ,si,ei,fvol_[0][0]);
-        pmb->pcoord->CellVolume(0,j+1,si,ei,fvol_[0][1]);
+        pco->CellVolume(0,j  ,si,ei,fvol_[0][0]);
+        pco->CellVolume(0,j+1,si,ei,fvol_[0][1]);
         for (int ci=csi; ci<=cei; ci++) {
           int i=(ci-pmb->cis)*2+pmb->is;
           Real tvol=fvol_[0][0](i)+fvol_[0][0](i+1)+fvol_[0][1](i)+fvol_[0][1](i+1);
@@ -969,7 +1026,7 @@ void BoundaryValues::RestrictFluid(AthenaArray<Real> &src,
   else { // 1D
     int j=pmb->js, cj=pmb->cjs, k=pmb->ks, ck=pmb->cks; 
     for (int n=0; n<(NFLUID); ++n) {
-      pmb->pcoord->CellVolume(k,j,si,ei,fvol_[0][0]);
+      pco->CellVolume(k,j,si,ei,fvol_[0][0]);
       for (int ci=csi; ci<=cei; ci++) {
         int i=(ci-pmb->cis)*2+pmb->is;
         Real tvol=fvol_[0][0](i)+fvol_[0][0](i+1);
@@ -1115,7 +1172,7 @@ void BoundaryValues::SendFluidBoundaryBuffers(AthenaArray<Real> &src, int step)
   int mylevel=pmb->uid.GetLevel();
 
   for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb=pmb->neighbor[n];
+    NeighborBlock& nb = pmb->neighbor[n];
     int ssize;
     if(nb.level==mylevel)
       ssize=LoadFluidBoundaryBufferSameLevel(src, fluid_send_[step][nb.bufid],nb);
@@ -1295,20 +1352,25 @@ bool BoundaryValues::ReceiveFluidBoundaryBuffers(AthenaArray<Real> &dst, int ste
 {
   MeshBlock *pmb=pmy_mblock_;
   int mylevel=pmb->uid.GetLevel();
-  int nc=0;
+  bool flag=true;
 
   for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb= pmb->neighbor[n];
-    if(fluid_flag_[step][nb.bufid]==boundary_completed) { nc++; continue;}
+    NeighborBlock& nb = pmb->neighbor[n];
+    if(fluid_flag_[step][nb.bufid]==boundary_completed) continue;
     if(fluid_flag_[step][nb.bufid]==boundary_waiting) {
-      if(nb.rank==myrank) // on the same process
+      if(nb.rank==myrank) {// on the same process
+        flag=false;
         continue;
+      }
 #ifdef MPI_PARALLEL
       else { // MPI boundary
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
         MPI_Test(&req_fluid_recv_[step][nb.bufid],&test,MPI_STATUS_IGNORE);
-        if(test==false) continue;
+        if(test==false) {
+          flag=false;
+          continue;
+        }
         fluid_flag_[step][nb.bufid] = boundary_arrived;
       }
 #endif
@@ -1320,12 +1382,8 @@ bool BoundaryValues::ReceiveFluidBoundaryBuffers(AthenaArray<Real> &dst, int ste
     else
       SetFluidBoundaryFromFiner(dst, fluid_recv_[step][nb.bufid], nb);
     fluid_flag_[step][nb.bufid] = boundary_completed; // completed
-    nc++;
   }
-
-  if(nc<pmb->nneighbor)
-    return false;
-  return true;
+  return flag;
 }
 
 //--------------------------------------------------------------------------------------
@@ -1338,7 +1396,7 @@ void BoundaryValues::ReceiveFluidBoundaryBuffersWithWait(AthenaArray<Real> &dst,
   int mylevel=pmb->uid.GetLevel();
 
   for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb= pmb->neighbor[n];
+    NeighborBlock& nb = pmb->neighbor[n];
 #ifdef MPI_PARALLEL
     if(nb.rank!=myrank)
       MPI_Wait(&req_fluid_recv_[0][nb.bufid],MPI_STATUS_IGNORE);
@@ -1361,6 +1419,7 @@ void BoundaryValues::ReceiveFluidBoundaryBuffersWithWait(AthenaArray<Real> &dst,
 void BoundaryValues::SendFluxCorrection(int step)
 {
   MeshBlock *pmb=pmy_mblock_;
+  Coordinates *pco=pmb->pcoord;
   long int lx1, lx2, lx3;
   int mylevel;
   pmb->uid.GetLocation(lx1,lx2,lx3,mylevel);
@@ -1368,7 +1427,7 @@ void BoundaryValues::SendFluxCorrection(int step)
   int fi1, fi2;
 
   for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb= pmb->neighbor[n];
+    NeighborBlock& nb = pmb->neighbor[n];
     if(nb.type!=neighbor_face) break;
     if(nb.level==mylevel-1) {
       int p=0;
@@ -1380,10 +1439,10 @@ void BoundaryValues::SendFluxCorrection(int step)
           for(int nn=0; nn<NFLUID; nn++) {
             for(int k=pmb->ks; k<=pmb->ke; k+=2) {
               for(int j=pmb->js; j<=pmb->je; j+=2) {
-                Real amm=pmb->pcoord->GetFace1Area(k,   j,   i);
-                Real amp=pmb->pcoord->GetFace1Area(k,   j+1, i);
-                Real apm=pmb->pcoord->GetFace1Area(k+1, j,   i);
-                Real app=pmb->pcoord->GetFace1Area(k+1, j+1, i);
+                Real amm=pco->GetFace1Area(k,   j,   i);
+                Real amp=pco->GetFace1Area(k,   j+1, i);
+                Real apm=pco->GetFace1Area(k+1, j,   i);
+                Real app=pco->GetFace1Area(k+1, j+1, i);
                 Real tarea=amm+amp+apm+app;
                 flcor_send_[step][nb.fid][p++]=
                            (surface_flux_[nb.fid](nn, k  , j  )*amm
@@ -1397,8 +1456,8 @@ void BoundaryValues::SendFluxCorrection(int step)
         else if(pmb->block_size.nx2>1) { // 2D
           for(int nn=0; nn<NFLUID; nn++) {
             for(int j=pmb->js; j<=pmb->je; j+=2) {
-              Real am=pmb->pcoord->GetFace1Area(0, j,   i);
-              Real ap=pmb->pcoord->GetFace1Area(0, j+1, i);
+              Real am=pco->GetFace1Area(0, j,   i);
+              Real ap=pco->GetFace1Area(0, j+1, i);
               Real tarea=am+ap;
               flcor_send_[step][nb.fid][p++]=
                          (surface_flux_[nb.fid](nn, 0, j  )*am
@@ -1418,8 +1477,8 @@ void BoundaryValues::SendFluxCorrection(int step)
         if(pmb->block_size.nx3>1) { // 3D
           for(int nn=0; nn<NFLUID; nn++) {
             for(int k=pmb->ks; k<=pmb->ke; k+=2) {
-              pmb->pcoord->Face2Area(k  , j, pmb->is, pmb->ie, sarea_[0]);
-              pmb->pcoord->Face2Area(k+1, j, pmb->is, pmb->ie, sarea_[1]);
+              pco->Face2Area(k  , j, pmb->is, pmb->ie, sarea_[0]);
+              pco->Face2Area(k+1, j, pmb->is, pmb->ie, sarea_[1]);
               for(int i=pmb->is; i<=pmb->ie; i+=2) {
                 Real tarea=sarea_[0](i)+sarea_[0](i+1)+sarea_[1](i)+sarea_[1](i+1);
                 flcor_send_[step][nb.fid][p++]=
@@ -1433,7 +1492,7 @@ void BoundaryValues::SendFluxCorrection(int step)
         }
         else if(pmb->block_size.nx2>1) { // 2D
           for(int nn=0; nn<NFLUID; nn++) {
-            pmb->pcoord->Face2Area(0, j, pmb->is ,pmb->ie, sarea_[0]);
+            pco->Face2Area(0, j, pmb->is ,pmb->ie, sarea_[0]);
             for(int i=pmb->is; i<=pmb->ie; i+=2) {
               Real tarea=sarea_[0](i)+sarea_[0](i+1);
               flcor_send_[step][nb.fid][p++]=
@@ -1449,8 +1508,8 @@ void BoundaryValues::SendFluxCorrection(int step)
         fi1=fx1, fi2=fx2;
         for(int nn=0; nn<NFLUID; nn++) {
           for(int j=pmb->js; j<=pmb->je; j+=2) {
-            pmb->pcoord->Face3Area(k, j,   pmb->is, pmb->ie, sarea_[0]);
-            pmb->pcoord->Face3Area(k, j+1, pmb->is, pmb->ie, sarea_[1]);
+            pco->Face3Area(k, j,   pmb->is, pmb->ie, sarea_[0]);
+            pco->Face3Area(k, j+1, pmb->is, pmb->ie, sarea_[1]);
             for(int i=pmb->is; i<=pmb->ie; i+=2) {
               Real tarea=sarea_[0](i)+sarea_[0](i+1)+sarea_[1](i)+sarea_[1](i+1);
               flcor_send_[step][nb.fid][p++]=
@@ -1484,33 +1543,31 @@ void BoundaryValues::SendFluxCorrection(int step)
 bool BoundaryValues::ReceiveFluxCorrection(AthenaArray<Real> &dst, int step)
 {
   MeshBlock *pmb=pmy_mblock_;
+  Coordinates *pco=pmb->pcoord;
   int mylevel=pmb->uid.GetLevel();
-  int nc=0, nff=0;
   Real dt=pmb->pmy_mesh->dt;
   if(step==1) dt*=0.5;
-
-  // count the number of finer faces.
-  for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb= pmb->neighbor[n];
-    if(nb.type==neighbor_face && nb.level==mylevel+1) nff++;
-    if(nb.type!=neighbor_face) break;
-  }
-  if(nff==0) return true;
+  bool flag=true;
 
   for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb= pmb->neighbor[n];
+    NeighborBlock& nb = pmb->neighbor[n];
     if(nb.type!=neighbor_face) break;
     if(nb.level==mylevel+1) {
-      if(flcor_flag_[step][nb.fid][nb.fi2][nb.fi1]==boundary_completed) { nc++; continue; }
+      if(flcor_flag_[step][nb.fid][nb.fi2][nb.fi1]==boundary_completed) continue;
       if(flcor_flag_[step][nb.fid][nb.fi2][nb.fi1]==boundary_waiting) {
-        if(nb.rank==myrank) // on the same process
+        if(nb.rank==myrank) {// on the same process
+          flag=false;
           continue;
+        }
 #ifdef MPI_PARALLEL
         else { // MPI boundary
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
           MPI_Test(&req_flcor_recv_[step][nb.fid][nb.fi2][nb.fi1],&test,MPI_STATUS_IGNORE);
-          if(test==false) continue;
+          if(test==false) {
+            flag=false;
+            continue;
+          }
           flcor_flag_[step][nb.fid][nb.fi2][nb.fi1] = boundary_arrived;
         }
 #endif
@@ -1530,8 +1587,8 @@ bool BoundaryValues::ReceiveFluxCorrection(AthenaArray<Real> &dst, int step)
         for(int nn=0; nn<NFLUID; nn++) {
           for(int k=ks; k<=ke; k++) {
             for(int j=js; j<=je; j++) {
-              Real area=pmb->pcoord->GetFace1Area(k,j,is);
-              Real vol=pmb->pcoord->GetCellVolume(k,j,ic);
+              Real area=pco->GetFace1Area(k,j,is);
+              Real vol=pco->GetCellVolume(k,j,ic);
               dst(nn,k,j,ic)+=sign*dt*area*(surface_flux_[nb.fid](nn,k,j)-buf[p++])/vol;
             }
           }
@@ -1548,8 +1605,8 @@ bool BoundaryValues::ReceiveFluxCorrection(AthenaArray<Real> &dst, int step)
         Real sign=(Real)((nb.fid&1)*2-1); // -1 for inner, +1 for outer
         for(int nn=0; nn<NFLUID; nn++) {
           for(int k=ks; k<=ke; k++) {
-            pmb->pcoord->Face2Area(k,js,is,ie,sarea_[0]);
-            pmb->pcoord->CellVolume(k,jc,is,ie,fvol_[0][0]);
+            pco->Face2Area(k,js,is,ie,sarea_[0]);
+            pco->CellVolume(k,jc,is,ie,fvol_[0][0]);
             for(int i=is; i<=ie; i++)
               dst(nn,k,jc,i)+=dt*sign*sarea_[0](i)
                             *(surface_flux_[nb.fid](nn,k,i)-buf[p++])/fvol_[0][0](i);
@@ -1567,8 +1624,8 @@ bool BoundaryValues::ReceiveFluxCorrection(AthenaArray<Real> &dst, int step)
         Real sign=(Real)((nb.fid&1)*2-1); // -1 for inner, +1 for outer
         for(int nn=0; nn<NFLUID; nn++) {
           for(int j=js; j<=je; j++) {
-            pmb->pcoord->Face3Area(ks,j,is,ie,sarea_[0]);
-            pmb->pcoord->CellVolume(kc,j,is,ie,fvol_[0][0]);
+            pco->Face3Area(ks,j,is,ie,sarea_[0]);
+            pco->CellVolume(kc,j,is,ie,fvol_[0][0]);
             for(int i=is; i<=ie; i++)
               dst(nn,kc,j,i)+=dt*sign*sarea_[0](i)
                             *(surface_flux_[nb.fid](nn,j,i)-buf[p++])/fvol_[0][0](i);
@@ -1577,13 +1634,10 @@ bool BoundaryValues::ReceiveFluxCorrection(AthenaArray<Real> &dst, int step)
       }
 
       flcor_flag_[step][nb.fid][nb.fi2][nb.fi1] = boundary_completed;
-      nc++;
     }
   }
 
-  if(nc!=nff)
-    return false;
-  return true;
+return flag;
 }
 
 //--------------------------------------------------------------------------------------
@@ -1601,7 +1655,7 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
   mox2=((int)(lx2&1L)<<1)-1;
   mox3=((int)(lx3&1L)<<1)-1;
   for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb= pmb->neighbor[n];
+    NeighborBlock& nb = pmb->neighbor[n];
     if(nb.level >= mylevel) continue;
     int mytype=std::abs(nb.ox1)+std::abs(nb.ox2)+std::abs(nb.ox3);
     // fill the required ghost-ghost zone
@@ -1860,6 +1914,7 @@ void BoundaryValues::RestrictFieldX1(AthenaArray<Real> &bx1f,
                              int csi, int cei, int csj, int cej, int csk, int cek)
 {
   MeshBlock *pmb=pmy_mblock_;
+  Coordinates *pco=pmb->pcoord;
   int si=(csi-pmb->cis)*2+pmb->is, ei=(cei-pmb->cis)*2+pmb->is;
 
   // store the restricted data in the prolongation buffer for later use
@@ -1869,10 +1924,10 @@ void BoundaryValues::RestrictFieldX1(AthenaArray<Real> &bx1f,
       for (int cj=csj; cj<=cej; cj++) {
         int j=(cj-pmb->cjs)*2+pmb->js;
         // reuse fvol_ arrays as surface area
-        pmb->pcoord->Face1Area(k,   j,   si, ei, fvol_[0][0]);
-        pmb->pcoord->Face1Area(k,   j+1, si, ei, fvol_[0][1]);
-        pmb->pcoord->Face1Area(k+1, j,   si, ei, fvol_[1][0]);
-        pmb->pcoord->Face1Area(k+1, j+1, si, ei, fvol_[1][1]);
+        pco->Face1Area(k,   j,   si, ei, fvol_[0][0]);
+        pco->Face1Area(k,   j+1, si, ei, fvol_[0][1]);
+        pco->Face1Area(k+1, j,   si, ei, fvol_[1][0]);
+        pco->Face1Area(k+1, j+1, si, ei, fvol_[1][1]);
         for (int ci=csi; ci<=cei; ci++) {
           int i=(ci-pmb->cis)*2+pmb->is;
           Real tarea=fvol_[0][0](i)+fvol_[0][1](i)+fvol_[1][0](i)+fvol_[1][1](i);
@@ -1888,8 +1943,8 @@ void BoundaryValues::RestrictFieldX1(AthenaArray<Real> &bx1f,
     for (int cj=csj; cj<=cej; cj++) {
       int j=(cj-pmb->cjs)*2+pmb->js;
       // reuse fvol_ arrays as surface area
-      pmb->pcoord->Face1Area(k,  j,   si, ei, fvol_[0][0]);
-      pmb->pcoord->Face1Area(k,  j+1, si, ei, fvol_[0][1]);
+      pco->Face1Area(k,  j,   si, ei, fvol_[0][0]);
+      pco->Face1Area(k,  j+1, si, ei, fvol_[0][1]);
       for (int ci=csi; ci<=cei; ci++) {
         int i=(ci-pmb->cis)*2+pmb->is;
         Real tarea=fvol_[0][0](i)+fvol_[0][1](i);
@@ -1916,6 +1971,7 @@ void BoundaryValues::RestrictFieldX2(AthenaArray<Real> &bx2f,
                              int csi, int cei, int csj, int cej, int csk, int cek)
 {
   MeshBlock *pmb=pmy_mblock_;
+  Coordinates *pco=pmb->pcoord;
   int si=(csi-pmb->cis)*2+pmb->is, ei=(cei-pmb->cis)*2+pmb->is+1;
 
   // store the restricted data in the prolongation buffer for later use
@@ -1925,8 +1981,8 @@ void BoundaryValues::RestrictFieldX2(AthenaArray<Real> &bx2f,
       for (int cj=csj; cj<=cej; cj++) {
         int j=(cj-pmb->cjs)*2+pmb->js;
         // reuse fvol_ arrays as surface area
-        pmb->pcoord->Face2Area(k,   j,  si, ei, fvol_[0][0]);
-        pmb->pcoord->Face2Area(k+1, j,  si, ei, fvol_[0][1]);
+        pco->Face2Area(k,   j,  si, ei, fvol_[0][0]);
+        pco->Face2Area(k+1, j,  si, ei, fvol_[0][1]);
         for (int ci=csi; ci<=cei; ci++) {
           int i=(ci-pmb->cis)*2+pmb->is;
           Real tarea=fvol_[0][0](i)+fvol_[0][0](i+1)+fvol_[0][1](i)+fvol_[0][1](i+1);
@@ -1942,7 +1998,7 @@ void BoundaryValues::RestrictFieldX2(AthenaArray<Real> &bx2f,
     for (int cj=csj; cj<=cej; cj++) {
       int j=(cj-pmb->cjs)*2+pmb->js;
       // reuse fvol_ arrays as surface area
-      pmb->pcoord->Face2Area(k, j, si, ei, fvol_[0][0]);
+      pco->Face2Area(k, j, si, ei, fvol_[0][0]);
       for (int ci=csi; ci<=cei; ci++) {
         int i=(ci-pmb->cis)*2+pmb->is;
         Real tarea=fvol_[0][0](i)+fvol_[0][0](i+1);
@@ -1953,7 +2009,7 @@ void BoundaryValues::RestrictFieldX2(AthenaArray<Real> &bx2f,
   }
   else { // 1D 
     int k=pmb->ks, j=pmb->js;
-    pmb->pcoord->Face2Area(k, j, si, ei, fvol_[0][0]);
+    pco->Face2Area(k, j, si, ei, fvol_[0][0]);
     for (int ci=csi; ci<=cei; ci++) {
       int i=(ci-pmb->cis)*2+pmb->is;
         Real tarea=fvol_[0][0](i)+fvol_[0][0](i+1);
@@ -1973,6 +2029,7 @@ void BoundaryValues::RestrictFieldX3(AthenaArray<Real> &bx3f,
                              int csi, int cei, int csj, int cej, int csk, int cek)
 {
   MeshBlock *pmb=pmy_mblock_;
+  Coordinates *pco=pmb->pcoord;
   int si=(csi-pmb->cis)*2+pmb->is, ei=(cei-pmb->cis)*2+pmb->is+1;
 
   // store the restricted data in the prolongation buffer for later use
@@ -1982,8 +2039,8 @@ void BoundaryValues::RestrictFieldX3(AthenaArray<Real> &bx3f,
       for (int cj=csj; cj<=cej; cj++) {
         int j=(cj-pmb->cjs)*2+pmb->js;
         // reuse fvol_ arrays as surface area
-        pmb->pcoord->Face3Area(k,   j,  si, ei, fvol_[0][0]);
-        pmb->pcoord->Face3Area(k, j+1,  si, ei, fvol_[0][1]);
+        pco->Face3Area(k,   j,  si, ei, fvol_[0][0]);
+        pco->Face3Area(k, j+1,  si, ei, fvol_[0][1]);
         for (int ci=csi; ci<=cei; ci++) {
           int i=(ci-pmb->cis)*2+pmb->is;
           Real tarea=fvol_[0][0](i)+fvol_[0][0](i+1)+fvol_[0][1](i)+fvol_[0][1](i+1);
@@ -1999,8 +2056,8 @@ void BoundaryValues::RestrictFieldX3(AthenaArray<Real> &bx3f,
     for (int cj=csj; cj<=cej; cj++) {
       int j=(cj-pmb->cjs)*2+pmb->js;
       // reuse fvol_ arrays as surface area
-      pmb->pcoord->Face3Area(k,   j, si, ei, fvol_[0][0]);
-      pmb->pcoord->Face3Area(k, j+1, si, ei, fvol_[0][1]);
+      pco->Face3Area(k,   j, si, ei, fvol_[0][0]);
+      pco->Face3Area(k, j+1, si, ei, fvol_[0][1]);
       for (int ci=csi; ci<=cei; ci++) {
         int i=(ci-pmb->cis)*2+pmb->is;
         Real tarea=fvol_[0][0](i)+fvol_[0][0](i+1)+fvol_[0][1](i)+fvol_[0][1](i+1);
@@ -2012,7 +2069,7 @@ void BoundaryValues::RestrictFieldX3(AthenaArray<Real> &bx3f,
   }
   else { // 1D 
     int k=pmb->ks, j=pmb->js;
-    pmb->pcoord->Face3Area(k, j, si, ei, fvol_[0][0]);
+    pco->Face3Area(k, j, si, ei, fvol_[0][0]);
     for (int ci=csi; ci<=cei; ci++) {
       int i=(ci-pmb->cis)*2+pmb->is;
         Real tarea=fvol_[0][0](i)+fvol_[0][0](i+1);
@@ -2324,7 +2381,7 @@ void BoundaryValues::SendFieldBoundaryBuffers(InterfaceField &src, int step)
   int mylevel=pmb->uid.GetLevel();
 
   for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb=pmb->neighbor[n];
+    NeighborBlock& nb = pmb->neighbor[n];
     int ssize;
     if(nb.level==mylevel)
       ssize=LoadFieldBoundaryBufferSameLevel(src, field_send_[step][nb.bufid],nb);
@@ -2717,20 +2774,25 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(InterfaceField &dst, int step)
 {
   MeshBlock *pmb=pmy_mblock_;
   int mylevel=pmb->uid.GetLevel();
-  int nc=0;
+  bool flag=true;
 
   for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb= pmb->neighbor[n];
-    if(field_flag_[step][nb.bufid]==boundary_completed) { nc++; continue;}
+    NeighborBlock& nb = pmb->neighbor[n];
+    if(field_flag_[step][nb.bufid]==boundary_completed) continue;
     if(field_flag_[step][nb.bufid]==boundary_waiting) {
-      if(nb.rank==myrank) // on the same process
+      if(nb.rank==myrank) {// on the same process
+        flag=false;
         continue;
+      }
 #ifdef MPI_PARALLEL
       else { // MPI boundary
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
         MPI_Test(&req_field_recv_[step][nb.bufid],&test,MPI_STATUS_IGNORE);
-        if(test==false) continue;
+        if(test==false) {
+          flag=false;
+          continue;
+        }
         field_flag_[step][nb.bufid] = boundary_arrived;
       }
 #endif
@@ -2742,12 +2804,9 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(InterfaceField &dst, int step)
     else
       SetFieldBoundaryFromFiner(dst, field_recv_[step][nb.bufid], nb);
     field_flag_[step][nb.bufid] = boundary_completed; // completed
-    nc++;
   }
 
-  if(nc<pmb->nneighbor)
-    return false;
-  return true;
+  return flag;
 }
 
 //--------------------------------------------------------------------------------------
@@ -2760,7 +2819,7 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(InterfaceField &dst, in
   int mylevel=pmb->uid.GetLevel();
 
   for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb= pmb->neighbor[n];
+    NeighborBlock& nb = pmb->neighbor[n];
 #ifdef MPI_PARALLEL
     if(nb.rank!=myrank)
       MPI_Wait(&req_field_recv_[0][nb.bufid],MPI_STATUS_IGNORE);
@@ -2778,230 +2837,951 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(InterfaceField &dst, in
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SendEMFCorrection(int step)
-//  \brief Restrict, pack and send the surace EMF to the coarse neighbor(s) if needed
-void BoundaryValues::SendEMFCorrection(int step)
+//! \fn int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, NeighborBlock& nb)
+//  \brief Set EMF correction buffers for sending to a block on the same level
+int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, NeighborBlock& nb)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  AthenaArray<Real> &e1=pmb->pfield->e.x1e;
+  AthenaArray<Real> &e2=pmb->pfield->e.x2e;
+  AthenaArray<Real> &e3=pmb->pfield->e.x3e;
+  int p=0;
+  if(nb.type==neighbor_face) {
+    if(pmb->block_size.nx3 > 1) { // 3D
+      // x1 direction
+      if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+        int i;
+        if(nb.fid==inner_x1) i=pmb->is;
+        else i=pmb->ie+1;
+        // pack e2
+        for(int k=pmb->ks; k<=pmb->ke+1; k++) {
+          for(int j=pmb->js; j<=pmb->je; j++)
+            buf[p++]=e2(k,j,i);
+        }
+        // pack e3
+        for(int k=pmb->ks; k<=pmb->ke; k++) {
+          for(int j=pmb->js; j<=pmb->je+1; j++)
+            buf[p++]=e3(k,j,i);
+        }
+      }
+      // x2 direction
+      else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+        int j;
+        if(nb.fid==inner_x2) j=pmb->js;
+        else j=pmb->je+1;
+        // pack e1
+        for(int k=pmb->ks; k<=pmb->ke+1; k++) {
+          for(int i=pmb->is; i<=pmb->ie; i++)
+            buf[p++]=e1(k,j,i);
+        }
+        // pack e3
+        for(int k=pmb->ks; k<=pmb->ke; k++) {
+          for(int i=pmb->is; i<=pmb->ie+1; i++)
+            buf[p++]=e3(k,j,i);
+        }
+      }
+      // x3 direction
+      else if(nb.fid==inner_x3 || nb.fid==outer_x3) {
+        int k;
+        if(nb.fid==inner_x3) k=pmb->ks;
+        else k=pmb->ke+1;
+        // pack e1
+        for(int j=pmb->js; j<=pmb->je+1; j++) {
+          for(int i=pmb->is; i<=pmb->ie; i++)
+            buf[p++]=e1(k,j,i);
+        }
+        // pack e2
+        for(int j=pmb->js; j<=pmb->je; j++) {
+          for(int i=pmb->is; i<=pmb->ie+1; i++)
+            buf[p++]=e2(k,j,i);
+        }
+      }
+    }
+    else if(pmb->block_size.nx2 > 1) { // 2D
+      int k=pmb->ks;
+      // x1 direction
+      if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+        int i;
+        if(nb.fid==inner_x1) i=pmb->is;
+        else i=pmb->ie+1;
+        // pack e2
+        for(int j=pmb->js; j<=pmb->je; j++)
+          buf[p++]=e2(k,j,i);
+        // pack e3
+        for(int j=pmb->js; j<=pmb->je+1; j++)
+          buf[p++]=e3(k,j,i);
+      }
+      // x2 direction
+      else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+        int j;
+        if(nb.fid==inner_x2) j=pmb->js;
+        else j=pmb->je+1;
+        // pack e1
+        for(int i=pmb->is; i<=pmb->ie; i++)
+          buf[p++]=e1(k,j,i);
+        // pack e3
+        for(int i=pmb->is; i<=pmb->ie+1; i++)
+          buf[p++]=e3(k,j,i);
+      }
+    }
+    else { // 1D
+      int i, j=pmb->js, k=pmb->ks;
+      if(nb.fid==inner_x1) i=pmb->is;
+      else i=pmb->ie+1;
+      // pack e2 and e3
+      buf[p++]=e2(k,j,i);
+      buf[p++]=e3(k,j,i);
+    }
+  }
+  else if(nb.type==neighbor_edge) {
+    // x1x2 edge (both 2D and 3D)
+    if(nb.eid>=0 && nb.eid<4) {
+      int i, j;
+      if((nb.eid&1)==0) i=pmb->is;
+      else i=pmb->ie+1;
+      if((nb.eid&2)==0) j=pmb->js;
+      else j=pmb->je+1;
+      // pack e3
+      for(int k=pmb->ks; k<=pmb->ke; k++)
+        buf[p++]=e3(k,j,i);
+    }
+    // x1x3 edge
+    else if(nb.eid>=4 && nb.eid<8) {
+      int i, k;
+      if((nb.eid&1)==0) i=pmb->is;
+      else i=pmb->ie+1;
+      if((nb.eid&2)==0) k=pmb->ks;
+      else k=pmb->ke+1;
+      // pack e2
+      for(int j=pmb->js; j<=pmb->je; j++)
+        buf[p++]=e2(k,j,i);
+    }
+    // x2x3 edge
+    else if(nb.eid>=8 && nb.eid<12) {
+      int j, k;
+      if((nb.eid&1)==0) j=pmb->js;
+      else j=pmb->je+1;
+      if((nb.eid&2)==0) k=pmb->ks;
+      else k=pmb->ke+1;
+      // pack e1
+      for(int i=pmb->is; i<=pmb->ie; i++)
+        buf[p++]=e1(k,j,i);
+    }
+  }
+  return p;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, NeighborBlock& nb)
+//  \brief Set EMF correction buffers for sending to a block on the coarser level
+int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
-  long int lx1, lx2, lx3;
-  int mylevel;
-  pmb->uid.GetLocation(lx1,lx2,lx3,mylevel);
-  int fx1=lx1&1L, fx2=lx2&1L, fx3=lx3&1L;
-  int fi1, fi2;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
   // use the surface area aray as the edge length array
   AthenaArray<Real> &le1=sarea_[0];
   AthenaArray<Real> &le2=sarea_[1];
+  int p=0;
+  if(nb.type==neighbor_face) {
+    if(pmb->block_size.nx3 > 1) { // 3D
+      // x1 direction
+      if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+        int i;
+        if(nb.fid==inner_x1) i=pmb->is;
+        else i=pmb->ie+1;
+        // restrict and pack e2
+        for(int k=pmb->ks; k<=pmb->ke+1; k+=2) {
+          for(int j=pmb->js; j<=pmb->je; j+=2) {
+            Real el1=pco->GetEdge2Length(k,j,i);
+            Real el2=pco->GetEdge2Length(k,j+1,i);
+            buf[p++]=(e2(k,j,i)*el1+e2(k,j+1,i)*el2)/(el1+el2);
+          }
+        }
+        // restrict and pack e3
+        for(int k=pmb->ks; k<=pmb->ke; k+=2) {
+          for(int j=pmb->js; j<=pmb->je+1; j+=2) {
+            Real el1=pco->GetEdge3Length(k,j,i);
+            Real el2=pco->GetEdge3Length(k+1,j,i);
+            buf[p++]=(e3(k,j,i)*el1+e3(k+1,j,i)*el2)/(el1+el2);
+          }
+        }
+      }
+      // x2 direction
+      else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+        int j;
+        if(nb.fid==inner_x2) j=pmb->js;
+        else j=pmb->je+1;
+        // restrict and pack e1
+        for(int k=pmb->ks; k<=pmb->ke+1; k+=2) {
+          pco->Edge1Length(k, j, pmb->is, pmb->ie, le1);
+          for(int i=pmb->is; i<=pmb->ie; i+=2)
+            buf[p++]=(e1(k,j,i)*le1(i)+e1(k,j,i+1)*le1(i+1))/(le1(i)+le1(i+1));
+        }
+        // restrict and pack e3
+        for(int k=pmb->ks; k<=pmb->ke; k+=2) {
+          pco->Edge3Length(k,   j, pmb->is, pmb->ie+1, le1);
+          pco->Edge3Length(k+1, j, pmb->is, pmb->ie+1, le2);
+          for(int i=pmb->is; i<=pmb->ie+1; i+=2)
+            buf[p++]=(e3(k,j,i)*le1(i)+e3(k+1,j,i)*le2(i))/(le1(i)+le2(i));
+        }
+      }
+      // x3 direction
+      else if(nb.fid==inner_x3 || nb.fid==outer_x3) {
+        int k;
+        if(nb.fid==inner_x3) k=pmb->ks;
+        else k=pmb->ke+1;
+        // restrict and pack e1
+        for(int j=pmb->js; j<=pmb->je+1; j+=2) {
+          pco->Edge1Length(k, j, pmb->is, pmb->ie, le1);
+          for(int i=pmb->is; i<=pmb->ie; i+=2)
+            buf[p++]=(e1(k,j,i)*le1(i)+e1(k,j,i+1)*le1(i+1))/(le1(i)+le1(i+1));
+        }
+        // restrict and pack e2
+        for(int j=pmb->js; j<=pmb->je; j+=2) {
+          pco->Edge2Length(k,   j, pmb->is, pmb->ie+1, le1);
+          pco->Edge2Length(k, j+1, pmb->is, pmb->ie+1, le2);
+          for(int i=pmb->is; i<=pmb->ie+1; i+=2)
+            buf[p++]=(e2(k,j,i)*le1(i)+e2(k,j+1,i)*le2(i))/(le1(i)+le2(i));
+        }
+      }
+    }
+    else if(pmb->block_size.nx2 > 1) { // 2D
+      int k=pmb->ks;
+      // x1 direction
+      if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+        int i;
+        if(nb.fid==inner_x1) i=pmb->is;
+        else i=pmb->ie+1;
+        // restrict and pack e2
+        for(int j=pmb->js; j<=pmb->je; j+=2) {
+          Real el1=pco->GetEdge2Length(k,j,i);
+          Real el2=pco->GetEdge2Length(k,j+1,i);
+          buf[p++]=(e2(k,j,i)*el1+e2(k,j+1,i)*el2)/(el1+el2);
+        }
+        // pack e3
+        for(int j=pmb->js; j<=pmb->je+1; j+=2)
+          buf[p++]=e3(k,j,i);
+      }
+      // x2 direction
+      else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+        int j;
+        if(nb.fid==inner_x2) j=pmb->js;
+        else j=pmb->je+1;
+        // restrict and pack e1
+        pco->Edge1Length(k, j, pmb->is, pmb->ie, le1);
+        for(int i=pmb->is; i<=pmb->ie; i+=2)
+          buf[p++]=(e1(k,j,i)*le1(i)+e1(k,j,i+1)*le1(i+1))/(le1(i)+le1(i+1));
+        // pack e3
+        for(int i=pmb->is; i<=pmb->ie+1; i+=2)
+          buf[p++]=e3(k,j,i);
+      }
+    }
+    else { // 1D
+      int i, j=pmb->js, k=pmb->ks;
+      if(nb.fid==inner_x1) i=pmb->is;
+      else i=pmb->ie+1;
+      // pack e2 and e3
+      buf[p++]=e2(k,j,i);
+      buf[p++]=e3(k,j,i);
+    }
+  }
+  else if(nb.type==neighbor_edge) {
+    if(pmb->block_size.nx3 > 1) { // 3D
+      // x1x2 edge
+      if(nb.eid>=0 && nb.eid<4) {
+        int i, j;
+        if((nb.eid&1)==0) i=pmb->is;
+        else i=pmb->ie+1;
+        if((nb.eid&2)==0) j=pmb->js;
+        else j=pmb->je+1;
+        // restrict and pack e3
+        for(int k=pmb->ks; k<=pmb->ke; k+=2) {
+          Real el1=pco->GetEdge3Length(k,j,i);
+          Real el2=pco->GetEdge3Length(k+1,j,i);
+          buf[p++]=(e3(k,j,i)*el1+e3(k+1,j,i)*el2)/(el1+el2);
+        }
+      }
+      // x1x3 edge
+      else if(nb.eid>=4 && nb.eid<8) {
+        int i, k;
+        if((nb.eid&1)==0) i=pmb->is;
+        else i=pmb->ie+1;
+        if((nb.eid&2)==0) k=pmb->ks;
+        else k=pmb->ke+1;
+        // restrict and pack e2
+        for(int j=pmb->js; j<=pmb->je; j+=2) {
+          Real el1=pco->GetEdge2Length(k,j,i);
+          Real el2=pco->GetEdge2Length(k,j+1,i);
+          buf[p++]=(e2(k,j,i)*el1+e2(k,j+1,i)*el2)/(el1+el2);
+        }
+      }
+      // x2x3 edge
+      else if(nb.eid>=8 && nb.eid<12) {
+        int j, k;
+        if((nb.eid&1)==0) j=pmb->js;
+        else j=pmb->je+1;
+        if((nb.eid&2)==0) k=pmb->ks;
+        else k=pmb->ke+1;
+        // restrict and pack e1
+        pco->Edge1Length(k, j, pmb->is, pmb->ie, le1);
+        for(int i=pmb->is; i<=pmb->ie; i+=2)
+          buf[p++]=(e1(k,j,i)*le1(i)+e1(k,j,i+1)*le1(i+1))/(le1(i)+le1(i+1));
+      }
+    }
+    else if(pmb->block_size.nx2 > 1) { // 2D
+      // x1x2 edge
+      int i, j;
+      if((nb.eid&1)==0) i=pmb->is;
+      else i=pmb->ie+1;
+      if((nb.eid&2)==0) j=pmb->js;
+      else j=pmb->je+1;
+      // pack e3
+      buf[p++]=e3(pmb->ks,j,i);
+    }
+  }
+  return p;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::SendEMFCorrection(int step)
+//  \brief Restrict, pack and send the surace EMF to the coarse neighbor(s) if needed
+void BoundaryValues::SendEMFCorrection(int step)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  int mylevel=pmb->uid.GetLevel();
 
   for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb=pmb->neighbor[n];
-    if(nb.type==neighbor_face) {
-      if(nb.level==mylevel-1) {
-        int p=0;
-        if(pmb->block_size.nx3 > 1) { // 3D
-          // x1 direction
-          if(nb.fid==inner_x1 || nb.fid==outer_x1) {
-            fi1=fx2, fi2=fx3;
-            int i;
-            if(nb.fid==inner_x1) i=pmb->is;
-            else i=pmb->ie+1;
-            // restrict and pack e2
-            for(int k=pmb->ks; k<=pmb->ke+1; k+=2) {
-              for(int j=pmb->js; j<=pmb->je; j+=2) {
-                Real el1=pco->GetEdge2Length(k,j,i);
-                Real el2=pco->GetEdge2Length(k,j+1,i);
-                emfcor_fsend_[step][nb.fid][p++]=(e2(k,j,i)*el1+e2(k,j+1,i)*el2)/(el1+el2);
-              }
-            }
-            // restrict and pack e3
-            for(int k=pmb->ks; k<=pmb->ke; k+=2) {
-              for(int j=pmb->js; j<=pmb->je+1; j+=2) {
-                Real el1=pco->GetEdge3Length(k,j,i);
-                Real el2=pco->GetEdge3Length(k+1,j,i);
-                emfcor_fsend_[step][nb.fid][p++]=(e3(k,j,i)*el1+e3(k+1,j,i)*el2)/(el1+el2);
-              }
-            }
-          }
-          // x2 direction
-          else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
-            fi1=fx1, fi2=fx3;
-            int j;
-            if(nb.fid==inner_x2) j=pmb->js;
-            else j=pmb->je+1;
-            // restrict and pack e1
-            for(int k=pmb->ks; k<=pmb->ke+1; k+=2) {
-              pco->Edge1Length(k, j, pmb->is, pmb->ie, le1);
-              for(int i=pmb->is; i<=pmb->ie; i+=2)
-                emfcor_fsend_[step][nb.fid][p++]
-                            =(e1(k,j,i)*le1(i)+e1(k,j,i+1)*le1(i+1))/(le1(i)+le1(i+1));
-            }
-            // restrict and pack e3
-            for(int k=pmb->ks; k<=pmb->ke; k+=2) {
-              pco->Edge3Length(k,   j, pmb->is, pmb->ie+1, le1);
-              pco->Edge3Length(k+1, j, pmb->is, pmb->ie+1, le2);
-              for(int i=pmb->is; i<=pmb->ie+1; i+=2)
-                emfcor_fsend_[step][nb.fid][p++]
-                            =(e3(k,j,i)*le1(i)+e3(k+1,j,i)*le2(i))/(le1(i)+le2(i));
-            }
-          }
-          // x3 direction
-          else if(nb.fid==inner_x3 || nb.fid==outer_x3) {
-            fi1=fx1, fi2=fx2;
-            int k;
-            if(nb.fid==inner_x3) k=pmb->ks;
-            else k=pmb->ke+1;
-            // restrict and pack e1
-            for(int j=pmb->js; j<=pmb->je+1; j+=2) {
-              pco->Edge1Length(k, j, pmb->is, pmb->ie, le1);
-              for(int i=pmb->is; i<=pmb->ie; i+=2)
-                emfcor_fsend_[step][nb.fid][p++]
-                            =(e1(k,j,i)*le1(i)+e1(k,j,i+1)*le1(i+1))/(le1(i)+le1(i+1));
-            }
-            // restrict and pack e2
-            for(int j=pmb->js; j<=pmb->je; j+=2) {
-              pco->Edge2Length(k,   j, pmb->is, pmb->ie+1, le1);
-              pco->Edge2Length(k, j+1, pmb->is, pmb->ie+1, le2);
-              for(int i=pmb->is; i<=pmb->ie+1; i+=2)
-                emfcor_fsend_[step][nb.fid][p++]
-                            =(e2(k,j,i)*le1(i)+e2(k,j+1,i)*le2(i))/(le1(i)+le2(i));
-            }
-          }
-        }
-        else if(pmb->block_size.nx2 > 1) { // 2D
-          int k=pmb->ks;
-          // x1 direction
-          if(nb.fid==inner_x1 || nb.fid==outer_x1) {
-            fi1=fx2, fi2=fx3;
-            int i;
-            if(nb.fid==inner_x1) i=pmb->is;
-            else i=pmb->ie+1;
-            // restrict and pack e2
-            for(int j=pmb->js; j<=pmb->je; j+=2) {
-              Real el1=pco->GetEdge2Length(k,j,i);
-              Real el2=pco->GetEdge2Length(k,j+1,i);
-              emfcor_fsend_[step][nb.fid][p++]=(e2(k,j,i)*el1+e2(k,j+1,i)*el2)/(el1+el2);
-            }
-            // pack e3
-            for(int j=pmb->js; j<=pmb->je+1; j+=2)
-              emfcor_fsend_[step][nb.fid][p++]=e3(k,j,i);
-          }
-          // x2 direction
-          else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
-            fi1=fx1, fi2=fx3;
-            int j;
-            if(nb.fid==inner_x2) j=pmb->js;
-            else j=pmb->je+1;
-            // restrict and pack e1
-            pco->Edge1Length(k, j, pmb->is, pmb->ie, le1);
-            for(int i=pmb->is; i<=pmb->ie; i+=2)
-              emfcor_fsend_[step][nb.fid][p++]
-                          =(e1(k,j,i)*le1(i)+e1(k,j,i+1)*le1(i+1))/(le1(i)+le1(i+1));
-            // pack e3
-            for(int i=pmb->is; i<=pmb->ie+1; i+=2)
-              emfcor_fsend_[step][nb.fid][p++]=e3(k,j,i);
-          }
-        }
-        else { // 1D
-          fi1=fx2, fi2=fx3;
-          int i, j=pmb->js, k=pmb->ks;
-          if(nb.fid==inner_x1) i=pmb->is;
-          else i=pmb->ie+1;
-          // pack e2 and e3
-          emfcor_fsend_[step][nb.fid][p++]=e2(k,j,i);
-          emfcor_fsend_[step][nb.fid][p++]=e3(k,j,i);
-        }
-        if(nb.rank==myrank) { // on the same node
-          MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
-          std::memcpy(pbl->pbval->emfcor_frecv_[step][(nb.fid^1)][fi2][fi1],
-                      emfcor_fsend_[step][nb.fid], p*sizeof(Real));
-          pbl->pbval->emfcor_fflag_[step][(nb.fid^1)][fi2][fi1]=boundary_arrived;
-        }
-#ifdef MPI_PARALLEL
-        else
-          MPI_Start(&req_emfcor_fsend_[step][nb.fid]);
-#endif
-      }
+    NeighborBlock& nb = pmb->neighbor[n];
+    if((nb.type!=neighbor_face) && (nb.type!=neighbor_edge)) break;;
+    int p=0;
+    if(nb.level==mylevel) {
+      if((nb.type==neighbor_face)
+      || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true)))
+        p=LoadEMFBoundaryBufferSameLevel(emfcor_send_[step][nb.bufid], nb);
+      else continue;
     }
-    else if(nb.type==neighbor_edge) {
-      if(nb.level==mylevel-1 && edge_flag_[nb.eid]==true) {
-        int p=0;
-        if(pmb->block_size.nx3 > 1) { // 3D
-          // x1x2 edge
-          if(nb.eid>=0 && nb.eid<4) {
-            fi1=fx3;
-            int i, j;
-            if((nb.eid&1)==0) i=pmb->is;
-            else i=pmb->ie+1;
-            if((nb.eid&2)==0) j=pmb->js;
-            else j=pmb->je+1;
-            // restrict and pack e3
-            for(int k=pmb->ks; k<=pmb->ke; k+=2) {
-              Real el1=pco->GetEdge3Length(k,j,i);
-              Real el2=pco->GetEdge3Length(k+1,j,i);
-              emfcor_esend_[step][nb.eid][p++]=(e3(k,j,i)*el1+e3(k+1,j,i)*el2)/(el1+el2);
-            }
-          }
-          // x1x3 edge
-          else if(nb.eid>=4 && nb.eid<8) {
-            fi1=fx2;
-            int i, k;
-            if((nb.eid&1)==0) i=pmb->is;
-            else i=pmb->ie+1;
-            if((nb.eid&2)==0) k=pmb->ks;
-            else k=pmb->ke+1;
-            // restrict and pack e2
-            for(int j=pmb->js; j<=pmb->je; j+=2) {
-              Real el1=pco->GetEdge2Length(k,j,i);
-              Real el2=pco->GetEdge2Length(k,j+1,i);
-              emfcor_esend_[step][nb.eid][p++]=(e2(k,j,i)*el1+e2(k,j+1,i)*el2)/(el1+el2);
-            }
-          }
-          // x2x3 edge
-          else if(nb.eid>=8 && nb.eid<12) {
-            fi1=fx1;
-            int j, k;
-            if((nb.eid&1)==0) j=pmb->js;
-            else j=pmb->je+1;
-            if((nb.eid&2)==0) k=pmb->ks;
-            else k=pmb->ke+1;
-            // restrict and pack e1
-            pco->Edge1Length(k, j, pmb->is, pmb->ie, le1);
-            for(int i=pmb->is; i<=pmb->ie; i+=2)
-              emfcor_esend_[step][nb.eid][p++]
-                          =(e1(k,j,i)*le1(i)+e1(k,j,i+1)*le1(i+1))/(le1(i)+le1(i+1));
-          }
-        }
-        else if(pmb->block_size.nx2 > 1) { // 2D
-          // x1x2 edge
-          fi1=fx3;
-          int i, j;
-          if((nb.eid&1)==0) i=pmb->is;
-          else i=pmb->ie+1;
-          if((nb.eid&2)==0) j=pmb->js;
-          else j=pmb->je+1;
-          // pack e3
-          emfcor_esend_[step][nb.eid][p++]=e3(pmb->ks,j,i);
-        }
-        if(nb.rank==myrank) { // on the same node
-          MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
-          std::memcpy(pbl->pbval->emfcor_erecv_[step][(nb.eid^3)][fi1],
-                      emfcor_esend_[step][nb.eid], p*sizeof(Real));
-          pbl->pbval->emfcor_eflag_[step][(nb.eid^3)][fi1]=boundary_arrived;
-        }
-#ifdef MPI_PARALLEL
-        else
-          MPI_Start(&req_emfcor_esend_[step][nb.eid]);
-#endif
-      }
+    else if(nb.level==mylevel-1) {
+      p=LoadEMFBoundaryBufferToCoarser(emfcor_send_[step][nb.bufid], nb);
     }
-    else break;
+    else continue;
+    if(nb.rank==myrank) { // on the same node
+      MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
+      std::memcpy(pbl->pbval->emfcor_recv_[step][nb.targetid],
+                  emfcor_send_[step][nb.bufid], p*sizeof(Real));
+      pbl->pbval->emfcor_flag_[step][nb.targetid]=boundary_arrived;
+    }
+#ifdef MPI_PARALLEL
+    else
+      MPI_Start(&req_emfcor_send_[step][nb.bufid]);
+#endif
   }
   return;
 }
 
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, NeighborBlock& nb)
+//  \brief Add up the EMF received from a block on the same level
+//         Later they will be divided in the AverageEMFBoundary function
+void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, NeighborBlock& nb)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  AthenaArray<Real> &e1=pmb->pfield->e.x1e;
+  AthenaArray<Real> &e2=pmb->pfield->e.x2e;
+  AthenaArray<Real> &e3=pmb->pfield->e.x3e;
+  int p=0;
+  if(nb.type==neighbor_face) {
+    if(pmb->block_size.nx3 > 1) { // 3D
+      // x1 direction
+      if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+        int i;
+        if(nb.fid==inner_x1) i=pmb->is;
+        else i=pmb->ie+1;
+        // unpack e2
+        for(int k=pmb->ks; k<=pmb->ke+1; k++) {
+          for(int j=pmb->js; j<=pmb->je; j++)
+            e2(k,j,i)+=buf[p++];
+        }
+        // unpack e3
+        for(int k=pmb->ks; k<=pmb->ke; k++) {
+          for(int j=pmb->js; j<=pmb->je+1; j++)
+            e3(k,j,i)+=buf[p++];
+        }
+      }
+      // x2 direction
+      else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+        int j;
+        if(nb.fid==inner_x2) j=pmb->js;
+        else j=pmb->je+1;
+        // unpack e1
+        for(int k=pmb->ks; k<=pmb->ke+1; k++) {
+          for(int i=pmb->is; i<=pmb->ie; i++)
+            e1(k,j,i)+=buf[p++];
+        }
+        // unpack e3
+        for(int k=pmb->ks; k<=pmb->ke; k++) {
+          for(int i=pmb->is; i<=pmb->ie+1; i++)
+            e3(k,j,i)+=buf[p++];
+        }
+      }
+      // x3 direction
+      else if(nb.fid==inner_x3 || nb.fid==outer_x3) {
+        int k;
+        if(nb.fid==inner_x3) k=pmb->ks;
+        else k=pmb->ke+1;
+        // unpack e1
+        for(int j=pmb->js; j<=pmb->je+1; j++) {
+          for(int i=pmb->is; i<=pmb->ie; i++)
+            e1(k,j,i)+=buf[p++];
+        }
+        // unpack e2
+        for(int j=pmb->js; j<=pmb->je; j++) {
+          for(int i=pmb->is; i<=pmb->ie+1; i++)
+            e2(k,j,i)+=buf[p++];
+        }
+      }
+    }
+    else if(pmb->block_size.nx2 > 1) { // 2D
+      int k=pmb->ks;
+      // x1 direction
+      if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+        int i;
+        if(nb.fid==inner_x1) i=pmb->is;
+        else i=pmb->ie+1;
+        // unpack e2
+        for(int j=pmb->js; j<=pmb->je; j++) {
+          e2(k+1,j,i)+=buf[p];
+          e2(k,  j,i)+=buf[p++];
+        }
+        // unpack e3
+        for(int j=pmb->js; j<=pmb->je+1; j++)
+          e3(k,j,i)+=buf[p++];
+      }
+      // x2 direction
+      else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+        int j;
+        if(nb.fid==inner_x2) j=pmb->js;
+        else j=pmb->je+1;
+        // unpack e1
+        for(int i=pmb->is; i<=pmb->ie; i++) {
+          e1(k+1,j,i)+=buf[p];
+          e1(k  ,j,i)+=buf[p++];
+        }
+        // unpack e3
+        for(int i=pmb->is; i<=pmb->ie+1; i++)
+          e3(k,j,i)+=buf[p++];
+      }
+    }
+    else { // 1D
+      int i, j=pmb->js, k=pmb->ks;
+      if(nb.fid==inner_x1) i=pmb->is;
+      else i=pmb->ie+1;
+      // unpack e2
+      e2(k+1,j,i)+=buf[p];
+      e2(k  ,j,i)+=buf[p++];
+      // unpack e3
+      e3(k,j+1,i)+=buf[p];
+      e3(k  ,j,i)+=buf[p++];
+    }
+  }
+  else if(nb.type==neighbor_edge) {
+    if(pmb->block_size.nx3 > 1) { // 3D
+      // x1x2 edge
+      if(nb.eid>=0 && nb.eid<4) {
+        int i, j;
+        if((nb.eid&1)==0) i=pmb->is;
+        else i=pmb->ie+1;
+        if((nb.eid&2)==0) j=pmb->js;
+        else j=pmb->je+1;
+        // unpack e3
+        for(int k=pmb->ks; k<=pmb->ke; k++)
+          e3(k,j,i)+=buf[p++];
+      }
+      // x1x3 edge
+      else if(nb.eid>=4 && nb.eid<8) {
+        int i, k;
+        if((nb.eid&1)==0) i=pmb->is;
+        else i=pmb->ie+1;
+        if((nb.eid&2)==0) k=pmb->ks;
+        else k=pmb->ke+1;
+        // unpack e2
+        for(int j=pmb->js; j<=pmb->je; j++)
+          e2(k,j,i)+=buf[p++];
+      }
+      // x2x3 edge
+      else if(nb.eid>=8 && nb.eid<12) {
+        int j, k;
+        if((nb.eid&1)==0) j=pmb->js;
+        else j=pmb->je+1;
+        if((nb.eid&2)==0) k=pmb->ks;
+        else k=pmb->ke+1;
+        // unpack e1
+        for(int i=pmb->is; i<=pmb->ie; i++)
+          e1(k,j,i)+=buf[p++];
+      }
+    }
+    else if(pmb->block_size.nx2 > 1) { // 2D
+      int i, j, k=pmb->ks;
+      if((nb.eid&1)==0) i=pmb->is;
+      else i=pmb->ie+1;
+      if((nb.eid&2)==0) j=pmb->js;
+      else j=pmb->je+1;
+      // unpack e3
+      e3(k,j,i)+=buf[p++];
+    }
+  }
+
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, NeighborBlock& nb)
+//  \brief Add up the EMF received from a block on the finer level
+//         Later they will be divided in the AverageEMFBoundary function
+void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, NeighborBlock& nb)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  AthenaArray<Real> &e1=pmb->pfield->e.x1e;
+  AthenaArray<Real> &e2=pmb->pfield->e.x2e;
+  AthenaArray<Real> &e3=pmb->pfield->e.x3e;
+  int p=0;
+  if(nb.type==neighbor_face) {
+    if(pmb->block_size.nx3 > 1) { // 3D
+      // x1 direction
+      if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+        int i, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
+        if(nb.fid==inner_x1) i=pmb->is;
+        else i=pmb->ie+1;
+        if(nb.fi1==0) ju=pmb->js+pmb->block_size.nx2/2-1;
+        else jl=pmb->js+pmb->block_size.nx2/2;
+        if(nb.fi2==0) ku=pmb->ks+pmb->block_size.nx3/2-1;
+        else kl=pmb->ks+pmb->block_size.nx3/2;
+        // unpack e2
+        for(int k=kl; k<=ku+1; k++) {
+          for(int j=jl; j<=ju; j++)
+            e2(k,j,i)+=buf[p++];
+        }
+        // unpack e3
+        for(int k=kl; k<=ku; k++) {
+          for(int j=jl; j<=ju+1; j++)
+            e3(k,j,i)+=buf[p++];
+        }
+      }
+      // x2 direction
+      else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+        int j, il=pmb->is, iu=pmb->ie, kl=pmb->ks, ku=pmb->ke;
+        if(nb.fid==inner_x2) j=pmb->js;
+        else j=pmb->je+1;
+        if(nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
+        else il=pmb->is+pmb->block_size.nx1/2;
+        if(nb.fi2==0) ku=pmb->ks+pmb->block_size.nx3/2-1;
+        else kl=pmb->ks+pmb->block_size.nx3/2;
+        // unpack e1
+        for(int k=kl; k<=ku+1; k++) {
+          for(int i=il; i<=iu; i++)
+            e1(k,j,i)+=buf[p++];
+        }
+        // unpack e3
+        for(int k=kl; k<=ku; k++) {
+          for(int i=il; i<=iu+1; i++)
+            e3(k,j,i)+=buf[p++];
+        }
+      }
+      // x3 direction
+      else if(nb.fid==inner_x3 || nb.fid==outer_x3) {
+        int k, il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je;
+        if(nb.fid==inner_x3) k=pmb->ks;
+        else k=pmb->ke+1;
+        if(nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
+        else il=pmb->is+pmb->block_size.nx1/2;
+        if(nb.fi2==0) ju=pmb->js+pmb->block_size.nx2/2-1;
+        else jl=pmb->js+pmb->block_size.nx2/2;
+        // unpack e1
+        for(int j=jl; j<=ju+1; j++) {
+          for(int i=il; i<=iu; i++)
+            e1(k,j,i)+=buf[p++];
+        }
+        // unpack e2
+        for(int j=jl; j<=ju; j++) {
+          for(int i=il; i<=iu+1; i++)
+            e2(k,j,i)+=buf[p++];
+        }
+      }
+    }
+    else if(pmb->block_size.nx2 > 1) { // 2D
+      int k=pmb->ks;
+      // x1 direction
+      if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+        int i, jl=pmb->js, ju=pmb->je;
+        if(nb.fid==inner_x1) i=pmb->is;
+        else i=pmb->ie+1;
+        if(nb.fi1==0) ju=pmb->js+pmb->block_size.nx2/2-1;
+        else jl=pmb->js+pmb->block_size.nx2/2;
+        // unpack e2
+        for(int j=jl; j<=ju; j++) {
+          e2(k+1,j,i)+=buf[p];
+          e2(k,  j,i)+=buf[p++];
+        }
+        // unpack e3
+        for(int j=jl; j<=ju+1; j++)
+          e3(k,j,i)+=buf[p++];
+      }
+      // x2 direction
+      else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+        int j, il=pmb->is, iu=pmb->ie;
+        if(nb.fid==inner_x2) j=pmb->js;
+        else j=pmb->je+1;
+        if(nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
+        else il=pmb->is+pmb->block_size.nx1/2;
+        // unpack e1
+        for(int i=il; i<=iu; i++) {
+          e1(k+1,j,i)+=buf[p];
+          e1(k  ,j,i)+=buf[p++];
+        }
+        // unpack e3
+        for(int i=il; i<=iu+1; i++)
+          e3(k,j,i)+=buf[p++];
+      }
+    }
+    else { // 1D
+      int i, j=pmb->js, k=pmb->ks;
+      if(nb.fid==inner_x1) i=pmb->is;
+      else i=pmb->ie+1;
+      // unpack e2
+      e2(k+1,j,i)+=buf[p];
+      e2(k  ,j,i)+=buf[p++];
+      // unpack e3
+      e3(k,j+1,i)+=buf[p];
+      e3(k  ,j,i)+=buf[p++];
+    }
+  }
+  else if(nb.type==neighbor_edge) {
+    if(pmb->block_size.nx3 > 1) { // 3D
+      // x1x2 edge
+      if(nb.eid>=0 && nb.eid<4) {
+        int i, j, kl=pmb->ks, ku=pmb->ke;
+        if((nb.eid&1)==0) i=pmb->is;
+        else i=pmb->ie+1;
+        if((nb.eid&2)==0) j=pmb->js;
+        else j=pmb->je+1;
+        if(nb.fi1==0) ku=pmb->ks+pmb->block_size.nx3/2-1;
+        else kl=pmb->ks+pmb->block_size.nx3/2;
+        // unpack e3
+        for(int k=kl; k<=ku; k++)
+          e3(k,j,i)+=buf[p++];
+      }
+      // x1x3 edge
+      else if(nb.eid>=4 && nb.eid<8) {
+        int i, k, jl=pmb->js, ju=pmb->je;
+        if((nb.eid&1)==0) i=pmb->is;
+        else i=pmb->ie+1;
+        if((nb.eid&2)==0) k=pmb->ks;
+        else k=pmb->ke+1;
+        if(nb.fi1==0) ju=pmb->js+pmb->block_size.nx2/2-1;
+        else jl=pmb->js+pmb->block_size.nx2/2;
+        // unpack e2
+        for(int j=jl; j<=ju; j++)
+          e2(k,j,i)+=buf[p++];
+      }
+      // x2x3 edge
+      else if(nb.eid>=8 && nb.eid<12) {
+        int j, k, il=pmb->is, iu=pmb->ie;
+        if((nb.eid&1)==0) j=pmb->js;
+        else j=pmb->je+1;
+        if((nb.eid&2)==0) k=pmb->ks;
+        else k=pmb->ke+1;
+        if(nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
+        else il=pmb->is+pmb->block_size.nx1/2;
+        // unpack e1
+        for(int i=il; i<=iu; i++)
+          e1(k,j,i)+=buf[p++];
+      }
+    }
+    else if(pmb->block_size.nx2 > 1) { // 2D
+      int i, j, k=pmb->ks;
+      if((nb.eid&1)==0) i=pmb->is;
+      else i=pmb->ie+1;
+      if((nb.eid&2)==0) j=pmb->js;
+      else j=pmb->je+1;
+      // unpack e3
+      e3(k,j,i)+=buf[p++];
+    }
+  }
+
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::ClearEMFBoundary(void)
+//  \brief Clear the EMFs on the surface/edge contacting with a finer block
+void BoundaryValues::ClearEMFBoundary(void)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  AthenaArray<Real> &e1=pmb->pfield->e.x1e;
+  AthenaArray<Real> &e2=pmb->pfield->e.x2e;
+  AthenaArray<Real> &e3=pmb->pfield->e.x3e;
+  int mylevel=pmb->uid.GetLevel();
+  int i, j, k, nl;
+  // face
+  for(int n=0; n<nface_; n++) {
+    if(n==inner_x1 || n==outer_x1) {
+      if(n==inner_x1) i=pmb->is;
+      else i=pmb->ie+1;
+      nl=pmb->nblevel[1][1][2*n];
+      if(nl>mylevel) { // finer
+        if(pmb->block_size.nx3 > 1) { // 3D
+          for(int k=pmb->ks+1; k<=pmb->ke; k++) {
+            for(int j=pmb->js; j<=pmb->je; j++)
+              e2(k,j,i)=0.0;
+          }
+          for(int k=pmb->ks; k<=pmb->ke; k++) {
+            for(int j=pmb->js+1; j<=pmb->je; j++)
+              e3(k,j,i)=0.0;
+          }
+        }
+        else if(pmb->block_size.nx2 > 1) { // 2D
+          for(int j=pmb->js; j<=pmb->je; j++)
+            e2(pmb->ks,j,i)=e2(pmb->ks+1,j,i)=0.0;
+          for(int j=pmb->js+1; j<=pmb->je; j++)
+            e3(pmb->ks,j,i)=0.0;
+        }
+        else { // 1D
+          e2(pmb->ks,pmb->js,i)=e2(pmb->ks+1,pmb->js,i)=0.0;
+          e3(pmb->ks,pmb->js,i)=e3(pmb->ks,pmb->js+1,i)=0.0;
+        }
+      }
+    }
+    if(n==inner_x2 || n==outer_x2) {
+      if(n==inner_x2) j=pmb->js;
+      else j=pmb->je+1;
+      nl=pmb->nblevel[1][2*n-4][1];
+      if(nl>mylevel) { // finer
+        if(pmb->block_size.nx3 > 1) { // 3D
+          for(int k=pmb->ks+1; k<=pmb->ke; k++) {
+            for(int i=pmb->is; i<=pmb->ie; i++)
+              e1(k,j,i)=0.0;
+          }
+          for(int k=pmb->ks; k<=pmb->ke; k++) {
+            for(int i=pmb->is+1; i<=pmb->ie; i++)
+              e3(k,j,i)=0.0;
+          }
+        }
+        else if(pmb->block_size.nx2 > 1) { // 2D
+          for(int i=pmb->is; i<=pmb->ie; i++)
+            e1(pmb->ks,j,i)=e1(pmb->ks+1,j,i)=0.0;
+          for(int i=pmb->is+1; i<=pmb->ie; i++)
+            e3(pmb->ks,j,i)=0.0;
+        }
+      }
+    }
+    if(n==inner_x3 || n==outer_x3) {
+      if(n==inner_x3) k=pmb->ks;
+      else k=pmb->ke+1;
+      nl=pmb->nblevel[2*n-8][1][1];
+      if(nl>mylevel) { // finer
+        // this is always 3D
+        for(int j=pmb->js+1; j<=pmb->je; j++) {
+          for(int i=pmb->is; i<=pmb->ie; i++)
+            e1(k,j,i)=0.0;
+        }
+        for(int j=pmb->js; j<=pmb->je; j++) {
+          for(int i=pmb->is+1; i<=pmb->ie; i++)
+            e2(k,j,i)=0.0;
+        }
+      }
+    }
+  }
+  // edge
+  for(int n=0; n<nedge_; n++) {
+    if(edge_flag_[n]==true) continue;
+    if(n>=0 && n<4) {
+      if((n&1)==0) i=pmb->is;
+      else i=pmb->ie+1;
+      if((n&2)==0) j=pmb->js;
+      else j=pmb->je+1;
+      for(int k=pmb->ks; k<=pmb->ke; k++)
+        e3(k,j,i)=0.0;
+    }
+    // x1x3 edge
+    else if(n>=4 && n<8) {
+      if((n&1)==0) i=pmb->is;
+      else i=pmb->ie+1;
+      if((n&2)==0) k=pmb->ks;
+      else k=pmb->ke+1;
+      for(int j=pmb->js; j<=pmb->je; j++)
+        e2(k,j,i)=0.0;
+    }
+    // x2x3 edge
+    else if(n>=8 && n<12) {
+      if((n&1)==0) j=pmb->js;
+      else j=pmb->je+1;
+      if((n&2)==0) k=pmb->ks;
+      else k=pmb->ke+1;
+      for(int i=pmb->is; i<=pmb->ie; i++)
+        e1(k,j,i)=0.0;
+    }
+  }
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::AverageEMFBoundary(void)
+//  \brief Set EMF boundary received from a block on the finer level
+void BoundaryValues::AverageEMFBoundary(void)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  AthenaArray<Real> &e1=pmb->pfield->e.x1e;
+  AthenaArray<Real> &e2=pmb->pfield->e.x2e;
+  AthenaArray<Real> &e3=pmb->pfield->e.x3e;
+  int mylevel=pmb->uid.GetLevel();
+  int i, j, k, nl;
+  // face
+  for(int n=0; n<nface_; n++) {
+    if(n==inner_x1 || n==outer_x1) {
+      if(n==inner_x1) i=pmb->is;
+      else i=pmb->ie+1;
+      nl=pmb->nblevel[1][1][2*n];
+      if(nl==mylevel) { // same ; divide all the face EMFs by 2
+        if(pmb->block_size.nx3 > 1) { // 3D
+          for(int k=pmb->ks+1; k<=pmb->ke; k++) {
+            for(int j=pmb->js; j<=pmb->je; j++)
+              e2(k,j,i)*=0.5;
+          }
+          for(int k=pmb->ks; k<=pmb->ke; k++) {
+            for(int j=pmb->js+1; j<=pmb->je; j++)
+              e3(k,j,i)*=0.5;
+          }
+        }
+        else if(pmb->block_size.nx2 > 1) { // 2D
+          for(int j=pmb->js; j<=pmb->je; j++)
+            e2(pmb->ks,j,i)*=0.5, e2(pmb->ks+1,j,i)*=0.5;
+          for(int j=pmb->js+1; j<=pmb->je; j++)
+            e3(pmb->ks,j,i)*=0.5;
+        }
+        else { // 1D
+          e2(pmb->ks,pmb->js,i)*=0.5, e2(pmb->ks+1,pmb->js,i)*=0.5;
+          e3(pmb->ks,pmb->js,i)*=0.5, e3(pmb->ks,pmb->js+1,i)*=0.5;
+        }
+      }
+      else if(nl>mylevel) { // finer; divide the overlapping EMFs by 2
+        if(pmb->block_size.nx3 > 1) { // 3D
+          int k=pmb->ks+pmb->block_size.nx3/2;
+          for(int j=pmb->js; j<=pmb->je; j++)
+            e2(k,j,i)*=0.5;
+        }
+        if(pmb->block_size.nx2 > 1) { // 2D or 3D
+          int j=pmb->js+pmb->block_size.nx2/2;
+          for(int k=pmb->ks; k<=pmb->ke; k++)
+            e3(k,j,i)*=0.5;
+        }
+      }
+    }
+    if(n==inner_x2 || n==outer_x2) {
+      if(n==inner_x2) j=pmb->js;
+      else j=pmb->je+1;
+      nl=pmb->nblevel[1][2*n-4][1];
+      if(nl==mylevel) { // same ; divide all the face EMFs by 2
+        if(pmb->block_size.nx3 > 1) {
+          for(int k=pmb->ks+1; k<=pmb->ke; k++) {
+            for(int i=pmb->is; i<=pmb->ie; i++)
+              e1(k,j,i)*=0.5;
+          }
+          for(int k=pmb->ks; k<=pmb->ke; k++) {
+            for(int i=pmb->is+1; i<=pmb->ie; i++)
+              e3(k,j,i)*=0.5;
+          }
+        }
+        else if(pmb->block_size.nx2 > 1) {
+          for(int i=pmb->is; i<=pmb->ie; i++)
+            e1(pmb->ks,j,i)*=0.5, e1(pmb->ks+1,j,i)*=0.5;
+          for(int i=pmb->is+1; i<=pmb->ie; i++)
+            e3(pmb->ks,j,i)*=0.5;
+        }
+      }
+      else if(nl>mylevel) { // finer; divide the overlapping EMFs by 2
+        if(pmb->block_size.nx3 > 1) { // 3D
+          int k=pmb->ks+pmb->block_size.nx3/2;
+          for(int i=pmb->is; i<=pmb->ie; i++)
+            e1(k,j,i)*=0.5;
+        }
+        if(pmb->block_size.nx2 > 1) { // 2D or 3D
+          int i=pmb->is+pmb->block_size.nx1/2;
+          for(int k=pmb->ks; k<=pmb->ke; k++)
+            e3(k,j,i)*=0.5;
+        }
+      }
+    }
+    if(n==inner_x3 || n==outer_x3) {
+      if(n==inner_x3) k=pmb->ks;
+      else k=pmb->ke+1;
+      nl=pmb->nblevel[2*n-8][1][1];
+      if(nl==mylevel) { // same ; divide all the face EMFs by 2
+        for(int j=pmb->js+1; j<=pmb->je; j++) {
+          for(int i=pmb->is; i<=pmb->ie; i++)
+            e1(k,j,i)*=0.5;
+        }
+        for(int j=pmb->js; j<=pmb->je; j++) {
+          for(int i=pmb->is+1; i<=pmb->ie; i++)
+            e2(k,j,i)*=0.5;
+        }
+      }
+      else if(nl>mylevel) { // finer; divide the overlapping EMFs by 2
+        // this is always 3D
+        int j=pmb->js+pmb->block_size.nx2/2;
+        for(int i=pmb->is; i<=pmb->ie; i++)
+          e1(k,j,i)*=0.5;
+        int i=pmb->is+pmb->block_size.nx1/2;
+        for(int j=pmb->js; j<=pmb->je; j++)
+          e2(k,j,i)*=0.5;
+      }
+    }
+  }
+  // edge
+  for(int n=0; n<nedge_; n++) {
+    if(nedge_fine_[n]==1) continue;
+    Real div=1.0/(Real)nedge_fine_[n];
+    if(n>=0 && n<4) {
+      nl=pmb->nblevel[1][n&2][(n&1)<<1];
+      if(nl<mylevel) continue;
+      if((n&1)==0) i=pmb->is;
+      else i=pmb->ie+1;
+      if((n&2)==0) j=pmb->js;
+      else j=pmb->je+1;
+      for(int k=pmb->ks; k<=pmb->ke; k++)
+        e3(k,j,i)*=div;
+    }
+    // x1x3 edge
+    else if(n>=4 && n<8) {
+      nl=pmb->nblevel[n&2][1][(n&1)<<1];
+      if(nl<mylevel) continue;
+      if((n&1)==0) i=pmb->is;
+      else i=pmb->ie+1;
+      if((n&2)==0) k=pmb->ks;
+      else k=pmb->ke+1;
+      for(int j=pmb->js; j<=pmb->je; j++)
+        e2(k,j,i)*=div;
+    }
+    // x2x3 edge
+    else if(n>=8 && n<12) {
+      nl=pmb->nblevel[n&2][(n&1)<<1][1];
+      if(nl<mylevel) continue;
+      if((n&1)==0) j=pmb->js;
+      else j=pmb->je+1;
+      if((n&2)==0) k=pmb->ks;
+      else k=pmb->ke+1;
+      for(int i=pmb->is; i<=pmb->ie; i++)
+        e1(k,j,i)*=div;
+    }
+  }
+  return;
+}
 
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ReceiveEMFCorrection(int step)
@@ -3010,229 +3790,49 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
 {
   MeshBlock *pmb=pmy_mblock_;
   int mylevel=pmb->uid.GetLevel();
-  int nc=0, nff=0;
-  AthenaArray<Real> &e1=pmb->pfield->e.x1e;
-  AthenaArray<Real> &e2=pmb->pfield->e.x2e;
-  AthenaArray<Real> &e3=pmb->pfield->e.x3e;
+  bool flag=true;
 
-  // count the number of finer faces and edges
-  for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb= pmb->neighbor[n];
-    if(nb.level==mylevel+1) {
-      if(nb.type==neighbor_face) nff++;
-      else if(nb.type==neighbor_edge) {
-       if(edge_flag_[nb.eid]==true) nff++;
-      }
-      else break;
-    }
+  if(firsttime_[step]==true) {
+    firsttime_[step]=false;
+    ClearEMFBoundary();
   }
-  if(nff==0) return true;
 
   for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb= pmb->neighbor[n];
-    if(nb.level==mylevel+1) {
-      if(nb.type==neighbor_face) {
-        if(emfcor_fflag_[step][nb.fid][nb.fi2][nb.fi1]==boundary_completed) { nc++; continue; }
-        if(emfcor_fflag_[step][nb.fid][nb.fi2][nb.fi1]==boundary_waiting) {
-          if(nb.rank==myrank) // on the same process
-            continue;
+    NeighborBlock& nb = pmb->neighbor[n];
+    if(nb.type!=neighbor_face && nb.type!=neighbor_edge) break;
+    if((nb.level>mylevel) || ((nb.level==mylevel) && ((nb.type==neighbor_face)
+    || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true))))) {
+      if(emfcor_flag_[step][nb.bufid]==boundary_completed) continue;
+      if(emfcor_flag_[step][nb.bufid]==boundary_waiting) {
+        if(nb.rank==myrank) {// on the same process
+          flag=false;
+          continue;
+        }
 #ifdef MPI_PARALLEL
-          else { // MPI boundary
-            int test;
-            MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-            MPI_Test(&req_emfcor_frecv_[step][nb.fid][nb.fi2][nb.fi1],&test,MPI_STATUS_IGNORE);
-            if(test==false) continue;
-            emfcor_fflag_[step][nb.fid][nb.fi2][nb.fi1] = boundary_arrived;
-          }
-#endif
-        }
-        // boundary arrived; apply EMF correction
-        Real *buf=emfcor_frecv_[step][nb.fid][nb.fi2][nb.fi1];
-        int p=0;
-        if(pmb->block_size.nx3 > 1) { // 3D
-          // x1 direction
-          if(nb.fid==inner_x1 || nb.fid==outer_x1) {
-            int i, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
-            if(nb.fid==inner_x1) i=pmb->is;
-            else i=pmb->ie+1;
-            if(nb.fi1==0) ju=pmb->js+pmb->block_size.nx2/2-1;
-            else jl=pmb->js+pmb->block_size.nx2/2;
-            if(nb.fi2==0) ku=pmb->ks+pmb->block_size.nx3/2-1;
-            else kl=pmb->ks+pmb->block_size.nx3/2;
-            // unpack e2
-            for(int k=kl; k<=ku+1; k++) {
-              for(int j=jl; j<=ju; j++)
-                e2(k,j,i)=buf[p++];
-            }
-            // unpack e3
-            for(int k=kl; k<=ku; k++) {
-              for(int j=jl; j<=ju+1; j++)
-                e3(k,j,i)=buf[p++];
-            }
-          }
-          // x2 direction
-          else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
-            int j, il=pmb->is, iu=pmb->ie, kl=pmb->ks, ku=pmb->ke;
-            if(nb.fid==inner_x2) j=pmb->js;
-            else j=pmb->je+1;
-            if(nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
-            else il=pmb->is+pmb->block_size.nx1/2;
-            if(nb.fi2==0) ku=pmb->ks+pmb->block_size.nx3/2-1;
-            else kl=pmb->ks+pmb->block_size.nx3/2;
-            // unpack e1
-            for(int k=kl; k<=ku+1; k++) {
-              for(int i=il; i<=iu; i++)
-                e1(k,j,i)=buf[p++];
-            }
-            // unpack e3
-            for(int k=kl; k<=ku; k++) {
-              for(int i=il; i<=iu+1; i++)
-                e3(k,j,i)=buf[p++];
-            }
-          }
-          // x3 direction
-          else if(nb.fid==inner_x3 || nb.fid==outer_x3) {
-            int k, il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je;
-            if(nb.fid==inner_x3) k=pmb->ks;
-            else k=pmb->ke+1;
-            if(nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
-            else il=pmb->is+pmb->block_size.nx1/2;
-            if(nb.fi2==0) ju=pmb->js+pmb->block_size.nx2/2-1;
-            else jl=pmb->js+pmb->block_size.nx2/2;
-            // unpack e1
-            for(int j=jl; j<=ju+1; j++) {
-              for(int i=il; i<=iu; i++)
-                e1(k,j,i)=buf[p++];
-            }
-            // unpack e2
-            for(int j=jl; j<=ju; j++) {
-              for(int i=il; i<=iu+1; i++)
-                e2(k,j,i)=buf[p++];
-            }
-          }
-        }
-        else if(pmb->block_size.nx2 > 1) { // 2D
-          int k=pmb->ks;
-          // x1 direction
-          if(nb.fid==inner_x1 || nb.fid==outer_x1) {
-            int i, jl=pmb->js, ju=pmb->je;
-            if(nb.fid==inner_x1) i=pmb->is;
-            else i=pmb->ie+1;
-            if(nb.fi1==0) ju=pmb->js+pmb->block_size.nx2/2-1;
-            else jl=pmb->js+pmb->block_size.nx2/2;
-            // unpack e2
-            for(int j=jl; j<=ju; j++)
-              e2(k+1,j,i)=e2(k,j,i)=buf[p++];
-            // unpack e3
-            for(int j=jl; j<=ju+1; j++)
-              e3(k,j,i)=buf[p++];
-          }
-          // x2 direction
-          else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
-            int j, il=pmb->is, iu=pmb->ie;
-            if(nb.fid==inner_x2) j=pmb->js;
-            else j=pmb->je+1;
-            if(nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
-            else il=pmb->is+pmb->block_size.nx1/2;
-            // unpack e1
-            for(int i=il; i<=iu; i++)
-              e1(k+1,j,i)=e1(k,j,i)=buf[p++];
-            // unpack e3
-            for(int i=il; i<=iu+1; i++)
-              e3(k,j,i)=buf[p++];
-          }
-        }
-        else { // 1D
-          int i, j=pmb->js, k=pmb->ks;
-          if(nb.fid==inner_x1) i=pmb->is;
-          else i=pmb->ie+1;
-          // unpack e2
-          e2(k+1,j,i)=e2(k,j,i)=buf[p++];
-          // unpack e3
-          e3(k,j+1,i)=e3(k,j,i)=buf[p++];
-        }
-        emfcor_fflag_[step][nb.fid][nb.fi2][nb.fi1] = boundary_completed;
-        nc++;
-      }
-      else if(nb.type==neighbor_edge) {
-        if(edge_flag_[nb.eid]!=true) continue;
-        if(emfcor_eflag_[step][nb.eid][nb.fi1]==boundary_completed) { nc++; continue; }
-        if(emfcor_eflag_[step][nb.eid][nb.fi1]==boundary_waiting) {
-          if(nb.rank==myrank) // on the same process
+        else { // MPI boundary
+          int test;
+          MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
+          MPI_Test(&req_emfcor_recv_[step][nb.bufid],&test,MPI_STATUS_IGNORE);
+          if(test==false) {
+            flag=false;
             continue;
-#ifdef MPI_PARALLEL
-          else { // MPI boundary
-            int test;
-            MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-            MPI_Test(&req_emfcor_erecv_[step][nb.eid][nb.fi1],&test,MPI_STATUS_IGNORE);
-            if(test==false) continue;
-            emfcor_eflag_[step][nb.eid][nb.fi1] = boundary_arrived;
           }
+          emfcor_flag_[step][nb.bufid] = boundary_arrived;
+        }
 #endif
-        }
-        // boundary arrived; apply EMF correction
-        Real *buf=emfcor_erecv_[step][nb.eid][nb.fi1];
-        int p=0;
-        if(pmb->block_size.nx3 > 1) { // 3D
-          // x1x2 edge
-          if(nb.eid>=0 && nb.eid<4) {
-            int i, j, kl=pmb->ks, ku=pmb->ke;
-            if((nb.eid&1)==0) i=pmb->is;
-            else i=pmb->ie+1;
-            if((nb.eid&2)==0) j=pmb->js;
-            else j=pmb->je+1;
-            if(nb.fi1==0) ku=pmb->ks+pmb->block_size.nx3/2-1;
-            else kl=pmb->ks+pmb->block_size.nx3/2;
-            // unpack e3
-            for(int k=kl; k<=ku; k++)
-              e3(k,j,i)=buf[p++];
-          }
-          // x1x3 edge
-          else if(nb.eid>=4 && nb.eid<8) {
-            int i, k, jl=pmb->js, ju=pmb->je;
-            if((nb.eid&1)==0) i=pmb->is;
-            else i=pmb->ie+1;
-            if((nb.eid&2)==0) k=pmb->ks;
-            else k=pmb->ke+1;
-            if(nb.fi1==0) ju=pmb->js+pmb->block_size.nx2/2-1;
-            else jl=pmb->js+pmb->block_size.nx2/2;
-            // unpack e2
-            for(int j=jl; j<=ju; j++)
-              e2(k,j,i)=buf[p++];
-          }
-          // x2x3 edge
-          else if(nb.eid>=8 && nb.eid<12) {
-            int j, k, il=pmb->is, iu=pmb->ie;
-            if((nb.eid&1)==0) j=pmb->js;
-            else j=pmb->je+1;
-            if((nb.eid&2)==0) k=pmb->ks;
-            else k=pmb->ke+1;
-            if(nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
-            else il=pmb->is+pmb->block_size.nx1/2;
-            // unpack e1
-            for(int i=il; i<=iu; i++)
-              e1(k,j,i)=buf[p++];
-          }
-        }
-        else if(pmb->block_size.nx2 > 1) { // 2D
-          int i, j, k=pmb->ks;
-          if((nb.eid&1)==0) i=pmb->is;
-          else i=pmb->ie+1;
-          if((nb.eid&2)==0) j=pmb->js;
-          else j=pmb->je+1;
-          // unpack e3
-          e3(k,j,i)=buf[p++];
-        }
-        emfcor_eflag_[step][nb.eid][nb.fi1] = boundary_completed;
-        nc++;
       }
-      else break;
+      // boundary arrived; apply EMF correction
+      if(nb.level > mylevel)
+        SetEMFBoundaryFromFiner(emfcor_recv_[step][nb.bufid], nb);
+      else
+        SetEMFBoundarySameLevel(emfcor_recv_[step][nb.bufid], nb);
+      emfcor_flag_[step][nb.bufid] = boundary_completed;
     }
   }
 
-  if(nc!=nff)
-    return false;
-  return true;
+  if(flag==true)
+    AverageEMFBoundary();
+  return flag;
 }
 
 //--------------------------------------------------------------------------------------
@@ -3252,7 +3852,7 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
   int cng=pmb->cnghost;
 
   for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb= pmb->neighbor[n];
+    NeighborBlock& nb = pmb->neighbor[n];
     if(nb.level >= mylevel) continue;
     int mytype=std::abs(nb.ox1)+std::abs(nb.ox2)+std::abs(nb.ox3);
     // fill the required ghost-ghost zone
@@ -3772,7 +4372,7 @@ void BoundaryValues::ClearBoundaryForInit(void)
   int mylevel=pmb->uid.GetLevel();
 
   for(int n=0;n<pmb->nneighbor;n++) {
-    NeighborBlock& nb=pmb->neighbor[n];
+    NeighborBlock& nb = pmb->neighbor[n];
     fluid_flag_[0][nb.bufid] = boundary_waiting;
     if (MAGNETIC_FIELDS_ENABLED)
       field_flag_[0][nb.bufid] = boundary_waiting;
@@ -3797,16 +4397,14 @@ void BoundaryValues::ClearBoundaryAll(void)
   int mylevel=pmb->uid.GetLevel();
   for(int l=0;l<NSTEP;l++) {
     for(int n=0;n<pmb->nneighbor;n++) {
-      NeighborBlock& nb=pmb->neighbor[n];
+      NeighborBlock& nb = pmb->neighbor[n];
       fluid_flag_[l][nb.bufid] = boundary_waiting;
       if(nb.type==neighbor_face)
         flcor_flag_[l][nb.fid][nb.fi2][nb.fi1] = boundary_waiting;
       if (MAGNETIC_FIELDS_ENABLED) {
         field_flag_[l][nb.bufid] = boundary_waiting;
-        if(nb.type==neighbor_face)
-          emfcor_fflag_[l][nb.fid][nb.fi2][nb.fi1] = boundary_waiting;
-        if(nb.type==neighbor_edge && edge_flag_[nb.eid]==true)
-          emfcor_eflag_[l][nb.eid][nb.fi1] = boundary_waiting;
+        if((nb.type==neighbor_face) || (nb.type==neighbor_edge))
+          emfcor_flag_[l][nb.bufid] = boundary_waiting;
       }
 #ifdef MPI_PARALLEL
       if(nb.rank!=myrank) {
@@ -3815,10 +4413,13 @@ void BoundaryValues::ClearBoundaryAll(void)
           MPI_Wait(&req_flcor_send_[l][nb.fid],MPI_STATUS_IGNORE); // Wait for Isend
         if (MAGNETIC_FIELDS_ENABLED) {
           MPI_Wait(&req_field_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
-          if(nb.type==neighbor_face && nb.level<mylevel)
-            MPI_Wait(&req_emfcor_fsend_[l][nb.fid],MPI_STATUS_IGNORE); // Wait for Isend
-          if(nb.type==neighbor_edge && nb.level<mylevel && edge_flag_[nb.eid]==true)
-            MPI_Wait(&req_emfcor_esend_[l][nb.eid],MPI_STATUS_IGNORE); // Wait for Isend
+          if(pmb->pmy_mesh->multilevel==true) {
+            if(nb.level < mylevel)
+              MPI_Wait(&req_emfcor_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
+            else if((nb.level==mylevel) && ((nb.type==neighbor_face)
+                || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true))))
+              MPI_Wait(&req_emfcor_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
+          }
         }
       }
 #endif

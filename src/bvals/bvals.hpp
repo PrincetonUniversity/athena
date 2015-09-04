@@ -136,7 +136,13 @@ public:
   void RestrictFieldX3(AthenaArray<Real> &bx3f,
                        int si, int ei, int sj, int ej, int sk, int ek);
   void ProlongateFieldBoundaries(InterfaceField &dst);
+  int LoadEMFBoundaryBufferSameLevel(Real *buf, NeighborBlock& nb);
+  int LoadEMFBoundaryBufferToCoarser(Real *buf, NeighborBlock& nb);
   void SendEMFCorrection(int step);
+  void SetEMFBoundarySameLevel(Real *buf, NeighborBlock& nb);
+  void SetEMFBoundaryFromFiner(Real *buf, NeighborBlock& nb);
+  void ClearEMFBoundary(void);
+  void AverageEMFBoundary(void);
   bool ReceiveEMFCorrection(int step);
 
   void FluidPhysicalBoundaries(AthenaArray<Real> &dst);
@@ -154,16 +160,18 @@ private:
 
   int nface_, nedge_;
   bool edge_flag_[12];
+  int nedge_fine_[12];
+  bool firsttime_[NSTEP];
 
   enum boundary_status fluid_flag_[NSTEP][56], field_flag_[NSTEP][56];
   enum boundary_status flcor_flag_[NSTEP][6][2][2];
-  enum boundary_status emfcor_fflag_[NSTEP][6][2][2];
-  enum boundary_status emfcor_eflag_[NSTEP][12][2];
+  enum boundary_status emfcor_flag_[NSTEP][48];
   Real *fluid_send_[NSTEP][56],   *fluid_recv_[NSTEP][56];
   Real *field_send_[NSTEP][56],   *field_recv_[NSTEP][56];
   Real *flcor_send_[NSTEP][6],    *flcor_recv_[NSTEP][6][2][2];
-  Real *emfcor_fsend_[NSTEP][6],  *emfcor_frecv_[NSTEP][6][2][2];
-  Real *emfcor_esend_[NSTEP][12], *emfcor_erecv_[NSTEP][12][2];
+  Real *emfcor_send_[NSTEP][48],   *emfcor_recv_[NSTEP][48];
+//  Real *emfcor_fsend_[NSTEP][6],  *emfcor_frecv_[NSTEP][6][2][2];
+//  Real *emfcor_esend_[NSTEP][12], *emfcor_erecv_[NSTEP][12][2];
   AthenaArray<Real> coarse_cons_, coarse_prim_;
   AthenaArray<Real> fvol_[2][2], sarea_[2];
   AthenaArray<Real> sarea_x1_[2][2], sarea_x2_[2][3], sarea_x3_[3][2];
@@ -175,8 +183,9 @@ private:
   MPI_Request req_fluid_send_[NSTEP][56],   req_fluid_recv_[NSTEP][56];
   MPI_Request req_field_send_[NSTEP][56],   req_field_recv_[NSTEP][56];
   MPI_Request req_flcor_send_[NSTEP][6],    req_flcor_recv_[NSTEP][6][2][2];
-  MPI_Request req_emfcor_fsend_[NSTEP][6],  req_emfcor_frecv_[NSTEP][6][2][2];
-  MPI_Request req_emfcor_esend_[NSTEP][12], req_emfcor_erecv_[NSTEP][12][2];
+  MPI_Request req_emfcor_send_[NSTEP][48],   req_emfcor_recv_[NSTEP][48];
+//  MPI_Request req_emfcor_fsend_[NSTEP][6],  req_emfcor_frecv_[NSTEP][6][2][2];
+//  MPI_Request req_emfcor_esend_[NSTEP][12], req_emfcor_erecv_[NSTEP][12][2];
 #endif
 
   friend class FluidIntegrator;

@@ -311,9 +311,9 @@ int main(int argc, char *argv[])
       task_list.AddTask(flux_correct_send_1, fluid_integrate_1);
       task_list.AddTask(flux_correct_recv_1, fluid_integrate_1);
       task_list.AddTask(fluid_send_1, flux_correct_recv_1); // send block boundaries
-      task_list.AddTask(calculate_emf_1, none); // calculate EMF
+      task_list.AddTask(calculate_emf_1, fluid_integrate_1); // calculate EMF
       task_list.AddTask(emf_correct_send_1, calculate_emf_1);
-      task_list.AddTask(emf_correct_recv_1, calculate_emf_1);
+      task_list.AddTask(emf_correct_recv_1, emf_correct_send_1);
       task_list.AddTask(field_integrate_1, emf_correct_recv_1); // predict b-field
     }
     else {
@@ -340,9 +340,9 @@ int main(int argc, char *argv[])
       task_list.AddTask(flux_correct_send_0, fluid_integrate_0);
       task_list.AddTask(flux_correct_recv_0, fluid_integrate_0);
       task_list.AddTask(fluid_send_0, flux_correct_recv_0); // send block boundaries
-      task_list.AddTask(calculate_emf_0, primitives_1); // calculate EMF
+      task_list.AddTask(calculate_emf_0, fluid_integrate_0); // calculate EMF
       task_list.AddTask(emf_correct_send_0, calculate_emf_0);
-      task_list.AddTask(emf_correct_recv_0, calculate_emf_0);
+      task_list.AddTask(emf_correct_recv_0, emf_correct_send_0);
       task_list.AddTask(field_integrate_0, emf_correct_recv_0); // predict b-field
     }
     else {
