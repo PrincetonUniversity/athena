@@ -155,33 +155,47 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 
     int level=pmb->uid.GetLevel();
     // Initialize components of the vector potential
-    for (int k=ks; k<=ke+1; k++) {
-      for (int j=js; j<=je+1; j++) {
-        for (int i=is; i<=ie+1; i++) {
-          if((pmb->nblevel[1][0][1]>level && j==js) || (pmb->nblevel[1][2][1]>level && j==je+1)
-          || (pmb->nblevel[0][1][1]>level && k==ks) || (pmb->nblevel[2][1][1]>level && k==ke+1)
-          || (pmb->nblevel[0][0][1]>level && j==js && k==ks)   || (pmb->nblevel[0][2][1]>level && j==je+1 && k==ks)
-          || (pmb->nblevel[2][0][1]>level && j==js && k==ke+1) || (pmb->nblevel[2][2][1]>level && j==je+1 && k==ke+1))
-            a1(k,j,i) = 0.5*(A1(pco->x1f(i)+0.25*pco->dx1f(i), pco->x2f(j), pco->x3f(k))+
-                             A1(pco->x1f(i)+0.75*pco->dx1f(i), pco->x2f(j), pco->x3f(k)));
-          else a1(k,j,i) = A1(0.5*(pco->x1f(i)+pco->x1f(i+1)), pco->x2f(j), pco->x3f(k));
-          if((pmb->nblevel[1][1][0]>level && i==is) || (pmb->nblevel[1][1][2]>level && i==ie+1)
-          || (pmb->nblevel[0][1][1]>level && k==ks) || (pmb->nblevel[2][1][1]>level && k==ke+1)
-          || (pmb->nblevel[0][1][0]>level && i==is && k==ks)   || (pmb->nblevel[0][1][2]>level && i==ie+1 && k==ks)
-          || (pmb->nblevel[2][1][0]>level && i==is && k==ke+1) || (pmb->nblevel[2][1][2]>level && i==ie+1 && k==ke+1))
-            a2(k,j,i) = 0.5*(A2(pco->x1f(i), pco->x2f(j)+0.25*pco->dx2f(j), pco->x3f(k))+
-                             A2(pco->x1f(i), pco->x2f(j)+0.75*pco->dx2f(j), pco->x3f(k)));
-          else a2(k,j,i) = A2(pco->x1f(i), 0.5*(pco->x2f(j)+pco->x2f(j+1)), pco->x3f(k));
-          if((pmb->nblevel[1][1][0]>level && i==is) || (pmb->nblevel[1][1][2]>level && i==ie+1)
-          || (pmb->nblevel[1][0][1]>level && j==js) || (pmb->nblevel[1][2][1]>level && j==je+1)
-          || (pmb->nblevel[1][0][0]>level && i==is && j==js)   || (pmb->nblevel[1][0][2]>level && i==ie+1 && j==js)
-          || (pmb->nblevel[1][2][0]>level && i==is && j==je+1) || (pmb->nblevel[1][2][2]>level && i==ie+1 && j==je+1))
-            a3(k,j,i) = 0.5*(A3(pco->x1f(i), pco->x2f(j), pco->x3f(k)+0.25*pco->dx3f(k))+
-                             A3(pco->x1f(i), pco->x2f(j), pco->x3f(k)+0.75*pco->dx3f(k)));
-          else a3(k,j,i) = A3(pco->x1f(i), pco->x2f(j), 0.5*(pco->x3f(k)+pco->x3f(k+1)));
+    if(pmb->block_size.nx3 > 1) {
+      for (int k=ks; k<=ke+1; k++) {
+        for (int j=js; j<=je+1; j++) {
+          for (int i=is; i<=ie+1; i++) {
+            if((pmb->nblevel[1][0][1]>level && j==js) || (pmb->nblevel[1][2][1]>level && j==je+1)
+            || (pmb->nblevel[0][1][1]>level && k==ks) || (pmb->nblevel[2][1][1]>level && k==ke+1)
+            || (pmb->nblevel[0][0][1]>level && j==js && k==ks)   || (pmb->nblevel[0][2][1]>level && j==je+1 && k==ks)
+            || (pmb->nblevel[2][0][1]>level && j==js && k==ke+1) || (pmb->nblevel[2][2][1]>level && j==je+1 && k==ke+1))
+              a1(k,j,i) = 0.5*(A1(pco->x1f(i)+0.25*pco->dx1f(i), pco->x2f(j), pco->x3f(k))+
+                               A1(pco->x1f(i)+0.75*pco->dx1f(i), pco->x2f(j), pco->x3f(k)));
+            else a1(k,j,i) = A1(0.5*(pco->x1f(i)+pco->x1f(i+1)), pco->x2f(j), pco->x3f(k));
+            if((pmb->nblevel[1][1][0]>level && i==is) || (pmb->nblevel[1][1][2]>level && i==ie+1)
+            || (pmb->nblevel[0][1][1]>level && k==ks) || (pmb->nblevel[2][1][1]>level && k==ke+1)
+            || (pmb->nblevel[0][1][0]>level && i==is && k==ks)   || (pmb->nblevel[0][1][2]>level && i==ie+1 && k==ks)
+            || (pmb->nblevel[2][1][0]>level && i==is && k==ke+1) || (pmb->nblevel[2][1][2]>level && i==ie+1 && k==ke+1))
+              a2(k,j,i) = 0.5*(A2(pco->x1f(i), pco->x2f(j)+0.25*pco->dx2f(j), pco->x3f(k))+
+                               A2(pco->x1f(i), pco->x2f(j)+0.75*pco->dx2f(j), pco->x3f(k)));
+            else a2(k,j,i) = A2(pco->x1f(i), 0.5*(pco->x2f(j)+pco->x2f(j+1)), pco->x3f(k));
+            if((pmb->nblevel[1][1][0]>level && i==is) || (pmb->nblevel[1][1][2]>level && i==ie+1)
+            || (pmb->nblevel[1][0][1]>level && j==js) || (pmb->nblevel[1][2][1]>level && j==je+1)
+            || (pmb->nblevel[1][0][0]>level && i==is && j==js)   || (pmb->nblevel[1][0][2]>level && i==ie+1 && j==js)
+            || (pmb->nblevel[1][2][0]>level && i==is && j==je+1) || (pmb->nblevel[1][2][2]>level && i==ie+1 && j==je+1))
+              a3(k,j,i) = 0.5*(A3(pco->x1f(i), pco->x2f(j), pco->x3f(k)+0.25*pco->dx3f(k))+
+                               A3(pco->x1f(i), pco->x2f(j), pco->x3f(k)+0.75*pco->dx3f(k)));
+            else a3(k,j,i) = A3(pco->x1f(i), pco->x2f(j), 0.5*(pco->x3f(k)+pco->x3f(k+1)));
+          }
         }
       }
     }
+    else {
+      for (int k=ks; k<=ke+1; k++) {
+        for (int j=js; j<=je+1; j++) {
+          for (int i=is; i<=ie+1; i++) {
+            a1(k,j,i) = A1(pco->x1v(i), pco->x2f(j), pco->x3f(k));
+            a2(k,j,i) = A2(pco->x1f(i), pco->x2v(j), pco->x3f(k));
+            a3(k,j,i) = A3(pco->x1f(i), pco->x2f(j), pco->x3v(k));
+          }
+        }
+      }
+    }
+
 
     // Initialize interface fields
     for (int k=ks; k<=ke; k++) {

@@ -404,37 +404,16 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         cb1g3.NewAthenaArray(ncc3,ncc2,ncc1+1);
         cb2g3.NewAthenaArray(ncc3,ncc2+1,ncc1);
       }
-      int fsize[6], esize[12];
       // allocate EMF correction buffer
-      if(pmb->block_size.nx3>1) { // 3D
-        fsize[0]=fsize[1]=(pmb->block_size.nx2+1)*(pmb->block_size.nx3)
-                         +(pmb->block_size.nx2)*(pmb->block_size.nx3+1);
-        fsize[2]=fsize[3]=(pmb->block_size.nx1+1)*(pmb->block_size.nx3)
-                         +(pmb->block_size.nx1)*(pmb->block_size.nx3+1);
-        fsize[4]=fsize[5]=(pmb->block_size.nx1+1)*(pmb->block_size.nx2)
-                         +(pmb->block_size.nx1)*(pmb->block_size.nx2+1);
-        esize[0]=esize[1]=esize[2]=esize[3]=pmb->block_size.nx3;
-        esize[4]=esize[5]=esize[6]=esize[7]=pmb->block_size.nx2;
-        esize[8]=esize[9]=esize[10]=esize[11]=pmb->block_size.nx1;
-      }
-      else if(pmb->block_size.nx2>1) { // 2D
-        fsize[0]=fsize[1]=(pmb->block_size.nx2+1)+pmb->block_size.nx2;
-        fsize[2]=fsize[3]=(pmb->block_size.nx1+1)+pmb->block_size.nx1;
-        for(int i=0; i<nedge_; i++)
-          esize[i]=1;
-      }
-      else { // 1D
-        fsize[0]=fsize[1]=2;
-      }
       for(int l=0;l<NSTEP;l++) {
         for(int i=0;i<pmb->pmy_mesh->maxneighbor_;i++){
           int size;
           if(ni_[i].type==neighbor_face) {
             if(pmb->block_size.nx3>1) { // 3D
-              if(ni_[i].ox1==0)
+              if(ni_[i].ox1!=0)
                 size=(pmb->block_size.nx2+1)*(pmb->block_size.nx3)
                     +(pmb->block_size.nx2)*(pmb->block_size.nx3+1);
-              else if(ni_[i].ox2==0)
+              else if(ni_[i].ox2!=0)
                 size=(pmb->block_size.nx1+1)*(pmb->block_size.nx3)
                     +(pmb->block_size.nx1)*(pmb->block_size.nx3+1);
               else
@@ -442,10 +421,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
                     +(pmb->block_size.nx1)*(pmb->block_size.nx2+1);
             }
             else if(pmb->block_size.nx2>1) { // 2D
-              if(ni_[i].ox1==0)
+              if(ni_[i].ox1!=0)
                 size=(pmb->block_size.nx2+1)+pmb->block_size.nx2;
               else 
-               size=(pmb->block_size.nx1/2+1)+pmb->block_size.nx1/2;
+                size=(pmb->block_size.nx1+1)+pmb->block_size.nx1;
             }
             else // 1D
               size=2;
@@ -742,7 +721,6 @@ void BoundaryValues::Initialize(void)
           else // finer
             ssize=csize, rsize=fsize;
 
-          // specify the offsets in the view point of the target block: flip ox? signs
           tag=CreateMPITag(nb.lid, l, tag_field, nb.targetid);
           MPI_Send_init(field_send_[l][nb.bufid],ssize,MPI_ATHENA_REAL,
                         nb.rank,tag,MPI_COMM_WORLD,&req_field_send_[l][nb.bufid]);
@@ -958,9 +936,11 @@ void BoundaryValues::StartReceivingAll(void)
         if (MAGNETIC_FIELDS_ENABLED) {
           MPI_Start(&req_field_recv_[l][nb.bufid]);
           if(pmb->pmy_mesh->multilevel==true) {
-            if((nb.level>mylevel) || ((nb.level==mylevel) && ((nb.type==neighbor_face)
-            || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true)))))
-              MPI_Start(&req_emfcor_recv_[l][nb.bufid]);
+            if(nb.type==neighbor_face || nb.type==neighbor_edge) {
+              if((nb.level>mylevel) || ((nb.level==mylevel) && ((nb.type==neighbor_face)
+              || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true)))))
+                MPI_Start(&req_emfcor_recv_[l][nb.bufid]);
+            }
           }
         }
       }
@@ -3156,7 +3136,7 @@ void BoundaryValues::SendEMFCorrection(int step)
 
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
-    if((nb.type!=neighbor_face) && (nb.type!=neighbor_edge)) break;;
+    if((nb.type!=neighbor_face) && (nb.type!=neighbor_edge)) break;
     int p=0;
     if(nb.level==mylevel) {
       if((nb.type==neighbor_face)
@@ -3164,9 +3144,8 @@ void BoundaryValues::SendEMFCorrection(int step)
         p=LoadEMFBoundaryBufferSameLevel(emfcor_send_[step][nb.bufid], nb);
       else continue;
     }
-    else if(nb.level==mylevel-1) {
+    else if(nb.level==mylevel-1)
       p=LoadEMFBoundaryBufferToCoarser(emfcor_send_[step][nb.bufid], nb);
-    }
     else continue;
     if(nb.rank==myrank) { // on the same node
       MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
@@ -3518,9 +3497,9 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, NeighborBlock& nb)
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ClearEMFBoundary(void)
+//! \fn void BoundaryValues::ClearCoarseEMFBoundary(void)
 //  \brief Clear the EMFs on the surface/edge contacting with a finer block
-void BoundaryValues::ClearEMFBoundary(void)
+void BoundaryValues::ClearCoarseEMFBoundary(void)
 {
   MeshBlock *pmb=pmy_mblock_;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
@@ -3748,8 +3727,6 @@ void BoundaryValues::AverageEMFBoundary(void)
     if(nedge_fine_[n]==1) continue;
     Real div=1.0/(Real)nedge_fine_[n];
     if(n>=0 && n<4) {
-      nl=pmb->nblevel[1][n&2][(n&1)<<1];
-      if(nl<mylevel) continue;
       if((n&1)==0) i=pmb->is;
       else i=pmb->ie+1;
       if((n&2)==0) j=pmb->js;
@@ -3759,8 +3736,6 @@ void BoundaryValues::AverageEMFBoundary(void)
     }
     // x1x3 edge
     else if(n>=4 && n<8) {
-      nl=pmb->nblevel[n&2][1][(n&1)<<1];
-      if(nl<mylevel) continue;
       if((n&1)==0) i=pmb->is;
       else i=pmb->ie+1;
       if((n&2)==0) k=pmb->ks;
@@ -3770,8 +3745,6 @@ void BoundaryValues::AverageEMFBoundary(void)
     }
     // x2x3 edge
     else if(n>=8 && n<12) {
-      nl=pmb->nblevel[n&2][(n&1)<<1][1];
-      if(nl<mylevel) continue;
       if((n&1)==0) j=pmb->js;
       else j=pmb->je+1;
       if((n&2)==0) k=pmb->ks;
@@ -3825,7 +3798,7 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
 
     if(flag==false) return flag;
 
-    ClearEMFBoundary();
+    ClearCoarseEMFBoundary();
     firsttime_[step]=false;
   }
 
@@ -4216,9 +4189,6 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
                                    + Wzz + Uxyz - Vxyz;
             dst.x3f(fk+1,fj+1,fi+1)=0.5*(dst.x3f(fk+2,fj+1,fi+1)+dst.x3f(fk  ,fj+1,fi+1))
                                    + Wzz + Uxyz + Vxyz;
-            Real cdivb=coarse_b_.x3f(k+1,j,i)-coarse_b_.x3f(k,j,i)+coarse_b_.x2f(k,j+1,i)-coarse_b_.x2f(k,j,i)+coarse_b_.x1f(k,j,i+1)-coarse_b_.x1f(k,j,i);
-            if(std::abs(cdivb)>1e-12)
-              std::cout << pmb->gid << " " << k << " " << j << " " << i << " " << cdivb << std::endl;
           }
         }
       }
@@ -4430,8 +4400,10 @@ void BoundaryValues::ClearBoundaryAll(void)
         flcor_flag_[l][nb.fid][nb.fi2][nb.fi1] = boundary_waiting;
       if (MAGNETIC_FIELDS_ENABLED) {
         field_flag_[l][nb.bufid] = boundary_waiting;
-        if((nb.type==neighbor_face) || (nb.type==neighbor_edge))
-          emfcor_flag_[l][nb.bufid] = boundary_waiting;
+        if(pmb->pmy_mesh->multilevel==true) {
+          if((nb.type==neighbor_face) || (nb.type==neighbor_edge))
+            emfcor_flag_[l][nb.bufid] = boundary_waiting;
+        }
       }
 #ifdef MPI_PARALLEL
       if(nb.rank!=myrank) {
@@ -4441,11 +4413,13 @@ void BoundaryValues::ClearBoundaryAll(void)
         if (MAGNETIC_FIELDS_ENABLED) {
           MPI_Wait(&req_field_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
           if(pmb->pmy_mesh->multilevel==true) {
-            if(nb.level < mylevel)
-              MPI_Wait(&req_emfcor_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
-            else if((nb.level==mylevel) && ((nb.type==neighbor_face)
-                || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true))))
-              MPI_Wait(&req_emfcor_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
+            if(nb.type==neighbor_face || nb.type==neighbor_edge) {
+              if(nb.level < mylevel)
+                MPI_Wait(&req_emfcor_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
+              else if((nb.level==mylevel) && ((nb.type==neighbor_face)
+                  || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true))))
+                MPI_Wait(&req_emfcor_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
+            }
           }
         }
       }

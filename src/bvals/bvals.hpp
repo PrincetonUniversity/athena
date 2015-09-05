@@ -141,7 +141,7 @@ public:
   void SendEMFCorrection(int step);
   void SetEMFBoundarySameLevel(Real *buf, NeighborBlock& nb);
   void SetEMFBoundaryFromFiner(Real *buf, NeighborBlock& nb);
-  void ClearEMFBoundary(void);
+  void ClearCoarseEMFBoundary(void);
   void AverageEMFBoundary(void);
   bool ReceiveEMFCorrection(int step);
 
