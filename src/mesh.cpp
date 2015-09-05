@@ -404,6 +404,21 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
+    if (MAGNETIC_FIELDS_ENABLED) {
+      if(mesh_size.x1rat!=1.0 || mesh_size.x2rat!=1.0 || mesh_size.x3rat!=1.0) {
+        msg << "### FATAL ERROR in Mesh constructor" << std::endl
+        << "Currently MHD with mesh refinement is supproted only for uniform mesh spacing."
+        << std::endl;
+        throw std::runtime_error(msg.str().c_str());
+      }
+      if((mesh_size.x1size/mesh_size.nx1!=mesh_size.x1size/mesh_size.nx2 && mesh_size.nx2 > 1)
+      || (mesh_size.x1size/mesh_size.nx1!=mesh_size.x1size/mesh_size.nx3 && mesh_size.nx3 > 1)) {
+        msg << "### FATAL ERROR in Mesh constructor" << std::endl
+        << "Currently MHD with mesh refinement is supproted only for cubic cell (dx1=dx2=dx3)."
+        << std::endl;
+        throw std::runtime_error(msg.str().c_str());
+      }
+    }
   }
 
   face_only=true;
