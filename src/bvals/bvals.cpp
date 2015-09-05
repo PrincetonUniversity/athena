@@ -396,14 +396,6 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       coarse_b_.x1f.NewAthenaArray(ncc3,ncc2,ncc1+1);
       coarse_b_.x2f.NewAthenaArray(ncc3,ncc2+1,ncc1);
       coarse_b_.x3f.NewAthenaArray(ncc3+1,ncc2,ncc1);
-      // slope buffers
-      if(pmb->block_size.nx2>1) 
-        cb1g2.NewAthenaArray(ncc3,ncc2,ncc1+1);
-        cb2g1.NewAthenaArray(ncc3,ncc2,ncc1+1);
-      if(pmb->block_size.nx3>1) {
-        cb1g3.NewAthenaArray(ncc3,ncc2,ncc1+1);
-        cb2g3.NewAthenaArray(ncc3,ncc2+1,ncc1);
-      }
       // allocate EMF correction buffer
       for(int l=0;l<NSTEP;l++) {
         for(int i=0;i<pmb->pmy_mesh->maxneighbor_;i++){
@@ -506,13 +498,6 @@ BoundaryValues::~BoundaryValues()
       coarse_b_.x1f.DeleteAthenaArray();
       coarse_b_.x2f.DeleteAthenaArray();
       coarse_b_.x3f.DeleteAthenaArray();
-      if(pmb->block_size.nx2>1)
-        cb1g2.DeleteAthenaArray();
-        cb2g1.DeleteAthenaArray();
-      if(pmb->block_size.nx3>1) {
-        cb1g3.DeleteAthenaArray();
-        cb2g3.DeleteAthenaArray();
-      }
       int jm=1, km=1;
       if(pmb->block_size.nx2 > 1) km=2;
       if(pmb->block_size.nx3 > 1) jm=2;
@@ -757,7 +742,7 @@ void BoundaryValues::Initialize(void)
                   f2csize=(pmb->block_size.nx2/2+1)+pmb->block_size.nx2/2;
                 }
                 else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
-                  size=(pmb->block_size.nx1/2+1)+pmb->block_size.nx1/2;
+                  size=(pmb->block_size.nx1+1)+pmb->block_size.nx1;
                   f2csize=(pmb->block_size.nx1/2+1)+pmb->block_size.nx1/2;
                 }
               }
@@ -784,28 +769,25 @@ void BoundaryValues::Initialize(void)
             }
             else // corner
               continue;
-            if(nb.level==mylevel) ssize=rsize=size;
-            else if(nb.level>mylevel) ssize=0, rsize=f2csize;
-            else if(nb.level<mylevel) ssize=f2csize, rsize=0;
 
             if(nb.level==mylevel) { // the same level
               if((nb.type==neighbor_face) || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true))) {
                 tag=CreateMPITag(nb.lid, l, tag_emfcor, nb.targetid);
-                MPI_Send_init(emfcor_send_[l][nb.bufid],ssize,MPI_ATHENA_REAL,
+                MPI_Send_init(emfcor_send_[l][nb.bufid],size,MPI_ATHENA_REAL,
                               nb.rank,tag,MPI_COMM_WORLD,&req_emfcor_send_[l][nb.bufid]);
                 tag=CreateMPITag(pmb->lid, l, tag_emfcor, nb.bufid);
-                MPI_Recv_init(emfcor_recv_[l][nb.bufid],rsize,MPI_ATHENA_REAL,
+                MPI_Recv_init(emfcor_recv_[l][nb.bufid],size,MPI_ATHENA_REAL,
                               nb.rank,tag,MPI_COMM_WORLD,&req_emfcor_recv_[l][nb.bufid]);
               }
             }
             if(nb.level>mylevel) { // finer neighbor
               tag=CreateMPITag(pmb->lid, l, tag_emfcor, nb.bufid);
-              MPI_Recv_init(emfcor_recv_[l][nb.bufid],rsize,MPI_ATHENA_REAL,
+              MPI_Recv_init(emfcor_recv_[l][nb.bufid],f2csize,MPI_ATHENA_REAL,
                             nb.rank,tag,MPI_COMM_WORLD,&req_emfcor_recv_[l][nb.bufid]);
             }
             if(nb.level<mylevel) { // coarser neighbor
               tag=CreateMPITag(nb.lid, l, tag_emfcor, nb.targetid);
-              MPI_Send_init(emfcor_send_[l][nb.bufid],ssize,MPI_ATHENA_REAL,
+              MPI_Send_init(emfcor_send_[l][nb.bufid],f2csize,MPI_ATHENA_REAL,
                             nb.rank,tag,MPI_COMM_WORLD,&req_emfcor_send_[l][nb.bufid]);
             }
           }
@@ -3777,7 +3759,7 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
             flag=false;
             continue;
           }
-  #ifdef MPI_PARALLEL
+#ifdef MPI_PARALLEL
           else { // MPI boundary
             int test;
             MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
@@ -3788,7 +3770,7 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
             }
             emfcor_flag_[step][nb.bufid] = boundary_arrived;
           }
-  #endif
+#endif
         }
         // boundary arrived; apply EMF correction
         SetEMFBoundarySameLevel(emfcor_recv_[step][nb.bufid], nb);
@@ -4011,9 +3993,6 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
               gx1c *= fac; gx2c *= fac;
             }
 */
-            // store the gradients; not needed for bx3
-            // cb3g1(k,j,i)=gx1c; cb3g2(k,j,i)=gx2c;
-
             if(k>=kl && k<=ku) {
               dst.x3f(fk,fj  ,fi  )=ccval-gx1c*(x1c-fx1m)-gx2c*(x2c-fx2m);
               dst.x3f(fk,fj  ,fi+1)=ccval+gx1c*(fx1p-x1c)-gx2c*(x2c-fx2m);
@@ -4068,8 +4047,6 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
               gx1c *= fac; gx3c *= fac;
             }
 */
-            // store the gradients; only x3 slope
-            cb2g3(k,j,i)=gx3c; // cb2g1(k,j,i)=gx1c; 
 
             if(j>=jl && j<=ju) {
               dst.x2f(fk  ,fj,fi  )=ccval-gx1c*(x1c-fx1m)-gx3c*(x3c-fx3m);
@@ -4125,7 +4102,6 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
               gx2c *= fac; gx3c *= fac;
             }
 */
-            cb1g2(k,j,i)=gx2c; cb1g3(k,j,i)=gx3c;
 
             if(i>=il && i<=iu) {
               dst.x1f(fk  ,fj  ,fi)=ccval-gx2c*(x2c-fx2m)-gx3c*(x3c-fx3m);
@@ -4216,7 +4192,6 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
           Real gx1m = (ccval-coarse_b_.x2f(k,j,i-1))/(x1c - x1m);
           Real gx1p = (coarse_b_.x2f(k,j,i+1)-ccval)/(x1p - x1c);
           Real gx1c = 0.5*(SIGN(gx1m)+SIGN(gx1p))*std::min(std::abs(gx1m),std::abs(gx1p));
-          cb2g1(k,j,i)=gx1c;
 
           if(j>=jl && j<=ju) {
             dst.x2f(fk,fj,fi  )=ccval-gx1c*(x1c-fx1m);
@@ -4241,7 +4216,6 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
           Real gx2m = (ccval-coarse_b_.x1f(k,j-1,i))/dx2m;
           Real gx2p = (coarse_b_.x1f(k,j+1,i)-ccval)/dx2p;
           Real gx2c = 0.5*(SIGN(gx2m)+SIGN(gx2p))*std::min(std::abs(gx2m),std::abs(gx2p));
-          cb1g2(k,j,i)=gx2c;
 
           if(i>=il && i<=iu) {
             dst.x1f(fk,fj  ,fi)=ccval-gx2c*(x2c-fx2m);
