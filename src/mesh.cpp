@@ -1456,7 +1456,7 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
   // x1 face
   for(int n=-1; n<=1; n+=2) {
     neibt=tree.FindNeighbor(uid,n,0,0,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-    if(neibt==NULL) { bufid+=nf1*nf2; nblevel[1][1][n+1]=-2; continue;}
+    if(neibt==NULL) { bufid+=nf1*nf2; nblevel[1][1][n+1]=ll; continue;}
     if(neibt->flag==false) { // finer
       int fface=1-(n+1)/2; // 0 for outer_x3, 1 for inner_x3
       nblevel[1][1][n+1]=neibt->uid.GetLevel()+1;
@@ -1488,7 +1488,7 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
   // x2 face
   for(int n=-1; n<=1; n+=2) {
     neibt=tree.FindNeighbor(uid,0,n,0,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-    if(neibt==NULL) { bufid+=nf1*nf2; nblevel[1][n+1][1]=-2; continue;}
+    if(neibt==NULL) { bufid+=nf1*nf2; nblevel[1][n+1][1]=ll; continue;}
     if(neibt->flag==false) { // finer
       int fface=1-(n+1)/2; // 0 for outer_x3, 1 for inner_x3
       nblevel[1][n+1][1]=neibt->uid.GetLevel()+1;
@@ -1520,7 +1520,7 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
     // x3 face
     for(int n=-1; n<=1; n+=2) {
       neibt=tree.FindNeighbor(uid,0,0,n,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-      if(neibt==NULL) { bufid+=nf1*nf2; nblevel[n+1][1][1]=-2; continue;}
+      if(neibt==NULL) { bufid+=nf1*nf2; nblevel[n+1][1][1]=ll; continue;}
       if(neibt->flag==false) { // finer
         int fface=1-(n+1)/2; // 0 for outer_x3, 1 for inner_x3
         nblevel[n+1][1][1]=neibt->uid.GetLevel()+1;
@@ -1555,7 +1555,7 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
   for(int m=-1; m<=1; m+=2) {
     for(int n=-1; n<=1; n+=2) {
       neibt=tree.FindNeighbor(uid,n,m,0,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-      if(neibt==NULL) { bufid+=nf2; nblevel[1][m+1][n+1]=-2; continue;}
+      if(neibt==NULL) { bufid+=nf2; nblevel[1][m+1][n+1]=ll; continue;}
       if(neibt->flag==false) { // finer
         int ff1=1-(n+1)/2; // 0 for outer_x1, 1 for inner_x1
         int ff2=1-(m+1)/2; // 0 for outer_x2, 1 for inner_x2
@@ -1591,7 +1591,7 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
   for(int m=-1; m<=1; m+=2) {
     for(int n=-1; n<=1; n+=2) {
       neibt=tree.FindNeighbor(uid,n,0,m,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-      if(neibt==NULL) { bufid+=nf1; nblevel[m+1][1][n+1]=-2; continue;}
+      if(neibt==NULL) { bufid+=nf1; nblevel[m+1][1][n+1]=ll; continue;}
       if(neibt->flag==false) { // finer
         int ff1=1-(n+1)/2; // 0 for outer_x1, 1 for inner_x1
         int ff2=1-(m+1)/2; // 0 for outer_x3, 1 for inner_x3
@@ -1626,7 +1626,7 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
   for(int m=-1; m<=1; m+=2) {
     for(int n=-1; n<=1; n+=2) {
       neibt=tree.FindNeighbor(uid,0,n,m,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-      if(neibt==NULL) { bufid+=nf1; nblevel[m+1][n+1][1]=-2; continue;}
+      if(neibt==NULL) { bufid+=nf1; nblevel[m+1][n+1][1]=ll; continue;}
       if(neibt->flag==false) { // finer
         int ff1=1-(n+1)/2; // 0 for outer_x1, 1 for inner_x1
         int ff2=1-(m+1)/2; // 0 for outer_x3, 1 for inner_x3
@@ -1662,7 +1662,7 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
     for(int m=-1; m<=1; m+=2) {
       for(int n=-1; n<=1; n+=2) {
         neibt=tree.FindNeighbor(uid,n,m,l,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-        if(neibt==NULL) { bufid++; nblevel[l+1][m+1][n+1]=-2; continue;}
+        if(neibt==NULL) { bufid++; nblevel[l+1][m+1][n+1]=ll; continue;}
         if(neibt->flag==false) { // finer
           int ff1=1-(n+1)/2; // 0 for outer_x1, 1 for inner_x1
           int ff2=1-(m+1)/2; // 0 for outer_x2, 1 for inner_x2
