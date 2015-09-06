@@ -272,33 +272,18 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
 // Function for converting all primitives to conserved variables
 // Inputs:
+//   kl,ku,jl,ju,il,iu: index bounds of region to be updated
 //   prim: 3D array of primitives
 //   bb_cc: 3D array of cell-centered magnetic fields (unused)
 // Outputs:
 //   cons: 3D array of conserved variables
-void FluidEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+// Notes:
+//   single-cell function exists for other purposes; call made to that function rather
+//       than having duplicate code
+void FluidEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int jl,
+    const int ju, const int il, const int iu, const AthenaArray<Real> &prim,
     const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons)
 {
-  // Prepare index bounds
-  MeshBlock *pmb = pmy_fluid_->pmy_block;
-  int il = pmb->is - NGHOST;
-  int iu = pmb->ie + NGHOST;
-  int jl = pmb->js;
-  int ju = pmb->je;
-  if (pmb->block_size.nx2 > 1)
-  {
-    jl -= (NGHOST);
-    ju += (NGHOST);
-  }
-  int kl = pmb->ks;
-  int ku = pmb->ke;
-  if (pmb->block_size.nx3 > 1)
-  {
-    kl -= (NGHOST);
-    ku += (NGHOST);
-  }
-
-  // Go through all cells
   for (int k = kl; k <= ku; ++k)
     for (int j = jl; j <= ju; ++j)
     {

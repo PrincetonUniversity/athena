@@ -210,32 +210,15 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
 // Function for converting all primitives to conserved variables
 // Inputs:
+//   kl,ku,jl,ju,il,iu: index bounds of region to be updated
 //   prim: 3D array of primitives
 //   b: 3D array of cell-centered magnetic fields
 // Outputs:
 //   cons: 3D array of conserved variables
-void FluidEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+void FluidEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int jl,
+    const int ju, const int il, const int iu, const AthenaArray<Real> &prim,
     const AthenaArray<Real> &b, AthenaArray<Real> &cons)
 {
-  // Prepare index bounds
-  MeshBlock *pb = pmy_fluid_->pmy_block;
-  int il = pb->is - NGHOST;
-  int iu = pb->ie + NGHOST;
-  int jl = pb->js;
-  int ju = pb->je;
-  if (pb->block_size.nx2 > 1)
-  {
-    jl -= (NGHOST);
-    ju += (NGHOST);
-  }
-  int kl = pb->ks;
-  int ku = pb->ke;
-  if (pb->block_size.nx3 > 1)
-  {
-    kl -= (NGHOST);
-    ku += (NGHOST);
-  }
-
   // Calculate reduced ratio of specific heats
   Real gamma_adi_red = gamma_ / (gamma_ - 1.0);
 

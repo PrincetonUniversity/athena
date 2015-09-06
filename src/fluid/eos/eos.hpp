@@ -29,8 +29,9 @@ public:
 
   void ConservedToPrimitive(AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old,
     const InterfaceField &b, AthenaArray<Real> &prim, AthenaArray<Real> &bcc);
-  void PrimitiveToConserved(const AthenaArray<Real> &prim, const AthenaArray<Real> &b,
-    AthenaArray<Real> &cons);
+  void PrimitiveToConserved(const int kl, const int ku, const int jl, const int ju,
+      const int il, const int iu, const AthenaArray<Real> &prim,
+      const AthenaArray<Real> &b, AthenaArray<Real> &cons);
 
   // Sound speed functions in different regimes
   #if !RELATIVISTIC_DYNAMICS  // Newtonian: SR, GR defined as no-op
