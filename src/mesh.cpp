@@ -411,8 +411,10 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
         << std::endl;
         throw std::runtime_error(msg.str().c_str());
       }
-      if((mesh_size.x1size/mesh_size.nx1!=mesh_size.x1size/mesh_size.nx2 && mesh_size.nx2 > 1)
-      || (mesh_size.x1size/mesh_size.nx1!=mesh_size.x1size/mesh_size.nx3 && mesh_size.nx3 > 1)) {
+      Real dx1=(mesh_size.x1max-mesh_size.x1min)/(Real)mesh_size.nx1;
+      Real dx2=(mesh_size.x2max-mesh_size.x2min)/(Real)mesh_size.nx2;
+      Real dx3=(mesh_size.x3max-mesh_size.x3min)/(Real)mesh_size.nx3;
+      if((dx1!=dx2 && mesh_size.nx2 > 1) || (dx1!=dx3 && mesh_size.nx3 > 1)) {
         msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "Currently MHD with mesh refinement is supproted only for cubic cell (dx1=dx2=dx3)."
         << std::endl;
