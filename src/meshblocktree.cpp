@@ -52,7 +52,6 @@ MeshBlockTree::MeshBlockTree(MeshBlockTree *parent, int ox, int oy, int oz)
       }
     }
   }
-  std::cout << "leaf created " << loc.lx1 << " " << loc.lx2 << " " << loc.lx3 << " " << loc.level << std::endl;
 }
 
 
@@ -108,13 +107,12 @@ void MeshBlockTree::AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc, int 
                     int* mesh_bcs, long int rbx, long int rby, long int rbz, int rl)
 {
   int mx, my, mz;
-  std::cout << "AddMeshBlock target: " <<  rloc.lx1 << " " << rloc.lx2 << " " << rloc.lx3 << " " << rloc.level << " now: " << loc.lx1 << " " << loc.lx2 << " " << loc.lx3 << " " << loc.level << std::endl;
   if(loc.level==rloc.level) // done
     return;
   if(flag==true) // leaf -> create the finer level
     Refine(root,dim,mesh_bcs,rbx,rby,rbz,rl);
   // get leaf indexes
-  int sh = rl-loc.level;
+  int sh = rloc.level-loc.level-1;
   mx=(int)((rloc.lx1>>sh)&1L);
   my=(int)((rloc.lx2>>sh)&1L);
   mz=(int)((rloc.lx3>>sh)&1L);
@@ -137,7 +135,7 @@ void MeshBlockTree::AddMeshBlockWithoutRefine(MeshBlockTree& root, LogicalLocati
   if(flag==true) // leaf -> create the finer level
     flag=false;
   // get leaf indexes
-  int sh = rl-loc.level;
+  int sh = rloc.level-loc.level-1;
   mx=(int)((rloc.lx1>>sh)&1L);
   my=(int)((rloc.lx2>>sh)&1L);
   mz=(int)((rloc.lx3>>sh)&1L);

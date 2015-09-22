@@ -696,7 +696,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   maxcost=0.0;
   mincost=(FLT_MAX);
   for(int i=0;i<nbtotal;i++) {
-    int bgid,level;
+    int bgid;
     if(resfile.Read(&bgid,sizeof(int),1)!=1) nerr++;
     if(resfile.Read(&(loclist[i]),sizeof(LogicalLocation),1)!=1) nerr++;
     if(loclist[i].level!=root_level) multilevel=true;

@@ -94,7 +94,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
   }
 
   // the size of an element of the ID list
-  listsize=sizeof(int)*2+sizeof(LogicalLocation)+sizeof(Real)+sizeof(WrapIOSize_t);
+  listsize=sizeof(int)+sizeof(LogicalLocation)+sizeof(Real)+sizeof(WrapIOSize_t);
 
   int mynb=pM->nbend-pM->nbstart+1;
   blocksize=new WrapIOSize_t[pM->nbtotal+1];
