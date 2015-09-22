@@ -153,7 +153,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     dby = amp*rem[NWAVE-2][wave_flag];
     dbz = amp*rem[NWAVE-1][wave_flag];
 
-    int level=pmb->uid.GetLevel();
+    int level=pmb->loc.level;
     // Initialize components of the vector potential
     if(pmb->block_size.nx3 > 1) {
       for (int k=ks; k<=ke+1; k++) {

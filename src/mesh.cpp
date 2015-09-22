@@ -41,7 +41,7 @@
 #include "fluid/integrators/fluid_integrator.hpp"  // FluidIntegrator
 #include "field/integrators/field_integrator.hpp"  // FieldIntegrator
 #include "parameter_input.hpp"          // ParameterInput
-#include "blockuid.hpp"        // BlockUID
+#include "meshblocktree.hpp"
 #include "wrapio.hpp"
 #include "tasklist.hpp"
 
@@ -68,13 +68,11 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 {
   std::stringstream msg;
   RegionSize block_size;
-  BlockTree *neibt;
+  MeshBlockTree *neibt;
   MeshBlock *pfirst;
   int block_bcs[6];
   Real totalcost, maxcost, mincost, mycost, targetcost;
   int nbmax, dim;
-  long int lx1, lx2, lx3;
-  int ll, i, j;
 
 // mesh test
   if(test_flag>0) nproc=test_flag;
@@ -254,7 +252,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   for(root_level=0;(1<<root_level)<nbmax;root_level++);
   current_level=root_level;
 
-// create Block UID list
+// create the root grid
   tree.CreateRootGrid(nrbx1,nrbx2,nrbx3,root_level);
 
 // SMR / AMR: create finer grids here
@@ -265,7 +263,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   if(adaptive==true)
     max_level = pin->GetOrAddInteger("mesh","maxlevel",1)+root_level-1;
   else
-    max_level = IDLENGTH*20;
+    max_level = 63;
 
   InputBlock *pib = pin->pfirst_block;
   while (pib != NULL) {
@@ -361,37 +359,36 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       }
       // create the finest level
       std::cout << "refinenment: logical level = " << lrlev << ", lx1min = "
-                << lx1min << ", lx1max = " << lx1max;
+                << lx1min << ", lx1max = " << lx1max << ", lx2min = " << lx2min
+                << ", lx2max = " << lx2max << ", lx3min = " << lx3min << ", lx3max = "
+                << lx3max << std::endl;
       if(dim==1) {
         for(long int i=lx1min; i<lx1max; i+=2) {
-          BlockUID tid;
-          tid.CreateUIDfromLocation(i,0,0,lrlev);
-          tree.AddMeshBlock(tree,tid,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level);
+          LogicalLocation nloc;
+          nloc.level=lrlev, nloc.lx1=i, nloc.lx2=0, nloc.lx3=0;
+          tree.AddMeshBlock(tree,nloc,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level);
         }
       }
       if(dim==2) {
-        std::cout << ", lx2min = " << lx2min << ", lx2max = " << lx2max;
         for(long int j=lx2min; j<lx2max; j+=2) {
           for(long int i=lx1min; i<lx1max; i+=2) {
-            BlockUID tid;
-            tid.CreateUIDfromLocation(i,j,0,lrlev);
-            tree.AddMeshBlock(tree,tid,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level);
+            LogicalLocation nloc;
+            nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=0;
+            tree.AddMeshBlock(tree,nloc,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level);
           }
         }
       }
       if(dim==3) {
-        std::cout << ", lx3min = " << lx3min << ", lx3max = " << lx3max;
         for(long int k=lx3min; k<lx3max; k+=2) {
           for(long int j=lx2min; j<lx2max; j+=2) {
             for(long int i=lx1min; i<lx1max; i+=2) {
-              BlockUID tid;
-              tid.CreateUIDfromLocation(i,j,k,lrlev);
-              tree.AddMeshBlock(tree,tid,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level);
+              LogicalLocation nloc;
+              nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=k;
+              tree.AddMeshBlock(tree,nloc,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level);
             }
           }
         }
       }
-      std::cout << std::endl;
     }
     pib=pib->pnext;
   }
@@ -432,8 +429,8 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   // initial mesh hierarchy construction is completed here
 
   tree.AssignGID(nbtotal); // count blocks at the same time
-  buid=new BlockUID[nbtotal];
-  tree.GetIDList(buid,nbtotal);
+  loclist=new LogicalLocation[nbtotal];
+  tree.GetLocationList(loclist,nbtotal);
 
   ranklist=new int[nbtotal];
   nslist=new int[nproc];
@@ -442,17 +439,17 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   maxcost=0.0;
   mincost=(FLT_MAX);
   totalcost=0.0;
-  for(i=0;i<nbtotal;i++) {
+  for(int i=0;i<nbtotal;i++) {
     costlist[i]=1.0; // the simplest estimate; all the blocks are equal
     totalcost+=costlist[i];
     mincost=std::min(mincost,costlist[i]);
     maxcost=std::max(maxcost,costlist[i]);
   }
-  j=nproc-1;
+  int j=nproc-1;
   targetcost=totalcost/nproc;
   mycost=0.0;
   // create rank list from the end: the master node should have less load
-  for(i=nbtotal-1;i>=0;i--) {
+  for(int i=nbtotal-1;i>=0;i--) {
     mycost+=costlist[i];
     ranklist[i]=j;
     if(mycost >= targetcost && j>0) {
@@ -464,7 +461,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   }
   nslist[0]=0;
   j=0;
-  for(i=1;i<nbtotal;i++) { // make the list of nbstart
+  for(int i=1;i<nbtotal;i++) { // make the list of nbstart
     if(ranklist[i]!=ranklist[i-1]) {
       nblist[j]=i-nslist[j];
       nslist[++j]=i;
@@ -509,9 +506,11 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   }
 
 // create MeshBlock list for this process
-  for(i=nbstart;i<=nbend;i++) {
-    buid[i].GetLocation(lx1,lx2,lx3,ll);
-
+  for(int i=nbstart;i<=nbend;i++) {
+    long int &lx1=loclist[i].lx1;
+    long int &lx2=loclist[i].lx2;
+    long int &lx3=loclist[i].lx3;
+    int &ll=loclist[i].level;
     // calculate physical block size, x1
     if(lx1==0) {
       block_size.x1min=mesh_size.x1min;
@@ -590,11 +589,11 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
     // create a block and add into the link list
     if(i==nbstart) {
-      pblock = new MeshBlock(i, i-nbstart, buid[i], block_size, block_bcs, this, pin);
+      pblock = new MeshBlock(i, i-nbstart, loclist[i], block_size, block_bcs, this, pin);
       pfirst = pblock;
     }
     else {
-      pblock->next = new MeshBlock(i, i-nbstart, buid[i], block_size, block_bcs, this, pin);
+      pblock->next = new MeshBlock(i, i-nbstart, loclist[i], block_size, block_bcs, this, pin);
       pblock->next->prev = pblock;
       pblock = pblock->next;
     }
@@ -613,11 +612,9 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   std::stringstream msg;
   RegionSize block_size;
   MeshBlock *pfirst;
-  int idl, i, j, ll, nerr, dim;
-  long int lx1, lx2, lx3;
+  int i, j, nerr, dim;
   WrapIOSize_t *offset;
   Real totalcost, targetcost, maxcost, mincost, mycost;
-  ID_t *rawid;
 
 // mesh test
   if(test_flag>0) nproc=test_flag;
@@ -642,7 +639,6 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   // the file is already open and the pointer is set to after <par_end>
   nerr=0;
   if(resfile.Read(&nbtotal, sizeof(int), 1)!=1) nerr++;
-  if(resfile.Read(&idl, sizeof(int), 1)!=1) nerr++;
   if(resfile.Read(&root_level, sizeof(int), 1)!=1) nerr++;
   current_level=root_level;
   if(resfile.Read(&mesh_size, sizeof(RegionSize), 1)!=1) nerr++;
@@ -658,13 +654,6 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   }
 
   max_level = pin->GetOrAddInteger("mesh","maxlevel",1)+root_level-1;
-
-  if(idl>IDLENGTH) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "IDLENGTH in the restarting files is larger than the current configuration"
-        << std::endl << "Please reconfigure the code accordingly." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
 
   dim=1;
   if(mesh_size.nx2>1) dim=2;
@@ -683,14 +672,12 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   }
 
   //initialize
-  buid=new BlockUID[nbtotal];
+  loclist=new LogicalLocation[nbtotal];
   offset=new WrapIOSize_t[nbtotal];
   costlist=new Real[nbtotal];
   ranklist=new int[nbtotal];
   nslist=new int[nproc];
   nblist=new int[nproc];
-  rawid=new ID_t[IDLENGTH];
-  for(int i=0;i<IDLENGTH;i++) rawid[i]=0;
 
   int nx1 = pin->GetOrAddReal("meshblock","nx1",mesh_size.nx1);
   int nx2 = pin->GetOrAddReal("meshblock","nx2",mesh_size.nx2);
@@ -711,13 +698,11 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   for(int i=0;i<nbtotal;i++) {
     int bgid,level;
     if(resfile.Read(&bgid,sizeof(int),1)!=1) nerr++;
-    if(resfile.Read(&level,sizeof(int),1)!=1) nerr++;
-    if(level!=root_level) multilevel=true;
-    if(level>current_level) current_level=level;
-    if(resfile.Read(rawid,sizeof(ID_t),idl)!=idl) nerr++;
+    if(resfile.Read(&(loclist[i]),sizeof(LogicalLocation),1)!=1) nerr++;
+    if(loclist[i].level!=root_level) multilevel=true;
+    if(loclist[i].level>current_level) current_level=loclist[i].level;
     if(resfile.Read(&(costlist[i]),sizeof(Real),1)!=1) nerr++;
     if(resfile.Read(&(offset[i]),sizeof(WrapIOSize_t),1)!=1) nerr++;
-    buid[i].SetUID(rawid,level);
     totalcost+=costlist[i];
     mincost=std::min(mincost,costlist[i]);
     maxcost=std::max(maxcost,costlist[i]);
@@ -733,8 +718,6 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   if(pin->GetOrAddString("mesh","refinement","static")=="adaptive")
     adaptive=true, multilevel=true;
 
-  delete [] rawid; // no longer needed
-
   face_only=true;
   if (MAGNETIC_FIELDS_ENABLED || multilevel==true || VISCOSITY)
     face_only=false;
@@ -743,7 +726,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
 
   // rebuild the Block Tree
   for(int i=0;i<nbtotal;i++)
-    tree.AddMeshBlockWithoutRefine(tree,buid[i],dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level);
+    tree.AddMeshBlockWithoutRefine(tree,loclist[i],dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level);
   int nnb;
   tree.AssignGID(nnb); // count blocks at the same time
   if(nnb!=nbtotal) {
@@ -832,12 +815,12 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   for(i=nbstart;i<=nbend;i++) {
     // create a block and add into the link list
     if(i==nbstart) {
-      pblock = new MeshBlock(i, i-nbstart, this, pin, buid, resfile, offset[i],
+      pblock = new MeshBlock(i, i-nbstart, this, pin, loclist, resfile, offset[i],
                              costlist[i], ranklist, nslist);
       pfirst = pblock;
     }
     else {
-      pblock->next = new MeshBlock(i, i-nbstart, this, pin, buid, resfile,
+      pblock->next = new MeshBlock(i, i-nbstart, this, pin, loclist, resfile,
                                    offset[i], costlist[i], ranklist, nslist);
       pblock->next->prev = pblock;
       pblock = pblock->next;
@@ -864,7 +847,7 @@ Mesh::~Mesh()
   delete [] nblist;
   delete [] ranklist;
   delete [] costlist;
-  delete [] buid;
+  delete [] loclist;
 }
 
 
@@ -894,10 +877,13 @@ void Mesh::MeshTest(int dim)
     Real dx=1.0/(Real)(1L<<i);
     nb[i-root_level]=0;
     for(j=0;j<nbtotal;j++) {
-      if(buid[j].GetLevel()==i) {
-        buid[j].GetLocation(lx1,lx2,lx3,ll);
+      if(loclist[j].level==i) {
+        long int &lx1=loclist[j].lx1;
+        long int &lx2=loclist[j].lx2;
+        long int &lx3=loclist[j].lx3;
+        int &ll=loclist[j].level;
         std::cout << "MeshBlock " << j << ", lx1 = "
-                  << lx1 << ", lx2 = " << lx2 <<", lx3 = " << lx3
+                  << loclist[j].lx1 << ", lx2 = " << lx2 <<", lx3 = " << lx3
                   << ", logical level = " << ll << ", physical level = "
                   << ll-root_level << ", cost = " << costlist[j]
                   << ", rank = " << ranklist[j] << std::endl;
@@ -975,12 +961,11 @@ void Mesh::MeshTest(int dim)
 // MeshBlock constructor: builds 1D vectors of cell positions and spacings, and
 // constructs coordinate, boundary condition, fluid and field objects.
 
-MeshBlock::MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_block,
+MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_block,
                      int *input_bcs, Mesh *pm, ParameterInput *pin)
 {
   std::stringstream msg;
-  long int lx1, lx2, lx3;
-  int ll, root_level;
+  int root_level;
   pmy_mesh = pm;
   root_level = pm->root_level;
   block_size = input_block;
@@ -989,7 +974,7 @@ MeshBlock::MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_block,
   next=NULL;
   gid=igid;
   lid=ilid;
-  uid=iuid;
+  loc=iloc;
   cost=1.0;
   task=NULL;
 
@@ -1022,10 +1007,9 @@ MeshBlock::MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_block,
       cks=cnghost, cke=cks+block_size.nx3/2-1;
   }
 
-  uid.GetLocation(lx1,lx2,lx3,ll);
   std::cout << "MeshBlock " << gid << ", rank = " << myrank << ", lx1 = "
-            << lx1 << ", lx2 = " << lx2 <<", lx3 = " << lx3 << ", level = "
-            << ll << std::endl;
+            << loc.lx1 << ", lx2 = " << loc.lx2 <<", lx3 = " << loc.lx3
+            << ", level = " << loc.level << std::endl;
   std::cout << "is=" << is << " ie=" << ie << " x1min=" << block_size.x1min
             << " x1max=" << block_size.x1max << std::endl;
   std::cout << "js=" << js << " je=" << je << " x2min=" << block_size.x2min
@@ -1048,8 +1032,9 @@ MeshBlock::MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_block,
 //--------------------------------------------------------------------------------------
 // MeshBlock constructor for restarting
 
-MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, BlockUID *list,
-           WrapIO& resfile, WrapIOSize_t offset, Real icost, int *ranklist, int *nslist)
+MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
+                     LogicalLocation *llist, WrapIO& resfile, WrapIOSize_t offset,
+                     Real icost, int *ranklist, int *nslist)
 {
   std::stringstream msg;
   pmy_mesh = pm;
@@ -1057,7 +1042,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, BlockUID
   next=NULL;
   gid=igid;
   lid=ilid;
-  uid=list[gid];
+  loc=llist[gid];
   cost=icost;
   int nerr=0;
   task=NULL;
@@ -1104,12 +1089,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, BlockUID
       cks=cnghost, cke=cks+block_size.nx3/2-1;
   }
 
-  long int lx1, lx2, lx3;
-  int ll;
-  uid.GetLocation(lx1,lx2,lx3,ll);
   std::cout << "MeshBlock " << gid << ", rank = " << myrank << ", lx1 = "
-            << lx1 << ", lx2 = " << lx2 <<", lx3 = " << lx3 << ", level = "
-            << ll << std::endl;
+            << loc.lx1 << ", lx2 = " << loc.lx2 <<", lx3 = " << loc.lx3
+            << ", level = " << loc.level << std::endl;
   std::cout << "is=" << is << " ie=" << ie << " x1min=" << block_size.x1min
             << " x1max=" << block_size.x1max << std::endl;
   std::cout << "js=" << js << " je=" << je << " x2min=" << block_size.x2min
@@ -1431,20 +1413,18 @@ void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslist)
+// \!fn void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist)
 // \brief Search and set all the neighbor blocks
-void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslist)
+void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist)
 {
-  BlockTree* neibt;
-  long int lx1, lx2, lx3;
-  int ll, myox1, myox2=0, myox3=0, myfx1, myfx2, myfx3;
-  uid.GetLocation(lx1,lx2,lx3,ll);
-  myfx1=(int)(lx1&1L);
-  myfx2=(int)(lx2&1L);
-  myfx3=(int)(lx3&1L);
-  myox1=((int)(lx1&1L))*2-1;
-  if(block_size.nx2>1) myox2=((int)(lx2&1L))*2-1;
-  if(block_size.nx3>1) myox3=((int)(lx3&1L))*2-1;
+  MeshBlockTree* neibt;
+  int myox1, myox2=0, myox3=0, myfx1, myfx2, myfx3;
+  myfx1=(int)(loc.lx1&1L);
+  myfx2=(int)(loc.lx2&1L);
+  myfx3=(int)(loc.lx3&1L);
+  myox1=((int)(loc.lx1&1L))*2-1;
+  if(block_size.nx2>1) myox2=((int)(loc.lx2&1L))*2-1;
+  if(block_size.nx3>1) myox3=((int)(loc.lx3&1L))*2-1;
   long int nrbx1=pmy_mesh->nrbx1, nrbx2=pmy_mesh->nrbx2, nrbx3=pmy_mesh->nrbx3;
 
   int nf1=1, nf2=1;
@@ -1454,19 +1434,19 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
   }
   int bufid=0;
   nneighbor=0;
-  nblevel[1][1][1]=ll;
+  nblevel[1][1][1]=loc.level;
   // x1 face
   for(int n=-1; n<=1; n+=2) {
-    neibt=tree.FindNeighbor(uid,n,0,0,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-    if(neibt==NULL) { bufid+=nf1*nf2; nblevel[1][1][n+1]=ll; continue;}
+    neibt=tree.FindNeighbor(loc,n,0,0,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
+    if(neibt==NULL) { bufid+=nf1*nf2; nblevel[1][1][n+1]=loc.level; continue;}
     if(neibt->flag==false) { // finer
       int fface=1-(n+1)/2; // 0 for outer_x3, 1 for inner_x3
-      nblevel[1][1][n+1]=neibt->uid.GetLevel()+1;
+      nblevel[1][1][n+1]=neibt->loc.level+1;
       for(int f2=0;f2<nf2;f2++) {
         for(int f1=0;f1<nf1;f1++) {
-          BlockTree* nf=neibt->GetLeaf(fface,f1,f2);
+          MeshBlockTree* nf=neibt->GetLeaf(fface,f1,f2);
           int fid = nf->gid;
-          int nlevel=nf->uid.GetLevel();
+          int nlevel=nf->loc.level;
           int tbid=FindBufferID(-n,0,0,0,0,pmy_mesh->maxneighbor_);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
             fid-nslist[ranklist[fid]], n, 0, 0, neighbor_face, bufid, tbid, f1, f2);
@@ -1475,11 +1455,11 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
       }
     }
     else {
-      int nlevel=neibt->uid.GetLevel();
+      int nlevel=neibt->loc.level;
       int nid=neibt->gid;
       nblevel[1][1][n+1]=nlevel;
       int tbid;
-      if(nlevel==ll) tbid=FindBufferID(-n,0,0,0,0,pmy_mesh->maxneighbor_);
+      if(nlevel==loc.level) tbid=FindBufferID(-n,0,0,0,0,pmy_mesh->maxneighbor_);
       else tbid=FindBufferID(-n,0,0,myfx2,myfx3,pmy_mesh->maxneighbor_);
       neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
         nid-nslist[ranklist[nid]], n, 0, 0, neighbor_face, bufid, tbid);
@@ -1489,16 +1469,16 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
   if(block_size.nx2==1) return;
   // x2 face
   for(int n=-1; n<=1; n+=2) {
-    neibt=tree.FindNeighbor(uid,0,n,0,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-    if(neibt==NULL) { bufid+=nf1*nf2; nblevel[1][n+1][1]=ll; continue;}
+    neibt=tree.FindNeighbor(loc,0,n,0,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
+    if(neibt==NULL) { bufid+=nf1*nf2; nblevel[1][n+1][1]=loc.level; continue;}
     if(neibt->flag==false) { // finer
       int fface=1-(n+1)/2; // 0 for outer_x3, 1 for inner_x3
-      nblevel[1][n+1][1]=neibt->uid.GetLevel()+1;
+      nblevel[1][n+1][1]=neibt->loc.level+1;
       for(int f2=0;f2<nf2;f2++) {
         for(int f1=0;f1<nf1;f1++) {
-          BlockTree* nf=neibt->GetLeaf(f1,fface,f2);
+          MeshBlockTree* nf=neibt->GetLeaf(f1,fface,f2);
           int fid = nf->gid;
-          int nlevel=nf->uid.GetLevel();
+          int nlevel=nf->loc.level;
           int tbid=FindBufferID(0,-n,0,0,0,pmy_mesh->maxneighbor_);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
             fid-nslist[ranklist[fid]], 0, n, 0, neighbor_face, bufid, tbid, f1, f2);
@@ -1507,11 +1487,11 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
       }
     }
     else {
-      int nlevel=neibt->uid.GetLevel();
+      int nlevel=neibt->loc.level;
       int nid=neibt->gid;
       nblevel[1][n+1][1]=nlevel;
       int tbid;
-      if(nlevel==ll) tbid=FindBufferID(0,-n,0,0,0,pmy_mesh->maxneighbor_);
+      if(nlevel==loc.level) tbid=FindBufferID(0,-n,0,0,0,pmy_mesh->maxneighbor_);
       else tbid=FindBufferID(0,-n,0,myfx1,myfx3,pmy_mesh->maxneighbor_);
       neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
         nid-nslist[ranklist[nid]], 0, n, 0, neighbor_face, bufid, tbid);
@@ -1521,16 +1501,16 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
   if(block_size.nx3>1) {
     // x3 face
     for(int n=-1; n<=1; n+=2) {
-      neibt=tree.FindNeighbor(uid,0,0,n,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-      if(neibt==NULL) { bufid+=nf1*nf2; nblevel[n+1][1][1]=ll; continue;}
+      neibt=tree.FindNeighbor(loc,0,0,n,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
+      if(neibt==NULL) { bufid+=nf1*nf2; nblevel[n+1][1][1]=loc.level; continue;}
       if(neibt->flag==false) { // finer
         int fface=1-(n+1)/2; // 0 for outer_x3, 1 for inner_x3
-        nblevel[n+1][1][1]=neibt->uid.GetLevel()+1;
+        nblevel[n+1][1][1]=neibt->loc.level+1;
         for(int f2=0;f2<nf2;f2++) {
           for(int f1=0;f1<nf1;f1++) {
-            BlockTree* nf=neibt->GetLeaf(f1,f2,fface);
+            MeshBlockTree* nf=neibt->GetLeaf(f1,f2,fface);
             int fid = nf->gid;
-            int nlevel=nf->uid.GetLevel();
+            int nlevel=nf->loc.level;
             int tbid=FindBufferID(0,0,-n,0,0,pmy_mesh->maxneighbor_);
             neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
               fid-nslist[ranklist[fid]], 0, 0, n, neighbor_face, bufid, tbid, f1, f2);
@@ -1539,11 +1519,11 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
         }
       }
       else {
-        int nlevel=neibt->uid.GetLevel();
+        int nlevel=neibt->loc.level;
         int nid=neibt->gid;
         nblevel[n+1][1][1]=nlevel;
         int tbid;
-        if(nlevel==ll) tbid=FindBufferID(0,0,-n,0,0,pmy_mesh->maxneighbor_);
+        if(nlevel==loc.level) tbid=FindBufferID(0,0,-n,0,0,pmy_mesh->maxneighbor_);
         else tbid=FindBufferID(0,0,-n,myfx1,myfx2,pmy_mesh->maxneighbor_);
         neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
           nid-nslist[ranklist[nid]], 0, 0, n, neighbor_face, bufid, tbid);
@@ -1556,16 +1536,16 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
   // x1x2
   for(int m=-1; m<=1; m+=2) {
     for(int n=-1; n<=1; n+=2) {
-      neibt=tree.FindNeighbor(uid,n,m,0,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-      if(neibt==NULL) { bufid+=nf2; nblevel[1][m+1][n+1]=ll; continue;}
+      neibt=tree.FindNeighbor(loc,n,m,0,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
+      if(neibt==NULL) { bufid+=nf2; nblevel[1][m+1][n+1]=loc.level; continue;}
       if(neibt->flag==false) { // finer
         int ff1=1-(n+1)/2; // 0 for outer_x1, 1 for inner_x1
         int ff2=1-(m+1)/2; // 0 for outer_x2, 1 for inner_x2
-        nblevel[1][m+1][n+1]=neibt->uid.GetLevel()+1;
+        nblevel[1][m+1][n+1]=neibt->loc.level+1;
         for(int f1=0;f1<nf2;f1++) {
-          BlockTree* nf=neibt->GetLeaf(ff1,ff2,f1);
+          MeshBlockTree* nf=neibt->GetLeaf(ff1,ff2,f1);
           int fid = nf->gid;
-          int nlevel=nf->uid.GetLevel();
+          int nlevel=nf->loc.level;
           int tbid=FindBufferID(-n,-m,0,0,0,pmy_mesh->maxneighbor_);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
             fid-nslist[ranklist[fid]], n, m, 0, neighbor_edge, bufid, tbid, f1, 0);
@@ -1573,13 +1553,13 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
         }
       }
       else {
-        int nlevel=neibt->uid.GetLevel();
+        int nlevel=neibt->loc.level;
         int nid=neibt->gid;
         nblevel[1][m+1][n+1]=nlevel;
         int tbid;
-        if(nlevel==ll) tbid=FindBufferID(-n,-m,0,0,0,pmy_mesh->maxneighbor_);
+        if(nlevel==loc.level) tbid=FindBufferID(-n,-m,0,0,0,pmy_mesh->maxneighbor_);
         else tbid=FindBufferID(-n,-m,0,myfx3,0,pmy_mesh->maxneighbor_);
-        if(nlevel>=ll || (myox1==n && myox2==m)) {
+        if(nlevel>=loc.level || (myox1==n && myox2==m)) {
           neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
             nid-nslist[ranklist[nid]], n, m, 0, neighbor_edge, bufid, tbid);
           nneighbor++;
@@ -1592,16 +1572,16 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
   // x1x3
   for(int m=-1; m<=1; m+=2) {
     for(int n=-1; n<=1; n+=2) {
-      neibt=tree.FindNeighbor(uid,n,0,m,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-      if(neibt==NULL) { bufid+=nf1; nblevel[m+1][1][n+1]=ll; continue;}
+      neibt=tree.FindNeighbor(loc,n,0,m,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
+      if(neibt==NULL) { bufid+=nf1; nblevel[m+1][1][n+1]=loc.level; continue;}
       if(neibt->flag==false) { // finer
         int ff1=1-(n+1)/2; // 0 for outer_x1, 1 for inner_x1
         int ff2=1-(m+1)/2; // 0 for outer_x3, 1 for inner_x3
-        nblevel[m+1][1][n+1]=neibt->uid.GetLevel()+1;
+        nblevel[m+1][1][n+1]=neibt->loc.level+1;
         for(int f1=0;f1<nf1;f1++) {
-          BlockTree* nf=neibt->GetLeaf(ff1,f1,ff2);
+          MeshBlockTree* nf=neibt->GetLeaf(ff1,f1,ff2);
           int fid = nf->gid;
-          int nlevel=nf->uid.GetLevel();
+          int nlevel=nf->loc.level;
           int tbid=FindBufferID(-n,0,-m,0,0,pmy_mesh->maxneighbor_);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
             fid-nslist[ranklist[fid]], n, 0, m, neighbor_edge, bufid, tbid, f1, 0);
@@ -1609,13 +1589,13 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
         }
       }
       else {
-        int nlevel=neibt->uid.GetLevel();
+        int nlevel=neibt->loc.level;
         int nid=neibt->gid;
         nblevel[m+1][1][n+1]=nlevel;
         int tbid;
-        if(nlevel==ll) tbid=FindBufferID(-n,0,-m,0,0,pmy_mesh->maxneighbor_);
+        if(nlevel==loc.level) tbid=FindBufferID(-n,0,-m,0,0,pmy_mesh->maxneighbor_);
         else tbid=FindBufferID(-n,0,-m,myfx2,0,pmy_mesh->maxneighbor_);
-        if(nlevel>=ll || (myox1==n && myox3==m)) {
+        if(nlevel>=loc.level || (myox1==n && myox3==m)) {
           neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
             nid-nslist[ranklist[nid]], n, 0, m, neighbor_edge, bufid, tbid);
           nneighbor++;
@@ -1627,16 +1607,16 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
   // x2x3
   for(int m=-1; m<=1; m+=2) {
     for(int n=-1; n<=1; n+=2) {
-      neibt=tree.FindNeighbor(uid,0,n,m,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-      if(neibt==NULL) { bufid+=nf1; nblevel[m+1][n+1][1]=ll; continue;}
+      neibt=tree.FindNeighbor(loc,0,n,m,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
+      if(neibt==NULL) { bufid+=nf1; nblevel[m+1][n+1][1]=loc.level; continue;}
       if(neibt->flag==false) { // finer
         int ff1=1-(n+1)/2; // 0 for outer_x1, 1 for inner_x1
         int ff2=1-(m+1)/2; // 0 for outer_x3, 1 for inner_x3
-        nblevel[m+1][n+1][1]=neibt->uid.GetLevel()+1;
+        nblevel[m+1][n+1][1]=neibt->loc.level+1;
         for(int f1=0;f1<nf1;f1++) {
-          BlockTree* nf=neibt->GetLeaf(f1,ff1,ff2);
+          MeshBlockTree* nf=neibt->GetLeaf(f1,ff1,ff2);
           int fid = nf->gid;
-          int nlevel=nf->uid.GetLevel();
+          int nlevel=nf->loc.level;
           int tbid=FindBufferID(0,-n,-m,0,0,pmy_mesh->maxneighbor_);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
             fid-nslist[ranklist[fid]], 0, n, m, neighbor_edge, bufid, tbid, f1, 0);
@@ -1644,13 +1624,13 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
         }
       }
       else {
-        int nlevel=neibt->uid.GetLevel();
+        int nlevel=neibt->loc.level;
         int nid=neibt->gid;
         nblevel[m+1][n+1][1]=nlevel;
         int tbid;
-        if(nlevel==ll) tbid=FindBufferID(0,-n,-m,0,0,pmy_mesh->maxneighbor_);
+        if(nlevel==loc.level) tbid=FindBufferID(0,-n,-m,0,0,pmy_mesh->maxneighbor_);
         else tbid=FindBufferID(0,-n,-m,myfx1,0,pmy_mesh->maxneighbor_);
-        if(nlevel>=ll || (myox2==n && myox3==m)) {
+        if(nlevel>=loc.level || (myox2==n && myox3==m)) {
           neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
             nid-nslist[ranklist[nid]], 0, n, m, neighbor_edge, bufid, tbid);
           nneighbor++;
@@ -1663,17 +1643,17 @@ void MeshBlock::SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslis
   for(int l=-1; l<=1; l+=2) {
     for(int m=-1; m<=1; m+=2) {
       for(int n=-1; n<=1; n+=2) {
-        neibt=tree.FindNeighbor(uid,n,m,l,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-        if(neibt==NULL) { bufid++; nblevel[l+1][m+1][n+1]=ll; continue;}
+        neibt=tree.FindNeighbor(loc,n,m,l,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
+        if(neibt==NULL) { bufid++; nblevel[l+1][m+1][n+1]=loc.level; continue;}
         if(neibt->flag==false) { // finer
           int ff1=1-(n+1)/2; // 0 for outer_x1, 1 for inner_x1
           int ff2=1-(m+1)/2; // 0 for outer_x2, 1 for inner_x2
           int ff3=1-(l+1)/2; // 0 for outer_x3, 1 for inner_x3
           neibt=neibt->GetLeaf(ff1,ff2,ff3);
         }
-        int nlevel=neibt->uid.GetLevel();
+        int nlevel=neibt->loc.level;
         nblevel[l+1][m+1][n+1]=nlevel;
-        if(nlevel>=ll || (myox1==n && myox2==m && myox3==l)) {
+        if(nlevel>=loc.level || (myox1==n && myox2==m && myox3==l)) {
           int nid=neibt->gid;
           int tbid=FindBufferID(-n,-m,-l,0,0,pmy_mesh->maxneighbor_);
           neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,

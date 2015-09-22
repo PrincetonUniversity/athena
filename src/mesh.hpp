@@ -16,7 +16,7 @@
 // Athena headers
 #include "athena.hpp"         // macros, Real
 #include "athena_arrays.hpp"  // AthenaArray
-#include "blockuid.hpp"
+#include "meshblocktree.hpp"
 #include "wrapio.hpp"
 #include "tasklist.hpp"
 
@@ -28,8 +28,7 @@ class Field;
 class BoundaryValues;
 struct Task;
 class TaskList;
-class BlockUID;
-class BlockTree;
+class MeshBlockTree;
 
 
 //! \struct NeighborBlock
@@ -65,7 +64,7 @@ typedef struct RegionSize {
 
 class MeshBlock {
 private:
-  BlockUID uid;
+  LogicalLocation loc;
   NeighborBlock neighbor[56];
   Real cost;
   Real new_block_dt;
@@ -83,13 +82,13 @@ private:
   friend class ATHDF5Output;
 #endif
 public:
-  MeshBlock(int igid, int ilid, BlockUID iuid, RegionSize input_size,
+  MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_size,
             int *input_bcs, Mesh *pm, ParameterInput *pin);
-  MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, BlockUID *list,
+  MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, LogicalLocation *llist,
   WrapIO& resfile, WrapIOSize_t offset, Real icost, int *ranklist, int *nslist);
   ~MeshBlock();
   size_t GetBlockSizeInBytes(void);
-  void SearchAndSetNeighbors(BlockTree &tree, int *ranklist, int *nslist);
+  void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
   void SetTaskList(TaskList& tl);
   enum tasklist_status DoOneTask(void);
   int FindNeighborGID(int ox1, int ox2, int ox3);
@@ -125,8 +124,8 @@ private:
   Real MeshGeneratorX1(Real x, RegionSize rs);
   Real MeshGeneratorX2(Real x, RegionSize rs);
   Real MeshGeneratorX3(Real x, RegionSize rs);
-  BlockUID *buid;
-  BlockTree tree;
+  LogicalLocation *loclist;
+  MeshBlockTree tree;
   long int nrbx1, nrbx2, nrbx3;
 
   void MeshTest(int dim);

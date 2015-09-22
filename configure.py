@@ -23,7 +23,6 @@
 #   -mpi              enable parallelization with MPI
 #   -omp              enable parallelization with OpenMP
 #   -hdf5             enable HDF5 output (requires the HDF5 library)
-#   --idlength=N      specify the length of the Block UID (default=1)
 #   -debug            enable debug flags (-g -O0); override other compiler options
 #   -vis              enable viscosity
 #---------------------------------------------------------------------------------------
@@ -137,12 +136,6 @@ parser.add_argument('--ifov',
     type=int,
     default=0,
     help='number of internal fluid output variables')
-
-# -idlength=N argument
-parser.add_argument('--idlength',
-    type=int,
-    default=1,
-    help='length of the block UID, default=1 ')
 
 # -debug argument
 parser.add_argument('-debug',
@@ -320,8 +313,6 @@ else:
 # -ifov=N argument
 definitions['NUM_IFOV'] = str(args['ifov'])
 
-# everything else
-definitions['ID_LENGTH'] = str(args['idlength'])
 
 #--- Step 5.  Create new files, finish up ----------------------------------------------
 
@@ -372,5 +363,3 @@ print('  HDF5 Output:             ' + ('ON' if args['hdf5'] else 'OFF'))
 print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
 print('  Viscosity:               ' + ('ON' if args['vis'] else 'OFF'))
 print('  Internal fluid outvars:  ' + str(args['ifov']))
-print('  UID Length:              ' + str(args['idlength']) \
-    + '  (maximum refinement level = ' + str(20*args['idlength']) + ')')
