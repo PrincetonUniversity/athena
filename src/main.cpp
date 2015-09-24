@@ -76,32 +76,33 @@ int main(int argc, char *argv[])
   int ncstart=0;
   TaskList task_list;
 
-#ifdef MPI_PARALLEL
 //--- Step 0. --------------------------------------------------------------------------
-// Initialize MPI environment, distribute input parameters to all ranks
+// Initialize MPI environment, if necessary
 
+#ifdef MPI_PARALLEL
   if(MPI_SUCCESS != MPI_Init(&argc, &argv)) {
     std::cout << "### FATAL ERROR in main" << std::endl
               << "MPI Initialization failed." << std::endl;
     return(0);
   }
 
-// Get process id (rank) in MPI_COMM_WORLD
+  // Get process id (rank) in MPI_COMM_WORLD
   if(MPI_SUCCESS != MPI_Comm_rank(MPI_COMM_WORLD, &(Globals::my_rank))) {
     std::cout << "### FATAL ERROR in main" << std::endl
               << "MPI_Comm_rank failed." << std::endl;
     return(0);
   }
 
-// Get total number of MPI processes (ranks) 
+  // Get total number of MPI processes (ranks) 
   if(MPI_SUCCESS != MPI_Comm_size(MPI_COMM_WORLD, &nranks)) {
     std::cout << "### FATAL ERROR in main" << std::endl
               << "MPI_Comm_size failed." << std::endl;
     return(0);
   }
-
+#else
+  Globals::my_rank = 0;
+  Globals::nranks  = 1;
 #endif /* MPI_PARALLEL */
-
 
 //--- Step 1. --------------------------------------------------------------------------
 // Check for command line options and respond.
