@@ -102,12 +102,12 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
   offset=new WrapIOSize_t[mynb];
 
 #ifdef MPI_PARALLEL
-  displ = new int[nproc];
+  displ = new int[Globals::nranks];
   if(Globals::my_rank==0) mynb++; // the first process includes the information block
   myblocksize=new WrapIOSize_t[mynb];
 
   displ[0]=0;
-  for(i=1;i<nproc;i++)
+  for(i=1;i<Globals::nranks;i++)
     displ[i]=pM->nslist[i]+1;
 
   i=0;

@@ -76,7 +76,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   int nbmax, dim;
 
 // mesh test
-  if(test_flag>0) Globals::nproc=test_flag;
+  if(test_flag>0) Globals::nranks=test_flag;
 
 // read time and cycle limits from input file
 
@@ -434,8 +434,8 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   tree.GetLocationList(loclist,nbtotal);
 
   ranklist=new int[nbtotal];
-  nslist=new int[Globals::nproc];
-  nblist=new int[Globals::nproc];
+  nslist=new int[Globals::nranks];
+  nblist=new int[Globals::nranks];
   costlist=new Real[nbtotal];
   maxcost=0.0;
   mincost=(FLT_MAX);
@@ -446,8 +446,8 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     mincost=std::min(mincost,costlist[i]);
     maxcost=std::max(maxcost,costlist[i]);
   }
-  int j=(Globals::nproc)-1;
-  targetcost=totalcost/Globals::nproc;
+  int j=(Globals::nranks)-1;
+  targetcost=totalcost/Globals::nranks;
   mycost=0.0;
   // create rank list from the end: the master node should have less load
   for(int i=nbtotal-1;i>=0;i--) {
@@ -472,27 +472,27 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
   // store my nbstart and nbend
   nbstart=nslist[Globals::my_rank];
-  if((Globals::my_rank)+1 == Globals::nproc)
+  if((Globals::my_rank)+1 == Globals::nranks)
     nbend=nbtotal-1;
   else 
     nbend=nslist[(Globals::my_rank)+1]-1;
 
 // check if there are sufficient blocks
 #ifdef MPI_PARALLEL
-  if(nbtotal < Globals::nproc) {
+  if(nbtotal < Globals::nranks) {
     if(test_flag==0) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
-          << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< Globals::nproc
+          << "Too few blocks: nbtotal (" << nbtotal << ") < nranks ("<< Globals::nranks
           << ")" << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
     else { // test
       std::cout << "### Warning in Mesh constructor" << std::endl
-          << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< Globals::nproc
+          << "Too few blocks: nbtotal (" << nbtotal << ") < nranks ("<< Globals::nranks
           << ")" << std::endl;
     }
   }
-  if(nbtotal % Globals::nproc != 0 && adaptive == false && maxcost == mincost && Globals::my_rank==0) {
+  if(nbtotal % Globals::nranks != 0 && adaptive == false && maxcost == mincost && Globals::my_rank==0) {
     std::cout << "### Warning in Mesh constructor" << std::endl
               << "The number of MeshBlocks cannot be divided evenly. "
               << "This will cause a poor load balance." << std::endl;
@@ -618,7 +618,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   Real totalcost, targetcost, maxcost, mincost, mycost;
 
 // mesh test
-  if(test_flag>0) Globals::nproc=test_flag;
+  if(test_flag>0) Globals::nranks=test_flag;
 
 // read time and cycle limits from input file
 
@@ -677,8 +677,8 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   offset=new WrapIOSize_t[nbtotal];
   costlist=new Real[nbtotal];
   ranklist=new int[nbtotal];
-  nslist=new int[Globals::nproc];
-  nblist=new int[Globals::nproc];
+  nslist=new int[Globals::nranks];
+  nblist=new int[Globals::nranks];
 
   int nx1 = pin->GetOrAddReal("meshblock","nx1",mesh_size.nx1);
   int nx2 = pin->GetOrAddReal("meshblock","nx2",mesh_size.nx2);
@@ -738,21 +738,21 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   }
 
 #ifdef MPI_PARALLEL
-  if(nbtotal < Globals::nproc) {
+  if(nbtotal < Globals::nranks) {
     if(test_flag==0) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
-          << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< Globals::nproc
+          << "Too few blocks: nbtotal (" << nbtotal << ") < nranks ("<< Globals::nranks
           << ")" << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
     else { // test
       std::cout << "### Warning in Mesh constructor" << std::endl
-          << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< Globals::nproc
+          << "Too few blocks: nbtotal (" << nbtotal << ") < nranks ("<< Globals::nranks
           << ")" << std::endl;
       return;
     }
   }
-  if(nbtotal % Globals::nproc != 0 && adaptive == false && maxcost == mincost && Globals::my_rank==0) {
+  if(nbtotal % Globals::nranks != 0 && adaptive == false && maxcost == mincost && Globals::my_rank==0) {
     std::cout << "### Warning in Mesh constructor" << std::endl
               << "The number of MeshBlocks cannot be divided evenly. "
               << "This will cause a poor load balance." << std::endl;
@@ -761,8 +761,8 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
 
   // divide the list evenly and distribute among the processes
   // note: ordering should be maintained, although it might not be optimal.
-  j=(Globals::nproc)-1;
-  targetcost=totalcost/Globals::nproc;
+  j=(Globals::nranks)-1;
+  targetcost=totalcost/Globals::nranks;
   mycost=0.0;
   // create rank list from the end: the master node should have less load
   for(i=nbtotal-1;i>=0;i--) {
@@ -776,13 +776,13 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
     }
   }
 
-  if(nbtotal < Globals::nproc && test_flag==0) {
+  if(nbtotal < Globals::nranks && test_flag==0) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< Globals::nproc
+        << "Too few blocks: nbtotal (" << nbtotal << ") < nranks ("<< Globals::nranks
         << ")" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if(nbtotal % Globals::nproc != 0 && adaptive == false && maxcost == mincost && Globals::my_rank==0) {
+  if(nbtotal % Globals::nranks != 0 && adaptive == false && maxcost == mincost && Globals::my_rank==0) {
     std::cout << "### Warning in Mesh constructor" << std::endl
               << "The number of MeshBlocks cannot be divided evenly. "
               << "This will cause a poor load balance." << std::endl;
@@ -799,7 +799,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   nblist[j]=nbtotal-nslist[j];
   // store my nbstart and nbend
   nbstart=nslist[Globals::my_rank];
-  if((Globals::my_rank)+1==Globals::nproc)
+  if((Globals::my_rank)+1==Globals::nranks)
     nbend=nbtotal-1;
   else 
     nbend=nslist[(Globals::my_rank)+1]-1;

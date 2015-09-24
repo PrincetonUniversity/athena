@@ -16,11 +16,14 @@
 
 //======================================================================================
 //! \file globals.cpp 
-//  \brief global variables.  Yes, I know global variables should never be used, but
-//    the fact is they are incredibly useful when used properly.
+//  \brief namespace containing global variables.
+//  Yes, I know global variables should never be used, but in fact they are incredibly
+//  useful when used properly, for example global constants that are set once and never
+//  changed.
 //======================================================================================
 
 namespace Globals
 {
-  int my_rank, nproc;
+  int my_rank; // MPI rank of this process, set at start of main()
+  int nranks;  // total number of MPI ranks, set at start of main()
 }

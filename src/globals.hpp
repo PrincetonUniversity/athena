@@ -6,12 +6,12 @@
 // See LICENSE file for full public license information.
 //======================================================================================
 //! \file globals.hpp
-//  \brief namespace containing global variables
+//  \brief namespace containing global variables defined in globals.cpp
 //======================================================================================
 
 namespace Globals
 {
-  extern int my_rank, nproc;  // MPI rank
+  extern int my_rank, nranks;
 }
 
 #endif // GLOBALS_HPP

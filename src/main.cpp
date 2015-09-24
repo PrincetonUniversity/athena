@@ -89,15 +89,15 @@ int main(int argc, char *argv[])
     return(0);
   }
 
-// Get proc id (rank) in MPI_COMM_WORLD
+// Get process id (rank) in MPI_COMM_WORLD
   if(MPI_SUCCESS != MPI_Comm_rank(MPI_COMM_WORLD, &(Globals::my_rank))) {
     std::cout << "### FATAL ERROR in main" << std::endl
               << "MPI_Comm_rank failed." << std::endl;
     return(0);
   }
 
-// Get the number of the processes 
-  if(MPI_SUCCESS != MPI_Comm_size(MPI_COMM_WORLD, &nproc)) {
+// Get total number of MPI processes (ranks) 
+  if(MPI_SUCCESS != MPI_Comm_size(MPI_COMM_WORLD, &nranks)) {
     std::cout << "### FATAL ERROR in main" << std::endl
               << "MPI_Comm_size failed." << std::endl;
     return(0);
