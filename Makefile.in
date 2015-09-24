@@ -34,6 +34,7 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/fluid/integrators/reconstruct/*.cpp) \
 	     src/fluid/integrators/rsolvers/$(RSOLVER_DIR)$(RSOLVER_FILE) \
 	     $(wildcard src/outputs/*.cpp) \
+	     $(wildcard src/utils/*.cpp) \
 	     src/pgen/$(PROBLEM_FILE)
 SRC_DIR := $(dir $(SRC_FILES))
 OBJ_DIR := obj/

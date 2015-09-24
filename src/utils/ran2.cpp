@@ -14,98 +14,15 @@
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
 
-// C++ headers
-#include <iostream>    // endl, ostream
-#include <sstream>     // stringstream
-#include <stdexcept>   // runtime_error
-#include <sys/stat.h>  // mkdir()
-#include <unistd.h>    // chdir()
-#include "float.h"     // DBL_EPSILON
-
 // Athena headers
-#include "athena.hpp"
+#include "../athena.hpp"
+
+// C++ headers
+#include "float.h"  // DBL_EPSILON
 
 //======================================================================================
-//! \file utils.cpp 
-//  \brief contains a variety of utility functions
+//! \file ran2.cpp 
 //======================================================================================
-
-//--------------------------------------------------------------------------------------
-//! \fn void ShowConfig(void)
-//  \brief prints diagnostic messages about the configuration of an Athena++ executable
-
-void ShowConfig(void)
-{
-  std::cout<<"This Athena++ executable is configured with:" << std::endl;
-  std::cout<<"  Problem generator:          " << PROBLEM_GENERATOR << std::endl;
-  std::cout<<"  Coordinate system:          " << COORDINATE_SYSTEM << std::endl;
-  if (NON_BAROTROPIC_EOS) {
-    std::cout<<"  Equation of state:          adiabatic" << std::endl;
-  } else {
-    std::cout<<"  Equation of state:          isothermal" << std::endl;
-  }
-  std::cout<<"  Riemann solver:             " << RIEMANN_SOLVER << std::endl;
-  std::cout<<"  Reconstruction method:      " << RECONSTRUCTION_METHOD << std::endl;
-  std::cout<<"  Fluid integrator:           " << FLUID_TIME_INTEGRATOR << std::endl;
-  std::cout<<"  Compiler and flags:         " << COMPILED_WITH << std::endl;
-  if (MAGNETIC_FIELDS_ENABLED) {
-    std::cout<<"  Magnetic fields:            ON" << std::endl;
-  } else {
-    std::cout<<"  Magnetic fields:            OFF" << std::endl;
-  }
-  if (RELATIVISTIC_DYNAMICS) {
-    std::cout<<"  Relativistic dynamics:      ON " << std::endl;
-  } else {
-    std::cout<<"  Relativistic dynamics:      OFF " << std::endl;
-  }
-  if (GENERAL_RELATIVITY) {
-    std::cout<<"  General Relativity:         ON " << std::endl;
-  } else {
-    std::cout<<"  General Relativity:         OFF " << std::endl;
-  }
-  if (VISCOSITY) {
-    std::cout<<"  Viscosity:                  ON " << std::endl;
-  } else {
-    std::cout<<"  Viscosity:                  OFF " << std::endl;
-  }
-#ifdef MPI_PARALLEL
-  std::cout<<"  MPI parallelism:            ON" << std::endl;
-#else
-  std::cout<<"  MPI parallelism:            OFF" << std::endl;
-#endif
-#ifdef OPENMP_PARALLEL
-  std::cout<<"  OpenMP parallelism:         ON" << std::endl;
-#else
-  std::cout<<"  OpenMP parallelism:         OFF" << std::endl;
-#endif
-#ifdef HDF5OUTPUT
-  std::cout<<"  HDF5 Output:                ON" << std::endl;
-#else
-  std::cout<<"  HDF5 Output:                OFF" << std::endl;
-#endif
-
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-//! \fn void ChangeToRunDir(const char *pdir)
-//  \brief change to input run directory; create if it does not exist yet
-
-void ChangeToRunDir(const char *pdir)
-{
-  std::stringstream msg;
-
-  if (pdir == NULL || *pdir == '\0') return;
-
-  mkdir(pdir, 0775);
-  if(chdir(pdir)) {
-    msg << "### FATAL ERROR in function [ChangeToRunDir]" << std::endl
-        << "Cannot cd to directory '" << pdir << "'";
-    throw std::runtime_error(msg.str().c_str());
-  }
-
-  return;
-}
 
 //--------------------------------------------------------------------------------------
 //! \fn double ran2(long int *idum)
@@ -116,7 +33,7 @@ void ChangeToRunDir(const char *pdir)
 // shuffle and added safeguards.  Returns a uniform random deviate between 0.0 and 1.0
 // (exclusive of the endpoint values).  Call with idum = a negative integer to
 // initialize; thereafter, do not alter idum between successive deviates in a sequence.
-//  RNMX should appriximate the largest floating point value that is less than 1. 
+// RNMX should appriximate the largest floating point value that is less than 1. 
 
 #define IM1 2147483563
 #define IM2 2147483399

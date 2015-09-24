@@ -36,6 +36,7 @@
 #include "outputs/outputs.hpp"  // Outputs
 #include "wrapio.hpp"           // WrapIO
 #include "tasklist.hpp"         // TaskList
+#include "utils/utils.hpp"
 
 // MPI/OpenMP headers
 #ifdef MPI_PARALLEL
@@ -45,10 +46,6 @@
 #ifdef OPENMP_PARALLEL
 #include <omp.h>
 #endif
-
-// function prototypes
-void ShowConfig();
-void ChangeToRunDir(const char *pdir);
 
 //======================================================================================
 /////////////////////////////////// Athena++ Main Program \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
@@ -276,7 +273,7 @@ int main(int argc, char *argv[])
 
   Outputs *pouts;
   try {
-    ChangeToRunDir(prundir);
+    ChangeRunDir(prundir);
     pouts = new Outputs(pmesh, pinput);
     if(res_flag==0) {
       pouts->MakeOutputs(pmesh,pinput);
