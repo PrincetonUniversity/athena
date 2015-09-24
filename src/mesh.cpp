@@ -32,6 +32,7 @@
 
 // Athena headers
 #include "athena.hpp"                   // enums, macros, Real
+#include "globals.hpp"
 #include "athena_arrays.hpp"            // AthenaArray
 #include "coordinates/coordinates.hpp"  // Coordinates
 #include "fluid/fluid.hpp"              // Fluid
@@ -75,7 +76,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   int nbmax, dim;
 
 // mesh test
-  if(test_flag>0) nproc=test_flag;
+  if(test_flag>0) Globals::nproc=test_flag;
 
 // read time and cycle limits from input file
 
@@ -244,7 +245,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   nbmax=(nrbx1>nrbx2)?nrbx1:nrbx2;
   nbmax=(nbmax>nrbx3)?nbmax:nrbx3;
 
-  if(myrank==0)
+  if(Globals::my_rank==0)
     std::cout << "RootGrid = " << nrbx1 << " x " << nrbx2
               << " x " << nrbx3 << std::endl;
 
@@ -433,8 +434,8 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   tree.GetLocationList(loclist,nbtotal);
 
   ranklist=new int[nbtotal];
-  nslist=new int[nproc];
-  nblist=new int[nproc];
+  nslist=new int[Globals::nproc];
+  nblist=new int[Globals::nproc];
   costlist=new Real[nbtotal];
   maxcost=0.0;
   mincost=(FLT_MAX);
@@ -445,8 +446,8 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     mincost=std::min(mincost,costlist[i]);
     maxcost=std::max(maxcost,costlist[i]);
   }
-  int j=nproc-1;
-  targetcost=totalcost/nproc;
+  int j=(Globals::nproc)-1;
+  targetcost=totalcost/Globals::nproc;
   mycost=0.0;
   // create rank list from the end: the master node should have less load
   for(int i=nbtotal-1;i>=0;i--) {
@@ -470,28 +471,28 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   nblist[j]=nbtotal-nslist[j];
 
   // store my nbstart and nbend
-  nbstart=nslist[myrank];
-  if(myrank+1==nproc)
+  nbstart=nslist[Globals::my_rank];
+  if((Globals::my_rank)+1 == Globals::nproc)
     nbend=nbtotal-1;
   else 
-    nbend=nslist[myrank+1]-1;
+    nbend=nslist[(Globals::my_rank)+1]-1;
 
 // check if there are sufficient blocks
 #ifdef MPI_PARALLEL
-  if(nbtotal < nproc) {
+  if(nbtotal < Globals::nproc) {
     if(test_flag==0) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
-          << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< nproc
+          << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< Globals::nproc
           << ")" << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
     else { // test
       std::cout << "### Warning in Mesh constructor" << std::endl
-          << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< nproc
+          << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< Globals::nproc
           << ")" << std::endl;
     }
   }
-  if(nbtotal % nproc != 0 && adaptive == false && maxcost == mincost && myrank==0) {
+  if(nbtotal % Globals::nproc != 0 && adaptive == false && maxcost == mincost && Globals::my_rank==0) {
     std::cout << "### Warning in Mesh constructor" << std::endl
               << "The number of MeshBlocks cannot be divided evenly. "
               << "This will cause a poor load balance." << std::endl;
@@ -500,7 +501,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
   // Mesh test only; do not create meshes
   if(test_flag>0) {
-    if(myrank==0)
+    if(Globals::my_rank==0)
       MeshTest(dim);
     return;
   }
@@ -617,7 +618,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   Real totalcost, targetcost, maxcost, mincost, mycost;
 
 // mesh test
-  if(test_flag>0) nproc=test_flag;
+  if(test_flag>0) Globals::nproc=test_flag;
 
 // read time and cycle limits from input file
 
@@ -676,8 +677,8 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   offset=new WrapIOSize_t[nbtotal];
   costlist=new Real[nbtotal];
   ranklist=new int[nbtotal];
-  nslist=new int[nproc];
-  nblist=new int[nproc];
+  nslist=new int[Globals::nproc];
+  nblist=new int[Globals::nproc];
 
   int nx1 = pin->GetOrAddReal("meshblock","nx1",mesh_size.nx1);
   int nx2 = pin->GetOrAddReal("meshblock","nx2",mesh_size.nx2);
@@ -737,21 +738,21 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   }
 
 #ifdef MPI_PARALLEL
-  if(nbtotal < nproc) {
+  if(nbtotal < Globals::nproc) {
     if(test_flag==0) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
-          << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< nproc
+          << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< Globals::nproc
           << ")" << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
     else { // test
       std::cout << "### Warning in Mesh constructor" << std::endl
-          << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< nproc
+          << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< Globals::nproc
           << ")" << std::endl;
       return;
     }
   }
-  if(nbtotal % nproc != 0 && adaptive == false && maxcost == mincost && myrank==0) {
+  if(nbtotal % Globals::nproc != 0 && adaptive == false && maxcost == mincost && Globals::my_rank==0) {
     std::cout << "### Warning in Mesh constructor" << std::endl
               << "The number of MeshBlocks cannot be divided evenly. "
               << "This will cause a poor load balance." << std::endl;
@@ -760,8 +761,8 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
 
   // divide the list evenly and distribute among the processes
   // note: ordering should be maintained, although it might not be optimal.
-  j=nproc-1;
-  targetcost=totalcost/nproc;
+  j=(Globals::nproc)-1;
+  targetcost=totalcost/Globals::nproc;
   mycost=0.0;
   // create rank list from the end: the master node should have less load
   for(i=nbtotal-1;i>=0;i--) {
@@ -775,13 +776,13 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
     }
   }
 
-  if(nbtotal < nproc && test_flag==0) {
+  if(nbtotal < Globals::nproc && test_flag==0) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< nproc
+        << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< Globals::nproc
         << ")" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if(nbtotal % nproc != 0 && adaptive == false && maxcost == mincost && myrank==0) {
+  if(nbtotal % Globals::nproc != 0 && adaptive == false && maxcost == mincost && Globals::my_rank==0) {
     std::cout << "### Warning in Mesh constructor" << std::endl
               << "The number of MeshBlocks cannot be divided evenly. "
               << "This will cause a poor load balance." << std::endl;
@@ -797,15 +798,15 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   }
   nblist[j]=nbtotal-nslist[j];
   // store my nbstart and nbend
-  nbstart=nslist[myrank];
-  if(myrank+1==nproc)
+  nbstart=nslist[Globals::my_rank];
+  if((Globals::my_rank)+1==Globals::nproc)
     nbend=nbtotal-1;
   else 
-    nbend=nslist[myrank+1]-1;
+    nbend=nslist[(Globals::my_rank)+1]-1;
 
   // Mesh test only; do not create meshes
   if(test_flag>0) {
-    if(myrank==0)
+    if(Globals::my_rank==0)
       MeshTest(dim);
     delete [] offset;
     return;
@@ -1007,7 +1008,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
       cks=cnghost, cke=cks+block_size.nx3/2-1;
   }
 
-  std::cout << "MeshBlock " << gid << ", rank = " << myrank << ", lx1 = "
+  std::cout << "MeshBlock " << gid << ", rank = " << Globals::my_rank << ", lx1 = "
             << loc.lx1 << ", lx2 = " << loc.lx2 <<", lx3 = " << loc.lx3
             << ", level = " << loc.level << std::endl;
   std::cout << "is=" << is << " ie=" << ie << " x1min=" << block_size.x1min
@@ -1089,7 +1090,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
       cks=cnghost, cke=cks+block_size.nx3/2-1;
   }
 
-  std::cout << "MeshBlock " << gid << ", rank = " << myrank << ", lx1 = "
+  std::cout << "MeshBlock " << gid << ", rank = " << Globals::my_rank << ", lx1 = "
             << loc.lx1 << ", lx2 = " << loc.lx2 <<", lx3 = " << loc.lx3
             << ", level = " << loc.level << std::endl;
   std::cout << "is=" << is << " ie=" << ie << " x1min=" << block_size.x1min
@@ -1685,7 +1686,7 @@ void Mesh::TestConservation(void)
   MPI_Allreduce(MPI_IN_PLACE,tcons,NFLUID,MPI_ATHENA_REAL,MPI_SUM,MPI_COMM_WORLD);
 #endif
 
-  if(myrank==0) {
+  if(Globals::my_rank==0) {
     std::cout << "Total Conservative : " ;
     for(int n=0;n<NFLUID;n++)
       std::cout << tcons[n] << " ";

@@ -16,6 +16,7 @@
 
 // Primary header
 #include "athena.hpp"
+#include "globals.hpp"
 
 // C headers
 #include <stdint.h>  // int64_t
@@ -36,15 +37,11 @@
 #include "wrapio.hpp"           // WrapIO
 #include "tasklist.hpp"         // TaskList
 
-// MPI related global variables
-int myrank=0, nproc=1;
-
-// MPI header and varaibles
+// MPI/OpenMP headers
 #ifdef MPI_PARALLEL
 #include <mpi.h>
 #endif
 
-// OpenMP header
 #ifdef OPENMP_PARALLEL
 #include <omp.h>
 #endif
@@ -93,7 +90,7 @@ int main(int argc, char *argv[])
   }
 
 // Get proc id (rank) in MPI_COMM_WORLD
-  if(MPI_SUCCESS != MPI_Comm_rank(MPI_COMM_WORLD, &myrank)) {
+  if(MPI_SUCCESS != MPI_Comm_rank(MPI_COMM_WORLD, &(Globals::my_rank))) {
     std::cout << "### FATAL ERROR in main" << std::endl
               << "MPI_Comm_rank failed." << std::endl;
     return(0);
@@ -137,7 +134,7 @@ int main(int argc, char *argv[])
         test_flag = strtol(argv[++i],NULL,10);
         break;
       case 'c':
-        if(myrank==0)
+        if(Globals::my_rank==0)
           ShowConfig();
 #ifdef MPI_PARALLEL
         MPI_Finalize();
@@ -146,7 +143,7 @@ int main(int argc, char *argv[])
       break;
       case 'h':
       default:
-        if(myrank==0) {
+        if(Globals::my_rank==0) {
           std::cout<<"Athena++ "<< athena_version << std::endl;
           std::cout<<"Usage: "<< argv[0] <<" [options] [block/par=value ...]"<< std::endl;
           std::cout<<"Options:" << std::endl;
@@ -204,7 +201,7 @@ int main(int argc, char *argv[])
 // Dump input parameters and quit if code was run with -n option.
 
   if (narg_flag){
-    if(myrank==0)
+    if(Globals::my_rank==0)
       pinput->ParameterDump(std::cout);
     input.Close();
 #ifdef MPI_PARALLEL
@@ -405,7 +402,7 @@ int main(int argc, char *argv[])
 //--- Step 9. === START OF MAIN INTEGRATION LOOP =======================================
 // For performance, there is no error handler protecting this step (except outputs)
 
-  if(myrank==0)
+  if(Globals::my_rank==0)
     std::cout<<std::endl<< "Setup complete, entering main loop..." <<std::endl<<std::endl;
   clock_t tstart = clock();
 #ifdef OPENMP_PARALLEL
@@ -415,7 +412,7 @@ int main(int argc, char *argv[])
   while ((pmesh->time < pmesh->tlim) && 
          (pmesh->nlim < 0 || pmesh->ncycle < pmesh->nlim)){
 
-    if(myrank==0)
+    if(Globals::my_rank==0)
       std::cout << "cycle=" << pmesh->ncycle << std::scientific << std::setprecision(14)
                 << " time=" << pmesh->time << " dt=" << pmesh->dt << std::endl;
 //    pmesh->TestConservation();
@@ -453,7 +450,7 @@ int main(int argc, char *argv[])
   clock_t tstop = clock();
 
 // print diagnostic messages
-  if(myrank==0) {
+  if(Globals::my_rank==0) {
     std::cout << "cycle=" << pmesh->ncycle << std::scientific << std::setprecision(6)
               << " time=" << pmesh->time << " dt=" << pmesh->dt << std::endl;
 

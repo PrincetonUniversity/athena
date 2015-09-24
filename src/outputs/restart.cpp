@@ -24,6 +24,7 @@
 #include <fstream>
 
 #include "../athena.hpp"
+#include "../globals.hpp"
 #include "../athena_arrays.hpp"
 #include "../mesh.hpp"
 #include "../parameter_input.hpp"
@@ -78,7 +79,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
 
   resfile.Open(fname.c_str(),writemode);
 
-  if(myrank==0) {
+  if(Globals::my_rank==0) {
     // output the input parameters; this part is serial
     std::string sbuf=ost.str();
     resfile.Write(sbuf.c_str(),sizeof(char),sbuf.size());
@@ -102,7 +103,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
 
 #ifdef MPI_PARALLEL
   displ = new int[nproc];
-  if(myrank==0) mynb++; // the first process includes the information block
+  if(Globals::my_rank==0) mynb++; // the first process includes the information block
   myblocksize=new WrapIOSize_t[mynb];
 
   displ[0]=0;
@@ -110,7 +111,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
     displ[i]=pM->nslist[i]+1;
 
   i=0;
-  if(myrank==0) { // the information block
+  if(Globals::my_rank==0) { // the information block
     myblocksize[0]=resfile.Tell();
     i=1;
   }

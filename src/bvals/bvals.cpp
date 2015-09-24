@@ -30,6 +30,7 @@
 
 // Athena headers
 #include "../athena.hpp"          // Real
+#include "../globals.hpp"
 #include "../athena_arrays.hpp"   // AthenaArray
 #include "../mesh.hpp"            // MeshBlock
 #include "../fluid/fluid.hpp"     // Fluid
@@ -603,7 +604,7 @@ void BoundaryValues::Initialize(void)
   for(int l=0;l<NSTEP;l++) {
     for(int n=0;n<pmb->nneighbor;n++) {
       NeighborBlock& nb = pmb->neighbor[n];
-      if(nb.rank!=myrank) {
+      if(nb.rank!=Globals::my_rank) {
         if(nb.level==mylevel) { // same
           ssize=rsize=((nb.ox1==0)?pmb->block_size.nx1:NGHOST)
                      *((nb.ox2==0)?pmb->block_size.nx2:NGHOST)
@@ -890,7 +891,7 @@ void BoundaryValues::StartReceivingForInit(void)
   MeshBlock *pmb=pmy_mblock_;
   for(int n=0;n<pmb->nneighbor;n++) {
     NeighborBlock& nb = pmb->neighbor[n];
-    if(nb.rank!=myrank) { 
+    if(nb.rank!=Globals::my_rank) { 
       MPI_Start(&req_fluid_recv_[0][nb.bufid]);
       if (MAGNETIC_FIELDS_ENABLED)
         MPI_Start(&req_field_recv_[0][nb.bufid]);
@@ -912,7 +913,7 @@ void BoundaryValues::StartReceivingAll(void)
     firsttime_[l]=true;
     for(int n=0;n<pmb->nneighbor;n++) {
       NeighborBlock& nb = pmb->neighbor[n];
-      if(nb.rank!=myrank) { 
+      if(nb.rank!=Globals::my_rank) { 
         MPI_Start(&req_fluid_recv_[l][nb.bufid]);
         if(nb.type==neighbor_face && nb.level>mylevel)
           MPI_Start(&req_flcor_recv_[l][nb.fid][nb.fi2][nb.fi1]);
@@ -1143,7 +1144,7 @@ void BoundaryValues::SendFluidBoundaryBuffers(AthenaArray<Real> &src, int step)
       ssize=LoadFluidBoundaryBufferToCoarser(src, fluid_send_[step][nb.bufid],nb);
     else
       ssize=LoadFluidBoundaryBufferToFiner(src, fluid_send_[step][nb.bufid], nb);
-    if(nb.rank == myrank) { // on the same process
+    if(nb.rank == Globals::my_rank) { // on the same process
       MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
       std::memcpy(pbl->pbval->fluid_recv_[step][nb.targetid],
                   fluid_send_[step][nb.bufid], ssize*sizeof(Real));
@@ -1318,7 +1319,7 @@ bool BoundaryValues::ReceiveFluidBoundaryBuffers(AthenaArray<Real> &dst, int ste
     NeighborBlock& nb = pmb->neighbor[n];
     if(fluid_flag_[step][nb.bufid]==boundary_completed) continue;
     if(fluid_flag_[step][nb.bufid]==boundary_waiting) {
-      if(nb.rank==myrank) {// on the same process
+      if(nb.rank==Globals::my_rank) {// on the same process
         flag=false;
         continue;
       }
@@ -1357,7 +1358,7 @@ void BoundaryValues::ReceiveFluidBoundaryBuffersWithWait(AthenaArray<Real> &dst,
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
 #ifdef MPI_PARALLEL
-    if(nb.rank!=myrank)
+    if(nb.rank!=Globals::my_rank)
       MPI_Wait(&req_fluid_recv_[0][nb.bufid],MPI_STATUS_IGNORE);
 #endif
     if(nb.level==pmb->loc.level)
@@ -1477,7 +1478,7 @@ void BoundaryValues::SendFluxCorrection(int step)
           }
         }
       }
-      if(nb.rank==myrank) { // on the same node
+      if(nb.rank==Globals::my_rank) { // on the same node
         MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
         std::memcpy(pbl->pbval->flcor_recv_[step][(nb.fid^1)][fi2][fi1],
                     flcor_send_[step][nb.fid], p*sizeof(Real));
@@ -1510,7 +1511,7 @@ bool BoundaryValues::ReceiveFluxCorrection(AthenaArray<Real> &dst, int step)
     if(nb.level==pmb->loc.level+1) {
       if(flcor_flag_[step][nb.fid][nb.fi2][nb.fi1]==boundary_completed) continue;
       if(flcor_flag_[step][nb.fid][nb.fi2][nb.fi1]==boundary_waiting) {
-        if(nb.rank==myrank) {// on the same process
+        if(nb.rank==Globals::my_rank) {// on the same process
           flag=false;
           continue;
         }
@@ -2344,7 +2345,7 @@ void BoundaryValues::SendFieldBoundaryBuffers(InterfaceField &src, int step)
       ssize=LoadFieldBoundaryBufferToCoarser(src, field_send_[step][nb.bufid],nb);
     else
       ssize=LoadFieldBoundaryBufferToFiner(src, field_send_[step][nb.bufid], nb);
-    if(nb.rank == myrank) { // on the same process
+    if(nb.rank == Globals::my_rank) { // on the same process
       MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
       // find target buffer
       std::memcpy(pbl->pbval->field_recv_[step][nb.targetid],
@@ -2732,7 +2733,7 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(InterfaceField &dst, int step)
     NeighborBlock& nb = pmb->neighbor[n];
     if(field_flag_[step][nb.bufid]==boundary_completed) continue;
     if(field_flag_[step][nb.bufid]==boundary_waiting) {
-      if(nb.rank==myrank) {// on the same process
+      if(nb.rank==Globals::my_rank) {// on the same process
         flag=false;
         continue;
       }
@@ -2772,7 +2773,7 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(InterfaceField &dst, in
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
 #ifdef MPI_PARALLEL
-    if(nb.rank!=myrank)
+    if(nb.rank!=Globals::my_rank)
       MPI_Wait(&req_field_recv_[0][nb.bufid],MPI_STATUS_IGNORE);
 #endif
     if(nb.level==pmb->loc.level)
@@ -3117,7 +3118,7 @@ void BoundaryValues::SendEMFCorrection(int step)
     else if(nb.level==pmb->loc.level-1)
       p=LoadEMFBoundaryBufferToCoarser(emfcor_send_[step][nb.bufid], nb);
     else continue;
-    if(nb.rank==myrank) { // on the same node
+    if(nb.rank==Globals::my_rank) { // on the same node
       MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
       std::memcpy(pbl->pbval->emfcor_recv_[step][nb.targetid],
                   emfcor_send_[step][nb.bufid], p*sizeof(Real));
@@ -3740,7 +3741,7 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
       if((nb.type==neighbor_face) || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true))) {
         if(emfcor_flag_[step][nb.bufid]==boundary_completed) continue;
         if(emfcor_flag_[step][nb.bufid]==boundary_waiting) {
-          if(nb.rank==myrank) {// on the same process
+          if(nb.rank==Globals::my_rank) {// on the same process
             flag=false;
             continue;
           }
@@ -3775,7 +3776,7 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
     if(nb.level!=pmb->loc.level+1) continue;
     if(emfcor_flag_[step][nb.bufid]==boundary_completed) continue;
     if(emfcor_flag_[step][nb.bufid]==boundary_waiting) {
-      if(nb.rank==myrank) {// on the same process
+      if(nb.rank==Globals::my_rank) {// on the same process
         flag=false;
         continue;
       }
@@ -4333,7 +4334,7 @@ void BoundaryValues::ClearBoundaryForInit(void)
     if (MAGNETIC_FIELDS_ENABLED)
       field_flag_[0][nb.bufid] = boundary_waiting;
 #ifdef MPI_PARALLEL
-    if(nb.rank!=myrank) {
+    if(nb.rank!=Globals::my_rank) {
       MPI_Wait(&req_fluid_send_[0][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
       if (MAGNETIC_FIELDS_ENABLED)
         MPI_Wait(&req_field_send_[0][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
@@ -4364,7 +4365,7 @@ void BoundaryValues::ClearBoundaryAll(void)
         }
       }
 #ifdef MPI_PARALLEL
-      if(nb.rank!=myrank) {
+      if(nb.rank!=Globals::my_rank) {
         MPI_Wait(&req_fluid_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
         if(nb.type==neighbor_face && nb.level<pmb->loc.level)
           MPI_Wait(&req_flcor_send_[l][nb.fid],MPI_STATUS_IGNORE); // Wait for Isend
