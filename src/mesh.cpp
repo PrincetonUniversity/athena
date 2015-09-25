@@ -43,7 +43,7 @@
 #include "field/integrators/field_integrator.hpp"  // FieldIntegrator
 #include "parameter_input.hpp"          // ParameterInput
 #include "meshblocktree.hpp"
-#include "wrapio.hpp"
+#include "outputs/wrapper.hpp"
 #include "tasklist.hpp"
 
 // MPI header
@@ -608,13 +608,13 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 //--------------------------------------------------------------------------------------
 // Mesh constructor for restarting. Load the restarting file
 
-Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
+Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
 {
   std::stringstream msg;
   RegionSize block_size;
   MeshBlock *pfirst;
   int i, j, nerr, dim;
-  WrapIOSize_t *offset;
+  IOWrapperSize_t *offset;
   Real totalcost, targetcost, maxcost, mincost, mycost;
 
 // mesh test
@@ -674,7 +674,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
 
   //initialize
   loclist=new LogicalLocation[nbtotal];
-  offset=new WrapIOSize_t[nbtotal];
+  offset=new IOWrapperSize_t[nbtotal];
   costlist=new Real[nbtotal];
   ranklist=new int[nbtotal];
   nslist=new int[Globals::nranks];
@@ -703,7 +703,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
     if(loclist[i].level!=root_level) multilevel=true;
     if(loclist[i].level>current_level) current_level=loclist[i].level;
     if(resfile.Read(&(costlist[i]),sizeof(Real),1)!=1) nerr++;
-    if(resfile.Read(&(offset[i]),sizeof(WrapIOSize_t),1)!=1) nerr++;
+    if(resfile.Read(&(offset[i]),sizeof(IOWrapperSize_t),1)!=1) nerr++;
     totalcost+=costlist[i];
     mincost=std::min(mincost,costlist[i]);
     maxcost=std::max(maxcost,costlist[i]);
@@ -1034,7 +1034,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 // MeshBlock constructor for restarting
 
 MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
-                     LogicalLocation *llist, WrapIO& resfile, WrapIOSize_t offset,
+                     LogicalLocation *llist, IOWrapper& resfile, IOWrapperSize_t offset,
                      Real icost, int *ranklist, int *nslist)
 {
   std::stringstream msg;

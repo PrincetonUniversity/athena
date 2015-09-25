@@ -55,9 +55,9 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
   FILE *fp;
   MeshBlock *pmb;
   int *nblocks, *displ;
-  WrapIOSize_t *myblocksize;
+  IOWrapperSize_t *myblocksize;
   int i, level;
-  WrapIOSize_t listsize;
+  IOWrapperSize_t listsize;
 
   // create single output, filename:"file_basename"+"."+"file_id"+"."+XXXXX+".rst",
   // where XXXXX = 5-digit file_number
@@ -95,16 +95,16 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
   }
 
   // the size of an element of the ID list
-  listsize=sizeof(int)+sizeof(LogicalLocation)+sizeof(Real)+sizeof(WrapIOSize_t);
+  listsize=sizeof(int)+sizeof(LogicalLocation)+sizeof(Real)+sizeof(IOWrapperSize_t);
 
   int mynb=pM->nbend-pM->nbstart+1;
-  blocksize=new WrapIOSize_t[pM->nbtotal+1];
-  offset=new WrapIOSize_t[mynb];
+  blocksize=new IOWrapperSize_t[pM->nbtotal+1];
+  offset=new IOWrapperSize_t[mynb];
 
 #ifdef MPI_PARALLEL
   displ = new int[Globals::nranks];
   if(Globals::my_rank==0) mynb++; // the first process includes the information block
-  myblocksize=new WrapIOSize_t[mynb];
+  myblocksize=new IOWrapperSize_t[mynb];
 
   displ[0]=0;
   for(i=1;i<Globals::nranks;i++)
@@ -144,7 +144,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
 #endif
 
   // blocksize[0] = offset to the end of the header
-  WrapIOSize_t firstoffset=blocksize[0]+listsize*pM->nbtotal; // end of the id list
+  IOWrapperSize_t firstoffset=blocksize[0]+listsize*pM->nbtotal; // end of the id list
   for(i=0;i<pM->nbstart;i++)
     firstoffset+=blocksize[i+1];
   offset[0]=firstoffset;
@@ -162,7 +162,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
     resfile.Write(&(pmb->gid),sizeof(int),1);
     resfile.Write(&(pmb->loc),sizeof(LogicalLocation),1);
     resfile.Write(&(pmb->cost),sizeof(Real),1);
-    resfile.Write(&(offset[i]),sizeof(WrapIOSize_t),1);
+    resfile.Write(&(offset[i]),sizeof(IOWrapperSize_t),1);
     i++;
     pmb=pmb->next;
   }

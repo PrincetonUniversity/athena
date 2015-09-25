@@ -152,16 +152,16 @@ void ParameterInput::LoadFromStream(std::istream &is)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn  void ParameterInput::LoadFromFile(WrapIO &input)
+//! \fn  void ParameterInput::LoadFromFile(IOWrapper &input)
 //  \brief Read the parameters from an input file or restarting file.
 //         Return the position at the end of the header, which is used in restarting
 
-void ParameterInput::LoadFromFile(WrapIO &input)
+void ParameterInput::LoadFromFile(IOWrapper &input)
 {
   std::stringstream par, msg;
   const int bufsize=4096;
   char *buf=new char[bufsize];
-  WrapIOSize_t header=0, ret, loc;
+  IOWrapperSize_t header=0, ret, loc;
 
   // search <par_end> or EOF. 
   do {

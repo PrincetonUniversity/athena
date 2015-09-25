@@ -14,7 +14,7 @@
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
 
-// Primary header
+// Primary headers
 #include "athena.hpp"
 #include "globals.hpp"
 
@@ -34,7 +34,7 @@
 #include "mesh.hpp"             // Mesh
 #include "parameter_input.hpp"  // ParameterInput
 #include "outputs/outputs.hpp"  // Outputs
-#include "wrapio.hpp"           // WrapIO
+#include "outputs/wrapper.hpp"           // WrapIO
 #include "tasklist.hpp"         // TaskList
 #include "utils/utils.hpp"
 
@@ -67,7 +67,7 @@
 int main(int argc, char *argv[])
 {
   std::string athena_version = "version 0.1 - February 2014";
-  char *input_file;
+  char *input_filename;
   char *prundir = NULL;
   int res_flag=0;     // gets set to 1 if -r        argument is on cmdline
   int narg_flag=0;    // gets set to 1 if -n        argument is on cmdline
@@ -113,14 +113,14 @@ int main(int argc, char *argv[])
 
     if(*argv[i] == '-'  && *(argv[i]+1) != '\0' && *(argv[i]+2) == '\0'){
       switch(*(argv[i]+1)) {
-      case 'i':                      // -i <input_file>
+      case 'i':                      // -i <input_filename>
         ++i;
-        if(res_flag==0) input_file = argv[i];
+        if(res_flag==0) input_filename = argv[i];
         iarg_flag = 1;
       break;
       case 'r':                      // -r <restart_file>
         res_flag = 1;
-        input_file = argv[++i];
+        input_filename = argv[++i];
         break;
       case 'd':                      // -d <run_directory>
         prundir = argv[++i];
@@ -164,16 +164,16 @@ int main(int argc, char *argv[])
   }
 
 //--- Step 2. --------------------------------------------------------------------------
-// Construct object to store input parameters, then parse input file and command line
-// Note memory allocations and parameter input are protected by a simple error handler
-// The input is read by every process in parallel using MPI-IO.
+// Construct object to store input parameters, then parse input file and command line.
+// Note memory allocations and parameter input are protected by a simple error handler.
+// With MPI, the input is read by every process in parallel using MPI-IO.
 
   ParameterInput *pinput;
-  WrapIO input;
+  IOWrapper infile;
   try {
     pinput = new ParameterInput;
-    input.Open(input_file,readmode);
-    pinput->LoadFromFile(input);
+    infile.Open(input_filename,readmode);
+    pinput->LoadFromFile(infile);
     pinput->ModifyFromCmdline(argc,argv);
      // leave the file open
   } 
@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
     std::cout << "### FATAL ERROR in main" << std::endl
               << "memory allocation failed initializing class ParameterInput: " 
               << ba.what() << std::endl;
-    input.Close();
+    infile.Close();
 #ifdef MPI_PARALLEL
     MPI_Finalize();
 #endif
@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
   }
   catch(std::exception const& ex) {
     std::cout << ex.what() << std::endl;  // prints diagnostic message  
-    input.Close();
+    infile.Close();
 #ifdef MPI_PARALLEL
     MPI_Finalize();
 #endif
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
   if (narg_flag){
     if(Globals::my_rank==0)
       pinput->ParameterDump(std::cout);
-    input.Close();
+    infile.Close();
 #ifdef MPI_PARALLEL
     MPI_Finalize();
 #endif
@@ -218,10 +218,10 @@ int main(int argc, char *argv[])
     if(res_flag==0)
       pmesh = new Mesh(pinput, test_flag);
     else { 
-      pmesh = new Mesh(pinput, input, test_flag);
+      pmesh = new Mesh(pinput, infile, test_flag);
       ncstart=pmesh->ncycle;
     }
-    input.Close(); // close the file here
+    infile.Close(); // close the file here
   }
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl

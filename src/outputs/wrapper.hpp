@@ -5,42 +5,42 @@
 //  \brief small wrapper class for MPI/Serial Output
 //======================================================================================
 
-#include "athena.hpp"
+#include "../athena.hpp"
 
 #include <stdio.h>
 
 #ifdef MPI_PARALLEL
 #include <mpi.h>
-typedef MPI_File WrapIOFile;
+typedef MPI_File IOWrapperFile;
 #else
-typedef FILE * WrapIOFile;
+typedef FILE * IOWrapperFile;
 #endif
 
-typedef long int WrapIOSize_t;
+typedef long int IOWrapperSize_t;
 
-class WrapIO
+class IOWrapper
 {
 private:
-  WrapIOFile fh;
+  IOWrapperFile fh;
 #ifdef MPI_PARALLEL
   MPI_Comm comm;
 #endif
 public:
 #ifdef MPI_PARALLEL
-  WrapIO() {comm=MPI_COMM_WORLD;};
+  IOWrapper() {comm=MPI_COMM_WORLD;};
   void SetCommunicator(MPI_Comm scomm) { comm=scomm;};
 #else
-  WrapIO() {};
+  IOWrapper() {};
 #endif
-  ~WrapIO() {};
+  ~IOWrapper() {};
 
   // wrapper functions
   int Open(const char* fname, enum rwmode rw);
-  int Seek(WrapIOSize_t offset);
-  int Write(const void *buf, WrapIOSize_t size, WrapIOSize_t count);
-  int Read(void *buf, WrapIOSize_t size, WrapIOSize_t count);
+  int Seek(IOWrapperSize_t offset);
+  int Write(const void *buf, IOWrapperSize_t size, IOWrapperSize_t count);
+  int Read(void *buf, IOWrapperSize_t size, IOWrapperSize_t count);
   int Close(void);
-  WrapIOSize_t Tell(void);
+  IOWrapperSize_t Tell(void);
 };
 
-#endif
+#endif // WRAPPER_HPP

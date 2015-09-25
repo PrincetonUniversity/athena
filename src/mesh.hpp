@@ -17,7 +17,7 @@
 #include "athena.hpp"         // macros, Real
 #include "athena_arrays.hpp"  // AthenaArray
 #include "meshblocktree.hpp"
-#include "wrapio.hpp"
+#include "outputs/wrapper.hpp"
 #include "tasklist.hpp"
 
 class ParameterInput;
@@ -85,7 +85,7 @@ public:
   MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_size,
             int *input_bcs, Mesh *pm, ParameterInput *pin);
   MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, LogicalLocation *llist,
-  WrapIO& resfile, WrapIOSize_t offset, Real icost, int *ranklist, int *nslist);
+  IOWrapper& resfile, IOWrapperSize_t offset, Real icost, int *ranklist, int *nslist);
   ~MeshBlock();
   size_t GetBlockSizeInBytes(void);
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
@@ -139,7 +139,7 @@ private:
 #endif
 public:
   Mesh(ParameterInput *pin, int test_flag=0);
-  Mesh(ParameterInput *pin, WrapIO &resfile, int test_flag=0);
+  Mesh(ParameterInput *pin, IOWrapper &resfile, int test_flag=0);
   ~Mesh();
 
   RegionSize mesh_size;
