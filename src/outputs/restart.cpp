@@ -13,16 +13,21 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
+//! \file restart.cpp
+//  \brief writes restart dump files
+//======================================================================================
 
-#include <sstream>
+// C/C++ headers
+#include <stdlib.h>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <stdexcept>
-#include <iomanip>
-#include <stdlib.h>
 #include <stdio.h>
 #include <fstream>
 
+// Athena++ classes headers
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../athena_arrays.hpp"
@@ -30,23 +35,19 @@
 #include "../parameter_input.hpp"
 #include "../fluid/fluid.hpp"
 #include "../field/field.hpp"
+
+// This class header
 #include "outputs.hpp"
-
-//======================================================================================
-//! \file restart.cpp
-//  \brief writes restart dump files
-//======================================================================================
-
 
 RestartOutput::RestartOutput(OutputParameters oparams)
   : OutputType(oparams)
 {
 }
 
-
 //--------------------------------------------------------------------------------------
 //! \fn void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
 //  \brief open the restarting file, output the parameter and header blocks
+
 void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
 {
   std::stringstream msg;
@@ -77,7 +78,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
   pin->SetReal(output_params.block_name, "next_time", output_params.next_time);
   pin->ParameterDump(ost);
 
-  resfile.Open(fname.c_str(),writemode);
+  resfile.Open(fname.c_str(),WRAPPER_WRITE_MODE);
 
   if(Globals::my_rank==0) {
     // output the input parameters; this part is serial
@@ -112,7 +113,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
 
   i=0;
   if(Globals::my_rank==0) { // the information block
-    myblocksize[0]=resfile.Tell();
+    myblocksize[0]=resfile.GetPosition();
     i=1;
   }
   pmb=pM->pblock;
@@ -134,7 +135,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
 
 #else // serial
   pmb=pM->pblock;
-  blocksize[0]=resfile.Tell();
+  blocksize[0]=resfile.GetPosition();
   i=1;
   while(pmb!=NULL) {
     blocksize[i]=pmb->GetBlockSizeInBytes();
@@ -174,16 +175,17 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
   return;
 }
 
-
 //--------------------------------------------------------------------------------------
 //! \fn void RestartOutput::Finalize(ParameterInput *pin)
 //  \brief close the file
+
 void RestartOutput::Finalize(ParameterInput *pin)
 {
   resfile.Close();
   delete [] blocksize;
   delete [] offset;
 }
+
 //--------------------------------------------------------------------------------------
 //! \fn void RestartOutput:::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 //  \brief writes OutputData to file in Restart format
@@ -211,5 +213,3 @@ void RestartOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
   }
   return;
 }
-
-

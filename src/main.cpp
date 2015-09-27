@@ -14,15 +14,9 @@
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
 
-// Primary headers
-#include "athena.hpp"
-#include "globals.hpp"
-
-// C headers
+// C/C++ headers
 #include <stdint.h>  // int64_t
 #include <stdlib.h>  // strtol
-
-// C++ headers
 #include <ctime>      // clock(), CLOCKS_PER_SEC, clock_t
 #include <exception>  // exception
 #include <iomanip>    // setprecision()
@@ -30,12 +24,14 @@
 #include <new>        // bad_alloc
 #include <string>     // string
 
-// Athena headers
-#include "mesh.hpp"             // Mesh
-#include "parameter_input.hpp"  // ParameterInput
-#include "outputs/outputs.hpp"  // Outputs
-#include "outputs/wrapper.hpp"           // WrapIO
-#include "tasklist.hpp"         // TaskList
+// Athena++ classes headers
+#include "athena.hpp"
+#include "globals.hpp"
+#include "mesh.hpp"
+#include "parameter_input.hpp" 
+#include "outputs/outputs.hpp"
+#include "outputs/wrapper.hpp"
+#include "tasklist.hpp"
 #include "utils/utils.hpp"
 
 // MPI/OpenMP headers
@@ -172,7 +168,7 @@ int main(int argc, char *argv[])
   IOWrapper infile;
   try {
     pinput = new ParameterInput;
-    infile.Open(input_filename,readmode);
+    infile.Open(input_filename,WRAPPER_READ_MODE);
     pinput->LoadFromFile(infile);
     pinput->ModifyFromCmdline(argc,argv);
      // leave the file open

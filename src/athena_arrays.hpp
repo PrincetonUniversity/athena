@@ -21,12 +21,11 @@ class AthenaArray {
 public:
   AthenaArray();
   ~AthenaArray();
-// define copy constructor and overload assignment operator (so both do deep copies).
+  // define copy constructor and overload assignment operator so both do deep copies.
   AthenaArray(const AthenaArray<T>& t);
   AthenaArray<T> &operator= (const AthenaArray<T> &t);
 
-// public functions to allocate/deallocate memory for 1D-5D data
-
+  // public functions to allocate/deallocate memory for 1D-5D data
   void NewAthenaArray(int nx1);
   void NewAthenaArray(int nx2, int nx1);
   void NewAthenaArray(int nx3, int nx2, int nx1);
@@ -34,15 +33,14 @@ public:
   void NewAthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1);
   void DeleteAthenaArray();
 
-// functions to get array dimensions 
-
+  // functions to get array dimensions 
   int GetDim1() const { return nx1_; }
   int GetDim2() const { return nx2_; }
   int GetDim3() const { return nx3_; }
   int GetDim4() const { return nx4_; }
   int GetDim5() const { return nx5_; }
 
-// a function to get the total size of the array
+  // a function to get the total size of the array
   int GetSize() const { return nx1_*nx2_*nx3_*nx4_*nx5_; }
 
   T *GetArrayPointer() const { return pdata_; } // a brute force approach
@@ -51,8 +49,7 @@ public:
   T *data() { return pdata_; }
   const T *data() const	{ return pdata_; }
 
-// overload operator() to access 1d-5d data
-
+  // overload operator() to access 1d-5d data
   T &operator() (const int n) { 
     return pdata_[n]; }
   T operator() (const int n) const { 
@@ -78,8 +75,7 @@ public:
   T operator() (const int m, const int n, const int k, const int j, const int i) const {
     return pdata_[i + nx1_*(j + nx2_*(k + nx3_*(n + nx4_*m)))]; }
 
-// functions that initialize an array with shallow copy or slice from another array
-
+  // functions that initialize an array with shallow copy or slice from another array
   void InitWithShallowCopy(AthenaArray<T> &src);
   void InitWithShallowSlice(AthenaArray<T> &src, const int dim, const int indx,
     const int nvar);
@@ -206,7 +202,7 @@ void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
 
 //--------------------------------------------------------------------------------------
 //! \fn
-//  \brief 1d data allocation
+//  \brief allocate new 1D array with elements initialized to zero.
 
 template<typename T>
 void AthenaArray<T>::NewAthenaArray(int nx1)
@@ -216,7 +212,7 @@ void AthenaArray<T>::NewAthenaArray(int nx1)
   nx3_ = 1;
   nx4_ = 1;
   nx5_ = 1;
-  pdata_ = new T[nx1](); // allocate memory (initialized to zero using () )
+  pdata_ = new T[nx1](); // initialized with zeroes using ()
 }
  
 //--------------------------------------------------------------------------------------
@@ -288,4 +284,4 @@ void AthenaArray<T>::DeleteAthenaArray()
 {
   if (!scopy_) delete[] pdata_;
 } 
-#endif
+#endif // ATHENA_ARRAYS_HPP
