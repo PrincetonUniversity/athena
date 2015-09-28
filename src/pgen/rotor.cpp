@@ -13,26 +13,6 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../mesh.hpp" 
-
-// C++ headers
-#include <iostream>   // endl
-#include <sstream>    // stringstream
-#include <stdexcept>  // runtime_error
-#include <string>     // c_str()
-
-// Athena headers
-#include "../athena.hpp"           // enums, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/eos/eos.hpp"    // eos
-#include "../fluid/fluid.hpp"      // Fluid
-#include "../field/field.hpp"      // Field
-#include "../coordinates/coordinates.hpp" // Coordinates
-
-//======================================================================================
 //! \file rotor.c
 //  \brief Sets up 2D rotor test problem.
 // The center of the grid is assumed to have coordinates (x1,x2) = [0,0]; the grid
@@ -42,7 +22,23 @@
 //   605 (2000)
 //======================================================================================
 
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+// C++ headers
+#include <iostream>   // endl
+#include <sstream>    // stringstream
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str()
+
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../fluid/fluid.hpp"
+#include "../field/field.hpp"
+#include "../fluid/eos/eos.hpp"
+#include "../coordinates/coordinates.hpp"
+
+void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pmb = pfl->pmy_block;
   Coordinates *pco = pmb->pcoord;

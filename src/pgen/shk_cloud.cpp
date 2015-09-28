@@ -13,35 +13,6 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../mesh.hpp" 
-
-// C++ headers
-#include <iostream>   // endl
-#include <sstream>    // stringstream
-#include <stdexcept>  // runtime_error
-#include <string>     // c_str()
-
-// Athena headers
-#include "../athena.hpp"           // enums, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/eos/eos.hpp"    // eos
-#include "../fluid/fluid.hpp"      // Fluid
-#include "../field/field.hpp"      // Field
-#include "../bvals/bvals.hpp"      // Enroll bval functions
-#include "../coordinates/coordinates.hpp" // Coordinates
-
-// postshock flow variables are shared with IIB function
-static Real gmma1,dl,pl,ul;
-static Real bxl,byl,bzl;
-
-// shk_cloud_iib() - fixes BCs on L-x1 (left edge) of grid to postshock flow.
-void shk_cloud_iib(MeshBlock *pmb, AthenaArray<Real> &a,
-                   int is, int ie, int js, int je, int ks, int ke);
-
-//======================================================================================
 //! \file shk_cloud.c
 //  \brief Problem generator for shock-cloud problem
 //
@@ -57,7 +28,31 @@ void shk_cloud_iib(MeshBlock *pmb, AthenaArray<Real> &a,
 //[-2.5,2.5] (see input file in /tst).
 //======================================================================================
 
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+// C++ headers
+#include <iostream>   // endl
+#include <sstream>    // stringstream
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str()
+
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../fluid/fluid.hpp"
+#include "../field/field.hpp"
+#include "../fluid/eos/eos.hpp"
+#include "../coordinates/coordinates.hpp"
+
+// postshock flow variables are shared with IIB function
+static Real gmma1,dl,pl,ul;
+static Real bxl,byl,bzl;
+
+// shk_cloud_iib() - fixes BCs on L-x1 (left edge) of grid to postshock flow.
+void shk_cloud_iib(MeshBlock *pmb, AthenaArray<Real> &a,
+                   int is, int ie, int js, int je, int ks, int ke);
+
+void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pmb = pfl->pmy_block;
   Coordinates *pco = pmb->pcoord;
@@ -177,7 +172,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 
 // Set IIB value function pointer
 
-  pmb->pbval->EnrollFluidBoundaryFunction(inner_x1, shk_cloud_iib);
+  pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, shk_cloud_iib);
 
   return;
 }

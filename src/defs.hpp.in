@@ -41,8 +41,8 @@
 // spatial reconstruction algorithm
 #define RECONSTRUCTION_METHOD "@RECONSTRUCT@"
 
-// fluid time-integration algorithm
-#define FLUID_TIME_INTEGRATOR "@FLUID_INTEGRATOR@"
+// hydro time-integration algorithm
+#define HYDRO_TIME_INTEGRATOR "@HYDRO_INTEGRATOR@"
 
 // fluid time-integration algorithm
 #define COMPILED_WITH "@COMPILER_CHOICE@"

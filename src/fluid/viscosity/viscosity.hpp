@@ -15,12 +15,12 @@
 #include "../../athena_arrays.hpp"  // AthenaArray
 
 // Declarations
-class Fluid;
+class Hydro;
 class ParameterInput;
 
 class Viscosity {
 public:
-  Viscosity(Fluid *pf, ParameterInput *pin);
+  Viscosity(Hydro *pf, ParameterInput *pin);
   ~Viscosity();
 
   void ViscosityTerms(const Real dt,
@@ -29,7 +29,7 @@ public:
   Real nuiso1(int n, int k, int j, int i);
   Real cnuiso2(int k, int j, int i); 
 private:
-  Fluid *pmy_fluid_;  // ptr to Fluid containing this Viscosity 
+  Hydro *pmy_fluid_;  // ptr to Hydro containing this Viscosity 
   AthenaArray<Real> area,area_p1,vol; //
   AthenaArray<Real> visflx_, jvisflx_j_, kvisflx_k_; // stress tensor at the cell face 
   AthenaArray<Real> dx_,dy_,dz_; // velocity dirivative for x,y,z directions at each face 

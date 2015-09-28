@@ -13,25 +13,23 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-//Primary header
-#include "coordinates.hpp"
-
-// C headers
-#include <math.h>   // pow function
-
-// Athena++ headers
-#include "../athena.hpp"          // macros, Real
-#include "../athena_arrays.hpp"   // AthenaArray
-#include "../parameter_input.hpp" // ParameterInput
-#include "../mesh.hpp"            // MeshBlock
-#include "../fluid/fluid.hpp"     // Fluid
-#include "../fluid/eos/eos.hpp"   // SoundSpeed()
-
-//======================================================================================
 //! \file cylindrical.cpp
 //  \brief implements Coordinates class functions for cylindrical (r-phi-z) coordinates
 //======================================================================================
+
+// C/C++ headers
+#include <math.h>   // pow function
+
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../fluid/fluid.hpp"
+#include "../fluid/eos/eos.hpp"   // SoundSpeed()
+
+// this class header
+#include "coordinates.hpp"
 
 //--------------------------------------------------------------------------------------
 // Coordinates constructor

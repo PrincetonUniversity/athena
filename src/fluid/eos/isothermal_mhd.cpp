@@ -13,31 +13,29 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "eos.hpp"
+//! \file isothermal_mhd.cpp
+//  \brief implements functions in class HydroEqnOfState for isothermal MHD
+//======================================================================================
 
 // C++ headers
 #include <cmath>   // sqrt()
 #include <cfloat>  // FLT_MIN
 
-// Athena headers
-#include "../fluid.hpp"               // Fluid
-#include "../../athena.hpp"           // enums, macros, Real
-#include "../../athena_arrays.hpp"    // AthenaArray
-#include "../../mesh.hpp"             // MeshBlock
-#include "../../parameter_input.hpp"  // GetReal()
-#include "../../field/field.hpp"      // BFields
-#include "../../coordinates/coordinates.hpp" // Coordinates
+// Athena++ headers
+#include "../fluid.hpp"
+#include "../../athena.hpp"
+#include "../../athena_arrays.hpp"
+#include "../../mesh.hpp"
+#include "../../parameter_input.hpp"
+#include "../../field/field.hpp"
+#include "../../coordinates/coordinates.hpp"
 
-//======================================================================================
-//! \file isothermal_mhd.cpp
-//  \brief implements functions in class FluidEqnOfState for isothermal MHD
-//======================================================================================
+// this class header
+#include "eos.hpp"
 
-// FluidEqnOfState constructor
+// HydroEqnOfState constructor
 
-FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
+HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
 {
   pmy_fluid_ = pf;
   iso_sound_speed_ = pin->GetReal("fluid","iso_sound_speed"); // error if missing!
@@ -46,17 +44,17 @@ FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
 
 // destructor
 
-FluidEqnOfState::~FluidEqnOfState()
+HydroEqnOfState::~HydroEqnOfState()
 {
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
+// \!fn void HydroEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
 //  const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
 //  AthenaArray<Real> &bcc)
 // \brief Converts conserved into primitive variables in adiabatic hydro.
 
-void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
+void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
   AthenaArray<Real> &bcc)
 {
@@ -141,20 +139,20 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn Real FluidEqnOfState::SoundSpeed(Real prim[NFLUID])
+// \!fn Real HydroEqnOfState::SoundSpeed(Real prim[NFLUID])
 // \brief returns adiabatic sound speed given vector of primitive variables
 
-Real FluidEqnOfState::SoundSpeed(const Real prim[NFLUID])
+Real HydroEqnOfState::SoundSpeed(const Real prim[NFLUID])
 {
   return iso_sound_speed_;
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn Real FluidEqnOfState::FastMagnetosonicSpeed()
+// \!fn Real HydroEqnOfState::FastMagnetosonicSpeed()
 // \brief returns fast magnetosonic speed given vector of primitive variables
 // Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN
 
-Real FluidEqnOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx)
+Real HydroEqnOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx)
 {
   Real asq = (iso_sound_speed_*iso_sound_speed_);
   Real vaxsq = bx*bx/prim[IDN];

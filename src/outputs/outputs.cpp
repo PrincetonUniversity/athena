@@ -13,25 +13,6 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-#include <sstream>
-#include <iostream>
-#include <string>
-#include <stdexcept>
-#include <iomanip>
-#include <stdlib.h>
-#include <stdio.h>
-
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh.hpp"
-#include "../fluid/fluid.hpp"
-#include "../field/field.hpp"
-#include "outputs.hpp"
-#include "../coordinates/coordinates.hpp" // Coordinates
-
-//======================================================================================
 //! \file outputs.cpp
 //  \brief implements functions for Athena++ outputs
 //
@@ -75,6 +56,27 @@
 // an object of this class in the Outputs constructor at the location indicated by the
 // text 'ADD NEW OUTPUT TYPES HERE'.
 //======================================================================================
+
+// C/C++ headers
+#include <sstream>
+#include <iostream>
+#include <string>
+#include <stdexcept>
+#include <iomanip>
+#include <stdlib.h>
+#include <stdio.h>
+
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../fluid/fluid.hpp"
+#include "../field/field.hpp"
+#include "../coordinates/coordinates.hpp" // Coordinates
+
+// this class header
+#include "outputs.hpp"
 
 //--------------------------------------------------------------------------------------
 // OutputVariable constructor
@@ -390,7 +392,7 @@ void OutputData::ReplaceNode(OutputVariable *pold, OutputVariable *pnew)
 
 void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 {
-  Fluid *pfl = pmb->pfluid;
+  Hydro *pfl = pmb->pfluid;
   Field *pfd = pmb->pfield;
   std::stringstream str;
 

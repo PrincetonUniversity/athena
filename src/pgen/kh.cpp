@@ -13,22 +13,6 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../mesh.hpp"
-
-// Athena headers
-#include "../athena.hpp"           // enums, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/fluid.hpp"      // Fluid
-#include "../fluid/eos/eos.hpp"    // GetGamma
-#include "../field/field.hpp"      // magnetic field
-#include "../coordinates/coordinates.hpp" // Coordinates
-
-double ran2(long int *idum);  // random number generator from NR
-
-//======================================================================================
 //! \file kh.cpp
 //  \brief Problem generator for KH instability. 
 //
@@ -37,7 +21,18 @@ double ran2(long int *idum);  // random number generator from NR
 //   - iprob=2: tanh profile at interface, with single-mode perturbation
 //======================================================================================
 
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../fluid/fluid.hpp"
+#include "../field/field.hpp"
+#include "../fluid/eos/eos.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../utils/utils.hpp"
+
+void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pmb = pfl->pmy_block;
   Coordinates *pco = pmb->pcoord;

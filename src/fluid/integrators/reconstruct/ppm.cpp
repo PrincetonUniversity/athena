@@ -13,27 +13,25 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../fluid_integrator.hpp"
-
-// Athena headers
-#include "../../../athena.hpp"         // macros, Real
-#include "../../../athena_arrays.hpp"  // AthenaArray
-#include "../../fluid.hpp"             // Fluid
-#include "../../../mesh.hpp"           // Block
-
-//======================================================================================
 //! \file ppm.cpp
 //  \brief piecewise parabolic reconstruction, adapted from remap in CMHOG code
 //======================================================================================
 
+// Athena++ headers
+#include "../../../athena.hpp"
+#include "../../../athena_arrays.hpp"
+#include "../../fluid.hpp"
+#include "../../../mesh.hpp"
+
+// this class header
+#include "../fluid_integrator.hpp"
+
 //--------------------------------------------------------------------------------------
-//! \fn FluidIntegrator::ReconstructionFuncX1()
+//! \fn HydroIntegrator::ReconstructionFuncX1()
 //  \brief 
 
 /*
-void FluidIntegrator::PiecewiseParabolicX1(const int n, const int m, const int k,
+void HydroIntegrator::PiecewiseParabolicX1(const int n, const int m, const int k,
   const int j, const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
 
@@ -77,20 +75,20 @@ void FluidIntegrator::PiecewiseParabolicX1(const int n, const int m, const int k
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn FluidIntegrator::ReconstructionFuncX2()
+//! \fn HydroIntegrator::ReconstructionFuncX2()
 //  \brief 
 
-void FluidIntegrator::PiecewiseParabolicX2(const int n, const int m, const int k,
+void HydroIntegrator::PiecewiseParabolicX2(const int n, const int m, const int k,
   const int j, const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
   return;
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn FluidIntegrator::ReconstructionFuncX3()
+//! \fn HydroIntegrator::ReconstructionFuncX3()
 //  \brief 
 
-void FluidIntegrator::PiecewiseParabolicX3(const int n, const int m, const int k,
+void HydroIntegrator::PiecewiseParabolicX3(const int n, const int m, const int k,
   const int j, const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
   return;

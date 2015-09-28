@@ -1,14 +1,30 @@
 //======================================================================================
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+//
+// This program is free software: you can redistribute and/or modify it under the terms
+// of the GNU General Public License (GPL) as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of GNU GPL in the file LICENSE included in the code
+// distribution.  If not see <http://www.gnu.org/licenses/>.
+//======================================================================================
 //! \file tasklist.hpp
 //  \brief task functions
 //======================================================================================
+
+// C/C++ headers
 #include <iostream>   // cout, endl
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
+// Athena++ classes headers
 #include "athena.hpp"
-#include "tasklist.hpp"
 #include "mesh.hpp"
 #include "fluid/fluid.hpp"
 #include "field/field.hpp"
@@ -17,11 +33,14 @@
 #include "fluid/integrators/fluid_integrator.hpp"
 #include "field/integrators/field_integrator.hpp"
 
+// this class header
+#include "tasklist.hpp"
+
 namespace taskfunc {
 
-enum task_status FluidIntegrate(MeshBlock *pmb, int task_arg)
+enum task_status HydroIntegrate(MeshBlock *pmb, int task_arg)
 {
-  Fluid *pfluid=pmb->pfluid;
+  Hydro *pfluid=pmb->pfluid;
   Field *pfield=pmb->pfield;
   if(task_arg==0) {
     pfluid->pf_integrator->OneStep(pmb, pfluid->u, pfluid->w1, pfield->b1,
@@ -38,7 +57,7 @@ enum task_status FluidIntegrate(MeshBlock *pmb, int task_arg)
 
 enum task_status CalculateEMF(MeshBlock *pmb, int task_arg)
 {
-  Fluid *pfluid=pmb->pfluid;
+  Hydro *pfluid=pmb->pfluid;
   Field *pfield=pmb->pfield;
   if(task_arg==0)
     pfield->pint->ComputeCornerE(pmb, pfluid->w1, pfield->bcc1);
@@ -49,7 +68,7 @@ enum task_status CalculateEMF(MeshBlock *pmb, int task_arg)
 
 enum task_status FieldIntegrate(MeshBlock *pmb, int task_arg)
 {
-  Fluid *pfluid=pmb->pfluid;
+  Hydro *pfluid=pmb->pfluid;
   Field *pfield=pmb->pfield;
   if(task_arg==0) {
     pfield->pint->CT(pmb, pfield->b, pfluid->w1, pfield->bcc1, 2);
@@ -63,26 +82,26 @@ enum task_status FieldIntegrate(MeshBlock *pmb, int task_arg)
   return task_donext;
 }
 
-enum task_status FluidSend(MeshBlock *pmb, int task_arg)
+enum task_status HydroSend(MeshBlock *pmb, int task_arg)
 {
-  Fluid *pfluid=pmb->pfluid;
+  Hydro *pfluid=pmb->pfluid;
   BoundaryValues *pbval=pmb->pbval;
   if(task_arg==0)
-    pbval->SendFluidBoundaryBuffers(pfluid->u,0);
+    pbval->SendHydroBoundaryBuffers(pfluid->u,0);
   else if(task_arg==1)
-    pbval->SendFluidBoundaryBuffers(pfluid->u1,1);
+    pbval->SendHydroBoundaryBuffers(pfluid->u1,1);
   return task_success;
 }
 
-enum task_status FluidReceive(MeshBlock *pmb, int task_arg)
+enum task_status HydroReceive(MeshBlock *pmb, int task_arg)
 {
-  Fluid *pfluid=pmb->pfluid;
+  Hydro *pfluid=pmb->pfluid;
   BoundaryValues *pbval=pmb->pbval;
   bool ret;
   if(task_arg==0)
-    ret=pbval->ReceiveFluidBoundaryBuffers(pfluid->u,0);
+    ret=pbval->ReceiveHydroBoundaryBuffers(pfluid->u,0);
   else if(task_arg==1)
-    ret=pbval->ReceiveFluidBoundaryBuffers(pfluid->u1,1);
+    ret=pbval->ReceiveHydroBoundaryBuffers(pfluid->u1,1);
   if(ret==true)
     return task_success;
   return task_failure;
@@ -96,7 +115,7 @@ enum task_status FluxCorrectionSend(MeshBlock *pmb, int task_arg)
 
 enum task_status FluxCorrectionReceive(MeshBlock *pmb, int task_arg)
 {
-  Fluid *pfluid=pmb->pfluid;
+  Hydro *pfluid=pmb->pfluid;
   BoundaryValues *pbval=pmb->pbval;
   bool ret;
   if(task_arg==0)
@@ -107,25 +126,25 @@ enum task_status FluxCorrectionReceive(MeshBlock *pmb, int task_arg)
   return task_failure;
 }
 
-enum task_status FluidProlongation(MeshBlock *pmb, int task_arg)
+enum task_status HydroProlongation(MeshBlock *pmb, int task_arg)
 {
-  Fluid *pfluid=pmb->pfluid;
+  Hydro *pfluid=pmb->pfluid;
   BoundaryValues *pbval=pmb->pbval;
   if(task_arg==0)
-    pbval->ProlongateFluidBoundaries(pfluid->u);
+    pbval->ProlongateHydroBoundaries(pfluid->u);
   else if(task_arg==1)
-    pbval->ProlongateFluidBoundaries(pfluid->u1);
+    pbval->ProlongateHydroBoundaries(pfluid->u1);
   return task_success;
 }
 
-enum task_status FluidPhysicalBoundary(MeshBlock *pmb, int task_arg)
+enum task_status HydroPhysicalBoundary(MeshBlock *pmb, int task_arg)
 {
-  Fluid *pfluid=pmb->pfluid;
+  Hydro *pfluid=pmb->pfluid;
   BoundaryValues *pbval=pmb->pbval;
   if(task_arg==0)
-    pbval->FluidPhysicalBoundaries(pfluid->u);
+    pbval->HydroPhysicalBoundaries(pfluid->u);
   else if(task_arg==1)
-    pbval->FluidPhysicalBoundaries(pfluid->u1);
+    pbval->HydroPhysicalBoundaries(pfluid->u1);
   return task_success;
 }
 
@@ -191,7 +210,7 @@ enum task_status FieldPhysicalBoundary(MeshBlock *pmb, int task_arg)
 
 enum task_status Primitives(MeshBlock *pmb, int task_arg)
 {
-  Fluid *pfluid=pmb->pfluid;
+  Hydro *pfluid=pmb->pfluid;
   Field *pfield=pmb->pfield;
   if(task_arg==0)
     pfluid->pf_eos->ConservedToPrimitive(pfluid->u, pfluid->w1, pfield->b,
@@ -220,7 +239,7 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
   switch(t)
   {
   case fluid_integrate_1:
-    task[ntask].TaskFunc=taskfunc::FluidIntegrate;
+    task[ntask].TaskFunc=taskfunc::HydroIntegrate;
     task[ntask].task_arg=1;
     break;
 
@@ -235,12 +254,12 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
     break;
 
   case fluid_send_1:
-    task[ntask].TaskFunc=taskfunc::FluidSend;
+    task[ntask].TaskFunc=taskfunc::HydroSend;
     task[ntask].task_arg=1;
     break;
 
   case fluid_recv_1:
-    task[ntask].TaskFunc=taskfunc::FluidReceive;
+    task[ntask].TaskFunc=taskfunc::HydroReceive;
     task[ntask].task_arg=1;
     break;
 
@@ -255,12 +274,12 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
     break;
 
   case fluid_prolong_1:
-    task[ntask].TaskFunc=taskfunc::FluidProlongation;
+    task[ntask].TaskFunc=taskfunc::HydroProlongation;
     task[ntask].task_arg=1;
     break;
 
   case fluid_boundary_1:
-    task[ntask].TaskFunc=taskfunc::FluidPhysicalBoundary;
+    task[ntask].TaskFunc=taskfunc::HydroPhysicalBoundary;
     task[ntask].task_arg=1;
     break;
 
@@ -300,7 +319,7 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
     break;
 
   case fluid_integrate_0:
-    task[ntask].TaskFunc=taskfunc::FluidIntegrate;
+    task[ntask].TaskFunc=taskfunc::HydroIntegrate;
     task[ntask].task_arg=0;
     break;
 
@@ -315,12 +334,12 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
     break;
 
   case fluid_send_0:
-    task[ntask].TaskFunc=taskfunc::FluidSend;
+    task[ntask].TaskFunc=taskfunc::HydroSend;
     task[ntask].task_arg=0;
     break;
 
   case fluid_recv_0:
-    task[ntask].TaskFunc=taskfunc::FluidReceive;
+    task[ntask].TaskFunc=taskfunc::HydroReceive;
     task[ntask].task_arg=0;
     break;
 
@@ -335,12 +354,12 @@ void TaskList::AddTask(enum task t, unsigned long int dependence)
     break;
 
   case fluid_prolong_0:
-    task[ntask].TaskFunc=taskfunc::FluidProlongation;
+    task[ntask].TaskFunc=taskfunc::HydroProlongation;
     task[ntask].task_arg=0;
     break;
 
   case fluid_boundary_0:
-    task[ntask].TaskFunc=taskfunc::FluidPhysicalBoundary;
+    task[ntask].TaskFunc=taskfunc::HydroPhysicalBoundary;
     task[ntask].task_arg=0;
     break;
 

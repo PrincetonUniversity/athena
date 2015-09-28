@@ -13,44 +13,42 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
+//! \file fluid.cpp
+//  \brief implementation of functions in class Hydro
+//======================================================================================
 
-// Primary header
-#include "fluid.hpp"
 
-// C++ headers
+// C/C++ headers
 #include <algorithm>  // min()
 #include <cfloat>     // FLT_MAX
 #include <cmath>      // fabs(), sqrt()
 
-// Athena headers
+// Athena++ headers
 #include "../athena.hpp"                // array access, macros, Real
 #include "../athena_arrays.hpp"         // AthenaArray
-#include "eos/eos.hpp"                  // FluidEqnOfState
-#include "srcterms/srcterms.hpp"        // FluidSourceTerms
+#include "eos/eos.hpp"
+#include "srcterms/srcterms.hpp"
 #include "viscosity/viscosity.hpp"      // Viscosity 
-#include "integrators/fluid_integrator.hpp"  // FluidIntegrator
+#include "integrators/fluid_integrator.hpp"
 #include "../mesh.hpp"                  // MeshBlock, Mesh
 #include "../coordinates/coordinates.hpp" // CenterWidth()
 #include "../field/field.hpp"             // B-fields
 
-// MPI header
+// this class header
+#include "fluid.hpp"
+
+// MPI/OpenMP header
 #ifdef MPI_PARALLEL
 #include <mpi.h>
 #endif
 
-// OpenMP header
 #ifdef OPENMP_PARALLEL
 #include <omp.h>
 #endif
 
-//======================================================================================
-//! \file fluid.cpp
-//  \brief implementation of functions in class Fluid
-//======================================================================================
-
 // constructor, initializes data structures and parameters
 
-Fluid::Fluid(MeshBlock *pmb, ParameterInput *pin)
+Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_block = pmb;
 
@@ -87,15 +85,15 @@ Fluid::Fluid(MeshBlock *pmb, ParameterInput *pin)
 
 // Construct ptrs to objects of various classes needed to integrate fluid eqns 
 
-  pf_integrator = new FluidIntegrator(this,pin);
-  pf_eos = new FluidEqnOfState(this,pin);
-  pf_srcterms = new FluidSourceTerms(this,pin);
+  pf_integrator = new HydroIntegrator(this,pin);
+  pf_eos = new HydroEqnOfState(this,pin);
+  pf_srcterms = new HydroSourceTerms(this,pin);
   if(VISCOSITY) pf_viscosity = new Viscosity(this,pin);
 }
 
 // destructor
 
-Fluid::~Fluid()
+Hydro::~Hydro()
 {
   u.DeleteAthenaArray();
   w.DeleteAthenaArray();
@@ -118,7 +116,7 @@ Fluid::~Fluid()
 // \!fn 
 // \brief
 
-Real Fluid::NewBlockTimeStep(MeshBlock *pmb)
+Real Hydro::NewBlockTimeStep(MeshBlock *pmb)
 {
   int tid=0;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;

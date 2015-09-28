@@ -13,9 +13,11 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../fluid/fluid.hpp"
+//! \file disk_cyl.cpp
+//  \brief Problem generator for accretion disk problems.  
+//
+// Problem generator for disk problems in cylindrical coordinate system.
+//======================================================================================
 
 // C++ headers
 #include <iostream>   // endl
@@ -24,20 +26,15 @@
 #include <string>     // c_str()
 #include <cmath>      // sqrt
 
-// Athena headers
-#include "../athena.hpp"           // enums, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../mesh.hpp"             // MeshBlock
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/eos/eos.hpp"    // ParameterInput
-#include "../coordinates/coordinates.hpp" // Coordinates
-
-//======================================================================================
-//! \file disk_cyl.cpp
-//  \brief Problem generator for accretion disk problems.  
-//
-// Problem generator for disk problems in disk_cyl system.
-//======================================================================================
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../fluid/fluid.hpp"
+#include "../field/field.hpp"
+#include "../fluid/eos/eos.hpp"
+#include "../coordinates/coordinates.hpp"
 
 // File scope variables
 static Real x1Max, x1Min;
@@ -51,7 +48,7 @@ static Real ICden(const Real x1);
 static Real ICvel(const Real x1);
 static Real KeplerVel(const Real x1);
 
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pb = pfl->pmy_block;
   std::stringstream msg;

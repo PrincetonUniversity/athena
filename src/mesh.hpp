@@ -10,26 +10,26 @@
 //  These classes contain data and functions related to the computational mesh
 //======================================================================================
 
-
+// C/C++ headers
 #include <stdint.h>  // int64_t
 
-// Athena headers
+// Athena++ classes headers
 #include "athena.hpp"         // macros, Real
 #include "athena_arrays.hpp"  // AthenaArray
 #include "meshblocktree.hpp"
 #include "outputs/wrapper.hpp"
 #include "tasklist.hpp"
 
+// Forward declarations
 class ParameterInput;
 class Mesh;
 class Coordinates;
-class Fluid;
+class Hydro;
 class Field;
 class BoundaryValues;
 struct Task;
 class TaskList;
 class MeshBlockTree;
-
 
 //! \struct NeighborBlock
 //  \brief neighbor rank, level, and ids
@@ -76,7 +76,7 @@ private:
   friend class RestartOutput;
   friend class BoundaryValues;
   friend class Mesh;
-  friend class Fluid;
+  friend class Hydro;
   friend class Coordinates;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
@@ -104,7 +104,7 @@ public:
   int cis,cie,cjs,cje,cks,cke,cnghost;
 
   Coordinates *pcoord;
-  Fluid *pfluid;
+  Hydro *pfluid;
   Field *pfield;
   BoundaryValues *pbval;
   MeshBlock *prev, *next;
@@ -156,7 +156,7 @@ public:
   void Initialize(int res_flag, ParameterInput *pin);
   void UpdateOneStep(void);
   void SetTaskList(TaskList& tl);
-  void ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin); // files in /pgen
+  void ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin); // files in /pgen
   void NewTimeStep(void);
   MeshBlock* FindMeshBlock(int tgid);
   void TestConservation(void);

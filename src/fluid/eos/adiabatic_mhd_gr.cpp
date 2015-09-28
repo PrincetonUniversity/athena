@@ -9,7 +9,7 @@
 #include <cmath>      // NAN, sqrt(), abs(), isfinite(), isnan(), pow()
 
 // Athena headers
-#include "../fluid.hpp"                       // Fluid
+#include "../fluid.hpp"                       // Hydro
 #include "../../athena.hpp"                   // enums, macros, Real
 #include "../../athena_arrays.hpp"            // AthenaArray
 #include "../../mesh.hpp"                     // MeshBlock
@@ -33,7 +33,7 @@ static void neighbor_average(AthenaArray<Real> &prim, int n, int k, int j, int i
 // Inputs:
 //   pf: pointer to fluid object
 //   pin: pointer to runtime inputs
-FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
+HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
 {
   pmy_fluid_ = pf;
   gamma_ = pin->GetReal("fluid", "gamma");
@@ -55,7 +55,7 @@ FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
 }
 
 // Destructor
-FluidEqnOfState::~FluidEqnOfState()
+HydroEqnOfState::~HydroEqnOfState()
 {
   g_.DeleteAthenaArray();
   g_inv_.DeleteAthenaArray();
@@ -81,7 +81,7 @@ FluidEqnOfState::~FluidEqnOfState()
 //       writing bb for B
 //       writing bbb for \mathcal{B}
 //   implements formulas assuming no magnetic field
-void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
+void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     const AthenaArray<Real> &prim_old, const InterfaceField &bb, AthenaArray<Real> &prim,
     AthenaArray<Real> &bb_cc)
 {
@@ -341,7 +341,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 // Notes:
 //   single-cell function exists for other purposes; call made to that function rather
 //       than having duplicate code
-void FluidEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int jl,
+void HydroEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int jl,
     const int ju, const int il, const int iu, const AthenaArray<Real> &prim,
     const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons)
 {
@@ -438,7 +438,7 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
 //   references Numerical Recipes, 3rd ed. (NR)
 //   follows advice in NR for avoiding large cancellations in solving quadratics
 //   same function as in adiabatic_mhd_sr.cpp
-void FluidEqnOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
+void HydroEqnOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
     const AthenaArray<Real> &bbx_vals, int il, int iu, int ivx,
     AthenaArray<Real> &lambdas_p, AthenaArray<Real> &lambdas_m)
 {
@@ -634,7 +634,7 @@ void FluidEqnOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
 // Notes:
 //   follows same general procedure as vchar() in phys.c in Harm
 //   variables are named as though 1 is normal direction
-void FluidEqnOfState::FastMagnetosonicSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1,
+void HydroEqnOfState::FastMagnetosonicSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1,
     Real b_sq, Real g00, Real g01, Real g11, Real *plambda_plus, Real *plambda_minus)
 {
   // Parameters and constants

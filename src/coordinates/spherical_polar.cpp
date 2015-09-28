@@ -14,10 +14,7 @@
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
 
-// Primary header
-#include "coordinates.hpp"
-
-// C headers
+// C/C++ headers
 #include <math.h>  // pow, trig functions
 
 // Athena++ headers
@@ -25,8 +22,11 @@
 #include "../athena_arrays.hpp"   // AthenaArray
 #include "../parameter_input.hpp" // ParameterInput
 #include "../mesh.hpp"            // MeshBlock
-#include "../fluid/fluid.hpp"     // Fluid
+#include "../fluid/fluid.hpp"
 #include "../fluid/eos/eos.hpp"   // SoundSpeed()
+
+// this class header
+#include "coordinates.hpp"
 
 //======================================================================================
 //! \file spherical_polar.cpp

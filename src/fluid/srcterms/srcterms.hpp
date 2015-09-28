@@ -6,7 +6,7 @@
 // See LICENSE file for full public license information.
 //======================================================================================
 //! \file srcterms.hpp
-//  \brief defines class FluidSourceTerms
+//  \brief defines class HydroSourceTerms
 //  Contains data and functions that implement physical (not coordinate) source terms
 //======================================================================================
 
@@ -15,19 +15,19 @@
 #include "../../athena_arrays.hpp"  // AthenaArray
 
 // Declarations
-class Fluid;
+class Hydro;
 class ParameterInput;
 
 typedef void (*SrcTermFunc_t)(const Real time, const Real dt,
   const AthenaArray<Real> &prim, AthenaArray<Real> &cons);
 
-//! \class FluidSourceTerms
+//! \class HydroSourceTerms
 //  \brief data and functions for physical source terms in the fluid
 
-class FluidSourceTerms {
+class HydroSourceTerms {
 public:
-  FluidSourceTerms(Fluid *pf, ParameterInput *pin);
-  ~FluidSourceTerms();
+  HydroSourceTerms(Hydro *pf, ParameterInput *pin);
+  ~HydroSourceTerms();
 
   Real GetGM() const {return gm_;}
   Real GetG1() const {return g1_;}
@@ -47,7 +47,7 @@ public:
     AthenaArray<Real> &cons);
 
 private:
-  Fluid *pmy_fluid_;  // ptr to Fluid containing this FluidSourceTerms
+  Hydro *pmy_fluid_;  // ptr to Hydro containing this HydroSourceTerms
   Real gm_;           // GM for point mass located at origin
   Real g1_, g2_, g3_; // constant acc'n in each direction
 };

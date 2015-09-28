@@ -13,18 +13,25 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
+//! \file hlld_iso.cpp
+//  \brief HLLD Riemann solver for isothermal MHD.
+//
+// REFERENCES:
+// - A. Mignone, "A simple and accurate Riemann solver for isothermal MHD", JPC, 225,
+//   1427 (2007)
+//======================================================================================
 
-// Primary header
-#include "../../fluid_integrator.hpp"
-
-// C++ headers
+// C/C++ headers
 #include <algorithm>  // max(), min()
 
-// Athena headers
-#include "../../../../athena.hpp"         // enums, macros, Real
-#include "../../../../athena_arrays.hpp"  // AthenaArray
-#include "../../../fluid.hpp"             // Fluid
-#include "../../../eos/eos.hpp"           // GetGamma
+// Athena++ headers
+#include "../../../../athena.hpp"
+#include "../../../../athena_arrays.hpp"
+#include "../../../fluid.hpp"
+#include "../../../eos/eos.hpp"
+
+// this class header
+#include "../../fluid_integrator.hpp"
 
 // container to store (density, momentum, tranverse magnetic field)
 // minimizes changes required to adopt athena4.2 version of this solver 
@@ -34,16 +41,7 @@ typedef struct Cons1D {
 
 #define SMALL_NUMBER 1.0e-8
 
-//======================================================================================
-//! \file hlld_iso.cpp
-//  \brief HLLD Riemann solver for isothermal MHD.
-//
-// REFERENCES:
-// - A. Mignone, "A simple and accurate Riemann solver for isothermal MHD", JPC, 225,
-//   1427 (2007)
-//======================================================================================
-
-void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const int iu,
+void HydroIntegrator::RiemannSolver(const int k,const int j, const int il, const int iu,
   const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
   AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {

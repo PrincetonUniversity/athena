@@ -240,8 +240,8 @@ definitions['RECONSTRUCT'] = args['order']
 makefile_options['RECONSTRUCT_FILE'] = args['order']
 
 # --fint=[name] argument
-definitions['FLUID_INTEGRATOR'] = args['fint']
-makefile_options['FLUID_INT_FILE'] = args['fint']
+definitions['HYDRO_INTEGRATOR'] = args['fint']
+makefile_options['HYDRO_INT_FILE'] = args['fint']
 definitions['NSTEP'] = '2'
 
 # --cxx=[name] argument
@@ -322,7 +322,7 @@ makefile_options['COORDINATES_FILE'] += '.cpp'
 makefile_options['EOS_FILE'] += '.cpp'
 makefile_options['RSOLVER_FILE'] += '.cpp'
 makefile_options['RECONSTRUCT_FILE'] += '.cpp'
-makefile_options['FLUID_INT_FILE'] += '.cpp'
+makefile_options['HYDRO_INT_FILE'] += '.cpp'
 
 # Read templates
 with open(defsfile_input, 'r') as current_file:

@@ -13,26 +13,6 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../mesh.hpp"
-
-// C++ headers
-#include <iostream>   // endl
-#include <sstream>    // stringstream
-#include <stdexcept>  // runtime_error
-#include <string>     // c_str()
-
-// Athena headers
-#include "../athena.hpp"           // enums, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/fluid.hpp"      // Fluid
-#include "../fluid/eos/eos.hpp"    // EOS
-#include "../bvals/bvals.hpp"      // EnrollFluidBoundaryFunction
-#include "../coordinates/coordinates.hpp" // Coordinates
-
-//======================================================================================
 //! \file dmr.cpp
 //  \brief Problem generator for double Mach reflection test.
 //  Only works for genuinely 2D hydro problems in X1-X2 plane with adiabatic EOS.
@@ -41,7 +21,22 @@
 // fluid flow with strong shocks", JCP, 54, 115, sect. IVc.
 //======================================================================================
 
-// PRIVATE FUNCTION PROTOTYPES:
+// C++ headers
+#include <iostream>   // endl
+#include <sstream>    // stringstream
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str()
+
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../fluid/fluid.hpp"
+#include "../field/field.hpp"
+#include "../fluid/eos/eos.hpp"
+#include "../coordinates/coordinates.hpp"
+
 // dmrbv_iib() - sets BCs on inner-x1 (left edge) of grid.  
 // dmrbv_ijb() - sets BCs on inner-x2 (bottom edge) of grid.  
 // dmrbv_ojb() - sets BCs on outer-x2 (top edge) of grid.  
@@ -55,7 +50,7 @@ void dmrbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
 
 // problem generator
 
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pmb = pfl->pmy_block;
   std::stringstream msg;
@@ -95,9 +90,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 
 // Set boundary value function pointers
 
-  pmb->pbval->EnrollFluidBoundaryFunction(inner_x1, dmrbv_iib);
-  pmb->pbval->EnrollFluidBoundaryFunction(inner_x2, dmrbv_ijb);
-  pmb->pbval->EnrollFluidBoundaryFunction(outer_x2, dmrbv_ojb);
+  pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, dmrbv_iib);
+  pmb->pbval->EnrollHydroBoundaryFunction(inner_x2, dmrbv_ijb);
+  pmb->pbval->EnrollHydroBoundaryFunction(outer_x2, dmrbv_ojb);
 }
 
 //--------------------------------------------------------------------------------------

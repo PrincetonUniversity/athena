@@ -13,36 +13,6 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../mesh.hpp"
-
-// Athena headers
-#include "../athena.hpp"           // enums, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/fluid.hpp"      // Fluid
-#include "../fluid/eos/eos.hpp"    // GetGamma
-#include "../field/field.hpp"      // magnetic field
-#include "../bvals/bvals.hpp"      // EnrollFluidBoundaryFunction
-#include "../fluid/srcterms/srcterms.hpp"  // GetG2, GetG3
-#include "../coordinates/coordinates.hpp" // Coordinates
-
-double ran2(long int *idum); // random number generator from NR
-void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a,
-                 int is, int ie, int js, int je, int ks, int ke);
-void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a,
-                 int is, int ie, int js, int je, int ks, int ke);
-void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a,
-                 int is, int ie, int js, int je, int ks, int ke);
-void reflect_ox3(MeshBlock *pmb, AthenaArray<Real> &a,
-                 int is, int ie, int js, int je, int ks, int ke);
-
-// made global to share with BC functions
-static Real gm1;
-static Real grav_acc;
-
-//======================================================================================
 //! \file rt.c
 //  \brief Problem generator for RT instabilty.
 //
@@ -70,7 +40,32 @@ static Real grav_acc;
 // REFERENCE: R. Liska & B. Wendroff, SIAM J. Sci. Comput., 25, 995 (2003)
 //======================================================================================
 
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../fluid/fluid.hpp"
+#include "../field/field.hpp"
+#include "../fluid/eos/eos.hpp"
+#include "../fluid/srcterms/srcterms.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../utils/utils.hpp"
+
+void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke);
+void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke);
+void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke);
+void reflect_ox3(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke);
+
+// made global to share with BC functions
+static Real gm1;
+static Real grav_acc;
+
+void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pmb = pfl->pmy_block;
   Coordinates *pco = pmb->pcoord;
@@ -145,8 +140,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     }
 
     // Enroll special BCs
-    pmb->pbval->EnrollFluidBoundaryFunction(inner_x2, reflect_ix2);
-    pmb->pbval->EnrollFluidBoundaryFunction(outer_x2, reflect_ox2);
+    pmb->pbval->EnrollHydroBoundaryFunction(inner_x2, reflect_ix2);
+    pmb->pbval->EnrollHydroBoundaryFunction(outer_x2, reflect_ox2);
     pmb->pbval->EnrollFieldBoundaryFunction(inner_x2, ReflectInnerX2);
     pmb->pbval->EnrollFieldBoundaryFunction(outer_x2, ReflectOuterX2);
 
@@ -215,8 +210,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     }
 
     // Enroll special BCs
-    pmb->pbval->EnrollFluidBoundaryFunction(inner_x3, reflect_ix3);
-    pmb->pbval->EnrollFluidBoundaryFunction(outer_x3, reflect_ox3);
+    pmb->pbval->EnrollHydroBoundaryFunction(inner_x3, reflect_ix3);
+    pmb->pbval->EnrollHydroBoundaryFunction(outer_x3, reflect_ox3);
     pmb->pbval->EnrollFieldBoundaryFunction(inner_x3, ReflectInnerX3);
     pmb->pbval->EnrollFieldBoundaryFunction(outer_x3, ReflectOuterX3);
 

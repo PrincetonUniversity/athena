@@ -41,7 +41,7 @@ void ShowConfig(void)
   }
   std::cout<<"  Riemann solver:             " << RIEMANN_SOLVER << std::endl;
   std::cout<<"  Reconstruction method:      " << RECONSTRUCTION_METHOD << std::endl;
-  std::cout<<"  Fluid integrator:           " << FLUID_TIME_INTEGRATOR << std::endl;
+  std::cout<<"  Hydro integrator:           " << HYDRO_TIME_INTEGRATOR << std::endl;
   std::cout<<"  Compiler and flags:         " << COMPILED_WITH << std::endl;
   if (MAGNETIC_FIELDS_ENABLED) {
     std::cout<<"  Magnetic fields:            ON" << std::endl;

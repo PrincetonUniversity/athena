@@ -13,26 +13,24 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../fluid_integrator.hpp"
-
-// Athena headers
-#include "../../../athena.hpp"         // macros, Real
-#include "../../../athena_arrays.hpp"  // AthenaArray
-#include "../../fluid.hpp"             // Fluid
-#include "../../../mesh.hpp"           // MeshBlock
-
-//======================================================================================
 //! \file dc.cpp
 //  \brief piecewise constant (donor cell) reconstruction
 //======================================================================================
 
+// Athena++ headers
+#include "../../../athena.hpp"
+#include "../../../athena_arrays.hpp"
+#include "../../fluid.hpp"
+#include "../../../mesh.hpp"
+
+// this class header
+#include "../fluid_integrator.hpp"
+
 //--------------------------------------------------------------------------------------
-//! \fn FluidIntegrator::DonorCellX1()
+//! \fn HydroIntegrator::DonorCellX1()
 //  \brief 
 
-void FluidIntegrator::DonorCellX1(const int k, const int j,
+void HydroIntegrator::DonorCellX1(const int k, const int j,
   const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
@@ -59,10 +57,10 @@ void FluidIntegrator::DonorCellX1(const int k, const int j,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn FluidIntegrator::DonorCellX2()
+//! \fn HydroIntegrator::DonorCellX2()
 //  \brief 
 
-void FluidIntegrator::DonorCellX2(const int k, const int j,
+void HydroIntegrator::DonorCellX2(const int k, const int j,
   const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
@@ -89,10 +87,10 @@ void FluidIntegrator::DonorCellX2(const int k, const int j,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn FluidIntegrator::DonorCellX3()
+//! \fn HydroIntegrator::DonorCellX3()
 //  \brief 
 
-void FluidIntegrator::DonorCellX3(const int k, const int j,
+void HydroIntegrator::DonorCellX3(const int k, const int j,
   const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)

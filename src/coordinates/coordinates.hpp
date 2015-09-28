@@ -10,10 +10,10 @@
 //  volumes, source terms) related to a Mesh
 //======================================================================================
 
-// Athena headers
-#include "../athena.hpp"         // macros, Real
-#include "../athena_arrays.hpp"  // AthenaArray
-#include "../mesh.hpp"           // RegionSize
+// Athena++ classes headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../mesh.hpp"
 
 // forward declarations
 class MeshBlock;
@@ -24,7 +24,7 @@ class ParameterInput;
 
 class Coordinates {
 public:
-  friend class FluidSourceTerms;
+  friend class HydroSourceTerms;
   Coordinates(MeshBlock *pmb, ParameterInput *pin);
   ~Coordinates();
 
@@ -687,4 +687,4 @@ inline void Coordinates::DeleteBasicCoordinates(void)
   }
 }
 
-#endif
+#endif // COORDINATES_HPP

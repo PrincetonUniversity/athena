@@ -18,8 +18,8 @@
 #include "../bvals/bvals.hpp"              // BoundaryValues, InterfaceField
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // Field
-#include "../fluid/fluid.hpp"              // Fluid
-#include "../fluid/eos/eos.hpp"            // FluidEqnOfState
+#include "../fluid/fluid.hpp"
+#include "../fluid/eos/eos.hpp"
 
 // Declarations
 static Real quadratic_root(Real a1, Real a0, bool greater_root);
@@ -29,7 +29,7 @@ static void quartic_roots(Real a3, Real a2, Real a1, Real a0,
 
 // Function for setting initial conditions
 // Inputs:
-//   pfl: Fluid
+//   pfl: Hydro
 //   pfd: Field
 //   pin: parameters
 // Outputs: (none)
@@ -38,7 +38,7 @@ static void quartic_roots(Real a3, Real a2, Real a1, Real a0,
 //     sets both primitive and conserved variables
 //   references Anton et al. 2010, ApJS 188 1 (A, MHD)
 //              Falle & Komissarov 1996, MNRAS 278 586 (FK, hydro)
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 {
   // Prepare index bounds
   MeshBlock *pmb = pfl->pmy_block;

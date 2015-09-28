@@ -23,8 +23,8 @@
 #include "../athena_arrays.hpp"    // AthenaArray
 #include "../mesh.hpp"             // MeshBlock
 #include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/fluid.hpp"      // Fluid
-#include "../fluid/eos/eos.hpp"    // FluidEqnOfState
+#include "../fluid/fluid.hpp"
+#include "../fluid/eos/eos.hpp"
 
 //--------------------------------------------------------------------------------------
 

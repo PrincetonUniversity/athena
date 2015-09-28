@@ -15,20 +15,20 @@
 #include "../bvals/bvals.hpp"              // BoundaryValues, InterfaceField
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // Field
-#include "../fluid/fluid.hpp"              // Fluid
-#include "../fluid/eos/eos.hpp"            // FluidEqnOfState
+#include "../fluid/fluid.hpp"
+#include "../fluid/eos/eos.hpp"
 
 // TODO: remove with boundary hack
 #include <cassert>
 
 // Declarations
-void InnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+void InnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
     int ks, int ke);
-void OuterFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+void OuterHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
     int ks, int ke);
-void TopFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+void TopHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
     int ks, int ke);
-void BottomFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js,
+void BottomHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js,
     int je, int ks, int ke);
 void InnerField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
     int ks, int ke);
@@ -54,7 +54,7 @@ static Real beta_min;                        // min ratio of gas to magnetic pre
 
 // Function for setting initial conditions
 // Inputs:
-//   pfl: Fluid
+//   pfl: Hydro
 //   pfd: Field (unused)
 //   pin: parameters
 // Outputs: (none)
@@ -65,7 +65,7 @@ static Real beta_min;                        // min ratio of gas to magnetic pre
 //   references Fishbone & Moncrief 1976, ApJ 207 962 (FM)
 //              Fishbone 1977, ApJ 215 323 (F)
 //   assumes x3 is axisymmetric direction
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 {
   // Prepare index bounds
   MeshBlock *pmb = pfl->pmy_block;
@@ -453,10 +453,10 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   bb.DeleteAthenaArray();
 
   // Enroll boundary functions
-  pmb->pbval->EnrollFluidBoundaryFunction(inner_x1, InnerFluid);
-  pmb->pbval->EnrollFluidBoundaryFunction(outer_x1, OuterFluid);
-  pmb->pbval->EnrollFluidBoundaryFunction(inner_x2, TopFluid);
-  pmb->pbval->EnrollFluidBoundaryFunction(outer_x2, BottomFluid);
+  pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, InnerHydro);
+  pmb->pbval->EnrollHydroBoundaryFunction(outer_x1, OuterHydro);
+  pmb->pbval->EnrollHydroBoundaryFunction(inner_x2, TopHydro);
+  pmb->pbval->EnrollHydroBoundaryFunction(outer_x2, BottomHydro);
   if (MAGNETIC_FIELDS_ENABLED)
   {
     pmb->pbval->EnrollFieldBoundaryFunction(inner_x1, InnerField);
@@ -469,7 +469,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 
 // Inner fluid boundary condition
 // TODO: implement when not hacking inversion
-void InnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+void InnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
     int ks, int ke)
 {
   return;
@@ -477,14 +477,14 @@ void InnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js,
 
 // Outer fluid boundary condition
 // TODO: implement when not hacking inversion
-void OuterFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+void OuterHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
     int ks, int ke)
 {
   return;
 }
 
 // Top fluid boundary condition
-void TopFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+void TopHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
     int ks, int ke)
 {
   for (int k = ks; k <= ke; ++k)
@@ -499,7 +499,7 @@ void TopFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, i
 }
 
 // Bottom fluid boundary condition
-void BottomFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js,
+void BottomHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js,
     int je, int ks, int ke)
 {
   for (int k = ks; k <= ke; ++k)

@@ -13,26 +13,6 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../mesh.hpp"
-
-// C++ headers
-#include <iostream>   // endl
-#include <sstream>    // stringstream
-#include <stdexcept>  // runtime_error
-#include <string>     // c_str()
-
-// Athena headers
-#include "../athena.hpp"           // enums, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/fluid.hpp"      // Fluid
-#include "../fluid/eos/eos.hpp"    // EOS
-#include "../field/field.hpp"      // Field
-#include "../coordinates/coordinates.hpp" // Coordinates
-
-//======================================================================================
 //! \file linear_wave.c
 //  \brief Linear wave problem generator for 1D/2D/3D problems.
 //
@@ -40,6 +20,22 @@
 // setting [ang_2,ang_3] = 0.0 or PI/2 in the input file).  In 2D/3D this routine
 // automatically sets the wavevector along the domain diagonal.
 //======================================================================================
+
+// C++ headers
+#include <iostream>   // endl
+#include <sstream>    // stringstream
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str()
+
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../fluid/fluid.hpp"
+#include "../field/field.hpp"
+#include "../fluid/eos/eos.hpp"
+#include "../coordinates/coordinates.hpp"
 
 // Parameters which define initial solution -- made global so that they can be shared
 // with functions A1,2,3 which compute vector potentials
@@ -66,7 +62,7 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
 //  \brief Linear wave problem generator for 1D/2D/3D problems.
 //======================================================================================
 
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pmb = pfl->pmy_block;
   Coordinates *pco = pmb->pcoord;

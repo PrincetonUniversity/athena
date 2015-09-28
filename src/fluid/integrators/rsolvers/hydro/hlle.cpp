@@ -12,20 +12,6 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../../fluid_integrator.hpp"
-
-// C++ headers
-#include <algorithm>  // max(), min()
-
-// Athena headers
-#include "../../../../athena.hpp"         // enums, macros, Real
-#include "../../../../athena_arrays.hpp"  // AthenaArray
-#include "../../../fluid.hpp"             // Fluid
-#include "../../../eos/eos.hpp"           // GetGamma
-
-//======================================================================================
 //! \file hlle.cpp
 //  \brief HLLE Riemann solver for hydrodynamics
 //
@@ -43,7 +29,19 @@
 //   schemes for hyperbolic conservation laws", SIAM Review 25, 35-61 (1983).
 //======================================================================================
 
-void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const int iu,
+// C/C++ headers
+#include <algorithm>  // max(), min()
+
+// Athena++ headers
+#include "../../../../athena.hpp"
+#include "../../../../athena_arrays.hpp"
+#include "../../../fluid.hpp"
+#include "../../../eos/eos.hpp"
+
+// this class header
+#include "../../fluid_integrator.hpp"
+
+void HydroIntegrator::RiemannSolver(const int k,const int j, const int il, const int iu,
   const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
   AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {

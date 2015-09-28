@@ -8,8 +8,8 @@
 #include <cmath>      // abs(), sqrt()
 
 // Athena headers
-#include "../../../fluid.hpp"                       // Fluid
-#include "../../../eos/eos.hpp"                     // FluidEqnOfState
+#include "../../../fluid.hpp"                       // Hydro
+#include "../../../eos/eos.hpp"                     // HydroEqnOfState
 #include "../../../../athena.hpp"                   // enums, macros, Real
 #include "../../../../athena_arrays.hpp"            // AthenaArray
 #include "../../../../mesh.hpp"                     // MeshBlock
@@ -28,7 +28,7 @@
 //   prim_l, prim_r overwritten
 //   implements HLLC algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB2005)
 //   references Mignone & Bodo 2006, MNRAS 368 1040 (MB2006)
-void FluidIntegrator::RiemannSolver(const int k, const int j, const int il,
+void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
     const int iu, const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
     AthenaArray<Real> &prim_r, AthenaArray<Real> &flux)
 {

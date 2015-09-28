@@ -10,7 +10,7 @@
 #include <cfloat>  // FLT_MIN
 
 // Athena headers
-#include "../fluid.hpp"               // Fluid
+#include "../fluid.hpp"               // Hydro
 #include "../../athena.hpp"           // enums, macros, Real
 #include "../../athena_arrays.hpp"    // AthenaArray
 #include "../../mesh.hpp"             // MeshBlock
@@ -21,7 +21,7 @@
 // Inputs:
 //   pf: pointer to fluid object
 //   pin: pointer to runtime inputs
-FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
+HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
 {
   pmy_fluid_ = pf;
   gamma_ = pin->GetReal("fluid", "gamma");
@@ -30,7 +30,7 @@ FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
 }
 
 // Destructor
-FluidEqnOfState::~FluidEqnOfState() {}
+HydroEqnOfState::~HydroEqnOfState() {}
 
 // Variable inverter
 // Inputs:
@@ -61,7 +61,7 @@ FluidEqnOfState::~FluidEqnOfState() {}
 //          d0 = 1/2 * (x0 - sqrt(x0^2 - 4 a0))
 //          then |v|^2 + d1 |v| + d0 = 0
 //          |v| = 1/2 * (-d1 + sqrt(d1^2 - 4 d0))
-void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
+void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
   AthenaArray<Real> &bcc)
 {
@@ -219,7 +219,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //   b: 3D array of cell-centered magnetic fields (unused)
 // Outputs:
 //   cons: 3D array of conserved variables
-void FluidEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int jl,
+void HydroEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int jl,
     const int ju, const int il, const int iu, const AthenaArray<Real> &prim,
     const AthenaArray<Real> &b, AthenaArray<Real> &cons)
 {
@@ -273,7 +273,7 @@ void FluidEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int
 // Notes:
 //   same function as in adiabatic_hydro_gr.cpp
 //   references Mignone & Bodo 2005, MNRAS 364 126 (MB)
-void FluidEqnOfState::SoundSpeedsSR(
+void HydroEqnOfState::SoundSpeedsSR(
     Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
     Real *plambda_plus, Real *plambda_minus)
 {

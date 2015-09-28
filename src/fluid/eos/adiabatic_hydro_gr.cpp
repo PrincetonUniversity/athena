@@ -9,7 +9,7 @@
 #include <cmath>      // NAN, sqrt(), abs(), isfinite(), isnan(), pow()
 
 // Athena headers
-#include "../fluid.hpp"                       // Fluid
+#include "../fluid.hpp"                       // Hydro
 #include "../../athena.hpp"                   // enums, macros, Real
 #include "../../athena_arrays.hpp"            // AthenaArray
 #include "../../mesh.hpp"                     // MeshBlock
@@ -30,7 +30,7 @@ static void neighbor_average(AthenaArray<Real> &prim, AthenaArray<bool> &problem
 // Inputs:
 //   pf: pointer to fluid object
 //   pin: pointer to runtime inputs
-FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
+HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
 {
   pmy_fluid_ = pf;
   gamma_ = pin->GetReal("fluid", "gamma");
@@ -52,7 +52,7 @@ FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
 }
 
 // Destructor
-FluidEqnOfState::~FluidEqnOfState()
+HydroEqnOfState::~HydroEqnOfState()
 {
   g_.DeleteAthenaArray();
   g_inv_.DeleteAthenaArray();
@@ -76,7 +76,7 @@ FluidEqnOfState::~FluidEqnOfState()
 //       writing uu for \tilde{u}
 //       writing vv for v
 //   implements formulas assuming no magnetic field
-void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
+void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     const AthenaArray<Real> &prim_old, const InterfaceField &bb,
     AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc)
 {
@@ -280,7 +280,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 // Notes:
 //   single-cell function exists for other purposes; call made to that function rather
 //       than having duplicate code
-void FluidEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int jl,
+void HydroEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int jl,
     const int ju, const int il, const int iu, const AthenaArray<Real> &prim,
     const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons)
 {
@@ -354,7 +354,7 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
 //   same function as in adiabatic_hydro_sr.cpp
 //     uses SR formula (should be called in locally flat coordinates)
 //   references Mignone & Bodo 2005, MNRAS 364 126 (MB)
-void FluidEqnOfState::SoundSpeedsSR(Real rho_h, Real pgas, Real vx,
+void HydroEqnOfState::SoundSpeedsSR(Real rho_h, Real pgas, Real vx,
     Real gamma_lorentz_sq, Real *plambda_plus, Real *plambda_minus)
 {
   const Real gamma_adi = gamma_;
@@ -374,7 +374,7 @@ void FluidEqnOfState::SoundSpeedsSR(Real rho_h, Real pgas, Real vx,
 // Notes:
 //   follows same general procedure as vchar() in phys.c in Harm
 //   variables are named as though 1 is normal direction
-void FluidEqnOfState::SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Real g00,
+void HydroEqnOfState::SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Real g00,
     Real g01, Real g11, Real *plambda_plus, Real *plambda_minus)
 {
   // Parameters and constants

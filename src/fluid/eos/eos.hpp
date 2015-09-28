@@ -6,7 +6,7 @@
 // See LICENSE file for full public license information.
 //======================================================================================
 //! \file eos.hpp
-//  \brief defines class FluidEqnOfState
+//  \brief defines class HydroEqnOfState
 //  Contains data and functions that implement the equation of state for the fluid
 //======================================================================================
 
@@ -15,17 +15,17 @@
 #include "../../athena_arrays.hpp"  // AthenaArray
 
 // Declarations
-class Fluid;
+class Hydro;
 class ParameterInput;
 struct InterfaceField;
 
-//! \class FluidEqnOfState
+//! \class HydroEqnOfState
 //  \brief data and functions that implement EoS for fluid
 
-class FluidEqnOfState {
+class HydroEqnOfState {
 public:
-  FluidEqnOfState(Fluid *pf, ParameterInput *pin);
-  ~FluidEqnOfState();
+  HydroEqnOfState(Hydro *pf, ParameterInput *pin);
+  ~HydroEqnOfState();
 
   void ConservedToPrimitive(AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old,
     const InterfaceField &b, AthenaArray<Real> &prim, AthenaArray<Real> &bcc);
@@ -101,7 +101,7 @@ public:
   Real GetPressureFloor() const {return pressure_floor_;}
 
 private:
-  Fluid *pmy_fluid_;                     // ptr to Fluid containing this EqnOfState
+  Hydro *pmy_fluid_;                     // ptr to Hydro containing this EqnOfState
   Real iso_sound_speed_, gamma_;         // isothermal Cs, ratio of specific heats
   Real density_floor_, pressure_floor_;  // density and pressure floors
   Real gamma_max_;                       // maximum Lorentz factor

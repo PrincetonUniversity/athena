@@ -13,7 +13,12 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
+//! \file history.cpp
+//  \brief writes history output data.  History data are volume-averaged quantities that
+//  are output frequently in time to trace their history.
+//======================================================================================
 
+// C/C++ headers
 #include <sstream>
 #include <iostream>
 #include <string>
@@ -22,19 +27,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../fluid/fluid.hpp"
 #include "../field/field.hpp"
 #include "../mesh.hpp"
-#include "outputs.hpp"
 
-//======================================================================================
-//! \file history.cpp
-//  \brief writes history output data.  History data are volume-averaged quantities that
-//  are output frequently in time to trace their history.
-//======================================================================================
+//this class header
+#include "outputs.hpp"
 
 //--------------------------------------------------------------------------------------
 // HistoryOutput constructor
@@ -53,7 +55,7 @@ HistoryOutput::HistoryOutput(OutputParameters oparams)
 
 void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 {
-  Fluid *pfl = pmb->pfluid;;
+  Hydro *pfl = pmb->pfluid;;
   Field *pfd = pmb->pfield;;
   Mesh *pmm = pmb->pmy_mesh;
   int tid=0;

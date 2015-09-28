@@ -13,20 +13,6 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../mesh.hpp"
-
-// Athena headers
-#include "../athena.hpp"           // enums, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/fluid.hpp"      // Fluid
-#include "../field/field.hpp"      // Field
-#include "../fluid/eos/eos.hpp"    // EOS
-#include "../coordinates/coordinates.hpp" // Coordinates
-
-//======================================================================================
 //! \file blast.cpp
 //  \brief Problem generator for spherical blast wave problem.
 //
@@ -34,12 +20,22 @@
 //   multidimensional MHD", ApJ, 530, 508 (2000), and references therein.
 //======================================================================================
 
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../fluid/fluid.hpp"
+#include "../field/field.hpp"
+#include "../fluid/eos/eos.hpp"
+#include "../coordinates/coordinates.hpp"
+
 //======================================================================================
 //! \fn ProblemGenerator
 //  \brief Spherical blast wave test problem generator
 //======================================================================================
 
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pmb = pfl->pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;

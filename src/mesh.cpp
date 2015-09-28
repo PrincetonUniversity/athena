@@ -13,54 +13,50 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
+//! \file mesh.cpp
+//  \brief implementation of functions in classes Mesh, and MeshBlock
+//======================================================================================
 
-// Primary header
-#include "mesh.hpp"
 
-// C++ headers
+// C/C++ headers
 #include <cfloat>     // FLT_MAX
 #include <cmath>      // std::abs(), pow()
-#include <iostream>   // cout, endl
-#include <sstream>    // sstream
+#include <iostream>
+#include <sstream>
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 #include <algorithm>  // sort, find
 #include <iomanip>
-
 #include <stdlib.h>
 #include <string.h>  // memcpy
 
-// Athena headers
+// Athena++ classes headers
 #include "athena.hpp"                   // enums, macros, Real
 #include "globals.hpp"
 #include "athena_arrays.hpp"            // AthenaArray
 #include "coordinates/coordinates.hpp"  // Coordinates
-#include "fluid/fluid.hpp"              // Fluid
+#include "fluid/fluid.hpp" 
 #include "field/field.hpp"              // Field
 #include "bvals/bvals.hpp"              // BoundaryValues
-#include "fluid/eos/eos.hpp"              // FluidEqnOfState
-#include "fluid/integrators/fluid_integrator.hpp"  // FluidIntegrator
+#include "fluid/eos/eos.hpp"
+#include "fluid/integrators/fluid_integrator.hpp" 
 #include "field/integrators/field_integrator.hpp"  // FieldIntegrator
 #include "parameter_input.hpp"          // ParameterInput
 #include "meshblocktree.hpp"
 #include "outputs/wrapper.hpp"
 #include "tasklist.hpp"
 
-// MPI header
+// this class header
+#include "mesh.hpp"
+
+// MPI/OpenMP header
 #ifdef MPI_PARALLEL
 #include <mpi.h>
 #endif
 
-// OpenMP header
 #ifdef OPENMP_PARALLEL
 #include <omp.h>
 #endif
-
-
-//======================================================================================
-//! \file mesh.cpp
-//  \brief implementation of functions in classes Mesh, and MeshBlock
-//======================================================================================
 
 //--------------------------------------------------------------------------------------
 // Mesh constructor, builds mesh at start of calculation using parameters in input file
@@ -1018,12 +1014,12 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   std::cout << "ks=" << ks << " ke=" << ke << " x3min=" << block_size.x3min
             << " x3max=" << block_size.x3max << std::endl;
 
-// construct Coordinates and Fluid objects stored in MeshBlock class.  Note that the
+// construct Coordinates and Hydro objects stored in MeshBlock class.  Note that the
 // initial conditions for the fluid are set in problem generator called from main, not
-// in the Fluid constructor
+// in the Hydro constructor
  
   pcoord = new Coordinates(this, pin);
-  pfluid = new Fluid(this, pin);
+  pfluid = new Hydro(this, pin);
   pfield = new Field(this, pin);
   pbval  = new BoundaryValues(this, pin);
 
@@ -1102,7 +1098,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   // create coordinates, fluid, field, and boundary conditions
   pcoord = new Coordinates(this, pin);
-  pfluid = new Fluid(this, pin);
+  pfluid = new Hydro(this, pin);
   pfield = new Field(this, pin);
   pbval  = new BoundaryValues(this, pin);
 
@@ -1178,7 +1174,7 @@ void Mesh::NewTimeStep(void)
 void Mesh::Initialize(int res_flag, ParameterInput *pin)
 {
   MeshBlock *pmb;
-  Fluid *pfluid;
+  Hydro *pfluid;
   Field *pfield;
   BoundaryValues *pbval;
 
@@ -1206,7 +1202,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     pfluid=pmb->pfluid;
     pfield=pmb->pfield;
     pbval=pmb->pbval;
-    pbval->SendFluidBoundaryBuffers(pfluid->u,0);
+    pbval->SendHydroBoundaryBuffers(pfluid->u,0);
     if (MAGNETIC_FIELDS_ENABLED)
       pbval->SendFieldBoundaryBuffers(pfield->b,0);
     pmb=pmb->next;
@@ -1217,13 +1213,13 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     pfluid=pmb->pfluid;
     pfield=pmb->pfield;
     pbval=pmb->pbval;
-    pbval->ReceiveFluidBoundaryBuffersWithWait(pfluid->u ,0);
+    pbval->ReceiveHydroBoundaryBuffersWithWait(pfluid->u ,0);
     if (MAGNETIC_FIELDS_ENABLED)
       pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b ,0);
     pmb->pbval->ClearBoundaryForInit();
-    pbval->FluidPhysicalBoundaries(pfluid->u);
+    pbval->HydroPhysicalBoundaries(pfluid->u);
     if(multilevel==true)
-      pbval->ProlongateFluidBoundaries(pfluid->u);
+      pbval->ProlongateHydroBoundaries(pfluid->u);
     if (MAGNETIC_FIELDS_ENABLED) {
       pbval->FieldPhysicalBoundaries(pfield->b);
       if(multilevel==true)

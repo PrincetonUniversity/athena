@@ -13,31 +13,29 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "eos.hpp"
+//! \file adiabatic_mhd.cpp
+//  \brief implements functions in class HydroEqnOfState for adiabatic MHD
+//======================================================================================
 
 // C++ headers
 #include <cmath>   // sqrt()
 #include <cfloat>  // FLT_MIN
 
-// Athena headers
-#include "../fluid.hpp"               // Fluid
-#include "../../athena.hpp"           // enums, macros, Real
-#include "../../athena_arrays.hpp"    // AthenaArray
-#include "../../mesh.hpp"             // MeshBlock
-#include "../../parameter_input.hpp"  // GetReal()
-#include "../../field/field.hpp"      // BFields
-#include "../../coordinates/coordinates.hpp" // Coordinates
+// Athena++ headers
+#include "../fluid.hpp"
+#include "../../athena.hpp"
+#include "../../athena_arrays.hpp"
+#include "../../mesh.hpp"
+#include "../../parameter_input.hpp"
+#include "../../field/field.hpp"
+#include "../../coordinates/coordinates.hpp"
 
-//======================================================================================
-//! \file adiabatic_mhd.cpp
-//  \brief implements functions in class FluidEqnOfState for adiabatic MHD
-//======================================================================================
+// this class header
+#include "eos.hpp"
 
-// FluidEqnOfState constructor
+// HydroEqnOfState constructor
 
-FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
+HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
 {
   pmy_fluid_ = pf;
   gamma_ = pin->GetReal("fluid","gamma");
@@ -47,18 +45,18 @@ FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
 
 // destructor
 
-FluidEqnOfState::~FluidEqnOfState()
+HydroEqnOfState::~HydroEqnOfState()
 {
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn void FluidEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
+// \!fn void HydroEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
 //  const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
 //  AthenaArray<Real> &bcc)
-// \brief For the Fluid, converts conserved into primitive variables in adiabatic MHD.
+// \brief For the Hydro, converts conserved into primitive variables in adiabatic MHD.
 //  For the Field, computes cell-centered from face-centered magnetic field.
 
-void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
+void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
   AthenaArray<Real> &bcc)
 {
@@ -164,20 +162,20 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn Real FluidEqnOfState::SoundSpeed(Real prim[NFLUID])
+// \!fn Real HydroEqnOfState::SoundSpeed(Real prim[NFLUID])
 // \brief returns adiabatic sound speed given vector of primitive variables
 
-Real FluidEqnOfState::SoundSpeed(const Real prim[NFLUID])
+Real HydroEqnOfState::SoundSpeed(const Real prim[NFLUID])
 {
   return sqrt(GetGamma()*prim[IEN]/prim[IDN]);
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn Real FluidEqnOfState::FastMagnetosonicSpeed(const Real prim[], const Real bx)
+// \!fn Real HydroEqnOfState::FastMagnetosonicSpeed(const Real prim[], const Real bx)
 // \brief returns fast magnetosonic speed given vector of primitive variables
 // Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN 
 
-Real FluidEqnOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx)
+Real HydroEqnOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx)
 {
   Real asq = GetGamma()*prim[IEN]/prim[IDN];
   Real vaxsq = bx*bx/prim[IDN];

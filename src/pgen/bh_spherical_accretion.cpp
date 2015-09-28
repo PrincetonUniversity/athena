@@ -13,13 +13,13 @@
 #include "../bvals/bvals.hpp"              // BoundaryValues, InterfaceField
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // Field
-#include "../fluid/fluid.hpp"              // Fluid
-#include "../fluid/eos/eos.hpp"            // FluidEqnOfState
+#include "../fluid/fluid.hpp"
+#include "../fluid/eos/eos.hpp"
 
 // Declarations
-void InnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+void InnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
     int ks, int ke);
-void OuterFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+void OuterHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
     int ks, int ke);
 void InnerField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
     int ks, int ke);
@@ -40,14 +40,14 @@ static Real bsq_over_rho;  // b^2/rho at inner radius
 
 // Function for setting initial conditions
 // Inputs:
-//   pfl: Fluid
+//   pfl: Hydro
 //   pfd: Field (unused)
 //   pin: parameters
 // Outputs: (none)
 // Notes:
 //   sets primitive and conserved variables according to input primitives
 //   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 {
   // Parameters
   const Real temp_min = 1.0e-2;  // lesser temperature root must be greater than this
@@ -234,8 +234,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   bb.DeleteAthenaArray();
 
   // Enroll boundary functions
-  pmb->pbval->EnrollFluidBoundaryFunction(inner_x1, InnerFluid);
-  pmb->pbval->EnrollFluidBoundaryFunction(outer_x1, OuterFluid);
+  pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, InnerHydro);
+  pmb->pbval->EnrollHydroBoundaryFunction(outer_x1, OuterHydro);
   if (MAGNETIC_FIELDS_ENABLED)
   {
     pmb->pbval->EnrollFieldBoundaryFunction(inner_x1, InnerField);
@@ -246,7 +246,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 
 // Inner fluid boundary condition
 // TODO: change when interface changes
-void InnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+void InnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
     int ks, int ke)
 {
   return;
@@ -254,7 +254,7 @@ void InnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js,
 
 // Outer fluid boundary condition
 // TODO: change when interface changes
-void OuterFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+void OuterHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
     int ks, int ke)
 {
   return;

@@ -13,25 +13,25 @@
 #include "../parameter_input.hpp"          // ParameterInput
 #include "../bvals/bvals.hpp"              // BoundaryValues, InterfaceField
 #include "../coordinates/coordinates.hpp"  // Coordinates
-#include "../fluid/fluid.hpp"              // Fluid
-#include "../fluid/eos/eos.hpp"            // FluidEqnOfState
+#include "../fluid/fluid.hpp"
+#include "../fluid/eos/eos.hpp"
 #include "../field/field.hpp"              // Field
 
 // Declarations
-void OutflowPrimInnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons,
+void OutflowPrimInnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons,
     int is, int ie, int js, int je, int ks, int ke);
-void FixedOuterFluid(MeshBlock *pmb, AthenaArray<Real> &cons,
+void FixedOuterHydro(MeshBlock *pmb, AthenaArray<Real> &cons,
     int is, int ie, int js, int je, int ks, int ke);
 
 // Function for setting initial conditions
 // Inputs:
-//   pfl: Fluid
+//   pfl: Hydro
 //   pfd: Field (unused)
 //   pin: parameters
 // Outputs: (none)
 // Notes:
 //   assumes x3 is axisymmetric direction
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 {
   // Prepare index bounds
   MeshBlock *pmb = pfl->pmy_block;
@@ -129,8 +129,8 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   bb.DeleteAthenaArray();
 
   // Enroll boundary functions
-  pmb->pbval->EnrollFluidBoundaryFunction(inner_x1, OutflowPrimInnerFluid);
-  pmb->pbval->EnrollFluidBoundaryFunction(outer_x1, FixedOuterFluid);
+  pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, OutflowPrimInnerHydro);
+  pmb->pbval->EnrollHydroBoundaryFunction(outer_x1, FixedOuterHydro);
   return;
 }
 
@@ -142,7 +142,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 // Notes:
 //   TODO: remove prim hack
 //   TODO: note hack is wrong (assumes wrong primitives)
-void OutflowPrimInnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons,
+void OutflowPrimInnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons,
     int is, int ie, int js, int je, int ks, int ke)
 {
   int il = is - NGHOST;
@@ -220,7 +220,7 @@ void OutflowPrimInnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons,
 //   cons: conserved quantities set along outer x1-boundary
 // Notes:
 //   remains unchanged
-void FixedOuterFluid(MeshBlock *pmb, AthenaArray<Real> &cons,
+void FixedOuterHydro(MeshBlock *pmb, AthenaArray<Real> &cons,
     int is, int ie, int js, int je, int ks, int ke)
 {
   return;

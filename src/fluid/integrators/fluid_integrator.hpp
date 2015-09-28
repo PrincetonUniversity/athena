@@ -6,7 +6,7 @@
 // See LICENSE file for full public license information.
 //======================================================================================
 //! \file fluid_integrator.hpp
-//  \brief defines class FluidIntegrator, data and functions to integrate fluid
+//  \brief defines class HydroIntegrator, data and functions to integrate fluid
 //======================================================================================
 
 // Athena headers
@@ -15,18 +15,18 @@
 
 // Forward declarations
 class MeshBlock;
-class Fluid;
+class Hydro;
 class ParameterInput;
 
-//! \class FluidIntegrator
+//! \class HydroIntegrator
 //  \brief member functions implement various integration algorithms for the fluid
 
-class FluidIntegrator {
+class HydroIntegrator {
 public:
-  FluidIntegrator(Fluid *pf, ParameterInput *pin);
-  ~FluidIntegrator();
+  HydroIntegrator(Hydro *pf, ParameterInput *pin);
+  ~HydroIntegrator();
 
-  Fluid *pmy_fluid;  // ptr to Fluid containing this FluidIntegrator
+  Hydro *pmy_fluid;  // ptr to Hydro containing this HydroIntegrator
 
   void OneStep(MeshBlock *pmb, AthenaArray<Real> &u, AthenaArray<Real> &w,
     InterfaceField &b, AthenaArray<Real> &bcc, const int step);

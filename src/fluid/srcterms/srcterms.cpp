@@ -11,29 +11,26 @@
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
-//
-//======================================================================================
-
-// Primary header
-#include "srcterms.hpp"
-
-// Athena headers
-#include "../../athena.hpp"          // Real
-#include "../../athena_arrays.hpp"   // AthenaArray
-#include "../../mesh.hpp"            // MeshBlock
-#include "../../coordinates/coordinates.hpp"  // src_terms_i_
-#include "../fluid.hpp"              // Fluid
-#include "../../parameter_input.hpp" // ParameterInput
-
 //======================================================================================
 //! \file srcterms.cpp
 //  \brief implements functions that compute physical source terms in the fluid
 //======================================================================================
 
-// FluidSourceTerms constructor - sets function pointers for each of the physical source
+// Athena++ headers
+#include "../../athena.hpp"
+#include "../../athena_arrays.hpp"
+#include "../../mesh.hpp"
+#include "../../coordinates/coordinates.hpp"
+#include "../fluid.hpp"
+#include "../../parameter_input.hpp"
+
+// this class header
+#include "srcterms.hpp"
+
+// HydroSourceTerms constructor - sets function pointers for each of the physical source
 // terms to be included in the calculation.
 
-FluidSourceTerms::FluidSourceTerms(Fluid *pf, ParameterInput *pin)
+HydroSourceTerms::HydroSourceTerms(Hydro *pf, ParameterInput *pin)
 {
   pmy_fluid_ = pf;
   gm_ = pin->GetOrAddReal("problem","GM",0.0);
@@ -45,7 +42,7 @@ FluidSourceTerms::FluidSourceTerms(Fluid *pf, ParameterInput *pin)
 
 // destructor
 
-FluidSourceTerms::~FluidSourceTerms()
+HydroSourceTerms::~HydroSourceTerms()
 {
 }
 
@@ -53,7 +50,7 @@ FluidSourceTerms::~FluidSourceTerms()
 //! \fn
 //  \brief
 
-void FluidSourceTerms::PhysicalSourceTermsX1(int k, int j, const Real dt,
+void HydroSourceTerms::PhysicalSourceTermsX1(int k, int j, const Real dt,
   const AthenaArray<Real> &flx,
   const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
 {
@@ -96,14 +93,14 @@ void FluidSourceTerms::PhysicalSourceTermsX1(int k, int j, const Real dt,
   return;
 }
 
-void FluidSourceTerms::PhysicalSourceTermsX2(int k, int j, const Real dt,
+void HydroSourceTerms::PhysicalSourceTermsX2(int k, int j, const Real dt,
   const AthenaArray<Real> &flx, const AthenaArray<Real> &flx_p1,
   const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
 {
   return;
 }
 
-void FluidSourceTerms::PhysicalSourceTermsX3(int k, int j, const Real dt,
+void HydroSourceTerms::PhysicalSourceTermsX3(int k, int j, const Real dt,
   const AthenaArray<Real> &flx, const AthenaArray<Real> &flx_p1,
   const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
 {
@@ -115,7 +112,7 @@ void FluidSourceTerms::PhysicalSourceTermsX3(int k, int j, const Real dt,
 //! \fn
 //  \brief
 
-void FluidSourceTerms::EnrollSrcTermFunction(SrcTermFunc_t my_func)
+void HydroSourceTerms::EnrollSrcTermFunction(SrcTermFunc_t my_func)
 {
   UserSourceTerm = my_func;
   return;

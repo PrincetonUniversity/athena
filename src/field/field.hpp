@@ -9,9 +9,9 @@
 //  \brief defines Field class which implements data and functions for E/B fields
 //======================================================================================
 
-// Athena headers
-#include "../athena.hpp"         // Real
-#include "../athena_arrays.hpp"  // AthenaArray
+// Athena++ classes headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
 
 //typedef struct InterfaceField {
 //  AthenaArray<Real> x1f,x2f,x3f;
@@ -19,14 +19,14 @@
 
 class MeshBlock;
 class ParameterInput;
-class Fluid;
+class Hydro;
 class FieldIntegrator;
 
 //! \class Field
 //  \brief electric and magnetic field data and functions
 
 class Field {
-friend class Fluid;
+friend class Hydro;
 public:
   Field(MeshBlock *pmb, ParameterInput *pin);
   ~Field();
@@ -46,4 +46,4 @@ public:
 
 private:
 };
-#endif
+#endif // FIELD_HPP

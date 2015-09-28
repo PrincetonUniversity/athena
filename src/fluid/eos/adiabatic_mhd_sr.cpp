@@ -12,7 +12,7 @@
 #include <cmath>      // NAN, sqrt(), abs(), isfinite()
 
 // Athena headers
-#include "../fluid.hpp"                       // Fluid
+#include "../fluid.hpp"                       // Hydro
 #include "../../athena.hpp"                   // enums, macros, Real
 #include "../../athena_arrays.hpp"            // AthenaArray
 #include "../../coordinates/coordinates.hpp"  // Coordinates
@@ -32,7 +32,7 @@ static Real quadratic_root(Real a1, Real a0, bool greater_root);
 // Inputs:
 //   pf: pointer to fluid object
 //   pin: pointer to runtime inputs
-FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
+HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
 {
   pmy_fluid_ = pf;
   gamma_ = pin->GetReal("fluid", "gamma");
@@ -44,7 +44,7 @@ FluidEqnOfState::FluidEqnOfState(Fluid *pf, ParameterInput *pin)
 }
 
 // Destructor
-FluidEqnOfState::~FluidEqnOfState()
+HydroEqnOfState::~HydroEqnOfState()
 {
   g_.DeleteAthenaArray();
   g_inv_.DeleteAthenaArray();
@@ -61,7 +61,7 @@ FluidEqnOfState::~FluidEqnOfState()
 // Notes:
 //   follows Mignone & McKinney 2007, MNRAS 378 1118 (MM)
 //   follows hlld_sr.c in Athena 4.2 in using W and E rather than W' and E'
-void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
+void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
     AthenaArray<Real> &bcc)
 {
@@ -215,7 +215,7 @@ void FluidEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //   b: 3D array of cell-centered magnetic fields
 // Outputs:
 //   cons: 3D array of conserved variables
-void FluidEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int jl,
+void HydroEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int jl,
     const int ju, const int il, const int iu, const AthenaArray<Real> &prim,
     const AthenaArray<Real> &b, AthenaArray<Real> &cons)
 {
@@ -286,7 +286,7 @@ void FluidEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int
 //   references Numerical Recipes, 3rd ed. (NR)
 //   follows advice in NR for avoiding large cancellations in solving quadratics
 //   same function as in adiabatic_mhd_gr.cpp
-void FluidEqnOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
+void HydroEqnOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
     const AthenaArray<Real> &bbx_vals, int il, int iu, int ivx,
     AthenaArray<Real> &lambdas_p, AthenaArray<Real> &lambdas_m)
 {

@@ -13,31 +13,6 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../mesh.hpp"
-
-// Athena headers
-#include "../athena.hpp"           // enums, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/fluid.hpp"      // Fluid
-#include "../fluid/eos/eos.hpp"    // GetGamma
-#include "../bvals/bvals.hpp"      // Boundary Enroll
-#include "../coordinates/coordinates.hpp" // Coordinates
-
-// BCs on outer edges of grid in each dimension
-void noh3d_oib(MeshBlock *pmb, AthenaArray<Real> &a,
-               int is, int ie, int js, int je, int ks, int ke);
-void noh3d_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
-               int is, int ie, int js, int je, int ks, int ke);
-void noh3d_okb(MeshBlock *pmb, AthenaArray<Real> &a,
-               int is, int ie, int js, int je, int ks, int ke);
-
-// made global to share with BC functions
-static Real gmma, gmma1;
-
-//======================================================================================
 //! \file noh.c
 //  \brief Spherical Noh implosion problem, from Liska & Wendroff, section 4.5 (fig 4.7)
 //
@@ -52,7 +27,28 @@ static Real gmma, gmma1;
 // REFERENCE: R. Liska & B. Wendroff, SIAM J. Sci. Comput., 25, 995 (2003)
 //======================================================================================
 
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../fluid/fluid.hpp"
+#include "../field/field.hpp"
+#include "../fluid/eos/eos.hpp"
+#include "../coordinates/coordinates.hpp"
+
+// BCs on outer edges of grid in each dimension
+void noh3d_oib(MeshBlock *pmb, AthenaArray<Real> &a,
+               int is, int ie, int js, int je, int ks, int ke);
+void noh3d_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
+               int is, int ie, int js, int je, int ks, int ke);
+void noh3d_okb(MeshBlock *pmb, AthenaArray<Real> &a,
+               int is, int ie, int js, int je, int ks, int ke);
+
+// made global to share with BC functions
+static Real gmma, gmma1;
+
+void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pmb = pfl->pmy_block;
   Coordinates *pco = pmb->pcoord;
@@ -81,10 +77,10 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   }}}
 
 // Enroll boundary value function pointers
-  pmb->pbval->EnrollFluidBoundaryFunction(outer_x1, noh3d_oib);
-  pmb->pbval->EnrollFluidBoundaryFunction(outer_x2, noh3d_ojb);
+  pmb->pbval->EnrollHydroBoundaryFunction(outer_x1, noh3d_oib);
+  pmb->pbval->EnrollHydroBoundaryFunction(outer_x2, noh3d_ojb);
   if (pmb->block_size.nx3 > 1) {
-    pmb->pbval->EnrollFluidBoundaryFunction(outer_x3, noh3d_okb);
+    pmb->pbval->EnrollHydroBoundaryFunction(outer_x3, noh3d_okb);
   }
 
 }

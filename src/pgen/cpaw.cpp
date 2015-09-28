@@ -13,26 +13,6 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../mesh.hpp" 
-
-// C++ headers
-#include <iostream>   // endl
-#include <sstream>    // stringstream
-#include <stdexcept>  // runtime_error
-#include <string>     // c_str()
-
-// Athena headers
-#include "../athena.hpp"           // enums, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/eos/eos.hpp"    // eos
-#include "../fluid/fluid.hpp"      // Fluid
-#include "../field/field.hpp"      // Field
-#include "../coordinates/coordinates.hpp" // Coordinates
-
-//======================================================================================
 //! \file cpaw.c
 //  \brief Circularly polarized Alfven wave (CPAW) for 1D/2D/3D problems
 //
@@ -43,8 +23,24 @@
 // Can be used for [standing/traveling] waves [(problem/v_par=1.0)/(problem/v_par=0.0)]
 //
 // REFERENCE: G. Toth,  "The div(B)=0 constraint in shock capturing MHD codes", JCP,
-//   161, 605 (2000)						      */
+//   161, 605 (2000)
 //======================================================================================
+
+// C/C++ headers
+#include <iostream>   // endl
+#include <sstream>    // stringstream
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str()
+
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../fluid/fluid.hpp"
+#include "../field/field.hpp"
+#include "../fluid/eos/eos.hpp"
+#include "../coordinates/coordinates.hpp"
 
 // Parameters which define initial solution -- made global so that they can be shared
 // with functions A1,2,3 which compute vector potentials
@@ -63,7 +59,7 @@ static Real A3(const Real x1, const Real x2, const Real x3);
 //  \brief circularly polarized Alfven wave problem generator for 1D/2D/3D problems.
 //======================================================================================
 
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pmb = pfl->pmy_block;
   Coordinates *pco = pmb->pcoord;

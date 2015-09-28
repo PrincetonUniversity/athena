@@ -16,12 +16,12 @@
 #include "../parameter_input.hpp"          // ParameterInput
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // Field
-#include "../fluid/fluid.hpp"              // Fluid
-#include "../fluid/eos/eos.hpp"            // FluidEqnOfState
+#include "../fluid/fluid.hpp"
+#include "../fluid/eos/eos.hpp"
 
 // Function for setting initial conditions
 // Inputs:
-//   pfl: Fluid
+//   pfl: Hydro
 //   pfd: Field
 //   pin: parameters
 // Outputs: (none)
@@ -31,7 +31,7 @@
 //     this helps shock tube 2 from Mignone, Ugliano, & Bodo 2009, MNRAS 393 1141
 //     otherwise the middle interface would go to left variables, creating a
 //         particularly troublesome jump leading to NaN's
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 {
   // Prepare index bounds
   MeshBlock *pmb = pfl->pmy_block;

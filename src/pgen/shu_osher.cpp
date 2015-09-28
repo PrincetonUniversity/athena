@@ -13,22 +13,6 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../mesh.hpp"
-
-// C++ headers
-#include <cmath>  // sin()
-
-// Athena headers
-#include "../athena.hpp"           // enums, macros, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/fluid.hpp"      // Fluid
-#include "../fluid/eos/eos.hpp"    // GetGamma
-#include "../coordinates/coordinates.hpp" // Coordinates
-
-//======================================================================================
 //! \file shu_osher.cpp
 //  \brief Problem generator for Shu-Osher shocktube test, involving
 //   interaction of a Mach 3 shock with a sine wave density distribution.  
@@ -37,7 +21,20 @@
 //   non-oscillatory shock-capturing schemes, II", JCP, 83, 32 (1998)	     
 //======================================================================================
 
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+// C/C++ headers
+#include <cmath>  // sin()
+
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../fluid/fluid.hpp"
+#include "../field/field.hpp"
+#include "../fluid/eos/eos.hpp"
+#include "../coordinates/coordinates.hpp"
+
+void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pb = pfl->pmy_block;
 

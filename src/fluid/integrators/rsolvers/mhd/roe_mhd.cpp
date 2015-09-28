@@ -13,29 +13,6 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../../fluid_integrator.hpp"
-
-// C++ headers
-#include <algorithm>  // max()
-#include <cmath>      // sqrt()
-
-// Athena headers
-#include "../../../../athena.hpp"         // enums, macros, Real
-#include "../../../../athena_arrays.hpp"  // AthenaArray
-#include "../../../fluid.hpp"             // Fluid
-#include "../../../eos/eos.hpp"           // GetGamma
-
-// function to compute eigenvalues and eigenvectors of Roe's matrix A
-inline static void RoeEigensystem(const Real wroe[], const Real b1, 
-  const Real x, const Real y, Real eigenvalues[],
-  Real right_eigenmatrix[][(NWAVE)], Real left_eigenmatrix[][(NWAVE)]);
-
-// (gamma-1) and isothermal sound speed made global so can be shared with eigensystem
-static Real gm1, iso_cs;
-
-//======================================================================================
 //! \file  roe_mhd.cpp
 //  \brief Roe's linearized Riemann solver for MHD.
 //
@@ -47,7 +24,29 @@ static Real gm1, iso_cs;
 //   JCP, 43, 357 (1981).
 //======================================================================================
 
-void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const int iu,
+
+// C/C++ headers
+#include <algorithm>  // max()
+#include <cmath>      // sqrt()
+
+// Athena++ headers
+#include "../../../../athena.hpp"
+#include "../../../../athena_arrays.hpp"
+#include "../../../fluid.hpp"
+#include "../../../eos/eos.hpp"
+
+// this class header
+#include "../../fluid_integrator.hpp"
+
+// function to compute eigenvalues and eigenvectors of Roe's matrix A
+inline static void RoeEigensystem(const Real wroe[], const Real b1, 
+  const Real x, const Real y, Real eigenvalues[],
+  Real right_eigenmatrix[][(NWAVE)], Real left_eigenmatrix[][(NWAVE)]);
+
+// (gamma-1) and isothermal sound speed made global so can be shared with eigensystem
+static Real gm1, iso_cs;
+
+void HydroIntegrator::RiemannSolver(const int k,const int j, const int il, const int iu,
   const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
   AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {

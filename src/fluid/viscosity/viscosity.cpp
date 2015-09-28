@@ -13,26 +13,24 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 //
 //======================================================================================
-
-// Primary header
-#include "viscosity.hpp"
-
-// Athena headers
-#include "../../athena.hpp"          // Real
-#include "../../athena_arrays.hpp"   // AthenaArray
-#include "../../mesh.hpp"            // MeshBlock
-#include "../../coordinates/coordinates.hpp"  // src_terms_i_
-#include "../fluid.hpp"              // Fluid
-#include "../../parameter_input.hpp" // ParameterInput
-
-//======================================================================================
 //! \file viscosity.cpp
 //  \brief implements functions that compute viscosity terms in the fluid
 //======================================================================================
 
+// Athena++ headers
+#include "../../athena.hpp"
+#include "../../athena_arrays.hpp"
+#include "../../mesh.hpp"
+#include "../../coordinates/coordinates.hpp"
+#include "../fluid.hpp"
+#include "../../parameter_input.hpp"
+
+// this class header
+#include "viscosity.hpp"
+
 // viscosity constructor 
 
-Viscosity::Viscosity(Fluid *pf, ParameterInput *pin)
+Viscosity::Viscosity(Hydro *pf, ParameterInput *pin)
 {
   pmy_fluid_ = pf;
   nuiso_ = pin->GetOrAddReal("problem","nuiso",0.0);

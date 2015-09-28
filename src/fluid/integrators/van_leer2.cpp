@@ -13,40 +13,37 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
+//! \file van_leer2.cpp
+//  \brief van-Leer (MUSCL-Hancock) second-order integrator
+//======================================================================================
 
-// C++ headers
+// C/C++ headers
 #include <algorithm>   // min,max
 
-// Primary header
-#include "fluid_integrator.hpp"
+// Athena++ headers
+#include "../../athena.hpp"
+#include "../../athena_arrays.hpp"
+#include "../../coordinates/coordinates.hpp"
+#include "../fluid.hpp"
+#include "../../field/field.hpp"
+#include "../../mesh.hpp"
+#include "../srcterms/srcterms.hpp"
+#include "../../bvals/bvals.hpp"
+#include "../viscosity/viscosity.hpp"
 
-// Athena headers
-#include "../../athena.hpp"                  // enums, macros, Real
-#include "../../athena_arrays.hpp"           // AthenaArray
-#include "../../coordinates/coordinates.hpp" // Coordinates
-#include "../fluid.hpp"                      // Fluid
-#include "../../field/field.hpp"             // Fields
-#include "../../mesh.hpp"                    // MeshBlock
-#include "../srcterms/srcterms.hpp"          // PhysicalSourceTerms()
-#include "../../bvals/bvals.hpp"             // BoundaryValues
-#include "../viscosity/viscosity.hpp"        // Viscosity
+// this class header
+#include "fluid_integrator.hpp"
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL
 #include <omp.h>
 #endif
 
-
-//======================================================================================
-//! \file van_leer2.cpp
-//  \brief van-Leer (MUSCL-Hancock) second-order integrator
-//======================================================================================
-
 //--------------------------------------------------------------------------------------
-//! \fn  void FluidIntegrator::Predict
+//! \fn  void HydroIntegrator::Predict
 //  \brief predictor step for 2nd order VL integrator
 
-void FluidIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<Real> &w,
+void HydroIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<Real> &w,
  InterfaceField &b, AthenaArray<Real> &bcc, const int step)
 {
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;

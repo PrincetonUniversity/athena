@@ -13,19 +13,19 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
+//! \file jet.cpp
+//  \brief Sets up a jet introduced through L-x1 boundary (left edge)
+//======================================================================================
 
-// Primary header
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
 #include "../mesh.hpp"
-
-// Athena headers
-#include "../athena.hpp"           // enums, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/fluid.hpp"      // Fluid
-#include "../fluid/eos/eos.hpp"    // GetGamma
-#include "../field/field.hpp"      // magnetic field
-#include "../bvals/bvals.hpp"      // Boundary Enroll
-#include "../coordinates/coordinates.hpp" // Coordinates
+#include "../fluid/fluid.hpp"
+#include "../field/field.hpp"
+#include "../fluid/eos/eos.hpp"
+#include "../coordinates/coordinates.hpp"
 
 // BCs on L-x1 (left edge) of grid with jet inflow conditions
 void jet_fluid_iib(MeshBlock *pmb, AthenaArray<Real> &a,
@@ -37,12 +37,7 @@ void jet_field_iib(MeshBlock *pmb, InterfaceField &a,
 static Real r_jet,d_jet,p_jet,vx_jet,vy_jet,vz_jet,bx_jet,by_jet,bz_jet;
 static Real gm1,x2_0,x3_0;
 
-//======================================================================================
-//! \file jet.cpp
-//  \brief Sets up a jet introduced through L-x1 boundary (left edge) */
-//======================================================================================
-
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 {
   MeshBlock *pmb = pfl->pmy_block;
 
@@ -121,7 +116,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   }
 
 // Enroll boundary value function pointers
-  pmb->pbval->EnrollFluidBoundaryFunction(inner_x1, jet_fluid_iib);
+  pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, jet_fluid_iib);
 
   return;
 }

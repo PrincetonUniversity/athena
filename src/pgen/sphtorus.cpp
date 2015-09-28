@@ -5,23 +5,21 @@
  * PURPOSE: Problem generator for the torus problem (Stone et al. 1999)
 /*============================================================================*/
 
-// C++ headers
+// C/C++ headers
 #include <iostream>   // endl
 #include <cmath>      // sqrt
 #include <cstdlib>    // srand
 
-// Athena headers
-#include "../defs.hpp"
-#include "../athena.hpp"           // enums, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../mesh.hpp"             // MeshBlock
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/eos/eos.hpp"    // ParameterInput
-#include "../fluid/fluid.hpp"      // Fluid
-#include "../field/field.hpp"      // Field
-#include "../bvals/bvals.hpp" // EnrollFluidBValFunction
-#include "../coordinates/coordinates.hpp" // Coordinates
-#include "../fluid/integrators/fluid_integrator.hpp"  // FieldIntegrator  
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../fluid/fluid.hpp"
+#include "../field/field.hpp"
+#include "../bvals/bvals.hpp"
+#include "../fluid/eos/eos.hpp"
+#include "../coordinates/coordinates.hpp"
 
 using namespace std;
 // #ifdef ISOTHERMAL
@@ -118,7 +116,7 @@ Real magp(MeshBlock *pmb, int i, int j, int k)
 }
 
 //problem generator
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 {
 
   MeshBlock *pmb = pfl->pmy_block;
@@ -152,10 +150,10 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   acons=0.5*(dist-1.0)/dist/(en+1.0);
 
   /* assign boundary conditions and gravitational force function*/
-  pmb->pbval->EnrollFluidBoundaryFunction(inner_x1, stbv_iib);
-  pmb->pbval->EnrollFluidBoundaryFunction(inner_x2, stbv_ijb);
-  pmb->pbval->EnrollFluidBoundaryFunction(outer_x1, stbv_oib);
-  pmb->pbval->EnrollFluidBoundaryFunction(outer_x2, stbv_ojb);
+  pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, stbv_iib);
+  pmb->pbval->EnrollHydroBoundaryFunction(inner_x2, stbv_ijb);
+  pmb->pbval->EnrollHydroBoundaryFunction(outer_x1, stbv_oib);
+  pmb->pbval->EnrollHydroBoundaryFunction(outer_x2, stbv_ojb);
 
   if (MAGNETIC_FIELDS_ENABLED) {
     pmb->pbval->EnrollFieldBoundaryFunction(inner_x1, OutflowInnerX1);

@@ -1,4 +1,3 @@
-
 //======================================================================================
 // Athena++ astrophysical MHD code
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
@@ -14,9 +13,9 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "bvals.hpp"
+//! \file bvals.cpp
+//  \brief implements functions that initialize/apply BCs on each dir
+//======================================================================================
 
 // C++ headers
 #include <iostream>   // endl
@@ -28,15 +27,18 @@
 #include <cstdlib>
 #include <cmath>
 
-// Athena headers
-#include "../athena.hpp"          // Real
+// Athena++ classes headers
+#include "../athena.hpp"
 #include "../globals.hpp"
-#include "../athena_arrays.hpp"   // AthenaArray
-#include "../mesh.hpp"            // MeshBlock
-#include "../fluid/fluid.hpp"     // Fluid
-#include "../field/field.hpp"     // Fluid
-#include "../coordinates/coordinates.hpp" // Coordinates
-#include "../parameter_input.hpp" // ParameterInput
+#include "../athena_arrays.hpp"
+#include "../mesh.hpp"
+#include "../fluid/fluid.hpp"
+#include "../field/field.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../parameter_input.hpp"
+
+// this class header
+#include "bvals.hpp"
 
 // MPI header
 #ifdef MPI_PARALLEL
@@ -45,11 +47,6 @@
 
 static NeighborIndexes ni_[56];
 static int bufid_[56];
-
-//======================================================================================
-//! \file bvals.cpp
-//  \brief implements functions that initialize/apply BCs on each dir
-//======================================================================================
 
 // BoundaryValues constructor - sets functions for the appropriate
 // boundary conditions at each of the 6 dirs of a MeshBlock
@@ -69,17 +66,17 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   nface_=2; nedge_=0;
   switch(pmb->block_bcs[inner_x1]){
     case 1:
-      FluidBoundary_[inner_x1] = ReflectInnerX1;
+      HydroBoundary_[inner_x1] = ReflectInnerX1;
       FieldBoundary_[inner_x1] = ReflectInnerX1;
       break;
     case 2:
-      FluidBoundary_[inner_x1] = OutflowInnerX1;
+      HydroBoundary_[inner_x1] = OutflowInnerX1;
       FieldBoundary_[inner_x1] = OutflowInnerX1;
       break;
     case -1: // block boundary
     case 3: // do nothing, useful for user-enrolled BCs
     case 4: // periodic boundary
-      FluidBoundary_[inner_x1] = NULL;
+      HydroBoundary_[inner_x1] = NULL;
       FieldBoundary_[inner_x1] = NULL;
       break;
     default:
@@ -92,17 +89,17 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 // Outer x1
   switch(pmb->block_bcs[outer_x1]){
     case 1:
-      FluidBoundary_[outer_x1] = ReflectOuterX1;
+      HydroBoundary_[outer_x1] = ReflectOuterX1;
       FieldBoundary_[outer_x1] = ReflectOuterX1;
       break;
     case 2:
-      FluidBoundary_[outer_x1] = OutflowOuterX1;
+      HydroBoundary_[outer_x1] = OutflowOuterX1;
       FieldBoundary_[outer_x1] = OutflowOuterX1;
       break;
     case -1: // block boundary
     case 3: // do nothing, useful for user-enrolled BCs
     case 4: // periodic boundary
-      FluidBoundary_[outer_x1] = NULL;
+      HydroBoundary_[outer_x1] = NULL;
       FieldBoundary_[outer_x1] = NULL;
       break;
     default:
@@ -117,17 +114,17 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 // Inner x2
     switch(pmb->block_bcs[inner_x2]){
       case 1:
-        FluidBoundary_[inner_x2] = ReflectInnerX2;
+        HydroBoundary_[inner_x2] = ReflectInnerX2;
         FieldBoundary_[inner_x2] = ReflectInnerX2;
         break;
       case 2:
-        FluidBoundary_[inner_x2] = OutflowInnerX2;
+        HydroBoundary_[inner_x2] = OutflowInnerX2;
         FieldBoundary_[inner_x2] = OutflowInnerX2;
         break;
       case -1: // block boundary
       case 3: // do nothing, useful for user-enrolled BCs
       case 4: // periodic boundary
-        FluidBoundary_[inner_x2] = NULL;
+        HydroBoundary_[inner_x2] = NULL;
         FieldBoundary_[inner_x2] = NULL;
         break;
       default:
@@ -140,17 +137,17 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 // Outer x2
     switch(pmb->block_bcs[outer_x2]){
       case 1:
-        FluidBoundary_[outer_x2] = ReflectOuterX2;
+        HydroBoundary_[outer_x2] = ReflectOuterX2;
         FieldBoundary_[outer_x2] = ReflectOuterX2;
         break;
       case 2:
-        FluidBoundary_[outer_x2] = OutflowOuterX2;
+        HydroBoundary_[outer_x2] = OutflowOuterX2;
         FieldBoundary_[outer_x2] = OutflowOuterX2;
         break;
       case -1: // block boundary
       case 3: // do nothing, useful for user-enrolled BCs
       case 4: // periodic boundary
-        FluidBoundary_[outer_x2] = NULL;
+        HydroBoundary_[outer_x2] = NULL;
         FieldBoundary_[outer_x2] = NULL;
         break;
       default:
@@ -166,17 +163,17 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 // Inner x3
     switch(pmb->block_bcs[inner_x3]){
       case 1:
-        FluidBoundary_[inner_x3] = ReflectInnerX3;
+        HydroBoundary_[inner_x3] = ReflectInnerX3;
         FieldBoundary_[inner_x3] = ReflectInnerX3;
         break;
       case 2:
-        FluidBoundary_[inner_x3] = OutflowInnerX3;
+        HydroBoundary_[inner_x3] = OutflowInnerX3;
         FieldBoundary_[inner_x3] = OutflowInnerX3;
         break;
       case -1: // block boundary
       case 3: // do nothing, useful for user-enrolled BCs
       case 4: // periodic boundary
-        FluidBoundary_[inner_x3] = NULL;
+        HydroBoundary_[inner_x3] = NULL;
         FieldBoundary_[inner_x3] = NULL;
         break;
       default:
@@ -189,17 +186,17 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 // Outer x3
     switch(pmb->block_bcs[outer_x3]){
       case 1:
-        FluidBoundary_[outer_x3] = ReflectOuterX3;
+        HydroBoundary_[outer_x3] = ReflectOuterX3;
         FieldBoundary_[outer_x3] = ReflectOuterX3;
         break;
       case 2:
-        FluidBoundary_[outer_x3] = OutflowOuterX3;
+        HydroBoundary_[outer_x3] = OutflowOuterX3;
         FieldBoundary_[outer_x3] = OutflowOuterX3;
         break;
       case -1: // block boundary
       case 3: // do nothing, useful for user-enrolled BCs
       case 4: // periodic boundary
-        FluidBoundary_[outer_x3] = NULL;
+        HydroBoundary_[outer_x3] = NULL;
         FieldBoundary_[outer_x3] = NULL;
         break;
       default:
@@ -803,26 +800,26 @@ void BoundaryValues::Initialize(void)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::EnrollFluidBoundaryFunction(enum direction dir,
-//                                                       BValFluid_t my_bc)
+//! \fn void BoundaryValues::EnrollHydroBoundaryFunction(enum direction dir,
+//                                                       BValHydro_t my_bc)
 //  \brief Enroll a user-defined boundary function for fluid
 
-void BoundaryValues::EnrollFluidBoundaryFunction(enum direction dir, BValFluid_t my_bc)
+void BoundaryValues::EnrollHydroBoundaryFunction(enum direction dir, BValHydro_t my_bc)
 {
   std::stringstream msg;
   if(dir<0 || dir>5) {
-    msg << "### FATAL ERROR in EnrollFluidBoundaryCondition function" << std::endl
+    msg << "### FATAL ERROR in EnrollHydroBoundaryCondition function" << std::endl
         << "dirName = " << dir << " not valid" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
   if(pmy_mblock_->block_bcs[dir]==-1) return;
   if(pmy_mblock_->block_bcs[dir]!=3) {
-    msg << "### FATAL ERROR in EnrollFluidBoundaryCondition function" << std::endl
+    msg << "### FATAL ERROR in EnrollHydroBoundaryCondition function" << std::endl
         << "A user-defined boundary condition flag (3) must be specified "
         << "in the input file to use a user-defined boundary function." << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  FluidBoundary_[dir]=my_bc;
+  HydroBoundary_[dir]=my_bc;
   return;
 }
 
@@ -861,7 +858,7 @@ void BoundaryValues::CheckBoundary(void)
   MeshBlock *pmb=pmy_mblock_;
   for(int i=0;i<nface_;i++) {
     if(pmb->block_bcs[i]==3) {
-      if(FluidBoundary_[i]==NULL) {
+      if(HydroBoundary_[i]==NULL) {
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues::CheckBoundary" << std::endl
             << "A user-defined boundary is specified but the fluid boundary function "
@@ -936,10 +933,10 @@ void BoundaryValues::StartReceivingAll(void)
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::RestrictFluid(AthenaArray<Real> &src,
+//! \fn void BoundaryValues::RestrictHydro(AthenaArray<Real> &src,
 //                           int csi, int cei, int csj, int cej, int csk, int cek)
 //  \brief restrict the fluid data and set them into the coarse buffer
-void BoundaryValues::RestrictFluid(AthenaArray<Real> &src, 
+void BoundaryValues::RestrictHydro(AthenaArray<Real> &src, 
                              int csi, int cei, int csj, int cej, int csk, int cek)
 {
   MeshBlock *pmb=pmy_mblock_;
@@ -1003,10 +1000,10 @@ void BoundaryValues::RestrictFluid(AthenaArray<Real> &src,
 
 
 //--------------------------------------------------------------------------------------
-//! \fn int BoundaryValues::LoadFluidBoundaryBufferSameLevel(AthenaArray<Real> &src,
+//! \fn int BoundaryValues::LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src,
 //                                                 Real *buf, NeighborBlock& nb)
 //  \brief Set fluid boundary buffers for sending to a block on the same level
-int BoundaryValues::LoadFluidBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
+int BoundaryValues::LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
                                                      NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_mblock_;
@@ -1034,10 +1031,10 @@ int BoundaryValues::LoadFluidBoundaryBufferSameLevel(AthenaArray<Real> &src, Rea
 
 
 //--------------------------------------------------------------------------------------
-//! \fn int BoundaryValues::LoadFluidBoundaryBufferToCoarser(AthenaArray<Real> &src,
+//! \fn int BoundaryValues::LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src,
 //                                                 Real *buf, NeighborBlock& nb)
 //  \brief Set fluid boundary buffers for sending to a block on the coarser level
-int BoundaryValues::LoadFluidBoundaryBufferToCoarser(AthenaArray<Real> &src, Real *buf,
+int BoundaryValues::LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src, Real *buf,
                                                      NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_mblock_;
@@ -1052,7 +1049,7 @@ int BoundaryValues::LoadFluidBoundaryBufferToCoarser(AthenaArray<Real> &src, Rea
   ek=(nb.ox3<0)?(pmb->cks+cn):pmb->cke;
 
   // restrict the data before sending
-  RestrictFluid(src, si, ei, sj, ej, sk, ek);
+  RestrictHydro(src, si, ei, sj, ej, sk, ek);
 
   int p=0;
   for (int n=0; n<(NFLUID); ++n) {
@@ -1069,10 +1066,10 @@ int BoundaryValues::LoadFluidBoundaryBufferToCoarser(AthenaArray<Real> &src, Rea
 
 
 //--------------------------------------------------------------------------------------
-//! \fn int BoundaryValues::LoadFluidBoundaryBufferToFiner(AthenaArray<Real> &src,
+//! \fn int BoundaryValues::LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src,
 //                                                 Real *buf, NeighborBlock& nb)
 //  \brief Set fluid boundary buffers for sending to a block on the finer level
-int BoundaryValues::LoadFluidBoundaryBufferToFiner(AthenaArray<Real> &src, Real *buf,
+int BoundaryValues::LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src, Real *buf,
                                                    NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_mblock_;
@@ -1128,9 +1125,9 @@ int BoundaryValues::LoadFluidBoundaryBufferToFiner(AthenaArray<Real> &src, Real 
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SendFluidBoundaryBuffers(AthenaArray<Real> &src, int step)
+//! \fn void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step)
 //  \brief Send boundary buffers
-void BoundaryValues::SendFluidBoundaryBuffers(AthenaArray<Real> &src, int step)
+void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step)
 {
   MeshBlock *pmb=pmy_mblock_;
   int mylevel=pmb->loc.level;
@@ -1139,11 +1136,11 @@ void BoundaryValues::SendFluidBoundaryBuffers(AthenaArray<Real> &src, int step)
     NeighborBlock& nb = pmb->neighbor[n];
     int ssize;
     if(nb.level==mylevel)
-      ssize=LoadFluidBoundaryBufferSameLevel(src, fluid_send_[step][nb.bufid],nb);
+      ssize=LoadHydroBoundaryBufferSameLevel(src, fluid_send_[step][nb.bufid],nb);
     else if(nb.level<mylevel)
-      ssize=LoadFluidBoundaryBufferToCoarser(src, fluid_send_[step][nb.bufid],nb);
+      ssize=LoadHydroBoundaryBufferToCoarser(src, fluid_send_[step][nb.bufid],nb);
     else
-      ssize=LoadFluidBoundaryBufferToFiner(src, fluid_send_[step][nb.bufid], nb);
+      ssize=LoadHydroBoundaryBufferToFiner(src, fluid_send_[step][nb.bufid], nb);
     if(nb.rank == Globals::my_rank) { // on the same process
       MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
       std::memcpy(pbl->pbval->fluid_recv_[step][nb.targetid],
@@ -1161,10 +1158,10 @@ void BoundaryValues::SendFluidBoundaryBuffers(AthenaArray<Real> &src, int step)
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SetFluidBoundarySameLevel(AthenaArray<Real> &dst,
+//! \fn void BoundaryValues::SetHydroBoundarySameLevel(AthenaArray<Real> &dst,
 //                                                     Real *buf, NeighborBlock& nb)
 //  \brief Set fluid boundary received from a block on the same level
-void BoundaryValues::SetFluidBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
+void BoundaryValues::SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
                                                NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_mblock_;
@@ -1195,9 +1192,9 @@ void BoundaryValues::SetFluidBoundarySameLevel(AthenaArray<Real> &dst, Real *buf
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SetFluidBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
+//! \fn void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
 //  \brief Set fluid prolongation buffer received from a block on the same level
-void BoundaryValues::SetFluidBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
+void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_mblock_;
 
@@ -1245,10 +1242,10 @@ void BoundaryValues::SetFluidBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SetFluidBoundaryFromFiner(AthenaArray<Real> &dst,
+//! \fn void BoundaryValues::SetHydroBoundaryFromFiner(AthenaArray<Real> &dst,
 //                                                     Real *buf, NeighborBlock& nb)
 //  \brief Set fluid boundary received from a block on the same level
-void BoundaryValues::SetFluidBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf,
+void BoundaryValues::SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf,
                                                NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_mblock_;
@@ -1308,9 +1305,9 @@ void BoundaryValues::SetFluidBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf
 
 
 //--------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::ReceiveFluidBoundaryBuffers(AthenaArray<Real> &dst, int step)
+//! \fn bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst, int step)
 //  \brief receive the boundary data
-bool BoundaryValues::ReceiveFluidBoundaryBuffers(AthenaArray<Real> &dst, int step)
+bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst, int step)
 {
   MeshBlock *pmb=pmy_mblock_;
   bool flag=true;
@@ -1337,21 +1334,21 @@ bool BoundaryValues::ReceiveFluidBoundaryBuffers(AthenaArray<Real> &dst, int ste
 #endif
     }
     if(nb.level==pmb->loc.level)
-      SetFluidBoundarySameLevel(dst, fluid_recv_[step][nb.bufid], nb);
+      SetHydroBoundarySameLevel(dst, fluid_recv_[step][nb.bufid], nb);
     else if(nb.level<pmb->loc.level) // this set only the prolongation buffer
-      SetFluidBoundaryFromCoarser(fluid_recv_[step][nb.bufid], nb);
+      SetHydroBoundaryFromCoarser(fluid_recv_[step][nb.bufid], nb);
     else
-      SetFluidBoundaryFromFiner(dst, fluid_recv_[step][nb.bufid], nb);
+      SetHydroBoundaryFromFiner(dst, fluid_recv_[step][nb.bufid], nb);
     fluid_flag_[step][nb.bufid] = boundary_completed; // completed
   }
   return flag;
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ReceiveFluidBoundaryBuffersWithWait(AthenaArray<Real> &dst,
+//! \fn void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst,
 //                                                               int step)
 //  \brief receive the boundary data for initialization
-void BoundaryValues::ReceiveFluidBoundaryBuffersWithWait(AthenaArray<Real> &dst, int step)
+void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst, int step)
 {
   MeshBlock *pmb=pmy_mblock_;
 
@@ -1362,11 +1359,11 @@ void BoundaryValues::ReceiveFluidBoundaryBuffersWithWait(AthenaArray<Real> &dst,
       MPI_Wait(&req_fluid_recv_[0][nb.bufid],MPI_STATUS_IGNORE);
 #endif
     if(nb.level==pmb->loc.level)
-      SetFluidBoundarySameLevel(dst, fluid_recv_[0][nb.bufid], nb);
+      SetHydroBoundarySameLevel(dst, fluid_recv_[0][nb.bufid], nb);
     else if(nb.level<pmb->loc.level)
-      SetFluidBoundaryFromCoarser(fluid_recv_[0][nb.bufid], nb);
+      SetHydroBoundaryFromCoarser(fluid_recv_[0][nb.bufid], nb);
     else
-      SetFluidBoundaryFromFiner(dst, fluid_recv_[0][nb.bufid], nb);
+      SetHydroBoundaryFromFiner(dst, fluid_recv_[0][nb.bufid], nb);
     fluid_flag_[0][nb.bufid] = boundary_completed; // completed
   }
   return;
@@ -1597,9 +1594,9 @@ return flag;
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
+//! \fn void BoundaryValues::ProlongateHydroBoundaries(AthenaArray<Real> &dst)
 //  \brief Prolongate the fluid in the ghost zones from the prolongation buffer
-void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
+void BoundaryValues::ProlongateHydroBoundaries(AthenaArray<Real> &dst)
 {
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
@@ -1661,7 +1658,7 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
           }
           else if(nk== 1) rks=pmb->cke+1, rke=pmb->cke+1;
           else if(nk==-1) rks=pmb->cks-1, rke=pmb->cks-1;
-          RestrictFluid(dst, ris, rie, rjs, rje, rks, rke);
+          RestrictHydro(dst, ris, rie, rjs, rje, rks, rke);
         }
       }
     }
@@ -4390,9 +4387,9 @@ void BoundaryValues::ClearBoundaryAll(void)
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::FluidPhysicalBoundaries(AthenaArray<Real> &dst)
+//! \fn void BoundaryValues::HydroPhysicalBoundaries(AthenaArray<Real> &dst)
 //  \brief Apply physical boundary conditions for fluid
-void BoundaryValues::FluidPhysicalBoundaries(AthenaArray<Real> &dst)
+void BoundaryValues::HydroPhysicalBoundaries(AthenaArray<Real> &dst)
 {
   MeshBlock *pmb=pmy_mblock_;
   int bis=pmb->is, bie=pmb->ie, bjs=pmb->js, bje=pmb->je, bks=pmb->ks, bke=pmb->ke;
@@ -4400,31 +4397,31 @@ void BoundaryValues::FluidPhysicalBoundaries(AthenaArray<Real> &dst)
   if(pmb->pmy_mesh->face_only==false) { // extend the ghost zone
     bis=pmb->is-NGHOST;
     bie=pmb->ie+NGHOST;
-    if(FluidBoundary_[inner_x2]==NULL && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
-    if(FluidBoundary_[outer_x2]==NULL && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
-    if(FluidBoundary_[inner_x3]==NULL && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
-    if(FluidBoundary_[outer_x3]==NULL && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
+    if(HydroBoundary_[inner_x2]==NULL && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
+    if(HydroBoundary_[outer_x2]==NULL && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
+    if(HydroBoundary_[inner_x3]==NULL && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
+    if(HydroBoundary_[outer_x3]==NULL && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
   }
 
-  if(FluidBoundary_[inner_x1]!=NULL)
-    FluidBoundary_[inner_x1](pmb, dst, pmb->is, pmb->ie, bjs, bje, bks, bke);
-  if(FluidBoundary_[outer_x1]!=NULL)
-    FluidBoundary_[outer_x1](pmb, dst, pmb->is, pmb->ie, bjs, bje, bks, bke);
+  if(HydroBoundary_[inner_x1]!=NULL)
+    HydroBoundary_[inner_x1](pmb, dst, pmb->is, pmb->ie, bjs, bje, bks, bke);
+  if(HydroBoundary_[outer_x1]!=NULL)
+    HydroBoundary_[outer_x1](pmb, dst, pmb->is, pmb->ie, bjs, bje, bks, bke);
   if(pmb->block_size.nx2>1) { // 2D or 3D
-    if(FluidBoundary_[inner_x2]!=NULL)
-      FluidBoundary_[inner_x2](pmb, dst, bis, bie, pmb->js, pmb->je, bks, bke);
-    if(FluidBoundary_[outer_x2]!=NULL)
-      FluidBoundary_[outer_x2](pmb, dst, bis, bie, pmb->js, pmb->je, bks, bke);
+    if(HydroBoundary_[inner_x2]!=NULL)
+      HydroBoundary_[inner_x2](pmb, dst, bis, bie, pmb->js, pmb->je, bks, bke);
+    if(HydroBoundary_[outer_x2]!=NULL)
+      HydroBoundary_[outer_x2](pmb, dst, bis, bie, pmb->js, pmb->je, bks, bke);
   }
   if(pmb->block_size.nx3>1) { // 3D
     if(pmb->pmy_mesh->face_only==false) {
       bjs=pmb->js-NGHOST;
       bje=pmb->je+NGHOST;
     }
-    if(FluidBoundary_[inner_x3]!=NULL)
-      FluidBoundary_[inner_x3](pmb, dst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
-    if(FluidBoundary_[outer_x3]!=NULL)
-      FluidBoundary_[outer_x3](pmb, dst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
+    if(HydroBoundary_[inner_x3]!=NULL)
+      HydroBoundary_[inner_x3](pmb, dst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
+    if(HydroBoundary_[outer_x3]!=NULL)
+      HydroBoundary_[outer_x3](pmb, dst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
   }
   return;
 }

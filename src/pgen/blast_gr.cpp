@@ -12,8 +12,8 @@
 #include "../parameter_input.hpp"          // ParameterInput
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // Field
-#include "../fluid/fluid.hpp"              // Fluid
-#include "../fluid/eos/eos.hpp"            // FluidEqnOfState
+#include "../fluid/fluid.hpp"
+#include "../fluid/eos/eos.hpp"
 
 // Function for setting initial conditions
 // Inputs:
@@ -21,7 +21,7 @@
 // Outputs:
 //   pfl: fluid primitives, half-timestep primitives, and conserved variables set 
 //   pfd: magnetic field set
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 {
   // Prepare index bounds
   MeshBlock *pmb = pfl->pmy_block;

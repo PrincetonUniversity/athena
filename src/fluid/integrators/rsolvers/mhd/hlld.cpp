@@ -13,18 +13,25 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../../fluid_integrator.hpp"
+//! \file hlld.cpp
+//  \brief HLLD Riemann solver for adiabatic MHD.
+//
+// REFERENCES:
+// - T. Miyoshi & K. Kusano, "A multi-state HLL approximate Riemann solver for ideal
+//   MHD", JCP, 208, 315 (2005)
+//======================================================================================
 
 // C++ headers
 #include <algorithm>  // max(), min()
 
-// Athena headers
-#include "../../../../athena.hpp"         // enums, macros, Real
-#include "../../../../athena_arrays.hpp"  // AthenaArray
-#include "../../../fluid.hpp"             // Fluid
-#include "../../../eos/eos.hpp"           // GetGamma
+// Athena++ headers
+#include "../../../../athena.hpp"
+#include "../../../../athena_arrays.hpp"
+#include "../../../fluid.hpp"
+#include "../../../eos/eos.hpp"
+
+// this class header
+#include "../../fluid_integrator.hpp"
 
 // container to store (density, momentum, total energy, tranverse magnetic field)
 // minimizes changes required to adopt athena4.2 version of this solver 
@@ -34,16 +41,7 @@ typedef struct Cons1D {
 
 #define SMALL_NUMBER 1.0e-8
 
-//======================================================================================
-//! \file hlld.cpp
-//  \brief HLLD Riemann solver for adiabatic MHD.
-//
-// REFERENCES:
-// - T. Miyoshi & K. Kusano, "A multi-state HLL approximate Riemann solver for ideal
-//   MHD", JCP, 208, 315 (2005)
-//======================================================================================
-
-void FluidIntegrator::RiemannSolver(const int k,const int j, const int il, const int iu,
+void HydroIntegrator::RiemannSolver(const int k,const int j, const int il, const int iu,
   const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
   AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {

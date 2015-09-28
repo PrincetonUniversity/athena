@@ -13,25 +13,23 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "fluid_integrator.hpp"
-
-// Athena headers
-#include "../../athena.hpp"          // macros
-#include "../../athena_arrays.hpp"   // AthenaArray
-#include "../fluid.hpp"              // Fluid
-#include "../../mesh.hpp"            // MeshBlock
-#include "../../parameter_input.hpp" 
-
-//======================================================================================
 //! \file integrators.cpp
 //  \brief 
 //======================================================================================
 
+// Athena++ headers
+#include "../../athena.hpp"
+#include "../../athena_arrays.hpp"
+#include "../fluid.hpp"
+#include "../../mesh.hpp"
+#include "../../parameter_input.hpp" 
+
+// this class header
+#include "fluid_integrator.hpp"
+
 // constructor
 
-FluidIntegrator::FluidIntegrator(Fluid *pf, ParameterInput *pin)
+HydroIntegrator::HydroIntegrator(Hydro *pf, ParameterInput *pin)
 {
   pmy_fluid = pf;
 
@@ -67,7 +65,7 @@ FluidIntegrator::FluidIntegrator(Fluid *pf, ParameterInput *pin)
 
 // destructor
 
-FluidIntegrator::~FluidIntegrator()
+HydroIntegrator::~HydroIntegrator()
 {
   wl_.DeleteAthenaArray();
   wr_.DeleteAthenaArray();

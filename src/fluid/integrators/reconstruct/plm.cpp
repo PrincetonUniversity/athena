@@ -13,27 +13,25 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../fluid_integrator.hpp"
-
-// Athena headers
-#include "../../../athena.hpp"         // macros, Real
-#include "../../../athena_arrays.hpp"  // AthenaArray
-#include "../../fluid.hpp"          // Fluid
-#include "../../../mesh.hpp"           // Block
-#include "../../../coordinates/coordinates.hpp" // Coordinates
-
-//======================================================================================
 //! \file plm.cpp
 //  \brief  piecewise linear reconstruction
 //======================================================================================
 
+// Athena++ headers
+#include "../../../athena.hpp"
+#include "../../../athena_arrays.hpp"
+#include "../../fluid.hpp"
+#include "../../../mesh.hpp"
+#include "../../../coordinates/coordinates.hpp"
+
+// this class header
+#include "../fluid_integrator.hpp"
+
 //--------------------------------------------------------------------------------------
-//! \fn FluidIntegrator::ReconstructionFuncX1()
+//! \fn HydroIntegrator::ReconstructionFuncX1()
 //  \brief 
 
-void FluidIntegrator::PiecewiseLinearX1(const int k, const int j,
+void HydroIntegrator::PiecewiseLinearX1(const int k, const int j,
   const int il, const int iu,
   const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &ql, AthenaArray<Real> &qr)
@@ -144,10 +142,10 @@ void FluidIntegrator::PiecewiseLinearX1(const int k, const int j,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn FluidIntegrator::ReconstructionFuncX2()
+//! \fn HydroIntegrator::ReconstructionFuncX2()
 //  \brief 
 
-void FluidIntegrator::PiecewiseLinearX2(const int k, const int j,
+void HydroIntegrator::PiecewiseLinearX2(const int k, const int j,
   const int il, const int iu,
   const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &ql, AthenaArray<Real> &qr)
@@ -233,10 +231,10 @@ void FluidIntegrator::PiecewiseLinearX2(const int k, const int j,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn FluidIntegrator::ReconstructionFuncX3()
+//! \fn HydroIntegrator::ReconstructionFuncX3()
 //  \brief 
 
-void FluidIntegrator::PiecewiseLinearX3(const int k, const int j,
+void HydroIntegrator::PiecewiseLinearX3(const int k, const int j,
   const int il, const int iu,
   const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &ql, AthenaArray<Real> &qr)
