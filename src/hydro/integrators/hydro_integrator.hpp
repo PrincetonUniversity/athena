@@ -1,12 +1,12 @@
-#ifndef FLUID_INTEGRATOR_HPP
-#define FLUID_INTEGRATOR_HPP
+#ifndef HYDRO_INTEGRATOR_HPP
+#define HYDRO_INTEGRATOR_HPP
 //======================================================================================
 // Athena++ astrophysical MHD code
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
 // See LICENSE file for full public license information.
 //======================================================================================
-//! \file fluid_integrator.hpp
-//  \brief defines class HydroIntegrator, data and functions to integrate fluid
+//! \file hydro_integrator.hpp
+//  \brief defines class HydroIntegrator, data and functions to integrate hydro
 //======================================================================================
 
 // Athena headers
@@ -19,14 +19,14 @@ class Hydro;
 class ParameterInput;
 
 //! \class HydroIntegrator
-//  \brief member functions implement various integration algorithms for the fluid
+//  \brief member functions implement various integration algorithms for the hydro
 
 class HydroIntegrator {
 public:
   HydroIntegrator(Hydro *pf, ParameterInput *pin);
   ~HydroIntegrator();
 
-  Hydro *pmy_fluid;  // ptr to Hydro containing this HydroIntegrator
+  Hydro *pmy_hydro;  // ptr to Hydro containing this HydroIntegrator
 
   void OneStep(MeshBlock *pmb, AthenaArray<Real> &u, AthenaArray<Real> &w,
     InterfaceField &b, AthenaArray<Real> &bcc, const int step);
@@ -78,4 +78,4 @@ private:
   AthenaArray<Real> g_, gi_;       // metric and inverse, for some GR Riemann solvers
   AthenaArray<Real> cons_;         // conserved state, for some GR Riemann solvers
 };
-#endif
+#endif // HYDRO_INTEGRATOR_HPP

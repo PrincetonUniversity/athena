@@ -37,17 +37,17 @@ void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
     switch (ivx)
     {
       case IVX:
-        pmy_fluid->pmy_block->pcoord->Face1Metric(k, j, il, iu, g_, gi_);
+        pmy_hydro->pmy_block->pcoord->Face1Metric(k, j, il, iu, g_, gi_);
         i01 = I01;
         i11 = I11;
         break;
       case IVY:
-        pmy_fluid->pmy_block->pcoord->Face2Metric(k, j, il, iu, g_, gi_);
+        pmy_hydro->pmy_block->pcoord->Face2Metric(k, j, il, iu, g_, gi_);
         i01 = I02;
         i11 = I22;
         break;
       case IVZ:
-        pmy_fluid->pmy_block->pcoord->Face3Metric(k, j, il, iu, g_, gi_);
+        pmy_hydro->pmy_block->pcoord->Face3Metric(k, j, il, iu, g_, gi_);
         i01 = I03;
         i11 = I33;
         break;
@@ -58,15 +58,15 @@ void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
     switch (ivx)
     {
       case IVX:
-        pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r,
+        pmy_hydro->pmy_block->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r,
             bb_normal_);
         break;
       case IVY:
-        pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, il, iu, bb, prim_l, prim_r,
+        pmy_hydro->pmy_block->pcoord->PrimToLocal2(k, j, il, iu, bb, prim_l, prim_r,
             bb_normal_);
         break;
       case IVZ:
-        pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r,
+        pmy_hydro->pmy_block->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r,
             bb_normal_);
         break;
     }
@@ -76,7 +76,7 @@ void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
   int ivz = IVX + ((ivx-IVX)+2)%3;
 
   // Extract ratio of specific heats
-  const Real gamma_adi = pmy_fluid->pf_eos->GetGamma();
+  const Real gamma_adi = pmy_hydro->pf_eos->GetGamma();
 
   // Go through each interface
   #pragma simd
@@ -134,13 +134,13 @@ void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
     // Calculate wavespeeds in left state (MB 23)
     Real lambda_p_l, lambda_m_l;
     Real wgas_l = rho_l + gamma_adi/(gamma_adi-1.0) * pgas_l;
-    pmy_fluid->pf_eos->SoundSpeedsSR(wgas_l, pgas_l, u_l[1]/u_l[0], SQR(u_l[0]),
+    pmy_hydro->pf_eos->SoundSpeedsSR(wgas_l, pgas_l, u_l[1]/u_l[0], SQR(u_l[0]),
         &lambda_p_l, &lambda_m_l);
 
     // Calculate wavespeeds in right state (MB 23)
     Real lambda_p_r, lambda_m_r;
     Real wgas_r = rho_r + gamma_adi/(gamma_adi-1.0) * pgas_r;
-    pmy_fluid->pf_eos->SoundSpeedsSR(wgas_r, pgas_r, u_r[1]/u_r[0], SQR(u_r[0]),
+    pmy_hydro->pf_eos->SoundSpeedsSR(wgas_r, pgas_r, u_r[1]/u_r[0], SQR(u_r[0]),
         &lambda_p_r, &lambda_m_r);
 
     // Calculate extremal wavespeeds
@@ -222,15 +222,15 @@ void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
     switch (ivx)
     {
       case IVX:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, il, iu, cons_, bb_normal_,
+        pmy_hydro->pmy_block->pcoord->FluxToGlobal1(k, j, il, iu, cons_, bb_normal_,
             flux);
         break;
       case IVY:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, il, iu, cons_, bb_normal_,
+        pmy_hydro->pmy_block->pcoord->FluxToGlobal2(k, j, il, iu, cons_, bb_normal_,
             flux);
         break;
       case IVZ:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, il, iu, cons_, bb_normal_,
+        pmy_hydro->pmy_block->pcoord->FluxToGlobal3(k, j, il, iu, cons_, bb_normal_,
             flux);
         break;
     }

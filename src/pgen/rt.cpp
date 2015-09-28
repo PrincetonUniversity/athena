@@ -230,7 +230,7 @@ void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a,
   Coordinates *pco = pmb->pcoord;
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
 
       if (n==(IM2)) {
 #pragma simd
@@ -266,7 +266,7 @@ void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a,
   Coordinates *pco = pmb->pcoord;
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
 
       if (n==(IM2)) {
 #pragma simd
@@ -302,7 +302,7 @@ void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a,
   Coordinates *pco = pmb->pcoord;
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js; j<=je; ++j) {
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
 
       if (n==(IM3)) {
 #pragma simd
@@ -338,7 +338,7 @@ void reflect_ox3(MeshBlock *pmb, AthenaArray<Real> &a,
   Coordinates *pco = pmb->pcoord;
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js; j<=je; ++j) {
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
 
       if (n==(IM3)) {
 #pragma simd

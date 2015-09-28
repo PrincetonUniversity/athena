@@ -28,19 +28,19 @@ static void neighbor_average(AthenaArray<Real> &prim, AthenaArray<bool> &problem
 
 // Constructor
 // Inputs:
-//   pf: pointer to fluid object
+//   pf: pointer to hydro object
 //   pin: pointer to runtime inputs
 HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
 {
-  pmy_fluid_ = pf;
-  gamma_ = pin->GetReal("fluid", "gamma");
-  density_floor_ = pin->GetOrAddReal("fluid", "dfloor", 1024*FLT_MIN);
-  pressure_floor_ = pin->GetOrAddReal("fluid", "pfloor", 1024*FLT_MIN);
-  rho_min_ = pin->GetOrAddReal("fluid", "rho_min", density_floor_);
-  rho_pow_ = pin->GetOrAddReal("fluid", "rho_pow", 0.0);
-  u_min_ = pin->GetOrAddReal("fluid", "u_min", pressure_floor_/(gamma_-1.0));
-  u_pow_ = pin->GetOrAddReal("fluid", "u_pow", 0.0);
-  gamma_max_ = pin->GetOrAddReal("fluid", "gamma_max", 1000.0);
+  pmy_hydro_ = pf;
+  gamma_ = pin->GetReal("hydro", "gamma");
+  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", 1024*FLT_MIN);
+  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", 1024*FLT_MIN);
+  rho_min_ = pin->GetOrAddReal("hydro", "rho_min", density_floor_);
+  rho_pow_ = pin->GetOrAddReal("hydro", "rho_pow", 0.0);
+  u_min_ = pin->GetOrAddReal("hydro", "u_min", pressure_floor_/(gamma_-1.0));
+  u_pow_ = pin->GetOrAddReal("hydro", "u_pow", 0.0);
+  gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
   int ncells1 = pf->pmy_block->block_size.nx1 + 2*NGHOST;
   g_.NewAthenaArray(NMETRIC, ncells1);
   g_inv_.NewAthenaArray(NMETRIC, ncells1);
@@ -89,7 +89,7 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const Real &gamma_adi = gamma_;
 
   // Determine array bounds
-  MeshBlock *pmb = pmy_fluid_->pmy_block;
+  MeshBlock *pmb = pmy_hydro_->pmy_block;
   int il = pmb->is - NGHOST;
   int iu = pmb->ie + NGHOST;
   int jl = pmb->js;

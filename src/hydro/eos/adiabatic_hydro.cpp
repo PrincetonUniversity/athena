@@ -36,10 +36,10 @@
 
 HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
 {
-  pmy_fluid_ = pf;
-  gamma_ = pin->GetReal("fluid","gamma");
-  density_floor_  = pin->GetOrAddReal("fluid","dfloor",(1024*(FLT_MIN)));
-  pressure_floor_ = pin->GetOrAddReal("fluid","pfloor",(1024*(FLT_MIN)));
+  pmy_hydro_ = pf;
+  gamma_ = pin->GetReal("hydro","gamma");
+  density_floor_  = pin->GetOrAddReal("hydro","dfloor",(1024*(FLT_MIN)));
+  pressure_floor_ = pin->GetOrAddReal("hydro","pfloor",(1024*(FLT_MIN)));
 }
 
 // destructor
@@ -58,7 +58,7 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
   AthenaArray<Real> &bcc)
 {
-  MeshBlock *pmb = pmy_fluid_->pmy_block;
+  MeshBlock *pmb = pmy_hydro_->pmy_block;
   int jl = pmb->js; int ju = pmb->je;
   int kl = pmb->ks; int ku = pmb->ke;
   if (pmb->block_size.nx2 > 1) {
@@ -114,10 +114,10 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn Real HydroEqnOfState::SoundSpeed(Real prim[NFLUID])
+// \!fn Real HydroEqnOfState::SoundSpeed(Real prim[NHYDRO])
 // \brief returns adiabatic sound speed given vector of primitive variables
 
-Real HydroEqnOfState::SoundSpeed(const Real prim[NFLUID])
+Real HydroEqnOfState::SoundSpeed(const Real prim[NHYDRO])
 {
   return sqrt(gamma_*prim[IEN]/prim[IDN]);
 }

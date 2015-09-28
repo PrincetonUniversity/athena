@@ -210,15 +210,15 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   // Clear flags and requests
   for(int l=0;l<NSTEP;l++) {
     for(int i=0;i<56;i++){
-      fluid_flag_[l][i]=boundary_waiting;
+      hydro_flag_[l][i]=boundary_waiting;
       field_flag_[l][i]=boundary_waiting;
-      fluid_send_[l][i]=NULL;
-      fluid_recv_[l][i]=NULL;
+      hydro_send_[l][i]=NULL;
+      hydro_recv_[l][i]=NULL;
       field_send_[l][i]=NULL;
       field_recv_[l][i]=NULL;
 #ifdef MPI_PARALLEL
-      req_fluid_send_[l][i]=MPI_REQUEST_NULL;
-      req_fluid_recv_[l][i]=MPI_REQUEST_NULL;
+      req_hydro_send_[l][i]=MPI_REQUEST_NULL;
+      req_hydro_recv_[l][i]=MPI_REQUEST_NULL;
 #endif
     }
     for(int i=0;i<48;i++){
@@ -262,9 +262,9 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         size=std::max(size,c2f);
         size=std::max(size,f2c);
       }
-      size*=NFLUID;
-      fluid_send_[l][n]=new Real[size];
-      fluid_recv_[l][n]=new Real[size];
+      size*=NHYDRO;
+      hydro_send_[l][n]=new Real[size];
+      hydro_recv_[l][n]=new Real[size];
     }
   }
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -349,29 +349,29 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     sarea_x3_[2][1].NewAthenaArray(nc1);
     int size[6], im, jm, km;
     // allocate flux correction buffer
-    size[0]=size[1]=(pmb->block_size.nx2+1)/2*(pmb->block_size.nx3+1)/2*NFLUID;
-    size[2]=size[3]=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx3+1)/2*NFLUID;
-    size[4]=size[5]=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx2+1)/2*NFLUID;
+    size[0]=size[1]=(pmb->block_size.nx2+1)/2*(pmb->block_size.nx3+1)/2*NHYDRO;
+    size[2]=size[3]=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx3+1)/2*NHYDRO;
+    size[4]=size[5]=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx2+1)/2*NHYDRO;
     if(pmb->block_size.nx3>1) { // 3D
       jm=2, km=2;
-      surface_flux_[inner_x1].NewAthenaArray(NFLUID, nc3, nc2);
-      surface_flux_[outer_x1].NewAthenaArray(NFLUID, nc3, nc2);
-      surface_flux_[inner_x2].NewAthenaArray(NFLUID, nc3, nc1);
-      surface_flux_[outer_x2].NewAthenaArray(NFLUID, nc3, nc1);
-      surface_flux_[inner_x3].NewAthenaArray(NFLUID, nc2, nc1);
-      surface_flux_[outer_x3].NewAthenaArray(NFLUID, nc2, nc1);
+      surface_flux_[inner_x1].NewAthenaArray(NHYDRO, nc3, nc2);
+      surface_flux_[outer_x1].NewAthenaArray(NHYDRO, nc3, nc2);
+      surface_flux_[inner_x2].NewAthenaArray(NHYDRO, nc3, nc1);
+      surface_flux_[outer_x2].NewAthenaArray(NHYDRO, nc3, nc1);
+      surface_flux_[inner_x3].NewAthenaArray(NHYDRO, nc2, nc1);
+      surface_flux_[outer_x3].NewAthenaArray(NHYDRO, nc2, nc1);
     }
     else if(pmb->block_size.nx2>1) { // 2D
       jm=1, km=2;
-      surface_flux_[inner_x1].NewAthenaArray(NFLUID, 1, nc2);
-      surface_flux_[outer_x1].NewAthenaArray(NFLUID, 1, nc2);
-      surface_flux_[inner_x2].NewAthenaArray(NFLUID, 1, nc1);
-      surface_flux_[outer_x2].NewAthenaArray(NFLUID, 1, nc1);
+      surface_flux_[inner_x1].NewAthenaArray(NHYDRO, 1, nc2);
+      surface_flux_[outer_x1].NewAthenaArray(NHYDRO, 1, nc2);
+      surface_flux_[inner_x2].NewAthenaArray(NHYDRO, 1, nc1);
+      surface_flux_[outer_x2].NewAthenaArray(NHYDRO, 1, nc1);
     }
     else { // 1D
       jm=1, km=1;
-      surface_flux_[inner_x1].NewAthenaArray(NFLUID, 1, 1);
-      surface_flux_[outer_x1].NewAthenaArray(NFLUID, 1, 1);
+      surface_flux_[inner_x1].NewAthenaArray(NHYDRO, 1, 1);
+      surface_flux_[outer_x1].NewAthenaArray(NHYDRO, 1, 1);
     }
     for(int l=0;l<NSTEP;l++) {
       for(int i=0;i<nface_;i++){
@@ -388,7 +388,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     if(pmb->block_size.nx2>1) ncc2=pmb->block_size.nx2/2+2*cng;
     int ncc3=1;
     if(pmb->block_size.nx3>1) ncc3=pmb->block_size.nx3/2+2*cng;
-    coarse_cons_.NewAthenaArray(NFLUID,ncc3,ncc2,ncc1);
+    coarse_cons_.NewAthenaArray(NHYDRO,ncc3,ncc2,ncc1);
 
     if (MAGNETIC_FIELDS_ENABLED) {
       coarse_b_.x1f.NewAthenaArray(ncc3,ncc2,ncc1+1);
@@ -444,8 +444,8 @@ BoundaryValues::~BoundaryValues()
   MeshBlock *pmb=pmy_mblock_;
   for(int l=0;l<NSTEP;l++) {
     for(int i=0;i<pmb->pmy_mesh->maxneighbor_;i++) {
-      delete [] fluid_send_[l][i];
-      delete [] fluid_recv_[l][i];
+      delete [] hydro_send_[l][i];
+      delete [] hydro_recv_[l][i];
     }
   }
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -623,14 +623,14 @@ void BoundaryValues::Initialize(void)
                *((nb.ox2==0)?((pmb->block_size.nx2+1)/2):NGHOST)
                *((nb.ox3==0)?((pmb->block_size.nx3+1)/2):NGHOST);
         }
-        ssize*=NFLUID; rsize*=NFLUID;
+        ssize*=NHYDRO; rsize*=NHYDRO;
         // specify the offsets in the view point of the target block: flip ox? signs
-        tag=CreateMPITag(nb.lid, l, tag_fluid, nb.targetid);
-        MPI_Send_init(fluid_send_[l][nb.bufid],ssize,MPI_ATHENA_REAL,
-                      nb.rank,tag,MPI_COMM_WORLD,&req_fluid_send_[l][nb.bufid]);
-        tag=CreateMPITag(pmb->lid, l, tag_fluid, nb.bufid);
-        MPI_Recv_init(fluid_recv_[l][nb.bufid],rsize,MPI_ATHENA_REAL,
-                      nb.rank,tag,MPI_COMM_WORLD,&req_fluid_recv_[l][nb.bufid]);
+        tag=CreateMPITag(nb.lid, l, tag_hydro, nb.targetid);
+        MPI_Send_init(hydro_send_[l][nb.bufid],ssize,MPI_ATHENA_REAL,
+                      nb.rank,tag,MPI_COMM_WORLD,&req_hydro_send_[l][nb.bufid]);
+        tag=CreateMPITag(pmb->lid, l, tag_hydro, nb.bufid);
+        MPI_Recv_init(hydro_recv_[l][nb.bufid],rsize,MPI_ATHENA_REAL,
+                      nb.rank,tag,MPI_COMM_WORLD,&req_hydro_recv_[l][nb.bufid]);
 
         // flux correction
         if(pmb->pmy_mesh->multilevel==true && nb.type==neighbor_face) {
@@ -641,7 +641,7 @@ void BoundaryValues::Initialize(void)
             fi1=myox1, fi2=myox3, size=((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx3+1)/2);
           else if(nb.fid==4 || nb.fid==5)
             fi1=myox1, fi2=myox2, size=((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx2+1)/2);
-          size*=NFLUID;
+          size*=NHYDRO;
           if(nb.level<mylevel) { // send to coarser
             tag=CreateMPITag(nb.lid, l, tag_flcor, nb.targetid);
             MPI_Send_init(flcor_send_[l][nb.fid],size,MPI_ATHENA_REAL,
@@ -802,7 +802,7 @@ void BoundaryValues::Initialize(void)
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::EnrollHydroBoundaryFunction(enum direction dir,
 //                                                       BValHydro_t my_bc)
-//  \brief Enroll a user-defined boundary function for fluid
+//  \brief Enroll a user-defined boundary function for hydro
 
 void BoundaryValues::EnrollHydroBoundaryFunction(enum direction dir, BValHydro_t my_bc)
 {
@@ -861,7 +861,7 @@ void BoundaryValues::CheckBoundary(void)
       if(HydroBoundary_[i]==NULL) {
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues::CheckBoundary" << std::endl
-            << "A user-defined boundary is specified but the fluid boundary function "
+            << "A user-defined boundary is specified but the hydro boundary function "
             << "is not enrolled in direction " << i  << "." << std::endl;
         throw std::runtime_error(msg.str().c_str());
       }
@@ -889,7 +889,7 @@ void BoundaryValues::StartReceivingForInit(void)
   for(int n=0;n<pmb->nneighbor;n++) {
     NeighborBlock& nb = pmb->neighbor[n];
     if(nb.rank!=Globals::my_rank) { 
-      MPI_Start(&req_fluid_recv_[0][nb.bufid]);
+      MPI_Start(&req_hydro_recv_[0][nb.bufid]);
       if (MAGNETIC_FIELDS_ENABLED)
         MPI_Start(&req_field_recv_[0][nb.bufid]);
     }
@@ -911,7 +911,7 @@ void BoundaryValues::StartReceivingAll(void)
     for(int n=0;n<pmb->nneighbor;n++) {
       NeighborBlock& nb = pmb->neighbor[n];
       if(nb.rank!=Globals::my_rank) { 
-        MPI_Start(&req_fluid_recv_[l][nb.bufid]);
+        MPI_Start(&req_hydro_recv_[l][nb.bufid]);
         if(nb.type==neighbor_face && nb.level>mylevel)
           MPI_Start(&req_flcor_recv_[l][nb.fid][nb.fi2][nb.fi1]);
         if (MAGNETIC_FIELDS_ENABLED) {
@@ -935,7 +935,7 @@ void BoundaryValues::StartReceivingAll(void)
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::RestrictHydro(AthenaArray<Real> &src,
 //                           int csi, int cei, int csj, int cej, int csk, int cek)
-//  \brief restrict the fluid data and set them into the coarse buffer
+//  \brief restrict the hydro data and set them into the coarse buffer
 void BoundaryValues::RestrictHydro(AthenaArray<Real> &src, 
                              int csi, int cei, int csj, int cej, int csk, int cek)
 {
@@ -945,7 +945,7 @@ void BoundaryValues::RestrictHydro(AthenaArray<Real> &src,
 
   // store the restricted data in the prolongation buffer for later use
   if(pmb->block_size.nx3>1) { // 3D
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
       for (int ck=csk; ck<=cek; ck++) {
         int k=(ck-pmb->cks)*2+pmb->ks;
         for (int cj=csj; cj<=cej; cj++) {
@@ -969,7 +969,7 @@ void BoundaryValues::RestrictHydro(AthenaArray<Real> &src,
     }
   }
   else if(pmb->block_size.nx2>1) { // 2D
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
       for (int cj=csj; cj<=cej; cj++) {
         int j=(cj-pmb->cjs)*2+pmb->js;
         pco->CellVolume(0,j  ,si,ei,fvol_[0][0]);
@@ -986,7 +986,7 @@ void BoundaryValues::RestrictHydro(AthenaArray<Real> &src,
   }
   else { // 1D
     int j=pmb->js, cj=pmb->cjs, k=pmb->ks, ck=pmb->cks; 
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
       pco->CellVolume(k,j,si,ei,fvol_[0][0]);
       for (int ci=csi; ci<=cei; ci++) {
         int i=(ci-pmb->cis)*2+pmb->is;
@@ -1002,7 +1002,7 @@ void BoundaryValues::RestrictHydro(AthenaArray<Real> &src,
 //--------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src,
 //                                                 Real *buf, NeighborBlock& nb)
-//  \brief Set fluid boundary buffers for sending to a block on the same level
+//  \brief Set hydro boundary buffers for sending to a block on the same level
 int BoundaryValues::LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
                                                      NeighborBlock& nb)
 {
@@ -1017,7 +1017,7 @@ int BoundaryValues::LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src, Rea
   ek=(nb.ox3<0)?(pmb->ks+NGHOST-1):pmb->ke;
 
   int p=0;
-  for (int n=0; n<(NFLUID); ++n) {
+  for (int n=0; n<(NHYDRO); ++n) {
     for (int k=sk; k<=ek; ++k) {
       for (int j=sj; j<=ej; ++j) {
 #pragma simd
@@ -1033,7 +1033,7 @@ int BoundaryValues::LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src, Rea
 //--------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src,
 //                                                 Real *buf, NeighborBlock& nb)
-//  \brief Set fluid boundary buffers for sending to a block on the coarser level
+//  \brief Set hydro boundary buffers for sending to a block on the coarser level
 int BoundaryValues::LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src, Real *buf,
                                                      NeighborBlock& nb)
 {
@@ -1052,7 +1052,7 @@ int BoundaryValues::LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src, Rea
   RestrictHydro(src, si, ei, sj, ej, sk, ek);
 
   int p=0;
-  for (int n=0; n<(NFLUID); ++n) {
+  for (int n=0; n<(NHYDRO); ++n) {
     for (int k=sk; k<=ek; k++) {
       for (int j=sj; j<=ej; j++) {
 #pragma simd
@@ -1068,7 +1068,7 @@ int BoundaryValues::LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src, Rea
 //--------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src,
 //                                                 Real *buf, NeighborBlock& nb)
-//  \brief Set fluid boundary buffers for sending to a block on the finer level
+//  \brief Set hydro boundary buffers for sending to a block on the finer level
 int BoundaryValues::LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src, Real *buf,
                                                    NeighborBlock& nb)
 {
@@ -1111,7 +1111,7 @@ int BoundaryValues::LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src, Real 
   }
 
   int p=0;
-  for (int n=0; n<(NFLUID); ++n) {
+  for (int n=0; n<(NHYDRO); ++n) {
     for (int k=sk; k<=ek; ++k) {
       for (int j=sj; j<=ej; ++j) {
 #pragma simd
@@ -1136,20 +1136,20 @@ void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step)
     NeighborBlock& nb = pmb->neighbor[n];
     int ssize;
     if(nb.level==mylevel)
-      ssize=LoadHydroBoundaryBufferSameLevel(src, fluid_send_[step][nb.bufid],nb);
+      ssize=LoadHydroBoundaryBufferSameLevel(src, hydro_send_[step][nb.bufid],nb);
     else if(nb.level<mylevel)
-      ssize=LoadHydroBoundaryBufferToCoarser(src, fluid_send_[step][nb.bufid],nb);
+      ssize=LoadHydroBoundaryBufferToCoarser(src, hydro_send_[step][nb.bufid],nb);
     else
-      ssize=LoadHydroBoundaryBufferToFiner(src, fluid_send_[step][nb.bufid], nb);
+      ssize=LoadHydroBoundaryBufferToFiner(src, hydro_send_[step][nb.bufid], nb);
     if(nb.rank == Globals::my_rank) { // on the same process
       MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
-      std::memcpy(pbl->pbval->fluid_recv_[step][nb.targetid],
-                  fluid_send_[step][nb.bufid], ssize*sizeof(Real));
-      pbl->pbval->fluid_flag_[step][nb.targetid]=boundary_arrived;
+      std::memcpy(pbl->pbval->hydro_recv_[step][nb.targetid],
+                  hydro_send_[step][nb.bufid], ssize*sizeof(Real));
+      pbl->pbval->hydro_flag_[step][nb.targetid]=boundary_arrived;
     }
 #ifdef MPI_PARALLEL
     else // MPI
-      MPI_Start(&req_fluid_send_[step][nb.bufid]);
+      MPI_Start(&req_hydro_send_[step][nb.bufid]);
 #endif
   }
 
@@ -1160,7 +1160,7 @@ void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step)
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetHydroBoundarySameLevel(AthenaArray<Real> &dst,
 //                                                     Real *buf, NeighborBlock& nb)
-//  \brief Set fluid boundary received from a block on the same level
+//  \brief Set hydro boundary received from a block on the same level
 void BoundaryValues::SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
                                                NeighborBlock& nb)
 {
@@ -1178,7 +1178,7 @@ void BoundaryValues::SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
 
   int p=0;
-  for (int n=0; n<(NFLUID); ++n) {
+  for (int n=0; n<(NHYDRO); ++n) {
     for (int k=sk; k<=ek; ++k) {
       for (int j=sj; j<=ej; ++j) {
 #pragma simd
@@ -1193,7 +1193,7 @@ void BoundaryValues::SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf
 
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
-//  \brief Set fluid prolongation buffer received from a block on the same level
+//  \brief Set hydro prolongation buffer received from a block on the same level
 void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_mblock_;
@@ -1228,7 +1228,7 @@ void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
   else               sk=pmb->cks-cng, ek=pmb->cks-1;
 
   int p=0;
-  for (int n=0; n<(NFLUID); ++n) {
+  for (int n=0; n<(NHYDRO); ++n) {
     for (int k=sk; k<=ek; ++k) {
       for (int j=sj; j<=ej; ++j) {
 #pragma simd
@@ -1244,7 +1244,7 @@ void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetHydroBoundaryFromFiner(AthenaArray<Real> &dst,
 //                                                     Real *buf, NeighborBlock& nb)
-//  \brief Set fluid boundary received from a block on the same level
+//  \brief Set hydro boundary received from a block on the same level
 void BoundaryValues::SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf,
                                                NeighborBlock& nb)
 {
@@ -1291,7 +1291,7 @@ void BoundaryValues::SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
 
   int p=0;
-  for (int n=0; n<(NFLUID); ++n) {
+  for (int n=0; n<(NHYDRO); ++n) {
     for (int k=sk; k<=ek; ++k) {
       for (int j=sj; j<=ej; ++j) {
 #pragma simd
@@ -1314,8 +1314,8 @@ bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst, int ste
 
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
-    if(fluid_flag_[step][nb.bufid]==boundary_completed) continue;
-    if(fluid_flag_[step][nb.bufid]==boundary_waiting) {
+    if(hydro_flag_[step][nb.bufid]==boundary_completed) continue;
+    if(hydro_flag_[step][nb.bufid]==boundary_waiting) {
       if(nb.rank==Globals::my_rank) {// on the same process
         flag=false;
         continue;
@@ -1324,22 +1324,22 @@ bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst, int ste
       else { // MPI boundary
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-        MPI_Test(&req_fluid_recv_[step][nb.bufid],&test,MPI_STATUS_IGNORE);
+        MPI_Test(&req_hydro_recv_[step][nb.bufid],&test,MPI_STATUS_IGNORE);
         if(test==false) {
           flag=false;
           continue;
         }
-        fluid_flag_[step][nb.bufid] = boundary_arrived;
+        hydro_flag_[step][nb.bufid] = boundary_arrived;
       }
 #endif
     }
     if(nb.level==pmb->loc.level)
-      SetHydroBoundarySameLevel(dst, fluid_recv_[step][nb.bufid], nb);
+      SetHydroBoundarySameLevel(dst, hydro_recv_[step][nb.bufid], nb);
     else if(nb.level<pmb->loc.level) // this set only the prolongation buffer
-      SetHydroBoundaryFromCoarser(fluid_recv_[step][nb.bufid], nb);
+      SetHydroBoundaryFromCoarser(hydro_recv_[step][nb.bufid], nb);
     else
-      SetHydroBoundaryFromFiner(dst, fluid_recv_[step][nb.bufid], nb);
-    fluid_flag_[step][nb.bufid] = boundary_completed; // completed
+      SetHydroBoundaryFromFiner(dst, hydro_recv_[step][nb.bufid], nb);
+    hydro_flag_[step][nb.bufid] = boundary_completed; // completed
   }
   return flag;
 }
@@ -1356,15 +1356,15 @@ void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst,
     NeighborBlock& nb = pmb->neighbor[n];
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank)
-      MPI_Wait(&req_fluid_recv_[0][nb.bufid],MPI_STATUS_IGNORE);
+      MPI_Wait(&req_hydro_recv_[0][nb.bufid],MPI_STATUS_IGNORE);
 #endif
     if(nb.level==pmb->loc.level)
-      SetHydroBoundarySameLevel(dst, fluid_recv_[0][nb.bufid], nb);
+      SetHydroBoundarySameLevel(dst, hydro_recv_[0][nb.bufid], nb);
     else if(nb.level<pmb->loc.level)
-      SetHydroBoundaryFromCoarser(fluid_recv_[0][nb.bufid], nb);
+      SetHydroBoundaryFromCoarser(hydro_recv_[0][nb.bufid], nb);
     else
-      SetHydroBoundaryFromFiner(dst, fluid_recv_[0][nb.bufid], nb);
-    fluid_flag_[0][nb.bufid] = boundary_completed; // completed
+      SetHydroBoundaryFromFiner(dst, hydro_recv_[0][nb.bufid], nb);
+    hydro_flag_[0][nb.bufid] = boundary_completed; // completed
   }
   return;
 }
@@ -1390,7 +1390,7 @@ void BoundaryValues::SendFluxCorrection(int step)
         int i=pmb->is+(pmb->ie-pmb->is+1)*nb.fid;
         fi1=fx2, fi2=fx3;
         if(pmb->block_size.nx3>1) { // 3D
-          for(int nn=0; nn<NFLUID; nn++) {
+          for(int nn=0; nn<NHYDRO; nn++) {
             for(int k=pmb->ks; k<=pmb->ke; k+=2) {
               for(int j=pmb->js; j<=pmb->je; j+=2) {
                 Real amm=pco->GetFace1Area(k,   j,   i);
@@ -1408,7 +1408,7 @@ void BoundaryValues::SendFluxCorrection(int step)
           }
         }
         else if(pmb->block_size.nx2>1) { // 2D
-          for(int nn=0; nn<NFLUID; nn++) {
+          for(int nn=0; nn<NHYDRO; nn++) {
             for(int j=pmb->js; j<=pmb->je; j+=2) {
               Real am=pco->GetFace1Area(0, j,   i);
               Real ap=pco->GetFace1Area(0, j+1, i);
@@ -1420,7 +1420,7 @@ void BoundaryValues::SendFluxCorrection(int step)
           }
         }
         else { // 1D
-          for(int nn=0; nn<NFLUID; nn++)
+          for(int nn=0; nn<NHYDRO; nn++)
             flcor_send_[step][nb.fid][p++]=surface_flux_[nb.fid](nn, 0, 0);
         }
       }
@@ -1429,7 +1429,7 @@ void BoundaryValues::SendFluxCorrection(int step)
         int j=pmb->js+(pmb->je-pmb->js+1)*(nb.fid&1);
         fi1=fx1, fi2=fx3;
         if(pmb->block_size.nx3>1) { // 3D
-          for(int nn=0; nn<NFLUID; nn++) {
+          for(int nn=0; nn<NHYDRO; nn++) {
             for(int k=pmb->ks; k<=pmb->ke; k+=2) {
               pco->Face2Area(k  , j, pmb->is, pmb->ie, sarea_[0]);
               pco->Face2Area(k+1, j, pmb->is, pmb->ie, sarea_[1]);
@@ -1445,7 +1445,7 @@ void BoundaryValues::SendFluxCorrection(int step)
           }
         }
         else if(pmb->block_size.nx2>1) { // 2D
-          for(int nn=0; nn<NFLUID; nn++) {
+          for(int nn=0; nn<NHYDRO; nn++) {
             pco->Face2Area(0, j, pmb->is ,pmb->ie, sarea_[0]);
             for(int i=pmb->is; i<=pmb->ie; i+=2) {
               Real tarea=sarea_[0](i)+sarea_[0](i+1);
@@ -1460,7 +1460,7 @@ void BoundaryValues::SendFluxCorrection(int step)
       else if(nb.fid==inner_x3 || nb.fid==outer_x3) {
         int k=pmb->ks+(pmb->ke-pmb->ks+1)*(nb.fid&1);
         fi1=fx1, fi2=fx2;
-        for(int nn=0; nn<NFLUID; nn++) {
+        for(int nn=0; nn<NHYDRO; nn++) {
           for(int j=pmb->js; j<=pmb->je; j+=2) {
             pco->Face3Area(k, j,   pmb->is, pmb->ie, sarea_[0]);
             pco->Face3Area(k, j+1, pmb->is, pmb->ie, sarea_[1]);
@@ -1537,7 +1537,7 @@ bool BoundaryValues::ReceiveFluxCorrection(AthenaArray<Real> &dst, int step)
         if(nb.fi2==0) ke-=pmb->block_size.nx3/2;
         else          ks+=pmb->block_size.nx3/2;
         Real sign=(Real)(nb.fid*2-1); // -1 for inner, +1 for outer
-        for(int nn=0; nn<NFLUID; nn++) {
+        for(int nn=0; nn<NHYDRO; nn++) {
           for(int k=ks; k<=ke; k++) {
             for(int j=js; j<=je; j++) {
               Real area=pco->GetFace1Area(k,j,is);
@@ -1556,7 +1556,7 @@ bool BoundaryValues::ReceiveFluxCorrection(AthenaArray<Real> &dst, int step)
         if(nb.fi2==0) ke-=pmb->block_size.nx3/2;
         else          ks+=pmb->block_size.nx3/2;
         Real sign=(Real)((nb.fid&1)*2-1); // -1 for inner, +1 for outer
-        for(int nn=0; nn<NFLUID; nn++) {
+        for(int nn=0; nn<NHYDRO; nn++) {
           for(int k=ks; k<=ke; k++) {
             pco->Face2Area(k,js,is,ie,sarea_[0]);
             pco->CellVolume(k,jc,is,ie,fvol_[0][0]);
@@ -1575,7 +1575,7 @@ bool BoundaryValues::ReceiveFluxCorrection(AthenaArray<Real> &dst, int step)
         if(nb.fi2==0) je-=pmb->block_size.nx2/2;
         else          js+=pmb->block_size.nx2/2;
         Real sign=(Real)((nb.fid&1)*2-1); // -1 for inner, +1 for outer
-        for(int nn=0; nn<NFLUID; nn++) {
+        for(int nn=0; nn<NHYDRO; nn++) {
           for(int j=js; j<=je; j++) {
             pco->Face3Area(ks,j,is,ie,sarea_[0]);
             pco->CellVolume(kc,j,is,ie,fvol_[0][0]);
@@ -1595,7 +1595,7 @@ return flag;
 
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ProlongateHydroBoundaries(AthenaArray<Real> &dst)
-//  \brief Prolongate the fluid in the ghost zones from the prolongation buffer
+//  \brief Prolongate the hydro in the ghost zones from the prolongation buffer
 void BoundaryValues::ProlongateHydroBoundaries(AthenaArray<Real> &dst)
 {
   MeshBlock *pmb=pmy_mblock_;
@@ -1694,7 +1694,7 @@ void BoundaryValues::ProlongateHydroBoundaries(AthenaArray<Real> &dst)
     else              sk=pmb->cks-cn, ek=pmb->cks-1;
 
     if(pmb->block_size.nx3 > 1) { // 3D
-      for(int n=0; n<NFLUID; n++) {
+      for(int n=0; n<NHYDRO; n++) {
         for(int k=sk; k<=ek; k++) {
           int fk=(k-pmb->cks)*2+pmb->ks;
           Real& x3m = pco->coarse_x3v(k-1);
@@ -1774,7 +1774,7 @@ void BoundaryValues::ProlongateHydroBoundaries(AthenaArray<Real> &dst)
     }
     else if(pmb->block_size.nx2 > 1) { // 2D
       int k=pmb->cks, fk=pmb->ks;
-      for(int n=0; n<NFLUID; n++) {
+      for(int n=0; n<NHYDRO; n++) {
         for(int j=sj; j<=ej; j++) {
           int fj=(j-pmb->cjs)*2+pmb->js;
           Real& x2m = pco->coarse_x2v(j-1);
@@ -1832,7 +1832,7 @@ void BoundaryValues::ProlongateHydroBoundaries(AthenaArray<Real> &dst)
     }
     else { // 1D
       int k=pmb->cks, fk=pmb->ks, j=pmb->cjs, fj=pmb->js;
-      for(int n=0; n<NFLUID; n++) {
+      for(int n=0; n<NHYDRO; n++) {
         for(int i=si; i<=ei; i++) {
           int fi=(i-pmb->cis)*2+pmb->is;
           Real& x1m = pco->coarse_x1v(i-1);
@@ -4327,12 +4327,12 @@ void BoundaryValues::ClearBoundaryForInit(void)
 
   for(int n=0;n<pmb->nneighbor;n++) {
     NeighborBlock& nb = pmb->neighbor[n];
-    fluid_flag_[0][nb.bufid] = boundary_waiting;
+    hydro_flag_[0][nb.bufid] = boundary_waiting;
     if (MAGNETIC_FIELDS_ENABLED)
       field_flag_[0][nb.bufid] = boundary_waiting;
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank) {
-      MPI_Wait(&req_fluid_send_[0][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
+      MPI_Wait(&req_hydro_send_[0][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
       if (MAGNETIC_FIELDS_ENABLED)
         MPI_Wait(&req_field_send_[0][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
     }
@@ -4351,7 +4351,7 @@ void BoundaryValues::ClearBoundaryAll(void)
   for(int l=0;l<NSTEP;l++) {
     for(int n=0;n<pmb->nneighbor;n++) {
       NeighborBlock& nb = pmb->neighbor[n];
-      fluid_flag_[l][nb.bufid] = boundary_waiting;
+      hydro_flag_[l][nb.bufid] = boundary_waiting;
       if(nb.type==neighbor_face)
         flcor_flag_[l][nb.fid][nb.fi2][nb.fi1] = boundary_waiting;
       if (MAGNETIC_FIELDS_ENABLED) {
@@ -4363,7 +4363,7 @@ void BoundaryValues::ClearBoundaryAll(void)
       }
 #ifdef MPI_PARALLEL
       if(nb.rank!=Globals::my_rank) {
-        MPI_Wait(&req_fluid_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
+        MPI_Wait(&req_hydro_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
         if(nb.type==neighbor_face && nb.level<pmb->loc.level)
           MPI_Wait(&req_flcor_send_[l][nb.fid],MPI_STATUS_IGNORE); // Wait for Isend
         if (MAGNETIC_FIELDS_ENABLED) {
@@ -4388,7 +4388,7 @@ void BoundaryValues::ClearBoundaryAll(void)
 
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::HydroPhysicalBoundaries(AthenaArray<Real> &dst)
-//  \brief Apply physical boundary conditions for fluid
+//  \brief Apply physical boundary conditions for hydro
 void BoundaryValues::HydroPhysicalBoundaries(AthenaArray<Real> &dst)
 {
   MeshBlock *pmb=pmy_mblock_;

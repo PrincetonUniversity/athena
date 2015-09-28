@@ -73,30 +73,30 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 
 // Parse left state read from input file: dl,ul,vl,wl,[pl]
 
-  Real wl[NFLUID+NFIELD];
+  Real wl[NHYDRO+NFIELD];
   wl[IDN] = pin->GetReal("problem","dl");
   wl[IVX] = pin->GetReal("problem","ul");
   wl[IVY] = pin->GetReal("problem","vl");
   wl[IVZ] = pin->GetReal("problem","wl");
   if (NON_BAROTROPIC_EOS) wl[IEN] = pin->GetReal("problem","pl");
   if (MAGNETIC_FIELDS_ENABLED) {
-    wl[NFLUID  ] = pin->GetReal("problem","bxl");
-    wl[NFLUID+1] = pin->GetReal("problem","byl");
-    wl[NFLUID+2] = pin->GetReal("problem","bzl");
+    wl[NHYDRO  ] = pin->GetReal("problem","bxl");
+    wl[NHYDRO+1] = pin->GetReal("problem","byl");
+    wl[NHYDRO+2] = pin->GetReal("problem","bzl");
   }
 
 // Parse right state read from input file: dr,ur,vr,wr,[pr]
 
-  Real wr[NFLUID+NFIELD];
+  Real wr[NHYDRO+NFIELD];
   wr[IDN] = pin->GetReal("problem","dr");
   wr[IVX] = pin->GetReal("problem","ur");
   wr[IVY] = pin->GetReal("problem","vr");
   wr[IVZ] = pin->GetReal("problem","wr");
   if (NON_BAROTROPIC_EOS) wr[IEN] = pin->GetReal("problem","pr");
   if (MAGNETIC_FIELDS_ENABLED) {
-    wr[NFLUID  ] = pin->GetReal("problem","bxr");
-    wr[NFLUID+1] = pin->GetReal("problem","byr");
-    wr[NFLUID+2] = pin->GetReal("problem","bzr");
+    wr[NHYDRO  ] = pin->GetReal("problem","bxr");
+    wr[NHYDRO+1] = pin->GetReal("problem","byr");
+    wr[NHYDRO+2] = pin->GetReal("problem","bzr");
   }
 
 // Initialize the discontinuity in the Hydro variables ---------------------------------
@@ -200,31 +200,31 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         if (shk_dir==1 && pco->x1v(i) < xshock) {
-          pfd->b.x1f(k,j,i) = wl[NFLUID  ];
-          pfd->b.x2f(k,j,i) = wl[NFLUID+1];
-          pfd->b.x3f(k,j,i) = wl[NFLUID+2];
+          pfd->b.x1f(k,j,i) = wl[NHYDRO  ];
+          pfd->b.x2f(k,j,i) = wl[NHYDRO+1];
+          pfd->b.x3f(k,j,i) = wl[NHYDRO+2];
         } else if (shk_dir==2 && pco->x2v(j) < xshock) {
-          pfd->b.x1f(k,j,i) = wl[NFLUID+2];
-          pfd->b.x2f(k,j,i) = wl[NFLUID  ];
-          pfd->b.x3f(k,j,i) = wl[NFLUID+1];
+          pfd->b.x1f(k,j,i) = wl[NHYDRO+2];
+          pfd->b.x2f(k,j,i) = wl[NHYDRO  ];
+          pfd->b.x3f(k,j,i) = wl[NHYDRO+1];
         } else if (shk_dir==3 && pco->x3v(k) < xshock) {
-          pfd->b.x1f(k,j,i) = wl[NFLUID+1];
-          pfd->b.x2f(k,j,i) = wl[NFLUID+2];
-          pfd->b.x3f(k,j,i) = wl[NFLUID];
+          pfd->b.x1f(k,j,i) = wl[NHYDRO+1];
+          pfd->b.x2f(k,j,i) = wl[NHYDRO+2];
+          pfd->b.x3f(k,j,i) = wl[NHYDRO];
         }
 
         if (shk_dir==1 && pco->x1v(i) >= xshock) {
-          pfd->b.x1f(k,j,i) = wr[NFLUID  ];
-          pfd->b.x2f(k,j,i) = wr[NFLUID+1];
-          pfd->b.x3f(k,j,i) = wr[NFLUID+2];
+          pfd->b.x1f(k,j,i) = wr[NHYDRO  ];
+          pfd->b.x2f(k,j,i) = wr[NHYDRO+1];
+          pfd->b.x3f(k,j,i) = wr[NHYDRO+2];
         } else if (shk_dir==2 && pco->x2v(j) >= xshock) {
-          pfd->b.x1f(k,j,i) = wr[NFLUID+2];
-          pfd->b.x2f(k,j,i) = wr[NFLUID  ];
-          pfd->b.x3f(k,j,i) = wr[NFLUID+1];
+          pfd->b.x1f(k,j,i) = wr[NHYDRO+2];
+          pfd->b.x2f(k,j,i) = wr[NHYDRO  ];
+          pfd->b.x3f(k,j,i) = wr[NHYDRO+1];
         } else if (shk_dir==3 && pco->x3v(k) >= xshock)  {
-          pfd->b.x1f(k,j,i) = wr[NFLUID+1];
-          pfd->b.x2f(k,j,i) = wr[NFLUID+2];
-          pfd->b.x3f(k,j,i) = wr[NFLUID];
+          pfd->b.x1f(k,j,i) = wr[NHYDRO+1];
+          pfd->b.x2f(k,j,i) = wr[NHYDRO+2];
+          pfd->b.x3f(k,j,i) = wr[NHYDRO];
         }
         if (NON_BAROTROPIC_EOS) {
           pfl->u(IEN,k,j,i) += 0.5*(SQR(pfd->b.x1f(k,j,i)) + SQR(pfd->b.x2f(k,j,i)) +

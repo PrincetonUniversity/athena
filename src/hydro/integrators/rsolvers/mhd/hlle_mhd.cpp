@@ -35,8 +35,8 @@ void HydroIntegrator::RiemannSolver(const int k,const int j, const int il, const
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NWAVE)],wri[(NWAVE)],wroe[(NWAVE)],fl[(NWAVE)],fr[(NWAVE)],flxi[(NWAVE)];
-  Real gm1 = pmy_fluid->pf_eos->GetGamma() - 1.0;
-  Real iso_cs = pmy_fluid->pf_eos->GetIsoSoundSpeed();
+  Real gm1 = pmy_hydro->pf_eos->GetGamma() - 1.0;
+  Real iso_cs = pmy_hydro->pf_eos->GetIsoSoundSpeed();
 
 #pragma simd
   for (int i=il; i<=iu; ++i){
@@ -90,8 +90,8 @@ void HydroIntegrator::RiemannSolver(const int k,const int j, const int il, const
 
 //--- Step 3.  Compute fast magnetosonic speed in L,R, and Roe-averaged states
 
-    Real cl = pmy_fluid->pf_eos->FastMagnetosonicSpeed(wli,bxi);
-    Real cr = pmy_fluid->pf_eos->FastMagnetosonicSpeed(wri,bxi);
+    Real cl = pmy_hydro->pf_eos->FastMagnetosonicSpeed(wli,bxi);
+    Real cr = pmy_hydro->pf_eos->FastMagnetosonicSpeed(wri,bxi);
 
     // Compute fast-magnetosonic speed using eq. B18 (adiabatic) or B39 (isothermal)
     Real btsq = SQR(wroe[IBY]) + SQR(wroe[IBZ]);

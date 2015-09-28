@@ -35,7 +35,7 @@ void HydroIntegrator::DonorCellX1(const int k, const int j,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
-  for (int n=0; n<NFLUID; ++n){
+  for (int n=0; n<NHYDRO; ++n){
 #pragma simd
     for (int i=il; i<=iu; ++i){
       wl(n,i) = w(n,k,j,i-1);
@@ -65,7 +65,7 @@ void HydroIntegrator::DonorCellX2(const int k, const int j,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
-  for (int n=0; n<NFLUID; ++n){
+  for (int n=0; n<NHYDRO; ++n){
 #pragma simd
     for (int i=il; i<=iu; ++i){
       wl(n,i) = w(n,k,j-1,i);
@@ -95,7 +95,7 @@ void HydroIntegrator::DonorCellX3(const int k, const int j,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
-  for (int n=0; n<NFLUID; ++n){
+  for (int n=0; n<NHYDRO; ++n){
 #pragma simd
     for (int i=il; i<=iu; ++i){
       wl(n,i) = w(n,k-1,j,i);

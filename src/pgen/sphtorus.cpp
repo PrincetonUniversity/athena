@@ -136,7 +136,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   
   /* read parameters */
   gm = pin->GetReal("problem","GM");
-  gmgas = pin->GetReal("fluid","gamma");
+  gmgas = pin->GetReal("hydro","gamma");
   dist = pin->GetReal("problem","dist");
   rg = pin->GetReal("problem","rg");
   d0= pin->GetReal("problem","d0");

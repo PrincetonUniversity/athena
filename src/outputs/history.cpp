@@ -55,7 +55,7 @@ HistoryOutput::HistoryOutput(OutputParameters oparams)
 
 void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 {
-  Hydro *pfl = pmb->pfluid;;
+  Hydro *pfl = pmb->phydro;;
   Field *pfd = pmb->pfield;;
   Mesh *pmm = pmb->pmy_mesh;
   int tid=0;

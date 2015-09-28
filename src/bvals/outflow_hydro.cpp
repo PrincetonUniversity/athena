@@ -13,19 +13,18 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
+//! \file outflow_hydro.cpp
+//  \brief implements outflow BCs in each dimension for conserved hydro variables
+//======================================================================================
 
-// Primary header
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../mesh.hpp"
+
+// this class header
 #include "bvals.hpp"
 
-// Athena headers
-#include "../athena.hpp"         // macros, Real
-#include "../athena_arrays.hpp"  // AthenaArray
-#include "../mesh.hpp"           // MeshBlock
-
-//======================================================================================
-//! \file outflow_fluid.cpp
-//  \brief implements outflow BCs in each dimension for conserved fluid variables
-//======================================================================================
 //--------------------------------------------------------------------------------------
 //! \fn void OutflowInnerX1(MeshBlock *pmb, AthenaArray<Real> &a,
 //                          int is, int ie, int js, int je, int ks, int ke)
@@ -36,7 +35,7 @@ void OutflowInnerX1(MeshBlock *pmb, AthenaArray<Real> &a,
 {
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
 #pragma simd
       for (int i=1; i<=(NGHOST); ++i) {
         a(n,k,j,is-i) = a(n,k,j,is);
@@ -57,7 +56,7 @@ void OutflowOuterX1(MeshBlock *pmb, AthenaArray<Real> &a,
 {
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
 #pragma simd
       for (int i=1; i<=(NGHOST); ++i) {
         a(n,k,j,ie+i) = a(n,k,j,ie);
@@ -78,7 +77,7 @@ void OutflowInnerX2(MeshBlock *pmb, AthenaArray<Real> &a,
 {
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
 #pragma simd
       for (int i=is; i<=ie; ++i) {
         a(n,k,js-j,i) = a(n,k,js,i);
@@ -99,7 +98,7 @@ void OutflowOuterX2(MeshBlock *pmb, AthenaArray<Real> &a,
 {
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
 #pragma simd
       for (int i=is; i<=ie; ++i) {
         a(n,k,je+j,i) = a(n,k,je,i);
@@ -120,7 +119,7 @@ void OutflowInnerX3(MeshBlock *pmb, AthenaArray<Real> &a,
 {
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js; j<=je; ++j) {
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
 #pragma simd
       for (int i=is; i<=ie; ++i) {
         a(n,ks-k,j,i) = a(n,ks,j,i);
@@ -141,7 +140,7 @@ void OutflowOuterX3(MeshBlock *pmb, AthenaArray<Real> &a,
 {
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js; j<=je; ++j) {
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
 #pragma simd
       for (int i=is; i<=ie; ++i) {
         a(n,ke+k,j,i) = a(n,ke,j,i);

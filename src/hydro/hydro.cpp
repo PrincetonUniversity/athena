@@ -59,13 +59,13 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
   if (pmy_block->block_size.nx2 > 1) ncells2 = pmy_block->block_size.nx2 + 2*(NGHOST);
   if (pmy_block->block_size.nx3 > 1) ncells3 = pmy_block->block_size.nx3 + 2*(NGHOST);
 
-  u.NewAthenaArray(NFLUID,ncells3,ncells2,ncells1);
-  w.NewAthenaArray(NFLUID,ncells3,ncells2,ncells1);
+  u.NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1);
+  w.NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1);
 
 // Allocate memory for primitive/conserved variables at intermediate-time step
 
-  u1.NewAthenaArray(NFLUID,ncells3,ncells2,ncells1);
-  w1.NewAthenaArray(NFLUID,ncells3,ncells2,ncells1);
+  u1.NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1);
+  w1.NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1);
 
   // Allocate memory for metric
   // TODO: this should only be done if we are in GR
@@ -79,11 +79,11 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
   dt2_.NewAthenaArray(nthreads,ncells1);
   dt3_.NewAthenaArray(nthreads,ncells1);
 
-// Allocate memory for internal fluid output variables (if needed)
+// Allocate memory for internal hydro output variables (if needed)
 
   ifov.NewAthenaArray(NIFOV,ncells3,ncells2,ncells1);
 
-// Construct ptrs to objects of various classes needed to integrate fluid eqns 
+// Construct ptrs to objects of various classes needed to integrate hydro eqns 
 
   pf_integrator = new HydroIntegrator(this,pin);
   pf_eos = new HydroEqnOfState(this,pin);
@@ -122,7 +122,7 @@ Real Hydro::NewBlockTimeStep(MeshBlock *pmb)
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   AthenaArray<Real> w,bcc,b_x1f,b_x2f,b_x3f;
-  w.InitWithShallowCopy(pmb->pfluid->w);
+  w.InitWithShallowCopy(pmb->phydro->w);
   bcc.InitWithShallowCopy(pmb->pfield->bcc);
   b_x1f.InitWithShallowCopy(pmb->pfield->b.x1f);
   b_x2f.InitWithShallowCopy(pmb->pfield->b.x2f);
@@ -192,9 +192,9 @@ Real Hydro::NewBlockTimeStep(MeshBlock *pmb)
 
         }
         if(VISCOSITY){
-          dt1(i)=std::min(pmb->pfluid->pf_viscosity->VisDt(pmy_block->pcoord->CenterWidth1(k,j,i),k,j,i),dt1(i));
-          dt2(i)=std::min(pmb->pfluid->pf_viscosity->VisDt(pmy_block->pcoord->CenterWidth2(k,j,i),k,j,i),dt2(i));
-          dt3(i)=std::min(pmb->pfluid->pf_viscosity->VisDt(pmy_block->pcoord->CenterWidth3(k,j,i),k,j,i),dt3(i));
+          dt1(i)=std::min(pmb->phydro->pf_viscosity->VisDt(pmy_block->pcoord->CenterWidth1(k,j,i),k,j,i),dt1(i));
+          dt2(i)=std::min(pmb->phydro->pf_viscosity->VisDt(pmy_block->pcoord->CenterWidth2(k,j,i),k,j,i),dt2(i));
+          dt3(i)=std::min(pmb->phydro->pf_viscosity->VisDt(pmy_block->pcoord->CenterWidth3(k,j,i),k,j,i),dt3(i));
         }
       }
 

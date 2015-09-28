@@ -444,7 +444,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
        }
 
   // Initialize conserved values
-  pmb->pfluid->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, pfl->w, bb, pfl->u);
+  pmb->phydro->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, pfl->w, bb, pfl->u);
 
   // Free scratch arrays
   in_torus.DeleteAthenaArray();
@@ -467,7 +467,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   return;
 }
 
-// Inner fluid boundary condition
+// Inner hydro boundary condition
 // TODO: implement when not hacking inversion
 void InnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
     int ks, int ke)
@@ -475,7 +475,7 @@ void InnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js,
   return;
 }
 
-// Outer fluid boundary condition
+// Outer hydro boundary condition
 // TODO: implement when not hacking inversion
 void OuterHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
     int ks, int ke)
@@ -483,13 +483,13 @@ void OuterHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js,
   return;
 }
 
-// Top fluid boundary condition
+// Top hydro boundary condition
 void TopHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
     int ks, int ke)
 {
   for (int k = ks; k <= ke; ++k)
     for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
-      for (int n = 0; n < NFLUID; ++n)
+      for (int n = 0; n < NHYDRO; ++n)
       {
         Real sign = (n == IM2 or n == IM3) ? -1.0 : 1.0;
         for (int i = is; i <= ie; ++i)
@@ -498,13 +498,13 @@ void TopHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, i
   return;
 }
 
-// Bottom fluid boundary condition
+// Bottom hydro boundary condition
 void BottomHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js,
     int je, int ks, int ke)
 {
   for (int k = ks; k <= ke; ++k)
     for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
-      for (int n = 0; n < NFLUID; ++n)
+      for (int n = 0; n < NHYDRO; ++n)
       {
         Real sign = (n == IM2 or n == IM3) ? -1.0 : 1.0;
         for (int i = is; i <= ie; ++i)

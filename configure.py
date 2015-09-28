@@ -17,9 +17,9 @@
 #   -g                enable general relativity
 #   -t                enable interface frame transformations for GR
 #   --order=choice    use choice as the spatial reconstruction algorithm
-#   --fint=choice     use choice as the fluid time-integration algorithm
+#   --fint=choice     use choice as the hydro time-integration algorithm
 #   --cxx=choice      use choice as the C++ compiler
-#   --ifov=N          enable N internal fluid output variables 
+#   --ifov=N          enable N internal hydro output variables 
 #   -mpi              enable parallelization with MPI
 #   -omp              enable parallelization with OpenMP
 #   -hdf5             enable HDF5 output (requires the HDF5 library)
@@ -105,7 +105,7 @@ parser.add_argument('--order',
 parser.add_argument('--fint',
     default='vl2',
     choices=['vl2'],
-    help='select fluid time-integration algorithm')
+    help='select hydro time-integration algorithm')
 
 # --cxx=[name] argument
 parser.add_argument('--cxx',
@@ -135,7 +135,7 @@ parser.add_argument('-hdf5',
 parser.add_argument('--ifov',
     type=int,
     default=0,
-    help='number of internal fluid output variables')
+    help='number of internal hydro output variables')
 
 # -debug argument
 parser.add_argument('-debug',
@@ -183,11 +183,11 @@ makefile_options['COORDINATES_FILE'] = args['coord']
 # --eos=[name] argument
 definitions['NON_BAROTROPIC_EOS'] = '1' if args['eos'] == 'adiabatic' else '0'
 makefile_options['EOS_FILE'] = args['eos']
-# set number of fluid variables for adiabatic/isothermal
+# set number of hydro variables for adiabatic/isothermal
 if args['eos'] == 'adiabatic':
-  definitions['NFLUID_VARIABLES'] = '5'
+  definitions['NHYDRO_VARIABLES'] = '5'
 if args['eos'] == 'isothermal':
-  definitions['NFLUID_VARIABLES'] = '4'
+  definitions['NHYDRO_VARIABLES'] = '4'
 
 # --flux=[name] argument
 definitions['RSOLVER'] = args['flux']
@@ -349,7 +349,7 @@ print('  Coordinate system:       ' + args['coord'])
 print('  Equation of state:       ' + args['eos'])
 print('  Riemann solver:          ' + args['flux'])
 print('  Reconstruction method:   ' + args['order'])
-print('  Fluid integrator:        ' + args['fint'])
+print('  Hydro integrator:        ' + args['fint'])
 print('  Compiler and flags:      ' + makefile_options['COMPILER_CHOICE'] + ' ' \
     + makefile_options['COMPILER_FLAGS'])
 print('  Loader flags:            ' + makefile_options['LOADER_FLAGS'])
@@ -362,4 +362,4 @@ print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
 print('  HDF5 Output:             ' + ('ON' if args['hdf5'] else 'OFF'))
 print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
 print('  Viscosity:               ' + ('ON' if args['vis'] else 'OFF'))
-print('  Internal fluid outvars:  ' + str(args['ifov']))
+print('  Internal hydro outvars:  ' + str(args['ifov']))

@@ -44,7 +44,7 @@
 // hydro time-integration algorithm
 #define HYDRO_TIME_INTEGRATOR "@HYDRO_INTEGRATOR@"
 
-// fluid time-integration algorithm
+// hydro time-integration algorithm
 #define COMPILED_WITH "@COMPILER_CHOICE@"
 
 // compiler options
@@ -59,14 +59,14 @@
 // HDF5 Output (HDF5OUTPUT or NO_HDF5OUTPUT)
 #define @HDF5_OPTION@
 
-// number of internal fluid output variables
+// number of internal hydro output variables
 #define NIFOV  @NUM_IFOV@
 
 
 //--------------------------------------------------------------------------------------
 // macros associated with numerical algorithm (rarely modified)
 
-#define NFLUID  (@NFLUID_VARIABLES@)
+#define NHYDRO  (@NHYDRO_VARIABLES@)
 #define NFIELD  (@NFIELD_VARIABLES@)
 #define NWAVE   (@NWAVE_VALUE@)
 #define NGHOST   2

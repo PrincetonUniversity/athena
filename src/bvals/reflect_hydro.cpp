@@ -13,19 +13,18 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
+//! \file reflect_hydro.cpp
+//  \brief implements reflecting BCs in each dimension for conserved hydro variables
+//======================================================================================
 
-// Primary header
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../mesh.hpp"
+
+// this class header
 #include "bvals.hpp"
 
-// Athena headers
-#include "../athena.hpp"         // macros, Real
-#include "../athena_arrays.hpp"  // AthenaArray
-#include "../mesh.hpp"           // MeshBlock
-
-//======================================================================================
-//! \file reflect_fluid.cpp
-//  \brief implements reflecting BCs in each dimension for conserved fluid variables
-//======================================================================================
 //--------------------------------------------------------------------------------------
 //! \fn void ReflectInnerX1(MeshBlock *pmb, AthenaArray<Real> &a,
 //                          int is, int ie, int js, int je, int ks, int ke)
@@ -36,7 +35,7 @@ void ReflectInnerX1(MeshBlock *pmb, AthenaArray<Real> &a,
 {
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
 
       if (n==(IM1)) {
 #pragma simd
@@ -67,7 +66,7 @@ void ReflectOuterX1(MeshBlock *pmb, AthenaArray<Real> &a,
 {
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
 
       if (n==(IM1)) {
 #pragma simd
@@ -98,7 +97,7 @@ void ReflectInnerX2(MeshBlock *pmb, AthenaArray<Real> &a,
 {
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
 
       if (n==(IM2)) {
 #pragma simd
@@ -129,7 +128,7 @@ void ReflectOuterX2(MeshBlock *pmb, AthenaArray<Real> &a,
 {
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
 
       if (n==(IM2)) {
 #pragma simd
@@ -159,7 +158,7 @@ void ReflectInnerX3(MeshBlock *pmb, AthenaArray<Real> &a,
 {
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js; j<=je; ++j) {
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
 
       if (n==(IM3)) {
 #pragma simd
@@ -190,7 +189,7 @@ void ReflectOuterX3(MeshBlock *pmb, AthenaArray<Real> &a,
 {
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js; j<=je; ++j) {
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
 
       if (n==(IM3)) {
 #pragma simd

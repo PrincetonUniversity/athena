@@ -14,7 +14,7 @@
 //
 //======================================================================================
 //! \file viscosity.cpp
-//  \brief implements functions that compute viscosity terms in the fluid
+//  \brief implements functions that compute viscosity terms
 //======================================================================================
 
 // Athena++ headers
@@ -22,7 +22,7 @@
 #include "../../athena_arrays.hpp"
 #include "../../mesh.hpp"
 #include "../../coordinates/coordinates.hpp"
-#include "../fluid.hpp"
+#include "../hydro.hpp"
 #include "../../parameter_input.hpp"
 
 // this class header
@@ -32,7 +32,7 @@
 
 Viscosity::Viscosity(Hydro *pf, ParameterInput *pin)
 {
-  pmy_fluid_ = pf;
+  pmy_hydro_ = pf;
   nuiso_ = pin->GetOrAddReal("problem","nuiso",0.0);
   int ncells3 =1;
 
@@ -81,7 +81,7 @@ Real Viscosity::cnuiso2(int k, int j, int i)
 void Viscosity::ViscosityTerms(const Real dt,
   const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
 {
-  MeshBlock *pmb = pmy_fluid_->pmy_block;
+  MeshBlock *pmb = pmy_hydro_->pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   Real s11=1., s22=1., s33=1., s12=1., s13=1., s23=1.;
@@ -118,7 +118,7 @@ void Viscosity::ViscosityTerms(const Real dt,
       }
 
       // update cons quantities
-      for (int n=1; n<NFLUID; ++n){
+      for (int n=1; n<NHYDRO; ++n){
 #pragma simd
         for (int i=is; i<=ie; ++i){
           cons(n,k,j,i) += dt*(area(i+1)*visflx_(n,i+1) - area(i)*visflx_(n,i))/vol(i);
@@ -172,7 +172,7 @@ void Viscosity::ViscosityTerms(const Real dt,
         }
     
 	// update cons quantities
-        for (int n=1; n<NFLUID; ++n){
+        for (int n=1; n<NHYDRO; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
             cons(n,k,j,i) += dt*(area_p1(i)*visflx_(n,i) - area(i)*jvisflx_j_(n,i))/vol(i);
@@ -230,7 +230,7 @@ void Viscosity::ViscosityTerms(const Real dt,
         }
     
 	// update cons quantities
-        for (int n=1; n<NFLUID; ++n){
+        for (int n=1; n<NHYDRO; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
             cons(n,k,j,i) += dt*(area_p1(i)*visflx_(n,i) - area(i)*kvisflx_k_(n,j,i))/vol(i);
@@ -242,7 +242,7 @@ void Viscosity::ViscosityTerms(const Real dt,
 
 	// store viscous flux at k+1 to next 
         if(k<ke){
-          for (int n=1; n<NFLUID; ++n){
+          for (int n=1; n<NHYDRO; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
               kvisflx_k_(n,j,i) = visflx_(n,i);
@@ -258,10 +258,10 @@ void Viscosity::ViscosityTerms(const Real dt,
 Real Viscosity::VisDt(Real len, int k, int j, int i)
 {
   Real Visdt;
-  if(pmy_fluid_->pmy_block->block_size.nx3>1){
+  if(pmy_hydro_->pmy_block->block_size.nx3>1){
     Visdt = SQR(len)/6.0/nuiso1(IDN,k,j,i);
   } else {
-    if(pmy_fluid_->pmy_block->block_size.nx2>1)
+    if(pmy_hydro_->pmy_block->block_size.nx2>1)
       Visdt = SQR(len)/8.0/nuiso1(IDN,k,j,i);
     else
       Visdt = SQR(len)/4.0/nuiso1(IDN,k,j,i);

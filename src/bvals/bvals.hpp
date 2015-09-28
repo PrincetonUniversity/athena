@@ -164,10 +164,10 @@ private:
   int nedge_fine_[12];
   bool firsttime_[NSTEP];
 
-  enum boundary_status fluid_flag_[NSTEP][56], field_flag_[NSTEP][56];
+  enum boundary_status hydro_flag_[NSTEP][56], field_flag_[NSTEP][56];
   enum boundary_status flcor_flag_[NSTEP][6][2][2];
   enum boundary_status emfcor_flag_[NSTEP][48];
-  Real *fluid_send_[NSTEP][56],  *fluid_recv_[NSTEP][56];
+  Real *hydro_send_[NSTEP][56],  *hydro_recv_[NSTEP][56];
   Real *field_send_[NSTEP][56],  *field_recv_[NSTEP][56];
   Real *flcor_send_[NSTEP][6],   *flcor_recv_[NSTEP][6][2][2];
   Real *emfcor_send_[NSTEP][48], *emfcor_recv_[NSTEP][48];
@@ -178,7 +178,7 @@ private:
   InterfaceField coarse_b_;
 
 #ifdef MPI_PARALLEL
-  MPI_Request req_fluid_send_[NSTEP][56],  req_fluid_recv_[NSTEP][56];
+  MPI_Request req_hydro_send_[NSTEP][56],  req_hydro_recv_[NSTEP][56];
   MPI_Request req_field_send_[NSTEP][56],  req_field_recv_[NSTEP][56];
   MPI_Request req_flcor_send_[NSTEP][6],   req_flcor_recv_[NSTEP][6][2][2];
   MPI_Request req_emfcor_send_[NSTEP][48], req_emfcor_recv_[NSTEP][48];

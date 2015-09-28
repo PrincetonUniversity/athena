@@ -6,8 +6,7 @@
 // See LICENSE file for full public license information.
 //======================================================================================
 //! \file outputs.hpp
-//  \brief provides multiple classes to handle ALL types of data output (fluid, bfield,
-//  gravity, radiation, particles, etc.)
+//  \brief provides multiple classes to handle ALL types of data output
 //======================================================================================
 
 #include <stdio.h> // size_t

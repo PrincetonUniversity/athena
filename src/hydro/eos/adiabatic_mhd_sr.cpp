@@ -30,14 +30,14 @@ static Real quadratic_root(Real a1, Real a0, bool greater_root);
 
 // Constructor
 // Inputs:
-//   pf: pointer to fluid object
+//   pf: pointer to hydro object
 //   pin: pointer to runtime inputs
 HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
 {
-  pmy_fluid_ = pf;
-  gamma_ = pin->GetReal("fluid", "gamma");
-  density_floor_ = pin->GetOrAddReal("fluid", "dfloor", 1024*FLT_MIN);
-  pressure_floor_ = pin->GetOrAddReal("fluid", "pfloor", 1024*FLT_MIN);
+  pmy_hydro_ = pf;
+  gamma_ = pin->GetReal("hydro", "gamma");
+  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", 1024*FLT_MIN);
+  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", 1024*FLT_MIN);
   int ncells1 = pf->pmy_block->block_size.nx1 + 2*NGHOST;
   g_.NewAthenaArray(NMETRIC,ncells1);
   g_inv_.NewAthenaArray(NMETRIC,ncells1);
@@ -69,7 +69,7 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const Real gamma_prime = gamma_/(gamma_-1.0);
 
   // Determine array bounds
-  MeshBlock *pb = pmy_fluid_->pmy_block;
+  MeshBlock *pb = pmy_hydro_->pmy_block;
   Coordinates *pco = pb->pcoord;
   int is = pb->is;
   int ie = pb->ie;

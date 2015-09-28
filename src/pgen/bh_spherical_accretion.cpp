@@ -226,7 +226,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
        }
 
   // Initialize conserved variables
-  pmb->pfluid->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, pfl->w, bb, pfl->u);
+  pmb->phydro->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, pfl->w, bb, pfl->u);
 
   // Free scratch arrays
   g.DeleteAthenaArray();
@@ -244,7 +244,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   return;
 }
 
-// Inner fluid boundary condition
+// Inner hydro boundary condition
 // TODO: change when interface changes
 void InnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
     int ks, int ke)
@@ -252,7 +252,7 @@ void InnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js,
   return;
 }
 
-// Outer fluid boundary condition
+// Outer hydro boundary condition
 // TODO: change when interface changes
 void OuterHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
     int ks, int ke)

@@ -7,7 +7,7 @@
 //======================================================================================
 //! \file eos.hpp
 //  \brief defines class HydroEqnOfState
-//  Contains data and functions that implement the equation of state for the fluid
+//  Contains data and functions that implement the equation of state for hydro
 //======================================================================================
 
 // Athena headers
@@ -20,7 +20,7 @@ class ParameterInput;
 struct InterfaceField;
 
 //! \class HydroEqnOfState
-//  \brief data and functions that implement EoS for fluid
+//  \brief data and functions that implement EoS for hydro
 
 class HydroEqnOfState {
 public:
@@ -35,7 +35,7 @@ public:
 
   // Sound speed functions in different regimes
   #if !RELATIVISTIC_DYNAMICS  // Newtonian: SR, GR defined as no-op
-    Real SoundSpeed(const Real prim[(NFLUID)]);
+    Real SoundSpeed(const Real prim[(NHYDRO)]);
     #if !MAGNETIC_FIELDS_ENABLED  // hydro: MHD defined as no-op
       Real FastMagnetosonicSpeed(const Real [], const Real) {return 0.0;}
     #else  // MHD
@@ -101,7 +101,7 @@ public:
   Real GetPressureFloor() const {return pressure_floor_;}
 
 private:
-  Hydro *pmy_fluid_;                     // ptr to Hydro containing this EqnOfState
+  Hydro *pmy_hydro_;                     // ptr to Hydro containing this EqnOfState
   Real iso_sound_speed_, gamma_;         // isothermal Cs, ratio of specific heats
   Real density_floor_, pressure_floor_;  // density and pressure floors
   Real gamma_max_;                       // maximum Lorentz factor

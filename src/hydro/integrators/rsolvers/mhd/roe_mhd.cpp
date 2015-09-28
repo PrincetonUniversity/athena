@@ -53,8 +53,8 @@ void HydroIntegrator::RiemannSolver(const int k,const int j, const int il, const
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[NWAVE],wri[NWAVE],wroe[NWAVE],fl[NWAVE],fr[NWAVE],flxi[NWAVE];
-  gm1 = pmy_fluid->pf_eos->GetGamma() - 1.0;
-  iso_cs = pmy_fluid->pf_eos->GetIsoSoundSpeed();
+  gm1 = pmy_hydro->pf_eos->GetGamma() - 1.0;
+  iso_cs = pmy_hydro->pf_eos->GetIsoSoundSpeed();
 
   Real coeff[NWAVE];
   Real ev[NWAVE],rem[NWAVE][NWAVE],lem[NWAVE][NWAVE];

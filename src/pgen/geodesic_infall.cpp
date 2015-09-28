@@ -125,7 +125,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   // Initialize conserved values
   AthenaArray<Real> bb;
   bb.NewAthenaArray(3, ku+1, ju+1, iu+1);
-  pmb->pfluid->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, pfl->w, bb, pfl->u);
+  pmb->phydro->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, pfl->w, bb, pfl->u);
   bb.DeleteAthenaArray();
 
   // Enroll boundary functions
@@ -134,7 +134,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   return;
 }
 
-// Inner fluid boundary condition
+// Inner hydro boundary condition
 // Inputs:
 //   pmb: pointer to block
 // Outputs:
@@ -152,10 +152,10 @@ void OutflowPrimInnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons,
   int kl = ks;
   int ku = ke;
   AthenaArray<Real> *pprim;
-  if (&cons == &pmb->pfluid->u)
-    pprim = &pmb->pfluid->w;
-  else if (&cons == &pmb->pfluid->u1)
-    pprim = &pmb->pfluid->w1;
+  if (&cons == &pmb->phydro->u)
+    pprim = &pmb->phydro->w;
+  else if (&cons == &pmb->phydro->u1)
+    pprim = &pmb->phydro->w1;
   else
     assert(0);
   AthenaArray<Real> g, gi;
@@ -198,7 +198,7 @@ void OutflowPrimInnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons,
         Real u_0_new, u_1_new, u_2_new, u_3_new;
         pmb->pcoord->LowerVectorCell(u0_new, u1_new, u2_new, u3_new, k, j, i, &u_0_new,
             &u_1_new, &u_2_new, &u_3_new);
-        Real gamma_adi = pmb->pfluid->pf_eos->GetGamma();
+        Real gamma_adi = pmb->phydro->pf_eos->GetGamma();
         Real gamma_prime = gamma_adi/(gamma_adi-1.0);
         Real wgas = rho + gamma_prime * pgas;
         cons(IDN,k,j,i) = rho * u0_new;
@@ -213,7 +213,7 @@ void OutflowPrimInnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons,
   return;
 }
 
-// Outer fluid boundary condition
+// Outer hydro boundary condition
 // Inputs:
 //   pmb: pointer to block
 // Outputs:

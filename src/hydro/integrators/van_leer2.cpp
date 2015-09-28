@@ -86,7 +86,7 @@ void HydroIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
   vol.InitWithShallowSlice(cell_volume_,2,tid,1);
 
 //----------Viscosity update
-  if(VISCOSITY) pmb->pfluid->pf_viscosity->ViscosityTerms(dt,w,u);
+  if(VISCOSITY) pmb->phydro->pf_viscosity->ViscosityTerms(dt,w,u);
 
 //--------------------------------------------------------------------------------------
 // i-direction
@@ -115,10 +115,10 @@ void HydroIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
       RiemannSolver(k,j,is,ie+1,IVX,b1,wl,wr,flx);
 
       if(k>=ks && k<=ke && j>=js && j<=je) {
-        // update conserved fluid variables
+        // update conserved hydro variables
         pmb->pcoord->Face1Area(k,j,is,ie+1,area);
         pmb->pcoord->CellVolume(k,j,is,ie,vol);
-        for (int n=0; n<NFLUID; ++n){
+        for (int n=0; n<NHYDRO; ++n){
 #pragma simd
           for (int i=is; i<=ie; ++i){
             u(n,k,j,i) -= dt*(area(i+1)*flx(n,i+1) - area(i)*flx(n,i))/vol(i);
@@ -128,11 +128,11 @@ void HydroIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
         // add coordinate (geometric) source terms
         pmb->pcoord->CoordSrcTermsX1(k,j,dt,flx,w,bcc,u);
         // add physical source terms for a point mass potential
-        pmb->pfluid->pf_srcterms->PhysicalSourceTermsX1(k,j,dt,flx,w,u);
+        pmb->phydro->pf_srcterms->PhysicalSourceTermsX1(k,j,dt,flx,w,u);
 
         // store the surface flux for flux correction
         if(pmb->pmy_mesh->multilevel==true) {
-          for(int n=0; n<NFLUID; ++n) {
+          for(int n=0; n<NHYDRO; ++n) {
             pmb->pbval->surface_flux_[inner_x1](n,k,j)=flx(n,is);
             pmb->pbval->surface_flux_[outer_x1](n,k,j)=flx(n,ie+1);
           }
@@ -185,7 +185,7 @@ void HydroIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
       
           // store the surface flux for flux correction
           if(pmb->pmy_mesh->multilevel==true) {
-            for(int n=0; n<NFLUID; ++n) {
+            for(int n=0; n<NHYDRO; ++n) {
               for(int i=is; i<=ie; ++i)
                 pmb->pbval->surface_flux_[inner_x2](n,k,i)=jflx_j(n,i);
             }
@@ -217,12 +217,12 @@ void HydroIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
         // compute fluxes at j+1
         RiemannSolver(k,j+1,il,iu,IVY,b2,wl,wr,flx); 
 
-        // update conserved fluid variables
+        // update conserved hydro variables
         pmb->pcoord->Face2Area(k,j  ,is,ie,area   );
         pmb->pcoord->Face2Area(k,j+1,is,ie,area_p1);
         pmb->pcoord->CellVolume(k,j,is,ie,vol);
         if(k>=ks && k<=ke) {
-          for (int n=0; n<NFLUID; ++n){
+          for (int n=0; n<NHYDRO; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
               u(n,k,j,i) -= dt*(area_p1(i)*flx(n,i) - area(i)*jflx_j(n,i))/vol(i);
@@ -232,12 +232,12 @@ void HydroIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
           // add coordinate (geometric) source terms
           pmb->pcoord->CoordSrcTermsX2(k,j,dt,jflx_j,flx,w,bcc,u);
           // add physical source terms for a point mass potential
-          pmb->pfluid->pf_srcterms->PhysicalSourceTermsX2(k,j,dt,jflx_j,flx,w,u);
+          pmb->phydro->pf_srcterms->PhysicalSourceTermsX2(k,j,dt,jflx_j,flx,w,u);
         }
 
         // store the surface flux for flux correction
         if(pmb->pmy_mesh->multilevel==true && j==je) {
-          for(int n=0; n<NFLUID; ++n) {
+          for(int n=0; n<NHYDRO; ++n) {
             for(int i=is; i<=ie; ++i)
               pmb->pbval->surface_flux_[outer_x2](n,k,i)=flx(n,i);
           }
@@ -291,7 +291,7 @@ void HydroIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 
           // store the surface flux for flux correction
           if(pmb->pmy_mesh->multilevel==true) {
-            for(int n=0; n<NFLUID; ++n) {
+            for(int n=0; n<NHYDRO; ++n) {
               for(int i=is; i<=ie; ++i)
                 pmb->pbval->surface_flux_[inner_x3](n,j,i)=flx(n,i);
             }
@@ -311,7 +311,7 @@ void HydroIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
           }
 
           // store fluxes at k=kstart over all i,j
-          for (int n=0; n<NFLUID; ++n){
+          for (int n=0; n<NHYDRO; ++n){
 #pragma simd
             for (int i=il; i<=iu; ++i){
               kflx_k(n,j,i) = flx(n,i);
@@ -333,11 +333,11 @@ void HydroIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
         // compute fluxes at k+1
         RiemannSolver(k+1,j,il,iu,IVZ,b3,wl,wr,flx);
         if(j>=js && j<=je) {
-          // update conserved fluid variables
+          // update conserved hydro variables
           pmb->pcoord->Face3Area(k  ,j,is,ie,area   );
           pmb->pcoord->Face3Area(k+1,j,is,ie,area_p1);
           pmb->pcoord->CellVolume(k,j,is,ie,vol);
-          for (int n=0; n<NFLUID; ++n){
+          for (int n=0; n<NHYDRO; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
               u(n,k,j,i) -= dt*(area_p1(i)*flx(n,i) - area(i)*kflx_k(n,j,i))/vol(i);
@@ -347,12 +347,12 @@ void HydroIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
           // add coordinate (geometric) source terms
           pmb->pcoord->CoordSrcTermsX3(k,j,dt,kflx_k,flx,w,bcc,u);
 	  // add physical source terms for a point mass potential
-	  pmb->pfluid->pf_srcterms->PhysicalSourceTermsX3(k,j,dt,kflx_k,flx,w,u);
+	  pmb->phydro->pf_srcterms->PhysicalSourceTermsX3(k,j,dt,kflx_k,flx,w,u);
         }
 
         // store the surface flux for flux correction
         if(pmb->pmy_mesh->multilevel==true && k==ke) {
-          for(int n=0; n<NFLUID; ++n) {
+          for(int n=0; n<NHYDRO; ++n) {
             for(int i=is; i<=ie; ++i)
               pmb->pbval->surface_flux_[outer_x3](n,j,i)=flx(n,i);
           }
@@ -373,7 +373,7 @@ void HydroIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 
         // store fluxes for k=k-1 in next iteration
         if(k<ke) {
-          for (int n=0; n<NFLUID; ++n){
+          for (int n=0; n<NHYDRO; ++n){
 #pragma simd
             for (int i=is; i<=ie; ++i){
               kflx_k(n,j,i) = flx(n,i);
@@ -390,8 +390,8 @@ void HydroIntegrator::OneStep(MeshBlock *pmb,AthenaArray<Real> &u, AthenaArray<R
 //--------------------------------------------------------------------------------------
 //  Add user source terms
 
-  if (pmb->pfluid->pf_srcterms->UserSourceTerm != NULL)
-    pmb->pfluid->pf_srcterms->UserSourceTerm(pmb->pmy_mesh->time,dt,w,u);
+  if (pmb->phydro->pf_srcterms->UserSourceTerm != NULL)
+    pmb->phydro->pf_srcterms->UserSourceTerm(pmb->pmy_mesh->time,dt,w,u);
 
   return;
 }

@@ -38,15 +38,15 @@ void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
     switch (ivx)
     {
       case IVX:
-        pmy_fluid->pmy_block->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r,
+        pmy_hydro->pmy_block->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r,
             bb_normal_);
         break;
       case IVY:
-        pmy_fluid->pmy_block->pcoord->PrimToLocal2(k, j, il, iu, bb, prim_l, prim_r,
+        pmy_hydro->pmy_block->pcoord->PrimToLocal2(k, j, il, iu, bb, prim_l, prim_r,
             bb_normal_);
         break;
       case IVZ:
-        pmy_fluid->pmy_block->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r,
+        pmy_hydro->pmy_block->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r,
             bb_normal_);
         break;
     }
@@ -58,9 +58,9 @@ void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
   }
 
   // Calculate wavespeeds
-  pmy_fluid->pf_eos->FastMagnetosonicSpeedsSR(prim_l, bb_normal_, il, iu, ivx,
+  pmy_hydro->pf_eos->FastMagnetosonicSpeedsSR(prim_l, bb_normal_, il, iu, ivx,
       lambdas_p_l_, lambdas_m_l_);
-  pmy_fluid->pf_eos->FastMagnetosonicSpeedsSR(prim_r, bb_normal_, il, iu, ivx,
+  pmy_hydro->pf_eos->FastMagnetosonicSpeedsSR(prim_r, bb_normal_, il, iu, ivx,
       lambdas_p_r_, lambdas_m_r_);
 
   // Calculate cyclic permutations of indices
@@ -68,7 +68,7 @@ void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
   int ivz = IVX + ((ivx-IVX)+2)%3;
 
   // Extract ratio of specific heats
-  const Real gamma_adi = pmy_fluid->pf_eos->GetGamma();
+  const Real gamma_adi = pmy_hydro->pf_eos->GetGamma();
 
   // Go through each interface
   #pragma simd
@@ -205,15 +205,15 @@ void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
     switch (ivx)
     {
       case IVX:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal1(k, j, il, iu, cons_, bb_normal_,
+        pmy_hydro->pmy_block->pcoord->FluxToGlobal1(k, j, il, iu, cons_, bb_normal_,
             flux);
         break;
       case IVY:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal2(k, j, il, iu, cons_, bb_normal_,
+        pmy_hydro->pmy_block->pcoord->FluxToGlobal2(k, j, il, iu, cons_, bb_normal_,
             flux);
         break;
       case IVZ:
-        pmy_fluid->pmy_block->pcoord->FluxToGlobal3(k, j, il, iu, cons_, bb_normal_,
+        pmy_hydro->pmy_block->pcoord->FluxToGlobal3(k, j, il, iu, cons_, bb_normal_,
             flux);
         break;
     }

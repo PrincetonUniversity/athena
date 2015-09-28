@@ -31,7 +31,7 @@
 
 HydroIntegrator::HydroIntegrator(Hydro *pf, ParameterInput *pin)
 {
-  pmy_fluid = pf;
+  pmy_hydro = pf;
 
 // Allocate memory for scratch vectors
 

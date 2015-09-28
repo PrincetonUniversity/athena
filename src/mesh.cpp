@@ -1019,7 +1019,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 // in the Hydro constructor
  
   pcoord = new Coordinates(this, pin);
-  pfluid = new Hydro(this, pin);
+  phydro = new Hydro(this, pin);
   pfield = new Field(this, pin);
   pbval  = new BoundaryValues(this, pin);
 
@@ -1098,19 +1098,19 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   // create coordinates, hydro, field, and boundary conditions
   pcoord = new Coordinates(this, pin);
-  pfluid = new Hydro(this, pin);
+  phydro = new Hydro(this, pin);
   pfield = new Field(this, pin);
   pbval  = new BoundaryValues(this, pin);
 
   // load hydro and field data
   nerr=0;
-  if(resfile.Read(pfluid->u.GetArrayPointer(),sizeof(Real),
-                         pfluid->u.GetSize())!=pfluid->u.GetSize()) nerr++;
+  if(resfile.Read(phydro->u.GetArrayPointer(),sizeof(Real),
+                         phydro->u.GetSize())!=phydro->u.GetSize()) nerr++;
   if (GENERAL_RELATIVITY) {
-    if(resfile.Read(pfluid->w.GetArrayPointer(),sizeof(Real),
-                           pfluid->w.GetSize())!=pfluid->w.GetSize()) nerr++;
-    if(resfile.Read(pfluid->w1.GetArrayPointer(),sizeof(Real),
-                           pfluid->w1.GetSize())!=pfluid->w1.GetSize()) nerr++;
+    if(resfile.Read(phydro->w.GetArrayPointer(),sizeof(Real),
+                           phydro->w.GetSize())!=phydro->w.GetSize()) nerr++;
+    if(resfile.Read(phydro->w1.GetArrayPointer(),sizeof(Real),
+                           phydro->w1.GetSize())!=phydro->w1.GetSize()) nerr++;
   }
   if (MAGNETIC_FIELDS_ENABLED) {
     if(resfile.Read(pfield->b.x1f.GetArrayPointer(),sizeof(Real),
@@ -1137,7 +1137,7 @@ MeshBlock::~MeshBlock()
   if(next!=NULL) next->prev=prev;
 
   delete pcoord;
-  delete pfluid;
+  delete phydro;
   delete pfield;
   delete pbval;
   delete [] task;
@@ -1147,7 +1147,7 @@ MeshBlock::~MeshBlock()
 //--------------------------------------------------------------------------------------
 // \!fn void Mesh::NewTimeStep(void)
 // \brief function that loops over all MeshBlocks and find new timestep
-//        this assumes that pfluid->NewBlockTimeStep is already called
+//        this assumes that phydro->NewBlockTimeStep is already called
 void Mesh::NewTimeStep(void)
 {
   MeshBlock *pmb = pblock;
@@ -1174,17 +1174,17 @@ void Mesh::NewTimeStep(void)
 void Mesh::Initialize(int res_flag, ParameterInput *pin)
 {
   MeshBlock *pmb;
-  Hydro *pfluid;
+  Hydro *phydro;
   Field *pfield;
   BoundaryValues *pbval;
 
   if(res_flag==0) {
     pmb = pblock;
     while (pmb != NULL)  {
-      pfluid=pmb->pfluid;
+      phydro=pmb->phydro;
       pfield=pmb->pfield;
       pbval=pmb->pbval;
-      ProblemGenerator(pfluid,pfield,pin);
+      ProblemGenerator(phydro,pfield,pin);
       pbval->CheckBoundary();
       pmb=pmb->next;
     }
@@ -1199,10 +1199,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
 
   pmb = pblock;
   while (pmb != NULL)  {
-    pfluid=pmb->pfluid;
+    phydro=pmb->phydro;
     pfield=pmb->pfield;
     pbval=pmb->pbval;
-    pbval->SendHydroBoundaryBuffers(pfluid->u,0);
+    pbval->SendHydroBoundaryBuffers(phydro->u,0);
     if (MAGNETIC_FIELDS_ENABLED)
       pbval->SendFieldBoundaryBuffers(pfield->b,0);
     pmb=pmb->next;
@@ -1210,30 +1210,30 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
 
   pmb = pblock;
   while (pmb != NULL)  {
-    pfluid=pmb->pfluid;
+    phydro=pmb->phydro;
     pfield=pmb->pfield;
     pbval=pmb->pbval;
-    pbval->ReceiveHydroBoundaryBuffersWithWait(pfluid->u ,0);
+    pbval->ReceiveHydroBoundaryBuffersWithWait(phydro->u ,0);
     if (MAGNETIC_FIELDS_ENABLED)
       pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b ,0);
     pmb->pbval->ClearBoundaryForInit();
-    pbval->HydroPhysicalBoundaries(pfluid->u);
+    pbval->HydroPhysicalBoundaries(phydro->u);
     if(multilevel==true)
-      pbval->ProlongateHydroBoundaries(pfluid->u);
+      pbval->ProlongateHydroBoundaries(phydro->u);
     if (MAGNETIC_FIELDS_ENABLED) {
       pbval->FieldPhysicalBoundaries(pfield->b);
       if(multilevel==true)
         pbval->ProlongateFieldBoundaries(pfield->b);
     }
-    pfluid->pf_eos->ConservedToPrimitive(pfluid->u, pfluid->w1, pfield->b, 
-                                         pfluid->w, pfield->bcc);
+    phydro->pf_eos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b, 
+                                         phydro->w, pfield->bcc);
     pmb=pmb->next;
   }
 
   if(res_flag==0) {
     pmb = pblock;
     while (pmb != NULL)  {
-      pmb->pfluid->NewBlockTimeStep(pmb);
+      pmb->phydro->NewBlockTimeStep(pmb);
       pmb=pmb->next;
     }
     NewTimeStep();
@@ -1258,10 +1258,10 @@ size_t MeshBlock::GetBlockSizeInBytes(void)
   size_t size;
 
   size =sizeof(RegionSize)+sizeof(int)*6;
-  size+=sizeof(Real)*pfluid->u.GetSize();
+  size+=sizeof(Real)*phydro->u.GetSize();
   if (GENERAL_RELATIVITY) {
-    size+=sizeof(Real)*pfluid->w.GetSize();
-    size+=sizeof(Real)*pfluid->w1.GetSize();
+    size+=sizeof(Real)*phydro->w.GetSize();
+    size+=sizeof(Real)*phydro->w1.GetSize();
   }
   if (MAGNETIC_FIELDS_ENABLED)
     size+=sizeof(Real)*(pfield->b.x1f.GetSize()+pfield->b.x2f.GetSize()
@@ -1671,20 +1671,20 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
 void Mesh::TestConservation(void)
 {
   MeshBlock *pmb = pblock;
-  Real tcons[NFLUID];
-  for(int n=0;n<NFLUID;n++) tcons[n]=0.0;
+  Real tcons[NHYDRO];
+  for(int n=0;n<NHYDRO;n++) tcons[n]=0.0;
   while(pmb!=NULL) {
     pmb->IntegrateConservative(tcons);
     pmb=pmb->next;
   }
 
 #ifdef MPI_PARALLEL
-  MPI_Allreduce(MPI_IN_PLACE,tcons,NFLUID,MPI_ATHENA_REAL,MPI_SUM,MPI_COMM_WORLD);
+  MPI_Allreduce(MPI_IN_PLACE,tcons,NHYDRO,MPI_ATHENA_REAL,MPI_SUM,MPI_COMM_WORLD);
 #endif
 
   if(Globals::my_rank==0) {
     std::cout << "Total Conservative : " ;
-    for(int n=0;n<NFLUID;n++)
+    for(int n=0;n<NHYDRO;n++)
       std::cout << tcons[n] << " ";
     std::cout << std::endl;
   }
@@ -1698,11 +1698,11 @@ void Mesh::TestConservation(void)
 // \brief Calculate and print the total of conservative variables
 void MeshBlock::IntegrateConservative(Real *tcons)
 {
-  for(int n=0;n<NFLUID;n++) {
+  for(int n=0;n<NHYDRO;n++) {
     for(int k=ks;k<=ke;k++) {
       for(int j=js;j<=je;j++) {
         for(int i=is;i<=ie;i++)
-          tcons[n]+=pfluid->u(n,k,j,i)*pcoord->GetCellVolume(k,j,i);
+          tcons[n]+=phydro->u(n,k,j,i)*pcoord->GetCellVolume(k,j,i);
       }
     }
   }

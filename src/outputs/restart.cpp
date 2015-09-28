@@ -195,13 +195,13 @@ void RestartOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
   resfile.Seek(offset[pmb->gid - pmb->pmy_mesh->nbstart]);
   resfile.Write(&(pmb->block_size), sizeof(RegionSize), 1);
   resfile.Write(pmb->block_bcs, sizeof(int), 6);
-  resfile.Write(pmb->pfluid->u.GetArrayPointer(),sizeof(Real),
-                       pmb->pfluid->u.GetSize());
+  resfile.Write(pmb->phydro->u.GetArrayPointer(),sizeof(Real),
+                       pmb->phydro->u.GetSize());
   if (GENERAL_RELATIVITY) {
-    resfile.Write(pmb->pfluid->w.GetArrayPointer(),sizeof(Real),
-                         pmb->pfluid->w.GetSize());
-    resfile.Write(pmb->pfluid->w1.GetArrayPointer(),sizeof(Real),
-                         pmb->pfluid->w1.GetSize());
+    resfile.Write(pmb->phydro->w.GetArrayPointer(),sizeof(Real),
+                         pmb->phydro->w.GetSize());
+    resfile.Write(pmb->phydro->w1.GetArrayPointer(),sizeof(Real),
+                         pmb->phydro->w1.GetSize());
   }
   if (MAGNETIC_FIELDS_ENABLED) {
     resfile.Write(pmb->pfield->b.x1f.GetArrayPointer(),sizeof(Real),

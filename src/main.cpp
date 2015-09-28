@@ -13,6 +13,17 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
+/////////////////////////////////// Athena++ Main Program \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+//! \file main.cpp
+//  \brief Athena++ main program file.
+//
+//  Based on the Athena MHD code in C.  History:
+//    - 2003-2013: development of v1.0-v4.2 of Athena code in C
+//    - jan-2014: start of Athena++ code project
+//    - may-2014: hydro implemented during KITP workshop
+//    - oct-2014: first Athena++ developer's meeting
+//    - nov-2014: mhd implemented
+//======================================================================================
 
 // C/C++ headers
 #include <stdint.h>  // int64_t
@@ -24,7 +35,7 @@
 #include <new>        // bad_alloc
 #include <string>     // string
 
-// Athena++ classes headers
+// Athena++ headers
 #include "athena.hpp"
 #include "globals.hpp"
 #include "mesh.hpp"
@@ -43,22 +54,9 @@
 #include <omp.h>
 #endif
 
-//======================================================================================
-/////////////////////////////////// Athena++ Main Program \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-//! \file main.cpp
-//  \brief Athena++ main program file.
-//
-//  Based on the Athena MHD code in C.  History:
-//    - 2003-2013: development of v1.0-v4.2 of Athena code in C
-//    - jan-2014: start of Athena++ code project
-//    - may-2014: hydro implemented during KITP workshop
-//    - oct-2014: first Athena++ developer's meeting
-//    - nov-2014: mhd implemented
-//======================================================================================
-
 //--------------------------------------------------------------------------------------
 //! \fn int main(int argc, char *argv[]) 
-//  \brief Athena++ main program   */
+//  \brief Athena++ main program
 
 int main(int argc, char *argv[])
 {
@@ -138,16 +136,16 @@ int main(int argc, char *argv[])
       case 'h':
       default:
         if(Globals::my_rank==0) {
-          std::cout<<"Athena++ "<< athena_version << std::endl;
-          std::cout<<"Usage: "<< argv[0] <<" [options] [block/par=value ...]"<< std::endl;
+          std::cout<<"Athena++ "<< athena_version <<std::endl;
+          std::cout<<"Usage: "<<argv[0]<<" [options] [block/par=value ...]"<<std::endl;
           std::cout<<"Options:" << std::endl;
-          std::cout<<"  -i <file>       specify input file [athinput]"<< std::endl;
-          std::cout<<"  -r <file>       restart with this file"<< std::endl;
-          std::cout<<"  -d <directory>  specify run dir [current dir]"<< std::endl;
-          std::cout<<"  -n              parse input file and quit"<< std::endl;
-          std::cout<<"  -c              show configuration and quit"<< std::endl;
-          std::cout<<"  -m <nproc>      test mesh structure and quit"<< std::endl;
-          std::cout<<"  -h              this help"<< std::endl;
+          std::cout<<"  -i <file>       specify input file [athinput]"<<std::endl;
+          std::cout<<"  -r <file>       restart with this file"<<std::endl;
+          std::cout<<"  -d <directory>  specify run dir [current dir]"<<std::endl;
+          std::cout<<"  -n              parse input file and quit"<<std::endl;
+          std::cout<<"  -c              show configuration and quit"<<std::endl;
+          std::cout<<"  -m <nproc>      test mesh structure and quit"<<std::endl;
+          std::cout<<"  -h              this help"<<std::endl;
           ShowConfig();
         }
 #ifdef MPI_PARALLEL
@@ -203,7 +201,6 @@ int main(int argc, char *argv[])
 #endif
     return(0);
   }
-
 
 // Note steps 4-6 are protected by a simple error handler
 //--- Step 4. --------------------------------------------------------------------------
@@ -293,101 +290,100 @@ int main(int argc, char *argv[])
     return(0);
   }
 
-
 //--- Step 8. Create and set the task list ---------------------------------------------
 // this is for a two-step integrator
   if (MAGNETIC_FIELDS_ENABLED) { // MHD
-    task_list.AddTask(fluid_integrate_1, none); // predict fluid
+    task_list.AddTask(hydro_integrate_1, none); // predict hydro
     if(pmesh->multilevel==true) { // SMR or AMR
-      task_list.AddTask(flux_correct_send_1, fluid_integrate_1);
-      task_list.AddTask(flux_correct_recv_1, fluid_integrate_1);
-      task_list.AddTask(fluid_send_1, flux_correct_recv_1); // send block boundaries
-      task_list.AddTask(calculate_emf_1, fluid_integrate_1); // calculate EMF
+      task_list.AddTask(flux_correct_send_1, hydro_integrate_1);
+      task_list.AddTask(flux_correct_recv_1, hydro_integrate_1);
+      task_list.AddTask(hydro_send_1, flux_correct_recv_1); // send block boundaries
+      task_list.AddTask(calculate_emf_1, hydro_integrate_1); // calculate EMF
       task_list.AddTask(emf_correct_send_1, calculate_emf_1);
       task_list.AddTask(emf_correct_recv_1, emf_correct_send_1);
       task_list.AddTask(field_integrate_1, emf_correct_recv_1); // predict b-field
     }
     else {
-      task_list.AddTask(fluid_send_1, fluid_integrate_1); // send block boundaries
-      task_list.AddTask(calculate_emf_1, fluid_integrate_1); // calculate EMF
+      task_list.AddTask(hydro_send_1, hydro_integrate_1); // send block boundaries
+      task_list.AddTask(calculate_emf_1, hydro_integrate_1); // calculate EMF
       task_list.AddTask(field_integrate_1, calculate_emf_1); // predict b-field
     }
     task_list.AddTask(field_send_1, field_integrate_1); // send block boundaries
-    task_list.AddTask(fluid_recv_1, none); // receive block boundaries
-    task_list.AddTask(fluid_boundary_1, fluid_recv_1 | fluid_integrate_1); // physical boundaries
+    task_list.AddTask(hydro_recv_1, none); // receive block boundaries
+    task_list.AddTask(hydro_boundary_1, hydro_recv_1 | hydro_integrate_1); // physical boundaries
     if(pmesh->multilevel==true) // SMR or AMR
-      task_list.AddTask(fluid_prolong_1, fluid_boundary_1);
+      task_list.AddTask(hydro_prolong_1, hydro_boundary_1);
     task_list.AddTask(field_recv_1, none); // receive block boundaries
     task_list.AddTask(field_boundary_1, field_recv_1 | field_integrate_1); // physical boundaries
     if(pmesh->multilevel==true) {// SMR or AMR
       task_list.AddTask(field_prolong_1, field_boundary_1);
-      task_list.AddTask(primitives_1, fluid_prolong_1 | field_prolong_1);
+      task_list.AddTask(primitives_1, hydro_prolong_1 | field_prolong_1);
     }
     else 
-      task_list.AddTask(primitives_1, fluid_boundary_1 | field_boundary_1);
+      task_list.AddTask(primitives_1, hydro_boundary_1 | field_boundary_1);
 
-    task_list.AddTask(fluid_integrate_0, primitives_1); // predict fluid
+    task_list.AddTask(hydro_integrate_0, primitives_1); // predict hydro
     if(pmesh->multilevel==true) { // SMR or AMR
-      task_list.AddTask(flux_correct_send_0, fluid_integrate_0);
-      task_list.AddTask(flux_correct_recv_0, fluid_integrate_0);
-      task_list.AddTask(fluid_send_0, flux_correct_recv_0); // send block boundaries
-      task_list.AddTask(calculate_emf_0, fluid_integrate_0); // calculate EMF
+      task_list.AddTask(flux_correct_send_0, hydro_integrate_0);
+      task_list.AddTask(flux_correct_recv_0, hydro_integrate_0);
+      task_list.AddTask(hydro_send_0, flux_correct_recv_0); // send block boundaries
+      task_list.AddTask(calculate_emf_0, hydro_integrate_0); // calculate EMF
       task_list.AddTask(emf_correct_send_0, calculate_emf_0);
       task_list.AddTask(emf_correct_recv_0, emf_correct_send_0);
       task_list.AddTask(field_integrate_0, emf_correct_recv_0); // predict b-field
     }
     else {
-      task_list.AddTask(fluid_send_0, fluid_integrate_0); // send block boundaries
-      task_list.AddTask(calculate_emf_0, fluid_integrate_0); // calculate EMF
+      task_list.AddTask(hydro_send_0, hydro_integrate_0); // send block boundaries
+      task_list.AddTask(calculate_emf_0, hydro_integrate_0); // calculate EMF
       task_list.AddTask(field_integrate_0, calculate_emf_0); // predict b-field
     }
     task_list.AddTask(field_send_0, field_integrate_0); // send block boundaries
-    task_list.AddTask(fluid_recv_0, primitives_1); // receive block boundaries
-    task_list.AddTask(fluid_boundary_0, fluid_recv_0 | fluid_integrate_0); // physical boundaries
+    task_list.AddTask(hydro_recv_0, primitives_1); // receive block boundaries
+    task_list.AddTask(hydro_boundary_0, hydro_recv_0 | hydro_integrate_0); // physical boundaries
     if(pmesh->multilevel==true) // SMR or AMR
-      task_list.AddTask(fluid_prolong_0, fluid_boundary_0);
+      task_list.AddTask(hydro_prolong_0, hydro_boundary_0);
     task_list.AddTask(field_recv_0, primitives_1); // receive block boundaries
     task_list.AddTask(field_boundary_0, field_recv_0 | field_integrate_0); // physical boundaries
     if(pmesh->multilevel==true) {// SMR or AMR
       task_list.AddTask(field_prolong_0, field_boundary_0);
-      task_list.AddTask(primitives_0, fluid_prolong_0 | field_prolong_0);
+      task_list.AddTask(primitives_0, hydro_prolong_0 | field_prolong_0);
     }
     else 
-      task_list.AddTask(primitives_0, fluid_boundary_0 | field_boundary_0);
+      task_list.AddTask(primitives_0, hydro_boundary_0 | field_boundary_0);
   }
   else { // hydro
-    task_list.AddTask(fluid_integrate_1, none); // predict fluid
+    task_list.AddTask(hydro_integrate_1, none); // predict hydro
     if(pmesh->multilevel==true) { // SMR or AMR
-      task_list.AddTask(flux_correct_send_1, fluid_integrate_1);
-      task_list.AddTask(flux_correct_recv_1, fluid_integrate_1);
-      task_list.AddTask(fluid_send_1, flux_correct_recv_1); // send block boundaries
+      task_list.AddTask(flux_correct_send_1, hydro_integrate_1);
+      task_list.AddTask(flux_correct_recv_1, hydro_integrate_1);
+      task_list.AddTask(hydro_send_1, flux_correct_recv_1); // send block boundaries
     }
     else
-      task_list.AddTask(fluid_send_1, fluid_integrate_1); // send block boundaries
-    task_list.AddTask(fluid_recv_1, none); // receive block boundaries
-    task_list.AddTask(fluid_boundary_1, fluid_recv_1 | fluid_integrate_1); // physical boundaries
+      task_list.AddTask(hydro_send_1, hydro_integrate_1); // send block boundaries
+    task_list.AddTask(hydro_recv_1, none); // receive block boundaries
+    task_list.AddTask(hydro_boundary_1, hydro_recv_1 | hydro_integrate_1); // physical boundaries
     if(pmesh->multilevel==true) { // SMR or AMR
-      task_list.AddTask(fluid_prolong_1, fluid_boundary_1);
-      task_list.AddTask(primitives_1, fluid_prolong_1);
+      task_list.AddTask(hydro_prolong_1, hydro_boundary_1);
+      task_list.AddTask(primitives_1, hydro_prolong_1);
     }
     else
-      task_list.AddTask(primitives_1, fluid_boundary_1);
-    task_list.AddTask(fluid_integrate_0, primitives_1); // predict correct
+      task_list.AddTask(primitives_1, hydro_boundary_1);
+    task_list.AddTask(hydro_integrate_0, primitives_1); // predict correct
     if(pmesh->multilevel==true) { // SMR or AMR
-      task_list.AddTask(flux_correct_send_0, fluid_integrate_0);
-      task_list.AddTask(flux_correct_recv_0, fluid_integrate_0);
-      task_list.AddTask(fluid_send_0, flux_correct_recv_0); // send block boundaries
+      task_list.AddTask(flux_correct_send_0, hydro_integrate_0);
+      task_list.AddTask(flux_correct_recv_0, hydro_integrate_0);
+      task_list.AddTask(hydro_send_0, flux_correct_recv_0); // send block boundaries
     }
     else
-      task_list.AddTask(fluid_send_0, fluid_integrate_0); // send block boundaries
-    task_list.AddTask(fluid_recv_0, primitives_1); // receive block boundaries
-    task_list.AddTask(fluid_boundary_0, fluid_recv_0 | fluid_integrate_0); // physical boundaries
+      task_list.AddTask(hydro_send_0, hydro_integrate_0); // send block boundaries
+    task_list.AddTask(hydro_recv_0, primitives_1); // receive block boundaries
+    task_list.AddTask(hydro_boundary_0, hydro_recv_0 | hydro_integrate_0); // physical boundaries
     if(pmesh->multilevel==true) { // SMR or AMR
-      task_list.AddTask(fluid_prolong_0, fluid_boundary_0);
-      task_list.AddTask(primitives_0, fluid_prolong_0);
+      task_list.AddTask(hydro_prolong_0, hydro_boundary_0);
+      task_list.AddTask(primitives_0, hydro_prolong_0);
     }
     else
-      task_list.AddTask(primitives_0, fluid_boundary_0);
+      task_list.AddTask(primitives_0, hydro_boundary_0);
   }
   task_list.AddTask(new_blocktimestep,primitives_0);
 
@@ -397,18 +393,18 @@ int main(int argc, char *argv[])
 // For performance, there is no error handler protecting this step (except outputs)
 
   if(Globals::my_rank==0)
-    std::cout<<std::endl<< "Setup complete, entering main loop..." <<std::endl<<std::endl;
+    std::cout<<std::endl<<"Setup complete, entering main loop..."<<std::endl<<std::endl;
   clock_t tstart = clock();
 #ifdef OPENMP_PARALLEL
-  double omp_time = omp_get_wtime();
+  double omp_start_time = omp_get_wtime();
 #endif
 
   while ((pmesh->time < pmesh->tlim) && 
          (pmesh->nlim < 0 || pmesh->ncycle < pmesh->nlim)){
 
     if(Globals::my_rank==0)
-      std::cout << "cycle=" << pmesh->ncycle << std::scientific << std::setprecision(14)
-                << " time=" << pmesh->time << " dt=" << pmesh->dt << std::endl;
+      std::cout << "cycle=" << pmesh->ncycle << std::scientific <<std::setprecision(14)
+                << " time=" << pmesh->time << " dt=" << pmesh->dt <<std::endl;
 //    pmesh->TestConservation();
 
     pmesh->UpdateOneStep();
@@ -423,7 +419,7 @@ int main(int argc, char *argv[])
     } 
     catch(std::bad_alloc& ba) {
       std::cout << "### FATAL ERROR in main" << std::endl
-                << "memory allocation failed during output: " << ba.what() << std::endl;
+                << "memory allocation failed during output: " << ba.what() <<std::endl;
 #ifdef MPI_PARALLEL
       MPI_Finalize();
 #endif
@@ -438,10 +434,6 @@ int main(int argc, char *argv[])
     }
 
   } // END OF MAIN INTEGRATION LOOP ====================================================
-#ifdef OPENMP_PARALLEL
-  omp_time = omp_get_wtime() - omp_time;;
-#endif
-  clock_t tstop = clock();
 
 // print diagnostic messages
   if(Globals::my_rank==0) {
@@ -453,15 +445,19 @@ int main(int argc, char *argv[])
     } else {
       std::cout << std::endl << "Terminating on time limit" << std::endl;
     }
-
     std::cout << "time=" << pmesh->time << " cycle=" << pmesh->ncycle << std::endl;
     std::cout << "tlim=" << pmesh->tlim << " nlim=" << pmesh->nlim << std::endl;
 
 // Calculate and print the zone-cycles/cpu-second and wall-second
 
+#ifdef OPENMP_PARALLEL
+    double omp_time = omp_get_wtime() - omp_start_time;;
+#endif
+    clock_t tstop = clock();
     float cpu_time = (tstop>tstart ? (float)(tstop-tstart) : 1.0)/(float)CLOCKS_PER_SEC;
     int64_t zones = pmesh->GetTotalCells();
     float zc_cpus = (float)(zones*(pmesh->ncycle-ncstart))/cpu_time;
+
     std::cout << std::endl << "cpu time used  = " << cpu_time << std::endl;
     std::cout << "zone-cycles/cpu_second = " << zc_cpus << std::endl;
 #ifdef OPENMP_PARALLEL

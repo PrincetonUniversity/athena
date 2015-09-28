@@ -104,7 +104,7 @@ public:
   int cis,cie,cjs,cje,cks,cke,cnghost;
 
   Coordinates *pcoord;
-  Hydro *pfluid;
+  Hydro *phydro;
   Field *pfield;
   BoundaryValues *pbval;
   MeshBlock *prev, *next;

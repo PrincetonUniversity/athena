@@ -392,7 +392,7 @@ void OutputData::ReplaceNode(OutputVariable *pold, OutputVariable *pnew)
 
 void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 {
-  Hydro *pfl = pmb->pfluid;
+  Hydro *pfl = pmb->phydro;
   Field *pfd = pmb->pfield;
   std::stringstream str;
 
@@ -498,7 +498,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       pov->type = "SCALARS";
       pov->name = "ifov";
       pov->data.InitWithShallowSlice(pfl->ifov,4,n,1);
-      pod->AppendNode(pov); // internal fluid outvars
+      pod->AppendNode(pov); // internal hydro outvars
     }
     var_added+=NIFOV;
   }

@@ -36,10 +36,10 @@ void HydroIntegrator::PiecewiseLinearX1(const int k, const int j,
   const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
-  Coordinates *pco = pmy_fluid->pmy_block->pcoord;
+  Coordinates *pco = pmy_hydro->pmy_block->pcoord;
   Real dql,dqr,dqc,q_im1,q_i;
   for (int n=0; n<NWAVE; ++n) {
-    if (n==NFLUID){
+    if (n==NHYDRO){
 #pragma simd
       for (int i=il; i<=iu; ++i){
         Real& dx_im2 = pco->dx1v(i-2);
@@ -71,7 +71,7 @@ void HydroIntegrator::PiecewiseLinearX1(const int k, const int j,
           qr(n,i) -= dxfl*dq2*(cf*dqc+cb*dqr)/(dqc*dqc+(cf+cb-2.0)*dq2+dqr*dqr);
         }
       }
-    } else if (n==(NFLUID+1)) {
+    } else if (n==(NHYDRO+1)) {
 #pragma simd
       for (int i=il; i<=iu; ++i){
         Real& dx_im2 = pco->dx1v(i-2);
@@ -150,7 +150,7 @@ void HydroIntegrator::PiecewiseLinearX2(const int k, const int j,
   const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
-  Coordinates *pco = pmy_fluid->pmy_block->pcoord;
+  Coordinates *pco = pmy_hydro->pmy_block->pcoord;
   Real dx2jm2i = 1.0/pco->dx2v(j-2);
   Real dx2jm1i = 1.0/pco->dx2v(j-1);
   Real dx2ji   = 1.0/pco->dx2v(j);
@@ -163,7 +163,7 @@ void HydroIntegrator::PiecewiseLinearX2(const int k, const int j,
   Real dql,dqr,dqc,q_jm1,q_j;
 
   for (int n=0; n<NWAVE; ++n) {
-    if (n==NFLUID){
+    if (n==NHYDRO){
 #pragma simd
       for (int i=il; i<=iu; ++i){
         q_jm1 = bcc(IB3,k,j-1,i);
@@ -183,7 +183,7 @@ void HydroIntegrator::PiecewiseLinearX2(const int k, const int j,
         if(dq2>0.0)
           qr(n,i) -= dxfl*dq2*(cfp*dqc+cbp*dqr)/(dqc*dqc+(cfp+cbp-2.0)*dq2+dqr*dqr);
       }
-    } else if (n==(NFLUID+1)) {
+    } else if (n==(NHYDRO+1)) {
 #pragma simd
       for (int i=il; i<=iu; ++i){
         q_jm1 = bcc(IB1,k,j-1,i);
@@ -239,7 +239,7 @@ void HydroIntegrator::PiecewiseLinearX3(const int k, const int j,
   const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
-  Coordinates *pco = pmy_fluid->pmy_block->pcoord;
+  Coordinates *pco = pmy_hydro->pmy_block->pcoord;
   Real dx3km2i = 1.0/pco->dx3v(k-2);
   Real dx3km1i = 1.0/pco->dx3v(k-1);
   Real dx3ki   = 1.0/pco->dx3v(k);
@@ -252,7 +252,7 @@ void HydroIntegrator::PiecewiseLinearX3(const int k, const int j,
   Real dql,dqr,dqc,q_km1,q_k;
 
   for (int n=0; n<NWAVE; ++n) {
-    if (n==NFLUID){
+    if (n==NHYDRO){
 #pragma simd
       for (int i=il; i<=iu; ++i){
         q_km1 = bcc(IB1,k-1,j,i);
@@ -273,7 +273,7 @@ void HydroIntegrator::PiecewiseLinearX3(const int k, const int j,
         if(dq2>0.0)
           qr(n,i) -= dxfl*dq2*(cfp*dqc+cbp*dqr)/(dqc*dqc+(cfp+cbp-2.0)*dq2+dqr*dqr);
       }
-    } else if (n==(NFLUID+1)) {
+    } else if (n==(NHYDRO+1)) {
 #pragma simd
       for (int i=il; i<=iu; ++i){
         q_km1 = bcc(IB2,k-1,j,i);

@@ -5,8 +5,8 @@
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
 // See LICENSE file for full public license information.
 //======================================================================================
-//! \file fluid.hpp
-//  \brief defines Hydro class which implements data and functions for thermal fluid
+//! \file hydro.hpp
+//  \brief definitions for Hydro class
 //======================================================================================
 
 // Athena++ classes headers
@@ -22,7 +22,7 @@ class HydroSourceTerms;
 class Viscosity;
 
 //! \class Hydro
-//  \brief fluid data and functions
+//  \brief hydro data and functions
 
 class Hydro {
 //friend class HydroIntegrator;
@@ -37,7 +37,7 @@ public:
 
   AthenaArray<Real> g, g_inv;  // metric and its inverse
 
-  AthenaArray<Real> ifov;  // internal fluid output variables for analysis
+  AthenaArray<Real> ifov;  // internal hydro output variables for analysis
 
   HydroIntegrator *pf_integrator;  // integration algorithm
   HydroEqnOfState *pf_eos;         // equation of state (including cons->prim func)

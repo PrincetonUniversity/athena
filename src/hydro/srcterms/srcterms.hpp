@@ -22,7 +22,7 @@ typedef void (*SrcTermFunc_t)(const Real time, const Real dt,
   const AthenaArray<Real> &prim, AthenaArray<Real> &cons);
 
 //! \class HydroSourceTerms
-//  \brief data and functions for physical source terms in the fluid
+//  \brief data and functions for physical source terms in the hydro
 
 class HydroSourceTerms {
 public:
@@ -47,7 +47,7 @@ public:
     AthenaArray<Real> &cons);
 
 private:
-  Hydro *pmy_fluid_;  // ptr to Hydro containing this HydroSourceTerms
+  Hydro *pmy_hydro_;  // ptr to Hydro containing this HydroSourceTerms
   Real gm_;           // GM for point mass located at origin
   Real g1_, g2_, g3_; // constant acc'n in each direction
 };

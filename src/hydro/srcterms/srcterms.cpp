@@ -13,7 +13,7 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 //======================================================================================
 //! \file srcterms.cpp
-//  \brief implements functions that compute physical source terms in the fluid
+//  \brief implements functions that compute physical source terms for hydro
 //======================================================================================
 
 // Athena++ headers
@@ -32,11 +32,11 @@
 
 HydroSourceTerms::HydroSourceTerms(Hydro *pf, ParameterInput *pin)
 {
-  pmy_fluid_ = pf;
+  pmy_hydro_ = pf;
   gm_ = pin->GetOrAddReal("problem","GM",0.0);
-  g1_ = pin->GetOrAddReal("fluid","grav_acc1",0.0);
-  g2_ = pin->GetOrAddReal("fluid","grav_acc2",0.0);
-  g3_ = pin->GetOrAddReal("fluid","grav_acc3",0.0);
+  g1_ = pin->GetOrAddReal("hydro","grav_acc1",0.0);
+  g2_ = pin->GetOrAddReal("hydro","grav_acc2",0.0);
+  g3_ = pin->GetOrAddReal("hydro","grav_acc3",0.0);
   UserSourceTerm = NULL;
 }
 
@@ -58,7 +58,7 @@ void HydroSourceTerms::PhysicalSourceTermsX1(int k, int j, const Real dt,
 
 // Source terms due to point mass gravity
 
-  MeshBlock *pmb = pmy_fluid_->pmy_block;
+  MeshBlock *pmb = pmy_hydro_->pmy_block;
 #pragma simd
     for (int i=pmb->is; i<=pmb->ie; ++i) {
       Real den = prim(IDN,k,j,i);
