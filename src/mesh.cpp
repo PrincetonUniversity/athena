@@ -35,11 +35,11 @@
 #include "globals.hpp"
 #include "athena_arrays.hpp"            // AthenaArray
 #include "coordinates/coordinates.hpp"  // Coordinates
-#include "fluid/fluid.hpp" 
+#include "hydro/hydro.hpp" 
 #include "field/field.hpp"              // Field
 #include "bvals/bvals.hpp"              // BoundaryValues
-#include "fluid/eos/eos.hpp"
-#include "fluid/integrators/fluid_integrator.hpp" 
+#include "hydro/eos/eos.hpp"
+#include "hydro/integrators/hydro_integrator.hpp" 
 #include "field/integrators/field_integrator.hpp"  // FieldIntegrator
 #include "parameter_input.hpp"          // ParameterInput
 #include "meshblocktree.hpp"
@@ -956,7 +956,7 @@ void Mesh::MeshTest(int dim)
 
 //--------------------------------------------------------------------------------------
 // MeshBlock constructor: builds 1D vectors of cell positions and spacings, and
-// constructs coordinate, boundary condition, fluid and field objects.
+// constructs coordinate, boundary condition, hydro and field objects.
 
 MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_block,
                      int *input_bcs, Mesh *pm, ParameterInput *pin)
@@ -1015,7 +1015,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
             << " x3max=" << block_size.x3max << std::endl;
 
 // construct Coordinates and Hydro objects stored in MeshBlock class.  Note that the
-// initial conditions for the fluid are set in problem generator called from main, not
+// initial conditions for the hydro are set in problem generator called from main, not
 // in the Hydro constructor
  
   pcoord = new Coordinates(this, pin);
@@ -1096,13 +1096,13 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   std::cout << "ks=" << ks << " ke=" << ke << " x3min=" << block_size.x3min
             << " x3max=" << block_size.x3max << std::endl;
 
-  // create coordinates, fluid, field, and boundary conditions
+  // create coordinates, hydro, field, and boundary conditions
   pcoord = new Coordinates(this, pin);
   pfluid = new Hydro(this, pin);
   pfield = new Field(this, pin);
   pbval  = new BoundaryValues(this, pin);
 
-  // load fluid and field data
+  // load hydro and field data
   nerr=0;
   if(resfile.Read(pfluid->u.GetArrayPointer(),sizeof(Real),
                          pfluid->u.GetSize())!=pfluid->u.GetSize()) nerr++;

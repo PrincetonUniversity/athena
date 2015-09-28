@@ -31,7 +31,7 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "../fluid/fluid.hpp"
+#include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
 #include "../mesh.hpp"
 

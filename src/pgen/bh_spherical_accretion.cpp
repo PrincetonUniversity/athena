@@ -13,8 +13,8 @@
 #include "../bvals/bvals.hpp"              // BoundaryValues, InterfaceField
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // Field
-#include "../fluid/fluid.hpp"
-#include "../fluid/eos/eos.hpp"
+#include "../hydro/hydro.hpp"
+#include "../hydro/eos/eos.hpp"
 
 // Declarations
 void InnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
@@ -33,7 +33,7 @@ static Real TemperatureResidual(Real t, Real m, Real n_adi, Real r, Real c1, Rea
 
 // Global variables
 static Real m;             // black hole mass
-static Real n_adi, k_adi;  // fluid parameters
+static Real n_adi, k_adi;  // hydro parameters
 static Real r_crit;        // sonic point radius
 static Real c1, c2;        // useful constants
 static Real bsq_over_rho;  // b^2/rho at inner radius
@@ -80,7 +80,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   n_adi = 1.0/(gamma_adi-1.0);
 
   // Read problem parameters
-  k_adi = pin->GetReal("fluid", "k_adi");
+  k_adi = pin->GetReal("hydro", "k_adi");
   r_crit = pin->GetReal("problem", "r_crit");
   bsq_over_rho = 0.0;
   if (MAGNETIC_FIELDS_ENABLED)

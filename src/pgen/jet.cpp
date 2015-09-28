@@ -22,13 +22,13 @@
 #include "../athena_arrays.hpp"
 #include "../parameter_input.hpp"
 #include "../mesh.hpp"
-#include "../fluid/fluid.hpp"
+#include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
-#include "../fluid/eos/eos.hpp"
+#include "../hydro/eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
 
 // BCs on L-x1 (left edge) of grid with jet inflow conditions
-void jet_fluid_iib(MeshBlock *pmb, AthenaArray<Real> &a,
+void jet_hydro_iib(MeshBlock *pmb, AthenaArray<Real> &a,
                    int is, int ie, int js, int je, int ks, int ke);
 void jet_field_iib(MeshBlock *pmb, InterfaceField &a,
                    int is, int ie, int js, int je, int ks, int ke);
@@ -116,16 +116,16 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   }
 
 // Enroll boundary value function pointers
-  pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, jet_fluid_iib);
+  pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, jet_hydro_iib);
 
   return;
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void jet_fluid_iib()
-//  \brief Sets boundary condition for fluid on left X boundary (iib) for jet problem
+//! \fn void jet_hydro_iib()
+//  \brief Sets boundary condition for hydro on left X boundary (iib) for jet problem
 
-void jet_fluid_iib(MeshBlock *pmb, AthenaArray<Real> &a,
+void jet_hydro_iib(MeshBlock *pmb, AthenaArray<Real> &a,
                    int is, int ie, int js, int je, int ks, int ke)
 {
   for(int k=ks; k<=ke; ++k){

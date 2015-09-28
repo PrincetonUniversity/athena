@@ -13,8 +13,8 @@
 #include "../parameter_input.hpp"          // ParameterInput
 #include "../bvals/bvals.hpp"              // BoundaryValues, InterfaceField
 #include "../coordinates/coordinates.hpp"  // Coordinates
-#include "../fluid/fluid.hpp"
-#include "../fluid/eos/eos.hpp"
+#include "../hydro/hydro.hpp"
+#include "../hydro/eos/eos.hpp"
 #include "../field/field.hpp"              // Field
 
 // Declarations
@@ -63,10 +63,10 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   // Read other properties
   Real e = pin->GetReal("problem", "energy");
   Real lz = pin->GetReal("problem", "l_z");
-  Real rho_min = pin->GetReal("fluid", "rho_min");
-  Real rho_pow = pin->GetReal("fluid", "rho_pow");
-  Real u_min = pin->GetReal("fluid", "u_min");
-  Real u_pow = pin->GetReal("fluid", "u_pow");
+  Real rho_min = pin->GetReal("hydro", "rho_min");
+  Real rho_pow = pin->GetReal("hydro", "rho_pow");
+  Real u_min = pin->GetReal("hydro", "u_min");
+  Real u_pow = pin->GetReal("hydro", "u_pow");
 
   // Initialize primitive values
   AthenaArray<Real> g, gi;

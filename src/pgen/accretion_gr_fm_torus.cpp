@@ -15,8 +15,8 @@
 #include "../bvals/bvals.hpp"              // BoundaryValues, InterfaceField
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // Field
-#include "../fluid/fluid.hpp"
-#include "../fluid/eos/eos.hpp"
+#include "../hydro/hydro.hpp"
+#include "../hydro/eos/eos.hpp"
 
 // TODO: remove with boundary hack
 #include <cassert>
@@ -46,7 +46,7 @@ static Real calculate_beta_min(Real r_min, Real r_max, Real theta_min, Real thet
 
 // Global variables
 static Real m, a;                            // black hole parameters
-static Real gamma_adi, k_adi;                // fluid parameters
+static Real gamma_adi, k_adi;                // hydro parameters
 static Real r_edge, r_peak, l, rho_max;      // disk parameters
 static Real rho_min, rho_pow, u_min, u_pow;  // background parameters
 static Real potential_cutoff;                // sets region of torus to magnetize
@@ -94,10 +94,10 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   gamma_adi = pfl->pf_eos->GetGamma();
 
   // Read other properties
-  rho_min = pin->GetReal("fluid", "rho_min");
-  rho_pow = pin->GetReal("fluid", "rho_pow");
-  u_min = pin->GetReal("fluid", "u_min");
-  u_pow = pin->GetReal("fluid", "u_pow");
+  rho_min = pin->GetReal("hydro", "rho_min");
+  rho_pow = pin->GetReal("hydro", "rho_pow");
+  u_min = pin->GetReal("hydro", "u_min");
+  u_pow = pin->GetReal("hydro", "u_pow");
   k_adi = pin->GetReal("problem", "k_adi");
   r_edge = pin->GetReal("problem", "r_edge");
   r_peak = pin->GetReal("problem", "r_peak");

@@ -25,8 +25,8 @@
 #include "../athena_arrays.hpp"
 #include "../parameter_input.hpp"
 #include "../mesh.hpp"
-#include "../fluid/fluid.hpp"
-#include "../fluid/eos/eos.hpp"   // SoundSpeed()
+#include "../hydro/hydro.hpp"
+#include "../hydro/eos/eos.hpp"   // SoundSpeed()
 
 // this class header
 #include "coordinates.hpp"

@@ -32,9 +32,9 @@
 #include "../athena_arrays.hpp"
 #include "../parameter_input.hpp"
 #include "../mesh.hpp"
-#include "../fluid/fluid.hpp"
+#include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
-#include "../fluid/eos/eos.hpp"
+#include "../hydro/eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
 
 // BCs on outer edges of grid in each dimension

@@ -18,8 +18,8 @@
 #include "../bvals/bvals.hpp"              // BoundaryValues, InterfaceField
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // Field
-#include "../fluid/fluid.hpp"
-#include "../fluid/eos/eos.hpp"
+#include "../hydro/hydro.hpp"
+#include "../hydro/eos/eos.hpp"
 
 // Declarations
 static Real quadratic_root(Real a1, Real a0, bool greater_root);

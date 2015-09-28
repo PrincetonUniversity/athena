@@ -26,11 +26,11 @@
 // Athena++ classes headers
 #include "athena.hpp"
 #include "mesh.hpp"
-#include "fluid/fluid.hpp"
+#include "hydro/hydro.hpp"
 #include "field/field.hpp"
 #include "bvals/bvals.hpp"
-#include "fluid/eos/eos.hpp"
-#include "fluid/integrators/fluid_integrator.hpp"
+#include "hydro/eos/eos.hpp"
+#include "hydro/integrators/hydro_integrator.hpp"
 #include "field/integrators/field_integrator.hpp"
 
 // this class header

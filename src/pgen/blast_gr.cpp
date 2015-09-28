@@ -12,14 +12,14 @@
 #include "../parameter_input.hpp"          // ParameterInput
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // Field
-#include "../fluid/fluid.hpp"
-#include "../fluid/eos/eos.hpp"
+#include "../hydro/hydro.hpp"
+#include "../hydro/eos/eos.hpp"
 
 // Function for setting initial conditions
 // Inputs:
 //   pin: parameters
 // Outputs:
-//   pfl: fluid primitives, half-timestep primitives, and conserved variables set 
+//   pfl: hydro primitives, half-timestep primitives, and conserved variables set 
 //   pfd: magnetic field set
 void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 {

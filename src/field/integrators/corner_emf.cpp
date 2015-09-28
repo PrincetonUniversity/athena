@@ -27,7 +27,7 @@
 #include "../../athena_arrays.hpp"            // AthenaArray
 #include "../../mesh.hpp"                     // MeshBlock
 #include "../../coordinates/coordinates.hpp"  // Coordinates
-#include "../../fluid/fluid.hpp"
+#include "../../hydro/hydro.hpp"
 
 //======================================================================================
 //! \file corner_emf.cpp

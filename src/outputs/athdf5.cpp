@@ -31,7 +31,7 @@
 #include "../athena_arrays.hpp"
 #include "../mesh.hpp"
 #include "../parameter_input.hpp"
-#include "../fluid/fluid.hpp"
+#include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
 #include "outputs.hpp"
 #include "../coordinates/coordinates.hpp" // Coordinates

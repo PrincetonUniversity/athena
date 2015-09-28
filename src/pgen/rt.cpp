@@ -45,10 +45,10 @@
 #include "../athena_arrays.hpp"
 #include "../parameter_input.hpp"
 #include "../mesh.hpp"
-#include "../fluid/fluid.hpp"
+#include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
-#include "../fluid/eos/eos.hpp"
-#include "../fluid/srcterms/srcterms.hpp"
+#include "../hydro/eos/eos.hpp"
+#include "../hydro/srcterms/srcterms.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../utils/utils.hpp"
 
