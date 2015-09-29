@@ -42,7 +42,7 @@ ox3_bc = 4     # 4: periodic
 m = 1.0  # black hole mass M
 a = 0.0  # black hole spin (0 <= a/M < 1)
 
-<fluid>
+<hydro>
 gamma     = 1.3333333333333333
 dfloor    = 1.0e-6
 pfloor    = 1.0e-8

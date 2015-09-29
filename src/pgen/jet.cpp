@@ -37,13 +37,13 @@ void jet_field_iib(MeshBlock *pmb, InterfaceField &a,
 static Real r_jet,d_jet,p_jet,vx_jet,vy_jet,vz_jet,bx_jet,by_jet,bz_jet;
 static Real gm1,x2_0,x3_0;
 
-void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
 
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  gm1 = pfl->pf_eos->GetGamma() - 1.0;
+  gm1 = phyd->pf_eos->GetGamma() - 1.0;
 
 // read parameters from input file
 
@@ -79,12 +79,12 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   for(int k=ks; k<=ke; ++k){
   for(int j=js; j<=je; ++j){
   for(int i=is; i<=ie; ++i){
-    pfl->u(IDN,k,j,i) = d_amb;
-    pfl->u(IM1,k,j,i) = d_amb*vx_amb;
-    pfl->u(IM2,k,j,i) = d_amb*vy_amb;
-    pfl->u(IM3,k,j,i) = d_amb*vz_amb;
+    phyd->u(IDN,k,j,i) = d_amb;
+    phyd->u(IM1,k,j,i) = d_amb*vx_amb;
+    phyd->u(IM2,k,j,i) = d_amb*vy_amb;
+    phyd->u(IM3,k,j,i) = d_amb*vz_amb;
     if (NON_BAROTROPIC_EOS) {
-      pfl->u(IEN,k,j,i) = p_amb/gm1 + 0.5*d_amb*(SQR(vx_amb)+SQR(vy_amb)+SQR(vz_amb));
+      phyd->u(IEN,k,j,i) = p_amb/gm1 + 0.5*d_amb*(SQR(vx_amb)+SQR(vy_amb)+SQR(vz_amb));
     }
   }}}
 
@@ -94,23 +94,23 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie+1; ++i) {
-      pfd->b.x1f(k,j,i) = bx_amb;
+      pfld->b.x1f(k,j,i) = bx_amb;
     }}}
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je+1; ++j) {
     for (int i=is; i<=ie; ++i) {
-      pfd->b.x2f(k,j,i) = by_amb;
+      pfld->b.x2f(k,j,i) = by_amb;
     }}}
     for (int k=ks; k<=ke+1; ++k) {
     for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie; ++i) {
-      pfd->b.x3f(k,j,i) = bz_amb;
+      pfld->b.x3f(k,j,i) = bz_amb;
     }}}
     if (NON_BAROTROPIC_EOS) {
       for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
-        pfl->u(IEN,k,j,i) += 0.5*(SQR(bx_amb) + SQR(by_amb) + SQR(bz_amb));
+        phyd->u(IEN,k,j,i) += 0.5*(SQR(bx_amb) + SQR(by_amb) + SQR(bz_amb));
       }}}
     }
   }

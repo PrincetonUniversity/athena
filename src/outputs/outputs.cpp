@@ -392,8 +392,8 @@ void OutputData::ReplaceNode(OutputVariable *pold, OutputVariable *pnew)
 
 void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 {
-  Hydro *pfl = pmb->phydro;
-  Field *pfd = pmb->pfield;
+  Hydro *phyd = pmb->phydro;
+  Field *pfld = pmb->pfield;
   std::stringstream str;
 
 // Create OutputData header
@@ -420,7 +420,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov = new OutputVariable; 
     pov->type = "SCALARS";
     pov->name = "dens";
-    pov->data.InitWithShallowSlice(pfl->u,4,IDN,1);
+    pov->data.InitWithShallowSlice(phyd->u,4,IDN,1);
     pod->AppendNode(pov); // (lab-frame) density
     var_added++;
   }
@@ -430,7 +430,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov = new OutputVariable; 
     pov->type = "SCALARS";
     pov->name = "rho";
-    pov->data.InitWithShallowSlice(pfl->w,4,IDN,1);
+    pov->data.InitWithShallowSlice(phyd->w,4,IDN,1);
     pod->AppendNode(pov); // (rest-frame) density
     var_added++;
   }
@@ -441,7 +441,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       pov = new OutputVariable; 
       pov->type = "SCALARS";
       pov->name = "Etot";
-      pov->data.InitWithShallowSlice(pfl->u,4,IEN,1);
+      pov->data.InitWithShallowSlice(phyd->u,4,IEN,1);
       pod->AppendNode(pov); // total energy
       var_added++;
     }
@@ -453,7 +453,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       pov = new OutputVariable; 
       pov->type = "SCALARS";
       pov->name = "press";
-      pov->data.InitWithShallowSlice(pfl->w,4,IEN,1);
+      pov->data.InitWithShallowSlice(phyd->w,4,IEN,1);
       pod->AppendNode(pov); // pressure
       var_added++;
     }
@@ -464,7 +464,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov = new OutputVariable; 
     pov->type = "VECTORS";
     pov->name = "mom";
-    pov->data.InitWithShallowSlice(pfl->u,4,IM1,3);
+    pov->data.InitWithShallowSlice(phyd->u,4,IM1,3);
     pod->AppendNode(pov); // momentum vector
     var_added+=3;
   }
@@ -474,7 +474,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     pov = new OutputVariable; 
     pov->type = "VECTORS";
     pov->name = "vel";
-    pov->data.InitWithShallowSlice(pfl->w,4,IVX,3);
+    pov->data.InitWithShallowSlice(phyd->w,4,IVX,3);
     pod->AppendNode(pov); // velocity vector
     var_added+=3;
   }
@@ -486,7 +486,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       pov = new OutputVariable; 
       pov->type = "VECTORS";
       pov->name = "cc-B";
-      pov->data.InitWithShallowSlice(pfd->bcc,4,IB1,3);
+      pov->data.InitWithShallowSlice(pfld->bcc,4,IB1,3);
       pod->AppendNode(pov); // magnetic field vector
       var_added+=3;
     }
@@ -497,7 +497,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       pov = new OutputVariable; 
       pov->type = "SCALARS";
       pov->name = "ifov";
-      pov->data.InitWithShallowSlice(pfl->ifov,4,n,1);
+      pov->data.InitWithShallowSlice(phyd->ifov,4,n,1);
       pod->AppendNode(pov); // internal hydro outvars
     }
     var_added+=NIFOV;

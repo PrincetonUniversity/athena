@@ -32,15 +32,15 @@
 #include "../coordinates/coordinates.hpp"
 #include "../utils/utils.hpp"
 
-void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
   Coordinates *pco = pmb->pcoord;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
   long int iseed = -1;
-  Real gm1 = pfl->pf_eos->GetGamma() - 1.0;
+  Real gm1 = phyd->pf_eos->GetGamma() - 1.0;
 
   // Read problem parameters
   int iprob = pin->GetInteger("problem","iprob");
@@ -55,19 +55,19 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      pfl->u(IDN,k,j,i) = 1.0;
-      pfl->u(IM1,k,j,i) = vflow + amp*(ran2(&iseed) - 0.5);
-      pfl->u(IM2,k,j,i) = amp*(ran2(&iseed) - 0.5);
-      pfl->u(IM3,k,j,i) = 0.0;
+      phyd->u(IDN,k,j,i) = 1.0;
+      phyd->u(IM1,k,j,i) = vflow + amp*(ran2(&iseed) - 0.5);
+      phyd->u(IM2,k,j,i) = amp*(ran2(&iseed) - 0.5);
+      phyd->u(IM3,k,j,i) = 0.0;
       if (fabs(pco->x2v(j)) < 0.25) {
-        pfl->u(IDN,k,j,i) = drat;
-        pfl->u(IM1,k,j,i) = -drat*(vflow + amp*(ran2(&iseed) - 0.5));
-        pfl->u(IM2,k,j,i) = drat*amp*(ran2(&iseed) - 0.5);
+        phyd->u(IDN,k,j,i) = drat;
+        phyd->u(IM1,k,j,i) = -drat*(vflow + amp*(ran2(&iseed) - 0.5));
+        phyd->u(IM2,k,j,i) = drat*amp*(ran2(&iseed) - 0.5);
       }
       // Pressure scaled to give a sound speed of 1 with gamma=1.4 
       if (NON_BAROTROPIC_EOS) {
-        pfl->u(IEN,k,j,i) = 2.5/gm1 + 0.5*(SQR(pfl->u(IM1,k,j,i)) +
-          SQR(pfl->u(IM2,k,j,i)))/pfl->u(IDN,k,j,i);
+        phyd->u(IEN,k,j,i) = 2.5/gm1 + 0.5*(SQR(phyd->u(IM1,k,j,i)) +
+          SQR(phyd->u(IM2,k,j,i)))/phyd->u(IDN,k,j,i);
       }
     }}}
   }
@@ -80,14 +80,14 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      pfl->u(IDN,k,j,i) = 1.0;
-      pfl->u(IM1,k,j,i) = vflow*tanh((pco->x2v(j))/a);
-      pfl->u(IM2,k,j,i) = amp*sin(2.0*PI*pco->x1v(i))
+      phyd->u(IDN,k,j,i) = 1.0;
+      phyd->u(IM1,k,j,i) = vflow*tanh((pco->x2v(j))/a);
+      phyd->u(IM2,k,j,i) = amp*sin(2.0*PI*pco->x1v(i))
         *exp(-(SQR(pco->x2v(j)))/SQR(sigma));
-      pfl->u(IM3,k,j,i) = 0.0;
+      phyd->u(IM3,k,j,i) = 0.0;
       if (NON_BAROTROPIC_EOS) {
-        pfl->u(IEN,k,j,i) = 1.0/gm1 + 0.5*(SQR(pfl->u(IM1,k,j,i)) +
-          SQR(pfl->u(IM2,k,j,i)))/pfl->u(IDN,k,j,i);
+        phyd->u(IEN,k,j,i) = 1.0/gm1 + 0.5*(SQR(phyd->u(IM1,k,j,i)) +
+          SQR(phyd->u(IM2,k,j,i)))/phyd->u(IDN,k,j,i);
       }
     }}}
   }
@@ -100,17 +100,17 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      pfl->u(IDN,k,j,i) = 0.505 + 0.495*tanh((fabs(pco->x2v(j))-0.5)/a);
-      pfl->u(IM1,k,j,i) = vflow*tanh((fabs(pco->x2v(j))-0.5)/a);
-      pfl->u(IM2,k,j,i) = amp*vflow*sin(2.0*PI*pco->x1v(i))
+      phyd->u(IDN,k,j,i) = 0.505 + 0.495*tanh((fabs(pco->x2v(j))-0.5)/a);
+      phyd->u(IM1,k,j,i) = vflow*tanh((fabs(pco->x2v(j))-0.5)/a);
+      phyd->u(IM2,k,j,i) = amp*vflow*sin(2.0*PI*pco->x1v(i))
                *exp(-((fabs(pco->x2v(j))-0.5)*(fabs(pco->x2v(j))-0.5))/(sigma*sigma));
-      if (pco->x2v(j) < 0.0) pfl->u(IM2,k,j,i) *= -1.0;
-      pfl->u(IM1,k,j,i) *= pfl->u(IDN,k,j,i);
-      pfl->u(IM2,k,j,i) *= pfl->u(IDN,k,j,i);
-      pfl->u(IM3,k,j,i) = 0.0;
+      if (pco->x2v(j) < 0.0) phyd->u(IM2,k,j,i) *= -1.0;
+      phyd->u(IM1,k,j,i) *= phyd->u(IDN,k,j,i);
+      phyd->u(IM2,k,j,i) *= phyd->u(IDN,k,j,i);
+      phyd->u(IM3,k,j,i) = 0.0;
       if (NON_BAROTROPIC_EOS) {
-        pfl->u(IEN,k,j,i) = 1.0/gm1 + 0.5*(SQR(pfl->u(IM1,k,j,i)) +
-          SQR(pfl->u(IM2,k,j,i)))/pfl->u(IDN,k,j,i);
+        phyd->u(IEN,k,j,i) = 1.0/gm1 + 0.5*(SQR(phyd->u(IM1,k,j,i)) +
+          SQR(phyd->u(IM2,k,j,i)))/phyd->u(IDN,k,j,i);
       }
     }}}
   }
@@ -120,23 +120,23 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie+1; i++) {
-      pfd->b.x1f(k,j,i) = b0;
+      pfld->b.x1f(k,j,i) = b0;
     }}}
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je+1; j++) {
     for (int i=is; i<=ie; i++) {
-      pfd->b.x2f(k,j,i) = 0.0;
+      pfld->b.x2f(k,j,i) = 0.0;
     }}}
     for (int k=ks; k<=ke+1; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      pfd->b.x3f(k,j,i) = 0.0;
+      pfld->b.x3f(k,j,i) = 0.0;
     }}}
     if (NON_BAROTROPIC_EOS) {
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
-        pfl->u(IEN,k,j,i) += 0.5*b0*b0;
+        phyd->u(IEN,k,j,i) += 0.5*b0*b0;
       }}}
     }
   }

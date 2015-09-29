@@ -55,13 +55,13 @@
 //  \brief field loop advection problem generator for 2D/3D problems.
 //======================================================================================
 
-void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
   Coordinates *pco = pmb->pcoord;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  Real gm1 = (pfl->pf_eos->GetGamma() - 1.0);
+  Real gm1 = (phyd->pf_eos->GetGamma() - 1.0);
 
   AthenaArray<Real> ax,ay,az;
   int nx1 = (ie-is)+1 + 2*(NGHOST);
@@ -207,16 +207,16 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
-     pfl->u(IDN,k,j,i) = 1.0;
-     pfl->u(IM1,k,j,i) = pfl->u(IDN,k,j,i)*vflow*x1size/diag;
-     pfl->u(IM2,k,j,i) = pfl->u(IDN,k,j,i)*vflow*x2size/diag;
-     pfl->u(IM3,k,j,i) = pfl->u(IDN,k,j,i)*vflow*x3size/diag;
+     phyd->u(IDN,k,j,i) = 1.0;
+     phyd->u(IM1,k,j,i) = phyd->u(IDN,k,j,i)*vflow*x1size/diag;
+     phyd->u(IM2,k,j,i) = phyd->u(IDN,k,j,i)*vflow*x2size/diag;
+     phyd->u(IM3,k,j,i) = phyd->u(IDN,k,j,i)*vflow*x3size/diag;
 
      if ((SQR(pco->x1v(i)) + SQR(pco->x2v(j)) + SQR(pco->x3v(k))) < rad*rad) {
-       pfl->u(IDN,k,j,i) = drat;
-       pfl->u(IM1,k,j,i) = pfl->u(IDN,k,j,i)*vflow*x1size/diag;
-       pfl->u(IM2,k,j,i) = pfl->u(IDN,k,j,i)*vflow*x2size/diag;
-       pfl->u(IM3,k,j,i) = pfl->u(IDN,k,j,i)*vflow*x3size/diag;
+       phyd->u(IDN,k,j,i) = drat;
+       phyd->u(IM1,k,j,i) = phyd->u(IDN,k,j,i)*vflow*x1size/diag;
+       phyd->u(IM2,k,j,i) = phyd->u(IDN,k,j,i)*vflow*x2size/diag;
+       phyd->u(IM3,k,j,i) = phyd->u(IDN,k,j,i)*vflow*x3size/diag;
      }
   }}}
 
@@ -225,19 +225,19 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie+1; i++) {
-    pfd->b.x1f(k,j,i) = (az(k,j+1,i) - az(k,j,i))/pco->dx2f(j) -
+    pfld->b.x1f(k,j,i) = (az(k,j+1,i) - az(k,j,i))/pco->dx2f(j) -
                         (ay(k+1,j,i) - ay(k,j,i))/pco->dx3f(k);
   }}}
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je+1; j++) {
   for (int i=is; i<=ie; i++) {
-    pfd->b.x2f(k,j,i) = (ax(k+1,j,i) - ax(k,j,i))/pco->dx3f(k) -
+    pfld->b.x2f(k,j,i) = (ax(k+1,j,i) - ax(k,j,i))/pco->dx3f(k) -
                         (az(k,j,i+1) - az(k,j,i))/pco->dx1f(i);
   }}}
   for (int k=ks; k<=ke+1; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
-    pfd->b.x3f(k,j,i) = (ay(k,j,i+1) - ay(k,j,i))/pco->dx1f(i) -
+    pfld->b.x3f(k,j,i) = (ay(k,j,i+1) - ay(k,j,i))/pco->dx1f(i) -
                         (ax(k,j+1,i) - ax(k,j,i))/pco->dx2f(j);
   }}}
 
@@ -247,12 +247,12 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
-        pfl->u(IEN,k,j,i) = 1.0/gm1 +
-          0.5*(SQR(0.5*(pfd->b.x1f(k,j,i) + pfd->b.x1f(k,j,i+1))) +
-               SQR(0.5*(pfd->b.x2f(k,j,i) + pfd->b.x2f(k,j+1,i))) +
-               SQR(0.5*(pfd->b.x3f(k,j,i) + pfd->b.x3f(k+1,j,i)))) + (0.5)*
-          (SQR(pfl->u(IM1,k,j,i)) + SQR(pfl->u(IM2,k,j,i)) + SQR(pfl->u(IM3,k,j,i)))
-          /pfl->u(IDN,k,j,i);
+        phyd->u(IEN,k,j,i) = 1.0/gm1 +
+          0.5*(SQR(0.5*(pfld->b.x1f(k,j,i) + pfld->b.x1f(k,j,i+1))) +
+               SQR(0.5*(pfld->b.x2f(k,j,i) + pfld->b.x2f(k,j+1,i))) +
+               SQR(0.5*(pfld->b.x3f(k,j,i) + pfld->b.x3f(k+1,j,i)))) + (0.5)*
+          (SQR(phyd->u(IM1,k,j,i)) + SQR(phyd->u(IM2,k,j,i)) + SQR(phyd->u(IM3,k,j,i)))
+          /phyd->u(IDN,k,j,i);
       }
     }}
   }

@@ -35,9 +35,9 @@
 #include "../hydro/eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
 
-void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
   Coordinates *pco = pmb->pcoord;
 
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
@@ -57,22 +57,22 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   for (int j=js; j<=je; ++j) {
 #pragma simd
     for (int i=is; i<=ie; ++i) {
-      pfl->u(IDN,k,j,i) = 1.0;
-      pfl->u(IM1,k,j,i) = 0.0;
-      pfl->u(IM2,k,j,i) = 0.0;
-      pfl->u(IM3,k,j,i) = 0.0;
+      phyd->u(IDN,k,j,i) = 1.0;
+      phyd->u(IM1,k,j,i) = 0.0;
+      phyd->u(IM2,k,j,i) = 0.0;
+      phyd->u(IM3,k,j,i) = 0.0;
       if ((shk_dir==1 && pco->x1v(i) < 0.1) ||
           (shk_dir==2 && pco->x2v(j) < 0.1) ||
           (shk_dir==3 && pco->x3v(k) < 0.1)) {
-        pfl->u(IEN,k,j,i)= 1.0e3/(pfl->pf_eos->GetGamma() - 1.0);
+        phyd->u(IEN,k,j,i)= 1.0e3/(phyd->pf_eos->GetGamma() - 1.0);
       }
       else if ((shk_dir==1 && pco->x1v(i) > 0.9) ||
                (shk_dir==2 && pco->x2v(j) > 0.9) ||
                (shk_dir==3 && pco->x3v(k) > 0.9)) {
-        pfl->u(IEN,k,j,i)= 1.0e2/(pfl->pf_eos->GetGamma() - 1.0);
+        phyd->u(IEN,k,j,i)= 1.0e2/(phyd->pf_eos->GetGamma() - 1.0);
       }
       else {
-        pfl->u(IEN,k,j,i)= 0.01/(pfl->pf_eos->GetGamma() - 1.0);
+        phyd->u(IEN,k,j,i)= 0.01/(phyd->pf_eos->GetGamma() - 1.0);
       }
     }
   }}

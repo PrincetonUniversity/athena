@@ -55,7 +55,7 @@ nx3 = 1
 m = 1.0  # black hole mass M
 a = 0.0  # black hole spin (0 <= a/M < 1)
 
-<fluid>
+<hydro>
 gamma     = 1.3333333333333333  # Gamma = C_p/C_v
 dfloor    = 1.0e-6              # minimum density
 pfloor    = 1.0e-8              # minimum gas pressure

@@ -40,7 +40,7 @@ x3max      = 0.5       # maximum value of X3
 
 num_threads = 1        # maximum number of OMP threads
 
-<fluid>
+<hydro>
 gamma = 1.666666666666667 # gamma = C_p/C_v
 iso_csound = 1.0          # isothermal sound speed
 

@@ -156,7 +156,7 @@ public:
   void Initialize(int res_flag, ParameterInput *pin);
   void UpdateOneStep(void);
   void SetTaskList(TaskList& tl);
-  void ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin); // files in /pgen
+  void ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin); // in /pgen
   void NewTimeStep(void);
   MeshBlock* FindMeshBlock(int tgid);
   void TestConservation(void);

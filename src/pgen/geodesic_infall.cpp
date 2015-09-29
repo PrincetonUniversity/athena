@@ -25,16 +25,16 @@ void FixedOuterHydro(MeshBlock *pmb, AthenaArray<Real> &cons,
 
 // Function for setting initial conditions
 // Inputs:
-//   pfl: Hydro
-//   pfd: Field (unused)
+//   phyd: Hydro
+//   pfld: Field (unused)
 //   pin: parameters
 // Outputs: (none)
 // Notes:
 //   assumes x3 is axisymmetric direction
-void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
   // Prepare index bounds
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
   int il = pmb->is - NGHOST;
   int iu = pmb->ie + NGHOST;
   int jl = pmb->js;
@@ -58,7 +58,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   Real a2 = SQR(a);
 
   // Get ratio of specific heats
-  Real gamma_adi = pfl->pf_eos->GetGamma();
+  Real gamma_adi = phyd->pf_eos->GetGamma();
 
   // Read other properties
   Real e = pin->GetReal("problem", "energy");
@@ -111,11 +111,11 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
       // Set primitive values
       for (int k = kl; k <= ku; k++)
       {
-        pfl->w(IDN,k,j,i) = pfl->w1(IDN,k,j,i) = rho;
-        pfl->w(IEN,k,j,i) = pfl->w1(IEN,k,j,i) = pgas;
-        pfl->w(IVX,k,j,i) = pfl->w1(IM1,k,j,i) = uu1;
-        pfl->w(IVY,k,j,i) = pfl->w1(IM2,k,j,i) = uu2;
-        pfl->w(IVZ,k,j,i) = pfl->w1(IM3,k,j,i) = uu3;
+        phyd->w(IDN,k,j,i) = phyd->w1(IDN,k,j,i) = rho;
+        phyd->w(IEN,k,j,i) = phyd->w1(IEN,k,j,i) = pgas;
+        phyd->w(IVX,k,j,i) = phyd->w1(IM1,k,j,i) = uu1;
+        phyd->w(IVY,k,j,i) = phyd->w1(IM2,k,j,i) = uu2;
+        phyd->w(IVZ,k,j,i) = phyd->w1(IM3,k,j,i) = uu3;
       }
     }
   }
@@ -125,7 +125,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   // Initialize conserved values
   AthenaArray<Real> bb;
   bb.NewAthenaArray(3, ku+1, ju+1, iu+1);
-  pmb->phydro->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, pfl->w, bb, pfl->u);
+  pmb->phydro->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, phyd->w, bb, phyd->u);
   bb.DeleteAthenaArray();
 
   // Enroll boundary functions

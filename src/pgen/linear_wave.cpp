@@ -62,14 +62,14 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
 //  \brief Linear wave problem generator for 1D/2D/3D problems.
 //======================================================================================
 
-void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
   Coordinates *pco = pmb->pcoord;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  gm1 = (pfl->pf_eos->GetGamma() - 1.0);
-  iso_cs = pfl->pf_eos->GetIsoSoundSpeed();
+  gm1 = (phyd->pf_eos->GetGamma() - 1.0);
+  iso_cs = phyd->pf_eos->GetIsoSoundSpeed();
 
 // Read initial conditions
 
@@ -126,7 +126,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   Real h0 = 0.0;
 
   if (NON_BAROTROPIC_EOS) {
-    p0 = 1.0/(pfl->pf_eos->GetGamma());
+    p0 = 1.0/(phyd->pf_eos->GetGamma());
     h0 = ((p0/gm1 + 0.5*d0*(u0*u0+v0*v0+w0*w0)) + p0)/d0;
     if (MAGNETIC_FIELDS_ENABLED) h0 += (bx0*bx0+by0*by0+bz0*bz0)/d0;
   }
@@ -197,7 +197,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie+1; i++) {
-        pfd->b.x1f(k,j,i) = (a3(k  ,j+1,i) - a3(k,j,i))/pco->dx2f(j) -
+        pfld->b.x1f(k,j,i) = (a3(k  ,j+1,i) - a3(k,j,i))/pco->dx2f(j) -
                             (a2(k+1,j  ,i) - a2(k,j,i))/pco->dx3f(k);
       }
     }}
@@ -205,7 +205,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je+1; j++) {
       for (int i=is; i<=ie; i++) {
-        pfd->b.x2f(k,j,i) = (a1(k+1,j,i  ) - a1(k,j,i))/pco->dx3f(k) -
+        pfld->b.x2f(k,j,i) = (a1(k+1,j,i  ) - a1(k,j,i))/pco->dx3f(k) -
                             (a3(k  ,j,i+1) - a3(k,j,i))/pco->dx1f(i);
       }
     }}
@@ -213,7 +213,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
     for (int k=ks; k<=ke+1; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
-       pfd->b.x3f(k,j,i) = (a2(k,j  ,i+1) - a2(k,j,i))/pco->dx1f(i) -
+       pfld->b.x3f(k,j,i) = (a2(k,j  ,i+1) - a2(k,j,i))/pco->dx1f(i) -
                            (a1(k,j+1,i  ) - a1(k,j,i))/pco->dx2f(j);
       }
     }}
@@ -230,20 +230,20 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
       Real x = cos_a2*(pco->x1v(i)*cos_a3 + pco->x2v(j)*sin_a3) + pco->x3v(k)*sin_a2;
       Real sn = sin(k_par*x);
 
-      pfl->u(IDN,k,j,i) = d0 + amp*sn*rem[0][wave_flag];
+      phyd->u(IDN,k,j,i) = d0 + amp*sn*rem[0][wave_flag];
 
       Real mx = d0*vflow + amp*sn*rem[1][wave_flag];
       Real my = amp*sn*rem[2][wave_flag];
       Real mz = amp*sn*rem[3][wave_flag];
 
-      pfl->u(IM1,k,j,i) = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
-      pfl->u(IM2,k,j,i) = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
-      pfl->u(IM3,k,j,i) = mx*sin_a2                    + mz*cos_a2;
+      phyd->u(IM1,k,j,i) = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
+      phyd->u(IM2,k,j,i) = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
+      phyd->u(IM3,k,j,i) = mx*sin_a2                    + mz*cos_a2;
 
       if (NON_BAROTROPIC_EOS) {
-        pfl->u(IEN,k,j,i) = p0/gm1 + 0.5*d0*u0*u0 + amp*sn*rem[4][wave_flag];
+        phyd->u(IEN,k,j,i) = p0/gm1 + 0.5*d0*u0*u0 + amp*sn*rem[4][wave_flag];
         if (MAGNETIC_FIELDS_ENABLED) {
-          pfl->u(IEN,k,j,i) += 0.5*(bx0*bx0+by0*by0+bz0*bz0);
+          phyd->u(IEN,k,j,i) += 0.5*(bx0*bx0+by0*by0+bz0*bz0);
         }
       }
     }

@@ -41,5 +41,5 @@ x3max      = 0.5       # maximum value of X3
 nx1        = 65
 nx2        = 40
 
-<fluid>
+<hydro>
 gamma      = 1.4       # gamma = C_p/C_v

@@ -54,8 +54,8 @@ static Real beta_min;                        // min ratio of gas to magnetic pre
 
 // Function for setting initial conditions
 // Inputs:
-//   pfl: Hydro
-//   pfd: Field (unused)
+//   phyd: Hydro
+//   pfld: Field (unused)
 //   pin: parameters
 // Outputs: (none)
 // Notes:
@@ -65,10 +65,10 @@ static Real beta_min;                        // min ratio of gas to magnetic pre
 //   references Fishbone & Moncrief 1976, ApJ 207 962 (FM)
 //              Fishbone 1977, ApJ 215 323 (F)
 //   assumes x3 is axisymmetric direction
-void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
   // Prepare index bounds
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
   int il = pmb->is - NGHOST;
   int iu = pmb->ie + NGHOST;
   int jl = pmb->js;
@@ -91,7 +91,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   a = pmb->pcoord->GetSpin();
 
   // Get ratio of specific heats
-  gamma_adi = pfl->pf_eos->GetGamma();
+  gamma_adi = phyd->pf_eos->GetGamma();
 
   // Read other properties
   rho_min = pin->GetReal("hydro", "rho_min");
@@ -175,11 +175,11 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
       // Set primitive values
       for (int k = kl; k <= ku; ++k)
       {
-        pfl->w(IDN,k,j,i) = pfl->w1(IDN,k,j,i) = rho;
-        pfl->w(IEN,k,j,i) = pfl->w1(IEN,k,j,i) = pgas;
-        pfl->w(IVX,k,j,i) = pfl->w1(IM1,k,j,i) = uu1;
-        pfl->w(IVY,k,j,i) = pfl->w1(IM2,k,j,i) = uu2;
-        pfl->w(IVZ,k,j,i) = pfl->w1(IM3,k,j,i) = uu3;
+        phyd->w(IDN,k,j,i) = phyd->w1(IDN,k,j,i) = rho;
+        phyd->w(IEN,k,j,i) = phyd->w1(IEN,k,j,i) = pgas;
+        phyd->w(IVX,k,j,i) = phyd->w1(IM1,k,j,i) = uu1;
+        phyd->w(IVY,k,j,i) = phyd->w1(IM2,k,j,i) = uu2;
+        phyd->w(IVZ,k,j,i) = phyd->w1(IM3,k,j,i) = uu3;
       }
     }
   }
@@ -309,7 +309,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
             }
             Real bbtheta = (a_phi_2 - a_phi_1) / (r_2 - r_1);
             if (bbr == 0.0 and bbtheta == 0.0)
-              pfd->b.x1f(k,j,i) = 0.0;
+              pfld->b.x1f(k,j,i) = 0.0;
             else
             {
               Real ut, uphi;
@@ -327,7 +327,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
               Real b0, b1, b2, b3;
               pmb->pcoord->TransformVectorFace1(bt, br, btheta, 0.0, k, j, i,
                   &b0, &b1, &b2, &b3);
-              pfd->b.x1f(k,j,i) = (b1 * u0 - b0 * u1) * normalization;
+              pfld->b.x1f(k,j,i) = (b1 * u0 - b0 * u1) * normalization;
             }
           }
 
@@ -372,7 +372,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
             }
             Real bbr = -(a_phi_2 - a_phi_1) / (theta_2 - theta_1);
             if (bbr == 0.0 and bbtheta == 0.0)
-              pfd->b.x2f(k,j,i) = 0.0;
+              pfld->b.x2f(k,j,i) = 0.0;
             else
             {
               Real ut, uphi;
@@ -390,13 +390,13 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
               Real b0, b1, b2, b3;
               pmb->pcoord->TransformVectorFace2(bt, br, btheta, 0.0, k, j, i,
                   &b0, &b1, &b2, &b3);
-              pfd->b.x2f(k,j,i) = (b2 * u0 - b0 * u2) * normalization;
+              pfld->b.x2f(k,j,i) = (b2 * u0 - b0 * u2) * normalization;
             }
           }
 
           // Set B^3
           if (i != iu+1 and j != ju+1)
-            pfd->b.x3f(k,j,i) = 0.0;
+            pfld->b.x3f(k,j,i) = 0.0;
         }
     a_phi_cells.DeleteAthenaArray();
     a_phi_edges.DeleteAthenaArray();
@@ -410,12 +410,12 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
         Real r, theta, phi;
         pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1v(i),
             pmb->pcoord->x2v(j), pmb->pcoord->x3v(kl), &r, &theta, &phi);
-        Real &rho = pfl->w(IDN,k,j,i);
-        Real &pgas = pfl->w(IEN,k,j,i);
+        Real &rho = phyd->w(IDN,k,j,i);
+        Real &pgas = phyd->w(IEN,k,j,i);
         rho = std::max(rho, rho_min * std::pow(r, rho_pow));
         pgas = std::max(pgas, (gamma_adi-1.0) * u_min * std::pow(r, u_pow));
-        pfl->w1(IDN,k,j,i) = rho;
-        pfl->w1(IEN,k,j,i) = pgas;
+        phyd->w1(IDN,k,j,i) = rho;
+        phyd->w1(IEN,k,j,i) = pgas;
       }
 
   // Calculate cell-centered magnetic field
@@ -427,12 +427,12 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
         for (int i = il; i <= iu; ++i)
         {
           // Extract face-centered magnetic field
-          const Real &bbf1m = pfd->b.x1f(k,j,i);
-          const Real &bbf1p = pfd->b.x1f(k,j,i+1);
-          const Real &bbf2m = pfd->b.x2f(k,j,i);
-          const Real &bbf2p = pfd->b.x2f(k,j+1,i);
-          const Real &bbf3m = pfd->b.x3f(k,j,i);
-          const Real &bbf3p = pfd->b.x3f(k+1,j,i);
+          const Real &bbf1m = pfld->b.x1f(k,j,i);
+          const Real &bbf1p = pfld->b.x1f(k,j,i+1);
+          const Real &bbf2m = pfld->b.x2f(k,j,i);
+          const Real &bbf2p = pfld->b.x2f(k,j+1,i);
+          const Real &bbf3m = pfld->b.x3f(k,j,i);
+          const Real &bbf3p = pfld->b.x3f(k+1,j,i);
 
           // Calculate cell-centered magnetic field
           Real tmp = (pmb->pcoord->x1v(i) - pmb->pcoord->x1f(i)) / pmb->pcoord->dx1f(i);
@@ -444,7 +444,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
        }
 
   // Initialize conserved values
-  pmb->phydro->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, pfl->w, bb, pfl->u);
+  pmb->phydro->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, phyd->w, bb, phyd->u);
 
   // Free scratch arrays
   in_torus.DeleteAthenaArray();

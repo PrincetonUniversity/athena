@@ -41,7 +41,7 @@ x3max       = 0.0125    # maximum value of X3
 ix3_bc      = 1         # inner (X3) boundary flag
 ox3_bc      = 1         # outer (X3) boundary flag
 
-<fluid>
+<hydro>
 gamma       = 1.4       # gamma = C_p/C_v
 
 <problem>

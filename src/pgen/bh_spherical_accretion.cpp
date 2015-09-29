@@ -40,21 +40,21 @@ static Real bsq_over_rho;  // b^2/rho at inner radius
 
 // Function for setting initial conditions
 // Inputs:
-//   pfl: Hydro
-//   pfd: Field (unused)
+//   phyd: Hydro
+//   pfld: Field (unused)
 //   pin: parameters
 // Outputs: (none)
 // Notes:
 //   sets primitive and conserved variables according to input primitives
 //   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
-void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
   // Parameters
   const Real temp_min = 1.0e-2;  // lesser temperature root must be greater than this
   const Real temp_max = 1.0e1;   // greater temperature root must be less than this
 
   // Prepare index bounds
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
   int il = pmb->is - NGHOST;
   int iu = pmb->ie + NGHOST;
   int jl = pmb->js;
@@ -76,7 +76,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   m = pmb->pcoord->GetMass();
 
   // Get ratio of specific heats
-  Real gamma_adi = pfl->pf_eos->GetGamma();
+  Real gamma_adi = phyd->pf_eos->GetGamma();
   n_adi = 1.0/(gamma_adi-1.0);
 
   // Read problem parameters
@@ -115,11 +115,11 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
         Real uu1 = u1 - gi(I01,i)/gi(I00,i) * u0;
         Real uu2 = u2 - gi(I02,i)/gi(I00,i) * u0;
         Real uu3 = u3 - gi(I03,i)/gi(I00,i) * u0;
-        pfl->w(IDN,k,j,i) = pfl->w1(IDN,k,j,i) = rho;
-        pfl->w(IEN,k,j,i) = pfl->w1(IEN,k,j,i) = pgas;
-        pfl->w(IM1,k,j,i) = pfl->w1(IM1,k,j,i) = uu1;
-        pfl->w(IM2,k,j,i) = pfl->w1(IM2,k,j,i) = uu2;
-        pfl->w(IM3,k,j,i) = pfl->w1(IM3,k,j,i) = uu3;
+        phyd->w(IDN,k,j,i) = phyd->w1(IDN,k,j,i) = rho;
+        phyd->w(IEN,k,j,i) = phyd->w1(IEN,k,j,i) = pgas;
+        phyd->w(IM1,k,j,i) = phyd->w1(IM1,k,j,i) = uu1;
+        phyd->w(IM2,k,j,i) = phyd->w1(IM2,k,j,i) = uu2;
+        phyd->w(IM3,k,j,i) = phyd->w1(IM3,k,j,i) = uu3;
       }
     }
 
@@ -159,7 +159,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
             Real b0, b1, b2, b3;
             pmb->pcoord->TransformVectorFace1(bt, br, 0.0, 0.0, k, j, i, &b0, &b1, &b2,
                 &b3);
-            pfd->b.x1f(k,j,i) = b1 * u0 - b0 * u1;
+            pfld->b.x1f(k,j,i) = b1 * u0 - b0 * u1;
           }
 
           // Set B^2
@@ -177,7 +177,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
             Real b0, b1, b2, b3;
             pmb->pcoord->TransformVectorFace2(bt, br, 0.0, 0.0, k, j, i, &b0, &b1, &b2,
                 &b3);
-            pfd->b.x2f(k,j,i) = b2 * u0 - b0 * u2;
+            pfld->b.x2f(k,j,i) = b2 * u0 - b0 * u2;
           }
 
           // Set B^3
@@ -195,7 +195,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
             Real b0, b1, b2, b3;
             pmb->pcoord->TransformVectorFace3(bt, br, 0.0, 0.0, k, j, i, &b0, &b1, &b2,
                 &b3);
-            pfd->b.x3f(k,j,i) = b3 * u0 - b0 * u3;
+            pfld->b.x3f(k,j,i) = b3 * u0 - b0 * u3;
           }
         }
   }
@@ -209,12 +209,12 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
         for (int i = il; i <= iu; ++i)
         {
           // Extract face-centered magnetic field
-          const Real &bbf1m = pfd->b.x1f(k,j,i);
-          const Real &bbf1p = pfd->b.x1f(k,j,i+1);
-          const Real &bbf2m = pfd->b.x2f(k,j,i);
-          const Real &bbf2p = pfd->b.x2f(k,j+1,i);
-          const Real &bbf3m = pfd->b.x3f(k,j,i);
-          const Real &bbf3p = pfd->b.x3f(k+1,j,i);
+          const Real &bbf1m = pfld->b.x1f(k,j,i);
+          const Real &bbf1p = pfld->b.x1f(k,j,i+1);
+          const Real &bbf2m = pfld->b.x2f(k,j,i);
+          const Real &bbf2p = pfld->b.x2f(k,j+1,i);
+          const Real &bbf3m = pfld->b.x3f(k,j,i);
+          const Real &bbf3p = pfld->b.x3f(k+1,j,i);
 
           // Calculate cell-centered magnetic field
           Real tmp = (pmb->pcoord->x1v(i) - pmb->pcoord->x1f(i)) / pmb->pcoord->dx1f(i);
@@ -226,7 +226,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
        }
 
   // Initialize conserved variables
-  pmb->phydro->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, pfl->w, bb, pfl->u);
+  pmb->phydro->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, phyd->w, bb, phyd->u);
 
   // Free scratch arrays
   g.DeleteAthenaArray();

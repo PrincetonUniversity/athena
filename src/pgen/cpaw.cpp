@@ -59,13 +59,13 @@ static Real A3(const Real x1, const Real x2, const Real x3);
 //  \brief circularly polarized Alfven wave problem generator for 1D/2D/3D problems.
 //======================================================================================
 
-void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
   Coordinates *pco = pmb->pcoord;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  Real gm1 = (pfl->pf_eos->GetGamma() - 1.0);
+  Real gm1 = (phyd->pf_eos->GetGamma() - 1.0);
 
 /* Read initial conditions */
 
@@ -120,7 +120,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie+1; i++) {
-      pfd->b.x1f(k,j,i) = (A3(pco->x1f(i),pco->x2f(j+1),pco->x3v(k  )) -
+      pfld->b.x1f(k,j,i) = (A3(pco->x1f(i),pco->x2f(j+1),pco->x3v(k  )) -
                            A3(pco->x1f(i),pco->x2f(j  ),pco->x3v(k  )))/pco->dx2f(j) -
                           (A2(pco->x1f(i),pco->x2v(j  ),pco->x3f(k+1)) -
                            A2(pco->x1f(i),pco->x2v(j  ),pco->x3f(k  )))/pco->dx3f(k);
@@ -130,7 +130,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je+1; j++) {
     for (int i=is; i<=ie; i++) {
-      pfd->b.x2f(k,j,i) = (A1(pco->x1v(i  ),pco->x2f(j),pco->x3f(k+1)) -
+      pfld->b.x2f(k,j,i) = (A1(pco->x1v(i  ),pco->x2f(j),pco->x3f(k+1)) -
                            A1(pco->x1v(i  ),pco->x2f(j),pco->x3f(k  )))/pco->dx3f(k) -
                           (A3(pco->x1f(i+1),pco->x2f(j),pco->x3v(k  )) -
                            A3(pco->x1f(i  ),pco->x2f(j),pco->x3v(k  )))/pco->dx1f(i);
@@ -140,7 +140,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   for (int k=ks; k<=ke+1; k++) {
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      pfd->b.x3f(k,j,i) = (A2(pco->x1f(i+1),pco->x2v(j  ),pco->x3f(k)) -
+      pfld->b.x3f(k,j,i) = (A2(pco->x1f(i+1),pco->x2v(j  ),pco->x3f(k)) -
                            A2(pco->x1f(i  ),pco->x2v(j  ),pco->x3f(k)))/pco->dx1f(i) -
                           (A1(pco->x1v(i  ),pco->x2f(j+1),pco->x3f(k)) -
                            A1(pco->x1v(i  ),pco->x2f(j  ),pco->x3f(k)))/pco->dx2f(j);
@@ -156,22 +156,22 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
       Real sn = sin(k_par*x);
       Real cs = fac*cos(k_par*x);
 
-      pfl->u(IDN,k,j,i) = den;
+      phyd->u(IDN,k,j,i) = den;
 
       Real mx = den*v_par;
       Real my = -fac*den*v_perp*sn;
       Real mz = -den*v_perp*cs;
 
-      pfl->u(IM1,k,j,i) = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
-      pfl->u(IM2,k,j,i) = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
-      pfl->u(IM3,k,j,i) = mx*sin_a2                    + mz*cos_a2;
+      phyd->u(IM1,k,j,i) = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
+      phyd->u(IM2,k,j,i) = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
+      phyd->u(IM3,k,j,i) = mx*sin_a2                    + mz*cos_a2;
 
       if (NON_BAROTROPIC_EOS) {
-        pfl->u(IEN,k,j,i) = pres/gm1 +
-          0.5*(SQR(0.5*(pfd->b.x1f(k,j,i) + pfd->b.x1f(k,j,i+1))) +
-               SQR(0.5*(pfd->b.x2f(k,j,i) + pfd->b.x2f(k,j+1,i))) +
-               SQR(0.5*(pfd->b.x3f(k,j,i) + pfd->b.x3f(k+1,j,i)))) + (0.5/den)*
-          (SQR(pfl->u(IM1,k,j,i)) + SQR(pfl->u(IM2,k,j,i)) + SQR(pfl->u(IM3,k,j,i)));
+        phyd->u(IEN,k,j,i) = pres/gm1 +
+          0.5*(SQR(0.5*(pfld->b.x1f(k,j,i) + pfld->b.x1f(k,j,i+1))) +
+               SQR(0.5*(pfld->b.x2f(k,j,i) + pfld->b.x2f(k,j+1,i))) +
+               SQR(0.5*(pfld->b.x3f(k,j,i) + pfld->b.x3f(k+1,j,i)))) + (0.5/den)*
+          (SQR(phyd->u(IM1,k,j,i)) + SQR(phyd->u(IM2,k,j,i)) + SQR(phyd->u(IM3,k,j,i)));
       }
     }
   }}

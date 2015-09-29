@@ -21,8 +21,8 @@
 
 // Function for setting initial conditions
 // Inputs:
-//   pfl: Hydro
-//   pfd: Field
+//   phyd: Hydro
+//   pfld: Field
 //   pin: parameters
 // Outputs: (none)
 // Notes:
@@ -31,10 +31,10 @@
 //     this helps shock tube 2 from Mignone, Ugliano, & Bodo 2009, MNRAS 393 1141
 //     otherwise the middle interface would go to left variables, creating a
 //         particularly troublesome jump leading to NaN's
-void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
   // Prepare index bounds
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
   Coordinates *pco = pmb->pcoord;
   int il = pmb->is - NGHOST;
   int iu = pmb->ie + NGHOST;
@@ -54,7 +54,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   }
 
   // Read and set ratio of specific heats
-  Real gamma_adi = pfl->pf_eos->GetGamma();
+  Real gamma_adi = phyd->pf_eos->GetGamma();
   Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Read and check shock direction and position
@@ -118,11 +118,11 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   }
 
   // Prepare auxiliary arrays
-  int ncells1 = pfl->pmy_block->block_size.nx1 + 2*NGHOST;
-  int ncells2 = pfl->pmy_block->block_size.nx2;
+  int ncells1 = phyd->pmy_block->block_size.nx1 + 2*NGHOST;
+  int ncells2 = phyd->pmy_block->block_size.nx2;
   if (ncells2 > 1)
     ncells2 += 2*NGHOST;
-  int ncells3 = pfl->pmy_block->block_size.nx3;
+  int ncells3 = phyd->pmy_block->block_size.nx3;
   if (ncells3 > 1)
     ncells3 += 2*NGHOST;
   AthenaArray<Real> b, g, gi;
@@ -207,22 +207,22 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
         }
 
         // Set primitives
-        pfl->w(IDN,k,j,i) = pfl->w1(IDN,k,j,i) = rho;
-        pfl->w(IEN,k,j,i) = pfl->w1(IEN,k,j,i) = pgas;
+        phyd->w(IDN,k,j,i) = phyd->w1(IDN,k,j,i) = rho;
+        phyd->w(IEN,k,j,i) = phyd->w1(IEN,k,j,i) = pgas;
         if (GENERAL_RELATIVITY)
         {
           Real uu1 = u1 - gi(I01,i)/gi(I00,i) * u0;
           Real uu2 = u2 - gi(I02,i)/gi(I00,i) * u0;
           Real uu3 = u3 - gi(I03,i)/gi(I00,i) * u0;
-          pfl->w(IVX,k,j,i) = pfl->w1(IVX,k,j,i) = uu1;
-          pfl->w(IVY,k,j,i) = pfl->w1(IVY,k,j,i) = uu2;
-          pfl->w(IVZ,k,j,i) = pfl->w1(IVZ,k,j,i) = uu3;
+          phyd->w(IVX,k,j,i) = phyd->w1(IVX,k,j,i) = uu1;
+          phyd->w(IVY,k,j,i) = phyd->w1(IVY,k,j,i) = uu2;
+          phyd->w(IVZ,k,j,i) = phyd->w1(IVZ,k,j,i) = uu3;
         }
         else
         {
-          pfl->w(IVX,k,j,i) = pfl->w1(IM1,k,j,i) = u1 / u0;
-          pfl->w(IVY,k,j,i) = pfl->w1(IM2,k,j,i) = u2 / u0;
-          pfl->w(IVZ,k,j,i) = pfl->w1(IM3,k,j,i) = u3 / u0;
+          phyd->w(IVX,k,j,i) = phyd->w1(IM1,k,j,i) = u1 / u0;
+          phyd->w(IVY,k,j,i) = phyd->w1(IM2,k,j,i) = u2 / u0;
+          phyd->w(IVZ,k,j,i) = phyd->w1(IM3,k,j,i) = u3 / u0;
         }
 
         // Set magnetic fields
@@ -231,7 +231,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
         b(IB3,k,j,i) = bcon3 * u0 - bcon0 * u3;
       }
     }
-  pmb->phydro->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, pfl->w, b, pfl->u);
+  pmb->phydro->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, phyd->w, b, phyd->u);
 
   // Delete auxiliary arrays
   b.DeleteAthenaArray();
@@ -298,10 +298,10 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
                   &u3);
               pmb->pcoord->TransformVectorFace1(bcont, bconx, bcony, bconz, k, j, i,
                   &bcon0, &bcon1, &bcon2, &bcon3);
-              pfd->b.x1f(k,j,i) = bcon1 * u0 - bcon0 * u1;
+              pfld->b.x1f(k,j,i) = bcon1 * u0 - bcon0 * u1;
             }
             else
-              pfd->b.x1f(k,j,i) = bx;
+              pfld->b.x1f(k,j,i) = bx;
           }
           if (i != iu+1 && k != ku+1)
           {
@@ -311,10 +311,10 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
                   &u3);
               pmb->pcoord->TransformVectorFace2(bcont, bconx, bcony, bconz, k, j, i,
                   &bcon0, &bcon1, &bcon2, &bcon3);
-              pfd->b.x2f(k,j,i) = bcon2 * u0 - bcon0 * u2;
+              pfld->b.x2f(k,j,i) = bcon2 * u0 - bcon0 * u2;
             }
             else
-              pfd->b.x2f(k,j,i) = by;
+              pfld->b.x2f(k,j,i) = by;
           }
           if (i != iu+1 && j != ju+1)
           {
@@ -324,10 +324,10 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
                   &u3);
               pmb->pcoord->TransformVectorFace3(bcont, bconx, bcony, bconz, k, j, i,
                   &bcon0, &bcon1, &bcon2, &bcon3);
-              pfd->b.x3f(k,j,i) = bcon3 * u0 - bcon0 * u3;
+              pfld->b.x3f(k,j,i) = bcon3 * u0 - bcon0 * u3;
             }
             else
-              pfd->b.x3f(k,j,i) = bz;
+              pfld->b.x3f(k,j,i) = bz;
           }
         }
   return;

@@ -52,13 +52,13 @@ static Real bxl,byl,bzl;
 void shk_cloud_iib(MeshBlock *pmb, AthenaArray<Real> &a,
                    int is, int ie, int js, int je, int ks, int ke);
 
-void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
   Coordinates *pco = pmb->pcoord;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  Real gmma  = pfl->pf_eos->GetGamma();
+  Real gmma  = phyd->pf_eos->GetGamma();
   gmma1 = gmma - 1.0;
 
 // Read input parameters
@@ -73,7 +73,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
 // Set paramters in ambient medium ("R-state" for shock)
 
   Real dr = 1.0;
-  Real pr = 1.0/(pfl->pf_eos->GetGamma());
+  Real pr = 1.0/(phyd->pf_eos->GetGamma());
   Real ur = 0.0;
 
 // Uses Rankine Hugoniot relations for adiabatic gas to initialize problem
@@ -93,29 +93,29 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   for (int i=is; i<=ie; i++) {
     // postshock flow
     if(pco->x1v(i) < xshock) {
-      pfl->u(IDN,k,j,i) = dl;
-      pfl->u(IM1,k,j,i) = ul*dl;
-      pfl->u(IM2,k,j,i) = 0.0;
-      pfl->u(IM3,k,j,i) = 0.0;
-      pfl->u(IEN,k,j,i) = pl/gmma1 + 0.5*dl*(ul*ul);
+      phyd->u(IDN,k,j,i) = dl;
+      phyd->u(IM1,k,j,i) = ul*dl;
+      phyd->u(IM2,k,j,i) = 0.0;
+      phyd->u(IM3,k,j,i) = 0.0;
+      phyd->u(IEN,k,j,i) = pl/gmma1 + 0.5*dl*(ul*ul);
 
     // preshock ambient gas
     } else {
-      pfl->u(IDN,k,j,i) = dr;
-      pfl->u(IM1,k,j,i) = ur*dr;
-      pfl->u(IM2,k,j,i) = 0.0;
-      pfl->u(IM3,k,j,i) = 0.0;
-      pfl->u(IEN,k,j,i) = pr/gmma1 + 0.5*dr*(ur*ur);
+      phyd->u(IDN,k,j,i) = dr;
+      phyd->u(IM1,k,j,i) = ur*dr;
+      phyd->u(IM2,k,j,i) = 0.0;
+      phyd->u(IM3,k,j,i) = 0.0;
+      phyd->u(IEN,k,j,i) = pr/gmma1 + 0.5*dr*(ur*ur);
     }
 
     // cloud interior
     Real diag = sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(j)) + SQR(pco->x3v(k)));
     if (diag < rad) {
-      pfl->u(IDN,k,j,i) = dr*drat;
-      pfl->u(IM1,k,j,i) = ur*dr*drat;
-      pfl->u(IM2,k,j,i) = 0.0;
-      pfl->u(IM3,k,j,i) = 0.0;
-      pfl->u(IEN,k,j,i) = pr/gmma1 + 0.5*dr*drat*(ur*ur);
+      phyd->u(IDN,k,j,i) = dr*drat;
+      phyd->u(IM1,k,j,i) = ur*dr*drat;
+      phyd->u(IM2,k,j,i) = 0.0;
+      phyd->u(IM3,k,j,i) = 0.0;
+      phyd->u(IEN,k,j,i) = pr/gmma1 + 0.5*dr*drat*(ur*ur);
     }
   }}}
 
@@ -133,27 +133,27 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie+1; i++) {
       if(pco->x1v(i) < xshock) {
-        pfd->b.x1f(k,j,i) = bxl;
+        pfld->b.x1f(k,j,i) = bxl;
       } else {
-        pfd->b.x1f(k,j,i) = bxr;
+        pfld->b.x1f(k,j,i) = bxr;
       }
     }}}
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je+1; j++) {
     for (int i=is; i<=ie; i++) {
       if(pco->x1v(i) < xshock) {
-        pfd->b.x2f(k,j,i) = byl;
+        pfld->b.x2f(k,j,i) = byl;
       } else {
-        pfd->b.x2f(k,j,i) = byr;
+        pfld->b.x2f(k,j,i) = byr;
       }
     }}}
     for (int k=ks; k<=ke+1; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
       if(pco->x1v(i) < xshock) {
-        pfd->b.x3f(k,j,i) = bzl;
+        pfld->b.x3f(k,j,i) = bzl;
       } else {
-        pfd->b.x3f(k,j,i) = bzr;
+        pfld->b.x3f(k,j,i) = bzr;
       }
     }}}
 
@@ -163,9 +163,9 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
       if(pco->x1v(i) < xshock) {
-        pfl->u(IEN,k,j,i) += 0.5*(bxl*bxl + byl*byl + bzl*bzl);
+        phyd->u(IEN,k,j,i) += 0.5*(bxl*bxl + byl*byl + bzl*bzl);
       } else {
-        pfl->u(IEN,k,j,i) += 0.5*(bxr*bxr + byr*byr + bxr*bzr);
+        phyd->u(IEN,k,j,i) += 0.5*(bxr*bxr + byr*byr + bxr*bzr);
       }
     }}}
   }

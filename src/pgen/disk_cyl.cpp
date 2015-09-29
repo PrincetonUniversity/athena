@@ -48,9 +48,9 @@ static Real ICden(const Real x1);
 static Real ICvel(const Real x1);
 static Real KeplerVel(const Real x1);
 
-void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
-  MeshBlock *pb = pfl->pmy_block;
+  MeshBlock *pb = phyd->pmy_block;
   std::stringstream msg;
 
   int is = pb->is; int js = pb->js; int ks = pb->ks;
@@ -88,13 +88,13 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         Real x1 = pb->pcoord->x1v(i);
-        pfl->u(IDN,k,j,i) = ICden(x1);
-        pfl->u(IM1,k,j,i) = 0.0;
-        pfl->u(IM2,k,j,i) = ICvel(x1)*pfl->u(IDN,k,j,i);
-        pfl->u(IM3,k,j,i) = 0.0;
-	if(NON_BAROTROPIC_EOS) pfl->u(IEN,k,j,i)= pressure/(pfl->pf_eos->GetGamma()-1.0)
-          + 0.5*(SQR(pfl->u(IM1,k,j,i)) + SQR(pfl->u(IM2,k,j,i)) +
-                 SQR(pfl->u(IM3,k,j,i)))/pfl->u(IDN,k,j,i);
+        phyd->u(IDN,k,j,i) = ICden(x1);
+        phyd->u(IM1,k,j,i) = 0.0;
+        phyd->u(IM2,k,j,i) = ICvel(x1)*phyd->u(IDN,k,j,i);
+        phyd->u(IM3,k,j,i) = 0.0;
+	if(NON_BAROTROPIC_EOS) phyd->u(IEN,k,j,i)= pressure/(phyd->pf_eos->GetGamma()-1.0)
+          + 0.5*(SQR(phyd->u(IM1,k,j,i)) + SQR(phyd->u(IM2,k,j,i)) +
+                 SQR(phyd->u(IM3,k,j,i)))/phyd->u(IDN,k,j,i);
       }
     }
   }

@@ -55,8 +55,8 @@ HistoryOutput::HistoryOutput(OutputParameters oparams)
 
 void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 {
-  Hydro *pfl = pmb->phydro;;
-  Field *pfd = pmb->pfield;;
+  Hydro *phyd = pmb->phydro;;
+  Field *pfld = pmb->pfield;;
   Mesh *pmm = pmb->pmy_mesh;
   int tid=0;
 
@@ -120,10 +120,10 @@ void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 
 #pragma simd
     for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i) {
-      Real& u_d  = pfl->u(IDN,k,j,i);
-      Real& u_mx = pfl->u(IM1,k,j,i);
-      Real& u_my = pfl->u(IM2,k,j,i);
-      Real& u_mz = pfl->u(IM3,k,j,i);
+      Real& u_d  = phyd->u(IDN,k,j,i);
+      Real& u_mx = phyd->u(IM1,k,j,i);
+      Real& u_my = phyd->u(IM2,k,j,i);
+      Real& u_mz = phyd->u(IM3,k,j,i);
 
       partial_sum[0] += vol(i)*u_d;
       partial_sum[1] += vol(i)*u_mx;
@@ -134,13 +134,13 @@ void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       partial_sum[6] += vol(i)*0.5*SQR(u_mz)/u_d;
 
       if (NON_BAROTROPIC_EOS) {
-        Real& u_e = pfl->u(IEN,k,j,i);;
+        Real& u_e = phyd->u(IEN,k,j,i);;
         partial_sum[7] += vol(i)*u_e;
       }
       if (MAGNETIC_FIELDS_ENABLED) {
-        Real& bcc1 = pfd->bcc(IB1,k,j,i);
-        Real& bcc2 = pfd->bcc(IB2,k,j,i);
-        Real& bcc3 = pfd->bcc(IB3,k,j,i);
+        Real& bcc1 = pfld->bcc(IB1,k,j,i);
+        Real& bcc2 = pfld->bcc(IB2,k,j,i);
+        Real& bcc3 = pfld->bcc(IB3,k,j,i);
         partial_sum[8]  += vol(i)*0.5*bcc1*bcc1;
         partial_sum[9]  += vol(i)*0.5*bcc2*bcc2;
         partial_sum[10] += vol(i)*0.5*bcc3*bcc3;

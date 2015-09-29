@@ -38,7 +38,7 @@ nx3        = 1         # Number of zones in X3-direction
 x3min      = -0.5      # minimum value of X3
 x3max      = 0.5       # maximum value of X3
 
-<fluid>
+<hydro>
 gamma = 1.666666666666667 # gamma = C_p/C_v
 iso_csound = 1.0          # isothermal sound speed
 

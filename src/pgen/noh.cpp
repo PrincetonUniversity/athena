@@ -48,13 +48,13 @@ void noh3d_okb(MeshBlock *pmb, AthenaArray<Real> &a,
 // made global to share with BC functions
 static Real gmma, gmma1;
 
-void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
   Coordinates *pco = pmb->pcoord;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  gmma  = pfl->pf_eos->GetGamma();
+  gmma  = phyd->pf_eos->GetGamma();
   gmma1 = gmma - 1.0;
 
 // Initialize the grid: d=1, v=-1.0 in radial direction, p=10^-6
@@ -65,15 +65,15 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
     Real rad;
     if (pmb->block_size.nx3 > 1) {
       rad = sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(j)) + SQR(pco->x3v(k)));
-      pfl->u(IM3,k,j,i) = -pco->x3v(k)/rad;
+      phyd->u(IM3,k,j,i) = -pco->x3v(k)/rad;
     } else {
       rad = sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(j)));
-      pfl->u(IM3,k,j,i) = 0.0;
+      phyd->u(IM3,k,j,i) = 0.0;
     }
-    pfl->u(IDN,k,j,i) = 1.0;
-    pfl->u(IM1,k,j,i) = -pco->x1v(i)/rad;
-    pfl->u(IM2,k,j,i) = -pco->x2v(j)/rad;
-    pfl->u(IEN,k,j,i) = 1.0e-6/gmma1 + 0.5;
+    phyd->u(IDN,k,j,i) = 1.0;
+    phyd->u(IM1,k,j,i) = -pco->x1v(i)/rad;
+    phyd->u(IM2,k,j,i) = -pco->x2v(j)/rad;
+    phyd->u(IEN,k,j,i) = 1.0e-6/gmma1 + 0.5;
   }}}
 
 // Enroll boundary value function pointers

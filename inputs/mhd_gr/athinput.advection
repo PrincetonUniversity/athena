@@ -37,7 +37,7 @@ ox3_bc = 4     # 4: periodic
 a = 0.0  # amplitude for sinusoidal coordinates
 k = 0.0  # wavenumber for sinusoidal coordinates
 
-<fluid>
+<hydro>
 gamma = 1.6666666666666666
 
 <problem>

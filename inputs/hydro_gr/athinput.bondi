@@ -54,7 +54,7 @@ ox3_bc = 4                   # 4: periodic
 m = 1.0  # black hole mass M
 a = 0.0  # black hole spin
 
-<fluid>
+<hydro>
 gamma = 1.3333333333333333  # \Gamma = C_p/C_V
 k_adi = 1.0                 # p = K \rho^\Gamma
 

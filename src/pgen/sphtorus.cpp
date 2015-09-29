@@ -116,10 +116,10 @@ Real magp(MeshBlock *pmb, int i, int j, int k)
 }
 
 //problem generator
-void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
 
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
   Coordinates *pco = pmb->pcoord;
   int i, is = pmb->is, ie = pmb->ie;
   int j, js = pmb->js, je = pmb->je;
@@ -166,10 +166,10 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   for (k=ks; k<=ke; k++) {
     for (j=js; j<=je; j++) {
       for (i=is; i<=ie; i++) {
-        pfl->u(IDN,k,j,i)  = d0;
-        pfl->u(IM1,k,j,i) = 0.0;
-        pfl->u(IM2,k,j,i) = 0.0;
-        pfl->u(IM3,k,j,i) = 0.0;
+        phyd->u(IDN,k,j,i)  = d0;
+        phyd->u(IM1,k,j,i) = 0.0;
+        phyd->u(IM2,k,j,i) = 0.0;
+        phyd->u(IM3,k,j,i) = 0.0;
         pr(k,j,i)=d0/pco->x1v(i);
       }
     }
@@ -212,8 +212,8 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
         vv= 1.0/3.0*(CUBE(pco->x1f(i+1))-CUBE(pco->x1f(i)))*(cos(pco->x2f(j))-cos(pco->x2f(j+1)));
         ld/=vv; lm/=vv;
         if(ftorus==1) {
-          pfl->u(IDN,k,j,i) = ld;
-          pfl->u(IM3,k,j,i) = lm;
+          phyd->u(IDN,k,j,i) = ld;
+          phyd->u(IM3,k,j,i) = lm;
 	  //cout << "ld torus: "<<ld <<endl;
           pr(k,j,i)=MAX(acons*pow(ld,gmgas),d0/pco->x1v(i))*(1+amp*((double)rand()/(double)RAND_MAX-0.5));
         }
@@ -226,21 +226,21 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
     for (k=ks; k<=ke; k++) {
       for (j=js; j<=je; j++) {
         for (i=is; i<=ie+1; i++) {
-          pfd->b.x1f(k,j,i)  = magr(pmb,i,j,k);
+          pfld->b.x1f(k,j,i)  = magr(pmb,i,j,k);
         }
       }
     }
     for (k=ks; k<=ke; k++) {
       for (j=js; j<=je+1; j++) {
         for (i=is; i<=ie; i++) {
-          pfd->b.x2f(k,j,i)  = magt(pmb,i,j,k);
+          pfld->b.x2f(k,j,i)  = magt(pmb,i,j,k);
         }
       }
     }
     for (k=ks; k<=ke+1; k++) {
       for (j=js; j<=je; j++) {
         for (i=is; i<=ie; i++) {
-          pfd->b.x3f(k,j,i) = 0.0;
+          pfld->b.x3f(k,j,i) = 0.0;
         }
       }
     }
@@ -249,15 +249,15 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   for (k=ks; k<=ke; k++) {
     for (j=js; j<=je; j++) {
       for (i=is; i<=ie; i++) {
-        pfl->u(IEN,k,j,i)=pr(k,j,i)*en+0.5*SQR(pfl->u(IM3,k,j,i))/pfl->u(IDN,k,j,i);
+        phyd->u(IEN,k,j,i)=pr(k,j,i)*en+0.5*SQR(phyd->u(IM3,k,j,i))/phyd->u(IDN,k,j,i);
         // //Adding the magnetic energy contributions onto the internal energy 
         if (MAGNETIC_FIELDS_ENABLED) {
-          Real bx = ((pco->x1f(i+1)-pco->x1v(i))*pfd->b.x1f(k,j,i)
-             +  (pco->x1v(i)-pco->x1f(i))*pfd->b.x1f(k,j,i+1))/pco->dx1f(i);
-          Real by = ((pco->x2f(j+1)-pco->x2v(j))*pfd->b.x2f(k,j,i)
-             +  (pco->x2v(j)-pco->x2f(j))*pfd->b.x2f(k,j+1,i))/pco->dx2f(j);
-          Real bz = (pfd->b.x3f(k,j,i) + pfd->b.x3f(k+1,j,i))*0.5;
-          pfl->u(IEN,k,j,i) += 0.5*(SQR(bx)+SQR(by)+SQR(bz));
+          Real bx = ((pco->x1f(i+1)-pco->x1v(i))*pfld->b.x1f(k,j,i)
+             +  (pco->x1v(i)-pco->x1f(i))*pfld->b.x1f(k,j,i+1))/pco->dx1f(i);
+          Real by = ((pco->x2f(j+1)-pco->x2v(j))*pfld->b.x2f(k,j,i)
+             +  (pco->x2v(j)-pco->x2f(j))*pfld->b.x2f(k,j+1,i))/pco->dx2f(j);
+          Real bz = (pfld->b.x3f(k,j,i) + pfld->b.x3f(k+1,j,i))*0.5;
+          phyd->u(IEN,k,j,i) += 0.5*(SQR(bx)+SQR(by)+SQR(bz));
         }
       }
     }

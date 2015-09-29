@@ -38,13 +38,13 @@
 #include "../hydro/eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
 
-void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
   Coordinates *pco = pmb->pcoord;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  Real gm1 = (pfl->pf_eos->GetGamma() - 1.0);
+  Real gm1 = (phyd->pf_eos->GetGamma() - 1.0);
 
 // Read initial conditions from 'athinput'
 
@@ -60,27 +60,27 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      pfl->u(IDN,k,j,i) = 1.0;
-      pfl->u(IM1,k,j,i) = 0.0;
-      pfl->u(IM2,k,j,i) = 0.0;
-      pfl->u(IM3,k,j,i) = 0.0;
+      phyd->u(IDN,k,j,i) = 1.0;
+      phyd->u(IM1,k,j,i) = 0.0;
+      phyd->u(IM2,k,j,i) = 0.0;
+      phyd->u(IM3,k,j,i) = 0.0;
 
 // reset density, velocity if cell is inside rotor
 
       Real rad = sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(j)));
       if (rad <= r0) {
-        pfl->u(IDN,k,j,i) = 10.0;
-        pfl->u(IM1,k,j,i) = -100.0*v0*pco->x2v(j);
-        pfl->u(IM2,k,j,i) = 100.0*v0*pco->x1v(i);
+        phyd->u(IDN,k,j,i) = 10.0;
+        phyd->u(IM1,k,j,i) = -100.0*v0*pco->x2v(j);
+        phyd->u(IM2,k,j,i) = 100.0*v0*pco->x1v(i);
       } else {
 
 // smooth solution between r0 and r1.  For no smoothing, set r1<0 in input
 
         if (rad <= r1) {
           Real frac = (0.115 - rad)/(0.015);
-          pfl->u(IDN,k,j,i) = 1.0 + 9.0*frac;
-          pfl->u(IM1,k,j,i) = -frac*100.0*v0*pco->x2v(j);
-          pfl->u(IM2,k,j,i) =  frac*100.0*v0*pco->x1v(i);
+          phyd->u(IDN,k,j,i) = 1.0 + 9.0*frac;
+          phyd->u(IM1,k,j,i) = -frac*100.0*v0*pco->x2v(j);
+          phyd->u(IM2,k,j,i) =  frac*100.0*v0*pco->x1v(i);
         }
       }
 
@@ -92,17 +92,17 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie+1; i++) {
-    pfd->b.x1f(k,j,i) = bx0;
+    pfld->b.x1f(k,j,i) = bx0;
   }}}
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je+1; j++) {
   for (int i=is; i<=ie; i++) {
-    pfd->b.x2f(k,j,i) = 0.0;
+    pfld->b.x2f(k,j,i) = 0.0;
   }}}
   for (int k=ks; k<=ke+1; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
-    pfd->b.x3f(k,j,i) = 0.0;
+    pfld->b.x3f(k,j,i) = 0.0;
   }}}
 
 // initialize total energy
@@ -111,8 +111,8 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
-        pfl->u(IEN,k,j,i) = p0/gm1 + 0.5*bx0*bx0 +
-          (SQR(pfl->u(IM1,k,j,i)) + SQR(pfl->u(IM2,k,j,i)))/pfl->u(IDN,k,j,i);
+        phyd->u(IEN,k,j,i) = p0/gm1 + 0.5*bx0*bx0 +
+          (SQR(phyd->u(IM1,k,j,i)) + SQR(phyd->u(IM2,k,j,i)))/phyd->u(IDN,k,j,i);
       }
     }}
   }

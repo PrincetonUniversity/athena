@@ -34,9 +34,9 @@
 #include "../hydro/eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
 
-void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
-  MeshBlock *pb = pfl->pmy_block;
+  MeshBlock *pb = phyd->pmy_block;
 
   int is = pb->is; int js = pb->js; int ks = pb->ks;
   int ie = pb->ie; int je = pb->je; int ke = pb->ke;
@@ -49,7 +49,7 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
   Real vl = 0.0;
   Real wl = 0.0;
 
-  Real gm1 = (pfl->pf_eos->GetGamma()) - 1.0;
+  Real gm1 = (phyd->pf_eos->GetGamma()) - 1.0;
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
@@ -57,18 +57,18 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
     for (int i=is; i<=ie; ++i) {
 
       if (pb->pcoord->x1v(i) < -0.8) {
-        pfl->u(IDN,k,j,i) = dl;
-        pfl->u(IM1,k,j,i) = ul*dl;
-        pfl->u(IM2,k,j,i) = vl*dl;
-        pfl->u(IM3,k,j,i) = wl*dl;
-        pfl->u(IEN,k,j,i) = pl/gm1 + 0.5*dl*(ul*ul + vl*vl + wl*wl);
+        phyd->u(IDN,k,j,i) = dl;
+        phyd->u(IM1,k,j,i) = ul*dl;
+        phyd->u(IM2,k,j,i) = vl*dl;
+        phyd->u(IM3,k,j,i) = wl*dl;
+        phyd->u(IEN,k,j,i) = pl/gm1 + 0.5*dl*(ul*ul + vl*vl + wl*wl);
       }
       else {
-        pfl->u(IDN,k,j,i) = 1.0 + 0.2*sin(5.0*PI*(pb->pcoord->x1v(i)));
-        pfl->u(IM1,k,j,i) = 0.0;
-        pfl->u(IM2,k,j,i) = 0.0;
-        pfl->u(IM3,k,j,i) = 0.0;
-        pfl->u(IEN,k,j,i) = 1.0/gm1;
+        phyd->u(IDN,k,j,i) = 1.0 + 0.2*sin(5.0*PI*(pb->pcoord->x1v(i)));
+        phyd->u(IM1,k,j,i) = 0.0;
+        phyd->u(IM2,k,j,i) = 0.0;
+        phyd->u(IM3,k,j,i) = 0.0;
+        phyd->u(IEN,k,j,i) = 1.0/gm1;
       }
     }
   }}

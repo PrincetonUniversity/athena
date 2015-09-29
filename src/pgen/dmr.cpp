@@ -50,9 +50,9 @@ void dmrbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
 
 // problem generator
 
-void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
   std::stringstream msg;
 
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
@@ -74,16 +74,16 @@ void Mesh::ProblemGenerator(Hydro *pfl, Field *pfd, ParameterInput *pin)
     for (int i=is; i<=ie; ++i) {
       Real shock_pos = 0.1666666666 + pmb->pcoord->x2v(j)/sqrt((double)3.0);
 // upstream conditions
-      pfl->u(IDN,ks,j,i) = 1.4;
-      pfl->u(IEN,ks,j,i) = 2.5;
-      pfl->u(IM1,ks,j,i) = 0.0;
-      pfl->u(IM2,ks,j,i) = 0.0;
+      phyd->u(IDN,ks,j,i) = 1.4;
+      phyd->u(IEN,ks,j,i) = 2.5;
+      phyd->u(IM1,ks,j,i) = 0.0;
+      phyd->u(IM2,ks,j,i) = 0.0;
 // downstream conditions
       if (pmb->pcoord->x1v(i) < shock_pos) {
-        pfl->u(IDN,ks,j,i) = d0;
-        pfl->u(IEN,ks,j,i) = e0 + 0.5*d0*(u0*u0+v0*v0);
-        pfl->u(IM1,ks,j,i) = d0*u0;
-        pfl->u(IM2,ks,j,i) = d0*v0;
+        phyd->u(IDN,ks,j,i) = d0;
+        phyd->u(IEN,ks,j,i) = e0 + 0.5*d0*(u0*u0+v0*v0);
+        phyd->u(IM1,ks,j,i) = d0*u0;
+        phyd->u(IM2,ks,j,i) = d0*v0;
       }
     }
   }
