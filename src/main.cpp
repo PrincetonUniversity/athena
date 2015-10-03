@@ -14,15 +14,15 @@
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
 /////////////////////////////////// Athena++ Main Program \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-//! \file main.cpp
-//  \brief Athena++ main program file.
+//!   \file main.cpp
+//    \brief Athena++ main program file.
 //
-//  Based on the Athena MHD code in C.  History:
-//    - 2003-2013: development of v1.0-v4.2 of Athena code in C
-//    - jan-2014: start of Athena++ code project
-//    - may-2014: hydro implemented during KITP workshop
-//    - oct-2014: first Athena++ developer's meeting
-//    - nov-2014: mhd implemented
+// Based on the Athena MHD code in C.  History:
+//   - 2003-2013: development of v1.0-v4.2 of Athena code in C
+//   - jan2014: start of Athena++ code project
+//   - apr-jul2014: hydro implemented during KITP workshop
+//   - oct2014: first Athena++ developer's meeting
+//   - sep2015: first paper published using Athena++ (hydro)
 //======================================================================================
 
 // C/C++ headers
@@ -55,18 +55,18 @@
 #endif
 
 //--------------------------------------------------------------------------------------
-//! \fn int main(int argc, char *argv[]) 
-//  \brief Athena++ main program
+//!   \fn int main(int argc, char *argv[]) 
+//    \brief Athena++ main program
 
 int main(int argc, char *argv[])
 {
   std::string athena_version = "version 0.1 - February 2014";
   char *input_filename;
   char *prundir = NULL;
-  int res_flag=0;     // gets set to 1 if -r        argument is on cmdline
-  int narg_flag=0;    // gets set to 1 if -n        argument is on cmdline
-  int iarg_flag=0;    // gets set to 1 if -i <file> argument is on cmdline
-  int test_flag=0;    // gets set to <nproc> if -m <nproc> argument is on cmdline
+  int res_flag=0;   // set to 1 if -r        argument is on cmdline
+  int narg_flag=0;  // set to 1 if -n        argument is on cmdline
+  int iarg_flag=0;  // set to 1 if -i <file> argument is on cmdline
+  int mesh_flag=0;  // set to <nproc> if -m <nproc> argument is on cmdline
   int ncstart=0;
   TaskList task_list;
 
@@ -123,11 +123,10 @@ int main(int argc, char *argv[])
         narg_flag = 1;
         break;
       case 'm':
-        test_flag = strtol(argv[++i],NULL,10);
+        mesh_flag = std::strtol(argv[++i],NULL,10);
         break;
       case 'c':
-        if(Globals::my_rank==0)
-          ShowConfig();
+        if(Globals::my_rank==0) ShowConfig();
 #ifdef MPI_PARALLEL
         MPI_Finalize();
 #endif
@@ -144,7 +143,7 @@ int main(int argc, char *argv[])
           std::cout<<"  -d <directory>  specify run dir [current dir]"<<std::endl;
           std::cout<<"  -n              parse input file and quit"<<std::endl;
           std::cout<<"  -c              show configuration and quit"<<std::endl;
-          std::cout<<"  -m <nproc>      test mesh structure and quit"<<std::endl;
+          std::cout<<"  -m <nproc>      output mesh structure and quit"<<std::endl;
           std::cout<<"  -h              this help"<<std::endl;
           ShowConfig();
         }
@@ -154,7 +153,16 @@ int main(int argc, char *argv[])
         return(0);
         break;
       }
-    } // else if argv[i] not of form "-?" ignore it
+    } else { // else if argv[i] not of form "-?" print error message and quit
+      if(Globals::my_rank==0) {
+        std::cout << "### FATAL ERROR in main" << std::endl
+                  << "Invalid command line argument." << std::endl;
+      }
+#ifdef MPI_PARALLEL
+      MPI_Finalize();
+#endif
+      return(0);
+    }
   }
 
 //--- Step 2. --------------------------------------------------------------------------
@@ -209,9 +217,9 @@ int main(int argc, char *argv[])
   Mesh *pmesh;
   try {
     if(res_flag==0)
-      pmesh = new Mesh(pinput, test_flag);
+      pmesh = new Mesh(pinput, mesh_flag);
     else { 
-      pmesh = new Mesh(pinput, infile, test_flag);
+      pmesh = new Mesh(pinput, infile, mesh_flag);
       ncstart=pmesh->ncycle;
     }
     infile.Close(); // close the file here
@@ -233,7 +241,8 @@ int main(int argc, char *argv[])
     return(0);
   }
 
-  if (test_flag>0){
+  // Quit if -m was on cmdline.  This option builds and outputs mesh structure.
+  if (mesh_flag>0){
 #ifdef MPI_PARALLEL
     MPI_Finalize();
 #endif /* MPI_PARALLEL */
@@ -241,7 +250,7 @@ int main(int argc, char *argv[])
   }
 
 //--- Step 5. --------------------------------------------------------------------------
-// Set initial conditions by calling problem generator on each MeshDomain/MeshBlock
+// Set initial conditions by calling problem generator, or reading restart file
 
   try {
     pmesh->Initialize(res_flag, pinput);

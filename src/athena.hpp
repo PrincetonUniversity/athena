@@ -49,36 +49,6 @@ enum face {x1face=0, x2face=1, x3face=2};
 enum mpitag {tag_hydro=0, tag_field=1, tag_flcor=2, tag_emfcor=3}; // mpitag must be < 16 and unique
 enum neighbor_type {neighbor_none, neighbor_face, neighbor_edge, neighbor_corner};
 
-enum task {
-  none=0, 
-
-  hydro_integrate_1=1L<<0, calculate_emf_1=1L<<1, field_integrate_1=1L<<2,
-  hydro_send_1=1L<<3, hydro_recv_1=1L<<4,
-  flux_correct_send_1=1L<<5, flux_correct_recv_1=1L<<6,
-  hydro_prolong_1=1L<<7, hydro_boundary_1=1L<<8,
-  field_send_1=1L<<9, field_recv_1=1L<<10,
-  emf_correct_send_1=1L<<11, emf_correct_recv_1=1L<<12,
-  field_prolong_1=1L<<13, field_boundary_1=1L<<14,
-  primitives_1=1L<<15,
-
-  hydro_integrate_0=1L<<16, calculate_emf_0=1L<<17, field_integrate_0=1L<<18,
-  hydro_send_0=1L<<19, hydro_recv_0=1L<<20,
-  flux_correct_send_0=1L<<21, flux_correct_recv_0=1L<<22,
-  hydro_prolong_0=1L<<23, hydro_boundary_0=1L<<24,
-  field_send_0=1L<<25, field_recv_0=1L<<26,
-  emf_correct_send_0=1L<<27, emf_correct_recv_0=1L<<28,
-  field_prolong_0=1L<<29, field_boundary_0=1L<<30,
-  primitives_0=1L<<31,
-
-  new_blocktimestep=1L<<32
-};
-
-enum tasklist_status { tl_running, tl_stuck, tl_complete, tl_nothing };
-
-enum task_status { task_failure, task_success, task_donext};
-
 enum boundary_status {boundary_waiting, boundary_arrived, boundary_completed};
 
-extern int myrank, nproc;
-
-#endif
+#endif // define ATHENA_HPP

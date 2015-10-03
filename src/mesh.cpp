@@ -1342,9 +1342,9 @@ void MeshBlock::SetTaskList(TaskList& tl)
 {
   if(task!=NULL)
     delete [] task;
-  task=new Task[tl.ntask];
-  ntask=tl.ntask;
-  memcpy(task, tl.task, sizeof(Task)*ntask);
+  task=new Task[tl.ntasks_];
+  ntask=tl.ntasks_;
+  memcpy(task, tl.task_list_, sizeof(Task)*ntask);
   return;
 }
 
@@ -1359,18 +1359,18 @@ enum tasklist_status MeshBlock::DoOneTask(void) {
   if(ntodo==0) return tl_nothing;
   for(int i=firsttask; i<ntask; i++) {
     Task &ti=task[i];
-    if((ti.taskid & task_flag)==0L) { // this task is not done
-      if (((ti.depend & task_flag) == ti.depend)) { // dependency clear
-        ret=ti.TaskFunc(this,ti.task_arg);
-//        std::cout << "Meshblock " << gid << " task "<< ti.taskid << " returns " << ret << std::endl;
+    if((ti.task_id & task_flag)==0L) { // this task is not done
+      if (((ti.dependency & task_flag) == ti.dependency)) { // dependency clear
+        ret=ti.TaskFunc(this,ti.task_flag);
+//        std::cout << "Meshblock " << gid << " task "<< ti.task_id << " returns " << ret << std::endl;
         if(ret!=task_failure) { // success
           ntodo--;
-          task_flag |= ti.taskid;
+          task_flag |= ti.task_id;
           if(skip==0)
             firsttask++;
           if(ntodo==0)
             return tl_complete;
-          if(ret==task_donext) continue;
+          if(ret==task_do_next) continue;
           return tl_running;
         }
       }

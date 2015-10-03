@@ -7,9 +7,9 @@
 //======================================================================================
 //! \file parameter_input.hpp
 //  \brief definition of class ParameterInput
-//  Contains data structures used to store, and functions used to access, parameters
-//  read from the input file.  See comments at start of parameter_input.cpp for more
-//  information on the Athena++ input file format.
+// Contains data structures used to store, and functions used to access, parameters
+// read from the input file.  See comments at start of parameter_input.cpp for more
+// information on the Athena++ input file format.
 //======================================================================================
 
 // C++ headers
