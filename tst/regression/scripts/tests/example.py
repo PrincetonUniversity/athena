@@ -134,7 +134,7 @@ def analyze():
   error_rel_mx = error_abs_mx / comparison.l1_norm(x_ref, mx_ref)
 
   # Finally, we test that the relative errors in the two quantities are no more than 1%.
-  # If the are, we return False; otherwise we return True. NumPy provides a way of
+  # If they are, we return False; otherwise we return True. NumPy provides a way of
   # checking if the error is NaN, which also indicates something went wrong. The main
   # test script will record the result and delete tst/regression/bin/ before proceeding
   # on to the next test.
