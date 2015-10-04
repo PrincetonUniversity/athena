@@ -34,8 +34,14 @@
 //   pin: pointer to runtime inputs
 Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 {
-  // Set pointer to host MeshBlock
+  // Set pointer to host MeshBlock and note active zone boundaries
   pmy_block = pmb;
+  int is = pmb->is;
+  int ie = pmb->ie;
+  int js = pmb->js;
+  int je = pmb->je;
+  int ks = pmb->ks;
+  int ke = pmb->ke;
 
   // Set face centered positions and distances
   AllocateAndSetBasicCoordinates();
@@ -47,36 +53,36 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
   const Real &kk = sinu_wavenumber_;
 
   // Initialize volume-averaged positions and spacings: x-direction
-  for (int i = pmb->is-NGHOST; i <= pmb->ie+NGHOST; ++i)
+  for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
     x1v(i) = 0.5 * (x1f(i) + x1f(i+1));
-  for (int i = pmb->is-NGHOST; i <= pmb->ie+NGHOST-1; ++i)
+  for (int i = is-NGHOST; i <= ie+NGHOST-1; ++i)
     dx1v(i) = x1v(i+1) - x1v(i);
 
   // Initialize volume-averaged positions and spacings: y-direction
   if (pmb->block_size.nx2 == 1)  // no extent
   {
-    x2v(pmb->js) = 0.5 * (x2f(pmb->js) + x2f(pmb->js+1));
-    dx2v(pmb->js) = dx2f(pmb->js);
+    x2v(js) = 0.5 * (x2f(js) + x2f(js+1));
+    dx2v(js) = dx2f(js);
   }
   else  // extended
   {
-    for (int j = pmb->js-NGHOST; j <= pmb->je+NGHOST; ++j)
+    for (int j = js-NGHOST; j <= je+NGHOST; ++j)
       x2v(j) = 0.5 * (x2f(j) + x2f(j+1));
-    for (int j = pmb->js-NGHOST; j <= pmb->je+NGHOST-1; ++j)
+    for (int j = js-NGHOST; j <= je+NGHOST-1; ++j)
       dx2v(j) = x2v(j+1) - x2v(j);
   }
 
   // Initialize volume-averaged positions and spacings: z-direction
   if (pmb->block_size.nx3 == 1)  // no extent
   {
-    x3v(pmb->ks) = 0.5 * (x3f(pmb->ks) + x3f(pmb->ks+1));
-    dx3v(pmb->ks) = dx3f(pmb->ks);
+    x3v(ks) = 0.5 * (x3f(ks) + x3f(ks+1));
+    dx3v(ks) = dx3f(ks);
   }
   else  // extended
   {
-    for (int k = pmb->ks-NGHOST; k <= pmb->ke+NGHOST; ++k)
+    for (int k = ks-NGHOST; k <= ke+NGHOST; ++k)
       x3v(k) = 0.5 * (x3f(k) + x3f(k+1));
-    for (int k = pmb->ks-NGHOST; k <= pmb->ke+NGHOST-1; ++k)
+    for (int k = ks-NGHOST; k <= ke+NGHOST-1; ++k)
       dx3v(k) = x3v(k+1) - x3v(k);
   }
 
@@ -149,7 +155,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 
   // Calculate intermediate geometric quantities: x-direction
   #pragma simd
-  for (int i = pmb->is-NGHOST; i <= pmb->ie+NGHOST; ++i)
+  for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
   {
     // Useful quantities
     Real r_c = x1v(i);
@@ -322,13 +328,6 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
   return;
 }
 
-
-// GetFace1Area returns only one Face1Area at i
-Real Coordinates::GetFace1Area(const int k, const int j, const int i)
-{
-  return dx2f(j)*dx3f(k);
-}
-
 //--------------------------------------------------------------------------------------
 
 // Function for computing lengths of edges in the x-direction
@@ -359,6 +358,7 @@ void Coordinates::Edge1Length(const int k, const int j, const int il, const int 
 //   lengths: 1D array of edge lengths along y
 // Notes:
 //   \Delta L = \Delta y
+//   cf. GetEdge2Length()
 void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &lengths)
 {
@@ -366,6 +366,22 @@ void Coordinates::Edge2Length(const int k, const int j, const int il, const int 
   for (int i = il; i <= iu; ++i)
     lengths(i) = dx2f(j);
   return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing single length of edge in the y-direction
+// Inputs:
+//   k,i: z- and x-indices (unused)
+//   j: y-index
+// Outputs:
+//   returned value: length of edge along y
+// Notes:
+//   \Delta L = \Delta y
+//   cf. Edge2Length()
+Real Coordinates::GetEdge2Length(const int k, const int j, const int i)
+{
+  return dx2f(j);
 }
 
 //--------------------------------------------------------------------------------------
@@ -379,6 +395,7 @@ void Coordinates::Edge2Length(const int k, const int j, const int il, const int 
 //   lengths: 1D array of edge lengths along z
 // Notes:
 //   \Delta L = \Delta z
+//   cf. GetEdge3Length()
 void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &lengths)
 {
@@ -388,12 +405,17 @@ void Coordinates::Edge3Length(const int k, const int j, const int il, const int 
   return;
 }
 
-// GetEdge?Length functions: return one edge length at i
-Real Coordinates::GetEdge2Length(const int k, const int j, const int i)
-{
-  return dx2f(j);
-}
+//--------------------------------------------------------------------------------------
 
+// Function for computing single length of edge in the z-direction
+// Inputs:
+//   k: z-index
+//   j,i: y- and x-indices (unused)
+// Outputs:
+//   returned value: length of edge along z
+// Notes:
+//   \Delta L = \Delta z
+//   cf. Edge3Length()
 Real Coordinates::GetEdge3Length(const int k, const int j, const int i)
 {
   return dx3f(k);
