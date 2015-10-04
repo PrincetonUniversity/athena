@@ -30,7 +30,6 @@
 #include "../fluid/fluid.hpp"
 #include "../field/field.hpp"
 #include "outputs.hpp"
-#include "../blockuid.hpp"
 
 //======================================================================================
 //! \file restart.cpp
@@ -57,9 +56,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
   int *nblocks, *displ;
   WrapIOSize_t *myblocksize;
   int i, level;
-  int idl=IDLENGTH;
-  WrapIOSize_t listsize, idlistoffset;
-  ID_t rawid[IDLENGTH];
+  WrapIOSize_t listsize;
 
   // create single output, filename:"file_basename"+"."+"file_id"+"."+XXXXX+".rst",
   // where XXXXX = 5-digit file_number
@@ -88,7 +85,6 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
 
     // output Mesh information; this part is serial
     resfile.Write(&(pM->nbtotal), sizeof(int), 1);
-    resfile.Write(&idl, sizeof(int), 1); // for extensibility
     resfile.Write(&(pM->root_level), sizeof(int), 1);
     resfile.Write(&(pM->mesh_size), sizeof(RegionSize), 1);
     resfile.Write(pM->mesh_bcs, sizeof(int), 6);
@@ -98,7 +94,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
   }
 
   // the size of an element of the ID list
-  listsize=sizeof(int)*2+sizeof(ID_t)*IDLENGTH+sizeof(Real)+sizeof(WrapIOSize_t);
+  listsize=sizeof(int)+sizeof(LogicalLocation)+sizeof(Real)+sizeof(WrapIOSize_t);
 
   int mynb=pM->nbend-pM->nbstart+1;
   blocksize=new WrapIOSize_t[pM->nbtotal+1];
@@ -161,13 +157,9 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
   pmb=pM->pblock;
   i=0;
   while(pmb!=NULL) {
-    level=pmb->uid.GetLevel();
-    pmb->uid.GetRawUID(rawid);
-
     // perhaps these data should be packed and dumped at once
     resfile.Write(&(pmb->gid),sizeof(int),1);
-    resfile.Write(&level,sizeof(int),1);
-    resfile.Write(rawid,sizeof(ID_t),IDLENGTH);
+    resfile.Write(&(pmb->loc),sizeof(LogicalLocation),1);
     resfile.Write(&(pmb->cost),sizeof(Real),1);
     resfile.Write(&(offset[i]),sizeof(WrapIOSize_t),1);
     i++;

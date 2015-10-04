@@ -34,7 +34,6 @@
 #include "../fluid/fluid.hpp"
 #include "../field/field.hpp"
 #include "outputs.hpp"
-#include "../blockuid.hpp"
 #include "../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
@@ -173,8 +172,10 @@ void ATHDF5Output::Initialize(Mesh *pM, ParameterInput *pin)
     gname.append(mbid);
     tgid = H5Gcreate(file, gname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-    pM->buid[b].GetLocation(lx[0], lx[1], lx[2], ll);
-    int level = ll-pM->root_level;
+    lx[0]=pM->loclist[b].lx1;
+    lx[1]=pM->loclist[b].lx2;
+    lx[2]=pM->loclist[b].lx3;
+    int level = pM->loclist[b].level-pM->root_level;
     sz=1;
     dsid = H5Screate_simple(1, &sz, NULL);
     aid=H5Acreate2(tgid,"Level",H5T_STD_I32BE,dsid,H5P_DEFAULT,H5P_DEFAULT);

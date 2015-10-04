@@ -70,7 +70,6 @@
 #define NFIELD  (@NFIELD_VARIABLES@)
 #define NWAVE   (@NWAVE_VALUE@)
 #define NGHOST   2
-#define IDLENGTH (@ID_LENGTH@)
 #define NSTEP (@NSTEP@)
 
 //--------------------------------------------------------------------------------------

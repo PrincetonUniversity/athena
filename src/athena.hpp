@@ -26,6 +26,16 @@ typedef struct EdgeField {
   AthenaArray<Real> x1e,x2e,x3e;
 } EdgeField;
 
+//! \struct LogicalLocation
+//  \brief logical location and level of meshblocks
+typedef struct LogicalLocation {
+  long int lx1, lx2, lx3;
+  int level;
+  LogicalLocation() : lx1(-1), lx2(-1), lx3(-1), level(-1) {};
+} LogicalLocation;
+
+
+
 enum {IDN=0, IM1=1, IM2=2, IM3=3, IEN=4};
 enum {IVX=1, IVY=2, IVZ=3, IBY=(NFLUID), IBZ=((NFLUID)+1)};
 enum {IB1=0, IB2=1, IB3=2};

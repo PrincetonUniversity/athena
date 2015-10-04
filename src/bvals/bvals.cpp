@@ -520,15 +520,17 @@ void BoundaryValues::Initialize(void)
 {
 #ifdef MPI_PARALLEL
   MeshBlock* pmb=pmy_mblock_;
-  long int lx1, lx2, lx3;
-  int mylevel,myox1, myox2, myox3;
+  int myox1, myox2, myox3;
   int tag;
   int cng, cng1, cng2, cng3;
   int ssize, rsize;
   cng=cng1=pmb->cnghost;
   cng2=(pmb->block_size.nx2>1)?cng:0;
   cng3=(pmb->block_size.nx3>1)?cng:0;
-  pmb->uid.GetLocation(lx1,lx2,lx3,mylevel);
+  long int &lx1=pmb->loc.lx1;
+  long int &lx2=pmb->loc.lx2;
+  long int &lx3=pmb->loc.lx3;
+  int &mylevel=pmb->loc.level;
   myox1=((int)(lx1&1L));
   myox2=((int)(lx2&1L));
   myox3=((int)(lx3&1L));
@@ -886,7 +888,6 @@ void BoundaryValues::StartReceivingForInit(void)
 {
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_mblock_;
-  int mylevel=pmb->uid.GetLevel();
   for(int n=0;n<pmb->nneighbor;n++) {
     NeighborBlock& nb = pmb->neighbor[n];
     if(nb.rank!=myrank) { 
@@ -906,7 +907,7 @@ void BoundaryValues::StartReceivingAll(void)
 {
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_mblock_;
-  int mylevel=pmb->uid.GetLevel();
+  int mylevel=pmb->loc.level;
   for(int l=0;l<NSTEP;l++) {
     firsttime_[l]=true;
     for(int n=0;n<pmb->nneighbor;n++) {
@@ -1131,7 +1132,7 @@ int BoundaryValues::LoadFluidBoundaryBufferToFiner(AthenaArray<Real> &src, Real 
 void BoundaryValues::SendFluidBoundaryBuffers(AthenaArray<Real> &src, int step)
 {
   MeshBlock *pmb=pmy_mblock_;
-  int mylevel=pmb->uid.GetLevel();
+  int mylevel=pmb->loc.level;
 
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
@@ -1199,14 +1200,12 @@ void BoundaryValues::SetFluidBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_mblock_;
 
-  int si, sj, sk, ei, ej, ek, ll;
-  long int lx1, lx2, lx3;
-  pmb->uid.GetLocation(lx1,lx2,lx3,ll);
+  int si, sj, sk, ei, ej, ek;
   int cng=pmb->cnghost;
 
   if(nb.ox1==0) {
     si=pmb->cis, ei=pmb->cie;
-    if((lx1&1L)==0L) ei+=cng;
+    if((pmb->loc.lx1&1L)==0L) ei+=cng;
     else             si-=cng; 
   }
   else if(nb.ox1>0)  si=pmb->cie+1,   ei=pmb->cie+cng;
@@ -1214,7 +1213,7 @@ void BoundaryValues::SetFluidBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
   if(nb.ox2==0) {
     sj=pmb->cjs, ej=pmb->cje;
     if(pmb->block_size.nx2 > 1) {
-      if((lx2&1L)==0L) ej+=cng;
+      if((pmb->loc.lx2&1L)==0L) ej+=cng;
       else             sj-=cng; 
     }
   }
@@ -1223,7 +1222,7 @@ void BoundaryValues::SetFluidBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
   if(nb.ox3==0) {
     sk=pmb->cks, ek=pmb->cke;
     if(pmb->block_size.nx3 > 1) {
-      if((lx3&1L)==0L) ek+=cng;
+      if((pmb->loc.lx3&1L)==0L) ek+=cng;
       else             sk-=cng; 
     }
   }
@@ -1313,7 +1312,6 @@ void BoundaryValues::SetFluidBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf
 bool BoundaryValues::ReceiveFluidBoundaryBuffers(AthenaArray<Real> &dst, int step)
 {
   MeshBlock *pmb=pmy_mblock_;
-  int mylevel=pmb->uid.GetLevel();
   bool flag=true;
 
   for(int n=0; n<pmb->nneighbor; n++) {
@@ -1337,9 +1335,9 @@ bool BoundaryValues::ReceiveFluidBoundaryBuffers(AthenaArray<Real> &dst, int ste
       }
 #endif
     }
-    if(nb.level==mylevel)
+    if(nb.level==pmb->loc.level)
       SetFluidBoundarySameLevel(dst, fluid_recv_[step][nb.bufid], nb);
-    else if(nb.level<mylevel) // this set only the prolongation buffer
+    else if(nb.level<pmb->loc.level) // this set only the prolongation buffer
       SetFluidBoundaryFromCoarser(fluid_recv_[step][nb.bufid], nb);
     else
       SetFluidBoundaryFromFiner(dst, fluid_recv_[step][nb.bufid], nb);
@@ -1355,7 +1353,6 @@ bool BoundaryValues::ReceiveFluidBoundaryBuffers(AthenaArray<Real> &dst, int ste
 void BoundaryValues::ReceiveFluidBoundaryBuffersWithWait(AthenaArray<Real> &dst, int step)
 {
   MeshBlock *pmb=pmy_mblock_;
-  int mylevel=pmb->uid.GetLevel();
 
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
@@ -1363,9 +1360,9 @@ void BoundaryValues::ReceiveFluidBoundaryBuffersWithWait(AthenaArray<Real> &dst,
     if(nb.rank!=myrank)
       MPI_Wait(&req_fluid_recv_[0][nb.bufid],MPI_STATUS_IGNORE);
 #endif
-    if(nb.level==mylevel)
+    if(nb.level==pmb->loc.level)
       SetFluidBoundarySameLevel(dst, fluid_recv_[0][nb.bufid], nb);
-    else if(nb.level<mylevel)
+    else if(nb.level<pmb->loc.level)
       SetFluidBoundaryFromCoarser(fluid_recv_[0][nb.bufid], nb);
     else
       SetFluidBoundaryFromFiner(dst, fluid_recv_[0][nb.bufid], nb);
@@ -1382,16 +1379,13 @@ void BoundaryValues::SendFluxCorrection(int step)
 {
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
-  long int lx1, lx2, lx3;
-  int mylevel;
-  pmb->uid.GetLocation(lx1,lx2,lx3,mylevel);
-  int fx1=lx1&1L, fx2=lx2&1L, fx3=lx3&1L;
+  int fx1=pmb->loc.lx1&1L, fx2=pmb->loc.lx2&1L, fx3=pmb->loc.lx3&1L;
   int fi1, fi2;
 
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
     if(nb.type!=neighbor_face) break;
-    if(nb.level==mylevel-1) {
+    if(nb.level==pmb->loc.level-1) {
       int p=0;
       // x1 direction
       if(nb.fid==inner_x1 || nb.fid==outer_x1) {
@@ -1506,7 +1500,6 @@ bool BoundaryValues::ReceiveFluxCorrection(AthenaArray<Real> &dst, int step)
 {
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
-  int mylevel=pmb->uid.GetLevel();
   Real dt=pmb->pmy_mesh->dt;
   if(step==1) dt*=0.5;
   bool flag=true;
@@ -1514,7 +1507,7 @@ bool BoundaryValues::ReceiveFluxCorrection(AthenaArray<Real> &dst, int step)
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
     if(nb.type!=neighbor_face) break;
-    if(nb.level==mylevel+1) {
+    if(nb.level==pmb->loc.level+1) {
       if(flcor_flag_[step][nb.fid][nb.fi2][nb.fi1]==boundary_completed) continue;
       if(flcor_flag_[step][nb.fid][nb.fi2][nb.fi1]==boundary_waiting) {
         if(nb.rank==myrank) {// on the same process
@@ -1609,10 +1602,11 @@ void BoundaryValues::ProlongateFluidBoundaries(AthenaArray<Real> &dst)
 {
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
-  int mylevel;
-  long int lx1, lx2, lx3;
   int mox1, mox2, mox3;
-  pmb->uid.GetLocation(lx1, lx2, lx3, mylevel);
+  long int &lx1=pmb->loc.lx1;
+  long int &lx2=pmb->loc.lx2;
+  long int &lx3=pmb->loc.lx3;
+  int &mylevel=pmb->loc.level;
   mox1=((int)(lx1&1L)<<1)-1;
   mox2=((int)(lx2&1L)<<1)-1;
   mox3=((int)(lx3&1L)<<1)-1;
@@ -2340,14 +2334,13 @@ int BoundaryValues::LoadFieldBoundaryBufferToFiner(InterfaceField &src, Real *bu
 void BoundaryValues::SendFieldBoundaryBuffers(InterfaceField &src, int step)
 {
   MeshBlock *pmb=pmy_mblock_;
-  int mylevel=pmb->uid.GetLevel();
 
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
     int ssize;
-    if(nb.level==mylevel)
+    if(nb.level==pmb->loc.level)
       ssize=LoadFieldBoundaryBufferSameLevel(src, field_send_[step][nb.bufid],nb);
-    else if(nb.level<mylevel)
+    else if(nb.level<pmb->loc.level)
       ssize=LoadFieldBoundaryBufferToCoarser(src, field_send_[step][nb.bufid],nb);
     else
       ssize=LoadFieldBoundaryBufferToFiner(src, field_send_[step][nb.bufid], nb);
@@ -2464,16 +2457,14 @@ void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf,
 void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_mblock_;
-  int si, sj, sk, ei, ej, ek, ll;
-  long int lx1, lx2, lx3;
-  pmb->uid.GetLocation(lx1,lx2,lx3,ll);
+  int si, sj, sk, ei, ej, ek;
   int cng=pmb->cnghost;
   int p=0;
 
   // bx1
   if(nb.ox1==0) {
     si=pmb->cis, ei=pmb->cie+1;
-    if((lx1&1L)==0L) ei+=cng;
+    if((pmb->loc.lx1&1L)==0L) ei+=cng;
     else             si-=cng; 
   }
   else if(nb.ox1>0)  si=pmb->cie+1, ei=pmb->cie+2;
@@ -2481,7 +2472,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
   if(nb.ox2==0) {
     sj=pmb->cjs, ej=pmb->cje;
     if(pmb->block_size.nx2 > 1) {
-      if((lx2&1L)==0L) ej+=cng;
+      if((pmb->loc.lx2&1L)==0L) ej+=cng;
       else             sj-=cng; 
     }
   }
@@ -2490,7 +2481,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
   if(nb.ox3==0) {
     sk=pmb->cks, ek=pmb->cke;
     if(pmb->block_size.nx3 > 1) {
-      if((lx3&1L)==0L) ek+=cng;
+      if((pmb->loc.lx3&1L)==0L) ek+=cng;
       else             sk-=cng; 
     }
   }
@@ -2508,7 +2499,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
   // bx2
   if(nb.ox1==0) {
     si=pmb->cis, ei=pmb->cie;
-    if((lx1&1L)==0L) ei+=cng;
+    if((pmb->loc.lx1&1L)==0L) ei+=cng;
     else             si-=cng; 
   }
   else if(nb.ox1>0)  si=pmb->cie+1,   ei=pmb->cie+cng;
@@ -2517,7 +2508,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
     sj=pmb->cjs, ej=pmb->cje;
     if(pmb->block_size.nx2 > 1) {
       ej++;
-      if((lx2&1L)==0L) ej+=cng;
+      if((pmb->loc.lx2&1L)==0L) ej+=cng;
       else             sj-=cng; 
     }
   }
@@ -2536,7 +2527,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
   if(nb.ox2==0) {
     sj=pmb->cjs, ej=pmb->cje;
     if(pmb->block_size.nx2 > 1) {
-      if((lx2&1L)==0L) ej+=cng;
+      if((pmb->loc.lx2&1L)==0L) ej+=cng;
       else             sj-=cng; 
     }
   }
@@ -2546,7 +2537,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, NeighborBlock& nb)
     sk=pmb->cks, ek=pmb->cke;
     if(pmb->block_size.nx3 > 1) {
       ek++;
-      if((lx3&1L)==0L) ek+=cng;
+      if((pmb->loc.lx3&1L)==0L) ek+=cng;
       else             sk-=cng; 
     }
   }
@@ -2735,7 +2726,6 @@ void BoundaryValues::SetFieldBoundaryFromFiner(InterfaceField &dst, Real *buf,
 bool BoundaryValues::ReceiveFieldBoundaryBuffers(InterfaceField &dst, int step)
 {
   MeshBlock *pmb=pmy_mblock_;
-  int mylevel=pmb->uid.GetLevel();
   bool flag=true;
 
   for(int n=0; n<pmb->nneighbor; n++) {
@@ -2759,9 +2749,9 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(InterfaceField &dst, int step)
       }
 #endif
     }
-    if(nb.level==mylevel)
+    if(nb.level==pmb->loc.level)
       SetFieldBoundarySameLevel(dst, field_recv_[step][nb.bufid], nb);
-    else if(nb.level<mylevel)
+    else if(nb.level<pmb->loc.level)
       SetFieldBoundaryFromCoarser(field_recv_[step][nb.bufid], nb);
     else
       SetFieldBoundaryFromFiner(dst, field_recv_[step][nb.bufid], nb);
@@ -2778,7 +2768,6 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(InterfaceField &dst, int step)
 void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(InterfaceField &dst, int step)
 {
   MeshBlock *pmb=pmy_mblock_;
-  int mylevel=pmb->uid.GetLevel();
 
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
@@ -2786,9 +2775,9 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(InterfaceField &dst, in
     if(nb.rank!=myrank)
       MPI_Wait(&req_field_recv_[0][nb.bufid],MPI_STATUS_IGNORE);
 #endif
-    if(nb.level==mylevel)
+    if(nb.level==pmb->loc.level)
       SetFieldBoundarySameLevel(dst, field_recv_[0][nb.bufid], nb);
-    else if(nb.level<mylevel)
+    else if(nb.level<pmb->loc.level)
       SetFieldBoundaryFromCoarser(field_recv_[0][nb.bufid], nb);
     else
       SetFieldBoundaryFromFiner(dst, field_recv_[0][nb.bufid], nb);
@@ -3114,19 +3103,18 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, NeighborBlock& nb)
 void BoundaryValues::SendEMFCorrection(int step)
 {
   MeshBlock *pmb=pmy_mblock_;
-  int mylevel=pmb->uid.GetLevel();
 
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
     if((nb.type!=neighbor_face) && (nb.type!=neighbor_edge)) break;
     int p=0;
-    if(nb.level==mylevel) {
+    if(nb.level==pmb->loc.level) {
       if((nb.type==neighbor_face)
       || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true)))
         p=LoadEMFBoundaryBufferSameLevel(emfcor_send_[step][nb.bufid], nb);
       else continue;
     }
-    else if(nb.level==mylevel-1)
+    else if(nb.level==pmb->loc.level-1)
       p=LoadEMFBoundaryBufferToCoarser(emfcor_send_[step][nb.bufid], nb);
     else continue;
     if(nb.rank==myrank) { // on the same node
@@ -3487,7 +3475,6 @@ void BoundaryValues::ClearCoarseEMFBoundary(void)
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
-  int mylevel=pmb->uid.GetLevel();
   int i, j, k, nl;
   // face
   for(int n=0; n<nface_; n++) {
@@ -3495,7 +3482,7 @@ void BoundaryValues::ClearCoarseEMFBoundary(void)
       if(n==inner_x1) i=pmb->is;
       else i=pmb->ie+1;
       nl=pmb->nblevel[1][1][2*n];
-      if(nl>mylevel) { // finer
+      if(nl>pmb->loc.level) { // finer
         if(pmb->block_size.nx3 > 1) { // 3D
           for(int k=pmb->ks+1; k<=pmb->ke; k++) {
             for(int j=pmb->js; j<=pmb->je; j++)
@@ -3522,7 +3509,7 @@ void BoundaryValues::ClearCoarseEMFBoundary(void)
       if(n==inner_x2) j=pmb->js;
       else j=pmb->je+1;
       nl=pmb->nblevel[1][2*n-4][1];
-      if(nl>mylevel) { // finer
+      if(nl>pmb->loc.level) { // finer
         if(pmb->block_size.nx3 > 1) { // 3D
           for(int k=pmb->ks+1; k<=pmb->ke; k++) {
             for(int i=pmb->is; i<=pmb->ie; i++)
@@ -3545,7 +3532,7 @@ void BoundaryValues::ClearCoarseEMFBoundary(void)
       if(n==inner_x3) k=pmb->ks;
       else k=pmb->ke+1;
       nl=pmb->nblevel[2*n-8][1][1];
-      if(nl>mylevel) { // finer
+      if(nl>pmb->loc.level) { // finer
         // this is always 3D
         for(int j=pmb->js+1; j<=pmb->je; j++) {
           for(int i=pmb->is; i<=pmb->ie; i++)
@@ -3601,7 +3588,6 @@ void BoundaryValues::AverageEMFBoundary(void)
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
-  int mylevel=pmb->uid.GetLevel();
   int i, j, k, nl;
   // face
   for(int n=0; n<nface_; n++) {
@@ -3609,7 +3595,7 @@ void BoundaryValues::AverageEMFBoundary(void)
       if(n==inner_x1) i=pmb->is;
       else i=pmb->ie+1;
       nl=pmb->nblevel[1][1][2*n];
-      if(nl==mylevel) { // same ; divide all the face EMFs by 2
+      if(nl==pmb->loc.level) { // same ; divide all the face EMFs by 2
         if(pmb->block_size.nx3 > 1) { // 3D
           for(int k=pmb->ks+1; k<=pmb->ke; k++) {
             for(int j=pmb->js; j<=pmb->je; j++)
@@ -3631,7 +3617,7 @@ void BoundaryValues::AverageEMFBoundary(void)
           e3(pmb->ks,pmb->js,i)*=0.5, e3(pmb->ks,pmb->js+1,i)*=0.5;
         }
       }
-      else if(nl>mylevel) { // finer; divide the overlapping EMFs by 2
+      else if(nl>pmb->loc.level) { // finer; divide the overlapping EMFs by 2
         if(pmb->block_size.nx3 > 1) { // 3D
           int k=pmb->ks+pmb->block_size.nx3/2;
           for(int j=pmb->js; j<=pmb->je; j++)
@@ -3648,7 +3634,7 @@ void BoundaryValues::AverageEMFBoundary(void)
       if(n==inner_x2) j=pmb->js;
       else j=pmb->je+1;
       nl=pmb->nblevel[1][2*n-4][1];
-      if(nl==mylevel) { // same ; divide all the face EMFs by 2
+      if(nl==pmb->loc.level) { // same ; divide all the face EMFs by 2
         if(pmb->block_size.nx3 > 1) {
           for(int k=pmb->ks+1; k<=pmb->ke; k++) {
             for(int i=pmb->is; i<=pmb->ie; i++)
@@ -3666,7 +3652,7 @@ void BoundaryValues::AverageEMFBoundary(void)
             e3(pmb->ks,j,i)*=0.5;
         }
       }
-      else if(nl>mylevel) { // finer; divide the overlapping EMFs by 2
+      else if(nl>pmb->loc.level) { // finer; divide the overlapping EMFs by 2
         if(pmb->block_size.nx3 > 1) { // 3D
           int k=pmb->ks+pmb->block_size.nx3/2;
           for(int i=pmb->is; i<=pmb->ie; i++)
@@ -3683,7 +3669,7 @@ void BoundaryValues::AverageEMFBoundary(void)
       if(n==inner_x3) k=pmb->ks;
       else k=pmb->ke+1;
       nl=pmb->nblevel[2*n-8][1][1];
-      if(nl==mylevel) { // same ; divide all the face EMFs by 2
+      if(nl==pmb->loc.level) { // same ; divide all the face EMFs by 2
         for(int j=pmb->js+1; j<=pmb->je; j++) {
           for(int i=pmb->is; i<=pmb->ie; i++)
             e1(k,j,i)*=0.5;
@@ -3693,7 +3679,7 @@ void BoundaryValues::AverageEMFBoundary(void)
             e2(k,j,i)*=0.5;
         }
       }
-      else if(nl>mylevel) { // finer; divide the overlapping EMFs by 2
+      else if(nl>pmb->loc.level) { // finer; divide the overlapping EMFs by 2
         // this is always 3D
         int j=pmb->js+pmb->block_size.nx2/2;
         for(int i=pmb->is; i<=pmb->ie; i++)
@@ -3744,14 +3730,13 @@ void BoundaryValues::AverageEMFBoundary(void)
 bool BoundaryValues::ReceiveEMFCorrection(int step)
 {
   MeshBlock *pmb=pmy_mblock_;
-  int mylevel=pmb->uid.GetLevel();
   bool flag=true;
 
   if(firsttime_[step]==true) {
     for(int n=0; n<pmb->nneighbor; n++) { // first correct the same level
       NeighborBlock& nb = pmb->neighbor[n];
       if(nb.type!=neighbor_face && nb.type!=neighbor_edge) break;
-      if(nb.level!=mylevel) continue;
+      if(nb.level!=pmb->loc.level) continue;
       if((nb.type==neighbor_face) || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true))) {
         if(emfcor_flag_[step][nb.bufid]==boundary_completed) continue;
         if(emfcor_flag_[step][nb.bufid]==boundary_waiting) {
@@ -3787,7 +3772,7 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
   for(int n=0; n<pmb->nneighbor; n++) { // then from finer
     NeighborBlock& nb = pmb->neighbor[n];
     if(nb.type!=neighbor_face && nb.type!=neighbor_edge) break;
-    if(nb.level!=mylevel+1) continue;
+    if(nb.level!=pmb->loc.level+1) continue;
     if(emfcor_flag_[step][nb.bufid]==boundary_completed) continue;
     if(emfcor_flag_[step][nb.bufid]==boundary_waiting) {
       if(nb.rank==myrank) {// on the same process
@@ -3824,10 +3809,11 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
 {
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
-  int mylevel;
-  long int lx1, lx2, lx3;
   int mox1, mox2, mox3;
-  pmb->uid.GetLocation(lx1, lx2, lx3, mylevel);
+  long int &lx1=pmb->loc.lx1;
+  long int &lx2=pmb->loc.lx2;
+  long int &lx3=pmb->loc.lx3;
+  int &mylevel=pmb->loc.level;
   mox1=((int)(lx1&1L)<<1)-1;
   mox2=((int)(lx2&1L)<<1)-1;
   mox3=((int)(lx3&1L)<<1)-1;
@@ -4340,7 +4326,6 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
 void BoundaryValues::ClearBoundaryForInit(void)
 {
   MeshBlock *pmb=pmy_mblock_;
-  int mylevel=pmb->uid.GetLevel();
 
   for(int n=0;n<pmb->nneighbor;n++) {
     NeighborBlock& nb = pmb->neighbor[n];
@@ -4365,7 +4350,6 @@ void BoundaryValues::ClearBoundaryForInit(void)
 void BoundaryValues::ClearBoundaryAll(void)
 {
   MeshBlock *pmb=pmy_mblock_;
-  int mylevel=pmb->uid.GetLevel();
   for(int l=0;l<NSTEP;l++) {
     for(int n=0;n<pmb->nneighbor;n++) {
       NeighborBlock& nb = pmb->neighbor[n];
@@ -4382,15 +4366,15 @@ void BoundaryValues::ClearBoundaryAll(void)
 #ifdef MPI_PARALLEL
       if(nb.rank!=myrank) {
         MPI_Wait(&req_fluid_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
-        if(nb.type==neighbor_face && nb.level<mylevel)
+        if(nb.type==neighbor_face && nb.level<pmb->loc.level)
           MPI_Wait(&req_flcor_send_[l][nb.fid],MPI_STATUS_IGNORE); // Wait for Isend
         if (MAGNETIC_FIELDS_ENABLED) {
           MPI_Wait(&req_field_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
           if(pmb->pmy_mesh->multilevel==true) {
             if(nb.type==neighbor_face || nb.type==neighbor_edge) {
-              if(nb.level < mylevel)
+              if(nb.level < pmb->loc.level)
                 MPI_Wait(&req_emfcor_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
-              else if((nb.level==mylevel) && ((nb.type==neighbor_face)
+              else if((nb.level==pmb->loc.level) && ((nb.type==neighbor_face)
                   || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true))))
                 MPI_Wait(&req_emfcor_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
             }

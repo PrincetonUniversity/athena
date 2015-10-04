@@ -355,9 +355,11 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
   int ie=pmy_block->ie, je=pmy_block->je, ke=pmy_block->ke;
   RegionSize& mesh_size  = pmy_block->pmy_mesh->mesh_size;
   long long nrootmesh, noffset;
-  long int lx1, lx2, lx3;
-  int ll, root_level;
-  pmy_block->uid.GetLocation(lx1,lx2,lx3,ll);
+  int root_level;
+  long int &lx1=pmy_block->loc.lx1;
+  long int &lx2=pmy_block->loc.lx2;
+  long int &lx3=pmy_block->loc.lx3;
+  int &ll=pmy_block->loc.level;
 
 // X1-DIRECTION: initialize sizes and positions of cell FACES (dx1f,x1f)
   nrootmesh=mesh_size.nx1*(1L<<(ll-pm->root_level));
