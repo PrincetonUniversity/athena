@@ -42,7 +42,6 @@
 #include "parameter_input.hpp" 
 #include "outputs/outputs.hpp"
 #include "outputs/wrapper.hpp"
-#include "tasklist.hpp"
 #include "utils/utils.hpp"
 
 // MPI/OpenMP headers
@@ -68,7 +67,6 @@ int main(int argc, char *argv[])
   int iarg_flag=0;  // set to 1 if -i <file> argument is on cmdline
   int mesh_flag=0;  // set to <nproc> if -m <nproc> argument is on cmdline
   int ncstart=0;
-  TaskList task_list;
 
 //--- Step 0. --------------------------------------------------------------------------
 // Initialize MPI environment, if necessary
@@ -298,105 +296,6 @@ int main(int argc, char *argv[])
 #endif
     return(0);
   }
-
-//--- Step 8. Create and set the task list ---------------------------------------------
-// this is for a two-step integrator
-  if (MAGNETIC_FIELDS_ENABLED) { // MHD
-    task_list.AddTask(hydro_integrate_1, none); // predict hydro
-    if(pmesh->multilevel==true) { // SMR or AMR
-      task_list.AddTask(flux_correct_send_1, hydro_integrate_1);
-      task_list.AddTask(flux_correct_recv_1, hydro_integrate_1);
-      task_list.AddTask(hydro_send_1, flux_correct_recv_1); // send block boundaries
-      task_list.AddTask(calculate_emf_1, hydro_integrate_1); // calculate EMF
-      task_list.AddTask(emf_correct_send_1, calculate_emf_1);
-      task_list.AddTask(emf_correct_recv_1, emf_correct_send_1);
-      task_list.AddTask(field_integrate_1, emf_correct_recv_1); // predict b-field
-    }
-    else {
-      task_list.AddTask(hydro_send_1, hydro_integrate_1); // send block boundaries
-      task_list.AddTask(calculate_emf_1, hydro_integrate_1); // calculate EMF
-      task_list.AddTask(field_integrate_1, calculate_emf_1); // predict b-field
-    }
-    task_list.AddTask(field_send_1, field_integrate_1); // send block boundaries
-    task_list.AddTask(hydro_recv_1, none); // receive block boundaries
-    task_list.AddTask(hydro_boundary_1, hydro_recv_1 | hydro_integrate_1); // physical boundaries
-    if(pmesh->multilevel==true) // SMR or AMR
-      task_list.AddTask(hydro_prolong_1, hydro_boundary_1);
-    task_list.AddTask(field_recv_1, none); // receive block boundaries
-    task_list.AddTask(field_boundary_1, field_recv_1 | field_integrate_1); // physical boundaries
-    if(pmesh->multilevel==true) {// SMR or AMR
-      task_list.AddTask(field_prolong_1, field_boundary_1);
-      task_list.AddTask(primitives_1, hydro_prolong_1 | field_prolong_1);
-    }
-    else 
-      task_list.AddTask(primitives_1, hydro_boundary_1 | field_boundary_1);
-
-    task_list.AddTask(hydro_integrate_0, primitives_1); // predict hydro
-    if(pmesh->multilevel==true) { // SMR or AMR
-      task_list.AddTask(flux_correct_send_0, hydro_integrate_0);
-      task_list.AddTask(flux_correct_recv_0, hydro_integrate_0);
-      task_list.AddTask(hydro_send_0, flux_correct_recv_0); // send block boundaries
-      task_list.AddTask(calculate_emf_0, hydro_integrate_0); // calculate EMF
-      task_list.AddTask(emf_correct_send_0, calculate_emf_0);
-      task_list.AddTask(emf_correct_recv_0, emf_correct_send_0);
-      task_list.AddTask(field_integrate_0, emf_correct_recv_0); // predict b-field
-    }
-    else {
-      task_list.AddTask(hydro_send_0, hydro_integrate_0); // send block boundaries
-      task_list.AddTask(calculate_emf_0, hydro_integrate_0); // calculate EMF
-      task_list.AddTask(field_integrate_0, calculate_emf_0); // predict b-field
-    }
-    task_list.AddTask(field_send_0, field_integrate_0); // send block boundaries
-    task_list.AddTask(hydro_recv_0, primitives_1); // receive block boundaries
-    task_list.AddTask(hydro_boundary_0, hydro_recv_0 | hydro_integrate_0); // physical boundaries
-    if(pmesh->multilevel==true) // SMR or AMR
-      task_list.AddTask(hydro_prolong_0, hydro_boundary_0);
-    task_list.AddTask(field_recv_0, primitives_1); // receive block boundaries
-    task_list.AddTask(field_boundary_0, field_recv_0 | field_integrate_0); // physical boundaries
-    if(pmesh->multilevel==true) {// SMR or AMR
-      task_list.AddTask(field_prolong_0, field_boundary_0);
-      task_list.AddTask(primitives_0, hydro_prolong_0 | field_prolong_0);
-    }
-    else 
-      task_list.AddTask(primitives_0, hydro_boundary_0 | field_boundary_0);
-  }
-  else { // hydro
-    task_list.AddTask(hydro_integrate_1, none); // predict hydro
-    if(pmesh->multilevel==true) { // SMR or AMR
-      task_list.AddTask(flux_correct_send_1, hydro_integrate_1);
-      task_list.AddTask(flux_correct_recv_1, hydro_integrate_1);
-      task_list.AddTask(hydro_send_1, flux_correct_recv_1); // send block boundaries
-    }
-    else
-      task_list.AddTask(hydro_send_1, hydro_integrate_1); // send block boundaries
-    task_list.AddTask(hydro_recv_1, none); // receive block boundaries
-    task_list.AddTask(hydro_boundary_1, hydro_recv_1 | hydro_integrate_1); // physical boundaries
-    if(pmesh->multilevel==true) { // SMR or AMR
-      task_list.AddTask(hydro_prolong_1, hydro_boundary_1);
-      task_list.AddTask(primitives_1, hydro_prolong_1);
-    }
-    else
-      task_list.AddTask(primitives_1, hydro_boundary_1);
-    task_list.AddTask(hydro_integrate_0, primitives_1); // predict correct
-    if(pmesh->multilevel==true) { // SMR or AMR
-      task_list.AddTask(flux_correct_send_0, hydro_integrate_0);
-      task_list.AddTask(flux_correct_recv_0, hydro_integrate_0);
-      task_list.AddTask(hydro_send_0, flux_correct_recv_0); // send block boundaries
-    }
-    else
-      task_list.AddTask(hydro_send_0, hydro_integrate_0); // send block boundaries
-    task_list.AddTask(hydro_recv_0, primitives_1); // receive block boundaries
-    task_list.AddTask(hydro_boundary_0, hydro_recv_0 | hydro_integrate_0); // physical boundaries
-    if(pmesh->multilevel==true) { // SMR or AMR
-      task_list.AddTask(hydro_prolong_0, hydro_boundary_0);
-      task_list.AddTask(primitives_0, hydro_prolong_0);
-    }
-    else
-      task_list.AddTask(primitives_0, hydro_boundary_0);
-  }
-  task_list.AddTask(new_blocktimestep,primitives_0);
-
-  pmesh->SetTaskList(task_list);
 
 //--- Step 9. === START OF MAIN INTEGRATION LOOP =======================================
 // For performance, there is no error handler protecting this step (except outputs)

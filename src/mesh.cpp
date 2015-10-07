@@ -74,6 +74,9 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 // mesh test
   if(test_flag>0) Globals::nranks=test_flag;
 
+// create new Task List
+  ptlist = new TaskList(this);
+
 // read time and cycle limits from input file
 
   start_time = pin->GetOrAddReal("time","start_time",0.0);
@@ -826,6 +829,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   }
   pblock=pfirst;
 
+// create new Task List
+  ptlist = new TaskList(this);
+
 // clean up
   delete [] offset;
 }
@@ -840,6 +846,7 @@ Mesh::~Mesh()
   while(pblock->next != NULL)
     delete pblock->next;
   delete pblock;
+  delete ptlist;
   delete [] nslist;
   delete [] nblist;
   delete [] ranklist;
@@ -973,7 +980,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   lid=ilid;
   loc=iloc;
   cost=1.0;
-  task=NULL;
+//  task=NULL;
 
 // initialize grid indices
 
@@ -1042,7 +1049,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   loc=llist[gid];
   cost=icost;
   int nerr=0;
-  task=NULL;
+//  task=NULL;
 
   // seek the file
   resfile.Seek(offset);
@@ -1140,7 +1147,7 @@ MeshBlock::~MeshBlock()
   delete phydro;
   delete pfield;
   delete pbval;
-  delete [] task;
+//  delete [] task;
 }
 
 
@@ -1277,22 +1284,22 @@ size_t MeshBlock::GetBlockSizeInBytes(void)
 //  \brief process the task list and advance one time step
 void Mesh::UpdateOneStep(void)
 {
-  int nb=nbend-nbstart+1;
   MeshBlock *pmb = pblock;
+  int nb=nbend-nbstart+1;
   // initialize
   while (pmb != NULL)  {
     pmb->firsttask=0;
-    pmb->ntodo=pmb->ntask;
-    pmb->task_flag=0L;
+    pmb->ntodo=ptlist->ntasks;
+    for(int i=0; i<4; ++i) pmb->finished_tasks[i]=0; // bit pattern that encodes which tasks are done
     pmb->pbval->StartReceivingAll();
     pmb=pmb->next;
   }
-
+//std::cout << pmb->ntodo <<std::endl;
   // main loop
   while(nb>0) {
     pmb = pblock;
     while (pmb != NULL)  {
-      if(pmb->DoOneTask()==tl_complete) // task list completed
+      if(ptlist->DoOneTask(pmb)==tl_complete) // task list completed
         nb--;
       pmb=pmb->next;
     }
@@ -1309,6 +1316,7 @@ void Mesh::UpdateOneStep(void)
 //--------------------------------------------------------------------------------------
 //! \fn void Mesh::SetTaskList(TaskList& tl)
 //  \brief set task list for all the meshblocks
+/*
 void Mesh::SetTaskList(TaskList& tl)
 {
   MeshBlock *pmb = pblock;
@@ -1318,6 +1326,7 @@ void Mesh::SetTaskList(TaskList& tl)
   }
   return;
 }
+*/
 
 //--------------------------------------------------------------------------------------
 //! \fn MeshBlock* Mesh::FindMeshBlock(int tgid)
@@ -1338,27 +1347,30 @@ MeshBlock* Mesh::FindMeshBlock(int tgid)
 //--------------------------------------------------------------------------------------
 //! \fn void MeshBlock::SetTaskList(TaskList& tl)
 //  \brief set task list for the meshblock
+/*
 void MeshBlock::SetTaskList(TaskList& tl)
 {
   if(task!=NULL)
     delete [] task;
-  task=new Task[tl.ntasks_];
-  ntask=tl.ntasks_;
+  task=new Task[tl.ntasks];
+  ntask=tl.ntasks;
   memcpy(task, tl.task_list_, sizeof(Task)*ntask);
   return;
 }
+*/
 
 
 //--------------------------------------------------------------------------------------
 //! \fn enum tlstatus MeshBlock::DoOneTask(void)
 //  \brief process one task (if possible), return true if the list is completed
+/*
 enum tasklist_status MeshBlock::DoOneTask(void) {
   int skip=0;
   enum task_status ret;
   std::stringstream msg;
   if(ntodo==0) return tl_nothing;
   for(int i=firsttask; i<ntask; i++) {
-    Task &ti=task[i];
+    Task &ti=task_list_[i];
     if((ti.task_id & task_flag)==0L) { // this task is not done
       if (((ti.dependency & task_flag) == ti.dependency)) { // dependency clear
         ret=ti.TaskFunc(this,ti.task_flag);
@@ -1381,6 +1393,7 @@ enum tasklist_status MeshBlock::DoOneTask(void) {
   }
   return tl_stuck; // there are still something to do but nothing can be done now
 }
+*/
 
 //--------------------------------------------------------------------------------------
 // \!fn void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,

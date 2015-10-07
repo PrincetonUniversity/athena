@@ -27,7 +27,7 @@ class Coordinates;
 class Hydro;
 class Field;
 class BoundaryValues;
-struct Task;
+//struct Task;
 class TaskList;
 class MeshBlockTree;
 
@@ -68,9 +68,9 @@ private:
   NeighborBlock neighbor[56];
   Real cost;
   Real new_block_dt;
-  Task *task;
-  long int task_flag;
-  int ntask, firsttask, ntodo, nneighbor;
+//  Task *task;
+  unsigned long int finished_tasks[4];
+  int firsttask, ntodo, nneighbor;
   int nblevel[3][3][3];
 
   friend class RestartOutput;
@@ -78,6 +78,7 @@ private:
   friend class Mesh;
   friend class Hydro;
   friend class Coordinates;
+  friend class TaskList;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
@@ -89,8 +90,8 @@ public:
   ~MeshBlock();
   size_t GetBlockSizeInBytes(void);
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
-  void SetTaskList(TaskList& tl);
-  enum tasklist_status DoOneTask(void);
+//  void SetTaskList(TaskList& tl);
+//  enum tasklist_status DoOneTask(void);
   int FindNeighborGID(int ox1, int ox2, int ox3);
   void IntegrateConservative(Real *tcons);
 
@@ -107,6 +108,7 @@ public:
   Hydro *phydro;
   Field *pfield;
   BoundaryValues *pbval;
+
   MeshBlock *prev, *next;
 };
 
@@ -149,13 +151,14 @@ public:
   int nlim, ncycle;
   bool adaptive, multilevel, face_only;
 
+  TaskList *ptlist;
   MeshBlock *pblock;
 
   int64_t GetTotalCells(void);
   int GetNumMeshThreads() const {return num_mesh_threads_;}
   void Initialize(int res_flag, ParameterInput *pin);
   void UpdateOneStep(void);
-  void SetTaskList(TaskList& tl);
+//  void SetTaskList(TaskList& tl);
   void ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin); // in /pgen
   void NewTimeStep(void);
   MeshBlock* FindMeshBlock(int tgid);
