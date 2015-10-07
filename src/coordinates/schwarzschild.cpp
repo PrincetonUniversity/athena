@@ -29,6 +29,12 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 {
   // Set pointer to host MeshBlock
   pmy_block = pmb;
+  int is = pmb->is;
+  int ie = pmb->ie;
+  int js = pmb->js;
+  int je = pmb->je;
+  int ks = pmb->ks;
+  int ke = pmb->ke;
 
   // Set face centered positions and distances
   AllocateAndSetBasicCoordinates();
@@ -39,52 +45,52 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
   const Real &m = bh_mass_;
 
   // Initialize volume-averaged positions and spacings: r-direction
-  for (int i = pmb->is-NGHOST; i <= pmb->ie+NGHOST; ++i)
+  for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
   {
     Real r_m = x1f(i);
     Real r_p = x1f(i+1);
     x1v(i) = std::pow(0.5 * (r_m*r_m*r_m + r_p*r_p*r_p), 1.0/3.0);
   }
-  for (int i = pmb->is-NGHOST; i <= pmb->ie+NGHOST-1; ++i)
+  for (int i = is-NGHOST; i <= ie+NGHOST-1; ++i)
     dx1v(i) = x1v(i+1) - x1v(i);
 
   // Initialize volume-averaged positions and spacings: theta-direction
   if (pmb->block_size.nx2 == 1)  // no extent
   {
-    Real theta_m = x2f(pmb->js);
-    Real theta_p = x2f(pmb->js+1);
-    x2v(pmb->js) = std::acos(0.5 * (std::cos(theta_m) + std::cos(theta_p)));
-    dx2v(pmb->js) = dx2f(pmb->js);
+    Real theta_m = x2f(js);
+    Real theta_p = x2f(js+1);
+    x2v(js) = std::acos(0.5 * (std::cos(theta_m) + std::cos(theta_p)));
+    dx2v(js) = dx2f(js);
   }
   else  // extended
   {
-    for (int j = pmb->js-NGHOST; j <= pmb->je+NGHOST; ++j)
+    for (int j = js-NGHOST; j <= je+NGHOST; ++j)
     {
       Real theta_m = x2f(j);
       Real theta_p = x2f(j+1);
       x2v(j) = std::acos(0.5 * (std::cos(theta_m) + std::cos(theta_p)));
     }
-    for (int j = pmb->js-NGHOST; j <= pmb->je+NGHOST-1; ++j)
+    for (int j = js-NGHOST; j <= je+NGHOST-1; ++j)
       dx2v(j) = x2v(j+1) - x2v(j);
   }
 
   // Initialize volume-averaged positions and spacings: phi-direction
   if (pmb->block_size.nx3 == 1)  // no extent
   {
-    Real phi_m = x3f(pmb->ks);
-    Real phi_p = x3f(pmb->ks+1);
-    x3v(pmb->ks) = 0.5 * (phi_m + phi_p);
-    dx3v(pmb->ks) = dx3f(pmb->ks);
+    Real phi_m = x3f(ks);
+    Real phi_p = x3f(ks+1);
+    x3v(ks) = 0.5 * (phi_m + phi_p);
+    dx3v(ks) = dx3f(ks);
   }
   else  // extended
   {
-    for (int k = pmb->ks-NGHOST; k <= pmb->ke+NGHOST; ++k)
+    for (int k = ks-NGHOST; k <= ke+NGHOST; ++k)
     {
       Real phi_m = x3f(k);
       Real phi_p = x3f(k+1);
       x3v(k) = 0.5 * (phi_m + phi_p);
     }
-    for (int k = pmb->ks-NGHOST; k <= pmb->ke+NGHOST-1; ++k)
+    for (int k = ks-NGHOST; k <= ke+NGHOST-1; ++k)
       dx3v(k) = x3v(k+1) - x3v(k);
   }
 
@@ -191,7 +197,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 
   // Calculate intermediate geometric quantities: r-direction
   #pragma simd
-  for (int i = pmb->is-NGHOST; i <= pmb->ie+NGHOST; ++i)
+  for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
   {
     // Useful quantities
     Real r_c = x1v(i);
@@ -239,7 +245,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
   if (n_cells_2 > 1)  // extended
   {
     #pragma simd
-    for (int j = pmb->js-NGHOST; j <= pmb->je+NGHOST; ++j)
+    for (int j = js-NGHOST; j <= je+NGHOST; ++j)
     {
       // Useful quantities
       Real theta_c = x2v(j);
@@ -288,9 +294,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
   else  // no extent
   {
     // Useful quantities
-    Real theta_c = x2v(pmb->js);
-    Real theta_m = x2f(pmb->js);
-    Real theta_p = x2f(pmb->js+1);
+    Real theta_c = x2v(js);
+    Real theta_m = x2f(js);
+    Real theta_p = x2f(js+1);
     Real sin_c = std::sin(theta_c);
     Real sin_m = std::sin(theta_m);
     Real sin_p = std::sin(theta_p);
@@ -302,32 +308,32 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     Real sin_p_cu = SQR(sin_p)*sin_p;
 
     // Volumes and areas
-    coord_vol_j1_(pmb->js) = cos_m - cos_p;
-    coord_area1_j1_(pmb->js) = coord_vol_j1_(pmb->js);
-    coord_area2_j1_(pmb->js) = sin_m;
-    coord_area3_j1_(pmb->js) = coord_vol_j1_(pmb->js);
-    coord_len1_j1_(pmb->js) = coord_area2_j1_(pmb->js);
-    coord_len2_j1_(pmb->js) = coord_vol_j1_(pmb->js);
-    coord_len3_j1_(pmb->js) = coord_area2_j1_(pmb->js);
+    coord_vol_j1_(js) = cos_m - cos_p;
+    coord_area1_j1_(js) = coord_vol_j1_(js);
+    coord_area2_j1_(js) = sin_m;
+    coord_area3_j1_(js) = coord_vol_j1_(js);
+    coord_len1_j1_(js) = coord_area2_j1_(js);
+    coord_len2_j1_(js) = coord_vol_j1_(js);
+    coord_len3_j1_(js) = coord_area2_j1_(js);
 
     // Source terms
-    coord_src_j1_(pmb->js) = 1.0/6.0
+    coord_src_j1_(js) = 1.0/6.0
         * (4.0 - std::cos(2.0*theta_m)
         - 2.0 * cos_m * cos_p - std::cos(2.0*theta_p));
-    coord_src_j2_(pmb->js) = 1.0/3.0 * (sin_m_cu - sin_p_cu)
+    coord_src_j2_(js) = 1.0/3.0 * (sin_m_cu - sin_p_cu)
         / (cos_m - cos_p);
-    coord_src_j3_(pmb->js) = (sin_p-sin_m) / (cos_m-cos_p);   // cot((theta_p+theta_m)/2)
+    coord_src_j3_(js) = (sin_p-sin_m) / (cos_m-cos_p);   // cot((theta_p+theta_m)/2)
 
     // Metric coefficients
-    metric_cell_j1_(pmb->js) = sin_c_sq;
-    metric_face1_j1_(pmb->js) = sin_c_sq;
-    metric_face2_j1_(pmb->js) = sin_m_sq;
-    metric_face3_j1_(pmb->js) = sin_c_sq;
+    metric_cell_j1_(js) = sin_c_sq;
+    metric_face1_j1_(js) = sin_c_sq;
+    metric_face2_j1_(js) = sin_m_sq;
+    metric_face3_j1_(js) = sin_c_sq;
 
     // Coordinate transformations
-    trans_face1_j1_(pmb->js) = sin_c;
-    trans_face2_j1_(pmb->js) = sin_m;
-    trans_face3_j1_(pmb->js) = sin_c;
+    trans_face1_j1_(js) = sin_c;
+    trans_face2_j1_(js) = sin_m;
+    trans_face3_j1_(js) = sin_c;
   }
 }
 
@@ -470,7 +476,8 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 
 // Function for computing areas orthogonal to phi
 // Inputs:
-//   k,j: phi- and theta-indices
+//   k: phi-index (unused)
+//   j: theta-index
 //   il,iu: r-index bounds
 // Outputs:
 //   areas: 1D array of interface areas orthogonal to phi
@@ -485,19 +492,12 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
   return;
 }
 
-
-// GetFace1Area returns only one Face1Area at i
-Real Coordinates::GetFace1Area(const int k, const int j, const int i)
-{
-  return coord_area1_i_(i)*coord_area1_j_(j)*dx3f(k);
-}
-
-
 //--------------------------------------------------------------------------------------
 
 // Function for computing lengths of edges in the r-direction
 // Inputs:
-//   k,j: phi- and theta-indices
+//   k: phi-index (unused)
+//   j: theta-index
 //   il,iu: r-index bounds
 // Outputs:
 //   lengths: 1D array of edge lengths along r
@@ -516,12 +516,14 @@ void Coordinates::Edge1Length(const int k, const int j, const int il, const int 
 
 // Function for computing lengths of edges in the theta-direction
 // Inputs:
-//   k,j: phi- and theta-indices
+//   k: phi-index (unused)
+//   j: theta-index
 //   il,iu: r-index bounds
 // Outputs:
-//   lengths: 1D array of edge lengths along r
+//   lengths: 1D array of edge lengths along theta
 // Notes:
 //   \Delta L = r^2 (-\Delta\cos\theta)
+//   cf. GetEdge2Length()
 void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &lengths)
 {
@@ -533,14 +535,31 @@ void Coordinates::Edge2Length(const int k, const int j, const int il, const int 
 
 //--------------------------------------------------------------------------------------
 
+// Function for computing single length of edge in the theta-direction
+// Inputs:
+//   k: phi-index (unused)
+//   j,i: theta- and r-indices
+// Outputs:
+//   returned value: length of edge along theta
+// Notes:
+//   \Delta L = r^2 (-\Delta\cos\theta)
+//   cf. Edge2Length()
+Real Coordinates::GetEdge2Length(const int k, const int j, const int i)
+{
+  return coord_len2_i1_(i) * coord_len2_j1_(j);
+}
+
+//--------------------------------------------------------------------------------------
+
 // Function for computing lengths of edges in the phi-direction
 // Inputs:
 //   k,j: phi- and theta-indices
 //   il,iu: r-index bounds
 // Outputs:
-//   lengths: 1D array of edge lengths along r
+//   lengths: 1D array of edge lengths along phi
 // Notes:
 //   \Delta L = r^2 \sin\theta \Delta\phi
+//   cf. GetEdge3Length()
 void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &lengths)
 {
@@ -550,15 +569,19 @@ void Coordinates::Edge3Length(const int k, const int j, const int il, const int 
   return;
 }
 
-// GetEdge?Length functions: return one edge length at i
-Real Coordinates::GetEdge2Length(const int k, const int j, const int i)
-{
-  return coord_len2_i1_(i)*coord_len2_j1_(j);
-}
+//--------------------------------------------------------------------------------------
 
+// Function for computing single length of edge in the phi-direction
+// Inputs:
+//   k,j,i: phi-, theta-, and r-indices
+// Outputs:
+//   returned value: length of edge along phi
+// Notes:
+//   \Delta L = r^2 \sin\theta \Delta\phi
+//   cf. Edge3Length()
 Real Coordinates::GetEdge3Length(const int k, const int j, const int i)
 {
-  return coord_len3_i1_(i)*coord_len3_j1_(j)*dx3f(k);
+  return coord_len3_i1_(i) * coord_len3_j1_(j) * dx3f(k);
 }
 
 //--------------------------------------------------------------------------------------

@@ -300,8 +300,6 @@ static void CalculatePrimitives(Real r, Real temp_min, Real temp_max, Real *prho
 
   // Calculate primitives
   Real rho = std::pow(temp/k_adi, n_adi);             // not same K as HSW
-  eeal rho = std::pow(temp/k_adi, n_adi);             // not same K as HSW
-  Real pgas = temp * rho;
   Real pgas = temp * rho;
   Real ur = c1 / (SQR(r) * std::pow(temp, n_adi));    // (HSW 75)
   Real ut = std::sqrt(1.0/SQR(1.0-2.0*m/r) * SQR(ur)

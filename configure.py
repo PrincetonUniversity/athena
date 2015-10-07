@@ -233,7 +233,7 @@ definitions['VISCOSITY'] = '1' if args['vis'] else '0'
 if args['vis']:
   makefile_options['VIS_FILE'] = '*.cpp'
 else:
-  makefile_options['VIS_FILE'] = ' '
+  makefile_options['VIS_FILE'] = '*.cpp'
 
 # --order=[name] argument
 definitions['RECONSTRUCT'] = args['order']

@@ -69,8 +69,13 @@ Viscosity::~Viscosity()
   divv_.DeleteAthenaArray();
 }
 
+Real Viscosity::nuiso1(int n,int k, int j, int i)
+{
+   return (nuiso_);
+}
+
 // --------------------------------------------------------------------------
-//! \fn Viscosity::nuiso1()
+//! \fn Viscosity::nuiso2()
 // \brief dilatational coefficient of viscosity or the second coefficient of viscosity
 
 Real Viscosity::cnuiso2(int k, int j, int i)
