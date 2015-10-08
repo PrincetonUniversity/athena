@@ -18,14 +18,12 @@
 class Mesh;
 class MeshBlock;
 
-// return codes for functions working on individual Tasks
-enum task_status {task_failure, task_success, task_do_next};
-
-// return codes for TaskList
-enum tasklist_status {tl_running, tl_stuck, tl_complete, tl_nothing};
+// return codes for functions working on individual Tasks and TaskList
+enum TaskStatus {TASK_FAIL, TASK_SUCCESS, TASK_NEXT};
+enum TaskListStatus {TL_RUNNING, TL_STUCK, TL_COMPLETE, TL_NOTHING_TO_DO};
 
 // definition of TaskFunc_t
-typedef enum task_status (*TaskFunc_t)(MeshBlock*, unsigned long int, int);
+typedef enum TaskStatus (*TaskFunc_t)(MeshBlock*, unsigned long int, int);
 
 // 32-bit integers with "1" in different bit positions to label each hydro task.
 enum HydroTasks {
@@ -64,21 +62,19 @@ struct Task {
 
 class TaskList {
 public:
-// constructor/destructor
+  // constructor/destructor
   TaskList(Mesh *pm);
   ~TaskList();
 
-// data
+  // data
   int ntasks;
 
-// functions
+  // functions
   void AddTask(int st, unsigned long int id, int sd, unsigned long int dep);
-  enum tasklist_status DoOneTask(MeshBlock *pmb);
+  enum TaskListStatus DoOneTask(MeshBlock *pmb);
 private:
   Mesh* pmy_mesh_;
   Task task_list_[32];
-//  friend class MeshBlock;
-//  friend class Mesh;
 };
 
 #endif // TASK_LIST_HPP

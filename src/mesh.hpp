@@ -18,7 +18,7 @@
 #include "athena_arrays.hpp"  // AthenaArray
 #include "meshblocktree.hpp"
 #include "outputs/wrapper.hpp"
-#include "tasklist.hpp"
+#include "task_list.hpp"
 
 // Forward declarations
 class ParameterInput;
@@ -27,7 +27,6 @@ class Coordinates;
 class Hydro;
 class Field;
 class BoundaryValues;
-//struct Task;
 class TaskList;
 class MeshBlockTree;
 
@@ -68,9 +67,8 @@ private:
   NeighborBlock neighbor[56];
   Real cost;
   Real new_block_dt;
-//  Task *task;
   unsigned long int finished_tasks[4];
-  int firsttask, ntodo, nneighbor;
+  int first_task, num_tasks_todo, nneighbor;
   int nblevel[3][3][3];
 
   friend class RestartOutput;
@@ -90,8 +88,6 @@ public:
   ~MeshBlock();
   size_t GetBlockSizeInBytes(void);
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
-//  void SetTaskList(TaskList& tl);
-//  enum tasklist_status DoOneTask(void);
   int FindNeighborGID(int ox1, int ox2, int ox3);
   void IntegrateConservative(Real *tcons);
 
@@ -158,7 +154,6 @@ public:
   int GetNumMeshThreads() const {return num_mesh_threads_;}
   void Initialize(int res_flag, ParameterInput *pin);
   void UpdateOneStep(void);
-//  void SetTaskList(TaskList& tl);
   void ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin); // in /pgen
   void NewTimeStep(void);
   MeshBlock* FindMeshBlock(int tgid);

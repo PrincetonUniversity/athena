@@ -17,7 +17,6 @@
 //  \brief implementation of functions in classes Mesh, and MeshBlock
 //======================================================================================
 
-
 // C/C++ headers
 #include <cfloat>     // FLT_MAX
 #include <cmath>      // std::abs(), pow()
@@ -44,7 +43,7 @@
 #include "parameter_input.hpp"          // ParameterInput
 #include "meshblocktree.hpp"
 #include "outputs/wrapper.hpp"
-#include "tasklist.hpp"
+#include "task_list.hpp"
 
 // this class header
 #include "mesh.hpp"
@@ -858,6 +857,7 @@ Mesh::~Mesh()
 //--------------------------------------------------------------------------------------
 //! \fn void Mesh::MeshTest(int dim)
 //  \brief print the mesh structure information
+
 void Mesh::MeshTest(int dim)
 {
   int i, j, nbt=0;
@@ -960,7 +960,6 @@ void Mesh::MeshTest(int dim)
   return;
 }
 
-
 //--------------------------------------------------------------------------------------
 // MeshBlock constructor: builds 1D vectors of cell positions and spacings, and
 // constructs coordinate, boundary condition, hydro and field objects.
@@ -980,7 +979,6 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   lid=ilid;
   loc=iloc;
   cost=1.0;
-//  task=NULL;
 
 // initialize grid indices
 
@@ -1155,6 +1153,7 @@ MeshBlock::~MeshBlock()
 // \!fn void Mesh::NewTimeStep(void)
 // \brief function that loops over all MeshBlocks and find new timestep
 //        this assumes that phydro->NewBlockTimeStep is already called
+
 void Mesh::NewTimeStep(void)
 {
   MeshBlock *pmb = pblock;
@@ -1252,6 +1251,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
 //--------------------------------------------------------------------------------------
 //! \fn int64_t Mesh::GetTotalCells(void)
 //  \brief return the total number of cells for performance counting
+
 int64_t Mesh::GetTotalCells(void)
 {
   return (int64_t)nbtotal*pblock->block_size.nx1*pblock->block_size.nx2*pblock->block_size.nx3;
@@ -1260,6 +1260,7 @@ int64_t Mesh::GetTotalCells(void)
 //--------------------------------------------------------------------------------------
 //! \fn long int MeshBlock::GetBlockSizeInBytes(void)
 //  \brief Calculate the block data size required for restarting.
+
 size_t MeshBlock::GetBlockSizeInBytes(void)
 {
   size_t size;
@@ -1278,28 +1279,29 @@ size_t MeshBlock::GetBlockSizeInBytes(void)
   return size;
 }
 
-
 //--------------------------------------------------------------------------------------
 //! \fn void Mesh::UpdateOneStep(void)
 //  \brief process the task list and advance one time step
+
 void Mesh::UpdateOneStep(void)
 {
   MeshBlock *pmb = pblock;
   int nb=nbend-nbstart+1;
+
   // initialize
   while (pmb != NULL)  {
-    pmb->firsttask=0;
-    pmb->ntodo=ptlist->ntasks;
-    for(int i=0; i<4; ++i) pmb->finished_tasks[i]=0; // bit pattern that encodes which tasks are done
+    pmb->first_task=0;
+    pmb->num_tasks_todo=ptlist->ntasks;
+    for(int i=0; i<4; ++i) pmb->finished_tasks[i]=0; // encodes which tasks are done
     pmb->pbval->StartReceivingAll();
     pmb=pmb->next;
   }
-//std::cout << pmb->ntodo <<std::endl;
+
   // main loop
   while(nb>0) {
     pmb = pblock;
     while (pmb != NULL)  {
-      if(ptlist->DoOneTask(pmb)==tl_complete) // task list completed
+      if(ptlist->DoOneTask(pmb)==TL_COMPLETE) // task list completed
         nb--;
       pmb=pmb->next;
     }
@@ -1314,23 +1316,9 @@ void Mesh::UpdateOneStep(void)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void Mesh::SetTaskList(TaskList& tl)
-//  \brief set task list for all the meshblocks
-/*
-void Mesh::SetTaskList(TaskList& tl)
-{
-  MeshBlock *pmb = pblock;
-  while (pmb != NULL)  {
-    pmb->SetTaskList(tl);
-    pmb=pmb->next;
-  }
-  return;
-}
-*/
-
-//--------------------------------------------------------------------------------------
 //! \fn MeshBlock* Mesh::FindMeshBlock(int tgid)
 //  \brief return the MeshBlock whose gid is tgid
+
 MeshBlock* Mesh::FindMeshBlock(int tgid)
 {
   MeshBlock *pbl=pblock;
@@ -1343,63 +1331,12 @@ MeshBlock* Mesh::FindMeshBlock(int tgid)
   return pbl;
 }
 
-
-//--------------------------------------------------------------------------------------
-//! \fn void MeshBlock::SetTaskList(TaskList& tl)
-//  \brief set task list for the meshblock
-/*
-void MeshBlock::SetTaskList(TaskList& tl)
-{
-  if(task!=NULL)
-    delete [] task;
-  task=new Task[tl.ntasks];
-  ntask=tl.ntasks;
-  memcpy(task, tl.task_list_, sizeof(Task)*ntask);
-  return;
-}
-*/
-
-
-//--------------------------------------------------------------------------------------
-//! \fn enum tlstatus MeshBlock::DoOneTask(void)
-//  \brief process one task (if possible), return true if the list is completed
-/*
-enum tasklist_status MeshBlock::DoOneTask(void) {
-  int skip=0;
-  enum task_status ret;
-  std::stringstream msg;
-  if(ntodo==0) return tl_nothing;
-  for(int i=firsttask; i<ntask; i++) {
-    Task &ti=task_list_[i];
-    if((ti.task_id & task_flag)==0L) { // this task is not done
-      if (((ti.dependency & task_flag) == ti.dependency)) { // dependency clear
-        ret=ti.TaskFunc(this,ti.task_flag);
-//        std::cout << "Meshblock " << gid << " task "<< ti.task_id << " returns " << ret << std::endl;
-        if(ret!=task_failure) { // success
-          ntodo--;
-          task_flag |= ti.task_id;
-          if(skip==0)
-            firsttask++;
-          if(ntodo==0)
-            return tl_complete;
-          if(ret==task_do_next) continue;
-          return tl_running;
-        }
-      }
-      skip++; // count the number of skipped tasks
-    }
-    else if(skip==0) // this task is done and at the top of the list
-      firsttask++;
-  }
-  return tl_stuck; // there are still something to do but nothing can be done now
-}
-*/
-
 //--------------------------------------------------------------------------------------
 // \!fn void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
 //                          int iox1, int iox2, int iox3, enum neighbor_type itype,
 //                          int ibid, int itargetid, int ifi1=0, int ifi2=0)
 // \brief Set neighbor information
+
 void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
   int iox1, int iox2, int iox3, enum neighbor_type itype, int ibid, int itargetid,
   int ifi1=0, int ifi2=0)
@@ -1425,6 +1362,7 @@ void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
 //--------------------------------------------------------------------------------------
 // \!fn void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist)
 // \brief Search and set all the neighbor blocks
+
 void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist)
 {
   MeshBlockTree* neibt;
@@ -1677,10 +1615,10 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
   return;
 }
 
-
 //--------------------------------------------------------------------------------------
 // \!fn void Mesh::TestConservation(void)
 // \brief Calculate and print the total of conservative variables
+
 void Mesh::TestConservation(void)
 {
   MeshBlock *pmb = pblock;
@@ -1705,10 +1643,10 @@ void Mesh::TestConservation(void)
   return;
 }
 
-
 //--------------------------------------------------------------------------------------
 // \!fn void MeshBlock::IntegrateConservative(Real *tcons)
 // \brief Calculate and print the total of conservative variables
+
 void MeshBlock::IntegrateConservative(Real *tcons)
 {
   for(int n=0;n<NHYDRO;n++) {

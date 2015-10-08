@@ -26,8 +26,8 @@
 //======================================================================================
 
 // C/C++ headers
-#include <stdint.h>  // int64_t
-#include <stdlib.h>  // strtol
+#include <stdint.h>   // int64_t
+#include <stdlib.h>   // strtol
 #include <ctime>      // clock(), CLOCKS_PER_SEC, clock_t
 #include <exception>  // exception
 #include <iomanip>    // setprecision()
@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
   int mesh_flag=0;  // set to <nproc> if -m <nproc> argument is on cmdline
   int ncstart=0;
 
-//--- Step 0. --------------------------------------------------------------------------
+//--- Step 1. --------------------------------------------------------------------------
 // Initialize MPI environment, if necessary
 
 #ifdef MPI_PARALLEL
@@ -96,13 +96,12 @@ int main(int argc, char *argv[])
   Globals::nranks  = 1;
 #endif /* MPI_PARALLEL */
 
-//--- Step 1. --------------------------------------------------------------------------
+//--- Step 2. --------------------------------------------------------------------------
 // Check for command line options and respond.
 
   for (int i=1; i<argc; i++) {
 
-// If argv[i] is a 2 character string of the form "-?" then:
-
+    // If argv[i] is a 2 character string of the form "-?" then:
     if(*argv[i] == '-'  && *(argv[i]+1) != '\0' && *(argv[i]+2) == '\0'){
       switch(*(argv[i]+1)) {
       case 'i':                      // -i <input_filename>
@@ -163,9 +162,9 @@ int main(int argc, char *argv[])
     }
   }
 
-//--- Step 2. --------------------------------------------------------------------------
+// Note steps 3-6 are protected by a simple error handler
+//--- Step 3. --------------------------------------------------------------------------
 // Construct object to store input parameters, then parse input file and command line.
-// Note memory allocations and parameter input are protected by a simple error handler.
 // With MPI, the input is read by every process in parallel using MPI-IO.
 
   ParameterInput *pinput;
@@ -196,8 +195,7 @@ int main(int argc, char *argv[])
     return(0);
   }
 
-// Dump input parameters and quit if code was run with -n option.
-
+  // Dump input parameters and quit if code was run with -n option.
   if (narg_flag){
     if(Globals::my_rank==0)
       pinput->ParameterDump(std::cout);
@@ -208,7 +206,6 @@ int main(int argc, char *argv[])
     return(0);
   }
 
-// Note steps 4-6 are protected by a simple error handler
 //--- Step 4. --------------------------------------------------------------------------
 // Construct and initialize Mesh
 
@@ -356,8 +353,7 @@ int main(int argc, char *argv[])
     std::cout << "time=" << pmesh->time << " cycle=" << pmesh->ncycle << std::endl;
     std::cout << "tlim=" << pmesh->tlim << " nlim=" << pmesh->nlim << std::endl;
 
-// Calculate and print the zone-cycles/cpu-second and wall-second
-
+    // Calculate and print the zone-cycles/cpu-second and wall-second
 #ifdef OPENMP_PARALLEL
     double omp_time = omp_get_wtime() - omp_start_time;;
 #endif

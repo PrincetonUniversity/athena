@@ -34,7 +34,7 @@
 #include "field/integrators/field_integrator.hpp"
 
 // this class header
-#include "tasklist.hpp"
+#include "task_list.hpp"
 
 //--------------------------------------------------------------------------------------
 // TaskList constructor
@@ -155,9 +155,9 @@ TaskList::~TaskList()
 {
 }
 
-namespace taskfunc {
+namespace TaskFunctions {
 
-enum task_status HydroIntegrate(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus HydroIntegrate(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
@@ -170,13 +170,13 @@ enum task_status HydroIntegrate(MeshBlock *pmb, unsigned long int task_id, int s
     phydro->pf_integrator->OneStep(pmb, phydro->u, phydro->w1, pfield->b1,
                                    pfield->bcc1, 2);
   } else {
-    return task_failure;
+    return TASK_FAIL;
   }
 
-  return task_do_next;
+  return TASK_NEXT;
 }
 
-enum task_status CalculateEMF(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus CalculateEMF(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
@@ -185,12 +185,12 @@ enum task_status CalculateEMF(MeshBlock *pmb, unsigned long int task_id, int ste
   } else if(step == 2) {
     pfield->pint->ComputeCornerE(pmb, phydro->w1, pfield->bcc1);
   } else {
-    return task_failure;
+    return TASK_FAIL;
   }
-  return task_do_next;
+  return TASK_NEXT;
 }
 
-enum task_status FieldIntegrate(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus FieldIntegrate(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
@@ -202,12 +202,12 @@ enum task_status FieldIntegrate(MeshBlock *pmb, unsigned long int task_id, int s
   } else if(step == 2) {
     pfield->pint->CT(pmb, pfield->b, phydro->w1, pfield->bcc1, 2);
   } else {
-    return task_failure;
+    return TASK_FAIL;
   }
-  return task_do_next;
+  return TASK_NEXT;
 }
 
-enum task_status HydroSend(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus HydroSend(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   Hydro *phydro=pmb->phydro;
   BoundaryValues *pbval=pmb->pbval;
@@ -216,12 +216,12 @@ enum task_status HydroSend(MeshBlock *pmb, unsigned long int task_id, int step)
   } else if(step == 2) {
     pbval->SendHydroBoundaryBuffers(phydro->u,0);
   } else {
-    return task_failure;
+    return TASK_FAIL;
   }
-  return task_success;
+  return TASK_SUCCESS;
 }
 
-enum task_status HydroReceive(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus HydroReceive(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   Hydro *phydro=pmb->phydro;
   BoundaryValues *pbval=pmb->pbval;
@@ -231,16 +231,16 @@ enum task_status HydroReceive(MeshBlock *pmb, unsigned long int task_id, int ste
   } else if(step == 2) {
     ret=pbval->ReceiveHydroBoundaryBuffers(phydro->u,0);
   } else {
-    return task_failure;
+    return TASK_FAIL;
   }
   if(ret==true) {
-    return task_success;
+    return TASK_SUCCESS;
   } else {
-    return task_failure;
+    return TASK_FAIL;
   }
 }
 
-enum task_status FluxCorrectionSend(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus FluxCorrectSend(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   int flag;
   if(step == 1) {
@@ -249,10 +249,10 @@ enum task_status FluxCorrectionSend(MeshBlock *pmb, unsigned long int task_id, i
     flag = 0;
   }
   pmb->pbval->SendFluxCorrection(flag);
-  return task_success;
+  return TASK_SUCCESS;
 }
 
-enum task_status FluxCorrectionReceive(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus FluxCorrectReceive(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   Hydro *phydro=pmb->phydro;
   BoundaryValues *pbval=pmb->pbval;
@@ -262,16 +262,16 @@ enum task_status FluxCorrectionReceive(MeshBlock *pmb, unsigned long int task_id
   } else if(step == 2) {
     ret=pbval->ReceiveFluxCorrection(phydro->u,0);
   } else {
-    return task_failure;
+    return TASK_FAIL;
   }
   if(ret==true) {
-    return task_do_next;
+    return TASK_NEXT;
   } else {
-    return task_failure;
+    return TASK_FAIL;
   }
 }
 
-enum task_status HydroProlongation(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus HydroProlongation(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   Hydro *phydro=pmb->phydro;
   BoundaryValues *pbval=pmb->pbval;
@@ -280,12 +280,12 @@ enum task_status HydroProlongation(MeshBlock *pmb, unsigned long int task_id, in
   } else if(step == 2) {
     pbval->ProlongateHydroBoundaries(phydro->u);
   } else {
-    return task_failure;
+    return TASK_FAIL;
   }
-  return task_success;
+  return TASK_SUCCESS;
 }
 
-enum task_status HydroPhysicalBoundary(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus HydroPhysicalBoundary(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   Hydro *phydro=pmb->phydro;
   BoundaryValues *pbval=pmb->pbval;
@@ -294,12 +294,12 @@ enum task_status HydroPhysicalBoundary(MeshBlock *pmb, unsigned long int task_id
   } else if(step == 2) {
     pbval->HydroPhysicalBoundaries(phydro->u);
   } else {
-    return task_failure;
+    return TASK_FAIL;
   }
-  return task_success;
+  return TASK_SUCCESS;
 }
 
-enum task_status FieldSend(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus FieldSend(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   Field *pfield=pmb->pfield;
   BoundaryValues *pbval=pmb->pbval;
@@ -308,12 +308,12 @@ enum task_status FieldSend(MeshBlock *pmb, unsigned long int task_id, int step)
   } else if(step == 2) {
     pbval->SendFieldBoundaryBuffers(pfield->b,0);
   } else {
-    return task_failure;
+    return TASK_FAIL;
   }
-  return task_success;
+  return TASK_SUCCESS;
 }
 
-enum task_status FieldReceive(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus FieldReceive(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   Field *pfield=pmb->pfield;
   BoundaryValues *pbval=pmb->pbval;
@@ -323,16 +323,16 @@ enum task_status FieldReceive(MeshBlock *pmb, unsigned long int task_id, int ste
   } else if(step == 2) {
     ret=pbval->ReceiveFieldBoundaryBuffers(pfield->b,0);
   } else {
-    return task_failure;
+    return TASK_FAIL;
   }
   if(ret==true) {
-    return task_success;
+    return TASK_SUCCESS;
   } else {
-    return task_failure;
+    return TASK_FAIL;
   }
 }
 
-enum task_status EMFCorrectionSend(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus EMFCorrectSend(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   int flag;
   if(step == 1) {
@@ -342,10 +342,10 @@ enum task_status EMFCorrectionSend(MeshBlock *pmb, unsigned long int task_id, in
   }
   
   pmb->pbval->SendEMFCorrection(flag);
-  return task_success;
+  return TASK_SUCCESS;
 }
 
-enum task_status EMFCorrectionReceive(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus EMFCorrectReceive(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   int flag;
   if(step == 1) {
@@ -355,13 +355,13 @@ enum task_status EMFCorrectionReceive(MeshBlock *pmb, unsigned long int task_id,
   }
   BoundaryValues *pbval=pmb->pbval;
   if(pbval->ReceiveEMFCorrection(flag)==true) {
-    return task_do_next;
+    return TASK_NEXT;
   } else {
-    return task_failure;
+    return TASK_FAIL;
   }
 }
 
-enum task_status FieldProlongation(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus FieldProlongation(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   Field *pfield=pmb->pfield;
   BoundaryValues *pbval=pmb->pbval;
@@ -370,12 +370,12 @@ enum task_status FieldProlongation(MeshBlock *pmb, unsigned long int task_id, in
   } else if(step == 2) {
     pbval->ProlongateFieldBoundaries(pfield->b);
   } else {
-    return task_failure;
+    return TASK_FAIL;
   }
-  return task_success;
+  return TASK_SUCCESS;
 }
 
-enum task_status FieldPhysicalBoundary(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus FieldPhysicalBoundary(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   Field *pfield=pmb->pfield;
   BoundaryValues *pbval=pmb->pbval;
@@ -384,12 +384,12 @@ enum task_status FieldPhysicalBoundary(MeshBlock *pmb, unsigned long int task_id
   } else if(step == 2) {
     pbval->FieldPhysicalBoundaries(pfield->b);
   } else {
-    return task_failure;
+    return TASK_FAIL;
   }
-  return task_success;
+  return TASK_SUCCESS;
 }
 
-enum task_status Primitives(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus Primitives(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
@@ -400,18 +400,18 @@ enum task_status Primitives(MeshBlock *pmb, unsigned long int task_id, int step)
     phydro->pf_eos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
                                          phydro->w, pfield->bcc);
   } else {
-    return task_failure;
+    return TASK_FAIL;
   }
-  return task_success;
+  return TASK_SUCCESS;
 }
 
-enum task_status NewBlockTimeStep(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus NewBlockTimeStep(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   pmb->phydro->NewBlockTimeStep(pmb);
-  return task_success;
+  return TASK_SUCCESS;
 }
 
-} // namespace task
+} // namespace TaskFunctions
 
 
 void TaskList::AddTask(int stp_t,unsigned long int id,int stp_d,unsigned long int dep)
@@ -424,71 +424,71 @@ void TaskList::AddTask(int stp_t,unsigned long int id,int stp_d,unsigned long in
   switch((id))
   {
   case (HYD_INT):
-    task_list_[ntasks].TaskFunc=taskfunc::HydroIntegrate;
+    task_list_[ntasks].TaskFunc=TaskFunctions::HydroIntegrate;
     break;
 
   case (CALC_EMF):
-    task_list_[ntasks].TaskFunc=taskfunc::CalculateEMF;
+    task_list_[ntasks].TaskFunc=TaskFunctions::CalculateEMF;
     break;
 
   case (FLD_INT):
-    task_list_[ntasks].TaskFunc=taskfunc::FieldIntegrate;
+    task_list_[ntasks].TaskFunc=TaskFunctions::FieldIntegrate;
     break;
 
   case (HYD_SEND):
-    task_list_[ntasks].TaskFunc=taskfunc::HydroSend;
+    task_list_[ntasks].TaskFunc=TaskFunctions::HydroSend;
     break;
 
   case (HYD_RECV):
-    task_list_[ntasks].TaskFunc=taskfunc::HydroReceive;
+    task_list_[ntasks].TaskFunc=TaskFunctions::HydroReceive;
     break;
 
   case (FLX_SEND):
-    task_list_[ntasks].TaskFunc=taskfunc::FluxCorrectionSend;
+    task_list_[ntasks].TaskFunc=TaskFunctions::FluxCorrectSend;
     break;
 
   case (FLX_RECV):
-    task_list_[ntasks].TaskFunc=taskfunc::FluxCorrectionReceive;
+    task_list_[ntasks].TaskFunc=TaskFunctions::FluxCorrectReceive;
     break;
 
   case (HYD_PROL):
-    task_list_[ntasks].TaskFunc=taskfunc::HydroProlongation;
+    task_list_[ntasks].TaskFunc=TaskFunctions::HydroProlongation;
     break;
 
   case (HYD_BVAL):
-    task_list_[ntasks].TaskFunc=taskfunc::HydroPhysicalBoundary;
+    task_list_[ntasks].TaskFunc=TaskFunctions::HydroPhysicalBoundary;
     break;
 
   case (FLD_SEND):
-    task_list_[ntasks].TaskFunc=taskfunc::FieldSend;
+    task_list_[ntasks].TaskFunc=TaskFunctions::FieldSend;
     break;
 
   case (FLD_RECV):
-    task_list_[ntasks].TaskFunc=taskfunc::FieldReceive;
+    task_list_[ntasks].TaskFunc=TaskFunctions::FieldReceive;
     break;
 
   case (EMF_SEND):
-    task_list_[ntasks].TaskFunc=taskfunc::EMFCorrectionSend;
+    task_list_[ntasks].TaskFunc=TaskFunctions::EMFCorrectSend;
     break;
 
   case (EMF_RECV):
-    task_list_[ntasks].TaskFunc=taskfunc::EMFCorrectionReceive;
+    task_list_[ntasks].TaskFunc=TaskFunctions::EMFCorrectReceive;
     break;
 
   case (FLD_PROL):
-    task_list_[ntasks].TaskFunc=taskfunc::FieldProlongation;
+    task_list_[ntasks].TaskFunc=TaskFunctions::FieldProlongation;
     break;
 
   case (FLD_BVAL):
-    task_list_[ntasks].TaskFunc=taskfunc::FieldPhysicalBoundary;
+    task_list_[ntasks].TaskFunc=TaskFunctions::FieldPhysicalBoundary;
     break;
 
   case (CON2PRIM):
-    task_list_[ntasks].TaskFunc=taskfunc::Primitives;
+    task_list_[ntasks].TaskFunc=TaskFunctions::Primitives;
     break;
 
   case (NEW_DT):
-    task_list_[ntasks].TaskFunc=taskfunc::NewBlockTimeStep;
+    task_list_[ntasks].TaskFunc=TaskFunctions::NewBlockTimeStep;
     break;
 
   default:
@@ -496,7 +496,6 @@ void TaskList::AddTask(int stp_t,unsigned long int id,int stp_d,unsigned long in
     msg << "### FATAL ERROR in AddTask" << std::endl
         << "Invalid Task "<< id << " is specified" << std::endl;
     throw std::runtime_error(msg.str().c_str());
-  
   }
   ntasks++;
   return;
@@ -504,35 +503,37 @@ void TaskList::AddTask(int stp_t,unsigned long int id,int stp_d,unsigned long in
 
 //--------------------------------------------------------------------------------------
 //! \fn
-//  \brief process one task (if possible), return tasklist_status
+//  \brief process one task (if possible), return TaskListStatus
 
-enum tasklist_status TaskList::DoOneTask(MeshBlock *pmb) {
+enum TaskListStatus TaskList::DoOneTask(MeshBlock *pmb) {
   int skip=0;
-  enum task_status ret;
+  enum TaskStatus ret;
   std::stringstream msg;
 
-  if(pmb->ntodo==0) return tl_nothing;
+  if(pmb->num_tasks_todo==0) return TL_NOTHING_TO_DO;
 
-  for(int i=pmb->firsttask; i<ntasks; i++) {
+  for(int i=pmb->first_task; i<ntasks; i++) {
     Task &ti=task_list_[i];
+
     if((ti.task_id & pmb->finished_tasks[ti.step_of_task])==0L) { // task not done
       // check if dependency clear
       if (((ti.dependency & pmb->finished_tasks[ti.step_of_depend]) == ti.dependency)) {
         ret=ti.TaskFunc(pmb,ti.task_id,ti.step_of_task);
-        if(ret!=task_failure) { // success
-          pmb->ntodo--;
+        if(ret!=TASK_FAIL) { // success
+          pmb->num_tasks_todo--;
           pmb->finished_tasks[ti.step_of_task] |= ti.task_id;
           if(skip==0)
-            pmb->firsttask++;
-          if(pmb->ntodo==0)
-            return tl_complete;
-          if(ret==task_do_next) continue;
-          return tl_running;
+            pmb->first_task++;
+          if(pmb->num_tasks_todo==0)
+            return TL_COMPLETE;
+          if(ret==TASK_NEXT) continue;
+          return TL_RUNNING;
         }
       }
       skip++; // increment number of tasks processed
+
     } else if(skip==0) // task is done and at the top of the list
-      pmb->firsttask++;
+      pmb->first_task++;
   }
-  return tl_stuck; // there are still tasks to do but nothing can be done now
+  return TL_STUCK; // there are still tasks to do but nothing can be done now
 }
