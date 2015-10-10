@@ -26,8 +26,8 @@
 //======================================================================================
 
 // C/C++ headers
-#include <stdint.h>   // int64_t
-#include <stdlib.h>   // strtol
+#include <stdint.h>    // int64_t
+#include <cstdlib>    // strtol
 #include <ctime>      // clock(), CLOCKS_PER_SEC, clock_t
 #include <exception>  // exception
 #include <iomanip>    // setprecision()
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
   }
 
   // Get total number of MPI processes (ranks) 
-  if(MPI_SUCCESS != MPI_Comm_size(MPI_COMM_WORLD, &nranks)) {
+  if(MPI_SUCCESS != MPI_Comm_size(MPI_COMM_WORLD, &Globals::nranks)) {
     std::cout << "### FATAL ERROR in main" << std::endl
               << "MPI_Comm_size failed." << std::endl;
     return(0);
