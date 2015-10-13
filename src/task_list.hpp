@@ -74,7 +74,7 @@ public:
   enum TaskListStatus DoOneTask(MeshBlock *pmb);
 private:
   Mesh* pmy_mesh_;
-  Task task_list_[32];
+  Task task_list_[64];
 };
 
 #endif // TASK_LIST_HPP

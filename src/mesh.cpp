@@ -73,9 +73,6 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 // mesh test
   if(test_flag>0) Globals::nranks=test_flag;
 
-// create new Task List
-  ptlist = new TaskList(this);
-
 // read time and cycle limits from input file
 
   start_time = pin->GetOrAddReal("time","start_time",0.0);
@@ -208,7 +205,6 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   mesh_bcs[outer_x2] = pin->GetOrAddInteger("mesh","ox2_bc",0);
   mesh_bcs[inner_x3] = pin->GetOrAddInteger("mesh","ix3_bc",0);
   mesh_bcs[outer_x3] = pin->GetOrAddInteger("mesh","ox3_bc",0);
-
 
 // read MeshBlock parameters
   block_size.nx1 = pin->GetOrAddInteger("meshblock","nx1",mesh_size.nx1);
@@ -600,6 +596,10 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     pblock->SearchAndSetNeighbors(tree, ranklist, nslist);
   }
   pblock=pfirst;
+
+// create new Task List, requires mesh to already be constructed
+  ptlist = new TaskList(this);
+
 }
 
 
