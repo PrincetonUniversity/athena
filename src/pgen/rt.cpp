@@ -107,8 +107,10 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
         phyd->u(IM1,k,j,i) = 0.0;
         phyd->u(IM2,k,j,i) *= (den*amp);
         phyd->u(IM3,k,j,i) = 0.0;
-        phyd->u(IEN,k,j,i) = (1.0/gamma + grav_acc*den*(pco->x2v(j)))/gm1;
-        phyd->u(IEN,k,j,i) += 0.5*SQR(phyd->u(IM2,k,j,i))/den;
+        if (NON_BAROTROPIC_EOS) {
+          phyd->u(IEN,k,j,i) = (1.0/gamma + grav_acc*den*(pco->x2v(j)))/gm1;
+          phyd->u(IEN,k,j,i) += 0.5*SQR(phyd->u(IM2,k,j,i))/den;
+        }
       }
     }}
 
@@ -167,8 +169,10 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
         phyd->u(IM1,k,j,i) = 0.0;
         phyd->u(IM2,k,j,i) = 0.0;
         phyd->u(IM3,k,j,i) *= (den*amp);
-        phyd->u(IEN,k,j,i) = (1.0/gamma + grav_acc*den*(pco->x3v(k)))/gm1;
-        phyd->u(IEN,k,j,i) += 0.5*SQR(phyd->u(IM3,k,j,i))/den;
+        if (NON_BAROTROPIC_EOS) {
+          phyd->u(IEN,k,j,i) = (1.0/gamma + grav_acc*den*(pco->x3v(k)))/gm1;
+          phyd->u(IEN,k,j,i) += 0.5*SQR(phyd->u(IM3,k,j,i))/den;
+        }
       }
     }}
 

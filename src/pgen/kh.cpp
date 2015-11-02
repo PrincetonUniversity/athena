@@ -47,7 +47,6 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   Real vflow = pin->GetReal("problem","vflow");
   Real drat = pin->GetReal("problem","drat");
   Real amp = pin->GetReal("problem","amp");
-  Real b0  = pin->GetReal("problem","b0");
 
 // iprob=1.  Two uniform streams moving at +/- vflow, random perturbations
 
@@ -117,6 +116,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 
   // initialize interface B, same for all iprob
   if (MAGNETIC_FIELDS_ENABLED) {
+    Real b0 = pin->GetReal("problem","b0");
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie+1; i++) {
