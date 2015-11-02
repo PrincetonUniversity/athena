@@ -47,6 +47,7 @@
 #include "../mesh.hpp"
 #include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
+#include "../bvals/bvals.hpp"
 #include "../hydro/eos/eos.hpp"
 #include "../hydro/srcterms/srcterms.hpp"
 #include "../coordinates/coordinates.hpp"
