@@ -29,6 +29,7 @@
 #include <hdf5.h>
 
 #include "../athena_arrays.hpp"
+#include "../globals.hpp"
 #include "../mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../hydro/hydro.hpp"
@@ -327,7 +328,7 @@ void ATHDF5Output::Initialize(Mesh *pM, ParameterInput *pin)
     else H5Gclose(tgid);
   }
 
-  if(myrank==0 && pin->GetOrAddInteger(output_params.block_name,"xdmf",1)!=0) {
+  if(Globals::my_rank==0 && pin->GetOrAddInteger(output_params.block_name,"xdmf",1)!=0) {
     std::string xname=fname;
     xname.append(".xdmf");
     std::ofstream xdmf(xname.c_str());
@@ -526,12 +527,10 @@ void ATHDF5Output::Finalize(ParameterInput *pin)
 void ATHDF5Output::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 {
   hid_t did;
-  hsize_t sz;
   char mbid[8];
   std::string gname="/MeshBlock";
   sprintf(mbid,"%d",pmb->gid);
   gname.append(mbid);
-  std::string iname;
   
   float *data;
   int ndata = std::max(mbsize[0]+1,mbsize[1]+1);
@@ -561,6 +560,17 @@ void ATHDF5Output::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
     int nvar = pvar->data.GetDim4();
     // convert data into float
     for (int n=0; n<nvar; ++n) {
+      if(pvar->name.compare("dens")==0 || pvar->name.compare("rho")==0)
+        did=rhoid[pmb->lid];
+      else if(pvar->name.compare("Etot")==0 || pvar->name.compare("press")==0)
+        did=eid[pmb->lid];
+      else if(pvar->name.compare("mom")==0 || pvar->name.compare("vel")==0)
+        did=mid[n][pmb->lid];
+      else if(pvar->name.compare("cc-B")==0)
+        did=bid[n][pmb->lid];
+      else if(pvar->name.compare("ifov")==0)
+        did=ifovid[n][pmb->lid];
+      else continue;
       int p=0;
       for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k) {
         for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j) {
@@ -569,16 +579,6 @@ void ATHDF5Output::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
           }
         }
       }
-      if(pvar->name.compare("dens")==0 || pvar->name.compare("rho")==0)
-        did=rhoid[pmb->lid];
-      if(pvar->name.compare("Etot")==0 || pvar->name.compare("press")==0)
-        did=eid[pmb->lid];
-      if(pvar->name.compare("mom")==0 || pvar->name.compare("vel")==0)
-        did=mid[n][pmb->lid];
-      if(pvar->name.compare("cc-B")==0)
-        did=bid[n][pmb->lid];
-      if(pvar->name.compare("ifov")==0)
-        did=ifovid[n][pmb->lid];
       // write data
       H5Dwrite(did, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
       H5Dclose(did);
@@ -587,6 +587,7 @@ void ATHDF5Output::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
   }
 
   H5Gclose(grpid[pmb->lid]);
+  
   delete [] data;
   return;
 }
