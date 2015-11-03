@@ -114,9 +114,11 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
         x1s2(i) = x1s3(i) = (2.0/3.0)*(pow(x1f(i+1),3) - pow(x1f(i),3))
                             /(SQR(x1f(i+1)) - SQR(x1f(i)));
       }
-      for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost); ++i)
-        x1s2(i) = x1s3(i) = (2.0/3.0)*(pow(coarse_x1f(i+1),3) - pow(coarse_x1f(i),3))
-                            /(SQR(coarse_x1f(i+1)) - SQR(coarse_x1f(i)));
+      for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost); ++i) {
+        coarse_x1s2(i) = coarse_x1s3(i)
+        = (2.0/3.0)*(pow(coarse_x1f(i+1),3) - pow(coarse_x1f(i),3))
+                   /(SQR(coarse_x1f(i+1)) - SQR(coarse_x1f(i)));
+      }
       if (pmb->block_size.nx2 == 1) {
         x2s1(js) = x2s3(js) = x2v(js);
         coarse_x2s1(js) = coarse_x2s3(js) = coarse_x2v(js);
