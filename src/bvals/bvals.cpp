@@ -4108,19 +4108,19 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
             Real Uxyz = 0.0, Vxyz = 0.0, Wxyz = 0.0;
 #pragma unroll
             for(int jj=0; jj<2; jj++){
-              int js=2*jj-1, fjp=fj+2*jj;
+              int js=2*jj-1, fjj=fj+jj, fjp=fj+2*jj;
 #pragma unroll
               for(int ii=0; ii<2; ii++){
-                int is=2*ii-1, fip=fi+2*ii;
-                Uxx += is*(js*(dst.x2f(fk,fjp,fi) + dst.x2f(fk+1,fjp,fi))
-                             +(dst.x3f(fk+2,fj,fi) - dst.x3f(fk,fj,fi)));
-                Vyy += js*((dst.x3f(fk+2,fj,fi) - dst.x3f(fk,fj,fi)) +
-                        is*(dst.x1f(fk,fj,fip) + dst.x1f(fk+1,fj,fip)));
-                Wzz += is*(dst.x1f(fk+1,fj,fip) - dst.x1f(fk,fj,fip))
-                      +js*(dst.x2f(fk+1,fjp,fi) - dst.x2f(fk,fjp,fi));
-                Uxyz += js*js*(dst.x1f(fk+1,fj,fip) - dst.x1f(fk,fj,fip));
-                Vxyz += is*js*(dst.x2f(fk+1,fjp,fi) - dst.x2f(fk,fjp,fi));
-                Wxyz += is*js*(dst.x2f(fk+2,fj,fi) - dst.x2f(fk,fj,fi));
+                int is=2*ii-1, fii=fi+ii, fip=fi+2*ii;
+                Uxx += is*(js*(dst.x2f(fk  ,fjp,fii) + dst.x2f(fk+1,fjp,fii))
+                             +(dst.x3f(fk+2,fjj,fii) - dst.x3f(fk  ,fjj,fii)));
+                Vyy += js*(   (dst.x3f(fk+2,fjj,fii) - dst.x3f(fk  ,fjj,fii))
+                          +is*(dst.x1f(fk  ,fjj,fip) + dst.x1f(fk+1,fjj,fip)));
+                Wzz +=     is*(dst.x1f(fk+1,fjj,fip) - dst.x1f(fk  ,fjj,fip))
+                          +js*(dst.x2f(fk+1,fjp,fii) - dst.x2f(fk  ,fjp,fii));
+                Uxyz += js*js*(dst.x1f(fk+1,fjj,fip) - dst.x1f(fk  ,fjj,fip));
+                Vxyz += is*js*(dst.x2f(fk+1,fjp,fii) - dst.x2f(fk  ,fjp,fii));
+                Wxyz += is*js*(dst.x3f(fk+2,fjj,fii) - dst.x3f(fk  ,fjj,fii));
               }
             }
             Uxx *= 0.125; Vyy *= 0.125; Wzz *= 0.125;
