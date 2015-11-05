@@ -30,6 +30,7 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../bvals/bvals.hpp"
 #include "../parameter_input.hpp"
 #include "../mesh.hpp"
 #include "../hydro/hydro.hpp"
