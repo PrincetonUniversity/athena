@@ -314,8 +314,8 @@ Real Coordinates::GetCellVolume(const int k, const int j, const int i)
 //--------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term functions
 
-void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
-  const AthenaArray<Real> &flx,
+void Coordinates::CoordSrcTerms(const int k, const int j, const Real dt,
+  const AthenaArray<Real> *flux,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
   Real iso_cs = pmy_block->phydro->pf_eos->GetIsoSoundSpeed();
@@ -337,23 +337,10 @@ void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
     // src_2 = -< M_{phi r} ><1/r>
     Real& x_i   = x1f(i);
     Real& x_ip1 = x1f(i+1);
-    u(IM2,k,j,i) -= dt*coord_src2_i_(i)*(x_i*flx(IM2,i) + x_ip1*flx(IM2,i+1));
+    u(IM2,k,j,i) -= dt*coord_src2_i_(i)*(x_i*flux[x1face](IM2,k,j,i)
+                                       + x_ip1*flux[x1face](IM2,k,j,i+1));
   }
 
-  return;
-}
-
-void Coordinates::CoordSrcTermsX2(const int k, const int j, const Real dt,
-  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
-  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
-{
-  return;
-}
-
-void Coordinates::CoordSrcTermsX3(const int k, const int j, const Real dt,
-  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
-  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
-{
   return;
 }
 

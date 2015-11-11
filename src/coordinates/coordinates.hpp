@@ -83,16 +83,8 @@ public:
   Real GetCellVolume(const int k, const int j, const int i);
 
 // function to compute geometrical source terms
-  void CoordSrcTermsX1(const int k, const int j, const Real dt,
-    const AthenaArray<Real> &flx,
-    const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
-
-  void CoordSrcTermsX2(const int k, const int j, const Real dt,
-    const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
-    const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
-
-  void CoordSrcTermsX3(const int k, const int j, const Real dt,
-    const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
+  void CoordSrcTerms(const int k, const int j, const Real dt,
+    const AthenaArray<Real> *flux,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
 
 // Functions to calculate covariant derivatives at faces, for viscosity calculations  

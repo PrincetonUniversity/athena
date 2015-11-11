@@ -50,8 +50,8 @@ HydroSourceTerms::~HydroSourceTerms()
 //! \fn
 //  \brief
 
-void HydroSourceTerms::PhysicalSourceTermsX1(int k, int j, const Real dt,
-  const AthenaArray<Real> &flx,
+void HydroSourceTerms::PhysicalSourceTerms(int k, int j, const Real dt,
+  const AthenaArray<Real> *flux,
   const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
 {
   if (gm_==0.0 && g1_==0.0 && g2_==0.0 && g3_==0.0) return;
@@ -66,8 +66,9 @@ void HydroSourceTerms::PhysicalSourceTermsX1(int k, int j, const Real dt,
       if (gm_!=0.0) {
         Real src = dt*den*pmb->pcoord->coord_src1_i_(i)*gm_/pmb->pcoord->x1v(i);
         cons(IM1,k,j,i) -= src;
-        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) -= dt*0.5*(pmb->pcoord->phy_src1_i_(i)*flx(IDN,i)*gm_
-                                                           +pmb->pcoord->phy_src2_i_(i)*flx(IDN,i+1)*gm_);
+        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) -=
+          dt*0.5*(pmb->pcoord->phy_src1_i_(i)*flux[x1face](IDN,k,j,i)*gm_
+                 +pmb->pcoord->phy_src2_i_(i)*flux[x1face](IDN,k,j,i+1)*gm_);
       }
 
       if (g1_!=0.0) {
@@ -92,21 +93,6 @@ void HydroSourceTerms::PhysicalSourceTermsX1(int k, int j, const Real dt,
 
   return;
 }
-
-void HydroSourceTerms::PhysicalSourceTermsX2(int k, int j, const Real dt,
-  const AthenaArray<Real> &flx, const AthenaArray<Real> &flx_p1,
-  const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
-{
-  return;
-}
-
-void HydroSourceTerms::PhysicalSourceTermsX3(int k, int j, const Real dt,
-  const AthenaArray<Real> &flx, const AthenaArray<Real> &flx_p1,
-  const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
-{
-  return;
-}
-
 
 //--------------------------------------------------------------------------------------
 //! \fn

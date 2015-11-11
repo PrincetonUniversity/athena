@@ -28,6 +28,7 @@ typedef enum TaskStatus (*TaskFunc_t)(MeshBlock*, unsigned long int, int);
 // 32-bit integers with "1" in different bit positions to label each hydro task.
 enum HydroTasks {
   NONE=0,
+  CALC_FLX=1L<<0,
   HYD_INT =1L<<1,
   CALC_EMF=1L<<2,
   FLD_INT =1L<<3,

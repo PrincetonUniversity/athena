@@ -632,19 +632,19 @@ Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 
 //--------------------------------------------------------------------------------------
 
-// Function for computing source terms using r-fluxes
+// Function for computing source terms using fluxes
 // Inputs:
 //   k,j: phi- and theta-indices
 //   dt: size of timestep
-//   flux: 1D array of r-fluxes
+//   flux: 3D array of fluxes
 //   prim: 3D array of primitive values at beginning of half timestep
 //   bb_cc: 3D array of cell-centered magnetic fields
 // Outputs:
 //   cons: source terms added to k,j-slice of 3D array of conserved variables
 // Notes:
 //   all source terms computed in this function
-void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
-  const AthenaArray<Real> &flux, const AthenaArray<Real> &prim,
+void Coordinates::CoordSrcTerms(const int k, const int j, const Real dt,
+  const AthenaArray<Real> *flux, const AthenaArray<Real> &prim,
   const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons)
 {
   // Extract ratio of specific heats
@@ -772,48 +772,6 @@ void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
     m_2 += dt * s_2;
     m_3 += dt * s_3;
   }
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing source terms using theta-fluxes
-// Inputs:
-//   k,j: phi- and theta-indices
-//   dt: size of timestep
-//   flux_j: 1D array of theta-fluxes left of cells j
-//   flux_jp1: 1D array of theta-fluxes right of cells j
-//   prim: 3D array of primitive values at beginning of half timestep
-//   bcc: 3D array of cell-centered magnetic fields
-// Outputs:
-//   cons: source terms added to k,j-slice of 3D array of conserved variables
-// Notes:
-//   not using this function
-void Coordinates::CoordSrcTermsX2(const int k, const int j, const Real dt,
-  const AthenaArray<Real> &flux_j, const AthenaArray<Real> &flux_jp1,
-  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &cons)
-{
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing source terms using phi-fluxes
-// Inputs:
-//   k,j: phi- and theta-indices
-//   dt: size of timestep
-//   flux_k: 2D array of phi-fluxes left of cells k
-//   flux_kp1: 2D array of phi-fluxes right of cells k
-//   prim: 3D array of primitive values at beginning of half timestep
-//   bcc: 3D array of cell-centered magnetic fields
-// Outputs:
-//   cons: source terms added to k,j-slice of 3D array of conserved variables
-// Notes:
-//   not using this function
-void Coordinates::CoordSrcTermsX3(const int k, const int j, const Real dt,
-  const AthenaArray<Real> &flux_k, const AthenaArray<Real> &flux_kp1,
-  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &cons)
-{
   return;
 }
 

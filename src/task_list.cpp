@@ -46,19 +46,21 @@ TaskList::TaskList(Mesh *pm)
 
   if (MAGNETIC_FIELDS_ENABLED) { // MHD
 
-  // MHD predict
-    AddTask(1,HYD_INT,1,NONE);
+    // MHD predict
+    AddTask(1,CALC_FLX,1,NONE);
     if(pmy_mesh_->multilevel==true) { // SMR or AMR
-      AddTask(1,FLX_SEND,1,HYD_INT);
-      AddTask(1,FLX_RECV,1,HYD_INT);
-      AddTask(1,HYD_SEND,1,FLX_RECV);
-      AddTask(1,CALC_EMF,1,HYD_INT);
+      AddTask(1,FLX_SEND,1,CALC_FLX);
+      AddTask(1,FLX_RECV,1,CALC_FLX);
+      AddTask(1,HYD_INT, 1,FLX_RECV);
+      AddTask(1,HYD_SEND,1,HYD_INT);
+      AddTask(1,CALC_EMF,1,CALC_FLX);
       AddTask(1,EMF_SEND,1,CALC_EMF);
       AddTask(1,EMF_RECV,1,EMF_SEND);
       AddTask(1,FLD_INT, 1,EMF_RECV);
     } else {
+      AddTask(1,HYD_INT, 1,CALC_FLX);
       AddTask(1,HYD_SEND,1,HYD_INT);
-      AddTask(1,CALC_EMF,1,HYD_INT);
+      AddTask(1,CALC_EMF,1,CALC_FLX);
       AddTask(1,FLD_INT, 1,CALC_EMF);
     }
     AddTask(1,FLD_SEND,1,FLD_INT);
@@ -76,19 +78,21 @@ TaskList::TaskList(Mesh *pm)
       AddTask(1,CON2PRIM,1,(HYD_BVAL|FLD_BVAL));
     }
 
-  // MHD correct
-    AddTask(2,HYD_INT,1,CON2PRIM);
+    // MHD correct
+    AddTask(2,CALC_FLX,1,CON2PRIM);
     if(pmy_mesh_->multilevel==true) { // SMR or AMR
-      AddTask(2,FLX_SEND,2,HYD_INT);
-      AddTask(2,FLX_RECV,2,HYD_INT);
-      AddTask(2,HYD_SEND,2,FLX_RECV);
-      AddTask(2,CALC_EMF,2,HYD_INT);
+      AddTask(2,FLX_SEND,2,CALC_FLX);
+      AddTask(2,FLX_RECV,2,CALC_FLX);
+      AddTask(2,HYD_INT ,2,FLX_RECV);
+      AddTask(2,HYD_SEND,2,HYD_INT);
+      AddTask(2,CALC_EMF,2,CALC_FLX);
       AddTask(2,EMF_SEND,2,CALC_EMF);
       AddTask(2,EMF_RECV,2,EMF_SEND);
       AddTask(2,FLD_INT, 2,EMF_RECV);
     } else {
+      AddTask(2,HYD_INT, 2,CALC_FLX);
       AddTask(2,HYD_SEND,2,HYD_INT);
-      AddTask(2,CALC_EMF,2,HYD_INT);
+      AddTask(2,CALC_EMF,2,CALC_FLX);
       AddTask(2,FLD_INT, 2,CALC_EMF);
     }
     AddTask(2,FLD_SEND,2,FLD_INT);
@@ -106,14 +110,16 @@ TaskList::TaskList(Mesh *pm)
       AddTask(2,CON2PRIM,2,(HYD_BVAL|FLD_BVAL));
     }
 
-  // Hydro predict
   } else {
-    AddTask(1,HYD_INT,1,NONE);
+    // Hydro predict
+    AddTask(1,CALC_FLX,1,NONE);
     if(pmy_mesh_->multilevel==true) { // SMR or AMR
-      AddTask(1,FLX_SEND,1,HYD_INT);
-      AddTask(1,FLX_RECV,1,HYD_INT);
-      AddTask(1,HYD_SEND,1,FLX_RECV);
+      AddTask(1,FLX_SEND,1,CALC_FLX);
+      AddTask(1,FLX_RECV,1,CALC_FLX);
+      AddTask(1,HYD_INT, 1,FLX_RECV);
+      AddTask(1,HYD_SEND,1,HYD_INT);
     } else {
+      AddTask(1,HYD_INT, 1,CALC_FLX);
       AddTask(1,HYD_SEND,1,HYD_INT);
     }
     AddTask(1,HYD_RECV,1,NONE);  
@@ -125,13 +131,15 @@ TaskList::TaskList(Mesh *pm)
       AddTask(1,CON2PRIM,1,HYD_BVAL);
     }
 
-  // Hydro correct
-    AddTask(2,HYD_INT,1,CON2PRIM);
+    // Hydro correct
+    AddTask(2,CALC_FLX,1,CON2PRIM);
     if(pmy_mesh_->multilevel==true) { // SMR or AMR
-      AddTask(2,FLX_SEND,2,HYD_INT);
-      AddTask(2,FLX_RECV,2,HYD_INT);
-      AddTask(2,HYD_SEND,2,FLX_RECV);
+      AddTask(2,FLX_SEND,2,CALC_FLX);
+      AddTask(2,FLX_RECV,2,CALC_FLX);
+      AddTask(2,HYD_INT, 2,FLX_RECV);
+      AddTask(2,HYD_SEND,2,HYD_INT);
     } else {
+      AddTask(2,HYD_INT, 2,CALC_FLX);
       AddTask(2,HYD_SEND,2,HYD_INT);
     }
     AddTask(2,HYD_RECV,1,CON2PRIM);
@@ -157,18 +165,36 @@ TaskList::~TaskList()
 
 namespace TaskFunctions {
 
-enum TaskStatus HydroIntegrate(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus CalculateFluxes(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
 
   if(step == 1) {
     phydro->u1 = phydro->u;
-    phydro->pf_integrator->OneStep(pmb, phydro->u1, phydro->w, pfield->b,
-                                   pfield->bcc, 1);
+    phydro->pf_integrator->CalculateFluxes(pmb, phydro->u1, phydro->w, pfield->b,
+                                           pfield->bcc, 1);
   } else if(step == 2) {
-    phydro->pf_integrator->OneStep(pmb, phydro->u, phydro->w1, pfield->b1,
-                                   pfield->bcc1, 2);
+    phydro->pf_integrator->CalculateFluxes(pmb, phydro->u, phydro->w1, pfield->b1,
+                                           pfield->bcc1, 2);
+  } else {
+    return TASK_FAIL;
+  }
+
+  return TASK_NEXT;
+}
+
+enum TaskStatus HydroIntegrate(MeshBlock *pmb, unsigned long int task_id, int step)
+{
+  Hydro *phydro=pmb->phydro;
+  Field *pfield=pmb->pfield;
+
+  if(step == 1) {
+    phydro->pf_integrator->FluxDivergence(pmb, phydro->u1, phydro->w, pfield->b,
+                                          pfield->bcc, 1);
+  } else if(step == 2) {
+    phydro->pf_integrator->FluxDivergence(pmb, phydro->u, phydro->w1, pfield->b1,
+                                          pfield->bcc1, 2);
   } else {
     return TASK_FAIL;
   }
@@ -423,6 +449,10 @@ void TaskList::AddTask(int stp_t,unsigned long int id,int stp_d,unsigned long in
 
   switch((id))
   {
+  case (CALC_FLX):
+    task_list_[ntasks].TaskFunc=TaskFunctions::CalculateFluxes;
+    break;
+
   case (HYD_INT):
     task_list_[ntasks].TaskFunc=TaskFunctions::HydroIntegrate;
     break;

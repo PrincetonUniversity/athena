@@ -383,7 +383,7 @@ Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 
 //--------------------------------------------------------------------------------------
 
-// Function for computing source terms using x-fluxes
+// Function for computing source terms using fluxes
 // Inputs:
 //   k,j: z- and y-indices
 //   dt: size of timestep
@@ -394,51 +394,9 @@ Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 //   cons: source terms added to k,j-slice of 3D array of conserved variables
 // Notes:
 //   source terms all vanish identically
-void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
-  const AthenaArray<Real> &flux, const AthenaArray<Real> &prim,
+void Coordinates::CoordSrcTerms(const int k, const int j, const Real dt,
+  const AthenaArray<Real> *flux, const AthenaArray<Real> &prim,
   const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons)
-{
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing source terms using y-fluxes
-// Inputs:
-//   k,j: z- and y-indices
-//   dt: size of timestep
-//   flux_j: 1D array of y-fluxes left of cells j
-//   flux_jp1: 1D array of y-fluxes right of cells j
-//   prim: 3D array of primitive values at beginning of half timestep
-//   bcc: 3D array of cell-centered magnetic fields
-// Outputs:
-//   cons: source terms added to k,j-slice of 3D array of conserved variables
-// Notes:
-//   source terms all vanish identically
-void Coordinates::CoordSrcTermsX2(const int k, const int j, const Real dt,
-  const AthenaArray<Real> &flux_j, const AthenaArray<Real> &flux_jp1,
-  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &cons)
-{
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing source terms using z-fluxes
-// Inputs:
-//   k,j: z- and y-indices
-//   dt: size of timestep
-//   flux_k: 2D array of z-fluxes left of cells k
-//   flux_kp1: 2D array of z-fluxes right of cells k
-//   prim: 3D array of primitive values at beginning of half timestep
-//   bcc: 3D array of cell-centered magnetic fields
-// Outputs:
-//   cons: source terms added to k,j-slice of 3D array of conserved variables
-// Notes:
-//   source terms all vanish identically
-void Coordinates::CoordSrcTermsX3(const int k, const int j, const Real dt,
-  const AthenaArray<Real> &flux_k, const AthenaArray<Real> &flux_kp1,
-  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &cons)
 {
   return;
 }

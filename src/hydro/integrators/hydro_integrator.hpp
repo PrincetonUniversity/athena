@@ -23,14 +23,15 @@ class ParameterInput;
 
 class HydroIntegrator {
 public:
-  HydroIntegrator(Hydro *pf, ParameterInput *pin);
+  HydroIntegrator(Hydro *phydro, ParameterInput *pin);
   ~HydroIntegrator();
 
   Hydro *pmy_hydro;  // ptr to Hydro containing this HydroIntegrator
 
-  void OneStep(MeshBlock *pmb, AthenaArray<Real> &u, AthenaArray<Real> &w,
+  void CalculateFluxes(MeshBlock *pmb, AthenaArray<Real> &u, AthenaArray<Real> &w,
     InterfaceField &b, AthenaArray<Real> &bcc, const int step);
-//  void Correct(MeshBlock *pmb);
+  void FluxDivergence(MeshBlock *pmb, AthenaArray<Real> &u, AthenaArray<Real> &w,
+    InterfaceField &b, AthenaArray<Real> &bcc, const int step);
 
   void RiemannSolver(const int k, const int j, const int il, const int iu,
     const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
@@ -68,8 +69,10 @@ public:
 
 private:
   // scratch space used in integrator
-  AthenaArray<Real> wl_, wr_, flx_, jflx_j_, kflx_k_; 
-  AthenaArray<Real> face_area_, face_area_p1_, cell_volume_;
+  AthenaArray<Real> wl_, wr_, flx_; 
+  AthenaArray<Real> x1face_area_, x2face_area_, x3face_area_;
+  AthenaArray<Real> x2face_area_p1_, x3face_area_p1_;
+  AthenaArray<Real> cell_volume_;
   AthenaArray<Real> bb_normal_;    // normal magnetic field, for (SR/GR)MHD
   AthenaArray<Real> lambdas_p_l_;  // most positive wavespeeds in left state
   AthenaArray<Real> lambdas_m_l_;  // most negative wavespeeds in left state

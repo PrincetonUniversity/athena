@@ -374,8 +374,8 @@ Real Coordinates::GetCellVolume(const int k, const int j, const int i)
 //--------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term functions
 
-void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
-  const AthenaArray<Real> &flx,
+void Coordinates::CoordSrcTerms(const int k, const int j, const Real dt,
+  const AthenaArray<Real> *flux,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
   Real iso_cs = pmy_block->phydro->pf_eos->GetIsoSoundSpeed();
@@ -396,24 +396,14 @@ void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
 
     // src_2 = -< M_{theta r} ><1/r> 
     u(IM2,k,j,i) -= dt*coord_src2_i_(i)*
-      (coord_area1_i_(i)*flx(IM2,i) + coord_area1_i_(i+1)*flx(IM2,i+1));
+      (coord_area1_i_(i)*flux[x1face](IM2,k,j,i)
+     + coord_area1_i_(i+1)*flux[x1face](IM2,k,j,i+1));
 
     // src_3 = -< M_{phi r} ><1/r> 
     u(IM3,k,j,i) -= dt*coord_src2_i_(i)*
-      (coord_area1_i_(i)*flx(IM3,i) + coord_area1_i_(i+1)*flx(IM3,i+1));
-  }
+      (coord_area1_i_(i)*flux[x1face](IM3,k,j,i)
+     + coord_area1_i_(i+1)*flux[x1face](IM3,k,j,i+1));
 
-  return;
-}
-
-void Coordinates::CoordSrcTermsX2(const int k, const int j, const Real dt,
-  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
-  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
-{
-  Real iso_cs = pmy_block->phydro->pf_eos->GetIsoSoundSpeed();
-
-#pragma simd
-  for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
     // src_2 = < M_{phi phi} ><cot theta/r>
     Real m_pp = prim(IDN,k,j,i)*SQR(prim(IM3,k,j,i));
     if (NON_BAROTROPIC_EOS) {
@@ -428,19 +418,12 @@ void Coordinates::CoordSrcTermsX2(const int k, const int j, const Real dt,
 
     // src_3 = -< M_{phi theta} ><cot theta/r> 
     u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src2_j_(j)*
-      (coord_area2_j_(j)*flx(IM3,i) + coord_area2_j_(j+1)*flx_p1(IM3,i));
+      (coord_area2_j_(j)*flux[x2face](IM3,k,j,i)
+     + coord_area2_j_(j+1)*flux(IM3,k,j+1,i));
   }
 
   return;
 }
-
-void Coordinates::CoordSrcTermsX3(const int k, const int j, const Real dt,
-  const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
-  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
-{
-  return;
-}
-
 
 //-------------------------------------------------------------------------------------
 // Calculate Divv 

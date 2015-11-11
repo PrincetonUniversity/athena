@@ -29,23 +29,28 @@
 
 // constructor
 
-HydroIntegrator::HydroIntegrator(Hydro *pf, ParameterInput *pin)
+HydroIntegrator::HydroIntegrator(Hydro *phydro, ParameterInput *pin)
 {
-  pmy_hydro = pf;
+  pmy_hydro = phydro;
 
 // Allocate memory for scratch vectors
 
-  int nthreads = pf->pmy_block->pmy_mesh->GetNumMeshThreads();
-  int ncells1 = pf->pmy_block->block_size.nx1 + 2*(NGHOST);
-  int ncells2 = pf->pmy_block->block_size.nx2 + 2*(NGHOST);
+  int nthreads = phydro->pmy_block->pmy_mesh->GetNumMeshThreads();
+  int ncells1 = phydro->pmy_block->block_size.nx1 + 2*(NGHOST);
+  int ncells2 = phydro->pmy_block->block_size.nx2 + 2*(NGHOST);
 
   wl_.NewAthenaArray(nthreads,(NWAVE),ncells1);
   wr_.NewAthenaArray(nthreads,(NWAVE),ncells1);
   flx_.NewAthenaArray(nthreads,(NWAVE),ncells1);
-  jflx_j_.NewAthenaArray(nthreads,(NWAVE),ncells1);
-  kflx_k_.NewAthenaArray(nthreads,(NWAVE),ncells2,ncells1);
-  face_area_.NewAthenaArray(nthreads,ncells1);
-  face_area_p1_.NewAthenaArray(nthreads,ncells1);
+  x1face_area_.NewAthenaArray(nthreads,ncells1+1);
+  if(pmy_hydro->pmy_block->block_size.nx2 > 1) {
+    x2face_area_.NewAthenaArray(nthreads,ncells1);
+    x2face_area_p1_.NewAthenaArray(nthreads,ncells1);
+  }
+  if(pmy_hydro->pmy_block->block_size.nx3 > 1) {
+    x3face_area_.NewAthenaArray(nthreads,ncells1);
+    x3face_area_p1_.NewAthenaArray(nthreads,ncells1);
+  }
   cell_volume_.NewAthenaArray(nthreads,ncells1);
   if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in (SR/GR)MHD
   {
@@ -70,10 +75,15 @@ HydroIntegrator::~HydroIntegrator()
   wl_.DeleteAthenaArray();
   wr_.DeleteAthenaArray();
   flx_.DeleteAthenaArray();
-  jflx_j_.DeleteAthenaArray();
-  kflx_k_.DeleteAthenaArray();
-  face_area_.DeleteAthenaArray();
-  face_area_p1_.DeleteAthenaArray();
+  x1face_area_.DeleteAthenaArray();
+  if(pmy_hydro->pmy_block->block_size.nx2 > 1) {
+    x2face_area_.DeleteAthenaArray();
+    x2face_area_p1_.DeleteAthenaArray();
+  }
+  if(pmy_hydro->pmy_block->block_size.nx3 > 1) {
+    x3face_area_.DeleteAthenaArray();
+    x3face_area_p1_.DeleteAthenaArray();
+  }
   cell_volume_.DeleteAthenaArray();
   if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in (SR/GR)MHD
   {
