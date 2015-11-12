@@ -61,7 +61,9 @@ TaskList::TaskList(Mesh *pm)
       AddTask(1,HYD_INT, 1,CALC_FLX);
       AddTask(1,HYD_SEND,1,HYD_INT);
       AddTask(1,CALC_EMF,1,CALC_FLX);
-      AddTask(1,FLD_INT, 1,CALC_EMF);
+      AddTask(1,EMF_SEND,1,CALC_EMF);
+      AddTask(1,EMF_RECV,1,EMF_SEND);
+      AddTask(1,FLD_INT, 1,EMF_RECV);
     }
     AddTask(1,FLD_SEND,1,FLD_INT);
     AddTask(1,HYD_RECV,1,NONE);
@@ -93,7 +95,9 @@ TaskList::TaskList(Mesh *pm)
       AddTask(2,HYD_INT, 2,CALC_FLX);
       AddTask(2,HYD_SEND,2,HYD_INT);
       AddTask(2,CALC_EMF,2,CALC_FLX);
-      AddTask(2,FLD_INT, 2,CALC_EMF);
+      AddTask(2,EMF_SEND,2,CALC_EMF);
+      AddTask(2,EMF_RECV,2,EMF_SEND);
+      AddTask(2,FLD_INT, 2,EMF_RECV);
     }
     AddTask(2,FLD_SEND,2,FLD_INT);
     AddTask(2,HYD_RECV,1,CON2PRIM);

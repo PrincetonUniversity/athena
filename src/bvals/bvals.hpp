@@ -173,7 +173,6 @@ private:
   Real *emfcor_send_[NSTEP][48], *emfcor_recv_[NSTEP][48];
   AthenaArray<Real> coarse_cons_, coarse_prim_;
   AthenaArray<Real> fvol_[2][2], sarea_[2];
-  AthenaArray<Real> sarea_x1_[2][2], sarea_x2_[2][3], sarea_x3_[3][2];
   InterfaceField coarse_b_;
 
 #ifdef MPI_PARALLEL
