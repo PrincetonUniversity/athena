@@ -350,7 +350,6 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
   int ie=pmy_block->ie, je=pmy_block->je, ke=pmy_block->ke;
   RegionSize& mesh_size  = pmy_block->pmy_mesh->mesh_size;
   long long nrootmesh, noffset;
-  int root_level;
   long int &lx1=pmy_block->loc.lx1;
   long int &lx2=pmy_block->loc.lx2;
   long int &lx3=pmy_block->loc.lx3;
@@ -397,7 +396,7 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
 
 // X2-DIRECTION: initialize spacing and positions of cell FACES (dx2f,x2f)
   if(block_size.nx2 > 1) {
-    nrootmesh=mesh_size.nx2*(1L<<(ll-root_level));
+    nrootmesh=mesh_size.nx2*(1L<<(ll-pm->root_level));
     if(block_size.x2rat == 1.0) { // uniform
       Real dx=(block_size.x2max-block_size.x2min)/block_size.nx2;
       for(int j=js-NGHOST; j<=je+NGHOST; ++j)
@@ -444,7 +443,7 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
 
 // X3-DIRECTION: initialize spacing and positions of cell FACES (dx3f,x3f)
   if(block_size.nx3 > 1) {
-    nrootmesh=mesh_size.nx3*(1L<<(ll-root_level));
+    nrootmesh=mesh_size.nx3*(1L<<(ll-pm->root_level));
     if(block_size.x3rat == 1.0) { // uniform
       Real dx=(block_size.x3max-block_size.x3min)/block_size.nx3;
       for(int k=ks-NGHOST; k<=ke+NGHOST; ++k)
