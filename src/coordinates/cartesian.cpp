@@ -245,6 +245,17 @@ Real Coordinates::GetFace1Area(const int k, const int j, const int i)
   return dx2f(j)*dx3f(k);
 }
 
+Real Coordinates::GetFace2Area(const int k, const int j, const int i)
+{
+  return dx1f(i)*dx3f(k);
+}
+
+Real Coordinates::GetFace3Area(const int k, const int j, const int i)
+{
+  return dx1f(i)*dx2f(j);
+}
+
+
 //--------------------------------------------------------------------------------------
 // Cell Volume function
 

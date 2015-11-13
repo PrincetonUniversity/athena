@@ -144,7 +144,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 
   // Allocate memory for scratch arrays used in integrator, and internal scratch arrays
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  coord_area1_i_.NewAthenaArray(ncells1);
+  coord_area1_i_.NewAthenaArray(ncells1+1);
   coord_area2_i_.NewAthenaArray(ncells1);
   coord_area3_i_.NewAthenaArray(ncells1);
   coord_vol_i_.NewAthenaArray(ncells1);
@@ -156,7 +156,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
   int ncells2 = 1;
   if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
   coord_area1_j_.NewAthenaArray(ncells2);
-  coord_area2_j_.NewAthenaArray(ncells2);
+  coord_area2_j_.NewAthenaArray(ncells2+1);
   coord_vol_j_.NewAthenaArray(ncells2);
   coord_src1_j_.NewAthenaArray(ncells2);
   coord_src2_j_.NewAthenaArray(ncells2);
@@ -184,6 +184,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     // Rf_{i+1}^2/R_{i}^2/Rf_{i+1}^2
     phy_src2_i_(i) = phy_src1_i_(i);
   }
+  coord_area1_i_(ie+(NGHOST)+1) = x1f(ie+(NGHOST)+1)*x1f(ie+(NGHOST)+1);
 
   if (pmb->block_size.nx2 > 1) {
 #pragma simd
@@ -203,6 +204,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
       // (dS/2)/(S_c dV)
       coord_src2_j_(j) = (sp - sm)/((sm + sp)*coord_vol_j_(j));
     }
+    coord_area2_j_(je+(NGHOST)+1) = sin(x2f(je+(NGHOST)+1));
   } else {
     Real sm = sin(x2f(js  ));
     Real sp = sin(x2f(js+1));
@@ -213,6 +215,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     coord_vol_j_(js) = coord_area1_j_(js);
     coord_src1_j_(js) = (sp - sm)/coord_vol_j_(js);
     coord_src2_j_(js) = (sp - sm)/((sm + sp)*coord_vol_j_(js));
+    coord_area2_j_(js+1) = sp;
   }
 
 }
@@ -351,6 +354,17 @@ Real Coordinates::GetFace1Area(const int k, const int j, const int i)
   return coord_area1_i_(i)*coord_area1_j_(j)*dx3f(k);
 }
 
+Real Coordinates::GetFace2Area(const int k, const int j, const int i)
+{
+  return coord_area2_i_(i)*coord_area2_j_(j)*dx3f(k);
+}
+
+Real Coordinates::GetFace3Area(const int k, const int j, const int i)
+{
+  return coord_area3_i_(i)*dx2f(j);
+}
+
+
 //--------------------------------------------------------------------------------------
 // Cell Volume function
 
@@ -419,7 +433,7 @@ void Coordinates::CoordSrcTerms(const int k, const int j, const Real dt,
     // src_3 = -< M_{phi theta} ><cot theta/r> 
     u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src2_j_(j)*
       (coord_area2_j_(j)*flux[x2face](IM3,k,j,i)
-     + coord_area2_j_(j+1)*flux(IM3,k,j+1,i));
+     + coord_area2_j_(j+1)*flux[x2face](IM3,k,j+1,i));
   }
 
   return;

@@ -3962,43 +3962,48 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
 #pragma unroll
               for(int ii=0; ii<2; ii++){
                 int is=2*ii-1, fii=fi+ii, fip=fi+2*ii;
-                Uxx += is*(js*(dst.x2f(fk  ,fjp,fii) + dst.x2f(fk+1,fjp,fii))
-                             +(dst.x3f(fk+2,fjj,fii) - dst.x3f(fk  ,fjj,fii)));
-                Vyy += js*(   (dst.x3f(fk+2,fjj,fii) - dst.x3f(fk  ,fjj,fii))
-                          +is*(dst.x1f(fk  ,fjj,fip) + dst.x1f(fk+1,fjj,fip)));
-                Wzz +=     is*(dst.x1f(fk+1,fjj,fip) - dst.x1f(fk  ,fjj,fip))
-                          +js*(dst.x2f(fk+1,fjp,fii) - dst.x2f(fk  ,fjp,fii));
-                Uxyz += js*js*(dst.x1f(fk+1,fjj,fip) - dst.x1f(fk  ,fjj,fip));
-                Vxyz += is*js*(dst.x2f(fk+1,fjp,fii) - dst.x2f(fk  ,fjp,fii));
-                Wxyz += is*js*(dst.x3f(fk+2,fjj,fii) - dst.x3f(fk  ,fjj,fii));
+                Uxx += is*(js*(dst.x2f(fk  ,fjp,fii)*pco->GetFace2Area(fk,fjp,fii) + dst.x2f(fk+1,fjp,fii)*pco->GetFace2Area(fk+1,fjp,fii))
+                             +(dst.x3f(fk+2,fjj,fii)*pco->GetFace3Area(fk+2,fjj,fii) - dst.x3f(fk  ,fjj,fii)*pco->GetFace3Area(fk,fjj,fii)));
+                Vyy += js*(   (dst.x3f(fk+2,fjj,fii)*pco->GetFace3Area(fk+2,fjj,fii)  - dst.x3f(fk  ,fjj,fii)*pco->GetFace3Area(fk,fjj,fii))
+                          +is*(dst.x1f(fk  ,fjj,fip)*pco->GetFace1Area(fk,fjj,fip) + dst.x1f(fk+1,fjj,fip)*pco->GetFace1Area(fk+1,fjj,fip)));
+                Wzz +=     is*(dst.x1f(fk+1,fjj,fip)*pco->GetFace1Area(fk+1,fjj,fip) - dst.x1f(fk  ,fjj,fip)*pco->GetFace1Area(fk,fjj,fip))
+                          +js*(dst.x2f(fk+1,fjp,fii)*pco->GetFace2Area(fk+1,fjp,fii) - dst.x2f(fk  ,fjp,fii)*pco->GetFace2Area(fk,fjp,fii));
+                Uxyz += js*js*(dst.x1f(fk+1,fjj,fip)*pco->GetFace1Area(fk+1,fjj,fip) - dst.x1f(fk  ,fjj,fip)*pco->GetFace1Area(fk,fjj,fip));
+                Vxyz += is*js*(dst.x2f(fk+1,fjp,fii)*pco->GetFace2Area(fk+1,fjp,fii) - dst.x2f(fk  ,fjp,fii)*pco->GetFace2Area(fk,fjp,fii));
+                Wxyz += is*js*(dst.x3f(fk+2,fjj,fii)*pco->GetFace3Area(fk+2,fjj,fii) - dst.x3f(fk  ,fjj,fii)*pco->GetFace3Area(fk,fjj,fii));
               }
             }
-            Uxx *= 0.125; Vyy *= 0.125; Wzz *= 0.125;
-            Uxyz *= 0.0625; Vxyz *= 0.0635; Wxyz *= 0.0625;
-            dst.x1f(fk  ,fj  ,fi+1)=0.5*(dst.x1f(fk  ,fj  ,fi  )+dst.x1f(fk  ,fj  ,fi+2))
-                                   + Uxx - Vxyz - Wxyz;
-            dst.x1f(fk  ,fj+1,fi+1)=0.5*(dst.x1f(fk  ,fj+1,fi  )+dst.x1f(fk  ,fj+1,fi+2))
-                                   + Uxx - Vxyz + Wxyz;
-            dst.x1f(fk+1,fj  ,fi+1)=0.5*(dst.x1f(fk+1,fj  ,fi  )+dst.x1f(fk+1,fj  ,fi+2))
-                                   + Uxx + Vxyz - Wxyz;
-            dst.x1f(fk+1,fj+1,fi+1)=0.5*(dst.x1f(fk+1,fj+1,fi  )+dst.x1f(fk+1,fj+1,fi+2))
-                                   + Uxx + Vxyz + Wxyz;
-            dst.x2f(fk  ,fj+1,fi  )=0.5*(dst.x2f(fk  ,fj  ,fi  )+dst.x2f(fk  ,fj+2,fi  ))
-                                   + Vyy - Uxyz - Wxyz;
-            dst.x2f(fk  ,fj+1,fi+1)=0.5*(dst.x2f(fk  ,fj  ,fi+1)+dst.x2f(fk  ,fj+2,fi+1))
-                                   + Vyy - Uxyz + Wxyz;
-            dst.x2f(fk+1,fj+1,fi  )=0.5*(dst.x2f(fk+1,fj  ,fi  )+dst.x2f(fk+1,fj+2,fi  ))
-                                   + Vyy + Uxyz - Wxyz;
-            dst.x2f(fk+1,fj+1,fi+1)=0.5*(dst.x2f(fk+1,fj  ,fi+1)+dst.x2f(fk+1,fj+2,fi+1))
-                                   + Vyy + Uxyz + Wxyz;
-            dst.x3f(fk+1,fj  ,fi  )=0.5*(dst.x3f(fk+2,fj  ,fi  )+dst.x3f(fk  ,fj  ,fi  ))
-                                   + Wzz - Uxyz - Vxyz;
-            dst.x3f(fk+1,fj  ,fi+1)=0.5*(dst.x3f(fk+2,fj  ,fi+1)+dst.x3f(fk  ,fj  ,fi+1))
-                                   + Wzz - Uxyz + Vxyz;
-            dst.x3f(fk+1,fj+1,fi  )=0.5*(dst.x3f(fk+2,fj+1,fi  )+dst.x3f(fk  ,fj+1,fi  ))
-                                   + Wzz + Uxyz - Vxyz;
-            dst.x3f(fk+1,fj+1,fi+1)=0.5*(dst.x3f(fk+2,fj+1,fi+1)+dst.x3f(fk  ,fj+1,fi+1))
-                                   + Wzz + Uxyz + Vxyz;
+	    Real Sdx1=SQR(pco->dx1f(fi)+pco->dx1f(fi+1));
+            Real Sdx2=SQR(pco->GetEdge2Length(fk+1,fj,fi+1)+pco->GetEdge2Length(fk+1,fj+1,fi+1));
+            Real Sdx3=SQR(pco->GetEdge3Length(fk,fj+1,fi+1)+pco->GetEdge3Length(fk+1,fj+1,fi+1));
+	    Uxx *= 0.125; Vyy *= 0.125; Wzz *= 0.125;
+            Uxyz *= 0.125/(Sdx2+Sdx3); Vxyz *= 0.125/(Sdx1+Sdx3); Wxyz *= 0.125/(Sdx1+Sdx2);
+            dst.x1f(fk  ,fj  ,fi+1)=(0.5*(dst.x1f(fk  ,fj  ,fi  )*pco->GetFace1Area(fk  ,fj  ,fi  )+dst.x1f(fk  ,fj  ,fi+2)*pco->GetFace1Area(fk  ,fj  ,fi+2))
+                                   + Uxx - Sdx3*Vxyz - Sdx2*Wxyz)/pco->GetFace1Area(fk  ,fj  ,fi+1);
+            dst.x1f(fk  ,fj+1,fi+1)=(0.5*(dst.x1f(fk  ,fj+1,fi  )*pco->GetFace1Area(fk  ,fj+1,fi  )+dst.x1f(fk  ,fj+1,fi+2)*pco->GetFace1Area(fk  ,fj+1,fi+2))
+                                   + Uxx - Sdx3*Vxyz + Sdx2*Wxyz)/pco->GetFace1Area(fk  ,fj+1,fi+1);
+            dst.x1f(fk+1,fj  ,fi+1)=(0.5*(dst.x1f(fk+1,fj  ,fi  )*pco->GetFace1Area(fk+1,fj  ,fi  )+dst.x1f(fk+1,fj  ,fi+2)*pco->GetFace1Area(fk+1,fj  ,fi+2))
+                                   + Uxx + Sdx3*Vxyz - Sdx2*Wxyz)/pco->GetFace1Area(fk+1,fj  ,fi+1);
+            dst.x1f(fk+1,fj+1,fi+1)=(0.5*(dst.x1f(fk+1,fj+1,fi  )*pco->GetFace1Area(fk+1,fj+1,fi  )+dst.x1f(fk+1,fj+1,fi+2)*pco->GetFace1Area(fk+1,fj+1,fi+2))
+                                   + Uxx + Sdx3*Vxyz + Sdx2*Wxyz)/pco->GetFace1Area(fk+1,fj+1,fi+1);
+
+	    dst.x2f(fk  ,fj+1,fi  )=(0.5*(dst.x2f(fk  ,fj  ,fi  )*pco->GetFace2Area(fk  ,fj  ,fi  )+dst.x2f(fk  ,fj+2,fi  )*pco->GetFace2Area(fk  ,fj+2,fi  ))
+                                   + Vyy - Sdx3*Uxyz - Sdx1*Wxyz)/pco->GetFace2Area(fk  ,fj+1,fi  );
+            dst.x2f(fk  ,fj+1,fi+1)=(0.5*(dst.x2f(fk  ,fj  ,fi+1)*pco->GetFace2Area(fk  ,fj  ,fi+1)+dst.x2f(fk  ,fj+2,fi+1)*pco->GetFace2Area(fk  ,fj+2,fi+1))
+                                   + Vyy - Sdx3*Uxyz + Sdx1*Wxyz)/pco->GetFace2Area(fk  ,fj+1,fi+1);
+            dst.x2f(fk+1,fj+1,fi  )=(0.5*(dst.x2f(fk+1,fj  ,fi  )*pco->GetFace2Area(fk+1,fj  ,fi  )+dst.x2f(fk+1,fj+2,fi  )*pco->GetFace2Area(fk+1,fj+2,fi  ))
+                                   + Vyy + Sdx3*Uxyz - Sdx1*Wxyz)/pco->GetFace2Area(fk+1,fj+1,fi  );
+            dst.x2f(fk+1,fj+1,fi+1)=(0.5*(dst.x2f(fk+1,fj  ,fi+1)*pco->GetFace2Area(fk+1,fj  ,fi+1)+dst.x2f(fk+1,fj+2,fi+1)*pco->GetFace2Area(fk+1,fj+2,fi+1))
+                                   + Vyy + Sdx3*Uxyz + Sdx1*Wxyz)/pco->GetFace2Area(fk+1,fj+1,fi+1);
+
+            dst.x3f(fk+1,fj  ,fi  )=(0.5*(dst.x3f(fk+2,fj  ,fi  )*pco->GetFace3Area(fk+2,fj  ,fi  )+dst.x3f(fk  ,fj  ,fi  )*pco->GetFace3Area(fk  ,fj  ,fi  ))
+                                   + Wzz - Sdx2*Uxyz - Sdx1*Vxyz)/pco->GetFace3Area(fk+1,fj  ,fi  );
+            dst.x3f(fk+1,fj  ,fi+1)=(0.5*(dst.x3f(fk+2,fj  ,fi+1)*pco->GetFace3Area(fk+2,fj  ,fi+1)+dst.x3f(fk  ,fj  ,fi+1)*pco->GetFace3Area(fk  ,fj  ,fi+1))
+                                   + Wzz - Sdx2*Uxyz + Sdx1*Vxyz)/pco->GetFace3Area(fk+1,fj  ,fi+1);
+            dst.x3f(fk+1,fj+1,fi  )=(0.5*(dst.x3f(fk+2,fj+1,fi  )*pco->GetFace3Area(fk+2,fj+1,fi  )+dst.x3f(fk  ,fj+1,fi  )*pco->GetFace3Area(fk  ,fj+1,fi  ))
+                                   + Wzz + Sdx2*Uxyz - Sdx1*Vxyz)/pco->GetFace3Area(fk+1,fj+1,fi  );
+            dst.x3f(fk+1,fj+1,fi+1)=(0.5*(dst.x3f(fk+2,fj+1,fi+1)*pco->GetFace3Area(fk+2,fj+1,fi+1)+dst.x3f(fk  ,fj+1,fi+1)*pco->GetFace3Area(fk  ,fj+1,fi+1))
+                                   + Wzz + Sdx2*Uxyz + Sdx1*Vxyz)/pco->GetFace3Area(fk+1,fj+1,fi+1);
           }
         }
       }
@@ -4063,14 +4068,22 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
         int fj=(j-pmb->cjs)*2+pmb->js;
         for(int i=si; i<=ei; i++) {
           int fi=(i-pmb->cis)*2+pmb->is;
-          Real tmp1=0.25*(dst.x2f(fk,fj+2,fi+1)-dst.x2f(fk,fj,fi+1)
-                         -dst.x2f(fk,fj+2,fi)+dst.x2f(fk,fj,fi));
-          Real tmp2=0.25*(dst.x1f(fk,fj,fi)-dst.x1f(fk,fj,fi+2)
-                         -dst.x1f(fk,fj+1,fi)+dst.x1f(fj+1,fi+2));
-          dst.x1f(fk,fj  ,fi+1)=0.5*(dst.x1f(fk,fj,fi)+dst.x1f(fk,fj,fi+2))+tmp1;
-          dst.x1f(fk,fj+1,fi+1)=0.5*(dst.x1f(fk,fj+1,fi)+dst.x1f(fk,fj+1,fi+2))+tmp1;
-          dst.x2f(fk,fj+1,fi  )=0.5*(dst.x2f(fk,fj,fi)+dst.x2f(fk,fj+2,fi))+tmp2;
-          dst.x2f(fk,fj+1,fi+1)=0.5*(dst.x2f(fk,fj,fi+1)+dst.x2f(fk,fj+2,fi+1))+tmp2;
+          Real tmp1=0.25*(dst.x2f(fk,fj+2,fi+1)*pco->GetFace2Area(fk,fj+2,fi+1)
+                         -dst.x2f(fk,fj,fi+1)*pco->GetFace2Area(fk,fj,fi+1)
+                         -dst.x2f(fk,fj+2,fi)*pco->GetFace2Area(fk,fj+2,fi)
+                         +dst.x2f(fk,fj,fi)*pco->GetFace2Area(fk,fj,fi));
+          Real tmp2=0.25*(dst.x1f(fk,fj,fi)*pco->GetFace1Area(fk,fj,fi)
+                         -dst.x1f(fk,fj,fi+2)*pco->GetFace1Area(fk,fj,fi+2)
+                         -dst.x1f(fk,fj+1,fi)*pco->GetFace1Area(fk,fj+1,fi)
+                         +dst.x1f(fk,fj+1,fi+2)*pco->GetFace1Area(fk,fj+1,fi+2));
+          dst.x1f(fk,fj  ,fi+1)=(0.5*(dst.x1f(fk,fj,fi)*pco->GetFace1Area(fk,fj,fi)
+                                     +dst.x1f(fk,fj,fi+2)*pco->GetFace1Area(fk,fj,fi+2))+tmp1)/pco->GetFace1Area(fk,fj  ,fi+1);
+          dst.x1f(fk,fj+1,fi+1)=(0.5*(dst.x1f(fk,fj+1,fi)*pco->GetFace1Area(fk,fj+1,fi)
+                                     +dst.x1f(fk,fj+1,fi+2)*pco->GetFace1Area(fk,fj+1,fi+2))+tmp1)/pco->GetFace1Area(fk,fj+1,fi+1);
+          dst.x2f(fk,fj+1,fi  )=(0.5*(dst.x2f(fk,fj,fi)*pco->GetFace2Area(fk,fj,fi)
+                                     +dst.x2f(fk,fj+2,fi)*pco->GetFace2Area(fk,fj+2,fi))+tmp2)/pco->GetFace2Area(fk,fj+1,fi  );
+          dst.x2f(fk,fj+1,fi+1)=(0.5*(dst.x2f(fk,fj,fi+1)*pco->GetFace2Area(fk,fj,fi+1)
+                                     +dst.x2f(fk,fj+2,fi+1)*pco->GetFace2Area(fk,fj+2,fi+1))+tmp2)/pco->GetFace2Area(fk,fj+1,fi+1);
         }
       }
       // step 4. calculate the finer x3 fields (independent from x1 and x2)

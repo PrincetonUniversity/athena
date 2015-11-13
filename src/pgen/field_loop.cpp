@@ -211,7 +211,6 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
      phyd->u(IM1,k,j,i) = phyd->u(IDN,k,j,i)*vflow*x1size/diag;
      phyd->u(IM2,k,j,i) = phyd->u(IDN,k,j,i)*vflow*x2size/diag;
      phyd->u(IM3,k,j,i) = phyd->u(IDN,k,j,i)*vflow*x3size/diag;
-
      if ((SQR(pco->x1v(i)) + SQR(pco->x2v(j)) + SQR(pco->x3v(k))) < rad*rad) {
        phyd->u(IDN,k,j,i) = drat;
        phyd->u(IM1,k,j,i) = phyd->u(IDN,k,j,i)*vflow*x1size/diag;
