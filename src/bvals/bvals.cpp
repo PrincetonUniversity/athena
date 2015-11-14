@@ -1528,6 +1528,7 @@ void BoundaryValues::ProlongateHydroBoundaries(AthenaArray<Real> &dst)
 {
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
+  Coordinates *pcrs=pmb->pcoarsec;
   int mox1, mox2, mox3;
   long int &lx1=pmb->loc.lx1;
   long int &lx2=pmb->loc.lx2;
@@ -1625,9 +1626,9 @@ void BoundaryValues::ProlongateHydroBoundaries(AthenaArray<Real> &dst)
       for(int n=0; n<NHYDRO; n++) {
         for(int k=sk; k<=ek; k++) {
           int fk=(k-pmb->cks)*2+pmb->ks;
-          Real& x3m = pco->coarse_x3v(k-1);
-          Real& x3c = pco->coarse_x3v(k);
-          Real& x3p = pco->coarse_x3v(k+1);
+          Real& x3m = pcrs->x3v(k-1);
+          Real& x3c = pcrs->x3v(k);
+          Real& x3p = pcrs->x3v(k+1);
           Real dx3m = x3c - x3m;
           Real dx3p = x3p - x3c;
           Real& fx3m = pco->x3v(fk);
@@ -1636,9 +1637,9 @@ void BoundaryValues::ProlongateHydroBoundaries(AthenaArray<Real> &dst)
           Real dx3fp= fx3p-x3c;
           for(int j=sj; j<=ej; j++) {
             int fj=(j-pmb->cjs)*2+pmb->js;
-            Real& x2m = pco->coarse_x2v(j-1);
-            Real& x2c = pco->coarse_x2v(j);
-            Real& x2p = pco->coarse_x2v(j+1);
+            Real& x2m = pcrs->x2v(j-1);
+            Real& x2c = pcrs->x2v(j);
+            Real& x2p = pcrs->x2v(j+1);
             Real dx2m = x2c - x2m;
             Real dx2p = x2p - x2c;
             Real& fx2m = pco->x2v(fj);
@@ -1647,9 +1648,9 @@ void BoundaryValues::ProlongateHydroBoundaries(AthenaArray<Real> &dst)
             Real dx2fp= fx2p-x2c;
             for(int i=si; i<=ei; i++) {
               int fi=(i-pmb->cis)*2+pmb->is;
-              Real& x1m = pco->coarse_x1v(i-1);
-              Real& x1c = pco->coarse_x1v(i);
-              Real& x1p = pco->coarse_x1v(i+1);
+              Real& x1m = pcrs->x1v(i-1);
+              Real& x1c = pcrs->x1v(i);
+              Real& x1p = pcrs->x1v(i+1);
               Real dx1m = x1c - x1m;
               Real dx1p = x1p - x1c;
               Real& fx1m = pco->x1v(fi);
@@ -1688,9 +1689,9 @@ void BoundaryValues::ProlongateHydroBoundaries(AthenaArray<Real> &dst)
       for(int n=0; n<NHYDRO; n++) {
         for(int j=sj; j<=ej; j++) {
           int fj=(j-pmb->cjs)*2+pmb->js;
-          Real& x2m = pco->coarse_x2v(j-1);
-          Real& x2c = pco->coarse_x2v(j);
-          Real& x2p = pco->coarse_x2v(j+1);
+          Real& x2m = pcrs->x2v(j-1);
+          Real& x2c = pcrs->x2v(j);
+          Real& x2p = pcrs->x2v(j+1);
           Real dx2m = x2c - x2m;
           Real dx2p = x2p - x2c;
           Real& fx2m = pco->x2v(fj);
@@ -1699,9 +1700,9 @@ void BoundaryValues::ProlongateHydroBoundaries(AthenaArray<Real> &dst)
           Real dx2fp= fx2p-x2c;
           for(int i=si; i<=ei; i++) {
             int fi=(i-pmb->cis)*2+pmb->is;
-            Real& x1m = pco->coarse_x1v(i-1);
-            Real& x1c = pco->coarse_x1v(i);
-            Real& x1p = pco->coarse_x1v(i+1);
+            Real& x1m = pcrs->x1v(i-1);
+            Real& x1c = pcrs->x1v(i);
+            Real& x1p = pcrs->x1v(i+1);
             Real dx1m = x1c - x1m;
             Real dx1p = x1p - x1c;
             Real& fx1m = pco->x1v(fi);
@@ -1732,9 +1733,9 @@ void BoundaryValues::ProlongateHydroBoundaries(AthenaArray<Real> &dst)
       for(int n=0; n<NHYDRO; n++) {
         for(int i=si; i<=ei; i++) {
           int fi=(i-pmb->cis)*2+pmb->is;
-          Real& x1m = pco->coarse_x1v(i-1);
-          Real& x1c = pco->coarse_x1v(i);
-          Real& x1p = pco->coarse_x1v(i+1);
+          Real& x1m = pcrs->x1v(i-1);
+          Real& x1c = pcrs->x1v(i);
+          Real& x1p = pcrs->x1v(i+1);
           Real dx1m = x1c - x1m;
           Real dx1p = x1p - x1c;
           Real& fx1m = pco->x1v(fi);
@@ -3704,6 +3705,7 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
 {
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
+  Coordinates *pcrs=pmb->pcoarsec;
   int mox1, mox2, mox3;
   long int &lx1=pmb->loc.lx1;
   long int &lx2=pmb->loc.lx2;
@@ -3834,18 +3836,18 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
         int fk=(k-pmb->cks)*2+pmb->ks;
         for(int j=sj; j<=ej; j++) {
           int fj=(j-pmb->cjs)*2+pmb->js;
-          Real& x2m = pco->coarse_x2s3(j-1);
-          Real& x2c = pco->coarse_x2s3(j);
-          Real& x2p = pco->coarse_x2s3(j+1);
+          Real& x2m = pcrs->x2s3(j-1);
+          Real& x2c = pcrs->x2s3(j);
+          Real& x2p = pcrs->x2s3(j+1);
           Real dx2m = x2c - x2m;
           Real dx2p = x2p - x2c;
           Real& fx2m = pco->x2s3(fj);
           Real& fx2p = pco->x2s3(fj+1);
           for(int i=si; i<=ei; i++) {
             int fi=(i-pmb->cis)*2+pmb->is;
-            Real& x1m = pco->coarse_x1s3(i-1);
-            Real& x1c = pco->coarse_x1s3(i);
-            Real& x1p = pco->coarse_x1s3(i+1);
+            Real& x1m = pcrs->x1s3(i-1);
+            Real& x1c = pcrs->x1s3(i);
+            Real& x1p = pcrs->x1s3(i+1);
             Real dx1m = x1c - x1m;
             Real dx1p = x1p - x1c;
             Real& fx1m = pco->x1s3(fi);
@@ -3871,9 +3873,9 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
       // step 2. calculate x2 outer surface fields and slopes
       for(int k=sk; k<=ek; k++) {
         int fk=(k-pmb->cks)*2+pmb->ks;
-        Real& x3m = pco->coarse_x3s2(k-1);
-        Real& x3c = pco->coarse_x3s2(k);
-        Real& x3p = pco->coarse_x3s2(k+1);
+        Real& x3m = pcrs->x3s2(k-1);
+        Real& x3c = pcrs->x3s2(k);
+        Real& x3p = pcrs->x3s2(k+1);
         Real dx3m = x3c - x3m;
         Real dx3p = x3p - x3c;
         Real& fx3m = pco->x3s2(fk);
@@ -3882,9 +3884,9 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
           int fj=(j-pmb->cjs)*2+pmb->js;
           for(int i=si; i<=ei; i++) {
             int fi=(i-pmb->cis)*2+pmb->is;
-            Real& x1m = pco->coarse_x1s2(i-1);
-            Real& x1c = pco->coarse_x1s2(i);
-            Real& x1p = pco->coarse_x1s2(i+1);
+            Real& x1m = pcrs->x1s2(i-1);
+            Real& x1c = pcrs->x1s2(i);
+            Real& x1p = pcrs->x1s2(i+1);
             Real dx1m = x1c - x1m;
             Real dx1p = x1p - x1c;
             Real& fx1m = pco->x1s2(fi);
@@ -3910,18 +3912,18 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
       // step 3. calculate x1 outer surface fields and slopes
       for(int k=sk; k<=ek; k++) {
         int fk=(k-pmb->cks)*2+pmb->ks;
-        Real& x3m = pco->coarse_x3s1(k-1);
-        Real& x3c = pco->coarse_x3s1(k);
-        Real& x3p = pco->coarse_x3s1(k+1);
+        Real& x3m = pcrs->x3s1(k-1);
+        Real& x3c = pcrs->x3s1(k);
+        Real& x3p = pcrs->x3s1(k+1);
         Real dx3m = x3c - x3m;
         Real dx3p = x3p - x3c;
         Real& fx3m = pco->x3s1(fk);
         Real& fx3p = pco->x3s1(fk+1);
         for(int j=sj; j<=ej; j++) {
           int fj=(j-pmb->cjs)*2+pmb->js;
-          Real& x2m = pco->coarse_x2s1(j-1);
-          Real& x2c = pco->coarse_x2s1(j);
-          Real& x2p = pco->coarse_x2s1(j+1);
+          Real& x2m = pcrs->x2s1(j-1);
+          Real& x2c = pcrs->x2s1(j);
+          Real& x2p = pcrs->x2s1(j+1);
           Real dx2m = x2c - x2m;
           Real dx2p = x2p - x2c;
           Real& fx2m = pco->x2s1(fj);
@@ -4021,9 +4023,9 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
         int fj=(j-pmb->cjs)*2+pmb->js;
         for(int i=si; i<=ei; i++) {
           int fi=(i-pmb->cis)*2+pmb->is;
-          Real& x1m = pco->coarse_x1s2(i-1);
-          Real& x1c = pco->coarse_x1s2(i);
-          Real& x1p = pco->coarse_x1s2(i+1);
+          Real& x1m = pcrs->x1s2(i-1);
+          Real& x1c = pcrs->x1s2(i);
+          Real& x1p = pcrs->x1s2(i+1);
           Real& fx1m = pco->x1s2(fi);
           Real& fx1p = pco->x1s2(fi+1);
           Real ccval=coarse_b_.x2f(k,j,i);
@@ -4041,9 +4043,9 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
       // step 2. calculate x1 outer surface fields and slopes
       for(int j=sj; j<=ej; j++) {
         int fj=(j-pmb->cjs)*2+pmb->js;
-        Real& x2m = pco->coarse_x2s1(j-1);
-        Real& x2c = pco->coarse_x2s1(j);
-        Real& x2p = pco->coarse_x2s1(j+1);
+        Real& x2m = pcrs->x2s1(j-1);
+        Real& x2c = pcrs->x2s1(j);
+        Real& x2p = pcrs->x2s1(j+1);
         Real dx2m = x2c - x2m;
         Real dx2p = x2p - x2c;
         Real& fx2m = pco->x2s1(fj);
@@ -4089,9 +4091,9 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
       // step 4. calculate the finer x3 fields (independent from x1 and x2)
       for(int j=sj; j<=ej; j++) {
         int fj=(j-pmb->cjs)*2+pmb->js;
-        Real& x2m = pco->coarse_x2s3(j-1);
-        Real& x2c = pco->coarse_x2s3(j);
-        Real& x2p = pco->coarse_x2s3(j+1);
+        Real& x2m = pcrs->x2s3(j-1);
+        Real& x2c = pcrs->x2s3(j);
+        Real& x2p = pcrs->x2s3(j+1);
         Real dx2m = x2c - x2m;
         Real dx2p = x2p - x2c;
         Real& fx2m = pco->x2s3(fj);
@@ -4100,9 +4102,9 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
         Real dx2fp= fx2p-x2c;
         for(int i=si; i<=ei; i++) {
           int fi=(i-pmb->cis)*2+pmb->is;
-          Real& x1m = pco->coarse_x1s3(i-1);
-          Real& x1c = pco->coarse_x1s3(i);
-          Real& x1p = pco->coarse_x1s3(i+1);
+          Real& x1m = pcrs->x1s3(i-1);
+          Real& x1c = pcrs->x1s3(i);
+          Real& x1p = pcrs->x1s3(i+1);
           Real dx1m = x1c - x1m;
           Real dx1p = x1p - x1c;
           Real& fx1m = pco->x1s3(fi);
@@ -4144,23 +4146,23 @@ void BoundaryValues::ProlongateFieldBoundaries(InterfaceField &dst)
       int fi=(si-pmb->cis)*2+pmb->is;
       // bx2 and bx3 - interpolation
       Real gxm = (coarse_b_.x2f(0,0,si)-coarse_b_.x2f(0,0,si-1))
-                 /(pco->coarse_x1s2(si)-pco->coarse_x1s2(si-1));
+                 /(pcrs->x1s2(si)-pcrs->x1s2(si-1));
       Real gxp = (coarse_b_.x2f(0,0,si+1)-coarse_b_.x2f(0,0,si))
-                 /(pco->coarse_x1s2(si+1)-pco->coarse_x1s2(si));
+                 /(pcrs->x1s2(si+1)-pcrs->x1s2(si));
       Real gxc = 0.5*(SIGN(gxm)+SIGN(gxp))*std::min(std::abs(gxm),std::abs(gxp));
       dst.x2f(0,0,fi  )=dst.x2f(0,1,fi  )
-                       =coarse_b_.x2f(0,0,si)-gxc*(pco->coarse_x1s2(si)-pco->x1s2(fi));
+                       =coarse_b_.x2f(0,0,si)-gxc*(pcrs->x1s2(si)-pco->x1s2(fi));
       dst.x2f(0,0,fi+1)=dst.x2f(0,1,fi+1)
-                       =coarse_b_.x2f(0,0,si)+gxc*(pco->x1s2(fi+1)-pco->coarse_x1s2(si));
+                       =coarse_b_.x2f(0,0,si)+gxc*(pco->x1s2(fi+1)-pcrs->x1s2(si));
       gxm = (coarse_b_.x3f(0,0,si)-coarse_b_.x3f(0,0,si-1))
-            /(pco->coarse_x1s3(si)-pco->coarse_x1s3(si-1));
+            /(pcrs->x1s3(si)-pcrs->x1s3(si-1));
       gxp = (coarse_b_.x3f(0,0,si+1)-coarse_b_.x3f(0,0,si))
-            /(pco->coarse_x1s3(si+1)-pco->coarse_x1s3(si));
+            /(pcrs->x1s3(si+1)-pcrs->x1s3(si));
       gxc = 0.5*(SIGN(gxm)+SIGN(gxp))*std::min(std::abs(gxm),std::abs(gxp));
       dst.x3f(0,0,fi  )=dst.x3f(1,0,fi  )
-                       =coarse_b_.x3f(0,0,si)-gxc*(pco->coarse_x1s3(si)-pco->x1s3(fi));
+                       =coarse_b_.x3f(0,0,si)-gxc*(pcrs->x1s3(si)-pco->x1s3(fi));
       dst.x3f(0,0,fi+1)=dst.x3f(1,0,fi+1)
-                       =coarse_b_.x3f(0,0,si)+gxc*(pco->x1s3(fi+1)-pco->coarse_x1s3(si));
+                       =coarse_b_.x3f(0,0,si)+gxc*(pco->x1s3(fi+1)-pcrs->x1s3(si));
     }
   }
   return;

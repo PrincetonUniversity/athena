@@ -39,8 +39,18 @@
 Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_block = pmb;
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+  cflag=flag;
+  int is, ie, js, je, ks, ke, ng;
+  if(cflag==0) {
+    is = pmb->is; js = pmb->js; ks = pmb->ks;
+    ie = pmb->ie; je = pmb->je; ke = pmb->ke;
+    ng=NGHOST;
+  }
+  else {
+    is = pmb->cis; js = pmb->cjs; ks = pmb->cks;
+    ie = pmb->cie; je = pmb->cje; ke = pmb->cke;
+    ng=pmb->cnghost;
+  }
 
   // Set face centered positions and distances
   AllocateAndSetBasicCoordinates();
@@ -84,140 +94,104 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     }
   }
 
-  if(pmb->pmy_mesh->multilevel==true) { // calc coarse coodinates
-    int cis = pmb->cis; int cjs = pmb->cjs; int cks = pmb->cks;
-    int cie = pmb->cie; int cje = pmb->cje; int cke = pmb->cke;
-    for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost); ++i) {
-      coarse_x1v(i) = 0.75*(pow(coarse_x1f(i+1),4) - pow(coarse_x1f(i),4))
-                          /(pow(coarse_x1f(i+1),3) - pow(coarse_x1f(i),3));
+  if((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+      x1s2(i) = x1s3(i) = (2.0/3.0)*(pow(x1f(i+1),3) - pow(x1f(i),3))
+                          /(SQR(x1f(i+1)) - SQR(x1f(i)));
     }
     if (pmb->block_size.nx2 == 1) {
-      coarse_x2v(cjs) = 0.5*(coarse_x2f(cjs+1) + coarse_x2f(cjs));
-    } else {
-      for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost); ++j) {
-        coarse_x2v(j) = 
-            ((sin(coarse_x2f(j+1)) - coarse_x2f(j+1)*cos(coarse_x2f(j+1))) 
-            -(sin(coarse_x2f(j  )) - coarse_x2f(j  )*cos(coarse_x2f(j  ))))
-            /(cos(coarse_x2f(j  )) - cos(coarse_x2f(j+1)));
-      }
+      x2s1(js) = x2s3(js) = x2v(js);
+    }
+    else {
+      for (int j=js-(NGHOST); j<=je+(NGHOST); ++j)
+        x2s1(j) = x2s3(j) = x2v(j);
     }
     if (pmb->block_size.nx3 == 1) {
-      coarse_x3v(cks) = 0.5*(coarse_x3f(cks+1) + coarse_x3f(cks));
-    } else {
-      for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost); ++k) {
-        coarse_x3v(k) = 0.5*(coarse_x3f(k+1) + coarse_x3f(k));
-      }
+      x3s1(ks) = x3s2(ks) = x3v(ks);
     }
-
-    if (MAGNETIC_FIELDS_ENABLED) {
-      for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-        x1s2(i) = x1s3(i) = (2.0/3.0)*(pow(x1f(i+1),3) - pow(x1f(i),3))
-                            /(SQR(x1f(i+1)) - SQR(x1f(i)));
-      }
-      for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost); ++i) {
-        coarse_x1s2(i) = coarse_x1s3(i)
-        = (2.0/3.0)*(pow(coarse_x1f(i+1),3) - pow(coarse_x1f(i),3))
-                   /(SQR(coarse_x1f(i+1)) - SQR(coarse_x1f(i)));
-      }
-      if (pmb->block_size.nx2 == 1) {
-        x2s1(js) = x2s3(js) = x2v(js);
-        coarse_x2s1(js) = coarse_x2s3(js) = coarse_x2v(js);
-      }
-      else {
-        for (int j=js-(NGHOST); j<=je+(NGHOST); ++j)
-          x2s1(j) = x2s3(j) = x2v(j);
-        for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost); ++j)
-          coarse_x2s1(j) = coarse_x2s3(j) = coarse_x2v(j);
-      }
-      if (pmb->block_size.nx3 == 1) {
-        x3s1(ks) = x3s2(ks) = x3v(ks);
-        coarse_x3s1(ks) = coarse_x3s2(ks) = coarse_x3v(ks);
-      }
-      else {
-        for (int k=ks-(NGHOST); k<=ke+(NGHOST); ++k)
-          x3s1(k) = x3s2(k) = x3v(k);
-        for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost); ++k)
-          coarse_x3s1(k) = coarse_x3s2(k) = coarse_x3v(k);
-      }
+    else {
+      for (int k=ks-(NGHOST); k<=ke+(NGHOST); ++k)
+        x3s1(k) = x3s2(k) = x3v(k);
     }
   }
 
   // Allocate memory for scratch arrays used in integrator, and internal scratch arrays
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  coord_area1_i_.NewAthenaArray(ncells1+1);
-  coord_area2_i_.NewAthenaArray(ncells1);
-  coord_area3_i_.NewAthenaArray(ncells1);
-  coord_vol_i_.NewAthenaArray(ncells1);
-  coord_src1_i_.NewAthenaArray(ncells1);
-  coord_src2_i_.NewAthenaArray(ncells1);
-  phy_src1_i_.NewAthenaArray(ncells1);
-  phy_src2_i_.NewAthenaArray(ncells1);
+  if(cflag==0) {
+    int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
+    coord_area1_i_.NewAthenaArray(ncells1+1);
+    coord_area2_i_.NewAthenaArray(ncells1);
+    coord_area3_i_.NewAthenaArray(ncells1);
+    coord_vol_i_.NewAthenaArray(ncells1);
+    coord_src1_i_.NewAthenaArray(ncells1);
+    coord_src2_i_.NewAthenaArray(ncells1);
+    phy_src1_i_.NewAthenaArray(ncells1);
+    phy_src2_i_.NewAthenaArray(ncells1);
 
-  int ncells2 = 1;
-  if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
-  coord_area1_j_.NewAthenaArray(ncells2);
-  coord_area2_j_.NewAthenaArray(ncells2+1);
-  coord_vol_j_.NewAthenaArray(ncells2);
-  coord_src1_j_.NewAthenaArray(ncells2);
-  coord_src2_j_.NewAthenaArray(ncells2);
+    int ncells2 = 1;
+    if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
+    coord_area1_j_.NewAthenaArray(ncells2);
+    coord_area2_j_.NewAthenaArray(ncells2+1);
+    coord_vol_j_.NewAthenaArray(ncells2);
+    coord_src1_j_.NewAthenaArray(ncells2);
+    coord_src2_j_.NewAthenaArray(ncells2);
 
-  // Compute and store constant coefficients needed for face-areas, cell-volumes, etc.
-  // This helps improve performance.
+    // Compute and store constant coefficients needed for face-areas, cell-volumes, etc.
+    // This helps improve performance.
 #pragma simd
-  for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i){
-    Real rm = x1f(i  );
-    Real rp = x1f(i+1);
-    // R^2
-    coord_area1_i_(i) = rm*rm;
-    // 0.5*(R_{i+1}^2 - R_{i}^2)
-    coord_area2_i_(i) = 0.5*(rp*rp - rm*rm);
-    // 0.5*(R_{i+1}^2 - R_{i}^2)
-    coord_area3_i_(i) = coord_area2_i_(i);
-    // dV = (R_{i+1}^3 - R_{i}^3)/3
-    coord_vol_i_(i) = (1.0/3.0)*(rp*rp*rp - rm*rm*rm);
-    // (A1^{+} - A1^{-})/dV
-    coord_src1_i_(i) = coord_area2_i_(i)/coord_vol_i_(i);
-    // (dR/2)/(R_c dV)
-    coord_src2_i_(i) = dx1f(i)/((rm + rp)*coord_vol_i_(i));
-    // Rf_{i}^2/R_{i}^2/Rf_{i}^2
-    phy_src1_i_(i) = 1.0/SQR(x1v(i));
-    // Rf_{i+1}^2/R_{i}^2/Rf_{i+1}^2
-    phy_src2_i_(i) = phy_src1_i_(i);
-  }
-  coord_area1_i_(ie+(NGHOST)+1) = x1f(ie+(NGHOST)+1)*x1f(ie+(NGHOST)+1);
-
-  if (pmb->block_size.nx2 > 1) {
-#pragma simd
-    for (int j=js-(NGHOST); j<=je+(NGHOST); ++j){
-      Real sm = sin(x2f(j  ));
-      Real sp = sin(x2f(j+1));
-      Real cm = cos(x2f(j  ));
-      Real cp = cos(x2f(j+1));
-      // d(sin theta) = d(-cos theta)
-      coord_area1_j_(j) = cm - cp;
-      // sin theta
-      coord_area2_j_(j) = sm;
-      // d(sin theta) = d(-cos theta)
-      coord_vol_j_(j) = coord_area1_j_(j);
-      // (A2^{+} - A2^{-})/dV
-      coord_src1_j_(j) = (sp - sm)/coord_vol_j_(j);
-      // (dS/2)/(S_c dV)
-      coord_src2_j_(j) = (sp - sm)/((sm + sp)*coord_vol_j_(j));
+    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i){
+      Real rm = x1f(i  );
+      Real rp = x1f(i+1);
+      // R^2
+      coord_area1_i_(i) = rm*rm;
+      // 0.5*(R_{i+1}^2 - R_{i}^2)
+      coord_area2_i_(i) = 0.5*(rp*rp - rm*rm);
+      // 0.5*(R_{i+1}^2 - R_{i}^2)
+      coord_area3_i_(i) = coord_area2_i_(i);
+      // dV = (R_{i+1}^3 - R_{i}^3)/3
+      coord_vol_i_(i) = (1.0/3.0)*(rp*rp*rp - rm*rm*rm);
+      // (A1^{+} - A1^{-})/dV
+      coord_src1_i_(i) = coord_area2_i_(i)/coord_vol_i_(i);
+      // (dR/2)/(R_c dV)
+      coord_src2_i_(i) = dx1f(i)/((rm + rp)*coord_vol_i_(i));
+      // Rf_{i}^2/R_{i}^2/Rf_{i}^2
+      phy_src1_i_(i) = 1.0/SQR(x1v(i));
+      // Rf_{i+1}^2/R_{i}^2/Rf_{i+1}^2
+      phy_src2_i_(i) = phy_src1_i_(i);
     }
-    coord_area2_j_(je+(NGHOST)+1) = sin(x2f(je+(NGHOST)+1));
-  } else {
-    Real sm = sin(x2f(js  ));
-    Real sp = sin(x2f(js+1));
-    Real cm = cos(x2f(js  ));
-    Real cp = cos(x2f(js+1));
-    coord_area1_j_(js) = cm - cp;
-    coord_area2_j_(js) = sm;
-    coord_vol_j_(js) = coord_area1_j_(js);
-    coord_src1_j_(js) = (sp - sm)/coord_vol_j_(js);
-    coord_src2_j_(js) = (sp - sm)/((sm + sp)*coord_vol_j_(js));
-    coord_area2_j_(js+1) = sp;
-  }
+    coord_area1_i_(ie+(NGHOST)+1) = x1f(ie+(NGHOST)+1)*x1f(ie+(NGHOST)+1);
 
+    if (pmb->block_size.nx2 > 1) {
+#pragma simd
+      for (int j=js-(NGHOST); j<=je+(NGHOST); ++j){
+        Real sm = sin(x2f(j  ));
+        Real sp = sin(x2f(j+1));
+        Real cm = cos(x2f(j  ));
+        Real cp = cos(x2f(j+1));
+        // d(sin theta) = d(-cos theta)
+        coord_area1_j_(j) = cm - cp;
+        // sin theta
+        coord_area2_j_(j) = sm;
+        // d(sin theta) = d(-cos theta)
+        coord_vol_j_(j) = coord_area1_j_(j);
+        // (A2^{+} - A2^{-})/dV
+        coord_src1_j_(j) = (sp - sm)/coord_vol_j_(j);
+        // (dS/2)/(S_c dV)
+        coord_src2_j_(j) = (sp - sm)/((sm + sp)*coord_vol_j_(j));
+      }
+      coord_area2_j_(je+(NGHOST)+1) = sin(x2f(je+(NGHOST)+1));
+    } else {
+      Real sm = sin(x2f(js  ));
+      Real sp = sin(x2f(js+1));
+      Real cm = cos(x2f(js  ));
+      Real cp = cos(x2f(js+1));
+      coord_area1_j_(js) = cm - cp;
+      coord_area2_j_(js) = sm;
+      coord_vol_j_(js) = coord_area1_j_(js);
+      coord_src1_j_(js) = (sp - sm)/coord_vol_j_(js);
+      coord_src2_j_(js) = (sp - sm)/((sm + sp)*coord_vol_j_(js));
+      coord_area2_j_(js+1) = sp;
+    }
+  }
 }
 
 // destructor

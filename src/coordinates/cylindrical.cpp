@@ -37,19 +37,29 @@
 Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_block = pmb;
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+  cflag=flag;
+  int is, ie, js, je, ks, ke, ng;
+  if(cflag==0) {
+    is = pmb->is; js = pmb->js; ks = pmb->ks;
+    ie = pmb->ie; je = pmb->je; ke = pmb->ke;
+    ng=NGHOST;
+  }
+  else {
+    is = pmb->cis; js = pmb->cjs; ks = pmb->cks;
+    ie = pmb->cie; je = pmb->cje; ke = pmb->cke;
+    ng=pmb->cnghost;
+  }
 
   // Set face centered positions and distances
   AllocateAndSetBasicCoordinates();
 
   // initialize volume-averaged positions and spacing
   // x1-direction: x1v = (\int r dV / \int dV) = d(r^3/3)d(r^2/2)
-  for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+  for (int i=is-ng; i<=ie+ng; ++i) {
     x1v(i) = (2.0/3.0)*(pow(x1f(i+1),3) - pow(x1f(i),3))
                       /(pow(x1f(i+1),2) - pow(x1f(i),2));
   }
-  for (int i=is-(NGHOST); i<=ie+(NGHOST)-1; ++i) {
+  for (int i=is-ng; i<=ie+ng-1; ++i) {
     dx1v(i) = x1v(i+1) - x1v(i);
   }
 
@@ -58,10 +68,10 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     x2v(js) = 0.5*(x2f(js+1) + x2f(js));
     dx2v(js) = dx2f(js);
   } else {
-    for (int j=js-(NGHOST); j<=je+(NGHOST); ++j) {
+    for (int j=js-ng; j<=je+ng; ++j) {
       x2v(j) = 0.5*(x2f(j+1) + x2f(j));
     }
-    for (int j=js-(NGHOST); j<=je+(NGHOST)-1; ++j) {
+    for (int j=js-ng; j<=je+ng-1; ++j) {
       dx2v(j) = x2v(j+1) - x2v(j);
     }
   }
@@ -71,97 +81,66 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
     x3v(ks) = 0.5*(x3f(ks+1) + x3f(ks));
     dx3v(ks) = dx3f(ks);
   } else {
-    for (int k=ks-(NGHOST); k<=ke+(NGHOST); ++k) {
+    for (int k=ks-ng; k<=ke+ng; ++k) {
       x3v(k) = 0.5*(x3f(k+1) + x3f(k));
     }
-    for (int k=ks-(NGHOST); k<=ke+(NGHOST)-1; ++k) {
+    for (int k=ks-ng; k<=ke+ng-1; ++k) {
       dx3v(k) = x3v(k+1) - x3v(k);
     }
   }
 
-  if(pmb->pmy_mesh->multilevel==true) { // calc coarse coodinates
-    int cis = pmb->cis; int cjs = pmb->cjs; int cks = pmb->cks;
-    int cie = pmb->cie; int cje = pmb->cje; int cke = pmb->cke;
-    for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost); ++i) {
-      coarse_x1v(i) = (2.0/3.0)
-                     *(pow(coarse_x1f(i+1),3) - pow(coarse_x1f(i),3))
-                     /(pow(coarse_x1f(i+1),2) - pow(coarse_x1f(i),2));
-}
+  if((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+    for (int i=is-ng; i<=ie+ng; ++i)
+      x1s2(i) = x1s3(i) = x1v(i);
     if (pmb->block_size.nx2 == 1) {
-      coarse_x2v(cjs) = 0.5*(coarse_x2f(cjs+1) + coarse_x2f(cjs));
-    } else {
-      for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost); ++j) {
-        coarse_x2v(j) = 0.5*(coarse_x2f(j+1) + coarse_x2f(j));
-      }
+      x2s1(js) = x2s3(js) = x2v(js);
+    }
+    else {
+      for (int j=js-ng; j<=je+ng; ++j)
+        x2s1(j) = x2s3(j) = x2v(j);
     }
     if (pmb->block_size.nx3 == 1) {
-      coarse_x3v(cks) = 0.5*(coarse_x3f(cks+1) + coarse_x3f(cks));
-    } else {
-      for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost); ++k) {
-        coarse_x3v(k) = 0.5*(coarse_x3f(k+1) + coarse_x3f(k));
-      }
+      x3s1(ks) = x3s2(ks) = x3v(ks);
     }
-
-    if (MAGNETIC_FIELDS_ENABLED) {
-      for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i)
-        x1s2(i) = x1s3(i) = x1v(i);
-      for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost); ++i)
-        coarse_x1s2(i) = coarse_x1s3(i) = coarse_x1v(i);
-      if (pmb->block_size.nx2 == 1) {
-        x2s1(js) = x2s3(js) = x2v(js);
-        coarse_x2s1(js) = coarse_x2s3(js) = coarse_x2v(js);
-      }
-      else {
-        for (int j=js-(NGHOST); j<=je+(NGHOST); ++j)
-          x2s1(j) = x2s3(j) = x2v(j);
-        for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost); ++j)
-          coarse_x2s1(j) = coarse_x2s3(j) = coarse_x2v(j);
-      }
-      if (pmb->block_size.nx3 == 1) {
-        x3s1(ks) = x3s2(ks) = x3v(ks);
-        coarse_x3s1(ks) = coarse_x3s2(ks) = coarse_x3v(ks);
-      }
-      else {
-        for (int k=ks-(NGHOST); k<=ke+(NGHOST); ++k)
-          x3s1(k) = x3s2(k) = x3v(k);
-        for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost); ++k)
-          coarse_x3s1(k) = coarse_x3s2(k) = coarse_x3v(k);
-      }
+    else {
+      for (int k=ks-ng; k<=ke+ng; ++k)
+        x3s1(k) = x3s2(k) = x3v(k);
     }
   }
 
   // Allocate memory for scratch arrays used in integrator, and internal scratch arrays
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  coord_area3_i_.NewAthenaArray(ncells1);
-  coord_vol_i_.NewAthenaArray(ncells1);
-  coord_src1_i_.NewAthenaArray(ncells1);
-  coord_src2_i_.NewAthenaArray(ncells1);
-  phy_src1_i_.NewAthenaArray(ncells1);
-  phy_src2_i_.NewAthenaArray(ncells1);
+  if(cflag==0) {
+    int ncells1 = pmb->block_size.nx1 + 2*ng;
+    coord_area3_i_.NewAthenaArray(ncells1);
+    coord_vol_i_.NewAthenaArray(ncells1);
+    coord_src1_i_.NewAthenaArray(ncells1);
+    coord_src2_i_.NewAthenaArray(ncells1);
+    phy_src1_i_.NewAthenaArray(ncells1);
+    phy_src2_i_.NewAthenaArray(ncells1);
 
-  // Compute and store constant coefficients needed for face-areas, cell-volumes, etc.
-  // This helps improve performance.
+    // Compute and store constant coefficients needed for face-areas, cell-volumes, etc.
+    // This helps improve performance.
 #pragma simd
-  for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i){
-    Real rm = x1f(i  );
-    Real rp = x1f(i+1);
-    // dV = 0.5*(R_{i+1}^2 - R_{i}^2)
-    coord_area3_i_(i)= 0.5*(rp*rp - rm*rm);
-    // dV = 0.5*(R_{i+1}^2 - R_{i}^2)
-    coord_vol_i_(i) = coord_area3_i_(i);
-    // (A1^{+} - A1^{-})/dV
-    coord_src1_i_(i) = dx1f(i)/coord_vol_i_(i);
-    // (dR/2)/(R_c dV)
-    coord_src2_i_(i) = dx1f(i)/((rm + rp)*coord_vol_i_(i));
-    // Rf_{i}/R_{i}/Rf_{i}^2
-    phy_src1_i_(i) = 1.0/(x1v(i)*x1f(i));
-  }
+    for (int i=is-ng; i<=ie+ng; ++i){
+      Real rm = x1f(i  );
+      Real rp = x1f(i+1);
+      // dV = 0.5*(R_{i+1}^2 - R_{i}^2)
+      coord_area3_i_(i)= 0.5*(rp*rp - rm*rm);
+      // dV = 0.5*(R_{i+1}^2 - R_{i}^2)
+      coord_vol_i_(i) = coord_area3_i_(i);
+      // (A1^{+} - A1^{-})/dV
+      coord_src1_i_(i) = dx1f(i)/coord_vol_i_(i);
+      // (dR/2)/(R_c dV)
+      coord_src2_i_(i) = dx1f(i)/((rm + rp)*coord_vol_i_(i));
+      // Rf_{i}/R_{i}/Rf_{i}^2
+      phy_src1_i_(i) = 1.0/(x1v(i)*x1f(i));
+    }
 #pragma simd
-  for (int i=is-(NGHOST); i<=ie+(NGHOST-1); ++i){
-     // Rf_{i+1}/R_{i}/Rf_{i+1}^2 
-    phy_src2_i_(i) = 1.0/(x1v(i)*x1f(i+1));
+    for (int i=is-ng; i<=ie+(ng-1); ++i){
+       // Rf_{i+1}/R_{i}/Rf_{i+1}^2 
+      phy_src2_i_(i) = 1.0/(x1v(i)*x1f(i+1));
+    }
   }
-
 }
 
 // destructor
@@ -170,12 +149,14 @@ Coordinates::~Coordinates()
 {
   DeleteBasicCoordinates();
 
-  coord_area3_i_.DeleteAthenaArray();
-  coord_vol_i_.DeleteAthenaArray();
-  coord_src1_i_.DeleteAthenaArray();
-  coord_src2_i_.DeleteAthenaArray();
-  phy_src1_i_.DeleteAthenaArray();
-  phy_src2_i_.DeleteAthenaArray();
+  if(cflag==0) {
+    coord_area3_i_.DeleteAthenaArray();
+    coord_vol_i_.DeleteAthenaArray();
+    coord_src1_i_.DeleteAthenaArray();
+    coord_src2_i_.DeleteAthenaArray();
+    phy_src1_i_.DeleteAthenaArray();
+    phy_src2_i_.DeleteAthenaArray();
+  }
 }
 
 //--------------------------------------------------------------------------------------
