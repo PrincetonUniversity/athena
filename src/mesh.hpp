@@ -100,7 +100,7 @@ public:
 
   int cis,cie,cjs,cje,cks,cke,cnghost;
 
-  Coordinates *pcoord;
+  Coordinates *pcoord, *pcoarsec;
   Hydro *phydro;
   Field *pfield;
   BoundaryValues *pbval;

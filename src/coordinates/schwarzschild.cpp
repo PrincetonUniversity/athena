@@ -25,16 +25,22 @@
 // Inputs:
 //   pmb: pointer to MeshBlock containing this grid
 //   pin: pointer to runtime inputs
-Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
+Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
 {
   // Set pointer to host MeshBlock
   pmy_block = pmb;
-  int is = pmb->is;
-  int ie = pmb->ie;
-  int js = pmb->js;
-  int je = pmb->je;
-  int ks = pmb->ks;
-  int ke = pmb->ke;
+  cflag=flag;
+  int is, ie, js, je, ks, ke, ng;
+  if(cflag==0) {
+    is = pmb->is; js = pmb->js; ks = pmb->ks;
+    ie = pmb->ie; je = pmb->je; ke = pmb->ke;
+    ng=NGHOST;
+  }
+  else {
+    is = pmb->cis; js = pmb->cjs; ks = pmb->cks;
+    ie = pmb->cie; je = pmb->cje; ke = pmb->cke;
+    ng=pmb->cnghost;
+  }
 
   // Set face centered positions and distances
   AllocateAndSetBasicCoordinates();
@@ -94,165 +100,175 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
       dx3v(k) = x3v(k+1) - x3v(k);
   }
 
-  if(pmb->pmy_mesh->multilevel==true) { // calc coarse coodinates
-    int cis = pmb->cis; int cjs = pmb->cjs; int cks = pmb->cks;
-    int cie = pmb->cie; int cje = pmb->cje; int cke = pmb->cke;
-    for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost); ++i) {
-      Real r_m = coarse_x1f(i);
-      Real r_p = coarse_x1f(i+1);
-      coarse_x1v(i) = std::pow(0.5 * (r_m*r_m*r_m + r_p*r_p*r_p), 1.0/3.0);
+  if((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+      x1s2(i) = x1s3(i) = (2.0/3.0)*(pow(x1f(i+1),3) - pow(x1f(i),3))
+                          /(SQR(x1f(i+1)) - SQR(x1f(i)));
     }
     if (pmb->block_size.nx2 == 1) {
-      coarse_x2v(cjs) = 0.5*(coarse_x2f(cjs+1) + coarse_x2f(cjs));
-    } else {
-      for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost); ++j) {
-        Real theta_m = coarse_x2f(j);
-        Real theta_p = coarse_x2f(j+1);
-        coarse_x2v(j) = std::acos(0.5 * (std::cos(theta_m) + std::cos(theta_p)));
-      }
+      x2s1(js) = x2s3(js) = x2v(js);
+    }
+    else {
+      for (int j=js-(NGHOST); j<=je+(NGHOST); ++j)
+        x2s1(j) = x2s3(j) = x2v(j);
     }
     if (pmb->block_size.nx3 == 1) {
-      coarse_x3v(cks) = 0.5*(coarse_x3f(cks+1) + coarse_x3f(cks));
-    } else {
-      for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost); ++k) {
-        coarse_x3v(k) = 0.5*(coarse_x3f(k+1) + coarse_x3f(k));
-      }
+      x3s1(ks) = x3s2(ks) = x3v(ks);
     }
-
-    if (MAGNETIC_FIELDS_ENABLED) {
-      for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
-        x1s2(i) = x1s3(i) = (2.0/3.0)*(pow(x1f(i+1),3) - pow(x1f(i),3))
-                            /(SQR(x1f(i+1)) - SQR(x1f(i)));
-      }
-      for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost); ++i) {
-        coarse_x1s2(i) = coarse_x1s3(i)
-        = (2.0/3.0)*(pow(coarse_x1f(i+1),3) - pow(coarse_x1f(i),3))
-                   /(SQR(coarse_x1f(i+1)) - SQR(coarse_x1f(i)));
-      }
-      if (pmb->block_size.nx2 == 1) {
-        x2s1(js) = x2s3(js) = x2v(js);
-        coarse_x2s1(js) = coarse_x2s3(js) = coarse_x2v(js);
-      }
-      else {
-        for (int j=js-(NGHOST); j<=je+(NGHOST); ++j)
-          x2s1(j) = x2s3(j) = x2v(j);
-        for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost); ++j)
-          coarse_x2s1(j) = coarse_x2s3(j) = coarse_x2v(j);
-      }
-      if (pmb->block_size.nx3 == 1) {
-        x3s1(ks) = x3s2(ks) = x3v(ks);
-        coarse_x3s1(ks) = coarse_x3s2(ks) = coarse_x3v(ks);
-      }
-      else {
-        for (int k=ks-(NGHOST); k<=ke+(NGHOST); ++k)
-          x3s1(k) = x3s2(k) = x3v(k);
-        for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost); ++k)
-          coarse_x3s1(k) = coarse_x3s2(k) = coarse_x3v(k);
-      }
+    else {
+      for (int k=ks-(NGHOST); k<=ke+(NGHOST); ++k)
+        x3s1(k) = x3s2(k) = x3v(k);
     }
   }
 
   // Allocate arrays for intermediate geometric quantities: r-direction
-  int n_cells_1 = pmb->block_size.nx1 + 2*NGHOST;
-  coord_vol_i1_.NewAthenaArray(n_cells_1);
-  coord_area1_i1_.NewAthenaArray(n_cells_1);
-  coord_area2_i1_.NewAthenaArray(n_cells_1);
-  coord_area3_i1_.NewAthenaArray(n_cells_1);
-  coord_len1_i1_.NewAthenaArray(n_cells_1);
-  coord_len2_i1_.NewAthenaArray(n_cells_1);
-  coord_len3_i1_.NewAthenaArray(n_cells_1);
-  coord_width1_i1_.NewAthenaArray(n_cells_1);
-  coord_src_i1_.NewAthenaArray(n_cells_1);
-  coord_src_i2_.NewAthenaArray(n_cells_1);
-  coord_src_i3_.NewAthenaArray(n_cells_1);
-  coord_src_i4_.NewAthenaArray(n_cells_1);
-  metric_cell_i1_.NewAthenaArray(n_cells_1);
-  metric_face1_i1_.NewAthenaArray(n_cells_1);
-  metric_face2_i1_.NewAthenaArray(n_cells_1);
-  metric_face3_i1_.NewAthenaArray(n_cells_1);
-  trans_face1_i1_.NewAthenaArray(n_cells_1);
-  trans_face2_i1_.NewAthenaArray(n_cells_1);
-  trans_face3_i1_.NewAthenaArray(n_cells_1);
-  g_.NewAthenaArray(NMETRIC, n_cells_1);
-  gi_.NewAthenaArray(NMETRIC, n_cells_1);
+  if(cflag==0) {
+    int n_cells_1 = pmb->block_size.nx1 + 2*NGHOST;
+    coord_vol_i1_.NewAthenaArray(n_cells_1);
+    coord_area1_i1_.NewAthenaArray(n_cells_1);
+    coord_area2_i1_.NewAthenaArray(n_cells_1);
+    coord_area3_i1_.NewAthenaArray(n_cells_1);
+    coord_len1_i1_.NewAthenaArray(n_cells_1);
+    coord_len2_i1_.NewAthenaArray(n_cells_1);
+    coord_len3_i1_.NewAthenaArray(n_cells_1);
+    coord_width1_i1_.NewAthenaArray(n_cells_1);
+    coord_src_i1_.NewAthenaArray(n_cells_1);
+    coord_src_i2_.NewAthenaArray(n_cells_1);
+    coord_src_i3_.NewAthenaArray(n_cells_1);
+    coord_src_i4_.NewAthenaArray(n_cells_1);
+    metric_cell_i1_.NewAthenaArray(n_cells_1);
+    metric_face1_i1_.NewAthenaArray(n_cells_1);
+    metric_face2_i1_.NewAthenaArray(n_cells_1);
+    metric_face3_i1_.NewAthenaArray(n_cells_1);
+    trans_face1_i1_.NewAthenaArray(n_cells_1);
+    trans_face2_i1_.NewAthenaArray(n_cells_1);
+    trans_face3_i1_.NewAthenaArray(n_cells_1);
+    g_.NewAthenaArray(NMETRIC, n_cells_1);
+    gi_.NewAthenaArray(NMETRIC, n_cells_1);
 
-  // Allocate arrays for intermediate geometric quantities: theta-direction
-  int n_cells_2 = (pmb->block_size.nx2 > 1) ? pmb->block_size.nx2 + 2*NGHOST : 1;
-  coord_vol_j1_.NewAthenaArray(n_cells_2);
-  coord_area1_j1_.NewAthenaArray(n_cells_2);
-  coord_area2_j1_.NewAthenaArray(n_cells_2);
-  coord_area3_j1_.NewAthenaArray(n_cells_2);
-  coord_len1_j1_.NewAthenaArray(n_cells_2);
-  coord_len2_j1_.NewAthenaArray(n_cells_2);
-  coord_len3_j1_.NewAthenaArray(n_cells_2);
-  coord_width3_j1_.NewAthenaArray(n_cells_2);
-  coord_src_j1_.NewAthenaArray(n_cells_2);
-  coord_src_j2_.NewAthenaArray(n_cells_2);
-  coord_src_j3_.NewAthenaArray(n_cells_2);
-  metric_cell_j1_.NewAthenaArray(n_cells_2);
-  metric_face1_j1_.NewAthenaArray(n_cells_2);
-  metric_face2_j1_.NewAthenaArray(n_cells_2);
-  metric_face3_j1_.NewAthenaArray(n_cells_2);
-  trans_face1_j1_.NewAthenaArray(n_cells_2);
-  trans_face2_j1_.NewAthenaArray(n_cells_2);
-  trans_face3_j1_.NewAthenaArray(n_cells_2);
+    // Allocate arrays for intermediate geometric quantities: theta-direction
+    int n_cells_2 = (pmb->block_size.nx2 > 1) ? pmb->block_size.nx2 + 2*NGHOST : 1;
+    coord_vol_j1_.NewAthenaArray(n_cells_2);
+    coord_area1_j1_.NewAthenaArray(n_cells_2);
+    coord_area2_j1_.NewAthenaArray(n_cells_2);
+    coord_area3_j1_.NewAthenaArray(n_cells_2);
+    coord_len1_j1_.NewAthenaArray(n_cells_2);
+    coord_len2_j1_.NewAthenaArray(n_cells_2);
+    coord_len3_j1_.NewAthenaArray(n_cells_2);
+    coord_width3_j1_.NewAthenaArray(n_cells_2);
+    coord_src_j1_.NewAthenaArray(n_cells_2);
+    coord_src_j2_.NewAthenaArray(n_cells_2);
+    coord_src_j3_.NewAthenaArray(n_cells_2);
+    metric_cell_j1_.NewAthenaArray(n_cells_2);
+    metric_face1_j1_.NewAthenaArray(n_cells_2);
+    metric_face2_j1_.NewAthenaArray(n_cells_2);
+    metric_face3_j1_.NewAthenaArray(n_cells_2);
+    trans_face1_j1_.NewAthenaArray(n_cells_2);
+    trans_face2_j1_.NewAthenaArray(n_cells_2);
+    trans_face3_j1_.NewAthenaArray(n_cells_2);
 
-  // Calculate intermediate geometric quantities: r-direction
-  #pragma simd
-  for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
-  {
-    // Useful quantities
-    Real r_c = x1v(i);
-    Real r_m = x1f(i);
-    Real r_p = x1f(i+1);
-    Real alpha_c = std::sqrt(1.0 - 2.0*m/r_c);
-    Real alpha_m = std::sqrt(1.0 - 2.0*m/r_m);
-    Real alpha_p = std::sqrt(1.0 - 2.0*m/r_p);
-    Real r_p_cu = r_p*r_p*r_p;
-    Real r_m_cu = r_m*r_m*r_m;
-
-    // Volumes, areas, lengths, and widths
-    coord_vol_i1_(i) = 1.0/3.0 * (r_p_cu - r_m_cu);
-    coord_area1_i1_(i) = SQR(r_m);
-    coord_area2_i1_(i) = coord_vol_i1_(i);
-    coord_area3_i1_(i) = coord_vol_i1_(i);
-    coord_len1_i1_(i) = coord_vol_i1_(i);
-    coord_len2_i1_(i) = coord_area1_i1_(i);
-    coord_len3_i1_(i) = coord_area1_i1_(i);
-    coord_width1_i1_(i) = r_p*alpha_p - r_m*alpha_m
-        + m * std::log((r_p*(1.0+alpha_p)-m) / (r_m*(1.0+alpha_m)-m));
-
-    // Source terms
-    coord_src_i1_(i) = 3.0*m / (r_p_cu - r_m_cu)
-        * (r_p - r_m + 2.0*m * std::log((r_p-2.0*m) / (r_m-2.0*m)));
-    coord_src_i2_(i) = 3.0*m / (r_p_cu - r_m_cu)
-        * (r_p - r_m - 2.0*m * std::log(r_p/r_m));
-    coord_src_i3_(i) = 2.0*m - 3.0/4.0 * (r_m + r_p) * (SQR(r_m) + SQR(r_p))
-        / (SQR(r_m) + r_m * r_p + SQR(r_p));
-    coord_src_i4_(i) = 3.0/2.0 * (r_m + r_p) / (SQR(r_m) + r_m * r_p + SQR(r_p));
-
-    // Metric coefficients
-    metric_cell_i1_(i) = SQR(alpha_c);
-    metric_face1_i1_(i) = SQR(alpha_m);
-    metric_face2_i1_(i) = SQR(alpha_c);
-    metric_face3_i1_(i) = SQR(alpha_c);
-
-    // Coordinate transformations
-    trans_face1_i1_(i) = alpha_m;
-    trans_face2_i1_(i) = alpha_c;
-    trans_face3_i1_(i) = alpha_c;
-  }
-
-  // Calculate intermediate geometric quantities: theta-direction
-  if (n_cells_2 > 1)  // extended
-  {
+    // Calculate intermediate geometric quantities: r-direction
     #pragma simd
-    for (int j = js-NGHOST; j <= je+NGHOST; ++j)
+    for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
     {
       // Useful quantities
-      Real theta_c = x2v(j);
-      Real theta_m = x2f(j);
-      Real theta_p = x2f(j+1);
+      Real r_c = x1v(i);
+      Real r_m = x1f(i);
+      Real r_p = x1f(i+1);
+      Real alpha_c = std::sqrt(1.0 - 2.0*m/r_c);
+      Real alpha_m = std::sqrt(1.0 - 2.0*m/r_m);
+      Real alpha_p = std::sqrt(1.0 - 2.0*m/r_p);
+      Real r_p_cu = r_p*r_p*r_p;
+      Real r_m_cu = r_m*r_m*r_m;
+
+      // Volumes, areas, lengths, and widths
+      coord_vol_i1_(i) = 1.0/3.0 * (r_p_cu - r_m_cu);
+      coord_area1_i1_(i) = SQR(r_m);
+      coord_area2_i1_(i) = coord_vol_i1_(i);
+      coord_area3_i1_(i) = coord_vol_i1_(i);
+      coord_len1_i1_(i) = coord_vol_i1_(i);
+      coord_len2_i1_(i) = coord_area1_i1_(i);
+      coord_len3_i1_(i) = coord_area1_i1_(i);
+      coord_width1_i1_(i) = r_p*alpha_p - r_m*alpha_m
+          + m * std::log((r_p*(1.0+alpha_p)-m) / (r_m*(1.0+alpha_m)-m));
+
+      // Source terms
+      coord_src_i1_(i) = 3.0*m / (r_p_cu - r_m_cu)
+          * (r_p - r_m + 2.0*m * std::log((r_p-2.0*m) / (r_m-2.0*m)));
+      coord_src_i2_(i) = 3.0*m / (r_p_cu - r_m_cu)
+          * (r_p - r_m - 2.0*m * std::log(r_p/r_m));
+      coord_src_i3_(i) = 2.0*m - 3.0/4.0 * (r_m + r_p) * (SQR(r_m) + SQR(r_p))
+          / (SQR(r_m) + r_m * r_p + SQR(r_p));
+      coord_src_i4_(i) = 3.0/2.0 * (r_m + r_p) / (SQR(r_m) + r_m * r_p + SQR(r_p));
+
+      // Metric coefficients
+      metric_cell_i1_(i) = SQR(alpha_c);
+      metric_face1_i1_(i) = SQR(alpha_m);
+      metric_face2_i1_(i) = SQR(alpha_c);
+      metric_face3_i1_(i) = SQR(alpha_c);
+
+      // Coordinate transformations
+      trans_face1_i1_(i) = alpha_m;
+      trans_face2_i1_(i) = alpha_c;
+      trans_face3_i1_(i) = alpha_c;
+    }
+
+    // Calculate intermediate geometric quantities: theta-direction
+    if (n_cells_2 > 1)  // extended
+    {
+      #pragma simd
+      for (int j = js-NGHOST; j <= je+NGHOST; ++j)
+      {
+        // Useful quantities
+        Real theta_c = x2v(j);
+        Real theta_m = x2f(j);
+        Real theta_p = x2f(j+1);
+        Real sin_c = std::sin(theta_c);
+        Real sin_m = std::sin(theta_m);
+        Real sin_p = std::sin(theta_p);
+        Real cos_m = std::cos(theta_m);
+        Real cos_p = std::cos(theta_p);
+        Real sin_c_sq = SQR(sin_c);
+        Real sin_m_sq = SQR(sin_m);
+        Real sin_m_cu = sin_m_sq*sin_m;
+        Real sin_p_cu = SQR(sin_p)*sin_p;
+
+        // Volumes, areas, lengths, and widths
+        coord_vol_j1_(j) = cos_m - cos_p;
+        coord_area1_j1_(j) = coord_vol_j1_(j);
+        coord_area2_j1_(j) = sin_m;
+        coord_area3_j1_(j) = coord_vol_j1_(j);
+        coord_len1_j1_(j) = coord_area2_j1_(j);
+        coord_len2_j1_(j) = coord_vol_j1_(j);
+        coord_len3_j1_(j) = coord_area2_j1_(j);
+        coord_width3_j1_(j) = sin_c;
+
+        // Source terms
+        coord_src_j1_(j) = 1.0/6.0
+            * (4.0 - std::cos(2.0*theta_m)
+            - 2.0 * cos_m * cos_p - std::cos(2.0*theta_p));
+        coord_src_j2_(j) = 1.0/3.0 * (sin_m_cu - sin_p_cu)
+            / (cos_m - cos_p);
+        coord_src_j3_(j) = (sin_p-sin_m) / (cos_m-cos_p);    // cot((theta_p+theta_m)/2)
+
+        // Metric coefficients
+        metric_cell_j1_(j) = sin_c_sq;
+        metric_face1_j1_(j) = sin_c_sq;
+        metric_face2_j1_(j) = sin_m_sq;
+        metric_face3_j1_(j) = sin_c_sq;
+
+        // Coordinate transformations
+        trans_face1_j1_(j) = sin_c;
+        trans_face2_j1_(j) = sin_m;
+        trans_face3_j1_(j) = sin_c;
+      }
+    }
+    else  // no extent
+    {
+      // Useful quantities
+      Real theta_c = x2v(js);
+      Real theta_m = x2f(js);
+      Real theta_p = x2f(js+1);
       Real sin_c = std::sin(theta_c);
       Real sin_m = std::sin(theta_m);
       Real sin_p = std::sin(theta_p);
@@ -263,79 +279,34 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
       Real sin_m_cu = sin_m_sq*sin_m;
       Real sin_p_cu = SQR(sin_p)*sin_p;
 
-      // Volumes, areas, lengths, and widths
-      coord_vol_j1_(j) = cos_m - cos_p;
-      coord_area1_j1_(j) = coord_vol_j1_(j);
-      coord_area2_j1_(j) = sin_m;
-      coord_area3_j1_(j) = coord_vol_j1_(j);
-      coord_len1_j1_(j) = coord_area2_j1_(j);
-      coord_len2_j1_(j) = coord_vol_j1_(j);
-      coord_len3_j1_(j) = coord_area2_j1_(j);
-      coord_width3_j1_(j) = sin_c;
+      // Volumes and areas
+      coord_vol_j1_(js) = cos_m - cos_p;
+      coord_area1_j1_(js) = coord_vol_j1_(js);
+      coord_area2_j1_(js) = sin_m;
+      coord_area3_j1_(js) = coord_vol_j1_(js);
+      coord_len1_j1_(js) = coord_area2_j1_(js);
+      coord_len2_j1_(js) = coord_vol_j1_(js);
+      coord_len3_j1_(js) = coord_area2_j1_(js);
 
       // Source terms
-      coord_src_j1_(j) = 1.0/6.0
+      coord_src_j1_(js) = 1.0/6.0
           * (4.0 - std::cos(2.0*theta_m)
           - 2.0 * cos_m * cos_p - std::cos(2.0*theta_p));
-      coord_src_j2_(j) = 1.0/3.0 * (sin_m_cu - sin_p_cu)
+      coord_src_j2_(js) = 1.0/3.0 * (sin_m_cu - sin_p_cu)
           / (cos_m - cos_p);
-      coord_src_j3_(j) = (sin_p-sin_m) / (cos_m-cos_p);    // cot((theta_p+theta_m)/2)
+      coord_src_j3_(js) = (sin_p-sin_m) / (cos_m-cos_p);   // cot((theta_p+theta_m)/2)
 
       // Metric coefficients
-      metric_cell_j1_(j) = sin_c_sq;
-      metric_face1_j1_(j) = sin_c_sq;
-      metric_face2_j1_(j) = sin_m_sq;
-      metric_face3_j1_(j) = sin_c_sq;
+      metric_cell_j1_(js) = sin_c_sq;
+      metric_face1_j1_(js) = sin_c_sq;
+      metric_face2_j1_(js) = sin_m_sq;
+      metric_face3_j1_(js) = sin_c_sq;
 
       // Coordinate transformations
-      trans_face1_j1_(j) = sin_c;
-      trans_face2_j1_(j) = sin_m;
-      trans_face3_j1_(j) = sin_c;
+      trans_face1_j1_(js) = sin_c;
+      trans_face2_j1_(js) = sin_m;
+      trans_face3_j1_(js) = sin_c;
     }
-  }
-  else  // no extent
-  {
-    // Useful quantities
-    Real theta_c = x2v(js);
-    Real theta_m = x2f(js);
-    Real theta_p = x2f(js+1);
-    Real sin_c = std::sin(theta_c);
-    Real sin_m = std::sin(theta_m);
-    Real sin_p = std::sin(theta_p);
-    Real cos_m = std::cos(theta_m);
-    Real cos_p = std::cos(theta_p);
-    Real sin_c_sq = SQR(sin_c);
-    Real sin_m_sq = SQR(sin_m);
-    Real sin_m_cu = sin_m_sq*sin_m;
-    Real sin_p_cu = SQR(sin_p)*sin_p;
-
-    // Volumes and areas
-    coord_vol_j1_(js) = cos_m - cos_p;
-    coord_area1_j1_(js) = coord_vol_j1_(js);
-    coord_area2_j1_(js) = sin_m;
-    coord_area3_j1_(js) = coord_vol_j1_(js);
-    coord_len1_j1_(js) = coord_area2_j1_(js);
-    coord_len2_j1_(js) = coord_vol_j1_(js);
-    coord_len3_j1_(js) = coord_area2_j1_(js);
-
-    // Source terms
-    coord_src_j1_(js) = 1.0/6.0
-        * (4.0 - std::cos(2.0*theta_m)
-        - 2.0 * cos_m * cos_p - std::cos(2.0*theta_p));
-    coord_src_j2_(js) = 1.0/3.0 * (sin_m_cu - sin_p_cu)
-        / (cos_m - cos_p);
-    coord_src_j3_(js) = (sin_p-sin_m) / (cos_m-cos_p);   // cot((theta_p+theta_m)/2)
-
-    // Metric coefficients
-    metric_cell_j1_(js) = sin_c_sq;
-    metric_face1_j1_(js) = sin_c_sq;
-    metric_face2_j1_(js) = sin_m_sq;
-    metric_face3_j1_(js) = sin_c_sq;
-
-    // Coordinate transformations
-    trans_face1_j1_(js) = sin_c;
-    trans_face2_j1_(js) = sin_m;
-    trans_face3_j1_(js) = sin_c;
   }
 }
 
@@ -344,45 +315,47 @@ Coordinates::~Coordinates()
 {
   DeleteBasicCoordinates();
 
-  coord_vol_i1_.DeleteAthenaArray();
-  coord_area1_i1_.DeleteAthenaArray();
-  coord_area2_i1_.DeleteAthenaArray();
-  coord_area3_i1_.DeleteAthenaArray();
-  coord_len1_i1_.DeleteAthenaArray();
-  coord_len2_i1_.DeleteAthenaArray();
-  coord_len3_i1_.DeleteAthenaArray();
-  coord_width1_i1_.DeleteAthenaArray();
-  coord_src_i1_.DeleteAthenaArray();
-  coord_src_i2_.DeleteAthenaArray();
-  coord_src_i3_.DeleteAthenaArray();
-  coord_src_i4_.DeleteAthenaArray();
-  coord_vol_j1_.DeleteAthenaArray();
-  coord_area1_j1_.DeleteAthenaArray();
-  coord_area2_j1_.DeleteAthenaArray();
-  coord_area3_j1_.DeleteAthenaArray();
-  coord_len1_j1_.DeleteAthenaArray();
-  coord_len2_j1_.DeleteAthenaArray();
-  coord_len3_j1_.DeleteAthenaArray();
-  coord_width3_j1_.DeleteAthenaArray();
-  coord_src_j1_.DeleteAthenaArray();
-  coord_src_j2_.DeleteAthenaArray();
-  coord_src_j3_.DeleteAthenaArray();
-  metric_cell_i1_.DeleteAthenaArray();
-  metric_cell_j1_.DeleteAthenaArray();
-  metric_face1_i1_.DeleteAthenaArray();
-  metric_face1_j1_.DeleteAthenaArray();
-  metric_face2_i1_.DeleteAthenaArray();
-  metric_face2_j1_.DeleteAthenaArray();
-  metric_face3_i1_.DeleteAthenaArray();
-  metric_face3_j1_.DeleteAthenaArray();
-  trans_face1_i1_.DeleteAthenaArray();
-  trans_face1_j1_.DeleteAthenaArray();
-  trans_face2_i1_.DeleteAthenaArray();
-  trans_face2_j1_.DeleteAthenaArray();
-  trans_face3_i1_.DeleteAthenaArray();
-  trans_face3_j1_.DeleteAthenaArray();
-  g_.DeleteAthenaArray();
-  gi_.DeleteAthenaArray();
+  if(cflag==0) {
+    coord_vol_i1_.DeleteAthenaArray();
+    coord_area1_i1_.DeleteAthenaArray();
+    coord_area2_i1_.DeleteAthenaArray();
+    coord_area3_i1_.DeleteAthenaArray();
+    coord_len1_i1_.DeleteAthenaArray();
+    coord_len2_i1_.DeleteAthenaArray();
+    coord_len3_i1_.DeleteAthenaArray();
+    coord_width1_i1_.DeleteAthenaArray();
+    coord_src_i1_.DeleteAthenaArray();
+    coord_src_i2_.DeleteAthenaArray();
+    coord_src_i3_.DeleteAthenaArray();
+    coord_src_i4_.DeleteAthenaArray();
+    coord_vol_j1_.DeleteAthenaArray();
+    coord_area1_j1_.DeleteAthenaArray();
+    coord_area2_j1_.DeleteAthenaArray();
+    coord_area3_j1_.DeleteAthenaArray();
+    coord_len1_j1_.DeleteAthenaArray();
+    coord_len2_j1_.DeleteAthenaArray();
+    coord_len3_j1_.DeleteAthenaArray();
+    coord_width3_j1_.DeleteAthenaArray();
+    coord_src_j1_.DeleteAthenaArray();
+    coord_src_j2_.DeleteAthenaArray();
+    coord_src_j3_.DeleteAthenaArray();
+    metric_cell_i1_.DeleteAthenaArray();
+    metric_cell_j1_.DeleteAthenaArray();
+    metric_face1_i1_.DeleteAthenaArray();
+    metric_face1_j1_.DeleteAthenaArray();
+    metric_face2_i1_.DeleteAthenaArray();
+    metric_face2_j1_.DeleteAthenaArray();
+    metric_face3_i1_.DeleteAthenaArray();
+    metric_face3_j1_.DeleteAthenaArray();
+    trans_face1_i1_.DeleteAthenaArray();
+    trans_face1_j1_.DeleteAthenaArray();
+    trans_face2_i1_.DeleteAthenaArray();
+    trans_face2_j1_.DeleteAthenaArray();
+    trans_face3_i1_.DeleteAthenaArray();
+    trans_face3_j1_.DeleteAthenaArray();
+    g_.DeleteAthenaArray();
+    gi_.DeleteAthenaArray();
+  }
 }
 
 //--------------------------------------------------------------------------------------
