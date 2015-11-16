@@ -17,6 +17,9 @@
 // Primary header
 #include "../mesh.hpp"
 
+// C++ headers
+#include <cmath>
+
 // Athena headers
 #include "../athena.hpp"           // enums, Real
 #include "../athena_arrays.hpp"    // AthenaArray
@@ -45,11 +48,12 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  Real rin = pin->GetReal("problem","radius");
+  Real rout = pin->GetReal("problem","radius");
+  Real rin = rout - pin->GetOrAddReal("problem","ramp",0.0);
   Real pa  = pin->GetReal("problem","pamb");
   Real da  = pin->GetOrAddReal("problem","damb",1.0);
-  Real drat = pin->GetOrAddReal("problem","drat",1.0);
   Real prat = pin->GetReal("problem","prat");
+  Real drat = pin->GetOrAddReal("problem","drat",1.0);
   Real b0,theta;
   if (MAGNETIC_FIELDS_ENABLED) {
     b0 = pin->GetReal("problem","b0");
@@ -65,7 +69,15 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   for (int i=is; i<=ie; i++) {
     Real rad = sqrt(SQR(pmb->pcoord->x1v(i)) + SQR(pmb->pcoord->x2v(j)) + SQR(pmb->pcoord->x3v(k)));
     Real den = da;
-    if (rad < rin) den = drat*da;
+    if (rad < rout) {
+      if (rad < rin) {
+        den = drat*da;
+      } else {
+        Real f = (rad-rin) / (rout-rin);
+        Real log_den = (1.0-f) * std::log(drat*da) + f * std::log(da);
+        den = std::exp(log_den);
+      }
+    }
 
     pfl->u(IDN,k,j,i) = den;
     pfl->u(IM1,k,j,i) = 0.0;
@@ -73,7 +85,15 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     pfl->u(IM3,k,j,i) = 0.0;
     if (NON_BAROTROPIC_EOS) {
       Real pres = pa;
-      if (rad < rin) pres = prat*pa;
+      if (rad < rout) {
+        if (rad < rin) {
+          pres = prat*pa;
+        } else {
+          Real f = (rad-rin) / (rout-rin);
+          Real log_pres = (1.0-f) * std::log(prat*pa) + f * std::log(pa);
+          pres = std::exp(log_pres);
+        }
+      }
       pfl->u(IEN,k,j,i) = pres/gm1;
       if (RELATIVISTIC_DYNAMICS)  // this should only ever be SR with this file
         pfl->u(IEN,k,j,i) += den;

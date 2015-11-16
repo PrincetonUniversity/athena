@@ -54,5 +54,6 @@ prat   = 100.0
 damb   = 1.0
 drat   = 1.0
 radius = 0.1
+ramp   = 0.0
 b0     = 1.0
 angle  = 30
