@@ -112,66 +112,64 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
   }
 
   // Allocate arrays for intermediate geometric quantities: x-direction
-  if(cflag==0) {
-    int n_cells_1 = pmb->block_size.nx1 + 2*NGHOST;
-    coord_src_i1_.NewAthenaArray(n_cells_1);
-    metric_cell_i1_.NewAthenaArray(n_cells_1);
-    metric_cell_i2_.NewAthenaArray(n_cells_1);
-    metric_face1_i1_.NewAthenaArray(n_cells_1);
-    metric_face1_i2_.NewAthenaArray(n_cells_1);
-    metric_face2_i1_.NewAthenaArray(n_cells_1);
-    metric_face2_i2_.NewAthenaArray(n_cells_1);
-    metric_face3_i1_.NewAthenaArray(n_cells_1);
-    metric_face3_i2_.NewAthenaArray(n_cells_1);
-    trans_face1_i2_.NewAthenaArray(n_cells_1);
-    trans_face2_i1_.NewAthenaArray(n_cells_1);
-    trans_face2_i2_.NewAthenaArray(n_cells_1);
-    trans_face3_i2_.NewAthenaArray(n_cells_1);
-    g_.NewAthenaArray(NMETRIC, n_cells_1);
-    gi_.NewAthenaArray(NMETRIC, n_cells_1);
+ int n_cells_1 = pmb->block_size.nx1 + 2*NGHOST;
+ coord_src_i1_.NewAthenaArray(n_cells_1);
+ metric_cell_i1_.NewAthenaArray(n_cells_1);
+ metric_cell_i2_.NewAthenaArray(n_cells_1);
+ metric_face1_i1_.NewAthenaArray(n_cells_1);
+ metric_face1_i2_.NewAthenaArray(n_cells_1);
+ metric_face2_i1_.NewAthenaArray(n_cells_1);
+ metric_face2_i2_.NewAthenaArray(n_cells_1);
+ metric_face3_i1_.NewAthenaArray(n_cells_1);
+ metric_face3_i2_.NewAthenaArray(n_cells_1);
+ trans_face1_i2_.NewAthenaArray(n_cells_1);
+ trans_face2_i1_.NewAthenaArray(n_cells_1);
+ trans_face2_i2_.NewAthenaArray(n_cells_1);
+ trans_face3_i2_.NewAthenaArray(n_cells_1);
+ g_.NewAthenaArray(NMETRIC, n_cells_1);
+ gi_.NewAthenaArray(NMETRIC, n_cells_1);
 
-    // Calculate intermediate geometric quantities: x-direction
-    #pragma simd
-    for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
-    {
-      // Useful quantities
-      Real r_c = x1v(i);
-      Real r_m = x1f(i);
-      Real r_p = x1f(i+1);
-      Real sin_2m = std::sin(2.0*kk*r_m);
-      Real sin_2p = std::sin(2.0*kk*r_p);
-      Real cos_c = std::cos(kk*r_c);
-      Real cos_m = std::cos(kk*r_m);
-      Real cos_p = std::cos(kk*r_p);
-      Real alpha_sq_c = 1.0 + SQR(aa)*SQR(kk) * SQR(cos_c);
-      Real alpha_sq_m = 1.0 + SQR(aa)*SQR(kk) * SQR(cos_m);
-      Real alpha_c = std::sqrt(alpha_sq_c);
-      Real beta_c = aa*kk * cos_c;
-      Real beta_m = aa*kk * cos_m;
-      Real beta_p = aa*kk * cos_p;
+ // Calculate intermediate geometric quantities: x-direction
+ #pragma simd
+ for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
+ {
+   // Useful quantities
+   Real r_c = x1v(i);
+   Real r_m = x1f(i);
+   Real r_p = x1f(i+1);
+   Real sin_2m = std::sin(2.0*kk*r_m);
+   Real sin_2p = std::sin(2.0*kk*r_p);
+   Real cos_c = std::cos(kk*r_c);
+   Real cos_m = std::cos(kk*r_m);
+   Real cos_p = std::cos(kk*r_p);
+   Real alpha_sq_c = 1.0 + SQR(aa)*SQR(kk) * SQR(cos_c);
+   Real alpha_sq_m = 1.0 + SQR(aa)*SQR(kk) * SQR(cos_m);
+   Real alpha_c = std::sqrt(alpha_sq_c);
+   Real beta_c = aa*kk * cos_c;
+   Real beta_m = aa*kk * cos_m;
+   Real beta_p = aa*kk * cos_p;
 
-      // Source terms
-      coord_src_i1_(i) = (beta_m - beta_p) / dx1f(i);
+   // Source terms
+   coord_src_i1_(i) = (beta_m - beta_p) / dx1f(i);
 
-      // Cell-centered metric
-      metric_cell_i1_(i) = alpha_sq_c;
-      metric_cell_i2_(i) = beta_c;
+   // Cell-centered metric
+   metric_cell_i1_(i) = alpha_sq_c;
+   metric_cell_i2_(i) = beta_c;
 
-      // Face-centered metric
-      metric_face1_i1_(i) = alpha_sq_m;
-      metric_face1_i2_(i) = beta_m;
-      metric_face2_i1_(i) = alpha_sq_c;
-      metric_face2_i2_(i) = beta_c;
-      metric_face3_i1_(i) = alpha_sq_c;
-      metric_face3_i2_(i) = beta_c;
+   // Face-centered metric
+   metric_face1_i1_(i) = alpha_sq_m;
+   metric_face1_i2_(i) = beta_m;
+   metric_face2_i1_(i) = alpha_sq_c;
+   metric_face2_i2_(i) = beta_c;
+   metric_face3_i1_(i) = alpha_sq_c;
+   metric_face3_i2_(i) = beta_c;
 
-      // Coordinate transformations
-      trans_face1_i2_(i) = beta_m;
-      trans_face2_i1_(i) = alpha_c;
-      trans_face2_i2_(i) = beta_c;
-      trans_face3_i2_(i) = beta_m;
-    }
-  }
+   // Coordinate transformations
+   trans_face1_i2_(i) = beta_m;
+   trans_face2_i1_(i) = alpha_c;
+   trans_face2_i2_(i) = beta_c;
+   trans_face3_i2_(i) = beta_m;
+ }
 }
 
 //--------------------------------------------------------------------------------------
@@ -181,23 +179,21 @@ Coordinates::~Coordinates()
 {
   DeleteBasicCoordinates();
 
-  if(cflag==0) {
-    coord_src_i1_.DeleteAthenaArray();
-    metric_cell_i1_.DeleteAthenaArray();
-    metric_cell_i2_.DeleteAthenaArray();
-    metric_face1_i1_.DeleteAthenaArray();
-    metric_face1_i2_.DeleteAthenaArray();
-    metric_face2_i1_.DeleteAthenaArray();
-    metric_face2_i2_.DeleteAthenaArray();
-    metric_face3_i1_.DeleteAthenaArray();
-    metric_face3_i2_.DeleteAthenaArray();
-    trans_face1_i2_.DeleteAthenaArray();
-    trans_face2_i1_.DeleteAthenaArray();
-    trans_face2_i2_.DeleteAthenaArray();
-    trans_face3_i2_.DeleteAthenaArray();
-    g_.DeleteAthenaArray();
-    gi_.DeleteAthenaArray();
-  }
+  coord_src_i1_.DeleteAthenaArray();
+  metric_cell_i1_.DeleteAthenaArray();
+  metric_cell_i2_.DeleteAthenaArray();
+  metric_face1_i1_.DeleteAthenaArray();
+  metric_face1_i2_.DeleteAthenaArray();
+  metric_face2_i1_.DeleteAthenaArray();
+  metric_face2_i2_.DeleteAthenaArray();
+  metric_face3_i1_.DeleteAthenaArray();
+  metric_face3_i2_.DeleteAthenaArray();
+  trans_face1_i2_.DeleteAthenaArray();
+  trans_face2_i1_.DeleteAthenaArray();
+  trans_face2_i2_.DeleteAthenaArray();
+  trans_face3_i2_.DeleteAthenaArray();
+  g_.DeleteAthenaArray();
+  gi_.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------

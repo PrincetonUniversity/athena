@@ -53,13 +53,13 @@
 #include "../coordinates/coordinates.hpp"
 #include "../utils/utils.hpp"
 
-void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a,
+void reflect_ix2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                  int is, int ie, int js, int je, int ks, int ke);
-void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a,
+void reflect_ox2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                  int is, int ie, int js, int je, int ks, int ke);
-void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a,
+void reflect_ix3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                  int is, int ie, int js, int je, int ks, int ke);
-void reflect_ox3(MeshBlock *pmb, AthenaArray<Real> &a,
+void reflect_ox3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                  int is, int ie, int js, int je, int ks, int ke);
 
 // made global to share with BC functions
@@ -229,10 +229,9 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 //! \fn void reflect_ix2()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a,
+void reflect_ix2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                  int is, int ie, int js, int je, int ks, int ke)
 {
-  Coordinates *pco = pmb->pcoord;
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
     for (int n=0; n<(NHYDRO); ++n) {
@@ -265,10 +264,9 @@ void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a,
 //! \fn void reflect_ox2()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a,
+void reflect_ox2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                  int is, int ie, int js, int je, int ks, int ke)
 {
-  Coordinates *pco = pmb->pcoord;
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
     for (int n=0; n<(NHYDRO); ++n) {
@@ -301,10 +299,9 @@ void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a,
 //! \fn void reflect_ix3()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a,
+void reflect_ix3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                  int is, int ie, int js, int je, int ks, int ke)
 {
-  Coordinates *pco = pmb->pcoord;
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js; j<=je; ++j) {
     for (int n=0; n<(NHYDRO); ++n) {
@@ -337,10 +334,9 @@ void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a,
 //! \fn void reflect_ox3()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void reflect_ox3(MeshBlock *pmb, AthenaArray<Real> &a,
+void reflect_ox3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                  int is, int ie, int js, int je, int ks, int ke)
 {
-  Coordinates *pco = pmb->pcoord;
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js; j<=je; ++j) {
     for (int n=0; n<(NHYDRO); ++n) {

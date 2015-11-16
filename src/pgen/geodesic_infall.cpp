@@ -18,9 +18,9 @@
 #include "../field/field.hpp"              // Field
 
 // Declarations
-void OutflowPrimInnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons,
+void OutflowPrimInnerHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
     int is, int ie, int js, int je, int ks, int ke);
-void FixedOuterHydro(MeshBlock *pmb, AthenaArray<Real> &cons,
+void FixedOuterHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
     int is, int ie, int js, int je, int ks, int ke);
 
 // Function for setting initial conditions
@@ -142,7 +142,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 // Notes:
 //   TODO: remove prim hack
 //   TODO: note hack is wrong (assumes wrong primitives)
-void OutflowPrimInnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons,
+void OutflowPrimInnerHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
     int is, int ie, int js, int je, int ks, int ke)
 {
   int il = is - NGHOST;
@@ -164,7 +164,7 @@ void OutflowPrimInnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons,
   for (int k = kl; k <= ku; ++k)
     for (int j = jl; j <= ju; ++j)
     {
-      pmb->pcoord->CellMetric(k, j, il, iu, g, gi);
+      pco->CellMetric(k, j, il, iu, g, gi);
       Real alpha = std::sqrt(-1.0/gi(I00,is));
       Real v1 = (*pprim)(IVX,k,j,is);
       Real v2 = (*pprim)(IVY,k,j,is);
@@ -196,7 +196,7 @@ void OutflowPrimInnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons,
         (*pprim)(IVY,k,j,i) = u2_new / u0_new;
         (*pprim)(IVZ,k,j,i) = u3_new / u0_new;
         Real u_0_new, u_1_new, u_2_new, u_3_new;
-        pmb->pcoord->LowerVectorCell(u0_new, u1_new, u2_new, u3_new, k, j, i, &u_0_new,
+        pco->LowerVectorCell(u0_new, u1_new, u2_new, u3_new, k, j, i, &u_0_new,
             &u_1_new, &u_2_new, &u_3_new);
         Real gamma_adi = pmb->phydro->pf_eos->GetGamma();
         Real gamma_prime = gamma_adi/(gamma_adi-1.0);
@@ -220,7 +220,7 @@ void OutflowPrimInnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons,
 //   cons: conserved quantities set along outer x1-boundary
 // Notes:
 //   remains unchanged
-void FixedOuterHydro(MeshBlock *pmb, AthenaArray<Real> &cons,
+void FixedOuterHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
     int is, int ie, int js, int je, int ks, int ke)
 {
   return;

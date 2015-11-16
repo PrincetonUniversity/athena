@@ -17,14 +17,14 @@
 #include "../hydro/eos/eos.hpp"
 
 // Declarations
-void InnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
-    int ks, int ke);
-void OuterHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
-    int ks, int ke);
-void InnerField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
-    int ks, int ke);
-void OuterField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
-    int ks, int ke);
+void InnerHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
+    int is, int ie, int js, int je, int ks, int ke);
+void OuterHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
+    int is, int ie, int js, int je, int ks, int ke);
+void InnerField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+    int is, int ie, int js, int je, int ks, int ke);
+void OuterField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+    int is, int ie, int js, int je, int ks, int ke);
 static void CalculatePrimitives(Real r, Real temp_min, Real temp_max, Real *prho,
     Real *ppgas, Real *put, Real *pur);
 static Real TemperatureMin(Real r, Real t_min, Real t_max);
@@ -246,32 +246,32 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 
 // Inner hydro boundary condition
 // TODO: change when interface changes
-void InnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
-    int ks, int ke)
+void InnerHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
+    int is, int ie, int js, int je, int ks, int ke)
 {
   return;
 }
 
 // Outer hydro boundary condition
 // TODO: change when interface changes
-void OuterHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
-    int ks, int ke)
+void OuterHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
+    int is, int ie, int js, int je, int ks, int ke)
 {
   return;
 }
 
 // Inner field boundary condition
 // TODO: comment
-void InnerField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
-    int ks, int ke)
+void InnerField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+    int is, int ie, int js, int je, int ks, int ke)
 {
   return;
 }
 
 // Outer field boundary condition
 // TODO: comment
-void OuterField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
-    int ks, int ke)
+void OuterField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+    int is, int ie, int js, int je, int ks, int ke)
 {
   return;
 }

@@ -4238,6 +4238,7 @@ void BoundaryValues::ClearBoundaryAll(void)
 void BoundaryValues::HydroPhysicalBoundaries(AthenaArray<Real> &dst)
 {
   MeshBlock *pmb=pmy_mblock_;
+  Coordinates *pco=pmb->pcoord;
   int bis=pmb->is, bie=pmb->ie, bjs=pmb->js, bje=pmb->je, bks=pmb->ks, bke=pmb->ke;
 
   if(pmb->pmy_mesh->face_only==false) { // extend the ghost zone
@@ -4250,14 +4251,14 @@ void BoundaryValues::HydroPhysicalBoundaries(AthenaArray<Real> &dst)
   }
 
   if(HydroBoundary_[inner_x1]!=NULL)
-    HydroBoundary_[inner_x1](pmb, dst, pmb->is, pmb->ie, bjs, bje, bks, bke);
+    HydroBoundary_[inner_x1](pmb, pco, dst, pmb->is, pmb->ie, bjs, bje, bks, bke);
   if(HydroBoundary_[outer_x1]!=NULL)
-    HydroBoundary_[outer_x1](pmb, dst, pmb->is, pmb->ie, bjs, bje, bks, bke);
+    HydroBoundary_[outer_x1](pmb, pco, dst, pmb->is, pmb->ie, bjs, bje, bks, bke);
   if(pmb->block_size.nx2>1) { // 2D or 3D
     if(HydroBoundary_[inner_x2]!=NULL)
-      HydroBoundary_[inner_x2](pmb, dst, bis, bie, pmb->js, pmb->je, bks, bke);
+      HydroBoundary_[inner_x2](pmb, pco, dst, bis, bie, pmb->js, pmb->je, bks, bke);
     if(HydroBoundary_[outer_x2]!=NULL)
-      HydroBoundary_[outer_x2](pmb, dst, bis, bie, pmb->js, pmb->je, bks, bke);
+      HydroBoundary_[outer_x2](pmb, pco, dst, bis, bie, pmb->js, pmb->je, bks, bke);
   }
   if(pmb->block_size.nx3>1) { // 3D
     if(pmb->pmy_mesh->face_only==false) {
@@ -4265,9 +4266,9 @@ void BoundaryValues::HydroPhysicalBoundaries(AthenaArray<Real> &dst)
       bje=pmb->je+NGHOST;
     }
     if(HydroBoundary_[inner_x3]!=NULL)
-      HydroBoundary_[inner_x3](pmb, dst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
+      HydroBoundary_[inner_x3](pmb, pco, dst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
     if(HydroBoundary_[outer_x3]!=NULL)
-      HydroBoundary_[outer_x3](pmb, dst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
+      HydroBoundary_[outer_x3](pmb, pco, dst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
   }
   return;
 }
@@ -4279,6 +4280,7 @@ void BoundaryValues::HydroPhysicalBoundaries(AthenaArray<Real> &dst)
 void BoundaryValues::FieldPhysicalBoundaries(InterfaceField &dst)
 {
   MeshBlock *pmb=pmy_mblock_;
+  Coordinates *pco=pmb->pcoord;
   int bis=pmb->is-NGHOST, bie=pmb->ie+NGHOST;
   int bjs=pmb->js, bje=pmb->je, bks=pmb->ks, bke=pmb->ke;
 
@@ -4288,22 +4290,22 @@ void BoundaryValues::FieldPhysicalBoundaries(InterfaceField &dst)
   if(FieldBoundary_[outer_x3]==NULL && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
 
   if(FieldBoundary_[inner_x1]!=NULL)
-    FieldBoundary_[inner_x1](pmb, dst, pmb->is, pmb->ie, bjs, bje, bks, bke);
+    FieldBoundary_[inner_x1](pmb, pco, dst, pmb->is, pmb->ie, bjs, bje, bks, bke);
   if(FieldBoundary_[outer_x1]!=NULL)
-    FieldBoundary_[outer_x1](pmb, dst, pmb->is, pmb->ie, bjs, bje, bks, bke);
+    FieldBoundary_[outer_x1](pmb, pco, dst, pmb->is, pmb->ie, bjs, bje, bks, bke);
   if(pmb->block_size.nx2>1) { // 2D or 3D
     if(FieldBoundary_[inner_x2]!=NULL)
-      FieldBoundary_[inner_x2](pmb, dst, bis, bie, pmb->js, pmb->je, bks, bke);
+      FieldBoundary_[inner_x2](pmb, pco, dst, bis, bie, pmb->js, pmb->je, bks, bke);
     if(FieldBoundary_[outer_x2]!=NULL)
-      FieldBoundary_[outer_x2](pmb, dst, bis, bie, pmb->js, pmb->je, bks, bke);
+      FieldBoundary_[outer_x2](pmb, pco, dst, bis, bie, pmb->js, pmb->je, bks, bke);
   }
   if(pmb->block_size.nx3>1) { // 3D
     bjs=pmb->js-NGHOST;
     bje=pmb->je+NGHOST;
     if(FieldBoundary_[inner_x3]!=NULL)
-      FieldBoundary_[inner_x3](pmb, dst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
+      FieldBoundary_[inner_x3](pmb, pco, dst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
     if(FieldBoundary_[outer_x3]!=NULL)
-      FieldBoundary_[outer_x3](pmb, dst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
+      FieldBoundary_[outer_x3](pmb, pco, dst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
   }
   return;
 }

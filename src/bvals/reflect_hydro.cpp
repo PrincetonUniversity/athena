@@ -26,11 +26,11 @@
 #include "bvals.hpp"
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectInnerX1(MeshBlock *pmb, AthenaArray<Real> &a,
+//! \fn void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 //                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief  REFLECTING boundary conditions conserved vars, inner x1 boundary (ix1_bc=1)
 
-void ReflectInnerX1(MeshBlock *pmb, AthenaArray<Real> &a,
+void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; ++k) {
@@ -57,11 +57,11 @@ void ReflectInnerX1(MeshBlock *pmb, AthenaArray<Real> &a,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectOuterX1(MeshBlock *pmb, AthenaArray<Real> &a,
+//! \fn void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 //                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief  REFLECTING boundary conditions conserved vars, outer x1 boundary (ox1_bc=1)
 
-void ReflectOuterX1(MeshBlock *pmb, AthenaArray<Real> &a,
+void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; ++k) {
@@ -88,11 +88,11 @@ void ReflectOuterX1(MeshBlock *pmb, AthenaArray<Real> &a,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflecInnerX2(MeshBlock *pmb, AthenaArray<Real> &a,
+//! \fn void ReflecInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 //                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief  REFLECTING boundary conditions conserved vars, inner x2 boundary (ix2_bc=1)
 
-void ReflectInnerX2(MeshBlock *pmb, AthenaArray<Real> &a,
+void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; ++k) {
@@ -119,11 +119,11 @@ void ReflectInnerX2(MeshBlock *pmb, AthenaArray<Real> &a,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectOuterX2(MeshBlock *pmb, AthenaArray<Real> &a,
+//! \fn void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 //                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief  REFLECTING boundary conditions conserved vars, outer x2 boundary (ox2_bc=1)
 
-void ReflectOuterX2(MeshBlock *pmb, AthenaArray<Real> &a,
+void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; ++k) {
@@ -150,10 +150,11 @@ void ReflectOuterX2(MeshBlock *pmb, AthenaArray<Real> &a,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectInnerX3(MeshBlock *pmb)
+//! \fn void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+//                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief  REFLECTING boundary conditions conserved vars, inner x3 boundary (ix3_bc=1)
 
-void ReflectInnerX3(MeshBlock *pmb, AthenaArray<Real> &a,
+void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=1; k<=(NGHOST); ++k) {
@@ -180,11 +181,11 @@ void ReflectInnerX3(MeshBlock *pmb, AthenaArray<Real> &a,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectOuterX3(MeshBlock *pmb, AthenaArray<Real> &a,
+//! \fn void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 //                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief  REFLECTING boundary conditions conserved vars, outer x3 boundary (ox3_bc=1)
 
-void ReflectOuterX3(MeshBlock *pmb, AthenaArray<Real> &a,
+void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=1; k<=(NGHOST); ++k) {

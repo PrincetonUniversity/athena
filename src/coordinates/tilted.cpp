@@ -113,11 +113,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
   }
 
   // Allocate arrays for intermediate geometric quantities: x'-direction
-  if(cflag==0) {
-    int n_cells_1 = pmb->block_size.nx1 + 2*NGHOST;
-    g_.NewAthenaArray(NMETRIC, n_cells_1);
-    gi_.NewAthenaArray(NMETRIC, n_cells_1);
-  }
+  int n_cells_1 = pmb->block_size.nx1 + 2*NGHOST;
+  g_.NewAthenaArray(NMETRIC, n_cells_1);
+  gi_.NewAthenaArray(NMETRIC, n_cells_1);
 }
 
 //--------------------------------------------------------------------------------------
@@ -126,10 +124,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
 Coordinates::~Coordinates()
 {
   DeleteBasicCoordinates();
-  if(cflag==0) {
-    g_.DeleteAthenaArray();
-    gi_.DeleteAthenaArray();
-  }
+
+  g_.DeleteAthenaArray();
+  gi_.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------
