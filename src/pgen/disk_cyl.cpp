@@ -13,9 +13,11 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../fluid/fluid.hpp"
+//! \file disk_cyl.cpp
+//  \brief Problem generator for accretion disk problems.  
+//
+// Problem generator for disk problems in cylindrical coordinate system.
+//======================================================================================
 
 // C++ headers
 #include <iostream>   // endl
@@ -24,20 +26,15 @@
 #include <string>     // c_str()
 #include <cmath>      // sqrt
 
-// Athena headers
-#include "../athena.hpp"           // enums, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../mesh.hpp"             // MeshBlock
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/eos/eos.hpp"    // ParameterInput
-#include "../coordinates/coordinates.hpp" // Coordinates
-
-//======================================================================================
-//! \file disk_cyl.cpp
-//  \brief Problem generator for accretion disk problems.  
-//
-// Problem generator for disk problems in disk_cyl system.
-//======================================================================================
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../hydro/hydro.hpp"
+#include "../field/field.hpp"
+#include "../hydro/eos/eos.hpp"
+#include "../coordinates/coordinates.hpp"
 
 // File scope variables
 static Real x1Max, x1Min;
@@ -51,9 +48,9 @@ static Real ICden(const Real x1);
 static Real ICvel(const Real x1);
 static Real KeplerVel(const Real x1);
 
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
-  MeshBlock *pb = pfl->pmy_block;
+  MeshBlock *pb = phyd->pmy_block;
   std::stringstream msg;
 
   int is = pb->is; int js = pb->js; int ks = pb->ks;
@@ -91,13 +88,13 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         Real x1 = pb->pcoord->x1v(i);
-        pfl->u(IDN,k,j,i) = ICden(x1);
-        pfl->u(IM1,k,j,i) = 0.0;
-        pfl->u(IM2,k,j,i) = ICvel(x1)*pfl->u(IDN,k,j,i);
-        pfl->u(IM3,k,j,i) = 0.0;
-	if(NON_BAROTROPIC_EOS) pfl->u(IEN,k,j,i)= pressure/(pfl->pf_eos->GetGamma()-1.0)
-          + 0.5*(SQR(pfl->u(IM1,k,j,i)) + SQR(pfl->u(IM2,k,j,i)) +
-                 SQR(pfl->u(IM3,k,j,i)))/pfl->u(IDN,k,j,i);
+        phyd->u(IDN,k,j,i) = ICden(x1);
+        phyd->u(IM1,k,j,i) = 0.0;
+        phyd->u(IM2,k,j,i) = ICvel(x1)*phyd->u(IDN,k,j,i);
+        phyd->u(IM3,k,j,i) = 0.0;
+	if(NON_BAROTROPIC_EOS) phyd->u(IEN,k,j,i)= pressure/(phyd->pf_eos->GetGamma()-1.0)
+          + 0.5*(SQR(phyd->u(IM1,k,j,i)) + SQR(phyd->u(IM2,k,j,i)) +
+                 SQR(phyd->u(IM3,k,j,i)))/phyd->u(IDN,k,j,i);
       }
     }
   }

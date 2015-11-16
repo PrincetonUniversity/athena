@@ -6,12 +6,11 @@
 // See LICENSE file for full public license information.
 //======================================================================================
 //! \file outputs.hpp
-//  \brief provides multiple classes to handle ALL types of data output (fluid, bfield,
-//  gravity, radiation, particles, etc.)
+//  \brief provides multiple classes to handle ALL types of data output
 //======================================================================================
 
 #include <stdio.h> // size_t
-#include "../wrapio.hpp"
+#include "wrapper.hpp"
 #include "../athena.hpp"
 
 #ifdef HDF5OUTPUT
@@ -152,8 +151,8 @@ public:
 
 class RestartOutput : public OutputType {
 private:
-  WrapIO resfile;
-  WrapIOSize_t *blocksize, *offset;
+  IOWrapper resfile;
+  IOWrapperSize_t *blocksize, *offset;
 
 public:
   RestartOutput(OutputParameters oparams);

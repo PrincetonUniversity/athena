@@ -13,33 +13,29 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../mesh.hpp"
-
-// Athena headers
-#include "../athena.hpp"           // enums, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/fluid.hpp"      // Fluid
-#include "../fluid/eos/eos.hpp"    // EOS
-#include "../coordinates/coordinates.hpp" // Coordinates
-
-//======================================================================================
 //! \file lw_implode.cpp
 //  \brief Problem generator for square implosion problem
 //
 // REFERENCE: R. Liska & B. Wendroff, SIAM J. Sci. Comput., 25, 995 (2003)    */
 //======================================================================================
 
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../hydro/hydro.hpp"
+#include "../hydro/eos/eos.hpp"
+#include "../coordinates/coordinates.hpp"
+
 //======================================================================================
 //! \fn ProblemGenerator
 //  \brief Liska & Wendroff implosion test problem generator
 //======================================================================================
 
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
@@ -49,23 +45,23 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   Real d_out = pin->GetReal("problem","d_out");
   Real p_out = pin->GetReal("problem","p_out");
 
-  Real gm1 = (pfl->pf_eos->GetGamma() - 1.0);
+  Real gm1 = (phyd->pf_eos->GetGamma() - 1.0);
   Real y0 = 0.5*(pmb->pmy_mesh->mesh_size.x2max + pmb->pmy_mesh->mesh_size.x2min);
 
 // Set initial conditions
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
-	pfl->u(IM1,k,j,i) = 0.0;
-	pfl->u(IM2,k,j,i) = 0.0;
-	pfl->u(IM3,k,j,i) = 0.0;
+	phyd->u(IM1,k,j,i) = 0.0;
+	phyd->u(IM2,k,j,i) = 0.0;
+	phyd->u(IM3,k,j,i) = 0.0;
 
 	if(pmb->pcoord->x2v(j) > (y0 - pmb->pcoord->x1v(i))) {
-	  pfl->u(IDN,k,j,i) = d_out;
-	  pfl->u(IEN,k,j,i) = p_out/gm1;
+	  phyd->u(IDN,k,j,i) = d_out;
+	  phyd->u(IEN,k,j,i) = p_out/gm1;
 	} else {
-	  pfl->u(IDN,k,j,i) = d_in;
-	  pfl->u(IEN,k,j,i) = p_in/gm1;
+	  phyd->u(IDN,k,j,i) = d_in;
+	  phyd->u(IEN,k,j,i) = p_in/gm1;
 	}
       }
     }

@@ -20,11 +20,11 @@ Integrators:
 
 Outputs:
  - add output of ghost zones 
- - add double precision option for vtk outputs
+ - add double precision option for vtk/hdf5 outputs
  - add proper line integrals in Sum transform
  - allow 5 digits in filename numbers??
  - add plast and plast_out ptrs to all linked lists so they are back-searchable
- - disabel slicing and sums for 1D data
+ - disable slicing and sums for 1D data
 
 Inputs:
  - how do we specify metric parameters (e.g. M and a=J/M)?
@@ -79,9 +79,12 @@ Documentation (wiki pages):
  - recursion tests?
 
 Other:
- - RESTARTS!!
+ - define constructor/destructor for all classes
+ - disable copy and assignment operators for all classes
+ - consistent order/commenting of headers following main.cpp or wrapper.cpp
  - Any "TODO" in source code
  - fix memory leaks
+ - use memcopy() in athena array assignment operators?
  - Use cbrt()?
    - so far always available in <cmath>
    - but only guaranteed for C++11

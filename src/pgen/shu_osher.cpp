@@ -13,22 +13,6 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../mesh.hpp"
-
-// C++ headers
-#include <cmath>  // sin()
-
-// Athena headers
-#include "../athena.hpp"           // enums, macros, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/fluid.hpp"      // Fluid
-#include "../fluid/eos/eos.hpp"    // GetGamma
-#include "../coordinates/coordinates.hpp" // Coordinates
-
-//======================================================================================
 //! \file shu_osher.cpp
 //  \brief Problem generator for Shu-Osher shocktube test, involving
 //   interaction of a Mach 3 shock with a sine wave density distribution.  
@@ -37,9 +21,22 @@
 //   non-oscillatory shock-capturing schemes, II", JCP, 83, 32 (1998)	     
 //======================================================================================
 
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+// C/C++ headers
+#include <cmath>  // sin()
+
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../hydro/hydro.hpp"
+#include "../field/field.hpp"
+#include "../hydro/eos/eos.hpp"
+#include "../coordinates/coordinates.hpp"
+
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
-  MeshBlock *pb = pfl->pmy_block;
+  MeshBlock *pb = phyd->pmy_block;
 
   int is = pb->is; int js = pb->js; int ks = pb->ks;
   int ie = pb->ie; int je = pb->je; int ke = pb->ke;
@@ -52,7 +49,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   Real vl = 0.0;
   Real wl = 0.0;
 
-  Real gm1 = (pfl->pf_eos->GetGamma()) - 1.0;
+  Real gm1 = (phyd->pf_eos->GetGamma()) - 1.0;
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
@@ -60,18 +57,18 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     for (int i=is; i<=ie; ++i) {
 
       if (pb->pcoord->x1v(i) < -0.8) {
-        pfl->u(IDN,k,j,i) = dl;
-        pfl->u(IM1,k,j,i) = ul*dl;
-        pfl->u(IM2,k,j,i) = vl*dl;
-        pfl->u(IM3,k,j,i) = wl*dl;
-        pfl->u(IEN,k,j,i) = pl/gm1 + 0.5*dl*(ul*ul + vl*vl + wl*wl);
+        phyd->u(IDN,k,j,i) = dl;
+        phyd->u(IM1,k,j,i) = ul*dl;
+        phyd->u(IM2,k,j,i) = vl*dl;
+        phyd->u(IM3,k,j,i) = wl*dl;
+        phyd->u(IEN,k,j,i) = pl/gm1 + 0.5*dl*(ul*ul + vl*vl + wl*wl);
       }
       else {
-        pfl->u(IDN,k,j,i) = 1.0 + 0.2*sin(5.0*PI*(pb->pcoord->x1v(i)));
-        pfl->u(IM1,k,j,i) = 0.0;
-        pfl->u(IM2,k,j,i) = 0.0;
-        pfl->u(IM3,k,j,i) = 0.0;
-        pfl->u(IEN,k,j,i) = 1.0/gm1;
+        phyd->u(IDN,k,j,i) = 1.0 + 0.2*sin(5.0*PI*(pb->pcoord->x1v(i)));
+        phyd->u(IM1,k,j,i) = 0.0;
+        phyd->u(IM2,k,j,i) = 0.0;
+        phyd->u(IM3,k,j,i) = 0.0;
+        phyd->u(IEN,k,j,i) = 1.0/gm1;
       }
     }
   }}

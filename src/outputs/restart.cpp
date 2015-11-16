@@ -13,39 +13,41 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-#include <sstream>
-#include <iostream>
-#include <string>
-#include <stdexcept>
-#include <iomanip>
-#include <stdlib.h>
-#include <stdio.h>
-#include <fstream>
-
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "../mesh.hpp"
-#include "../parameter_input.hpp"
-#include "../fluid/fluid.hpp"
-#include "../field/field.hpp"
-#include "outputs.hpp"
-
-//======================================================================================
 //! \file restart.cpp
 //  \brief writes restart dump files
 //======================================================================================
 
+// C/C++ headers
+#include <stdlib.h>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <stdexcept>
+#include <stdio.h>
+#include <fstream>
+
+// Athena++ classes headers
+#include "../athena.hpp"
+#include "../globals.hpp"
+#include "../athena_arrays.hpp"
+#include "../mesh.hpp"
+#include "../parameter_input.hpp"
+#include "../hydro/hydro.hpp"
+#include "../field/field.hpp"
+
+// This class header
+#include "outputs.hpp"
 
 RestartOutput::RestartOutput(OutputParameters oparams)
   : OutputType(oparams)
 {
 }
 
-
 //--------------------------------------------------------------------------------------
 //! \fn void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
 //  \brief open the restarting file, output the parameter and header blocks
+
 void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
 {
   std::stringstream msg;
@@ -54,9 +56,9 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
   FILE *fp;
   MeshBlock *pmb;
   int *nblocks, *displ;
-  WrapIOSize_t *myblocksize;
+  IOWrapperSize_t *myblocksize;
   int i, level;
-  WrapIOSize_t listsize;
+  IOWrapperSize_t listsize;
 
   // create single output, filename:"file_basename"+"."+"file_id"+"."+XXXXX+".rst",
   // where XXXXX = 5-digit file_number
@@ -76,9 +78,9 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
   pin->SetReal(output_params.block_name, "next_time", output_params.next_time);
   pin->ParameterDump(ost);
 
-  resfile.Open(fname.c_str(),writemode);
+  resfile.Open(fname.c_str(),WRAPPER_WRITE_MODE);
 
-  if(myrank==0) {
+  if(Globals::my_rank==0) {
     // output the input parameters; this part is serial
     std::string sbuf=ost.str();
     resfile.Write(sbuf.c_str(),sizeof(char),sbuf.size());
@@ -94,24 +96,24 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
   }
 
   // the size of an element of the ID list
-  listsize=sizeof(int)+sizeof(LogicalLocation)+sizeof(Real)+sizeof(WrapIOSize_t);
+  listsize=sizeof(int)+sizeof(LogicalLocation)+sizeof(Real)+sizeof(IOWrapperSize_t);
 
   int mynb=pM->nbend-pM->nbstart+1;
-  blocksize=new WrapIOSize_t[pM->nbtotal+1];
-  offset=new WrapIOSize_t[mynb];
+  blocksize=new IOWrapperSize_t[pM->nbtotal+1];
+  offset=new IOWrapperSize_t[mynb];
 
 #ifdef MPI_PARALLEL
-  displ = new int[nproc];
-  if(myrank==0) mynb++; // the first process includes the information block
-  myblocksize=new WrapIOSize_t[mynb];
+  displ = new int[Globals::nranks];
+  if(Globals::my_rank==0) mynb++; // the first process includes the information block
+  myblocksize=new IOWrapperSize_t[mynb];
 
   displ[0]=0;
-  for(i=1;i<nproc;i++)
+  for(i=1;i<Globals::nranks;i++)
     displ[i]=pM->nslist[i]+1;
 
   i=0;
-  if(myrank==0) { // the information block
-    myblocksize[0]=resfile.Tell();
+  if(Globals::my_rank==0) { // the information block
+    myblocksize[0]=resfile.GetPosition();
     i=1;
   }
   pmb=pM->pblock;
@@ -133,7 +135,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
 
 #else // serial
   pmb=pM->pblock;
-  blocksize[0]=resfile.Tell();
+  blocksize[0]=resfile.GetPosition();
   i=1;
   while(pmb!=NULL) {
     blocksize[i]=pmb->GetBlockSizeInBytes();
@@ -143,7 +145,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
 #endif
 
   // blocksize[0] = offset to the end of the header
-  WrapIOSize_t firstoffset=blocksize[0]+listsize*pM->nbtotal; // end of the id list
+  IOWrapperSize_t firstoffset=blocksize[0]+listsize*pM->nbtotal; // end of the id list
   for(i=0;i<pM->nbstart;i++)
     firstoffset+=blocksize[i+1];
   offset[0]=firstoffset;
@@ -161,7 +163,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
     resfile.Write(&(pmb->gid),sizeof(int),1);
     resfile.Write(&(pmb->loc),sizeof(LogicalLocation),1);
     resfile.Write(&(pmb->cost),sizeof(Real),1);
-    resfile.Write(&(offset[i]),sizeof(WrapIOSize_t),1);
+    resfile.Write(&(offset[i]),sizeof(IOWrapperSize_t),1);
     i++;
     pmb=pmb->next;
   }
@@ -173,16 +175,17 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
   return;
 }
 
-
 //--------------------------------------------------------------------------------------
 //! \fn void RestartOutput::Finalize(ParameterInput *pin)
 //  \brief close the file
+
 void RestartOutput::Finalize(ParameterInput *pin)
 {
   resfile.Close();
   delete [] blocksize;
   delete [] offset;
 }
+
 //--------------------------------------------------------------------------------------
 //! \fn void RestartOutput:::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 //  \brief writes OutputData to file in Restart format
@@ -192,13 +195,13 @@ void RestartOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
   resfile.Seek(offset[pmb->gid - pmb->pmy_mesh->nbstart]);
   resfile.Write(&(pmb->block_size), sizeof(RegionSize), 1);
   resfile.Write(pmb->block_bcs, sizeof(int), 6);
-  resfile.Write(pmb->pfluid->u.GetArrayPointer(),sizeof(Real),
-                       pmb->pfluid->u.GetSize());
+  resfile.Write(pmb->phydro->u.GetArrayPointer(),sizeof(Real),
+                       pmb->phydro->u.GetSize());
   if (GENERAL_RELATIVITY) {
-    resfile.Write(pmb->pfluid->w.GetArrayPointer(),sizeof(Real),
-                         pmb->pfluid->w.GetSize());
-    resfile.Write(pmb->pfluid->w1.GetArrayPointer(),sizeof(Real),
-                         pmb->pfluid->w1.GetSize());
+    resfile.Write(pmb->phydro->w.GetArrayPointer(),sizeof(Real),
+                         pmb->phydro->w.GetSize());
+    resfile.Write(pmb->phydro->w1.GetArrayPointer(),sizeof(Real),
+                         pmb->phydro->w1.GetSize());
   }
   if (MAGNETIC_FIELDS_ENABLED) {
     resfile.Write(pmb->pfield->b.x1f.GetArrayPointer(),sizeof(Real),
@@ -210,5 +213,3 @@ void RestartOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
   }
   return;
 }
-
-

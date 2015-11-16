@@ -13,36 +13,6 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../mesh.hpp"
-
-// Athena headers
-#include "../athena.hpp"           // enums, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/fluid.hpp"      // Fluid
-#include "../fluid/eos/eos.hpp"    // GetGamma
-#include "../field/field.hpp"      // magnetic field
-#include "../bvals/bvals.hpp"      // EnrollFluidBoundaryFunction
-#include "../fluid/srcterms/srcterms.hpp"  // GetG2, GetG3
-#include "../coordinates/coordinates.hpp" // Coordinates
-
-double ran2(long int *idum); // random number generator from NR
-void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a,
-                 int is, int ie, int js, int je, int ks, int ke);
-void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a,
-                 int is, int ie, int js, int je, int ks, int ke);
-void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a,
-                 int is, int ie, int js, int je, int ks, int ke);
-void reflect_ox3(MeshBlock *pmb, AthenaArray<Real> &a,
-                 int is, int ie, int js, int je, int ks, int ke);
-
-// made global to share with BC functions
-static Real gm1;
-static Real grav_acc;
-
-//======================================================================================
 //! \file rt.c
 //  \brief Problem generator for RT instabilty.
 //
@@ -70,15 +40,41 @@ static Real grav_acc;
 // REFERENCE: R. Liska & B. Wendroff, SIAM J. Sci. Comput., 25, 995 (2003)
 //======================================================================================
 
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../hydro/hydro.hpp"
+#include "../field/field.hpp"
+#include "../bvals/bvals.hpp"
+#include "../hydro/eos/eos.hpp"
+#include "../hydro/srcterms/srcterms.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../utils/utils.hpp"
+
+void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke);
+void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke);
+void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke);
+void reflect_ox3(MeshBlock *pmb, AthenaArray<Real> &a,
+                 int is, int ie, int js, int je, int ks, int ke);
+
+// made global to share with BC functions
+static Real gm1;
+static Real grav_acc;
+
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
   Coordinates *pco = pmb->pcoord;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
   long int iseed = -1;
-  Real gamma = pfl->pf_eos->GetGamma();
+  Real gamma = phyd->pf_eos->GetGamma();
   gm1 = gamma - 1.0;
   
   Real kx = 2.0*(PI)/(pmb->pmy_mesh->mesh_size.x1max - pmb->pmy_mesh->mesh_size.x1min);
@@ -94,7 +90,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 // 2D PROBLEM ---------------------------------------------------------------
 
   if (pmb->block_size.nx3 == 1) {
-    grav_acc = pfl->pf_srcterms->GetG2();
+    grav_acc = phyd->pf_srcterms->GetG2();
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
@@ -102,17 +98,19 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         if (pco->x2v(j) > 0.0) den *= drat;
 
         if (iprob == 1) {
-          pfl->u(IM2,k,j,i) = (1.0+cos(kx*pco->x1v(i)))*(1.0+cos(ky*pco->x2v(j)))/4.0;
+          phyd->u(IM2,k,j,i) = (1.0+cos(kx*pco->x1v(i)))*(1.0+cos(ky*pco->x2v(j)))/4.0;
         } else {
-          pfl->u(IM2,k,j,i) = (ran2(&iseed) - 0.5)*(1.0+cos(ky*pco->x2v(j)));
+          phyd->u(IM2,k,j,i) = (ran2(&iseed) - 0.5)*(1.0+cos(ky*pco->x2v(j)));
         }
 
-        pfl->u(IDN,k,j,i) = den;
-        pfl->u(IM1,k,j,i) = 0.0;
-        pfl->u(IM2,k,j,i) *= (den*amp);
-        pfl->u(IM3,k,j,i) = 0.0;
-        pfl->u(IEN,k,j,i) = (1.0/gamma + grav_acc*den*(pco->x2v(j)))/gm1;
-        pfl->u(IEN,k,j,i) += 0.5*SQR(pfl->u(IM2,k,j,i))/den;
+        phyd->u(IDN,k,j,i) = den;
+        phyd->u(IM1,k,j,i) = 0.0;
+        phyd->u(IM2,k,j,i) *= (den*amp);
+        phyd->u(IM3,k,j,i) = 0.0;
+        if (NON_BAROTROPIC_EOS) {
+          phyd->u(IEN,k,j,i) = (1.0/gamma + grav_acc*den*(pco->x2v(j)))/gm1;
+          phyd->u(IEN,k,j,i) += 0.5*SQR(phyd->u(IM2,k,j,i))/den;
+        }
       }
     }}
 
@@ -123,37 +121,37 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie+1; i++) {
-        pfd->b.x1f(k,j,i) = b0;
+        pfld->b.x1f(k,j,i) = b0;
       }}}
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je+1; j++) {
       for (int i=is; i<=ie; i++) {
-        pfd->b.x2f(k,j,i) = 0.0;
+        pfld->b.x2f(k,j,i) = 0.0;
       }}}
       for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
-        pfd->b.x3f(k,j,i) = 0.0;
+        pfld->b.x3f(k,j,i) = 0.0;
       }}}
       if (NON_BAROTROPIC_EOS) {
         for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
-          pfl->u(IEN,k,j,i) += 0.5*b0*b0;
+          phyd->u(IEN,k,j,i) += 0.5*b0*b0;
         }}}
       }
     }
 
     // Enroll special BCs
-    pmb->pbval->EnrollFluidBoundaryFunction(inner_x2, reflect_ix2);
-    pmb->pbval->EnrollFluidBoundaryFunction(outer_x2, reflect_ox2);
+    pmb->pbval->EnrollHydroBoundaryFunction(inner_x2, reflect_ix2);
+    pmb->pbval->EnrollHydroBoundaryFunction(outer_x2, reflect_ox2);
     pmb->pbval->EnrollFieldBoundaryFunction(inner_x2, ReflectInnerX2);
     pmb->pbval->EnrollFieldBoundaryFunction(outer_x2, ReflectOuterX2);
 
 // 3D PROBLEM ----------------------------------------------------------------
 
   } else {
-    grav_acc = pfl->pf_srcterms->GetG3();
+    grav_acc = phyd->pf_srcterms->GetG3();
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
@@ -161,18 +159,20 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         if (pco->x3v(k) > 0.0) den *= drat;
 
         if (iprob == 1) {
-          pfl->u(IM3,k,j,i) = (1.0+cos(kx*(pco->x1v(i))))/8.0
+          phyd->u(IM3,k,j,i) = (1.0+cos(kx*(pco->x1v(i))))/8.0
                      *(1.0+cos(ky*pco->x2v(j)))*(1.0+cos(kz*pco->x3v(k)));
         } else {
-          pfl->u(IM3,k,j,i) = amp*(ran2(&iseed) - 0.5)*(1.0+cos(kz*pco->x3v(k)));
+          phyd->u(IM3,k,j,i) = amp*(ran2(&iseed) - 0.5)*(1.0+cos(kz*pco->x3v(k)));
         }
 
-        pfl->u(IDN,k,j,i) = den;
-        pfl->u(IM1,k,j,i) = 0.0;
-        pfl->u(IM2,k,j,i) = 0.0;
-        pfl->u(IM3,k,j,i) *= (den*amp);
-        pfl->u(IEN,k,j,i) = (1.0/gamma + grav_acc*den*(pco->x3v(k)))/gm1;
-        pfl->u(IEN,k,j,i) += 0.5*SQR(pfl->u(IM3,k,j,i))/den;
+        phyd->u(IDN,k,j,i) = den;
+        phyd->u(IM1,k,j,i) = 0.0;
+        phyd->u(IM2,k,j,i) = 0.0;
+        phyd->u(IM3,k,j,i) *= (den*amp);
+        if (NON_BAROTROPIC_EOS) {
+          phyd->u(IEN,k,j,i) = (1.0/gamma + grav_acc*den*(pco->x3v(k)))/gm1;
+          phyd->u(IEN,k,j,i) += 0.5*SQR(phyd->u(IM3,k,j,i))/den;
+        }
       }
     }}
 
@@ -186,37 +186,37 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie+1; i++) {
         if (pco->x3v(k) > 0.0) {
-          pfd->b.x1f(k,j,i) = b0;
+          pfld->b.x1f(k,j,i) = b0;
         } else {
-          pfd->b.x1f(k,j,i) = b0*cos(angle);
+          pfld->b.x1f(k,j,i) = b0*cos(angle);
         }
       }}}
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je+1; j++) {
       for (int i=is; i<=ie; i++) {
         if (pco->x3v(k) > 0.0) {
-          pfd->b.x2f(k,j,i) = 0.0;
+          pfld->b.x2f(k,j,i) = 0.0;
         } else {
-          pfd->b.x2f(k,j,i) = b0*sin(angle);
+          pfld->b.x2f(k,j,i) = b0*sin(angle);
         }
       }}}
       for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
-        pfd->b.x3f(k,j,i) = 0.0;
+        pfld->b.x3f(k,j,i) = 0.0;
       }}}
       if (NON_BAROTROPIC_EOS) {
         for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
-          pfl->u(IEN,k,j,i) += 0.5*b0*b0;
+          phyd->u(IEN,k,j,i) += 0.5*b0*b0;
         }}}
       }
     }
 
     // Enroll special BCs
-    pmb->pbval->EnrollFluidBoundaryFunction(inner_x3, reflect_ix3);
-    pmb->pbval->EnrollFluidBoundaryFunction(outer_x3, reflect_ox3);
+    pmb->pbval->EnrollHydroBoundaryFunction(inner_x3, reflect_ix3);
+    pmb->pbval->EnrollHydroBoundaryFunction(outer_x3, reflect_ox3);
     pmb->pbval->EnrollFieldBoundaryFunction(inner_x3, ReflectInnerX3);
     pmb->pbval->EnrollFieldBoundaryFunction(outer_x3, ReflectOuterX3);
 
@@ -235,7 +235,7 @@ void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a,
   Coordinates *pco = pmb->pcoord;
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
 
       if (n==(IM2)) {
 #pragma simd
@@ -271,7 +271,7 @@ void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a,
   Coordinates *pco = pmb->pcoord;
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
 
       if (n==(IM2)) {
 #pragma simd
@@ -307,7 +307,7 @@ void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a,
   Coordinates *pco = pmb->pcoord;
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js; j<=je; ++j) {
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
 
       if (n==(IM3)) {
 #pragma simd
@@ -343,7 +343,7 @@ void reflect_ox3(MeshBlock *pmb, AthenaArray<Real> &a,
   Coordinates *pco = pmb->pcoord;
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js; j<=je; ++j) {
-    for (int n=0; n<(NFLUID); ++n) {
+    for (int n=0; n<(NHYDRO); ++n) {
 
       if (n==(IM3)) {
 #pragma simd

@@ -8,7 +8,7 @@ PROBLEM_FILE = @PROBLEM_FILE@
 RECONSTRUCT_FILE = @RECONSTRUCT_FILE@
 RSOLVER_FILE = @RSOLVER_FILE@
 RSOLVER_DIR = @RSOLVER_DIR@
-FLUID_INT_FILE = @FLUID_INT_FILE@
+HYDRO_INT_FILE = @HYDRO_INT_FILE@
 VIS_FILE = @VIS_FILE@
 
 # General compiler specifications
@@ -26,14 +26,15 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     src/coordinates/$(COORDINATES_FILE) \
 	     $(wildcard src/field/*.cpp) \
 	     $(wildcard src/field/integrators/*.cpp) \
-	     $(wildcard src/fluid/*.cpp) \
-	     $(wildcard src/fluid/srcterms/*.cpp) \
-	     $(wildcard src/fluid/viscosity/$(VIS_FILE)) \
-	     src/fluid/eos/$(EOS_FILE) \
-	     $(wildcard src/fluid/integrators/*.cpp) \
-	     $(wildcard src/fluid/integrators/reconstruct/*.cpp) \
-	     src/fluid/integrators/rsolvers/$(RSOLVER_DIR)$(RSOLVER_FILE) \
+	     $(wildcard src/hydro/*.cpp) \
+	     $(wildcard src/hydro/srcterms/*.cpp) \
+	     $(wildcard src/hydro/viscosity/$(VIS_FILE)) \
+	     src/hydro/eos/$(EOS_FILE) \
+	     $(wildcard src/hydro/integrators/*.cpp) \
+	     $(wildcard src/hydro/integrators/reconstruct/*.cpp) \
+	     src/hydro/integrators/rsolvers/$(RSOLVER_DIR)$(RSOLVER_FILE) \
 	     $(wildcard src/outputs/*.cpp) \
+	     $(wildcard src/utils/*.cpp) \
 	     src/pgen/$(PROBLEM_FILE)
 SRC_DIR := $(dir $(SRC_FILES))
 OBJ_DIR := obj/

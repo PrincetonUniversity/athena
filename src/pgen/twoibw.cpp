@@ -13,25 +13,6 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../mesh.hpp"
-
-// C++ headers
-#include <iostream>   // endl
-#include <sstream>    // stringstream
-#include <stdexcept>  // runtime_error
-#include <string>     // c_str()
-
-// Athena headers
-#include "../athena.hpp"           // enums, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/eos/eos.hpp"    // EOS
-#include "../fluid/fluid.hpp"      // Fluid
-#include "../coordinates/coordinates.hpp" // Coordinates
-
-//======================================================================================
 //! \file two_ibw.c
 //  \brief Problem generator for two interacting blast waves test.
 //
@@ -39,9 +20,24 @@
 //   fluid flow with strong shocks", JCP, 54, 115, sect. IVa
 //======================================================================================
 
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+// C/C++ headers
+#include <iostream>   // endl
+#include <sstream>    // stringstream
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str()
+
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../hydro/hydro.hpp"
+#include "../hydro/eos/eos.hpp"
+#include "../coordinates/coordinates.hpp"
+
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
   Coordinates *pco = pmb->pcoord;
 
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
@@ -61,22 +57,22 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   for (int j=js; j<=je; ++j) {
 #pragma simd
     for (int i=is; i<=ie; ++i) {
-      pfl->u(IDN,k,j,i) = 1.0;
-      pfl->u(IM1,k,j,i) = 0.0;
-      pfl->u(IM2,k,j,i) = 0.0;
-      pfl->u(IM3,k,j,i) = 0.0;
+      phyd->u(IDN,k,j,i) = 1.0;
+      phyd->u(IM1,k,j,i) = 0.0;
+      phyd->u(IM2,k,j,i) = 0.0;
+      phyd->u(IM3,k,j,i) = 0.0;
       if ((shk_dir==1 && pco->x1v(i) < 0.1) ||
           (shk_dir==2 && pco->x2v(j) < 0.1) ||
           (shk_dir==3 && pco->x3v(k) < 0.1)) {
-        pfl->u(IEN,k,j,i)= 1.0e3/(pfl->pf_eos->GetGamma() - 1.0);
+        phyd->u(IEN,k,j,i)= 1.0e3/(phyd->pf_eos->GetGamma() - 1.0);
       }
       else if ((shk_dir==1 && pco->x1v(i) > 0.9) ||
                (shk_dir==2 && pco->x2v(j) > 0.9) ||
                (shk_dir==3 && pco->x3v(k) > 0.9)) {
-        pfl->u(IEN,k,j,i)= 1.0e2/(pfl->pf_eos->GetGamma() - 1.0);
+        phyd->u(IEN,k,j,i)= 1.0e2/(phyd->pf_eos->GetGamma() - 1.0);
       }
       else {
-        pfl->u(IEN,k,j,i)= 0.01/(pfl->pf_eos->GetGamma() - 1.0);
+        phyd->u(IEN,k,j,i)= 0.01/(phyd->pf_eos->GetGamma() - 1.0);
       }
     }
   }}

@@ -13,28 +13,28 @@
 #include "../parameter_input.hpp"          // ParameterInput
 #include "../bvals/bvals.hpp"              // BoundaryValues, InterfaceField
 #include "../coordinates/coordinates.hpp"  // Coordinates
-#include "../fluid/fluid.hpp"              // Fluid
-#include "../fluid/eos/eos.hpp"            // FluidEqnOfState
+#include "../hydro/hydro.hpp"
+#include "../hydro/eos/eos.hpp"
 #include "../field/field.hpp"              // Field
 
 // Declarations
-void OutflowPrimInnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons,
+void OutflowPrimInnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons,
     int is, int ie, int js, int je, int ks, int ke);
-void FixedOuterFluid(MeshBlock *pmb, AthenaArray<Real> &cons,
+void FixedOuterHydro(MeshBlock *pmb, AthenaArray<Real> &cons,
     int is, int ie, int js, int je, int ks, int ke);
 
 // Function for setting initial conditions
 // Inputs:
-//   pfl: Fluid
-//   pfd: Field (unused)
+//   phyd: Hydro
+//   pfld: Field (unused)
 //   pin: parameters
 // Outputs: (none)
 // Notes:
 //   assumes x3 is axisymmetric direction
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
   // Prepare index bounds
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
   int il = pmb->is - NGHOST;
   int iu = pmb->ie + NGHOST;
   int jl = pmb->js;
@@ -58,15 +58,15 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   Real a2 = SQR(a);
 
   // Get ratio of specific heats
-  Real gamma_adi = pfl->pf_eos->GetGamma();
+  Real gamma_adi = phyd->pf_eos->GetGamma();
 
   // Read other properties
   Real e = pin->GetReal("problem", "energy");
   Real lz = pin->GetReal("problem", "l_z");
-  Real rho_min = pin->GetReal("fluid", "rho_min");
-  Real rho_pow = pin->GetReal("fluid", "rho_pow");
-  Real u_min = pin->GetReal("fluid", "u_min");
-  Real u_pow = pin->GetReal("fluid", "u_pow");
+  Real rho_min = pin->GetReal("hydro", "rho_min");
+  Real rho_pow = pin->GetReal("hydro", "rho_pow");
+  Real u_min = pin->GetReal("hydro", "u_min");
+  Real u_pow = pin->GetReal("hydro", "u_pow");
 
   // Initialize primitive values
   AthenaArray<Real> g, gi;
@@ -111,11 +111,11 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       // Set primitive values
       for (int k = kl; k <= ku; k++)
       {
-        pfl->w(IDN,k,j,i) = pfl->w1(IDN,k,j,i) = rho;
-        pfl->w(IEN,k,j,i) = pfl->w1(IEN,k,j,i) = pgas;
-        pfl->w(IVX,k,j,i) = pfl->w1(IM1,k,j,i) = uu1;
-        pfl->w(IVY,k,j,i) = pfl->w1(IM2,k,j,i) = uu2;
-        pfl->w(IVZ,k,j,i) = pfl->w1(IM3,k,j,i) = uu3;
+        phyd->w(IDN,k,j,i) = phyd->w1(IDN,k,j,i) = rho;
+        phyd->w(IEN,k,j,i) = phyd->w1(IEN,k,j,i) = pgas;
+        phyd->w(IVX,k,j,i) = phyd->w1(IM1,k,j,i) = uu1;
+        phyd->w(IVY,k,j,i) = phyd->w1(IM2,k,j,i) = uu2;
+        phyd->w(IVZ,k,j,i) = phyd->w1(IM3,k,j,i) = uu3;
       }
     }
   }
@@ -125,16 +125,16 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   // Initialize conserved values
   AthenaArray<Real> bb;
   bb.NewAthenaArray(3, ku+1, ju+1, iu+1);
-  pmb->pfluid->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, pfl->w, bb, pfl->u);
+  pmb->phydro->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, phyd->w, bb, phyd->u);
   bb.DeleteAthenaArray();
 
   // Enroll boundary functions
-  pmb->pbval->EnrollFluidBoundaryFunction(inner_x1, OutflowPrimInnerFluid);
-  pmb->pbval->EnrollFluidBoundaryFunction(outer_x1, FixedOuterFluid);
+  pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, OutflowPrimInnerHydro);
+  pmb->pbval->EnrollHydroBoundaryFunction(outer_x1, FixedOuterHydro);
   return;
 }
 
-// Inner fluid boundary condition
+// Inner hydro boundary condition
 // Inputs:
 //   pmb: pointer to block
 // Outputs:
@@ -142,7 +142,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 // Notes:
 //   TODO: remove prim hack
 //   TODO: note hack is wrong (assumes wrong primitives)
-void OutflowPrimInnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons,
+void OutflowPrimInnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons,
     int is, int ie, int js, int je, int ks, int ke)
 {
   int il = is - NGHOST;
@@ -152,10 +152,10 @@ void OutflowPrimInnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons,
   int kl = ks;
   int ku = ke;
   AthenaArray<Real> *pprim;
-  if (&cons == &pmb->pfluid->u)
-    pprim = &pmb->pfluid->w;
-  else if (&cons == &pmb->pfluid->u1)
-    pprim = &pmb->pfluid->w1;
+  if (&cons == &pmb->phydro->u)
+    pprim = &pmb->phydro->w;
+  else if (&cons == &pmb->phydro->u1)
+    pprim = &pmb->phydro->w1;
   else
     assert(0);
   AthenaArray<Real> g, gi;
@@ -198,7 +198,7 @@ void OutflowPrimInnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons,
         Real u_0_new, u_1_new, u_2_new, u_3_new;
         pmb->pcoord->LowerVectorCell(u0_new, u1_new, u2_new, u3_new, k, j, i, &u_0_new,
             &u_1_new, &u_2_new, &u_3_new);
-        Real gamma_adi = pmb->pfluid->pf_eos->GetGamma();
+        Real gamma_adi = pmb->phydro->pf_eos->GetGamma();
         Real gamma_prime = gamma_adi/(gamma_adi-1.0);
         Real wgas = rho + gamma_prime * pgas;
         cons(IDN,k,j,i) = rho * u0_new;
@@ -213,14 +213,14 @@ void OutflowPrimInnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons,
   return;
 }
 
-// Outer fluid boundary condition
+// Outer hydro boundary condition
 // Inputs:
 //   pmb: pointer to block
 // Outputs:
 //   cons: conserved quantities set along outer x1-boundary
 // Notes:
 //   remains unchanged
-void FixedOuterFluid(MeshBlock *pmb, AthenaArray<Real> &cons,
+void FixedOuterHydro(MeshBlock *pmb, AthenaArray<Real> &cons,
     int is, int ie, int js, int je, int ks, int ke)
 {
   return;

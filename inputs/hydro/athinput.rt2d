@@ -39,8 +39,8 @@ x3max      = 0.5       # maximum value of X3
 ix3_bc     = 4         # boundary condition flag for inner-K (X3)
 ox3_bc     = 4         # boundary condition flag for outer-K (X3)
 
-<fluid>
-iso_csound = 1.0 
+<hydro>
+iso_sound_speed = 1.0 
 gamma      = 1.4       # gamma = C_p/C_v
 grav_acc2  = -0.1
 

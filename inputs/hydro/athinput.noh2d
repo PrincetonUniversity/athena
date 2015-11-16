@@ -39,5 +39,5 @@ x3max      = 0.5       # maximum value of X3
 ix3_bc     = 1         # inner-K (Z) boundary flag
 ox3_bc     = 1         # outer-K (Z) boundary flag
 
-<fluid>
+<hydro>
 gamma   = 1.666666666667     # gamma = C_p/C_v

@@ -20,8 +20,8 @@
 #include "../athena_arrays.hpp"    // AthenaArray
 #include "../mesh.hpp"             // MeshBlock
 #include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/fluid.hpp"      // Fluid
-#include "../fluid/eos/eos.hpp"    // FluidEqnOfState
+#include "../hydro/hydro.hpp"
+#include "../hydro/eos/eos.hpp"
 
 // Global variables
 static Real alpha;  // \sqrt{1+a^2}
@@ -33,16 +33,22 @@ static Real beta;   // \sqrt{1-a^2}
 // Inputs:
 //   pmb: pointer to block containing this grid
 //   pin: pointer to runtime inputs
-Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
+Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
 {
   // Set pointer to host MeshBlock
   pmy_block = pmb;
-  int is = pmb->is;
-  int ie = pmb->ie;
-  int js = pmb->js;
-  int je = pmb->je;
-  int ks = pmb->ks;
-  int ke = pmb->ke;
+  cflag=flag;
+  int is, ie, js, je, ks, ke, ng;
+  if(cflag==0) {
+    is = pmb->is; js = pmb->js; ks = pmb->ks;
+    ie = pmb->ie; je = pmb->je; ke = pmb->ke;
+    ng=NGHOST;
+  }
+  else {
+    is = pmb->cis; js = pmb->cjs; ks = pmb->cks;
+    ie = pmb->cie; je = pmb->cje; ke = pmb->cke;
+    ng=pmb->cnghost;
+  }
 
   // Set face centered positions and distances
   AllocateAndSetBasicCoordinates();
@@ -87,59 +93,31 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
       dx3v(k) = x3v(k+1) - x3v(k);
   }
 
-  if(pmb->pmy_mesh->multilevel==true) { // calc coarse coodinates
-    int cis = pmb->cis; int cjs = pmb->cjs; int cks = pmb->cks;
-    int cie = pmb->cie; int cje = pmb->cje; int cke = pmb->cke;
-    for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost); ++i) {
-      coarse_x1v(i) = 0.5*(coarse_x1f(i+1) + coarse_x1f(i));
-    }
+  if((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i)
+      x1s2(i) = x1s3(i) = x1v(i);
     if (pmb->block_size.nx2 == 1) {
-      coarse_x2v(cjs) = 0.5*(coarse_x2f(cjs+1) + coarse_x2f(cjs));
-    } else {
-      for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost); ++j) {
-        coarse_x2v(j) = 0.5*(coarse_x2f(j+1) + coarse_x2f(j));
-      }
+      x2s1(js) = x2s3(js) = x2v(js);
+    }
+    else {
+      for (int j=js-(NGHOST); j<=je+(NGHOST); ++j)
+        x2s1(j) = x2s3(j) = x2v(j);
     }
     if (pmb->block_size.nx3 == 1) {
-      coarse_x3v(cks) = 0.5*(coarse_x3f(cks+1) + coarse_x3f(cks));
-    } else {
-      for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost); ++k) {
-        coarse_x3v(k) = 0.5*(coarse_x3f(k+1) + coarse_x3f(k));
-      }
+      x3s1(ks) = x3s2(ks) = x3v(ks);
     }
-
-    if (MAGNETIC_FIELDS_ENABLED) {
-      for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i)
-        x1s2(i) = x1s3(i) = x1v(i);
-      for (int i=cis-(pmb->cnghost); i<=cie+(pmb->cnghost); ++i)
-        coarse_x1s2(i) = coarse_x1s3(i) = coarse_x1v(i);
-      if (pmb->block_size.nx2 == 1) {
-        x2s1(js) = x2s3(js) = x2v(js);
-        coarse_x2s1(js) = coarse_x2s3(js) = coarse_x2v(js);
-      }
-      else {
-        for (int j=js-(NGHOST); j<=je+(NGHOST); ++j)
-          x2s1(j) = x2s3(j) = x2v(j);
-        for (int j=cjs-(pmb->cnghost); j<=cje+(pmb->cnghost); ++j)
-          coarse_x2s1(j) = coarse_x2s3(j) = coarse_x2v(j);
-      }
-      if (pmb->block_size.nx3 == 1) {
-        x3s1(ks) = x3s2(ks) = x3v(ks);
-        coarse_x3s1(ks) = coarse_x3s2(ks) = coarse_x3v(ks);
-      }
-      else {
-        for (int k=ks-(NGHOST); k<=ke+(NGHOST); ++k)
-          x3s1(k) = x3s2(k) = x3v(k);
-        for (int k=cks-(pmb->cnghost); k<=cke+(pmb->cnghost); ++k)
-          coarse_x3s1(k) = coarse_x3s2(k) = coarse_x3v(k);
-      }
+    else {
+      for (int k=ks-(NGHOST); k<=ke+(NGHOST); ++k)
+        x3s1(k) = x3s2(k) = x3v(k);
     }
   }
 
   // Allocate arrays for intermediate geometric quantities: x'-direction
-  int n_cells_1 = pmb->block_size.nx1 + 2*NGHOST;
-  g_.NewAthenaArray(NMETRIC, n_cells_1);
-  gi_.NewAthenaArray(NMETRIC, n_cells_1);
+  if(cflag==0) {
+    int n_cells_1 = pmb->block_size.nx1 + 2*NGHOST;
+    g_.NewAthenaArray(NMETRIC, n_cells_1);
+    gi_.NewAthenaArray(NMETRIC, n_cells_1);
+  }
 }
 
 //--------------------------------------------------------------------------------------
@@ -148,8 +126,10 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin)
 Coordinates::~Coordinates()
 {
   DeleteBasicCoordinates();
-  g_.DeleteAthenaArray();
-  gi_.DeleteAthenaArray();
+  if(cflag==0) {
+    g_.DeleteAthenaArray();
+    gi_.DeleteAthenaArray();
+  }
 }
 
 //--------------------------------------------------------------------------------------
@@ -408,65 +388,24 @@ Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 
 //--------------------------------------------------------------------------------------
 
-// Function for computing source terms using x'-fluxes
+// Function for computing source terms using fluxes
 // Inputs:
 //   k,j: z- and y-indices
 //   dt: size of timestep
-//   flux: 1D array of x'-fluxes
+//   flux: 3D array of fluxes
 //   prim: 3D array of primitive values at beginning of half timestep
 //   bb_cc: 3D array of cell-centered magnetic fields
 // Outputs:
 //   cons: source terms added to k,j-slice of 3D array of conserved variables
 // Notes:
 //   source terms all vanish identically
-void Coordinates::CoordSrcTermsX1(const int k, const int j, const Real dt,
-  const AthenaArray<Real> &flux, const AthenaArray<Real> &prim,
+void Coordinates::CoordSrcTerms(const int k, const int j, const Real dt,
+  const AthenaArray<Real> *flux, const AthenaArray<Real> &prim,
   const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons)
 {
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for computing source terms using y-fluxes
-// Inputs:
-//   k,j: z- and y-indices
-//   dt: size of timestep
-//   flux_j: 1D array of y-fluxes left of cells j
-//   flux_jp1: 1D array of y-fluxes right of cells j
-//   prim: 3D array of primitive values at beginning of half timestep
-//   bcc: 3D array of cell-centered magnetic fields
-// Outputs:
-//   cons: source terms added to k,j-slice of 3D array of conserved variables
-// Notes:
-//   source terms all vanish identically
-void Coordinates::CoordSrcTermsX2(const int k, const int j, const Real dt,
-  const AthenaArray<Real> &flux_j, const AthenaArray<Real> &flux_jp1,
-  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &cons)
-{
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing source terms using z-fluxes
-// Inputs:
-//   k,j: z- and y-indices
-//   dt: size of timestep
-//   flux_k: 2D array of z-fluxes left of cells k
-//   flux_kp1: 2D array of z-fluxes right of cells k
-//   prim: 3D array of primitive values at beginning of half timestep
-//   bcc: 3D array of cell-centered magnetic fields
-// Outputs:
-//   cons: source terms added to k,j-slice of 3D array of conserved variables
-// Notes:
-//   source terms all vanish identically
-void Coordinates::CoordSrcTermsX3(const int k, const int j, const Real dt,
-  const AthenaArray<Real> &flux_k, const AthenaArray<Real> &flux_kp1,
-  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &cons)
-{
-  return;
-}
 
 //--------------------------------------------------------------------------------------
 

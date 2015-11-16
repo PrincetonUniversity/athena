@@ -13,23 +13,6 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../mesh.hpp"
-
-// C++ headers
-#include <cmath>
-
-// Athena headers
-#include "../athena.hpp"           // enums, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/fluid.hpp"      // Fluid
-#include "../field/field.hpp"      // Field
-#include "../fluid/eos/eos.hpp"    // EOS
-#include "../coordinates/coordinates.hpp" // Coordinates
-
-//======================================================================================
 //! \file blast.cpp
 //  \brief Problem generator for spherical blast wave problem.
 //
@@ -37,14 +20,24 @@
 //   multidimensional MHD", ApJ, 530, 508 (2000), and references therein.
 //======================================================================================
 
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../hydro/hydro.hpp"
+#include "../field/field.hpp"
+#include "../hydro/eos/eos.hpp"
+#include "../coordinates/coordinates.hpp"
+
 //======================================================================================
 //! \fn ProblemGenerator
 //  \brief Spherical blast wave test problem generator
 //======================================================================================
 
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
@@ -59,7 +52,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     b0 = pin->GetReal("problem","b0");
     theta = (PI/180.0)*pin->GetReal("problem","angle");
   }
-  Real gamma = pfl->pf_eos->GetGamma();
+  Real gamma = phyd->pf_eos->GetGamma();
   Real gm1 = gamma - 1.0;
 
 // setup uniform ambient medium with spherical over-pressured region
@@ -79,10 +72,10 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       }
     }
 
-    pfl->u(IDN,k,j,i) = den;
-    pfl->u(IM1,k,j,i) = 0.0;
-    pfl->u(IM2,k,j,i) = 0.0;
-    pfl->u(IM3,k,j,i) = 0.0;
+    phyd->u(IDN,k,j,i) = den;
+    phyd->u(IM1,k,j,i) = 0.0;
+    phyd->u(IM2,k,j,i) = 0.0;
+    phyd->u(IM3,k,j,i) = 0.0;
     if (NON_BAROTROPIC_EOS) {
       Real pres = pa;
       if (rad < rout) {
@@ -94,9 +87,9 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
           pres = std::exp(log_pres);
         }
       }
-      pfl->u(IEN,k,j,i) = pres/gm1;
+      phyd->u(IEN,k,j,i) = pres/gm1;
       if (RELATIVISTIC_DYNAMICS)  // this should only ever be SR with this file
-        pfl->u(IEN,k,j,i) += den;
+        phyd->u(IEN,k,j,i) += den;
     }
   }}}
 
@@ -106,22 +99,22 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie+1; i++) {
-      pfd->b.x1f(k,j,i) = b0*cos(theta);
+      pfld->b.x1f(k,j,i) = b0*cos(theta);
     }}}
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je+1; j++) {
     for (int i=is; i<=ie; i++) {
-      pfd->b.x2f(k,j,i) = b0*sin(theta);
+      pfld->b.x2f(k,j,i) = b0*sin(theta);
     }}}
     for (int k=ks; k<=ke+1; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      pfd->b.x3f(k,j,i) = 0.0;
+      pfld->b.x3f(k,j,i) = 0.0;
     }}}
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie+1; i++) {
-      pfl->u(IEN,k,j,i) += 0.5*b0*b0;
+      phyd->u(IEN,k,j,i) += 0.5*b0*b0;
     }}}
   }
 

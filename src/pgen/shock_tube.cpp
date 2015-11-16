@@ -13,26 +13,6 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../mesh.hpp"
-
-// C++ headers
-#include <iostream>   // endl
-#include <sstream>    // stringstream
-#include <stdexcept>  // runtime_error
-#include <string>     // c_str()
-
-// Athena headers
-#include "../athena.hpp"           // enums, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../fluid/fluid.hpp"      // Fluid
-#include "../fluid/eos/eos.hpp"    // GetGamma
-#include "../field/field.hpp"      // magnetic field
-#include "../coordinates/coordinates.hpp" // Coordinates
-
-//======================================================================================
 //! \file shock_tube.cpp
 //  \brief Problem generator for shock tube problems.  
 //
@@ -40,9 +20,25 @@
 // shock along x1 (in 1D, 2D, 3D), along x2 (in 2D, 3D), and along x3 (in 3D).
 //======================================================================================
 
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+// C++ headers
+#include <iostream>   // endl
+#include <sstream>    // stringstream
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str()
+
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh.hpp"
+#include "../hydro/hydro.hpp"
+#include "../field/field.hpp"
+#include "../hydro/eos/eos.hpp"
+#include "../coordinates/coordinates.hpp"
+
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
   Coordinates *pco = pmb->pcoord;
   std::stringstream msg;
 
@@ -77,33 +73,33 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 
 // Parse left state read from input file: dl,ul,vl,wl,[pl]
 
-  Real wl[NFLUID+NFIELD];
+  Real wl[NHYDRO+NFIELD];
   wl[IDN] = pin->GetReal("problem","dl");
   wl[IVX] = pin->GetReal("problem","ul");
   wl[IVY] = pin->GetReal("problem","vl");
   wl[IVZ] = pin->GetReal("problem","wl");
   if (NON_BAROTROPIC_EOS) wl[IEN] = pin->GetReal("problem","pl");
   if (MAGNETIC_FIELDS_ENABLED) {
-    wl[NFLUID  ] = pin->GetReal("problem","bxl");
-    wl[NFLUID+1] = pin->GetReal("problem","byl");
-    wl[NFLUID+2] = pin->GetReal("problem","bzl");
+    wl[NHYDRO  ] = pin->GetReal("problem","bxl");
+    wl[NHYDRO+1] = pin->GetReal("problem","byl");
+    wl[NHYDRO+2] = pin->GetReal("problem","bzl");
   }
 
 // Parse right state read from input file: dr,ur,vr,wr,[pr]
 
-  Real wr[NFLUID+NFIELD];
+  Real wr[NHYDRO+NFIELD];
   wr[IDN] = pin->GetReal("problem","dr");
   wr[IVX] = pin->GetReal("problem","ur");
   wr[IVY] = pin->GetReal("problem","vr");
   wr[IVZ] = pin->GetReal("problem","wr");
   if (NON_BAROTROPIC_EOS) wr[IEN] = pin->GetReal("problem","pr");
   if (MAGNETIC_FIELDS_ENABLED) {
-    wr[NFLUID  ] = pin->GetReal("problem","bxr");
-    wr[NFLUID+1] = pin->GetReal("problem","byr");
-    wr[NFLUID+2] = pin->GetReal("problem","bzr");
+    wr[NHYDRO  ] = pin->GetReal("problem","bxr");
+    wr[NHYDRO+1] = pin->GetReal("problem","byr");
+    wr[NHYDRO+2] = pin->GetReal("problem","bzr");
   }
 
-// Initialize the discontinuity in the Fluid variables ---------------------------------
+// Initialize the discontinuity in the Hydro variables ---------------------------------
 
   switch(shk_dir) {
 
@@ -113,20 +109,20 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         if (pco->x1v(i) < xshock) {
-          pfl->u(IDN,k,j,i) = wl[IDN];
-          pfl->u(IM1,k,j,i) = wl[IVX]*wl[IDN];
-          pfl->u(IM2,k,j,i) = wl[IVY]*wl[IDN];
-          pfl->u(IM3,k,j,i) = wl[IVZ]*wl[IDN];
-          if (NON_BAROTROPIC_EOS) pfl->u(IEN,k,j,i) =
-            wl[IEN]/(pfl->pf_eos->GetGamma() - 1.0)
+          phyd->u(IDN,k,j,i) = wl[IDN];
+          phyd->u(IM1,k,j,i) = wl[IVX]*wl[IDN];
+          phyd->u(IM2,k,j,i) = wl[IVY]*wl[IDN];
+          phyd->u(IM3,k,j,i) = wl[IVZ]*wl[IDN];
+          if (NON_BAROTROPIC_EOS) phyd->u(IEN,k,j,i) =
+            wl[IEN]/(phyd->pf_eos->GetGamma() - 1.0)
             + 0.5*wl[IDN]*(wl[IVX]*wl[IVX] + wl[IVY]*wl[IVY] + wl[IVZ]*wl[IVZ]);
         } else {
-          pfl->u(IDN,k,j,i) = wr[IDN];
-          pfl->u(IM1,k,j,i) = wr[IVX]*wr[IDN];
-          pfl->u(IM2,k,j,i) = wr[IVY]*wr[IDN];
-          pfl->u(IM3,k,j,i) = wr[IVZ]*wr[IDN];
-          if (NON_BAROTROPIC_EOS) pfl->u(IEN,k,j,i) =
-            wr[IEN]/(pfl->pf_eos->GetGamma() - 1.0)
+          phyd->u(IDN,k,j,i) = wr[IDN];
+          phyd->u(IM1,k,j,i) = wr[IVX]*wr[IDN];
+          phyd->u(IM2,k,j,i) = wr[IVY]*wr[IDN];
+          phyd->u(IM3,k,j,i) = wr[IVZ]*wr[IDN];
+          if (NON_BAROTROPIC_EOS) phyd->u(IEN,k,j,i) =
+            wr[IEN]/(phyd->pf_eos->GetGamma() - 1.0)
             + 0.5*wr[IDN]*(wr[IVX]*wr[IVX] + wr[IVY]*wr[IVY] + wr[IVZ]*wr[IVZ]);
         }
       }
@@ -139,22 +135,22 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     for (int j=js; j<=je; ++j) {
       if (pco->x2v(j) < xshock) {
         for (int i=is; i<=ie; ++i) {
-          pfl->u(IDN,k,j,i) = wl[IDN];
-          pfl->u(IM2,k,j,i) = wl[IVX]*wl[IDN];
-          pfl->u(IM3,k,j,i) = wl[IVY]*wl[IDN];
-          pfl->u(IM1,k,j,i) = wl[IVZ]*wl[IDN];
-          if (NON_BAROTROPIC_EOS) pfl->u(IEN,k,j,i) =
-            wl[IEN]/(pfl->pf_eos->GetGamma() - 1.0)
+          phyd->u(IDN,k,j,i) = wl[IDN];
+          phyd->u(IM2,k,j,i) = wl[IVX]*wl[IDN];
+          phyd->u(IM3,k,j,i) = wl[IVY]*wl[IDN];
+          phyd->u(IM1,k,j,i) = wl[IVZ]*wl[IDN];
+          if (NON_BAROTROPIC_EOS) phyd->u(IEN,k,j,i) =
+            wl[IEN]/(phyd->pf_eos->GetGamma() - 1.0)
             + 0.5*wl[IDN]*(wl[IVX]*wl[IVX] + wl[IVY]*wl[IVY] + wl[IVZ]*wl[IVZ]);
         }
       } else {
         for (int i=is; i<=ie; ++i) {
-          pfl->u(IDN,k,j,i) = wr[IDN];
-          pfl->u(IM2,k,j,i) = wr[IVX]*wr[IDN];
-          pfl->u(IM3,k,j,i) = wr[IVY]*wr[IDN];
-          pfl->u(IM1,k,j,i) = wr[IVZ]*wr[IDN];
-          if (NON_BAROTROPIC_EOS) pfl->u(IEN,k,j,i) =
-            wr[IEN]/(pfl->pf_eos->GetGamma() - 1.0)
+          phyd->u(IDN,k,j,i) = wr[IDN];
+          phyd->u(IM2,k,j,i) = wr[IVX]*wr[IDN];
+          phyd->u(IM3,k,j,i) = wr[IVY]*wr[IDN];
+          phyd->u(IM1,k,j,i) = wr[IVZ]*wr[IDN];
+          if (NON_BAROTROPIC_EOS) phyd->u(IEN,k,j,i) =
+            wr[IEN]/(phyd->pf_eos->GetGamma() - 1.0)
             + 0.5*wr[IDN]*(wr[IVX]*wr[IVX] + wr[IVY]*wr[IVY] + wr[IVZ]*wr[IVZ]);
         }
       }
@@ -168,23 +164,23 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       if (pco->x3v(k) < xshock) {
         for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
-          pfl->u(IDN,k,j,i) = wl[IDN];
-          pfl->u(IM3,k,j,i) = wl[IVX]*wl[IDN];
-          pfl->u(IM1,k,j,i) = wl[IVY]*wl[IDN];
-          pfl->u(IM2,k,j,i) = wl[IVZ]*wl[IDN];
-          if (NON_BAROTROPIC_EOS) pfl->u(IEN,k,j,i) =
-            wl[IEN]/(pfl->pf_eos->GetGamma() - 1.0)
+          phyd->u(IDN,k,j,i) = wl[IDN];
+          phyd->u(IM3,k,j,i) = wl[IVX]*wl[IDN];
+          phyd->u(IM1,k,j,i) = wl[IVY]*wl[IDN];
+          phyd->u(IM2,k,j,i) = wl[IVZ]*wl[IDN];
+          if (NON_BAROTROPIC_EOS) phyd->u(IEN,k,j,i) =
+            wl[IEN]/(phyd->pf_eos->GetGamma() - 1.0)
             + 0.5*wl[IDN]*(wl[IVX]*wl[IVX] + wl[IVY]*wl[IVY] + wl[IVZ]*wl[IVZ]);
         }}
       } else {
         for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
-          pfl->u(IDN,k,j,i) = wr[IDN];
-          pfl->u(IM3,k,j,i) = wr[IVX]*wr[IDN];
-          pfl->u(IM1,k,j,i) = wr[IVY]*wr[IDN];
-          pfl->u(IM2,k,j,i) = wr[IVZ]*wr[IDN];
-          if (NON_BAROTROPIC_EOS) pfl->u(IEN,k,j,i) =
-            wr[IEN]/(pfl->pf_eos->GetGamma() - 1.0)
+          phyd->u(IDN,k,j,i) = wr[IDN];
+          phyd->u(IM3,k,j,i) = wr[IVX]*wr[IDN];
+          phyd->u(IM1,k,j,i) = wr[IVY]*wr[IDN];
+          phyd->u(IM2,k,j,i) = wr[IVZ]*wr[IDN];
+          if (NON_BAROTROPIC_EOS) phyd->u(IEN,k,j,i) =
+            wr[IEN]/(phyd->pf_eos->GetGamma() - 1.0)
             + 0.5*wr[IDN]*(wr[IVX]*wr[IVX] + wr[IVY]*wr[IVY] + wr[IVZ]*wr[IVZ]);
         }}
       }
@@ -204,35 +200,35 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         if (shk_dir==1 && pco->x1v(i) < xshock) {
-          pfd->b.x1f(k,j,i) = wl[NFLUID  ];
-          pfd->b.x2f(k,j,i) = wl[NFLUID+1];
-          pfd->b.x3f(k,j,i) = wl[NFLUID+2];
+          pfld->b.x1f(k,j,i) = wl[NHYDRO  ];
+          pfld->b.x2f(k,j,i) = wl[NHYDRO+1];
+          pfld->b.x3f(k,j,i) = wl[NHYDRO+2];
         } else if (shk_dir==2 && pco->x2v(j) < xshock) {
-          pfd->b.x1f(k,j,i) = wl[NFLUID+2];
-          pfd->b.x2f(k,j,i) = wl[NFLUID  ];
-          pfd->b.x3f(k,j,i) = wl[NFLUID+1];
+          pfld->b.x1f(k,j,i) = wl[NHYDRO+2];
+          pfld->b.x2f(k,j,i) = wl[NHYDRO  ];
+          pfld->b.x3f(k,j,i) = wl[NHYDRO+1];
         } else if (shk_dir==3 && pco->x3v(k) < xshock) {
-          pfd->b.x1f(k,j,i) = wl[NFLUID+1];
-          pfd->b.x2f(k,j,i) = wl[NFLUID+2];
-          pfd->b.x3f(k,j,i) = wl[NFLUID];
+          pfld->b.x1f(k,j,i) = wl[NHYDRO+1];
+          pfld->b.x2f(k,j,i) = wl[NHYDRO+2];
+          pfld->b.x3f(k,j,i) = wl[NHYDRO];
         }
 
         if (shk_dir==1 && pco->x1v(i) >= xshock) {
-          pfd->b.x1f(k,j,i) = wr[NFLUID  ];
-          pfd->b.x2f(k,j,i) = wr[NFLUID+1];
-          pfd->b.x3f(k,j,i) = wr[NFLUID+2];
+          pfld->b.x1f(k,j,i) = wr[NHYDRO  ];
+          pfld->b.x2f(k,j,i) = wr[NHYDRO+1];
+          pfld->b.x3f(k,j,i) = wr[NHYDRO+2];
         } else if (shk_dir==2 && pco->x2v(j) >= xshock) {
-          pfd->b.x1f(k,j,i) = wr[NFLUID+2];
-          pfd->b.x2f(k,j,i) = wr[NFLUID  ];
-          pfd->b.x3f(k,j,i) = wr[NFLUID+1];
+          pfld->b.x1f(k,j,i) = wr[NHYDRO+2];
+          pfld->b.x2f(k,j,i) = wr[NHYDRO  ];
+          pfld->b.x3f(k,j,i) = wr[NHYDRO+1];
         } else if (shk_dir==3 && pco->x3v(k) >= xshock)  {
-          pfd->b.x1f(k,j,i) = wr[NFLUID+1];
-          pfd->b.x2f(k,j,i) = wr[NFLUID+2];
-          pfd->b.x3f(k,j,i) = wr[NFLUID];
+          pfld->b.x1f(k,j,i) = wr[NHYDRO+1];
+          pfld->b.x2f(k,j,i) = wr[NHYDRO+2];
+          pfld->b.x3f(k,j,i) = wr[NHYDRO];
         }
         if (NON_BAROTROPIC_EOS) {
-          pfl->u(IEN,k,j,i) += 0.5*(SQR(pfd->b.x1f(k,j,i)) + SQR(pfd->b.x2f(k,j,i)) +
-             SQR(pfd->b.x3f(k,j,i)));
+          phyd->u(IEN,k,j,i) += 0.5*(SQR(pfld->b.x1f(k,j,i)) + SQR(pfld->b.x2f(k,j,i)) +
+             SQR(pfld->b.x3f(k,j,i)));
         }
       }
     }}
@@ -241,15 +237,15 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
 
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
-      pfd->b.x1f(k,j,ie+1) = pfd->b.x1f(k,j,ie);
+      pfld->b.x1f(k,j,ie+1) = pfld->b.x1f(k,j,ie);
     }}
     for (int k=ks; k<=ke; ++k) {
     for (int i=is; i<=ie; ++i) {
-      pfd->b.x2f(k,je+1,i) = pfd->b.x2f(k,je,i);
+      pfld->b.x2f(k,je+1,i) = pfld->b.x2f(k,je,i);
     }}
     for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie; ++i) {
-      pfd->b.x3f(ke+1,j,i) = pfd->b.x3f(ke,j,i);
+      pfld->b.x3f(ke+1,j,i) = pfld->b.x3f(ke,j,i);
     }}
   }
 

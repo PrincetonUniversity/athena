@@ -13,53 +13,49 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
+//! \file mesh.cpp
+//  \brief implementation of functions in classes Mesh, and MeshBlock
+//======================================================================================
 
-// Primary header
-#include "mesh.hpp"
-
-// C++ headers
+// C/C++ headers
 #include <cfloat>     // FLT_MAX
 #include <cmath>      // std::abs(), pow()
-#include <iostream>   // cout, endl
-#include <sstream>    // sstream
+#include <iostream>
+#include <sstream>
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 #include <algorithm>  // sort, find
 #include <iomanip>
-
 #include <stdlib.h>
 #include <string.h>  // memcpy
 
-// Athena headers
+// Athena++ classes headers
 #include "athena.hpp"                   // enums, macros, Real
+#include "globals.hpp"
 #include "athena_arrays.hpp"            // AthenaArray
 #include "coordinates/coordinates.hpp"  // Coordinates
-#include "fluid/fluid.hpp"              // Fluid
+#include "hydro/hydro.hpp" 
 #include "field/field.hpp"              // Field
 #include "bvals/bvals.hpp"              // BoundaryValues
-#include "fluid/eos/eos.hpp"              // FluidEqnOfState
-#include "fluid/integrators/fluid_integrator.hpp"  // FluidIntegrator
+#include "hydro/eos/eos.hpp"
+#include "hydro/integrators/hydro_integrator.hpp" 
 #include "field/integrators/field_integrator.hpp"  // FieldIntegrator
 #include "parameter_input.hpp"          // ParameterInput
 #include "meshblocktree.hpp"
-#include "wrapio.hpp"
-#include "tasklist.hpp"
+#include "outputs/wrapper.hpp"
+#include "task_list.hpp"
 
-// MPI header
+// this class header
+#include "mesh.hpp"
+
+// MPI/OpenMP header
 #ifdef MPI_PARALLEL
 #include <mpi.h>
 #endif
 
-// OpenMP header
 #ifdef OPENMP_PARALLEL
 #include <omp.h>
 #endif
-
-
-//======================================================================================
-//! \file mesh.cpp
-//  \brief implementation of functions in classes Mesh, and MeshBlock
-//======================================================================================
 
 //--------------------------------------------------------------------------------------
 // Mesh constructor, builds mesh at start of calculation using parameters in input file
@@ -75,7 +71,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   int nbmax, dim;
 
 // mesh test
-  if(test_flag>0) nproc=test_flag;
+  if(test_flag>0) Globals::nranks=test_flag;
 
 // read time and cycle limits from input file
 
@@ -210,7 +206,6 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   mesh_bcs[inner_x3] = pin->GetOrAddInteger("mesh","ix3_bc",0);
   mesh_bcs[outer_x3] = pin->GetOrAddInteger("mesh","ox3_bc",0);
 
-
 // read MeshBlock parameters
   block_size.nx1 = pin->GetOrAddInteger("meshblock","nx1",mesh_size.nx1);
   if(dim>=2)
@@ -244,7 +239,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   nbmax=(nrbx1>nrbx2)?nrbx1:nrbx2;
   nbmax=(nbmax>nrbx3)?nbmax:nrbx3;
 
-  if(myrank==0)
+  if(Globals::my_rank==0)
     std::cout << "RootGrid = " << nrbx1 << " x " << nrbx2
               << " x " << nrbx3 << std::endl;
 
@@ -401,23 +396,6 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
-    if (MAGNETIC_FIELDS_ENABLED) {
-      if(mesh_size.x1rat!=1.0 || mesh_size.x2rat!=1.0 || mesh_size.x3rat!=1.0) {
-        msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Currently MHD with mesh refinement is supproted only for uniform mesh spacing."
-        << std::endl;
-        throw std::runtime_error(msg.str().c_str());
-      }
-      Real dx1=(mesh_size.x1max-mesh_size.x1min)/(Real)mesh_size.nx1;
-      Real dx2=(mesh_size.x2max-mesh_size.x2min)/(Real)mesh_size.nx2;
-      Real dx3=(mesh_size.x3max-mesh_size.x3min)/(Real)mesh_size.nx3;
-      if((dx1!=dx2 && mesh_size.nx2 > 1) || (dx1!=dx3 && mesh_size.nx3 > 1)) {
-        msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Currently MHD with mesh refinement is supproted only for cubic cell (dx1=dx2=dx3)."
-        << std::endl;
-        throw std::runtime_error(msg.str().c_str());
-      }
-    }
   }
 
   face_only=true;
@@ -433,8 +411,8 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   tree.GetLocationList(loclist,nbtotal);
 
   ranklist=new int[nbtotal];
-  nslist=new int[nproc];
-  nblist=new int[nproc];
+  nslist=new int[Globals::nranks];
+  nblist=new int[Globals::nranks];
   costlist=new Real[nbtotal];
   maxcost=0.0;
   mincost=(FLT_MAX);
@@ -445,8 +423,8 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     mincost=std::min(mincost,costlist[i]);
     maxcost=std::max(maxcost,costlist[i]);
   }
-  int j=nproc-1;
-  targetcost=totalcost/nproc;
+  int j=(Globals::nranks)-1;
+  targetcost=totalcost/Globals::nranks;
   mycost=0.0;
   // create rank list from the end: the master node should have less load
   for(int i=nbtotal-1;i>=0;i--) {
@@ -470,28 +448,28 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   nblist[j]=nbtotal-nslist[j];
 
   // store my nbstart and nbend
-  nbstart=nslist[myrank];
-  if(myrank+1==nproc)
+  nbstart=nslist[Globals::my_rank];
+  if((Globals::my_rank)+1 == Globals::nranks)
     nbend=nbtotal-1;
   else 
-    nbend=nslist[myrank+1]-1;
+    nbend=nslist[(Globals::my_rank)+1]-1;
 
 // check if there are sufficient blocks
 #ifdef MPI_PARALLEL
-  if(nbtotal < nproc) {
+  if(nbtotal < Globals::nranks) {
     if(test_flag==0) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
-          << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< nproc
+          << "Too few blocks: nbtotal (" << nbtotal << ") < nranks ("<< Globals::nranks
           << ")" << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
     else { // test
       std::cout << "### Warning in Mesh constructor" << std::endl
-          << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< nproc
+          << "Too few blocks: nbtotal (" << nbtotal << ") < nranks ("<< Globals::nranks
           << ")" << std::endl;
     }
   }
-  if(nbtotal % nproc != 0 && adaptive == false && maxcost == mincost && myrank==0) {
+  if(nbtotal % Globals::nranks != 0 && adaptive == false && maxcost == mincost && Globals::my_rank==0) {
     std::cout << "### Warning in Mesh constructor" << std::endl
               << "The number of MeshBlocks cannot be divided evenly. "
               << "This will cause a poor load balance." << std::endl;
@@ -500,7 +478,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
   // Mesh test only; do not create meshes
   if(test_flag>0) {
-    if(myrank==0)
+    if(Globals::my_rank==0)
       MeshTest(dim);
     return;
   }
@@ -601,23 +579,27 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     pblock->SearchAndSetNeighbors(tree, ranklist, nslist);
   }
   pblock=pfirst;
+
+// create new Task List, requires mesh to already be constructed
+  ptlist = new TaskList(this);
+
 }
 
 
 //--------------------------------------------------------------------------------------
 // Mesh constructor for restarting. Load the restarting file
 
-Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
+Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
 {
   std::stringstream msg;
   RegionSize block_size;
   MeshBlock *pfirst;
   int i, j, nerr, dim;
-  WrapIOSize_t *offset;
+  IOWrapperSize_t *offset;
   Real totalcost, targetcost, maxcost, mincost, mycost;
 
 // mesh test
-  if(test_flag>0) nproc=test_flag;
+  if(test_flag>0) Globals::nranks=test_flag;
 
 // read time and cycle limits from input file
 
@@ -673,11 +655,11 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
 
   //initialize
   loclist=new LogicalLocation[nbtotal];
-  offset=new WrapIOSize_t[nbtotal];
+  offset=new IOWrapperSize_t[nbtotal];
   costlist=new Real[nbtotal];
   ranklist=new int[nbtotal];
-  nslist=new int[nproc];
-  nblist=new int[nproc];
+  nslist=new int[Globals::nranks];
+  nblist=new int[Globals::nranks];
 
   int nx1 = pin->GetOrAddReal("meshblock","nx1",mesh_size.nx1);
   int nx2 = pin->GetOrAddReal("meshblock","nx2",mesh_size.nx2);
@@ -702,7 +684,7 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
     if(loclist[i].level!=root_level) multilevel=true;
     if(loclist[i].level>current_level) current_level=loclist[i].level;
     if(resfile.Read(&(costlist[i]),sizeof(Real),1)!=1) nerr++;
-    if(resfile.Read(&(offset[i]),sizeof(WrapIOSize_t),1)!=1) nerr++;
+    if(resfile.Read(&(offset[i]),sizeof(IOWrapperSize_t),1)!=1) nerr++;
     totalcost+=costlist[i];
     mincost=std::min(mincost,costlist[i]);
     maxcost=std::max(maxcost,costlist[i]);
@@ -737,21 +719,21 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   }
 
 #ifdef MPI_PARALLEL
-  if(nbtotal < nproc) {
+  if(nbtotal < Globals::nranks) {
     if(test_flag==0) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
-          << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< nproc
+          << "Too few blocks: nbtotal (" << nbtotal << ") < nranks ("<< Globals::nranks
           << ")" << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
     else { // test
       std::cout << "### Warning in Mesh constructor" << std::endl
-          << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< nproc
+          << "Too few blocks: nbtotal (" << nbtotal << ") < nranks ("<< Globals::nranks
           << ")" << std::endl;
       return;
     }
   }
-  if(nbtotal % nproc != 0 && adaptive == false && maxcost == mincost && myrank==0) {
+  if(nbtotal % Globals::nranks != 0 && adaptive == false && maxcost == mincost && Globals::my_rank==0) {
     std::cout << "### Warning in Mesh constructor" << std::endl
               << "The number of MeshBlocks cannot be divided evenly. "
               << "This will cause a poor load balance." << std::endl;
@@ -760,8 +742,8 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
 
   // divide the list evenly and distribute among the processes
   // note: ordering should be maintained, although it might not be optimal.
-  j=nproc-1;
-  targetcost=totalcost/nproc;
+  j=(Globals::nranks)-1;
+  targetcost=totalcost/Globals::nranks;
   mycost=0.0;
   // create rank list from the end: the master node should have less load
   for(i=nbtotal-1;i>=0;i--) {
@@ -775,13 +757,13 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
     }
   }
 
-  if(nbtotal < nproc && test_flag==0) {
+  if(nbtotal < Globals::nranks && test_flag==0) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Too few blocks: nbtotal (" << nbtotal << ") < nproc ("<< nproc
+        << "Too few blocks: nbtotal (" << nbtotal << ") < nranks ("<< Globals::nranks
         << ")" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if(nbtotal % nproc != 0 && adaptive == false && maxcost == mincost && myrank==0) {
+  if(nbtotal % Globals::nranks != 0 && adaptive == false && maxcost == mincost && Globals::my_rank==0) {
     std::cout << "### Warning in Mesh constructor" << std::endl
               << "The number of MeshBlocks cannot be divided evenly. "
               << "This will cause a poor load balance." << std::endl;
@@ -797,15 +779,15 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   }
   nblist[j]=nbtotal-nslist[j];
   // store my nbstart and nbend
-  nbstart=nslist[myrank];
-  if(myrank+1==nproc)
+  nbstart=nslist[Globals::my_rank];
+  if((Globals::my_rank)+1==Globals::nranks)
     nbend=nbtotal-1;
   else 
-    nbend=nslist[myrank+1]-1;
+    nbend=nslist[(Globals::my_rank)+1]-1;
 
   // Mesh test only; do not create meshes
   if(test_flag>0) {
-    if(myrank==0)
+    if(Globals::my_rank==0)
       MeshTest(dim);
     delete [] offset;
     return;
@@ -829,6 +811,9 @@ Mesh::Mesh(ParameterInput *pin, WrapIO& resfile, int test_flag)
   }
   pblock=pfirst;
 
+// create new Task List
+  ptlist = new TaskList(this);
+
 // clean up
   delete [] offset;
 }
@@ -843,6 +828,7 @@ Mesh::~Mesh()
   while(pblock->next != NULL)
     delete pblock->next;
   delete pblock;
+  delete ptlist;
   delete [] nslist;
   delete [] nblist;
   delete [] ranklist;
@@ -854,6 +840,7 @@ Mesh::~Mesh()
 //--------------------------------------------------------------------------------------
 //! \fn void Mesh::MeshTest(int dim)
 //  \brief print the mesh structure information
+
 void Mesh::MeshTest(int dim)
 {
   int i, j, nbt=0;
@@ -956,10 +943,9 @@ void Mesh::MeshTest(int dim)
   return;
 }
 
-
 //--------------------------------------------------------------------------------------
 // MeshBlock constructor: builds 1D vectors of cell positions and spacings, and
-// constructs coordinate, boundary condition, fluid and field objects.
+// constructs coordinate, boundary condition, hydro and field objects.
 
 MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_block,
                      int *input_bcs, Mesh *pm, ParameterInput *pin)
@@ -976,7 +962,6 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   lid=ilid;
   loc=iloc;
   cost=1.0;
-  task=NULL;
 
 // initialize grid indices
 
@@ -1007,7 +992,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
       cks=cnghost, cke=cks+block_size.nx3/2-1;
   }
 
-  std::cout << "MeshBlock " << gid << ", rank = " << myrank << ", lx1 = "
+  std::cout << "MeshBlock " << gid << ", rank = " << Globals::my_rank << ", lx1 = "
             << loc.lx1 << ", lx2 = " << loc.lx2 <<", lx3 = " << loc.lx3
             << ", level = " << loc.level << std::endl;
   std::cout << "is=" << is << " ie=" << ie << " x1min=" << block_size.x1min
@@ -1017,12 +1002,14 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   std::cout << "ks=" << ks << " ke=" << ke << " x3min=" << block_size.x3min
             << " x3max=" << block_size.x3max << std::endl;
 
-// construct Coordinates and Fluid objects stored in MeshBlock class.  Note that the
-// initial conditions for the fluid are set in problem generator called from main, not
-// in the Fluid constructor
+// construct Coordinates and Hydro objects stored in MeshBlock class.  Note that the
+// initial conditions for the hydro are set in problem generator called from main, not
+// in the Hydro constructor
  
   pcoord = new Coordinates(this, pin);
-  pfluid = new Fluid(this, pin);
+  if(pm->multilevel==true)
+    pcoarsec = new Coordinates(this, pin, 1);
+  phydro = new Hydro(this, pin);
   pfield = new Field(this, pin);
   pbval  = new BoundaryValues(this, pin);
 
@@ -1033,7 +1020,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 // MeshBlock constructor for restarting
 
 MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
-                     LogicalLocation *llist, WrapIO& resfile, WrapIOSize_t offset,
+                     LogicalLocation *llist, IOWrapper& resfile, IOWrapperSize_t offset,
                      Real icost, int *ranklist, int *nslist)
 {
   std::stringstream msg;
@@ -1045,7 +1032,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   loc=llist[gid];
   cost=icost;
   int nerr=0;
-  task=NULL;
+//  task=NULL;
 
   // seek the file
   resfile.Seek(offset);
@@ -1089,7 +1076,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
       cks=cnghost, cke=cks+block_size.nx3/2-1;
   }
 
-  std::cout << "MeshBlock " << gid << ", rank = " << myrank << ", lx1 = "
+  std::cout << "MeshBlock " << gid << ", rank = " << Globals::my_rank << ", lx1 = "
             << loc.lx1 << ", lx2 = " << loc.lx2 <<", lx3 = " << loc.lx3
             << ", level = " << loc.level << std::endl;
   std::cout << "is=" << is << " ie=" << ie << " x1min=" << block_size.x1min
@@ -1099,21 +1086,23 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   std::cout << "ks=" << ks << " ke=" << ke << " x3min=" << block_size.x3min
             << " x3max=" << block_size.x3max << std::endl;
 
-  // create coordinates, fluid, field, and boundary conditions
+  // create coordinates, hydro, field, and boundary conditions
   pcoord = new Coordinates(this, pin);
-  pfluid = new Fluid(this, pin);
+  if(pm->multilevel==true)
+    pcoarsec = new Coordinates(this, pin, 1);
+  phydro = new Hydro(this, pin);
   pfield = new Field(this, pin);
   pbval  = new BoundaryValues(this, pin);
 
-  // load fluid and field data
+  // load hydro and field data
   nerr=0;
-  if(resfile.Read(pfluid->u.GetArrayPointer(),sizeof(Real),
-                         pfluid->u.GetSize())!=pfluid->u.GetSize()) nerr++;
+  if(resfile.Read(phydro->u.GetArrayPointer(),sizeof(Real),
+                         phydro->u.GetSize())!=phydro->u.GetSize()) nerr++;
   if (GENERAL_RELATIVITY) {
-    if(resfile.Read(pfluid->w.GetArrayPointer(),sizeof(Real),
-                           pfluid->w.GetSize())!=pfluid->w.GetSize()) nerr++;
-    if(resfile.Read(pfluid->w1.GetArrayPointer(),sizeof(Real),
-                           pfluid->w1.GetSize())!=pfluid->w1.GetSize()) nerr++;
+    if(resfile.Read(phydro->w.GetArrayPointer(),sizeof(Real),
+                           phydro->w.GetSize())!=phydro->w.GetSize()) nerr++;
+    if(resfile.Read(phydro->w1.GetArrayPointer(),sizeof(Real),
+                           phydro->w1.GetSize())!=phydro->w1.GetSize()) nerr++;
   }
   if (MAGNETIC_FIELDS_ENABLED) {
     if(resfile.Read(pfield->b.x1f.GetArrayPointer(),sizeof(Real),
@@ -1140,17 +1129,18 @@ MeshBlock::~MeshBlock()
   if(next!=NULL) next->prev=prev;
 
   delete pcoord;
-  delete pfluid;
+  delete phydro;
   delete pfield;
   delete pbval;
-  delete [] task;
+//  delete [] task;
 }
 
 
 //--------------------------------------------------------------------------------------
 // \!fn void Mesh::NewTimeStep(void)
 // \brief function that loops over all MeshBlocks and find new timestep
-//        this assumes that pfluid->NewBlockTimeStep is already called
+//        this assumes that phydro->NewBlockTimeStep is already called
+
 void Mesh::NewTimeStep(void)
 {
   MeshBlock *pmb = pblock;
@@ -1177,17 +1167,17 @@ void Mesh::NewTimeStep(void)
 void Mesh::Initialize(int res_flag, ParameterInput *pin)
 {
   MeshBlock *pmb;
-  Fluid *pfluid;
+  Hydro *phydro;
   Field *pfield;
   BoundaryValues *pbval;
 
   if(res_flag==0) {
     pmb = pblock;
     while (pmb != NULL)  {
-      pfluid=pmb->pfluid;
+      phydro=pmb->phydro;
       pfield=pmb->pfield;
       pbval=pmb->pbval;
-      ProblemGenerator(pfluid,pfield,pin);
+      ProblemGenerator(phydro,pfield,pin);
       pbval->CheckBoundary();
       pmb=pmb->next;
     }
@@ -1202,10 +1192,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
 
   pmb = pblock;
   while (pmb != NULL)  {
-    pfluid=pmb->pfluid;
+    phydro=pmb->phydro;
     pfield=pmb->pfield;
     pbval=pmb->pbval;
-    pbval->SendFluidBoundaryBuffers(pfluid->u,0);
+    pbval->SendHydroBoundaryBuffers(phydro->u,0);
     if (MAGNETIC_FIELDS_ENABLED)
       pbval->SendFieldBoundaryBuffers(pfield->b,0);
     pmb=pmb->next;
@@ -1213,30 +1203,30 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
 
   pmb = pblock;
   while (pmb != NULL)  {
-    pfluid=pmb->pfluid;
+    phydro=pmb->phydro;
     pfield=pmb->pfield;
     pbval=pmb->pbval;
-    pbval->ReceiveFluidBoundaryBuffersWithWait(pfluid->u ,0);
+    pbval->ReceiveHydroBoundaryBuffersWithWait(phydro->u ,0);
     if (MAGNETIC_FIELDS_ENABLED)
       pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b ,0);
     pmb->pbval->ClearBoundaryForInit();
-    pbval->FluidPhysicalBoundaries(pfluid->u);
+    pbval->HydroPhysicalBoundaries(phydro->u);
     if(multilevel==true)
-      pbval->ProlongateFluidBoundaries(pfluid->u);
+      pbval->ProlongateHydroBoundaries(phydro->u);
     if (MAGNETIC_FIELDS_ENABLED) {
       pbval->FieldPhysicalBoundaries(pfield->b);
       if(multilevel==true)
         pbval->ProlongateFieldBoundaries(pfield->b);
     }
-    pfluid->pf_eos->ConservedToPrimitive(pfluid->u, pfluid->w1, pfield->b, 
-                                         pfluid->w, pfield->bcc);
+    phydro->pf_eos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b, 
+                                         phydro->w, pfield->bcc);
     pmb=pmb->next;
   }
 
   if(res_flag==0) {
     pmb = pblock;
     while (pmb != NULL)  {
-      pmb->pfluid->NewBlockTimeStep(pmb);
+      pmb->phydro->NewBlockTimeStep(pmb);
       pmb=pmb->next;
     }
     NewTimeStep();
@@ -1248,6 +1238,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
 //--------------------------------------------------------------------------------------
 //! \fn int64_t Mesh::GetTotalCells(void)
 //  \brief return the total number of cells for performance counting
+
 int64_t Mesh::GetTotalCells(void)
 {
   return (int64_t)nbtotal*pblock->block_size.nx1*pblock->block_size.nx2*pblock->block_size.nx3;
@@ -1256,15 +1247,16 @@ int64_t Mesh::GetTotalCells(void)
 //--------------------------------------------------------------------------------------
 //! \fn long int MeshBlock::GetBlockSizeInBytes(void)
 //  \brief Calculate the block data size required for restarting.
+
 size_t MeshBlock::GetBlockSizeInBytes(void)
 {
   size_t size;
 
   size =sizeof(RegionSize)+sizeof(int)*6;
-  size+=sizeof(Real)*pfluid->u.GetSize();
+  size+=sizeof(Real)*phydro->u.GetSize();
   if (GENERAL_RELATIVITY) {
-    size+=sizeof(Real)*pfluid->w.GetSize();
-    size+=sizeof(Real)*pfluid->w1.GetSize();
+    size+=sizeof(Real)*phydro->w.GetSize();
+    size+=sizeof(Real)*phydro->w1.GetSize();
   }
   if (MAGNETIC_FIELDS_ENABLED)
     size+=sizeof(Real)*(pfield->b.x1f.GetSize()+pfield->b.x2f.GetSize()
@@ -1274,19 +1266,20 @@ size_t MeshBlock::GetBlockSizeInBytes(void)
   return size;
 }
 
-
 //--------------------------------------------------------------------------------------
 //! \fn void Mesh::UpdateOneStep(void)
 //  \brief process the task list and advance one time step
+
 void Mesh::UpdateOneStep(void)
 {
-  int nb=nbend-nbstart+1;
   MeshBlock *pmb = pblock;
+  int nb=nbend-nbstart+1;
+
   // initialize
   while (pmb != NULL)  {
-    pmb->firsttask=0;
-    pmb->ntodo=pmb->ntask;
-    pmb->task_flag=0L;
+    pmb->first_task=0;
+    pmb->num_tasks_todo=ptlist->ntasks;
+    for(int i=0; i<4; ++i) pmb->finished_tasks[i]=0; // encodes which tasks are done
     pmb->pbval->StartReceivingAll();
     pmb=pmb->next;
   }
@@ -1295,7 +1288,7 @@ void Mesh::UpdateOneStep(void)
   while(nb>0) {
     pmb = pblock;
     while (pmb != NULL)  {
-      if(pmb->DoOneTask()==tl_complete) // task list completed
+      if(ptlist->DoOneTask(pmb)==TL_COMPLETE) // task list completed
         nb--;
       pmb=pmb->next;
     }
@@ -1310,21 +1303,9 @@ void Mesh::UpdateOneStep(void)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void Mesh::SetTaskList(TaskList& tl)
-//  \brief set task list for all the meshblocks
-void Mesh::SetTaskList(TaskList& tl)
-{
-  MeshBlock *pmb = pblock;
-  while (pmb != NULL)  {
-    pmb->SetTaskList(tl);
-    pmb=pmb->next;
-  }
-  return;
-}
-
-//--------------------------------------------------------------------------------------
 //! \fn MeshBlock* Mesh::FindMeshBlock(int tgid)
 //  \brief return the MeshBlock whose gid is tgid
+
 MeshBlock* Mesh::FindMeshBlock(int tgid)
 {
   MeshBlock *pbl=pblock;
@@ -1337,59 +1318,12 @@ MeshBlock* Mesh::FindMeshBlock(int tgid)
   return pbl;
 }
 
-
-//--------------------------------------------------------------------------------------
-//! \fn void MeshBlock::SetTaskList(TaskList& tl)
-//  \brief set task list for the meshblock
-void MeshBlock::SetTaskList(TaskList& tl)
-{
-  if(task!=NULL)
-    delete [] task;
-  task=new Task[tl.ntask];
-  ntask=tl.ntask;
-  memcpy(task, tl.task, sizeof(Task)*ntask);
-  return;
-}
-
-
-//--------------------------------------------------------------------------------------
-//! \fn enum tlstatus MeshBlock::DoOneTask(void)
-//  \brief process one task (if possible), return true if the list is completed
-enum tasklist_status MeshBlock::DoOneTask(void) {
-  int skip=0;
-  enum task_status ret;
-  std::stringstream msg;
-  if(ntodo==0) return tl_nothing;
-  for(int i=firsttask; i<ntask; i++) {
-    Task &ti=task[i];
-    if((ti.taskid & task_flag)==0L) { // this task is not done
-      if (((ti.depend & task_flag) == ti.depend)) { // dependency clear
-        ret=ti.TaskFunc(this,ti.task_arg);
-//        std::cout << "Meshblock " << gid << " task "<< ti.taskid << " returns " << ret << std::endl;
-        if(ret!=task_failure) { // success
-          ntodo--;
-          task_flag |= ti.taskid;
-          if(skip==0)
-            firsttask++;
-          if(ntodo==0)
-            return tl_complete;
-          if(ret==task_donext) continue;
-          return tl_running;
-        }
-      }
-      skip++; // count the number of skipped tasks
-    }
-    else if(skip==0) // this task is done and at the top of the list
-      firsttask++;
-  }
-  return tl_stuck; // there are still something to do but nothing can be done now
-}
-
 //--------------------------------------------------------------------------------------
 // \!fn void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
 //                          int iox1, int iox2, int iox3, enum neighbor_type itype,
 //                          int ibid, int itargetid, int ifi1=0, int ifi2=0)
 // \brief Set neighbor information
+
 void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
   int iox1, int iox2, int iox3, enum neighbor_type itype, int ibid, int itargetid,
   int ifi1=0, int ifi2=0)
@@ -1415,6 +1349,7 @@ void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
 //--------------------------------------------------------------------------------------
 // \!fn void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist)
 // \brief Search and set all the neighbor blocks
+
 void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist)
 {
   MeshBlockTree* neibt;
@@ -1667,27 +1602,27 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
   return;
 }
 
-
 //--------------------------------------------------------------------------------------
 // \!fn void Mesh::TestConservation(void)
 // \brief Calculate and print the total of conservative variables
+
 void Mesh::TestConservation(void)
 {
   MeshBlock *pmb = pblock;
-  Real tcons[NFLUID];
-  for(int n=0;n<NFLUID;n++) tcons[n]=0.0;
+  Real tcons[NHYDRO];
+  for(int n=0;n<NHYDRO;n++) tcons[n]=0.0;
   while(pmb!=NULL) {
     pmb->IntegrateConservative(tcons);
     pmb=pmb->next;
   }
 
 #ifdef MPI_PARALLEL
-  MPI_Allreduce(MPI_IN_PLACE,tcons,NFLUID,MPI_ATHENA_REAL,MPI_SUM,MPI_COMM_WORLD);
+  MPI_Allreduce(MPI_IN_PLACE,tcons,NHYDRO,MPI_ATHENA_REAL,MPI_SUM,MPI_COMM_WORLD);
 #endif
 
-  if(myrank==0) {
+  if(Globals::my_rank==0) {
     std::cout << "Total Conservative : " ;
-    for(int n=0;n<NFLUID;n++)
+    for(int n=0;n<NHYDRO;n++)
       std::cout << tcons[n] << " ";
     std::cout << std::endl;
   }
@@ -1695,17 +1630,17 @@ void Mesh::TestConservation(void)
   return;
 }
 
-
 //--------------------------------------------------------------------------------------
 // \!fn void MeshBlock::IntegrateConservative(Real *tcons)
 // \brief Calculate and print the total of conservative variables
+
 void MeshBlock::IntegrateConservative(Real *tcons)
 {
-  for(int n=0;n<NFLUID;n++) {
+  for(int n=0;n<NHYDRO;n++) {
     for(int k=ks;k<=ke;k++) {
       for(int j=js;j<=je;j++) {
         for(int i=is;i<=ie;i++)
-          tcons[n]+=pfluid->u(n,k,j,i)*pcoord->GetCellVolume(k,j,i);
+          tcons[n]+=phydro->u(n,k,j,i)*pcoord->GetCellVolume(k,j,i);
       }
     }
   }

@@ -37,7 +37,7 @@ ox3_bc = 4     # 4: periodic
 <coord>  # in case of GR
 a = 0.0
 
-<fluid>
+<hydro>
 gamma = 1.3333333333333333
 
 <problem>

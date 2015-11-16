@@ -7,9 +7,9 @@
 //======================================================================================
 //! \file parameter_input.hpp
 //  \brief definition of class ParameterInput
-//  Contains data structures used to store, and functions used to access, parameters
-//  read from the input file.  See comments at start of parameter_input.cpp for more
-//  information on the Athena++ input file format.
+// Contains data structures used to store, and functions used to access, parameters
+// read from the input file.  See comments at start of parameter_input.cpp for more
+// information on the Athena++ input file format.
 //======================================================================================
 
 // C++ headers
@@ -19,7 +19,7 @@
 
 // Athena headers
 #include "athena.hpp"  // Real
-#include "wrapio.hpp"
+#include "outputs/wrapper.hpp"
 
 //! \struct InputLine
 //  \brief  node in a linked list of parameters contained within a single input block
@@ -36,15 +36,18 @@ typedef struct InputLine {
 
 class InputBlock { 
 public:
+  // constructor/destructor
   InputBlock();
   ~InputBlock();
 
+  // data
   std::string block_name;
   std::size_t max_len_parname;  // length of longest param_name, for nice-looking output
   std::size_t max_len_parvalue; // length of longest param_value, to format outputs
   InputLine *pline;             // pointer to first InputLine in this block
   InputBlock *pnext;            // pointer to the next node
 
+  // functions
   InputLine* GetPtrToLine(std::string name);
 };
 
@@ -54,11 +57,16 @@ public:
 
 class ParameterInput {
 public:
+  // constructor/destructor
   ParameterInput();
   ~ParameterInput();
 
+  // data
+  InputBlock* pfirst_block;   // pointer to first input block in linked list
+
+  // functions
   void LoadFromStream(std::istream &is);
-  void LoadFromFile(WrapIO &input);
+  void LoadFromFile(IOWrapper &input);
   void LoadFromFile(std::string filename);
   void ModifyFromCmdline(int argc, char *argv[]);
   void ParameterDump(std::ostream& os);
@@ -72,16 +80,14 @@ public:
   std::string GetString(std::string block, std::string name);
   std::string GetOrAddString(std::string block, std::string name, std::string value);
 
-  InputBlock* pfirst_block;   // pointer to first input block in linked list
-
 private:
   std::string last_filename_;  // last input file opened, to prevent duplicate reads
 
+  InputBlock* FindOrAddBlock(std::string name);
+  InputBlock* GetPtrToBlock(std::string name);
   void ParseLine(InputBlock *pib, std::string line, std::string& name,
        std::string& value, std::string& comment);
   void AddParameter(InputBlock *pib, std::string name, std::string value,
        std::string comment);
-  InputBlock* FindOrAddBlock(std::string name);
-  InputBlock* GetPtrToBlock(std::string name);
 };
 #endif

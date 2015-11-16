@@ -15,20 +15,20 @@
 #include "../bvals/bvals.hpp"              // BoundaryValues, InterfaceField
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // Field
-#include "../fluid/fluid.hpp"              // Fluid
-#include "../fluid/eos/eos.hpp"            // FluidEqnOfState
+#include "../hydro/hydro.hpp"
+#include "../hydro/eos/eos.hpp"
 
 // TODO: remove with boundary hack
 #include <cassert>
 
 // Declarations
-void InnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+void InnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
     int ks, int ke);
-void OuterFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+void OuterHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
     int ks, int ke);
-void TopFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+void TopHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
     int ks, int ke);
-void BottomFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js,
+void BottomHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js,
     int je, int ks, int ke);
 void InnerField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
     int ks, int ke);
@@ -46,7 +46,7 @@ static Real calculate_beta_min(Real r_min, Real r_max, Real theta_min, Real thet
 
 // Global variables
 static Real m, a;                            // black hole parameters
-static Real gamma_adi, k_adi;                // fluid parameters
+static Real gamma_adi, k_adi;                // hydro parameters
 static Real r_edge, r_peak, l, rho_max;      // disk parameters
 static Real rho_min, rho_pow, u_min, u_pow;  // background parameters
 static Real potential_cutoff;                // sets region of torus to magnetize
@@ -54,8 +54,8 @@ static Real beta_min;                        // min ratio of gas to magnetic pre
 
 // Function for setting initial conditions
 // Inputs:
-//   pfl: Fluid
-//   pfd: Field (unused)
+//   phyd: Hydro
+//   pfld: Field (unused)
 //   pin: parameters
 // Outputs: (none)
 // Notes:
@@ -65,10 +65,10 @@ static Real beta_min;                        // min ratio of gas to magnetic pre
 //   references Fishbone & Moncrief 1976, ApJ 207 962 (FM)
 //              Fishbone 1977, ApJ 215 323 (F)
 //   assumes x3 is axisymmetric direction
-void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
+void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 {
   // Prepare index bounds
-  MeshBlock *pmb = pfl->pmy_block;
+  MeshBlock *pmb = phyd->pmy_block;
   int il = pmb->is - NGHOST;
   int iu = pmb->ie + NGHOST;
   int jl = pmb->js;
@@ -91,13 +91,13 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   a = pmb->pcoord->GetSpin();
 
   // Get ratio of specific heats
-  gamma_adi = pfl->pf_eos->GetGamma();
+  gamma_adi = phyd->pf_eos->GetGamma();
 
   // Read other properties
-  rho_min = pin->GetReal("fluid", "rho_min");
-  rho_pow = pin->GetReal("fluid", "rho_pow");
-  u_min = pin->GetReal("fluid", "u_min");
-  u_pow = pin->GetReal("fluid", "u_pow");
+  rho_min = pin->GetReal("hydro", "rho_min");
+  rho_pow = pin->GetReal("hydro", "rho_pow");
+  u_min = pin->GetReal("hydro", "u_min");
+  u_pow = pin->GetReal("hydro", "u_pow");
   k_adi = pin->GetReal("problem", "k_adi");
   r_edge = pin->GetReal("problem", "r_edge");
   r_peak = pin->GetReal("problem", "r_peak");
@@ -175,11 +175,11 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
       // Set primitive values
       for (int k = kl; k <= ku; ++k)
       {
-        pfl->w(IDN,k,j,i) = pfl->w1(IDN,k,j,i) = rho;
-        pfl->w(IEN,k,j,i) = pfl->w1(IEN,k,j,i) = pgas;
-        pfl->w(IVX,k,j,i) = pfl->w1(IM1,k,j,i) = uu1;
-        pfl->w(IVY,k,j,i) = pfl->w1(IM2,k,j,i) = uu2;
-        pfl->w(IVZ,k,j,i) = pfl->w1(IM3,k,j,i) = uu3;
+        phyd->w(IDN,k,j,i) = phyd->w1(IDN,k,j,i) = rho;
+        phyd->w(IEN,k,j,i) = phyd->w1(IEN,k,j,i) = pgas;
+        phyd->w(IVX,k,j,i) = phyd->w1(IM1,k,j,i) = uu1;
+        phyd->w(IVY,k,j,i) = phyd->w1(IM2,k,j,i) = uu2;
+        phyd->w(IVZ,k,j,i) = phyd->w1(IM3,k,j,i) = uu3;
       }
     }
   }
@@ -309,7 +309,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
             }
             Real bbtheta = (a_phi_2 - a_phi_1) / (r_2 - r_1);
             if (bbr == 0.0 and bbtheta == 0.0)
-              pfd->b.x1f(k,j,i) = 0.0;
+              pfld->b.x1f(k,j,i) = 0.0;
             else
             {
               Real ut, uphi;
@@ -327,7 +327,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
               Real b0, b1, b2, b3;
               pmb->pcoord->TransformVectorFace1(bt, br, btheta, 0.0, k, j, i,
                   &b0, &b1, &b2, &b3);
-              pfd->b.x1f(k,j,i) = (b1 * u0 - b0 * u1) * normalization;
+              pfld->b.x1f(k,j,i) = (b1 * u0 - b0 * u1) * normalization;
             }
           }
 
@@ -372,7 +372,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
             }
             Real bbr = -(a_phi_2 - a_phi_1) / (theta_2 - theta_1);
             if (bbr == 0.0 and bbtheta == 0.0)
-              pfd->b.x2f(k,j,i) = 0.0;
+              pfld->b.x2f(k,j,i) = 0.0;
             else
             {
               Real ut, uphi;
@@ -390,13 +390,13 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
               Real b0, b1, b2, b3;
               pmb->pcoord->TransformVectorFace2(bt, br, btheta, 0.0, k, j, i,
                   &b0, &b1, &b2, &b3);
-              pfd->b.x2f(k,j,i) = (b2 * u0 - b0 * u2) * normalization;
+              pfld->b.x2f(k,j,i) = (b2 * u0 - b0 * u2) * normalization;
             }
           }
 
           // Set B^3
           if (i != iu+1 and j != ju+1)
-            pfd->b.x3f(k,j,i) = 0.0;
+            pfld->b.x3f(k,j,i) = 0.0;
         }
     a_phi_cells.DeleteAthenaArray();
     a_phi_edges.DeleteAthenaArray();
@@ -410,12 +410,12 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         Real r, theta, phi;
         pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1v(i),
             pmb->pcoord->x2v(j), pmb->pcoord->x3v(kl), &r, &theta, &phi);
-        Real &rho = pfl->w(IDN,k,j,i);
-        Real &pgas = pfl->w(IEN,k,j,i);
+        Real &rho = phyd->w(IDN,k,j,i);
+        Real &pgas = phyd->w(IEN,k,j,i);
         rho = std::max(rho, rho_min * std::pow(r, rho_pow));
         pgas = std::max(pgas, (gamma_adi-1.0) * u_min * std::pow(r, u_pow));
-        pfl->w1(IDN,k,j,i) = rho;
-        pfl->w1(IEN,k,j,i) = pgas;
+        phyd->w1(IDN,k,j,i) = rho;
+        phyd->w1(IEN,k,j,i) = pgas;
       }
 
   // Calculate cell-centered magnetic field
@@ -427,12 +427,12 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
         for (int i = il; i <= iu; ++i)
         {
           // Extract face-centered magnetic field
-          const Real &bbf1m = pfd->b.x1f(k,j,i);
-          const Real &bbf1p = pfd->b.x1f(k,j,i+1);
-          const Real &bbf2m = pfd->b.x2f(k,j,i);
-          const Real &bbf2p = pfd->b.x2f(k,j+1,i);
-          const Real &bbf3m = pfd->b.x3f(k,j,i);
-          const Real &bbf3p = pfd->b.x3f(k+1,j,i);
+          const Real &bbf1m = pfld->b.x1f(k,j,i);
+          const Real &bbf1p = pfld->b.x1f(k,j,i+1);
+          const Real &bbf2m = pfld->b.x2f(k,j,i);
+          const Real &bbf2p = pfld->b.x2f(k,j+1,i);
+          const Real &bbf3m = pfld->b.x3f(k,j,i);
+          const Real &bbf3p = pfld->b.x3f(k+1,j,i);
 
           // Calculate cell-centered magnetic field
           Real tmp = (pmb->pcoord->x1v(i) - pmb->pcoord->x1f(i)) / pmb->pcoord->dx1f(i);
@@ -444,7 +444,7 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
        }
 
   // Initialize conserved values
-  pmb->pfluid->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, pfl->w, bb, pfl->u);
+  pmb->phydro->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, phyd->w, bb, phyd->u);
 
   // Free scratch arrays
   in_torus.DeleteAthenaArray();
@@ -453,10 +453,10 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   bb.DeleteAthenaArray();
 
   // Enroll boundary functions
-  pmb->pbval->EnrollFluidBoundaryFunction(inner_x1, InnerFluid);
-  pmb->pbval->EnrollFluidBoundaryFunction(outer_x1, OuterFluid);
-  pmb->pbval->EnrollFluidBoundaryFunction(inner_x2, TopFluid);
-  pmb->pbval->EnrollFluidBoundaryFunction(outer_x2, BottomFluid);
+  pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, InnerHydro);
+  pmb->pbval->EnrollHydroBoundaryFunction(outer_x1, OuterHydro);
+  pmb->pbval->EnrollHydroBoundaryFunction(inner_x2, TopHydro);
+  pmb->pbval->EnrollHydroBoundaryFunction(outer_x2, BottomHydro);
   if (MAGNETIC_FIELDS_ENABLED)
   {
     pmb->pbval->EnrollFieldBoundaryFunction(inner_x1, InnerField);
@@ -467,29 +467,29 @@ void Mesh::ProblemGenerator(Fluid *pfl, Field *pfd, ParameterInput *pin)
   return;
 }
 
-// Inner fluid boundary condition
+// Inner hydro boundary condition
 // TODO: implement when not hacking inversion
-void InnerFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+void InnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
     int ks, int ke)
 {
   return;
 }
 
-// Outer fluid boundary condition
+// Outer hydro boundary condition
 // TODO: implement when not hacking inversion
-void OuterFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+void OuterHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
     int ks, int ke)
 {
   return;
 }
 
-// Top fluid boundary condition
-void TopFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
+// Top hydro boundary condition
+void TopHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
     int ks, int ke)
 {
   for (int k = ks; k <= ke; ++k)
     for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
-      for (int n = 0; n < NFLUID; ++n)
+      for (int n = 0; n < NHYDRO; ++n)
       {
         Real sign = (n == IM2 or n == IM3) ? -1.0 : 1.0;
         for (int i = is; i <= ie; ++i)
@@ -498,13 +498,13 @@ void TopFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, i
   return;
 }
 
-// Bottom fluid boundary condition
-void BottomFluid(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js,
+// Bottom hydro boundary condition
+void BottomHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js,
     int je, int ks, int ke)
 {
   for (int k = ks; k <= ke; ++k)
     for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
-      for (int n = 0; n < NFLUID; ++n)
+      for (int n = 0; n < NHYDRO; ++n)
       {
         Real sign = (n == IM2 or n == IM3) ? -1.0 : 1.0;
         for (int i = is; i <= ie; ++i)

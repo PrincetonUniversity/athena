@@ -1,26 +1,27 @@
 #ifndef BOUNDARY_VALUES_HPP
 #define BOUNDARY_VALUES_HPP
 //======================================================================================
-/* Athena++ astrophysical MHD code
- * Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
- * See LICENSE file for full public license information.
- *====================================================================================*/
-/*! \file bvals.hpp
- *  \brief defines BoundaryValues class used for setting BCs on all data types
- *====================================================================================*/
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+// See LICENSE file for full public license information.
+//======================================================================================
+//! \file bvals.hpp
+//  \brief defines BoundaryValues class used for setting BCs on all data types
+//======================================================================================
 
-// Athena headers
+// Athena++ classes headers
 #include "../athena.hpp"         // Real
 #include "../athena_arrays.hpp"  // AthenaArray
 
+// MPI headers
 #ifdef MPI_PARALLEL
 #include <mpi.h>
 #endif
 
 // forward declarations
 class MeshBlock;
-class Fluid;
-class FluidIntegrator;
+class Hydro;
+class HydroIntegrator;
 class ParameterInput;
 struct InterfaceField;
 struct NeighborBlock;
@@ -79,7 +80,7 @@ void OutflowOuterX2(MeshBlock *pmb, InterfaceField &buf,
 void OutflowOuterX3(MeshBlock *pmb, InterfaceField &buf,
                     int is, int ie, int js, int je, int ks, int ke);
 
-typedef void (*BValFluid_t)(MeshBlock *pmb, AthenaArray<Real> &buf,
+typedef void (*BValHydro_t)(MeshBlock *pmb, AthenaArray<Real> &buf,
                             int is, int ie, int js, int je, int ks, int ke);
 typedef void (*BValField_t)(MeshBlock *pmb, InterfaceField &buf,
                             int is, int ie, int js, int je, int ks, int ke);
@@ -96,27 +97,27 @@ public:
   void StartReceivingForInit(void);
   void StartReceivingAll(void);
 
-  void EnrollFluidBoundaryFunction (enum direction edge, BValFluid_t  my_bc);
+  void EnrollHydroBoundaryFunction (enum direction edge, BValHydro_t  my_bc);
   void EnrollFieldBoundaryFunction(enum direction edge, BValField_t my_bc);
   void CheckBoundary(void);
 
-  int LoadFluidBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
+  int LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
                                        NeighborBlock& nb);
-  int LoadFluidBoundaryBufferToCoarser(AthenaArray<Real> &src, Real *buf,
+  int LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src, Real *buf,
                                        NeighborBlock& nb);
-  int LoadFluidBoundaryBufferToFiner(AthenaArray<Real> &src, Real *buf,
+  int LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src, Real *buf,
                                      NeighborBlock& nb);
-  void SendFluidBoundaryBuffers(AthenaArray<Real> &src, int step);
-  void SetFluidBoundarySameLevel(AthenaArray<Real> &dst, Real *buf, NeighborBlock& nb);
-  void SetFluidBoundaryFromCoarser(Real *buf, NeighborBlock& nb);
-  void SetFluidBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf, NeighborBlock& nb);
-  bool ReceiveFluidBoundaryBuffers(AthenaArray<Real> &dst, int step);
-  void ReceiveFluidBoundaryBuffersWithWait(AthenaArray<Real> &dst, int step);
-  void RestrictFluid(AthenaArray<Real> &src,
+  void SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step);
+  void SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf, NeighborBlock& nb);
+  void SetHydroBoundaryFromCoarser(Real *buf, NeighborBlock& nb);
+  void SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf, NeighborBlock& nb);
+  bool ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst, int step);
+  void ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst, int step);
+  void RestrictHydro(AthenaArray<Real> &src,
                      int si, int ei, int sj, int ej, int sk, int ek);
   void SendFluxCorrection(int step);
   bool ReceiveFluxCorrection(AthenaArray<Real> &dst, int step);
-  void ProlongateFluidBoundaries(AthenaArray<Real> &dst);
+  void ProlongateHydroBoundaries(AthenaArray<Real> &dst);
   int LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *buf,
                                        NeighborBlock& nb);
   int LoadFieldBoundaryBufferToCoarser(InterfaceField &src, Real *buf,
@@ -145,7 +146,7 @@ public:
   void AverageEMFBoundary(void);
   bool ReceiveEMFCorrection(int step);
 
-  void FluidPhysicalBoundaries(AthenaArray<Real> &dst);
+  void HydroPhysicalBoundaries(AthenaArray<Real> &dst);
   void FieldPhysicalBoundaries(InterfaceField &dst);
 
   void ClearBoundaryForInit(void);
@@ -155,7 +156,7 @@ public:
 private:
   MeshBlock *pmy_mblock_;  // ptr to MeshBlock containing this BVals
 
-  BValFluid_t FluidBoundary_[6];
+  BValHydro_t HydroBoundary_[6];
   BValField_t FieldBoundary_[6];
 
   int nface_, nedge_;
@@ -163,27 +164,25 @@ private:
   int nedge_fine_[12];
   bool firsttime_[NSTEP];
 
-  enum boundary_status fluid_flag_[NSTEP][56], field_flag_[NSTEP][56];
+  enum boundary_status hydro_flag_[NSTEP][56], field_flag_[NSTEP][56];
   enum boundary_status flcor_flag_[NSTEP][6][2][2];
   enum boundary_status emfcor_flag_[NSTEP][48];
-  Real *fluid_send_[NSTEP][56],  *fluid_recv_[NSTEP][56];
+  Real *hydro_send_[NSTEP][56],  *hydro_recv_[NSTEP][56];
   Real *field_send_[NSTEP][56],  *field_recv_[NSTEP][56];
   Real *flcor_send_[NSTEP][6],   *flcor_recv_[NSTEP][6][2][2];
   Real *emfcor_send_[NSTEP][48], *emfcor_recv_[NSTEP][48];
   AthenaArray<Real> coarse_cons_, coarse_prim_;
   AthenaArray<Real> fvol_[2][2], sarea_[2];
-  AthenaArray<Real> sarea_x1_[2][2], sarea_x2_[2][3], sarea_x3_[3][2];
-  AthenaArray<Real> surface_flux_[6];
   InterfaceField coarse_b_;
 
 #ifdef MPI_PARALLEL
-  MPI_Request req_fluid_send_[NSTEP][56],  req_fluid_recv_[NSTEP][56];
+  MPI_Request req_hydro_send_[NSTEP][56],  req_hydro_recv_[NSTEP][56];
   MPI_Request req_field_send_[NSTEP][56],  req_field_recv_[NSTEP][56];
   MPI_Request req_flcor_send_[NSTEP][6],   req_flcor_recv_[NSTEP][6][2][2];
   MPI_Request req_emfcor_send_[NSTEP][48], req_emfcor_recv_[NSTEP][48];
 #endif
 
-  friend class FluidIntegrator;
+  friend class HydroIntegrator;
 };
 
 unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
@@ -198,4 +197,4 @@ typedef struct NeighborIndexes
 } NeighborIndexes;
 
 
-#endif
+#endif // BOUNDARY_VALUES_HPP
