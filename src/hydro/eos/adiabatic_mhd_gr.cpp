@@ -348,11 +348,11 @@ void HydroEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int
   for (int k = kl; k <= ku; ++k)
     for (int j = jl; j <= ju; ++j)
     {
-      pmy_fluid_->pmy_block->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
+      pmy_hydro_->pmy_block->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
       #pragma simd
       for (int i = il; i <= iu; ++i)
         PrimitiveToConservedSingle(prim, gamma_, bb_cc, g_, g_inv_, k, j, i,
-            pmy_fluid_->pmy_block, cons);
+            pmy_hydro_->pmy_block, cons);
     }
   return;
 }
