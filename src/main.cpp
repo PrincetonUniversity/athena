@@ -150,16 +150,7 @@ int main(int argc, char *argv[])
         return(0);
         break;
       }
-    } else { // else if argv[i] not of form "-?" print error message and quit
-      if(Globals::my_rank==0) {
-        std::cout << "### FATAL ERROR in main" << std::endl
-                  << "Invalid command line argument." << std::endl;
-      }
-#ifdef MPI_PARALLEL
-      MPI_Finalize();
-#endif
-      return(0);
-    }
+    } // else if argv[i] not of form "-?" ignore it
   }
 
 // Note steps 3-6 are protected by a simple error handler
