@@ -27,6 +27,7 @@
 #include "../athena_arrays.hpp"           // AthenaArray
 #include "../mesh.hpp"                    // MeshBlock, Mesh
 #include "integrators/field_integrator.hpp"  // FieldIntegrator
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //======================================================================================
 //! \file field.cpp
@@ -103,10 +104,10 @@ Field::~Field()
 }
 
 
-void Field::CalculateCellCenteredField(InterfaceField &bf, AthenaArray<Real> &bc,
+void Field::CalculateCellCenteredField(const InterfaceField &bf, AthenaArray<Real> &bc,
             Coordinates *pco, int is, int ie, int js, int je, int ks, int ke)
 {
-  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
+  int nthreads = pmy_mblock->pmy_mesh->GetNumMeshThreads();
 #pragma omp parallel default(shared) num_threads(nthreads)
 {
   for (int k=ks; k<=ke; ++k){

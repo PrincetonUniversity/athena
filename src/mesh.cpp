@@ -1218,8 +1218,15 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       if(multilevel==true)
         pbval->ProlongateFieldBoundaries(pfield->b);
     }
+
+    int is=pmb->is-NGHOST, ie=pmb->ie+NGHOST, js, je, ks, ke;
+    if(pmb->block_size.nx2 > 1) js=pmb->js-NGHOST, je=pmb->je+NGHOST;
+    else                        js=pmb->js,        je=pmb->je;
+    if(pmb->block_size.nx3 > 1) ks=pmb->ks-NGHOST, ke=pmb->ke+NGHOST;
+    else                        ks=pmb->ks,        ke=pmb->ke;
     phydro->pf_eos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b, 
-                                         phydro->w, pfield->bcc);
+                                         phydro->w, pfield->bcc, pmb->pcoord,
+                                         is, ie, js, je, ks, ke);
     pmb=pmb->next;
   }
 

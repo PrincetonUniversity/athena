@@ -137,13 +137,6 @@ void HydroIntegrator::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
     }
   }
 
-  // update conserved hydro variables
-  for (int k=ks; k<=ke; ++k) { 
-#pragma omp for schedule(static)
-    for (int j=js; j<=je; ++j) {
-    }
-  }
-
 //--------------------------------------------------------------------------------------
 // j-direction
 

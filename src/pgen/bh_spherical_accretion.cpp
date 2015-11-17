@@ -226,7 +226,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
        }
 
   // Initialize conserved variables
-  pmb->phydro->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, phyd->w, bb, phyd->u);
+  pmb->phydro->pf_eos->PrimitiveToConserved(phyd->w, bb, phyd->u, pmb->pcoord,
+                                            il, iu, jl, ju, kl, ku);
 
   // Free scratch arrays
   g.DeleteAthenaArray();

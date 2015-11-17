@@ -12,6 +12,7 @@
 // Athena++ classes headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 //typedef struct InterfaceField {
 //  AthenaArray<Real> x1f,x2f,x3f;
@@ -30,7 +31,7 @@ friend class Hydro;
 public:
   Field(MeshBlock *pmb, ParameterInput *pin);
   ~Field();
-  void CalculateCellCenteredField(InterfaceField &bf, AthenaArray<Real> &bc,
+  void CalculateCellCenteredField(const InterfaceField &bf, AthenaArray<Real> &bc,
        Coordinates *pco, int is, int ie, int js, int je, int ks, int ke);
 
   MeshBlock* pmy_mblock;  // ptr to MeshBlock containing this Field

@@ -125,7 +125,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   // Initialize conserved values
   AthenaArray<Real> bb;
   bb.NewAthenaArray(3, ku+1, ju+1, iu+1);
-  pmb->phydro->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, phyd->w, bb, phyd->u);
+  pmb->phydro->pf_eos->PrimitiveToConserved(phyd->w, bb, phyd->u, pmb->pcoord,
+                                            il, iu, jl, ju, kl, ku);
   bb.DeleteAthenaArray();
 
   // Enroll boundary functions

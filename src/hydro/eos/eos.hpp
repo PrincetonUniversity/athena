@@ -13,6 +13,7 @@
 // Athena headers
 #include "../../athena.hpp"         // Real
 #include "../../athena_arrays.hpp"  // AthenaArray
+#include "../../coordinates/coordinates.hpp" // Coordinates
 
 // Declarations
 class Hydro;
@@ -28,10 +29,11 @@ public:
   ~HydroEqnOfState();
 
   void ConservedToPrimitive(AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old,
-    const InterfaceField &b, AthenaArray<Real> &prim, AthenaArray<Real> &bcc);
-  void PrimitiveToConserved(const int kl, const int ku, const int jl, const int ju,
-      const int il, const int iu, const AthenaArray<Real> &prim,
-      const AthenaArray<Real> &b, AthenaArray<Real> &cons);
+    const InterfaceField &b, AthenaArray<Real> &prim, AthenaArray<Real> &bcc,
+    Coordinates *pco, int is, int ie, int js, int je, int ks, int ke);
+  void PrimitiveToConserved(const AthenaArray<Real> &prim, const AthenaArray<Real> &bc,
+       AthenaArray<Real> &cons, Coordinates *pco,
+       int is, int ie, int js, int je, int ks, int ke);
 
   // Sound speed functions in different regimes
   #if !RELATIVISTIC_DYNAMICS  // Newtonian: SR, GR defined as no-op

@@ -49,36 +49,27 @@ HydroEqnOfState::~HydroEqnOfState()
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn void HydroEqnOfState::ConservedToPrimitive(const AthenaArray<Real> &cons,
-//  const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
-//  AthenaArray<Real> &bcc)
+// \!fn void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
+//           const AthenaArray<Real> &prim_old, const InterfaceField &b,
+//           AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
+//           int is, int ie, int js, int je, int ks, int ke)
 // \brief Converts conserved into primitive variables in adiabatic hydro.
 
 void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
-  AthenaArray<Real> &bcc)
+  AthenaArray<Real> &bcc, Coordinates *pco, int is, int ie, int js, int je, int ks, int ke)
 {
   MeshBlock *pmb = pmy_hydro_->pmy_block;
-  int jl = pmb->js; int ju = pmb->je;
-  int kl = pmb->ks; int ku = pmb->ke;
-  if (pmb->block_size.nx2 > 1) {
-    jl -= (NGHOST);
-    ju += (NGHOST);
-  }
-  if (pmb->block_size.nx3 > 1) {
-    kl -= (NGHOST);
-    ku += (NGHOST);
-  }
   Real gm1 = GetGamma() - 1.0;
 
   int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
 #pragma omp parallel default(shared) num_threads(nthreads)
 {
-  for (int k=kl; k<=ku; ++k){
+  for (int k=ks; k<=ke; ++k){
 #pragma omp for schedule(dynamic)
-  for (int j=jl; j<=ju; ++j){
+  for (int j=js; j<=je; ++j){
 #pragma simd
-    for (int i=pmb->is-(NGHOST); i<=pmb->ie+(NGHOST); ++i){
+    for (int i=is; i<=ie; ++i){
       Real& u_d  = cons(IDN,k,j,i);
       Real& u_m1 = cons(IM1,k,j,i);
       Real& u_m2 = cons(IM2,k,j,i);
@@ -110,6 +101,51 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   }}
 }
 
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+// \!fn void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+//           const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
+//           int is, int ie, int js, int je, int ks, int ke);
+// \brief Converts primitive variables into conservative variables
+
+void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+     const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
+     int is, int ie, int js, int je, int ks, int ke)
+{
+  MeshBlock *pmb = pmy_hydro_->pmy_block;
+  Real igm1 = 1.0/(GetGamma() - 1.0);
+
+  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
+#pragma omp parallel default(shared) num_threads(nthreads)
+{
+  for (int k=ks; k<=ke; ++k){
+#pragma omp for schedule(dynamic)
+  for (int j=js; j<=je; ++j){
+#pragma simd
+    for (int i=is; i<=ie; ++i){
+      Real& u_d  = cons(IDN,k,j,i);
+      Real& u_m1 = cons(IM1,k,j,i);
+      Real& u_m2 = cons(IM2,k,j,i);
+      Real& u_m3 = cons(IM3,k,j,i);
+      Real& u_e  = cons(IEN,k,j,i);
+
+      const Real& w_d  = prim(IDN,k,j,i);
+      const Real& w_vx = prim(IVX,k,j,i);
+      const Real& w_vy = prim(IVY,k,j,i);
+      const Real& w_vz = prim(IVZ,k,j,i);
+      const Real& w_p  = prim(IEN,k,j,i);
+
+      u_d = w_d;
+      u_m1 = w_vx*w_d;
+      u_m2 = w_vy*w_d;
+      u_m3 = w_vz*w_d;
+      u_e = w_p*igm1 + 0.5*w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz));
+    }
+  }}
+}
   return;
 }
 

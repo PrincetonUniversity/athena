@@ -20,7 +20,7 @@
 // Declarations
 static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma_adi,
     const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int i,
-    MeshBlock *pmb, AthenaArray<Real> &cons);
+    MeshBlock *pmb, AthenaArray<Real> &cons, Coordinates *pco);
 static Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_adi);
 static Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi);
 static void neighbor_average(AthenaArray<Real> &prim, AthenaArray<bool> &problem, int n,
@@ -64,6 +64,7 @@ HydroEqnOfState::~HydroEqnOfState()
 //   cons: conserved quantities
 //   prim_old: primitive quantities from previous half timestep
 //   bb: face-centered magnetic field (unused)
+//   pco: a pointer to a Coordinates class
 // Outputs:
 //   prim: primitives
 //   bb_cc: cell-centered magnetic fields (unused)
@@ -78,7 +79,8 @@ HydroEqnOfState::~HydroEqnOfState()
 //   implements formulas assuming no magnetic field
 void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     const AthenaArray<Real> &prim_old, const InterfaceField &bb,
-    AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc)
+    AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc, Coordinates *pco,
+    int is, int ie, int js, int je, int ks, int ke)
 {
   // Parameters
   const Real max_wgas_rel = 1.0e8;
@@ -90,30 +92,14 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
   // Determine array bounds
   MeshBlock *pmb = pmy_hydro_->pmy_block;
-  int il = pmb->is - NGHOST;
-  int iu = pmb->ie + NGHOST;
-  int jl = pmb->js;
-  int ju = pmb->je;
-  int kl = pmb->ks;
-  int ku = pmb->ke;
-  if (pmb->block_size.nx2 > 1)
-  {
-    jl -= NGHOST;
-    ju += NGHOST;
-  }
-  if (pmb->block_size.nx3 > 1)
-  {
-    kl -= NGHOST;
-    ku += NGHOST;
-  }
 
   // Go through cells
-  for (int k = kl; k <= ku; ++k)
-    for (int j = jl; j <= ju; ++j)
+  for (int k = ks; k <= ke; ++k)
+    for (int j = js; j <= je; ++j)
     {
-      pmb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
+      pco->CellMetric(k, j, is, ie, g_, g_inv_);
       #pragma simd
-      for (int i = il; i <= iu; ++i)
+      for (int i = is; i <= ie; ++i)
       {
         // Extract metric
         const Real
@@ -227,11 +213,11 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real density_floor_local = density_floor_;
         if (rho_pow_ != 0.0)
           density_floor_local = std::max(density_floor_local,
-              rho_min_*std::pow(pmb->pcoord->x1v(i),rho_pow_));
+              rho_min_*std::pow(pco->x1v(i),rho_pow_));
         Real pressure_floor_local = pressure_floor_;
         if (u_pow_ != 0.0)
           pressure_floor_local = std::max(pressure_floor_local,
-              (gamma_-1.0)*u_min_*std::pow(pmb->pcoord->x1v(i),u_pow_));
+              (gamma_-1.0)*u_min_*std::pow(pco->x1v(i),u_pow_));
         if (rho < density_floor_local or std::isnan(rho))
         {
           rho = density_floor_local;
@@ -256,14 +242,14 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     }
 
   // Fix corresponding conserved values if any changes made
-  for (int k = kl; k <= ku; ++k)
-    for (int j = jl; j <= ju; ++j)
+  for (int k = ks; k <= ke; ++k)
+    for (int j = js; j <= je; ++j)
     {
-      pmb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
-      for (int i = il; i <= iu; ++i)
+      pco->CellMetric(k, j, is, ie, g_, g_inv_);
+      for (int i = is; i <= ie; ++i)
         if (fixed_(k,j,i))
         {
-          PrimitiveToConservedSingle(prim, gamma_adi, g_, g_inv_, k, j, i, pmb, cons);
+          PrimitiveToConservedSingle(prim, gamma_adi, g_, g_inv_, k, j, i, pmb, cons, pco);
           fixed_(k,j,i) = false;
         }
     }
@@ -272,26 +258,27 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
 // Function for converting all primitives to conserved variables
 // Inputs:
-//   kl,ku,jl,ju,il,iu: index bounds of region to be updated
 //   prim: 3D array of primitives
-//   bb_cc: 3D array of cell-centered magnetic fields (unused)
+//   bc: 3D array of cell-centered magnetic fields (unused)
+//   pco: pointer to a Coordinates class
+//   is,ie,js,je,ks,ke: index bounds of region to be updated
 // Outputs:
 //   cons: 3D array of conserved variables
 // Notes:
 //   single-cell function exists for other purposes; call made to that function rather
 //       than having duplicate code
-void HydroEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int jl,
-    const int ju, const int il, const int iu, const AthenaArray<Real> &prim,
-    const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons)
+void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+     const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
+     int is, int ie, int js, int je, int ks, int ke)
 {
-  for (int k = kl; k <= ku; ++k)
-    for (int j = jl; j <= ju; ++j)
+  for (int k = ks; k <= ke; ++k)
+    for (int j = js; j <= je; ++j)
     {
-      pmy_fluid_->pmy_block->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
+      pco->CellMetric(k, j, is, ie, g_, g_inv_);
       #pragma simd
-      for (int i = il; i <= iu; ++i)
+      for (int i = is; i <= ie; ++i)
         PrimitiveToConservedSingle(prim, gamma_, g_, g_inv_, k, j, i,
-            pmy_fluid_->pmy_block, cons);
+            pmy_fluid_->pmy_block, cons, pco);
     }
   return;
 }
@@ -307,7 +294,7 @@ void HydroEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int
 //   cons: conserved variables set in desired cell
 static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma_adi,
     const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int i,
-    MeshBlock *pmb, AthenaArray<Real> &cons)
+    MeshBlock *pmb, AthenaArray<Real> &cons, Coordinates *pco)
 {
   // Extract primitives
   const Real &rho = prim(IDN,k,j,i);
@@ -327,7 +314,7 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
   Real u2 = uu2 - alpha * gamma * gi(I02,i);
   Real u3 = uu3 - alpha * gamma * gi(I03,i);
   Real u_0, u_1, u_2, u_3;
-  pmb->pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
+  pco->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
 
   // Extract conserved quantities
   Real &rho_u0 = cons(IDN,k,j,i);

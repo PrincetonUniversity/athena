@@ -67,6 +67,7 @@ HydroEqnOfState::~HydroEqnOfState()
 //   cons: conserved quantities
 //   prim_old: primitive quantities from previous half timestep
 //   bb: face-centered magnetic field
+//   pco: a pointer to a Coordinates class
 // Outputs:
 //   prim: primitives
 //   bb_cc: cell-centered magnetic fields
@@ -82,8 +83,9 @@ HydroEqnOfState::~HydroEqnOfState()
 //       writing bbb for \mathcal{B}
 //   implements formulas assuming no magnetic field
 void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-    const AthenaArray<Real> &prim_old, const InterfaceField &bb, AthenaArray<Real> &prim,
-    AthenaArray<Real> &bb_cc)
+    const AthenaArray<Real> &prim_old, const InterfaceField &bb,
+    AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc, Coordinates *pco,
+    int is, int ie, int js, int je, int ks, int ke)
 {
   // Parameters
   const Real max_wgas_rel = 1.0e8;
@@ -93,64 +95,21 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   // Extract ratio of specific heats
   const Real &gamma_adi = gamma_;
 
-  // Determine array bounds
   MeshBlock *pmb = pmy_hydro_->pmy_block;
-  int il = pmb->is - NGHOST;
-  int iu = pmb->ie + NGHOST;
-  int jl = pmb->js;
-  int ju = pmb->je;
-  int kl = pmb->ks;
-  int ku = pmb->ke;
-  if (pmb->block_size.nx2 > 1)
-  {
-    jl -= NGHOST;
-    ju += NGHOST;
-  }
-  if (pmb->block_size.nx3 > 1)
-  {
-    kl -= NGHOST;
-    ku += NGHOST;
-  }
+
+  pmb->pfield->CalculateCellCenteredField(b,bcc,pco,is,ie,js,je,ks,ke);
 
   // Go through cells
-  for (int k = kl; k <= ku; ++k)
-    for (int j = jl; j <= ju; ++j)
+  for (int k = ks; k <= ke; ++k)
+  {
+    for (int j = js; j <= je; ++j)
     {
       // Calculate metric
-      pmb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
-
-      // Set cell-centered magnetic field
-      #pragma simd
-      for (int i = il; i <= iu; ++i)
-      {
-        // Extract face-centered magnetic fields
-        const Real &bb1m = bb.x1f(k,j,i);
-        const Real &bb1p = bb.x1f(k,j,i+1);
-        const Real &bb2m = bb.x2f(k,j,i);
-        const Real &bb2p = bb.x2f(k,j+1,i);
-        const Real &bb3m = bb.x3f(k,j,i);
-        const Real &bb3p = bb.x3f(k+1,j,i);
-
-        // Extract cell-centered magnetic field
-        Real &bb1 = bb_cc(IB1,k,j,i);
-        Real &bb2 = bb_cc(IB2,k,j,i);
-        Real &bb3 = bb_cc(IB3,k,j,i);
-
-        // Set cell-centered magnetic field
-        Real interp_param = (pmb->pcoord->x1v(i) - pmb->pcoord->x1f(i))
-            / pmb->pcoord->dx1f(i);
-        bb1 = (1.0-interp_param) * bb1m + interp_param * bb1p;
-        interp_param = (pmb->pcoord->x2v(j) - pmb->pcoord->x2f(j))
-            / pmb->pcoord->dx2f(j);
-        bb2 = (1.0-interp_param) * bb2m + interp_param * bb2p;
-        interp_param = (pmb->pcoord->x3v(k) - pmb->pcoord->x3f(k))
-            / pmb->pcoord->dx3f(k);
-        bb3 = (1.0-interp_param) * bb3m + interp_param * bb3p;
-      }
+      pco->CellMetric(k, j, is, ie, g_, g_inv_);
 
       // Set primitives
       #pragma simd
-      for (int i = il; i <= iu; ++i)
+      for (int i = is; i <= ie; ++i)
       {
         // Extract metric
         const Real
@@ -287,11 +246,11 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real density_floor_local = density_floor_;
         if (rho_pow_ != 0.0)
           density_floor_local = std::max(density_floor_local,
-              rho_min_*std::pow(pmb->pcoord->x1v(i),rho_pow_));
+              rho_min_*std::pow(pco->x1v(i),rho_pow_));
         Real pressure_floor_local = pressure_floor_;
         if (u_pow_ != 0.0)
           pressure_floor_local = std::max(pressure_floor_local,
-              (gamma_-1.0)*u_min_*std::pow(pmb->pcoord->x1v(i),u_pow_));
+              (gamma_-1.0)*u_min_*std::pow(pco->x1v(i),u_pow_));
         if (rho < density_floor_local or std::isnan(rho))
         {
           rho = density_floor_local;
@@ -314,45 +273,49 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         }
       }
     }
+  }
 
   // Fix corresponding conserved values if any changes made
-  for (int k = kl; k <= ku; ++k)
-    for (int j = jl; j <= ju; ++j)
+  for (int k = ks; k <= ke; ++k)
+  {
+    for (int j = js; j <= je; ++j)
     {
-      pmb->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
-      for (int i = il; i <= iu; ++i)
+      pco->CellMetric(k, j, is, ie, g_, g_inv_);
+      for (int i = is; i <= ie; ++i)
         if (fixed_(k,j,i))
         {
           PrimitiveToConservedSingle(prim, gamma_adi, bb_cc, g_, g_inv_, k, j, i, pmb,
-              cons);
+              cons, pco);
           fixed_(k,j,i) = false;
         }
     }
+  }
   return;
 }
 
 // Function for converting all primitives to conserved variables
 // Inputs:
-//   kl,ku,jl,ju,il,iu: index bounds of region to be updated
 //   prim: 3D array of primitives
-//   bb_cc: 3D array of cell-centered magnetic field
+//   bc: 3D array of cell-centered magnetic fields
+//   pco: pointer to a Coordinates class
+//   is,ie,js,je,ks,ke: index bounds of region to be updated
 // Outputs:
 //   cons: 3D array of conserved variables
 // Notes:
 //   single-cell function exists for other purposes; call made to that function rather
 //       than having duplicate code
-void HydroEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int jl,
-    const int ju, const int il, const int iu, const AthenaArray<Real> &prim,
-    const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons)
+void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+     const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
+     int is, int ie, int js, int je, int ks, int ke)
 {
-  for (int k = kl; k <= ku; ++k)
-    for (int j = jl; j <= ju; ++j)
+  for (int k = ks; k <= ke; ++k)
+    for (int j = js; j <= je; ++j)
     {
-      pmy_fluid_->pmy_block->pcoord->CellMetric(k, j, il, iu, g_, g_inv_);
+      pco->CellMetric(k, j, is, ie, g_, g_inv_);
       #pragma simd
-      for (int i = il; i <= iu; ++i)
-        PrimitiveToConservedSingle(prim, gamma_, bb_cc, g_, g_inv_, k, j, i,
-            pmy_fluid_->pmy_block, cons);
+      for (int i = is; i <= ie; ++i)
+        PrimitiveToConservedSingle(prim, gamma_, bc, g_, g_inv_, k, j, i,
+            pmy_fluid_->pmy_block, cons, pco);
     }
   return;
 }
@@ -370,7 +333,7 @@ void HydroEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int
 static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma_adi,
     const AthenaArray<Real> &bb_cc, const AthenaArray<Real> &g,
     const AthenaArray<Real> &gi, int k, int j, int i, MeshBlock *pmb,
-    AthenaArray<Real> &cons)
+    AthenaArray<Real> &cons, Coordinates *pco)
 {
   // Extract primitives and magnetic fields
   const Real &rho = prim(IDN,k,j,i);
@@ -393,7 +356,7 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
   Real u2 = uu2 - alpha * gamma * gi(I02,i);
   Real u3 = uu3 - alpha * gamma * gi(I03,i);
   Real u_0, u_1, u_2, u_3;
-  pmb->pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
+  pco->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
 
   // Calculate 4-magnetic field
   Real b0 = g(I01,i)*u0*bb1 + g(I02,i)*u0*bb2 + g(I03,i)*u0*bb3
@@ -404,7 +367,7 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
   Real b2 = (bb2 + b0 * u2) / u0;
   Real b3 = (bb3 + b0 * u3) / u0;
   Real b_0, b_1, b_2, b_3;
-  pmb->pcoord->LowerVectorCell(b0, b1, b2, b3, k, j, i, &b_0, &b_1, &b_2, &b_3);
+  pco->LowerVectorCell(b0, b1, b2, b3, k, j, i, &b_0, &b_1, &b_2, &b_3);
   Real b_sq = b0*b_0 + b1*b_1 + b2*b_2 + b3*b_3;
 
   // Extract conserved quantities

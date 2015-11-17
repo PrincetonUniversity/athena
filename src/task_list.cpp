@@ -423,12 +423,20 @@ enum TaskStatus Primitives(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
+  int is=pmb->is-NGHOST, ie=pmb->ie+NGHOST, js, je, ks, ke;
+  if(pmb->block_size.nx2 > 1) js=pmb->js-NGHOST, je=pmb->je+NGHOST;
+  else                        js=pmb->js,        je=pmb->je;
+  if(pmb->block_size.nx3 > 1) ks=pmb->ks-NGHOST, ke=pmb->ke+NGHOST;
+  else                        ks=pmb->ks,        ke=pmb->ke;
+
   if(step == 1) {
     phydro->pf_eos->ConservedToPrimitive(phydro->u1, phydro->w, pfield->b1,
-                                         phydro->w1, pfield->bcc1);
+                                         phydro->w1, pfield->bcc1, pmb->pcoord,
+                                         is, ie, js, je, ks, ke);
   } else if(step == 2) {
     phydro->pf_eos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
-                                         phydro->w, pfield->bcc);
+                                         phydro->w, pfield->bcc, pmb->pcoord,
+                                         is, ie, js, je, ks, ke);
   } else {
     return TASK_FAIL;
   }
