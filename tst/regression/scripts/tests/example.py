@@ -25,8 +25,11 @@ produced by the test.
 
 # Modules
 import numpy as np                             # standard Python module for numerics
-import scripts.utils.athena as athena          # utilities for working with Athena++
-import scripts.utils.comparison as comparison  # more utilities bundled with Athena++
+import sys                                     # standard Python module to change path
+import scripts.utils.athena as athena          # utilities for running Athena++
+import scripts.utils.comparison as comparison  # more utilities explicitly for testing
+sys.path.insert(0, '../../vis/python')         # insert path to Python read scripts
+import athena_read                             # utilities for reading Athena++ data
 
 def prepare():
   """
@@ -91,20 +94,20 @@ def analyze():
 
   # Read in reference data. The tst/regression/data/ directory has reference runs for
   # comparing future output of the code. We only need to specify file names starting
-  # with "data/". Now athena.read_vtk() returns four objects: the x-interface locations,
+  # with "data/". Now athena_read.vtk() returns four objects: the x-interface locations,
   # the y-interface locations, the z-interface locations, and the values of the
   # variables themselves. In a 1D problem we ignore the second and third returned
   # values, assigning them to the _ variable as is typical Python style.
-  x_ref,_,_,data_ref = athena.read_vtk('data/sr_hydro_shock1_hlle.vtk')
+  x_ref,_,_,data_ref = athena_read.vtk('data/sr_hydro_shock1_hlle.vtk')
 
   # Read in the data produced during this test. This will usually be stored in the
   # tst/regression/bin/ directory, but again we omit the first part of the path. Note
   # the file name is what we expect based on the job/problem_id field supplied in run().
-  x_new,_,_,data_new = athena.read_vtk('bin/gr_shock_tube.block0.out1.00001.vtk')
+  x_new,_,_,data_new = athena_read.vtk('bin/gr_shock_tube.block0.out1.00001.vtk')
 
   # Extract the quantities of interest. Suppose we want to check that the total energy
   # and the x-momentum are the same as those given in the reference dataset. The fourth
-  # object returned by athena.read_vtk() is a dictionary of 3D (scalars) or 4D (vectors)
+  # object returned by athena_read.vtk() is a dictionary of 3D (scalars) or 4D (vectors)
   # NumPy arrays, whose keys ('Etot' and 'mom' in this case) are exactly the names of
   # the arrays as stored in the vtk file. Here we extract the reference values, where
   # the fourth index specifies which component of the vector quantity to extract. The

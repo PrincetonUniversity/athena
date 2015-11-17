@@ -3,8 +3,11 @@
 # Modules
 import numpy as np
 import math
+import sys
 import scripts.utils.athena as athena
 import scripts.utils.comparison as comparison
+sys.path.insert(0, '../../vis/python')
+import athena_read
 
 # Parameters
 wave_flags = range(7)
@@ -36,7 +39,7 @@ def run():
         'time/tlim=' + repr(time),
         'output1/dt=' + repr(time),
         'output2/dt=' + repr(time), 'output2/file_type=tab',
-        'fluid/gamma=' + repr(gamma),
+        'hydro/gamma=' + repr(gamma),
         'problem/wave_flag=' + repr(wave_flag), 'problem/amp=' + repr(amp),
         'problem/vflow=' + repr(vflow)]
     athena.run('mhd/athinput.linear_wave2d', arguments)
@@ -55,16 +58,16 @@ def analyze():
   for wave_flag in wave_flags:
 
     # Read low and high resolution initial and final states
-    prim_initial_low = athena.read_tab(
+    prim_initial_low = athena_read.tab(
         'bin/mhd_wave_{0}_low.block0.out2.00000.tab'.format(wave_flag),
         headings=headings, dimensions=2)
-    prim_initial_high = athena.read_tab(
+    prim_initial_high = athena_read.tab(
         'bin/mhd_wave_{0}_high.block0.out2.00000.tab'.format(wave_flag),
         headings=headings, dimensions=2)
-    prim_final_low = athena.read_tab(
+    prim_final_low = athena_read.tab(
         'bin/mhd_wave_{0}_low.block0.out2.00001.tab'.format(wave_flag),
         headings=headings, dimensions=2)
-    prim_final_high = athena.read_tab(
+    prim_final_high = athena_read.tab(
         'bin/mhd_wave_{0}_high.block0.out2.00001.tab'.format(wave_flag),
         headings=headings, dimensions=2)
 
