@@ -101,3 +101,57 @@ Field::~Field()
   wght.x2f.DeleteAthenaArray();
   wght.x3f.DeleteAthenaArray();
 }
+
+
+void Field::CalculateCellCenteredField(InterfaceField &bf, AthenaArray<Real> &bc,
+            Coordinates *pco, int is, int ie, int js, int je, int ks, int ke)
+{
+  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
+#pragma omp parallel default(shared) num_threads(nthreads)
+{
+  for (int k=ks; k<=ke; ++k){
+#pragma omp for schedule(dynamic)
+    for (int j=js; j<=je; ++j){
+    // calc cell centered fields first
+#pragma simd
+      for (int i=is; i<=ie; ++i){
+        const Real& b1_i   = bf.x1f(k,j,i  );
+        const Real& b1_ip1 = bf.x1f(k,j,i+1);
+        const Real& b2_j   = bf.x2f(k,j  ,i);
+        const Real& b2_jp1 = bf.x2f(k,j+1,i);
+        const Real& b3_k   = bf.x3f(k  ,j,i);
+        const Real& b3_kp1 = bf.x3f(k+1,j,i);
+
+        Real& bcc1 = bc(IB1,k,j,i);
+        Real& bcc2 = bc(IB2,k,j,i);
+        Real& bcc3 = bc(IB3,k,j,i);
+
+        // cell center B-fields are defined as spatial interpolation at the volume center
+        const Real& x1f_i  = pco->x1f(i);
+        const Real& x1f_ip = pco->x1f(i+1);
+        const Real& x1v_i  = pco->x1v(i);
+        const Real& dx1_i  = pco->dx1f(i);
+        Real lw=(x1f_ip-x1v_i)/dx1_i;
+        Real rw=(x1v_i -x1f_i)/dx1_i;
+        bcc1 = lw*b1_i + rw*b1_ip1;
+        const Real& x2f_j  = pco->x2f(j);
+        const Real& x2f_jp = pco->x2f(j+1);
+        const Real& x2v_j  = pco->x2v(j);
+        const Real& dx2_j  = pco->dx2f(j);
+        lw=(x2f_jp-x2v_j)/dx2_j;
+        rw=(x2v_j -x2f_j)/dx2_j;
+        bcc2 = lw*b2_j + rw*b2_jp1;
+        const Real& x3f_k  = pco->x3f(k);
+        const Real& x3f_kp = pco->x3f(k+1);
+        const Real& x3v_k  = pco->x3v(k);
+        const Real& dx3_k  = pco->dx3f(k);
+        lw=(x3f_kp-x3v_k)/dx3_k;
+        rw=(x3v_k -x3f_k)/dx3_k;
+        bcc3 = lw*b3_k + rw*b3_kp1;
+      }
+    }
+  }
+}
+  return;
+}
+

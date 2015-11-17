@@ -30,6 +30,8 @@ friend class Hydro;
 public:
   Field(MeshBlock *pmb, ParameterInput *pin);
   ~Field();
+  void CalculateCellCenteredField(InterfaceField &bf, AthenaArray<Real> &bc,
+       Coordinates *pco, int is, int ie, int js, int je, int ks, int ke);
 
   MeshBlock* pmy_mblock;  // ptr to MeshBlock containing this Field
 
