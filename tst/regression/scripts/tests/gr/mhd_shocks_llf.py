@@ -2,8 +2,11 @@
 
 # Modules
 import numpy as np
+import sys
 import scripts.utils.athena as athena
 import scripts.utils.comparison as comparison
+sys.path.insert(0, '../../vis/python')
+import athena_read
 
 # Prepare Athena++
 def prepare():
@@ -40,9 +43,9 @@ def analyze():
               [0.003, 0.002, 0.007, 0.01, 0.007, 0.0, 0.005, 0.007],
               [0.003, 0.002, 0.03,  0.04, 0.008, 0.0, 0.002, 0.005]]
   for i,tols in zip([1,2,4],tol_sets):
-    x_ref,_,_,data_ref = athena.read_vtk('data/sr_mhd_shock{0}_hlld.vtk'.format(i))
+    x_ref,_,_,data_ref = athena_read.vtk('data/sr_mhd_shock{0}_hlld.vtk'.format(i))
     x_new,_,_,data_new = \
-        athena.read_vtk('bin/gr_mhd_shock{0}.block0.out1.00001.vtk'.format(i))
+        athena_read.vtk('bin/gr_mhd_shock{0}.block0.out1.00001.vtk'.format(i))
     for header,tol in zip(headers,tols):
       array_ref = data_ref[header[0]]
       array_ref = array_ref[0,0,:] if len(header) == 1 else array_ref[0,0,:,header[1]]

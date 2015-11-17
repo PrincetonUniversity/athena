@@ -85,40 +85,74 @@ public:
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
 
 // Functions to calculate covariant derivatives at faces, for viscosity calculations  
-  void FaceXdx(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
-  void FaceXdy(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
-  void FaceXdz(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
-  void FaceYdx(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
-  void FaceYdy(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
-  void FaceYdz(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
-  void FaceZdx(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
-  void FaceZdy(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
-  void FaceZdz(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  #if !GENERAL_RELATIVITY  // declare, but do not define, in non-GR case
+    void FaceXdx(const int k, const int j, const int il, const int iu,
+      const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+    void FaceXdy(const int k, const int j, const int il, const int iu,
+      const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+    void FaceXdz(const int k, const int j, const int il, const int iu,
+      const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+    void FaceYdx(const int k, const int j, const int il, const int iu,
+      const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+    void FaceYdy(const int k, const int j, const int il, const int iu,
+      const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+    void FaceYdz(const int k, const int j, const int il, const int iu,
+      const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+    void FaceZdx(const int k, const int j, const int il, const int iu,
+      const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+    void FaceZdy(const int k, const int j, const int il, const int iu,
+      const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+    void FaceZdz(const int k, const int j, const int il, const int iu,
+      const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+  #else  // GR: define as no-op in all coordinate systems
+    void FaceXdx(const int, const int, const int, const int, const AthenaArray<Real> &,
+        AthenaArray<Real> &) {return;}
+    void FaceXdy(const int, const int, const int, const int, const AthenaArray<Real> &,
+        AthenaArray<Real> &) {return;}
+    void FaceXdz(const int, const int, const int, const int, const AthenaArray<Real> &,
+        AthenaArray<Real> &) {return;}
+    void FaceYdx(const int, const int, const int, const int, const AthenaArray<Real> &,
+        AthenaArray<Real> &) {return;}
+    void FaceYdy(const int, const int, const int, const int, const AthenaArray<Real> &,
+        AthenaArray<Real> &) {return;}
+    void FaceYdz(const int, const int, const int, const int, const AthenaArray<Real> &,
+        AthenaArray<Real> &) {return;}
+    void FaceZdx(const int, const int, const int, const int, const AthenaArray<Real> &,
+        AthenaArray<Real> &) {return;}
+    void FaceZdy(const int, const int, const int, const int, const AthenaArray<Real> &,
+        AthenaArray<Real> &) {return;}
+    void FaceZdz(const int, const int, const int, const int, const AthenaArray<Real> &,
+        AthenaArray<Real> &) {return;}
+  #endif  // !GENERAL_RELATIVITY
 
 // function to compute Divv
-  void Divv(const AthenaArray<Real> &prim, AthenaArray<Real> &divv);
+  #if !GENERAL_RELATIVITY  // declare, but do not define, in non-GR case
+    void Divv(const AthenaArray<Real> &prim, AthenaArray<Real> &divv);
+  #else  // GR: define as no-op in all coordinate systems
+    void Divv(const AthenaArray<Real> &, AthenaArray<Real> &) {return;}
+  #endif  // !GENERAL_RELATIVITY
 
 // function to compute viscous source terms
-  void VisSrcTermsX1(const int k, const int j, const Real dt,
-    const AthenaArray<Real> &flx,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &u);
-
-  void VisSrcTermsX2(const int k, const int j, const Real dt,
-    const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &u);
-
-  void VisSrcTermsX3(const int k, const int j, const Real dt,
-    const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &u);
+  #if !GENERAL_RELATIVITY  // declare, but do not define, in non-GR case
+    void VisSrcTermsX1(const int k, const int j, const Real dt,
+      const AthenaArray<Real> &flx,
+      const AthenaArray<Real> &prim, AthenaArray<Real> &u);
+    void VisSrcTermsX2(const int k, const int j, const Real dt,
+      const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
+      const AthenaArray<Real> &prim, AthenaArray<Real> &u);
+    void VisSrcTermsX3(const int k, const int j, const Real dt,
+      const AthenaArray<Real> &flx,  const AthenaArray<Real> &flx_p1,
+      const AthenaArray<Real> &prim, AthenaArray<Real> &u);
+  #else  // GR: define as no-op in all coordinate systems
+    void VisSrcTermsX1(const int, const int, const Real, const AthenaArray<Real> &,
+        const AthenaArray<Real> &, AthenaArray<Real> &) {return;}
+    void VisSrcTermsX2(const int, const int, const Real, const AthenaArray<Real> &,
+        const AthenaArray<Real> &, const AthenaArray<Real> &, AthenaArray<Real> &)
+        {return;}
+    void VisSrcTermsX3(const int, const int, const Real, const AthenaArray<Real> &,
+        const AthenaArray<Real> &, const AthenaArray<Real> &, AthenaArray<Real> &)
+        {return;}
+  #endif  // !GENERAL_RELATIVITY
 
   // Functions for use in general relativity
   #if GENERAL_RELATIVITY  // declare, but do not define, in GR case

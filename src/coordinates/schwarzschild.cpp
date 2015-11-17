@@ -370,7 +370,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    volumes(i) = coord_vol_i1_(i) * coord_vol_j1_(j) * dx3f(k);
+    volumes(i) = GetCellVolume(k, j, i);
   return;
 }
 
@@ -405,7 +405,7 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    areas(i) = coord_area1_i1_(i) * coord_area1_j1_(j) * dx3f(k);
+    areas(i) = GetFace1Area(k, j, i);
   return;
 }
 
@@ -434,13 +434,29 @@ Real Coordinates::GetFace1Area(const int k, const int j, const int i)
 //   areas: 1D array of interface areas orthogonal to theta
 // Notes:
 //   \Delta A = 1/3 \Delta(r^3) \sin\theta \Delta\phi
+//   cf. GetFace2Area()
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    areas(i) = coord_area2_i1_(i) * coord_area2_j1_(j) * dx3f(k);
+    areas(i) = GetFace2Area(k, j, i);
   return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing single area orthogonal to theta
+// Inputs:
+//   k,j,i: phi-, theta-, and r-indices
+// Outputs:
+//   returned value: interface area orthogonal to theta
+// Notes:
+//   \Delta A = 1/3 \Delta(r^3) \sin\theta \Delta\phi
+//   cf. Face2Area()
+Real Coordinates::GetFace2Area(const int k, const int j, const int i)
+{
+  return coord_area2_i1_(i) * coord_area2_j1_(j) * dx3f(k);
 }
 
 //--------------------------------------------------------------------------------------
@@ -454,13 +470,29 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 //   areas: 1D array of interface areas orthogonal to phi
 // Notes:
 //   \Delta A = 1/3 \Delta(r^3) (-\Delta\cos\theta)
+//   cf. GetFace3Area()
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    areas(i) = coord_area3_i1_(i) * coord_area3_j1_(j);
+    areas(i) = GetFace3Area(k, j, i);
   return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for computing single area orthogonal to phi
+// Inputs:
+//   k,j,i: phi-, theta-, and r-indices
+// Outputs:
+//   returned value: interface area orthogonal to phi
+// Notes:
+//   \Delta A = 1/3 \Delta(r^3) (-\Delta\cos\theta)
+//   cf. Face3Area()
+Real Coordinates::GetFace3Area(const int k, const int j, const int i)
+{
+  return coord_area3_i1_(i) * coord_area3_j1_(j);
 }
 
 //--------------------------------------------------------------------------------------
@@ -500,7 +532,7 @@ void Coordinates::Edge2Length(const int k, const int j, const int il, const int 
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    lengths(i) = coord_len2_i1_(i) * coord_len2_j1_(j);
+    lengths(i) = GetEdge2Length(k, j, i);
   return;
 }
 
@@ -536,7 +568,7 @@ void Coordinates::Edge3Length(const int k, const int j, const int il, const int 
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    lengths(i) = coord_len3_i1_(i) * coord_len3_j1_(j) * dx3f(k);
+    lengths(i) = GetEdge3Length(k, j, i);
   return;
 }
 
