@@ -456,7 +456,6 @@ BoundaryValues::~BoundaryValues()
 //  \brief Initialize MPI requests
 void BoundaryValues::Initialize(void)
 {
-#ifdef MPI_PARALLEL
   MeshBlock* pmb=pmy_mblock_;
   int myox1, myox2, myox3;
   int tag;
@@ -538,6 +537,7 @@ void BoundaryValues::Initialize(void)
     }
   }
 
+#ifdef MPI_PARALLEL
   for(int l=0;l<NSTEP;l++) {
     for(int n=0;n<pmb->nneighbor;n++) {
       NeighborBlock& nb = pmb->neighbor[n];
@@ -841,11 +841,12 @@ void BoundaryValues::StartReceivingForInit(void)
 //  \brief initiate MPI_Irecv for all the sweeps
 void BoundaryValues::StartReceivingAll(void)
 {
+  for(int l=0;l<NSTEP;l++)
+    firsttime_[l]=true;
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_mblock_;
   int mylevel=pmb->loc.level;
   for(int l=0;l<NSTEP;l++) {
-    firsttime_[l]=true;
     for(int n=0;n<pmb->nneighbor;n++) {
       NeighborBlock& nb = pmb->neighbor[n];
       if(nb.rank!=Globals::my_rank) { 
@@ -3134,49 +3135,38 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, NeighborBlock& nb)
     }
   }
   else if(nb.type==neighbor_edge) {
-    if(pmb->block_size.nx3 > 1) { // 3D
-      // x1x2 edge
-      if(nb.eid>=0 && nb.eid<4) {
-        int i, j;
-        if((nb.eid&1)==0) i=pmb->is;
-        else i=pmb->ie+1;
-        if((nb.eid&2)==0) j=pmb->js;
-        else j=pmb->je+1;
-        // unpack e3
-        for(int k=pmb->ks; k<=pmb->ke; k++)
-          e3(k,j,i)+=buf[p++];
-      }
-      // x1x3 edge
-      else if(nb.eid>=4 && nb.eid<8) {
-        int i, k;
-        if((nb.eid&1)==0) i=pmb->is;
-        else i=pmb->ie+1;
-        if((nb.eid&2)==0) k=pmb->ks;
-        else k=pmb->ke+1;
-        // unpack e2
-        for(int j=pmb->js; j<=pmb->je; j++)
-          e2(k,j,i)+=buf[p++];
-      }
-      // x2x3 edge
-      else if(nb.eid>=8 && nb.eid<12) {
-        int j, k;
-        if((nb.eid&1)==0) j=pmb->js;
-        else j=pmb->je+1;
-        if((nb.eid&2)==0) k=pmb->ks;
-        else k=pmb->ke+1;
-        // unpack e1
-        for(int i=pmb->is; i<=pmb->ie; i++)
-          e1(k,j,i)+=buf[p++];
-      }
-    }
-    else if(pmb->block_size.nx2 > 1) { // 2D
-      int i, j, k=pmb->ks;
+    // x1x2 edge (2D and 3D)
+    if(nb.eid>=0 && nb.eid<4) {
+      int i, j;
       if((nb.eid&1)==0) i=pmb->is;
       else i=pmb->ie+1;
       if((nb.eid&2)==0) j=pmb->js;
       else j=pmb->je+1;
       // unpack e3
-      e3(k,j,i)+=buf[p++];
+      for(int k=pmb->ks; k<=pmb->ke; k++)
+        e3(k,j,i)+=buf[p++];
+    }
+    // x1x3 edge
+    else if(nb.eid>=4 && nb.eid<8) {
+      int i, k;
+      if((nb.eid&1)==0) i=pmb->is;
+      else i=pmb->ie+1;
+      if((nb.eid&2)==0) k=pmb->ks;
+      else k=pmb->ke+1;
+      // unpack e2
+      for(int j=pmb->js; j<=pmb->je; j++)
+        e2(k,j,i)+=buf[p++];
+    }
+    // x2x3 edge
+    else if(nb.eid>=8 && nb.eid<12) {
+      int j, k;
+      if((nb.eid&1)==0) j=pmb->js;
+      else j=pmb->je+1;
+      if((nb.eid&2)==0) k=pmb->ks;
+      else k=pmb->ke+1;
+      // unpack e1
+      for(int i=pmb->is; i<=pmb->ie; i++)
+        e1(k,j,i)+=buf[p++];
     }
   }
 
