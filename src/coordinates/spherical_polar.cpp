@@ -328,16 +328,6 @@ Real Coordinates::GetFace1Area(const int k, const int j, const int i)
   return coord_area1_i_(i)*coord_area1_j_(j)*dx3f(k);
 }
 
-Real Coordinates::GetFace2Area(const int k, const int j, const int i)
-{
-  return coord_area2_i_(i)*coord_area2_j_(j)*dx3f(k);
-}
-
-Real Coordinates::GetFace3Area(const int k, const int j, const int i)
-{
-  return coord_area3_i_(i)*dx2f(j);
-}
-
 
 //--------------------------------------------------------------------------------------
 // Cell Volume function

@@ -511,7 +511,8 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    volumes(i) = GetCellVolume(k, j, i);
+    volumes(i) = 1.0/3.0 * coord_vol_i1_(i) * coord_vol_j1_(j) * coord_vol_k1_(k)
+               * (coord_vol_i2_(i) + coord_vol_j2_(j));
   return;
 }
 
@@ -550,7 +551,8 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    areas(i) = GetFace1Area(k, j, i);
+    areas(i) = coord_area1_j1_(j) * coord_area1_k1_(k)
+             * (coord_area1_i1_(i) + 1.0/3.0 * coord_area1_j2_(j));
   return;
 }
 
@@ -582,32 +584,16 @@ Real Coordinates::GetFace1Area(const int k, const int j, const int i)
 // Notes:
 //   \Delta A = 1/3 (r_+ - r_-) \sin\theta_- (\phi_+ - \phi_-)
 //       * (r_-^2 + r_- r_+ + r_+^2 + 3 a^2 \cos^2\theta_-)
-//   cf. GetFace2Area()
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    areas(i) = GetFace2Area(k, j, i);
+    areas(i) = coord_area2_i1_(i) * coord_area2_j1_(j) * coord_area2_k1_(k)
+               * (1.0/3.0 * coord_area2_i2_(i) + coord_area2_j2_(j));
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for computing single area orthogonal to theta
-// Inputs:
-//   k,j,i: phi-, theta-, and r-indices
-// Outputs:
-//   returned value: interface area orthogonal to theta
-// Notes:
-//   \Delta A = 1/3 (r_+ - r_-) \sin\theta_- (\phi_+ - \phi_-)
-//       * (r_-^2 + r_- r_+ + r_+^2 + 3 a^2 \cos^2\theta_-)
-//   cf. Face2Area()
-Real Coordinates::GetFace2Area(const int k, const int j, const int i)
-{
-  return coord_area2_i1_(i) * coord_area2_j1_(j) * coord_area2_k1_(k)
-      * (1.0/3.0 * coord_area2_i2_(i) + coord_area2_j2_(j));
-}
 
 //--------------------------------------------------------------------------------------
 
@@ -622,32 +608,14 @@ Real Coordinates::GetFace2Area(const int k, const int j, const int i)
 //   \Delta A = 1/3 (r_+ - r_-) (\cos\theta_- - \cos\theta_+)
 //       * (r_-^2 + r_- r_+ + r_+^2
 //       + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
-//   cf. GetFace3Area()
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    areas(i) = GetFace3Area(k, j, i);
+    areas(i) = 1.0/3.0 * coord_area3_i1_(i) * coord_area3_j1_(j)
+             * (coord_area3_i2_(i) + coord_area3_j2_(j));
   return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing single area orthogonal to phi
-// Inputs:
-//   k,j,i: phi-, theta-, and r-indices
-// Outputs:
-//   returned value: interface area orthogonal to phi
-// Notes:
-//   \Delta A = 1/3 (r_+ - r_-) (\cos\theta_- - \cos\theta_+)
-//       * (r_-^2 + r_- r_+ + r_+^2
-//       + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
-//   cf. Face3Area()
-Real Coordinates::GetFace3Area(const int k, const int j, const int i)
-{
-  return 1.0/3.0 * coord_area3_i1_(i) * coord_area3_j1_(j)
-      * (coord_area3_i2_(i) + coord_area3_j2_(j));
 }
 
 //--------------------------------------------------------------------------------------
@@ -690,7 +658,7 @@ void Coordinates::Edge2Length(const int k, const int j, const int il, const int 
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    lengths(i) = GetEdge2Length(k, j, i);
+    lengths(i) = coord_len2_j1_(j) * (coord_len2_i1_(i) + 1.0/3.0 * coord_len2_j2_(j));
   return;
 }
 
@@ -727,7 +695,8 @@ void Coordinates::Edge3Length(const int k, const int j, const int il, const int 
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    lengths(i) = GetEdge3Length(k, j, i);
+    lengths(i) = coord_len3_k1_(k) * coord_len3_j1_(j)
+               * (coord_len3_i1_(i) + coord_len3_j2_(j));
   return;
 }
 

@@ -119,7 +119,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    volumes(i) = GetCellVolume(k, j, i);
+    volumes(i) = dx1f(i) * dx2f(j) * dx3f(k);
   return;
 }
 
@@ -155,7 +155,7 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    areas(i) = GetFace1Area(k, j, i);
+    areas(i) = dx2f(j) * dx3f(k);
   return;
 }
 
@@ -185,30 +185,15 @@ Real Coordinates::GetFace1Area(const int k, const int j, const int i)
 //   areas: 1D array of interface areas orthogonal to y
 // Notes:
 //   \Delta A = \Delta x * \Delta z
-//   cf. GetFace2Area()
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    areas(i) = GetFace2Area(k, j, i);
+    areas(i) = dx1f(i) * dx3f(k);
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for computing single area orthogonal to y
-// Inputs:
-//   k,j,i: z-, y-, and x-indices
-// Outputs:
-//   returned value: interface area orthogonal to y
-// Notes:
-//   \Delta A = \Delta x * \Delta z
-//   cf. Face2Area()
-Real Coordinates::GetFace2Area(const int k, const int j, const int i)
-{
-  return dx1f(i) * dx3f(k);
-}
 
 //--------------------------------------------------------------------------------------
 
@@ -221,30 +206,15 @@ Real Coordinates::GetFace2Area(const int k, const int j, const int i)
 //   areas: 1D array of interface areas orthogonal to z
 // Notes:
 //   \Delta A = \Delta x * \Delta y
-//   cf. GetFace3Area()
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    areas(i) = GetFace3Area(k, j, i);
+    areas(i) = dx1f(i) * dx2f(j);
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for computing single area orthogonal to z
-// Inputs:
-//   k,j,i: z-, y-, and x-indices
-// Outputs:
-//   returned value: interface area orthogonal to z
-// Notes:
-//   \Delta A = \Delta x * \Delta y
-//   cf. Face3Area()
-Real Coordinates::GetFace3Area(const int k, const int j, const int i)
-{
-  return dx1f(i) * dx2f(j);
-}
 
 //--------------------------------------------------------------------------------------
 
@@ -283,7 +253,7 @@ void Coordinates::Edge2Length(const int k, const int j, const int il, const int 
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    lengths(i) = GetEdge2Length(k, j, i);
+    lengths(i) = dx2f(j);
   return;
 }
 
@@ -320,7 +290,7 @@ void Coordinates::Edge3Length(const int k, const int j, const int il, const int 
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    lengths(k) = GetEdge3Length(k, j, i);
+    lengths(k) = dx3f(k);
   return;
 }
 
