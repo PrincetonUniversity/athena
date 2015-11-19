@@ -26,7 +26,7 @@
 //======================================================================================
 
 // C/C++ headers
-#include <stdint.h>    // int64_t
+#include <stdint.h>   // int64_t
 #include <cstdlib>    // strtol
 #include <ctime>      // clock(), CLOCKS_PER_SEC, clock_t
 #include <exception>  // exception
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
         return(0);
         break;
       }
-    } // else if argv[i] not of form "-?" ignore it
+    } // else if argv[i] not of form "-?" ignore it here (tested in ModifyFromCmdline)
   }
 
 // Note steps 3-6 are protected by a simple error handler
@@ -165,13 +165,12 @@ int main(int argc, char *argv[])
     infile.Open(input_filename,WRAPPER_READ_MODE);
     pinput->LoadFromFile(infile);
     pinput->ModifyFromCmdline(argc,argv);
-     // leave the file open
+    infile.Close();
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl
               << "memory allocation failed initializing class ParameterInput: " 
               << ba.what() << std::endl;
-    infile.Close();
 #ifdef MPI_PARALLEL
     MPI_Finalize();
 #endif
@@ -179,7 +178,6 @@ int main(int argc, char *argv[])
   }
   catch(std::exception const& ex) {
     std::cout << ex.what() << std::endl;  // prints diagnostic message  
-    infile.Close();
 #ifdef MPI_PARALLEL
     MPI_Finalize();
 #endif
@@ -188,9 +186,7 @@ int main(int argc, char *argv[])
 
   // Dump input parameters and quit if code was run with -n option.
   if (narg_flag){
-    if(Globals::my_rank==0)
-      pinput->ParameterDump(std::cout);
-    infile.Close();
+    if(Globals::my_rank==0) pinput->ParameterDump(std::cout);
 #ifdef MPI_PARALLEL
     MPI_Finalize();
 #endif
@@ -208,7 +204,6 @@ int main(int argc, char *argv[])
       pmesh = new Mesh(pinput, infile, mesh_flag);
       ncstart=pmesh->ncycle;
     }
-    infile.Close(); // close the file here
   }
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl
@@ -231,7 +226,7 @@ int main(int argc, char *argv[])
   if (mesh_flag>0){
 #ifdef MPI_PARALLEL
     MPI_Finalize();
-#endif /* MPI_PARALLEL */
+#endif
     return(0);
   }
 
@@ -264,9 +259,7 @@ int main(int argc, char *argv[])
   try {
     ChangeRunDir(prundir);
     pouts = new Outputs(pmesh, pinput);
-    if(res_flag==0) {
-      pouts->MakeOutputs(pmesh,pinput);
-    }
+    if(res_flag==0) pouts->MakeOutputs(pmesh,pinput);
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl
@@ -288,8 +281,9 @@ int main(int argc, char *argv[])
 //--- Step 9. === START OF MAIN INTEGRATION LOOP =======================================
 // For performance, there is no error handler protecting this step (except outputs)
 
-  if(Globals::my_rank==0)
+  if(Globals::my_rank==0) {
     std::cout<<std::endl<<"Setup complete, entering main loop..."<<std::endl<<std::endl;
+  }
   clock_t tstart = clock();
 #ifdef OPENMP_PARALLEL
   double omp_start_time = omp_get_wtime();
@@ -298,10 +292,10 @@ int main(int argc, char *argv[])
   while ((pmesh->time < pmesh->tlim) && 
          (pmesh->nlim < 0 || pmesh->ncycle < pmesh->nlim)){
 
-    if(Globals::my_rank==0)
+    if(Globals::my_rank==0) {
       std::cout << "cycle=" << pmesh->ncycle << std::scientific <<std::setprecision(14)
                 << " time=" << pmesh->time << " dt=" << pmesh->dt <<std::endl;
-//    pmesh->TestConservation();
+    }
 
     pmesh->UpdateOneStep();
 
@@ -331,7 +325,7 @@ int main(int argc, char *argv[])
 
   } // END OF MAIN INTEGRATION LOOP ====================================================
 
-// print diagnostic messages
+  // print diagnostic messages
   if(Globals::my_rank==0) {
     std::cout << "cycle=" << pmesh->ncycle << std::scientific << std::setprecision(6)
               << " time=" << pmesh->time << " dt=" << pmesh->dt << std::endl;
@@ -368,7 +362,7 @@ int main(int argc, char *argv[])
 
 #ifdef MPI_PARALLEL
   MPI_Finalize();
-#endif /* MPI_PARALLEL */
+#endif
 
   return(0); 
 }

@@ -26,7 +26,7 @@
 #include <string>     // string
 
 // Athena headers
-#include "athena.hpp"  // Real
+#include "athena.hpp"
 
 //======================================================================================
 //! \file parameter_input.cpp
@@ -141,9 +141,8 @@ void ParameterInput::LoadFromStream(std::istream &is)
       continue;  // skip to next line if block name was found
     }
 
-// if line does not contain a block name, it must contain a parameter value.  So parse
-// line and add name/value/comment strings (if found) to current block name
-
+    // if line does not contain a block name, it must contain a parameter value.  So
+    // parse line and add name/value/comment strings (if found) to current block name
     ParseLine(pib,line,param_name,param_value,param_comment);
     AddParameter(pib,param_name,param_value,param_comment);
   }
@@ -196,77 +195,6 @@ void ParameterInput::LoadFromFile(IOWrapper &input)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn  void ParameterInput::LoadFromFile(std::string filename)
-//  \brief opens/reads/closes an input file.
-//  Input block names are allocated and stored in a linked list of InputBlocks.  Within
-//  each InputBlock the names, values, and comments of each parameter are allocated and
-//  stored in a linked list of InputLines.
-
-void ParameterInput::LoadFromFile(std::string filename)
-{
-  std::ifstream input_file;
-  std::string line, block_name, param_name, param_value, param_comment;
-  std::size_t first_char,last_char;
-  std::stringstream msg;
-  InputBlock *pib;
-
-  if (last_filename_ == filename) {
-    msg << "### FATAL ERROR in function [ParameterInput::LoadFromFile]" << std::endl
-        << "Input file '" << filename << "' has already been read";
-    throw std::runtime_error(msg.str().c_str());
-  }
-
-  input_file.open(filename.c_str());
-  if (!input_file.is_open()) {
-    msg << "### FATAL ERROR in function [ParameterInput::LoadFromFile]" << std::endl
-        << "Input file '" << filename << "' could not be opened";
-    throw std::runtime_error(msg.str().c_str());
-  }
-
-  while (input_file.good()) {
-    getline(input_file,line);
-    if (line.empty()) continue;                             // skip blank line
-    first_char = line.find_first_not_of(" ");               // skip white space
-    if (first_char == std::string::npos) continue;          // line is all white space
-    if (line.compare(first_char,1,"#") == 0) continue;      // skip comments
-    if (line.compare(first_char,9,"<par_end>") == 0) break; // stop on <par_end>
-
-    if (line.compare(first_char,1,"<") == 0) {              // a new block
-      first_char++;
-      last_char = (line.find_first_of(">",first_char));       
-      block_name.assign(line,first_char,last_char-1);       // extract block name
-
-      if (last_char == std::string::npos) {
-        msg << "### FATAL ERROR in function [ParameterInput::LoadFromFile]" << std::endl
-            << "Block name '" << block_name << "' in input file '" << filename
-            << "' not properly ended";
-        throw std::runtime_error(msg.str().c_str());
-      }
-
-      pib = FindOrAddBlock(block_name);  // find or add block to linked list
-
-      if (pib == NULL) {
-        msg << "### FATAL ERROR in function [ParameterInput::LoadFromFile]" << std::endl
-            << "Block name '" << block_name << "' could not be found/added";
-        throw std::runtime_error(msg.str().c_str());
-      }
-      continue;  // skip to next line if block name was found
-    }
-
-// if line does not contain a block name, it must contain a parameter value.  So parse
-// line and add name/value/comment strings (if found) to current block name
-
-    ParseLine(pib,line,param_name,param_value,param_comment);
-    AddParameter(pib,param_name,param_value,param_comment);
-  }
-
-  input_file.close();
-  last_filename_ = filename;
-
-  return;
-}
-
-//--------------------------------------------------------------------------------------
 //! \fn InputBlock* ParameterInput::FindOrAddBlock(std::string name)
 //  \brief find or add specified InputBlock.  Returns pointer to block.
 
@@ -276,23 +204,20 @@ InputBlock* ParameterInput::FindOrAddBlock(std::string name)
   plast = pfirst_block;
   pib = pfirst_block;
 
-// Search linked list of InputBlocks to see if name exists, return if found.
-
+  // Search linked list of InputBlocks to see if name exists, return if found.
   while (pib != NULL) {
     if (name.compare(pib->block_name) == 0) return pib;    
     plast = pib;
     pib = pib->pnext;
   }
 
-// Create new block in list if not found above
-
+  // Create new block in list if not found above
   pib = new InputBlock;
   pib->block_name.assign(name);  // store the new block name
   pib->pline = NULL;             // Terminate the InputLine list
   pib->pnext = NULL;             // Terminate the InputBlock list
 
-// if this is the first block in list, save pointer to it in class
-
+  // if this is the first block in list, save pointer to it in class
   if (pfirst_block == NULL) {
      pfirst_block = pib;
   } else {
@@ -316,16 +241,14 @@ void ParameterInput::ParseLine(InputBlock *pib, std::string line,
   equal_char = line.find_first_of("=");       // find "=" char
   hash_char  = line.find_first_of("#");       // find "#" (optional)
 
-// copy substring into name, remove white space at end of name
-
+  // copy substring into name, remove white space at end of name
   len = equal_char - first_char;
   name.assign(line,first_char,len);
 
   last_char = name.find_last_not_of(" ");
   name.erase(last_char+1,std::string::npos);
 
-// copy substring into value, remove white space at start and end
-
+  // copy substring into value, remove white space at start and end
   len = hash_char - equal_char - 1;
   value.assign(line,equal_char+1,len);      
 
@@ -335,8 +258,7 @@ void ParameterInput::ParseLine(InputBlock *pib, std::string line,
   last_char = value.find_last_not_of(" ");
   value.erase(last_char+1,std::string::npos);
 
-// copy substring into comment, if present
-
+  // copy substring into comment, if present
   if (hash_char != std::string::npos) {
     comment = line.substr(hash_char);
   } else {
@@ -356,9 +278,8 @@ void ParameterInput::AddParameter(InputBlock *pb, std::string name,
 {
   InputLine *pl, *plast;
 
-// Search linked list of InputLines to see if name exists.  This also sets *plast
-// to point to last member of list
-
+  // Search linked list of InputLines to see if name exists.  This also sets *plast
+  // to point to last member of list
   pl = pb->pline;
   plast = pb->pline;
   while (pl != NULL) {
@@ -372,16 +293,14 @@ void ParameterInput::AddParameter(InputBlock *pb, std::string name,
     pl = pl->pnext;
   }
 
-// Create new node in linked list if name does not already exist
-
+  // Create new node in linked list if name does not already exist
   pl = new InputLine;
   pl->param_name.assign(name);
   pl->param_value.assign(value);
   pl->param_comment.assign(comment);
   pl->pnext = NULL;
 
-// if this is the first parameter in list, save pointer to it in block.
-
+  // if this is the first parameter in list, save pointer to it in block.
   if (pb->pline == NULL) {
     pb->pline = pl;
     pb->max_len_parname = name.length();
@@ -403,26 +322,25 @@ void ParameterInput::AddParameter(InputBlock *pb, std::string name,
 void ParameterInput::ModifyFromCmdline(int argc, char *argv[])
 {
   std::string input_text,block,name,value;
-  std::size_t slash_char,equal_char;
+  std::size_t slash_posn,equal_posn;
   std::stringstream msg;
   InputBlock *pb;
   InputLine *pl;
 
   for (int i=1; i<argc; i++) {
     input_text = argv[i];
-    slash_char = input_text.find_first_of("/");   // find "/" character
-    equal_char = input_text.find_first_of("=");   // find "=" character
-// skip if either "/" or "=" do not exist in input
-    if ((slash_char==std::string::npos) || (equal_char==std::string::npos)) continue;
+    slash_posn = input_text.find_first_of("/");   // find "/" character
+    equal_posn = input_text.find_first_of("=");   // find "=" character
+
+    // skip if either "/" or "=" do not exist in input
+    if ((slash_posn==std::string::npos) || (equal_posn==std::string::npos)) continue;
     
-// extract block/name/value strings
+    // extract block/name/value strings
+    block = input_text.substr(0,slash_posn);
+    name  = input_text.substr(slash_posn+1,(equal_posn - slash_posn - 1));
+    value = input_text.substr(equal_posn+1,std::string::npos);
 
-    block = input_text.substr(0,slash_char);
-    name  = input_text.substr(slash_char+1,(equal_char - slash_char - 1));
-    value = input_text.substr(equal_char+1,std::string::npos);
-
-// get pointer to node with same block name in linked list of InputBlocks
-
+    // get pointer to node with same block name in linked list of InputBlocks
     pb = GetPtrToBlock(block);
     if (pb == NULL) {
       msg << "### FATAL ERROR in function [ParameterInput::ModifyFromCmdline]" 
@@ -430,8 +348,7 @@ void ParameterInput::ModifyFromCmdline(int argc, char *argv[])
       throw std::runtime_error(msg.str().c_str());
     }
 
-// get pointer to node with same parameter name in linked list of InputLines
-
+    // get pointer to node with same parameter name in linked list of InputLines
     pl = pb->GetPtrToLine(name);
     if (pl == NULL) {
       msg << "### FATAL ERROR in function [ParameterInput::ModifyFromCmdline]"
@@ -482,8 +399,7 @@ int ParameterInput::GetInteger(std::string block, std::string name)
   InputLine* pl;
   std::stringstream msg;
 
-// get pointer to node with same block name in linked list of InputBlocks
-
+  // get pointer to node with same block name in linked list of InputBlocks
   pb = GetPtrToBlock(block);
   if (pb == NULL) {
     msg << "### FATAL ERROR in function [ParameterInput::GetInteger]" << std::endl
@@ -492,8 +408,7 @@ int ParameterInput::GetInteger(std::string block, std::string name)
     throw std::runtime_error(msg.str().c_str());
   }
 
-// get pointer to node with same parameter name in linked list of InputLines
-
+  // get pointer to node with same parameter name in linked list of InputLines
   pl = pb->GetPtrToLine(name);
   if (pl == NULL) {
     msg << "### FATAL ERROR in function [ParameterInput::GetInteger]" << std::endl 
@@ -501,8 +416,7 @@ int ParameterInput::GetInteger(std::string block, std::string name)
     throw std::runtime_error(msg.str().c_str());
   }
 
-// Convert string to integer and return value
-
+  // Convert string to integer and return value
   return atoi(pl->param_value.c_str());
 }
 
@@ -516,8 +430,7 @@ Real ParameterInput::GetReal(std::string block, std::string name)
   InputLine* pl;
   std::stringstream msg;
 
-// get pointer to node with same block name in linked list of InputBlocks
-
+  // get pointer to node with same block name in linked list of InputBlocks
   pb = GetPtrToBlock(block);
   if (pb == NULL) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
@@ -526,8 +439,7 @@ Real ParameterInput::GetReal(std::string block, std::string name)
     throw std::runtime_error(msg.str().c_str());
   }
 
-// get pointer to node with same parameter name in linked list of InputLines
-
+  // get pointer to node with same parameter name in linked list of InputLines
   pl = pb->GetPtrToLine(name);
   if (pl == NULL) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
@@ -535,8 +447,7 @@ Real ParameterInput::GetReal(std::string block, std::string name)
     throw std::runtime_error(msg.str().c_str());
   }
 
-// Convert string to real and return value
-
+  // Convert string to real and return value
   return (Real)atof(pl->param_value.c_str());
 }
 
@@ -550,8 +461,7 @@ std::string ParameterInput::GetString(std::string block, std::string name)
   InputLine* pl;
   std::stringstream msg;
 
-// get pointer to node with same block name in linked list of InputBlocks
-
+  // get pointer to node with same block name in linked list of InputBlocks
   pb = GetPtrToBlock(block);
   if (pb == NULL) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
@@ -560,8 +470,7 @@ std::string ParameterInput::GetString(std::string block, std::string name)
     throw std::runtime_error(msg.str().c_str());
   }
 
-// get pointer to node with same parameter name in linked list of InputLines
-
+  // get pointer to node with same parameter name in linked list of InputLines
   pl = pb->GetPtrToLine(name);
   if (pl == NULL) {
     msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
@@ -569,8 +478,7 @@ std::string ParameterInput::GetString(std::string block, std::string name)
     throw std::runtime_error(msg.str().c_str());
   }
 
-// return value
-
+  // return value
   return pl->param_value;
 }
 
