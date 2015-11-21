@@ -45,7 +45,6 @@ TaskList::TaskList(Mesh *pm)
   ntasks = 0;
 
   if (MAGNETIC_FIELDS_ENABLED) { // MHD
-
     // MHD predict
     AddTask(1,CALC_FLX,1,NONE);
     if(pmy_mesh_->multilevel==true) { // SMR or AMR
@@ -67,25 +66,22 @@ TaskList::TaskList(Mesh *pm)
     }
     AddTask(1,FLD_SEND,1,FLD_INT);
     AddTask(1,HYD_RECV,1,NONE);
-    AddTask(1,HYD_BVAL,1,(HYD_RECV|HYD_INT));
-    if(pmy_mesh_->multilevel==true) { // SMR or AMR
-      AddTask(1,HYD_PROL,1,HYD_BVAL);
-    }
     AddTask(1,FLD_RECV,1,NONE);
-    AddTask(1,FLD_BVAL,1,(FLD_RECV|FLD_INT));
-    if(pmy_mesh_->multilevel==true) {// SMR or AMR
-      AddTask(1,FLD_PROL,1,FLD_BVAL);
-      AddTask(1,CON2PRIM,1,(HYD_PROL|FLD_PROL));
-    } else {
-      AddTask(1,CON2PRIM,1,(HYD_BVAL|FLD_BVAL));
+    if(pmy_mesh_->multilevel==true) { // SMR or AMR
+      AddTask(1,PROLONG,1,(HYD_SEND|HYD_RECV|FLD_SEND|FLD_RECV));
+      AddTask(1,CON2PRIM,1,PROLONG);
     }
+    else {
+      AddTask(1,CON2PRIM,1,(HYD_INT|HYD_RECV|FLD_INT|FLD_RECV));
+    }
+    AddTask(1,PHY_BVAL,1,CON2PRIM);
 
     // MHD correct
-    AddTask(2,CALC_FLX,1,CON2PRIM);
+    AddTask(2,CALC_FLX,1,PHY_BVAL);
     if(pmy_mesh_->multilevel==true) { // SMR or AMR
       AddTask(2,FLX_SEND,2,CALC_FLX);
       AddTask(2,FLX_RECV,2,CALC_FLX);
-      AddTask(2,HYD_INT ,2,FLX_RECV);
+      AddTask(2,HYD_INT, 2,FLX_RECV);
       AddTask(2,HYD_SEND,2,HYD_INT);
       AddTask(2,CALC_EMF,2,CALC_FLX);
       AddTask(2,EMF_SEND,2,CALC_EMF);
@@ -100,64 +96,61 @@ TaskList::TaskList(Mesh *pm)
       AddTask(2,FLD_INT, 2,EMF_RECV);
     }
     AddTask(2,FLD_SEND,2,FLD_INT);
-    AddTask(2,HYD_RECV,1,CON2PRIM);
-    AddTask(2,HYD_BVAL,2,(HYD_RECV|HYD_INT));
+    AddTask(2,HYD_RECV,1,PHY_BVAL);
+    AddTask(2,FLD_RECV,1,PHY_BVAL);
     if(pmy_mesh_->multilevel==true) { // SMR or AMR
-      AddTask(2,HYD_PROL,2,HYD_BVAL);
+      AddTask(2,PROLONG,2,(HYD_SEND|HYD_RECV|FLD_SEND|FLD_RECV));
+      AddTask(2,CON2PRIM,2,PROLONG);
     }
-    AddTask(2,FLD_RECV,1,CON2PRIM);
-    AddTask(2,FLD_BVAL,2,(FLD_RECV|FLD_INT));
-    if(pmy_mesh_->multilevel==true) {// SMR or AMR
-      AddTask(2,FLD_PROL,2,FLD_BVAL);
-      AddTask(2,CON2PRIM,2,(HYD_PROL|FLD_PROL));
-    } else { 
-      AddTask(2,CON2PRIM,2,(HYD_BVAL|FLD_BVAL));
+    else {
+      AddTask(2,CON2PRIM,2,(HYD_INT|HYD_RECV|FLD_INT|FLD_RECV));
     }
-
-  } else {
+    AddTask(2,PHY_BVAL,2,CON2PRIM);
+  }
+  else {
     // Hydro predict
     AddTask(1,CALC_FLX,1,NONE);
     if(pmy_mesh_->multilevel==true) { // SMR or AMR
       AddTask(1,FLX_SEND,1,CALC_FLX);
       AddTask(1,FLX_RECV,1,CALC_FLX);
       AddTask(1,HYD_INT, 1,FLX_RECV);
-      AddTask(1,HYD_SEND,1,HYD_INT);
-    } else {
+    }
+    else {
       AddTask(1,HYD_INT, 1,CALC_FLX);
-      AddTask(1,HYD_SEND,1,HYD_INT);
     }
-    AddTask(1,HYD_RECV,1,NONE);  
-    AddTask(1,HYD_BVAL,1,(HYD_RECV|HYD_INT));
+    AddTask(1,HYD_SEND,1,HYD_INT);
+    AddTask(1,HYD_RECV,1,NONE);
     if(pmy_mesh_->multilevel==true) { // SMR or AMR
-      AddTask(1,HYD_PROL,1,HYD_BVAL);
-      AddTask(1,CON2PRIM,1,HYD_PROL);
+      AddTask(1,PROLONG,1,(HYD_SEND|HYD_RECV));
+      AddTask(1,CON2PRIM,1,PROLONG);
     } else {
-      AddTask(1,CON2PRIM,1,HYD_BVAL);
+      AddTask(1,CON2PRIM,1,(HYD_INT|HYD_RECV));
     }
+    AddTask(1,PHY_BVAL,1,CON2PRIM);
 
     // Hydro correct
-    AddTask(2,CALC_FLX,1,CON2PRIM);
+    AddTask(2,CALC_FLX,1,PHY_BVAL);
     if(pmy_mesh_->multilevel==true) { // SMR or AMR
       AddTask(2,FLX_SEND,2,CALC_FLX);
       AddTask(2,FLX_RECV,2,CALC_FLX);
       AddTask(2,HYD_INT, 2,FLX_RECV);
-      AddTask(2,HYD_SEND,2,HYD_INT);
-    } else {
+    }
+    else {
       AddTask(2,HYD_INT, 2,CALC_FLX);
-      AddTask(2,HYD_SEND,2,HYD_INT);
     }
-    AddTask(2,HYD_RECV,1,CON2PRIM);
-    AddTask(2,HYD_BVAL,2,(HYD_RECV|HYD_INT));
+    AddTask(2,HYD_SEND,2,HYD_INT);
+    AddTask(2,HYD_RECV,1,PHY_BVAL);
     if(pmy_mesh_->multilevel==true) { // SMR or AMR
-      AddTask(2,HYD_PROL,2,HYD_BVAL);
-      AddTask(2,CON2PRIM,2,HYD_PROL);
+      AddTask(2,PROLONG,2,(HYD_SEND|HYD_RECV));
+      AddTask(2,CON2PRIM,2,PROLONG);
     } else {
-      AddTask(2,CON2PRIM,2,HYD_BVAL);
+      AddTask(2,CON2PRIM,2,(HYD_INT|HYD_RECV));
     }
+    AddTask(2,PHY_BVAL,2,CON2PRIM);
   }
 
   // New timestep on mesh block
-  AddTask(2,NEW_DT,2,CON2PRIM);
+  AddTask(2,NEW_DT,2,PHY_BVAL);
 
 }
 
@@ -188,22 +181,34 @@ enum TaskStatus CalculateFluxes(MeshBlock *pmb, unsigned long int task_id, int s
   return TASK_NEXT;
 }
 
-enum TaskStatus HydroIntegrate(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus FluxCorrectSend(MeshBlock *pmb, unsigned long int task_id, int step)
+{
+  int flag;
+  if(step == 1) {
+    flag = 1;
+  } else if(step == 2) {
+    flag = 0;
+  }
+  pmb->pbval->SendFluxCorrection(flag);
+  return TASK_SUCCESS;
+}
+
+enum TaskStatus FluxCorrectReceive(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   Hydro *phydro=pmb->phydro;
-  Field *pfield=pmb->pfield;
-
+  BoundaryValues *pbval=pmb->pbval;
+  int flag;
   if(step == 1) {
-    phydro->pf_integrator->FluxDivergence(pmb, phydro->u1, phydro->w, pfield->b,
-                                          pfield->bcc, 1);
+    flag = 1;
   } else if(step == 2) {
-    phydro->pf_integrator->FluxDivergence(pmb, phydro->u, phydro->w1, pfield->b1,
-                                          pfield->bcc1, 2);
+    flag = 0;
+  }
+  bool ret=pbval->ReceiveFluxCorrection(flag);
+  if(ret==true) {
+    return TASK_NEXT;
   } else {
     return TASK_FAIL;
   }
-
-  return TASK_NEXT;
 }
 
 enum TaskStatus CalculateEMF(MeshBlock *pmb, unsigned long int task_id, int step)
@@ -220,20 +225,50 @@ enum TaskStatus CalculateEMF(MeshBlock *pmb, unsigned long int task_id, int step
   return TASK_NEXT;
 }
 
-enum TaskStatus FieldIntegrate(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus EMFCorrectSend(MeshBlock *pmb, unsigned long int task_id, int step)
 {
-  Hydro *phydro=pmb->phydro;
-  Field *pfield=pmb->pfield;
+  int flag;
   if(step == 1) {
-    pfield->b1.x1f = pfield->b.x1f;
-    pfield->b1.x2f = pfield->b.x2f;
-    pfield->b1.x3f = pfield->b.x3f;
-    pfield->pint->CT(pmb, pfield->b1, phydro->w, pfield->bcc, 1);
+    flag = 1;
   } else if(step == 2) {
-    pfield->pint->CT(pmb, pfield->b, phydro->w1, pfield->bcc1, 2);
+    flag = 0;
+  }
+  
+  pmb->pbval->SendEMFCorrection(flag);
+  return TASK_SUCCESS;
+}
+
+enum TaskStatus EMFCorrectReceive(MeshBlock *pmb, unsigned long int task_id, int step)
+{
+  int flag;
+  if(step == 1) {
+    flag = 1;
+  } else if(step == 2) {
+    flag = 0;
+  }
+  BoundaryValues *pbval=pmb->pbval;
+  if(pbval->ReceiveEMFCorrection(flag)==true) {
+    return TASK_NEXT;
   } else {
     return TASK_FAIL;
   }
+}
+
+enum TaskStatus HydroIntegrate(MeshBlock *pmb, unsigned long int task_id, int step)
+{
+  Hydro *phydro=pmb->phydro;
+  Field *pfield=pmb->pfield;
+
+  if(step == 1) {
+    phydro->pf_integrator->FluxDivergence(pmb, phydro->u1, phydro->w, pfield->b,
+                                          pfield->bcc, 1);
+  } else if(step == 2) {
+    phydro->pf_integrator->FluxDivergence(pmb, phydro->u, phydro->w1, pfield->b1,
+                                          pfield->bcc1, 2);
+  } else {
+    return TASK_FAIL;
+  }
+
   return TASK_NEXT;
 }
 
@@ -270,63 +305,21 @@ enum TaskStatus HydroReceive(MeshBlock *pmb, unsigned long int task_id, int step
   }
 }
 
-enum TaskStatus FluxCorrectSend(MeshBlock *pmb, unsigned long int task_id, int step)
-{
-  int flag;
-  if(step == 1) {
-    flag = 1;
-  } else if(step == 2) {
-    flag = 0;
-  }
-  pmb->pbval->SendFluxCorrection(flag);
-  return TASK_SUCCESS;
-}
-
-enum TaskStatus FluxCorrectReceive(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus FieldIntegrate(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   Hydro *phydro=pmb->phydro;
-  BoundaryValues *pbval=pmb->pbval;
-  bool ret;
+  Field *pfield=pmb->pfield;
   if(step == 1) {
-    ret=pbval->ReceiveFluxCorrection(phydro->u1,1);
+    pfield->b1.x1f = pfield->b.x1f;
+    pfield->b1.x2f = pfield->b.x2f;
+    pfield->b1.x3f = pfield->b.x3f;
+    pfield->pint->CT(pmb, pfield->b1, phydro->w, pfield->bcc, 1);
   } else if(step == 2) {
-    ret=pbval->ReceiveFluxCorrection(phydro->u,0);
+    pfield->pint->CT(pmb, pfield->b, phydro->w1, pfield->bcc1, 2);
   } else {
     return TASK_FAIL;
   }
-  if(ret==true) {
-    return TASK_NEXT;
-  } else {
-    return TASK_FAIL;
-  }
-}
-
-enum TaskStatus HydroProlongation(MeshBlock *pmb, unsigned long int task_id, int step)
-{
-  Hydro *phydro=pmb->phydro;
-  BoundaryValues *pbval=pmb->pbval;
-  if(step == 1) {
-    pbval->ProlongateHydroBoundaries(phydro->u1);
-  } else if(step == 2) {
-    pbval->ProlongateHydroBoundaries(phydro->u);
-  } else {
-    return TASK_FAIL;
-  }
-  return TASK_SUCCESS;
-}
-
-enum TaskStatus HydroPhysicalBoundary(MeshBlock *pmb, unsigned long int task_id, int step)
-{
-  Hydro *phydro=pmb->phydro;
-  BoundaryValues *pbval=pmb->pbval;
-  if(step == 1) {
-    pbval->HydroPhysicalBoundaries(phydro->u1);
-  } else if(step == 2) {
-    pbval->HydroPhysicalBoundaries(phydro->u);
-  } else {
-    return TASK_FAIL;
-  }
-  return TASK_SUCCESS;
+  return TASK_NEXT;
 }
 
 enum TaskStatus FieldSend(MeshBlock *pmb, unsigned long int task_id, int step)
@@ -362,57 +355,15 @@ enum TaskStatus FieldReceive(MeshBlock *pmb, unsigned long int task_id, int step
   }
 }
 
-enum TaskStatus EMFCorrectSend(MeshBlock *pmb, unsigned long int task_id, int step)
+enum TaskStatus Prolongation(MeshBlock *pmb, unsigned long int task_id, int step)
 {
-  int flag;
-  if(step == 1) {
-    flag = 1;
-  } else if(step == 2) {
-    flag = 0;
-  }
-  
-  pmb->pbval->SendEMFCorrection(flag);
-  return TASK_SUCCESS;
-}
-
-enum TaskStatus EMFCorrectReceive(MeshBlock *pmb, unsigned long int task_id, int step)
-{
-  int flag;
-  if(step == 1) {
-    flag = 1;
-  } else if(step == 2) {
-    flag = 0;
-  }
-  BoundaryValues *pbval=pmb->pbval;
-  if(pbval->ReceiveEMFCorrection(flag)==true) {
-    return TASK_NEXT;
-  } else {
-    return TASK_FAIL;
-  }
-}
-
-enum TaskStatus FieldProlongation(MeshBlock *pmb, unsigned long int task_id, int step)
-{
+  Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
   BoundaryValues *pbval=pmb->pbval;
   if(step == 1) {
-    pbval->ProlongateFieldBoundaries(pfield->b1);
+    pbval->ProlongateBoundaries(phydro->w1, phydro->u1, pfield->b1, pfield->bcc1);
   } else if(step == 2) {
-    pbval->ProlongateFieldBoundaries(pfield->b);
-  } else {
-    return TASK_FAIL;
-  }
-  return TASK_SUCCESS;
-}
-
-enum TaskStatus FieldPhysicalBoundary(MeshBlock *pmb, unsigned long int task_id, int step)
-{
-  Field *pfield=pmb->pfield;
-  BoundaryValues *pbval=pmb->pbval;
-  if(step == 1) {
-    pbval->FieldPhysicalBoundaries(pfield->b1);
-  } else if(step == 2) {
-    pbval->FieldPhysicalBoundaries(pfield->b);
+    pbval->ProlongateBoundaries(phydro->w,  phydro->u,  pfield->b,  pfield->bcc);
   } else {
     return TASK_FAIL;
   }
@@ -423,11 +374,13 @@ enum TaskStatus Primitives(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
-  int is=pmb->is-NGHOST, ie=pmb->ie+NGHOST, js, je, ks, ke;
-  if(pmb->block_size.nx2 > 1) js=pmb->js-NGHOST, je=pmb->je+NGHOST;
-  else                        js=pmb->js,        je=pmb->je;
-  if(pmb->block_size.nx3 > 1) ks=pmb->ks-NGHOST, ke=pmb->ke+NGHOST;
-  else                        ks=pmb->ks,        ke=pmb->ke;
+  int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
+  if(pmb->nblevel[1][1][0]!=-1) is-=NGHOST;
+  if(pmb->nblevel[1][1][2]!=-1) ie+=NGHOST;
+  if(pmb->nblevel[1][0][1]!=-1) js-=NGHOST;
+  if(pmb->nblevel[1][2][1]!=-1) je+=NGHOST;
+  if(pmb->nblevel[0][1][1]!=-1) ks-=NGHOST;
+  if(pmb->nblevel[2][1][1]!=-1) ke+=NGHOST;
 
   if(step == 1) {
     phydro->pf_eos->ConservedToPrimitive(phydro->u1, phydro->w, pfield->b1,
@@ -437,6 +390,21 @@ enum TaskStatus Primitives(MeshBlock *pmb, unsigned long int task_id, int step)
     phydro->pf_eos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
                                          phydro->w, pfield->bcc, pmb->pcoord,
                                          is, ie, js, je, ks, ke);
+  } else {
+    return TASK_FAIL;
+  }
+  return TASK_SUCCESS;
+}
+
+enum TaskStatus PhysicalBoundary(MeshBlock *pmb, unsigned long int task_id, int step)
+{
+  Hydro *phydro=pmb->phydro;
+  Field *pfield=pmb->pfield;
+  BoundaryValues *pbval=pmb->pbval;
+  if(step == 1) {
+    pbval->ApplyPhysicalBoundaries(phydro->w1, phydro->u1, pfield->b1, pfield->bcc1);
+  } else if(step == 2) {
+    pbval->ApplyPhysicalBoundaries(phydro->w,  phydro->u,  pfield->b,  pfield->bcc);
   } else {
     return TASK_FAIL;
   }
@@ -465,26 +433,6 @@ void TaskList::AddTask(int stp_t,unsigned long int id,int stp_d,unsigned long in
     task_list_[ntasks].TaskFunc=TaskFunctions::CalculateFluxes;
     break;
 
-  case (HYD_INT):
-    task_list_[ntasks].TaskFunc=TaskFunctions::HydroIntegrate;
-    break;
-
-  case (CALC_EMF):
-    task_list_[ntasks].TaskFunc=TaskFunctions::CalculateEMF;
-    break;
-
-  case (FLD_INT):
-    task_list_[ntasks].TaskFunc=TaskFunctions::FieldIntegrate;
-    break;
-
-  case (HYD_SEND):
-    task_list_[ntasks].TaskFunc=TaskFunctions::HydroSend;
-    break;
-
-  case (HYD_RECV):
-    task_list_[ntasks].TaskFunc=TaskFunctions::HydroReceive;
-    break;
-
   case (FLX_SEND):
     task_list_[ntasks].TaskFunc=TaskFunctions::FluxCorrectSend;
     break;
@@ -493,20 +441,8 @@ void TaskList::AddTask(int stp_t,unsigned long int id,int stp_d,unsigned long in
     task_list_[ntasks].TaskFunc=TaskFunctions::FluxCorrectReceive;
     break;
 
-  case (HYD_PROL):
-    task_list_[ntasks].TaskFunc=TaskFunctions::HydroProlongation;
-    break;
-
-  case (HYD_BVAL):
-    task_list_[ntasks].TaskFunc=TaskFunctions::HydroPhysicalBoundary;
-    break;
-
-  case (FLD_SEND):
-    task_list_[ntasks].TaskFunc=TaskFunctions::FieldSend;
-    break;
-
-  case (FLD_RECV):
-    task_list_[ntasks].TaskFunc=TaskFunctions::FieldReceive;
+  case (CALC_EMF):
+    task_list_[ntasks].TaskFunc=TaskFunctions::CalculateEMF;
     break;
 
   case (EMF_SEND):
@@ -517,12 +453,36 @@ void TaskList::AddTask(int stp_t,unsigned long int id,int stp_d,unsigned long in
     task_list_[ntasks].TaskFunc=TaskFunctions::EMFCorrectReceive;
     break;
 
-  case (FLD_PROL):
-    task_list_[ntasks].TaskFunc=TaskFunctions::FieldProlongation;
+  case (HYD_INT):
+    task_list_[ntasks].TaskFunc=TaskFunctions::HydroIntegrate;
     break;
 
-  case (FLD_BVAL):
-    task_list_[ntasks].TaskFunc=TaskFunctions::FieldPhysicalBoundary;
+  case (HYD_SEND):
+    task_list_[ntasks].TaskFunc=TaskFunctions::HydroSend;
+    break;
+
+  case (HYD_RECV):
+    task_list_[ntasks].TaskFunc=TaskFunctions::HydroReceive;
+    break;
+
+  case (FLD_INT):
+    task_list_[ntasks].TaskFunc=TaskFunctions::FieldIntegrate;
+    break;
+
+  case (FLD_SEND):
+    task_list_[ntasks].TaskFunc=TaskFunctions::FieldSend;
+    break;
+
+  case (FLD_RECV):
+    task_list_[ntasks].TaskFunc=TaskFunctions::FieldReceive;
+    break;
+
+  case (PROLONG):
+    task_list_[ntasks].TaskFunc=TaskFunctions::Prolongation;
+    break;
+
+  case (PHY_BVAL):
+    task_list_[ntasks].TaskFunc=TaskFunctions::PhysicalBoundary;
     break;
 
   case (CON2PRIM):

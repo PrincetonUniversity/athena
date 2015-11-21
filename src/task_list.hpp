@@ -29,23 +29,21 @@ typedef enum TaskStatus (*TaskFunc_t)(MeshBlock*, unsigned long int, int);
 enum HydroTasks {
   NONE=0,
   CALC_FLX=1L<<0,
-  HYD_INT =1L<<1,
-  CALC_EMF=1L<<2,
-  FLD_INT =1L<<3,
-  HYD_SEND=1L<<4,
-  HYD_RECV=1L<<5,
-  FLX_SEND=1L<<6,
-  FLX_RECV=1L<<7,
-  HYD_PROL=1L<<8,
-  HYD_BVAL=1L<<9,
+  FLX_SEND=1L<<1,
+  FLX_RECV=1L<<2,
+  CALC_EMF=1L<<3,
+  EMF_SEND=1L<<4,
+  EMF_RECV=1L<<5,
+  HYD_INT =1L<<6,
+  HYD_SEND=1L<<7,
+  HYD_RECV=1L<<8,
+  FLD_INT =1L<<9,
   FLD_SEND=1L<<10,
   FLD_RECV=1L<<11,
-  EMF_SEND=1L<<12,
-  EMF_RECV=1L<<13,
-  FLD_PROL=1L<<14,
-  FLD_BVAL=1L<<15,
-  CON2PRIM=1L<<16,
-  NEW_DT  =1L<<17
+  PROLONG =1L<<12,
+  CON2PRIM=1L<<13,
+  PHY_BVAL=1L<<14,
+  NEW_DT  =1L<<15
 };
 
 //!   \struct Task

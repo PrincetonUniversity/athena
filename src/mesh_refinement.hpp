@@ -35,11 +35,11 @@ private:
   friend class BoundaryValues;
 
 public:
-  MeshRefinement(Meshblock *pmb, ParameterInput *pin);
+  MeshRefinement(MeshBlock *pmb, ParameterInput *pin);
   ~MeshRefinement();
 
   void RestrictCellCenteredValues(const AthenaArray<Real> &fine,
-                                  AthenaArray<Real> &coarse, int ns, int ne,
+                                  AthenaArray<Real> &coarse, int sn, int en,
                                   int csi, int cei, int csj, int cej, int csk, int cek);
   void RestrictFieldX1(const AthenaArray<Real> &fine, AthenaArray<Real> &coarse,
                        int csi, int cei, int csj, int cej, int csk, int cek);
@@ -56,7 +56,8 @@ public:
                                int si, int ei, int sj, int ej, int sk, int ek);
   void ProlongateSharedFieldX3(const AthenaArray<Real> &coarse, AthenaArray<Real> &fine,
                                int si, int ei, int sj, int ej, int sk, int ek);
-  void ProlongateInternalField(InterfaceField &fine 
+  void ProlongateInternalField(InterfaceField &fine,
                                int si, int ei, int sj, int ej, int sk, int ek);
 };
 
+#endif
