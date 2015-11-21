@@ -108,13 +108,15 @@ void dmrbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
   Real e0 = 291.25;
   Real u0 =  8.25*sqrt(3.0)/2.0;
   Real v0 = -8.25*0.5;
+  Real gamma = pmb->phydro->pf_eos->GetGamma();
+  Real p0=e0*(gamma-1.0);
 
   for (int j=js; j<=je; ++j) {
     for (int i=1;  i<=(NGHOST); ++i) {
       a(IDN,ks,j,is-i) = d0;
-      a(IM1,ks,j,is-i) = d0*u0;
-      a(IM2,ks,j,is-i) = d0*v0;
-      a(IEN,ks,j,is-i) = e0 + 0.5*d0*(u0*u0+v0*v0);
+      a(IVX,ks,j,is-i) = u0;
+      a(IVY,ks,j,is-i) = v0;
+      a(IEN,ks,j,is-i) = p0;
     }
   }
 }
@@ -132,20 +134,22 @@ void dmrbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
   Real e0 = 291.25;
   Real u0 =  8.25*sqrt(3.0)/2.0;
   Real v0 = -8.25*0.5;
+  Real gamma = pmb->phydro->pf_eos->GetGamma();
+  Real p0=e0*(gamma-1.0);
 
   for (int j=1;  j<=(NGHOST); ++j) {
     for (int i=is; i<=ie; ++i) {
       if (pco->x1v(i) < 0.1666666666) {
 // fixed at downstream state
         a(IDN,ks,js-j,i) = d0;
-        a(IM1,ks,js-j,i) = d0*u0;
-        a(IM2,ks,js-j,i) = d0*v0;
-        a(IEN,ks,js-j,i) = e0 + 0.5*d0*(u0*u0+v0*v0);
+        a(IVX,ks,js-j,i) = u0;
+        a(IVY,ks,js-j,i) = v0;
+        a(IEN,ks,js-j,i) = p0;
       } else {
 // reflected
         a(IDN,ks,js-j,i) = a(IDN,ks,js+(j-1),i);
-        a(IM1,ks,js-j,i) = a(IM1,ks,js+(j-1),i);
-        a(IM2,ks,js-j,i) = -a(IM2,ks,js+(j-1),i);
+        a(IVX,ks,js-j,i) = a(IVX,ks,js+(j-1),i);
+        a(IVY,ks,js-j,i) = -a(IVY,ks,js+(j-1),i);
         a(IEN,ks,js-j,i) = a(IEN,ks,js+(j-1),i);
       }
     }
@@ -167,21 +171,24 @@ void dmrbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
   Real u0 =  8.25*sqrt(3.0)/2.0;
   Real v0 = -8.25*0.5;
   Real shock_pos = 0.1666666666 + (1. + 20.*pmb->pmy_mesh->time)/sqrt(3.0);
+  Real gamma = pmb->phydro->pf_eos->GetGamma();
+  Real p0=e0*(gamma-1.0);
+  Real p1=2.5*(gamma-1.0);
 
   for (int j=1;  j<=(NGHOST); ++j) {
     for (int i=is; i<=ie; ++i) {
       if (pco->x1v(i) < shock_pos) {
 // fixed at downstream state
         a(IDN,ks,je+j,i) = d0;
-        a(IM1,ks,je+j,i) = d0*u0;
-        a(IM2,ks,je+j,i) = d0*v0;
-        a(IEN,ks,je+j,i) = e0 + 0.5*d0*(u0*u0+v0*v0);
+        a(IVX,ks,je+j,i) = u0;
+        a(IVY,ks,je+j,i) = v0;
+        a(IEN,ks,je+j,i) = p0;
       } else {
 // fixed at upstream state
         a(IDN,ks,je+j,i) = 1.4;
-        a(IM1,ks,je+j,i) = 0.0;
-        a(IM2,ks,je+j,i) = 0.0;
-        a(IEN,ks,je+j,i) = 2.5;
+        a(IVX,ks,je+j,i) = 0.0;
+        a(IVY,ks,je+j,i) = 0.0;
+        a(IEN,ks,je+j,i) = p1;
       }
     }
   }

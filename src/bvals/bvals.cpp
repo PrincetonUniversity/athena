@@ -3289,7 +3289,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
     if(HydroBoundary_[outer_x3]==NULL && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
   }
 
-  if(FieldBoundary_[inner_x1]!=NULL) {
+  if(FieldBoundary_[inner_x1]!=NULL && MAGNETIC_FIELDS_ENABLED) {
     FieldBoundary_[inner_x1](pmb, pco, bfdst, pmb->is, pmb->ie, bjs, bje, bks, bke);
     pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                       pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
@@ -3300,7 +3300,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
                                     pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
   }
 
-  if(FieldBoundary_[outer_x1]!=NULL) {
+  if(FieldBoundary_[outer_x1]!=NULL && MAGNETIC_FIELDS_ENABLED) {
     FieldBoundary_[outer_x1](pmb, pco, bfdst, pmb->is, pmb->ie, bjs, bje, bks, bke);
     pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                       pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
@@ -3312,7 +3312,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
   }
 
   if(pmb->block_size.nx2>1) { // 2D or 3D
-    if(FieldBoundary_[inner_x2]!=NULL) {
+    if(FieldBoundary_[inner_x2]!=NULL && MAGNETIC_FIELDS_ENABLED) {
       FieldBoundary_[inner_x2](pmb, pco, bfdst, bis, bie, pmb->js, pmb->je, bks, bke);
       pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                         bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
@@ -3322,7 +3322,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
       pmb->phydro->pf_eos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
                                       bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
     }
-    if(FieldBoundary_[outer_x2]!=NULL) {
+    if(FieldBoundary_[outer_x2]!=NULL && MAGNETIC_FIELDS_ENABLED) {
       FieldBoundary_[outer_x2](pmb, pco, bfdst, bis, bie, pmb->js, pmb->je, bks, bke);
       pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                         bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
@@ -3338,7 +3338,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
       bjs=pmb->js-NGHOST;
       bje=pmb->je+NGHOST;
     }
-    if(FieldBoundary_[inner_x3]!=NULL) {
+    if(FieldBoundary_[inner_x3]!=NULL && MAGNETIC_FIELDS_ENABLED) {
       FieldBoundary_[inner_x3](pmb, pco, bfdst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
       pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                         bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
@@ -3348,7 +3348,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
       pmb->phydro->pf_eos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
                                         bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
     }
-    if(FieldBoundary_[outer_x3]!=NULL) {
+    if(FieldBoundary_[outer_x3]!=NULL && MAGNETIC_FIELDS_ENABLED) {
       FieldBoundary_[outer_x3](pmb, pco, bfdst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
       pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                         bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
