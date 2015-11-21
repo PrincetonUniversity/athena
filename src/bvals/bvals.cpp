@@ -3083,6 +3083,7 @@ void BoundaryValues::AverageEMFBoundary(void)
   for(int n=0; n<nedge_; n++) {
     if(nedge_fine_[n]==1) continue;
     Real div=1.0/(Real)nedge_fine_[n];
+    // x1x2 edge (both 2D and 3D)
     if(n>=0 && n<4) {
       if((n&1)==0) i=pmb->is;
       else i=pmb->ie+1;
