@@ -3,8 +3,11 @@
 # Modules
 import numpy as np
 import math
+import sys
 import scripts.utils.athena as athena
 import scripts.utils.comparison as comparison
+sys.path.insert(0, '../../vis/python')
+import athena_read
 
 # Parameters
 wave_flags = range(7)
@@ -40,7 +43,7 @@ def run():
         'mesh/nx1=' + repr(res_low),
         'time/tlim=' + repr(time),
         'output1/dt=' + repr(time),
-        'fluid/gamma=' + repr(gamma_adi),
+        'hydro/gamma=' + repr(gamma_adi),
         'problem/rho=' + repr(rho), 'problem/pgas=' + repr(pgas),
         'problem/vx=' + repr(vx), 'problem/vy=' + repr(vy), 'problem/vz=' + repr(vz),
         'problem/Bx=' + repr(bx), 'problem/By=' + repr(by), 'problem/Bz=' + repr(bz),
@@ -60,16 +63,16 @@ def analyze():
   for wave_flag in wave_flags:
 
     # Read low and high resolution initial and final states
-    prim_initial_low = athena.read_tab(
+    prim_initial_low = athena_read.tab(
         'bin/sr_mhd_wave_{0}_low.block0.out1.00000.tab'.format(wave_flag),
         headings=headings, dimensions=1)
-    prim_initial_high = athena.read_tab(
+    prim_initial_high = athena_read.tab(
         'bin/sr_mhd_wave_{0}_high.block0.out1.00000.tab'.format(wave_flag),
         headings=headings, dimensions=1)
-    prim_final_low = athena.read_tab(
+    prim_final_low = athena_read.tab(
         'bin/sr_mhd_wave_{0}_low.block0.out1.00001.tab'.format(wave_flag),
         headings=headings, dimensions=1)
-    prim_final_high = athena.read_tab(
+    prim_final_high = athena_read.tab(
         'bin/sr_mhd_wave_{0}_high.block0.out1.00001.tab'.format(wave_flag),
         headings=headings, dimensions=1)
 

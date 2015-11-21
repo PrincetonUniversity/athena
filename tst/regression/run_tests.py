@@ -32,22 +32,23 @@ def main(**kwargs):
   athena.save_files()
 
   # Make list of tests to run
+  tests = kwargs['tests']
   test_names = []
-  if kwargs['single'] is not None:
-    test_names.extend([name.replace('/','.') for name in kwargs['single']])
-  if kwargs['collection'] is not None:
-    for directory in kwargs['collection']:
-      if directory[-1] == '/':
-        directory = directory[:-1]
-      test_names.extend([name for _,name,_ in
-          pkgutil.iter_modules(path=['scripts/tests/'+directory],
-          prefix=directory+'.')])
-  if kwargs['single'] is None and kwargs['collection'] is None:
+  if len(tests) == 0:  # run all tests
     for _,directory,ispkg in pkgutil.iter_modules(path=['scripts/tests']):
       if ispkg:
         test_names.extend([name for _,name,_ in
             pkgutil.iter_modules(path=['scripts/tests/'+directory],
             prefix=directory+'.')])
+  else:  # run selected tests
+    for test in tests:
+      if test[-1] == '/':
+        test = test[:-1]  # remove trailing slash
+      if '/' in test:  # specific test specified
+        test_names.append(test.replace('/','.'))
+      else:  # test suite specified
+        test_names.extend([name for _,name,_ in
+            pkgutil.iter_modules(path=['scripts/tests/'+test], prefix=test+'.')])
   test_names = list(set(test_names))
 
   # Run tests
@@ -114,15 +115,10 @@ class TestError(RuntimeError):
 # Execute main function
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
-  parser.add_argument('-s', '--single',
+  parser.add_argument('tests',
       type=str,
       default=None,
-      nargs='+',
-      help='name of individual test to run, relative to scripts/tests/, excluding .py')
-  parser.add_argument('-c', '--collection',
-      type=str,
-      default=None,
-      nargs='+',
-      help='name of collection (directory) of tests to run, relative to scripts/tests/')
+      nargs='*',
+      help='names of tests to run, relative to scripts/tests/, excluding .py')
   args = parser.parse_args()
   main(**vars(args))

@@ -3,7 +3,7 @@ Example test script.
 
 This is a complete, working example that can be run as part of the test suite. It does a
 simple test of a relativistic shock tube using the GR framework. There are many comments
-in order to make this file self-explanatory, but the actual working code is only 25-34
+in order to make this file self-explanatory, but the actual working code is only 28
 lines long.
 
 There are three functions defined here:

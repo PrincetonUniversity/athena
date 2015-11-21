@@ -2,10 +2,8 @@
 Read Athena++ output data files.
 """
 
-# Python Modules
+# Python modules
 import numpy as np
-import h5py
-import struct
 
 #=======================================================================================
 
@@ -74,6 +72,9 @@ def tab(filename, headings=None, dimensions=1):
 
 def vtk(filename):
   """Read .vtk files and return dict of arrays of data."""
+
+  # Python module
+  import struct
 
   # Read raw data
   with open(filename, 'r') as data_file:
@@ -179,6 +180,9 @@ def vtk(filename):
 
 def athdf(filename, data=None, quantities=None):
   """Read .athdf files and populate dict of arrays of data."""
+
+  # Python module for reading hdf5 files
+  import h5py
 
   # Open file
   with h5py.File(filename, 'r') as f:
