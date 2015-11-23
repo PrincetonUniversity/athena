@@ -111,23 +111,21 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
       dx3v(k) = x3v(k+1) - x3v(k);
   }
 
-  if((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
-    for (int i=is-(ng); i<=ie+(ng); ++i)
+  // Prepare for MHD mesh refinement
+  if (pmb->pmy_mesh->multilevel == true && MAGNETIC_FIELDS_ENABLED)
+  {
+    for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
       x1s2(i) = x1s3(i) = x1v(i);
-    if (pmb->block_size.nx2 == 1) {
+    if (pmb->block_size.nx2 == 1)
       x2s1(js) = x2s3(js) = x2v(js);
-    }
-    else {
-      for (int j=js-(ng); j<=je+(ng); ++j)
+    else
+      for (int j = js-NGHOST; j <= je+NGHOST; ++j)
         x2s1(j) = x2s3(j) = x2v(j);
-    }
-    if (pmb->block_size.nx3 == 1) {
+    if (pmb->block_size.nx3 == 1)
       x3s1(ks) = x3s2(ks) = x3v(ks);
-    }
-    else {
-      for (int k=ks-(ng); k<=ke+(ng); ++k)
+    else
+      for (int k = ks-NGHOST; k <= ke+NGHOST; ++k)
         x3s1(k) = x3s2(k) = x3v(k);
-    }
   }
 
   // Allocate arrays for intermediate geometric quantities: r-direction
@@ -511,8 +509,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    volumes(i) = 1.0/3.0 * coord_vol_i1_(i) * coord_vol_j1_(j) * coord_vol_k1_(k)
-               * (coord_vol_i2_(i) + coord_vol_j2_(j));
+    volumes(i) = GetCellVolume(k, j, i);
   return;
 }
 
@@ -551,8 +548,7 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    areas(i) = coord_area1_j1_(j) * coord_area1_k1_(k)
-             * (coord_area1_i1_(i) + 1.0/3.0 * coord_area1_j2_(j));
+    areas(i) = GetFace1Area(k, j, i);
   return;
 }
 
@@ -658,7 +654,7 @@ void Coordinates::Edge2Length(const int k, const int j, const int il, const int 
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    lengths(i) = coord_len2_j1_(j) * (coord_len2_i1_(i) + 1.0/3.0 * coord_len2_j2_(j));
+    lengths(i) = GetEdge2Length(k, j, i);
   return;
 }
 
@@ -695,8 +691,7 @@ void Coordinates::Edge3Length(const int k, const int j, const int il, const int 
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    lengths(i) = coord_len3_k1_(k) * coord_len3_j1_(j)
-               * (coord_len3_i1_(i) + coord_len3_j2_(j));
+    lengths(i) = GetEdge3Length(k, j, i);
   return;
 }
 
