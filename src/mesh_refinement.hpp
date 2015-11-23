@@ -24,6 +24,9 @@ class Coordinates;
 struct InterfaceField;
 class BoundaryValues;
 
+typedef int (*AMRFlag_t)(MeshBlock *pmb);
+
+
 class MeshRefinement
 {
 private:
@@ -32,7 +35,12 @@ private:
   InterfaceField coarse_b_;
   AthenaArray<Real> fvol_[2][2], sarea_x1_[2][2], sarea_x2_[2][3], sarea_x3_[3][2];
 
+  AMRFlag_t AMRFlag_;
+  int refine_flag_;
+
   friend class BoundaryValues;
+  friend class MeshBlock;
+  friend class Mesh;
 
 public:
   MeshRefinement(MeshBlock *pmb, ParameterInput *pin);
@@ -58,6 +66,9 @@ public:
                                int si, int ei, int sj, int ej, int sk, int ek);
   void ProlongateInternalField(InterfaceField &fine,
                                int si, int ei, int sj, int ej, int sk, int ek);
+
+  void EnrollAMRFlagFunction(AMRFlag_t amrflag);
+  void CheckRefinementCondition(void);
 };
 
 #endif

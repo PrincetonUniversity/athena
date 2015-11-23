@@ -39,6 +39,7 @@
 MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_mblock_ = pmb;
+  AMRFlag_=NULL;
   // allocate prolongation buffer
   int ncc1=pmb->block_size.nx1/2+2*pmb->cnghost;
   int ncc2=1;
@@ -898,6 +899,38 @@ void MeshRefinement::ProlongateInternalField(InterfaceField &fine,
   }
   return;
 }
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void MeshRefinement::EnrollAMRFlagFunction(AMRFlag_t amrflag)
+//  \brief Enroll a user-defined function for checking refinement criteria
+void MeshRefinement::EnrollAMRFlagFunction(AMRFlag_t amrflag)
+{
+  AMRFlag_=amrflag;
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void MeshRefinement::CheckRefinementCondition(void)
+//  \brief Enroll a user-defined function for checking refinement criteria
+void MeshRefinement::CheckRefinementCondition(void)
+{
+  int ret=0;
+  if(AMRFlag_!=NULL)
+    ret=AMRFlag_(pmy_mblock_);
+
+  if(ret>0) {
+    if(pmy_mblock_->loc.level == pmy_mblock_->pmy_mesh->max_level) refine_flag_=0;
+    else refine_flag_=1;
+  }
+  else if(ret<0) {
+    if(pmy_mblock_->loc.level == pmy_mblock_->pmy_mesh->root_level) refine_flag_=0;
+    else refine_flag_=-1;
+  }
+  return;
+}
+
 
 
 

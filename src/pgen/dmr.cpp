@@ -38,6 +38,11 @@
 #include "../hydro/eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
 
+#include "../mesh_refinement.hpp"
+
+#include <iostream>
+#include <cmath>
+
 // dmrbv_iib() - sets BCs on inner-x1 (left edge) of grid.  
 // dmrbv_ijb() - sets BCs on inner-x2 (bottom edge) of grid.  
 // dmrbv_ojb() - sets BCs on outer-x2 (top edge) of grid.  
@@ -48,6 +53,7 @@ void dmrbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                int is, int ie, int js, int je, int ks, int ke);
 void dmrbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                int is, int ie, int js, int je, int ks, int ke);
+int RefinementCondition(MeshBlock *pmb);
 
 // problem generator
 
@@ -94,6 +100,9 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, dmrbv_iib);
   pmb->pbval->EnrollHydroBoundaryFunction(inner_x2, dmrbv_ijb);
   pmb->pbval->EnrollHydroBoundaryFunction(outer_x2, dmrbv_ojb);
+
+  if(pmb->pmy_mesh->adaptive==true)
+    pmb->pmr->EnrollAMRFlagFunction(RefinementCondition);
 }
 
 //--------------------------------------------------------------------------------------
@@ -192,4 +201,29 @@ void dmrbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
       }
     }
   }
+}
+
+// refinement condition: density and pressure curvature
+int RefinementCondition(MeshBlock *pmb)
+{
+  AthenaArray<Real> &w = pmb->phydro->w;
+  Coordinates *pco=pmb->pcoord;
+  Real maxeps=0.0;
+  int k=pmb->ks;
+  for(int j=pmb->js; j<=pmb->je; j++) {
+    for(int i=pmb->is; i<=pmb->ie; i++) {
+      Real epsr= ((w(IDN,k,j,i+1)-2.0*w(IDN,k,j,i)+w(IDN,k,j,i-1))
+                 +(w(IDN,k,j+1,i)-2.0*w(IDN,k,j,i)+w(IDN,k,j-1,i)))/w(IDN,k,j,i);
+      Real epsp= ((w(IEN,k,j,i+1)-2.0*w(IEN,k,j,i)+w(IEN,k,j,i-1))
+                 +(w(IEN,k,j+1,i)-2.0*w(IEN,k,j,i)+w(IEN,k,j-1,i)))/w(IEN,k,j,i);
+      Real eps = std::max(std::abs(epsr), std::abs(epsp));
+      maxeps   = std::max(maxeps, eps);
+    }
+  }
+  // refine : curvature > 0.01
+  if(maxeps > 0.01) return 1;
+  // derefinement: curvature after derefinement < 0.005
+  if(maxeps < 0.00125) return -1;
+  // otherwise, stay
+  return 0;
 }

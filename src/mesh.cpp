@@ -256,8 +256,15 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   adaptive=false;
   if(pin->GetOrAddString("mesh","refinement","static")=="adaptive")
     adaptive=true, multilevel=true;
-  if(adaptive==true)
+  if(adaptive==true) {
     max_level = pin->GetOrAddInteger("mesh","maxlevel",1)+root_level-1;
+    if(max_level > 63) {
+      msg << "### FATAL ERROR in Mesh constructor" << std::endl
+          << "The maximum refinement level must be smaller than "
+          << 63-root_level+1 << "." << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+  }
   else
     max_level = 63;
 
@@ -411,6 +418,28 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   loclist=new LogicalLocation[nbtotal];
   tree.GetLocationList(loclist,nbtotal);
 
+// check if there are sufficient blocks
+#ifdef MPI_PARALLEL
+  if(nbtotal < Globals::nranks) {
+    if(test_flag==0) {
+      msg << "### FATAL ERROR in Mesh constructor" << std::endl
+          << "Too few blocks: nbtotal (" << nbtotal << ") < nranks ("<< Globals::nranks
+          << ")" << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+    else { // test
+      std::cout << "### Warning in Mesh constructor" << std::endl
+          << "Too few blocks: nbtotal (" << nbtotal << ") < nranks ("<< Globals::nranks
+          << ")" << std::endl;
+    }
+  }
+  if(nbtotal % Globals::nranks != 0 && adaptive == false && maxcost == mincost && Globals::my_rank==0) {
+    std::cout << "### Warning in Mesh constructor" << std::endl
+              << "The number of MeshBlocks cannot be divided evenly. "
+              << "This will cause a poor load balance." << std::endl;
+  }
+#endif
+
   ranklist=new int[nbtotal];
   nslist=new int[Globals::nranks];
   nblist=new int[Globals::nranks];
@@ -454,28 +483,6 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     nbend=nbtotal-1;
   else 
     nbend=nslist[(Globals::my_rank)+1]-1;
-
-// check if there are sufficient blocks
-#ifdef MPI_PARALLEL
-  if(nbtotal < Globals::nranks) {
-    if(test_flag==0) {
-      msg << "### FATAL ERROR in Mesh constructor" << std::endl
-          << "Too few blocks: nbtotal (" << nbtotal << ") < nranks ("<< Globals::nranks
-          << ")" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
-    }
-    else { // test
-      std::cout << "### Warning in Mesh constructor" << std::endl
-          << "Too few blocks: nbtotal (" << nbtotal << ") < nranks ("<< Globals::nranks
-          << ")" << std::endl;
-    }
-  }
-  if(nbtotal % Globals::nranks != 0 && adaptive == false && maxcost == mincost && Globals::my_rank==0) {
-    std::cout << "### Warning in Mesh constructor" << std::endl
-              << "The number of MeshBlocks cannot be divided evenly. "
-              << "This will cause a poor load balance." << std::endl;
-  }
-#endif
 
   // Mesh test only; do not create meshes
   if(test_flag>0) {
@@ -756,18 +763,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
       mycost=0.0;
       targetcost=totalcost/(j+1);
     }
-  }
-
-  if(nbtotal < Globals::nranks && test_flag==0) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Too few blocks: nbtotal (" << nbtotal << ") < nranks ("<< Globals::nranks
-        << ")" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  if(nbtotal % Globals::nranks != 0 && adaptive == false && maxcost == mincost && Globals::my_rank==0) {
-    std::cout << "### Warning in Mesh constructor" << std::endl
-              << "The number of MeshBlocks cannot be divided evenly. "
-              << "This will cause a poor load balance." << std::endl;
   }
 
   nslist[0]=0;
@@ -1661,5 +1656,123 @@ void MeshBlock::IntegrateConservative(Real *tcons)
       }
     }
   }
+  return;
+}
+
+
+
+//--------------------------------------------------------------------------------------
+// \!fn void Mesh::MeshRefinement(void)
+// \brief Main function for mesh refinement
+void Mesh::MeshRefinement(void)
+{
+  MeshBlock *pmb;
+  int *nref = new int [Globals::nranks];
+  int *nderef = new int [Globals::nranks];
+
+  // collect information of refinement from all the meshblocks
+  // collect the number of the blocks to be (de)refined
+  nref[Globals::my_rank]=0;
+  nderef[Globals::my_rank]=0;
+  pmb=pblock;
+  while(pmb!=NULL) {
+    if(pmb->pmr->refine_flag_== 1) nref[Globals::my_rank]++;
+    if(pmb->pmr->refine_flag_==-1) nderef[Globals::my_rank]++;
+    pmb=pmb->next;
+  }
+#ifdef MPI_PARALLEL
+  MPI_Request areq[2];
+  // if this does not work due to a version issue, replace these with blocking AllGather
+  MPI_Iallgather(MPI_IN_PLACE, 1, MPI_INT, nref,   1, MPI_INT, MPI_COMM_WORLD, &areq[0]);
+  MPI_Iallgather(MPI_IN_PLACE, 1, MPI_INT, nderef, 1, MPI_INT, MPI_COMM_WORLD, &areq[1]);
+  MPI_Waitall(2, areq, MPI_STATUS_IGNORE);
+#endif
+
+  // count the number of the blocks to be (de)refined and displacement
+  int tnref=0, tnderef=0;
+  int *rdisp = new int [Globals::nranks];
+  int *ddisp = new int [Globals::nranks];
+  int *bnref = new int [Globals::nranks];
+  int *bnderef = new int [Globals::nranks];
+  int *brdisp = new int [Globals::nranks];
+  int *bddisp = new int [Globals::nranks];
+  for(int n=0; n<Globals::nranks; n++) {
+    bnref[n]   = nref[n]*sizeof(LogicalLocation);
+    bnderef[n] = nderef[n]*sizeof(LogicalLocation);
+    rdisp[n] = tnref;
+    ddisp[n] = tnderef;
+    brdisp[n] = tnref*sizeof(LogicalLocation);
+    bddisp[n] = tnderef*sizeof(LogicalLocation);
+    tnref  += nref[n];
+    tnderef+= nderef[n];
+  }
+  if(Globals::my_rank==0) {
+    std::cout << tnref << " blocks need to be refined, and " 
+              << tnderef << " blocks can be derefined." << std::endl;
+  }
+/*  if(tnref==0 && tnderef==0) {
+    delete [] nref;
+    delete [] nderef;
+    delete [] bnref;
+    delete [] bnderef;
+    delete [] rdisp;
+    delete [] ddisp;
+    delete [] brdisp;
+    delete [] bddisp;
+    return;
+  }*/
+
+  // allocate memory for the location arrays
+  LogicalLocation *lref, *lderef;
+  if(tnref!=0)
+    lref = new LogicalLocation[tnref];
+  if(tnderef!=0)
+    lderef = new LogicalLocation[tnderef];
+
+  // collect the locations and costs
+  int iref = rdisp[Globals::my_rank], ideref = ddisp[Globals::my_rank];
+  pmb=pblock;
+  while(pmb!=NULL) {
+    if(pmb->pmr->refine_flag_== 1) {
+      lref[iref]=pmb->loc;
+      iref++;
+    }
+    if(pmb->pmr->refine_flag_==-1) {
+      lderef[ideref]=pmb->loc;
+      ideref++;
+    }
+    pmb=pmb->next;
+  }
+#ifdef MPI_PARALLEL
+  MPI_Iallgatherv(MPI_IN_PLACE, bnref[Globals::my_rank],   MPI_BYTE,
+                  lref,   bnref,   brdisp, MPI_BYTE, MPI_COMM_WORLD, &areq[0]);
+  MPI_Iallgatherv(MPI_IN_PLACE, bnderef[Globals::my_rank], MPI_BYTE,
+                  lderef, bnderef, bddisp, MPI_BYTE, MPI_COMM_WORLD, &areq[1]);
+  MPI_Waitall(2, areq, MPI_STATUS_IGNORE);
+#endif
+
+  // Now the lists of the blocks to be refined and derefined are completed
+  if(Globals::my_rank==0) {
+    for(int n=0; n<tnref; n++)
+      std::cout << "Refine   " << n << " :  Location " << lref[n].lx1 << " " <<
+           lref[n].lx2 << " " << lref[n].lx3 << " " << lref[n].level << std::endl;
+    for(int n=0; n<tnderef; n++)
+      std::cout << "Derefine " << n << " :  Location " << lderef[n].lx1 << " " << 
+           lderef[n].lx2 << " " << lderef[n].lx3 << " " << lderef[n].level << std::endl;
+  }
+
+
+  // free temporary arrays
+  delete [] nref;
+  delete [] nderef;
+  delete [] bnref;
+  delete [] bnderef;
+  delete [] rdisp;
+  delete [] ddisp;
+  delete [] brdisp;
+  delete [] bddisp;
+  if(tnref!=0) delete [] lref;
+  if(tnderef!=0) delete [] lderef;
+
   return;
 }

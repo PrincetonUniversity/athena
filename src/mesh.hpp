@@ -136,6 +136,7 @@ private:
   friend class MeshBlock;
   friend class BoundaryValues;
   friend class Coordinates;
+  friend class MeshRefinement;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
@@ -160,6 +161,7 @@ public:
   void UpdateOneStep(void);
   void ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin); // in /pgen
   void NewTimeStep(void);
+  void MeshRefinement(void);
   MeshBlock* FindMeshBlock(int tgid);
   void TestConservation(void);
 };
