@@ -53,7 +53,7 @@ void dmrbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                int is, int ie, int js, int je, int ks, int ke);
 void dmrbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                int is, int ie, int js, int je, int ks, int ke);
-int RefinementCondition(MeshBlock *pmb);
+int RefinementCondition(MeshBlock *pmb, int &nflag);
 
 // problem generator
 
@@ -204,26 +204,39 @@ void dmrbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 }
 
 // refinement condition: density and pressure curvature
-int RefinementCondition(MeshBlock *pmb)
+int RefinementCondition(MeshBlock *pmb, int &nflag)
 {
   AthenaArray<Real> &w = pmb->phydro->w;
   Coordinates *pco=pmb->pcoord;
+  MeshRefinement *pmr = pmb->pmr;
   Real maxeps=0.0;
   int k=pmb->ks;
+  int ox3=0;
+  int qil=pmb->is + pmb->block_size.nx1/4-1, qir=pmb->ie - pmb->block_size.nx1/4+1;
+  int qjl=pmb->js + pmb->block_size.nx2/4-1, qjr=pmb->je - pmb->block_size.nx2/4+1;
   for(int j=pmb->js; j<=pmb->je; j++) {
+    int ox2=0;
+    if(j<=qjl)      ox2=-1;
+    else if(j>=qjr) ox2= 1;
     for(int i=pmb->is; i<=pmb->ie; i++) {
       Real epsr= ((w(IDN,k,j,i+1)-2.0*w(IDN,k,j,i)+w(IDN,k,j,i-1))
                  +(w(IDN,k,j+1,i)-2.0*w(IDN,k,j,i)+w(IDN,k,j-1,i)))/w(IDN,k,j,i);
       Real epsp= ((w(IEN,k,j,i+1)-2.0*w(IEN,k,j,i)+w(IEN,k,j,i-1))
                  +(w(IEN,k,j+1,i)-2.0*w(IEN,k,j,i)+w(IEN,k,j-1,i)))/w(IEN,k,j,i);
       Real eps = std::max(std::abs(epsr), std::abs(epsp));
-      maxeps   = std::max(maxeps, eps);
+      maxeps = std::max(maxeps, eps);
+      if(eps > 0.01) {
+        int ox1=0;
+        if(i<=qil)      ox1=-1;
+        else if(i>=qir) ox1= 1;
+        pmr->SetNeighborRefinementFlag(ox1, ox2, ox3, nflag);
+      }
     }
   }
   // refine : curvature > 0.01
   if(maxeps > 0.01) return 1;
-  // derefinement: curvature after derefinement < 0.005
-  if(maxeps < 0.00125) return -1;
+  // derefinement: curvature < 0.005
+  if(maxeps < 0.005) return -1;
   // otherwise, stay
   return 0;
 }

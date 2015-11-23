@@ -24,19 +24,20 @@ class Coordinates;
 struct InterfaceField;
 class BoundaryValues;
 
-typedef int (*AMRFlag_t)(MeshBlock *pmb);
+typedef int (*AMRFlag_t)(MeshBlock *pmb, int &nflag);
 
 
 class MeshRefinement
 {
 private:
   MeshBlock *pmy_mblock_;
+  ParameterInput *pin_;
   AthenaArray<Real> coarse_cons_, coarse_prim_, coarse_bcc_;
   InterfaceField coarse_b_;
   AthenaArray<Real> fvol_[2][2], sarea_x1_[2][2], sarea_x2_[2][3], sarea_x3_[3][2];
 
   AMRFlag_t AMRFlag_;
-  int refine_flag_;
+  int refine_flag_, neighbor_rflag_;
 
   friend class BoundaryValues;
   friend class MeshBlock;
@@ -69,6 +70,7 @@ public:
 
   void EnrollAMRFlagFunction(AMRFlag_t amrflag);
   void CheckRefinementCondition(void);
+  void SetNeighborRefinementFlag(int ox1, int ox2, int ox3, int &nflag);
 };
 
 #endif

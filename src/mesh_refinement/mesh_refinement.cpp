@@ -39,6 +39,7 @@
 MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_mblock_ = pmb;
+  pin_=pin;
   AMRFlag_=NULL;
   // allocate prolongation buffer
   int ncc1=pmb->block_size.nx1/2+2*pmb->cnghost;
@@ -916,15 +917,21 @@ void MeshRefinement::EnrollAMRFlagFunction(AMRFlag_t amrflag)
 //  \brief Enroll a user-defined function for checking refinement criteria
 void MeshRefinement::CheckRefinementCondition(void)
 {
-  int ret=0;
-  if(AMRFlag_!=NULL)
-    ret=AMRFlag_(pmy_mblock_);
+  int ret=0, aret=-1;
+  refine_flag_=0, neighbor_rflag_=0;
 
-  if(ret>0) {
+  // *** should be implemented later ***
+  // loop-over refinement criteria
+  if(AMRFlag_!=NULL)
+    ret=AMRFlag_(pmy_mblock_, neighbor_rflag_);
+  aret=std::max(aret,ret);
+
+
+  if(aret>0) {
     if(pmy_mblock_->loc.level == pmy_mblock_->pmy_mesh->max_level) refine_flag_=0;
     else refine_flag_=1;
   }
-  else if(ret<0) {
+  else if(aret<0) {
     if(pmy_mblock_->loc.level == pmy_mblock_->pmy_mesh->root_level) refine_flag_=0;
     else refine_flag_=-1;
   }
@@ -932,5 +939,14 @@ void MeshRefinement::CheckRefinementCondition(void)
 }
 
 
-
+//--------------------------------------------------------------------------------------
+//! \fn void MeshRefinement::SetNeighborRefinementFlag(int ox1, int ox2, int ox3,
+//                                                     int &nflag)
+//  \brief Set a refinement flag for a neighboring block
+void MeshRefinement::SetNeighborRefinementFlag(int ox1, int ox2, int ox3, int &nflag)
+{
+  int bit=(ox3+1)*9+(ox2+1)*3+(ox1+1);
+  nflag |= (1<<bit);
+  return;
+}
 

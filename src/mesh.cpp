@@ -1681,7 +1681,7 @@ void Mesh::MeshRefinement(void)
     pmb=pmb->next;
   }
 #ifdef MPI_PARALLEL
-  MPI_Request areq[2];
+  MPI_Request areq[3];
   // if this does not work due to a version issue, replace these with blocking AllGather
   MPI_Iallgather(MPI_IN_PLACE, 1, MPI_INT, nref,   1, MPI_INT, MPI_COMM_WORLD, &areq[0]);
   MPI_Iallgather(MPI_IN_PLACE, 1, MPI_INT, nderef, 1, MPI_INT, MPI_COMM_WORLD, &areq[1]);
@@ -1710,7 +1710,7 @@ void Mesh::MeshRefinement(void)
     std::cout << tnref << " blocks need to be refined, and " 
               << tnderef << " blocks can be derefined." << std::endl;
   }
-/*  if(tnref==0 && tnderef==0) {
+  if(tnref==0 && tnderef==0) {
     delete [] nref;
     delete [] nderef;
     delete [] bnref;
@@ -1720,12 +1720,15 @@ void Mesh::MeshRefinement(void)
     delete [] brdisp;
     delete [] bddisp;
     return;
-  }*/
+  }
 
   // allocate memory for the location arrays
   LogicalLocation *lref, *lderef;
-  if(tnref!=0)
+  int *fref;
+  if(tnref!=0) {
     lref = new LogicalLocation[tnref];
+    fref = new int[tnref];
+  }
   if(tnderef!=0)
     lderef = new LogicalLocation[tnderef];
 
@@ -1735,6 +1738,7 @@ void Mesh::MeshRefinement(void)
   while(pmb!=NULL) {
     if(pmb->pmr->refine_flag_== 1) {
       lref[iref]=pmb->loc;
+      fref[iref]=pmb->pmr->neighbor_rflag_;
       iref++;
     }
     if(pmb->pmr->refine_flag_==-1) {
@@ -1748,14 +1752,18 @@ void Mesh::MeshRefinement(void)
                   lref,   bnref,   brdisp, MPI_BYTE, MPI_COMM_WORLD, &areq[0]);
   MPI_Iallgatherv(MPI_IN_PLACE, bnderef[Globals::my_rank], MPI_BYTE,
                   lderef, bnderef, bddisp, MPI_BYTE, MPI_COMM_WORLD, &areq[1]);
-  MPI_Waitall(2, areq, MPI_STATUS_IGNORE);
+  MPI_Iallgatherv(MPI_IN_PLACE, nref[Globals::my_rank], MPI_INT,
+                  fref, nref, rdisp, MPI_INT, MPI_COMM_WORLD, &areq[2]);
+  MPI_Waitall(3, areq, MPI_STATUS_IGNORE);
 #endif
 
   // Now the lists of the blocks to be refined and derefined are completed
   if(Globals::my_rank==0) {
-    for(int n=0; n<tnref; n++)
-      std::cout << "Refine   " << n << " :  Location " << lref[n].lx1 << " " <<
-           lref[n].lx2 << " " << lref[n].lx3 << " " << lref[n].level << std::endl;
+    for(int n=0; n<tnref; n++) {
+      std::cout << "Refine   " << n << " :  Location " << lref[n].lx1 << " "
+                << lref[n].lx2 << " " << lref[n].lx3 << " " << lref[n].level
+                << " " << fref[n] << std::endl;
+    }
     for(int n=0; n<tnderef; n++)
       std::cout << "Derefine " << n << " :  Location " << lderef[n].lx1 << " " << 
            lderef[n].lx2 << " " << lderef[n].lx3 << " " << lderef[n].level << std::endl;
@@ -1771,8 +1779,12 @@ void Mesh::MeshRefinement(void)
   delete [] ddisp;
   delete [] brdisp;
   delete [] bddisp;
-  if(tnref!=0) delete [] lref;
-  if(tnderef!=0) delete [] lderef;
+  if(tnref!=0) {
+    delete [] lref;
+    delete [] fref;
+  }
+  if(tnderef!=0)
+    delete [] lderef;
 
   return;
 }
