@@ -31,7 +31,7 @@
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh_refinement.hpp"
+#include "../mesh_refinement/mesh_refinement.hpp"
 #include "../mesh.hpp"
 #include "../hydro/hydro.hpp"
 #include "../hydro/eos/eos.hpp"

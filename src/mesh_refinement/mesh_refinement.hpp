@@ -10,8 +10,8 @@
 //======================================================================================
 
 // Athena++ classes headers
-#include "athena.hpp"         // Real
-#include "athena_arrays.hpp"  // AthenaArray
+#include "../athena.hpp"         // Real
+#include "../athena_arrays.hpp"  // AthenaArray
 
 // MPI headers
 #ifdef MPI_PARALLEL

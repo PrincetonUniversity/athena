@@ -38,7 +38,7 @@
 #include "../hydro/eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
 
-#include "../mesh_refinement.hpp"
+#include "../mesh_refinement/mesh_refinement.hpp"
 
 #include <iostream>
 #include <cmath>

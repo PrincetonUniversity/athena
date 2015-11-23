@@ -33,6 +33,7 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/hydro/integrators/*.cpp) \
 	     $(wildcard src/hydro/integrators/reconstruct/*.cpp) \
 	     src/hydro/integrators/rsolvers/$(RSOLVER_DIR)$(RSOLVER_FILE) \
+	     $(wildcard src/mesh_refinement/*.cpp) \
 	     $(wildcard src/outputs/*.cpp) \
 	     $(wildcard src/utils/*.cpp) \
 	     src/pgen/$(PROBLEM_FILE)

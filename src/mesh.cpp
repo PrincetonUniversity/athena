@@ -44,7 +44,7 @@
 #include "meshblocktree.hpp"
 #include "outputs/wrapper.hpp"
 #include "task_list.hpp"
-#include "mesh_refinement.hpp"
+#include "mesh_refinement/mesh_refinement.hpp"
 
 // this class header
 #include "mesh.hpp"
