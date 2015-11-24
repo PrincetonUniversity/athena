@@ -85,7 +85,7 @@ private:
 public:
   MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_size,
             int *input_bcs, Mesh *pm, ParameterInput *pin);
-  MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, LogicalLocation *llist,
+  MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, LogicalLocation iloc,
   IOWrapper& resfile, IOWrapperSize_t offset, Real icost, int *ranklist, int *nslist);
   ~MeshBlock();
   size_t GetBlockSizeInBytes(void);
@@ -121,16 +121,18 @@ private:
   int nbtotal, nbstart, nbend;
   int maxneighbor_;
   int num_mesh_threads_;
-  int *nslist, *nblist, *ranklist;
+  int *nslist, *ranklist, *nblist;
   Real *costlist;
-  Real MeshGeneratorX1(Real x, RegionSize rs);
-  Real MeshGeneratorX2(Real x, RegionSize rs);
-  Real MeshGeneratorX3(Real x, RegionSize rs);
   LogicalLocation *loclist;
   MeshBlockTree tree;
   long int nrbx1, nrbx2, nrbx3;
 
+  Real MeshGeneratorX1(Real x, RegionSize rs);
+  Real MeshGeneratorX2(Real x, RegionSize rs);
+  Real MeshGeneratorX3(Real x, RegionSize rs);
+
   void MeshTest(int dim);
+  void LoadBalancing(Real *clist, int *rlist, int *slist, int *nlist);
 
   friend class RestartOutput;
   friend class MeshBlock;
@@ -140,6 +142,7 @@ private:
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
+
 public:
   Mesh(ParameterInput *pin, int test_flag=0);
   Mesh(ParameterInput *pin, IOWrapper &resfile, int test_flag=0);
@@ -161,7 +164,7 @@ public:
   void UpdateOneStep(void);
   void ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin); // in /pgen
   void NewTimeStep(void);
-  void MeshRefinement(void);
+  void MeshRefinement(ParameterInput *pin);
   MeshBlock* FindMeshBlock(int tgid);
   void TestConservation(void);
 };

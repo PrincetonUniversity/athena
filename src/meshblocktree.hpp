@@ -8,7 +8,6 @@
 #include "athena_arrays.hpp"  // AthenaArray
 #include "defs.hpp"
 
-
 //! \class MeshBlockTree
 //  \brief Construct AMR Block tree structure
 class MeshBlockTree
@@ -19,6 +18,7 @@ private:
   MeshBlockTree* pleaf[2][2][2];
   LogicalLocation loc;
   int gid;
+  friend class Mesh;
   friend class MeshBlock;
 public:
   MeshBlockTree();
@@ -27,13 +27,12 @@ public:
   void CreateRootGrid(long int nx, long int ny, long int nz, int nl);
   void AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc, int dim, int* mesh_bcs,
                     long int rbx, long int rby, long int rbz, int rl);
-  void AddMeshBlockWithoutRefine(MeshBlockTree& root, LogicalLocation rloc, int dim,
-                   int* mesh_bcs, long int rbx, long int rby, long int rbz, int rl);
+  void AddMeshBlockWithoutRefine(LogicalLocation rloc, 
+                                 long int rbx, long int rby, long int rbz, int rl);
   void Refine(MeshBlockTree& root, int dim, int* mesh_bcs,
               long int rbx, long int rby, long int rbz, int rl);
-  void Derefine(void);
-  void AssignGID(int& id);
-  void GetLocationList(LogicalLocation *list, int& count);
+  void CountMeshBlock(int& count);
+  void GetMeshBlockList(LogicalLocation *list, int *pglist, int& count);
   MeshBlockTree* FindNeighbor(LogicalLocation myloc, int ox1, int ox2, int ox3, int *bcs,
                               long int rbx, long int rby, long int rbz, int rl);
   MeshBlockTree* GetLeaf(int ox, int oy, int oz);

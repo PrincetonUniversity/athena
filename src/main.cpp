@@ -309,7 +309,7 @@ int main(int argc, char *argv[])
     pmesh->time += pmesh->dt;
 
     if(pmesh->adaptive==true)
-      pmesh->MeshRefinement();
+      pmesh->MeshRefinement(pinput);
 
     pmesh->NewTimeStep();
 

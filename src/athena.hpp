@@ -32,6 +32,11 @@ typedef struct LogicalLocation {
   long int lx1, lx2, lx3;
   int level;
   LogicalLocation() : lx1(-1), lx2(-1), lx3(-1), level(-1) {};
+  // for sort from the finest level
+  static bool Less(const LogicalLocation & lloc, const LogicalLocation &rloc)
+  { return lloc.level < rloc.level; };
+  static bool Greater(const LogicalLocation & lloc, const LogicalLocation &rloc)
+  { return lloc.level > rloc.level; };
 } LogicalLocation;
 
 
@@ -46,8 +51,10 @@ enum direction {dir_undefined=-1, inner_x1=0, outer_x1=1, inner_x2=2, outer_x2=3
 enum edgeid {edgeid_undefined = -1, em2m1=0, em2p1=1, ep2m1=2, ep2p2=3, 
                 em3m1=4, em3p1=5, ep3m1=6, ep3p1=7, em3m2=8, em3p2=9, ep3m2=10, ep3p2=11};
 enum face {x1face=0, x2face=1, x3face=2};
-enum mpitag {tag_hydro=0, tag_field=1, tag_flcor=2, tag_emfcor=3}; // mpitag must be < 16 and unique
+enum mpitag {tag_hydro=0, tag_field=1, tag_flcor=2, tag_emfcor=3, tag_amr=4}; // mpitag must be < 16 and unique
 enum neighbor_type {neighbor_none, neighbor_face, neighbor_edge, neighbor_corner};
+
+enum mbtflag {mbt_node=0, mbt_refined=1, mbt_deref=2, mbt_newr=3, mbt_newd=4, mbt_leaf=5};
 
 enum boundary_status {boundary_waiting, boundary_arrived, boundary_completed};
 

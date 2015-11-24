@@ -85,7 +85,7 @@ void MeshBlockTree::CreateRootGrid(long int nx, long int ny, long int nz, int nl
         if((loc.lx2*2+j)*(1L<<(nl-loc.level-1)) < ny) {
           for(int i=0; i<=1; i++) {
             if((loc.lx1*2+i)*(1L<<(nl-loc.level-1)) < nx) {
-              flag=false; // if there is a leaf, this is not a leaf
+              flag=false; // if there is a leaf, this is a node
               gid=-1;
               pleaf[k][j][i] = new MeshBlockTree(this, i, j, k);
               pleaf[k][j][i]->CreateRootGrid(nx, ny, nz, nl);
@@ -117,17 +117,17 @@ void MeshBlockTree::AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc, int 
   my=(int)((rloc.lx2>>sh)&1L);
   mz=(int)((rloc.lx3>>sh)&1L);
   pleaf[mz][my][mx]->AddMeshBlock(root,rloc,dim,mesh_bcs,rbx,rby,rbz,rl);
+
   return;
 }
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void MeshBlockTree::AddMeshBlockWithoutRefine(MeshBlockTree& root,
-//                          LogicalLocation rloc, int dim, int* mesh_bcs,
+//! \fn void MeshBlockTree::AddMeshBlockWithoutRefine(LogicalLocation rloc,
 //                          long int rbx, long int rby, long int rbz, int rl)
 //  \brief add a MeshBlock to the tree without refinement, used in restarting
-void MeshBlockTree::AddMeshBlockWithoutRefine(MeshBlockTree& root, LogicalLocation rloc,
-     int dim, int* mesh_bcs, long int rbx, long int rby, long int rbz, int rl)
+void MeshBlockTree::AddMeshBlockWithoutRefine(LogicalLocation rloc,
+                    long int rbx, long int rby, long int rbz, int rl)
 {
   int mx, my, mz;
   if(loc.level==rloc.level) // done
@@ -141,17 +141,17 @@ void MeshBlockTree::AddMeshBlockWithoutRefine(MeshBlockTree& root, LogicalLocati
   mz=(int)((rloc.lx3>>sh)&1L);
   if(pleaf[mz][my][mx]==NULL)
     pleaf[mz][my][mx] = new MeshBlockTree(this, mx, my, mz);
-  pleaf[mz][my][mx]->AddMeshBlockWithoutRefine(root,rloc,dim,mesh_bcs,rbx,rby,rbz,rl);
+  pleaf[mz][my][mx]->AddMeshBlockWithoutRefine(rloc,rbx,rby,rbz,rl);
   return;
 }
 
 
 //--------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::Refine(MeshBlockTree& root, int dim, int* mesh_bcs,
-//                             long int rbx, long int rby, long int rbz, int rl)
+//                          long int rbx, long int rby, long int rbz, int rl)
 //  \brief make finer leaves
 void MeshBlockTree::Refine(MeshBlockTree& root, int dim, int* mesh_bcs,
-                       long int rbx, long int rby, long int rbz, int rl)
+                           long int rbx, long int rby, long int rbz, int rl)
 {
   long int nx,ny,nz,nxmax,nymax,nzmax;
   long int ox, oy, oz, oxmin, oxmax, oymin, oymax, ozmin, ozmax;
@@ -208,48 +208,26 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, int* mesh_bcs,
     }
   }
   gid=-1;
-  flag=false; // this block is not a leaf anymore
+  // this block is not a leaf anymore
+  flag=false;
   return;
 }
 
-//--------------------------------------------------------------------------------------
-//! \fn void MeshBlockTree::Derefine(void)
-//  \brief delete leaves
-void MeshBlockTree::Derefine(void)
-{
-  for(int k=0; k<=1; k++) {
-    for(int j=0; j<=1; j++) {
-      for(int i=0; i<=1; i++) {
-        if(pleaf[k][j][i]!=NULL)
-          delete pleaf[k][j][i];
-      }
-    }
-  }
-  flag=true; // this block is now a leaf
-  // need to recalculate gid
-  return;
-}
 
 //--------------------------------------------------------------------------------------
-//! \fn void MeshBlockTree::AssignGID(int& id)
-//  \brief assign IDs to the leaves and count the total number of the blocks
-void MeshBlockTree::AssignGID(int& id)
+//! \fn void MeshBlockTree::CountMeshBlock(int& count)
+//  \brief creates the Location list sorted by Z-ordering
+void MeshBlockTree::CountMeshBlock(int& count)
 {
-  if(pparent==NULL) // clear id if this is the root of the tree
-    id=0;
-
-  if(flag==true) {
-    gid=id;
-    id++;
-  }
+  if(pparent==NULL) count=0;
+  if(flag==true)
+    count++;
   else {
-    gid=-1;
-
     for(int k=0; k<=1; k++) {
       for(int j=0; j<=1; j++) {
         for(int i=0; i<=1; i++) {
           if(pleaf[k][j][i]!=NULL)
-            pleaf[k][j][i]->AssignGID(id); // depth-first search
+            pleaf[k][j][i]->CountMeshBlock(count);
         }
       }
     }
@@ -259,13 +237,17 @@ void MeshBlockTree::AssignGID(int& id)
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void MeshBlockTree::GetLocationList(LogicalLocation *list, int& count)
+//! \fn void MeshBlockTree::GetMeshBlockList(LogicalLocation *list,
+//                                           int *pglist, int& count)
 //  \brief creates the Location list sorted by Z-ordering
-void MeshBlockTree::GetLocationList(LogicalLocation *list, int& count)
+void MeshBlockTree::GetMeshBlockList(LogicalLocation *list, int *pglist, int& count)
 {
   if(pparent==NULL) count=0;
   if(flag==true) {
     list[count]=loc;
+    if(pglist!=NULL)
+      pglist[count]=gid;
+    gid=count;
     count++;
   }
   else {
@@ -273,7 +255,7 @@ void MeshBlockTree::GetLocationList(LogicalLocation *list, int& count)
       for(int j=0; j<=1; j++) {
         for(int i=0; i<=1; i++) {
           if(pleaf[k][j][i]!=NULL)
-            pleaf[k][j][i]->GetLocationList(list, count);
+            pleaf[k][j][i]->GetMeshBlockList(list, pglist, count);
         }
       }
     }
@@ -288,6 +270,7 @@ void MeshBlockTree::GetLocationList(LogicalLocation *list, int& count)
 //  \brief find a neighboring block, called from the root of the tree
 //         If it is coarser or same level, return the pointer to that block.
 //         If it is a finer block, return the pointer to its parent.
+//         Note that this function must be called on a completed tree only
 MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int ox2, int ox3,
                               int *bcs, long int rbx, long int rby, long int rbz, int rl)
 {

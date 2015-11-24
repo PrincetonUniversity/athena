@@ -24,7 +24,7 @@
 #include <sstream>
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <algorithm>  // sort, find
+#include <algorithm>  // sort
 #include <iomanip>
 #include <stdlib.h>
 #include <string.h>  // memcpy
@@ -68,7 +68,6 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   MeshBlockTree *neibt;
   MeshBlock *pfirst;
   int block_bcs[6];
-  Real totalcost, maxcost, mincost, mycost, targetcost;
   int nbmax, dim;
 
 // mesh test
@@ -414,9 +413,9 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
   // initial mesh hierarchy construction is completed here
 
-  tree.AssignGID(nbtotal); // count blocks at the same time
+  tree.CountMeshBlock(nbtotal);
   loclist=new LogicalLocation[nbtotal];
-  tree.GetLocationList(loclist,nbtotal);
+  tree.GetMeshBlockList(loclist,NULL,nbtotal);
 
 // check if there are sufficient blocks
 #ifdef MPI_PARALLEL
@@ -433,49 +432,17 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
           << ")" << std::endl;
     }
   }
-  if(nbtotal % Globals::nranks != 0 && adaptive == false && maxcost == mincost && Globals::my_rank==0) {
-    std::cout << "### Warning in Mesh constructor" << std::endl
-              << "The number of MeshBlocks cannot be divided evenly. "
-              << "This will cause a poor load balance." << std::endl;
-  }
 #endif
 
   ranklist=new int[nbtotal];
   nslist=new int[Globals::nranks];
   nblist=new int[Globals::nranks];
   costlist=new Real[nbtotal];
-  maxcost=0.0;
-  mincost=(FLT_MAX);
-  totalcost=0.0;
-  for(int i=0;i<nbtotal;i++) {
+
+  for(int i=0;i<nbtotal;i++)
     costlist[i]=1.0; // the simplest estimate; all the blocks are equal
-    totalcost+=costlist[i];
-    mincost=std::min(mincost,costlist[i]);
-    maxcost=std::max(maxcost,costlist[i]);
-  }
-  int j=(Globals::nranks)-1;
-  targetcost=totalcost/Globals::nranks;
-  mycost=0.0;
-  // create rank list from the end: the master node should have less load
-  for(int i=nbtotal-1;i>=0;i--) {
-    mycost+=costlist[i];
-    ranklist[i]=j;
-    if(mycost >= targetcost && j>0) {
-      j--;
-      totalcost-=mycost;
-      mycost=0.0;
-      targetcost=totalcost/(j+1);
-    }
-  }
-  nslist[0]=0;
-  j=0;
-  for(int i=1;i<nbtotal;i++) { // make the list of nbstart
-    if(ranklist[i]!=ranklist[i-1]) {
-      nblist[j]=i-nslist[j];
-      nslist[++j]=i;
-    }
-  }
-  nblist[j]=nbtotal-nslist[j];
+
+  LoadBalancing(costlist, ranklist, nslist, nblist);
 
   // store my nbstart and nbend
   nbstart=nslist[Globals::my_rank];
@@ -681,7 +648,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   // read the id list (serial, because we need the costs for load balancing)
   // ... perhaps I should pack them.
   multilevel=false;
-  totalcost=0.0;
   nerr=0;
   maxcost=0.0;
   mincost=(FLT_MAX);
@@ -693,7 +659,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
     if(loclist[i].level>current_level) current_level=loclist[i].level;
     if(resfile.Read(&(costlist[i]),sizeof(Real),1)!=1) nerr++;
     if(resfile.Read(&(offset[i]),sizeof(IOWrapperSize_t),1)!=1) nerr++;
-    totalcost+=costlist[i];
     mincost=std::min(mincost,costlist[i]);
     maxcost=std::max(maxcost,costlist[i]);
   }
@@ -716,9 +681,10 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
 
   // rebuild the Block Tree
   for(int i=0;i<nbtotal;i++)
-    tree.AddMeshBlockWithoutRefine(tree,loclist[i],dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level);
+    tree.AddMeshBlockWithoutRefine(loclist[i],nrbx1,nrbx2,nrbx3,root_level);
   int nnb;
-  tree.AssignGID(nnb); // count blocks at the same time
+  // check the tree structure, and assign GID
+  tree.GetMeshBlockList(loclist, NULL, nnb);
   if(nnb!=nbtotal) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "Tree reconstruction failed. The total numbers of the blocks do not match. ("
@@ -741,39 +707,10 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
       return;
     }
   }
-  if(nbtotal % Globals::nranks != 0 && adaptive == false && maxcost == mincost && Globals::my_rank==0) {
-    std::cout << "### Warning in Mesh constructor" << std::endl
-              << "The number of MeshBlocks cannot be divided evenly. "
-              << "This will cause a poor load balance." << std::endl;
-  }
 #endif
 
-  // divide the list evenly and distribute among the processes
-  // note: ordering should be maintained, although it might not be optimal.
-  j=(Globals::nranks)-1;
-  targetcost=totalcost/Globals::nranks;
-  mycost=0.0;
-  // create rank list from the end: the master node should have less load
-  for(i=nbtotal-1;i>=0;i--) {
-    mycost+=costlist[i];
-    ranklist[i]=j;
-    if(mycost >= targetcost && j>0) {
-      j--;
-      totalcost-=mycost;
-      mycost=0.0;
-      targetcost=totalcost/(j+1);
-    }
-  }
+  LoadBalancing(costlist, ranklist, nslist, nblist);
 
-  nslist[0]=0;
-  j=0;
-  for(i=1;i<nbtotal;i++) { // make the list of nbstart
-    if(ranklist[i]!=ranklist[i-1]) {
-      nblist[j]=i-nslist[j];
-      nslist[++j]=i;
-    }
-  }
-  nblist[j]=nbtotal-nslist[j];
   // store my nbstart and nbend
   nbstart=nslist[Globals::my_rank];
   if((Globals::my_rank)+1==Globals::nranks)
@@ -793,12 +730,12 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   for(i=nbstart;i<=nbend;i++) {
     // create a block and add into the link list
     if(i==nbstart) {
-      pblock = new MeshBlock(i, i-nbstart, this, pin, loclist, resfile, offset[i],
+      pblock = new MeshBlock(i, i-nbstart, this, pin, loclist[i], resfile, offset[i],
                              costlist[i], ranklist, nslist);
       pfirst = pblock;
     }
     else {
-      pblock->next = new MeshBlock(i, i-nbstart, this, pin, loclist, resfile,
+      pblock->next = new MeshBlock(i, i-nbstart, this, pin, loclist[i], resfile,
                                    offset[i], costlist[i], ranklist, nslist);
       pblock->next->prev = pblock;
       pblock = pblock->next;
@@ -1018,7 +955,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 // MeshBlock constructor for restarting
 
 MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
-                     LogicalLocation *llist, IOWrapper& resfile, IOWrapperSize_t offset,
+                     LogicalLocation iloc, IOWrapper& resfile, IOWrapperSize_t offset,
                      Real icost, int *ranklist, int *nslist)
 {
   std::stringstream msg;
@@ -1027,7 +964,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   next=NULL;
   gid=igid;
   lid=ilid;
-  loc=llist[gid];
+  loc=iloc;
   cost=icost;
   int nerr=0;
 //  task=NULL;
@@ -1228,7 +1165,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     pmb=pmb->next;
   }
 
-  if(res_flag==0) {
+  if(res_flag==0 || res_flag==2) {
     pmb = pblock;
     while (pmb != NULL)  {
       pmb->phydro->NewBlockTimeStep(pmb);
@@ -1660,15 +1597,68 @@ void MeshBlock::IntegrateConservative(Real *tcons)
 }
 
 
+//--------------------------------------------------------------------------------------
+// \!fn void Mesh::LoadBalancing(Real *clist, int *rlist, int *slist, int *nlist)
+// \brief Calculate distribution of MeshBlocks based on the cost list
+void Mesh::LoadBalancing(Real *clist, int *rlist, int *slist, int *nlist)
+{
+  Real totalcost=0, maxcost=0.0, mincost=(FLT_MAX);
+
+  for(int i=0; i<nbtotal; i++) {
+    totalcost+=clist[i];
+    mincost=std::min(mincost,clist[i]);
+    maxcost=std::max(maxcost,clist[i]);
+  }
+  int j=(Globals::nranks)-1;
+  Real targetcost=totalcost/Globals::nranks;
+  Real mycost=0.0;
+  // create rank list from the end: the master node should have less load
+  for(int i=nbtotal-1;i>=0;i--) {
+    mycost+=clist[i];
+    rlist[i]=j;
+    if(mycost >= targetcost && j>0) {
+      j--;
+      totalcost-=mycost;
+      mycost=0.0;
+      targetcost=totalcost/(j+1);
+    }
+  }
+  slist[0]=0;
+  j=0;
+  for(int i=1;i<nbtotal;i++) { // make the list of nbstart
+    if(rlist[i]!=rlist[i-1]) {
+      nlist[j]=i-nslist[j];
+      slist[++j]=i;
+    }
+  }
+  nlist[j]=nbtotal-slist[j];
+
+#ifdef MPI_PARALLEL
+  if(nbtotal % Globals::nranks != 0 && adaptive == false
+  && maxcost == mincost && Globals::my_rank==0) {
+    std::cout << "### Warning in LoadBalancing" << std::endl
+              << "The number of MeshBlocks cannot be divided evenly. "
+              << "This will cause a poor load balance." << std::endl;
+  }
+#endif
+  return;
+}
 
 //--------------------------------------------------------------------------------------
-// \!fn void Mesh::MeshRefinement(void)
+// \!fn void Mesh::MeshRefinement(ParameterInput *pin)
 // \brief Main function for mesh refinement
-void Mesh::MeshRefinement(void)
+void Mesh::MeshRefinement(ParameterInput *pin)
 {
   MeshBlock *pmb;
+#ifdef MPI_PARALLEL
+  MPI_Request areq[4];
+  // start sharing the cost list
+  MPI_Iallgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_INT,
+                  costlist, nblist, nslist, MPI_INT, MPI_COMM_WORLD, &areq[3]);
+#endif
   int *nref = new int [Globals::nranks];
   int *nderef = new int [Globals::nranks];
+
 
   // collect information of refinement from all the meshblocks
   // collect the number of the blocks to be (de)refined
@@ -1681,7 +1671,6 @@ void Mesh::MeshRefinement(void)
     pmb=pmb->next;
   }
 #ifdef MPI_PARALLEL
-  MPI_Request areq[3];
   // if this does not work due to a version issue, replace these with blocking AllGather
   MPI_Iallgather(MPI_IN_PLACE, 1, MPI_INT, nref,   1, MPI_INT, MPI_COMM_WORLD, &areq[0]);
   MPI_Iallgather(MPI_IN_PLACE, 1, MPI_INT, nderef, 1, MPI_INT, MPI_COMM_WORLD, &areq[1]);
@@ -1723,14 +1712,20 @@ void Mesh::MeshRefinement(void)
   }
 
   // allocate memory for the location arrays
-  LogicalLocation *lref, *lderef;
+  LogicalLocation *lref, *lderef, *clderef;
   int *fref;
   if(tnref!=0) {
     lref = new LogicalLocation[tnref];
     fref = new int[tnref];
   }
-  if(tnderef!=0)
+
+  int minbl=2;
+  if(mesh_size.nx2 > 1) minbl=4;
+  if(mesh_size.nx3 > 1) minbl=8;
+  if(tnderef>minbl) {
     lderef = new LogicalLocation[tnderef];
+    clderef = new LogicalLocation[tnderef/minbl];
+  }
 
   // collect the locations and costs
   int iref = rdisp[Globals::my_rank], ideref = ddisp[Globals::my_rank];
@@ -1741,21 +1736,77 @@ void Mesh::MeshRefinement(void)
       fref[iref]=pmb->pmr->neighbor_rflag_;
       iref++;
     }
-    if(pmb->pmr->refine_flag_==-1) {
+    if(pmb->pmr->refine_flag_==-1 && tnderef>minbl) {
       lderef[ideref]=pmb->loc;
       ideref++;
     }
     pmb=pmb->next;
   }
 #ifdef MPI_PARALLEL
-  MPI_Iallgatherv(MPI_IN_PLACE, bnref[Globals::my_rank],   MPI_BYTE,
-                  lref,   bnref,   brdisp, MPI_BYTE, MPI_COMM_WORLD, &areq[0]);
-  MPI_Iallgatherv(MPI_IN_PLACE, bnderef[Globals::my_rank], MPI_BYTE,
-                  lderef, bnderef, bddisp, MPI_BYTE, MPI_COMM_WORLD, &areq[1]);
-  MPI_Iallgatherv(MPI_IN_PLACE, nref[Globals::my_rank], MPI_INT,
-                  fref, nref, rdisp, MPI_INT, MPI_COMM_WORLD, &areq[2]);
-  MPI_Waitall(3, areq, MPI_STATUS_IGNORE);
+  if(tnref>0 && tnderef>minbl) {
+    MPI_Iallgatherv(MPI_IN_PLACE, bnref[Globals::my_rank],   MPI_BYTE,
+                    lref,   bnref,   brdisp, MPI_BYTE, MPI_COMM_WORLD, &areq[0]);
+    MPI_Iallgatherv(MPI_IN_PLACE, nref[Globals::my_rank], MPI_INT,
+                    fref, nref, rdisp, MPI_INT, MPI_COMM_WORLD, &areq[1]);
+    MPI_Iallgatherv(MPI_IN_PLACE, bnderef[Globals::my_rank], MPI_BYTE,
+                    lderef, bnderef, bddisp, MPI_BYTE, MPI_COMM_WORLD, &areq[2]);
+    MPI_Waitall(3, areq, MPI_STATUS_IGNORE);
+  }
+  else if(tnref>0) {
+    MPI_Iallgatherv(MPI_IN_PLACE, bnref[Globals::my_rank],   MPI_BYTE,
+                    lref,   bnref,   brdisp, MPI_BYTE, MPI_COMM_WORLD, &areq[0]);
+    MPI_Iallgatherv(MPI_IN_PLACE, nref[Globals::my_rank], MPI_INT,
+                    fref, nref, rdisp, MPI_INT, MPI_COMM_WORLD, &areq[1]);
+    MPI_Waitall(2, areq, MPI_STATUS_IGNORE);
+  }
+  else if(tnderef>minbl) {
+    MPI_Allgatherv(MPI_IN_PLACE, bnderef[Globals::my_rank], MPI_BYTE,
+                    lderef, bnderef, bddisp, MPI_BYTE, MPI_COMM_WORLD);
+  }
 #endif
+  delete [] nref;
+  delete [] bnref;
+  delete [] ddisp;
+  delete [] rdisp;
+  delete [] brdisp;
+
+  // calculate the list of the newly derefined blocks
+  int ke=0, je=0, ctnd=0;
+  if(mesh_size.nx2 > 1) je=1;
+  if(mesh_size.nx3 > 1) ke=1;
+  for(int n=0; n<tnderef; n++) {
+    if((lderef[n].lx1&1L)==0 && (lderef[n].lx2&1L)==0 && (lderef[n].lx3&1L)==0) {
+      int r=n+1, rr=0;
+      for(long int k=0;k<=ke;k++) {
+        for(long int j=0;j<=je;j++) {
+          for(long int i=0;i<=1;i++) {
+            if((lderef[n].lx1+i)==lderef[r].lx1
+            && (lderef[n].lx2+j)==lderef[r].lx2
+            && (lderef[n].lx3+k)==lderef[r].lx3
+            &&  lderef[n].level ==lderef[r].level)
+              rr++;
+            r++;
+          }
+        }
+      }
+      if(rr==minbl) {
+        clderef[ctnd].lx1  =(lderef[n].lx1>>1L);
+        clderef[ctnd].lx2  =(lderef[n].lx2>>1L);
+        clderef[ctnd].lx3  =(lderef[n].lx3>>1L);
+        clderef[ctnd].level=lderef[n].level-1;
+        ctnd++;
+      }
+    }
+  }
+  // sort the lists by level
+  if(ctnd>1)
+    std::sort(clderef, &(clderef[ctnd-1]), LogicalLocation::Greater);
+
+  delete [] nderef;
+  delete [] bnderef;
+  delete [] bddisp;
+  if(tnderef>minbl)
+    delete [] lderef;
 
   // Now the lists of the blocks to be refined and derefined are completed
   if(Globals::my_rank==0) {
@@ -1764,27 +1815,38 @@ void Mesh::MeshRefinement(void)
                 << lref[n].lx2 << " " << lref[n].lx3 << " " << lref[n].level
                 << " " << fref[n] << std::endl;
     }
-    for(int n=0; n<tnderef; n++)
-      std::cout << "Derefine " << n << " :  Location " << lderef[n].lx1 << " " << 
-           lderef[n].lx2 << " " << lderef[n].lx3 << " " << lderef[n].level << std::endl;
+    for(int n=0; n<ctnd; n++)
+      std::cout << "Derefine " << n << " :  Location " << clderef[n].lx1 << " " << 
+           clderef[n].lx2 << " " << clderef[n].lx3 << " " << clderef[n].level << std::endl;
   }
 
+  // start tree manipulation
+  // Step 1. perform refinement
+
+  // Step 2. perform derefinement
+
+  // Step 3. assign new costs
+#ifdef MPI
+  // receive the cost list
+  MPI_Wait(&areq[3], MPI_STATUS_IGNORE);
+#endif
+
+
+  // re-initialize the MeshBlocks
+  pmb=pblock;
+  while(pmb!=NULL) {
+    pblock->SearchAndSetNeighbors(tree, ranklist, nslist);
+    pmb=pmb->next;
+  }
+  Initialize(2, pin);
+  
 
   // free temporary arrays
-  delete [] nref;
-  delete [] nderef;
-  delete [] bnref;
-  delete [] bnderef;
-  delete [] rdisp;
-  delete [] ddisp;
-  delete [] brdisp;
-  delete [] bddisp;
   if(tnref!=0) {
     delete [] lref;
     delete [] fref;
   }
-  if(tnderef!=0)
-    delete [] lderef;
-
+  if(tnderef>minbl)
+    delete [] clderef;
   return;
 }
