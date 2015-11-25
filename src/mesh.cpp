@@ -45,6 +45,7 @@
 #include "outputs/wrapper.hpp"
 #include "task_list.hpp"
 #include "mesh_refinement/mesh_refinement.hpp"
+#include "utils/buffer_utils.hpp"
 
 // this class header
 #include "mesh.hpp"
@@ -1987,7 +1988,7 @@ void Mesh::MeshRefinement(ParameterInput *pin)
         if(newrank[nn]==Globals::my_rank) continue;
         sendbuf[k] = new Real[bssame];
         // pack
-
+//        BufferUtility::Pack4DData();
         int tag=CreateAMRMPITag(nn-nslist[newrank[nn]], 0, 0, 0);
         MPI_Isend(sendbuf[k], bssame, MPI_ATHENA_REAL, newrank[nn],
                   tag, MPI_COMM_WORLD, &(req_send[k]));
