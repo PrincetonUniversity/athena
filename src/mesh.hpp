@@ -118,7 +118,7 @@ public:
 class Mesh {
 private:
   int root_level, max_level, current_level;
-  int nbtotal, nbstart, nbend;
+  int nbtotal;
   int maxneighbor_;
   int num_mesh_threads_;
   int *nslist, *ranklist, *nblist;
@@ -132,7 +132,7 @@ private:
   Real MeshGeneratorX3(Real x, RegionSize rs);
 
   void MeshTest(int dim);
-  void LoadBalancing(Real *clist, int *rlist, int *slist, int *nlist);
+  void LoadBalancing(Real *clist, int *rlist, int *slist, int *nlist, int nb);
 
   friend class RestartOutput;
   friend class MeshBlock;

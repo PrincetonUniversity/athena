@@ -3366,16 +3366,6 @@ unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2)
 
 
 //--------------------------------------------------------------------------------------
-//! \fn unsigned int CreateMPITag(int lid, int flag, int phys, int bufid)
-//  \brief calculate an MPI tag
-unsigned int CreateMPITag(int lid, int flag, int phys, int bufid)
-{
-// tag = local id of destination (18) + flag (2) + physics (4) + bufid(7)
-  return (lid<<13) | (flag<<11) | (phys<<7) | bufid;
-}
-
-
-//--------------------------------------------------------------------------------------
 //! \fn int BufferID(int dim, bool multilevel, bool face_only)
 //  \brief calculate neighbor indexes and target buffer IDs
 int BufferID(int dim, bool multilevel, bool face_only)

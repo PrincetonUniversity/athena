@@ -26,11 +26,14 @@ public:
   ~MeshBlockTree();
   void CreateRootGrid(long int nx, long int ny, long int nz, int nl);
   void AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc, int dim, int* mesh_bcs,
-                    long int rbx, long int rby, long int rbz, int rl);
+                    long int rbx, long int rby, long int rbz, int rl, int &nnew);
   void AddMeshBlockWithoutRefine(LogicalLocation rloc, 
                                  long int rbx, long int rby, long int rbz, int rl);
   void Refine(MeshBlockTree& root, int dim, int* mesh_bcs,
-              long int rbx, long int rby, long int rbz, int rl);
+              long int rbx, long int rby, long int rbz, int rl, int &nnew);
+  void Derefine(MeshBlockTree& root, int dim, int* mesh_bcs,
+              long int rbx, long int rby, long int rbz, int rl, int &ndel);
+  MeshBlockTree* FindMeshBlock(LogicalLocation tloc);
   void CountMeshBlock(int& count);
   void GetMeshBlockList(LogicalLocation *list, int *pglist, int& count);
   MeshBlockTree* FindNeighbor(LogicalLocation myloc, int ox1, int ox2, int ox3, int *bcs,

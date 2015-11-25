@@ -22,8 +22,30 @@
 //  changed.
 //======================================================================================
 
+#include "athena.hpp"
+
 namespace Globals
 {
   int my_rank; // MPI rank of this process, set at start of main()
   int nranks;  // total number of MPI ranks, set at start of main()
 }
+
+//--------------------------------------------------------------------------------------
+//! \fn unsigned int CreateMPITag(int lid, int flag, int phys, int bufid)
+//  \brief calculate an MPI tag
+unsigned int CreateMPITag(int lid, int flag, int phys, int bufid)
+{
+// tag = local id of destination (18) + flag (2) + bufid(7) + physics(4)
+  return (lid<<13) | (flag<<11) | (bufid<<4) | phys;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn unsigned int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3)
+//  \brief calculate an MPI tag for AMR block transfer
+unsigned int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3)
+{
+// tag = local id of destination (25) + ox1(1) + ox2(1) + ox3(1) + physics(4)
+  return (lid<<7) | (ox1<<6)| (ox2<<5) | (ox3<<4) | tag_amr;
+}
+
+

@@ -33,6 +33,8 @@ typedef struct LogicalLocation {
   int level;
   LogicalLocation() : lx1(-1), lx2(-1), lx3(-1), level(-1) {};
   // for sort from the finest level
+  bool operator==(LogicalLocation &rloc) { return ((rloc.level==level) &&
+                 (rloc.lx1==lx1) && (rloc.lx2==lx2) && (rloc.lx3==lx3)); }
   static bool Less(const LogicalLocation & lloc, const LogicalLocation &rloc)
   { return lloc.level < rloc.level; };
   static bool Greater(const LogicalLocation & lloc, const LogicalLocation &rloc)

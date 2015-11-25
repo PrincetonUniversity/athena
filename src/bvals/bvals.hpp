@@ -182,7 +182,6 @@ private:
 };
 
 unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
-unsigned int CreateMPITag(int lid, int flag, int phys, int bufid);
 int BufferID(int dim, bool multilevel, bool face_only);
 int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2, int bmax);
 

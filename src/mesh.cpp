@@ -368,7 +368,8 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
         for(long int i=lx1min; i<lx1max; i+=2) {
           LogicalLocation nloc;
           nloc.level=lrlev, nloc.lx1=i, nloc.lx2=0, nloc.lx3=0;
-          tree.AddMeshBlock(tree,nloc,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level);
+          int nnew;
+          tree.AddMeshBlock(tree,nloc,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level,nnew);
         }
       }
       if(dim==2) {
@@ -376,7 +377,8 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
           for(long int i=lx1min; i<lx1max; i+=2) {
             LogicalLocation nloc;
             nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=0;
-            tree.AddMeshBlock(tree,nloc,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level);
+            int nnew;
+            tree.AddMeshBlock(tree,nloc,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level,nnew);
           }
         }
       }
@@ -386,7 +388,8 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
             for(long int i=lx1min; i<lx1max; i+=2) {
               LogicalLocation nloc;
               nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=k;
-              tree.AddMeshBlock(tree,nloc,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level);
+              int nnew;
+              tree.AddMeshBlock(tree,nloc,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level,nnew);
             }
           }
         }
@@ -442,14 +445,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   for(int i=0;i<nbtotal;i++)
     costlist[i]=1.0; // the simplest estimate; all the blocks are equal
 
-  LoadBalancing(costlist, ranklist, nslist, nblist);
-
-  // store my nbstart and nbend
-  nbstart=nslist[Globals::my_rank];
-  if((Globals::my_rank)+1 == Globals::nranks)
-    nbend=nbtotal-1;
-  else 
-    nbend=nslist[(Globals::my_rank)+1]-1;
+  LoadBalancing(costlist, ranklist, nslist, nblist, nbtotal);
 
   // Mesh test only; do not create meshes
   if(test_flag>0) {
@@ -458,8 +454,10 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     return;
   }
 
-// create MeshBlock list for this process
-  for(int i=nbstart;i<=nbend;i++) {
+  // create MeshBlock list for this process
+  int nbs=nslist[Globals::my_rank];
+  int nbe=nbs+nblist[Globals::my_rank]-1;
+  for(int i=nbs; i<=nbe; i++) {
     long int &lx1=loclist[i].lx1;
     long int &lx2=loclist[i].lx2;
     long int &lx3=loclist[i].lx3;
@@ -541,12 +539,12 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     }
 
     // create a block and add into the link list
-    if(i==nbstart) {
-      pblock = new MeshBlock(i, i-nbstart, loclist[i], block_size, block_bcs, this, pin);
+    if(i==nbs) {
+      pblock = new MeshBlock(i, i-nbs, loclist[i], block_size, block_bcs, this, pin);
       pfirst = pblock;
     }
     else {
-      pblock->next = new MeshBlock(i, i-nbstart, loclist[i], block_size, block_bcs, this, pin);
+      pblock->next = new MeshBlock(i, i-nbs, loclist[i], block_size, block_bcs, this, pin);
       pblock->next->prev = pblock;
       pblock = pblock->next;
     }
@@ -571,7 +569,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   MeshBlock *pfirst;
   int i, j, nerr, dim;
   IOWrapperSize_t *offset;
-  Real totalcost, targetcost, maxcost, mincost, mycost;
 
 // mesh test
   if(test_flag>0) Globals::nranks=test_flag;
@@ -649,8 +646,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   // ... perhaps I should pack them.
   multilevel=false;
   nerr=0;
-  maxcost=0.0;
-  mincost=(FLT_MAX);
   for(int i=0;i<nbtotal;i++) {
     int bgid;
     if(resfile.Read(&bgid,sizeof(int),1)!=1) nerr++;
@@ -659,8 +654,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
     if(loclist[i].level>current_level) current_level=loclist[i].level;
     if(resfile.Read(&(costlist[i]),sizeof(Real),1)!=1) nerr++;
     if(resfile.Read(&(offset[i]),sizeof(IOWrapperSize_t),1)!=1) nerr++;
-    mincost=std::min(mincost,costlist[i]);
-    maxcost=std::max(maxcost,costlist[i]);
   }
   if(nerr>0) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -709,14 +702,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   }
 #endif
 
-  LoadBalancing(costlist, ranklist, nslist, nblist);
-
-  // store my nbstart and nbend
-  nbstart=nslist[Globals::my_rank];
-  if((Globals::my_rank)+1==Globals::nranks)
-    nbend=nbtotal-1;
-  else 
-    nbend=nslist[(Globals::my_rank)+1]-1;
+  LoadBalancing(costlist, ranklist, nslist, nblist, nbtotal);
 
   // Mesh test only; do not create meshes
   if(test_flag>0) {
@@ -727,15 +713,17 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   }
 
   // load MeshBlocks (parallel)
-  for(i=nbstart;i<=nbend;i++) {
+  int nbs=nslist[Globals::my_rank];
+  int nbe=nbs+nblist[Globals::my_rank]-1;  
+  for(i=nbs;i<=nbe;i++) {
     // create a block and add into the link list
-    if(i==nbstart) {
-      pblock = new MeshBlock(i, i-nbstart, this, pin, loclist[i], resfile, offset[i],
+    if(i==nbs) {
+      pblock = new MeshBlock(i, i-nbs, this, pin, loclist[i], resfile, offset[i],
                              costlist[i], ranklist, nslist);
       pfirst = pblock;
     }
     else {
-      pblock->next = new MeshBlock(i, i-nbstart, this, pin, loclist[i], resfile,
+      pblock->next = new MeshBlock(i, i-nbs, this, pin, loclist[i], resfile,
                                    offset[i], costlist[i], ranklist, nslist);
       pblock->next->prev = pblock;
       pblock = pblock->next;
@@ -1215,7 +1203,7 @@ size_t MeshBlock::GetBlockSizeInBytes(void)
 void Mesh::UpdateOneStep(void)
 {
   MeshBlock *pmb = pblock;
-  int nb=nbend-nbstart+1;
+  int nb=nblist[Globals::my_rank];
 
   // initialize
   while (pmb != NULL)  {
@@ -1598,13 +1586,14 @@ void MeshBlock::IntegrateConservative(Real *tcons)
 
 
 //--------------------------------------------------------------------------------------
-// \!fn void Mesh::LoadBalancing(Real *clist, int *rlist, int *slist, int *nlist)
+// \!fn void Mesh::LoadBalancing(Real *clist, int *rlist, int *slist, int *nlist, int nb)
 // \brief Calculate distribution of MeshBlocks based on the cost list
-void Mesh::LoadBalancing(Real *clist, int *rlist, int *slist, int *nlist)
+void Mesh::LoadBalancing(Real *clist, int *rlist, int *slist, int *nlist, int nb)
 {
+  std::stringstream msg;
   Real totalcost=0, maxcost=0.0, mincost=(FLT_MAX);
 
-  for(int i=0; i<nbtotal; i++) {
+  for(int i=0; i<nb; i++) {
     totalcost+=clist[i];
     mincost=std::min(mincost,clist[i]);
     maxcost=std::max(maxcost,clist[i]);
@@ -1613,7 +1602,13 @@ void Mesh::LoadBalancing(Real *clist, int *rlist, int *slist, int *nlist)
   Real targetcost=totalcost/Globals::nranks;
   Real mycost=0.0;
   // create rank list from the end: the master node should have less load
-  for(int i=nbtotal-1;i>=0;i--) {
+  for(int i=nb-1;i>=0;i--) {
+    if(targetcost==0.0) {
+      msg << "### FATAL ERROR in LoadBalancing" << std::endl
+          << "There is at least one process which has no MeshBlock" << std::endl
+          << "Decrease the number of processes or use smaller MeshBlocks." << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
     mycost+=clist[i];
     rlist[i]=j;
     if(mycost >= targetcost && j>0) {
@@ -1625,16 +1620,16 @@ void Mesh::LoadBalancing(Real *clist, int *rlist, int *slist, int *nlist)
   }
   slist[0]=0;
   j=0;
-  for(int i=1;i<nbtotal;i++) { // make the list of nbstart
+  for(int i=1;i<nb;i++) { // make the list of nbstart and nblocks
     if(rlist[i]!=rlist[i-1]) {
       nlist[j]=i-nslist[j];
       slist[++j]=i;
     }
   }
-  nlist[j]=nbtotal-slist[j];
+  nlist[j]=nb-slist[j];
 
 #ifdef MPI_PARALLEL
-  if(nbtotal % Globals::nranks != 0 && adaptive == false
+  if(nb % Globals::nranks != 0 && adaptive == false
   && maxcost == mincost && Globals::my_rank==0) {
     std::cout << "### Warning in LoadBalancing" << std::endl
               << "The number of MeshBlocks cannot be divided evenly. "
@@ -1716,15 +1711,15 @@ void Mesh::MeshRefinement(ParameterInput *pin)
   int *fref;
   if(tnref!=0) {
     lref = new LogicalLocation[tnref];
-    fref = new int[tnref];
+//    fref = new int[tnref];
   }
 
-  int minbl=2;
-  if(mesh_size.nx2 > 1) minbl=4;
-  if(mesh_size.nx3 > 1) minbl=8;
-  if(tnderef>minbl) {
+  int nlbl=2, dim=1;
+  if(mesh_size.nx2 > 1) nlbl=4, dim=2;
+  if(mesh_size.nx3 > 1) nlbl=8, dim=3;
+  if(tnderef>nlbl) {
     lderef = new LogicalLocation[tnderef];
-    clderef = new LogicalLocation[tnderef/minbl];
+    clderef = new LogicalLocation[tnderef/nlbl];
   }
 
   // collect the locations and costs
@@ -1733,33 +1728,30 @@ void Mesh::MeshRefinement(ParameterInput *pin)
   while(pmb!=NULL) {
     if(pmb->pmr->refine_flag_== 1) {
       lref[iref]=pmb->loc;
-      fref[iref]=pmb->pmr->neighbor_rflag_;
+//      fref[iref]=pmb->pmr->neighbor_rflag_;
       iref++;
     }
-    if(pmb->pmr->refine_flag_==-1 && tnderef>minbl) {
+    if(pmb->pmr->refine_flag_==-1 && tnderef>nlbl) {
       lderef[ideref]=pmb->loc;
       ideref++;
     }
     pmb=pmb->next;
   }
 #ifdef MPI_PARALLEL
-  if(tnref>0 && tnderef>minbl) {
+  if(tnref>0 && tnderef>nlbl) {
     MPI_Iallgatherv(MPI_IN_PLACE, bnref[Globals::my_rank],   MPI_BYTE,
                     lref,   bnref,   brdisp, MPI_BYTE, MPI_COMM_WORLD, &areq[0]);
-    MPI_Iallgatherv(MPI_IN_PLACE, nref[Globals::my_rank], MPI_INT,
-                    fref, nref, rdisp, MPI_INT, MPI_COMM_WORLD, &areq[1]);
     MPI_Iallgatherv(MPI_IN_PLACE, bnderef[Globals::my_rank], MPI_BYTE,
-                    lderef, bnderef, bddisp, MPI_BYTE, MPI_COMM_WORLD, &areq[2]);
-    MPI_Waitall(3, areq, MPI_STATUS_IGNORE);
+                    lderef, bnderef, bddisp, MPI_BYTE, MPI_COMM_WORLD, &areq[1]);
+    MPI_Waitall(2, areq, MPI_STATUS_IGNORE);
+//    MPI_Iallgatherv(MPI_IN_PLACE, nref[Globals::my_rank], MPI_INT,
+//                    fref, nref, rdisp, MPI_INT, MPI_COMM_WORLD, &areq[1]);
   }
   else if(tnref>0) {
-    MPI_Iallgatherv(MPI_IN_PLACE, bnref[Globals::my_rank],   MPI_BYTE,
-                    lref,   bnref,   brdisp, MPI_BYTE, MPI_COMM_WORLD, &areq[0]);
-    MPI_Iallgatherv(MPI_IN_PLACE, nref[Globals::my_rank], MPI_INT,
-                    fref, nref, rdisp, MPI_INT, MPI_COMM_WORLD, &areq[1]);
-    MPI_Waitall(2, areq, MPI_STATUS_IGNORE);
+    MPI_Allgatherv(MPI_IN_PLACE, bnref[Globals::my_rank],   MPI_BYTE,
+                    lref,   bnref,   brdisp, MPI_BYTE, MPI_COMM_WORLD);
   }
-  else if(tnderef>minbl) {
+  else if(tnderef>nlbl) {
     MPI_Allgatherv(MPI_IN_PLACE, bnderef[Globals::my_rank], MPI_BYTE,
                     lderef, bnderef, bddisp, MPI_BYTE, MPI_COMM_WORLD);
   }
@@ -1771,14 +1763,14 @@ void Mesh::MeshRefinement(ParameterInput *pin)
   delete [] brdisp;
 
   // calculate the list of the newly derefined blocks
-  int ke=0, je=0, ctnd=0;
-  if(mesh_size.nx2 > 1) je=1;
-  if(mesh_size.nx3 > 1) ke=1;
+  int lk=0, lj=0, ctnd=0;
+  if(mesh_size.nx2 > 1) lj=1;
+  if(mesh_size.nx3 > 1) lk=1;
   for(int n=0; n<tnderef; n++) {
     if((lderef[n].lx1&1L)==0 && (lderef[n].lx2&1L)==0 && (lderef[n].lx3&1L)==0) {
       int r=n+1, rr=0;
-      for(long int k=0;k<=ke;k++) {
-        for(long int j=0;j<=je;j++) {
+      for(long int k=0;k<=lk;k++) {
+        for(long int j=0;j<=lj;j++) {
           for(long int i=0;i<=1;i++) {
             if((lderef[n].lx1+i)==lderef[r].lx1
             && (lderef[n].lx2+j)==lderef[r].lx2
@@ -1789,7 +1781,7 @@ void Mesh::MeshRefinement(ParameterInput *pin)
           }
         }
       }
-      if(rr==minbl) {
+      if(rr==nlbl) {
         clderef[ctnd].lx1  =(lderef[n].lx1>>1L);
         clderef[ctnd].lx2  =(lderef[n].lx2>>1L);
         clderef[ctnd].lx3  =(lderef[n].lx3>>1L);
@@ -1805,32 +1797,260 @@ void Mesh::MeshRefinement(ParameterInput *pin)
   delete [] nderef;
   delete [] bnderef;
   delete [] bddisp;
-  if(tnderef>minbl)
+  if(tnderef>nlbl)
     delete [] lderef;
 
   // Now the lists of the blocks to be refined and derefined are completed
   if(Globals::my_rank==0) {
     for(int n=0; n<tnref; n++) {
       std::cout << "Refine   " << n << " :  Location " << lref[n].lx1 << " "
-                << lref[n].lx2 << " " << lref[n].lx3 << " " << lref[n].level
-                << " " << fref[n] << std::endl;
+        << lref[n].lx2 << " " << lref[n].lx3 << " " << lref[n].level << std::endl;
     }
     for(int n=0; n<ctnd; n++)
       std::cout << "Derefine " << n << " :  Location " << clderef[n].lx1 << " " << 
            clderef[n].lx2 << " " << clderef[n].lx3 << " " << clderef[n].level << std::endl;
   }
 
-  // start tree manipulation
+  // Start tree manipulation
   // Step 1. perform refinement
-
+  int nnew=0, ndel, ntot=0;
+  for(int n=0; n<tnref; n++) {
+    MeshBlockTree *bt=tree.FindMeshBlock(lref[n]);
+    bt->Refine(tree, dim, mesh_bcs, nrbx1, nrbx2, nrbx3, root_level, nnew);
+  }
   // Step 2. perform derefinement
+  for(int n=0; n<ctnd; n++) {
+    MeshBlockTree *bt=tree.FindMeshBlock(clderef[n]);
+    bt->Refine(tree, dim, mesh_bcs, nrbx1, nrbx2, nrbx3, root_level, ndel);
+  }
+  ntot=nbtotal+nnew-ndel;
 
-  // Step 3. assign new costs
-#ifdef MPI
-  // receive the cost list
+  // Tree manipulation completed
+
+  // Block exchange
+  // Step 1. construct new lists
+  LogicalLocation *newloc = new LogicalLocation[ntot];
+  int *newrank = new int[ntot];
+  Real *newcost = new Real[ntot];
+  int *newtoold = new int[ntot];
+  int *oldtonew = new int[nbtotal];
+  int oldnb=nbtotal;
+  tree.GetMeshBlockList(newloc,newtoold,nbtotal);
+  // create a list mapping the previous gid to the current one
+  oldtonew[0]=0;
+  int k=1;
+  for(int n=1; n<ntot; n++) {
+    if(newtoold[n]==newtoold[n-1]+1) { // normal
+      oldtonew[k++]=n;
+    }
+    else if(newtoold[n]==newtoold[n-1]+nlbl) { // derefined
+      for(int j=0; j<nlbl-1; j++)
+        oldtonew[k++]=n;
+    }
+  }
+#ifdef MPI_PARALLEL
+  // receive the old cost list
   MPI_Wait(&areq[3], MPI_STATUS_IGNORE);
 #endif
+  for(int n=0; n<ntot; n++) {
+    int pg=newtoold[n];
+    if(newloc[n].level>=loclist[pg].level) // same or refined
+      newcost[n]=costlist[pg];
+    else {
+      Real acost=0.0;
+      for(int l=0; l<nlbl; l++)
+        acost+=costlist[pg+l];
+      newcost[n]=acost/nlbl;
+    }
+  }
 
+  // store old nbstart and nbend
+  int onbs=nslist[Globals::my_rank];
+  int onbe=onbs+nblist[Globals::my_rank]-1;
+  // Step 2. Calculate new load balance
+  LoadBalancing(newcost, newrank, nslist, nblist, ntot);
+
+/*  for(int n=0; n<ntot; n++) {
+    int pg=newtoold[n];
+    std::cout << "new gid " << n << " : " << newloc[n].lx1 << " " << newloc[n].lx2 << " " << newloc[n].lx3 << " " << newloc[n].level 
+              << " <- " << pg << " : " << loclist[pg].lx1 << " " << loclist[pg].lx2 << " " << loclist[pg].lx3 << " " << loclist[pg].level << std::endl;
+  }
+  for(int n=0; n<oldnb; n++) {
+    int gp=oldtonew[n];
+    std::cout << "old gid " << n << " : " << loclist[n].lx1 << " " << loclist[n].lx2 << " " << loclist[n].lx3 << " " << loclist[n].level 
+              << " -> " << gp << " : " << newloc[gp].lx1 << " " << newloc[gp].lx2 << " " << newloc[gp].lx3 << " " << newloc[gp].level << std::endl;
+  }
+*/
+
+  int nbs=nslist[Globals::my_rank];
+  int nbe=nbs+nblist[Globals::my_rank]-1;
+
+#ifdef MPI_PARALLEL
+  // Step 3. count the number of the blocks to be sent / received
+  int nsend=0, nrecv=0;
+  for(int n=nbs; n<=nbe; n++) { 
+    int on=newtoold[n];
+    if(loclist[on].level > newloc[n].level) { // f2c
+      for(int k=0; k<nlbl; k++) {
+        if(ranklist[on+k]!=Globals::my_rank)
+          nrecv++;
+      }
+    }
+    else {
+      if(ranklist[on]!=Globals::my_rank)
+        nrecv++;
+    }
+  }
+  for(int n=onbs; n<=onbe; n++) { 
+    int nn=oldtonew[n];
+    if(loclist[n].level < newloc[nn].level) { // c2f
+      for(int k=0; k<nlbl; k++) {
+        if(newrank[nn+k]!=Globals::my_rank)
+          nsend++;
+      }
+    }
+    else {
+      if(newrank[nn]!=Globals::my_rank)
+        nsend++;
+    }
+  }
+  //std::cout << Globals::my_rank << " is sending " << nsend << " blocks and receiving " << nrecv << " blocks."<< std::endl;
+
+  // Step 4. calculate buffer sizes
+  Real **sendbuf, **recvbuf;
+  int f2, f3;
+  int &bnx1=pblock->block_size.nx1;
+  int &bnx2=pblock->block_size.nx2;
+  int &bnx3=pblock->block_size.nx3;
+  if(mesh_size.nx2>1) f2=1;
+  else f2=0;
+  if(mesh_size.nx3>1) f3=1;
+  else f3=0;
+  int bssame=bnx1*bnx2*bnx3*NHYDRO;
+  int bsf2c=(bnx1/2)*((bnx2+1)/2)*((bnx3+1)/2)*NHYDRO;
+  int bsc2f=(bnx1/2+1)*((bnx2+1)/2+f2)*((bnx3+1)/2+f3)*NHYDRO;
+  if(MAGNETIC_FIELDS_ENABLED) {
+    bssame+=(bnx1+1)*bnx2*bnx3+bnx1*(bnx2+f2)*bnx3+bnx1*bnx2*(bnx3+f3);
+    bsf2c+=((bnx1/2)+1)*((bnx2+1)/2)*((bnx3+1)/2)
+          +(bnx1/2)*(((bnx2+1)/2)+f2)*((bnx3+1)/2)
+          +(bnx1/2)*((bnx2+1)/2)*(((bnx3+1)/2)+f3);
+    bsc2f+=((bnx1/2)+1+1)*((bnx2+1)/2+f2)*((bnx3+1)/2+f3)
+          +(bnx1/2+1)*(((bnx2+1)/2)+f2+f2)*((bnx3+1)/2+f3)
+          +(bnx1/2+1)*((bnx2+1)/2+f2)*(((bnx3+1)/2)+f3+f3);
+  }
+
+  MPI_Request *req_send, *req_recv;
+  // Step 5. allocate and start receiving buffers
+  if(nrecv!=0) {
+    recvbuf = new Real*[nrecv];
+    req_recv = new MPI_Request[nrecv];
+    int k=0;
+    for(int n=nbs; n<=nbe; n++) { 
+      int on=newtoold[n];
+      LogicalLocation &oloc=loclist[on];
+      LogicalLocation &nloc=newloc[n];
+      if(oloc.level>nloc.level) { // f2c
+        for(int l=0; l<nlbl; l++) {
+          if(ranklist[on+l]==Globals::my_rank) continue;
+          LogicalLocation &lloc=loclist[on+l];
+          int ox1=lloc.lx1&1L, ox2=lloc.lx2&1L, ox3=lloc.lx3&1L;
+          recvbuf[k] = new Real[bsf2c];
+          int tag=CreateAMRMPITag(n-nbs, ox1, ox2, ox3);
+          MPI_Irecv(recvbuf[k], bsf2c, MPI_ATHENA_REAL, ranklist[on+l],
+                    tag, MPI_COMM_WORLD, &(req_recv[k]));
+          k++;
+        }
+      }
+      else { // same or c2f
+        if(ranklist[on]==Globals::my_rank) continue;
+        int size;
+        if(oloc.level == nloc.level) size=bssame;
+        else size=bsc2f;
+        recvbuf[k] = new Real[size];
+        int tag=CreateAMRMPITag(n-nbs, 0, 0, 0);
+        MPI_Irecv(recvbuf[k], size, MPI_ATHENA_REAL, ranklist[on],
+                  tag, MPI_COMM_WORLD, &(req_recv[k]));
+        k++;
+      }
+    }
+  }
+  // Step 6. allocate, pack and start sending buffers
+  if(nsend!=0) {
+    sendbuf = new Real*[nsend];
+    req_send = new MPI_Request[nsend];
+    int k=0;
+    for(int n=onbs; n<=onbe; n++) { 
+      int nn=oldtonew[n];
+      LogicalLocation &oloc=loclist[n];
+      LogicalLocation &nloc=newloc[nn];
+      if(nloc.level==oloc.level) { // same
+        if(newrank[nn]==Globals::my_rank) continue;
+        sendbuf[k] = new Real[bssame];
+        // pack
+
+        int tag=CreateAMRMPITag(nn-nslist[newrank[nn]], 0, 0, 0);
+        MPI_Isend(sendbuf[k], bssame, MPI_ATHENA_REAL, newrank[nn],
+                  tag, MPI_COMM_WORLD, &(req_send[k]));
+        k++;
+      }
+      else if(nloc.level>oloc.level) { // c2f
+        for(int l=0; l<nlbl; l++) {
+          if(newrank[nn+l]==Globals::my_rank) continue;
+          LogicalLocation &lloc=newloc[nn+l];
+          int ox1=lloc.lx1&1L, ox2=lloc.lx2&1L, ox3=lloc.lx3&1L;
+          sendbuf[k] = new Real[bsc2f];
+          // pack
+
+          int tag=CreateAMRMPITag(nn-nslist[newrank[nn]], 0, 0, 0);
+          MPI_Isend(sendbuf[k], bsc2f, MPI_ATHENA_REAL, newrank[nn+l],
+                    tag, MPI_COMM_WORLD, &(req_send[k]));
+          k++;
+        }
+      }
+      else { // f2c
+        if(newrank[nn]==Globals::my_rank) continue;
+        int ox1=oloc.lx1&1L, ox2=oloc.lx2&1L, ox3=oloc.lx3&1L;
+        sendbuf[k] = new Real[bsf2c];
+        // restrict and pack
+
+        int tag=CreateAMRMPITag(nn-nslist[newrank[nn]], ox1, ox2, ox3);
+        MPI_Isend(sendbuf[k], bsf2c, MPI_ATHENA_REAL, newrank[nn],
+                  tag, MPI_COMM_WORLD, &(req_send[k]));
+        k++;
+      }
+    }
+  }
+
+#endif
+
+  // deallocate arrays
+  delete [] loclist;
+  delete [] ranklist;
+  delete [] costlist;
+  delete [] newtoold;
+  delete [] oldtonew;
+#ifdef MPI_PARALLEL
+  if(nsend!=0) {
+    MPI_Waitall(nsend, req_send, MPI_STATUS_IGNORE);
+    for(int n=0;n<nsend;n++)
+      delete [] sendbuf[n];
+    delete [] sendbuf;
+    delete [] req_send;
+  }
+  if(nrecv!=0) {
+    for(int n=0;n<nrecv;n++)
+      delete [] recvbuf[n];
+    delete [] recvbuf;
+    delete [] req_recv;
+  }
+#endif
+
+  // update the lists
+  loclist = newloc;
+  ranklist = newrank;
+  costlist = newcost;
+  nbtotal=ntot;
+  exit(1);
 
   // re-initialize the MeshBlocks
   pmb=pblock;
@@ -1844,9 +2064,9 @@ void Mesh::MeshRefinement(ParameterInput *pin)
   // free temporary arrays
   if(tnref!=0) {
     delete [] lref;
-    delete [] fref;
+//    delete [] fref;
   }
-  if(tnderef>minbl)
+  if(tnderef>nlbl)
     delete [] clderef;
   return;
 }
