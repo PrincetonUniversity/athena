@@ -29,9 +29,9 @@
 #include "../coordinates/coordinates.hpp"
 
 // BCs on L-x1 (left edge) of grid with jet inflow conditions
-void jet_hydro_iib(MeshBlock *pmb, AthenaArray<Real> &a,
+void jet_hydro_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                    int is, int ie, int js, int je, int ks, int ke);
-void jet_field_iib(MeshBlock *pmb, InterfaceField &a,
+void jet_field_iib(MeshBlock *pmb, Coordinates *pco, InterfaceField &a,
                    int is, int ie, int js, int je, int ks, int ke);
 
 // Make radius of jet and jet variables global so they can be accessed by BC functions
@@ -126,13 +126,13 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 //! \fn void jet_hydro_iib()
 //  \brief Sets boundary condition for hydro on left X boundary (iib) for jet problem
 
-void jet_hydro_iib(MeshBlock *pmb, AthenaArray<Real> &a,
+void jet_hydro_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                    int is, int ie, int js, int je, int ks, int ke)
 {
   for(int k=ks; k<=ke; ++k){
   for(int j=js; j<=je; ++j){
     for(int i=1; i<=(NGHOST); ++i){
-      Real rad = sqrt(SQR(pmb->pcoord->x2v(j) - x2_0) + SQR(pmb->pcoord->x3v(k) - x3_0));
+      Real rad = sqrt(SQR(pco->x2v(j) - x2_0) + SQR(pco->x3v(k) - x3_0));
       if(rad <= r_jet){
         a(IDN,k,j,is-i) = d_jet;
         a(IM1,k,j,is-i) = d_jet*vx_jet;
@@ -157,14 +157,14 @@ void jet_hydro_iib(MeshBlock *pmb, AthenaArray<Real> &a,
 //! \fn void jet_field_iib()
 //  \brief Sets boundary condition for B field on left X boundary (iib) for jet problem
 
-void jet_field_iib(MeshBlock *pmb, InterfaceField &a,
+void jet_field_iib(MeshBlock *pmb, Coordinates *pco, InterfaceField &a,
                    int is, int ie, int js, int je, int ks, int ke)
 {
   for(int k=ks; k<=ke; ++k){
   for(int j=js; j<=je; ++j){
 #pragma simd
     for(int i=1; i<=(NGHOST); ++i){
-      Real rad = sqrt(SQR(pmb->pcoord->x2v(j) - x2_0) + SQR(pmb->pcoord->x3v(k) - x3_0));
+      Real rad = sqrt(SQR(pco->x2v(j) - x2_0) + SQR(pco->x3v(k) - x3_0));
       if(rad <= r_jet){
         a.x1f(k,j,is-i) = bx_jet;
       } else{
@@ -177,7 +177,7 @@ void jet_field_iib(MeshBlock *pmb, InterfaceField &a,
   for (int j=js; j<=je+1; ++j) {
 #pragma simd
     for (int i=1; i<=(NGHOST); ++i) {
-      Real rad = sqrt(SQR(pmb->pcoord->x2v(j) - x2_0) + SQR(pmb->pcoord->x3v(k) - x3_0));
+      Real rad = sqrt(SQR(pco->x2v(j) - x2_0) + SQR(pco->x3v(k) - x3_0));
       if(rad <= r_jet){
         a.x2f(k,j,is-i) = by_jet;
       } else{
@@ -190,7 +190,7 @@ void jet_field_iib(MeshBlock *pmb, InterfaceField &a,
   for (int j=js; j<=je; ++j) {
 #pragma simd
     for (int i=1; i<=(NGHOST); ++i) {
-      Real rad = sqrt(SQR(pmb->pcoord->x2v(j) - x2_0) + SQR(pmb->pcoord->x3v(k) - x3_0));
+      Real rad = sqrt(SQR(pco->x2v(j) - x2_0) + SQR(pco->x3v(k) - x3_0));
       if(rad <= r_jet){
         a.x3f(k,j,is-i) = bz_jet;
       } else{

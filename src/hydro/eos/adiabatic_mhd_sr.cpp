@@ -26,7 +26,6 @@ static Real EResidual(Real w_guess, Real d, Real e, Real m_sq, Real b_sq, Real s
     Real gamma_prime);
 static Real EResidualPrime(Real w_guess, Real d, Real m_sq, Real b_sq, Real s_sq,
     Real gamma_prime);
-static Real quadratic_root(Real a1, Real a0, bool greater_root);
 
 // Constructor
 // Inputs:
@@ -53,72 +52,34 @@ HydroEqnOfState::~HydroEqnOfState()
 // Variable inverter
 // Inputs:
 //   cons: conserved quantities
-//   prim_old: primitive quantities from previous half timestep (not used)
-//   b: face-centered magnetic field
+//   prim_old: primitive quantities from previous half timestep
+//   bb: face-centered magnetic field
+//   pco: pointer to Coordinates
+//   is,ie,js,je,ks,ke: index bounds of region to be updated
 // Outputs:
 //   prim: primitives
-//   bcc: cell-centered magnetic field
+//   bb_cc: cell-centered magnetic field
 // Notes:
 //   follows Mignone & McKinney 2007, MNRAS 378 1118 (MM)
 //   follows hlld_sr.c in Athena 4.2 in using W and E rather than W' and E'
 void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-    const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
-    AthenaArray<Real> &bcc)
+    const AthenaArray<Real> &prim_old, const InterfaceField &bb,
+    AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc, Coordinates *pco, int is, int ie,
+    int js, int je, int ks, int ke)
 {
   // Calculate reduced ratio of specific heats
   const Real gamma_prime = gamma_/(gamma_-1.0);
 
-  // Determine array bounds
-  MeshBlock *pb = pmy_hydro_->pmy_block;
-  Coordinates *pco = pb->pcoord;
-  int is = pb->is;
-  int ie = pb->ie;
-  int jl = pb->js;
-  int ju = pb->je;
-  int kl = pb->ks;
-  int ku = pb->ke;
-  if (pb->block_size.nx2 > 1)
-  {
-    jl -= (NGHOST);
-    ju += (NGHOST);
-  }
-  if (pb->block_size.nx3 > 1)
-  {
-    kl -= (NGHOST);
-    ku += (NGHOST);
-  }
+  // Interpolate magnetic field from faces to cell centers
+  pmy_hydro_->pmy_block->pfield->CalculateCellCenteredField(bb, bb_cc, pco, is, ie, js,
+      je, ks, ke);
 
   // Go through cells
-  for (int k = kl; k <= ku; k++)
-    for (int j = jl; j <= ju; j++)
+  for (int k = ks; k <= ke; k++)
+    for (int j = js; j <= je; j++)
     {
       #pragma simd
-      for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
-      {
-        // Extract face-centered magnetic field
-        const Real &bxm = b.x1f(k,j,i);
-        const Real &bxp = b.x1f(k,j,i+1);
-        const Real &bym = b.x2f(k,j,i);
-        const Real &byp = b.x2f(k,j+1,i);
-        const Real &bzm = b.x3f(k,j,i);
-        const Real &bzp = b.x3f(k+1,j,i);
-
-        // Extract cell-centered magnetic field
-        Real &bx = bcc(IB1,k,j,i);
-        Real &by = bcc(IB2,k,j,i);
-        Real &bz = bcc(IB3,k,j,i);
-
-        // Calculate cell-centered magnetic field
-        Real interp_param = (pco->x1v(i) - pco->x1f(i)) / pco->dx1f(i);
-        bx = (1.0-interp_param) * bxm + interp_param * bxp;
-        interp_param = (pco->x2v(j) - pco->x2f(j)) / pco->dx2f(j);
-        by = (1.0-interp_param) * bym + interp_param * byp;
-        interp_param = (pco->x3v(k) - pco->x3f(k)) / pco->dx3f(k);
-        bz = (1.0-interp_param) * bzm + interp_param * bzp;
-      }
-
-      #pragma simd
-      for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
+      for (int i = is; i <= ie; ++i)
       {
         // Extract conserved quantities
         Real &d = cons(IDN,k,j,i);
@@ -128,9 +89,9 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         const Real &mz = cons(IM3,k,j,i);
 
         // Extract cell-centered magnetic field
-        const Real &bx = bcc(IB1,k,j,i);
-        const Real &by = bcc(IB2,k,j,i);
-        const Real &bz = bcc(IB3,k,j,i);
+        const Real &bx = bb_cc(IB1,k,j,i);
+        const Real &by = bb_cc(IB2,k,j,i);
+        const Real &bz = bb_cc(IB3,k,j,i);
 
         // Calculate variations on conserved quantities
         Real m_sq = SQR(mx) + SQR(my) + SQR(mz);
@@ -210,24 +171,25 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
 // Function for converting all primitives to conserved variables
 // Inputs:
-//   kl,ku,jl,ju,il,iu: index bounds of region to be updated
 //   prim: 3D array of primitives
-//   b: 3D array of cell-centered magnetic fields
+//   bc: 3D array of cell-centered magnetic fields
+//   pco: pointer to Coordinates
+//   is,ie,js,je,ks,ke: index bounds of region to be updated
 // Outputs:
 //   cons: 3D array of conserved variables
-void HydroEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int jl,
-    const int ju, const int il, const int iu, const AthenaArray<Real> &prim,
-    const AthenaArray<Real> &b, AthenaArray<Real> &cons)
+void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+     const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco, int is,
+     int ie, int js, int je, int ks, int ke)
 {
   // Calculate reduced ratio of specific heats
-  Real gamma_adi_red = gamma_ / (gamma_ - 1.0);
+  Real gamma_adi_red = gamma_/(gamma_-1.0);
 
   // Go through all cells
-  for (int k = kl; k <= ku; ++k)
-    for (int j = jl; j <= ju; ++j)
+  for (int k = ks; k <= ke; ++k)
+    for (int j = js; j <= je; ++j)
     {
       #pragma simd
-      for (int i = il; i <= iu; ++i)
+      for (int i = is; i <= ie; ++i)
       {
         // Extract primitives and magnetic fields
         const Real &rho = prim(IDN,k,j,i);
@@ -235,9 +197,9 @@ void HydroEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int
         const Real &v1 = prim(IVX,k,j,i);
         const Real &v2 = prim(IVY,k,j,i);
         const Real &v3 = prim(IVZ,k,j,i);
-        const Real &bb1 = b(IB1,k,j,i);
-        const Real &bb2 = b(IB2,k,j,i);
-        const Real &bb3 = b(IB3,k,j,i);
+        const Real &bb1 = bc(IB1,k,j,i);
+        const Real &bb2 = bc(IB2,k,j,i);
+        const Real &bb3 = bc(IB3,k,j,i);
 
         // Calculate 4-velocity
         Real u0 = 1.0 / std::sqrt(1.0 - SQR(v1) - SQR(v2) - SQR(v3));
@@ -285,7 +247,7 @@ void HydroEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int
 //   references Mignone & Bodo 2006, MNRAS 368 1040 (MB2006)
 //   references Numerical Recipes, 3rd ed. (NR)
 //   follows advice in NR for avoiding large cancellations in solving quadratics
-//   same function as in adiabatic_mhd_gr.cpp
+//   almost same function as in adiabatic_mhd_gr.cpp
 void HydroEqnOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
     const AthenaArray<Real> &bbx_vals, int il, int iu, int ivx,
     AthenaArray<Real> &lambdas_p, AthenaArray<Real> &lambdas_m)
@@ -309,30 +271,19 @@ void HydroEqnOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
     // Extract primitives
     const Real &rho = prim(IDN,i);
     const Real &pgas = prim(IEN,i);
-    Real u[4], vx, vy, vz;
-    if (GENERAL_RELATIVITY)
-    {
-      u[1] = prim(ivx,i);
-      u[2] = prim(ivy,i);
-      u[3] = prim(ivz,i);
-      u[0] = std::sqrt(1.0 + SQR(u[1]) + SQR(u[2]) + SQR(u[3]));
-      vx = u[1]/u[0];
-      vy = u[2]/u[0];
-      vz = u[3]/u[0];
-    }
-    else  // SR
-    {
-      vx = prim(ivx,i);
-      vy = prim(ivy,i);
-      vz = prim(ivz,i);
-      u[0] = std::sqrt(1.0 / (1.0 - SQR(vx) - SQR(vy) - SQR(vz)));
-      u[1] = u[0]*vx;
-      u[2] = u[0]*vy;
-      u[3] = u[0]*vz;
-    }
+    const Real &vx = prim(ivx,i);
+    const Real &vy = prim(ivy,i);
+    const Real &vz = prim(ivz,i);
     const Real &bbx = bbx_vals(i);
     const Real &bby = prim(IBY,i);
     const Real &bbz = prim(IBZ,i);
+
+    // Calculate 4-velocity
+    Real u[4];
+    u[0] = std::sqrt(1.0 / (1.0 - SQR(vx) - SQR(vy) - SQR(vz)));
+    u[1] = u[0]*vx;
+    u[2] = u[0]*vy;
+    u[3] = u[0]*vz;
 
     // Calculate contravariant magnetic field
     Real b[4];
@@ -536,37 +487,4 @@ static Real EResidualPrime(Real w_guess, Real d, Real m_sq, Real b_sq, Real s_sq
   Real dpgas_drho = 0.0;                                                // (MM A18)
   Real dpgas_dw = dpgas_dchi * dchi_dw + dpgas_drho * drho_dw;
   return 1.0 - dpgas_dw + 0.5*b_sq*dv_sq_dw + s_sq/w_cu;
-}
-
-// Function for finding root of monic quadratic equation
-// Inputs:
-//   a1: linear coefficient
-//   a0: constant coefficient
-//   greater_root: flag indicating that larger root is to be returned
-//     "larger" does not mean absolute value
-// Outputs:
-//   returned value: desired root
-// Notes:
-//   same function as in adiabatic_mhd_gr.cpp, hlld_rel.cpp, and linear_wave_rel.cpp
-//   solves x^2 + a_1 x + a_0 = 0 for x
-//   returns abscissa of vertex if there are no real roots
-//   follows advice in Numerical Recipes, 3rd ed. (5.6) for avoiding large cancellations
-static Real quadratic_root(Real a1, Real a0, bool greater_root)
-{
-  if (a1*a1 < 4.0*a0)  // no real roots
-    return -a1/2.0;
-  if (greater_root)
-  {
-    if (a1 >= 0.0)
-      return -2.0*a0 / (a1 + std::sqrt(a1*a1 - 4.0*a0));
-    else
-      return (-a1 + std::sqrt(a1*a1 - 4.0*a0)) / 2.0;
-  }
-  else
-  {
-    if (a1 >= 0.0)
-      return (-a1 - std::sqrt(a1*a1 - 4.0*a0)) / 2.0;
-    else
-      return -2.0*a0 / (a1 - std::sqrt(a1*a1 - 4.0*a0));
-  }
 }

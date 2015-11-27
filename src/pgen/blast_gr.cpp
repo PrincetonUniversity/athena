@@ -143,7 +143,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
         b(IB3,k,j,i) = bcon3 * u0 - bcon0 * u3;
       }
     }
-  pmb->phydro->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, phyd->w, b, phyd->u);
+  pmb->phydro->pf_eos->PrimitiveToConserved(phyd->w, b, phyd->u, pmb->pcoord, il, iu,
+      jl, ju, kl, ku);
 
   // Delete auxiliary array
   b.DeleteAthenaArray();

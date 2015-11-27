@@ -44,6 +44,7 @@
 #include "meshblocktree.hpp"
 #include "outputs/wrapper.hpp"
 #include "task_list.hpp"
+#include "mesh_refinement.hpp"
 
 // this class header
 #include "mesh.hpp"
@@ -1007,8 +1008,10 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 // in the Hydro constructor
  
   pcoord = new Coordinates(this, pin);
-  if(pm->multilevel==true)
+  if(pm->multilevel==true) {
     pcoarsec = new Coordinates(this, pin, 1);
+    pmr = new MeshRefinement(this, pin);
+  }
   phydro = new Hydro(this, pin);
   pfield = new Field(this, pin);
   pbval  = new BoundaryValues(this, pin);
@@ -1088,8 +1091,10 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   // create coordinates, hydro, field, and boundary conditions
   pcoord = new Coordinates(this, pin);
-  if(pm->multilevel==true)
+  if(pm->multilevel==true) {
     pcoarsec = new Coordinates(this, pin, 1);
+    pmr = new MeshRefinement(this, pin);
+  }
   phydro = new Hydro(this, pin);
   pfield = new Field(this, pin);
   pbval  = new BoundaryValues(this, pin);
@@ -1210,16 +1215,21 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     if (MAGNETIC_FIELDS_ENABLED)
       pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b ,0);
     pmb->pbval->ClearBoundaryForInit();
-    pbval->HydroPhysicalBoundaries(phydro->u);
     if(multilevel==true)
-      pbval->ProlongateHydroBoundaries(phydro->u);
-    if (MAGNETIC_FIELDS_ENABLED) {
-      pbval->FieldPhysicalBoundaries(pfield->b);
-      if(multilevel==true)
-        pbval->ProlongateFieldBoundaries(pfield->b);
-    }
+      pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc);
+
+    int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
+    if(pmb->nblevel[1][1][0]!=-1) is-=NGHOST;
+    if(pmb->nblevel[1][1][2]!=-1) ie+=NGHOST;
+    if(pmb->nblevel[1][0][1]!=-1) js-=NGHOST;
+    if(pmb->nblevel[1][2][1]!=-1) je+=NGHOST;
+    if(pmb->nblevel[0][1][1]!=-1) ks-=NGHOST;
+    if(pmb->nblevel[2][1][1]!=-1) ke+=NGHOST;
     phydro->pf_eos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b, 
-                                         phydro->w, pfield->bcc);
+                                         phydro->w, pfield->bcc, pmb->pcoord,
+                                         is, ie, js, je, ks, ke);
+    pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc);
+
     pmb=pmb->next;
   }
 
@@ -1369,11 +1379,18 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
   }
   int bufid=0;
   nneighbor=0;
+  for(int k=0; k<=2; k++) {
+    for(int j=0; j<=2; j++) {
+      for(int i=0; i<=2; i++)
+        nblevel[k][j][i]=-1;
+    }
+  }
   nblevel[1][1][1]=loc.level;
+
   // x1 face
   for(int n=-1; n<=1; n+=2) {
     neibt=tree.FindNeighbor(loc,n,0,0,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-    if(neibt==NULL) { bufid+=nf1*nf2; nblevel[1][1][n+1]=loc.level; continue;}
+    if(neibt==NULL) { bufid+=nf1*nf2; continue;}
     if(neibt->flag==false) { // finer
       int fface=1-(n+1)/2; // 0 for outer_x3, 1 for inner_x3
       nblevel[1][1][n+1]=neibt->loc.level+1;
@@ -1405,7 +1422,7 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
   // x2 face
   for(int n=-1; n<=1; n+=2) {
     neibt=tree.FindNeighbor(loc,0,n,0,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-    if(neibt==NULL) { bufid+=nf1*nf2; nblevel[1][n+1][1]=loc.level; continue;}
+    if(neibt==NULL) { bufid+=nf1*nf2; continue;}
     if(neibt->flag==false) { // finer
       int fface=1-(n+1)/2; // 0 for outer_x3, 1 for inner_x3
       nblevel[1][n+1][1]=neibt->loc.level+1;
@@ -1437,7 +1454,7 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
     // x3 face
     for(int n=-1; n<=1; n+=2) {
       neibt=tree.FindNeighbor(loc,0,0,n,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-      if(neibt==NULL) { bufid+=nf1*nf2; nblevel[n+1][1][1]=loc.level; continue;}
+      if(neibt==NULL) { bufid+=nf1*nf2; continue;}
       if(neibt->flag==false) { // finer
         int fface=1-(n+1)/2; // 0 for outer_x3, 1 for inner_x3
         nblevel[n+1][1][1]=neibt->loc.level+1;
@@ -1472,7 +1489,7 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
   for(int m=-1; m<=1; m+=2) {
     for(int n=-1; n<=1; n+=2) {
       neibt=tree.FindNeighbor(loc,n,m,0,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-      if(neibt==NULL) { bufid+=nf2; nblevel[1][m+1][n+1]=loc.level; continue;}
+      if(neibt==NULL) { bufid+=nf2; continue;}
       if(neibt->flag==false) { // finer
         int ff1=1-(n+1)/2; // 0 for outer_x1, 1 for inner_x1
         int ff2=1-(m+1)/2; // 0 for outer_x2, 1 for inner_x2
@@ -1508,7 +1525,7 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
   for(int m=-1; m<=1; m+=2) {
     for(int n=-1; n<=1; n+=2) {
       neibt=tree.FindNeighbor(loc,n,0,m,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-      if(neibt==NULL) { bufid+=nf1; nblevel[m+1][1][n+1]=loc.level; continue;}
+      if(neibt==NULL) { bufid+=nf1; continue;}
       if(neibt->flag==false) { // finer
         int ff1=1-(n+1)/2; // 0 for outer_x1, 1 for inner_x1
         int ff2=1-(m+1)/2; // 0 for outer_x3, 1 for inner_x3
@@ -1543,7 +1560,7 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
   for(int m=-1; m<=1; m+=2) {
     for(int n=-1; n<=1; n+=2) {
       neibt=tree.FindNeighbor(loc,0,n,m,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-      if(neibt==NULL) { bufid+=nf1; nblevel[m+1][n+1][1]=loc.level; continue;}
+      if(neibt==NULL) { bufid+=nf1; continue;}
       if(neibt->flag==false) { // finer
         int ff1=1-(n+1)/2; // 0 for outer_x1, 1 for inner_x1
         int ff2=1-(m+1)/2; // 0 for outer_x3, 1 for inner_x3
@@ -1579,7 +1596,7 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
     for(int m=-1; m<=1; m+=2) {
       for(int n=-1; n<=1; n+=2) {
         neibt=tree.FindNeighbor(loc,n,m,l,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
-        if(neibt==NULL) { bufid++; nblevel[l+1][m+1][n+1]=loc.level; continue;}
+        if(neibt==NULL) { bufid++; continue;}
         if(neibt->flag==false) { // finer
           int ff1=1-(n+1)/2; // 0 for outer_x1, 1 for inner_x1
           int ff2=1-(m+1)/2; // 0 for outer_x2, 1 for inner_x2

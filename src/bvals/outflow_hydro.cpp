@@ -14,7 +14,7 @@
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
 //! \file outflow_hydro.cpp
-//  \brief implements outflow BCs in each dimension for conserved hydro variables
+//  \brief implements outflow BCs in each dimension for primitive hydro variables
 //======================================================================================
 
 // Athena++ headers
@@ -26,127 +26,127 @@
 #include "bvals.hpp"
 
 //--------------------------------------------------------------------------------------
-//! \fn void OutflowInnerX1(MeshBlock *pmb, AthenaArray<Real> &a,
+//! \fn void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 //                          int is, int ie, int js, int je, int ks, int ke)
-//  \brief  OUTFLOW  boundary conditions conserved vars, inner x1 boundary (ix1_bc=2)
+//  \brief  OUTFLOW  boundary conditions primitive vars, inner x1 boundary (ix1_bc=2)
 
-void OutflowInnerX1(MeshBlock *pmb, AthenaArray<Real> &a,
+void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
-  for (int k=ks; k<=ke; ++k) {
-  for (int j=js; j<=je; ++j) {
-    for (int n=0; n<(NHYDRO); ++n) {
+  for (int n=0; n<(NHYDRO); ++n) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
 #pragma simd
-      for (int i=1; i<=(NGHOST); ++i) {
-        a(n,k,j,is-i) = a(n,k,j,is);
+        for (int i=1; i<=(NGHOST); ++i)
+          a(n,k,j,is-i) = a(n,k,j,is);
       }
     }
-  }}
+  }
 
   return;
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void OutflowOuterX1(MeshBlock *pmb, AthenaArray<Real> &a,
+//! \fn void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 //                          int is, int ie, int js, int je, int ks, int ke)
-//  \brief  OUTFLOW  boundary conditions conserved vars, outer x1 boundary (ox1_bc=2)
+//  \brief  OUTFLOW  boundary conditions primitive vars, outer x1 boundary (ox1_bc=2)
 
-void OutflowOuterX1(MeshBlock *pmb, AthenaArray<Real> &a,
+void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
-  for (int k=ks; k<=ke; ++k) {
-  for (int j=js; j<=je; ++j) {
-    for (int n=0; n<(NHYDRO); ++n) {
+  for (int n=0; n<(NHYDRO); ++n) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
 #pragma simd
-      for (int i=1; i<=(NGHOST); ++i) {
-        a(n,k,j,ie+i) = a(n,k,j,ie);
+        for (int i=1; i<=(NGHOST); ++i)
+          a(n,k,j,ie+i) = a(n,k,j,ie);
       }
     }
-  }}
+  }
 
   return;
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void OutflowInnerX2(MeshBlock *pmb, AthenaArray<Real> &a,
+//! \fn void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 //                          int is, int ie, int js, int je, int ks, int ke)
-//  \brief  OUTFLOW  boundary conditions conserved vars, inner x2 boundary (ix2_bc=2)
+//  \brief  OUTFLOW  boundary conditions primitive vars, inner x2 boundary (ix2_bc=2)
 
-void OutflowInnerX2(MeshBlock *pmb, AthenaArray<Real> &a,
+void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
-  for (int k=ks; k<=ke; ++k) {
-  for (int j=1; j<=(NGHOST); ++j) {
-    for (int n=0; n<(NHYDRO); ++n) {
+  for (int n=0; n<(NHYDRO); ++n) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=1; j<=(NGHOST); ++j) {
 #pragma simd
-      for (int i=is; i<=ie; ++i) {
-        a(n,k,js-j,i) = a(n,k,js,i);
+        for (int i=is; i<=ie; ++i)
+          a(n,k,js-j,i) = a(n,k,js,i);
       }
     }
-  }}
+  }
 
   return;
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void OutflowOuterX2(MeshBlock *pmb, AthenaArray<Real> &a,
+//! \fn void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 //                          int is, int ie, int js, int je, int ks, int ke)
-//  \brief  OUTFLOW  boundary conditions conserved vars, outer x2 boundary (ox2_bc=2)
+//  \brief  OUTFLOW  boundary conditions primitive vars, outer x2 boundary (ox2_bc=2)
 
-void OutflowOuterX2(MeshBlock *pmb, AthenaArray<Real> &a,
+void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
-  for (int k=ks; k<=ke; ++k) {
-  for (int j=1; j<=(NGHOST); ++j) {
-    for (int n=0; n<(NHYDRO); ++n) {
+  for (int n=0; n<(NHYDRO); ++n) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=1; j<=(NGHOST); ++j) {
 #pragma simd
-      for (int i=is; i<=ie; ++i) {
-        a(n,k,je+j,i) = a(n,k,je,i);
+        for (int i=is; i<=ie; ++i)
+          a(n,k,je+j,i) = a(n,k,je,i);
       }
     }
-  }}
+  }
 
   return;
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void OutflowInnerX3(MeshBlock *pmb, AthenaArray<Real> &a,
+//! \fn void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 //                          int is, int ie, int js, int je, int ks, int ke)
-//  \brief  OUTFLOW  boundary conditions conserved vars, inner x3 boundary (ix3_bc=2)
+//  \brief  OUTFLOW  boundary conditions primitive vars, inner x3 boundary (ix3_bc=2)
 
-void OutflowInnerX3(MeshBlock *pmb, AthenaArray<Real> &a,
+void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
-  for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js; j<=je; ++j) {
-    for (int n=0; n<(NHYDRO); ++n) {
+  for (int n=0; n<(NHYDRO); ++n) {
+    for (int k=1; k<=(NGHOST); ++k) {
+      for (int j=js; j<=je; ++j) {
 #pragma simd
-      for (int i=is; i<=ie; ++i) {
-        a(n,ks-k,j,i) = a(n,ks,j,i);
+        for (int i=is; i<=ie; ++i)
+          a(n,ks-k,j,i) = a(n,ks,j,i);
       }
     }
-  }}
+  }
 
   return;
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void OutflowOuterX3(MeshBlock *pmb, AthenaArray<Real> &a,
+//! \fn void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 //                          int is, int ie, int js, int je, int ks, int ke)
-//  \brief  OUTFLOW  boundary conditions conserved vars, outer x3 boundary (ox3_bc=2)
+//  \brief  OUTFLOW  boundary conditions primitive vars, outer x3 boundary (ox3_bc=2)
 
-void OutflowOuterX3(MeshBlock *pmb, AthenaArray<Real> &a,
+void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
-  for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js; j<=je; ++j) {
-    for (int n=0; n<(NHYDRO); ++n) {
+  for (int n=0; n<(NHYDRO); ++n) {
+    for (int k=1; k<=(NGHOST); ++k) {
+      for (int j=js; j<=je; ++j) {
 #pragma simd
-      for (int i=is; i<=ie; ++i) {
-        a(n,ke+k,j,i) = a(n,ke,j,i);
+        for (int i=is; i<=ie; ++i)
+          a(n,ke+k,j,i) = a(n,ke,j,i);
       }
     }
-  }}
+  }
 
   return;
 }

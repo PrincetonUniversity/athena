@@ -39,11 +39,11 @@
 #include "../coordinates/coordinates.hpp"
 
 // BCs on outer edges of grid in each dimension
-void noh3d_oib(MeshBlock *pmb, AthenaArray<Real> &a,
+void noh3d_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                int is, int ie, int js, int je, int ks, int ke);
-void noh3d_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
+void noh3d_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                int is, int ie, int js, int je, int ks, int ke);
-void noh3d_okb(MeshBlock *pmb, AthenaArray<Real> &a,
+void noh3d_okb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                int is, int ie, int js, int je, int ks, int ke);
 
 // made global to share with BC functions
@@ -92,10 +92,9 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 //
 // Quantities at this boundary are held fixed at the time-dependent upstream state
 
-void noh3d_oib(MeshBlock *pmb, AthenaArray<Real> &a,
+void noh3d_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                int is, int ie, int js, int je, int ks, int ke)
 {
-  Coordinates *pco = pmb->pcoord;
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
     for (int i=1;  i<=(NGHOST); ++i) {
@@ -129,10 +128,9 @@ void noh3d_oib(MeshBlock *pmb, AthenaArray<Real> &a,
 //
 // Quantities at this boundary are held fixed at the time-dependent upstream state
 
-void noh3d_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
+void noh3d_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                int is, int ie, int js, int je, int ks, int ke)
 {
-  Coordinates *pco = pmb->pcoord;
   for (int k=ks; k<=ke; ++k) {
   for (int j=1; j<=(NGHOST); ++j) {
     for (int i=is; i<=ie; ++i) {
@@ -166,10 +164,9 @@ void noh3d_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
 //
 // Quantities at this boundary are held fixed at the time-dependent upstream state
 
-void noh3d_okb(MeshBlock *pmb, AthenaArray<Real> &a,
+void noh3d_okb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                int is, int ie, int js, int je, int ks, int ke)
 {
-  Coordinates *pco = pmb->pcoord;
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie; ++i) {

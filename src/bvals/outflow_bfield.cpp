@@ -31,7 +31,7 @@
 //! \fn void OutflowInnerX1()
 //  \brief  OUTFLOW boundary conditions interface B, inner x1 boundary (ix1_bc=1)
 
-void OutflowInnerX1(MeshBlock *pmb, InterfaceField &a,
+void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, InterfaceField &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; ++k) {
@@ -65,7 +65,7 @@ void OutflowInnerX1(MeshBlock *pmb, InterfaceField &a,
 //! \fn void OutflowOuterX1()
 //  \brief  OUTFLOW boundary conditions interface B, outer x1 boundary (ox1_bc=1)
 
-void OutflowOuterX1(MeshBlock *pmb, InterfaceField &a,
+void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, InterfaceField &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; ++k) {
@@ -99,7 +99,7 @@ void OutflowOuterX1(MeshBlock *pmb, InterfaceField &a,
 //! \fn void OutflowInnerX2()
 //  \brief  OUTFLOW boundary conditions interface B, inner x2 boundary (ix2_bc=1)
 
-void OutflowInnerX2(MeshBlock *pmb, InterfaceField &a,
+void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, InterfaceField &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; ++k) {
@@ -133,7 +133,7 @@ void OutflowInnerX2(MeshBlock *pmb, InterfaceField &a,
 //! \fn void OutflowOuterX2()
 //  \brief  OUTFLOW boundary conditions interface B, outer x2 boundary (ox2_bc=1)
 
-void OutflowOuterX2(MeshBlock *pmb, InterfaceField &a,
+void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, InterfaceField &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; ++k) {
@@ -167,7 +167,7 @@ void OutflowOuterX2(MeshBlock *pmb, InterfaceField &a,
 //! \fn void OutflowInnerX3()
 //  \brief  OUTFLOW boundary conditions interface B, inner x3 boundary (ix3_bc=1)
 
-void OutflowInnerX3(MeshBlock *pmb, InterfaceField &a,
+void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, InterfaceField &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=1; k<=(NGHOST); ++k) {
@@ -201,7 +201,7 @@ void OutflowInnerX3(MeshBlock *pmb, InterfaceField &a,
 //! \fn void OutflowOuterX3()
 //  \brief  OUTFLOW boundary conditions interface B, outer x3 boundary (ox3_bc=1)
 
-void OutflowOuterX3(MeshBlock *pmb, InterfaceField &a,
+void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, InterfaceField &a,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=1; k<=(NGHOST); ++k) {

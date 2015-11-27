@@ -50,7 +50,7 @@ static Real gmma1,dl,pl,ul;
 static Real bxl,byl,bzl;
 
 // shk_cloud_iib() - fixes BCs on L-x1 (left edge) of grid to postshock flow.
-void shk_cloud_iib(MeshBlock *pmb, AthenaArray<Real> &a,
+void shk_cloud_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                    int is, int ie, int js, int je, int ks, int ke);
 
 void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
@@ -183,7 +183,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 //  \brief Sets boundary condition on left X boundary (iib) 
 // Note quantities at this boundary are held fixed at the downstream state
 
-void shk_cloud_iib(MeshBlock *pmb, AthenaArray<Real> &a,
+void shk_cloud_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                    int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; ++k) {

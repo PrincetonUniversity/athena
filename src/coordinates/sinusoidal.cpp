@@ -92,86 +92,82 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
       dx3v(k) = x3v(k+1) - x3v(k);
   }
 
-  if((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i)
+  // Prepare for MHD mesh refinement
+  if (pmb->pmy_mesh->multilevel == true && MAGNETIC_FIELDS_ENABLED)
+  {
+    for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
       x1s2(i) = x1s3(i) = x1v(i);
-    if (pmb->block_size.nx2 == 1) {
+    if (pmb->block_size.nx2 == 1)
       x2s1(js) = x2s3(js) = x2v(js);
-    }
-    else {
-      for (int j=js-(NGHOST); j<=je+(NGHOST); ++j)
+    else
+      for (int j = js-NGHOST; j <= je+NGHOST; ++j)
         x2s1(j) = x2s3(j) = x2v(j);
-    }
-    if (pmb->block_size.nx3 == 1) {
+    if (pmb->block_size.nx3 == 1)
       x3s1(ks) = x3s2(ks) = x3v(ks);
-    }
-    else {
-      for (int k=ks-(NGHOST); k<=ke+(NGHOST); ++k)
+    else
+      for (int k = ks-NGHOST; k <= ke+NGHOST; ++k)
         x3s1(k) = x3s2(k) = x3v(k);
-    }
   }
 
   // Allocate arrays for intermediate geometric quantities: x-direction
-  if(cflag==0) {
-    int n_cells_1 = pmb->block_size.nx1 + 2*NGHOST;
-    coord_src_i1_.NewAthenaArray(n_cells_1);
-    metric_cell_i1_.NewAthenaArray(n_cells_1);
-    metric_cell_i2_.NewAthenaArray(n_cells_1);
-    metric_face1_i1_.NewAthenaArray(n_cells_1);
-    metric_face1_i2_.NewAthenaArray(n_cells_1);
-    metric_face2_i1_.NewAthenaArray(n_cells_1);
-    metric_face2_i2_.NewAthenaArray(n_cells_1);
-    metric_face3_i1_.NewAthenaArray(n_cells_1);
-    metric_face3_i2_.NewAthenaArray(n_cells_1);
-    trans_face1_i2_.NewAthenaArray(n_cells_1);
-    trans_face2_i1_.NewAthenaArray(n_cells_1);
-    trans_face2_i2_.NewAthenaArray(n_cells_1);
-    trans_face3_i2_.NewAthenaArray(n_cells_1);
-    g_.NewAthenaArray(NMETRIC, n_cells_1);
-    gi_.NewAthenaArray(NMETRIC, n_cells_1);
+  int n_cells_1 = pmb->block_size.nx1 + 2*NGHOST;
+  coord_src_i1_.NewAthenaArray(n_cells_1);
+  metric_cell_i1_.NewAthenaArray(n_cells_1);
+  metric_cell_i2_.NewAthenaArray(n_cells_1);
+  metric_face1_i1_.NewAthenaArray(n_cells_1);
+  metric_face1_i2_.NewAthenaArray(n_cells_1);
+  metric_face2_i1_.NewAthenaArray(n_cells_1);
+  metric_face2_i2_.NewAthenaArray(n_cells_1);
+  metric_face3_i1_.NewAthenaArray(n_cells_1);
+  metric_face3_i2_.NewAthenaArray(n_cells_1);
+  trans_face1_i2_.NewAthenaArray(n_cells_1);
+  trans_face2_i1_.NewAthenaArray(n_cells_1);
+  trans_face2_i2_.NewAthenaArray(n_cells_1);
+  trans_face3_i2_.NewAthenaArray(n_cells_1);
+  g_.NewAthenaArray(NMETRIC, n_cells_1);
+  gi_.NewAthenaArray(NMETRIC, n_cells_1);
 
-    // Calculate intermediate geometric quantities: x-direction
-    #pragma simd
-    for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
-    {
-      // Useful quantities
-      Real r_c = x1v(i);
-      Real r_m = x1f(i);
-      Real r_p = x1f(i+1);
-      Real sin_2m = std::sin(2.0*kk*r_m);
-      Real sin_2p = std::sin(2.0*kk*r_p);
-      Real cos_c = std::cos(kk*r_c);
-      Real cos_m = std::cos(kk*r_m);
-      Real cos_p = std::cos(kk*r_p);
-      Real alpha_sq_c = 1.0 + SQR(aa)*SQR(kk) * SQR(cos_c);
-      Real alpha_sq_m = 1.0 + SQR(aa)*SQR(kk) * SQR(cos_m);
-      Real alpha_c = std::sqrt(alpha_sq_c);
-      Real beta_c = aa*kk * cos_c;
-      Real beta_m = aa*kk * cos_m;
-      Real beta_p = aa*kk * cos_p;
+ // Calculate intermediate geometric quantities: x-direction
+ #pragma simd
+ for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
+ {
+   // Useful quantities
+   Real r_c = x1v(i);
+   Real r_m = x1f(i);
+   Real r_p = x1f(i+1);
+   Real sin_2m = std::sin(2.0*kk*r_m);
+   Real sin_2p = std::sin(2.0*kk*r_p);
+   Real cos_c = std::cos(kk*r_c);
+   Real cos_m = std::cos(kk*r_m);
+   Real cos_p = std::cos(kk*r_p);
+   Real alpha_sq_c = 1.0 + SQR(aa)*SQR(kk) * SQR(cos_c);
+   Real alpha_sq_m = 1.0 + SQR(aa)*SQR(kk) * SQR(cos_m);
+   Real alpha_c = std::sqrt(alpha_sq_c);
+   Real beta_c = aa*kk * cos_c;
+   Real beta_m = aa*kk * cos_m;
+   Real beta_p = aa*kk * cos_p;
 
-      // Source terms
-      coord_src_i1_(i) = (beta_m - beta_p) / dx1f(i);
+   // Source terms
+   coord_src_i1_(i) = (beta_m - beta_p) / dx1f(i);
 
-      // Cell-centered metric
-      metric_cell_i1_(i) = alpha_sq_c;
-      metric_cell_i2_(i) = beta_c;
+   // Cell-centered metric
+   metric_cell_i1_(i) = alpha_sq_c;
+   metric_cell_i2_(i) = beta_c;
 
-      // Face-centered metric
-      metric_face1_i1_(i) = alpha_sq_m;
-      metric_face1_i2_(i) = beta_m;
-      metric_face2_i1_(i) = alpha_sq_c;
-      metric_face2_i2_(i) = beta_c;
-      metric_face3_i1_(i) = alpha_sq_c;
-      metric_face3_i2_(i) = beta_c;
+   // Face-centered metric
+   metric_face1_i1_(i) = alpha_sq_m;
+   metric_face1_i2_(i) = beta_m;
+   metric_face2_i1_(i) = alpha_sq_c;
+   metric_face2_i2_(i) = beta_c;
+   metric_face3_i1_(i) = alpha_sq_c;
+   metric_face3_i2_(i) = beta_c;
 
-      // Coordinate transformations
-      trans_face1_i2_(i) = beta_m;
-      trans_face2_i1_(i) = alpha_c;
-      trans_face2_i2_(i) = beta_c;
-      trans_face3_i2_(i) = beta_m;
-    }
-  }
+   // Coordinate transformations
+   trans_face1_i2_(i) = beta_m;
+   trans_face2_i1_(i) = alpha_c;
+   trans_face2_i2_(i) = beta_c;
+   trans_face3_i2_(i) = beta_m;
+ }
 }
 
 //--------------------------------------------------------------------------------------
@@ -181,23 +177,21 @@ Coordinates::~Coordinates()
 {
   DeleteBasicCoordinates();
 
-  if(cflag==0) {
-    coord_src_i1_.DeleteAthenaArray();
-    metric_cell_i1_.DeleteAthenaArray();
-    metric_cell_i2_.DeleteAthenaArray();
-    metric_face1_i1_.DeleteAthenaArray();
-    metric_face1_i2_.DeleteAthenaArray();
-    metric_face2_i1_.DeleteAthenaArray();
-    metric_face2_i2_.DeleteAthenaArray();
-    metric_face3_i1_.DeleteAthenaArray();
-    metric_face3_i2_.DeleteAthenaArray();
-    trans_face1_i2_.DeleteAthenaArray();
-    trans_face2_i1_.DeleteAthenaArray();
-    trans_face2_i2_.DeleteAthenaArray();
-    trans_face3_i2_.DeleteAthenaArray();
-    g_.DeleteAthenaArray();
-    gi_.DeleteAthenaArray();
-  }
+  coord_src_i1_.DeleteAthenaArray();
+  metric_cell_i1_.DeleteAthenaArray();
+  metric_cell_i2_.DeleteAthenaArray();
+  metric_face1_i1_.DeleteAthenaArray();
+  metric_face1_i2_.DeleteAthenaArray();
+  metric_face2_i1_.DeleteAthenaArray();
+  metric_face2_i2_.DeleteAthenaArray();
+  metric_face3_i1_.DeleteAthenaArray();
+  metric_face3_i2_.DeleteAthenaArray();
+  trans_face1_i2_.DeleteAthenaArray();
+  trans_face2_i1_.DeleteAthenaArray();
+  trans_face2_i2_.DeleteAthenaArray();
+  trans_face3_i2_.DeleteAthenaArray();
+  g_.DeleteAthenaArray();
+  gi_.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------
@@ -280,30 +274,15 @@ Real Coordinates::GetFace1Area(const int k, const int j, const int i)
 //   areas: 1D array of interface areas orthogonal to y
 // Notes:
 //   \Delta A = \Delta x * \Delta z
-//   cf. GetFace2Area()
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    areas(i) = GetFace2Area(k, j, i);
+    areas(i) = dx1f(i) * dx3f(k);
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for computing single area orthogonal to y
-// Inputs:
-//   k,j,i: z-, y-, and x-indices
-// Outputs:
-//   returned value: interface area orthogonal to y
-// Notes:
-//   \Delta A = \Delta x * \Delta z
-//   cf. Face2Area()
-Real Coordinates::GetFace2Area(const int k, const int j, const int i)
-{
-  return dx1f(i) * dx3f(k);
-}
 
 //--------------------------------------------------------------------------------------
 
@@ -315,30 +294,15 @@ Real Coordinates::GetFace2Area(const int k, const int j, const int i)
 //   areas: 1D array of interface areas orthogonal to z
 // Notes:
 //   \Delta A = \Delta x * \Delta y
-//   cf. GetFace3Area()
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    areas(i) = GetFace3Area(k, j, i);
+    areas(i) = dx1f(i) * dx2f(j);
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for computing single area orthogonal to z
-// Inputs:
-//   k,j,i: z-, y-, and x-indices
-// Outputs:
-//   returned value: interface area orthogonal to z
-// Notes:
-//   \Delta A = \Delta x * \Delta y
-//   cf. Face3Area()
-Real Coordinates::GetFace3Area(const int k, const int j, const int i)
-{
-  return dx1f(i) * dx2f(j);
-}
 
 //--------------------------------------------------------------------------------------
 

@@ -19,70 +19,72 @@
 #endif
 
 // forward declarations
+class Mesh;
 class MeshBlock;
+class MeshRefinemnt;
 class Hydro;
-class HydroIntegrator;
+class Field;
 class ParameterInput;
+class Coordinates;
 struct InterfaceField;
 struct NeighborBlock;
-class Field;
 
 //-------------------- prototypes for all BC functions ---------------------------------
-void ReflectInnerX1(MeshBlock *pmb, AthenaArray<Real> &buf,
+void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
                     int is, int ie, int js, int je, int ks, int ke);
-void ReflectInnerX2(MeshBlock *pmb, AthenaArray<Real> &buf,
+void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
                     int is, int ie, int js, int je, int ks, int ke);
-void ReflectInnerX3(MeshBlock *pmb, AthenaArray<Real> &buf,
+void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
                     int is, int ie, int js, int je, int ks, int ke);
-void ReflectOuterX1(MeshBlock *pmb, AthenaArray<Real> &buf,
+void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
                     int is, int ie, int js, int je, int ks, int ke);
-void ReflectOuterX2(MeshBlock *pmb, AthenaArray<Real> &buf,
+void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
                     int is, int ie, int js, int je, int ks, int ke);
-void ReflectOuterX3(MeshBlock *pmb, AthenaArray<Real> &buf,
-                    int is, int ie, int js, int je, int ks, int ke);
-
-void ReflectInnerX1(MeshBlock *pmb, InterfaceField &buf,
-                    int is, int ie, int js, int je, int ks, int ke);
-void ReflectInnerX2(MeshBlock *pmb, InterfaceField &buf,
-                    int is, int ie, int js, int je, int ks, int ke);
-void ReflectInnerX3(MeshBlock *pmb, InterfaceField &buf,
-                    int is, int ie, int js, int je, int ks, int ke);
-void ReflectOuterX1(MeshBlock *pmb, InterfaceField &buf,
-                    int is, int ie, int js, int je, int ks, int ke);
-void ReflectOuterX2(MeshBlock *pmb, InterfaceField &buf,
-                    int is, int ie, int js, int je, int ks, int ke);
-void ReflectOuterX3(MeshBlock *pmb, InterfaceField &buf,
+void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
                     int is, int ie, int js, int je, int ks, int ke);
 
-void OutflowInnerX1(MeshBlock *pmb, AthenaArray<Real> &buf,
+void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, InterfaceField &buf,
                     int is, int ie, int js, int je, int ks, int ke);
-void OutflowInnerX2(MeshBlock *pmb, AthenaArray<Real> &buf,
+void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, InterfaceField &buf,
                     int is, int ie, int js, int je, int ks, int ke);
-void OutflowInnerX3(MeshBlock *pmb, AthenaArray<Real> &buf,
+void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, InterfaceField &buf,
                     int is, int ie, int js, int je, int ks, int ke);
-void OutflowOuterX1(MeshBlock *pmb, AthenaArray<Real> &buf,
+void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, InterfaceField &buf,
                     int is, int ie, int js, int je, int ks, int ke);
-void OutflowOuterX2(MeshBlock *pmb, AthenaArray<Real> &buf,
+void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, InterfaceField &buf,
                     int is, int ie, int js, int je, int ks, int ke);
-void OutflowOuterX3(MeshBlock *pmb, AthenaArray<Real> &buf,
-                    int is, int ie, int js, int je, int ks, int ke);
-
-void OutflowInnerX1(MeshBlock *pmb, InterfaceField &buf,
-                    int is, int ie, int js, int je, int ks, int ke);
-void OutflowInnerX2(MeshBlock *pmb, InterfaceField &buf,
-                    int is, int ie, int js, int je, int ks, int ke);
-void OutflowInnerX3(MeshBlock *pmb, InterfaceField &buf,
-                    int is, int ie, int js, int je, int ks, int ke);
-void OutflowOuterX1(MeshBlock *pmb, InterfaceField &buf,
-                    int is, int ie, int js, int je, int ks, int ke);
-void OutflowOuterX2(MeshBlock *pmb, InterfaceField &buf,
-                    int is, int ie, int js, int je, int ks, int ke);
-void OutflowOuterX3(MeshBlock *pmb, InterfaceField &buf,
+void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, InterfaceField &buf,
                     int is, int ie, int js, int je, int ks, int ke);
 
-typedef void (*BValHydro_t)(MeshBlock *pmb, AthenaArray<Real> &buf,
+void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
+                    int is, int ie, int js, int je, int ks, int ke);
+void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
+                    int is, int ie, int js, int je, int ks, int ke);
+void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
+                    int is, int ie, int js, int je, int ks, int ke);
+void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
+                    int is, int ie, int js, int je, int ks, int ke);
+void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
+                    int is, int ie, int js, int je, int ks, int ke);
+void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
+                    int is, int ie, int js, int je, int ks, int ke);
+
+void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, InterfaceField &buf,
+                    int is, int ie, int js, int je, int ks, int ke);
+void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, InterfaceField &buf,
+                    int is, int ie, int js, int je, int ks, int ke);
+void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, InterfaceField &buf,
+                    int is, int ie, int js, int je, int ks, int ke);
+void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, InterfaceField &buf,
+                    int is, int ie, int js, int je, int ks, int ke);
+void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, InterfaceField &buf,
+                    int is, int ie, int js, int je, int ks, int ke);
+void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, InterfaceField &buf,
+                    int is, int ie, int js, int je, int ks, int ke);
+
+typedef void (*BValHydro_t)(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
                             int is, int ie, int js, int je, int ks, int ke);
-typedef void (*BValField_t)(MeshBlock *pmb, InterfaceField &buf,
+typedef void (*BValField_t)(MeshBlock *pmb, Coordinates *pco, InterfaceField &buf,
                             int is, int ie, int js, int je, int ks, int ke);
 
 //! \class BoundaryValues
@@ -102,52 +104,50 @@ public:
   void CheckBoundary(void);
 
   int LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
-                                       NeighborBlock& nb);
+                                       const NeighborBlock& nb);
   int LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src, Real *buf,
-                                       NeighborBlock& nb);
+                                       const NeighborBlock& nb);
   int LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src, Real *buf,
-                                     NeighborBlock& nb);
+                                     const NeighborBlock& nb);
   void SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step);
-  void SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf, NeighborBlock& nb);
-  void SetHydroBoundaryFromCoarser(Real *buf, NeighborBlock& nb);
-  void SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf, NeighborBlock& nb);
+  void SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf, const NeighborBlock& nb);
+  void SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock& nb);
+  void SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf, const NeighborBlock& nb);
   bool ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst, int step);
   void ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst, int step);
   void RestrictHydro(AthenaArray<Real> &src,
                      int si, int ei, int sj, int ej, int sk, int ek);
+
   void SendFluxCorrection(int step);
-  bool ReceiveFluxCorrection(AthenaArray<Real> &dst, int step);
-  void ProlongateHydroBoundaries(AthenaArray<Real> &dst);
+  bool ReceiveFluxCorrection(int step);
+
   int LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *buf,
-                                       NeighborBlock& nb);
+                                       const NeighborBlock& nb);
   int LoadFieldBoundaryBufferToCoarser(InterfaceField &src, Real *buf,
-                                       NeighborBlock& nb);
+                                       const NeighborBlock& nb);
   int LoadFieldBoundaryBufferToFiner(InterfaceField &src, Real *buf,
-                                     NeighborBlock& nb);
+                                     const NeighborBlock& nb);
   void SendFieldBoundaryBuffers(InterfaceField &src, int step);
-  void SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf, NeighborBlock& nb);
-  void SetFieldBoundaryFromCoarser(Real *buf, NeighborBlock& nb);
-  void SetFieldBoundaryFromFiner(InterfaceField &dst, Real *buf, NeighborBlock& nb);
+  void SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf, const NeighborBlock& nb);
+  void SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock& nb);
+  void SetFieldBoundaryFromFiner(InterfaceField &dst, Real *buf, const NeighborBlock& nb);
   bool ReceiveFieldBoundaryBuffers(InterfaceField &dst, int step);
   void ReceiveFieldBoundaryBuffersWithWait(InterfaceField &dst, int step);
-  void RestrictFieldX1(AthenaArray<Real> &bx1f,
-                       int si, int ei, int sj, int ej, int sk, int ek);
-  void RestrictFieldX2(AthenaArray<Real> &bx2f,
-                       int si, int ei, int sj, int ej, int sk, int ek);
-  void RestrictFieldX3(AthenaArray<Real> &bx3f,
-                       int si, int ei, int sj, int ej, int sk, int ek);
-  void ProlongateFieldBoundaries(InterfaceField &dst);
-  int LoadEMFBoundaryBufferSameLevel(Real *buf, NeighborBlock& nb);
-  int LoadEMFBoundaryBufferToCoarser(Real *buf, NeighborBlock& nb);
+
+  int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
+  int LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
   void SendEMFCorrection(int step);
-  void SetEMFBoundarySameLevel(Real *buf, NeighborBlock& nb);
-  void SetEMFBoundaryFromFiner(Real *buf, NeighborBlock& nb);
+  void SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb);
+  void SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb);
   void ClearCoarseEMFBoundary(void);
   void AverageEMFBoundary(void);
   bool ReceiveEMFCorrection(int step);
 
-  void HydroPhysicalBoundaries(AthenaArray<Real> &dst);
-  void FieldPhysicalBoundaries(InterfaceField &dst);
+  void ProlongateBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst, 
+                            InterfaceField &bfdst, AthenaArray<Real> &bcdst);
+
+  void ApplyPhysicalBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
+                               InterfaceField &bfdst, AthenaArray<Real> &bcdst);
 
   void ClearBoundaryForInit(void);
   void ClearBoundaryAll(void);
@@ -171,9 +171,7 @@ private:
   Real *field_send_[NSTEP][56],  *field_recv_[NSTEP][56];
   Real *flcor_send_[NSTEP][6],   *flcor_recv_[NSTEP][6][2][2];
   Real *emfcor_send_[NSTEP][48], *emfcor_recv_[NSTEP][48];
-  AthenaArray<Real> coarse_cons_, coarse_prim_;
-  AthenaArray<Real> fvol_[2][2], sarea_[2];
-  InterfaceField coarse_b_;
+  AthenaArray<Real> sarea_[2];
 
 #ifdef MPI_PARALLEL
   MPI_Request req_hydro_send_[NSTEP][56],  req_hydro_recv_[NSTEP][56];
@@ -181,8 +179,6 @@ private:
   MPI_Request req_flcor_send_[NSTEP][6],   req_flcor_recv_[NSTEP][6][2][2];
   MPI_Request req_emfcor_send_[NSTEP][48], req_emfcor_recv_[NSTEP][48];
 #endif
-
-  friend class HydroIntegrator;
 };
 
 unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);

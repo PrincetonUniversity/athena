@@ -19,10 +19,12 @@
 #include "meshblocktree.hpp"
 #include "outputs/wrapper.hpp"
 #include "task_list.hpp"
+#include "mesh_refinement.hpp"
 
 // Forward declarations
 class ParameterInput;
 class Mesh;
+class MeshRefinement;
 class Coordinates;
 class Hydro;
 class Field;
@@ -69,7 +71,6 @@ private:
   Real new_block_dt;
   unsigned long int finished_tasks[4];
   int first_task, num_tasks_todo, nneighbor;
-  int nblevel[3][3][3];
 
   friend class RestartOutput;
   friend class BoundaryValues;
@@ -77,6 +78,7 @@ private:
   friend class Hydro;
   friend class Coordinates;
   friend class TaskList;
+  friend class MeshRefinement;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
@@ -93,6 +95,7 @@ public:
 
   RegionSize block_size;
   int block_bcs[6];
+  int nblevel[3][3][3];
   Mesh *pmy_mesh;  // ptr to Mesh containing this MeshBlock
 
   int is,ie,js,je,ks,ke;
@@ -104,6 +107,7 @@ public:
   Hydro *phydro;
   Field *pfield;
   BoundaryValues *pbval;
+  MeshRefinement *pmr;
 
   MeshBlock *prev, *next;
 };

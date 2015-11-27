@@ -36,8 +36,12 @@ HydroEqnOfState::~HydroEqnOfState() {}
 // Inputs:
 //   cons: conserved quantities
 //   prim_old: primitive quantities from previous half timestep (not used)
+//   bb: face-centered magnetic field (not used)
+//   pco: pointer to Coordinates
+//   is,ie,js,je,ks,ke: index bounds of region to be updated
 // Outputs:
 //   prim: primitives
+//   bb_cc: cell-centered magnetic field (not used)
 // Notes:
 //   solves quartic equation for velocity explicitly
 //   follows relativistic hydro routine in old Athena's convert_var.c:
@@ -62,30 +66,12 @@ HydroEqnOfState::~HydroEqnOfState() {}
 //          then |v|^2 + d1 |v| + d0 = 0
 //          |v| = 1/2 * (-d1 + sqrt(d1^2 - 4 d0))
 void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-  const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
-  AthenaArray<Real> &bcc)
+  const AthenaArray<Real> &prim_old, const InterfaceField &bb, AthenaArray<Real> &prim,
+  AthenaArray<Real> &bb_cc, Coordinates *pco, int is, int ie, int js, int je, int ks,
+  int ke)
 {
   // Parameters
   const Real max_velocity = 1.0 - 1.0e-15;
-
-  // Determine array bounds
-  MeshBlock *pb = pmy_hydro_->pmy_block;
-  int is = pb->is;
-  int ie = pb->ie;
-  int jl = pb->js;
-  int ju = pb->je;
-  int kl = pb->ks;
-  int ku = pb->ke;
-  if (pb->block_size.nx2 > 1)
-  {
-    jl -= (NGHOST);
-    ju += (NGHOST);
-  }
-  if (pb->block_size.nx3 > 1)
-  {
-    kl -= (NGHOST);
-    ku += (NGHOST);
-  }
 
   // Extract ratio of specific heats
   const Real gamma_adi = GetGamma();
@@ -97,11 +83,11 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   prim_copy.InitWithShallowCopy(prim);
 
   // Go through cells
-  for (int k = kl; k <= ku; k++)
-    for (int j = jl; j <= ju; j++)
+  for (int k = ks; k <= ke; k++)
+    for (int j = js; j <= je; j++)
     {
       #pragma simd
-      for (int i = is - (NGHOST); i <= ie + (NGHOST); i++)
+      for (int i = is; i <= ie; i++)
       {
         // Extract conserved quantities
         Real &d = cons_copy(IDN,k,j,i);
@@ -214,24 +200,28 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
 // Function for converting all primitives to conserved variables
 // Inputs:
-//   kl,ku,jl,ju,il,iu: index bounds of region to be updated
-//   prim: 3D array of primitives
-//   b: 3D array of cell-centered magnetic fields (unused)
+//   prim: primitives
+//   bb_cc: cell-centered magnetic field (unused)
+//   pco: pointer to Coordinates
+//   is,ie,js,je,ks,ke: index bounds of region to be updated
 // Outputs:
-//   cons: 3D array of conserved variables
-void HydroEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int jl,
-    const int ju, const int il, const int iu, const AthenaArray<Real> &prim,
-    const AthenaArray<Real> &b, AthenaArray<Real> &cons)
+//   cons: conserved variables
+// Notes:
+//   single-cell function exists for other purposes; call made to that function rather
+//       than having duplicate code
+void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+     const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons, Coordinates *pco, int is,
+     int ie, int js, int je, int ks, int ke)
 {
   // Calculate reduced ratio of specific heats
-  Real gamma_adi_red = gamma_ / (gamma_ - 1.0);
+  Real gamma_adi_red = gamma_/(gamma_-1.0);
 
   // Go through all cells
-  for (int k = kl; k <= ku; ++k)
-    for (int j = jl; j <= ju; ++j)
+  for (int k = ks; k <= ke; ++k)
+    for (int j = js; j <= je; ++j)
     {
       #pragma simd
-      for (int i = il; i <= iu; ++i)
+      for (int i = is; i <= ie; ++i)
       {
         // Extract primitives
         const Real &rho = prim(IDN,k,j,i);
@@ -267,6 +257,10 @@ void HydroEqnOfState::PrimitiveToConserved(const int kl, const int ku, const int
 
 // Function for calculating relativistic sound speeds
 // Inputs:
+//   rho_h: enthalpy per unit volume
+//   pgas: gas pressure
+//   vx: 3-velocity component v^x
+//   gamma_lorentz_sq: Lorentz factor \gamma^2
 // Outputs:
 //   plambda_plus: value set to most positive wavespeed
 //   plambda_minus: value set to most negative wavespeed

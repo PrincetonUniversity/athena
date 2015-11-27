@@ -22,22 +22,22 @@
 #include <cassert>
 
 // Declarations
-void InnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
-    int ks, int ke);
-void OuterHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
-    int ks, int ke);
-void TopHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
-    int ks, int ke);
-void BottomHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js,
-    int je, int ks, int ke);
-void InnerField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
-    int ks, int ke);
-void OuterField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
-    int ks, int ke);
-void TopField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
-    int ks, int ke);
-void BottomField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
-    int ks, int ke);
+void InnerHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
+    int is, int ie, int js, int je, int ks, int ke);
+void OuterHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
+    int is, int ie, int js, int je, int ks, int ke);
+void TopHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
+    int is, int ie, int js, int je, int ks, int ke);
+void BottomHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
+    int is, int ie, int js, int je, int ks, int ke);
+void InnerField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+    int is, int ie, int js, int je, int ks, int ke);
+void OuterField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+    int is, int ie, int js, int je, int ks, int ke);
+void TopField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+    int is, int ie, int js, int je, int ks, int ke);
+void BottomField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+    int is, int ie, int js, int je, int ks, int ke);
 static Real calculate_l_from_r_peak(Real r);
 static Real calculate_r_peak_from_l(Real l_target, Real r_min, Real r_max);
 static Real log_h_aux(Real r, Real sin_theta);
@@ -444,7 +444,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
        }
 
   // Initialize conserved values
-  pmb->phydro->pf_eos->PrimitiveToConserved(kl, ku, jl, ju, il, iu, phyd->w, bb, phyd->u);
+  pmb->phydro->pf_eos->PrimitiveToConserved(phyd->w, bb, phyd->u, pmb->pcoord,
+                                            il, iu, jl, ju, kl, ku);
 
   // Free scratch arrays
   in_torus.DeleteAthenaArray();
@@ -469,23 +470,23 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 
 // Inner hydro boundary condition
 // TODO: implement when not hacking inversion
-void InnerHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
-    int ks, int ke)
+void InnerHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
+    int is, int ie, int js, int je, int ks, int ke)
 {
   return;
 }
 
 // Outer hydro boundary condition
 // TODO: implement when not hacking inversion
-void OuterHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
-    int ks, int ke)
+void OuterHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
+    int is, int ie, int js, int je, int ks, int ke)
 {
   return;
 }
 
 // Top hydro boundary condition
-void TopHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, int je,
-    int ks, int ke)
+void TopHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
+    int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k = ks; k <= ke; ++k)
     for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
@@ -499,8 +500,8 @@ void TopHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js, i
 }
 
 // Bottom hydro boundary condition
-void BottomHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js,
-    int je, int ks, int ke)
+void BottomHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
+    int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k = ks; k <= ke; ++k)
     for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
@@ -514,8 +515,8 @@ void BottomHydro(MeshBlock *pmb, AthenaArray<Real> &cons, int is, int ie, int js
 }
 
 // Inner field boundary condition
-void InnerField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
-    int ks, int ke)
+void InnerField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+    int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k = ks; k <= ke; ++k)
     for (int j = js; j <= je; ++j)
@@ -533,8 +534,8 @@ void InnerField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int 
 }
 
 // Outer field boundary condition
-void OuterField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
-    int ks, int ke)
+void OuterField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+    int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k = ks; k <= ke; ++k)
     for (int j = js; j <= je; ++j)
@@ -552,8 +553,8 @@ void OuterField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int 
 }
 
 // Top field boundary condition
-void TopField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
-    int ks, int ke)
+void TopField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+    int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k = ks; k <= ke; ++k)
     for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
@@ -571,8 +572,8 @@ void TopField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je
 }
 
 // Bottom field boundary condition
-void BottomField(MeshBlock *pmb, InterfaceField &bb, int is, int ie, int js, int je,
-    int ks, int ke)
+void BottomField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+    int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k = ks; k <= ke; ++k)
     for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)

@@ -53,13 +53,13 @@
 #include "../coordinates/coordinates.hpp"
 #include "../utils/utils.hpp"
 
-void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a,
+void reflect_ix2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                  int is, int ie, int js, int je, int ks, int ke);
-void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a,
+void reflect_ox2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                  int is, int ie, int js, int je, int ks, int ke);
-void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a,
+void reflect_ix3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                  int is, int ie, int js, int je, int ks, int ke);
-void reflect_ox3(MeshBlock *pmb, AthenaArray<Real> &a,
+void reflect_ox3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                  int is, int ie, int js, int je, int ks, int ke);
 
 // made global to share with BC functions
@@ -229,34 +229,32 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 //! \fn void reflect_ix2()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a,
+void reflect_ix2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                  int is, int ie, int js, int je, int ks, int ke)
 {
-  Coordinates *pco = pmb->pcoord;
-  for (int k=ks; k<=ke; ++k) {
-  for (int j=1; j<=(NGHOST); ++j) {
-    for (int n=0; n<(NHYDRO); ++n) {
-
-      if (n==(IM2)) {
+  for (int n=0; n<(NHYDRO); ++n) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=1; j<=(NGHOST); ++j) {
+        if (n==(IVY)) {
 #pragma simd
-        for (int i=is; i<=ie; ++i) {
-          a(IM2,k,js-j,i) = -a(IM2,k,js+j-1,i);  // reflect 2-mom
-        }
-      } else if (n==(IEN)) {
+          for (int i=is; i<=ie; ++i) {
+            a(IVY,k,js-j,i) = -a(IVY,k,js+j-1,i);  // reflect 2-mom
+          }
+        } else if (n==(IEN)) {
 #pragma simd
-        for (int i=is; i<=ie; ++i) {
-          a(IEN,k,js-j,i) = a(IEN,k,js+j-1,i) 
-             - a(IDN,k,js+j-1,i)*grav_acc*(2*j-1)*pco->dx2f(j)/gm1;
-        }
-      } else {
+          for (int i=is; i<=ie; ++i) {
+            a(IEN,k,js-j,i) = a(IEN,k,js+j-1,i) 
+               - a(IDN,k,js+j-1,i)*grav_acc*(2*j-1)*pco->dx2f(j)/gm1;
+          }
+        } else {
 #pragma simd
-        for (int i=is; i<=ie; ++i) {
-          a(n,k,js-j,i) = a(n,k,js+j-1,i);
+          for (int i=is; i<=ie; ++i) {
+            a(n,k,js-j,i) = a(n,k,js+j-1,i);
+          }
         }
       }
-
     }
-  }}
+  }
 
   return;
 }
@@ -265,34 +263,32 @@ void reflect_ix2(MeshBlock *pmb, AthenaArray<Real> &a,
 //! \fn void reflect_ox2()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a,
+void reflect_ox2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                  int is, int ie, int js, int je, int ks, int ke)
 {
-  Coordinates *pco = pmb->pcoord;
-  for (int k=ks; k<=ke; ++k) {
-  for (int j=1; j<=(NGHOST); ++j) {
-    for (int n=0; n<(NHYDRO); ++n) {
-
-      if (n==(IM2)) {
+  for (int n=0; n<(NHYDRO); ++n) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=1; j<=(NGHOST); ++j) {
+        if (n==(IVY)) {
 #pragma simd
-        for (int i=is; i<=ie; ++i) {
-          a(IM2,k,je+j,i) = -a(IM2,k,je-j+1,i);  // reflect 2-mom
-        }
-      } else if (n==(IEN)) {
+          for (int i=is; i<=ie; ++i) {
+            a(IVY,k,je+j,i) = -a(IVY,k,je-j+1,i);  // reflect 2-mom
+          }
+        } else if (n==(IEN)) {
 #pragma simd
-        for (int i=is; i<=ie; ++i) {
-          a(IEN,k,je+j,i) = a(IEN,k,je-j+1,i) 
-             + a(IDN,k,je-j+1,i)*grav_acc*(2*j-1)*pco->dx2f(j)/gm1;
-        }
-      } else {
+          for (int i=is; i<=ie; ++i) {
+            a(IEN,k,je+j,i) = a(IEN,k,je-j+1,i) 
+               + a(IDN,k,je-j+1,i)*grav_acc*(2*j-1)*pco->dx2f(j)/gm1;
+          }
+        } else {
 #pragma simd
-        for (int i=is; i<=ie; ++i) {
-          a(n,k,je+j,i) = a(n,k,je-j+1,i);
+          for (int i=is; i<=ie; ++i) {
+            a(n,k,je+j,i) = a(n,k,je-j+1,i);
+          }
         }
       }
-
     }
-  }}
+  }
 
   return;
 }
@@ -301,34 +297,32 @@ void reflect_ox2(MeshBlock *pmb, AthenaArray<Real> &a,
 //! \fn void reflect_ix3()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a,
+void reflect_ix3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                  int is, int ie, int js, int je, int ks, int ke)
 {
-  Coordinates *pco = pmb->pcoord;
-  for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js; j<=je; ++j) {
-    for (int n=0; n<(NHYDRO); ++n) {
-
-      if (n==(IM3)) {
+  for (int n=0; n<(NHYDRO); ++n) {
+    for (int k=1; k<=(NGHOST); ++k) {
+      for (int j=js; j<=je; ++j) {
+        if (n==(IVZ)) {
 #pragma simd
-        for (int i=is; i<=ie; ++i) {
-          a(IM3,ks-k,j,i) = -a(IM3,ks+k-1,j,i);  // reflect 3-mom
-        }
-      } else if (n==(IEN)) {
+          for (int i=is; i<=ie; ++i) {
+            a(IVZ,ks-k,j,i) = -a(IVZ,ks+k-1,j,i);  // reflect 3-vel
+          }
+        } else if (n==(IEN)) {
 #pragma simd
-        for (int i=is; i<=ie; ++i) {
-          a(IEN,ks-k,j,i) = a(IEN,ks+k-1,j,i) 
-             - a(IDN,ks+k-1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k)/gm1;
-        }
-      } else {
+          for (int i=is; i<=ie; ++i) {
+            a(IEN,ks-k,j,i) = a(IEN,ks+k-1,j,i) 
+               - a(IDN,ks+k-1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
+          }
+        } else {
 #pragma simd
-        for (int i=is; i<=ie; ++i) {
-          a(n,ks-k,j,i) = a(n,ks+k-1,j,i);
+          for (int i=is; i<=ie; ++i) {
+            a(n,ks-k,j,i) = a(n,ks+k-1,j,i);
+          }
         }
       }
-
     }
-  }}
+  }
 
   return;
 }
@@ -337,34 +331,32 @@ void reflect_ix3(MeshBlock *pmb, AthenaArray<Real> &a,
 //! \fn void reflect_ox3()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void reflect_ox3(MeshBlock *pmb, AthenaArray<Real> &a,
+void reflect_ox3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                  int is, int ie, int js, int je, int ks, int ke)
 {
-  Coordinates *pco = pmb->pcoord;
-  for (int k=1; k<=(NGHOST); ++k) {
-  for (int j=js; j<=je; ++j) {
-    for (int n=0; n<(NHYDRO); ++n) {
-
-      if (n==(IM3)) {
+  for (int n=0; n<(NHYDRO); ++n) {
+    for (int k=1; k<=(NGHOST); ++k) {
+      for (int j=js; j<=je; ++j) {
+        if (n==(IVZ)) {
 #pragma simd
-        for (int i=is; i<=ie; ++i) {
-          a(IM3,ke+k,j,i) = -a(IM3,ke-k+1,j,i);  // reflect 3-mom
-        }
-      } else if (n==(IEN)) {
+          for (int i=is; i<=ie; ++i) {
+            a(IVZ,ke+k,j,i) = -a(IVZ,ke-k+1,j,i);  // reflect 3-vel
+          }
+        } else if (n==(IEN)) {
 #pragma simd
-        for (int i=is; i<=ie; ++i) {
-          a(IEN,ke+k,j,i) = a(IEN,ke-k+1,j,i)
-             + a(IDN,ke-k+1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k)/gm1;
-        }
-      } else {
+          for (int i=is; i<=ie; ++i) {
+            a(IEN,ke+k,j,i) = a(IEN,ke-k+1,j,i)
+               + a(IDN,ke-k+1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
+          }
+        } else {
 #pragma simd
-        for (int i=is; i<=ie; ++i) {
-          a(n,ke+k,j,i) = a(n,ke-k+1,j,i);
+          for (int i=is; i<=ie; ++i) {
+            a(n,ke+k,j,i) = a(n,ke-k+1,j,i);
+          }
         }
       }
-
     }
-  }}
+  }
 
   return;
 }

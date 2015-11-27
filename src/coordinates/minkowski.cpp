@@ -74,23 +74,21 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
       dx3v(k) = x3v(k+1) - x3v(k);
   }
 
-  if((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i)
+  // Prepare for MHD mesh refinement
+  if (pmb->pmy_mesh->multilevel == true && MAGNETIC_FIELDS_ENABLED)
+  {
+    for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
       x1s2(i) = x1s3(i) = x1v(i);
-    if (pmb->block_size.nx2 == 1) {
+    if (pmb->block_size.nx2 == 1)
       x2s1(js) = x2s3(js) = x2v(js);
-    }
-    else {
-      for (int j=js-(NGHOST); j<=je+(NGHOST); ++j)
+    else
+      for (int j = js-NGHOST; j <= je+NGHOST; ++j)
         x2s1(j) = x2s3(j) = x2v(j);
-    }
-    if (pmb->block_size.nx3 == 1) {
+    if (pmb->block_size.nx3 == 1)
       x3s1(ks) = x3s2(ks) = x3v(ks);
-    }
-    else {
-      for (int k=ks-(NGHOST); k<=ke+(NGHOST); ++k)
+    else
+      for (int k = ks-NGHOST; k <= ke+NGHOST; ++k)
         x3s1(k) = x3s2(k) = x3v(k);
-    }
   }
 }
 
@@ -185,30 +183,15 @@ Real Coordinates::GetFace1Area(const int k, const int j, const int i)
 //   areas: 1D array of interface areas orthogonal to y
 // Notes:
 //   \Delta A = \Delta x * \Delta z
-//   cf. GetFace2Area()
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    areas(i) = GetFace2Area(k, j, i);
+    areas(i) = dx1f(i) * dx3f(k);
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for computing single area orthogonal to y
-// Inputs:
-//   k,j,i: z-, y-, and x-indices
-// Outputs:
-//   returned value: interface area orthogonal to y
-// Notes:
-//   \Delta A = \Delta x * \Delta z
-//   cf. Face2Area()
-Real Coordinates::GetFace2Area(const int k, const int j, const int i)
-{
-  return dx1f(i) * dx3f(k);
-}
 
 //--------------------------------------------------------------------------------------
 
@@ -221,30 +204,15 @@ Real Coordinates::GetFace2Area(const int k, const int j, const int i)
 //   areas: 1D array of interface areas orthogonal to z
 // Notes:
 //   \Delta A = \Delta x * \Delta y
-//   cf. GetFace3Area()
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    areas(i) = GetFace3Area(k, j, i);
+    areas(i) = dx1f(i) * dx2f(j);
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for computing single area orthogonal to z
-// Inputs:
-//   k,j,i: z-, y-, and x-indices
-// Outputs:
-//   returned value: interface area orthogonal to z
-// Notes:
-//   \Delta A = \Delta x * \Delta y
-//   cf. Face3Area()
-Real Coordinates::GetFace3Area(const int k, const int j, const int i)
-{
-  return dx1f(i) * dx2f(j);
-}
 
 //--------------------------------------------------------------------------------------
 

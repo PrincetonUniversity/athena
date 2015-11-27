@@ -28,13 +28,13 @@ using namespace std;
 
 /*----------------------------------------------------------------------------*/
 /* function prototypes and global variables*/
-void stbv_iib(MeshBlock *pmb, AthenaArray<Real> &a,
+void stbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
               int is, int ie, int js, int je, int ks, int ke); //sets BCs on inner-x1 (left edge) of grid.
-void stbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a,
+void stbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
               int is, int ie, int js, int je, int ks, int ke); //sets BCs on inner-x2 (bottom edge) of grid.
-void stbv_oib(MeshBlock *pmb, AthenaArray<Real> &a,
+void stbv_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
               int is, int ie, int js, int je, int ks, int ke); //sets BCs on outer-x1 (right edge) of grid.
-void stbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
+void stbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
               int is, int ie, int js, int je, int ks, int ke); //sets BCs on outer-x2 (top edge) of grid.
 
 Real A1(  Real x1,   Real x2,   Real x3);
@@ -268,10 +268,9 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 
 
 /*  Boundary Condtions, outflowing, ix1, ox1, ix2, ox2  */
-void stbv_iib(MeshBlock *pmb, AthenaArray<Real> &a,
+void stbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
               int is, int ie, int js, int je, int ks, int ke)
 {
-  Coordinates *pco = pmb->pcoord;
   int i,j,k;
   Real pg;
   for (k=ks; k<=ke; k++) {
@@ -291,7 +290,7 @@ void stbv_iib(MeshBlock *pmb, AthenaArray<Real> &a,
 }
 
 
-void stbv_oib(MeshBlock *pmb, AthenaArray<Real> &a,
+void stbv_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
               int is, int ie, int js, int je, int ks, int ke)
 {
   int i,j,k;
@@ -316,7 +315,7 @@ void stbv_oib(MeshBlock *pmb, AthenaArray<Real> &a,
 }
 
 
-void stbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a,
+void stbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
               int is, int ie, int js, int je, int ks, int ke)
 {
   int i,j,k;
@@ -341,7 +340,7 @@ void stbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a,
 }
 
 
-void stbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a,
+void stbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
               int is, int ie, int js, int je, int ks, int ke)
 {
   int i,j,k;
