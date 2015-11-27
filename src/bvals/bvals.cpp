@@ -210,6 +210,14 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     }
   }
 
+  // *** this is temporary fix - copy boundary functions to the Mesh class
+  for(int i=0; i<6; i++) {
+    if(pmb->pmy_mesh->HydroBoundary_[i]==NULL) {
+      pmb->pmy_mesh->HydroBoundary_[i]=HydroBoundary_[i];
+      pmb->pmy_mesh->FieldBoundary_[i]=FieldBoundary_[i];
+    }
+  }
+
   // Clear flags and requests
   for(int l=0;l<NSTEP;l++) {
     for(int i=0;i<56;i++){
@@ -723,7 +731,9 @@ void BoundaryValues::EnrollHydroBoundaryFunction(enum direction dir, BValHydro_t
         << "dirName = " << dir << " not valid" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if(pmy_mblock_->block_bcs[dir]==-1) return;
+  // temporary fix
+  pmy_mblock_->pmy_mesh->HydroBoundary_[dir]=my_bc;
+  if(pmy_mblock_->block_bcs[dir]<=0) return;
   if(pmy_mblock_->block_bcs[dir]!=3) {
     msg << "### FATAL ERROR in EnrollHydroBoundaryCondition function" << std::endl
         << "A user-defined boundary condition flag (3) must be specified "
@@ -748,7 +758,9 @@ void BoundaryValues::EnrollFieldBoundaryFunction(enum direction dir,BValField_t 
         << "dirName = " << dir << " is not valid" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if(pmy_mblock_->block_bcs[dir]==-1) return;
+  // temporary fix
+  pmy_mblock_->pmy_mesh->FieldBoundary_[dir]=my_bc;
+  if(pmy_mblock_->block_bcs[dir]<=0) return;
   if(pmy_mblock_->block_bcs[dir]!=3) {
     msg << "### FATAL ERROR in EnrollFieldBoundaryCondition function" << std::endl
         << "A user-defined boundary condition flag (3) must be specified "
@@ -858,8 +870,9 @@ int BoundaryValues::LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src, Rea
   ej=(nb.ox2<0)?(pmb->js+NGHOST-1):pmb->je;
   sk=(nb.ox3>0)?(pmb->ke-NGHOST+1):pmb->ks;
   ek=(nb.ox3<0)?(pmb->ks+NGHOST-1):pmb->ke;
-
-  return BufferUtility::Pack4DData(src, buf, 0, NHYDRO-1, si, ei, sj, ej, sk, ek);
+  int p=0;
+  BufferUtility::Pack4DData(src, buf, 0, NHYDRO-1, si, ei, sj, ej, sk, ek, p);
+  return p;
 }
 
 
@@ -885,9 +898,10 @@ int BoundaryValues::LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src, Rea
   // restrict the data before sending
   pmr->RestrictCellCenteredValues(src, pmr->coarse_cons_, 0, NHYDRO-1,
                                   si, ei, sj, ej, sk, ek);
-
-  return BufferUtility::Pack4DData(pmr->coarse_cons_, buf, 0, NHYDRO-1,
-                                   si, ei, sj, ej, sk, ek);
+  int p=0;
+  BufferUtility::Pack4DData(pmr->coarse_cons_, buf, 0, NHYDRO-1,
+                            si, ei, sj, ej, sk, ek, p);
+  return p;
 }
 
 
@@ -936,7 +950,9 @@ int BoundaryValues::LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src, Real 
     }
   }
 
-  return BufferUtility::Pack4DData(src, buf, 0, NHYDRO-1, si, ei, sj, ej, sk, ek);
+  int p=0;
+  BufferUtility::Pack4DData(src, buf, 0, NHYDRO-1, si, ei, sj, ej, sk, ek, p);
+  return p;
 }
 
 
@@ -993,7 +1009,8 @@ void BoundaryValues::SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf
   else if(nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
 
-  BufferUtility::Unpack4DData(buf, dst, 0, NHYDRO-1, si, ei, sj, ej, sk, ek);
+  int p=0;
+  BufferUtility::Unpack4DData(buf, dst, 0, NHYDRO-1, si, ei, sj, ej, sk, ek, p);
   return;
 }
 
@@ -1036,8 +1053,9 @@ void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock&
   else if(nb.ox3>0)  sk=pmb->cke+1,   ek=pmb->cke+cng;
   else               sk=pmb->cks-cng, ek=pmb->cks-1;
 
+  int p=0;
   BufferUtility::Unpack4DData(buf, pmr->coarse_cons_, 0, NHYDRO-1,
-                              si, ei, sj, ej, sk, ek);
+                              si, ei, sj, ej, sk, ek, p);
   return;
 }
 
@@ -1091,7 +1109,8 @@ void BoundaryValues::SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf
   else if(nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
 
-  BufferUtility::Unpack4DData(buf, dst, 0, NHYDRO-1, si, ei, sj, ej, sk, ek);
+  int p=0;
+  BufferUtility::Unpack4DData(buf, dst, 0, NHYDRO-1, si, ei, sj, ej, sk, ek, p);
   return;
 }
 
@@ -1403,7 +1422,7 @@ int BoundaryValues::LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *
     if(nb.ox1>0) ei++;
     else if(nb.ox1<0) si--;
   }
-  p=BufferUtility::Pack3DData(src.x1f, buf, si, ei, sj, ej, sk, ek);
+  BufferUtility::Pack3DData(src.x1f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx2
   if(nb.ox1==0)      si=pmb->is,          ei=pmb->ie;
@@ -1417,7 +1436,7 @@ int BoundaryValues::LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *
     if(nb.ox2>0) ej++;
     else if(nb.ox2<0) sj--;
   }
-  p+=BufferUtility::Pack3DData(src.x2f, &(buf[p]), si, ei, sj, ej, sk, ek);
+  BufferUtility::Pack3DData(src.x2f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx3
   if(nb.ox2==0)      sj=pmb->js,          ej=pmb->je;
@@ -1431,7 +1450,7 @@ int BoundaryValues::LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *
     if(nb.ox3>0) ek++;
     else if(nb.ox3<0) sk--;
   }
-  p+=BufferUtility::Pack3DData(src.x3f, &(buf[p]), si, ei, sj, ej, sk, ek);
+  BufferUtility::Pack3DData(src.x3f, buf, si, ei, sj, ej, sk, ek, p);
 
   return p;
 }
@@ -1465,7 +1484,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(InterfaceField &src, Real *
     else if(nb.ox1<0) si--;
   }
   pmr->RestrictFieldX1(src.x1f, pmr->coarse_b_.x1f, si, ei, sj, ej, sk, ek);
-  p=BufferUtility::Pack3DData(pmr->coarse_b_.x1f, buf, si, ei, sj, ej, sk, ek);
+  BufferUtility::Pack3DData(pmr->coarse_b_.x1f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx2
   if(nb.ox1==0)      si=pmb->cis,       ei=pmb->cie;
@@ -1480,7 +1499,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(InterfaceField &src, Real *
     else if(nb.ox2<0) sj--;
   }
   pmr->RestrictFieldX2(src.x2f, pmr->coarse_b_.x2f, si, ei, sj, ej, sk, ek);
-  p+=BufferUtility::Pack3DData(pmr->coarse_b_.x2f, &(buf[p]), si, ei, sj, ej, sk, ek);
+  BufferUtility::Pack3DData(pmr->coarse_b_.x2f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx3
   if(nb.ox2==0)      sj=pmb->cjs,       ej=pmb->cje;
@@ -1495,7 +1514,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(InterfaceField &src, Real *
     else if(nb.ox3<0) sk--;
   }
   pmr->RestrictFieldX3(src.x3f, pmr->coarse_b_.x3f, si, ei, sj, ej, sk, ek);
-  p+=BufferUtility::Pack3DData(pmr->coarse_b_.x3f, &(buf[p]), si, ei, sj, ej, sk, ek);
+  BufferUtility::Pack3DData(pmr->coarse_b_.x3f, buf, si, ei, sj, ej, sk, ek, p);
 
   return p;
 }
@@ -1551,7 +1570,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToFiner(InterfaceField &src, Real *bu
   }
   else if(nb.ox3>0) sk=pmb->ke-cn, ek=pmb->ke;
   else              sk=pmb->ks,    ek=pmb->ks+cn;
-  p=BufferUtility::Pack3DData(src.x1f, buf, si, ei, sj, ej, sk, ek);
+  BufferUtility::Pack3DData(src.x1f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx2
   if(nb.ox1==0) {
@@ -1576,7 +1595,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToFiner(InterfaceField &src, Real *bu
   }
   else if(nb.ox2>0) sj=pmb->je, ej=pmb->je+1;
   else              sj=pmb->js, ej=pmb->js+1;
-  p+=BufferUtility::Pack3DData(src.x2f, &(buf[p]), si, ei, sj, ej, sk, ek);
+  BufferUtility::Pack3DData(src.x2f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx3
   if(nb.ox2==0) {
@@ -1610,7 +1629,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToFiner(InterfaceField &src, Real *bu
   }
   else if(nb.ox3>0) sk=pmb->ke, ek=pmb->ke+1;
   else              sk=pmb->ks, ek=pmb->ks+1;
-  p+=BufferUtility::Pack3DData(src.x3f, &(buf[p]), si, ei, sj, ej, sk, ek);
+  BufferUtility::Pack3DData(src.x3f, buf, si, ei, sj, ej, sk, ek, p);
 
   return p;
 }
@@ -1674,13 +1693,8 @@ void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf,
     if(nb.ox1>0) si--;
     else if(nb.ox1<0) ei++;
   }
-  for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
-#pragma simd
-      for (int i=si; i<=ei; ++i)
-        dst.x1f(k,j,i)=buf[p++];
-    }
-  }
+  BufferUtility::Unpack3DData(buf, dst.x1f, si, ei, sj, ej, sk, ek, p);
+
   // bx2
   if(nb.ox1==0)      si=pmb->is,         ei=pmb->ie;
   else if(nb.ox1>0)  si=pmb->ie+1,       ei=pmb->ie+NGHOST;
@@ -1694,18 +1708,13 @@ void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf,
     if(nb.ox2>0) sj--;
     else if(nb.ox2<0) ej++;
   }
-  for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
-#pragma simd
-      for (int i=si; i<=ei; ++i)
-        dst.x2f(k,j,i)=buf[p++];
-    }
-  }
+  BufferUtility::Unpack3DData(buf, dst.x2f, si, ei, sj, ej, sk, ek, p);
   if(pmb->block_size.nx2==1) { // 1D
 #pragma simd
     for (int i=si; i<=ei; ++i)
       dst.x2f(sk,sj+1,i)=dst.x2f(sk,sj,i);
   }
+
   // bx3
   if(nb.ox2==0)      sj=pmb->js,         ej=pmb->je;
   else if(nb.ox2>0)  sj=pmb->je+1,       ej=pmb->je+NGHOST;
@@ -1719,13 +1728,7 @@ void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf,
     if(nb.ox3>0) sk--;
     else if(nb.ox3<0) ek++;
   }
-  for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
-#pragma simd
-      for (int i=si; i<=ei; ++i)
-        dst.x3f(k,j,i)=buf[p++];
-    }
-  }
+  BufferUtility::Unpack3DData(buf, dst.x3f, si, ei, sj, ej, sk, ek, p);
   if(pmb->block_size.nx3==1) { // 1D or 2D
     for (int j=sj; j<=ej; ++j) {
 #pragma simd
@@ -1776,14 +1779,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
   }
   else if(nb.ox3>0)  sk=pmb->cke+1,   ek=pmb->cke+cng;
   else               sk=pmb->cks-cng, ek=pmb->cks-1;
-
-  for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
-#pragma simd
-      for (int i=si; i<=ei; ++i)
-        pmr->coarse_b_.x1f(k,j,i) = buf[p++];
-    }
-  }
+  BufferUtility::Unpack3DData(buf, pmr->coarse_b_.x1f, si, ei, sj, ej, sk, ek, p);
 
   // bx2
   if(nb.ox1==0) {
@@ -1803,14 +1799,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
   }
   else if(nb.ox2>0)  sj=pmb->cje+1, ej=pmb->cje+2;
   else               sj=pmb->cjs-1, ej=pmb->cjs;
-
-  for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
-#pragma simd
-      for (int i=si; i<=ei; ++i)
-        pmr->coarse_b_.x2f(k,j,i) = buf[p++];
-    }
-  }
+  BufferUtility::Unpack3DData(buf, pmr->coarse_b_.x2f, si, ei, sj, ej, sk, ek, p);
 
   // bx3
   if(nb.ox2==0) {
@@ -1832,14 +1821,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
   }
   else if(nb.ox3>0)  sk=pmb->cke+1, ek=pmb->cke+2;
   else               sk=pmb->cks-1, ek=pmb->cks;
-
-  for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
-#pragma simd
-      for (int i=si; i<=ei; ++i)
-        pmr->coarse_b_.x3f(k,j,i) = buf[p++];
-    }
-  }
+  BufferUtility::Unpack3DData(buf, pmr->coarse_b_.x3f, si, ei, sj, ej, sk, ek, p);
 
   return;
 }
@@ -1901,13 +1883,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(InterfaceField &dst, Real *buf,
   else if(nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
 
-  for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
-#pragma simd
-      for (int i=si; i<=ei; ++i)
-        dst.x1f(k,j,i) = buf[p++];
-    }
-  }
+  BufferUtility::Unpack3DData(buf, dst.x1f, si, ei, sj, ej, sk, ek, p);
 
   // bx2
   if(nb.ox1==0) {
@@ -1939,13 +1915,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(InterfaceField &dst, Real *buf,
     else if(nb.ox2<0) ej++;
   }
 
-  for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
-#pragma simd
-      for (int i=si; i<=ei; ++i)
-        dst.x2f(k,j,i) = buf[p++];
-    }
-  }
+  BufferUtility::Unpack3DData(buf, dst.x2f, si, ei, sj, ej, sk, ek, p);
   if(pmb->block_size.nx2==1) { // 1D
 #pragma simd
     for (int i=si; i<=ei; ++i)
@@ -1989,14 +1959,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(InterfaceField &dst, Real *buf,
     if(nb.ox3>0) sk--;
     else if(nb.ox3<0) ek++;
   }
-
-  for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
-#pragma simd
-      for (int i=si; i<=ei; ++i)
-        dst.x3f(k,j,i) = buf[p++];
-    }
-  }
+  BufferUtility::Unpack3DData(buf, dst.x3f, si, ei, sj, ej, sk, ek, p);
   if(pmb->block_size.nx3==1) { // 1D or 2D
     for (int j=sj; j<=ej; ++j) {
 #pragma simd
@@ -3164,13 +3127,12 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
   if(pmb->pmy_mesh->face_only==false) { // extend the ghost zone
     bis=pmb->is-NGHOST;
     bie=pmb->ie+NGHOST;
-    // note : this is temporary; Hydro and Field Boundary functions will be merged soon
     if(HydroBoundary_[inner_x2]==NULL && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
     if(HydroBoundary_[outer_x2]==NULL && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
     if(HydroBoundary_[inner_x3]==NULL && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
     if(HydroBoundary_[outer_x3]==NULL && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
   }
-
+  // note : this is temporary; Hydro and Field Boundary functions will be merged soon
   if(FieldBoundary_[inner_x1]!=NULL && MAGNETIC_FIELDS_ENABLED) {
     FieldBoundary_[inner_x1](pmb, pco, bfdst, pmb->is, pmb->ie, bjs, bje, bks, bke);
     pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
@@ -3527,7 +3489,7 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
                                    pmb->cis, pmb->cie, sj, ej, sk, ek);
       }
     }
-    if(nb.ox2==0) {
+    if(nb.ox2==0 && pmb->block_size.nx2 > 1) {
       if(HydroBoundary_[inner_x2]!=NULL) {
         HydroBoundary_[inner_x2](pmb, pmb->pcoarsec, pmr->coarse_prim_,
                                  si, ei, pmb->cjs, pmb->cje, sk, ek);
@@ -3543,7 +3505,7 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
                                    si, ei, pmb->cjs, pmb->cje, sk, ek);
       }
     }
-    if(nb.ox3==0) {
+    if(nb.ox3==0 && pmb->block_size.nx3 > 1) {
       if(HydroBoundary_[inner_x3]!=NULL) {
         HydroBoundary_[inner_x3](pmb, pmb->pcoarsec, pmr->coarse_prim_,
                                  si, ei, sj, ej, pmb->cks, pmb->cke);

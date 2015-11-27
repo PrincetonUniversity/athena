@@ -24,7 +24,7 @@ class Coordinates;
 struct InterfaceField;
 class BoundaryValues;
 
-typedef int (*AMRFlag_t)(MeshBlock *pmb, int &nflag);
+typedef int (*AMRFlag_t)(MeshBlock *pmb);
 
 
 class MeshRefinement
@@ -70,7 +70,6 @@ public:
 
   void EnrollAMRFlagFunction(AMRFlag_t amrflag);
   void CheckRefinementCondition(void);
-  void SetNeighborRefinementFlag(int ox1, int ox2, int ox3, int &nflag);
 };
 
 #endif

@@ -908,6 +908,7 @@ void MeshRefinement::ProlongateInternalField(InterfaceField &fine,
 void MeshRefinement::EnrollAMRFlagFunction(AMRFlag_t amrflag)
 {
   AMRFlag_=amrflag;
+  pmy_mblock_->pmy_mesh->AMRFlag_=amrflag;
   return;
 }
 
@@ -917,36 +918,39 @@ void MeshRefinement::EnrollAMRFlagFunction(AMRFlag_t amrflag)
 //  \brief Enroll a user-defined function for checking refinement criteria
 void MeshRefinement::CheckRefinementCondition(void)
 {
+  MeshBlock *pmb=pmy_mblock_;
   int ret=0, aret=-1;
-  refine_flag_=0, neighbor_rflag_=0;
+  refine_flag_=0;
 
   // *** should be implemented later ***
   // loop-over refinement criteria
   if(AMRFlag_!=NULL)
-    ret=AMRFlag_(pmy_mblock_, neighbor_rflag_);
+    ret=AMRFlag_(pmy_mblock_);
   aret=std::max(aret,ret);
 
 
   if(aret>0) {
-    if(pmy_mblock_->loc.level == pmy_mblock_->pmy_mesh->max_level) refine_flag_=0;
+    if(pmb->loc.level == pmb->pmy_mesh->max_level) refine_flag_=0;
     else refine_flag_=1;
   }
   else if(aret<0) {
-    if(pmy_mblock_->loc.level == pmy_mblock_->pmy_mesh->root_level) refine_flag_=0;
-    else refine_flag_=-1;
+    if(pmb->loc.level == pmb->pmy_mesh->root_level) refine_flag_=0;
+    else {
+      int ec=0, js, je, ks, ke;
+      if(pmb->block_size.nx2 > 1) js=-1, je=1;
+      else js=0, je=0;
+      if(pmb->block_size.nx3 > 1) ks=-1, ke=1;
+      else ks=0, ke=0;
+      for(int k=ks; k<=ke; k++) {
+        for(int j=js; j<=je; j++) {
+          for(int i=-1; i<=1; i++)
+            if(pmb->nblevel[k+1][j+1][i+1]>pmb->loc.level) ec++;
+        }
+      }
+      if(ec>0) refine_flag_=0;
+      else refine_flag_=-1;
+    }
   }
-  return;
-}
-
-
-//--------------------------------------------------------------------------------------
-//! \fn void MeshRefinement::SetNeighborRefinementFlag(int ox1, int ox2, int ox3,
-//                                                     int &nflag)
-//  \brief Set a refinement flag for a neighboring block
-void MeshRefinement::SetNeighborRefinementFlag(int ox1, int ox2, int ox3, int &nflag)
-{
-  int bit=(ox3+1)*9+(ox2+1)*3+(ox1+1);
-  nflag |= (1<<bit);
   return;
 }
 

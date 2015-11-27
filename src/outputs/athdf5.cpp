@@ -58,8 +58,8 @@ void ATHDF5Output::Initialize(Mesh *pM, ParameterInput *pin)
   hsize_t sz;
   long int lx[3];
   int ll;
-  int nbs=nslist[Globals::my_rank];
-  int nbe=nbs+nblist[Globals::my_rank]-1;
+  int nbs=pM->nslist[Globals::my_rank];
+  int nbe=nbs+pM->nblist[Globals::my_rank]-1;
   int nbl=nbe-nbs+1;
 
   // create single output, filename:"file_basename"+"."+"file_id"+"."+XXXXX+".athdf",

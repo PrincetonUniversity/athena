@@ -19,6 +19,7 @@
 #include "meshblocktree.hpp"
 #include "outputs/wrapper.hpp"
 #include "task_list.hpp"
+#include "bvals/bvals.hpp"
 #include "mesh_refinement/mesh_refinement.hpp"
 
 // Forward declarations
@@ -131,6 +132,10 @@ private:
   Real MeshGeneratorX2(Real x, RegionSize rs);
   Real MeshGeneratorX3(Real x, RegionSize rs);
 
+  BValHydro_t HydroBoundary_[6];
+  BValField_t FieldBoundary_[6];
+  AMRFlag_t AMRFlag_;
+
   void MeshTest(int dim);
   void LoadBalancing(Real *clist, int *rlist, int *slist, int *nlist, int nb);
 
@@ -161,10 +166,12 @@ public:
   int64_t GetTotalCells(void);
   int GetNumMeshThreads() const {return num_mesh_threads_;}
   void Initialize(int res_flag, ParameterInput *pin);
+  void SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
+                                 int *block_bcs);
   void UpdateOneStep(void);
   void ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin); // in /pgen
   void NewTimeStep(void);
-  void MeshRefinement(ParameterInput *pin);
+  void AdaptiveMeshRefinement(ParameterInput *pin);
   MeshBlock* FindMeshBlock(int tgid);
   void TestConservation(void);
 };
