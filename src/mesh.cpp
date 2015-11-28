@@ -1081,12 +1081,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
                                            phydro->w, pfield->bcc, pmb->pcoord,
                                            is, ie, js, je, ks, ke);
       pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc);
-      for(int j=pmb->js-NGHOST; j<=pmb->je+NGHOST; j++) {
-        for(int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; i++) {
-          if(std::abs(phydro->u(0,0,j,i)-phydro->w(0,0,j,i))>0.01)
-          std::cout << pmb->gid << " " << j << " " << i << " " << phydro->u(0,0,j,i) << " " << phydro->w(0,0,j,i) << std::endl;
-        }
-      }
       pmb=pmb->next;
     }
     if((res_flag==0) && (adaptive==true)) {
@@ -1853,6 +1847,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   if(tnderef>nlbl)
     delete [] clderef;
   ntot=nbtotal+nnew-ndel;
+      std::cout << Globals::my_rank << " before " << nbtotal << " after " << ntot << " added " << nnew << " deleted " << ndel << std::endl;
   // Tree manipulation completed
 
   // Block exchange
