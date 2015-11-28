@@ -20,7 +20,7 @@
 // Declarations
 static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma_adi,
     const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int i,
-    MeshBlock *pmb, AthenaArray<Real> &cons, Coordinates *pco);
+    AthenaArray<Real> &cons, Coordinates *pco);
 static Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_adi);
 static Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi);
 static void neighbor_average(AthenaArray<Real> &prim, AthenaArray<bool> &problem, int n,
@@ -62,12 +62,13 @@ HydroEqnOfState::~HydroEqnOfState()
 // Variable inverter
 // Inputs:
 //   cons: conserved quantities
-//   prim_old: primitive quantities from previous half timestep
-//   bb: face-centered magnetic field (unused)
-//   pco: a pointer to a Coordinates class
+//   prim_old: primitive quantities from previous half timestep (not used)
+//   bb: face-centered magnetic field
+//   pco: pointer to Coordinates
+//   is,ie,js,je,ks,ke: index bounds of region to be updated
 // Outputs:
 //   prim: primitives
-//   bb_cc: cell-centered magnetic fields (unused)
+//   bb_cc: cell-centered magnetic field
 // Notes:
 //   follows Noble et al. 2006, ApJ 641 626 (N)
 //       writing wgas_rel for W = \gamma^2 w
@@ -79,8 +80,8 @@ HydroEqnOfState::~HydroEqnOfState()
 //   implements formulas assuming no magnetic field
 void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     const AthenaArray<Real> &prim_old, const InterfaceField &bb,
-    AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc, Coordinates *pco,
-    int is, int ie, int js, int je, int ks, int ke)
+    AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc, Coordinates *pco, int is, int ie,
+    int js, int je, int ks, int ke)
 {
   // Parameters
   const Real max_wgas_rel = 1.0e8;
@@ -89,9 +90,6 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
   // Extract ratio of specific heats
   const Real &gamma_adi = gamma_;
-
-  // Determine array bounds
-  MeshBlock *pmb = pmy_hydro_->pmy_block;
 
   // Go through cells
   for (int k = ks; k <= ke; ++k)
@@ -249,7 +247,7 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       for (int i = is; i <= ie; ++i)
         if (fixed_(k,j,i))
         {
-          PrimitiveToConservedSingle(prim, gamma_adi, g_, g_inv_, k, j, i, pmb, cons, pco);
+          PrimitiveToConservedSingle(prim, gamma_adi, g_, g_inv_, k, j, i, cons, pco);
           fixed_(k,j,i) = false;
         }
     }
@@ -258,18 +256,18 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
 // Function for converting all primitives to conserved variables
 // Inputs:
-//   prim: 3D array of primitives
-//   bc: 3D array of cell-centered magnetic fields (unused)
-//   pco: pointer to a Coordinates class
+//   prim: primitives
+//   bb_cc: cell-centered magnetic field (unused)
+//   pco: pointer to Coordinates
 //   is,ie,js,je,ks,ke: index bounds of region to be updated
 // Outputs:
-//   cons: 3D array of conserved variables
+//   cons: conserved variables
 // Notes:
 //   single-cell function exists for other purposes; call made to that function rather
 //       than having duplicate code
 void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
-     const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
-     int is, int ie, int js, int je, int ks, int ke)
+     const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons, Coordinates *pco, int is,
+     int ie, int js, int je, int ks, int ke)
 {
   for (int k = ks; k <= ke; ++k)
     for (int j = js; j <= je; ++j)
@@ -277,8 +275,7 @@ void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
       pco->CellMetric(k, j, is, ie, g_, g_inv_);
       #pragma simd
       for (int i = is; i <= ie; ++i)
-        PrimitiveToConservedSingle(prim, gamma_, g_, g_inv_, k, j, i,
-            pmy_fluid_->pmy_block, cons, pco);
+        PrimitiveToConservedSingle(prim, gamma_, g_, g_inv_, k, j, i, cons, pco);
     }
   return;
 }
@@ -289,12 +286,12 @@ void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //   gamma_adi: ratio of specific heats
 //   g,gi: 1D arrays of metric covariant and contravariant coefficients
 //   k,j,i: indices of cell
-//   pmb: pointer to MeshBlock
+//   pco: pointer to Coordinates
 // Outputs:
 //   cons: conserved variables set in desired cell
 static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma_adi,
     const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int i,
-    MeshBlock *pmb, AthenaArray<Real> &cons, Coordinates *pco)
+    AthenaArray<Real> &cons, Coordinates *pco)
 {
   // Extract primitives
   const Real &rho = prim(IDN,k,j,i);
@@ -335,6 +332,10 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
 
 // Function for calculating relativistic sound speeds
 // Inputs:
+//   rho_h: enthalpy per unit volume
+//   pgas: gas pressure
+//   vx: 3-velocity component v^x
+//   gamma_lorentz_sq: Lorentz factor \gamma^2
 // Outputs:
 //   plambda_plus: value set to most positive wavespeed
 //   plambda_minus: value set to most negative wavespeed
@@ -356,6 +357,10 @@ void HydroEqnOfState::SoundSpeedsSR(Real rho_h, Real pgas, Real vx,
 
 // Function for calculating relativistic sound speeds in arbitrary coordinates
 // Inputs:
+//   rho_h: enthalpy per unit volume
+//   pgas: gas pressure
+//   u0,u1: 4-velocity components u^0, u^1
+//   g00,g01,g11: metric components g^00, g^01, g^11
 // Outputs:
 //   plambda_plus: value set to most positive wavespeed
 //   plambda_minus: value set to most negative wavespeed

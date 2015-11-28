@@ -92,42 +92,40 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
       dx3v(k) = x3v(k+1) - x3v(k);
   }
 
-  if((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
-    for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i)
+  // Prepare for MHD mesh refinement
+  if (pmb->pmy_mesh->multilevel == true && MAGNETIC_FIELDS_ENABLED)
+  {
+    for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
       x1s2(i) = x1s3(i) = x1v(i);
-    if (pmb->block_size.nx2 == 1) {
+    if (pmb->block_size.nx2 == 1)
       x2s1(js) = x2s3(js) = x2v(js);
-    }
-    else {
-      for (int j=js-(NGHOST); j<=je+(NGHOST); ++j)
+    else
+      for (int j = js-NGHOST; j <= je+NGHOST; ++j)
         x2s1(j) = x2s3(j) = x2v(j);
-    }
-    if (pmb->block_size.nx3 == 1) {
+    if (pmb->block_size.nx3 == 1)
       x3s1(ks) = x3s2(ks) = x3v(ks);
-    }
-    else {
-      for (int k=ks-(NGHOST); k<=ke+(NGHOST); ++k)
+    else
+      for (int k = ks-NGHOST; k <= ke+NGHOST; ++k)
         x3s1(k) = x3s2(k) = x3v(k);
-    }
   }
 
   // Allocate arrays for intermediate geometric quantities: x-direction
- int n_cells_1 = pmb->block_size.nx1 + 2*NGHOST;
- coord_src_i1_.NewAthenaArray(n_cells_1);
- metric_cell_i1_.NewAthenaArray(n_cells_1);
- metric_cell_i2_.NewAthenaArray(n_cells_1);
- metric_face1_i1_.NewAthenaArray(n_cells_1);
- metric_face1_i2_.NewAthenaArray(n_cells_1);
- metric_face2_i1_.NewAthenaArray(n_cells_1);
- metric_face2_i2_.NewAthenaArray(n_cells_1);
- metric_face3_i1_.NewAthenaArray(n_cells_1);
- metric_face3_i2_.NewAthenaArray(n_cells_1);
- trans_face1_i2_.NewAthenaArray(n_cells_1);
- trans_face2_i1_.NewAthenaArray(n_cells_1);
- trans_face2_i2_.NewAthenaArray(n_cells_1);
- trans_face3_i2_.NewAthenaArray(n_cells_1);
- g_.NewAthenaArray(NMETRIC, n_cells_1);
- gi_.NewAthenaArray(NMETRIC, n_cells_1);
+  int n_cells_1 = pmb->block_size.nx1 + 2*NGHOST;
+  coord_src_i1_.NewAthenaArray(n_cells_1);
+  metric_cell_i1_.NewAthenaArray(n_cells_1);
+  metric_cell_i2_.NewAthenaArray(n_cells_1);
+  metric_face1_i1_.NewAthenaArray(n_cells_1);
+  metric_face1_i2_.NewAthenaArray(n_cells_1);
+  metric_face2_i1_.NewAthenaArray(n_cells_1);
+  metric_face2_i2_.NewAthenaArray(n_cells_1);
+  metric_face3_i1_.NewAthenaArray(n_cells_1);
+  metric_face3_i2_.NewAthenaArray(n_cells_1);
+  trans_face1_i2_.NewAthenaArray(n_cells_1);
+  trans_face2_i1_.NewAthenaArray(n_cells_1);
+  trans_face2_i2_.NewAthenaArray(n_cells_1);
+  trans_face3_i2_.NewAthenaArray(n_cells_1);
+  g_.NewAthenaArray(NMETRIC, n_cells_1);
+  gi_.NewAthenaArray(NMETRIC, n_cells_1);
 
  // Calculate intermediate geometric quantities: x-direction
  #pragma simd
@@ -212,7 +210,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    volumes(i) = dx1f(i) * dx2f(j) * dx3f(k);
+    volumes(i) = GetCellVolume(k, j, i);
   return;
 }
 
@@ -247,7 +245,7 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    areas(i) = dx2f(j) * dx3f(k);
+    areas(i) = GetFace1Area(k, j, i);
   return;
 }
 
@@ -342,7 +340,7 @@ void Coordinates::Edge2Length(const int k, const int j, const int il, const int 
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    lengths(i) = dx2f(j);
+    lengths(i) = GetEdge2Length(k, j, i);
   return;
 }
 
@@ -379,7 +377,7 @@ void Coordinates::Edge3Length(const int k, const int j, const int il, const int 
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    lengths(i) = dx3f(k);
+    lengths(i) = GetEdge3Length(k, j, i);
   return;
 }
 
