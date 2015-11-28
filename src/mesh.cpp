@@ -257,10 +257,10 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   if(pin->GetOrAddString("mesh","refinement","static")=="adaptive")
     adaptive=true, multilevel=true;
   if(adaptive==true) {
-    max_level = pin->GetOrAddInteger("mesh","maxlevel",1)+root_level-1;
+    max_level = pin->GetOrAddInteger("mesh","numlevel",1)+root_level-1;
     if(max_level > 63) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
-          << "The maximum refinement level must be smaller than "
+          << "The number of the refinement level must be smaller than "
           << 63-root_level+1 << "." << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
@@ -1723,46 +1723,40 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
 
   // count the number of the blocks to be (de)refined and displacement
   int tnref=0, tnderef=0;
+  for(int n=0; n<Globals::nranks; n++) {
+    tnref  += nref[n];
+    tnderef+= nderef[n];
+  }
+  if(tnref==0 && tnderef==0) {
+    delete [] nref;
+    delete [] nderef;
+    return;
+  }
   int *rdisp = new int [Globals::nranks];
   int *ddisp = new int [Globals::nranks];
   int *bnref = new int [Globals::nranks];
   int *bnderef = new int [Globals::nranks];
   int *brdisp = new int [Globals::nranks];
   int *bddisp = new int [Globals::nranks];
+  int rd=0, dd=0;
   for(int n=0; n<Globals::nranks; n++) {
     bnref[n]   = nref[n]*sizeof(LogicalLocation);
     bnderef[n] = nderef[n]*sizeof(LogicalLocation);
-    rdisp[n] = tnref;
-    ddisp[n] = tnderef;
-    brdisp[n] = tnref*sizeof(LogicalLocation);
-    bddisp[n] = tnderef*sizeof(LogicalLocation);
-    tnref  += nref[n];
-    tnderef+= nderef[n];
-  }
-  if(Globals::my_rank==0) {
-    std::cout << tnref << " blocks need to be refined, and " 
-              << tnderef << " blocks can be derefined." << std::endl;
-  }
-  if(tnref==0 && tnderef==0) {
-    delete [] nref;
-    delete [] nderef;
-    delete [] bnref;
-    delete [] bnderef;
-    delete [] rdisp;
-    delete [] ddisp;
-    delete [] brdisp;
-    delete [] bddisp;
-    return;
+    rdisp[n] = rd;
+    ddisp[n] = dd;
+    brdisp[n] = rd*sizeof(LogicalLocation);
+    bddisp[n] = dd*sizeof(LogicalLocation);
+    rd+=nref[n];
+    dd+=nderef[n];
   }
 
   // allocate memory for the location arrays
-  LogicalLocation *lref, *lderef, *clderef;
-  if(tnref!=0)
-    lref = new LogicalLocation[tnref];
-
   int nlbl=2, dim=1;
   if(mesh_size.nx2 > 1) nlbl=4, dim=2;
   if(mesh_size.nx3 > 1) nlbl=8, dim=3;
+  LogicalLocation *lref, *lderef, *clderef;
+  if(tnref!=0)
+    lref = new LogicalLocation[tnref];
   if(tnderef>nlbl) {
     lderef = new LogicalLocation[tnderef];
     clderef = new LogicalLocation[tnderef/nlbl];
@@ -1772,14 +1766,10 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   int iref = rdisp[Globals::my_rank], ideref = ddisp[Globals::my_rank];
   pmb=pblock;
   while(pmb!=NULL) {
-    if(pmb->pmr->refine_flag_== 1) {
-      lref[iref]=pmb->loc;
-      iref++;
-    }
-    if(pmb->pmr->refine_flag_==-1 && tnderef>nlbl) {
-      lderef[ideref]=pmb->loc;
-      ideref++;
-    }
+    if(pmb->pmr->refine_flag_== 1)
+      lref[iref++]=pmb->loc;
+    if(pmb->pmr->refine_flag_==-1 && tnderef>nlbl)
+      lderef[ideref++]=pmb->loc;
     pmb=pmb->next;
   }
 #ifdef MPI_PARALLEL
@@ -1801,35 +1791,37 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
 #endif
   delete [] nref;
   delete [] bnref;
-  delete [] ddisp;
   delete [] rdisp;
+  delete [] ddisp;
   delete [] brdisp;
 
   // calculate the list of the newly derefined blocks
   int lk=0, lj=0, ctnd=0;
   if(mesh_size.nx2 > 1) lj=1;
   if(mesh_size.nx3 > 1) lk=1;
-  for(int n=0; n<tnderef; n++) {
-    if((lderef[n].lx1&1L)==0 && (lderef[n].lx2&1L)==0 && (lderef[n].lx3&1L)==0) {
-      int r=n, rr=0;
-      for(long int k=0;k<=lk;k++) {
-        for(long int j=0;j<=lj;j++) {
-          for(long int i=0;i<=1;i++) {
-            if((lderef[n].lx1+i)==lderef[r].lx1
-            && (lderef[n].lx2+j)==lderef[r].lx2
-            && (lderef[n].lx3+k)==lderef[r].lx3
-            &&  lderef[n].level ==lderef[r].level)
-              rr++;
-            r++;
+  if(tnderef>nlbl) {
+    for(int n=0; n<tnderef; n++) {
+      if((lderef[n].lx1&1L)==0 && (lderef[n].lx2&1L)==0 && (lderef[n].lx3&1L)==0) {
+        int r=n, rr=0;
+        for(long int k=0;k<=lk;k++) {
+          for(long int j=0;j<=lj;j++) {
+            for(long int i=0;i<=1;i++) {
+              if((lderef[n].lx1+i)==lderef[r].lx1
+              && (lderef[n].lx2+j)==lderef[r].lx2
+              && (lderef[n].lx3+k)==lderef[r].lx3
+              &&  lderef[n].level ==lderef[r].level)
+                rr++;
+              r++;
+            }
           }
         }
-      }
-      if(rr==nlbl) {
-        clderef[ctnd].lx1  =(lderef[n].lx1>>1);
-        clderef[ctnd].lx2  =(lderef[n].lx2>>1);
-        clderef[ctnd].lx3  =(lderef[n].lx3>>1);
-        clderef[ctnd].level=lderef[n].level-1;
-        ctnd++;
+        if(rr==nlbl) {
+          clderef[ctnd].lx1  =(lderef[n].lx1>>1);
+          clderef[ctnd].lx2  =(lderef[n].lx2>>1);
+          clderef[ctnd].lx3  =(lderef[n].lx3>>1);
+          clderef[ctnd].level=lderef[n].level-1;
+          ctnd++;
+        }
       }
     }
   }
@@ -1844,16 +1836,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
     delete [] lderef;
 
   // Now the lists of the blocks to be refined and derefined are completed
-  if(Globals::my_rank==0) {
-/*    for(int n=0; n<tnref; n++) {
-      std::cout << "Refine   " << n << " :  Location " << lref[n].lx1 << " "
-        << lref[n].lx2 << " " << lref[n].lx3 << " " << lref[n].level << std::endl;
-    }*/
-    for(int n=0; n<ctnd; n++)
-      std::cout << "Derefine " << n << " :  Location " << clderef[n].lx1 << " " << 
-           clderef[n].lx2 << " " << clderef[n].lx3 << " " << clderef[n].level << std::endl;
-  }
-
   // Start tree manipulation
   // Step 1. perform refinement
   int nnew=0, ndel=0, ntot=0;
@@ -1861,11 +1843,15 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
     MeshBlockTree *bt=tree.FindMeshBlock(lref[n]);
     bt->Refine(tree, dim, mesh_bcs, nrbx1, nrbx2, nrbx3, root_level, nnew);
   }
+  if(tnref!=0)
+    delete [] lref;
   // Step 2. perform derefinement
   for(int n=0; n<ctnd; n++) {
     MeshBlockTree *bt=tree.FindMeshBlock(clderef[n]);
     bt->Derefine(tree, dim, mesh_bcs, nrbx1, nrbx2, nrbx3, root_level, ndel);
   }
+  if(tnderef>nlbl)
+    delete [] clderef;
   ntot=nbtotal+nnew-ndel;
   // Tree manipulation completed
 
@@ -1889,6 +1875,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
         oldtonew[k++]=n;
     }
   }
+
 #ifdef MPI_PARALLEL
   // receive the old cost list
   MPI_Wait(&areq[3], MPI_STATUS_IGNORE);
@@ -2045,6 +2032,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
           if(ox1==0) is=pb->is-1,                       ie=pb->is+pb->block_size.nx1/2;
           else       is=pb->is+pb->block_size.nx1/2-1,  ie=pb->ie+1;
           if(ox2==0) js=pb->js-f2,                      je=pb->js+pb->block_size.nx2/2;
+          if(ox2==0) js=pb->js-f2,                      je=pb->js+pb->block_size.nx2/2;
           else       js=pb->js+pb->block_size.nx2/2-f2, je=pb->je+f2;
           if(ox3==0) ks=pb->ks-f3,                      ke=pb->ks+pb->block_size.nx3/2;
           else       ks=pb->ks+pb->block_size.nx3/2-f3, ke=pb->ke+f3;
@@ -2137,9 +2125,13 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
       }
       // temporary fix - enroll boundary functions
       for(int b=0; b<6; b++) {
-        if(block_bcs[b]>0 && block_bcs[b]!=4) {
+        if(block_bcs[b]>0 && block_bcs[b]<=3) {
           pmb->pbval->HydroBoundary_[b]=HydroBoundary_[b];
           pmb->pbval->FieldBoundary_[b]=FieldBoundary_[b];
+        }
+        else {
+          pmb->pbval->HydroBoundary_[b]=NULL;
+          pmb->pbval->FieldBoundary_[b]=NULL;
         }
       }
       // temporary fix - enroll mesh refinement condition function
@@ -2225,12 +2217,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
         }}}
         pmr->ProlongateCellCenteredValues(pmr->coarse_cons_, pmb->phydro->u,
                                           0, NHYDRO-1, is, ie, js, je, ks, ke);
-        for(int j=pmb->js-NGHOST; j<=pmb->je+NGHOST; j++) {
-          for(int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; i++) {
-            if(pmb->phydro->u(IDN,0,j,i)< 0.01)
-            std::cout << pmb->gid << " "<< j << " " << i << " " << pmb->phydro->u(IDN,0,j,i) << std::endl;
-          }
-        }
         if(MAGNETIC_FIELDS_ENABLED) {
           InterfaceField &src=pob->pfield->b;
           InterfaceField &dst=pmr->coarse_b_;
@@ -2414,11 +2400,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   }
   Initialize(2, pin);
 
-  // free temporary arrays
-  if(tnref!=0)
-    delete [] lref;
-  if(tnderef>nlbl)
-    delete [] clderef;
   return;
 }
 

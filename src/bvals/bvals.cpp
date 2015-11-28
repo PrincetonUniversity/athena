@@ -63,6 +63,8 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   int f2d=0, f3d=0;
   if(pmb->block_size.nx2 > 1) f2d=1;
   if(pmb->block_size.nx3 > 1) f3d=1;
+  for(int i=0; i<6; i++)
+    HydroBoundary_[i]=NULL, FieldBoundary_[i]=NULL;
 
 // Set BC functions for each of the 6 boundaries in turn -------------------------------
 // Inner x1
@@ -212,7 +214,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 
   // *** this is temporary fix - copy boundary functions to the Mesh class
   for(int i=0; i<6; i++) {
-    if(pmb->pmy_mesh->HydroBoundary_[i]==NULL) {
+    if(pmb->block_bcs[i]>0 && pmb->block_bcs[i]<=2) {
       pmb->pmy_mesh->HydroBoundary_[i]=HydroBoundary_[i];
       pmb->pmy_mesh->FieldBoundary_[i]=FieldBoundary_[i];
     }

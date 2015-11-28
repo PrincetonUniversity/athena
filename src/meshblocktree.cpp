@@ -266,6 +266,7 @@ void MeshBlockTree::Derefine(MeshBlockTree& root, int dim, int* mesh_bcs,
     for(int j=0; j<=e2; j++) {
       for(int i=0; i<=1; i++) {
         delete pleaf[k][j][i];
+        pleaf[k][j][i]=NULL;
         ndel++;
       }
     }
