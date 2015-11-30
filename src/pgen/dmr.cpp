@@ -211,13 +211,13 @@ int RefinementCondition(MeshBlock *pmb)
   MeshRefinement *pmr = pmb->pmr;
   Real maxeps=0.0;
   int k=pmb->ks;
-  for(int j=pmb->js-1; j<=pmb->je+1; j++) {
-    for(int i=pmb->is-1; i<=pmb->ie+1; i++) {
-      Real epsr= ((w(IDN,k,j,i+1)-2.0*w(IDN,k,j,i)+w(IDN,k,j,i-1))
-                 +(w(IDN,k,j+1,i)-2.0*w(IDN,k,j,i)+w(IDN,k,j-1,i)))/w(IDN,k,j,i);
-      Real epsp= ((w(IEN,k,j,i+1)-2.0*w(IEN,k,j,i)+w(IEN,k,j,i-1))
-                 +(w(IEN,k,j+1,i)-2.0*w(IEN,k,j,i)+w(IEN,k,j-1,i)))/w(IEN,k,j,i);
-      Real eps = std::max(std::abs(epsr), std::abs(epsp));
+  for(int j=pmb->js; j<=pmb->je; j++) {
+    for(int i=pmb->is; i<=pmb->ie; i++) {
+      Real epsr= (std::abs(w(IDN,k,j,i+1)-2.0*w(IDN,k,j,i)+w(IDN,k,j,i-1))
+                 +std::abs(w(IDN,k,j+1,i)-2.0*w(IDN,k,j,i)+w(IDN,k,j-1,i)))/w(IDN,k,j,i);
+      Real epsp= (std::abs(w(IEN,k,j,i+1)-2.0*w(IEN,k,j,i)+w(IEN,k,j,i-1))
+                 +std::abs(w(IEN,k,j+1,i)-2.0*w(IEN,k,j,i)+w(IEN,k,j-1,i)))/w(IEN,k,j,i);
+      Real eps = std::max(epsr, epsp);
       maxeps = std::max(maxeps, eps);
     }
   }

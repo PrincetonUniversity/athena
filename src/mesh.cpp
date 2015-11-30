@@ -1689,10 +1689,10 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
 {
   MeshBlock *pmb;
 #ifdef MPI_PARALLEL
-  MPI_Request areq[4];
+  MPI_Request areq[3];
   // start sharing the cost list
   MPI_Iallgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_INT,
-                  costlist, nblist, nslist, MPI_INT, MPI_COMM_WORLD, &areq[3]);
+                  costlist, nblist, nslist, MPI_INT, MPI_COMM_WORLD, &areq[2]);
 #endif
   int *nref = new int [Globals::nranks];
   int *nderef = new int [Globals::nranks];
@@ -1790,10 +1790,11 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   delete [] brdisp;
 
   // calculate the list of the newly derefined blocks
-  int lk=0, lj=0, ctnd=0;
-  if(mesh_size.nx2 > 1) lj=1;
-  if(mesh_size.nx3 > 1) lk=1;
+  int ctnd=0;
   if(tnderef>nlbl) {
+    int lk=0, lj=0;
+    if(mesh_size.nx2 > 1) lj=1;
+    if(mesh_size.nx3 > 1) lk=1;
     for(int n=0; n<tnderef; n++) {
       if((lderef[n].lx1&1L)==0 && (lderef[n].lx2&1L)==0 && (lderef[n].lx3&1L)==0) {
         int r=n, rr=0;
@@ -1823,6 +1824,13 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   if(ctnd>1)
     std::sort(clderef, &(clderef[ctnd-1]), LogicalLocation::Greater);
 
+/*  if(Globals::my_rank==0) {
+    for(int n=0; n<tnref; n++)
+      std::cout << "Refine flag:" << lref[n].lx1 << " " << lref[n].lx2 << " " << lref[n].lx3 << " " << lref[n].level << std::endl;
+    for(int n=0; n<ctnd; n++)
+      std::cout << "Derefine flag:" << clderef[n].lx1 << " " << clderef[n].lx2 << " " << clderef[n].lx3 << " " << clderef[n].level << std::endl;
+  }*/
+
   delete [] nderef;
   delete [] bnderef;
   delete [] bddisp;
@@ -1847,7 +1855,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   if(tnderef>nlbl)
     delete [] clderef;
   ntot=nbtotal+nnew-ndel;
-      std::cout << Globals::my_rank << " before " << nbtotal << " after " << ntot << " added " << nnew << " deleted " << ndel << std::endl;
   // Tree manipulation completed
 
   // Block exchange
@@ -1873,7 +1880,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
 
 #ifdef MPI_PARALLEL
   // receive the old cost list
-  MPI_Wait(&areq[3], MPI_STATUS_IGNORE);
+  MPI_Wait(&areq[2], MPI_STATUS_IGNORE);
 #endif
   for(int n=0; n<ntot; n++) {
     int pg=newtoold[n];
@@ -2103,8 +2110,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
         pob->prev=pmb;
         pmb=pmb->next;
       }
-      pob->next=NULL;
-      pob->gid=n; pob->lid=n-nbs;
+      pmb->next=NULL;
+      pmb->gid=n; pmb->lid=n-nbs;
     }
     else {
       // on a different level or node - create a new block
@@ -2138,20 +2145,17 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
           // on the same node - restriction
           MeshBlock* pob=FindMeshBlock(on+ll);
           MeshRefinement *pmr=pob->pmr;
-          int is=pmb->is+(loclist[on+ll].lx1&1L)*pmb->block_size.nx1/2;
-          int ie=is+pmb->block_size.nx1/2-1;
-          int js=pmb->js+(loclist[on+ll].lx2&1L)*pmb->block_size.nx2/2;
-          int je=js+pmb->block_size.nx2/2-f2;
-          int ks=pmb->ks+(loclist[on+ll].lx3&1L)*pmb->block_size.nx3/2;
-          int ke=ks+pmb->block_size.nx3/2-f3;
           pmr->RestrictCellCenteredValues(pob->phydro->u, pmr->coarse_cons_,
                0, NHYDRO-1, pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke);
+          int is=pmb->is+(loclist[on+ll].lx1&1L)*pmb->block_size.nx1/2;
+          int js=pmb->js+(loclist[on+ll].lx2&1L)*pmb->block_size.nx2/2;
+          int ks=pmb->ks+(loclist[on+ll].lx3&1L)*pmb->block_size.nx3/2;
           AthenaArray<Real> &src=pmr->coarse_cons_;
           AthenaArray<Real> &dst=pmb->phydro->u;
           for(int nn=0; nn<NHYDRO; nn++) {
-            for(int k=ks, fk=pob->cks; k<=ke; k++, fk++) {
-              for(int j=js, fj=pob->cjs; j<=je; j++, fj++) {
-                for(int i=is, fi=pob->cis; i<=ie; i++, fi++)
+            for(int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
+              for(int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
+                for(int i=is, fi=pob->cis; fi<=pob->cie; i++, fi++)
                   dst(nn, k, j, i)=src(nn, fk, fj, fi);
           }}}
           if(MAGNETIC_FIELDS_ENABLED) {
@@ -2163,26 +2167,28 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
                          pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke+f3);
             InterfaceField &src=pmr->coarse_b_;
             InterfaceField &dst=pmb->pfield->b;
-            for(int k=ks, fk=pob->cks; k<=ke; k++, fk++) {
-              for(int j=js, fj=pob->cjs; j<=je; j++, fj++) {
-                for(int i=is, fi=pob->cis; i<=ie+1; i++, fi++)
+            for(int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
+              for(int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
+                for(int i=is, fi=pob->cis; fi<=pob->cie+1; i++, fi++)
                   dst.x1f(k, j, i)=src.x1f(fk, fj, fi);
             }}
-            for(int k=ks, fk=pob->cks; k<=ke; k++, fk++) {
-              for(int j=js, fj=pob->cjs; j<=je+f2; j++, fj++) {
-                for(int i=is, fi=pob->cis; i<=ie; i++, fi++)
+            for(int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
+              for(int j=js, fj=pob->cjs; fj<=pob->cje+f2; j++, fj++) {
+                for(int i=is, fi=pob->cis; fi<=pob->cie; i++, fi++)
                   dst.x2f(k, j, i)=src.x2f(fk, fj, fi);
             }}
             if(pmb->block_size.nx2==1) {
+              int ie=is+block_size.nx1/2-1;
               for(int i=is; i<=ie; i++)
                 dst.x2f(pmb->ks, pmb->js+1, i)=dst.x2f(pmb->ks, pmb->js, i);
             }
-            for(int k=ks, fk=pob->cks; k<=ke+f3; k++, fk++) {
-              for(int j=js, fj=pob->cjs; j<=je; j++, fj++) {
-                for(int i=is, fi=pob->cis; i<=ie; i++, fi++)
+            for(int k=ks, fk=pob->cks; fk<=pob->cke+f3; k++, fk++) {
+              for(int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
+                for(int i=is, fi=pob->cis; fi<=pob->cie; i++, fi++)
                   dst.x3f(k, j, i)=src.x3f(fk, fj, fi);
             }}
             if(pmb->block_size.nx3==1) {
+              int ie=is+block_size.nx1/2-1, je=js+block_size.nx2/2-1;
               for(int j=js; j<=je; j++) {
                 for(int i=is; i<=ie; i++)
                   dst.x3f(pmb->ks+1, j, i)=dst.x3f(pmb->ks, j, i);
@@ -2198,43 +2204,43 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
         MeshRefinement *pmr=pmb->pmr;
         int is=pob->cis-1, ie=pob->cie+1, js=pob->cjs-f2,
             je=pob->cje+f2, ks=pob->cks-f3, ke=pob->cke+f3;
-        int cis=(loclist[on].lx1&1L)*pob->block_size.nx1/2-pob->cis+pob->is;
-        int cjs=(loclist[on].lx2&1L)*pob->block_size.nx2/2-pob->cjs+pob->js;
-        int cks=(loclist[on].lx3&1L)*pob->block_size.nx3/2-pob->cks+pob->ks;
+        int cis=(newloc[n].lx1&1L)*pob->block_size.nx1/2+pob->is-1;
+        int cjs=(newloc[n].lx2&1L)*pob->block_size.nx2/2+pob->js-f2;
+        int cks=(newloc[n].lx3&1L)*pob->block_size.nx3/2+pob->ks-f3;
         AthenaArray<Real> &src=pob->phydro->u;
         AthenaArray<Real> &dst=pmr->coarse_cons_;
         // fill the coarse buffer
         for(int nn=0; nn<NHYDRO; nn++) {
-          for(int k=ks, ck=ks+cks; k<=ke; k++, ck++) {
-            for(int j=js, cj=js+cjs; j<=je; j++, cj++) {
-              for(int i=is, ci=is+cis; i<=ie; i++, ci++)
+          for(int k=ks, ck=cks; k<=ke; k++, ck++) {
+            for(int j=js, cj=cjs; j<=je; j++, cj++) {
+              for(int i=is, ci=cis; i<=ie; i++, ci++)
                 dst(nn, k, j, i)=src(nn, ck, cj, ci);
         }}}
-        pmr->ProlongateCellCenteredValues(pmr->coarse_cons_, pmb->phydro->u,
-                                          0, NHYDRO-1, is, ie, js, je, ks, ke);
+        pmr->ProlongateCellCenteredValues(dst, pmb->phydro->u, 0, NHYDRO-1,
+                                          is, ie, js, je, ks, ke);
         if(MAGNETIC_FIELDS_ENABLED) {
           InterfaceField &src=pob->pfield->b;
           InterfaceField &dst=pmr->coarse_b_;
-          for(int k=ks, ck=ks+cks; k<=ke; k++, ck++) {
-            for(int j=js, cj=js+cjs; j<=je; j++, cj++) {
-              for(int i=is, ci=is+cis; i<=ie+1; i++, ci++)
+          for(int k=ks, ck=cks; k<=ke; k++, ck++) {
+            for(int j=js, cj=cjs; j<=je; j++, cj++) {
+              for(int i=is, ci=cis; i<=ie+1; i++, ci++)
                 dst.x1f(k, j, i)=src.x1f(ck, cj, ci);
           }}
-          for(int k=ks, ck=ks+cks; k<=ke; k++, ck++) {
-            for(int j=js, cj=js+cjs; j<=je+f2; j++, cj++) {
-              for(int i=is, ci=is+cis; i<=ie; i++, ci++)
+          for(int k=ks, ck=cks; k<=ke; k++, ck++) {
+            for(int j=js, cj=cjs; j<=je+f2; j++, cj++) {
+              for(int i=is, ci=cis; i<=ie; i++, ci++)
                 dst.x2f(k, j, i)=src.x2f(ck, cj, ci);
           }}
-          for(int k=ks, ck=ks+cks; k<=ke+f3; k++, ck++) {
-            for(int j=js, cj=js+cjs; j<=je; j++, cj++) {
-              for(int i=is, ci=is+cis; i<=ie; i++, ci++)
+          for(int k=ks, ck=cks; k<=ke+f3; k++, ck++) {
+            for(int j=js, cj=cjs; j<=je; j++, cj++) {
+              for(int i=is, ci=cis; i<=ie; i++, ci++)
                 dst.x3f(k, j, i)=src.x3f(ck, cj, ci);
           }}
-          pmr->ProlongateSharedFieldX1(pmr->coarse_b_.x1f, pmb->pfield->b.x1f,
+          pmr->ProlongateSharedFieldX1(dst.x1f, pmb->pfield->b.x1f,
                                        pob->is, ie+1, js, je, ks, ke);
-          pmr->ProlongateSharedFieldX2(pmr->coarse_b_.x2f, pmb->pfield->b.x2f,
+          pmr->ProlongateSharedFieldX2(dst.x2f, pmb->pfield->b.x2f,
                                        is, ie, js, je+f2, ks, ke);
-          pmr->ProlongateSharedFieldX3(pmr->coarse_b_.x3f, pmb->pfield->b.x3f,
+          pmr->ProlongateSharedFieldX3(dst.x3f, pmb->pfield->b.x3f,
                                        is, ie, js, je, ks, ke+f3);
           pmr->ProlongateInternalField(pmb->pfield->b, is, ie, js, je, ks, ke);
         }

@@ -26,6 +26,7 @@
 
 #include "athena.hpp"
 #include "meshblocktree.hpp"
+#include "globals.hpp"
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -169,6 +170,7 @@ void MeshBlockTree::AddMeshBlockWithoutRefine(LogicalLocation rloc,
 void MeshBlockTree::Refine(MeshBlockTree& root, int dim, int* mesh_bcs,
                     long int rbx, long int rby, long int rbz, int rl, int &nnew)
 {
+  if(flag==false) return;
   long int nx,ny,nz,nxmax,nymax,nzmax;
   long int ox, oy, oz, oxmin, oxmax, oymin, oymax, ozmin, ozmax;
   int xmax,ymax,zmax;
@@ -180,7 +182,6 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, int* mesh_bcs,
   else       ymax=0, oymin=0,  oymax=0, nymax=1;
   if(dim==3) zmax=1, ozmin=-1, ozmax=1, nzmax=(rbz<<(loc.level-rl));
   else       zmax=0, ozmin=0,  ozmax=0, nzmax=1;
-
   for(int k=0; k<=zmax; k++) {
     for(int j=0; j<=ymax; j++) {
       for(int i=0; i<=xmax; i++) {
@@ -239,8 +240,6 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, int* mesh_bcs,
 void MeshBlockTree::Derefine(MeshBlockTree& root, int dim, int* mesh_bcs,
                     long int rbx, long int rby, long int rbz, int rl, int &ndel)
 {
-  if(pleaf[0][0][0]->flag==false) return; // it cannot be derefined as it is refined
-
   int ec=0;
   int s2=0, e2=0, s3=0, e3=0;
   if(dim>=2) s2=-1, e2=1;
@@ -248,18 +247,38 @@ void MeshBlockTree::Derefine(MeshBlockTree& root, int dim, int* mesh_bcs,
   for(int ox3=s3; ox3<=e3; ox3++) {
     for(int ox2=s2; ox2<=e2; ox2++) {
       for(int ox1=-1; ox1<=1; ox1++) {
-        if(ox1==0 && ox2==0 && ox3==0) continue;
         MeshBlockTree *bt=
-          root.FindNeighbor(loc,ox1,ox2,ox3,mesh_bcs,rbx,rby,rbz,rl);
+          root.FindNeighbor(loc,ox1,ox2,ox3,mesh_bcs,rbx,rby,rbz,rl,true);
         if(bt!=NULL) {
           if(bt->flag==false) {
-            if(bt->pleaf[0][0][0]->flag==false) ec++;
+            int lis, lie, ljs, lje, lks, lke;
+            if(ox1==-1)       lis=lie=1;
+            else if(ox1==1)   lis=lie=0;
+            else              lis=0, lie=1;
+            if(dim>=2) {
+              if(ox2==-1)     ljs=lje=1;
+              else if(ox2==1) ljs=lje=0;
+              else            ljs=0, lje=1;
+            }
+            else              ljs=lje=0;
+            if(dim==3) {
+              if(ox3==-1)     lks=lke=1;
+              else if(ox3==1) lks=lke=0;
+              else            lks=0, lke=1;
+            }
+            else              lks=lke=0;
+            for(int lk=lks; lk<=lke; lk++) {
+              for(int lj=ljs; lj<=lje; lj++) {
+                for(int li=lis; li<=lie; li++) {
+                  if(bt->pleaf[lk][lj][li]->flag==false) return;
+                }
+              }
+            }
           }
         }
       }
     }
   }
-  if(ec!=0) return;
 
   gid=pleaf[0][0][0]->gid; // inherit the first leaf's GID
   for(int k=0; k<=e3; k++) {
@@ -334,7 +353,7 @@ void MeshBlockTree::GetMeshBlockList(LogicalLocation *list, int *pglist, int& co
 //         If it is a finer block, return the pointer to its parent.
 //         Note that this function must be called on a completed tree only
 MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int ox2, int ox3,
-                              int *bcs, long int rbx, long int rby, long int rbz, int rl)
+             int *bcs, long int rbx, long int rby, long int rbz, int rl, bool amrflag)
 {
   std::stringstream msg;
   long int lx, ly, lz;
@@ -406,10 +425,12 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
   if(ox3<0) oz=1;
   if(bt->pleaf[oz][oy][ox]->flag==true)
     return bt;  // return this block
-  msg << "### FATAL ERROR in FindNeighbor" << std::endl
-      << "Neighbor search failed. The Block Tree is broken." << std::endl;
-  throw std::runtime_error(msg.str().c_str());
-  return NULL;
+  if(amrflag==false) {
+    msg << "### FATAL ERROR in FindNeighbor" << std::endl
+        << "Neighbor search failed. The Block Tree is broken." << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  return bt;
 }
 
 
