@@ -4,15 +4,15 @@ reference = Woodward, P. & Colella, P., JCP 54, 115 (1984)
 configure = --prob=dmr
 
 <job>
-problem_id = dmr       # problem ID: basename of output filenames
+problem_id = amr       # problem ID: basename of output filenames
 
 <output1>
-file_type  = hdf5       # Binary data dump
-variable   = prim      # variables to be output
-dt         = 0.002     # time increment between outputs
+file_type = hdf5              # Binary data dump
+dt      = 0.01              # time increment between outputs
+variable     = prim
 
 <time>
-cfl_number = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
+cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim       = -1        # cycle limit
 tlim       = 0.2       # time limit
 
@@ -34,7 +34,7 @@ x3min      = -0.5      # minimum value of X3
 x3max      = 0.5       # maximum value of X3
 
 refinement = adaptive
-maxlevel   = 3
+numlevel   = 3
 
 <meshblock>
 nx1        = 16

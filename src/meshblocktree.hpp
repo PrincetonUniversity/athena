@@ -41,7 +41,7 @@ public:
   void CountMeshBlock(int& count);
   void GetMeshBlockList(LogicalLocation *list, int *pglist, int& count);
   MeshBlockTree* FindNeighbor(LogicalLocation myloc, int ox1, int ox2, int ox3, int *bcs,
-                              long int rbx, long int rby, long int rbz, int rl);
+                 long int rbx, long int rby, long int rbz, int rl, bool amrflag=false);
   MeshBlockTree* GetLeaf(int ox, int oy, int oz);
 };
 

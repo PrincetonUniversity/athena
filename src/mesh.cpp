@@ -442,6 +442,16 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   nslist=new int[Globals::nranks];
   nblist=new int[Globals::nranks];
   costlist=new Real[nbtotal];
+  if(adaptive==true) { // allocate arrays for AMR
+    nref = new int [Globals::nranks];
+    nderef = new int [Globals::nranks];
+    rdisp = new int [Globals::nranks];
+    ddisp = new int [Globals::nranks];
+    bnref = new int [Globals::nranks];
+    bnderef = new int [Globals::nranks];
+    brdisp = new int [Globals::nranks];
+    bddisp = new int [Globals::nranks];
+  }
 
   for(int i=0;i<nbtotal;i++)
     costlist[i]=1.0; // the simplest estimate; all the blocks are equal
@@ -626,6 +636,17 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   }
 #endif
 
+  if(adaptive==true) { // allocate arrays for AMR
+    nref = new int [Globals::nranks];
+    nderef = new int [Globals::nranks];
+    rdisp = new int [Globals::nranks];
+    ddisp = new int [Globals::nranks];
+    bnref = new int [Globals::nranks];
+    bnderef = new int [Globals::nranks];
+    brdisp = new int [Globals::nranks];
+    bddisp = new int [Globals::nranks];
+  }
+
   LoadBalancing(costlist, ranklist, nslist, nblist, nbtotal);
 
   // Mesh test only; do not create meshes
@@ -679,6 +700,17 @@ Mesh::~Mesh()
   delete [] ranklist;
   delete [] costlist;
   delete [] loclist;
+  if(adaptive==true) { // allocate arrays for AMR
+    delete [] nref;
+    delete [] nderef;
+    delete [] rdisp;
+    delete [] ddisp;
+    delete [] bnref;
+    delete [] bnderef;
+    delete [] brdisp;
+    delete [] bddisp;
+  }
+
 }
 
 
@@ -981,7 +1013,6 @@ MeshBlock::~MeshBlock()
   delete phydro;
   delete pfield;
   delete pbval;
-//  delete [] task;
 }
 
 
@@ -1694,9 +1725,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   MPI_Iallgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_INT,
                   costlist, nblist, nslist, MPI_INT, MPI_COMM_WORLD, &areq[2]);
 #endif
-  int *nref = new int [Globals::nranks];
-  int *nderef = new int [Globals::nranks];
-
 
   // collect information of refinement from all the meshblocks
   // collect the number of the blocks to be (de)refined
@@ -1721,17 +1749,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
     tnref  += nref[n];
     tnderef+= nderef[n];
   }
-  if(tnref==0 && tnderef==0) {
-    delete [] nref;
-    delete [] nderef;
+  if(tnref==0 && tnderef==0) // nothing to do
     return;
-  }
-  int *rdisp = new int [Globals::nranks];
-  int *ddisp = new int [Globals::nranks];
-  int *bnref = new int [Globals::nranks];
-  int *bnderef = new int [Globals::nranks];
-  int *brdisp = new int [Globals::nranks];
-  int *bddisp = new int [Globals::nranks];
+
   int rd=0, dd=0;
   for(int n=0; n<Globals::nranks; n++) {
     bnref[n]   = nref[n]*sizeof(LogicalLocation);
@@ -1783,11 +1803,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
                     lderef, bnderef, bddisp, MPI_BYTE, MPI_COMM_WORLD);
   }
 #endif
-  delete [] nref;
-  delete [] bnref;
-  delete [] rdisp;
-  delete [] ddisp;
-  delete [] brdisp;
 
   // calculate the list of the newly derefined blocks
   int ctnd=0;
@@ -1831,9 +1846,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
       std::cout << "Derefine flag:" << clderef[n].lx1 << " " << clderef[n].lx2 << " " << clderef[n].lx3 << " " << clderef[n].level << std::endl;
   }*/
 
-  delete [] nderef;
-  delete [] bnderef;
-  delete [] bddisp;
   if(tnderef>nlbl)
     delete [] lderef;
 

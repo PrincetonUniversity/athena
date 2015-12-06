@@ -124,6 +124,7 @@ private:
   int num_mesh_threads_;
   int *nslist, *ranklist, *nblist;
   Real *costlist;
+  int *nref, *nderef, *bnref, *bnderef, *rdisp, *brdisp, *ddisp, *bddisp;
   LogicalLocation *loclist;
   MeshBlockTree tree;
   long int nrbx1, nrbx2, nrbx3;
