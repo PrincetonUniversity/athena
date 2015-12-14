@@ -126,6 +126,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       case -1: // block boundary
       case 3: // do nothing, useful for user-enrolled BCs
       case 4: // periodic boundary
+      case 5: // polar boundary
         HydroBoundary_[inner_x2] = NULL;
         FieldBoundary_[inner_x2] = NULL;
         break;
@@ -149,6 +150,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       case -1: // block boundary
       case 3: // do nothing, useful for user-enrolled BCs
       case 4: // periodic boundary
+      case 5: // polar boundary
         HydroBoundary_[outer_x2] = NULL;
         FieldBoundary_[outer_x2] = NULL;
         break;
@@ -1023,11 +1025,12 @@ void BoundaryValues::SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf
 
   int p=0;
   for (int n=0; n<(NHYDRO); ++n) {
+    Real sign = (nb.polar and flip_across_pole_hydro[n]) ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=sj; j<=ej; ++j) {
 #pragma simd
         for (int i=si; i<=ei; ++i)
-          dst(n,k,j,i) = buf[p++];
+          dst(n,k,j,i) = sign * buf[p++];
       }
     }
   }
@@ -1038,7 +1041,7 @@ void BoundaryValues::SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf,
 //                                                       const NeighborBlock& nb)
-//  \brief Set hydro prolongation buffer received from a block on the same level
+//  \brief Set hydro prolongation buffer received from a block on a coarser level
 void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_mblock_;
@@ -1075,11 +1078,12 @@ void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock&
 
   int p=0;
   for (int n=0; n<(NHYDRO); ++n) {
+    Real sign = (nb.polar and flip_across_pole_hydro[n]) ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=sj; j<=ej; ++j) {
 #pragma simd
         for (int i=si; i<=ei; ++i)
-          pmr->coarse_cons_(n,k,j,i) = buf[p++];
+          pmr->coarse_cons_(n,k,j,i) = sign * buf[p++];
       }
     }
   }
@@ -1090,7 +1094,7 @@ void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock&
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetHydroBoundaryFromFiner(AthenaArray<Real> &dst,
 //                                               Real *buf, const NeighborBlock& nb)
-//  \brief Set hydro boundary received from a block on the same level
+//  \brief Set hydro boundary received from a block on a finer level
 void BoundaryValues::SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf,
                                                const NeighborBlock& nb)
 {
@@ -1138,11 +1142,12 @@ void BoundaryValues::SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf
 
   int p=0;
   for (int n=0; n<(NHYDRO); ++n) {
+    Real sign = (nb.polar and flip_across_pole_hydro[n]) ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=sj; j<=ej; ++j) {
 #pragma simd
         for (int i=si; i<=ei; ++i)
-          dst(n,k,j,i) = buf[p++];
+          dst(n,k,j,i) = sign * buf[p++];
       }
     }
   }
@@ -1782,11 +1787,12 @@ void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf,
     if(nb.ox1>0) si--;
     else if(nb.ox1<0) ei++;
   }
+  Real sign = (nb.polar and flip_across_pole_field[IB1]) ? -1.0 : 1.0;
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
 #pragma simd
       for (int i=si; i<=ei; ++i)
-        dst.x1f(k,j,i)=buf[p++];
+        dst.x1f(k,j,i)=sign*buf[p++];
     }
   }
   // bx2
@@ -1802,11 +1808,12 @@ void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf,
     if(nb.ox2>0) sj--;
     else if(nb.ox2<0) ej++;
   }
+  sign = (nb.polar and flip_across_pole_field[IB2]) ? -1.0 : 1.0;
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
 #pragma simd
       for (int i=si; i<=ei; ++i)
-        dst.x2f(k,j,i)=buf[p++];
+        dst.x2f(k,j,i)=sign*buf[p++];
     }
   }
   if(pmb->block_size.nx2==1) { // 1D
@@ -1827,11 +1834,12 @@ void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf,
     if(nb.ox3>0) sk--;
     else if(nb.ox3<0) ek++;
   }
+  sign = (nb.polar and flip_across_pole_field[IB3]) ? -1.0 : 1.0;
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
 #pragma simd
       for (int i=si; i<=ei; ++i)
-        dst.x3f(k,j,i)=buf[p++];
+        dst.x3f(k,j,i)=sign*buf[p++];
     }
   }
   if(pmb->block_size.nx3==1) { // 1D or 2D
@@ -1885,11 +1893,12 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
   else if(nb.ox3>0)  sk=pmb->cke+1,   ek=pmb->cke+cng;
   else               sk=pmb->cks-cng, ek=pmb->cks-1;
 
+  Real sign = (nb.polar and flip_across_pole_field[IB1]) ? -1.0 : 1.0;
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
 #pragma simd
       for (int i=si; i<=ei; ++i)
-        pmr->coarse_b_.x1f(k,j,i) = buf[p++];
+        pmr->coarse_b_.x1f(k,j,i) = sign*buf[p++];
     }
   }
 
@@ -1912,11 +1921,12 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
   else if(nb.ox2>0)  sj=pmb->cje+1, ej=pmb->cje+2;
   else               sj=pmb->cjs-1, ej=pmb->cjs;
 
+  sign = (nb.polar and flip_across_pole_field[IB2]) ? -1.0 : 1.0;
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
 #pragma simd
       for (int i=si; i<=ei; ++i)
-        pmr->coarse_b_.x2f(k,j,i) = buf[p++];
+        pmr->coarse_b_.x2f(k,j,i) = sign*buf[p++];
     }
   }
 
@@ -1941,11 +1951,12 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
   else if(nb.ox3>0)  sk=pmb->cke+1, ek=pmb->cke+2;
   else               sk=pmb->cks-1, ek=pmb->cks;
 
+  sign = (nb.polar and flip_across_pole_field[IB3]) ? -1.0 : 1.0;
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
 #pragma simd
       for (int i=si; i<=ei; ++i)
-        pmr->coarse_b_.x3f(k,j,i) = buf[p++];
+        pmr->coarse_b_.x3f(k,j,i) = sign*buf[p++];
     }
   }
 
@@ -2009,11 +2020,12 @@ void BoundaryValues::SetFieldBoundaryFromFiner(InterfaceField &dst, Real *buf,
   else if(nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
 
+  Real sign = (nb.polar and flip_across_pole_field[IB1]) ? -1.0 : 1.0;
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
 #pragma simd
       for (int i=si; i<=ei; ++i)
-        dst.x1f(k,j,i) = buf[p++];
+        dst.x1f(k,j,i) = sign*buf[p++];
     }
   }
 
@@ -2047,11 +2059,12 @@ void BoundaryValues::SetFieldBoundaryFromFiner(InterfaceField &dst, Real *buf,
     else if(nb.ox2<0) ej++;
   }
 
+  sign = (nb.polar and flip_across_pole_field[IB2]) ? -1.0 : 1.0;
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
 #pragma simd
       for (int i=si; i<=ei; ++i)
-        dst.x2f(k,j,i) = buf[p++];
+        dst.x2f(k,j,i) = sign*buf[p++];
     }
   }
   if(pmb->block_size.nx2==1) { // 1D
@@ -2098,11 +2111,12 @@ void BoundaryValues::SetFieldBoundaryFromFiner(InterfaceField &dst, Real *buf,
     else if(nb.ox3<0) ek++;
   }
 
+  sign = (nb.polar and flip_across_pole_field[IB3]) ? -1.0 : 1.0;
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
 #pragma simd
       for (int i=si; i<=ei; ++i)
-        dst.x3f(k,j,i) = buf[p++];
+        dst.x3f(k,j,i) = sign*buf[p++];
     }
   }
   if(pmb->block_size.nx3==1) { // 1D or 2D
@@ -2566,14 +2580,16 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
         if(nb.fid==inner_x2) j=pmb->js;
         else j=pmb->je+1;
         // unpack e1
+        Real sign = (nb.polar and flip_across_pole_field[IB1]) ? -1.0 : 1.0;
         for(int k=pmb->ks; k<=pmb->ke+1; k++) {
           for(int i=pmb->is; i<=pmb->ie; i++)
-            e1(k,j,i)+=buf[p++];
+            e1(k,j,i)+=sign*buf[p++];
         }
         // unpack e3
+        sign = (nb.polar and flip_across_pole_field[IB3]) ? -1.0 : 1.0;
         for(int k=pmb->ks; k<=pmb->ke; k++) {
           for(int i=pmb->is; i<=pmb->ie+1; i++)
-            e3(k,j,i)+=buf[p++];
+            e3(k,j,i)+=sign*buf[p++];
         }
       }
       // x3 direction
@@ -2645,8 +2661,9 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
       if((nb.eid&2)==0) j=pmb->js;
       else j=pmb->je+1;
       // unpack e3
+      Real sign = (nb.polar and flip_across_pole_field[IB3]) ? -1.0 : 1.0;
       for(int k=pmb->ks; k<=pmb->ke; k++)
-        e3(k,j,i)+=buf[p++];
+        e3(k,j,i)+=sign*buf[p++];
     }
     // x1x3 edge
     else if(nb.eid>=4 && nb.eid<8) {
@@ -2667,8 +2684,9 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
       if((nb.eid&2)==0) k=pmb->ks;
       else k=pmb->ke+1;
       // unpack e1
+      Real sign = (nb.polar and flip_across_pole_field[IB1]) ? -1.0 : 1.0;
       for(int i=pmb->is; i<=pmb->ie; i++)
-        e1(k,j,i)+=buf[p++];
+        e1(k,j,i)+=sign*buf[p++];
     }
   }
 
@@ -2719,14 +2737,16 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
         if(nb.fi2==0) ku=pmb->ks+pmb->block_size.nx3/2-1;
         else kl=pmb->ks+pmb->block_size.nx3/2;
         // unpack e1
+        Real sign = (nb.polar and flip_across_pole_field[IB1]) ? -1.0 : 1.0;
         for(int k=kl; k<=ku+1; k++) {
           for(int i=il; i<=iu; i++)
-            e1(k,j,i)+=buf[p++];
+            e1(k,j,i)+=sign*buf[p++];
         }
         // unpack e3
+        sign = (nb.polar and flip_across_pole_field[IB3]) ? -1.0 : 1.0;
         for(int k=kl; k<=ku; k++) {
           for(int i=il; i<=iu+1; i++)
-            e3(k,j,i)+=buf[p++];
+            e3(k,j,i)+=sign*buf[p++];
         }
       }
       // x3 direction
@@ -2809,8 +2829,9 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
         if(nb.fi1==0) ku=pmb->ks+pmb->block_size.nx3/2-1;
         else kl=pmb->ks+pmb->block_size.nx3/2;
         // unpack e3
+        Real sign = (nb.polar and flip_across_pole_field[IB3]) ? -1.0 : 1.0;
         for(int k=kl; k<=ku; k++)
-          e3(k,j,i)+=buf[p++];
+          e3(k,j,i)+=sign*buf[p++];
       }
       // x1x3 edge
       else if(nb.eid>=4 && nb.eid<8) {
@@ -2835,8 +2856,9 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
         if(nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
         else il=pmb->is+pmb->block_size.nx1/2;
         // unpack e1
+        Real sign = (nb.polar and flip_across_pole_field[IB1]) ? -1.0 : 1.0;
         for(int i=il; i<=iu; i++)
-          e1(k,j,i)+=buf[p++];
+          e1(k,j,i)+=sign*buf[p++];
       }
     }
     else if(pmb->block_size.nx2 > 1) { // 2D

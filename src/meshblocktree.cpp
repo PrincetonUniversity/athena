@@ -299,7 +299,7 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
   lx=myloc.lx1, ly=myloc.lx2, lz=myloc.lx3, ll=myloc.level;
 
   lx+=ox1; ly+=ox2; lz+=ox3;
-  // periodic boundaries
+  // periodic and polar boundaries
   if(lx<0) {
     if(bcs[inner_x1]==4) lx=(rbx<<(ll-rl))-1;
     else return NULL;
@@ -308,22 +308,33 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
     if(bcs[outer_x1]==4) lx=0;
     else return NULL;
   }
+  bool polar = false;
   if(ly<0) {
     if(bcs[inner_x2]==4) ly=(rby<<(ll-rl))-1;
+    else if(bcs[inner_x2]==5) {
+      ly=0;
+      polar=true;
+    }
     else return NULL;
   }
   if(ly>=rby<<(ll-rl)) {
     if(bcs[outer_x2]==4) ly=0;
+    else if(bcs[outer_x2]==5) {
+      ly=(rby<<(ll-rl))-1;
+      polar=true;
+    }
     else return NULL;
   }
+  long int num_x3 = rbz<<(ll-rl);
   if(lz<0) {
-    if(bcs[inner_x3]==4) lz=(rbz<<(ll-rl))-1;
+    if(bcs[inner_x3]==4) lz=num_x3-1;
     else return NULL;
   }
-  if(lz>=rbz<<(ll-rl)) {
+  if(lz>=num_x3) {
     if(bcs[outer_x3]==4) lz=0;
     else return NULL;
   }
+  if(polar) lz=(lz+num_x3/2)%num_x3;
 
   if(ll<1) return this; // single grid; return itself
 
