@@ -18,25 +18,14 @@
 #include "../hydro/hydro.hpp"
 #include "../hydro/eos/eos.hpp"
 
-// TODO: remove with boundary hack
-#include <cassert>
-
 // Declarations
 void InnerHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
     int is, int ie, int js, int je, int ks, int ke);
 void OuterHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
     int is, int ie, int js, int je, int ks, int ke);
-void TopHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
-    int is, int ie, int js, int je, int ks, int ke);
-void BottomHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
-    int is, int ie, int js, int je, int ks, int ke);
 void InnerField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
     int is, int ie, int js, int je, int ks, int ke);
 void OuterField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
-    int is, int ie, int js, int je, int ks, int ke);
-void TopField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
-    int is, int ie, int js, int je, int ks, int ke);
-void BottomField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
     int is, int ie, int js, int je, int ks, int ke);
 static Real calculate_l_from_r_peak(Real r);
 static Real calculate_r_peak_from_l(Real l_target, Real r_min, Real r_max);
@@ -456,14 +445,10 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   // Enroll boundary functions
   pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, InnerHydro);
   pmb->pbval->EnrollHydroBoundaryFunction(outer_x1, OuterHydro);
-  pmb->pbval->EnrollHydroBoundaryFunction(inner_x2, TopHydro);
-  pmb->pbval->EnrollHydroBoundaryFunction(outer_x2, BottomHydro);
   if (MAGNETIC_FIELDS_ENABLED)
   {
     pmb->pbval->EnrollFieldBoundaryFunction(inner_x1, InnerField);
     pmb->pbval->EnrollFieldBoundaryFunction(outer_x1, OuterField);
-    pmb->pbval->EnrollFieldBoundaryFunction(inner_x2, TopField);
-    pmb->pbval->EnrollFieldBoundaryFunction(outer_x2, BottomField);
   }
   return;
 }
@@ -481,36 +466,6 @@ void InnerHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
 void OuterHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
     int is, int ie, int js, int je, int ks, int ke)
 {
-  return;
-}
-
-// Top hydro boundary condition
-void TopHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
-    int is, int ie, int js, int je, int ks, int ke)
-{
-  for (int k = ks; k <= ke; ++k)
-    for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
-      for (int n = 0; n < NHYDRO; ++n)
-      {
-        Real sign = (n == IM2 or n == IM3) ? -1.0 : 1.0;
-        for (int i = is; i <= ie; ++i)
-          cons(n,k,js-j_offset,i) = sign * cons(n,k,js+j_offset-1,i);
-      }
-  return;
-}
-
-// Bottom hydro boundary condition
-void BottomHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
-    int is, int ie, int js, int je, int ks, int ke)
-{
-  for (int k = ks; k <= ke; ++k)
-    for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
-      for (int n = 0; n < NHYDRO; ++n)
-      {
-        Real sign = (n == IM2 or n == IM3) ? -1.0 : 1.0;
-        for (int i = is; i <= ie; ++i)
-          cons(n,k,je+j_offset,i) = sign * cons(n,k,je-j_offset+1,i);
-      }
   return;
 }
 
@@ -549,44 +504,6 @@ void OuterField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
     for (int j = js; j <= je; ++j)
       for (int i_offset=1; i_offset <= NGHOST; ++i_offset)
         bb.x3f(k,j,ie+i_offset) = bb.x3f(k,j,ie);
-  return;
-}
-
-// Top field boundary condition
-void TopField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
-    int is, int ie, int js, int je, int ks, int ke)
-{
-  for (int k = ks; k <= ke; ++k)
-    for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
-      for (int i = is; i <= ie+1; ++i)
-        bb.x1f(k,js-j_offset,i) = bb.x1f(k,js+j_offset-1,i);
-  for (int k = ks; k <= ke; ++k)
-    for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
-      for (int i = is; i <= ie; ++i)
-        bb.x2f(k,js-j_offset,i) = -bb.x2f(k,js+j_offset,i);
-  for (int k = ks; k <= ke+1; ++k)
-    for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
-      for (int i = is; i <= ie; ++i)
-        bb.x3f(k,js-j_offset,i) = -bb.x3f(k,js+j_offset-1,i);
-  return;
-}
-
-// Bottom field boundary condition
-void BottomField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
-    int is, int ie, int js, int je, int ks, int ke)
-{
-  for (int k = ks; k <= ke; ++k)
-    for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
-      for (int i = is; i <= ie+1; ++i)
-        bb.x1f(k,je+j_offset,i) = bb.x1f(k,je-j_offset+1,i);
-  for (int k = ks; k <= ke; ++k)
-    for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
-      for (int i = is; i <= ie; ++i)
-        bb.x2f(k,je+1+j_offset,i) = -bb.x2f(k,je+1-j_offset,i);
-  for (int k = ks; k <= ke+1; ++k)
-    for (int j_offset = 1; j_offset <= NGHOST; ++j_offset)
-      for (int i = is; i <= ie; ++i)
-        bb.x3f(k,je+j_offset,i) = -bb.x3f(k,je-j_offset+1,i);
   return;
 }
 
