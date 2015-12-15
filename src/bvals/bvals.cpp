@@ -1816,6 +1816,18 @@ void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf,
         dst.x2f(k,j,i)=sign*buf[p++];
     }
   }
+  if (nb.polar and nb.ox2 < 0) {  // interpolate B^theta across top pole
+    for (int k=sk; k<=ek; ++k) {
+      for (int i=si; i<=ei; ++i)
+        dst.x2f(k,pmb->js,i) = 0.5 * (dst.x2f(k,pmb->js-1,i) + dst.x2f(k,pmb->js+1,i));
+    }
+  }
+  if (nb.polar and nb.ox2 > 0) {  // interpolate B^theta across bottom pole
+    for (int k=sk; k<=ek; ++k) {
+      for (int i=si; i<=ei; ++i)
+        dst.x2f(k,pmb->je+1,i) = 0.5 * (dst.x2f(k,pmb->je,i) + dst.x2f(k,pmb->je+2,i));
+    }
+  }
   if(pmb->block_size.nx2==1) { // 1D
 #pragma simd
     for (int i=si; i<=ei; ++i)
