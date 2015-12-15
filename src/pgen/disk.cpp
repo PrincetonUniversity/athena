@@ -43,9 +43,9 @@ static Real dslope, pslope, p0_over_r0;
 static Real ifield,b0;
 
 // Function Declarations
-static Real A3(const Real x1, const Real x2, const Real x3);
-static Real A2(const Real x1, const Real x2, const Real x3);
 static Real A1(const Real x1, const Real x2, const Real x3);
+static Real A2(const Real x1, const Real x2, const Real x3);
+static Real A3(const Real x1, const Real x2, const Real x3);
 
 //======================================================================================
 //! \file disk.cpp
@@ -123,12 +123,6 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
         pmb->pcoord->Edge3Length(k,j,is,ie+1,len);
         for (int i=is; i<=ie; ++i) {
           pfld->b.x2f(k,j,i) = -1.0*(len(i+1)*a3(k,j,i+1) - len(i)*a3(k,j,i))/area(i);
-        }
-        pmb->pcoord->Face2Area(k,j,is,ie,area);
-        pmb->pcoord->Edge1Length(k  ,j,is,ie,len);
-        pmb->pcoord->Edge1Length(k+1,j,is,ie,len_p1);
-        for (int i=is; i<=ie; ++i) {
-          pfld->b.x2f(k,j,i) += (len_p1(i)*a1(k+1,j,i) - len(i)*a1(k,j,i))/area(i);
         }
       }
     }
@@ -328,7 +322,7 @@ static Real A1(const Real x1, const Real x2, const Real x3){
     Real y=x1*sin(x2)*sin(x3);
     Real z=x1*cos(x2);
     if(sqrt(SQR(x-r0)+SQR(y))<=0.3 && fabs(z)<0.1){
-      az=1.e-6*(0.3-sqrt(SQR(x-r0)+SQR(y)));
+      az=1.0e-6*(0.3-sqrt(SQR(x-r0)+SQR(y)));
     }
     a1=az*cos(x2);
   }
