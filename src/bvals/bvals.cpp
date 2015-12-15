@@ -1027,10 +1027,19 @@ void BoundaryValues::SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf
   for (int n=0; n<(NHYDRO); ++n) {
     Real sign = (nb.polar and flip_across_pole_hydro[n]) ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
+      if (nb.polar) {
+        for (int j=ej; j>=sj; --j) {
 #pragma simd
-        for (int i=si; i<=ei; ++i)
-          dst(n,k,j,i) = sign * buf[p++];
+          for (int i=si; i<=ei; ++i)
+            dst(n,k,j,i) = sign * buf[p++];
+        }
+      }
+      else {
+        for (int j=sj; j<=ej; ++j) {
+#pragma simd
+          for (int i=si; i<=ei; ++i)
+            dst(n,k,j,i) = sign * buf[p++];
+        }
       }
     }
   }
@@ -1080,10 +1089,19 @@ void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock&
   for (int n=0; n<(NHYDRO); ++n) {
     Real sign = (nb.polar and flip_across_pole_hydro[n]) ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
+      if (nb.polar) {
+        for (int j=ej; j>=sj; --j) {
 #pragma simd
-        for (int i=si; i<=ei; ++i)
-          pmr->coarse_cons_(n,k,j,i) = sign * buf[p++];
+          for (int i=si; i<=ei; ++i)
+            pmr->coarse_cons_(n,k,j,i) = sign * buf[p++];
+        }
+      }
+      else {
+        for (int j=sj; j<=ej; ++j) {
+#pragma simd
+          for (int i=si; i<=ei; ++i)
+            pmr->coarse_cons_(n,k,j,i) = sign * buf[p++];
+        }
       }
     }
   }
@@ -1144,10 +1162,19 @@ void BoundaryValues::SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf
   for (int n=0; n<(NHYDRO); ++n) {
     Real sign = (nb.polar and flip_across_pole_hydro[n]) ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
+      if (nb.polar) {
+        for (int j=sj; j<=ej; ++j) {
 #pragma simd
-        for (int i=si; i<=ei; ++i)
-          dst(n,k,j,i) = sign * buf[p++];
+          for (int i=si; i<=ei; ++i)
+            dst(n,k,j,i) = sign * buf[p++];
+        }
+      }
+      else {
+        for (int j=ej; j>=sj; --j) {
+#pragma simd
+          for (int i=si; i<=ei; ++i)
+            dst(n,k,j,i) = sign * buf[p++];
+        }
       }
     }
   }
@@ -1789,10 +1816,19 @@ void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf,
   }
   Real sign = (nb.polar and flip_across_pole_field[IB1]) ? -1.0 : 1.0;
   for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
+    if (nb.polar) {
+      for (int j=ej; j>=sj; --j) {
 #pragma simd
-      for (int i=si; i<=ei; ++i)
-        dst.x1f(k,j,i)=sign*buf[p++];
+        for (int i=si; i<=ei; ++i)
+          dst.x1f(k,j,i)=sign*buf[p++];
+      }
+    }
+    else {
+      for (int j=sj; j<=ej; ++j) {
+#pragma simd
+        for (int i=si; i<=ei; ++i)
+          dst.x1f(k,j,i)=sign*buf[p++];
+      }
     }
   }
   // bx2
@@ -1810,10 +1846,19 @@ void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf,
   }
   sign = (nb.polar and flip_across_pole_field[IB2]) ? -1.0 : 1.0;
   for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
+    if (nb.polar) {
+      for (int j=ej; j>=sj; --j) {
 #pragma simd
-      for (int i=si; i<=ei; ++i)
-        dst.x2f(k,j,i)=sign*buf[p++];
+        for (int i=si; i<=ei; ++i)
+          dst.x2f(k,j,i)=sign*buf[p++];
+      }
+    }
+    else {
+      for (int j=sj; j<=ej; ++j) {
+#pragma simd
+        for (int i=si; i<=ei; ++i)
+          dst.x2f(k,j,i)=sign*buf[p++];
+      }
     }
   }
   if (nb.polar and nb.ox2 < 0) {  // interpolate B^theta across top pole
@@ -1848,10 +1893,19 @@ void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf,
   }
   sign = (nb.polar and flip_across_pole_field[IB3]) ? -1.0 : 1.0;
   for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
+    if (nb.polar) {
+      for (int j=ej; j>=sj; --j) {
 #pragma simd
-      for (int i=si; i<=ei; ++i)
-        dst.x3f(k,j,i)=sign*buf[p++];
+        for (int i=si; i<=ei; ++i)
+          dst.x3f(k,j,i)=sign*buf[p++];
+      }
+    }
+    else {
+      for (int j=sj; j<=ej; ++j) {
+#pragma simd
+        for (int i=si; i<=ei; ++i)
+          dst.x3f(k,j,i)=sign*buf[p++];
+      }
     }
   }
   if(pmb->block_size.nx3==1) { // 1D or 2D
@@ -1907,10 +1961,19 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
 
   Real sign = (nb.polar and flip_across_pole_field[IB1]) ? -1.0 : 1.0;
   for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
+    if (nb.polar) {
+      for (int j=ej; j>=sj; --j) {
 #pragma simd
-      for (int i=si; i<=ei; ++i)
-        pmr->coarse_b_.x1f(k,j,i) = sign*buf[p++];
+        for (int i=si; i<=ei; ++i)
+          pmr->coarse_b_.x1f(k,j,i) = sign*buf[p++];
+      }
+    }
+    else {
+      for (int j=sj; j<=ej; ++j) {
+#pragma simd
+        for (int i=si; i<=ei; ++i)
+          pmr->coarse_b_.x1f(k,j,i) = sign*buf[p++];
+      }
     }
   }
 
@@ -1935,10 +1998,19 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
 
   sign = (nb.polar and flip_across_pole_field[IB2]) ? -1.0 : 1.0;
   for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
+    if (nb.polar) {
+      for (int j=ej; j>=sj; --j) {
 #pragma simd
-      for (int i=si; i<=ei; ++i)
-        pmr->coarse_b_.x2f(k,j,i) = sign*buf[p++];
+        for (int i=si; i<=ei; ++i)
+          pmr->coarse_b_.x2f(k,j,i) = sign*buf[p++];
+      }
+    }
+    else {
+      for (int j=sj; j<=ej; ++j) {
+#pragma simd
+        for (int i=si; i<=ei; ++i)
+          pmr->coarse_b_.x2f(k,j,i) = sign*buf[p++];
+      }
     }
   }
 
@@ -1965,10 +2037,19 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
 
   sign = (nb.polar and flip_across_pole_field[IB3]) ? -1.0 : 1.0;
   for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
+    if (nb.polar) {
+      for (int j=ej; j>=sj; --j) {
 #pragma simd
-      for (int i=si; i<=ei; ++i)
-        pmr->coarse_b_.x3f(k,j,i) = sign*buf[p++];
+        for (int i=si; i<=ei; ++i)
+          pmr->coarse_b_.x3f(k,j,i) = sign*buf[p++];
+      }
+    }
+    else {
+      for (int j=sj; j<=ej; ++j) {
+#pragma simd
+        for (int i=si; i<=ei; ++i)
+          pmr->coarse_b_.x3f(k,j,i) = sign*buf[p++];
+      }
     }
   }
 
@@ -2034,10 +2115,19 @@ void BoundaryValues::SetFieldBoundaryFromFiner(InterfaceField &dst, Real *buf,
 
   Real sign = (nb.polar and flip_across_pole_field[IB1]) ? -1.0 : 1.0;
   for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
+    if (nb.polar) {
+      for (int j=ej; j>=sj; --j) {
 #pragma simd
-      for (int i=si; i<=ei; ++i)
-        dst.x1f(k,j,i) = sign*buf[p++];
+        for (int i=si; i<=ei; ++i)
+          dst.x1f(k,j,i) = sign*buf[p++];
+      }
+    }
+    else {
+      for (int j=sj; j<=ej; ++j) {
+#pragma simd
+        for (int i=si; i<=ei; ++i)
+          dst.x1f(k,j,i) = sign*buf[p++];
+      }
     }
   }
 
@@ -2073,10 +2163,19 @@ void BoundaryValues::SetFieldBoundaryFromFiner(InterfaceField &dst, Real *buf,
 
   sign = (nb.polar and flip_across_pole_field[IB2]) ? -1.0 : 1.0;
   for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
+    if (nb.polar) {
+      for (int j=ej; j>=sj; --j) {
 #pragma simd
-      for (int i=si; i<=ei; ++i)
-        dst.x2f(k,j,i) = sign*buf[p++];
+        for (int i=si; i<=ei; ++i)
+          dst.x2f(k,j,i) = sign*buf[p++];
+      }
+    }
+    else {
+      for (int j=sj; j<=ej; ++j) {
+#pragma simd
+        for (int i=si; i<=ei; ++i)
+          dst.x2f(k,j,i) = sign*buf[p++];
+      }
     }
   }
   if(pmb->block_size.nx2==1) { // 1D
@@ -2125,10 +2224,19 @@ void BoundaryValues::SetFieldBoundaryFromFiner(InterfaceField &dst, Real *buf,
 
   sign = (nb.polar and flip_across_pole_field[IB3]) ? -1.0 : 1.0;
   for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
+    if (nb.polar) {
+      for (int j=ej; j>=sj; --j) {
 #pragma simd
-      for (int i=si; i<=ei; ++i)
-        dst.x3f(k,j,i) = sign*buf[p++];
+        for (int i=si; i<=ei; ++i)
+          dst.x3f(k,j,i) = sign*buf[p++];
+      }
+    }
+    else {
+      for (int j=sj; j<=ej; ++j) {
+#pragma simd
+        for (int i=si; i<=ei; ++i)
+          dst.x3f(k,j,i) = sign*buf[p++];
+      }
     }
   }
   if(pmb->block_size.nx3==1) { // 1D or 2D
