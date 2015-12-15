@@ -15,7 +15,7 @@
 #include "../../athena_arrays.hpp"    // AthenaArray
 #include "../../mesh.hpp"             // MeshBlock
 #include "../../parameter_input.hpp"  // GetReal()
-#include "../../field/field.hpp"      // InterfaceField
+#include "../../field/field.hpp"      // FaceField
 
 // Constructor
 // Inputs:
@@ -66,7 +66,7 @@ HydroEqnOfState::~HydroEqnOfState() {}
 //          then |v|^2 + d1 |v| + d0 = 0
 //          |v| = 1/2 * (-d1 + sqrt(d1^2 - 4 d0))
 void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-  const AthenaArray<Real> &prim_old, const InterfaceField &bb, AthenaArray<Real> &prim,
+  const AthenaArray<Real> &prim_old, const FaceField &bb, AthenaArray<Real> &prim,
   AthenaArray<Real> &bb_cc, Coordinates *pco, int is, int ie, int js, int je, int ks,
   int ke)
 {

@@ -143,10 +143,10 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     }
 
     // Enroll special BCs
-    pmb->pbval->EnrollHydroBoundaryFunction(inner_x2, reflect_ix2);
-    pmb->pbval->EnrollHydroBoundaryFunction(outer_x2, reflect_ox2);
-    pmb->pbval->EnrollFieldBoundaryFunction(inner_x2, ReflectInnerX2);
-    pmb->pbval->EnrollFieldBoundaryFunction(outer_x2, ReflectOuterX2);
+    pmb->pbval->EnrollHydroBoundaryFunction(INNER_X2, reflect_ix2);
+    pmb->pbval->EnrollHydroBoundaryFunction(OUTER_X2, reflect_ox2);
+    pmb->pbval->EnrollFieldBoundaryFunction(INNER_X2, ReflectInnerX2);
+    pmb->pbval->EnrollFieldBoundaryFunction(OUTER_X2, ReflectOuterX2);
 
 // 3D PROBLEM ----------------------------------------------------------------
 
@@ -215,10 +215,10 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     }
 
     // Enroll special BCs
-    pmb->pbval->EnrollHydroBoundaryFunction(inner_x3, reflect_ix3);
-    pmb->pbval->EnrollHydroBoundaryFunction(outer_x3, reflect_ox3);
-    pmb->pbval->EnrollFieldBoundaryFunction(inner_x3, ReflectInnerX3);
-    pmb->pbval->EnrollFieldBoundaryFunction(outer_x3, ReflectOuterX3);
+    pmb->pbval->EnrollHydroBoundaryFunction(INNER_X3, reflect_ix3);
+    pmb->pbval->EnrollHydroBoundaryFunction(OUTER_X3, reflect_ox3);
+    pmb->pbval->EnrollFieldBoundaryFunction(INNER_X3, ReflectInnerX3);
+    pmb->pbval->EnrollFieldBoundaryFunction(OUTER_X3, ReflectOuterX3);
 
   } /* end of 3D initialization */
 

@@ -29,9 +29,9 @@ public:
   Hydro *pmy_hydro;  // ptr to Hydro containing this HydroIntegrator
 
   void CalculateFluxes(MeshBlock *pmb, AthenaArray<Real> &u, AthenaArray<Real> &w,
-    InterfaceField &b, AthenaArray<Real> &bcc, const int step);
+    FaceField &b, AthenaArray<Real> &bcc, const int step);
   void FluxDivergence(MeshBlock *pmb, AthenaArray<Real> &u, AthenaArray<Real> &w,
-    InterfaceField &b, AthenaArray<Real> &bcc, const int step);
+    FaceField &b, AthenaArray<Real> &bcc, const int step);
 
   void RiemannSolver(const int k, const int j, const int il, const int iu,
     const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,

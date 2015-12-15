@@ -10,7 +10,7 @@
 #include "../athena.hpp"                   // macros, enums, Real
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../parameter_input.hpp"          // ParameterInput
-#include "../bvals/bvals.hpp"              // BoundaryValues, InterfaceField
+#include "../bvals/bvals.hpp"              // BoundaryValues, FaceField
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"
@@ -21,9 +21,9 @@ void InnerHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
     int is, int ie, int js, int je, int ks, int ke);
 void OuterHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
     int is, int ie, int js, int je, int ks, int ke);
-void InnerField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+void InnerField(MeshBlock *pmb, Coordinates *pco, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke);
-void OuterField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+void OuterField(MeshBlock *pmb, Coordinates *pco, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke);
 static void CalculatePrimitives(Real r, Real temp_min, Real temp_max, Real *prho,
     Real *ppgas, Real *put, Real *pur);
@@ -235,12 +235,12 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   bb.DeleteAthenaArray();
 
   // Enroll boundary functions
-  pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, InnerHydro);
-  pmb->pbval->EnrollHydroBoundaryFunction(outer_x1, OuterHydro);
+  pmb->pbval->EnrollHydroBoundaryFunction(INNER_X1, InnerHydro);
+  pmb->pbval->EnrollHydroBoundaryFunction(OUTER_X1, OuterHydro);
   if (MAGNETIC_FIELDS_ENABLED)
   {
-    pmb->pbval->EnrollFieldBoundaryFunction(inner_x1, InnerField);
-    pmb->pbval->EnrollFieldBoundaryFunction(outer_x1, OuterField);
+    pmb->pbval->EnrollFieldBoundaryFunction(INNER_X1, InnerField);
+    pmb->pbval->EnrollFieldBoundaryFunction(OUTER_X1, OuterField);
   }
   return;
 }
@@ -263,7 +263,7 @@ void OuterHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
 
 // Inner field boundary condition
 // TODO: comment
-void InnerField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+void InnerField(MeshBlock *pmb, Coordinates *pco, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke)
 {
   return;
@@ -271,7 +271,7 @@ void InnerField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
 
 // Outer field boundary condition
 // TODO: comment
-void OuterField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+void OuterField(MeshBlock *pmb, Coordinates *pco, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke)
 {
   return;

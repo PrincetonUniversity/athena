@@ -173,7 +173,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 
 // Set IIB value function pointer
 
-  pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, shk_cloud_iib);
+  pmb->pbval->EnrollHydroBoundaryFunction(INNER_X1, shk_cloud_iib);
 
   return;
 }

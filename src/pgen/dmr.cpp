@@ -91,9 +91,9 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 
 // Set boundary value function pointers
 
-  pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, dmrbv_iib);
-  pmb->pbval->EnrollHydroBoundaryFunction(inner_x2, dmrbv_ijb);
-  pmb->pbval->EnrollHydroBoundaryFunction(outer_x2, dmrbv_ojb);
+  pmb->pbval->EnrollHydroBoundaryFunction(INNER_X1, dmrbv_iib);
+  pmb->pbval->EnrollHydroBoundaryFunction(INNER_X2, dmrbv_ijb);
+  pmb->pbval->EnrollHydroBoundaryFunction(OUTER_X2, dmrbv_ojb);
 }
 
 //--------------------------------------------------------------------------------------

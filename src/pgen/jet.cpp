@@ -31,7 +31,7 @@
 // BCs on L-x1 (left edge) of grid with jet inflow conditions
 void jet_hydro_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                    int is, int ie, int js, int je, int ks, int ke);
-void jet_field_iib(MeshBlock *pmb, Coordinates *pco, InterfaceField &a,
+void jet_field_iib(MeshBlock *pmb, Coordinates *pco, FaceField &a,
                    int is, int ie, int js, int je, int ks, int ke);
 
 // Make radius of jet and jet variables global so they can be accessed by BC functions
@@ -117,7 +117,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   }
 
 // Enroll boundary value function pointers
-  pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, jet_hydro_iib);
+  pmb->pbval->EnrollHydroBoundaryFunction(INNER_X1, jet_hydro_iib);
 
   return;
 }
@@ -157,7 +157,7 @@ void jet_hydro_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 //! \fn void jet_field_iib()
 //  \brief Sets boundary condition for B field on left X boundary (iib) for jet problem
 
-void jet_field_iib(MeshBlock *pmb, Coordinates *pco, InterfaceField &a,
+void jet_field_iib(MeshBlock *pmb, Coordinates *pco, FaceField &a,
                    int is, int ie, int js, int je, int ks, int ke)
 {
   for(int k=ks; k<=ke; ++k){

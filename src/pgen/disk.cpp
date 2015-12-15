@@ -116,8 +116,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     for (int k=ks; k<=ke; ++k) {
       // reset loop limits for polar boundary
       int jl=js; int ju=je+1;
-      if (pmb->block_bcs[inner_x2] == 5) jl=js+1; 
-      if (pmb->block_bcs[outer_x2] == 5) ju=je;
+      if (pmb->block_bcs[INNER_X2] == 5) jl=js+1; 
+      if (pmb->block_bcs[OUTER_X2] == 5) ju=je;
       for (int j=jl; j<=ju; ++j) {
         pmb->pcoord->Face2Area(k,j,is,ie,area);
         pmb->pcoord->Edge3Length(k,j,is,ie+1,len);
@@ -172,8 +172,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
       for (int k=ks; k<=ke; ++k) {
         // reset loop limits for polar boundary
         int jl=js; int ju=je+1;
-        if (pmb->block_bcs[inner_x2] == 5) jl=js+1; 
-        if (pmb->block_bcs[outer_x2] == 5) ju=je;
+        if (pmb->block_bcs[INNER_X2] == 5) jl=js+1; 
+        if (pmb->block_bcs[OUTER_X2] == 5) ju=je;
         for (int j=jl; j<=ju; ++j) {
           pmb->pcoord->Face2Area(k,j,is,ie,area);
           pmb->pcoord->Edge1Length(k  ,j,is,ie,len);

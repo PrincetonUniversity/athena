@@ -11,7 +11,7 @@
 #include "../athena.hpp"                   // enums, Real
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../parameter_input.hpp"          // ParameterInput
-#include "../bvals/bvals.hpp"              // BoundaryValues, InterfaceField
+#include "../bvals/bvals.hpp"              // BoundaryValues, FaceField
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../hydro/hydro.hpp"
 #include "../hydro/eos/eos.hpp"
@@ -130,8 +130,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   bb.DeleteAthenaArray();
 
   // Enroll boundary functions
-  pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, OutflowPrimInnerHydro);
-  pmb->pbval->EnrollHydroBoundaryFunction(outer_x1, FixedOuterHydro);
+  pmb->pbval->EnrollHydroBoundaryFunction(INNER_X1, OutflowPrimInnerHydro);
+  pmb->pbval->EnrollHydroBoundaryFunction(OUTER_X1, FixedOuterHydro);
   return;
 }
 

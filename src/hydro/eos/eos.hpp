@@ -18,7 +18,7 @@
 // Declarations
 class Hydro;
 class ParameterInput;
-struct InterfaceField;
+struct FaceField;
 
 //! \class HydroEqnOfState
 //  \brief data and functions that implement EoS for hydro
@@ -29,7 +29,7 @@ public:
   ~HydroEqnOfState();
 
   void ConservedToPrimitive(AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old,
-    const InterfaceField &b, AthenaArray<Real> &prim, AthenaArray<Real> &bcc,
+    const FaceField &b, AthenaArray<Real> &prim, AthenaArray<Real> &bcc,
     Coordinates *pco, int is, int ie, int js, int je, int ks, int ke);
   void PrimitiveToConserved(const AthenaArray<Real> &prim, const AthenaArray<Real> &bc,
        AthenaArray<Real> &cons, Coordinates *pco,

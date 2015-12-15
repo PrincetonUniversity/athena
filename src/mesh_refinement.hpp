@@ -21,7 +21,7 @@
 class MeshBlock;
 class ParameterInput;
 class Coordinates;
-struct InterfaceField;
+struct FaceField;
 class BoundaryValues;
 
 class MeshRefinement
@@ -29,7 +29,7 @@ class MeshRefinement
 private:
   MeshBlock *pmy_mblock_;
   AthenaArray<Real> coarse_cons_, coarse_prim_, coarse_bcc_;
-  InterfaceField coarse_b_;
+  FaceField coarse_b_;
   AthenaArray<Real> fvol_[2][2], sarea_x1_[2][2], sarea_x2_[2][3], sarea_x3_[3][2];
 
   friend class BoundaryValues;
@@ -56,7 +56,7 @@ public:
                                int si, int ei, int sj, int ej, int sk, int ek);
   void ProlongateSharedFieldX3(const AthenaArray<Real> &coarse, AthenaArray<Real> &fine,
                                int si, int ei, int sj, int ej, int sk, int ek);
-  void ProlongateInternalField(InterfaceField &fine,
+  void ProlongateInternalField(FaceField &fine,
                                int si, int ei, int sj, int ej, int sk, int ek);
 };
 

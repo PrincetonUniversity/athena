@@ -1,18 +1,35 @@
 //======================================================================================
-//! \file MeshBlockTree.cpp
+// Athena++ astrophysical MHD code
+// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
+//
+// This program is free software: you can redistribute and/or modify it under the terms
+// of the GNU General Public License (GPL) as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of GNU GPL in the file LICENSE included in the code
+// distribution.  If not see <http://www.gnu.org/licenses/>.
+//======================================================================================
+//! \file meshblocktree.cpp
 //  \brief implementation of functions in the MeshBlockTree class
-//  The MeshBlockTree stores the logical grid structure, and is used for 
-//  neighbor search, assigning global IDs, etc.
-//  Level is defined as "logical level", where the logical root (single block) is 0,
-//  and the physical root (user-specified root level) can be different.
+// MeshBlockTree stores the logical grid structure, and is used for neighbor searches,
+// assigning global IDs, etc.  Level is defined as "logical level", where the logical
+// root (single block) is 0; the physical root (user-specified root level) may be
+// different.
 //======================================================================================
 
-
-#include "athena.hpp"
-#include "meshblocktree.hpp"
+// C++ headers
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+
+// Athena++ classes headers
+#include "athena.hpp"
+#include "meshblocktree.hpp"
+#include "bvals/bvals.hpp"
 
 //--------------------------------------------------------------------------------------
 //! \fn MeshBlockTree::MeshBlockTree()
@@ -175,32 +192,32 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, int* mesh_bcs,
   for(oz=ozmin;oz<=ozmax;oz++) {
     nloc.lx3=loc.lx3+oz;
     if(nloc.lx3<0) {
-      if(mesh_bcs[inner_x3]!=4) continue;
+      if(mesh_bcs[INNER_X3]!=4) continue;
       else nloc.lx3=nzmax-1;
     }
     if(nloc.lx3>=nzmax) {
-      if(mesh_bcs[outer_x3]!=4) continue;
+      if(mesh_bcs[OUTER_X3]!=4) continue;
       else nloc.lx3=0;
     }
     for(oy=oymin;oy<=oymax;oy++) {
       nloc.lx2=loc.lx2+oy;
       if(nloc.lx2<0) {
-        if(mesh_bcs[inner_x2]!=4) continue;
+        if(mesh_bcs[INNER_X2]!=4) continue;
         else nloc.lx2=nymax-1;
       }
       if(nloc.lx2>=nymax) {
-        if(mesh_bcs[outer_x2]!=4) continue;
+        if(mesh_bcs[OUTER_X2]!=4) continue;
         else nloc.lx2=0;
       }
       for(ox=oxmin;ox<=oxmax;ox++) {
         if(ox==0 && oy==0 && oz==0) continue;
         nloc.lx1=loc.lx1+ox;
         if(nloc.lx1<0) {
-          if(mesh_bcs[inner_x1]!=4) continue;
+          if(mesh_bcs[INNER_X1]!=4) continue;
           else nloc.lx1=nxmax-1;
         }
         if(nloc.lx1>=nxmax) {
-          if(mesh_bcs[outer_x1]!=4) continue;
+          if(mesh_bcs[OUTER_X1]!=4) continue;
           else nloc.lx1=0;
         }
         root.AddMeshBlock(root,nloc,dim,mesh_bcs,rbx,rby,rbz,rl);
@@ -301,25 +318,25 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
   lx+=ox1; ly+=ox2; lz+=ox3;
   // periodic and polar boundaries
   if(lx<0) {
-    if(bcs[inner_x1]==4) lx=(rbx<<(ll-rl))-1;
+    if(bcs[INNER_X1]==4) lx=(rbx<<(ll-rl))-1;
     else return NULL;
   }
   if(lx>=rbx<<(ll-rl)) {;
-    if(bcs[outer_x1]==4) lx=0;
+    if(bcs[OUTER_X1]==4) lx=0;
     else return NULL;
   }
   bool polar = false;
   if(ly<0) {
-    if(bcs[inner_x2]==4) ly=(rby<<(ll-rl))-1;
-    else if(bcs[inner_x2]==5) {
+    if(bcs[INNER_X2]==4) ly=(rby<<(ll-rl))-1;
+    else if(bcs[INNER_X2]==5) {
       ly=0;
       polar=true;
     }
     else return NULL;
   }
   if(ly>=rby<<(ll-rl)) {
-    if(bcs[outer_x2]==4) ly=0;
-    else if(bcs[outer_x2]==5) {
+    if(bcs[OUTER_X2]==4) ly=0;
+    else if(bcs[OUTER_X2]==5) {
       ly=(rby<<(ll-rl))-1;
       polar=true;
     }
@@ -327,11 +344,11 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
   }
   long int num_x3 = rbz<<(ll-rl);
   if(lz<0) {
-    if(bcs[inner_x3]==4) lz=num_x3-1;
+    if(bcs[INNER_X3]==4) lz=num_x3-1;
     else return NULL;
   }
   if(lz>=num_x3) {
-    if(bcs[outer_x3]==4) lz=0;
+    if(bcs[OUTER_X3]==4) lz=0;
     else return NULL;
   }
   if(polar) lz=(lz+num_x3/2)%num_x3;

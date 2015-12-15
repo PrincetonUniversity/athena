@@ -12,7 +12,7 @@
 #include "../athena.hpp"                   // macros, enums, Real
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../parameter_input.hpp"          // ParameterInput
-#include "../bvals/bvals.hpp"              // BoundaryValues, InterfaceField
+#include "../bvals/bvals.hpp"              // BoundaryValues, FaceField
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"
@@ -30,13 +30,13 @@ void TopHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
     int is, int ie, int js, int je, int ks, int ke);
 void BottomHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
     int is, int ie, int js, int je, int ks, int ke);
-void InnerField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+void InnerField(MeshBlock *pmb, Coordinates *pco, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke);
-void OuterField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+void OuterField(MeshBlock *pmb, Coordinates *pco, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke);
-void TopField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+void TopField(MeshBlock *pmb, Coordinates *pco, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke);
-void BottomField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+void BottomField(MeshBlock *pmb, Coordinates *pco, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke);
 static Real calculate_l_from_r_peak(Real r);
 static Real calculate_r_peak_from_l(Real l_target, Real r_min, Real r_max);
@@ -454,16 +454,16 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   bb.DeleteAthenaArray();
 
   // Enroll boundary functions
-  pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, InnerHydro);
-  pmb->pbval->EnrollHydroBoundaryFunction(outer_x1, OuterHydro);
-  pmb->pbval->EnrollHydroBoundaryFunction(inner_x2, TopHydro);
-  pmb->pbval->EnrollHydroBoundaryFunction(outer_x2, BottomHydro);
+  pmb->pbval->EnrollHydroBoundaryFunction(INNER_X1, InnerHydro);
+  pmb->pbval->EnrollHydroBoundaryFunction(OUTER_X1, OuterHydro);
+  pmb->pbval->EnrollHydroBoundaryFunction(INNER_X2, TopHydro);
+  pmb->pbval->EnrollHydroBoundaryFunction(OUTER_X2, BottomHydro);
   if (MAGNETIC_FIELDS_ENABLED)
   {
-    pmb->pbval->EnrollFieldBoundaryFunction(inner_x1, InnerField);
-    pmb->pbval->EnrollFieldBoundaryFunction(outer_x1, OuterField);
-    pmb->pbval->EnrollFieldBoundaryFunction(inner_x2, TopField);
-    pmb->pbval->EnrollFieldBoundaryFunction(outer_x2, BottomField);
+    pmb->pbval->EnrollFieldBoundaryFunction(INNER_X1, InnerField);
+    pmb->pbval->EnrollFieldBoundaryFunction(OUTER_X1, OuterField);
+    pmb->pbval->EnrollFieldBoundaryFunction(INNER_X2, TopField);
+    pmb->pbval->EnrollFieldBoundaryFunction(OUTER_X2, BottomField);
   }
   return;
 }
@@ -515,7 +515,7 @@ void BottomHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
 }
 
 // Inner field boundary condition
-void InnerField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+void InnerField(MeshBlock *pmb, Coordinates *pco, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k = ks; k <= ke; ++k)
@@ -534,7 +534,7 @@ void InnerField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
 }
 
 // Outer field boundary condition
-void OuterField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+void OuterField(MeshBlock *pmb, Coordinates *pco, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k = ks; k <= ke; ++k)
@@ -553,7 +553,7 @@ void OuterField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
 }
 
 // Top field boundary condition
-void TopField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+void TopField(MeshBlock *pmb, Coordinates *pco, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k = ks; k <= ke; ++k)
@@ -572,7 +572,7 @@ void TopField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
 }
 
 // Bottom field boundary condition
-void BottomField(MeshBlock *pmb, Coordinates *pco, InterfaceField &bb,
+void BottomField(MeshBlock *pmb, Coordinates *pco, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k = ks; k <= ke; ++k)

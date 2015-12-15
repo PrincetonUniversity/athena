@@ -13,15 +13,20 @@
 #include "athena_arrays.hpp"
 #include <math.h>
 
+// typedefs that allow code to run with either floats or doubles
 typedef double Real;
 #ifdef MPI_PARALLEL
 #define MPI_ATHENA_REAL MPI_DOUBLE
 #endif
 
-typedef struct InterfaceField {
+//! \struct FaceField
+//  \brief container for face-centered fields
+typedef struct FaceField {
   AthenaArray<Real> x1f,x2f,x3f;
-} InterfaceField;
+} FaceField;
 
+//! \struct EdgeField
+//  \brief container for edge-centered fields
 typedef struct EdgeField {
   AthenaArray<Real> x1e,x2e,x3e;
 } EdgeField;
@@ -34,17 +39,23 @@ typedef struct LogicalLocation {
   LogicalLocation() : lx1(-1), lx2(-1), lx3(-1), level(-1) {};
 } LogicalLocation;
 
-
-
+// array indices for conserved: density, momemtum, total energy, face-centered field 
 enum {IDN=0, IM1=1, IM2=2, IM3=3, IEN=4};
-static bool flip_across_pole_hydro[] = {false, false, true, true, false};
-enum {IVX=1, IVY=2, IVZ=3, IBY=(NHYDRO), IBZ=((NHYDRO)+1)};
 enum {IB1=0, IB2=1, IB3=2};
-static bool flip_across_pole_field[] = {false, true, true};
+
+// array indices for 1D primitives: velocity, transverse components of field
+enum {IVX=1, IVY=2, IVZ=3, IBY=(NHYDRO), IBZ=((NHYDRO)+1)};
+
+// array indices for face-centered electric fields returned by Riemann solver
 enum {X1E2=0, X1E3=1, X2E3=0, X2E1=1, X3E1=0, X3E2=1};
+
+// array indices for metric in GR
 enum {I00, I01, I02, I03, I11, I12, I13, I22, I23, I33, NMETRIC};
 
-enum direction {dir_undefined=-1, inner_x1=0, outer_x1=1, inner_x2=2, outer_x2=3, inner_x3=4, outer_x3=5};
+// flags to denote which components of hydro and B-field arrays to flip at polar bndrys
+static bool flip_across_pole_hydro[] = {false, false, true, true, false};
+static bool flip_across_pole_field[] = {false, true, true};
+
 enum edgeid {edgeid_undefined = -1, em2m1=0, em2p1=1, ep2m1=2, ep2p2=3, 
                 em3m1=4, em3p1=5, ep3m1=6, ep3p1=7, em3m2=8, em3p2=9, ep3m2=10, ep3p2=11};
 enum face {x1face=0, x2face=1, x3face=2};

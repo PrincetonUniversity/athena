@@ -393,13 +393,13 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
   }
 
   // correct cell face positions in ghost zones for reflecting boundary condition
-  if (pmy_block->block_bcs[inner_x1] == 1) {
+  if (pmy_block->block_bcs[INNER_X1] == 1) {
     for (int i=1; i<=ng; ++i) {
       dx1f(is-i) = dx1f(is+i-1);
        x1f(is-i) =  x1f(is-i+1) - dx1f(is-i);
     }
   }
-  if (pmy_block->block_bcs[outer_x1] == 1) {
+  if (pmy_block->block_bcs[OUTER_X1] == 1) {
     for (int i=1; i<=ng; ++i) {
       dx1f(ie+i  ) = dx1f(ie-i+1);
        x1f(ie+i+1) =  x1f(ie+i) + dx1f(ie+i);
@@ -433,13 +433,13 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
     }
 
     // correct cell face positions in ghost zones for reflecting boundary condition
-    if (pmy_block->block_bcs[inner_x2] == 1) {
+    if (pmy_block->block_bcs[INNER_X2] == 1) {
       for (int j=1; j<=ng; ++j) {
         dx2f(js-j) = dx2f(js+j-1);
          x2f(js-j) =  x2f(js-j+1) - dx2f(js-j);
       }
     }
-    if (pmy_block->block_bcs[outer_x2] == 1) {
+    if (pmy_block->block_bcs[OUTER_X2] == 1) {
       for (int j=1; j<=ng; ++j) {
         dx2f(je+j  ) = dx2f(je-j+1);
          x2f(je+j+1) =  x2f(je+j) + dx2f(je+j);
@@ -480,13 +480,13 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
     }
 
     // correct cell face positions in ghost zones for reflecting boundary condition
-    if (pmy_block->block_bcs[inner_x3] == 1) {
+    if (pmy_block->block_bcs[INNER_X3] == 1) {
       for (int k=1; k<=ng; ++k) {
         dx3f(ks-k) = dx3f(ks+k-1);
          x3f(ks-k) =  x3f(ks-k+1) - dx3f(ks-k);
       }
     }
-    if (pmy_block->block_bcs[outer_x3] == 1) {
+    if (pmy_block->block_bcs[OUTER_X3] == 1) {
       for (int k=1; k<=ng; ++k) {
         dx3f(ke+k  ) = dx3f(ke-k+1);
          x3f(ke+k+1) =  x3f(ke+k) + dx3f(ke+k);

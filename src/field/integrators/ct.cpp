@@ -14,18 +14,17 @@
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
 
-// Primary header
-#include "../field.hpp"             // Field
-#include "field_integrator.hpp"
-
 // C++ headers
 #include <algorithm>  // max(), min()
 
-// Athena headers
-#include "../../athena.hpp"         // enums, macros, Real
-#include "../../athena_arrays.hpp"  // AthenaArray
-#include "../../mesh.hpp"           // MeshBlock
-#include "../../coordinates/coordinates.hpp"    // Areas/Lengths
+// Athena++ headers
+#include "../../athena.hpp"
+#include "../../athena_arrays.hpp"
+#include "../../mesh.hpp"
+#include "../../coordinates/coordinates.hpp"
+#include "../../bvals/bvals.hpp"
+#include "../field.hpp"
+#include "field_integrator.hpp"
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL
@@ -41,7 +40,7 @@
 //! \fn  void FieldIntegrator::CT
 //  \brief Constrained Transport implementation of dB/dt = -Curl(E), where E=-(v X B)
 
-void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w,
+void FieldIntegrator::CT(MeshBlock *pmb, FaceField &b, AthenaArray<Real> &w,
   AthenaArray<Real> &bcc, const int step)
 {
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
@@ -76,8 +75,8 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w
   for (int k=ks; k<=ke; ++k) {
     // reset loop limits for polar boundary
     int jl=js; int ju=je+1;
-    if (pmb->block_bcs[inner_x2] == 5) jl=js+1;
-    if (pmb->block_bcs[outer_x2] == 5) ju=je;
+    if (pmb->block_bcs[INNER_X2] == 5) jl=js+1;
+    if (pmb->block_bcs[OUTER_X2] == 5) ju=je;
 #pragma omp for schedule(static)
     for (int j=jl; j<=ju; ++j) {
       pmb->pcoord->Face2Area(k,j,is,ie,area);
@@ -148,8 +147,8 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w
     for (int k=ks; k<=ke; ++k) {
       // reset loop limits for polar boundary
       int jl=js; int ju=je+1;
-      if (pmb->block_bcs[inner_x2] == 5) jl=js+1;
-      if (pmb->block_bcs[outer_x2] == 5) ju=je;
+      if (pmb->block_bcs[INNER_X2] == 5) jl=js+1;
+      if (pmb->block_bcs[OUTER_X2] == 5) ju=je;
       for (int j=jl; j<=ju; ++j) {
         pmb->pcoord->Face2Area(k,j,is,ie,area);
         pmb->pcoord->Edge1Length(k  ,j,is,ie,len);

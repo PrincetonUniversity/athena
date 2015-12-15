@@ -28,7 +28,7 @@ public:
 
   Field *pmy_field;  // ptr to Field containing this FieldIntegrator
 
-  void CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w,
+  void CT(MeshBlock *pmb, FaceField &b, AthenaArray<Real> &w,
     AthenaArray<Real> &bcc, const int step);
   void ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w, AthenaArray<Real> &bcc);
 

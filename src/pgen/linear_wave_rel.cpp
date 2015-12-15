@@ -15,7 +15,7 @@
 #include "../athena.hpp"                   // macros, enums, Real
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../parameter_input.hpp"          // ParameterInput
-#include "../bvals/bvals.hpp"              // BoundaryValues, InterfaceField
+#include "../bvals/bvals.hpp"              // BoundaryValues, FaceField
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"

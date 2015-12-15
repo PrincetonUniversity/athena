@@ -66,98 +66,98 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 // Set BC functions for each of the 6 boundaries in turn -------------------------------
 // Inner x1
   nface_=2; nedge_=0;
-  switch(pmb->block_bcs[inner_x1]){
+  switch(pmb->block_bcs[INNER_X1]){
     case 1:
-      HydroBoundary_[inner_x1] = ReflectInnerX1;
-      FieldBoundary_[inner_x1] = ReflectInnerX1;
+      HydroBoundary_[INNER_X1] = ReflectInnerX1;
+      FieldBoundary_[INNER_X1] = ReflectInnerX1;
       break;
     case 2:
-      HydroBoundary_[inner_x1] = OutflowInnerX1;
-      FieldBoundary_[inner_x1] = OutflowInnerX1;
+      HydroBoundary_[INNER_X1] = OutflowInnerX1;
+      FieldBoundary_[INNER_X1] = OutflowInnerX1;
       break;
     case -1: // block boundary
     case 3: // do nothing, useful for user-enrolled BCs
     case 4: // periodic boundary
-      HydroBoundary_[inner_x1] = NULL;
-      FieldBoundary_[inner_x1] = NULL;
+      HydroBoundary_[INNER_X1] = NULL;
+      FieldBoundary_[INNER_X1] = NULL;
       break;
     default:
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-          << "Flag ix1_bc=" << pmb->block_bcs[inner_x1] << " not valid" << std::endl;
+          << "Flag ix1_bc=" << pmb->block_bcs[INNER_X1] << " not valid" << std::endl;
       throw std::runtime_error(msg.str().c_str());
    }
 
 // Outer x1
-  switch(pmb->block_bcs[outer_x1]){
+  switch(pmb->block_bcs[OUTER_X1]){
     case 1:
-      HydroBoundary_[outer_x1] = ReflectOuterX1;
-      FieldBoundary_[outer_x1] = ReflectOuterX1;
+      HydroBoundary_[OUTER_X1] = ReflectOuterX1;
+      FieldBoundary_[OUTER_X1] = ReflectOuterX1;
       break;
     case 2:
-      HydroBoundary_[outer_x1] = OutflowOuterX1;
-      FieldBoundary_[outer_x1] = OutflowOuterX1;
+      HydroBoundary_[OUTER_X1] = OutflowOuterX1;
+      FieldBoundary_[OUTER_X1] = OutflowOuterX1;
       break;
     case -1: // block boundary
     case 3: // do nothing, useful for user-enrolled BCs
     case 4: // periodic boundary
-      HydroBoundary_[outer_x1] = NULL;
-      FieldBoundary_[outer_x1] = NULL;
+      HydroBoundary_[OUTER_X1] = NULL;
+      FieldBoundary_[OUTER_X1] = NULL;
       break;
     default:
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-          << "Flag ox1_bc=" << pmb->block_bcs[outer_x1] << " not valid" << std::endl;
+          << "Flag ox1_bc=" << pmb->block_bcs[OUTER_X1] << " not valid" << std::endl;
       throw std::runtime_error(msg.str().c_str());
   }
 
   if (pmb->block_size.nx2 > 1) {
     nface_=4; nedge_=4;
 // Inner x2
-    switch(pmb->block_bcs[inner_x2]){
+    switch(pmb->block_bcs[INNER_X2]){
       case 1:
-        HydroBoundary_[inner_x2] = ReflectInnerX2;
-        FieldBoundary_[inner_x2] = ReflectInnerX2;
+        HydroBoundary_[INNER_X2] = ReflectInnerX2;
+        FieldBoundary_[INNER_X2] = ReflectInnerX2;
         break;
       case 2:
-        HydroBoundary_[inner_x2] = OutflowInnerX2;
-        FieldBoundary_[inner_x2] = OutflowInnerX2;
+        HydroBoundary_[INNER_X2] = OutflowInnerX2;
+        FieldBoundary_[INNER_X2] = OutflowInnerX2;
         break;
       case -1: // block boundary
       case 3: // do nothing, useful for user-enrolled BCs
       case 4: // periodic boundary
       case 5: // polar boundary
-        HydroBoundary_[inner_x2] = NULL;
-        FieldBoundary_[inner_x2] = NULL;
+        HydroBoundary_[INNER_X2] = NULL;
+        FieldBoundary_[INNER_X2] = NULL;
         break;
       default:
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ix2_bc=" << pmb->block_bcs[inner_x2] << " not valid" << std::endl;
+            << "Flag ix2_bc=" << pmb->block_bcs[INNER_X2] << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
      }
 
 // Outer x2
-    switch(pmb->block_bcs[outer_x2]){
+    switch(pmb->block_bcs[OUTER_X2]){
       case 1:
-        HydroBoundary_[outer_x2] = ReflectOuterX2;
-        FieldBoundary_[outer_x2] = ReflectOuterX2;
+        HydroBoundary_[OUTER_X2] = ReflectOuterX2;
+        FieldBoundary_[OUTER_X2] = ReflectOuterX2;
         break;
       case 2:
-        HydroBoundary_[outer_x2] = OutflowOuterX2;
-        FieldBoundary_[outer_x2] = OutflowOuterX2;
+        HydroBoundary_[OUTER_X2] = OutflowOuterX2;
+        FieldBoundary_[OUTER_X2] = OutflowOuterX2;
         break;
       case -1: // block boundary
       case 3: // do nothing, useful for user-enrolled BCs
       case 4: // periodic boundary
       case 5: // polar boundary
-        HydroBoundary_[outer_x2] = NULL;
-        FieldBoundary_[outer_x2] = NULL;
+        HydroBoundary_[OUTER_X2] = NULL;
+        FieldBoundary_[OUTER_X2] = NULL;
         break;
       default:
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ox2_bc=" << pmb->block_bcs[outer_x2] << " not valid" << std::endl;
+            << "Flag ox2_bc=" << pmb->block_bcs[OUTER_X2] << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
     }
   }
@@ -165,48 +165,48 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   if (pmb->block_size.nx3 > 1) {
     nface_=6; nedge_=12;
 // Inner x3
-    switch(pmb->block_bcs[inner_x3]){
+    switch(pmb->block_bcs[INNER_X3]){
       case 1:
-        HydroBoundary_[inner_x3] = ReflectInnerX3;
-        FieldBoundary_[inner_x3] = ReflectInnerX3;
+        HydroBoundary_[INNER_X3] = ReflectInnerX3;
+        FieldBoundary_[INNER_X3] = ReflectInnerX3;
         break;
       case 2:
-        HydroBoundary_[inner_x3] = OutflowInnerX3;
-        FieldBoundary_[inner_x3] = OutflowInnerX3;
+        HydroBoundary_[INNER_X3] = OutflowInnerX3;
+        FieldBoundary_[INNER_X3] = OutflowInnerX3;
         break;
       case -1: // block boundary
       case 3: // do nothing, useful for user-enrolled BCs
       case 4: // periodic boundary
-        HydroBoundary_[inner_x3] = NULL;
-        FieldBoundary_[inner_x3] = NULL;
+        HydroBoundary_[INNER_X3] = NULL;
+        FieldBoundary_[INNER_X3] = NULL;
         break;
       default:
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ix3_bc=" << pmb->block_bcs[inner_x3] << " not valid" << std::endl;
+            << "Flag ix3_bc=" << pmb->block_bcs[INNER_X3] << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
      }
 
 // Outer x3
-    switch(pmb->block_bcs[outer_x3]){
+    switch(pmb->block_bcs[OUTER_X3]){
       case 1:
-        HydroBoundary_[outer_x3] = ReflectOuterX3;
-        FieldBoundary_[outer_x3] = ReflectOuterX3;
+        HydroBoundary_[OUTER_X3] = ReflectOuterX3;
+        FieldBoundary_[OUTER_X3] = ReflectOuterX3;
         break;
       case 2:
-        HydroBoundary_[outer_x3] = OutflowOuterX3;
-        FieldBoundary_[outer_x3] = OutflowOuterX3;
+        HydroBoundary_[OUTER_X3] = OutflowOuterX3;
+        FieldBoundary_[OUTER_X3] = OutflowOuterX3;
         break;
       case -1: // block boundary
       case 3: // do nothing, useful for user-enrolled BCs
       case 4: // periodic boundary
-        HydroBoundary_[outer_x3] = NULL;
-        FieldBoundary_[outer_x3] = NULL;
+        HydroBoundary_[OUTER_X3] = NULL;
+        FieldBoundary_[OUTER_X3] = NULL;
         break;
       default:
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ox3_bc=" << pmb->block_bcs[outer_x3] << " not valid" << std::endl;
+            << "Flag ox3_bc=" << pmb->block_bcs[OUTER_X3] << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
     }
   }
@@ -630,19 +630,19 @@ void BoundaryValues::Initialize(void)
           int fi1, fi2, f2csize;
           if(nb.type==neighbor_face) { // face
             if(pmb->block_size.nx3 > 1) { // 3D
-              if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+              if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
                 size=(pmb->block_size.nx2+1)*(pmb->block_size.nx3)
                     +(pmb->block_size.nx2)*(pmb->block_size.nx3+1);
                 f2csize=(pmb->block_size.nx2/2+1)*(pmb->block_size.nx3/2)
                     +(pmb->block_size.nx2/2)*(pmb->block_size.nx3/2+1);
               }
-              else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+              else if(nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
                 size=(pmb->block_size.nx1+1)*(pmb->block_size.nx3)
                     +(pmb->block_size.nx1)*(pmb->block_size.nx3+1);
                 f2csize=(pmb->block_size.nx1/2+1)*(pmb->block_size.nx3/2)
                     +(pmb->block_size.nx1/2)*(pmb->block_size.nx3/2+1);
               }
-              else if(nb.fid==inner_x3 || nb.fid==outer_x3) {
+              else if(nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
                 size=(pmb->block_size.nx1+1)*(pmb->block_size.nx2)
                     +(pmb->block_size.nx1)*(pmb->block_size.nx2+1);
                 f2csize=(pmb->block_size.nx1/2+1)*(pmb->block_size.nx2/2)
@@ -650,11 +650,11 @@ void BoundaryValues::Initialize(void)
               }
             }
             else if(pmb->block_size.nx2 > 1) { // 2D
-              if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+              if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
                 size=(pmb->block_size.nx2+1)+pmb->block_size.nx2;
                 f2csize=(pmb->block_size.nx2/2+1)+pmb->block_size.nx2/2;
               }
-              else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+              else if(nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
                 size=(pmb->block_size.nx1+1)+pmb->block_size.nx1;
                 f2csize=(pmb->block_size.nx1/2+1)+pmb->block_size.nx1/2;
               }
@@ -712,11 +712,11 @@ void BoundaryValues::Initialize(void)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::EnrollHydroBoundaryFunction(enum direction dir,
+//! \fn void BoundaryValues::EnrollHydroBoundaryFunction(enum BoundarySide dir,
 //                                                       BValHydro_t my_bc)
 //  \brief Enroll a user-defined boundary function for hydro
 
-void BoundaryValues::EnrollHydroBoundaryFunction(enum direction dir, BValHydro_t my_bc)
+void BoundaryValues::EnrollHydroBoundaryFunction(enum BoundarySide dir, BValHydro_t my_bc)
 {
   std::stringstream msg;
   if(dir<0 || dir>5) {
@@ -737,11 +737,11 @@ void BoundaryValues::EnrollHydroBoundaryFunction(enum direction dir, BValHydro_t
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::EnrollFieldBoundaryFunction(enum direction dir,
+//! \fn void BoundaryValues::EnrollFieldBoundaryFunction(enum BoundarySide dir,
 //                                                       BValField_t my_bc)
 //  \brief Enroll a user-defined boundary function for magnetic fields
 
-void BoundaryValues::EnrollFieldBoundaryFunction(enum direction dir,BValField_t my_bc)
+void BoundaryValues::EnrollFieldBoundaryFunction(enum BoundarySide dir,BValField_t my_bc)
 {
   std::stringstream msg;
   if(dir<0 || dir>5) {
@@ -1240,7 +1240,7 @@ void BoundaryValues::SendFluxCorrection(int step)
     if(nb.level==pmb->loc.level-1) {
       int p=0;
       // x1 direction
-      if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+      if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i=pmb->is+(pmb->ie-pmb->is+1)*nb.fid;
         fi1=fx2, fi2=fx3;
         if(pmb->block_size.nx3>1) { // 3D
@@ -1281,7 +1281,7 @@ void BoundaryValues::SendFluxCorrection(int step)
         }
       }
       // x2 direction
-      else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+      else if(nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j=pmb->js+(pmb->je-pmb->js+1)*(nb.fid&1);
         fi1=fx1, fi2=fx3;
         if(pmb->block_size.nx3>1) { // 3D
@@ -1314,7 +1314,7 @@ void BoundaryValues::SendFluxCorrection(int step)
         }
       }
       // x3 direction - 3D only
-      else if(nb.fid==inner_x3 || nb.fid==outer_x3) {
+      else if(nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
         int k=pmb->ks+(pmb->ke-pmb->ks+1)*(nb.fid&1);
         fi1=fx1, fi2=fx2;
         for(int nn=0; nn<NHYDRO; nn++) {
@@ -1386,7 +1386,7 @@ bool BoundaryValues::ReceiveFluxCorrection(int step)
       // boundary arrived; apply flux correction
       Real *buf=flcor_recv_[step][nb.fid][nb.fi2][nb.fi1];
       int p=0;
-      if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+      if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int is=pmb->is+(pmb->ie-pmb->is)*nb.fid+nb.fid;
         int js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
         if(nb.fi1==0) je-=pmb->block_size.nx2/2;
@@ -1400,7 +1400,7 @@ bool BoundaryValues::ReceiveFluxCorrection(int step)
           }
         }
       }
-      else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+      else if(nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int js=pmb->js+(pmb->je-pmb->js)*(nb.fid&1)+(nb.fid&1);
         int is=pmb->is, ie=pmb->ie, ks=pmb->ks, ke=pmb->ke;
         if(nb.fi1==0) ie-=pmb->block_size.nx1/2;
@@ -1414,7 +1414,7 @@ bool BoundaryValues::ReceiveFluxCorrection(int step)
           }
         }
       }
-      else if(nb.fid==inner_x3 || nb.fid==outer_x3) {
+      else if(nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
         int ks=pmb->ks+(pmb->ke-pmb->ks)*(nb.fid&1)+(nb.fid&1);
         int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je;
         if(nb.fi1==0) ie-=pmb->block_size.nx1/2;
@@ -1437,10 +1437,10 @@ bool BoundaryValues::ReceiveFluxCorrection(int step)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn int BoundaryValues::LoadFieldBoundaryBufferSameLevel(InterfaceField &src,
+//! \fn int BoundaryValues::LoadFieldBoundaryBufferSameLevel(FaceField &src,
 //                                                 Real *buf, const NeighborBlock& nb)
 //  \brief Set field boundary buffers for sending to a block on the same level
-int BoundaryValues::LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *buf,
+int BoundaryValues::LoadFieldBoundaryBufferSameLevel(FaceField &src, Real *buf,
                                                      const NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_mblock_;
@@ -1514,10 +1514,10 @@ int BoundaryValues::LoadFieldBoundaryBufferSameLevel(InterfaceField &src, Real *
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn int BoundaryValues::LoadFieldBoundaryBufferToCoarser(InterfaceField &src,
+//! \fn int BoundaryValues::LoadFieldBoundaryBufferToCoarser(FaceField &src,
 //                                                 Real *buf, const NeighborBlock& nb)
 //  \brief Set field boundary buffers for sending to a block on the coarser level
-int BoundaryValues::LoadFieldBoundaryBufferToCoarser(InterfaceField &src, Real *buf,
+int BoundaryValues::LoadFieldBoundaryBufferToCoarser(FaceField &src, Real *buf,
                                                      const NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_mblock_;
@@ -1596,10 +1596,10 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(InterfaceField &src, Real *
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn int BoundaryValues::LoadFieldBoundaryBufferToFiner(InterfaceField &src, 
+//! \fn int BoundaryValues::LoadFieldBoundaryBufferToFiner(FaceField &src, 
 //                                                 Real *buf, const NeighborBlock& nb)
 //  \brief Set field boundary buffers for sending to a block on the finer level
-int BoundaryValues::LoadFieldBoundaryBufferToFiner(InterfaceField &src, Real *buf,
+int BoundaryValues::LoadFieldBoundaryBufferToFiner(FaceField &src, Real *buf,
                                                    const NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_mblock_;
@@ -1729,9 +1729,9 @@ int BoundaryValues::LoadFieldBoundaryBufferToFiner(InterfaceField &src, Real *bu
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SendFieldBoundaryBuffers(InterfaceField &src, int step)
+//! \fn void BoundaryValues::SendFieldBoundaryBuffers(FaceField &src, int step)
 //  \brief Send field boundary buffers
-void BoundaryValues::SendFieldBoundaryBuffers(InterfaceField &src, int step)
+void BoundaryValues::SendFieldBoundaryBuffers(FaceField &src, int step)
 {
   MeshBlock *pmb=pmy_mblock_;
 
@@ -1761,10 +1761,10 @@ void BoundaryValues::SendFieldBoundaryBuffers(InterfaceField &src, int step)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst,
+//! \fn void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst,
 //                                               Real *buf, const NeighborBlock& nb)
 //  \brief Set field boundary received from a block on the same level
-void BoundaryValues::SetFieldBoundarySameLevel(InterfaceField &dst, Real *buf,
+void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
                                                const NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_mblock_;
@@ -1977,10 +1977,10 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SetFielBoundaryFromFiner(InterfaceField &dst,
+//! \fn void BoundaryValues::SetFielBoundaryFromFiner(FaceField &dst,
 //                                                    Real *buf, const NeighborBlock& nb)
 //  \brief Set field boundary received from a block on the same level
-void BoundaryValues::SetFieldBoundaryFromFiner(InterfaceField &dst, Real *buf,
+void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
                                                const NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_mblock_;
@@ -2144,9 +2144,9 @@ void BoundaryValues::SetFieldBoundaryFromFiner(InterfaceField &dst, Real *buf,
 
 
 //--------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::ReceiveFieldBoundaryBuffers(InterfaceField &dst, int step)
+//! \fn bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst, int step)
 //  \brief load boundary buffer for x1 direction into the array
-bool BoundaryValues::ReceiveFieldBoundaryBuffers(InterfaceField &dst, int step)
+bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst, int step)
 {
   MeshBlock *pmb=pmy_mblock_;
   bool flag=true;
@@ -2185,10 +2185,10 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(InterfaceField &dst, int step)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(InterfaceField &dst,
+//! \fn void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst,
 //                                                               int step)
 //  \brief load boundary buffer for x1 direction into the array
-void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(InterfaceField &dst, int step)
+void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst, int step)
 {
   MeshBlock *pmb=pmy_mblock_;
 
@@ -2224,9 +2224,9 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
   if(nb.type==neighbor_face) {
     if(pmb->block_size.nx3 > 1) { // 3D
       // x1 direction
-      if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+      if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i;
-        if(nb.fid==inner_x1) i=pmb->is;
+        if(nb.fid==INNER_X1) i=pmb->is;
         else i=pmb->ie+1;
         // pack e2
         for(int k=pmb->ks; k<=pmb->ke+1; k++) {
@@ -2240,9 +2240,9 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
         }
       }
       // x2 direction
-      else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+      else if(nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j;
-        if(nb.fid==inner_x2) j=pmb->js;
+        if(nb.fid==INNER_X2) j=pmb->js;
         else j=pmb->je+1;
         // pack e1
         for(int k=pmb->ks; k<=pmb->ke+1; k++) {
@@ -2256,9 +2256,9 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
         }
       }
       // x3 direction
-      else if(nb.fid==inner_x3 || nb.fid==outer_x3) {
+      else if(nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
         int k;
-        if(nb.fid==inner_x3) k=pmb->ks;
+        if(nb.fid==INNER_X3) k=pmb->ks;
         else k=pmb->ke+1;
         // pack e1
         for(int j=pmb->js; j<=pmb->je+1; j++) {
@@ -2275,9 +2275,9 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
     else if(pmb->block_size.nx2 > 1) { // 2D
       int k=pmb->ks;
       // x1 direction
-      if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+      if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i;
-        if(nb.fid==inner_x1) i=pmb->is;
+        if(nb.fid==INNER_X1) i=pmb->is;
         else i=pmb->ie+1;
         // pack e2
         for(int j=pmb->js; j<=pmb->je; j++)
@@ -2287,9 +2287,9 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
           buf[p++]=e3(k,j,i);
       }
       // x2 direction
-      else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+      else if(nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j;
-        if(nb.fid==inner_x2) j=pmb->js;
+        if(nb.fid==INNER_X2) j=pmb->js;
         else j=pmb->je+1;
         // pack e1
         for(int i=pmb->is; i<=pmb->ie; i++)
@@ -2301,7 +2301,7 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
     }
     else { // 1D
       int i, j=pmb->js, k=pmb->ks;
-      if(nb.fid==inner_x1) i=pmb->is;
+      if(nb.fid==INNER_X1) i=pmb->is;
       else i=pmb->ie+1;
       // pack e2 and e3
       buf[p++]=e2(k,j,i);
@@ -2365,9 +2365,9 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
   if(nb.type==neighbor_face) {
     if(pmb->block_size.nx3 > 1) { // 3D
       // x1 direction
-      if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+      if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i;
-        if(nb.fid==inner_x1) i=pmb->is;
+        if(nb.fid==INNER_X1) i=pmb->is;
         else i=pmb->ie+1;
         // restrict and pack e2
         for(int k=pmb->ks; k<=pmb->ke+1; k+=2) {
@@ -2387,9 +2387,9 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
         }
       }
       // x2 direction
-      else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+      else if(nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j;
-        if(nb.fid==inner_x2) j=pmb->js;
+        if(nb.fid==INNER_X2) j=pmb->js;
         else j=pmb->je+1;
         // restrict and pack e1
         for(int k=pmb->ks; k<=pmb->ke+1; k+=2) {
@@ -2406,9 +2406,9 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
         }
       }
       // x3 direction
-      else if(nb.fid==inner_x3 || nb.fid==outer_x3) {
+      else if(nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
         int k;
-        if(nb.fid==inner_x3) k=pmb->ks;
+        if(nb.fid==INNER_X3) k=pmb->ks;
         else k=pmb->ke+1;
         // restrict and pack e1
         for(int j=pmb->js; j<=pmb->je+1; j+=2) {
@@ -2428,9 +2428,9 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
     else if(pmb->block_size.nx2 > 1) { // 2D
       int k=pmb->ks;
       // x1 direction
-      if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+      if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i;
-        if(nb.fid==inner_x1) i=pmb->is;
+        if(nb.fid==INNER_X1) i=pmb->is;
         else i=pmb->ie+1;
         // restrict and pack e2
         for(int j=pmb->js; j<=pmb->je; j+=2) {
@@ -2443,9 +2443,9 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
           buf[p++]=e3(k,j,i);
       }
       // x2 direction
-      else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+      else if(nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j;
-        if(nb.fid==inner_x2) j=pmb->js;
+        if(nb.fid==INNER_X2) j=pmb->js;
         else j=pmb->je+1;
         // restrict and pack e1
         pco->Edge1Length(k, j, pmb->is, pmb->ie, le1);
@@ -2458,7 +2458,7 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
     }
     else { // 1D
       int i, j=pmb->js, k=pmb->ks;
-      if(nb.fid==inner_x1) i=pmb->is;
+      if(nb.fid==INNER_X1) i=pmb->is;
       else i=pmb->ie+1;
       // pack e2 and e3
       buf[p++]=e2(k,j,i);
@@ -2571,9 +2571,9 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
   if(nb.type==neighbor_face) {
     if(pmb->block_size.nx3 > 1) { // 3D
       // x1 direction
-      if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+      if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i;
-        if(nb.fid==inner_x1) i=pmb->is;
+        if(nb.fid==INNER_X1) i=pmb->is;
         else i=pmb->ie+1;
         // unpack e2
         for(int k=pmb->ks; k<=pmb->ke+1; k++) {
@@ -2587,9 +2587,9 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
         }
       }
       // x2 direction
-      else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+      else if(nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j;
-        if(nb.fid==inner_x2) j=pmb->js;
+        if(nb.fid==INNER_X2) j=pmb->js;
         else j=pmb->je+1;
         // unpack e1
         Real sign = (nb.polar and flip_across_pole_field[IB1]) ? -1.0 : 1.0;
@@ -2605,9 +2605,9 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
         }
       }
       // x3 direction
-      else if(nb.fid==inner_x3 || nb.fid==outer_x3) {
+      else if(nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
         int k;
-        if(nb.fid==inner_x3) k=pmb->ks;
+        if(nb.fid==INNER_X3) k=pmb->ks;
         else k=pmb->ke+1;
         // unpack e1
         for(int j=pmb->js; j<=pmb->je+1; j++) {
@@ -2624,9 +2624,9 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
     else if(pmb->block_size.nx2 > 1) { // 2D
       int k=pmb->ks;
       // x1 direction
-      if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+      if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i;
-        if(nb.fid==inner_x1) i=pmb->is;
+        if(nb.fid==INNER_X1) i=pmb->is;
         else i=pmb->ie+1;
         // unpack e2
         for(int j=pmb->js; j<=pmb->je; j++) {
@@ -2638,9 +2638,9 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
           e3(k,j,i)+=buf[p++];
       }
       // x2 direction
-      else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+      else if(nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j;
-        if(nb.fid==inner_x2) j=pmb->js;
+        if(nb.fid==INNER_X2) j=pmb->js;
         else j=pmb->je+1;
         // unpack e1
         for(int i=pmb->is; i<=pmb->ie; i++) {
@@ -2654,7 +2654,7 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
     }
     else { // 1D
       int i, j=pmb->js, k=pmb->ks;
-      if(nb.fid==inner_x1) i=pmb->is;
+      if(nb.fid==INNER_X1) i=pmb->is;
       else i=pmb->ie+1;
       // unpack e2
       e2(k+1,j,i)+=buf[p];
@@ -2720,9 +2720,9 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
   if(nb.type==neighbor_face) {
     if(pmb->block_size.nx3 > 1) { // 3D
       // x1 direction
-      if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+      if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
-        if(nb.fid==inner_x1) i=pmb->is;
+        if(nb.fid==INNER_X1) i=pmb->is;
         else i=pmb->ie+1;
         if(nb.fi1==0) ju=pmb->js+pmb->block_size.nx2/2-1;
         else jl=pmb->js+pmb->block_size.nx2/2;
@@ -2740,9 +2740,9 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
         }
       }
       // x2 direction
-      else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+      else if(nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j, il=pmb->is, iu=pmb->ie, kl=pmb->ks, ku=pmb->ke;
-        if(nb.fid==inner_x2) j=pmb->js;
+        if(nb.fid==INNER_X2) j=pmb->js;
         else j=pmb->je+1;
         if(nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
         else il=pmb->is+pmb->block_size.nx1/2;
@@ -2762,9 +2762,9 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
         }
       }
       // x3 direction
-      else if(nb.fid==inner_x3 || nb.fid==outer_x3) {
+      else if(nb.fid==INNER_X3 || nb.fid==OUTER_X3) {
         int k, il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je;
-        if(nb.fid==inner_x3) k=pmb->ks;
+        if(nb.fid==INNER_X3) k=pmb->ks;
         else k=pmb->ke+1;
         if(nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
         else il=pmb->is+pmb->block_size.nx1/2;
@@ -2785,9 +2785,9 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
     else if(pmb->block_size.nx2 > 1) { // 2D
       int k=pmb->ks;
       // x1 direction
-      if(nb.fid==inner_x1 || nb.fid==outer_x1) {
+      if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int i, jl=pmb->js, ju=pmb->je;
-        if(nb.fid==inner_x1) i=pmb->is;
+        if(nb.fid==INNER_X1) i=pmb->is;
         else i=pmb->ie+1;
         if(nb.fi1==0) ju=pmb->js+pmb->block_size.nx2/2-1;
         else jl=pmb->js+pmb->block_size.nx2/2;
@@ -2801,9 +2801,9 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
           e3(k,j,i)+=buf[p++];
       }
       // x2 direction
-      else if(nb.fid==inner_x2 || nb.fid==outer_x2) {
+      else if(nb.fid==INNER_X2 || nb.fid==OUTER_X2) {
         int j, il=pmb->is, iu=pmb->ie;
-        if(nb.fid==inner_x2) j=pmb->js;
+        if(nb.fid==INNER_X2) j=pmb->js;
         else j=pmb->je+1;
         if(nb.fi1==0) iu=pmb->is+pmb->block_size.nx1/2-1;
         else il=pmb->is+pmb->block_size.nx1/2;
@@ -2819,7 +2819,7 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
     }
     else { // 1D
       int i, j=pmb->js, k=pmb->ks;
-      if(nb.fid==inner_x1) i=pmb->is;
+      if(nb.fid==INNER_X1) i=pmb->is;
       else i=pmb->ie+1;
       // unpack e2
       e2(k+1,j,i)+=buf[p];
@@ -2900,8 +2900,8 @@ void BoundaryValues::ClearCoarseEMFBoundary(void)
   int i, j, k, nl;
   // face
   for(int n=0; n<nface_; n++) {
-    if(n==inner_x1 || n==outer_x1) {
-      if(n==inner_x1) i=pmb->is;
+    if(n==INNER_X1 || n==OUTER_X1) {
+      if(n==INNER_X1) i=pmb->is;
       else i=pmb->ie+1;
       nl=pmb->nblevel[1][1][2*n];
       if(nl>pmb->loc.level) { // finer
@@ -2927,8 +2927,8 @@ void BoundaryValues::ClearCoarseEMFBoundary(void)
         }
       }
     }
-    if(n==inner_x2 || n==outer_x2) {
-      if(n==inner_x2) j=pmb->js;
+    if(n==INNER_X2 || n==OUTER_X2) {
+      if(n==INNER_X2) j=pmb->js;
       else j=pmb->je+1;
       nl=pmb->nblevel[1][2*n-4][1];
       if(nl>pmb->loc.level) { // finer
@@ -2950,8 +2950,8 @@ void BoundaryValues::ClearCoarseEMFBoundary(void)
         }
       }
     }
-    if(n==inner_x3 || n==outer_x3) {
-      if(n==inner_x3) k=pmb->ks;
+    if(n==INNER_X3 || n==OUTER_X3) {
+      if(n==INNER_X3) k=pmb->ks;
       else k=pmb->ke+1;
       nl=pmb->nblevel[2*n-8][1][1];
       if(nl>pmb->loc.level) { // finer
@@ -3014,8 +3014,8 @@ void BoundaryValues::AverageEMFBoundary(void)
   // face
   for(int n=0; n<nface_; n++) {
     if ((pmb->block_bcs[n] != -1) && (pmb->block_bcs[n] != 4)) continue;
-    if(n==inner_x1 || n==outer_x1) {
-      if(n==inner_x1) i=pmb->is;
+    if(n==INNER_X1 || n==OUTER_X1) {
+      if(n==INNER_X1) i=pmb->is;
       else i=pmb->ie+1;
       nl=pmb->nblevel[1][1][2*n];
       if(nl==pmb->loc.level) { // same ; divide all the face EMFs by 2
@@ -3053,8 +3053,8 @@ void BoundaryValues::AverageEMFBoundary(void)
         }
       }
     }
-    if(n==inner_x2 || n==outer_x2) {
-      if(n==inner_x2) j=pmb->js;
+    if(n==INNER_X2 || n==OUTER_X2) {
+      if(n==INNER_X2) j=pmb->js;
       else j=pmb->je+1;
       nl=pmb->nblevel[1][2*n-4][1];
       if(nl==pmb->loc.level) { // same ; divide all the face EMFs by 2
@@ -3088,8 +3088,8 @@ void BoundaryValues::AverageEMFBoundary(void)
         }
       }
     }
-    if(n==inner_x3 || n==outer_x3) {
-      if(n==inner_x3) k=pmb->ks;
+    if(n==INNER_X3 || n==OUTER_X3) {
+      if(n==INNER_X3) k=pmb->ks;
       else k=pmb->ke+1;
       nl=pmb->nblevel[2*n-8][1][1];
       if(nl==pmb->loc.level) { // same ; divide all the face EMFs by 2
@@ -3294,11 +3294,11 @@ void BoundaryValues::ClearBoundaryAll(void)
 
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
-//           AthenaArray<Real> &cdst, InterfaceField &bfdst, AthenaArray<Real> &bcdst)
-//                                                   InterfaceField &bdst)
+//           AthenaArray<Real> &cdst, FaceField &bfdst, AthenaArray<Real> &bcdst)
+//                                                   FaceField &bdst)
 //  \brief Apply all the physical boundary conditions for both hydro and field
 void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
-     AthenaArray<Real> &cdst, InterfaceField &bfdst, AthenaArray<Real> &bcdst)
+     AthenaArray<Real> &cdst, FaceField &bfdst, AthenaArray<Real> &bcdst)
 {
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
@@ -3307,52 +3307,52 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
     bis=pmb->is-NGHOST;
     bie=pmb->ie+NGHOST;
     // note : this is temporary; Hydro and Field Boundary functions will be merged soon
-    if(HydroBoundary_[inner_x2]==NULL && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
-    if(HydroBoundary_[outer_x2]==NULL && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
-    if(HydroBoundary_[inner_x3]==NULL && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
-    if(HydroBoundary_[outer_x3]==NULL && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
+    if(HydroBoundary_[INNER_X2]==NULL && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
+    if(HydroBoundary_[OUTER_X2]==NULL && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
+    if(HydroBoundary_[INNER_X3]==NULL && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
+    if(HydroBoundary_[OUTER_X3]==NULL && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
   }
 
-  if(FieldBoundary_[inner_x1]!=NULL && MAGNETIC_FIELDS_ENABLED) {
-    FieldBoundary_[inner_x1](pmb, pco, bfdst, pmb->is, pmb->ie, bjs, bje, bks, bke);
+  if(FieldBoundary_[INNER_X1]!=NULL && MAGNETIC_FIELDS_ENABLED) {
+    FieldBoundary_[INNER_X1](pmb, pco, bfdst, pmb->is, pmb->ie, bjs, bje, bks, bke);
     pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                       pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
   }
-  if(HydroBoundary_[inner_x1]!=NULL) {
-    HydroBoundary_[inner_x1](pmb, pco, pdst,  pmb->is, pmb->ie, bjs, bje, bks, bke);
+  if(HydroBoundary_[INNER_X1]!=NULL) {
+    HydroBoundary_[INNER_X1](pmb, pco, pdst,  pmb->is, pmb->ie, bjs, bje, bks, bke);
     pmb->phydro->pf_eos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
                                     pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
   }
 
-  if(FieldBoundary_[outer_x1]!=NULL && MAGNETIC_FIELDS_ENABLED) {
-    FieldBoundary_[outer_x1](pmb, pco, bfdst, pmb->is, pmb->ie, bjs, bje, bks, bke);
+  if(FieldBoundary_[OUTER_X1]!=NULL && MAGNETIC_FIELDS_ENABLED) {
+    FieldBoundary_[OUTER_X1](pmb, pco, bfdst, pmb->is, pmb->ie, bjs, bje, bks, bke);
     pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                       pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
   }
-  if(HydroBoundary_[outer_x1]!=NULL) {
-    HydroBoundary_[outer_x1](pmb, pco, pdst,  pmb->is, pmb->ie, bjs, bje, bks, bke);
+  if(HydroBoundary_[OUTER_X1]!=NULL) {
+    HydroBoundary_[OUTER_X1](pmb, pco, pdst,  pmb->is, pmb->ie, bjs, bje, bks, bke);
     pmb->phydro->pf_eos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
                                     pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
   }
 
   if(pmb->block_size.nx2>1) { // 2D or 3D
-    if(FieldBoundary_[inner_x2]!=NULL && MAGNETIC_FIELDS_ENABLED) {
-      FieldBoundary_[inner_x2](pmb, pco, bfdst, bis, bie, pmb->js, pmb->je, bks, bke);
+    if(FieldBoundary_[INNER_X2]!=NULL && MAGNETIC_FIELDS_ENABLED) {
+      FieldBoundary_[INNER_X2](pmb, pco, bfdst, bis, bie, pmb->js, pmb->je, bks, bke);
       pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                         bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
     }
-    if(HydroBoundary_[inner_x2]!=NULL) {
-      HydroBoundary_[inner_x2](pmb, pco, pdst,  bis, bie, pmb->js, pmb->je, bks, bke);
+    if(HydroBoundary_[INNER_X2]!=NULL) {
+      HydroBoundary_[INNER_X2](pmb, pco, pdst,  bis, bie, pmb->js, pmb->je, bks, bke);
       pmb->phydro->pf_eos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
                                       bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
     }
-    if(FieldBoundary_[outer_x2]!=NULL && MAGNETIC_FIELDS_ENABLED) {
-      FieldBoundary_[outer_x2](pmb, pco, bfdst, bis, bie, pmb->js, pmb->je, bks, bke);
+    if(FieldBoundary_[OUTER_X2]!=NULL && MAGNETIC_FIELDS_ENABLED) {
+      FieldBoundary_[OUTER_X2](pmb, pco, bfdst, bis, bie, pmb->js, pmb->je, bks, bke);
       pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                         bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
     }
-    if(HydroBoundary_[outer_x2]!=NULL) {
-      HydroBoundary_[outer_x2](pmb, pco, pdst,  bis, bie, pmb->js, pmb->je, bks, bke);
+    if(HydroBoundary_[OUTER_X2]!=NULL) {
+      HydroBoundary_[OUTER_X2](pmb, pco, pdst,  bis, bie, pmb->js, pmb->je, bks, bke);
       pmb->phydro->pf_eos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
                                       bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
     }
@@ -3362,23 +3362,23 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
       bjs=pmb->js-NGHOST;
       bje=pmb->je+NGHOST;
     }
-    if(FieldBoundary_[inner_x3]!=NULL && MAGNETIC_FIELDS_ENABLED) {
-      FieldBoundary_[inner_x3](pmb, pco, bfdst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
+    if(FieldBoundary_[INNER_X3]!=NULL && MAGNETIC_FIELDS_ENABLED) {
+      FieldBoundary_[INNER_X3](pmb, pco, bfdst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
       pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                         bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
     }
-    if(HydroBoundary_[inner_x3]!=NULL) {
-      HydroBoundary_[inner_x3](pmb, pco, pdst,  bis, bie, bjs, bje, pmb->ks, pmb->ke);
+    if(HydroBoundary_[INNER_X3]!=NULL) {
+      HydroBoundary_[INNER_X3](pmb, pco, pdst,  bis, bie, bjs, bje, pmb->ks, pmb->ke);
       pmb->phydro->pf_eos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
                                         bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
     }
-    if(FieldBoundary_[outer_x3]!=NULL && MAGNETIC_FIELDS_ENABLED) {
-      FieldBoundary_[outer_x3](pmb, pco, bfdst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
+    if(FieldBoundary_[OUTER_X3]!=NULL && MAGNETIC_FIELDS_ENABLED) {
+      FieldBoundary_[OUTER_X3](pmb, pco, bfdst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
       pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
                                         bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
     }
-    if(HydroBoundary_[outer_x3]!=NULL) {
-      HydroBoundary_[outer_x3](pmb, pco, pdst,  bis, bie, bjs, bje, pmb->ks, pmb->ke);
+    if(HydroBoundary_[OUTER_X3]!=NULL) {
+      HydroBoundary_[OUTER_X3](pmb, pco, pdst,  bis, bie, bjs, bje, pmb->ks, pmb->ke);
       pmb->phydro->pf_eos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
                                       bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
     }
@@ -3518,10 +3518,10 @@ int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2, int bmax)
 
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
-//           AthenaArray<Real> &cdst, InterfaceField &bdst, AthenaArray<Real> &bcdst)
+//           AthenaArray<Real> &cdst, FaceField &bdst, AthenaArray<Real> &bcdst)
 //  \brief Prolongate the level boundary using the coarse data
 void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
-     AthenaArray<Real> &cdst, InterfaceField &bfdst, AthenaArray<Real> &bcdst)
+     AthenaArray<Real> &cdst, FaceField &bfdst, AthenaArray<Real> &bcdst)
 {
   MeshBlock *pmb=pmy_mblock_;
   MeshRefinement *pmr=pmb->pmr;
@@ -3664,50 +3664,50 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
 
     // Apply physical boundaries
     if(nb.ox1==0) {
-      if(HydroBoundary_[inner_x1]!=NULL) {
-        HydroBoundary_[inner_x1](pmb, pmb->pcoarsec, pmr->coarse_prim_,
+      if(HydroBoundary_[INNER_X1]!=NULL) {
+        HydroBoundary_[INNER_X1](pmb, pmb->pcoarsec, pmr->coarse_prim_,
                                  pmb->cis, pmb->cie, sj, ej, sk, ek);
         if(MAGNETIC_FIELDS_ENABLED)
-          FieldBoundary_[inner_x1](pmb, pmb->pcoarsec, pmr->coarse_b_,
+          FieldBoundary_[INNER_X1](pmb, pmb->pcoarsec, pmr->coarse_b_,
                                    pmb->cis, pmb->cie, sj, ej, sk, ek);
       }
-      if(HydroBoundary_[outer_x1]!=NULL) {
-        HydroBoundary_[outer_x1](pmb, pmb->pcoarsec, pmr->coarse_prim_,
+      if(HydroBoundary_[OUTER_X1]!=NULL) {
+        HydroBoundary_[OUTER_X1](pmb, pmb->pcoarsec, pmr->coarse_prim_,
                                  pmb->cis, pmb->cie, sj, ej, sk, ek);
         if(MAGNETIC_FIELDS_ENABLED)
-          FieldBoundary_[outer_x1](pmb, pmb->pcoarsec, pmr->coarse_b_,
+          FieldBoundary_[OUTER_X1](pmb, pmb->pcoarsec, pmr->coarse_b_,
                                    pmb->cis, pmb->cie, sj, ej, sk, ek);
       }
     }
     if(nb.ox2==0) {
-      if(HydroBoundary_[inner_x2]!=NULL) {
-        HydroBoundary_[inner_x2](pmb, pmb->pcoarsec, pmr->coarse_prim_,
+      if(HydroBoundary_[INNER_X2]!=NULL) {
+        HydroBoundary_[INNER_X2](pmb, pmb->pcoarsec, pmr->coarse_prim_,
                                  si, ei, pmb->cjs, pmb->cje, sk, ek);
         if(MAGNETIC_FIELDS_ENABLED)
-          FieldBoundary_[inner_x2](pmb, pmb->pcoarsec, pmr->coarse_b_,
+          FieldBoundary_[INNER_X2](pmb, pmb->pcoarsec, pmr->coarse_b_,
                                    si, ei, pmb->cjs, pmb->cje, sk, ek);
       }
-      if(HydroBoundary_[outer_x2]!=NULL) {
-        HydroBoundary_[outer_x2](pmb, pmb->pcoarsec, pmr->coarse_prim_,
+      if(HydroBoundary_[OUTER_X2]!=NULL) {
+        HydroBoundary_[OUTER_X2](pmb, pmb->pcoarsec, pmr->coarse_prim_,
                                  si, ei, pmb->cjs, pmb->cje, sk, ek);
         if(MAGNETIC_FIELDS_ENABLED)
-          FieldBoundary_[outer_x2](pmb, pmb->pcoarsec, pmr->coarse_b_,
+          FieldBoundary_[OUTER_X2](pmb, pmb->pcoarsec, pmr->coarse_b_,
                                    si, ei, pmb->cjs, pmb->cje, sk, ek);
       }
     }
     if(nb.ox3==0) {
-      if(HydroBoundary_[inner_x3]!=NULL) {
-        HydroBoundary_[inner_x3](pmb, pmb->pcoarsec, pmr->coarse_prim_,
+      if(HydroBoundary_[INNER_X3]!=NULL) {
+        HydroBoundary_[INNER_X3](pmb, pmb->pcoarsec, pmr->coarse_prim_,
                                  si, ei, sj, ej, pmb->cks, pmb->cke);
         if(MAGNETIC_FIELDS_ENABLED)
-          FieldBoundary_[inner_x3](pmb, pmb->pcoarsec, pmr->coarse_b_,
+          FieldBoundary_[INNER_X3](pmb, pmb->pcoarsec, pmr->coarse_b_,
                                    si, ei, sj, ej, pmb->cks, pmb->cke);
       }
-      if(HydroBoundary_[outer_x3]!=NULL) {
-        HydroBoundary_[outer_x3](pmb, pmb->pcoarsec, pmr->coarse_prim_,
+      if(HydroBoundary_[OUTER_X3]!=NULL) {
+        HydroBoundary_[OUTER_X3](pmb, pmb->pcoarsec, pmr->coarse_prim_,
                                  si, ei, sj, ej, pmb->cks, pmb->cke);
         if(MAGNETIC_FIELDS_ENABLED)
-          FieldBoundary_[outer_x3](pmb, pmb->pcoarsec, pmr->coarse_b_,
+          FieldBoundary_[OUTER_X3](pmb, pmb->pcoarsec, pmr->coarse_b_,
                                    si, ei, sj, ej, pmb->cks, pmb->cke);
       }
     }

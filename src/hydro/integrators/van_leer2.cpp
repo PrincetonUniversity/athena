@@ -44,7 +44,7 @@
 //  \brief Calculate Hydrodynamic Fluxes using the Riemann solver
 
 void HydroIntegrator::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
-  AthenaArray<Real> &w, InterfaceField &b, AthenaArray<Real> &bcc, const int step)
+  AthenaArray<Real> &w, FaceField &b, AthenaArray<Real> &bcc, const int step)
 {
   AthenaArray<Real> &x1flux=pmb->phydro->flux[x1face];
   AthenaArray<Real> &x2flux=pmb->phydro->flux[x2face];
@@ -248,7 +248,7 @@ void HydroIntegrator::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
 //  \brief Integrate the conservative variables using the calculated fluxes
 
 void HydroIntegrator::FluxDivergence(MeshBlock *pmb,AthenaArray<Real> &u,
-  AthenaArray<Real> &w, InterfaceField &b, AthenaArray<Real> &bcc, const int step)
+  AthenaArray<Real> &w, FaceField &b, AthenaArray<Real> &bcc, const int step)
 {
   AthenaArray<Real> &x1flux=pmb->phydro->flux[x1face];
   AthenaArray<Real> &x2flux=pmb->phydro->flux[x2face];
