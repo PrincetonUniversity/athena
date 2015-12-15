@@ -74,15 +74,20 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w
 //---- 1-D update
 
   for (int k=ks; k<=ke; ++k) {
+    // reset loop limits for polar boundary
+    int jl=js; int ju=je+1;
+    if (pmb->block_bcs[inner_x2] == 5) jl=js+1;
+    if (pmb->block_bcs[outer_x2] == 5) ju=je;
 #pragma omp for schedule(static)
-  for (int j=js; j<=je+1; ++j) {
-    pmb->pcoord->Face2Area(k,j,is,ie,area);
-    pmb->pcoord->Edge3Length(k,j,is,ie+1,len);
+    for (int j=jl; j<=ju; ++j) {
+      pmb->pcoord->Face2Area(k,j,is,ie,area);
+      pmb->pcoord->Edge3Length(k,j,is,ie+1,len);
 #pragma simd
-    for (int i=is; i<=ie; ++i) {
-      b.x2f(k,j,i) += (dt/area(i))*(len(i+1)*e3(k,j,i+1) - len(i)*e3(k,j,i));
+      for (int i=is; i<=ie; ++i) {
+        b.x2f(k,j,i) += (dt/area(i))*(len(i+1)*e3(k,j,i+1) - len(i)*e3(k,j,i));
+      }
     }
-  }}
+  }
 
   for (int k=ks; k<=ke+1; ++k) {
 #pragma omp for schedule(static)
@@ -141,15 +146,20 @@ void FieldIntegrator::CT(MeshBlock *pmb, InterfaceField &b, AthenaArray<Real> &w
 
 #pragma omp for schedule(static)
     for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je+1; ++j) {
-      pmb->pcoord->Face2Area(k,j,is,ie,area);
-      pmb->pcoord->Edge1Length(k  ,j,is,ie,len);
-      pmb->pcoord->Edge1Length(k+1,j,is,ie,len_p1);
+      // reset loop limits for polar boundary
+      int jl=js; int ju=je+1;
+      if (pmb->block_bcs[inner_x2] == 5) jl=js+1;
+      if (pmb->block_bcs[outer_x2] == 5) ju=je;
+      for (int j=jl; j<=ju; ++j) {
+        pmb->pcoord->Face2Area(k,j,is,ie,area);
+        pmb->pcoord->Edge1Length(k  ,j,is,ie,len);
+        pmb->pcoord->Edge1Length(k+1,j,is,ie,len_p1);
 #pragma simd
-      for (int i=is; i<=ie; ++i) {
-        b.x2f(k,j,i) -= (dt/area(i))*(len_p1(i)*e1(k+1,j,i) - len(i)*e1(k,j,i));
+        for (int i=is; i<=ie; ++i) {
+          b.x2f(k,j,i) -= (dt/area(i))*(len_p1(i)*e1(k+1,j,i) - len(i)*e1(k,j,i));
+        }
       }
-    }}
+    }
   }
 
 } // end of omp parallel region
