@@ -21,6 +21,7 @@
 #include "athena.hpp"  // Real
 #include "outputs/wrapper.hpp"
 
+//--------------------------------------------------------------------------------------
 //! \struct InputLine
 //  \brief  node in a linked list of parameters contained within a single input block
 
@@ -31,6 +32,7 @@ typedef struct InputLine {
   struct InputLine *pnext;    // pointer to the next node
 } InputLine;
 
+//--------------------------------------------------------------------------------------
 //! \class InputBlock
 //  \brief  node in a linked list of all input blocks contained within input file
 
@@ -51,6 +53,7 @@ public:
   InputLine* GetPtrToLine(std::string name);
 };
 
+//--------------------------------------------------------------------------------------
 //! \class ParameterInput
 //  \brief data and definitions of functions used to store and access input parameters
 //  Functions are implemented in parameter_input.cpp
@@ -67,7 +70,6 @@ public:
   // functions
   void LoadFromStream(std::istream &is);
   void LoadFromFile(IOWrapper &input);
-  void LoadFromFile(std::string filename);
   void ModifyFromCmdline(int argc, char *argv[]);
   void ParameterDump(std::ostream& os);
   int  DoesParameterExist(std::string block, std::string name);
