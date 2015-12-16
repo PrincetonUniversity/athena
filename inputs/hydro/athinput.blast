@@ -8,7 +8,7 @@ problem_id = Blast      # problem ID: basename of output filenames
 
 <output1>
 file_type  = hst        # History data dump
-dt         = 0.00       # time increment between outputs
+dt         = 0.01       # time increment between outputs
 
 <output2>
 file_type  = vtk        # Binary data dump
