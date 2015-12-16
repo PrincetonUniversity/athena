@@ -4,42 +4,42 @@ reference = Woodward, P. & Colella, P., JCP 54, 115 (1984)
 configure = --prob=dmr
 
 <job>
-problem_id = dmr       # problem ID: basename of output filenames
+problem_id = dmr      # problem ID: basename of output filenames
 
 <output1>
-file_type  = hst       # History data dump
-dt         = 0.01      # time increment between outputs
+file_type  = hst      # History data dump
+dt         = 0.01     # time increment between outputs
 
 <output2>
-file_type  = vtk       # Binary data dump
-variable   = prim      # variables to be output
-dt         = 0.002     # time increment between outputs
+file_type  = vtk      # Binary data dump
+variable   = prim     # variables to be output
+dt         = 0.002    # time increment between outputs
 
 <time>
-cfl_number = 0.8       # The Courant, Friedrichs, & Lewy (CFL) Number
-nlim       = -1        # cycle limit
-tlim       = 0.2       # time limit
+cfl_number = 0.8      # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1       # cycle limit
+tlim       = 0.2      # time limit
 
 <mesh>
-nx1        = 260       # Number of zones in X-direction
-x1min      = 0.0       # minimum value of X
-x1max      = 3.25      # maximum value of X
-ix1_bc     = 2         # inner-I (X) boundary flag
-ox1_bc     = 2         # outer-I (X) boundary flag
+nx1        = 260      # Number of zones in X1-direction
+x1min      = 0.0      # minimum value of X1
+x1max      = 3.25     # maximum value of X1
+ix1_bc     = outflow  # inner-X1 boundary flag
+ox1_bc     = outflow  # outer-X1 boundary flag
 
-nx2        = 80        # Number of zones in Y-direction
-x2min      = 0.0       # minimum value of Y
-x2max      = 1.0       # maximum value of Y
-ix2_bc     = 2         # inner-J (Y) boundary flag
-ox2_bc     = 2         # outer-J (Y) boundary flag
+nx2        = 80       # Number of zones in X2-direction
+x2min      = 0.0      # minimum value of X2
+x2max      = 1.0      # maximum value of X2
+ix2_bc     = outflow  # inner-X2 boundary flag
+ox2_bc     = outflow  # outer-X2 boundary flag
 
-nx3        = 1         # Number of zones in X3-direction
-x3min      = -0.5      # minimum value of X3
-x3max      = 0.5       # maximum value of X3
+nx3        = 1        # Number of zones in X3-direction
+x3min      = -0.5     # minimum value of X3
+x3max      = 0.5      # maximum value of X3
 
 <meshblock>
-nx1        = 65
-nx2        = 40
+nx1 = 65
+nx2 = 40
 
 <hydro>
-gamma      = 1.4       # gamma = C_p/C_v
+gamma = 1.4           # gamma = C_p/C_v

@@ -11,10 +11,10 @@ file_type  = hst       # History data dump
 dt         = 0.01      # time increment between outputs
 
 <output2>
-file_type   = vtk       # Binary data dump
-variable    = prim      # variables to be output
-dt          = 0.01      # time increment between outputs
-data_format = %24.16e   # format for tab files
+file_type   = vtk      # Binary data dump
+variable    = prim     # variables to be output
+dt          = 0.01     # time increment between outputs
+data_format = %24.16   # format for tab files
 
 <time>
 cfl_number = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
@@ -22,17 +22,17 @@ nlim       = -1        # cycle limit
 tlim       = 5.0       # time limit
 
 <mesh>
-nx1        = 256       # Number of zones in X-direction
-x1min      = 0.0       # minimum value of X
-x1max      = 2.236068  # maximum value of X
-ix1_bc     = 4         # inner-I (X) boundary flag
-ox1_bc     = 4         # outer-I (X) boundary flag
+nx1        = 256       # Number of zones in X1-direction
+x1min      = 0.0       # minimum value of X1
+x1max      = 2.236068  # maximum value of X1
+ix1_bc     = periodic  # inner-X1 boundary flag
+ox1_bc     = periodic  # outer-X1 boundary flag
 
-nx2        = 128       # Number of zones in Y-direction
-x2min      = 0.0       # minimum value of Y
-x2max      = 1.118034  # maximum value of Y
-ix2_bc     = 4         # inner-J (Y) boundary flag
-ox2_bc     = 4         # outer-J (Y) boundary flag
+nx2        = 128       # Number of zones in X2-direction
+x2min      = 0.0       # minimum value of X2
+x2max      = 1.118034  # maximum value of X2
+ix2_bc     = periodic  # inner-X2 boundary flag
+ox2_bc     = periodic  # outer-X2 boundary flag
 
 nx3        = 1         # Number of zones in X3-direction
 x3min      = -0.5      # minimum value of X3
