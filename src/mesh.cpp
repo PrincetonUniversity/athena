@@ -67,7 +67,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   RegionSize block_size;
   MeshBlockTree *neibt;
   MeshBlock *pfirst;
-  int block_bcs[6];
+  enum BoundaryFlag block_bcs[6];
   Real totalcost, maxcost, mincost, mycost, targetcost;
   int nbmax, dim;
 
@@ -197,15 +197,13 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     throw std::runtime_error(msg.str().c_str());
   }
 
-// read BC flags for each of the 6 boundaries in turn.  Error tests performed in
-// BoundaryValues constructor
-
-  mesh_bcs[INNER_X1] = pin->GetOrAddInteger("mesh","ix1_bc",0);
-  mesh_bcs[OUTER_X1] = pin->GetOrAddInteger("mesh","ox1_bc",0);
-  mesh_bcs[INNER_X2] = pin->GetOrAddInteger("mesh","ix2_bc",0);
-  mesh_bcs[OUTER_X2] = pin->GetOrAddInteger("mesh","ox2_bc",0);
-  mesh_bcs[INNER_X3] = pin->GetOrAddInteger("mesh","ix3_bc",0);
-  mesh_bcs[OUTER_X3] = pin->GetOrAddInteger("mesh","ox3_bc",0);
+  // read BC flags for each of the 6 boundaries in turn.
+  mesh_bcs[INNER_X1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix1_bc","none"));
+  mesh_bcs[OUTER_X1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox1_bc","none"));
+  mesh_bcs[INNER_X2] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix2_bc","none"));
+  mesh_bcs[OUTER_X2] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox2_bc","none"));
+  mesh_bcs[INNER_X3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix3_bc","none"));
+  mesh_bcs[OUTER_X3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox3_bc","none"));
 
 // read MeshBlock parameters
   block_size.nx1 = pin->GetOrAddInteger("meshblock","nx1",mesh_size.nx1);
@@ -498,7 +496,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     else {
       Real rx=(Real)lx1/(Real)(nrbx1<<(ll-root_level));
       block_size.x1min=MeshGeneratorX1(rx,mesh_size);
-      block_bcs[INNER_X1]=-1;
+      block_bcs[INNER_X1]=BLOCK_BNDRY;
     }
     if(lx1==(nrbx1<<(ll-root_level))-1) {
       block_size.x1max=mesh_size.x1max;
@@ -507,7 +505,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     else {
       Real rx=(Real)(lx1+1)/(Real)(nrbx1<<(ll-root_level));
       block_size.x1max=MeshGeneratorX1(rx,mesh_size);
-      block_bcs[OUTER_X1]=-1;
+      block_bcs[OUTER_X1]=BLOCK_BNDRY;
     }
 
     // calculate physical block size, x2
@@ -525,7 +523,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       else {
         Real rx=(Real)lx2/(Real)(nrbx2<<(ll-root_level));
         block_size.x2min=MeshGeneratorX2(rx,mesh_size);
-        block_bcs[INNER_X2]=-1;
+        block_bcs[INNER_X2]=BLOCK_BNDRY;
       }
       if(lx2==(nrbx2<<(ll-root_level))-1) {
         block_size.x2max=mesh_size.x2max;
@@ -534,7 +532,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       else {
         Real rx=(Real)(lx2+1)/(Real)(nrbx2<<(ll-root_level));
         block_size.x2max=MeshGeneratorX2(rx,mesh_size);
-        block_bcs[OUTER_X2]=-1;
+        block_bcs[OUTER_X2]=BLOCK_BNDRY;
       }
     }
 
@@ -553,7 +551,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       else {
         Real rx=(Real)lx3/(Real)(nrbx3<<(ll-root_level));
         block_size.x3min=MeshGeneratorX3(rx,mesh_size);
-        block_bcs[INNER_X3]=-1;
+        block_bcs[INNER_X3]=BLOCK_BNDRY;
       }
       if(lx3==(nrbx3<<(ll-root_level))-1) {
         block_size.x3max=mesh_size.x3max;
@@ -562,7 +560,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       else {
         Real rx=(Real)(lx3+1)/(Real)(nrbx3<<(ll-root_level));
         block_size.x3max=MeshGeneratorX3(rx,mesh_size);
-        block_bcs[OUTER_X3]=-1;
+        block_bcs[OUTER_X3]=BLOCK_BNDRY;
       }
     }
 
@@ -949,7 +947,7 @@ void Mesh::MeshTest(int dim)
 // constructs coordinate, boundary condition, hydro and field objects.
 
 MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_block,
-                     int *input_bcs, Mesh *pm, ParameterInput *pin)
+                     enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin)
 {
   std::stringstream msg;
   int root_level;
@@ -1452,8 +1450,8 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
       bool polar=false;
       if(nlevel==loc.level) { // neighbor at same level
         long int num_x2 = nrbx2<<(loc.level-pmy_mesh->root_level);
-        if ((loc.lx2+n<0 and block_bcs[INNER_X2]==5) // neighbor across top pole...
-            or (loc.lx2+n>=num_x2 and block_bcs[OUTER_X2]==5)) { // ...or bottom pole
+        if ((loc.lx2+n<0 and block_bcs[INNER_X2]==POLAR_BNDRY) // neighbor across top pole...
+            or (loc.lx2+n>=num_x2 and block_bcs[OUTER_X2]==POLAR_BNDRY)) { // ...or bottom pole
           polar=true;
         }
         tbid=FindBufferID(0,polar?n:-n,0,0,0,pmy_mesh->maxneighbor_);
@@ -1513,8 +1511,8 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
       if(neibt==NULL) { bufid+=nf2; continue;}
       bool polar=false;
       long int num_x2 = nrbx2<<(loc.level-pmy_mesh->root_level);
-      if ((loc.lx2+m<0 and block_bcs[INNER_X2]==5) // neighbor across top pole...
-          or (loc.lx2+m>=num_x2 and block_bcs[OUTER_X2]==5)) { // ...or bottom pole
+      if ((loc.lx2+m<0 and block_bcs[INNER_X2]==POLAR_BNDRY) // neighbor across top pole...
+          or (loc.lx2+m>=num_x2 and block_bcs[OUTER_X2]==POLAR_BNDRY)) { // ...or bottom pole
         polar=true;
       }
       if(neibt->flag==false) { // neighbor at finer level
@@ -1622,8 +1620,8 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
         bool polar=false;
         if(nlevel==loc.level) { // neighbor at same level
           long int num_x2 = nrbx2<<(loc.level-pmy_mesh->root_level);
-          if ((loc.lx2+n<0 and block_bcs[INNER_X2]==5) // neighbor across top pole...
-              or (loc.lx2+n>=num_x2 and block_bcs[OUTER_X2]==5)) { // ...or bottom pole
+          if ((loc.lx2+n<0 and block_bcs[INNER_X2]==POLAR_BNDRY) // neighbor across top pole...
+              or (loc.lx2+n>=num_x2 and block_bcs[OUTER_X2]==POLAR_BNDRY)) { // ...or bottom pole
             polar=true;
           }
           tbid=FindBufferID(0,polar?n:-n,-m,0,0,pmy_mesh->maxneighbor_);
@@ -1650,8 +1648,8 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
         if(neibt==NULL) { bufid++; continue;}
         bool polar=false;
         long int num_x2 = nrbx2<<(loc.level-pmy_mesh->root_level);
-        if ((loc.lx2+m<0 and block_bcs[INNER_X2]==5) // neighbor across top pole...
-            or (loc.lx2+m>=num_x2 and block_bcs[OUTER_X2]==5)) { // ...or bottom pole
+        if ((loc.lx2+m<0 and block_bcs[INNER_X2]==POLAR_BNDRY) // neighbor across top pole...
+            or (loc.lx2+m>=num_x2 and block_bcs[OUTER_X2]==POLAR_BNDRY)) { // ...or bottom pole
           polar=true;
         }
         if(neibt->flag==false) { // neighbor at finer level

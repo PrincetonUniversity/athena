@@ -9,6 +9,9 @@
 //  \brief defines BoundaryValues class used for setting BCs on all data types
 //======================================================================================
 
+// C++ headers
+#include <string>   // string
+
 // Athena++ classes headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
@@ -27,9 +30,13 @@ class Coordinates;
 struct FaceField;
 struct NeighborBlock;
 
-// identifiers for all 6 boundaries of a MeshBlock
-enum BoundarySide {SIDE_UNDEF=-1, INNER_X1=0, OUTER_X1=1, INNER_X2=2, OUTER_X2=3, 
+// identifiers for all 6 faces of a MeshBlock on which boundary conditions are applied
+enum BoundaryFace {FACE_UNDEF=-1, INNER_X1=0, OUTER_X1=1, INNER_X2=2, OUTER_X2=3, 
   INNER_X3=4, OUTER_X3=5};
+
+// identifiers for boundary conditions
+enum BoundaryFlag {BLOCK_BNDRY=-1, BNDRY_UNDEF=0, REFLECTING_BNDRY=1, OUTFLOW_BNDRY=2,
+  USER_BNDRY=3, PERIODIC_BNDRY=4, POLAR_BNDRY=5};
 
 //-------------------- prototypes for all BC functions ---------------------------------
 void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
@@ -88,6 +95,8 @@ typedef void (*BValHydro_t)(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
                             int is, int ie, int js, int je, int ks, int ke);
 typedef void (*BValField_t)(MeshBlock *pmb, Coordinates *pco, FaceField &buf,
                             int is, int ie, int js, int je, int ks, int ke);
+enum BoundaryFlag GetBoundaryFlag(std::string input_string);
+
 
 //! \class BoundaryValues
 //  \brief BVals data and functions
@@ -101,8 +110,8 @@ public:
   void StartReceivingForInit(void);
   void StartReceivingAll(void);
 
-  void EnrollHydroBoundaryFunction (enum BoundarySide edge, BValHydro_t  my_bc);
-  void EnrollFieldBoundaryFunction(enum BoundarySide edge, BValField_t my_bc);
+  void EnrollHydroBoundaryFunction (enum BoundaryFace edge, BValHydro_t  my_bc);
+  void EnrollFieldBoundaryFunction(enum BoundaryFace edge, BValField_t my_bc);
   void CheckBoundary(void);
 
   int LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
@@ -153,7 +162,6 @@ public:
 
   void ClearBoundaryForInit(void);
   void ClearBoundaryAll(void);
-
 
 private:
   MeshBlock *pmy_mblock_;  // ptr to MeshBlock containing this BVals

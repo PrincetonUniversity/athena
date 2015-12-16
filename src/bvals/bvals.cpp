@@ -67,17 +67,17 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 // Inner x1
   nface_=2; nedge_=0;
   switch(pmb->block_bcs[INNER_X1]){
-    case 1:
+    case REFLECTING_BNDRY:
       HydroBoundary_[INNER_X1] = ReflectInnerX1;
       FieldBoundary_[INNER_X1] = ReflectInnerX1;
       break;
-    case 2:
+    case OUTFLOW_BNDRY:
       HydroBoundary_[INNER_X1] = OutflowInnerX1;
       FieldBoundary_[INNER_X1] = OutflowInnerX1;
       break;
-    case -1: // block boundary
-    case 3: // do nothing, useful for user-enrolled BCs
-    case 4: // periodic boundary
+    case BLOCK_BNDRY: // block boundary
+    case USER_BNDRY: // do nothing, useful for user-enrolled BCs
+    case PERIODIC_BNDRY: // periodic boundary
       HydroBoundary_[INNER_X1] = NULL;
       FieldBoundary_[INNER_X1] = NULL;
       break;
@@ -90,17 +90,17 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 
 // Outer x1
   switch(pmb->block_bcs[OUTER_X1]){
-    case 1:
+    case REFLECTING_BNDRY:
       HydroBoundary_[OUTER_X1] = ReflectOuterX1;
       FieldBoundary_[OUTER_X1] = ReflectOuterX1;
       break;
-    case 2:
+    case OUTFLOW_BNDRY:
       HydroBoundary_[OUTER_X1] = OutflowOuterX1;
       FieldBoundary_[OUTER_X1] = OutflowOuterX1;
       break;
-    case -1: // block boundary
-    case 3: // do nothing, useful for user-enrolled BCs
-    case 4: // periodic boundary
+    case BLOCK_BNDRY: // block boundary
+    case USER_BNDRY: // do nothing, useful for user-enrolled BCs
+    case PERIODIC_BNDRY: // periodic boundary
       HydroBoundary_[OUTER_X1] = NULL;
       FieldBoundary_[OUTER_X1] = NULL;
       break;
@@ -115,18 +115,18 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     nface_=4; nedge_=4;
 // Inner x2
     switch(pmb->block_bcs[INNER_X2]){
-      case 1:
+      case REFLECTING_BNDRY:
         HydroBoundary_[INNER_X2] = ReflectInnerX2;
         FieldBoundary_[INNER_X2] = ReflectInnerX2;
         break;
-      case 2:
+      case OUTFLOW_BNDRY:
         HydroBoundary_[INNER_X2] = OutflowInnerX2;
         FieldBoundary_[INNER_X2] = OutflowInnerX2;
         break;
-      case -1: // block boundary
-      case 3: // do nothing, useful for user-enrolled BCs
-      case 4: // periodic boundary
-      case 5: // polar boundary
+      case BLOCK_BNDRY: // block boundary
+      case USER_BNDRY: // do nothing, useful for user-enrolled BCs
+      case PERIODIC_BNDRY: // periodic boundary
+      case POLAR_BNDRY: // polar boundary
         HydroBoundary_[INNER_X2] = NULL;
         FieldBoundary_[INNER_X2] = NULL;
         break;
@@ -139,18 +139,18 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 
 // Outer x2
     switch(pmb->block_bcs[OUTER_X2]){
-      case 1:
+      case REFLECTING_BNDRY:
         HydroBoundary_[OUTER_X2] = ReflectOuterX2;
         FieldBoundary_[OUTER_X2] = ReflectOuterX2;
         break;
-      case 2:
+      case OUTFLOW_BNDRY:
         HydroBoundary_[OUTER_X2] = OutflowOuterX2;
         FieldBoundary_[OUTER_X2] = OutflowOuterX2;
         break;
-      case -1: // block boundary
-      case 3: // do nothing, useful for user-enrolled BCs
-      case 4: // periodic boundary
-      case 5: // polar boundary
+      case BLOCK_BNDRY: // block boundary
+      case USER_BNDRY: // do nothing, useful for user-enrolled BCs
+      case PERIODIC_BNDRY: // periodic boundary
+      case POLAR_BNDRY: // polar boundary
         HydroBoundary_[OUTER_X2] = NULL;
         FieldBoundary_[OUTER_X2] = NULL;
         break;
@@ -166,17 +166,17 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     nface_=6; nedge_=12;
 // Inner x3
     switch(pmb->block_bcs[INNER_X3]){
-      case 1:
+      case REFLECTING_BNDRY:
         HydroBoundary_[INNER_X3] = ReflectInnerX3;
         FieldBoundary_[INNER_X3] = ReflectInnerX3;
         break;
-      case 2:
+      case OUTFLOW_BNDRY:
         HydroBoundary_[INNER_X3] = OutflowInnerX3;
         FieldBoundary_[INNER_X3] = OutflowInnerX3;
         break;
-      case -1: // block boundary
-      case 3: // do nothing, useful for user-enrolled BCs
-      case 4: // periodic boundary
+      case BLOCK_BNDRY: // block boundary
+      case USER_BNDRY: // do nothing, useful for user-enrolled BCs
+      case PERIODIC_BNDRY: // periodic boundary
         HydroBoundary_[INNER_X3] = NULL;
         FieldBoundary_[INNER_X3] = NULL;
         break;
@@ -189,17 +189,17 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 
 // Outer x3
     switch(pmb->block_bcs[OUTER_X3]){
-      case 1:
+      case REFLECTING_BNDRY:
         HydroBoundary_[OUTER_X3] = ReflectOuterX3;
         FieldBoundary_[OUTER_X3] = ReflectOuterX3;
         break;
-      case 2:
+      case OUTFLOW_BNDRY:
         HydroBoundary_[OUTER_X3] = OutflowOuterX3;
         FieldBoundary_[OUTER_X3] = OutflowOuterX3;
         break;
-      case -1: // block boundary
-      case 3: // do nothing, useful for user-enrolled BCs
-      case 4: // periodic boundary
+      case BLOCK_BNDRY: // block boundary
+      case USER_BNDRY: // do nothing, useful for user-enrolled BCs
+      case PERIODIC_BNDRY: // periodic boundary
         HydroBoundary_[OUTER_X3] = NULL;
         FieldBoundary_[OUTER_X3] = NULL;
         break;
@@ -712,11 +712,11 @@ void BoundaryValues::Initialize(void)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::EnrollHydroBoundaryFunction(enum BoundarySide dir,
+//! \fn void BoundaryValues::EnrollHydroBoundaryFunction(enum BoundaryFace dir,
 //                                                       BValHydro_t my_bc)
 //  \brief Enroll a user-defined boundary function for hydro
 
-void BoundaryValues::EnrollHydroBoundaryFunction(enum BoundarySide dir, BValHydro_t my_bc)
+void BoundaryValues::EnrollHydroBoundaryFunction(enum BoundaryFace dir, BValHydro_t my_bc)
 {
   std::stringstream msg;
   if(dir<0 || dir>5) {
@@ -737,11 +737,11 @@ void BoundaryValues::EnrollHydroBoundaryFunction(enum BoundarySide dir, BValHydr
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::EnrollFieldBoundaryFunction(enum BoundarySide dir,
+//! \fn void BoundaryValues::EnrollFieldBoundaryFunction(enum BoundaryFace dir,
 //                                                       BValField_t my_bc)
 //  \brief Enroll a user-defined boundary function for magnetic fields
 
-void BoundaryValues::EnrollFieldBoundaryFunction(enum BoundarySide dir,BValField_t my_bc)
+void BoundaryValues::EnrollFieldBoundaryFunction(enum BoundaryFace dir,BValField_t my_bc)
 {
   std::stringstream msg;
   if(dir<0 || dir>5) {
@@ -3762,4 +3762,3 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
                                               fsi, fei, fsj, fej, fsk, fek);
   }
 }
-
