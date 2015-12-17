@@ -64,22 +64,19 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   if(pmb->block_size.nx3 > 1) f3d=1;
 
 // Set BC functions for each of the 6 boundaries in turn -------------------------------
-// Inner x1
+  // Inner x1
   nface_=2; nedge_=0;
   switch(pmb->block_bcs[INNER_X1]){
     case REFLECTING_BNDRY:
-      HydroBoundary_[INNER_X1] = ReflectInnerX1;
-      FieldBoundary_[INNER_X1] = ReflectInnerX1;
+      BoundaryFunction_[INNER_X1] = ReflectInnerX1;
       break;
     case OUTFLOW_BNDRY:
-      HydroBoundary_[INNER_X1] = OutflowInnerX1;
-      FieldBoundary_[INNER_X1] = OutflowInnerX1;
+      BoundaryFunction_[INNER_X1] = OutflowInnerX1;
       break;
     case BLOCK_BNDRY: // block boundary
     case USER_BNDRY: // do nothing, useful for user-enrolled BCs
     case PERIODIC_BNDRY: // periodic boundary
-      HydroBoundary_[INNER_X1] = NULL;
-      FieldBoundary_[INNER_X1] = NULL;
+      BoundaryFunction_[INNER_X1] = NULL;
       break;
     default:
       std::stringstream msg;
@@ -88,21 +85,18 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       throw std::runtime_error(msg.str().c_str());
    }
 
-// Outer x1
+  // Outer x1
   switch(pmb->block_bcs[OUTER_X1]){
     case REFLECTING_BNDRY:
-      HydroBoundary_[OUTER_X1] = ReflectOuterX1;
-      FieldBoundary_[OUTER_X1] = ReflectOuterX1;
+      BoundaryFunction_[OUTER_X1] = ReflectOuterX1;
       break;
     case OUTFLOW_BNDRY:
-      HydroBoundary_[OUTER_X1] = OutflowOuterX1;
-      FieldBoundary_[OUTER_X1] = OutflowOuterX1;
+      BoundaryFunction_[OUTER_X1] = OutflowOuterX1;
       break;
     case BLOCK_BNDRY: // block boundary
     case USER_BNDRY: // do nothing, useful for user-enrolled BCs
     case PERIODIC_BNDRY: // periodic boundary
-      HydroBoundary_[OUTER_X1] = NULL;
-      FieldBoundary_[OUTER_X1] = NULL;
+      BoundaryFunction_[OUTER_X1] = NULL;
       break;
     default:
       std::stringstream msg;
@@ -113,22 +107,19 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 
   if (pmb->block_size.nx2 > 1) {
     nface_=4; nedge_=4;
-// Inner x2
+    // Inner x2
     switch(pmb->block_bcs[INNER_X2]){
       case REFLECTING_BNDRY:
-        HydroBoundary_[INNER_X2] = ReflectInnerX2;
-        FieldBoundary_[INNER_X2] = ReflectInnerX2;
+        BoundaryFunction_[INNER_X2] = ReflectInnerX2;
         break;
       case OUTFLOW_BNDRY:
-        HydroBoundary_[INNER_X2] = OutflowInnerX2;
-        FieldBoundary_[INNER_X2] = OutflowInnerX2;
+        BoundaryFunction_[INNER_X2] = OutflowInnerX2;
         break;
       case BLOCK_BNDRY: // block boundary
       case USER_BNDRY: // do nothing, useful for user-enrolled BCs
       case PERIODIC_BNDRY: // periodic boundary
       case POLAR_BNDRY: // polar boundary
-        HydroBoundary_[INNER_X2] = NULL;
-        FieldBoundary_[INNER_X2] = NULL;
+        BoundaryFunction_[INNER_X2] = NULL;
         break;
       default:
         std::stringstream msg;
@@ -137,22 +128,19 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         throw std::runtime_error(msg.str().c_str());
      }
 
-// Outer x2
+    // Outer x2
     switch(pmb->block_bcs[OUTER_X2]){
       case REFLECTING_BNDRY:
-        HydroBoundary_[OUTER_X2] = ReflectOuterX2;
-        FieldBoundary_[OUTER_X2] = ReflectOuterX2;
+        BoundaryFunction_[OUTER_X2] = ReflectOuterX2;
         break;
       case OUTFLOW_BNDRY:
-        HydroBoundary_[OUTER_X2] = OutflowOuterX2;
-        FieldBoundary_[OUTER_X2] = OutflowOuterX2;
+        BoundaryFunction_[OUTER_X2] = OutflowOuterX2;
         break;
       case BLOCK_BNDRY: // block boundary
       case USER_BNDRY: // do nothing, useful for user-enrolled BCs
       case PERIODIC_BNDRY: // periodic boundary
       case POLAR_BNDRY: // polar boundary
-        HydroBoundary_[OUTER_X2] = NULL;
-        FieldBoundary_[OUTER_X2] = NULL;
+        BoundaryFunction_[OUTER_X2] = NULL;
         break;
       default:
         std::stringstream msg;
@@ -164,21 +152,18 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 
   if (pmb->block_size.nx3 > 1) {
     nface_=6; nedge_=12;
-// Inner x3
+    // Inner x3
     switch(pmb->block_bcs[INNER_X3]){
       case REFLECTING_BNDRY:
-        HydroBoundary_[INNER_X3] = ReflectInnerX3;
-        FieldBoundary_[INNER_X3] = ReflectInnerX3;
+        BoundaryFunction_[INNER_X3] = ReflectInnerX3;
         break;
       case OUTFLOW_BNDRY:
-        HydroBoundary_[INNER_X3] = OutflowInnerX3;
-        FieldBoundary_[INNER_X3] = OutflowInnerX3;
+        BoundaryFunction_[INNER_X3] = OutflowInnerX3;
         break;
       case BLOCK_BNDRY: // block boundary
       case USER_BNDRY: // do nothing, useful for user-enrolled BCs
       case PERIODIC_BNDRY: // periodic boundary
-        HydroBoundary_[INNER_X3] = NULL;
-        FieldBoundary_[INNER_X3] = NULL;
+        BoundaryFunction_[INNER_X3] = NULL;
         break;
       default:
         std::stringstream msg;
@@ -187,21 +172,18 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         throw std::runtime_error(msg.str().c_str());
      }
 
-// Outer x3
+    // Outer x3
     switch(pmb->block_bcs[OUTER_X3]){
       case REFLECTING_BNDRY:
-        HydroBoundary_[OUTER_X3] = ReflectOuterX3;
-        FieldBoundary_[OUTER_X3] = ReflectOuterX3;
+        BoundaryFunction_[OUTER_X3] = ReflectOuterX3;
         break;
       case OUTFLOW_BNDRY:
-        HydroBoundary_[OUTER_X3] = OutflowOuterX3;
-        FieldBoundary_[OUTER_X3] = OutflowOuterX3;
+        BoundaryFunction_[OUTER_X3] = OutflowOuterX3;
         break;
       case BLOCK_BNDRY: // block boundary
       case USER_BNDRY: // do nothing, useful for user-enrolled BCs
       case PERIODIC_BNDRY: // periodic boundary
-        HydroBoundary_[OUTER_X3] = NULL;
-        FieldBoundary_[OUTER_X3] = NULL;
+        BoundaryFunction_[OUTER_X3] = NULL;
         break;
       default:
         std::stringstream msg;
@@ -712,79 +694,43 @@ void BoundaryValues::Initialize(void)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::EnrollHydroBoundaryFunction(enum BoundaryFace dir,
+//! \fn void BoundaryValues::EnrollUserBoundaryFunction(enum BoundaryFace dir,
 //                                                       BValHydro_t my_bc)
-//  \brief Enroll a user-defined boundary function for hydro
+//  \brief Enroll a user-defined boundary function
 
-void BoundaryValues::EnrollHydroBoundaryFunction(enum BoundaryFace dir, BValHydro_t my_bc)
+void BoundaryValues::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValFunc_t my_bc)
 {
   std::stringstream msg;
   if(dir<0 || dir>5) {
-    msg << "### FATAL ERROR in EnrollHydroBoundaryCondition function" << std::endl
+    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
         << "dirName = " << dir << " not valid" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if(pmy_mblock_->block_bcs[dir]==-1) return;
-  if(pmy_mblock_->block_bcs[dir]!=3) {
-    msg << "### FATAL ERROR in EnrollHydroBoundaryCondition function" << std::endl
-        << "A user-defined boundary condition flag (3) must be specified "
-        << "in the input file to use a user-defined boundary function." << std::endl;
+  if(pmy_mblock_->block_bcs[dir]==BLOCK_BNDRY) return;
+  if(pmy_mblock_->block_bcs[dir]!=USER_BNDRY) {
+    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
+        << "The boundary condition flag must be set to the string 'user' in the "
+        << " <mesh> block in the input file to use user-enrolled BCs" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  HydroBoundary_[dir]=my_bc;
+  BoundaryFunction_[dir]=my_bc;
   return;
 }
-
-
-//--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::EnrollFieldBoundaryFunction(enum BoundaryFace dir,
-//                                                       BValField_t my_bc)
-//  \brief Enroll a user-defined boundary function for magnetic fields
-
-void BoundaryValues::EnrollFieldBoundaryFunction(enum BoundaryFace dir,BValField_t my_bc)
-{
-  std::stringstream msg;
-  if(dir<0 || dir>5) {
-    msg << "### FATAL ERROR in EnrollFieldBoundaryCondition function" << std::endl
-        << "dirName = " << dir << " is not valid" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  if(pmy_mblock_->block_bcs[dir]==-1) return;
-  if(pmy_mblock_->block_bcs[dir]!=3) {
-    msg << "### FATAL ERROR in EnrollFieldBoundaryCondition function" << std::endl
-        << "A user-defined boundary condition flag (3) must be specified "
-        << "in the input file to use a user-defined boundary function." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  FieldBoundary_[dir]=my_bc;
-  return;
-}
-
 
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::CheckBoundary(void)
 //  \brief checks if the boundary conditions are correctly enrolled
 void BoundaryValues::CheckBoundary(void)
 {
-  int i;
   MeshBlock *pmb=pmy_mblock_;
   for(int i=0;i<nface_;i++) {
-    if(pmb->block_bcs[i]==3) {
-      if(HydroBoundary_[i]==NULL) {
+    if(pmb->block_bcs[i]==USER_BNDRY) {
+      if(BoundaryFunction_[i]==NULL) {
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues::CheckBoundary" << std::endl
             << "A user-defined boundary is specified but the hydro boundary function "
             << "is not enrolled in direction " << i  << "." << std::endl;
         throw std::runtime_error(msg.str().c_str());
-      }
-      if (MAGNETIC_FIELDS_ENABLED) {
-        if(FieldBoundary_[i]==NULL) {
-          std::stringstream msg;
-          msg << "### FATAL ERROR in BoundaryValues::CheckBoundary" << std::endl
-              << "A user-defined boundary is specified but the field boundary function "
-              << "is not enrolled in direction " << i  << "." << std::endl;
-          throw std::runtime_error(msg.str().c_str());
-        }
       }
     }
   }
@@ -3415,82 +3361,88 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
     bis=pmb->is-NGHOST;
     bie=pmb->ie+NGHOST;
     // note : this is temporary; Hydro and Field Boundary functions will be merged soon
-    if(HydroBoundary_[INNER_X2]==NULL && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
-    if(HydroBoundary_[OUTER_X2]==NULL && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
-    if(HydroBoundary_[INNER_X3]==NULL && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
-    if(HydroBoundary_[OUTER_X3]==NULL && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
+    if(BoundaryFunction_[INNER_X2]==NULL && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
+    if(BoundaryFunction_[OUTER_X2]==NULL && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
+    if(BoundaryFunction_[INNER_X3]==NULL && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
+    if(BoundaryFunction_[OUTER_X3]==NULL && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
   }
 
-  if(FieldBoundary_[INNER_X1]!=NULL && MAGNETIC_FIELDS_ENABLED) {
-    FieldBoundary_[INNER_X1](pmb, pco, bfdst, pmb->is, pmb->ie, bjs, bje, bks, bke);
-    pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
-                                      pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
-  }
-  if(HydroBoundary_[INNER_X1]!=NULL) {
-    HydroBoundary_[INNER_X1](pmb, pco, pdst,  pmb->is, pmb->ie, bjs, bje, bks, bke);
+  // Apply boundary function on inner-x1
+  if (BoundaryFunction_[INNER_X1] != NULL) {
+    BoundaryFunction_[INNER_X1](pmb, pdst, bfdst, pmb->is, pmb->ie, bjs,bje,bks,bke);
+    if(MAGNETIC_FIELDS_ENABLED) {
+      pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
+        pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
+    }
     pmb->phydro->pf_eos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
-                                    pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
+      pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
   }
 
-  if(FieldBoundary_[OUTER_X1]!=NULL && MAGNETIC_FIELDS_ENABLED) {
-    FieldBoundary_[OUTER_X1](pmb, pco, bfdst, pmb->is, pmb->ie, bjs, bje, bks, bke);
-    pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
-                                      pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
-  }
-  if(HydroBoundary_[OUTER_X1]!=NULL) {
-    HydroBoundary_[OUTER_X1](pmb, pco, pdst,  pmb->is, pmb->ie, bjs, bje, bks, bke);
+  // Apply boundary function on outer-x1
+  if (BoundaryFunction_[OUTER_X1] != NULL) {
+    BoundaryFunction_[OUTER_X1](pmb, pdst, bfdst, pmb->is, pmb->ie, bjs,bje,bks,bke);
+    if(MAGNETIC_FIELDS_ENABLED) {
+      pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
+        pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
+    }
     pmb->phydro->pf_eos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
-                                    pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
+      pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
   }
 
   if(pmb->block_size.nx2>1) { // 2D or 3D
-    if(FieldBoundary_[INNER_X2]!=NULL && MAGNETIC_FIELDS_ENABLED) {
-      FieldBoundary_[INNER_X2](pmb, pco, bfdst, bis, bie, pmb->js, pmb->je, bks, bke);
-      pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
-                                        bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
-    }
-    if(HydroBoundary_[INNER_X2]!=NULL) {
-      HydroBoundary_[INNER_X2](pmb, pco, pdst,  bis, bie, pmb->js, pmb->je, bks, bke);
+
+    // Apply boundary function on inner-x2
+    if (BoundaryFunction_[INNER_X2] != NULL) {
+      BoundaryFunction_[INNER_X2](pmb, pdst, bfdst, bis,bie, pmb->js, pmb->je, bks,bke);
+      if(MAGNETIC_FIELDS_ENABLED) {
+        pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
+          bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
+      }
       pmb->phydro->pf_eos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
-                                      bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
+        bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
     }
-    if(FieldBoundary_[OUTER_X2]!=NULL && MAGNETIC_FIELDS_ENABLED) {
-      FieldBoundary_[OUTER_X2](pmb, pco, bfdst, bis, bie, pmb->js, pmb->je, bks, bke);
-      pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
-                                        bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
-    }
-    if(HydroBoundary_[OUTER_X2]!=NULL) {
-      HydroBoundary_[OUTER_X2](pmb, pco, pdst,  bis, bie, pmb->js, pmb->je, bks, bke);
+
+    // Apply boundary function on outer-x2
+    if (BoundaryFunction_[OUTER_X2] != NULL) {
+      BoundaryFunction_[OUTER_X2](pmb, pdst, bfdst, bis,bie, pmb->js, pmb->je, bks,bke);
+      if(MAGNETIC_FIELDS_ENABLED) {
+        pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
+          bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
+      }
       pmb->phydro->pf_eos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
-                                      bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
+        bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
     }
   }
+
   if(pmb->block_size.nx3>1) { // 3D
     if(pmb->pmy_mesh->face_only==false) {
       bjs=pmb->js-NGHOST;
       bje=pmb->je+NGHOST;
     }
-    if(FieldBoundary_[INNER_X3]!=NULL && MAGNETIC_FIELDS_ENABLED) {
-      FieldBoundary_[INNER_X3](pmb, pco, bfdst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
-      pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
-                                        bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
-    }
-    if(HydroBoundary_[INNER_X3]!=NULL) {
-      HydroBoundary_[INNER_X3](pmb, pco, pdst,  bis, bie, bjs, bje, pmb->ks, pmb->ke);
+
+    // Apply boundary function on inner-x3
+    if (BoundaryFunction_[INNER_X3] != NULL) {
+      BoundaryFunction_[INNER_X3](pmb, pdst, bfdst, bis,bie,bjs,bje, pmb->ks, pmb->ke);
+      if(MAGNETIC_FIELDS_ENABLED) {
+        pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
+          bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
+      }
       pmb->phydro->pf_eos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
-                                        bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
+        bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
     }
-    if(FieldBoundary_[OUTER_X3]!=NULL && MAGNETIC_FIELDS_ENABLED) {
-      FieldBoundary_[OUTER_X3](pmb, pco, bfdst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
-      pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
-                                        bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
-    }
-    if(HydroBoundary_[OUTER_X3]!=NULL) {
-      HydroBoundary_[OUTER_X3](pmb, pco, pdst,  bis, bie, bjs, bje, pmb->ks, pmb->ke);
+
+    // Apply boundary function on outer-x3
+    if (BoundaryFunction_[OUTER_X3] != NULL) {
+      BoundaryFunction_[OUTER_X3](pmb, pdst, bfdst, bis,bie,bjs,bje, pmb->ks, pmb->ke);
+      if(MAGNETIC_FIELDS_ENABLED) {
+        pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
+          bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
+      }
       pmb->phydro->pf_eos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
-                                      bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
+        bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
     }
   }
+
   return;
 }
 
@@ -3772,51 +3724,33 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
 
     // Apply physical boundaries
     if(nb.ox1==0) {
-      if(HydroBoundary_[INNER_X1]!=NULL) {
-        HydroBoundary_[INNER_X1](pmb, pmb->pcoarsec, pmr->coarse_prim_,
+      if(BoundaryFunction_[INNER_X1]!=NULL) {
+        BoundaryFunction_[INNER_X1](pmb, pmr->coarse_prim_, pmr->coarse_b_,
                                  pmb->cis, pmb->cie, sj, ej, sk, ek);
-        if(MAGNETIC_FIELDS_ENABLED)
-          FieldBoundary_[INNER_X1](pmb, pmb->pcoarsec, pmr->coarse_b_,
-                                   pmb->cis, pmb->cie, sj, ej, sk, ek);
       }
-      if(HydroBoundary_[OUTER_X1]!=NULL) {
-        HydroBoundary_[OUTER_X1](pmb, pmb->pcoarsec, pmr->coarse_prim_,
+      if(BoundaryFunction_[OUTER_X1]!=NULL) {
+        BoundaryFunction_[OUTER_X1](pmb, pmr->coarse_prim_, pmr->coarse_b_,
                                  pmb->cis, pmb->cie, sj, ej, sk, ek);
-        if(MAGNETIC_FIELDS_ENABLED)
-          FieldBoundary_[OUTER_X1](pmb, pmb->pcoarsec, pmr->coarse_b_,
-                                   pmb->cis, pmb->cie, sj, ej, sk, ek);
       }
     }
     if(nb.ox2==0) {
-      if(HydroBoundary_[INNER_X2]!=NULL) {
-        HydroBoundary_[INNER_X2](pmb, pmb->pcoarsec, pmr->coarse_prim_,
+      if(BoundaryFunction_[INNER_X2]!=NULL) {
+        BoundaryFunction_[INNER_X2](pmb, pmr->coarse_prim_, pmr->coarse_b_,
                                  si, ei, pmb->cjs, pmb->cje, sk, ek);
-        if(MAGNETIC_FIELDS_ENABLED)
-          FieldBoundary_[INNER_X2](pmb, pmb->pcoarsec, pmr->coarse_b_,
-                                   si, ei, pmb->cjs, pmb->cje, sk, ek);
       }
-      if(HydroBoundary_[OUTER_X2]!=NULL) {
-        HydroBoundary_[OUTER_X2](pmb, pmb->pcoarsec, pmr->coarse_prim_,
+      if(BoundaryFunction_[OUTER_X2]!=NULL) {
+        BoundaryFunction_[OUTER_X2](pmb, pmr->coarse_prim_, pmr->coarse_b_,
                                  si, ei, pmb->cjs, pmb->cje, sk, ek);
-        if(MAGNETIC_FIELDS_ENABLED)
-          FieldBoundary_[OUTER_X2](pmb, pmb->pcoarsec, pmr->coarse_b_,
-                                   si, ei, pmb->cjs, pmb->cje, sk, ek);
       }
     }
     if(nb.ox3==0) {
-      if(HydroBoundary_[INNER_X3]!=NULL) {
-        HydroBoundary_[INNER_X3](pmb, pmb->pcoarsec, pmr->coarse_prim_,
+      if(BoundaryFunction_[INNER_X3]!=NULL) {
+        BoundaryFunction_[INNER_X3](pmb, pmr->coarse_prim_, pmr->coarse_b_,
                                  si, ei, sj, ej, pmb->cks, pmb->cke);
-        if(MAGNETIC_FIELDS_ENABLED)
-          FieldBoundary_[INNER_X3](pmb, pmb->pcoarsec, pmr->coarse_b_,
-                                   si, ei, sj, ej, pmb->cks, pmb->cke);
       }
-      if(HydroBoundary_[OUTER_X3]!=NULL) {
-        HydroBoundary_[OUTER_X3](pmb, pmb->pcoarsec, pmr->coarse_prim_,
+      if(BoundaryFunction_[OUTER_X3]!=NULL) {
+        BoundaryFunction_[OUTER_X3](pmb, pmr->coarse_prim_, pmr->coarse_b_,
                                  si, ei, sj, ej, pmb->cks, pmb->cke);
-        if(MAGNETIC_FIELDS_ENABLED)
-          FieldBoundary_[OUTER_X3](pmb, pmb->pcoarsec, pmr->coarse_b_,
-                                   si, ei, sj, ej, pmb->cks, pmb->cke);
       }
     }
 
