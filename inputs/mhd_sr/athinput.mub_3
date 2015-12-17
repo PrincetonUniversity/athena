@@ -12,28 +12,28 @@ data_format = %24.16e  # optional data format string
 dt          = 0.4      # time increment between outputs
 
 <time>
-cfl_number = 0.4  # Courant-Friedrichs-Lewy number
-nlim       = -1   # cycle limit
-tlim       = 0.4  # time limit
+cfl_number = 0.4    # Courant-Friedrichs-Lewy number
+nlim       = -1     # cycle limit
+tlim       = 0.4    # time limit
 
 <mesh>
-nx1    = 400   # number of zones in x1-direction
-x1min  = -0.5  # minimum value of x1
-x1max  = 0.5   # maximum value of x1
-ix1_bc = 2     # inner-x1 boundary condition flag
-ox1_bc = 2     # outer-x1 boundary condition flag
+nx1    = 400        # number of zones in x1-direction
+x1min  = -0.5       # minimum value of x1
+x1max  = 0.5        # maximum value of x1
+ix1_bc = outflow    # inner-x1 boundary condition flag
+ox1_bc = outflow    # outer-x1 boundary condition flag
 
-nx2    = 1     # number of zones in x2-direction
-x2min  = -0.5  # minimum value of x2
-x2max  = 0.5   # maximum value of x2
-ix2_bc = 4     # inner-x2 boundary condition flag
-ox2_bc = 4     # outer-x2 boundary condition flag
+nx2    = 1          # number of zones in x2-direction
+x2min  = -0.5       # minimum value of x2
+x2max  = 0.5        # maximum value of x2
+ix2_bc = periodic   # inner-x2 boundary condition flag
+ox2_bc = periodic   # outer-x2 boundary condition flag
 
-nx3    = 1     # number of zones in x3-direction
-x3min  = -0.5  # minimum value of x3
-x3max  = 0.5   # maximum value of x3
-ix3_bc = 4     # inner-x3 boundary condition flag
-ox3_bc = 4     # outer-x3 boundary condition flag
+nx3    = 1          # number of zones in x3-direction
+x3min  = -0.5       # minimum value of x3
+x3max  = 0.5        # maximum value of x3
+ix3_bc = periodic   # inner-x3 boundary condition flag
+ox3_bc = periodic   # outer-x3 boundary condition flag
 
 <hydro>
 gamma = 1.6666666666666667  # Gamma = C_p/C_V

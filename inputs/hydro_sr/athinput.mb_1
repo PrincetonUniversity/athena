@@ -12,44 +12,44 @@ data_format = %24.16e  # Optional data format string
 dt          = 0.4      # time increment between outputs
 
 <time>
-cfl_number = 0.4  # The Courant, Friedrichs, & Lewy (CFL) Number
-nlim       = -1   # cycle limit
-tlim       = 0.4  # time limit
+cfl_number = 0.4   # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1    # cycle limit
+tlim       = 0.4   # time limit
 
 <mesh>
-nx1    = 400   # Number of zones in X1-direction
-x1min  = -0.5  # minimum value of X1
-x1max  = 0.5   # maximum value of X1
-ix1_bc = 2     # Inner-X1 boundary condition flag
-ox1_bc = 2     # Outer-X1 boundary condition flag
+nx1    = 400       # Number of zones in X1-direction
+x1min  = -0.5      # minimum value of X1
+x1max  = 0.5       # maximum value of X1
+ix1_bc = outflow   # Inner-X1 boundary condition flag
+ox1_bc = outflow   # Outer-X1 boundary condition flag
 
-nx2    = 1     # Number of zones in X2-direction
-x2min  = -0.5  # minimum value of X2
-x2max  = 0.5   # maximum value of X2
-ix2_bc = 4     # Inner-X2 boundary condition flag
-ox2_bc = 4     # Outer-X2 boundary condition flag
+nx2    = 1         # Number of zones in X2-direction
+x2min  = -0.5      # minimum value of X2
+x2max  = 0.5       # maximum value of X2
+ix2_bc = periodic  # Inner-X2 boundary condition flag
+ox2_bc = periodic  # Outer-X2 boundary condition flag
 
-nx3    = 1     # Number of zones in X3-direction
-x3min  = -0.5  # minimum value of X3
-x3max  = 0.5   # maximum value of X3
-ix3_bc = 4     # Inner-X3 boundary condition flag
-ox3_bc = 4     # Outer-X3 boundary condition flag
+nx3    = 1         # Number of zones in X3-direction
+x3min  = -0.5      # minimum value of X3
+x3max  = 0.5       # maximum value of X3
+ix3_bc = periodic  # Inner-X3 boundary condition flag
+ox3_bc = periodic  # Outer-X3 boundary condition flag
 
 <hydro>
 gamma = 1.3333333333333333  # gamma = C_p/C_v
 
 <problem>
-shock_dir = 1     # Shock Direction -- (1,2,3) = (x1,x2,x3)
-xshock    = 0.0   # position of initial interface
+shock_dir = 1      # Shock Direction -- (1,2,3) = (x1,x2,x3)
+xshock    = 0.0    # position of initial interface
 
-dl        = 1.0   # density on left
-pl        = 1.0   # pressure
-ul        = 0.9   # X-velocity
-vl        = 0.0   # Y-velocity
-wl        = 0.0   # Z-velocity
+dl        = 1.0    # density on left
+pl        = 1.0    # pressure
+ul        = 0.9    # X-velocity
+vl        = 0.0    # Y-velocity
+wl        = 0.0    # Z-velocity
 
-dr        = 1.0   # density on right
-pr        = 10.0  # pressure
-ur        = 0.0   # X-velocity
-vr        = 0.0   # Y-velocity
-wr        = 0.0   # Z-velocity
+dr        = 1.0    # density on right
+pr        = 10.0   # pressure
+ur        = 0.0    # X-velocity
+vr        = 0.0    # Y-velocity
+wr        = 0.0    # Z-velocity
