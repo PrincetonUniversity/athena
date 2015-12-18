@@ -253,7 +253,7 @@ void ReflectOuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
       for (int i=is; i<=ie; ++i) {
         b.x3f(k,(je+j  ),i) =  b.x3f(k,(je-j+1),i);
       }
-      }}
+    }}
   }
 
   return;

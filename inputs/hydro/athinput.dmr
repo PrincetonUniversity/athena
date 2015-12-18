@@ -16,7 +16,7 @@ variable   = prim     # variables to be output
 dt         = 0.002    # time increment between outputs
 
 <time>
-cfl_number = 0.8      # The Courant, Friedrichs, & Lewy (CFL) Number
+cfl_number = 0.4      # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim       = -1       # cycle limit
 tlim       = 0.2      # time limit
 
@@ -24,14 +24,14 @@ tlim       = 0.2      # time limit
 nx1        = 260      # Number of zones in X1-direction
 x1min      = 0.0      # minimum value of X1
 x1max      = 3.25     # maximum value of X1
-ix1_bc     = outflow  # inner-X1 boundary flag
+ix1_bc     = user     # inner-X1 boundary flag
 ox1_bc     = outflow  # outer-X1 boundary flag
 
 nx2        = 80       # Number of zones in X2-direction
 x2min      = 0.0      # minimum value of X2
 x2max      = 1.0      # maximum value of X2
-ix2_bc     = outflow  # inner-X2 boundary flag
-ox2_bc     = outflow  # outer-X2 boundary flag
+ix2_bc     = user     # inner-X2 boundary flag
+ox2_bc     = user     # outer-X2 boundary flag
 
 nx3        = 1        # Number of zones in X3-direction
 x3min      = -0.5     # minimum value of X3

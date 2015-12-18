@@ -49,8 +49,8 @@
 static Real gmma1,dl,pl,ul;
 static Real bxl,byl,bzl;
 
-// shk_cloud_iib() - fixes BCs on L-x1 (left edge) of grid to postshock flow.
-void shk_cloud_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+// fixes BCs on L-x1 (left edge) of grid to postshock flow.
+void ShockCloudInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                    int is, int ie, int js, int je, int ks, int ke);
 
 void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
@@ -173,30 +173,27 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 
 // Set IIB value function pointer
 
-  pmb->pbval->EnrollHydroBoundaryFunction(INNER_X1, shk_cloud_iib);
+  pmb->pbval->EnrollUserBoundaryFunction(INNER_X1, ShockCloudInnerX1);
 
   return;
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void shk_cloud_iib()
+//! \fn void ShockCloudInnerX1()
 //  \brief Sets boundary condition on left X boundary (iib) 
 // Note quantities at this boundary are held fixed at the downstream state
 
-void shk_cloud_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void ShockCloudInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                    int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
     for (int i=1; i<=(NGHOST); ++i) {
       a(IDN,k,j,is-i) = dl;
-      a(IM1,k,j,is-i) = ul*dl;
-      a(IM2,k,j,is-i) = 0.0;
-      a(IM3,k,j,is-i) = 0.0;
-      a(IEN,k,j,is-i) = pl/gmma1 + 0.5*dl*(ul*ul);
-      if (MAGNETIC_FIELDS_ENABLED) {
-        a(IEN,k,j,is-i) += 0.5*(bxl*bxl + byl*byl + bzl*bzl);
-      }
+      a(IVX,k,j,is-i) = ul;
+      a(IVY,k,j,is-i) = 0.0;
+      a(IVZ,k,j,is-i) = 0.0;
+      a(IEN,k,j,is-i) = pl;
     }
   }}
 }

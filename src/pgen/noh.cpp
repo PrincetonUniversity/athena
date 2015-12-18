@@ -17,13 +17,6 @@
 //  \brief Spherical Noh implosion problem, from Liska & Wendroff, section 4.5 (fig 4.7)
 //
 //  Tests code on VERY strong shock, also sensitive to carbuncle instability.
-//
-// PRIVATE FUNCTION PROTOTYPES:
-//   - void noh3d_oib() - sets BCs on R-x1 boundary
-//   - void noh3d_ojb() - sets BCs on R-x2 boundary
-//   - void noh3d_okb() - sets BCs on R-x3 boundary
-//   - void scat_plot() - makes scatter plot of density
-//
 // REFERENCE: R. Liska & B. Wendroff, SIAM J. Sci. Comput., 25, 995 (2003)
 //======================================================================================
 
@@ -39,11 +32,11 @@
 #include "../coordinates/coordinates.hpp"
 
 // BCs on outer edges of grid in each dimension
-void noh3d_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void Noh3DOuterX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke);
-void noh3d_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void Noh3DOuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke);
-void noh3d_okb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void Noh3DOuterX3(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke);
 
 // made global to share with BC functions
@@ -78,21 +71,21 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   }}}
 
 // Enroll boundary value function pointers
-  pmb->pbval->EnrollHydroBoundaryFunction(outer_x1, noh3d_oib);
-  pmb->pbval->EnrollHydroBoundaryFunction(outer_x2, noh3d_ojb);
+  pmb->pbval->EnrollUserBoundaryFunction(OUTER_X1, Noh3DOuterX1);
+  pmb->pbval->EnrollUserBoundaryFunction(OUTER_X2, Noh3DOuterX2);
   if (pmb->block_size.nx3 > 1) {
-    pmb->pbval->EnrollHydroBoundaryFunction(outer_x3, noh3d_okb);
+    pmb->pbval->EnrollUserBoundaryFunction(OUTER_X3, Noh3DOuterX3);
   }
 
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void noh3d_oib()
+//! \fn void Noh3DOuterX1()
 //  \brief Sets boundary condition on right X1 boundary (oib) for noh3d test
 //
 // Quantities at this boundary are held fixed at the time-dependent upstream state
 
-void noh3d_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void Noh3DOuterX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; ++k) {
@@ -100,35 +93,36 @@ void noh3d_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
     for (int i=1;  i<=(NGHOST); ++i) {
       Real rad,f_t;
       if (pmb->block_size.nx3 > 1) {
-        rad = sqrt(SQR(pco->x1v(ie+i)) + SQR(pco->x2v(j)) + SQR(pco->x3v(k)));
+        rad = sqrt(SQR(pmb->pcoord->x1v(ie+i)) + SQR(pmb->pcoord->x2v(j)) 
+              + SQR(pmb->pcoord->x3v(k)));
         f_t = SQR(1.0 + pmb->pmy_mesh->time/rad);
       } else {
-        rad = sqrt(SQR(pco->x1v(ie+i)) + SQR(pco->x2v(j)));
+        rad = sqrt(SQR(pmb->pcoord->x1v(ie+i)) + SQR(pmb->pcoord->x2v(j)));
         f_t = (1.0 + pmb->pmy_mesh->time/rad);
       }
       Real d0 = 1.0*f_t;
    
       a(IDN,k,j,ie+i)  = d0;
-      a(IM1,k,j,ie+i) = -pco->x1v(ie+i)*d0/rad;
-      a(IM2,k,j,ie+i) = -pco->x2v(j   )*d0/rad;
+      a(IVX,k,j,ie+i) = -pmb->pcoord->x1v(ie+i)/rad;
+      a(IVY,k,j,ie+i) = -pmb->pcoord->x2v(j   )/rad;
       if (pmb->block_size.nx3 > 1) {
-        a(IM3,k,j,ie+i) = -pco->x3v(k)*d0/rad;
-        a(IEN,k,j,ie+i) = 1.0e-6*pow(f_t,(1.0+gmma))/gmma1 + 0.5*d0;
+        a(IVZ,k,j,ie+i) = -pmb->pcoord->x3v(k)/rad;
+        a(IEN,k,j,ie+i) = 1.0e-6*pow(f_t,(1.0+gmma));
       } else {
-        a(IM3,k,j,ie+i) = 0.0;
-        a(IEN,k,j,ie+i)= 1.0e-6/gmma1 + 0.5*d0;
+        a(IVZ,k,j,ie+i) = 0.0;
+        a(IEN,k,j,ie+i)= 1.0e-6;
       }
     }
   }}
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void noh3d_oib()
+//! \fn void Noh3DOuterX2()
 //  \brief Sets boundary condition on right X2 boundary (ojb) for noh3d test
 //
 // Quantities at this boundary are held fixed at the time-dependent upstream state
 
-void noh3d_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void Noh3DOuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; ++k) {
@@ -136,49 +130,51 @@ void noh3d_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
     for (int i=is; i<=ie; ++i) {
       Real rad,f_t;
       if (pmb->block_size.nx3 > 1) {
-        rad = sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(je+j)) + SQR(pco->x3v(k)));
+        rad = sqrt(SQR(pmb->pcoord->x1v(i)) + SQR(pmb->pcoord->x2v(je+j)) 
+              + SQR(pmb->pcoord->x3v(k)));
         f_t = SQR(1.0 + pmb->pmy_mesh->time/rad);
       } else {
-        rad = sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(je+j)));
+        rad = sqrt(SQR(pmb->pcoord->x1v(i)) + SQR(pmb->pcoord->x2v(je+j)));
         f_t = (1.0 + pmb->pmy_mesh->time/rad);
       }
       Real d0 = 1.0*f_t;
 
       a(IDN,k,je+j,i)  = d0;
-      a(IM1,k,je+j,i) = -pco->x1v(i)*d0/rad;
-      a(IM2,k,je+j,i) = -pco->x2v(je+j)*d0/rad;
+      a(IVX,k,je+j,i) = -pmb->pcoord->x1v(i)/rad;
+      a(IVY,k,je+j,i) = -pmb->pcoord->x2v(je+j)/rad;
       if (pmb->block_size.nx3 > 1) {
-        a(IM3,k,je+j,i) = -pco->x3v(k)*d0/rad;
-        a(IEN,k,je+j,i) = 1.0e-6*pow(f_t,(1.0+gmma))/gmma1 + 0.5*d0;
+        a(IVZ,k,je+j,i) = -pmb->pcoord->x3v(k)/rad;
+        a(IEN,k,je+j,i) = 1.0e-6*pow(f_t,(1.0+gmma));
       } else {
-        a(IM3,k,je+j,i) = 0.0;
-        a(IEN,k,je+j,i)= 1.0e-6/gmma1 + 0.5*d0;
+        a(IVZ,k,je+j,i) = 0.0;
+        a(IEN,k,je+j,i)= 1.0e-6;
       }
     }
   }}
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void noh3d_oib()
+//! \fn void Noh3DOuterX3()
 //  \brief Sets boundary condition on right X3 boundary (okb) for noh3d test
 //
 // Quantities at this boundary are held fixed at the time-dependent upstream state
 
-void noh3d_okb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void Noh3DOuterX3(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=1; k<=(NGHOST); ++k) {
   for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie; ++i) {
-      Real rad = sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(j)) + SQR(pco->x3v(ke+k)));
+      Real rad = sqrt(SQR(pmb->pcoord->x1v(i)) + SQR(pmb->pcoord->x2v(j)) 
+              + SQR(pmb->pcoord->x3v(ke+k)));
       Real f_t = SQR(1.0 + pmb->pmy_mesh->time/rad);
       Real d0 = 1.0*f_t;
 
       a(IDN,ke+k,j,i)  = d0;
-      a(IM1,ke+k,j,i) = -pco->x1v(i)*d0/rad;
-      a(IM2,ke+k,j,i) = -pco->x2v(j)*d0/rad;
-      a(IM3,ke+k,j,i) = -pco->x3v(ke+k)*d0/rad;
-      a(IEN,ke+k,j,i) = 1.0e-6*pow(f_t,(1.0+gmma))/gmma1 + 0.5*d0;
+      a(IVX,ke+k,j,i) = -pmb->pcoord->x1v(i)/rad;
+      a(IVY,ke+k,j,i) = -pmb->pcoord->x2v(j)/rad;
+      a(IVZ,ke+k,j,i) = -pmb->pcoord->x3v(ke+k)/rad;
+      a(IEN,ke+k,j,i) = 1.0e-6*pow(f_t,(1.0+gmma));
     }
   }}
 }
