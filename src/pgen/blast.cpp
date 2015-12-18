@@ -30,6 +30,8 @@
 #include "../hydro/eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
 
+#include <cmath>
+
 //======================================================================================
 //! \fn ProblemGenerator
 //  \brief Spherical blast wave test problem generator
