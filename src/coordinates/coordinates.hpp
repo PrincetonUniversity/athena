@@ -180,6 +180,7 @@ public:
     void FluxToGlobal3(const int k, const int j, const int il, const int iu,
         const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
         AthenaArray<Real> &flux);
+    void IdentifyPoles(bool *ppole_top, bool *ppole_bottom);
     Real DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real by, Real bz);
     void MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3,
         Real *pt, Real *px, Real *py, Real *pz);
@@ -311,6 +312,16 @@ private:
   AthenaArray<Real> g_, gi_;
 };
 
+// Function for determining if block is against a polar boundary
+// Inputs: (none)
+// Outputs:
+//   ppole_top,ppole_bottom: flags set to true if pole present
+inline void Coordinates::IdentifyPoles(bool *ppole_top, bool *ppole_bottom)
+{
+  *ppole_top = pmy_block->block_bcs[INNER_X2] == POLAR_BNDRY;
+  *ppole_bottom = pmy_block->block_bcs[OUTER_X2] == POLAR_BNDRY;
+  return;
+}
 
 inline void Coordinates::AllocateAndSetBasicCoordinates(void)
 {
