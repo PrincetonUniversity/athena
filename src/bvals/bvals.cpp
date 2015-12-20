@@ -64,7 +64,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   if(pmb->block_size.nx2 > 1) f2d=1;
   if(pmb->block_size.nx3 > 1) f3d=1;
   for(int i=0; i<6; i++)
-    HydroBoundary_[i]=NULL, FieldBoundary_[i]=NULL;
+    BoundaryFunction_[i]=NULL;
 
 // Set BC functions for each of the 6 boundaries in turn -------------------------------
   // Inner x1
@@ -198,10 +198,8 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 
   // *** this is temporary fix - copy boundary functions to the Mesh class
   for(int i=0; i<6; i++) {
-    if(pmb->block_bcs[i]>0 && pmb->block_bcs[i]<=2) {
-      pmb->pmy_mesh->HydroBoundary_[i]=HydroBoundary_[i];
-      pmb->pmy_mesh->FieldBoundary_[i]=FieldBoundary_[i];
-    }
+    if(pmb->block_bcs[i]>0 && pmb->block_bcs[i]<=2)
+      pmb->pmy_mesh->BoundaryFunction_[i]=BoundaryFunction_[i];
   }
 
   // Clear flags and requests
@@ -717,6 +715,8 @@ void BoundaryValues::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValFunc_
         << "dirName = " << dir << " not valid" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
+  // temporary fix
+  pmy_mblock_->pmy_mesh->BoundaryFunction_[dir]=my_bc;
   if(pmy_mblock_->block_bcs[dir]==BLOCK_BNDRY) return;
   if(pmy_mblock_->block_bcs[dir]!=USER_BNDRY) {
     msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
@@ -1014,13 +1014,14 @@ void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock&
 
   int p=0;
   if (nb.polar) {
-  for (int n=0; n<(NHYDRO); ++n) {
-    Real sign = (nb.polar and flip_across_pole_hydro[n]) ? -1.0 : 1.0;
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=ej; j>=sj; --j) {
-#pragma simd
-        for (int i=si; i<=ei; ++i)
-          pmr->coarse_cons_(n,k,j,i) = sign * buf[p++];
+    for (int n=0; n<(NHYDRO); ++n) {
+      Real sign = (nb.polar and flip_across_pole_hydro[n]) ? -1.0 : 1.0;
+      for (int k=sk; k<=ek; ++k) {
+        for (int j=ej; j>=sj; --j) {
+  #pragma simd
+          for (int i=si; i<=ei; ++i)
+            pmr->coarse_cons_(n,k,j,i) = sign * buf[p++];
+        }
       }
     }
   }
@@ -3239,7 +3240,6 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
     if(BoundaryFunction_[INNER_X3]==NULL && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
     if(BoundaryFunction_[OUTER_X3]==NULL && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
   }
-  // note : this is temporary; Hydro and Field Boundary functions will be merged soon
   // Apply boundary function on inner-x1
   if (BoundaryFunction_[INNER_X1] != NULL) {
     BoundaryFunction_[INNER_X1](pmb, pdst, bfdst, pmb->is, pmb->ie, bjs,bje,bks,bke);

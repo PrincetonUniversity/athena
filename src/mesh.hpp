@@ -135,8 +135,7 @@ private:
   Real MeshGeneratorX2(Real x, RegionSize rs);
   Real MeshGeneratorX3(Real x, RegionSize rs);
 
-  BValHydro_t HydroBoundary_[6];
-  BValField_t FieldBoundary_[6];
+  BValFunc_t BoundaryFunction_[6];
   AMRFlag_t AMRFlag_;
 
   void MeshTest(int dim);

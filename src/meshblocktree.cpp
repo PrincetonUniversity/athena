@@ -222,7 +222,7 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
           if(mesh_bcs[OUTER_X1]!=PERIODIC_BNDRY) continue;
           else nloc.lx1=0;
         }
-        root.AddMeshBlock(root,nloc,dim,mesh_bcs,rbx,rby,rbz,rl);
+        root.AddMeshBlock(root,nloc,dim,mesh_bcs,rbx,rby,rbz,rl,nnew);
       }
     }
   }

@@ -1688,10 +1688,10 @@ void Mesh::LoadBalancing(Real *clist, int *rlist, int *slist, int *nlist, int nb
 void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
                                      enum BoundaryFlag *block_bcs)
 {
-  long int &lx1=loclist[i].lx1;
-  long int &lx2=loclist[i].lx2;
-  long int &lx3=loclist[i].lx3;
-  int &ll=loclist[i].level;
+  long int &lx1=loc.lx1;
+  long int &lx2=loc.lx2;
+  long int &lx3=loc.lx3;
+  int &ll=loc.level;
   // calculate physical block size, x1
   if(lx1==0) {
     block_size.x1min=mesh_size.x1min;
@@ -2165,7 +2165,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   // move the data within the node
   MeshBlock *newlist=NULL;
   RegionSize block_size=pblock->block_size;
-  int block_bcs[6];
+  enum BoundaryFlag block_bcs[6];
 
   for(int n=nbs; n<=nbe; n++) {
     int on=newtoold[n];
@@ -2201,14 +2201,10 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
       }
       // temporary fix - enroll boundary functions
       for(int b=0; b<6; b++) {
-        if(block_bcs[b]>0 && block_bcs[b]<=3) {
-          pmb->pbval->HydroBoundary_[b]=HydroBoundary_[b];
-          pmb->pbval->FieldBoundary_[b]=FieldBoundary_[b];
-        }
-        else {
-          pmb->pbval->HydroBoundary_[b]=NULL;
-          pmb->pbval->FieldBoundary_[b]=NULL;
-        }
+        if(block_bcs[b]>0 && block_bcs[b]<=3)
+          pmb->pbval->BoundaryFunction_[b]=BoundaryFunction_[b];
+        else
+          pmb->pbval->BoundaryFunction_[b]=NULL;
       }
       // temporary fix - enroll mesh refinement condition function
       pmb->pmr->AMRFlag_=AMRFlag_;
@@ -2239,8 +2235,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
                          pob->cis, pob->cie, pob->cjs, pob->cje+f2, pob->cks, pob->cke);
             pmr->RestrictFieldX3(pob->pfield->b.x3f, pmr->coarse_b_.x3f,
                          pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke+f3);
-            InterfaceField &src=pmr->coarse_b_;
-            InterfaceField &dst=pmb->pfield->b;
+            FaceField &src=pmr->coarse_b_;
+            FaceField &dst=pmb->pfield->b;
             for(int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
               for(int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
                 for(int i=is, fi=pob->cis; fi<=pob->cie+1; i++, fi++)
@@ -2293,8 +2289,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
         pmr->ProlongateCellCenteredValues(dst, pmb->phydro->u, 0, NHYDRO-1,
                                           is, ie, js, je, ks, ke);
         if(MAGNETIC_FIELDS_ENABLED) {
-          InterfaceField &src=pob->pfield->b;
-          InterfaceField &dst=pmr->coarse_b_;
+          FaceField &src=pob->pfield->b;
+          FaceField &dst=pmr->coarse_b_;
           for(int k=ks, ck=cks; k<=ke; k++, ck++) {
             for(int j=js, cj=cjs; j<=je; j++, cj++) {
               for(int i=is, ci=cis; i<=ie+1; i++, ci++)
@@ -2350,7 +2346,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
         BufferUtility::Unpack4DData(recvbuf[k], pb->phydro->u, 0, NHYDRO-1,
                        pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
         if(MAGNETIC_FIELDS_ENABLED) {
-          InterfaceField &dst=pb->pfield->b;
+          FaceField &dst=pb->pfield->b;
           BufferUtility::Unpack3DData(recvbuf[k], dst.x1f,
                          pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
           BufferUtility::Unpack3DData(recvbuf[k], dst.x2f,
@@ -2386,7 +2382,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
           BufferUtility::Unpack4DData(recvbuf[k], pb->phydro->u, 0, NHYDRO-1,
                          is, ie, js, je, ks, ke, p);
           if(MAGNETIC_FIELDS_ENABLED) {
-            InterfaceField &dst=pb->pfield->b;
+            FaceField &dst=pb->pfield->b;
             BufferUtility::Unpack3DData(recvbuf[k], dst.x1f,
                            is, ie+1, js, je, ks, ke, p);
             BufferUtility::Unpack3DData(recvbuf[k], dst.x2f,
