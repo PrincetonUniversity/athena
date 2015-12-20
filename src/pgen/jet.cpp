@@ -29,9 +29,7 @@
 #include "../coordinates/coordinates.hpp"
 
 // BCs on L-x1 (left edge) of grid with jet inflow conditions
-void jet_hydro_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
-                   int is, int ie, int js, int je, int ks, int ke);
-void jet_field_iib(MeshBlock *pmb, Coordinates *pco, InterfaceField &a,
+void JetInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                    int is, int ie, int js, int je, int ks, int ke);
 
 // Make radius of jet and jet variables global so they can be accessed by BC functions
@@ -117,86 +115,79 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   }
 
 // Enroll boundary value function pointers
-  pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, jet_hydro_iib);
+  pmb->pbval->EnrollUserBoundaryFunction(INNER_X1, JetInnerX1);
 
   return;
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void jet_hydro_iib()
-//  \brief Sets boundary condition for hydro on left X boundary (iib) for jet problem
+//! \fn void JetInnerX1()
+//  \brief Sets boundary condition on left X boundary (iib) for jet problem
 
-void jet_hydro_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void JetInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                    int is, int ie, int js, int je, int ks, int ke)
 {
+  // set primitive variables in inlet ghost zones
   for(int k=ks; k<=ke; ++k){
   for(int j=js; j<=je; ++j){
     for(int i=1; i<=(NGHOST); ++i){
-      Real rad = sqrt(SQR(pco->x2v(j) - x2_0) + SQR(pco->x3v(k) - x3_0));
+      Real rad = sqrt(SQR(pmb->pcoord->x2v(j)-x2_0) + SQR(pmb->pcoord->x3v(k)-x3_0));
       if(rad <= r_jet){
         a(IDN,k,j,is-i) = d_jet;
-        a(IM1,k,j,is-i) = d_jet*vx_jet;
-        a(IM2,k,j,is-i) = d_jet*vy_jet;
-        a(IM3,k,j,is-i) = d_jet*vz_jet;
-        a(IEN,k,j,is-i) = p_jet/gm1 + 0.5*d_jet*(SQR(vx_jet)+SQR(vy_jet)+SQR(vz_jet));
-        if (MAGNETIC_FIELDS_ENABLED){
-          a(IEN,k,j,is-i) += 0.5*(SQR(bx_jet)+SQR(by_jet)+SQR(bz_jet));
-        }
+        a(IVX,k,j,is-i) = vx_jet;
+        a(IVY,k,j,is-i) = vy_jet;
+        a(IVZ,k,j,is-i) = vz_jet;
+        a(IEN,k,j,is-i) = p_jet;
       } else{
         a(IDN,k,j,is-i) = a(IDN,k,j,is);
-        a(IM1,k,j,is-i) = a(IM1,k,j,is);
-        a(IM2,k,j,is-i) = a(IM2,k,j,is);
-        a(IM3,k,j,is-i) = a(IM3,k,j,is);
+        a(IVX,k,j,is-i) = a(IVX,k,j,is);
+        a(IVY,k,j,is-i) = a(IVY,k,j,is);
+        a(IVZ,k,j,is-i) = a(IVZ,k,j,is);
         a(IEN,k,j,is-i) = a(IEN,k,j,is);
       }
     }
   }}
-}
 
-//--------------------------------------------------------------------------------------
-//! \fn void jet_field_iib()
-//  \brief Sets boundary condition for B field on left X boundary (iib) for jet problem
-
-void jet_field_iib(MeshBlock *pmb, Coordinates *pco, InterfaceField &a,
-                   int is, int ie, int js, int je, int ks, int ke)
-{
-  for(int k=ks; k<=ke; ++k){
-  for(int j=js; j<=je; ++j){
+  // set magnetic field in inlet ghost zones
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for(int k=ks; k<=ke; ++k){
+    for(int j=js; j<=je; ++j){
 #pragma simd
-    for(int i=1; i<=(NGHOST); ++i){
-      Real rad = sqrt(SQR(pco->x2v(j) - x2_0) + SQR(pco->x3v(k) - x3_0));
-      if(rad <= r_jet){
-        a.x1f(k,j,is-i) = bx_jet;
-      } else{
-        a.x1f(k,j,is-i) = a.x1f(k,j,is);
+      for(int i=1; i<=(NGHOST); ++i){
+        Real rad = sqrt(SQR(pmb->pcoord->x2v(j)-x2_0) + SQR(pmb->pcoord->x3v(k)-x3_0));
+        if(rad <= r_jet){
+          b.x1f(k,j,is-i) = bx_jet;
+        } else{
+          b.x1f(k,j,is-i) = b.x1f(k,j,is);
+        }
       }
-    }
-  }}
+    }}
 
-  for (int k=ks; k<=ke; ++k) {
-  for (int j=js; j<=je+1; ++j) {
+    for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je+1; ++j) {
 #pragma simd
-    for (int i=1; i<=(NGHOST); ++i) {
-      Real rad = sqrt(SQR(pco->x2v(j) - x2_0) + SQR(pco->x3v(k) - x3_0));
-      if(rad <= r_jet){
-        a.x2f(k,j,is-i) = by_jet;
-      } else{
-        a.x2f(k,j,is-i) = a.x2f(k,j,is);
+      for (int i=1; i<=(NGHOST); ++i) {
+        Real rad = sqrt(SQR(pmb->pcoord->x2v(j)-x2_0) + SQR(pmb->pcoord->x3v(k)-x3_0));
+        if(rad <= r_jet){
+          b.x2f(k,j,is-i) = by_jet;
+        } else{
+          b.x2f(k,j,is-i) = b.x2f(k,j,is);
+        }
       }
-    }
-  }}
+    }}
 
-  for (int k=ks; k<=ke+1; ++k) {
-  for (int j=js; j<=je; ++j) {
+    for (int k=ks; k<=ke+1; ++k) {
+    for (int j=js; j<=je; ++j) {
 #pragma simd
-    for (int i=1; i<=(NGHOST); ++i) {
-      Real rad = sqrt(SQR(pco->x2v(j) - x2_0) + SQR(pco->x3v(k) - x3_0));
-      if(rad <= r_jet){
-        a.x3f(k,j,is-i) = bz_jet;
-      } else{
-        a.x3f(k,j,is-i) = a.x3f(k,j,is);
+      for (int i=1; i<=(NGHOST); ++i) {
+        Real rad = sqrt(SQR(pmb->pcoord->x2v(j)-x2_0) + SQR(pmb->pcoord->x3v(k)-x3_0));
+        if(rad <= r_jet){
+          b.x3f(k,j,is-i) = bz_jet;
+        } else{
+          b.x3f(k,j,is-i) = b.x3f(k,j,is);
+        }
       }
-    }
-  }}
+    }}
+  }
 
 }

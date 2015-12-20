@@ -15,7 +15,7 @@
 #include "../../mesh.hpp"                     // MeshBlock
 #include "../../parameter_input.hpp"          // ParameterInput
 #include "../../coordinates/coordinates.hpp"  // Coordinates
-#include "../../field/field.hpp"              // InterfaceField
+#include "../../field/field.hpp"              // FaceField
 
 // Declarations
 static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma_adi,
@@ -79,7 +79,7 @@ HydroEqnOfState::~HydroEqnOfState()
 //       writing vv for v
 //   implements formulas assuming no magnetic field
 void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-    const AthenaArray<Real> &prim_old, const InterfaceField &bb,
+    const AthenaArray<Real> &prim_old, const FaceField &bb,
     AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc, Coordinates *pco, int is, int ie,
     int js, int je, int ks, int ke)
 {

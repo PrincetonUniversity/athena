@@ -16,7 +16,7 @@
 #include "../../athena.hpp"                   // enums, macros, Real
 #include "../../athena_arrays.hpp"            // AthenaArray
 #include "../../coordinates/coordinates.hpp"  // Coordinates
-#include "../../field/field.hpp"              // InterfaceField
+#include "../../field/field.hpp"              // FaceField
 #include "../../mesh.hpp"                     // MeshBlock
 #include "../../parameter_input.hpp"          // GetReal()
 #include "../../coordinates/coordinates.hpp" // Coordinates
@@ -63,7 +63,7 @@ HydroEqnOfState::~HydroEqnOfState()
 //   follows Mignone & McKinney 2007, MNRAS 378 1118 (MM)
 //   follows hlld_sr.c in Athena 4.2 in using W and E rather than W' and E'
 void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-    const AthenaArray<Real> &prim_old, const InterfaceField &bb,
+    const AthenaArray<Real> &prim_old, const FaceField &bb,
     AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc, Coordinates *pco, int is, int ie,
     int js, int je, int ks, int ke)
 {

@@ -18,20 +18,20 @@ tlim       = 0.16
 nx1    = 100
 x1min  = -0.5
 x1max  = 0.5
-ix1_bc = 4     # 4: periodic
-ox1_bc = 4     # 4: periodic
+ix1_bc = periodic  # 4: periodic
+ox1_bc = periodic  # 4: periodic
 
 nx2    = 100
 x2min  = -0.5
 x2max  = 0.5
-ix2_bc = 4     # 4: periodic
-ox2_bc = 4     # 4: periodic
+ix2_bc = periodic  # 4: periodic
+ox2_bc = periodic  # 4: periodic
 
 nx3    = 1
 x3min  = -0.5
 x3max  = 0.5
-ix3_bc = 4     # 4: periodic
-ox3_bc = 4     # 4: periodic
+ix3_bc = periodic  # 4: periodic
+ox3_bc = periodic  # 4: periodic
 
 <coord>
 a = 0.0  # amplitude for sinusoidal coordinates

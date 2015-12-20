@@ -17,9 +17,10 @@
 //======================================================================================
 //! \file globals.cpp 
 //  \brief namespace containing global variables.
-//  Yes, I know global variables should never be used, but in fact they are incredibly
-//  useful when used properly, for example global constants that are set once and never
-//  changed.
+//
+// Yes, we all know global variables should NEVER be used, but in fact they are ideal
+// for, e.g., global constants that are set once and never changed.  To prevent name
+// collisions, global variables are wrapped in their own namespace.
 //======================================================================================
 
 #include "athena.hpp"

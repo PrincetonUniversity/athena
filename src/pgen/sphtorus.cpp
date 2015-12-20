@@ -150,16 +150,16 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   acons=0.5*(dist-1.0)/dist/(en+1.0);
 
   /* assign boundary conditions and gravitational force function*/
-  pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, stbv_iib);
-  pmb->pbval->EnrollHydroBoundaryFunction(inner_x2, stbv_ijb);
-  pmb->pbval->EnrollHydroBoundaryFunction(outer_x1, stbv_oib);
-  pmb->pbval->EnrollHydroBoundaryFunction(outer_x2, stbv_ojb);
+  pmb->pbval->EnrollHydroBoundaryFunction(INNER_X1, stbv_iib);
+  pmb->pbval->EnrollHydroBoundaryFunction(INNER_X2, stbv_ijb);
+  pmb->pbval->EnrollHydroBoundaryFunction(OUTER_X1, stbv_oib);
+  pmb->pbval->EnrollHydroBoundaryFunction(OUTER_X2, stbv_ojb);
 
   if (MAGNETIC_FIELDS_ENABLED) {
-    pmb->pbval->EnrollFieldBoundaryFunction(inner_x1, OutflowInnerX1);
-    pmb->pbval->EnrollFieldBoundaryFunction(inner_x2, OutflowInnerX2);
-    pmb->pbval->EnrollFieldBoundaryFunction(outer_x1, OutflowOuterX1);
-    pmb->pbval->EnrollFieldBoundaryFunction(outer_x2, OutflowOuterX2);
+    pmb->pbval->EnrollFieldBoundaryFunction(INNER_X1, OutflowInnerX1);
+    pmb->pbval->EnrollFieldBoundaryFunction(INNER_X2, OutflowInnerX2);
+    pmb->pbval->EnrollFieldBoundaryFunction(OUTER_X1, OutflowOuterX1);
+    pmb->pbval->EnrollFieldBoundaryFunction(OUTER_X2, OutflowOuterX2);
   }
 
   /* Background */ 

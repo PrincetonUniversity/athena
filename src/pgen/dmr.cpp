@@ -43,15 +43,14 @@
 #include <iostream>
 #include <cmath>
 
-// dmrbv_iib() - sets BCs on inner-x1 (left edge) of grid.  
-// dmrbv_ijb() - sets BCs on inner-x2 (bottom edge) of grid.  
-// dmrbv_ojb() - sets BCs on outer-x2 (top edge) of grid.  
-
-void dmrbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+// DMRInnerX1() - sets BCs on inner-x1 (left edge) of grid.  
+// DMRInnerX2() - sets BCs on inner-x2 (bottom edge) of grid.  
+// DMROuterX2() - sets BCs on outer-x2 (top edge) of grid.  
+void DMRInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke);
-void dmrbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void DMRInnerX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke);
-void dmrbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void DMROuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke);
 int RefinementCondition(MeshBlock *pmb);
 
@@ -71,8 +70,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     throw std::runtime_error(msg.str().c_str());
   }
 
-// Initialize shock using parameters defined in Woodward & Colella
-
+  // Initialize shock using parameters defined in Woodward & Colella
   Real d0 = 8.0;
   Real e0 = 291.25;
   Real u0 =  8.25*sqrt(3.0)/2.0;
@@ -80,12 +78,12 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie; ++i) {
       Real shock_pos = 0.1666666666 + pmb->pcoord->x2v(j)/sqrt((double)3.0);
-// upstream conditions
+      // upstream conditions
       phyd->u(IDN,ks,j,i) = 1.4;
       phyd->u(IEN,ks,j,i) = 2.5;
       phyd->u(IM1,ks,j,i) = 0.0;
       phyd->u(IM2,ks,j,i) = 0.0;
-// downstream conditions
+      // downstream conditions
       if (pmb->pcoord->x1v(i) < shock_pos) {
         phyd->u(IDN,ks,j,i) = d0;
         phyd->u(IEN,ks,j,i) = e0 + 0.5*d0*(u0*u0+v0*v0);
@@ -95,22 +93,21 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     }
   }
 
-// Set boundary value function pointers
-
-  pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, dmrbv_iib);
-  pmb->pbval->EnrollHydroBoundaryFunction(inner_x2, dmrbv_ijb);
-  pmb->pbval->EnrollHydroBoundaryFunction(outer_x2, dmrbv_ojb);
+  // Set boundary value function pointers
+  pmb->pbval->EnrollUserBoundaryFunction(INNER_X1, DMRInnerX1);
+  pmb->pbval->EnrollUserBoundaryFunction(INNER_X2, DMRInnerX2);
+  pmb->pbval->EnrollUserBoundaryFunction(OUTER_X2, DMROuterX2);
 
   if(pmb->pmy_mesh->adaptive==true)
     pmb->pmr->EnrollAMRFlagFunction(RefinementCondition);
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void dmrbv_iib()
+//! \fn void DMRInnerX1()
 //  \brief Sets boundary condition on left X boundary (iib) for dmr test
 //  Quantities at this boundary are held fixed at the downstream state
 
-void dmrbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void DMRInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke)
 {
   Real d0 = 8.0;
@@ -131,12 +128,12 @@ void dmrbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void dmrbv_ijb()
+//! \fn void DMRInnerX2()
 //  \brief  Sets boundary condition on lower Y boundary (ijb) for dmr test.
 //  Quantaties at this boundary are held fixed at the downstream state for
 //  x1 < 0.16666666, and are reflected for x1 > 0.16666666
 
-void dmrbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void DMRInnerX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke)
 {
   Real d0 = 8.0;
@@ -148,14 +145,14 @@ void dmrbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 
   for (int j=1;  j<=(NGHOST); ++j) {
     for (int i=is; i<=ie; ++i) {
-      if (pco->x1v(i) < 0.1666666666) {
-// fixed at downstream state
+      if (pmb->pcoord->x1v(i) < 0.1666666666) {
+        // fixed at downstream state
         a(IDN,ks,js-j,i) = d0;
         a(IVX,ks,js-j,i) = u0;
         a(IVY,ks,js-j,i) = v0;
         a(IEN,ks,js-j,i) = p0;
       } else {
-// reflected
+        // reflected
         a(IDN,ks,js-j,i) = a(IDN,ks,js+(j-1),i);
         a(IVX,ks,js-j,i) = a(IVX,ks,js+(j-1),i);
         a(IVY,ks,js-j,i) = -a(IVY,ks,js+(j-1),i);
@@ -166,13 +163,13 @@ void dmrbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void dmrbv_ojb()
+//! \fn void DMROuterX2()
 //  \brief Sets TIME-DEPENDENT boundary condition on upper Y boundary (ojb) for dmr test
 //  Quantaties at this boundary are held fixed at the downstream state for
 //  x1 < 0.16666666+v1_shock*time, and at the upstream state for
 //  x1 > 0.16666666+v1_shock*time
 
-void dmrbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void DMROuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke)
 {
   Real d0 = 8.0;
@@ -186,14 +183,14 @@ void dmrbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 
   for (int j=1;  j<=(NGHOST); ++j) {
     for (int i=is; i<=ie; ++i) {
-      if (pco->x1v(i) < shock_pos) {
-// fixed at downstream state
+      if (pmb->pcoord->x1v(i) < shock_pos) {
+        // fixed at downstream state
         a(IDN,ks,je+j,i) = d0;
         a(IVX,ks,je+j,i) = u0;
         a(IVY,ks,je+j,i) = v0;
         a(IEN,ks,je+j,i) = p0;
       } else {
-// fixed at upstream state
+        // fixed at upstream state
         a(IDN,ks,je+j,i) = 1.4;
         a(IVX,ks,je+j,i) = 0.0;
         a(IVY,ks,je+j,i) = 0.0;

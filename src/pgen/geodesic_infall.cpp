@@ -11,16 +11,16 @@
 #include "../athena.hpp"                   // enums, Real
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../parameter_input.hpp"          // ParameterInput
-#include "../bvals/bvals.hpp"              // BoundaryValues, InterfaceField
+#include "../bvals/bvals.hpp"              // BoundaryValues, FaceField
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../hydro/hydro.hpp"
 #include "../hydro/eos/eos.hpp"
 #include "../field/field.hpp"              // Field
 
 // Declarations
-void OutflowPrimInnerHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
+void OutflowInnerHydro(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb, 
     int is, int ie, int js, int je, int ks, int ke);
-void FixedOuterHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
+void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb, 
     int is, int ie, int js, int je, int ks, int ke);
 
 // Function for setting initial conditions
@@ -130,20 +130,20 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   bb.DeleteAthenaArray();
 
   // Enroll boundary functions
-  pmb->pbval->EnrollHydroBoundaryFunction(inner_x1, OutflowPrimInnerHydro);
-  pmb->pbval->EnrollHydroBoundaryFunction(outer_x1, FixedOuterHydro);
+  pmb->pbval->EnrollUserBoundaryFunction(INNER_X1, OutflowInnerHydro);
+  pmb->pbval->EnrollUserBoundaryFunction(OUTER_X1, FixedOuterHydro);
   return;
 }
 
-// Inner hydro boundary condition
+// Inner boundary condition
 // Inputs:
 //   pmb: pointer to block
 // Outputs:
-//   cons: conserved quantities set along inner x1-boundary
+//   prim: primitive quantities set along inner x1-boundary
 // Notes:
 //   TODO: remove prim hack
 //   TODO: note hack is wrong (assumes wrong primitives)
-void OutflowPrimInnerHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
+void OutflowInnerHydro(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke)
 {
   int il = is - NGHOST;
@@ -214,14 +214,14 @@ void OutflowPrimInnerHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   return;
 }
 
-// Outer hydro boundary condition
+// Outer boundary condition
 // Inputs:
 //   pmb: pointer to block
 // Outputs:
-//   cons: conserved quantities set along outer x1-boundary
+//   prim: primitive quantities set along outer x1-boundary
 // Notes:
 //   remains unchanged
-void FixedOuterHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
+void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke)
 {
   return;

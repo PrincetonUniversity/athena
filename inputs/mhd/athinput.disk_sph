@@ -1,0 +1,77 @@
+<comment>
+problem   = Kerlerian disk in spherical polar coordinates
+reference = 
+configure = --prob=disk --coord=spherical_polar
+
+<job>
+problem_id  = disk       # problem ID: basename of output filenames
+
+<output1>
+file_type   = vtk        # History data dump
+variable    = cons       #
+dt          = 0.01       # time increment between outputs
+
+<output2>
+file_type   = hst        # History data dump
+dt          = 1.0        # time increment between outputs
+
+<time>
+cfl_number  = 0.4        # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim        = -1         # cycle limit
+tlim        = 62.8       # time limit
+
+<mesh>
+nx1         = 48         # Number of zones in X1-direction
+x1min       = 0.3        # minimum value of X1
+x1max       = 3.0        # maximum value of X1
+ix1_bc      = outflow    # Inner-X1 boundary condition flag
+ox1_bc      = outflow    # Outer-X1 boundary condition flag
+x1rat       = 1.05
+
+nx2         = 64         # Number of zones in X2-direction
+x2min       = 0.0        # minimum value of X2
+x2max       = 3.1415926  # maximum value of X2
+ix2_bc      = polar      # Inner-X2 boundary condition flag
+ox2_bc      = polar      # Outer-X2 boundary condition flag
+
+nx3         = 64         # Number of zones in X3-direction
+x3min       = 0.0        # minimum value of X3
+x3max       = 6.2831853  # maximum value of X3
+ix3_bc      = periodic   # Inner-X3 boundary condition flag
+ox3_bc      = periodic   # Outer-X3 boundary condition flag
+
+#<refinement1>
+#x1min       = 0.3
+#x1max       = 3.0
+#x2min       = 1.56
+#x2max       = 1.58
+#x3min       = 0.0
+#x3max       = 6.2831853
+#level       = 3
+
+<hydro>
+gamma           = 1.66666667 # gamma = C_p/C_v
+iso_sound_speed = 0.1        # isothermal sound speed
+dfloor          = 1.e-8
+
+<problem>
+gm              = 1.0
+r0              = 1.0
+rho0            = 1.0    # intial uniform density
+rho_floor       = 1.0e-8 # floor density
+dflag           = 2      # initial density flag
+vflag           = 2      # initial velocity flag
+p0_over_r0      = 0.01
+dslope          = -0.5
+pslope          = -2.25
+ifield          = 1
+beta            = 1.e5
+
+<pointmass0>
+GM              = 1.0
+x1_0            = 0.0
+x2_0            = 0.0
+x3_0            = 0.0
+v1_0            = 0.0
+v2_0            = 0.0
+v3_0            = 0.0

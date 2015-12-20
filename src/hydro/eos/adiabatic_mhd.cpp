@@ -51,14 +51,14 @@ HydroEqnOfState::~HydroEqnOfState()
 
 //--------------------------------------------------------------------------------------
 // \!fn void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-//    const AthenaArray<Real> &prim_old, const InterfaceField &b,
+//    const AthenaArray<Real> &prim_old, const FaceField &b,
 //    AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
 //    int is, int ie, int js, int je, int ks, int ke);
 // \brief For the Hydro, converts conserved into primitive variables in adiabatic MHD.
 //  For the Field, computes cell-centered from face-centered magnetic field.
 
 void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-	    const AthenaArray<Real> &prim_old, const InterfaceField &b, AthenaArray<Real> &prim,
+	    const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
     AthenaArray<Real> &bcc, Coordinates *pco,
     int is, int ie, int js, int je, int ks, int ke)
 {

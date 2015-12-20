@@ -31,20 +31,20 @@ nx1    = 64    # number of zones in r-direction
 x1min  = 1.96  # inner r
 x1max  = 20.0  # outer r
 x1rat  = 1.0   # ratio setting r-spacing
-ix1_bc = 3     # 3: special
-ox1_bc = 3     # 3: special
+ix1_bc = user  # 3: special
+ox1_bc = user  # 3: special
 
 nx2    = 64                  # number of zones in theta-direction
 x2min  = 0.7853981633974483  # lower theta (1/4 pi)
 x2max  = 2.356194490192345   # upper theta (3/4 pi)
-ix2_bc = 3                   # 3: special
-ox2_bc = 3                   # 3: special
+ix2_bc = user                # 3: special
+ox2_bc = user                # 3: special
 
 nx3    = 1                  # number of zones in phi-direction
 x3min  = 0.0                # minimum phi
 x3max  = 6.283185307179586  # maximum phi (2 pi)
-ix3_bc = 4                  # 4: periodic
-ox3_bc = 4                  # 4: periodic
+ix3_bc = periodic           # 4: periodic
+ox3_bc = periodic           # 4: periodic
 
 <meshblock>
 nx1 = 64

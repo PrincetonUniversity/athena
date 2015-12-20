@@ -104,7 +104,7 @@ Field::~Field()
 }
 
 
-void Field::CalculateCellCenteredField(const InterfaceField &bf, AthenaArray<Real> &bc,
+void Field::CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &bc,
             Coordinates *pco, int is, int ie, int js, int je, int ks, int ke)
 {
   int nthreads = pmy_mblock->pmy_mesh->GetNumMeshThreads();

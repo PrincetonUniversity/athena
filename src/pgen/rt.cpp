@@ -53,13 +53,13 @@
 #include "../coordinates/coordinates.hpp"
 #include "../utils/utils.hpp"
 
-void reflect_ix2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void ProjectPressureInnerX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                  int is, int ie, int js, int je, int ks, int ke);
-void reflect_ox2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void ProjectPressureOuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                  int is, int ie, int js, int je, int ks, int ke);
-void reflect_ix3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void ProjectPressureInnerX3(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                  int is, int ie, int js, int je, int ks, int ke);
-void reflect_ox3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void ProjectPressureOuterX3(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                  int is, int ie, int js, int je, int ks, int ke);
 
 // made global to share with BC functions
@@ -143,10 +143,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     }
 
     // Enroll special BCs
-    pmb->pbval->EnrollHydroBoundaryFunction(inner_x2, reflect_ix2);
-    pmb->pbval->EnrollHydroBoundaryFunction(outer_x2, reflect_ox2);
-    pmb->pbval->EnrollFieldBoundaryFunction(inner_x2, ReflectInnerX2);
-    pmb->pbval->EnrollFieldBoundaryFunction(outer_x2, ReflectOuterX2);
+    pmb->pbval->EnrollUserBoundaryFunction(INNER_X2, ProjectPressureInnerX2);
+    pmb->pbval->EnrollUserBoundaryFunction(OUTER_X2, ProjectPressureOuterX2);
 
 // 3D PROBLEM ----------------------------------------------------------------
 
@@ -215,10 +213,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     }
 
     // Enroll special BCs
-    pmb->pbval->EnrollHydroBoundaryFunction(inner_x3, reflect_ix3);
-    pmb->pbval->EnrollHydroBoundaryFunction(outer_x3, reflect_ox3);
-    pmb->pbval->EnrollFieldBoundaryFunction(inner_x3, ReflectInnerX3);
-    pmb->pbval->EnrollFieldBoundaryFunction(outer_x3, ReflectOuterX3);
+    pmb->pbval->EnrollUserBoundaryFunction(INNER_X3, ProjectPressureInnerX3);
+    pmb->pbval->EnrollUserBoundaryFunction(OUTER_X3, ProjectPressureOuterX3);
 
   } /* end of 3D initialization */
 
@@ -226,136 +222,240 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void reflect_ix2()
+//! \fn void ProjectPressureInnerX2()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void reflect_ix2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void ProjectPressureInnerX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                  int is, int ie, int js, int je, int ks, int ke)
 {
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=ks; k<=ke; ++k) {
-      for (int j=1; j<=(NGHOST); ++j) {
-        if (n==(IVY)) {
+    for (int j=1; j<=(NGHOST); ++j) {
+      if (n==(IVY)) {
 #pragma simd
-          for (int i=is; i<=ie; ++i) {
-            a(IVY,k,js-j,i) = -a(IVY,k,js+j-1,i);  // reflect 2-mom
-          }
-        } else if (n==(IEN)) {
+        for (int i=is; i<=ie; ++i) {
+          a(IVY,k,js-j,i) = -a(IVY,k,js+j-1,i);  // reflect 2-velocity
+        }
+      } else if (n==(IEN)) {
 #pragma simd
-          for (int i=is; i<=ie; ++i) {
-            a(IEN,k,js-j,i) = a(IEN,k,js+j-1,i) 
-               - a(IDN,k,js+j-1,i)*grav_acc*(2*j-1)*pco->dx2f(j)/gm1;
-          }
-        } else {
+        for (int i=is; i<=ie; ++i) {
+          a(IEN,k,js-j,i) = a(IEN,k,js+j-1,i) 
+             - a(IDN,k,js+j-1,i)*grav_acc*(2*j-1)*pmb->pcoord->dx2f(j)/gm1;
+        }
+      } else {
 #pragma simd
-          for (int i=is; i<=ie; ++i) {
-            a(n,k,js-j,i) = a(n,k,js+j-1,i);
-          }
+        for (int i=is; i<=ie; ++i) {
+          a(n,k,js-j,i) = a(n,k,js+j-1,i);
         }
       }
-    }
+    }}
+  }
+
+  // copy face-centered magnetic fields into ghost zones, reflecting b2
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for (int k=ks; k<=ke; ++k) {
+    for (int j=1; j<=(NGHOST); ++j) {
+#pragma simd
+      for (int i=is; i<=ie+1; ++i) {
+        b.x1f(k,(js-j),i) =  b.x1f(k,(js+j-1),i);
+      }
+    }}
+
+    for (int k=ks; k<=ke; ++k) {
+    for (int j=1; j<=(NGHOST); ++j) {
+#pragma simd
+      for (int i=is; i<=ie; ++i) {
+        b.x2f(k,(js-j),i) = -b.x2f(k,(js+j  ),i);  // reflect 2-field
+      }
+    }}
+
+    for (int k=ks; k<=ke+1; ++k) {
+    for (int j=1; j<=(NGHOST); ++j) {
+#pragma simd
+      for (int i=is; i<=ie; ++i) {
+        b.x3f(k,(js-j),i) =  b.x3f(k,(js+j-1),i);
+      }
+    }}
   }
 
   return;
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void reflect_ox2()
+//! \fn void ProjectPressureOuterX2()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void reflect_ox2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void ProjectPressureOuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                  int is, int ie, int js, int je, int ks, int ke)
 {
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=ks; k<=ke; ++k) {
-      for (int j=1; j<=(NGHOST); ++j) {
-        if (n==(IVY)) {
+    for (int j=1; j<=(NGHOST); ++j) {
+      if (n==(IVY)) {
 #pragma simd
-          for (int i=is; i<=ie; ++i) {
-            a(IVY,k,je+j,i) = -a(IVY,k,je-j+1,i);  // reflect 2-mom
-          }
-        } else if (n==(IEN)) {
+        for (int i=is; i<=ie; ++i) {
+          a(IVY,k,je+j,i) = -a(IVY,k,je-j+1,i);  // reflect 2-velocity
+        }
+      } else if (n==(IEN)) {
 #pragma simd
-          for (int i=is; i<=ie; ++i) {
-            a(IEN,k,je+j,i) = a(IEN,k,je-j+1,i) 
-               + a(IDN,k,je-j+1,i)*grav_acc*(2*j-1)*pco->dx2f(j)/gm1;
-          }
-        } else {
+        for (int i=is; i<=ie; ++i) {
+          a(IEN,k,je+j,i) = a(IEN,k,je-j+1,i) 
+             + a(IDN,k,je-j+1,i)*grav_acc*(2*j-1)*pmb->pcoord->dx2f(j)/gm1;
+        }
+      } else {
 #pragma simd
-          for (int i=is; i<=ie; ++i) {
-            a(n,k,je+j,i) = a(n,k,je-j+1,i);
-          }
+        for (int i=is; i<=ie; ++i) {
+          a(n,k,je+j,i) = a(n,k,je-j+1,i);
         }
       }
-    }
+    }}
+  }
+
+  // copy face-centered magnetic fields into ghost zones, reflecting b2
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for (int k=ks; k<=ke; ++k) {
+    for (int j=1; j<=(NGHOST); ++j) {
+#pragma simd
+      for (int i=is; i<=ie+1; ++i) {
+        b.x1f(k,(je+j  ),i) =  b.x1f(k,(je-j+1),i);
+      }
+    }}
+
+    for (int k=ks; k<=ke; ++k) {
+    for (int j=1; j<=(NGHOST); ++j) {
+#pragma simd
+      for (int i=is; i<=ie; ++i) {
+        b.x2f(k,(je+j+1),i) = -b.x2f(k,(je-j+1),i);  // reflect 2-field
+      }
+    }}
+
+    for (int k=ks; k<=ke+1; ++k) {
+    for (int j=1; j<=(NGHOST); ++j) {
+#pragma simd
+      for (int i=is; i<=ie; ++i) {
+        b.x3f(k,(je+j  ),i) =  b.x3f(k,(je-j+1),i);
+      }
+    }}
   }
 
   return;
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void reflect_ix3()
+//! \fn void ProjectPressureInnerX3()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void reflect_ix3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void ProjectPressureInnerX3(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                  int is, int ie, int js, int je, int ks, int ke)
 {
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=1; k<=(NGHOST); ++k) {
-      for (int j=js; j<=je; ++j) {
-        if (n==(IVZ)) {
+    for (int j=js; j<=je; ++j) {
+      if (n==(IVZ)) {
 #pragma simd
-          for (int i=is; i<=ie; ++i) {
-            a(IVZ,ks-k,j,i) = -a(IVZ,ks+k-1,j,i);  // reflect 3-vel
-          }
-        } else if (n==(IEN)) {
+        for (int i=is; i<=ie; ++i) {
+          a(IVZ,ks-k,j,i) = -a(IVZ,ks+k-1,j,i);  // reflect 3-vel
+        }
+      } else if (n==(IEN)) {
 #pragma simd
-          for (int i=is; i<=ie; ++i) {
-            a(IEN,ks-k,j,i) = a(IEN,ks+k-1,j,i) 
-               - a(IDN,ks+k-1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
-          }
-        } else {
+        for (int i=is; i<=ie; ++i) {
+          a(IEN,ks-k,j,i) = a(IEN,ks+k-1,j,i) 
+             - a(IDN,ks+k-1,j,i)*grav_acc*(2*k-1)*pmb->pcoord->dx3f(k);
+        }
+      } else {
 #pragma simd
-          for (int i=is; i<=ie; ++i) {
-            a(n,ks-k,j,i) = a(n,ks+k-1,j,i);
-          }
+        for (int i=is; i<=ie; ++i) {
+          a(n,ks-k,j,i) = a(n,ks+k-1,j,i);
         }
       }
-    }
+    }}
+  }
+
+  // copy face-centered magnetic fields into ghost zones, reflecting b3
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for (int k=1; k<=(NGHOST); ++k) {
+    for (int j=js; j<=je; ++j) {
+#pragma simd
+      for (int i=is; i<=ie+1; ++i) {
+        b.x1f((ks-k),j,i) =  b.x1f((ks+k-1),j,i);
+      }
+    }}
+
+    for (int k=1; k<=(NGHOST); ++k) {
+    for (int j=js; j<=je+1; ++j) {
+#pragma simd
+      for (int i=is; i<=ie; ++i) {
+        b.x2f((ks-k),j,i) =  b.x2f((ks+k-1),j,i);
+      }
+    }}
+
+    for (int k=1; k<=(NGHOST); ++k) {
+    for (int j=js; j<=je; ++j) {
+#pragma simd
+      for (int i=is; i<=ie; ++i) {
+        b.x3f((ks-k),j,i) = -b.x3f((ks+k  ),j,i);  // reflect 3-field
+      }
+    }}
   }
 
   return;
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void reflect_ox3()
+//! \fn void ProjectPressureOuterX3()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void reflect_ox3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void ProjectPressureOuterX3(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                  int is, int ie, int js, int je, int ks, int ke)
 {
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=1; k<=(NGHOST); ++k) {
-      for (int j=js; j<=je; ++j) {
-        if (n==(IVZ)) {
+    for (int j=js; j<=je; ++j) {
+      if (n==(IVZ)) {
 #pragma simd
-          for (int i=is; i<=ie; ++i) {
-            a(IVZ,ke+k,j,i) = -a(IVZ,ke-k+1,j,i);  // reflect 3-vel
-          }
-        } else if (n==(IEN)) {
+        for (int i=is; i<=ie; ++i) {
+          a(IVZ,ke+k,j,i) = -a(IVZ,ke-k+1,j,i);  // reflect 3-vel
+        }
+      } else if (n==(IEN)) {
 #pragma simd
-          for (int i=is; i<=ie; ++i) {
-            a(IEN,ke+k,j,i) = a(IEN,ke-k+1,j,i)
-               + a(IDN,ke-k+1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
-          }
-        } else {
+        for (int i=is; i<=ie; ++i) {
+          a(IEN,ke+k,j,i) = a(IEN,ke-k+1,j,i)
+             + a(IDN,ke-k+1,j,i)*grav_acc*(2*k-1)*pmb->pcoord->dx3f(k);
+        }
+      } else {
 #pragma simd
-          for (int i=is; i<=ie; ++i) {
-            a(n,ke+k,j,i) = a(n,ke-k+1,j,i);
-          }
+        for (int i=is; i<=ie; ++i) {
+          a(n,ke+k,j,i) = a(n,ke-k+1,j,i);
         }
       }
-    }
+    }}
+  }
+
+  // copy face-centered magnetic fields into ghost zones, reflecting b3
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for (int k=1; k<=(NGHOST); ++k) {
+    for (int j=js; j<=je; ++j) {
+#pragma simd
+      for (int i=is; i<=ie+1; ++i) {
+        b.x1f((ke+k  ),j,i) =  b.x1f((ke-k+1),j,i);
+      }
+    }}
+
+    for (int k=1; k<=(NGHOST); ++k) {
+    for (int j=js; j<=je+1; ++j) {
+#pragma simd
+      for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+        b.x2f((ke+k  ),j,i) =  b.x2f((ke-k+1),j,i);
+      }
+    }}
+
+    for (int k=1; k<=(NGHOST); ++k) {
+    for (int j=js; j<=je; ++j) {
+#pragma simd
+      for (int i=is; i<=ie; ++i) {
+        b.x3f((ke+k+1),j,i) = -b.x3f((ke-k+1),j,i);  // reflect 3-field
+      }
+    }}
   }
 
   return;

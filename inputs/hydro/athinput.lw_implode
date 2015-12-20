@@ -21,30 +21,30 @@ nlim       = -1        # cycle limit
 tlim       = 2.5       # time limit
 
 <mesh>
-nx1        = 200       # Number of zones in X-direction
-x1min      = 0.0       # minimum value of X
-x1max      = 0.3       # maximum value of X
-ix1_bc     = 1         # inner-I (X) boundary flag
-ox1_bc     = 1         # outer-I (X) boundary flag
+nx1        = 200         # Number of zones in X1-direction
+x1min      = 0.0         # minimum value of X1
+x1max      = 0.3         # maximum value of X1
+ix1_bc     = reflecting  # inner-X1 boundary flag
+ox1_bc     = reflecting  # outer-X1 boundary flag
 
-nx2        = 200       # Number of zones in Y-direction
-x2min      = 0.0       # minimum value of Y
-x2max      = 0.3       # maximum value of Y
-ix2_bc     = 1         # inner-J (Y) boundary flag
-ox2_bc     = 1         # outer-J (Y) boundary flag
+nx2        = 200         # Number of zones in X2irection
+x2min      = 0.0         # minimum value of X2
+x2max      = 0.3         # maximum value of X2
+ix2_bc     = reflecting  # inner-X2 boundary flag
+ox2_bc     = reflecting  # outer-X2 boundary flag
 
-nx3        = 1         # Number of zones in X3-direction
-x3min      = -0.5      # minimum value of X3
-x3max      = 0.5       # maximum value of X3
+nx3        = 1           # Number of zones in X3-direction
+x3min      = -0.5        # minimum value of X3
+x3max      = 0.5         # maximum value of X3
 
 <hydro>
-gamma      = 1.4       # gamma = C_p/C_v
+gamma      = 1.4         # gamma = C_p/C_v
 
 <problem>
 # Interior Conditions
-d_in  = 0.125          # density
-p_in  = 0.14           # pressure
+d_in  = 0.125            # density
+p_in  = 0.14             # pressure
 
 # Exterior Conditions
-d_out  = 1.0           # density
-p_out  = 1.0           # pressure
+d_out  = 1.0             # density
+p_out  = 1.0             # pressure

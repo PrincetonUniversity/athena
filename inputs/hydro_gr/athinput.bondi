@@ -35,20 +35,20 @@ tlim       = 100.0
 nx1    = 100   # number of zones in r-direction
 x1min  = 3.0   # inner r
 x1max  = 20.0  # outer r
-ix1_bc = 3     # 3: custom
-ox1_bc = 3     # 3: custom
+ix1_bc = user  # 3: custom
+ox1_bc = user  # 3: custom
 
 nx2    = 1                   # number of zones in theta-direction
 x2min  = 1.0707963267948966  # lower theta (pi/2 - 1/2)
 x2max  = 2.0707963267948966  # upper theta (pi/2 + 1/2)
-ix2_bc = 4                   # 4: periodic
-ox2_bc = 4                   # 4: periodic
+ix2_bc = periodic            # 4: periodic
+ox2_bc = periodic            # 4: periodic
 
 nx3    = 1                   # number of zones in phi-direction
 x3min  = -0.5                # minimum phi
 x3max  = 0.5                 # maximum phi
-ix3_bc = 4                   # 4: periodic
-ox3_bc = 4                   # 4: periodic
+ix3_bc = periodic            # 4: periodic
+ox3_bc = periodic            # 4: periodic
 
 <coord>
 m = 1.0  # black hole mass M

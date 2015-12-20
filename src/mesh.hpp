@@ -14,8 +14,8 @@
 #include <stdint.h>  // int64_t
 
 // Athena++ classes headers
-#include "athena.hpp"         // macros, Real
-#include "athena_arrays.hpp"  // AthenaArray
+#include "athena.hpp"
+#include "athena_arrays.hpp"
 #include "meshblocktree.hpp"
 #include "outputs/wrapper.hpp"
 #include "task_list.hpp"
@@ -39,13 +39,15 @@ class MeshBlockTree;
 typedef struct NeighborBlock {
   int rank, level, gid, lid, ox1, ox2, ox3, fi1, fi2, bufid, targetid;
   enum neighbor_type type;
-  enum direction fid;
+  enum BoundaryFace fid;
   enum edgeid eid;
+  bool polar;
   NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1), ox1(-1), ox2(-1), ox3(-1),
     bufid(-1), targetid(-1), fi1(-1), fi2(-1), type(neighbor_none),
-    fid(dir_undefined), eid (edgeid_undefined) {};
-  void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2, int iox3,
-                   enum neighbor_type itype, int ibid, int itargetid, int ifi1, int ifi2);
+    fid(FACE_UNDEF), eid (edgeid_undefined) {};
+  void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
+                   int iox3, enum neighbor_type itype, int ibid, int itargetid,
+                   int ifi1, int ifi2, bool ipolar);
 } NeighborBlock;
 
 
@@ -85,7 +87,7 @@ private:
 #endif
 public:
   MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_size,
-            int *input_bcs, Mesh *pm, ParameterInput *pin);
+            enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin);
   MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, LogicalLocation iloc,
   IOWrapper& resfile, IOWrapperSize_t offset, Real icost, int *ranklist, int *nslist);
   ~MeshBlock();
@@ -95,7 +97,7 @@ public:
   void IntegrateConservative(Real *tcons);
 
   RegionSize block_size;
-  int block_bcs[6];
+  enum BoundaryFlag block_bcs[6];
   int nblevel[3][3][3];
   Mesh *pmy_mesh;  // ptr to Mesh containing this MeshBlock
 
@@ -155,7 +157,7 @@ public:
   ~Mesh();
 
   RegionSize mesh_size;
-  int mesh_bcs[6];
+  enum BoundaryFlag mesh_bcs[6];
 
   Real start_time, tlim, cfl_number, time, dt;
   int nlim, ncycle;
@@ -168,7 +170,7 @@ public:
   int GetNumMeshThreads() const {return num_mesh_threads_;}
   void Initialize(int res_flag, ParameterInput *pin);
   void SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
-                                 int *block_bcs);
+                                 enum BoundaryFlag *block_bcs);
   void UpdateOneStep(void);
   void ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin); // in /pgen
   void NewTimeStep(void);

@@ -14,10 +14,6 @@
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp" // Coordinates
 
-//typedef struct InterfaceField {
-//  AthenaArray<Real> x1f,x2f,x3f;
-//} InterfaceField;
-
 class MeshBlock;
 class ParameterInput;
 class Hydro;
@@ -31,19 +27,19 @@ friend class Hydro;
 public:
   Field(MeshBlock *pmb, ParameterInput *pin);
   ~Field();
-  void CalculateCellCenteredField(const InterfaceField &bf, AthenaArray<Real> &bc,
+  void CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &bc,
        Coordinates *pco, int is, int ie, int js, int je, int ks, int ke);
 
   MeshBlock* pmy_mblock;  // ptr to MeshBlock containing this Field
 
-  InterfaceField b;       // face-centered magnetic fields
-  InterfaceField b1;      // face-centered magnetic fields at intermediate step
+  FaceField b;       // face-centered magnetic fields
+  FaceField b1;      // face-centered magnetic fields at intermediate step
   AthenaArray<Real> bcc;  // cell-centered magnetic fields
   AthenaArray<Real> bcc1; // cell-centered magnetic fields at intermediate step
 
   EdgeField e;         // edge-centered electric fields used in CT
-  InterfaceField ei;   // face-centered electric fields (e.g. from Riemann solver)
-  InterfaceField wght; // weights used to integrate E to corner using GS algorithm
+  FaceField ei;   // face-centered electric fields (e.g. from Riemann solver)
+  FaceField wght; // weights used to integrate E to corner using GS algorithm
 
   FieldIntegrator *pint;  // integration algorithm (CT)
 

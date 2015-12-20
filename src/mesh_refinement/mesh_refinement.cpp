@@ -774,10 +774,10 @@ void MeshRefinement::ProlongateSharedFieldX3(const AthenaArray<Real> &coarse,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void MeshRefinement::ProlongateInternalField(InterfaceField &fine,
+//! \fn void MeshRefinement::ProlongateInternalField(FaceField &fine,
 //                           int si, int ei, int sj, int ej, int sk, int ek)
 //  \brief prolongate the internal face-centered fields
-void MeshRefinement::ProlongateInternalField(InterfaceField &fine,
+void MeshRefinement::ProlongateInternalField(FaceField &fine,
                      int si, int ei, int sj, int ej, int sk, int ek)
 {
   MeshBlock *pmb=pmy_mblock_;
