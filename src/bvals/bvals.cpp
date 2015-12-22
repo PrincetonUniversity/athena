@@ -2942,7 +2942,7 @@ void BoundaryValues::AverageEMFBoundary(void)
   int i, j, k, nl;
   // face
   for(int n=0; n<nface_; n++) {
-    if ((pmb->block_bcs[n] != -1) && (pmb->block_bcs[n] != 4)) continue;
+    if ((pmb->block_bcs[n] != -1) && (pmb->block_bcs[n] != 4) && (pmb->block_bcs[n] !=5)) continue;
     if(n==INNER_X1 || n==OUTER_X1) {
       if(n==INNER_X1) i=pmb->is;
       else i=pmb->ie+1;
