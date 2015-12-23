@@ -45,7 +45,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   Real d_out = pin->GetReal("problem","d_out");
   Real p_out = pin->GetReal("problem","p_out");
 
-  Real gm1 = (phyd->pf_eos->GetGamma() - 1.0);
+  Real gm1 = (phyd->peos->GetGamma() - 1.0);
   Real y0 = 0.5*(pmb->pmy_mesh->mesh_size.x2max + pmb->pmy_mesh->mesh_size.x2min);
 
 // Set initial conditions

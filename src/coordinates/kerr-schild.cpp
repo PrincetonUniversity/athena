@@ -775,7 +775,7 @@ void Coordinates::CoordSrcTerms(const int k, const int j, const Real dt,
   const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons)
 {
   // Extract ratio of specific heats
-  const Real gamma_adi = pmy_block->phydro->pf_eos->GetGamma();
+  const Real gamma_adi = pmy_block->phydro->peos->GetGamma();
 
   // Extract useful quantities that do not depend on r
   const Real &m = bh_mass_;

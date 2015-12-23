@@ -41,8 +41,8 @@ public:
 
   AthenaArray<Real> ifov;  // internal hydro output variables for analysis
 
-  HydroIntegrator *pf_integrator;  // integration algorithm
-  HydroEqnOfState *pf_eos;         // equation of state (including cons->prim func)
+  HydroIntegrator *pintegrator;  // pointer to integrator class
+  HydroEqnOfState *peos;         // pointer to equation of state class
   HydroSourceTerms *pf_srcterms;   // physical source terms
 
   Viscosity *pf_viscosity; // Viscosity terms

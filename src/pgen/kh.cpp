@@ -40,7 +40,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
   long int iseed = -1;
-  Real gm1 = phyd->pf_eos->GetGamma() - 1.0;
+  Real gm1 = phyd->peos->GetGamma() - 1.0;
 
   // Read problem parameters
   int iprob = pin->GetInteger("problem","iprob");

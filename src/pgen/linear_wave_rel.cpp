@@ -73,7 +73,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   }
 
   // Get ratio of specific heats
-  Real gamma_adi = phyd->pf_eos->GetGamma();  
+  Real gamma_adi = phyd->peos->GetGamma();  
   Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Read background state

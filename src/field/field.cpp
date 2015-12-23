@@ -74,7 +74,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin)
 
 // Construct ptrs to objects of various classes needed to integrate B-field
 
-    pint = new FieldIntegrator(this, pin);
+    pintegrator = new FieldIntegrator(this, pin);
 
   }
 }
@@ -101,6 +101,8 @@ Field::~Field()
   wght.x1f.DeleteAthenaArray();
   wght.x2f.DeleteAthenaArray();
   wght.x3f.DeleteAthenaArray();
+
+  delete pintegrator;
 }
 
 

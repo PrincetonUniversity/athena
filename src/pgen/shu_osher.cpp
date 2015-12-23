@@ -49,7 +49,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   Real vl = 0.0;
   Real wl = 0.0;
 
-  Real gm1 = (phyd->pf_eos->GetGamma()) - 1.0;
+  Real gm1 = (phyd->peos->GetGamma()) - 1.0;
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {

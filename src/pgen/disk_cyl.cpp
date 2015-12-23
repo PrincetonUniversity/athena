@@ -92,7 +92,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
         phyd->u(IM1,k,j,i) = 0.0;
         phyd->u(IM2,k,j,i) = ICvel(x1)*phyd->u(IDN,k,j,i);
         phyd->u(IM3,k,j,i) = 0.0;
-	if(NON_BAROTROPIC_EOS) phyd->u(IEN,k,j,i)= pressure/(phyd->pf_eos->GetGamma()-1.0)
+	if(NON_BAROTROPIC_EOS) phyd->u(IEN,k,j,i)= pressure/(phyd->peos->GetGamma()-1.0)
           + 0.5*(SQR(phyd->u(IM1,k,j,i)) + SQR(phyd->u(IM2,k,j,i)) +
                  SQR(phyd->u(IM3,k,j,i)))/phyd->u(IDN,k,j,i);
       }

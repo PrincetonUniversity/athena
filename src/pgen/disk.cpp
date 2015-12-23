@@ -262,7 +262,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
           Real x2 = pco->x2v(j);
           Real r = std::max(fabs(x1*sin(x2)),pmb->pmy_mesh->mesh_size.x1min);
           Real p_over_r = p0_over_r0*pow(r/r0, pslope);
-          Real gamma = phyd->pf_eos->GetGamma();
+          Real gamma = phyd->peos->GetGamma();
           phyd->u(IEN,k,j,i) = p_over_r*phyd->u(IDN,k,j,i)/(gamma - 1.0);
           phyd->u(IEN,k,j,i) += 0.5*SQR(phyd->u(IM3,k,j,i))/phyd->u(IDN,k,j,i);
           if (MAGNETIC_FIELDS_ENABLED){

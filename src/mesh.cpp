@@ -1107,9 +1107,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
         if(pmb->nblevel[0][1][1]!=-1) ks-=NGHOST;
         if(pmb->nblevel[2][1][1]!=-1) ke+=NGHOST;
       }
-      phydro->pf_eos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b, 
-                                           phydro->w, pfield->bcc, pmb->pcoord,
-                                           is, ie, js, je, ks, ke);
+      phydro->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b, 
+                                         phydro->w, pfield->bcc, pmb->pcoord,
+                                         is, ie, js, je, ks, ke);
       pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc);
       pmb=pmb->next;
     }

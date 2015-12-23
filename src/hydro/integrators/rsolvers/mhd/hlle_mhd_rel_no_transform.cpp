@@ -36,7 +36,7 @@ void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
   int ivz = IVX + ((ivx-IVX)+2)%3;
 
   // Extract ratio of specific heats
-  const Real gamma_adi = pmy_hydro->pf_eos->GetGamma();
+  const Real gamma_adi = pmy_hydro->peos->GetGamma();
 
   // Get metric components
   switch (ivx)
@@ -202,13 +202,13 @@ void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
     // Calculate wavespeeds in left state
     Real lambda_p_l, lambda_m_l;
     Real wgas_l = rho_l + gamma_adi/(gamma_adi-1.0) * pgas_l;
-    pmy_hydro->pf_eos->FastMagnetosonicSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[ivx],
+    pmy_hydro->peos->FastMagnetosonicSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[ivx],
         b_sq_l, g00, g0i, gii, &lambda_p_l, &lambda_m_l);
 
     // Calculate wavespeeds in right state
     Real lambda_p_r, lambda_m_r;
     Real wgas_r = rho_r + gamma_adi/(gamma_adi-1.0) * pgas_r;
-    pmy_hydro->pf_eos->FastMagnetosonicSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[ivx],
+    pmy_hydro->peos->FastMagnetosonicSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[ivx],
         b_sq_r, g00, g0i, gii, &lambda_p_r, &lambda_m_r);
 
     // Calculate extremal wavespeed

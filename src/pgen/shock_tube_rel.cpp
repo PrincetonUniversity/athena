@@ -54,7 +54,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   }
 
   // Read and set ratio of specific heats
-  Real gamma_adi = phyd->pf_eos->GetGamma();
+  Real gamma_adi = phyd->peos->GetGamma();
   Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Read and check shock direction and position
@@ -231,7 +231,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
         b(IB3,k,j,i) = bcon3 * u0 - bcon0 * u3;
       }
     }
-  pmb->phydro->pf_eos->PrimitiveToConserved(phyd->w, b, phyd->u, pmb->pcoord,
+  pmb->phydro->peos->PrimitiveToConserved(phyd->w, b, phyd->u, pmb->pcoord,
                                             il, iu, jl, ju, kl, ju);
 
   // Delete auxiliary arrays

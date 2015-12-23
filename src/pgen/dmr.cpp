@@ -114,7 +114,7 @@ void DMRInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
   Real e0 = 291.25;
   Real u0 =  8.25*sqrt(3.0)/2.0;
   Real v0 = -8.25*0.5;
-  Real gamma = pmb->phydro->pf_eos->GetGamma();
+  Real gamma = pmb->phydro->peos->GetGamma();
   Real p0=e0*(gamma-1.0);
 
   for (int j=js; j<=je; ++j) {
@@ -140,7 +140,7 @@ void DMRInnerX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
   Real e0 = 291.25;
   Real u0 =  8.25*sqrt(3.0)/2.0;
   Real v0 = -8.25*0.5;
-  Real gamma = pmb->phydro->pf_eos->GetGamma();
+  Real gamma = pmb->phydro->peos->GetGamma();
   Real p0=e0*(gamma-1.0);
 
   for (int j=1;  j<=(NGHOST); ++j) {
@@ -177,7 +177,7 @@ void DMROuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
   Real u0 =  8.25*sqrt(3.0)/2.0;
   Real v0 = -8.25*0.5;
   Real shock_pos = 0.1666666666 + (1. + 20.*pmb->pmy_mesh->time)/sqrt(3.0);
-  Real gamma = pmb->phydro->pf_eos->GetGamma();
+  Real gamma = pmb->phydro->peos->GetGamma();
   Real p0=e0*(gamma-1.0);
   Real p1=2.5*(gamma-1.0);
 

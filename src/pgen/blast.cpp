@@ -54,7 +54,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     b0 = pin->GetReal("problem","b0");
     theta = (PI/180.0)*pin->GetReal("problem","angle");
   }
-  Real gamma = phyd->pf_eos->GetGamma();
+  Real gamma = phyd->peos->GetGamma();
   Real gm1 = gamma - 1.0;
 
 // setup uniform ambient medium with spherical over-pressured region

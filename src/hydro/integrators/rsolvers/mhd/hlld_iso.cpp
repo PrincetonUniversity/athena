@@ -54,8 +54,8 @@ void HydroIntegrator::RiemannSolver(const int k,const int j, const int il, const
   Cons1D ulst,urst,ucst;          // Conserved variable for all states 
   Cons1D fl,fr;                   // Fluxes for left & right states
 
-  Real dfloor = pmy_hydro->pf_eos->GetDensityFloor();
-  Real cs = (pmy_hydro->pf_eos->GetIsoSoundSpeed());
+  Real dfloor = pmy_hydro->peos->GetDensityFloor();
+  Real cs = (pmy_hydro->peos->GetIsoSoundSpeed());
 
 #pragma simd
   for (int i=il; i<=iu; ++i){
@@ -95,8 +95,8 @@ void HydroIntegrator::RiemannSolver(const int k,const int j, const int il, const
 
 //--- Step 2.  Compute left & right wave speeds according to Miyoshi & Kusano, eqn. (67)
 
-    Real cfl = pmy_hydro->pf_eos->FastMagnetosonicSpeed(wli,bxi);
-    Real cfr = pmy_hydro->pf_eos->FastMagnetosonicSpeed(wri,bxi);
+    Real cfl = pmy_hydro->peos->FastMagnetosonicSpeed(wli,bxi);
+    Real cfr = pmy_hydro->peos->FastMagnetosonicSpeed(wri,bxi);
 
     spd[0] = std::min( wli[IVX]-cfl, wri[IVX]-cfr );
     spd[4] = std::max( wli[IVX]+cfl, wri[IVX]+cfr );

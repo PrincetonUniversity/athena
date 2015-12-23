@@ -171,10 +171,10 @@ enum TaskStatus CalculateFluxes(MeshBlock *pmb, unsigned long int task_id, int s
 
   if(step == 1) {
     phydro->u1 = phydro->u;
-    phydro->pf_integrator->CalculateFluxes(pmb, phydro->u1, phydro->w, pfield->b,
+    phydro->pintegrator->CalculateFluxes(pmb, phydro->u1, phydro->w, pfield->b,
                                            pfield->bcc, 1);
   } else if(step == 2) {
-    phydro->pf_integrator->CalculateFluxes(pmb, phydro->u, phydro->w1, pfield->b1,
+    phydro->pintegrator->CalculateFluxes(pmb, phydro->u, phydro->w1, pfield->b1,
                                            pfield->bcc1, 2);
   } else {
     return TASK_FAIL;
@@ -218,9 +218,9 @@ enum TaskStatus CalculateEMF(MeshBlock *pmb, unsigned long int task_id, int step
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
   if(step == 1) {
-    pfield->pint->ComputeCornerE(pmb, phydro->w, pfield->bcc);
+    pfield->pintegrator->ComputeCornerE(pmb, phydro->w, pfield->bcc);
   } else if(step == 2) {
-    pfield->pint->ComputeCornerE(pmb, phydro->w1, pfield->bcc1);
+    pfield->pintegrator->ComputeCornerE(pmb, phydro->w1, pfield->bcc1);
   } else {
     return TASK_FAIL;
   }
@@ -262,10 +262,10 @@ enum TaskStatus HydroIntegrate(MeshBlock *pmb, unsigned long int task_id, int st
   Field *pfield=pmb->pfield;
 
   if(step == 1) {
-    phydro->pf_integrator->FluxDivergence(pmb, phydro->u1, phydro->w, pfield->b,
+    phydro->pintegrator->FluxDivergence(pmb, phydro->u1, phydro->w, pfield->b,
                                           pfield->bcc, 1);
   } else if(step == 2) {
-    phydro->pf_integrator->FluxDivergence(pmb, phydro->u, phydro->w1, pfield->b1,
+    phydro->pintegrator->FluxDivergence(pmb, phydro->u, phydro->w1, pfield->b1,
                                           pfield->bcc1, 2);
   } else {
     return TASK_FAIL;
@@ -315,9 +315,9 @@ enum TaskStatus FieldIntegrate(MeshBlock *pmb, unsigned long int task_id, int st
     pfield->b1.x1f = pfield->b.x1f;
     pfield->b1.x2f = pfield->b.x2f;
     pfield->b1.x3f = pfield->b.x3f;
-    pfield->pint->CT(pmb, pfield->b1, phydro->w, pfield->bcc, 1);
+    pfield->pintegrator->CT(pmb, pfield->b1, phydro->w, pfield->bcc, 1);
   } else if(step == 2) {
-    pfield->pint->CT(pmb, pfield->b, phydro->w1, pfield->bcc1, 2);
+    pfield->pintegrator->CT(pmb, pfield->b, phydro->w1, pfield->bcc1, 2);
   } else {
     return TASK_FAIL;
   }
@@ -385,13 +385,13 @@ enum TaskStatus Primitives(MeshBlock *pmb, unsigned long int task_id, int step)
   if(pmb->nblevel[2][1][1]!=-1) ke+=NGHOST;
 
   if(step == 1) {
-    phydro->pf_eos->ConservedToPrimitive(phydro->u1, phydro->w, pfield->b1,
-                                         phydro->w1, pfield->bcc1, pmb->pcoord,
-                                         is, ie, js, je, ks, ke);
+    phydro->peos->ConservedToPrimitive(phydro->u1, phydro->w, pfield->b1,
+                                       phydro->w1, pfield->bcc1, pmb->pcoord,
+                                       is, ie, js, je, ks, ke);
   } else if(step == 2) {
-    phydro->pf_eos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
-                                         phydro->w, pfield->bcc, pmb->pcoord,
-                                         is, ie, js, je, ks, ke);
+    phydro->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
+                                       phydro->w, pfield->bcc, pmb->pcoord,
+                                       is, ie, js, je, ks, ke);
   } else {
     return TASK_FAIL;
   }

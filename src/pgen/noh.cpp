@@ -48,7 +48,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   Coordinates *pco = pmb->pcoord;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  gmma  = phyd->pf_eos->GetGamma();
+  gmma  = phyd->peos->GetGamma();
   gmma1 = gmma - 1.0;
 
 // Initialize the grid: d=1, v=-1.0 in radial direction, p=10^-6

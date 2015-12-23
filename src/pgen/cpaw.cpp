@@ -65,7 +65,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   Coordinates *pco = pmb->pcoord;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  Real gm1 = (phyd->pf_eos->GetGamma() - 1.0);
+  Real gm1 = (phyd->peos->GetGamma() - 1.0);
 
 /* Read initial conditions */
 

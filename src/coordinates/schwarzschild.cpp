@@ -615,7 +615,7 @@ void Coordinates::CoordSrcTerms(const int k, const int j, const Real dt,
   const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons)
 {
   // Extract ratio of specific heats
-  const Real gamma_adi = pmy_block->phydro->pf_eos->GetGamma();
+  const Real gamma_adi = pmy_block->phydro->peos->GetGamma();
 
   // Calculate metric coefficients
   CellMetric(k, j, pmy_block->is, pmy_block->ie, g_, gi_);

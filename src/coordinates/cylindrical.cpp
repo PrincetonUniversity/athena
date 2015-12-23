@@ -298,7 +298,7 @@ void Coordinates::CoordSrcTerms(const int k, const int j, const Real dt,
   const AthenaArray<Real> *flux,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
-  Real iso_cs = pmy_block->phydro->pf_eos->GetIsoSoundSpeed();
+  Real iso_cs = pmy_block->phydro->peos->GetIsoSoundSpeed();
 
 #pragma simd
   for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
@@ -502,7 +502,7 @@ void Coordinates::VisSrcTermsX1(const int k, const int j, const Real dt,
   const AthenaArray<Real> &flx,
   const AthenaArray<Real> &prim, AthenaArray<Real> &u)
 {
-  Real iso_cs = pmy_block->phydro->pf_eos->GetIsoSoundSpeed();
+  Real iso_cs = pmy_block->phydro->peos->GetIsoSoundSpeed();
 
 #pragma simd
   for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {

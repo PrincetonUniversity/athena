@@ -77,7 +77,7 @@ void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
   int ivz = IVX + ((ivx-IVX)+2)%3;
 
   // Extract ratio of specific heats
-  const Real gamma_adi = pmy_hydro->pf_eos->GetGamma();
+  const Real gamma_adi = pmy_hydro->peos->GetGamma();
 
   // Go through each interface
   #pragma simd
@@ -135,13 +135,13 @@ void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
     // Calculate wavespeeds in left state (MB2005 23)
     Real lambda_p_l, lambda_m_l;
     Real wgas_l = rho_l + gamma_adi/(gamma_adi-1.0) * pgas_l;
-    pmy_hydro->pf_eos->SoundSpeedsSR(wgas_l, pgas_l, u_l[1]/u_l[0], SQR(u_l[0]),
+    pmy_hydro->peos->SoundSpeedsSR(wgas_l, pgas_l, u_l[1]/u_l[0], SQR(u_l[0]),
         &lambda_p_l, &lambda_m_l);
 
     // Calculate wavespeeds in right state (MB2005 23)
     Real lambda_p_r, lambda_m_r;
     Real wgas_r = rho_r + gamma_adi/(gamma_adi-1.0) * pgas_r;
-    pmy_hydro->pf_eos->SoundSpeedsSR(wgas_r, pgas_r, u_r[1]/u_r[0], SQR(u_r[0]),
+    pmy_hydro->peos->SoundSpeedsSR(wgas_r, pgas_r, u_r[1]/u_r[0], SQR(u_r[0]),
         &lambda_p_r, &lambda_m_r);
 
     // Calculate extremal wavespeeds

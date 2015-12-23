@@ -76,7 +76,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   a = pmb->pcoord->GetSpin();
 
   // Get ratio of specific heats
-  gamma_adi = phyd->pf_eos->GetGamma();
+  gamma_adi = phyd->peos->GetGamma();
 
   // Read other properties
   rho_min = pin->GetReal("hydro", "rho_min");
@@ -429,8 +429,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
        }
 
   // Initialize conserved values
-  pmb->phydro->pf_eos->PrimitiveToConserved(phyd->w, bb, phyd->u, pmb->pcoord,
-                                            il, iu, jl, ju, kl, ku);
+  pmb->phydro->peos->PrimitiveToConserved(phyd->w, bb, phyd->u, pmb->pcoord,
+                                          il, iu, jl, ju, kl, ku);
 
   // Free scratch arrays
   in_torus.DeleteAthenaArray();

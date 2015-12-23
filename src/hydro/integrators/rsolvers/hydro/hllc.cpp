@@ -45,7 +45,7 @@ void HydroIntegrator::RiemannSolver(const int k,const int j, const int il, const
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NHYDRO)],wri[(NHYDRO)],wroe[(NHYDRO)];
   Real flxi[(NHYDRO)],fl[(NHYDRO)],fr[(NHYDRO)];
-  Real gm1 = pmy_hydro->pf_eos->GetGamma() - 1.0;
+  Real gm1 = pmy_hydro->peos->GetGamma() - 1.0;
 
 #pragma simd
   for (int i=il; i<=iu; ++i){
@@ -84,8 +84,8 @@ void HydroIntegrator::RiemannSolver(const int k,const int j, const int il, const
 
 //--- Step 3.  Compute sound speed in L,R, and Roe-averaged states
 
-    Real cl = pmy_hydro->pf_eos->SoundSpeed(wli);
-    Real cr = pmy_hydro->pf_eos->SoundSpeed(wri);
+    Real cl = pmy_hydro->peos->SoundSpeed(wli);
+    Real cr = pmy_hydro->peos->SoundSpeed(wri);
     Real q = hroe - 0.5*(SQR(wroe[IVX]) + SQR(wroe[IVY]) + SQR(wroe[IVZ]));
     Real a = (q < 0.0) ? 0.0 : sqrt(gm1*q);
 

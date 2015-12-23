@@ -74,7 +74,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
   long int iseed = -1;
-  Real gamma = phyd->pf_eos->GetGamma();
+  Real gamma = phyd->peos->GetGamma();
   gm1 = gamma - 1.0;
   
   Real kx = 2.0*(PI)/(pmb->pmy_mesh->mesh_size.x1max - pmb->pmy_mesh->mesh_size.x1min);

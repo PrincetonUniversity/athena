@@ -41,7 +41,7 @@ public:
   FaceField ei;   // face-centered electric fields (e.g. from Riemann solver)
   FaceField wght; // weights used to integrate E to corner using GS algorithm
 
-  FieldIntegrator *pint;  // integration algorithm (CT)
+  FieldIntegrator *pintegrator;  // integration algorithm (CT)
 
 private:
 };

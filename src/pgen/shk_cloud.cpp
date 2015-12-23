@@ -59,7 +59,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   Coordinates *pco = pmb->pcoord;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  Real gmma  = phyd->pf_eos->GetGamma();
+  Real gmma  = phyd->peos->GetGamma();
   gmma1 = gmma - 1.0;
 
 // Read input parameters
@@ -74,7 +74,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 // Set paramters in ambient medium ("R-state" for shock)
 
   Real dr = 1.0;
-  Real pr = 1.0/(phyd->pf_eos->GetGamma());
+  Real pr = 1.0/(phyd->peos->GetGamma());
   Real ur = 0.0;
 
 // Uses Rankine Hugoniot relations for adiabatic gas to initialize problem

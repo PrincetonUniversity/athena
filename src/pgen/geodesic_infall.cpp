@@ -58,7 +58,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   Real a2 = SQR(a);
 
   // Get ratio of specific heats
-  Real gamma_adi = phyd->pf_eos->GetGamma();
+  Real gamma_adi = phyd->peos->GetGamma();
 
   // Read other properties
   Real e = pin->GetReal("problem", "energy");
@@ -125,8 +125,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   // Initialize conserved values
   AthenaArray<Real> bb;
   bb.NewAthenaArray(3, ku+1, ju+1, iu+1);
-  pmb->phydro->pf_eos->PrimitiveToConserved(phyd->w, bb, phyd->u, pmb->pcoord,
-                                            il, iu, jl, ju, kl, ku);
+  pmb->phydro->peos->PrimitiveToConserved(phyd->w, bb, phyd->u, pmb->pcoord,
+                                          il, iu, jl, ju, kl, ku);
   bb.DeleteAthenaArray();
 
   // Enroll boundary functions
@@ -199,7 +199,7 @@ void OutflowInnerHydro(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
         Real u_0_new, u_1_new, u_2_new, u_3_new;
         pco->LowerVectorCell(u0_new, u1_new, u2_new, u3_new, k, j, i, &u_0_new,
             &u_1_new, &u_2_new, &u_3_new);
-        Real gamma_adi = pmb->phydro->pf_eos->GetGamma();
+        Real gamma_adi = pmb->phydro->peos->GetGamma();
         Real gamma_prime = gamma_adi/(gamma_adi-1.0);
         Real wgas = rho + gamma_prime * pgas;
         cons(IDN,k,j,i) = rho * u0_new;

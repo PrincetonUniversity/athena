@@ -94,9 +94,9 @@ void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
   }
 
   // Calculate wavespeeds
-  pmy_hydro->pf_eos->FastMagnetosonicSpeedsSR(prim_l, bb_normal_, il, iu, ivx,
+  pmy_hydro->peos->FastMagnetosonicSpeedsSR(prim_l, bb_normal_, il, iu, ivx,
       lambdas_p_l_, lambdas_m_l_);
-  pmy_hydro->pf_eos->FastMagnetosonicSpeedsSR(prim_r, bb_normal_, il, iu, ivx,
+  pmy_hydro->peos->FastMagnetosonicSpeedsSR(prim_r, bb_normal_, il, iu, ivx,
       lambdas_p_r_, lambdas_m_r_);
 
   // Calculate cyclic permutations of indices
@@ -104,7 +104,7 @@ void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
   int ivz = IVX + ((ivx-IVX)+2)%3;
 
   // Extract ratio of specific heats
-  const Real gamma_adi = pmy_hydro->pf_eos->GetGamma();
+  const Real gamma_adi = pmy_hydro->peos->GetGamma();
 
   // Calculate total pressures for each interface
   #pragma simd

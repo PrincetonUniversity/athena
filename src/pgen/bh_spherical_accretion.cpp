@@ -72,7 +72,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   m = pmb->pcoord->GetMass();
 
   // Get ratio of specific heats
-  Real gamma_adi = phyd->pf_eos->GetGamma();
+  Real gamma_adi = phyd->peos->GetGamma();
   n_adi = 1.0/(gamma_adi-1.0);
 
   // Read problem parameters
@@ -222,8 +222,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
        }
 
   // Initialize conserved variables
-  pmb->phydro->pf_eos->PrimitiveToConserved(phyd->w, bb, phyd->u, pmb->pcoord,
-                                            il, iu, jl, ju, kl, ku);
+  pmb->phydro->peos->PrimitiveToConserved(phyd->w, bb, phyd->u, pmb->pcoord,
+                                          il, iu, jl, ju, kl, ku);
 
   // Free scratch arrays
   g.DeleteAthenaArray();

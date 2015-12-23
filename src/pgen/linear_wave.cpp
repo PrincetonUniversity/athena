@@ -68,8 +68,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   Coordinates *pco = pmb->pcoord;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  gm1 = (phyd->pf_eos->GetGamma() - 1.0);
-  iso_cs = phyd->pf_eos->GetIsoSoundSpeed();
+  gm1 = (phyd->peos->GetGamma() - 1.0);
+  iso_cs = phyd->peos->GetIsoSoundSpeed();
 
 // Read initial conditions
 
@@ -126,7 +126,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   Real h0 = 0.0;
 
   if (NON_BAROTROPIC_EOS) {
-    p0 = 1.0/(phyd->pf_eos->GetGamma());
+    p0 = 1.0/(phyd->peos->GetGamma());
     h0 = ((p0/gm1 + 0.5*d0*(u0*u0+v0*v0+w0*w0)) + p0)/d0;
     if (MAGNETIC_FIELDS_ENABLED) h0 += (bx0*bx0+by0*by0+bz0*bz0)/d0;
   }

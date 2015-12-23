@@ -64,15 +64,15 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
       if ((shk_dir==1 && pco->x1v(i) < 0.1) ||
           (shk_dir==2 && pco->x2v(j) < 0.1) ||
           (shk_dir==3 && pco->x3v(k) < 0.1)) {
-        phyd->u(IEN,k,j,i)= 1.0e3/(phyd->pf_eos->GetGamma() - 1.0);
+        phyd->u(IEN,k,j,i)= 1.0e3/(phyd->peos->GetGamma() - 1.0);
       }
       else if ((shk_dir==1 && pco->x1v(i) > 0.9) ||
                (shk_dir==2 && pco->x2v(j) > 0.9) ||
                (shk_dir==3 && pco->x3v(k) > 0.9)) {
-        phyd->u(IEN,k,j,i)= 1.0e2/(phyd->pf_eos->GetGamma() - 1.0);
+        phyd->u(IEN,k,j,i)= 1.0e2/(phyd->peos->GetGamma() - 1.0);
       }
       else {
-        phyd->u(IEN,k,j,i)= 0.01/(phyd->pf_eos->GetGamma() - 1.0);
+        phyd->u(IEN,k,j,i)= 0.01/(phyd->peos->GetGamma() - 1.0);
       }
     }
   }}

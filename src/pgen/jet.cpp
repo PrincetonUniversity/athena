@@ -42,7 +42,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  gm1 = phyd->pf_eos->GetGamma() - 1.0;
+  gm1 = phyd->peos->GetGamma() - 1.0;
 
 // read parameters from input file
 

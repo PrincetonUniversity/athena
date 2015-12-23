@@ -91,8 +91,8 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
 
 // Construct ptrs to objects of various classes needed to integrate hydro eqns 
 
-  pf_integrator = new HydroIntegrator(this,pin);
-  pf_eos = new HydroEqnOfState(this,pin);
+  pintegrator = new HydroIntegrator(this,pin);
+  peos = new HydroEqnOfState(this,pin);
   pf_srcterms = new HydroSourceTerms(this,pin);
   if(VISCOSITY) pf_viscosity = new Viscosity(this,pin);
 }
@@ -116,8 +116,8 @@ Hydro::~Hydro()
   dt2_.DeleteAthenaArray();
   dt3_.DeleteAthenaArray();
 
-  delete pf_integrator;
-  delete pf_eos;
+  delete pintegrator;
+  delete peos;
   delete pf_srcterms;
   if(VISCOSITY) delete pf_viscosity;
 }
@@ -178,24 +178,24 @@ Real Hydro::NewBlockTimeStep(MeshBlock *pmb)
           Real bx = bcc(IB1,k,j,i) + fabs(b_x1f(k,j,i)-bcc(IB1,k,j,i));
           wi[IBY] = bcc(IB2,k,j,i);
           wi[IBZ] = bcc(IB3,k,j,i);
-          Real cf = pf_eos->FastMagnetosonicSpeed(wi,bx);
+          Real cf = peos->FastMagnetosonicSpeed(wi,bx);
           dt1(i)= pmy_block->pcoord->CenterWidth1(k,j,i)/(fabs(wi[IVX]) + cf);
 
           wi[IBY] = bcc(IB3,k,j,i);
           wi[IBZ] = bcc(IB1,k,j,i);
           bx = bcc(IB2,k,j,i) + fabs(b_x2f(k,j,i)-bcc(IB2,k,j,i));
-          cf = pf_eos->FastMagnetosonicSpeed(wi,bx);
+          cf = peos->FastMagnetosonicSpeed(wi,bx);
           dt2(i)= pmy_block->pcoord->CenterWidth2(k,j,i)/(fabs(wi[IVY]) + cf);
 
           wi[IBY] = bcc(IB1,k,j,i);
           wi[IBZ] = bcc(IB2,k,j,i);
           bx = bcc(IB3,k,j,i) + fabs(b_x3f(k,j,i)-bcc(IB3,k,j,i));
-          cf = pf_eos->FastMagnetosonicSpeed(wi,bx);
+          cf = peos->FastMagnetosonicSpeed(wi,bx);
           dt3(i)= pmy_block->pcoord->CenterWidth3(k,j,i)/(fabs(wi[IVZ]) + cf);
 
         } else {
 
-          Real cs = pf_eos->SoundSpeed(wi);
+          Real cs = peos->SoundSpeed(wi);
           dt1(i)= pmy_block->pcoord->CenterWidth1(k,j,i)/(fabs(wi[IVX]) + cs);
           dt2(i)= pmy_block->pcoord->CenterWidth2(k,j,i)/(fabs(wi[IVY]) + cs);
           dt3(i)= pmy_block->pcoord->CenterWidth3(k,j,i)/(fabs(wi[IVZ]) + cs);
