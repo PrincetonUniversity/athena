@@ -163,12 +163,12 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
     if (pmb->block_size.nx2 > 1) {
 #pragma simd
       for (int j=js-(NGHOST); j<=je+(NGHOST); ++j){
-        Real sm = sin(x2f(j  ));
-        Real sp = sin(x2f(j+1));
+        Real sm = fabs(sin(x2f(j  )));
+        Real sp = fabs(sin(x2f(j+1)));
         Real cm = cos(x2f(j  ));
         Real cp = cos(x2f(j+1));
         // d(sin theta) = d(-cos theta)
-        coord_area1_j_(j) = cm - cp;
+        coord_area1_j_(j) = fabs(cm - cp);
         // sin theta
         coord_area2_j_(j) = sm;
         // d(sin theta) = d(-cos theta)
@@ -178,13 +178,13 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
         // (dS/2)/(S_c dV)
         coord_src2_j_(j) = (sp - sm)/((sm + sp)*coord_vol_j_(j));
       }
-      coord_area2_j_(je+(NGHOST)+1) = sin(x2f(je+(NGHOST)+1));
+      coord_area2_j_(je+(NGHOST)+1) = fabs(sin(x2f(je+(NGHOST)+1)));
     } else {
-      Real sm = sin(x2f(js  ));
-      Real sp = sin(x2f(js+1));
+      Real sm = fabs(sin(x2f(js  )));
+      Real sp = fabs(sin(x2f(js+1)));
       Real cm = cos(x2f(js  ));
       Real cp = cos(x2f(js+1));
-      coord_area1_j_(js) = cm - cp;
+      coord_area1_j_(js) = fabs(cm - cp);
       coord_area2_j_(js) = sm;
       coord_vol_j_(js) = coord_area1_j_(js);
       coord_src1_j_(js) = (sp - sm)/coord_vol_j_(js);
@@ -283,7 +283,7 @@ Real Coordinates::CenterWidth2(const int k, const int j, const int i)
 
 Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 {
-  return x1v(i)*sin(x2v(j))*dx3f(k);
+  return x1v(i)*fabs(sin(x2v(j)))*dx3f(k);
 }
 
 //--------------------------------------------------------------------------------------
