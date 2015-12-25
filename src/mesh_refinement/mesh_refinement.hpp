@@ -10,8 +10,8 @@
 //======================================================================================
 
 // Athena++ classes headers
-#include "athena.hpp"         // Real
-#include "athena_arrays.hpp"  // AthenaArray
+#include "../athena.hpp"         // Real
+#include "../athena_arrays.hpp"  // AthenaArray
 
 // MPI headers
 #ifdef MPI_PARALLEL
@@ -24,15 +24,24 @@ class Coordinates;
 struct FaceField;
 class BoundaryValues;
 
+typedef int (*AMRFlag_t)(MeshBlock *pmb);
+
+
 class MeshRefinement
 {
 private:
   MeshBlock *pmy_mblock_;
+  ParameterInput *pin_;
   AthenaArray<Real> coarse_cons_, coarse_prim_, coarse_bcc_;
   FaceField coarse_b_;
   AthenaArray<Real> fvol_[2][2], sarea_x1_[2][2], sarea_x2_[2][3], sarea_x3_[3][2];
 
+  AMRFlag_t AMRFlag_;
+  int refine_flag_, neighbor_rflag_;
+
   friend class BoundaryValues;
+  friend class MeshBlock;
+  friend class Mesh;
 
 public:
   MeshRefinement(MeshBlock *pmb, ParameterInput *pin);
@@ -58,6 +67,9 @@ public:
                                int si, int ei, int sj, int ej, int sk, int ek);
   void ProlongateInternalField(FaceField &fine,
                                int si, int ei, int sj, int ej, int sk, int ek);
+
+  void EnrollAMRFlagFunction(AMRFlag_t amrflag);
+  void CheckRefinementCondition(void);
 };
 
 #endif

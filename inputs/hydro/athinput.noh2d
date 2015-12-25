@@ -25,13 +25,13 @@ nx1        = 200        # Number of zones in X1-direction
 x1min      = 0.0        # minimum value of X1
 x1max      = 1.0        # maximum value of X1
 ix1_bc     = reflecting # inner-X1 boundary flag
-ox1_bc     = reflecting # outer-X1 boundary flag
+ox1_bc     = user       # outer-X1 boundary flag
 
 nx2        = 200        # Number of zones in X2-direction
 x2min      = 0.0        # minimum value of X2
 x2max      = 1.0        # maximum value of X2
 ix2_bc     = reflecting # inner-X2 boundary flag
-ox2_bc     = reflecting # outer-X2 boundary flag
+ox2_bc     = user       # outer-X2 boundary flag
 
 nx3        = 1          # Number of zones in X3-direction
 x3min      = -0.5       # minimum value of X3

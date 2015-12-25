@@ -31,13 +31,14 @@
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh_refinement.hpp"
+#include "../mesh_refinement/mesh_refinement.hpp"
 #include "../mesh.hpp"
 #include "../hydro/hydro.hpp"
 #include "../hydro/eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../parameter_input.hpp"
+#include "../utils/buffer_utils.hpp"
 
 // this class header
 #include "bvals.hpp"
@@ -62,24 +63,23 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   int f2d=0, f3d=0;
   if(pmb->block_size.nx2 > 1) f2d=1;
   if(pmb->block_size.nx3 > 1) f3d=1;
+  for(int i=0; i<6; i++)
+    BoundaryFunction_[i]=NULL;
 
 // Set BC functions for each of the 6 boundaries in turn -------------------------------
-// Inner x1
+  // Inner x1
   nface_=2; nedge_=0;
   switch(pmb->block_bcs[INNER_X1]){
     case REFLECTING_BNDRY:
-      HydroBoundary_[INNER_X1] = ReflectInnerX1;
-      FieldBoundary_[INNER_X1] = ReflectInnerX1;
+      BoundaryFunction_[INNER_X1] = ReflectInnerX1;
       break;
     case OUTFLOW_BNDRY:
-      HydroBoundary_[INNER_X1] = OutflowInnerX1;
-      FieldBoundary_[INNER_X1] = OutflowInnerX1;
+      BoundaryFunction_[INNER_X1] = OutflowInnerX1;
       break;
     case BLOCK_BNDRY: // block boundary
     case USER_BNDRY: // do nothing, useful for user-enrolled BCs
     case PERIODIC_BNDRY: // periodic boundary
-      HydroBoundary_[INNER_X1] = NULL;
-      FieldBoundary_[INNER_X1] = NULL;
+      BoundaryFunction_[INNER_X1] = NULL;
       break;
     default:
       std::stringstream msg;
@@ -88,21 +88,18 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       throw std::runtime_error(msg.str().c_str());
    }
 
-// Outer x1
+  // Outer x1
   switch(pmb->block_bcs[OUTER_X1]){
     case REFLECTING_BNDRY:
-      HydroBoundary_[OUTER_X1] = ReflectOuterX1;
-      FieldBoundary_[OUTER_X1] = ReflectOuterX1;
+      BoundaryFunction_[OUTER_X1] = ReflectOuterX1;
       break;
     case OUTFLOW_BNDRY:
-      HydroBoundary_[OUTER_X1] = OutflowOuterX1;
-      FieldBoundary_[OUTER_X1] = OutflowOuterX1;
+      BoundaryFunction_[OUTER_X1] = OutflowOuterX1;
       break;
     case BLOCK_BNDRY: // block boundary
     case USER_BNDRY: // do nothing, useful for user-enrolled BCs
     case PERIODIC_BNDRY: // periodic boundary
-      HydroBoundary_[OUTER_X1] = NULL;
-      FieldBoundary_[OUTER_X1] = NULL;
+      BoundaryFunction_[OUTER_X1] = NULL;
       break;
     default:
       std::stringstream msg;
@@ -113,22 +110,19 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 
   if (pmb->block_size.nx2 > 1) {
     nface_=4; nedge_=4;
-// Inner x2
+    // Inner x2
     switch(pmb->block_bcs[INNER_X2]){
       case REFLECTING_BNDRY:
-        HydroBoundary_[INNER_X2] = ReflectInnerX2;
-        FieldBoundary_[INNER_X2] = ReflectInnerX2;
+        BoundaryFunction_[INNER_X2] = ReflectInnerX2;
         break;
       case OUTFLOW_BNDRY:
-        HydroBoundary_[INNER_X2] = OutflowInnerX2;
-        FieldBoundary_[INNER_X2] = OutflowInnerX2;
+        BoundaryFunction_[INNER_X2] = OutflowInnerX2;
         break;
       case BLOCK_BNDRY: // block boundary
       case USER_BNDRY: // do nothing, useful for user-enrolled BCs
       case PERIODIC_BNDRY: // periodic boundary
       case POLAR_BNDRY: // polar boundary
-        HydroBoundary_[INNER_X2] = NULL;
-        FieldBoundary_[INNER_X2] = NULL;
+        BoundaryFunction_[INNER_X2] = NULL;
         break;
       default:
         std::stringstream msg;
@@ -137,22 +131,19 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         throw std::runtime_error(msg.str().c_str());
      }
 
-// Outer x2
+    // Outer x2
     switch(pmb->block_bcs[OUTER_X2]){
       case REFLECTING_BNDRY:
-        HydroBoundary_[OUTER_X2] = ReflectOuterX2;
-        FieldBoundary_[OUTER_X2] = ReflectOuterX2;
+        BoundaryFunction_[OUTER_X2] = ReflectOuterX2;
         break;
       case OUTFLOW_BNDRY:
-        HydroBoundary_[OUTER_X2] = OutflowOuterX2;
-        FieldBoundary_[OUTER_X2] = OutflowOuterX2;
+        BoundaryFunction_[OUTER_X2] = OutflowOuterX2;
         break;
       case BLOCK_BNDRY: // block boundary
       case USER_BNDRY: // do nothing, useful for user-enrolled BCs
       case PERIODIC_BNDRY: // periodic boundary
       case POLAR_BNDRY: // polar boundary
-        HydroBoundary_[OUTER_X2] = NULL;
-        FieldBoundary_[OUTER_X2] = NULL;
+        BoundaryFunction_[OUTER_X2] = NULL;
         break;
       default:
         std::stringstream msg;
@@ -164,21 +155,18 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 
   if (pmb->block_size.nx3 > 1) {
     nface_=6; nedge_=12;
-// Inner x3
+    // Inner x3
     switch(pmb->block_bcs[INNER_X3]){
       case REFLECTING_BNDRY:
-        HydroBoundary_[INNER_X3] = ReflectInnerX3;
-        FieldBoundary_[INNER_X3] = ReflectInnerX3;
+        BoundaryFunction_[INNER_X3] = ReflectInnerX3;
         break;
       case OUTFLOW_BNDRY:
-        HydroBoundary_[INNER_X3] = OutflowInnerX3;
-        FieldBoundary_[INNER_X3] = OutflowInnerX3;
+        BoundaryFunction_[INNER_X3] = OutflowInnerX3;
         break;
       case BLOCK_BNDRY: // block boundary
       case USER_BNDRY: // do nothing, useful for user-enrolled BCs
       case PERIODIC_BNDRY: // periodic boundary
-        HydroBoundary_[INNER_X3] = NULL;
-        FieldBoundary_[INNER_X3] = NULL;
+        BoundaryFunction_[INNER_X3] = NULL;
         break;
       default:
         std::stringstream msg;
@@ -187,21 +175,18 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         throw std::runtime_error(msg.str().c_str());
      }
 
-// Outer x3
+    // Outer x3
     switch(pmb->block_bcs[OUTER_X3]){
       case REFLECTING_BNDRY:
-        HydroBoundary_[OUTER_X3] = ReflectOuterX3;
-        FieldBoundary_[OUTER_X3] = ReflectOuterX3;
+        BoundaryFunction_[OUTER_X3] = ReflectOuterX3;
         break;
       case OUTFLOW_BNDRY:
-        HydroBoundary_[OUTER_X3] = OutflowOuterX3;
-        FieldBoundary_[OUTER_X3] = OutflowOuterX3;
+        BoundaryFunction_[OUTER_X3] = OutflowOuterX3;
         break;
       case BLOCK_BNDRY: // block boundary
       case USER_BNDRY: // do nothing, useful for user-enrolled BCs
       case PERIODIC_BNDRY: // periodic boundary
-        HydroBoundary_[OUTER_X3] = NULL;
-        FieldBoundary_[OUTER_X3] = NULL;
+        BoundaryFunction_[OUTER_X3] = NULL;
         break;
       default:
         std::stringstream msg;
@@ -209,6 +194,12 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
             << "Flag ox3_bc=" << pmb->block_bcs[OUTER_X3] << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
     }
+  }
+
+  // *** this is temporary fix - copy boundary functions to the Mesh class
+  for(int i=0; i<6; i++) {
+    if(pmb->block_bcs[i]>0 && pmb->block_bcs[i]<=2)
+      pmb->pmy_mesh->BoundaryFunction_[i]=BoundaryFunction_[i];
   }
 
   // Clear flags and requests
@@ -712,79 +703,45 @@ void BoundaryValues::Initialize(void)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::EnrollHydroBoundaryFunction(enum BoundaryFace dir,
+//! \fn void BoundaryValues::EnrollUserBoundaryFunction(enum BoundaryFace dir,
 //                                                       BValHydro_t my_bc)
-//  \brief Enroll a user-defined boundary function for hydro
+//  \brief Enroll a user-defined boundary function
 
-void BoundaryValues::EnrollHydroBoundaryFunction(enum BoundaryFace dir, BValHydro_t my_bc)
+void BoundaryValues::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValFunc_t my_bc)
 {
   std::stringstream msg;
   if(dir<0 || dir>5) {
-    msg << "### FATAL ERROR in EnrollHydroBoundaryCondition function" << std::endl
+    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
         << "dirName = " << dir << " not valid" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if(pmy_mblock_->block_bcs[dir]==-1) return;
-  if(pmy_mblock_->block_bcs[dir]!=3) {
-    msg << "### FATAL ERROR in EnrollHydroBoundaryCondition function" << std::endl
-        << "A user-defined boundary condition flag (3) must be specified "
-        << "in the input file to use a user-defined boundary function." << std::endl;
+  // temporary fix
+  pmy_mblock_->pmy_mesh->BoundaryFunction_[dir]=my_bc;
+  if(pmy_mblock_->block_bcs[dir]==BLOCK_BNDRY) return;
+  if(pmy_mblock_->block_bcs[dir]!=USER_BNDRY) {
+    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
+        << "The boundary condition flag must be set to the string 'user' in the "
+        << " <mesh> block in the input file to use user-enrolled BCs" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  HydroBoundary_[dir]=my_bc;
+  BoundaryFunction_[dir]=my_bc;
   return;
 }
-
-
-//--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::EnrollFieldBoundaryFunction(enum BoundaryFace dir,
-//                                                       BValField_t my_bc)
-//  \brief Enroll a user-defined boundary function for magnetic fields
-
-void BoundaryValues::EnrollFieldBoundaryFunction(enum BoundaryFace dir,BValField_t my_bc)
-{
-  std::stringstream msg;
-  if(dir<0 || dir>5) {
-    msg << "### FATAL ERROR in EnrollFieldBoundaryCondition function" << std::endl
-        << "dirName = " << dir << " is not valid" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  if(pmy_mblock_->block_bcs[dir]==-1) return;
-  if(pmy_mblock_->block_bcs[dir]!=3) {
-    msg << "### FATAL ERROR in EnrollFieldBoundaryCondition function" << std::endl
-        << "A user-defined boundary condition flag (3) must be specified "
-        << "in the input file to use a user-defined boundary function." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  FieldBoundary_[dir]=my_bc;
-  return;
-}
-
 
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::CheckBoundary(void)
 //  \brief checks if the boundary conditions are correctly enrolled
 void BoundaryValues::CheckBoundary(void)
 {
-  int i;
   MeshBlock *pmb=pmy_mblock_;
   for(int i=0;i<nface_;i++) {
-    if(pmb->block_bcs[i]==3) {
-      if(HydroBoundary_[i]==NULL) {
+    if(pmb->block_bcs[i]==USER_BNDRY) {
+      if(BoundaryFunction_[i]==NULL) {
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues::CheckBoundary" << std::endl
             << "A user-defined boundary is specified but the hydro boundary function "
             << "is not enrolled in direction " << i  << "." << std::endl;
         throw std::runtime_error(msg.str().c_str());
-      }
-      if (MAGNETIC_FIELDS_ENABLED) {
-        if(FieldBoundary_[i]==NULL) {
-          std::stringstream msg;
-          msg << "### FATAL ERROR in BoundaryValues::CheckBoundary" << std::endl
-              << "A user-defined boundary is specified but the field boundary function "
-              << "is not enrolled in direction " << i  << "." << std::endl;
-          throw std::runtime_error(msg.str().c_str());
-        }
       }
     }
   }
@@ -859,17 +816,8 @@ int BoundaryValues::LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src, Rea
   ej=(nb.ox2<0)?(pmb->js+NGHOST-1):pmb->je;
   sk=(nb.ox3>0)?(pmb->ke-NGHOST+1):pmb->ks;
   ek=(nb.ox3<0)?(pmb->ks+NGHOST-1):pmb->ke;
-
   int p=0;
-  for (int n=0; n<(NHYDRO); ++n) {
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
-#pragma simd
-        for (int i=si; i<=ei; ++i)
-          buf[p++]=src(n,k,j,i);
-      }
-    }
-  }
+  BufferUtility::Pack4DData(src, buf, 0, NHYDRO-1, si, ei, sj, ej, sk, ek, p);
   return p;
 }
 
@@ -896,17 +844,9 @@ int BoundaryValues::LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src, Rea
   // restrict the data before sending
   pmr->RestrictCellCenteredValues(src, pmr->coarse_cons_, 0, NHYDRO-1,
                                   si, ei, sj, ej, sk, ek);
-
   int p=0;
-  for (int n=0; n<(NHYDRO); ++n) {
-    for (int k=sk; k<=ek; k++) {
-      for (int j=sj; j<=ej; j++) {
-#pragma simd
-        for (int i=si; i<=ei; i++)
-            buf[p++]=pmr->coarse_cons_(n,k,j,i);
-      }
-    }
-  }
+  BufferUtility::Pack4DData(pmr->coarse_cons_, buf, 0, NHYDRO-1,
+                            si, ei, sj, ej, sk, ek, p);
   return p;
 }
 
@@ -957,15 +897,7 @@ int BoundaryValues::LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src, Real 
   }
 
   int p=0;
-  for (int n=0; n<(NHYDRO); ++n) {
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
-#pragma simd
-        for (int i=si; i<=ei; ++i)
-          buf[p++]=src(n,k,j,i);
-      }
-    }
-  }
+  BufferUtility::Pack4DData(src, buf, 0, NHYDRO-1, si, ei, sj, ej, sk, ek, p);
   return p;
 }
 
@@ -1024,8 +956,8 @@ void BoundaryValues::SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
 
   int p=0;
-  for (int n=0; n<(NHYDRO); ++n) {
-    if (nb.polar) {
+  if (nb.polar) {
+    for (int n=0; n<(NHYDRO); ++n) {
       Real sign = flip_across_pole_hydro[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
         int k_shift = k;
@@ -1040,16 +972,9 @@ void BoundaryValues::SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf
         }
       }
     }
-    else {
-      for (int k=sk; k<=ek; ++k) {
-        for (int j=sj; j<=ej; ++j) {
-#pragma simd
-          for (int i=si; i<=ei; ++i)
-            dst(n,k,j,i) = buf[p++];
-        }
-      }
-    }
   }
+  else
+    BufferUtility::Unpack4DData(buf, dst, 0, NHYDRO-1, si, ei, sj, ej, sk, ek, p);
   return;
 }
 
@@ -1093,8 +1018,8 @@ void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock&
   else               sk=pmb->cks-cng, ek=pmb->cks-1;
 
   int p=0;
-  for (int n=0; n<(NHYDRO); ++n) {
-    if (nb.polar) {
+  if (nb.polar) {
+    for (int n=0; n<(NHYDRO); ++n) {
       Real sign = flip_across_pole_hydro[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
         for (int j=ej; j>=sj; --j) {
@@ -1104,16 +1029,10 @@ void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock&
         }
       }
     }
-    else {
-      for (int k=sk; k<=ek; ++k) {
-        for (int j=sj; j<=ej; ++j) {
-#pragma simd
-          for (int i=si; i<=ei; ++i)
-            pmr->coarse_cons_(n,k,j,i) = buf[p++];
-        }
-      }
-    }
   }
+  else
+    BufferUtility::Unpack4DData(buf, pmr->coarse_cons_, 0, NHYDRO-1,
+                                si, ei, sj, ej, sk, ek, p);    
   return;
 }
 
@@ -1168,8 +1087,8 @@ void BoundaryValues::SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
 
   int p=0;
-  for (int n=0; n<(NHYDRO); ++n) {
-    if (nb.polar) {
+  if (nb.polar) {
+    for (int n=0; n<(NHYDRO); ++n) {
       Real sign = flip_across_pole_hydro[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
         for (int j=sj; j<=ej; ++j) {
@@ -1179,16 +1098,9 @@ void BoundaryValues::SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf
         }
       }
     }
-    else {
-      for (int k=sk; k<=ek; ++k) {
-        for (int j=ej; j>=sj; --j) {
-#pragma simd
-          for (int i=si; i<=ei; ++i)
-            dst(n,k,j,i) = buf[p++];
-        }
-      }
-    }
   }
+  else 
+    BufferUtility::Unpack4DData(buf, dst, 0, NHYDRO-1, si, ei, sj, ej, sk, ek, p);
   return;
 }
 
@@ -1500,13 +1412,7 @@ int BoundaryValues::LoadFieldBoundaryBufferSameLevel(FaceField &src, Real *buf,
     if(nb.ox1>0) ei++;
     else if(nb.ox1<0) si--;
   }
-  for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
-#pragma simd
-      for (int i=si; i<=ei; ++i)
-        buf[p++]=src.x1f(k,j,i);
-    }
-  }
+  BufferUtility::Pack3DData(src.x1f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx2
   if(nb.ox1==0)      si=pmb->is,          ei=pmb->ie;
@@ -1520,13 +1426,7 @@ int BoundaryValues::LoadFieldBoundaryBufferSameLevel(FaceField &src, Real *buf,
     if(nb.ox2>0) ej++;
     else if(nb.ox2<0) sj--;
   }
-  for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
-#pragma simd
-      for (int i=si; i<=ei; ++i)
-        buf[p++]=src.x2f(k,j,i);
-    }
-  }
+  BufferUtility::Pack3DData(src.x2f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx3
   if(nb.ox2==0)      sj=pmb->js,          ej=pmb->je;
@@ -1540,13 +1440,7 @@ int BoundaryValues::LoadFieldBoundaryBufferSameLevel(FaceField &src, Real *buf,
     if(nb.ox3>0) ek++;
     else if(nb.ox3<0) sk--;
   }
-  for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
-#pragma simd
-      for (int i=si; i<=ei; ++i)
-        buf[p++]=src.x3f(k,j,i);
-    }
-  }
+  BufferUtility::Pack3DData(src.x3f, buf, si, ei, sj, ej, sk, ek, p);
 
   return p;
 }
@@ -1580,13 +1474,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(FaceField &src, Real *buf,
     else if(nb.ox1<0) si--;
   }
   pmr->RestrictFieldX1(src.x1f, pmr->coarse_b_.x1f, si, ei, sj, ej, sk, ek);
-  for (int k=sk; k<=ek; k++) {
-    for (int j=sj; j<=ej; j++) {
-#pragma simd
-      for (int i=si; i<=ei; i++)
-        buf[p++]=pmr->coarse_b_.x1f(k,j,i);
-    }
-  }
+  BufferUtility::Pack3DData(pmr->coarse_b_.x1f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx2
   if(nb.ox1==0)      si=pmb->cis,       ei=pmb->cie;
@@ -1601,13 +1489,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(FaceField &src, Real *buf,
     else if(nb.ox2<0) sj--;
   }
   pmr->RestrictFieldX2(src.x2f, pmr->coarse_b_.x2f, si, ei, sj, ej, sk, ek);
-  for (int k=sk; k<=ek; k++) {
-    for (int j=sj; j<=ej; j++) {
-#pragma simd
-      for (int i=si; i<=ei; i++)
-        buf[p++]=pmr->coarse_b_.x2f(k,j,i);
-    }
-  }
+  BufferUtility::Pack3DData(pmr->coarse_b_.x2f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx3
   if(nb.ox2==0)      sj=pmb->cjs,       ej=pmb->cje;
@@ -1622,13 +1504,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(FaceField &src, Real *buf,
     else if(nb.ox3<0) sk--;
   }
   pmr->RestrictFieldX3(src.x3f, pmr->coarse_b_.x3f, si, ei, sj, ej, sk, ek);
-  for (int k=sk; k<=ek; k++) {
-    for (int j=sj; j<=ej; j++) {
-#pragma simd
-      for (int i=si; i<=ei; i++)
-        buf[p++]=pmr->coarse_b_.x3f(k,j,i);
-    }
-  }
+  BufferUtility::Pack3DData(pmr->coarse_b_.x3f, buf, si, ei, sj, ej, sk, ek, p);
 
   return p;
 }
@@ -1684,13 +1560,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToFiner(FaceField &src, Real *buf,
   }
   else if(nb.ox3>0) sk=pmb->ke-cn, ek=pmb->ke;
   else              sk=pmb->ks,    ek=pmb->ks+cn;
-  for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
-#pragma simd
-      for (int i=si; i<=ei; ++i)
-        buf[p++]=src.x1f(k,j,i);
-    }
-  }
+  BufferUtility::Pack3DData(src.x1f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx2
   if(nb.ox1==0) {
@@ -1715,13 +1585,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToFiner(FaceField &src, Real *buf,
   }
   else if(nb.ox2>0) sj=pmb->je, ej=pmb->je+1;
   else              sj=pmb->js, ej=pmb->js+1;
-  for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
-#pragma simd
-      for (int i=si; i<=ei; ++i)
-        buf[p++]=src.x2f(k,j,i);
-    }
-  }
+  BufferUtility::Pack3DData(src.x2f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx3
   if(nb.ox2==0) {
@@ -1755,13 +1619,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToFiner(FaceField &src, Real *buf,
   }
   else if(nb.ox3>0) sk=pmb->ke, ek=pmb->ke+1;
   else              sk=pmb->ks, ek=pmb->ks+1;
-  for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
-#pragma simd
-      for (int i=si; i<=ei; ++i)
-        buf[p++]=src.x3f(k,j,i);
-    }
-  }
+  BufferUtility::Pack3DData(src.x3f, buf, si, ei, sj, ej, sk, ek, p);
 
   return p;
 }
@@ -1840,15 +1698,9 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
       }
     }
   }
-  else {
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
-#pragma simd
-        for (int i=si; i<=ei; ++i)
-          dst.x1f(k,j,i)=buf[p++];
-      }
-    }
-  }
+  else 
+    BufferUtility::Unpack3DData(buf, dst.x1f, si, ei, sj, ej, sk, ek, p);
+
   // bx2
   if(nb.ox1==0)      si=pmb->is,         ei=pmb->ie;
   else if(nb.ox1>0)  si=pmb->ie+1,       ei=pmb->ie+NGHOST;
@@ -1876,33 +1728,27 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
           dst.x2f(k_shift,j,i)=sign*buf[p++];
       }
     }
-  }
-  else {
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
-#pragma simd
+    if (nb.ox2 < 0) {  // interpolate B^theta across top pole
+      for (int k=sk; k<=ek; ++k) {
         for (int i=si; i<=ei; ++i)
-          dst.x2f(k,j,i)=buf[p++];
+          dst.x2f(k,pmb->js,i) = 0.5 * (dst.x2f(k,pmb->js-1,i) + dst.x2f(k,pmb->js+1,i));
+      }
+    }
+    if (nb.ox2 > 0) {  // interpolate B^theta across bottom pole
+      for (int k=sk; k<=ek; ++k) {
+        for (int i=si; i<=ei; ++i)
+          dst.x2f(k,pmb->je+1,i) = 0.5 * (dst.x2f(k,pmb->je,i) + dst.x2f(k,pmb->je+2,i));
       }
     }
   }
-  if (nb.polar and nb.ox2 < 0) {  // interpolate B^theta across top pole
-    for (int k=sk; k<=ek; ++k) {
-      for (int i=si; i<=ei; ++i)
-        dst.x2f(k,pmb->js,i) = 0.5 * (dst.x2f(k,pmb->js-1,i) + dst.x2f(k,pmb->js+1,i));
-    }
-  }
-  if (nb.polar and nb.ox2 > 0) {  // interpolate B^theta across bottom pole
-    for (int k=sk; k<=ek; ++k) {
-      for (int i=si; i<=ei; ++i)
-        dst.x2f(k,pmb->je+1,i) = 0.5 * (dst.x2f(k,pmb->je,i) + dst.x2f(k,pmb->je+2,i));
-    }
-  }
+  else
+    BufferUtility::Unpack3DData(buf, dst.x2f, si, ei, sj, ej, sk, ek, p);
   if(pmb->block_size.nx2==1) { // 1D
 #pragma simd
     for (int i=si; i<=ei; ++i)
       dst.x2f(sk,sj+1,i)=dst.x2f(sk,sj,i);
   }
+
   // bx3
   if(nb.ox2==0)      sj=pmb->js,         ej=pmb->je;
   else if(nb.ox2>0)  sj=pmb->je+1,       ej=pmb->je+NGHOST;
@@ -1931,15 +1777,8 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
       }
     }
   }
-  else {
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
-#pragma simd
-        for (int i=si; i<=ei; ++i)
-          dst.x3f(k,j,i)=buf[p++];
-      }
-    }
-  }
+  else 
+    BufferUtility::Unpack3DData(buf, dst.x3f, si, ei, sj, ej, sk, ek, p);
   if(pmb->block_size.nx3==1) { // 1D or 2D
     for (int j=sj; j<=ej; ++j) {
 #pragma simd
@@ -2001,15 +1840,8 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
       }
     }
   }
-  else {
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
-#pragma simd
-        for (int i=si; i<=ei; ++i)
-          pmr->coarse_b_.x1f(k,j,i) = buf[p++];
-      }
-    }
-  }
+  else 
+    BufferUtility::Unpack3DData(buf, pmr->coarse_b_.x1f, si, ei, sj, ej, sk, ek, p);
 
   // bx2
   if(nb.ox1==0) {
@@ -2040,15 +1872,8 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
       }
     }
   }
-  else {
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
-#pragma simd
-        for (int i=si; i<=ei; ++i)
-          pmr->coarse_b_.x2f(k,j,i) = buf[p++];
-      }
-    }
-  }
+  else
+    BufferUtility::Unpack3DData(buf, pmr->coarse_b_.x2f, si, ei, sj, ej, sk, ek, p);
 
   // bx3
   if(nb.ox2==0) {
@@ -2081,15 +1906,8 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
       }
     }
   }
-  else {
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
-#pragma simd
-        for (int i=si; i<=ei; ++i)
-          pmr->coarse_b_.x3f(k,j,i) = buf[p++];
-      }
-    }
-  }
+  else
+    BufferUtility::Unpack3DData(buf, pmr->coarse_b_.x3f, si, ei, sj, ej, sk, ek, p);
 
   return;
 }
@@ -2161,15 +1979,8 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
       }
     }
   }
-  else {
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
-#pragma simd
-        for (int i=si; i<=ei; ++i)
-          dst.x1f(k,j,i) = buf[p++];
-      }
-    }
-  }
+  else 
+    BufferUtility::Unpack3DData(buf, dst.x1f, si, ei, sj, ej, sk, ek, p);
 
   // bx2
   if(nb.ox1==0) {
@@ -2211,15 +2022,8 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
       }
     }
   }
-  else {
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
-#pragma simd
-        for (int i=si; i<=ei; ++i)
-          dst.x2f(k,j,i) = buf[p++];
-      }
-    }
-  }
+  else
+    BufferUtility::Unpack3DData(buf, dst.x2f, si, ei, sj, ej, sk, ek, p);
   if(pmb->block_size.nx2==1) { // 1D
 #pragma simd
     for (int i=si; i<=ei; ++i)
@@ -2274,15 +2078,8 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
       }
     }
   }
-  else {
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
-#pragma simd
-        for (int i=si; i<=ei; ++i)
-          dst.x3f(k,j,i) = buf[p++];
-      }
-    }
-  }
+  else 
+    BufferUtility::Unpack3DData(buf, dst.x3f, si, ei, sj, ej, sk, ek, p);
   if(pmb->block_size.nx3==1) { // 1D or 2D
     for (int j=sj; j<=ej; ++j) {
 #pragma simd
@@ -3475,83 +3272,87 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
   if(pmb->pmy_mesh->face_only==false) { // extend the ghost zone
     bis=pmb->is-NGHOST;
     bie=pmb->ie+NGHOST;
-    // note : this is temporary; Hydro and Field Boundary functions will be merged soon
-    if(HydroBoundary_[INNER_X2]==NULL && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
-    if(HydroBoundary_[OUTER_X2]==NULL && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
-    if(HydroBoundary_[INNER_X3]==NULL && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
-    if(HydroBoundary_[OUTER_X3]==NULL && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
+    if(BoundaryFunction_[INNER_X2]==NULL && pmb->block_size.nx2>1) bjs=pmb->js-NGHOST;
+    if(BoundaryFunction_[OUTER_X2]==NULL && pmb->block_size.nx2>1) bje=pmb->je+NGHOST;
+    if(BoundaryFunction_[INNER_X3]==NULL && pmb->block_size.nx3>1) bks=pmb->ks-NGHOST;
+    if(BoundaryFunction_[OUTER_X3]==NULL && pmb->block_size.nx3>1) bke=pmb->ke+NGHOST;
+  }
+  // Apply boundary function on inner-x1
+  if (BoundaryFunction_[INNER_X1] != NULL) {
+    BoundaryFunction_[INNER_X1](pmb, pdst, bfdst, pmb->is, pmb->ie, bjs,bje,bks,bke);
+    if(MAGNETIC_FIELDS_ENABLED) {
+      pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
+        pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
+    }
+    pmb->phydro->pf_eos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
+      pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
   }
 
-  if(FieldBoundary_[INNER_X1]!=NULL && MAGNETIC_FIELDS_ENABLED) {
-    FieldBoundary_[INNER_X1](pmb, pco, bfdst, pmb->is, pmb->ie, bjs, bje, bks, bke);
-    pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
-                                      pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
-  }
-  if(HydroBoundary_[INNER_X1]!=NULL) {
-    HydroBoundary_[INNER_X1](pmb, pco, pdst,  pmb->is, pmb->ie, bjs, bje, bks, bke);
+  // Apply boundary function on outer-x1
+  if (BoundaryFunction_[OUTER_X1] != NULL) {
+    BoundaryFunction_[OUTER_X1](pmb, pdst, bfdst, pmb->is, pmb->ie, bjs,bje,bks,bke);
+    if(MAGNETIC_FIELDS_ENABLED) {
+      pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
+        pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
+    }
     pmb->phydro->pf_eos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
-                                    pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
-  }
-
-  if(FieldBoundary_[OUTER_X1]!=NULL && MAGNETIC_FIELDS_ENABLED) {
-    FieldBoundary_[OUTER_X1](pmb, pco, bfdst, pmb->is, pmb->ie, bjs, bje, bks, bke);
-    pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
-                                      pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
-  }
-  if(HydroBoundary_[OUTER_X1]!=NULL) {
-    HydroBoundary_[OUTER_X1](pmb, pco, pdst,  pmb->is, pmb->ie, bjs, bje, bks, bke);
-    pmb->phydro->pf_eos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
-                                    pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
+      pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
   }
 
   if(pmb->block_size.nx2>1) { // 2D or 3D
-    if(FieldBoundary_[INNER_X2]!=NULL && MAGNETIC_FIELDS_ENABLED) {
-      FieldBoundary_[INNER_X2](pmb, pco, bfdst, bis, bie, pmb->js, pmb->je, bks, bke);
-      pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
-                                        bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
-    }
-    if(HydroBoundary_[INNER_X2]!=NULL) {
-      HydroBoundary_[INNER_X2](pmb, pco, pdst,  bis, bie, pmb->js, pmb->je, bks, bke);
+
+    // Apply boundary function on inner-x2
+    if (BoundaryFunction_[INNER_X2] != NULL) {
+      BoundaryFunction_[INNER_X2](pmb, pdst, bfdst, bis,bie, pmb->js, pmb->je, bks,bke);
+      if(MAGNETIC_FIELDS_ENABLED) {
+        pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
+          bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
+      }
       pmb->phydro->pf_eos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
-                                      bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
+        bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
     }
-    if(FieldBoundary_[OUTER_X2]!=NULL && MAGNETIC_FIELDS_ENABLED) {
-      FieldBoundary_[OUTER_X2](pmb, pco, bfdst, bis, bie, pmb->js, pmb->je, bks, bke);
-      pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
-                                        bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
-    }
-    if(HydroBoundary_[OUTER_X2]!=NULL) {
-      HydroBoundary_[OUTER_X2](pmb, pco, pdst,  bis, bie, pmb->js, pmb->je, bks, bke);
+
+    // Apply boundary function on outer-x2
+    if (BoundaryFunction_[OUTER_X2] != NULL) {
+      BoundaryFunction_[OUTER_X2](pmb, pdst, bfdst, bis,bie, pmb->js, pmb->je, bks,bke);
+      if(MAGNETIC_FIELDS_ENABLED) {
+        pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
+          bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
+      }
       pmb->phydro->pf_eos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
-                                      bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
+        bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
     }
   }
+
   if(pmb->block_size.nx3>1) { // 3D
     if(pmb->pmy_mesh->face_only==false) {
       bjs=pmb->js-NGHOST;
       bje=pmb->je+NGHOST;
     }
-    if(FieldBoundary_[INNER_X3]!=NULL && MAGNETIC_FIELDS_ENABLED) {
-      FieldBoundary_[INNER_X3](pmb, pco, bfdst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
-      pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
-                                        bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
-    }
-    if(HydroBoundary_[INNER_X3]!=NULL) {
-      HydroBoundary_[INNER_X3](pmb, pco, pdst,  bis, bie, bjs, bje, pmb->ks, pmb->ke);
+
+    // Apply boundary function on inner-x3
+    if (BoundaryFunction_[INNER_X3] != NULL) {
+      BoundaryFunction_[INNER_X3](pmb, pdst, bfdst, bis,bie,bjs,bje, pmb->ks, pmb->ke);
+      if(MAGNETIC_FIELDS_ENABLED) {
+        pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
+          bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
+      }
       pmb->phydro->pf_eos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
-                                        bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
+        bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
     }
-    if(FieldBoundary_[OUTER_X3]!=NULL && MAGNETIC_FIELDS_ENABLED) {
-      FieldBoundary_[OUTER_X3](pmb, pco, bfdst, bis, bie, bjs, bje, pmb->ks, pmb->ke);
-      pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
-                                        bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
-    }
-    if(HydroBoundary_[OUTER_X3]!=NULL) {
-      HydroBoundary_[OUTER_X3](pmb, pco, pdst,  bis, bie, bjs, bje, pmb->ks, pmb->ke);
+
+    // Apply boundary function on outer-x3
+    if (BoundaryFunction_[OUTER_X3] != NULL) {
+      BoundaryFunction_[OUTER_X3](pmb, pdst, bfdst, bis,bie,bjs,bje, pmb->ks, pmb->ke);
+      if(MAGNETIC_FIELDS_ENABLED) {
+        pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
+          bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
+      }
       pmb->phydro->pf_eos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
-                                      bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
+        bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
     }
   }
+
   return;
 }
 
@@ -3565,16 +3366,6 @@ unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2)
   unsigned int ux2=(unsigned)(ox2+1);
   unsigned int ux3=(unsigned)(ox3+1);
   return (ux1<<6) | (ux2<<4) | (ux3<<2) | (fi1<<1) | fi2;
-}
-
-
-//--------------------------------------------------------------------------------------
-//! \fn unsigned int CreateMPITag(int lid, int flag, int phys, int bufid)
-//  \brief calculate an MPI tag
-unsigned int CreateMPITag(int lid, int flag, int phys, int bufid)
-{
-// tag = local id of destination (18) + flag (2) + physics (4) + bufid(7)
-  return (lid<<13) | (flag<<11) | (phys<<7) | bufid;
 }
 
 
@@ -3833,51 +3624,33 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
 
     // Apply physical boundaries
     if(nb.ox1==0) {
-      if(HydroBoundary_[INNER_X1]!=NULL) {
-        HydroBoundary_[INNER_X1](pmb, pmb->pcoarsec, pmr->coarse_prim_,
+      if(BoundaryFunction_[INNER_X1]!=NULL) {
+        BoundaryFunction_[INNER_X1](pmb, pmr->coarse_prim_, pmr->coarse_b_,
                                  pmb->cis, pmb->cie, sj, ej, sk, ek);
-        if(MAGNETIC_FIELDS_ENABLED)
-          FieldBoundary_[INNER_X1](pmb, pmb->pcoarsec, pmr->coarse_b_,
-                                   pmb->cis, pmb->cie, sj, ej, sk, ek);
       }
-      if(HydroBoundary_[OUTER_X1]!=NULL) {
-        HydroBoundary_[OUTER_X1](pmb, pmb->pcoarsec, pmr->coarse_prim_,
+      if(BoundaryFunction_[OUTER_X1]!=NULL) {
+        BoundaryFunction_[OUTER_X1](pmb, pmr->coarse_prim_, pmr->coarse_b_,
                                  pmb->cis, pmb->cie, sj, ej, sk, ek);
-        if(MAGNETIC_FIELDS_ENABLED)
-          FieldBoundary_[OUTER_X1](pmb, pmb->pcoarsec, pmr->coarse_b_,
-                                   pmb->cis, pmb->cie, sj, ej, sk, ek);
       }
     }
-    if(nb.ox2==0) {
-      if(HydroBoundary_[INNER_X2]!=NULL) {
-        HydroBoundary_[INNER_X2](pmb, pmb->pcoarsec, pmr->coarse_prim_,
+    if(nb.ox2==0 && pmb->block_size.nx2 > 1) {
+      if(BoundaryFunction_[INNER_X2]!=NULL) {
+        BoundaryFunction_[INNER_X2](pmb, pmr->coarse_prim_, pmr->coarse_b_,
                                  si, ei, pmb->cjs, pmb->cje, sk, ek);
-        if(MAGNETIC_FIELDS_ENABLED)
-          FieldBoundary_[INNER_X2](pmb, pmb->pcoarsec, pmr->coarse_b_,
-                                   si, ei, pmb->cjs, pmb->cje, sk, ek);
       }
-      if(HydroBoundary_[OUTER_X2]!=NULL) {
-        HydroBoundary_[OUTER_X2](pmb, pmb->pcoarsec, pmr->coarse_prim_,
+      if(BoundaryFunction_[OUTER_X2]!=NULL) {
+        BoundaryFunction_[OUTER_X2](pmb, pmr->coarse_prim_, pmr->coarse_b_,
                                  si, ei, pmb->cjs, pmb->cje, sk, ek);
-        if(MAGNETIC_FIELDS_ENABLED)
-          FieldBoundary_[OUTER_X2](pmb, pmb->pcoarsec, pmr->coarse_b_,
-                                   si, ei, pmb->cjs, pmb->cje, sk, ek);
       }
     }
-    if(nb.ox3==0) {
-      if(HydroBoundary_[INNER_X3]!=NULL) {
-        HydroBoundary_[INNER_X3](pmb, pmb->pcoarsec, pmr->coarse_prim_,
+    if(nb.ox3==0 && pmb->block_size.nx3 > 1) {
+      if(BoundaryFunction_[INNER_X3]!=NULL) {
+        BoundaryFunction_[INNER_X3](pmb, pmr->coarse_prim_, pmr->coarse_b_,
                                  si, ei, sj, ej, pmb->cks, pmb->cke);
-        if(MAGNETIC_FIELDS_ENABLED)
-          FieldBoundary_[INNER_X3](pmb, pmb->pcoarsec, pmr->coarse_b_,
-                                   si, ei, sj, ej, pmb->cks, pmb->cke);
       }
-      if(HydroBoundary_[OUTER_X3]!=NULL) {
-        HydroBoundary_[OUTER_X3](pmb, pmb->pcoarsec, pmr->coarse_prim_,
+      if(BoundaryFunction_[OUTER_X3]!=NULL) {
+        BoundaryFunction_[OUTER_X3](pmb, pmr->coarse_prim_, pmr->coarse_b_,
                                  si, ei, sj, ej, pmb->cks, pmb->cke);
-        if(MAGNETIC_FIELDS_ENABLED)
-          FieldBoundary_[OUTER_X3](pmb, pmb->pcoarsec, pmr->coarse_b_,
-                                   si, ei, sj, ej, pmb->cks, pmb->cke);
       }
     }
 

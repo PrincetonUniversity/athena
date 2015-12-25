@@ -19,8 +19,8 @@
 #include "meshblocktree.hpp"
 #include "outputs/wrapper.hpp"
 #include "task_list.hpp"
-#include "mesh_refinement.hpp"
 #include "bvals/bvals.hpp"
+#include "mesh_refinement/mesh_refinement.hpp"
 
 // Forward declarations
 class ParameterInput;
@@ -89,7 +89,7 @@ private:
 public:
   MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_size,
             enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin);
-  MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, LogicalLocation *llist,
+  MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, LogicalLocation iloc,
   IOWrapper& resfile, IOWrapperSize_t offset, Real icost, int *ranklist, int *nslist);
   ~MeshBlock();
   size_t GetBlockSizeInBytes(void);
@@ -122,27 +122,35 @@ public:
 class Mesh {
 private:
   int root_level, max_level, current_level;
-  int nbtotal, nbstart, nbend;
+  int nbtotal;
   int maxneighbor_;
   int num_mesh_threads_;
-  int *nslist, *nblist, *ranklist;
+  int *nslist, *ranklist, *nblist;
   Real *costlist;
-  Real MeshGeneratorX1(Real x, RegionSize rs);
-  Real MeshGeneratorX2(Real x, RegionSize rs);
-  Real MeshGeneratorX3(Real x, RegionSize rs);
+  int *nref, *nderef, *bnref, *bnderef, *rdisp, *brdisp, *ddisp, *bddisp;
   LogicalLocation *loclist;
   MeshBlockTree tree;
   long int nrbx1, nrbx2, nrbx3;
 
+  Real MeshGeneratorX1(Real x, RegionSize rs);
+  Real MeshGeneratorX2(Real x, RegionSize rs);
+  Real MeshGeneratorX3(Real x, RegionSize rs);
+
+  BValFunc_t BoundaryFunction_[6];
+  AMRFlag_t AMRFlag_;
+
   void MeshTest(int dim);
+  void LoadBalancing(Real *clist, int *rlist, int *slist, int *nlist, int nb);
 
   friend class RestartOutput;
   friend class MeshBlock;
   friend class BoundaryValues;
   friend class Coordinates;
+  friend class MeshRefinement;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
+
 public:
   Mesh(ParameterInput *pin, int test_flag=0);
   Mesh(ParameterInput *pin, IOWrapper &resfile, int test_flag=0);
@@ -161,9 +169,12 @@ public:
   int64_t GetTotalCells(void);
   int GetNumMeshThreads() const {return num_mesh_threads_;}
   void Initialize(int res_flag, ParameterInput *pin);
+  void SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
+                                 enum BoundaryFlag *block_bcs);
   void UpdateOneStep(void);
   void ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin); // in /pgen
   void NewTimeStep(void);
+  void AdaptiveMeshRefinement(ParameterInput *pin);
   MeshBlock* FindMeshBlock(int tgid);
   void TestConservation(void);
 };

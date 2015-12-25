@@ -98,7 +98,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
   // the size of an element of the ID list
   listsize=sizeof(int)+sizeof(LogicalLocation)+sizeof(Real)+sizeof(IOWrapperSize_t);
 
-  int mynb=pM->nbend-pM->nbstart+1;
+  int mynb=pM->nblist[Globals::my_rank];
   blocksize=new IOWrapperSize_t[pM->nbtotal+1];
   offset=new IOWrapperSize_t[mynb];
 
@@ -144,17 +144,19 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
   }
 #endif
 
+  int nbs=pM->nslist[Globals::my_rank];
+  int nbe=nbs+pM->nblist[Globals::my_rank]-1;
   // blocksize[0] = offset to the end of the header
   IOWrapperSize_t firstoffset=blocksize[0]+listsize*pM->nbtotal; // end of the id list
-  for(i=0;i<pM->nbstart;i++)
+  for(i=0;i<nbs;i++)
     firstoffset+=blocksize[i+1];
   offset[0]=firstoffset;
 //  offset[0]=blocksize[0]+listsize*pM->nbtotal;
-  for(i=pM->nbstart;i<pM->nbend;i++) // calculate the offsets
-    offset[i-pM->nbstart+1]=offset[i-pM->nbstart]+blocksize[i+1]; // blocksize[i]=the size of i-1th block
+  for(i=nbs;i<nbe;i++) // calculate the offsets
+    offset[i-nbs+1]=offset[i-nbs]+blocksize[i+1]; // blocksize[i]=the size of i-1th block
 
   // seek to the head of the ID list of this process
-  resfile.Seek(blocksize[0]+pM->nbstart*listsize);
+  resfile.Seek(blocksize[0]+nbs*listsize);
 
   pmb=pM->pblock;
   i=0;
@@ -192,7 +194,7 @@ void RestartOutput::Finalize(ParameterInput *pin)
 
 void RestartOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 {
-  resfile.Seek(offset[pmb->gid - pmb->pmy_mesh->nbstart]);
+  resfile.Seek(offset[pmb->lid]);
   resfile.Write(&(pmb->block_size), sizeof(RegionSize), 1);
   resfile.Write(pmb->block_bcs, sizeof(int), 6);
   resfile.Write(pmb->phydro->u.GetArrayPointer(),sizeof(Real),

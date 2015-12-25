@@ -32,7 +32,7 @@ private:
   Hydro *pmy_hydro_;  // ptr to Hydro containing this Viscosity 
   AthenaArray<Real> area,area_p1,vol; //
   AthenaArray<Real> visflx_, jvisflx_j_, kvisflx_k_; // stress tensor at the cell face 
-  AthenaArray<Real> dx_,dy_,dz_; // velocity dirivative for x,y,z directions at each face 
+  AthenaArray<Real> dx_,dy_,dz_; // velocity derivatives for x,y,z directions at each face 
   AthenaArray<Real> divv_; // divv
   Real nuiso_; 
 };

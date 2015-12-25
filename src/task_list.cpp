@@ -151,6 +151,8 @@ TaskList::TaskList(Mesh *pm)
 
   // New timestep on mesh block
   AddTask(2,NEW_DT,2,PHY_BVAL);
+  if(pmy_mesh_->adaptive==true)
+    AddTask(2,AMR_FLAG,2,PHY_BVAL);
 
 }
 
@@ -417,6 +419,12 @@ enum TaskStatus NewBlockTimeStep(MeshBlock *pmb, unsigned long int task_id, int 
   return TASK_SUCCESS;
 }
 
+enum TaskStatus CheckRefinement(MeshBlock *pmb, unsigned long int task_id, int step)
+{
+  pmb->pmr->CheckRefinementCondition();
+  return TASK_SUCCESS;
+}
+
 } // namespace TaskFunctions
 
 
@@ -491,6 +499,10 @@ void TaskList::AddTask(int stp_t,unsigned long int id,int stp_d,unsigned long in
 
   case (NEW_DT):
     task_list_[ntasks].TaskFunc=TaskFunctions::NewBlockTimeStep;
+    break;
+
+  case (AMR_FLAG):
+    task_list_[ntasks].TaskFunc=TaskFunctions::CheckRefinement;
     break;
 
   default:

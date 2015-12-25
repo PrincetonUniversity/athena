@@ -19,13 +19,9 @@
 #include "../hydro/eos/eos.hpp"
 
 // Declarations
-void InnerHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
+void InnerBC(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke);
-void OuterHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
-    int is, int ie, int js, int je, int ks, int ke);
-void InnerField(MeshBlock *pmb, Coordinates *pco, FaceField &bb,
-    int is, int ie, int js, int je, int ks, int ke);
-void OuterField(MeshBlock *pmb, Coordinates *pco, FaceField &bb,
+void OuterBC(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke);
 static Real calculate_l_from_r_peak(Real r);
 static Real calculate_r_peak_from_l(Real l_target, Real r_min, Real r_max);
@@ -443,34 +439,13 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   bb.DeleteAthenaArray();
 
   // Enroll boundary functions
-  pmb->pbval->EnrollHydroBoundaryFunction(INNER_X1, InnerHydro);
-  pmb->pbval->EnrollHydroBoundaryFunction(OUTER_X1, OuterHydro);
-  if (MAGNETIC_FIELDS_ENABLED)
-  {
-    pmb->pbval->EnrollFieldBoundaryFunction(INNER_X1, InnerField);
-    pmb->pbval->EnrollFieldBoundaryFunction(OUTER_X1, OuterField);
-  }
+  pmb->pbval->EnrollUserBoundaryFunction(INNER_X1, InnerBC);
+  pmb->pbval->EnrollUserBoundaryFunction(OUTER_X1, OuterBC);
   return;
 }
 
-// Inner hydro boundary condition
-// TODO: implement when not hacking inversion
-void InnerHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
-    int is, int ie, int js, int je, int ks, int ke)
-{
-  return;
-}
-
-// Outer hydro boundary condition
-// TODO: implement when not hacking inversion
-void OuterHydro(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &cons,
-    int is, int ie, int js, int je, int ks, int ke)
-{
-  return;
-}
-
-// Inner field boundary condition
-void InnerField(MeshBlock *pmb, Coordinates *pco, FaceField &bb,
+// Inner boundary condition
+void InnerBC(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k = ks; k <= ke; ++k)
@@ -488,8 +463,8 @@ void InnerField(MeshBlock *pmb, Coordinates *pco, FaceField &bb,
   return;
 }
 
-// Outer field boundary condition
-void OuterField(MeshBlock *pmb, Coordinates *pco, FaceField &bb,
+// Outer boundary condition
+void OuterBC(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k = ks; k <= ke; ++k)

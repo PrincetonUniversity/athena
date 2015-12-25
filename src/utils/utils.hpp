@@ -5,7 +5,7 @@
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
 // See LICENSE file for full public license information.
 //======================================================================================
-//! \file globals.hpp
+//! \file utils.hpp
 //  \brief prototypes of utility functions in utils/*.cpp
 //======================================================================================
 

@@ -25,7 +25,7 @@ tlim       = 300.0    # time limit
 nx1        = 300      # Number of zones in X1-direction
 x1min      = 0.0      # minimum value of X1
 x1max      = 60.0     # maximum value of X1
-ix1_bc     = outflow  # inner-X1 boundary flag
+ix1_bc     = user     # inner-X1 boundary flag
 ox1_bc     = outflow  # outer-X1 boundary flag
 
 nx2        = 250      # Number of zones in X2-direction

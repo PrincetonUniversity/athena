@@ -1,0 +1,44 @@
+<comment>
+problem   = double Mach reflection
+reference = Woodward, P. & Colella, P., JCP 54, 115 (1984)
+configure = --prob=dmr
+
+<job>
+problem_id = amr       # problem ID: basename of output filenames
+
+<output1>
+file_type = hdf5              # Binary data dump
+dt      = 0.01              # time increment between outputs
+variable     = prim
+
+<time>
+cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1        # cycle limit
+tlim       = 0.2       # time limit
+
+<mesh>
+nx1        = 256       # Number of zones in X-direction
+x1min      = 0.0       # minimum value of X
+x1max      = 4.0       # maximum value of X
+ix1_bc     = user      # inner-X1 boundary flag
+ox1_bc     = outflow   # outer-X1 boundary flag
+
+nx2        = 64        # Number of zones in Y-direction
+x2min      = 0.0       # minimum value of Y
+x2max      = 1.0       # maximum value of Y
+ix2_bc     = user      # inner-X2 boundary flag
+ox2_bc     = user      # outer-X2 boundary flag
+
+nx3        = 1         # Number of zones in X3-direction
+x3min      = -0.5      # minimum value of X3
+x3max      = 0.5       # maximum value of X3
+
+refinement = adaptive
+numlevel   = 3
+
+<meshblock>
+nx1        = 16
+nx2        = 16
+
+<hydro>
+gamma      = 1.4       # gamma = C_p/C_v

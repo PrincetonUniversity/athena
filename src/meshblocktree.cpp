@@ -18,18 +18,15 @@
 // MeshBlockTree stores the logical grid structure, and is used for neighbor searches,
 // assigning global IDs, etc.  Level is defined as "logical level", where the logical
 // root (single block) is 0; the physical root (user-specified root level) may be
-// different.
 //======================================================================================
 
-// C++ headers
+
+#include "athena.hpp"
+#include "meshblocktree.hpp"
+#include "globals.hpp"
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-
-// Athena++ classes headers
-#include "athena.hpp"
-#include "meshblocktree.hpp"
-#include "bvals/bvals.hpp"
 
 //--------------------------------------------------------------------------------------
 //! \fn MeshBlockTree::MeshBlockTree()
@@ -56,8 +53,8 @@ MeshBlockTree::MeshBlockTree()
 MeshBlockTree::MeshBlockTree(MeshBlockTree *parent, int ox, int oy, int oz)
 {
   flag=true;
-  gid=-1;
   pparent=parent;
+  gid=pparent->gid;
   loc.lx1=(parent->loc.lx1<<1)+ox;
   loc.lx2=(parent->loc.lx2<<1)+oy;
   loc.lx3=(parent->loc.lx3<<1)+oz;
@@ -102,7 +99,7 @@ void MeshBlockTree::CreateRootGrid(long int nx, long int ny, long int nz, int nl
         if((loc.lx2*2+j)*(1L<<(nl-loc.level-1)) < ny) {
           for(int i=0; i<=1; i++) {
             if((loc.lx1*2+i)*(1L<<(nl-loc.level-1)) < nx) {
-              flag=false; // if there is a leaf, this is not a leaf
+              flag=false; // if there is a leaf, this is a node
               gid=-1;
               pleaf[k][j][i] = new MeshBlockTree(this, i, j, k);
               pleaf[k][j][i]->CreateRootGrid(nx, ny, nz, nl);
@@ -118,33 +115,35 @@ void MeshBlockTree::CreateRootGrid(long int nx, long int ny, long int nz, int nl
 
 //--------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc,
-//           int dim, int* mesh_bcs, long int rbx, long int rby, long int rbz, int rl)
+//   int dim, enum BoundaryFlag* mesh_bcs, long int rbx, long int rby, long int rbz,
+//   int rl, int &nnew)
 //  \brief add a MeshBlock to the tree, also creates neighboring blocks
 void MeshBlockTree::AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc, int dim,
-  enum BoundaryFlag* mesh_bcs, long int rbx, long int rby, long int rbz, int rl)
+                                 enum BoundaryFlag* mesh_bcs, long int rbx, long int rby,
+                                 long int rbz, int rl, int &nnew)
 {
   int mx, my, mz;
   if(loc.level==rloc.level) // done
     return;
   if(flag==true) // leaf -> create the finer level
-    Refine(root,dim,mesh_bcs,rbx,rby,rbz,rl);
+    Refine(root,dim,mesh_bcs,rbx,rby,rbz,rl,nnew);
   // get leaf indexes
   int sh = rloc.level-loc.level-1;
   mx=(int)((rloc.lx1>>sh)&1L);
   my=(int)((rloc.lx2>>sh)&1L);
   mz=(int)((rloc.lx3>>sh)&1L);
-  pleaf[mz][my][mx]->AddMeshBlock(root,rloc,dim,mesh_bcs,rbx,rby,rbz,rl);
+  pleaf[mz][my][mx]->AddMeshBlock(root,rloc,dim,mesh_bcs,rbx,rby,rbz,rl,nnew);
+
   return;
 }
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void MeshBlockTree::AddMeshBlockWithoutRefine(MeshBlockTree& root,
-//                          LogicalLocation rloc, int dim, int* mesh_bcs,
+//! \fn void MeshBlockTree::AddMeshBlockWithoutRefine(LogicalLocation rloc,
 //                          long int rbx, long int rby, long int rbz, int rl)
 //  \brief add a MeshBlock to the tree without refinement, used in restarting
-void MeshBlockTree::AddMeshBlockWithoutRefine(MeshBlockTree& root, LogicalLocation rloc,
-  int dim, enum BoundaryFlag* mesh_bcs, long int rbx, long int rby, long int rbz, int rl)
+void MeshBlockTree::AddMeshBlockWithoutRefine(LogicalLocation rloc,
+                    long int rbx, long int rby, long int rbz, int rl)
 {
   int mx, my, mz;
   if(loc.level==rloc.level) // done
@@ -158,18 +157,20 @@ void MeshBlockTree::AddMeshBlockWithoutRefine(MeshBlockTree& root, LogicalLocati
   mz=(int)((rloc.lx3>>sh)&1L);
   if(pleaf[mz][my][mx]==NULL)
     pleaf[mz][my][mx] = new MeshBlockTree(this, mx, my, mz);
-  pleaf[mz][my][mx]->AddMeshBlockWithoutRefine(root,rloc,dim,mesh_bcs,rbx,rby,rbz,rl);
+  pleaf[mz][my][mx]->AddMeshBlockWithoutRefine(rloc,rbx,rby,rbz,rl);
   return;
 }
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void MeshBlockTree::Refine(MeshBlockTree& root, int dim, int* mesh_bcs,
-//                             long int rbx, long int rby, long int rbz, int rl)
+//! \fn void MeshBlockTree::Refine(MeshBlockTree& root, int dim,
+//           enum BoundaryFlag* mesh_bcs, long int rbx, long int rby, long int rbz,
+//           int rl, int &nnew)
 //  \brief make finer leaves
 void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh_bcs,
-                       long int rbx, long int rby, long int rbz, int rl)
+                    long int rbx, long int rby, long int rbz, int rl, int &nnew)
 {
+  if(flag==false) return;
   long int nx,ny,nz,nxmax,nymax,nzmax;
   long int ox, oy, oz, oxmin, oxmax, oymin, oymax, ozmin, ozmax;
   int xmax,ymax,zmax;
@@ -181,11 +182,12 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
   else       ymax=0, oymin=0,  oymax=0, nymax=1;
   if(dim==3) zmax=1, ozmin=-1, ozmax=1, nzmax=(rbz<<(loc.level-rl));
   else       zmax=0, ozmin=0,  ozmax=0, nzmax=1;
-
   for(int k=0; k<=zmax; k++) {
     for(int j=0; j<=ymax; j++) {
-      for(int i=0; i<=xmax; i++)
+      for(int i=0; i<=xmax; i++) {
         pleaf[k][j][i] = new MeshBlockTree(this, i, j, k);
+        nnew++;
+      }
     }
   }
 
@@ -220,53 +222,94 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
           if(mesh_bcs[OUTER_X1]!=PERIODIC_BNDRY) continue;
           else nloc.lx1=0;
         }
-        root.AddMeshBlock(root,nloc,dim,mesh_bcs,rbx,rby,rbz,rl);
+        root.AddMeshBlock(root,nloc,dim,mesh_bcs,rbx,rby,rbz,rl,nnew);
       }
     }
   }
+  // this block is not a leaf anymore
+  flag=false;
   gid=-1;
-  flag=false; // this block is not a leaf anymore
+  nnew--;
   return;
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void MeshBlockTree::Derefine(void)
-//  \brief delete leaves
-void MeshBlockTree::Derefine(void)
+//! \fn void MeshBlockTree::Derefine(MeshBlockTree& root, int dim,
+//                                   enum BoundaryFlag* mesh_bcs, long int rbx,
+//                                   long int rby, long int rbz, int rl, int &ndel)
+//  \brief destroy leaves and make this block a leaf
+void MeshBlockTree::Derefine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh_bcs,
+                    long int rbx, long int rby, long int rbz, int rl, int &ndel)
 {
-  for(int k=0; k<=1; k++) {
-    for(int j=0; j<=1; j++) {
-      for(int i=0; i<=1; i++) {
-        if(pleaf[k][j][i]!=NULL)
-          delete pleaf[k][j][i];
+  int ec=0;
+  int s2=0, e2=0, s3=0, e3=0;
+  if(dim>=2) s2=-1, e2=1;
+  if(dim==3) s3=-1, e3=1;
+  for(int ox3=s3; ox3<=e3; ox3++) {
+    for(int ox2=s2; ox2<=e2; ox2++) {
+      for(int ox1=-1; ox1<=1; ox1++) {
+        MeshBlockTree *bt=
+          root.FindNeighbor(loc,ox1,ox2,ox3,mesh_bcs,rbx,rby,rbz,rl,true);
+        if(bt!=NULL) {
+          if(bt->flag==false) {
+            int lis, lie, ljs, lje, lks, lke;
+            if(ox1==-1)       lis=lie=1;
+            else if(ox1==1)   lis=lie=0;
+            else              lis=0, lie=1;
+            if(dim>=2) {
+              if(ox2==-1)     ljs=lje=1;
+              else if(ox2==1) ljs=lje=0;
+              else            ljs=0, lje=1;
+            }
+            else              ljs=lje=0;
+            if(dim==3) {
+              if(ox3==-1)     lks=lke=1;
+              else if(ox3==1) lks=lke=0;
+              else            lks=0, lke=1;
+            }
+            else              lks=lke=0;
+            for(int lk=lks; lk<=lke; lk++) {
+              for(int lj=ljs; lj<=lje; lj++) {
+                for(int li=lis; li<=lie; li++) {
+                  if(bt->pleaf[lk][lj][li]->flag==false) return;
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
-  flag=true; // this block is now a leaf
-  // need to recalculate gid
+
+  gid=pleaf[0][0][0]->gid; // inherit the first leaf's GID
+  for(int k=0; k<=e3; k++) {
+    for(int j=0; j<=e2; j++) {
+      for(int i=0; i<=1; i++) {
+        delete pleaf[k][j][i];
+        pleaf[k][j][i]=NULL;
+        ndel++;
+      }
+    }
+  }
+  flag=true; // now this is a leaf
+  ndel--;
   return;
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void MeshBlockTree::AssignGID(int& id)
-//  \brief assign IDs to the leaves and count the total number of the blocks
-void MeshBlockTree::AssignGID(int& id)
+//! \fn void MeshBlockTree::CountMeshBlock(int& count)
+//  \brief creates the Location list sorted by Z-ordering
+void MeshBlockTree::CountMeshBlock(int& count)
 {
-  if(pparent==NULL) // clear id if this is the root of the tree
-    id=0;
-
-  if(flag==true) {
-    gid=id;
-    id++;
-  }
+  if(pparent==NULL) count=0;
+  if(flag==true)
+    count++;
   else {
-    gid=-1;
-
     for(int k=0; k<=1; k++) {
       for(int j=0; j<=1; j++) {
         for(int i=0; i<=1; i++) {
           if(pleaf[k][j][i]!=NULL)
-            pleaf[k][j][i]->AssignGID(id); // depth-first search
+            pleaf[k][j][i]->CountMeshBlock(count);
         }
       }
     }
@@ -276,13 +319,17 @@ void MeshBlockTree::AssignGID(int& id)
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void MeshBlockTree::GetLocationList(LogicalLocation *list, int& count)
+//! \fn void MeshBlockTree::GetMeshBlockList(LogicalLocation *list,
+//                                           int *pglist, int& count)
 //  \brief creates the Location list sorted by Z-ordering
-void MeshBlockTree::GetLocationList(LogicalLocation *list, int& count)
+void MeshBlockTree::GetMeshBlockList(LogicalLocation *list, int *pglist, int& count)
 {
   if(pparent==NULL) count=0;
   if(flag==true) {
     list[count]=loc;
+    if(pglist!=NULL)
+      pglist[count]=gid;
+    gid=count;
     count++;
   }
   else {
@@ -290,7 +337,7 @@ void MeshBlockTree::GetLocationList(LogicalLocation *list, int& count)
       for(int j=0; j<=1; j++) {
         for(int i=0; i<=1; i++) {
           if(pleaf[k][j][i]!=NULL)
-            pleaf[k][j][i]->GetLocationList(list, count);
+            pleaf[k][j][i]->GetMeshBlockList(list, pglist, count);
         }
       }
     }
@@ -301,12 +348,15 @@ void MeshBlockTree::GetLocationList(LogicalLocation *list, int& count)
 
 //--------------------------------------------------------------------------------------
 //! \fn MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1,
-//      int ox2, int ox3, int *bcs, long int rbx, long int rby, long int rbz, int rl)
+//                                    int ox2, int ox3, enum BoundaryFlag* bcs,
+//                                    long int rbx, long int rby, long int rbz, int rl)
 //  \brief find a neighboring block, called from the root of the tree
 //         If it is coarser or same level, return the pointer to that block.
 //         If it is a finer block, return the pointer to its parent.
-MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int ox2, int ox3,
-  enum BoundaryFlag* bcs, long int rbx, long int rby, long int rbz, int rl)
+//         Note that this function must be called on a completed tree only
+MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int ox2,
+               int ox3, enum BoundaryFlag* bcs, long int rbx, long int rby, long int rbz,
+               int rl, bool amrflag)
 {
   std::stringstream msg;
   long int lx, ly, lz;
@@ -389,10 +439,28 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
   if(ox3<0) oz=1;
   if(bt->pleaf[oz][oy][ox]->flag==true)
     return bt;  // return this block
-  msg << "### FATAL ERROR in FindNeighbor" << std::endl
-      << "Neighbor search failed. The Block Tree is broken." << std::endl;
-  throw std::runtime_error(msg.str().c_str());
-  return NULL;
+  if(amrflag==false) {
+    msg << "### FATAL ERROR in FindNeighbor" << std::endl
+        << "Neighbor search failed. The Block Tree is broken." << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  return bt;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn MeshBlockTree* MeshBlockTree::FindMeshBlock(LogicalLocation tloc)
+//  \brief find a MeshBlock with tloc and return a pointer
+MeshBlockTree* MeshBlockTree::FindMeshBlock(LogicalLocation tloc)
+{
+  if(tloc.level==loc.level) return this;
+  // get leaf indexes
+  int sh = tloc.level-loc.level-1;
+  int mx=(int)((tloc.lx1>>sh)&1L);
+  int my=(int)((tloc.lx2>>sh)&1L);
+  int mz=(int)((tloc.lx3>>sh)&1L);
+  if(pleaf[mz][my][mx]==NULL) return NULL;
+  else return pleaf[mz][my][mx]->FindMeshBlock(tloc);
 }
 
 
