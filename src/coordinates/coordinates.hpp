@@ -38,6 +38,7 @@ public:
   //note: only x1s2 and x1s3 in spherical and schwarzschild coordinates are non trivial
   AthenaArray<Real> x1s2, x1s3, x2s1, x2s3, x3s1, x3s2; // area averaged positions
 
+  void IdentifyPoles(bool *ppole_top, bool *ppole_bottom);
   void AllocateAndSetBasicCoordinates(void);
   void DeleteBasicCoordinates(void);
 
@@ -180,7 +181,6 @@ public:
     void FluxToGlobal3(const int k, const int j, const int il, const int iu,
         const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
         AthenaArray<Real> &flux);
-    void IdentifyPoles(bool *ppole_top, bool *ppole_bottom);
     Real DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real by, Real bz);
     void MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3,
         Real *pt, Real *px, Real *py, Real *pz);
