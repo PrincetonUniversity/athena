@@ -38,6 +38,7 @@ public:
   //note: only x1s2 and x1s3 in spherical and schwarzschild coordinates are non trivial
   AthenaArray<Real> x1s2, x1s3, x2s1, x2s3, x3s1, x3s2; // area averaged positions
 
+  void IdentifyPoles(bool *ppole_top, bool *ppole_bottom);
   void AllocateAndSetBasicCoordinates(void);
   void DeleteBasicCoordinates(void);
 
@@ -311,6 +312,16 @@ private:
   AthenaArray<Real> g_, gi_;
 };
 
+// Function for determining if block is against a polar boundary
+// Inputs: (none)
+// Outputs:
+//   ppole_top,ppole_bottom: flags set to true if pole present
+inline void Coordinates::IdentifyPoles(bool *ppole_top, bool *ppole_bottom)
+{
+  *ppole_top = pmy_block->block_bcs[INNER_X2] == POLAR_BNDRY;
+  *ppole_bottom = pmy_block->block_bcs[OUTER_X2] == POLAR_BNDRY;
+  return;
+}
 
 inline void Coordinates::AllocateAndSetBasicCoordinates(void)
 {

@@ -42,12 +42,13 @@ typedef struct NeighborBlock {
   enum BoundaryFace fid;
   enum edgeid eid;
   bool polar;
+  bool self_neighbor;
   NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1), ox1(-1), ox2(-1), ox3(-1),
     bufid(-1), targetid(-1), fi1(-1), fi2(-1), type(neighbor_none),
     fid(FACE_UNDEF), eid (edgeid_undefined) {};
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
                    int iox3, enum neighbor_type itype, int ibid, int itargetid,
-                   int ifi1, int ifi2, bool ipolar);
+                   bool iself_neighbor, int ifi1, int ifi2, bool ipolar);
 } NeighborBlock;
 
 

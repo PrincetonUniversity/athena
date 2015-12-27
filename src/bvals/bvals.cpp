@@ -956,14 +956,19 @@ void BoundaryValues::SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
 
   int p=0;
-  if(nb.polar) {
+  if (nb.polar) {
     for (int n=0; n<(NHYDRO); ++n) {
-      Real sign = (nb.polar and flip_across_pole_hydro[n]) ? -1.0 : 1.0;
+      Real sign = flip_across_pole_hydro[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
+        int k_shift = k;
+        if (nb.self_neighbor) {
+          int nx3_half = (ek - sk + 1) / 2;
+          k_shift += (k < nx3_half ? 1 : -1) * nx3_half;
+        }
         for (int j=ej; j>=sj; --j) {
 #pragma simd
           for (int i=si; i<=ei; ++i)
-            dst(n,k,j,i) = sign * buf[p++];
+            dst(n,k_shift,j,i) = sign * buf[p++];
         }
       }
     }
@@ -1015,10 +1020,10 @@ void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock&
   int p=0;
   if (nb.polar) {
     for (int n=0; n<(NHYDRO); ++n) {
-      Real sign = (nb.polar and flip_across_pole_hydro[n]) ? -1.0 : 1.0;
+      Real sign = flip_across_pole_hydro[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
         for (int j=ej; j>=sj; --j) {
-  #pragma simd
+#pragma simd
           for (int i=si; i<=ei; ++i)
             pmr->coarse_cons_(n,k,j,i) = sign * buf[p++];
         }
@@ -1084,7 +1089,7 @@ void BoundaryValues::SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf
   int p=0;
   if (nb.polar) {
     for (int n=0; n<(NHYDRO); ++n) {
-      Real sign = (nb.polar and flip_across_pole_hydro[n]) ? -1.0 : 1.0;
+      Real sign = flip_across_pole_hydro[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
         for (int j=sj; j<=ej; ++j) {
 #pragma simd
@@ -1679,12 +1684,17 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
     else if(nb.ox1<0) ei++;
   }
   if (nb.polar) {
-    Real sign = (nb.polar and flip_across_pole_field[IB1]) ? -1.0 : 1.0;
+    Real sign = flip_across_pole_field[IB1] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
+      int k_shift = k;
+      if (nb.self_neighbor) {
+        int nx3_half = (ek - sk + 1) / 2;
+        k_shift += (k < nx3_half ? 1 : -1) * nx3_half;
+      }
       for (int j=ej; j>=sj; --j) {
 #pragma simd
         for (int i=si; i<=ei; ++i)
-          dst.x1f(k,j,i)=sign*buf[p++];
+          dst.x1f(k_shift,j,i)=sign*buf[p++];
       }
     }
   }
@@ -1705,12 +1715,17 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
     else if(nb.ox2<0) ej++;
   }
   if (nb.polar) {
-    Real sign = (nb.polar and flip_across_pole_field[IB2]) ? -1.0 : 1.0;
+    Real sign = flip_across_pole_field[IB2] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
+      int k_shift = k;
+      if (nb.self_neighbor) {
+        int nx3_half = (ek - sk + 1) / 2;
+        k_shift += (k < nx3_half ? 1 : -1) * nx3_half;
+      }
       for (int j=ej; j>=sj; --j) {
 #pragma simd
         for (int i=si; i<=ei; ++i)
-          dst.x2f(k,j,i)=sign*buf[p++];
+          dst.x2f(k_shift,j,i)=sign*buf[p++];
       }
     }
     if (nb.ox2 < 0) {  // interpolate B^theta across top pole
@@ -1748,12 +1763,17 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
     else if(nb.ox3<0) ek++;
   }
   if (nb.polar) {
-    Real sign = (nb.polar and flip_across_pole_field[IB3]) ? -1.0 : 1.0;
+    Real sign = flip_across_pole_field[IB3] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
+      int k_shift = k;
+      if (nb.self_neighbor) {
+        int nx3_half = (ek - sk + 1) / 2;
+        k_shift += (k < nx3_half ? 1 : -1) * nx3_half;
+      }
       for (int j=ej; j>=sj; --j) {
 #pragma simd
         for (int i=si; i<=ei; ++i)
-          dst.x3f(k,j,i)=sign*buf[p++];
+          dst.x3f(k_shift,j,i)=sign*buf[p++];
       }
     }
   }
@@ -1811,7 +1831,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
   else               sk=pmb->cks-cng, ek=pmb->cks-1;
 
   if (nb.polar) {
-    Real sign = (nb.polar and flip_across_pole_field[IB1]) ? -1.0 : 1.0;
+    Real sign = flip_across_pole_field[IB1] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma simd
@@ -1843,7 +1863,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
   else               sj=pmb->cjs-1, ej=pmb->cjs;
 
   if (nb.polar) {
-    Real sign = (nb.polar and flip_across_pole_field[IB2]) ? -1.0 : 1.0;
+    Real sign = flip_across_pole_field[IB2] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma simd
@@ -1877,7 +1897,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
   else               sk=pmb->cks-1, ek=pmb->cks;
 
   if (nb.polar) {
-    Real sign = (nb.polar and flip_across_pole_field[IB3]) ? -1.0 : 1.0;
+    Real sign = flip_across_pole_field[IB3] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma simd
@@ -1950,7 +1970,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
 
   if (nb.polar) {
-    Real sign = (nb.polar and flip_across_pole_field[IB1]) ? -1.0 : 1.0;
+    Real sign = flip_across_pole_field[IB1] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma simd
@@ -1993,7 +2013,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
   }
 
   if (nb.polar) {
-    Real sign = (nb.polar and flip_across_pole_field[IB2]) ? -1.0 : 1.0;
+    Real sign = flip_across_pole_field[IB2] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma simd
@@ -2049,7 +2069,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
   }
 
   if (nb.polar) {
-    Real sign = (nb.polar and flip_across_pole_field[IB3]) ? -1.0 : 1.0;
+    Real sign = flip_across_pole_field[IB3] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
 #pragma simd
@@ -2523,14 +2543,24 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
         // unpack e1
         Real sign = (nb.polar and flip_across_pole_field[IB1]) ? -1.0 : 1.0;
         for(int k=pmb->ks; k<=pmb->ke+1; k++) {
+          int k_shift = k;
+          if (nb.polar and nb.self_neighbor) {
+            int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
+            k_shift += (k < nx3_half ? 1 : -1) * nx3_half;
+          }
           for(int i=pmb->is; i<=pmb->ie; i++)
-            e1(k,j,i)+=sign*buf[p++];
+            e1(k_shift,j,i)+=sign*buf[p++];
         }
         // unpack e3
         sign = (nb.polar and flip_across_pole_field[IB3]) ? -1.0 : 1.0;
         for(int k=pmb->ks; k<=pmb->ke; k++) {
+          int k_shift = k;
+          if (nb.polar and nb.self_neighbor) {
+            int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
+            k_shift += (k < nx3_half ? 1 : -1) * nx3_half;
+          }
           for(int i=pmb->is; i<=pmb->ie+1; i++)
-            e3(k,j,i)+=sign*buf[p++];
+            e3(k_shift,j,i)+=sign*buf[p++];
         }
       }
       // x3 direction
@@ -2603,8 +2633,14 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
       else j=pmb->je+1;
       // unpack e3
       Real sign = (nb.polar and flip_across_pole_field[IB3]) ? -1.0 : 1.0;
-      for(int k=pmb->ks; k<=pmb->ke; k++)
-        e3(k,j,i)+=sign*buf[p++];
+      for(int k=pmb->ks; k<=pmb->ke; k++) {
+        int k_shift = k;
+        if (nb.polar and nb.self_neighbor) {
+          int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
+          k_shift += (k < nx3_half ? 1 : -1) * nx3_half;
+        }
+        e3(k_shift,j,i)+=sign*buf[p++];
+      }
     }
     // x1x3 edge
     else if(nb.eid>=4 && nb.eid<8) {
@@ -2942,7 +2978,8 @@ void BoundaryValues::AverageEMFBoundary(void)
   int i, j, k, nl;
   // face
   for(int n=0; n<nface_; n++) {
-    if ((pmb->block_bcs[n] != -1) && (pmb->block_bcs[n] != 4) && (pmb->block_bcs[n] !=5)) continue;
+    if ((pmb->block_bcs[n] != BLOCK_BNDRY) && (pmb->block_bcs[n] != PERIODIC_BNDRY)
+        && (pmb->block_bcs[n] != POLAR_BNDRY)) continue;
     if(n==INNER_X1 || n==OUTER_X1) {
       if(n==INNER_X1) i=pmb->is;
       else i=pmb->ie+1;

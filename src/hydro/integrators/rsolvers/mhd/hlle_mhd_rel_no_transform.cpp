@@ -25,7 +25,6 @@
 // Outputs:
 //   flux: fluxes across interface
 // Notes:
-//   prim_l, prim_r overwritten
 //   implements HLLE algorithm similar to that of fluxcalc() in step_ch.c in Harm
 void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
     const int iu, const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
@@ -211,10 +210,9 @@ void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
     pmy_hydro->peos->FastMagnetosonicSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[ivx],
         b_sq_r, g00, g0i, gii, &lambda_p_r, &lambda_m_r);
 
-    // Calculate extremal wavespeed
+    // Calculate extremal wavespeeds
     Real lambda_l = std::min(lambda_m_l, lambda_m_r);
     Real lambda_r = std::max(lambda_p_l, lambda_p_r);
-    Real lambda = std::max(lambda_r, -lambda_l);
 
     // Calculate conserved quantities in L region
     // (rho u^0, T^0_\mu, and B^j = *F^{j0}, where j != ivx)
