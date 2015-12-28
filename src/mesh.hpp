@@ -187,7 +187,7 @@ inline Real Mesh::MeshGeneratorX1(Real x, RegionSize rs)
 {
   Real lw, rw;
   if(rs.x1rat==1.0)
-    rw=x;
+    rw=x, lw=1.0-x;
   else
   {
     Real ratn=pow(rs.x1rat,rs.nx1);
@@ -195,7 +195,6 @@ inline Real Mesh::MeshGeneratorX1(Real x, RegionSize rs)
     lw=(rnx-ratn)/(1.0-ratn);
     rw=1.0-lw;
   }
-  lw=1.0-rw;
   return rs.x1min*lw+rs.x1max*rw;
 }
 
@@ -206,7 +205,7 @@ inline Real Mesh::MeshGeneratorX2(Real x, RegionSize rs)
 {
   Real lw, rw;
   if(rs.x2rat==1.0)
-    rw=x;
+    rw=x, lw=1.0-x;
   else
   {
     Real ratn=pow(rs.x2rat,rs.nx2);
@@ -214,7 +213,6 @@ inline Real Mesh::MeshGeneratorX2(Real x, RegionSize rs)
     lw=(rnx-ratn)/(1.0-ratn);
     rw=1.0-lw;
   }
-  lw=1.0-rw;
   return rs.x2min*lw+rs.x2max*rw;
 }
 
@@ -225,7 +223,7 @@ inline Real Mesh::MeshGeneratorX3(Real x, RegionSize rs)
 {
   Real lw, rw;
   if(rs.x3rat==1.0)
-    rw=x;
+    rw=x, lw=1.0-x;
   else
   {
     Real ratn=pow(rs.x3rat,rs.nx3);
@@ -233,7 +231,6 @@ inline Real Mesh::MeshGeneratorX3(Real x, RegionSize rs)
     lw=(rnx-ratn)/(1.0-ratn);
     rw=1.0-lw;
   }
-  lw=1.0-rw;
   return rs.x3min*lw+rs.x3max*rw;
 }
 
