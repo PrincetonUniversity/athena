@@ -15,6 +15,8 @@
 #include "../../../../mesh.hpp"                     // MeshBlock
 #include "../../../../coordinates/coordinates.hpp"  // Coordinates
 
+//--------------------------------------------------------------------------------------
+
 // Riemann solver
 // Inputs:
 //   k,j: x3- and x2-indices

@@ -21,6 +21,8 @@ static void NonTransformingHLLE(const int k, const int j, const int i,
     const AthenaArray<Real> &prim_r, const AthenaArray<Real> &g,
     const AthenaArray<Real> &gi, Hydro *pmy_hydro, AthenaArray<Real> &flux);
 
+//--------------------------------------------------------------------------------------
+
 // Riemann solver
 // Inputs:
 //   k,j: x3- and x2-indices
@@ -104,11 +106,6 @@ void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
   #pragma simd
   for (int i = il+(pole_top?1:0); i <= iu-(pole_bottom?1:0); ++i)
   {
-    // Calculate interface velocity
-    Real v_interface = 0.0;
-    if (GENERAL_RELATIVITY)
-      v_interface = gi_(i01,i) / std::sqrt(SQR(gi_(i01,i)) - gi_(I00,i)*gi_(i11,i));
-
     // Extract left primitives
     const Real &rho_l = prim_l(IDN,i);
     const Real &pgas_l = prim_l(IEN,i);
@@ -238,6 +235,11 @@ void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
           + lambda_l*lambda_r * (cons_r[n] - cons_l[n]))
           / (lambda_r-lambda_l);
 
+    // Calculate interface velocity
+    Real v_interface = 0.0;
+    if (GENERAL_RELATIVITY)
+      v_interface = gi_(i01,i) / std::sqrt(SQR(gi_(i01,i)) - gi_(I00,i)*gi_(i11,i));
+
     // Set conserved quantities in GR
     if (GENERAL_RELATIVITY)
       for (int n = 0; n < NWAVE; ++n)
@@ -281,23 +283,28 @@ void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
     }
 
   // Calculate pole fluxes if necessary
-  if (pole_top)
+  if (GENERAL_RELATIVITY and pole_top)
     NonTransformingHLLE(k, j, il, bb, prim_l, prim_r, g_, gi_, pmy_hydro, flux);
-  if (pole_bottom)
+  if (GENERAL_RELATIVITY and pole_bottom)
     NonTransformingHLLE(k, j, iu, bb, prim_l, prim_r, g_, gi_, pmy_hydro, flux);
   return;
 }
+
+//--------------------------------------------------------------------------------------
 
 // Fallback Riemann solver for poles
 // Inputs:
 //   k,j,i: x3-, x2-, and x1-indices
 //   bb: 3D array of normal magnetic fields
 //   prim_l, prim_r: left and right primitive states
+//   g,gi: 1D arrays of metric covariant and contravariant coefficients
+//   pmy_hydro: pointer to Hydro
 // Outputs:
 //   flux: fluxes across interface
 // Notes:
 //   implements HLLE algorithm similar to that of fluxcalc() in step_ch.c in Harm
 //   adapted from RiemannSolver() in hlle_mhd_rel_no_transform.cpp
+//   same function as in hlld_rel.cpp
 static void NonTransformingHLLE(const int k, const int j, const int i,
     const AthenaArray<Real> &bb, const AthenaArray<Real> &prim_l,
     const AthenaArray<Real> &prim_r, const AthenaArray<Real> &g,
