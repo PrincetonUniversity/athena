@@ -192,6 +192,8 @@ public:
         Real *a0, Real *a1, Real *a2, Real *a3);
     void TransformVectorFace3(Real at, Real ax, Real ay, Real az, int k, int j, int i,
         Real *a0, Real *a1, Real *a2, Real *a3);
+    void RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j, int i,
+        Real *pa0, Real *pa1, Real *pa2, Real *pa3);
     void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
         Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3);
     void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3,
@@ -234,6 +236,8 @@ public:
         Real *, Real *) {return;}
     void TransformVectorFace3(Real, Real, Real, Real, int, int, int, Real *, Real *,
         Real *, Real *) {return;}
+    void RaiseVectorCell(Real, Real, Real, Real, int, int, int, Real *, Real *, Real *,
+        Real *) {return;}
     void LowerVectorCell(Real, Real, Real, Real, int, int, int, Real *, Real *, Real *,
         Real *) {return;}
   #endif  // GENERAL_RELATIVITY

@@ -1491,9 +1491,8 @@ Real Coordinates::DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real
 //   i: x-index
 // Outputs:
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
-void Coordinates::TransformVectorCell(
-    Real at, Real ax, Real ay, Real az, int k, int j, int i,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+void Coordinates::TransformVectorCell(Real at, Real ax, Real ay, Real az, int k, int j,
+    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   const Real &beta = metric_cell_i2_(i);
   *pa0 = at;
@@ -1512,9 +1511,8 @@ void Coordinates::TransformVectorCell(
 //   i: x-index
 // Outputs:
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
-void Coordinates::TransformVectorFace1(
-    Real at, Real ax, Real ay, Real az, int k, int j, int i,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+void Coordinates::TransformVectorFace1(Real at, Real ax, Real ay, Real az, int k, int j,
+    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   const Real &beta = metric_face1_i2_(i);
   *pa0 = at;
@@ -1533,9 +1531,8 @@ void Coordinates::TransformVectorFace1(
 //   i: x-index
 // Outputs:
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
-void Coordinates::TransformVectorFace2(
-    Real at, Real ax, Real ay, Real az, int k, int j, int i,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+void Coordinates::TransformVectorFace2(Real at, Real ax, Real ay, Real az, int k, int j,
+    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   const Real &beta = metric_face2_i2_(i);
   *pa0 = at;
@@ -1554,9 +1551,8 @@ void Coordinates::TransformVectorFace2(
 //   i: x-index
 // Outputs:
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
-void Coordinates::TransformVectorFace3(
-    Real at, Real ax, Real ay, Real az, int k, int j, int i,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+void Coordinates::TransformVectorFace3(Real at, Real ax, Real ay, Real az, int k, int j,
+    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   const Real &beta = metric_face3_i2_(i);
   *pa0 = at;
@@ -1568,22 +1564,51 @@ void Coordinates::TransformVectorFace3(
 
 //--------------------------------------------------------------------------------------
 
+// Function for raising covariant components of a vector
+// Inputs:
+//   a_0,a_1,a_2,a_3: covariant components of vector
+//   k,j,i: indices of cell in which transformation is desired
+// Outputs:
+//   pa0,pa1,pa2,pa3: pointers to contravariant 4-vector components
+void Coordinates::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j,
+    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+{
+  // Calculate metric coefficients
+  Real g00 = -1.0;
+  Real g11 = 1.0;
+  const Real &g12 = metric_cell_i2_(i);
+  const Real &g21 = g12;
+  const Real &g22 = metric_cell_i1_(i);
+  Real g33 = 1.0;
+
+  // Set raised components
+  *pa0 = g00*a_0;
+  *pa1 = g11*a_1 + g12*a_2;
+  *pa2 = g21*a_1 + g22*a_2;
+  *pa3 = g33*a_3;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
 // Function for lowering contravariant components of a vector
 // Inputs:
 //   a0,a1,a2,a3: contravariant components of vector
 //   k,j,i: indices of cell in which transformation is desired
 // Outputs:
 //   pa_0,pa_1,pa_2,pa_3: pointers to covariant 4-vector components
-void Coordinates::LowerVectorCell(
-    Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
-    Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3)
+void Coordinates::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j,
+    int i, Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3)
 {
+  // Calculate metric coefficients
   Real g_00 = -1.0;
   const Real &g_11 = metric_cell_i1_(i);
   Real g_12 = -metric_cell_i2_(i);
   const Real &g_21 = g_12;
   Real g_22 = 1.0;
   Real g_33 = 1.0;
+
+  // Set lowered components
   *pa_0 = g_00*a0;
   *pa_1 = g_11*a1 + g_12*a2;
   *pa_2 = g_21*a1 + g_22*a2;

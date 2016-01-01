@@ -2084,6 +2084,54 @@ void Coordinates::TransformVectorFace3(
 
 //--------------------------------------------------------------------------------------
 
+// Function for raising covariant components of a vector
+// Inputs:
+//   a_0,a_1,a_2,a_3: covariant components of vector
+//   k,j,i: indices of cell in which transformation is desired
+// Outputs:
+//   pa0,pa1,pa2,pa3: pointers to contravariant 4-vector components
+void Coordinates::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j,
+    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+{
+  // Extract geometric quantities
+  const Real &m = bh_mass_;
+  const Real &a = bh_spin_;
+  Real asq = SQR(a);
+  const Real &r = metric_cell_i1_(i);
+  Real rsq = SQR(r);
+  const Real &sin2 = metric_cell_j1_(j);
+  const Real &cos2 = metric_cell_j2_(j);
+  Real delta = rsq - 2.0*m*r + asq;
+  Real sigma = rsq + asq * cos2;
+
+  // Calculate metric coefficients
+  Real g00 = -(1.0 + 2.0*m*r/sigma);
+  Real g01 = 2.0*m*r/sigma;
+  Real g02 = 0.0;
+  Real g03 = 0.0;
+  Real g11 = delta/sigma;
+  Real g12 = 0.0;
+  Real g13 = a/sigma;
+  Real g22 = 1.0/sigma;
+  Real g23 = 0.0;
+  Real g33 = 1.0/(sigma*sin2);
+  const Real &g10 = g01;
+  const Real &g20 = g02;
+  const Real &g21 = g12;
+  const Real &g30 = g03;
+  const Real &g31 = g13;
+  const Real &g32 = g23;
+
+  // Set raised components
+  *pa0 = g00*a_0 + g01*a_1 + g02*a_2 + g03*a_3;
+  *pa1 = g10*a_0 + g11*a_1 + g12*a_2 + g13*a_3;
+  *pa2 = g20*a_0 + g21*a_1 + g22*a_2 + g23*a_3;
+  *pa3 = g30*a_0 + g31*a_1 + g32*a_2 + g33*a_3;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
 // Function for lowering contravariant components of a vector
 // Inputs:
 //   a0,a1,a2,a3: contravariant components of vector
@@ -2093,13 +2141,15 @@ void Coordinates::TransformVectorFace3(
 void Coordinates::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j,
     int i, Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3)
 {
-  // Extract and calculate useful quantities
+  // Extract geometric quantities
   const Real &m = bh_mass_;
   const Real &a = bh_spin_;
+  Real asq = SQR(a);
   const Real &r = metric_cell_i1_(i);
+  Real rsq = SQR(r);
   const Real &sin2 = metric_cell_j1_(j);
   const Real &cos2 = metric_cell_j2_(j);
-  Real sigma = SQR(r) + SQR(a) * cos2;
+  Real sigma = rsq + asq * cos2;
 
   // Calculate metric coefficients
   Real g_00 = -(1.0 - 2.0*m*r/sigma);
@@ -2111,7 +2161,7 @@ void Coordinates::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int
   Real g_13 = -(1.0 + 2.0*m*r/sigma) * a * sin2;
   Real g_22 = sigma;
   Real g_23 = 0.0;
-  Real g_33 = (SQR(r) + SQR(a) + 2.0*m*SQR(a)*r/sigma * sin2) * sin2;
+  Real g_33 = (rsq + asq + 2.0*m*asq*r/sigma * sin2) * sin2;
   const Real &g_10 = g_01;
   const Real &g_20 = g_02;
   const Real &g_21 = g_12;
@@ -2119,7 +2169,7 @@ void Coordinates::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int
   const Real &g_31 = g_13;
   const Real &g_32 = g_23;
 
-  // Transform vector
+  // Set lowered components
   *pa_0 = g_00*a0 + g_01*a1 + g_02*a2 + g_03*a3;
   *pa_1 = g_10*a0 + g_11*a1 + g_12*a2 + g_13*a3;
   *pa_2 = g_20*a0 + g_21*a1 + g_22*a2 + g_23*a3;

@@ -675,8 +675,8 @@ Real Coordinates::DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real
 //   pt,px,py,pz: Minkowski coordinate values set
 // Notes:
 //   transformation is trivial
-void Coordinates::MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3,
-    Real *pt, Real *px, Real *py, Real *pz)
+void Coordinates::MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
+    Real *px, Real *py, Real *pz)
 {
   *pt = x0;
   *px = x1;
@@ -695,9 +695,8 @@ void Coordinates::MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3,
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::TransformVectorCell(
-    Real at, Real ax, Real ay, Real az, int k, int j, int i,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+void Coordinates::TransformVectorCell(Real at, Real ax, Real ay, Real az, int k, int j,
+    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   *pa0 = at;
   *pa1 = ax;
@@ -716,9 +715,8 @@ void Coordinates::TransformVectorCell(
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::TransformVectorFace1(
-    Real at, Real ax, Real ay, Real az, int k, int j, int i,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+void Coordinates::TransformVectorFace1(Real at, Real ax, Real ay, Real az, int k, int j,
+    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   *pa0 = at;
   *pa1 = ax;
@@ -737,9 +735,8 @@ void Coordinates::TransformVectorFace1(
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::TransformVectorFace2(
-    Real at, Real ax, Real ay, Real az, int k, int j, int i,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+void Coordinates::TransformVectorFace2(Real at, Real ax, Real ay, Real az, int k, int j,
+    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   *pa0 = at;
   *pa1 = ax;
@@ -758,14 +755,31 @@ void Coordinates::TransformVectorFace2(
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::TransformVectorFace3(
-    Real at, Real ax, Real ay, Real az, int k, int j, int i,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+void Coordinates::TransformVectorFace3(Real at, Real ax, Real ay, Real az, int k, int j,
+    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   *pa0 = at;
   *pa1 = ax;
   *pa2 = ay;
   *pa3 = az;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for raising covariant components of a vector
+// Inputs:
+//   a_0,a_1,a_2,a_3: covariant components of vector
+//   k,j,i: indices of cell in which transformation is desired
+// Outputs:
+//   pa0,pa1,pa2,pa3: pointers to contravariant 4-vector components
+void Coordinates::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j,
+    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+{
+  *pa0 = -a_0;
+  *pa1 = a_1;
+  *pa2 = a_2;
+  *pa3 = a_3;
   return;
 }
 

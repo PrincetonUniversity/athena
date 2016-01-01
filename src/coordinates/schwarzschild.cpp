@@ -1620,7 +1620,8 @@ void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const in
 //   puts phi-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
 //   puts phi-fluxes of B1/B2 in IBY/IBZ slots
 void Coordinates::FluxToGlobal3(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
+    AthenaArray<Real> &flux)
 {
   // Extract geometric quantities that do not depend on r
   const Real &sin_sq_theta = metric_face3_j1_(j);
@@ -1695,9 +1696,8 @@ void Coordinates::FluxToGlobal3(const int k, const int j, const int il, const in
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Schwarzschild coordinates
 // Notes:
 //   Schwarzschild coordinates match Boyer-Lindquist when a = 0
-void Coordinates::TransformVectorCell(
-    Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, int k, int j, int i,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+void Coordinates::TransformVectorCell(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl,
+    int k, int j, int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   *pa0 = a0_bl;
   *pa1 = a1_bl;
@@ -1705,6 +1705,8 @@ void Coordinates::TransformVectorCell(
   *pa3 = a3_bl;
   return;
 }
+
+//--------------------------------------------------------------------------------------
 
 // Function for transforming 4-vector from Boyer-Lindquist to Schwarzschild
 // Inputs:
@@ -1714,9 +1716,8 @@ void Coordinates::TransformVectorCell(
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Schwarzschild coordinates
 // Notes:
 //   Schwarzschild coordinates match Boyer-Lindquist when a = 0
-void Coordinates::TransformVectorFace1(
-    Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, int k, int j, int i,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+void Coordinates::TransformVectorFace1(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl,
+    int k, int j, int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   *pa0 = a0_bl;
   *pa1 = a1_bl;
@@ -1724,6 +1725,8 @@ void Coordinates::TransformVectorFace1(
   *pa3 = a3_bl;
   return;
 }
+
+//--------------------------------------------------------------------------------------
 
 // Function for transforming 4-vector from Boyer-Lindquist to Schwarzschild
 // Inputs:
@@ -1733,9 +1736,8 @@ void Coordinates::TransformVectorFace1(
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Schwarzschild coordinates
 // Notes:
 //   Schwarzschild coordinates match Boyer-Lindquist when a = 0
-void Coordinates::TransformVectorFace2(
-    Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, int k, int j, int i,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+void Coordinates::TransformVectorFace2(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl,
+    int k, int j, int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   *pa0 = a0_bl;
   *pa1 = a1_bl;
@@ -1743,6 +1745,8 @@ void Coordinates::TransformVectorFace2(
   *pa3 = a3_bl;
   return;
 }
+
+//--------------------------------------------------------------------------------------
 
 // Function for transforming 4-vector from Boyer-Lindquist to Schwarzschild
 // Inputs:
@@ -1752,9 +1756,8 @@ void Coordinates::TransformVectorFace2(
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Schwarzschild coordinates
 // Notes:
 //   Schwarzschild coordinates match Boyer-Lindquist when a = 0
-void Coordinates::TransformVectorFace3(
-    Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, int k, int j, int i,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+void Coordinates::TransformVectorFace3(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl,
+    int k, int j, int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   *pa0 = a0_bl;
   *pa1 = a1_bl;
@@ -1762,6 +1765,39 @@ void Coordinates::TransformVectorFace3(
   *pa3 = a3_bl;
   return;
 }
+
+//--------------------------------------------------------------------------------------
+
+// Function for raising covariant components of a vector
+// Inputs:
+//   a_0,a_1,a_2,a_3: covariant components of vector
+//   k,j,i: indices of cell in which transformation is desired
+// Outputs:
+//   pa0,pa1,pa2,pa3: pointers to contravariant 4-vector components
+void Coordinates::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j,
+    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+{
+  // Extract geometric quantities
+  const Real &sin_sq_theta = metric_cell_j1_(j);
+  const Real &alpha_sq = metric_cell_i1_(i);
+  const Real &r = x1v(i);
+  Real r_sq = SQR(r);
+
+  // Calculate metric coefficients
+  Real g00 = -1.0/alpha_sq;
+  Real g11 = alpha_sq;
+  Real g22 = 1.0/r_sq;
+  Real g33 = 1.0/(r_sq*sin_sq_theta);
+
+  // Set raised components
+  *pa0 = g00 * a_0;
+  *pa1 = g11 * a_1;
+  *pa2 = g22 * a_2;
+  *pa3 = g33 * a_3;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
 
 // Function for lowering contravariant components of a vector
 // Inputs:
@@ -1778,19 +1814,21 @@ void Coordinates::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int
   const Real &r = x1v(i);
   Real r_sq = SQR(r);
 
-  // Calculate metric terms
+  // Calculate metric coefficients
   Real g_00 = -alpha_sq;
   Real g_11 = 1.0/alpha_sq;
   Real g_22 = r_sq;
   Real g_33 = r_sq * sin_sq_theta;
 
-  // Transform vector
+  // Set lowered components
   *pa_0 = g_00 * a0;
   *pa_1 = g_11 * a1;
   *pa_2 = g_22 * a2;
   *pa_3 = g_33 * a3;
   return;
 }
+
+//--------------------------------------------------------------------------------------
 
 // Function for returning Boyer-Lindquist coordinates of given cell
 // Inputs:
@@ -1801,8 +1839,8 @@ void Coordinates::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int
 //   pphi: pointer to stored value of phi
 // Notes:
 //   Schwarzschild (x1,x2,x3) match Boyer-Lindquist (r,theta,phi) when a = 0
-void Coordinates::GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3,
-    Real *pr, Real *ptheta, Real *pphi)
+void Coordinates::GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+    Real *ptheta, Real *pphi)
 {
   *pr = x1;
   *ptheta = x2;

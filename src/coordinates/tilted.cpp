@@ -1270,8 +1270,8 @@ Real Coordinates::DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real
 //   transformation given by:
 //     t = (t' - a x') / \alpha
 //     x = (x' + a t') / \alpha
-void Coordinates::MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3,
-    Real *pt, Real *px, Real *py, Real *pz)
+void Coordinates::MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
+    Real *px, Real *py, Real *pz)
 {
   *pt = (x0 - tilted_a_ * x1) / alpha;
   *px = (x1 + tilted_a_ * x0) / alpha;
@@ -1290,9 +1290,8 @@ void Coordinates::MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3,
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::TransformVectorCell(
-    Real at, Real ax, Real ay, Real az, int k, int j, int i,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+void Coordinates::TransformVectorCell(Real at, Real ax, Real ay, Real az, int k, int j,
+    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   *pa0 = 1.0/alpha * at + tilted_a_/alpha * ax;
   *pa1 = -tilted_a_/alpha * at + 1.0/alpha * ax;
@@ -1311,9 +1310,8 @@ void Coordinates::TransformVectorCell(
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::TransformVectorFace1(
-    Real at, Real ax, Real ay, Real az, int k, int j, int i,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+void Coordinates::TransformVectorFace1(Real at, Real ax, Real ay, Real az, int k, int j,
+    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   *pa0 = 1.0/alpha * at + tilted_a_/alpha * ax;
   *pa1 = -tilted_a_/alpha * at + 1.0/alpha * ax;
@@ -1332,9 +1330,8 @@ void Coordinates::TransformVectorFace1(
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::TransformVectorFace2(
-    Real at, Real ax, Real ay, Real az, int k, int j, int i,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+void Coordinates::TransformVectorFace2(Real at, Real ax, Real ay, Real az, int k, int j,
+    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   *pa0 = 1.0/alpha * at + tilted_a_/alpha * ax;
   *pa1 = -tilted_a_/alpha * at + 1.0/alpha * ax;
@@ -1353,14 +1350,40 @@ void Coordinates::TransformVectorFace2(
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::TransformVectorFace3(
-    Real at, Real ax, Real ay, Real az, int k, int j, int i,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+void Coordinates::TransformVectorFace3(Real at, Real ax, Real ay, Real az, int k, int j,
+    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   *pa0 = 1.0/alpha * at + tilted_a_/alpha * ax;
   *pa1 = -tilted_a_/alpha * at + 1.0/alpha * ax;
   *pa2 = ay;
   *pa3 = az;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for raising covariant components of a vector
+// Inputs:
+//   a_0,a_1,a_2,a_3: covariant components of vector
+//   k,j,i: indices of cell in which transformation is desired
+// Outputs:
+//   pa0,pa1,pa2,pa3: pointers to contravariant 4-vector components
+void Coordinates::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j,
+    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+{
+  // Calculate metric coefficients
+  Real g00 = -SQR(beta) / SQR(alpha);
+  Real g01 = 2.0 * tilted_a_ / SQR(alpha);
+  Real g10 = g01;
+  Real g11 = SQR(beta) / SQR(alpha);
+  Real g22 = 1.0;
+  Real g33 = 1.0;
+
+  // Set raised components
+  *pa0 = g00*a_0 + g01*a_1;
+  *pa1 = g10*a_0 + g11*a_1;
+  *pa2 = g22*a_2;
+  *pa3 = g33*a_3;
   return;
 }
 
@@ -1375,7 +1398,7 @@ void Coordinates::TransformVectorFace3(
 void Coordinates::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j,
     int i, Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3)
 {
-  // Extract geometric quantities
+  // Calculate metric coefficients
   Real g_00 = -SQR(beta) / SQR(alpha);
   Real g_01 = 2.0 * tilted_a_ / SQR(alpha);
   Real g_10 = g_01;
