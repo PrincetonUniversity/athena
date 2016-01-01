@@ -18,6 +18,10 @@
 #include "../../field/field.hpp"              // FaceField
 
 // Declarations
+static bool ConservedToPrimitiveSingle(const AthenaArray<Real> &cons,
+    const AthenaArray<Real> &prim_old, Real gamma_adi, const AthenaArray<Real> &bb_cc,
+    const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int i,
+    AthenaArray<Real> &prim);
 static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma_adi,
     const AthenaArray<Real> &bb_cc, const AthenaArray<Real> &g,
     const AthenaArray<Real> &gi, int k, int j, int i, AthenaArray<Real> &cons,
@@ -43,6 +47,8 @@ HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
   rho_pow_ = pin->GetOrAddReal("hydro", "rho_pow", 0.0);
   u_min_ = pin->GetOrAddReal("hydro", "u_min", pressure_floor_/(gamma_-1.0));
   u_pow_ = pin->GetOrAddReal("hydro", "u_pow", 0.0);
+  rho_pmag_min_ = pin->GetOrAddReal("hydro", "rho_pmag_min", 0.0);
+  pgas_pmag_min_ = pin->GetOrAddReal("hydro", "pgas_pmag_min", 0.0);
   gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
   int ncells1 = pf->pmy_block->block_size.nx1 + 2*NGHOST;
   g_.NewAthenaArray(NMETRIC, ncells1);
@@ -87,11 +93,6 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc, Coordinates *pco, int is, int ie,
     int js, int je, int ks, int ke)
 {
-  // Parameters
-  const Real max_wgas_rel = 1.0e8;
-  const Real initial_guess_multiplier = 10.0;
-  const int initial_guess_multiplications = 10;
-
   // Extract ratio of specific heats
   const Real &gamma_adi = gamma_;
 
@@ -99,132 +100,45 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   pmy_hydro_->pmy_block->pfield->CalculateCellCenteredField(bb, bb_cc, pco, is, ie, js,
       je, ks, ke);
 
-  // Go through cells
+  // Go through cells for first pass
   for (int k = ks; k <= ke; ++k)
     for (int j = js; j <= je; ++j)
     {
-      // Calculate metric
       pco->CellMetric(k, j, is, ie, g_, g_inv_);
-
-      // Set primitives
       #pragma simd
       for (int i = is; i <= ie; ++i)
+        fixed_(k,j,i) = ConservedToPrimitiveSingle(cons, prim_old, gamma_adi, bb_cc, g_,
+            g_inv_, k, j, i, prim);
+    }
+
+  // Adjust conserved values if fix was applied
+  for (int k = ks; k <= ke; ++k)
+    for (int j = js; j <= je; ++j)
+    {
+      bool fix_in_row = false;
+      for (int i = is; i <= ie; ++i)
+        if (fixed_(k,j,i))
+          fix_in_row = true;
+      if (fix_in_row)
       {
-        // Extract metric
-        const Real
-            &g_00 = g_(I00,i), &g_01 = g_(I01,i), &g_02 = g_(I02,i), &g_03 = g_(I03,i),
-            &g_10 = g_(I01,i), &g_11 = g_(I11,i), &g_12 = g_(I12,i), &g_13 = g_(I13,i),
-            &g_20 = g_(I02,i), &g_21 = g_(I12,i), &g_22 = g_(I22,i), &g_23 = g_(I23,i),
-            &g_30 = g_(I03,i), &g_31 = g_(I13,i), &g_32 = g_(I23,i), &g_33 = g_(I33,i);
-        const Real &g00 = g_inv_(I00,i), &g01 = g_inv_(I01,i), &g02 = g_inv_(I02,i),
-                   &g03 = g_inv_(I03,i), &g10 = g_inv_(I01,i), &g11 = g_inv_(I11,i),
-                   &g12 = g_inv_(I12,i), &g13 = g_inv_(I13,i), &g20 = g_inv_(I02,i),
-                   &g21 = g_inv_(I12,i), &g22 = g_inv_(I22,i), &g23 = g_inv_(I23,i),
-                   &g30 = g_inv_(I03,i), &g31 = g_inv_(I13,i), &g32 = g_inv_(I23,i),
-                   &g33 = g_inv_(I33,i);
-        Real alpha = std::sqrt(-1.0/g00);
+        pco->CellMetric(k, j, is, ie, g_, g_inv_);
+        for (int i = is; i <= ie; ++i)
+          if (fixed_(k,j,i))
+          {
+            PrimitiveToConservedSingle(prim, gamma_adi, bb_cc, g_, g_inv_, k, j, i,
+                cons, pco);
+            fixed_(k,j,i) = false;
+          }
+      }
+    }
 
-        // Extract conserved quantities
-        const Real &rho_u0 = cons(IDN,k,j,i);
-        const Real &t0_0 = cons(IEN,k,j,i);
-        const Real &t0_1 = cons(IVX,k,j,i);
-        const Real &t0_2 = cons(IVY,k,j,i);
-        const Real &t0_3 = cons(IVZ,k,j,i);
-
-        // Calculate variations on conserved quantities
-        Real d = alpha * rho_u0;                                               // (N 21)
-        Real q_0 = alpha * t0_0;                                               // (N 17)
-        Real q_1 = alpha * t0_1;                                               // (N 17)
-        Real q_2 = alpha * t0_2;                                               // (N 17)
-        Real q_3 = alpha * t0_3;                                               // (N 17)
-        Real q_n = -alpha * (g00*q_0 + g01*q_1 + g02*q_2 + g03*q_3);
-        Real qq1 = g10*q_0 + g11*q_1 + g12*q_2 + g13*q_3 - alpha * g01 * q_n;
-        Real qq2 = g20*q_0 + g21*q_1 + g22*q_2 + g23*q_3 - alpha * g02 * q_n;
-        Real qq3 = g30*q_0 + g31*q_1 + g32*q_2 + g33*q_3 - alpha * g03 * q_n;
-        Real tmp1 = g00*q_0*q_0 + 2.0*g01*q_0*q_1 + 2.0*g02*q_0*q_2
-                      + 2.0*g03*q_0*q_3
-                  + g11*q_1*q_1 + 2.0*g12*q_1*q_2 + 2.0*g13*q_1*q_3
-                  + g22*q_2*q_2 + 2.0*g23*q_2*q_3
-                  + g33*q_3*q_3;
-        Real tmp2 = alpha * (g00*q_0 + g01*q_1 + g02*q_2 + g03*q_3);
-        Real qq_sq = tmp1 + SQR(tmp2);
-
-        // Extract cell-centered magnetic field
-        const Real &bb1 = bb_cc(IB1,k,j,i);
-        const Real &bb2 = bb_cc(IB2,k,j,i);
-        const Real &bb3 = bb_cc(IB3,k,j,i);
-
-        // Calculate variations on magnetic field
-        Real bbb1 = alpha * bb1;                                                // (N 5)
-        Real bbb2 = alpha * bb2;                                                // (N 5)
-        Real bbb3 = alpha * bb3;                                                // (N 5)
-        Real bbb_sq = g_11*bbb1*bbb1 + 2.0*g_12*bbb1*bbb2 + 2.0*g_13*bbb1*bbb3
-                    + g_22*bbb2*bbb2 + 2.0*g_23*bbb2*bbb3
-                    + g_33*bbb3*bbb3;
-        Real q_bbb = q_1*bbb1 + q_2*bbb2 + q_3*bbb3;
-        Real q_bbb_sq = SQR(q_bbb);
-
-        // Extract old primitives
-        const Real &rho_old = prim_old(IDN,k,j,i);
-        const Real &pgas_old = prim_old(IEN,k,j,i);
-        const Real &uu1_old = prim_old(IVX,k,j,i);
-        const Real &uu2_old = prim_old(IVY,k,j,i);
-        const Real &uu3_old = prim_old(IVZ,k,j,i);
-
-        // Construct initial guess for relativistic gas enthalpy W
-        Real tmp = g_11*SQR(uu1_old) + 2.0*g_12*uu1_old*uu2_old
-                     + 2.0*g_13*uu1_old*uu3_old
-                 + g_22*SQR(uu2_old) + 2.0*g_23*uu2_old*uu3_old
-                 + g_33*SQR(uu3_old);
-        Real gamma_sq = 1.0 + tmp;
-        Real wgas_rel_init =
-            gamma_sq * (rho_old + gamma_adi/(gamma_adi-1.0) * pgas_old);
-        for (int count = 0; count < initial_guess_multiplications; ++count)
-        {
-          Real vv_sq = (qq_sq*SQR(wgas_rel_init)
-              + q_bbb_sq*(bbb_sq+2.0*wgas_rel_init))
-              / SQR(wgas_rel_init*(bbb_sq+wgas_rel_init));  // (N 28)
-          if (vv_sq >= 1.0)  // guess for W leads to superluminal velocities
-            wgas_rel_init *= initial_guess_multiplier;
-          else
-            break;
-        }
-
-        // Apply Newton-Raphson method to find new W
-        const int num_iterations = 5;
-        Real wgas_rel_new = wgas_rel_init;
-        Real res_new = QNResidual(wgas_rel_new, d, q_n, qq_sq, bbb_sq, q_bbb_sq,
-            gamma_adi);
-        for (int n = 0; n < num_iterations; ++n)
-        {
-          Real wgas_rel_old = wgas_rel_new;
-          Real res_old = res_new;
-          Real derivative = QNResidualPrime(wgas_rel_old, d, qq_sq, bbb_sq, q_bbb_sq,
-              gamma_adi);
-          Real delta = -res_old / derivative;
-          wgas_rel_new = wgas_rel_old + delta;
-          res_new = QNResidual(wgas_rel_new, d, q_n, qq_sq, bbb_sq, q_bbb_sq,
-              gamma_adi);
-        }
-        Real wgas_rel_true = wgas_rel_new;
-        if (not (wgas_rel_true > 0.0 and wgas_rel_true < max_wgas_rel))
-        {
-          fixed_(k,j,i) = true;
-          wgas_rel_true = wgas_rel_init;
-        }
-        Real vv_sq = (qq_sq*SQR(wgas_rel_true)
-            + q_bbb_sq*(bbb_sq+2.0*wgas_rel_true))
-            / SQR(wgas_rel_true*(bbb_sq+wgas_rel_true));  // (N 28)
-        gamma_sq = 1.0/(1.0-vv_sq);
-        Real gamma_rel = std::sqrt(gamma_sq);
-        if (std::isnan(gamma_rel) or not std::isfinite(gamma_rel) or gamma_rel < 1.0)
-        {
-          fixed_(k,j,i) = true;
-          gamma_rel = 1.0;
-          gamma_sq = SQR(gamma_rel);
-        }
-        Real u0 = gamma_rel/alpha;  // (N 21)
-
+  // Apply limits, adjusting conserved and then primitive quantities as necessary
+  for (int k = ks; k <= ke; ++k)
+    for (int j = js; j <= je; ++j)
+    {
+      pco->CellMetric(k, j, is, ie, g_, g_inv_);
+      for (int i = is; i <= ie; ++i)
+      {
         // Extract primitives
         Real &rho = prim(IDN,k,j,i);
         Real &pgas = prim(IEN,k,j,i);
@@ -232,24 +146,150 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real &uu2 = prim(IVY,k,j,i);
         Real &uu3 = prim(IVZ,k,j,i);
 
-        // Set density and pressure
-        rho = d/gamma_rel;                                                  // (N 21)
-        pgas = (gamma_adi-1.0)/gamma_adi * (wgas_rel_true/gamma_sq - rho);  // (N 21,32)
+        // Calculate 4-velocity
+        Real alpha = std::sqrt(-1.0/g_inv_(I00,i));
+        Real tmp = g_(I11,i)*uu1*uu1 + 2.0*g_(I12,i)*uu1*uu2 + 2.0*g_(I13,i)*uu1*uu3
+                 + g_(I22,i)*uu2*uu2 + 2.0*g_(I23,i)*uu2*uu3
+                 + g_(I33,i)*uu3*uu3;
+        Real gamma = std::sqrt(1.0 + tmp);
+        Real u0 = gamma/alpha;
+        Real u1 = uu1 - alpha * gamma * g_inv_(I01,i);
+        Real u2 = uu2 - alpha * gamma * g_inv_(I02,i);
+        Real u3 = uu3 - alpha * gamma * g_inv_(I03,i);
+        Real u_0, u_1, u_2, u_3;
+        pco->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
 
-        // Set velocity (N 31)
-        uu1 = gamma_rel/(wgas_rel_true+bbb_sq) * (qq1 + q_bbb/wgas_rel_true * bbb1);
-        uu2 = gamma_rel/(wgas_rel_true+bbb_sq) * (qq2 + q_bbb/wgas_rel_true * bbb2);
-        uu3 = gamma_rel/(wgas_rel_true+bbb_sq) * (qq3 + q_bbb/wgas_rel_true * bbb3);
+        // Extract cell-centered magnetic field
+        const Real &bb1 = bb_cc(IB1,k,j,i);
+        const Real &bb2 = bb_cc(IB2,k,j,i);
+        const Real &bb3 = bb_cc(IB3,k,j,i);
 
-        // Apply floors to density and pressure
+        // Calculate magnetic pressure
+        Real b0 = g_(I01,i)*u0*bb1 + g_(I02,i)*u0*bb2 + g_(I03,i)*u0*bb3
+                + g_(I11,i)*u1*bb1 + g_(I12,i)*u1*bb2 + g_(I13,i)*u1*bb3
+                + g_(I12,i)*u2*bb1 + g_(I22,i)*u2*bb2 + g_(I23,i)*u2*bb3
+                + g_(I13,i)*u3*bb1 + g_(I23,i)*u3*bb2 + g_(I33,i)*u3*bb3;
+        Real b1 = (bb1 + b0 * u1) / u0;
+        Real b2 = (bb2 + b0 * u2) / u0;
+        Real b3 = (bb3 + b0 * u3) / u0;
+        Real b_0, b_1, b_2, b_3;
+        pco->LowerVectorCell(b0, b1, b2, b3, k, j, i, &b_0, &b_1, &b_2, &b_3);
+        Real b_sq = b0*b_0 + b1*b_1 + b2*b_2 + b3*b_3;
+        Real pmag = 0.5*b_sq;
+
+        // Calculate floors for density and pressure
         Real density_floor_local = density_floor_;
         if (rho_pow_ != 0.0)
           density_floor_local = std::max(density_floor_local,
               rho_min_*std::pow(pco->x1v(i),rho_pow_));
+        density_floor_local = std::max(density_floor_local, rho_pmag_min_*pmag);
         Real pressure_floor_local = pressure_floor_;
         if (u_pow_ != 0.0)
           pressure_floor_local = std::max(pressure_floor_local,
               (gamma_-1.0)*u_min_*std::pow(pco->x1v(i),u_pow_));
+        pressure_floor_local = std::max(pressure_floor_local, pgas_pmag_min_*pmag);
+
+        // Adjust conserved quantities to add unmagnetized density and/or pressure at
+        // rest in normal frame
+        Real rho_add = std::max(density_floor_local-rho, 0.0);
+        Real pgas_add = std::max(pressure_floor_local-pgas, 0.0);
+        if (rho_add > 0.0 or pgas_add > 0.0)
+        {
+          Real u0_add, u1_add, u2_add, u3_add;
+          pco->RaiseVectorCell(-alpha, 0.0, 0.0, 0.0, k, j, i, &u0_add, &u1_add,
+              &u2_add, &u3_add);
+          Real wgas_add = rho_add + gamma_adi/(gamma_adi-1.0) * pgas_add;
+          cons(IDN,k,j,i) += rho_add * u0_add;
+          cons(IEN,k,j,i) += wgas_add * u0_add * (-alpha) + pgas_add;
+          fixed_(k,j,i) = true;
+        }
+
+        // Adjust primitive quantities to match
+        if (rho_add > 0.0 or pgas_add > 0.0)
+          fixed_(k,j,i) = ConservedToPrimitiveSingle(cons, prim_old, gamma_adi, bb_cc,
+              g_, g_inv_, k, j, i, prim);
+      }
+    }
+
+  // Readjust conserved values if fix was applied
+  for (int k = ks; k <= ke; ++k)
+    for (int j = js; j <= je; ++j)
+    {
+      bool fix_in_row = false;
+      for (int i = is; i <= ie; ++i)
+        if (fixed_(k,j,i))
+          fix_in_row = true;
+      if (fix_in_row)
+      {
+        pco->CellMetric(k, j, is, ie, g_, g_inv_);
+        for (int i = is; i <= ie; ++i)
+          if (fixed_(k,j,i))
+          {
+            PrimitiveToConservedSingle(prim, gamma_adi, bb_cc, g_, g_inv_, k, j, i,
+                cons, pco);
+            fixed_(k,j,i) = false;
+          }
+      }
+    }
+
+  // Apply limits, adjusting primitives as necessary
+  for (int k = ks; k <= ke; ++k)
+    for (int j = js; j <= je; ++j)
+    {
+      pco->CellMetric(k, j, is, ie, g_, g_inv_);
+      for (int i = is; i <= ie; ++i)
+      {
+        // Extract primitives
+        Real &rho = prim(IDN,k,j,i);
+        Real &pgas = prim(IEN,k,j,i);
+        Real &uu1 = prim(IVX,k,j,i);
+        Real &uu2 = prim(IVY,k,j,i);
+        Real &uu3 = prim(IVZ,k,j,i);
+
+        // Calculate 4-velocity
+        Real alpha = std::sqrt(-1.0/g_inv_(I00,i));
+        Real tmp = g_(I11,i)*uu1*uu1 + 2.0*g_(I12,i)*uu1*uu2 + 2.0*g_(I13,i)*uu1*uu3
+                 + g_(I22,i)*uu2*uu2 + 2.0*g_(I23,i)*uu2*uu3
+                 + g_(I33,i)*uu3*uu3;
+        Real gamma = std::sqrt(1.0 + tmp);
+        Real u0 = gamma/alpha;
+        Real u1 = uu1 - alpha * gamma * g_inv_(I01,i);
+        Real u2 = uu2 - alpha * gamma * g_inv_(I02,i);
+        Real u3 = uu3 - alpha * gamma * g_inv_(I03,i);
+        Real u_0, u_1, u_2, u_3;
+        pco->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
+
+        // Extract cell-centered magnetic field
+        const Real &bb1 = bb_cc(IB1,k,j,i);
+        const Real &bb2 = bb_cc(IB2,k,j,i);
+        const Real &bb3 = bb_cc(IB3,k,j,i);
+
+        // Calculate magnetic pressure
+        Real b0 = g_(I01,i)*u0*bb1 + g_(I02,i)*u0*bb2 + g_(I03,i)*u0*bb3
+                + g_(I11,i)*u1*bb1 + g_(I12,i)*u1*bb2 + g_(I13,i)*u1*bb3
+                + g_(I12,i)*u2*bb1 + g_(I22,i)*u2*bb2 + g_(I23,i)*u2*bb3
+                + g_(I13,i)*u3*bb1 + g_(I23,i)*u3*bb2 + g_(I33,i)*u3*bb3;
+        Real b1 = (bb1 + b0 * u1) / u0;
+        Real b2 = (bb2 + b0 * u2) / u0;
+        Real b3 = (bb3 + b0 * u3) / u0;
+        Real b_0, b_1, b_2, b_3;
+        pco->LowerVectorCell(b0, b1, b2, b3, k, j, i, &b_0, &b_1, &b_2, &b_3);
+        Real b_sq = b0*b_0 + b1*b_1 + b2*b_2 + b3*b_3;
+        Real pmag = 0.5*b_sq;
+
+        // Calculate floors for density and pressure
+        Real density_floor_local = density_floor_;
+        if (rho_pow_ != 0.0)
+          density_floor_local = std::max(density_floor_local,
+              rho_min_*std::pow(pco->x1v(i),rho_pow_));
+        density_floor_local = std::max(density_floor_local, rho_pmag_min_*pmag);
+        Real pressure_floor_local = pressure_floor_;
+        if (u_pow_ != 0.0)
+          pressure_floor_local = std::max(pressure_floor_local,
+              (gamma_-1.0)*u_min_*std::pow(pco->x1v(i),u_pow_));
+        pressure_floor_local = std::max(pressure_floor_local, pgas_pmag_min_*pmag);
+
+        // Apply floors to density and pressure
         if (rho < density_floor_local or std::isnan(rho))
         {
           rho = density_floor_local;
@@ -262,9 +302,9 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         }
 
         // Apply ceiling to velocity
-        if (gamma_rel > gamma_max_)
+        if (gamma > gamma_max_)
         {
-          Real factor = std::sqrt((SQR(gamma_max_)-1.0) / (SQR(gamma_rel)-1.0));
+          Real factor = std::sqrt((SQR(gamma_max_)-1.0) / (SQR(gamma)-1.0));
           uu1 *= factor;
           uu2 *= factor;
           uu3 *= factor;
@@ -273,22 +313,167 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       }
     }
 
-  // Fix corresponding conserved values if any changes made
+  // Finally ensure conserved quantities match primitives
   for (int k = ks; k <= ke; ++k)
-  {
     for (int j = js; j <= je; ++j)
     {
-      pco->CellMetric(k, j, is, ie, g_, g_inv_);
+      bool fix_in_row = false;
       for (int i = is; i <= ie; ++i)
         if (fixed_(k,j,i))
-        {
-          PrimitiveToConservedSingle(prim, gamma_adi, bb_cc, g_, g_inv_, k, j, i, cons,
-              pco);
-          fixed_(k,j,i) = false;
-        }
+          fix_in_row = true;
+      if (fix_in_row)
+      {
+        pco->CellMetric(k, j, is, ie, g_, g_inv_);
+        for (int i = is; i <= ie; ++i)
+          if (fixed_(k,j,i))
+          {
+            PrimitiveToConservedSingle(prim, gamma_adi, bb_cc, g_, g_inv_, k, j, i,
+                cons, pco);
+            fixed_(k,j,i) = false;
+          }
+      }
     }
-  }
   return;
+}
+
+// Function for finding primitives from conserved variables in a single cell
+static bool ConservedToPrimitiveSingle(const AthenaArray<Real> &cons,
+    const AthenaArray<Real> &prim_old, Real gamma_adi, const AthenaArray<Real> &bb_cc,
+    const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int i,
+    AthenaArray<Real> &prim)
+{
+  // Parameters
+  const Real max_wgas_rel = 1.0e8;
+  const Real initial_guess_multiplier = 10.0;
+  const int initial_guess_multiplications = 10;
+  const int num_iterations = 5;
+
+  // Prepare return value
+  bool fixed = false;
+
+  // Extract metric
+  const Real &g_00 = g(I00,i), &g_01 = g(I01,i), &g_02 = g(I02,i), &g_03 = g(I03,i),
+             &g_10 = g(I01,i), &g_11 = g(I11,i), &g_12 = g(I12,i), &g_13 = g(I13,i),
+             &g_20 = g(I02,i), &g_21 = g(I12,i), &g_22 = g(I22,i), &g_23 = g(I23,i),
+             &g_30 = g(I03,i), &g_31 = g(I13,i), &g_32 = g(I23,i), &g_33 = g(I33,i);
+  const Real &g00 = gi(I00,i), &g01 = gi(I01,i), &g02 = gi(I02,i), &g03 = gi(I03,i),
+             &g10 = gi(I01,i), &g11 = gi(I11,i), &g12 = gi(I12,i), &g13 = gi(I13,i),
+             &g20 = gi(I02,i), &g21 = gi(I12,i), &g22 = gi(I22,i), &g23 = gi(I23,i),
+             &g30 = gi(I03,i), &g31 = gi(I13,i), &g32 = gi(I23,i), &g33 = gi(I33,i);
+  Real alpha = std::sqrt(-1.0/g00);
+
+  // Extract conserved quantities
+  const Real &rho_u0 = cons(IDN,k,j,i);
+  const Real &t0_0 = cons(IEN,k,j,i);
+  const Real &t0_1 = cons(IVX,k,j,i);
+  const Real &t0_2 = cons(IVY,k,j,i);
+  const Real &t0_3 = cons(IVZ,k,j,i);
+
+  // Calculate variations on conserved quantities
+  Real d = alpha * rho_u0;                                               // (N 21)
+  Real q_0 = alpha * t0_0;                                               // (N 17)
+  Real q_1 = alpha * t0_1;                                               // (N 17)
+  Real q_2 = alpha * t0_2;                                               // (N 17)
+  Real q_3 = alpha * t0_3;                                               // (N 17)
+  Real q_n = -alpha * (g00*q_0 + g01*q_1 + g02*q_2 + g03*q_3);
+  Real qq1 = g10*q_0 + g11*q_1 + g12*q_2 + g13*q_3 - alpha * g01 * q_n;
+  Real qq2 = g20*q_0 + g21*q_1 + g22*q_2 + g23*q_3 - alpha * g02 * q_n;
+  Real qq3 = g30*q_0 + g31*q_1 + g32*q_2 + g33*q_3 - alpha * g03 * q_n;
+  Real tmp1 = g00*q_0*q_0 + 2.0*g01*q_0*q_1 + 2.0*g02*q_0*q_2
+                + 2.0*g03*q_0*q_3
+            + g11*q_1*q_1 + 2.0*g12*q_1*q_2 + 2.0*g13*q_1*q_3
+            + g22*q_2*q_2 + 2.0*g23*q_2*q_3
+            + g33*q_3*q_3;
+  Real tmp2 = alpha * (g00*q_0 + g01*q_1 + g02*q_2 + g03*q_3);
+  Real qq_sq = tmp1 + SQR(tmp2);
+
+  // Extract cell-centered magnetic field
+  const Real &bb1 = bb_cc(IB1,k,j,i);
+  const Real &bb2 = bb_cc(IB2,k,j,i);
+  const Real &bb3 = bb_cc(IB3,k,j,i);
+
+  // Calculate variations on magnetic field
+  Real bbb1 = alpha * bb1;                                                // (N 5)
+  Real bbb2 = alpha * bb2;                                                // (N 5)
+  Real bbb3 = alpha * bb3;                                                // (N 5)
+  Real bbb_sq = g_11*bbb1*bbb1 + 2.0*g_12*bbb1*bbb2 + 2.0*g_13*bbb1*bbb3
+              + g_22*bbb2*bbb2 + 2.0*g_23*bbb2*bbb3
+              + g_33*bbb3*bbb3;
+  Real q_bbb = q_1*bbb1 + q_2*bbb2 + q_3*bbb3;
+  Real q_bbb_sq = SQR(q_bbb);
+
+  // Extract old primitives
+  const Real &rho_old = prim_old(IDN,k,j,i);
+  const Real &pgas_old = prim_old(IEN,k,j,i);
+  const Real &uu1_old = prim_old(IVX,k,j,i);
+  const Real &uu2_old = prim_old(IVY,k,j,i);
+  const Real &uu3_old = prim_old(IVZ,k,j,i);
+
+  // Construct initial guess for relativistic gas enthalpy W
+  Real tmp = g_11*SQR(uu1_old) + 2.0*g_12*uu1_old*uu2_old + 2.0*g_13*uu1_old*uu3_old
+           + g_22*SQR(uu2_old) + 2.0*g_23*uu2_old*uu3_old
+           + g_33*SQR(uu3_old);
+  Real gamma_sq = 1.0 + tmp;
+  Real wgas_rel_init = gamma_sq * (rho_old + gamma_adi/(gamma_adi-1.0) * pgas_old);
+  for (int count = 0; count < initial_guess_multiplications; ++count)
+  {
+    Real vv_sq = (qq_sq*SQR(wgas_rel_init)
+        + q_bbb_sq*(bbb_sq+2.0*wgas_rel_init))
+        / SQR(wgas_rel_init*(bbb_sq+wgas_rel_init));  // (N 28)
+    if (vv_sq >= 1.0)  // guess for W leads to superluminal velocities
+      wgas_rel_init *= initial_guess_multiplier;
+    else
+      break;
+  }
+
+  // Apply Newton-Raphson method to find new W
+  Real wgas_rel_new = wgas_rel_init;
+  Real res_new = QNResidual(wgas_rel_new, d, q_n, qq_sq, bbb_sq, q_bbb_sq, gamma_adi);
+  for (int n = 0; n < num_iterations; ++n)
+  {
+    Real wgas_rel_old = wgas_rel_new;
+    Real res_old = res_new;
+    Real derivative = QNResidualPrime(wgas_rel_old, d, qq_sq, bbb_sq, q_bbb_sq,
+        gamma_adi);
+    Real delta = -res_old / derivative;
+    wgas_rel_new = wgas_rel_old + delta;
+    res_new = QNResidual(wgas_rel_new, d, q_n, qq_sq, bbb_sq, q_bbb_sq, gamma_adi);
+  }
+  Real wgas_rel_true = wgas_rel_new;
+  if (not (wgas_rel_true > 0.0 and wgas_rel_true < max_wgas_rel))
+  {
+    fixed = true;
+    wgas_rel_true = wgas_rel_init;
+  }
+  Real vv_sq = (qq_sq*SQR(wgas_rel_true)
+      + q_bbb_sq*(bbb_sq+2.0*wgas_rel_true))
+      / SQR(wgas_rel_true*(bbb_sq+wgas_rel_true));  // (N 28)
+  gamma_sq = 1.0/(1.0-vv_sq);
+  Real gamma_rel = std::sqrt(gamma_sq);
+  if (not std::isfinite(gamma_rel) or gamma_rel < 1.0)
+  {
+    fixed = true;
+    gamma_rel = 1.0;
+    gamma_sq = SQR(gamma_rel);
+  }
+  Real u0 = gamma_rel/alpha;  // (N 21)
+
+  // Extract primitives
+  Real &rho = prim(IDN,k,j,i);
+  Real &pgas = prim(IEN,k,j,i);
+  Real &uu1 = prim(IVX,k,j,i);
+  Real &uu2 = prim(IVY,k,j,i);
+  Real &uu3 = prim(IVZ,k,j,i);
+
+  // Set density and pressure
+  rho = d/gamma_rel;                                                  // (N 21)
+  pgas = (gamma_adi-1.0)/gamma_adi * (wgas_rel_true/gamma_sq - rho);  // (N 21,32)
+
+  // Set velocity (N 31)
+  uu1 = gamma_rel/(wgas_rel_true+bbb_sq) * (qq1 + q_bbb/wgas_rel_true * bbb1);
+  uu2 = gamma_rel/(wgas_rel_true+bbb_sq) * (qq2 + q_bbb/wgas_rel_true * bbb2);
+  uu3 = gamma_rel/(wgas_rel_true+bbb_sq) * (qq3 + q_bbb/wgas_rel_true * bbb3);
+  return fixed;
 }
 
 // Function for converting all primitives to conserved variables
