@@ -33,6 +33,8 @@ static Real QNResidualPrime(Real w_guess, Real d_norm, Real q_norm_sq, Real bbb_
 static void neighbor_average(AthenaArray<Real> &prim, int n, int k, int j, int i,
     int kl, int ku, int jl, int ju, int il, int iu);
 
+//--------------------------------------------------------------------------------------
+
 // Constructor
 // Inputs:
 //   pf: pointer to hydro object
@@ -60,6 +62,8 @@ HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
   fixed_.NewAthenaArray(ncells3, ncells2, ncells1);
 }
 
+//--------------------------------------------------------------------------------------
+
 // Destructor
 HydroEqnOfState::~HydroEqnOfState()
 {
@@ -67,6 +71,8 @@ HydroEqnOfState::~HydroEqnOfState()
   g_inv_.DeleteAthenaArray();
   fixed_.DeleteAthenaArray();
 }
+
+//--------------------------------------------------------------------------------------
 
 // Variable inverter
 // Inputs:
@@ -78,16 +84,6 @@ HydroEqnOfState::~HydroEqnOfState()
 // Outputs:
 //   prim: primitives
 //   bb_cc: cell-centered magnetic field
-// Notes:
-//   follows Noble et al. 2006, ApJ 641 626 (N)
-//       writing uu for \tilde{u}
-//       writing d for D
-//       writing q for Q
-//       writing qq for \tilde{Q}
-//       writing vv for v
-//       writing wgas_rel for W = \gamma^2 w
-//       writing bb for B
-//       writing bbb for \mathcal{B}
 void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     const AthenaArray<Real> &prim_old, const FaceField &bb,
     AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc, Coordinates *pco, int is, int ie,
@@ -336,7 +332,28 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   return;
 }
 
+//--------------------------------------------------------------------------------------
+
 // Function for finding primitives from conserved variables in a single cell
+// Inputs:
+//   cons: conserved quantities
+//   prim_old: primitive quantities from previous half timestep
+//   gamma_adi: ratio of specific heats
+//   bb_cc: cell-centered magnetic field
+//   g,gi: 1D arrays of metric covariant and contravariant coefficients
+//   k,j,i: indices of cell
+// Outputs:
+//   prim: primitives
+// Notes:
+//   follows Noble et al. 2006, ApJ 641 626 (N)
+//       writing uu for \tilde{u}
+//       writing d for D
+//       writing q for Q
+//       writing qq for \tilde{Q}
+//       writing vv for v
+//       writing wgas_rel for W = \gamma^2 w
+//       writing bb for B
+//       writing bbb for \mathcal{B}
 static bool ConservedToPrimitiveSingle(const AthenaArray<Real> &cons,
     const AthenaArray<Real> &prim_old, Real gamma_adi, const AthenaArray<Real> &bb_cc,
     const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int i,
@@ -476,6 +493,8 @@ static bool ConservedToPrimitiveSingle(const AthenaArray<Real> &cons,
   return fixed;
 }
 
+//--------------------------------------------------------------------------------------
+
 // Function for converting all primitives to conserved variables
 // Inputs:
 //   prim: primitives
@@ -501,6 +520,8 @@ void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
     }
   return;
 }
+
+//--------------------------------------------------------------------------------------
 
 // Function for converting primitives to conserved variables in a single cell
 // Inputs:
@@ -569,6 +590,8 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
   t0_3 = wtot * u0 * u_3 - b0 * b_3;
   return;
 }
+
+//--------------------------------------------------------------------------------------
 
 // Function for calculating relativistic fast wavespeeds
 // Inputs:
@@ -756,6 +779,8 @@ void HydroEqnOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
   return;
 }
 
+//--------------------------------------------------------------------------------------
+
 // Function for calculating relativistic fast wavespeeds in arbitrary coordinates
 // Inputs:
 //   rho_h: gas enthalpy
@@ -804,6 +829,8 @@ void HydroEqnOfState::FastMagnetosonicSpeedsGR(Real rho_h, Real pgas, Real u0, R
   return;
 }
 
+//--------------------------------------------------------------------------------------
+
 // Function whose value vanishes for correct enthalpy
 // Inputs:
 //   w_guess: guess for total enthalpy W
@@ -831,6 +858,8 @@ static Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real bbb_sq,
       + q_bbb_sq / (2.0*SQR(w_guess)) - w_guess + pgas;  // (N 29)
   return q_dot_n_calc - q_n;
 }
+
+//--------------------------------------------------------------------------------------
 
 // Derivative of QNResidual()
 // Inputs:
@@ -868,6 +897,8 @@ static Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real bbb_sq,
   return -0.5*bbb_sq*dv_norm_sq_dw - q_bbb_sq/w_cu - 1.0
       + dpgas_dw;
 }
+
+//--------------------------------------------------------------------------------------
 
 // Function for replacing primitive value in cell with average of neighbors
 // Inputs:

@@ -21,6 +21,8 @@
 #include "../hydro/hydro.hpp"
 #include "../hydro/eos/eos.hpp" 
 
+//--------------------------------------------------------------------------------------
+
 // Constructor
 // Inputs:
 //   pmb: pointer to MeshBlock containing this grid
@@ -303,6 +305,8 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
     trans_face3_j1_(js) = sin_c;
   }
 }
+
+//--------------------------------------------------------------------------------------
 
 // Destructor
 Coordinates::~Coordinates()
