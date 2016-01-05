@@ -150,7 +150,6 @@ void HydroIntegrator::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
         il=is-1, iu=ie+1, kl=ks-1, ku=ke+1;
     }
     for (int k=kl; k<=ku; ++k){
-      bool first_time_through_loop = true;
 #pragma omp for schedule(static)
       for (int j=js; j<=je+1; ++j){
 

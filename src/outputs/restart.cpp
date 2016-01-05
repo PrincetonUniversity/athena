@@ -89,7 +89,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
     resfile.Write(&(pM->nbtotal), sizeof(int), 1);
     resfile.Write(&(pM->root_level), sizeof(int), 1);
     resfile.Write(&(pM->mesh_size), sizeof(RegionSize), 1);
-    resfile.Write(pM->mesh_bcs, sizeof(int), 6);
+    resfile.Write(pM->mesh_bcs, sizeof(enum BoundaryFlag), 6);
     resfile.Write(&(pM->time), sizeof(Real), 1);
     resfile.Write(&(pM->dt), sizeof(Real), 1);
     resfile.Write(&(pM->ncycle), sizeof(int), 1);
