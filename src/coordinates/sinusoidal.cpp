@@ -49,7 +49,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
     ng=pmb->cnghost;
   }
 
-  // Set face centered positions and distances
+  // Set face-centered positions and distances
   AllocateAndSetBasicCoordinates();
 
   // Set parameters

@@ -11,7 +11,7 @@
 #include "coordinates.hpp"
 
 // C++ headers
-#include <cmath>  // acos(), cos(), log(), pow(), sin(), sqrt()
+#include <cmath>  // abs(), acos(), cos(), log(), pow(), sin(), sqrt()
 
 // Athena headers
 #include "../athena.hpp"           // enums, macros, Real
@@ -44,7 +44,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
     ng=pmb->cnghost;
   }
 
-  // Set face centered positions and distances
+  // Set face-centered positions and distances
   AllocateAndSetBasicCoordinates();
 
   // Set parameters
@@ -231,14 +231,14 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
       Real sin_p_cu = SQR(sin_p)*sin_p;
 
       // Volumes, areas, lengths, and widths
-      coord_vol_j1_(j) = cos_m - cos_p;
+      coord_vol_j1_(j) = std::abs(cos_m - cos_p);
       coord_area1_j1_(j) = coord_vol_j1_(j);
-      coord_area2_j1_(j) = sin_m;
+      coord_area2_j1_(j) = std::abs(sin_m);
       coord_area3_j1_(j) = coord_vol_j1_(j);
       coord_len1_j1_(j) = coord_area2_j1_(j);
       coord_len2_j1_(j) = coord_vol_j1_(j);
       coord_len3_j1_(j) = coord_area2_j1_(j);
-      coord_width3_j1_(j) = sin_c;
+      coord_width3_j1_(j) = std::abs(sin_c);
 
       // Source terms
       coord_src_j1_(j) = 1.0/6.0
@@ -255,9 +255,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
       metric_face3_j1_(j) = sin_c_sq;
 
       // Coordinate transformations
-      trans_face1_j1_(j) = sin_c;
-      trans_face2_j1_(j) = sin_m;
-      trans_face3_j1_(j) = sin_c;
+      trans_face1_j1_(j) = std::abs(sin_c);
+      trans_face2_j1_(j) = std::abs(sin_m);
+      trans_face3_j1_(j) = std::abs(sin_c);
     }
   }
   else  // no extent
@@ -276,10 +276,10 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
     Real sin_m_cu = sin_m_sq*sin_m;
     Real sin_p_cu = SQR(sin_p)*sin_p;
 
-    // Volumes and areas
-    coord_vol_j1_(js) = cos_m - cos_p;
+    // Volumes, areas, lengths, and widths
+    coord_vol_j1_(js) = std::abs(cos_m - cos_p);
     coord_area1_j1_(js) = coord_vol_j1_(js);
-    coord_area2_j1_(js) = sin_m;
+    coord_area2_j1_(js) = std::abs(sin_m);
     coord_area3_j1_(js) = coord_vol_j1_(js);
     coord_len1_j1_(js) = coord_area2_j1_(js);
     coord_len2_j1_(js) = coord_vol_j1_(js);
@@ -300,9 +300,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
     metric_face3_j1_(js) = sin_c_sq;
 
     // Coordinate transformations
-    trans_face1_j1_(js) = sin_c;
-    trans_face2_j1_(js) = sin_m;
-    trans_face3_j1_(js) = sin_c;
+    trans_face1_j1_(js) = std::abs(sin_c);
+    trans_face2_j1_(js) = std::abs(sin_m);
+    trans_face3_j1_(js) = std::abs(sin_c);
   }
 }
 
@@ -964,7 +964,7 @@ void Coordinates::PrimToLocal1(const int k, const int j, const int il, const int
     Face1Metric(k, j, il, iu, g_, gi_);
 
   // Extract useful quantities that do not depend on r
-  const Real &sin_theta = trans_face1_j1_(j);
+  const Real &abs_sin_theta = trans_face1_j1_(j);
 
   // Go through 1D block of cells
   #pragma simd
@@ -976,7 +976,7 @@ void Coordinates::PrimToLocal1(const int k, const int j, const int il, const int
     const Real mt_0 = alpha;
     const Real mx_1 = 1.0/alpha;
     const Real my_2 = r;
-    const Real mz_3 = r * sin_theta;
+    const Real mz_3 = r * abs_sin_theta;
 
     // Extract global projected 4-velocities
     Real uu0_l = 0.0;
@@ -1133,7 +1133,7 @@ void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int
     Face2Metric(k, j, il, iu, g_, gi_);
 
   // Extract useful quantities that do not depend on r
-  const Real &sin_theta = trans_face2_j1_(j);
+  const Real &abs_sin_theta = trans_face2_j1_(j);
 
   // Go through 1D block of cells
   #pragma simd
@@ -1144,7 +1144,7 @@ void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int
     const Real &alpha = trans_face2_i1_(i);
     const Real mt_0 = alpha;
     const Real mx_2 = 1.0/r;
-    const Real my_3 = r * sin_theta;
+    const Real my_3 = r * abs_sin_theta;
     const Real &mz_1 = 1.0/alpha;
 
     // Extract global projected 4-velocities
@@ -1302,7 +1302,7 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
     Face3Metric(k, j, il, iu, g_, gi_);
 
   // Extract useful quantities that do not depend on r
-  const Real &sin_theta = trans_face3_j1_(j);
+  const Real &abs_sin_theta = trans_face3_j1_(j);
 
   // Go through 1D block of cells
   #pragma simd
@@ -1312,7 +1312,7 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
     const Real &r = x1v(i);
     const Real &alpha = trans_face3_i1_(i);
     const Real mt_0 = alpha;
-    const Real mx_3 = r * sin_theta;
+    const Real mx_3 = r * abs_sin_theta;
     const Real my_1 = 1.0/alpha;
     const Real mz_2 = r;
 
@@ -1463,7 +1463,7 @@ void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const in
 {
   // Extract geometric quantities that do not depend on r
   const Real &sin_sq_theta = metric_face1_j1_(j);
-  const Real &sin_theta = trans_face1_j1_(j);
+  const Real &abs_sin_theta = trans_face1_j1_(j);
 
   // Go through 1D block of cells
   #pragma simd
@@ -1481,7 +1481,7 @@ void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const in
     const Real m0_t = 1.0/alpha;
     const Real m1_x = alpha;
     const Real m2_y = 1.0/r;
-    const Real m3_z = 1.0 / (r * sin_theta);
+    const Real m3_z = 1.0 / (r * abs_sin_theta);
 
     // Extract local conserved quantities and fluxes
     const Real dx = flux(IDN,i);
@@ -1546,7 +1546,7 @@ void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const in
 {
   // Extract geometric quantities that do not depend on r
   const Real &sin_sq_theta = metric_face2_j1_(j);
-  const Real &sin_theta = trans_face2_j1_(j);
+  const Real &abs_sin_theta = trans_face2_j1_(j);
 
   // Go through 1D block of cells
   #pragma simd
@@ -1564,7 +1564,7 @@ void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const in
     const Real m0_t = 1.0/alpha;
     const Real m1_z = alpha;
     const Real m2_x = 1.0/r;
-    const Real m3_y = 1.0 / (r * sin_theta);
+    const Real m3_y = 1.0 / (r * abs_sin_theta);
 
     // Extract local conserved quantities and fluxes
     const Real dx = flux(IDN,i);
@@ -1629,7 +1629,7 @@ void Coordinates::FluxToGlobal3(const int k, const int j, const int il, const in
 {
   // Extract geometric quantities that do not depend on r
   const Real &sin_sq_theta = metric_face3_j1_(j);
-  const Real &sin_theta = trans_face3_j1_(j);
+  const Real &abs_sin_theta = trans_face3_j1_(j);
 
   // Go through 1D block of cells
   #pragma simd
@@ -1647,7 +1647,7 @@ void Coordinates::FluxToGlobal3(const int k, const int j, const int il, const in
     const Real m0_t = 1.0/alpha;
     const Real m1_y = alpha;
     const Real m2_z = 1.0/r;
-    const Real m3_x = 1.0 / (r * sin_theta);
+    const Real m3_x = 1.0 / (r * abs_sin_theta);
 
     // Extract local conserved quantities and fluxes
     const Real dx = flux(IDN,i);

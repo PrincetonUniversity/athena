@@ -50,7 +50,7 @@ HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
   u_min_ = pin->GetOrAddReal("hydro", "u_min", pressure_floor_/(gamma_-1.0));
   u_pow_ = pin->GetOrAddReal("hydro", "u_pow", 0.0);
   rho_pmag_min_ = pin->GetOrAddReal("hydro", "rho_pmag_min", 0.0);
-  pgas_pmag_min_ = pin->GetOrAddReal("hydro", "pgas_pmag_min", 0.0);
+  u_pmag_min_ = pin->GetOrAddReal("hydro", "u_pmag_min", 0.0);
   gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
   int ncells1 = pf->pmy_block->block_size.nx1 + 2*NGHOST;
   g_.NewAthenaArray(NMETRIC, ncells1);
@@ -183,7 +183,8 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         if (u_pow_ != 0.0)
           pressure_floor_local = std::max(pressure_floor_local,
               (gamma_-1.0)*u_min_*std::pow(pco->x1v(i),u_pow_));
-        pressure_floor_local = std::max(pressure_floor_local, pgas_pmag_min_*pmag);
+        pressure_floor_local = std::max(pressure_floor_local,
+            (gamma_-1.0)*u_pmag_min_*pmag);
 
         // Adjust conserved quantities to add unmagnetized density and/or pressure at
         // rest in normal frame
@@ -283,7 +284,8 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         if (u_pow_ != 0.0)
           pressure_floor_local = std::max(pressure_floor_local,
               (gamma_-1.0)*u_min_*std::pow(pco->x1v(i),u_pow_));
-        pressure_floor_local = std::max(pressure_floor_local, pgas_pmag_min_*pmag);
+        pressure_floor_local = std::max(pressure_floor_local,
+            (gamma_-1.0)*u_pmag_min_*pmag);
 
         // Apply floors to density and pressure
         if (rho < density_floor_local or std::isnan(rho))

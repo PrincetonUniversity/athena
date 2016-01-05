@@ -106,7 +106,7 @@ private:
   Hydro *pmy_hydro_;                     // ptr to Hydro containing this EqnOfState
   Real iso_sound_speed_, gamma_;         // isothermal Cs, ratio of specific heats
   Real density_floor_, pressure_floor_;  // density and pressure floors
-  Real rho_pmag_min_, pgas_pmag_min_;    // floors on ratios of gas quantities to pmag
+  Real rho_pmag_min_, u_pmag_min_;       // floors on ratios of gas quantities to pmag
   Real gamma_max_;                       // maximum Lorentz factor
   Real rho_min_, rho_pow_;               // variables to control power-law denity floor
   Real u_min_, u_pow_;                   // variables to control power-law energy floor
