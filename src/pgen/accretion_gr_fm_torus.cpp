@@ -19,10 +19,6 @@
 #include "../hydro/eos/eos.hpp"
 
 // Declarations
-void InnerBC(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
-    int is, int ie, int js, int je, int ks, int ke);
-void OuterBC(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
-    int is, int ie, int js, int je, int ks, int ke);
 static Real calculate_l_from_r_peak(Real r);
 static Real calculate_r_peak_from_l(Real l_target, Real r_min, Real r_max);
 static Real log_h_aux(Real r, Real sin_theta);
@@ -437,48 +433,6 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   g.DeleteAthenaArray();
   gi.DeleteAthenaArray();
   bb.DeleteAthenaArray();
-
-  // Enroll boundary functions
-  pmb->pbval->EnrollUserBoundaryFunction(INNER_X1, InnerBC);
-  pmb->pbval->EnrollUserBoundaryFunction(OUTER_X1, OuterBC);
-  return;
-}
-
-// Inner boundary condition
-void InnerBC(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
-    int is, int ie, int js, int je, int ks, int ke)
-{
-  for (int k = ks; k <= ke; ++k)
-    for (int j = js; j <= je; ++j)
-      for (int i_offset = 1; i_offset <= NGHOST; ++i_offset)
-        bb.x1f(k,j,is-i_offset) = bb.x1f(k,j,is);
-  for (int k = ks; k <= ke; ++k)
-    for (int j = js; j <= je+1; ++j)
-      for (int i_offset=1; i_offset <= NGHOST; ++i_offset)
-        bb.x2f(k,j,is-i_offset) = bb.x2f(k,j,is);
-  for (int k = ks; k <= ke+1; ++k)
-    for (int j = js; j <= je; ++j)
-      for (int i_offset=1; i_offset <= NGHOST; ++i_offset)
-        bb.x3f(k,j,is-i_offset) = bb.x3f(k,j,is);
-  return;
-}
-
-// Outer boundary condition
-void OuterBC(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
-    int is, int ie, int js, int je, int ks, int ke)
-{
-  for (int k = ks; k <= ke; ++k)
-    for (int j = js; j <= je; ++j)
-      for (int i_offset = 1; i_offset <= NGHOST; ++i_offset)
-        bb.x1f(k,j,ie+1+i_offset) = bb.x1f(k,j,ie+1);
-  for (int k = ks; k <= ke; ++k)
-    for (int j = js; j <= je+1; ++j)
-      for (int i_offset=1; i_offset <= NGHOST; ++i_offset)
-        bb.x2f(k,j,ie+i_offset) = bb.x2f(k,j,ie);
-  for (int k = ks; k <= ke+1; ++k)
-    for (int j = js; j <= je; ++j)
-      for (int i_offset=1; i_offset <= NGHOST; ++i_offset)
-        bb.x3f(k,j,ie+i_offset) = bb.x3f(k,j,ie);
   return;
 }
 

@@ -3,19 +3,17 @@ problem   = Fishbone-Moncrief equilibrium torus
 reference = Fishbone & Moncrief 1976, ApJ 207 962 (FM)
 
 <job>
-problem_id = FMTorus
+problem_id = fm_torus
 
 <output1>
-file_type   = vtk
+file_type   = athdf
 variable    = prim
 dt          = 1.0
-data_format = %24.16e
 
 <output2>
-file_type   = vtk
+file_type   = athdf
 variable    = cons
 dt          = 1.0
-data_format = %24.16e
 
 <output3>
 file_type = rst
@@ -27,43 +25,45 @@ nlim       = -1
 tlim       = 1.0
 
 <mesh>
-nx1    = 64    # number of zones in r-direction
-x1min  = 1.96  # inner r
-x1max  = 20.0  # outer r
-x1rat  = 1.0   # ratio setting r-spacing
-ix1_bc = user  # 3: special
-ox1_bc = user  # 3: special
+nx1    = 64       # r-direction
+x1min  = 1.96
+x1max  = 20.0
+x1rat  = 1.0
+ix1_bc = outflow
+ox1_bc = outflow
 
-nx2    = 64                  # number of zones in theta-direction
-x2min  = 0.7853981633974483  # lower theta (1/4 pi)
-x2max  = 2.356194490192345   # upper theta (3/4 pi)
-ix2_bc = user                # 3: special
-ox2_bc = user                # 3: special
+nx2    = 64                 # theta-direction
+x2min  = 0.0
+x2max  = 3.141592653589793  # 3.141592653589793 == pi
+ix2_bc = polar
+ox2_bc = polar
 
-nx3    = 1                  # number of zones in phi-direction
-x3min  = 0.0                # minimum phi
-x3max  = 6.283185307179586  # maximum phi (2 pi)
-ix3_bc = periodic           # 4: periodic
-ox3_bc = periodic           # 4: periodic
+nx3    = 64                 # phi-direction
+x3min  = 0.0
+x3max  = 6.283185307179586  # 6.283185307179586 == 2*pi
+ix3_bc = periodic
+ox3_bc = periodic
 
 <meshblock>
 nx1 = 64
 nx2 = 64
-nx3 = 1
+nx3 = 64
 
 <coord>
 m = 1.0  # black hole mass M
 a = 0.0  # black hole spin (0 <= a/M < 1)
 
 <hydro>
-gamma     = 1.3333333333333333  # Gamma = C_p/C_v
-dfloor    = 1.0e-6              # minimum density
-pfloor    = 1.0e-8              # minimum gas pressure
-rho_min   = 1.0e-2              # value of density floor at r_edge
-rho_pow   = -1.5                # density floor rho_min * (r/r_edge)^rho_pow
-u_min     = 1.0e-2              # value of internal energy floor at r_edge
-u_pow     = -2.5                # internal energy floor u_min * (r/r_edge)^u_pow
-gamma_max = 50.0                # maximum Lorentz factor relative to normal observer
+gamma        = 1.3333333333333333  # Gamma = C_p/C_v
+dfloor       = 1.0e-6              # minimum density
+pfloor       = 1.0e-8              # minimum gas pressure
+rho_min      = 1.0e-2              # value of density floor at r_edge
+rho_pow      = -1.5                # density floor rho_min * (r/r_edge)^rho_pow
+u_min        = 1.0e-2              # value of internal energy floor at r_edge
+u_pow        = -2.5                # internal energy floor u_min * (r/r_edge)^u_pow
+rho_pmag_min = 0.02                # minimum allowed value of rho/pmag
+u_pmag_min   = 0.002               # minimum allowed value of u/pmag
+gamma_max    = 50.0                # maximum Lorentz factor relative to normal observer
 
 <problem>
 k_adi    = 1.0    # p_gas = K * rho^Gamma
