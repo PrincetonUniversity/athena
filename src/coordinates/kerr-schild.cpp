@@ -21,7 +21,7 @@
 #include "coordinates.hpp"
 
 // C++ headers
-#include <cmath>  // cos(), log(), sin(), sqrt()
+#include <cmath>  // abs(), cos(), log(), sin(), sqrt()
 
 // Athena headers
 #include "../athena.hpp"           // enums, macros, Real
@@ -54,7 +54,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
     ng=pmb->cnghost;
   }
 
-  // Set face centered positions and distances
+  // Set face-centered positions and distances
   AllocateAndSetBasicCoordinates();
 
   // Set parameters
@@ -290,11 +290,11 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
     Real sin_p_cu = SQR(sin_p)*sin_p;
 
     // Volumes, areas, lengths, and widths
-    coord_vol_j1_(j) = cos_m - cos_p;
+    coord_vol_j1_(j) = std::abs(cos_m - cos_p);
     coord_vol_j2_(j) = SQR(a) * (cos_m_sq + cos_m * cos_p + cos_p_sq);
     coord_area1_j1_(j) = coord_vol_j1_(j);
     coord_area1_j2_(j) = coord_vol_j2_(j);
-    coord_area2_j1_(j) = sin_m;
+    coord_area2_j1_(j) = std::abs(sin_m);
     coord_area2_j2_(j) = SQR(a) * cos_m_sq;
     coord_area3_j1_(j) = coord_vol_j1_(j);
     coord_area3_j2_(j) = coord_vol_j2_(j);
@@ -305,7 +305,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
     coord_len3_j1_(j) = coord_area2_j1_(j);
     coord_len3_j2_(j) = coord_area2_j2_(j);
     coord_width2_j1_(j) = dx2f(j);
-    coord_width3_j1_(j) = sin_c;
+    coord_width3_j1_(j) = std::abs(sin_c);
     coord_width3_j2_(j) = SQR(a) * sin_c_sq;
     coord_width3_j3_(j) = SQR(a) * cos_c_sq;
 
@@ -384,28 +384,28 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
       trans_face1_ji2_(j,i) = std::sqrt((sigma_mc + 2.0*m*r_m)
           / (r_m_sq + a2 + 2.0*m*a2*r_m/sigma_mc * sin_c_sq));
       trans_face1_ji3_(j,i) = std::sqrt(sigma_mc);
-      trans_face1_ji4_(j,i) = sin_c
+      trans_face1_ji4_(j,i) = std::abs(sin_c)
           * std::sqrt(r_m_sq + a2 + 2.0*m*a2*r_m/sigma_mc * sin_c_sq);
       trans_face1_ji5_(j,i) = 2.0*m*r_m * std::sqrt(sigma_mc
           / ((sigma_mc + 2.0*m*r_m)
           * (r_m_qu + a2*r_m_sq + 2.0*m*a2*r_m + delta_m*a2*cos_c_sq)));
-      trans_face1_ji6_(j,i) = -2.0*m*a*r_m * sin_c
+      trans_face1_ji6_(j,i) = -2.0*m*a*r_m * std::abs(sin_c)
           * std::sqrt(r_m_sq + a2 + 2.0*m*a2*r_m/sigma_mc * sin_c_sq)
           / (r_m_qu + a2*r_m_sq + 2.0*m*a2*r_m + delta_m*a2*cos_c_sq);
-      trans_face1_ji7_(j,i) = -a * (sigma_mc + 2.0*m*r_m) * sin_c
+      trans_face1_ji7_(j,i) = -a * (sigma_mc + 2.0*m*r_m) * std::abs(sin_c)
           * std::sqrt(r_m_sq + a2 + 2.0*m*a2*r_m/sigma_mc * sin_c_sq)
           / (r_m_qu + a2*r_m_sq + 2.0*m*a2*r_m + delta_m*a2*cos_c_sq);
       trans_face2_ji1_(j,i) = 1.0 / std::sqrt(1.0 + 2.0*m*r_c/sigma_cm);
       trans_face2_ji2_(j,i) = std::sqrt(1.0 + 2.0*m*r_c/sigma_cm);
       trans_face2_ji3_(j,i) = std::sqrt(sigma_cm);
-      trans_face2_ji4_(j,i) = std::sqrt(sigma_cm) * sin_m;
+      trans_face2_ji4_(j,i) = std::sqrt(sigma_cm) * std::abs(sin_m);
       trans_face2_ji5_(j,i) = 2.0*m*r_c
           / (sigma_cm * std::sqrt(1.0 + 2.0*m*r_c/sigma_cm));
       trans_face2_ji6_(j,i) = -a * sin_m_sq * std::sqrt(1.0 + 2.0*m*r_c/sigma_cm);
       trans_face3_ji1_(j,i) = 1.0 / std::sqrt(1.0 + 2.0*m*r_c/sigma_cc);
       trans_face3_ji2_(j,i) = std::sqrt(1.0 + 2.0*m*r_c/sigma_cc);
       trans_face3_ji3_(j,i) = std::sqrt(sigma_cc);
-      trans_face3_ji4_(j,i) = std::sqrt(sigma_cc) * sin_c;
+      trans_face3_ji4_(j,i) = std::sqrt(sigma_cc) * std::abs(sin_c);
       trans_face3_ji5_(j,i) = 2.0*m*r_c
           / (sigma_cc * std::sqrt(1.0 + 2.0*m*r_c/sigma_cc));
       trans_face3_ji6_(j,i) = -a * sin_c_sq * std::sqrt(1.0 + 2.0*m*r_c/sigma_cc);
@@ -504,7 +504,7 @@ Coordinates::~Coordinates()
 // Outputs:
 //   volumes: 1D array of cell volumes
 // Notes:
-//   \Delta V = 1/3 * (r_+ - r_-) (\cos\theta_- - \cos\theta_+) (\phi_+ - \phi_-)
+//   \Delta V = 1/3 * (r_+ - r_-) |\cos\theta_- - \cos\theta_+| (\phi_+ - \phi_-)
 //       * (r_-^2 + r_- r_+ + r_+^2
 //       + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
 //   cf. GetCellVolume()
@@ -525,7 +525,7 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 // Outputs:
 //   returned value: cell volume
 // Notes:
-//   \Delta V = 1/3 * (r_+ - r_-) (\cos\theta_- - \cos\theta_+) (\phi_+ - \phi_-)
+//   \Delta V = 1/3 * (r_+ - r_-) |\cos\theta_- - \cos\theta_+| (\phi_+ - \phi_-)
 //       * (r_-^2 + r_- r_+ + r_+^2
 //       + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
 //   cf. CellVolume()
@@ -544,7 +544,7 @@ Real Coordinates::GetCellVolume(const int k, const int j, const int i)
 // Outputs:
 //   areas: 1D array of interface areas orthogonal to r
 // Notes:
-//   \Delta A = 1/3 * (\cos\theta_- - \cos\theta_+) (\phi_+ - \phi_-)
+//   \Delta A = 1/3 * |\cos\theta_- - \cos\theta_+| (\phi_+ - \phi_-)
 //       * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
 //   cf. GetFace1Area()
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
@@ -564,7 +564,7 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 // Outputs:
 //   returned value: interface area orthogonal to r
 // Notes:
-//   \Delta A = 1/3 * (\cos\theta_- - \cos\theta_+) (\phi_+ - \phi_-)
+//   \Delta A = 1/3 * |\cos\theta_- - \cos\theta_+| (\phi_+ - \phi_-)
 //       * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
 //   cf. Face1Area()
 Real Coordinates::GetFace1Area(const int k, const int j, const int i)
@@ -582,7 +582,7 @@ Real Coordinates::GetFace1Area(const int k, const int j, const int i)
 // Outputs:
 //   areas: 1D array of interface areas orthogonal to theta
 // Notes:
-//   \Delta A = 1/3 (r_+ - r_-) \sin\theta_- (\phi_+ - \phi_-)
+//   \Delta A = 1/3 (r_+ - r_-) |\sin\theta_-| (\phi_+ - \phi_-)
 //       * (r_-^2 + r_- r_+ + r_+^2 + 3 a^2 \cos^2\theta_-)
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &areas)
@@ -605,7 +605,7 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 // Outputs:
 //   areas: 1D array of interface areas orthogonal to phi
 // Notes:
-//   \Delta A = 1/3 (r_+ - r_-) (\cos\theta_- - \cos\theta_+)
+//   \Delta A = 1/3 (r_+ - r_-) |\cos\theta_- - \cos\theta_+|
 //       * (r_-^2 + r_- r_+ + r_+^2
 //       + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
@@ -628,7 +628,7 @@ void Coordinates::Face3Area(const int k, const int j, const int il, const int iu
 // Outputs:
 //   lengths: 1D array of edge lengths along r
 // Notes:
-//   \Delta L = 1/3 (r_+ - r_-) \sin\theta_-
+//   \Delta L = 1/3 (r_+ - r_-) |\sin\theta_-|
 //       * (r_-^2 + r_- r_+ + r_+^2 + 3 a^2 \cos^2\theta_-)
 void Coordinates::Edge1Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &lengths)
@@ -650,7 +650,7 @@ void Coordinates::Edge1Length(const int k, const int j, const int il, const int 
 // Outputs:
 //   lengths: 1D array of edge lengths along r
 // Notes:
-//   \Delta L = 1/3 * (\cos\theta_- - \cos\theta_+)
+//   \Delta L = 1/3 * |\cos\theta_- - \cos\theta_+|
 //       * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
 //   cf. GetEdge2Length()
 void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
@@ -671,7 +671,7 @@ void Coordinates::Edge2Length(const int k, const int j, const int il, const int 
 // Outputs:
 //   returned value: length of edge along theta
 // Notes:
-//   \Delta L = 1/3 * (\cos\theta_- - \cos\theta_+)
+//   \Delta L = 1/3 * |\cos\theta_- - \cos\theta_+|
 //       * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
 //   cf. Edge2Length()
 Real Coordinates::GetEdge2Length(const int k, const int j, const int i)
@@ -688,7 +688,7 @@ Real Coordinates::GetEdge2Length(const int k, const int j, const int i)
 // Outputs:
 //   lengths: 1D array of edge lengths along r
 // Notes:
-//   \Delta L = (\phi_+ - \phi_-) \sin\theta_- (r_-^2 + a^2 \cos^2\theta_-)
+//   \Delta L = (\phi_+ - \phi_-) |\sin\theta_-| (r_-^2 + a^2 \cos^2\theta_-)
 //   cf. GetEdge3Length()
 void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &lengths)
@@ -707,7 +707,7 @@ void Coordinates::Edge3Length(const int k, const int j, const int il, const int 
 // Outputs:
 //   returned value: length of edge along phi
 // Notes:
-//   \Delta L = (\phi_+ - \phi_-) \sin\theta_- (r_-^2 + a^2 \cos^2\theta_-)
+//   \Delta L = (\phi_+ - \phi_-) |\sin\theta_-| (r_-^2 + a^2 \cos^2\theta_-)
 //   cf. Edge3Length()
 Real Coordinates::GetEdge3Length(const int k, const int j, const int i)
 {
@@ -754,7 +754,7 @@ Real Coordinates::CenterWidth2(const int k, const int j, const int i)
 // Outputs:
 //   returned value: phi-width of cell (i,j,k)
 // Notes:
-//   \Delta W = \sin\theta (\phi_+ - \phi_-)
+//   \Delta W = |\sin\theta| (\phi_+ - \phi_-)
 //       * \sqrt{r^2 + a^2 + 2 M a^2 r \sin^2\theta / (r^2 + a^2 \cos^2\theta)}
 Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 {
