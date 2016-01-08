@@ -165,12 +165,13 @@ int main(int argc, char *argv[])
     infile.Open(input_filename,WRAPPER_READ_MODE);
     pinput->LoadFromFile(infile);
     pinput->ModifyFromCmdline(argc,argv);
-    infile.Close();
+  	// leave the input file open (for restarting)
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl
               << "memory allocation failed initializing class ParameterInput: " 
               << ba.what() << std::endl;
+    infile.Close();
 #ifdef MPI_PARALLEL
     MPI_Finalize();
 #endif
@@ -178,6 +179,7 @@ int main(int argc, char *argv[])
   }
   catch(std::exception const& ex) {
     std::cout << ex.what() << std::endl;  // prints diagnostic message  
+    infile.Close();
 #ifdef MPI_PARALLEL
     MPI_Finalize();
 #endif
@@ -187,6 +189,7 @@ int main(int argc, char *argv[])
   // Dump input parameters and quit if code was run with -n option.
   if (narg_flag){
     if(Globals::my_rank==0) pinput->ParameterDump(std::cout);
+    infile.Close();
 #ifdef MPI_PARALLEL
     MPI_Finalize();
 #endif
@@ -204,6 +207,7 @@ int main(int argc, char *argv[])
       pmesh = new Mesh(pinput, infile, mesh_flag);
       ncstart=pmesh->ncycle;
     }
+    infile.Close(); // close the input file here
   }
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl
@@ -301,9 +305,6 @@ int main(int argc, char *argv[])
 
     pmesh->ncycle++;
     pmesh->time += pmesh->dt;
-
-    if(pmesh->adaptive==true)
-      pmesh->AdaptiveMeshRefinement(pinput);
 
     pmesh->NewTimeStep();
 

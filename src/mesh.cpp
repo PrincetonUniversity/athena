@@ -527,7 +527,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   if(resfile.Read(&root_level, sizeof(int), 1)!=1) nerr++;
   current_level=root_level;
   if(resfile.Read(&mesh_size, sizeof(RegionSize), 1)!=1) nerr++;
-  if(resfile.Read(mesh_bcs, sizeof(int), 6)!=6) nerr++;
+  if(resfile.Read(mesh_bcs, sizeof(enum BoundaryFlag), 6)!=6) nerr++;
   if(resfile.Read(&time, sizeof(Real), 1)!=1) nerr++;
   if(resfile.Read(&dt, sizeof(Real), 1)!=1) nerr++;
   if(resfile.Read(&ncycle, sizeof(int), 1)!=1) nerr++;
