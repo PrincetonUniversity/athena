@@ -16,10 +16,14 @@
 #include "../../../../coordinates/coordinates.hpp"  // Coordinates
 
 // Declarations
-static void NonTransformingLLF(const int k, const int j, const int i,
-    const AthenaArray<Real> &prim_l, const AthenaArray<Real> &prim_r,
-    const AthenaArray<Real> &g, const AthenaArray<Real> &gi, Hydro *pmy_hydro,
+static void LLFTransforming(Hydro *pmy_hydro, const int k, const int j, const int il,
+    const int iu, const int ivx, const AthenaArray<Real> &bb,
+    AthenaArray<Real> &bb_normal, AthenaArray<Real> &g, AthenaArray<Real> &gi,
+    AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &cons,
     AthenaArray<Real> &flux);
+static void LLFNonTransforming(Hydro *pmy_hydro, const int k, const int j, const int il,
+    const int iu, AthenaArray<Real> &g, AthenaArray<Real> &gi,
+    AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &flux);
 
 //--------------------------------------------------------------------------------------
 
@@ -35,28 +39,58 @@ static void NonTransformingLLF(const int k, const int j, const int i,
 // Notes:
 //   prim_l, prim_r overwritten
 //   implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
-//   references Mignone & Bodo 2005, MNRAS 364 126 (MB)
 void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
     const int iu, const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
     AthenaArray<Real> &prim_r, AthenaArray<Real> &flux)
 {
+  if (GENERAL_RELATIVITY and ivx == IVY and pmy_hydro->pmy_block->pcoord->IsPole(j))
+    LLFNonTransforming(pmy_hydro, k, j, il, iu, g_, gi_, prim_l, prim_r, flux);
+  else
+    LLFTransforming(pmy_hydro, k, j, il, iu, ivx, bb, bb_normal_, g_, gi_, prim_l,
+        prim_r, cons_, flux);
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Frame-transforming LLF implementation
+// Inputs:
+//   pmy_hydro: pointer to Hydro object
+//   k,j: x3- and x2-indices
+//   il,iu: lower and upper x1-indices
+//   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
+//   bb: 3D array of normal magnetic fields (not used)
+//   bb_normal: 1D scratch array for normal magnetic fields
+//   g,gi: 1D scratch arrays for metric coefficients
+//   prim_l, prim_r: left and right primitive states
+//   cons: 1D scratch array for conserved quantities
+// Outputs:
+//   flux: fluxes across interface
+// Notes:
+//   prim_l, prim_r overwritten
+//   implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
+//   references Mignone & Bodo 2005, MNRAS 364 126 (MB)
+static void LLFTransforming(Hydro *pmy_hydro, const int k, const int j, const int il,
+    const int iu, const int ivx, const AthenaArray<Real> &bb,
+    AthenaArray<Real> &bb_normal, AthenaArray<Real> &g, AthenaArray<Real> &gi,
+    AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &cons,
+    AthenaArray<Real> &flux)
+{
   // Transform primitives to locally flat coordinates if in GR
-  bool pole_top = false, pole_bottom = false;
   if (GENERAL_RELATIVITY)
     switch (ivx)
     {
       case IVX:
         pmy_hydro->pmy_block->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r,
-            bb_normal_);
+            bb_normal);
         break;
       case IVY:
-        pmy_hydro->pmy_block->pcoord->IdentifyPoles(&pole_top, &pole_bottom);
-        pmy_hydro->pmy_block->pcoord->PrimToLocal2(k, j, il+(pole_top?1:0),
-            iu-(pole_bottom?1:0), bb, prim_l, prim_r, bb_normal_);
+        pmy_hydro->pmy_block->pcoord->PrimToLocal2(k, j, il, iu, bb, prim_l, prim_r,
+            bb_normal);
         break;
       case IVZ:
         pmy_hydro->pmy_block->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r,
-            bb_normal_);
+            bb_normal);
         break;
     }
 
@@ -67,9 +101,9 @@ void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
   // Extract ratio of specific heats
   const Real gamma_adi = pmy_hydro->peos->GetGamma();
 
-  // Go through each non-pole interface
+  // Go through each interface
   #pragma simd
-  for (int i = il+(pole_top?1:0); i <= iu-(pole_bottom?1:0); ++i)
+  for (int i = il; i <= iu; ++i)
   {
     // Extract left primitives
     const Real &rho_l = prim_l(IDN,i);
@@ -171,171 +205,166 @@ void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
     // Set conserved quantities in GR
     if (GENERAL_RELATIVITY)
       for (int n = 0; n < NWAVE; ++n)
-        cons_(n,i) = 0.5 * (cons_r[n] + cons_l[n] + (flux_l[n] - flux_r[n]) / lambda);
+        cons(n,i) = 0.5 * (cons_r[n] + cons_l[n] + (flux_l[n] - flux_r[n]) / lambda);
   }
 
-  // Transform non-pole fluxes to global coordinates if in GR
+  // Transform fluxes to global coordinates if in GR
   if (GENERAL_RELATIVITY)
     switch (ivx)
     {
       case IVX:
-        pmy_hydro->pmy_block->pcoord->FluxToGlobal1(k, j, il, iu, cons_, bb_normal_,
+        pmy_hydro->pmy_block->pcoord->FluxToGlobal1(k, j, il, iu, cons, bb_normal,
             flux);
         break;
       case IVY:
-        pmy_hydro->pmy_block->pcoord->FluxToGlobal2(k, j, il+(pole_top?1:0),
-            iu-(pole_bottom?1:0), cons_, bb_normal_, flux);
+        pmy_hydro->pmy_block->pcoord->FluxToGlobal2(k, j, il, iu, cons, bb_normal,
+            flux);
         break;
       case IVZ:
-        pmy_hydro->pmy_block->pcoord->FluxToGlobal3(k, j, il, iu, cons_, bb_normal_,
+        pmy_hydro->pmy_block->pcoord->FluxToGlobal3(k, j, il, iu, cons, bb_normal,
             flux);
         break;
     }
-
-  // Calculate pole fluxes if necessary
-  if (GENERAL_RELATIVITY and (pole_top or pole_bottom))
-    pmy_hydro->pmy_block->pcoord->Face2Metric(k, j, il, iu, g_, gi_);
-  if (GENERAL_RELATIVITY and pole_top)
-    NonTransformingLLF(k, j, il, prim_l, prim_r, g_, gi_, pmy_hydro, flux);
-  if (GENERAL_RELATIVITY and pole_bottom)
-    NonTransformingLLF(k, j, iu, prim_l, prim_r, g_, gi_, pmy_hydro, flux);
   return;
 }
 
 //--------------------------------------------------------------------------------------
 
-// Fallback Riemann solver for poles
+// Non-frame-transforming LLF implementation
 // Inputs:
-//   k,j,i: x3-, x2-, and x1-indices
+//   pmy_hydro: pointer to Hydro object
+//   k,j: x3- and x2-indices
+//   il,iu: lower and upper x1-indices
+//   g,gi: 1D scratch arrays for metric coefficients
 //   prim_l, prim_r: left and right primitive states
-//   g,gi: 1D arrays of metric covariant and contravariant coefficients
-//   pmy_hydro: pointer to Hydro
 // Outputs:
 //   flux: fluxes across interface
 // Notes:
 //   implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
-//   adapted from RiemannSolver() in llf_rel_no_transform.cpp
-static void NonTransformingLLF(const int k, const int j, const int i,
-    const AthenaArray<Real> &prim_l, const AthenaArray<Real> &prim_r,
-    const AthenaArray<Real> &g, const AthenaArray<Real> &gi, Hydro *pmy_hydro,
-    AthenaArray<Real> &flux)
+//   derived from RiemannSolver() in llf_rel_no_transform.cpp assuming ivx = IVY
+static void LLFNonTransforming(Hydro *pmy_hydro, const int k, const int j, const int il,
+    const int iu, AthenaArray<Real> &g, AthenaArray<Real> &gi,
+    AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &flux)
 {
-  // Fix variable direction
-  int ivx = IVY;
-
   // Extract ratio of specific heats
   const Real gamma_adi = pmy_hydro->peos->GetGamma();
 
-  // Extract metric
-  const Real
-      &g_00 = g(I00,i), &g_01 = g(I01,i), &g_02 = g(I02,i), &g_03 = g(I03,i),
-      &g_10 = g(I01,i), &g_11 = g(I11,i), &g_12 = g(I12,i), &g_13 = g(I13,i),
-      &g_20 = g(I02,i), &g_21 = g(I12,i), &g_22 = g(I22,i), &g_23 = g(I23,i),
-      &g_30 = g(I03,i), &g_31 = g(I13,i), &g_32 = g(I23,i), &g_33 = g(I33,i);
-  const Real
-      &g00 = gi(I00,i), &g01 = gi(I01,i), &g02 = gi(I02,i), &g03 = gi(I03,i),
-      &g10 = gi(I01,i), &g11 = gi(I11,i), &g12 = gi(I12,i), &g13 = gi(I13,i),
-      &g20 = gi(I02,i), &g21 = gi(I12,i), &g22 = gi(I22,i), &g23 = gi(I23,i),
-      &g30 = gi(I03,i), &g31 = gi(I13,i), &g32 = gi(I23,i), &g33 = gi(I33,i);
-  Real alpha = std::sqrt(-1.0/g00);
+  // Get metric components
+  pmy_hydro->pmy_block->pcoord->Face2Metric(k, j, il, iu, g, gi);
 
-  // Extract left primitives
-  const Real &rho_l = prim_l(IDN,i);
-  const Real &pgas_l = prim_l(IEN,i);
-  const Real &uu1_l = prim_l(IVX,i);
-  const Real &uu2_l = prim_l(IVY,i);
-  const Real &uu3_l = prim_l(IVZ,i);
+  // Go through each interface
+  #pragma simd
+  for (int i = il; i <= iu; ++i)
+  {
+    // Extract metric
+    const Real &g_00 = g(I00,i), &g_01 = g(I01,i), &g_02 = g(I02,i), &g_03 = g(I03,i),
+               &g_10 = g(I01,i), &g_11 = g(I11,i), &g_12 = g(I12,i), &g_13 = g(I13,i),
+               &g_20 = g(I02,i), &g_21 = g(I12,i), &g_22 = g(I22,i), &g_23 = g(I23,i),
+               &g_30 = g(I03,i), &g_31 = g(I13,i), &g_32 = g(I23,i), &g_33 = g(I33,i);
+    const Real &g00 = gi(I00,i), &g01 = gi(I01,i), &g02 = gi(I02,i), &g03 = gi(I03,i),
+               &g10 = gi(I01,i), &g11 = gi(I11,i), &g12 = gi(I12,i), &g13 = gi(I13,i),
+               &g20 = gi(I02,i), &g21 = gi(I12,i), &g22 = gi(I22,i), &g23 = gi(I23,i),
+               &g30 = gi(I03,i), &g31 = gi(I13,i), &g32 = gi(I23,i), &g33 = gi(I33,i);
+    Real alpha = std::sqrt(-1.0/g00);
 
-  // Extract right primitives
-  const Real &rho_r = prim_r(IDN,i);
-  const Real &pgas_r = prim_r(IEN,i);
-  const Real &uu1_r = prim_r(IVX,i);
-  const Real &uu2_r = prim_r(IVY,i);
-  const Real &uu3_r = prim_r(IVZ,i);
+    // Extract left primitives
+    const Real &rho_l = prim_l(IDN,i);
+    const Real &pgas_l = prim_l(IEN,i);
+    const Real &uu1_l = prim_l(IVX,i);
+    const Real &uu2_l = prim_l(IVY,i);
+    const Real &uu3_l = prim_l(IVZ,i);
 
-  // Calculate 4-velocity in left state
-  Real ucon_l[4], ucov_l[4];
-  Real tmp = g_11*SQR(uu1_l) + 2.0*g_12*uu1_l*uu2_l + 2.0*g_13*uu1_l*uu3_l
-           + g_22*SQR(uu2_l) + 2.0*g_23*uu2_l*uu3_l
-           + g_33*SQR(uu3_l);
-  Real gamma_l = std::sqrt(1.0 + tmp);
-  ucon_l[0] = gamma_l / alpha;
-  ucon_l[1] = uu1_l - alpha * gamma_l * g01;
-  ucon_l[2] = uu2_l - alpha * gamma_l * g02;
-  ucon_l[3] = uu3_l - alpha * gamma_l * g03;
-  ucov_l[0] = g_00*ucon_l[0] + g_01*ucon_l[1] + g_02*ucon_l[2] + g_03*ucon_l[3];
-  ucov_l[1] = g_10*ucon_l[0] + g_11*ucon_l[1] + g_12*ucon_l[2] + g_13*ucon_l[3];
-  ucov_l[2] = g_20*ucon_l[0] + g_21*ucon_l[1] + g_22*ucon_l[2] + g_23*ucon_l[3];
-  ucov_l[3] = g_30*ucon_l[0] + g_31*ucon_l[1] + g_32*ucon_l[2] + g_33*ucon_l[3];
+    // Extract right primitives
+    const Real &rho_r = prim_r(IDN,i);
+    const Real &pgas_r = prim_r(IEN,i);
+    const Real &uu1_r = prim_r(IVX,i);
+    const Real &uu2_r = prim_r(IVY,i);
+    const Real &uu3_r = prim_r(IVZ,i);
 
-  // Calculate 4-velocity in right state
-  Real ucon_r[4], ucov_r[4];
-  tmp = g_11*SQR(uu1_r) + 2.0*g_12*uu1_r*uu2_r + 2.0*g_13*uu1_r*uu3_r
-      + g_22*SQR(uu2_r) + 2.0*g_23*uu2_r*uu3_r
-      + g_33*SQR(uu3_r);
-  Real gamma_r = std::sqrt(1.0 + tmp);
-  ucon_r[0] = gamma_r / alpha;
-  ucon_r[1] = uu1_r - alpha * gamma_r * g01;
-  ucon_r[2] = uu2_r - alpha * gamma_r * g02;
-  ucon_r[3] = uu3_r - alpha * gamma_r * g03;
-  ucov_r[0] = g_00*ucon_r[0] + g_01*ucon_r[1] + g_02*ucon_r[2] + g_03*ucon_r[3];
-  ucov_r[1] = g_10*ucon_r[0] + g_11*ucon_r[1] + g_12*ucon_r[2] + g_13*ucon_r[3];
-  ucov_r[2] = g_20*ucon_r[0] + g_21*ucon_r[1] + g_22*ucon_r[2] + g_23*ucon_r[3];
-  ucov_r[3] = g_30*ucon_r[0] + g_31*ucon_r[1] + g_32*ucon_r[2] + g_33*ucon_r[3];
+    // Calculate 4-velocity in left state
+    Real ucon_l[4], ucov_l[4];
+    Real tmp = g_11*SQR(uu1_l) + 2.0*g_12*uu1_l*uu2_l + 2.0*g_13*uu1_l*uu3_l
+             + g_22*SQR(uu2_l) + 2.0*g_23*uu2_l*uu3_l
+             + g_33*SQR(uu3_l);
+    Real gamma_l = std::sqrt(1.0 + tmp);
+    ucon_l[0] = gamma_l / alpha;
+    ucon_l[1] = uu1_l - alpha * gamma_l * g01;
+    ucon_l[2] = uu2_l - alpha * gamma_l * g02;
+    ucon_l[3] = uu3_l - alpha * gamma_l * g03;
+    ucov_l[0] = g_00*ucon_l[0] + g_01*ucon_l[1] + g_02*ucon_l[2] + g_03*ucon_l[3];
+    ucov_l[1] = g_10*ucon_l[0] + g_11*ucon_l[1] + g_12*ucon_l[2] + g_13*ucon_l[3];
+    ucov_l[2] = g_20*ucon_l[0] + g_21*ucon_l[1] + g_22*ucon_l[2] + g_23*ucon_l[3];
+    ucov_l[3] = g_30*ucon_l[0] + g_31*ucon_l[1] + g_32*ucon_l[2] + g_33*ucon_l[3];
 
-  // Calculate wavespeeds in left state
-  Real lambda_p_l, lambda_m_l;
-  Real wgas_l = rho_l + gamma_adi/(gamma_adi-1.0) * pgas_l;
-  pmy_hydro->peos->SoundSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[ivx], g00, g02,
-      g22, &lambda_p_l, &lambda_m_l);
+    // Calculate 4-velocity in right state
+    Real ucon_r[4], ucov_r[4];
+    tmp = g_11*SQR(uu1_r) + 2.0*g_12*uu1_r*uu2_r + 2.0*g_13*uu1_r*uu3_r
+        + g_22*SQR(uu2_r) + 2.0*g_23*uu2_r*uu3_r
+        + g_33*SQR(uu3_r);
+    Real gamma_r = std::sqrt(1.0 + tmp);
+    ucon_r[0] = gamma_r / alpha;
+    ucon_r[1] = uu1_r - alpha * gamma_r * g01;
+    ucon_r[2] = uu2_r - alpha * gamma_r * g02;
+    ucon_r[3] = uu3_r - alpha * gamma_r * g03;
+    ucov_r[0] = g_00*ucon_r[0] + g_01*ucon_r[1] + g_02*ucon_r[2] + g_03*ucon_r[3];
+    ucov_r[1] = g_10*ucon_r[0] + g_11*ucon_r[1] + g_12*ucon_r[2] + g_13*ucon_r[3];
+    ucov_r[2] = g_20*ucon_r[0] + g_21*ucon_r[1] + g_22*ucon_r[2] + g_23*ucon_r[3];
+    ucov_r[3] = g_30*ucon_r[0] + g_31*ucon_r[1] + g_32*ucon_r[2] + g_33*ucon_r[3];
 
-  // Calculate wavespeeds in right state
-  Real lambda_p_r, lambda_m_r;
-  Real wgas_r = rho_r + gamma_adi/(gamma_adi-1.0) * pgas_r;
-  pmy_hydro->peos->SoundSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[ivx], g00, g02,
-      g22, &lambda_p_r, &lambda_m_r);
+    // Calculate wavespeeds in left state
+    Real lambda_p_l, lambda_m_l;
+    Real wgas_l = rho_l + gamma_adi/(gamma_adi-1.0) * pgas_l;
+    pmy_hydro->peos->SoundSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[IVY], g00, g02,
+        g22, &lambda_p_l, &lambda_m_l);
 
-  // Calculate extremal wavespeed
-  Real lambda_l = std::min(lambda_m_l, lambda_m_r);
-  Real lambda_r = std::max(lambda_p_l, lambda_p_r);
-  Real lambda = std::max(lambda_r, -lambda_l);
+    // Calculate wavespeeds in right state
+    Real lambda_p_r, lambda_m_r;
+    Real wgas_r = rho_r + gamma_adi/(gamma_adi-1.0) * pgas_r;
+    pmy_hydro->peos->SoundSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[IVY], g00, g02,
+        g22, &lambda_p_r, &lambda_m_r);
 
-  // Calculate conserved quantities in L region (rho u^0 and T^0_\mu)
-  Real cons_l[NWAVE];
-  cons_l[IDN] = rho_l * ucon_l[0];
-  cons_l[IEN] = wgas_l * ucon_l[0] * ucov_l[0] + pgas_l;
-  cons_l[IVX] = wgas_l * ucon_l[0] * ucov_l[1];
-  cons_l[IVY] = wgas_l * ucon_l[0] * ucov_l[2];
-  cons_l[IVZ] = wgas_l * ucon_l[0] * ucov_l[3];
+    // Calculate extremal wavespeed
+    Real lambda_l = std::min(lambda_m_l, lambda_m_r);
+    Real lambda_r = std::max(lambda_p_l, lambda_p_r);
+    Real lambda = std::max(lambda_r, -lambda_l);
 
-  // Calculate fluxes in L region (rho u^i and T^i_\mu, where i = ivx)
-  Real flux_l[NWAVE];
-  flux_l[IDN] = rho_l * ucon_l[ivx];
-  flux_l[IEN] = wgas_l * ucon_l[ivx] * ucov_l[0];
-  flux_l[IVX] = wgas_l * ucon_l[ivx] * ucov_l[1];
-  flux_l[IVY] = wgas_l * ucon_l[ivx] * ucov_l[2];
-  flux_l[IVZ] = wgas_l * ucon_l[ivx] * ucov_l[3];
-  flux_l[ivx] += pgas_l;
+    // Calculate conserved quantities in L region (rho u^0 and T^0_\mu)
+    Real cons_l[NWAVE];
+    cons_l[IDN] = rho_l * ucon_l[0];
+    cons_l[IEN] = wgas_l * ucon_l[0] * ucov_l[0] + pgas_l;
+    cons_l[IVX] = wgas_l * ucon_l[0] * ucov_l[1];
+    cons_l[IVY] = wgas_l * ucon_l[0] * ucov_l[2];
+    cons_l[IVZ] = wgas_l * ucon_l[0] * ucov_l[3];
 
-  // Calculate conserved quantities in R region (rho u^0 and T^0_\mu)
-  Real cons_r[NWAVE];
-  cons_r[IDN] = rho_r * ucon_r[0];
-  cons_r[IEN] = wgas_r * ucon_r[0] * ucov_r[0] + pgas_r;
-  cons_r[IVX] = wgas_r * ucon_r[0] * ucov_r[1];
-  cons_r[IVY] = wgas_r * ucon_r[0] * ucov_r[2];
-  cons_r[IVZ] = wgas_r * ucon_r[0] * ucov_r[3];
+    // Calculate fluxes in L region (rho u^i and T^i_\mu, where i = IVY)
+    Real flux_l[NWAVE];
+    flux_l[IDN] = rho_l * ucon_l[IVY];
+    flux_l[IEN] = wgas_l * ucon_l[IVY] * ucov_l[0];
+    flux_l[IVX] = wgas_l * ucon_l[IVY] * ucov_l[1];
+    flux_l[IVY] = wgas_l * ucon_l[IVY] * ucov_l[2];
+    flux_l[IVZ] = wgas_l * ucon_l[IVY] * ucov_l[3];
+    flux_l[IVY] += pgas_l;
 
-  // Calculate fluxes in R region (rho u^i and T^i_\mu, where i = ivx)
-  Real flux_r[NWAVE];
-  flux_r[IDN] = rho_r * ucon_r[ivx];
-  flux_r[IEN] = wgas_r * ucon_r[ivx] * ucov_r[0];
-  flux_r[IVX] = wgas_r * ucon_r[ivx] * ucov_r[1];
-  flux_r[IVY] = wgas_r * ucon_r[ivx] * ucov_r[2];
-  flux_r[IVZ] = wgas_r * ucon_r[ivx] * ucov_r[3];
-  flux_r[ivx] += pgas_r;
+    // Calculate conserved quantities in R region (rho u^0 and T^0_\mu)
+    Real cons_r[NWAVE];
+    cons_r[IDN] = rho_r * ucon_r[0];
+    cons_r[IEN] = wgas_r * ucon_r[0] * ucov_r[0] + pgas_r;
+    cons_r[IVX] = wgas_r * ucon_r[0] * ucov_r[1];
+    cons_r[IVY] = wgas_r * ucon_r[0] * ucov_r[2];
+    cons_r[IVZ] = wgas_r * ucon_r[0] * ucov_r[3];
 
-  // Set fluxes
-  for (int n = 0; n < NWAVE; ++n)
-    flux(n,i) = 0.5 * (flux_l[n] + flux_r[n] - lambda * (cons_r[n] - cons_l[n]));
+    // Calculate fluxes in R region (rho u^i and T^i_\mu, where i = IVY)
+    Real flux_r[NWAVE];
+    flux_r[IDN] = rho_r * ucon_r[IVY];
+    flux_r[IEN] = wgas_r * ucon_r[IVY] * ucov_r[0];
+    flux_r[IVX] = wgas_r * ucon_r[IVY] * ucov_r[1];
+    flux_r[IVY] = wgas_r * ucon_r[IVY] * ucov_r[2];
+    flux_r[IVZ] = wgas_r * ucon_r[IVY] * ucov_r[3];
+    flux_r[IVY] += pgas_r;
+
+    // Set fluxes
+    for (int n = 0; n < NWAVE; ++n)
+      flux(n,i) = 0.5 * (flux_l[n] + flux_r[n] - lambda * (cons_r[n] - cons_l[n]));
+  }
   return;
 }

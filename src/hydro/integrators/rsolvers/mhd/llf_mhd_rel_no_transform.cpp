@@ -21,14 +21,13 @@
 // Inputs:
 //   k,j: x3- and x2-indices
 //   il,iu: lower and upper x1-indices
-//   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
 //   bb: 3D array of normal magnetic fields
 //   prim_l, prim_r: left and right primitive states
 // Outputs:
 //   flux: fluxes across interface
 // Notes:
-//   prim_l, prim_r overwritten
 //   implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
+//   cf. LLFNonTransforming() in llf_mhd_rel.cpp
 void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
     const int iu, const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
     AthenaArray<Real> &prim_r, AthenaArray<Real> &flux)

@@ -27,8 +27,8 @@
 // Outputs:
 //   flux: fluxes across interface
 // Notes:
-//   prim_l, prim_r overwritten
 //   implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
+//   cf. LLFNonTransforming() in llf_rel.cpp
 void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
     const int iu, const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
     AthenaArray<Real> &prim_r, AthenaArray<Real> &flux)
