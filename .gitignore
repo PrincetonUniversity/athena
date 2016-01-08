@@ -28,7 +28,7 @@ athena
 # Athena output files
 *.tab
 *.vtk
-*.athdf
+*.athdf*
 *.hst
 *.rst
 
