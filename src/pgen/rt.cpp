@@ -66,20 +66,53 @@ void ProjectPressureOuterX3(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 static Real gm1;
 static Real grav_acc;
 
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
-{
-  MeshBlock *pmb = phyd->pmy_block;
-  Coordinates *pco = pmb->pcoord;
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+//======================================================================================
+//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
+//  \brief Init the Mesh properties
+//======================================================================================
 
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
+{
+  if (mesh_size.nx3 == 1) {  // 2D problem
+    // Enroll special BCs
+    EnrollUserBoundaryFunction(INNER_X2, ProjectPressureInnerX2);
+    EnrollUserBoundaryFunction(OUTER_X2, ProjectPressureOuterX2);
+  }
+  else { // 3D problem
+    // Enroll special BCs
+    EnrollUserBoundaryFunction(INNER_X3, ProjectPressureInnerX3);
+    EnrollUserBoundaryFunction(OUTER_X3, ProjectPressureOuterX3);
+  }
+  return;
+}
+
+
+//======================================================================================
+//! \fn void Mesh::TerminateUserMeshProperties(void)
+//  \brief Clean up the Mesh properties
+//======================================================================================
+
+void Mesh::TerminateUserMeshProperties(void)
+{
+  // nothing to do
+  return;
+}
+
+
+//======================================================================================
+//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
+//  \brief Problem Generator for the Rayleigh-Taylor instability test
+//======================================================================================
+
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
+{
   long int iseed = -1;
-  Real gamma = phyd->peos->GetGamma();
+  Real gamma = phydro->peos->GetGamma();
   gm1 = gamma - 1.0;
   
-  Real kx = 2.0*(PI)/(pmb->pmy_mesh->mesh_size.x1max - pmb->pmy_mesh->mesh_size.x1min);
-  Real ky = 2.0*(PI)/(pmb->pmy_mesh->mesh_size.x2max - pmb->pmy_mesh->mesh_size.x2min);
-  Real kz = 2.0*(PI)/(pmb->pmy_mesh->mesh_size.x3max - pmb->pmy_mesh->mesh_size.x3min);
+  Real kx = 2.0*(PI)/(pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min);
+  Real ky = 2.0*(PI)/(pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min);
+  Real kz = 2.0*(PI)/(pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min);
 
   // Read perturbation amplitude, problem switch, density ratio
   Real amp = pin->GetReal("problem","amp");
@@ -89,27 +122,27 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 
 // 2D PROBLEM ---------------------------------------------------------------
 
-  if (pmb->block_size.nx3 == 1) {
-    grav_acc = phyd->pf_srcterms->GetG2();
+  if (block_size.nx3 == 1) {
+    grav_acc = phydro->pf_srcterms->GetG2();
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
         Real den=1.0;
-        if (pco->x2v(j) > 0.0) den *= drat;
+        if (pcoord->x2v(j) > 0.0) den *= drat;
 
         if (iprob == 1) {
-          phyd->u(IM2,k,j,i) = (1.0+cos(kx*pco->x1v(i)))*(1.0+cos(ky*pco->x2v(j)))/4.0;
+          phydro->u(IM2,k,j,i) = (1.0+cos(kx*pcoord->x1v(i)))*(1.0+cos(ky*pcoord->x2v(j)))/4.0;
         } else {
-          phyd->u(IM2,k,j,i) = (ran2(&iseed) - 0.5)*(1.0+cos(ky*pco->x2v(j)));
+          phydro->u(IM2,k,j,i) = (ran2(&iseed) - 0.5)*(1.0+cos(ky*pcoord->x2v(j)));
         }
 
-        phyd->u(IDN,k,j,i) = den;
-        phyd->u(IM1,k,j,i) = 0.0;
-        phyd->u(IM2,k,j,i) *= (den*amp);
-        phyd->u(IM3,k,j,i) = 0.0;
+        phydro->u(IDN,k,j,i) = den;
+        phydro->u(IM1,k,j,i) = 0.0;
+        phydro->u(IM2,k,j,i) *= (den*amp);
+        phydro->u(IM3,k,j,i) = 0.0;
         if (NON_BAROTROPIC_EOS) {
-          phyd->u(IEN,k,j,i) = (1.0/gamma + grav_acc*den*(pco->x2v(j)))/gm1;
-          phyd->u(IEN,k,j,i) += 0.5*SQR(phyd->u(IM2,k,j,i))/den;
+          phydro->u(IEN,k,j,i) = (1.0/gamma + grav_acc*den*(pcoord->x2v(j)))/gm1;
+          phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM2,k,j,i))/den;
         }
       }
     }}
@@ -121,55 +154,51 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie+1; i++) {
-        pfld->b.x1f(k,j,i) = b0;
+        pfield->b.x1f(k,j,i) = b0;
       }}}
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je+1; j++) {
       for (int i=is; i<=ie; i++) {
-        pfld->b.x2f(k,j,i) = 0.0;
+        pfield->b.x2f(k,j,i) = 0.0;
       }}}
       for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
-        pfld->b.x3f(k,j,i) = 0.0;
+        pfield->b.x3f(k,j,i) = 0.0;
       }}}
       if (NON_BAROTROPIC_EOS) {
         for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
-          phyd->u(IEN,k,j,i) += 0.5*b0*b0;
+          phydro->u(IEN,k,j,i) += 0.5*b0*b0;
         }}}
       }
     }
 
-    // Enroll special BCs
-    pmb->pbval->EnrollUserBoundaryFunction(INNER_X2, ProjectPressureInnerX2);
-    pmb->pbval->EnrollUserBoundaryFunction(OUTER_X2, ProjectPressureOuterX2);
-
 // 3D PROBLEM ----------------------------------------------------------------
 
   } else {
-    grav_acc = phyd->pf_srcterms->GetG3();
+    grav_acc = phydro->pf_srcterms->GetG3();
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
         Real den=1.0;
-        if (pco->x3v(k) > 0.0) den *= drat;
+        if (pcoord->x3v(k) > 0.0) den *= drat;
 
         if (iprob == 1) {
-          phyd->u(IM3,k,j,i) = (1.0+cos(kx*(pco->x1v(i))))/8.0
-                     *(1.0+cos(ky*pco->x2v(j)))*(1.0+cos(kz*pco->x3v(k)));
+          phydro->u(IM3,k,j,i) = (1.0+cos(kx*(pcoord->x1v(i))))/8.0
+                     *(1.0+cos(ky*pcoord->x2v(j)))*(1.0+cos(kz*pcoord->x3v(k)));
         } else {
-          phyd->u(IM3,k,j,i) = amp*(ran2(&iseed) - 0.5)*(1.0+cos(kz*pco->x3v(k)));
+          phydro->u(IM3,k,j,i) = amp*(ran2(&iseed) - 0.5)*(1.0+cos(kz*pcoord->x3v(k)));
         }
 
-        phyd->u(IDN,k,j,i) = den;
-        phyd->u(IM1,k,j,i) = 0.0;
-        phyd->u(IM2,k,j,i) = 0.0;
-        phyd->u(IM3,k,j,i) *= (den*amp);
+        phydro->u(IDN,k,j,i) = den;
+        phydro->u(IM1,k,j,i) = 0.0;
+        phydro->u(IM2,k,j,i) = 0.0;
+        phydro->u(IM3,k,j,i) *= (den*amp);
         if (NON_BAROTROPIC_EOS) {
-          phyd->u(IEN,k,j,i) = (1.0/gamma + grav_acc*den*(pco->x3v(k)))/gm1;
-          phyd->u(IEN,k,j,i) += 0.5*SQR(phyd->u(IM3,k,j,i))/den;
+          phydro->u(IEN,k,j,i) = (1.0/gamma + grav_acc*den*(pcoord->x3v(k)))/gm1;
+          phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM3,k,j,i))/den;
         }
       }
     }}
@@ -183,43 +212,51 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie+1; i++) {
-        if (pco->x3v(k) > 0.0) {
-          pfld->b.x1f(k,j,i) = b0;
+        if (pcoord->x3v(k) > 0.0) {
+          pfield->b.x1f(k,j,i) = b0;
         } else {
-          pfld->b.x1f(k,j,i) = b0*cos(angle);
+          pfield->b.x1f(k,j,i) = b0*cos(angle);
         }
       }}}
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je+1; j++) {
       for (int i=is; i<=ie; i++) {
-        if (pco->x3v(k) > 0.0) {
-          pfld->b.x2f(k,j,i) = 0.0;
+        if (pcoord->x3v(k) > 0.0) {
+          pfield->b.x2f(k,j,i) = 0.0;
         } else {
-          pfld->b.x2f(k,j,i) = b0*sin(angle);
+          pfield->b.x2f(k,j,i) = b0*sin(angle);
         }
       }}}
       for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
-        pfld->b.x3f(k,j,i) = 0.0;
+        pfield->b.x3f(k,j,i) = 0.0;
       }}}
       if (NON_BAROTROPIC_EOS) {
         for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
-          phyd->u(IEN,k,j,i) += 0.5*b0*b0;
+          phydro->u(IEN,k,j,i) += 0.5*b0*b0;
         }}}
       }
     }
-
-    // Enroll special BCs
-    pmb->pbval->EnrollUserBoundaryFunction(INNER_X3, ProjectPressureInnerX3);
-    pmb->pbval->EnrollUserBoundaryFunction(OUTER_X3, ProjectPressureOuterX3);
-
   } /* end of 3D initialization */
 
   return;
 }
+
+
+//======================================================================================
+//! \fn void MeshBlock::UserWorkInLoop(void)
+//  \brief User-defined work function for every time step
+//======================================================================================
+
+void MeshBlock::UserWorkInLoop(void)
+{
+  // nothing to do
+  return;
+}
+
 
 //--------------------------------------------------------------------------------------
 //! \fn void ProjectPressureInnerX2()

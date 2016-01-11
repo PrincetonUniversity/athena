@@ -53,13 +53,39 @@ static Real bxl,byl,bzl;
 void ShockCloudInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                    int is, int ie, int js, int je, int ks, int ke);
 
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
+//======================================================================================
+//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
+//  \brief Init the Mesh properties
+//======================================================================================
+
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
 {
-  MeshBlock *pmb = phyd->pmy_block;
-  Coordinates *pco = pmb->pcoord;
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  Real gmma  = phyd->peos->GetGamma();
+// Set IIB value function pointer
+  EnrollUserBoundaryFunction(INNER_X1, ShockCloudInnerX1);
+  return;
+}
+
+
+//======================================================================================
+//! \fn void Mesh::TerminateUserMeshProperties(void)
+//  \brief Clean up the Mesh properties
+//======================================================================================
+
+void Mesh::TerminateUserMeshProperties(void)
+{
+  // nothing to do
+  return;
+}
+
+
+//======================================================================================
+//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
+//  \brief Problem Generator for the shock-cloud interaction test
+//======================================================================================
+
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
+{
+  Real gmma  = phydro->peos->GetGamma();
   gmma1 = gmma - 1.0;
 
 // Read input parameters
@@ -74,7 +100,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 // Set paramters in ambient medium ("R-state" for shock)
 
   Real dr = 1.0;
-  Real pr = 1.0/(phyd->peos->GetGamma());
+  Real pr = 1.0/(phydro->peos->GetGamma());
   Real ur = 0.0;
 
 // Uses Rankine Hugoniot relations for adiabatic gas to initialize problem
@@ -93,30 +119,30 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
     // postshock flow
-    if(pco->x1v(i) < xshock) {
-      phyd->u(IDN,k,j,i) = dl;
-      phyd->u(IM1,k,j,i) = ul*dl;
-      phyd->u(IM2,k,j,i) = 0.0;
-      phyd->u(IM3,k,j,i) = 0.0;
-      phyd->u(IEN,k,j,i) = pl/gmma1 + 0.5*dl*(ul*ul);
+    if(pcoord->x1v(i) < xshock) {
+      phydro->u(IDN,k,j,i) = dl;
+      phydro->u(IM1,k,j,i) = ul*dl;
+      phydro->u(IM2,k,j,i) = 0.0;
+      phydro->u(IM3,k,j,i) = 0.0;
+      phydro->u(IEN,k,j,i) = pl/gmma1 + 0.5*dl*(ul*ul);
 
     // preshock ambient gas
     } else {
-      phyd->u(IDN,k,j,i) = dr;
-      phyd->u(IM1,k,j,i) = ur*dr;
-      phyd->u(IM2,k,j,i) = 0.0;
-      phyd->u(IM3,k,j,i) = 0.0;
-      phyd->u(IEN,k,j,i) = pr/gmma1 + 0.5*dr*(ur*ur);
+      phydro->u(IDN,k,j,i) = dr;
+      phydro->u(IM1,k,j,i) = ur*dr;
+      phydro->u(IM2,k,j,i) = 0.0;
+      phydro->u(IM3,k,j,i) = 0.0;
+      phydro->u(IEN,k,j,i) = pr/gmma1 + 0.5*dr*(ur*ur);
     }
 
     // cloud interior
-    Real diag = sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(j)) + SQR(pco->x3v(k)));
+    Real diag = sqrt(SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)) + SQR(pcoord->x3v(k)));
     if (diag < rad) {
-      phyd->u(IDN,k,j,i) = dr*drat;
-      phyd->u(IM1,k,j,i) = ur*dr*drat;
-      phyd->u(IM2,k,j,i) = 0.0;
-      phyd->u(IM3,k,j,i) = 0.0;
-      phyd->u(IEN,k,j,i) = pr/gmma1 + 0.5*dr*drat*(ur*ur);
+      phydro->u(IDN,k,j,i) = dr*drat;
+      phydro->u(IM1,k,j,i) = ur*dr*drat;
+      phydro->u(IM2,k,j,i) = 0.0;
+      phydro->u(IM3,k,j,i) = 0.0;
+      phydro->u(IEN,k,j,i) = pr/gmma1 + 0.5*dr*drat*(ur*ur);
     }
   }}}
 
@@ -133,28 +159,28 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie+1; i++) {
-      if(pco->x1v(i) < xshock) {
-        pfld->b.x1f(k,j,i) = bxl;
+      if(pcoord->x1v(i) < xshock) {
+        pfield->b.x1f(k,j,i) = bxl;
       } else {
-        pfld->b.x1f(k,j,i) = bxr;
+        pfield->b.x1f(k,j,i) = bxr;
       }
     }}}
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je+1; j++) {
     for (int i=is; i<=ie; i++) {
-      if(pco->x1v(i) < xshock) {
-        pfld->b.x2f(k,j,i) = byl;
+      if(pcoord->x1v(i) < xshock) {
+        pfield->b.x2f(k,j,i) = byl;
       } else {
-        pfld->b.x2f(k,j,i) = byr;
+        pfield->b.x2f(k,j,i) = byr;
       }
     }}}
     for (int k=ks; k<=ke+1; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      if(pco->x1v(i) < xshock) {
-        pfld->b.x3f(k,j,i) = bzl;
+      if(pcoord->x1v(i) < xshock) {
+        pfield->b.x3f(k,j,i) = bzl;
       } else {
-        pfld->b.x3f(k,j,i) = bzr;
+        pfield->b.x3f(k,j,i) = bzr;
       }
     }}}
 
@@ -163,20 +189,28 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      if(pco->x1v(i) < xshock) {
-        phyd->u(IEN,k,j,i) += 0.5*(bxl*bxl + byl*byl + bzl*bzl);
+      if(pcoord->x1v(i) < xshock) {
+        phydro->u(IEN,k,j,i) += 0.5*(bxl*bxl + byl*byl + bzl*bzl);
       } else {
-        phyd->u(IEN,k,j,i) += 0.5*(bxr*bxr + byr*byr + bxr*bzr);
+        phydro->u(IEN,k,j,i) += 0.5*(bxr*bxr + byr*byr + bxr*bzr);
       }
     }}}
   }
-
-// Set IIB value function pointer
-
-  pmb->pbval->EnrollUserBoundaryFunction(INNER_X1, ShockCloudInnerX1);
-
   return;
 }
+
+
+//======================================================================================
+//! \fn void MeshBlock::UserWorkInLoop(void)
+//  \brief User-defined work function for every time step
+//======================================================================================
+
+void MeshBlock::UserWorkInLoop(void)
+{
+  // nothing to do
+  return;
+}
+
 
 //--------------------------------------------------------------------------------------
 //! \fn void ShockCloudInnerX1()

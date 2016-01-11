@@ -198,12 +198,16 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   }
 
   // read BC flags for each of the 6 boundaries in turn.
+  for(int dir=0; dir<6; dir++)
+    BoundaryFunction_[dir]=NULL;
   mesh_bcs[INNER_X1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix1_bc","none"));
   mesh_bcs[OUTER_X1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox1_bc","none"));
   mesh_bcs[INNER_X2] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix2_bc","none"));
   mesh_bcs[OUTER_X2] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox2_bc","none"));
   mesh_bcs[INNER_X3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix3_bc","none"));
   mesh_bcs[OUTER_X3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox3_bc","none"));
+
+  InitUserMeshProperties(pin);
 
 // read MeshBlock parameters
   block_size.nx1 = pin->GetOrAddInteger("meshblock","nx1",mesh_size.nx1);
@@ -544,6 +548,10 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   if(mesh_size.nx2>1) dim=2;
   if(mesh_size.nx3>1) dim=3;
 
+  for(int dir=0; dir<6; dir++)
+    BoundaryFunction_[dir]=NULL;
+  InitUserMeshProperties(pin);
+
 // check cfl_number
   if(cfl_number > 1.0 && mesh_size.nx2==1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -686,6 +694,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
 
 Mesh::~Mesh()
 {
+  TerminateUserMeshProperties();
   while(pblock->prev != NULL) // should not be true
     delete pblock->prev;
   while(pblock->next != NULL)
@@ -1039,6 +1048,39 @@ void Mesh::NewTimeStep(void)
   return;
 }
 
+
+//--------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValHydro_t my_bc)
+//  \brief Enroll a user-defined boundary function
+
+void Mesh::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValFunc_t my_bc)
+{
+  std::stringstream msg;
+  if(dir<0 || dir>5) {
+    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
+        << "dirName = " << dir << " not valid" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  if(mesh_bcs[dir]!=USER_BNDRY) {
+    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
+        << "The boundary condition flag must be set to the string 'user' in the "
+        << " <mesh> block in the input file to use user-enrolled BCs" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  BoundaryFunction_[dir]=my_bc;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserRefinementCondition(AMRFlag_t amrflag)
+//  \brief Enroll a user-defined function for checking refinement criteria
+void Mesh::EnrollUserRefinementCondition(AMRFlag_t amrflag)
+{
+  AMRFlag_=amrflag;
+  return;
+}
+
+
 //--------------------------------------------------------------------------------------
 // \!fn void Mesh::Initialize(int res_flag, ParameterInput *pin)
 // \brief  initialization before the main loop
@@ -1057,11 +1099,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     if(res_flag==0) {
       pmb = pblock;
       while (pmb != NULL)  {
-        phydro=pmb->phydro;
-        pfield=pmb->pfield;
-        pbval=pmb->pbval;
-        ProblemGenerator(phydro,pfield,pin);
-        pbval->CheckBoundary();
+        pmb->ProblemGenerator(pin);
+        pmb->pbval->CheckBoundary();
         pmb=pmb->next;
       }
     }
@@ -2206,15 +2245,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
         pmb->next->prev=pmb;
         pmb=pmb->next;
       }
-      // temporary fix - enroll boundary functions
-      for(int b=0; b<6; b++) {
-        if(block_bcs[b]>0 && block_bcs[b]<=3)
-          pmb->pbval->BoundaryFunction_[b]=BoundaryFunction_[b];
-        else
-          pmb->pbval->BoundaryFunction_[b]=NULL;
-      }
-      // temporary fix - enroll mesh refinement condition function
-      pmb->pmr->AMRFlag_=AMRFlag_;
       // fill the conservative variables
       if((loclist[on].level>newloc[n].level)) { // fine to coarse
         for(int ll=0; ll<nlbl; ll++) {

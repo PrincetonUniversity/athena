@@ -3,6 +3,12 @@
 // Primary header
 #include "../mesh.hpp"
 
+#error "geodesic_infall.cpp is outdated and must be rewritten."
+
+#if MAGNETIC_FIELDS_ENABLED
+#error "This problem generator does not support magnetic fields"
+#endif
+
 // C++ headers
 #include <cassert>  // assert
 #include <cmath>    // pow(), sin(), sqrt()
@@ -18,10 +24,28 @@
 #include "../field/field.hpp"              // Field
 
 // Declarations
-void OutflowInnerHydro(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb, 
+void OutflowInner(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb, 
     int is, int ie, int js, int je, int ks, int ke);
 void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb, 
     int is, int ie, int js, int je, int ks, int ke);
+
+
+// Function for initializing global mesh properties
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
+{
+  // Enroll boundary functions
+  EnrollUserBoundaryFunction(INNER_X1, OutflowInner);
+  EnrollUserBoundaryFunction(OUTER_X1, FixedOuter);
+  return;
+}
+
+
+// Function for cleaning up global mesh properties
+void Mesh::TerminateUserMeshProperties(void)
+{
+  return;
+}
+
 
 // Function for setting initial conditions
 // Inputs:
@@ -31,34 +55,33 @@ void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
 // Outputs: (none)
 // Notes:
 //   assumes x3 is axisymmetric direction
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   // Prepare index bounds
-  MeshBlock *pmb = phyd->pmy_block;
-  int il = pmb->is - NGHOST;
-  int iu = pmb->ie + NGHOST;
-  int jl = pmb->js;
-  int ju = pmb->je;
-  if (pmb->block_size.nx2 > 1)
+  int il = is - NGHOST;
+  int iu = ie + NGHOST;
+  int jl = js;
+  int ju = je;
+  if (block_size.nx2 > 1)
   {
     jl -= (NGHOST);
     ju += (NGHOST);
   }
-  int kl = pmb->ks;
-  int ku = pmb->ke;
-  if (pmb->block_size.nx3 > 1)
+  int kl = ks;
+  int ku = ke;
+  if (block_size.nx3 > 1)
   {
     kl -= (NGHOST);
     ku += (NGHOST);
   }
 
   // Get mass and spin of black hole
-  Real m = pmb->pcoord->GetMass();
-  Real a = pmb->pcoord->GetSpin();
+  Real m = pcoord->GetMass();
+  Real a = pcoord->GetSpin();
   Real a2 = SQR(a);
 
   // Get ratio of specific heats
-  Real gamma_adi = phyd->peos->GetGamma();
+  Real gamma_adi = phydro->peos->GetGamma();
 
   // Read other properties
   Real e = pin->GetReal("problem", "energy");
@@ -74,13 +97,13 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   gi.NewAthenaArray(NMETRIC, iu+1);
   for (int j = jl; j <= ju; j++)
   {
-    pmb->pcoord->CellMetric(kl, j, il, iu, g, gi);
+    pcoord->CellMetric(kl, j, il, iu, g, gi);
     for (int i = il; i <= iu; i++)
     {
       // Get Boyer-Lindquist coordinates of cell
       Real r, theta, phi;
-      pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1v(i),
-          pmb->pcoord->x2v(j), pmb->pcoord->x3v(kl), &r, &theta, &phi);
+      pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i),
+          pcoord->x2v(j), pcoord->x3v(kl), &r, &theta, &phi);
       /*Real r2 = SQR(r);
       Real sin = std::sin(theta);
       Real sin2 = SQR(sin);
@@ -99,7 +122,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
       Real u2_bl = 0.0;
       Real u3_bl = 1.0/sigma * (-(a * e - lz / sin2) + a/delta * (rr - pp));
       Real u0, u1, u2, u3;
-      pmb->pcoord->TransformVectorCell(u0_bl, u1_bl, u2_bl, u3_bl, pmb->ks, j, i,
+      pcoord->TransformVectorCell(u0_bl, u1_bl, u2_bl, u3_bl, ks, j, i,
           &u0, &u1, &u2, &u3);
       Real v1 = u1 / u0;
       Real v2 = u2 / u0;
@@ -111,11 +134,11 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
       // Set primitive values
       for (int k = kl; k <= ku; k++)
       {
-        phyd->w(IDN,k,j,i) = phyd->w1(IDN,k,j,i) = rho;
-        phyd->w(IEN,k,j,i) = phyd->w1(IEN,k,j,i) = pgas;
-        phyd->w(IVX,k,j,i) = phyd->w1(IM1,k,j,i) = uu1;
-        phyd->w(IVY,k,j,i) = phyd->w1(IM2,k,j,i) = uu2;
-        phyd->w(IVZ,k,j,i) = phyd->w1(IM3,k,j,i) = uu3;
+        phydro->w(IDN,k,j,i) = phydro->w1(IDN,k,j,i) = rho;
+        phydro->w(IEN,k,j,i) = phydro->w1(IEN,k,j,i) = pgas;
+        phydro->w(IVX,k,j,i) = phydro->w1(IM1,k,j,i) = uu1;
+        phydro->w(IVY,k,j,i) = phydro->w1(IM2,k,j,i) = uu2;
+        phydro->w(IVZ,k,j,i) = phydro->w1(IM3,k,j,i) = uu3;
       }
     }
   }
@@ -125,15 +148,20 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   // Initialize conserved values
   AthenaArray<Real> bb;
   bb.NewAthenaArray(3, ku+1, ju+1, iu+1);
-  pmb->phydro->peos->PrimitiveToConserved(phyd->w, bb, phyd->u, pmb->pcoord,
+  phydro->peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord,
                                           il, iu, jl, ju, kl, ku);
   bb.DeleteAthenaArray();
 
-  // Enroll boundary functions
-  pmb->pbval->EnrollUserBoundaryFunction(INNER_X1, OutflowInnerHydro);
-  pmb->pbval->EnrollUserBoundaryFunction(OUTER_X1, FixedOuterHydro);
   return;
 }
+
+
+// User-defined work function called every time step
+void MeshBlock::UserWorkInLoop(void)
+{
+  return;
+}
+
 
 // Inner boundary condition
 // Inputs:
@@ -143,7 +171,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 // Notes:
 //   TODO: remove prim hack
 //   TODO: note hack is wrong (assumes wrong primitives)
-void OutflowInnerHydro(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
+void OutflowInner(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke)
 {
   int il = is - NGHOST;
@@ -165,7 +193,7 @@ void OutflowInnerHydro(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
   for (int k = kl; k <= ku; ++k)
     for (int j = jl; j <= ju; ++j)
     {
-      pco->CellMetric(k, j, il, iu, g, gi);
+      pmb->pcoord->CellMetric(k, j, il, iu, g, gi);
       Real alpha = std::sqrt(-1.0/gi(I00,is));
       Real v1 = (*pprim)(IVX,k,j,is);
       Real v2 = (*pprim)(IVY,k,j,is);
@@ -197,7 +225,7 @@ void OutflowInnerHydro(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
         (*pprim)(IVY,k,j,i) = u2_new / u0_new;
         (*pprim)(IVZ,k,j,i) = u3_new / u0_new;
         Real u_0_new, u_1_new, u_2_new, u_3_new;
-        pco->LowerVectorCell(u0_new, u1_new, u2_new, u3_new, k, j, i, &u_0_new,
+        pmb->pcoord->LowerVectorCell(u0_new, u1_new, u2_new, u3_new, k, j, i, &u_0_new,
             &u_1_new, &u_2_new, &u_3_new);
         Real gamma_adi = pmb->phydro->peos->GetGamma();
         Real gamma_prime = gamma_adi/(gamma_adi-1.0);

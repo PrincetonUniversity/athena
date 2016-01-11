@@ -65,10 +65,6 @@ void OutflowOuterX2(MeshBlock *pmb, AthenaArray<Real> &buf, FaceField &buf2,
 void OutflowOuterX3(MeshBlock *pmb, AthenaArray<Real> &buf, FaceField &buf2,
                     int is, int ie, int js, int je, int ks, int ke);
 
-// prototype for boundary condition function pointer
-typedef void (*BValFunc_t)(MeshBlock *pmb, AthenaArray<Real> &buf, FaceField &buf2,
-                           int is, int ie, int js, int je, int ks, int ke);
-
 // function to return boundary flag given input string
 enum BoundaryFlag GetBoundaryFlag(std::string input_string);
 
@@ -85,7 +81,6 @@ public:
   void StartReceivingForInit(void);
   void StartReceivingAll(void);
 
-  void EnrollUserBoundaryFunction (enum BoundaryFace face, BValFunc_t my_func);
   void CheckBoundary(void);
 
   int LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,

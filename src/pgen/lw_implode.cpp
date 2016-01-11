@@ -28,44 +28,77 @@
 #include "../hydro/eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
 
+
+#if MAGNETIC_FIELDS_ENABLED
+#error "This problem generator does not support magnetic fields"
+#endif
+
 //======================================================================================
-//! \fn ProblemGenerator
+//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
+//  \brief Init the Mesh properties
+//======================================================================================
+
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
+{
+  return;
+}
+
+
+//======================================================================================
+//! \fn void Mesh::TerminateUserMeshProperties(void)
+//  \brief Clean up the Mesh properties
+//======================================================================================
+void Mesh::TerminateUserMeshProperties(void)
+{
+  // nothing to do
+  return;
+}
+
+
+//======================================================================================
+//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Liska & Wendroff implosion test problem generator
 //======================================================================================
 
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
-  MeshBlock *pmb = phyd->pmy_block;
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-
   Real d_in = pin->GetReal("problem","d_in");
   Real p_in = pin->GetReal("problem","p_in");
 
   Real d_out = pin->GetReal("problem","d_out");
   Real p_out = pin->GetReal("problem","p_out");
 
-  Real gm1 = (phyd->peos->GetGamma() - 1.0);
-  Real y0 = 0.5*(pmb->pmy_mesh->mesh_size.x2max + pmb->pmy_mesh->mesh_size.x2min);
+  Real gm1 = (phydro->peos->GetGamma() - 1.0);
+  Real y0 = 0.5*(pmy_mesh->mesh_size.x2max + pmy_mesh->mesh_size.x2min);
 
 // Set initial conditions
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
-	phyd->u(IM1,k,j,i) = 0.0;
-	phyd->u(IM2,k,j,i) = 0.0;
-	phyd->u(IM3,k,j,i) = 0.0;
-
-	if(pmb->pcoord->x2v(j) > (y0 - pmb->pcoord->x1v(i))) {
-	  phyd->u(IDN,k,j,i) = d_out;
-	  phyd->u(IEN,k,j,i) = p_out/gm1;
-	} else {
-	  phyd->u(IDN,k,j,i) = d_in;
-	  phyd->u(IEN,k,j,i) = p_in/gm1;
-	}
+        phydro->u(IM1,k,j,i) = 0.0;
+        phydro->u(IM2,k,j,i) = 0.0;
+        phydro->u(IM3,k,j,i) = 0.0;
+        if(pcoord->x2v(j) > (y0 - pcoord->x1v(i))) {
+          phydro->u(IDN,k,j,i) = d_out;
+          phydro->u(IEN,k,j,i) = p_out/gm1;
+        } else {
+          phydro->u(IDN,k,j,i) = d_in;
+          phydro->u(IEN,k,j,i) = p_in/gm1;
+        }
       }
     }
   }
 
+  return;
+}
+
+
+//======================================================================================
+//! \fn void MeshBlock::UserWorkInLoop(void)
+//  \brief User-defined work function for every time step
+//======================================================================================
+void MeshBlock::UserWorkInLoop(void)
+{
+  // nothing to do
   return;
 }

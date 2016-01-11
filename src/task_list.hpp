@@ -43,8 +43,9 @@ enum HydroTasks {
   PROLONG =1L<<12,
   CON2PRIM=1L<<13,
   PHY_BVAL=1L<<14,
-  NEW_DT  =1L<<15,
-  AMR_FLAG=1L<<16,
+  USERWORK=1L<<15,
+  NEW_DT  =1L<<16,
+  AMR_FLAG=1L<<17,
 };
 
 //!   \struct Task

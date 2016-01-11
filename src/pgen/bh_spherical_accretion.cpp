@@ -34,45 +34,59 @@ static Real r_crit;        // sonic point radius
 static Real c1, c2;        // useful constants
 static Real bsq_over_rho;  // b^2/rho at inner radius
 
+
+
+// Function for initializing global mesh properties
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
+{
+  // Enroll boundary functions
+  EnrollUserBoundaryFunction(INNER_X1, InnerBC);
+  EnrollUserBoundaryFunction(OUTER_X1, OuterBC);
+  return;
+}
+
+// Function for cleaning up global mesh properties
+void Mesh::TerminateUserMeshProperties(void)
+{
+  return;
+}
+
 // Function for setting initial conditions
 // Inputs:
-//   phyd: Hydro
-//   pfld: Field (unused)
 //   pin: parameters
 // Outputs: (none)
 // Notes:
 //   sets primitive and conserved variables according to input primitives
 //   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   // Parameters
   const Real temp_min = 1.0e-2;  // lesser temperature root must be greater than this
   const Real temp_max = 1.0e1;   // greater temperature root must be less than this
 
   // Prepare index bounds
-  MeshBlock *pmb = phyd->pmy_block;
-  int il = pmb->is - NGHOST;
-  int iu = pmb->ie + NGHOST;
-  int jl = pmb->js;
-  int ju = pmb->je;
-  if (pmb->block_size.nx2 > 1)
+  int il = is - NGHOST;
+  int iu = ie + NGHOST;
+  int jl = js;
+  int ju = je;
+  if (block_size.nx2 > 1)
   {
     jl -= (NGHOST);
     ju += (NGHOST);
   }
-  int kl = pmb->ks;
-  int ku = pmb->ke;
-  if (pmb->block_size.nx3 > 1)
+  int kl = ks;
+  int ku = ke;
+  if (block_size.nx3 > 1)
   {
     kl -= (NGHOST);
     ku += (NGHOST);
   }
 
   // Get mass of black hole
-  m = pmb->pcoord->GetMass();
+  m = pcoord->GetMass();
 
   // Get ratio of specific heats
-  Real gamma_adi = phyd->peos->GetGamma();
+  Real gamma_adi = phydro->peos->GetGamma();
   n_adi = 1.0/(gamma_adi-1.0);
 
   // Read problem parameters
@@ -98,24 +112,24 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   for (int k = kl; k <= ku; ++k)
     for (int j = jl; j <= ju; ++j)
     {
-      pmb->pcoord->CellMetric(k, j, il, iu, g, gi);
+      pcoord->CellMetric(k, j, il, iu, g, gi);
       for (int i = il; i <= iu; ++i)
       {
         Real r, theta, phi;
-        pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1v(i),
-            pmb->pcoord->x2v(j), pmb->pcoord->x3v(k), &r, &theta, &phi);
+        pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i),
+            pcoord->x2v(j), pcoord->x3v(k), &r, &theta, &phi);
         Real rho, pgas, ut, ur;
         CalculatePrimitives(r, temp_min, temp_max, &rho, &pgas, &ut, &ur);
         Real u0, u1, u2, u3;
-        pmb->pcoord->TransformVectorCell(ut, ur, 0.0, 0.0, k, j, i, &u0, &u1, &u2, &u3);
+        pcoord->TransformVectorCell(ut, ur, 0.0, 0.0, k, j, i, &u0, &u1, &u2, &u3);
         Real uu1 = u1 - gi(I01,i)/gi(I00,i) * u0;
         Real uu2 = u2 - gi(I02,i)/gi(I00,i) * u0;
         Real uu3 = u3 - gi(I03,i)/gi(I00,i) * u0;
-        phyd->w(IDN,k,j,i) = phyd->w1(IDN,k,j,i) = rho;
-        phyd->w(IEN,k,j,i) = phyd->w1(IEN,k,j,i) = pgas;
-        phyd->w(IM1,k,j,i) = phyd->w1(IM1,k,j,i) = uu1;
-        phyd->w(IM2,k,j,i) = phyd->w1(IM2,k,j,i) = uu2;
-        phyd->w(IM3,k,j,i) = phyd->w1(IM3,k,j,i) = uu3;
+        phydro->w(IDN,k,j,i) = phydro->w1(IDN,k,j,i) = rho;
+        phydro->w(IEN,k,j,i) = phydro->w1(IEN,k,j,i) = pgas;
+        phydro->w(IM1,k,j,i) = phydro->w1(IM1,k,j,i) = uu1;
+        phydro->w(IM2,k,j,i) = phydro->w1(IM2,k,j,i) = uu2;
+        phydro->w(IM3,k,j,i) = phydro->w1(IM3,k,j,i) = uu3;
       }
     }
 
@@ -124,8 +138,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   {
     // Find normalization
     Real r, theta, phi;
-    pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1f(pmb->is),
-        pmb->pcoord->x2v((jl+ju)/2), pmb->pcoord->x3v((kl+ku)/2), &r, &theta, &phi);
+    pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(is),
+        pcoord->x2v((jl+ju)/2), pcoord->x3v((kl+ku)/2), &r, &theta, &phi);
     Real rho, pgas, ut, ur;
     CalculatePrimitives(r, temp_min, temp_max, &rho, &pgas, &ut, &ur);
     Real bbr = 1.0/SQR(r);
@@ -143,55 +157,55 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
           // Set B^1
           if (j != ju+1 and k != ku+1)
           {
-            pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1f(i),
-                pmb->pcoord->x2v(j), pmb->pcoord->x3v(k), &r, &theta, &phi);
+            pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i),
+                pcoord->x2v(j), pcoord->x3v(k), &r, &theta, &phi);
             CalculatePrimitives(r, temp_min, temp_max, &rho, &pgas, &ut, &ur);
             bbr = normalization/SQR(r);
             bt = 1.0/(1.0-2.0*m/r) * bbr * ur;
             br = (bbr + bt * ur) / ut;
             Real u0, u1, u2, u3;
-            pmb->pcoord->TransformVectorFace1(ut, ur, 0.0, 0.0, k, j, i, &u0, &u1, &u2,
+            pcoord->TransformVectorFace1(ut, ur, 0.0, 0.0, k, j, i, &u0, &u1, &u2,
                 &u3);
             Real b0, b1, b2, b3;
-            pmb->pcoord->TransformVectorFace1(bt, br, 0.0, 0.0, k, j, i, &b0, &b1, &b2,
+            pcoord->TransformVectorFace1(bt, br, 0.0, 0.0, k, j, i, &b0, &b1, &b2,
                 &b3);
-            pfld->b.x1f(k,j,i) = b1 * u0 - b0 * u1;
+            pfield->b.x1f(k,j,i) = b1 * u0 - b0 * u1;
           }
 
           // Set B^2
           if (i != iu+1 and k != ku+1)
           {
-            pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1v(i),
-                pmb->pcoord->x2f(j), pmb->pcoord->x3v(k), &r, &theta, &phi);
+            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i),
+                pcoord->x2f(j), pcoord->x3v(k), &r, &theta, &phi);
             CalculatePrimitives(r, temp_min, temp_max, &rho, &pgas, &ut, &ur);
             bbr = normalization/SQR(r);
             bt = 1.0/(1.0-2.0*m/r) * bbr * ur;
             br = (bbr + bt * ur) / ut;
             Real u0, u1, u2, u3;
-            pmb->pcoord->TransformVectorFace2(ut, ur, 0.0, 0.0, k, j, i, &u0, &u1, &u2,
+            pcoord->TransformVectorFace2(ut, ur, 0.0, 0.0, k, j, i, &u0, &u1, &u2,
                 &u3);
             Real b0, b1, b2, b3;
-            pmb->pcoord->TransformVectorFace2(bt, br, 0.0, 0.0, k, j, i, &b0, &b1, &b2,
+            pcoord->TransformVectorFace2(bt, br, 0.0, 0.0, k, j, i, &b0, &b1, &b2,
                 &b3);
-            pfld->b.x2f(k,j,i) = b2 * u0 - b0 * u2;
+            pfield->b.x2f(k,j,i) = b2 * u0 - b0 * u2;
           }
 
           // Set B^3
           if (i != iu+1 and j != ju+1)
           {
-            pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1v(i),
-                pmb->pcoord->x2v(j), pmb->pcoord->x3f(k), &r, &theta, &phi);
+            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i),
+                pcoord->x2v(j), pcoord->x3f(k), &r, &theta, &phi);
             CalculatePrimitives(r, temp_min, temp_max, &rho, &pgas, &ut, &ur);
             bbr = normalization/SQR(r);
             bt = 1.0/(1.0-2.0*m/r) * bbr * ur;
             br = (bbr + bt * ur) / ut;
             Real u0, u1, u2, u3;
-            pmb->pcoord->TransformVectorFace3(ut, ur, 0.0, 0.0, k, j, i, &u0, &u1, &u2,
+            pcoord->TransformVectorFace3(ut, ur, 0.0, 0.0, k, j, i, &u0, &u1, &u2,
                 &u3);
             Real b0, b1, b2, b3;
-            pmb->pcoord->TransformVectorFace3(bt, br, 0.0, 0.0, k, j, i, &b0, &b1, &b2,
+            pcoord->TransformVectorFace3(bt, br, 0.0, 0.0, k, j, i, &b0, &b1, &b2,
                 &b3);
-            pfld->b.x3f(k,j,i) = b3 * u0 - b0 * u3;
+            pfield->b.x3f(k,j,i) = b3 * u0 - b0 * u3;
           }
         }
   }
@@ -205,24 +219,24 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
         for (int i = il; i <= iu; ++i)
         {
           // Extract face-centered magnetic field
-          const Real &bbf1m = pfld->b.x1f(k,j,i);
-          const Real &bbf1p = pfld->b.x1f(k,j,i+1);
-          const Real &bbf2m = pfld->b.x2f(k,j,i);
-          const Real &bbf2p = pfld->b.x2f(k,j+1,i);
-          const Real &bbf3m = pfld->b.x3f(k,j,i);
-          const Real &bbf3p = pfld->b.x3f(k+1,j,i);
+          const Real &bbf1m = pfield->b.x1f(k,j,i);
+          const Real &bbf1p = pfield->b.x1f(k,j,i+1);
+          const Real &bbf2m = pfield->b.x2f(k,j,i);
+          const Real &bbf2p = pfield->b.x2f(k,j+1,i);
+          const Real &bbf3m = pfield->b.x3f(k,j,i);
+          const Real &bbf3p = pfield->b.x3f(k+1,j,i);
 
           // Calculate cell-centered magnetic field
-          Real tmp = (pmb->pcoord->x1v(i) - pmb->pcoord->x1f(i)) / pmb->pcoord->dx1f(i);
+          Real tmp = (pcoord->x1v(i) - pcoord->x1f(i)) / pcoord->dx1f(i);
           bb(IB1,k,j,i) = (1.0-tmp) * bbf1m + tmp * bbf1p;
-          tmp = (pmb->pcoord->x2v(j) - pmb->pcoord->x2f(j)) / pmb->pcoord->dx2f(j);
+          tmp = (pcoord->x2v(j) - pcoord->x2f(j)) / pcoord->dx2f(j);
           bb(IB2,k,j,i) = (1.0-tmp) * bbf2m + tmp * bbf2p;
-          tmp = (pmb->pcoord->x3v(k) - pmb->pcoord->x3f(k)) / pmb->pcoord->dx3f(k);
+          tmp = (pcoord->x3v(k) - pcoord->x3f(k)) / pcoord->dx3f(k);
           bb(IB3,k,j,i) = (1.0-tmp) * bbf3m + tmp * bbf3p;
        }
 
   // Initialize conserved variables
-  pmb->phydro->peos->PrimitiveToConserved(phyd->w, bb, phyd->u, pmb->pcoord,
+  phydro->peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord,
                                           il, iu, jl, ju, kl, ku);
 
   // Free scratch arrays
@@ -230,11 +244,16 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   gi.DeleteAthenaArray();
   bb.DeleteAthenaArray();
 
-  // Enroll boundary functions
-  pmb->pbval->EnrollUserBoundaryFunction(INNER_X1, InnerBC);
-  pmb->pbval->EnrollUserBoundaryFunction(OUTER_X1, OuterBC);
   return;
 }
+
+
+// User-defined work function called every time step
+void MeshBlock::UserWorkInLoop(void)
+{
+  return;
+}
+
 
 // Inner boundary condition
 // TODO: change when interface changes

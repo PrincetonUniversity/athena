@@ -15,35 +15,45 @@
 #include "../hydro/hydro.hpp"
 #include "../hydro/eos/eos.hpp"
 
+
+// Function for initializing global mesh properties
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
+{
+  return;
+}
+
+// Function for cleaning up global mesh properties
+void Mesh::TerminateUserMeshProperties(void)
+{
+  return;
+}
+
+
 // Function for setting initial conditions
 // Inputs:
 //   pin: parameters
-// Outputs:
-//   phyd: hydro primitives, half-timestep primitives, and conserved variables set 
-//   pfld: magnetic field set
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   // Prepare index bounds
-  MeshBlock *pmb = phyd->pmy_block;
-  int il = pmb->is - NGHOST;
-  int iu = pmb->ie + NGHOST;
-  int jl = pmb->js;
-  int ju = pmb->je;
-  if (pmb->block_size.nx2 > 1)
+  int il = is - NGHOST;
+  int iu = ie + NGHOST;
+  int jl = js;
+  int ju = je;
+  if (block_size.nx2 > 1)
   {
     jl -= (NGHOST);
     ju += (NGHOST);
   }
-  int kl = pmb->ks;
-  int ku = pmb->ke;
-  if (pmb->block_size.nx3 > 1)
+  int kl = ks;
+  int ku = ke;
+  if (block_size.nx3 > 1)
   {
     kl -= (NGHOST);
     ku += (NGHOST);
   }
 
   // Get ratio of specific heats
-  Real gamma_adi = phyd->peos->GetGamma();
+  Real gamma_adi = phydro->peos->GetGamma();
   Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Read problem parameters
@@ -61,11 +71,11 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   }
 
   // Prepare auxiliary arrays
-  int ncells1 = phyd->pmy_block->block_size.nx1 + 2*NGHOST;
-  int ncells2 = phyd->pmy_block->block_size.nx2;
+  int ncells1 = block_size.nx1 + 2*NGHOST;
+  int ncells2 = block_size.nx2;
   if (ncells2 > 1)
     ncells2 += 2*NGHOST;
-  int ncells3 = phyd->pmy_block->block_size.nx3;
+  int ncells3 = block_size.nx3;
   if (ncells3 > 1)
     ncells3 += 2*NGHOST;
   AthenaArray<Real> b, g, gi;
@@ -74,10 +84,10 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   gi.NewAthenaArray(NMETRIC, ncells1);
 
   // Initialize hydro variables
-  for (int k = kl; k <= ku; ++k)
+  for (int k = kl; k <= ku; ++k) {
     for (int j = jl; j <= ju; ++j)
     {
-      pmb->pcoord->CellMetric(k, j, il, iu, g, gi);
+      pcoord->CellMetric(k, j, il, iu, g, gi);
       for (int i = il; i <= iu; ++i)
       {
         // Construct 4-vectors
@@ -93,16 +103,16 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
         // Transform 4-vectors
         Real u0, u1, u2, u3;
         Real bcon0, bcon1, bcon2, bcon3;
-        pmb->pcoord->TransformVectorCell(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
-        pmb->pcoord->TransformVectorCell(bcont, bconx, bcony, bconz, k, j, i, &bcon0,
+        pcoord->TransformVectorCell(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
+        pcoord->TransformVectorCell(bcont, bconx, bcony, bconz, k, j, i, &bcon0,
             &bcon1, &bcon2, &bcon3);
 
         // Set primitives
-        phyd->w(IDN,k,j,i) = phyd->w1(IDN,k,j,i) = rho;
-        phyd->w(IEN,k,j,i) = phyd->w1(IEN,k,j,i) = pgas;
-        phyd->w(IVX,k,j,i) = phyd->w1(IVX,k,j,i) = u1 - gi(I01,i)/gi(I00,i) * u0;
-        phyd->w(IVY,k,j,i) = phyd->w1(IVY,k,j,i) = u2 - gi(I02,i)/gi(I00,i) * u0;
-        phyd->w(IVZ,k,j,i) = phyd->w1(IVZ,k,j,i) = u3 - gi(I03,i)/gi(I00,i) * u0;
+        phydro->w(IDN,k,j,i) = phydro->w1(IDN,k,j,i) = rho;
+        phydro->w(IEN,k,j,i) = phydro->w1(IEN,k,j,i) = pgas;
+        phydro->w(IVX,k,j,i) = phydro->w1(IVX,k,j,i) = u1 - gi(I01,i)/gi(I00,i) * u0;
+        phydro->w(IVY,k,j,i) = phydro->w1(IVY,k,j,i) = u2 - gi(I02,i)/gi(I00,i) * u0;
+        phydro->w(IVZ,k,j,i) = phydro->w1(IVZ,k,j,i) = u3 - gi(I03,i)/gi(I00,i) * u0;
 
         // Store cell-centered magnetic fields
         b(IB1,k,j,i) = bcon1 * u0 - bcon0 * u1;
@@ -110,7 +120,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
         b(IB3,k,j,i) = bcon3 * u0 - bcon0 * u3;
       }
     }
-  pmb->phydro->peos->PrimitiveToConserved(phyd->w, b, phyd->u, pmb->pcoord,
+  }
+  phydro->peos->PrimitiveToConserved(phydro->w, b, phydro->u, pcoord,
                                           il, iu, jl, ju, kl, ku);
 
   // Delete auxiliary arrays
@@ -139,28 +150,37 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
           Real bcon0, bcon1, bcon2, bcon3;
           if (j != ju+1 && k != ku+1)
           {
-            pmb->pcoord->TransformVectorFace1(ut, ux, uy, uz, k, j, i,
+            pcoord->TransformVectorFace1(ut, ux, uy, uz, k, j, i,
                 &u0, &u1, &u2, &u3);
-            pmb->pcoord->TransformVectorFace1(bcont, bconx, bcony, bconz, k, j, i,
+            pcoord->TransformVectorFace1(bcont, bconx, bcony, bconz, k, j, i,
                 &bcon0, &bcon1, &bcon2, &bcon3);
-            pfld->b.x1f(k,j,i) = bcon1 * u0 - bcon0 * u1;
+            pfield->b.x1f(k,j,i) = bcon1 * u0 - bcon0 * u1;
           }
           if (i != iu+1 && k != ku+1)
           {
-            pmb->pcoord->TransformVectorFace2(ut, ux, uy, uz, k, j, i,
+            pcoord->TransformVectorFace2(ut, ux, uy, uz, k, j, i,
                 &u0, &u1, &u2, &u3);
-            pmb->pcoord->TransformVectorFace2(bcont, bconx, bcony, bconz, k, j, i,
+            pcoord->TransformVectorFace2(bcont, bconx, bcony, bconz, k, j, i,
                 &bcon0, &bcon1, &bcon2, &bcon3);
-            pfld->b.x2f(k,j,i) = bcon2 * u0 - bcon0 * u2;
+            pfield->b.x2f(k,j,i) = bcon2 * u0 - bcon0 * u2;
           }
           if (i != iu+1 && j != ju+1)
           {
-            pmb->pcoord->TransformVectorFace3(ut, ux, uy, uz, k, j, i,
+            pcoord->TransformVectorFace3(ut, ux, uy, uz, k, j, i,
                 &u0, &u1, &u2, &u3);
-            pmb->pcoord->TransformVectorFace3(bcont, bconx, bcony, bconz, k, j, i,
+            pcoord->TransformVectorFace3(bcont, bconx, bcony, bconz, k, j, i,
                 &bcon0, &bcon1, &bcon2, &bcon3);
-            pfld->b.x3f(k,j,i) = bcon3 * u0 - bcon0 * u3;
+            pfield->b.x3f(k,j,i) = bcon3 * u0 - bcon0 * u3;
           }
         }
   return;
 }
+
+
+
+// User-defined work function called every time step
+void MeshBlock::UserWorkInLoop(void)
+{
+  return;
+}
+

@@ -77,9 +77,11 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       BoundaryFunction_[INNER_X1] = OutflowInnerX1;
       break;
     case BLOCK_BNDRY: // block boundary
-    case USER_BNDRY: // do nothing, useful for user-enrolled BCs
     case PERIODIC_BNDRY: // periodic boundary
       BoundaryFunction_[INNER_X1] = NULL;
+      break;
+    case USER_BNDRY: // user-enrolled BCs
+      BoundaryFunction_[INNER_X1] = pmb->pmy_mesh->BoundaryFunction_[INNER_X1];
       break;
     default:
       std::stringstream msg;
@@ -97,9 +99,11 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       BoundaryFunction_[OUTER_X1] = OutflowOuterX1;
       break;
     case BLOCK_BNDRY: // block boundary
-    case USER_BNDRY: // do nothing, useful for user-enrolled BCs
     case PERIODIC_BNDRY: // periodic boundary
       BoundaryFunction_[OUTER_X1] = NULL;
+      break;
+    case USER_BNDRY: // user-enrolled BCs
+      BoundaryFunction_[OUTER_X1] = pmb->pmy_mesh->BoundaryFunction_[OUTER_X1];
       break;
     default:
       std::stringstream msg;
@@ -119,10 +123,12 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         BoundaryFunction_[INNER_X2] = OutflowInnerX2;
         break;
       case BLOCK_BNDRY: // block boundary
-      case USER_BNDRY: // do nothing, useful for user-enrolled BCs
       case PERIODIC_BNDRY: // periodic boundary
       case POLAR_BNDRY: // polar boundary
         BoundaryFunction_[INNER_X2] = NULL;
+        break;
+      case USER_BNDRY: // user-enrolled BCs
+        BoundaryFunction_[INNER_X2] = pmb->pmy_mesh->BoundaryFunction_[INNER_X2];
         break;
       default:
         std::stringstream msg;
@@ -140,10 +146,12 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         BoundaryFunction_[OUTER_X2] = OutflowOuterX2;
         break;
       case BLOCK_BNDRY: // block boundary
-      case USER_BNDRY: // do nothing, useful for user-enrolled BCs
       case PERIODIC_BNDRY: // periodic boundary
       case POLAR_BNDRY: // polar boundary
         BoundaryFunction_[OUTER_X2] = NULL;
+        break;
+      case USER_BNDRY: // user-enrolled BCs
+        BoundaryFunction_[OUTER_X2] = pmb->pmy_mesh->BoundaryFunction_[OUTER_X2];
         break;
       default:
         std::stringstream msg;
@@ -164,9 +172,11 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         BoundaryFunction_[INNER_X3] = OutflowInnerX3;
         break;
       case BLOCK_BNDRY: // block boundary
-      case USER_BNDRY: // do nothing, useful for user-enrolled BCs
       case PERIODIC_BNDRY: // periodic boundary
         BoundaryFunction_[INNER_X3] = NULL;
+        break;
+      case USER_BNDRY: // user-enrolled BCs
+        BoundaryFunction_[INNER_X3] = pmb->pmy_mesh->BoundaryFunction_[INNER_X3];
         break;
       default:
         std::stringstream msg;
@@ -184,9 +194,11 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         BoundaryFunction_[OUTER_X3] = OutflowOuterX3;
         break;
       case BLOCK_BNDRY: // block boundary
-      case USER_BNDRY: // do nothing, useful for user-enrolled BCs
       case PERIODIC_BNDRY: // periodic boundary
         BoundaryFunction_[OUTER_X3] = NULL;
+        break;
+      case USER_BNDRY: // user-enrolled BCs
+        BoundaryFunction_[OUTER_X3] = pmb->pmy_mesh->BoundaryFunction_[OUTER_X3];
         break;
       default:
         std::stringstream msg;
@@ -194,12 +206,6 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
             << "Flag ox3_bc=" << pmb->block_bcs[OUTER_X3] << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
     }
-  }
-
-  // *** this is temporary fix - copy boundary functions to the Mesh class
-  for(int i=0; i<6; i++) {
-    if(pmb->block_bcs[i]>0 && pmb->block_bcs[i]<=2)
-      pmb->pmy_mesh->BoundaryFunction_[i]=BoundaryFunction_[i];
   }
 
   // Clear flags and requests
@@ -702,31 +708,6 @@ void BoundaryValues::Initialize(void)
   return;
 }
 
-//--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::EnrollUserBoundaryFunction(enum BoundaryFace dir,
-//                                                       BValHydro_t my_bc)
-//  \brief Enroll a user-defined boundary function
-
-void BoundaryValues::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValFunc_t my_bc)
-{
-  std::stringstream msg;
-  if(dir<0 || dir>5) {
-    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
-        << "dirName = " << dir << " not valid" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  // temporary fix
-  pmy_mblock_->pmy_mesh->BoundaryFunction_[dir]=my_bc;
-  if(pmy_mblock_->block_bcs[dir]==BLOCK_BNDRY) return;
-  if(pmy_mblock_->block_bcs[dir]!=USER_BNDRY) {
-    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
-        << "The boundary condition flag must be set to the string 'user' in the "
-        << " <mesh> block in the input file to use user-enrolled BCs" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  BoundaryFunction_[dir]=my_bc;
-  return;
-}
 
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::CheckBoundary(void)

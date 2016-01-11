@@ -31,6 +31,10 @@
 #include "../hydro/eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
 
+#if MAGNETIC_FIELDS_ENABLED
+#error "This problem generator does not support magnetic fields"
+#endif
+
 // BCs on outer edges of grid in each dimension
 void Noh3DOuterX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke);
@@ -42,13 +46,43 @@ void Noh3DOuterX3(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 // made global to share with BC functions
 static Real gmma, gmma1;
 
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
+
+//======================================================================================
+//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
+//  \brief Init the Mesh properties
+//======================================================================================
+
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
 {
-  MeshBlock *pmb = phyd->pmy_block;
-  Coordinates *pco = pmb->pcoord;
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  gmma  = phyd->peos->GetGamma();
+// Enroll boundary value function pointers
+  EnrollUserBoundaryFunction(OUTER_X1, Noh3DOuterX1);
+  EnrollUserBoundaryFunction(OUTER_X2, Noh3DOuterX2);
+  if (mesh_size.nx3 > 1)
+    EnrollUserBoundaryFunction(OUTER_X3, Noh3DOuterX3);
+  return;
+}
+
+
+//======================================================================================
+//! \fn void Mesh::TerminateUserMeshProperties(void)
+//  \brief Clean up the Mesh properties
+//======================================================================================
+
+void Mesh::TerminateUserMeshProperties(void)
+{
+  // nothing to do
+  return;
+}
+
+
+//======================================================================================
+//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
+//  \brief Problem Generator for the Noh spherical implosion test
+//======================================================================================
+
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
+{
+  gmma  = phydro->peos->GetGamma();
   gmma1 = gmma - 1.0;
 
 // Initialize the grid: d=1, v=-1.0 in radial direction, p=10^-6
@@ -57,27 +91,32 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
     Real rad;
-    if (pmb->block_size.nx3 > 1) {
-      rad = sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(j)) + SQR(pco->x3v(k)));
-      phyd->u(IM3,k,j,i) = -pco->x3v(k)/rad;
+    if (block_size.nx3 > 1) {
+      rad = sqrt(SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)) + SQR(pcoord->x3v(k)));
+      phydro->u(IM3,k,j,i) = -pcoord->x3v(k)/rad;
     } else {
-      rad = sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(j)));
-      phyd->u(IM3,k,j,i) = 0.0;
+      rad = sqrt(SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)));
+      phydro->u(IM3,k,j,i) = 0.0;
     }
-    phyd->u(IDN,k,j,i) = 1.0;
-    phyd->u(IM1,k,j,i) = -pco->x1v(i)/rad;
-    phyd->u(IM2,k,j,i) = -pco->x2v(j)/rad;
-    phyd->u(IEN,k,j,i) = 1.0e-6/gmma1 + 0.5;
+    phydro->u(IDN,k,j,i) = 1.0;
+    phydro->u(IM1,k,j,i) = -pcoord->x1v(i)/rad;
+    phydro->u(IM2,k,j,i) = -pcoord->x2v(j)/rad;
+    phydro->u(IEN,k,j,i) = 1.0e-6/gmma1 + 0.5;
   }}}
-
-// Enroll boundary value function pointers
-  pmb->pbval->EnrollUserBoundaryFunction(OUTER_X1, Noh3DOuterX1);
-  pmb->pbval->EnrollUserBoundaryFunction(OUTER_X2, Noh3DOuterX2);
-  if (pmb->block_size.nx3 > 1) {
-    pmb->pbval->EnrollUserBoundaryFunction(OUTER_X3, Noh3DOuterX3);
-  }
-
 }
+
+
+//======================================================================================
+//! \fn void MeshBlock::UserWorkInLoop(void)
+//  \brief User-defined work function for every time step
+//======================================================================================
+
+void MeshBlock::UserWorkInLoop(void)
+{
+  // nothing to do
+  return;
+}
+
 
 //--------------------------------------------------------------------------------------
 //! \fn void Noh3DOuterX1()

@@ -40,7 +40,6 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_mblock_ = pmb;
   pin_=pin;
-  AMRFlag_=NULL;
   // allocate prolongation buffer
   int ncc1=pmb->block_size.nx1/2+2*pmb->cnghost;
   int ncc2=1;
@@ -902,20 +901,10 @@ void MeshRefinement::ProlongateInternalField(FaceField &fine,
 }
 
 
-//--------------------------------------------------------------------------------------
-//! \fn void MeshRefinement::EnrollAMRFlagFunction(AMRFlag_t amrflag)
-//  \brief Enroll a user-defined function for checking refinement criteria
-void MeshRefinement::EnrollAMRFlagFunction(AMRFlag_t amrflag)
-{
-  AMRFlag_=amrflag;
-  pmy_mblock_->pmy_mesh->AMRFlag_=amrflag;
-  return;
-}
-
 
 //--------------------------------------------------------------------------------------
 //! \fn void MeshRefinement::CheckRefinementCondition(void)
-//  \brief Enroll a user-defined function for checking refinement criteria
+//  \brief Check refinement criteria
 void MeshRefinement::CheckRefinementCondition(void)
 {
   MeshBlock *pmb=pmy_mblock_;
@@ -924,8 +913,8 @@ void MeshRefinement::CheckRefinementCondition(void)
 
   // *** should be implemented later ***
   // loop-over refinement criteria
-  if(AMRFlag_!=NULL)
-    ret=AMRFlag_(pmy_mblock_);
+  if(pmb->pmy_mesh->AMRFlag_!=NULL)
+    ret=pmb->pmy_mesh->AMRFlag_(pmy_mblock_);
   aret=std::max(aret,ret);
 
 

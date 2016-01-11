@@ -36,14 +36,37 @@
 #include "../hydro/eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
 
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
-{
-  MeshBlock *pmb = phyd->pmy_block;
-  Coordinates *pco = pmb->pcoord;
-  std::stringstream msg;
+//======================================================================================
+//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
+//  \brief Init the Mesh properties
+//======================================================================================
 
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
+{
+  return;
+}
+
+
+//======================================================================================
+//! \fn void Mesh::TerminateUserMeshProperties(void)
+//  \brief Clean up the Mesh properties
+//======================================================================================
+
+void Mesh::TerminateUserMeshProperties(void)
+{
+  // nothing to do
+  return;
+}
+
+
+//======================================================================================
+//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
+//  \brief Problem Generator for the shock tube tests
+//======================================================================================
+
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
+{
+  std::stringstream msg;
 
 // parse shock direction: {1,2,3} -> {x1,x2,x3}
 
@@ -52,20 +75,20 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 // parse shock location (must be inside grid)
 
   Real xshock = pin->GetReal("problem","xshock"); 
-  if (shk_dir == 1 && (xshock < pmb->pmy_mesh->mesh_size.x1min ||
-                       xshock > pmb->pmy_mesh->mesh_size.x1max)) {
+  if (shk_dir == 1 && (xshock < pmy_mesh->mesh_size.x1min ||
+                       xshock > pmy_mesh->mesh_size.x1max)) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl << "xshock="
         << xshock << " lies outside x1 domain for shkdir=" << shk_dir << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if (shk_dir == 2 && (xshock < pmb->pmy_mesh->mesh_size.x2min ||
-                       xshock > pmb->pmy_mesh->mesh_size.x2max)) {
+  if (shk_dir == 2 && (xshock < pmy_mesh->mesh_size.x2min ||
+                       xshock > pmy_mesh->mesh_size.x2max)) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl << "xshock="
         << xshock << " lies outside x2 domain for shkdir=" << shk_dir << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  if (shk_dir == 3 && (xshock < pmb->pmy_mesh->mesh_size.x3min ||
-                       xshock > pmb->pmy_mesh->mesh_size.x3max)) {
+  if (shk_dir == 3 && (xshock < pmy_mesh->mesh_size.x3min ||
+                       xshock > pmy_mesh->mesh_size.x3max)) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl << "xshock="
         << xshock << " lies outside x3 domain for shkdir=" << shk_dir << std::endl;
     throw std::runtime_error(msg.str().c_str());
@@ -108,21 +131,21 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
-        if (pco->x1v(i) < xshock) {
-          phyd->u(IDN,k,j,i) = wl[IDN];
-          phyd->u(IM1,k,j,i) = wl[IVX]*wl[IDN];
-          phyd->u(IM2,k,j,i) = wl[IVY]*wl[IDN];
-          phyd->u(IM3,k,j,i) = wl[IVZ]*wl[IDN];
-          if (NON_BAROTROPIC_EOS) phyd->u(IEN,k,j,i) =
-            wl[IEN]/(phyd->peos->GetGamma() - 1.0)
+        if (pcoord->x1v(i) < xshock) {
+          phydro->u(IDN,k,j,i) = wl[IDN];
+          phydro->u(IM1,k,j,i) = wl[IVX]*wl[IDN];
+          phydro->u(IM2,k,j,i) = wl[IVY]*wl[IDN];
+          phydro->u(IM3,k,j,i) = wl[IVZ]*wl[IDN];
+          if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
+            wl[IEN]/(phydro->peos->GetGamma() - 1.0)
             + 0.5*wl[IDN]*(wl[IVX]*wl[IVX] + wl[IVY]*wl[IVY] + wl[IVZ]*wl[IVZ]);
         } else {
-          phyd->u(IDN,k,j,i) = wr[IDN];
-          phyd->u(IM1,k,j,i) = wr[IVX]*wr[IDN];
-          phyd->u(IM2,k,j,i) = wr[IVY]*wr[IDN];
-          phyd->u(IM3,k,j,i) = wr[IVZ]*wr[IDN];
-          if (NON_BAROTROPIC_EOS) phyd->u(IEN,k,j,i) =
-            wr[IEN]/(phyd->peos->GetGamma() - 1.0)
+          phydro->u(IDN,k,j,i) = wr[IDN];
+          phydro->u(IM1,k,j,i) = wr[IVX]*wr[IDN];
+          phydro->u(IM2,k,j,i) = wr[IVY]*wr[IDN];
+          phydro->u(IM3,k,j,i) = wr[IVZ]*wr[IDN];
+          if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
+            wr[IEN]/(phydro->peos->GetGamma() - 1.0)
             + 0.5*wr[IDN]*(wr[IVX]*wr[IVX] + wr[IVY]*wr[IVY] + wr[IVZ]*wr[IVZ]);
         }
       }
@@ -133,24 +156,24 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   case 2:
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
-      if (pco->x2v(j) < xshock) {
+      if (pcoord->x2v(j) < xshock) {
         for (int i=is; i<=ie; ++i) {
-          phyd->u(IDN,k,j,i) = wl[IDN];
-          phyd->u(IM2,k,j,i) = wl[IVX]*wl[IDN];
-          phyd->u(IM3,k,j,i) = wl[IVY]*wl[IDN];
-          phyd->u(IM1,k,j,i) = wl[IVZ]*wl[IDN];
-          if (NON_BAROTROPIC_EOS) phyd->u(IEN,k,j,i) =
-            wl[IEN]/(phyd->peos->GetGamma() - 1.0)
+          phydro->u(IDN,k,j,i) = wl[IDN];
+          phydro->u(IM2,k,j,i) = wl[IVX]*wl[IDN];
+          phydro->u(IM3,k,j,i) = wl[IVY]*wl[IDN];
+          phydro->u(IM1,k,j,i) = wl[IVZ]*wl[IDN];
+          if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
+            wl[IEN]/(phydro->peos->GetGamma() - 1.0)
             + 0.5*wl[IDN]*(wl[IVX]*wl[IVX] + wl[IVY]*wl[IVY] + wl[IVZ]*wl[IVZ]);
         }
       } else {
         for (int i=is; i<=ie; ++i) {
-          phyd->u(IDN,k,j,i) = wr[IDN];
-          phyd->u(IM2,k,j,i) = wr[IVX]*wr[IDN];
-          phyd->u(IM3,k,j,i) = wr[IVY]*wr[IDN];
-          phyd->u(IM1,k,j,i) = wr[IVZ]*wr[IDN];
-          if (NON_BAROTROPIC_EOS) phyd->u(IEN,k,j,i) =
-            wr[IEN]/(phyd->peos->GetGamma() - 1.0)
+          phydro->u(IDN,k,j,i) = wr[IDN];
+          phydro->u(IM2,k,j,i) = wr[IVX]*wr[IDN];
+          phydro->u(IM3,k,j,i) = wr[IVY]*wr[IDN];
+          phydro->u(IM1,k,j,i) = wr[IVZ]*wr[IDN];
+          if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
+            wr[IEN]/(phydro->peos->GetGamma() - 1.0)
             + 0.5*wr[IDN]*(wr[IVX]*wr[IVX] + wr[IVY]*wr[IVY] + wr[IVZ]*wr[IVZ]);
         }
       }
@@ -161,26 +184,26 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 
   case 3:
     for (int k=ks; k<=ke; ++k) {
-      if (pco->x3v(k) < xshock) {
+      if (pcoord->x3v(k) < xshock) {
         for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
-          phyd->u(IDN,k,j,i) = wl[IDN];
-          phyd->u(IM3,k,j,i) = wl[IVX]*wl[IDN];
-          phyd->u(IM1,k,j,i) = wl[IVY]*wl[IDN];
-          phyd->u(IM2,k,j,i) = wl[IVZ]*wl[IDN];
-          if (NON_BAROTROPIC_EOS) phyd->u(IEN,k,j,i) =
-            wl[IEN]/(phyd->peos->GetGamma() - 1.0)
+          phydro->u(IDN,k,j,i) = wl[IDN];
+          phydro->u(IM3,k,j,i) = wl[IVX]*wl[IDN];
+          phydro->u(IM1,k,j,i) = wl[IVY]*wl[IDN];
+          phydro->u(IM2,k,j,i) = wl[IVZ]*wl[IDN];
+          if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
+            wl[IEN]/(phydro->peos->GetGamma() - 1.0)
             + 0.5*wl[IDN]*(wl[IVX]*wl[IVX] + wl[IVY]*wl[IVY] + wl[IVZ]*wl[IVZ]);
         }}
       } else {
         for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
-          phyd->u(IDN,k,j,i) = wr[IDN];
-          phyd->u(IM3,k,j,i) = wr[IVX]*wr[IDN];
-          phyd->u(IM1,k,j,i) = wr[IVY]*wr[IDN];
-          phyd->u(IM2,k,j,i) = wr[IVZ]*wr[IDN];
-          if (NON_BAROTROPIC_EOS) phyd->u(IEN,k,j,i) =
-            wr[IEN]/(phyd->peos->GetGamma() - 1.0)
+          phydro->u(IDN,k,j,i) = wr[IDN];
+          phydro->u(IM3,k,j,i) = wr[IVX]*wr[IDN];
+          phydro->u(IM1,k,j,i) = wr[IVY]*wr[IDN];
+          phydro->u(IM2,k,j,i) = wr[IVZ]*wr[IDN];
+          if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
+            wr[IEN]/(phydro->peos->GetGamma() - 1.0)
             + 0.5*wr[IDN]*(wr[IVX]*wr[IVX] + wr[IVY]*wr[IVY] + wr[IVZ]*wr[IVZ]);
         }}
       }
@@ -199,36 +222,36 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
-        if (shk_dir==1 && pco->x1v(i) < xshock) {
-          pfld->b.x1f(k,j,i) = wl[NHYDRO  ];
-          pfld->b.x2f(k,j,i) = wl[NHYDRO+1];
-          pfld->b.x3f(k,j,i) = wl[NHYDRO+2];
-        } else if (shk_dir==2 && pco->x2v(j) < xshock) {
-          pfld->b.x1f(k,j,i) = wl[NHYDRO+2];
-          pfld->b.x2f(k,j,i) = wl[NHYDRO  ];
-          pfld->b.x3f(k,j,i) = wl[NHYDRO+1];
-        } else if (shk_dir==3 && pco->x3v(k) < xshock) {
-          pfld->b.x1f(k,j,i) = wl[NHYDRO+1];
-          pfld->b.x2f(k,j,i) = wl[NHYDRO+2];
-          pfld->b.x3f(k,j,i) = wl[NHYDRO];
+        if (shk_dir==1 && pcoord->x1v(i) < xshock) {
+          pfield->b.x1f(k,j,i) = wl[NHYDRO  ];
+          pfield->b.x2f(k,j,i) = wl[NHYDRO+1];
+          pfield->b.x3f(k,j,i) = wl[NHYDRO+2];
+        } else if (shk_dir==2 && pcoord->x2v(j) < xshock) {
+          pfield->b.x1f(k,j,i) = wl[NHYDRO+2];
+          pfield->b.x2f(k,j,i) = wl[NHYDRO  ];
+          pfield->b.x3f(k,j,i) = wl[NHYDRO+1];
+        } else if (shk_dir==3 && pcoord->x3v(k) < xshock) {
+          pfield->b.x1f(k,j,i) = wl[NHYDRO+1];
+          pfield->b.x2f(k,j,i) = wl[NHYDRO+2];
+          pfield->b.x3f(k,j,i) = wl[NHYDRO];
         }
 
-        if (shk_dir==1 && pco->x1v(i) >= xshock) {
-          pfld->b.x1f(k,j,i) = wr[NHYDRO  ];
-          pfld->b.x2f(k,j,i) = wr[NHYDRO+1];
-          pfld->b.x3f(k,j,i) = wr[NHYDRO+2];
-        } else if (shk_dir==2 && pco->x2v(j) >= xshock) {
-          pfld->b.x1f(k,j,i) = wr[NHYDRO+2];
-          pfld->b.x2f(k,j,i) = wr[NHYDRO  ];
-          pfld->b.x3f(k,j,i) = wr[NHYDRO+1];
-        } else if (shk_dir==3 && pco->x3v(k) >= xshock)  {
-          pfld->b.x1f(k,j,i) = wr[NHYDRO+1];
-          pfld->b.x2f(k,j,i) = wr[NHYDRO+2];
-          pfld->b.x3f(k,j,i) = wr[NHYDRO];
+        if (shk_dir==1 && pcoord->x1v(i) >= xshock) {
+          pfield->b.x1f(k,j,i) = wr[NHYDRO  ];
+          pfield->b.x2f(k,j,i) = wr[NHYDRO+1];
+          pfield->b.x3f(k,j,i) = wr[NHYDRO+2];
+        } else if (shk_dir==2 && pcoord->x2v(j) >= xshock) {
+          pfield->b.x1f(k,j,i) = wr[NHYDRO+2];
+          pfield->b.x2f(k,j,i) = wr[NHYDRO  ];
+          pfield->b.x3f(k,j,i) = wr[NHYDRO+1];
+        } else if (shk_dir==3 && pcoord->x3v(k) >= xshock)  {
+          pfield->b.x1f(k,j,i) = wr[NHYDRO+1];
+          pfield->b.x2f(k,j,i) = wr[NHYDRO+2];
+          pfield->b.x3f(k,j,i) = wr[NHYDRO];
         }
         if (NON_BAROTROPIC_EOS) {
-          phyd->u(IEN,k,j,i) += 0.5*(SQR(pfld->b.x1f(k,j,i)) + SQR(pfld->b.x2f(k,j,i)) +
-             SQR(pfld->b.x3f(k,j,i)));
+          phydro->u(IEN,k,j,i) += 0.5*(SQR(pfield->b.x1f(k,j,i)) + SQR(pfield->b.x2f(k,j,i)) +
+             SQR(pfield->b.x3f(k,j,i)));
         }
       }
     }}
@@ -237,17 +260,30 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
-      pfld->b.x1f(k,j,ie+1) = pfld->b.x1f(k,j,ie);
+      pfield->b.x1f(k,j,ie+1) = pfield->b.x1f(k,j,ie);
     }}
     for (int k=ks; k<=ke; ++k) {
     for (int i=is; i<=ie; ++i) {
-      pfld->b.x2f(k,je+1,i) = pfld->b.x2f(k,je,i);
+      pfield->b.x2f(k,je+1,i) = pfield->b.x2f(k,je,i);
     }}
     for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie; ++i) {
-      pfld->b.x3f(ke+1,j,i) = pfld->b.x3f(ke,j,i);
+      pfield->b.x3f(ke+1,j,i) = pfield->b.x3f(ke,j,i);
     }}
   }
 
   return;
 }
+
+
+//======================================================================================
+//! \fn void MeshBlock::UserWorkInLoop(void)
+//  \brief User-defined work function for every time step
+//======================================================================================
+
+void MeshBlock::UserWorkInLoop(void)
+{
+  // nothing to do
+  return;
+}
+

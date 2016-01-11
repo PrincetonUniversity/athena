@@ -33,31 +33,27 @@ void JetInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
                    int is, int ie, int js, int je, int ks, int ke);
 
 // Make radius of jet and jet variables global so they can be accessed by BC functions
+static Real r_amb,d_amb,p_amb,vx_amb,vy_amb,vz_amb,bx_amb,by_amb,bz_amb;
 static Real r_jet,d_jet,p_jet,vx_jet,vy_jet,vz_jet,bx_jet,by_jet,bz_jet;
 static Real gm1,x2_0,x3_0;
 
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
+
+//--------------------------------------------------------------------------------------
+//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
+//  \brief Init the Mesh properties
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
 {
-  MeshBlock *pmb = phyd->pmy_block;
-
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  gm1 = phyd->peos->GetGamma() - 1.0;
-
-// read parameters from input file
-
-  Real d_amb  = pin->GetReal("problem", "d");
-  Real p_amb  = pin->GetReal("problem", "p");
-  Real vx_amb = pin->GetReal("problem", "vx");
-  Real vy_amb = pin->GetReal("problem", "vy");
-  Real vz_amb = pin->GetReal("problem", "vz");
-  Real bx_amb,by_amb,bz_amb;
+  // initialize global variables
+  d_amb  = pin->GetReal("problem", "d");
+  p_amb  = pin->GetReal("problem", "p");
+  vx_amb = pin->GetReal("problem", "vx");
+  vy_amb = pin->GetReal("problem", "vy");
+  vz_amb = pin->GetReal("problem", "vz");
   if (MAGNETIC_FIELDS_ENABLED) {
     bx_amb = pin->GetReal("problem", "bx");
     by_amb = pin->GetReal("problem", "by");
     bz_amb = pin->GetReal("problem", "bz");
   }
-
   d_jet  = pin->GetReal("problem", "djet");
   p_jet  = pin->GetReal("problem", "pjet");
   vx_jet = pin->GetReal("problem", "vxjet");
@@ -69,21 +65,43 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     bz_jet = pin->GetReal("problem", "bzjet");
   }
   r_jet = pin->GetReal("problem", "rjet");
+  x2_0 = 0.5*(mesh_size.x2max + mesh_size.x2min);
+  x3_0 = 0.5*(mesh_size.x3max + mesh_size.x3min);
    
-  x2_0 = 0.5*(pmb->pmy_mesh->mesh_size.x2max + pmb->pmy_mesh->mesh_size.x2min);
-  x3_0 = 0.5*(pmb->pmy_mesh->mesh_size.x3max + pmb->pmy_mesh->mesh_size.x3min);
+  // enroll boundary value function pointers
+  EnrollUserBoundaryFunction(INNER_X1, JetInnerX1);
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void Mesh::TerminateUserMeshProperties(void)
+//  \brief Clean up the Mesh properties
+void Mesh::TerminateUserMeshProperties(void)
+{
+  // nothing to do
+  return;
+}
+
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
+//  \brief Problem Generator for the Jet problem
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
+{
+  gm1 = phydro->peos->GetGamma() - 1.0;
 
 // initialize conserved variables
    
   for(int k=ks; k<=ke; ++k){
   for(int j=js; j<=je; ++j){
   for(int i=is; i<=ie; ++i){
-    phyd->u(IDN,k,j,i) = d_amb;
-    phyd->u(IM1,k,j,i) = d_amb*vx_amb;
-    phyd->u(IM2,k,j,i) = d_amb*vy_amb;
-    phyd->u(IM3,k,j,i) = d_amb*vz_amb;
+    phydro->u(IDN,k,j,i) = d_amb;
+    phydro->u(IM1,k,j,i) = d_amb*vx_amb;
+    phydro->u(IM2,k,j,i) = d_amb*vy_amb;
+    phydro->u(IM3,k,j,i) = d_amb*vz_amb;
     if (NON_BAROTROPIC_EOS) {
-      phyd->u(IEN,k,j,i) = p_amb/gm1 + 0.5*d_amb*(SQR(vx_amb)+SQR(vy_amb)+SQR(vz_amb));
+      phydro->u(IEN,k,j,i) = p_amb/gm1 + 0.5*d_amb*(SQR(vx_amb)+SQR(vy_amb)+SQR(vz_amb));
     }
   }}}
 
@@ -93,32 +111,39 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie+1; ++i) {
-      pfld->b.x1f(k,j,i) = bx_amb;
+      pfield->b.x1f(k,j,i) = bx_amb;
     }}}
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je+1; ++j) {
     for (int i=is; i<=ie; ++i) {
-      pfld->b.x2f(k,j,i) = by_amb;
+      pfield->b.x2f(k,j,i) = by_amb;
     }}}
     for (int k=ks; k<=ke+1; ++k) {
     for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie; ++i) {
-      pfld->b.x3f(k,j,i) = bz_amb;
+      pfield->b.x3f(k,j,i) = bz_amb;
     }}}
     if (NON_BAROTROPIC_EOS) {
       for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
-        phyd->u(IEN,k,j,i) += 0.5*(SQR(bx_amb) + SQR(by_amb) + SQR(bz_amb));
+        phydro->u(IEN,k,j,i) += 0.5*(SQR(bx_amb) + SQR(by_amb) + SQR(bz_amb));
       }}}
     }
   }
 
-// Enroll boundary value function pointers
-  pmb->pbval->EnrollUserBoundaryFunction(INNER_X1, JetInnerX1);
-
   return;
 }
+
+//--------------------------------------------------------------------------------------
+//! \fn void MeshBlock::UserWorkInLoop(void)
+//  \brief User-defined work function for every time step
+void MeshBlock::UserWorkInLoop(void)
+{
+  // nothing to do
+  return;
+}
+
 
 //--------------------------------------------------------------------------------------
 //! \fn void JetInnerX1()

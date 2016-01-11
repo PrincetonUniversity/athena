@@ -36,13 +36,42 @@
 #include "../hydro/eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
 
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
+#if !MAGNETIC_FIELDS_ENABLED
+#error "This problem generator requires magnetic fields"
+#endif
+
+
+//======================================================================================
+//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
+//  \brief Init the Mesh properties
+//======================================================================================
+
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
 {
-  MeshBlock *pmb = phyd->pmy_block;
-  Coordinates *pco = pmb->pcoord;
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  Real gm1 = (phyd->peos->GetGamma() - 1.0);
+  return;
+}
+
+
+//======================================================================================
+//! \fn void Mesh::TerminateUserMeshProperties(void)
+//  \brief Clean up the Mesh properties
+//======================================================================================
+
+void Mesh::TerminateUserMeshProperties(void)
+{
+  // nothing to do
+  return;
+}
+
+
+//======================================================================================
+//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
+//  \brief Problem Generator for the Orszag-Tang test
+//======================================================================================
+
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
+{
+  Real gm1 = (phydro->peos->GetGamma() - 1.0);
 
   AthenaArray<Real> az;
   int nx1 = (ie-is)+1 + 2*(NGHOST);
@@ -58,7 +87,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 
   for (int j=js; j<=je+1; ++j) {
   for (int i=is; i<=ie+1; ++i) {
-    az(j,i) = B0/(4.0*PI)*cos(4.0*PI*pco->x1f(i)) + B0/(2.0*PI)*cos(2.0*PI*pco->x2f(j));
+    az(j,i) = B0/(4.0*PI)*cos(4.0*PI*pcoord->x1f(i)) + B0/(2.0*PI)*cos(2.0*PI*pcoord->x2f(j));
   }}
 
 // Initialize density, momentum, face-centered fields
@@ -66,10 +95,10 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
-    phyd->u(IDN,k,j,i) = d0;
-    phyd->u(IM1,k,j,i) = -d0*v0*sin(2.0*PI*pco->x2v(j));
-    phyd->u(IM2,k,j,i) =  d0*v0*sin(2.0*PI*pco->x1v(i));
-    phyd->u(IM3,k,j,i) = 0.0;
+    phydro->u(IDN,k,j,i) = d0;
+    phydro->u(IM1,k,j,i) = -d0*v0*sin(2.0*PI*pcoord->x2v(j));
+    phydro->u(IM2,k,j,i) =  d0*v0*sin(2.0*PI*pcoord->x1v(i));
+    phydro->u(IM3,k,j,i) = 0.0;
   }}}
 
 // initialize interface B
@@ -77,17 +106,17 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie+1; i++) {
-    pfld->b.x1f(k,j,i) = (az(j+1,i) - az(j,i))/pco->dx2f(j);
+    pfield->b.x1f(k,j,i) = (az(j+1,i) - az(j,i))/pcoord->dx2f(j);
   }}}
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je+1; j++) {
   for (int i=is; i<=ie; i++) {
-    pfld->b.x2f(k,j,i) = (az(j,i) - az(j,i+1))/pco->dx1f(i);
+    pfield->b.x2f(k,j,i) = (az(j,i) - az(j,i+1))/pcoord->dx1f(i);
   }}}
   for (int k=ks; k<=ke+1; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
-    pfld->b.x3f(k,j,i) = 0.0;
+    pfield->b.x3f(k,j,i) = 0.0;
   }}}
 
 // initialize total energy
@@ -96,15 +125,28 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      phyd->u(IEN,k,j,i) = p0/gm1 +
-          0.5*(SQR(0.5*(pfld->b.x1f(k,j,i) + pfld->b.x1f(k,j,i+1))) +
-               SQR(0.5*(pfld->b.x2f(k,j,i) + pfld->b.x2f(k,j+1,i))) +
-               SQR(0.5*(pfld->b.x3f(k,j,i) + pfld->b.x3f(k+1,j,i)))) + (0.5)*
-          (SQR(phyd->u(IM1,k,j,i)) + SQR(phyd->u(IM2,k,j,i)) + SQR(phyd->u(IM3,k,j,i)))
-          /phyd->u(IDN,k,j,i);
+      phydro->u(IEN,k,j,i) = p0/gm1 +
+          0.5*(SQR(0.5*(pfield->b.x1f(k,j,i) + pfield->b.x1f(k,j,i+1))) +
+               SQR(0.5*(pfield->b.x2f(k,j,i) + pfield->b.x2f(k,j+1,i))) +
+               SQR(0.5*(pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i)))) + (0.5)*
+          (SQR(phydro->u(IM1,k,j,i)) + SQR(phydro->u(IM2,k,j,i)) + SQR(phydro->u(IM3,k,j,i)))
+          /phydro->u(IDN,k,j,i);
     }}}
   }
 
   az.DeleteAthenaArray();
   return;
 }
+
+
+//======================================================================================
+//! \fn void MeshBlock::UserWorkInLoop(void)
+//  \brief User-defined work function for every time step
+//======================================================================================
+
+void MeshBlock::UserWorkInLoop(void)
+{
+  // nothing to do
+  return;
+}
+

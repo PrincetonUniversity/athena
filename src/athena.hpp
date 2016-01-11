@@ -19,6 +19,8 @@ typedef double Real;
 #define MPI_ATHENA_REAL MPI_DOUBLE
 #endif
 
+class MeshBlock;
+
 //! \struct FaceField
 //  \brief container for face-centered fields
 typedef struct FaceField {
@@ -45,6 +47,14 @@ typedef struct LogicalLocation {
   static bool Greater(const LogicalLocation & lloc, const LogicalLocation &rloc)
   { return lloc.level > rloc.level; };
 } LogicalLocation;
+
+// prototype for boundary condition function pointer
+typedef void (*BValFunc_t)(MeshBlock *pmb, AthenaArray<Real> &buf, FaceField &buf2,
+                           int is, int ie, int js, int je, int ks, int ke);
+// prototype for amr flagging function pointer
+typedef int (*AMRFlag_t)(MeshBlock *pmb);
+
+
 
 // array indices for conserved: density, momemtum, total energy, face-centered field 
 enum {IDN=0, IM1=1, IM2=2, IM3=3, IEN=4};

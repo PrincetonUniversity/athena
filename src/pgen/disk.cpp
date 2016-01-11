@@ -52,14 +52,13 @@ static Real A3(const Real x1, const Real x2, const Real x3);
 //  \brief Initializes Keplerian accretion disk in spherical polar coords
 //======================================================================================
 
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
+//======================================================================================
+//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
+//  \brief Init the Mesh properties
+//======================================================================================
+
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
 {
-  MeshBlock *pmb = phyd->pmy_block;
-  Coordinates *pco = pmb->pcoord;
-
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-
   // Get parameters for gravitatonal potential of central point mass
   gm0 = pin->GetOrAddReal("problem","gm",0.0);
   r0 = pin->GetOrAddReal("problem","r0",1.0);
@@ -79,15 +78,36 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     p0_over_r0=SQR(pin->GetReal("hydro","iso_sound_speed"));
   }
 
-  // Initialize the magnetic fields
-
   if (MAGNETIC_FIELDS_ENABLED){
-
     // Get parameters of inital magnetic fields
     ifield = pin->GetInteger("problem","ifield");
     Real beta = pin->GetReal("problem","beta");
     b0=sqrt(2.*p0_over_r0*rho0/beta);
+  }
+  return;
+}
 
+
+//======================================================================================
+//! \fn void Mesh::TerminateUserMeshProperties(void)
+//  \brief Clean up the Mesh properties
+//======================================================================================
+void Mesh::TerminateUserMeshProperties(void)
+{
+  // nothing to do
+  return;
+}
+
+
+//======================================================================================
+//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
+//  \brief Keplerian accretion disk test
+//======================================================================================
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
+{
+  // Initialize the magnetic fields
+
+  if (MAGNETIC_FIELDS_ENABLED){
     // Compute vector potential
     AthenaArray<Real> a1,a2,a3;
     int nx1 = (ie-is)+1 + 2*(NGHOST);
@@ -100,9 +120,9 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je+1; j++) {
         for (int i=is; i<=ie+1; i++) {
-          a1(k,j,i) = A1(pco->x1v(i), pco->x2f(j), pco->x3f(k));
-          a2(k,j,i) = A2(pco->x1f(i), pco->x2v(j), pco->x3f(k));
-          a3(k,j,i) = A3(pco->x1f(i), pco->x2f(j), pco->x3v(k));
+          a1(k,j,i) = A1(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k));
+          a2(k,j,i) = A2(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k));
+          a3(k,j,i) = A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k));
         }
       }
     }
@@ -113,73 +133,70 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     len.NewAthenaArray(nx1);
     len_p1.NewAthenaArray(nx1);
 
+    int jl=js; int ju=je+1;
+    if (block_bcs[INNER_X2] == POLAR_BNDRY) jl=js+1; 
+    if (block_bcs[OUTER_X2] == POLAR_BNDRY) ju=je;
     for (int k=ks; k<=ke; ++k) {
       // reset loop limits for polar boundary
-      int jl=js; int ju=je+1;
-      if (pmb->block_bcs[INNER_X2] == 5) jl=js+1; 
-      if (pmb->block_bcs[OUTER_X2] == 5) ju=je;
       for (int j=jl; j<=ju; ++j) {
-        pmb->pcoord->Face2Area(k,j,is,ie,area);
-        pmb->pcoord->Edge3Length(k,j,is,ie+1,len);
+        pcoord->Face2Area(k,j,is,ie,area);
+        pcoord->Edge3Length(k,j,is,ie+1,len);
         for (int i=is; i<=ie; ++i) {
-          pfld->b.x2f(k,j,i) = -1.0*(len(i+1)*a3(k,j,i+1) - len(i)*a3(k,j,i))/area(i);
+          pfield->b.x2f(k,j,i) = -1.0*(len(i+1)*a3(k,j,i+1) - len(i)*a3(k,j,i))/area(i);
         }
       }
     }
 
     for (int k=ks; k<=ke+1; ++k) {
     for (int j=js; j<=je; ++j) {
-      pmb->pcoord->Face3Area(k,j,is,ie,area);
-      pmb->pcoord->Edge2Length(k,j,is,ie+1,len);
+      pcoord->Face3Area(k,j,is,ie,area);
+      pcoord->Edge2Length(k,j,is,ie+1,len);
       for (int i=is; i<=ie; ++i) {
-        pfld->b.x3f(k,j,i) = (len(i+1)*a2(k,j,i+1) - len(i)*a2(k,j,i))/area(i);
+        pfield->b.x3f(k,j,i) = (len(i+1)*a2(k,j,i+1) - len(i)*a2(k,j,i))/area(i);
       }
     }}
 
-    if (pmb->block_size.nx2 > 1) {
+    if (block_size.nx2 > 1) {
       for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
-        pmb->pcoord->Face1Area(k,j,is,ie+1,area);
-        pmb->pcoord->Edge3Length(k,j  ,is,ie+1,len);
-        pmb->pcoord->Edge3Length(k,j+1,is,ie+1,len_p1);
+        pcoord->Face1Area(k,j,is,ie+1,area);
+        pcoord->Edge3Length(k,j  ,is,ie+1,len);
+        pcoord->Edge3Length(k,j+1,is,ie+1,len_p1);
         for (int i=is; i<=ie+1; ++i) {
-          pfld->b.x1f(k,j,i) = (len_p1(i)*a3(k,j+1,i) - len(i)*a3(k,j,i))/area(i);
+          pfield->b.x1f(k,j,i) = (len_p1(i)*a3(k,j+1,i) - len(i)*a3(k,j,i))/area(i);
         }
       }}
 
       for (int k=ks; k<=ke+1; ++k) {
       for (int j=js; j<=je; ++j) {
-        pmb->pcoord->Face3Area(k,j,is,ie,area);
-        pmb->pcoord->Edge1Length(k,j  ,is,ie,len);
-        pmb->pcoord->Edge1Length(k,j+1,is,ie,len_p1);
+        pcoord->Face3Area(k,j,is,ie,area);
+        pcoord->Edge1Length(k,j  ,is,ie,len);
+        pcoord->Edge1Length(k,j+1,is,ie,len_p1);
         for (int i=is; i<=ie; ++i) {
-          pfld->b.x3f(k,j,i) -= (len_p1(i)*a1(k,j+1,i) - len(i)*a1(k,j,i))/area(i);
+          pfield->b.x3f(k,j,i) -= (len_p1(i)*a1(k,j+1,i) - len(i)*a1(k,j,i))/area(i);
         }
       }}
     }
 
-    if (pmb->block_size.nx3 > 1) {
+    if (block_size.nx3 > 1) {
       for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
-        pmb->pcoord->Face1Area(k,j,is,ie+1,area);
-        pmb->pcoord->Edge2Length(k  ,j,is,ie+1,len);
-        pmb->pcoord->Edge2Length(k+1,j,is,ie+1,len_p1);
+        pcoord->Face1Area(k,j,is,ie+1,area);
+        pcoord->Edge2Length(k  ,j,is,ie+1,len);
+        pcoord->Edge2Length(k+1,j,is,ie+1,len_p1);
         for (int i=is; i<=ie+1; ++i) {
-          pfld->b.x1f(k,j,i) -= (len_p1(i)*a2(k+1,j,i) - len(i)*a2(k,j,i))/area(i);
+          pfield->b.x1f(k,j,i) -= (len_p1(i)*a2(k+1,j,i) - len(i)*a2(k,j,i))/area(i);
         }
       }}
 
       for (int k=ks; k<=ke; ++k) {
         // reset loop limits for polar boundary
-        int jl=js; int ju=je+1;
-        if (pmb->block_bcs[INNER_X2] == 5) jl=js+1; 
-        if (pmb->block_bcs[OUTER_X2] == 5) ju=je;
         for (int j=jl; j<=ju; ++j) {
-          pmb->pcoord->Face2Area(k,j,is,ie,area);
-          pmb->pcoord->Edge1Length(k  ,j,is,ie,len);
-          pmb->pcoord->Edge1Length(k+1,j,is,ie,len_p1);
+          pcoord->Face2Area(k,j,is,ie,area);
+          pcoord->Edge1Length(k  ,j,is,ie,len);
+          pcoord->Edge1Length(k+1,j,is,ie,len_p1);
           for (int i=is; i<=ie; ++i) {
-            pfld->b.x2f(k,j,i) += (len_p1(i)*a1(k+1,j,i) - len(i)*a1(k,j,i))/area(i);
+            pfield->b.x2f(k,j,i) += (len_p1(i)*a1(k+1,j,i) - len(i)*a1(k,j,i))/area(i);
           }
         }
       }
@@ -199,19 +216,19 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     for (int j=js; j<=je; ++j) {
       if (dflag == 1) {
         for (int i=is; i<=ie; ++i) {
-          phyd->u(IDN,k,j,i) = std::max(rho0, rho_floor);
+          phydro->u(IDN,k,j,i) = std::max(rho0, rho_floor);
         }
       } else {
         for (int i=is; i<=ie; ++i) {
-          Real x1 = pco->x1v(i);
-          Real x2 = pco->x2v(j);
-          Real r = std::max(fabs(x1*sin(x2)),pmb->pmy_mesh->mesh_size.x1min);
+          Real x1 = pcoord->x1v(i);
+          Real x2 = pcoord->x2v(j);
+          Real r = std::max(fabs(x1*sin(x2)),pmy_mesh->mesh_size.x1min);
           Real z = fabs(x1*cos(x2));
           Real p_over_r = p0_over_r0;
           if (NON_BAROTROPIC_EOS) p_over_r = p0_over_r0*pow(r/r0, pslope);
           Real den = rho0*pow(r/r0,dslope);
           den = den*exp(gm0/p_over_r*(1./sqrt(SQR(r)+SQR(z))-1./r));
-          phyd->u(IDN,k,j,i) = std::max(den, rho_floor);
+          phydro->u(IDN,k,j,i) = std::max(den, rho_floor);
         }
       }
     }
@@ -222,18 +239,18 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     for (int j=js; j<=je; ++j) {
       if (vflag == 1) {
         for (int i=is; i<=ie; ++i) {
-          phyd->u(IM1,k,j,i) = 0.0;
-          phyd->u(IM2,k,j,i) = 0.0;
-          phyd->u(IM3,k,j,i) = 0.0;
+          phydro->u(IM1,k,j,i) = 0.0;
+          phydro->u(IM2,k,j,i) = 0.0;
+          phydro->u(IM3,k,j,i) = 0.0;
         }
       } else {
         for (int i=is; i<=ie; ++i) {
-          Real x1 = pco->x1v(i);
-          Real x2 = pco->x2v(j);
-          Real r = std::max(fabs(x1*sin(x2)),pmb->pmy_mesh->mesh_size.x1min);
+          Real x1 = pcoord->x1v(i);
+          Real x2 = pcoord->x2v(j);
+          Real r = std::max(fabs(x1*sin(x2)),pmy_mesh->mesh_size.x1min);
           Real z = fabs(x1*cos(x2));
           Real vel;
-          if (phyd->u(IDN,k,j,i) == rho_floor) {
+          if (phydro->u(IDN,k,j,i) == rho_floor) {
             vel = sqrt(gm0*SQR(r)/(SQR(r)+SQR(z))/sqrt(SQR(r)+SQR(z)));
           } else {
             if (NON_BAROTROPIC_EOS){
@@ -245,9 +262,9 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
               vel = sqrt(gm0/r)*sqrt(vel);
             }
           }
-          phyd->u(IM1,k,j,i) = 0.0;
-          phyd->u(IM2,k,j,i) = 0.0;
-          phyd->u(IM3,k,j,i) = vel*phyd->u(IDN,k,j,i);
+          phydro->u(IM1,k,j,i) = 0.0;
+          phydro->u(IM2,k,j,i) = 0.0;
+          phydro->u(IM3,k,j,i) = vel*phydro->u(IDN,k,j,i);
         }
       }
     }
@@ -258,18 +275,18 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     for(int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
-          Real x1 = pco->x1v(i);
-          Real x2 = pco->x2v(j);
-          Real r = std::max(fabs(x1*sin(x2)),pmb->pmy_mesh->mesh_size.x1min);
+          Real x1 = pcoord->x1v(i);
+          Real x2 = pcoord->x2v(j);
+          Real r = std::max(fabs(x1*sin(x2)),pmy_mesh->mesh_size.x1min);
           Real p_over_r = p0_over_r0*pow(r/r0, pslope);
-          Real gamma = phyd->peos->GetGamma();
-          phyd->u(IEN,k,j,i) = p_over_r*phyd->u(IDN,k,j,i)/(gamma - 1.0);
-          phyd->u(IEN,k,j,i) += 0.5*SQR(phyd->u(IM3,k,j,i))/phyd->u(IDN,k,j,i);
+          Real gamma = phydro->peos->GetGamma();
+          phydro->u(IEN,k,j,i) = p_over_r*phydro->u(IDN,k,j,i)/(gamma - 1.0);
+          phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM3,k,j,i))/phydro->u(IDN,k,j,i);
           if (MAGNETIC_FIELDS_ENABLED){
-            phyd->u(IEN,k,j,i) += 
-              0.5*(SQR(0.5*(pfld->b.x1f(k,j,i+1) + pfld->b.x1f(k,j,i)))
-                 + SQR(0.5*(pfld->b.x2f(k,j+1,i) + pfld->b.x2f(k,j,i)))
-                 + SQR(0.5*(pfld->b.x3f(k+1,j,i) + pfld->b.x3f(k,j,i))));
+            phydro->u(IEN,k,j,i) += 
+              0.5*(SQR(0.5*(pfield->b.x1f(k,j,i+1) + pfield->b.x1f(k,j,i)))
+                 + SQR(0.5*(pfield->b.x2f(k,j+1,i) + pfield->b.x2f(k,j,i)))
+                 + SQR(0.5*(pfield->b.x3f(k+1,j,i) + pfield->b.x3f(k,j,i))));
           }
         }
       }
@@ -278,6 +295,19 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 
   return;
 }
+
+
+//======================================================================================
+//! \fn void MeshBlock::UserWorkInLoop(void)
+//  \brief User-defined work function for every time step
+//======================================================================================
+
+void MeshBlock::UserWorkInLoop(void)
+{
+  // nothing to do
+  return;
+}
+
 
 //--------------------------------------------------------------------------------------
 //! \fn static Real A3(const Real x1,const Real x2,const Real x3)
