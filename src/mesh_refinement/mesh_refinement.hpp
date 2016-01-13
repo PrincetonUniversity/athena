@@ -29,7 +29,7 @@ class MeshRefinement
 {
 private:
   MeshBlock *pmy_mblock_;
-  ParameterInput *pin_;
+  Coordinates *pcoarsec;
   AthenaArray<Real> coarse_cons_, coarse_prim_, coarse_bcc_;
   FaceField coarse_b_;
   AthenaArray<Real> fvol_[2][2], sarea_x1_[2][2], sarea_x2_[2][3], sarea_x3_[3][2];

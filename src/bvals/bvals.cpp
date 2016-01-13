@@ -3600,7 +3600,7 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
       else f3m=1, f3p=1;
     }
     pmb->phydro->peos->ConservedToPrimitive(pmr->coarse_cons_, pmr->coarse_prim_,
-                 pmr->coarse_b_, pmr->coarse_prim_, pmr->coarse_bcc_, pmb->pcoarsec,
+                 pmr->coarse_b_, pmr->coarse_prim_, pmr->coarse_bcc_, pmr->pcoarsec,
                  si-f1m, ei+f1p, sj-f2m, ej+f2p, sk-f3m, ek+f3p);
 
     // Apply physical boundaries

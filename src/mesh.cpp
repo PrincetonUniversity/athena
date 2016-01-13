@@ -892,10 +892,8 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 // in the Hydro constructor
  
   pcoord = new Coordinates(this, pin);
-  if(pm->multilevel==true) {
-    pcoarsec = new Coordinates(this, pin, 1);
+  if(pm->multilevel==true)
     pmr = new MeshRefinement(this, pin);
-  }
   phydro = new Hydro(this, pin);
   pfield = new Field(this, pin);
   pbval  = new BoundaryValues(this, pin);
@@ -975,10 +973,8 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   // create coordinates, hydro, field, and boundary conditions
   pcoord = new Coordinates(this, pin);
-  if(pm->multilevel==true) {
-    pcoarsec = new Coordinates(this, pin, 1);
+  if(pm->multilevel==true)
     pmr = new MeshRefinement(this, pin);
-  }
   phydro = new Hydro(this, pin);
   pfield = new Field(this, pin);
   pbval  = new BoundaryValues(this, pin);
