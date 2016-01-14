@@ -23,20 +23,20 @@ tlim       = 1.0
 nx1    = 100
 x1min  = 1.96
 x1max  = 20.0
-ix1_bc = user  # 3: special
-ox1_bc = user  # 3: special
+ix1_bc = outflow
+ox1_bc = user
 
 nx2    = 100
 x2min  = 0.5235987755982988  # pi/6
 x2max  = 2.6179938779914944  # 5*pi/6
-ix2_bc = reflecting          # 1: reflecting
-ox2_bc = reflecting          # 1: reflecting
+ix2_bc = reflecting
+ox2_bc = reflecting
 
 nx3    = 1
 x3min  = -0.5
 x3max  = 0.5
-ix3_bc = periodic  # 4: periodic
-ox3_bc = periodic  # 4: periodic
+ix3_bc = periodic
+ox3_bc = periodic
 
 <coord>
 m = 1.0  # black hole mass M
