@@ -24,10 +24,10 @@
 #include "../field/field.hpp"              // Field
 
 // Declarations
-void OutflowInner(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb, 
-    int is, int ie, int js, int je, int ks, int ke);
-void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb, 
-    int is, int ie, int js, int je, int ks, int ke);
+void OutflowInner(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+     FaceField &bb, int is, int ie, int js, int je, int ks, int ke);
+void FixedOuter(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+     FaceField &bb, int is, int ie, int js, int je, int ks, int ke);
 
 
 // Function for initializing global mesh properties
@@ -171,8 +171,8 @@ void MeshBlock::UserWorkInLoop(void)
 // Notes:
 //   TODO: remove prim hack
 //   TODO: note hack is wrong (assumes wrong primitives)
-void OutflowInner(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
-    int is, int ie, int js, int je, int ks, int ke)
+void OutflowInner(MeshBlock *pmb,  Coordinates *pco, AthenaArray<Real> &prim,
+     FaceField &bb, int is, int ie, int js, int je, int ks, int ke)
 {
   int il = is - NGHOST;
   int iu = is;
@@ -193,7 +193,7 @@ void OutflowInner(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
   for (int k = kl; k <= ku; ++k)
     for (int j = jl; j <= ju; ++j)
     {
-      pmb->pcoord->CellMetric(k, j, il, iu, g, gi);
+      pco->CellMetric(k, j, il, iu, g, gi);
       Real alpha = std::sqrt(-1.0/gi(I00,is));
       Real v1 = (*pprim)(IVX,k,j,is);
       Real v2 = (*pprim)(IVY,k,j,is);
@@ -225,7 +225,7 @@ void OutflowInner(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
         (*pprim)(IVY,k,j,i) = u2_new / u0_new;
         (*pprim)(IVZ,k,j,i) = u3_new / u0_new;
         Real u_0_new, u_1_new, u_2_new, u_3_new;
-        pmb->pcoord->LowerVectorCell(u0_new, u1_new, u2_new, u3_new, k, j, i, &u_0_new,
+        pco->LowerVectorCell(u0_new, u1_new, u2_new, u3_new, k, j, i, &u_0_new,
             &u_1_new, &u_2_new, &u_3_new);
         Real gamma_adi = pmb->phydro->peos->GetGamma();
         Real gamma_prime = gamma_adi/(gamma_adi-1.0);
@@ -249,8 +249,8 @@ void OutflowInner(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
 //   prim: primitive quantities set along outer x1-boundary
 // Notes:
 //   remains unchanged
-void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
-    int is, int ie, int js, int je, int ks, int ke)
+void FixedOuter(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+     FaceField &bb, int is, int ie, int js, int je, int ks, int ke)
 {
   return;
 }

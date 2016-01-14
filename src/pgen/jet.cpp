@@ -29,7 +29,7 @@
 #include "../coordinates/coordinates.hpp"
 
 // BCs on L-x1 (left edge) of grid with jet inflow conditions
-void JetInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                    int is, int ie, int js, int je, int ks, int ke);
 
 // Make radius of jet and jet variables global so they can be accessed by BC functions
@@ -149,14 +149,14 @@ void MeshBlock::UserWorkInLoop(void)
 //! \fn void JetInnerX1()
 //  \brief Sets boundary condition on left X boundary (iib) for jet problem
 
-void JetInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                    int is, int ie, int js, int je, int ks, int ke)
 {
   // set primitive variables in inlet ghost zones
   for(int k=ks; k<=ke; ++k){
   for(int j=js; j<=je; ++j){
     for(int i=1; i<=(NGHOST); ++i){
-      Real rad = sqrt(SQR(pmb->pcoord->x2v(j)-x2_0) + SQR(pmb->pcoord->x3v(k)-x3_0));
+      Real rad = sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
       if(rad <= r_jet){
         a(IDN,k,j,is-i) = d_jet;
         a(IVX,k,j,is-i) = vx_jet;
@@ -179,7 +179,7 @@ void JetInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
     for(int j=js; j<=je; ++j){
 #pragma simd
       for(int i=1; i<=(NGHOST); ++i){
-        Real rad = sqrt(SQR(pmb->pcoord->x2v(j)-x2_0) + SQR(pmb->pcoord->x3v(k)-x3_0));
+        Real rad = sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
         if(rad <= r_jet){
           b.x1f(k,j,is-i) = bx_jet;
         } else{
@@ -192,7 +192,7 @@ void JetInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
     for (int j=js; j<=je+1; ++j) {
 #pragma simd
       for (int i=1; i<=(NGHOST); ++i) {
-        Real rad = sqrt(SQR(pmb->pcoord->x2v(j)-x2_0) + SQR(pmb->pcoord->x3v(k)-x3_0));
+        Real rad = sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
         if(rad <= r_jet){
           b.x2f(k,j,is-i) = by_jet;
         } else{
@@ -205,7 +205,7 @@ void JetInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
     for (int j=js; j<=je; ++j) {
 #pragma simd
       for (int i=1; i<=(NGHOST); ++i) {
-        Real rad = sqrt(SQR(pmb->pcoord->x2v(j)-x2_0) + SQR(pmb->pcoord->x3v(k)-x3_0));
+        Real rad = sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
         if(rad <= r_jet){
           b.x3f(k,j,is-i) = bz_jet;
         } else{

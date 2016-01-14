@@ -28,13 +28,13 @@ using namespace std;
 
 /*----------------------------------------------------------------------------*/
 /* function prototypes and global variables*/
-void stbv_iib(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void stbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
               int is, int ie, int js, int je, int ks, int ke); //sets BCs on inner-x1 (left edge) of grid.
-void stbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void stbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
               int is, int ie, int js, int je, int ks, int ke); //sets BCs on inner-x2 (bottom edge) of grid.
-void stbv_oib(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void stbv_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
               int is, int ie, int js, int je, int ks, int ke); //sets BCs on outer-x1 (right edge) of grid.
-void stbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void stbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
               int is, int ie, int js, int je, int ks, int ke); //sets BCs on outer-x2 (top edge) of grid.
 
 Real A1(  Real x1,   Real x2,   Real x3);
@@ -292,10 +292,9 @@ void MeshBlock::UserWorkInLoop(void)
 
 
 /*  Boundary Condtions, outflowing, ix1, ox1, ix2, ox2  */
-void stbv_iib(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void stbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
               int is, int ie, int js, int je, int ks, int ke)
 {
-  Coordinates *pco=pmb->pcoord;
   Real pg;
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
@@ -304,7 +303,9 @@ void stbv_iib(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
         a(IM1,k,j,is-i) = 0.0;
         a(IM2,k,j,is-i) = a(IM2,k,j,is); //corotating ghost region
         a(IM3,k,j,is-i) = a(IM3,k,j,is);
-        pg = (a(IEN,k,j,is-i+1)-0.5*(SQR(a(IM1,k,j,is-i+1))+SQR(a(IM2,k,j,is-i+1))+SQR(a(IM3,k,j,is-i+1)))/a(IDN,k,j,is-i+1)-0.5*(SQR(a(IB1,k,j,is-i+1))+SQR(a(IB2,k,j,is-i+1))+SQR(a(IB3,k,j,is-i+1))))*(gmgas-1.0);
+        pg = (a(IEN,k,j,is-i+1)
+             -0.5*(SQR(a(IM1,k,j,is-i+1))+SQR(a(IM2,k,j,is-i+1))+SQR(a(IM3,k,j,is-i+1)))/a(IDN,k,j,is-i+1)
+             -0.5*(SQR(a(IB1,k,j,is-i+1))+SQR(a(IB2,k,j,is-i+1))+SQR(a(IB3,k,j,is-i+1))))*(gmgas-1.0);
         pg-=gm/SQR(pco->x1f(is-i+1))*a(IDN,k,j,is-i+1)*pco->dx1v(is-i);
         a(IEN,k,j,is-i)=pg/(gmgas-1.0)+0.5*SQR(a(IM1,k,j,is-i))/a(IDN,k,j,is-i);
       }
@@ -316,7 +317,7 @@ void stbv_iib(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 }
 
 
-void stbv_oib(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void stbv_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
               int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; k++) {
@@ -341,7 +342,7 @@ void stbv_oib(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 }
 
 
-void stbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void stbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
               int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; k++) {
@@ -366,7 +367,7 @@ void stbv_ijb(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 }
 
 
-void stbv_ojb(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void stbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
               int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; k++) {

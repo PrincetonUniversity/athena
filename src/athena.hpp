@@ -20,6 +20,7 @@ typedef double Real;
 #endif
 
 class MeshBlock;
+class Coordinates;
 
 //! \struct FaceField
 //  \brief container for face-centered fields
@@ -49,8 +50,8 @@ typedef struct LogicalLocation {
 } LogicalLocation;
 
 // prototype for boundary condition function pointer
-typedef void (*BValFunc_t)(MeshBlock *pmb, AthenaArray<Real> &buf, FaceField &buf2,
-                           int is, int ie, int js, int je, int ks, int ke);
+typedef void (*BValFunc_t)(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
+                   FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
 // prototype for amr flagging function pointer
 typedef int (*AMRFlag_t)(MeshBlock *pmb);
 

@@ -17,9 +17,9 @@
 #include "../hydro/eos/eos.hpp"
 
 // Declarations
-void InnerBC(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
+void InnerBC(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke);
-void OuterBC(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
+void OuterBC(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke);
 static void CalculatePrimitives(Real r, Real temp_min, Real temp_max, Real *prho,
     Real *ppgas, Real *put, Real *pur);
@@ -257,7 +257,7 @@ void MeshBlock::UserWorkInLoop(void)
 
 // Inner boundary condition
 // TODO: change when interface changes
-void InnerBC(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
+void InnerBC(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke)
 {
   return;
@@ -265,7 +265,7 @@ void InnerBC(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
 
 // Outer boundary condition
 // TODO: change when interface changes
-void OuterBC(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb,
+void OuterBC(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &bb,
     int is, int ie, int js, int je, int ks, int ke)
 {
   return;

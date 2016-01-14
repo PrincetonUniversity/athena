@@ -39,31 +39,31 @@ enum BoundaryFlag {BLOCK_BNDRY=-1, BNDRY_UNDEF=0, REFLECTING_BNDRY=1, OUTFLOW_BN
   USER_BNDRY=3, PERIODIC_BNDRY=4, POLAR_BNDRY=5};
 
 //-------------------- prototypes for all BC functions ---------------------------------
-void ReflectInnerX1(MeshBlock *pmb, AthenaArray<Real> &buf, FaceField &buf2,
-                    int is, int ie, int js, int je, int ks, int ke);
-void ReflectInnerX2(MeshBlock *pmb, AthenaArray<Real> &buf, FaceField &buf2,
-                    int is, int ie, int js, int je, int ks, int ke);
-void ReflectInnerX3(MeshBlock *pmb, AthenaArray<Real> &buf, FaceField &buf2,
-                    int is, int ie, int js, int je, int ks, int ke);
-void ReflectOuterX1(MeshBlock *pmb, AthenaArray<Real> &buf, FaceField &buf2,
-                    int is, int ie, int js, int je, int ks, int ke);
-void ReflectOuterX2(MeshBlock *pmb, AthenaArray<Real> &buf, FaceField &buf2,
-                    int is, int ie, int js, int je, int ks, int ke);
-void ReflectOuterX3(MeshBlock *pmb, AthenaArray<Real> &buf, FaceField &buf2,
-                    int is, int ie, int js, int je, int ks, int ke);
+void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
+                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
+void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
+                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
+void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
+                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
+void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
+                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
+void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
+                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
+void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
+                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
 
-void OutflowInnerX1(MeshBlock *pmb, AthenaArray<Real> &buf, FaceField &buf2,
-                    int is, int ie, int js, int je, int ks, int ke);
-void OutflowInnerX2(MeshBlock *pmb, AthenaArray<Real> &buf, FaceField &buf2,
-                    int is, int ie, int js, int je, int ks, int ke);
-void OutflowInnerX3(MeshBlock *pmb, AthenaArray<Real> &buf, FaceField &buf2,
-                    int is, int ie, int js, int je, int ks, int ke);
-void OutflowOuterX1(MeshBlock *pmb, AthenaArray<Real> &buf, FaceField &buf2,
-                    int is, int ie, int js, int je, int ks, int ke);
-void OutflowOuterX2(MeshBlock *pmb, AthenaArray<Real> &buf, FaceField &buf2,
-                    int is, int ie, int js, int je, int ks, int ke);
-void OutflowOuterX3(MeshBlock *pmb, AthenaArray<Real> &buf, FaceField &buf2,
-                    int is, int ie, int js, int je, int ks, int ke);
+void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
+                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
+void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
+                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
+void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
+                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
+void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
+                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
+void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
+                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
+void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
+                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
 
 // function to return boundary flag given input string
 enum BoundaryFlag GetBoundaryFlag(std::string input_string);

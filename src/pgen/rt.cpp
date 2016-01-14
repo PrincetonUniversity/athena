@@ -53,14 +53,14 @@
 #include "../coordinates/coordinates.hpp"
 #include "../utils/utils.hpp"
 
-void ProjectPressureInnerX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
-                 int is, int ie, int js, int je, int ks, int ke);
-void ProjectPressureOuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
-                 int is, int ie, int js, int je, int ks, int ke);
-void ProjectPressureInnerX3(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
-                 int is, int ie, int js, int je, int ks, int ke);
-void ProjectPressureOuterX3(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
-                 int is, int ie, int js, int je, int ks, int ke);
+void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
 
 // made global to share with BC functions
 static Real gm1;
@@ -262,8 +262,8 @@ void MeshBlock::UserWorkInLoop(void)
 //! \fn void ProjectPressureInnerX2()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void ProjectPressureInnerX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
-                 int is, int ie, int js, int je, int ks, int ke)
+void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+                            FaceField &b, int is, int ie, int js, int je, int ks, int ke)
 {
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=ks; k<=ke; ++k) {
@@ -277,7 +277,7 @@ void ProjectPressureInnerX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 #pragma simd
         for (int i=is; i<=ie; ++i) {
           a(IEN,k,js-j,i) = a(IEN,k,js+j-1,i) 
-             - a(IDN,k,js+j-1,i)*grav_acc*(2*j-1)*pmb->pcoord->dx2f(j)/gm1;
+             - a(IDN,k,js+j-1,i)*grav_acc*(2*j-1)*pco->dx2f(j)/gm1;
         }
       } else {
 #pragma simd
@@ -322,8 +322,8 @@ void ProjectPressureInnerX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 //! \fn void ProjectPressureOuterX2()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void ProjectPressureOuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
-                 int is, int ie, int js, int je, int ks, int ke)
+void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+                            FaceField &b, int is, int ie, int js, int je, int ks, int ke)
 {
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=ks; k<=ke; ++k) {
@@ -337,7 +337,7 @@ void ProjectPressureOuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 #pragma simd
         for (int i=is; i<=ie; ++i) {
           a(IEN,k,je+j,i) = a(IEN,k,je-j+1,i) 
-             + a(IDN,k,je-j+1,i)*grav_acc*(2*j-1)*pmb->pcoord->dx2f(j)/gm1;
+             + a(IDN,k,je-j+1,i)*grav_acc*(2*j-1)*pco->dx2f(j)/gm1;
         }
       } else {
 #pragma simd
@@ -382,8 +382,8 @@ void ProjectPressureOuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 //! \fn void ProjectPressureInnerX3()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void ProjectPressureInnerX3(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
-                 int is, int ie, int js, int je, int ks, int ke)
+void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+                            FaceField &b, int is, int ie, int js, int je, int ks, int ke)
 {
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=1; k<=(NGHOST); ++k) {
@@ -397,7 +397,7 @@ void ProjectPressureInnerX3(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 #pragma simd
         for (int i=is; i<=ie; ++i) {
           a(IEN,ks-k,j,i) = a(IEN,ks+k-1,j,i) 
-             - a(IDN,ks+k-1,j,i)*grav_acc*(2*k-1)*pmb->pcoord->dx3f(k);
+             - a(IDN,ks+k-1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
         }
       } else {
 #pragma simd
@@ -442,8 +442,8 @@ void ProjectPressureInnerX3(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 //! \fn void ProjectPressureOuterX3()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void ProjectPressureOuterX3(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
-                 int is, int ie, int js, int je, int ks, int ke)
+void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+                            FaceField &b, int is, int ie, int js, int je, int ks, int ke)
 {
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=1; k<=(NGHOST); ++k) {
@@ -457,7 +457,7 @@ void ProjectPressureOuterX3(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 #pragma simd
         for (int i=is; i<=ie; ++i) {
           a(IEN,ke+k,j,i) = a(IEN,ke-k+1,j,i)
-             + a(IDN,ke-k+1,j,i)*grav_acc*(2*k-1)*pmb->pcoord->dx3f(k);
+             + a(IDN,ke-k+1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
         }
       } else {
 #pragma simd

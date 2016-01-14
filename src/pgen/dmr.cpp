@@ -52,11 +52,11 @@
 // DMRInnerX1() - sets BCs on inner-x1 (left edge) of grid.  
 // DMRInnerX2() - sets BCs on inner-x2 (bottom edge) of grid.  
 // DMROuterX2() - sets BCs on outer-x2 (top edge) of grid.  
-void DMRInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke);
-void DMRInnerX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke);
-void DMROuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke);
 int RefinementCondition(MeshBlock *pmb);
 
@@ -130,7 +130,7 @@ void MeshBlock::UserWorkInLoop(void)
 //  \brief Sets boundary condition on left X boundary (iib) for dmr test
 //  Quantities at this boundary are held fixed at the downstream state
 
-void DMRInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke)
 {
   Real d0 = 8.0;
@@ -156,7 +156,7 @@ void DMRInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 //  Quantaties at this boundary are held fixed at the downstream state for
 //  x1 < 0.16666666, and are reflected for x1 > 0.16666666
 
-void DMRInnerX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke)
 {
   Real d0 = 8.0;
@@ -168,7 +168,7 @@ void DMRInnerX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 
   for (int j=1;  j<=(NGHOST); ++j) {
     for (int i=is; i<=ie; ++i) {
-      if (pmb->pcoord->x1v(i) < 0.1666666666) {
+      if (pco->x1v(i) < 0.1666666666) {
         // fixed at downstream state
         a(IDN,ks,js-j,i) = d0;
         a(IVX,ks,js-j,i) = u0;
@@ -192,7 +192,7 @@ void DMRInnerX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 //  x1 < 0.16666666+v1_shock*time, and at the upstream state for
 //  x1 > 0.16666666+v1_shock*time
 
-void DMROuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke)
 {
   Real d0 = 8.0;
@@ -206,7 +206,7 @@ void DMROuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 
   for (int j=1;  j<=(NGHOST); ++j) {
     for (int i=is; i<=ie; ++i) {
-      if (pmb->pcoord->x1v(i) < shock_pos) {
+      if (pco->x1v(i) < shock_pos) {
         // fixed at downstream state
         a(IDN,ks,je+j,i) = d0;
         a(IVX,ks,je+j,i) = u0;
@@ -227,8 +227,6 @@ void DMROuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 int RefinementCondition(MeshBlock *pmb)
 {
   AthenaArray<Real> &w = pmb->phydro->w;
-  Coordinates *pco=pmb->pcoord;
-  MeshRefinement *pmr = pmb->pmr;
   Real maxeps=0.0;
   int k=pmb->ks;
   for(int j=pmb->js; j<=pmb->je; j++) {

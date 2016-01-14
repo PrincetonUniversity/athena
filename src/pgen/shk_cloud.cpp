@@ -50,8 +50,8 @@ static Real gmma1,dl,pl,ul;
 static Real bxl,byl,bzl;
 
 // fixes BCs on L-x1 (left edge) of grid to postshock flow.
-void ShockCloudInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
-                   int is, int ie, int js, int je, int ks, int ke);
+void ShockCloudInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+                       FaceField &b, int is, int ie, int js, int je, int ks, int ke);
 
 //======================================================================================
 //! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
@@ -217,8 +217,8 @@ void MeshBlock::UserWorkInLoop(void)
 //  \brief Sets boundary condition on left X boundary (iib) 
 // Note quantities at this boundary are held fixed at the downstream state
 
-void ShockCloudInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
-                   int is, int ie, int js, int je, int ks, int ke)
+void ShockCloudInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+                       FaceField &b, int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
