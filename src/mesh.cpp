@@ -1422,7 +1422,7 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
         int ff2=1-(m+1)/2; // 0 for OUTER_X2, 1 for INNER_X2
         nblevel[1][m+1][n+1]=neibt->loc.level+1;
         for(int f1=0;f1<nf2;f1++) {
-          MeshBlockTree* nf=neibt->GetLeaf(ff1,polar?1-ff2:ff2,f1);
+          MeshBlockTree* nf=neibt->GetLeaf(ff1,ff2,f1);
           int fid = nf->gid;
           int nlevel=nf->loc.level;
           int tbid=FindBufferID(-n,-m,0,0,0,pmy_mesh->maxneighbor_);
