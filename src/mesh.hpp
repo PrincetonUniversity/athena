@@ -41,14 +41,13 @@ typedef struct NeighborBlock {
   enum neighbor_type type;
   enum BoundaryFace fid;
   enum edgeid eid;
-  bool polar;
-  bool self_neighbor;
+  bool polar; // flag indicating boundary is across a pole
   NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1), ox1(-1), ox2(-1), ox3(-1),
     bufid(-1), targetid(-1), fi1(-1), fi2(-1), type(neighbor_none),
-    fid(FACE_UNDEF), eid (edgeid_undefined) {};
+    fid(FACE_UNDEF), eid (edgeid_undefined), polar(false) {};
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
                    int iox3, enum neighbor_type itype, int ibid, int itargetid,
-                   bool iself_neighbor, int ifi1, int ifi2, bool ipolar);
+                   bool ipolar, int ifi1, int ifi2);
 } NeighborBlock;
 
 
