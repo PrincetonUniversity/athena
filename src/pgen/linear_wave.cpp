@@ -44,7 +44,7 @@ static int wave_flag;
 static Real ang_2, ang_3; // Rotation angles about the y and z' axis
 static Real sin_a2, cos_a2, sin_a3, cos_a3;
 static Real amp, lambda, k_par; // amplitude, Wavelength, 2*PI/wavelength
-static Real gm1,iso_cs;
+static Real gm1,iso_cs, vflow;
 
 // functions to compute vector potential to initialize the solution
 static Real A1(const Real x1, const Real x2, const Real x3);
@@ -57,31 +57,49 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
   Real eigenvalues[(NWAVE)],
   Real right_eigenmatrix[(NWAVE)][(NWAVE)], Real left_eigenmatrix[(NWAVE)][(NWAVE)]);
 
+
 //======================================================================================
-//! \fn ProblemGenerator
-//  \brief Linear wave problem generator for 1D/2D/3D problems.
+//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
+//  \brief Init the Mesh properties
 //======================================================================================
 
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
 {
-  MeshBlock *pmb = phyd->pmy_block;
-  Coordinates *pco = pmb->pcoord;
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  gm1 = (phyd->peos->GetGamma() - 1.0);
-  iso_cs = phyd->peos->GetIsoSoundSpeed();
-
-// Read initial conditions
-
+  // initialize global variables 
   wave_flag = pin->GetInteger("problem","wave_flag");
   amp = pin->GetReal("problem","amp");
-  Real vflow = pin->GetOrAddReal("problem","vflow",0.0);
+  vflow = pin->GetOrAddReal("problem","vflow",0.0);
   ang_2 = pin->GetOrAddReal("problem","ang_2",-999.9);
   ang_3 = pin->GetOrAddReal("problem","ang_3",-999.9);
 
-  Real x1size = pmb->pmy_mesh->mesh_size.x1max - pmb->pmy_mesh->mesh_size.x1min;
-  Real x2size = pmb->pmy_mesh->mesh_size.x2max - pmb->pmy_mesh->mesh_size.x2min;
-  Real x3size = pmb->pmy_mesh->mesh_size.x3max - pmb->pmy_mesh->mesh_size.x3min;
+  return;
+}
+
+
+//======================================================================================
+//! \fn void Mesh::TerminateUserMeshProperties(void)
+//  \brief Clean up the Mesh properties
+//======================================================================================
+void Mesh::TerminateUserMeshProperties(void)
+{
+  // nothing to do
+  return;
+}
+
+
+//======================================================================================
+//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
+//  \brief Linear wave problem generator for 1D/2D/3D problems.
+//======================================================================================
+
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
+{
+  gm1 = (phydro->peos->GetGamma() - 1.0);
+  iso_cs = phydro->peos->GetIsoSoundSpeed();
+
+  Real x1size = pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min;
+  Real x2size = pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min;
+  Real x3size = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
 
 // For wavevector along coordinate axes, set desired values of ang_2/ang_3.
 //    For example, for 1D problem use ang_2 = ang_3 = 0.0
@@ -104,8 +122,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 
 // For lambda choose the smaller of the 3
   lambda = x1;
-  if (pmb->block_size.nx2 > 1 && ang_3 != 0.0) lambda = std::min(lambda,x2);
-  if (pmb->block_size.nx3 > 1 && ang_2 != 0.0) lambda = std::min(lambda,x3);
+  if (block_size.nx2 > 1 && ang_3 != 0.0) lambda = std::min(lambda,x2);
+  if (block_size.nx3 > 1 && ang_2 != 0.0) lambda = std::min(lambda,x3);
 
 // Initialize k_parallel
   k_par = 2.0*(PI)/lambda;
@@ -126,7 +144,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   Real h0 = 0.0;
 
   if (NON_BAROTROPIC_EOS) {
-    p0 = 1.0/(phyd->peos->GetGamma());
+    p0 = 1.0/(phydro->peos->GetGamma());
     h0 = ((p0/gm1 + 0.5*d0*(u0*u0+v0*v0+w0*w0)) + p0)/d0;
     if (MAGNETIC_FIELDS_ENABLED) h0 += (bx0*bx0+by0*by0+bz0*bz0)/d0;
   }
@@ -149,33 +167,33 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     dby = amp*rem[NWAVE-2][wave_flag];
     dbz = amp*rem[NWAVE-1][wave_flag];
 
-    int level=pmb->loc.level;
+    int level=loc.level;
     // Initialize components of the vector potential
-    if(pmb->block_size.nx3 > 1) {
+    if(block_size.nx3 > 1) {
       for (int k=ks; k<=ke+1; k++) {
         for (int j=js; j<=je+1; j++) {
           for (int i=is; i<=ie+1; i++) {
-            if((pmb->nblevel[1][0][1]>level && j==js) || (pmb->nblevel[1][2][1]>level && j==je+1)
-            || (pmb->nblevel[0][1][1]>level && k==ks) || (pmb->nblevel[2][1][1]>level && k==ke+1)
-            || (pmb->nblevel[0][0][1]>level && j==js && k==ks)   || (pmb->nblevel[0][2][1]>level && j==je+1 && k==ks)
-            || (pmb->nblevel[2][0][1]>level && j==js && k==ke+1) || (pmb->nblevel[2][2][1]>level && j==je+1 && k==ke+1))
-              a1(k,j,i) = 0.5*(A1(pco->x1f(i)+0.25*pco->dx1f(i), pco->x2f(j), pco->x3f(k))+
-                               A1(pco->x1f(i)+0.75*pco->dx1f(i), pco->x2f(j), pco->x3f(k)));
-            else a1(k,j,i) = A1(0.5*(pco->x1f(i)+pco->x1f(i+1)), pco->x2f(j), pco->x3f(k));
-            if((pmb->nblevel[1][1][0]>level && i==is) || (pmb->nblevel[1][1][2]>level && i==ie+1)
-            || (pmb->nblevel[0][1][1]>level && k==ks) || (pmb->nblevel[2][1][1]>level && k==ke+1)
-            || (pmb->nblevel[0][1][0]>level && i==is && k==ks)   || (pmb->nblevel[0][1][2]>level && i==ie+1 && k==ks)
-            || (pmb->nblevel[2][1][0]>level && i==is && k==ke+1) || (pmb->nblevel[2][1][2]>level && i==ie+1 && k==ke+1))
-              a2(k,j,i) = 0.5*(A2(pco->x1f(i), pco->x2f(j)+0.25*pco->dx2f(j), pco->x3f(k))+
-                               A2(pco->x1f(i), pco->x2f(j)+0.75*pco->dx2f(j), pco->x3f(k)));
-            else a2(k,j,i) = A2(pco->x1f(i), 0.5*(pco->x2f(j)+pco->x2f(j+1)), pco->x3f(k));
-            if((pmb->nblevel[1][1][0]>level && i==is) || (pmb->nblevel[1][1][2]>level && i==ie+1)
-            || (pmb->nblevel[1][0][1]>level && j==js) || (pmb->nblevel[1][2][1]>level && j==je+1)
-            || (pmb->nblevel[1][0][0]>level && i==is && j==js)   || (pmb->nblevel[1][0][2]>level && i==ie+1 && j==js)
-            || (pmb->nblevel[1][2][0]>level && i==is && j==je+1) || (pmb->nblevel[1][2][2]>level && i==ie+1 && j==je+1))
-              a3(k,j,i) = 0.5*(A3(pco->x1f(i), pco->x2f(j), pco->x3f(k)+0.25*pco->dx3f(k))+
-                               A3(pco->x1f(i), pco->x2f(j), pco->x3f(k)+0.75*pco->dx3f(k)));
-            else a3(k,j,i) = A3(pco->x1f(i), pco->x2f(j), 0.5*(pco->x3f(k)+pco->x3f(k+1)));
+            if((nblevel[1][0][1]>level && j==js) || (nblevel[1][2][1]>level && j==je+1)
+            || (nblevel[0][1][1]>level && k==ks) || (nblevel[2][1][1]>level && k==ke+1)
+            || (nblevel[0][0][1]>level && j==js && k==ks)   || (nblevel[0][2][1]>level && j==je+1 && k==ks)
+            || (nblevel[2][0][1]>level && j==js && k==ke+1) || (nblevel[2][2][1]>level && j==je+1 && k==ke+1))
+              a1(k,j,i) = 0.5*(A1(pcoord->x1f(i)+0.25*pcoord->dx1f(i), pcoord->x2f(j), pcoord->x3f(k))+
+                               A1(pcoord->x1f(i)+0.75*pcoord->dx1f(i), pcoord->x2f(j), pcoord->x3f(k)));
+            else a1(k,j,i) = A1(0.5*(pcoord->x1f(i)+pcoord->x1f(i+1)), pcoord->x2f(j), pcoord->x3f(k));
+            if((nblevel[1][1][0]>level && i==is) || (nblevel[1][1][2]>level && i==ie+1)
+            || (nblevel[0][1][1]>level && k==ks) || (nblevel[2][1][1]>level && k==ke+1)
+            || (nblevel[0][1][0]>level && i==is && k==ks)   || (nblevel[0][1][2]>level && i==ie+1 && k==ks)
+            || (nblevel[2][1][0]>level && i==is && k==ke+1) || (nblevel[2][1][2]>level && i==ie+1 && k==ke+1))
+              a2(k,j,i) = 0.5*(A2(pcoord->x1f(i), pcoord->x2f(j)+0.25*pcoord->dx2f(j), pcoord->x3f(k))+
+                               A2(pcoord->x1f(i), pcoord->x2f(j)+0.75*pcoord->dx2f(j), pcoord->x3f(k)));
+            else a2(k,j,i) = A2(pcoord->x1f(i), 0.5*(pcoord->x2f(j)+pcoord->x2f(j+1)), pcoord->x3f(k));
+            if((nblevel[1][1][0]>level && i==is) || (nblevel[1][1][2]>level && i==ie+1)
+            || (nblevel[1][0][1]>level && j==js) || (nblevel[1][2][1]>level && j==je+1)
+            || (nblevel[1][0][0]>level && i==is && j==js)   || (nblevel[1][0][2]>level && i==ie+1 && j==js)
+            || (nblevel[1][2][0]>level && i==is && j==je+1) || (nblevel[1][2][2]>level && i==ie+1 && j==je+1))
+              a3(k,j,i) = 0.5*(A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3f(k)+0.25*pcoord->dx3f(k))+
+                               A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3f(k)+0.75*pcoord->dx3f(k)));
+            else a3(k,j,i) = A3(pcoord->x1f(i), pcoord->x2f(j), 0.5*(pcoord->x3f(k)+pcoord->x3f(k+1)));
           }
         }
       }
@@ -184,9 +202,9 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
       for (int k=ks; k<=ke+1; k++) {
         for (int j=js; j<=je+1; j++) {
           for (int i=is; i<=ie+1; i++) {
-            a1(k,j,i) = A1(pco->x1v(i), pco->x2f(j), pco->x3f(k));
-            a2(k,j,i) = A2(pco->x1f(i), pco->x2v(j), pco->x3f(k));
-            a3(k,j,i) = A3(pco->x1f(i), pco->x2f(j), pco->x3v(k));
+            a1(k,j,i) = A1(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k));
+            a2(k,j,i) = A2(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k));
+            a3(k,j,i) = A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k));
           }
         }
       }
@@ -197,24 +215,24 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie+1; i++) {
-        pfld->b.x1f(k,j,i) = (a3(k  ,j+1,i) - a3(k,j,i))/pco->dx2f(j) -
-                            (a2(k+1,j  ,i) - a2(k,j,i))/pco->dx3f(k);
+        pfield->b.x1f(k,j,i) = (a3(k  ,j+1,i) - a3(k,j,i))/pcoord->dx2f(j) -
+                            (a2(k+1,j  ,i) - a2(k,j,i))/pcoord->dx3f(k);
       }
     }}
 
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je+1; j++) {
       for (int i=is; i<=ie; i++) {
-        pfld->b.x2f(k,j,i) = (a1(k+1,j,i  ) - a1(k,j,i))/pco->dx3f(k) -
-                            (a3(k  ,j,i+1) - a3(k,j,i))/pco->dx1f(i);
+        pfield->b.x2f(k,j,i) = (a1(k+1,j,i  ) - a1(k,j,i))/pcoord->dx3f(k) -
+                            (a3(k  ,j,i+1) - a3(k,j,i))/pcoord->dx1f(i);
       }
     }}
 
     for (int k=ks; k<=ke+1; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
-       pfld->b.x3f(k,j,i) = (a2(k,j  ,i+1) - a2(k,j,i))/pco->dx1f(i) -
-                           (a1(k,j+1,i  ) - a1(k,j,i))/pco->dx2f(j);
+       pfield->b.x3f(k,j,i) = (a2(k,j  ,i+1) - a2(k,j,i))/pcoord->dx1f(i) -
+                           (a1(k,j+1,i  ) - a1(k,j,i))/pcoord->dx2f(j);
       }
     }}
     a1.DeleteAthenaArray();
@@ -227,23 +245,23 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      Real x = cos_a2*(pco->x1v(i)*cos_a3 + pco->x2v(j)*sin_a3) + pco->x3v(k)*sin_a2;
+      Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3) + pcoord->x3v(k)*sin_a2;
       Real sn = sin(k_par*x);
 
-      phyd->u(IDN,k,j,i) = d0 + amp*sn*rem[0][wave_flag];
+      phydro->u(IDN,k,j,i) = d0 + amp*sn*rem[0][wave_flag];
 
       Real mx = d0*vflow + amp*sn*rem[1][wave_flag];
       Real my = amp*sn*rem[2][wave_flag];
       Real mz = amp*sn*rem[3][wave_flag];
 
-      phyd->u(IM1,k,j,i) = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
-      phyd->u(IM2,k,j,i) = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
-      phyd->u(IM3,k,j,i) = mx*sin_a2                    + mz*cos_a2;
+      phydro->u(IM1,k,j,i) = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
+      phydro->u(IM2,k,j,i) = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
+      phydro->u(IM3,k,j,i) = mx*sin_a2                    + mz*cos_a2;
 
       if (NON_BAROTROPIC_EOS) {
-        phyd->u(IEN,k,j,i) = p0/gm1 + 0.5*d0*u0*u0 + amp*sn*rem[4][wave_flag];
+        phydro->u(IEN,k,j,i) = p0/gm1 + 0.5*d0*u0*u0 + amp*sn*rem[4][wave_flag];
         if (MAGNETIC_FIELDS_ENABLED) {
-          phyd->u(IEN,k,j,i) += 0.5*(bx0*bx0+by0*by0+bz0*bz0);
+          phydro->u(IEN,k,j,i) += 0.5*(bx0*bx0+by0*by0+bz0*bz0);
         }
       }
     }
@@ -251,6 +269,18 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 
   return;
 }
+
+
+//======================================================================================
+//! \fn void MeshBlock::UserWorkInLoop(void)
+//  \brief User-defined work function for every time step
+//======================================================================================
+void MeshBlock::UserWorkInLoop(void)
+{
+  // nothing to do
+  return;
+}
+
 
 //--------------------------------------------------------------------------------------
 //! \fn static Real A1(const Real x1,const Real x2,const Real x3)

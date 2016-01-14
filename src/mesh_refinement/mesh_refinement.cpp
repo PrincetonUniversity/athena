@@ -39,8 +39,7 @@
 MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_mblock_ = pmb;
-  pin_=pin;
-  AMRFlag_=NULL;
+  pcoarsec = new Coordinates(pmb, pin, 1);
   // allocate prolongation buffer
   int ncc1=pmb->block_size.nx1/2+2*pmb->cnghost;
   int ncc2=1;
@@ -364,14 +363,13 @@ void MeshRefinement::ProlongateCellCenteredValues(const AthenaArray<Real> &coars
 {
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
-  Coordinates *pcrs=pmb->pcoarsec;
   if(pmb->block_size.nx3 > 1) {
     for(int n=sn; n<=en; n++) {
       for(int k=sk; k<=ek; k++) {
         int fk=(k-pmb->cks)*2+pmb->ks;
-        const Real& x3m = pcrs->x3v(k-1);
-        const Real& x3c = pcrs->x3v(k);
-        const Real& x3p = pcrs->x3v(k+1);
+        const Real& x3m = pcoarsec->x3v(k-1);
+        const Real& x3c = pcoarsec->x3v(k);
+        const Real& x3p = pcoarsec->x3v(k+1);
         Real dx3m = x3c - x3m;
         Real dx3p = x3p - x3c;
         const Real& fx3m = pco->x3v(fk);
@@ -380,9 +378,9 @@ void MeshRefinement::ProlongateCellCenteredValues(const AthenaArray<Real> &coars
         Real dx3fp= fx3p-x3c;
         for(int j=sj; j<=ej; j++) {
           int fj=(j-pmb->cjs)*2+pmb->js;
-          const Real& x2m = pcrs->x2v(j-1);
-          const Real& x2c = pcrs->x2v(j);
-          const Real& x2p = pcrs->x2v(j+1);
+          const Real& x2m = pcoarsec->x2v(j-1);
+          const Real& x2c = pcoarsec->x2v(j);
+          const Real& x2p = pcoarsec->x2v(j+1);
           Real dx2m = x2c - x2m;
           Real dx2p = x2p - x2c;
           const Real& fx2m = pco->x2v(fj);
@@ -391,9 +389,9 @@ void MeshRefinement::ProlongateCellCenteredValues(const AthenaArray<Real> &coars
           Real dx2fp= fx2p-x2c;
           for(int i=si; i<=ei; i++) {
             int fi=(i-pmb->cis)*2+pmb->is;
-            const Real& x1m = pcrs->x1v(i-1);
-            const Real& x1c = pcrs->x1v(i);
-            const Real& x1p = pcrs->x1v(i+1);
+            const Real& x1m = pcoarsec->x1v(i-1);
+            const Real& x1c = pcoarsec->x1v(i);
+            const Real& x1p = pcoarsec->x1v(i+1);
             Real dx1m = x1c - x1m;
             Real dx1p = x1p - x1c;
             const Real& fx1m = pco->x1v(fi);
@@ -432,9 +430,9 @@ void MeshRefinement::ProlongateCellCenteredValues(const AthenaArray<Real> &coars
     for(int n=sn; n<=en; n++) {
       for(int j=sj; j<=ej; j++) {
         int fj=(j-pmb->cjs)*2+pmb->js;
-        const Real& x2m = pcrs->x2v(j-1);
-        const Real& x2c = pcrs->x2v(j);
-        const Real& x2p = pcrs->x2v(j+1);
+        const Real& x2m = pcoarsec->x2v(j-1);
+        const Real& x2c = pcoarsec->x2v(j);
+        const Real& x2p = pcoarsec->x2v(j+1);
         Real dx2m = x2c - x2m;
         Real dx2p = x2p - x2c;
         const Real& fx2m = pco->x2v(fj);
@@ -443,9 +441,9 @@ void MeshRefinement::ProlongateCellCenteredValues(const AthenaArray<Real> &coars
         Real dx2fp= fx2p-x2c;
         for(int i=si; i<=ei; i++) {
           int fi=(i-pmb->cis)*2+pmb->is;
-          const Real& x1m = pcrs->x1v(i-1);
-          const Real& x1c = pcrs->x1v(i);
-          const Real& x1p = pcrs->x1v(i+1);
+          const Real& x1m = pcoarsec->x1v(i-1);
+          const Real& x1c = pcoarsec->x1v(i);
+          const Real& x1p = pcoarsec->x1v(i+1);
           Real dx1m = x1c - x1m;
           Real dx1p = x1p - x1c;
           const Real& fx1m = pco->x1v(fi);
@@ -476,9 +474,9 @@ void MeshRefinement::ProlongateCellCenteredValues(const AthenaArray<Real> &coars
     for(int n=sn; n<=en; n++) {
       for(int i=si; i<=ei; i++) {
         int fi=(i-pmb->cis)*2+pmb->is;
-        const Real& x1m = pcrs->x1v(i-1);
-        const Real& x1c = pcrs->x1v(i);
-        const Real& x1p = pcrs->x1v(i+1);
+        const Real& x1m = pcoarsec->x1v(i-1);
+        const Real& x1c = pcoarsec->x1v(i);
+        const Real& x1p = pcoarsec->x1v(i+1);
         Real dx1m = x1c - x1m;
         Real dx1p = x1p - x1c;
         const Real& fx1m = pco->x1v(fi);
@@ -510,22 +508,21 @@ void MeshRefinement::ProlongateSharedFieldX1(const AthenaArray<Real> &coarse,
 {
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
-  Coordinates *pcrs=pmb->pcoarsec;
   if(pmb->block_size.nx3 > 1) {
     for(int k=sk; k<=ek; k++) {
       int fk=(k-pmb->cks)*2+pmb->ks;
-      const Real& x3m = pcrs->x3s1(k-1);
-      const Real& x3c = pcrs->x3s1(k);
-      const Real& x3p = pcrs->x3s1(k+1);
+      const Real& x3m = pcoarsec->x3s1(k-1);
+      const Real& x3c = pcoarsec->x3s1(k);
+      const Real& x3p = pcoarsec->x3s1(k+1);
       Real dx3m = x3c - x3m;
       Real dx3p = x3p - x3c;
       const Real& fx3m = pco->x3s1(fk);
       const Real& fx3p = pco->x3s1(fk+1);
       for(int j=sj; j<=ej; j++) {
         int fj=(j-pmb->cjs)*2+pmb->js;
-        const Real& x2m = pcrs->x2s1(j-1);
-        const Real& x2c = pcrs->x2s1(j);
-        const Real& x2p = pcrs->x2s1(j+1);
+        const Real& x2m = pcoarsec->x2s1(j-1);
+        const Real& x2c = pcoarsec->x2s1(j);
+        const Real& x2p = pcoarsec->x2s1(j+1);
         Real dx2m = x2c - x2m;
         Real dx2p = x2p - x2c;
         const Real& fx2m = pco->x2s1(fj);
@@ -553,9 +550,9 @@ void MeshRefinement::ProlongateSharedFieldX1(const AthenaArray<Real> &coarse,
     int k=pmb->cks, fk=pmb->ks;
     for(int j=sj; j<=ej; j++) {
       int fj=(j-pmb->cjs)*2+pmb->js;
-      const Real& x2m = pcrs->x2s1(j-1);
-      const Real& x2c = pcrs->x2s1(j);
-      const Real& x2p = pcrs->x2s1(j+1);
+      const Real& x2m = pcoarsec->x2s1(j-1);
+      const Real& x2c = pcoarsec->x2s1(j);
+      const Real& x2p = pcoarsec->x2s1(j+1);
       Real dx2m = x2c - x2m;
       Real dx2p = x2p - x2c;
       const Real& fx2m = pco->x2s1(fj);
@@ -592,13 +589,12 @@ void MeshRefinement::ProlongateSharedFieldX2(const AthenaArray<Real> &coarse,
 {
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
-  Coordinates *pcrs=pmb->pcoarsec;
   if(pmb->block_size.nx3 > 1) {
     for(int k=sk; k<=ek; k++) {
       int fk=(k-pmb->cks)*2+pmb->ks;
-      const Real& x3m = pcrs->x3s2(k-1);
-      const Real& x3c = pcrs->x3s2(k);
-      const Real& x3p = pcrs->x3s2(k+1);
+      const Real& x3m = pcoarsec->x3s2(k-1);
+      const Real& x3c = pcoarsec->x3s2(k);
+      const Real& x3p = pcoarsec->x3s2(k+1);
       Real dx3m = x3c - x3m;
       Real dx3p = x3p - x3c;
       const Real& fx3m = pco->x3s2(fk);
@@ -607,9 +603,9 @@ void MeshRefinement::ProlongateSharedFieldX2(const AthenaArray<Real> &coarse,
         int fj=(j-pmb->cjs)*2+pmb->js;
         for(int i=si; i<=ei; i++) {
           int fi=(i-pmb->cis)*2+pmb->is;
-          const Real& x1m = pcrs->x1s2(i-1);
-          const Real& x1c = pcrs->x1s2(i);
-          const Real& x1p = pcrs->x1s2(i+1);
+          const Real& x1m = pcoarsec->x1s2(i-1);
+          const Real& x1c = pcoarsec->x1s2(i);
+          const Real& x1p = pcoarsec->x1s2(i+1);
           Real dx1m = x1c - x1m;
           Real dx1p = x1p - x1c;
           const Real& fx1m = pco->x1s2(fi);
@@ -637,9 +633,9 @@ void MeshRefinement::ProlongateSharedFieldX2(const AthenaArray<Real> &coarse,
       int fj=(j-pmb->cjs)*2+pmb->js;
       for(int i=si; i<=ei; i++) {
         int fi=(i-pmb->cis)*2+pmb->is;
-        const Real& x1m = pcrs->x1s2(i-1);
-        const Real& x1c = pcrs->x1s2(i);
-        const Real& x1p = pcrs->x1s2(i+1);
+        const Real& x1m = pcoarsec->x1s2(i-1);
+        const Real& x1c = pcoarsec->x1s2(i);
+        const Real& x1p = pcoarsec->x1s2(i+1);
         const Real& fx1m = pco->x1s2(fi);
         const Real& fx1p = pco->x1s2(fi+1);
         Real ccval=coarse(k,j,i);
@@ -656,14 +652,14 @@ void MeshRefinement::ProlongateSharedFieldX2(const AthenaArray<Real> &coarse,
   else {
     int fi=(si-pmb->cis)*2+pmb->is;
     Real gxm = (coarse(0,0,si)-coarse(0,0,si-1))
-               /(pcrs->x1s2(si)-pcrs->x1s2(si-1));
+               /(pcoarsec->x1s2(si)-pcoarsec->x1s2(si-1));
     Real gxp = (coarse(0,0,si+1)-coarse(0,0,si))
-               /(pcrs->x1s2(si+1)-pcrs->x1s2(si));
+               /(pcoarsec->x1s2(si+1)-pcoarsec->x1s2(si));
     Real gxc = 0.5*(SIGN(gxm)+SIGN(gxp))*std::min(std::abs(gxm),std::abs(gxp));
     fine(0,0,fi  )=fine(0,1,fi  )
-                  =coarse(0,0,si)-gxc*(pcrs->x1s2(si)-pco->x1s2(fi));
+                  =coarse(0,0,si)-gxc*(pcoarsec->x1s2(si)-pco->x1s2(fi));
     fine(0,0,fi+1)=fine(0,1,fi+1)
-                  =coarse(0,0,si)+gxc*(pco->x1s2(fi+1)-pcrs->x1s2(si));
+                  =coarse(0,0,si)+gxc*(pco->x1s2(fi+1)-pcoarsec->x1s2(si));
   }
   return;
 }
@@ -677,24 +673,23 @@ void MeshRefinement::ProlongateSharedFieldX3(const AthenaArray<Real> &coarse,
 {
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
-  Coordinates *pcrs=pmb->pcoarsec;
   if(pmb->block_size.nx3 > 1) {
     for(int k=sk; k<=ek; k++) {
       int fk=(k-pmb->cks)*2+pmb->ks;
       for(int j=sj; j<=ej; j++) {
         int fj=(j-pmb->cjs)*2+pmb->js;
-        const Real& x2m = pcrs->x2s3(j-1);
-        const Real& x2c = pcrs->x2s3(j);
-        const Real& x2p = pcrs->x2s3(j+1);
+        const Real& x2m = pcoarsec->x2s3(j-1);
+        const Real& x2c = pcoarsec->x2s3(j);
+        const Real& x2p = pcoarsec->x2s3(j+1);
         Real dx2m = x2c - x2m;
         Real dx2p = x2p - x2c;
         const Real& fx2m = pco->x2s3(fj);
         const Real& fx2p = pco->x2s3(fj+1);
         for(int i=si; i<=ei; i++) {
           int fi=(i-pmb->cis)*2+pmb->is;
-          const Real& x1m = pcrs->x1s3(i-1);
-          const Real& x1c = pcrs->x1s3(i);
-          const Real& x1p = pcrs->x1s3(i+1);
+          const Real& x1m = pcoarsec->x1s3(i-1);
+          const Real& x1c = pcoarsec->x1s3(i);
+          const Real& x1p = pcoarsec->x1s3(i+1);
           Real dx1m = x1c - x1m;
           Real dx1p = x1p - x1c;
           const Real& fx1m = pco->x1s3(fi);
@@ -720,9 +715,9 @@ void MeshRefinement::ProlongateSharedFieldX3(const AthenaArray<Real> &coarse,
     int k=pmb->cks, fk=pmb->ks;
     for(int j=sj; j<=ej; j++) {
       int fj=(j-pmb->cjs)*2+pmb->js;
-      const Real& x2m = pcrs->x2s3(j-1);
-      const Real& x2c = pcrs->x2s3(j);
-      const Real& x2p = pcrs->x2s3(j+1);
+      const Real& x2m = pcoarsec->x2s3(j-1);
+      const Real& x2c = pcoarsec->x2s3(j);
+      const Real& x2p = pcoarsec->x2s3(j+1);
       Real dx2m = x2c - x2m;
       Real dx2p = x2p - x2c;
       const Real& fx2m = pco->x2s3(fj);
@@ -731,9 +726,9 @@ void MeshRefinement::ProlongateSharedFieldX3(const AthenaArray<Real> &coarse,
       Real dx2fp= fx2p-x2c;
       for(int i=si; i<=ei; i++) {
         int fi=(i-pmb->cis)*2+pmb->is;
-        const Real& x1m = pcrs->x1s3(i-1);
-        const Real& x1c = pcrs->x1s3(i);
-        const Real& x1p = pcrs->x1s3(i+1);
+        const Real& x1m = pcoarsec->x1s3(i-1);
+        const Real& x1c = pcoarsec->x1s3(i);
+        const Real& x1p = pcoarsec->x1s3(i+1);
         Real dx1m = x1c - x1m;
         Real dx1p = x1p - x1c;
         const Real& fx1m = pco->x1s3(fi);
@@ -761,13 +756,13 @@ void MeshRefinement::ProlongateSharedFieldX3(const AthenaArray<Real> &coarse,
   else {
     for(int i=si; i<=ei; i++) {
       int fi=(si-pmb->cis)*2+pmb->is;
-      Real gxm = (coarse(0,0,si)-coarse(0,0,si-1))/(pcrs->x1s3(si)-pcrs->x1s3(si-1));
-      Real gxp = (coarse(0,0,si+1)-coarse(0,0,si))/(pcrs->x1s3(si+1)-pcrs->x1s3(si));
+      Real gxm = (coarse(0,0,si)-coarse(0,0,si-1))/(pcoarsec->x1s3(si)-pcoarsec->x1s3(si-1));
+      Real gxp = (coarse(0,0,si+1)-coarse(0,0,si))/(pcoarsec->x1s3(si+1)-pcoarsec->x1s3(si));
       Real gxc = 0.5*(SIGN(gxm)+SIGN(gxp))*std::min(std::abs(gxm),std::abs(gxp));
       fine(0,0,fi  )=fine(1,0,fi  )
-                    =coarse(0,0,si)-gxc*(pcrs->x1s3(si)-pco->x1s3(fi));
+                    =coarse(0,0,si)-gxc*(pcoarsec->x1s3(si)-pco->x1s3(fi));
       fine(0,0,fi+1)=fine(1,0,fi+1)
-                    =coarse(0,0,si)+gxc*(pco->x1s3(fi+1)-pcrs->x1s3(si));
+                    =coarse(0,0,si)+gxc*(pco->x1s3(fi+1)-pcoarsec->x1s3(si));
     }
   }
   return;
@@ -902,20 +897,10 @@ void MeshRefinement::ProlongateInternalField(FaceField &fine,
 }
 
 
-//--------------------------------------------------------------------------------------
-//! \fn void MeshRefinement::EnrollAMRFlagFunction(AMRFlag_t amrflag)
-//  \brief Enroll a user-defined function for checking refinement criteria
-void MeshRefinement::EnrollAMRFlagFunction(AMRFlag_t amrflag)
-{
-  AMRFlag_=amrflag;
-  pmy_mblock_->pmy_mesh->AMRFlag_=amrflag;
-  return;
-}
-
 
 //--------------------------------------------------------------------------------------
 //! \fn void MeshRefinement::CheckRefinementCondition(void)
-//  \brief Enroll a user-defined function for checking refinement criteria
+//  \brief Check refinement criteria
 void MeshRefinement::CheckRefinementCondition(void)
 {
   MeshBlock *pmb=pmy_mblock_;
@@ -924,8 +909,8 @@ void MeshRefinement::CheckRefinementCondition(void)
 
   // *** should be implemented later ***
   // loop-over refinement criteria
-  if(AMRFlag_!=NULL)
-    ret=AMRFlag_(pmy_mblock_);
+  if(pmb->pmy_mesh->AMRFlag_!=NULL)
+    ret=pmb->pmy_mesh->AMRFlag_(pmy_mblock_);
   aret=std::max(aret,ret);
 
 

@@ -50,18 +50,41 @@
 #include "../hydro/eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
 
+#if !MAGNETIC_FIELDS_ENABLED
+#error "This problem generator requires magnetic fields"
+#endif
+
+
 //======================================================================================
-//! \fn ProblemGenerator
+//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
+//  \brief Init the Mesh properties
+//======================================================================================
+
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
+{
+  return;
+}
+
+
+//======================================================================================
+//! \fn void Mesh::TerminateUserMeshProperties(void)
+//  \brief Clean up the Mesh properties
+//======================================================================================
+void Mesh::TerminateUserMeshProperties(void)
+{
+  // nothing to do
+  return;
+}
+
+
+//======================================================================================
+//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief field loop advection problem generator for 2D/3D problems.
 //======================================================================================
 
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
-  MeshBlock *pmb = phyd->pmy_block;
-  Coordinates *pco = pmb->pcoord;
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  Real gm1 = (phyd->peos->GetGamma() - 1.0);
+  Real gm1 = (phydro->peos->GetGamma() - 1.0);
 
   AthenaArray<Real> ax,ay,az;
   int nx1 = (ie-is)+1 + 2*(NGHOST);
@@ -83,8 +106,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 // For (iprob=4) -- rotated cylinder in 3D -- set up rotation angle and wavelength
 
   if(iprob == 4){
-    Real x1size = pmb->pmy_mesh->mesh_size.x1max - pmb->pmy_mesh->mesh_size.x1min;
-    Real x3size = pmb->pmy_mesh->mesh_size.x3max - pmb->pmy_mesh->mesh_size.x3min;
+    Real x1size = pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min;
+    Real x3size = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
 
 // We put 1 wavelength in each direction.  Hence the wavelength
 //     lambda = x1size*cos_a;
@@ -116,8 +139,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     if(iprob==1) {  
       ax(k,j,i) = 0.0;
       ay(k,j,i) = 0.0;
-      if ((SQR(pco->x1f(i)) + SQR(pco->x2f(j))) < rad*rad) {
-        az(k,j,i) = amp*(rad - sqrt(SQR(pco->x1f(i)) + SQR(pco->x2f(j))));
+      if ((SQR(pcoord->x1f(i)) + SQR(pcoord->x2f(j))) < rad*rad) {
+        az(k,j,i) = amp*(rad - sqrt(SQR(pcoord->x1f(i)) + SQR(pcoord->x2f(j))));
       } else {
         az(k,j,i) = 0.0;
       }
@@ -125,8 +148,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 
     // (iprob=2): field loop in x2-x3 plane (cylinder in 3D)
     if(iprob==2) {  
-      if ((SQR(pco->x2f(j)) + SQR(pco->x3f(k))) < rad*rad) {
-        ax(k,j,i) = amp*(rad - sqrt(SQR(pco->x2f(j)) + SQR(pco->x3f(k))));
+      if ((SQR(pcoord->x2f(j)) + SQR(pcoord->x3f(k))) < rad*rad) {
+        ax(k,j,i) = amp*(rad - sqrt(SQR(pcoord->x2f(j)) + SQR(pcoord->x3f(k))));
       } else {
         ax(k,j,i) = 0.0;
       }
@@ -136,8 +159,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 
     // (iprob=3): field loop in x3-x1 plane (cylinder in 3D)
     if(iprob==3) {  
-      if ((SQR(pco->x1f(i)) + SQR(pco->x3f(k))) < rad*rad) {
-        ay(k,j,i) = amp*(rad - sqrt(SQR(pco->x1f(i)) + SQR(pco->x3f(k))));
+      if ((SQR(pcoord->x1f(i)) + SQR(pcoord->x3f(k))) < rad*rad) {
+        ay(k,j,i) = amp*(rad - sqrt(SQR(pcoord->x1f(i)) + SQR(pcoord->x3f(k))));
       } else {
         ay(k,j,i) = 0.0;
       }
@@ -156,8 +179,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     //    x2  = y
     //    x3  = x*sin(ang_2) + z*cos(ang_2)
     if(iprob==4) {
-      Real x = pco->x1v(i)*cos_a2 + pco->x3f(k)*sin_a2;
-      Real y = pco->x2f(j);
+      Real x = pcoord->x1v(i)*cos_a2 + pcoord->x3f(k)*sin_a2;
+      Real y = pcoord->x2f(j);
       // shift x back to the domain -0.5*lambda <= x <= 0.5*lambda
       while(x >  0.5*lambda) x -= lambda;
       while(x < -0.5*lambda) x += lambda;
@@ -168,8 +191,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
       }
       ay(k,j,i) = 0.0;
 
-      x = pco->x1f(i)*cos_a2 + pco->x3v(k)*sin_a2;
-      y = pco->x2f(j);
+      x = pcoord->x1f(i)*cos_a2 + pcoord->x3v(k)*sin_a2;
+      y = pcoord->x2f(j);
       // shift x back to the domain -0.5*lambda <= x <= 0.5*lambda
       while(x >  0.5*lambda) x -= lambda;
       while(x < -0.5*lambda) x += lambda;
@@ -183,13 +206,13 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     // (iprob=5): spherical field loop in rotated plane
     if(iprob==5) { 
       ax(k,j,i) = 0.0;
-      if ((SQR(pco->x1f(i)) + SQR(pco->x2v(j)) + SQR(pco->x3f(k))) < rad*rad) {
-        ay(k,j,i) = amp*(rad-sqrt(SQR(pco->x1f(i))+SQR(pco->x2v(j))+SQR(pco->x3f(k))));
+      if ((SQR(pcoord->x1f(i)) + SQR(pcoord->x2v(j)) + SQR(pcoord->x3f(k))) < rad*rad) {
+        ay(k,j,i) = amp*(rad-sqrt(SQR(pcoord->x1f(i))+SQR(pcoord->x2v(j))+SQR(pcoord->x3f(k))));
       } else {
         ay(k,j,i) = 0.0;
       }
-      if ((SQR(pco->x1f(i)) + SQR(pco->x2f(j)) + SQR(pco->x3v(k))) < rad*rad) {
-        az(k,j,i) = amp*(rad-sqrt(SQR(pco->x1f(i))+SQR(pco->x2f(j))+SQR(pco->x3v(k))));
+      if ((SQR(pcoord->x1f(i)) + SQR(pcoord->x2f(j)) + SQR(pcoord->x3v(k))) < rad*rad) {
+        az(k,j,i) = amp*(rad-sqrt(SQR(pcoord->x1f(i))+SQR(pcoord->x2f(j))+SQR(pcoord->x3v(k))));
       } else {
         az(k,j,i) = 0.0;
       }
@@ -200,22 +223,22 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 // Initialize density and momenta.  If drat != 1, then density and temperature will be
 // different inside loop than background values
 
-  Real x1size = pmb->pmy_mesh->mesh_size.x1max - pmb->pmy_mesh->mesh_size.x1min;
-  Real x2size = pmb->pmy_mesh->mesh_size.x2max - pmb->pmy_mesh->mesh_size.x2min;
-  Real x3size = pmb->pmy_mesh->mesh_size.x3max - pmb->pmy_mesh->mesh_size.x3min;
+  Real x1size = pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min;
+  Real x2size = pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min;
+  Real x3size = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
   Real diag = sqrt(x1size*x1size + x2size*x2size + x3size*x3size);
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
-     phyd->u(IDN,k,j,i) = 1.0;
-     phyd->u(IM1,k,j,i) = phyd->u(IDN,k,j,i)*vflow*x1size/diag;
-     phyd->u(IM2,k,j,i) = phyd->u(IDN,k,j,i)*vflow*x2size/diag;
-     phyd->u(IM3,k,j,i) = phyd->u(IDN,k,j,i)*vflow*x3size/diag;
-     if ((SQR(pco->x1v(i)) + SQR(pco->x2v(j)) + SQR(pco->x3v(k))) < rad*rad) {
-       phyd->u(IDN,k,j,i) = drat;
-       phyd->u(IM1,k,j,i) = phyd->u(IDN,k,j,i)*vflow*x1size/diag;
-       phyd->u(IM2,k,j,i) = phyd->u(IDN,k,j,i)*vflow*x2size/diag;
-       phyd->u(IM3,k,j,i) = phyd->u(IDN,k,j,i)*vflow*x3size/diag;
+     phydro->u(IDN,k,j,i) = 1.0;
+     phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x1size/diag;
+     phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x2size/diag;
+     phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x3size/diag;
+     if ((SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)) + SQR(pcoord->x3v(k))) < rad*rad) {
+       phydro->u(IDN,k,j,i) = drat;
+       phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x1size/diag;
+       phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x2size/diag;
+       phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x3size/diag;
      }
   }}}
 
@@ -224,20 +247,20 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie+1; i++) {
-    pfld->b.x1f(k,j,i) = (az(k,j+1,i) - az(k,j,i))/pco->dx2f(j) -
-                        (ay(k+1,j,i) - ay(k,j,i))/pco->dx3f(k);
+    pfield->b.x1f(k,j,i) = (az(k,j+1,i) - az(k,j,i))/pcoord->dx2f(j) -
+                        (ay(k+1,j,i) - ay(k,j,i))/pcoord->dx3f(k);
   }}}
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je+1; j++) {
   for (int i=is; i<=ie; i++) {
-    pfld->b.x2f(k,j,i) = (ax(k+1,j,i) - ax(k,j,i))/pco->dx3f(k) -
-                        (az(k,j,i+1) - az(k,j,i))/pco->dx1f(i);
+    pfield->b.x2f(k,j,i) = (ax(k+1,j,i) - ax(k,j,i))/pcoord->dx3f(k) -
+                        (az(k,j,i+1) - az(k,j,i))/pcoord->dx1f(i);
   }}}
   for (int k=ks; k<=ke+1; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
-    pfld->b.x3f(k,j,i) = (ay(k,j,i+1) - ay(k,j,i))/pco->dx1f(i) -
-                        (ax(k,j+1,i) - ax(k,j,i))/pco->dx2f(j);
+    pfield->b.x3f(k,j,i) = (ay(k,j,i+1) - ay(k,j,i))/pcoord->dx1f(i) -
+                        (ax(k,j+1,i) - ax(k,j,i))/pcoord->dx2f(j);
   }}}
 
 // initialize total energy
@@ -246,12 +269,12 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
-        phyd->u(IEN,k,j,i) = 1.0/gm1 +
-          0.5*(SQR(0.5*(pfld->b.x1f(k,j,i) + pfld->b.x1f(k,j,i+1))) +
-               SQR(0.5*(pfld->b.x2f(k,j,i) + pfld->b.x2f(k,j+1,i))) +
-               SQR(0.5*(pfld->b.x3f(k,j,i) + pfld->b.x3f(k+1,j,i)))) + (0.5)*
-          (SQR(phyd->u(IM1,k,j,i)) + SQR(phyd->u(IM2,k,j,i)) + SQR(phyd->u(IM3,k,j,i)))
-          /phyd->u(IDN,k,j,i);
+        phydro->u(IEN,k,j,i) = 1.0/gm1 +
+          0.5*(SQR(0.5*(pfield->b.x1f(k,j,i) + pfield->b.x1f(k,j,i+1))) +
+               SQR(0.5*(pfield->b.x2f(k,j,i) + pfield->b.x2f(k,j+1,i))) +
+               SQR(0.5*(pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i)))) + (0.5)*
+          (SQR(phydro->u(IM1,k,j,i)) + SQR(phydro->u(IM2,k,j,i)) + SQR(phydro->u(IM3,k,j,i)))
+          /phydro->u(IDN,k,j,i);
       }
     }}
   }
@@ -262,3 +285,16 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 
   return;
 }
+
+
+//======================================================================================
+//! \fn void MeshBlock::UserWorkInLoop(void)
+//  \brief User-defined work function for every time step
+//======================================================================================
+void MeshBlock::UserWorkInLoop(void)
+{
+  // nothing to do
+  return;
+}
+
+

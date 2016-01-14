@@ -28,13 +28,13 @@ using namespace std;
 
 /*----------------------------------------------------------------------------*/
 /* function prototypes and global variables*/
-void stbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void stbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
               int is, int ie, int js, int je, int ks, int ke); //sets BCs on inner-x1 (left edge) of grid.
-void stbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void stbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
               int is, int ie, int js, int je, int ks, int ke); //sets BCs on inner-x2 (bottom edge) of grid.
-void stbv_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void stbv_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
               int is, int ie, int js, int je, int ks, int ke); //sets BCs on outer-x1 (right edge) of grid.
-void stbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void stbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
               int is, int ie, int js, int je, int ks, int ke); //sets BCs on outer-x2 (top edge) of grid.
 
 Real A1(  Real x1,   Real x2,   Real x3);
@@ -115,26 +115,15 @@ Real magp(MeshBlock *pmb, int i, int j, int k)
   return 0.0;
 }
 
-//problem generator
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
+
+//======================================================================================
+//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
+//  \brief Init the Mesh properties
+//======================================================================================
+
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
 {
-
-  MeshBlock *pmb = phyd->pmy_block;
-  Coordinates *pco = pmb->pcoord;
-  int i, is = pmb->is, ie = pmb->ie;
-  int j, js = pmb->js, je = pmb->je;
-  int k, ks = pmb->ks, ke = pmb->ke;
-  int ii,jj,ftorus;
-  // Real en, cprime, w0, rg, dist, acons, d0, amp,beta
-  Real ld, lm, lv, vv, rp, rm, tp, tm, tv, rv, vt, pp,eq29,dens,wt;
-
-  AthenaArray<Real> pr;
-  std::srand(pmb->gid);       
-
-  /* allocate memory for the gas pressure */
-  pr.NewAthenaArray(pmb->block_size.nx3+2*(NGHOST),pmb->block_size.nx2+2*(NGHOST),pmb->block_size.nx1+2*(NGHOST));
-  
-  /* read parameters */
+  // read parameters
   gm = pin->GetReal("problem","GM");
   gmgas = pin->GetReal("hydro","gamma");
   dist = pin->GetReal("problem","dist");
@@ -149,46 +138,71 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   en = 1.0/(gmgas-1.0);
   acons=0.5*(dist-1.0)/dist/(en+1.0);
 
-  /* assign boundary conditions and gravitational force function*/
-  pmb->pbval->EnrollHydroBoundaryFunction(INNER_X1, stbv_iib);
-  pmb->pbval->EnrollHydroBoundaryFunction(INNER_X2, stbv_ijb);
-  pmb->pbval->EnrollHydroBoundaryFunction(OUTER_X1, stbv_oib);
-  pmb->pbval->EnrollHydroBoundaryFunction(OUTER_X2, stbv_ojb);
+  // assign boundary conditions
+  EnrollUserBoundaryFunction(INNER_X1, stbv_iib);
+  EnrollUserBoundaryFunction(INNER_X2, stbv_ijb);
+  EnrollUserBoundaryFunction(OUTER_X1, stbv_oib);
+  EnrollUserBoundaryFunction(OUTER_X2, stbv_ojb);
+  return;
+}
 
-  if (MAGNETIC_FIELDS_ENABLED) {
-    pmb->pbval->EnrollFieldBoundaryFunction(INNER_X1, OutflowInnerX1);
-    pmb->pbval->EnrollFieldBoundaryFunction(INNER_X2, OutflowInnerX2);
-    pmb->pbval->EnrollFieldBoundaryFunction(OUTER_X1, OutflowOuterX1);
-    pmb->pbval->EnrollFieldBoundaryFunction(OUTER_X2, OutflowOuterX2);
-  }
 
+//======================================================================================
+//! \fn void Mesh::TerminateUserMeshProperties(void)
+//  \brief Clean up the Mesh properties
+//======================================================================================
+
+void Mesh::TerminateUserMeshProperties(void)
+{
+  // nothing to do
+  return;
+}
+
+
+//======================================================================================
+//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
+//  \brief Problem Generator for the torus problem (Stone et al. 1999)
+//======================================================================================
+
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
+{
+  int ii,jj,ftorus;
+  // Real en, cprime, w0, rg, dist, acons, d0, amp,beta
+  Real ld, lm, lv, vv, rp, rm, tp, tm, tv, rv, vt, pp,eq29,dens,wt;
+
+  AthenaArray<Real> pr;
+  std::srand(gid);       
+
+  /* allocate memory for the gas pressure */
+  pr.NewAthenaArray(block_size.nx3+2*(NGHOST),block_size.nx2+2*(NGHOST),block_size.nx1+2*(NGHOST));
+  
   /* Background */ 
-  for (k=ks; k<=ke; k++) {
-    for (j=js; j<=je; j++) {
-      for (i=is; i<=ie; i++) {
-        phyd->u(IDN,k,j,i)  = d0;
-        phyd->u(IM1,k,j,i) = 0.0;
-        phyd->u(IM2,k,j,i) = 0.0;
-        phyd->u(IM3,k,j,i) = 0.0;
-        pr(k,j,i)=d0/pco->x1v(i);
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++) {
+        phydro->u(IDN,k,j,i)  = d0;
+        phydro->u(IM1,k,j,i) = 0.0;
+        phydro->u(IM2,k,j,i) = 0.0;
+        phydro->u(IM3,k,j,i) = 0.0;
+        pr(k,j,i)=d0/pcoord->x1v(i);
       }
     }
   }
 
   /* Torus */
-  for (k=ks; k<=ke; k++) {
-    for (j=js; j<=je; j++) {
-      for (i=is; i<=ie; i++) {
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++) {
         ld=0.0; lm=0.0;
         ftorus=0;
         vt=0.0;
-        for(jj=0;jj<10;jj++) {
-          tp=pco->x2f(j)+pco->dx2f(j)*0.1*(jj+1);
-          tm=pco->x2f(j)+pco->dx2f(j)*0.1*jj;
+        for(int jj=0;jj<10;jj++) {
+          tp=pcoord->x2f(j)+pcoord->dx2f(j)*0.1*(jj+1);
+          tm=pcoord->x2f(j)+pcoord->dx2f(j)*0.1*jj;
           tv=0.5*(tp+tm)+(1.0-0.5*(tp-tm)/tan(0.5*(tp-tm)))/tan(0.5*(tp+tm));
-          for(ii=0;ii<10;ii++) {
-            rp = pco->x1f(i)+pco->dx1f(i)*0.1*(ii+1);
-            rm = pco->x1f(i)+pco->dx1f(i)*0.1*ii;
+          for(int ii=0;ii<10;ii++) {
+            rp = pcoord->x1f(i)+pcoord->dx1f(i)*0.1*(ii+1);
+            rm = pcoord->x1f(i)+pcoord->dx1f(i)*0.1*ii;
             rv= ((SQR(SQR(rp))-SQR(SQR(rm)))/4.0)/((CUBE(rp)-CUBE(rm))/3.0);
             lv= 1.0/3.0*(CUBE(rp)-CUBE(rm))*(cos(tm)-cos(tp));
             vt+=lv;
@@ -209,13 +223,12 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
               ld+=d0*lv;
           }
         }
-        vv= 1.0/3.0*(CUBE(pco->x1f(i+1))-CUBE(pco->x1f(i)))*(cos(pco->x2f(j))-cos(pco->x2f(j+1)));
+        vv= 1.0/3.0*(CUBE(pcoord->x1f(i+1))-CUBE(pcoord->x1f(i)))*(cos(pcoord->x2f(j))-cos(pcoord->x2f(j+1)));
         ld/=vv; lm/=vv;
         if(ftorus==1) {
-          phyd->u(IDN,k,j,i) = ld;
-          phyd->u(IM3,k,j,i) = lm;
-	  //cout << "ld torus: "<<ld <<endl;
-          pr(k,j,i)=MAX(acons*pow(ld,gmgas),d0/pco->x1v(i))*(1+amp*((double)rand()/(double)RAND_MAX-0.5));
+          phydro->u(IDN,k,j,i) = ld;
+          phydro->u(IM3,k,j,i) = lm;
+          pr(k,j,i)=MAX(acons*pow(ld,gmgas),d0/pcoord->x1v(i))*(1+amp*((double)rand()/(double)RAND_MAX-0.5));
         }
       }
     }
@@ -223,41 +236,41 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 
 
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (k=ks; k<=ke; k++) {
-      for (j=js; j<=je; j++) {
-        for (i=is; i<=ie+1; i++) {
-          pfld->b.x1f(k,j,i)  = magr(pmb,i,j,k);
+    for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie+1; i++) {
+          pfield->b.x1f(k,j,i)  = magr(this,i,j,k);
         }
       }
     }
-    for (k=ks; k<=ke; k++) {
-      for (j=js; j<=je+1; j++) {
-        for (i=is; i<=ie; i++) {
-          pfld->b.x2f(k,j,i)  = magt(pmb,i,j,k);
+    for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je+1; j++) {
+        for (int i=is; i<=ie; i++) {
+          pfield->b.x2f(k,j,i)  = magt(this,i,j,k);
         }
       }
     }
-    for (k=ks; k<=ke+1; k++) {
-      for (j=js; j<=je; j++) {
-        for (i=is; i<=ie; i++) {
-          pfld->b.x3f(k,j,i) = 0.0;
+    for (int k=ks; k<=ke+1; k++) {
+      for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie; i++) {
+          pfield->b.x3f(k,j,i) = 0.0;
         }
       }
     }
   }
 
-  for (k=ks; k<=ke; k++) {
-    for (j=js; j<=je; j++) {
-      for (i=is; i<=ie; i++) {
-        phyd->u(IEN,k,j,i)=pr(k,j,i)*en+0.5*SQR(phyd->u(IM3,k,j,i))/phyd->u(IDN,k,j,i);
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++) {
+        phydro->u(IEN,k,j,i)=pr(k,j,i)*en+0.5*SQR(phydro->u(IM3,k,j,i))/phydro->u(IDN,k,j,i);
         // //Adding the magnetic energy contributions onto the internal energy 
         if (MAGNETIC_FIELDS_ENABLED) {
-          Real bx = ((pco->x1f(i+1)-pco->x1v(i))*pfld->b.x1f(k,j,i)
-             +  (pco->x1v(i)-pco->x1f(i))*pfld->b.x1f(k,j,i+1))/pco->dx1f(i);
-          Real by = ((pco->x2f(j+1)-pco->x2v(j))*pfld->b.x2f(k,j,i)
-             +  (pco->x2v(j)-pco->x2f(j))*pfld->b.x2f(k,j+1,i))/pco->dx2f(j);
-          Real bz = (pfld->b.x3f(k,j,i) + pfld->b.x3f(k+1,j,i))*0.5;
-          phyd->u(IEN,k,j,i) += 0.5*(SQR(bx)+SQR(by)+SQR(bz));
+          Real bx = ((pcoord->x1f(i+1)-pcoord->x1v(i))*pfield->b.x1f(k,j,i)
+             +  (pcoord->x1v(i)-pcoord->x1f(i))*pfield->b.x1f(k,j,i+1))/pcoord->dx1f(i);
+          Real by = ((pcoord->x2f(j+1)-pcoord->x2v(j))*pfield->b.x2f(k,j,i)
+             +  (pcoord->x2v(j)-pcoord->x2f(j))*pfield->b.x2f(k,j+1,i))/pcoord->dx2f(j);
+          Real bz = (pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i))*0.5;
+          phydro->u(IEN,k,j,i) += 0.5*(SQR(bx)+SQR(by)+SQR(bz));
         }
       }
     }
@@ -267,37 +280,49 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 }
 
 
+//======================================================================================
+//! \fn void MeshBlock::UserWorkInLoop(void)
+//  \brief User-defined work function for every time step
+//======================================================================================
+void MeshBlock::UserWorkInLoop(void)
+{
+  // nothing to do
+  return;
+}
+
+
 /*  Boundary Condtions, outflowing, ix1, ox1, ix2, ox2  */
-void stbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void stbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
               int is, int ie, int js, int je, int ks, int ke)
 {
-  int i,j,k;
   Real pg;
-  for (k=ks; k<=ke; k++) {
-    for (j=js; j<=je; j++) {
-      for (i=1; i<=(NGHOST); i++) {
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
+      for (int i=1; i<=(NGHOST); i++) {
         a(IDN,k,j,is-i) = a(IDN,k,j,is);
         a(IM1,k,j,is-i) = 0.0;
         a(IM2,k,j,is-i) = a(IM2,k,j,is); //corotating ghost region
         a(IM3,k,j,is-i) = a(IM3,k,j,is);
-        pg = (a(IEN,k,j,is-i+1)-0.5*(SQR(a(IM1,k,j,is-i+1))+SQR(a(IM2,k,j,is-i+1))+SQR(a(IM3,k,j,is-i+1)))/a(IDN,k,j,is-i+1)-0.5*(SQR(a(IB1,k,j,is-i+1))+SQR(a(IB2,k,j,is-i+1))+SQR(a(IB3,k,j,is-i+1))))*(gmgas-1.0);
+        pg = (a(IEN,k,j,is-i+1)
+             -0.5*(SQR(a(IM1,k,j,is-i+1))+SQR(a(IM2,k,j,is-i+1))+SQR(a(IM3,k,j,is-i+1)))/a(IDN,k,j,is-i+1)
+             -0.5*(SQR(a(IB1,k,j,is-i+1))+SQR(a(IB2,k,j,is-i+1))+SQR(a(IB3,k,j,is-i+1))))*(gmgas-1.0);
         pg-=gm/SQR(pco->x1f(is-i+1))*a(IDN,k,j,is-i+1)*pco->dx1v(is-i);
         a(IEN,k,j,is-i)=pg/(gmgas-1.0)+0.5*SQR(a(IM1,k,j,is-i))/a(IDN,k,j,is-i);
       }
     }
   }
+  if (MAGNETIC_FIELDS_ENABLED)
+    OutflowInnerX1(pmb, a, b, is, ie, js, je, ks, ke);
   return;
 }
 
 
-void stbv_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void stbv_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
               int is, int ie, int js, int je, int ks, int ke)
 {
-  int i,j,k;
-
-  for (k=ks; k<=ke; k++) {
-    for (j=js; j<=je; j++) {
-      for (i=1; i<=(NGHOST); i++) {
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
+      for (int i=1; i<=(NGHOST); i++) {
         a(IDN,k,j,ie+i) = a(IDN,k,j,ie);
         a(IM1,k,j,ie+i) = a(IM1,k,j,ie);
         a(IM2,k,j,ie+i) = a(IM2,k,j,ie);
@@ -311,18 +336,18 @@ void stbv_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
       }
     }
   }
+  if (MAGNETIC_FIELDS_ENABLED)
+    OutflowOuterX1(pmb, a, b, is, ie, js, je, ks, ke);
   return;
 }
 
 
-void stbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void stbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
               int is, int ie, int js, int je, int ks, int ke)
 {
-  int i,j,k;
-
-  for (k=ks; k<=ke; k++) {
-    for (j=1; j<=(NGHOST); j++) {
-      for (i=is; i<=ie; i++) {
+  for (int k=ks; k<=ke; k++) {
+    for (int j=1; j<=(NGHOST); j++) {
+      for (int i=is; i<=ie; i++) {
         a(IDN,k,js-j,i) = a(IDN,k,js,i);
         a(IM1,k,js-j,i) = a(IM1,k,js,i);
         a(IM2,k,js-j,i) = a(IM2,k,js,i);
@@ -336,18 +361,18 @@ void stbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
       }
     }
   }
+  if (MAGNETIC_FIELDS_ENABLED)
+    OutflowInnerX2(pmb, a, b, is, ie, js, je, ks, ke);
   return;
 }
 
 
-void stbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void stbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
               int is, int ie, int js, int je, int ks, int ke)
 {
-  int i,j,k;
-
-  for (k=ks; k<=ke; k++) {
-    for (j=1; j<=(NGHOST); j++) {
-      for (i=is; i<=ie; i++) {
+  for (int k=ks; k<=ke; k++) {
+    for (int j=1; j<=(NGHOST); j++) {
+      for (int i=is; i<=ie; i++) {
         a(IDN,k,je+j,i) = a(IDN,k,je,i);
         a(IM1,k,je+j,i) = a(IM1,k,je,i);
         a(IM2,k,je+j,i) = a(IM2,k,je,i);
@@ -361,6 +386,8 @@ void stbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
       }
     }
   }
+  if (MAGNETIC_FIELDS_ENABLED)
+    OutflowOuterX2(pmb, a, b, is, ie, js, je, ks, ke);
   return;
 }
 

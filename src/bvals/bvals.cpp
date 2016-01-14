@@ -77,9 +77,11 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       BoundaryFunction_[INNER_X1] = OutflowInnerX1;
       break;
     case BLOCK_BNDRY: // block boundary
-    case USER_BNDRY: // do nothing, useful for user-enrolled BCs
     case PERIODIC_BNDRY: // periodic boundary
       BoundaryFunction_[INNER_X1] = NULL;
+      break;
+    case USER_BNDRY: // user-enrolled BCs
+      BoundaryFunction_[INNER_X1] = pmb->pmy_mesh->BoundaryFunction_[INNER_X1];
       break;
     default:
       std::stringstream msg;
@@ -97,9 +99,11 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       BoundaryFunction_[OUTER_X1] = OutflowOuterX1;
       break;
     case BLOCK_BNDRY: // block boundary
-    case USER_BNDRY: // do nothing, useful for user-enrolled BCs
     case PERIODIC_BNDRY: // periodic boundary
       BoundaryFunction_[OUTER_X1] = NULL;
+      break;
+    case USER_BNDRY: // user-enrolled BCs
+      BoundaryFunction_[OUTER_X1] = pmb->pmy_mesh->BoundaryFunction_[OUTER_X1];
       break;
     default:
       std::stringstream msg;
@@ -119,10 +123,12 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         BoundaryFunction_[INNER_X2] = OutflowInnerX2;
         break;
       case BLOCK_BNDRY: // block boundary
-      case USER_BNDRY: // do nothing, useful for user-enrolled BCs
       case PERIODIC_BNDRY: // periodic boundary
       case POLAR_BNDRY: // polar boundary
         BoundaryFunction_[INNER_X2] = NULL;
+        break;
+      case USER_BNDRY: // user-enrolled BCs
+        BoundaryFunction_[INNER_X2] = pmb->pmy_mesh->BoundaryFunction_[INNER_X2];
         break;
       default:
         std::stringstream msg;
@@ -140,10 +146,12 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         BoundaryFunction_[OUTER_X2] = OutflowOuterX2;
         break;
       case BLOCK_BNDRY: // block boundary
-      case USER_BNDRY: // do nothing, useful for user-enrolled BCs
       case PERIODIC_BNDRY: // periodic boundary
       case POLAR_BNDRY: // polar boundary
         BoundaryFunction_[OUTER_X2] = NULL;
+        break;
+      case USER_BNDRY: // user-enrolled BCs
+        BoundaryFunction_[OUTER_X2] = pmb->pmy_mesh->BoundaryFunction_[OUTER_X2];
         break;
       default:
         std::stringstream msg;
@@ -164,9 +172,11 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         BoundaryFunction_[INNER_X3] = OutflowInnerX3;
         break;
       case BLOCK_BNDRY: // block boundary
-      case USER_BNDRY: // do nothing, useful for user-enrolled BCs
       case PERIODIC_BNDRY: // periodic boundary
         BoundaryFunction_[INNER_X3] = NULL;
+        break;
+      case USER_BNDRY: // user-enrolled BCs
+        BoundaryFunction_[INNER_X3] = pmb->pmy_mesh->BoundaryFunction_[INNER_X3];
         break;
       default:
         std::stringstream msg;
@@ -184,9 +194,11 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         BoundaryFunction_[OUTER_X3] = OutflowOuterX3;
         break;
       case BLOCK_BNDRY: // block boundary
-      case USER_BNDRY: // do nothing, useful for user-enrolled BCs
       case PERIODIC_BNDRY: // periodic boundary
         BoundaryFunction_[OUTER_X3] = NULL;
+        break;
+      case USER_BNDRY: // user-enrolled BCs
+        BoundaryFunction_[OUTER_X3] = pmb->pmy_mesh->BoundaryFunction_[OUTER_X3];
         break;
       default:
         std::stringstream msg;
@@ -194,12 +206,6 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
             << "Flag ox3_bc=" << pmb->block_bcs[OUTER_X3] << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
     }
-  }
-
-  // *** this is temporary fix - copy boundary functions to the Mesh class
-  for(int i=0; i<6; i++) {
-    if(pmb->block_bcs[i]>0 && pmb->block_bcs[i]<=2)
-      pmb->pmy_mesh->BoundaryFunction_[i]=BoundaryFunction_[i];
   }
 
   // Clear flags and requests
@@ -702,31 +708,6 @@ void BoundaryValues::Initialize(void)
   return;
 }
 
-//--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::EnrollUserBoundaryFunction(enum BoundaryFace dir,
-//                                                       BValHydro_t my_bc)
-//  \brief Enroll a user-defined boundary function
-
-void BoundaryValues::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValFunc_t my_bc)
-{
-  std::stringstream msg;
-  if(dir<0 || dir>5) {
-    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
-        << "dirName = " << dir << " not valid" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  // temporary fix
-  pmy_mblock_->pmy_mesh->BoundaryFunction_[dir]=my_bc;
-  if(pmy_mblock_->block_bcs[dir]==BLOCK_BNDRY) return;
-  if(pmy_mblock_->block_bcs[dir]!=USER_BNDRY) {
-    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
-        << "The boundary condition flag must be set to the string 'user' in the "
-        << " <mesh> block in the input file to use user-enrolled BCs" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  BoundaryFunction_[dir]=my_bc;
-  return;
-}
 
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::CheckBoundary(void)
@@ -3244,7 +3225,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
   }
   // Apply boundary function on inner-x1
   if (BoundaryFunction_[INNER_X1] != NULL) {
-    BoundaryFunction_[INNER_X1](pmb, pdst, bfdst, pmb->is, pmb->ie, bjs,bje,bks,bke);
+    BoundaryFunction_[INNER_X1](pmb, pco, pdst, bfdst, pmb->is, pmb->ie, bjs,bje,bks,bke);
     if(MAGNETIC_FIELDS_ENABLED) {
       pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
         pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
@@ -3255,7 +3236,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
 
   // Apply boundary function on outer-x1
   if (BoundaryFunction_[OUTER_X1] != NULL) {
-    BoundaryFunction_[OUTER_X1](pmb, pdst, bfdst, pmb->is, pmb->ie, bjs,bje,bks,bke);
+    BoundaryFunction_[OUTER_X1](pmb, pco, pdst, bfdst, pmb->is, pmb->ie, bjs,bje,bks,bke);
     if(MAGNETIC_FIELDS_ENABLED) {
       pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
         pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
@@ -3268,7 +3249,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
 
     // Apply boundary function on inner-x2
     if (BoundaryFunction_[INNER_X2] != NULL) {
-      BoundaryFunction_[INNER_X2](pmb, pdst, bfdst, bis,bie, pmb->js, pmb->je, bks,bke);
+      BoundaryFunction_[INNER_X2](pmb, pco, pdst, bfdst, bis,bie, pmb->js, pmb->je, bks,bke);
       if(MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
           bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
@@ -3279,7 +3260,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
 
     // Apply boundary function on outer-x2
     if (BoundaryFunction_[OUTER_X2] != NULL) {
-      BoundaryFunction_[OUTER_X2](pmb, pdst, bfdst, bis,bie, pmb->js, pmb->je, bks,bke);
+      BoundaryFunction_[OUTER_X2](pmb, pco, pdst, bfdst, bis,bie, pmb->js, pmb->je, bks,bke);
       if(MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
           bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
@@ -3297,7 +3278,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
 
     // Apply boundary function on inner-x3
     if (BoundaryFunction_[INNER_X3] != NULL) {
-      BoundaryFunction_[INNER_X3](pmb, pdst, bfdst, bis,bie,bjs,bje, pmb->ks, pmb->ke);
+      BoundaryFunction_[INNER_X3](pmb, pco, pdst, bfdst, bis,bie,bjs,bje, pmb->ks, pmb->ke);
       if(MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
           bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
@@ -3308,7 +3289,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
 
     // Apply boundary function on outer-x3
     if (BoundaryFunction_[OUTER_X3] != NULL) {
-      BoundaryFunction_[OUTER_X3](pmb, pdst, bfdst, bis,bie,bjs,bje, pmb->ks, pmb->ke);
+      BoundaryFunction_[OUTER_X3](pmb, pco, pdst, bfdst, bis,bie,bjs,bje, pmb->ks, pmb->ke);
       if(MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
           bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
@@ -3584,38 +3565,38 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
       else f3m=1, f3p=1;
     }
     pmb->phydro->peos->ConservedToPrimitive(pmr->coarse_cons_, pmr->coarse_prim_,
-                 pmr->coarse_b_, pmr->coarse_prim_, pmr->coarse_bcc_, pmb->pcoarsec,
+                 pmr->coarse_b_, pmr->coarse_prim_, pmr->coarse_bcc_, pmr->pcoarsec,
                  si-f1m, ei+f1p, sj-f2m, ej+f2p, sk-f3m, ek+f3p);
 
     // Apply physical boundaries
     if(nb.ox1==0) {
       if(BoundaryFunction_[INNER_X1]!=NULL) {
-        BoundaryFunction_[INNER_X1](pmb, pmr->coarse_prim_, pmr->coarse_b_,
-                                 pmb->cis, pmb->cie, sj, ej, sk, ek);
+        BoundaryFunction_[INNER_X1](pmb, pmr->pcoarsec, pmr->coarse_prim_,
+                          pmr->coarse_b_, pmb->cis, pmb->cie, sj, ej, sk, ek);
       }
       if(BoundaryFunction_[OUTER_X1]!=NULL) {
-        BoundaryFunction_[OUTER_X1](pmb, pmr->coarse_prim_, pmr->coarse_b_,
-                                 pmb->cis, pmb->cie, sj, ej, sk, ek);
+        BoundaryFunction_[OUTER_X1](pmb, pmr->pcoarsec, pmr->coarse_prim_,
+                          pmr->coarse_b_, pmb->cis, pmb->cie, sj, ej, sk, ek);
       }
     }
     if(nb.ox2==0 && pmb->block_size.nx2 > 1) {
       if(BoundaryFunction_[INNER_X2]!=NULL) {
-        BoundaryFunction_[INNER_X2](pmb, pmr->coarse_prim_, pmr->coarse_b_,
-                                 si, ei, pmb->cjs, pmb->cje, sk, ek);
+        BoundaryFunction_[INNER_X2](pmb, pmr->pcoarsec, pmr->coarse_prim_,
+                          pmr->coarse_b_, si, ei, pmb->cjs, pmb->cje, sk, ek);
       }
       if(BoundaryFunction_[OUTER_X2]!=NULL) {
-        BoundaryFunction_[OUTER_X2](pmb, pmr->coarse_prim_, pmr->coarse_b_,
-                                 si, ei, pmb->cjs, pmb->cje, sk, ek);
+        BoundaryFunction_[OUTER_X2](pmb, pmr->pcoarsec, pmr->coarse_prim_,
+                          pmr->coarse_b_, si, ei, pmb->cjs, pmb->cje, sk, ek);
       }
     }
     if(nb.ox3==0 && pmb->block_size.nx3 > 1) {
       if(BoundaryFunction_[INNER_X3]!=NULL) {
-        BoundaryFunction_[INNER_X3](pmb, pmr->coarse_prim_, pmr->coarse_b_,
-                                 si, ei, sj, ej, pmb->cks, pmb->cke);
+        BoundaryFunction_[INNER_X3](pmb, pmr->pcoarsec, pmr->coarse_prim_,
+                          pmr->coarse_b_, si, ei, sj, ej, pmb->cks, pmb->cke);
       }
       if(BoundaryFunction_[OUTER_X3]!=NULL) {
-        BoundaryFunction_[OUTER_X3](pmb, pmr->coarse_prim_, pmr->coarse_b_,
-                                 si, ei, sj, ej, pmb->cks, pmb->cke);
+        BoundaryFunction_[OUTER_X3](pmb, pmr->pcoarsec, pmr->coarse_prim_,
+                          pmr->coarse_b_, si, ei, sj, ej, pmb->cks, pmb->cke);
       }
     }
 
@@ -3666,6 +3647,6 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
     }
     // calculate conservative variables
     pmb->phydro->peos->PrimitiveToConserved(pdst, bcdst, cdst, pmb->pcoord,
-                                              fsi, fei, fsj, fej, fsk, fek);
+                                            fsi, fei, fsj, fej, fsk, fek);
   }
 }

@@ -36,6 +36,12 @@
 #include "../hydro/eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
 
+#error "disk_cyl.cpp is outdated and must be rewritten."
+
+#if MAGNETIC_FIELDS_ENABLED
+#error "This problem generator does not support magnetic fields"
+#endif
+
 // File scope variables
 static Real x1Max, x1Min;
 static Real rho0, rho_floor, rho_MIN;
@@ -48,15 +54,11 @@ static Real ICden(const Real x1);
 static Real ICvel(const Real x1);
 static Real KeplerVel(const Real x1);
 
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
-{
-  MeshBlock *pb = phyd->pmy_block;
-  std::stringstream msg;
 
-  int is = pb->is; int js = pb->js; int ks = pb->ks;
-  int ie = pb->ie; int je = pb->je; int ke = pb->ke;
-  x1Max = pb->block_size.x1max;
-  x1Min = pb->block_size.x1min;
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
+{
+  x1Max = mesh_size.x1max;
+  x1Min = mesh_size.x1min;
 
 // Get parameters for grav terms
   GM = pin->GetOrAddReal("problem","GM",0.0);
@@ -73,33 +75,50 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   }
   ICv = pin->GetInteger("problem","ICv");
 
+  return;
+}
+
+
+void Mesh::TerminateUserMeshProperties(void)
+{
+  return;
+}
+
+
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
+{
+  std::stringstream msg;
+
 // Get initial pressure
   Real pressure = 0.0;
   if(NON_BAROTROPIC_EOS){
     pressure = pin->GetReal("problem","pressure");
   }
 
-// Get options for boundary conditions
-//  int ix1_bc = pin->GetInteger("mesh","ix1_bc");
-//  int ox1_bc = pin->GetInteger("mesh","ox1_bc");
-
 // Initialize the disk
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
-        Real x1 = pb->pcoord->x1v(i);
-        phyd->u(IDN,k,j,i) = ICden(x1);
-        phyd->u(IM1,k,j,i) = 0.0;
-        phyd->u(IM2,k,j,i) = ICvel(x1)*phyd->u(IDN,k,j,i);
-        phyd->u(IM3,k,j,i) = 0.0;
-	if(NON_BAROTROPIC_EOS) phyd->u(IEN,k,j,i)= pressure/(phyd->peos->GetGamma()-1.0)
-          + 0.5*(SQR(phyd->u(IM1,k,j,i)) + SQR(phyd->u(IM2,k,j,i)) +
-                 SQR(phyd->u(IM3,k,j,i)))/phyd->u(IDN,k,j,i);
+        Real x1 = pcoord->x1v(i);
+        phydro->u(IDN,k,j,i) = ICden(x1);
+        phydro->u(IM1,k,j,i) = 0.0;
+        phydro->u(IM2,k,j,i) = ICvel(x1)*phydro->u(IDN,k,j,i);
+        phydro->u(IM3,k,j,i) = 0.0;
+	    if(NON_BAROTROPIC_EOS)
+          phydro->u(IEN,k,j,i)= pressure/(phydro->peos->GetGamma()-1.0)
+          + 0.5*(SQR(phydro->u(IM1,k,j,i)) + SQR(phydro->u(IM2,k,j,i)) +
+                 SQR(phydro->u(IM3,k,j,i)))/phydro->u(IDN,k,j,i);
       }
     }
   }
 
 
+  return;
+}
+
+
+void MeshBlock::UserWorkInLoop(void)
+{
   return;
 }
 

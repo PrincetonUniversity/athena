@@ -3,6 +3,12 @@
 // Primary header
 #include "../mesh.hpp"
 
+#error "geodesic_infall.cpp is outdated and must be rewritten."
+
+#if MAGNETIC_FIELDS_ENABLED
+#error "This problem generator does not support magnetic fields"
+#endif
+
 // C++ headers
 #include <cassert>  // assert
 #include <cmath>    // pow(), sin(), sqrt()
@@ -21,6 +27,20 @@
 void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb, int is, int ie,
     int js, int je, int ks, int ke);
 
+// Function for initializing global mesh properties
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
+{
+  // Enroll boundary functions
+  EnrollUserBoundaryFunction(OUTER_X1, FixedOuter);
+  return;
+}
+
+// Function for cleaning up global mesh properties
+void Mesh::TerminateUserMeshProperties(void)
+{
+  return;
+}
+
 // Function for setting initial conditions
 // Inputs:
 //   phyd: Hydro
@@ -29,34 +49,33 @@ void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb, int is, 
 // Outputs: (none)
 // Notes:
 //   assumes x3 is axisymmetric direction
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   // Prepare index bounds
-  MeshBlock *pmb = phyd->pmy_block;
-  int il = pmb->is - NGHOST;
-  int iu = pmb->ie + NGHOST;
-  int jl = pmb->js;
-  int ju = pmb->je;
-  if (pmb->block_size.nx2 > 1)
+  int il = is - NGHOST;
+  int iu = ie + NGHOST;
+  int jl = js;
+  int ju = je;
+  if (block_size.nx2 > 1)
   {
     jl -= (NGHOST);
     ju += (NGHOST);
   }
-  int kl = pmb->ks;
-  int ku = pmb->ke;
-  if (pmb->block_size.nx3 > 1)
+  int kl = ks;
+  int ku = ke;
+  if (block_size.nx3 > 1)
   {
     kl -= (NGHOST);
     ku += (NGHOST);
   }
 
   // Get mass and spin of black hole
-  Real m = pmb->pcoord->GetMass();
-  Real a = pmb->pcoord->GetSpin();
+  Real m = pcoord->GetMass();
+  Real a = pcoord->GetSpin();
   Real a2 = SQR(a);
 
   // Get ratio of specific heats
-  Real gamma_adi = phyd->peos->GetGamma();
+  Real gamma_adi = phydro->peos->GetGamma();
 
   // Read other properties
   Real e = pin->GetReal("problem", "energy");
@@ -76,8 +95,8 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     {
       // Get Boyer-Lindquist coordinates of cell
       Real r, theta, phi;
-      pmb->pcoord->GetBoyerLindquistCoordinates(pmb->pcoord->x1v(i),
-          pmb->pcoord->x2v(j), pmb->pcoord->x3v(kl), &r, &theta, &phi);
+      pmb->pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
+          pcoord->x3v(kl), &r, &theta, &phi);
 
       // Calculate primitives depending on location
       Real rho = rho_min * std::pow(r, rho_pow);
@@ -89,11 +108,11 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
       // Set primitive values
       for (int k = kl; k <= ku; k++)
       {
-        phyd->w(IDN,k,j,i) = phyd->w1(IDN,k,j,i) = rho;
-        phyd->w(IEN,k,j,i) = phyd->w1(IEN,k,j,i) = pgas;
-        phyd->w(IVX,k,j,i) = phyd->w1(IM1,k,j,i) = uu1;
-        phyd->w(IVY,k,j,i) = phyd->w1(IM2,k,j,i) = uu2;
-        phyd->w(IVZ,k,j,i) = phyd->w1(IM3,k,j,i) = uu3;
+        phydro->w(IDN,k,j,i) = phydro->w1(IDN,k,j,i) = rho;
+        phydro->w(IEN,k,j,i) = phydro->w1(IEN,k,j,i) = pgas;
+        phydro->w(IVX,k,j,i) = phydro->w1(IM1,k,j,i) = uu1;
+        phydro->w(IVY,k,j,i) = phydro->w1(IM2,k,j,i) = uu2;
+        phydro->w(IVZ,k,j,i) = phydro->w1(IM3,k,j,i) = uu3;
       }
     }
   }
@@ -101,26 +120,31 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   // Initialize conserved values
   AthenaArray<Real> bb;
   bb.NewAthenaArray(3, ku+1, ju+1, iu+1);
-  pmb->phydro->peos->PrimitiveToConserved(phyd->w, bb, phyd->u, pmb->pcoord, il, iu, jl,
-      ju, kl, ku);
+  phydro->peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, il, iu, jl, ju,
+      kl, ku);
   bb.DeleteAthenaArray();
+  return;
+}
 
-  // Enroll boundary function
-  pmb->pbval->EnrollUserBoundaryFunction(OUTER_X1, FixedOuter);
+
+// User-defined work function called every time step
+void MeshBlock::UserWorkInLoop(void)
+{
   return;
 }
 
 // Outer boundary condition
 // Inputs:
 //   pmb: pointer to block
+//   pco: pointer to coordinates
 //   is,ie,js,je,ks,ke: index boundaries of active zone
 // Outputs:
 //   prim: primitive quantities set along outer x1-boundary
 //   bb: magnetic fields set along outer x1-boundary
 // Notes:
 //   remains unchanged
-void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb, int is, int ie,
-    int js, int je, int ks, int ke)
+void FixedOuter(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+    FaceField &bb, int is, int ie, int js, int je, int ks, int ke)
 {
   return;
 }

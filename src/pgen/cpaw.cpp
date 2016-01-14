@@ -42,9 +42,13 @@
 #include "../hydro/eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
 
+#if !MAGNETIC_FIELDS_ENABLED
+#error "This problem generator requires magnetic fields"
+#endif
+
 // Parameters which define initial solution -- made global so that they can be shared
 // with functions A1,2,3 which compute vector potentials
-static Real b_par, b_perp;
+static Real b_par, b_perp, den, v_perp, v_par;
 static Real ang_2, ang_3; // Rotation angles about the y and z' axis
 static Real fac, sin_a2, cos_a2, sin_a3, cos_a3;
 static Real lambda, k_par; // Wavelength, 2*PI/wavelength
@@ -54,40 +58,31 @@ static Real A1(const Real x1, const Real x2, const Real x3);
 static Real A2(const Real x1, const Real x2, const Real x3);
 static Real A3(const Real x1, const Real x2, const Real x3);
 
+
 //======================================================================================
-//! \fn ProblemGenerator
-//  \brief circularly polarized Alfven wave problem generator for 1D/2D/3D problems.
+//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
+//  \brief Init the Mesh properties
 //======================================================================================
 
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
 {
-  MeshBlock *pmb = phyd->pmy_block;
-  Coordinates *pco = pmb->pcoord;
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  Real gm1 = (phyd->peos->GetGamma() - 1.0);
-
-/* Read initial conditions */
-
-  b_par = pin->GetReal("problem","b_par");
-  b_perp = pin->GetReal("problem","b_perp");
-  Real dir = pin->GetOrAddReal("problem","dir",1); // right(1)/left(2) polarization
-  Real pres = pin->GetReal("problem","pres");
-  Real den = 1.0;
-  Real v_par = pin->GetReal("problem","v_par");
-  ang_2 = pin->GetOrAddReal("problem","ang_2",-999.9);
-  ang_3 = pin->GetOrAddReal("problem","ang_3",-999.9);
-
-  Real x1size = pmb->pmy_mesh->mesh_size.x1max - pmb->pmy_mesh->mesh_size.x1min;
-  Real x2size = pmb->pmy_mesh->mesh_size.x2max - pmb->pmy_mesh->mesh_size.x2min;
-  Real x3size = pmb->pmy_mesh->mesh_size.x3max - pmb->pmy_mesh->mesh_size.x3min;
-
+// Initialize magnetic field parameters
 // For wavevector along coordinate axes, set desired values of ang_2/ang_3.
 //    For example, for 1D problem use ang_2 = ang_3 = 0.0
 //    For wavevector along grid diagonal, do not input values for ang_2/ang_3.
 // Code below will automatically calculate these imposing periodicity and exactly one
 // wavelength along each grid direction
+  b_par = pin->GetReal("problem","b_par");
+  b_perp = pin->GetReal("problem","b_perp");
+  v_par = pin->GetReal("problem","v_par");
+  ang_2 = pin->GetOrAddReal("problem","ang_2",-999.9);
+  ang_3 = pin->GetOrAddReal("problem","ang_3",-999.9);
+  Real dir = pin->GetOrAddReal("problem","dir",1); // right(1)/left(2) polarization
   
+  Real x1size = mesh_size.x1max - mesh_size.x1min;
+  Real x2size = mesh_size.x2max - mesh_size.x2min;
+  Real x3size = mesh_size.x3max - mesh_size.x3min;
+
 // User should never input -999.9 in angles
   if (ang_3 == -999.9) ang_3 = atan(x1size/x2size);
   sin_a3 = sin(ang_3);
@@ -103,47 +98,71 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
 
 // For lambda choose the smaller of the 3
   lambda = x1;
-  if (pmb->block_size.nx2 > 1 && ang_3 != 0.0) lambda = std::min(lambda,x2);
-  if (pmb->block_size.nx3 > 1 && ang_2 != 0.0) lambda = std::min(lambda,x3);
+  if (mesh_size.nx2 > 1 && ang_3 != 0.0) lambda = std::min(lambda,x2);
+  if (mesh_size.nx3 > 1 && ang_2 != 0.0) lambda = std::min(lambda,x3);
 
 // Initialize k_parallel
   k_par = 2.0*(PI)/lambda;
-  Real v_perp = b_perp/sqrt(den);
+  v_perp = b_perp/sqrt(den);
 
   if (dir == 1) // right polarization
     fac = 1.0;
   else          // left polarization
     fac = -1.0;
+  return;
+}
+
+
+//======================================================================================
+//! \fn void Mesh::TerminateUserMeshProperties(void)
+//  \brief Clean up the Mesh properties
+//======================================================================================
+void Mesh::TerminateUserMeshProperties(void)
+{
+  // nothing to do
+  return;
+}
+
+//======================================================================================
+//! \fn ProblemGenerator
+//  \brief circularly polarized Alfven wave problem generator for 1D/2D/3D problems.
+//======================================================================================
+
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
+{
+  Real gm1 = (phydro->peos->GetGamma() - 1.0);
+  Real pres = pin->GetReal("problem","pres");
+  den = 1.0;
 
 // Use the vector potential to initialize the interface magnetic fields
 
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie+1; i++) {
-      pfld->b.x1f(k,j,i) = (A3(pco->x1f(i),pco->x2f(j+1),pco->x3v(k  )) -
-                           A3(pco->x1f(i),pco->x2f(j  ),pco->x3v(k  )))/pco->dx2f(j) -
-                          (A2(pco->x1f(i),pco->x2v(j  ),pco->x3f(k+1)) -
-                           A2(pco->x1f(i),pco->x2v(j  ),pco->x3f(k  )))/pco->dx3f(k);
+      pfield->b.x1f(k,j,i) = (A3(pcoord->x1f(i),pcoord->x2f(j+1),pcoord->x3v(k  )) -
+                           A3(pcoord->x1f(i),pcoord->x2f(j  ),pcoord->x3v(k  )))/pcoord->dx2f(j) -
+                          (A2(pcoord->x1f(i),pcoord->x2v(j  ),pcoord->x3f(k+1)) -
+                           A2(pcoord->x1f(i),pcoord->x2v(j  ),pcoord->x3f(k  )))/pcoord->dx3f(k);
     }
   }}
 
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je+1; j++) {
     for (int i=is; i<=ie; i++) {
-      pfld->b.x2f(k,j,i) = (A1(pco->x1v(i  ),pco->x2f(j),pco->x3f(k+1)) -
-                           A1(pco->x1v(i  ),pco->x2f(j),pco->x3f(k  )))/pco->dx3f(k) -
-                          (A3(pco->x1f(i+1),pco->x2f(j),pco->x3v(k  )) -
-                           A3(pco->x1f(i  ),pco->x2f(j),pco->x3v(k  )))/pco->dx1f(i);
+      pfield->b.x2f(k,j,i) = (A1(pcoord->x1v(i  ),pcoord->x2f(j),pcoord->x3f(k+1)) -
+                           A1(pcoord->x1v(i  ),pcoord->x2f(j),pcoord->x3f(k  )))/pcoord->dx3f(k) -
+                          (A3(pcoord->x1f(i+1),pcoord->x2f(j),pcoord->x3v(k  )) -
+                           A3(pcoord->x1f(i  ),pcoord->x2f(j),pcoord->x3v(k  )))/pcoord->dx1f(i);
     }
   }}
 
   for (int k=ks; k<=ke+1; k++) {
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      pfld->b.x3f(k,j,i) = (A2(pco->x1f(i+1),pco->x2v(j  ),pco->x3f(k)) -
-                           A2(pco->x1f(i  ),pco->x2v(j  ),pco->x3f(k)))/pco->dx1f(i) -
-                          (A1(pco->x1v(i  ),pco->x2f(j+1),pco->x3f(k)) -
-                           A1(pco->x1v(i  ),pco->x2f(j  ),pco->x3f(k)))/pco->dx2f(j);
+      pfield->b.x3f(k,j,i) = (A2(pcoord->x1f(i+1),pcoord->x2v(j  ),pcoord->x3f(k)) -
+                           A2(pcoord->x1f(i  ),pcoord->x2v(j  ),pcoord->x3f(k)))/pcoord->dx1f(i) -
+                          (A1(pcoord->x1v(i  ),pcoord->x2f(j+1),pcoord->x3f(k)) -
+                           A1(pcoord->x1v(i  ),pcoord->x2f(j  ),pcoord->x3f(k)))/pcoord->dx2f(j);
     }
   }}
 
@@ -152,32 +171,44 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      Real x = cos_a2*(pco->x1v(i)*cos_a3 + pco->x2v(j)*sin_a3) + pco->x3v(k)*sin_a2;
+      Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3) + pcoord->x3v(k)*sin_a2;
       Real sn = sin(k_par*x);
       Real cs = fac*cos(k_par*x);
 
-      phyd->u(IDN,k,j,i) = den;
+      phydro->u(IDN,k,j,i) = den;
 
       Real mx = den*v_par;
       Real my = -fac*den*v_perp*sn;
       Real mz = -den*v_perp*cs;
 
-      phyd->u(IM1,k,j,i) = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
-      phyd->u(IM2,k,j,i) = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
-      phyd->u(IM3,k,j,i) = mx*sin_a2                    + mz*cos_a2;
+      phydro->u(IM1,k,j,i) = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
+      phydro->u(IM2,k,j,i) = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
+      phydro->u(IM3,k,j,i) = mx*sin_a2                    + mz*cos_a2;
 
       if (NON_BAROTROPIC_EOS) {
-        phyd->u(IEN,k,j,i) = pres/gm1 +
-          0.5*(SQR(0.5*(pfld->b.x1f(k,j,i) + pfld->b.x1f(k,j,i+1))) +
-               SQR(0.5*(pfld->b.x2f(k,j,i) + pfld->b.x2f(k,j+1,i))) +
-               SQR(0.5*(pfld->b.x3f(k,j,i) + pfld->b.x3f(k+1,j,i)))) + (0.5/den)*
-          (SQR(phyd->u(IM1,k,j,i)) + SQR(phyd->u(IM2,k,j,i)) + SQR(phyd->u(IM3,k,j,i)));
+        phydro->u(IEN,k,j,i) = pres/gm1 +
+          0.5*(SQR(0.5*(pfield->b.x1f(k,j,i) + pfield->b.x1f(k,j,i+1))) +
+               SQR(0.5*(pfield->b.x2f(k,j,i) + pfield->b.x2f(k,j+1,i))) +
+               SQR(0.5*(pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i)))) + (0.5/den)*
+          (SQR(phydro->u(IM1,k,j,i)) + SQR(phydro->u(IM2,k,j,i)) + SQR(phydro->u(IM3,k,j,i)));
       }
     }
   }}
 
   return;
 }
+
+
+//======================================================================================
+//! \fn void MeshBlock::UserWorkInLoop(void)
+//  \brief User-defined work function for every time step
+//======================================================================================
+void MeshBlock::UserWorkInLoop(void)
+{
+  // nothing to do
+  return;
+}
+
 
 //--------------------------------------------------------------------------------------
 //! \fn static Real A1(const Real x1,const Real x2,const Real x3)

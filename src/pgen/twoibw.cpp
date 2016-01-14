@@ -35,13 +35,42 @@
 #include "../hydro/eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
 
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
-{
-  MeshBlock *pmb = phyd->pmy_block;
-  Coordinates *pco = pmb->pcoord;
+#if MAGNETIC_FIELDS_ENABLED
+#error "This problem generator does not support magnetic fields"
+#endif
 
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+
+
+//======================================================================================
+//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
+//  \brief Init the Mesh properties
+//======================================================================================
+
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
+{
+  return;
+}
+
+
+//======================================================================================
+//! \fn void Mesh::TerminateUserMeshProperties(void)
+//  \brief Clean up the Mesh properties
+//======================================================================================
+
+void Mesh::TerminateUserMeshProperties(void)
+{
+  // nothing to do
+  return;
+}
+
+
+//======================================================================================
+//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
+//  \brief Problem Generator for the two interacting blast waves
+//======================================================================================
+
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
+{
   std::stringstream msg;
 
 // parse shock direction: {1,2,3} -> {x1,x2,x3}
@@ -57,25 +86,37 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   for (int j=js; j<=je; ++j) {
 #pragma simd
     for (int i=is; i<=ie; ++i) {
-      phyd->u(IDN,k,j,i) = 1.0;
-      phyd->u(IM1,k,j,i) = 0.0;
-      phyd->u(IM2,k,j,i) = 0.0;
-      phyd->u(IM3,k,j,i) = 0.0;
-      if ((shk_dir==1 && pco->x1v(i) < 0.1) ||
-          (shk_dir==2 && pco->x2v(j) < 0.1) ||
-          (shk_dir==3 && pco->x3v(k) < 0.1)) {
-        phyd->u(IEN,k,j,i)= 1.0e3/(phyd->peos->GetGamma() - 1.0);
+      phydro->u(IDN,k,j,i) = 1.0;
+      phydro->u(IM1,k,j,i) = 0.0;
+      phydro->u(IM2,k,j,i) = 0.0;
+      phydro->u(IM3,k,j,i) = 0.0;
+      if ((shk_dir==1 && pcoord->x1v(i) < 0.1) ||
+          (shk_dir==2 && pcoord->x2v(j) < 0.1) ||
+          (shk_dir==3 && pcoord->x3v(k) < 0.1)) {
+        phydro->u(IEN,k,j,i)= 1.0e3/(phydro->peos->GetGamma() - 1.0);
       }
-      else if ((shk_dir==1 && pco->x1v(i) > 0.9) ||
-               (shk_dir==2 && pco->x2v(j) > 0.9) ||
-               (shk_dir==3 && pco->x3v(k) > 0.9)) {
-        phyd->u(IEN,k,j,i)= 1.0e2/(phyd->peos->GetGamma() - 1.0);
+      else if ((shk_dir==1 && pcoord->x1v(i) > 0.9) ||
+               (shk_dir==2 && pcoord->x2v(j) > 0.9) ||
+               (shk_dir==3 && pcoord->x3v(k) > 0.9)) {
+        phydro->u(IEN,k,j,i)= 1.0e2/(phydro->peos->GetGamma() - 1.0);
       }
       else {
-        phyd->u(IEN,k,j,i)= 0.01/(phyd->peos->GetGamma() - 1.0);
+        phydro->u(IEN,k,j,i)= 0.01/(phydro->peos->GetGamma() - 1.0);
       }
     }
   }}
 
+  return;
+}
+
+
+//======================================================================================
+//! \fn void MeshBlock::UserWorkInLoop(void)
+//  \brief User-defined work function for every time step
+//======================================================================================
+
+void MeshBlock::UserWorkInLoop(void)
+{
+  // nothing to do
   return;
 }

@@ -40,33 +40,54 @@
 
 #include "../mesh_refinement/mesh_refinement.hpp"
 
+
+#if MAGNETIC_FIELDS_ENABLED
+#error "This problem generator does not support magnetic fields"
+#endif
+
+
 #include <iostream>
 #include <cmath>
 
 // DMRInnerX1() - sets BCs on inner-x1 (left edge) of grid.  
 // DMRInnerX2() - sets BCs on inner-x2 (bottom edge) of grid.  
 // DMROuterX2() - sets BCs on outer-x2 (top edge) of grid.  
-void DMRInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke);
-void DMRInnerX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke);
-void DMROuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke);
 int RefinementCondition(MeshBlock *pmb);
 
+
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
+{
+  // Enroll user-defined boundary functions
+  EnrollUserBoundaryFunction(INNER_X1, DMRInnerX1);
+  EnrollUserBoundaryFunction(INNER_X2, DMRInnerX2);
+  EnrollUserBoundaryFunction(OUTER_X2, DMROuterX2);
+  // Enroll user-defined AMR criterion
+  if(adaptive==true)
+    EnrollUserRefinementCondition(RefinementCondition);
+
+  return;
+}
+
+void Mesh::TerminateUserMeshProperties(void)
+{
+  return;
+}
+
 // problem generator
 
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
-  MeshBlock *pmb = phyd->pmy_block;
   std::stringstream msg;
 
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-
-  if (pmb->block_size.nx3 > 1) {
+  if (block_size.nx3 > 1) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl << "nx3=" 
-        << pmb->block_size.nx3 << " but this test only works for 2D" << std::endl;
+        << block_size.nx3 << " but this test only works for 2D" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
 
@@ -77,37 +98,39 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   Real v0 = -8.25*0.5;
   for (int j=js; j<=je; ++j) {
     for (int i=is; i<=ie; ++i) {
-      Real shock_pos = 0.1666666666 + pmb->pcoord->x2v(j)/sqrt((double)3.0);
+      Real shock_pos = 0.1666666666 + pcoord->x2v(j)/sqrt((double)3.0);
       // upstream conditions
-      phyd->u(IDN,ks,j,i) = 1.4;
-      phyd->u(IEN,ks,j,i) = 2.5;
-      phyd->u(IM1,ks,j,i) = 0.0;
-      phyd->u(IM2,ks,j,i) = 0.0;
+      phydro->u(IDN,ks,j,i) = 1.4;
+      phydro->u(IEN,ks,j,i) = 2.5;
+      phydro->u(IM1,ks,j,i) = 0.0;
+      phydro->u(IM2,ks,j,i) = 0.0;
       // downstream conditions
-      if (pmb->pcoord->x1v(i) < shock_pos) {
-        phyd->u(IDN,ks,j,i) = d0;
-        phyd->u(IEN,ks,j,i) = e0 + 0.5*d0*(u0*u0+v0*v0);
-        phyd->u(IM1,ks,j,i) = d0*u0;
-        phyd->u(IM2,ks,j,i) = d0*v0;
+      if (pcoord->x1v(i) < shock_pos) {
+        phydro->u(IDN,ks,j,i) = d0;
+        phydro->u(IEN,ks,j,i) = e0 + 0.5*d0*(u0*u0+v0*v0);
+        phydro->u(IM1,ks,j,i) = d0*u0;
+        phydro->u(IM2,ks,j,i) = d0*v0;
       }
     }
   }
 
-  // Set boundary value function pointers
-  pmb->pbval->EnrollUserBoundaryFunction(INNER_X1, DMRInnerX1);
-  pmb->pbval->EnrollUserBoundaryFunction(INNER_X2, DMRInnerX2);
-  pmb->pbval->EnrollUserBoundaryFunction(OUTER_X2, DMROuterX2);
-
-  if(pmb->pmy_mesh->adaptive==true)
-    pmb->pmr->EnrollAMRFlagFunction(RefinementCondition);
+  return;
 }
+
+
+
+void MeshBlock::UserWorkInLoop(void)
+{
+  return;
+}
+
 
 //--------------------------------------------------------------------------------------
 //! \fn void DMRInnerX1()
 //  \brief Sets boundary condition on left X boundary (iib) for dmr test
 //  Quantities at this boundary are held fixed at the downstream state
 
-void DMRInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke)
 {
   Real d0 = 8.0;
@@ -133,7 +156,7 @@ void DMRInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 //  Quantaties at this boundary are held fixed at the downstream state for
 //  x1 < 0.16666666, and are reflected for x1 > 0.16666666
 
-void DMRInnerX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke)
 {
   Real d0 = 8.0;
@@ -145,7 +168,7 @@ void DMRInnerX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 
   for (int j=1;  j<=(NGHOST); ++j) {
     for (int i=is; i<=ie; ++i) {
-      if (pmb->pcoord->x1v(i) < 0.1666666666) {
+      if (pco->x1v(i) < 0.1666666666) {
         // fixed at downstream state
         a(IDN,ks,js-j,i) = d0;
         a(IVX,ks,js-j,i) = u0;
@@ -169,7 +192,7 @@ void DMRInnerX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 //  x1 < 0.16666666+v1_shock*time, and at the upstream state for
 //  x1 > 0.16666666+v1_shock*time
 
-void DMROuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                int is, int ie, int js, int je, int ks, int ke)
 {
   Real d0 = 8.0;
@@ -183,7 +206,7 @@ void DMROuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 
   for (int j=1;  j<=(NGHOST); ++j) {
     for (int i=is; i<=ie; ++i) {
-      if (pmb->pcoord->x1v(i) < shock_pos) {
+      if (pco->x1v(i) < shock_pos) {
         // fixed at downstream state
         a(IDN,ks,je+j,i) = d0;
         a(IVX,ks,je+j,i) = u0;
@@ -204,8 +227,6 @@ void DMROuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 int RefinementCondition(MeshBlock *pmb)
 {
   AthenaArray<Real> &w = pmb->phydro->w;
-  Coordinates *pco=pmb->pcoord;
-  MeshRefinement *pmr = pmb->pmr;
   Real maxeps=0.0;
   int k=pmb->ks;
   for(int j=pmb->js; j<=pmb->je; j++) {

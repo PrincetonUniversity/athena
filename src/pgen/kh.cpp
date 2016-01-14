@@ -32,15 +32,38 @@
 #include "../coordinates/coordinates.hpp"
 #include "../utils/utils.hpp"
 
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
-{
-  MeshBlock *pmb = phyd->pmy_block;
-  Coordinates *pco = pmb->pcoord;
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+//======================================================================================
+//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
+//  \brief Init the Mesh properties
+//======================================================================================
 
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
+{
+  return;
+}
+
+
+//======================================================================================
+//! \fn void Mesh::TerminateUserMeshProperties(void)
+//  \brief Clean up the Mesh properties
+//======================================================================================
+
+void Mesh::TerminateUserMeshProperties(void)
+{
+  // nothing to do
+  return;
+}
+
+
+//======================================================================================
+//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
+//  \brief Problem Generator for the Kelvin-Helmholz test
+//======================================================================================
+
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
+{
   long int iseed = -1;
-  Real gm1 = phyd->peos->GetGamma() - 1.0;
+  Real gm1 = phydro->peos->GetGamma() - 1.0;
 
   // Read problem parameters
   int iprob = pin->GetInteger("problem","iprob");
@@ -54,19 +77,19 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      phyd->u(IDN,k,j,i) = 1.0;
-      phyd->u(IM1,k,j,i) = vflow + amp*(ran2(&iseed) - 0.5);
-      phyd->u(IM2,k,j,i) = amp*(ran2(&iseed) - 0.5);
-      phyd->u(IM3,k,j,i) = 0.0;
-      if (fabs(pco->x2v(j)) < 0.25) {
-        phyd->u(IDN,k,j,i) = drat;
-        phyd->u(IM1,k,j,i) = -drat*(vflow + amp*(ran2(&iseed) - 0.5));
-        phyd->u(IM2,k,j,i) = drat*amp*(ran2(&iseed) - 0.5);
+      phydro->u(IDN,k,j,i) = 1.0;
+      phydro->u(IM1,k,j,i) = vflow + amp*(ran2(&iseed) - 0.5);
+      phydro->u(IM2,k,j,i) = amp*(ran2(&iseed) - 0.5);
+      phydro->u(IM3,k,j,i) = 0.0;
+      if (fabs(pcoord->x2v(j)) < 0.25) {
+        phydro->u(IDN,k,j,i) = drat;
+        phydro->u(IM1,k,j,i) = -drat*(vflow + amp*(ran2(&iseed) - 0.5));
+        phydro->u(IM2,k,j,i) = drat*amp*(ran2(&iseed) - 0.5);
       }
       // Pressure scaled to give a sound speed of 1 with gamma=1.4 
       if (NON_BAROTROPIC_EOS) {
-        phyd->u(IEN,k,j,i) = 2.5/gm1 + 0.5*(SQR(phyd->u(IM1,k,j,i)) +
-          SQR(phyd->u(IM2,k,j,i)))/phyd->u(IDN,k,j,i);
+        phydro->u(IEN,k,j,i) = 2.5/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +
+          SQR(phydro->u(IM2,k,j,i)))/phydro->u(IDN,k,j,i);
       }
     }}}
   }
@@ -79,14 +102,14 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      phyd->u(IDN,k,j,i) = 1.0;
-      phyd->u(IM1,k,j,i) = vflow*tanh((pco->x2v(j))/a);
-      phyd->u(IM2,k,j,i) = amp*sin(2.0*PI*pco->x1v(i))
-        *exp(-(SQR(pco->x2v(j)))/SQR(sigma));
-      phyd->u(IM3,k,j,i) = 0.0;
+      phydro->u(IDN,k,j,i) = 1.0;
+      phydro->u(IM1,k,j,i) = vflow*tanh((pcoord->x2v(j))/a);
+      phydro->u(IM2,k,j,i) = amp*sin(2.0*PI*pcoord->x1v(i))
+        *exp(-(SQR(pcoord->x2v(j)))/SQR(sigma));
+      phydro->u(IM3,k,j,i) = 0.0;
       if (NON_BAROTROPIC_EOS) {
-        phyd->u(IEN,k,j,i) = 1.0/gm1 + 0.5*(SQR(phyd->u(IM1,k,j,i)) +
-          SQR(phyd->u(IM2,k,j,i)))/phyd->u(IDN,k,j,i);
+        phydro->u(IEN,k,j,i) = 1.0/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +
+          SQR(phydro->u(IM2,k,j,i)))/phydro->u(IDN,k,j,i);
       }
     }}}
   }
@@ -99,17 +122,17 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      phyd->u(IDN,k,j,i) = 0.505 + 0.495*tanh((fabs(pco->x2v(j))-0.5)/a);
-      phyd->u(IM1,k,j,i) = vflow*tanh((fabs(pco->x2v(j))-0.5)/a);
-      phyd->u(IM2,k,j,i) = amp*vflow*sin(2.0*PI*pco->x1v(i))
-               *exp(-((fabs(pco->x2v(j))-0.5)*(fabs(pco->x2v(j))-0.5))/(sigma*sigma));
-      if (pco->x2v(j) < 0.0) phyd->u(IM2,k,j,i) *= -1.0;
-      phyd->u(IM1,k,j,i) *= phyd->u(IDN,k,j,i);
-      phyd->u(IM2,k,j,i) *= phyd->u(IDN,k,j,i);
-      phyd->u(IM3,k,j,i) = 0.0;
+      phydro->u(IDN,k,j,i) = 0.505 + 0.495*tanh((fabs(pcoord->x2v(j))-0.5)/a);
+      phydro->u(IM1,k,j,i) = vflow*tanh((fabs(pcoord->x2v(j))-0.5)/a);
+      phydro->u(IM2,k,j,i) = amp*vflow*sin(2.0*PI*pcoord->x1v(i))
+               *exp(-((fabs(pcoord->x2v(j))-0.5)*(fabs(pcoord->x2v(j))-0.5))/(sigma*sigma));
+      if (pcoord->x2v(j) < 0.0) phydro->u(IM2,k,j,i) *= -1.0;
+      phydro->u(IM1,k,j,i) *= phydro->u(IDN,k,j,i);
+      phydro->u(IM2,k,j,i) *= phydro->u(IDN,k,j,i);
+      phydro->u(IM3,k,j,i) = 0.0;
       if (NON_BAROTROPIC_EOS) {
-        phyd->u(IEN,k,j,i) = 1.0/gm1 + 0.5*(SQR(phyd->u(IM1,k,j,i)) +
-          SQR(phyd->u(IM2,k,j,i)))/phyd->u(IDN,k,j,i);
+        phydro->u(IEN,k,j,i) = 1.0/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +
+          SQR(phydro->u(IM2,k,j,i)))/phydro->u(IDN,k,j,i);
       }
     }}}
   }
@@ -120,26 +143,39 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie+1; i++) {
-      pfld->b.x1f(k,j,i) = b0;
+      pfield->b.x1f(k,j,i) = b0;
     }}}
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je+1; j++) {
     for (int i=is; i<=ie; i++) {
-      pfld->b.x2f(k,j,i) = 0.0;
+      pfield->b.x2f(k,j,i) = 0.0;
     }}}
     for (int k=ks; k<=ke+1; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      pfld->b.x3f(k,j,i) = 0.0;
+      pfield->b.x3f(k,j,i) = 0.0;
     }}}
     if (NON_BAROTROPIC_EOS) {
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
-        phyd->u(IEN,k,j,i) += 0.5*b0*b0;
+        phydro->u(IEN,k,j,i) += 0.5*b0*b0;
       }}}
     }
   }
 
   return;
 }
+
+
+//======================================================================================
+//! \fn void MeshBlock::UserWorkInLoop(void)
+//  \brief User-defined work function for every time step
+//======================================================================================
+
+void MeshBlock::UserWorkInLoop(void)
+{
+  // nothing to do
+  return;
+}
+

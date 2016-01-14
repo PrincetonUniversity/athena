@@ -149,10 +149,12 @@ TaskList::TaskList(Mesh *pm)
     AddTask(2,PHY_BVAL,2,CON2PRIM);
   }
 
+  AddTask(2,USERWORK,2,PHY_BVAL);
+
   // New timestep on mesh block
-  AddTask(2,NEW_DT,2,PHY_BVAL);
+  AddTask(2,NEW_DT,2,USERWORK);
   if(pmy_mesh_->adaptive==true)
-    AddTask(2,AMR_FLAG,2,PHY_BVAL);
+    AddTask(2,AMR_FLAG,2,USERWORK);
 
 }
 
@@ -413,6 +415,12 @@ enum TaskStatus PhysicalBoundary(MeshBlock *pmb, unsigned long int task_id, int 
   return TASK_SUCCESS;
 }
 
+enum TaskStatus UserWork(MeshBlock *pmb, unsigned long int task_id, int step)
+{
+  pmb->UserWorkInLoop();
+  return TASK_SUCCESS;
+}
+
 enum TaskStatus NewBlockTimeStep(MeshBlock *pmb, unsigned long int task_id, int step)
 {
   pmb->phydro->NewBlockTimeStep(pmb);
@@ -495,6 +503,10 @@ void TaskList::AddTask(int stp_t,unsigned long int id,int stp_d,unsigned long in
 
   case (CON2PRIM):
     task_list_[ntasks].TaskFunc=TaskFunctions::Primitives;
+    break;
+
+  case (USERWORK):
+    task_list_[ntasks].TaskFunc=TaskFunctions::UserWork;
     break;
 
   case (NEW_DT):

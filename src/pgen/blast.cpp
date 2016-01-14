@@ -32,17 +32,36 @@
 
 #include <cmath>
 
+
 //======================================================================================
-//! \fn ProblemGenerator
+//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
+//  \brief Init the Mesh properties
+//======================================================================================
+
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
+{
+  return;
+}
+
+
+//======================================================================================
+//! \fn void Mesh::TerminateUserMeshProperties(void)
+//  \brief Clean up the Mesh properties
+//======================================================================================
+void Mesh::TerminateUserMeshProperties(void)
+{
+  // nothing to do
+  return;
+}
+
+
+//======================================================================================
+//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Spherical blast wave test problem generator
 //======================================================================================
 
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
-  MeshBlock *pmb = phyd->pmy_block;
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-
   Real rout = pin->GetReal("problem","radius");
   Real rin = rout - pin->GetOrAddReal("problem","ramp",0.0);
   Real pa  = pin->GetReal("problem","pamb");
@@ -54,7 +73,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     b0 = pin->GetReal("problem","b0");
     theta = (PI/180.0)*pin->GetReal("problem","angle");
   }
-  Real gamma = phyd->peos->GetGamma();
+  Real gamma = phydro->peos->GetGamma();
   Real gm1 = gamma - 1.0;
 
 // setup uniform ambient medium with spherical over-pressured region
@@ -62,7 +81,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
-    Real rad = sqrt(SQR(pmb->pcoord->x1v(i)) + SQR(pmb->pcoord->x2v(j)) + SQR(pmb->pcoord->x3v(k)));
+    Real rad = sqrt(SQR(pcoord->x1v(i)) + SQR(pcoord->x2v(j)) + SQR(pcoord->x3v(k)));
     Real den = da;
     if (rad < rout) {
       if (rad < rin) {
@@ -74,10 +93,10 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
       }
     }
 
-    phyd->u(IDN,k,j,i) = den;
-    phyd->u(IM1,k,j,i) = 0.0;
-    phyd->u(IM2,k,j,i) = 0.0;
-    phyd->u(IM3,k,j,i) = 0.0;
+    phydro->u(IDN,k,j,i) = den;
+    phydro->u(IM1,k,j,i) = 0.0;
+    phydro->u(IM2,k,j,i) = 0.0;
+    phydro->u(IM3,k,j,i) = 0.0;
     if (NON_BAROTROPIC_EOS) {
       Real pres = pa;
       if (rad < rout) {
@@ -89,9 +108,9 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
           pres = std::exp(log_pres);
         }
       }
-      phyd->u(IEN,k,j,i) = pres/gm1;
+      phydro->u(IEN,k,j,i) = pres/gm1;
       if (RELATIVISTIC_DYNAMICS)  // this should only ever be SR with this file
-        phyd->u(IEN,k,j,i) += den;
+        phydro->u(IEN,k,j,i) += den;
     }
   }}}
 
@@ -101,23 +120,35 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie+1; i++) {
-      pfld->b.x1f(k,j,i) = b0*cos(theta);
+      pfield->b.x1f(k,j,i) = b0*cos(theta);
     }}}
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je+1; j++) {
     for (int i=is; i<=ie; i++) {
-      pfld->b.x2f(k,j,i) = b0*sin(theta);
+      pfield->b.x2f(k,j,i) = b0*sin(theta);
     }}}
     for (int k=ks; k<=ke+1; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      pfld->b.x3f(k,j,i) = 0.0;
+      pfield->b.x3f(k,j,i) = 0.0;
     }}}
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie+1; i++) {
-      phyd->u(IEN,k,j,i) += 0.5*b0*b0;
+      phydro->u(IEN,k,j,i) += 0.5*b0*b0;
     }}}
   }
 
 }
+
+
+//======================================================================================
+//! \fn void MeshBlock::UserWorkInLoop(void)
+//  \brief User-defined work function for every time step
+//======================================================================================
+void MeshBlock::UserWorkInLoop(void)
+{
+  // nothing to do
+  return;
+}
+

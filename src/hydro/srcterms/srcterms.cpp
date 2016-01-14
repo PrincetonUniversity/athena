@@ -33,7 +33,7 @@
 HydroSourceTerms::HydroSourceTerms(Hydro *pf, ParameterInput *pin)
 {
   pmy_hydro_ = pf;
-  gm_ = pin->GetOrAddReal("problem","gm",0.0);
+  gm_ = pin->GetOrAddReal("problem","GM",0.0);
   g1_ = pin->GetOrAddReal("hydro","grav_acc1",0.0);
   g2_ = pin->GetOrAddReal("hydro","grav_acc2",0.0);
   g3_ = pin->GetOrAddReal("hydro","grav_acc3",0.0);

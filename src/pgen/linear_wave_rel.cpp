@@ -27,10 +27,24 @@ static Real cubic_root_real(Real a2, Real a1, Real a0);
 static void quartic_roots(Real a3, Real a2, Real a1, Real a0,
     Real *px1, Real *px2, Real *px3, Real *px4);
 
+
+
+// Function for initializing global mesh properties
+void Mesh::InitUserMeshProperties(ParameterInput *pin)
+{
+  return;
+}
+
+
+// Function for cleaning up global mesh properties
+void Mesh::TerminateUserMeshProperties(void)
+{
+  return;
+}
+
+
 // Function for setting initial conditions
 // Inputs:
-//   phyd: Hydro
-//   pfld: Field
 //   pin: parameters
 // Outputs: (none)
 // Notes:
@@ -38,23 +52,21 @@ static void quartic_roots(Real a3, Real a2, Real a1, Real a0,
 //     sets both primitive and conserved variables
 //   references Anton et al. 2010, ApJS 188 1 (A, MHD)
 //              Falle & Komissarov 1996, MNRAS 278 586 (FK, hydro)
-void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   // Prepare index bounds
-  MeshBlock *pmb = phyd->pmy_block;
-  Coordinates *pco = pmb->pcoord;
-  int il = pmb->is - NGHOST;
-  int iu = pmb->ie + NGHOST;
-  int jl = pmb->js;
-  int ju = pmb->je;
-  if (pmb->block_size.nx2 > 1)
+  int il = is - NGHOST;
+  int iu = ie + NGHOST;
+  int jl = js;
+  int ju = je;
+  if (block_size.nx2 > 1)
   {
     jl -= NGHOST;
     ju += NGHOST;
   }
-  int kl = pmb->ks;
-  int ku = pmb->ke;
-  if (pmb->block_size.nx3 > 1)
+  int kl = ks;
+  int ku = ke;
+  if (block_size.nx3 > 1)
   {
     kl -= NGHOST;
     ku += NGHOST;
@@ -73,7 +85,7 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   }
 
   // Get ratio of specific heats
-  Real gamma_adi = phyd->peos->GetGamma();  
+  Real gamma_adi = phydro->peos->GetGamma();  
   Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Read background state
@@ -435,18 +447,18 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   }
 
   // Calculate wavenumber such that wave has single period over domain
-  Real x1_min = pmb->pmy_mesh->mesh_size.x1min;
-  Real x1_max = pmb->pmy_mesh->mesh_size.x1max;
-  Real x2_min = pmb->pmy_mesh->mesh_size.x2min;
-  Real x3_min = pmb->pmy_mesh->mesh_size.x3min;
+  Real x1_min = pmy_mesh->mesh_size.x1min;
+  Real x1_max = pmy_mesh->mesh_size.x1max;
+  Real x2_min = pmy_mesh->mesh_size.x2min;
+  Real x3_min = pmy_mesh->mesh_size.x3min;
   Real arg_min, arg_max;
   if (GENERAL_RELATIVITY)
   {
     Real t_left, x_left, y_left, z_left;
     Real t_right, x_right, y_right, z_right;
-    pmb->pcoord->MinkowskiCoordinates(0.0, x1_min, x2_min, x3_min,
+    pcoord->MinkowskiCoordinates(0.0, x1_min, x2_min, x3_min,
         &t_left, &x_left, &y_left, &z_left);
-    pmb->pcoord->MinkowskiCoordinates(0.0, x1_max, x2_min, x3_min,
+    pcoord->MinkowskiCoordinates(0.0, x1_max, x2_min, x3_min,
         &t_right, &x_right, &y_right, &z_right);
     arg_min = x_left - lambda * t_left;
     arg_max = x_right - lambda * t_right;
@@ -462,26 +474,24 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   AthenaArray<Real> g, gi;
   if (GENERAL_RELATIVITY)
   {
-    int ncells1 = phyd->pmy_block->block_size.nx1 + 2*NGHOST;
+    int ncells1 = block_size.nx1 + 2*NGHOST;
     g.NewAthenaArray(NMETRIC, ncells1);
     gi.NewAthenaArray(NMETRIC, ncells1);
   }
-  for (int k = kl; k <= ku; ++k)
-    for (int j = jl; j <= ju; ++j)
-    {
+  for (int k = kl; k <= ku; ++k) {
+    for (int j = jl; j <= ju; ++j) {
       if (GENERAL_RELATIVITY)
-        pmb->pcoord->CellMetric(k, j, il, iu, g, gi);
-      for (int i = il; i <= iu; ++i)
-      {
+        pcoord->CellMetric(k, j, il, iu, g, gi);
+      for (int i = il; i <= iu; ++i) {
         // Find location of cell in spacetime
         Real t, x, y, z;
         if (GENERAL_RELATIVITY)
-          pmb->pcoord->MinkowskiCoordinates(0.0, pco->x1v(i), pco->x2v(j), pco->x3v(k),
+          pcoord->MinkowskiCoordinates(0.0, pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(k),
               &t, &x, &y, &z);
         else
         {
           t = 0.0;
-          x = pco->x1v(i);
+          x = pcoord->x1v(i);
         }
 
         // Calculate scalar perturbations
@@ -516,14 +526,14 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
         Real u_local[4], b_local[4], u_local_low[4], b_local_low[4];
         if (GENERAL_RELATIVITY)
         {
-          pmb->pcoord->TransformVectorCell(u_mink[0], u_mink[1], u_mink[2], u_mink[3],
+          pcoord->TransformVectorCell(u_mink[0], u_mink[1], u_mink[2], u_mink[3],
               k, j, i, &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
-          pmb->pcoord->TransformVectorCell(b_mink[0], b_mink[1], b_mink[2], b_mink[3],
+          pcoord->TransformVectorCell(b_mink[0], b_mink[1], b_mink[2], b_mink[3],
               k, j, i, &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
-          pmb->pcoord->LowerVectorCell(
+          pcoord->LowerVectorCell(
               u_local[0], u_local[1], u_local[2], u_local[3], k, j, i,
               &u_local_low[0], &u_local_low[1], &u_local_low[2], &u_local_low[3]);
-          pmb->pcoord->LowerVectorCell(
+          pcoord->LowerVectorCell(
               b_local[0], b_local[1], b_local[2], b_local[3], k, j, i,
               &b_local_low[0], &b_local_low[1], &b_local_low[2], &b_local_low[3]);
         }
@@ -544,47 +554,48 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
         Real ptot_local = pgas_local + 0.5*b_sq_local;
 
         // Set primitive hydro variables
-        phyd->w(IDN,k,j,i) = phyd->w1(IDN,k,j,i) = rho_local;
-        phyd->w(IEN,k,j,i) = phyd->w1(IEN,k,j,i) = pgas_local;
+        phydro->w(IDN,k,j,i) = phydro->w1(IDN,k,j,i) = rho_local;
+        phydro->w(IEN,k,j,i) = phydro->w1(IEN,k,j,i) = pgas_local;
         if (GENERAL_RELATIVITY)
         {
           Real uu1 = u_local[1] - gi(I01,i)/gi(I00,i) * u_local[0];
           Real uu2 = u_local[2] - gi(I02,i)/gi(I00,i) * u_local[0];
           Real uu3 = u_local[3] - gi(I03,i)/gi(I00,i) * u_local[0];
-          phyd->w(IVX,k,j,i) = phyd->w1(IVX,k,j,i) = uu1;
-          phyd->w(IVY,k,j,i) = phyd->w1(IVY,k,j,i) = uu2;
-          phyd->w(IVZ,k,j,i) = phyd->w1(IVZ,k,j,i) = uu3;
+          phydro->w(IVX,k,j,i) = phydro->w1(IVX,k,j,i) = uu1;
+          phydro->w(IVY,k,j,i) = phydro->w1(IVY,k,j,i) = uu2;
+          phydro->w(IVZ,k,j,i) = phydro->w1(IVZ,k,j,i) = uu3;
         }
         else
         {
-          phyd->w(IVX,k,j,i) = phyd->w1(IVX,k,j,i) = u_local[1] / u_local[0];
-          phyd->w(IVY,k,j,i) = phyd->w1(IVY,k,j,i) = u_local[2] / u_local[0];
-          phyd->w(IVZ,k,j,i) = phyd->w1(IVZ,k,j,i) = u_local[3] / u_local[0];
+          phydro->w(IVX,k,j,i) = phydro->w1(IVX,k,j,i) = u_local[1] / u_local[0];
+          phydro->w(IVY,k,j,i) = phydro->w1(IVY,k,j,i) = u_local[2] / u_local[0];
+          phydro->w(IVZ,k,j,i) = phydro->w1(IVZ,k,j,i) = u_local[3] / u_local[0];
         }
 
         // Set conserved hydro variables
-        phyd->u(IDN,k,j,i) = u_local[0] * rho_local;
+        phydro->u(IDN,k,j,i) = u_local[0] * rho_local;
         if (GENERAL_RELATIVITY)
         {
-          phyd->u(IEN,k,j,i) = wtot_local*u_local[0]*u_local_low[0]
+          phydro->u(IEN,k,j,i) = wtot_local*u_local[0]*u_local_low[0]
               - b_local[0]*b_local_low[0] + ptot_local;
-          phyd->u(IM1,k,j,i) = wtot_local*u_local[0]*u_local_low[1]
+          phydro->u(IM1,k,j,i) = wtot_local*u_local[0]*u_local_low[1]
               - b_local[0]*b_local_low[1];
-          phyd->u(IM2,k,j,i) = wtot_local*u_local[0]*u_local_low[2]
+          phydro->u(IM2,k,j,i) = wtot_local*u_local[0]*u_local_low[2]
               - b_local[0]*b_local_low[2];
-          phyd->u(IM3,k,j,i) = wtot_local*u_local[0]*u_local_low[3]
+          phydro->u(IM3,k,j,i) = wtot_local*u_local[0]*u_local_low[3]
               - b_local[0]*b_local_low[3];
         }
         else
         {
-          phyd->u(IEN,k,j,i) = wtot_local*u_local[0]*u_local[0] - b_local[0]*b_local[0]
+          phydro->u(IEN,k,j,i) = wtot_local*u_local[0]*u_local[0] - b_local[0]*b_local[0]
               - ptot_local;
-          phyd->u(IM1,k,j,i) = wtot_local*u_local[0]*u_local[1] - b_local[0]*b_local[1];
-          phyd->u(IM2,k,j,i) = wtot_local*u_local[0]*u_local[2] - b_local[0]*b_local[2];
-          phyd->u(IM3,k,j,i) = wtot_local*u_local[0]*u_local[3] - b_local[0]*b_local[3];
+          phydro->u(IM1,k,j,i) = wtot_local*u_local[0]*u_local[1] - b_local[0]*b_local[1];
+          phydro->u(IM2,k,j,i) = wtot_local*u_local[0]*u_local[2] - b_local[0]*b_local[2];
+          phydro->u(IM3,k,j,i) = wtot_local*u_local[0]*u_local[3] - b_local[0]*b_local[3];
         }
       }
     }
+  }
   if (GENERAL_RELATIVITY)
   {
     g.DeleteAthenaArray();
@@ -592,18 +603,18 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
   }
 
   // Initialize magnetic fields
-  if (MAGNETIC_FIELDS_ENABLED)
-    for (int k = kl; k <= ku+1; ++k)
-      for (int j = jl; j <= ju+1; ++j)
-        for (int i = il; i <= iu+1; ++i)
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for (int k = kl; k <= ku+1; ++k) {
+      for (int j = jl; j <= ju+1; ++j) {
+        for (int i = il; i <= iu+1; ++i) {
           if (GENERAL_RELATIVITY)
           {
             // Set B^1 if needed
             if (j != ju+1 and k != ku+1)
             {
               Real t, x, y, z;
-              pmb->pcoord->MinkowskiCoordinates(
-                  0.0, pco->x1f(i), pco->x2v(j), pco->x3v(k), &t, &x, &y, &z);
+              pcoord->MinkowskiCoordinates(
+                  0.0, pcoord->x1f(i), pcoord->x2v(j), pcoord->x3v(k), &t, &x, &y, &z);
               Real local_amp = amp * std::sin(wavenumber * (x - lambda * t));
               Real u_mink[4], b_mink[4];
               for (int mu = 0; mu < 4; ++mu)
@@ -612,21 +623,21 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
                 b_mink[mu] = b[mu] + local_amp * delta_b[mu];
               }
               Real u_local[4], b_local[4];
-              pmb->pcoord->TransformVectorFace1(
+              pcoord->TransformVectorFace1(
                   u_mink[0], u_mink[1], u_mink[2], u_mink[3], k, j, i,
                   &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
-              pmb->pcoord->TransformVectorFace1(
+              pcoord->TransformVectorFace1(
                   b_mink[0], b_mink[1], b_mink[2], b_mink[3], k, j, i,
                   &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
-              pfld->b.x1f(k,j,i) = b_local[1] * u_local[0] - b_local[0] * u_local[1];
+              pfield->b.x1f(k,j,i) = b_local[1] * u_local[0] - b_local[0] * u_local[1];
             }
 
             // Set B^2 if needed
             if (i != iu+1 and k != ku+1)
             {
               Real t, x, y, z;
-              pmb->pcoord->MinkowskiCoordinates(
-                  0.0, pco->x1v(i), pco->x2f(j), pco->x3v(k), &t, &x, &y, &z);
+              pcoord->MinkowskiCoordinates(
+                  0.0, pcoord->x1v(i), pcoord->x2f(j), pcoord->x3v(k), &t, &x, &y, &z);
               Real local_amp = amp * std::sin(wavenumber * (x - lambda * t));
               Real u_mink[4], b_mink[4];
               for (int mu = 0; mu < 4; ++mu)
@@ -635,21 +646,21 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
                 b_mink[mu] = b[mu] + local_amp * delta_b[mu];
               }
               Real u_local[4], b_local[4];
-              pmb->pcoord->TransformVectorFace2(
+              pcoord->TransformVectorFace2(
                   u_mink[0], u_mink[1], u_mink[2], u_mink[3], k, j, i,
                   &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
-              pmb->pcoord->TransformVectorFace2(
+              pcoord->TransformVectorFace2(
                   b_mink[0], b_mink[1], b_mink[2], b_mink[3], k, j, i,
                   &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
-              pfld->b.x2f(k,j,i) = b_local[2] * u_local[0] - b_local[0] * u_local[2];
+              pfield->b.x2f(k,j,i) = b_local[2] * u_local[0] - b_local[0] * u_local[2];
             }
 
             // Set B^3 if needed
             if (i != iu+1 and j != ju+1)
             {
               Real t, x, y, z;
-              pmb->pcoord->MinkowskiCoordinates(
-                  0.0, pco->x1v(i), pco->x2v(j), pco->x3f(k), &t, &x, &y, &z);
+              pcoord->MinkowskiCoordinates(
+                  0.0, pcoord->x1v(i), pcoord->x2v(j), pcoord->x3f(k), &t, &x, &y, &z);
               Real local_amp = amp * std::sin(wavenumber * (x - lambda * t));
               Real u_mink[4], b_mink[4];
               for (int mu = 0; mu < 4; ++mu)
@@ -658,18 +669,18 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
                 b_mink[mu] = b[mu] + local_amp * delta_b[mu];
               }
               Real u_local[4], b_local[4];
-              pmb->pcoord->TransformVectorFace3(
+              pcoord->TransformVectorFace3(
                   u_mink[0], u_mink[1], u_mink[2], u_mink[3], k, j, i,
                   &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
-              pmb->pcoord->TransformVectorFace3(
+              pcoord->TransformVectorFace3(
                   b_mink[0], b_mink[1], b_mink[2], b_mink[3], k, j, i,
                   &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
-              pfld->b.x3f(k,j,i) = b_local[3] * u_local[0] - b_local[0] * u_local[3];
+              pfield->b.x3f(k,j,i) = b_local[3] * u_local[0] - b_local[0] * u_local[3];
             }
           }
           else
           {
-            Real local_amp = amp * std::sin(wavenumber * pco->x1v(i));
+            Real local_amp = amp * std::sin(wavenumber * pcoord->x1v(i));
             Real u_local[4], b_local[4];
             for (int mu = 0; mu < 4; ++mu)
             {
@@ -679,14 +690,26 @@ void Mesh::ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin)
             Real by_local = b_local[2]*u_local[0] - b_local[0]*u_local[2];
             Real bz_local = b_local[3]*u_local[0] - b_local[0]*u_local[3];
             if (j != ju+1 and k != ku+1)
-              pfld->b.x1f(k,j,i) = bx;
+              pfield->b.x1f(k,j,i) = bx;
             if (i != iu+1 and k != ku+1)
-              pfld->b.x2f(k,j,i) = by_local;
+              pfield->b.x2f(k,j,i) = by_local;
             if (i != iu+1 and j != ju+1)
-              pfld->b.x3f(k,j,i) = bz_local;
+              pfield->b.x3f(k,j,i) = bz_local;
           }
+        }
+      }
+    }
+  }
   return;
 }
+
+
+// User-defined work function called every time step
+void MeshBlock::UserWorkInLoop(void)
+{
+  return;
+}
+
 
 // Function for finding root of monic quadratic equation
 // Inputs:

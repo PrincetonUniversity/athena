@@ -51,7 +51,6 @@ typedef struct NeighborBlock {
 } NeighborBlock;
 
 
-
 //! \struct RegionSize
 //  \brief physical size and number of cells in a Mesh
 
@@ -68,24 +67,24 @@ typedef struct RegionSize {
 
 class MeshBlock {
 private:
-  LogicalLocation loc;
   NeighborBlock neighbor[56];
   Real cost;
   Real new_block_dt;
   unsigned long int finished_tasks[4];
   int first_task, num_tasks_todo, nneighbor;
 
+  void ProblemGenerator(ParameterInput *pin); // in /pgen
+
   friend class RestartOutput;
   friend class BoundaryValues;
   friend class Mesh;
   friend class Hydro;
-  friend class Coordinates;
   friend class TaskList;
-  friend class MeshRefinement;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
 public:
+  LogicalLocation loc;
   MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_size,
             enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin);
   MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, LogicalLocation iloc,
@@ -95,6 +94,7 @@ public:
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
   int FindNeighborGID(int ox1, int ox2, int ox3);
   void IntegrateConservative(Real *tcons);
+  void UserWorkInLoop(void); // in /pgen
 
   RegionSize block_size;
   enum BoundaryFlag block_bcs[6];
@@ -106,7 +106,7 @@ public:
 
   int cis,cie,cjs,cje,cks,cke,cnghost;
 
-  Coordinates *pcoord, *pcoarsec;
+  Coordinates *pcoord;
   Hydro *phydro;
   Field *pfield;
   BoundaryValues *pbval;
@@ -139,6 +139,14 @@ private:
   AMRFlag_t AMRFlag_;
 
   void MeshTest(int dim);
+
+  // methods in /pgen
+  void InitUserMeshProperties(ParameterInput *pin);
+  void TerminateUserMeshProperties(void);
+
+  void EnrollUserBoundaryFunction (enum BoundaryFace face, BValFunc_t my_func);
+  void EnrollUserRefinementCondition(AMRFlag_t amrflag);
+
   void LoadBalancing(Real *clist, int *rlist, int *slist, int *nlist, int nb);
 
   friend class RestartOutput;
@@ -167,11 +175,11 @@ public:
 
   int64_t GetTotalCells(void);
   int GetNumMeshThreads() const {return num_mesh_threads_;}
+
   void Initialize(int res_flag, ParameterInput *pin);
   void SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
                                  enum BoundaryFlag *block_bcs);
   void UpdateOneStep(void);
-  void ProblemGenerator(Hydro *phyd, Field *pfld, ParameterInput *pin); // in /pgen
   void NewTimeStep(void);
   void AdaptiveMeshRefinement(ParameterInput *pin);
   MeshBlock* FindMeshBlock(int tgid);

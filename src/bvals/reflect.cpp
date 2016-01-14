@@ -24,11 +24,11 @@
 #include "bvals.hpp"
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectInnerX1(MeshBlock *pmb, AthenaArray<Real> &a,
+//! \fn void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 //                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief REFLECTING boundary conditions, inner x1 boundary
 
-void ReflectInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   // copy hydro variables into ghost zones, reflecting v1
@@ -83,11 +83,11 @@ void ReflectInnerX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectOuterX1(MeshBlock *pmb, AthenaArray<Real> &a,
+//! \fn void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 //                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief REFLECTING boundary conditions, outer x1 boundary
 
-void ReflectOuterX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   // copy hydro variables into ghost zones, reflecting v1
@@ -142,11 +142,11 @@ void ReflectOuterX1(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflecInnerX2(MeshBlock *pmb, AthenaArray<Real> &a,
+//! \fn void ReflecInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 //                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief REFLECTING boundary conditions, inner x2 boundary
 
-void ReflectInnerX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   // copy hydro variables into ghost zones, reflecting v2
@@ -201,11 +201,11 @@ void ReflectInnerX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectOuterX2(MeshBlock *pmb, AthenaArray<Real> &a,
+//! \fn void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 //                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief REFLECTING boundary conditions, outer x2 boundary
 
-void ReflectOuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   // copy hydro variables into ghost zones, reflecting v2
@@ -260,11 +260,11 @@ void ReflectOuterX2(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectInnerX3(MeshBlock *pmb, AthenaArray<Real> &a,
+//! \fn void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 //                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief REFLECTING boundary conditions, inner x3 boundary
 
-void ReflectInnerX3(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   // copy hydro variables into ghost zones, reflecting v3
@@ -319,11 +319,11 @@ void ReflectInnerX3(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void ReflectOuterX3(MeshBlock *pmb, AthenaArray<Real> &a,
+//! \fn void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
 //                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief REFLECTING boundary conditions, outer x3 boundary
 
-void ReflectOuterX3(MeshBlock *pmb, AthenaArray<Real> &a, FaceField &b,
+void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                     int is, int ie, int js, int je, int ks, int ke)
 {
   // copy hydro variables into ghost zones, reflecting v3
