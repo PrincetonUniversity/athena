@@ -121,6 +121,9 @@ public:
   void SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb);
   void ClearCoarseEMFBoundary(void);
   void AverageEMFBoundary(void);
+  void PolarSingleEMF(void);
+  void PolarSingleHydro(AthenaArray<Real> &dst);
+  void PolarSingleField(FaceField &dst);
   bool ReceiveEMFCorrection(int step);
 
   void ProlongateBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst, 
@@ -149,7 +152,7 @@ private:
   Real *field_send_[NSTEP][56],  *field_recv_[NSTEP][56];
   Real *flcor_send_[NSTEP][6],   *flcor_recv_[NSTEP][6][2][2];
   Real *emfcor_send_[NSTEP][48], *emfcor_recv_[NSTEP][48];
-  AthenaArray<Real> sarea_[2];
+  AthenaArray<Real> sarea_[2], exc;
 
 #ifdef MPI_PARALLEL
   MPI_Request req_hydro_send_[NSTEP][56],  req_hydro_recv_[NSTEP][56];

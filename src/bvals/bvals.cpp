@@ -382,6 +382,13 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       }
     }
   }
+
+ /* single CPU in the azimuthal direction with the polar boundary*/
+  if(pmb->pmy_mesh->current_level == pmb->pmy_mesh->root_level &&
+     pmb->pmy_mesh->nrbx3 == 1 &&
+     (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY))
+       exc.NewAthenaArray(pmb->ke+NGHOST+1);
+
 }
 
 // destructor
@@ -420,6 +427,10 @@ BoundaryValues::~BoundaryValues()
       }
     }
   }
+  if(pmb->pmy_mesh->current_level == pmb->pmy_mesh->root_level &&
+     pmb->pmy_mesh->nrbx3 == 1 &&
+     (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY))
+       exc.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------
@@ -1118,6 +1129,8 @@ bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst, int ste
       SetHydroBoundaryFromFiner(dst, hydro_recv_[step][nb.bufid], nb);
     hydro_flag_[step][nb.bufid] = boundary_completed; // completed
   }
+
+  if(flag&&(pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY)) PolarSingleHydro(dst);
   return flag;
 }
 
@@ -1142,6 +1155,58 @@ void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst,
     else
       SetHydroBoundaryFromFiner(dst, hydro_recv_[0][nb.bufid], nb);
     hydro_flag_[0][nb.bufid] = boundary_completed; // completed
+  }
+ 
+  if (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY) PolarSingleHydro(dst);
+
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::PolarSingleHydro(AthenaArray<Real> &dst)
+//
+// \brief  single CPU in the azimuthal direction for the polar boundary 
+void BoundaryValues::PolarSingleHydro(AthenaArray<Real> &dst)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  if(pmb->pmy_mesh->current_level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1){
+
+    if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY){
+      int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
+      for (int n=0; n<(NHYDRO); ++n) {
+        for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
+         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
+           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+             exc(k)=dst(n,k,j,i);
+           }
+           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+             int k_shift = k;
+             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+             dst(n,k,j,i)=exc(k_shift);
+           }
+         }
+        }
+      }
+    }
+
+    if(pmb->block_bcs[OUTER_X2]==POLAR_BNDRY){
+      int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
+      for (int n=0; n<(NHYDRO); ++n) {
+        for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
+         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
+           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+             exc(k)=dst(n,k,j,i);
+           }
+           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+             int k_shift = k;
+             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+             dst(n,k,j,i)=exc(k_shift);
+           }
+         }
+        }
+      }
+    }
   }
   return;
 }
@@ -2091,8 +2156,11 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst, int step)
     field_flag_[step][nb.bufid] = boundary_completed; // completed
   }
 
+  if(flag&&(pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY)) PolarSingleField(dst);
+
   return flag;
 }
+
 
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst,
@@ -2115,6 +2183,112 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst, int ste
     else
       SetFieldBoundaryFromFiner(dst, field_recv_[0][nb.bufid], nb);
     field_flag_[0][nb.bufid] = boundary_completed; // completed
+  }
+
+  if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY) PolarSingleField(dst);
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::PolarSingleField(FaceField &dst)
+//
+//  \brief single CPU in the azimuthal direction for the polar boundary
+void BoundaryValues::PolarSingleField(FaceField &dst)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  if(pmb->pmy_mesh->current_level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1){
+    if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY){
+      int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
+      for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
+       for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i){
+         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+           exc(k)=dst.x1f(k,j,i);
+         }
+         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+           int k_shift = k;
+           k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+           dst.x1f(k,j,i)=exc(k_shift);
+         }
+       }
+      }
+      for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
+       for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
+         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+           exc(k)=dst.x2f(k,j,i);
+         }
+         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+           int k_shift = k;
+           k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+           dst.x2f(k,j,i)=exc(k_shift);
+         }
+       }
+      }
+      for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
+       for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
+         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
+           exc(k)=dst.x3f(k,j,i);
+         }
+         for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
+           int k_shift = k;
+           k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+           dst.x3f(k,j,i)=exc(k_shift);
+         }
+       }
+      }
+        /* average B2 across the pole */
+      for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
+          dst.x2f(k,pmb->js,i) = 0.5*(dst.x2f(k,pmb->js-1,i)+dst.x2f(k,pmb->js+1,i));
+        }
+      }
+    }
+
+    if(pmb->block_bcs[OUTER_X2]==POLAR_BNDRY){
+      int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
+      for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
+        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i){
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+            exc(k)=dst.x1f(k,j,i);
+          }
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+            int k_shift = k;
+            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+            dst.x1f(k,j,i)=exc(k_shift);
+          }
+        }
+      }
+      for (int j=pmb->je+2; j<=pmb->je+NGHOST+1; ++j) {
+        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+            exc(k)=dst.x2f(k,j,i);
+          }
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+            int k_shift = k;
+            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+            dst.x2f(k,j,i)=exc(k_shift);
+          }
+        }
+      }
+      for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
+        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
+            exc(k)=dst.x3f(k,j,i);
+          }
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
+            int k_shift = k;
+            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+            dst.x3f(k,j,i)=exc(k_shift);
+          }
+        }
+      }
+         /* average B2 across the pole */
+      for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
+          dst.x2f(k,pmb->je+1,i) = 0.5*(dst.x2f(k,pmb->je,i)+dst.x2f(k,pmb->je+2,i));
+        }
+      }
+
+    }
   }
   return;
 }
@@ -3061,6 +3235,78 @@ void BoundaryValues::AverageEMFBoundary(void)
 }
 
 //--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::PolarSingleEMF(void)
+//  \brief single CPU in the azimuthal direction for the polar boundary
+void BoundaryValues::PolarSingleEMF(void)
+{
+  MeshBlock *pmb=pmy_mblock_;
+  AthenaArray<Real> &e1=pmb->pfield->e.x1e;
+  AthenaArray<Real> &e2=pmb->pfield->e.x2e;
+  AthenaArray<Real> &e3=pmb->pfield->e.x3e;
+
+  int i, j, k, nl;
+  if(pmb->pmy_mesh->current_level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1){
+    if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY) {
+      j=pmb->js;
+      int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
+      if(pmb->block_size.nx3 > 1) {
+        std::cout<<" j e1  "<<j<<" "<<e1(30,j,10)<<" "<<e1(94,j,10)<<" js+1 "<<e1(30,j+1,10)<<" "<<e1(94,j+1,10)<<std::endl;
+        for(int i=pmb->is; i<=pmb->ie; i++){
+          for(int k=pmb->ks; k<=pmb->ke+1; k++) {
+            exc(k)=e1(k,j,i);
+          }
+          for(int k=pmb->ks; k<=pmb->ke+1; k++) {
+            int k_shift = k;
+            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+            e1(k,j,i)=exc(k_shift);
+          }
+        }
+        for(int i=pmb->is; i<=pmb->ie+1; i++){
+          for(int k=pmb->ks; k<=pmb->ke; k++) {
+            exc(k)=e3(k,j,i);
+          }
+          for(int k=pmb->ks; k<=pmb->ke; k++) {
+            int k_shift = k;
+            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+            e3(k,j,i)=exc(k_shift);
+          }
+        }
+      }
+    }
+
+    if(pmb->block_bcs[OUTER_X2]==POLAR_BNDRY){
+      j=pmb->je+1;
+      int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
+      if(pmb->block_size.nx3 > 1) {
+        for(int i=pmb->is; i<=pmb->ie; i++){
+          for(int k=pmb->ks; k<=pmb->ke+1; k++) {
+            exc(k)=e1(k,j,i);
+          }
+          for(int k=pmb->ks; k<=pmb->ke+1; k++) {
+            int k_shift = k;
+            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+            e1(k,j,i)=exc(k_shift);
+          }
+        }
+        for(int i=pmb->is; i<=pmb->ie+1; i++){
+          for(int k=pmb->ks; k<=pmb->ke; k++) {
+            exc(k)=e3(k,j,i);
+          }
+          for(int k=pmb->ks; k<=pmb->ke; k++) {
+            int k_shift = k;
+            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+            e3(k,j,i)=exc(k_shift);
+          }
+        }
+      }
+    }
+  }
+  return;
+}
+
+
+
+//--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ReceiveEMFCorrection(int step)
 //  \brief Receive and Apply the surace EMF to the coarse neighbor(s) if needed
 bool BoundaryValues::ReceiveEMFCorrection(int step)
@@ -3134,8 +3380,10 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
       emfcor_flag_[step][nb.bufid] = boundary_completed;
     }
   }
-  if(flag==true)
+  if(flag==true){
     AverageEMFBoundary();
+    if (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY) PolarSingleEMF();
+  }
   return flag;
 }
 
