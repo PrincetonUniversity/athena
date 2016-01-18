@@ -394,9 +394,8 @@ Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 //   cons: source terms added to k,j-slice of 3D array of conserved variables
 // Notes:
 //   source terms all vanish identically
-void Coordinates::CoordSrcTerms(const int k, const int j, const Real dt,
-  const AthenaArray<Real> *flux, const AthenaArray<Real> &prim,
-  const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons)
+void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+  const AthenaArray<Real> &prim, const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons)
 {
   return;
 }

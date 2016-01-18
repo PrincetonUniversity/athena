@@ -352,52 +352,57 @@ Real Coordinates::GetCellVolume(const int k, const int j, const int i)
 //--------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term functions
 
-void Coordinates::CoordSrcTerms(const int k, const int j, const Real dt,
-  const AthenaArray<Real> *flux,
+void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
   Real iso_cs = pmy_block->phydro->peos->GetIsoSoundSpeed();
 
+  // Go through cells
+  for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
+#pragma omp parallel for schedule(static)
+    for (int j=pmy_block->js; j<=pmy_block->je; ++j) {
 #pragma simd
-  for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
-    // src_1 = < M_{theta theta} + M_{phi phi} ><1/r>
-    Real m_ii = prim(IDN,k,j,i)*(SQR(prim(IM2,k,j,i)) + SQR(prim(IM3,k,j,i)));
-    if (NON_BAROTROPIC_EOS) {
-       m_ii += 2.0*prim(IEN,k,j,i);
-    } else {
-       m_ii += 2.0*(iso_cs*iso_cs)*prim(IDN,k,j,i);
-    }
-    if (MAGNETIC_FIELDS_ENABLED) {
-       m_ii += SQR(bcc(IB1,k,j,i));
-    }
-    u(IM1,k,j,i) += dt*coord_src1_i_(i)*m_ii;
+      for (int i=pmy_block->is; i<=pmy_block->ie; ++i) {
+        // src_1 = < M_{theta theta} + M_{phi phi} ><1/r>
+        Real m_ii = prim(IDN,k,j,i)*(SQR(prim(IM2,k,j,i)) + SQR(prim(IM3,k,j,i)));
+        if (NON_BAROTROPIC_EOS) {
+           m_ii += 2.0*prim(IEN,k,j,i);
+        } else {
+           m_ii += 2.0*(iso_cs*iso_cs)*prim(IDN,k,j,i);
+        }
+        if (MAGNETIC_FIELDS_ENABLED) {
+           m_ii += SQR(bcc(IB1,k,j,i));
+        }
+        u(IM1,k,j,i) += dt*coord_src1_i_(i)*m_ii;
 
-    // src_2 = -< M_{theta r} ><1/r> 
-    u(IM2,k,j,i) -= dt*coord_src2_i_(i)*
-      (coord_area1_i_(i)*flux[x1face](IM2,k,j,i)
-     + coord_area1_i_(i+1)*flux[x1face](IM2,k,j,i+1));
+        // src_2 = -< M_{theta r} ><1/r> 
+        u(IM2,k,j,i) -= dt*coord_src2_i_(i)*
+          (coord_area1_i_(i)*flux[x1face](IM2,k,j,i)
+         + coord_area1_i_(i+1)*flux[x1face](IM2,k,j,i+1));
 
-    // src_3 = -< M_{phi r} ><1/r> 
-    u(IM3,k,j,i) -= dt*coord_src2_i_(i)*
-      (coord_area1_i_(i)*flux[x1face](IM3,k,j,i)
-     + coord_area1_i_(i+1)*flux[x1face](IM3,k,j,i+1));
+        // src_3 = -< M_{phi r} ><1/r> 
+        u(IM3,k,j,i) -= dt*coord_src2_i_(i)*
+          (coord_area1_i_(i)*flux[x1face](IM3,k,j,i)
+         + coord_area1_i_(i+1)*flux[x1face](IM3,k,j,i+1));
 
-    // src_2 = < M_{phi phi} ><cot theta/r>
-    Real m_pp = prim(IDN,k,j,i)*SQR(prim(IM3,k,j,i));
-    if (NON_BAROTROPIC_EOS) {
-       m_pp += prim(IEN,k,j,i);
-    } else {
-       m_pp += (iso_cs*iso_cs)*prim(IDN,k,j,i);
+        // src_2 = < M_{phi phi} ><cot theta/r>
+        Real m_pp = prim(IDN,k,j,i)*SQR(prim(IM3,k,j,i));
+        if (NON_BAROTROPIC_EOS) {
+           m_pp += prim(IEN,k,j,i);
+        } else {
+           m_pp += (iso_cs*iso_cs)*prim(IDN,k,j,i);
+        }
+        if (MAGNETIC_FIELDS_ENABLED) {
+           m_pp += 0.5*( SQR(bcc(IB1,k,j,i)) + SQR(bcc(IB2,k,j,i)) - SQR(bcc(IB3,k,j,i)) );
+        }
+        u(IM2,k,j,i) += dt*coord_src1_i_(i)*coord_src1_j_(j)*m_pp;
+
+        // src_3 = -< M_{phi theta} ><cot theta/r> 
+        u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src2_j_(j)*
+          (coord_area2_j_(j)*flux[x2face](IM3,k,j,i)
+         + coord_area2_j_(j+1)*flux[x2face](IM3,k,j+1,i));
+      }
     }
-    if (MAGNETIC_FIELDS_ENABLED) {
-       m_pp += 0.5*( SQR(bcc(IB1,k,j,i)) + SQR(bcc(IB2,k,j,i)) - SQR(bcc(IB3,k,j,i)) );
-    }
-    u(IM2,k,j,i) += dt*coord_src1_i_(i)*coord_src1_j_(j)*m_pp;
-
-    // src_3 = -< M_{phi theta} ><cot theta/r> 
-    u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src2_j_(j)*
-      (coord_area2_j_(j)*flux[x2face](IM3,k,j,i)
-     + coord_area2_j_(j+1)*flux[x2face](IM3,k,j+1,i));
   }
 
   return;

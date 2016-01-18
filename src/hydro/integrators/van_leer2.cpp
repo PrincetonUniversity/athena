@@ -336,18 +336,13 @@ void HydroIntegrator::FluxDivergence(MeshBlock *pmb,AthenaArray<Real> &u,
     }
   }
 
-
-  for (int k=ks; k<=ke; ++k) { 
-#pragma omp for schedule(static)
-    for (int j=js; j<=je; ++j) {
-      // add coordinate (geometric) source terms
-      pmb->pcoord->CoordSrcTerms(k,j,dt,pmb->phydro->flux,w,bcc,u);
-      // add physical source terms for a point mass potential
-      pmb->phydro->pf_srcterms->PhysicalSourceTerms(k,j,dt,pmb->phydro->flux,w,u);
-    }
-  }
-
 } // end of omp parallel region
+
+
+  // add coordinate (geometric) source terms
+  pmb->pcoord->CoordSrcTerms(dt,pmb->phydro->flux,w,bcc,u);
+  // add physical source terms for a point mass potential
+  pmb->phydro->pf_srcterms->PhysicalSourceTerms(dt,pmb->phydro->flux,w,u);
 
 //--------------------------------------------------------------------------------------
 //  Add user source terms

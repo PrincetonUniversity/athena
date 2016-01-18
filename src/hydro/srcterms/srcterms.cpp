@@ -47,11 +47,11 @@ HydroSourceTerms::~HydroSourceTerms()
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn
-//  \brief
+//! \fn void HydroSourceTerms::PhysicalSourceTerms(const Real dt,
+//  const AthenaArray<Real> *flux, const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
+//  \brief Physical (gravitational) source terms
 
-void HydroSourceTerms::PhysicalSourceTerms(int k, int j, const Real dt,
-  const AthenaArray<Real> *flux,
+void HydroSourceTerms::PhysicalSourceTerms(const Real dt, const AthenaArray<Real> *flux,
   const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
 {
   if (gm_==0.0 && g1_==0.0 && g2_==0.0 && g3_==0.0) return;
@@ -59,44 +59,48 @@ void HydroSourceTerms::PhysicalSourceTerms(int k, int j, const Real dt,
 // Source terms due to point mass gravity
 
   MeshBlock *pmb = pmy_hydro_->pmy_block;
+  for (int k=pmb->ks; k<=pmb->ke; ++k) {
+#pragma omp parallel for schedule(static)
+    for (int j=pmb->js; j<=pmb->je; ++j) {
 #pragma simd
-    for (int i=pmb->is; i<=pmb->ie; ++i) {
-      Real den = prim(IDN,k,j,i);
+      for (int i=pmb->is; i<=pmb->ie; ++i) {
+        Real den = prim(IDN,k,j,i);
 
-      if (gm_!=0.0) {
-        Real src = dt*den*pmb->pcoord->coord_src1_i_(i)*gm_/pmb->pcoord->x1v(i);
-        cons(IM1,k,j,i) -= src;
-        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) -=
-          dt*0.5*(pmb->pcoord->phy_src1_i_(i)*flux[x1face](IDN,k,j,i)*gm_
-                 +pmb->pcoord->phy_src2_i_(i)*flux[x1face](IDN,k,j,i+1)*gm_);
+        if (gm_!=0.0) {
+          Real src = dt*den*pmb->pcoord->coord_src1_i_(i)*gm_/pmb->pcoord->x1v(i);
+          cons(IM1,k,j,i) -= src;
+          if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) -=
+            dt*0.5*(pmb->pcoord->phy_src1_i_(i)*flux[x1face](IDN,k,j,i)*gm_
+                   +pmb->pcoord->phy_src2_i_(i)*flux[x1face](IDN,k,j,i+1)*gm_);
+        }
+
+        if (g1_!=0.0) {
+          Real src = dt*den*g1_;
+          cons(IM1,k,j,i) += src;
+          if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVX,k,j,i);
+        }
+
+        if (g2_!=0.0) {
+          Real src = dt*den*g2_;
+          cons(IM2,k,j,i) += src;
+          if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVY,k,j,i);
+        }
+
+        if (g3_!=0.0) {
+          Real src = dt*den*g3_;
+          cons(IM3,k,j,i) += src;
+          if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVZ,k,j,i);
+        }
       }
-
-      if (g1_!=0.0) {
-        Real src = dt*den*g1_;
-        cons(IM1,k,j,i) += src;
-        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVX,k,j,i);
-      }
-
-      if (g2_!=0.0) {
-        Real src = dt*den*g2_;
-        cons(IM2,k,j,i) += src;
-        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVY,k,j,i);
-      }
-
-      if (g3_!=0.0) {
-        Real src = dt*den*g3_;
-        cons(IM3,k,j,i) += src;
-        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVZ,k,j,i);
-      }
-
     }
+  }
 
   return;
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn
-//  \brief
+//! \fn void HydroSourceTerms::EnrollSrcTermFunction(SrcTermFunc_t my_func)
+//  \brief enroll a user-defined source function
 
 void HydroSourceTerms::EnrollSrcTermFunction(SrcTermFunc_t my_func)
 {
