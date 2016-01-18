@@ -273,7 +273,6 @@ void FieldIntegrator::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w,
       }
     }}
   }
-
 } // end of omp parallel region
 
   return;

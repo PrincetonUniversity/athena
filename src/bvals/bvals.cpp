@@ -384,7 +384,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   }
 
  /* single CPU in the azimuthal direction with the polar boundary*/
-  if(pmb->pmy_mesh->current_level == pmb->pmy_mesh->root_level &&
+  if(pmb->loc.level == pmb->pmy_mesh->root_level &&
      pmb->pmy_mesh->nrbx3 == 1 &&
      (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY))
        exc.NewAthenaArray(pmb->ke+NGHOST+1);
@@ -427,7 +427,7 @@ BoundaryValues::~BoundaryValues()
       }
     }
   }
-  if(pmb->pmy_mesh->current_level == pmb->pmy_mesh->root_level &&
+  if(pmb->loc.level == pmb->pmy_mesh->root_level &&
      pmb->pmy_mesh->nrbx3 == 1 &&
      (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY))
        exc.DeleteAthenaArray();
@@ -1170,7 +1170,7 @@ void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst,
 void BoundaryValues::PolarSingleHydro(AthenaArray<Real> &dst)
 {
   MeshBlock *pmb=pmy_mblock_;
-  if(pmb->pmy_mesh->current_level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1){
+  if(pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1){
 
     if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY){
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
@@ -2196,7 +2196,7 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst, int ste
 void BoundaryValues::PolarSingleField(FaceField &dst)
 {
   MeshBlock *pmb=pmy_mblock_;
-  if(pmb->pmy_mesh->current_level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1){
+  if(pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1){
     if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY){
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
@@ -3245,20 +3245,19 @@ void BoundaryValues::PolarSingleEMF(void)
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
 
   int i, j, k, nl;
-  if(pmb->pmy_mesh->current_level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1){
+  if(pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1){
     if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY) {
       j=pmb->js;
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       if(pmb->block_size.nx3 > 1) {
-        std::cout<<" j e1  "<<j<<" "<<e1(30,j,10)<<" "<<e1(94,j,10)<<" js+1 "<<e1(30,j+1,10)<<" "<<e1(94,j+1,10)<<std::endl;
         for(int i=pmb->is; i<=pmb->ie; i++){
-          for(int k=pmb->ks; k<=pmb->ke+1; k++) {
-            exc(k)=e1(k,j,i);
+          Real tote1=0.0;
+          for(int k=pmb->ks; k<=pmb->ke; k++) {
+            tote1+=e1(k,j,i);
           }
-          for(int k=pmb->ks; k<=pmb->ke+1; k++) {
-            int k_shift = k;
-            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            e1(k,j,i)=exc(k_shift);
+          Real e1a=tote1/double(pmb->ke-pmb->ks+1);
+	  for(int k=pmb->ks; k<=pmb->ke+1; k++) {
+            e1(k,j,i)=e1a;
           }
         }
         for(int i=pmb->is; i<=pmb->ie+1; i++){
@@ -3279,13 +3278,13 @@ void BoundaryValues::PolarSingleEMF(void)
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       if(pmb->block_size.nx3 > 1) {
         for(int i=pmb->is; i<=pmb->ie; i++){
-          for(int k=pmb->ks; k<=pmb->ke+1; k++) {
-            exc(k)=e1(k,j,i);
+          Real tote1=0.0;
+          for (int k=pmb->ks; k<=pmb->ke; ++k) {
+            tote1+=e1(k,j,i);
           }
-          for(int k=pmb->ks; k<=pmb->ke+1; k++) {
-            int k_shift = k;
-            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            e1(k,j,i)=exc(k_shift);
+          Real e1a=tote1/double(pmb->ke-pmb->ks+1);
+          for (int k=pmb->ks; k<=pmb->ke+1; ++k) {
+            e1(k,j,i)=e1a;
           }
         }
         for(int i=pmb->is; i<=pmb->ie+1; i++){
