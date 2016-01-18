@@ -133,10 +133,12 @@ Real Hydro::NewBlockTimeStep(MeshBlock *pmb)
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   AthenaArray<Real> w,bcc,b_x1f,b_x2f,b_x3f;
   w.InitWithShallowCopy(pmb->phydro->w);
-  bcc.InitWithShallowCopy(pmb->pfield->bcc);
-  b_x1f.InitWithShallowCopy(pmb->pfield->b.x1f);
-  b_x2f.InitWithShallowCopy(pmb->pfield->b.x2f);
-  b_x3f.InitWithShallowCopy(pmb->pfield->b.x3f);
+  if (MAGNETIC_FIELDS_ENABLED) {
+    bcc.InitWithShallowCopy(pmb->pfield->bcc);
+    b_x1f.InitWithShallowCopy(pmb->pfield->b.x1f);
+    b_x2f.InitWithShallowCopy(pmb->pfield->b.x2f);
+    b_x3f.InitWithShallowCopy(pmb->pfield->b.x3f);
+  }
 
   int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
   Real *pthread_min_dt;

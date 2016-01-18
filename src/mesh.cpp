@@ -198,16 +198,12 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   }
 
   // read BC flags for each of the 6 boundaries in turn.
-  for(int dir=0; dir<6; dir++)
-    BoundaryFunction_[dir]=NULL;
   mesh_bcs[INNER_X1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix1_bc","none"));
   mesh_bcs[OUTER_X1] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox1_bc","none"));
   mesh_bcs[INNER_X2] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix2_bc","none"));
   mesh_bcs[OUTER_X2] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox2_bc","none"));
   mesh_bcs[INNER_X3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix3_bc","none"));
   mesh_bcs[OUTER_X3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox3_bc","none"));
-
-  InitUserMeshProperties(pin);
 
 // read MeshBlock parameters
   block_size.nx1 = pin->GetOrAddInteger("meshblock","nx1",mesh_size.nx1);
@@ -269,6 +265,11 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   }
   else
     max_level = 63;
+
+  for(int dir=0; dir<6; dir++)
+    BoundaryFunction_[dir]=NULL;
+  AMRFlag_=NULL;
+  InitUserMeshProperties(pin);
 
   InputBlock *pib = pin->pfirst_block;
   while (pib != NULL) {
@@ -548,10 +549,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   if(mesh_size.nx2>1) dim=2;
   if(mesh_size.nx3>1) dim=3;
 
-  for(int dir=0; dir<6; dir++)
-    BoundaryFunction_[dir]=NULL;
-  InitUserMeshProperties(pin);
-
 // check cfl_number
   if(cfl_number > 1.0 && mesh_size.nx2==1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -604,6 +601,11 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   adaptive=false;
   if(pin->GetOrAddString("mesh","refinement","static")=="adaptive")
     adaptive=true, multilevel=true;
+
+  for(int dir=0; dir<6; dir++)
+    BoundaryFunction_[dir]=NULL;
+  AMRFlag_=NULL;
+  InitUserMeshProperties(pin);
 
   face_only=true;
   if (MAGNETIC_FIELDS_ENABLED || multilevel==true || VISCOSITY)
@@ -895,7 +897,8 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   if(pm->multilevel==true)
     pmr = new MeshRefinement(this, pin);
   phydro = new Hydro(this, pin);
-  pfield = new Field(this, pin);
+  if (MAGNETIC_FIELDS_ENABLED)
+    pfield = new Field(this, pin);
   pbval  = new BoundaryValues(this, pin);
 
   return;
@@ -976,7 +979,8 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   if(pm->multilevel==true)
     pmr = new MeshRefinement(this, pin);
   phydro = new Hydro(this, pin);
-  pfield = new Field(this, pin);
+  if (MAGNETIC_FIELDS_ENABLED)
+    pfield = new Field(this, pin);
   pbval  = new BoundaryValues(this, pin);
 
   // load hydro and field data
@@ -1015,7 +1019,8 @@ MeshBlock::~MeshBlock()
 
   delete pcoord;
   delete phydro;
-  delete pfield;
+  if (MAGNETIC_FIELDS_ENABLED)
+    delete pfield;
   delete pbval;
 }
 
@@ -1072,7 +1077,8 @@ void Mesh::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValFunc_t my_bc)
 //  \brief Enroll a user-defined function for checking refinement criteria
 void Mesh::EnrollUserRefinementCondition(AMRFlag_t amrflag)
 {
-  AMRFlag_=amrflag;
+  if(adaptive==true)
+    AMRFlag_=amrflag;
   return;
 }
 

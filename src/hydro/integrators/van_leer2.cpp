@@ -60,15 +60,17 @@ void HydroIntegrator::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
   }
 
   AthenaArray<Real> b1,b2,b3,ei_x1f,ei_x2f,ei_x3f,w_x1f,w_x2f,w_x3f;
-  b1.InitWithShallowCopy(b.x1f);
-  b2.InitWithShallowCopy(b.x2f);
-  b3.InitWithShallowCopy(b.x3f);
-  ei_x1f.InitWithShallowCopy(pmb->pfield->ei.x1f);
-  ei_x2f.InitWithShallowCopy(pmb->pfield->ei.x2f);
-  ei_x3f.InitWithShallowCopy(pmb->pfield->ei.x3f);
-  w_x1f.InitWithShallowCopy(pmb->pfield->wght.x1f);
-  w_x2f.InitWithShallowCopy(pmb->pfield->wght.x2f);
-  w_x3f.InitWithShallowCopy(pmb->pfield->wght.x3f);
+  if (MAGNETIC_FIELDS_ENABLED) {
+    b1.InitWithShallowCopy(b.x1f);
+    b2.InitWithShallowCopy(b.x2f);
+    b3.InitWithShallowCopy(b.x3f);
+    ei_x1f.InitWithShallowCopy(pmb->pfield->ei.x1f);
+    ei_x2f.InitWithShallowCopy(pmb->pfield->ei.x2f);
+    ei_x3f.InitWithShallowCopy(pmb->pfield->ei.x3f);
+    w_x1f.InitWithShallowCopy(pmb->pfield->wght.x1f);
+    w_x2f.InitWithShallowCopy(pmb->pfield->wght.x2f);
+    w_x3f.InitWithShallowCopy(pmb->pfield->wght.x3f);
+  }
 
   int tid=0;
   int nthreads = pmb->pmy_mesh->GetNumMeshThreads();

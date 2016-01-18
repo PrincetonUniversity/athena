@@ -35,11 +35,20 @@
 
 #include <iostream>
 
+
+namespace RefinementConditions {
+
+
+}
+
+
 // MeshRefinement Constructor
 MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_mblock_ = pmb;
   pcoarsec = new Coordinates(pmb, pin, 1);
+  deref_count_ = 0;
+  deref_threshold_ = pin->GetOrAddInteger("mesh","derefine_count",10);
   // allocate prolongation buffer
   int ncc1=pmb->block_size.nx1/2+2*pmb->cnghost;
   int ncc2=1;
@@ -910,10 +919,11 @@ void MeshRefinement::CheckRefinementCondition(void)
   // *** should be implemented later ***
   // loop-over refinement criteria
   if(pmb->pmy_mesh->AMRFlag_!=NULL)
-    ret=pmb->pmy_mesh->AMRFlag_(pmy_mblock_);
+    ret=pmb->pmy_mesh->AMRFlag_(pmb);
   aret=std::max(aret,ret);
 
-
+  if(aret>=0)
+    deref_count_=0;
   if(aret>0) {
     if(pmb->loc.level == pmb->pmy_mesh->max_level) refine_flag_=0;
     else refine_flag_=1;
@@ -921,6 +931,7 @@ void MeshRefinement::CheckRefinementCondition(void)
   else if(aret<0) {
     if(pmb->loc.level == pmb->pmy_mesh->root_level) refine_flag_=0;
     else {
+      deref_count_++;
       int ec=0, js, je, ks, ke;
       if(pmb->block_size.nx2 > 1) js=-1, je=1;
       else js=0, je=0;
@@ -933,7 +944,10 @@ void MeshRefinement::CheckRefinementCondition(void)
         }
       }
       if(ec>0) refine_flag_=0;
-      else refine_flag_=-1;
+      else {
+        if(deref_count_ >= deref_threshold_) refine_flag_=-1;
+        else refine_flag_=0;
+      }
     }
   }
   return;

@@ -3,8 +3,6 @@
 // Primary header
 #include "../mesh.hpp"
 
-#error "geodesic_infall.cpp is outdated and must be rewritten."
-
 #if MAGNETIC_FIELDS_ENABLED
 #error "This problem generator does not support magnetic fields"
 #endif
@@ -24,8 +22,8 @@
 #include "../field/field.hpp"              // Field
 
 // Declarations
-void FixedOuter(MeshBlock *pmb, AthenaArray<Real> &prim, FaceField &bb, int is, int ie,
-    int js, int je, int ks, int ke);
+void FixedOuter(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &bb,
+                int is, int ie, int js, int je, int ks, int ke);
 
 // Function for initializing global mesh properties
 void Mesh::InitUserMeshProperties(ParameterInput *pin)
