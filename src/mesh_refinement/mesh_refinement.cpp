@@ -46,6 +46,7 @@ namespace RefinementConditions {
 MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_mblock_ = pmb;
+  AMRFlag_=pmb->pmy_mesh->AMRFlag_;
   pcoarsec = new Coordinates(pmb, pin, 1);
   deref_count_ = 0;
   deref_threshold_ = pin->GetOrAddInteger("mesh","derefine_count",10);
@@ -918,8 +919,8 @@ void MeshRefinement::CheckRefinementCondition(void)
 
   // *** should be implemented later ***
   // loop-over refinement criteria
-  if(pmb->pmy_mesh->AMRFlag_!=NULL)
-    ret=pmb->pmy_mesh->AMRFlag_(pmb);
+  if(AMRFlag_!=NULL)
+    ret=AMRFlag_(pmb);
   aret=std::max(aret,ret);
 
   if(aret>=0)

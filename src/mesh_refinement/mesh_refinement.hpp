@@ -34,6 +34,7 @@ private:
   FaceField coarse_b_;
   AthenaArray<Real> fvol_[2][2], sarea_x1_[2][2], sarea_x2_[2][3], sarea_x3_[3][2];
 
+  AMRFlag_t AMRFlag_;
   int refine_flag_, neighbor_rflag_, deref_count_, deref_threshold_;
 
   friend class BoundaryValues;

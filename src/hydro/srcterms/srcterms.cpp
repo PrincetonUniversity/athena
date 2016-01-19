@@ -30,14 +30,14 @@
 // HydroSourceTerms constructor - sets function pointers for each of the physical source
 // terms to be included in the calculation.
 
-HydroSourceTerms::HydroSourceTerms(Hydro *pf, ParameterInput *pin)
+HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin)
 {
-  pmy_hydro_ = pf;
+  pmy_hydro_ = phyd;
   gm_ = pin->GetOrAddReal("problem","GM",0.0);
   g1_ = pin->GetOrAddReal("hydro","grav_acc1",0.0);
   g2_ = pin->GetOrAddReal("hydro","grav_acc2",0.0);
   g3_ = pin->GetOrAddReal("hydro","grav_acc3",0.0);
-  UserSourceTerm = NULL;
+  UserSourceTerm = phyd->pmy_block->pmy_mesh->UserSourceTerm_;
 }
 
 // destructor
@@ -98,12 +98,3 @@ void HydroSourceTerms::PhysicalSourceTerms(const Real dt, const AthenaArray<Real
   return;
 }
 
-//--------------------------------------------------------------------------------------
-//! \fn void HydroSourceTerms::EnrollSrcTermFunction(SrcTermFunc_t my_func)
-//  \brief enroll a user-defined source function
-
-void HydroSourceTerms::EnrollSrcTermFunction(SrcTermFunc_t my_func)
-{
-  UserSourceTerm = my_func;
-  return;
-}

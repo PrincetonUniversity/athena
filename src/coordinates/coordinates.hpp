@@ -374,7 +374,7 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
 
   // X1-DIRECTION: initialize sizes and positions of cell FACES (dx1f,x1f)
   nrootmesh=mesh_size.nx1*(1L<<(ll-pm->root_level));
-  if(block_size.x1rat == 1.0) { // uniform
+  if(pm->user_meshgen_[x1dir]==false) { // uniform
     Real dx=(block_size.x1max-block_size.x1min)/(ie-is+1);
     for(int i=is-ng; i<=ie+ng; ++i)
       dx1f(i)=dx;
@@ -389,7 +389,7 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
       // if there are too many levels, this won't work or be precise enough
       noffset=((i-is)<<cflag)+(long long)lx1*block_size.nx1;
       Real rx=(Real)noffset/(Real)nrootmesh;
-      x1f(i)=pm->MeshGeneratorX1(rx,mesh_size);
+      x1f(i)=pm->MeshGenerator_[x1dir](rx,mesh_size);
     }
     x1f(is) = block_size.x1min;
     x1f(ie+1) = block_size.x1max;
@@ -414,7 +414,7 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
   // X2-DIRECTION: initialize spacing and positions of cell FACES (dx2f,x2f)
   if(ncells2 > 1) {
     nrootmesh=mesh_size.nx2*(1L<<(ll-pm->root_level));
-    if(block_size.x2rat == 1.0) { // uniform
+    if(pm->user_meshgen_[x2dir]==false) { // uniform
       Real dx=(block_size.x2max-block_size.x2min)/(je-js+1);
       for(int j=js-ng; j<=je+ng; ++j)
         dx2f(j)=dx;
@@ -429,7 +429,7 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
         // if there are too many levels, this won't work or be precise enough
         noffset=((j-js)<<cflag)+(long long)lx2*block_size.nx2;
         Real rx=(Real)noffset/(Real)nrootmesh;
-        x2f(j)=pm->MeshGeneratorX2(rx,mesh_size);
+        x2f(j)=pm->MeshGenerator_[x2dir](rx,mesh_size);
       }
       x2f(js) = block_size.x2min;
       x2f(je+1) = block_size.x2max;
@@ -461,7 +461,7 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
   // X3-DIRECTION: initialize spacing and positions of cell FACES (dx3f,x3f)
   if(ncells3 > 1) {
     nrootmesh=mesh_size.nx3*(1L<<(ll-pm->root_level));
-    if(block_size.x3rat == 1.0) { // uniform
+    if(pm->user_meshgen_[x3dir]==false) { // uniform
       Real dx=(block_size.x3max-block_size.x3min)/(ke-ks+1);
       for(int k=ks-ng; k<=ke+ng; ++k)
         dx3f(k)=dx;
@@ -476,7 +476,7 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
         // if there are too many levels, this won't work or be precise enough
         noffset=((k-ks)<<cflag)+(long long)lx3*block_size.nx3;
         Real rx=(Real)noffset/(Real)nrootmesh;
-        x3f(k)=pm->MeshGeneratorX3(rx,mesh_size);
+        x3f(k)=pm->MeshGenerator_[x3dir](rx,mesh_size);
       }
       x3f(ks) = block_size.x3min;
       x3f(ke+1) = block_size.x3max;

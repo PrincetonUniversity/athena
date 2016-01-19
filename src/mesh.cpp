@@ -266,9 +266,26 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   else
     max_level = 63;
 
+  //initialize user-enrollable functions
+  if(mesh_size.x1rat!=1.0)
+    user_meshgen_[x1dir]=true;
+  else
+    user_meshgen_[x1dir]=false;
+  if(mesh_size.x2rat!=1.0)
+    user_meshgen_[x2dir]=true;
+  else
+    user_meshgen_[x2dir]=false;
+  if(mesh_size.x3rat!=1.0)
+    user_meshgen_[x3dir]=true;
+  else
+    user_meshgen_[x3dir]=false;
+  MeshGenerator_[x1dir]=DefaultMeshGeneratorX1;
+  MeshGenerator_[x2dir]=DefaultMeshGeneratorX2;
+  MeshGenerator_[x3dir]=DefaultMeshGeneratorX3;
   for(int dir=0; dir<6; dir++)
     BoundaryFunction_[dir]=NULL;
   AMRFlag_=NULL;
+  UserSourceTerm_=NULL;
   InitUserMeshProperties(pin);
 
   InputBlock *pib = pin->pfirst_block;
@@ -328,11 +345,11 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       long int lx1min=0, lx1max=0, lx2min=0, lx2max=0, lx3min=0, lx3max=0;
       long int lxmax=nrbx1*(1L<<ref_lev);
       for(lx1min=0;lx1min<lxmax;lx1min++) {
-        if(MeshGeneratorX1((Real)(lx1min+1)/lxmax,mesh_size)>ref_size.x1min)
+        if(MeshGenerator_[x1dir]((Real)(lx1min+1)/lxmax,mesh_size)>ref_size.x1min)
           break;
       }
       for(lx1max=lx1min;lx1max<lxmax;lx1max++) {
-        if(MeshGeneratorX1((Real)(lx1max+1)/lxmax,mesh_size)>=ref_size.x1max)
+        if(MeshGenerator_[x1dir]((Real)(lx1max+1)/lxmax,mesh_size)>=ref_size.x1max)
           break;
       }
       if(lx1min%2==1) lx1min--;
@@ -340,11 +357,11 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       if(dim>=2) { // 2D or 3D
         lxmax=nrbx2*(1L<<ref_lev);
         for(lx2min=0;lx2min<lxmax;lx2min++) {
-          if(MeshGeneratorX2((Real)(lx2min+1)/lxmax,mesh_size)>ref_size.x2min)
+          if(MeshGenerator_[x2dir]((Real)(lx2min+1)/lxmax,mesh_size)>ref_size.x2min)
             break;
         }
         for(lx2max=lx2min;lx2max<lxmax;lx2max++) {
-          if(MeshGeneratorX2((Real)(lx2max+1)/lxmax,mesh_size)>=ref_size.x2max)
+          if(MeshGenerator_[x2dir]((Real)(lx2max+1)/lxmax,mesh_size)>=ref_size.x2max)
             break;
         }
         if(lx2min%2==1) lx2min--;
@@ -353,11 +370,11 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       if(dim==3) { // 3D
         lxmax=nrbx3*(1L<<ref_lev);
         for(lx3min=0;lx3min<lxmax;lx3min++) {
-          if(MeshGeneratorX3((Real)(lx3min+1)/lxmax,mesh_size)>ref_size.x3min)
+          if(MeshGenerator_[x3dir]((Real)(lx3min+1)/lxmax,mesh_size)>ref_size.x3min)
             break;
         }
         for(lx3max=lx3min;lx3max<lxmax;lx3max++) {
-          if(MeshGeneratorX3((Real)(lx3max+1)/lxmax,mesh_size)>=ref_size.x3max)
+          if(MeshGenerator_[x3dir]((Real)(lx3max+1)/lxmax,mesh_size)>=ref_size.x3max)
             break;
         }
         if(lx3min%2==1) lx3min--;
@@ -602,9 +619,26 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   if(pin->GetOrAddString("mesh","refinement","static")=="adaptive")
     adaptive=true, multilevel=true;
 
+  //initialize user-enrollable functions
+  if(mesh_size.x1rat!=1.0)
+    user_meshgen_[x1dir]=true;
+  else
+    user_meshgen_[x1dir]=false;
+  if(mesh_size.x2rat!=1.0)
+    user_meshgen_[x2dir]=true;
+  else
+    user_meshgen_[x2dir]=false;
+  if(mesh_size.x3rat!=1.0)
+    user_meshgen_[x3dir]=true;
+  else
+    user_meshgen_[x3dir]=false;
+  MeshGenerator_[x1dir]=DefaultMeshGeneratorX1;
+  MeshGenerator_[x2dir]=DefaultMeshGeneratorX2;
+  MeshGenerator_[x3dir]=DefaultMeshGeneratorX3;
   for(int dir=0; dir<6; dir++)
     BoundaryFunction_[dir]=NULL;
   AMRFlag_=NULL;
+  UserSourceTerm_=NULL;
   InitUserMeshProperties(pin);
 
   face_only=true;
@@ -1063,7 +1097,7 @@ void Mesh::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValFunc_t my_bc)
     throw std::runtime_error(msg.str().c_str());
   }
   if(mesh_bcs[dir]!=USER_BNDRY) {
-    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
+    msg << "### FATAL ERROR in EnrollUserBoundaryFunction" << std::endl
         << "The boundary condition flag must be set to the string 'user' in the "
         << " <mesh> block in the input file to use user-enrolled BCs" << std::endl;
     throw std::runtime_error(msg.str().c_str());
@@ -1072,6 +1106,7 @@ void Mesh::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValFunc_t my_bc)
   return;
 }
 
+
 //--------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserRefinementCondition(AMRFlag_t amrflag)
 //  \brief Enroll a user-defined function for checking refinement criteria
@@ -1079,6 +1114,34 @@ void Mesh::EnrollUserRefinementCondition(AMRFlag_t amrflag)
 {
   if(adaptive==true)
     AMRFlag_=amrflag;
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserMeshGenerator(enum direction, MeshGenFunc_t my_mg)
+//  \brief Enroll a user-defined function for Mesh generation
+void Mesh::EnrollUserMeshGenerator(enum direction dir, MeshGenFunc_t my_mg)
+{
+  std::stringstream msg;
+  if(dir<0 || dir>3) {
+    msg << "### FATAL ERROR in EnrollUserMeshGenerator function" << std::endl
+        << "dirName = " << dir << " not valid" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  user_meshgen_[dir]=true;
+  MeshGenerator_[dir]=my_mg;
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserSourceTermFunction(SrcTermFunc_t my_func)
+//  \brief Enroll a user-defined source function
+
+void Mesh::EnrollUserSourceTermFunction(SrcTermFunc_t my_func)
+{
+  UserSourceTerm_ = my_func;
   return;
 }
 
@@ -1742,7 +1805,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
   }
   else {
     Real rx=(Real)lx1/(Real)(nrbx1<<(ll-root_level));
-    block_size.x1min=MeshGeneratorX1(rx,mesh_size);
+    block_size.x1min=MeshGenerator_[x1dir](rx,mesh_size);
     block_bcs[INNER_X1]=BLOCK_BNDRY;
   }
   if(lx1==(nrbx1<<(ll-root_level))-1) {
@@ -1751,7 +1814,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
   }
   else {
     Real rx=(Real)(lx1+1)/(Real)(nrbx1<<(ll-root_level));
-    block_size.x1max=MeshGeneratorX1(rx,mesh_size);
+    block_size.x1max=MeshGenerator_[x1dir](rx,mesh_size);
     block_bcs[OUTER_X1]=BLOCK_BNDRY;
   }
 
@@ -1769,7 +1832,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
     }
     else {
       Real rx=(Real)lx2/(Real)(nrbx2<<(ll-root_level));
-      block_size.x2min=MeshGeneratorX2(rx,mesh_size);
+      block_size.x2min=MeshGenerator_[x2dir](rx,mesh_size);
       block_bcs[INNER_X2]=BLOCK_BNDRY;
     }
     if(lx2==(nrbx2<<(ll-root_level))-1) {
@@ -1778,7 +1841,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
     }
     else {
       Real rx=(Real)(lx2+1)/(Real)(nrbx2<<(ll-root_level));
-      block_size.x2max=MeshGeneratorX2(rx,mesh_size);
+      block_size.x2max=MeshGenerator_[x2dir](rx,mesh_size);
       block_bcs[OUTER_X2]=BLOCK_BNDRY;
     }
   }
@@ -1797,7 +1860,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
     }
     else {
       Real rx=(Real)lx3/(Real)(nrbx3<<(ll-root_level));
-      block_size.x3min=MeshGeneratorX3(rx,mesh_size);
+      block_size.x3min=MeshGenerator_[x3dir](rx,mesh_size);
       block_bcs[INNER_X3]=BLOCK_BNDRY;
     }
     if(lx3==(nrbx3<<(ll-root_level))-1) {
@@ -1806,7 +1869,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
     }
     else {
       Real rx=(Real)(lx3+1)/(Real)(nrbx3<<(ll-root_level));
-      block_size.x3max=MeshGeneratorX3(rx,mesh_size);
+      block_size.x3max=MeshGenerator_[x3dir](rx,mesh_size);
       block_bcs[OUTER_X3]=BLOCK_BNDRY;
     }
   }
