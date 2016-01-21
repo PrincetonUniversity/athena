@@ -360,17 +360,17 @@ Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 
 // Function for computing source terms using fluxes
 // Inputs:
-//   k,j: z- and y-indices
 //   dt: size of timestep
 //   flux: 1D array of x-fluxes
 //   prim: 3D array of primitive values at beginning of half timestep
 //   bb_cc: 3D array of cell-centered magnetic fields
 // Outputs:
-//   cons: source terms added to k,j-slice of 3D array of conserved variables
+//   cons: source terms added to 3D array of conserved variables
 // Notes:
 //   source terms all vanish identically
 void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-  const AthenaArray<Real> &prim, const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons)
+    const AthenaArray<Real> &prim, const AthenaArray<Real> &bb_cc,
+    AthenaArray<Real> &cons)
 {
   return;
 }

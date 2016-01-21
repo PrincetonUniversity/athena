@@ -605,26 +605,27 @@ Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 
 // Function for computing source terms using fluxes
 // Inputs:
-//   k,j: phi- and theta-indices
 //   dt: size of timestep
 //   flux: 3D array of fluxes
 //   prim: 3D array of primitive values at beginning of half timestep
 //   bb_cc: 3D array of cell-centered magnetic fields
 // Outputs:
-//   cons: source terms added to k,j-slice of 3D array of conserved variables
+//   cons: source terms added to 3D array of conserved variables
 // Notes:
 //   all source terms computed in this function
 void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
- const AthenaArray<Real> &prim, const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons)
+    const AthenaArray<Real> &prim, const AthenaArray<Real> &bb_cc,
+    AthenaArray<Real> &cons)
 {
   // Extract ratio of specific heats
   const Real gamma_adi = pmy_block->phydro->peos->GetGamma();
 
   // Go through cells
-  for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
-#pragma omp parallel for schedule(static)
-    for (int j=pmy_block->js; j<=pmy_block->je; ++j) {
-      // Calculate metric coefficients
+  for (int k = pmy_block->ks; k <= pmy_block->ke; ++k)
+  {
+    #pragma omp parallel for schedule(static)
+    for (int j=pmy_block->js; j<=pmy_block->je; ++j)
+    {
       CellMetric(k, j, pmy_block->is, pmy_block->ie, g_, gi_);
       #pragma simd
       for (int i = pmy_block->is; i <= pmy_block->ie; ++i)
