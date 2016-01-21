@@ -1391,9 +1391,8 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
       int tbid;
       bool polar=false;
       if(nlevel==loc.level) { // neighbor at same level
-        long int num_x2 = nrbx2<<(loc.level-pmy_mesh->root_level);
-        if ((loc.lx2+n<0 and block_bcs[INNER_X2]==POLAR_BNDRY)
-            or (loc.lx2+n>=num_x2 and block_bcs[OUTER_X2]==POLAR_BNDRY)) {
+        if ((n == -1 and block_bcs[INNER_X2] == POLAR_BNDRY)
+            or (n == 1 and block_bcs[OUTER_X2] == POLAR_BNDRY)) {
           polar = true; // neighbor is across top or bottom pole
         }
         tbid=FindBufferID(0,polar?n:-n,0,0,0,pmy_mesh->maxneighbor_);
@@ -1474,9 +1473,8 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
         int tbid;
         bool polar=false;
         if(nlevel==loc.level) { // neighbor at same level
-          long int num_x2 = nrbx2<<(loc.level-pmy_mesh->root_level);
-          if ((loc.lx2+m<0 and block_bcs[INNER_X2]==POLAR_BNDRY)
-              or (loc.lx2+m>=num_x2 and block_bcs[OUTER_X2]==POLAR_BNDRY)) {
+          if ((m == -1 and block_bcs[INNER_X2] == POLAR_BNDRY)
+              or (m == 1 and block_bcs[OUTER_X2] == POLAR_BNDRY)) {
             polar = true; // neighbor is across top or bottom pole
           }
           tbid=FindBufferID(-n,polar?m:-m,0,0,0,pmy_mesh->maxneighbor_);
@@ -1563,9 +1561,8 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
         int tbid;
         bool polar=false;
         if(nlevel==loc.level) { // neighbor at same level
-          long int num_x2 = nrbx2<<(loc.level-pmy_mesh->root_level);
-          if ((loc.lx2+n<0 and block_bcs[INNER_X2]==POLAR_BNDRY)
-              or (loc.lx2+n>=num_x2 and block_bcs[OUTER_X2]==POLAR_BNDRY)) {
+          if ((n == -1 and block_bcs[INNER_X2] == POLAR_BNDRY)
+              or (n == 1 and block_bcs[OUTER_X2] == POLAR_BNDRY)) {
             polar = true; // neighbor is across top or bottom pole
           }
           tbid=FindBufferID(0,polar?n:-n,-m,0,0,pmy_mesh->maxneighbor_);
@@ -1590,9 +1587,8 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
         neibt=tree.FindNeighbor(loc,n,m,l,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh->root_level);
         if(neibt==NULL) { bufid++; continue;}
         bool polar=false;
-        long int num_x2 = nrbx2<<(loc.level-pmy_mesh->root_level);
-        if ((loc.lx2+m<0 and block_bcs[INNER_X2]==POLAR_BNDRY)
-            or (loc.lx2+m>=num_x2 and block_bcs[OUTER_X2]==POLAR_BNDRY)) {
+        if ((m == -1 and block_bcs[INNER_X2] == POLAR_BNDRY)
+            or (m == 1 and block_bcs[OUTER_X2] == POLAR_BNDRY)) {
           polar = true; // neighbor is across top or bottom pole
         }
         if(neibt->flag==false) { // neighbor at finer level
