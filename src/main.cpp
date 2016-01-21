@@ -306,6 +306,9 @@ int main(int argc, char *argv[])
     pmesh->ncycle++;
     pmesh->time += pmesh->dt;
 
+    if(pmesh->adaptive==true)
+      pmesh->AdaptiveMeshRefinement(pinput);
+
     pmesh->NewTimeStep();
 
     try {

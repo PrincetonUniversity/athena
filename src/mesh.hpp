@@ -131,10 +131,9 @@ private:
   MeshBlockTree tree;
   long int nrbx1, nrbx2, nrbx3;
 
-  Real MeshGeneratorX1(Real x, RegionSize rs);
-  Real MeshGeneratorX2(Real x, RegionSize rs);
-  Real MeshGeneratorX3(Real x, RegionSize rs);
-
+  bool user_meshgen_[3];
+  MeshGenFunc_t MeshGenerator_[3];
+  SrcTermFunc_t UserSourceTerm_;
   BValFunc_t BoundaryFunction_[6];
   AMRFlag_t AMRFlag_;
 
@@ -146,6 +145,8 @@ private:
 
   void EnrollUserBoundaryFunction (enum BoundaryFace face, BValFunc_t my_func);
   void EnrollUserRefinementCondition(AMRFlag_t amrflag);
+  void EnrollUserMeshGenerator(enum direction dir, MeshGenFunc_t my_mg);
+  void EnrollUserSourceTermFunction(SrcTermFunc_t my_func);
 
   void LoadBalancing(Real *clist, int *rlist, int *slist, int *nlist, int nb);
 
@@ -154,6 +155,7 @@ private:
   friend class BoundaryValues;
   friend class Coordinates;
   friend class MeshRefinement;
+  friend class HydroSourceTerms;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
@@ -188,9 +190,9 @@ public:
 
 
 //--------------------------------------------------------------------------------------
-// \!fn Real Mesh::MeshGeneratorX1(Real x, RegionSize rs)
+// \!fn Real DefaultMeshGeneratorX1(Real x, RegionSize rs)
 // \brief x1 mesh generator function, x is the logical location; x=i/nx1
-inline Real Mesh::MeshGeneratorX1(Real x, RegionSize rs)
+inline Real DefaultMeshGeneratorX1(Real x, RegionSize rs)
 {
   Real lw, rw;
   if(rs.x1rat==1.0)
@@ -206,9 +208,9 @@ inline Real Mesh::MeshGeneratorX1(Real x, RegionSize rs)
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn Real Mesh::MeshGeneratorX2(Real x, RegionSize rs)
+// \!fn Real DefaultMeshGeneratorX2(Real x, RegionSize rs)
 // \brief x2 mesh generator function, x is the logical location; x=j/nx2
-inline Real Mesh::MeshGeneratorX2(Real x, RegionSize rs)
+inline Real DefaultMeshGeneratorX2(Real x, RegionSize rs)
 {
   Real lw, rw;
   if(rs.x2rat==1.0)
@@ -224,9 +226,9 @@ inline Real Mesh::MeshGeneratorX2(Real x, RegionSize rs)
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn Real Mesh::MeshGeneratorX3(Real x, RegionSize rs)
+// \!fn Real DefaultMeshGeneratorX3(Real x, RegionSize rs)
 // \brief x3 mesh generator function, x is the logical location; x=k/nx3
-inline Real Mesh::MeshGeneratorX3(Real x, RegionSize rs)
+inline Real DefaultMeshGeneratorX3(Real x, RegionSize rs)
 {
   Real lw, rw;
   if(rs.x3rat==1.0)

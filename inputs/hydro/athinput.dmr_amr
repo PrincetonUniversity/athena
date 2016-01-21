@@ -34,6 +34,7 @@ x3min      = -0.5      # minimum value of X3
 x3max      = 0.5       # maximum value of X3
 
 refinement = adaptive
+derefine_count = 5
 numlevel   = 3
 
 <meshblock>

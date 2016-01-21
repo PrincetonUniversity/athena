@@ -456,102 +456,105 @@ Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 //   cons: source terms added to k,j-slice of 3D array of conserved variables
 // Notes:
 //   all source terms computed in this function
-void Coordinates::CoordSrcTerms(const int k, const int j, const Real dt,
-  const AthenaArray<Real> *flux, const AthenaArray<Real> &prim,
-  const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons)
+void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+ const AthenaArray<Real> &prim, const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons)
 {
   // Extract ratio of specific heats
   const Real gamma_adi = pmy_block->phydro->peos->GetGamma();
 
-  // Calculate metric coefficients
-  CellMetric(k, j, pmy_block->is, pmy_block->ie, g_, gi_);
-
   // Go through cells
-  #pragma simd
-  for (int i = pmy_block->is; i <= pmy_block->ie; ++i)
-  {
-    // Extract metric coefficients
-    const Real &g_00 = g_(I00,i);
-    const Real &g_01 = 0.0;
-    const Real &g_02 = 0.0;
-    const Real &g_03 = 0.0;
-    const Real &g_10 = 0.0;
-    const Real &g_11 = g_(I11,i);
-    const Real &g_12 = g_(I12,i);
-    const Real &g_13 = 0.0;
-    const Real &g_20 = 0.0;
-    const Real &g_21 = g_(I12,i);
-    const Real &g_22 = g_(I22,i);
-    const Real &g_23 = 0.0;
-    const Real &g_30 = 0.0;
-    const Real &g_31 = 0.0;
-    const Real &g_32 = 0.0;
-    const Real &g_33 = g_(I33,i);
-    const Real &g01 = 0.0;
-    const Real &g02 = 0.0;
-    const Real &g03 = 0.0;
-    Real alpha = std::sqrt(-1.0/gi_(I00,i));
+  for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
+#pragma omp parallel for schedule(static)
+    for (int j=pmy_block->js; j<=pmy_block->je; ++j) {
+      // Calculate metric coefficients
+      CellMetric(k, j, pmy_block->is, pmy_block->ie, g_, gi_);
+      #pragma simd
+      for (int i = pmy_block->is; i <= pmy_block->ie; ++i)
+      {
+        // Extract metric coefficients
+        const Real &g_00 = g_(I00,i);
+        const Real &g_01 = 0.0;
+        const Real &g_02 = 0.0;
+        const Real &g_03 = 0.0;
+        const Real &g_10 = 0.0;
+        const Real &g_11 = g_(I11,i);
+        const Real &g_12 = g_(I12,i);
+        const Real &g_13 = 0.0;
+        const Real &g_20 = 0.0;
+        const Real &g_21 = g_(I12,i);
+        const Real &g_22 = g_(I22,i);
+        const Real &g_23 = 0.0;
+        const Real &g_30 = 0.0;
+        const Real &g_31 = 0.0;
+        const Real &g_32 = 0.0;
+        const Real &g_33 = g_(I33,i);
+        const Real &g01 = 0.0;
+        const Real &g02 = 0.0;
+        const Real &g03 = 0.0;
+        Real alpha = std::sqrt(-1.0/gi_(I00,i));
 
-    // Extract primitives
-    const Real &rho = prim(IDN,k,j,i);
-    const Real &pgas = prim(IEN,k,j,i);
-    const Real &uu1 = prim(IVX,k,j,i);
-    const Real &uu2 = prim(IVY,k,j,i);
-    const Real &uu3 = prim(IVZ,k,j,i);
+        // Extract primitives
+        const Real &rho = prim(IDN,k,j,i);
+        const Real &pgas = prim(IEN,k,j,i);
+        const Real &uu1 = prim(IVX,k,j,i);
+        const Real &uu2 = prim(IVY,k,j,i);
+        const Real &uu3 = prim(IVZ,k,j,i);
 
-    // Calculate 4-velocity
-    Real tmp = g_11*uu1*uu1 + 2.0*g_12*uu1*uu2 + 2.0*g_13*uu1*uu3
-             + g_22*uu2*uu2 + 2.0*g_23*uu2*uu3
-             + g_33*uu3*uu3;
-    Real gamma = std::sqrt(1.0 + tmp);
-    Real u0 = gamma / alpha;
-    Real u1 = uu1 - alpha * gamma * g01;
-    Real u2 = uu2 - alpha * gamma * g02;
-    Real u3 = uu3 - alpha * gamma * g03;
-    Real u_0 = g_00*u0 + g_01*u1 + g_02*u2 + g_03*u3;
-    Real u_1 = g_10*u0 + g_11*u1 + g_12*u2 + g_13*u3;
-    Real u_2 = g_20*u0 + g_21*u1 + g_22*u2 + g_23*u3;
-    Real u_3 = g_30*u0 + g_31*u1 + g_32*u2 + g_33*u3;
+        // Calculate 4-velocity
+        Real tmp = g_11*uu1*uu1 + 2.0*g_12*uu1*uu2 + 2.0*g_13*uu1*uu3
+                 + g_22*uu2*uu2 + 2.0*g_23*uu2*uu3
+                 + g_33*uu3*uu3;
+        Real gamma = std::sqrt(1.0 + tmp);
+        Real u0 = gamma / alpha;
+        Real u1 = uu1 - alpha * gamma * g01;
+        Real u2 = uu2 - alpha * gamma * g02;
+        Real u3 = uu3 - alpha * gamma * g03;
+        Real u_0 = g_00*u0 + g_01*u1 + g_02*u2 + g_03*u3;
+        Real u_1 = g_10*u0 + g_11*u1 + g_12*u2 + g_13*u3;
+        Real u_2 = g_20*u0 + g_21*u1 + g_22*u2 + g_23*u3;
+        Real u_3 = g_30*u0 + g_31*u1 + g_32*u2 + g_33*u3;
 
-    // Extract and calculate magnetic field
-    Real b0 = 0.0, b1 = 0.0, b2 = 0.0, b3 = 0.0;
-    Real b_0 = 0.0, b_1 = 0.0, b_2 = 0.0, b_3 = 0.0;
-    Real b_sq = 0.0;
-    if (MAGNETIC_FIELDS_ENABLED)
-    {
-      const Real &bb1 = bb_cc(IB1,k,j,i);
-      const Real &bb2 = bb_cc(IB2,k,j,i);
-      const Real &bb3 = bb_cc(IB3,k,j,i);
-      b0 =
-            g_10*bb1*u0 + g_11*bb1*u1 + g_12*bb1*u2 + g_13*bb1*u3
-          + g_20*bb2*u0 + g_21*bb2*u1 + g_22*bb2*u2 + g_23*bb2*u3
-          + g_30*bb3*u0 + g_31*bb3*u1 + g_32*bb3*u2 + g_33*bb3*u3;
-      b1 = (bb1 + b0 * u1) / u0;
-      b2 = (bb2 + b0 * u2) / u0;
-      b3 = (bb3 + b0 * u3) / u0;
-      b_0 = g_00*b0 + g_01*b1 + g_02*b2 + g_03*b3;
-      b_1 = g_10*b0 + g_11*b1 + g_12*b2 + g_13*b3;
-      b_2 = g_20*b0 + g_21*b1 + g_22*b2 + g_23*b3;
-      b_3 = g_30*b0 + g_31*b1 + g_32*b2 + g_33*b3;
-      b_sq = b0*b_0 + b1*b_1 + b2*b_2 + b3*b_3;
+        // Extract and calculate magnetic field
+        Real b0 = 0.0, b1 = 0.0, b2 = 0.0, b3 = 0.0;
+        Real b_0 = 0.0, b_1 = 0.0, b_2 = 0.0, b_3 = 0.0;
+        Real b_sq = 0.0;
+        if (MAGNETIC_FIELDS_ENABLED)
+        {
+          const Real &bb1 = bb_cc(IB1,k,j,i);
+          const Real &bb2 = bb_cc(IB2,k,j,i);
+          const Real &bb3 = bb_cc(IB3,k,j,i);
+          b0 =
+                g_10*bb1*u0 + g_11*bb1*u1 + g_12*bb1*u2 + g_13*bb1*u3
+              + g_20*bb2*u0 + g_21*bb2*u1 + g_22*bb2*u2 + g_23*bb2*u3
+              + g_30*bb3*u0 + g_31*bb3*u1 + g_32*bb3*u2 + g_33*bb3*u3;
+          b1 = (bb1 + b0 * u1) / u0;
+          b2 = (bb2 + b0 * u2) / u0;
+          b3 = (bb3 + b0 * u3) / u0;
+          b_0 = g_00*b0 + g_01*b1 + g_02*b2 + g_03*b3;
+          b_1 = g_10*b0 + g_11*b1 + g_12*b2 + g_13*b3;
+          b_2 = g_20*b0 + g_21*b1 + g_22*b2 + g_23*b3;
+          b_3 = g_30*b0 + g_31*b1 + g_32*b2 + g_33*b3;
+          b_sq = b0*b_0 + b1*b_1 + b2*b_2 + b3*b_3;
+        }
+
+        // Calculate stress-energy tensor
+        Real wtot = rho + gamma_adi/(gamma_adi-1.0) * pgas + b_sq;
+        Real ptot = pgas + 0.5*b_sq;
+        Real t1_2 = wtot*u1*u_2 - b1*b_2;
+
+        // Calculate connection coefficients
+        const Real &gamma2_11 = coord_src_i1_(i);
+
+        // Calculate source terms
+        Real s_1 = gamma2_11*t1_2;
+
+        // Extract conserved quantities
+        Real &m_1 = cons(IM1,k,j,i);
+
+        // Add source terms to conserved quantities
+        m_1 += dt * s_1;
+      }
     }
-
-    // Calculate stress-energy tensor
-    Real wtot = rho + gamma_adi/(gamma_adi-1.0) * pgas + b_sq;
-    Real ptot = pgas + 0.5*b_sq;
-    Real t1_2 = wtot*u1*u_2 - b1*b_2;
-
-    // Calculate connection coefficients
-    const Real &gamma2_11 = coord_src_i1_(i);
-
-    // Calculate source terms
-    Real s_1 = gamma2_11*t1_2;
-
-    // Extract conserved quantities
-    Real &m_1 = cons(IM1,k,j,i);
-
-    // Add source terms to conserved quantities
-    m_1 += dt * s_1;
   }
   return;
 }

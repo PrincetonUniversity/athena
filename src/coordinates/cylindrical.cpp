@@ -294,31 +294,35 @@ Real Coordinates::GetCellVolume(const int k, const int j, const int i)
 //--------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term functions
 
-void Coordinates::CoordSrcTerms(const int k, const int j, const Real dt,
-  const AthenaArray<Real> *flux,
+void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
   Real iso_cs = pmy_block->phydro->peos->GetIsoSoundSpeed();
 
+  for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
+#pragma omp parallel for schedule(static)
+    for (int j=pmy_block->js; j<=pmy_block->je; ++j) {
 #pragma simd
-  for (int i=(pmy_block->is); i<=(pmy_block->ie); ++i) {
-    // src_1 = <M_{phi phi}><1/r>
-    Real m_pp = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM2,k,j,i);
-    if (NON_BAROTROPIC_EOS) {
-       m_pp += prim(IEN,k,j,i);
-    } else {
-       m_pp += (iso_cs*iso_cs)*prim(IDN,k,j,i);
-    }
-    if (MAGNETIC_FIELDS_ENABLED) {
-       m_pp += 0.5*( SQR(bcc(IB1,k,j,i)) - SQR(bcc(IB2,k,j,i)) + SQR(bcc(IB3,k,j,i)) );
-    }
-    u(IM1,k,j,i) += dt*coord_src1_i_(i)*m_pp;
+      for (int i=pmy_block->is; i<=pmy_block->ie; ++i) {
+        // src_1 = <M_{phi phi}><1/r>
+        Real m_pp = prim(IDN,k,j,i)*prim(IM2,k,j,i)*prim(IM2,k,j,i);
+        if (NON_BAROTROPIC_EOS) {
+           m_pp += prim(IEN,k,j,i);
+        } else {
+           m_pp += (iso_cs*iso_cs)*prim(IDN,k,j,i);
+        }
+        if (MAGNETIC_FIELDS_ENABLED) {
+           m_pp += 0.5*( SQR(bcc(IB1,k,j,i)) - SQR(bcc(IB2,k,j,i)) + SQR(bcc(IB3,k,j,i)) );
+        }
+        u(IM1,k,j,i) += dt*coord_src1_i_(i)*m_pp;
 
-    // src_2 = -< M_{phi r} ><1/r>
-    Real& x_i   = x1f(i);
-    Real& x_ip1 = x1f(i+1);
-    u(IM2,k,j,i) -= dt*coord_src2_i_(i)*(x_i*flux[x1face](IM2,k,j,i)
-                                       + x_ip1*flux[x1face](IM2,k,j,i+1));
+        // src_2 = -< M_{phi r} ><1/r>
+        Real& x_i   = x1f(i);
+        Real& x_ip1 = x1f(i+1);
+        u(IM2,k,j,i) -= dt*coord_src2_i_(i)*(x_i*flux[x1face](IM2,k,j,i)
+                                           + x_ip1*flux[x1face](IM2,k,j,i+1));
+      }
+    }
   }
 
   return;

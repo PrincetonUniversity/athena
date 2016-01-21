@@ -18,15 +18,12 @@
 class Hydro;
 class ParameterInput;
 
-typedef void (*SrcTermFunc_t)(const Real time, const Real dt,
-  const AthenaArray<Real> &prim, AthenaArray<Real> &cons);
-
 //! \class HydroSourceTerms
 //  \brief data and functions for physical source terms in the hydro
 
 class HydroSourceTerms {
 public:
-  HydroSourceTerms(Hydro *pf, ParameterInput *pin);
+  HydroSourceTerms(Hydro *phyd, ParameterInput *pin);
   ~HydroSourceTerms();
 
   Real GetGM() const {return gm_;}
@@ -34,11 +31,10 @@ public:
   Real GetG2() const {return g2_;}
   Real GetG3() const {return g3_;}
 
-  void PhysicalSourceTerms(int k, int j, const Real dt, 
-    const AthenaArray<Real> *flx, const AthenaArray<Real> &p, AthenaArray<Real> &c);
+  void PhysicalSourceTerms(const Real dt, const AthenaArray<Real> *flx,
+                           const AthenaArray<Real> &p, AthenaArray<Real> &c);
   void EnrollSrcTermFunction(SrcTermFunc_t my_func);
-  void (*UserSourceTerm)(const Real time, const Real dt, const AthenaArray<Real> &prim,
-    AthenaArray<Real> &cons);
+  SrcTermFunc_t UserSourceTerm;
 
 private:
   Hydro *pmy_hydro_;  // ptr to Hydro containing this HydroSourceTerms
