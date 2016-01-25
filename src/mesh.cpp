@@ -1021,6 +1021,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   nerr=0;
   if(resfile.Read(phydro->u.GetArrayPointer(),sizeof(Real),
                          phydro->u.GetSize())!=phydro->u.GetSize()) nerr++;
+  // copy it into the half-step arrays
+  memcpy(phydro->u1.GetArrayPointer(), phydro->u.GetArrayPointer(),
+         phydro->u.GetSize()*sizeof(Real));
   if (GENERAL_RELATIVITY) {
     if(resfile.Read(phydro->w.GetArrayPointer(),sizeof(Real),
                            phydro->w.GetSize())!=phydro->w.GetSize()) nerr++;
@@ -1034,7 +1037,15 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
                pfield->b.x2f.GetSize())!=pfield->b.x2f.GetSize()) nerr++;
     if(resfile.Read(pfield->b.x3f.GetArrayPointer(),sizeof(Real),
                pfield->b.x3f.GetSize())!=pfield->b.x3f.GetSize()) nerr++;
+    memcpy(pfield->b1.x1f.GetArrayPointer(), pfield->b.x1f.GetArrayPointer(),
+           pfield->b.x1f.GetSize()*sizeof(Real));
+    memcpy(pfield->b1.x2f.GetArrayPointer(), pfield->b.x2f.GetArrayPointer(),
+           pfield->b.x2f.GetSize()*sizeof(Real));
+    memcpy(pfield->b1.x3f.GetArrayPointer(), pfield->b.x3f.GetArrayPointer(),
+           pfield->b.x3f.GetSize()*sizeof(Real));
   }
+
+
   if(nerr>0) {
     msg << "### FATAL ERROR in MeshBlock constructor" << std::endl
         << "The restarting file is broken." << std::endl;
