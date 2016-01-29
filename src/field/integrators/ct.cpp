@@ -75,8 +75,8 @@ void FieldIntegrator::CT(MeshBlock *pmb, FaceField &b, AthenaArray<Real> &w,
   for (int k=ks; k<=ke; ++k) {
     // reset loop limits for polar boundary
     int jl=js; int ju=je+1;
-    if (pmb->block_bcs[INNER_X2] == 5) jl=js+1;
-    if (pmb->block_bcs[OUTER_X2] == 5) ju=je;
+    if (pmb->block_bcs[INNER_X2] == POLAR_BNDRY) jl=js+1;
+    if (pmb->block_bcs[OUTER_X2] == POLAR_BNDRY) ju=je;
 #pragma omp for schedule(static)
     for (int j=jl; j<=ju; ++j) {
       pmb->pcoord->Face2Area(k,j,is,ie,area);
@@ -147,8 +147,8 @@ void FieldIntegrator::CT(MeshBlock *pmb, FaceField &b, AthenaArray<Real> &w,
     for (int k=ks; k<=ke; ++k) {
       // reset loop limits for polar boundary
       int jl=js; int ju=je+1;
-      if (pmb->block_bcs[INNER_X2] == 5) jl=js+1;
-      if (pmb->block_bcs[OUTER_X2] == 5) ju=je;
+      if (pmb->block_bcs[INNER_X2] == POLAR_BNDRY) jl=js+1;
+      if (pmb->block_bcs[OUTER_X2] == POLAR_BNDRY) ju=je;
       for (int j=jl; j<=ju; ++j) {
         pmb->pcoord->Face2Area(k,j,is,ie,area);
         pmb->pcoord->Edge1Length(k  ,j,is,ie,len);

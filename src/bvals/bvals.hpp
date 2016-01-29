@@ -29,6 +29,7 @@ class ParameterInput;
 class Coordinates;
 struct FaceField;
 struct NeighborBlock;
+struct PolarNeighborBlock;
 
 // identifiers for all 6 faces of a MeshBlock on which boundary conditions are applied
 enum BoundaryFace {FACE_UNDEF=-1, INNER_X1=0, OUTER_X1=1, INNER_X2=2, OUTER_X2=3, 
@@ -116,9 +117,11 @@ public:
 
   int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
   int LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
+  int LoadEMFBoundaryPolarBuffer(Real *buf, const PolarNeighborBlock &nb);
   void SendEMFCorrection(int step);
   void SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb);
   void SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb);
+  void SetEMFBoundaryPolar(Real **buf_list, int num_bufs, bool north);
   void ClearCoarseEMFBoundary(void);
   void AverageEMFBoundary(void);
   void PolarSingleEMF(void);
@@ -148,17 +151,25 @@ private:
   enum boundary_status hydro_flag_[NSTEP][56], field_flag_[NSTEP][56];
   enum boundary_status flcor_flag_[NSTEP][6][2][2];
   enum boundary_status emfcor_flag_[NSTEP][48];
+  enum boundary_status *emf_north_flag_[NSTEP];
+  enum boundary_status *emf_south_flag_[NSTEP];
   Real *hydro_send_[NSTEP][56],  *hydro_recv_[NSTEP][56];
   Real *field_send_[NSTEP][56],  *field_recv_[NSTEP][56];
   Real *flcor_send_[NSTEP][6],   *flcor_recv_[NSTEP][6][2][2];
   Real *emfcor_send_[NSTEP][48], *emfcor_recv_[NSTEP][48];
-  AthenaArray<Real> sarea_[2], exc;
+  Real **emf_north_send_[NSTEP], **emf_north_recv_[NSTEP];
+  Real **emf_south_send_[NSTEP], **emf_south_recv_[NSTEP];
+  AthenaArray<Real> sarea_[2];
+  AthenaArray<Real> exc_;
+  int num_north_polar_blocks_, num_south_polar_blocks_;
 
 #ifdef MPI_PARALLEL
   MPI_Request req_hydro_send_[NSTEP][56],  req_hydro_recv_[NSTEP][56];
   MPI_Request req_field_send_[NSTEP][56],  req_field_recv_[NSTEP][56];
   MPI_Request req_flcor_send_[NSTEP][6],   req_flcor_recv_[NSTEP][6][2][2];
   MPI_Request req_emfcor_send_[NSTEP][48], req_emfcor_recv_[NSTEP][48];
+  MPI_Request *req_emf_north_send_[NSTEP], *req_emf_north_recv_[NSTEP];
+  MPI_Request *req_emf_south_send_[NSTEP], *req_emf_south_recv_[NSTEP];
 #endif
   // temporary
   friend class Mesh;
