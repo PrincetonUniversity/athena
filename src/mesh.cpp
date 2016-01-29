@@ -935,12 +935,12 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     pfield = new Field(this, pin);
   pbval  = new BoundaryValues(this, pin);
   if (block_bcs[INNER_X2] == POLAR_BNDRY) {
-    int level = pmy_mesh->current_level - pmy_mesh->root_level;
+    int level = loc.level - pmy_mesh->root_level;
     int num_north_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
     polar_neighbor_north = new PolarNeighborBlock[num_north_polar_blocks];
   }
   if (block_bcs[OUTER_X2] == POLAR_BNDRY) {
-    int level = pmy_mesh->current_level - pmy_mesh->root_level;
+    int level = loc.level - pmy_mesh->root_level;
     int num_south_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
     polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
   }
@@ -1026,12 +1026,12 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     pfield = new Field(this, pin);
   pbval  = new BoundaryValues(this, pin);
   if (block_bcs[INNER_X2] == POLAR_BNDRY) {
-    int level = pmy_mesh->current_level - pmy_mesh->root_level;
+    int level = loc.level - pmy_mesh->root_level;
     int num_north_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
     polar_neighbor_north = new PolarNeighborBlock[num_north_polar_blocks];
   }
   if (block_bcs[OUTER_X2] == POLAR_BNDRY) {
-    int level = pmy_mesh->current_level - pmy_mesh->root_level;
+    int level = loc.level - pmy_mesh->root_level;
     int num_south_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
     polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
   }
@@ -1716,7 +1716,7 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
 
   // polar neighbors
   if (block_bcs[INNER_X2] == POLAR_BNDRY) {
-    int level = pmy_mesh->current_level - pmy_mesh->root_level;
+    int level = loc.level - pmy_mesh->root_level;
     int num_north_polar_blocks = nrbx3 * (1 << level);
     for (int n = 0; n < num_north_polar_blocks; ++n) {
       LogicalLocation neighbor_loc;
@@ -1733,7 +1733,7 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
     }
   }
   if (block_bcs[OUTER_X2] == POLAR_BNDRY) {
-    int level = pmy_mesh->current_level - pmy_mesh->root_level;
+    int level = loc.level - pmy_mesh->root_level;
     int num_south_polar_blocks = nrbx3 * (1 << level);
     for (int n = 0; n < num_south_polar_blocks; ++n) {
       LogicalLocation neighbor_loc;
