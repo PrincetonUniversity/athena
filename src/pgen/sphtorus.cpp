@@ -239,14 +239,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie+1; i++) {
-          pfield->b.x1f(k,j,i)  = magr(this,i,j,k);
+          pfield->b.x1f(k,j,i) = magr(this,i,j,k);
         }
       }
     }
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je+1; j++) {
         for (int i=is; i<=ie; i++) {
-          pfield->b.x2f(k,j,i)  = magt(this,i,j,k);
+          pfield->b.x2f(k,j,i) = magt(this,i,j,k);
         }
       }
     }
@@ -295,7 +295,6 @@ void MeshBlock::UserWorkInLoop(void)
 void stbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
               int is, int ie, int js, int je, int ks, int ke)
 {
-  Real pg;
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=1; i<=(NGHOST); i++) {
@@ -303,16 +302,35 @@ void stbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField 
         a(IM1,k,j,is-i) = 0.0;
         a(IM2,k,j,is-i) = a(IM2,k,j,is); //corotating ghost region
         a(IM3,k,j,is-i) = a(IM3,k,j,is);
-        pg = (a(IEN,k,j,is-i+1)
-             -0.5*(SQR(a(IM1,k,j,is-i+1))+SQR(a(IM2,k,j,is-i+1))+SQR(a(IM3,k,j,is-i+1)))/a(IDN,k,j,is-i+1)
-             -0.5*(SQR(a(IB1,k,j,is-i+1))+SQR(a(IB2,k,j,is-i+1))+SQR(a(IB3,k,j,is-i+1))))*(gmgas-1.0);
-        pg-=gm/SQR(pco->x1f(is-i+1))*a(IDN,k,j,is-i+1)*pco->dx1v(is-i);
-        a(IEN,k,j,is-i)=pg/(gmgas-1.0)+0.5*SQR(a(IM1,k,j,is-i))/a(IDN,k,j,is-i);
+        a(IEN,k,j,is-i)=a(IEN,k,j,is-i+1)-gm/SQR(pco->x1f(is-i+1))*a(IDN,k,j,is-i+1)*pco->dx1v(is-i);
       }
     }
   }
-  if (MAGNETIC_FIELDS_ENABLED)
-    OutflowInnerX1(pmb, a, b, is, ie, js, je, ks, ke);
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
+#pragma simd
+      for (int i=1; i<=(NGHOST); ++i) {
+        b.x1f(k,j,(is-i)) = b.x1f(k,j,is);
+      }
+    }}
+
+    for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je+1; ++j) {
+#pragma simd
+      for (int i=1; i<=(NGHOST); ++i) {
+        b.x2f(k,j,(is-i)) = b.x2f(k,j,is);
+      }
+    }}
+
+    for (int k=ks; k<=ke+1; ++k) {
+    for (int j=js; j<=je; ++j) {
+#pragma simd
+      for (int i=1; i<=(NGHOST); ++i) {
+        b.x3f(k,j,(is-i)) = b.x3f(k,j,is);
+      }
+    }}
+  }
   return;
 }
 
@@ -329,15 +347,35 @@ void stbv_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField 
         a(IM3,k,j,ie+i) = a(IM3,k,j,ie);
         a(IEN,k,j,ie+i) = a(IEN,k,j,ie);
         if(a(IM1,k,j,ie+i) < 0.0)
-        {
-          a(IEN,k,j,ie+i) -= 0.5*SQR(a(IM1,k,j,ie+i))/a(IDN,k,j,ie+i);
           a(IM1,k,j,ie+i) = 0.0;
-        }
       }
     }
   }
-  if (MAGNETIC_FIELDS_ENABLED)
-    OutflowOuterX1(pmb, a, b, is, ie, js, je, ks, ke);
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
+#pragma simd
+      for (int i=1; i<=(NGHOST); ++i) {
+        b.x1f(k,j,(ie+i+1)) = b.x1f(k,j,(ie+1));
+      }
+    }}
+
+    for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je+1; ++j) {
+#pragma simd
+      for (int i=1; i<=(NGHOST); ++i) {
+        b.x2f(k,j,(ie+i)) = b.x2f(k,j,ie);
+      }
+    }}
+
+    for (int k=ks; k<=ke+1; ++k) {
+    for (int j=js; j<=je; ++j) {
+#pragma simd
+      for (int i=1; i<=(NGHOST); ++i) {
+        b.x3f(k,j,(ie+i)) = b.x3f(k,j,ie);
+      }
+    }}
+  }
   return;
 }
 
@@ -354,15 +392,35 @@ void stbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField 
         a(IM3,k,js-j,i) = a(IM3,k,js,i);
         a(IEN,k,js-j,i) = a(IEN,k,js,i);
         if(a(IM2,k,js-j,i) > 0.0)
-        {
-          a(IEN,k,js-j,i) -= 0.5*SQR(a(IM2,k,js-j,i))/a(IDN,k,js-j,i);
           a(IM2,k,js-j,i) = 0.0;
-        }
       }
     }
   }
-  if (MAGNETIC_FIELDS_ENABLED)
-    OutflowInnerX2(pmb, a, b, is, ie, js, je, ks, ke);
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for (int k=ks; k<=ke; ++k) {
+    for (int j=1; j<=(NGHOST); ++j) {
+#pragma simd
+      for (int i=is; i<=ie+1; ++i) {
+        b.x1f(k,(js-j),i) = b.x1f(k,js,i);
+      }
+    }}
+
+    for (int k=ks; k<=ke; ++k) {
+    for (int j=1; j<=(NGHOST); ++j) {
+#pragma simd
+      for (int i=is; i<=ie; ++i) {
+        b.x2f(k,(js-j),i) = b.x2f(k,js,i);
+      }
+    }}
+
+    for (int k=ks; k<=ke+1; ++k) {
+    for (int j=1; j<=(NGHOST); ++j) {
+#pragma simd
+      for (int i=is; i<=ie; ++i) {
+        b.x3f(k,(js-j),i) = b.x3f(k,js,i);
+      }
+    }}
+  }
   return;
 }
 
@@ -379,15 +437,35 @@ void stbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField 
         a(IM3,k,je+j,i) = a(IM3,k,je,i);
         a(IEN,k,je+j,i) = a(IEN,k,je,i);
         if(a(IM2,k,je+j,i) < 0.0)
-        {
-          a(IEN,k,je+j,i) -= 0.5*SQR(a(IM2,k,je+j,i))/a(IDN,k,je+j,i);
           a(IM2,k,je+j,i) = 0.0;
-        }
       }
     }
   }
-  if (MAGNETIC_FIELDS_ENABLED)
-    OutflowOuterX2(pmb, a, b, is, ie, js, je, ks, ke);
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for (int k=ks; k<=ke; ++k) {
+    for (int j=1; j<=(NGHOST); ++j) {
+#pragma simd
+      for (int i=is; i<=ie+1; ++i) {
+        b.x1f(k,(je+j  ),i) = b.x1f(k,(je  ),i);
+      }
+    }}
+
+    for (int k=ks; k<=ke; ++k) {
+    for (int j=1; j<=(NGHOST); ++j) {
+#pragma simd
+      for (int i=is; i<=ie; ++i) {
+        b.x2f(k,(je+j+1),i) = b.x2f(k,(je+1),i);
+      }
+    }}
+
+    for (int k=ks; k<=ke+1; ++k) {
+    for (int j=1; j<=(NGHOST); ++j) {
+#pragma simd
+      for (int i=is; i<=ie; ++i) {
+        b.x3f(k,(je+j  ),i) = b.x3f(k,(je  ),i);
+      }
+    }}
+  }
   return;
 }
 
