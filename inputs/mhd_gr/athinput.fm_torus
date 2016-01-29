@@ -6,12 +6,12 @@ reference = Fishbone & Moncrief 1976, ApJ 207 962 (FM)
 problem_id = fm_torus
 
 <output1>
-file_type   = athdf
+file_type   = hdf5
 variable    = prim
 dt          = 1.0
 
 <output2>
-file_type   = athdf
+file_type   = hdf5
 variable    = cons
 dt          = 1.0
 
