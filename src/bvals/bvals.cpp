@@ -3184,12 +3184,14 @@ void BoundaryValues::SetEMFBoundaryPolar(Real **buf_list, int num_bufs, bool nor
 {
   MeshBlock *pmb = pmy_mblock_;
   int j = north ? pmb->js : pmb->je+1;
+  int count = 0;
   for (int i = pmb->is; i <= pmb->ie; ++i) {
     Real val = 0.0;
     for (int n = 0; n < num_bufs; ++n)
-      val += buf_list[n][i];
+      val += buf_list[n][count];
     for (int k = pmb->ks-NGHOST; k <= pmb->ke+NGHOST+1; ++k)
       pmb->pfield->e.x1e(k, j, i) = val / num_bufs;
+    ++count;
   }
   return;
 }
