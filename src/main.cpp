@@ -379,8 +379,12 @@ int main(int argc, char *argv[])
   } // END OF MAIN INTEGRATION LOOP ====================================================
 
 #ifdef MPI_PARALLEL
-  if(walltime_flag==1)
-    MPI_Cancel(&wtreq); // cancel unused broadcast for walltime limit
+  if(walltime_flag==1) {
+    // terminate the unused broadcast
+    if(Globals::my_rank==0)
+      MPI_Ibcast(&nwtlim,1,MPI_INT,0,MPI_COMM_WORLD,&wtreq);
+    MPI_Wait(&wtreq,MPI_STATUS_IGNORE);
+  }
 #endif
   if(walltime_flag==2) { // hit the wall time limit
 #ifdef MPI_PARALLEL
