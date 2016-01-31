@@ -45,10 +45,10 @@ RestartOutput::RestartOutput(OutputParameters oparams)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
+//! \fn void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag)
 //  \brief open the restarting file, output the parameter and header blocks
 
-void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
+void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag)
 {
   std::stringstream msg;
   std::string fname;
@@ -68,14 +68,19 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin)
   fname.append(".");
   fname.append(output_params.file_id);
   fname.append(".");
-  fname.append(number);
+  if(wtflag==false) 
+    fname.append(number);
+  else 
+    fname.append("last");
   fname.append(".rst");
 
   // count up here for the restarting file.
-  output_params.file_number++;
-  output_params.next_time += output_params.dt;
-  pin->SetInteger(output_params.block_name, "file_number", output_params.file_number);
-  pin->SetReal(output_params.block_name, "next_time", output_params.next_time);
+  if(wtflag==false) {
+    output_params.file_number++;
+    output_params.next_time += output_params.dt;
+    pin->SetInteger(output_params.block_name, "file_number", output_params.file_number);
+    pin->SetReal(output_params.block_name, "next_time", output_params.next_time);
+  }
   pin->ParameterDump(ost);
 
   resfile.Open(fname.c_str(),WRAPPER_WRITE_MODE);
