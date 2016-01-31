@@ -50,6 +50,13 @@ typedef struct NeighborBlock {
                    bool ipolar, int ifi1, int ifi2);
 } NeighborBlock;
 
+// Struct for describing neighbors around pole at same radius and polar angle
+typedef struct PolarNeighborBlock {
+  int rank;    // MPI rank of neighbor
+  int lid;     // local ID of neighbor
+  int gid;     // global ID of neighbor
+  bool north;  // flag that is true for North pole and false for South pole
+} PolarNeighborBlock;
 
 //! \struct RegionSize
 //  \brief physical size and number of cells in a Mesh
@@ -68,6 +75,7 @@ typedef struct RegionSize {
 class MeshBlock {
 private:
   NeighborBlock neighbor[56];
+  PolarNeighborBlock *polar_neighbor_north, *polar_neighbor_south;
   Real cost;
   Real new_block_dt;
   unsigned long int finished_tasks[4];

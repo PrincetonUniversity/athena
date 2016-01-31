@@ -208,6 +208,20 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     }
   }
 
+  // Count number of blocks wrapping around pole
+  if (pmb->block_bcs[INNER_X2] == POLAR_BNDRY) {
+    int level = pmb->loc.level - pmb->pmy_mesh->root_level;
+    num_north_polar_blocks_ = pmb->pmy_mesh->nrbx3 * (1 << level);
+  }
+  else
+    num_north_polar_blocks_ = 0;
+  if (pmb->block_bcs[OUTER_X2] == POLAR_BNDRY) {
+    int level = pmb->loc.level - pmb->pmy_mesh->root_level;
+    num_south_polar_blocks_ = pmb->pmy_mesh->nrbx3 * (1 << level);
+  }
+  else
+    num_south_polar_blocks_ = 0;
+
   // Clear flags and requests
   for(int l=0;l<NSTEP;l++) {
     for(int i=0;i<56;i++){
@@ -246,8 +260,45 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         }
       }
     }
+    if (num_north_polar_blocks_ > 0) {
+      emf_north_send_[l] = new Real *[num_north_polar_blocks_];
+      emf_north_recv_[l] = new Real *[num_north_polar_blocks_];
+      emf_north_flag_[l] = new enum boundary_status[num_north_polar_blocks_];
+#ifdef MPI_PARALLEL
+      req_emf_north_send_[l] = new MPI_Request[num_north_polar_blocks_];
+      req_emf_north_recv_[l] = new MPI_Request[num_north_polar_blocks_];
+#endif
+      for (int n = 0; n < num_north_polar_blocks_; ++n) {
+        emf_north_send_[l][n] = NULL;
+        emf_north_recv_[l][n] = NULL;
+        emf_north_flag_[l][n] = boundary_waiting;
+#ifdef MPI_PARALLEL
+        req_emf_north_send_[l][n] = MPI_REQUEST_NULL;
+        req_emf_north_recv_[l][n] = MPI_REQUEST_NULL;
+#endif
+      }
+    }
+    if (num_south_polar_blocks_ > 0) {
+      emf_south_send_[l] = new Real *[num_south_polar_blocks_];
+      emf_south_recv_[l] = new Real *[num_south_polar_blocks_];
+      emf_south_flag_[l] = new enum boundary_status[num_south_polar_blocks_];
+#ifdef MPI_PARALLEL
+      req_emf_south_send_[l] = new MPI_Request[num_south_polar_blocks_];
+      req_emf_south_recv_[l] = new MPI_Request[num_south_polar_blocks_];
+#endif
+      for (int n = 0; n < num_south_polar_blocks_; ++n) {
+        emf_south_send_[l][n] = NULL;
+        emf_south_recv_[l][n] = NULL;
+        emf_south_flag_[l][n] = boundary_waiting;
+#ifdef MPI_PARALLEL
+        req_emf_south_send_[l][n] = MPI_REQUEST_NULL;
+        req_emf_south_recv_[l][n] = MPI_REQUEST_NULL;
+#endif
+      }
+    }
   }
-  // Allocate Buffers
+
+  // Allocate buffers for non-polar neighbor communication
   for(int l=0;l<NSTEP;l++) {
     for(int n=0;n<pmb->pmy_mesh->maxneighbor_;n++) {
       int size=((ni_[n].ox1==0)?pmb->block_size.nx1:NGHOST)
@@ -356,6 +407,26 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     }
   }
 
+  // Allocate buffers for polar neighbor communication
+  if (MAGNETIC_FIELDS_ENABLED) {
+    if (num_north_polar_blocks_ > 0) {
+      for (int l = 0; l < NSTEP; ++l) {
+        for (int n = 0; n < num_north_polar_blocks_; ++n) {
+          emf_north_send_[l][n] = new Real[pmb->block_size.nx1];
+          emf_north_recv_[l][n] = new Real[pmb->block_size.nx1];
+        }
+      }
+    }
+    if (num_south_polar_blocks_ > 0) {
+      for (int l = 0; l < NSTEP; ++l) {
+        for (int n = 0; n < num_south_polar_blocks_; ++n) {
+          emf_south_send_[l][n] = new Real[pmb->block_size.nx1];
+          emf_south_recv_[l][n] = new Real[pmb->block_size.nx1];
+        }
+      }
+    }
+  }
+
   if(pmb->pmy_mesh->multilevel==true) { // SMR or AMR
     // allocate surface area array
     int nc1=pmb->block_size.nx1+2*NGHOST;
@@ -387,7 +458,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   if(pmb->loc.level == pmb->pmy_mesh->root_level &&
      pmb->pmy_mesh->nrbx3 == 1 &&
      (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY))
-       exc.NewAthenaArray(pmb->ke+NGHOST+1);
+       exc_.NewAthenaArray(pmb->ke+NGHOST+1);
 
 }
 
@@ -414,6 +485,24 @@ BoundaryValues::~BoundaryValues()
       }
     }
   }
+  if (MAGNETIC_FIELDS_ENABLED) {
+    if (num_north_polar_blocks_ > 0) {
+      for (int l = 0; l < NSTEP; ++l) {
+        for (int n = 0; n < num_north_polar_blocks_; ++n) {
+          delete[] emf_north_send_[l][n];
+          delete[] emf_north_recv_[l][n];
+        }
+      }
+    }
+    if (num_south_polar_blocks_ > 0) {
+      for (int l = 0; l < NSTEP; ++l) {
+        for (int n = 0; n < num_south_polar_blocks_; ++n) {
+          delete[] emf_south_send_[l][n];
+          delete[] emf_south_recv_[l][n];
+        }
+      }
+    }
+  }
   if(pmb->pmy_mesh->multilevel==true) {
     sarea_[0].DeleteAthenaArray();
     sarea_[1].DeleteAthenaArray();
@@ -427,10 +516,32 @@ BoundaryValues::~BoundaryValues()
       }
     }
   }
+  if (num_north_polar_blocks_ > 0) {
+    for (int l = 0; l < NSTEP; ++l) {
+      delete[] emf_north_send_[l];
+      delete[] emf_north_recv_[l];
+      delete[] emf_north_flag_[l];
+#ifdef MPI_PARALLEL
+      delete[] req_emf_north_send_[l];
+      delete[] req_emf_north_recv_[l];
+#endif
+    }
+  }
+  if (num_south_polar_blocks_ > 0) {
+    for (int l = 0; l < NSTEP; ++l) {
+      delete[] emf_south_send_[l];
+      delete[] emf_south_recv_[l];
+      delete[] emf_south_flag_[l];
+#ifdef MPI_PARALLEL
+      delete[] req_emf_south_send_[l];
+      delete[] req_emf_south_recv_[l];
+#endif
+    }
+  }
   if(pmb->loc.level == pmb->pmy_mesh->root_level &&
      pmb->pmy_mesh->nrbx3 == 1 &&
      (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY))
-       exc.DeleteAthenaArray();
+       exc_.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------
@@ -520,6 +631,7 @@ void BoundaryValues::Initialize(void)
   }
 
 #ifdef MPI_PARALLEL
+  // Initialize non-polar neighbor communications to other ranks
   for(int l=0;l<NSTEP;l++) {
     for(int n=0;n<pmb->nneighbor;n++) {
       NeighborBlock& nb = pmb->neighbor[n];
@@ -715,6 +827,34 @@ void BoundaryValues::Initialize(void)
       }
     }
   }
+
+  // Initialize polar neighbor communications to other ranks
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for (int l = 0; l < NSTEP; ++l) {
+      for (int n = 0; n < num_north_polar_blocks_; ++n) {
+        const PolarNeighborBlock &nb = pmb->polar_neighbor_north[n];
+        if(nb.rank != Globals::my_rank) {
+          tag = CreateMPITag(nb.lid, l, tag_emfpole, n);
+          MPI_Send_init(emf_north_send_[l][n], pmb->block_size.nx1, MPI_ATHENA_REAL,
+              nb.rank, tag, MPI_COMM_WORLD, &req_emf_north_send_[l][n]);
+          tag = CreateMPITag(pmb->lid, l, tag_emfpole, pmb->loc.lx3);
+          MPI_Recv_init(emf_north_recv_[l][n], pmb->block_size.nx1, MPI_ATHENA_REAL,
+              nb.rank, tag, MPI_COMM_WORLD, &req_emf_north_recv_[l][n]);
+        }
+      }
+      for (int n = 0; n < num_south_polar_blocks_; ++n) {
+        const PolarNeighborBlock &nb = pmb->polar_neighbor_south[n];
+        if(nb.rank != Globals::my_rank) {
+          tag = CreateMPITag(nb.lid, l, tag_emfpole, n);
+          MPI_Send_init(emf_south_send_[l][n], pmb->block_size.nx1, MPI_ATHENA_REAL,
+              nb.rank, tag, MPI_COMM_WORLD, &req_emf_south_send_[l][n]);
+          tag = CreateMPITag(pmb->lid, l, tag_emfpole, pmb->loc.lx3);
+          MPI_Recv_init(emf_south_recv_[l][n], pmb->block_size.nx1, MPI_ATHENA_REAL,
+              nb.rank, tag, MPI_COMM_WORLD, &req_emf_south_recv_[l][n]);
+        }
+      }
+    }
+  }
 #endif
   return;
 }
@@ -783,6 +923,20 @@ void BoundaryValues::StartReceivingAll(void)
             || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true)))))
               MPI_Start(&req_emfcor_recv_[l][nb.bufid]);
           }
+        }
+      }
+    }
+    if (MAGNETIC_FIELDS_ENABLED) {
+      for (int n = 0; n < num_north_polar_blocks_; ++n) {
+        const PolarNeighborBlock &nb = pmb->polar_neighbor_north[n];
+        if (nb.rank != Globals::my_rank) {
+          MPI_Start(&req_emf_north_recv_[l][n]);
+        }
+      }
+      for (int n = 0; n < num_south_polar_blocks_; ++n) {
+        const PolarNeighborBlock &nb = pmb->polar_neighbor_south[n];
+        if (nb.rank != Globals::my_rank) {
+          MPI_Start(&req_emf_south_recv_[l][n]);
         }
       }
     }
@@ -1178,12 +1332,12 @@ void BoundaryValues::PolarSingleHydro(AthenaArray<Real> &dst)
         for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
          for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
            for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
-             exc(k)=dst(n,k,j,i);
+             exc_(k)=dst(n,k,j,i);
            }
            for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
              int k_shift = k;
              k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-             dst(n,k,j,i)=exc(k_shift);
+             dst(n,k,j,i)=exc_(k_shift);
            }
          }
         }
@@ -1196,12 +1350,12 @@ void BoundaryValues::PolarSingleHydro(AthenaArray<Real> &dst)
         for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
          for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
            for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
-             exc(k)=dst(n,k,j,i);
+             exc_(k)=dst(n,k,j,i);
            }
            for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
              int k_shift = k;
              k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-             dst(n,k,j,i)=exc(k_shift);
+             dst(n,k,j,i)=exc_(k_shift);
            }
          }
         }
@@ -2202,36 +2356,36 @@ void BoundaryValues::PolarSingleField(FaceField &dst)
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i){
          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
-           exc(k)=dst.x1f(k,j,i);
+           exc_(k)=dst.x1f(k,j,i);
          }
          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
            int k_shift = k;
            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-           dst.x1f(k,j,i)=exc(k_shift);
+           dst.x1f(k,j,i)=exc_(k_shift);
          }
        }
       }
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
-           exc(k)=dst.x2f(k,j,i);
+           exc_(k)=dst.x2f(k,j,i);
          }
          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
            int k_shift = k;
            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-           dst.x2f(k,j,i)=exc(k_shift);
+           dst.x2f(k,j,i)=exc_(k_shift);
          }
        }
       }
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
-           exc(k)=dst.x3f(k,j,i);
+           exc_(k)=dst.x3f(k,j,i);
          }
          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
            int k_shift = k;
            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-           dst.x3f(k,j,i)=exc(k_shift);
+           dst.x3f(k,j,i)=exc_(k_shift);
          }
        }
       }
@@ -2248,36 +2402,36 @@ void BoundaryValues::PolarSingleField(FaceField &dst)
       for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i){
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
-            exc(k)=dst.x1f(k,j,i);
+            exc_(k)=dst.x1f(k,j,i);
           }
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x1f(k,j,i)=exc(k_shift);
+            dst.x1f(k,j,i)=exc_(k_shift);
           }
         }
       }
       for (int j=pmb->je+2; j<=pmb->je+NGHOST+1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
-            exc(k)=dst.x2f(k,j,i);
+            exc_(k)=dst.x2f(k,j,i);
           }
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x2f(k,j,i)=exc(k_shift);
+            dst.x2f(k,j,i)=exc_(k_shift);
           }
         }
       }
       for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
-            exc(k)=dst.x3f(k,j,i);
+            exc_(k)=dst.x3f(k,j,i);
           }
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST+1; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            dst.x3f(k,j,i)=exc(k_shift);
+            dst.x3f(k,j,i)=exc_(k_shift);
           }
         }
       }
@@ -2607,12 +2761,32 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
 }
 
 //--------------------------------------------------------------------------------------
+//! \fn int BoundaryValues::LoadEMFBoundaryPolarBuffer(Real *buf,
+//          const PolarNeighborBlock &nb)
+//  \brief Load EMF values along polar axis into send buffers
+int BoundaryValues::LoadEMFBoundaryPolarBuffer(Real *buf, const PolarNeighborBlock &nb)
+{
+  MeshBlock *pmb = pmy_mblock_;
+  int count = 0;
+  int j = nb.north ? pmb->js : pmb->je+1;
+  for (int i = pmb->is; i <= pmb->ie; ++i) {
+    Real val = 0.0;
+    for (int k = pmb->ks; k <= pmb->ke; ++k) {  // avoid double counting right ends
+      val += pmb->pfield->e.x1e(k, j, i);
+    }
+    buf[count++] = val / (pmb->ke - pmb->ks + 1);
+  }
+  return count;
+}
+
+//--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SendEMFCorrection(int step)
 //  \brief Restrict, pack and send the surace EMF to the coarse neighbor(s) if needed
 void BoundaryValues::SendEMFCorrection(int step)
 {
   MeshBlock *pmb=pmy_mblock_;
 
+  // Send non-polar EMF values
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
     if((nb.type!=neighbor_face) && (nb.type!=neighbor_edge)) break;
@@ -2635,6 +2809,36 @@ void BoundaryValues::SendEMFCorrection(int step)
 #ifdef MPI_PARALLEL
     else
       MPI_Start(&req_emfcor_send_[step][nb.bufid]);
+#endif
+  }
+
+  // Send polar EMF values
+  for (int n = 0; n < num_north_polar_blocks_; ++n) {
+    const PolarNeighborBlock &nb = pmb->polar_neighbor_north[n];
+    int count = LoadEMFBoundaryPolarBuffer(emf_north_send_[step][n], nb);
+    if (nb.rank == Globals::my_rank) { // on the same node
+      MeshBlock *pbl = pmb->pmy_mesh->FindMeshBlock(nb.gid);
+      std::memcpy(pbl->pbval->emf_north_recv_[step][pmb->loc.lx3],
+          emf_north_send_[step][n], count * sizeof(Real));
+      pbl->pbval->emf_north_flag_[step][pmb->loc.lx3] = boundary_arrived;
+    }
+#ifdef MPI_PARALLEL
+    else
+      MPI_Start(&req_emf_north_send_[step][n]);
+#endif
+  }
+  for (int n = 0; n < num_south_polar_blocks_; ++n) {
+    const PolarNeighborBlock &nb = pmb->polar_neighbor_south[n];
+    int count = LoadEMFBoundaryPolarBuffer(emf_south_send_[step][n], nb);
+    if (nb.rank == Globals::my_rank) { // on the same node
+      MeshBlock *pbl = pmb->pmy_mesh->FindMeshBlock(nb.gid);
+      std::memcpy(pbl->pbval->emf_south_recv_[step][pmb->loc.lx3],
+          emf_south_send_[step][n], count * sizeof(Real));
+      pbl->pbval->emf_south_flag_[step][pmb->loc.lx3] = boundary_arrived;
+    }
+#ifdef MPI_PARALLEL
+    else
+      MPI_Start(&req_emf_south_send_[step][n]);
 #endif
   }
   return;
@@ -2972,6 +3176,25 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
   return;
 }
 
+//--------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::SetEMFBoundaryPolar(Real **buf_list, int num_bufs,
+//          bool north)
+//  \brief Overwrite EMF values along polar axis with azimuthal averages
+void BoundaryValues::SetEMFBoundaryPolar(Real **buf_list, int num_bufs, bool north)
+{
+  MeshBlock *pmb = pmy_mblock_;
+  int j = north ? pmb->js : pmb->je+1;
+  int count = 0;
+  for (int i = pmb->is; i <= pmb->ie; ++i) {
+    Real val = 0.0;
+    for (int n = 0; n < num_bufs; ++n)
+      val += buf_list[n][count];
+    for (int k = pmb->ks-NGHOST; k <= pmb->ke+NGHOST+1; ++k)
+      pmb->pfield->e.x1e(k, j, i) = val / num_bufs;
+    ++count;
+  }
+  return;
+}
 
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ClearCoarseEMFBoundary(void)
@@ -3262,12 +3485,12 @@ void BoundaryValues::PolarSingleEMF(void)
         }
         for(int i=pmb->is; i<=pmb->ie+1; i++){
           for(int k=pmb->ks; k<=pmb->ke; k++) {
-            exc(k)=e3(k,j,i);
+            exc_(k)=e3(k,j,i);
           }
           for(int k=pmb->ks; k<=pmb->ke; k++) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            e3(k,j,i)=exc(k_shift);
+            e3(k,j,i)=exc_(k_shift);
           }
         }
       }
@@ -3289,12 +3512,12 @@ void BoundaryValues::PolarSingleEMF(void)
         }
         for(int i=pmb->is; i<=pmb->ie+1; i++){
           for(int k=pmb->ks; k<=pmb->ke; k++) {
-            exc(k)=e3(k,j,i);
+            exc_(k)=e3(k,j,i);
           }
           for(int k=pmb->ks; k<=pmb->ke; k++) {
             int k_shift = k;
             k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            e3(k,j,i)=exc(k_shift);
+            e3(k,j,i)=exc_(k_shift);
           }
         }
       }
@@ -3313,6 +3536,7 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
   MeshBlock *pmb=pmy_mblock_;
   bool flag=true;
 
+  // Receive same-level non-polar EMF values
   if(firsttime_[step]==true) {
     for(int n=0; n<pmb->nneighbor; n++) { // first correct the same level
       NeighborBlock& nb = pmb->neighbor[n];
@@ -3350,6 +3574,7 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
     firsttime_[step]=false;
   }
 
+  // Receive finer non-polar EMF values
   if(pmb->pmy_mesh->multilevel==true) {
     for(int n=0; n<pmb->nneighbor; n++) { // then from finer
       NeighborBlock& nb = pmb->neighbor[n];
@@ -3379,8 +3604,59 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
       emfcor_flag_[step][nb.bufid] = boundary_completed;
     }
   }
+
+  // Receive polar EMF values
+  for (int n = 0; n < num_north_polar_blocks_; ++n) {
+    const PolarNeighborBlock &nb = pmb->polar_neighbor_north[n];
+    if (emf_north_flag_[step][n] == boundary_waiting) {
+      if (nb.rank == Globals::my_rank) { // on the same process
+        flag = false;
+        continue;
+      }
+#ifdef MPI_PARALLEL
+      else {
+        int recv_flag;
+        MPI_Test(&req_emf_north_recv_[step][n], &recv_flag, MPI_STATUS_IGNORE);
+        if (not recv_flag) {
+          flag = false;
+          continue;
+        }
+        emf_north_flag_[step][n] = boundary_arrived;
+      }
+#endif
+    }
+  }
+  for (int n = 0; n < num_south_polar_blocks_; ++n) {
+    const PolarNeighborBlock &nb = pmb->polar_neighbor_south[n];
+    if (emf_south_flag_[step][n] == boundary_waiting) {
+      if (nb.rank == Globals::my_rank) { // on the same process
+        flag = false;
+        continue;
+      }
+#ifdef MPI_PARALLEL
+      else {
+        int recv_flag;
+        MPI_Test(&req_emf_south_recv_[step][n], &recv_flag, MPI_STATUS_IGNORE);
+        if (not recv_flag) {
+          flag = false;
+          continue;
+        }
+        emf_south_flag_[step][n] = boundary_arrived;
+      }
+#endif
+    }
+  }
+
   if(flag==true){
     AverageEMFBoundary();
+    if (num_north_polar_blocks_ > 0)
+      SetEMFBoundaryPolar(emf_north_recv_[step], num_north_polar_blocks_, true);
+    for (int n = 0; n < num_north_polar_blocks_; ++n)
+      emf_north_flag_[step][n] = boundary_completed;
+    if (num_south_polar_blocks_ > 0)
+      SetEMFBoundaryPolar(emf_south_recv_[step], num_south_polar_blocks_, false);
+    for (int n = 0; n < num_south_polar_blocks_; ++n)
+      emf_south_flag_[step][n] = boundary_completed;
     if (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY) PolarSingleEMF();
   }
   return flag;

@@ -934,7 +934,16 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   if (MAGNETIC_FIELDS_ENABLED)
     pfield = new Field(this, pin);
   pbval  = new BoundaryValues(this, pin);
-
+  if (block_bcs[INNER_X2] == POLAR_BNDRY) {
+    int level = loc.level - pmy_mesh->root_level;
+    int num_north_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
+    polar_neighbor_north = new PolarNeighborBlock[num_north_polar_blocks];
+  }
+  if (block_bcs[OUTER_X2] == POLAR_BNDRY) {
+    int level = loc.level - pmy_mesh->root_level;
+    int num_south_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
+    polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
+  }
   return;
 }
 
@@ -1016,6 +1025,16 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   if (MAGNETIC_FIELDS_ENABLED)
     pfield = new Field(this, pin);
   pbval  = new BoundaryValues(this, pin);
+  if (block_bcs[INNER_X2] == POLAR_BNDRY) {
+    int level = loc.level - pmy_mesh->root_level;
+    int num_north_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
+    polar_neighbor_north = new PolarNeighborBlock[num_north_polar_blocks];
+  }
+  if (block_bcs[OUTER_X2] == POLAR_BNDRY) {
+    int level = loc.level - pmy_mesh->root_level;
+    int num_south_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
+    polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
+  }
 
   // load hydro and field data
   nerr=0;
@@ -1066,6 +1085,10 @@ MeshBlock::~MeshBlock()
   delete phydro;
   if (MAGNETIC_FIELDS_ENABLED)
     delete pfield;
+  if (block_bcs[INNER_X2] == POLAR_BNDRY)
+    delete[] polar_neighbor_north;
+  if (block_bcs[OUTER_X2] == POLAR_BNDRY)
+    delete[] polar_neighbor_south;
   delete pbval;
 }
 
@@ -1688,6 +1711,42 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
         }
         bufid++;
       }
+    }
+  }
+
+  // polar neighbors
+  if (block_bcs[INNER_X2] == POLAR_BNDRY) {
+    int level = loc.level - pmy_mesh->root_level;
+    int num_north_polar_blocks = nrbx3 * (1 << level);
+    for (int n = 0; n < num_north_polar_blocks; ++n) {
+      LogicalLocation neighbor_loc;
+      neighbor_loc.lx1 = loc.lx1;
+      neighbor_loc.lx2 = loc.lx2;
+      neighbor_loc.lx3 = n;
+      neighbor_loc.level = loc.level;
+      neibt = tree.FindMeshBlock(neighbor_loc);
+      int nid = neibt->gid;
+      polar_neighbor_north[neibt->loc.lx3].rank = ranklist[nid];
+      polar_neighbor_north[neibt->loc.lx3].lid = nid - nslist[ranklist[nid]];
+      polar_neighbor_north[neibt->loc.lx3].gid = nid;
+      polar_neighbor_north[neibt->loc.lx3].north = true;
+    }
+  }
+  if (block_bcs[OUTER_X2] == POLAR_BNDRY) {
+    int level = loc.level - pmy_mesh->root_level;
+    int num_south_polar_blocks = nrbx3 * (1 << level);
+    for (int n = 0; n < num_south_polar_blocks; ++n) {
+      LogicalLocation neighbor_loc;
+      neighbor_loc.lx1 = loc.lx1;
+      neighbor_loc.lx2 = loc.lx2;
+      neighbor_loc.lx3 = n;
+      neighbor_loc.level = loc.level;
+      neibt = tree.FindMeshBlock(neighbor_loc);
+      int nid = neibt->gid;
+      polar_neighbor_south[neibt->loc.lx3].rank = ranklist[nid];
+      polar_neighbor_south[neibt->loc.lx3].lid = nid - nslist[ranklist[nid]];
+      polar_neighbor_south[neibt->loc.lx3].gid = nid;
+      polar_neighbor_south[neibt->loc.lx3].north = false;
     }
   }
   return;
