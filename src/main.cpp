@@ -27,6 +27,7 @@
 
 // C/C++ headers
 #include <stdint.h>   // int64_t
+#include <cstdio>     // sscanf()
 #include <cstdlib>    // strtol
 #include <ctime>      // clock(), CLOCKS_PER_SEC, clock_t
 #include <exception>  // exception
