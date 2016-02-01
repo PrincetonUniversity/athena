@@ -1,6 +1,5 @@
-#!/usr/lib/python2.7/bin/python
 #---------------------------------------------------------------------------------------
-# configure.py: Athena++ configuration script in python.  Original version by CJW.
+# configure.py: Athena++ configuration script in python. Original version by CJW.
 #
 # When configure.py is run, it uses the command line options and default settings to
 # create custom versions of the files Makefile and src/defs.hpp from the template files
@@ -12,19 +11,19 @@
 #   --coord=choice    use choice as the coordinate system
 #   --eos=choice      use choice as the equation of state
 #   --flux=choice     use choice as the Riemann solver
+#   --order=choice    use choice as the spatial reconstruction algorithm
+#   --fint=choice     use choice as the hydro time-integration algorithm
 #   -b                enable magnetic fields
 #   -s                enable special relativity
 #   -g                enable general relativity
 #   -t                enable interface frame transformations for GR
-#   --order=choice    use choice as the spatial reconstruction algorithm
-#   --fint=choice     use choice as the hydro time-integration algorithm
+#   -vis              enable viscosity
 #   --cxx=choice      use choice as the C++ compiler
-#   --ifov=N          enable N internal hydro output variables 
+#   -debug            enable debug flags (-g -O0); override other compiler options
 #   -mpi              enable parallelization with MPI
 #   -omp              enable parallelization with OpenMP
 #   -hdf5             enable HDF5 output (requires the HDF5 library)
-#   -debug            enable debug flags (-g -O0); override other compiler options
-#   -vis              enable viscosity
+#   --ifov=N          enable N internal hydro output variables
 #---------------------------------------------------------------------------------------
 
 # Modules
@@ -38,7 +37,7 @@ makefile_output = 'Makefile'
 defsfile_input = 'src/defs.hpp.in'
 defsfile_output = 'src/defs.hpp'
 
-#--- Step 1.  Prepare parser, add each of the arguments --------------------------------
+#--- Step 1. Prepare parser, add each of the arguments ---------------------------------
 parser = argparse.ArgumentParser()
 
 # --prob=[name] argument
@@ -71,6 +70,18 @@ parser.add_argument('--flux',
     choices=['hlle','hllc','hlld','roe','llf'],
     help='select Riemann solver')
 
+# --order=[name] argument
+parser.add_argument('--order',
+    default='plm',
+    choices=['plm'],
+    help='select spatial reconstruction algorithm')
+
+# --fint=[name] argument
+parser.add_argument('--fint',
+    default='vl2',
+    choices=['vl2'],
+    help='select hydro time-integration algorithm')
+
 # -b argument
 parser.add_argument('-b',
     action='store_true',
@@ -95,23 +106,23 @@ parser.add_argument('-t',
     default=False,
     help='enable interface frame transformations for GR')
 
-# --order=[name] argument
-parser.add_argument('--order',
-    default='plm',
-    choices=['plm'],
-    help='select spatial reconstruction algorithm')
-
-# --fint=[name] argument
-parser.add_argument('--fint',
-    default='vl2',
-    choices=['vl2'],
-    help='select hydro time-integration algorithm')
+# -vis argument
+parser.add_argument('-vis',
+    action='store_true',
+    default=False,
+    help='enable viscosity')
 
 # --cxx=[name] argument
 parser.add_argument('--cxx',
     default='g++',
-    choices=['g++','icc','cray'],
+    choices=['g++','icc','cray','bgxl'],
     help='select C++ compiler')
+
+# -debug argument
+parser.add_argument('-debug',
+    action='store_true',
+    default=False,
+    help='enable debug flags; override other compiler options')
 
 # -mpi argument
 parser.add_argument('-mpi',
@@ -137,48 +148,38 @@ parser.add_argument('--ifov',
     default=0,
     help='number of internal hydro output variables')
 
-# -debug argument
-parser.add_argument('-debug',
-    action='store_true',
-    default=False,
-    help='enable debug flags; override other compiler options')
-
-# -vis argument
-parser.add_argument('-vis',
-    action='store_true',
-    default=False,
-    help='enable viscosity')
-
 # Parse command-line inputs
 args = vars(parser.parse_args())
+
+#--- Step 2. Test for incompatible arguments -------------------------------------------
+
+# Check Riemann solver compatibility
+if args['flux']=='hllc' and args['eos']=='isothermal':
+  raise SystemExit('### CONFIGURE ERROR: HLLC flux cannot be used with isothermal EOS')
+if args['flux']=='hllc' and args['b']:
+  raise SystemExit('### CONFIGURE ERROR: HLLC flux cannot be used with MHD')
+if args['flux']=='hlld' and not args['b']:
+  raise SystemExit('### CONFIGURE ERROR: HLLD flux can only be used with MHD')
+
+# Check relativity
+if args['s'] and args['g']:
+  raise SystemExit('### CONFIGURE ERROR: GR implies SR; \
+      the -s option is restricted to pure SR.')
+if args['t'] and not args['g']:
+  raise SystemExit('### CONFIGURE ERROR: Frame transformations only apply to GR.')
+
+#--- Step 3. Set definitions and Makefile options based on above arguments -------------
 
 # Prepare dictionaries of substitutions to be made
 definitions = {}
 makefile_options = {}
-
-#--- Step 3.  Test for incompatible arguments ------------------------------------------
-
-if args['flux']=='hllc' and args['eos']=='isothermal':
-  raise SystemExit('### CONFIGURE ERROR: HLLC flux cannot be used with isothermal EOS')
-
-if args['flux']=='hllc' and args['b']:
-  raise SystemExit('### CONFIGURE ERROR: HLLC flux cannot be used with MHD')
-
-if args['flux']=='hlld' and not args['b']:
-  raise SystemExit('### CONFIGURE ERROR: HLLD flux can only be used with MHD')
-
-#--- Step 4.  Set definitions and Makefile options based on above arguments ------------
-
-
 makefile_options['LOADER_FLAGS'] = ''
 
 # --prob=[name] argument
-definitions['PROBLEM'] = args['prob']
-makefile_options['PROBLEM_FILE'] = args['prob']
+definitions['PROBLEM'] = makefile_options['PROBLEM_FILE'] = args['prob']
 
 # --coord=[name] argument
-definitions['COORDINATE_SYSTEM'] = args['coord']
-makefile_options['COORDINATES_FILE'] = args['coord']
+definitions['COORDINATE_SYSTEM'] = makefile_options['COORDINATES_FILE'] = args['coord']
 
 # --eos=[name] argument
 definitions['NON_BAROTROPIC_EOS'] = '1' if args['eos'] == 'adiabatic' else '0'
@@ -190,14 +191,20 @@ if args['eos'] == 'isothermal':
   definitions['NHYDRO_VARIABLES'] = '4'
 
 # --flux=[name] argument
-definitions['RSOLVER'] = args['flux']
-makefile_options['RSOLVER_FILE'] = args['flux']
+definitions['RSOLVER'] = makefile_options['RSOLVER_FILE'] = args['flux']
+
+# --order=[name] argument
+definitions['RECONSTRUCT'] = makefile_options['RECONSTRUCT_FILE'] = args['order']
+
+# --fint=[name] argument
+definitions['HYDRO_INTEGRATOR'] = makefile_options['HYDRO_INT_FILE'] = args['fint']
+definitions['NSTEP'] = '2'
 
 # -b argument
-definitions['MAGNETIC_FIELDS_ENABLED'] = '1' if args['b'] else '0'
-makefile_options['EOS_FILE'] += '_mhd' if args['b'] else '_hydro'
 # set variety of macros based on whether MHD/hydro or adi/iso are defined
 if args['b']:
+  definitions['MAGNETIC_FIELDS_ENABLED'] = '1'
+  makefile_options['EOS_FILE'] += '_mhd'
   definitions['NFIELD_VARIABLES'] = '3'
   makefile_options['RSOLVER_DIR'] = 'mhd/'
   if args['flux'] == 'hlle' or args['flux'] == 'llf' or args['flux'] == 'roe':
@@ -209,6 +216,8 @@ if args['b']:
     if args['flux'] == 'hlld':
       makefile_options['RSOLVER_FILE'] += '_iso'
 else:
+  definitions['MAGNETIC_FIELDS_ENABLED'] = '0'
+  makefile_options['EOS_FILE'] += '_hydro'
   definitions['NFIELD_VARIABLES'] = '0'
   makefile_options['RSOLVER_DIR'] = 'hydro/'
   if args['eos'] == 'adiabatic':
@@ -216,7 +225,7 @@ else:
   else:
     definitions['NWAVE_VALUE'] = '4'
 
-# -s and -g arguments
+# -s, -g, and -t arguments
 definitions['RELATIVISTIC_DYNAMICS'] = '1' if args['s'] or args['g'] else '0'
 definitions['GENERAL_RELATIVITY'] = '1' if args['g'] else '0'
 if args['s']:
@@ -229,81 +238,83 @@ if args['g']:
     makefile_options['RSOLVER_FILE'] += '_no_transform'
 
 # -vis argument
-definitions['VISCOSITY'] = '1' if args['vis'] else '0'
 if args['vis']:
+  definitions['VISCOSITY'] = '1'
   makefile_options['VIS_FILE'] = '*.cpp'
 else:
+  definitions['VISCOSITY'] = '0'
   makefile_options['VIS_FILE'] = '*.cpp'
 
-# --order=[name] argument
-definitions['RECONSTRUCT'] = args['order']
-makefile_options['RECONSTRUCT_FILE'] = args['order']
-
-# --fint=[name] argument
-definitions['HYDRO_INTEGRATOR'] = args['fint']
-makefile_options['HYDRO_INT_FILE'] = args['fint']
-definitions['NSTEP'] = '2'
-
 # --cxx=[name] argument
-definitions['COMPILER_CHOICE'] = args['cxx']
-makefile_options['COMPILER_CHOICE'] = args['cxx']
-if args['cxx'] == 'icc':
-  makefile_options['COMPILER_FLAGS'] = '-O3 -xhost -ipo -inline-forceinline'
-  definitions['COMPILER_FLAGS'] = '-O3 -xhost -ipo -inline-forceinline'
 if args['cxx'] == 'g++':
-  makefile_options['COMPILER_FLAGS'] = '-O3'
-  definitions['COMPILER_FLAGS'] = '-O3'
+  definitions['COMPILER_CHOICE'] = makefile_options['COMPILER_CHOICE'] = 'g++'
+  definitions['COMPILER_FLAGS'] = makefile_options['COMPILER_FLAGS'] = '-O3'
+if args['cxx'] == 'icc':
+  definitions['COMPILER_CHOICE'] = makefile_options['COMPILER_CHOICE'] = 'icc'
+  definitions['COMPILER_FLAGS'] = makefile_options['COMPILER_FLAGS'] = \
+      '-O3 -xhost -ipo -inline-forceinline'
 if args['cxx'] == 'cray':
+  definitions['COMPILER_CHOICE'] = 'cray'
   makefile_options['COMPILER_CHOICE'] = 'CC'
-  makefile_options['COMPILER_FLAGS'] = '-O3 -lm -h aggress -h vector3 -hfp3 -hwp -hpl=obj/lib'
-  definitions['COMPILER_FLAGS'] = '-O3 -lm -h aggress -h vector3 -hfp3 -hwp -hpl=obj/lib'
-  
+  definitions['COMPILER_FLAGS'] = makefile_options['COMPILER_FLAGS'] = \
+      '-O3 -lm -h aggress -h vector3 -hfp3 -hwp -hpl=obj/lib'
+if args['cxx'] == 'bgxl':
+  definitions['COMPILER_CHOICE'] = makefile_options['COMPILER_CHOICE'] = 'bgxlc++'
+  # turn off pragma simd warnings
+  definitions['COMPILER_FLAGS'] = makefile_options['COMPILER_FLAGS'] = \
+      '-O3 -qsuppress=1540-1401'
 
-definitions['MPI_OPTION'] = 'MPI_PARALLEL' if args['mpi'] \
-    else 'NOT_MPI_PARALLEL'
-if args['mpi']:
-  if args['cxx'] == 'cray':
-    makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
-    definitions['COMPILER_FLAGS'] += ' -h mpi1'
-  else : 
-    makefile_options['COMPILER_CHOICE'] = 'mpicxx'
-    definitions['COMPILER_CHOICE'] = 'mpicxx'
-
-definitions['DEBUG'] = 'DEBUG' if args['debug'] \
-    else 'NOT_DEBUG'
+# -debug argument
 if args['debug']:
-  if args['cxx'] == 'g++':
-    makefile_options['COMPILER_FLAGS'] = '-g -O0'
-    definitions['COMPILER_FLAGS'] = '-g -O0'
-  if args['cxx'] == 'icc':
-    makefile_options['COMPILER_FLAGS'] = '-g -O0'
-    definitions['COMPILER_FLAGS'] = '-g -O0'
+  definitions['DEBUG'] = 'DEBUG'
+  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'bgxl':
+    definitions['COMPILER_FLAGS'] = makefile_options['COMPILER_FLAGS'] = '-O0 -g'
   if args['cxx'] == 'cray':
-    makefile_options['COMPILER_FLAGS'] = '-O0'
-    definitions['COMPILER_FLAGS'] = '-O0'
+    definitions['COMPILER_FLAGS'] = makefile_options['COMPILER_FLAGS'] = '-O0'
+else:
+  definitions['DEBUG'] = 'NOT_DEBUG'
 
-definitions['OPENMP_OPTION'] = 'OPENMP_PARALLEL' if args['omp'] \
-    else 'NOT_OPENMP_PARALLEL'
+# -mpi argument
+if args['mpi']:
+  definitions['MPI_OPTION'] = 'MPI_PARALLEL'
+  if args['cxx'] == 'g++' or args['cxx'] == 'icc':
+    definitions['COMPILER_CHOICE'] = makefile_options['COMPILER_CHOICE'] = 'mpicxx'
+  if args['cxx'] == 'cray':
+    definitions['COMPILER_FLAGS'] += ' -h mpi1'
+    makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
+  if args['cxx'] == 'bgxl':
+    definitions['COMPILER_CHOICE'] = makefile_options['COMPILER_CHOICE'] = 'mpixlcxx'
+else:
+  definitions['MPI_OPTION'] = 'NOT_MPI_PARALLEL'
+
+# -omp argument
 if args['omp']:
+  definitions['OPENMP_OPTION'] = 'OPENMP_PARALLEL'
   if args['cxx'] == 'g++':
-    makefile_options['COMPILER_FLAGS'] += ' -fopenmp'
     definitions['COMPILER_FLAGS'] += ' -fopenmp'
+    makefile_options['COMPILER_FLAGS'] += ' -fopenmp'
   if args['cxx'] == 'icc':
-    makefile_options['COMPILER_FLAGS'] += ' -openmp'
     definitions['COMPILER_FLAGS'] += ' -openmp'
+    makefile_options['COMPILER_FLAGS'] += ' -openmp'
   if args['cxx'] == 'cray':
-    makefile_options['COMPILER_FLAGS'] += ' -homp'
     definitions['COMPILER_FLAGS'] += ' -homp'
-else: 
+    makefile_options['COMPILER_FLAGS'] += ' -homp'
+  if args['cxx'] == 'bgxl':
+    # use thread-safe version of compiler
+    definitions['COMPILER_CHOICE'] += '_r'
+    makefile_options['COMPILER_CHOICE'] += '_r'
+    definitions['COMPILER_FLAGS'] += ' -qsmp'
+    makefile_options['COMPILER_FLAGS'] += ' -qsmp'
+else:
+  definitions['OPENMP_OPTION'] = 'NOT_OPENMP_PARALLEL'
   if args['cxx'] == 'cray':
-    makefile_options['COMPILER_FLAGS'] += ' -hnoomp'
     definitions['COMPILER_FLAGS'] += ' -hnoomp'
-  # turn off pragma omp warnings for Intel compiler
-  if args['cxx'] == 'icc':
+    makefile_options['COMPILER_FLAGS'] += ' -hnoomp'
+  if args['cxx'] == 'icc':  # turn off pragma omp warnings
     makefile_options['COMPILER_FLAGS'] += ' -diag-disable 3180'
     definitions['COMPILER_FLAGS'] += ' -diag-disable 3180'
 
-# -hdf5
+# -hdf5 argument
 if args['hdf5']:
   definitions['HDF5_OPTION'] = 'HDF5OUTPUT'
   makefile_options['LOADER_FLAGS'] += ' -lhdf5'
@@ -313,10 +324,9 @@ else:
 # -ifov=N argument
 definitions['NUM_IFOV'] = str(args['ifov'])
 
+#--- Step 4. Create new files, finish up -----------------------------------------------
 
-#--- Step 5.  Create new files, finish up ----------------------------------------------
-
-# terminate all filenames with .cpp extension
+# Terminate all filenames with .cpp extension
 makefile_options['PROBLEM_FILE'] += '.cpp'
 makefile_options['COORDINATES_FILE'] += '.cpp'
 makefile_options['EOS_FILE'] += '.cpp'
@@ -350,16 +360,16 @@ print('  Equation of state:       ' + args['eos'])
 print('  Riemann solver:          ' + args['flux'])
 print('  Reconstruction method:   ' + args['order'])
 print('  Hydro integrator:        ' + args['fint'])
-print('  Compiler and flags:      ' + makefile_options['COMPILER_CHOICE'] + ' ' \
-    + makefile_options['COMPILER_FLAGS'])
-print('  Loader flags:            ' + makefile_options['LOADER_FLAGS'])
 print('  Magnetic fields:         ' + ('ON' if args['b'] else 'OFF'))
 print('  Special relativity:      ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))
+print('  Viscosity:               ' + ('ON' if args['vis'] else 'OFF'))
+print('  Compiler and flags:      ' + makefile_options['COMPILER_CHOICE'] + ' ' \
+    + makefile_options['COMPILER_FLAGS'])
+print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
+print('  Loader flags:            ' + makefile_options['LOADER_FLAGS'])
 print('  MPI parallelism:         ' + ('ON' if args['mpi'] else 'OFF'))
 print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
 print('  HDF5 Output:             ' + ('ON' if args['hdf5'] else 'OFF'))
-print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
-print('  Viscosity:               ' + ('ON' if args['vis'] else 'OFF'))
 print('  Internal hydro outvars:  ' + str(args['ifov']))
