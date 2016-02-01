@@ -747,21 +747,21 @@ void OutputType::Sum(OutputData* pod, MeshBlock* pmb, int dim)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin)
+//! \fn void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag)
 //  \brief scans through linked list of OutputTypes and makes any outputs needed.
 
-void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin)
+void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag)
 {
   OutputType* ptype = pfirst_type_;
   MeshBlock *pmb;
 
-
   while (ptype != NULL) {
     if ((pm->time == pm->start_time) ||
         (pm->time >= ptype->output_params.next_time) ||
-        (pm->time >= pm->tlim)) {
+        (pm->time >= pm->tlim) ||
+        (wtflag==true && ptype->output_params.file_type=="rst")) {
 
-      ptype->Initialize(pm,pin);
+      ptype->Initialize(pm,pin,wtflag);
       pmb=pm->pblock;
       while (pmb != NULL)  {
         // Create new OutputData container, load and transform data, then write to file

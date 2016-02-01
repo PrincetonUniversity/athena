@@ -95,7 +95,7 @@ public:
 
 // functions that operate on OutputData container
 
-  virtual void Initialize(Mesh *pM, ParameterInput *pin) {};
+  virtual void Initialize(Mesh *pM, ParameterInput *pin, bool wtflag=false) {};
   virtual void Finalize(ParameterInput *pin);
   virtual void LoadOutputData(OutputData *pod, MeshBlock *pmb);
   virtual void TransformOutputData(OutputData *pod, MeshBlock *pmb);
@@ -157,7 +157,7 @@ private:
 public:
   RestartOutput(OutputParameters oparams);
   ~RestartOutput() {};
-  void Initialize(Mesh *pm, ParameterInput *pin);
+  void Initialize(Mesh *pm, ParameterInput *pin, bool wtflag);
   void Finalize(ParameterInput *pin);
   void LoadOutputData(OutputData *pod, MeshBlock *pmb) {};
   void TransformOutputData(OutputData *pod, MeshBlock *pmb) {};
@@ -179,7 +179,7 @@ private:
 public:
   ATHDF5Output(OutputParameters oparams);
   ~ATHDF5Output() {};
-  void Initialize(Mesh *pm, ParameterInput *pin);
+  void Initialize(Mesh *pm, ParameterInput *pin, bool wtflag);
   void Finalize(ParameterInput *pin);
   void TransformOutputData(OutputData *pod, MeshBlock *pmb) {};
   void WriteOutputFile(OutputData *pod, MeshBlock *pmb);
@@ -197,7 +197,7 @@ public:
   Outputs(Mesh *pm, ParameterInput *pin);
   ~Outputs();
 
-  void MakeOutputs(Mesh *pm, ParameterInput *pin);
+  void MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag=false);
 
 private:
   OutputType *pfirst_type_; // ptr to first OutputType in linked list

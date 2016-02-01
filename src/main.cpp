@@ -66,7 +66,12 @@ int main(int argc, char *argv[])
   int narg_flag=0;  // set to 1 if -n        argument is on cmdline
   int iarg_flag=0;  // set to 1 if -i <file> argument is on cmdline
   int mesh_flag=0;  // set to <nproc> if -m <nproc> argument is on cmdline
+  int walltime_flag=0, nwtlim; // wall time flag
+  Real wtlim;
   int ncstart=0;
+#ifdef MPI_PARALLEL
+  MPI_Request wtreq;
+#endif
 
 //--- Step 1. --------------------------------------------------------------------------
 // Initialize MPI environment, if necessary
@@ -122,6 +127,12 @@ int main(int argc, char *argv[])
       case 'm':
         mesh_flag = std::strtol(argv[++i],NULL,10);
         break;
+      case 't':
+        int wth, wtm, wts;
+        std::sscanf(argv[++i],"%d:%d:%d",&wth,&wtm,&wts);
+        walltime_flag=1;
+        wtlim=(Real)(wth*3600+wtm*60+wts);
+        break;
       case 'c':
         if(Globals::my_rank==0) ShowConfig();
 #ifdef MPI_PARALLEL
@@ -141,6 +152,7 @@ int main(int argc, char *argv[])
           std::cout<<"  -n              parse input file and quit"<<std::endl;
           std::cout<<"  -c              show configuration and quit"<<std::endl;
           std::cout<<"  -m <nproc>      output mesh structure and quit"<<std::endl;
+          std::cout<<"  -t hh:mm:ss     wall time limit for final output" << std::endl;
           std::cout<<"  -h              this help"<<std::endl;
           ShowConfig();
         }
@@ -285,9 +297,17 @@ int main(int argc, char *argv[])
 //--- Step 9. === START OF MAIN INTEGRATION LOOP =======================================
 // For performance, there is no error handler protecting this step (except outputs)
 
+
+#ifdef MPI_PARALLEL
+  // start receiving broadcast for wall time limit
+  if(walltime_flag==1 && Globals::my_rank!=0)
+    MPI_Ibcast(&nwtlim,1,MPI_INT,0,MPI_COMM_WORLD,&wtreq);
+#endif
+
   if(Globals::my_rank==0) {
     std::cout<<std::endl<<"Setup complete, entering main loop..."<<std::endl<<std::endl;
   }
+
   clock_t tstart = clock();
 #ifdef OPENMP_PARALLEL
   double omp_start_time = omp_get_wtime();
@@ -330,15 +350,75 @@ int main(int argc, char *argv[])
       return(0);
     }
 
+    // check the wall time limit
+    if(walltime_flag==1) {
+      if(Globals::my_rank==0) {
+        clock_t tnow = clock();
+        Real wtnow = (Real)(tnow-tstart)/(Real)CLOCKS_PER_SEC;
+        if(wtnow > wtlim) {
+          walltime_flag=2;
+          nwtlim=pmesh->nlim=pmesh->ncycle+2;
+#ifdef MPI_PARALLEL
+          // broadcast
+          MPI_Ibcast(&nwtlim,1,MPI_INT,0,MPI_COMM_WORLD,&wtreq);
+#endif
+        }
+      }
+#ifdef MPI_PARALLEL
+      else {
+        int wtest;
+        MPI_Test(&wtreq,&wtest,MPI_STATUS_IGNORE);
+        if(wtest==true) {
+          walltime_flag=2;
+          pmesh->nlim=nwtlim;
+        }
+      }
+#endif
+    }
+
   } // END OF MAIN INTEGRATION LOOP ====================================================
 
+#ifdef MPI_PARALLEL
+  if(walltime_flag==1) {
+    // terminate the unused broadcast
+    if(Globals::my_rank==0)
+      MPI_Ibcast(&nwtlim,1,MPI_INT,0,MPI_COMM_WORLD,&wtreq);
+    MPI_Wait(&wtreq,MPI_STATUS_IGNORE);
+  }
+#endif
+  if(walltime_flag==2) { // hit the wall time limit
+#ifdef MPI_PARALLEL
+    if(Globals::my_rank==0)
+      MPI_Wait(&wtreq,MPI_STATUS_IGNORE);
+#endif
+    try {
+      pouts->MakeOutputs(pmesh,pinput,true);
+    } 
+    catch(std::bad_alloc& ba) {
+      std::cout << "### FATAL ERROR in main" << std::endl
+                << "memory allocation failed during output: " << ba.what() <<std::endl;
+#ifdef MPI_PARALLEL
+      MPI_Finalize();
+#endif
+      return(0);
+    }
+    catch(std::exception const& ex) {
+      std::cout << ex.what() << std::endl;  // prints diagnostic message  
+#ifdef MPI_PARALLEL
+      MPI_Finalize();
+#endif
+      return(0);
+    }
+  }
   // print diagnostic messages
   if(Globals::my_rank==0) {
-    std::cout << "cycle=" << pmesh->ncycle << std::scientific << std::setprecision(6)
-              << " time=" << pmesh->time << " dt=" << pmesh->dt << std::endl;
-
+    std::cout << "cycle=" << pmesh->ncycle << " time=" << pmesh->time
+              << " dt=" << pmesh->dt << std::endl;
     if (pmesh->ncycle == pmesh->nlim) {
-      std::cout << std::endl << "Terminating on cycle limit" << std::endl;
+      if(walltime_flag==2)
+        std::cout << std::endl << "Terminating on wall-time limit" << std::endl;
+      else 
+        std::cout << std::endl << "Terminating on cycle limit" << std::endl;
     } else {
       std::cout << std::endl << "Terminating on time limit" << std::endl;
     }

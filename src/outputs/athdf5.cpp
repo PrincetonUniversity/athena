@@ -49,9 +49,9 @@ ATHDF5Output::ATHDF5Output(OutputParameters oparams)
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void ATHDF5Output::Initialize(Mesh *pM, ParameterInput *pin)
+//! \fn void ATHDF5Output::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag)
 //  \brief open the Athena HDF5 file, create the meta data for the whole Mesh
-void ATHDF5Output::Initialize(Mesh *pM, ParameterInput *pin)
+void ATHDF5Output::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag=false)
 {
   std::string fname;
   hid_t aid, dsid, tid, tgid;
