@@ -14,8 +14,10 @@ VIS_FILE = @VIS_FILE@
 # General compiler specifications
 
 CXX := @COMPILER_CHOICE@
+CPPFLAGS := @PREPROCESSOR_FLAGS@
 CXXFLAGS := @COMPILER_FLAGS@
-LIBRARY_FLAGS := @LOADER_FLAGS@
+LDFLAGS := @LINKER_FLAGS@
+LDLIBS := @LIBRARY_FLAGS@
 
 # Preliminary definitions
 
@@ -59,12 +61,12 @@ $(OBJ_DIR):
 # Link objects into executable
 
 $(EXECUTABLE) : $(OBJ_FILES)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBRARY_FLAGS) 
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
 
 # Create objects from source files
 
 $(OBJ_DIR)%.o : %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@ 
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
 # Cleanup
 

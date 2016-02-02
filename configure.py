@@ -54,8 +54,8 @@ parser.add_argument('--prob',
 # --coord=[name] argument
 parser.add_argument('--coord',
     default='cartesian',
-    choices=['cartesian','cylindrical','spherical_polar',\
-        'minkowski','sinusoidal','tilted','schwarzschild','kerr-schild'],
+    choices=['cartesian','cylindrical','spherical_polar','minkowski','sinusoidal',
+        'tilted','schwarzschild','kerr-schild'],
     help='select coordinate system')
 
 # --eos=[name] argument
@@ -248,29 +248,43 @@ else:
 # --cxx=[name] argument
 if args['cxx'] == 'g++':
   definitions['COMPILER_CHOICE'] = makefile_options['COMPILER_CHOICE'] = 'g++'
-  definitions['COMPILER_FLAGS'] = makefile_options['COMPILER_FLAGS'] = '-O3'
+  makefile_options['PREPROCESSOR_FLAGS'] = ''
+  makefile_options['COMPILER_FLAGS'] = '-O3'
+  makefile_options['LINKER_FLAGS'] = ''
+  makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'icc':
   definitions['COMPILER_CHOICE'] = makefile_options['COMPILER_CHOICE'] = 'icc'
-  definitions['COMPILER_FLAGS'] = makefile_options['COMPILER_FLAGS'] = \
-      '-O3 -xhost -ipo -inline-forceinline'
+  makefile_options['PREPROCESSOR_FLAGS'] = ''
+  makefile_options['COMPILER_FLAGS'] = '-O3 -xhost -ipo -inline-forceinline'
+  makefile_options['LINKER_FLAGS'] = ''
+  makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'cray':
   definitions['COMPILER_CHOICE'] = 'cray'
   makefile_options['COMPILER_CHOICE'] = 'CC'
-  definitions['COMPILER_FLAGS'] = makefile_options['COMPILER_FLAGS'] = \
-      '-O3 -lm -h aggress -h vector3 -hfp3 -hwp -hpl=obj/lib'
+  makefile_options['PREPROCESSOR_FLAGS'] = ''
+  makefile_options['COMPILER_FLAGS'] = '-O3 -h aggress -h vector3 -hfp3'
+  makefile_options['LINKER_FLAGS'] = '-hwp -hpl=obj/lib'
+  makefile_options['LIBRARY_FLAGS'] = '-lm'
 if args['cxx'] == 'bgxl':
+  # suppressed messages:
+  #   1500-036:  nostrict option can change semantics
+  #   1540-1401: pragma (simd) not recognized
   definitions['COMPILER_CHOICE'] = makefile_options['COMPILER_CHOICE'] = 'bgxlc++'
-  # turn off pragma simd warnings
-  definitions['COMPILER_FLAGS'] = makefile_options['COMPILER_FLAGS'] = \
-      '-O3 -qsuppress=1540-1401'
+  makefile_options['PREPROCESSOR_FLAGS'] = ''
+  makefile_options['COMPILER_FLAGS'] = \
+      '-O3 -qlanglvl=extended -qsuppress=1500-036 -qsuppress=1540-1401'
+  makefile_options['LINKER_FLAGS'] = ''
+  makefile_options['LIBRARY_FLAGS'] = ''
 
 # -debug argument
 if args['debug']:
   definitions['DEBUG'] = 'DEBUG'
-  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'bgxl':
-    definitions['COMPILER_FLAGS'] = makefile_options['COMPILER_FLAGS'] = '-O0 -g'
+  if args['cxx'] == 'g++' or args['cxx'] == 'icc':
+    makefile_options['COMPILER_FLAGS'] = '-O0 -g'
   if args['cxx'] == 'cray':
-    definitions['COMPILER_FLAGS'] = makefile_options['COMPILER_FLAGS'] = '-O0'
+    makefile_options['COMPILER_FLAGS'] = '-O0'
+  if args['cxx'] == 'bgxl':
+    makefile_options['COMPILER_FLAGS'] = '-O0 -g -qlanglvl=extended'
 else:
   definitions['DEBUG'] = 'NOT_DEBUG'
 
@@ -280,7 +294,6 @@ if args['mpi']:
   if args['cxx'] == 'g++' or args['cxx'] == 'icc':
     definitions['COMPILER_CHOICE'] = makefile_options['COMPILER_CHOICE'] = 'mpicxx'
   if args['cxx'] == 'cray':
-    definitions['COMPILER_FLAGS'] += ' -h mpi1'
     makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
   if args['cxx'] == 'bgxl':
     definitions['COMPILER_CHOICE'] = makefile_options['COMPILER_CHOICE'] = 'mpixlcxx'
@@ -291,35 +304,46 @@ else:
 if args['omp']:
   definitions['OPENMP_OPTION'] = 'OPENMP_PARALLEL'
   if args['cxx'] == 'g++':
-    definitions['COMPILER_FLAGS'] += ' -fopenmp'
     makefile_options['COMPILER_FLAGS'] += ' -fopenmp'
   if args['cxx'] == 'icc':
-    definitions['COMPILER_FLAGS'] += ' -openmp'
     makefile_options['COMPILER_FLAGS'] += ' -openmp'
   if args['cxx'] == 'cray':
-    definitions['COMPILER_FLAGS'] += ' -homp'
     makefile_options['COMPILER_FLAGS'] += ' -homp'
   if args['cxx'] == 'bgxl':
     # use thread-safe version of compiler
     definitions['COMPILER_CHOICE'] += '_r'
     makefile_options['COMPILER_CHOICE'] += '_r'
-    definitions['COMPILER_FLAGS'] += ' -qsmp'
     makefile_options['COMPILER_FLAGS'] += ' -qsmp'
 else:
   definitions['OPENMP_OPTION'] = 'NOT_OPENMP_PARALLEL'
   if args['cxx'] == 'cray':
-    definitions['COMPILER_FLAGS'] += ' -hnoomp'
     makefile_options['COMPILER_FLAGS'] += ' -hnoomp'
-  if args['cxx'] == 'icc':  # turn off pragma omp warnings
+  if args['cxx'] == 'icc':
+    # suppressed messages:
+    #   3180: pragma omp not recognized
     makefile_options['COMPILER_FLAGS'] += ' -diag-disable 3180'
-    definitions['COMPILER_FLAGS'] += ' -diag-disable 3180'
 
 # -hdf5 argument
 if args['hdf5']:
   definitions['HDF5_OPTION'] = 'HDF5OUTPUT'
-  makefile_options['LOADER_FLAGS'] += ' -lhdf5'
+  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'cray':
+    makefile_options['LIBRARY_FLAGS'] += ' -lhdf5'
+  if args['cxx'] == 'bgxl':
+    makefile_options['PREPROCESSOR_FLAGS'] += \
+        ' -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_BSD_SOURCE' \
+        + ' -I/soft/libraries/hdf5/1.8.14/cnk-xl/V1R2M2-20150213/include' \
+        + ' -I/soft/libraries/alcf/current/xl/ZLIB/include' \
+        + ' -I/bgsys/drivers/ppcfloor/comm/include'
+    makefile_options['LINKER_FLAGS'] += \
+        ' -L/soft/libraries/hdf5/1.8.14/cnk-xl/V1R2M2-20150213/lib' \
+        + ' -L/soft/libraries/alcf/current/xl/ZLIB/lib'
+    makefile_options['LIBRARY_FLAGS'] += ' -lhdf5 -ldl -lz -lm'
 else:
   definitions['HDF5_OPTION'] = 'NO_HDF5OUTPUT'
+
+# Assemble all flags of any sort given to compiler
+definitions['COMPILER_FLAGS'] = ' '.join([makefile_options[opt+'_FLAGS'] for opt in \
+    ['PREPROCESSOR','COMPILER','LINKER','LIBRARY']])
 
 # -ifov=N argument
 definitions['NUM_IFOV'] = str(args['ifov'])
@@ -366,9 +390,10 @@ print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))
 print('  Viscosity:               ' + ('ON' if args['vis'] else 'OFF'))
 print('  Compiler and flags:      ' + makefile_options['COMPILER_CHOICE'] + ' ' \
-    + makefile_options['COMPILER_FLAGS'])
+    + makefile_options['PREPROCESSOR_FLAGS'] + ' ' + makefile_options['COMPILER_FLAGS'])
 print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
-print('  Loader flags:            ' + makefile_options['LOADER_FLAGS'])
+print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' ' \
+    + makefile_options['LIBRARY_FLAGS'])
 print('  MPI parallelism:         ' + ('ON' if args['mpi'] else 'OFF'))
 print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
 print('  HDF5 Output:             ' + ('ON' if args['hdf5'] else 'OFF'))
