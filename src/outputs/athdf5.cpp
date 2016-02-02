@@ -162,6 +162,8 @@ void ATHDF5Output::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag=false)
     if (MAGNETIC_FIELDS_ENABLED)
       bid[n] = new hid_t[nbl];
   }
+  if (NIFOV > 0)
+    ifovid = new hid_t *[NIFOV];
   for(int n=0;n<NIFOV;n++)
     ifovid[n]=new hid_t [nbl];
 
@@ -514,6 +516,8 @@ void ATHDF5Output::Finalize(ParameterInput *pin)
   }
   for(int n=0;n<NIFOV;n++)
     delete [] ifovid[n];
+  if (NIFOV > 0)
+    delete [] ifovid;
 
   output_params.file_number++;
   output_params.next_time += output_params.dt;

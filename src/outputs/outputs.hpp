@@ -173,7 +173,7 @@ private:
   hid_t file;
   int mbsize[3];
   hid_t *grpid, *x1fid, *x2fid, *x3fid, *rhoid, *eid;
-  hid_t *mid[3], *bid[3], *ifovid[NIFOV];
+  hid_t *mid[3], *bid[3], **ifovid;
   hsize_t dim, dims[3];
 
 public:
