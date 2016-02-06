@@ -1948,12 +1948,6 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
 void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
 {
   MeshBlock *pmb;
-#ifdef MPI_PARALLEL
-  MPI_Request areq[3];
-  // start sharing the cost list
-  MPI_Iallgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_INT,
-                  costlist, nblist, nslist, MPI_INT, MPI_COMM_WORLD, &areq[2]);
-#endif
 
   // collect refinement flags from all the meshblocks
   // count the number of the blocks to be (de)refined
@@ -1966,10 +1960,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
     pmb=pmb->next;
   }
 #ifdef MPI_PARALLEL
-  // if this does not work due to a version issue, replace these with blocking AllGather
-  MPI_Iallgather(MPI_IN_PLACE, 1, MPI_INT, nref,   1, MPI_INT, MPI_COMM_WORLD, &areq[0]);
-  MPI_Iallgather(MPI_IN_PLACE, 1, MPI_INT, nderef, 1, MPI_INT, MPI_COMM_WORLD, &areq[1]);
-  MPI_Waitall(2, areq, MPI_STATUSES_IGNORE);
+  MPI_Allgather(MPI_IN_PLACE, 1, MPI_INT, nref,   1, MPI_INT, MPI_COMM_WORLD);
+  MPI_Allgather(MPI_IN_PLACE, 1, MPI_INT, nderef, 1, MPI_INT, MPI_COMM_WORLD);
 #endif
 
   // count the number of the blocks to be (de)refined and displacement
@@ -2017,19 +2009,18 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   }
 #ifdef MPI_PARALLEL
   if(tnref>0 && tnderef>nlbl) {
-    MPI_Iallgatherv(MPI_IN_PLACE, bnref[Globals::my_rank],   MPI_BYTE,
-                    lref,   bnref,   brdisp, MPI_BYTE, MPI_COMM_WORLD, &areq[0]);
-    MPI_Iallgatherv(MPI_IN_PLACE, bnderef[Globals::my_rank], MPI_BYTE,
-                    lderef, bnderef, bddisp, MPI_BYTE, MPI_COMM_WORLD, &areq[1]);
-    MPI_Waitall(2, areq, MPI_STATUSES_IGNORE);
+    MPI_Allgatherv(MPI_IN_PLACE, bnref[Globals::my_rank],   MPI_BYTE,
+                   lref,   bnref,   brdisp, MPI_BYTE, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, bnderef[Globals::my_rank], MPI_BYTE,
+                   lderef, bnderef, bddisp, MPI_BYTE, MPI_COMM_WORLD);
   }
   else if(tnref>0) {
     MPI_Allgatherv(MPI_IN_PLACE, bnref[Globals::my_rank],   MPI_BYTE,
-                    lref,   bnref,   brdisp, MPI_BYTE, MPI_COMM_WORLD);
+                   lref,   bnref,   brdisp, MPI_BYTE, MPI_COMM_WORLD);
   }
   else if(tnderef>nlbl) {
     MPI_Allgatherv(MPI_IN_PLACE, bnderef[Globals::my_rank], MPI_BYTE,
-                    lderef, bnderef, bddisp, MPI_BYTE, MPI_COMM_WORLD);
+                   lderef, bnderef, bddisp, MPI_BYTE, MPI_COMM_WORLD);
   }
 #endif
 
@@ -2067,13 +2058,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   // sort the lists by level
   if(ctnd>1)
     std::sort(clderef, &(clderef[ctnd-1]), LogicalLocation::Greater);
-
-/*  if(Globals::my_rank==0) {
-    for(int n=0; n<tnref; n++)
-      std::cout << "Refine flag:" << lref[n].lx1 << " " << lref[n].lx2 << " " << lref[n].lx3 << " " << lref[n].level << std::endl;
-    for(int n=0; n<ctnd; n++)
-      std::cout << "Derefine flag:" << clderef[n].lx1 << " " << clderef[n].lx2 << " " << clderef[n].lx3 << " " << clderef[n].level << std::endl;
-  }*/
 
   if(tnderef>nlbl)
     delete [] lderef;
@@ -2123,8 +2107,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   }
 
 #ifdef MPI_PARALLEL
-  // receive the old cost list
-  MPI_Wait(&areq[2], MPI_STATUS_IGNORE);
+  // share the cost list
+  MPI_Allgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_INT,
+                 costlist, nblist, nslist, MPI_INT, MPI_COMM_WORLD);
 #endif
   for(int n=0; n<ntot; n++) {
     int on=newtoold[n];
