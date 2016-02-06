@@ -13,4 +13,12 @@ void ChangeRunDir(const char *pdir);
 double ran2(long int *idum);
 void ShowConfig();
 
+
+namespace WallTimeLimit {
+  void InitWTLimit(void);
+  void SendWTLimit(int nwtlimit);
+  bool TestWTLimit(int &nwtlimit);
+  void FinalizeWTLimit(int wtflag);
+}
+
 #endif // UTILS_HPP

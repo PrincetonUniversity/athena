@@ -67,12 +67,9 @@ int main(int argc, char *argv[])
   int narg_flag=0;  // set to 1 if -n        argument is on cmdline
   int iarg_flag=0;  // set to 1 if -i <file> argument is on cmdline
   int mesh_flag=0;  // set to <nproc> if -m <nproc> argument is on cmdline
-  int walltime_flag=0, nwtlim; // wall time flag
+  int walltime_flag=0; // wall time flag
   Real wtlim;
   int ncstart=0;
-#ifdef MPI_PARALLEL
-  MPI_Request wtreq;
-#endif
 
 //--- Step 1. --------------------------------------------------------------------------
 // Initialize MPI environment, if necessary
@@ -299,11 +296,8 @@ int main(int argc, char *argv[])
 // For performance, there is no error handler protecting this step (except outputs)
 
 
-#ifdef MPI_PARALLEL
-  // start receiving broadcast for wall time limit
-  if(walltime_flag==1 && Globals::my_rank!=0)
-    MPI_Ibcast(&nwtlim,1,MPI_INT,0,MPI_COMM_WORLD,&wtreq);
-#endif
+  if(walltime_flag==1)
+    WallTimeLimit::InitWTLimit();
 
   if(Globals::my_rank==0) {
     std::cout<<std::endl<<"Setup complete, entering main loop..."<<std::endl<<std::endl;
@@ -356,42 +350,25 @@ int main(int argc, char *argv[])
       if(Globals::my_rank==0) {
         clock_t tnow = clock();
         Real wtnow = (Real)(tnow-tstart)/(Real)CLOCKS_PER_SEC;
-        if(wtnow > wtlim) {
+        if(wtnow > wtlim && (pmesh->nlim-pmesh->ncycle>2 || pmesh->nlim<0)
+                         && (pmesh->tlim-pmesh->time>3.0*pmesh->dt)) {
           walltime_flag=2;
-          nwtlim=pmesh->nlim=pmesh->ncycle+2;
-#ifdef MPI_PARALLEL
-          // broadcast
-          MPI_Ibcast(&nwtlim,1,MPI_INT,0,MPI_COMM_WORLD,&wtreq);
-#endif
+          pmesh->nlim=pmesh->ncycle+2;
+          WallTimeLimit::SendWTLimit(pmesh->nlim);
         }
       }
-#ifdef MPI_PARALLEL
       else {
-        int wtest;
-        MPI_Test(&wtreq,&wtest,MPI_STATUS_IGNORE);
-        if(wtest==true) {
+        if(WallTimeLimit::TestWTLimit(pmesh->nlim)==true)
           walltime_flag=2;
-          pmesh->nlim=nwtlim;
-        }
       }
-#endif
     }
 
   } // END OF MAIN INTEGRATION LOOP ====================================================
 
 #ifdef MPI_PARALLEL
-  if(walltime_flag==1) {
-    // terminate the unused broadcast
-    if(Globals::my_rank==0)
-      MPI_Ibcast(&nwtlim,1,MPI_INT,0,MPI_COMM_WORLD,&wtreq);
-    MPI_Wait(&wtreq,MPI_STATUS_IGNORE);
-  }
+  WallTimeLimit::FinalizeWTLimit(walltime_flag);
 #endif
   if(walltime_flag==2) { // hit the wall time limit
-#ifdef MPI_PARALLEL
-    if(Globals::my_rank==0)
-      MPI_Wait(&wtreq,MPI_STATUS_IGNORE);
-#endif
     try {
       pouts->MakeOutputs(pmesh,pinput,true);
     } 
