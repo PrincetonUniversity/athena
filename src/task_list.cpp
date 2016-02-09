@@ -18,7 +18,7 @@
 //======================================================================================
 
 // C/C++ headers
-#include <iostream>   // cout, endl
+#include <iostream>   // endl
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
@@ -281,9 +281,9 @@ enum TaskStatus HydroSend(MeshBlock *pmb, unsigned long int task_id, int step)
   Hydro *phydro=pmb->phydro;
   BoundaryValues *pbval=pmb->pbval;
   if(step == 1) {
-    pbval->SendHydroBoundaryBuffers(phydro->u1,1);
+    pbval->SendHydroBoundaryBuffers(phydro->u1, 1, true);
   } else if(step == 2) {
-    pbval->SendHydroBoundaryBuffers(phydro->u,0);
+    pbval->SendHydroBoundaryBuffers(phydro->u, 0, true);
   } else {
     return TASK_FAIL;
   }

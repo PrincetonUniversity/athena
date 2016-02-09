@@ -893,6 +893,9 @@ void BoundaryValues::StartReceivingForInit(void)
       MPI_Start(&req_hydro_recv_[0][nb.bufid]);
       if (MAGNETIC_FIELDS_ENABLED)
         MPI_Start(&req_field_recv_[0][nb.bufid]);
+      // Prep sending primitives to enable cons->prim inversion before prolongation
+      if (GENERAL_RELATIVITY and pmb->pmy_mesh->multilevel)
+        MPI_Start(&req_hydro_recv_[1][nb.bufid]);
     }
   }
 #endif
@@ -970,10 +973,12 @@ int BoundaryValues::LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src, Rea
 
 //--------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src,
-//                                                 Real *buf, const NeighborBlock& nb)
+//                                                 Real *buf, const NeighborBlock& nb,
+//                                                 bool conserved_values)
 //  \brief Set hydro boundary buffers for sending to a block on the coarser level
 int BoundaryValues::LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src, Real *buf,
-                                                     const NeighborBlock& nb)
+                                                     const NeighborBlock& nb,
+                                                     bool conserved_values)
 {
   MeshBlock *pmb=pmy_mblock_;
   MeshRefinement *pmr=pmb->pmr;
@@ -987,12 +992,17 @@ int BoundaryValues::LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src, Rea
   sk=(nb.ox3>0)?(pmb->cke-cn):pmb->cks;
   ek=(nb.ox3<0)?(pmb->cks+cn):pmb->cke;
 
-  // restrict the data before sending
-  pmr->RestrictCellCenteredValues(src, pmr->coarse_cons_, 0, NHYDRO-1,
-                                  si, ei, sj, ej, sk, ek);
   int p=0;
-  BufferUtility::Pack4DData(pmr->coarse_cons_, buf, 0, NHYDRO-1,
-                            si, ei, sj, ej, sk, ek, p);
+  if (conserved_values) { // normal case; restrict the data before sending
+    pmr->RestrictCellCenteredValues(src, pmr->coarse_cons_, 0, NHYDRO-1,
+                                    si, ei, sj, ej, sk, ek);
+    BufferUtility::Pack4DData(pmr->coarse_cons_, buf, 0, NHYDRO-1,
+                              si, ei, sj, ej, sk, ek, p);
+  }
+  else { // must be initialization; need to restrict but not send primitives
+    pmr->RestrictCellCenteredValues(src, pmr->coarse_prim_, 0, NHYDRO-1,
+                                    si, ei, sj, ej, sk, ek);
+  }
   return p;
 }
 
@@ -1049,9 +1059,11 @@ int BoundaryValues::LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src, Real 
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step)
+//! \fn void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step,
+//                                                    bool conserved_values)
 //  \brief Send boundary buffers
-void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step)
+void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step,
+                                              bool conserved_values)
 {
   MeshBlock *pmb=pmy_mblock_;
   int mylevel=pmb->loc.level;
@@ -1062,7 +1074,8 @@ void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step)
     if(nb.level==mylevel)
       ssize=LoadHydroBoundaryBufferSameLevel(src, hydro_send_[step][nb.bufid],nb);
     else if(nb.level<mylevel)
-      ssize=LoadHydroBoundaryBufferToCoarser(src, hydro_send_[step][nb.bufid],nb);
+      ssize=LoadHydroBoundaryBufferToCoarser(src, hydro_send_[step][nb.bufid], nb,
+                                             conserved_values);
     else
       ssize=LoadHydroBoundaryBufferToFiner(src, hydro_send_[step][nb.bufid], nb);
     if(nb.rank == Globals::my_rank) { // on the same process
@@ -1122,9 +1135,11 @@ void BoundaryValues::SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf
 
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf,
-//                                                       const NeighborBlock& nb)
+//                                                       const NeighborBlock& nb,
+//                                                       bool conserved_values)
 //  \brief Set hydro prolongation buffer received from a block on a coarser level
-void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock& nb)
+void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock& nb,
+    bool conserved_values)
 {
   MeshBlock *pmb=pmy_mblock_;
   MeshRefinement *pmr=pmb->pmr;
@@ -1165,15 +1180,24 @@ void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock&
       for (int k=sk; k<=ek; ++k) {
         for (int j=ej; j>=sj; --j) {
 #pragma simd
-          for (int i=si; i<=ei; ++i)
-            pmr->coarse_cons_(n,k,j,i) = sign * buf[p++];
+          for (int i=si; i<=ei; ++i) {
+            if (conserved_values)
+              pmr->coarse_cons_(n,k,j,i) = sign * buf[p++];
+            else
+              pmr->coarse_prim_(n,k,j,i) = sign * buf[p++];
+          }
         }
       }
     }
   }
-  else
-    BufferUtility::Unpack4DData(buf, pmr->coarse_cons_, 0, NHYDRO-1,
-                                si, ei, sj, ej, sk, ek, p);    
+  else {
+    if (conserved_values)
+      BufferUtility::Unpack4DData(buf, pmr->coarse_cons_, 0, NHYDRO-1,
+                                  si, ei, sj, ej, sk, ek, p);
+    else
+      BufferUtility::Unpack4DData(buf, pmr->coarse_prim_, 0, NHYDRO-1,
+                                  si, ei, sj, ej, sk, ek, p);
+  }
   return;
 }
 
@@ -1278,7 +1302,7 @@ bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst, int ste
     if(nb.level==pmb->loc.level)
       SetHydroBoundarySameLevel(dst, hydro_recv_[step][nb.bufid], nb);
     else if(nb.level<pmb->loc.level) // this set only the prolongation buffer
-      SetHydroBoundaryFromCoarser(hydro_recv_[step][nb.bufid], nb);
+      SetHydroBoundaryFromCoarser(hydro_recv_[step][nb.bufid], nb, true);
     else
       SetHydroBoundaryFromFiner(dst, hydro_recv_[step][nb.bufid], nb);
     hydro_flag_[step][nb.bufid] = boundary_completed; // completed
@@ -1300,15 +1324,15 @@ void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst,
     NeighborBlock& nb = pmb->neighbor[n];
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank)
-      MPI_Wait(&req_hydro_recv_[0][nb.bufid],MPI_STATUS_IGNORE);
+      MPI_Wait(&req_hydro_recv_[step][nb.bufid],MPI_STATUS_IGNORE);
 #endif
     if(nb.level==pmb->loc.level)
-      SetHydroBoundarySameLevel(dst, hydro_recv_[0][nb.bufid], nb);
+      SetHydroBoundarySameLevel(dst, hydro_recv_[step][nb.bufid], nb);
     else if(nb.level<pmb->loc.level)
-      SetHydroBoundaryFromCoarser(hydro_recv_[0][nb.bufid], nb);
+      SetHydroBoundaryFromCoarser(hydro_recv_[step][nb.bufid], nb, step == 0);
     else
-      SetHydroBoundaryFromFiner(dst, hydro_recv_[0][nb.bufid], nb);
-    hydro_flag_[0][nb.bufid] = boundary_completed; // completed
+      SetHydroBoundaryFromFiner(dst, hydro_recv_[step][nb.bufid], nb);
+    hydro_flag_[step][nb.bufid] = boundary_completed; // completed
   }
  
   if (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY) PolarSingleHydro(dst);
@@ -3670,16 +3694,22 @@ void BoundaryValues::ClearBoundaryForInit(void)
 {
   MeshBlock *pmb=pmy_mblock_;
 
+  // Note step==0 corresponds to initial exchange of conserved variables, while step==1
+  // corresponds to primitives sent only in the case of GR with refinement
   for(int n=0;n<pmb->nneighbor;n++) {
     NeighborBlock& nb = pmb->neighbor[n];
     hydro_flag_[0][nb.bufid] = boundary_waiting;
     if (MAGNETIC_FIELDS_ENABLED)
       field_flag_[0][nb.bufid] = boundary_waiting;
+    if (GENERAL_RELATIVITY and pmb->pmy_mesh->multilevel)
+      hydro_flag_[1][nb.bufid] = boundary_waiting;
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank) {
       MPI_Wait(&req_hydro_send_[0][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
       if (MAGNETIC_FIELDS_ENABLED)
         MPI_Wait(&req_field_send_[0][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
+      if (GENERAL_RELATIVITY and pmb->pmy_mesh->multilevel)
+        MPI_Wait(&req_hydro_send_[1][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
     }
 #endif
   }

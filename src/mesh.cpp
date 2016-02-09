@@ -1216,9 +1216,12 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       phydro=pmb->phydro;
       pfield=pmb->pfield;
       pbval=pmb->pbval;
-      pbval->SendHydroBoundaryBuffers(phydro->u,0);
+      pbval->SendHydroBoundaryBuffers(phydro->u, 0, true);
       if (MAGNETIC_FIELDS_ENABLED)
         pbval->SendFieldBoundaryBuffers(pfield->b,0);
+      // Send primitives to enable cons->prim inversion before prolongation
+      if (GENERAL_RELATIVITY and multilevel)
+        pbval->SendHydroBoundaryBuffers(phydro->w, 1, false);
       pmb=pmb->next;
     }
 
@@ -1227,9 +1230,12 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       phydro=pmb->phydro;
       pfield=pmb->pfield;
       pbval=pmb->pbval;
-      pbval->ReceiveHydroBoundaryBuffersWithWait(phydro->u ,0);
+      pbval->ReceiveHydroBoundaryBuffersWithWait(phydro->u, 0);
       if (MAGNETIC_FIELDS_ENABLED)
-        pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b ,0);
+        pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b, 0);
+      // Receive primitives to enable cons->prim inversion before prolongation
+      if (GENERAL_RELATIVITY and multilevel)
+        pbval->ReceiveHydroBoundaryBuffersWithWait(phydro->w, 1);
       pmb->pbval->ClearBoundaryForInit();
       if(multilevel==true)
         pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc);

@@ -87,13 +87,17 @@ public:
   int LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
                                        const NeighborBlock& nb);
   int LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src, Real *buf,
-                                       const NeighborBlock& nb);
+                                       const NeighborBlock& nb, bool conserved_values);
   int LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src, Real *buf,
                                      const NeighborBlock& nb);
-  void SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step);
-  void SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf, const NeighborBlock& nb);
-  void SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock& nb);
-  void SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf, const NeighborBlock& nb);
+  void SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step,
+                                bool conserved_values);
+  void SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
+                                 const NeighborBlock& nb);
+  void SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock& nb,
+                                   bool conserved_values);
+  void SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf,
+                                 const NeighborBlock& nb);
   bool ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst, int step);
   void ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst, int step);
   void RestrictHydro(AthenaArray<Real> &src,
