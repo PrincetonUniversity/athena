@@ -288,7 +288,7 @@ void Coordinates::Edge3Length(const int k, const int j, const int il, const int 
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    lengths(k) = GetEdge3Length(k, j, i);
+    lengths(i) = GetEdge3Length(k, j, i);
   return;
 }
 
