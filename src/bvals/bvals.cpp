@@ -4039,6 +4039,9 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
 
           pmb->pmr->RestrictCellCenteredValues(cdst, pmr->coarse_cons_, 0, NHYDRO-1,
                                                ris, rie, rjs, rje, rks, rke);
+          if (GENERAL_RELATIVITY)
+            pmb->pmr->RestrictCellCenteredValues(pdst, pmr->coarse_prim_, 0, NHYDRO-1,
+                                                 ris, rie, rjs, rje, rks, rke);
           if (MAGNETIC_FIELDS_ENABLED) {
             int rs=ris, re=rie+1;
             if(rs==pmb->cis   && pmb->nblevel[nk+1][nj+1][ni  ]<mylevel) rs++;
