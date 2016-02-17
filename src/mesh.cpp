@@ -863,11 +863,11 @@ void Mesh::MeshTest(int dim)
 }
 
 //--------------------------------------------------------------------------------------
-// MeshBlock constructor: builds 1D vectors of cell positions and spacings, and
-// constructs coordinate, boundary condition, hydro and field objects.
+// MeshBlock constructor: constructs coordinate, boundary condition, hydro, field
+//                        and mesh refinement objects.
 
 MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_block,
-                     enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin)
+           enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, bool ref_flag)
 {
   std::stringstream msg;
   int root_level;
@@ -911,7 +911,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
       cks=cnghost, cke=cks+block_size.nx3/2-1;
   }
 
-  if(pm->adaptive==false) { // too noisy for AMR
+  if(ref_flag==false) { // too noisy for AMR
     std::cout << "MeshBlock " << gid << ", rank = " << Globals::my_rank << ", lx1 = "
               << loc.lx1 << ", lx2 = " << loc.lx2 <<", lx3 = " << loc.lx3
               << ", level = " << loc.level << std::endl;
@@ -928,6 +928,8 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 // in the Hydro constructor
  
   pcoord = new Coordinates(this, pin);
+  if(ref_flag==false)
+    pcoord->CheckMeshSpacing();
   if(pm->multilevel==true)
     pmr = new MeshRefinement(this, pin);
   phydro = new Hydro(this, pin);
@@ -2354,11 +2356,11 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
       // on a different level or node - create a new block
       SetBlockSizeAndBoundaries(newloc[n], block_size, block_bcs);
       if(n==nbs) { // first
-        newlist = new MeshBlock(n, n-nbs, newloc[n], block_size, block_bcs, this, pin);
+        newlist = new MeshBlock(n, n-nbs, newloc[n], block_size, block_bcs, this, pin, true);
         pmb=newlist;
       }
       else {
-        pmb->next = new MeshBlock(n, n-nbs, newloc[n], block_size, block_bcs, this, pin);
+        pmb->next = new MeshBlock(n, n-nbs, newloc[n], block_size, block_bcs, this, pin, true);
         pmb->next->prev=pmb;
         pmb=pmb->next;
       }

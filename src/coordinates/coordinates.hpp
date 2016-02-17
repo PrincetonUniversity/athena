@@ -14,6 +14,7 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../mesh.hpp"
+#include <iostream>
 
 // forward declarations
 class MeshBlock;
@@ -40,6 +41,7 @@ public:
 
   void AllocateAndSetBasicCoordinates(void);
   void DeleteBasicCoordinates(void);
+  void CheckMeshSpacing(void);
 
   // Function for checking for poles
   bool IsPole(int j);
@@ -531,6 +533,46 @@ inline void Coordinates::DeleteBasicCoordinates(void)
     x3s1.DeleteAthenaArray();
     x3s2.DeleteAthenaArray();
   }
+}
+
+
+inline void Coordinates::CheckMeshSpacing(void)
+{
+  Real rmax=1.0, rmin=1.0;
+  for(int i=pmy_block->is; i<=pmy_block->ie; i++) {
+    rmax=std::max(dx1v(i+1)/dx1v(i),rmax);
+    rmin=std::min(dx1v(i+1)/dx1v(i),rmin);
+  }
+  if(rmax > 1.1 || rmin  < 1.0/1.1) {
+     std::cout << "### Warning in Coordinates::CheckMeshSpacing" << std::endl
+       << "Neighboring cell sizes differ by more than 10% in the x1 direction."
+       << std::endl;
+  }
+  if(pmy_block->je!=pmy_block->js) {
+    rmax=1.0, rmin=1.0;
+    for(int j=pmy_block->js; j<=pmy_block->je; j++) {
+      rmax=std::max(dx2v(j+1)/dx2v(j),rmax);
+      rmin=std::min(dx2v(j+1)/dx2v(j),rmin);
+    }
+    if(rmax > 1.1 || rmin  < 1.0/1.1) {
+       std::cout << "### Warning in Coordinates::CheckMeshSpacing" << std::endl
+         << "Neighboring cell sizes differ by more than 10% in the x2 direction."
+         << std::endl;
+    }
+  }
+  if(pmy_block->ke!=pmy_block->ks) {
+    rmax=1.0, rmin=1.0;
+    for(int k=pmy_block->ks; k<=pmy_block->ke; k++) {
+      rmax=std::max(dx3v(k+1)/dx3v(k),rmax);
+      rmin=std::min(dx3v(k+1)/dx3v(k),rmin);
+    }
+    if(rmax > 1.1 || rmin  < 1.0/1.1) {
+       std::cout << "### Warning in Coordinates::CheckMeshSpacing" << std::endl
+         << "Neighboring cell sizes differ by more than 10% in the x3 direction."
+         << std::endl;
+    }
+  }
+  return;
 }
 
 // Function for determining if index corresponds to a polar boundary

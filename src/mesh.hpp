@@ -94,7 +94,7 @@ private:
 public:
   LogicalLocation loc;
   MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_size,
-            enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin);
+    enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, bool ref_flag = false);
   MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, LogicalLocation iloc,
   IOWrapper& resfile, IOWrapperSize_t offset, Real icost, int *ranklist, int *nslist);
   ~MeshBlock();
