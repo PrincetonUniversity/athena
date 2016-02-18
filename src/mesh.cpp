@@ -1218,11 +1218,11 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       phydro=pmb->phydro;
       pfield=pmb->pfield;
       pbval=pmb->pbval;
-      pbval->SendHydroBoundaryBuffers(phydro->u, 0, true);
+      pbval->SendHydroBoundaryBuffers(phydro->u, 0);
       if (MAGNETIC_FIELDS_ENABLED)
         pbval->SendFieldBoundaryBuffers(pfield->b,0);
       // Send primitives to enable cons->prim inversion before prolongation
-      if (GENERAL_RELATIVITY and multilevel)
+      if (GENERAL_RELATIVITY && multilevel)
         pbval->SendHydroBoundaryBuffers(phydro->w, 1, false);
       pmb=pmb->next;
     }

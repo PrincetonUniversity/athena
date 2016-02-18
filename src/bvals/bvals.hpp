@@ -91,7 +91,7 @@ public:
   int LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src, Real *buf,
                                      const NeighborBlock& nb);
   void SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step,
-                                bool conserved_values);
+                                bool conserved_values = true);
   void SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
                                  const NeighborBlock& nb);
   void SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock& nb,

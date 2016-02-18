@@ -1308,7 +1308,9 @@ bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst, int ste
     hydro_flag_[step][nb.bufid] = boundary_completed; // completed
   }
 
-  if(flag&&(pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY)) PolarSingleHydro(dst);
+  if(flag&& (pmb->block_bcs[INNER_X2]==POLAR_BNDRY
+         ||  pmb->block_bcs[OUTER_X2]==POLAR_BNDRY))
+     PolarSingleHydro(dst);
   return flag;
 }
 
@@ -1335,7 +1337,8 @@ void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst,
     hydro_flag_[step][nb.bufid] = boundary_completed; // completed
   }
  
-  if (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY) PolarSingleHydro(dst);
+  if (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY)
+    PolarSingleHydro(dst);
 
   return;
 }
@@ -2334,7 +2337,8 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst, int step)
     field_flag_[step][nb.bufid] = boundary_completed; // completed
   }
 
-  if(flag&&(pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY)) PolarSingleField(dst);
+  if(flag&&(pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY))
+    PolarSingleField(dst);
 
   return flag;
 }
@@ -2363,7 +2367,8 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst, int ste
     field_flag_[0][nb.bufid] = boundary_completed; // completed
   }
 
-  if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY) PolarSingleField(dst);
+  if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY)
+    PolarSingleField(dst);
   return;
 }
 
@@ -3681,7 +3686,8 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
       SetEMFBoundaryPolar(emf_south_recv_[step], num_south_polar_blocks_, false);
     for (int n = 0; n < num_south_polar_blocks_; ++n)
       emf_south_flag_[step][n] = boundary_completed;
-    if (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY) PolarSingleEMF();
+    if (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY)
+      PolarSingleEMF();
   }
   return flag;
 }
