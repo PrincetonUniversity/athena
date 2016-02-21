@@ -272,7 +272,7 @@ if args['cxx'] == 'bgxl':
   definitions['COMPILER_CHOICE'] = makefile_options['COMPILER_CHOICE'] = 'bgxlc++'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
   makefile_options['COMPILER_FLAGS'] = \
-      '-O3 -qlanglvl=extended -qsuppress=1500-036 -qsuppress=1540-1401'
+      '-O3 -qstrict -qlanglvl=extended -qsuppress=1500-036 -qsuppress=1540-1401'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
 
