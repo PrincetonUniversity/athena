@@ -834,10 +834,10 @@ void BoundaryValues::Initialize(void)
       for (int n = 0; n < num_north_polar_blocks_; ++n) {
         const PolarNeighborBlock &nb = pmb->polar_neighbor_north[n];
         if(nb.rank != Globals::my_rank) {
-          tag = CreateMPITag(nb.lid, l, tag_emfpole, n);
+          tag = CreateMPITag(nb.lid, l, tag_emfpole, pmb->loc.lx3);
           MPI_Send_init(emf_north_send_[l][n], pmb->block_size.nx1, MPI_ATHENA_REAL,
               nb.rank, tag, MPI_COMM_WORLD, &req_emf_north_send_[l][n]);
-          tag = CreateMPITag(pmb->lid, l, tag_emfpole, pmb->loc.lx3);
+          tag = CreateMPITag(pmb->lid, l, tag_emfpole, n);
           MPI_Recv_init(emf_north_recv_[l][n], pmb->block_size.nx1, MPI_ATHENA_REAL,
               nb.rank, tag, MPI_COMM_WORLD, &req_emf_north_recv_[l][n]);
         }
@@ -845,10 +845,10 @@ void BoundaryValues::Initialize(void)
       for (int n = 0; n < num_south_polar_blocks_; ++n) {
         const PolarNeighborBlock &nb = pmb->polar_neighbor_south[n];
         if(nb.rank != Globals::my_rank) {
-          tag = CreateMPITag(nb.lid, l, tag_emfpole, n);
+          tag = CreateMPITag(nb.lid, l, tag_emfpole, pmb->loc.lx3);
           MPI_Send_init(emf_south_send_[l][n], pmb->block_size.nx1, MPI_ATHENA_REAL,
               nb.rank, tag, MPI_COMM_WORLD, &req_emf_south_send_[l][n]);
-          tag = CreateMPITag(pmb->lid, l, tag_emfpole, pmb->loc.lx3);
+          tag = CreateMPITag(pmb->lid, l, tag_emfpole, n);
           MPI_Recv_init(emf_south_recv_[l][n], pmb->block_size.nx1, MPI_ATHENA_REAL,
               nb.rank, tag, MPI_COMM_WORLD, &req_emf_south_recv_[l][n]);
         }
@@ -3723,6 +3723,8 @@ void BoundaryValues::ClearBoundaryForInit(void)
 void BoundaryValues::ClearBoundaryAll(void)
 {
   MeshBlock *pmb=pmy_mblock_;
+
+  // Clear non-polar boundary communications
   for(int l=0;l<NSTEP;l++) {
     for(int n=0;n<pmb->nneighbor;n++) {
       NeighborBlock& nb = pmb->neighbor[n];
@@ -3751,6 +3753,28 @@ void BoundaryValues::ClearBoundaryAll(void)
         }
       }
 #endif
+    }
+  }
+
+  // Clear polar boundary communications
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for (int l = 0; l < NSTEP; ++l) {
+      for (int n = 0; n < num_north_polar_blocks_; ++n) {
+        PolarNeighborBlock &nb = pmb->polar_neighbor_north[n];
+        emf_north_flag_[l][n] = boundary_waiting;
+#ifdef MPI_PARALLEL
+        if(nb.rank != Globals::my_rank)
+          MPI_Wait(&req_emf_north_send_[l][n], MPI_STATUS_IGNORE);
+#endif
+      }
+      for (int n = 0; n < num_south_polar_blocks_; ++n) {
+        PolarNeighborBlock &nb = pmb->polar_neighbor_south[n];
+        emf_south_flag_[l][n] = boundary_waiting;
+#ifdef MPI_PARALLEL
+        if(nb.rank != Globals::my_rank)
+          MPI_Wait(&req_emf_south_send_[l][n], MPI_STATUS_IGNORE);
+#endif
+      }
     }
   }
   return;
