@@ -348,7 +348,7 @@ void HydroIntegrator::FluxDivergence(MeshBlock *pmb,AthenaArray<Real> &u,
 //  Add user source terms
 
   if (pmb->phydro->pf_srcterms->UserSourceTerm != NULL)
-    pmb->phydro->pf_srcterms->UserSourceTerm(pmb->pmy_mesh->time,dt,w,bcc,u);
+    pmb->phydro->pf_srcterms->UserSourceTerm(pmb, pmb->pmy_mesh->time,dt,w,bcc,u);
 
   return;
 }

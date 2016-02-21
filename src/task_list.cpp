@@ -281,9 +281,9 @@ enum TaskStatus HydroSend(MeshBlock *pmb, unsigned long int task_id, int step)
   Hydro *phydro=pmb->phydro;
   BoundaryValues *pbval=pmb->pbval;
   if(step == 1) {
-    pbval->SendHydroBoundaryBuffers(phydro->u1, 1, true);
+    pbval->SendHydroBoundaryBuffers(phydro->u1, 1);
   } else if(step == 2) {
-    pbval->SendHydroBoundaryBuffers(phydro->u, 0, true);
+    pbval->SendHydroBoundaryBuffers(phydro->u, 0);
   } else {
     return TASK_FAIL;
   }
