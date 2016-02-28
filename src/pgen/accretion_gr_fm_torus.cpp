@@ -6,7 +6,11 @@
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // exp(), log(), NAN, pow(), sin(), sqrt()
+#include <iostream>   // endl
 #include <limits>     // numeric_limits::max()
+#include <sstream>    // stringstream
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str(), string
 
 // Athena headers
 #include "../athena.hpp"                   // macros, enums, Real
@@ -23,16 +27,25 @@ static Real calculate_l_from_r_peak(Real r);
 static Real calculate_r_peak_from_l(Real l_target, Real r_min, Real r_max);
 static Real log_h_aux(Real r, Real sin_theta);
 static void calculate_velocity_in_torus(Real r, Real sin_theta, Real *pu0, Real *pu3);
-static Real calculate_beta_min(Real r_min, Real r_max, Real theta_min, Real theta_max);
+static Real calculate_beta_min(Real r_min, Real r_max, Real theta_min, Real theta_max,
+    int n_r, int n_theta, Real r_ratio);
+static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
+    Real theta_p, Real *pbb1, Real *pbb2, Real *pbb3, Real *pbeta);
+static Real CalculateMagneticPressure(Real bb1, Real bb2, Real bb3, Real r,
+    Real sin_theta, Real cos_theta);
+static Real CalculatePotentialOffset(Real r, Real theta, Real r_min, Real r_max,
+    int n_r, int n_theta, Real r_rat);
 
 // Global variables
 static Real m, a;                            // black hole parameters
 static Real gamma_adi, k_adi;                // hydro parameters
-static Real r_edge, r_peak, l, rho_max;      // disk parameters
+static Real r_edge, r_peak, l, rho_max;      // fixed torus parameters
+static Real log_h_edge, log_h_peak;          // calculated torus parameters
+static Real pgas_over_rho_peak, rho_peak;    // more calculated torus parameters
 static Real rho_min, rho_pow, u_min, u_pow;  // background parameters
 static Real potential_cutoff;                // sets region of torus to magnetize
 static Real beta_min;                        // min ratio of gas to magnetic pressure
-
+static std::string field_shape;              // type of field to use
 
 // Function for initializing global mesh properties
 void Mesh::InitUserMeshProperties(ParameterInput *pin)
@@ -45,7 +58,6 @@ void Mesh::TerminateUserMeshProperties(void)
 {
   return;
 }
-
 
 // Function for setting initial conditions
 // Inputs:
@@ -113,10 +125,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   gi.NewAthenaArray(NMETRIC, iu+1);
 
   // Initialize primitive values
-  Real log_h_edge = log_h_aux(r_edge, 1.0);
-  Real log_h_peak = log_h_aux(r_peak, 1.0) - log_h_edge;
-  Real pgas_over_rho_peak = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h_peak)-1);
-  Real rho_peak = std::pow(pgas_over_rho_peak/k_adi, 1.0/(gamma_adi-1.0));
+  log_h_edge = log_h_aux(r_edge, 1.0);
+  log_h_peak = log_h_aux(r_peak, 1.0) - log_h_edge;
+  pgas_over_rho_peak = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h_peak)-1.0);
+  rho_peak = std::pow(pgas_over_rho_peak/k_adi, 1.0/(gamma_adi-1.0));
   for (int j = jl; j <= ju; ++j)
   {
     pcoord->CellMetric(kl, j, il, iu, g, gi);
@@ -142,7 +154,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       Real rho, pgas, uu1, uu2, uu3;
       if (in_torus(j,i))
       {
-        Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1);
+        Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
         rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
         pgas = pgas_over_rho * rho;
         Real u0, u3;
@@ -179,76 +191,123 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   // Initialize magnetic fields
   if (MAGNETIC_FIELDS_ENABLED)
   {
+    // Determine field shape
+    field_shape = pin->GetOrAddString("problem", "field_shape", "standard");
+    if (not (field_shape == "standard" or field_shape == "offset"))
+    {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Problem Generator" << std::endl
+          << "must select valid field_shape" << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+
     // Prepare 2D arrays of vector potential values
     AthenaArray<Real> a_phi_cells, a_phi_edges;
     a_phi_cells.NewAthenaArray(ju+1, iu+1);
     a_phi_edges.NewAthenaArray(ju+2, iu+2);
 
-    // Go through 2D slice, setting vector potential in cells
-    for (int j = jl; j <= ju; ++j)
-      for (int i = il; i <= iu; ++i)
-      {
-        // Get Boyer-Lindquist coordinates
-        Real r, theta, phi;
-        pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i),
-            pcoord->x2v(j), pcoord->x3v(kl), &r, &theta, &phi);
-        Real sin_theta = std::sin(theta);
-
-        // Calculate A_phi as proportional to rho
-        if (r >= r_edge)
+    // Set vector potential in 2D slice in standard case (proportional to rho)
+    if (field_shape == "standard")
+    {
+      // Set cell-centered values
+      for (int j = jl; j <= ju; ++j)
+        for (int i = il; i <= iu; ++i)
         {
-          Real log_h = log_h_aux(r, sin_theta) - log_h_edge;  // (FM 3.6)
-          if (log_h >= 0.0)
-          {
-            Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1);
-            Real rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
-            a_phi_cells(j,i) = rho;
-          }
-        }
-      }
-
-    // Go through 2D slice, setting vector potential at edges
-    for (int j = jl; j <= ju+1; ++j)
-      for (int i = il; i <= iu+1; ++i)
-      {
-        // Get Boyer-Lindquist coordinates
-        Real r, theta, phi;
-        pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i),
-            pcoord->x2f(j), pcoord->x3v(kl), &r, &theta, &phi);
-
-        // Calculate A_phi as proportional to rho
-        if (r >= r_edge)
-        {
+          Real r, theta, phi;
+          pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i),
+              pcoord->x2v(j), pcoord->x3v(kl), &r, &theta, &phi);
           Real sin_theta = std::sin(theta);
-          Real log_h = log_h_aux(r, sin_theta) - log_h_edge;  // (FM 3.6)
-          if (log_h >= 0.0)
+          if (r >= r_edge)
           {
-            Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1);
-            Real rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
-            a_phi_edges(j,i) = rho;
+            Real log_h = log_h_aux(r, sin_theta) - log_h_edge;  // (FM 3.6)
+            if (log_h >= 0.0)
+            {
+              Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
+              Real rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
+              a_phi_cells(j,i) = std::max(rho-potential_cutoff, 0.0);
+            }
           }
         }
-      }
 
-    // Truncate vector potential
-    for (int j = jl; j <= ju; ++j)
-      for (int i = il; i <= iu; ++i)
-        a_phi_cells(j,i) = std::max(a_phi_cells(j,i) - potential_cutoff, 0.0);
-    for (int j = jl; j <= ju+1; ++j)
-      for (int i = il; i <= iu+1; ++i)
-        a_phi_edges(j,i) = std::max(a_phi_edges(j,i) - potential_cutoff, 0.0);
+      // Set edge-centered values
+      for (int j = jl; j <= ju+1; ++j)
+        for (int i = il; i <= iu+1; ++i)
+        {
+          Real r, theta, phi;
+          pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i),
+              pcoord->x2f(j), pcoord->x3v(kl), &r, &theta, &phi);
+          if (r >= r_edge)
+          {
+            Real sin_theta = std::sin(theta);
+            Real log_h = log_h_aux(r, sin_theta) - log_h_edge;  // (FM 3.6)
+            if (log_h >= 0.0)
+            {
+              Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
+              Real rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
+              a_phi_edges(j,i) = std::max(rho-potential_cutoff, 0.0);
+            }
+          }
+        }
+    }
+
+    // Extract parameters for sampling grid
+    int sample_n_r = pin->GetInteger("problem", "sample_n_r");
+    int sample_n_theta = pin->GetInteger("problem", "sample_n_theta");
+    sample_n_theta += sample_n_theta % 2;
+    Real sample_r_rat = pin->GetReal("problem", "sample_r_rat");
+    Real x1_min = pin->GetReal("mesh", "x1min");
+    Real x1_max = pin->GetReal("mesh", "x1max");
+    Real x2_min = pin->GetReal("mesh", "x2min");
+    Real x2_max = pin->GetReal("mesh", "x2max");
+    Real r1, r2, r3, r4, theta1, theta2, theta3, theta4, temp;
+    pcoord->GetBoyerLindquistCoordinates(x1_min, x2_min, pcoord->x3v(kl), &r1, &theta1,
+        &temp);
+    pcoord->GetBoyerLindquistCoordinates(x1_max, x2_min, pcoord->x3v(kl), &r2, &theta2,
+        &temp);
+    pcoord->GetBoyerLindquistCoordinates(x1_min, x2_max, pcoord->x3v(kl), &r3, &theta3,
+        &temp);
+    pcoord->GetBoyerLindquistCoordinates(x1_max, x2_max, pcoord->x3v(kl), &r4, &theta4,
+        &temp);
+    Real r_min = std::min(std::min(r1, r2), std::min(r3, r4));
+    Real r_max = std::max(std::max(r1, r2), std::max(r3, r4));
+    Real theta_min = std::min(std::min(theta1, theta2), std::min(theta3, theta4));
+    Real theta_max = std::max(std::max(theta1, theta2), std::max(theta3, theta4));
+
+    // Set vector potential in 2D slice in offset case (based on r^5*rho^2)
+    if (field_shape == "offset")
+    {
+      // Set cell-centered values
+      for (int j = jl; j <= ju; ++j)
+        for (int i = il; i <= iu; ++i)
+        {
+          Real r, theta, phi;
+          pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
+              pcoord->x3v(kl), &r, &theta, &phi);
+          a_phi_cells(j,i) = CalculatePotentialOffset(r, theta, r_min, r_max,
+              sample_n_r, sample_n_theta, sample_r_rat);
+        }
+
+      // Set edge-centered values
+      for (int j = jl; j <= ju+1; ++j)
+        for (int i = il; i <= iu+1; ++i)
+        {
+          Real r, theta, phi;
+          pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j),
+              pcoord->x3v(kl), &r, &theta, &phi);
+          a_phi_edges(j,i) = CalculatePotentialOffset(r, theta, r_min, r_max,
+              sample_n_r, sample_n_theta, sample_r_rat);
+        }
+    }
 
     // Calculate magnetic field normalization
-    r_peak = calculate_r_peak_from_l(l, pin->GetReal("mesh", "x1min"),
-        pin->GetReal("mesh", "x1max"));
+    r_peak = calculate_r_peak_from_l(l, r_min, r_max);
     Real normalization;
     if (beta_min < 0.0)
       normalization = 0.0;
     else
     {
-      Real beta_min_actual = calculate_beta_min(pin->GetReal("mesh", "x1min"),
-          pin->GetReal("mesh", "x1max"), pin->GetReal("mesh", "x2min"),
-          pin->GetReal("mesh", "x2max"));
+      Real beta_min_actual = calculate_beta_min(r_min, r_max, theta_min, theta_max,
+          sample_n_r, sample_n_theta, sample_r_rat);
       normalization = std::sqrt(beta_min_actual/beta_min);
     }
 
@@ -608,127 +667,320 @@ static void calculate_velocity_in_torus(Real r, Real sin_theta, Real *pu0, Real 
 // Inputs:
 //   r_min,r_max: bounds on Boyer-Lindquist radial extent of grid
 //   theta_min,theta_max: bounds on Boyer-Lindquist polar extent of grid
+//   n_r,n_theta: numbers of cells in radial and polar directions in sample grid
+//   r_ratio: geometric ratio of adjacent radial widths in sample grid
 // Outputs:
 //   returned value: minimum beta found by sampling grid covering whole domain
 // Notes:
 //   constructs grid over entire mesh, not just block
 //   grid is not necessarily the same as used for the problem proper
 //   calculation is done entirely in Boyer-Lindquist coordinates
-//   references Fishbone & Moncrief 1976, ApJ 207 962 (FM)
-static Real calculate_beta_min(Real r_min, Real r_max, Real theta_min, Real theta_max)
+static Real calculate_beta_min(Real r_min, Real r_max, Real theta_min, Real theta_max,
+    int n_r, int n_theta, Real r_ratio)
 {
-  // Parameters
-  const int n_r = 128;      // number of cells in radial direction to use
-  const int n_theta = 128;  // number of cells in polar direction to use
-
-  // Prepare values that do not depend on location
-  Real log_h_edge = log_h_aux(r_edge, 1.0);
-  Real log_h_peak = log_h_aux(r_peak, 1.0) - log_h_edge;
-  Real pgas_over_rho_peak = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h_peak)-1);
-  Real rho_peak = std::pow(pgas_over_rho_peak/k_adi, 1.0/(gamma_adi-1.0));
-
-  // Loop through theta
+  // Prepare container to hold minimum
   Real beta_min_actual = std::numeric_limits<Real>::max();
+
+  // Go through sample grid in theta
   for (int j = 0; j < n_theta; ++j)
   {
-    // Set up theta sampling points
+    // Calculate theta values
     Real theta_m = theta_min
         + static_cast<Real>(j)/static_cast<Real>(n_theta) * (theta_max-theta_min);
     Real theta_p = theta_min
         + static_cast<Real>(j+1)/static_cast<Real>(n_theta) * (theta_max-theta_min);
     Real theta_c = 0.5 * (theta_m + theta_p);
-    Real sin_theta_m = std::sin(theta_m);
-    Real sin_theta_p = std::sin(theta_p);
     Real sin_theta_c = std::sin(theta_c);
     Real cos_theta_c = std::cos(theta_c);
 
-    // Loop through r
+    // Go through sample grid in r
     for (int i = 0; i < n_r; ++i)
     {
-      // Set up r sampling points
-      Real r_m = r_min + static_cast<Real>(i)/static_cast<Real>(n_r) * (r_max-r_min);
-      Real r_p = r_min + static_cast<Real>(i+1)/static_cast<Real>(n_r) * (r_max-r_min);
+      // Calculate r values
+      Real r_m, r_p, delta_r;
+      if (i == 0)
+      {
+        r_m = r_min;
+        Real ratio_power = 1.0;
+        Real ratio_sum = 1.0;
+        for (int ii = 1; ii < n_r; ++ii)
+        {
+          ratio_power *= r_ratio;
+          ratio_sum += ratio_power;
+        }
+        delta_r = (r_max-r_min) / ratio_sum;
+      }
+      else
+      {
+        r_m = r_p;
+        delta_r *= r_ratio;
+      }
+      r_p = r_m + delta_r;
       Real r_c = 0.5 * (r_m + r_p);
 
-      // Determine if we are in the torus (FM 3.6)
-      if (r_m < r_edge)
-        continue;
-      Real log_h_cc = log_h_aux(r_c, sin_theta_c) - log_h_edge;
-      Real log_h_cm = log_h_aux(r_c, sin_theta_m) - log_h_edge;
-      Real log_h_cp = log_h_aux(r_c, sin_theta_p) - log_h_edge;
-      Real log_h_mc = log_h_aux(r_m, sin_theta_c) - log_h_edge;
-      Real log_h_pc = log_h_aux(r_p, sin_theta_c) - log_h_edge;
-      if (log_h_cc < 0.0 or log_h_cm < 0.0 or log_h_cp < 0.0 or log_h_mc < 0.0
-          or log_h_pc < 0.0)
-        continue;
+      // Calculate beta in standard case
+      if (field_shape == "standard")
+      {
+        Real beta, bbr, bbtheta, bbphi;
+        bool values_set = CalculateBeta(r_m, r_c, r_p, theta_m, theta_c, theta_p, &bbr,
+            &bbtheta, &bbphi, &beta);
+        if (values_set)
+          beta_min_actual = std::min(beta_min_actual, beta);
+      }
 
-      // Calculate primitives depending on location
-      Real pgas_over_rho_cc = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h_cc)-1);
-      Real pgas_over_rho_cm = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h_cm)-1);
-      Real pgas_over_rho_cp = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h_cp)-1);
-      Real pgas_over_rho_mc = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h_mc)-1);
-      Real pgas_over_rho_pc = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h_pc)-1);
-      Real rho_cc = std::pow(pgas_over_rho_cc/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
-      Real rho_cm = std::pow(pgas_over_rho_cm/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
-      Real rho_cp = std::pow(pgas_over_rho_cp/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
-      Real rho_mc = std::pow(pgas_over_rho_mc/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
-      Real rho_pc = std::pow(pgas_over_rho_pc/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
-      Real pgas = pgas_over_rho_cc * rho_cc;
-      Real u1 = 0.0;
-      Real u2 = 0.0;
-      Real u0, u3;
-      calculate_velocity_in_torus(r_c, sin_theta_c, &u0, &u3);
+      // Calculate beta in offset case
+      if (field_shape == "offset")
+      {
+        // Calculate true vector potential at sample cell edges
+        Real a_cm = CalculatePotentialOffset(r_c, theta_m, r_min, r_max, n_r, n_theta,
+            r_ratio);
+        Real a_cp = CalculatePotentialOffset(r_c, theta_p, r_min, r_max, n_r, n_theta,
+            r_ratio);
+        Real a_mc = CalculatePotentialOffset(r_m, theta_c, r_min, r_max, n_r, n_theta,
+            r_ratio);
+        Real a_pc = CalculatePotentialOffset(r_p, theta_c, r_min, r_max, n_r, n_theta,
+            r_ratio);
+        if (a_cm == 0.0 or a_cp == 0.0 or a_mc == 0.0 or a_pc == 0.0)
+          continue;
 
-      // Calculate phi-component of vector potential
-      Real a_cm = std::max(rho_cm-potential_cutoff, 0.0);
-      Real a_cp = std::max(rho_cp-potential_cutoff, 0.0);
-      Real a_mc = std::max(rho_mc-potential_cutoff, 0.0);
-      Real a_pc = std::max(rho_pc-potential_cutoff, 0.0);
-      if (a_cm == 0.0 or a_cp == 0.0 or a_mc == 0.0 or a_pc == 0.0)
-        continue;
+        // Calculate magnetic field and pressure
+        Real bbr = -(a_cp-a_cm) / (theta_p-theta_m);
+        Real bbtheta = (a_pc-a_mc) / (r_p-r_m);
+        Real pmag = CalculateMagneticPressure(bbr, bbtheta, 0.0, r_c, sin_theta_c,
+            cos_theta_c);
 
-      // Calculate cell-centered 3-magnetic field
-      Real bb1 = -(a_cp-a_cm) / (theta_p-theta_m);
-      Real bb2 = (a_pc-a_mc) / (r_p-r_m);
-      Real bb3 = 0.0;
+        // Calculate gas pressure
+        Real log_h = log_h_aux(r_c, sin_theta_c) - log_h_edge;
+        Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
+        Real rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
+        Real pgas = pgas_over_rho * rho;
 
-      // Calculate Boyer-Lindquist metric
-      Real delta = SQR(r_c) - 2.0*m*r_c + SQR(a);
-      Real sigma = SQR(r_c) + SQR(a) * SQR(cos_theta_c);
-      Real g_00 = -(1.0 - 2.0*m*r_c/sigma);
-      Real g_01 = 0.0;
-      Real g_02 = 0.0;
-      Real g_03 = -2.0*m*a*r_c/sigma * SQR(sin_theta_c);
-      Real g_11 = sigma/delta;
-      Real g_12 = 0.0;
-      Real g_13 = 0.0;
-      Real g_22 = sigma;
-      Real g_23 = 0.0;
-      Real g_33 = (SQR(r_c) + SQR(a) + 2.0*m*SQR(a)*r_c/sigma * SQR(sin_theta_c))
-          * SQR(sin_theta_c);
-      Real g_10 = g_01;
-      Real g_20 = g_02;
-      Real g_21 = g_12;
-      Real g_30 = g_03;
-      Real g_31 = g_13;
-      Real g_32 = g_23;
-
-      // Calculate cell-centered 4-magnetic field
-      Real b0 = bb1 * (g_10*u0 + g_11*u1 + g_12*u2 + g_13*u3)
-              + bb2 * (g_20*u0 + g_21*u1 + g_22*u2 + g_23*u3)
-              + bb3 * (g_30*u0 + g_31*u1 + g_32*u2 + g_33*u3);
-      Real b1 = 1.0/u0 * (bb1 + b0 * u1);
-      Real b2 = 1.0/u0 * (bb2 + b0 * u2);
-      Real b3 = 1.0/u0 * (bb3 + b0 * u3);
-
-      // Calculate beta
-      Real b_sq = g_00*b0*b0 + g_01*b0*b1 + g_02*b0*b2 + g_03*b0*b3
-                + g_10*b1*b0 + g_11*b1*b1 + g_12*b1*b2 + g_13*b1*b3
-                + g_20*b2*b0 + g_21*b2*b1 + g_22*b2*b2 + g_23*b2*b3
-                + g_30*b3*b0 + g_31*b3*b1 + g_32*b3*b2 + g_33*b3*b3;
-      Real beta = pgas / (0.5*b_sq);
-      beta_min_actual = std::min(beta_min_actual, beta);
+        // Reset minimum beta
+        beta_min_actual = std::min(beta_min_actual, pgas/pmag);
+      }
     }
   }
   return beta_min_actual;
+}
+
+// Function for calculating beta from four nearby points
+// Inputs:
+//   r_m,r_c,r_p: inner, center, and outer radii
+//   theta_m,theta_c,theta_p: upper, center, and lower polar angles
+// Outputs:
+//   pbb1,pbb2,pbb3: values set to 3-magnetic field at cell center
+//   pbeta: value set to plasma beta at cell center
+// Notes:
+//   in field_shape=="offset" case, only the original r^5*rho^2 potential is considered
+//   references Fishbone & Moncrief 1976, ApJ 207 962 (FM)
+static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
+    Real theta_p, Real *pbb1, Real *pbb2, Real *pbb3, Real *pbeta)
+{
+  // Calculate trigonometric functions of theta
+  Real sin_theta_m = std::sin(theta_m);
+  Real sin_theta_p = std::sin(theta_p);
+  Real sin_theta_c = std::sin(theta_c);
+  Real cos_theta_c = std::cos(theta_c);
+
+  // Determine if we are in the torus (FM 3.6)
+  if (r_m < r_edge)
+    return false;
+  Real log_h_cc = log_h_aux(r_c, sin_theta_c) - log_h_edge;
+  Real log_h_cm = log_h_aux(r_c, sin_theta_m) - log_h_edge;
+  Real log_h_cp = log_h_aux(r_c, sin_theta_p) - log_h_edge;
+  Real log_h_mc = log_h_aux(r_m, sin_theta_c) - log_h_edge;
+  Real log_h_pc = log_h_aux(r_p, sin_theta_c) - log_h_edge;
+  if (log_h_cc < 0.0 or log_h_cm < 0.0 or log_h_cp < 0.0 or log_h_mc < 0.0
+      or log_h_pc < 0.0)
+    return false;
+
+  // Calculate primitives depending on location
+  Real pgas_over_rho_cc = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h_cc)-1.0);
+  Real pgas_over_rho_cm = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h_cm)-1.0);
+  Real pgas_over_rho_cp = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h_cp)-1.0);
+  Real pgas_over_rho_mc = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h_mc)-1.0);
+  Real pgas_over_rho_pc = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h_pc)-1.0);
+  Real rho_cc = std::pow(pgas_over_rho_cc/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
+  Real rho_cm = std::pow(pgas_over_rho_cm/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
+  Real rho_cp = std::pow(pgas_over_rho_cp/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
+  Real rho_mc = std::pow(pgas_over_rho_mc/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
+  Real rho_pc = std::pow(pgas_over_rho_pc/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
+  Real pgas = pgas_over_rho_cc * rho_cc;
+  Real u1 = 0.0;
+  Real u2 = 0.0;
+  Real u0, u3;
+  calculate_velocity_in_torus(r_c, sin_theta_c, &u0, &u3);
+
+  // Calculate phi-component of vector potential
+  Real a_cm, a_cp, a_mc, a_pc;
+  if (field_shape == "standard")
+  {
+    a_cm = std::max(rho_cm-potential_cutoff, 0.0);
+    a_cp = std::max(rho_cp-potential_cutoff, 0.0);
+    a_mc = std::max(rho_mc-potential_cutoff, 0.0);
+    a_pc = std::max(rho_pc-potential_cutoff, 0.0);
+  }
+  if (field_shape == "offset")
+  {
+    a_cm = std::pow(r_c, 5) * SQR(rho_cm);
+    a_cp = std::pow(r_c, 5) * SQR(rho_cp);
+    a_mc = std::pow(r_m, 5) * SQR(rho_mc);
+    a_pc = std::pow(r_p, 5) * SQR(rho_pc);
+  }
+  if (a_cm == 0.0 or a_cp == 0.0 or a_mc == 0.0 or a_pc == 0.0)
+    return false;
+
+  // Calculate cell-centered 3-magnetic field
+  *pbb1 = -(a_cp-a_cm) / (theta_p-theta_m);
+  *pbb2 = (a_pc-a_mc) / (r_p-r_m);
+  *pbb3 = 0.0;
+
+  // Calculate beta
+  Real pmag = CalculateMagneticPressure(*pbb1, *pbb2, *pbb3, r_c, sin_theta_c,
+      cos_theta_c);
+  *pbeta = pgas / pmag;
+  return true;
+}
+
+// Function to calculate b^lambda b_lambda / 2
+// Inputs:
+//   bb1,bb2,bb3: components of 3-magnetic field in Boyer-Lindquist coordinates
+//   r: Boyer-Lindquist radius
+//   sin_theta,cos_theta: sine and cosine of Boyer-Lindquist theta
+// Outputs:
+//   returned value: magnetic pressure
+static Real CalculateMagneticPressure(Real bb1, Real bb2, Real bb3, Real r,
+    Real sin_theta, Real cos_theta)
+{
+  // Calculate Boyer-Lindquist metric
+  Real delta = SQR(r) - 2.0*m*r + SQR(a);
+  Real sigma = SQR(r) + SQR(a) * SQR(cos_theta);
+  Real g_00 = -(1.0 - 2.0*m*r/sigma);
+  Real g_01 = 0.0;
+  Real g_02 = 0.0;
+  Real g_03 = -2.0*m*a*r/sigma * SQR(sin_theta);
+  Real g_11 = sigma/delta;
+  Real g_12 = 0.0;
+  Real g_13 = 0.0;
+  Real g_22 = sigma;
+  Real g_23 = 0.0;
+  Real g_33 = (SQR(r) + SQR(a) + 2.0*m*SQR(a)*r/sigma * SQR(sin_theta))
+      * SQR(sin_theta);
+  Real g_10 = g_01;
+  Real g_20 = g_02;
+  Real g_21 = g_12;
+  Real g_30 = g_03;
+  Real g_31 = g_13;
+  Real g_32 = g_23;
+
+  // Calculate 4-velocity
+  Real u1 = 0.0;
+  Real u2 = 0.0;
+  Real u0, u3;
+  calculate_velocity_in_torus(r, sin_theta, &u0, &u3);
+
+  // Calculate 4-magnetic field
+  Real b0 = bb1 * (g_10*u0 + g_11*u1 + g_12*u2 + g_13*u3)
+          + bb2 * (g_20*u0 + g_21*u1 + g_22*u2 + g_23*u3)
+          + bb3 * (g_30*u0 + g_31*u1 + g_32*u2 + g_33*u3);
+  Real b1 = 1.0/u0 * (bb1 + b0 * u1);
+  Real b2 = 1.0/u0 * (bb2 + b0 * u2);
+  Real b3 = 1.0/u0 * (bb3 + b0 * u3);
+
+  // Calculate magnetic pressure
+  Real b_sq = g_00*b0*b0 + g_01*b0*b1 + g_02*b0*b2 + g_03*b0*b3
+            + g_10*b1*b0 + g_11*b1*b1 + g_12*b1*b2 + g_13*b1*b3
+            + g_20*b2*b0 + g_21*b2*b1 + g_22*b2*b2 + g_23*b2*b3
+            + g_30*b3*b0 + g_31*b3*b1 + g_32*b3*b2 + g_33*b3*b3;
+  return 0.5*b_sq;
+}
+
+// Function for calculating A_phi in offset potential
+// Inputs:
+//   r,theta: Boyer-Lindquist coordinates of point
+//   r_min,r_max: inner and outer limits of sample grid
+//   n_r,n_theta: numbers of cells in radial and polar directions in sample grid
+//   r_ratio: geometric ratio of adjacent radial widths in sample grid
+// Outputs:
+//   returned value: A_phi at (r,theta)
+// Notes:
+//   procedure adapted from Tchekhovskoy, Narayan, & McKinney 2011, MNRAS 418 L79:
+//     A'_phi = r^5 rho^2
+//     B^r = -\partial(A'_phi) / \partial(theta)
+//     B^r readjusted locally to correspond to beta = 1
+//     A_phi = \int_0^theta B^r sin(theta') d theta'
+//   integral done from nearest pole rather than North pole
+//   uses sample grid over entire mesh, not just block
+//   grid is not necessarily the same as used for the problem proper
+static Real CalculatePotentialOffset(Real r, Real theta, Real r_min, Real r_max,
+    int n_r, int n_theta, Real r_rat)
+{
+  // Assume no field beyond poles
+  if (theta <= 0.0 or theta >= PI)
+    return 0.0;
+  Real delta_theta = PI / n_theta;
+
+  // Find r-boundaries in sample grid
+  Real r_m, r_p, delta_r;
+  for (int i = 0; i < n_r; ++i)
+  {
+    if (i == 0)
+    {
+      r_m = r_min;
+      Real ratio_power = 1.0;
+      Real ratio_sum = 1.0;
+      for (int ii = 1; ii < n_r; ++ii)
+      {
+        ratio_power *= r_rat;
+        ratio_sum += ratio_power;
+      }
+      delta_r = (r_max-r_min) / ratio_sum;
+    }
+    else
+    {
+      r_m = r_p;
+      delta_r *= r_rat;
+    }
+    r_p = r_m + delta_r;
+    if (r_p >= r)
+      break;
+  }
+
+  // Go through all cells at same radius from nearest pole to here
+  Real a_phi = 0.0;
+  for (int j = 0; j < n_theta/2; ++j)
+  {
+    // Calculate + and - theta values
+    Real theta_m, theta_p;
+    Real cell_fraction = 1.0;
+    if (theta <= PI/2.0)
+    {
+      theta_m = static_cast<Real>(j)/static_cast<Real>(n_theta/2) * PI/2.0;
+      theta_p = static_cast<Real>(j+1)/static_cast<Real>(n_theta/2) * PI/2.0;
+      if (theta_m >= theta)
+        break;
+      if (theta_p > theta)
+        cell_fraction = (theta-theta_m) / (theta_p-theta_m);
+    }
+    else
+    {
+      theta_p = PI - static_cast<Real>(j)/static_cast<Real>(n_theta/2) * PI/2.0;
+      theta_m = PI - static_cast<Real>(j+1)/static_cast<Real>(n_theta/2) * PI/2.0;
+      if (theta_p <= theta)
+        break;
+      if (theta_m < theta)
+        cell_fraction = (theta-theta_m) / (theta_p-theta_m);
+    }
+    Real theta_c = 0.5*(theta_m+theta_p);
+
+    // Calculate B^r and beta to add to integral
+    Real beta, bbr, bbtheta, bbphi;
+    bool values_set = CalculateBeta(r_m, r, r_p, theta_m, theta_c, theta_p, &bbr,
+        &bbtheta, &bbphi, &beta);
+    if (not values_set)
+      continue;
+    bbr *= std::sqrt(beta);
+    a_phi += cell_fraction * bbr * std::sin(theta_c) * delta_theta;
+  }
+  return a_phi;
 }

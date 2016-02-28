@@ -66,12 +66,18 @@ u_pmag_min   = 0.002               # minimum allowed value of u/pmag
 gamma_max    = 50.0                # maximum Lorentz factor relative to normal observer
 
 <problem>
-k_adi    = 1.0    # p_gas = K * rho^Gamma
-r_edge   = 6.0    # radius of inner edge of disk
-r_peak   = 12.0   # radius of pressure maximum; use l instead if negative
-l        = 0.0    # constant ang. mom. per unit mass u^t u_phi; only used if r_peak < 0
-rho_max  = 1.0    # if greater than 0, rescale density to have this peak, and rescale
-                  # pressure by same factor
-cutoff   = 0.2    # density relative to peak at which vector potential vanishes
-beta_min = 100.0  # desired minimum ratio of gas pressure to magnetic pressure; magnetic
-                  # field zeroed if negative
+k_adi    = 1.0          # p_gas = K * rho^Gamma
+r_edge   = 6.0          # radius of inner edge of disk
+r_peak   = 12.0         # radius of pressure maximum; use l instead if negative
+l        = 0.0          # constant ang. mom. per unit mass u^t u_phi; only used if
+                        # r_peak < 0
+rho_max  = 1.0          # if greater than 0, rescale density to have this peak, and
+                        # rescale pressure by same factor
+cutoff   = 0.2          # density relative to peak at which vector potential vanishes
+beta_min = 100.0        # desired minimum ratio of gas pressure to magnetic pressure;
+                        # magnetic field zeroed if negative
+sample_n_r = 128        # number of samples in radius to use in global beta grid
+sample_n_theta = 128    # number of samples in polar angle to use in global beta grid
+sample_r_rat = 1.0      # geometric ratio to use in radius in global beta grid
+field_shape = standard  # standard: A^phi ~ rho; offset: A^phi goes as theta-integral of
+                        # B^r derived from (A')^phi ~ r^5 rho^2
