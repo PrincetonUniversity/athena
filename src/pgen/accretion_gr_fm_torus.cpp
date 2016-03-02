@@ -652,10 +652,10 @@ static Real calculate_beta_min()
     Real cos_theta_c = std::cos(theta_c);
 
     // Go through sample grid in r
+    Real r_m, r_p, delta_r;
     for (int i = 0; i < sample_n_r; ++i)
     {
       // Calculate r values
-      Real r_m, r_p, delta_r;
       if (i == 0)
       {
         r_m = r_min;
