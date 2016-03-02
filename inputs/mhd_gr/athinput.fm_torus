@@ -73,7 +73,7 @@ l       = 0.0   # constant ang. mom. per unit mass u^t u_phi; only used if r_pea
 rho_max = 1.0   # if greater than 0, rescale density to have this peak, and rescale
                 # pressure by same factor
 
-potential_cutoff  = 0.2    # density relative to peak at which vector potential vanishes
+potential_cutoff  = 0.2    # amount to subtract from density when calculating potential
 potential_r_pow   = 0.0    # vector potential proportional to this power of radius
 potential_rho_pow = 1.0    # vector potential proportional to this power of density
 beta_min          = 100.0  # desired minimum ratio of gas pressure to magnetic pressure;
@@ -81,3 +81,4 @@ beta_min          = 100.0  # desired minimum ratio of gas pressure to magnetic p
 sample_n_r        = 64     # number of samples in radius to use in global beta grid
 sample_n_theta    = 64     # number of samples in polar angle to use in global beta grid
 sample_r_rat      = 1.0    # geometric ratio to use in radius in global beta grid
+sample_cutoff     = 0.2    # density below which cells are not used for beta calculation

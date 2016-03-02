@@ -41,6 +41,7 @@ static Real potential_r_pow, potential_rho_pow;  // set how vector potential sca
 static Real beta_min;                            // min ratio of gas to mag pressure
 static int sample_n_r, sample_r_rat;             // sample grid radial parameters
 static int sample_n_theta;                       // sample grid polar parameter
+static Real sample_cutoff;                       // density cutoff for sample grid
 static Real x1_min, x1_max, x2_min, x2_max;      // limits in chosen coordinate system
 static Real r_min, r_max, theta_min, theta_max;  // limits in r,theta
 
@@ -113,6 +114,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     sample_n_r = pin->GetInteger("problem", "sample_n_r");
     sample_n_theta = pin->GetInteger("problem", "sample_n_theta");
     sample_r_rat = pin->GetReal("problem", "sample_r_rat");
+    sample_cutoff = pin->GetReal("problem", "sample_cutoff");
     x1_min = pin->GetReal("mesh", "x1min");
     x1_max = pin->GetReal("mesh", "x1max");
     x2_min = pin->GetReal("mesh", "x2min");
@@ -722,6 +724,8 @@ static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta
   Real pgas_over_rho_mc = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h_mc)-1.0);
   Real pgas_over_rho_pc = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h_pc)-1.0);
   Real rho_cc = std::pow(pgas_over_rho_cc/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
+  if (rho_cc < sample_cutoff)
+    return false;
   Real rho_cm = std::pow(pgas_over_rho_cm/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
   Real rho_cp = std::pow(pgas_over_rho_cp/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
   Real rho_mc = std::pow(pgas_over_rho_mc/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
