@@ -39,8 +39,8 @@ static Real rho_min, rho_pow, u_min, u_pow;      // background parameters
 static Real potential_cutoff;                    // sets region of torus to magnetize
 static Real potential_r_pow, potential_rho_pow;  // set how vector potential scales
 static Real beta_min;                            // min ratio of gas to mag pressure
-static int sample_n_r, sample_r_rat;             // sample grid radial parameters
-static int sample_n_theta;                       // sample grid polar parameter
+static int sample_n_r, sample_n_theta;           // number of cells in sample grid
+static Real sample_r_rat;                        // sample grid geometric spacing ratio
 static Real sample_cutoff;                       // density cutoff for sample grid
 static Real x1_min, x1_max, x2_min, x2_max;      // limits in chosen coordinate system
 static Real r_min, r_max, theta_min, theta_max;  // limits in r,theta
@@ -138,7 +138,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   log_h_edge = log_h_aux(r_edge, 1.0);
   log_h_peak = log_h_aux(r_peak, 1.0) - log_h_edge;
   pgas_over_rho_peak = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h_peak)-1.0);
-  rho_peak = std::pow(pgas_over_rho_peak/k_adi, 1.0/(gamma_adi-1.0));
+  rho_peak = std::pow(pgas_over_rho_peak/k_adi, 1.0/(gamma_adi-1.0)) / rho_max;
   for (int j = jl; j <= ju; ++j)
   {
     pcoord->CellMetric(kl, j, il, iu, g, gi);
@@ -266,7 +266,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     theta_max = std::max(std::max(theta1, theta2), std::max(theta3, theta4));
 
     // Calculate magnetic field normalization
-    r_peak = calculate_r_peak_from_l(l);
     Real normalization;
     if (beta_min < 0.0)
       normalization = 0.0;
@@ -525,34 +524,34 @@ static Real calculate_r_peak_from_l(Real l_target)
   const int max_iterations = 100;  // maximum number of iterations before best res
 
   // Prepare initial values
-  Real a = r_min;
-  Real b = r_max;
-  Real c = 0.5 * (r_min + r_max);
-  Real l_a = calculate_l_from_r_peak(a);
-  Real l_b = calculate_l_from_r_peak(b);
-  Real l_c = calculate_l_from_r_peak(c);
+  Real r_a = r_min;
+  Real r_b = r_max;
+  Real r_c = 0.5 * (r_min + r_max);
+  Real l_a = calculate_l_from_r_peak(r_a);
+  Real l_b = calculate_l_from_r_peak(r_b);
+  Real l_c = calculate_l_from_r_peak(r_c);
   if (not ((l_a < l_target and l_b > l_target) or (l_a > l_target and l_b < l_target)))
     return NAN;
 
   // Find root
   for (int n = 0; n < max_iterations; ++n)
   {
-    if (std::abs(b-a) <= 2.0*tol_r or std::abs(l_c-l_target) <= tol_l)
+    if (std::abs(r_b-r_a) <= 2.0*tol_r or std::abs(l_c-l_target) <= tol_l)
       break;
     if ((l_a < l_target and l_c < l_target) or (l_a > l_target and l_c > l_target))
     {
-      a = c;
+      r_a = r_c;
       l_a = l_c;
     }
     else
     {
-      b = c;
+      r_b = r_c;
       l_b = l_c;
     }
-    c = 0.5 * (r_min + r_max);
-    l_c = calculate_l_from_r_peak(c);
+    r_c = 0.5 * (r_min + r_max);
+    l_c = calculate_l_from_r_peak(r_c);
   }
-  return c;
+  return r_c;
 }
 
 // Function for helping to calculate enthalpy
