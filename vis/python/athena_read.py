@@ -178,11 +178,15 @@ def vtk(filename):
 
 #=======================================================================================
 
-def athdf(filename, data=None, quantities=None):
+def athdf(filename, data=None, quantities=None, level=0, vol_func=None):
   """Read .athdf files and populate dict of arrays of data."""
 
   # Python module for reading hdf5 files
   import h5py
+
+  # Set naive volume function assuming Cartesian coordinates
+  if vol_func is None:
+    vol_func = lambda x1m,x1p,x2m,x2p,x3m,x3p: (x1p-x1m) * (x2p-x2m) * (x3p-x3m)
 
   # Open file
   with h5py.File(filename, 'r') as f:
@@ -192,77 +196,125 @@ def athdf(filename, data=None, quantities=None):
       quantities = data.values()
     elif quantities is None:
       quantities = f[u'MeshBlock0'].keys()
-      quantities = [q for q in quantities \
-          if q != u'x1f' and q != u'x2f' and q != u'x3f']
+    quantities = [str(q) for q in quantities \
+        if q != 'x1f' and q != 'x2f' and q != 'x3f']
 
-    # Get block count, dimensions, and sizes
-    num_blocks = len(f.keys())
-    dims = 0
-    block_size = []
-    coords = [u'x1f',u'x2f',u'x3f']
-    for key in coords:
-      if key in f[u'MeshBlock0'].keys():
-        dims += 1
-        block_size.append(len(f[u'MeshBlock0'][key][:]) - 1)
-    coords = coords[:dims]
+    # Extract size information
+    block_size = f.attrs['MeshBlockSize']
+    root_grid_size = f.attrs['RootGridSize']
+    nx1 = root_grid_size[0] * 2**level
+    nx2 = root_grid_size[1] * 2**level
+    nx3 = root_grid_size[2] * 2**level
+    lx1 = nx1 / block_size[0]
+    lx2 = nx2 / block_size[1]
+    lx3 = nx3 / block_size[2]
+    if nx3 > 1:
+      dim = 3
+    elif nx2 > 1:
+      dim = 2
+    else:
+      dim = 1
 
-    # Order blocks
-    edges = np.empty((num_blocks,dims))
-    for block_num,block_name in zip(range(num_blocks),f.keys()):
-      for dim,coord in zip(range(dims),coords):
-        edges[block_num,dim] = f[block_name][coord][0]
-    edges_unique = []
-    for dim in range(dims):
-      edges_unique.append(set(edges[:,dim]))
-    indices = np.empty((num_blocks,3,2), dtype=int)
-    for block_num in range(num_blocks):
-      for dim in range(dims):
-        num_prior = sum(edge < edges[block_num,dim] for edge in edges_unique[dim])
-        indices[block_num,dim,0] = num_prior * block_size[dim]
-        indices[block_num,dim,1] = (num_prior+1) * block_size[dim]
-      for dim in range(dims,3):
-        indices[block_num,dim,0] = 0
-        indices[block_num,dim,1] = 1
-
-    # Prepare arrays if needed
-    nx1 = block_size[0] * len(edges_unique[0])
-    nx2 = block_size[1] * len(edges_unique[1]) if dims >= 2 else 1
-    nx3 = block_size[2] * len(edges_unique[2]) if dims >= 3 else 1
-    if data is None:
+    # Prepare arrays
+    if data is not None:
+      for q in quantities:
+        data[q].fill(0.0)
+    else:
       data = {}
       for q in quantities:
-        data[q] = np.empty((nx3,nx2,nx1))
-    data[u'x1f'] = np.empty(nx1+1)
-    if dims >= 2:
-      data[u'x2f'] = np.empty(nx2+1)
-    if dims >= 3:
-      data[u'x3f'] = np.empty(nx3+1)
+        data[q] = np.zeros((nx3,nx2,nx1))
+    data['x1f'] = np.empty(nx1+1)
+    data['x2f'] = np.empty(nx2+1)
+    data['x3f'] = np.empty(nx3+1)
+    restricted_data = np.zeros((lx3,lx2,lx1), dtype=bool)
 
-    # Read interface data
-    for n,block_name in zip(range(num_blocks),f.keys()):
-      for dim,coord in zip(range(dims),coords):
-        need_interfaces = True
-        for dim_other in range(dims):
-          if dim_other == dim:
-            continue
-          if indices[n,dim_other,0] != 0:
-            need_interfaces = False
-        if not need_interfaces:
-          continue
-        data[coord][indices[n,dim,0]:indices[n,dim,1]] = f[block_name][coord][:-1]
-        if indices[n,dim,1] == block_size[dim] * len(edges_unique[dim]):
-          data[coord][indices[n,dim,1]] = f[block_name][coord][-1]
+    # Go through blocks in data file
+    for block in f.itervalues():
 
-    # Read value data
-    for n,block_name in zip(range(num_blocks),f.keys()):
-      kl = indices[n,2,0]
-      ku = indices[n,2,1]
-      jl = indices[n,1,0]
-      ju = indices[n,1,1]
-      il = indices[n,0,0]
-      iu = indices[n,0,1]
-      for q in quantities:
-        data[q][kl:ku,jl:ju,il:iu] = f[block_name][q][:]
+      # Extract location information
+      block_level = block.attrs['Level'][0]
+      block_location = block.attrs['LogicalLocation']
+
+      # Prolongate coarse data and copy same-level data
+      if block_level <= level:
+        s = 2**(level-block_level)
+        il = block_location[0] * s * block_size[0]
+        jl = block_location[1] * s * block_size[1]
+        kl = block_location[2] * s * block_size[2]
+        iu = il + s * block_size[0]
+        ju = jl + s * block_size[1]
+        ku = kl + s * block_size[2]
+        for q in quantities:
+          for ko in range(s):
+            for jo in range(s):
+              for io in range(s):
+                data[q][kl+ko:ku+ko:s,jl+jo:ju+jo:s,il+io:iu+io:s] = block[q][:]
+
+      # Restrict fine data
+      else:
+        s = 2**(block_level-level)
+        ir_vals = np.arange(block_size[0])
+        jr_vals = np.arange(block_size[1])
+        kr_vals = np.arange(block_size[2])
+        i_vals = (ir_vals + block_location[0] * block_size[0]) / s
+        j_vals = (jr_vals + block_location[1] * block_size[1]) / s
+        k_vals = (kr_vals + block_location[2] * block_size[2]) / s
+        for k,kr in zip(k_vals,kr_vals):
+          x3m = block['x3f'][kr]
+          x3p = block['x3f'][kr+1]
+          for j,jr in zip(j_vals,jr_vals):
+            x2m = block['x2f'][jr]
+            x2p = block['x2f'][jr+1]
+            for i,ir in zip(i_vals,ir_vals):
+              x1m = block['x1f'][ir]
+              x1p = block['x1f'][ir+1]
+              vol = vol_func(x1m, x1p, x2m, x2p, x3m, x3p)
+              for q in quantities:
+                data[q][k,j,i] += block[q][:][kr,jr,ir] * vol
+        loc1 = block_location[0] / s
+        loc2 = block_location[1] / s
+        loc3 = block_location[2] / s
+        restricted_data[loc3,loc2,loc1] = True
+
+    # Record interface locations
+    for d,nx in zip(np.arange(dim)+1,(nx1,nx2,nx3)[:dim]):
+      xf_string = 'x' + str(d) + 'f'
+      x_0 = f['MeshBlock0'][xf_string][:][0]
+      x_1 = f['MeshBlock0'][xf_string][:][1]
+      x_2 = f['MeshBlock0'][xf_string][:][2]
+      ratio_block0 = (x_2-x_1) / (x_1-x_0)
+      level_block0 = f['MeshBlock0'].attrs['Level'][0]
+      ratio = ratio_block0 ** (1.0 / 2**(level-level_block0))
+      ratio_powers = ratio ** np.arange(nx)
+      ratio_powers_sum = np.cumsum(ratio_powers)
+      data[xf_string][0] = x_0
+      data[xf_string][1:] = x_0 + (x_1-x_0) * ratio_powers_sum
+      data[xf_string][-1] \
+          = f['MeshBlock'+str(f.attrs['TotalMeshBlock'][0]-1)][xf_string][:][-1]
+
+  # Remove volume factors from restricted data
+  for loc3 in range(lx3):
+    for loc2 in range(lx2):
+      for loc1 in range(lx1):
+        if restricted_data[loc3,loc2,loc1]:
+          il = loc1 * block_size[0]
+          jl = loc2 * block_size[1]
+          kl = loc3 * block_size[2]
+          iu = il + block_size[0]
+          ju = jl + block_size[1]
+          ku = kl + block_size[2]
+          for k in range(kl,ku):
+            x3m = data['x3f'][k]
+            x3p = data['x3f'][k+1]
+            for j in range(jl,ju):
+              x2m = data['x2f'][j]
+              x2p = data['x2f'][j+1]
+              for i in range(il,iu):
+                x1m = data['x1f'][i]
+                x1p = data['x1f'][i+1]
+                vol = vol_func(x1m, x1p, x2m, x2p, x3m, x3p)
+                for q in quantities:
+                  data[q][k,j,i] /= vol
   return data
 
 #=======================================================================================
