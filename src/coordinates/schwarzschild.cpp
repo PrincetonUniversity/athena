@@ -13,13 +13,13 @@
 // C++ headers
 #include <cmath>  // abs(), acos(), cos(), log(), pow(), sin(), sqrt()
 
-// Athena headers
-#include "../athena.hpp"           // enums, macros, Real
+// Athena++ headers
+#include "../athena.hpp"           // enums, macros
 #include "../athena_arrays.hpp"    // AthenaArray
 #include "../mesh.hpp"             // MeshBlock
 #include "../parameter_input.hpp"  // ParameterInput
-#include "../hydro/hydro.hpp"
-#include "../hydro/eos/eos.hpp" 
+#include "../hydro/hydro.hpp"      // Hydro
+#include "../hydro/eos/eos.hpp"    // HydroEqnOfState
 
 //--------------------------------------------------------------------------------------
 
@@ -27,21 +27,32 @@
 // Inputs:
 //   pmb: pointer to MeshBlock containing this grid
 //   pin: pointer to runtime inputs
+//   flag: indicator that this is special refinement case
 Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
 {
-  // Set pointer to host MeshBlock
+  // Set pointer to host MeshBlock and note active zone boundaries
   pmy_block = pmb;
-  cflag=flag;
+  cflag = flag;
   int is, ie, js, je, ks, ke, ng;
-  if(cflag==0) {
-    is = pmb->is; js = pmb->js; ks = pmb->ks;
-    ie = pmb->ie; je = pmb->je; ke = pmb->ke;
-    ng=NGHOST;
+  if(cflag == 0)
+  {
+    is = pmb->is;
+    ie = pmb->ie;
+    js = pmb->js;
+    je = pmb->je;
+    ks = pmb->ks;
+    ke = pmb->ke;
+    ng = NGHOST;
   }
-  else {
-    is = pmb->cis; js = pmb->cjs; ks = pmb->cks;
-    ie = pmb->cie; je = pmb->cje; ke = pmb->cke;
-    ng=pmb->cnghost;
+  else
+  {
+    is = pmb->cis;
+    ie = pmb->cie;
+    js = pmb->cjs;
+    je = pmb->cje;
+    ks = pmb->cks;
+    ke = pmb->cke;
+    ng = pmb->cnghost;
   }
 
   // Set face-centered positions and distances
@@ -53,13 +64,13 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
   const Real &m = bh_mass_;
 
   // Initialize volume-averaged positions and spacings: r-direction
-  for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
+  for (int i = is-ng; i <= ie+ng; ++i)
   {
     Real r_m = x1f(i);
     Real r_p = x1f(i+1);
     x1v(i) = std::pow(0.5 * (r_m*r_m*r_m + r_p*r_p*r_p), 1.0/3.0);
   }
-  for (int i = is-NGHOST; i <= ie+NGHOST-1; ++i)
+  for (int i = is-ng; i <= ie+ng-1; ++i)
     dx1v(i) = x1v(i+1) - x1v(i);
 
   // Initialize volume-averaged positions and spacings: theta-direction
@@ -72,13 +83,13 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
   }
   else  // extended
   {
-    for (int j = js-NGHOST; j <= je+NGHOST; ++j)
+    for (int j = js-ng; j <= je+ng; ++j)
     {
       Real theta_m = x2f(j);
       Real theta_p = x2f(j+1);
       x2v(j) = std::acos(0.5 * (std::cos(theta_m) + std::cos(theta_p)));
     }
-    for (int j = js-NGHOST; j <= je+NGHOST-1; ++j)
+    for (int j = js-ng; j <= je+ng-1; ++j)
       dx2v(j) = x2v(j+1) - x2v(j);
   }
 
@@ -92,81 +103,82 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
   }
   else  // extended
   {
-    for (int k = ks-NGHOST; k <= ke+NGHOST; ++k)
+    for (int k = ks-ng; k <= ke+ng; ++k)
     {
       Real phi_m = x3f(k);
       Real phi_p = x3f(k+1);
       x3v(k) = 0.5 * (phi_m + phi_p);
     }
-    for (int k = ks-NGHOST; k <= ke+NGHOST-1; ++k)
+    for (int k = ks-ng; k <= ke+ng-1; ++k)
       dx3v(k) = x3v(k+1) - x3v(k);
   }
 
   // Prepare for MHD mesh refinement
-  if (pmb->pmy_mesh->multilevel == true && MAGNETIC_FIELDS_ENABLED)
+  if (pmb->pmy_mesh->multilevel && MAGNETIC_FIELDS_ENABLED)
   {
-    for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
+    for (int i = is-ng; i <= ie+ng; ++i)
       x1s2(i) = x1s3(i) = x1v(i);
     if (pmb->block_size.nx2 == 1)
       x2s1(js) = x2s3(js) = x2v(js);
     else
-      for (int j = js-NGHOST; j <= je+NGHOST; ++j)
+      for (int j = js-ng; j <= je+ng; ++j)
         x2s1(j) = x2s3(j) = x2v(j);
     if (pmb->block_size.nx3 == 1)
       x3s1(ks) = x3s2(ks) = x3v(ks);
     else
-      for (int k = ks-NGHOST; k <= ke+NGHOST; ++k)
+      for (int k = ks-ng; k <= ke+ng; ++k)
         x3s1(k) = x3s2(k) = x3v(k);
   }
 
   // Allocate arrays for intermediate geometric quantities: r-direction
-  int n_cells_1 = pmb->block_size.nx1 + 2*NGHOST;
+  int n_cells_1 = pmb->block_size.nx1 + 2*ng;
   coord_vol_i1_.NewAthenaArray(n_cells_1);
-  coord_area1_i1_.NewAthenaArray(n_cells_1);
+  coord_area1_i1_.NewAthenaArray(n_cells_1+1);
   coord_area2_i1_.NewAthenaArray(n_cells_1);
   coord_area3_i1_.NewAthenaArray(n_cells_1);
   coord_len1_i1_.NewAthenaArray(n_cells_1);
-  coord_len2_i1_.NewAthenaArray(n_cells_1);
-  coord_len3_i1_.NewAthenaArray(n_cells_1);
+  coord_len2_i1_.NewAthenaArray(n_cells_1+1);
+  coord_len3_i1_.NewAthenaArray(n_cells_1+1);
   coord_width1_i1_.NewAthenaArray(n_cells_1);
   coord_src_i1_.NewAthenaArray(n_cells_1);
   coord_src_i2_.NewAthenaArray(n_cells_1);
   coord_src_i3_.NewAthenaArray(n_cells_1);
   coord_src_i4_.NewAthenaArray(n_cells_1);
   metric_cell_i1_.NewAthenaArray(n_cells_1);
-  metric_face1_i1_.NewAthenaArray(n_cells_1);
+  metric_face1_i1_.NewAthenaArray(n_cells_1+1);
   metric_face2_i1_.NewAthenaArray(n_cells_1);
   metric_face3_i1_.NewAthenaArray(n_cells_1);
-  trans_face1_i1_.NewAthenaArray(n_cells_1);
+  trans_face1_i1_.NewAthenaArray(n_cells_1+1);
   trans_face2_i1_.NewAthenaArray(n_cells_1);
   trans_face3_i1_.NewAthenaArray(n_cells_1);
-  g_.NewAthenaArray(NMETRIC, n_cells_1);
-  gi_.NewAthenaArray(NMETRIC, n_cells_1);
+  g_.NewAthenaArray(NMETRIC, n_cells_1+1);
+  gi_.NewAthenaArray(NMETRIC, n_cells_1+1);
 
   // Allocate arrays for intermediate geometric quantities: theta-direction
-  int n_cells_2 = (pmb->block_size.nx2 > 1) ? pmb->block_size.nx2 + 2*NGHOST : 1;
+  int n_cells_2 = (pmb->block_size.nx2 > 1) ? pmb->block_size.nx2 + 2*ng : 1;
   coord_vol_j1_.NewAthenaArray(n_cells_2);
   coord_area1_j1_.NewAthenaArray(n_cells_2);
-  coord_area2_j1_.NewAthenaArray(n_cells_2);
+  coord_area2_j1_.NewAthenaArray(n_cells_2+1);
   coord_area3_j1_.NewAthenaArray(n_cells_2);
-  coord_len1_j1_.NewAthenaArray(n_cells_2);
+  coord_len1_j1_.NewAthenaArray(n_cells_2+1);
   coord_len2_j1_.NewAthenaArray(n_cells_2);
-  coord_len3_j1_.NewAthenaArray(n_cells_2);
+  coord_len3_j1_.NewAthenaArray(n_cells_2+1);
   coord_width3_j1_.NewAthenaArray(n_cells_2);
   coord_src_j1_.NewAthenaArray(n_cells_2);
   coord_src_j2_.NewAthenaArray(n_cells_2);
   coord_src_j3_.NewAthenaArray(n_cells_2);
   metric_cell_j1_.NewAthenaArray(n_cells_2);
   metric_face1_j1_.NewAthenaArray(n_cells_2);
-  metric_face2_j1_.NewAthenaArray(n_cells_2);
+  metric_face2_j1_.NewAthenaArray(n_cells_2+1);
   metric_face3_j1_.NewAthenaArray(n_cells_2);
   trans_face1_j1_.NewAthenaArray(n_cells_2);
-  trans_face2_j1_.NewAthenaArray(n_cells_2);
+  trans_face2_j1_.NewAthenaArray(n_cells_2+1);
   trans_face3_j1_.NewAthenaArray(n_cells_2);
 
   // Calculate intermediate geometric quantities: r-direction
-  #pragma simd
-  for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
+  int il = is - ng;
+  int iu = ie + ng;
+  for (int i = il; i <= iu; ++i)
   {
     // Useful quantities
     Real r_c = x1v(i);
@@ -181,11 +193,17 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
     // Volumes, areas, lengths, and widths
     coord_vol_i1_(i) = 1.0/3.0 * (r_p_cu - r_m_cu);
     coord_area1_i1_(i) = SQR(r_m);
+    if (i == iu)
+      coord_area1_i1_(i+1) = SQR(r_p);
     coord_area2_i1_(i) = coord_vol_i1_(i);
     coord_area3_i1_(i) = coord_vol_i1_(i);
     coord_len1_i1_(i) = coord_vol_i1_(i);
     coord_len2_i1_(i) = coord_area1_i1_(i);
+    if (i == iu)
+      coord_len2_i1_(i+1) = coord_area1_i1_(i+1);
     coord_len3_i1_(i) = coord_area1_i1_(i);
+    if (i == iu)
+      coord_len3_i1_(i+1) = coord_area1_i1_(i+1);
     coord_width1_i1_(i) = r_p*alpha_p - r_m*alpha_m
         + m * std::log((r_p*(1.0+alpha_p)-m) / (r_m*(1.0+alpha_m)-m));
 
@@ -201,71 +219,37 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
     // Metric coefficients
     metric_cell_i1_(i) = SQR(alpha_c);
     metric_face1_i1_(i) = SQR(alpha_m);
+    if (i == iu)
+      metric_face1_i1_(i+1) = SQR(alpha_p);
     metric_face2_i1_(i) = SQR(alpha_c);
     metric_face3_i1_(i) = SQR(alpha_c);
 
     // Coordinate transformations
     trans_face1_i1_(i) = alpha_m;
+    if (i == iu)
+      trans_face1_i1_(i+1) = alpha_p;
     trans_face2_i1_(i) = alpha_c;
     trans_face3_i1_(i) = alpha_c;
   }
 
   // Calculate intermediate geometric quantities: theta-direction
+  int jl, ju;
   if (n_cells_2 > 1)  // extended
   {
-    #pragma simd
-    for (int j = js-NGHOST; j <= je+NGHOST; ++j)
-    {
-      // Useful quantities
-      Real theta_c = x2v(j);
-      Real theta_m = x2f(j);
-      Real theta_p = x2f(j+1);
-      Real sin_c = std::sin(theta_c);
-      Real sin_m = std::sin(theta_m);
-      Real sin_p = std::sin(theta_p);
-      Real cos_m = std::cos(theta_m);
-      Real cos_p = std::cos(theta_p);
-      Real sin_c_sq = SQR(sin_c);
-      Real sin_m_sq = SQR(sin_m);
-      Real sin_m_cu = sin_m_sq*sin_m;
-      Real sin_p_cu = SQR(sin_p)*sin_p;
-
-      // Volumes, areas, lengths, and widths
-      coord_vol_j1_(j) = std::abs(cos_m - cos_p);
-      coord_area1_j1_(j) = coord_vol_j1_(j);
-      coord_area2_j1_(j) = std::abs(sin_m);
-      coord_area3_j1_(j) = coord_vol_j1_(j);
-      coord_len1_j1_(j) = coord_area2_j1_(j);
-      coord_len2_j1_(j) = coord_vol_j1_(j);
-      coord_len3_j1_(j) = coord_area2_j1_(j);
-      coord_width3_j1_(j) = std::abs(sin_c);
-
-      // Source terms
-      coord_src_j1_(j) = 1.0/6.0
-          * (4.0 - std::cos(2.0*theta_m)
-          - 2.0 * cos_m * cos_p - std::cos(2.0*theta_p));
-      coord_src_j2_(j) = 1.0/3.0 * (sin_m_cu - sin_p_cu)
-          / (cos_m - cos_p);
-      coord_src_j3_(j) = (sin_p-sin_m) / (cos_m-cos_p);    // cot((theta_p+theta_m)/2)
-
-      // Metric coefficients
-      metric_cell_j1_(j) = sin_c_sq;
-      metric_face1_j1_(j) = sin_c_sq;
-      metric_face2_j1_(j) = sin_m_sq;
-      metric_face3_j1_(j) = sin_c_sq;
-
-      // Coordinate transformations
-      trans_face1_j1_(j) = std::abs(sin_c);
-      trans_face2_j1_(j) = std::abs(sin_m);
-      trans_face3_j1_(j) = std::abs(sin_c);
-    }
+    jl = js - ng;
+    ju = je + ng;
   }
   else  // no extent
   {
+    jl = js;
+    ju = js;
+  }
+  for (int j = jl; j <= ju; ++j)
+  {
     // Useful quantities
-    Real theta_c = x2v(js);
-    Real theta_m = x2f(js);
-    Real theta_p = x2f(js+1);
+    Real theta_c = x2v(j);
+    Real theta_m = x2f(j);
+    Real theta_p = x2f(j+1);
     Real sin_c = std::sin(theta_c);
     Real sin_m = std::sin(theta_m);
     Real sin_p = std::sin(theta_p);
@@ -273,36 +257,48 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
     Real cos_p = std::cos(theta_p);
     Real sin_c_sq = SQR(sin_c);
     Real sin_m_sq = SQR(sin_m);
+    Real sin_p_sq = SQR(sin_p);
     Real sin_m_cu = sin_m_sq*sin_m;
     Real sin_p_cu = SQR(sin_p)*sin_p;
 
     // Volumes, areas, lengths, and widths
-    coord_vol_j1_(js) = std::abs(cos_m - cos_p);
-    coord_area1_j1_(js) = coord_vol_j1_(js);
-    coord_area2_j1_(js) = std::abs(sin_m);
-    coord_area3_j1_(js) = coord_vol_j1_(js);
-    coord_len1_j1_(js) = coord_area2_j1_(js);
-    coord_len2_j1_(js) = coord_vol_j1_(js);
-    coord_len3_j1_(js) = coord_area2_j1_(js);
+    coord_vol_j1_(j) = std::abs(cos_m - cos_p);
+    coord_area1_j1_(j) = coord_vol_j1_(j);
+    coord_area2_j1_(j) = std::abs(sin_m);
+    if (j == ju)
+      coord_area2_j1_(j+1) = std::abs(sin_p);
+    coord_area3_j1_(j) = coord_vol_j1_(j);
+    coord_len1_j1_(j) = coord_area2_j1_(j);
+    if (j == ju)
+      coord_len1_j1_(j+1) = coord_area2_j1_(j+1);
+    coord_len2_j1_(j) = coord_vol_j1_(j);
+    coord_len3_j1_(j) = coord_area2_j1_(j);
+    if (j == ju)
+      coord_len3_j1_(j+1) = coord_area2_j1_(j+1);
+    coord_width3_j1_(j) = std::abs(sin_c);
 
     // Source terms
-    coord_src_j1_(js) = 1.0/6.0
+    coord_src_j1_(j) = 1.0/6.0
         * (4.0 - std::cos(2.0*theta_m)
         - 2.0 * cos_m * cos_p - std::cos(2.0*theta_p));
-    coord_src_j2_(js) = 1.0/3.0 * (sin_m_cu - sin_p_cu)
+    coord_src_j2_(j) = 1.0/3.0 * (sin_m_cu - sin_p_cu)
         / (cos_m - cos_p);
-    coord_src_j3_(js) = (sin_p-sin_m) / (cos_m-cos_p);   // cot((theta_p+theta_m)/2)
+    coord_src_j3_(j) = (sin_p-sin_m) / (cos_m-cos_p);    // cot((theta_p+theta_m)/2)
 
     // Metric coefficients
-    metric_cell_j1_(js) = sin_c_sq;
-    metric_face1_j1_(js) = sin_c_sq;
-    metric_face2_j1_(js) = sin_m_sq;
-    metric_face3_j1_(js) = sin_c_sq;
+    metric_cell_j1_(j) = sin_c_sq;
+    metric_face1_j1_(j) = sin_c_sq;
+    metric_face2_j1_(j) = sin_m_sq;
+    if (j == ju)
+      metric_face2_j1_(j+1) = sin_p_sq;
+    metric_face3_j1_(j) = sin_c_sq;
 
     // Coordinate transformations
-    trans_face1_j1_(js) = std::abs(sin_c);
-    trans_face2_j1_(js) = std::abs(sin_m);
-    trans_face3_j1_(js) = std::abs(sin_c);
+    trans_face1_j1_(j) = std::abs(sin_c);
+    trans_face2_j1_(j) = std::abs(sin_m);
+    if (j == ju)
+      trans_face2_j1_(j+1) = std::abs(sin_p);
+    trans_face3_j1_(j) = std::abs(sin_c);
   }
 }
 
@@ -312,7 +308,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
 Coordinates::~Coordinates()
 {
   DeleteBasicCoordinates();
-
   coord_vol_i1_.DeleteAthenaArray();
   coord_area1_i1_.DeleteAthenaArray();
   coord_area2_i1_.DeleteAthenaArray();

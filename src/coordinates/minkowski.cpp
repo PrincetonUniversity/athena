@@ -9,41 +9,52 @@
 // C++ headers
 #include <cmath>  // sqrt()
 
-// Athena headers
-#include "../athena.hpp"           // enums, macros, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../mesh.hpp"             // MeshBlock
+// Athena++ headers
+#include "../athena.hpp"         // enums, macros
+#include "../athena_arrays.hpp"  // AthenaArray
+#include "../mesh.hpp"           // MeshBlock
 
 //--------------------------------------------------------------------------------------
 
 // Constructor
 // Inputs:
 //   pmb: pointer to block containing this grid
-//   pin: pointer to runtime inputs
+//   pin: pointer to runtime inputs (not used)
+//   flag: indicator that this is special refinement case
 Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
 {
   // Set pointer to host MeshBlock and note active zone boundaries
   pmy_block = pmb;
-  cflag=flag;
+  cflag = flag;
   int is, ie, js, je, ks, ke, ng;
-  if(cflag==0) {
-    is = pmb->is; js = pmb->js; ks = pmb->ks;
-    ie = pmb->ie; je = pmb->je; ke = pmb->ke;
-    ng=NGHOST;
+  if(cflag == 0)
+  {
+    is = pmb->is;
+    ie = pmb->ie;
+    js = pmb->js;
+    je = pmb->je;
+    ks = pmb->ks;
+    ke = pmb->ke;
+    ng = NGHOST;
   }
-  else {
-    is = pmb->cis; js = pmb->cjs; ks = pmb->cks;
-    ie = pmb->cie; je = pmb->cje; ke = pmb->cke;
-    ng=pmb->cnghost;
+  else
+  {
+    is = pmb->cis;
+    ie = pmb->cie;
+    js = pmb->cjs;
+    je = pmb->cje;
+    ks = pmb->cks;
+    ke = pmb->cke;
+    ng = pmb->cnghost;
   }
 
   // Set face-centered positions and distances
   AllocateAndSetBasicCoordinates();
 
   // Initialize volume-averaged positions and spacings: x-direction
-  for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
+  for (int i = is-ng; i <= ie+ng; ++i)
     x1v(i) = 0.5 * (x1f(i) + x1f(i+1));
-  for (int i = is-NGHOST; i <= ie+NGHOST-1; ++i)
+  for (int i = is-ng; i <= ie+ng-1; ++i)
     dx1v(i) = x1v(i+1) - x1v(i);
 
   // Initialize volume-averaged positions and spacings: y-direction
@@ -54,9 +65,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
   }
   else  // extended
   {
-    for (int j = js-NGHOST; j <= je+NGHOST; ++j)
+    for (int j = js-ng; j <= je+ng; ++j)
       x2v(j) = 0.5 * (x2f(j) + x2f(j+1));
-    for (int j = js-NGHOST; j <= je+NGHOST-1; ++j)
+    for (int j = js-ng; j <= je+ng-1; ++j)
       dx2v(j) = x2v(j+1) - x2v(j);
   }
 
@@ -68,26 +79,26 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
   }
   else  // extended
   {
-    for (int k = ks-NGHOST; k <= ke+NGHOST; ++k)
+    for (int k = ks-ng; k <= ke+ng; ++k)
       x3v(k) = 0.5 * (x3f(k) + x3f(k+1));
-    for (int k = ks-NGHOST; k <= ke+NGHOST-1; ++k)
+    for (int k = ks-ng; k <= ke+ng-1; ++k)
       dx3v(k) = x3v(k+1) - x3v(k);
   }
 
   // Prepare for MHD mesh refinement
-  if (pmb->pmy_mesh->multilevel == true && MAGNETIC_FIELDS_ENABLED)
+  if (pmb->pmy_mesh->multilevel && MAGNETIC_FIELDS_ENABLED)
   {
-    for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
+    for (int i = is-ng; i <= ie+ng; ++i)
       x1s2(i) = x1s3(i) = x1v(i);
     if (pmb->block_size.nx2 == 1)
       x2s1(js) = x2s3(js) = x2v(js);
     else
-      for (int j = js-NGHOST; j <= je+NGHOST; ++j)
+      for (int j = js-ng; j <= je+ng; ++j)
         x2s1(j) = x2s3(j) = x2v(j);
     if (pmb->block_size.nx3 == 1)
       x3s1(ks) = x3s2(ks) = x3v(ks);
     else
-      for (int k = ks-NGHOST; k <= ke+NGHOST; ++k)
+      for (int k = ks-ng; k <= ke+ng; ++k)
         x3s1(k) = x3s2(k) = x3v(k);
   }
 }
