@@ -94,6 +94,12 @@ InputBlock::InputBlock()
 
 InputBlock::~InputBlock()
 {
+  InputLine *pil = pline;
+  while (pil != NULL) {
+    InputLine *pold_line = pil;
+    pil = pil->pnext;
+    delete pold_line;
+  }
 }
 
 //--------------------------------------------------------------------------------------

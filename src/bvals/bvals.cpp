@@ -458,7 +458,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   if(pmb->loc.level == pmb->pmy_mesh->root_level &&
      pmb->pmy_mesh->nrbx3 == 1 &&
      (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY))
-       exc_.NewAthenaArray(pmb->ke+NGHOST+1);
+       exc_.NewAthenaArray(pmb->ke+NGHOST+2);
 
 }
 
