@@ -1,23 +1,27 @@
-# Compiled Object files
+# Configured outputs
+Makefile
+src/defs.hpp
+
+# Object and binary directories
+obj/
+bin/
+
+# Compiled object files
 *.slo
 *.lo
 *.o
 *.obj
 
-# Compiled Dynamic libraries
+# Compiled dynamic libraries
 *.so
 *.dylib
 *.dll
 
-# Compiled Static libraries
+# Compiled static libraries
 *.lai
 *.la
 *.a
 *.lib
-
-# Configured outputs
-Makefile
-src/defs.hpp
 
 # Executables
 *.exe
