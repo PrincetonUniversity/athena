@@ -981,7 +981,7 @@ void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
 
         // Calculate connection coefficients
         Real gamma0_00 = 2.0*m2*xi*r/sigma3;
-        Real gamma0_01 =m*xi/sigma2 * (1.0 + 2.0*m*r/sigma);
+        Real gamma0_01 = m*xi/sigma2 * (1.0 + 2.0*m*r/sigma);
         Real gamma0_02 = -2.0*m*a2*r/sigma2 * sin * cos;
         Real gamma0_03 = -2.0*m2*a*r*xi/sigma3 * sin2;
         Real gamma0_11 = 2.0*m*xi/sigma2 * (1.0 + m*r/sigma);
