@@ -66,8 +66,8 @@ parser.add_argument('--eos',
 
 # --flux=[name] argument
 parser.add_argument('--flux',
-    default='hlle',
-    choices=['hlle','hllc','hlld','roe','llf'],
+    default='default',
+    choices=['default','hlle','hllc','hlld','roe','llf'],
     help='select Riemann solver')
 
 # --order=[name] argument
@@ -153,6 +153,16 @@ args = vars(parser.parse_args())
 
 #--- Step 2. Test for incompatible arguments -------------------------------------------
 
+# Set default flux; HLLD for MHD, HLLC for hydro, HLLE for isothermal hydro
+if args['flux']=='default':
+  if args['b']:
+    args['flux']='hlld'
+  else:
+    if args['eos']=='isothermal':
+      args['flux']='hlle'
+    else:
+      args['flux']='hllc'
+
 # Check Riemann solver compatibility
 if args['flux']=='hllc' and args['eos']=='isothermal':
   raise SystemExit('### CONFIGURE ERROR: HLLC flux cannot be used with isothermal EOS')
@@ -167,6 +177,9 @@ if args['s'] and args['g']:
       the -s option is restricted to pure SR.')
 if args['t'] and not args['g']:
   raise SystemExit('### CONFIGURE ERROR: Frame transformations only apply to GR.')
+if args['eos']=='isothermal':
+  if args['s'] or args['g']:
+    raise SystemExit('### CONFIGURE ERROR: Isothermal EOS is incompatible with relativity.')
 
 #--- Step 3. Set definitions and Makefile options based on above arguments -------------
 
