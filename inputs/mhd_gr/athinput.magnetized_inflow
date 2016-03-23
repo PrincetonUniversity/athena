@@ -1,0 +1,46 @@
+<job>
+problem_id = magnetized_inflow
+
+<output1>
+file_type = vtk
+variable  = prim
+dt        = 15.0
+
+<time>
+cfl_number = 0.4
+nlim       = -1
+tlim       = 15.0
+
+<mesh>
+nx1    = 128
+x1min  = 2.0
+x1max  = 4.0
+x1rat  = 1.0054299011128027
+ix1_bc = outflow
+ox1_bc = user
+
+nx2    = 1
+x2min  = 1.5707649108683606
+x2max  = 1.5708277427214323
+ix2_bc = outflow
+ox2_bc = outflow
+
+nx3    = 1
+x3min  = 0.0
+x3max  = 6.283185307179586
+ix3_bc = periodic
+ox3_bc = periodic
+
+<coord>
+m = 1.0
+a = 0.5
+
+<hydro>
+gamma  = 1.3333333333333333
+dfloor = 1.0e-6
+pfloor = 1.0e-10
+
+<problem>
+temperature    = 1.0e-10
+num_data_lines = 2050
+data_file      = magnetized_inflow.dat  # data file must be provided to work
