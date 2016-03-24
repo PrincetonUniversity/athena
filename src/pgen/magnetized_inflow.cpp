@@ -4,9 +4,12 @@
 #include "../mesh.hpp"
 
 // C++ headers
-#include <cmath>    // cos, sin, sqrt
-#include <fstream>  // ifstream
-#include <string>   // string
+#include <cmath>      // cos, sin, sqrt
+#include <fstream>    // ifstream
+#include <iostream>   // endl
+#include <sstream>    // stringstream
+#include <stdexcept>  // runtime_error
+#include <string>     // string, c_str()
 
 // Athena headers
 #include "../athena.hpp"                   // macros, enums, FaceField
@@ -48,6 +51,13 @@ void Mesh::InitUserMeshProperties(ParameterInput *pin)
   // Read interpolation data from file
   std::string filename = pin->GetString("problem", "data_file");
   std::ifstream file(filename.c_str());
+  if (not file.is_open())
+  {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in Problem Generator" << std::endl
+        << "file " << filename << " cannot be opened" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
   for (int n = 0; n < num_lines; ++n)
   {
     Real r, rho, ur, uphi, bbr, bbphi;
