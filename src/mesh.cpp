@@ -730,7 +730,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
 
 Mesh::~Mesh()
 {
-  TerminateUserMeshProperties();
   while(pblock->prev != NULL) // should not be true
     delete pblock->prev;
   while(pblock->next != NULL)

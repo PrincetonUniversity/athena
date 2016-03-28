@@ -24,7 +24,8 @@
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
-#include <string>     // c_str()
+#include <string>
+#include <stdio.h>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -46,18 +47,114 @@ void Mesh::InitUserMeshProperties(ParameterInput *pin)
   return;
 }
 
-
 //======================================================================================
 //! \fn void Mesh::TerminateUserMeshProperties(void)
 //  \brief Clean up the Mesh properties
 //======================================================================================
 
-void Mesh::TerminateUserMeshProperties(void)
+void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
 {
-  // nothing to do
+  MeshBlock *pmb = pblock;
+  
+  Real err[NHYDRO+NFIELD];
+  for (int i=0; i<=(NHYDRO+NFIELD); ++i) err[i]=0.0;
+
+  // Positions of shock, contact, head and foot of rarefaction for Sod test
+  Real xs = 1.7522*tlim;
+  Real xc = 0.92745*tlim;
+  Real xf = -0.07027*tlim;
+  Real xh = -1.1832*tlim;
+  int shk_dir = pin->GetInteger("problem","shock_dir"); 
+
+  // Errors in Sod solution
+  int im1, im2, im3;
+  if (shk_dir == 1) {
+    im1 = IM1; im2 = IM2; im3 = IM3;
+  } else if (shk_dir == 2) {
+    im1 = IM2; im2 = IM3; im3 = IM1;
+  } else {
+    im1 = IM3; im2 = IM1; im3 = IM2;
+  }
+
+  for (int k=pmb->ks; k<=pmb->ke; k++) {
+  for (int j=pmb->js; j<=pmb->je; j++) {
+    for (int i=pmb->is; i<=pmb->ie; i++) {
+      Real r, d0, m0, e0;
+      if (shk_dir == 1) r = pmb->pcoord->x1v(i);  
+      if (shk_dir == 2) r = pmb->pcoord->x2v(j);  
+      if (shk_dir == 3) r = pmb->pcoord->x3v(k);  
+
+      if (r > xs) {
+        d0 = 0.125;
+        m0 = 0.0;
+        e0 = 0.25;
+      } else if (r > xc) {
+        d0 = 0.26557;
+        m0 = 0.92745*d0;
+        e0 = 0.87204;
+      } else if (r > xf) {
+        d0 = 0.42632;
+        m0 = 0.92745*d0;
+        e0 = 0.94118;
+      } else if (r > xh) {
+        Real v0 = 0.92745*(r-xh)/(xf-xh);
+        d0 = 0.42632*pow((1.0+0.20046*(0.92745-v0)),5);
+        m0 = v0*d0;
+        e0 = (0.30313*pow((1.0+0.20046*(0.92745-v0)),7))/0.4 + 0.5*d0*v0*v0;
+      } else {
+        d0 = 1.0;
+        m0 = 0.0;
+        e0 = 2.5;
+      }
+      err[IDN] += fabs(d0  - pmb->phydro->u(IDN,k,j,i));
+      err[im1] += fabs(m0  - pmb->phydro->u(im1,k,j,i));
+      err[im2] += fabs(0.0 - pmb->phydro->u(im2,k,j,i));
+      err[im3] += fabs(0.0 - pmb->phydro->u(im3,k,j,i));
+      err[IEN] += fabs(e0  - pmb->phydro->u(IEN,k,j,i));
+    }
+  }}
+
+  // normalize errors by number of cells, compute RMS
+  for (int i=0; i<=(NHYDRO+NFIELD); ++i) err[i] = err[i]/(float)GetTotalCells();
+  Real rms_err = 0.0;
+  for (int i=0; i<=(NHYDRO+NFIELD); ++i) rms_err += SQR(err[i]);
+  rms_err = sqrt(rms_err);
+
+  // open output file and write out errors
+  std::string fname;
+  fname.assign("shock-errors.dat");
+  std::stringstream msg;
+  FILE *pfile;
+  // The file exists -- reopen the file in append mode
+  if((pfile = fopen(fname.c_str(),"r")) != NULL){
+    if((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
+      msg << "### FATAL ERROR in function [Mesh::TerminateUserMeshProperties]"
+          << std::endl << "Error output file could not be opened" <<std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+
+  // The file does not exist -- open the file in write mode and add headers
+  } else {
+    if((pfile = fopen(fname.c_str(),"w")) == NULL){
+      msg << "### FATAL ERROR in function [Mesh::TerminateUserMeshProperties]"
+          << std::endl << "Error output file could not be opened" <<std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+    fprintf(pfile,"# Nx1  Nx2  Nx3  RMS-Error  d  M1  M2  M3  E");
+    if (MAGNETIC_FIELDS_ENABLED) fprintf(pfile,"  B1c  B2c  B3c");
+    fprintf(pfile,"\n");
+  }
+
+  // write errors
+  fprintf(pfile,"%d  %d",pmb->block_size.nx1,pmb->block_size.nx2);
+  fprintf(pfile,"  %d  %e",pmb->block_size.nx3,rms_err);
+  fprintf(pfile,"  %e  %e  %e  %e  %e",err[IDN],err[IM1],err[IM2],err[IM3],err[IEN]);
+  fprintf(pfile,"\n");
+
+  fclose(pfile);
+
   return;
 }
-
 
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
@@ -68,12 +165,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   std::stringstream msg;
 
-// parse shock direction: {1,2,3} -> {x1,x2,x3}
-
+  // parse shock direction: {1,2,3} -> {x1,x2,x3}
   int shk_dir = pin->GetInteger("problem","shock_dir"); 
 
-// parse shock location (must be inside grid)
-
+  // parse shock location (must be inside grid)
   Real xshock = pin->GetReal("problem","xshock"); 
   if (shk_dir == 1 && (xshock < pmy_mesh->mesh_size.x1min ||
                        xshock > pmy_mesh->mesh_size.x1max)) {
@@ -94,8 +189,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     throw std::runtime_error(msg.str().c_str());
   }
 
-// Parse left state read from input file: dl,ul,vl,wl,[pl]
-
+  // Parse left state read from input file: dl,ul,vl,wl,[pl]
   Real wl[NHYDRO+NFIELD];
   wl[IDN] = pin->GetReal("problem","dl");
   wl[IVX] = pin->GetReal("problem","ul");
@@ -108,8 +202,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     wl[NHYDRO+2] = pin->GetReal("problem","bzl");
   }
 
-// Parse right state read from input file: dr,ur,vr,wr,[pr]
-
+  // Parse right state read from input file: dr,ur,vr,wr,[pr]
   Real wr[NHYDRO+NFIELD];
   wr[IDN] = pin->GetReal("problem","dr");
   wr[IVX] = pin->GetReal("problem","ur");
@@ -250,13 +343,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           pfield->b.x3f(k,j,i) = wr[NHYDRO];
         }
         if (NON_BAROTROPIC_EOS) {
-          phydro->u(IEN,k,j,i) += 0.5*(SQR(pfield->b.x1f(k,j,i)) + SQR(pfield->b.x2f(k,j,i)) +
-             SQR(pfield->b.x3f(k,j,i)));
+          phydro->u(IEN,k,j,i) += 0.5*(SQR(pfield->b.x1f(k,j,i))
+            + SQR(pfield->b.x2f(k,j,i)) + SQR(pfield->b.x3f(k,j,i)));
         }
       }
     }}
 
-// end by adding bi.x1 at ie+1, bi.x2 at je+1, and bi.x3 at ke+1
+    // end by adding bi.x1 at ie+1, bi.x2 at je+1, and bi.x3 at ke+1
 
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
@@ -275,7 +368,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   return;
 }
 
-
 //======================================================================================
 //! \fn void MeshBlock::UserWorkInLoop(void)
 //  \brief User-defined work function for every time step
@@ -286,4 +378,3 @@ void MeshBlock::UserWorkInLoop(void)
   // nothing to do
   return;
 }
-
