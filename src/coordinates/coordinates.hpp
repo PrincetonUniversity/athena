@@ -291,6 +291,7 @@ private:
   AthenaArray<Real> coord_src1_j_;
   AthenaArray<Real> coord_src2_i_;
   AthenaArray<Real> coord_src2_j_;
+  AthenaArray<Real> coord_src3_j_;
 
   // Scratch arrays for physical source terms
   AthenaArray<Real> phy_src1_i_, phy_src2_i_;

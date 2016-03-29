@@ -134,6 +134,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
     coord_vol_j_.NewAthenaArray(ncells2);
     coord_src1_j_.NewAthenaArray(ncells2);
     coord_src2_j_.NewAthenaArray(ncells2);
+    coord_src3_j_.NewAthenaArray(ncells2);
 
     // Compute and store constant coefficients needed for face-areas, cell-volumes, etc.
     // This helps improve performance.
@@ -177,6 +178,8 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
         coord_src1_j_(j) = (sp - sm)/coord_vol_j_(j);
         // (dS/2)/(S_c dV)
         coord_src2_j_(j) = (sp - sm)/((sm + sp)*coord_vol_j_(j));
+        // < cot theta > = (|sin th_p| - |sin th_m|) / |cos th_m - cos th_p|
+        coord_src3_j_(j) = (sp - sm)/coord_vol_j_(j);
       }
       coord_area2_j_(je+(NGHOST)+1) = fabs(sin(x2f(je+(NGHOST)+1)));
     } else {
@@ -189,6 +192,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
       coord_vol_j_(js) = coord_area1_j_(js);
       coord_src1_j_(js) = (sp - sm)/coord_vol_j_(js);
       coord_src2_j_(js) = (sp - sm)/((sm + sp)*coord_vol_j_(js));
+      coord_src3_j_(js) = (sp - sm)/coord_vol_j_(js);
       coord_area2_j_(js+1) = sp;
     }
   }
@@ -214,6 +218,7 @@ Coordinates::~Coordinates()
   coord_vol_j_.DeleteAthenaArray();
   coord_src1_j_.DeleteAthenaArray();
   coord_src2_j_.DeleteAthenaArray();
+  coord_src3_j_.DeleteAthenaArray();
 }
 
 //--------------------------------------------------------------------------------------
@@ -356,6 +361,7 @@ void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
   Real iso_cs = pmy_block->phydro->peos->GetIsoSoundSpeed();
+  bool use_x2_fluxes = pmy_block->block_size.nx2 > 1;
 
   // Go through cells
   for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
@@ -398,9 +404,15 @@ void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
         u(IM2,k,j,i) += dt*coord_src1_i_(i)*coord_src1_j_(j)*m_pp;
 
         // src_3 = -< M_{phi theta} ><cot theta/r> 
-        u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src2_j_(j)*
-          (coord_area2_j_(j)*flux[x2face](IM3,k,j,i)
-         + coord_area2_j_(j+1)*flux[x2face](IM3,k,j+1,i));
+        if (use_x2_fluxes) {
+          u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src2_j_(j)*
+              (coord_area2_j_(j)*flux[x2face](IM3,k,j,i)
+              + coord_area2_j_(j+1)*flux[x2face](IM3,k,j+1,i));
+        }
+        else {
+          u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src3_j_(j)
+              * prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM2,k,j,i);
+        }
       }
     }
   }
