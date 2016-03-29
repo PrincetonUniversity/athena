@@ -22,9 +22,9 @@
 #include "../../coordinates/coordinates.hpp" // Coordinates
 
 // Declarations
-static Real EResidual(Real w_guess, Real d, Real e, Real m_sq, Real b_sq, Real s_sq,
+static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
     Real gamma_prime);
-static Real EResidualPrime(Real w_guess, Real d, Real m_sq, Real b_sq, Real s_sq,
+static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
     Real gamma_prime);
 
 // Constructor
@@ -37,6 +37,9 @@ HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
   gamma_ = pin->GetReal("hydro", "gamma");
   density_floor_ = pin->GetOrAddReal("hydro", "dfloor", 1024*FLT_MIN);
   pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", 1024*FLT_MIN);
+  rho_pmag_min_ = pin->GetOrAddReal("hydro", "rho_pmag_min", 0.0);
+  u_pmag_min_ = pin->GetOrAddReal("hydro", "u_pmag_min", 0.0);
+  gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
   int ncells1 = pf->pmy_block->block_size.nx1 + 2*NGHOST;
   g_.NewAthenaArray(NMETRIC,ncells1);
   g_inv_.NewAthenaArray(NMETRIC,ncells1);
@@ -67,8 +70,10 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc, Coordinates *pco, int is, int ie,
     int js, int je, int ks, int ke)
 {
-  // Calculate reduced ratio of specific heats
+  // Parameters
   const Real gamma_prime = gamma_/(gamma_-1.0);
+  const Real v_sq_max = 1.0 - 1.0/SQR(gamma_max_);
+  const Real max_velocity = std::sqrt(v_sq_max);
 
   // Interpolate magnetic field from faces to cell centers
   pmy_hydro_->pmy_block->pfield->CalculateCellCenteredField(bb, bb_cc, pco, is, ie, js,
@@ -82,26 +87,26 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
       for (int i = is; i <= ie; ++i)
       {
         // Extract conserved quantities
-        Real &d = cons(IDN,k,j,i);
-        Real &e = cons(IEN,k,j,i);
+        Real &dd = cons(IDN,k,j,i);
+        Real &ee = cons(IEN,k,j,i);
         const Real &mx = cons(IM1,k,j,i);
         const Real &my = cons(IM2,k,j,i);
         const Real &mz = cons(IM3,k,j,i);
 
         // Extract cell-centered magnetic field
-        const Real &bx = bb_cc(IB1,k,j,i);
-        const Real &by = bb_cc(IB2,k,j,i);
-        const Real &bz = bb_cc(IB3,k,j,i);
+        const Real &bbx = bb_cc(IB1,k,j,i);
+        const Real &bby = bb_cc(IB2,k,j,i);
+        const Real &bbz = bb_cc(IB3,k,j,i);
 
         // Calculate variations on conserved quantities
         Real m_sq = SQR(mx) + SQR(my) + SQR(mz);
-        Real b_sq = SQR(bx) + SQR(by) + SQR(bz);
-        Real m_dot_b = mx*bx + my*by + mz*bz;
-        Real s_sq = SQR(m_dot_b);
+        Real bb_sq = SQR(bbx) + SQR(bby) + SQR(bbz);
+        Real m_dot_bb = mx*bbx + my*bby + mz*bbz;
+        Real ss_sq = SQR(m_dot_bb);
 
         // Construct initial guess for enthalpy W (cf. MM A26-A27)
-        Real a1 = 4.0/3.0 * (b_sq - e);
-        Real a0 = 1.0/3.0 * (m_sq + b_sq * (b_sq - 2.0*e));
+        Real a1 = 4.0/3.0 * (bb_sq - ee);
+        Real a0 = 1.0/3.0 * (m_sq + bb_sq * (bb_sq - 2.0*ee));
         Real s2 = SQR(a1) - 4.0*a0;
         Real s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
         Real w_init = (s2 >= 0.0 and a1 >= 0.0) ? -2.0*a0/(a1+s) : (-a1+s)/2.0;
@@ -109,15 +114,15 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         // Apply Newton-Raphson method to find new W
         const int num_iterations = 5;
         Real w_new = w_init;
-        Real res_new = EResidual(w_new, d, e, m_sq, b_sq, s_sq, gamma_prime);
+        Real res_new = EResidual(w_new, dd, ee, m_sq, bb_sq, ss_sq, gamma_prime);
         for (int n = 0; n < num_iterations; ++n)
         {
           Real w_old = w_new;
           Real res_old = res_new;
-          Real derivative = EResidualPrime(w_old, d, m_sq, b_sq, s_sq, gamma_prime);
+          Real derivative = EResidualPrime(w_old, dd, m_sq, bb_sq, ss_sq, gamma_prime);
           Real delta = -res_old / derivative;
           w_new = w_old + delta;
-          res_new = EResidual(w_new, d, e, m_sq, b_sq, s_sq, gamma_prime);
+          res_new = EResidual(w_new, dd, ee, m_sq, bb_sq, ss_sq, gamma_prime);
         }
         Real w_true = w_new;
 
@@ -128,41 +133,50 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real &vy = prim(IVY,k,j,i);
         Real &vz = prim(IVZ,k,j,i);
 
-        // Set density, correcting only conserved density if floor applied
-        Real v_sq = (m_sq + s_sq/SQR(w_true) * (2.0*w_true + b_sq))
-            / SQR(w_true + b_sq);                                    // (cf. MM A3)
+        // Set velocity
+        vx = (mx + m_dot_bb/w_true * bbx) / (w_true + bb_sq);  // (MM A10)
+        vy = (my + m_dot_bb/w_true * bby) / (w_true + bb_sq);  // (MM A10)
+        vz = (mz + m_dot_bb/w_true * bbz) / (w_true + bb_sq);  // (MM A10)
+        Real v_sq = SQR(vx) + SQR(vy) + SQR(vz);
+        if (v_sq > v_sq_max)
+        {
+          Real v_abs = std::sqrt(v_sq);
+          vx *= max_velocity/v_abs;
+          vy *= max_velocity/v_abs;
+          vz *= max_velocity/v_abs;
+          v_sq = v_sq_max;
+        }
         Real gamma_sq = 1.0/(1.0-v_sq);
         Real gamma_lorentz = std::sqrt(gamma_sq);
-        rho = d/gamma_lorentz;                                       // (MM A12)
-        if (rho < density_floor_)
+
+        // Calculate magnetic pressure
+        Real v_dot_bb = vx*bbx + vy*bby + vz*bbz;
+        Real b_sq = bb_sq/gamma_sq + SQR(v_dot_bb);
+        Real pmag = 0.5*b_sq;
+
+        // Calculate floors for density and pressure
+        Real density_floor_local = std::max(density_floor_, rho_pmag_min_*pmag);
+        Real pressure_floor_local =
+            std::max(pressure_floor_, (gamma_-1.0)*u_pmag_min_*pmag);
+
+        // Set density, correcting only conserved density if floor applied
+        rho = dd/gamma_lorentz;  // (MM A12)
+        if (rho < density_floor_local)
         {
-          rho = density_floor_;
-          d = gamma_lorentz * rho;
+          rho = density_floor_local;
+          dd = gamma_lorentz * rho;
         }
 
-        // Set velocity
-        vx = (mx + m_dot_b/w_true * bx) / (w_true + b_sq);  // (MM A10)
-        vy = (my + m_dot_b/w_true * by) / (w_true + b_sq);  // (MM A10)
-        vz = (mz + m_dot_b/w_true * bz) / (w_true + b_sq);  // (MM A10)
-
         // Set pressure, correcting only energy if floor applied
-        Real chi = (1.0 - v_sq) * (w_true - gamma_lorentz * d);  // (cf. MM A11)
-        pgas = chi/gamma_prime;                                  // (MM A17)
-        if (pgas < pressure_floor_)
+        Real chi = (1.0 - v_sq) * (w_true - gamma_lorentz * dd);  // (cf. MM A11)
+        pgas = chi/gamma_prime;                                   // (MM A17)
+        if (pgas < pressure_floor_local)
         {
-          pgas = pressure_floor_;
-          Real ut = gamma_lorentz;
-          Real ux = ut * vx;
-          Real uy = ut * vy;
-          Real uz = ut * vz;
-          Real bcont = bx*ux + by*uy + bz*uz;
-          Real bconx = (bx + bcont * ux) / ut;
-          Real bcony = (by + bcont * uy) / ut;
-          Real bconz = (bz + bcont * uz) / ut;
-          Real b_sq = -SQR(bcont) + SQR(bconx) + SQR(bcony) + SQR(bconz);
+          pgas = pressure_floor_local;
+          Real bt = gamma_lorentz * v_dot_bb;
           Real w = rho + gamma_prime * pgas + b_sq;
-          Real ptot = pgas + 0.5*b_sq;
-          e = gamma_sq * w - SQR(bcont) - ptot;
+          Real ptot = pgas + pmag;
+          ee = gamma_sq * w - SQR(bt) - ptot;
         }
       }
     }
@@ -215,17 +229,17 @@ void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
         Real b_sq = -SQR(b0) + SQR(b1) + SQR(b2) + SQR(b3);
 
         // Extract conserved quantities
-        Real &d = cons(IDN,k,j,i);
-        Real &e = cons(IEN,k,j,i);
+        Real &dd = cons(IDN,k,j,i);
+        Real &ee = cons(IEN,k,j,i);
         Real &m1 = cons(IM1,k,j,i);
         Real &m2 = cons(IM2,k,j,i);
         Real &m3 = cons(IM3,k,j,i);
 
         // Set conserved quantities
         Real wtot = rho + gamma_adi_red * pgas + b_sq;
-        Real ptot = pgas + 0.5 * b_sq;
-        d = rho * u0;
-        e = wtot * u0 * u0 - b0 * b0 - ptot;
+        Real ptot = pgas + 0.5*b_sq;
+        dd = rho * u0;
+        ee = wtot * u0 * u0 - b0 * b0 - ptot;
         m1 = wtot * u0 * u1 - b0 * b1;
         m2 = wtot * u0 * u2 - b0 * b2;
         m3 = wtot * u0 * u3 - b0 * b3;
@@ -428,39 +442,39 @@ void HydroEqnOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
 // Function whose value vanishes for correct enthalpy
 // Inputs:
 //   w_guess: guess for total enthalpy W
-//   d: relativistic density D
-//   e: total energy E
+//   dd: relativistic density D
+//   ee: total energy E
 //   m_sq: square magnitude of momentum \vec{m}
-//   b_sq: square magnitude of magnetic field \vec{B}
-//   s_sq: (\vec{m} \cdot \vec{B})^2
+//   bb_sq: square magnitude of magnetic field \vec{B}
+//   ss_sq: (\vec{m} \cdot \vec{B})^2
 //   gamma_prime: reduced adiabatic gas constant Gamma' = Gamma/(Gamma-1)
 // Outputs:
 //   returned value: calculated minus given value of E
 // Notes:
 //   follows Mignone & McKinney 2007, MNRAS 378 1118 (MM)
 //   implementation follows that of hlld_sr.c in Athena 4.2
-//   same function as in hlld_mhd_rel.cpp
-static Real EResidual(Real w_guess, Real d, Real e, Real m_sq, Real b_sq, Real s_sq,
+//   same function as in hlld_rel.cpp
+static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
     Real gamma_prime)
 {
-  Real v_sq = (m_sq + s_sq/SQR(w_guess) * (2.0*w_guess + b_sq))
-      / SQR(w_guess + b_sq);                                     // (cf. MM A3)
+  Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
+      / SQR(w_guess + bb_sq);                                      // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
   Real gamma_lorentz = std::sqrt(gamma_sq);
-  Real chi = (1.0 - v_sq) * (w_guess - gamma_lorentz * d);       // (cf. MM A11)
-  Real pgas = chi/gamma_prime;                                   // (MM A17)
-  Real e_calc = w_guess - pgas + 0.5 * b_sq * (1.0+v_sq)
-      - s_sq / (2.0*SQR(w_guess));                               // (MM A1)
-  return e_calc - e;
+  Real chi = (1.0 - v_sq) * (w_guess - gamma_lorentz * dd);        // (cf. MM A11)
+  Real pgas = chi/gamma_prime;                                     // (MM A17)
+  Real ee_calc = w_guess - pgas + 0.5*bb_sq * (1.0+v_sq)
+      - ss_sq / (2.0*SQR(w_guess));                                // (MM A1)
+  return ee_calc - ee;
 }
 
 // Derivative of EResidual()
 // Inputs:
 //   w_guess: guess for total enthalpy W
-//   d: relativistic density D
+//   dd: relativistic density D
 //   m_sq: square magnitude of momentum \vec{m}
-//   b_sq: square magnitude of magnetic field \vec{B}
-//   s_sq: (\vec{m} \cdot \vec{B})^2
+//   bb_sq: square magnitude of magnetic field \vec{B}
+//   ss_sq: (\vec{m} \cdot \vec{B})^2
 //   gamma_prime: reduced adiabatic gas constant Gamma' = Gamma/(Gamma-1)
 // Outputs:
 //   returned value: derivative of calculated value of E
@@ -468,23 +482,23 @@ static Real EResidual(Real w_guess, Real d, Real e, Real m_sq, Real b_sq, Real s
 //   follows Mignone & McKinney 2007, MNRAS 378 1118 (MM)
 //   implementation follows that of hlld_sr.c in Athena 4.2
 //   same function as in hlld_mhd_rel.cpp
-static Real EResidualPrime(Real w_guess, Real d, Real m_sq, Real b_sq, Real s_sq,
+static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
     Real gamma_prime)
 {
-  Real v_sq = (m_sq + s_sq/SQR(w_guess) * (2.0*w_guess + b_sq))
-      / SQR(w_guess + b_sq);                                            // (cf. MM A3)
+  Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
+      / SQR(w_guess + bb_sq);                                         // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
   Real gamma_lorentz = std::sqrt(gamma_sq);
-  Real chi = (1.0 - v_sq) * (w_guess - gamma_lorentz * d);              // (cf. MM A11)
+  Real chi = (1.0 - v_sq) * (w_guess - gamma_lorentz * dd);           // (cf. MM A11)
   Real w_cu = SQR(w_guess) * w_guess;
-  Real w_b_cu = SQR(w_guess + b_sq) * (w_guess + b_sq);
-  Real dv_sq_dw = -2.0 / (w_cu*w_b_cu)
-      * (s_sq * (3.0*w_guess*(w_guess+b_sq) + SQR(b_sq)) + m_sq*w_cu);  // (MM A16)
+  Real w_b_cu = SQR(w_guess + bb_sq) * (w_guess + bb_sq);
+  Real dv_sq_dw = -2.0 / (w_cu*w_b_cu) * (ss_sq
+      * (3.0*w_guess*(w_guess+bb_sq) + SQR(bb_sq)) + m_sq*w_cu);      // (MM A16)
   Real dchi_dw = 1.0 - v_sq
-      - gamma_lorentz/2.0 * (d + 2.0*gamma_lorentz*chi) * dv_sq_dw;     // (cf. MM A14)
-  Real drho_dw = -gamma_lorentz*d/2.0 * dv_sq_dw;                       // (MM A15)
-  Real dpgas_dchi = 1.0/gamma_prime;                                    // (MM A18)
-  Real dpgas_drho = 0.0;                                                // (MM A18)
+      - gamma_lorentz/2.0 * (dd + 2.0*gamma_lorentz*chi) * dv_sq_dw;  // (cf. MM A14)
+  Real drho_dw = -gamma_lorentz*dd/2.0 * dv_sq_dw;                    // (MM A15)
+  Real dpgas_dchi = 1.0/gamma_prime;                                  // (MM A18)
+  Real dpgas_drho = 0.0;                                              // (MM A18)
   Real dpgas_dw = dpgas_dchi * dchi_dw + dpgas_drho * drho_dw;
-  return 1.0 - dpgas_dw + 0.5*b_sq*dv_sq_dw + s_sq/w_cu;
+  return 1.0 - dpgas_dw + 0.5*bb_sq * dv_sq_dw + ss_sq/w_cu;
 }
