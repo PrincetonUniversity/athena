@@ -410,8 +410,11 @@ void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
               + coord_area2_j_(j+1)*flux[x2face](IM3,k,j+1,i));
         }
         else {
-          u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src3_j_(j)
-              * prim(IDN,k,j,i)*prim(IM3,k,j,i)*prim(IM2,k,j,i);
+          Real m_ph = prim(IDN,k,j,i) * prim(IM3,k,j,i) * prim(IM2,k,j,i);
+          if (MAGNETIC_FIELDS_ENABLED) {
+            m_ph -= bcc(IB3,k,j,i) * bcc(IB2,k,j,i);
+          }
+          u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src3_j_(j)*m_ph;
         }
       }
     }
