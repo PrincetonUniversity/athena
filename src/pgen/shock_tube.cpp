@@ -55,69 +55,176 @@ void Mesh::InitUserMeshProperties(ParameterInput *pin)
 void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
 {
   MeshBlock *pmb = pblock;
+
+  // return if compute_error=0 (default)
+  int error_test;
+  if ((error_test=pin->GetOrAddInteger("problem","compute_error",0))==0) return;
   
-  Real err[NHYDRO+NFIELD];
-  for (int i=0; i<=(NHYDRO+NFIELD); ++i) err[i]=0.0;
-
-  // Positions of shock, contact, head and foot of rarefaction for Sod test
-  Real xs = 1.7522*tlim;
-  Real xc = 0.92745*tlim;
-  Real xf = -0.07027*tlim;
-  Real xh = -1.1832*tlim;
+  // Read shock direction and set array indices
   int shk_dir = pin->GetInteger("problem","shock_dir"); 
-
-  // Errors in Sod solution
-  int im1, im2, im3;
+  int im1,im2,im3,ib1,ib2,ib3;
   if (shk_dir == 1) {
     im1 = IM1; im2 = IM2; im3 = IM3;
+    ib1 = IB1; ib2 = IB2; ib3 = IB3;
   } else if (shk_dir == 2) {
     im1 = IM2; im2 = IM3; im3 = IM1;
+    ib1 = IB2; ib2 = IB3; ib3 = IB1;
   } else {
     im1 = IM3; im2 = IM1; im3 = IM2;
+    ib1 = IB3; ib2 = IB1; ib3 = IB2;
   }
 
-  for (int k=pmb->ks; k<=pmb->ke; k++) {
-  for (int j=pmb->js; j<=pmb->je; j++) {
-    for (int i=pmb->is; i<=pmb->ie; i++) {
-      Real r, d0, m0, e0;
-      if (shk_dir == 1) r = pmb->pcoord->x1v(i);  
-      if (shk_dir == 2) r = pmb->pcoord->x2v(j);  
-      if (shk_dir == 3) r = pmb->pcoord->x3v(k);  
+  // Initialize errors to zero
+  Real err[NHYDRO+NFIELD];
+  for (int i=0; i<(NHYDRO+NFIELD); ++i) err[i]=0.0;
 
-      if (r > xs) {
-        d0 = 0.125;
-        m0 = 0.0;
-        e0 = 0.25;
-      } else if (r > xc) {
-        d0 = 0.26557;
-        m0 = 0.92745*d0;
-        e0 = 0.87204;
-      } else if (r > xf) {
-        d0 = 0.42632;
-        m0 = 0.92745*d0;
-        e0 = 0.94118;
-      } else if (r > xh) {
-        Real v0 = 0.92745*(r-xh)/(xf-xh);
-        d0 = 0.42632*pow((1.0+0.20046*(0.92745-v0)),5);
-        m0 = v0*d0;
-        e0 = (0.30313*pow((1.0+0.20046*(0.92745-v0)),7))/0.4 + 0.5*d0*v0*v0;
-      } else {
-        d0 = 1.0;
-        m0 = 0.0;
-        e0 = 2.5;
+  // Errors in RJ2a test (Dai & Woodward 1994 Tables Ia and Ib)
+  if (MAGNETIC_FIELDS_ENABLED) {
+    Real xfp = 2.2638*tlim;
+    Real xrp = (0.53432 + 1.0/sqrt(PI*1.309))*tlim;
+    Real xsp = (0.53432 + 0.48144/1.309)*tlim;
+    Real xc = 0.57538*tlim;
+    Real xsm = (0.60588 - 0.51594/1.4903)*tlim;
+    Real xrm = (0.60588 - 1.0/sqrt(PI*1.4903))*tlim;
+    Real xfm = (1.2 - 2.3305/1.08)*tlim;
+    Real gm1 = pmb->phydro->peos->GetGamma() - 1.0;
+    for (int k=pmb->ks; k<=pmb->ke; k++) {
+    for (int j=pmb->js; j<=pmb->je; j++) {
+      for (int i=pmb->is; i<=pmb->ie; i++) {
+        Real r, d0, mx, my, mz, e0, bx, by, bz;
+        if (shk_dir == 1) r = pmb->pcoord->x1v(i);  
+        if (shk_dir == 2) r = pmb->pcoord->x2v(j);  
+        if (shk_dir == 3) r = pmb->pcoord->x3v(k);  
+
+        bx = 2.0/sqrt(4.0*PI);
+        if (r > xfp) {
+          d0 = 1.0;
+          mx = 0.0;
+          my = 0.0;
+          mz = 0.0;
+          by = 4.0/sqrt(4.0*PI);
+          bz = 2.0/sqrt(4.0*PI);
+          e0 = 1.0/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
+        } else if (r > xrp) {
+          d0 = 1.3090;
+          mx = 0.53432*d0;
+          my = -0.094572*d0;
+          mz = -0.047286*d0;
+          by = 5.3452/sqrt(4.0*PI);
+          bz = 2.6726/sqrt(4.0*PI);
+          e0 = 1.5844/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
+        } else if (r > xsp) {
+          d0 = 1.3090;
+          mx = 0.53432*d0;
+          my = -0.18411*d0;
+          mz = 0.17554*d0;
+          by = 5.7083/sqrt(4.0*PI);
+          bz = 1.7689/sqrt(4.0*PI);
+          e0 = 1.5844/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
+        } else if (r > xc) {
+          d0 = 1.4735;
+          mx = 0.57538*d0;
+          my = 0.047601*d0;
+          mz = 0.24734*d0;
+          by = 5.0074/sqrt(4.0*PI);
+          bz = 1.5517/sqrt(4.0*PI);
+          e0 = 1.9317/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
+        } else if (r > xsm) {
+          d0 = 1.6343;
+          mx = 0.57538*d0;
+          my = 0.047601*d0;
+          mz = 0.24734*d0;
+          by = 5.0074/sqrt(4.0*PI);
+          bz = 1.5517/sqrt(4.0*PI);
+          e0 = 1.9317/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
+        } else if (r > xrm) {
+          d0 = 1.4903;
+          mx = 0.60588*d0;
+          my = 0.22157*d0;
+          mz = 0.30125*d0;
+          by = 5.5713/sqrt(4.0*PI);
+          bz = 1.7264/sqrt(4.0*PI);
+          e0 = 1.6558/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
+        } else if (r > xfm) {
+          d0 = 1.4903;
+          mx = 0.60588*d0;
+          my = 0.11235*d0;
+          mz = 0.55686*d0;
+          by = 5.0987/sqrt(4.0*PI);
+          bz = 2.8326/sqrt(4.0*PI);
+          e0 = 1.6558/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
+        } else {
+          d0 = 1.08;
+          mx = 1.2*d0;
+          my = 0.01*d0;
+          mz = 0.5*d0;
+          by = 3.6/sqrt(4.0*PI);
+          bz = 2.0/sqrt(4.0*PI);
+          e0 = 0.95/gm1 + 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
+        }
+
+        err[IDN] += fabs(d0 - pmb->phydro->u(IDN,k,j,i));
+        err[im1] += fabs(mx - pmb->phydro->u(im1,k,j,i));
+        err[im2] += fabs(my - pmb->phydro->u(im2,k,j,i));
+        err[im3] += fabs(mz - pmb->phydro->u(im3,k,j,i));
+        err[IEN] += fabs(e0 - pmb->phydro->u(IEN,k,j,i));
+        err[IEN+ib1+1] += fabs(bx - pmb->pfield->bcc(ib1,k,j,i));
+        err[IEN+ib2+1] += fabs(by - pmb->pfield->bcc(ib2,k,j,i));
+        err[IEN+ib3+1] += fabs(bz - pmb->pfield->bcc(ib3,k,j,i));
       }
-      err[IDN] += fabs(d0  - pmb->phydro->u(IDN,k,j,i));
-      err[im1] += fabs(m0  - pmb->phydro->u(im1,k,j,i));
-      err[im2] += fabs(0.0 - pmb->phydro->u(im2,k,j,i));
-      err[im3] += fabs(0.0 - pmb->phydro->u(im3,k,j,i));
-      err[IEN] += fabs(e0  - pmb->phydro->u(IEN,k,j,i));
-    }
-  }}
+    }}
+  
+  // Errors in Sod solution
+  } else {
+    // Positions of shock, contact, head and foot of rarefaction for Sod test
+    Real xs = 1.7522*tlim;
+    Real xc = 0.92745*tlim;
+    Real xf = -0.07027*tlim;
+    Real xh = -1.1832*tlim;
+
+    for (int k=pmb->ks; k<=pmb->ke; k++) {
+    for (int j=pmb->js; j<=pmb->je; j++) {
+      for (int i=pmb->is; i<=pmb->ie; i++) {
+        Real r,d0,m0,e0;
+        if (shk_dir == 1) r = pmb->pcoord->x1v(i);  
+        if (shk_dir == 2) r = pmb->pcoord->x2v(j);  
+        if (shk_dir == 3) r = pmb->pcoord->x3v(k);  
+  
+        if (r > xs) {
+          d0 = 0.125;
+          m0 = 0.0;
+          e0 = 0.25;
+        } else if (r > xc) {
+          d0 = 0.26557;
+          m0 = 0.92745*d0;
+          e0 = 0.87204;
+        } else if (r > xf) {
+          d0 = 0.42632;
+          m0 = 0.92745*d0;
+          e0 = 0.94118;
+        } else if (r > xh) {
+          Real v0 = 0.92745*(r-xh)/(xf-xh);
+          d0 = 0.42632*pow((1.0+0.20046*(0.92745-v0)),5);
+          m0 = v0*d0;
+          e0 = (0.30313*pow((1.0+0.20046*(0.92745-v0)),7))/0.4 + 0.5*d0*v0*v0;
+        } else {
+          d0 = 1.0;
+          m0 = 0.0;
+          e0 = 2.5;
+        }
+        err[IDN] += fabs(d0  - pmb->phydro->u(IDN,k,j,i));
+        err[im1] += fabs(m0  - pmb->phydro->u(im1,k,j,i));
+        err[im2] += fabs(0.0 - pmb->phydro->u(im2,k,j,i));
+        err[im3] += fabs(0.0 - pmb->phydro->u(im3,k,j,i));
+        err[IEN] += fabs(e0  - pmb->phydro->u(IEN,k,j,i));
+      }
+    }}
+  }
 
   // normalize errors by number of cells, compute RMS
-  for (int i=0; i<=(NHYDRO+NFIELD); ++i) err[i] = err[i]/(float)GetTotalCells();
+  for (int i=0; i<(NHYDRO+NFIELD); ++i) err[i] = err[i]/(float)GetTotalCells();
   Real rms_err = 0.0;
-  for (int i=0; i<=(NHYDRO+NFIELD); ++i) rms_err += SQR(err[i]);
+  for (int i=0; i<(NHYDRO+NFIELD); ++i) rms_err += SQR(err[i]);
   rms_err = sqrt(rms_err);
 
   // open output file and write out errors
@@ -125,6 +232,7 @@ void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
   fname.assign("shock-errors.dat");
   std::stringstream msg;
   FILE *pfile;
+
   // The file exists -- reopen the file in append mode
   if((pfile = fopen(fname.c_str(),"r")) != NULL){
     if((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
@@ -149,8 +257,10 @@ void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
   fprintf(pfile,"%d  %d",pmb->block_size.nx1,pmb->block_size.nx2);
   fprintf(pfile,"  %d  %e",pmb->block_size.nx3,rms_err);
   fprintf(pfile,"  %e  %e  %e  %e  %e",err[IDN],err[IM1],err[IM2],err[IM3],err[IEN]);
+  if (MAGNETIC_FIELDS_ENABLED) {
+    fprintf(pfile,"  %e  %e  %e",err[IEN+IB1+1],err[IEN+IB2+1],err[IEN+IB3+1]);
+  }
   fprintf(pfile,"\n");
-
   fclose(pfile);
 
   return;
