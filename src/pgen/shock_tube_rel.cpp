@@ -19,20 +19,17 @@
 #include "../hydro/hydro.hpp"
 #include "../hydro/eos/eos.hpp"
 
-
-/// Function for initializing global mesh properties
+// Function for initializing global mesh properties
 void Mesh::InitUserMeshProperties(ParameterInput *pin)
 {
   return;
 }
-
 
 // Function for cleaning up global mesh properties
 void Mesh::TerminateUserMeshProperties(void)
 {
   return;
 }
-
 
 // Function for setting initial conditions
 // Inputs:
@@ -46,31 +43,13 @@ void Mesh::TerminateUserMeshProperties(void)
 //         particularly troublesome jump leading to NaN's
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
-  // Prepare index bounds
-  int il = is - NGHOST;
-  int iu = ie + NGHOST;
-  int jl = js;
-  int ju = je;
-  if (block_size.nx2 > 1)
-  {
-    jl -= (NGHOST);
-    ju += (NGHOST);
-  }
-  int kl = ks;
-  int ku = ke;
-  if (block_size.nx3 > 1)
-  {
-    kl -= (NGHOST);
-    ku += (NGHOST);
-  }
-
   // Read and set ratio of specific heats
   Real gamma_adi = phydro->peos->GetGamma();
   Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Read and check shock direction and position
-  int shock_dir = pin->GetInteger("problem", "shock_dir"); 
-  Real shock_pos = pin->GetReal("problem", "xshock"); 
+  int shock_dir = pin->GetInteger("problem", "shock_dir");
+  Real shock_pos = pin->GetReal("problem", "xshock");
   Real min_bound, max_bound;
   std::stringstream msg;
   switch (shock_dir)
@@ -106,12 +85,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real vx_left = pin->GetReal("problem", "ul");
   Real vy_left = pin->GetReal("problem", "vl");
   Real vz_left = pin->GetReal("problem", "wl");
-  Real bx_left = 0.0, by_left = 0.0, bz_left = 0.0;
+  Real bbx_left = 0.0, bby_left = 0.0, bbz_left = 0.0;
   if (MAGNETIC_FIELDS_ENABLED)
   {
-    bx_left = pin->GetReal("problem", "bxl");
-    by_left = pin->GetReal("problem", "byl");
-    bz_left = pin->GetReal("problem", "bzl");
+    bbx_left = pin->GetReal("problem", "bxl");
+    bby_left = pin->GetReal("problem", "byl");
+    bbz_left = pin->GetReal("problem", "bzl");
   }
 
   // Read right state
@@ -120,38 +99,30 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real vx_right = pin->GetReal("problem", "ur");
   Real vy_right = pin->GetReal("problem", "vr");
   Real vz_right = pin->GetReal("problem", "wr");
-  Real bx_right = 0.0, by_right = 0.0, bz_right = 0.0;
+  Real bbx_right = 0.0, bby_right = 0.0, bbz_right = 0.0;
   if (MAGNETIC_FIELDS_ENABLED)
   {
-    bx_right = pin->GetReal("problem", "bxr");
-    by_right = pin->GetReal("problem", "byr");
-    bz_right = pin->GetReal("problem", "bzr");
+    bbx_right = pin->GetReal("problem", "bxr");
+    bby_right = pin->GetReal("problem", "byr");
+    bbz_right = pin->GetReal("problem", "bzr");
   }
 
   // Prepare auxiliary arrays
-  int ncells1 = block_size.nx1 + 2*NGHOST;
-  int ncells2 = block_size.nx2;
-  if (ncells2 > 1)
-    ncells2 += 2*NGHOST;
-  int ncells3 = block_size.nx3;
-  if (ncells3 > 1)
-    ncells3 += 2*NGHOST;
-  AthenaArray<Real> b, g, gi;
-  b.NewAthenaArray(3, ncells3, ncells2, ncells1);
+  AthenaArray<Real> bb, g, gi;
+  bb.NewAthenaArray(3, ke+1, je+1, ie+1);
   if (GENERAL_RELATIVITY)
   {
-    g.NewAthenaArray(NMETRIC, ncells1);
-    gi.NewAthenaArray(NMETRIC, ncells1);
+    g.NewAthenaArray(NMETRIC, ie+1);
+    gi.NewAthenaArray(NMETRIC, ie+1);
   }
 
   // Initialize hydro variables
-  for (int k = kl; k <= ku; ++k)
-  {
-    for (int j = jl; j <= ju; ++j)
+  for (int k = ks; k <= ke; ++k)
+    for (int j = js; j <= je; ++j)
     {
       if (GENERAL_RELATIVITY)
-        pcoord->CellMetric(k, j, il, iu, g, gi);
-      for (int i = il; i <= iu; ++i) 
+        pcoord->CellMetric(k, j, is, ie, g, gi);
+      for (int i = is; i <= ie; ++i)
       {
         // Determine which variables to use
         Real rho = rho_right;
@@ -159,9 +130,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         Real vx = vx_right;
         Real vy = vy_right;
         Real vz = vz_right;
-        Real bx = bx_right;
-        Real by = by_right;
-        Real bz = bz_right;
+        Real bbx = bbx_right;
+        Real bby = bby_right;
+        Real bbz = bbz_right;
         bool left_side = false;
         switch(shock_dir)
         {
@@ -182,9 +153,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           vx = vx_left;
           vy = vy_left;
           vz = vz_left;
-          bx = bx_left;
-          by = by_left;
-          bz = bz_left;
+          bbx = bbx_left;
+          bby = bby_left;
+          bbz = bbz_left;
         }
 
         // Construct 4-vectors
@@ -192,19 +163,18 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         Real ux = ut * vx;
         Real uy = ut * vy;
         Real uz = ut * vz;
-        Real bcont = bx*ux + by*uy + bz*uz;
-        Real bconx = (bx + bcont * ux) / ut;
-        Real bcony = (by + bcont * uy) / ut;
-        Real bconz = (bz + bcont * uz) / ut;
+        Real bt = bbx*ux + bby*uy + bbz*uz;
+        Real bx = (bbx + bt * ux) / ut;
+        Real by = (bby + bt * uy) / ut;
+        Real bz = (bbz + bt * uz) / ut;
 
         // Transform 4-vectors
         Real u0, u1, u2, u3;
-        Real bcon0, bcon1, bcon2, bcon3;
+        Real b0, b1, b2, b3;
         if (GENERAL_RELATIVITY)
         {
           pcoord->TransformVectorCell(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
-          pcoord->TransformVectorCell(bcont, bconx, bcony, bconz, k, j, i, &bcon0,
-              &bcon1, &bcon2, &bcon3);
+          pcoord->TransformVectorCell(bt, bx, by, bz, k, j, i, &b0, &b1, &b2, &b3);
         }
         else
         {
@@ -212,10 +182,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           u1 = ux;
           u2 = uy;
           u3 = uz;
-          bcon0 = bcont;
-          bcon1 = bconx;
-          bcon2 = bcony;
-          bcon3 = bconz;
+          b0 = bt;
+          b1 = bx;
+          b2 = by;
+          b3 = bz;
         }
 
         // Set primitives
@@ -238,17 +208,16 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         }
 
         // Set magnetic fields
-        b(IB1,k,j,i) = bcon1 * u0 - bcon0 * u1;
-        b(IB2,k,j,i) = bcon2 * u0 - bcon0 * u2;
-        b(IB3,k,j,i) = bcon3 * u0 - bcon0 * u3;
+        bb(IB1,k,j,i) = b1 * u0 - b0 * u1;
+        bb(IB2,k,j,i) = b2 * u0 - b0 * u2;
+        bb(IB3,k,j,i) = b3 * u0 - b0 * u3;
       }
     }
-  }
-  phydro->peos->PrimitiveToConserved(phydro->w, b, phydro->u, pcoord,
-                                            il, iu, jl, ju, kl, ju);
+  phydro->peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, is, ie, js, je,
+      ks, ke);
 
   // Delete auxiliary arrays
-  b.DeleteAthenaArray();
+  bb.DeleteAthenaArray();
   if (GENERAL_RELATIVITY)
   {
     g.DeleteAthenaArray();
@@ -256,18 +225,18 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   }
 
   // Initialize magnetic field
-  if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k = kl; k <= ku+1; ++k) {
-      for (int j = jl; j <= ju+1; ++j) {
-        for (int i = il; i <= iu+1; ++i)
+  if (MAGNETIC_FIELDS_ENABLED)
+    for (int k = ks; k <= ke+1; ++k)
+      for (int j = js; j <= je+1; ++j)
+        for (int i = is; i <= ie+1; ++i)
         {
           // Determine which variables to use
           Real vx = vx_right;
           Real vy = vy_right;
           Real vz = vz_right;
-          Real bx = bx_right;
-          Real by = by_right;
-          Real bz = bz_right;
+          Real bbx = bbx_right;
+          Real bby = bby_right;
+          Real bbz = bbz_right;
           bool left_side = false;
           switch(shock_dir)
           {
@@ -286,9 +255,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             vx = vx_left;
             vy = vy_left;
             vz = vz_left;
-            bx = bx_left;
-            by = by_left;
-            bz = bz_left;
+            bbx = bbx_left;
+            bby = bby_left;
+            bbz = bbz_left;
           }
 
           // Construct 4-vectors
@@ -296,57 +265,48 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           Real ux = ut * vx;
           Real uy = ut * vy;
           Real uz = ut * vz;
-          Real bcont = bx*ux + by*uy + bz*uz;
-          Real bconx = (bx + bcont * ux) / ut;
-          Real bcony = (by + bcont * uy) / ut;
-          Real bconz = (bz + bcont * uz) / ut;
+          Real bt = bbx*ux + bby*uy + bbz*uz;
+          Real bx = (bbx + bt * ux) / ut;
+          Real by = (bby + bt * uy) / ut;
+          Real bz = (bbz + bt * uz) / ut;
 
           // Set magnetic fields
           Real u0, u1, u2, u3;
-          Real bcon0, bcon1, bcon2, bcon3;
-          if (j != ju+1 && k != ku+1)
+          Real b0, b1, b2, b3;
+          if (j != je+1 && k != ke+1)
           {
             if (GENERAL_RELATIVITY)
             {
-              pcoord->TransformVectorFace1(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2,
-                  &u3);
-              pcoord->TransformVectorFace1(bcont, bconx, bcony, bconz, k, j, i,
-                  &bcon0, &bcon1, &bcon2, &bcon3);
-              pfield->b.x1f(k,j,i) = bcon1 * u0 - bcon0 * u1;
+              pcoord->TransformVectorFace1(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
+              pcoord->TransformVectorFace1(bt, bx, by, bz, k, j, i, &b0, &b1, &b2, &b3);
+              pfield->b.x1f(k,j,i) = b1 * u0 - b0 * u1;
             }
             else
-              pfield->b.x1f(k,j,i) = bx;
+              pfield->b.x1f(k,j,i) = bbx;
           }
-          if (i != iu+1 && k != ku+1)
+          if (i != ie+1 && k != ke+1)
           {
             if (GENERAL_RELATIVITY)
             {
-              pcoord->TransformVectorFace2(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2,
-                  &u3);
-              pcoord->TransformVectorFace2(bcont, bconx, bcony, bconz, k, j, i,
-                  &bcon0, &bcon1, &bcon2, &bcon3);
-              pfield->b.x2f(k,j,i) = bcon2 * u0 - bcon0 * u2;
+              pcoord->TransformVectorFace2(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
+              pcoord->TransformVectorFace2(bt, bx, by, bz, k, j, i, &b0, &b1, &b2, &b3);
+              pfield->b.x2f(k,j,i) = b2 * u0 - b0 * u2;
             }
             else
-              pfield->b.x2f(k,j,i) = by;
+              pfield->b.x2f(k,j,i) = bby;
           }
-          if (i != iu+1 && j != ju+1)
+          if (i != ie+1 && j != je+1)
           {
             if (GENERAL_RELATIVITY)
             {
-              pcoord->TransformVectorFace3(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2,
-                  &u3);
-              pcoord->TransformVectorFace3(bcont, bconx, bcony, bconz, k, j, i,
-                  &bcon0, &bcon1, &bcon2, &bcon3);
-              pfield->b.x3f(k,j,i) = bcon3 * u0 - bcon0 * u3;
+              pcoord->TransformVectorFace3(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
+              pcoord->TransformVectorFace3(bt, bx, by, bz, k, j, i, &b0, &b1, &b2, &b3);
+              pfield->b.x3f(k,j,i) = b3 * u0 - b0 * u3;
             }
             else
-              pfield->b.x3f(k,j,i) = bz;
+              pfield->b.x3f(k,j,i) = bbz;
           }
         }
-      }
-    }
-  }
   return;
 }
 
