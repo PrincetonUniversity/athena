@@ -9,7 +9,8 @@ import scripts.utils.athena as athena
 def prepare():
   athena.configure('gtb',
       prob='bh_spherical_accretion',
-      coord='schwarzschild')
+      coord='schwarzschild',
+      flux='hlle')
   athena.make()
 
 # Run Athena++
