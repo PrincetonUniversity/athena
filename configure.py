@@ -368,7 +368,7 @@ else:
 
 # -parallelhdf5 argument
 if args['parallelhdf5']:
-  definitions['PARALLELHDF5_OPTION'] = 'PARALLEL_HDF5OUTPUT'
+  definitions['PARALLELHDF5_OPTION'] = 'HDF5OUTPUT'
   if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'cray':
     makefile_options['LIBRARY_FLAGS'] += ' -lhdf5'
   if args['cxx'] == 'bgxl':
@@ -440,5 +440,5 @@ print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' ' \
 print('  MPI parallelism:         ' + ('ON' if args['mpi'] else 'OFF'))
 print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
 print('  HDF5 Output:             ' + ('ON' if args['hdf5'] else 'OFF'))
-print('  Parallel HDF5 Output:             ' + ('ON' if args['parallelhdf5'] else 'OFF'))
+print('  Parallel HDF5 Output:    ' + ('ON' if args['parallelhdf5'] else 'OFF'))
 print('  Internal hydro outvars:  ' + str(args['ifov']))
