@@ -160,11 +160,22 @@ void ATHDF5Output::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag=false)
   int* gid_list;
   int* level_list;
   long long int* logicallocation_list;
+  float* x1f_list;
+  float* x2f_list;
+  float* x3f_list;
 
   // Allocate the array
   gid_list=  new int [nbl];
   level_list=  new int [nbl];
   logicallocation_list = new long long int[nbl*3];
+  
+  int x1f_elem_per_block = mbsize[0] + 1;
+  int x2f_elem_per_block = mbsize[1] + 1;
+  int x3f_elem_per_block = mbsize[2] + 1;
+  
+  x1f_list = new float[nbl * x1f_elem_per_block];
+  x2f_list = new float[nbl * x2f_elem_per_block];
+  x3f_list = new float[nbl * x3f_elem_per_block];
   
   
   // Assign the values by looping over the blocks
@@ -180,10 +191,26 @@ void ATHDF5Output::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag=false)
     logicallocation_list[3*itr + 1] = pM->loclist[b].lx2;
     logicallocation_list[3*itr+ 2] = pM->loclist[b].lx3;
     
-    // TODO - Do the same for the other metadata as well
-    
     itr++;
   }
+  
+  // TODO - Do the same for the other metadata as well
+  itr = 0;  
+  MeshBlock *pmb;
+  pmb=pm->pblock;
+  while (pmb != NULL) {
+    for(int j =0; j < x1f_elem_per_block; j++)
+      x1f_list[(x1f_elem_per_block*itr) + j] = (float)(pmb->pcoord->x1f(j);
+  
+    for(int j =0; j < x2f_elem_per_block; j++)
+      x2f_list[(x2f_elem_per_block*itr) + j] = (float)(pmb->pcoord->x2f(j);
+
+    for(int j =0; j < x3f_elem_per_block; j++)
+      x3f_list[(x3f_elem_per_block*itr) + j] = (float)(pmb->pcoord->x3f(j);
+
+    itr++;
+    pmb=pmb->next;
+  }  
   
   // Lets write the various out as a dataset each
   hid_t filespace, memspace;
@@ -308,6 +335,123 @@ void ATHDF5Output::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag=false)
   delete[] logicallocation_list;
   logicallocation_list = 0;
   
+  
+  //  -------------------------
+  // Writing out the Co-ordinates X1F
+  // --------------------------
+  
+  dims[0] = pM->nbtotal;
+  dims[1] = mbsize[0]+1;
+  filespace = H5Screate_simple(2, dims, NULL);
+  
+  dset_id = H5Dcreate(file, "x1f", H5T_IEEE_F32BE, filespace,
+                      H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Sclose(filespace);
+  
+  
+  // Each process defines dataset in memory and writes it to the hyperslab
+  // in the file.
+  count[0] = nbl;
+  count[1] = dims[1];
+  offset[0] = nbs;
+  offset[1] = 0;
+  memspace = H5Screate_simple(2, count, NULL);
+  
+  // Select hyperslab in the file.
+  filespace = H5Dget_space(dset_id);
+  H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL, count, NULL);
+  
+  // Create property list for collective dataset write.
+  plist_id = H5Pcreate(H5P_DATASET_XFER);
+  H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+  
+  status = H5Dwrite(dset_id, H5T_IEEE_F32BE, memspace, filespace,
+                    plist_id, x1f_list);
+  
+  H5Dclose(dset_id);
+  H5Sclose(filespace);
+  H5Sclose(memspace);
+  
+  delete[] x1f_list;
+  x1f_list = 0;
+  
+  //  -------------------------
+  // Writing out the Co-ordinates X2F
+  // --------------------------
+
+  dims[0] = pM->nbtotal;
+  dims[1] = mbsize[1]+1;
+  filespace = H5Screate_simple(2, dims, NULL);
+
+  dset_id = H5Dcreate(file, "x2f", H5T_IEEE_F32BE, filespace,
+                     H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Sclose(filespace);
+
+
+  // Each process defines dataset in memory and writes it to the hyperslab
+  // in the file.
+  count[0] = nbl;
+  count[1] = dims[1];
+  offset[0] = nbs;
+  offset[1] = 0;
+  memspace = H5Screate_simple(2, count, NULL);
+
+  // Select hyperslab in the file.
+  filespace = H5Dget_space(dset_id);
+  H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL, count, NULL);
+
+  // Create property list for collective dataset write.
+  plist_id = H5Pcreate(H5P_DATASET_XFER);
+  H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+
+  status = H5Dwrite(dset_id, H5T_IEEE_F32BE, memspace, filespace,
+                   plist_id, x2f_list);
+
+  H5Dclose(dset_id);
+  H5Sclose(filespace);
+  H5Sclose(memspace);
+
+  delete[] x2f_list;
+  x2f_list = 0;
+                                                       
+  //  -------------------------
+  // Writing out the Co-ordinates X1F
+  // --------------------------
+
+  dims[0] = pM->nbtotal;
+  dims[1] = mbsize[2]+1;
+  filespace = H5Screate_simple(2, dims, NULL);
+
+  dset_id = H5Dcreate(file, "x3f", H5T_IEEE_F32BE, filespace,
+                     H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Sclose(filespace);
+
+  // Each process defines dataset in memory and writes it to the hyperslab
+  // in the file.
+  count[0] = nbl;
+  count[1] = dims[1];
+  offset[0] = nbs;
+  offset[1] = 0;
+  memspace = H5Screate_simple(2, count, NULL);
+
+  // Select hyperslab in the file.
+  filespace = H5Dget_space(dset_id);
+  H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL, count, NULL);
+
+  // Create property list for collective dataset write.
+  plist_id = H5Pcreate(H5P_DATASET_XFER);
+  H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+
+  status = H5Dwrite(dset_id, H5T_IEEE_F32BE, memspace, filespace,
+                   plist_id, x3f_list);
+
+  H5Dclose(dset_id);
+  H5Sclose(filespace);
+  H5Sclose(memspace);
+
+  delete[] x3f_list;
+  x3f_list = 0;
+                                                       
   
 #else
   grpid = new hid_t[nbl];
