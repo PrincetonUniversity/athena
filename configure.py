@@ -142,6 +142,12 @@ parser.add_argument('-hdf5',
     default=False,
     help='enable HDF5 Output')
 
+# -hdf5 argument
+parser.add_argument('-parallelhdf5',
+                    action='store_true',
+                    default=False,
+                    help='enable Parallel HDF5 Output')
+
 # -ifov=N argument
 parser.add_argument('--ifov',
     type=int,
@@ -360,6 +366,24 @@ if args['hdf5']:
 else:
   definitions['HDF5_OPTION'] = 'NO_HDF5OUTPUT'
 
+# -parallelhdf5 argument
+if args['parallelhdf5']:
+  definitions['PARALLELHDF5_OPTION'] = 'PARALLEL_HDF5OUTPUT'
+  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'cray':
+    makefile_options['LIBRARY_FLAGS'] += ' -lhdf5'
+  if args['cxx'] == 'bgxl':
+    makefile_options['PREPROCESSOR_FLAGS'] += \
+      ' -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_BSD_SOURCE -D_MPI_PARALLEL' \
+        + ' -I/soft/libraries/hdf5/1.8.14/cnk-xl/V1R2M2-20150213/include' \
+        + ' -I/bgsys/drivers/ppcfloor/comm/include'
+    makefile_options['LINKER_FLAGS'] += \
+      ' -L/soft/libraries/hdf5/1.8.14/cnk-xl/V1R2M2-20150213/lib' \
+        + ' -L/soft/libraries/alcf/current/xl/ZLIB/lib'
+makefile_options['LIBRARY_FLAGS'] += ' -lhdf5 -lz -lm'
+else:
+  definitions['PARALLELHDF5_OPTION'] = 'NO_HDF5OUTPUT'
+
+
 # Assemble all flags of any sort given to compiler
 definitions['COMPILER_FLAGS'] = ' '.join([makefile_options[opt+'_FLAGS'] for opt in \
     ['PREPROCESSOR','COMPILER','LINKER','LIBRARY']])
@@ -416,4 +440,5 @@ print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' ' \
 print('  MPI parallelism:         ' + ('ON' if args['mpi'] else 'OFF'))
 print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
 print('  HDF5 Output:             ' + ('ON' if args['hdf5'] else 'OFF'))
+print('  Parallel HDF5 Output:             ' + ('ON' if args['parallelhdf5'] else 'OFF'))
 print('  Internal hydro outvars:  ' + str(args['ifov']))
