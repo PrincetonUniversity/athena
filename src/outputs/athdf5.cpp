@@ -148,7 +148,168 @@ void ATHDF5Output::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag=false)
   aid=H5Acreate2(file,"NVariables",H5T_STD_I32BE,dsid,H5P_DEFAULT,H5P_DEFAULT);
   H5Awrite(aid, H5T_NATIVE_INT, &var_added);
   H5Aclose(aid); H5Sclose(dsid);
+  
+  // VV - Good to add the names of variables as well
+  
 
+#ifdef HDF5_NEW
+  
+  int itr =0;
+  
+  // VV- Define the various metadata lists
+  int* gid_list;
+  int* level_list;
+  long long int* logicallocation_list;
+
+  // Allocate the array
+  gid_list=  new int [nbl];
+  level_list=  new int [nbl];
+  logicallocation_list = new long long int[nbl*3];
+  
+  
+  // Assign the values by looping over the blocks
+  for(int b=nbs;b<=nbe;b++){
+    // Add global ID
+    gid_list[itr] = b;
+    
+    // Add level
+    level_list[itr] = pM->loclist[b].level-pM->root_level;
+    
+    // Add Logical Locations
+    logicallocation_list[3*itr] = pM->loclist[b].lx1;
+    logicallocation_list[3*itr + 1] = pM->loclist[b].lx2;
+    logicallocation_list[3*itr+ 2] = pM->loclist[b].lx3;
+    
+    // TODO - Do the same for the other metadata as well
+    
+    itr++;
+  }
+  
+  // Lets write the various out as a dataset each
+  hid_t filespace, memspace;
+  hid_t dset_id;
+  hsize_t dims[3];
+  hsize_t	count[3];
+  hsize_t	offset[3];
+  herr_t status;
+  hid_t plist_id;
+  
+  //  -------------------------
+  // Writing out the Global ID
+  // --------------------------
+  
+  dims[0] = pM->nbtotal;
+  filespace = H5Screate_simple(1, &dims[0], NULL);
+  
+  dset_id = H5Dcreate(file, "GlobalID", H5T_STD_I32BE, filespace,
+                      H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Sclose(filespace);
+  
+  
+  // Each process defines dataset in memory and writes it to the hyperslab
+  // in the file.
+  count[0] = nbl;
+  offset[0] = nbs;
+  memspace = H5Screate_simple(1, count, NULL);
+  
+  // Select hyperslab in the file.
+  filespace = H5Dget_space(dset_id);
+  H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL, count, NULL);
+  
+  // Create property list for collective dataset write.
+  plist_id = H5Pcreate(H5P_DATASET_XFER);
+  H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+  
+  status = H5Dwrite(dset_id, H5T_STD_I32BE, memspace, filespace,
+                    plist_id, gid_list);
+  
+  H5Dclose(dset_id);
+  H5Sclose(filespace);
+  H5Sclose(memspace);
+  
+  delete[] gid_list;
+  gid_list = 0;
+  
+  
+  
+  //  -------------------------
+  // Writing out the LEVELS
+  // --------------------------
+  
+  dims[0] = pM->nbtotal;
+  filespace = H5Screate_simple(1, &dims[0], NULL);
+  
+  dset_id = H5Dcreate(file, "Level", H5T_STD_I32BE, filespace,
+                      H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Sclose(filespace);
+  
+  
+  // Each process defines dataset in memory and writes it to the hyperslab
+  // in the file.
+  count[0] = nbl;
+  offset[0] = nbs;
+  memspace = H5Screate_simple(1, count, NULL);
+  
+  // Select hyperslab in the file.
+  filespace = H5Dget_space(dset_id);
+  H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL, count, NULL);
+  
+  // Create property list for collective dataset write.
+  plist_id = H5Pcreate(H5P_DATASET_XFER);
+  H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+  
+  status = H5Dwrite(dset_id, H5T_STD_I32BE, memspace, filespace,
+                    plist_id, level_list);
+  
+  H5Dclose(dset_id);
+  H5Sclose(filespace);
+  H5Sclose(memspace);
+  
+  delete[] level_list;
+  level_list = 0;
+  
+
+  //  -------------------------
+  // Writing out the Logical Locations
+  // --------------------------
+  
+  dims[0] = pM->nbtotal;
+  dims[1] = 3;
+  filespace = H5Screate_simple(2, dims, NULL);
+  
+  dset_id = H5Dcreate(file, "LogicalLocation", H5T_STD_I64BE, filespace,
+                      H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Sclose(filespace);
+  
+  
+  // Each process defines dataset in memory and writes it to the hyperslab
+  // in the file.
+  count[0] = nbl;
+  count[1] = 3;
+  offset[0] = nbs;
+  offset[1] = 0;
+  memspace = H5Screate_simple(2, count, NULL);
+  
+  // Select hyperslab in the file.
+  filespace = H5Dget_space(dset_id);
+  H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL, count, NULL);
+  
+  // Create property list for collective dataset write.
+  plist_id = H5Pcreate(H5P_DATASET_XFER);
+  H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+  
+  status = H5Dwrite(dset_id, H5T_STD_I64BE, memspace, filespace,
+                    plist_id, logicallocation_list);
+  
+  H5Dclose(dset_id);
+  H5Sclose(filespace);
+  H5Sclose(memspace);
+  
+  delete[] logicallocation_list;
+  logicallocation_list = 0;
+  
+  
+#else
   grpid = new hid_t[nbl];
   x1fid = new hid_t[nbl];
   x2fid = new hid_t[nbl];
@@ -490,6 +651,8 @@ void ATHDF5Output::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag=false)
     xdmf.close();
   }
 
+  #endif
+  
   return;
 }
 
