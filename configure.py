@@ -373,7 +373,7 @@ if args['parallelhdf5']:
     makefile_options['LIBRARY_FLAGS'] += ' -lhdf5'
   if args['cxx'] == 'bgxl':
     makefile_options['PREPROCESSOR_FLAGS'] += \
-      ' -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_BSD_SOURCE -D_MPI_PARALLEL' \
+      ' -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_BSD_SOURCE -D_MPI_PARALLEL -D_HDF5_NEW' \
         + ' -I/soft/libraries/hdf5/1.8.14/cnk-xl/V1R2M2-20150213/include' \
         + ' -I/bgsys/drivers/ppcfloor/comm/include'
     makefile_options['LINKER_FLAGS'] += \
