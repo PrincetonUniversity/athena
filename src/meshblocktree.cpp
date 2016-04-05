@@ -203,14 +203,26 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
     }
     for(oy=oymin;oy<=oymax;oy++) {
       nloc.lx2=loc.lx2+oy;
+      bool polar=false;
       if(nloc.lx2<0) {
-        if(mesh_bcs[INNER_X2]!=PERIODIC_BNDRY) continue;
-        else nloc.lx2=nymax-1;
+        if(mesh_bcs[INNER_X2]==PERIODIC_BNDRY) nloc.lx2=nymax-1;
+        else if(mesh_bcs[INNER_X2]==POLAR_BNDRY) {
+          nloc.lx2=0;
+          polar=true;
+        }
+        else
+          continue;
       }
       if(nloc.lx2>=nymax) {
-        if(mesh_bcs[OUTER_X2]!=PERIODIC_BNDRY) continue;
-        else nloc.lx2=0;
+        if(mesh_bcs[OUTER_X2]==PERIODIC_BNDRY) nloc.lx2=0;
+        else if(mesh_bcs[OUTER_X2]==POLAR_BNDRY) {
+          nloc.lx2=nymax-1;
+          polar=true;
+        }
+        else
+          continue;
       }
+      if(polar) nloc.lx3=(nloc.lx3+nzmax/2)%nzmax;
       for(ox=oxmin;ox<=oxmax;ox++) {
         if(ox==0 && oy==0 && oz==0) continue;
         nloc.lx1=loc.lx1+ox;

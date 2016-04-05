@@ -23,10 +23,10 @@ static void HLLDTransforming(Hydro *pmy_hydro, const int k, const int j, const i
     AthenaArray<Real> &lambdas_m_r, AthenaArray<Real> &g, AthenaArray<Real> &gi,
     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &cons,
     AthenaArray<Real> &flux);
-static Real EResidual(Real w_guess, Real d, Real e, Real m_sq, Real b_sq, Real s_sq,
-    Real gamma_adi);
-static Real EResidualPrime(Real w_guess, Real d, Real m_sq, Real b_sq, Real s_sq,
-    Real gamma_adi);
+static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
+    Real gamma_prime);
+static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
+    Real gamma_prime);
 static Real PResidual(Real p, Real bbx, Real lambda_l, Real lambda_r,
     const Real r_l[NWAVE], const Real r_r[NWAVE], int ivx);
 static void HLLENonTransforming(Hydro *pmy_hydro, const int k, const int j,
@@ -156,6 +156,7 @@ static void HLLDTransforming(Hydro *pmy_hydro, const int k, const int j, const i
 
   // Extract ratio of specific heats
   const Real gamma_adi = pmy_hydro->peos->GetGamma();
+  const Real gamma_prime = gamma_adi/(gamma_adi-1.0);
 
   // Go through each interface
   #pragma simd
@@ -317,18 +318,18 @@ static void HLLDTransforming(Hydro *pmy_hydro, const int k, const int j, const i
       const int num_nr = 2;
       Real w_new = w_init;
       Real res_new = EResidual(w_new, cons_hll[IDN], cons_hll[IEN], m_sq, bb_sq, ss_sq,
-          gamma_adi);
+          gamma_prime);
       for (int n = 0; n < num_nr; ++n)
       {
         // Prepare needed values
         Real w_old = w_new;
         Real res_old = res_new;
         Real derivative = EResidualPrime(w_old, cons_hll[IDN], m_sq, bb_sq, ss_sq,
-            gamma_adi);
+            gamma_prime);
         Real delta = -res_old / derivative;
         w_new = w_old + delta;
         res_new = EResidual(w_new, cons_hll[IDN], cons_hll[IEN], m_sq, bb_sq, ss_sq,
-            gamma_adi);
+            gamma_prime);
       }
       Real w = w_new;
 
@@ -811,29 +812,30 @@ static void HLLDTransforming(Hydro *pmy_hydro, const int k, const int j, const i
 // Function whose value vanishes for correct enthalpy
 // Inputs:
 //   w_guess: guess for total enthalpy W
-//   d: relativistic density D
-//   e: total energy E
+//   dd: relativistic density D
+//   ee: total energy E
 //   m_sq: square magnitude of momentum \vec{m}
-//   b_sq: square magnitude of magnetic field \vec{B}
-//   s_sq: (\vec{m} \cdot \vec{B})^2
-//   gamma_adi: ratio of specific heats
+//   bb_sq: square magnitude of magnetic field \vec{B}
+//   ss_sq: (\vec{m} \cdot \vec{B})^2
+//   gamma_prime: reduced adiabatic gas constant Gamma' = Gamma/(Gamma-1)
 // Outputs:
 //   returned value: calculated minus given value of E
 // Notes:
 //   follows Mignone & McKinney 2007, MNRAS 378 1118 (MM)
 //   implementation follows that of hlld_sr.c in Athena 4.2
-static Real EResidual(Real w_guess, Real d, Real e, Real m_sq, Real b_sq, Real s_sq,
-    Real gamma_adi)
+//   same function as in adiabatic_mhd_sr.cpp
+static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
+    Real gamma_prime)
 {
-  Real v_sq = (m_sq + s_sq/SQR(w_guess) * (2.0*w_guess + b_sq))
-      / SQR(w_guess + b_sq);                                     // (MM A3)
+  Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
+      / SQR(w_guess + bb_sq);                                      // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
   Real gamma_lorentz = std::sqrt(gamma_sq);
-  Real chi = (1.0 - v_sq) * (w_guess - gamma_lorentz * d);       // (cf. MM A11)
-  Real pgas = (gamma_adi-1.0)/gamma_adi * chi;                   // (MM A17)
-  Real e_calc = w_guess - pgas + 0.5 * b_sq * (1.0+v_sq)
-      - s_sq / (2.0*SQR(w_guess));                               // (MM A1)
-  return e_calc - e;
+  Real chi = (1.0 - v_sq) * (w_guess - gamma_lorentz * dd);        // (cf. MM A11)
+  Real pgas = chi/gamma_prime;                                     // (MM A17)
+  Real ee_calc = w_guess - pgas + 0.5*bb_sq * (1.0+v_sq)
+      - ss_sq / (2.0*SQR(w_guess));                                // (MM A1)
+  return ee_calc - ee;
 }
 
 //--------------------------------------------------------------------------------------
@@ -841,35 +843,36 @@ static Real EResidual(Real w_guess, Real d, Real e, Real m_sq, Real b_sq, Real s
 // Derivative of EResidual()
 // Inputs:
 //   w_guess: guess for total enthalpy W
-//   d: relativistic density D
+//   dd: relativistic density D
 //   m_sq: square magnitude of momentum \vec{m}
-//   b_sq: square magnitude of magnetic field \vec{B}
-//   s_sq: (\vec{m} \cdot \vec{B})^2
-//   gamma_adi: ratio of specific heats
+//   bb_sq: square magnitude of magnetic field \vec{B}
+//   ss_sq: (\vec{m} \cdot \vec{B})^2
+//   gamma_prime: reduced adiabatic gas constant Gamma' = Gamma/(Gamma-1)
 // Outputs:
 //   returned value: derivative of calculated value of E
 // Notes:
 //   follows Mignone & McKinney 2007, MNRAS 378 1118 (MM)
 //   implementation follows that of hlld_sr.c in Athena 4.2
-static Real EResidualPrime(Real w_guess, Real d, Real m_sq, Real b_sq, Real s_sq,
-    Real gamma_adi)
+//   same function as in adiabatic_mhd_sr.cpp
+static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
+    Real gamma_prime)
 {
-  Real v_sq = (m_sq + s_sq/SQR(w_guess) * (2.0*w_guess + b_sq))
-      / SQR(w_guess + b_sq);                                            // (MM A3)
+  Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
+      / SQR(w_guess + bb_sq);                                         // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
   Real gamma_lorentz = std::sqrt(gamma_sq);
-  Real chi = (1.0 - v_sq) * (w_guess - gamma_lorentz * d);              // (cf. MM A11)
+  Real chi = (1.0 - v_sq) * (w_guess - gamma_lorentz * dd);           // (cf. MM A11)
   Real w_cu = SQR(w_guess) * w_guess;
-  Real w_b_cu = SQR(w_guess + b_sq) * (w_guess + b_sq);
-  Real dv_sq_dw = -2.0 / (w_cu*w_b_cu)
-      * (s_sq * (3.0*w_guess*(w_guess+b_sq) + SQR(b_sq)) + m_sq*w_cu);  // (MM A16)
+  Real w_b_cu = SQR(w_guess + bb_sq) * (w_guess + bb_sq);
+  Real dv_sq_dw = -2.0 / (w_cu*w_b_cu) * (ss_sq
+      * (3.0*w_guess*(w_guess+bb_sq) + SQR(bb_sq)) + m_sq*w_cu);      // (MM A16)
   Real dchi_dw = 1.0 - v_sq
-      - gamma_lorentz/2.0 * (d + 2.0*gamma_lorentz*chi) * dv_sq_dw;     // (cf. MM A14)
-  Real drho_dw = -gamma_lorentz*d/2.0 * dv_sq_dw;                       // (MM A15)
-  Real dpgas_dchi = (gamma_adi-1.0)/gamma_adi;                          // (MM A18)
-  Real dpgas_drho = 0.0;                                                // (MM A18)
+      - gamma_lorentz/2.0 * (dd + 2.0*gamma_lorentz*chi) * dv_sq_dw;  // (cf. MM A14)
+  Real drho_dw = -gamma_lorentz*dd/2.0 * dv_sq_dw;                    // (MM A15)
+  Real dpgas_dchi = 1.0/gamma_prime;                                  // (MM A18)
+  Real dpgas_drho = 0.0;                                              // (MM A18)
   Real dpgas_dw = dpgas_dchi * dchi_dw + dpgas_drho * drho_dw;
-  return 1.0 - dpgas_dw + 0.5*b_sq*dv_sq_dw + s_sq/w_cu;
+  return 1.0 - dpgas_dw + 0.5*bb_sq * dv_sq_dw + ss_sq/w_cu;
 }
 
 //--------------------------------------------------------------------------------------

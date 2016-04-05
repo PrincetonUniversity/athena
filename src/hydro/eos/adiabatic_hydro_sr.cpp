@@ -27,6 +27,7 @@ HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
   gamma_ = pin->GetReal("hydro", "gamma");
   density_floor_ = pin->GetOrAddReal("hydro", "dfloor", 1024*FLT_MIN);
   pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", 1024*FLT_MIN);
+  gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
 }
 
 // Destructor
@@ -71,7 +72,7 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   int ke)
 {
   // Parameters
-  const Real max_velocity = 1.0 - 1.0e-15;
+  const Real max_velocity = std::sqrt(1.0 - 1.0/SQR(gamma_max_));
 
   // Extract ratio of specific heats
   const Real gamma_adi = GetGamma();

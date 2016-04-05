@@ -12,7 +12,8 @@ import athena_read
 def prepare():
   athena.configure('bgt',
       prob='shock_tube_rel',
-      coord='minkowski')
+      coord='minkowski',
+      flux='hlle')
   athena.make()
 
 # Run Athena++
