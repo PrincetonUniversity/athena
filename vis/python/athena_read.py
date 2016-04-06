@@ -234,7 +234,7 @@ def athdf(filename, data=None, quantities=None, level=0, subsample=False,
               + 'boundaries at desired level for\nsubsampling or fast restriction to ' \
               + 'work')
 
-    # Prepare arrays
+    # Prepare arrays to be returned
     if data is not None:
       for q in quantities:
         data[q].fill(0.0)
@@ -245,8 +245,19 @@ def athdf(filename, data=None, quantities=None, level=0, subsample=False,
     data['x1f'] = np.empty(nx1+1)
     data['x2f'] = np.empty(nx2+1)
     data['x3f'] = np.empty(nx3+1)
+
+    # Prepare bookkeeping arrays
+    x1f_level = np.full_like(data['x1f'], level+1, dtype=int)
+    x2f_level = np.full_like(data['x2f'], level+1, dtype=int)
+    x3f_level = np.full_like(data['x3f'], level+1, dtype=int)
     if not subsample and not fast_restrict and max_level > level:
       restricted_data = np.zeros((lx3,lx2,lx1), dtype=bool)
+
+    # Account for singleton dimensions in arrays of face locations
+    if nx2 == 1:
+      data['x2f'] = f['MeshBlock0']['x2f'][:]
+    if nx3 == 1:
+      data['x3f'] = f['MeshBlock0']['x3f'][:]
 
     # Go through blocks in data file
     for block in f.itervalues():
@@ -254,6 +265,53 @@ def athdf(filename, data=None, quantities=None, level=0, subsample=False,
       # Extract location information
       block_level = block.attrs['Level'][0]
       block_location = block.attrs['LogicalLocation']
+
+      # Populate interface arrays if appropriate
+      for d in np.arange(dim)+1:
+
+        # Extract basics about this block and the direction
+        loc = block_location[d-1]
+        size = block_size[d-1]
+        nx = (nx1,nx2,nx3)[d-1]
+        xf_block = block['x'+str(d)+'f'][:]
+        xf = data['x'+str(d)+'f']
+        xf_level = (x1f_level,x2f_level,x3f_level)[d-1]
+
+        # Refine coarse positions if no better positions are yet known to exist
+        if block_level < level:
+          level_diff = level - block_level
+          s = 2**level_diff
+          index_low = loc * size * s
+          index_high = index_low + size * s
+          if np.any(xf_level[index_low+1:index_high] <= level_diff):
+            continue
+          xf[index_low:index_high+1:s] = xf_block
+          ratio_block = ((xf_block[-1]-xf_block[-2]) / (xf_block[1]-xf_block[0])) \
+              ** (1.0/(size-1))
+          for l in range(level_diff):
+            ss = 2**(level_diff-l)
+            ratio = ratio_block ** (1.0/2**(l+1))
+            xf_low = xf[index_low:index_high:ss]
+            xf_high = xf[index_low+ss:index_high+1:ss]
+            xf[index_low+ss/2:index_high:ss] = xf_low + (xf_high-xf_low) / (1.0+ratio)
+          xf_level[index_low:index_high+1] = \
+              np.minimum(xf_level[index_low:index_high+1], level_diff)
+
+        # Copy exact values from sufficiently refined block if values have not been set
+        else:
+          level_diff = block_level - level
+          s = 2**level_diff
+          index_low = loc * size
+          index_high = index_low + size
+          if index_low%s == 0:
+            index_first_aligned = index_low
+          else:
+            index_first_aligned = index_low + s - index_low%s
+          if np.all(xf_level[index_first_aligned/s:index_high/s+1] == 0):
+            continue
+          xf[index_first_aligned/s:index_high/s+1] = \
+              xf_block[index_first_aligned-index_low:index_high+1-index_low:s]
+          xf_level[index_first_aligned/s:index_high/s+1] = 0
 
       # Prolongate coarse data and copy same-level data
       if block_level <= level:
@@ -366,7 +424,7 @@ def athdf(filename, data=None, quantities=None, level=0, subsample=False,
                 x1p = block['x1f'][ir+1]
                 vol = vol_func(x1m, x1p, x2m, x2p, x3m, x3p)
                 for q in quantities:
-                  data[q][k,j,i] += block[q][:][kr,jr,ir] * vol
+                  data[q][k,j,i] += block[q][kr,jr,ir] * vol
           loc1 = block_location[0] / s
           loc2 = block_location[1] / s
           loc3 = block_location[2] / s
@@ -396,22 +454,6 @@ def athdf(filename, data=None, quantities=None, level=0, subsample=False,
                     vol = vol_func(x1m, x1p, x2m, x2p, x3m, x3p)
                     for q in quantities:
                       data[q][k,j,i] /= vol
-
-    # Record interface locations
-    for d,nx in zip(np.arange(dim)+1,(nx1,nx2,nx3)[:dim]):
-      xf_string = 'x' + str(d) + 'f'
-      x_0 = f['MeshBlock0'][xf_string][:][0]
-      x_1 = f['MeshBlock0'][xf_string][:][1]
-      x_2 = f['MeshBlock0'][xf_string][:][2]
-      ratio_block0 = (x_2-x_1) / (x_1-x_0)
-      level_block0 = f['MeshBlock0'].attrs['Level'][0]
-      ratio = ratio_block0 ** (1.0 / 2**(level-level_block0))
-      ratio_powers = ratio ** np.arange(nx)
-      ratio_powers_sum = np.cumsum(ratio_powers)
-      data[xf_string][0] = x_0
-      data[xf_string][1:] = x_0 + (x_1-x_0) * ratio_powers_sum
-      data[xf_string][-1] \
-          = f['MeshBlock'+str(f.attrs['TotalMeshBlock'][0]-1)][xf_string][:][-1]
 
   return data
 
