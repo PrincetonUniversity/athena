@@ -56,12 +56,14 @@
 // openMP parallelization (OPENMP_PARALLEL or NOT_OPENMP_PARALLEL)
 #define @OPENMP_OPTION@
 
-// HDF5 Output (HDF5OUTPUT or NO_HDF5OUTPUT)
+// HDF5 output (HDF5OUTPUT or NO_HDF5OUTPUT)
 #define @HDF5_OPTION@
+
+// parallel HDF5 output (PARALLELHDF5OUTPUT or NO_PARALLELHDF5OUTPUT)
+#define @PARALLELHDF5_OPTION@
 
 // number of internal hydro output variables
 #define NIFOV  @NUM_IFOV@
-
 
 //--------------------------------------------------------------------------------------
 // macros associated with numerical algorithm (rarely modified)

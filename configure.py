@@ -23,6 +23,7 @@
 #   -mpi              enable parallelization with MPI
 #   -omp              enable parallelization with OpenMP
 #   -hdf5             enable HDF5 output (requires the HDF5 library)
+#   -parallelhdf5     enable parallel HDF5 output (forces -hdf5)
 #   --ifov=N          enable N internal hydro output variables
 #---------------------------------------------------------------------------------------
 
@@ -144,9 +145,9 @@ parser.add_argument('-hdf5',
 
 # -hdf5 argument
 parser.add_argument('-parallelhdf5',
-                    action='store_true',
-                    default=False,
-                    help='enable Parallel HDF5 Output')
+   action='store_true',
+   default=False,
+   help='enable parallel HDF5 output')
 
 # -ifov=N argument
 parser.add_argument('--ifov',
@@ -158,6 +159,10 @@ parser.add_argument('--ifov',
 args = vars(parser.parse_args())
 
 #--- Step 2. Test for incompatible arguments -------------------------------------------
+
+# Turn on HDF5 if parallel HDF5 selected
+if args['parallelhdf5']:
+  args['hdf5'] = True
 
 # Set default flux; HLLD for MHD, HLLC for hydro, HLLE for isothermal hydro
 if args['flux']=='default':
@@ -368,21 +373,11 @@ else:
 
 # -parallelhdf5 argument
 if args['parallelhdf5']:
-  definitions['PARALLELHDF5_OPTION'] = 'HDF5OUTPUT'
-  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'cray':
-    makefile_options['LIBRARY_FLAGS'] += ' -lhdf5'
+  definitions['PARALLELHDF5_OPTION'] = 'PARALLELHDF5OUTPUT'
   if args['cxx'] == 'bgxl':
-    makefile_options['PREPROCESSOR_FLAGS'] += \
-      ' -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_BSD_SOURCE -D_MPI_PARALLEL -D_HDF5_NEW' \
-        + ' -I/soft/libraries/hdf5/1.8.14/cnk-xl/V1R2M2-20150213/include' \
-        + ' -I/bgsys/drivers/ppcfloor/comm/include'
-    makefile_options['LINKER_FLAGS'] += \
-      ' -L/soft/libraries/hdf5/1.8.14/cnk-xl/V1R2M2-20150213/lib' \
-        + ' -L/soft/libraries/alcf/current/xl/ZLIB/lib'
-makefile_options['LIBRARY_FLAGS'] += ' -lhdf5 -lz -lm'
+    makefile_options['PREPROCESSOR_FLAGS'] += ' -D_MPI_PARALLEL -D_HDF5_NEW'
 else:
-  definitions['PARALLELHDF5_OPTION'] = 'NO_HDF5OUTPUT'
-
+  definitions['PARALLELHDF5_OPTION'] = 'NO_PARALLELHDF5OUTPUT'
 
 # Assemble all flags of any sort given to compiler
 definitions['COMPILER_FLAGS'] = ' '.join([makefile_options[opt+'_FLAGS'] for opt in \
