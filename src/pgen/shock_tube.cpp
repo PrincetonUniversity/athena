@@ -49,7 +49,7 @@ void Mesh::InitUserMeshProperties(ParameterInput *pin)
 
 //======================================================================================
 //! \fn void Mesh::TerminateUserMeshProperties(void)
-//  \brief Clean up the Mesh properties
+//  \brief Calculate L1 errors in Sod (hydro) and RJ2a (MHD) tests
 //======================================================================================
 
 void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
@@ -248,14 +248,14 @@ void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
           << std::endl << "Error output file could not be opened" <<std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
-    fprintf(pfile,"# Nx1  Nx2  Nx3  RMS-Error  d  M1  M2  M3  E");
+    fprintf(pfile,"# Nx1  Nx2  Nx3  Ncycle  RMS-Error  d  M1  M2  M3  E");
     if (MAGNETIC_FIELDS_ENABLED) fprintf(pfile,"  B1c  B2c  B3c");
     fprintf(pfile,"\n");
   }
 
   // write errors
   fprintf(pfile,"%d  %d",pmb->block_size.nx1,pmb->block_size.nx2);
-  fprintf(pfile,"  %d  %e",pmb->block_size.nx3,rms_err);
+  fprintf(pfile,"  %d  %d  %e",pmb->block_size.nx3,ncycle,rms_err);
   fprintf(pfile,"  %e  %e  %e  %e  %e",err[IDN],err[IM1],err[IM2],err[IM3],err[IEN]);
   if (MAGNETIC_FIELDS_ENABLED) {
     fprintf(pfile,"  %e  %e  %e",err[IEN+IB1+1],err[IEN+IB2+1],err[IEN+IB3+1]);
