@@ -85,10 +85,10 @@ void ATHDF5Output::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag=false)
    return;
   }
   H5Pclose(plist);
-#else
+#else  // not MPI_PARALLEL
   // serial: everything is default
   file= H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-#endif
+#endif  // MPI_PARALLEL else
 
   // setup metadata
   sz=1;
@@ -452,8 +452,8 @@ void ATHDF5Output::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag=false)
   delete[] x3f_list;
   x3f_list = 0;
                                                        
-  
-#else
+#else  // not HDF5_NEW
+
   grpid = new hid_t[nbl];
   x1fid = new hid_t[nbl];
   x2fid = new hid_t[nbl];
@@ -795,7 +795,7 @@ void ATHDF5Output::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag=false)
     xdmf.close();
   }
 
-  #endif
+#endif  // HDF5_NEW else
   
   return;
 }
@@ -903,4 +903,4 @@ void ATHDF5Output::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
   return;
 }
 
-#endif
+#endif  // HDF5OUTPUT
