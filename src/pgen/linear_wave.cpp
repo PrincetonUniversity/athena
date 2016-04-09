@@ -180,6 +180,18 @@ void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
         }
         err[IEN] += fabs(e0 - pmb->phydro->u(IEN,k,j,i));
       }
+
+      if (MAGNETIC_FIELDS_ENABLED) {
+        Real bx = bx0;
+        Real by = by0 + amp*sn*rem[5][wave_flag];
+        Real bz = bz0 + amp*sn*rem[6][wave_flag];
+        Real b1 = bx*cos_a2*cos_a3 - by*sin_a3 - bz*sin_a2*cos_a3;
+        Real b2 = bx*cos_a2*sin_a3 + by*cos_a3 - bz*sin_a2*sin_a3;
+        Real b3 = bx*sin_a2                    + bz*cos_a2;
+        err[NHYDRO + IB1] += fabs(b1 - pmb->pfield->bcc(IB1,k,j,i));
+        err[NHYDRO + IB2] += fabs(b2 - pmb->pfield->bcc(IB2,k,j,i));
+        err[NHYDRO + IB3] += fabs(b3 - pmb->pfield->bcc(IB3,k,j,i));
+      }
     }
   }}
 
@@ -220,7 +232,7 @@ void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
   fprintf(pfile,"  %d  %d  %e",pmb->block_size.nx3,ncycle,rms_err);
   fprintf(pfile,"  %e  %e  %e  %e  %e",err[IDN],err[IM1],err[IM2],err[IM3],err[IEN]);
   if (MAGNETIC_FIELDS_ENABLED) {
-    fprintf(pfile,"  %e  %e  %e",err[IEN+IB1+1],err[IEN+IB2+1],err[IEN+IB3+1]);
+    fprintf(pfile,"  %e  %e  %e",err[NHYDRO+IB1],err[NHYDRO+IB2],err[NHYDRO+IB3]);
   }
   fprintf(pfile,"\n");
   fclose(pfile);

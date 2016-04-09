@@ -168,9 +168,9 @@ void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
         err[im2] += fabs(my - pmb->phydro->u(im2,k,j,i));
         err[im3] += fabs(mz - pmb->phydro->u(im3,k,j,i));
         err[IEN] += fabs(e0 - pmb->phydro->u(IEN,k,j,i));
-        err[IEN+ib1+1] += fabs(bx - pmb->pfield->bcc(ib1,k,j,i));
-        err[IEN+ib2+1] += fabs(by - pmb->pfield->bcc(ib2,k,j,i));
-        err[IEN+ib3+1] += fabs(bz - pmb->pfield->bcc(ib3,k,j,i));
+        err[NYDRO + ib1] += fabs(bx - pmb->pfield->bcc(ib1,k,j,i));
+        err[NYDRO + ib2] += fabs(by - pmb->pfield->bcc(ib2,k,j,i));
+        err[NYDRO + ib3] += fabs(bz - pmb->pfield->bcc(ib3,k,j,i));
       }
     }}
   
@@ -258,7 +258,7 @@ void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
   fprintf(pfile,"  %d  %d  %e",pmb->block_size.nx3,ncycle,rms_err);
   fprintf(pfile,"  %e  %e  %e  %e  %e",err[IDN],err[IM1],err[IM2],err[IM3],err[IEN]);
   if (MAGNETIC_FIELDS_ENABLED) {
-    fprintf(pfile,"  %e  %e  %e",err[IEN+IB1+1],err[IEN+IB2+1],err[IEN+IB3+1]);
+    fprintf(pfile,"  %e  %e  %e",err[NHYDRO+IB1],err[NHYDRO+IB2],err[NHYDRO+IB3]);
   }
   fprintf(pfile,"\n");
   fclose(pfile);
