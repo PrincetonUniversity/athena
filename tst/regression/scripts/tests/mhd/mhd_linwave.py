@@ -25,34 +25,30 @@ def run():
   # L-going fast/Alfven/slow waves
   for w in (0,1,2):
     tlim = max(0.5,w)
-    for i in (48,96):
+    for i in (32,64):
       arguments = [
-        'problem/wave_flag=' + repr(w),'problem/vflow=0.0',
+        'problem/wave_flag=' + repr(w),'problem/vflow=0.0','mesh/refinement=static',
         'mesh/nx1=' + repr(i), 'mesh/nx2=' + repr(i/2), 'mesh/nx3=' + repr(i/2),
         'meshblock/nx1=' + repr(i/4),
         'meshblock/nx2=' + repr(i/4),
         'meshblock/nx3=' + repr(i/4),
-        'output2/dt=10', 'time/tlim=' + repr(tlim), 'problem/compute_error=1']
+        'output2/dt=-1', 'time/tlim=' + repr(tlim), 'problem/compute_error=1']
       athena.run('mhd/athinput.linear_wave3d', arguments)
   # entropy wave
-  for i in (48,96):
+  for i in (32,64):
     arguments = [
-      'problem/wave_flag=3','problem/vflow=1.0',
+      'problem/wave_flag=3','problem/vflow=1.0','mesh/refinement=static',
       'mesh/nx1=' + repr(i), 'mesh/nx2=' + repr(i/2), 'mesh/nx3=' + repr(i/2),
       'meshblock/nx1=' + repr(i/4),
       'meshblock/nx2=' + repr(i/4),
       'meshblock/nx3=' + repr(i/4),
-      'output2/dt=10', 'time/tlim=1.0', 'problem/compute_error=1']
+      'output2/dt=-1', 'time/tlim=1.0', 'problem/compute_error=1']
     athena.run('mhd/athinput.linear_wave3d', arguments)
-  # R-going fast wave
-  for i in (48,96):
+  # L/R-going fast wave
+  for w in (0,6):
     arguments = [
-      'problem/wave_flag=6','problem/vflow=0.0',
-      'mesh/nx1=' + repr(i), 'mesh/nx2=' + repr(i/2), 'mesh/nx3=' + repr(i/2),
-      'meshblock/nx1=' + repr(i/4),
-      'meshblock/nx2=' + repr(i/4),
-      'meshblock/nx3=' + repr(i/4),
-      'output2/dt=10', 'time/tlim=0.5', 'problem/compute_error=1']
+      'problem/wave_flag=' + repr(w),
+      'output2/dt=-1', 'time/tlim=0.5', 'problem/compute_error=1']
     athena.run('mhd/athinput.linear_wave3d', arguments)
 
 # Analyze outputs
@@ -68,44 +64,37 @@ def analyze():
       data.append([float(val) for val in line.split()])
 
   # check absolute error and convergence of all three waves
-  if data[1][4] > 3.0e-8:
+  if data[1][4] > 4.0e-8:
     print "error in L-going fast wave too large",data[1][4]
     return False
   if data[1][4]/data[0][4] > 0.3:
     print "not converging for L-going fast wave",data[0][4],data[1][4]
     return False
 
-  if data[3][4] > 3.0e-8:
+  if data[3][4] > 4.0e-8:
     print "error in L-going Alfven wave too large",data[3][4]
     return False
-  if data[3][4]/data[2][4] > 0.3:
+  if data[3][4]/data[2][4] > 0.35:
     print "not converging for L-going Alfven wave",data[2][4],data[3][4]
     return False
 
-  if data[5][4] > 3.0e-8:
+  if data[5][4] > 5.0e-8:
     print "error in L-going slow wave too large",data[5][4]
     return False
   if data[5][4]/data[4][4] > 0.35:
     print "not converging for L-going slow wave",data[4][4],data[5][4]
     return False
 
-  if data[7][4] > 2.0e-8:
+  if data[7][4] > 2.5e-8:
     print "error in entropy wave too large",data[7][4]
     return False
-  if data[7][4]/data[6][4] > 0.3:
+  if data[7][4]/data[6][4] > 0.33:
     print "not converging for entropy wave",data[6][4],data[7][4]
     return False
 
-  if data[9][4] > 3.0e-8:
-    print "error in R-going fast wave too large",data[9][4]
-    return False
-  if data[9][4]/data[8][4] > 0.3:
-    print "not converging for R-going fast wave",data[8][4],data[9][4]
-    return False
-
   # check error identical for waves in each direction
-  if data[1][4] != data[9][4]:
-    print "error in L/R-going fast waves not equal",data[1][4],data[9][4]
+  if data[8][4] != data[9][4]:
+    print "error in L/R-going fast waves not equal",data[8][4],data[9][4]
     return False
 
   return True

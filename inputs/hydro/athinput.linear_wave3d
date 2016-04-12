@@ -11,9 +11,9 @@ file_type  = hst       # History data dump
 dt         = 0.01      # time increment between outputs
 
 <output2>
-file_type   = vtk      # Binary data dump
-variable    = prim     # variables to be output
-dt          = 0.01     # time increment between outputs
+file_type  = vtk       # VTK data dump
+variable   = prim      # variables to be output
+dt         = 0.01      # time increment between outputs
 
 <time>
 cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
@@ -40,11 +40,60 @@ ix3_bc     = periodic  # inner-X3 boundary flag
 ox3_bc     = periodic  # outer-X3 boundary flag
 
 num_threads = 1        # maximum number of OMP threads
+refinement  = none
 
 <meshblock>
 nx1        = 64        # Number of zones in X1-direction
 nx2        = 32        # Number of zones in X2-direction
 nx3        = 32        # Number of zones in X3-direction
+
+# The following refinement regions are used in regression tests.  By default,
+# they are ignored.  To use, set meshblock size to 16^3.
+
+<refinement1>
+x1min = 0.3
+x1max = 0.4
+x2min = 0.3
+x2max = 0.4
+x3min = 0.3
+x3max = 0.4
+level=1
+
+<refinement2>
+x1min = 0.3
+x1max = 0.4
+x2min = 1.0
+x2max = 1.1
+x3min = 1.0
+x3max = 1.1
+level=1
+
+<refinement3>
+x1min = 1.0
+x1max = 1.1
+x2min = 1.0
+x2max = 1.1
+x3min = 0.3
+x3max = 0.4
+level=1
+
+<refinement4>
+x1min = 1.0
+x1max = 1.1
+x2min = 0.3
+x2max = 0.4
+x3min = 1.0
+x3max = 1.1
+level=1
+
+<refinement5>
+x1min = 1.9
+x1max = 2.0
+x2min = 0.3
+x2max = 1.2
+x3min = 0.3
+x3max = 1.2
+level=1
 
 <hydro>
 gamma = 1.666666666666667 # gamma = C_p/C_v
