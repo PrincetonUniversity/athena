@@ -168,9 +168,9 @@ void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
         err[im2] += fabs(my - pmb->phydro->u(im2,k,j,i));
         err[im3] += fabs(mz - pmb->phydro->u(im3,k,j,i));
         err[IEN] += fabs(e0 - pmb->phydro->u(IEN,k,j,i));
-        err[NYDRO + ib1] += fabs(bx - pmb->pfield->bcc(ib1,k,j,i));
-        err[NYDRO + ib2] += fabs(by - pmb->pfield->bcc(ib2,k,j,i));
-        err[NYDRO + ib3] += fabs(bz - pmb->pfield->bcc(ib3,k,j,i));
+        err[NHYDRO + ib1] += fabs(bx - pmb->pfield->bcc(ib1,k,j,i));
+        err[NHYDRO + ib2] += fabs(by - pmb->pfield->bcc(ib2,k,j,i));
+        err[NHYDRO + ib3] += fabs(bz - pmb->pfield->bcc(ib3,k,j,i));
       }
     }}
   

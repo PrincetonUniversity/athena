@@ -143,8 +143,6 @@ void Mesh::InitUserMeshProperties(ParameterInput *pin)
 //======================================================================================
 void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
 {
-  MeshBlock *pmb = pblock;
-
   // return if compute_error=0 (default)
   int error_test;
   if ((error_test=pin->GetOrAddInteger("problem","compute_error",0))==0) return;
@@ -153,47 +151,51 @@ void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
   Real err[NHYDRO+NFIELD];
   for (int i=0; i<(NHYDRO+NFIELD); ++i) err[i]=0.0;
 
-  //  Compute errors
-  for (int k=pmb->ks; k<=pmb->ke; k++) {
-  for (int j=pmb->js; j<=pmb->je; j++) {
-    for (int i=pmb->is; i<=pmb->ie; i++) {
-      Real x = cos_a2*(pmb->pcoord->x1v(i)*cos_a3 + pmb->pcoord->x2v(j)*sin_a3) 
-                     + pmb->pcoord->x3v(k)*sin_a2;
-      Real sn = sin(k_par*x);
-
-      err[IDN] += fabs((d0 + amp*sn*rem[0][wave_flag]) - pmb->phydro->u(IDN,k,j,i));
-
-      Real mx = d0*vflow + amp*sn*rem[1][wave_flag];
-      Real my = amp*sn*rem[2][wave_flag];
-      Real mz = amp*sn*rem[3][wave_flag];
-      Real m1 = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
-      Real m2 = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
-      Real m3 = mx*sin_a2                    + mz*cos_a2;
-      err[IM1] += fabs(m1 - pmb->phydro->u(IM1,k,j,i));
-      err[IM2] += fabs(m2 - pmb->phydro->u(IM2,k,j,i));
-      err[IM3] += fabs(m3 - pmb->phydro->u(IM3,k,j,i));
-
-      if (NON_BAROTROPIC_EOS) {
-        Real e0 = p0/gm1 + 0.5*d0*u0*u0 + amp*sn*rem[4][wave_flag];
-        if (MAGNETIC_FIELDS_ENABLED) {
-          e0 += 0.5*(bx0*bx0+by0*by0+bz0*bz0);
+  MeshBlock *pmb = pblock;
+  while (pmb != NULL) {
+    //  Compute errors
+    for (int k=pmb->ks; k<=pmb->ke; k++) {
+    for (int j=pmb->js; j<=pmb->je; j++) {
+      for (int i=pmb->is; i<=pmb->ie; i++) {
+        Real x = cos_a2*(pmb->pcoord->x1v(i)*cos_a3 + pmb->pcoord->x2v(j)*sin_a3) 
+                       + pmb->pcoord->x3v(k)*sin_a2;
+        Real sn = sin(k_par*x);
+  
+        err[IDN] += fabs((d0 + amp*sn*rem[0][wave_flag]) - pmb->phydro->u(IDN,k,j,i));
+  
+        Real mx = d0*vflow + amp*sn*rem[1][wave_flag];
+        Real my = amp*sn*rem[2][wave_flag];
+        Real mz = amp*sn*rem[3][wave_flag];
+        Real m1 = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
+        Real m2 = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
+        Real m3 = mx*sin_a2                    + mz*cos_a2;
+        err[IM1] += fabs(m1 - pmb->phydro->u(IM1,k,j,i));
+        err[IM2] += fabs(m2 - pmb->phydro->u(IM2,k,j,i));
+        err[IM3] += fabs(m3 - pmb->phydro->u(IM3,k,j,i));
+  
+        if (NON_BAROTROPIC_EOS) {
+          Real e0 = p0/gm1 + 0.5*d0*u0*u0 + amp*sn*rem[4][wave_flag];
+          if (MAGNETIC_FIELDS_ENABLED) {
+            e0 += 0.5*(bx0*bx0+by0*by0+bz0*bz0);
+          }
+          err[IEN] += fabs(e0 - pmb->phydro->u(IEN,k,j,i));
         }
-        err[IEN] += fabs(e0 - pmb->phydro->u(IEN,k,j,i));
-      }
 
-      if (MAGNETIC_FIELDS_ENABLED) {
-        Real bx = bx0;
-        Real by = by0 + amp*sn*rem[5][wave_flag];
-        Real bz = bz0 + amp*sn*rem[6][wave_flag];
-        Real b1 = bx*cos_a2*cos_a3 - by*sin_a3 - bz*sin_a2*cos_a3;
-        Real b2 = bx*cos_a2*sin_a3 + by*cos_a3 - bz*sin_a2*sin_a3;
-        Real b3 = bx*sin_a2                    + bz*cos_a2;
-        err[NHYDRO + IB1] += fabs(b1 - pmb->pfield->bcc(IB1,k,j,i));
-        err[NHYDRO + IB2] += fabs(b2 - pmb->pfield->bcc(IB2,k,j,i));
-        err[NHYDRO + IB3] += fabs(b3 - pmb->pfield->bcc(IB3,k,j,i));
+        if (MAGNETIC_FIELDS_ENABLED) {
+          Real bx = bx0;
+          Real by = by0 + amp*sn*rem[5][wave_flag];
+          Real bz = bz0 + amp*sn*rem[6][wave_flag];
+          Real b1 = bx*cos_a2*cos_a3 - by*sin_a3 - bz*sin_a2*cos_a3;
+          Real b2 = bx*cos_a2*sin_a3 + by*cos_a3 - bz*sin_a2*sin_a3;
+          Real b3 = bx*sin_a2                    + bz*cos_a2;
+          err[NHYDRO + IB1] += fabs(b1 - pmb->pfield->bcc(IB1,k,j,i));
+          err[NHYDRO + IB2] += fabs(b2 - pmb->pfield->bcc(IB2,k,j,i));
+          err[NHYDRO + IB3] += fabs(b3 - pmb->pfield->bcc(IB3,k,j,i));
+        }
       }
-    }
-  }}
+    }}
+    pmb=pmb->next;
+  }
 
   // normalize errors by number of cells, compute RMS
   for (int i=0; i<(NHYDRO+NFIELD); ++i) err[i] = err[i]/(float)GetTotalCells();
@@ -228,8 +230,8 @@ void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
   }
 
   // write errors
-  fprintf(pfile,"%d  %d",pmb->block_size.nx1,pmb->block_size.nx2);
-  fprintf(pfile,"  %d  %d  %e",pmb->block_size.nx3,ncycle,rms_err);
+  fprintf(pfile,"%d  %d",mesh_size.nx1,mesh_size.nx2);
+  fprintf(pfile,"  %d  %d  %e",mesh_size.nx3,ncycle,rms_err);
   fprintf(pfile,"  %e  %e  %e  %e  %e",err[IDN],err[IM1],err[IM2],err[IM3],err[IEN]);
   if (MAGNETIC_FIELDS_ENABLED) {
     fprintf(pfile,"  %e  %e  %e",err[NHYDRO+IB1],err[NHYDRO+IB2],err[NHYDRO+IB3]);
