@@ -683,10 +683,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
 
   LoadBalancing(costlist, ranklist, nslist, nblist, nbtotal);
 
-  // Mesh test only; do not create meshes
+  // Output MeshBlock list and quit (mesh test only); do not create meshes
   if(test_flag>0) {
-    if(Globals::my_rank==0)
-      OutputMeshStructure(dim);
+    if(Globals::my_rank==0) OutputMeshStructure(dim);
     delete [] offset;
     return;
   }
@@ -917,18 +916,6 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
       cks=cnghost, cke=cks+block_size.nx3/2-1;
   }
 
-  if(ref_flag==false) { // too noisy for AMR
-    std::cout << "MeshBlock " << gid << ", rank = " << Globals::my_rank << ", lx1 = "
-              << loc.lx1 << ", lx2 = " << loc.lx2 <<", lx3 = " << loc.lx3
-              << ", level = " << loc.level << std::endl;
-    std::cout << "is=" << is << " ie=" << ie << " x1min=" << block_size.x1min
-              << " x1max=" << block_size.x1max << std::endl;
-    std::cout << "js=" << js << " je=" << je << " x2min=" << block_size.x2min
-              << " x2max=" << block_size.x2max << std::endl;
-    std::cout << "ks=" << ks << " ke=" << ke << " x3min=" << block_size.x3min
-              << " x3max=" << block_size.x3max << std::endl;
-  }
-
 // construct Coordinates and Hydro objects stored in MeshBlock class.  Note that the
 // initial conditions for the hydro are set in problem generator called from main, not
 // in the Hydro constructor
@@ -1014,16 +1001,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     if(block_size.nx3>1) // 3D
       cks=cnghost, cke=cks+block_size.nx3/2-1;
   }
-
-  std::cout << "MeshBlock " << gid << ", rank = " << Globals::my_rank << ", lx1 = "
-            << loc.lx1 << ", lx2 = " << loc.lx2 <<", lx3 = " << loc.lx3
-            << ", level = " << loc.level << std::endl;
-  std::cout << "is=" << is << " ie=" << ie << " x1min=" << block_size.x1min
-            << " x1max=" << block_size.x1max << std::endl;
-  std::cout << "js=" << js << " je=" << je << " x2min=" << block_size.x2min
-            << " x2max=" << block_size.x2max << std::endl;
-  std::cout << "ks=" << ks << " ke=" << ke << " x3min=" << block_size.x3min
-            << " x3max=" << block_size.x3max << std::endl;
 
   // create coordinates, hydro, field, and boundary conditions
   pcoord = new Coordinates(this, pin);
