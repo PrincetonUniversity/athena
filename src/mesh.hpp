@@ -145,7 +145,7 @@ private:
   BValFunc_t BoundaryFunction_[6];
   AMRFlag_t AMRFlag_;
 
-  void MeshTest(int dim);
+  void OutputMeshStructure(int dim);
 
   // methods in /pgen
   void InitUserMeshProperties(ParameterInput *pin);

@@ -238,23 +238,20 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   nbmax=(nrbx1>nrbx2)?nrbx1:nrbx2;
   nbmax=(nbmax>nrbx3)?nbmax:nrbx3;
 
-  if(Globals::my_rank==0)
-    std::cout << "RootGrid = " << nrbx1 << " x " << nrbx2
-              << " x " << nrbx3 << std::endl;
-
-// calculate the logical root level and maximum level
-  for(root_level=0;(1<<root_level)<nbmax;root_level++);
+  // calculate the logical root level and maximum level
+  for (root_level=0; (1<<root_level)<nbmax; root_level++);
   current_level=root_level;
 
-// create the root grid
+  // create the root grid
   tree.CreateRootGrid(nrbx1,nrbx2,nrbx3,root_level);
 
-// SMR / AMR: create finer grids here
+  // SMR / AMR: create finer grids here
   multilevel=false;
   adaptive=false;
-  if(pin->GetOrAddString("mesh","refinement","none")=="adaptive")
+  if (pin->GetOrAddString("mesh","refinement","none")=="adaptive") {
     adaptive=true, multilevel=true;
-  if(adaptive==true) {
+  }
+  if (adaptive==true) {
     max_level = pin->GetOrAddInteger("mesh","numlevel",1)+root_level-1;
     if(max_level > 63) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -262,9 +259,9 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
           << 63-root_level+1 << "." << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
-  }
-  else
+  } else {
     max_level = 63;
+  }
 
   //initialize user-enrollable functions
   if(mesh_size.x1rat!=1.0)
@@ -382,10 +379,6 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
         if(lx3max%2==0) lx3max++;
       }
       // create the finest level
-      std::cout << "refinenment: logical level = " << lrlev << ", lx1min = "
-                << lx1min << ", lx1max = " << lx1max << ", lx2min = " << lx2min
-                << ", lx2max = " << lx2max << ", lx3min = " << lx3min << ", lx3max = "
-                << lx3max << std::endl;
       if(dim==1) {
         for(long int i=lx1min; i<lx1max; i+=2) {
           LogicalLocation nloc;
@@ -431,8 +424,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   }
 
   face_only=true;
-  if (MAGNETIC_FIELDS_ENABLED || multilevel==true || VISCOSITY)
-    face_only=false;
+  if (MAGNETIC_FIELDS_ENABLED || multilevel==true || VISCOSITY) face_only=false;
 
   maxneighbor_=BufferID(dim, multilevel, face_only);
 
@@ -442,16 +434,15 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   loclist=new LogicalLocation[nbtotal];
   tree.GetMeshBlockList(loclist,NULL,nbtotal);
 
-// check if there are sufficient blocks
 #ifdef MPI_PARALLEL
+  // check if there are sufficient blocks
   if(nbtotal < Globals::nranks) {
     if(test_flag==0) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
           << "Too few blocks: nbtotal (" << nbtotal << ") < nranks ("<< Globals::nranks
           << ")" << std::endl;
       throw std::runtime_error(msg.str().c_str());
-    }
-    else { // test
+    } else { // test
       std::cout << "### Warning in Mesh constructor" << std::endl
           << "Too few blocks: nbtotal (" << nbtotal << ") < nranks ("<< Globals::nranks
           << ")" << std::endl;
@@ -474,15 +465,16 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     bddisp = new int [Globals::nranks];
   }
 
-  for(int i=0;i<nbtotal;i++)
-    costlist[i]=1.0; // the simplest estimate; all the blocks are equal
+ // initialize cost array with the simplest estimate; all the blocks are equal
+  for(int i=0;i<nbtotal;i++) costlist[i]=1.0;
 
   LoadBalancing(costlist, ranklist, nslist, nblist, nbtotal);
 
-  // Mesh test only; do not create meshes
-  if(test_flag>0) {
-    if(Globals::my_rank==0)
-      MeshTest(dim);
+  // Output some diagnostic information to terminal
+
+  // Output MeshBlock list and quit (mesh test only); do not create meshes
+  if (test_flag>0) {
+    if (Globals::my_rank==0) OutputMeshStructure(dim);
     return;
   }
 
@@ -694,7 +686,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   // Mesh test only; do not create meshes
   if(test_flag>0) {
     if(Globals::my_rank==0)
-      MeshTest(dim);
+      OutputMeshStructure(dim);
     delete [] offset;
     return;
   }
@@ -755,110 +747,124 @@ Mesh::~Mesh()
 
 }
 
-
 //--------------------------------------------------------------------------------------
-//! \fn void Mesh::MeshTest(int dim)
+//! \fn void Mesh::OutputMeshStructure(int dim)
 //  \brief print the mesh structure information
 
-void Mesh::MeshTest(int dim)
+void Mesh::OutputMeshStructure(int dim)
 {
-  int i, j, nbt=0;
-  long int lx1, lx2, lx3;
-  int ll;
-  Real mycost=0, mincost=FLT_MAX, maxcost=0.0, totalcost=0.0;
-  int *nb=new int [max_level-root_level+1];
+  // open 'mesh_structure.dat' file
   FILE *fp;
   if(dim>=2) {
-    if ((fp = fopen("meshtest.dat","wb")) == NULL) {
-      std::cout << "### ERROR in function Mesh::MeshTest" << std::endl
-                << "Cannot open meshtest.dat" << std::endl;
+    if ((fp = fopen("mesh_structure.dat","wb")) == NULL) {
+      std::cout << "### ERROR in function Mesh::OutputMeshStructure" << std::endl
+                << "Cannot open mesh_structure.dat" << std::endl;
       return;
     }
   }
 
-  std::cout << "Logical level of the physical root grid = "<< root_level << std::endl;
-  std::cout << "Logical level of maximum refinement = "<< current_level << std::endl;
-  std::cout << "List of MeshBlocks" << std::endl;
-  for(i=root_level;i<=max_level;i++) {
+  // Write overall Mesh structure to stdout and file
+  std::cout << std::endl;
+  std::cout << "Root grid = " << nrbx1 << " x " << nrbx2 << " x " << nrbx3
+            << " MeshBlocks" << std::endl;
+  std::cout << "Total number of MeshBlocks = " << nbtotal << std::endl;
+  std::cout << "Number of physical refinement levels = " 
+            << (current_level - root_level) << std::endl;
+  std::cout << "Number of logical  refinement levels = " << current_level << std::endl;
+
+  // compute/output number of blocks per level, and cost per level
+  int nb_per_plevel[max_level];
+  int cost_per_plevel[max_level];
+  for (int i=0; i<=max_level; ++i) {
+    nb_per_plevel[i]=0;
+    cost_per_plevel[i]=0;
+  }
+  for (int i=0; i<nbtotal; i++) {
+    nb_per_plevel[(loclist[i].level - root_level)]++;
+    cost_per_plevel[(loclist[i].level - root_level)] += costlist[i];
+  }
+  for(int i=root_level;i<=max_level;i++) {
+    if(nb_per_plevel[i-root_level]!=0) {
+      std::cout << "  Physical level = " << i-root_level << " (logical level = " << i 
+                << "): " << nb_per_plevel[i-root_level] << " MeshBlocks, cost = " 
+                << cost_per_plevel[i-root_level] <<  std::endl;
+    }
+  }
+
+  // compute/output number of blocks per rank, and cost per rank
+  std::cout << "Number of parallel ranks = " << Globals::nranks << std::endl;
+  int nb_per_rank[Globals::nranks];
+  int cost_per_rank[Globals::nranks];
+  for (int i=0; i<Globals::nranks; ++i) {
+    nb_per_rank[i]=0;
+    cost_per_rank[i]=0;
+  }
+  for (int i=0; i<nbtotal; i++) {
+    nb_per_rank[ranklist[i]]++;
+    cost_per_rank[ranklist[i]] += costlist[i];
+  }
+  for (int i=0; i<Globals::nranks; ++i) {
+    std::cout << "  Rank = " << i << ": " << nb_per_rank[i] <<" MeshBlocks, cost = "
+              << cost_per_rank[i] << std::endl;
+  }
+
+  // output relative size/locations of meshblock to file, for plotting
+  Real mincost=FLT_MAX, maxcost=0.0, totalcost=0.0;
+  for (int i=root_level; i<=max_level; i++) {
     Real dx=1.0/(Real)(1L<<i);
-    nb[i-root_level]=0;
-    for(j=0;j<nbtotal;j++) {
+    for (int j=0; j<nbtotal; j++) {
       if(loclist[j].level==i) {
         long int &lx1=loclist[j].lx1;
         long int &lx2=loclist[j].lx2;
         long int &lx3=loclist[j].lx3;
         int &ll=loclist[j].level;
-        std::cout << "MeshBlock " << j << ", lx1 = "
-                  << loclist[j].lx1 << ", lx2 = " << lx2 <<", lx3 = " << lx3
-                  << ", logical level = " << ll << ", physical level = "
-                  << ll-root_level << ", cost = " << costlist[j]
-                  << ", rank = " << ranklist[j] << std::endl;
         mincost=std::min(mincost,costlist[i]);
         maxcost=std::max(maxcost,costlist[i]);
         totalcost+=costlist[i];
-        nb[i-root_level]++;
+        fprintf(fp,"#MeshBlock %d on rank=%d with cost=%g\n",j,ranklist[j],costlist[j]);
+        fprintf(fp,"#  Logical level %d, location = (%ld %ld %ld)\n",ll,lx1,lx2,lx3);
         if(dim==2) {
-          fprintf(fp, "#MeshBlock %d at %ld %ld %ld %d\n", j, lx1, lx2, lx3, ll);
-          fprintf(fp, "%g %g %d %d\n", lx1*dx, lx2*dx, ll, ranklist[j]);
-          fprintf(fp, "%g %g %d %d\n", lx1*dx+dx, lx2*dx, ll, ranklist[j]);
-          fprintf(fp, "%g %g %d %d\n", lx1*dx+dx, lx2*dx+dx, ll, ranklist[j]);
-          fprintf(fp, "%g %g %d %d\n", lx1*dx, lx2*dx+dx, ll, ranklist[j]);
-          fprintf(fp, "%g %g %d %d\n\n\n", lx1*dx, lx2*dx, ll, ranklist[j]);
+          fprintf(fp, "%g %g\n", lx1*dx,    lx2*dx);
+          fprintf(fp, "%g %g\n", lx1*dx+dx, lx2*dx);
+          fprintf(fp, "%g %g\n", lx1*dx+dx, lx2*dx+dx);
+          fprintf(fp, "%g %g\n", lx1*dx,    lx2*dx+dx);
+          fprintf(fp, "%g %g\n", lx1*dx,    lx2*dx);
+          fprintf(fp, "\n\n");
         }
         if(dim==3) {
-          fprintf(fp, "#MeshBlock %d at %ld %ld %ld %d\n", j, lx1, lx2, lx3, ll);
-          fprintf(fp, "%g %g %g %d %d\n", lx1*dx, lx2*dx, lx3*dx, ll, ranklist[j]);
-          fprintf(fp, "%g %g %g %d %d\n", lx1*dx+dx, lx2*dx, lx3*dx, ll, ranklist[j]);
-          fprintf(fp, "%g %g %g %d %d\n", lx1*dx+dx, lx2*dx+dx, lx3*dx, ll, ranklist[j]);
-          fprintf(fp, "%g %g %g %d %d\n", lx1*dx, lx2*dx+dx, lx3*dx, ll, ranklist[j]);
-          fprintf(fp, "%g %g %g %d %d\n", lx1*dx, lx2*dx, lx3*dx, ll, ranklist[j]);
-          fprintf(fp, "%g %g %g %d %d\n", lx1*dx, lx2*dx, lx3*dx+dx, ll, ranklist[j]);
-          fprintf(fp, "%g %g %g %d %d\n", lx1*dx+dx, lx2*dx, lx3*dx+dx, ll, ranklist[j]);
-          fprintf(fp, "%g %g %g %d %d\n", lx1*dx+dx, lx2*dx, lx3*dx, ll, ranklist[j]);
-          fprintf(fp, "%g %g %g %d %d\n", lx1*dx+dx, lx2*dx, lx3*dx+dx, ll, ranklist[j]);
-          fprintf(fp, "%g %g %g %d %d\n", lx1*dx+dx, lx2*dx+dx, lx3*dx+dx, ll, ranklist[j]);
-          fprintf(fp, "%g %g %g %d %d\n", lx1*dx+dx, lx2*dx+dx, lx3*dx, ll, ranklist[j]);
-          fprintf(fp, "%g %g %g %d %d\n", lx1*dx+dx, lx2*dx+dx, lx3*dx+dx, ll, ranklist[j]);
-          fprintf(fp, "%g %g %g %d %d\n", lx1*dx, lx2*dx+dx, lx3*dx+dx, ll, ranklist[j]);
-          fprintf(fp, "%g %g %g %d %d\n", lx1*dx, lx2*dx+dx, lx3*dx, ll, ranklist[j]);
-          fprintf(fp, "%g %g %g %d %d\n", lx1*dx, lx2*dx+dx, lx3*dx+dx, ll, ranklist[j]);
-          fprintf(fp, "%g %g %g %d %d\n", lx1*dx, lx2*dx, lx3*dx+dx, ll, ranklist[j]);
-          fprintf(fp, "%g %g %g %d %d\n\n\n", lx1*dx, lx2*dx, lx3*dx, ll, ranklist[j]);
+          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx,    lx3*dx);
+          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx,    lx3*dx);
+          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx+dx, lx3*dx);
+          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx+dx, lx3*dx);
+          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx,    lx3*dx);
+          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx,    lx3*dx+dx);
+          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx,    lx3*dx+dx);
+          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx,    lx3*dx);
+          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx,    lx3*dx+dx);
+          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx+dx, lx3*dx+dx);
+          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx+dx, lx3*dx);
+          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx+dx, lx3*dx+dx);
+          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx+dx, lx3*dx+dx);
+          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx+dx, lx3*dx);
+          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx+dx, lx3*dx+dx);
+          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx,    lx3*dx+dx);
+          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx,    lx3*dx);
+          fprintf(fp, "\n\n");
         }
       }
     }
   }
+
+  // close file, final outputs
   if(dim>=2) fclose(fp);
+  std::cout << "Load Balancing:" << std::endl;
+  std::cout << "  Minimum cost = " << mincost << ", Maximum cost = " << maxcost
+            << ", Average cost = " << totalcost/nbtotal << std::endl << std::endl;
+  std::cout << "See the 'mesh_structure.dat' file for a complete list"
+            << " of MeshBlocks." << std::endl;
+  std::cout << "Use 'python ../vis/python/plot_mesh.py' to visualize mesh structure."
+            << std::endl << std::endl;
 
-  std::cout << std::endl;
-
-  for(i=root_level;i<=max_level;i++) {
-    if(nb[i-root_level]!=0)
-      std::cout << "Level " << i-root_level << " (logical level " << i << ") : "
-        << nb[i-root_level] << " MeshBlocks" << std::endl;
-  }
-
-  std::cout << "Total : " << nbtotal << " MeshBlocks" << std::endl << std::endl;
-  std::cout << "Load Balance :" << std::endl;
-  std::cout << "Minimum cost = " << mincost << ", Maximum cost = " << maxcost
-            << ", Average cost = " << totalcost/nbtotal << std::endl;
-  j=0;
-  nbt=0;
-  for(i=0;i<nbtotal;i++) {
-    if(ranklist[i]==j) {
-      mycost+=costlist[i];
-      nbt++;
-    }
-    else if(ranklist[i]!=j) {
-      std::cout << "Rank " << j << ": " << nbt <<" MeshBlocks, cost = " << mycost << std::endl;
-      mycost=costlist[i];
-      nbt=1;
-      j++;
-    }
-  }
-  std::cout << "Rank " << j << ": " << nbt <<" MeshBlocks, cost = " << mycost << std::endl;
-
-  delete [] nb;
   return;
 }
 
