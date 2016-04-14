@@ -39,12 +39,13 @@
 
 // Parameters which define initial solution -- made global so that they can be shared
 // with functions A1,2,3 which compute vector potentials
-static Real bx0, by0, bz0, dby, dbz;
+static Real d0,p0,u0,bx0, by0, bz0, dby, dbz;
 static int wave_flag;
 static Real ang_2, ang_3; // Rotation angles about the y and z' axis
 static Real sin_a2, cos_a2, sin_a3, cos_a3;
 static Real amp, lambda, k_par; // amplitude, Wavelength, 2*PI/wavelength
-static Real gm1,iso_cs, vflow;
+static Real gam,gm1,iso_cs,vflow;
+static Real ev[NWAVE], rem[NWAVE][NWAVE], lem[NWAVE][NWAVE];
 
 // functions to compute vector potential to initialize the solution
 static Real A1(const Real x1, const Real x2, const Real x3);
@@ -65,49 +66,31 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
 
 void Mesh::InitUserMeshProperties(ParameterInput *pin)
 {
-  // initialize global variables 
+  // read global parameters
   wave_flag = pin->GetInteger("problem","wave_flag");
   amp = pin->GetReal("problem","amp");
   vflow = pin->GetOrAddReal("problem","vflow",0.0);
   ang_2 = pin->GetOrAddReal("problem","ang_2",-999.9);
   ang_3 = pin->GetOrAddReal("problem","ang_3",-999.9);
 
-  return;
-}
+  // initialize global variables
+  if (NON_BAROTROPIC_EOS) {
+    gam   = pin->GetReal("hydro","gamma");
+    gm1 = (gam - 1.0);
+  } else {
+    iso_cs = pin->GetReal("hydro","iso_sound_speed");
+  }
 
+  // For wavevector along coordinate axes, set desired values of ang_2/ang_3.
+  //    For example, for 1D problem use ang_2 = ang_3 = 0.0
+  //    For wavevector along grid diagonal, do not input values for ang_2/ang_3.
+  // Code below will automatically calculate these imposing periodicity and exactly one
+  // wavelength along each grid direction
+  Real x1size = mesh_size.x1max - mesh_size.x1min;
+  Real x2size = mesh_size.x2max - mesh_size.x2min;
+  Real x3size = mesh_size.x3max - mesh_size.x3min;
 
-//======================================================================================
-//! \fn void Mesh::TerminateUserMeshProperties(void)
-//  \brief Clean up the Mesh properties
-//======================================================================================
-void Mesh::TerminateUserMeshProperties(void)
-{
-  // nothing to do
-  return;
-}
-
-
-//======================================================================================
-//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief Linear wave problem generator for 1D/2D/3D problems.
-//======================================================================================
-
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
-  gm1 = (phydro->peos->GetGamma() - 1.0);
-  iso_cs = phydro->peos->GetIsoSoundSpeed();
-
-  Real x1size = pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min;
-  Real x2size = pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min;
-  Real x3size = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
-
-// For wavevector along coordinate axes, set desired values of ang_2/ang_3.
-//    For example, for 1D problem use ang_2 = ang_3 = 0.0
-//    For wavevector along grid diagonal, do not input values for ang_2/ang_3.
-// Code below will automatically calculate these imposing periodicity and exactly one
-// wavelength along each grid direction
-
-// User should never input -999.9 in angles
+  // User should never input -999.9 in angles
   if (ang_3 == -999.9) ang_3 = atan(x1size/x2size);
   sin_a3 = sin(ang_3);
   cos_a3 = cos(ang_3);
@@ -120,20 +103,19 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real x2 = x2size*cos_a2*sin_a3;
   Real x3 = x3size*sin_a2;
 
-// For lambda choose the smaller of the 3
+  // For lambda choose the smaller of the 3
   lambda = x1;
-  if (block_size.nx2 > 1 && ang_3 != 0.0) lambda = std::min(lambda,x2);
-  if (block_size.nx3 > 1 && ang_2 != 0.0) lambda = std::min(lambda,x3);
+  if (mesh_size.nx2 > 1 && ang_3 != 0.0) lambda = std::min(lambda,x2);
+  if (mesh_size.nx3 > 1 && ang_2 != 0.0) lambda = std::min(lambda,x3);
 
-// Initialize k_parallel
+  // Initialize k_parallel
   k_par = 2.0*(PI)/lambda;
 
-// Get eigenvectors, where the quantities u0 and bx0 are parallel to the wavevector, and
-// v0,w0,by0,bz0 are perpendicular.
-
-  Real d0 = 1.0;
-  Real p0 = 0.0;
-  Real u0 = vflow;
+  // Compute eigenvectors, where the quantities u0 and bx0 are parallel to the
+  // wavevector, and v0,w0,by0,bz0 are perpendicular.
+  d0 = 1.0;
+  p0 = 0.0;
+  u0 = vflow;
   Real v0 = 0.0;
   Real w0 = 0.0;
   bx0 = 1.0;
@@ -144,15 +126,132 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real h0 = 0.0;
 
   if (NON_BAROTROPIC_EOS) {
-    p0 = 1.0/(phydro->peos->GetGamma());
+    p0 = 1.0/gam;
     h0 = ((p0/gm1 + 0.5*d0*(u0*u0+v0*v0+w0*w0)) + p0)/d0;
     if (MAGNETIC_FIELDS_ENABLED) h0 += (bx0*bx0+by0*by0+bz0*bz0)/d0;
   }
 
-  Real ev[NWAVE], rem[NWAVE][NWAVE], lem[NWAVE][NWAVE];
   Eigensystem(d0,u0,v0,w0,h0,bx0,by0,bz0,xfact,yfact,ev,rem,lem);
 
-// Initialize the magnetic fields
+  return;
+}
+
+
+//======================================================================================
+//! \fn void Mesh::TerminateUserMeshProperties(void)
+//  \brief Clean up the Mesh properties
+//======================================================================================
+void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
+{
+  // return if compute_error=0 (default)
+  int error_test;
+  if ((error_test=pin->GetOrAddInteger("problem","compute_error",0))==0) return;
+
+  // Initialize errors to zero
+  Real err[NHYDRO+NFIELD];
+  for (int i=0; i<(NHYDRO+NFIELD); ++i) err[i]=0.0;
+
+  MeshBlock *pmb = pblock;
+  while (pmb != NULL) {
+    //  Compute errors
+    for (int k=pmb->ks; k<=pmb->ke; k++) {
+    for (int j=pmb->js; j<=pmb->je; j++) {
+      for (int i=pmb->is; i<=pmb->ie; i++) {
+        Real x = cos_a2*(pmb->pcoord->x1v(i)*cos_a3 + pmb->pcoord->x2v(j)*sin_a3) 
+                       + pmb->pcoord->x3v(k)*sin_a2;
+        Real sn = sin(k_par*x);
+  
+        err[IDN] += fabs((d0 + amp*sn*rem[0][wave_flag]) - pmb->phydro->u(IDN,k,j,i));
+  
+        Real mx = d0*vflow + amp*sn*rem[1][wave_flag];
+        Real my = amp*sn*rem[2][wave_flag];
+        Real mz = amp*sn*rem[3][wave_flag];
+        Real m1 = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
+        Real m2 = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
+        Real m3 = mx*sin_a2                    + mz*cos_a2;
+        err[IM1] += fabs(m1 - pmb->phydro->u(IM1,k,j,i));
+        err[IM2] += fabs(m2 - pmb->phydro->u(IM2,k,j,i));
+        err[IM3] += fabs(m3 - pmb->phydro->u(IM3,k,j,i));
+  
+        if (NON_BAROTROPIC_EOS) {
+          Real e0 = p0/gm1 + 0.5*d0*u0*u0 + amp*sn*rem[4][wave_flag];
+          if (MAGNETIC_FIELDS_ENABLED) {
+            e0 += 0.5*(bx0*bx0+by0*by0+bz0*bz0);
+          }
+          err[IEN] += fabs(e0 - pmb->phydro->u(IEN,k,j,i));
+        }
+
+        if (MAGNETIC_FIELDS_ENABLED) {
+          Real bx = bx0;
+          Real by = by0 + amp*sn*rem[5][wave_flag];
+          Real bz = bz0 + amp*sn*rem[6][wave_flag];
+          Real b1 = bx*cos_a2*cos_a3 - by*sin_a3 - bz*sin_a2*cos_a3;
+          Real b2 = bx*cos_a2*sin_a3 + by*cos_a3 - bz*sin_a2*sin_a3;
+          Real b3 = bx*sin_a2                    + bz*cos_a2;
+          err[NHYDRO + IB1] += fabs(b1 - pmb->pfield->bcc(IB1,k,j,i));
+          err[NHYDRO + IB2] += fabs(b2 - pmb->pfield->bcc(IB2,k,j,i));
+          err[NHYDRO + IB3] += fabs(b3 - pmb->pfield->bcc(IB3,k,j,i));
+        }
+      }
+    }}
+    pmb=pmb->next;
+  }
+
+  // normalize errors by number of cells, compute RMS
+  for (int i=0; i<(NHYDRO+NFIELD); ++i) err[i] = err[i]/(float)GetTotalCells();
+  Real rms_err = 0.0;
+  for (int i=0; i<(NHYDRO+NFIELD); ++i) rms_err += SQR(err[i]);
+  rms_err = sqrt(rms_err);
+
+  // open output file and write out errors
+  std::string fname;
+  fname.assign("linearwave-errors.dat");
+  std::stringstream msg;
+  FILE *pfile;
+
+  // The file exists -- reopen the file in append mode
+  if((pfile = fopen(fname.c_str(),"r")) != NULL){
+    if((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
+      msg << "### FATAL ERROR in function [Mesh::TerminateUserMeshProperties]"
+          << std::endl << "Error output file could not be opened" <<std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+
+  // The file does not exist -- open the file in write mode and add headers
+  } else {
+    if((pfile = fopen(fname.c_str(),"w")) == NULL){
+      msg << "### FATAL ERROR in function [Mesh::TerminateUserMeshProperties]"
+          << std::endl << "Error output file could not be opened" <<std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+    fprintf(pfile,"# Nx1  Nx2  Nx3  Ncycle  RMS-Error  d  M1  M2  M3  E");
+    if (MAGNETIC_FIELDS_ENABLED) fprintf(pfile,"  B1c  B2c  B3c");
+    fprintf(pfile,"\n");
+  }
+
+  // write errors
+  fprintf(pfile,"%d  %d",mesh_size.nx1,mesh_size.nx2);
+  fprintf(pfile,"  %d  %d  %e",mesh_size.nx3,ncycle,rms_err);
+  fprintf(pfile,"  %e  %e  %e  %e  %e",err[IDN],err[IM1],err[IM2],err[IM3],err[IEN]);
+  if (MAGNETIC_FIELDS_ENABLED) {
+    fprintf(pfile,"  %e  %e  %e",err[NHYDRO+IB1],err[NHYDRO+IB2],err[NHYDRO+IB3]);
+  }
+  fprintf(pfile,"\n");
+  fclose(pfile);
+
+  return;
+}
+
+
+//======================================================================================
+//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
+//  \brief Linear wave problem generator for 1D/2D/3D problems.
+//======================================================================================
+
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
+{
+  // Initialize the magnetic fields.  Note wavevector, eigenvectors, and other variables
+  // are set in InitUserMeshProperties
 
   if (MAGNETIC_FIELDS_ENABLED) {
     AthenaArray<Real> a1,a2,a3;
@@ -243,8 +342,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     a3.DeleteAthenaArray();
   }
 
-// initialize conserved variables
-
+  // initialize conserved variables
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {

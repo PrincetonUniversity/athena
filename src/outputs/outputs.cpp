@@ -141,166 +141,160 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
   OutputType *pnew_type;
   OutputType *plast = pfirst_type_;
 
-// loop over input block names.  Find those that start with "output", read parameters,
-// and construct linked list of OutputTypes.
-
+  // loop over input block names.  Find those that start with "output", read parameters,
+  // and construct linked list of OutputTypes.
   while (pib != NULL) {
     if (pib->block_name.compare(0,6,"output") == 0) {
       OutputParameters op;  // define temporary OutputParameters struct
 
-// extract integer number of output block.  Save name and number 
-
+      // extract integer number of output block.  Save name and number 
       std::string outn = pib->block_name.substr(6); // 6 because starts at 0!
       op.block_number = atoi(outn.c_str());
       op.block_name.assign(pib->block_name);
 
-// set time of last output, time between outputs
-
+      // set time of last output, time between outputs
       op.next_time = pin->GetOrAddReal(op.block_name,"next_time",0.0);
       op.dt = pin->GetReal(op.block_name,"dt");
 
-// set file number, basename, id, and format
+      if (op.dt > 0.0) {  // only add output if dt>0
 
-      op.file_number = pin->GetOrAddInteger(op.block_name,"file_number",0);
-      op.file_basename = pin->GetString("job","problem_id");
-      char define_id[10];
-      sprintf(define_id,"out%d",op.block_number);  // default id="outN"
-      op.file_id = pin->GetOrAddString(op.block_name,"id",define_id);
-      op.file_type = pin->GetString(op.block_name,"file_type");
+        // set file number, basename, id, and format
+        op.file_number = pin->GetOrAddInteger(op.block_name,"file_number",0);
+        op.file_basename = pin->GetString("job","problem_id");
+        char define_id[10];
+        sprintf(define_id,"out%d",op.block_number);  // default id="outN"
+        op.file_id = pin->GetOrAddString(op.block_name,"id",define_id);
+        op.file_type = pin->GetString(op.block_name,"file_type");
 
-// read slicing options.  Check that slice is within mesh
-
-      if (pin->DoesParameterExist(op.block_name,"x1_slice")) {
-        Real x1 = pin->GetReal(op.block_name,"x1_slice");
-        if (x1 >= pm->mesh_size.x1min && x1 < pm->mesh_size.x1max) {
-          op.x1_slice = x1;
-          op.islice = 1;
-        } else {
-          msg << "### FATAL ERROR in Outputs constructor" << std::endl
-              << "Slice at x1=" << x1 << " in output block '" << op.block_name
-              << "' is out of range of Mesh" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
-        }
-      } else {
-        op.islice = 0;
-      }
-
-      if (pin->DoesParameterExist(op.block_name,"x2_slice")) {
-        Real x2 = pin->GetReal(op.block_name,"x2_slice");
-        if (x2 >= pm->mesh_size.x2min && x2 < pm->mesh_size.x2max) {
-          op.x2_slice = x2;
-          op.jslice = 1;
-        } else {
-          msg << "### FATAL ERROR in Outputs constructor" << std::endl
-              << "Slice at x2=" << x2 << " in output block '" << op.block_name
-              << "' is out of range of Mesh" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
-        }
-      } else {
-        op.jslice = 0;
-      }
-
-      if (pin->DoesParameterExist(op.block_name,"x3_slice")) {
-        Real x3 = pin->GetReal(op.block_name,"x3_slice");
-        if (x3 >= pm->mesh_size.x3min && x3 < pm->mesh_size.x3max) {
-          op.x3_slice = x3;
-          op.kslice = 1;
-        } else {
-          msg << "### FATAL ERROR in Outputs constructor" << std::endl
-              << "Slice at x3=" << x3 << " in output block '" << op.block_name
-              << "' is out of range of Mesh" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
-        }
-      } else {
-        op.kslice = 0;
-      }
-
-// read sum options.  Check for conflicts with slicing.
-
-      if (pin->DoesParameterExist(op.block_name,"x1_sum")) {
+        // read slicing options.  Check that slice is within mesh
         if (pin->DoesParameterExist(op.block_name,"x1_slice")) {
-          msg << "### FATAL ERROR in Outputs constructor" << std::endl 
-              << "Cannot request both slice and sum along x1-direction"
-              << " in output block '" << op.block_name << "'" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          Real x1 = pin->GetReal(op.block_name,"x1_slice");
+          if (x1 >= pm->mesh_size.x1min && x1 < pm->mesh_size.x1max) {
+            op.x1_slice = x1;
+            op.islice = 1;
+          } else {
+            msg << "### FATAL ERROR in Outputs constructor" << std::endl
+                << "Slice at x1=" << x1 << " in output block '" << op.block_name
+                << "' is out of range of Mesh" << std::endl;
+            throw std::runtime_error(msg.str().c_str());
+          }
         } else {
-          op.isum = pin->GetInteger(op.block_name,"x1_sum");;
+          op.islice = 0;
         }
-      } else {
-        op.isum = 0;
-      }
 
-      if (pin->DoesParameterExist(op.block_name,"x2_sum")) {
         if (pin->DoesParameterExist(op.block_name,"x2_slice")) {
-          msg << "### FATAL ERROR in Outputs constructor" << std::endl
-              << "Cannot request both slice and sum along x2-direction"
-              << " in output block '" << op.block_name << "'" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          Real x2 = pin->GetReal(op.block_name,"x2_slice");
+          if (x2 >= pm->mesh_size.x2min && x2 < pm->mesh_size.x2max) {
+            op.x2_slice = x2;
+            op.jslice = 1;
+          } else {
+            msg << "### FATAL ERROR in Outputs constructor" << std::endl
+                << "Slice at x2=" << x2 << " in output block '" << op.block_name
+                << "' is out of range of Mesh" << std::endl;
+            throw std::runtime_error(msg.str().c_str());
+          }
         } else {
-          op.jsum = pin->GetInteger(op.block_name,"x2_sum");;
+          op.jslice = 0;
         }
-      } else {
-        op.jsum = 0;
-      }
 
-      if (pin->DoesParameterExist(op.block_name,"x3_sum")) {
         if (pin->DoesParameterExist(op.block_name,"x3_slice")) {
-          msg << "### FATAL ERROR in Outputs constructor" << std::endl
-              << "Cannot request both slice and sum along x3-direction"
-              << " in output block '" << op.block_name << "'" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
+          Real x3 = pin->GetReal(op.block_name,"x3_slice");
+          if (x3 >= pm->mesh_size.x3min && x3 < pm->mesh_size.x3max) {
+            op.x3_slice = x3;
+            op.kslice = 1;
+          } else {
+            msg << "### FATAL ERROR in Outputs constructor" << std::endl
+                << "Slice at x3=" << x3 << " in output block '" << op.block_name
+                << "' is out of range of Mesh" << std::endl;
+            throw std::runtime_error(msg.str().c_str());
+          }
         } else {
-          op.ksum = pin->GetInteger(op.block_name,"x3_sum");;
+          op.kslice = 0;
         }
-      } else {
-        op.ksum = 0;
-      }
 
-// set output variable and optional data format string used in formatted writes
+        // read sum options.  Check for conflicts with slicing.
+        if (pin->DoesParameterExist(op.block_name,"x1_sum")) {
+          if (pin->DoesParameterExist(op.block_name,"x1_slice")) {
+            msg << "### FATAL ERROR in Outputs constructor" << std::endl 
+                << "Cannot request both slice and sum along x1-direction"
+                << " in output block '" << op.block_name << "'" << std::endl;
+            throw std::runtime_error(msg.str().c_str());
+          } else {
+            op.isum = pin->GetInteger(op.block_name,"x1_sum");;
+          }
+        } else {
+          op.isum = 0;
+        }
 
-      if (op.file_type.compare("hst") != 0 && op.file_type.compare("rst") != 0) {
-        op.variable = pin->GetString(op.block_name,"variable");
-      }
-      op.data_format = pin->GetOrAddString(op.block_name,"data_format","%12.5e");
-      op.data_format.insert(0," "); // prepend with blank to separate columns
+        if (pin->DoesParameterExist(op.block_name,"x2_sum")) {
+          if (pin->DoesParameterExist(op.block_name,"x2_slice")) {
+            msg << "### FATAL ERROR in Outputs constructor" << std::endl
+                << "Cannot request both slice and sum along x2-direction"
+                << " in output block '" << op.block_name << "'" << std::endl;
+            throw std::runtime_error(msg.str().c_str());
+          } else {
+            op.jsum = pin->GetInteger(op.block_name,"x2_sum");;
+          }
+        } else {
+          op.jsum = 0;
+        }
 
-// Construct new OutputType according to file format
-// ADD NEW OUTPUT TYPES HERE
+        if (pin->DoesParameterExist(op.block_name,"x3_sum")) {
+          if (pin->DoesParameterExist(op.block_name,"x3_slice")) {
+            msg << "### FATAL ERROR in Outputs constructor" << std::endl
+                << "Cannot request both slice and sum along x3-direction"
+                << " in output block '" << op.block_name << "'" << std::endl;
+            throw std::runtime_error(msg.str().c_str());
+          } else {
+            op.ksum = pin->GetInteger(op.block_name,"x3_sum");;
+          }
+        } else {
+          op.ksum = 0;
+        }
 
-      if (op.file_type.compare("rst") == 0) {
-        pnew_type = new RestartOutput(op);
-      } else if (op.file_type.compare("tab") == 0) {
-        pnew_type = new FormattedTableOutput(op);
-      } else if (op.file_type.compare("hst") == 0) {
-        pnew_type = new HistoryOutput(op);
-      } else if (op.file_type.compare("vtk") == 0) {
-        pnew_type = new VTKOutput(op);
-      }
+        // set output variable and optional data format string used in formatted writes
+        if (op.file_type.compare("hst") != 0 && op.file_type.compare("rst") != 0) {
+          op.variable = pin->GetString(op.block_name,"variable");
+        }
+        op.data_format = pin->GetOrAddString(op.block_name,"data_format","%12.5e");
+        op.data_format.insert(0," "); // prepend with blank to separate columns
+
+        // Construct new OutputType according to file format
+        // ADD NEW OUTPUT TYPES HERE
+        if (op.file_type.compare("rst") == 0) {
+          pnew_type = new RestartOutput(op);
+        } else if (op.file_type.compare("tab") == 0) {
+          pnew_type = new FormattedTableOutput(op);
+        } else if (op.file_type.compare("hst") == 0) {
+          pnew_type = new HistoryOutput(op);
+        } else if (op.file_type.compare("vtk") == 0) {
+          pnew_type = new VTKOutput(op);
+        }
 #ifdef HDF5OUTPUT
-      else if (op.file_type.compare("ath5") == 0 || op.file_type.compare("hdf5") == 0) {
-        pnew_type = new ATHDF5Output(op);
-      }
+        else if (op.file_type.compare("ath5") == 0 || op.file_type.compare("hdf5") == 0) {
+          pnew_type = new ATHDF5Output(op);
+        }
 #endif
-      else {
-        msg << "### FATAL ERROR in Outputs constructor" << std::endl
-            << "Unrecognized file format = '" << op.file_type 
-            << "' in output block '" << op.block_name << "'" << std::endl;
-        throw std::runtime_error(msg.str().c_str());
-      }
+        else {
+          msg << "### FATAL ERROR in Outputs constructor" << std::endl
+              << "Unrecognized file format = '" << op.file_type 
+              << "' in output block '" << op.block_name << "'" << std::endl;
+          throw std::runtime_error(msg.str().c_str());
+        }
 
-// Add type as node in linked list 
-
-      if (pfirst_type_ == NULL) {
-        pfirst_type_ = pnew_type;
-      } else {
-        plast->pnext_type = pnew_type;
+        // Add type as node in linked list 
+        if (pfirst_type_ == NULL) {
+          pfirst_type_ = pnew_type;
+        } else {
+          plast->pnext_type = pnew_type;
+        }
+        plast = pnew_type;
       }
-      plast = pnew_type;
     }
     pib = pib->pnext;  // move to next input block name
   }
 
-// Move the restarting block to the end of the list
+  // Move the restarting block to the end of the list
   int pos=0, found=0;
   OutputType *pot=pfirst_type_, *prst;
   while(pot!=NULL) {

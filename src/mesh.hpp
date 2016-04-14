@@ -149,7 +149,6 @@ private:
 
   // methods in /pgen
   void InitUserMeshProperties(ParameterInput *pin);
-  void TerminateUserMeshProperties(void);
 
   void EnrollUserBoundaryFunction (enum BoundaryFace face, BValFunc_t my_func);
   void EnrollUserRefinementCondition(AMRFlag_t amrflag);
@@ -194,6 +193,9 @@ public:
   void AdaptiveMeshRefinement(ParameterInput *pin);
   MeshBlock* FindMeshBlock(int tgid);
   void TestConservation(void);
+
+  // methods in /pgen
+  void TerminateUserMeshProperties(ParameterInput *pin);
 };
 
 
