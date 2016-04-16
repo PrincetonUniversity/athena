@@ -38,21 +38,11 @@
 #include "../coordinates/coordinates.hpp"
 
 //======================================================================================
-//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
-//  \brief Init the Mesh properties
-//======================================================================================
-
-void Mesh::InitUserMeshProperties(ParameterInput *pin)
-{
-  return;
-}
-
-//======================================================================================
-//! \fn void Mesh::TerminateUserMeshProperties(void)
+//! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 //  \brief Calculate L1 errors in Sod (hydro) and RJ2a (MHD) tests
 //======================================================================================
 
-void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
+void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
   MeshBlock *pmb = pblock;
 
@@ -475,16 +465,5 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }}
   }
 
-  return;
-}
-
-//======================================================================================
-//! \fn void MeshBlock::UserWorkInLoop(void)
-//  \brief User-defined work function for every time step
-//======================================================================================
-
-void MeshBlock::UserWorkInLoop(void)
-{
-  // nothing to do
   return;
 }

@@ -1,4 +1,5 @@
-# Rough Draft of Athena++ Makefile
+# Template for Athena++ Makefile
+# The 'configure.py' python script uses this template to create the actual Makefile
 
 # Files for conditional compilation
 
@@ -38,10 +39,11 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/mesh_refinement/*.cpp) \
 	     $(wildcard src/outputs/*.cpp) \
 	     $(wildcard src/utils/*.cpp) \
-	     src/pgen/$(PROBLEM_FILE)
-SRC_DIR := $(dir $(SRC_FILES))
+	     src/pgen/$(PROBLEM_FILE) \
+	     src/pgen/default_pgen.cpp
 OBJ_DIR := obj/
 OBJ_FILES := $(addprefix $(OBJ_DIR),$(notdir $(SRC_FILES:.cpp=.o)))
+SRC_DIR := $(dir $(SRC_FILES) $(PROB_FILES))
 VPATH := $(SRC_DIR)
 
 # Generally useful targets
@@ -61,8 +63,13 @@ $(OBJ_DIR):
 # Link objects into executable
 
 $(EXECUTABLE) : $(OBJ_FILES)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $(OBJ_FILES) $(LDFLAGS) $(LDLIBS)
 
+## Create static library containing default problem generator functions
+#
+#$(OBJ_DIR)libprob.a : $(PROB_OBJ)
+#	ar rc $@ $(PROB_OBJ)
+#
 # Create objects from source files
 
 $(OBJ_DIR)%.o : %.cpp

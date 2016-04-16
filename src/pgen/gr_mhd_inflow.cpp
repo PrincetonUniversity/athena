@@ -39,7 +39,7 @@ static int num_lines;                    // number of lines in table
 // Inputs:
 //   pin: pointer to runtime inputs
 // Outputs: (none)
-void Mesh::InitUserMeshProperties(ParameterInput *pin)
+void Mesh::InitUserMeshData(ParameterInput *pin)
 {
   // Read temperature
   temperature = pin->GetReal("problem", "temperature");
@@ -80,7 +80,7 @@ void Mesh::InitUserMeshProperties(ParameterInput *pin)
 // Function for cleaning up global mesh properties
 // Inputs: (none)
 // Outputs: (none)
-void Mesh::TerminateUserMeshProperties(void)
+void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
   // Free interpolation table
   interp_values.DeleteAthenaArray();
@@ -202,16 +202,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   phydro->peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, is-NGHOST,
       ie+NGHOST, js, je, ks, ke);
   bb.DeleteAthenaArray();
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// User-defined work function called every time step
-// Inputs: (none)
-// Outputs: (none)
-void MeshBlock::UserWorkInLoop(void)
-{
   return;
 }
 

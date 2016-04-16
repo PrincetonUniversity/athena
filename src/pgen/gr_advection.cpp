@@ -16,19 +16,6 @@
 #include "../hydro/eos/eos.hpp"
 
 
-// Function for initializing global mesh properties
-void Mesh::InitUserMeshProperties(ParameterInput *pin)
-{
-  return;
-}
-
-// Function for cleaning up global mesh properties
-void Mesh::TerminateUserMeshProperties(void)
-{
-  return;
-}
-
-
 // Function for setting initial conditions
 // Inputs:
 //   pin: parameters
@@ -175,12 +162,3 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         }
   return;
 }
-
-
-
-// User-defined work function called every time step
-void MeshBlock::UserWorkInLoop(void)
-{
-  return;
-}
-

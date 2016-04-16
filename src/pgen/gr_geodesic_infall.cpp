@@ -26,16 +26,10 @@ void FixedOuter(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
                 int is, int ie, int js, int je, int ks, int ke);
 
 // Function for initializing global mesh properties
-void Mesh::InitUserMeshProperties(ParameterInput *pin)
+void Mesh::InitUserMeshData(ParameterInput *pin)
 {
   // Enroll boundary functions
   EnrollUserBoundaryFunction(OUTER_X1, FixedOuter);
-  return;
-}
-
-// Function for cleaning up global mesh properties
-void Mesh::TerminateUserMeshProperties(void)
-{
   return;
 }
 
@@ -124,12 +118,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   return;
 }
 
-
-// User-defined work function called every time step
-void MeshBlock::UserWorkInLoop(void)
-{
-  return;
-}
 
 // Outer boundary condition
 // Inputs:

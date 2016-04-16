@@ -54,29 +54,18 @@ void ShockCloudInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
                        FaceField &b, int is, int ie, int js, int je, int ks, int ke);
 
 //======================================================================================
-//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
-//  \brief Init the Mesh properties
+//! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
+//  \brief Function to initialize problem-specific data in mesh class.  Can also be used
+//  to initialize variables which are global to (and therefore can be passed to) other
+//  functions in this file.  Called in Mesh constructor.
 //======================================================================================
 
-void Mesh::InitUserMeshProperties(ParameterInput *pin)
+void Mesh::InitUserMeshData(ParameterInput *pin)
 {
 // Set IIB value function pointer
   EnrollUserBoundaryFunction(INNER_X1, ShockCloudInnerX1);
   return;
 }
-
-
-//======================================================================================
-//! \fn void Mesh::TerminateUserMeshProperties(void)
-//  \brief Clean up the Mesh properties
-//======================================================================================
-
-void Mesh::TerminateUserMeshProperties(void)
-{
-  // nothing to do
-  return;
-}
-
 
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
@@ -196,18 +185,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       }
     }}}
   }
-  return;
-}
-
-
-//======================================================================================
-//! \fn void MeshBlock::UserWorkInLoop(void)
-//  \brief User-defined work function for every time step
-//======================================================================================
-
-void MeshBlock::UserWorkInLoop(void)
-{
-  // nothing to do
   return;
 }
 

@@ -58,13 +58,14 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
   Real eigenvalues[(NWAVE)],
   Real right_eigenmatrix[(NWAVE)][(NWAVE)], Real left_eigenmatrix[(NWAVE)][(NWAVE)]);
 
-
 //======================================================================================
-//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
-//  \brief Init the Mesh properties
+//! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
+//  \brief Function to initialize problem-specific data in mesh class.  Can also be used
+//  to initialize variables which are global to (and therefore can be passed to) other
+//  functions in this file.  Called in Mesh constructor.
 //======================================================================================
 
-void Mesh::InitUserMeshProperties(ParameterInput *pin)
+void Mesh::InitUserMeshData(ParameterInput *pin)
 {
   // read global parameters
   wave_flag = pin->GetInteger("problem","wave_flag");
@@ -136,12 +137,12 @@ void Mesh::InitUserMeshProperties(ParameterInput *pin)
   return;
 }
 
+//======================================================================================
+//! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
+//  \brief Compute L1 error in linear waves and output to file
+//======================================================================================
 
-//======================================================================================
-//! \fn void Mesh::TerminateUserMeshProperties(void)
-//  \brief Clean up the Mesh properties
-//======================================================================================
-void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
+void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
   // return if compute_error=0 (default)
   int error_test;
@@ -241,7 +242,6 @@ void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
 
   return;
 }
-
 
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
@@ -370,18 +370,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
   return;
 }
-
-
-//======================================================================================
-//! \fn void MeshBlock::UserWorkInLoop(void)
-//  \brief User-defined work function for every time step
-//======================================================================================
-void MeshBlock::UserWorkInLoop(void)
-{
-  // nothing to do
-  return;
-}
-
 
 //--------------------------------------------------------------------------------------
 //! \fn static Real A1(const Real x1,const Real x2,const Real x3)

@@ -283,7 +283,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     BoundaryFunction_[dir]=NULL;
   AMRFlag_=NULL;
   UserSourceTerm_=NULL;
-  InitUserMeshProperties(pin);
+  InitUserMeshData(pin);
 
   InputBlock *pib = pin->pfirst_block;
   while (pib != NULL) {
@@ -632,7 +632,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
     BoundaryFunction_[dir]=NULL;
   AMRFlag_=NULL;
   UserSourceTerm_=NULL;
-  InitUserMeshProperties(pin);
+  InitUserMeshData(pin);
 
   face_only=true;
   if (MAGNETIC_FIELDS_ENABLED || multilevel==true || VISCOSITY)

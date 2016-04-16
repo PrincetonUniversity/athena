@@ -45,18 +45,6 @@ static Real sample_cutoff;                       // density cutoff for sample gr
 static Real x1_min, x1_max, x2_min, x2_max;      // limits in chosen coordinate system
 static Real r_min, r_max, theta_min, theta_max;  // limits in r,theta
 
-// Function for initializing global mesh properties
-void Mesh::InitUserMeshProperties(ParameterInput *pin)
-{
-  return;
-}
-
-// Function for cleaning up global mesh properties
-void Mesh::TerminateUserMeshProperties(void)
-{
-  return;
-}
-
 // Function for setting initial conditions
 // Inputs:
 //   pin: parameters
@@ -467,13 +455,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   g.DeleteAthenaArray();
   gi.DeleteAthenaArray();
   bb.DeleteAthenaArray();
-  return;
-}
-
-
-// User-defined work function called every time step
-void MeshBlock::UserWorkInLoop(void)
-{
   return;
 }
 

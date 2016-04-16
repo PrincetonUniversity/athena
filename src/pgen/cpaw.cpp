@@ -60,11 +60,13 @@ static Real A3(const Real x1, const Real x2, const Real x3);
 
 
 //======================================================================================
-//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
-//  \brief Init the Mesh properties
+//! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
+//  \brief Function to initialize problem-specific data in mesh class.  Can also be used
+//  to initialize variables which are global to (and therefore can be passed to) other
+//  functions in this file.  Called in Mesh constructor.
 //======================================================================================
 
-void Mesh::InitUserMeshProperties(ParameterInput *pin)
+void Mesh::InitUserMeshData(ParameterInput *pin)
 {
 // Initialize magnetic field parameters
 // For wavevector along coordinate axes, set desired values of ang_2/ang_3.
@@ -112,17 +114,6 @@ void Mesh::InitUserMeshProperties(ParameterInput *pin)
   return;
 }
 
-
-//======================================================================================
-//! \fn void Mesh::TerminateUserMeshProperties(void)
-//  \brief Clean up the Mesh properties
-//======================================================================================
-void Mesh::TerminateUserMeshProperties(void)
-{
-  // nothing to do
-  return;
-}
-
 //======================================================================================
 //! \fn ProblemGenerator
 //  \brief circularly polarized Alfven wave problem generator for 1D/2D/3D problems.
@@ -139,30 +130,33 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie+1; i++) {
-      pfield->b.x1f(k,j,i) = (A3(pcoord->x1f(i),pcoord->x2f(j+1),pcoord->x3v(k  )) -
-                           A3(pcoord->x1f(i),pcoord->x2f(j  ),pcoord->x3v(k  )))/pcoord->dx2f(j) -
-                          (A2(pcoord->x1f(i),pcoord->x2v(j  ),pcoord->x3f(k+1)) -
-                           A2(pcoord->x1f(i),pcoord->x2v(j  ),pcoord->x3f(k  )))/pcoord->dx3f(k);
+      pfield->b.x1f(k,j,i) =
+        (A3(pcoord->x1f(i),pcoord->x2f(j+1),pcoord->x3v(k  )) -
+         A3(pcoord->x1f(i),pcoord->x2f(j  ),pcoord->x3v(k  )))/pcoord->dx2f(j) -
+        (A2(pcoord->x1f(i),pcoord->x2v(j  ),pcoord->x3f(k+1)) -
+         A2(pcoord->x1f(i),pcoord->x2v(j  ),pcoord->x3f(k  )))/pcoord->dx3f(k);
     }
   }}
 
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je+1; j++) {
     for (int i=is; i<=ie; i++) {
-      pfield->b.x2f(k,j,i) = (A1(pcoord->x1v(i  ),pcoord->x2f(j),pcoord->x3f(k+1)) -
-                           A1(pcoord->x1v(i  ),pcoord->x2f(j),pcoord->x3f(k  )))/pcoord->dx3f(k) -
-                          (A3(pcoord->x1f(i+1),pcoord->x2f(j),pcoord->x3v(k  )) -
-                           A3(pcoord->x1f(i  ),pcoord->x2f(j),pcoord->x3v(k  )))/pcoord->dx1f(i);
+      pfield->b.x2f(k,j,i) =
+        (A1(pcoord->x1v(i  ),pcoord->x2f(j),pcoord->x3f(k+1)) -
+         A1(pcoord->x1v(i  ),pcoord->x2f(j),pcoord->x3f(k  )))/pcoord->dx3f(k) -
+        (A3(pcoord->x1f(i+1),pcoord->x2f(j),pcoord->x3v(k  )) -
+         A3(pcoord->x1f(i  ),pcoord->x2f(j),pcoord->x3v(k  )))/pcoord->dx1f(i);
     }
   }}
 
   for (int k=ks; k<=ke+1; k++) {
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      pfield->b.x3f(k,j,i) = (A2(pcoord->x1f(i+1),pcoord->x2v(j  ),pcoord->x3f(k)) -
-                           A2(pcoord->x1f(i  ),pcoord->x2v(j  ),pcoord->x3f(k)))/pcoord->dx1f(i) -
-                          (A1(pcoord->x1v(i  ),pcoord->x2f(j+1),pcoord->x3f(k)) -
-                           A1(pcoord->x1v(i  ),pcoord->x2f(j  ),pcoord->x3f(k)))/pcoord->dx2f(j);
+      pfield->b.x3f(k,j,i) =
+        (A2(pcoord->x1f(i+1),pcoord->x2v(j  ),pcoord->x3f(k)) -
+         A2(pcoord->x1f(i  ),pcoord->x2v(j  ),pcoord->x3f(k)))/pcoord->dx1f(i) -
+        (A1(pcoord->x1v(i  ),pcoord->x2f(j+1),pcoord->x3f(k)) -
+         A1(pcoord->x1v(i  ),pcoord->x2f(j  ),pcoord->x3f(k)))/pcoord->dx2f(j);
     }
   }}
 
@@ -197,18 +191,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
   return;
 }
-
-
-//======================================================================================
-//! \fn void MeshBlock::UserWorkInLoop(void)
-//  \brief User-defined work function for every time step
-//======================================================================================
-void MeshBlock::UserWorkInLoop(void)
-{
-  // nothing to do
-  return;
-}
-
 
 //--------------------------------------------------------------------------------------
 //! \fn static Real A1(const Real x1,const Real x2,const Real x3)

@@ -35,19 +35,12 @@ static Real c1, c2;        // useful constants
 static Real bsq_over_rho;  // b^2/rho at inner radius
 
 
-
 // Function for initializing global mesh properties
-void Mesh::InitUserMeshProperties(ParameterInput *pin)
+void Mesh::InitUserMeshData(ParameterInput *pin)
 {
   // Enroll boundary functions
   EnrollUserBoundaryFunction(INNER_X1, InnerBC);
   EnrollUserBoundaryFunction(OUTER_X1, OuterBC);
-  return;
-}
-
-// Function for cleaning up global mesh properties
-void Mesh::TerminateUserMeshProperties(void)
-{
   return;
 }
 

@@ -53,11 +53,13 @@ static Real A3(const Real x1, const Real x2, const Real x3);
 //======================================================================================
 
 //======================================================================================
-//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
-//  \brief Init the Mesh properties
+//! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
+//  \brief Function to initialize problem-specific data in mesh class.  Can also be used
+//  to initialize variables which are global to (and therefore can be passed to) other
+//  functions in this file.  Called in Mesh constructor.
 //======================================================================================
 
-void Mesh::InitUserMeshProperties(ParameterInput *pin)
+void Mesh::InitUserMeshData(ParameterInput *pin)
 {
   // Get parameters for gravitatonal potential of central point mass
   gm0 = pin->GetOrAddReal("problem","gm",0.0);
@@ -87,22 +89,11 @@ void Mesh::InitUserMeshProperties(ParameterInput *pin)
   return;
 }
 
-
-//======================================================================================
-//! \fn void Mesh::TerminateUserMeshProperties(void)
-//  \brief Clean up the Mesh properties
-//======================================================================================
-void Mesh::TerminateUserMeshProperties(void)
-{
-  // nothing to do
-  return;
-}
-
-
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Keplerian accretion disk test
 //======================================================================================
+
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   // Initialize the magnetic fields
@@ -293,18 +284,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }
   }
 
-  return;
-}
-
-
-//======================================================================================
-//! \fn void MeshBlock::UserWorkInLoop(void)
-//  \brief User-defined work function for every time step
-//======================================================================================
-
-void MeshBlock::UserWorkInLoop(void)
-{
-  // nothing to do
   return;
 }
 
