@@ -183,9 +183,9 @@ void ATHDF5Output::Initialize(Mesh *pmesh, ParameterInput *pin,
     dataset_names = new char[num_datasets][max_name_length+1];
     variable_names = new char[num_total_variables][max_name_length+1];
     std::strncpy(dataset_names[0], "v", max_name_length+1);
-    std::strncpy(variable_names[1], "vel1", max_name_length+1);
-    std::strncpy(variable_names[2], "vel2", max_name_length+1);
-    std::strncpy(variable_names[3], "vel3", max_name_length+1);
+    std::strncpy(variable_names[0], "vel1", max_name_length+1);
+    std::strncpy(variable_names[1], "vel2", max_name_length+1);
+    std::strncpy(variable_names[2], "vel3", max_name_length+1);
   }
   else if (variable.compare("D") == 0)
   {
@@ -218,9 +218,9 @@ void ATHDF5Output::Initialize(Mesh *pmesh, ParameterInput *pin,
     dataset_names = new char[num_datasets][max_name_length+1];
     variable_names = new char[num_total_variables][max_name_length+1];
     std::strncpy(dataset_names[0], "m", max_name_length+1);
-    std::strncpy(variable_names[1], "mom1", max_name_length+1);
-    std::strncpy(variable_names[2], "mom2", max_name_length+1);
-    std::strncpy(variable_names[3], "mom3", max_name_length+1);
+    std::strncpy(variable_names[0], "mom1", max_name_length+1);
+    std::strncpy(variable_names[1], "mom2", max_name_length+1);
+    std::strncpy(variable_names[2], "mom3", max_name_length+1);
   }
   else if (MAGNETIC_FIELDS_ENABLED and variable.compare("b") == 0)
   {
@@ -231,9 +231,9 @@ void ATHDF5Output::Initialize(Mesh *pmesh, ParameterInput *pin,
     dataset_names = new char[num_datasets][max_name_length+1];
     variable_names = new char[num_total_variables][max_name_length+1];
     std::strncpy(dataset_names[0], "B", max_name_length+1);
-    std::strncpy(variable_names[1], "B1", max_name_length+1);
-    std::strncpy(variable_names[2], "B2", max_name_length+1);
-    std::strncpy(variable_names[3], "B3", max_name_length+1);
+    std::strncpy(variable_names[0], "B1", max_name_length+1);
+    std::strncpy(variable_names[1], "B2", max_name_length+1);
+    std::strncpy(variable_names[2], "B3", max_name_length+1);
   }
   else if (variable.compare("ifov") == 0)
   {
