@@ -46,31 +46,20 @@ void Noh3DOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceFi
 // made global to share with BC functions
 static Real gmma, gmma1;
 
-
 //======================================================================================
-//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
-//  \brief Init the Mesh properties
+//! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
+//  \brief Function to initialize problem-specific data in mesh class.  Can also be used
+//  to initialize variables which are global to (and therefore can be passed to) other
+//  functions in this file.  Called in Mesh constructor.
 //======================================================================================
 
-void Mesh::InitUserMeshProperties(ParameterInput *pin)
+void Mesh::InitUserMeshData(ParameterInput *pin)
 {
 // Enroll boundary value function pointers
   EnrollUserBoundaryFunction(OUTER_X1, Noh3DOuterX1);
   EnrollUserBoundaryFunction(OUTER_X2, Noh3DOuterX2);
   if (mesh_size.nx3 > 1)
     EnrollUserBoundaryFunction(OUTER_X3, Noh3DOuterX3);
-  return;
-}
-
-
-//======================================================================================
-//! \fn void Mesh::TerminateUserMeshProperties(void)
-//  \brief Clean up the Mesh properties
-//======================================================================================
-
-void Mesh::TerminateUserMeshProperties(void)
-{
-  // nothing to do
   return;
 }
 
@@ -103,18 +92,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     phydro->u(IM2,k,j,i) = -pcoord->x2v(j)/rad;
     phydro->u(IEN,k,j,i) = 1.0e-6/gmma1 + 0.5;
   }}}
-}
-
-
-//======================================================================================
-//! \fn void MeshBlock::UserWorkInLoop(void)
-//  \brief User-defined work function for every time step
-//======================================================================================
-
-void MeshBlock::UserWorkInLoop(void)
-{
-  // nothing to do
-  return;
 }
 
 
