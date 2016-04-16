@@ -2102,8 +2102,12 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   MPI_Allgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_INT,
                  costlist, nblist, nslist, MPI_INT, MPI_COMM_WORLD);
 #endif
+
+  current_level=0;
   for(int n=0; n<ntot; n++) {
     int on=newtoold[n];
+    if(newloc[n].level>current_level) // set the current max level
+      current_level=newloc[n].level;
     if(newloc[n].level>=loclist[on].level) // same or refined
       newcost[n]=costlist[on];
     else {
