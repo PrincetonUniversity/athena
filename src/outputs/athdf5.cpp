@@ -815,14 +815,14 @@ void ATHDF5Output::MakeXDMF()
     for (int n_dataset = 0; n_dataset < num_datasets; ++n_dataset)
       for (int n_variable = 0; n_variable < num_variables[n_dataset]; ++n_variable)
       {
-        xdmf << "    <Attribute Name=\"" << variable_names[n_quantity]
+        xdmf << "    <Attribute Name=\"" << variable_names[n_quantity++]
             << "\" Center=\"Cell\">\n";
         if (nx3 > 1)
         {
           xdmf << "      <DataItem ItemType=\"HyperSlab\" Dimensions=\"" << nx3 << " "
               << nx2 << " " << nx1 << "\">\n";
           xdmf << "        <DataItem Dimensions=\"3 5\" NumberType=\"Int\"> " << n_block
-              << " " << n_quantity << " 0 0 0 1 1 1 1 1 1 1 " << nx3 << " " << nx2
+              << " " << n_variable << " 0 0 0 1 1 1 1 1 1 1 " << nx3 << " " << nx2
               << " " << nx1 << " </DataItem>\n";
         }
         else
@@ -830,7 +830,7 @@ void ATHDF5Output::MakeXDMF()
           xdmf << "      <DataItem ItemType=\"HyperSlab\" Dimensions=\"" << nx2 << " "
               << nx1 << "\">\n";
           xdmf << "        <DataItem Dimensions=\"3 5\" NumberType=\"Int\"> " << n_block
-              << " " << n_quantity << " 0 0 0 1 1 1 1 1 1 1 1 " << nx2 << " " << nx1
+              << " " << n_variable << " 0 0 0 1 1 1 1 1 1 1 1 " << nx2 << " " << nx1
               << " </DataItem>\n";
         }
         xdmf << "        <DataItem Dimensions=\"" << num_blocks_global << " "
@@ -839,7 +839,6 @@ void ATHDF5Output::MakeXDMF()
             << " </DataItem>\n";
         xdmf << "      </DataItem>\n";
         xdmf << "    </Attribute>\n";
-        ++n_quantity;
       }
 
     // End block
