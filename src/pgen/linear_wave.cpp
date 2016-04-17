@@ -213,7 +213,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   // The file exists -- reopen the file in append mode
   if((pfile = fopen(fname.c_str(),"r")) != NULL){
     if((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
-      msg << "### FATAL ERROR in function [Mesh::TerminateUserMeshProperties]"
+      msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
           << std::endl << "Error output file could not be opened" <<std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
@@ -221,7 +221,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   // The file does not exist -- open the file in write mode and add headers
   } else {
     if((pfile = fopen(fname.c_str(),"w")) == NULL){
-      msg << "### FATAL ERROR in function [Mesh::TerminateUserMeshProperties]"
+      msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
           << std::endl << "Error output file could not be opened" <<std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
@@ -251,7 +251,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   // Initialize the magnetic fields.  Note wavevector, eigenvectors, and other variables
-  // are set in InitUserMeshProperties
+  // are set in InitUserMeshData
 
   if (MAGNETIC_FIELDS_ENABLED) {
     AthenaArray<Real> a1,a2,a3;

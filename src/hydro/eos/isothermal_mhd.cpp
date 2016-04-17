@@ -107,7 +107,6 @@ void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      int is, int ie, int js, int je, int ks, int ke)
 {
   MeshBlock *pmb = pmy_hydro_->pmy_block;
-  Real igm1 = 1.0/(GetGamma() - 1.0);
 
   int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
 #pragma omp parallel default(shared) num_threads(nthreads)

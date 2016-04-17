@@ -48,7 +48,7 @@
 
 // Parameters which define initial solution -- made global so that they can be shared
 // with functions A1,2,3 which compute vector potentials
-static Real b_par, b_perp, den, v_perp, v_par;
+static Real den, pres, gm1, b_par, b_perp, v_perp, v_par;
 static Real ang_2, ang_3; // Rotation angles about the y and z' axis
 static Real fac, sin_a2, cos_a2, sin_a3, cos_a3;
 static Real lambda, k_par; // Wavelength, 2*PI/wavelength
@@ -80,12 +80,18 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   ang_2 = pin->GetOrAddReal("problem","ang_2",-999.9);
   ang_3 = pin->GetOrAddReal("problem","ang_3",-999.9);
   Real dir = pin->GetOrAddReal("problem","dir",1); // right(1)/left(2) polarization
+  if (NON_BAROTROPIC_EOS) {
+    Real gam   = pin->GetReal("hydro","gamma");
+    gm1 = (gam - 1.0);
+  }
+  pres = pin->GetReal("problem","pres");
+  den = 1.0;
   
   Real x1size = mesh_size.x1max - mesh_size.x1min;
   Real x2size = mesh_size.x2max - mesh_size.x2min;
   Real x3size = mesh_size.x3max - mesh_size.x3min;
 
-// User should never input -999.9 in angles
+  // User should never input -999.9 in angles
   if (ang_3 == -999.9) ang_3 = atan(x1size/x2size);
   sin_a3 = sin(ang_3);
   cos_a3 = cos(ang_3);
@@ -98,12 +104,12 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   Real x2 = x2size*cos_a2*sin_a3;
   Real x3 = x3size*sin_a2;
 
-// For lambda choose the smaller of the 3
+  // For lambda choose the smaller of the 3
   lambda = x1;
   if (mesh_size.nx2 > 1 && ang_3 != 0.0) lambda = std::min(lambda,x2);
   if (mesh_size.nx3 > 1 && ang_2 != 0.0) lambda = std::min(lambda,x3);
 
-// Initialize k_parallel
+  // Initialize k_parallel
   k_par = 2.0*(PI)/lambda;
   v_perp = b_perp/sqrt(den);
 
@@ -115,18 +121,118 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 }
 
 //======================================================================================
+//! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
+//  \brief Compute L1 error in CPAW and output to file
+//======================================================================================
+
+void Mesh::UserWorkAfterLoop(ParameterInput *pin)
+{
+  // return if compute_error=0 (default)
+  int error_test;
+  if ((error_test=pin->GetOrAddInteger("problem","compute_error",0))==0) return;
+
+  // Initialize errors to zero
+  Real err[NHYDRO+NFIELD];
+  for (int i=0; i<(NHYDRO+NFIELD); ++i) err[i]=0.0;
+
+  MeshBlock *pmb = pblock;
+  while (pmb != NULL) {
+    //  Compute errors
+    for (int k=pmb->ks; k<=pmb->ke; k++) {
+    for (int j=pmb->js; j<=pmb->je; j++) {
+      for (int i=pmb->is; i<=pmb->ie; i++) {
+        Real x = cos_a2*(pmb->pcoord->x1v(i)*cos_a3 + pmb->pcoord->x2v(j)*sin_a3) 
+                       + pmb->pcoord->x3v(k)*sin_a2;
+        Real sn = sin(k_par*x);
+        Real cs = fac*cos(k_par*x);
+  
+        err[IDN] += fabs(den - pmb->phydro->u(IDN,k,j,i));
+  
+        Real mx = den*v_par;
+        Real my = -fac*den*v_perp*sn;
+        Real mz = -den*v_perp*cs;
+        Real m1 = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
+        Real m2 = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
+        Real m3 = mx*sin_a2                    + mz*cos_a2;
+        err[IM1] += fabs(m1 - pmb->phydro->u(IM1,k,j,i));
+        err[IM2] += fabs(m2 - pmb->phydro->u(IM2,k,j,i));
+        err[IM3] += fabs(m3 - pmb->phydro->u(IM3,k,j,i));
+  
+        Real bx = b_par;
+        Real by = b_perp*sn;
+        Real bz = b_perp*cs;
+        Real b1 = bx*cos_a2*cos_a3 - by*sin_a3 - bz*sin_a2*cos_a3;
+        Real b2 = bx*cos_a2*sin_a3 + by*cos_a3 - bz*sin_a2*sin_a3;
+        Real b3 = bx*sin_a2                    + bz*cos_a2;
+        err[NHYDRO + IB1] += fabs(b1 - pmb->pfield->bcc(IB1,k,j,i));
+        err[NHYDRO + IB2] += fabs(b2 - pmb->pfield->bcc(IB2,k,j,i));
+        err[NHYDRO + IB3] += fabs(b3 - pmb->pfield->bcc(IB3,k,j,i));
+
+        if (NON_BAROTROPIC_EOS) {
+          Real e0 = pres/gm1 + 0.5*(m1*m1 + m2*m2 + m3*m3)/den
+            + 0.5*(b1*b1+b2*b2+b3*b3);
+          err[IEN] += fabs(e0 - pmb->phydro->u(IEN,k,j,i));
+        }
+
+      }
+    }}
+    pmb=pmb->next;
+  }
+
+  // normalize errors by number of cells, compute RMS
+  for (int i=0; i<(NHYDRO+NFIELD); ++i) err[i] = err[i]/(float)GetTotalCells();
+  Real rms_err = 0.0;
+  for (int i=0; i<(NHYDRO+NFIELD); ++i) rms_err += SQR(err[i]);
+  rms_err = sqrt(rms_err);
+
+  // open output file and write out errors
+  std::string fname;
+  fname.assign("cpaw-errors.dat");
+  std::stringstream msg;
+  FILE *pfile;
+
+  // The file exists -- reopen the file in append mode
+  if((pfile = fopen(fname.c_str(),"r")) != NULL){
+    if((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
+      msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
+          << std::endl << "Error output file could not be opened" <<std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+
+  // The file does not exist -- open the file in write mode and add headers
+  } else {
+    if((pfile = fopen(fname.c_str(),"w")) == NULL){
+      msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
+          << std::endl << "Error output file could not be opened" <<std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+    fprintf(pfile,"# Nx1  Nx2  Nx3  Ncycle  RMS-Error  d  M1  M2  M3");
+    if (NON_BAROTROPIC_EOS) fprintf(pfile,"  E");
+    fprintf(pfile,"  B1c  B2c  B3c");
+    fprintf(pfile,"\n");
+  }
+
+  // write errors
+  fprintf(pfile,"%d  %d",mesh_size.nx1,mesh_size.nx2);
+  fprintf(pfile,"  %d  %d  %e",mesh_size.nx3,ncycle,rms_err);
+  fprintf(pfile,"  %e  %e  %e  %e",err[IDN],err[IM1],err[IM2],err[IM3]);
+  if (NON_BAROTROPIC_EOS) fprintf(pfile,"  %e",err[IEN]);
+  fprintf(pfile,"  %e  %e  %e",err[NHYDRO+IB1],err[NHYDRO+IB2],err[NHYDRO+IB3]);
+  fprintf(pfile,"\n");
+  fclose(pfile);
+
+  return;
+}
+
+//======================================================================================
 //! \fn ProblemGenerator
 //  \brief circularly polarized Alfven wave problem generator for 1D/2D/3D problems.
 //======================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
-  Real gm1 = (phydro->peos->GetGamma() - 1.0);
-  Real pres = pin->GetReal("problem","pres");
-  den = 1.0;
 
-// Use the vector potential to initialize the interface magnetic fields
-
+  // Use the vector potential to initialize the interface magnetic fields
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie+1; i++) {
@@ -160,12 +266,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }
   }}
 
-/* Now initialize rest of the cell centered quantities */
-
+  // Now initialize rest of the cell centered quantities
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3) + pcoord->x3v(k)*sin_a2;
+      Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3) +
+               pcoord->x3v(k)*sin_a2;
       Real sn = sin(k_par*x);
       Real cs = fac*cos(k_par*x);
 
@@ -183,8 +289,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         phydro->u(IEN,k,j,i) = pres/gm1 +
           0.5*(SQR(0.5*(pfield->b.x1f(k,j,i) + pfield->b.x1f(k,j,i+1))) +
                SQR(0.5*(pfield->b.x2f(k,j,i) + pfield->b.x2f(k,j+1,i))) +
-               SQR(0.5*(pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i)))) + (0.5/den)*
-          (SQR(phydro->u(IM1,k,j,i)) + SQR(phydro->u(IM2,k,j,i)) + SQR(phydro->u(IM3,k,j,i)));
+               SQR(0.5*(pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i)))) + 
+          (0.5/den)*(SQR(phydro->u(IM1,k,j,i)) + SQR(phydro->u(IM2,k,j,i)) +
+                     SQR(phydro->u(IM3,k,j,i)));
       }
     }
   }}
