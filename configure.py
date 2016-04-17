@@ -23,7 +23,6 @@
 #   -mpi              enable parallelization with MPI
 #   -omp              enable parallelization with OpenMP
 #   -hdf5             enable HDF5 output (requires the HDF5 library)
-#   -parallelhdf5     enable parallel HDF5 output (forces -hdf5)
 #   --ifov=N          enable N internal hydro output variables
 #---------------------------------------------------------------------------------------
 
@@ -45,7 +44,7 @@ parser = argparse.ArgumentParser()
 pgen_directory = 'src/pgen/'
 # set pgen_choices to list of .cpp files in src/pgen/
 pgen_choices = glob.glob(pgen_directory + '*.cpp')
-# remove 'src/pgen/' prefix and '.cpp' extension from each filename 
+# remove 'src/pgen/' prefix and '.cpp' extension from each filename
 pgen_choices = [choice[len(pgen_directory):-4] for choice in pgen_choices]
 parser.add_argument('--prob',
     default='shock_tube',
@@ -143,12 +142,6 @@ parser.add_argument('-hdf5',
     default=False,
     help='enable HDF5 Output')
 
-# -hdf5 argument
-parser.add_argument('-parallelhdf5',
-   action='store_true',
-   default=False,
-   help='enable parallel HDF5 output')
-
 # -ifov=N argument
 parser.add_argument('--ifov',
     type=int,
@@ -159,10 +152,6 @@ parser.add_argument('--ifov',
 args = vars(parser.parse_args())
 
 #--- Step 2. Test for incompatible arguments -------------------------------------------
-
-# Turn on HDF5 if parallel HDF5 selected
-if args['parallelhdf5']:
-  args['hdf5'] = True
 
 # Set default flux; HLLD for MHD, HLLC for hydro, HLLE for isothermal hydro
 if args['flux']=='default':
@@ -371,14 +360,6 @@ if args['hdf5']:
 else:
   definitions['HDF5_OPTION'] = 'NO_HDF5OUTPUT'
 
-# -parallelhdf5 argument
-if args['parallelhdf5']:
-  definitions['PARALLELHDF5_OPTION'] = 'PARALLELHDF5OUTPUT'
-  if args['cxx'] == 'bgxl':
-    makefile_options['PREPROCESSOR_FLAGS'] += ' -D_MPI_PARALLEL -D_HDF5_NEW'
-else:
-  definitions['PARALLELHDF5_OPTION'] = 'NO_PARALLELHDF5OUTPUT'
-
 # Assemble all flags of any sort given to compiler
 definitions['COMPILER_FLAGS'] = ' '.join([makefile_options[opt+'_FLAGS'] for opt in \
     ['PREPROCESSOR','COMPILER','LINKER','LIBRARY']])
@@ -434,6 +415,5 @@ print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' ' \
     + makefile_options['LIBRARY_FLAGS'])
 print('  MPI parallelism:         ' + ('ON' if args['mpi'] else 'OFF'))
 print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
-print('  HDF5 Output:             ' + ('ON' if args['hdf5'] else 'OFF'))
-print('  Parallel HDF5 Output:    ' + ('ON' if args['parallelhdf5'] else 'OFF'))
+print('  HDF5 output:             ' + ('ON' if args['hdf5'] else 'OFF'))
 print('  Internal hydro outvars:  ' + str(args['ifov']))
