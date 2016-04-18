@@ -39,6 +39,19 @@ x3min      = -0.5      # minimum value of X3
 x3max      = 0.5       # maximum value of X3
 
 num_threads = 1        # maximum number of OMP threads
+refinement  = none
+
+<meshblock>
+nx1        = 256       # Number of zones in X1-direction
+nx2        = 128       # Number of zones in X2-direction
+nx3        = 128       # Number of zones in X3-direction
+
+<refinement1>
+x1min = 1.0
+x1max = 1.2
+x2min = 0.5
+x2max = 0.6
+level=1
 
 <hydro>
 gamma = 1.666666666666667 # gamma = C_p/C_v

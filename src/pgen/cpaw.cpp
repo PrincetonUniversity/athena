@@ -150,7 +150,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   
         Real mx = den*v_par;
         Real my = -fac*den*v_perp*sn;
-        Real mz = -den*v_perp*cs;
+        Real mz = -fac*den*v_perp*cs;
         Real m1 = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
         Real m2 = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
         Real m3 = mx*sin_a2                    + mz*cos_a2;
@@ -231,40 +231,106 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
+  AthenaArray<Real> a1,a2,a3;
+  int nx1 = (ie-is)+1 + 2*(NGHOST);
+  int nx2 = (je-js)+1 + 2*(NGHOST);
+  int nx3 = (ke-ks)+1 + 2*(NGHOST);
+  a1.NewAthenaArray(nx3,nx2,nx1);
+  a2.NewAthenaArray(nx3,nx2,nx1);
+  a3.NewAthenaArray(nx3,nx2,nx1);
 
-  // Use the vector potential to initialize the interface magnetic fields
+  int level=loc.level;
+  // Initialize components of the vector potential
+  if (block_size.nx3 > 1) {
+    for (int k=ks; k<=ke+1; k++) {
+      for (int j=js; j<=je+1; j++) {
+        for (int i=is; i<=ie+1; i++) {
+          if ((nblevel[1][0][1]>level && j==js) || (nblevel[1][2][1]>level && j==je+1)
+           || (nblevel[0][1][1]>level && k==ks) || (nblevel[2][1][1]>level && k==ke+1)
+           || (nblevel[0][0][1]>level && j==js   && k==ks)
+           || (nblevel[0][2][1]>level && j==je+1 && k==ks)
+           || (nblevel[2][0][1]>level && j==js   && k==ke+1)
+           || (nblevel[2][2][1]>level && j==je+1 && k==ke+1)) {
+            Real x1l = pcoord->x1f(i)+0.25*pcoord->dx1f(i);
+            Real x1r = pcoord->x1f(i)+0.75*pcoord->dx1f(i);
+            a1(k,j,i) = 0.5*(A1(x1l, pcoord->x2f(j), pcoord->x3f(k)) +
+                             A1(x1r, pcoord->x2f(j), pcoord->x3f(k)));
+          } else {
+            a1(k,j,i) = A1(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k));
+          }
+
+          if ((nblevel[1][1][0]>level && i==is) || (nblevel[1][1][2]>level && i==ie+1)
+           || (nblevel[0][1][1]>level && k==ks) || (nblevel[2][1][1]>level && k==ke+1)
+           || (nblevel[0][1][0]>level && i==is   && k==ks) 
+           || (nblevel[0][1][2]>level && i==ie+1 && k==ks)
+           || (nblevel[2][1][0]>level && i==is   && k==ke+1)
+           || (nblevel[2][1][2]>level && i==ie+1 && k==ke+1)) {
+            Real x2l = pcoord->x2f(j)+0.25*pcoord->dx2f(j);
+            Real x2r = pcoord->x2f(j)+0.75*pcoord->dx2f(j);
+            a2(k,j,i) = 0.5*(A2(pcoord->x1f(i), x2l, pcoord->x3f(k)) +
+                             A2(pcoord->x1f(i), x2r, pcoord->x3f(k)));
+          } else {
+            a2(k,j,i) = A2(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k));
+          }
+
+          if ((nblevel[1][1][0]>level && i==is) || (nblevel[1][1][2]>level && i==ie+1)
+           || (nblevel[1][0][1]>level && j==js) || (nblevel[1][2][1]>level && j==je+1)
+           || (nblevel[1][0][0]>level && i==is   && j==js) 
+           || (nblevel[1][0][2]>level && i==ie+1 && j==js)
+           || (nblevel[1][2][0]>level && i==is   && j==je+1)
+           || (nblevel[1][2][2]>level && i==ie+1 && j==je+1)) {
+            Real x3l = pcoord->x3f(k)+0.25*pcoord->dx3f(k);
+            Real x3r = pcoord->x3f(k)+0.75*pcoord->dx3f(k);
+            a3(k,j,i) = 0.5*(A3(pcoord->x1f(i), pcoord->x2f(j), x3l) +
+                             A3(pcoord->x1f(i), pcoord->x2f(j), x3r));
+          } else {
+            a3(k,j,i) = A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k));
+          }
+        }
+      }
+    }
+  } else {
+    for (int k=ks; k<=ke+1; k++) {
+      for (int j=js; j<=je+1; j++) {
+        for (int i=is; i<=ie+1; i++) {
+          if (i != ie+1)
+            a1(k,j,i) = A1(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k));
+          if (j != je+1)
+            a2(k,j,i) = A2(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k));
+          if (k != ke+1)
+            a3(k,j,i) = A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k));
+        }
+      }
+    }
+  }
+
+  // Initialize interface fields
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie+1; i++) {
-      pfield->b.x1f(k,j,i) =
-        (A3(pcoord->x1f(i),pcoord->x2f(j+1),pcoord->x3v(k  )) -
-         A3(pcoord->x1f(i),pcoord->x2f(j  ),pcoord->x3v(k  )))/pcoord->dx2f(j) -
-        (A2(pcoord->x1f(i),pcoord->x2v(j  ),pcoord->x3f(k+1)) -
-         A2(pcoord->x1f(i),pcoord->x2v(j  ),pcoord->x3f(k  )))/pcoord->dx3f(k);
+      pfield->b.x1f(k,j,i) = (a3(k  ,j+1,i) - a3(k,j,i))/pcoord->dx2f(j) -
+                             (a2(k+1,j  ,i) - a2(k,j,i))/pcoord->dx3f(k);
     }
   }}
 
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je+1; j++) {
     for (int i=is; i<=ie; i++) {
-      pfield->b.x2f(k,j,i) =
-        (A1(pcoord->x1v(i  ),pcoord->x2f(j),pcoord->x3f(k+1)) -
-         A1(pcoord->x1v(i  ),pcoord->x2f(j),pcoord->x3f(k  )))/pcoord->dx3f(k) -
-        (A3(pcoord->x1f(i+1),pcoord->x2f(j),pcoord->x3v(k  )) -
-         A3(pcoord->x1f(i  ),pcoord->x2f(j),pcoord->x3v(k  )))/pcoord->dx1f(i);
+      pfield->b.x2f(k,j,i) = (a1(k+1,j,i  ) - a1(k,j,i))/pcoord->dx3f(k) -
+                             (a3(k  ,j,i+1) - a3(k,j,i))/pcoord->dx1f(i);
     }
   }}
 
   for (int k=ks; k<=ke+1; k++) {
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
-      pfield->b.x3f(k,j,i) =
-        (A2(pcoord->x1f(i+1),pcoord->x2v(j  ),pcoord->x3f(k)) -
-         A2(pcoord->x1f(i  ),pcoord->x2v(j  ),pcoord->x3f(k)))/pcoord->dx1f(i) -
-        (A1(pcoord->x1v(i  ),pcoord->x2f(j+1),pcoord->x3f(k)) -
-         A1(pcoord->x1v(i  ),pcoord->x2f(j  ),pcoord->x3f(k)))/pcoord->dx2f(j);
+     pfield->b.x3f(k,j,i) = (a2(k,j  ,i+1) - a2(k,j,i))/pcoord->dx1f(i) -
+                            (a1(k,j+1,i  ) - a1(k,j,i))/pcoord->dx2f(j);
     }
   }}
+  a1.DeleteAthenaArray();
+  a2.DeleteAthenaArray();
+  a3.DeleteAthenaArray();
 
   // Now initialize rest of the cell centered quantities
   for (int k=ks; k<=ke; k++) {
@@ -279,7 +345,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
       Real mx = den*v_par;
       Real my = -fac*den*v_perp*sn;
-      Real mz = -den*v_perp*cs;
+      Real mz = -fac*den*v_perp*cs;
 
       phydro->u(IM1,k,j,i) = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
       phydro->u(IM2,k,j,i) = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
