@@ -141,9 +141,9 @@ void HistoryOutput::LoadOutputData(OutputData *pod, MeshBlock *pmb)
         Real& bcc1 = pfld->bcc(IB1,k,j,i);
         Real& bcc2 = pfld->bcc(IB2,k,j,i);
         Real& bcc3 = pfld->bcc(IB3,k,j,i);
-        partial_sum[8]  += vol(i)*0.5*bcc1*bcc1;
-        partial_sum[9]  += vol(i)*0.5*bcc2*bcc2;
-        partial_sum[10] += vol(i)*0.5*bcc3*bcc3;
+        partial_sum[NHYDRO + 3] += vol(i)*0.5*bcc1*bcc1;
+        partial_sum[NHYDRO + 4] += vol(i)*0.5*bcc2*bcc2;
+        partial_sum[NHYDRO + 5] += vol(i)*0.5*bcc3*bcc3;
       }
     }
     for (int n=0; n<(nvars-2); ++n) pvar->data(n+2,0,0,0) += partial_sum[n];

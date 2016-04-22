@@ -38,21 +38,11 @@
 #include "../coordinates/coordinates.hpp"
 
 //======================================================================================
-//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
-//  \brief Init the Mesh properties
-//======================================================================================
-
-void Mesh::InitUserMeshProperties(ParameterInput *pin)
-{
-  return;
-}
-
-//======================================================================================
-//! \fn void Mesh::TerminateUserMeshProperties(void)
+//! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 //  \brief Calculate L1 errors in Sod (hydro) and RJ2a (MHD) tests
 //======================================================================================
 
-void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
+void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
   MeshBlock *pmb = pblock;
 
@@ -236,7 +226,7 @@ void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
   // The file exists -- reopen the file in append mode
   if((pfile = fopen(fname.c_str(),"r")) != NULL){
     if((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
-      msg << "### FATAL ERROR in function [Mesh::TerminateUserMeshProperties]"
+      msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
           << std::endl << "Error output file could not be opened" <<std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
@@ -244,7 +234,7 @@ void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
   // The file does not exist -- open the file in write mode and add headers
   } else {
     if((pfile = fopen(fname.c_str(),"w")) == NULL){
-      msg << "### FATAL ERROR in function [Mesh::TerminateUserMeshProperties]"
+      msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
           << std::endl << "Error output file could not be opened" <<std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
@@ -475,16 +465,5 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }}
   }
 
-  return;
-}
-
-//======================================================================================
-//! \fn void MeshBlock::UserWorkInLoop(void)
-//  \brief User-defined work function for every time step
-//======================================================================================
-
-void MeshBlock::UserWorkInLoop(void)
-{
-  // nothing to do
   return;
 }

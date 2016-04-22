@@ -60,8 +60,14 @@ void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceFiel
                int is, int ie, int js, int je, int ks, int ke);
 int RefinementCondition(MeshBlock *pmb);
 
+//======================================================================================
+//! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
+//  \brief Function to initialize problem-specific data in mesh class.  Can also be used
+//  to initialize variables which are global to (and therefore can be passed to) other
+//  functions in this file.  Called in Mesh constructor.
+//======================================================================================
 
-void Mesh::InitUserMeshProperties(ParameterInput *pin)
+void Mesh::InitUserMeshData(ParameterInput *pin)
 {
   // Enroll user-defined boundary functions
   EnrollUserBoundaryFunction(INNER_X1, DMRInnerX1);
@@ -74,12 +80,10 @@ void Mesh::InitUserMeshProperties(ParameterInput *pin)
   return;
 }
 
-void Mesh::TerminateUserMeshProperties(void)
-{
-  return;
-}
-
-// problem generator
+//======================================================================================
+//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
+//  \brief Initialize DMR test
+//======================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
@@ -116,14 +120,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
   return;
 }
-
-
-
-void MeshBlock::UserWorkInLoop(void)
-{
-  return;
-}
-
 
 //--------------------------------------------------------------------------------------
 //! \fn void DMRInnerX1()

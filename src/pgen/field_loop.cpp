@@ -54,29 +54,6 @@
 #error "This problem generator requires magnetic fields"
 #endif
 
-
-//======================================================================================
-//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
-//  \brief Init the Mesh properties
-//======================================================================================
-
-void Mesh::InitUserMeshProperties(ParameterInput *pin)
-{
-  return;
-}
-
-
-//======================================================================================
-//! \fn void Mesh::TerminateUserMeshProperties(void)
-//  \brief Clean up the Mesh properties
-//======================================================================================
-void Mesh::TerminateUserMeshProperties(void)
-{
-  // nothing to do
-  return;
-}
-
-
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief field loop advection problem generator for 2D/3D problems.
@@ -285,16 +262,3 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
   return;
 }
-
-
-//======================================================================================
-//! \fn void MeshBlock::UserWorkInLoop(void)
-//  \brief User-defined work function for every time step
-//======================================================================================
-void MeshBlock::UserWorkInLoop(void)
-{
-  // nothing to do
-  return;
-}
-
-

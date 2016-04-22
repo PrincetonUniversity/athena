@@ -67,11 +67,13 @@ static Real gm1;
 static Real grav_acc;
 
 //======================================================================================
-//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
-//  \brief Init the Mesh properties
+//! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
+//  \brief Function to initialize problem-specific data in mesh class.  Can also be used
+//  to initialize variables which are global to (and therefore can be passed to) other
+//  functions in this file.  Called in Mesh constructor.
 //======================================================================================
 
-void Mesh::InitUserMeshProperties(ParameterInput *pin)
+void Mesh::InitUserMeshData(ParameterInput *pin)
 {
   if (mesh_size.nx3 == 1) {  // 2D problem
     // Enroll special BCs
@@ -85,19 +87,6 @@ void Mesh::InitUserMeshProperties(ParameterInput *pin)
   }
   return;
 }
-
-
-//======================================================================================
-//! \fn void Mesh::TerminateUserMeshProperties(void)
-//  \brief Clean up the Mesh properties
-//======================================================================================
-
-void Mesh::TerminateUserMeshProperties(void)
-{
-  // nothing to do
-  return;
-}
-
 
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
@@ -242,18 +231,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }
   } /* end of 3D initialization */
 
-  return;
-}
-
-
-//======================================================================================
-//! \fn void MeshBlock::UserWorkInLoop(void)
-//  \brief User-defined work function for every time step
-//======================================================================================
-
-void MeshBlock::UserWorkInLoop(void)
-{
-  // nothing to do
   return;
 }
 

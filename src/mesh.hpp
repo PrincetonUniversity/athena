@@ -145,10 +145,10 @@ private:
   BValFunc_t BoundaryFunction_[6];
   AMRFlag_t AMRFlag_;
 
-  void MeshTest(int dim);
+  void OutputMeshStructure(int dim);
 
   // methods in /pgen
-  void InitUserMeshProperties(ParameterInput *pin);
+  void InitUserMeshData(ParameterInput *pin);
 
   void EnrollUserBoundaryFunction (enum BoundaryFace face, BValFunc_t my_func);
   void EnrollUserRefinementCondition(AMRFlag_t amrflag);
@@ -195,7 +195,7 @@ public:
   void TestConservation(void);
 
   // methods in /pgen
-  void TerminateUserMeshProperties(ParameterInput *pin);
+  void UserWorkAfterLoop(ParameterInput *pin);
 };
 
 

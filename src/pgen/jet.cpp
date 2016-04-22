@@ -38,10 +38,14 @@ static Real r_jet,d_jet,p_jet,vx_jet,vy_jet,vz_jet,bx_jet,by_jet,bz_jet;
 static Real gm1,x2_0,x3_0;
 
 
-//--------------------------------------------------------------------------------------
-//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
-//  \brief Init the Mesh properties
-void Mesh::InitUserMeshProperties(ParameterInput *pin)
+//======================================================================================
+//! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
+//  \brief Function to initialize problem-specific data in mesh class.  Can also be used
+//  to initialize variables which are global to (and therefore can be passed to) other
+//  functions in this file.  Called in Mesh constructor.
+//======================================================================================
+
+void Mesh::InitUserMeshData(ParameterInput *pin)
 {
   // initialize global variables
   d_amb  = pin->GetReal("problem", "d");
@@ -72,16 +76,6 @@ void Mesh::InitUserMeshProperties(ParameterInput *pin)
   EnrollUserBoundaryFunction(INNER_X1, JetInnerX1);
   return;
 }
-
-//--------------------------------------------------------------------------------------
-//! \fn void Mesh::TerminateUserMeshProperties(void)
-//  \brief Clean up the Mesh properties
-void Mesh::TerminateUserMeshProperties(void)
-{
-  // nothing to do
-  return;
-}
-
 
 
 //--------------------------------------------------------------------------------------
@@ -132,15 +126,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }
   }
 
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-//! \fn void MeshBlock::UserWorkInLoop(void)
-//  \brief User-defined work function for every time step
-void MeshBlock::UserWorkInLoop(void)
-{
-  // nothing to do
   return;
 }
 

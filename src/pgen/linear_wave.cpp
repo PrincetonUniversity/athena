@@ -58,13 +58,14 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
   Real eigenvalues[(NWAVE)],
   Real right_eigenmatrix[(NWAVE)][(NWAVE)], Real left_eigenmatrix[(NWAVE)][(NWAVE)]);
 
-
 //======================================================================================
-//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
-//  \brief Init the Mesh properties
+//! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
+//  \brief Function to initialize problem-specific data in mesh class.  Can also be used
+//  to initialize variables which are global to (and therefore can be passed to) other
+//  functions in this file.  Called in Mesh constructor.
 //======================================================================================
 
-void Mesh::InitUserMeshProperties(ParameterInput *pin)
+void Mesh::InitUserMeshData(ParameterInput *pin)
 {
   // read global parameters
   wave_flag = pin->GetInteger("problem","wave_flag");
@@ -136,12 +137,12 @@ void Mesh::InitUserMeshProperties(ParameterInput *pin)
   return;
 }
 
+//======================================================================================
+//! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
+//  \brief Compute L1 error in linear waves and output to file
+//======================================================================================
 
-//======================================================================================
-//! \fn void Mesh::TerminateUserMeshProperties(void)
-//  \brief Clean up the Mesh properties
-//======================================================================================
-void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
+void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
   // return if compute_error=0 (default)
   int error_test;
@@ -212,7 +213,7 @@ void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
   // The file exists -- reopen the file in append mode
   if((pfile = fopen(fname.c_str(),"r")) != NULL){
     if((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
-      msg << "### FATAL ERROR in function [Mesh::TerminateUserMeshProperties]"
+      msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
           << std::endl << "Error output file could not be opened" <<std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
@@ -220,7 +221,7 @@ void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
   // The file does not exist -- open the file in write mode and add headers
   } else {
     if((pfile = fopen(fname.c_str(),"w")) == NULL){
-      msg << "### FATAL ERROR in function [Mesh::TerminateUserMeshProperties]"
+      msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
           << std::endl << "Error output file could not be opened" <<std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
@@ -242,7 +243,6 @@ void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
   return;
 }
 
-
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Linear wave problem generator for 1D/2D/3D problems.
@@ -251,7 +251,7 @@ void Mesh::TerminateUserMeshProperties(ParameterInput *pin)
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   // Initialize the magnetic fields.  Note wavevector, eigenvectors, and other variables
-  // are set in InitUserMeshProperties
+  // are set in InitUserMeshData
 
   if (MAGNETIC_FIELDS_ENABLED) {
     AthenaArray<Real> a1,a2,a3;
@@ -268,36 +268,55 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
     int level=loc.level;
     // Initialize components of the vector potential
-    if(block_size.nx3 > 1) {
+    if (block_size.nx3 > 1) {
       for (int k=ks; k<=ke+1; k++) {
         for (int j=js; j<=je+1; j++) {
           for (int i=is; i<=ie+1; i++) {
-            if((nblevel[1][0][1]>level && j==js) || (nblevel[1][2][1]>level && j==je+1)
-            || (nblevel[0][1][1]>level && k==ks) || (nblevel[2][1][1]>level && k==ke+1)
-            || (nblevel[0][0][1]>level && j==js && k==ks)   || (nblevel[0][2][1]>level && j==je+1 && k==ks)
-            || (nblevel[2][0][1]>level && j==js && k==ke+1) || (nblevel[2][2][1]>level && j==je+1 && k==ke+1))
-              a1(k,j,i) = 0.5*(A1(pcoord->x1f(i)+0.25*pcoord->dx1f(i), pcoord->x2f(j), pcoord->x3f(k))+
-                               A1(pcoord->x1f(i)+0.75*pcoord->dx1f(i), pcoord->x2f(j), pcoord->x3f(k)));
-            else a1(k,j,i) = A1(0.5*(pcoord->x1f(i)+pcoord->x1f(i+1)), pcoord->x2f(j), pcoord->x3f(k));
-            if((nblevel[1][1][0]>level && i==is) || (nblevel[1][1][2]>level && i==ie+1)
-            || (nblevel[0][1][1]>level && k==ks) || (nblevel[2][1][1]>level && k==ke+1)
-            || (nblevel[0][1][0]>level && i==is && k==ks)   || (nblevel[0][1][2]>level && i==ie+1 && k==ks)
-            || (nblevel[2][1][0]>level && i==is && k==ke+1) || (nblevel[2][1][2]>level && i==ie+1 && k==ke+1))
-              a2(k,j,i) = 0.5*(A2(pcoord->x1f(i), pcoord->x2f(j)+0.25*pcoord->dx2f(j), pcoord->x3f(k))+
-                               A2(pcoord->x1f(i), pcoord->x2f(j)+0.75*pcoord->dx2f(j), pcoord->x3f(k)));
-            else a2(k,j,i) = A2(pcoord->x1f(i), 0.5*(pcoord->x2f(j)+pcoord->x2f(j+1)), pcoord->x3f(k));
-            if((nblevel[1][1][0]>level && i==is) || (nblevel[1][1][2]>level && i==ie+1)
-            || (nblevel[1][0][1]>level && j==js) || (nblevel[1][2][1]>level && j==je+1)
-            || (nblevel[1][0][0]>level && i==is && j==js)   || (nblevel[1][0][2]>level && i==ie+1 && j==js)
-            || (nblevel[1][2][0]>level && i==is && j==je+1) || (nblevel[1][2][2]>level && i==ie+1 && j==je+1))
-              a3(k,j,i) = 0.5*(A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3f(k)+0.25*pcoord->dx3f(k))+
-                               A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3f(k)+0.75*pcoord->dx3f(k)));
-            else a3(k,j,i) = A3(pcoord->x1f(i), pcoord->x2f(j), 0.5*(pcoord->x3f(k)+pcoord->x3f(k+1)));
+            if ((nblevel[1][0][1]>level && j==js) || (nblevel[1][2][1]>level && j==je+1)
+             || (nblevel[0][1][1]>level && k==ks) || (nblevel[2][1][1]>level && k==ke+1)
+             || (nblevel[0][0][1]>level && j==js   && k==ks)
+             || (nblevel[0][2][1]>level && j==je+1 && k==ks)
+             || (nblevel[2][0][1]>level && j==js   && k==ke+1)
+             || (nblevel[2][2][1]>level && j==je+1 && k==ke+1)) {
+              Real x1l = pcoord->x1f(i)+0.25*pcoord->dx1f(i);
+              Real x1r = pcoord->x1f(i)+0.75*pcoord->dx1f(i);
+              a1(k,j,i) = 0.5*(A1(x1l, pcoord->x2f(j), pcoord->x3f(k)) +
+                               A1(x1r, pcoord->x2f(j), pcoord->x3f(k)));
+            } else {
+              a1(k,j,i) = A1(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k));
+            }
+
+            if ((nblevel[1][1][0]>level && i==is) || (nblevel[1][1][2]>level && i==ie+1)
+             || (nblevel[0][1][1]>level && k==ks) || (nblevel[2][1][1]>level && k==ke+1)
+             || (nblevel[0][1][0]>level && i==is   && k==ks)
+             || (nblevel[0][1][2]>level && i==ie+1 && k==ks)
+             || (nblevel[2][1][0]>level && i==is   && k==ke+1)
+             || (nblevel[2][1][2]>level && i==ie+1 && k==ke+1)) {
+              Real x2l = pcoord->x2f(j)+0.25*pcoord->dx2f(j);
+              Real x2r = pcoord->x2f(j)+0.75*pcoord->dx2f(j);
+              a2(k,j,i) = 0.5*(A2(pcoord->x1f(i), x2l, pcoord->x3f(k)) +
+                               A2(pcoord->x1f(i), x2r, pcoord->x3f(k)));
+            } else {
+              a2(k,j,i) = A2(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k));
+            }
+
+            if ((nblevel[1][1][0]>level && i==is) || (nblevel[1][1][2]>level && i==ie+1)
+             || (nblevel[1][0][1]>level && j==js) || (nblevel[1][2][1]>level && j==je+1)
+             || (nblevel[1][0][0]>level && i==is   && j==js)
+             || (nblevel[1][0][2]>level && i==ie+1 && j==js)
+             || (nblevel[1][2][0]>level && i==is   && j==je+1)
+             || (nblevel[1][2][2]>level && i==ie+1 && j==je+1)) {
+              Real x3l = pcoord->x3f(k)+0.25*pcoord->dx3f(k);
+              Real x3r = pcoord->x3f(k)+0.75*pcoord->dx3f(k);
+              a3(k,j,i) = 0.5*(A3(pcoord->x1f(i), pcoord->x2f(j), x3l) +
+                               A3(pcoord->x1f(i), pcoord->x2f(j), x3r));
+            } else {
+              a3(k,j,i) = A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k));
+            }
           }
         }
       }
-    }
-    else {
+    } else {
       for (int k=ks; k<=ke+1; k++) {
         for (int j=js; j<=je+1; j++) {
           for (int i=is; i<=ie+1; i++) {
@@ -312,13 +331,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       }
     }
 
-
     // Initialize interface fields
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie+1; i++) {
         pfield->b.x1f(k,j,i) = (a3(k  ,j+1,i) - a3(k,j,i))/pcoord->dx2f(j) -
-                            (a2(k+1,j  ,i) - a2(k,j,i))/pcoord->dx3f(k);
+                               (a2(k+1,j  ,i) - a2(k,j,i))/pcoord->dx3f(k);
       }
     }}
 
@@ -326,7 +344,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     for (int j=js; j<=je+1; j++) {
       for (int i=is; i<=ie; i++) {
         pfield->b.x2f(k,j,i) = (a1(k+1,j,i  ) - a1(k,j,i))/pcoord->dx3f(k) -
-                            (a3(k  ,j,i+1) - a3(k,j,i))/pcoord->dx1f(i);
+                               (a3(k  ,j,i+1) - a3(k,j,i))/pcoord->dx1f(i);
       }
     }}
 
@@ -334,7 +352,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
        pfield->b.x3f(k,j,i) = (a2(k,j  ,i+1) - a2(k,j,i))/pcoord->dx1f(i) -
-                           (a1(k,j+1,i  ) - a1(k,j,i))/pcoord->dx2f(j);
+                              (a1(k,j+1,i  ) - a1(k,j,i))/pcoord->dx2f(j);
       }
     }}
     a1.DeleteAthenaArray();
@@ -370,18 +388,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
   return;
 }
-
-
-//======================================================================================
-//! \fn void MeshBlock::UserWorkInLoop(void)
-//  \brief User-defined work function for every time step
-//======================================================================================
-void MeshBlock::UserWorkInLoop(void)
-{
-  // nothing to do
-  return;
-}
-
 
 //--------------------------------------------------------------------------------------
 //! \fn static Real A1(const Real x1,const Real x2,const Real x3)

@@ -28,21 +28,6 @@ static void quartic_roots(Real a3, Real a2, Real a1, Real a0,
     Real *px1, Real *px2, Real *px3, Real *px4);
 
 
-
-// Function for initializing global mesh properties
-void Mesh::InitUserMeshProperties(ParameterInput *pin)
-{
-  return;
-}
-
-
-// Function for cleaning up global mesh properties
-void Mesh::TerminateUserMeshProperties(void)
-{
-  return;
-}
-
-
 // Function for setting initial conditions
 // Inputs:
 //   pin: parameters
@@ -702,14 +687,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   }
   return;
 }
-
-
-// User-defined work function called every time step
-void MeshBlock::UserWorkInLoop(void)
-{
-  return;
-}
-
 
 // Function for finding root of monic quadratic equation
 // Inputs:
