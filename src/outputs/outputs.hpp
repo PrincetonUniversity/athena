@@ -193,13 +193,13 @@ private:
   hid_t filespace_blocks_nx1;
   hid_t filespace_blocks_nx2;
   hid_t filespace_blocks_nx3;
-  hid_t *filespaces_blocks_vars_nx3_nx2_nx1;
+  hid_t *filespaces_vars_blocks_nx3_nx2_nx1;
   hid_t memspace_blocks;                        // local dataspaces for memory
   hid_t memspace_blocks_3;
   hid_t memspace_blocks_nx1;
   hid_t memspace_blocks_nx2;
   hid_t memspace_blocks_nx3;
-  hid_t *memspaces_blocks_vars_nx3_nx2_nx1;
+  hid_t *memspaces_vars_blocks_nx3_nx2_nx1;
   hid_t property_list;                          // properties for writing
 
   // Metadata

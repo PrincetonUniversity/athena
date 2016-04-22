@@ -328,7 +328,7 @@ def athdf(filename, data=None, quantities=None, level=0, subsample=False,
             for jo in jo_vals:
               for io in io_vals:
                 data[q][kl+ko:ku+ko:s,jl+jo:ju+jo:s,il+io:iu+io:s] \
-                    = f[dataset][block_num,index,:]
+                    = f[dataset][index,block_num,:]
 
       # Restrict fine data
       else:
@@ -354,7 +354,7 @@ def athdf(filename, data=None, quantities=None, level=0, subsample=False,
 
           # Assign values
           for q,dataset,index in zip(quantities,quantity_datasets,quantity_indices):
-            data[q][kl:ku,jl:ju,il:iu] = f[dataset][block_num,index,o::s,o::s,o::s]
+            data[q][kl:ku,jl:ju,il:iu] = f[dataset][index,block_num,o::s,o::s,o::s]
 
         # Apply fast (uniform Cartesian) restriction
         elif fast_restrict:
@@ -383,7 +383,7 @@ def athdf(filename, data=None, quantities=None, level=0, subsample=False,
               for jo in jo_vals:
                 for io in io_vals:
                   data[q][kl:ku,jl:ju,il:iu] \
-                      += f[dataset][block_num,index,ko::s,jo::s,io::s]
+                      += f[dataset][index,block_num,ko::s,jo::s,io::s]
             data[q][kl:ku,jl:ju,il:iu] /= s**dim
 
         # Apply exact (volume-weighted) restriction
@@ -415,7 +415,7 @@ def athdf(filename, data=None, quantities=None, level=0, subsample=False,
                 vol = vol_func(x1m, x1p, x2m, x2p, x3m, x3p)
                 for q,dataset,index in \
                     zip(quantities,quantity_datasets,quantity_indices):
-                  data[q][k,j,i] += f[dataset][block_num,index,kr,jr,ir] * vol
+                  data[q][k,j,i] += f[dataset][index,block_num,kr,jr,ir] * vol
           loc1 = block_location[0] / s
           loc2 = block_location[1] / s
           loc3 = block_location[2] / s

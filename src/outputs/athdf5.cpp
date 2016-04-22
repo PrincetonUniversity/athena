@@ -81,77 +81,113 @@ void ATHDF5Output::Initialize(Mesh *pmesh, ParameterInput *pin,
   ke = pblock->ke;
   root_level = pmesh->root_level;
 
-  // Determine what variables to output
+  // Set up primitive and conserved outputs
   std::string variable = output_params.variable;
   if (variable.compare("prim") == 0 or variable.compare("cons") == 0)
   {
     num_datasets = 1;
     if (MAGNETIC_FIELDS_ENABLED)
-      num_datasets = 2;
+      num_datasets += 1;
+    if (RADIATION_ENABLED)
+      num_datasets += 3;
     num_variables = new int[num_datasets];
-    num_variables[0] = NHYDRO;
+    int n_dataset = 0;
+    num_variables[n_dataset++] = NHYDRO;
     num_total_variables = NHYDRO;
     if (MAGNETIC_FIELDS_ENABLED)
     {
-      num_variables[1] = 3;
+      num_variables[n_dataset++] = 3;
       num_total_variables += 3;
+    }
+    if (RADIATION_ENABLED)
+    {
+      num_variables[n_dataset++] = 10;
+      num_variables[n_dataset++] = 4;
+      num_variables[n_dataset++] = 2;
+      num_total_variables += 10 + 4 + 2;
     }
     dataset_names = new char[num_datasets][max_name_length+1];
     variable_names = new char[num_total_variables][max_name_length+1];
+    n_dataset = 0;
+    int n_variable = 0;
     if (variable.compare("prim") == 0)
     {
-      std::strncpy(dataset_names[0], "prim", max_name_length+1);
+      std::strncpy(dataset_names[n_dataset++], "prim", max_name_length+1);
       for (int n = 0; n < NHYDRO; ++n)
         switch (n)
         {
           case IDN:
-            std::strncpy(variable_names[n], "rho", max_name_length+1);
+            std::strncpy(variable_names[n_variable++], "rho", max_name_length+1);
             break;
           case IEN:
-            std::strncpy(variable_names[n], "pgas", max_name_length+1);
+            std::strncpy(variable_names[n_variable++], "pgas", max_name_length+1);
             break;
           case IM1:
-            std::strncpy(variable_names[n], "vel1", max_name_length+1);
+            std::strncpy(variable_names[n_variable++], "vel1", max_name_length+1);
             break;
           case IM2:
-            std::strncpy(variable_names[n], "vel2", max_name_length+1);
+            std::strncpy(variable_names[n_variable++], "vel2", max_name_length+1);
             break;
           case IM3:
-            std::strncpy(variable_names[n], "vel3", max_name_length+1);
+            std::strncpy(variable_names[n_variable++], "vel3", max_name_length+1);
             break;
         }
     }
     else
     {
-      std::strncpy(dataset_names[0], "cons", max_name_length+1);
+      std::strncpy(dataset_names[n_dataset++], "cons", max_name_length+1);
       for (int n = 0; n < NHYDRO; ++n)
         switch (n)
         {
           case IDN:
-            std::strncpy(variable_names[n], "dens", max_name_length+1);
+            std::strncpy(variable_names[n_variable++], "dens", max_name_length+1);
             break;
           case IEN:
-            std::strncpy(variable_names[n], "Etot", max_name_length+1);
+            std::strncpy(variable_names[n_variable++], "Etot", max_name_length+1);
             break;
           case IM1:
-            std::strncpy(variable_names[n], "mom1", max_name_length+1);
+            std::strncpy(variable_names[n_variable++], "mom1", max_name_length+1);
             break;
           case IM2:
-            std::strncpy(variable_names[n], "mom2", max_name_length+1);
+            std::strncpy(variable_names[n_variable++], "mom2", max_name_length+1);
             break;
           case IM3:
-            std::strncpy(variable_names[n], "mom3", max_name_length+1);
+            std::strncpy(variable_names[n_variable++], "mom3", max_name_length+1);
             break;
         }
     }
     if (MAGNETIC_FIELDS_ENABLED)
     {
-      std::strncpy(dataset_names[1], "B", max_name_length+1);
-      std::strncpy(variable_names[NHYDRO], "B1", max_name_length+1);
-      std::strncpy(variable_names[NHYDRO+1], "B2", max_name_length+1);
-      std::strncpy(variable_names[NHYDRO+2], "B3", max_name_length+1);
+      std::strncpy(dataset_names[n_dataset++], "B", max_name_length+1);
+      std::strncpy(variable_names[n_variable++], "B1", max_name_length+1);
+      std::strncpy(variable_names[n_variable++], "B2", max_name_length+1);
+      std::strncpy(variable_names[n_variable++], "B3", max_name_length+1);
+    }
+    if (RADIATION_ENABLED)  // Lab-frame moments, comoving moments, and opacities
+    {
+      std::strncpy(dataset_names[n_dataset++], "rad", max_name_length+1);
+      std::strncpy(variable_names[n_variable++], "Er", max_name_length+1);
+      std::strncpy(variable_names[n_variable++], "Fr1", max_name_length+1);
+      std::strncpy(variable_names[n_variable++], "Fr2", max_name_length+1);
+      std::strncpy(variable_names[n_variable++], "Fr3", max_name_length+1);
+      std::strncpy(variable_names[n_variable++], "Pr11", max_name_length+1);
+      std::strncpy(variable_names[n_variable++], "Pr22", max_name_length+1);
+      std::strncpy(variable_names[n_variable++], "Pr33", max_name_length+1);
+      std::strncpy(variable_names[n_variable++], "Pr12", max_name_length+1);
+      std::strncpy(variable_names[n_variable++], "Pr13", max_name_length+1);
+      std::strncpy(variable_names[n_variable++], "Pr23", max_name_length+1);
+      std::strncpy(dataset_names[n_dataset++], "rad_cm", max_name_length+1);
+      std::strncpy(variable_names[n_variable++], "Er0", max_name_length+1);
+      std::strncpy(variable_names[n_variable++], "Fr01", max_name_length+1);
+      std::strncpy(variable_names[n_variable++], "Fr02", max_name_length+1);
+      std::strncpy(variable_names[n_variable++], "Fr03", max_name_length+1);
+      std::strncpy(dataset_names[n_dataset++], "opacity", max_name_length+1);
+      std::strncpy(variable_names[n_variable++], "Sigma_s", max_name_length+1);
+      std::strncpy(variable_names[n_variable++], "Sigma_a", max_name_length+1);
     }
   }
+
+  // Set up individual primitive variable outputs
   else if (variable.compare("d") == 0)
   {
     num_datasets = 1;
@@ -187,6 +223,8 @@ void ATHDF5Output::Initialize(Mesh *pmesh, ParameterInput *pin,
     std::strncpy(variable_names[1], "vel2", max_name_length+1);
     std::strncpy(variable_names[2], "vel3", max_name_length+1);
   }
+
+  // Set up individual conserved variable outputs
   else if (variable.compare("D") == 0)
   {
     num_datasets = 1;
@@ -222,6 +260,8 @@ void ATHDF5Output::Initialize(Mesh *pmesh, ParameterInput *pin,
     std::strncpy(variable_names[1], "mom2", max_name_length+1);
     std::strncpy(variable_names[2], "mom3", max_name_length+1);
   }
+
+  // Set up magnetic field outputs
   else if (MAGNETIC_FIELDS_ENABLED and variable.compare("b") == 0)
   {
     num_datasets = 1;
@@ -235,6 +275,96 @@ void ATHDF5Output::Initialize(Mesh *pmesh, ParameterInput *pin,
     std::strncpy(variable_names[1], "B2", max_name_length+1);
     std::strncpy(variable_names[2], "B3", max_name_length+1);
   }
+
+  // Set up individual radiation outputs
+  else if (RADIATION_ENABLED and variable.compare("Er") == 0)
+  {
+    num_datasets = 1;
+    num_variables = new int[num_datasets];
+    num_variables[0] = 1;
+    num_total_variables = 1;
+    dataset_names = new char[num_datasets][max_name_length+1];
+    variable_names = new char[num_total_variables][max_name_length+1];
+    std::strncpy(dataset_names[0], "Er", max_name_length+1);
+    std::strncpy(variable_names[0], "Er", max_name_length+1);
+  }
+  else if (RADIATION_ENABLED and variable.compare("Er0") == 0)
+  {
+    num_datasets = 1;
+    num_variables = new int[num_datasets];
+    num_variables[0] = 1;
+    num_total_variables = 1;
+    dataset_names = new char[num_datasets][max_name_length+1];
+    variable_names = new char[num_total_variables][max_name_length+1];
+    std::strncpy(dataset_names[0], "Er0", max_name_length+1);
+    std::strncpy(variable_names[0], "Er0", max_name_length+1);
+  }
+  else if (RADIATION_ENABLED and variable.compare("Sigma_s") == 0)
+  {
+    num_datasets = 1;
+    num_variables = new int[num_datasets];
+    num_variables[0] = 1;
+    num_total_variables = 1;
+    dataset_names = new char[num_datasets][max_name_length+1];
+    variable_names = new char[num_total_variables][max_name_length+1];
+    std::strncpy(dataset_names[0], "Sigma_s", max_name_length+1);
+    std::strncpy(variable_names[0], "Sigma_s", max_name_length+1);
+  }
+  else if (RADIATION_ENABLED and variable.compare("Sigma_a") == 0)
+  {
+    num_datasets = 1;
+    num_variables = new int[num_datasets];
+    num_variables[0] = 1;
+    num_total_variables = 1;
+    dataset_names = new char[num_datasets][max_name_length+1];
+    variable_names = new char[num_total_variables][max_name_length+1];
+    std::strncpy(dataset_names[0], "Sigma_a", max_name_length+1);
+    std::strncpy(variable_names[0], "Sigma_a", max_name_length+1);
+  }
+  else if (RADIATION_ENABLED and variable.compare("Fr") == 0)
+  {
+    num_datasets = 1;
+    num_variables = new int[num_datasets];
+    num_variables[0] = 3;
+    num_total_variables = 3;
+    dataset_names = new char[num_datasets][max_name_length+1];
+    variable_names = new char[num_total_variables][max_name_length+1];
+    std::strncpy(dataset_names[0], "Fr", max_name_length+1);
+    std::strncpy(variable_names[0], "Fr1", max_name_length+1);
+    std::strncpy(variable_names[1], "Fr2", max_name_length+1);
+    std::strncpy(variable_names[2], "Fr3", max_name_length+1);
+  }
+  else if (RADIATION_ENABLED and variable.compare("Fr0") == 0)
+  {
+    num_datasets = 1;
+    num_variables = new int[num_datasets];
+    num_variables[0] = 3;
+    num_total_variables = 3;
+    dataset_names = new char[num_datasets][max_name_length+1];
+    variable_names = new char[num_total_variables][max_name_length+1];
+    std::strncpy(dataset_names[0], "Fr0", max_name_length+1);
+    std::strncpy(variable_names[0], "Fr01", max_name_length+1);
+    std::strncpy(variable_names[1], "Fr02", max_name_length+1);
+    std::strncpy(variable_names[2], "Fr03", max_name_length+1);
+  }
+  else if (RADIATION_ENABLED and variable.compare("Pr") == 0)
+  {
+    num_datasets = 1;
+    num_variables = new int[num_datasets];
+    num_variables[0] = 6;
+    num_total_variables = 6;
+    dataset_names = new char[num_datasets][max_name_length+1];
+    variable_names = new char[num_total_variables][max_name_length+1];
+    std::strncpy(dataset_names[0], "Pr", max_name_length+1);
+    std::strncpy(variable_names[0], "Pr11", max_name_length+1);
+    std::strncpy(variable_names[1], "Pr22", max_name_length+1);
+    std::strncpy(variable_names[2], "Pr33", max_name_length+1);
+    std::strncpy(variable_names[3], "Pr12", max_name_length+1);
+    std::strncpy(variable_names[4], "Pr13", max_name_length+1);
+    std::strncpy(variable_names[5], "Pr23", max_name_length+1);
+  }
+
+  // Set up internal fluid outputs
   else if (variable.compare("ifov") == 0)
   {
     if (NIFOV <= 0)
@@ -267,6 +397,42 @@ void ATHDF5Output::Initialize(Mesh *pmesh, ParameterInput *pin,
     for (int n = 0; n < NIFOV; ++n)
       std::sprintf(variable_names[n], "ifov%d", n);
   }
+
+  // Set up internal radiation outputs
+  else if (RADIATION_ENABLED and variable.compare("rad_fov") == 0)
+  {
+    if (NRADFOV <= 0)
+    {
+      std::stringstream message;
+      message << "### FATAL ERROR in athdf5 initialization\n"
+              << "No variables to output\n";
+      throw std::runtime_error(message.str().c_str());
+    }
+    int max_rad_fov_digits = max_name_length - std::strlen("rfov");
+    int max_rad_fov = 1;
+    for (int n = 0; n < max_rad_fov_digits; ++n)
+      max_rad_fov *= 10;
+    if (max_rad_fov_digits <= 0)
+      max_rad_fov = 0;
+    if (NRADFOV > max_rad_fov)
+    {
+      std::stringstream message;
+      message << "### FATAL ERROR in athdf5 initialization\n"
+              << "Can only support " << max_rad_fov << " rad_fov outputs\n";
+      throw std::runtime_error(message.str().c_str());
+    }
+    num_datasets = 1;
+    num_variables = new int[num_datasets];
+    num_variables[0] = NRADFOV;
+    num_total_variables = NRADFOV;
+    dataset_names = new char[num_datasets][max_name_length+1];
+    variable_names = new char[num_total_variables][max_name_length+1];
+    std::strncpy(dataset_names[0], "rfov", max_name_length+1);
+    for (int n = 0; n < NRADFOV; ++n)
+      std::sprintf(variable_names[n], "rfov%d", n);
+  }
+
+  // Requested output not supported
   else
   {
     std::stringstream message;
@@ -444,14 +610,15 @@ void ATHDF5Output::Initialize(Mesh *pmesh, ParameterInput *pin,
   filespace_blocks_nx2 = H5Screate_simple(2, dims_count, NULL);
   dims_count[1] = nx3+1;
   filespace_blocks_nx3 = H5Screate_simple(2, dims_count, NULL);
+  dims_count[1] = num_blocks_global;
   dims_count[2] = nx3;
   dims_count[3] = nx2;
   dims_count[4] = nx1;
-  filespaces_blocks_vars_nx3_nx2_nx1 = new hid_t[num_datasets];
+  filespaces_vars_blocks_nx3_nx2_nx1 = new hid_t[num_datasets];
   for (int n = 0; n < num_datasets; ++n)
   {
-    dims_count[1] = num_variables[n];
-    filespaces_blocks_vars_nx3_nx2_nx1[n] = H5Screate_simple(5, dims_count, NULL);
+    dims_count[0] = num_variables[n];
+    filespaces_vars_blocks_nx3_nx2_nx1[n] = H5Screate_simple(5, dims_count, NULL);
   }
 
   // Create datasets
@@ -468,7 +635,7 @@ void ATHDF5Output::Initialize(Mesh *pmesh, ParameterInput *pin,
   datasets_celldata = new hid_t[num_datasets];
   for (int n = 0; n < num_datasets; ++n)
     datasets_celldata[n] = H5Dcreate(file, dataset_names[n], H5T_IEEE_F32BE,
-        filespaces_blocks_vars_nx3_nx2_nx1[n], H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        filespaces_vars_blocks_nx3_nx2_nx1[n], H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   // Prepare local (hyperslabbed) dataspaces for writing datasets to file
   dims_start[0] = first_block;
@@ -488,16 +655,19 @@ void ATHDF5Output::Initialize(Mesh *pmesh, ParameterInput *pin,
   dims_count[1] = nx3+1;
   H5Sselect_hyperslab(filespace_blocks_nx3, H5S_SELECT_SET, dims_start, NULL,
       dims_count, NULL);
+  dims_start[0] = 0;
+  dims_start[1] = first_block;
   dims_start[2] = 0;
   dims_start[3] = 0;
   dims_start[4] = 0;
+  dims_count[1] = num_blocks_local;
   dims_count[2] = nx3;
   dims_count[3] = nx2;
   dims_count[4] = nx1;
   for (int n = 0; n < num_datasets; ++n)
   {
-    dims_count[1] = num_variables[n];
-    H5Sselect_hyperslab(filespaces_blocks_vars_nx3_nx2_nx1[n], H5S_SELECT_SET,
+    dims_count[0] = num_variables[n];
+    H5Sselect_hyperslab(filespaces_vars_blocks_nx3_nx2_nx1[n], H5S_SELECT_SET,
         dims_start, NULL, dims_count, NULL);
   }
 
@@ -509,7 +679,7 @@ void ATHDF5Output::Initialize(Mesh *pmesh, ParameterInput *pin,
   x3f_mesh = new float[num_blocks_local * (nx3+1)];
   data_buffers = new float *[num_datasets];
   for (int n = 0; n < num_datasets; ++n)
-    data_buffers[n] = new float[num_blocks_local * num_variables[n] * nx3 * nx2 * nx1];
+    data_buffers[n] = new float[num_variables[n] * num_blocks_local * nx3 * nx2 * nx1];
   data_arrays = new AthenaArray<Real>[num_datasets];
 
   // Prepare dataspaces for describing data in memory
@@ -523,14 +693,15 @@ void ATHDF5Output::Initialize(Mesh *pmesh, ParameterInput *pin,
   memspace_blocks_nx2 = H5Screate_simple(2, dims_count, NULL);
   dims_count[1] = nx3+1;
   memspace_blocks_nx3 = H5Screate_simple(2, dims_count, NULL);
-  memspaces_blocks_vars_nx3_nx2_nx1 = new hid_t[num_datasets];
+  dims_count[1] = num_blocks_local;
+  dims_count[2] = nx3;
+  dims_count[3] = nx2;
+  dims_count[4] = nx1;
+  memspaces_vars_blocks_nx3_nx2_nx1 = new hid_t[num_datasets];
   for (int n = 0; n < num_datasets; ++n)
   {
-    dims_count[1] = num_variables[n];
-    dims_count[2] = nx3;
-    dims_count[3] = nx2;
-    dims_count[4] = nx1;
-    memspaces_blocks_vars_nx3_nx2_nx1[n] = H5Screate_simple(5, dims_count, NULL);
+    dims_count[0] = num_variables[n];
+    memspaces_vars_blocks_nx3_nx2_nx1[n] = H5Screate_simple(5, dims_count, NULL);
   }
 
   // Use collective MPI calls if applicable
@@ -561,8 +732,8 @@ void ATHDF5Output::Finalize(ParameterInput *pin)
   H5Sclose(memspace_blocks_nx2);
   H5Sclose(memspace_blocks_nx3);
   for (int n = 0; n < num_datasets; ++n)
-    H5Sclose(memspaces_blocks_vars_nx3_nx2_nx1[n]);
-  delete[] memspaces_blocks_vars_nx3_nx2_nx1;
+    H5Sclose(memspaces_vars_blocks_nx3_nx2_nx1[n]);
+  delete[] memspaces_vars_blocks_nx3_nx2_nx1;
 
   // Close dataspaces for describing file
   H5Sclose(filespace_blocks);
@@ -571,8 +742,8 @@ void ATHDF5Output::Finalize(ParameterInput *pin)
   H5Sclose(filespace_blocks_nx2);
   H5Sclose(filespace_blocks_nx3);
   for (int n = 0; n < num_datasets; ++n)
-    H5Sclose(filespaces_blocks_vars_nx3_nx2_nx1[n]);
-  delete[] filespaces_blocks_vars_nx3_nx2_nx1;
+    H5Sclose(filespaces_vars_blocks_nx3_nx2_nx1[n]);
+  delete[] filespaces_vars_blocks_nx3_nx2_nx1;
 
   // Close datasets
   H5Dclose(dataset_levels);
@@ -638,17 +809,30 @@ void ATHDF5Output::LoadOutputData(OutputData *pout_data, MeshBlock *pblock)
   {
     // Determine where variables to be output are stored
     std::string variable = output_params.variable;
-    if (variable.compare("prim") == 0)
+    int n_dataset = 0;
+    if (variable.compare("prim") == 0 or variable.compare("cons") == 0)
     {
-      data_arrays[0].InitWithShallowSlice(pblock_current->phydro->w, 4, 0, NHYDRO);
+      if (variable.compare("prim") == 0)
+        data_arrays[n_dataset++]
+            .InitWithShallowSlice(pblock_current->phydro->w, 4, 0, NHYDRO);
+      else
+        data_arrays[n_dataset++]
+            .InitWithShallowSlice(pblock_current->phydro->u, 4, 0, NHYDRO);
       if (MAGNETIC_FIELDS_ENABLED)
-        data_arrays[1].InitWithShallowSlice(pblock_current->pfield->bcc, 4, 0, 3);
-    }
-    else if (variable.compare("cons") == 0)
-    {
-      data_arrays[0].InitWithShallowSlice(pblock_current->phydro->u, 4, 0, NHYDRO);
-      if (MAGNETIC_FIELDS_ENABLED)
-        data_arrays[1].InitWithShallowSlice(pblock_current->pfield->bcc, 4, 0, 3);
+        data_arrays[n_dataset++]
+            .InitWithShallowSlice(pblock_current->pfield->bcc, 4, 0, 3);
+      // TODO: uncomment when merged with radiation
+      /*
+      if (RADIATION_ENABLED)
+      {
+        data_arrays[n_dataset++]
+            .InitWithShallowSlice(pblock_current->prad->rad_mom, 4, 0, 10);
+        data_arrays[n_dataset++]
+            .InitWithShallowSlice(pblock_current->prad->rad_mom_cm, 4, 0, 4);
+        data_arrays[n_dataset++]
+            .InitWithShallowSlice(pblock_current->prad->grey_sigma, 4, 0, 2);
+      }
+      */
     }
     else if (variable.compare("d") == 0)
       data_arrays[0].InitWithShallowSlice(pblock_current->phydro->w, 4, IDN, 1);
@@ -663,9 +847,39 @@ void ATHDF5Output::LoadOutputData(OutputData *pout_data, MeshBlock *pblock)
     else if (variable.compare("m") == 0)
       data_arrays[0].InitWithShallowSlice(pblock_current->phydro->u, 4, IM1, 3);
     else if (variable.compare("b") == 0)
-      data_arrays[0].InitWithShallowSlice(pblock_current->pfield->bcc, 4, 0, 3);
-    else
+      data_arrays[0].InitWithShallowSlice(pblock_current->pfield->bcc, 4, IB1, 3);
+    // TODO: uncomment when merged with radiation
+    /*
+    else if (variable.compare("Er") == 0)
+      data_arrays[0].InitWithShallowSlice(pblock_current->prad->rad_mom, 4, IER, 1);
+    else if (variable.compare("Fr") == 0)
+      data_arrays[0].InitWithShallowSlice(pblock_current->prad->rad_mom, 4, IFR1, 3);
+    else if (variable.compare("Pr") == 0)
+      data_arrays[0].InitWithShallowSlice(pblock_current->prad->rad_mom, 4, IPR11, 6);
+    else if (variable.compare("Er0") == 0)
+      data_arrays[0].InitWithShallowSlice(pblock_current->prad->rad_mom_cm, 4, IER, 1);
+    else if (variable.compare("Fr0") == 0)
+      data_arrays[0].InitWithShallowSlice(pblock_current->prad->rad_mom_cm, 4, IFR1, 3);
+    else if (variable.compare("Sigma_s") == 0)
+      data_arrays[0].InitWithShallowSlice(pblock_current->prad->grey_sigma, 4, OPAS, 1);
+    else if (variable.compare("Sigma_a") == 0)
+      data_arrays[0].InitWithShallowSlice(pblock_current->prad->grey_sigma, 4, OPAA, 1);
+    */
+    else if (variable.compare("ifov") == 0)
       data_arrays[0].InitWithShallowSlice(pblock_current->phydro->ifov, 4, 0, NIFOV);
+    // TODO: uncomment when merged with radiation
+    /*
+    else if (variable.compare("rad_fov") == 0)
+      data_arrays[0]
+          .InitWithShallowSlice(pblock_current->prad->rad_ifov, 4, 0, NRADFOV);
+    */
+    else
+    {
+      std::stringstream message;
+      message << "### FATAL ERROR in athdf5 output\n"
+              << "Output variable " << variable << " unrecognized\n";
+      throw std::runtime_error(message.str().c_str());
+    }
 
     // Load location information
     levels_mesh[lid] = pblock_current->loc.level - root_level;
@@ -684,13 +898,15 @@ void ATHDF5Output::LoadOutputData(OutputData *pout_data, MeshBlock *pblock)
     // Load celldata (implicitly converting to float)
     for (int n = 0; n < num_datasets; ++n)
     {
-      int index = 0;
       for (int v = 0; v < num_variables[n]; ++v)
+      {
+        int index = 0;
         for (int k = ks; k <= ke; ++k)
           for (int j = js; j <= je; ++j)
             for (int i = is; i <= ie; ++i)
-              data_buffers[n][lid*num_variables[n]*nx3*nx2*nx1 + index++]
+              data_buffers[n][(v*num_blocks_local+lid)*nx3*nx2*nx1 + index++]
                   = data_arrays[n](v,k,j,i);
+      }
       data_arrays[n].DeleteAthenaArray();
     }
   }
@@ -738,7 +954,7 @@ void ATHDF5Output::WriteOutputFile(OutputData *pout_data, MeshBlock *pblock)
   // Write cell data
   for (int n = 0; n < num_datasets; ++n)
     H5Dwrite(datasets_celldata[n], H5T_NATIVE_FLOAT,
-        memspaces_blocks_vars_nx3_nx2_nx1[n], filespaces_blocks_vars_nx3_nx2_nx1[n],
+        memspaces_vars_blocks_nx3_nx2_nx1[n], filespaces_vars_blocks_nx3_nx2_nx1[n],
         property_list, data_buffers[n]);
   return;
 }
@@ -821,20 +1037,20 @@ void ATHDF5Output::MakeXDMF()
         {
           xdmf << "      <DataItem ItemType=\"HyperSlab\" Dimensions=\"" << nx3 << " "
               << nx2 << " " << nx1 << "\">\n";
-          xdmf << "        <DataItem Dimensions=\"3 5\" NumberType=\"Int\"> " << n_block
-              << " " << n_variable << " 0 0 0 1 1 1 1 1 1 1 " << nx3 << " " << nx2
-              << " " << nx1 << " </DataItem>\n";
+          xdmf << "        <DataItem Dimensions=\"3 5\" NumberType=\"Int\"> "
+              << n_variable << " " << n_block << " 0 0 0 1 1 1 1 1 1 1 " << nx3 << " "
+              << nx2 << " " << nx1 << " </DataItem>\n";
         }
         else
         {
           xdmf << "      <DataItem ItemType=\"HyperSlab\" Dimensions=\"" << nx2 << " "
               << nx1 << "\">\n";
-          xdmf << "        <DataItem Dimensions=\"3 5\" NumberType=\"Int\"> " << n_block
-              << " " << n_variable << " 0 0 0 1 1 1 1 1 1 1 1 " << nx2 << " " << nx1
-              << " </DataItem>\n";
+          xdmf << "        <DataItem Dimensions=\"3 5\" NumberType=\"Int\"> "
+              << n_variable << " " << n_block << " 0 0 0 1 1 1 1 1 1 1 1 " << nx2 << " "
+              << nx1 << " </DataItem>\n";
         }
-        xdmf << "        <DataItem Dimensions=\"" << num_blocks_global << " "
-            << num_total_variables << " " << nx3 << " " << nx2 << " " << nx1
+        xdmf << "        <DataItem Dimensions=\"" << num_variables[n_dataset] << " "
+            << num_blocks_global << " " << nx3 << " " << nx2 << " " << nx1
             << "\" Format=\"HDF\"> " << filename << ":/" << dataset_names[n_dataset]
             << " </DataItem>\n";
         xdmf << "      </DataItem>\n";
