@@ -21,7 +21,7 @@
 #include "coordinates.hpp"
 
 // C++ headers
-#include <cmath>  // abs(), cos(), log(), sin(), sqrt()
+#include <cmath>  // NAN, abs(), cos(), log(), sin(), sqrt()
 
 // Athena++ headers
 #include "../athena.hpp"           // enums, macros
@@ -2075,6 +2075,22 @@ void Coordinates::FluxToGlobal3(const int k, const int j, const int il, const in
     }
   }
   return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for calculating distance between two points
+// Inputs:
+//   a1,a2,a3: global coordinates of first point (unused)
+//   bx,by,bz: Minkowski coordinates of second point (unused)
+// Outputs:
+//   returned value: NAN
+// Notes:
+//   should not be called
+Real Coordinates::DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real by,
+    Real bz)
+{
+  return NAN;
 }
 
 //--------------------------------------------------------------------------------------
