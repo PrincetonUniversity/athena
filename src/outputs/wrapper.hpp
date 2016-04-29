@@ -36,7 +36,11 @@ public:
   // wrappers for basic I/O functions
   int Open(const char* fname, enum rwmode rw);
   int Read(void *buf, IOWrapperSize_t size, IOWrapperSize_t count);
+  int Read_at(void *buf, IOWrapperSize_t size,
+              IOWrapperSize_t count, IOWrapperSize_t offset);
   int Write(const void *buf, IOWrapperSize_t size, IOWrapperSize_t count);
+  int Write_at_all(const void *buf, IOWrapperSize_t size,
+                   IOWrapperSize_t cnt, IOWrapperSize_t offset);
   int Close(void);
   int Seek(IOWrapperSize_t offset);
   IOWrapperSize_t GetPosition(void);

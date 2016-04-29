@@ -18,14 +18,13 @@
 //======================================================================================
 
 // C/C++ headers
-#include <stdlib.h>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <stdexcept>
-#include <stdio.h>
 #include <fstream>
+#include <string.h>
 
 // Athena++ classes headers
 #include "../athena.hpp"
@@ -50,15 +49,9 @@ RestartOutput::RestartOutput(OutputParameters oparams)
 
 void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag)
 {
-  std::stringstream msg;
   std::string fname;
   std::stringstream ost;
-  FILE *fp;
   MeshBlock *pmb;
-  int *nblocks, *displ;
-  IOWrapperSize_t *myblocksize;
-  int i, level;
-  IOWrapperSize_t listsize;
 
   // create single output, filename:"file_basename"+"."+"file_id"+"."+XXXXX+".rst",
   // where XXXXX = 5-digit file_number
@@ -81,142 +74,115 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag)
     pin->SetInteger(output_params.block_name, "file_number", output_params.file_number);
     pin->SetReal(output_params.block_name, "next_time", output_params.next_time);
   }
-  pin->ParameterDump(ost);
-
   resfile.Open(fname.c_str(),WRAPPER_WRITE_MODE);
 
+  // prepare the input parameters
+  pin->ParameterDump(ost);
+  std::string sbuf=ost.str();
+
+  // calculate the header size
+  headeroffset=sbuf.size()*sizeof(char)+3*sizeof(int)+sizeof(RegionSize)
+              +2*sizeof(Real)+sizeof(IOWrapperSize_t);
+  // the size of an element of the ID list
+  listsize=sizeof(int)+sizeof(LogicalLocation)+sizeof(Real);
+  // the size of each MeshBlock
+  datasize = pM->pblock->GetBlockSizeInBytes();
+  nbtotal=pM->nbtotal;
+  myns=pM->nslist[Globals::my_rank];
+  mynb=pM->nblist[Globals::my_rank];
+
+  // write the header
   if(Globals::my_rank==0) {
     // output the input parameters; this part is serial
-    std::string sbuf=ost.str();
     resfile.Write(sbuf.c_str(),sizeof(char),sbuf.size());
 
     // output Mesh information; this part is serial
     resfile.Write(&(pM->nbtotal), sizeof(int), 1);
     resfile.Write(&(pM->root_level), sizeof(int), 1);
     resfile.Write(&(pM->mesh_size), sizeof(RegionSize), 1);
-    resfile.Write(pM->mesh_bcs, sizeof(enum BoundaryFlag), 6);
     resfile.Write(&(pM->time), sizeof(Real), 1);
     resfile.Write(&(pM->dt), sizeof(Real), 1);
     resfile.Write(&(pM->ncycle), sizeof(int), 1);
+    resfile.Write(&(datasize), sizeof(IOWrapperSize_t), 1);
   }
 
-  // the size of an element of the ID list
-  listsize=sizeof(int)+sizeof(LogicalLocation)+sizeof(Real)+sizeof(IOWrapperSize_t);
-
-  int mynb=pM->nblist[Globals::my_rank];
-  blocksize=new IOWrapperSize_t[pM->nbtotal+1];
-  offset=new IOWrapperSize_t[mynb];
-
-#ifdef MPI_PARALLEL
-  displ = new int[Globals::nranks];
-  if(Globals::my_rank==0) mynb++; // the first process includes the information block
-  myblocksize=new IOWrapperSize_t[mynb];
-
-  displ[0]=0;
-  for(i=1;i<Globals::nranks;i++)
-    displ[i]=pM->nslist[i]+1;
-
-  i=0;
-  if(Globals::my_rank==0) { // the information block
-    myblocksize[0]=resfile.GetPosition();
-    i=1;
-  }
+  // allocate memory for the ID list and the data
+  char *idlist=new char [listsize*mynb];
+  data = new Real [mynb*datasize/sizeof(Real)];
   pmb=pM->pblock;
+  int os=0;
   while(pmb!=NULL) {
-    myblocksize[i]=pmb->GetBlockSizeInBytes();
-    i++;
+    // pack the meta data
+    memcpy(&(idlist[os]), &(pmb->gid), sizeof(int));
+    os+=sizeof(int);
+    memcpy(&(idlist[os]), &(pmb->loc), sizeof(LogicalLocation));
+    os+=sizeof(LogicalLocation);
+    memcpy(&(idlist[os]), &(pmb->cost), sizeof(Real));
+    os+=sizeof(Real);
     pmb=pmb->next;
   }
-
-  // distribute the size of each block + header size
-  pM->nblist[0]++; // include the information block
-  MPI_Allgatherv(myblocksize,mynb,MPI_LONG,
-     blocksize,pM->nblist,displ,MPI_LONG,MPI_COMM_WORLD);
-  pM->nblist[0]--; // recover the original list
-
-  // clean up
-  delete [] myblocksize;
-  delete [] displ;
-
-#else // serial
-  pmb=pM->pblock;
-  blocksize[0]=resfile.GetPosition();
-  i=1;
-  while(pmb!=NULL) {
-    blocksize[i]=pmb->GetBlockSizeInBytes();
-    i++;
-    pmb=pmb->next;
+  if(os!=listsize*mynb) {
+    std::stringstream message;
+    message << "### FATAL ERROR in RestartOutput::Initialize\n"
+            << "The ID list size does not match.\n";
+    throw std::runtime_error(message.str().c_str());
   }
-#endif
+  // write the ID list collectively
+  IOWrapperSize_t myoffset=headeroffset+listsize*myns;
+  resfile.Write_at_all(idlist,listsize,mynb,myoffset);
 
-  int nbs=pM->nslist[Globals::my_rank];
-  int nbe=nbs+pM->nblist[Globals::my_rank]-1;
-  // blocksize[0] = offset to the end of the header
-  IOWrapperSize_t firstoffset=blocksize[0]+listsize*pM->nbtotal; // end of the id list
-  for(i=0;i<nbs;i++)
-    firstoffset+=blocksize[i+1];
-  offset[0]=firstoffset;
-//  offset[0]=blocksize[0]+listsize*pM->nbtotal;
-  for(i=nbs;i<nbe;i++) // calculate the offsets
-    offset[i-nbs+1]=offset[i-nbs]+blocksize[i+1]; // blocksize[i]=the size of i-1th block
-
-  // seek to the head of the ID list of this process
-  resfile.Seek(blocksize[0]+nbs*listsize);
-
-  pmb=pM->pblock;
-  i=0;
-  while(pmb!=NULL) {
-    // perhaps these data should be packed and dumped at once
-    resfile.Write(&(pmb->gid),sizeof(int),1);
-    resfile.Write(&(pmb->loc),sizeof(LogicalLocation),1);
-    resfile.Write(&(pmb->cost),sizeof(Real),1);
-    resfile.Write(&(offset[i]),sizeof(IOWrapperSize_t),1);
-    i++;
-    pmb=pmb->next;
-  }
-  // If any additional physics is implemented, modify here accordingly.
-  // Especially, the offset from the top of the file must be recalculated.
-  // For MPI-IO, it is important to know the absolute location in advance.
+  // deallocate the idlist array
+  delete [] idlist;
 
   // leave the file open; it will be closed in Finalize()
   return;
 }
 
-//--------------------------------------------------------------------------------------
-//! \fn void RestartOutput::Finalize(ParameterInput *pin)
-//  \brief close the file
-
-void RestartOutput::Finalize(ParameterInput *pin)
-{
-  resfile.Close();
-  delete [] blocksize;
-  delete [] offset;
-}
 
 //--------------------------------------------------------------------------------------
-//! \fn void RestartOutput:::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
-//  \brief writes OutputData to file in Restart format
-
-void RestartOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
+//! \fn void RestartOutput::LoadOutputData(OutputData *pout_data, MeshBlock *pblock)
+//  \brief Load the data array from all the MeshBlocks
+void RestartOutput::LoadOutputData(OutputData *pout_data, MeshBlock *pblock)
 {
-  resfile.Seek(offset[pmb->lid]);
-  resfile.Write(&(pmb->block_size), sizeof(RegionSize), 1);
-  resfile.Write(pmb->block_bcs, sizeof(int), 6);
-  resfile.Write(pmb->phydro->u.GetArrayPointer(),sizeof(Real),
-                       pmb->phydro->u.GetSize());
+  // pack the data
+  Real *pdata=&(data[pblock->lid*datasize/sizeof(Real)]);
+  memcpy(pdata,pblock->phydro->u.GetArrayPointer(),
+         sizeof(Real)*pblock->phydro->u.GetSize());
+  pdata+=pblock->phydro->u.GetSize();
   if (GENERAL_RELATIVITY) {
-    resfile.Write(pmb->phydro->w.GetArrayPointer(),sizeof(Real),
-                         pmb->phydro->w.GetSize());
-    resfile.Write(pmb->phydro->w1.GetArrayPointer(),sizeof(Real),
-                         pmb->phydro->w1.GetSize());
+    memcpy(pdata,pblock->phydro->w.GetArrayPointer(),
+           sizeof(Real)*pblock->phydro->w.GetSize());
+    pdata+=pblock->phydro->w.GetSize();
+    memcpy(pdata,pblock->phydro->w1.GetArrayPointer(),
+           sizeof(Real)*pblock->phydro->w1.GetSize());
+    pdata+=pblock->phydro->w1.GetSize();
   }
   if (MAGNETIC_FIELDS_ENABLED) {
-    resfile.Write(pmb->pfield->b.x1f.GetArrayPointer(),sizeof(Real),
-                         pmb->pfield->b.x1f.GetSize());
-    resfile.Write(pmb->pfield->b.x2f.GetArrayPointer(),sizeof(Real),
-                         pmb->pfield->b.x2f.GetSize());
-    resfile.Write(pmb->pfield->b.x3f.GetArrayPointer(),sizeof(Real),
-                         pmb->pfield->b.x3f.GetSize());
+    memcpy(pdata,pblock->pfield->b.x1f.GetArrayPointer(),
+           sizeof(Real)*pblock->pfield->b.x1f.GetSize());
+    pdata+=pblock->pfield->b.x1f.GetSize();
+    memcpy(pdata,pblock->pfield->b.x2f.GetArrayPointer(),
+           sizeof(Real)*pblock->pfield->b.x2f.GetSize());
+    pdata+=pblock->pfield->b.x2f.GetSize();
+    memcpy(pdata,pblock->pfield->b.x3f.GetArrayPointer(),
+           sizeof(Real)*pblock->pfield->b.x3f.GetSize());
+    pdata+=pblock->pfield->b.x3f.GetSize();
   }
-  return;
+
+  // add additional physics here
+  // also update MeshBlock::GetBlockSizeInBytes accordingly
 }
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void RestartOutput::Finalize(ParameterInput *pin)
+//  \brief perform collective data output and clean up
+void RestartOutput::Finalize(ParameterInput *pin)
+{
+  // call actual write here
+  IOWrapperSize_t myoffset=headeroffset+listsize*nbtotal+datasize*myns;
+  resfile.Write_at_all(data,datasize,mynb,myoffset);
+  resfile.Close();
+  delete [] data;
+}
+
