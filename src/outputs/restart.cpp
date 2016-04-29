@@ -145,7 +145,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag)
 void RestartOutput::LoadOutputData(OutputData *pout_data, MeshBlock *pblock)
 {
   // pack the data
-  Real *pdata=&(data[pblock->lid*datasize]);
+  Real *pdata=&(data[pblock->lid*datasize/sizeof(Real)]);
   memcpy(pdata,pblock->phydro->u.GetArrayPointer(),
          sizeof(Real)*pblock->phydro->u.GetSize());
   pdata+=pblock->phydro->u.GetSize();
