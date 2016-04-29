@@ -16,8 +16,10 @@
 #include "../parameter_input.hpp"          // ParameterInput
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // Field
-#include "../hydro/hydro.hpp"
-#include "../hydro/eos/eos.hpp"
+#include "../hydro/hydro.hpp"              // Hydro
+#include "../hydro/eos/eos.hpp"            // HydroEqnOfState
+
+//--------------------------------------------------------------------------------------
 
 // Function for setting initial conditions
 // Inputs:

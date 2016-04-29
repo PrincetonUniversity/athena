@@ -37,7 +37,7 @@ static int num_lines;                    // number of lines in table
 
 // Function for initializing global mesh properties
 // Inputs:
-//   pin: pointer to runtime inputs
+//   pin: input parameters
 // Outputs: (none)
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
@@ -78,7 +78,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //--------------------------------------------------------------------------------------
 
 // Function for cleaning up global mesh properties
-// Inputs: (none)
+// Inputs:
+//   pin: parameters (unused)
 // Outputs: (none)
 void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {

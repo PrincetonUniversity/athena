@@ -17,21 +17,28 @@
 #include "../parameter_input.hpp"          // ParameterInput
 #include "../bvals/bvals.hpp"              // BoundaryValues, FaceField
 #include "../coordinates/coordinates.hpp"  // Coordinates
-#include "../hydro/hydro.hpp"
-#include "../hydro/eos/eos.hpp"
 #include "../field/field.hpp"              // Field
+#include "../hydro/hydro.hpp"              // Hydro
+#include "../hydro/eos/eos.hpp"            // HydroEqnOfState
 
 // Declarations
-void FixedOuter(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &bb,
-                int is, int ie, int js, int je, int ks, int ke);
+void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
+    FaceField &bb, int is, int ie, int js, int je, int ks, int ke);
+
+//--------------------------------------------------------------------------------------
 
 // Function for initializing global mesh properties
+// Inputs:
+//   pin: input parameters (unused)
+// Outputs: (none)
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
   // Enroll boundary functions
-  EnrollUserBoundaryFunction(OUTER_X1, FixedOuter);
+  EnrollUserBoundaryFunction(OUTER_X1, FixedBoundary);
   return;
 }
+
+//--------------------------------------------------------------------------------------
 
 // Function for setting initial conditions
 // Inputs:
@@ -118,18 +125,19 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   return;
 }
 
+//--------------------------------------------------------------------------------------
 
-// Outer boundary condition
+// Fixed boundary condition
 // Inputs:
-//   pmb: pointer to block
-//   pco: pointer to coordinates
-//   is,ie,js,je,ks,ke: index boundaries of active zone
+//   pmb: pointer to MeshBlock
+//   pcoord: pointer to Coordinates
+//   is,ie,js,je,ks,ke: indices demarkating active region
 // Outputs:
-//   prim: primitive quantities set along outer x1-boundary
-//   bb: magnetic fields set along outer x1-boundary
+//   prim: primitives set in ghost zones
+//   bb: face-centered magnetic field set in ghost zones
 // Notes:
-//   remains unchanged
-void FixedOuter(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+//   does nothing
+void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
     FaceField &bb, int is, int ie, int js, int je, int ks, int ke)
 {
   return;

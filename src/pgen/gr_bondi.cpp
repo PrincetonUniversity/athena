@@ -13,19 +13,17 @@
 #include "../bvals/bvals.hpp"              // BoundaryValues, FaceField
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // Field
-#include "../hydro/hydro.hpp"
-#include "../hydro/eos/eos.hpp"
+#include "../hydro/hydro.hpp"              // Hydro
+#include "../hydro/eos/eos.hpp"            // HydroEqnOfState
 
 // Declarations
-void InnerBC(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &bb,
-    int is, int ie, int js, int je, int ks, int ke);
-void OuterBC(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &bb,
-    int is, int ie, int js, int je, int ks, int ke);
+void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
+    FaceField &bb, int is, int ie, int js, int je, int ks, int ke);
 static void CalculatePrimitives(Real r, Real temp_min, Real temp_max, Real *prho,
     Real *ppgas, Real *put, Real *pur);
 static Real TemperatureMin(Real r, Real t_min, Real t_max);
 static Real TemperatureBisect(Real r, Real t_min, Real t_max);
-static Real TemperatureResidual(Real t, Real m, Real n_adi, Real r, Real c1, Real c2);
+static Real TemperatureResidual(Real t, Real r);
 
 // Global variables
 static Real m;             // black hole mass
@@ -34,15 +32,21 @@ static Real r_crit;        // sonic point radius
 static Real c1, c2;        // useful constants
 static Real bsq_over_rho;  // b^2/rho at inner radius
 
+//--------------------------------------------------------------------------------------
 
 // Function for initializing global mesh properties
+// Inputs:
+//   pin: input parameters (unused)
+// Outputs: (none)
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
   // Enroll boundary functions
-  EnrollUserBoundaryFunction(INNER_X1, InnerBC);
-  EnrollUserBoundaryFunction(OUTER_X1, OuterBC);
+  EnrollUserBoundaryFunction(INNER_X1, FixedBoundary);
+  EnrollUserBoundaryFunction(OUTER_X1, FixedBoundary);
   return;
 }
+
+//--------------------------------------------------------------------------------------
 
 // Function for setting initial conditions
 // Inputs:
@@ -240,29 +244,25 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   return;
 }
 
+//--------------------------------------------------------------------------------------
 
-// User-defined work function called every time step
-void MeshBlock::UserWorkInLoop(void)
+// Fixed boundary condition
+// Inputs:
+//   pmb: pointer to MeshBlock
+//   pcoord: pointer to Coordinates
+//   is,ie,js,je,ks,ke: indices demarkating active region
+// Outputs:
+//   prim: primitives set in ghost zones
+//   bb: face-centered magnetic field set in ghost zones
+// Notes:
+//   does nothing
+void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
+    FaceField &bb, int is, int ie, int js, int je, int ks, int ke)
 {
   return;
 }
 
-
-// Inner boundary condition
-// TODO: change when interface changes
-void InnerBC(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &bb,
-    int is, int ie, int js, int je, int ks, int ke)
-{
-  return;
-}
-
-// Outer boundary condition
-// TODO: change when interface changes
-void OuterBC(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &bb,
-    int is, int ie, int js, int je, int ks, int ke)
-{
-  return;
-}
+//--------------------------------------------------------------------------------------
 
 // Function for calculating primitives given radius
 // Inputs:
@@ -301,6 +301,8 @@ static void CalculatePrimitives(Real r, Real temp_min, Real temp_max, Real *prho
   return;
 }
 
+//--------------------------------------------------------------------------------------
+
 // Function for finding temperature at which residual is minimized
 // Inputs:
 //   r: Schwarzschild radius
@@ -318,7 +320,7 @@ static Real TemperatureMin(Real r, Real t_min, Real t_max)
 
   // Initialize values
   Real t_mid = t_min + ratio * (t_max - t_min);
-  Real res_mid = TemperatureResidual(t_mid, m, n_adi, r, c1, c2);
+  Real res_mid = TemperatureResidual(t_mid, r);
 
   // Apply golden section method
   bool larger_to_right = true;  // flag indicating larger subinterval is on right
@@ -330,7 +332,7 @@ static Real TemperatureMin(Real r, Real t_min, Real t_max)
     if (larger_to_right)
     {
       t_new = t_mid + ratio * (t_max - t_mid);
-      Real res_new = TemperatureResidual(t_new, m, n_adi, r, c1, c2);
+      Real res_new = TemperatureResidual(t_new, r);
       if (res_new < res_mid)
       {
         t_min = t_mid;
@@ -346,7 +348,7 @@ static Real TemperatureMin(Real r, Real t_min, Real t_max)
     else
     {
       t_new = t_mid - ratio * (t_mid - t_min);
-      Real res_new = TemperatureResidual(t_new, m, n_adi, r, c1, c2);
+      Real res_new = TemperatureResidual(t_new, r);
       if (res_new < res_mid)
       {
         t_max = t_mid;
@@ -362,6 +364,8 @@ static Real TemperatureMin(Real r, Real t_min, Real t_max)
   }
   return NAN;
 }
+
+//--------------------------------------------------------------------------------------
 
 // Bisection root finder
 // Inputs:
@@ -380,8 +384,8 @@ static Real TemperatureBisect(Real r, Real t_min, Real t_max)
   const Real tol_temperature = 1.0e-6;
 
   // Find initial residuals
-  Real res_min = TemperatureResidual(t_min, m, n_adi, r, c1, c2);
-  Real res_max = TemperatureResidual(t_max, m, n_adi, r, c1, c2);
+  Real res_min = TemperatureResidual(t_min, r);
+  Real res_max = TemperatureResidual(t_max, r);
   if (std::abs(res_min) < tol_residual)
     return t_min;
   if (std::abs(res_max) < tol_residual)
@@ -396,7 +400,7 @@ static Real TemperatureBisect(Real r, Real t_min, Real t_max)
     t_mid = (t_min + t_max) / 2.0;
     if (t_max - t_min < tol_temperature)
       return t_mid;
-    Real res_mid = TemperatureResidual(t_mid, m, n_adi, r, c1, c2);
+    Real res_mid = TemperatureResidual(t_mid, r);
     if (std::abs(res_mid) < tol_residual)
       return t_mid;
     if ((res_mid < 0.0 and res_min < 0.0) or (res_mid > 0.0 and res_min > 0.0))
@@ -413,10 +417,17 @@ static Real TemperatureBisect(Real r, Real t_min, Real t_max)
   return t_mid;
 }
 
+//--------------------------------------------------------------------------------------
+
 // Function whose value vanishes for correct temperature
+// Inputs:
+//   t: temperature
+//   r: Schwarzschild radius
+// Outputs:
+//   returned value: residual that should vanish for correct temperature
 // Notes:
 //   implements (76) from Hawley, Smarr, & Wilson 1984, ApJ 277 296
-static Real TemperatureResidual(Real t, Real m, Real n_adi, Real r, Real c1, Real c2)
+static Real TemperatureResidual(Real t, Real r);
 {
   return SQR(1.0 + (n_adi+1.0) * t)
       * (1.0 - 2.0*m/r + SQR(c1) / (SQR(SQR(r)) * std::pow(t, 2.0*n_adi))) - c2;
