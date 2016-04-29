@@ -61,7 +61,7 @@
 int main(int argc, char *argv[])
 {
   std::string athena_version = "version 0.1 - February 2014";
-  char *input_filename;
+  char *input_filename=NULL, *restart_filename=NULL;
   char *prundir = NULL;
   int res_flag=0;   // set to 1 if -r        argument is on cmdline
   int narg_flag=0;  // set to 1 if -n        argument is on cmdline
@@ -109,12 +109,12 @@ int main(int argc, char *argv[])
       switch(*(argv[i]+1)) {
       case 'i':                      // -i <input_filename>
         ++i;
-        if(res_flag==0) input_filename = argv[i];
+        input_filename = argv[i];
         iarg_flag = 1;
       break;
       case 'r':                      // -r <restart_file>
         res_flag = 1;
-        input_filename = argv[++i];
+        restart_filename = argv[++i];
         break;
       case 'd':                      // -d <run_directory>
         prundir = argv[++i];
@@ -163,25 +163,42 @@ int main(int argc, char *argv[])
     } // else if argv[i] not of form "-?" ignore it here (tested in ModifyFromCmdline)
   }
 
+  if(restart_filename==NULL && input_filename==NULL) {
+    // no input file is given
+    std::cout << "### FATAL ERROR in main" << std::endl
+              << "No input file or restart file is specified." << std::endl;
+#ifdef MPI_PARALLEL
+    MPI_Finalize();
+#endif
+    return(0);
+  }
+
 // Note steps 3-6 are protected by a simple error handler
 //--- Step 3. --------------------------------------------------------------------------
 // Construct object to store input parameters, then parse input file and command line.
 // With MPI, the input is read by every process in parallel using MPI-IO.
 
   ParameterInput *pinput;
-  IOWrapper infile;
+  IOWrapper infile, restartfile;
   try {
     pinput = new ParameterInput;
-    infile.Open(input_filename,WRAPPER_READ_MODE);
-    pinput->LoadFromFile(infile);
+    if(res_flag==1) {
+      restartfile.Open(restart_filename,WRAPPER_READ_MODE);
+      pinput->LoadFromFile(restartfile);
+      // leave the restart file open for later use
+    }
+    if(iarg_flag==1) {
+      // if both -r and -i are specified, override the parameters using the input file
+      infile.Open(input_filename,WRAPPER_READ_MODE);
+      pinput->LoadFromFile(infile);
+      infile.Close();
+    }
     pinput->ModifyFromCmdline(argc,argv);
-  	// leave the input file open (for restarting)
   } 
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl
               << "memory allocation failed initializing class ParameterInput: " 
               << ba.what() << std::endl;
-    infile.Close();
 #ifdef MPI_PARALLEL
     MPI_Finalize();
 #endif
@@ -189,7 +206,7 @@ int main(int argc, char *argv[])
   }
   catch(std::exception const& ex) {
     std::cout << ex.what() << std::endl;  // prints diagnostic message  
-    infile.Close();
+    if(res_flag==1) restartfile.Close();
 #ifdef MPI_PARALLEL
     MPI_Finalize();
 #endif
@@ -199,7 +216,7 @@ int main(int argc, char *argv[])
   // Dump input parameters and quit if code was run with -n option.
   if (narg_flag){
     if(Globals::my_rank==0) pinput->ParameterDump(std::cout);
-    infile.Close();
+    if(res_flag==1) restartfile.Close();
 #ifdef MPI_PARALLEL
     MPI_Finalize();
 #endif
@@ -214,10 +231,9 @@ int main(int argc, char *argv[])
     if(res_flag==0)
       pmesh = new Mesh(pinput, mesh_flag);
     else { 
-      pmesh = new Mesh(pinput, infile, mesh_flag);
+      pmesh = new Mesh(pinput, restartfile, mesh_flag);
       ncstart=pmesh->ncycle;
     }
-    infile.Close(); // close the input file here
   }
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl
@@ -235,6 +251,7 @@ int main(int argc, char *argv[])
 #endif
     return(0);
   }
+  if(res_flag==1) restartfile.Close(); // close the restart file here
 
   // Quit if -m was on cmdline.  This option builds and outputs mesh structure.
   if (mesh_flag>0){

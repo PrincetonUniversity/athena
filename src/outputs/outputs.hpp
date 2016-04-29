@@ -159,16 +159,18 @@ public:
 class RestartOutput : public OutputType {
 private:
   IOWrapper resfile;
-  IOWrapperSize_t *blocksize, *offset;
+  IOWrapperSize_t listsize, headeroffset, datasize;
+  Real *data;
+  int nbtotal, myns, mynb;
 
 public:
   RestartOutput(OutputParameters oparams);
   ~RestartOutput() {};
   void Initialize(Mesh *pm, ParameterInput *pin, bool wtflag);
   void Finalize(ParameterInput *pin);
-  void LoadOutputData(OutputData *pod, MeshBlock *pmb) {};
+  void LoadOutputData(OutputData *pod, MeshBlock *pmb);
   void TransformOutputData(OutputData *pod, MeshBlock *pmb) {};
-  void WriteOutputFile(OutputData *pod, MeshBlock *pmb);
+  void WriteOutputFile(OutputData *pod, MeshBlock *pmb) {};
 };
 
 #ifdef HDF5OUTPUT
