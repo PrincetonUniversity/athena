@@ -611,15 +611,12 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   // read the id list (serial, because we need the costs for load balancing)
   multilevel=false;
   nerr=0;
-  listsize=sizeof(int)+sizeof(LogicalLocation)+sizeof(Real);
+  listsize=sizeof(LogicalLocation)+sizeof(Real);
   //allocate the idlist buffer
   char *idlist = new char [listsize*nbtotal];
   if(resfile.Read_all(idlist,listsize,nbtotal)!=nbtotal) nerr++;
   int os=0;
   for(int i=0;i<nbtotal;i++) {
-    int bgid;
-    memcpy(&bgid, &(idlist[os]), sizeof(int));
-    os+=sizeof(int);
     memcpy(&(loclist[i]), &(idlist[os]), sizeof(LogicalLocation));
     os+=sizeof(LogicalLocation);
     memcpy(&(costlist[i]), &(idlist[os]), sizeof(Real));
@@ -732,13 +729,12 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
     // create a block and add into the link list
     if(i==nbs) {
       pblock = new MeshBlock(i, i-nbs, this, pin, loclist[i], block_size,
-                             block_bcs, costlist[i], ranklist, nslist, mbdata+buff_os);
+                             block_bcs, costlist[i], mbdata+buff_os);
       pfirst = pblock;
     }
     else {
       pblock->next = new MeshBlock(i, i-nbs, this, pin, loclist[i], block_size,
-                                   block_bcs, costlist[i], ranklist, nslist,
-                                   mbdata+buff_os);
+                                   block_bcs, costlist[i], mbdata+buff_os);
       pblock->next->prev = pblock;
       pblock = pblock->next;
     }
@@ -984,7 +980,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
 MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
            LogicalLocation iloc, RegionSize input_block, enum BoundaryFlag *input_bcs,
-           Real icost, int *ranklist, int *nslist, Real *mbdata)
+           Real icost, Real *mbdata)
 {
   std::stringstream msg;
   pmy_mesh = pm;
