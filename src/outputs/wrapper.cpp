@@ -90,19 +90,35 @@ int IOWrapper::Read(void *buf, IOWrapperSize_t size, IOWrapperSize_t count)
 #endif
 }
 
+//--------------------------------------------------------------------------------------
+//! \fn int IOWrapper::Read_all(void *buf, IOWrapperSize_t size, IOWrapperSize_t count)
+//  \brief wrapper for {MPI_File_read_all} versus {fread}
+
+int IOWrapper::Read_all(void *buf, IOWrapperSize_t size, IOWrapperSize_t count)
+{
+#ifdef MPI_PARALLEL
+  MPI_Status status;
+  int ierr, nread;
+  if(MPI_File_read_all(fh,buf,count*size,MPI_BYTE,&status)!=MPI_SUCCESS) return -1;
+  if(MPI_Get_count(&status,MPI_BYTE,&nread)==MPI_UNDEFINED) return -1;
+  return nread/size;
+#else
+  return fread(buf,size,count,fh);
+#endif
+}
 
 //--------------------------------------------------------------------------------------
-//! \fn int IOWrapper::Read_at(void *buf, IOWrapperSize_t size,
+//! \fn int IOWrapper::Read_at_all(void *buf, IOWrapperSize_t size,
 //                             IOWrapperSize_t count, IOWrapperSize_t offset)
-//  \brief wrapper for {MPI_File_read_at} versus {fseek+fread}
+//  \brief wrapper for {MPI_File_read_at_all} versus {fseek+fread}
 
-int IOWrapper::Read_at(void *buf, IOWrapperSize_t size,
+int IOWrapper::Read_at_all(void *buf, IOWrapperSize_t size,
                            IOWrapperSize_t count, IOWrapperSize_t offset)
 {
 #ifdef MPI_PARALLEL
   MPI_Status status;
   int ierr, nread;
-  if(MPI_File_read_at(fh,offset,buf,count*size,MPI_BYTE,&status)!=MPI_SUCCESS)
+  if(MPI_File_read_at_all(fh,offset,buf,count*size,MPI_BYTE,&status)!=MPI_SUCCESS)
     return -1;
   if(MPI_Get_count(&status,MPI_BYTE,&nread)==MPI_UNDEFINED) return -1;
   return nread/size;
