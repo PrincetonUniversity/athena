@@ -170,7 +170,8 @@ void ParameterInput::LoadFromFile(IOWrapper &input)
 
   // search <par_end> or EOF. 
   do {
-    ret=input.Read(buf, sizeof(char), bufsize);
+//    ret=input.Read_all(buf, sizeof(char), bufsize);
+    ret=input.Read(buf, sizeof(char), bufsize); // for BG/Q
     par.write(buf,ret); // add the buffer into the stream
     header+=ret;
     std::string sbuf = par.str(); // create string for search
