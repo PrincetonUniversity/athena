@@ -730,7 +730,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   // load MeshBlocks (parallel)
   if(resfile.Read_at_all(mbdata, datasize, nb, headeroffset+nbs*datasize)!=nb) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "The restarting file is broken." << std::endl;
+        << "The restarting file is broken or input parameters are inconsistent."
+        << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
   for(i=nbs;i<=nbe;i++) {
@@ -752,6 +753,13 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   }
   pblock=pfirst;
   delete [] mbdata;
+  // check consistency
+  if(datasize!=pblock->GetBlockSizeInBytes()) {
+    msg << "### FATAL ERROR in Mesh constructor" << std::endl
+        << "The restarting file is broken or input parameters are inconsistent."
+        << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
 
 // create new Task List
   ptlist = new TaskList(this);
