@@ -27,6 +27,7 @@
 
 // Athena headers
 #include "athena.hpp"
+#include "globals.hpp"
 
 //======================================================================================
 //! \file parameter_input.cpp
@@ -170,8 +171,13 @@ void ParameterInput::LoadFromFile(IOWrapper &input)
 
   // search <par_end> or EOF. 
   do {
-//    ret=input.Read_all(buf, sizeof(char), bufsize);
-    ret=input.Read(buf, sizeof(char), bufsize); // for BG/Q
+    if(Globals::my_rank==0) // only the master process reads the header from the file
+      ret=input.Read(buf, sizeof(char), bufsize);
+#ifdef MPI_PARALLEL
+    // then broadcasts it
+    MPI_Bcast(&ret, 1, MPI_INTEGER, 0, MPI_COMM_WORLD);
+    MPI_Bcast(buf, ret, MPI_BYTE, 0, MPI_COMM_WORLD);
+#endif
     par.write(buf,ret); // add the buffer into the stream
     header+=ret;
     std::string sbuf = par.str(); // create string for search
@@ -181,12 +187,10 @@ void ParameterInput::LoadFromFile(IOWrapper &input)
       header=loc+10; // store the header length
       break;
     }
-    if(header > bufsize*10)
-    {
+    if(header > bufsize*10) {
       msg << "### FATAL ERROR in function [ParameterInput::LoadFromFile]"
           << "<par_end> is not found in the first 40KBytes." << std::endl
           << "Probably the file is broken or a wrong file is specified" << std::endl;
-      input.Close();
       throw std::runtime_error(msg.str().c_str());
     }
   } while(ret == bufsize); // till EOF (or par_end is found)
