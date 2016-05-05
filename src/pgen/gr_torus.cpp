@@ -325,7 +325,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             Real r_2, theta_2, phi_2;
             pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j+1),
                 pcoord->x3v(k), &r_2, &theta_2, &phi_2);
-            Real bbr = -(a_phi_edges(j+1,i) - a_phi_edges(j,i)) / (theta_2 - theta_1);
+            Real cos_theta = std::cos(theta);
+            Real det = (SQR(r) + SQR(a) * SQR(cos_theta)) * std::abs(std::sin(theta));
+            Real bbr = -1.0/det
+                * (a_phi_edges(j+1,i) - a_phi_edges(j,i)) / (theta_2 - theta_1);
             Real a_phi_1, a_phi_2;
             if (i == il)
             {
@@ -352,7 +355,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
               pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
                   pcoord->x3v(k), &r_2, &theta_2, &phi_2);
             }
-            Real bbtheta = (a_phi_2 - a_phi_1) / (r_2 - r_1);
+            Real bbtheta = 1.0/det * (a_phi_2 - a_phi_1) / (r_2 - r_1);
             if (bbr == 0.0 and bbtheta == 0.0)
               pfield->b.x1f(k,j,i) = 0.0;
             else
@@ -388,7 +391,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             Real r_2, theta_2, phi_2;
             pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i+1), pcoord->x2f(j),
                 pcoord->x3v(k), &r_2, &theta_2, &phi_2);
-            Real bbtheta = (a_phi_edges(j,i+1) - a_phi_edges(j,i)) / (r_2 - r_1);
+            Real cos_theta = std::cos(theta);
+            Real det = (SQR(r) + SQR(a) * SQR(cos_theta)) * std::abs(std::sin(theta));
+            Real bbtheta =
+                1.0/det * (a_phi_edges(j,i+1) - a_phi_edges(j,i)) / (r_2 - r_1);
             Real a_phi_1, a_phi_2;
             if (j == jl)
             {
@@ -415,7 +421,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
               pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
                   pcoord->x3v(k), &r_2, &theta_2, &phi_2);
             }
-            Real bbr = -(a_phi_2 - a_phi_1) / (theta_2 - theta_1);
+            Real bbr = -1.0/det * (a_phi_2 - a_phi_1) / (theta_2 - theta_1);
             if (bbr == 0.0 and bbtheta == 0.0)
               pfield->b.x2f(k,j,i) = 0.0;
             else
@@ -861,8 +867,9 @@ static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta
     return false;
 
   // Calculate cell-centered 3-magnetic field
-  Real bb1 = -(a_cp-a_cm) / (theta_p-theta_m);
-  Real bb2 = (a_pc-a_mc) / (r_p-r_m);
+  Real det = (SQR(r_c) + SQR(a) * SQR(cos_theta_c)) * std::abs(sin_theta_c);
+  Real bb1 = -1.0/det * (a_cp-a_cm) / (theta_p-theta_m);
+  Real bb2 = 1.0/det * (a_pc-a_mc) / (r_p-r_m);
   Real bb3 = 0.0;
 
   // Calculate beta
