@@ -563,7 +563,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   if(nerr>0) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "The restarting file is broken." << std::endl;
-    resfile.Close();
     throw std::runtime_error(msg.str().c_str());
   }
 
@@ -610,16 +609,26 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
 
   // read the id list (serial, because we need the costs for load balancing)
   multilevel=false;
-  nerr=0;
-  listsize=sizeof(int)+sizeof(LogicalLocation)+sizeof(Real);
+  listsize=sizeof(LogicalLocation)+sizeof(Real);
   //allocate the idlist buffer
   char *idlist = new char [listsize*nbtotal];
-  if(resfile.Read_all(idlist,listsize,nbtotal)!=nbtotal) nerr++;
+  if(Globals::my_rank==0) { // only the master process reads the ID list
+    if(resfile.Read(idlist,listsize,nbtotal)!=nbtotal) {
+      msg << "### FATAL ERROR in Mesh constructor" << std::endl
+          << "The restarting file is broken." << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+  }
+  else { // the others just seek the file pointer
+    resfile.Seek(resfile.GetPosition()+listsize*nbtotal);
+  }
+#ifdef MPI_PARALLEL
+  // then broadcast the ID list
+  MPI_Bcast(idlist, listsize*nbtotal, MPI_BYTE, 0, MPI_COMM_WORLD);
+#endif
+
   int os=0;
   for(int i=0;i<nbtotal;i++) {
-    int bgid;
-    memcpy(&bgid, &(idlist[os]), sizeof(int));
-    os+=sizeof(int);
     memcpy(&(loclist[i]), &(idlist[os]), sizeof(LogicalLocation));
     os+=sizeof(LogicalLocation);
     memcpy(&(costlist[i]), &(idlist[os]), sizeof(Real));
@@ -628,12 +637,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
     if(loclist[i].level>current_level) current_level=loclist[i].level;
   }
   delete [] idlist;
-  if(nerr>0) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "The restarting file is broken." << std::endl;
-    resfile.Close();
-    throw std::runtime_error(msg.str().c_str());
-  }
   // get the header offset
   headeroffset=resfile.GetPosition();
 
@@ -725,20 +728,24 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   int nbe=nbs+nb-1;
   Real *mbdata = new Real [datasize/sizeof(Real)*nb];
   // load MeshBlocks (parallel)
-  resfile.Read_at_all(mbdata, datasize, nb, headeroffset+nbs*datasize);
+  if(resfile.Read_at_all(mbdata, datasize, nb, headeroffset+nbs*datasize)!=nb) {
+    msg << "### FATAL ERROR in Mesh constructor" << std::endl
+        << "The restarting file is broken or input parameters are inconsistent."
+        << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
   for(i=nbs;i<=nbe;i++) {
     int buff_os = datasize/sizeof(Real) * (i-nbs);
     SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
     // create a block and add into the link list
     if(i==nbs) {
       pblock = new MeshBlock(i, i-nbs, this, pin, loclist[i], block_size,
-                             block_bcs, costlist[i], ranklist, nslist, mbdata+buff_os);
+                             block_bcs, costlist[i], mbdata+buff_os);
       pfirst = pblock;
     }
     else {
       pblock->next = new MeshBlock(i, i-nbs, this, pin, loclist[i], block_size,
-                                   block_bcs, costlist[i], ranklist, nslist,
-                                   mbdata+buff_os);
+                                   block_bcs, costlist[i], mbdata+buff_os);
       pblock->next->prev = pblock;
       pblock = pblock->next;
     }
@@ -746,6 +753,13 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   }
   pblock=pfirst;
   delete [] mbdata;
+  // check consistency
+  if(datasize!=pblock->GetBlockSizeInBytes()) {
+    msg << "### FATAL ERROR in Mesh constructor" << std::endl
+        << "The restarting file is broken or input parameters are inconsistent."
+        << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
 
 // create new Task List
   ptlist = new TaskList(this);
@@ -898,8 +912,8 @@ void Mesh::OutputMeshStructure(int dim)
             << ", Average cost = " << totalcost/nbtotal << std::endl << std::endl;
   std::cout << "See the 'mesh_structure.dat' file for a complete list"
             << " of MeshBlocks." << std::endl;
-  std::cout << "Use 'python ../vis/python/plot_mesh.py' to visualize mesh structure."
-            << std::endl << std::endl;
+  std::cout << "Use 'python ../vis/python/plot_mesh.py' or gnuplot"
+            << " to visualize mesh structure." << std::endl << std::endl;
 
   return;
 }
@@ -984,7 +998,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
 MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
            LogicalLocation iloc, RegionSize input_block, enum BoundaryFlag *input_bcs,
-           Real icost, int *ranklist, int *nslist, Real *mbdata)
+           Real icost, Real *mbdata)
 {
   std::stringstream msg;
   pmy_mesh = pm;

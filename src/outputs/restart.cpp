@@ -84,7 +84,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag)
   headeroffset=sbuf.size()*sizeof(char)+3*sizeof(int)+sizeof(RegionSize)
               +2*sizeof(Real)+sizeof(IOWrapperSize_t);
   // the size of an element of the ID list
-  listsize=sizeof(int)+sizeof(LogicalLocation)+sizeof(Real);
+  listsize=sizeof(LogicalLocation)+sizeof(Real);
   // the size of each MeshBlock
   datasize = pM->pblock->GetBlockSizeInBytes();
   nbtotal=pM->nbtotal;
@@ -113,19 +113,11 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag)
   int os=0;
   while(pmb!=NULL) {
     // pack the meta data
-    memcpy(&(idlist[os]), &(pmb->gid), sizeof(int));
-    os+=sizeof(int);
     memcpy(&(idlist[os]), &(pmb->loc), sizeof(LogicalLocation));
     os+=sizeof(LogicalLocation);
     memcpy(&(idlist[os]), &(pmb->cost), sizeof(Real));
     os+=sizeof(Real);
     pmb=pmb->next;
-  }
-  if(os!=listsize*mynb) {
-    std::stringstream message;
-    message << "### FATAL ERROR in RestartOutput::Initialize\n"
-            << "The ID list size does not match.\n";
-    throw std::runtime_error(message.str().c_str());
   }
   // write the ID list collectively
   IOWrapperSize_t myoffset=headeroffset+listsize*myns;

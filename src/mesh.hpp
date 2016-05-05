@@ -96,8 +96,7 @@ public:
   MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_size,
     enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, bool ref_flag = false);
   MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, LogicalLocation iloc,
-            RegionSize input_block, enum BoundaryFlag *input_bcs, Real icost,
-            int *ranklist, int *nslist, Real *mbdata);
+    RegionSize input_block, enum BoundaryFlag *input_bcs, Real icost, Real *mbdata);
   ~MeshBlock();
   size_t GetBlockSizeInBytes(void);
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);

@@ -199,6 +199,7 @@ int main(int argc, char *argv[])
     std::cout << "### FATAL ERROR in main" << std::endl
               << "memory allocation failed initializing class ParameterInput: " 
               << ba.what() << std::endl;
+    if(res_flag==1) restartfile.Close();
 #ifdef MPI_PARALLEL
     MPI_Finalize();
 #endif
@@ -239,6 +240,7 @@ int main(int argc, char *argv[])
     std::cout << "### FATAL ERROR in main" << std::endl
               << "memory allocation failed initializing class Mesh: " 
               << ba.what() << std::endl;
+    if(res_flag==1) restartfile.Close();
 #ifdef MPI_PARALLEL
     MPI_Finalize();
 #endif
@@ -246,6 +248,7 @@ int main(int argc, char *argv[])
   }
   catch(std::exception const& ex) {
     std::cout << ex.what() << std::endl;  // prints diagnostic message
+    if(res_flag==1) restartfile.Close();
 #ifdef MPI_PARALLEL
     MPI_Finalize();
 #endif
