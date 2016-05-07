@@ -682,11 +682,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                 pcoord->x3v(k), &r_2, &theta_2, &phi_2);
             Real cos_theta = std::cos(theta);
             Real det = (SQR(r) + SQR(a) * SQR(cos_theta)) * std::abs(std::sin(theta));
-            if (det == 0.0)
-            {
-              pfield->b.x1f(k,j,i) = 0.0;
-              continue;
-            }
             Real bbr =
                 1.0/det * (a_phi_edges(j+1,i)-a_phi_edges(j,i)) / (theta_2-theta_1);
             Real a_phi_1, a_phi_2;
@@ -716,7 +711,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                   pcoord->x3v(k), &r_2, &theta_2, &phi_2);
             }
             Real bbtheta = -1.0/det * (a_phi_2-a_phi_1) / (r_2-r_1);
-            if (bbr == 0.0 and bbtheta == 0.0)
+            if (det == 0.0 or (bbr == 0.0 and bbtheta == 0.0))
               pfield->b.x1f(k,j,i) = 0.0;
             else
             {
@@ -753,11 +748,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                 pcoord->x3v(k), &r_2, &theta_2, &phi_2);
             Real cos_theta = std::cos(theta);
             Real det = (SQR(r) + SQR(a) * SQR(cos_theta)) * std::abs(std::sin(theta));
-            if (det == 0.0)
-            {
-              pfield->b.x2f(k,j,i) = 0.0;
-              continue;
-            }
             Real bbtheta = -1.0/det * (a_phi_edges(j,i+1)-a_phi_edges(j,i)) / (r_2-r_1);
             Real a_phi_1, a_phi_2;
             if (j == jl)
@@ -786,7 +776,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                   pcoord->x3v(k), &r_2, &theta_2, &phi_2);
             }
             Real bbr = 1.0/det * (a_phi_2 - a_phi_1) / (theta_2 - theta_1);
-            if (bbr == 0.0 and bbtheta == 0.0)
+            if (det == 0.0 or (bbr == 0.0 and bbtheta == 0.0))
               pfield->b.x2f(k,j,i) = 0.0;
             else
             {
