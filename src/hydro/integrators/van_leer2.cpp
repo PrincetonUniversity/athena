@@ -29,7 +29,6 @@
 #include "../../mesh.hpp"
 #include "../srcterms/srcterms.hpp"
 #include "../../bvals/bvals.hpp"
-#include "../viscosity/viscosity.hpp"
 
 // this class header
 #include "hydro_integrator.hpp"
@@ -84,9 +83,6 @@ void HydroIntegrator::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
   wl.InitWithShallowSlice(wl_,3,tid,1);
   wr.InitWithShallowSlice(wr_,3,tid,1);
   flx.InitWithShallowSlice(flx_,3,tid,1);
-
-//----------Viscosity update
-  if(VISCOSITY) pmb->phydro->pf_viscosity->ViscosityTerms(dt,w,u);
 
 //--------------------------------------------------------------------------------------
 // i-direction
