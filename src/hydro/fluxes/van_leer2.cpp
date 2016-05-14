@@ -32,7 +32,7 @@
 #include "../../reconstruct/reconstruction.hpp"
 
 // this class header
-#include "hydro_integrator.hpp"
+#include "fluxes.hpp"
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL
@@ -40,10 +40,10 @@
 #endif
 
 //--------------------------------------------------------------------------------------
-//! \fn  void HydroIntegrator::CalculateFluxes
+//! \fn  void HydroFluxes::CalculateFluxes
 //  \brief Calculate Hydrodynamic Fluxes using the Riemann solver
 
-void HydroIntegrator::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
+void HydroFluxes::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
   AthenaArray<Real> &w, FaceField &b, AthenaArray<Real> &bcc, const int step)
 {
   AthenaArray<Real> &x1flux=pmb->phydro->flux[x1face];
@@ -242,10 +242,10 @@ void HydroIntegrator::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
 
 
 //--------------------------------------------------------------------------------------
-//! \fn  void HydroIntegrator::FluxDivergence
+//! \fn  void HydroFluxes::FluxDivergence
 //  \brief Integrate the conservative variables using the calculated fluxes
 
-void HydroIntegrator::FluxDivergence(MeshBlock *pmb,AthenaArray<Real> &u,
+void HydroFluxes::FluxDivergence(MeshBlock *pmb,AthenaArray<Real> &u,
   AthenaArray<Real> &w, FaceField &b, AthenaArray<Real> &bcc, const int step)
 {
   AthenaArray<Real> &x1flux=pmb->phydro->flux[x1face];
@@ -339,13 +339,13 @@ void HydroIntegrator::FluxDivergence(MeshBlock *pmb,AthenaArray<Real> &u,
   // add coordinate (geometric) source terms
   pmb->pcoord->CoordSrcTerms(dt,pmb->phydro->flux,w,bcc,u);
   // add physical source terms for a point mass potential
-  pmb->phydro->pf_srcterms->PhysicalSourceTerms(dt,pmb->phydro->flux,w,u);
+  pmb->phydro->psrc->PhysicalSourceTerms(dt,pmb->phydro->flux,w,u);
 
 //--------------------------------------------------------------------------------------
 //  Add user source terms
 
-  if (pmb->phydro->pf_srcterms->UserSourceTerm != NULL)
-    pmb->phydro->pf_srcterms->UserSourceTerm(pmb, pmb->pmy_mesh->time,dt,w,bcc,u);
+  if (pmb->phydro->psrc->UserSourceTerm != NULL)
+    pmb->phydro->psrc->UserSourceTerm(pmb, pmb->pmy_mesh->time,dt,w,bcc,u);
 
   return;
 }

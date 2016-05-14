@@ -15,16 +15,13 @@
 
 class MeshBlock;
 class ParameterInput;
-class HydroIntegrator;
-class HydroBCs;
-class HydroEqnOfState;
+class HydroFluxes;
 class HydroSourceTerms;
 
 //! \class Hydro
 //  \brief hydro data and functions
 
 class Hydro {
-//friend class HydroIntegrator;
 friend class Field;
 public:
   Hydro(MeshBlock *pmb, ParameterInput *pin);
@@ -40,11 +37,10 @@ public:
 
   AthenaArray<Real> ifov;  // internal hydro output variables for analysis
 
-  HydroIntegrator *pintegrator;  // pointer to integrator class
-  HydroSourceTerms *pf_srcterms;   // physical source terms
+  HydroFluxes *pflux;
+  HydroSourceTerms *psrc;
 
   Real NewBlockTimeStep(MeshBlock *pmb);    // computes new timestep on a MeshBlock
-//  void InitHydro(ParameterInput *pin); // problem generator function (files in /pgen)
 
 private:
   AthenaArray<Real> dt1_,dt2_,dt3_;  // scratch arrays used in NewTimeStep

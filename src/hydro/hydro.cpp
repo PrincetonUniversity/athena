@@ -24,14 +24,14 @@
 #include <cmath>      // fabs(), sqrt()
 
 // Athena++ headers
-#include "../athena.hpp"                // array access, macros, Real
-#include "../athena_arrays.hpp"         // AthenaArray
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
 #include "../eos/eos.hpp"
 #include "srcterms/srcterms.hpp"
-#include "integrators/hydro_integrator.hpp"
-#include "../mesh.hpp"                  // MeshBlock, Mesh
-#include "../coordinates/coordinates.hpp" // CenterWidth()
-#include "../field/field.hpp"             // B-fields
+#include "fluxes/fluxes.hpp"
+#include "../mesh.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../field/field.hpp"
 
 // this class header
 #include "hydro.hpp"
@@ -88,10 +88,10 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
 
   ifov.NewAthenaArray(NIFOV,ncells3,ncells2,ncells1);
 
-// Construct ptrs to objects of various classes needed to integrate hydro eqns 
+// Construct ptrs to objects of various classes needed to integrate hydro/MHD eqns 
 
-  pintegrator = new HydroIntegrator(this,pin);
-  pf_srcterms = new HydroSourceTerms(this,pin);
+  pflux = new HydroFluxes(this,pin);
+  psrc  = new HydroSourceTerms(this,pin);
 }
 
 // destructor
@@ -115,8 +115,8 @@ Hydro::~Hydro()
 
   ifov.DeleteAthenaArray();
 
-  delete pintegrator;
-  delete pf_srcterms;
+  delete pflux;
+  delete psrc;
 }
 
 //--------------------------------------------------------------------------------------

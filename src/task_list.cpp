@@ -30,7 +30,7 @@
 #include "field/field.hpp"
 #include "bvals/bvals.hpp"
 #include "eos/eos.hpp"
-#include "hydro/integrators/hydro_integrator.hpp"
+#include "hydro/fluxes/fluxes.hpp"
 #include "field/integrators/field_integrator.hpp"
 
 // this class header
@@ -173,10 +173,10 @@ enum TaskStatus CalculateFluxes(MeshBlock *pmb, unsigned long int task_id, int s
 
   if(step == 1) {
     phydro->u1 = phydro->u;
-    phydro->pintegrator->CalculateFluxes(pmb, phydro->u1, phydro->w, pfield->b,
+    phydro->pflux->CalculateFluxes(pmb, phydro->u1, phydro->w, pfield->b,
                                            pfield->bcc, 1);
   } else if(step == 2) {
-    phydro->pintegrator->CalculateFluxes(pmb, phydro->u, phydro->w1, pfield->b1,
+    phydro->pflux->CalculateFluxes(pmb, phydro->u, phydro->w1, pfield->b1,
                                            pfield->bcc1, 2);
   } else {
     return TASK_FAIL;
@@ -264,10 +264,10 @@ enum TaskStatus HydroIntegrate(MeshBlock *pmb, unsigned long int task_id, int st
   Field *pfield=pmb->pfield;
 
   if(step == 1) {
-    phydro->pintegrator->FluxDivergence(pmb, phydro->u1, phydro->w, pfield->b,
+    phydro->pflux->FluxDivergence(pmb, phydro->u1, phydro->w, pfield->b,
                                           pfield->bcc, 1);
   } else if(step == 2) {
-    phydro->pintegrator->FluxDivergence(pmb, phydro->u, phydro->w1, pfield->b1,
+    phydro->pflux->FluxDivergence(pmb, phydro->u, phydro->w1, pfield->b1,
                                           pfield->bcc1, 2);
   } else {
     return TASK_FAIL;

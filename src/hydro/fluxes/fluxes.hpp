@@ -1,35 +1,36 @@
-#ifndef HYDRO_INTEGRATOR_HPP
-#define HYDRO_INTEGRATOR_HPP
+#ifndef FLUXES_HPP
+#define FLUXES_HPP
 //======================================================================================
 // Athena++ astrophysical MHD code
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
 // See LICENSE file for full public license information.
 //======================================================================================
-//! \file hydro_integrator.hpp
-//  \brief defines class HydroIntegrator, data and functions to integrate hydro
+//! \file fluxes.hpp
+//  \brief defines class HydroFluxes, data and functions for hydro/MHD fluxes
 //======================================================================================
 
 // Athena headers
-#include "../../athena.hpp"         // Real
-#include "../../athena_arrays.hpp"  // AthenaArray
+#include "../../athena.hpp"
+#include "../../athena_arrays.hpp"
 
 // Forward declarations
-class MeshBlock;
 class Hydro;
 class ParameterInput;
+class MeshBlock;
 
-//! \class HydroIntegrator
-//  \brief member functions implement various integration algorithms for the hydro
+//! \class HydroFluxes
+//  \brief member functions implement various flux functions for hydro/MHD
 
-class HydroIntegrator {
+class HydroFluxes {
 public:
-  HydroIntegrator(Hydro *phydro, ParameterInput *pin);
-  ~HydroIntegrator();
+  HydroFluxes(Hydro *phydro, ParameterInput *pin);
+  ~HydroFluxes();
 
   Hydro *pmy_hydro;  // ptr to Hydro containing this HydroIntegrator
 
   void CalculateFluxes(MeshBlock *pmb, AthenaArray<Real> &u, AthenaArray<Real> &w,
     FaceField &b, AthenaArray<Real> &bcc, const int step);
+
   void FluxDivergence(MeshBlock *pmb, AthenaArray<Real> &u, AthenaArray<Real> &w,
     FaceField &b, AthenaArray<Real> &bcc, const int step);
 

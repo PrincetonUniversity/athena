@@ -13,7 +13,7 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file integrators.cpp
+//! \file fluxes.cpp
 //  \brief 
 //======================================================================================
 
@@ -25,11 +25,11 @@
 #include "../../parameter_input.hpp" 
 
 // this class header
-#include "hydro_integrator.hpp"
+#include "fluxes.hpp"
 
 // constructor
 
-HydroIntegrator::HydroIntegrator(Hydro *phydro, ParameterInput *pin)
+HydroFluxes::HydroFluxes(Hydro *phydro, ParameterInput *pin)
 {
   pmy_hydro = phydro;
 
@@ -70,7 +70,7 @@ HydroIntegrator::HydroIntegrator(Hydro *phydro, ParameterInput *pin)
 
 // destructor
 
-HydroIntegrator::~HydroIntegrator()
+HydroFluxes::~HydroFluxes()
 {
   wl_.DeleteAthenaArray();
   wr_.DeleteAthenaArray();

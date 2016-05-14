@@ -25,13 +25,13 @@
 #include <algorithm>  // max(), min()
 
 // Athena++ headers
-#include "../../../../athena.hpp"
-#include "../../../../athena_arrays.hpp"
-#include "../../../hydro.hpp"
-#include "../../../../eos/eos.hpp"
+#include "../../../athena.hpp"
+#include "../../../athena_arrays.hpp"
+#include "../../hydro.hpp"
+#include "../../../eos/eos.hpp"
 
 // this class header
-#include "../../hydro_integrator.hpp"
+#include "../fluxes.hpp"
 
 // container to store (density, momentum, total energy, tranverse magnetic field)
 // minimizes changes required to adopt athena4.2 version of this solver 
@@ -41,7 +41,7 @@ typedef struct Cons1D {
 
 #define SMALL_NUMBER 1.0e-8
 
-void HydroIntegrator::RiemannSolver(const int k,const int j, const int il, const int iu,
+void HydroFluxes::RiemannSolver(const int k,const int j, const int il, const int iu,
   const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
   AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {

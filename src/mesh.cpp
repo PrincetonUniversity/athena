@@ -38,7 +38,6 @@
 #include "field/field.hpp"
 #include "bvals/bvals.hpp"
 #include "eos/eos.hpp"
-#include "hydro/integrators/hydro_integrator.hpp" 
 #include "field/integrators/field_integrator.hpp"
 #include "parameter_input.hpp"
 #include "meshblocktree.hpp"

@@ -1,19 +1,19 @@
 // HLLD Riemann solver for relativistic magnetohydrodynamics
 
 // Primary header
-#include "../../hydro_integrator.hpp"
+#include "../fluxes.hpp"
 
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // abs(), isfinite(), NAN, sqrt()
 
 // Athena headers
-#include "../../../hydro.hpp"                       // Hydro
+#include "../../hydro.hpp"                       // Hydro
 #include "../../../eos/eos.hpp"                     // HydroEqnOfState
-#include "../../../../athena.hpp"                   // enums, macros, Real
-#include "../../../../athena_arrays.hpp"            // AthenaArray
-#include "../../../../mesh.hpp"                     // MeshBlock
-#include "../../../../coordinates/coordinates.hpp"  // Coordinates
+#include "../../../athena.hpp"                   // enums, macros, Real
+#include "../../../athena_arrays.hpp"            // AthenaArray
+#include "../../../mesh.hpp"                     // MeshBlock
+#include "../../../coordinates/coordinates.hpp"  // Coordinates
 
 // Declarations
 static void HLLDTransforming(Hydro *pmy_hydro, const int k, const int j, const int il,
@@ -51,7 +51,7 @@ static void HLLENonTransforming(Hydro *pmy_hydro, const int k, const int j,
 //       1141 (MUB)
 //   otherwise implements HLLE algorithm similar to that of fluxcalc() in step_ch.c in
 //       Harm
-void HydroIntegrator::RiemannSolver(const int k, const int j, const int il,
+void HydroFluxes::RiemannSolver(const int k, const int j, const int il,
     const int iu, const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
     AthenaArray<Real> &prim_r, AthenaArray<Real> &flux)
 {
@@ -145,9 +145,9 @@ static void HLLDTransforming(Hydro *pmy_hydro, const int k, const int j, const i
   }
 
   // Calculate wavespeeds
-  pmy_hydro->peos->FastMagnetosonicSpeedsSR(prim_l, bb_normal, il, iu, ivx, lambdas_p_l,
+  pmy_hydro->pmy_block->peos->FastMagnetosonicSpeedsSR(prim_l, bb_normal, il, iu, ivx, lambdas_p_l,
       lambdas_m_l);
-  pmy_hydro->peos->FastMagnetosonicSpeedsSR(prim_r, bb_normal, il, iu, ivx, lambdas_p_r,
+  pmy_hydro->pmy_block->peos->FastMagnetosonicSpeedsSR(prim_r, bb_normal, il, iu, ivx, lambdas_p_r,
       lambdas_m_r);
 
   // Calculate cyclic permutations of indices
@@ -155,7 +155,7 @@ static void HLLDTransforming(Hydro *pmy_hydro, const int k, const int j, const i
   int ivz = IVX + ((ivx-IVX)+2)%3;
 
   // Extract ratio of specific heats
-  const Real gamma_adi = pmy_hydro->peos->GetGamma();
+  const Real gamma_adi = pmy_hydro->pmy_block->peos->GetGamma();
   const Real gamma_prime = gamma_adi/(gamma_adi-1.0);
 
   // Go through each interface
@@ -993,7 +993,7 @@ static void HLLENonTransforming(Hydro *pmy_hydro, const int k, const int j,
     AthenaArray<Real> &flux)
 {
   // Extract ratio of specific heats
-  const Real gamma_adi = pmy_hydro->peos->GetGamma();
+  const Real gamma_adi = pmy_hydro->pmy_block->peos->GetGamma();
 
   // Get metric components
   pmy_hydro->pmy_block->pcoord->Face2Metric(k, j, il, iu, g, gi);
@@ -1098,13 +1098,13 @@ static void HLLENonTransforming(Hydro *pmy_hydro, const int k, const int j,
     // Calculate wavespeeds in left state
     Real lambda_p_l, lambda_m_l;
     Real wgas_l = rho_l + gamma_adi/(gamma_adi-1.0) * pgas_l;
-    pmy_hydro->peos->FastMagnetosonicSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[IVY],
+    pmy_hydro->pmy_block->peos->FastMagnetosonicSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[IVY],
         b_sq_l, g00, g02, g22, &lambda_p_l, &lambda_m_l);
 
     // Calculate wavespeeds in right state
     Real lambda_p_r, lambda_m_r;
     Real wgas_r = rho_r + gamma_adi/(gamma_adi-1.0) * pgas_r;
-    pmy_hydro->peos->FastMagnetosonicSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[IVY],
+    pmy_hydro->pmy_block->peos->FastMagnetosonicSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[IVY],
         b_sq_r, g00, g02, g22, &lambda_p_r, &lambda_m_r);
 
     // Calculate extremal wavespeeds
