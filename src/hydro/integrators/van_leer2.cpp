@@ -29,6 +29,7 @@
 #include "../../mesh.hpp"
 #include "../srcterms/srcterms.hpp"
 #include "../../bvals/bvals.hpp"
+#include "../../reconstruct/reconstruction.hpp"
 
 // this class header
 #include "hydro_integrator.hpp"
@@ -102,9 +103,9 @@ void HydroIntegrator::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
 
       // reconstruct L/R states
       if (step == 1) {
-        DonorCellX1(k,j,is,ie+1,w,bcc,wl,wr);
+        pmb->precon->DonorCellX1(k,j,is,ie+1,w,bcc,wl,wr);
       } else {
-        PiecewiseLinearX1(k,j,is,ie+1,w,bcc,wl,wr);
+        pmb->precon->PiecewiseLinearX1(k,j,is,ie+1,w,bcc,wl,wr);
       }
 
       // compute fluxes
@@ -153,9 +154,9 @@ void HydroIntegrator::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
 
         // reconstruct L/R states at j
         if (step == 1) {
-          DonorCellX2(k,j,il,iu,w,bcc,wl,wr);
+          pmb->precon->DonorCellX2(k,j,il,iu,w,bcc,wl,wr);
         } else {
-          PiecewiseLinearX2(k,j,il,iu,w,bcc,wl,wr);
+          pmb->precon->PiecewiseLinearX2(k,j,il,iu,w,bcc,wl,wr);
         }
 
         // compute fluxes at j
@@ -201,9 +202,9 @@ void HydroIntegrator::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
 
         // reconstruct L/R states at k
         if (step == 1) {
-          DonorCellX3(k,j,il,iu,w,bcc,wl,wr);
+          pmb->precon->DonorCellX3(k,j,il,iu,w,bcc,wl,wr);
         } else {
-          PiecewiseLinearX3(k,j,il,iu,w,bcc,wl,wr);
+          pmb->precon->PiecewiseLinearX3(k,j,il,iu,w,bcc,wl,wr);
         }
 
         // compute fluxes at k

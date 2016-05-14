@@ -30,6 +30,7 @@ class MeshBlockTree;
 class BoundaryValues;
 class TaskList;
 class Coordinates;
+class Reconstruction;
 class Hydro;
 class Field;
 class EquationOfState;
@@ -115,9 +116,13 @@ public:
 
   int cis,cie,cjs,cje,cks,cke,cnghost;
 
+  // mesh-related objects
   Coordinates *pcoord;
   BoundaryValues *pbval;
+  Reconstruction *precon;
   MeshRefinement *pmr;
+
+  // physics-related objects
   Hydro *phydro;
   Field *pfield;
   EquationOfState *peos;

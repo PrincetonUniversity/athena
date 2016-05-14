@@ -18,19 +18,19 @@
 //======================================================================================
 
 // Athena++ headers
-#include "../../../athena.hpp"
-#include "../../../athena_arrays.hpp"
-#include "../../hydro.hpp"
-#include "../../../mesh.hpp"
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../mesh.hpp"
+#include "../hydro/hydro.hpp"
 
 // this class header
-#include "../hydro_integrator.hpp"
+#include "reconstruction.hpp"
 
 //--------------------------------------------------------------------------------------
-//! \fn HydroIntegrator::DonorCellX1()
+//! \fn Reconstruction::DonorCellX1()
 //  \brief 
 
-void HydroIntegrator::DonorCellX1(const int k, const int j,
+void Reconstruction::DonorCellX1(const int k, const int j,
   const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
@@ -57,10 +57,10 @@ void HydroIntegrator::DonorCellX1(const int k, const int j,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn HydroIntegrator::DonorCellX2()
+//! \fn Reconstruction::DonorCellX2()
 //  \brief 
 
-void HydroIntegrator::DonorCellX2(const int k, const int j,
+void Reconstruction::DonorCellX2(const int k, const int j,
   const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
@@ -87,10 +87,10 @@ void HydroIntegrator::DonorCellX2(const int k, const int j,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn HydroIntegrator::DonorCellX3()
+//! \fn Reconstruction::DonorCellX3()
 //  \brief 
 
-void HydroIntegrator::DonorCellX3(const int k, const int j,
+void Reconstruction::DonorCellX3(const int k, const int j,
   const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)

@@ -46,6 +46,7 @@
 #include "task_list.hpp"
 #include "mesh_refinement/mesh_refinement.hpp"
 #include "utils/buffer_utils.hpp"
+#include "reconstruct/reconstruction.hpp"
 
 // this class header
 #include "mesh.hpp"
@@ -966,13 +967,13 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
       cks=cnghost, cke=cks+block_size.nx3/2-1;
   }
 
-// construct Coordinates and Hydro objects stored in MeshBlock class.  Note that the
-// initial conditions for the hydro are set in problem generator called from main, not
-// in the Hydro constructor
+  // construct objects stored in MeshBlock class.  Note in particular that the initial
+  // conditions for the simulation are set in problem generator called from main, not
+  // in the Hydro constructor
  
+  // mesh-related objects
   pcoord = new Coordinates(this, pin);
   if(ref_flag==false) pcoord->CheckMeshSpacing();
-  if(pm->multilevel==true) pmr = new MeshRefinement(this, pin);
   pbval  = new BoundaryValues(this, pin);
   if (block_bcs[INNER_X2] == POLAR_BNDRY) {
     int level = loc.level - pmy_mesh->root_level;
@@ -984,10 +985,12 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     int num_south_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
     polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
   }
+  precon = new Reconstruction(this, pin);
+  if(pm->multilevel==true) pmr = new MeshRefinement(this, pin);
 
+  // physics-related objects
   phydro = new Hydro(this, pin);
-  if (MAGNETIC_FIELDS_ENABLED)
-    pfield = new Field(this, pin);
+  if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
   peos = new EquationOfState(this, pin);
 
   return;
@@ -1039,13 +1042,8 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
       cks=cnghost, cke=cks+block_size.nx3/2-1;
   }
 
-  // create coordinates, hydro, field, and boundary conditions
+  // (re-)create mesh-related objects in MeshBlock
   pcoord = new Coordinates(this, pin);
-  if(pm->multilevel==true)
-    pmr = new MeshRefinement(this, pin);
-  phydro = new Hydro(this, pin);
-  if (MAGNETIC_FIELDS_ENABLED)
-    pfield = new Field(this, pin);
   pbval  = new BoundaryValues(this, pin);
   if (block_bcs[INNER_X2] == POLAR_BNDRY) {
     int level = loc.level - pmy_mesh->root_level;
@@ -1057,6 +1055,13 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     int num_south_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
     polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
   }
+  precon = new Reconstruction(this, pin);
+  if(pm->multilevel==true) pmr = new MeshRefinement(this, pin);
+
+  // (re-)create physics-related objects in MeshBlock
+  phydro = new Hydro(this, pin);
+  if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
+  peos = new EquationOfState(this, pin);
 
   // load hydro and field data
   int os=0;
@@ -1100,14 +1105,16 @@ MeshBlock::~MeshBlock()
   if(next!=NULL) next->prev=prev;
 
   delete pcoord;
-  delete phydro;
-  if (MAGNETIC_FIELDS_ENABLED)
-    delete pfield;
   if (block_bcs[INNER_X2] == POLAR_BNDRY)
     delete[] polar_neighbor_north;
   if (block_bcs[OUTER_X2] == POLAR_BNDRY)
     delete[] polar_neighbor_south;
   delete pbval;
+  delete precon;
+  delete pmr;
+
+  delete phydro;
+  if (MAGNETIC_FIELDS_ENABLED) delete pfield;
   delete peos;
 }
 

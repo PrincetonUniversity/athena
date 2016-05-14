@@ -18,13 +18,13 @@
 //======================================================================================
 
 // Athena++ headers
-#include "../../../athena.hpp"
-#include "../../../athena_arrays.hpp"
-#include "../../hydro.hpp"
-#include "../../../mesh.hpp"
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh.hpp"
 
 // this class header
-#include "../hydro_integrator.hpp"
+#include "reconstruction.hpp"
 
 //--------------------------------------------------------------------------------------
 //! \fn HydroIntegrator::ReconstructionFuncX1()

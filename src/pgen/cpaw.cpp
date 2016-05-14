@@ -39,7 +39,7 @@
 #include "../mesh.hpp"
 #include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
-#include "../hydro/eos/eos.hpp"
+#include "../eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
 
 #if !MAGNETIC_FIELDS_ENABLED

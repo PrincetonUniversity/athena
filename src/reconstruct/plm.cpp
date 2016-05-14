@@ -18,25 +18,25 @@
 //======================================================================================
 
 // Athena++ headers
-#include "../../../athena.hpp"
-#include "../../../athena_arrays.hpp"
-#include "../../hydro.hpp"
-#include "../../../mesh.hpp"
-#include "../../../coordinates/coordinates.hpp"
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh.hpp"
+#include "../coordinates/coordinates.hpp"
 
 // this class header
-#include "../hydro_integrator.hpp"
+#include "reconstruction.hpp"
 
 //--------------------------------------------------------------------------------------
-//! \fn HydroIntegrator::ReconstructionFuncX1()
+//! \fn Reconstruction::ReconstructionFuncX1()
 //  \brief 
 
-void HydroIntegrator::PiecewiseLinearX1(const int k, const int j,
+void Reconstruction::PiecewiseLinearX1(const int k, const int j,
   const int il, const int iu,
   const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
-  Coordinates *pco = pmy_hydro->pmy_block->pcoord;
+  Coordinates *pco = pmy_block_->pcoord;
   Real dql,dqr,dqc,q_im1,q_i;
   for (int n=0; n<NWAVE; ++n) {
     if (n==NHYDRO){
@@ -142,15 +142,15 @@ void HydroIntegrator::PiecewiseLinearX1(const int k, const int j,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn HydroIntegrator::ReconstructionFuncX2()
+//! \fn Reconstruction::ReconstructionFuncX2()
 //  \brief 
 
-void HydroIntegrator::PiecewiseLinearX2(const int k, const int j,
+void Reconstruction::PiecewiseLinearX2(const int k, const int j,
   const int il, const int iu,
   const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
-  Coordinates *pco = pmy_hydro->pmy_block->pcoord;
+  Coordinates *pco = pmy_block_->pcoord;
   Real dx2jm2i = 1.0/pco->dx2v(j-2);
   Real dx2jm1i = 1.0/pco->dx2v(j-1);
   Real dx2ji   = 1.0/pco->dx2v(j);
@@ -231,15 +231,15 @@ void HydroIntegrator::PiecewiseLinearX2(const int k, const int j,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn HydroIntegrator::ReconstructionFuncX3()
+//! \fn Reconstruction::ReconstructionFuncX3()
 //  \brief 
 
-void HydroIntegrator::PiecewiseLinearX3(const int k, const int j,
+void Reconstruction::PiecewiseLinearX3(const int k, const int j,
   const int il, const int iu,
   const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
-  Coordinates *pco = pmy_hydro->pmy_block->pcoord;
+  Coordinates *pco = pmy_block_->pcoord;
   Real dx3km2i = 1.0/pco->dx3v(k-2);
   Real dx3km1i = 1.0/pco->dx3v(k-1);
   Real dx3ki   = 1.0/pco->dx3v(k);
