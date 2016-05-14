@@ -41,7 +41,6 @@ public:
   AthenaArray<Real> ifov;  // internal hydro output variables for analysis
 
   HydroIntegrator *pintegrator;  // pointer to integrator class
-  HydroEqnOfState *peos;         // pointer to equation of state class
   HydroSourceTerms *pf_srcterms;   // physical source terms
 
   Real NewBlockTimeStep(MeshBlock *pmb);    // computes new timestep on a MeshBlock

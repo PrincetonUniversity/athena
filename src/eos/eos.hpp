@@ -6,27 +6,27 @@
 // See LICENSE file for full public license information.
 //======================================================================================
 //! \file eos.hpp
-//  \brief defines class HydroEqnOfState
-//  Contains data and functions that implement the equation of state for hydro
+//  \brief defines class EquationOfState
+//  Contains data and functions that implement the equation of state
 //======================================================================================
 
 // Athena headers
-#include "../../athena.hpp"         // Real
-#include "../../athena_arrays.hpp"  // AthenaArray
-#include "../../coordinates/coordinates.hpp" // Coordinates
+#include "../athena.hpp"         // Real
+#include "../athena_arrays.hpp"  // AthenaArray
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 // Declarations
 class Hydro;
 class ParameterInput;
 struct FaceField;
 
-//! \class HydroEqnOfState
-//  \brief data and functions that implement EoS for hydro
+//! \class EquationOfState
+//  \brief data and functions that implement EoS
 
-class HydroEqnOfState {
+class EquationOfState {
 public:
-  HydroEqnOfState(Hydro *pf, ParameterInput *pin);
-  ~HydroEqnOfState();
+  EquationOfState(MeshBlock *pmb, ParameterInput *pin);
+  ~EquationOfState();
 
   void ConservedToPrimitive(AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old,
     const FaceField &b, AthenaArray<Real> &prim, AthenaArray<Real> &bcc,
@@ -103,7 +103,7 @@ public:
   Real GetPressureFloor() const {return pressure_floor_;}
 
 private:
-  Hydro *pmy_hydro_;                     // ptr to Hydro containing this EqnOfState
+  MeshBlock *pmy_block_;                 // ptr to MeshBlock containing this EOS
   Real iso_sound_speed_, gamma_;         // isothermal Cs, ratio of specific heats
   Real density_floor_, pressure_floor_;  // density and pressure floors
   Real rho_pmag_min_, u_pmag_min_;       // floors on ratios of gas quantities to pmag

@@ -9,13 +9,13 @@
 #include <cmath>      // NAN, sqrt(), abs(), isfinite(), isnan(), pow()
 
 // Athena headers
-#include "../hydro.hpp"                       // Hydro
-#include "../../athena.hpp"                   // enums, macros, Real
-#include "../../athena_arrays.hpp"            // AthenaArray
-#include "../../mesh.hpp"                     // MeshBlock
-#include "../../parameter_input.hpp"          // ParameterInput
-#include "../../coordinates/coordinates.hpp"  // Coordinates
-#include "../../field/field.hpp"              // FaceField
+#include "../hydro/hydro.hpp"                       // Hydro
+#include "../athena.hpp"                   // enums, macros, Real
+#include "../athena_arrays.hpp"            // AthenaArray
+#include "../mesh.hpp"                     // MeshBlock
+#include "../parameter_input.hpp"          // ParameterInput
+#include "../coordinates/coordinates.hpp"  // Coordinates
+#include "../field/field.hpp"              // FaceField
 
 // Declarations
 static bool ConservedToPrimitiveSingle(const AthenaArray<Real> &cons,
@@ -39,9 +39,9 @@ static void neighbor_average(AthenaArray<Real> &prim, int n, int k, int j, int i
 // Inputs:
 //   pf: pointer to hydro object
 //   pin: pointer to runtime inputs
-HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
+EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
 {
-  pmy_hydro_ = pf;
+  pmy_block_ = pmb;
   gamma_ = pin->GetReal("hydro", "gamma");
   density_floor_ = pin->GetOrAddReal("hydro", "dfloor", 1024*FLT_MIN);
   pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", 1024*FLT_MIN);
@@ -65,7 +65,7 @@ HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
 //--------------------------------------------------------------------------------------
 
 // Destructor
-HydroEqnOfState::~HydroEqnOfState()
+EquationOfState::~EquationOfState()
 {
   g_.DeleteAthenaArray();
   g_inv_.DeleteAthenaArray();
@@ -84,7 +84,7 @@ HydroEqnOfState::~HydroEqnOfState()
 // Outputs:
 //   prim: primitives
 //   bb_cc: cell-centered magnetic field
-void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
+void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     const AthenaArray<Real> &prim_old, const FaceField &bb,
     AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc, Coordinates *pco, int is, int ie,
     int js, int je, int ks, int ke)
@@ -93,7 +93,7 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const Real &gamma_adi = gamma_;
 
   // Interpolate magnetic field from faces to cell centers
-  pmy_hydro_->pmy_block->pfield->CalculateCellCenteredField(bb, bb_cc, pco, is, ie, js,
+  pmy_block_->pfield->CalculateCellCenteredField(bb, bb_cc, pco, is, ie, js,
       je, ks, ke);
 
   // Go through cells for first pass
@@ -508,7 +508,7 @@ static bool ConservedToPrimitiveSingle(const AthenaArray<Real> &cons,
 // Notes:
 //   single-cell function exists for other purposes; call made to that function rather
 //       than having duplicate code
-void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons, Coordinates *pco,
      int is, int ie, int js, int je, int ks, int ke)
 {
@@ -609,7 +609,7 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
 //   references Numerical Recipes, 3rd ed. (NR)
 //   follows advice in NR for avoiding large cancellations in solving quadratics
 //   almost same function as in adiabatic_mhd_sr.cpp
-void HydroEqnOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
+void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
     const AthenaArray<Real> &bbx_vals, int il, int iu, int ivx,
     AthenaArray<Real> &lambdas_p, AthenaArray<Real> &lambdas_m)
 {
@@ -796,7 +796,7 @@ void HydroEqnOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
 // Notes:
 //   follows same general procedure as vchar() in phys.c in Harm
 //   variables are named as though 1 is normal direction
-void HydroEqnOfState::FastMagnetosonicSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1,
+void EquationOfState::FastMagnetosonicSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1,
     Real b_sq, Real g00, Real g01, Real g11, Real *plambda_plus, Real *plambda_minus)
 {
   // Parameters and constants

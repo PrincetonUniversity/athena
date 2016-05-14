@@ -14,7 +14,7 @@
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
 //! \file adiabatic_mhd.cpp
-//  \brief implements functions in class HydroEqnOfState for adiabatic MHD
+//  \brief implements functions in class EquationOfState for adiabatic MHD
 //======================================================================================
 
 // C++ headers
@@ -22,22 +22,22 @@
 #include <cfloat>  // FLT_MIN
 
 // Athena++ headers
-#include "../hydro.hpp"
-#include "../../athena.hpp"
-#include "../../athena_arrays.hpp"
-#include "../../mesh.hpp"
-#include "../../parameter_input.hpp"
-#include "../../field/field.hpp"
-#include "../../coordinates/coordinates.hpp"
+#include "../hydro/hydro.hpp"
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../mesh.hpp"
+#include "../parameter_input.hpp"
+#include "../field/field.hpp"
+#include "../coordinates/coordinates.hpp"
 
 // this class header
 #include "eos.hpp"
 
-// HydroEqnOfState constructor
+// EquationOfState constructor
 
-HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
+EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
 {
-  pmy_hydro_ = pf;
+  pmy_block_ = pmb;
   gamma_ = pin->GetReal("hydro","gamma");
   density_floor_  = pin->GetOrAddReal("hydro","dfloor",(1024*(FLT_MIN)));
   pressure_floor_ = pin->GetOrAddReal("hydro","pfloor",(1024*(FLT_MIN)));
@@ -45,29 +45,28 @@ HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
 
 // destructor
 
-HydroEqnOfState::~HydroEqnOfState()
+EquationOfState::~EquationOfState()
 {
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
+// \!fn void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //    const AthenaArray<Real> &prim_old, const FaceField &b,
 //    AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
 //    int is, int ie, int js, int je, int ks, int ke);
 // \brief For the Hydro, converts conserved into primitive variables in adiabatic MHD.
 //  For the Field, computes cell-centered from face-centered magnetic field.
 
-void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
+void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 	    const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
     AthenaArray<Real> &bcc, Coordinates *pco,
     int is, int ie, int js, int je, int ks, int ke)
 {
-  MeshBlock *pmb = pmy_hydro_->pmy_block;
   Real gm1 = GetGamma() - 1.0;
 
-  pmb->pfield->CalculateCellCenteredField(b,bcc,pco,is,ie,js,je,ks,ke);
+  pmy_block_->pfield->CalculateCellCenteredField(b,bcc,pco,is,ie,js,je,ks,ke);
 
-  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
+  int nthreads = pmy_block_->pmy_mesh->GetNumMeshThreads();
 #pragma omp parallel default(shared) num_threads(nthreads)
 {
   for (int k=ks; k<=ke; ++k){
@@ -115,20 +114,19 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+// \!fn void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //           const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
 //           int is, int ie, int js, int je, int ks, int ke);
 // \brief Converts primitive variables into conservative variables
 //        Note that this function assumes cell-centered fields are already calculated
 
-void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
      int is, int ie, int js, int je, int ks, int ke)
 {
-  MeshBlock *pmb = pmy_hydro_->pmy_block;
   Real igm1 = 1.0/(GetGamma() - 1.0);
 
-  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
+  int nthreads = pmy_block_->pmy_mesh->GetNumMeshThreads();
 #pragma omp parallel default(shared) num_threads(nthreads)
 {
   for (int k=ks; k<=ke; ++k){
@@ -165,20 +163,20 @@ void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn Real HydroEqnOfState::SoundSpeed(Real prim[NHYDRO])
+// \!fn Real EquationOfState::SoundSpeed(Real prim[NHYDRO])
 // \brief returns adiabatic sound speed given vector of primitive variables
 
-Real HydroEqnOfState::SoundSpeed(const Real prim[NHYDRO])
+Real EquationOfState::SoundSpeed(const Real prim[NHYDRO])
 {
   return sqrt(GetGamma()*prim[IEN]/prim[IDN]);
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn Real HydroEqnOfState::FastMagnetosonicSpeed(const Real prim[], const Real bx)
+// \!fn Real EquationOfState::FastMagnetosonicSpeed(const Real prim[], const Real bx)
 // \brief returns fast magnetosonic speed given vector of primitive variables
 // Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN 
 
-Real HydroEqnOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx)
+Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx)
 {
   Real asq = GetGamma()*prim[IEN]/prim[IDN];
   Real vaxsq = bx*bx/prim[IDN];

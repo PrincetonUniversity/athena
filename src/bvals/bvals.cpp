@@ -34,7 +34,7 @@
 #include "../mesh_refinement/mesh_refinement.hpp"
 #include "../mesh.hpp"
 #include "../hydro/hydro.hpp"
-#include "../hydro/eos/eos.hpp"
+#include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../parameter_input.hpp"
@@ -3813,7 +3813,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
       pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
         pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
     }
-    pmb->phydro->peos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
+    pmb->peos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
       pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
   }
 
@@ -3824,7 +3824,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
       pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
         pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
     }
-    pmb->phydro->peos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
+    pmb->peos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
       pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
   }
 
@@ -3837,7 +3837,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
         pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
           bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
       }
-      pmb->phydro->peos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
+      pmb->peos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
         bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
     }
 
@@ -3848,7 +3848,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
         pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
           bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
       }
-      pmb->phydro->peos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
+      pmb->peos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
         bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
     }
   }
@@ -3866,7 +3866,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
         pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
           bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
       }
-      pmb->phydro->peos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
+      pmb->peos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
         bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
     }
 
@@ -3877,7 +3877,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
         pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pco,
           bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
       }
-      pmb->phydro->peos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
+      pmb->peos->PrimitiveToConserved(pdst, bcdst, cdst, pco,
         bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
     }
   }
@@ -4150,7 +4150,7 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
       }
       else f3m=1, f3p=1;
     }
-    pmb->phydro->peos->ConservedToPrimitive(pmr->coarse_cons_, pmr->coarse_prim_,
+    pmb->peos->ConservedToPrimitive(pmr->coarse_cons_, pmr->coarse_prim_,
                  pmr->coarse_b_, pmr->coarse_prim_, pmr->coarse_bcc_, pmr->pcoarsec,
                  si-f1m, ei+f1p, sj-f2m, ej+f2p, sk-f3m, ek+f3p);
 
@@ -4232,7 +4232,7 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
                                               fsi, fei, fsj, fej, fsk, fek);
     }
     // calculate conservative variables
-    pmb->phydro->peos->PrimitiveToConserved(pdst, bcdst, cdst, pmb->pcoord,
+    pmb->peos->PrimitiveToConserved(pdst, bcdst, cdst, pmb->pcoord,
                                             fsi, fei, fsj, fej, fsk, fek);
   }
 }

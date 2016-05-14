@@ -29,7 +29,7 @@
 #include "hydro/hydro.hpp"
 #include "field/field.hpp"
 #include "bvals/bvals.hpp"
-#include "hydro/eos/eos.hpp"
+#include "eos/eos.hpp"
 #include "hydro/integrators/hydro_integrator.hpp"
 #include "field/integrators/field_integrator.hpp"
 
@@ -387,13 +387,13 @@ enum TaskStatus Primitives(MeshBlock *pmb, unsigned long int task_id, int step)
   if(pmb->nblevel[2][1][1]!=-1) ke+=NGHOST;
 
   if(step == 1) {
-    phydro->peos->ConservedToPrimitive(phydro->u1, phydro->w, pfield->b1,
-                                       phydro->w1, pfield->bcc1, pmb->pcoord,
-                                       is, ie, js, je, ks, ke);
+    pmb->peos->ConservedToPrimitive(phydro->u1, phydro->w, pfield->b1,
+                                    phydro->w1, pfield->bcc1, pmb->pcoord,
+                                    is, ie, js, je, ks, ke);
   } else if(step == 2) {
-    phydro->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
-                                       phydro->w, pfield->bcc, pmb->pcoord,
-                                       is, ie, js, je, ks, ke);
+    pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
+                                    phydro->w, pfield->bcc, pmb->pcoord,
+                                    is, ie, js, je, ks, ke);
   } else {
     return TASK_FAIL;
   }

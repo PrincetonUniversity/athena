@@ -37,7 +37,7 @@
 #include "hydro/hydro.hpp" 
 #include "field/field.hpp"
 #include "bvals/bvals.hpp"
-#include "hydro/eos/eos.hpp"
+#include "eos/eos.hpp"
 #include "hydro/integrators/hydro_integrator.hpp" 
 #include "field/integrators/field_integrator.hpp"
 #include "parameter_input.hpp"
@@ -971,13 +971,8 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 // in the Hydro constructor
  
   pcoord = new Coordinates(this, pin);
-  if(ref_flag==false)
-    pcoord->CheckMeshSpacing();
-  if(pm->multilevel==true)
-    pmr = new MeshRefinement(this, pin);
-  phydro = new Hydro(this, pin);
-  if (MAGNETIC_FIELDS_ENABLED)
-    pfield = new Field(this, pin);
+  if(ref_flag==false) pcoord->CheckMeshSpacing();
+  if(pm->multilevel==true) pmr = new MeshRefinement(this, pin);
   pbval  = new BoundaryValues(this, pin);
   if (block_bcs[INNER_X2] == POLAR_BNDRY) {
     int level = loc.level - pmy_mesh->root_level;
@@ -989,6 +984,12 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     int num_south_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
     polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
   }
+
+  phydro = new Hydro(this, pin);
+  if (MAGNETIC_FIELDS_ENABLED)
+    pfield = new Field(this, pin);
+  peos = new EquationOfState(this, pin);
+
   return;
 }
 
@@ -1107,6 +1108,7 @@ MeshBlock::~MeshBlock()
   if (block_bcs[OUTER_X2] == POLAR_BNDRY)
     delete[] polar_neighbor_south;
   delete pbval;
+  delete peos;
 }
 
 
@@ -1268,9 +1270,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
         if(pmb->nblevel[0][1][1]!=-1) ks-=NGHOST;
         if(pmb->nblevel[2][1][1]!=-1) ke+=NGHOST;
       }
-      phydro->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b, 
-                                         phydro->w, pfield->bcc, pmb->pcoord,
-                                         is, ie, js, je, ks, ke);
+      pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b, 
+                                      phydro->w, pfield->bcc, pmb->pcoord,
+                                      is, ie, js, je, ks, ke);
       pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc);
       pmb=pmb->next;
     }

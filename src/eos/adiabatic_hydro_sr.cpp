@@ -10,20 +10,20 @@
 #include <cfloat>  // FLT_MIN
 
 // Athena headers
-#include "../hydro.hpp"               // Hydro
-#include "../../athena.hpp"           // enums, macros, Real
-#include "../../athena_arrays.hpp"    // AthenaArray
-#include "../../mesh.hpp"             // MeshBlock
-#include "../../parameter_input.hpp"  // GetReal()
-#include "../../field/field.hpp"      // FaceField
+#include "../hydro/hydro.hpp"               // Hydro
+#include "../athena.hpp"           // enums, macros, Real
+#include "../athena_arrays.hpp"    // AthenaArray
+#include "../mesh.hpp"             // MeshBlock
+#include "../parameter_input.hpp"  // GetReal()
+#include "../field/field.hpp"      // FaceField
 
 // Constructor
 // Inputs:
 //   pf: pointer to hydro object
 //   pin: pointer to runtime inputs
-HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
+EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
 {
-  pmy_hydro_ = pf;
+  pmy_block_ = pmb;
   gamma_ = pin->GetReal("hydro", "gamma");
   density_floor_ = pin->GetOrAddReal("hydro", "dfloor", 1024*FLT_MIN);
   pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", 1024*FLT_MIN);
@@ -31,7 +31,7 @@ HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
 }
 
 // Destructor
-HydroEqnOfState::~HydroEqnOfState() {}
+EquationOfState::~EquationOfState() {}
 
 // Variable inverter
 // Inputs:
@@ -66,7 +66,7 @@ HydroEqnOfState::~HydroEqnOfState() {}
 //          d0 = 1/2 * (x0 - sqrt(x0^2 - 4 a0))
 //          then |v|^2 + d1 |v| + d0 = 0
 //          |v| = 1/2 * (-d1 + sqrt(d1^2 - 4 d0))
-void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
+void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const AthenaArray<Real> &prim_old, const FaceField &bb, AthenaArray<Real> &prim,
   AthenaArray<Real> &bb_cc, Coordinates *pco, int is, int ie, int js, int je, int ks,
   int ke)
@@ -210,7 +210,7 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 // Notes:
 //   single-cell function exists for other purposes; call made to that function rather
 //       than having duplicate code
-void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons, Coordinates *pco, int is,
      int ie, int js, int je, int ks, int ke)
 {
@@ -268,7 +268,7 @@ void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 // Notes:
 //   same function as in adiabatic_hydro_gr.cpp
 //   references Mignone & Bodo 2005, MNRAS 364 126 (MB)
-void HydroEqnOfState::SoundSpeedsSR(
+void EquationOfState::SoundSpeedsSR(
     Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
     Real *plambda_plus, Real *plambda_minus)
 {

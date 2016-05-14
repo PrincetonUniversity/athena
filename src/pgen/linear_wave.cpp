@@ -34,7 +34,7 @@
 #include "../mesh.hpp"
 #include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
-#include "../hydro/eos/eos.hpp"
+#include "../eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
 
 // Parameters which define initial solution -- made global so that they can be shared

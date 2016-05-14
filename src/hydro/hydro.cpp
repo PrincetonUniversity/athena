@@ -26,7 +26,7 @@
 // Athena++ headers
 #include "../athena.hpp"                // array access, macros, Real
 #include "../athena_arrays.hpp"         // AthenaArray
-#include "eos/eos.hpp"
+#include "../eos/eos.hpp"
 #include "srcterms/srcterms.hpp"
 #include "integrators/hydro_integrator.hpp"
 #include "../mesh.hpp"                  // MeshBlock, Mesh
@@ -91,7 +91,6 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
 // Construct ptrs to objects of various classes needed to integrate hydro eqns 
 
   pintegrator = new HydroIntegrator(this,pin);
-  peos = new HydroEqnOfState(this,pin);
   pf_srcterms = new HydroSourceTerms(this,pin);
 }
 
@@ -117,7 +116,6 @@ Hydro::~Hydro()
   ifov.DeleteAthenaArray();
 
   delete pintegrator;
-  delete peos;
   delete pf_srcterms;
 }
 
@@ -179,24 +177,24 @@ Real Hydro::NewBlockTimeStep(MeshBlock *pmb)
           Real bx = bcc(IB1,k,j,i) + fabs(b_x1f(k,j,i)-bcc(IB1,k,j,i));
           wi[IBY] = bcc(IB2,k,j,i);
           wi[IBZ] = bcc(IB3,k,j,i);
-          Real cf = peos->FastMagnetosonicSpeed(wi,bx);
+          Real cf = pmy_block->peos->FastMagnetosonicSpeed(wi,bx);
           dt1(i)= pmy_block->pcoord->CenterWidth1(k,j,i)/(fabs(wi[IVX]) + cf);
 
           wi[IBY] = bcc(IB3,k,j,i);
           wi[IBZ] = bcc(IB1,k,j,i);
           bx = bcc(IB2,k,j,i) + fabs(b_x2f(k,j,i)-bcc(IB2,k,j,i));
-          cf = peos->FastMagnetosonicSpeed(wi,bx);
+          cf = pmy_block->peos->FastMagnetosonicSpeed(wi,bx);
           dt2(i)= pmy_block->pcoord->CenterWidth2(k,j,i)/(fabs(wi[IVY]) + cf);
 
           wi[IBY] = bcc(IB1,k,j,i);
           wi[IBZ] = bcc(IB2,k,j,i);
           bx = bcc(IB3,k,j,i) + fabs(b_x3f(k,j,i)-bcc(IB3,k,j,i));
-          cf = peos->FastMagnetosonicSpeed(wi,bx);
+          cf = pmy_block->peos->FastMagnetosonicSpeed(wi,bx);
           dt3(i)= pmy_block->pcoord->CenterWidth3(k,j,i)/(fabs(wi[IVZ]) + cf);
 
         } else {
 
-          Real cs = peos->SoundSpeed(wi);
+          Real cs = pmy_block->peos->SoundSpeed(wi);
           dt1(i)= pmy_block->pcoord->CenterWidth1(k,j,i)/(fabs(wi[IVX]) + cs);
           dt2(i)= pmy_block->pcoord->CenterWidth2(k,j,i)/(fabs(wi[IVY]) + cs);
           dt3(i)= pmy_block->pcoord->CenterWidth3(k,j,i)/(fabs(wi[IVZ]) + cs);

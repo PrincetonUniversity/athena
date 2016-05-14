@@ -26,12 +26,13 @@
 class ParameterInput;
 class Mesh;
 class MeshRefinement;
+class MeshBlockTree;
+class BoundaryValues;
+class TaskList;
 class Coordinates;
 class Hydro;
 class Field;
-class BoundaryValues;
-class TaskList;
-class MeshBlockTree;
+class EquationOfState;
 
 //! \struct NeighborBlock
 //  \brief neighbor rank, level, and ids
@@ -115,10 +116,11 @@ public:
   int cis,cie,cjs,cje,cks,cke,cnghost;
 
   Coordinates *pcoord;
-  Hydro *phydro;
-  Field *pfield;
   BoundaryValues *pbval;
   MeshRefinement *pmr;
+  Hydro *phydro;
+  Field *pfield;
+  EquationOfState *peos;
 
   MeshBlock *prev, *next;
 };

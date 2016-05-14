@@ -14,52 +14,50 @@
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
 //! \file isothermal_hydro.cpp
-//  \brief implements functions in class HydroEqnOfState for isothermal hydrodynamics`
+//  \brief implements functions in class EquationOfState for isothermal hydrodynamics`
 //======================================================================================
 
 // C/C++ headers
 #include <cfloat>  // FLT_MIN
 
 // Athena++ headers
-#include "../hydro.hpp"
-#include "../../athena.hpp"
-#include "../../athena_arrays.hpp"
-#include "../../mesh.hpp"
-#include "../../parameter_input.hpp"
-#include "../../field/field.hpp"
+#include "../hydro/hydro.hpp"
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../mesh.hpp"
+#include "../parameter_input.hpp"
+#include "../field/field.hpp"
 
 // this class header
 #include "eos.hpp"
 
-// HydroEqnOfState constructor
+// EquationOfState constructor
 
-HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
+EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
 {
-  pmy_hydro_ = pf;
+  pmy_block_ = pmb;
   iso_sound_speed_ = pin->GetReal("hydro","iso_sound_speed"); // error if missing!
   density_floor_  = pin->GetOrAddReal("hydro","dfloor",(1024*(FLT_MIN)));
 }
 
 // destructor
 
-HydroEqnOfState::~HydroEqnOfState()
+EquationOfState::~EquationOfState()
 {
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
+// \!fn void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //           const AthenaArray<Real> &prim_old, const FaceField &b,
 //           AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
 //           int is, int ie, int js, int je, int ks, int ke)
 // \brief Converts conserved into primitive variables in adiabatic hydro.
 
-void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
+void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
   AthenaArray<Real> &bcc, Coordinates *pco, int is, int ie, int js, int je, int ks, int ke)
 {
-  MeshBlock *pmb = pmy_hydro_->pmy_block;
-
-  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
+  int nthreads = pmy_block_->pmy_mesh->GetNumMeshThreads();
 #pragma omp parallel default(shared) num_threads(nthreads)
 {
   for (int k=ks; k<=ke; ++k){
@@ -93,19 +91,18 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+// \!fn void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //           const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
 //           int is, int ie, int js, int je, int ks, int ke);
 // \brief Converts primitive variables into conservative variables
 
-void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
      int is, int ie, int js, int je, int ks, int ke)
 {
-  MeshBlock *pmb = pmy_hydro_->pmy_block;
   Real igm1 = 1.0/(GetGamma() - 1.0);
 
-  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
+  int nthreads = pmy_block_->pmy_mesh->GetNumMeshThreads();
 #pragma omp parallel default(shared) num_threads(nthreads)
 {
   for (int k=ks; k<=ke; ++k){
@@ -134,10 +131,10 @@ void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 }
 
 //--------------------------------------------------------------------------------------
-// \!fn Real HydroEqnOfState::SoundSpeed(Real dummy_arg[NHYDRO])
+// \!fn Real EquationOfState::SoundSpeed(Real dummy_arg[NHYDRO])
 // \brief returns isothermal sound speed
 
-Real HydroEqnOfState::SoundSpeed(const Real dummy_arg[NHYDRO])
+Real EquationOfState::SoundSpeed(const Real dummy_arg[NHYDRO])
 {
   return iso_sound_speed_;
 }

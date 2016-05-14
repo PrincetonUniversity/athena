@@ -12,14 +12,14 @@
 #include <cmath>      // NAN, sqrt(), abs(), isfinite()
 
 // Athena headers
-#include "../hydro.hpp"                       // Hydro
-#include "../../athena.hpp"                   // enums, macros, Real
-#include "../../athena_arrays.hpp"            // AthenaArray
-#include "../../coordinates/coordinates.hpp"  // Coordinates
-#include "../../field/field.hpp"              // FaceField
-#include "../../mesh.hpp"                     // MeshBlock
-#include "../../parameter_input.hpp"          // GetReal()
-#include "../../coordinates/coordinates.hpp" // Coordinates
+#include "../hydro/hydro.hpp"                       // Hydro
+#include "../athena.hpp"                   // enums, macros, Real
+#include "../athena_arrays.hpp"            // AthenaArray
+#include "../coordinates/coordinates.hpp"  // Coordinates
+#include "../field/field.hpp"              // FaceField
+#include "../mesh.hpp"                     // MeshBlock
+#include "../parameter_input.hpp"          // GetReal()
+#include "../coordinates/coordinates.hpp" // Coordinates
 
 // Declarations
 static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
@@ -31,9 +31,9 @@ static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss
 // Inputs:
 //   pf: pointer to hydro object
 //   pin: pointer to runtime inputs
-HydroEqnOfState::HydroEqnOfState(Hydro *pf, ParameterInput *pin)
+HydroEqnOfState::HydroEqnOfState(MeshBlock *pmb, ParameterInput *pin)
 {
-  pmy_hydro_ = pf;
+  pmy_block_ = pmb;
   gamma_ = pin->GetReal("hydro", "gamma");
   density_floor_ = pin->GetOrAddReal("hydro", "dfloor", 1024*FLT_MIN);
   pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", 1024*FLT_MIN);
@@ -76,7 +76,7 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const Real max_velocity = std::sqrt(v_sq_max);
 
   // Interpolate magnetic field from faces to cell centers
-  pmy_hydro_->pmy_block->pfield->CalculateCellCenteredField(bb, bb_cc, pco, is, ie, js,
+  pmy_block_->pfield->CalculateCellCenteredField(bb, bb_cc, pco, is, ie, js,
       je, ks, ke);
 
   // Go through cells
