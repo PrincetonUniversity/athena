@@ -37,36 +37,6 @@ public:
     const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
     AthenaArray<Real> &wr, AthenaArray<Real> &flx);
 
-  void PiecewiseLinearX1(const int k, const int j,
-    const int il, const int iu,
-    const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
-    AthenaArray<Real> &ql, AthenaArray<Real> &qr);
-
-  void PiecewiseLinearX2(const int k, const int j,
-    const int il, const int iu,
-    const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
-    AthenaArray<Real> &ql, AthenaArray<Real> &qr);
-
-  void PiecewiseLinearX3(const int k, const int j,
-    const int il, const int iu,
-    const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
-    AthenaArray<Real> &ql, AthenaArray<Real> &qr);
-
-  void DonorCellX1(const int k, const int j,
-    const int il, const int iu,
-    const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
-    AthenaArray<Real> &ql, AthenaArray<Real> &qr);
-
-  void DonorCellX2(const int k, const int j,
-    const int il, const int iu,
-    const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
-    AthenaArray<Real> &ql, AthenaArray<Real> &qr);
-
-  void DonorCellX3(const int k, const int j,
-    const int il, const int iu,
-    const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
-    AthenaArray<Real> &ql, AthenaArray<Real> &qr);
-
 private:
   // scratch space used in integrator
   AthenaArray<Real> wl_, wr_, flx_; 
