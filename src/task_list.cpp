@@ -172,7 +172,9 @@ enum TaskStatus CalculateFluxes(MeshBlock *pmb, unsigned long int task_id, int s
   Field *pfield=pmb->pfield;
 
   if(step == 1) {
-    phydro->u1 = phydro->u;
+//    phydro->u1 = phydro->u;
+    phydro->CopyOrAverageHydro(phydro->u1, phydro->u, phydro->u, 0.0);
+
     phydro->pflux->CalculateFluxes(pmb, phydro->u1, phydro->w, pfield->b,
                                            pfield->bcc, 1);
   } else if(step == 2) {

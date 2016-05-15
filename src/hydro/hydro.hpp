@@ -42,6 +42,9 @@ public:
 
   Real NewBlockTimeStep(MeshBlock *pmb);    // computes new timestep on a MeshBlock
 
+  void CopyOrAverageHydro(AthenaArray<Real> &a, AthenaArray<Real> &b, 
+    AthenaArray<Real> &c, Real f);
+
 private:
   AthenaArray<Real> dt1_,dt2_,dt3_;  // scratch arrays used in NewTimeStep
 };
