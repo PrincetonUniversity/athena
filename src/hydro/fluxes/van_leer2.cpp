@@ -136,14 +136,6 @@ void HydroFluxes::FluxDivergence(MeshBlock *pmb,AthenaArray<Real> &u,
 
   // add coordinate (geometric) source terms
   pmb->pcoord->CoordSrcTerms(dt,pmb->phydro->flux,w,bcc,u);
-  // add physical source terms for a point mass potential
-  pmb->phydro->psrc->PhysicalSourceTerms(dt,pmb->phydro->flux,w,u);
-
-//--------------------------------------------------------------------------------------
-//  Add user source terms
-
-  if (pmb->phydro->psrc->UserSourceTerm != NULL)
-    pmb->phydro->psrc->UserSourceTerm(pmb, pmb->pmy_mesh->time,dt,w,bcc,u);
 
   return;
 }

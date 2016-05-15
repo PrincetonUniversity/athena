@@ -59,7 +59,7 @@ typedef int (*AMRFlag_t)(MeshBlock *pmb);
 typedef Real (*MeshGenFunc_t)(Real x, RegionSize rs);
 // prototype for user-defined source function pointer
 typedef void (*SrcTermFunc_t)(MeshBlock *pmb, const Real time, const Real dt,
-  const AthenaArray<Real> &prim, AthenaArray<Real> &bcc, AthenaArray<Real> &cons);
+  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &cons);
 
 
 

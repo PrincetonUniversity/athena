@@ -47,12 +47,11 @@ HydroSourceTerms::~HydroSourceTerms()
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void HydroSourceTerms::PhysicalSourceTerms(const Real dt,
-//  const AthenaArray<Real> *flux, const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
-//  \brief Physical (gravitational) source terms
+//! \fn void HydroSourceTerms::AddHydroSourceTerms
+//  \brief Adds source terms to conserved variables
 
-void HydroSourceTerms::PhysicalSourceTerms(const Real dt, const AthenaArray<Real> *flux,
-  const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
+void HydroSourceTerms::AddHydroSourceTerms(const Real dt, const AthenaArray<Real> *flux,
+  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &cons)
 {
   if (gm_==0.0 && g1_==0.0 && g2_==0.0 && g3_==0.0) return;
 
@@ -94,6 +93,11 @@ void HydroSourceTerms::PhysicalSourceTerms(const Real dt, const AthenaArray<Real
       }
     }
   }
+
+//  Add user source terms
+
+  if (UserSourceTerm != NULL)
+    UserSourceTerm(pmb, pmb->pmy_mesh->time,dt,prim,bcc,cons);
 
   return;
 }

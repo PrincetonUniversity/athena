@@ -31,6 +31,7 @@
 #include "bvals/bvals.hpp"
 #include "eos/eos.hpp"
 #include "hydro/fluxes/fluxes.hpp"
+#include "hydro/srcterms/srcterms.hpp"
 #include "field/integrators/field_integrator.hpp"
 
 // this class header
@@ -268,9 +269,15 @@ enum TaskStatus HydroIntegrate(MeshBlock *pmb, unsigned long int task_id, int st
   if(step == 1) {
     phydro->pflux->FluxDivergence(pmb, phydro->u1, phydro->w, pfield->b,
                                           pfield->bcc, 1);
+    // source terms
+    Real dt = 0.5*(pmb->pmy_mesh->dt);
+    phydro->psrc->AddHydroSourceTerms(dt,pmb->phydro->flux,phydro->w,pfield->bcc,phydro->u);
   } else if(step == 2) {
     phydro->pflux->FluxDivergence(pmb, phydro->u, phydro->w1, pfield->b1,
                                           pfield->bcc1, 2);
+    // source terms
+    Real dt = (pmb->pmy_mesh->dt);
+    phydro->psrc->AddHydroSourceTerms(dt,pmb->phydro->flux,phydro->w,pfield->bcc,phydro->u);
   } else {
     return TASK_FAIL;
   }

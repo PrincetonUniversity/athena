@@ -31,8 +31,8 @@ public:
   Real GetG2() const {return g2_;}
   Real GetG3() const {return g3_;}
 
-  void PhysicalSourceTerms(const Real dt, const AthenaArray<Real> *flx,
-                           const AthenaArray<Real> &p, AthenaArray<Real> &c);
+  void AddHydroSourceTerms(const Real dt, const AthenaArray<Real> *flx,
+    const AthenaArray<Real> &p, const AthenaArray<Real> &b, AthenaArray<Real> &c);
   void EnrollSrcTermFunction(SrcTermFunc_t my_func);
   SrcTermFunc_t UserSourceTerm;
 
