@@ -1,5 +1,5 @@
-#ifndef FLUXES_HPP
-#define FLUXES_HPP
+#ifndef HYDRO_FLUXES_HPP
+#define HYDRO_FLUXES_HPP
 //======================================================================================
 // Athena++ astrophysical MHD code
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
@@ -52,4 +52,4 @@ private:
   AthenaArray<Real> g_, gi_;       // metric and inverse, for some GR Riemann solvers
   AthenaArray<Real> cons_;         // conserved state, for some GR Riemann solvers
 };
-#endif // HYDRO_INTEGRATOR_HPP
+#endif // HYDRO_FLUXES_HPP

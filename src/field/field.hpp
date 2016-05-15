@@ -43,6 +43,8 @@ public:
 
   FieldIntegrator *pintegrator;  // integration algorithm (CT)
 
+  void CopyOrAverageField(FaceField &a, FaceField &b, FaceField &c, Real factor);
+
 private:
 };
 #endif // FIELD_HPP

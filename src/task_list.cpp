@@ -323,9 +323,11 @@ enum TaskStatus FieldIntegrate(MeshBlock *pmb, unsigned long int task_id, int st
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
   if(step == 1) {
-    pfield->b1.x1f = pfield->b.x1f;
-    pfield->b1.x2f = pfield->b.x2f;
-    pfield->b1.x3f = pfield->b.x3f;
+//    pfield->b1.x1f = pfield->b.x1f;
+//    pfield->b1.x2f = pfield->b.x2f;
+//    pfield->b1.x3f = pfield->b.x3f;
+    pfield->CopyOrAverageField(pfield->b1, pfield->b, pfield->b, 0.0);
+
     pfield->pintegrator->CT(pmb, pfield->b1, phydro->w, pfield->bcc, 1);
   } else if(step == 2) {
     pfield->pintegrator->CT(pmb, pfield->b, phydro->w1, pfield->bcc1, 2);
