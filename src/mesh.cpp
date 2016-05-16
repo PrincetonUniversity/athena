@@ -84,6 +84,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 
   nlim = pin->GetOrAddInteger("time","nlim",-1);
   ncycle = 0;
+  niusermeshdata_=0, nrusermeshdata_=0;
 
 // read number of OpenMP threads for mesh
 
@@ -243,6 +244,29 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   nbmax=(nrbx1>nrbx2)?nrbx1:nrbx2;
   nbmax=(nbmax>nrbx3)?nbmax:nrbx3;
 
+
+  //initialize user-enrollable functions
+  if(mesh_size.x1rat!=1.0)
+    user_meshgen_[x1dir]=true;
+  else
+    user_meshgen_[x1dir]=false;
+  if(mesh_size.x2rat!=1.0)
+    user_meshgen_[x2dir]=true;
+  else
+    user_meshgen_[x2dir]=false;
+  if(mesh_size.x3rat!=1.0)
+    user_meshgen_[x3dir]=true;
+  else
+    user_meshgen_[x3dir]=false;
+  MeshGenerator_[x1dir]=DefaultMeshGeneratorX1;
+  MeshGenerator_[x2dir]=DefaultMeshGeneratorX2;
+  MeshGenerator_[x3dir]=DefaultMeshGeneratorX3;
+  for(int dir=0; dir<6; dir++)
+    BoundaryFunction_[dir]=NULL;
+  AMRFlag_=NULL;
+  UserSourceTerm_=NULL;
+  InitUserMeshData(pin);
+
   // calculate the logical root level and maximum level
   for (root_level=0; (1<<root_level)<nbmax; root_level++);
   current_level=root_level;
@@ -267,28 +291,6 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   } else {
     max_level = 63;
   }
-
-  //initialize user-enrollable functions
-  if(mesh_size.x1rat!=1.0)
-    user_meshgen_[x1dir]=true;
-  else
-    user_meshgen_[x1dir]=false;
-  if(mesh_size.x2rat!=1.0)
-    user_meshgen_[x2dir]=true;
-  else
-    user_meshgen_[x2dir]=false;
-  if(mesh_size.x3rat!=1.0)
-    user_meshgen_[x3dir]=true;
-  else
-    user_meshgen_[x3dir]=false;
-  MeshGenerator_[x1dir]=DefaultMeshGeneratorX1;
-  MeshGenerator_[x2dir]=DefaultMeshGeneratorX2;
-  MeshGenerator_[x3dir]=DefaultMeshGeneratorX3;
-  for(int dir=0; dir<6; dir++)
-    BoundaryFunction_[dir]=NULL;
-  AMRFlag_=NULL;
-  UserSourceTerm_=NULL;
-  InitUserMeshData(pin);
 
   InputBlock *pib = pin->pfirst_block;
   while (pib != NULL) {
@@ -519,7 +521,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   RegionSize block_size;
   enum BoundaryFlag block_bcs[6];
   MeshBlock *pfirst;
-  int i, j, nerr, dim;
+  int i, j, dim;
   IOWrapperSize_t *offset, datasize, listsize, headeroffset;
 
 // mesh test
@@ -531,6 +533,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   tlim       = pin->GetReal("time","tlim");
   cfl_number = pin->GetReal("time","cfl_number");
   nlim = pin->GetOrAddInteger("time","nlim",-1);
+  niusermeshdata_=0, nrusermeshdata_=0;
 
 // read number of OpenMP threads for mesh
   num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
@@ -549,22 +552,40 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   mesh_bcs[INNER_X3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix3_bc","none"));
   mesh_bcs[OUTER_X3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox3_bc","none"));
 
-  // read from the restarting file (everyone)
+  // get the end of the header
+  headeroffset=resfile.GetPosition();
+  // read the restarting file
   // the file is already open and the pointer is set to after <par_end>
-  nerr=0;
-  if(resfile.Read_all(&nbtotal, sizeof(int), 1)!=1) nerr++;
-  if(resfile.Read_all(&root_level, sizeof(int), 1)!=1) nerr++;
-  current_level=root_level;
-  if(resfile.Read_all(&mesh_size, sizeof(RegionSize), 1)!=1) nerr++;
-  if(resfile.Read_all(&time, sizeof(Real), 1)!=1) nerr++;
-  if(resfile.Read_all(&dt, sizeof(Real), 1)!=1) nerr++;
-  if(resfile.Read_all(&ncycle, sizeof(int), 1)!=1) nerr++;
-  if(resfile.Read_all(&(datasize), sizeof(IOWrapperSize_t), 1)!=1) nerr++;
-  if(nerr>0) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "The restarting file is broken." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+  IOWrapperSize_t headersize = sizeof(int)*3+sizeof(Real)*2
+                             + sizeof(RegionSize)+sizeof(IOWrapperSize_t);
+  char *headerdata = new char[headersize];
+  if(Globals::my_rank==0) { // the master process reads the header data
+    if(resfile.Read(headerdata,1,headersize)!=headersize) {
+      msg << "### FATAL ERROR in Mesh constructor" << std::endl
+          << "The restarting file is broken." << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
   }
+#ifdef MPI_PARALLEL
+  // then broadcast the header data
+  MPI_Bcast(headerdata, headersize, MPI_BYTE, 0, MPI_COMM_WORLD);
+#endif
+  IOWrapperSize_t hdos = 0;
+  memcpy(&nbtotal, &(headerdata[hdos]), sizeof(int));
+  hdos+=sizeof(int);
+  memcpy(&root_level, &(headerdata[hdos]), sizeof(int));
+  hdos+=sizeof(int);
+  current_level=root_level;
+  memcpy(&mesh_size, &(headerdata[hdos]), sizeof(RegionSize));
+  hdos+=sizeof(RegionSize);
+  memcpy(&time, &(headerdata[hdos]), sizeof(Real));
+  hdos+=sizeof(Real);
+  memcpy(&dt, &(headerdata[hdos]), sizeof(Real));
+  hdos+=sizeof(Real);
+  memcpy(&ncycle, &(headerdata[hdos]), sizeof(int));
+  hdos+=sizeof(int);
+  memcpy(&datasize, &(headerdata[hdos]), sizeof(IOWrapperSize_t));
+  hdos+=sizeof(IOWrapperSize_t);
 
   max_level = pin->GetOrAddInteger("mesh","maxlevel",1)+root_level-1;
 
@@ -606,44 +627,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   nrbx2=mesh_size.nx2/block_size.nx2;
   nrbx3=mesh_size.nx3/block_size.nx3;
 
-
-  // read the id list (serial, because we need the costs for load balancing)
-  multilevel=false;
-  listsize=sizeof(LogicalLocation)+sizeof(Real);
-  //allocate the idlist buffer
-  char *idlist = new char [listsize*nbtotal];
-  if(Globals::my_rank==0) { // only the master process reads the ID list
-    if(resfile.Read(idlist,listsize,nbtotal)!=nbtotal) {
-      msg << "### FATAL ERROR in Mesh constructor" << std::endl
-          << "The restarting file is broken." << std::endl;
-      throw std::runtime_error(msg.str().c_str());
-    }
-  }
-  else { // the others just seek the file pointer
-    resfile.Seek(resfile.GetPosition()+listsize*nbtotal);
-  }
-#ifdef MPI_PARALLEL
-  // then broadcast the ID list
-  MPI_Bcast(idlist, listsize*nbtotal, MPI_BYTE, 0, MPI_COMM_WORLD);
-#endif
-
-  int os=0;
-  for(int i=0;i<nbtotal;i++) {
-    memcpy(&(loclist[i]), &(idlist[os]), sizeof(LogicalLocation));
-    os+=sizeof(LogicalLocation);
-    memcpy(&(costlist[i]), &(idlist[os]), sizeof(Real));
-    os+=sizeof(Real);
-    if(loclist[i].level!=root_level) multilevel=true;
-    if(loclist[i].level>current_level) current_level=loclist[i].level;
-  }
-  delete [] idlist;
-  // get the header offset
-  headeroffset=resfile.GetPosition();
-
-  adaptive=false;
-  if(pin->GetOrAddString("mesh","refinement","none")=="adaptive")
-    adaptive=true, multilevel=true;
-
   //initialize user-enrollable functions
   if(mesh_size.x1rat!=1.0)
     user_meshgen_[x1dir]=true;
@@ -665,6 +648,77 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   AMRFlag_=NULL;
   UserSourceTerm_=NULL;
   InitUserMeshData(pin);
+
+  // read user Mesh data
+  IOWrapperSize_t udsize = 0;
+  for(int n=0; n<niusermeshdata_; n++)
+    udsize+=iusermeshdata[n].GetSizeInBytes();
+  for(int n=0; n<nrusermeshdata_; n++)
+    udsize+=rusermeshdata[n].GetSizeInBytes();
+  if(udsize!=0) {
+    char *userdata = new char[udsize];
+    if(Globals::my_rank==0) { // only the master process reads the ID list
+      if(resfile.Read(userdata,1,udsize)!=udsize) {
+        msg << "### FATAL ERROR in Mesh constructor" << std::endl
+            << "The restarting file is broken." << std::endl;
+        throw std::runtime_error(msg.str().c_str());
+      }
+    }
+#ifdef MPI_PARALLEL
+    // then broadcast the ID list
+    MPI_Bcast(userdata, udsize, MPI_BYTE, 0, MPI_COMM_WORLD);
+#endif
+
+    IOWrapperSize_t udoffset=0;
+    for(int n=0; n<niusermeshdata_; n++) {
+      memcpy(iusermeshdata[n].data(), &(userdata[udoffset]),
+             iusermeshdata[n].GetSizeInBytes());
+      udoffset+=iusermeshdata[n].GetSizeInBytes();
+    }
+    for(int n=0; n<nrusermeshdata_; n++) {
+      memcpy(rusermeshdata[n].data(), &(userdata[udoffset]),
+             rusermeshdata[n].GetSizeInBytes());
+      udoffset+=rusermeshdata[n].GetSizeInBytes();
+    }
+    delete [] userdata;
+  }
+
+  // read the ID list
+  multilevel=false;
+  listsize=sizeof(LogicalLocation)+sizeof(Real);
+  //allocate the idlist buffer
+  char *idlist = new char [listsize*nbtotal];
+  if(Globals::my_rank==0) { // only the master process reads the ID list
+    if(resfile.Read(idlist,listsize,nbtotal)!=nbtotal) {
+      msg << "### FATAL ERROR in Mesh constructor" << std::endl
+          << "The restarting file is broken." << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+  }
+#ifdef MPI_PARALLEL
+  // then broadcast the ID list
+  MPI_Bcast(idlist, listsize*nbtotal, MPI_BYTE, 0, MPI_COMM_WORLD);
+#endif
+
+  int os=0;
+  for(int i=0;i<nbtotal;i++) {
+    memcpy(&(loclist[i]), &(idlist[os]), sizeof(LogicalLocation));
+    os+=sizeof(LogicalLocation);
+    memcpy(&(costlist[i]), &(idlist[os]), sizeof(Real));
+    os+=sizeof(Real);
+    if(loclist[i].level!=root_level) multilevel=true;
+    if(loclist[i].level>current_level) current_level=loclist[i].level;
+  }
+  delete [] idlist;
+
+  // calculate the header offset and seek
+  headeroffset+=headersize+udsize+listsize*nbtotal;
+  if(Globals::my_rank!=0)
+    resfile.Seek(headeroffset);
+
+  adaptive=false;
+  if(pin->GetOrAddString("mesh","refinement","none")=="adaptive")
+    adaptive=true, multilevel=true;
 
   face_only=true;
   if (MAGNETIC_FIELDS_ENABLED || multilevel==true) face_only=false;
@@ -725,8 +779,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   int nb=nblist[Globals::my_rank];
   int nbs=nslist[Globals::my_rank];
   int nbe=nbs+nb-1;
-  Real *mbdata = new Real [datasize/sizeof(Real)*nb];
-  // load MeshBlocks (parallel)
+  char *mbdata = new char [datasize*nb];
+ // load MeshBlocks (parallel)
   if(resfile.Read_at_all(mbdata, datasize, nb, headeroffset+nbs*datasize)!=nb) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "The restarting file is broken or input parameters are inconsistent."
@@ -734,7 +788,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
     throw std::runtime_error(msg.str().c_str());
   }
   for(i=nbs;i<=nbe;i++) {
-    int buff_os = datasize/sizeof(Real) * (i-nbs);
+    int buff_os = datasize * (i-nbs);
     SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
     // create a block and add into the link list
     if(i==nbs) {
@@ -783,7 +837,7 @@ Mesh::~Mesh()
   delete [] ranklist;
   delete [] costlist;
   delete [] loclist;
-  if(adaptive==true) { // allocate arrays for AMR
+  if(adaptive==true) { // deallocate arrays for AMR
     delete [] nref;
     delete [] nderef;
     delete [] rdisp;
@@ -793,7 +847,13 @@ Mesh::~Mesh()
     delete [] brdisp;
     delete [] bddisp;
   }
-
+  // delete user Mesh data
+  for(int n=0; n<nrusermeshdata_; n++)
+    rusermeshdata[n].DeleteAthenaArray();
+  if(nrusermeshdata_>0) delete [] rusermeshdata;
+  for(int n=0; n<niusermeshdata_; n++)
+    iusermeshdata[n].DeleteAthenaArray();
+  if(niusermeshdata_>0) delete [] iusermeshdata;
 }
 
 //--------------------------------------------------------------------------------------
@@ -937,6 +997,8 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   loc=iloc;
   cost=1.0;
 
+  nrusermeshblockdata_ = 0, niusermeshblockdata_ = 0; 
+
 // initialize grid indices
 
   is = NGHOST;
@@ -989,6 +1051,8 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     int num_south_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
     polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
   }
+
+  InitUserMeshBlockData(pin);
   return;
 }
 
@@ -997,7 +1061,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
 MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
            LogicalLocation iloc, RegionSize input_block, enum BoundaryFlag *input_bcs,
-           Real icost, Real *mbdata)
+           Real icost, char *mbdata)
 {
   std::stringstream msg;
   pmy_mesh = pm;
@@ -1009,6 +1073,8 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   cost=icost;
   block_size = input_block;
   for(int i=0; i<6; i++) block_bcs[i] = input_bcs[i];
+
+  nrusermeshblockdata_ = 0, niusermeshblockdata_ = 0; 
 
 // initialize grid indices
   is = NGHOST;
@@ -1057,36 +1123,45 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
   }
 
+  InitUserMeshBlockData(pin);
+
   // load hydro and field data
   int os=0;
-  memcpy(phydro->u.GetArrayPointer(), &(mbdata[os]), phydro->u.GetSize()*sizeof(Real));
+  memcpy(phydro->u.data(), &(mbdata[os]), phydro->u.GetSizeInBytes());
   // load it into the half-step arrays too
-  memcpy(phydro->u1.GetArrayPointer(), &(mbdata[os]), phydro->u1.GetSize()*sizeof(Real));
-  os += phydro->u.GetSize();
+  memcpy(phydro->u1.data(), &(mbdata[os]), phydro->u1.GetSizeInBytes());
+  os += phydro->u.GetSizeInBytes();
   if (GENERAL_RELATIVITY) {
-    memcpy(phydro->w.GetArrayPointer(), &(mbdata[os]), phydro->w.GetSize()*sizeof(Real));
-    os += phydro->w.GetSize();
-    memcpy(phydro->w1.GetArrayPointer(), &(mbdata[os]), phydro->w1.GetSize()*sizeof(Real));
-    os += phydro->w1.GetSize();
+    memcpy(phydro->w.data(), &(mbdata[os]), phydro->w.GetSizeInBytes());
+    os += phydro->w.GetSizeInBytes();
+    memcpy(phydro->w1.data(), &(mbdata[os]), phydro->w1.GetSizeInBytes());
+    os += phydro->w1.GetSizeInBytes();
   }
   if (MAGNETIC_FIELDS_ENABLED) {
-    memcpy(pfield->b.x1f.GetArrayPointer(), &(mbdata[os]),
-           pfield->b.x1f.GetSize()*sizeof(Real));
-    memcpy(pfield->b1.x1f.GetArrayPointer(), &(mbdata[os]),
-           pfield->b1.x1f.GetSize()*sizeof(Real));
-    os += pfield->b.x1f.GetSize();
-    memcpy(pfield->b.x2f.GetArrayPointer(), &(mbdata[os]),
-           pfield->b.x2f.GetSize()*sizeof(Real));
-    memcpy(pfield->b1.x2f.GetArrayPointer(), &(mbdata[os]),
-           pfield->b1.x2f.GetSize()*sizeof(Real));
-    os += pfield->b.x2f.GetSize();
-    memcpy(pfield->b.x3f.GetArrayPointer(), &(mbdata[os]),
-           pfield->b.x3f.GetSize()*sizeof(Real));
-    memcpy(pfield->b1.x3f.GetArrayPointer(), &(mbdata[os]),
-           pfield->b1.x3f.GetSize()*sizeof(Real));
-    os += pfield->b.x3f.GetSize();
+    memcpy(pfield->b.x1f.data(), &(mbdata[os]), pfield->b.x1f.GetSizeInBytes());
+    memcpy(pfield->b1.x1f.data(), &(mbdata[os]), pfield->b1.x1f.GetSizeInBytes());
+    os += pfield->b.x1f.GetSizeInBytes();
+    memcpy(pfield->b.x2f.data(), &(mbdata[os]), pfield->b.x2f.GetSizeInBytes());
+    memcpy(pfield->b1.x2f.data(), &(mbdata[os]), pfield->b1.x2f.GetSizeInBytes());
+    os += pfield->b.x2f.GetSizeInBytes();
+    memcpy(pfield->b.x3f.data(), &(mbdata[os]), pfield->b.x3f.GetSizeInBytes());
+    memcpy(pfield->b1.x3f.data(), &(mbdata[os]), pfield->b1.x3f.GetSizeInBytes());
+    os += pfield->b.x3f.GetSizeInBytes();
   }
   // please add new physics here
+
+
+  // load user MeshBlock data
+  for(int n=0; n<niusermeshblockdata_; n++) {
+    memcpy(iusermeshblockdata[n].data(), &(mbdata[os]),
+           iusermeshblockdata[n].GetSizeInBytes());
+    os+=iusermeshblockdata[n].GetSizeInBytes();
+  }
+  for(int n=0; n<nrusermeshblockdata_; n++) {
+    memcpy(rusermeshblockdata[n].data(), &(mbdata[os]),
+           rusermeshblockdata[n].GetSizeInBytes());
+    os+=rusermeshblockdata[n].GetSizeInBytes();
+  }
 
   return;
 }
@@ -1107,6 +1182,13 @@ MeshBlock::~MeshBlock()
   if (block_bcs[OUTER_X2] == POLAR_BNDRY)
     delete[] polar_neighbor_south;
   delete pbval;
+  // delete user MeshBlock data
+  for(int n=0; n<nrusermeshblockdata_; n++)
+    rusermeshblockdata[n].DeleteAthenaArray();
+  if(nrusermeshblockdata_>0) delete [] rusermeshblockdata;
+  for(int n=0; n<niusermeshblockdata_; n++)
+    iusermeshblockdata[n].DeleteAthenaArray();
+  if(niusermeshblockdata_>0) delete [] iusermeshblockdata;
 }
 
 
@@ -1193,6 +1275,41 @@ void Mesh::EnrollUserMeshGenerator(enum direction dir, MeshGenFunc_t my_mg)
 void Mesh::EnrollUserSourceTermFunction(SrcTermFunc_t my_func)
 {
   UserSourceTerm_ = my_func;
+  return;
+}
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void Mesh::AllocateRealUserMeshDataField(int n)
+//  \brief Allocate Real AthenaArrays for user-defned data in Mesh
+
+void Mesh::AllocateRealUserMeshDataField(int n)
+{
+  if(nrusermeshdata_!=0) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in Mesh::AllocateRealUserMeshDataField"
+        << std::endl << "User Mesh data arrays are already allocated" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  nrusermeshdata_=n;
+  rusermeshdata = new AthenaArray<Real>[n];
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void Mesh::AllocateIntUserMeshDataField(int n)
+//  \brief Allocate integer AthenaArrays for user-defned data in Mesh
+
+void Mesh::AllocateIntUserMeshDataField(int n)
+{
+  if(niusermeshdata_!=0) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in Mesh::AllocateIntUserMeshDataField"
+        << std::endl << "User Mesh data arrays are already allocated" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  niusermeshdata_=n;
+  iusermeshdata = new AthenaArray<int>[n];
   return;
 }
 
@@ -1318,6 +1435,40 @@ int64_t Mesh::GetTotalCells(void)
 }
 
 //--------------------------------------------------------------------------------------
+//! \fn void MeshBlock::AllocateRealUserMeshDataField(int n)
+//  \brief Allocate Real AthenaArrays for user-defned data in MeshBlock
+
+void MeshBlock::AllocateRealUserMeshBlockDataField(int n)
+{
+  if(nrusermeshblockdata_!=0) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in MeshBlock::AllocateRealUserMeshBlockDataField"
+        << std::endl << "User MeshBlock data arrays are already allocated" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  nrusermeshblockdata_=n;
+  rusermeshblockdata = new AthenaArray<Real>[n];
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void MeshBlock::AllocateIntUserMeshBlockDataField(int n)
+//  \brief Allocate integer AthenaArrays for user-defned data in MeshBlock
+
+void MeshBlock::AllocateIntUserMeshBlockDataField(int n)
+{
+  if(niusermeshblockdata_!=0) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in MeshBlock::AllocateIntusermeshblockDataField"
+        << std::endl << "User MeshBlock data arrays are already allocated" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  niusermeshblockdata_=n;
+  iusermeshblockdata = new AthenaArray<int>[n];
+  return;
+}
+
+//--------------------------------------------------------------------------------------
 //! \fn size_t MeshBlock::GetBlockSizeInBytes(void)
 //  \brief Calculate the block data size required for restarting.
 
@@ -1325,18 +1476,26 @@ size_t MeshBlock::GetBlockSizeInBytes(void)
 {
   size_t size;
 
-  size=sizeof(Real)*phydro->u.GetSize();
+  size=phydro->u.GetSizeInBytes();
   if (GENERAL_RELATIVITY) {
-    size+=sizeof(Real)*phydro->w.GetSize();
-    size+=sizeof(Real)*phydro->w1.GetSize();
+    size+=phydro->w.GetSizeInBytes();
+    size+=phydro->w1.GetSizeInBytes();
   }
   if (MAGNETIC_FIELDS_ENABLED)
-    size+=sizeof(Real)*(pfield->b.x1f.GetSize()+pfield->b.x2f.GetSize()
-                       +pfield->b.x3f.GetSize());
+    size+=(pfield->b.x1f.GetSizeInBytes()+pfield->b.x2f.GetSizeInBytes()
+          +pfield->b.x3f.GetSizeInBytes());
   // please add the size counter here when new physics is introduced
+
+
+  // calculate user MeshBlock data size
+  for(int n=0; n<niusermeshblockdata_; n++)
+    size+=iusermeshblockdata[n].GetSizeInBytes();
+  for(int n=0; n<nrusermeshblockdata_; n++)
+    size+=rusermeshblockdata[n].GetSizeInBytes();
 
   return size;
 }
+
 
 //--------------------------------------------------------------------------------------
 //! \fn void Mesh::UpdateOneStep(void)

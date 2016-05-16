@@ -42,8 +42,7 @@ public:
 
   // a function to get the total size of the array
   int GetSize() const { return nx1_*nx2_*nx3_*nx4_*nx5_; }
-
-  T *GetArrayPointer() const { return pdata_; } // a brute force approach
+  size_t GetSizeInBytes() const {return nx1_*nx2_*nx3_*nx4_*nx5_*sizeof(T); }
 
   bool IsShallowCopy() { return (scopy_ == 1); }
   T *data() { return pdata_; }
