@@ -1,12 +1,12 @@
-#ifndef FIELD_INTEGRATOR_HPP
-#define FIELD_INTEGRATOR_HPP
+#ifndef FIELD_FLUXES_HPP
+#define FIELD_FLUXES_HPP
 //======================================================================================
 // Athena++ astrophysical MHD code
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
 // See LICENSE file for full public license information.
 //======================================================================================
-//! \file field_integrator.hpp
-//  \brief defines class FieldIntegrator for evolving magnetic field
+//! \file field_fluxes.hpp
+//  \brief defines class FieldFluxes; data and functions for fluxes of B-field
 //======================================================================================
 
 // Athena headers
@@ -18,24 +18,25 @@ class Field;
 class ParameterInput;
 class MeshBlock;
 
-//! \class FieldIntegrator
-//  \brief member functions implement various integration algorithms for the field
+//! \class FieldFluxes
+//  \brief member functions implement various flux functions for the B-field
 
-class FieldIntegrator {
+class FieldFluxes {
 public:
-  FieldIntegrator(Field *pfd, ParameterInput *pin);
-  ~FieldIntegrator();
+  FieldFluxes(Field *pfd, ParameterInput *pin);
+  ~FieldFluxes();
 
-  Field *pmy_field;  // ptr to Field containing this FieldIntegrator
+  Field *pmy_field;  // ptr to Field containing this FieldFluxes
 
   void CT(MeshBlock *pmb, FaceField &b, AthenaArray<Real> &w,
     AthenaArray<Real> &bcc, const int step);
+
   void ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w, AthenaArray<Real> &bcc);
 
 private:
-// scratch space used in integrator
+  // scratch space used to compute fluxes
   AthenaArray<Real> cc_e_;
   AthenaArray<Real> face_area_, edge_length_, edge_length_p1_;
-  AthenaArray<Real> g_, gi_;                                    // only used in GR
+  AthenaArray<Real> g_, gi_;  // only used in GR
 };
 #endif

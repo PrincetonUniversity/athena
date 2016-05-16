@@ -22,7 +22,7 @@
 #include "../athena_arrays.hpp"
 #include "../eos/eos.hpp"
 #include "srcterms/srcterms.hpp"
-#include "fluxes/fluxes.hpp"
+#include "fluxes/hydro_fluxes.hpp"
 #include "../mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"

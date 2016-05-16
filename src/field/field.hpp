@@ -12,12 +12,12 @@
 // Athena++ classes headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../coordinates/coordinates.hpp" // Coordinates
+#include "../coordinates/coordinates.hpp"
 
 class MeshBlock;
 class ParameterInput;
 class Hydro;
-class FieldIntegrator;
+class FieldFluxes;
 
 //! \class Field
 //  \brief electric and magnetic field data and functions
@@ -41,7 +41,7 @@ public:
   FaceField ei;   // face-centered electric fields (e.g. from Riemann solver)
   FaceField wght; // weights used to integrate E to corner using GS algorithm
 
-  FieldIntegrator *pintegrator;  // integration algorithm (CT)
+  FieldFluxes *pflux;
 
   void CopyOrAverageField(FaceField &a, FaceField &b, FaceField &c, Real factor);
 

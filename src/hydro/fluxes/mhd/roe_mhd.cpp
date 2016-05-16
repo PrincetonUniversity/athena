@@ -36,7 +36,7 @@
 #include "../../../eos/eos.hpp"
 
 // this class header
-#include "../fluxes.hpp"
+#include "../hydro_fluxes.hpp"
 
 // function to compute eigenvalues and eigenvectors of Roe's matrix A
 inline static void RoeEigensystem(const Real wroe[], const Real b1, 

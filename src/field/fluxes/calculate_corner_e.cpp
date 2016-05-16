@@ -13,32 +13,30 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../field.hpp"    // Field
-#include "field_integrator.hpp"
+//! \file corner_emf.cpp
+//  \brief
+//======================================================================================
 
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
-// Athena headers
-#include "../../athena.hpp"                   // enums, macros, Real
-#include "../../athena_arrays.hpp"            // AthenaArray
-#include "../../mesh.hpp"                     // MeshBlock
-#include "../../coordinates/coordinates.hpp"  // Coordinates
+// Athena++ headers
+#include "../../athena.hpp"
+#include "../../athena_arrays.hpp"
+#include "../../mesh.hpp"
+#include "../field.hpp"
+#include "../../coordinates/coordinates.hpp"
 #include "../../hydro/hydro.hpp"
 
-//======================================================================================
-//! \file corner_emf.cpp
-//  \brief
-//======================================================================================
+// this class header
+#include "field_fluxes.hpp"
 
 //--------------------------------------------------------------------------------------
-//! \fn  void FieldIntegrator::ComputeCornerEMFs
+//! \fn  void FieldFluxes::ComputeCornerEMFs
 //  \brief
 
-void FieldIntegrator::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w, 
+void FieldFluxes::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w, 
   AthenaArray<Real> &bcc)
 {
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;

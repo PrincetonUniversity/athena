@@ -31,7 +31,7 @@
 #include "../../../eos/eos.hpp"
 
 // this class header
-#include "../fluxes.hpp"
+#include "../hydro_fluxes.hpp"
 
 // container to store (density, momentum, tranverse magnetic field)
 // minimizes changes required to adopt athena4.2 version of this solver 

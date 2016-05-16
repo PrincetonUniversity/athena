@@ -39,7 +39,7 @@ public:
     AthenaArray<Real> &wr, AthenaArray<Real> &flx);
 
 private:
-  // scratch space used in integrator
+  // scratch space used to compute fluxes
   AthenaArray<Real> wl_, wr_, flx_; 
   AthenaArray<Real> x1face_area_, x2face_area_, x3face_area_;
   AthenaArray<Real> x2face_area_p1_, x3face_area_p1_;

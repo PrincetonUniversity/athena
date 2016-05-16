@@ -1,7 +1,7 @@
 // Local Lax-Friedrichs Riemann solver for relativistic magnetohydrodynamics
 
 // Primary header
-#include "../fluxes.hpp"
+#include "../hydro_fluxes.hpp"
 
 // C++ headers
 #include <algorithm>  // max(), min()

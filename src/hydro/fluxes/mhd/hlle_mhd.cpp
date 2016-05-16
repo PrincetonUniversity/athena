@@ -26,7 +26,7 @@
 #include "../../../eos/eos.hpp"
 
 // this class header
-#include "../fluxes.hpp"
+#include "../hydro_fluxes.hpp"
 
 void HydroFluxes::RiemannSolver(const int k,const int j, const int il, const int iu,
   const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl, 

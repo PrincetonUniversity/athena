@@ -32,7 +32,7 @@
 #include "../../reconstruct/reconstruction.hpp"
 
 // this class header
-#include "fluxes.hpp"
+#include "hydro_fluxes.hpp"
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL

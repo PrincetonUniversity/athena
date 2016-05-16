@@ -25,7 +25,7 @@
 #include "../../parameter_input.hpp" 
 
 // this class header
-#include "fluxes.hpp"
+#include "hydro_fluxes.hpp"
 
 // constructor
 
@@ -33,8 +33,7 @@ HydroFluxes::HydroFluxes(Hydro *phydro, ParameterInput *pin)
 {
   pmy_hydro = phydro;
 
-// Allocate memory for scratch vectors
-
+  // Allocate memory for scratch vectors
   int nthreads = phydro->pmy_block->pmy_mesh->GetNumMeshThreads();
   int ncells1 = phydro->pmy_block->block_size.nx1 + 2*(NGHOST);
   int ncells2 = phydro->pmy_block->block_size.nx2 + 2*(NGHOST);

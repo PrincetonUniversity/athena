@@ -13,26 +13,19 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "field.hpp"
-
-// C++ headers
-#include <algorithm>  // min()
-#include <cfloat>     // FLT_MAX
-#include <cmath>      // fabs(), sqrt()
-
-// Athena headers
-#include "../athena.hpp"                  // array access, macros, Real
-#include "../athena_arrays.hpp"           // AthenaArray
-#include "../mesh.hpp"                    // MeshBlock, Mesh
-#include "integrators/field_integrator.hpp"  // FieldIntegrator
-#include "../coordinates/coordinates.hpp" // Coordinates
-
-//======================================================================================
 //! \file field.cpp
 //  \brief implementation of functions in class Field
 //======================================================================================
+
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../mesh.hpp"
+#include "fluxes/field_fluxes.hpp"
+#include "../coordinates/coordinates.hpp"
+
+// this class header
+#include "field.hpp"
 
 // constructor, initializes data structures and parameters
 
@@ -74,7 +67,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin)
 
 // Construct ptrs to objects of various classes needed to integrate B-field
 
-    pintegrator = new FieldIntegrator(this, pin);
+    pflux = new FieldFluxes(this, pin);
 
   }
 }
@@ -102,7 +95,7 @@ Field::~Field()
   wght.x2f.DeleteAthenaArray();
   wght.x3f.DeleteAthenaArray();
 
-  delete pintegrator;
+  delete pflux;
 }
 
 

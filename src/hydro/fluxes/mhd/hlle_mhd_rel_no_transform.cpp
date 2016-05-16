@@ -1,7 +1,7 @@
 // HLLE Riemann solver for relativistic magnetohydrodynamics in pure GR
 
 // Primary header
-#include "../fluxes.hpp"
+#include "../hydro_fluxes.hpp"
 
 // C++ headers
 #include <algorithm>  // max(), min()

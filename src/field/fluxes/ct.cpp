@@ -24,7 +24,9 @@
 #include "../../coordinates/coordinates.hpp"
 #include "../../bvals/bvals.hpp"
 #include "../field.hpp"
-#include "field_integrator.hpp"
+
+// this class header
+#include "field_fluxes.hpp"
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL
@@ -37,10 +39,10 @@
 //======================================================================================
 
 //--------------------------------------------------------------------------------------
-//! \fn  void FieldIntegrator::CT
+//! \fn  void FieldFluxes::CT
 //  \brief Constrained Transport implementation of dB/dt = -Curl(E), where E=-(v X B)
 
-void FieldIntegrator::CT(MeshBlock *pmb, FaceField &b, AthenaArray<Real> &w,
+void FieldFluxes::CT(MeshBlock *pmb, FaceField &b, AthenaArray<Real> &w,
   AthenaArray<Real> &bcc, const int step)
 {
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;

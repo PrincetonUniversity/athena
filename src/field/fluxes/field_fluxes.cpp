@@ -13,31 +13,28 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "../field.hpp"              // Field
-#include "field_integrator.hpp"
-
-// Athena headers
-#include "../../athena.hpp"          // macros
-#include "../../athena_arrays.hpp"   // AthenaArray
-#include "../../mesh.hpp"            // MeshBlock
-#include "../../parameter_input.hpp" 
-
-//======================================================================================
-//! \file field_integrator.cpp
+//! \file field_fluxes.cpp
 //  \brief 
 //======================================================================================
 
+// Athena++ headers
+#include "../../athena.hpp"
+#include "../../athena_arrays.hpp"
+#include "../field.hpp"
+#include "../../mesh.hpp"
+#include "../../parameter_input.hpp" 
+
+// this class header
+#include "field_fluxes.hpp"
+
 // constructor
 
-FieldIntegrator::FieldIntegrator(Field *pfield, ParameterInput *pin)
+FieldFluxes::FieldFluxes(Field *pfield, ParameterInput *pin)
 {
   pmy_field = pfield;
   MeshBlock *pmb = pfield->pmy_mblock;
 
-// Allocate memory for scratch vectors
-
+  // Allocate memory for scratch vectors
   int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
   int ncells2 = 1, ncells3 = 1;
@@ -49,8 +46,7 @@ FieldIntegrator::FieldIntegrator(Field *pfield, ParameterInput *pin)
   face_area_.NewAthenaArray(nthreads,ncells1);
   edge_length_.NewAthenaArray(nthreads,ncells1);
   edge_length_p1_.NewAthenaArray(nthreads,ncells1);
-  if (GENERAL_RELATIVITY)
-  {
+  if (GENERAL_RELATIVITY) {
     g_.NewAthenaArray(NMETRIC,ncells1);
     gi_.NewAthenaArray(NMETRIC,ncells1);
   }
@@ -58,14 +54,13 @@ FieldIntegrator::FieldIntegrator(Field *pfield, ParameterInput *pin)
 
 // destructor
 
-FieldIntegrator::~FieldIntegrator()
+FieldFluxes::~FieldFluxes()
 {
   cc_e_.DeleteAthenaArray();
   face_area_.DeleteAthenaArray();
   edge_length_.DeleteAthenaArray();
   edge_length_p1_.DeleteAthenaArray();
-  if (GENERAL_RELATIVITY)
-  {
+  if (GENERAL_RELATIVITY) {
     g_.DeleteAthenaArray();
     gi_.DeleteAthenaArray();
   }

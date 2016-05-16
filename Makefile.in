@@ -27,7 +27,7 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/bvals/*.cpp) \
 	     src/coordinates/$(COORDINATES_FILE) \
 	     $(wildcard src/field/*.cpp) \
-	     $(wildcard src/field/integrators/*.cpp) \
+	     $(wildcard src/field/fluxes/*.cpp) \
 	     $(wildcard src/hydro/*.cpp) \
 	     $(wildcard src/hydro/srcterms/*.cpp) \
 	     src/eos/$(EOS_FILE) \
