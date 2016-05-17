@@ -82,8 +82,6 @@ private:
   int first_task, num_tasks_todo, nneighbor;
 
   int nrusermeshblockdata_, niusermeshblockdata_;
-  AthenaArray<Real> *rusermeshblockdata;
-  AthenaArray<int> *iusermeshblockdata;
   void AllocateRealUserMeshBlockDataField(int n);
   void AllocateIntUserMeshBlockDataField(int n);
 
@@ -122,6 +120,9 @@ public:
 
   int cis,cie,cjs,cje,cks,cke,cnghost;
 
+  AthenaArray<Real> *rusermeshblockdata;
+  AthenaArray<int> *iusermeshblockdata;
+
   Coordinates *pcoord;
   Hydro *phydro;
   Field *pfield;
@@ -154,8 +155,6 @@ private:
   AMRFlag_t AMRFlag_;
 
   int niusermeshdata_, nrusermeshdata_;
-  AthenaArray<Real> *rusermeshdata;
-  AthenaArray<int> *iusermeshdata;
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
 
@@ -195,6 +194,9 @@ public:
 
   TaskList *ptlist;
   MeshBlock *pblock;
+
+  AthenaArray<Real> *rusermeshdata;
+  AthenaArray<int> *iusermeshdata;
 
   int64_t GetTotalCells(void);
   int GetNumMeshThreads() const {return num_mesh_threads_;}
