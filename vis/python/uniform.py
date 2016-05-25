@@ -32,7 +32,13 @@ def main(**kwargs):
       attributes = f.attrs.items()
       attrs = dict(attributes)
       level = f.attrs['MaxLevel']
-    data = athena_read.athdf(input_filename, level=level)
+    subsample = False
+    if kwargs['level'] is not None:
+      if level > kwargs['level']:
+        subsample = True
+      level = kwargs['level']
+    data = athena_read.athdf(input_filename, quantities=kwargs['quantities'],
+        level=level, subsample=subsample)
 
     # Determine new grid size
     nx1 = attrs['RootGridSize'][0] * 2**level
@@ -54,6 +60,12 @@ def main(**kwargs):
           value = [nx1, nx2, nx3]
         elif key == 'MaxLevel':
           value = 0
+        elif key == 'NumVariables' and kwargs['quantities'] is not None:
+          value = [len(kwargs['quantities'])]
+        elif key == 'DatasetNames' and kwargs['quantities'] is not None:
+          value = ['quantities']
+        elif key == 'VariableNames' and kwargs['quantities'] is not None:
+          value = kwargs['quantities']
         else:
           value = val
         f.attrs.create(key, value, dtype=val.dtype)
@@ -65,10 +77,10 @@ def main(**kwargs):
       f.create_dataset('x2f', data=data['x2f'], dtype='>f4', shape=(1,nx2+1))
       f.create_dataset('x3f', data=data['x3f'], dtype='>f4', shape=(1,nx3+1))
       var_offset = 0
-      for dataset_name,num_vars in zip(attrs['DatasetNames'],attrs['NumVariables']):
+      for dataset_name,num_vars in zip(f.attrs['DatasetNames'],f.attrs['NumVariables']):
         f.create_dataset(dataset_name, dtype='>f4', shape=(num_vars,1,nx3,nx2,nx1))
         for var_num in range(num_vars):
-          variable_name = attrs['VariableNames'][var_num+var_offset]
+          variable_name = f.attrs['VariableNames'][var_num+var_offset]
           f[dataset_name][var_num,0,:,:,:] = data[variable_name]
         var_offset += num_vars
 
@@ -84,7 +96,7 @@ def main(**kwargs):
         f.write(('    <Topology TopologyType="3DRectMesh"' \
             + ' NumberOfElements="{0} {1} {2}"/>\n').format(nx3+1,nx2+1,nx1+1))
         f.write('    <Geometry GeometryType="VXVYVZ">\n')
-        for nx,xf_string in zip((nx1,nx2,nx3), ('x1f','x2f','x3f')):
+        for nx,xf_string in zip((nx1,nx2,nx3),('x1f','x2f','x3f')):
           f.write('      <DataItem ItemType="HyperSlab" Dimensions="{0}">\n'\
               .format(nx+1))
           f.write(('        <DataItem Dimensions="3 2" NumberType="Int">' \
@@ -93,10 +105,18 @@ def main(**kwargs):
               + ' {1}:/{2} </DataItem>\n').format(nx+1,output_base,xf_string))
           f.write('      </DataItem>\n')
         f.write('    </Geometry>\n')
+        if kwargs['quantities'] is None:
+          num_variables = attrs['NumVariables']
+          dataset_names = attrs['DatasetNames']
+          variable_names = attrs['VariableNames']
+        else:
+          num_variables = [len(kwargs['quantities'])]
+          dataset_names = ['quantities']
+          variable_names = kwargs['quantities']
         var_offset = 0
-        for dataset_name,num_vars in zip(attrs['DatasetNames'],attrs['NumVariables']):
+        for dataset_name,num_vars in zip(dataset_names,num_variables):
           for var_num in range(num_vars):
-            variable_name = attrs['VariableNames'][var_num+var_offset]
+            variable_name = variable_names[var_num+var_offset]
             f.write('    <Attribute Name="{0}" Center="Cell">\n'.format(variable_name))
             f.write('      <DataItem ItemType="HyperSlab" Dimensions="{0} {1} {2}">\n'\
                 .format(nx3,nx2,nx1))
@@ -139,5 +159,12 @@ if __name__ == '__main__':
   parser.add_argument('-x',
       action='store_false',
       help='flag indicating no XDMF file should be written')
+  parser.add_argument('-l', '--level',
+      type=int,
+      help='refinement level to use, overriding default of max level present')
+  parser.add_argument('-q', '--quantities',
+      type=str,
+      nargs='+',
+      help='names of quantities to extract')
   args = parser.parse_args()
   main(**vars(args))
