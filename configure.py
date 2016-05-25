@@ -153,22 +153,23 @@ args = vars(parser.parse_args())
 
 #--- Step 2. Test for incompatible arguments -------------------------------------------
 
-# Set default flux; HLLD for MHD, HLLC for hydro, HLLE for isothermal hydro
-if args['flux']=='default':
-  if args['b']:
-    args['flux']='hlld'
+# Set default flux; HLLD for MHD, HLLC for hydro, HLLE for isothermal hydro or any GR
+if args['flux'] == 'default':
+  if args['g']:
+    args['flux'] = 'hlle'
+  elif args['b']:
+    args['flux'] = 'hlld'
+  elif args['eos'] == 'isothermal':
+    args['flux'] = 'hlle'
   else:
-    if args['eos']=='isothermal':
-      args['flux']='hlle'
-    else:
-      args['flux']='hllc'
+    args['flux'] = 'hllc'
 
 # Check Riemann solver compatibility
-if args['flux']=='hllc' and args['eos']=='isothermal':
+if args['flux'] == 'hllc' and args['eos'] == 'isothermal':
   raise SystemExit('### CONFIGURE ERROR: HLLC flux cannot be used with isothermal EOS')
-if args['flux']=='hllc' and args['b']:
+if args['flux'] == 'hllc' and args['b']:
   raise SystemExit('### CONFIGURE ERROR: HLLC flux cannot be used with MHD')
-if args['flux']=='hlld' and not args['b']:
+if args['flux'] == 'hlld' and not args['b']:
   raise SystemExit('### CONFIGURE ERROR: HLLD flux can only be used with MHD')
 
 # Check relativity
@@ -183,7 +184,7 @@ if args['g'] and args['coord'] in ('cartesian','cylindrical','spherical_polar'):
 if not args['g'] and args['coord'] not in ('cartesian','cylindrical','spherical_polar'):
   raise SystemExit('### CONFIGURE ERROR: ' \
       + args['coord'] + ' coordinates only apply to GR')
-if args['eos']=='isothermal':
+if args['eos'] == 'isothermal':
   if args['s'] or args['g']:
     raise SystemExit('### CONFIGURE ERROR: '\
         + 'Isothermal EOS is incompatible with relativity.')

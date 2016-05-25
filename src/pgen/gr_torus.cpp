@@ -57,7 +57,7 @@ static AthenaArray<Real> g, gi;                  // metric and its inverse
 
 // Function for setting up arrays to handle user work
 // Inputs:
-//   pin: input parameters (unused)
+//   pin: input parameters
 // Outputs: (none)
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
@@ -102,7 +102,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 
 // Function for freeing arrays needed for user work
 // Inputs:
-//   pin: parameters
+//   pin: input parameters (unused)
 // Outputs: (none)
 void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
@@ -119,7 +119,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
 // Function for setting initial conditions
 // Inputs:
-//   pin: parameters
+//   pin: input parameters (unused)
 // Outputs: (none)
 // Notes:
 //   initializes Fishbone-Moncrief torus
