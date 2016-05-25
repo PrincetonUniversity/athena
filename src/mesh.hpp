@@ -81,6 +81,11 @@ private:
   unsigned long int finished_tasks[4];
   int first_task, num_tasks_todo, nneighbor;
 
+  int nrusermeshblockdata_, niusermeshblockdata_;
+  void AllocateRealUserMeshBlockDataField(int n);
+  void AllocateIntUserMeshBlockDataField(int n);
+
+
   void ProblemGenerator(ParameterInput *pin); // in /pgen
 
   friend class RestartOutput;
@@ -96,13 +101,14 @@ public:
   MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_size,
     enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, bool ref_flag = false);
   MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, LogicalLocation iloc,
-    RegionSize input_block, enum BoundaryFlag *input_bcs, Real icost, Real *mbdata);
+    RegionSize input_block, enum BoundaryFlag *input_bcs, Real icost, char *mbdata);
   ~MeshBlock();
   size_t GetBlockSizeInBytes(void);
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
   int FindNeighborGID(int ox1, int ox2, int ox3);
   void IntegrateConservative(Real *tcons);
   void UserWorkInLoop(void); // in /pgen
+  void InitUserMeshBlockData(ParameterInput *pin); // in/pgen
 
   RegionSize block_size;
   enum BoundaryFlag block_bcs[6];
@@ -113,6 +119,9 @@ public:
   int gid, lid;
 
   int cis,cie,cjs,cje,cks,cke,cnghost;
+
+  AthenaArray<Real> *rusermeshblockdata;
+  AthenaArray<int> *iusermeshblockdata;
 
   Coordinates *pcoord;
   Hydro *phydro;
@@ -144,6 +153,10 @@ private:
   SrcTermFunc_t UserSourceTerm_;
   BValFunc_t BoundaryFunction_[6];
   AMRFlag_t AMRFlag_;
+
+  int niusermeshdata_, nrusermeshdata_;
+  void AllocateRealUserMeshDataField(int n);
+  void AllocateIntUserMeshDataField(int n);
 
   void OutputMeshStructure(int dim);
 
@@ -181,6 +194,9 @@ public:
 
   TaskList *ptlist;
   MeshBlock *pblock;
+
+  AthenaArray<Real> *rusermeshdata;
+  AthenaArray<int> *iusermeshdata;
 
   int64_t GetTotalCells(void);
   int GetNumMeshThreads() const {return num_mesh_threads_;}

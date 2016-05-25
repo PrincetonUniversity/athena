@@ -29,8 +29,7 @@ def run():
       'mesh/ix1_bc=outflow', 'mesh/ox1_bc=outflow',
       'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
       'mesh/ix3_bc=periodic', 'mesh/ox3_bc=periodic',
-      'problem/shock_dir=1',
-      'problem/compute_error=1']
+      'time/cfl_number=0.3', 'problem/shock_dir=1', 'problem/compute_error=1']
     athena.run('mhd/athinput.rj2a', arguments)
   # run in X2 direction
   for i in (256,512):
@@ -39,8 +38,7 @@ def run():
       'mesh/ix1_bc=periodic', 'mesh/ox1_bc=periodic',
       'mesh/ix2_bc=outflow', 'mesh/ox2_bc=outflow',
       'mesh/ix3_bc=periodic', 'mesh/ox3_bc=periodic',
-      'problem/shock_dir=2',
-      'problem/compute_error=1']
+      'time/cfl_number=0.3', 'problem/shock_dir=2', 'problem/compute_error=1']
     athena.run('mhd/athinput.rj2a', arguments)
   # run in X3 direction
   for i in (256,512):
@@ -49,8 +47,7 @@ def run():
       'mesh/ix1_bc=periodic', 'mesh/ox1_bc=periodic',
       'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
       'mesh/ix3_bc=outflow', 'mesh/ox3_bc=outflow',
-      'problem/shock_dir=3',
-      'problem/compute_error=1']
+      'time/cfl_number=0.3', 'problem/shock_dir=3', 'problem/compute_error=1']
     athena.run('mhd/athinput.rj2a', arguments)
 
 # Analyze outputs

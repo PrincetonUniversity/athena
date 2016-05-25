@@ -160,7 +160,7 @@ class RestartOutput : public OutputType {
 private:
   IOWrapper resfile;
   IOWrapperSize_t listsize, headeroffset, datasize;
-  Real *data;
+  char *data;
   int nbtotal, myns, mynb;
 
 public:

@@ -28,7 +28,6 @@
 #include "../athena_arrays.hpp"         // AthenaArray
 #include "eos/eos.hpp"
 #include "srcterms/srcterms.hpp"
-#include "viscosity/viscosity.hpp"      // Viscosity 
 #include "integrators/hydro_integrator.hpp"
 #include "../mesh.hpp"                  // MeshBlock, Mesh
 #include "../coordinates/coordinates.hpp" // CenterWidth()
@@ -94,7 +93,6 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
   pintegrator = new HydroIntegrator(this,pin);
   peos = new HydroEqnOfState(this,pin);
   pf_srcterms = new HydroSourceTerms(this,pin);
-  if(VISCOSITY) pf_viscosity = new Viscosity(this,pin);
 }
 
 // destructor
@@ -121,7 +119,6 @@ Hydro::~Hydro()
   delete pintegrator;
   delete peos;
   delete pf_srcterms;
-  if(VISCOSITY) delete pf_viscosity;
 }
 
 //--------------------------------------------------------------------------------------
@@ -204,11 +201,6 @@ Real Hydro::NewBlockTimeStep(MeshBlock *pmb)
           dt2(i)= pmy_block->pcoord->CenterWidth2(k,j,i)/(fabs(wi[IVY]) + cs);
           dt3(i)= pmy_block->pcoord->CenterWidth3(k,j,i)/(fabs(wi[IVZ]) + cs);
 
-        }
-        if(VISCOSITY){
-          dt1(i)=std::min(pmb->phydro->pf_viscosity->VisDt(pmy_block->pcoord->CenterWidth1(k,j,i),k,j,i),dt1(i));
-          dt2(i)=std::min(pmb->phydro->pf_viscosity->VisDt(pmy_block->pcoord->CenterWidth2(k,j,i),k,j,i),dt2(i));
-          dt3(i)=std::min(pmb->phydro->pf_viscosity->VisDt(pmy_block->pcoord->CenterWidth3(k,j,i),k,j,i),dt3(i));
         }
       }
 

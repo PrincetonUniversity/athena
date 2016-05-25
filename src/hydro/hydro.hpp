@@ -19,7 +19,6 @@ class HydroIntegrator;
 class HydroBCs;
 class HydroEqnOfState;
 class HydroSourceTerms;
-class Viscosity;
 
 //! \class Hydro
 //  \brief hydro data and functions
@@ -44,8 +43,6 @@ public:
   HydroIntegrator *pintegrator;  // pointer to integrator class
   HydroEqnOfState *peos;         // pointer to equation of state class
   HydroSourceTerms *pf_srcterms;   // physical source terms
-
-  Viscosity *pf_viscosity; // Viscosity terms
 
   Real NewBlockTimeStep(MeshBlock *pmb);    // computes new timestep on a MeshBlock
 //  void InitHydro(ParameterInput *pin); // problem generator function (files in /pgen)

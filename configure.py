@@ -17,12 +17,12 @@
 #   -s                enable special relativity
 #   -g                enable general relativity
 #   -t                enable interface frame transformations for GR
-#   -vis              enable viscosity
 #   --cxx=choice      use choice as the C++ compiler
 #   -debug            enable debug flags (-g -O0); override other compiler options
 #   -mpi              enable parallelization with MPI
 #   -omp              enable parallelization with OpenMP
 #   -hdf5             enable HDF5 output (requires the HDF5 library)
+#   --hdf5_path=path  path to HDF5 libraries (requires the HDF5 library)
 #   --ifov=N          enable N internal hydro output variables
 #---------------------------------------------------------------------------------------
 
@@ -106,12 +106,6 @@ parser.add_argument('-t',
     default=False,
     help='enable interface frame transformations for GR')
 
-# -vis argument
-parser.add_argument('-vis',
-    action='store_true',
-    default=False,
-    help='enable viscosity')
-
 # --cxx=[name] argument
 parser.add_argument('--cxx',
     default='g++',
@@ -141,6 +135,12 @@ parser.add_argument('-hdf5',
     action='store_true',
     default=False,
     help='enable HDF5 Output')
+
+# --hdf5_path argument
+parser.add_argument('--hdf5_path',
+    type=str,
+    default='',
+    help='path to HDF5 libraries')
 
 # -ifov=N argument
 parser.add_argument('--ifov',
@@ -258,14 +258,6 @@ if args['g']:
   if not args['t']:
     makefile_options['RSOLVER_FILE'] += '_no_transform'
 
-# -vis argument
-if args['vis']:
-  definitions['VISCOSITY'] = '1'
-  makefile_options['VIS_FILE'] = '*.cpp'
-else:
-  definitions['VISCOSITY'] = '0'
-  makefile_options['VIS_FILE'] = '*.cpp'
-
 # --cxx=[name] argument
 if args['cxx'] == 'g++':
   definitions['COMPILER_CHOICE'] = makefile_options['COMPILER_CHOICE'] = 'g++'
@@ -347,6 +339,9 @@ else:
 # -hdf5 argument
 if args['hdf5']:
   definitions['HDF5_OPTION'] = 'HDF5OUTPUT'
+  if args['hdf5_path'] != '':
+    makefile_options['PREPROCESSOR_FLAGS'] += '-I%s/include' % args['hdf5_path']
+    makefile_options['LINKER_FLAGS'] += '-L%s/lib' % args['hdf5_path']
   if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'cray':
     makefile_options['LIBRARY_FLAGS'] += ' -lhdf5'
   if args['cxx'] == 'bgxl':
@@ -385,9 +380,9 @@ with open(makefile_input, 'r') as current_file:
   makefile_template = current_file.read()
 
 # Make substitutions
-for key,val in definitions.iteritems():
+for key,val in definitions.items():
   defsfile_template = re.sub(r'@{0}@'.format(key), val, defsfile_template)
-for key,val in makefile_options.iteritems():
+for key,val in makefile_options.items():
   makefile_template = re.sub(r'@{0}@'.format(key), val, makefile_template)
 
 # Write output files
@@ -408,7 +403,6 @@ print('  Magnetic fields:         ' + ('ON' if args['b'] else 'OFF'))
 print('  Special relativity:      ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))
-print('  Viscosity:               ' + ('ON' if args['vis'] else 'OFF'))
 print('  Compiler and flags:      ' + makefile_options['COMPILER_CHOICE'] + ' ' \
     + makefile_options['PREPROCESSOR_FLAGS'] + ' ' + makefile_options['COMPILER_FLAGS'])
 print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))

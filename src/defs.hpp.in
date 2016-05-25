@@ -35,9 +35,6 @@
 // enable general relativity? default=0 (false)
 #define GENERAL_RELATIVITY @GENERAL_RELATIVITY@
 
-// enable viscosity? default=0 (false)
-#define VISCOSITY @VISCOSITY@
-
 // Riemann solver
 #define RIEMANN_SOLVER "@RSOLVER@"
 

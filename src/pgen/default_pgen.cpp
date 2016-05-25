@@ -26,12 +26,25 @@
 
 //======================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
-//  \brief Function to initialize problem-specific data in mesh class.  Can also be used
+//  \brief Function to initialize problem-specific data in Mesh class.  Can also be used
 //  to initialize variables which are global to (and therefore can be passed to) other
 //  functions in this file.  Called in Mesh constructor.
 //======================================================================================
 
 void __attribute__((weak)) Mesh::InitUserMeshData(ParameterInput *pin)
+{
+  // do nothing
+  return;
+}
+
+//======================================================================================
+//! \fn void MeshBlock::InitUserMeshBlockData(ParameterInput *pin)
+//  \brief Function to initialize problem-specific data in MeshBlock class.  Can also be
+//  used to initialize variables which are global to other functions in this file. 
+//  Called in MeshBlock constructor before ProblemGenerator.
+//======================================================================================
+
+void __attribute__((weak)) MeshBlock::InitUserMeshBlockData(ParameterInput *pin)
 {
   // do nothing
   return;

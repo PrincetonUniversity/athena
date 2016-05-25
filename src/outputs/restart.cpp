@@ -81,8 +81,14 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag)
   std::string sbuf=ost.str();
 
   // calculate the header size
+  IOWrapperSize_t udsize=0;
+  for(int n=0; n<pM->niusermeshdata_; n++)
+    udsize+=pM->iusermeshdata[n].GetSizeInBytes();
+  for(int n=0; n<pM->nrusermeshdata_; n++)
+    udsize+=pM->rusermeshdata[n].GetSizeInBytes();
+
   headeroffset=sbuf.size()*sizeof(char)+3*sizeof(int)+sizeof(RegionSize)
-              +2*sizeof(Real)+sizeof(IOWrapperSize_t);
+              +2*sizeof(Real)+sizeof(IOWrapperSize_t)+udsize;
   // the size of an element of the ID list
   listsize=sizeof(LogicalLocation)+sizeof(Real);
   // the size of each MeshBlock
@@ -104,11 +110,29 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag)
     resfile.Write(&(pM->dt), sizeof(Real), 1);
     resfile.Write(&(pM->ncycle), sizeof(int), 1);
     resfile.Write(&(datasize), sizeof(IOWrapperSize_t), 1);
+
+    // collect and write user Mesh data
+    if(udsize!=0) {
+      char *ud = new char[udsize];
+      IOWrapperSize_t udoffset = 0;
+      for(int n=0; n<pM->niusermeshdata_; n++) {
+        memcpy(&(ud[udoffset]), pM->iusermeshdata[n].data(),
+               pM->iusermeshdata[n].GetSizeInBytes());
+        udoffset+=pM->iusermeshdata[n].GetSizeInBytes();
+      }
+      for(int n=0; n<pM->nrusermeshdata_; n++) {
+        memcpy(&(ud[udoffset]), pM->rusermeshdata[n].data(),
+               pM->rusermeshdata[n].GetSizeInBytes());
+        udoffset+=pM->rusermeshdata[n].GetSizeInBytes();
+      }
+      resfile.Write(ud, 1, udsize);
+      delete [] ud;
+    }
   }
 
   // allocate memory for the ID list and the data
   char *idlist=new char [listsize*mynb];
-  data = new Real [mynb*datasize/sizeof(Real)];
+  data = new char [mynb*datasize];
   pmb=pM->pblock;
   int os=0;
   while(pmb!=NULL) {
@@ -137,32 +161,40 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag)
 void RestartOutput::LoadOutputData(OutputData *pout_data, MeshBlock *pblock)
 {
   // pack the data
-  Real *pdata=&(data[pblock->lid*datasize/sizeof(Real)]);
-  memcpy(pdata,pblock->phydro->u.GetArrayPointer(),
-         sizeof(Real)*pblock->phydro->u.GetSize());
-  pdata+=pblock->phydro->u.GetSize();
+  char *pdata=&(data[pblock->lid*datasize]);
+  memcpy(pdata,pblock->phydro->u.data(), pblock->phydro->u.GetSizeInBytes());
+  pdata+=pblock->phydro->u.GetSizeInBytes();
   if (GENERAL_RELATIVITY) {
-    memcpy(pdata,pblock->phydro->w.GetArrayPointer(),
-           sizeof(Real)*pblock->phydro->w.GetSize());
-    pdata+=pblock->phydro->w.GetSize();
-    memcpy(pdata,pblock->phydro->w1.GetArrayPointer(),
-           sizeof(Real)*pblock->phydro->w1.GetSize());
-    pdata+=pblock->phydro->w1.GetSize();
+    memcpy(pdata,pblock->phydro->w.data(), pblock->phydro->w.GetSizeInBytes());
+    pdata+=pblock->phydro->w.GetSizeInBytes();
+    memcpy(pdata,pblock->phydro->w1.data(), pblock->phydro->w1.GetSizeInBytes());
+    pdata+=pblock->phydro->w1.GetSizeInBytes();
   }
   if (MAGNETIC_FIELDS_ENABLED) {
-    memcpy(pdata,pblock->pfield->b.x1f.GetArrayPointer(),
-           sizeof(Real)*pblock->pfield->b.x1f.GetSize());
-    pdata+=pblock->pfield->b.x1f.GetSize();
-    memcpy(pdata,pblock->pfield->b.x2f.GetArrayPointer(),
-           sizeof(Real)*pblock->pfield->b.x2f.GetSize());
-    pdata+=pblock->pfield->b.x2f.GetSize();
-    memcpy(pdata,pblock->pfield->b.x3f.GetArrayPointer(),
-           sizeof(Real)*pblock->pfield->b.x3f.GetSize());
-    pdata+=pblock->pfield->b.x3f.GetSize();
+    memcpy(pdata,pblock->pfield->b.x1f.data(), pblock->pfield->b.x1f.GetSizeInBytes());
+    pdata+=pblock->pfield->b.x1f.GetSizeInBytes();
+    memcpy(pdata,pblock->pfield->b.x2f.data(), pblock->pfield->b.x2f.GetSizeInBytes());
+    pdata+=pblock->pfield->b.x2f.GetSizeInBytes();
+    memcpy(pdata,pblock->pfield->b.x3f.data(), pblock->pfield->b.x3f.GetSizeInBytes());
+    pdata+=pblock->pfield->b.x3f.GetSizeInBytes();
   }
 
   // add additional physics here
   // also update MeshBlock::GetBlockSizeInBytes accordingly
+
+
+  // pack the user MeshBlock data
+  for(int n=0; n<pblock->niusermeshblockdata_; n++) {
+    memcpy(pdata, pblock->iusermeshblockdata[n].data(),
+           pblock->iusermeshblockdata[n].GetSizeInBytes());
+    pdata+=pblock->iusermeshblockdata[n].GetSizeInBytes();
+  }
+  for(int n=0; n<pblock->nrusermeshblockdata_; n++) {
+    memcpy(pdata, pblock->rusermeshblockdata[n].data(),
+           pblock->rusermeshblockdata[n].GetSizeInBytes());
+    pdata+=pblock->rusermeshblockdata[n].GetSizeInBytes();
+  }
+  return;
 }
 
 
