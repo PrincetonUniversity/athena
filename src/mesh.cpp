@@ -264,7 +264,6 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     BoundaryFunction_[dir]=NULL;
   AMRFlag_=NULL;
   UserSourceTerm_=NULL;
-  InitUserMeshData(pin);
 
   // calculate the logical root level and maximum level
   for (root_level=0; (1<<root_level)<nbmax; root_level++);
@@ -276,9 +275,10 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   // SMR / AMR: create finer grids here
   multilevel=false;
   adaptive=false;
-  if (pin->GetOrAddString("mesh","refinement","none")=="adaptive") {
+  if (pin->GetOrAddString("mesh","refinement","none")=="adaptive")
     adaptive=true, multilevel=true;
-  }
+  else if (pin->GetOrAddString("mesh","refinement","none")=="static")
+    multilevel=true;
   if (adaptive==true) {
     max_level = pin->GetOrAddInteger("mesh","numlevel",1)+root_level-1;
     if(max_level > 63) {
@@ -291,133 +291,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     max_level = 63;
   }
 
-  InputBlock *pib = pin->pfirst_block;
-  while (pib != NULL) {
-    if (pib->block_name.compare(0,10,"refinement") == 0 &&
-        pin->GetString("mesh","refinement") != "none") {
-      RegionSize ref_size;
-      ref_size.x1min=pin->GetReal(pib->block_name,"x1min");
-      ref_size.x1max=pin->GetReal(pib->block_name,"x1max");
-      if(dim>=2) {
-        ref_size.x2min=pin->GetReal(pib->block_name,"x2min");
-        ref_size.x2max=pin->GetReal(pib->block_name,"x2max");
-      }
-      else {
-        ref_size.x2min=mesh_size.x2min;
-        ref_size.x2max=mesh_size.x2max;
-      }
-      if(dim>=3) {
-        ref_size.x3min=pin->GetReal(pib->block_name,"x3min");
-        ref_size.x3max=pin->GetReal(pib->block_name,"x3max");
-      }
-      else {
-        ref_size.x3min=mesh_size.x3min;
-        ref_size.x3max=mesh_size.x3max;
-      }
-      int ref_lev=pin->GetReal(pib->block_name,"level");
-      int lrlev=ref_lev+root_level;
-      if(lrlev>current_level) current_level=lrlev;
-      if(lrlev!=root_level)
-        multilevel=true;
-      // range check
-      if(ref_lev<1) {
-        msg << "### FATAL ERROR in Mesh constructor" << std::endl
-            << "Refinement level must be larger than 0 (root level = 0)" << std::endl;
-        throw std::runtime_error(msg.str().c_str());
-      }
-      if(lrlev > max_level) {
-        msg << "### FATAL ERROR in Mesh constructor" << std::endl
-            << "Refinement level exceeds the maximum level (specify maxlevel in <mesh> if adaptive)."
-            << std::endl;
-        throw std::runtime_error(msg.str().c_str());
-      }
-      if(ref_size.x1min > ref_size.x1max || ref_size.x2min > ref_size.x2max
-      || ref_size.x3min > ref_size.x3max)  {
-        msg << "### FATAL ERROR in Mesh constructor" << std::endl
-            << "Invalid refinement region is specified."<<  std::endl;
-        throw std::runtime_error(msg.str().c_str());
-      }
-      if(ref_size.x1min < mesh_size.x1min || ref_size.x1max > mesh_size.x1max
-      || ref_size.x2min < mesh_size.x2min || ref_size.x2max > mesh_size.x2max
-      || ref_size.x3min < mesh_size.x3min || ref_size.x3max > mesh_size.x3max) {
-        msg << "### FATAL ERROR in Mesh constructor" << std::endl
-            << "Refinement region must be smaller than the whole mesh." << std::endl;
-        throw std::runtime_error(msg.str().c_str());
-      }
-      // find the logical range in the ref_level
-      // note: if this is too slow, this should be replaced with bi-section search.
-      long int lx1min=0, lx1max=0, lx2min=0, lx2max=0, lx3min=0, lx3max=0;
-      long int lxmax=nrbx1*(1L<<ref_lev);
-      for(lx1min=0;lx1min<lxmax;lx1min++) {
-        if(MeshGenerator_[x1dir]((Real)(lx1min+1)/lxmax,mesh_size)>ref_size.x1min)
-          break;
-      }
-      for(lx1max=lx1min;lx1max<lxmax;lx1max++) {
-        if(MeshGenerator_[x1dir]((Real)(lx1max+1)/lxmax,mesh_size)>=ref_size.x1max)
-          break;
-      }
-      if(lx1min%2==1) lx1min--;
-      if(lx1max%2==0) lx1max++;
-      if(dim>=2) { // 2D or 3D
-        lxmax=nrbx2*(1L<<ref_lev);
-        for(lx2min=0;lx2min<lxmax;lx2min++) {
-          if(MeshGenerator_[x2dir]((Real)(lx2min+1)/lxmax,mesh_size)>ref_size.x2min)
-            break;
-        }
-        for(lx2max=lx2min;lx2max<lxmax;lx2max++) {
-          if(MeshGenerator_[x2dir]((Real)(lx2max+1)/lxmax,mesh_size)>=ref_size.x2max)
-            break;
-        }
-        if(lx2min%2==1) lx2min--;
-        if(lx2max%2==0) lx2max++;
-      }
-      if(dim==3) { // 3D
-        lxmax=nrbx3*(1L<<ref_lev);
-        for(lx3min=0;lx3min<lxmax;lx3min++) {
-          if(MeshGenerator_[x3dir]((Real)(lx3min+1)/lxmax,mesh_size)>ref_size.x3min)
-            break;
-        }
-        for(lx3max=lx3min;lx3max<lxmax;lx3max++) {
-          if(MeshGenerator_[x3dir]((Real)(lx3max+1)/lxmax,mesh_size)>=ref_size.x3max)
-            break;
-        }
-        if(lx3min%2==1) lx3min--;
-        if(lx3max%2==0) lx3max++;
-      }
-      // create the finest level
-      if(dim==1) {
-        for(long int i=lx1min; i<lx1max; i+=2) {
-          LogicalLocation nloc;
-          nloc.level=lrlev, nloc.lx1=i, nloc.lx2=0, nloc.lx3=0;
-          int nnew;
-          tree.AddMeshBlock(tree,nloc,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level,nnew);
-        }
-      }
-      if(dim==2) {
-        for(long int j=lx2min; j<lx2max; j+=2) {
-          for(long int i=lx1min; i<lx1max; i+=2) {
-            LogicalLocation nloc;
-            nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=0;
-            int nnew;
-            tree.AddMeshBlock(tree,nloc,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level,nnew);
-          }
-        }
-      }
-      if(dim==3) {
-        for(long int k=lx3min; k<lx3max; k+=2) {
-          for(long int j=lx2min; j<lx2max; j+=2) {
-            for(long int i=lx1min; i<lx1max; i+=2) {
-              LogicalLocation nloc;
-              nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=k;
-              int nnew;
-              tree.AddMeshBlock(tree,nloc,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level,nnew);
-            }
-          }
-        }
-      }
-    }
-    pib=pib->pnext;
-  }
+  InitUserMeshData(pin);
 
   if(multilevel==true) {
     if(block_size.nx1%2==1 || (block_size.nx2%2==1 && block_size.nx2>1)
@@ -426,6 +300,131 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
       << "The size of MeshBlock must be divisible by 2 in order to use SMR or AMR."
       << std::endl;
       throw std::runtime_error(msg.str().c_str());
+    }
+
+    InputBlock *pib = pin->pfirst_block;
+    while (pib != NULL) {
+      if (pib->block_name.compare(0,10,"refinement") == 0) {
+        RegionSize ref_size;
+        ref_size.x1min=pin->GetReal(pib->block_name,"x1min");
+        ref_size.x1max=pin->GetReal(pib->block_name,"x1max");
+        if(dim>=2) {
+          ref_size.x2min=pin->GetReal(pib->block_name,"x2min");
+          ref_size.x2max=pin->GetReal(pib->block_name,"x2max");
+        }
+        else {
+          ref_size.x2min=mesh_size.x2min;
+          ref_size.x2max=mesh_size.x2max;
+        }
+        if(dim>=3) {
+          ref_size.x3min=pin->GetReal(pib->block_name,"x3min");
+          ref_size.x3max=pin->GetReal(pib->block_name,"x3max");
+        }
+        else {
+          ref_size.x3min=mesh_size.x3min;
+          ref_size.x3max=mesh_size.x3max;
+        }
+        int ref_lev=pin->GetReal(pib->block_name,"level");
+        int lrlev=ref_lev+root_level;
+        if(lrlev>current_level) current_level=lrlev;
+        // range check
+        if(ref_lev<1) {
+          msg << "### FATAL ERROR in Mesh constructor" << std::endl
+              << "Refinement level must be larger than 0 (root level = 0)" << std::endl;
+          throw std::runtime_error(msg.str().c_str());
+        }
+        if(lrlev > max_level) {
+          msg << "### FATAL ERROR in Mesh constructor" << std::endl
+              << "Refinement level exceeds the maximum level (specify maxlevel in <mesh> if adaptive)."
+              << std::endl;
+          throw std::runtime_error(msg.str().c_str());
+        }
+        if(ref_size.x1min > ref_size.x1max || ref_size.x2min > ref_size.x2max
+        || ref_size.x3min > ref_size.x3max)  {
+          msg << "### FATAL ERROR in Mesh constructor" << std::endl
+              << "Invalid refinement region is specified."<<  std::endl;
+          throw std::runtime_error(msg.str().c_str());
+        }
+        if(ref_size.x1min < mesh_size.x1min || ref_size.x1max > mesh_size.x1max
+        || ref_size.x2min < mesh_size.x2min || ref_size.x2max > mesh_size.x2max
+        || ref_size.x3min < mesh_size.x3min || ref_size.x3max > mesh_size.x3max) {
+          msg << "### FATAL ERROR in Mesh constructor" << std::endl
+              << "Refinement region must be smaller than the whole mesh." << std::endl;
+          throw std::runtime_error(msg.str().c_str());
+        }
+        // find the logical range in the ref_level
+        // note: if this is too slow, this should be replaced with bi-section search.
+        long int lx1min=0, lx1max=0, lx2min=0, lx2max=0, lx3min=0, lx3max=0;
+        long int lxmax=nrbx1*(1L<<ref_lev);
+        for(lx1min=0;lx1min<lxmax;lx1min++) {
+          if(MeshGenerator_[x1dir]((Real)(lx1min+1)/lxmax,mesh_size)>ref_size.x1min)
+            break;
+        }
+        for(lx1max=lx1min;lx1max<lxmax;lx1max++) {
+          if(MeshGenerator_[x1dir]((Real)(lx1max+1)/lxmax,mesh_size)>=ref_size.x1max)
+            break;
+        }
+        if(lx1min%2==1) lx1min--;
+        if(lx1max%2==0) lx1max++;
+        if(dim>=2) { // 2D or 3D
+          lxmax=nrbx2*(1L<<ref_lev);
+          for(lx2min=0;lx2min<lxmax;lx2min++) {
+            if(MeshGenerator_[x2dir]((Real)(lx2min+1)/lxmax,mesh_size)>ref_size.x2min)
+              break;
+          }
+          for(lx2max=lx2min;lx2max<lxmax;lx2max++) {
+            if(MeshGenerator_[x2dir]((Real)(lx2max+1)/lxmax,mesh_size)>=ref_size.x2max)
+              break;
+          }
+          if(lx2min%2==1) lx2min--;
+          if(lx2max%2==0) lx2max++;
+        }
+        if(dim==3) { // 3D
+          lxmax=nrbx3*(1L<<ref_lev);
+          for(lx3min=0;lx3min<lxmax;lx3min++) {
+            if(MeshGenerator_[x3dir]((Real)(lx3min+1)/lxmax,mesh_size)>ref_size.x3min)
+              break;
+          }
+          for(lx3max=lx3min;lx3max<lxmax;lx3max++) {
+            if(MeshGenerator_[x3dir]((Real)(lx3max+1)/lxmax,mesh_size)>=ref_size.x3max)
+              break;
+          }
+          if(lx3min%2==1) lx3min--;
+          if(lx3max%2==0) lx3max++;
+        }
+        // create the finest level
+        if(dim==1) {
+          for(long int i=lx1min; i<lx1max; i+=2) {
+            LogicalLocation nloc;
+            nloc.level=lrlev, nloc.lx1=i, nloc.lx2=0, nloc.lx3=0;
+            int nnew;
+            tree.AddMeshBlock(tree,nloc,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level,nnew);
+          }
+        }
+        if(dim==2) {
+          for(long int j=lx2min; j<lx2max; j+=2) {
+            for(long int i=lx1min; i<lx1max; i+=2) {
+              LogicalLocation nloc;
+              nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=0;
+              int nnew;
+              tree.AddMeshBlock(tree,nloc,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level,nnew);
+            }
+          }
+        }
+        if(dim==3) {
+          for(long int k=lx3min; k<lx3max; k+=2) {
+            for(long int j=lx2min; j<lx2max; j+=2) {
+              for(long int i=lx1min; i<lx1max; i+=2) {
+                LogicalLocation nloc;
+                nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=k;
+                int nnew;
+                tree.AddMeshBlock(tree,nloc,dim,mesh_bcs,nrbx1,nrbx2,nrbx3,root_level,nnew);
+              }
+            }
+          }
+        }
+      }
+      pib=pib->pnext;
     }
   }
 
@@ -586,8 +585,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   memcpy(&datasize, &(headerdata[hdos]), sizeof(IOWrapperSize_t));
   hdos+=sizeof(IOWrapperSize_t);
 
-  max_level = pin->GetOrAddInteger("mesh","maxlevel",1)+root_level-1;
-
   dim=1;
   if(mesh_size.nx2>1) dim=2;
   if(mesh_size.nx3>1) dim=3;
@@ -646,6 +643,25 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
     BoundaryFunction_[dir]=NULL;
   AMRFlag_=NULL;
   UserSourceTerm_=NULL;
+
+  multilevel=false;
+  adaptive=false;
+  if (pin->GetOrAddString("mesh","refinement","none")=="adaptive")
+    adaptive=true, multilevel=true;
+  else if (pin->GetOrAddString("mesh","refinement","none")=="static")
+    multilevel=true;
+  if (adaptive==true) {
+    max_level = pin->GetOrAddInteger("mesh","numlevel",1)+root_level-1;
+    if(max_level > 63) {
+      msg << "### FATAL ERROR in Mesh constructor" << std::endl
+          << "The number of the refinement level must be smaller than "
+          << 63-root_level+1 << "." << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+  } else {
+    max_level = 63;
+  }
+
   InitUserMeshData(pin);
 
   // read user Mesh data
@@ -683,7 +699,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   }
 
   // read the ID list
-  multilevel=false;
   listsize=sizeof(LogicalLocation)+sizeof(Real);
   //allocate the idlist buffer
   char *idlist = new char [listsize*nbtotal];
@@ -705,7 +720,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
     os+=sizeof(LogicalLocation);
     memcpy(&(costlist[i]), &(idlist[os]), sizeof(Real));
     os+=sizeof(Real);
-    if(loclist[i].level!=root_level) multilevel=true;
     if(loclist[i].level>current_level) current_level=loclist[i].level;
   }
   delete [] idlist;
@@ -714,10 +728,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   headeroffset+=headersize+udsize+listsize*nbtotal;
   if(Globals::my_rank!=0)
     resfile.Seek(headeroffset);
-
-  adaptive=false;
-  if(pin->GetOrAddString("mesh","refinement","none")=="adaptive")
-    adaptive=true, multilevel=true;
 
   face_only=true;
   if (MAGNETIC_FIELDS_ENABLED || multilevel==true) face_only=false;
@@ -779,7 +789,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   int nbs=nslist[Globals::my_rank];
   int nbe=nbs+nb-1;
   char *mbdata = new char [datasize*nb];
- // load MeshBlocks (parallel)
+  // load MeshBlocks (parallel)
   if(resfile.Read_at_all(mbdata, datasize, nb, headeroffset+nbs*datasize)!=nb) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "The restarting file is broken or input parameters are inconsistent."
