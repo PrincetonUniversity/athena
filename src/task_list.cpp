@@ -31,7 +31,6 @@
 #include "bvals/bvals.hpp"
 #include "eos/eos.hpp"
 #include "hydro/srcterms/srcterms.hpp"
-#include "field/fluxes/field_fluxes.hpp"
 
 // this class header
 #include "task_list.hpp"
@@ -222,9 +221,9 @@ enum TaskStatus CalculateEMF(MeshBlock *pmb, unsigned long int task_id, int step
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
   if(step == 1) {
-    pfield->pflux->ComputeCornerE(pmb, phydro->w, pfield->bcc);
+    pfield->ComputeCornerE(pmb, phydro->w, pfield->bcc);
   } else if(step == 2) {
-    pfield->pflux->ComputeCornerE(pmb, phydro->w1, pfield->bcc1);
+    pfield->ComputeCornerE(pmb, phydro->w1, pfield->bcc1);
   } else {
     return TASK_FAIL;
   }
@@ -327,9 +326,9 @@ enum TaskStatus FieldIntegrate(MeshBlock *pmb, unsigned long int task_id, int st
 //    pfield->b1.x3f = pfield->b.x3f;
     pfield->CopyOrAverageField(pfield->b1, pfield->b, pfield->b, 0.0);
 
-    pfield->pflux->CT(pmb, pfield->b1, phydro->w, pfield->bcc, 1);
+    pfield->CT(pmb, pfield->b1, phydro->w, pfield->bcc, 1);
   } else if(step == 2) {
-    pfield->pflux->CT(pmb, pfield->b, phydro->w1, pfield->bcc1, 2);
+    pfield->CT(pmb, pfield->b, phydro->w1, pfield->bcc1, 2);
   } else {
     return TASK_FAIL;
   }

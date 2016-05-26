@@ -15,7 +15,6 @@
 
 class MeshBlock;
 class ParameterInput;
-class HydroFluxes;
 class HydroSourceTerms;
 
 //! \class Hydro
@@ -34,7 +33,6 @@ public:
   AthenaArray<Real> g, g_inv; // metric and its inverse
   AthenaArray<Real> ifov;     // internal hydro output variables for analysis
 
-  HydroFluxes *pflux;
   HydroSourceTerms *psrc;
 
   Real NewBlockTimeStep(MeshBlock *pmb);    // computes new timestep on a MeshBlock

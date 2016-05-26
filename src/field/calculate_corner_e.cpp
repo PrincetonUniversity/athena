@@ -22,21 +22,20 @@
 #include <cmath>      // sqrt()
 
 // Athena++ headers
-#include "../../athena.hpp"
-#include "../../athena_arrays.hpp"
-#include "../../mesh.hpp"
-#include "../field.hpp"
-#include "../../coordinates/coordinates.hpp"
-#include "../../hydro/hydro.hpp"
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../mesh.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../hydro/hydro.hpp"
 
 // this class header
-#include "field_fluxes.hpp"
+#include "field.hpp"
 
 //--------------------------------------------------------------------------------------
-//! \fn  void FieldFluxes::ComputeCornerEMFs
+//! \fn  void Field::ComputeCornerEMFs
 //  \brief
 
-void FieldFluxes::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w, 
+void Field::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w, 
   AthenaArray<Real> &bcc)
 {
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;

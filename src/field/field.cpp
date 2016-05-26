@@ -21,7 +21,6 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../mesh.hpp"
-#include "fluxes/field_fluxes.hpp"
 #include "../coordinates/coordinates.hpp"
 
 // this class header
@@ -65,9 +64,17 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin)
     wght.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
     wght.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
 
-// Construct ptrs to objects of various classes needed to integrate B-field
+// Allocate memory for scratch vectors
+    cc_e_.NewAthenaArray(ncells3,ncells2,ncells1);
 
-    pflux = new FieldFluxes(this, pin);
+    int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
+    face_area_.NewAthenaArray(nthreads,ncells1);
+    edge_length_.NewAthenaArray(nthreads,ncells1);
+    edge_length_p1_.NewAthenaArray(nthreads,ncells1);
+    if (GENERAL_RELATIVITY) {
+      g_.NewAthenaArray(NMETRIC,ncells1);
+      gi_.NewAthenaArray(NMETRIC,ncells1);
+    }
 
   }
 }
@@ -95,7 +102,14 @@ Field::~Field()
   wght.x2f.DeleteAthenaArray();
   wght.x3f.DeleteAthenaArray();
 
-  delete pflux;
+  cc_e_.DeleteAthenaArray();
+  face_area_.DeleteAthenaArray();
+  edge_length_.DeleteAthenaArray();
+  edge_length_p1_.DeleteAthenaArray();
+  if (GENERAL_RELATIVITY) {
+    g_.DeleteAthenaArray();
+    gi_.DeleteAthenaArray();
+  }
 }
 
 

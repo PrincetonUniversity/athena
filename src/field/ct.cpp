@@ -13,36 +13,33 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
+//! \file ct.cpp
+//  \brief
+//======================================================================================
 
 // C++ headers
 #include <algorithm>  // max(), min()
 
 // Athena++ headers
-#include "../../athena.hpp"
-#include "../../athena_arrays.hpp"
-#include "../../mesh.hpp"
-#include "../../coordinates/coordinates.hpp"
-#include "../../bvals/bvals.hpp"
-#include "../field.hpp"
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../mesh.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../bvals/bvals.hpp"
 
 // this class header
-#include "field_fluxes.hpp"
+#include "field.hpp"
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL
 #include <omp.h>
 #endif
 
-//======================================================================================
-//! \file ct.cpp
-//  \brief
-//======================================================================================
-
 //--------------------------------------------------------------------------------------
-//! \fn  void FieldFluxes::CT
+//! \fn  void Field::CT
 //  \brief Constrained Transport implementation of dB/dt = -Curl(E), where E=-(v X B)
 
-void FieldFluxes::CT(MeshBlock *pmb, FaceField &b, AthenaArray<Real> &w,
+void Field::CT(MeshBlock *pmb, FaceField &b, AthenaArray<Real> &w,
   AthenaArray<Real> &bcc, const int step)
 {
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;

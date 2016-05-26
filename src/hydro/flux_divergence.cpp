@@ -37,7 +37,7 @@
 #endif
 
 //--------------------------------------------------------------------------------------
-//! \fn  void HydroFluxes::FluxDivergence
+//! \fn  void Hydro::FluxDivergence
 //  \brief Integrate the conservative variables using the calculated fluxes
 
 void Hydro::FluxDivergence(MeshBlock *pmb,AthenaArray<Real> &u,

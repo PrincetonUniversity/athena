@@ -17,7 +17,6 @@
 class MeshBlock;
 class ParameterInput;
 class Hydro;
-class FieldFluxes;
 
 //! \class Field
 //  \brief electric and magnetic field data and functions
@@ -41,10 +40,15 @@ public:
   FaceField ei;   // face-centered electric fields (e.g. from Riemann solver)
   FaceField wght; // weights used to integrate E to corner using GS algorithm
 
-  FieldFluxes *pflux;
-
   void CopyOrAverageField(FaceField &a, FaceField &b, FaceField &c, Real factor);
+  void CT(MeshBlock *pmb, FaceField &b, AthenaArray<Real> &w,
+    AthenaArray<Real> &bcc, const int step);
+  void ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w, AthenaArray<Real> &bcc);
 
 private:
+  // scratch space used to compute fluxes
+  AthenaArray<Real> cc_e_;
+  AthenaArray<Real> face_area_, edge_length_, edge_length_p1_;
+  AthenaArray<Real> g_, gi_;  // only used in GR
 };
 #endif // FIELD_HPP
