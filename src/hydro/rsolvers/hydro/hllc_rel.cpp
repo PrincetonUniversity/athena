@@ -1,14 +1,13 @@
-// Local Lax-Friedrichs Riemann solver for relativistic hydrodynamics
+// HLLC Riemann solver for relativistic hydrodynamics
 
 // Primary header
-#include "../hydro_fluxes.hpp"
+#include "../../hydro.hpp"
 
 // C++ headers
 #include <algorithm>  // max(), min()
-#include <cmath>      // sqrt()
+#include <cmath>      // abs(), sqrt()
 
 // Athena headers
-#include "../../hydro.hpp"                       // Hydro
 #include "../../../eos/eos.hpp"                     // HydroEqnOfState
 #include "../../../athena.hpp"                   // enums, macros, Real
 #include "../../../athena_arrays.hpp"            // AthenaArray
@@ -16,13 +15,13 @@
 #include "../../../coordinates/coordinates.hpp"  // Coordinates
 
 // Declarations
-static void LLFTransforming(Hydro *pmy_hydro, const int k, const int j, const int il,
+static void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
     const int iu, const int ivx, const AthenaArray<Real> &bb,
     AthenaArray<Real> &bb_normal, AthenaArray<Real> &g, AthenaArray<Real> &gi,
     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &cons,
     AthenaArray<Real> &flux);
-static void LLFNonTransforming(Hydro *pmy_hydro, const int k, const int j, const int il,
-    const int iu, AthenaArray<Real> &g, AthenaArray<Real> &gi,
+static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
+    const int il, const int iu, AthenaArray<Real> &g, AthenaArray<Real> &gi,
     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &flux);
 
 //--------------------------------------------------------------------------------------
@@ -38,24 +37,26 @@ static void LLFNonTransforming(Hydro *pmy_hydro, const int k, const int j, const
 //   flux: fluxes across interface
 // Notes:
 //   prim_l, prim_r overwritten
-//   implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
-void HydroFluxes::RiemannSolver(const int k, const int j, const int il,
+//   tries to implement HLLC algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB2005)
+//   otherwise implements HLLE algorithm similar to that of fluxcalc() in step_ch.c in
+//       Harm
+void Hydro::RiemannSolver(const int k, const int j, const int il,
     const int iu, const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
     AthenaArray<Real> &prim_r, AthenaArray<Real> &flux)
 {
-  if (GENERAL_RELATIVITY and ivx == IVY and pmy_hydro->pmy_block->pcoord->IsPole(j))
-    LLFNonTransforming(pmy_hydro, k, j, il, iu, g_, gi_, prim_l, prim_r, flux);
+  if (GENERAL_RELATIVITY and ivx == IVY and pmy_block->pcoord->IsPole(j))
+    HLLENonTransforming(pmy_block, k, j, il, iu, g_, gi_, prim_l, prim_r, flux);
   else
-    LLFTransforming(pmy_hydro, k, j, il, iu, ivx, bb, bb_normal_, g_, gi_, prim_l,
-        prim_r, cons_, flux);
+    HLLCTransforming(pmy_block, k, j, il, iu, ivx, bb, bb_normal_, g_, gi_, prim_l, prim_r,
+        cons_, flux);
   return;
 }
 
 //--------------------------------------------------------------------------------------
 
-// Frame-transforming LLF implementation
+// Frame-transforming HLLC implementation
 // Inputs:
-//   pmy_hydro: pointer to Hydro object
+//   pmb: pointer to MeshBlock object
 //   k,j: x3- and x2-indices
 //   il,iu: lower and upper x1-indices
 //   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
@@ -68,28 +69,50 @@ void HydroFluxes::RiemannSolver(const int k, const int j, const int il,
 //   flux: fluxes across interface
 // Notes:
 //   prim_l, prim_r overwritten
-//   implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
-//   references Mignone & Bodo 2005, MNRAS 364 126 (MB)
-static void LLFTransforming(Hydro *pmy_hydro, const int k, const int j, const int il,
+//   implements HLLC algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB2005)
+//   references Mignone & Bodo 2006, MNRAS 368 1040 (MB2006)
+static void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
     const int iu, const int ivx, const AthenaArray<Real> &bb,
     AthenaArray<Real> &bb_normal, AthenaArray<Real> &g, AthenaArray<Real> &gi,
     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &cons,
     AthenaArray<Real> &flux)
 {
+  // Calculate metric if in GR
+  int i01, i11;
+  if (GENERAL_RELATIVITY)
+    switch (ivx)
+    {
+      case IVX:
+        pmb->pcoord->Face1Metric(k, j, il, iu, g, gi);
+        i01 = I01;
+        i11 = I11;
+        break;
+      case IVY:
+        pmb->pcoord->Face2Metric(k, j, il, iu, g, gi);
+        i01 = I02;
+        i11 = I22;
+        break;
+      case IVZ:
+        pmb->pcoord->Face3Metric(k, j, il, iu, g, gi);
+        i01 = I03;
+        i11 = I33;
+        break;
+    }
+
   // Transform primitives to locally flat coordinates if in GR
   if (GENERAL_RELATIVITY)
     switch (ivx)
     {
       case IVX:
-        pmy_hydro->pmy_block->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r,
+        pmb->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r,
             bb_normal);
         break;
       case IVY:
-        pmy_hydro->pmy_block->pcoord->PrimToLocal2(k, j, il, iu, bb, prim_l, prim_r,
+        pmb->pcoord->PrimToLocal2(k, j, il, iu, bb, prim_l, prim_r,
             bb_normal);
         break;
       case IVZ:
-        pmy_hydro->pmy_block->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r,
+        pmb->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r,
             bb_normal);
         break;
     }
@@ -99,7 +122,7 @@ static void LLFTransforming(Hydro *pmy_hydro, const int k, const int j, const in
   int ivz = IVX + ((ivx-IVX)+2)%3;
 
   // Extract ratio of specific heats
-  const Real gamma_adi = pmy_hydro->pmy_block->peos->GetGamma();
+  const Real gamma_adi = pmb->peos->GetGamma();
 
   // Go through each interface
   #pragma simd
@@ -149,24 +172,23 @@ static void LLFTransforming(Hydro *pmy_hydro, const int k, const int j, const in
       u_r[3] = u_r[0] * vz_r;
     }
 
-    // Calculate wavespeeds in left state (MB 23)
+    // Calculate wavespeeds in left state (MB2005 23)
     Real lambda_p_l, lambda_m_l;
     Real wgas_l = rho_l + gamma_adi/(gamma_adi-1.0) * pgas_l;
-    pmy_hydro->pmy_block->peos->SoundSpeedsSR(wgas_l, pgas_l, u_l[1]/u_l[0], SQR(u_l[0]),
+    pmb->peos->SoundSpeedsSR(wgas_l, pgas_l, u_l[1]/u_l[0], SQR(u_l[0]),
         &lambda_p_l, &lambda_m_l);
 
-    // Calculate wavespeeds in right state (MB 23)
+    // Calculate wavespeeds in right state (MB2005 23)
     Real lambda_p_r, lambda_m_r;
     Real wgas_r = rho_r + gamma_adi/(gamma_adi-1.0) * pgas_r;
-    pmy_hydro->pmy_block->peos->SoundSpeedsSR(wgas_r, pgas_r, u_r[1]/u_r[0], SQR(u_r[0]),
+    pmb->peos->SoundSpeedsSR(wgas_r, pgas_r, u_r[1]/u_r[0], SQR(u_r[0]),
         &lambda_p_r, &lambda_m_r);
 
-    // Calculate extremal wavespeed
+    // Calculate extremal wavespeeds
     Real lambda_l = std::min(lambda_m_l, lambda_m_r);
     Real lambda_r = std::max(lambda_p_l, lambda_p_r);
-    Real lambda = std::max(lambda_r, -lambda_l);
 
-    // Calculate conserved quantities in L region (MB 3)
+    // Calculate conserved quantities in L region (MB2005 3)
     Real cons_l[NWAVE];
     cons_l[IDN] = rho_l * u_l[0];
     cons_l[IEN] = wgas_l * u_l[0] * u_l[0] - pgas_l;
@@ -174,7 +196,7 @@ static void LLFTransforming(Hydro *pmy_hydro, const int k, const int j, const in
     cons_l[ivy] = wgas_l * u_l[2] * u_l[0];
     cons_l[ivz] = wgas_l * u_l[3] * u_l[0];
 
-    // Calculate fluxes in L region (MB 2,3)
+    // Calculate fluxes in L region (MB2005 2,3)
     Real flux_l[NWAVE];
     flux_l[IDN] = rho_l * u_l[1];
     flux_l[IEN] = wgas_l * u_l[0] * u_l[1];
@@ -182,7 +204,7 @@ static void LLFTransforming(Hydro *pmy_hydro, const int k, const int j, const in
     flux_l[ivy] = wgas_l * u_l[2] * u_l[1];
     flux_l[ivz] = wgas_l * u_l[3] * u_l[1];
 
-    // Calculate conserved quantities in R region (MB 3)
+    // Calculate conserved quantities in R region (MB2005 3)
     Real cons_r[NWAVE];
     cons_r[IDN] = rho_r * u_r[0];
     cons_r[IEN] = wgas_r * u_r[0] * u_r[0] - pgas_r;
@@ -190,7 +212,7 @@ static void LLFTransforming(Hydro *pmy_hydro, const int k, const int j, const in
     cons_r[ivy] = wgas_r * u_r[2] * u_r[0];
     cons_r[ivz] = wgas_r * u_r[3] * u_r[0];
 
-    // Calculate fluxes in R region (MB 2,3)
+    // Calculate fluxes in R region (MB2005 2,3)
     Real flux_r[NWAVE];
     flux_r[IDN] = rho_r * u_r[1];
     flux_r[IEN] = wgas_r * u_r[0] * u_r[1];
@@ -198,14 +220,98 @@ static void LLFTransforming(Hydro *pmy_hydro, const int k, const int j, const in
     flux_r[ivy] = wgas_r * u_r[2] * u_r[1];
     flux_r[ivz] = wgas_r * u_r[3] * u_r[1];
 
-    // Set fluxes
+    // Calculate conserved quantities in HLL region in GR (MB2005 9)
+    Real cons_hll[NWAVE];
     for (int n = 0; n < NWAVE; ++n)
-      flux(n,i) = 0.5 * (flux_l[n] + flux_r[n] - lambda * (cons_r[n] - cons_l[n]));
+      cons_hll[n] = (lambda_r*cons_r[n] - lambda_l*cons_l[n] + flux_l[n] - flux_r[n])
+          / (lambda_r-lambda_l);
+
+    // Calculate fluxes in HLL region (MB2005 11)
+    Real flux_hll[NWAVE];
+    for (int n = 0; n < NWAVE; ++n)
+      flux_hll[n] = (lambda_r*flux_l[n] - lambda_l*flux_r[n]
+          + lambda_l*lambda_r * (cons_r[n] - cons_l[n]))
+          / (lambda_r-lambda_l);
+
+    // Calculate contact wavespeed (MB2005 18)
+    Real lambda_star;
+    if (std::abs(flux_hll[IEN]) > TINY_NUMBER)  // use quadratic formula
+    {
+      // Follows algorithm in Numerical Recipes (section 5.6) for avoiding cancellations
+      Real a = flux_hll[IEN];
+      Real b = -(cons_hll[IEN] + flux_hll[ivx]);
+      Real c = cons_hll[ivx];
+      Real q = -0.5 * (b - std::sqrt(SQR(b) - 4.0*a*c));
+      lambda_star = c / q;
+    }
+    else  // no quadratic term
+      lambda_star = cons_hll[ivx] / (cons_hll[IEN] + flux_hll[ivx]);
+
+    // Calculate contact pressure (MB2006 48)
+    // Note: Could also use (MB2005 17), but note the first minus sign there is wrong.
+    Real pgas_star = -flux_hll[IEN] * lambda_star + flux_hll[ivx];
+
+    // Calculate conserved quantities in L* region (MB2005 16)
+    Real cons_lstar[NWAVE];
+    Real vx_l = u_l[1] / u_l[0];
+    for (int n = 0; n < NWAVE; ++n)
+      cons_lstar[n] = cons_l[n] * (lambda_l-vx_l);
+    cons_lstar[IEN] += pgas_star*lambda_star - pgas_l*vx_l;
+    cons_lstar[ivx] += pgas_star - pgas_l;
+    for (int n = 0; n < NWAVE; ++n)
+      cons_lstar[n] /= lambda_l - lambda_star;
+
+    // Calculate fluxes in L* region (MB2005 14)
+    Real flux_lstar[NWAVE];
+    for (int n = 0; n < NWAVE; ++n)
+      flux_lstar[n] = flux_l[n] + lambda_l * (cons_lstar[n] - cons_l[n]);
+
+    // Calculate conserved quantities in R* region (MB2005 16)
+    Real cons_rstar[NWAVE];
+    Real vx_r = u_r[1] / u_r[0];
+    for (int n = 0; n < NWAVE; ++n)
+      cons_rstar[n] = cons_r[n] * (lambda_r-vx_r);
+    cons_rstar[IEN] += pgas_star*lambda_star - pgas_r*vx_r;
+    cons_rstar[ivx] += pgas_star - pgas_r;
+    for (int n = 0; n < NWAVE; ++n)
+      cons_rstar[n] /= lambda_r - lambda_star;
+
+    // Calculate fluxes in R* region (MB2005 14)
+    Real flux_rstar[NWAVE];
+    for (int n = 0; n < NWAVE; ++n)
+      flux_rstar[n] = flux_r[n] + lambda_r * (cons_rstar[n] - cons_r[n]);
+
+    // Calculate interface velocity
+    Real v_interface = 0.0;
+    if (GENERAL_RELATIVITY)
+      v_interface = gi(i01,i) / std::sqrt(SQR(gi(i01,i)) - gi(I00,i)*gi(i11,i));
 
     // Set conserved quantities in GR
     if (GENERAL_RELATIVITY)
       for (int n = 0; n < NWAVE; ++n)
-        cons(n,i) = 0.5 * (cons_r[n] + cons_l[n] + (flux_l[n] - flux_r[n]) / lambda);
+      {
+        if (lambda_l >= v_interface)  // L region
+          cons(n,i) = cons_l[n];
+        else if (lambda_r <= v_interface)  // R region
+          cons(n,i) = cons_r[n];
+        else if (lambda_star >= v_interface)  // L* region
+          cons(n,i) = cons_lstar[n];
+        else  // R* region
+          cons(n,i) = cons_rstar[n];
+      }
+
+    // Set fluxes
+    for (int n = 0; n < NWAVE; ++n)
+    {
+      if (lambda_l >= v_interface)  // L region
+        flux(n,i) = flux_l[n];
+      else if (lambda_r <= v_interface)  // R region
+        flux(n,i) = flux_r[n];
+      else if (lambda_star >= v_interface)  // L* region
+        flux(n,i) = flux_lstar[n];
+      else  // R* region
+        flux(n,i) = flux_rstar[n];
+    }
   }
 
   // Transform fluxes to global coordinates if in GR
@@ -213,15 +319,15 @@ static void LLFTransforming(Hydro *pmy_hydro, const int k, const int j, const in
     switch (ivx)
     {
       case IVX:
-        pmy_hydro->pmy_block->pcoord->FluxToGlobal1(k, j, il, iu, cons, bb_normal,
+        pmb->pcoord->FluxToGlobal1(k, j, il, iu, cons, bb_normal,
             flux);
         break;
       case IVY:
-        pmy_hydro->pmy_block->pcoord->FluxToGlobal2(k, j, il, iu, cons, bb_normal,
+        pmb->pcoord->FluxToGlobal2(k, j, il, iu, cons, bb_normal,
             flux);
         break;
       case IVZ:
-        pmy_hydro->pmy_block->pcoord->FluxToGlobal3(k, j, il, iu, cons, bb_normal,
+        pmb->pcoord->FluxToGlobal3(k, j, il, iu, cons, bb_normal,
             flux);
         break;
     }
@@ -230,9 +336,9 @@ static void LLFTransforming(Hydro *pmy_hydro, const int k, const int j, const in
 
 //--------------------------------------------------------------------------------------
 
-// Non-frame-transforming LLF implementation
+// Non-frame-transforming HLLE implementation
 // Inputs:
-//   pmy_hydro: pointer to Hydro object
+//   pmb: pointer to MeshBlock object
 //   k,j: x3- and x2-indices
 //   il,iu: lower and upper x1-indices
 //   g,gi: 1D scratch arrays for metric coefficients
@@ -240,17 +346,18 @@ static void LLFTransforming(Hydro *pmy_hydro, const int k, const int j, const in
 // Outputs:
 //   flux: fluxes across interface
 // Notes:
-//   implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
-//   derived from RiemannSolver() in llf_rel_no_transform.cpp assuming ivx = IVY
-static void LLFNonTransforming(Hydro *pmy_hydro, const int k, const int j, const int il,
-    const int iu, AthenaArray<Real> &g, AthenaArray<Real> &gi,
+//   implements HLLE algorithm similar to that of fluxcalc() in step_ch.c in Harm
+//   derived from RiemannSolver() in hlle_rel_no_transform.cpp assuming ivx = IVY
+//   same function as in hlle_rel.cpp
+static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
+    const int il, const int iu, AthenaArray<Real> &g, AthenaArray<Real> &gi,
     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r, AthenaArray<Real> &flux)
 {
   // Extract ratio of specific heats
-  const Real gamma_adi = pmy_hydro->pmy_block->peos->GetGamma();
+  const Real gamma_adi = pmb->peos->GetGamma();
 
   // Get metric components
-  pmy_hydro->pmy_block->pcoord->Face2Metric(k, j, il, iu, g, gi);
+  pmb->pcoord->Face2Metric(k, j, il, iu, g, gi);
 
   // Go through each interface
   #pragma simd
@@ -314,19 +421,18 @@ static void LLFNonTransforming(Hydro *pmy_hydro, const int k, const int j, const
     // Calculate wavespeeds in left state
     Real lambda_p_l, lambda_m_l;
     Real wgas_l = rho_l + gamma_adi/(gamma_adi-1.0) * pgas_l;
-    pmy_hydro->pmy_block->peos->SoundSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[IVY], g00, g02,
+    pmb->peos->SoundSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[IVY], g00, g02,
         g22, &lambda_p_l, &lambda_m_l);
 
     // Calculate wavespeeds in right state
     Real lambda_p_r, lambda_m_r;
     Real wgas_r = rho_r + gamma_adi/(gamma_adi-1.0) * pgas_r;
-    pmy_hydro->pmy_block->peos->SoundSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[IVY], g00, g02,
+    pmb->peos->SoundSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[IVY], g00, g02,
         g22, &lambda_p_r, &lambda_m_r);
 
-    // Calculate extremal wavespeed
+    // Calculate extremal wavespeeds
     Real lambda_l = std::min(lambda_m_l, lambda_m_r);
     Real lambda_r = std::max(lambda_p_l, lambda_p_r);
-    Real lambda = std::max(lambda_r, -lambda_l);
 
     // Calculate conserved quantities in L region (rho u^0 and T^0_\mu)
     Real cons_l[NWAVE];
@@ -362,9 +468,23 @@ static void LLFNonTransforming(Hydro *pmy_hydro, const int k, const int j, const
     flux_r[IVZ] = wgas_r * ucon_r[IVY] * ucov_r[3];
     flux_r[IVY] += pgas_r;
 
+    // Calculate fluxes in HLL region
+    Real flux_hll[NWAVE];
+    for (int n = 0; n < NWAVE; ++n)
+      flux_hll[n] = (lambda_r*flux_l[n] - lambda_l*flux_r[n]
+          + lambda_r*lambda_l * (cons_r[n] - cons_l[n]))
+          / (lambda_r-lambda_l);
+
     // Set fluxes
     for (int n = 0; n < NWAVE; ++n)
-      flux(n,i) = 0.5 * (flux_l[n] + flux_r[n] - lambda * (cons_r[n] - cons_l[n]));
+    {
+      if (lambda_l >= 0.0)  // L region
+        flux(n,i) = flux_l[n];
+      else if (lambda_r <= 0.0)  // R region
+        flux(n,i) = flux_r[n];
+      else  // HLL region
+        flux(n,i) = flux_hll[n];
+    }
   }
   return;
 }

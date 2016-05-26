@@ -27,11 +27,10 @@
 // Athena++ headers
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"
-#include "../../hydro.hpp"
 #include "../../../eos/eos.hpp"
 
 // this class header
-#include "../hydro_fluxes.hpp"
+#include "../../hydro.hpp"
 
 // container to store (density, momentum, total energy, tranverse magnetic field)
 // minimizes changes required to adopt athena4.2 version of this solver 
@@ -41,7 +40,7 @@ typedef struct Cons1D {
 
 #define SMALL_NUMBER 1.0e-8
 
-void HydroFluxes::RiemannSolver(const int k,const int j, const int il, const int iu,
+void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
   const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
   AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {
@@ -54,7 +53,7 @@ void HydroFluxes::RiemannSolver(const int k,const int j, const int il, const int
   Cons1D ulst,uldst,urdst,urst;   // Conserved variable for all states 
   Cons1D fl,fr;                   // Fluxes for left & right states
 
-  Real gm1 = pmy_hydro->pmy_block->peos->GetGamma() - 1.0;
+  Real gm1 = pmy_block->peos->GetGamma() - 1.0;
 
 #pragma simd
   for (int i=il; i<=iu; ++i){
@@ -104,8 +103,8 @@ void HydroFluxes::RiemannSolver(const int k,const int j, const int il, const int
 
 //--- Step 2.  Compute left & right wave speeds according to Miyoshi & Kusano, eqn. (67)
 
-    Real cfl = pmy_hydro->pmy_block->peos->FastMagnetosonicSpeed(wli,bxi);
-    Real cfr = pmy_hydro->pmy_block->peos->FastMagnetosonicSpeed(wri,bxi);
+    Real cfl = pmy_block->peos->FastMagnetosonicSpeed(wli,bxi);
+    Real cfr = pmy_block->peos->FastMagnetosonicSpeed(wri,bxi);
 
     spd[0] = std::min( wli[IVX]-cfl, wri[IVX]-cfr );
     spd[4] = std::max( wli[IVX]+cfl, wri[IVX]+cfr );

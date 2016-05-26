@@ -21,11 +21,10 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../eos/eos.hpp"
-#include "srcterms/srcterms.hpp"
-#include "fluxes/hydro_fluxes.hpp"
 #include "../mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
+#include "srcterms/srcterms.hpp"
 
 // this class header
 #include "hydro.hpp"
@@ -62,20 +61,46 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
   g.NewAthenaArray(NMETRIC, ncells1);
   g_inv.NewAthenaArray(NMETRIC, ncells1);
 
+// Allocate memory for internal hydro output variables (if needed)
+
+  ifov.NewAthenaArray(NIFOV,ncells3,ncells2,ncells1);
+
 // Allocate memory for scratch arrays
 
   int nthreads = pmy_block->pmy_mesh->GetNumMeshThreads();
   dt1_.NewAthenaArray(nthreads,ncells1);
   dt2_.NewAthenaArray(nthreads,ncells1);
   dt3_.NewAthenaArray(nthreads,ncells1);
-
-// Allocate memory for internal hydro output variables (if needed)
-
-  ifov.NewAthenaArray(NIFOV,ncells3,ncells2,ncells1);
+  wl_.NewAthenaArray(nthreads,(NWAVE),ncells1);
+  wr_.NewAthenaArray(nthreads,(NWAVE),ncells1);
+  flx_.NewAthenaArray(nthreads,(NWAVE),ncells1);
+  x1face_area_.NewAthenaArray(nthreads,ncells1+1);
+  if(pmy_block->block_size.nx2 > 1) {
+    x2face_area_.NewAthenaArray(nthreads,ncells1);
+    x2face_area_p1_.NewAthenaArray(nthreads,ncells1);
+  }
+  if(pmy_block->block_size.nx3 > 1) {
+    x3face_area_.NewAthenaArray(nthreads,ncells1);
+    x3face_area_p1_.NewAthenaArray(nthreads,ncells1);
+  }
+  cell_volume_.NewAthenaArray(nthreads,ncells1);
+  if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in (SR/GR)MHD
+  {
+    bb_normal_.NewAthenaArray(ncells1);
+    lambdas_p_l_.NewAthenaArray(ncells1);
+    lambdas_m_l_.NewAthenaArray(ncells1);
+    lambdas_p_r_.NewAthenaArray(ncells1);
+    lambdas_m_r_.NewAthenaArray(ncells1);
+  }
+  if (GENERAL_RELATIVITY)  // only used in GR
+  {
+    g_.NewAthenaArray(NMETRIC,ncells1);
+    gi_.NewAthenaArray(NMETRIC,ncells1);
+    cons_.NewAthenaArray(NWAVE,ncells1);
+  }
 
 // Construct ptrs to objects of various classes needed to integrate hydro/MHD eqns 
 
-  pflux = new HydroFluxes(this,pin);
   psrc  = new HydroSourceTerms(this,pin);
 }
 
@@ -89,6 +114,7 @@ Hydro::~Hydro()
   w1.DeleteAthenaArray();
   g.DeleteAthenaArray();
   g_inv.DeleteAthenaArray();
+  ifov.DeleteAthenaArray();
 
   flux[x1face].DeleteAthenaArray();
   if (pmy_block->block_size.nx2 > 1) flux[x2face].DeleteAthenaArray();
@@ -97,9 +123,33 @@ Hydro::~Hydro()
   dt1_.DeleteAthenaArray();
   dt2_.DeleteAthenaArray();
   dt3_.DeleteAthenaArray();
+  wl_.DeleteAthenaArray();
+  wr_.DeleteAthenaArray();
+  flx_.DeleteAthenaArray();
+  x1face_area_.DeleteAthenaArray();
+  if(pmy_block->block_size.nx2 > 1) {
+    x2face_area_.DeleteAthenaArray();
+    x2face_area_p1_.DeleteAthenaArray();
+  }
+  if(pmy_block->block_size.nx3 > 1) {
+    x3face_area_.DeleteAthenaArray();
+    x3face_area_p1_.DeleteAthenaArray();
+  }
+  cell_volume_.DeleteAthenaArray();
+  if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in (SR/GR)MHD
+  {
+    bb_normal_.DeleteAthenaArray();
+    lambdas_p_l_.DeleteAthenaArray();
+    lambdas_m_l_.DeleteAthenaArray();
+    lambdas_p_r_.DeleteAthenaArray();
+    lambdas_m_r_.DeleteAthenaArray();
+  }
+  if (GENERAL_RELATIVITY)
+  {
+    g_.DeleteAthenaArray();
+    gi_.DeleteAthenaArray();
+    cons_.DeleteAthenaArray();
+  }
 
-  ifov.DeleteAthenaArray();
-
-  delete pflux;
   delete psrc;
 }

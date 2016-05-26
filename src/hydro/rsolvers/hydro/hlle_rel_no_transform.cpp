@@ -1,14 +1,13 @@
 // HLLE Riemann solver for relativistic hydrodynamics in pure GR
 
 // Primary header
-#include "../hydro_fluxes.hpp"
+#include "../../hydro.hpp"                       // Hydro
 
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
 // Athena headers
-#include "../../hydro.hpp"                       // Hydro
 #include "../../../eos/eos.hpp"                     // HydroEqnOfState
 #include "../../../athena.hpp"                   // enums, macros, Real
 #include "../../../athena_arrays.hpp"            // AthenaArray
@@ -29,7 +28,7 @@
 // Notes:
 //   implements HLLE algorithm similar to that of fluxcalc() in step_ch.c in Harm
 //   cf. HLLENonTransforming() in hlle_rel.cpp and hllc_rel.cpp
-void HydroFluxes::RiemannSolver(const int k, const int j, const int il,
+void Hydro::RiemannSolver(const int k, const int j, const int il,
     const int iu, const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
     AthenaArray<Real> &prim_r, AthenaArray<Real> &flux)
 {
@@ -38,19 +37,19 @@ void HydroFluxes::RiemannSolver(const int k, const int j, const int il,
   int ivz = IVX + ((ivx-IVX)+2)%3;
 
   // Extract ratio of specific heats
-  const Real gamma_adi = pmy_hydro->pmy_block->peos->GetGamma();
+  const Real gamma_adi = pmy_block->peos->GetGamma();
 
   // Get metric components
   switch (ivx)
   {
     case IVX:
-      pmy_hydro->pmy_block->pcoord->Face1Metric(k, j, il, iu, g_, gi_);
+      pmy_block->pcoord->Face1Metric(k, j, il, iu, g_, gi_);
       break;
     case IVY:
-      pmy_hydro->pmy_block->pcoord->Face2Metric(k, j, il, iu, g_, gi_);
+      pmy_block->pcoord->Face2Metric(k, j, il, iu, g_, gi_);
       break;
     case IVZ:
-      pmy_hydro->pmy_block->pcoord->Face3Metric(k, j, il, iu, g_, gi_);
+      pmy_block->pcoord->Face3Metric(k, j, il, iu, g_, gi_);
       break;
   }
 
@@ -134,13 +133,13 @@ void HydroFluxes::RiemannSolver(const int k, const int j, const int il,
     // Calculate wavespeeds in left state
     Real lambda_p_l, lambda_m_l;
     Real wgas_l = rho_l + gamma_adi/(gamma_adi-1.0) * pgas_l;
-    pmy_hydro->pmy_block->peos->SoundSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[ivx], g00, g0i,
+    pmy_block->peos->SoundSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[ivx], g00, g0i,
         gii, &lambda_p_l, &lambda_m_l);
 
     // Calculate wavespeeds in right state
     Real lambda_p_r, lambda_m_r;
     Real wgas_r = rho_r + gamma_adi/(gamma_adi-1.0) * pgas_r;
-    pmy_hydro->pmy_block->peos->SoundSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[ivx], g00, g0i,
+    pmy_block->peos->SoundSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[ivx], g00, g0i,
         gii, &lambda_p_r, &lambda_m_r);
 
     // Calculate extremal wavespeeds

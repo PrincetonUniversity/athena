@@ -21,18 +21,17 @@
 #include <algorithm>   // min,max
 
 // Athena++ headers
-#include "../../athena.hpp"
-#include "../../athena_arrays.hpp"
-#include "../../coordinates/coordinates.hpp"
-#include "../hydro.hpp"
-#include "../../field/field.hpp"
-#include "../../mesh.hpp"
-#include "../srcterms/srcterms.hpp"
-#include "../../bvals/bvals.hpp"
-#include "../../reconstruct/reconstruction.hpp"
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../field/field.hpp"
+#include "../mesh.hpp"
+#include "srcterms/srcterms.hpp"
+#include "../bvals/bvals.hpp"
+#include "../reconstruct/reconstruction.hpp"
 
 // this class header
-#include "hydro_fluxes.hpp"
+#include "hydro.hpp"
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL
@@ -40,15 +39,15 @@
 #endif
 
 //--------------------------------------------------------------------------------------
-//! \fn  void HydroFluxes::CalculateFluxes
+//! \fn  void Hydro::CalculateFluxes
 //  \brief Calculate Hydrodynamic Fluxes using the Riemann solver
 
-void HydroFluxes::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
+void Hydro::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
   AthenaArray<Real> &w, FaceField &b, AthenaArray<Real> &bcc, const int step)
 {
-  AthenaArray<Real> &x1flux=pmb->phydro->flux[x1face];
-  AthenaArray<Real> &x2flux=pmb->phydro->flux[x2face];
-  AthenaArray<Real> &x3flux=pmb->phydro->flux[x3face];
+  AthenaArray<Real> &x1flux=flux[x1face];
+  AthenaArray<Real> &x2flux=flux[x2face];
+  AthenaArray<Real> &x3flux=flux[x3face];
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   int il, iu, jl, ju, kl, ku;

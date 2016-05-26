@@ -22,21 +22,20 @@
 // Athena++ headers
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"
-#include "../../hydro.hpp"
 #include "../../../eos/eos.hpp"
 
 // this class header
-#include "../hydro_fluxes.hpp"
+#include "../../hydro.hpp"
 
-void HydroFluxes::RiemannSolver(const int k,const int j, const int il, const int iu,
+void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
   const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl, 
   AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NWAVE)],wri[(NWAVE)],wroe[(NWAVE)],fl[(NWAVE)],fr[(NWAVE)],flxi[(NWAVE)];
-  Real gm1 = pmy_hydro->pmy_block->peos->GetGamma() - 1.0;
-  Real iso_cs = pmy_hydro->pmy_block->peos->GetIsoSoundSpeed();
+  Real gm1 = pmy_block->peos->GetGamma() - 1.0;
+  Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
 
 #pragma simd
   for (int i=il; i<=iu; ++i){
@@ -90,8 +89,8 @@ void HydroFluxes::RiemannSolver(const int k,const int j, const int il, const int
 
 //--- Step 3.  Compute fast magnetosonic speed in L,R, and Roe-averaged states
 
-    Real cl = pmy_hydro->pmy_block->peos->FastMagnetosonicSpeed(wli,bxi);
-    Real cr = pmy_hydro->pmy_block->peos->FastMagnetosonicSpeed(wri,bxi);
+    Real cl = pmy_block->peos->FastMagnetosonicSpeed(wli,bxi);
+    Real cr = pmy_block->peos->FastMagnetosonicSpeed(wri,bxi);
 
     // Compute fast-magnetosonic speed using eq. B18 (adiabatic) or B39 (isothermal)
     Real btsq = SQR(wroe[IBY]) + SQR(wroe[IBZ]);

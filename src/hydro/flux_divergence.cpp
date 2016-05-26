@@ -13,26 +13,23 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file van_leer2.cpp
-//  \brief van-Leer (MUSCL-Hancock) second-order integrator
+//! \file flux_divergence.cpp
+//  \brief Applies divergence of the fluxes, including geometric "source terms" added
+//         by a function implemented in each Coordinate class.
 //======================================================================================
 
-// C/C++ headers
-#include <algorithm>   // min,max
-
 // Athena++ headers
-#include "../../athena.hpp"
-#include "../../athena_arrays.hpp"
-#include "../../coordinates/coordinates.hpp"
-#include "../hydro.hpp"
-#include "../../field/field.hpp"
-#include "../../mesh.hpp"
-#include "../srcterms/srcterms.hpp"
-#include "../../bvals/bvals.hpp"
-#include "../../reconstruct/reconstruction.hpp"
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../field/field.hpp"
+#include "../mesh.hpp"
+#include "srcterms/srcterms.hpp"
+#include "../bvals/bvals.hpp"
+#include "../reconstruct/reconstruction.hpp"
 
 // this class header
-#include "hydro_fluxes.hpp"
+#include "hydro.hpp"
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL
@@ -43,12 +40,12 @@
 //! \fn  void HydroFluxes::FluxDivergence
 //  \brief Integrate the conservative variables using the calculated fluxes
 
-void HydroFluxes::FluxDivergence(MeshBlock *pmb,AthenaArray<Real> &u,
+void Hydro::FluxDivergence(MeshBlock *pmb,AthenaArray<Real> &u,
   AthenaArray<Real> &w, FaceField &b, AthenaArray<Real> &bcc, const int step)
 {
-  AthenaArray<Real> &x1flux=pmb->phydro->flux[x1face];
-  AthenaArray<Real> &x2flux=pmb->phydro->flux[x2face];
-  AthenaArray<Real> &x3flux=pmb->phydro->flux[x3face];
+  AthenaArray<Real> &x1flux=flux[x1face];
+  AthenaArray<Real> &x2flux=flux[x2face];
+  AthenaArray<Real> &x3flux=flux[x3face];
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   Real dt;

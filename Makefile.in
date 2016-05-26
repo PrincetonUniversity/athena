@@ -30,10 +30,9 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/field/fluxes/*.cpp) \
 	     $(wildcard src/hydro/*.cpp) \
 	     $(wildcard src/hydro/srcterms/*.cpp) \
+	     src/hydro/rsolvers/$(RSOLVER_DIR)$(RSOLVER_FILE) \
 	     src/eos/$(EOS_FILE) \
-	     $(wildcard src/hydro/fluxes/*.cpp) \
 	     $(wildcard src/reconstruct/*.cpp) \
-	     src/hydro/fluxes/$(RSOLVER_DIR)$(RSOLVER_FILE) \
 	     $(wildcard src/mesh_refinement/*.cpp) \
 	     $(wildcard src/outputs/*.cpp) \
 	     $(wildcard src/utils/*.cpp) \

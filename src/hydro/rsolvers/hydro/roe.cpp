@@ -31,11 +31,10 @@
 // Athena++ headers
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"
-#include "../../hydro.hpp"
 #include "../../../eos/eos.hpp"
 
 // this class header
-#include "../hydro_fluxes.hpp"
+#include "../../hydro.hpp"
 
 // function to compute eigenvalues and eigenvectors of Roe's matrix A
 inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
@@ -44,15 +43,15 @@ inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
 // (gamma-1) and isothermal sound speed made global so can be shared with eigensystem
 static Real gm1, iso_cs;
 
-void HydroFluxes::RiemannSolver(const int k,const int j, const int il, const int iu,
+void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
   const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
   AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[NWAVE],wri[NWAVE],wroe[NWAVE],fl[NWAVE],fr[NWAVE],flxi[NWAVE];
-  gm1 = pmy_hydro->pmy_block->peos->GetGamma() - 1.0;
-  iso_cs = pmy_hydro->pmy_block->peos->GetIsoSoundSpeed();
+  gm1 = pmy_block->peos->GetGamma() - 1.0;
+  iso_cs = pmy_block->peos->GetIsoSoundSpeed();
 
   Real coeff[NWAVE];
   Real ev[NWAVE],rem[NWAVE][NWAVE],lem[NWAVE][NWAVE];

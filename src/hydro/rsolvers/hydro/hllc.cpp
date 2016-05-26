@@ -31,13 +31,12 @@
 // Athena++ headers
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"
-#include "../../hydro.hpp"
 #include "../../../eos/eos.hpp"
 
 // this class header
-#include "../hydro_fluxes.hpp"
+#include "../../hydro.hpp"
 
-void HydroFluxes::RiemannSolver(const int k,const int j, const int il, const int iu,
+void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
   const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
   AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {
@@ -45,7 +44,7 @@ void HydroFluxes::RiemannSolver(const int k,const int j, const int il, const int
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NHYDRO)],wri[(NHYDRO)],wroe[(NHYDRO)];
   Real flxi[(NHYDRO)],fl[(NHYDRO)],fr[(NHYDRO)];
-  Real gm1 = pmy_hydro->pmy_block->peos->GetGamma() - 1.0;
+  Real gm1 = pmy_block->peos->GetGamma() - 1.0;
 
 #pragma simd
   for (int i=il; i<=iu; ++i){
@@ -84,8 +83,8 @@ void HydroFluxes::RiemannSolver(const int k,const int j, const int il, const int
 
 //--- Step 3.  Compute sound speed in L,R, and Roe-averaged states
 
-    Real cl = pmy_hydro->pmy_block->peos->SoundSpeed(wli);
-    Real cr = pmy_hydro->pmy_block->peos->SoundSpeed(wri);
+    Real cl = pmy_block->peos->SoundSpeed(wli);
+    Real cr = pmy_block->peos->SoundSpeed(wri);
     Real q = hroe - 0.5*(SQR(wroe[IVX]) + SQR(wroe[IVY]) + SQR(wroe[IVZ]));
     Real a = (q < 0.0) ? 0.0 : sqrt(gm1*q);
 

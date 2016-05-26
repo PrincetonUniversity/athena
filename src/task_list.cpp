@@ -30,7 +30,6 @@
 #include "field/field.hpp"
 #include "bvals/bvals.hpp"
 #include "eos/eos.hpp"
-#include "hydro/fluxes/hydro_fluxes.hpp"
 #include "hydro/srcterms/srcterms.hpp"
 #include "field/fluxes/field_fluxes.hpp"
 
@@ -176,10 +175,10 @@ enum TaskStatus CalculateFluxes(MeshBlock *pmb, unsigned long int task_id, int s
 //    phydro->u1 = phydro->u;
     phydro->CopyOrAverageHydro(phydro->u1, phydro->u, phydro->u, 0.0);
 
-    phydro->pflux->CalculateFluxes(pmb, phydro->u1, phydro->w, pfield->b,
+    phydro->CalculateFluxes(pmb, phydro->u1, phydro->w, pfield->b,
                                            pfield->bcc, 1);
   } else if(step == 2) {
-    phydro->pflux->CalculateFluxes(pmb, phydro->u, phydro->w1, pfield->b1,
+    phydro->CalculateFluxes(pmb, phydro->u, phydro->w1, pfield->b1,
                                            pfield->bcc1, 2);
   } else {
     return TASK_FAIL;
@@ -267,13 +266,13 @@ enum TaskStatus HydroIntegrate(MeshBlock *pmb, unsigned long int task_id, int st
   Field *pfield=pmb->pfield;
 
   if(step == 1) {
-    phydro->pflux->FluxDivergence(pmb, phydro->u1, phydro->w, pfield->b,
+    phydro->FluxDivergence(pmb, phydro->u1, phydro->w, pfield->b,
                                           pfield->bcc, 1);
     // source terms
     Real dt = 0.5*(pmb->pmy_mesh->dt);
     phydro->psrc->AddHydroSourceTerms(dt,pmb->phydro->flux,phydro->w,pfield->bcc,phydro->u);
   } else if(step == 2) {
-    phydro->pflux->FluxDivergence(pmb, phydro->u, phydro->w1, pfield->b1,
+    phydro->FluxDivergence(pmb, phydro->u, phydro->w1, pfield->b1,
                                           pfield->bcc1, 2);
     // source terms
     Real dt = (pmb->pmy_mesh->dt);
