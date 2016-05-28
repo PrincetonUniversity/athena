@@ -29,7 +29,7 @@
 #include "../coordinates/coordinates.hpp"
 
 // BCs on L-x1 (left edge) of grid with jet inflow conditions
-void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
+void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
                    int is, int ie, int js, int je, int ks, int ke);
 
 // Make radius of jet and jet variables global so they can be accessed by BC functions
@@ -134,7 +134,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //! \fn void JetInnerX1()
 //  \brief Sets boundary condition on left X boundary (iib) for jet problem
 
-void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
+void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
                    int is, int ie, int js, int je, int ks, int ke)
 {
   // set primitive variables in inlet ghost zones
@@ -143,17 +143,17 @@ void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceFiel
     for(int i=1; i<=(NGHOST); ++i){
       Real rad = sqrt(SQR(pco->x2v(j)-x2_0) + SQR(pco->x3v(k)-x3_0));
       if(rad <= r_jet){
-        a(IDN,k,j,is-i) = d_jet;
-        a(IVX,k,j,is-i) = vx_jet;
-        a(IVY,k,j,is-i) = vy_jet;
-        a(IVZ,k,j,is-i) = vz_jet;
-        a(IEN,k,j,is-i) = p_jet;
+        prim(IDN,k,j,is-i) = d_jet;
+        prim(IVX,k,j,is-i) = vx_jet;
+        prim(IVY,k,j,is-i) = vy_jet;
+        prim(IVZ,k,j,is-i) = vz_jet;
+        prim(IPR,k,j,is-i) = p_jet;
       } else{
-        a(IDN,k,j,is-i) = a(IDN,k,j,is);
-        a(IVX,k,j,is-i) = a(IVX,k,j,is);
-        a(IVY,k,j,is-i) = a(IVY,k,j,is);
-        a(IVZ,k,j,is-i) = a(IVZ,k,j,is);
-        a(IEN,k,j,is-i) = a(IEN,k,j,is);
+        prim(IDN,k,j,is-i) = prim(IDN,k,j,is);
+        prim(IVX,k,j,is-i) = prim(IVX,k,j,is);
+        prim(IVY,k,j,is-i) = prim(IVY,k,j,is);
+        prim(IVZ,k,j,is-i) = prim(IVZ,k,j,is);
+        prim(IPR,k,j,is-i) = prim(IPR,k,j,is);
       }
     }
   }}

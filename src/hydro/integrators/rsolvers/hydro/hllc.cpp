@@ -56,13 +56,13 @@ void HydroIntegrator::RiemannSolver(const int k,const int j, const int il, const
     wli[IVX]=wl(ivx,i);
     wli[IVY]=wl(ivy,i);
     wli[IVZ]=wl(ivz,i);
-    wli[IEN]=wl(IEN,i);
+    wli[IPR]=wl(IPR,i);
 
     wri[IDN]=wr(IDN,i);
     wri[IVX]=wr(ivx,i);
     wri[IVY]=wr(ivy,i);
     wri[IVZ]=wr(ivz,i);
-    wri[IEN]=wr(IEN,i);
+    wri[IPR]=wr(IPR,i);
 
 //--- Step2.  Compute Roe-averaged state
 
@@ -78,9 +78,9 @@ void HydroIntegrator::RiemannSolver(const int k,const int j, const int il, const
     // Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
     // rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
     Real el,er,hroe;
-    el = wli[IEN]/gm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
-    er = wri[IEN]/gm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
-    hroe = ((el + wli[IEN])/sqrtdl + (er + wri[IEN])/sqrtdr)*isdlpdr;
+    el = wli[IPR]/gm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
+    er = wri[IPR]/gm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
+    hroe = ((el + wli[IPR])/sqrtdl + (er + wri[IPR])/sqrtdr)*isdlpdr;
 
 //--- Step 3.  Compute sound speed in L,R, and Roe-averaged states
 
@@ -102,8 +102,8 @@ void HydroIntegrator::RiemannSolver(const int k,const int j, const int il, const
     Real vxl = wli[IVX] - al;
     Real vxr = wri[IVX] - ar;
 
-    Real tl = wli[IEN] + vxl*wli[IDN]*wli[IVX];
-    Real tr = wri[IEN] + vxr*wri[IDN]*wri[IVX];
+    Real tl = wli[IPR] + vxl*wli[IDN]*wli[IVX];
+    Real tr = wri[IPR] + vxr*wri[IDN]*wri[IVX];
 
     Real ml =   wli[IDN]*vxl;
     Real mr = -(wri[IDN]*vxr);
@@ -122,8 +122,8 @@ void HydroIntegrator::RiemannSolver(const int k,const int j, const int il, const
     fl[IDN] = wli[IDN]*vxl;
     fr[IDN] = wri[IDN]*vxr;
 
-    fl[IVX] = wli[IDN]*wli[IVX]*vxl + wli[IEN];
-    fr[IVX] = wri[IDN]*wri[IVX]*vxr + wri[IEN];
+    fl[IVX] = wli[IDN]*wli[IVX]*vxl + wli[IPR];
+    fr[IVX] = wri[IDN]*wri[IVX]*vxr + wri[IPR];
 
     fl[IVY] = wli[IDN]*wli[IVY]*vxl;
     fr[IVY] = wri[IDN]*wri[IVY]*vxr;
@@ -131,8 +131,8 @@ void HydroIntegrator::RiemannSolver(const int k,const int j, const int il, const
     fl[IVZ] = wli[IDN]*wli[IVZ]*vxl;
     fr[IVZ] = wri[IDN]*wri[IVZ]*vxr;
 
-    fl[IEN] = el*vxl + wli[IEN]*wli[IVX];
-    fr[IEN] = er*vxr + wri[IEN]*wri[IVX];
+    fl[IEN] = el*vxl + wli[IPR]*wli[IVX];
+    fr[IEN] = er*vxr + wri[IPR]*wri[IVX];
 
 //--- Step 8.  Compute flux weights or scales
 

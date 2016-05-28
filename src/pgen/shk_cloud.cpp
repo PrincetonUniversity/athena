@@ -50,7 +50,7 @@ static Real gmma1,dl,pl,ul;
 static Real bxl,byl,bzl;
 
 // fixes BCs on L-x1 (left edge) of grid to postshock flow.
-void ShockCloudInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void ShockCloudInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                        FaceField &b, int is, int ie, int js, int je, int ks, int ke);
 
 //======================================================================================
@@ -194,17 +194,17 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Sets boundary condition on left X boundary (iib) 
 // Note quantities at this boundary are held fixed at the downstream state
 
-void ShockCloudInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void ShockCloudInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                        FaceField &b, int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
     for (int i=1; i<=(NGHOST); ++i) {
-      a(IDN,k,j,is-i) = dl;
-      a(IVX,k,j,is-i) = ul;
-      a(IVY,k,j,is-i) = 0.0;
-      a(IVZ,k,j,is-i) = 0.0;
-      a(IEN,k,j,is-i) = pl;
+      prim(IDN,k,j,is-i) = dl;
+      prim(IVX,k,j,is-i) = ul;
+      prim(IVY,k,j,is-i) = 0.0;
+      prim(IVZ,k,j,is-i) = 0.0;
+      prim(IPR,k,j,is-i) = pl;
     }
   }}
 }

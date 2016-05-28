@@ -61,13 +61,13 @@ void HydroIntegrator::RiemannSolver(const int k,const int j, const int il, const
     wli[IVX]=wl(ivx,i);
     wli[IVY]=wl(ivy,i);
     wli[IVZ]=wl(ivz,i);
-    if (NON_BAROTROPIC_EOS) wli[IEN]=wl(IEN,i);
+    if (NON_BAROTROPIC_EOS) wli[IPR]=wl(IPR,i);
 
     wri[IDN]=wr(IDN,i);
     wri[IVX]=wr(ivx,i);
     wri[IVY]=wr(ivy,i);
     wri[IVZ]=wr(ivz,i);
-    if (NON_BAROTROPIC_EOS) wri[IEN]=wr(IEN,i);
+    if (NON_BAROTROPIC_EOS) wri[IPR]=wr(IPR,i);
 
 //--- Step2.  Compute Roe-averaged state
 
@@ -84,9 +84,9 @@ void HydroIntegrator::RiemannSolver(const int k,const int j, const int il, const
     // rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
     Real el,er,hroe;
     if (NON_BAROTROPIC_EOS) {
-      el = wli[IEN]/gm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
-      er = wri[IEN]/gm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
-      hroe = ((el + wli[IEN])/sqrtdl + (er + wri[IEN])/sqrtdr)*isdlpdr;
+      el = wli[IPR]/gm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
+      er = wri[IPR]/gm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
+      hroe = ((el + wli[IPR])/sqrtdl + (er + wri[IPR])/sqrtdr)*isdlpdr;
     }
 
 //--- Step 3.  Compute sound speed in L,R, and Roe-averaged states
@@ -125,10 +125,10 @@ void HydroIntegrator::RiemannSolver(const int k,const int j, const int il, const
     fr[IVZ] = wri[IDN]*wri[IVZ]*vxr;
 
     if (NON_BAROTROPIC_EOS) {
-      fl[IVX] += wli[IEN];
-      fr[IVX] += wri[IEN];
-      fl[IEN] = el*vxl + wli[IEN]*wli[IVX];
-      fr[IEN] = er*vxr + wri[IEN]*wri[IVX];
+      fl[IVX] += wli[IPR];
+      fr[IVX] += wri[IPR];
+      fl[IEN] = el*vxl + wli[IPR]*wli[IVX];
+      fr[IEN] = er*vxr + wri[IPR]*wri[IVX];
     } else {
       fl[IVX] += (iso_cs*iso_cs)*wli[IDN];
       fr[IVX] += (iso_cs*iso_cs)*wri[IDN];
