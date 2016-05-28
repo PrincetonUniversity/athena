@@ -14,7 +14,7 @@
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
 //! \file bvals_cc.cpp
-//  \brief functions that initialize/apply BCs for CELL_CENTERED variables in each dir
+//  \brief functions that apply BCs for CELL_CENTERED variables
 //======================================================================================
 
 // C++ headers
@@ -47,9 +47,6 @@
 #ifdef MPI_PARALLEL
 #include <mpi.h>
 #endif
-
-static NeighborIndexes ni_[56];
-static int bufid_[56];
 
 //--------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src,
