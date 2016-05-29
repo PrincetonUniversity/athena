@@ -59,7 +59,7 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
   int p=0;
-  if(nb.type==neighbor_face) {
+  if(nb.type==NEIGHBOR_FACE) {
     if(pmb->block_size.nx3 > 1) { // 3D
       // x1 direction
       if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
@@ -146,7 +146,7 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
       buf[p++]=e3(k,j,i);
     }
   }
-  else if(nb.type==neighbor_edge) {
+  else if(nb.type==NEIGHBOR_EDGE) {
     // x1x2 edge (both 2D and 3D)
     if(nb.eid>=0 && nb.eid<4) {
       int i, j;
@@ -200,7 +200,7 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
   AthenaArray<Real> &le1=sarea_[0];
   AthenaArray<Real> &le2=sarea_[1];
   int p=0;
-  if(nb.type==neighbor_face) {
+  if(nb.type==NEIGHBOR_FACE) {
     if(pmb->block_size.nx3 > 1) { // 3D
       // x1 direction
       if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
@@ -303,7 +303,7 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
       buf[p++]=e3(k,j,i);
     }
   }
-  else if(nb.type==neighbor_edge) {
+  else if(nb.type==NEIGHBOR_EDGE) {
     if(pmb->block_size.nx3 > 1) { // 3D
       // x1x2 edge
       if(nb.eid>=0 && nb.eid<4) {
@@ -389,11 +389,11 @@ void BoundaryValues::SendEMFCorrection(int step)
   // Send non-polar EMF values
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
-    if((nb.type!=neighbor_face) && (nb.type!=neighbor_edge)) break;
+    if((nb.type!=NEIGHBOR_FACE) && (nb.type!=NEIGHBOR_EDGE)) break;
     int p=0;
     if(nb.level==pmb->loc.level) {
-      if((nb.type==neighbor_face)
-      || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true)))
+      if((nb.type==NEIGHBOR_FACE)
+      || ((nb.type==NEIGHBOR_EDGE) && (edge_flag_[nb.eid]==true)))
         p=LoadEMFBoundaryBufferSameLevel(emfcor_send_[step][nb.bufid], nb);
       else continue;
     }
@@ -404,7 +404,7 @@ void BoundaryValues::SendEMFCorrection(int step)
       MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
       std::memcpy(pbl->pbval->emfcor_recv_[step][nb.targetid],
                   emfcor_send_[step][nb.bufid], p*sizeof(Real));
-      pbl->pbval->emfcor_flag_[step][nb.targetid]=boundary_arrived;
+      pbl->pbval->emfcor_flag_[step][nb.targetid]=BNDRY_ARRIVED;
     }
 #ifdef MPI_PARALLEL
     else
@@ -420,7 +420,7 @@ void BoundaryValues::SendEMFCorrection(int step)
       MeshBlock *pbl = pmb->pmy_mesh->FindMeshBlock(nb.gid);
       std::memcpy(pbl->pbval->emf_north_recv_[step][pmb->loc.lx3],
           emf_north_send_[step][n], count * sizeof(Real));
-      pbl->pbval->emf_north_flag_[step][pmb->loc.lx3] = boundary_arrived;
+      pbl->pbval->emf_north_flag_[step][pmb->loc.lx3] = BNDRY_ARRIVED;
     }
 #ifdef MPI_PARALLEL
     else
@@ -434,7 +434,7 @@ void BoundaryValues::SendEMFCorrection(int step)
       MeshBlock *pbl = pmb->pmy_mesh->FindMeshBlock(nb.gid);
       std::memcpy(pbl->pbval->emf_south_recv_[step][pmb->loc.lx3],
           emf_south_send_[step][n], count * sizeof(Real));
-      pbl->pbval->emf_south_flag_[step][pmb->loc.lx3] = boundary_arrived;
+      pbl->pbval->emf_south_flag_[step][pmb->loc.lx3] = BNDRY_ARRIVED;
     }
 #ifdef MPI_PARALLEL
     else
@@ -456,7 +456,7 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
   int p=0;
-  if(nb.type==neighbor_face) {
+  if(nb.type==NEIGHBOR_FACE) {
     if(pmb->block_size.nx3 > 1) { // 3D
       // x1 direction
       if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
@@ -552,7 +552,7 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
       e3(k  ,j,i)+=buf[p++];
     }
   }
-  else if(nb.type==neighbor_edge) {
+  else if(nb.type==NEIGHBOR_EDGE) {
     // x1x2 edge (2D and 3D)
     if(nb.eid>=0 && nb.eid<4) {
       int i, j;
@@ -606,7 +606,7 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
   int p=0;
-  if(nb.type==neighbor_face) {
+  if(nb.type==NEIGHBOR_FACE) {
     if(pmb->block_size.nx3 > 1) { // 3D
       // x1 direction
       if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
@@ -718,7 +718,7 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
       e3(k  ,j,i)+=buf[p++];
     }
   }
-  else if(nb.type==neighbor_edge) {
+  else if(nb.type==NEIGHBOR_EDGE) {
     if(pmb->block_size.nx3 > 1) { // 3D
       // x1x2 edge
       if(nb.eid>=0 && nb.eid<4) {
@@ -1140,11 +1140,11 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
   if(firsttime_[step]==true) {
     for(int n=0; n<pmb->nneighbor; n++) { // first correct the same level
       NeighborBlock& nb = pmb->neighbor[n];
-      if(nb.type!=neighbor_face && nb.type!=neighbor_edge) break;
+      if(nb.type!=NEIGHBOR_FACE && nb.type!=NEIGHBOR_EDGE) break;
       if(nb.level!=pmb->loc.level) continue;
-      if((nb.type==neighbor_face) || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true))) {
-        if(emfcor_flag_[step][nb.bufid]==boundary_completed) continue;
-        if(emfcor_flag_[step][nb.bufid]==boundary_waiting) {
+      if((nb.type==NEIGHBOR_FACE) || ((nb.type==NEIGHBOR_EDGE) && (edge_flag_[nb.eid]==true))) {
+        if(emfcor_flag_[step][nb.bufid]==BNDRY_COMPLETED) continue;
+        if(emfcor_flag_[step][nb.bufid]==BNDRY_WAITING) {
           if(nb.rank==Globals::my_rank) {// on the same process
             flag=false;
             continue;
@@ -1158,13 +1158,13 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
               flag=false;
               continue;
             }
-            emfcor_flag_[step][nb.bufid] = boundary_arrived;
+            emfcor_flag_[step][nb.bufid] = BNDRY_ARRIVED;
           }
 #endif
         }
         // boundary arrived; apply EMF correction
         SetEMFBoundarySameLevel(emfcor_recv_[step][nb.bufid], nb);
-        emfcor_flag_[step][nb.bufid] = boundary_completed;
+        emfcor_flag_[step][nb.bufid] = BNDRY_COMPLETED;
       }
     }
 
@@ -1178,10 +1178,10 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
   if(pmb->pmy_mesh->multilevel==true) {
     for(int n=0; n<pmb->nneighbor; n++) { // then from finer
       NeighborBlock& nb = pmb->neighbor[n];
-      if(nb.type!=neighbor_face && nb.type!=neighbor_edge) break;
+      if(nb.type!=NEIGHBOR_FACE && nb.type!=NEIGHBOR_EDGE) break;
       if(nb.level!=pmb->loc.level+1) continue;
-      if(emfcor_flag_[step][nb.bufid]==boundary_completed) continue;
-      if(emfcor_flag_[step][nb.bufid]==boundary_waiting) {
+      if(emfcor_flag_[step][nb.bufid]==BNDRY_COMPLETED) continue;
+      if(emfcor_flag_[step][nb.bufid]==BNDRY_WAITING) {
         if(nb.rank==Globals::my_rank) {// on the same process
           flag=false;
           continue;
@@ -1195,20 +1195,20 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
             flag=false;
             continue;
           }
-          emfcor_flag_[step][nb.bufid] = boundary_arrived;
+          emfcor_flag_[step][nb.bufid] = BNDRY_ARRIVED;
         }
 #endif
       }
       // boundary arrived; apply EMF correction
       SetEMFBoundaryFromFiner(emfcor_recv_[step][nb.bufid], nb);
-      emfcor_flag_[step][nb.bufid] = boundary_completed;
+      emfcor_flag_[step][nb.bufid] = BNDRY_COMPLETED;
     }
   }
 
   // Receive polar EMF values
   for (int n = 0; n < num_north_polar_blocks_; ++n) {
     const PolarNeighborBlock &nb = pmb->polar_neighbor_north[n];
-    if (emf_north_flag_[step][n] == boundary_waiting) {
+    if (emf_north_flag_[step][n] == BNDRY_WAITING) {
       if (nb.rank == Globals::my_rank) { // on the same process
         flag = false;
         continue;
@@ -1221,14 +1221,14 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
           flag = false;
           continue;
         }
-        emf_north_flag_[step][n] = boundary_arrived;
+        emf_north_flag_[step][n] = BNDRY_ARRIVED;
       }
 #endif
     }
   }
   for (int n = 0; n < num_south_polar_blocks_; ++n) {
     const PolarNeighborBlock &nb = pmb->polar_neighbor_south[n];
-    if (emf_south_flag_[step][n] == boundary_waiting) {
+    if (emf_south_flag_[step][n] == BNDRY_WAITING) {
       if (nb.rank == Globals::my_rank) { // on the same process
         flag = false;
         continue;
@@ -1241,7 +1241,7 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
           flag = false;
           continue;
         }
-        emf_south_flag_[step][n] = boundary_arrived;
+        emf_south_flag_[step][n] = BNDRY_ARRIVED;
       }
 #endif
     }
@@ -1252,11 +1252,11 @@ bool BoundaryValues::ReceiveEMFCorrection(int step)
     if (num_north_polar_blocks_ > 0)
       SetEMFBoundaryPolar(emf_north_recv_[step], num_north_polar_blocks_, true);
     for (int n = 0; n < num_north_polar_blocks_; ++n)
-      emf_north_flag_[step][n] = boundary_completed;
+      emf_north_flag_[step][n] = BNDRY_COMPLETED;
     if (num_south_polar_blocks_ > 0)
       SetEMFBoundaryPolar(emf_south_recv_[step], num_south_polar_blocks_, false);
     for (int n = 0; n < num_south_polar_blocks_; ++n)
-      emf_south_flag_[step][n] = boundary_completed;
+      emf_south_flag_[step][n] = BNDRY_COMPLETED;
     if (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY)
       PolarSingleEMF();
   }

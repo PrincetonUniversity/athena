@@ -178,7 +178,7 @@ void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step,
       MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
       std::memcpy(pbl->pbval->hydro_recv_[step][nb.targetid],
                   hydro_send_[step][nb.bufid], ssize*sizeof(Real));
-      pbl->pbval->hydro_flag_[step][nb.targetid]=boundary_arrived;
+      pbl->pbval->hydro_flag_[step][nb.targetid]=BNDRY_ARRIVED;
     }
 #ifdef MPI_PARALLEL
     else // MPI
@@ -373,8 +373,8 @@ bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst, int ste
 
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
-    if(hydro_flag_[step][nb.bufid]==boundary_completed) continue;
-    if(hydro_flag_[step][nb.bufid]==boundary_waiting) {
+    if(hydro_flag_[step][nb.bufid]==BNDRY_COMPLETED) continue;
+    if(hydro_flag_[step][nb.bufid]==BNDRY_WAITING) {
       if(nb.rank==Globals::my_rank) {// on the same process
         flag=false;
         continue;
@@ -388,7 +388,7 @@ bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst, int ste
           flag=false;
           continue;
         }
-        hydro_flag_[step][nb.bufid] = boundary_arrived;
+        hydro_flag_[step][nb.bufid] = BNDRY_ARRIVED;
       }
 #endif
     }
@@ -398,7 +398,7 @@ bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst, int ste
       SetHydroBoundaryFromCoarser(hydro_recv_[step][nb.bufid], nb, true);
     else
       SetHydroBoundaryFromFiner(dst, hydro_recv_[step][nb.bufid], nb);
-    hydro_flag_[step][nb.bufid] = boundary_completed; // completed
+    hydro_flag_[step][nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
   if(flag&& (pmb->block_bcs[INNER_X2]==POLAR_BNDRY
@@ -427,7 +427,7 @@ void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst,
       SetHydroBoundaryFromCoarser(hydro_recv_[step][nb.bufid], nb, step == 0);
     else
       SetHydroBoundaryFromFiner(dst, hydro_recv_[step][nb.bufid], nb);
-    hydro_flag_[step][nb.bufid] = boundary_completed; // completed
+    hydro_flag_[step][nb.bufid] = BNDRY_COMPLETED; // completed
   }
  
   if (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY)

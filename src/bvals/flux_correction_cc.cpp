@@ -63,7 +63,7 @@ void BoundaryValues::SendFluxCorrection(int step)
 
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
-    if(nb.type!=neighbor_face) break;
+    if(nb.type!=NEIGHBOR_FACE) break;
     if(nb.level==pmb->loc.level-1) {
       int p=0;
       // x1 direction
@@ -163,7 +163,7 @@ void BoundaryValues::SendFluxCorrection(int step)
         MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
         std::memcpy(pbl->pbval->flcor_recv_[step][(nb.fid^1)][fi2][fi1],
                     flcor_send_[step][nb.fid], p*sizeof(Real));
-        pbl->pbval->flcor_flag_[step][(nb.fid^1)][fi2][fi1]=boundary_arrived;
+        pbl->pbval->flcor_flag_[step][(nb.fid^1)][fi2][fi1]=BNDRY_ARRIVED;
       }
 #ifdef MPI_PARALLEL
       else
@@ -189,10 +189,10 @@ bool BoundaryValues::ReceiveFluxCorrection(int step)
 
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
-    if(nb.type!=neighbor_face) break;
+    if(nb.type!=NEIGHBOR_FACE) break;
     if(nb.level==pmb->loc.level+1) {
-      if(flcor_flag_[step][nb.fid][nb.fi2][nb.fi1]==boundary_completed) continue;
-      if(flcor_flag_[step][nb.fid][nb.fi2][nb.fi1]==boundary_waiting) {
+      if(flcor_flag_[step][nb.fid][nb.fi2][nb.fi1]==BNDRY_COMPLETED) continue;
+      if(flcor_flag_[step][nb.fid][nb.fi2][nb.fi1]==BNDRY_WAITING) {
         if(nb.rank==Globals::my_rank) {// on the same process
           flag=false;
           continue;
@@ -206,7 +206,7 @@ bool BoundaryValues::ReceiveFluxCorrection(int step)
             flag=false;
             continue;
           }
-          flcor_flag_[step][nb.fid][nb.fi2][nb.fi1] = boundary_arrived;
+          flcor_flag_[step][nb.fid][nb.fi2][nb.fi1] = BNDRY_ARRIVED;
         }
 #endif
       }
@@ -256,7 +256,7 @@ bool BoundaryValues::ReceiveFluxCorrection(int step)
         }
       }
 
-      flcor_flag_[step][nb.fid][nb.fi2][nb.fi1] = boundary_completed;
+      flcor_flag_[step][nb.fid][nb.fi2][nb.fi1] = BNDRY_COMPLETED;
     }
   }
 

@@ -31,13 +31,30 @@ struct FaceField;
 struct NeighborBlock;
 struct PolarNeighborBlock;
 
-// identifiers for all 6 faces of a MeshBlock on which boundary conditions are applied
+// identifiers for all 6 faces of a MeshBlock
 enum BoundaryFace {FACE_UNDEF=-1, INNER_X1=0, OUTER_X1=1, INNER_X2=2, OUTER_X2=3, 
   INNER_X3=4, OUTER_X3=5};
 
 // identifiers for boundary conditions
 enum BoundaryFlag {BLOCK_BNDRY=-1, BNDRY_UNDEF=0, REFLECTING_BNDRY=1, OUTFLOW_BNDRY=2,
   USER_BNDRY=3, PERIODIC_BNDRY=4, POLAR_BNDRY=5};
+
+// identifiers for types of neighbor blocks
+enum NeighborType {NEIGHBOR_NONE, NEIGHBOR_FACE, NEIGHBOR_EDGE, NEIGHBOR_CORNER};
+
+// identifiers for status of MPI boundary communications
+enum BoundaryStatus {BNDRY_WAITING, BNDRY_ARRIVED, BNDRY_COMPLETED};
+
+// flags to mark which variables are reversed across polar boundary
+static bool flip_across_pole_hydro[] = {false, false, true, true, false};
+static bool flip_across_pole_field[] = {false, true, true};
+
+//! \struct NeighborType
+//  \brief data to describe MeshBlock neighbors
+typedef struct NeighborIndexes {
+  int ox1, ox2, ox3, fi1, fi2;
+  enum NeighborType type;
+} NeighborIndexes;
 
 //-------------------- prototypes for all BC functions ---------------------------------
 void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
@@ -152,11 +169,11 @@ private:
   int nedge_fine_[12];
   bool firsttime_[NSTEP];
 
-  enum boundary_status hydro_flag_[NSTEP][56], field_flag_[NSTEP][56];
-  enum boundary_status flcor_flag_[NSTEP][6][2][2];
-  enum boundary_status emfcor_flag_[NSTEP][48];
-  enum boundary_status *emf_north_flag_[NSTEP];
-  enum boundary_status *emf_south_flag_[NSTEP];
+  enum BoundaryStatus hydro_flag_[NSTEP][56], field_flag_[NSTEP][56];
+  enum BoundaryStatus flcor_flag_[NSTEP][6][2][2];
+  enum BoundaryStatus emfcor_flag_[NSTEP][48];
+  enum BoundaryStatus *emf_north_flag_[NSTEP];
+  enum BoundaryStatus *emf_south_flag_[NSTEP];
   Real *hydro_send_[NSTEP][56],  *hydro_recv_[NSTEP][56];
   Real *field_send_[NSTEP][56],  *field_recv_[NSTEP][56];
   Real *flcor_send_[NSTEP][6],   *flcor_recv_[NSTEP][6][2][2];
@@ -183,11 +200,6 @@ unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
 int BufferID(int dim, bool multilevel, bool face_only);
 int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2, int bmax);
 
-typedef struct NeighborIndexes
-{
-  int ox1, ox2, ox3, fi1, fi2;
-  enum neighbor_type type;
-} NeighborIndexes;
 
 
 #endif // BOUNDARY_VALUES_HPP

@@ -40,15 +40,15 @@ class EquationOfState;
 
 typedef struct NeighborBlock {
   int rank, level, gid, lid, ox1, ox2, ox3, fi1, fi2, bufid, targetid;
-  enum neighbor_type type;
+  enum NeighborType type;
   enum BoundaryFace fid;
   enum edgeid eid;
   bool polar; // flag indicating boundary is across a pole
   NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1), ox1(-1), ox2(-1), ox3(-1),
-    bufid(-1), targetid(-1), fi1(-1), fi2(-1), type(neighbor_none),
+    bufid(-1), targetid(-1), fi1(-1), fi2(-1), type(NEIGHBOR_NONE),
     fid(FACE_UNDEF), eid (edgeid_undefined), polar(false) {};
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
-                   int iox3, enum neighbor_type itype, int ibid, int itargetid,
+                   int iox3, enum NeighborType itype, int ibid, int itargetid,
                    bool ipolar, int ifi1, int ifi2);
 } NeighborBlock;
 

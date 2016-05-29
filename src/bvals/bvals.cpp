@@ -225,8 +225,8 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   // Clear flags and requests
   for(int l=0;l<NSTEP;l++) {
     for(int i=0;i<56;i++){
-      hydro_flag_[l][i]=boundary_waiting;
-      field_flag_[l][i]=boundary_waiting;
+      hydro_flag_[l][i]=BNDRY_WAITING;
+      field_flag_[l][i]=BNDRY_WAITING;
       hydro_send_[l][i]=NULL;
       hydro_recv_[l][i]=NULL;
       field_send_[l][i]=NULL;
@@ -239,7 +239,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     for(int i=0;i<48;i++){
       emfcor_send_[l][i]=NULL;
       emfcor_recv_[l][i]=NULL;
-      emfcor_flag_[l][i]=boundary_waiting;
+      emfcor_flag_[l][i]=BNDRY_WAITING;
 #ifdef MPI_PARALLEL
       req_emfcor_send_[l][i]=MPI_REQUEST_NULL;
       req_emfcor_recv_[l][i]=MPI_REQUEST_NULL;
@@ -253,7 +253,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       for(int j=0;j<=1;j++) {
         for(int k=0;k<=1;k++) {
           flcor_recv_[l][i][j][k]=NULL;
-          flcor_flag_[l][i][j][k]=boundary_waiting;
+          flcor_flag_[l][i][j][k]=BNDRY_WAITING;
 #ifdef MPI_PARALLEL
           req_flcor_recv_[l][i][j][k]=MPI_REQUEST_NULL;
 #endif
@@ -263,7 +263,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     if (num_north_polar_blocks_ > 0) {
       emf_north_send_[l] = new Real *[num_north_polar_blocks_];
       emf_north_recv_[l] = new Real *[num_north_polar_blocks_];
-      emf_north_flag_[l] = new enum boundary_status[num_north_polar_blocks_];
+      emf_north_flag_[l] = new enum BoundaryStatus[num_north_polar_blocks_];
 #ifdef MPI_PARALLEL
       req_emf_north_send_[l] = new MPI_Request[num_north_polar_blocks_];
       req_emf_north_recv_[l] = new MPI_Request[num_north_polar_blocks_];
@@ -271,7 +271,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       for (int n = 0; n < num_north_polar_blocks_; ++n) {
         emf_north_send_[l][n] = NULL;
         emf_north_recv_[l][n] = NULL;
-        emf_north_flag_[l][n] = boundary_waiting;
+        emf_north_flag_[l][n] = BNDRY_WAITING;
 #ifdef MPI_PARALLEL
         req_emf_north_send_[l][n] = MPI_REQUEST_NULL;
         req_emf_north_recv_[l][n] = MPI_REQUEST_NULL;
@@ -281,7 +281,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     if (num_south_polar_blocks_ > 0) {
       emf_south_send_[l] = new Real *[num_south_polar_blocks_];
       emf_south_recv_[l] = new Real *[num_south_polar_blocks_];
-      emf_south_flag_[l] = new enum boundary_status[num_south_polar_blocks_];
+      emf_south_flag_[l] = new enum BoundaryStatus[num_south_polar_blocks_];
 #ifdef MPI_PARALLEL
       req_emf_south_send_[l] = new MPI_Request[num_south_polar_blocks_];
       req_emf_south_recv_[l] = new MPI_Request[num_south_polar_blocks_];
@@ -289,7 +289,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       for (int n = 0; n < num_south_polar_blocks_; ++n) {
         emf_south_send_[l][n] = NULL;
         emf_south_recv_[l][n] = NULL;
-        emf_south_flag_[l][n] = boundary_waiting;
+        emf_south_flag_[l][n] = BNDRY_WAITING;
 #ifdef MPI_PARALLEL
         req_emf_south_send_[l][n] = MPI_REQUEST_NULL;
         req_emf_south_recv_[l][n] = MPI_REQUEST_NULL;
@@ -333,7 +333,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
                  *((ni_[n].ox3==0)?(pmb->block_size.nx3+f3d):NGHOST);
         int size=size1+size2+size3;
         if(pmb->pmy_mesh->multilevel==true) {
-          if(ni_[n].type!=neighbor_face) {
+          if(ni_[n].type!=NEIGHBOR_FACE) {
             if(ni_[n].ox1!=0) size1=size1/NGHOST*(NGHOST+1);
             if(ni_[n].ox2!=0) size2=size2/NGHOST*(NGHOST+1);
             if(ni_[n].ox3!=0) size3=size3/NGHOST*(NGHOST+1);
@@ -348,7 +348,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
           int f2c3=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2):cng)
                   *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2):cng)
                   *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+f3d):cng);
-          if(ni_[n].type!=neighbor_face) {
+          if(ni_[n].type!=NEIGHBOR_FACE) {
             if(ni_[n].ox1!=0) f2c1=f2c1/cng*(cng+1);
             if(ni_[n].ox2!=0) f2c2=f2c2/cng*(cng+1);
             if(ni_[n].ox3!=0) f2c3=f2c3/cng*(cng+1);
@@ -370,7 +370,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         field_recv_[l][n]=new Real[size];
 
         // allocate EMF correction buffer
-        if(ni_[n].type==neighbor_face) {
+        if(ni_[n].type==NEIGHBOR_FACE) {
           if(pmb->block_size.nx3>1) { // 3D
             if(ni_[n].ox1!=0)
               size=(pmb->block_size.nx2+1)*(pmb->block_size.nx3)
@@ -391,7 +391,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
           else // 1D
             size=2;
         }
-        else if(ni_[n].type==neighbor_edge) {
+        else if(ni_[n].type==NEIGHBOR_EDGE) {
           if(pmb->block_size.nx3>1) { // 3D
             if(ni_[n].ox3==0) size=pmb->block_size.nx3;
             if(ni_[n].ox2==0) size=pmb->block_size.nx2;
@@ -478,7 +478,7 @@ BoundaryValues::~BoundaryValues()
       for(int i=0;i<pmb->pmy_mesh->maxneighbor_;i++) { 
         delete [] field_send_[l][i];
         delete [] field_recv_[l][i];
-        if(ni_[i].type==neighbor_face || ni_[i].type==neighbor_edge) {
+        if(ni_[i].type==NEIGHBOR_FACE || ni_[i].type==NEIGHBOR_EDGE) {
           delete [] emfcor_send_[l][i];
           delete [] emfcor_recv_[l][i];
         }
@@ -667,7 +667,7 @@ void BoundaryValues::Initialize(void)
                       nb.rank,tag,MPI_COMM_WORLD,&req_hydro_recv_[l][nb.bufid]);
 
         // flux correction
-        if(pmb->pmy_mesh->multilevel==true && nb.type==neighbor_face) {
+        if(pmb->pmy_mesh->multilevel==true && nb.type==NEIGHBOR_FACE) {
           int fi1, fi2, size;
           if(nb.fid==0 || nb.fid==1)
             fi1=myox2, fi2=myox3, size=((pmb->block_size.nx2+1)/2)*((pmb->block_size.nx3+1)/2);
@@ -701,7 +701,7 @@ void BoundaryValues::Initialize(void)
                    *((nb.ox3==0)?(pmb->block_size.nx3+f3d):NGHOST);
           size=size1+size2+size3;
           if(pmb->pmy_mesh->multilevel==true) {
-            if(nb.type!=neighbor_face) {
+            if(nb.type!=NEIGHBOR_FACE) {
               if(nb.ox1!=0) size1=size1/NGHOST*(NGHOST+1);
               if(nb.ox2!=0) size2=size2/NGHOST*(NGHOST+1);
               if(nb.ox3!=0) size3=size3/NGHOST*(NGHOST+1);
@@ -716,7 +716,7 @@ void BoundaryValues::Initialize(void)
             int f2c3=((nb.ox1==0)?((pmb->block_size.nx1+1)/2):cng)
                     *((nb.ox2==0)?((pmb->block_size.nx2+1)/2):cng)
                     *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+f3d):cng);
-            if(nb.type!=neighbor_face) {
+            if(nb.type!=NEIGHBOR_FACE) {
               if(nb.ox1!=0) f2c1=f2c1/cng*(cng+1);
               if(nb.ox2!=0) f2c2=f2c2/cng*(cng+1);
               if(nb.ox3!=0) f2c3=f2c3/cng*(cng+1);
@@ -748,7 +748,7 @@ void BoundaryValues::Initialize(void)
                         nb.rank,tag,MPI_COMM_WORLD,&req_field_recv_[l][nb.bufid]);
           // EMF correction
           int fi1, fi2, f2csize;
-          if(nb.type==neighbor_face) { // face
+          if(nb.type==NEIGHBOR_FACE) { // face
             if(pmb->block_size.nx3 > 1) { // 3D
               if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
                 size=(pmb->block_size.nx2+1)*(pmb->block_size.nx3)
@@ -782,7 +782,7 @@ void BoundaryValues::Initialize(void)
             else // 1D
               size=f2csize=2;
           }
-          else if(nb.type==neighbor_edge) { // edge
+          else if(nb.type==NEIGHBOR_EDGE) { // edge
             if(pmb->block_size.nx3 > 1) { // 3D
               if(nb.eid>=0 && nb.eid<4) {
                 size=pmb->block_size.nx3;
@@ -804,7 +804,7 @@ void BoundaryValues::Initialize(void)
             continue;
 
           if(nb.level==mylevel) { // the same level
-            if((nb.type==neighbor_face) || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true))) {
+            if((nb.type==NEIGHBOR_FACE) || ((nb.type==NEIGHBOR_EDGE) && (edge_flag_[nb.eid]==true))) {
               tag=CreateMPITag(nb.lid, l, tag_emfcor, nb.targetid);
               MPI_Send_init(emfcor_send_[l][nb.bufid],size,MPI_ATHENA_REAL,
                             nb.rank,tag,MPI_COMM_WORLD,&req_emfcor_send_[l][nb.bufid]);
@@ -915,13 +915,13 @@ void BoundaryValues::StartReceivingAll(void)
       NeighborBlock& nb = pmb->neighbor[n];
       if(nb.rank!=Globals::my_rank) { 
         MPI_Start(&req_hydro_recv_[l][nb.bufid]);
-        if(nb.type==neighbor_face && nb.level>mylevel)
+        if(nb.type==NEIGHBOR_FACE && nb.level>mylevel)
           MPI_Start(&req_flcor_recv_[l][nb.fid][nb.fi2][nb.fi1]);
         if (MAGNETIC_FIELDS_ENABLED) {
           MPI_Start(&req_field_recv_[l][nb.bufid]);
-          if(nb.type==neighbor_face || nb.type==neighbor_edge) {
-            if((nb.level>mylevel) || ((nb.level==mylevel) && ((nb.type==neighbor_face)
-            || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true)))))
+          if(nb.type==NEIGHBOR_FACE || nb.type==NEIGHBOR_EDGE) {
+            if((nb.level>mylevel) || ((nb.level==mylevel) && ((nb.type==NEIGHBOR_FACE)
+            || ((nb.type==NEIGHBOR_EDGE) && (edge_flag_[nb.eid]==true)))))
               MPI_Start(&req_emfcor_recv_[l][nb.bufid]);
           }
         }
@@ -957,11 +957,11 @@ void BoundaryValues::ClearBoundaryForInit(void)
   // corresponds to primitives sent only in the case of GR with refinement
   for(int n=0;n<pmb->nneighbor;n++) {
     NeighborBlock& nb = pmb->neighbor[n];
-    hydro_flag_[0][nb.bufid] = boundary_waiting;
+    hydro_flag_[0][nb.bufid] = BNDRY_WAITING;
     if (MAGNETIC_FIELDS_ENABLED)
-      field_flag_[0][nb.bufid] = boundary_waiting;
+      field_flag_[0][nb.bufid] = BNDRY_WAITING;
     if (GENERAL_RELATIVITY and pmb->pmy_mesh->multilevel)
-      hydro_flag_[1][nb.bufid] = boundary_waiting;
+      hydro_flag_[1][nb.bufid] = BNDRY_WAITING;
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank) {
       MPI_Wait(&req_hydro_send_[0][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
@@ -987,26 +987,26 @@ void BoundaryValues::ClearBoundaryAll(void)
   for(int l=0;l<NSTEP;l++) {
     for(int n=0;n<pmb->nneighbor;n++) {
       NeighborBlock& nb = pmb->neighbor[n];
-      hydro_flag_[l][nb.bufid] = boundary_waiting;
-      if(nb.type==neighbor_face)
-        flcor_flag_[l][nb.fid][nb.fi2][nb.fi1] = boundary_waiting;
+      hydro_flag_[l][nb.bufid] = BNDRY_WAITING;
+      if(nb.type==NEIGHBOR_FACE)
+        flcor_flag_[l][nb.fid][nb.fi2][nb.fi1] = BNDRY_WAITING;
       if (MAGNETIC_FIELDS_ENABLED) {
-        field_flag_[l][nb.bufid] = boundary_waiting;
-        if((nb.type==neighbor_face) || (nb.type==neighbor_edge))
-          emfcor_flag_[l][nb.bufid] = boundary_waiting;
+        field_flag_[l][nb.bufid] = BNDRY_WAITING;
+        if((nb.type==NEIGHBOR_FACE) || (nb.type==NEIGHBOR_EDGE))
+          emfcor_flag_[l][nb.bufid] = BNDRY_WAITING;
       }
 #ifdef MPI_PARALLEL
       if(nb.rank!=Globals::my_rank) {
         MPI_Wait(&req_hydro_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
-        if(nb.type==neighbor_face && nb.level<pmb->loc.level)
+        if(nb.type==NEIGHBOR_FACE && nb.level<pmb->loc.level)
           MPI_Wait(&req_flcor_send_[l][nb.fid],MPI_STATUS_IGNORE); // Wait for Isend
         if (MAGNETIC_FIELDS_ENABLED) {
           MPI_Wait(&req_field_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
-          if(nb.type==neighbor_face || nb.type==neighbor_edge) {
+          if(nb.type==NEIGHBOR_FACE || nb.type==NEIGHBOR_EDGE) {
             if(nb.level < pmb->loc.level)
               MPI_Wait(&req_emfcor_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
-            else if((nb.level==pmb->loc.level) && ((nb.type==neighbor_face)
-                || ((nb.type==neighbor_edge) && (edge_flag_[nb.eid]==true))))
+            else if((nb.level==pmb->loc.level) && ((nb.type==NEIGHBOR_FACE)
+                || ((nb.type==NEIGHBOR_EDGE) && (edge_flag_[nb.eid]==true))))
               MPI_Wait(&req_emfcor_send_[l][nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
           }
         }
@@ -1020,7 +1020,7 @@ void BoundaryValues::ClearBoundaryAll(void)
     for (int l = 0; l < NSTEP; ++l) {
       for (int n = 0; n < num_north_polar_blocks_; ++n) {
         PolarNeighborBlock &nb = pmb->polar_neighbor_north[n];
-        emf_north_flag_[l][n] = boundary_waiting;
+        emf_north_flag_[l][n] = BNDRY_WAITING;
 #ifdef MPI_PARALLEL
         if(nb.rank != Globals::my_rank)
           MPI_Wait(&req_emf_north_send_[l][n], MPI_STATUS_IGNORE);
@@ -1028,7 +1028,7 @@ void BoundaryValues::ClearBoundaryAll(void)
       }
       for (int n = 0; n < num_south_polar_blocks_; ++n) {
         PolarNeighborBlock &nb = pmb->polar_neighbor_south[n];
-        emf_south_flag_[l][n] = boundary_waiting;
+        emf_south_flag_[l][n] = BNDRY_WAITING;
 #ifdef MPI_PARALLEL
         if(nb.rank != Globals::my_rank)
           MPI_Wait(&req_emf_south_send_[l][n], MPI_STATUS_IGNORE);
@@ -1167,7 +1167,7 @@ int BufferID(int dim, bool multilevel, bool face_only)
     for(int f2=0;f2<nf2;f2++) {
       for(int f1=0;f1<nf1;f1++) {
         ni_[b].ox1=n; ni_[b].ox2=0; ni_[b].ox3=0;
-        ni_[b].fi1=f1; ni_[b].fi2=f2; ni_[b].type=neighbor_face;
+        ni_[b].fi1=f1; ni_[b].fi2=f2; ni_[b].type=NEIGHBOR_FACE;
         b++;
       }
     }
@@ -1178,7 +1178,7 @@ int BufferID(int dim, bool multilevel, bool face_only)
       for(int f2=0;f2<nf2;f2++) {
         for(int f1=0;f1<nf1;f1++) {
           ni_[b].ox1=0; ni_[b].ox2=n; ni_[b].ox3=0;
-          ni_[b].fi1=f1; ni_[b].fi2=f2; ni_[b].type=neighbor_face;
+          ni_[b].fi1=f1; ni_[b].fi2=f2; ni_[b].type=NEIGHBOR_FACE;
           b++;
         }
       }
@@ -1190,7 +1190,7 @@ int BufferID(int dim, bool multilevel, bool face_only)
       for(int f2=0;f2<nf2;f2++) {
         for(int f1=0;f1<nf1;f1++) {
           ni_[b].ox1=0; ni_[b].ox2=0; ni_[b].ox3=n;
-          ni_[b].fi1=f1; ni_[b].fi2=f2; ni_[b].type=neighbor_face;
+          ni_[b].fi1=f1; ni_[b].fi2=f2; ni_[b].type=NEIGHBOR_FACE;
           b++;
         }
       }
@@ -1203,7 +1203,7 @@ int BufferID(int dim, bool multilevel, bool face_only)
       for(int n=-1; n<=1; n+=2) {
         for(int f1=0;f1<nf2;f1++) {
           ni_[b].ox1=n; ni_[b].ox2=m; ni_[b].ox3=0;
-          ni_[b].fi1=f1; ni_[b].fi2=0; ni_[b].type=neighbor_edge;
+          ni_[b].fi1=f1; ni_[b].fi2=0; ni_[b].type=NEIGHBOR_EDGE;
           b++;
         }
       }
@@ -1215,7 +1215,7 @@ int BufferID(int dim, bool multilevel, bool face_only)
       for(int n=-1; n<=1; n+=2) {
         for(int f1=0;f1<nf1;f1++) {
           ni_[b].ox1=n; ni_[b].ox2=0; ni_[b].ox3=m;
-          ni_[b].fi1=f1; ni_[b].fi2=0; ni_[b].type=neighbor_edge;
+          ni_[b].fi1=f1; ni_[b].fi2=0; ni_[b].type=NEIGHBOR_EDGE;
           b++;
         }
       }
@@ -1225,7 +1225,7 @@ int BufferID(int dim, bool multilevel, bool face_only)
       for(int n=-1; n<=1; n+=2) {
         for(int f1=0;f1<nf1;f1++) {
           ni_[b].ox1=0; ni_[b].ox2=n; ni_[b].ox3=m;
-          ni_[b].fi1=f1; ni_[b].fi2=0; ni_[b].type=neighbor_edge;
+          ni_[b].fi1=f1; ni_[b].fi2=0; ni_[b].type=NEIGHBOR_EDGE;
           b++;
         }
       }
@@ -1235,7 +1235,7 @@ int BufferID(int dim, bool multilevel, bool face_only)
       for(int m=-1; m<=1; m+=2) {
         for(int n=-1; n<=1; n+=2) {
           ni_[b].ox1=n; ni_[b].ox2=m; ni_[b].ox3=l;
-          ni_[b].fi1=0; ni_[b].fi2=0; ni_[b].type=neighbor_corner;
+          ni_[b].fi1=0; ni_[b].fi2=0; ni_[b].type=NEIGHBOR_CORNER;
           b++;
         }
       }

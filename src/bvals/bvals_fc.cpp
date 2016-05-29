@@ -70,7 +70,7 @@ int BoundaryValues::LoadFieldBoundaryBufferSameLevel(FaceField &src, Real *buf,
   else if(nb.ox3>0) sk=pmb->ke-NGHOST+1, ek=pmb->ke;
   else              sk=pmb->ks,          ek=pmb->ks+NGHOST-1;
   // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
-  if(pmb->pmy_mesh->multilevel==true && nb.type != neighbor_face) {
+  if(pmb->pmy_mesh->multilevel==true && nb.type != NEIGHBOR_FACE) {
     if(nb.ox1>0) ei++;
     else if(nb.ox1<0) si--;
   }
@@ -84,7 +84,7 @@ int BoundaryValues::LoadFieldBoundaryBufferSameLevel(FaceField &src, Real *buf,
   else if(nb.ox2==0) sj=pmb->js,          ej=pmb->je+1;
   else if(nb.ox2>0)  sj=pmb->je-NGHOST+1, ej=pmb->je;
   else               sj=pmb->js+1,        ej=pmb->js+NGHOST;
-  if(pmb->pmy_mesh->multilevel==true && nb.type != neighbor_face) {
+  if(pmb->pmy_mesh->multilevel==true && nb.type != NEIGHBOR_FACE) {
     if(nb.ox2>0) ej++;
     else if(nb.ox2<0) sj--;
   }
@@ -98,7 +98,7 @@ int BoundaryValues::LoadFieldBoundaryBufferSameLevel(FaceField &src, Real *buf,
   else if(nb.ox3==0) sk=pmb->ks,          ek=pmb->ke+1;
   else if(nb.ox3>0)  sk=pmb->ke-NGHOST+1, ek=pmb->ke;
   else               sk=pmb->ks+1,        ek=pmb->ks+NGHOST;
-  if(pmb->pmy_mesh->multilevel==true && nb.type != neighbor_face) {
+  if(pmb->pmy_mesh->multilevel==true && nb.type != NEIGHBOR_FACE) {
     if(nb.ox3>0) ek++;
     else if(nb.ox3<0) sk--;
   }
@@ -131,7 +131,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(FaceField &src, Real *buf,
   else if(nb.ox3>0) sk=pmb->cke-cng+1, ek=pmb->cke;
   else              sk=pmb->cks,       ek=pmb->cks+cng-1;
   // include the overlapping faces in edge and corner boundaries
-  if(nb.type != neighbor_face) {
+  if(nb.type != NEIGHBOR_FACE) {
     if(nb.ox1>0) ei++;
     else if(nb.ox1<0) si--;
   }
@@ -146,7 +146,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(FaceField &src, Real *buf,
   else if(nb.ox2==0) sj=pmb->cjs,       ej=pmb->cje+1;
   else if(nb.ox2>0)  sj=pmb->cje-cng+1, ej=pmb->cje;
   else               sj=pmb->cjs+1,     ej=pmb->cjs+cng;
-  if(nb.type != neighbor_face) {
+  if(nb.type != NEIGHBOR_FACE) {
     if(nb.ox2>0) ej++;
     else if(nb.ox2<0) sj--;
   }
@@ -161,7 +161,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(FaceField &src, Real *buf,
   else if(nb.ox3==0) sk=pmb->cks,       ek=pmb->cke+1;
   else if(nb.ox3>0)  sk=pmb->cke-cng+1, ek=pmb->cke;
   else               sk=pmb->cks+1,     ek=pmb->cks+cng;
-  if(nb.type != neighbor_face) {
+  if(nb.type != NEIGHBOR_FACE) {
     if(nb.ox3>0) ek++;
     else if(nb.ox3<0) sk--;
   }
@@ -307,7 +307,7 @@ void BoundaryValues::SendFieldBoundaryBuffers(FaceField &src, int step)
       // find target buffer
       std::memcpy(pbl->pbval->field_recv_[step][nb.targetid],
                   field_send_[step][nb.bufid], ssize*sizeof(Real));
-      pbl->pbval->field_flag_[step][nb.targetid]=boundary_arrived;
+      pbl->pbval->field_flag_[step][nb.targetid]=BNDRY_ARRIVED;
     }
 #ifdef MPI_PARALLEL
     else // MPI
@@ -341,7 +341,7 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
   else if(nb.ox3>0) sk=pmb->ke+1,      ek=pmb->ke+NGHOST;
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
   // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
-  if(pmb->pmy_mesh->multilevel==true && nb.type != neighbor_face) {
+  if(pmb->pmy_mesh->multilevel==true && nb.type != NEIGHBOR_FACE) {
     if(nb.ox1>0) si--;
     else if(nb.ox1<0) ei++;
   }
@@ -367,7 +367,7 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
   else if(nb.ox2>0)  sj=pmb->je+2,       ej=pmb->je+NGHOST+1;
   else               sj=pmb->js-NGHOST,  ej=pmb->js-1;
   // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
-  if(pmb->pmy_mesh->multilevel==true && nb.type != neighbor_face) {
+  if(pmb->pmy_mesh->multilevel==true && nb.type != NEIGHBOR_FACE) {
     if(nb.ox2>0) sj--;
     else if(nb.ox2<0) ej++;
   }
@@ -410,7 +410,7 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
   else if(nb.ox3>0)  sk=pmb->ke+2,       ek=pmb->ke+NGHOST+1;
   else               sk=pmb->ks-NGHOST,  ek=pmb->ks-1;
   // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
-  if(pmb->pmy_mesh->multilevel==true && nb.type != neighbor_face) {
+  if(pmb->pmy_mesh->multilevel==true && nb.type != NEIGHBOR_FACE) {
     if(nb.ox3>0) sk--;
     else if(nb.ox3<0) ek++;
   }
@@ -579,7 +579,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
   else if(nb.ox1>0) si=pmb->ie+2,      ei=pmb->ie+NGHOST+1;
   else              si=pmb->is-NGHOST, ei=pmb->is-1;
   // include the overlapping faces in edge and corner boundaries
-  if(nb.type != neighbor_face) {
+  if(nb.type != NEIGHBOR_FACE) {
     if(nb.ox1>0) si--;
     else if(nb.ox1<0) ei++;
   }
@@ -652,7 +652,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
   else if(nb.ox2>0) sj=pmb->je+2,      ej=pmb->je+NGHOST+1;
   else              sj=pmb->js-NGHOST, ej=pmb->js-1;
   // include the overlapping faces in edge and corner boundaries
-  if(nb.type != neighbor_face) {
+  if(nb.type != NEIGHBOR_FACE) {
     if(nb.ox2>0) sj--;
     else if(nb.ox2<0) ej++;
   }
@@ -708,7 +708,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
   else if(nb.ox3>0) sk=pmb->ke+2,      ek=pmb->ke+NGHOST+1;
   else              sk=pmb->ks-NGHOST, ek=pmb->ks-1;
   // include the overlapping faces in edge and corner boundaries
-  if(nb.type != neighbor_face) {
+  if(nb.type != NEIGHBOR_FACE) {
     if(nb.ox3>0) sk--;
     else if(nb.ox3<0) ek++;
   }
@@ -746,8 +746,8 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst, int step)
 
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
-    if(field_flag_[step][nb.bufid]==boundary_completed) continue;
-    if(field_flag_[step][nb.bufid]==boundary_waiting) {
+    if(field_flag_[step][nb.bufid]==BNDRY_COMPLETED) continue;
+    if(field_flag_[step][nb.bufid]==BNDRY_WAITING) {
       if(nb.rank==Globals::my_rank) {// on the same process
         flag=false;
         continue;
@@ -761,7 +761,7 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst, int step)
           flag=false;
           continue;
         }
-        field_flag_[step][nb.bufid] = boundary_arrived;
+        field_flag_[step][nb.bufid] = BNDRY_ARRIVED;
       }
 #endif
     }
@@ -771,7 +771,7 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst, int step)
       SetFieldBoundaryFromCoarser(field_recv_[step][nb.bufid], nb);
     else
       SetFieldBoundaryFromFiner(dst, field_recv_[step][nb.bufid], nb);
-    field_flag_[step][nb.bufid] = boundary_completed; // completed
+    field_flag_[step][nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
   if(flag&&(pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY))
@@ -800,7 +800,7 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst, int ste
       SetFieldBoundaryFromCoarser(field_recv_[0][nb.bufid], nb);
     else
       SetFieldBoundaryFromFiner(dst, field_recv_[0][nb.bufid], nb);
-    field_flag_[0][nb.bufid] = boundary_completed; // completed
+    field_flag_[0][nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
   if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY)
