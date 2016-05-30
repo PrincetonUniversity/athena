@@ -23,7 +23,7 @@
 #include <stdio.h>
 
 #include "../athena.hpp"
-#include "../mesh.hpp"
+#include "../mesh/mesh.hpp"
 #include "outputs.hpp"
 #include "../coordinates/coordinates.hpp" // Coordinates
 

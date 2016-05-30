@@ -12,7 +12,7 @@
 #include "../hydro/hydro.hpp"                       // Hydro
 #include "../athena.hpp"                   // enums, macros, Real
 #include "../athena_arrays.hpp"            // AthenaArray
-#include "../mesh.hpp"                     // MeshBlock
+#include "../mesh/mesh.hpp"                     // MeshBlock
 #include "../parameter_input.hpp"          // ParameterInput
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // FaceField

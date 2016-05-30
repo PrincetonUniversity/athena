@@ -6,21 +6,22 @@
 // See LICENSE file for full public license information.
 //======================================================================================
 //! \file mesh.hpp
-//  \brief defines classes Mesh, and MeshBlock
-//  These classes contain data and functions related to the computational mesh
+//  \brief defines Mesh and MeshBlock classes, and various structs used in them
+//  The Mesh is the overall grid structure, and MeshBlocks are local patches of data
+//  (potentially on different levels) that tile the entire domain.
 //======================================================================================
 
 // C/C++ headers
 #include <stdint.h>  // int64_t
 
 // Athena++ classes headers
-#include "athena.hpp"
-#include "athena_arrays.hpp"
-#include "meshblocktree.hpp"
-#include "outputs/wrapper.hpp"
-#include "task_list.hpp"
-#include "bvals/bvals.hpp"
-#include "mesh_refinement/mesh_refinement.hpp"
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "meshblock_tree.hpp"
+#include "../outputs/wrapper.hpp"
+#include "../task_list.hpp"
+#include "../bvals/bvals.hpp"
+#include "mesh_refinement.hpp"
 
 // Forward declarations
 class ParameterInput;
@@ -37,7 +38,6 @@ class EquationOfState;
 
 //! \struct NeighborBlock
 //  \brief neighbor rank, level, and ids
-
 typedef struct NeighborBlock {
   int rank, level, gid, lid, ox1, ox2, ox3, fi1, fi2, bufid, targetid;
   enum NeighborType type;
@@ -62,7 +62,6 @@ typedef struct PolarNeighborBlock {
 
 //! \struct RegionSize
 //  \brief physical size and number of cells in a Mesh
-
 typedef struct RegionSize {
   Real x1min, x2min, x3min;
   Real x1max, x2max, x3max;
@@ -75,21 +74,6 @@ typedef struct RegionSize {
 //  \brief data/functions associated with a single block
 
 class MeshBlock {
-private:
-  NeighborBlock neighbor[56];
-  PolarNeighborBlock *polar_neighbor_north, *polar_neighbor_south;
-  Real cost;
-  Real new_block_dt;
-  unsigned long int finished_tasks[4];
-  int first_task, num_tasks_todo, nneighbor;
-
-  int nrusermeshblockdata_, niusermeshblockdata_;
-  void AllocateRealUserMeshBlockDataField(int n);
-  void AllocateIntUserMeshBlockDataField(int n);
-
-
-  void ProblemGenerator(ParameterInput *pin); // in /pgen
-
   friend class RestartOutput;
   friend class BoundaryValues;
   friend class Mesh;
@@ -98,28 +82,22 @@ private:
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
+
 public:
-  LogicalLocation loc;
   MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_size,
     enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, bool ref_flag = false);
   MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, LogicalLocation iloc,
     RegionSize input_block, enum BoundaryFlag *input_bcs, Real icost, char *mbdata);
   ~MeshBlock();
-  size_t GetBlockSizeInBytes(void);
-  void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
-  int FindNeighborGID(int ox1, int ox2, int ox3);
-  void IntegrateConservative(Real *tcons);
-  void UserWorkInLoop(void); // in /pgen
-  void InitUserMeshBlockData(ParameterInput *pin); // in/pgen
 
+  //data
+  Mesh *pmy_mesh;  // ptr to Mesh containing this MeshBlock
+  LogicalLocation loc;
   RegionSize block_size;
   enum BoundaryFlag block_bcs[6];
   int nblevel[3][3][3];
-  Mesh *pmy_mesh;  // ptr to Mesh containing this MeshBlock
-
   int is,ie,js,je,ks,ke;
   int gid, lid;
-
   int cis,cie,cjs,cje,cks,cke,cnghost;
 
   // user MeshBlock data that can be stored in restart files
@@ -138,46 +116,35 @@ public:
   EquationOfState *peos;
 
   MeshBlock *prev, *next;
+
+  // functions
+  size_t GetBlockSizeInBytes(void);
+  void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
+  int FindNeighborGID(int ox1, int ox2, int ox3);
+  void IntegrateConservative(Real *tcons);
+  void UserWorkInLoop(void); // in ../pgen
+  void InitUserMeshBlockData(ParameterInput *pin); // in ../pgen
+
+private:
+  // data
+  NeighborBlock neighbor[56];
+  PolarNeighborBlock *polar_neighbor_north, *polar_neighbor_south;
+  Real cost;
+  Real new_block_dt;
+  unsigned long int finished_tasks[4];
+  int first_task, num_tasks_todo, nneighbor;
+  int nrusermeshblockdata_, niusermeshblockdata_;
+
+  // functions
+  void AllocateRealUserMeshBlockDataField(int n);
+  void AllocateIntUserMeshBlockDataField(int n);
+  void ProblemGenerator(ParameterInput *pin); // in ../pgen
 };
 
 //! \class Mesh
 //  \brief data/functions associated with the overall mesh
 
 class Mesh {
-private:
-  int root_level, max_level, current_level;
-  int nbtotal;
-  int maxneighbor_;
-  int num_mesh_threads_;
-  int *nslist, *ranklist, *nblist;
-  Real *costlist;
-  int *nref, *nderef, *bnref, *bnderef, *rdisp, *brdisp, *ddisp, *bddisp;
-  LogicalLocation *loclist;
-  MeshBlockTree tree;
-  long int nrbx1, nrbx2, nrbx3;
-
-  bool user_meshgen_[3];
-  MeshGenFunc_t MeshGenerator_[3];
-  SrcTermFunc_t UserSourceTerm_;
-  BValFunc_t BoundaryFunction_[6];
-  AMRFlag_t AMRFlag_;
-
-  int niusermeshdata_, nrusermeshdata_;
-  void AllocateRealUserMeshDataField(int n);
-  void AllocateIntUserMeshDataField(int n);
-
-  void OutputMeshStructure(int dim);
-
-  // methods in /pgen
-  void InitUserMeshData(ParameterInput *pin);
-
-  void EnrollUserBoundaryFunction (enum BoundaryFace face, BValFunc_t my_func);
-  void EnrollUserRefinementCondition(AMRFlag_t amrflag);
-  void EnrollUserMeshGenerator(enum direction dir, MeshGenFunc_t my_mg);
-  void EnrollUserSourceTermFunction(SrcTermFunc_t my_func);
-
-  void LoadBalancing(Real *clist, int *rlist, int *slist, int *nlist, int nb);
-
   friend class RestartOutput;
   friend class MeshBlock;
   friend class BoundaryValues;
@@ -188,14 +155,15 @@ private:
   friend class ATHDF5Output;
 #endif
 
+
 public:
   Mesh(ParameterInput *pin, int test_flag=0);
   Mesh(ParameterInput *pin, IOWrapper &resfile, int test_flag=0);
   ~Mesh();
 
+  // data
   RegionSize mesh_size;
   enum BoundaryFlag mesh_bcs[6];
-
   Real start_time, tlim, cfl_number, time, dt;
   int nlim, ncycle;
   bool adaptive, multilevel, face_only;
@@ -206,9 +174,9 @@ public:
   AthenaArray<Real> *rusermeshdata;
   AthenaArray<int> *iusermeshdata;
 
+  // functions
   int64_t GetTotalCells(void);
   int GetNumMeshThreads() const {return num_mesh_threads_;}
-
   void Initialize(int res_flag, ParameterInput *pin);
   void SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
                                  enum BoundaryFlag *block_bcs);
@@ -217,9 +185,39 @@ public:
   void AdaptiveMeshRefinement(ParameterInput *pin);
   MeshBlock* FindMeshBlock(int tgid);
   void TestConservation(void);
+  void UserWorkAfterLoop(ParameterInput *pin); // method in ../pgen
 
-  // methods in /pgen
-  void UserWorkAfterLoop(ParameterInput *pin);
+private:
+  // data
+  int root_level, max_level, current_level;
+  int nbtotal;
+  int maxneighbor_;
+  int num_mesh_threads_;
+  int *nslist, *ranklist, *nblist;
+  Real *costlist;
+  int *nref, *nderef, *bnref, *bnderef, *rdisp, *brdisp, *ddisp, *bddisp;
+  LogicalLocation *loclist;
+  MeshBlockTree tree;
+  long int nrbx1, nrbx2, nrbx3;
+  bool user_meshgen_[3];
+  int niusermeshdata_, nrusermeshdata_;
+
+  // functions
+  MeshGenFunc_t MeshGenerator_[3];
+  SrcTermFunc_t UserSourceTerm_;
+  BValFunc_t BoundaryFunction_[6];
+  AMRFlag_t AMRFlag_;
+  void AllocateRealUserMeshDataField(int n);
+  void AllocateIntUserMeshDataField(int n);
+  void OutputMeshStructure(int dim);
+  void LoadBalancing(Real *clist, int *rlist, int *slist, int *nlist, int nb);
+
+  // methods in ../pgen
+  void InitUserMeshData(ParameterInput *pin);
+  void EnrollUserBoundaryFunction (enum BoundaryFace face, BValFunc_t my_func);
+  void EnrollUserRefinementCondition(AMRFlag_t amrflag);
+  void EnrollUserMeshGenerator(enum direction dir, MeshGenFunc_t my_mg);
+  void EnrollUserSourceTermFunction(SrcTermFunc_t my_func);
 };
 
 

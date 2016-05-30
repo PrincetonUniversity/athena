@@ -1,7 +1,7 @@
 // Relativistic shock tube generator
 
 // Primary header
-#include "../mesh.hpp"
+#include "../mesh/mesh.hpp"
 
 // C++ headers
 #include <cmath>      // sqrt()

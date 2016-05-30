@@ -24,7 +24,7 @@
 
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh.hpp"
+#include "../mesh/mesh.hpp"
 #include "../hydro/hydro.hpp"
 #include "outputs.hpp"
 #include "../coordinates/coordinates.hpp" // Coordinates

@@ -1,7 +1,7 @@
 // General relativistic black hole accretion generator, spherically symmetric flows
 
 // Primary header
-#include "../mesh.hpp"
+#include "../mesh/mesh.hpp"
 
 // C++ headers
 #include <cmath>  // abs(), NAN, pow(), sqrt()

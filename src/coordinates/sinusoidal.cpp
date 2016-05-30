@@ -21,7 +21,7 @@
 // Athena++ headers
 #include "../athena.hpp"           // enums, macros
 #include "../athena_arrays.hpp"    // AthenaArray
-#include "../mesh.hpp"             // MeshBlock
+#include "../mesh/mesh.hpp"             // MeshBlock
 #include "../parameter_input.hpp"  // ParameterInput
 #include "../hydro/hydro.hpp"      // Hydro
 #include "../hydro/eos/eos.hpp"    // HydroEqnOfState

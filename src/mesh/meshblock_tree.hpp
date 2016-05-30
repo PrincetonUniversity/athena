@@ -1,36 +1,30 @@
-#ifndef MESHBLOCKTREE_HPP
-#define MESHBLOCKTREE_HPP
+#ifndef MESHBLOCK_TREE_HPP
+#define MESHBLOCK_TREE_HPP
 //======================================================================================
 // Athena++ astrophysical MHD code
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
 // See LICENSE file for full public license information.
 //======================================================================================
-//! \file meshblocktree.hpp
+//! \file meshblock_tree.hpp
 //  \brief defines the LogicalLocation structure and MeshBlockTree class
 //======================================================================================
 
 // Athena++ classes headers
-#include "athena.hpp"
-#include "athena_arrays.hpp"
-#include "defs.hpp"
-#include "bvals/bvals.hpp"
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../defs.hpp"
+#include "../bvals/bvals.hpp"
 
 //! \class MeshBlockTree
 //  \brief Construct AMR Block tree structure
 class MeshBlockTree
 {
-private:
-  bool flag; // false: vitrual, has leaves, true: real, is a leaf
-  MeshBlockTree* pparent;
-  MeshBlockTree* pleaf[2][2][2];
-  LogicalLocation loc;
-  int gid;
-  friend class Mesh;
-  friend class MeshBlock;
 public:
   MeshBlockTree();
   MeshBlockTree(MeshBlockTree *parent, int ox, int oy, int oz);
   ~MeshBlockTree();
+
+  // functions
   void CreateRootGrid(long int nx, long int ny, long int nz, int nl);
   void AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc, int dim,
        enum BoundaryFlag* mesh_bcs, long int rbx, long int rby, long int rbz,
@@ -48,6 +42,16 @@ public:
                  enum BoundaryFlag* bcs, long int rbx, long int rby, long int rbz,
                  int rl, bool amrflag=false);
   MeshBlockTree* GetLeaf(int ox, int oy, int oz);
+
+private:
+  // data
+  bool flag; // false: vitrual, has leaves, true: real, is a leaf
+  MeshBlockTree* pparent;
+  MeshBlockTree* pleaf[2][2][2];
+  LogicalLocation loc;
+  int gid;
+  friend class Mesh;
+  friend class MeshBlock;
 };
 
 #endif

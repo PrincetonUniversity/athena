@@ -1,7 +1,7 @@
 // Linear wave problem generator for special relativity
 
 // Primary header
-#include "../mesh.hpp"
+#include "../mesh/mesh.hpp"
 
 // C++ headers
 #include <algorithm>  // max(), min()

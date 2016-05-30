@@ -30,21 +30,21 @@
 #include <string.h>  // memcpy
 
 // Athena++ classes headers
-#include "athena.hpp"
-#include "globals.hpp"
-#include "athena_arrays.hpp"
-#include "coordinates/coordinates.hpp"
-#include "hydro/hydro.hpp" 
-#include "field/field.hpp"
-#include "bvals/bvals.hpp"
-#include "eos/eos.hpp"
-#include "parameter_input.hpp"
-#include "meshblocktree.hpp"
-#include "outputs/wrapper.hpp"
-#include "task_list.hpp"
-#include "mesh_refinement/mesh_refinement.hpp"
-#include "utils/buffer_utils.hpp"
-#include "reconstruct/reconstruction.hpp"
+#include "../athena.hpp"
+#include "../globals.hpp"
+#include "../athena_arrays.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../hydro/hydro.hpp" 
+#include "../field/field.hpp"
+#include "../bvals/bvals.hpp"
+#include "../eos/eos.hpp"
+#include "../parameter_input.hpp"
+#include "../outputs/wrapper.hpp"
+#include "../task_list.hpp"
+#include "mesh_refinement.hpp"
+#include "meshblock_tree.hpp"
+#include "../utils/buffer_utils.hpp"
+#include "../reconstruct/reconstruction.hpp"
 
 // this class header
 #include "mesh.hpp"
@@ -1189,13 +1189,11 @@ MeshBlock::~MeshBlock()
   if(next!=NULL) next->prev=prev;
 
   delete pcoord;
-  if (block_bcs[INNER_X2] == POLAR_BNDRY)
-    delete[] polar_neighbor_north;
-  if (block_bcs[OUTER_X2] == POLAR_BNDRY)
-    delete[] polar_neighbor_south;
+  if (block_bcs[INNER_X2] == POLAR_BNDRY) delete[] polar_neighbor_north;
+  if (block_bcs[OUTER_X2] == POLAR_BNDRY) delete[] polar_neighbor_south;
   delete pbval;
   delete precon;
-  delete pmr;
+  if (pmy_mesh->multilevel == true) delete pmr;
 
   delete phydro;
   if (MAGNETIC_FIELDS_ENABLED) delete pfield;

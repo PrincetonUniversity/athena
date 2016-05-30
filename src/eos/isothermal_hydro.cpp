@@ -24,7 +24,7 @@
 #include "../hydro/hydro.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh.hpp"
+#include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../field/field.hpp"
 

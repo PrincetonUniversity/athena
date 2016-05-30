@@ -39,7 +39,7 @@
 // Athena++ headers
 #include "athena.hpp"
 #include "globals.hpp"
-#include "mesh.hpp"
+#include "mesh/mesh.hpp"
 #include "parameter_input.hpp" 
 #include "outputs/outputs.hpp"
 #include "outputs/wrapper.hpp"

@@ -1,7 +1,7 @@
 // General relativistic problem generator for dust falling onto black hole
 
 // Primary header
-#include "../mesh.hpp"
+#include "../mesh/mesh.hpp"
 
 #if MAGNETIC_FIELDS_ENABLED
 #error "This problem generator does not support magnetic fields"

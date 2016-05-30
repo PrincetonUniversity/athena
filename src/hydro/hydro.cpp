@@ -21,7 +21,7 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../eos/eos.hpp"
-#include "../mesh.hpp"
+#include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
 #include "srcterms/srcterms.hpp"

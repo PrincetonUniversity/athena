@@ -1,7 +1,7 @@
 // Spherical blast wave generator for GRMHD in flat spacetime
 
 // Primary header
-#include "../mesh.hpp"
+#include "../mesh/mesh.hpp"
 
 // C++ headers
 #include <algorithm>  // min()

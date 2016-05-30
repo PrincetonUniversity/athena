@@ -20,7 +20,6 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh.hpp"
 #include "../parameter_input.hpp" 
 
 // this class header

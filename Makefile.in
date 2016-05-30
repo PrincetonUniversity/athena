@@ -26,15 +26,14 @@ EXECUTABLE := $(EXE_DIR)athena
 SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/bvals/*.cpp) \
 	     src/coordinates/$(COORDINATES_FILE) \
+	     src/eos/$(EOS_FILE) \
 	     $(wildcard src/field/*.cpp) \
-	     $(wildcard src/field/fluxes/*.cpp) \
 	     $(wildcard src/hydro/*.cpp) \
 	     $(wildcard src/hydro/srcterms/*.cpp) \
 	     src/hydro/rsolvers/$(RSOLVER_DIR)$(RSOLVER_FILE) \
-	     src/eos/$(EOS_FILE) \
-	     $(wildcard src/reconstruct/*.cpp) \
-	     $(wildcard src/mesh_refinement/*.cpp) \
+	     $(wildcard src/mesh/*.cpp) \
 	     $(wildcard src/outputs/*.cpp) \
+	     $(wildcard src/reconstruct/*.cpp) \
 	     $(wildcard src/utils/*.cpp) \
 	     src/pgen/$(PROBLEM_FILE) \
 	     src/pgen/default_pgen.cpp

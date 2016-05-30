@@ -31,13 +31,7 @@
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh_refinement/mesh_refinement.hpp"
-#include "../mesh.hpp"
-#include "../hydro/hydro.hpp"
-#include "../eos/eos.hpp"
-#include "../field/field.hpp"
-#include "../coordinates/coordinates.hpp"
-#include "../parameter_input.hpp"
+#include "../mesh/mesh.hpp"
 #include "../utils/buffer_utils.hpp"
 
 // this class header

@@ -20,13 +20,17 @@
 // root (single block) is 0; the physical root (user-specified root level) may be
 //======================================================================================
 
-
-#include "athena.hpp"
-#include "meshblocktree.hpp"
-#include "globals.hpp"
+// C++ headers
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+
+// Athena++ headers
+#include "../athena.hpp"
+#include "../globals.hpp"
+
+// this class header
+#include "meshblock_tree.hpp"
 
 //--------------------------------------------------------------------------------------
 //! \fn MeshBlockTree::MeshBlockTree()

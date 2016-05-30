@@ -21,7 +21,7 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../hydro/hydro.hpp"
-#include "../mesh.hpp"
+#include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 
 // this class header

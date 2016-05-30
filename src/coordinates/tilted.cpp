@@ -18,7 +18,7 @@
 // Athena++ headers
 #include "../athena.hpp"           // enums, macros
 #include "../athena_arrays.hpp"    // AthenaArray
-#include "../mesh.hpp"             // MeshBlock
+#include "../mesh/mesh.hpp"             // MeshBlock
 #include "../parameter_input.hpp"  // ParameterInput
 
 // Global variables

@@ -11,7 +11,7 @@
 #include "../../../eos/eos.hpp"                     // HydroEqnOfState
 #include "../../../athena.hpp"                   // enums, macros, Real
 #include "../../../athena_arrays.hpp"            // AthenaArray
-#include "../../../mesh.hpp"                     // MeshBlock
+#include "../../../mesh/mesh.hpp"                     // MeshBlock
 #include "../../../coordinates/coordinates.hpp"  // Coordinates
 
 //--------------------------------------------------------------------------------------

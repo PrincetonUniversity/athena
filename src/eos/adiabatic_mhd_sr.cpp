@@ -17,7 +17,7 @@
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // FaceField
-#include "../mesh.hpp"                     // MeshBlock
+#include "../mesh/mesh.hpp"                     // MeshBlock
 #include "../parameter_input.hpp"          // GetReal()
 #include "../coordinates/coordinates.hpp" // Coordinates
 
