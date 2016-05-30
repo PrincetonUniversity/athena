@@ -48,8 +48,9 @@
 #include <mpi.h>
 #endif
 
-static NeighborIndexes ni_[56];
-static int bufid_[56];
+// forward declaration of static members of this class
+NeighborIndexes BoundaryValues::ni[56];
+int BoundaryValues::bufid[56];
 
 // BoundaryValues constructor - sets functions for the appropriate
 // boundary conditions at each of the 6 dirs of a MeshBlock
@@ -301,16 +302,16 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   // Allocate buffers for non-polar neighbor communication
   for(int l=0;l<NSTEP;l++) {
     for(int n=0;n<pmb->pmy_mesh->maxneighbor_;n++) {
-      int size=((ni_[n].ox1==0)?pmb->block_size.nx1:NGHOST)
-              *((ni_[n].ox2==0)?pmb->block_size.nx2:NGHOST)
-              *((ni_[n].ox3==0)?pmb->block_size.nx3:NGHOST);
+      int size=((BoundaryValues::ni[n].ox1==0)?pmb->block_size.nx1:NGHOST)
+              *((BoundaryValues::ni[n].ox2==0)?pmb->block_size.nx2:NGHOST)
+              *((BoundaryValues::ni[n].ox3==0)?pmb->block_size.nx3:NGHOST);
       if(pmb->pmy_mesh->multilevel==true) {
-        int f2c=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2):NGHOST)
-               *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2):NGHOST)
-               *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2):NGHOST);
-        int c2f=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng1):cng)
-               *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng)
-               *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng);
+        int f2c=((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2):NGHOST)
+               *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2):NGHOST)
+               *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2):NGHOST);
+        int c2f=((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng1):cng)
+               *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng2):cng)
+               *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng3):cng);
         size=std::max(size,c2f);
         size=std::max(size,f2c);
       }
@@ -322,47 +323,50 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   if (MAGNETIC_FIELDS_ENABLED) {
     for(int l=0;l<NSTEP;l++) {
       for(int n=0;n<pmb->pmy_mesh->maxneighbor_;n++) {
-        int size1=((ni_[n].ox1==0)?(pmb->block_size.nx1+1):NGHOST)
-                 *((ni_[n].ox2==0)?(pmb->block_size.nx2):NGHOST)
-                 *((ni_[n].ox3==0)?(pmb->block_size.nx3):NGHOST);
-        int size2=((ni_[n].ox1==0)?(pmb->block_size.nx1):NGHOST)
-                 *((ni_[n].ox2==0)?(pmb->block_size.nx2+f2d):NGHOST)
-                 *((ni_[n].ox3==0)?(pmb->block_size.nx3):NGHOST);
-        int size3=((ni_[n].ox1==0)?(pmb->block_size.nx1):NGHOST)
-                 *((ni_[n].ox2==0)?(pmb->block_size.nx2):NGHOST)
-                 *((ni_[n].ox3==0)?(pmb->block_size.nx3+f3d):NGHOST);
+        int size1=((BoundaryValues::ni[n].ox1==0)?(pmb->block_size.nx1+1):NGHOST)
+                 *((BoundaryValues::ni[n].ox2==0)?(pmb->block_size.nx2):NGHOST)
+                 *((BoundaryValues::ni[n].ox3==0)?(pmb->block_size.nx3):NGHOST);
+        int size2=((BoundaryValues::ni[n].ox1==0)?(pmb->block_size.nx1):NGHOST)
+                 *((BoundaryValues::ni[n].ox2==0)?(pmb->block_size.nx2+f2d):NGHOST)
+                 *((BoundaryValues::ni[n].ox3==0)?(pmb->block_size.nx3):NGHOST);
+        int size3=((BoundaryValues::ni[n].ox1==0)?(pmb->block_size.nx1):NGHOST)
+                 *((BoundaryValues::ni[n].ox2==0)?(pmb->block_size.nx2):NGHOST)
+                 *((BoundaryValues::ni[n].ox3==0)?(pmb->block_size.nx3+f3d):NGHOST);
         int size=size1+size2+size3;
         if(pmb->pmy_mesh->multilevel==true) {
-          if(ni_[n].type!=NEIGHBOR_FACE) {
-            if(ni_[n].ox1!=0) size1=size1/NGHOST*(NGHOST+1);
-            if(ni_[n].ox2!=0) size2=size2/NGHOST*(NGHOST+1);
-            if(ni_[n].ox3!=0) size3=size3/NGHOST*(NGHOST+1);
+          if(BoundaryValues::ni[n].type!=NEIGHBOR_FACE) {
+            if(BoundaryValues::ni[n].ox1!=0) size1=size1/NGHOST*(NGHOST+1);
+            if(BoundaryValues::ni[n].ox2!=0) size2=size2/NGHOST*(NGHOST+1);
+            if(BoundaryValues::ni[n].ox3!=0) size3=size3/NGHOST*(NGHOST+1);
           }
           size=size1+size2+size3;
-          int f2c1=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+1):cng)
-                  *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2):cng)
-                  *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2):cng);
-          int f2c2=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2):cng)
-                  *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d):cng)
-                  *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2):cng);
-          int f2c3=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2):cng)
-                  *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2):cng)
-                  *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+f3d):cng);
-          if(ni_[n].type!=NEIGHBOR_FACE) {
-            if(ni_[n].ox1!=0) f2c1=f2c1/cng*(cng+1);
-            if(ni_[n].ox2!=0) f2c2=f2c2/cng*(cng+1);
-            if(ni_[n].ox3!=0) f2c3=f2c3/cng*(cng+1);
+          int f2c1=((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+1):cng)
+                  *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2):cng)
+                  *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2):cng);
+          int f2c2=((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2):cng)
+                  *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d):cng)
+                  *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2):cng);
+          int f2c3=((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2):cng)
+                  *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2):cng)
+                  *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+f3d):cng);
+          if(BoundaryValues::ni[n].type!=NEIGHBOR_FACE) {
+            if(BoundaryValues::ni[n].ox1!=0) f2c1=f2c1/cng*(cng+1);
+            if(BoundaryValues::ni[n].ox2!=0) f2c2=f2c2/cng*(cng+1);
+            if(BoundaryValues::ni[n].ox3!=0) f2c3=f2c3/cng*(cng+1);
           }
           int fsize=f2c1+f2c2+f2c3;
-          int c2f1=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+1+cng):cng)
-                  *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng*f2d):cng)
-                  *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
-          int c2f2=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
-                  *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d+cng*f2d):cng)
-                  *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
-          int c2f3=((ni_[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
-                  *((ni_[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d*cng):cng)
-                  *((ni_[n].ox3==0)?((pmb->block_size.nx3+1)/2+f3d+cng*f3d):cng);
+          int c2f1=
+            ((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+1+cng):cng)
+           *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng*f2d):cng)
+           *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
+          int c2f2=
+            ((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
+           *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d+cng*f2d):cng)
+           *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
+          int c2f3=
+            ((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
+           *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d*cng):cng)
+           *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+f3d+cng*f3d):cng);
           int csize=c2f1+c2f2+c2f3;
           size=std::max(size,std::max(csize,fsize));
         }
@@ -370,12 +374,12 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         field_recv_[l][n]=new Real[size];
 
         // allocate EMF correction buffer
-        if(ni_[n].type==NEIGHBOR_FACE) {
+        if(BoundaryValues::ni[n].type==NEIGHBOR_FACE) {
           if(pmb->block_size.nx3>1) { // 3D
-            if(ni_[n].ox1!=0)
+            if(BoundaryValues::ni[n].ox1!=0)
               size=(pmb->block_size.nx2+1)*(pmb->block_size.nx3)
                   +(pmb->block_size.nx2)*(pmb->block_size.nx3+1);
-            else if(ni_[n].ox2!=0)
+            else if(BoundaryValues::ni[n].ox2!=0)
               size=(pmb->block_size.nx1+1)*(pmb->block_size.nx3)
                   +(pmb->block_size.nx1)*(pmb->block_size.nx3+1);
             else
@@ -383,7 +387,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
                   +(pmb->block_size.nx1)*(pmb->block_size.nx2+1);
           }
           else if(pmb->block_size.nx2>1) { // 2D
-            if(ni_[n].ox1!=0)
+            if(BoundaryValues::ni[n].ox1!=0)
               size=(pmb->block_size.nx2+1)+pmb->block_size.nx2;
             else 
               size=(pmb->block_size.nx1+1)+pmb->block_size.nx1;
@@ -391,11 +395,11 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
           else // 1D
             size=2;
         }
-        else if(ni_[n].type==NEIGHBOR_EDGE) {
+        else if(BoundaryValues::ni[n].type==NEIGHBOR_EDGE) {
           if(pmb->block_size.nx3>1) { // 3D
-            if(ni_[n].ox3==0) size=pmb->block_size.nx3;
-            if(ni_[n].ox2==0) size=pmb->block_size.nx2;
-            if(ni_[n].ox1==0) size=pmb->block_size.nx1;
+            if(BoundaryValues::ni[n].ox3==0) size=pmb->block_size.nx3;
+            if(BoundaryValues::ni[n].ox2==0) size=pmb->block_size.nx2;
+            if(BoundaryValues::ni[n].ox1==0) size=pmb->block_size.nx1;
           }
           else if(pmb->block_size.nx2>1)
             size=1;
@@ -478,7 +482,8 @@ BoundaryValues::~BoundaryValues()
       for(int i=0;i<pmb->pmy_mesh->maxneighbor_;i++) { 
         delete [] field_send_[l][i];
         delete [] field_recv_[l][i];
-        if(ni_[i].type==NEIGHBOR_FACE || ni_[i].type==NEIGHBOR_EDGE) {
+        if(BoundaryValues::ni[i].type==NEIGHBOR_FACE ||
+           BoundaryValues::ni[i].type==NEIGHBOR_EDGE) {
           delete [] emfcor_send_[l][i];
           delete [] emfcor_recv_[l][i];
         }
@@ -1136,126 +1141,6 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
   }
 
   return;
-}
-
-
-//--------------------------------------------------------------------------------------
-//! \fn unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2)
-//  \brief calculate a buffer identifier
-unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2)
-{
-  unsigned int ux1=(unsigned)(ox1+1);
-  unsigned int ux2=(unsigned)(ox2+1);
-  unsigned int ux3=(unsigned)(ox3+1);
-  return (ux1<<6) | (ux2<<4) | (ux3<<2) | (fi1<<1) | fi2;
-}
-
-
-//--------------------------------------------------------------------------------------
-//! \fn int BufferID(int dim, bool multilevel, bool face_only)
-//  \brief calculate neighbor indexes and target buffer IDs
-int BufferID(int dim, bool multilevel, bool face_only)
-{
-  int nf1=1, nf2=1;
-  if(multilevel==true) {
-    if(dim>=2) nf1=2;
-    if(dim>=3) nf2=2;
-  }
-  int b=0;
-  // x1 face
-  for(int n=-1; n<=1; n+=2) {
-    for(int f2=0;f2<nf2;f2++) {
-      for(int f1=0;f1<nf1;f1++) {
-        ni_[b].ox1=n; ni_[b].ox2=0; ni_[b].ox3=0;
-        ni_[b].fi1=f1; ni_[b].fi2=f2; ni_[b].type=NEIGHBOR_FACE;
-        b++;
-      }
-    }
-  }
-  // x2 face
-  if(dim>=2) {
-    for(int n=-1; n<=1; n+=2) {
-      for(int f2=0;f2<nf2;f2++) {
-        for(int f1=0;f1<nf1;f1++) {
-          ni_[b].ox1=0; ni_[b].ox2=n; ni_[b].ox3=0;
-          ni_[b].fi1=f1; ni_[b].fi2=f2; ni_[b].type=NEIGHBOR_FACE;
-          b++;
-        }
-      }
-    }
-  }
-  if(dim==3) {
-    // x3 face
-    for(int n=-1; n<=1; n+=2) {
-      for(int f2=0;f2<nf2;f2++) {
-        for(int f1=0;f1<nf1;f1++) {
-          ni_[b].ox1=0; ni_[b].ox2=0; ni_[b].ox3=n;
-          ni_[b].fi1=f1; ni_[b].fi2=f2; ni_[b].type=NEIGHBOR_FACE;
-          b++;
-        }
-      }
-    }
-  }
-  // edges
-  // x1x2
-  if(dim>=2) {
-    for(int m=-1; m<=1; m+=2) {
-      for(int n=-1; n<=1; n+=2) {
-        for(int f1=0;f1<nf2;f1++) {
-          ni_[b].ox1=n; ni_[b].ox2=m; ni_[b].ox3=0;
-          ni_[b].fi1=f1; ni_[b].fi2=0; ni_[b].type=NEIGHBOR_EDGE;
-          b++;
-        }
-      }
-    }
-  }
-  if(dim==3) {
-    // x1x3
-    for(int m=-1; m<=1; m+=2) {
-      for(int n=-1; n<=1; n+=2) {
-        for(int f1=0;f1<nf1;f1++) {
-          ni_[b].ox1=n; ni_[b].ox2=0; ni_[b].ox3=m;
-          ni_[b].fi1=f1; ni_[b].fi2=0; ni_[b].type=NEIGHBOR_EDGE;
-          b++;
-        }
-      }
-    }
-    // x2x3
-    for(int m=-1; m<=1; m+=2) {
-      for(int n=-1; n<=1; n+=2) {
-        for(int f1=0;f1<nf1;f1++) {
-          ni_[b].ox1=0; ni_[b].ox2=n; ni_[b].ox3=m;
-          ni_[b].fi1=f1; ni_[b].fi2=0; ni_[b].type=NEIGHBOR_EDGE;
-          b++;
-        }
-      }
-    }
-    // corners
-    for(int l=-1; l<=1; l+=2) {
-      for(int m=-1; m<=1; m+=2) {
-        for(int n=-1; n<=1; n+=2) {
-          ni_[b].ox1=n; ni_[b].ox2=m; ni_[b].ox3=l;
-          ni_[b].fi1=0; ni_[b].fi2=0; ni_[b].type=NEIGHBOR_CORNER;
-          b++;
-        }
-      }
-    }
-  }
-
-  for(int n=0;n<b;n++)
-    bufid_[n]=CreateBufferID(ni_[n].ox1, ni_[n].ox2, ni_[n].ox3, ni_[n].fi1, ni_[n].fi2);
-
-  return b;
-}
-
-int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2, int bmax)
-{
-  int bid=CreateBufferID(ox1, ox2, ox3, fi1, fi2);
-
-  for(int i=0;i<bmax;i++) {
-    if(bid==bufid_[i]) return i;
-  }
-  return -1;
 }
 
 //--------------------------------------------------------------------------------------

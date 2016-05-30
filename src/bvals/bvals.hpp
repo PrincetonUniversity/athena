@@ -54,6 +54,10 @@ static bool flip_across_pole_field[] = {false, true, true};
 typedef struct NeighborIndexes {
   int ox1, ox2, ox3, fi1, fi2;
   enum NeighborType type;
+  NeighborIndexes() {
+    ox1=0; ox2=0; ox3=0; fi1=0; fi2=0;
+    type=NEIGHBOR_NONE;
+  }
 } NeighborIndexes;
 
 //-------------------- prototypes for all BC functions ---------------------------------
@@ -94,6 +98,9 @@ class BoundaryValues {
 public:
   BoundaryValues(MeshBlock *pmb, ParameterInput *pin);
   ~BoundaryValues();
+
+  static NeighborIndexes ni[56];
+  static int bufid[56];
 
   void Initialize(void);
   void StartReceivingForInit(void);
@@ -159,10 +166,12 @@ public:
   void ClearBoundaryForInit(void);
   void ClearBoundaryAll(void);
 
+//  int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2, int bmax);
+//  int BufferID(int dim, bool multilevel, bool face_only);
+//  unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
+
 private:
   MeshBlock *pmy_mblock_;  // ptr to MeshBlock containing this BVals
-
-  BValFunc_t BoundaryFunction_[6];
 
   int nface_, nedge_;
   bool edge_flag_[12];
@@ -192,6 +201,9 @@ private:
   MPI_Request *req_emf_north_send_[NSTEP], *req_emf_north_recv_[NSTEP];
   MPI_Request *req_emf_south_send_[NSTEP], *req_emf_south_recv_[NSTEP];
 #endif
+
+  BValFunc_t BoundaryFunction_[6];
+
   // temporary
   friend class Mesh;
 };
