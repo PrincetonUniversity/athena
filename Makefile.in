@@ -34,6 +34,7 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/mesh/*.cpp) \
 	     $(wildcard src/outputs/*.cpp) \
 	     $(wildcard src/reconstruct/*.cpp) \
+	     $(wildcard src/task_list/*.cpp) \
 	     $(wildcard src/utils/*.cpp) \
 	     src/pgen/$(PROBLEM_FILE) \
 	     src/pgen/default_pgen.cpp

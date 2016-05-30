@@ -24,13 +24,13 @@
 #include <string>     // c_str()
 
 // Athena++ classes headers
-#include "athena.hpp"
-#include "mesh/mesh.hpp"
-#include "hydro/hydro.hpp"
-#include "field/field.hpp"
-#include "bvals/bvals.hpp"
-#include "eos/eos.hpp"
-#include "hydro/srcterms/srcterms.hpp"
+#include "../athena.hpp"
+#include "../mesh/mesh.hpp"
+#include "../hydro/hydro.hpp"
+#include "../field/field.hpp"
+#include "../bvals/bvals.hpp"
+#include "../eos/eos.hpp"
+#include "../hydro/srcterms/srcterms.hpp"
 
 // this class header
 #include "task_list.hpp"

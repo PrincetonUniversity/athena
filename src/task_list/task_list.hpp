@@ -11,8 +11,8 @@
 //======================================================================================
 
 // Athena++ headers
-#include "athena.hpp"
-#include "mesh/mesh.hpp"
+#include "../athena.hpp"
+#include "../mesh/mesh.hpp"
 
 // forward declarations
 class Mesh;

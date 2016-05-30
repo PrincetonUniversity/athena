@@ -19,7 +19,7 @@
 #include "../athena_arrays.hpp"
 #include "meshblock_tree.hpp"
 #include "../outputs/wrapper.hpp"
-#include "../task_list.hpp"
+#include "../task_list/task_list.hpp"
 #include "../bvals/bvals.hpp"
 #include "mesh_refinement.hpp"
 
