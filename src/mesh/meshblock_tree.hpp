@@ -15,14 +15,40 @@
 #include "../defs.hpp"
 #include "../bvals/bvals.hpp"
 
+//--------------------------------------------------------------------------------------
+//! \struct LogicalLocation
+//  \brief stores logical location and level of meshblock
+
+typedef struct LogicalLocation {
+  long int lx1, lx2, lx3;
+  int level;
+
+  LogicalLocation() : lx1(-1), lx2(-1), lx3(-1), level(-1) {};
+
+  // operators useful for sorting
+  bool operator==(LogicalLocation &ll)
+    { return ((ll.level==level) && (ll.lx1==lx1) && (ll.lx2==lx2) && (ll.lx3==lx3)); }
+  static bool Lesser(const LogicalLocation &left, const LogicalLocation &right)
+    { return left.level < right.level; };
+  static bool Greater(const LogicalLocation & left, const LogicalLocation &right)
+    { return left.level > right.level; };
+
+} LogicalLocation;
+
+//--------------------------------------------------------------------------------------
 //! \class MeshBlockTree
-//  \brief Construct AMR Block tree structure
-class MeshBlockTree
-{
+//  \brief Objects are nodes in an AMR MeshBlock tree structure
+
+class MeshBlockTree {
+  friend class Mesh;
+  friend class MeshBlock;
 public:
   MeshBlockTree();
   MeshBlockTree(MeshBlockTree *parent, int ox, int oy, int oz);
   ~MeshBlockTree();
+
+  // accessor
+  MeshBlockTree* GetLeaf(int ox, int oy, int oz) {return pleaf[oz][oy][ox];}
 
   // functions
   void CreateRootGrid(long int nx, long int ny, long int nz, int nl);
@@ -41,18 +67,14 @@ public:
   MeshBlockTree* FindNeighbor(LogicalLocation myloc, int ox1, int ox2, int ox3,
                  enum BoundaryFlag* bcs, long int rbx, long int rby, long int rbz,
                  int rl, bool amrflag=false);
-  MeshBlockTree* GetLeaf(int ox, int oy, int oz);
 
 private:
   // data
-  bool flag; // false: vitrual, has leaves, true: real, is a leaf
+  bool flag; // false: virtual node, has leaves; true: real node, is a leaf
   MeshBlockTree* pparent;
   MeshBlockTree* pleaf[2][2][2];
   LogicalLocation loc;
   int gid;
-  friend class Mesh;
-  friend class MeshBlock;
 };
 
-#endif
-
+#endif // MESHBLOCK_TREE_HPP

@@ -23,40 +23,24 @@ class MeshBlock;
 class Coordinates;
 struct RegionSize;
 
+//--------------------------------------------------------------------------------------
 //! \struct FaceField
 //  \brief container for face-centered fields
+
 typedef struct FaceField {
   AthenaArray<Real> x1f,x2f,x3f;
 } FaceField;
 
+//--------------------------------------------------------------------------------------
 //! \struct EdgeField
 //  \brief container for edge-centered fields
+
 typedef struct EdgeField {
   AthenaArray<Real> x1e,x2e,x3e;
 } EdgeField;
 
-//! \struct LogicalLocation
-//  \brief logical location and level of meshblocks
-typedef struct LogicalLocation {
-  long int lx1, lx2, lx3;
-  int level;
-  LogicalLocation() : lx1(-1), lx2(-1), lx3(-1), level(-1) {};
-  // for sort from the finest level
-  bool operator==(LogicalLocation &rloc) { return ((rloc.level==level) &&
-                 (rloc.lx1==lx1) && (rloc.lx2==lx2) && (rloc.lx3==lx3)); }
-  static bool Less(const LogicalLocation & lloc, const LogicalLocation &rloc)
-  { return lloc.level < rloc.level; };
-  static bool Greater(const LogicalLocation & lloc, const LogicalLocation &rloc)
-  { return lloc.level > rloc.level; };
-} LogicalLocation;
-
-// function pointer prototypes for user-defined modules set at runtime
-typedef void (*BValFunc_t)(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
-                   FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
-typedef int (*AMRFlag_t)(MeshBlock *pmb);
-typedef Real (*MeshGenFunc_t)(Real x, RegionSize rs);
-typedef void (*SrcTermFunc_t)(MeshBlock *pmb, const Real time, const Real dt,
-  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &cons);
+//--------------------------------------------------------------------------------------
+// enums used everywhere
 
 // array indices for conserved: density, momemtum, total energy, face-centered field 
 enum {IDN=0, IM1=1, IM2=2, IM3=3, IEN=4};
@@ -83,4 +67,14 @@ enum mpitag {tag_hydro=0, tag_field=1, tag_flcor=2, tag_emfcor=3, tag_amr=4,
 
 enum mbtflag {mbt_node=0, mbt_refined=1, mbt_deref=2, mbt_newr=3, mbt_newd=4, mbt_leaf=5};
 
-#endif // define ATHENA_HPP
+//--------------------------------------------------------------------------------------
+// function pointer prototypes for user-defined modules set at runtime
+
+typedef void (*BValFunc_t)(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
+  FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
+typedef int (*AMRFlagFunc_t)(MeshBlock *pmb);
+typedef Real (*MeshGenFunc_t)(Real x, RegionSize rs);
+typedef void (*SrcTermFunc_t)(MeshBlock *pmb, const Real time, const Real dt,
+  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &cons);
+
+#endif // ATHENA_HPP

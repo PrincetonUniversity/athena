@@ -1257,9 +1257,9 @@ void Mesh::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValFunc_t my_bc)
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserRefinementCondition(AMRFlag_t amrflag)
+//! \fn void Mesh::EnrollUserRefinementCondition(AMRFlagFunc_t amrflag)
 //  \brief Enroll a user-defined function for checking refinement criteria
-void Mesh::EnrollUserRefinementCondition(AMRFlag_t amrflag)
+void Mesh::EnrollUserRefinementCondition(AMRFlagFunc_t amrflag)
 {
   if(adaptive==true)
     AMRFlag_=amrflag;

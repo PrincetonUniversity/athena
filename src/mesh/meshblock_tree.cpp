@@ -15,9 +15,11 @@
 //======================================================================================
 //! \file meshblocktree.cpp
 //  \brief implementation of functions in the MeshBlockTree class
-// MeshBlockTree stores the logical grid structure, and is used for neighbor searches,
-// assigning global IDs, etc.  Level is defined as "logical level", where the logical
-// root (single block) is 0; the physical root (user-specified root level) may be
+// The MeshBlockTree stores the logical grid structure, and is used for neighbor
+// searches, assigning global IDs, etc.  Level is defined as "logical level", where the
+// logical root (single block) level is 0.  Note the logical level of the physical root
+// grid (user-specified root grid) will be greater than zero if it contains more than
+// one MeshBlock
 //======================================================================================
 
 // C++ headers
@@ -34,7 +36,8 @@
 
 //--------------------------------------------------------------------------------------
 //! \fn MeshBlockTree::MeshBlockTree()
-//  \brief constructor of MeshBlockTree, creates the logical root
+//  \brief constructor for the logical root
+
 MeshBlockTree::MeshBlockTree()
 {
   flag=true;
@@ -53,7 +56,8 @@ MeshBlockTree::MeshBlockTree()
 
 //--------------------------------------------------------------------------------------
 //! \fn MeshBlockTree::MeshBlockTree(MeshBlockTree *parent, int ox, int oy, int oz)
-//  \brief constructor of MeshBlockTree, creates a leaf
+//  \brief constructor for a leaf
+
 MeshBlockTree::MeshBlockTree(MeshBlockTree *parent, int ox, int oy, int oz)
 {
   flag=true;
@@ -75,7 +79,8 @@ MeshBlockTree::MeshBlockTree(MeshBlockTree *parent, int ox, int oy, int oz)
 
 //--------------------------------------------------------------------------------------
 //! \fn MeshBlockTree::~MeshBlockTree()
-//  \brief destructor of MeshBlockTree, destroy all the leaves
+//  \brief destructor (for both root and leaves)
+
 MeshBlockTree::~MeshBlockTree()
 {
   for(int k=0; k<=1; k++) {
@@ -89,14 +94,14 @@ MeshBlockTree::~MeshBlockTree()
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void MeshBlockTree::CreateRootGrid(long int nx, long int ny, long int nz, int nl)
+//! \fn void MeshBlockTree::CreateRootGrid(long int nx,long int ny, long int nz, int nl)
 //  \brief create the root grid; the root grid can be incomplete (less than 8 leaves)
+
 void MeshBlockTree::CreateRootGrid(long int nx, long int ny, long int nz, int nl)
 {
   long int mx, my, mz;
-  if(loc.level == nl) {
-    return;
-  }
+  if (loc.level == nl) return;
+
   for(int k=0; k<=1; k++) {
     if((loc.lx3*2+k)*(1L<<(nl-loc.level-1)) < nz) {
       for(int j=0; j<=1; j++) {
@@ -116,19 +121,19 @@ void MeshBlockTree::CreateRootGrid(long int nx, long int ny, long int nz, int nl
   return;
 }
 
-
 //--------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc,
 //   int dim, enum BoundaryFlag* mesh_bcs, long int rbx, long int rby, long int rbz,
 //   int rl, int &nnew)
 //  \brief add a MeshBlock to the tree, also creates neighboring blocks
+
 void MeshBlockTree::AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc, int dim,
-                                 enum BoundaryFlag* mesh_bcs, long int rbx, long int rby,
-                                 long int rbz, int rl, int &nnew)
+   enum BoundaryFlag* mesh_bcs, long int rbx, long int rby, long int rbz,
+   int rl, int &nnew)
 {
   int mx, my, mz;
-  if(loc.level==rloc.level) // done
-    return;
+  if(loc.level==rloc.level) return; // done
+
   if(flag==true) // leaf -> create the finer level
     Refine(root,dim,mesh_bcs,rbx,rby,rbz,rl,nnew);
   // get leaf indexes
@@ -141,11 +146,11 @@ void MeshBlockTree::AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc, int 
   return;
 }
 
-
 //--------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::AddMeshBlockWithoutRefine(LogicalLocation rloc,
 //                          long int rbx, long int rby, long int rbz, int rl)
 //  \brief add a MeshBlock to the tree without refinement, used in restarting
+
 void MeshBlockTree::AddMeshBlockWithoutRefine(LogicalLocation rloc,
                     long int rbx, long int rby, long int rbz, int rl)
 {
@@ -165,12 +170,12 @@ void MeshBlockTree::AddMeshBlockWithoutRefine(LogicalLocation rloc,
   return;
 }
 
-
 //--------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::Refine(MeshBlockTree& root, int dim,
 //           enum BoundaryFlag* mesh_bcs, long int rbx, long int rby, long int rbz,
 //           int rl, int &nnew)
 //  \brief make finer leaves
+
 void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh_bcs,
                     long int rbx, long int rby, long int rbz, int rl, int &nnew)
 {
@@ -254,6 +259,7 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
 //                                   enum BoundaryFlag* mesh_bcs, long int rbx,
 //                                   long int rby, long int rbz, int rl, int &ndel)
 //  \brief destroy leaves and make this block a leaf
+
 void MeshBlockTree::Derefine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh_bcs,
                     long int rbx, long int rby, long int rbz, int rl, int &ndel)
 {
@@ -315,6 +321,7 @@ void MeshBlockTree::Derefine(MeshBlockTree& root, int dim, enum BoundaryFlag* me
 //--------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::CountMeshBlock(int& count)
 //  \brief creates the Location list sorted by Z-ordering
+
 void MeshBlockTree::CountMeshBlock(int& count)
 {
   if(pparent==NULL) count=0;
@@ -333,11 +340,11 @@ void MeshBlockTree::CountMeshBlock(int& count)
   return;
 }
 
-
 //--------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::GetMeshBlockList(LogicalLocation *list,
 //                                           int *pglist, int& count)
 //  \brief creates the Location list sorted by Z-ordering
+
 void MeshBlockTree::GetMeshBlockList(LogicalLocation *list, int *pglist, int& count)
 {
   if(pparent==NULL) count=0;
@@ -361,7 +368,6 @@ void MeshBlockTree::GetMeshBlockList(LogicalLocation *list, int *pglist, int& co
   return;
 }
 
-
 //--------------------------------------------------------------------------------------
 //! \fn MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1,
 //                                    int ox2, int ox3, enum BoundaryFlag* bcs,
@@ -370,9 +376,10 @@ void MeshBlockTree::GetMeshBlockList(LogicalLocation *list, int *pglist, int& co
 //         If it is coarser or same level, return the pointer to that block.
 //         If it is a finer block, return the pointer to its parent.
 //         Note that this function must be called on a completed tree only
+
 MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int ox2,
-               int ox3, enum BoundaryFlag* bcs, long int rbx, long int rby, long int rbz,
-               int rl, bool amrflag)
+  int ox3, enum BoundaryFlag* bcs, long int rbx, long int rby, long int rbz,
+  int rl, bool amrflag)
 {
   std::stringstream msg;
   long int lx, ly, lz;
@@ -463,10 +470,10 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
   return bt;
 }
 
-
 //--------------------------------------------------------------------------------------
 //! \fn MeshBlockTree* MeshBlockTree::FindMeshBlock(LogicalLocation tloc)
-//  \brief find a MeshBlock with tloc and return a pointer
+//  \brief find MeshBlock with LogicalLocation tloc and return a pointer
+
 MeshBlockTree* MeshBlockTree::FindMeshBlock(LogicalLocation tloc)
 {
   if(tloc.level==loc.level) return this;
@@ -478,14 +485,3 @@ MeshBlockTree* MeshBlockTree::FindMeshBlock(LogicalLocation tloc)
   if(pleaf[mz][my][mx]==NULL) return NULL;
   else return pleaf[mz][my][mx]->FindMeshBlock(tloc);
 }
-
-
-
-//--------------------------------------------------------------------------------------
-//! \fn MeshBlockTree* MeshBlockTree::GetLeaf(int ox, int oy, int oz)
-//  \brief returns the pointer to a leaf
-MeshBlockTree* MeshBlockTree::GetLeaf(int ox, int oy, int oz)
-{
-  return pleaf[oz][oy][ox];
-}
-

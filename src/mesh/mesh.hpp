@@ -206,7 +206,7 @@ private:
   MeshGenFunc_t MeshGenerator_[3];
   SrcTermFunc_t UserSourceTerm_;
   BValFunc_t BoundaryFunction_[6];
-  AMRFlag_t AMRFlag_;
+  AMRFlagFunc_t AMRFlag_;
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
   void OutputMeshStructure(int dim);
@@ -215,7 +215,7 @@ private:
   // methods in ../pgen
   void InitUserMeshData(ParameterInput *pin);
   void EnrollUserBoundaryFunction (enum BoundaryFace face, BValFunc_t my_func);
-  void EnrollUserRefinementCondition(AMRFlag_t amrflag);
+  void EnrollUserRefinementCondition(AMRFlagFunc_t amrflag);
   void EnrollUserMeshGenerator(enum direction dir, MeshGenFunc_t my_mg);
   void EnrollUserSourceTermFunction(SrcTermFunc_t my_func);
 };

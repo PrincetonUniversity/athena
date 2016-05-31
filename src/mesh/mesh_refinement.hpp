@@ -24,27 +24,19 @@ class Coordinates;
 struct FaceField;
 class BoundaryValues;
 
+//--------------------------------------------------------------------------------------
+//! \class MeshRefinement
+//  \brief
 
-class MeshRefinement
-{
-private:
-  MeshBlock *pmy_mblock_;
-  Coordinates *pcoarsec;
-  AthenaArray<Real> coarse_cons_, coarse_prim_, coarse_bcc_;
-  FaceField coarse_b_;
-  AthenaArray<Real> fvol_[2][2], sarea_x1_[2][2], sarea_x2_[2][3], sarea_x3_[3][2];
-
-  AMRFlag_t AMRFlag_;
-  int refine_flag_, neighbor_rflag_, deref_count_, deref_threshold_;
-
+class MeshRefinement {
   friend class BoundaryValues;
   friend class MeshBlock;
   friend class Mesh;
-
 public:
   MeshRefinement(MeshBlock *pmb, ParameterInput *pin);
   ~MeshRefinement();
 
+  // functions
   void RestrictCellCenteredValues(const AthenaArray<Real> &fine,
                                   AthenaArray<Real> &coarse, int sn, int en,
                                   int csi, int cei, int csj, int cej, int csk, int cek);
@@ -65,8 +57,19 @@ public:
                                int si, int ei, int sj, int ej, int sk, int ek);
   void ProlongateInternalField(FaceField &fine,
                                int si, int ei, int sj, int ej, int sk, int ek);
-
   void CheckRefinementCondition(void);
+
+private:
+  // data
+  MeshBlock *pmy_mblock_;
+  Coordinates *pcoarsec;
+  AthenaArray<Real> coarse_cons_, coarse_prim_, coarse_bcc_;
+  FaceField coarse_b_;
+  AthenaArray<Real> fvol_[2][2], sarea_x1_[2][2], sarea_x2_[2][3], sarea_x3_[3][2];
+  int refine_flag_, neighbor_rflag_, deref_count_, deref_threshold_;
+
+  // functions
+  AMRFlagFunc_t AMRFlag_;
 };
 
-#endif
+#endif // MESH_REFINEMENT_HPP
