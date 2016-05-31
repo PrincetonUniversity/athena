@@ -36,23 +36,30 @@ class Hydro;
 class Field;
 class EquationOfState;
 
+//--------------------------------------------------------------------------------------
 //! \struct NeighborBlock
 //  \brief neighbor rank, level, and ids
+
 typedef struct NeighborBlock {
   int rank, level, gid, lid, ox1, ox2, ox3, fi1, fi2, bufid, targetid;
   enum NeighborType type;
   enum BoundaryFace fid;
   enum edgeid eid;
   bool polar; // flag indicating boundary is across a pole
+
   NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1), ox1(-1), ox2(-1), ox3(-1),
     bufid(-1), targetid(-1), fi1(-1), fi2(-1), type(NEIGHBOR_NONE),
     fid(FACE_UNDEF), eid (edgeid_undefined), polar(false) {};
+
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
                    int iox3, enum NeighborType itype, int ibid, int itargetid,
                    bool ipolar, int ifi1, int ifi2);
 } NeighborBlock;
 
-// Struct for describing neighbors around pole at same radius and polar angle
+//--------------------------------------------------------------------------------------
+//! \struct PolarNeighborBlock
+//  \brief Struct for describing neighbors around pole at same radius and polar angle
+
 typedef struct PolarNeighborBlock {
   int rank;    // MPI rank of neighbor
   int lid;     // local ID of neighbor
@@ -60,8 +67,10 @@ typedef struct PolarNeighborBlock {
   bool north;  // flag that is true for North pole and false for South pole
 } PolarNeighborBlock;
 
+//--------------------------------------------------------------------------------------
 //! \struct RegionSize
 //  \brief physical size and number of cells in a Mesh
+
 typedef struct RegionSize {
   Real x1min, x2min, x3min;
   Real x1max, x2max, x3max;
@@ -69,7 +78,7 @@ typedef struct RegionSize {
   int nx1, nx2, nx3;        // number of active cells (not including ghost zones)
 } RegionSize;
 
-
+//--------------------------------------------------------------------------------------
 //! \class MeshBlock
 //  \brief data/functions associated with a single block
 
@@ -120,8 +129,6 @@ public:
   // functions
   size_t GetBlockSizeInBytes(void);
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
-  int FindNeighborGID(int ox1, int ox2, int ox3);
-  void IntegrateConservative(Real *tcons);
   void UserWorkInLoop(void); // in ../pgen
   void InitUserMeshBlockData(ParameterInput *pin); // in ../pgen
 
@@ -141,6 +148,7 @@ private:
   void ProblemGenerator(ParameterInput *pin); // in ../pgen
 };
 
+//--------------------------------------------------------------------------------------
 //! \class Mesh
 //  \brief data/functions associated with the overall mesh
 
@@ -154,7 +162,6 @@ class Mesh {
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
-
 
 public:
   Mesh(ParameterInput *pin, int test_flag=0);
@@ -184,7 +191,6 @@ public:
   void NewTimeStep(void);
   void AdaptiveMeshRefinement(ParameterInput *pin);
   MeshBlock* FindMeshBlock(int tgid);
-  void TestConservation(void);
   void UserWorkAfterLoop(ParameterInput *pin); // method in ../pgen
 
 private:
@@ -210,7 +216,7 @@ private:
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
   void OutputMeshStructure(int dim);
-  void LoadBalancing(Real *clist, int *rlist, int *slist, int *nlist, int nb);
+  void LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb);
 
   // methods in ../pgen
   void InitUserMeshData(ParameterInput *pin);
@@ -220,17 +226,16 @@ private:
   void EnrollUserSourceTermFunction(SrcTermFunc_t my_func);
 };
 
-
 //--------------------------------------------------------------------------------------
 // \!fn Real DefaultMeshGeneratorX1(Real x, RegionSize rs)
 // \brief x1 mesh generator function, x is the logical location; x=i/nx1
+
 inline Real DefaultMeshGeneratorX1(Real x, RegionSize rs)
 {
   Real lw, rw;
-  if(rs.x1rat==1.0)
+  if(rs.x1rat==1.0) {
     rw=x, lw=1.0-x;
-  else
-  {
+  } else {
     Real ratn=pow(rs.x1rat,rs.nx1);
     Real rnx=pow(rs.x1rat,x*rs.nx1);
     lw=(rnx-ratn)/(1.0-ratn);
@@ -242,13 +247,13 @@ inline Real DefaultMeshGeneratorX1(Real x, RegionSize rs)
 //--------------------------------------------------------------------------------------
 // \!fn Real DefaultMeshGeneratorX2(Real x, RegionSize rs)
 // \brief x2 mesh generator function, x is the logical location; x=j/nx2
+
 inline Real DefaultMeshGeneratorX2(Real x, RegionSize rs)
 {
   Real lw, rw;
-  if(rs.x2rat==1.0)
+  if(rs.x2rat==1.0) {
     rw=x, lw=1.0-x;
-  else
-  {
+  } else {
     Real ratn=pow(rs.x2rat,rs.nx2);
     Real rnx=pow(rs.x2rat,x*rs.nx2);
     lw=(rnx-ratn)/(1.0-ratn);
@@ -260,13 +265,13 @@ inline Real DefaultMeshGeneratorX2(Real x, RegionSize rs)
 //--------------------------------------------------------------------------------------
 // \!fn Real DefaultMeshGeneratorX3(Real x, RegionSize rs)
 // \brief x3 mesh generator function, x is the logical location; x=k/nx3
+
 inline Real DefaultMeshGeneratorX3(Real x, RegionSize rs)
 {
   Real lw, rw;
-  if(rs.x3rat==1.0)
+  if(rs.x3rat==1.0) {
     rw=x, lw=1.0-x;
-  else
-  {
+  } else {
     Real ratn=pow(rs.x3rat,rs.nx3);
     Real rnx=pow(rs.x3rat,x*rs.nx3);
     lw=(rnx-ratn)/(1.0-ratn);
@@ -275,4 +280,4 @@ inline Real DefaultMeshGeneratorX3(Real x, RegionSize rs)
   return rs.x3min*lw+rs.x3max*rw;
 }
 
-#endif
+#endif  // MESH_HPP
