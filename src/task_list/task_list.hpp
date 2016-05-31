@@ -63,7 +63,6 @@ struct Task {
 
 class TaskList {
 public:
-  // constructor/destructor
   TaskList(Mesh *pm);
   ~TaskList();
 
@@ -73,6 +72,8 @@ public:
   // functions
   void AddTask(int st, unsigned long int id, int sd, unsigned long int dep);
   enum TaskListStatus DoOneTask(MeshBlock *pmb);
+  void CreateVL2Integrator(Mesh *pm);
+
 private:
   Mesh* pmy_mesh_;
   Task task_list_[64];
