@@ -489,6 +489,12 @@ bool ParameterInput::GetBoolean(std::string block, std::string name)
     throw std::runtime_error(msg.str().c_str());
   }
 
+  // check is string contains integers 0 or 1 (instead of true or false) and return
+  if (pl->param_value.compare(0, 1, "0")==0 ||
+      pl->param_value.compare(0, 1, "1")==0) {
+    return (bool)atoi(pl->param_value.c_str());
+  }
+
   // convert string to all lower case
   std::transform(pl->param_value.begin(), pl->param_value.end(), 
                  pl->param_value.begin(), ::tolower);
