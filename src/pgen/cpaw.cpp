@@ -127,9 +127,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
-  // return if compute_error=0 (default)
-  int error_test;
-  if ((error_test=pin->GetOrAddInteger("problem","compute_error",0))==0) return;
+  if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
 
   // Initialize errors to zero
   Real err[NHYDRO+NFIELD];

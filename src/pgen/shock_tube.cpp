@@ -46,9 +46,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
   MeshBlock *pmb = pblock;
 
-  // return if compute_error=0 (default)
-  int error_test;
-  if ((error_test=pin->GetOrAddInteger("problem","compute_error",0))==0) return;
+  if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
   
   // Read shock direction and set array indices
   int shk_dir = pin->GetInteger("problem","shock_dir"); 
