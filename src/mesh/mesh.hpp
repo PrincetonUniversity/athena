@@ -41,15 +41,14 @@ class EquationOfState;
 //  \brief neighbor rank, level, and ids
 
 typedef struct NeighborBlock {
-  int rank, level, gid, lid, ox1, ox2, ox3, fi1, fi2, bufid, targetid;
+  int rank, level, gid, lid, ox1, ox2, ox3, fi1, fi2, bufid, eid, targetid;
   enum NeighborType type;
   enum BoundaryFace fid;
-  enum edgeid eid;
   bool polar; // flag indicating boundary is across a pole
 
   NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1), ox1(-1), ox2(-1), ox3(-1),
-    bufid(-1), targetid(-1), fi1(-1), fi2(-1), type(NEIGHBOR_NONE),
-    fid(FACE_UNDEF), eid (edgeid_undefined), polar(false) {};
+    bufid(-1), targetid(-1), fi1(-1), fi2(-1), eid(-1), type(NEIGHBOR_NONE),
+    fid(FACE_UNDEF), polar(false) {};
 
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
                    int iox3, enum NeighborType itype, int ibid, int itargetid,
@@ -222,7 +221,7 @@ private:
   void InitUserMeshData(ParameterInput *pin);
   void EnrollUserBoundaryFunction (enum BoundaryFace face, BValFunc_t my_func);
   void EnrollUserRefinementCondition(AMRFlagFunc_t amrflag);
-  void EnrollUserMeshGenerator(enum direction dir, MeshGenFunc_t my_mg);
+  void EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc_t my_mg);
   void EnrollUserSourceTermFunction(SrcTermFunc_t my_func);
 };
 

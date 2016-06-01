@@ -50,11 +50,11 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
   u1.NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1);
   w1.NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1);
 
-  flux[x1face].NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1+1);
+  flux[X1DIR].NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1+1);
   if (pmy_block->block_size.nx2 > 1) 
-    flux[x2face].NewAthenaArray(NHYDRO,ncells3,ncells2+1,ncells1);
+    flux[X2DIR].NewAthenaArray(NHYDRO,ncells3,ncells2+1,ncells1);
   if (pmy_block->block_size.nx3 > 1) 
-    flux[x3face].NewAthenaArray(NHYDRO,ncells3+1,ncells2,ncells1);
+    flux[X3DIR].NewAthenaArray(NHYDRO,ncells3+1,ncells2,ncells1);
 
   // Allocate memory for metric
   // TODO: this should only be done if we are in GR
@@ -116,9 +116,9 @@ Hydro::~Hydro()
   g_inv.DeleteAthenaArray();
   ifov.DeleteAthenaArray();
 
-  flux[x1face].DeleteAthenaArray();
-  if (pmy_block->block_size.nx2 > 1) flux[x2face].DeleteAthenaArray();
-  if (pmy_block->block_size.nx3 > 1) flux[x3face].DeleteAthenaArray();
+  flux[X1DIR].DeleteAthenaArray();
+  if (pmy_block->block_size.nx2 > 1) flux[X2DIR].DeleteAthenaArray();
+  if (pmy_block->block_size.nx3 > 1) flux[X3DIR].DeleteAthenaArray();
 
   dt1_.DeleteAthenaArray();
   dt2_.DeleteAthenaArray();

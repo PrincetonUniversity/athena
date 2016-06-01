@@ -43,9 +43,9 @@
 void Hydro::FluxDivergence(MeshBlock *pmb,AthenaArray<Real> &u,
   AthenaArray<Real> &w, FaceField &b, AthenaArray<Real> &bcc, const int step)
 {
-  AthenaArray<Real> &x1flux=flux[x1face];
-  AthenaArray<Real> &x2flux=flux[x2face];
-  AthenaArray<Real> &x3flux=flux[x3face];
+  AthenaArray<Real> &x1flux=flux[X1DIR];
+  AthenaArray<Real> &x2flux=flux[X2DIR];
+  AthenaArray<Real> &x3flux=flux[X3DIR];
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   Real dt;

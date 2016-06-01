@@ -54,9 +54,9 @@ void BoundaryValues::SendFluxCorrection(int step)
 {
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
-  AthenaArray<Real> &x1flux=pmb->phydro->flux[x1face];
-  AthenaArray<Real> &x2flux=pmb->phydro->flux[x2face];
-  AthenaArray<Real> &x3flux=pmb->phydro->flux[x3face];
+  AthenaArray<Real> &x1flux=pmb->phydro->flux[X1DIR];
+  AthenaArray<Real> &x2flux=pmb->phydro->flux[X2DIR];
+  AthenaArray<Real> &x3flux=pmb->phydro->flux[X3DIR];
   int fx1=pmb->loc.lx1&1L, fx2=pmb->loc.lx2&1L, fx3=pmb->loc.lx3&1L;
   int fi1, fi2;
 
@@ -181,9 +181,9 @@ bool BoundaryValues::ReceiveFluxCorrection(int step)
 {
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
-  AthenaArray<Real> &x1flux=pmb->phydro->flux[x1face];
-  AthenaArray<Real> &x2flux=pmb->phydro->flux[x2face];
-  AthenaArray<Real> &x3flux=pmb->phydro->flux[x3face];
+  AthenaArray<Real> &x1flux=pmb->phydro->flux[X1DIR];
+  AthenaArray<Real> &x2flux=pmb->phydro->flux[X2DIR];
+  AthenaArray<Real> &x3flux=pmb->phydro->flux[X3DIR];
   bool flag=true;
 
   for(int n=0; n<pmb->nneighbor; n++) {
