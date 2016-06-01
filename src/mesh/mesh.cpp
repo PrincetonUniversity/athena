@@ -60,7 +60,7 @@
 //--------------------------------------------------------------------------------------
 // Mesh constructor, builds mesh at start of calculation using parameters in input file
 
-Mesh::Mesh(ParameterInput *pin, int test_flag)
+Mesh::Mesh(ParameterInput *pin, int mesh_test)
 {
   std::stringstream msg;
   RegionSize block_size;
@@ -69,11 +69,10 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   enum BoundaryFlag block_bcs[6];
   int nbmax, dim;
 
-// mesh test
-  if(test_flag>0) Globals::nranks=test_flag;
+  // mesh test
+  if(mesh_test>0) Globals::nranks=mesh_test;
 
-// read time and cycle limits from input file
-
+  // read time and cycle limits from input file
   start_time = pin->GetOrAddReal("time","start_time",0.0);
   tlim       = pin->GetReal("time","tlim");
   cfl_number = pin->GetReal("time","cfl_number");
@@ -84,8 +83,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   ncycle = 0;
   niusermeshdata_=0, nrusermeshdata_=0;
 
-// read number of OpenMP threads for mesh
-
+  // read number of OpenMP threads for mesh
   num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
   if (num_mesh_threads_ < 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -94,8 +92,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     throw std::runtime_error(msg.str().c_str());
   }
 
-// read number of grid cells in root level of mesh from input file.  
-
+  // read number of grid cells in root level of mesh from input file.  
   mesh_size.nx1 = pin->GetInteger("mesh","nx1");
   if (mesh_size.nx1 < 4) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -130,7 +127,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   if(mesh_size.nx2>1) dim=2;
   if(mesh_size.nx3>1) dim=3;
 
-// check cfl_number
+  // check cfl_number
   if(cfl_number > 1.0 && dim==1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "The CFL number must be smaller than 1.0 in 1D simulation" << std::endl;
@@ -147,8 +144,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     throw std::runtime_error(msg.str().c_str());
   }
 
-// read physical size of mesh (root level) from input file.  
-
+  // read physical size of mesh (root level) from input file.  
   mesh_size.x1min = pin->GetReal("mesh","x1min");
   mesh_size.x2min = pin->GetReal("mesh","x2min");
   mesh_size.x3min = pin->GetReal("mesh","x3min");
@@ -176,8 +172,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     throw std::runtime_error(msg.str().c_str());
   }
 
-// read ratios of grid cell size in each direction
-
+  // read ratios of grid cell size in each direction
   block_size.x1rat = mesh_size.x1rat = pin->GetOrAddReal("mesh","x1rat",1.0);
   block_size.x2rat = mesh_size.x2rat = pin->GetOrAddReal("mesh","x2rat",1.0);
   block_size.x3rat = mesh_size.x3rat = pin->GetOrAddReal("mesh","x3rat",1.0);
@@ -209,7 +204,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   mesh_bcs[INNER_X3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ix3_bc","none"));
   mesh_bcs[OUTER_X3] = GetBoundaryFlag(pin->GetOrAddString("mesh","ox3_bc","none"));
 
-// read MeshBlock parameters
+  // read MeshBlock parameters
   block_size.nx1 = pin->GetOrAddInteger("meshblock","nx1",mesh_size.nx1);
   if(dim>=2)
     block_size.nx2 = pin->GetOrAddInteger("meshblock","nx2",mesh_size.nx2);
@@ -220,7 +215,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   else
     block_size.nx3=mesh_size.nx3;
 
-// check consistency of the block and mesh
+  // check consistency of the block and mesh
   if(mesh_size.nx1%block_size.nx1 != 0
   || mesh_size.nx2%block_size.nx2 != 0
   || mesh_size.nx3%block_size.nx3 != 0) {
@@ -235,7 +230,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     throw std::runtime_error(msg.str().c_str());
   }
 
-// calculate the number of the blocks
+  // calculate the number of the blocks
   nrbx1=mesh_size.nx1/block_size.nx1;
   nrbx2=mesh_size.nx2/block_size.nx2;
   nrbx3=mesh_size.nx3/block_size.nx3;
@@ -441,15 +436,15 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 #ifdef MPI_PARALLEL
   // check if there are sufficient blocks
   if(nbtotal < Globals::nranks) {
-    if(test_flag==0) {
+    if(mesh_test==0) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
-          << "Too few blocks: nbtotal (" << nbtotal << ") < nranks ("<< Globals::nranks
-          << ")" << std::endl;
+          << "Too few mesh blocks: nbtotal ("<< nbtotal <<") < nranks ("
+          << Globals::nranks << ")" << std::endl;
       throw std::runtime_error(msg.str().c_str());
     } else { // test
       std::cout << "### Warning in Mesh constructor" << std::endl
-          << "Too few blocks: nbtotal (" << nbtotal << ") < nranks ("<< Globals::nranks
-          << ")" << std::endl;
+          << "Too few mesh blocks: nbtotal ("<< nbtotal <<") < nranks ("
+          << Globals::nranks << ")" << std::endl;
     }
   }
 #endif
@@ -469,7 +464,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
     bddisp = new int [Globals::nranks];
   }
 
- // initialize cost array with the simplest estimate; all the blocks are equal
+  // initialize cost array with the simplest estimate; all the blocks are equal
   for(int i=0;i<nbtotal;i++) costlist[i]=1.0;
 
   LoadBalance(costlist, ranklist, nslist, nblist, nbtotal);
@@ -477,7 +472,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   // Output some diagnostic information to terminal
 
   // Output MeshBlock list and quit (mesh test only); do not create meshes
-  if (test_flag>0) {
+  if (mesh_test>0) {
     if (Globals::my_rank==0) OutputMeshStructure(dim);
     return;
   }
@@ -485,7 +480,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   // create MeshBlock list for this process
   int nbs=nslist[Globals::my_rank];
   int nbe=nbs+nblist[Globals::my_rank]-1;
-// create MeshBlock list for this process
+  // create MeshBlock list for this process
   for(int i=nbs;i<=nbe;i++) {
     SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
     // create a block and add into the link list
@@ -503,7 +498,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
   }
   pblock=pfirst;
 
-// create new Task List, requires mesh to already be constructed
+  // create new Task List, requires mesh to already be constructed
   ptlist = new TaskList(this);
 
 }
@@ -511,7 +506,7 @@ Mesh::Mesh(ParameterInput *pin, int test_flag)
 //--------------------------------------------------------------------------------------
 // Mesh constructor for restarts. Load the restart file
 
-Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
+Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
 {
   std::stringstream msg;
   RegionSize block_size;
@@ -520,18 +515,17 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   int i, j, dim;
   IOWrapperSize_t *offset, datasize, listsize, headeroffset;
 
-// mesh test
-  if(test_flag>0) Globals::nranks=test_flag;
+  // mesh test
+  if(mesh_test>0) Globals::nranks=mesh_test;
 
-// read time and cycle limits from input file
-
+  // read time and cycle limits from input file
   start_time = pin->GetOrAddReal("time","start_time",0.0);
   tlim       = pin->GetReal("time","tlim");
   cfl_number = pin->GetReal("time","cfl_number");
   nlim = pin->GetOrAddInteger("time","nlim",-1);
   niusermeshdata_=0, nrusermeshdata_=0;
 
-// read number of OpenMP threads for mesh
+  // read number of OpenMP threads for mesh
   num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
   if (num_mesh_threads_ < 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -587,7 +581,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   if(mesh_size.nx2>1) dim=2;
   if(mesh_size.nx3>1) dim=3;
 
-// check cfl_number
+  // check cfl_number
   if(cfl_number > 1.0 && dim==1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "The CFL number must be smaller than 1.0 in 1D simulation" << std::endl;
@@ -616,7 +610,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   block_size.nx2 = pin->GetOrAddReal("meshblock","nx2",mesh_size.nx2);
   block_size.nx3 = pin->GetOrAddReal("meshblock","nx3",mesh_size.nx3);
 
-// calculate the number of the blocks
+  // calculate the number of the blocks
   nrbx1=mesh_size.nx1/block_size.nx1;
   nrbx2=mesh_size.nx2/block_size.nx2;
   nrbx3=mesh_size.nx3/block_size.nx3;
@@ -747,16 +741,16 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
 
 #ifdef MPI_PARALLEL
   if(nbtotal < Globals::nranks) {
-    if(test_flag==0) {
+    if(mesh_test==0) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
-          << "Too few blocks: nbtotal (" << nbtotal << ") < nranks ("<< Globals::nranks
-          << ")" << std::endl;
+          << "Too few mesh blocks: nbtotal ("<< nbtotal <<") < nranks ("
+          << Globals::nranks << ")" << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
     else { // test
       std::cout << "### Warning in Mesh constructor" << std::endl
-          << "Too few blocks: nbtotal (" << nbtotal << ") < nranks ("<< Globals::nranks
-          << ")" << std::endl;
+          << "Too few mesh blocks: nbtotal ("<< nbtotal <<") < nranks ("
+          << Globals::nranks << ")" << std::endl;
       return;
     }
   }
@@ -776,7 +770,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
   LoadBalance(costlist, ranklist, nslist, nblist, nbtotal);
 
   // Output MeshBlock list and quit (mesh test only); do not create meshes
-  if(test_flag>0) {
+  if(mesh_test>0) {
     if(Globals::my_rank==0) OutputMeshStructure(dim);
     delete [] offset;
     return;
@@ -821,10 +815,10 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int test_flag)
     throw std::runtime_error(msg.str().c_str());
   }
 
-// create new Task List
+  // create new Task List
   ptlist = new TaskList(this);
 
-// clean up
+  // clean up
   delete [] offset;
 }
 
