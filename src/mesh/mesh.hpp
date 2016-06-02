@@ -189,6 +189,7 @@ public:
   void UpdateOneStep(void);
   void NewTimeStep(void);
   void AdaptiveMeshRefinement(ParameterInput *pin);
+  unsigned int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3);
   MeshBlock* FindMeshBlock(int tgid);
   void UserWorkAfterLoop(ParameterInput *pin); // method in ../pgen
 
