@@ -135,11 +135,12 @@ private:
   // data
   NeighborBlock neighbor[56];
   PolarNeighborBlock *polar_neighbor_north, *polar_neighbor_south;
+  int nneighbor;
   Real cost;
   Real new_block_dt;
   unsigned long int finished_tasks[4];
-  int first_task, num_tasks_todo, nneighbor;
-  int nrusermeshblockdata_, niusermeshblockdata_;
+  int indx_first_task_, num_tasks_left_;
+  int nreal_user_meshblock_data_, nint_user_meshblock_data_;
 
   // functions
   void AllocateRealUserMeshBlockDataField(int n);
@@ -206,7 +207,7 @@ private:
   MeshBlockTree tree;
   long int nrbx1, nrbx2, nrbx3;
   bool user_meshgen_[3];
-  int niusermeshdata_, nrusermeshdata_;
+  int nreal_user_mesh_data_, nint_user_mesh_data_;
 
   // functions
   MeshGenFunc_t MeshGenerator_[3];

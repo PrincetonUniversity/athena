@@ -66,7 +66,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   loc=iloc;
   cost=1.0;
 
-  nrusermeshblockdata_ = 0, niusermeshblockdata_ = 0; 
+  nreal_user_meshblock_data_ = 0, nint_user_meshblock_data_ = 0; 
 
   // initialize grid indices
 
@@ -147,7 +147,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   block_size = input_block;
   for(int i=0; i<6; i++) block_bcs[i] = input_bcs[i];
 
-  nrusermeshblockdata_ = 0, niusermeshblockdata_ = 0; 
+  nreal_user_meshblock_data_ = 0, nint_user_meshblock_data_ = 0; 
 
   // initialize grid indices
   is = NGHOST;
@@ -227,12 +227,12 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
 
   // load user MeshBlock data
-  for(int n=0; n<niusermeshblockdata_; n++) {
+  for(int n=0; n<nint_user_meshblock_data_; n++) {
     memcpy(iusermeshblockdata[n].data(), &(mbdata[os]),
            iusermeshblockdata[n].GetSizeInBytes());
     os+=iusermeshblockdata[n].GetSizeInBytes();
   }
-  for(int n=0; n<nrusermeshblockdata_; n++) {
+  for(int n=0; n<nreal_user_meshblock_data_; n++) {
     memcpy(rusermeshblockdata[n].data(), &(mbdata[os]),
            rusermeshblockdata[n].GetSizeInBytes());
     os+=rusermeshblockdata[n].GetSizeInBytes();
@@ -261,12 +261,12 @@ MeshBlock::~MeshBlock()
   delete peos;
 
   // delete user MeshBlock data
-  for(int n=0; n<nrusermeshblockdata_; n++)
+  for(int n=0; n<nreal_user_meshblock_data_; n++)
     rusermeshblockdata[n].DeleteAthenaArray();
-  if(nrusermeshblockdata_>0) delete [] rusermeshblockdata;
-  for(int n=0; n<niusermeshblockdata_; n++)
+  if(nreal_user_meshblock_data_>0) delete [] rusermeshblockdata;
+  for(int n=0; n<nint_user_meshblock_data_; n++)
     iusermeshblockdata[n].DeleteAthenaArray();
-  if(niusermeshblockdata_>0) delete [] iusermeshblockdata;
+  if(nint_user_meshblock_data_>0) delete [] iusermeshblockdata;
 }
 
 //--------------------------------------------------------------------------------------
@@ -275,13 +275,13 @@ MeshBlock::~MeshBlock()
 
 void MeshBlock::AllocateRealUserMeshBlockDataField(int n)
 {
-  if(nrusermeshblockdata_!=0) {
+  if(nreal_user_meshblock_data_!=0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateRealUserMeshBlockDataField"
         << std::endl << "User MeshBlock data arrays are already allocated" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  nrusermeshblockdata_=n;
+  nreal_user_meshblock_data_=n;
   rusermeshblockdata = new AthenaArray<Real>[n];
   return;
 }
@@ -292,13 +292,13 @@ void MeshBlock::AllocateRealUserMeshBlockDataField(int n)
 
 void MeshBlock::AllocateIntUserMeshBlockDataField(int n)
 {
-  if(niusermeshblockdata_!=0) {
+  if(nint_user_meshblock_data_!=0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateIntusermeshblockDataField"
         << std::endl << "User MeshBlock data arrays are already allocated" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  niusermeshblockdata_=n;
+  nint_user_meshblock_data_=n;
   iusermeshblockdata = new AthenaArray<int>[n];
   return;
 }
@@ -323,9 +323,9 @@ size_t MeshBlock::GetBlockSizeInBytes(void)
 
 
   // calculate user MeshBlock data size
-  for(int n=0; n<niusermeshblockdata_; n++)
+  for(int n=0; n<nint_user_meshblock_data_; n++)
     size+=iusermeshblockdata[n].GetSizeInBytes();
-  for(int n=0; n<nrusermeshblockdata_; n++)
+  for(int n=0; n<nreal_user_meshblock_data_; n++)
     size+=rusermeshblockdata[n].GetSizeInBytes();
 
   return size;

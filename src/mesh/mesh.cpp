@@ -81,7 +81,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
 
   nlim = pin->GetOrAddInteger("time","nlim",-1);
   ncycle = 0;
-  niusermeshdata_=0, nrusermeshdata_=0;
+  nint_user_mesh_data_=0, nreal_user_mesh_data_=0;
 
   // read number of OpenMP threads for mesh
   num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
@@ -523,7 +523,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   tlim       = pin->GetReal("time","tlim");
   cfl_number = pin->GetReal("time","cfl_number");
   nlim = pin->GetOrAddInteger("time","nlim",-1);
-  niusermeshdata_=0, nrusermeshdata_=0;
+  nint_user_mesh_data_=0, nreal_user_mesh_data_=0;
 
   // read number of OpenMP threads for mesh
   num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
@@ -658,9 +658,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
 
   // read user Mesh data
   IOWrapperSize_t udsize = 0;
-  for(int n=0; n<niusermeshdata_; n++)
+  for(int n=0; n<nint_user_mesh_data_; n++)
     udsize+=iusermeshdata[n].GetSizeInBytes();
-  for(int n=0; n<nrusermeshdata_; n++)
+  for(int n=0; n<nreal_user_mesh_data_; n++)
     udsize+=rusermeshdata[n].GetSizeInBytes();
   if(udsize!=0) {
     char *userdata = new char[udsize];
@@ -677,12 +677,12 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
 #endif
 
     IOWrapperSize_t udoffset=0;
-    for(int n=0; n<niusermeshdata_; n++) {
+    for(int n=0; n<nint_user_mesh_data_; n++) {
       memcpy(iusermeshdata[n].data(), &(userdata[udoffset]),
              iusermeshdata[n].GetSizeInBytes());
       udoffset+=iusermeshdata[n].GetSizeInBytes();
     }
-    for(int n=0; n<nrusermeshdata_; n++) {
+    for(int n=0; n<nreal_user_mesh_data_; n++) {
       memcpy(rusermeshdata[n].data(), &(userdata[udoffset]),
              rusermeshdata[n].GetSizeInBytes());
       udoffset+=rusermeshdata[n].GetSizeInBytes();
@@ -849,12 +849,12 @@ Mesh::~Mesh()
     delete [] bddisp;
   }
   // delete user Mesh data
-  for(int n=0; n<nrusermeshdata_; n++)
+  for(int n=0; n<nreal_user_mesh_data_; n++)
     rusermeshdata[n].DeleteAthenaArray();
-  if(nrusermeshdata_>0) delete [] rusermeshdata;
-  for(int n=0; n<niusermeshdata_; n++)
+  if(nreal_user_mesh_data_>0) delete [] rusermeshdata;
+  for(int n=0; n<nint_user_mesh_data_; n++)
     iusermeshdata[n].DeleteAthenaArray();
-  if(niusermeshdata_>0) delete [] iusermeshdata;
+  if(nint_user_mesh_data_>0) delete [] iusermeshdata;
 }
 
 //--------------------------------------------------------------------------------------
@@ -1068,13 +1068,13 @@ void Mesh::EnrollUserSourceTermFunction(SrcTermFunc_t my_func)
 
 void Mesh::AllocateRealUserMeshDataField(int n)
 {
-  if(nrusermeshdata_!=0) {
+  if(nreal_user_mesh_data_!=0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Mesh::AllocateRealUserMeshDataField"
         << std::endl << "User Mesh data arrays are already allocated" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  nrusermeshdata_=n;
+  nreal_user_mesh_data_=n;
   rusermeshdata = new AthenaArray<Real>[n];
   return;
 }
@@ -1085,13 +1085,13 @@ void Mesh::AllocateRealUserMeshDataField(int n)
 
 void Mesh::AllocateIntUserMeshDataField(int n)
 {
-  if(niusermeshdata_!=0) {
+  if(nint_user_mesh_data_!=0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Mesh::AllocateIntUserMeshDataField"
         << std::endl << "User Mesh data arrays are already allocated" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  niusermeshdata_=n;
+  nint_user_mesh_data_=n;
   iusermeshdata = new AthenaArray<int>[n];
   return;
 }
@@ -1242,8 +1242,8 @@ void Mesh::UpdateOneStep(void)
 
   // initialize
   while (pmb != NULL)  {
-    pmb->first_task=0;
-    pmb->num_tasks_todo=ptlist->ntasks;
+    pmb->indx_first_task_ = 0;
+    pmb->num_tasks_left_ = ptlist->ntasks;
     for(int i=0; i<4; ++i) pmb->finished_tasks[i]=0; // encodes which tasks are done
     pmb->pbval->StartReceivingAll();
     pmb=pmb->next;
