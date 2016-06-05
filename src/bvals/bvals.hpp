@@ -104,7 +104,7 @@ public:
 
   void Initialize(void);
   void StartReceivingForInit(void);
-  void StartReceivingAll(void);
+  void StartReceivingAll(int step);
 
   void CheckBoundary(void);
 
@@ -164,7 +164,7 @@ public:
                                FaceField &bfdst, AthenaArray<Real> &bcdst);
 
   void ClearBoundaryForInit(void);
-  void ClearBoundaryAll(void);
+  void ClearBoundaryAll(int step);
 
 //  int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2, int bmax);
 //  int BufferID(int dim, bool multilevel, bool face_only);

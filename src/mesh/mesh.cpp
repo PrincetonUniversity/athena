@@ -1237,33 +1237,41 @@ MeshBlock* Mesh::FindMeshBlock(int tgid)
 
 void Mesh::CompleteAllMeshTaskLists(void)
 {
-  MeshBlock *pmb = pblock;
-  int nmb_left = nblist[Globals::my_rank];
 
-  // initialize
-  while (pmb != NULL)  {
-    pmb->indx_first_task_ = 0;
-    pmb->num_tasks_left_ = ptlist->ntasks;
-    for(int i=0; i<4; ++i) pmb->finished_tasks[i]=0; // encodes which tasks are done
-    pmb->pbval->StartReceivingAll();
-    pmb=pmb->next;
-  }
-
-  // main loop
-  while(nmb_left > 0) {
-    pmb = pblock;
+  for (int step=1; step<=ptlist->nloop_over_list; ++step) {
+    MeshBlock *pmb = pblock;
+    int nmb_left = nblist[Globals::my_rank];
+    // initialize, start MPI communications (if needed)
     while (pmb != NULL)  {
-      if(ptlist->DoAllTasksPossible(pmb)==TL_COMPLETE) // task list completed
-        nmb_left--;
+      pmb->indx_first_task_ = 0;
+      pmb->num_tasks_left_ = ptlist->ntasks;
+      pmb->finished_tasks = 0; // encodes which tasks are done
+      if(step==1)pmb->pbval->StartReceivingAll(1);
+      if(step==2)pmb->pbval->StartReceivingAll(0);
       pmb=pmb->next;
     }
+//    std::cout << "here0 on rank=" << Globals::my_rank <<" step="<<step<< std::endl;
+
+    // cycle through all MeshBlocks and perform all tasks possible
+    while(nmb_left > 0) {
+      pmb = pblock;
+      while (pmb != NULL)  {
+        if (ptlist->DoAllTasksPossible(pmb,step) == TL_COMPLETE) nmb_left--;
+        pmb=pmb->next;
+      }
+    }
+//    std::cout << "here1 on rank=" << Globals::my_rank <<" step="<<step<< std::endl;
+
+    // clear boundary buffers
+    pmb = pblock;
+    while (pmb != NULL)  {
+      if(step==1)pmb->pbval->ClearBoundaryAll(1);
+      if(step==2)pmb->pbval->ClearBoundaryAll(0);
+      pmb=pmb->next;
+    }
+//    std::cout << "here2 on rank=" << Globals::my_rank <<" step="<<step<< std::endl;
   }
 
-  pmb = pblock;
-  while (pmb != NULL)  {
-    pmb->pbval->ClearBoundaryAll();
-    pmb=pmb->next;
-  }
   return;
 }
 

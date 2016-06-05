@@ -301,18 +301,24 @@ enum TaskStatus PhysicalBoundary(MeshBlock *pmb, int step)
 
 enum TaskStatus UserWork(MeshBlock *pmb, int step)
 {
+  if (step != 2) return TASK_SUCCESS;
+
   pmb->UserWorkInLoop();
   return TASK_SUCCESS;
 }
 
 enum TaskStatus NewBlockTimeStep(MeshBlock *pmb, int step)
 {
+  if (step != 2) return TASK_SUCCESS;
+
   pmb->phydro->NewBlockTimeStep(pmb);
   return TASK_SUCCESS;
 }
 
 enum TaskStatus CheckRefinement(MeshBlock *pmb, int step)
 {
+  if (step != 2) return TASK_SUCCESS;
+
   pmb->pmr->CheckRefinementCondition();
   return TASK_SUCCESS;
 }
@@ -326,126 +332,68 @@ enum TaskStatus CheckRefinement(MeshBlock *pmb, int step)
 void TaskList::CreateTimeIntegrator(Mesh *pm)
 {
   if (MAGNETIC_FIELDS_ENABLED) { // MHD
-    // MHD predict
-    AddTask(1,CALC_FLX,1,NONE);
+    AddTask(CALC_FLX,NONE);
     if(pm->multilevel==true) { // SMR or AMR
-      AddTask(1,FLX_SEND,1,CALC_FLX);
-      AddTask(1,FLX_RECV,1,CALC_FLX);
-      AddTask(1,HYD_INT, 1,FLX_RECV);
-      AddTask(1,HYD_SEND,1,HYD_INT);
-      AddTask(1,CALC_EMF,1,CALC_FLX);
-      AddTask(1,EMF_SEND,1,CALC_EMF);
-      AddTask(1,EMF_RECV,1,EMF_SEND);
-      AddTask(1,FLD_INT, 1,EMF_RECV);
+      AddTask(FLX_SEND,CALC_FLX);
+      AddTask(FLX_RECV,CALC_FLX);
+      AddTask(HYD_INT, FLX_RECV);
+      AddTask(HYD_SEND,HYD_INT);
+      AddTask(CALC_EMF,CALC_FLX);
+      AddTask(EMF_SEND,CALC_EMF);
+      AddTask(EMF_RECV,EMF_SEND);
+      AddTask(FLD_INT, EMF_RECV);
     } else {
-      AddTask(1,HYD_INT, 1,CALC_FLX);
-      AddTask(1,HYD_SEND,1,HYD_INT);
-      AddTask(1,CALC_EMF,1,CALC_FLX);
-      AddTask(1,EMF_SEND,1,CALC_EMF);
-      AddTask(1,EMF_RECV,1,EMF_SEND);
-      AddTask(1,FLD_INT, 1,EMF_RECV);
+      AddTask(HYD_INT, CALC_FLX);
+      AddTask(HYD_SEND,HYD_INT);
+      AddTask(CALC_EMF,CALC_FLX);
+      AddTask(EMF_SEND,CALC_EMF);
+      AddTask(EMF_RECV,EMF_SEND);
+      AddTask(FLD_INT, EMF_RECV);
     }
-    AddTask(1,FLD_SEND,1,FLD_INT);
-    AddTask(1,HYD_RECV,1,NONE);
-    AddTask(1,FLD_RECV,1,NONE);
+    AddTask(FLD_SEND,FLD_INT);
+    AddTask(HYD_RECV,NONE);
+    AddTask(FLD_RECV,NONE);
     if(pm->multilevel==true) { // SMR or AMR
-      AddTask(1,PROLONG,1,(HYD_SEND|HYD_RECV|FLD_SEND|FLD_RECV));
-      AddTask(1,CON2PRIM,1,PROLONG);
+      AddTask(PROLONG, (HYD_SEND|HYD_RECV|FLD_SEND|FLD_RECV));
+      AddTask(CON2PRIM,PROLONG);
+    } else {
+      AddTask(CON2PRIM,(HYD_INT|HYD_RECV|FLD_INT|FLD_RECV));
     }
-    else {
-      AddTask(1,CON2PRIM,1,(HYD_INT|HYD_RECV|FLD_INT|FLD_RECV));
-    }
-    AddTask(1,PHY_BVAL,1,CON2PRIM);
+    AddTask(PHY_BVAL,CON2PRIM);
 
-    // MHD correct
-    AddTask(2,CALC_FLX,1,PHY_BVAL);
+  } else {  // HYDRO
+    AddTask(CALC_FLX,NONE);
     if(pm->multilevel==true) { // SMR or AMR
-      AddTask(2,FLX_SEND,2,CALC_FLX);
-      AddTask(2,FLX_RECV,2,CALC_FLX);
-      AddTask(2,HYD_INT, 2,FLX_RECV);
-      AddTask(2,HYD_SEND,2,HYD_INT);
-      AddTask(2,CALC_EMF,2,CALC_FLX);
-      AddTask(2,EMF_SEND,2,CALC_EMF);
-      AddTask(2,EMF_RECV,2,EMF_SEND);
-      AddTask(2,FLD_INT, 2,EMF_RECV);
-    } else {
-      AddTask(2,HYD_INT, 2,CALC_FLX);
-      AddTask(2,HYD_SEND,2,HYD_INT);
-      AddTask(2,CALC_EMF,2,CALC_FLX);
-      AddTask(2,EMF_SEND,2,CALC_EMF);
-      AddTask(2,EMF_RECV,2,EMF_SEND);
-      AddTask(2,FLD_INT, 2,EMF_RECV);
-    }
-    AddTask(2,FLD_SEND,2,FLD_INT);
-    AddTask(2,HYD_RECV,1,PHY_BVAL);
-    AddTask(2,FLD_RECV,1,PHY_BVAL);
-    if(pm->multilevel==true) { // SMR or AMR
-      AddTask(2,PROLONG,2,(HYD_SEND|HYD_RECV|FLD_SEND|FLD_RECV));
-      AddTask(2,CON2PRIM,2,PROLONG);
+      AddTask(FLX_SEND,CALC_FLX);
+      AddTask(FLX_RECV,CALC_FLX);
+      AddTask(HYD_INT, FLX_RECV);
     }
     else {
-      AddTask(2,CON2PRIM,2,(HYD_INT|HYD_RECV|FLD_INT|FLD_RECV));
+      AddTask(HYD_INT,CALC_FLX);
     }
-    AddTask(2,PHY_BVAL,2,CON2PRIM);
-  }
-  else {
-    // Hydro predict
-    AddTask(1,CALC_FLX,1,NONE);
+    AddTask(HYD_SEND,HYD_INT);
+    AddTask(HYD_RECV,NONE);
     if(pm->multilevel==true) { // SMR or AMR
-      AddTask(1,FLX_SEND,1,CALC_FLX);
-      AddTask(1,FLX_RECV,1,CALC_FLX);
-      AddTask(1,HYD_INT, 1,FLX_RECV);
-    }
-    else {
-      AddTask(1,HYD_INT, 1,CALC_FLX);
-    }
-    AddTask(1,HYD_SEND,1,HYD_INT);
-    AddTask(1,HYD_RECV,1,NONE);
-    if(pm->multilevel==true) { // SMR or AMR
-      AddTask(1,PROLONG,1,(HYD_SEND|HYD_RECV));
-      AddTask(1,CON2PRIM,1,PROLONG);
+      AddTask(PROLONG,(HYD_SEND|HYD_RECV));
+      AddTask(CON2PRIM,PROLONG);
     } else {
-      AddTask(1,CON2PRIM,1,(HYD_INT|HYD_RECV));
+      AddTask(CON2PRIM,(HYD_INT|HYD_RECV));
     }
-    AddTask(1,PHY_BVAL,1,CON2PRIM);
-
-    // Hydro correct
-    AddTask(2,CALC_FLX,1,PHY_BVAL);
-    if(pm->multilevel==true) { // SMR or AMR
-      AddTask(2,FLX_SEND,2,CALC_FLX);
-      AddTask(2,FLX_RECV,2,CALC_FLX);
-      AddTask(2,HYD_INT, 2,FLX_RECV);
-    }
-    else {
-      AddTask(2,HYD_INT, 2,CALC_FLX);
-    }
-    AddTask(2,HYD_SEND,2,HYD_INT);
-    AddTask(2,HYD_RECV,1,PHY_BVAL);
-    if(pm->multilevel==true) { // SMR or AMR
-      AddTask(2,PROLONG,2,(HYD_SEND|HYD_RECV));
-      AddTask(2,CON2PRIM,2,PROLONG);
-    } else {
-      AddTask(2,CON2PRIM,2,(HYD_INT|HYD_RECV));
-    }
-    AddTask(2,PHY_BVAL,2,CON2PRIM);
+    AddTask(PHY_BVAL,CON2PRIM);
   }
 
-  AddTask(2,USERWORK,2,PHY_BVAL);
-
-  // New timestep on mesh block
-  AddTask(2,NEW_DT,2,USERWORK);
+  AddTask(USERWORK,PHY_BVAL);
+  AddTask(NEW_DT,USERWORK);
   if(pm->adaptive==true) {
-    AddTask(2,AMR_FLAG,2,USERWORK);
+    AddTask(AMR_FLAG,USERWORK);
   }
 }
 
 //--------------------------------------------------------------------------------------//! \fn
 //  \brief
 
-void TaskList::AddTask(int stp_t,unsigned long int id,int stp_d,unsigned long int dep)
+void TaskList::AddTask(unsigned long int id,unsigned long int dep)
 {
-  task_list_[ntasks].step_of_task=stp_t;
-  task_list_[ntasks].step_of_depend=stp_d;
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 

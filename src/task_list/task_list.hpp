@@ -104,7 +104,6 @@ namespace IntegratorTask {
 //    \brief all data related to an individual Task
 
 struct Task {
-  int step_of_task, step_of_depend; 
   unsigned long int task_id;    // encodes step & task using bit positions in HydroTasks
   unsigned long int dependency; // encodes dependencies to other tasks using " " " "
   TaskFunc_t TaskFunc;          // function called by this task
@@ -120,10 +119,11 @@ public:
 
   // data
   int ntasks;
+  int nloop_over_list;
 
   // functions
-  void AddTask(int st, unsigned long int id, int sd, unsigned long int dep);
-  enum TaskListStatus DoAllTasksPossible(MeshBlock *pmb);
+  void AddTask(unsigned long int id, unsigned long int dep);
+  enum TaskListStatus DoAllTasksPossible(MeshBlock *pmb, int step);
   void CreateTimeIntegrator(Mesh *pm);
 
 private:

@@ -908,14 +908,16 @@ void BoundaryValues::StartReceivingForInit(void)
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::StartReceivingAll(void)
 //  \brief initiate MPI_Irecv for all the sweeps
-void BoundaryValues::StartReceivingAll(void)
+void BoundaryValues::StartReceivingAll(int step)
 {
-  for(int l=0;l<NSTEP;l++)
-    firsttime_[l]=true;
+//  for(int l=0;l<NSTEP;l++)
+//    firsttime_[l]=true;
+    firsttime_[step]=true;
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_mblock_;
   int mylevel=pmb->loc.level;
-  for(int l=0;l<NSTEP;l++) {
+//  for(int l=0;l<NSTEP;l++) {
+    int l=step;
     for(int n=0;n<pmb->nneighbor;n++) {
       NeighborBlock& nb = pmb->neighbor[n];
       if(nb.rank!=Globals::my_rank) { 
@@ -946,7 +948,7 @@ void BoundaryValues::StartReceivingAll(void)
         }
       }
     }
-  }
+// }
 #endif
   return;
 }
@@ -984,12 +986,13 @@ void BoundaryValues::ClearBoundaryForInit(void)
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ClearBoundaryAll(void)
 //  \brief clean up the boundary flags after each loop
-void BoundaryValues::ClearBoundaryAll(void)
+void BoundaryValues::ClearBoundaryAll(int step)
 {
   MeshBlock *pmb=pmy_mblock_;
 
   // Clear non-polar boundary communications
-  for(int l=0;l<NSTEP;l++) {
+//  for(int l=0;l<NSTEP;l++) {
+    int l=step;
     for(int n=0;n<pmb->nneighbor;n++) {
       NeighborBlock& nb = pmb->neighbor[n];
       hydro_flag_[l][nb.bufid] = BNDRY_WAITING;
@@ -1018,11 +1021,12 @@ void BoundaryValues::ClearBoundaryAll(void)
       }
 #endif
     }
-  }
+//  }
 
   // Clear polar boundary communications
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int l = 0; l < NSTEP; ++l) {
+//    for (int l = 0; l < NSTEP; ++l) {
+    int l=step;
       for (int n = 0; n < num_north_polar_blocks_; ++n) {
         PolarNeighborBlock &nb = pmb->polar_neighbor_north[n];
         emf_north_flag_[l][n] = BNDRY_WAITING;
@@ -1039,7 +1043,7 @@ void BoundaryValues::ClearBoundaryAll(void)
           MPI_Wait(&req_emf_south_send_[l][n], MPI_STATUS_IGNORE);
 #endif
       }
-    }
+//    }
   }
   return;
 }

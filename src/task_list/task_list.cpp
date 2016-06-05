@@ -38,6 +38,7 @@ TaskList::TaskList(Mesh *pm)
   ntasks = 0;
 
   // hardwired for VL2 integrator for now
+  nloop_over_list = 2;
   CreateTimeIntegrator(pm);
 
 }
@@ -52,7 +53,7 @@ TaskList::~TaskList()
 //! \fn
 //  \brief do all possible tasks in this TaskList, return status
 
-enum TaskListStatus TaskList::DoAllTasksPossible(MeshBlock *pmb) {
+enum TaskListStatus TaskList::DoAllTasksPossible(MeshBlock *pmb, int step) {
   int skip=0;
   enum TaskStatus ret;
 
@@ -61,17 +62,15 @@ enum TaskListStatus TaskList::DoAllTasksPossible(MeshBlock *pmb) {
   for(int i=pmb->indx_first_task_; i<ntasks; i++) {
     Task &taski=task_list_[i];
 
-    if((taski.task_id & pmb->finished_tasks[taski.step_of_task])==0L) { // task not done
+    if((taski.task_id & pmb->finished_tasks)==0L) { // task not done
       // check if dependency clear
-      if (((taski.dependency & pmb->finished_tasks[taski.step_of_depend]) == taski.dependency)) {
-        ret=taski.TaskFunc(pmb,taski.step_of_task);
+      if (((taski.dependency & pmb->finished_tasks) == taski.dependency)) {
+        ret=taski.TaskFunc(pmb,step);
         if(ret!=TASK_FAIL) { // success
           pmb->num_tasks_left_--;
-          pmb->finished_tasks[taski.step_of_task] |= taski.task_id;
-          if(skip==0)
-            pmb->indx_first_task_++;
-          if(pmb->num_tasks_left_==0)
-            return TL_COMPLETE;
+          pmb->finished_tasks |= taski.task_id;
+          if(skip==0) pmb->indx_first_task_++;
+          if(pmb->num_tasks_left_==0) return TL_COMPLETE;
           if(ret==TASK_NEXT) continue;
           return TL_RUNNING;
         }
