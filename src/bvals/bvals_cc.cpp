@@ -154,7 +154,7 @@ int BoundaryValues::LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src, Real 
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step,
+//! \fn void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step
 //                                                    bool conserved_values)
 //  \brief Send boundary buffers
 void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step,
@@ -167,21 +167,21 @@ void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step,
     NeighborBlock& nb = pmb->neighbor[n];
     int ssize;
     if(nb.level==mylevel)
-      ssize=LoadHydroBoundaryBufferSameLevel(src, hydro_send_[step][nb.bufid],nb);
+      ssize=LoadHydroBoundaryBufferSameLevel(src, hydro_send_[nb.bufid],nb);
     else if(nb.level<mylevel)
-      ssize=LoadHydroBoundaryBufferToCoarser(src, hydro_send_[step][nb.bufid], nb,
+      ssize=LoadHydroBoundaryBufferToCoarser(src, hydro_send_[nb.bufid], nb,
                                              conserved_values);
     else
-      ssize=LoadHydroBoundaryBufferToFiner(src, hydro_send_[step][nb.bufid], nb);
+      ssize=LoadHydroBoundaryBufferToFiner(src, hydro_send_[nb.bufid], nb);
     if(nb.rank == Globals::my_rank) { // on the same process
       MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
-      std::memcpy(pbl->pbval->hydro_recv_[step][nb.targetid],
-                  hydro_send_[step][nb.bufid], ssize*sizeof(Real));
-      pbl->pbval->hydro_flag_[step][nb.targetid]=BNDRY_ARRIVED;
+      std::memcpy(pbl->pbval->hydro_recv_[nb.targetid],
+                  hydro_send_[nb.bufid], ssize*sizeof(Real));
+      pbl->pbval->hydro_flag_[nb.targetid]=BNDRY_ARRIVED;
     }
 #ifdef MPI_PARALLEL
     else // MPI
-      MPI_Start(&req_hydro_send_[step][nb.bufid]);
+      MPI_Start(&req_hydro_send_[nb.bufid]);
 #endif
   }
 
@@ -372,8 +372,8 @@ bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst, int ste
 
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
-    if(hydro_flag_[step][nb.bufid]==BNDRY_COMPLETED) continue;
-    if(hydro_flag_[step][nb.bufid]==BNDRY_WAITING) {
+    if(hydro_flag_[nb.bufid]==BNDRY_COMPLETED) continue;
+    if(hydro_flag_[nb.bufid]==BNDRY_WAITING) {
       if(nb.rank==Globals::my_rank) {// on the same process
         flag=false;
         continue;
@@ -382,22 +382,22 @@ bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst, int ste
       else { // MPI boundary
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-        MPI_Test(&req_hydro_recv_[step][nb.bufid],&test,MPI_STATUS_IGNORE);
+        MPI_Test(&req_hydro_recv_[nb.bufid],&test,MPI_STATUS_IGNORE);
         if(test==false) {
           flag=false;
           continue;
         }
-        hydro_flag_[step][nb.bufid] = BNDRY_ARRIVED;
+        hydro_flag_[nb.bufid] = BNDRY_ARRIVED;
       }
 #endif
     }
     if(nb.level==pmb->loc.level)
-      SetHydroBoundarySameLevel(dst, hydro_recv_[step][nb.bufid], nb);
+      SetHydroBoundarySameLevel(dst, hydro_recv_[nb.bufid], nb);
     else if(nb.level<pmb->loc.level) // this set only the prolongation buffer
-      SetHydroBoundaryFromCoarser(hydro_recv_[step][nb.bufid], nb, true);
+      SetHydroBoundaryFromCoarser(hydro_recv_[nb.bufid], nb, true);
     else
-      SetHydroBoundaryFromFiner(dst, hydro_recv_[step][nb.bufid], nb);
-    hydro_flag_[step][nb.bufid] = BNDRY_COMPLETED; // completed
+      SetHydroBoundaryFromFiner(dst, hydro_recv_[nb.bufid], nb);
+    hydro_flag_[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
   if(flag&& (pmb->block_bcs[INNER_X2]==POLAR_BNDRY
@@ -418,15 +418,15 @@ void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst,
     NeighborBlock& nb = pmb->neighbor[n];
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank)
-      MPI_Wait(&req_hydro_recv_[step][nb.bufid],MPI_STATUS_IGNORE);
+      MPI_Wait(&req_hydro_recv_[nb.bufid],MPI_STATUS_IGNORE);
 #endif
     if(nb.level==pmb->loc.level)
-      SetHydroBoundarySameLevel(dst, hydro_recv_[step][nb.bufid], nb);
+      SetHydroBoundarySameLevel(dst, hydro_recv_[nb.bufid], nb);
     else if(nb.level<pmb->loc.level)
-      SetHydroBoundaryFromCoarser(hydro_recv_[step][nb.bufid], nb, step == 0);
+      SetHydroBoundaryFromCoarser(hydro_recv_[nb.bufid], nb, step == 0);
     else
-      SetHydroBoundaryFromFiner(dst, hydro_recv_[step][nb.bufid], nb);
-    hydro_flag_[step][nb.bufid] = BNDRY_COMPLETED; // completed
+      SetHydroBoundaryFromFiner(dst, hydro_recv_[nb.bufid], nb);
+    hydro_flag_[nb.bufid] = BNDRY_COMPLETED; // completed
   }
  
   if (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY)

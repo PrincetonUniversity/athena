@@ -63,28 +63,13 @@ enum TaskStatus CalculateFluxes(MeshBlock *pmb, int step)
 
 enum TaskStatus FluxCorrectSend(MeshBlock *pmb, int step)
 {
-  int flag;
-  if(step == 1) {
-    flag = 1;
-  } else if(step == 2) {
-    flag = 0;
-  }
-  pmb->pbval->SendFluxCorrection(flag);
+  pmb->pbval->SendFluxCorrection();
   return TASK_SUCCESS;
 }
 
 enum TaskStatus FluxCorrectReceive(MeshBlock *pmb, int step)
 {
-  Hydro *phydro=pmb->phydro;
-  BoundaryValues *pbval=pmb->pbval;
-  int flag;
-  if(step == 1) {
-    flag = 1;
-  } else if(step == 2) {
-    flag = 0;
-  }
-  bool ret=pbval->ReceiveFluxCorrection(flag);
-  if(ret==true) {
+  if(pmb->pbval->ReceiveFluxCorrection() == true) {
     return TASK_NEXT;
   } else {
     return TASK_FAIL;
@@ -107,27 +92,13 @@ enum TaskStatus CalculateEMF(MeshBlock *pmb, int step)
 
 enum TaskStatus EMFCorrectSend(MeshBlock *pmb, int step)
 {
-  int flag;
-  if(step == 1) {
-    flag = 1;
-  } else if(step == 2) {
-    flag = 0;
-  }
-  
-  pmb->pbval->SendEMFCorrection(flag);
+  pmb->pbval->SendEMFCorrection();
   return TASK_SUCCESS;
 }
 
 enum TaskStatus EMFCorrectReceive(MeshBlock *pmb, int step)
 {
-  int flag;
-  if(step == 1) {
-    flag = 1;
-  } else if(step == 2) {
-    flag = 0;
-  }
-  BoundaryValues *pbval=pmb->pbval;
-  if(pbval->ReceiveEMFCorrection(flag)==true) {
+  if(pmb->pbval->ReceiveEMFCorrection() == true) {
     return TASK_NEXT;
   } else {
     return TASK_FAIL;

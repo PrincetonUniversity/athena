@@ -48,9 +48,9 @@
 #endif
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SendFluxCorrection(int step)
+//! \fn void BoundaryValues::SendFluxCorrection(void)
 //  \brief Restrict, pack and send the surace flux to the coarse neighbor(s)
-void BoundaryValues::SendFluxCorrection(int step)
+void BoundaryValues::SendFluxCorrection(void)
 {
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
@@ -78,7 +78,7 @@ void BoundaryValues::SendFluxCorrection(int step)
                 Real apm=pco->GetFace1Area(k+1, j,   i);
                 Real app=pco->GetFace1Area(k+1, j+1, i);
                 Real tarea=amm+amp+apm+app;
-                flcor_send_[step][nb.fid][p++]=
+                flcor_send_[nb.fid][p++]=
                            (x1flux(nn, k  , j  , i)*amm
                            +x1flux(nn, k  , j+1, i)*amp
                            +x1flux(nn, k+1, j  , i)*apm
@@ -94,7 +94,7 @@ void BoundaryValues::SendFluxCorrection(int step)
               Real am=pco->GetFace1Area(k, j,   i);
               Real ap=pco->GetFace1Area(k, j+1, i);
               Real tarea=am+ap;
-              flcor_send_[step][nb.fid][p++]=
+              flcor_send_[nb.fid][p++]=
                          (x1flux(nn, k, j  , i)*am
                          +x1flux(nn, k, j+1, i)*ap)/tarea;
             }
@@ -103,7 +103,7 @@ void BoundaryValues::SendFluxCorrection(int step)
         else { // 1D
           int k=pmb->ks, j=pmb->js;
           for(int nn=0; nn<NHYDRO; nn++)
-            flcor_send_[step][nb.fid][p++]=x1flux(nn, k, j, i);
+            flcor_send_[nb.fid][p++]=x1flux(nn, k, j, i);
         }
       }
       // x2 direction
@@ -117,7 +117,7 @@ void BoundaryValues::SendFluxCorrection(int step)
               pco->Face2Area(k+1, j, pmb->is, pmb->ie, sarea_[1]);
               for(int i=pmb->is; i<=pmb->ie; i+=2) {
                 Real tarea=sarea_[0](i)+sarea_[0](i+1)+sarea_[1](i)+sarea_[1](i+1);
-                flcor_send_[step][nb.fid][p++]=
+                flcor_send_[nb.fid][p++]=
                            (x2flux(nn, k  , j, i  )*sarea_[0](i  )
                            +x2flux(nn, k  , j, i+1)*sarea_[0](i+1)
                            +x2flux(nn, k+1, j, i  )*sarea_[1](i  )
@@ -132,7 +132,7 @@ void BoundaryValues::SendFluxCorrection(int step)
             pco->Face2Area(0, j, pmb->is ,pmb->ie, sarea_[0]);
             for(int i=pmb->is; i<=pmb->ie; i+=2) {
               Real tarea=sarea_[0](i)+sarea_[0](i+1);
-              flcor_send_[step][nb.fid][p++]=
+              flcor_send_[nb.fid][p++]=
                          (x2flux(nn, k, j, i  )*sarea_[0](i  )
                          +x2flux(nn, k, j, i+1)*sarea_[0](i+1))/tarea;
             }
@@ -149,7 +149,7 @@ void BoundaryValues::SendFluxCorrection(int step)
             pco->Face3Area(k, j+1, pmb->is, pmb->ie, sarea_[1]);
             for(int i=pmb->is; i<=pmb->ie; i+=2) {
               Real tarea=sarea_[0](i)+sarea_[0](i+1)+sarea_[1](i)+sarea_[1](i+1);
-              flcor_send_[step][nb.fid][p++]=
+              flcor_send_[nb.fid][p++]=
                          (x3flux(nn, k, j  , i  )*sarea_[0](i  )
                          +x3flux(nn, k, j  , i+1)*sarea_[0](i+1)
                          +x3flux(nn, k, j+1, i  )*sarea_[1](i  )
@@ -160,13 +160,13 @@ void BoundaryValues::SendFluxCorrection(int step)
       }
       if(nb.rank==Globals::my_rank) { // on the same node
         MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
-        std::memcpy(pbl->pbval->flcor_recv_[step][(nb.fid^1)][fi2][fi1],
-                    flcor_send_[step][nb.fid], p*sizeof(Real));
-        pbl->pbval->flcor_flag_[step][(nb.fid^1)][fi2][fi1]=BNDRY_ARRIVED;
+        std::memcpy(pbl->pbval->flcor_recv_[(nb.fid^1)][fi2][fi1],
+                    flcor_send_[nb.fid], p*sizeof(Real));
+        pbl->pbval->flcor_flag_[(nb.fid^1)][fi2][fi1]=BNDRY_ARRIVED;
       }
 #ifdef MPI_PARALLEL
       else
-        MPI_Start(&req_flcor_send_[step][nb.fid]);
+        MPI_Start(&req_flcor_send_[nb.fid]);
 #endif
     }
   }
@@ -175,9 +175,9 @@ void BoundaryValues::SendFluxCorrection(int step)
 
 
 //--------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::ReceiveFluxCorrection(int step)
+//! \fn bool BoundaryValues::ReceiveFluxCorrection(void)
 //  \brief Receive and apply the surace flux from the finer neighbor(s)
-bool BoundaryValues::ReceiveFluxCorrection(int step)
+bool BoundaryValues::ReceiveFluxCorrection(void)
 {
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
@@ -190,8 +190,8 @@ bool BoundaryValues::ReceiveFluxCorrection(int step)
     NeighborBlock& nb = pmb->neighbor[n];
     if(nb.type!=NEIGHBOR_FACE) break;
     if(nb.level==pmb->loc.level+1) {
-      if(flcor_flag_[step][nb.fid][nb.fi2][nb.fi1]==BNDRY_COMPLETED) continue;
-      if(flcor_flag_[step][nb.fid][nb.fi2][nb.fi1]==BNDRY_WAITING) {
+      if(flcor_flag_[nb.fid][nb.fi2][nb.fi1]==BNDRY_COMPLETED) continue;
+      if(flcor_flag_[nb.fid][nb.fi2][nb.fi1]==BNDRY_WAITING) {
         if(nb.rank==Globals::my_rank) {// on the same process
           flag=false;
           continue;
@@ -200,17 +200,17 @@ bool BoundaryValues::ReceiveFluxCorrection(int step)
         else { // MPI boundary
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-          MPI_Test(&req_flcor_recv_[step][nb.fid][nb.fi2][nb.fi1],&test,MPI_STATUS_IGNORE);
+          MPI_Test(&req_flcor_recv_[nb.fid][nb.fi2][nb.fi1],&test,MPI_STATUS_IGNORE);
           if(test==false) {
             flag=false;
             continue;
           }
-          flcor_flag_[step][nb.fid][nb.fi2][nb.fi1] = BNDRY_ARRIVED;
+          flcor_flag_[nb.fid][nb.fi2][nb.fi1] = BNDRY_ARRIVED;
         }
 #endif
       }
       // boundary arrived; apply flux correction
-      Real *buf=flcor_recv_[step][nb.fid][nb.fi2][nb.fi1];
+      Real *buf=flcor_recv_[nb.fid][nb.fi2][nb.fi1];
       int p=0;
       if(nb.fid==INNER_X1 || nb.fid==OUTER_X1) {
         int is=pmb->is+(pmb->ie-pmb->is)*nb.fid+nb.fid;
@@ -255,7 +255,7 @@ bool BoundaryValues::ReceiveFluxCorrection(int step)
         }
       }
 
-      flcor_flag_[step][nb.fid][nb.fi2][nb.fi1] = BNDRY_COMPLETED;
+      flcor_flag_[nb.fid][nb.fi2][nb.fi1] = BNDRY_COMPLETED;
     }
   }
 

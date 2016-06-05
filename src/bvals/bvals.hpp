@@ -91,6 +91,7 @@ void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
 enum BoundaryFlag GetBoundaryFlag(std::string input_string);
 
 
+//--------------------------------------------------------------------------------------
 //! \class BoundaryValues
 //  \brief BVals data and functions
 
@@ -103,10 +104,15 @@ public:
   static int bufid[56];
 
   void Initialize(void);
-  void StartReceivingForInit(void);
-  void StartReceivingAll(int step);
-
   void CheckBoundary(void);
+  void StartReceivingForInit(void);
+  void StartReceivingAll(void);
+  void ClearBoundaryForInit(void);
+  void ClearBoundaryAll(void);
+  void ApplyPhysicalBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
+                               FaceField &bfdst, AthenaArray<Real> &bcdst);
+  void ProlongateBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst, 
+                            FaceField &bfdst, AthenaArray<Real> &bcdst);
 
   int LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
                                        const NeighborBlock& nb);
@@ -114,8 +120,7 @@ public:
                                        const NeighborBlock& nb, bool conserved_values);
   int LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src, Real *buf,
                                      const NeighborBlock& nb);
-  void SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step,
-                                bool conserved_values = true);
+  void SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step, bool conserved_values = true);
   void SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
                                  const NeighborBlock& nb);
   void SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock& nb,
@@ -124,11 +129,7 @@ public:
                                  const NeighborBlock& nb);
   bool ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst, int step);
   void ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst, int step);
-  void RestrictHydro(AthenaArray<Real> &src,
-                     int si, int ei, int sj, int ej, int sk, int ek);
-
-  void SendFluxCorrection(int step);
-  bool ReceiveFluxCorrection(int step);
+  void PolarSingleHydro(AthenaArray<Real> &dst);
 
   int LoadFieldBoundaryBufferSameLevel(FaceField &src, Real *buf,
                                        const NeighborBlock& nb);
@@ -142,33 +143,22 @@ public:
   void SetFieldBoundaryFromFiner(FaceField &dst, Real *buf, const NeighborBlock& nb);
   bool ReceiveFieldBoundaryBuffers(FaceField &dst, int step);
   void ReceiveFieldBoundaryBuffersWithWait(FaceField &dst, int step);
+  void PolarSingleField(FaceField &dst);
+
+  void SendFluxCorrection(void);
+  bool ReceiveFluxCorrection(void);
 
   int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
   int LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
   int LoadEMFBoundaryPolarBuffer(Real *buf, const PolarNeighborBlock &nb);
-  void SendEMFCorrection(int step);
+  void SendEMFCorrection(void);
   void SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb);
   void SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb);
   void SetEMFBoundaryPolar(Real **buf_list, int num_bufs, bool north);
   void ClearCoarseEMFBoundary(void);
   void AverageEMFBoundary(void);
   void PolarSingleEMF(void);
-  void PolarSingleHydro(AthenaArray<Real> &dst);
-  void PolarSingleField(FaceField &dst);
-  bool ReceiveEMFCorrection(int step);
-
-  void ProlongateBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst, 
-                            FaceField &bfdst, AthenaArray<Real> &bcdst);
-
-  void ApplyPhysicalBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
-                               FaceField &bfdst, AthenaArray<Real> &bcdst);
-
-  void ClearBoundaryForInit(void);
-  void ClearBoundaryAll(int step);
-
-//  int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2, int bmax);
-//  int BufferID(int dim, bool multilevel, bool face_only);
-//  unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
+  bool ReceiveEMFCorrection(void);
 
 private:
   MeshBlock *pmy_mblock_;  // ptr to MeshBlock containing this BVals
@@ -176,30 +166,30 @@ private:
   int nface_, nedge_;
   bool edge_flag_[12];
   int nedge_fine_[12];
-  bool firsttime_[NSTEP];
+  bool firsttime_;
 
-  enum BoundaryStatus hydro_flag_[NSTEP][56], field_flag_[NSTEP][56];
-  enum BoundaryStatus flcor_flag_[NSTEP][6][2][2];
-  enum BoundaryStatus emfcor_flag_[NSTEP][48];
-  enum BoundaryStatus *emf_north_flag_[NSTEP];
-  enum BoundaryStatus *emf_south_flag_[NSTEP];
-  Real *hydro_send_[NSTEP][56],  *hydro_recv_[NSTEP][56];
-  Real *field_send_[NSTEP][56],  *field_recv_[NSTEP][56];
-  Real *flcor_send_[NSTEP][6],   *flcor_recv_[NSTEP][6][2][2];
-  Real *emfcor_send_[NSTEP][48], *emfcor_recv_[NSTEP][48];
-  Real **emf_north_send_[NSTEP], **emf_north_recv_[NSTEP];
-  Real **emf_south_send_[NSTEP], **emf_south_recv_[NSTEP];
+  enum BoundaryStatus hydro_flag_[56], field_flag_[56];
+  enum BoundaryStatus flcor_flag_[6][2][2];
+  enum BoundaryStatus emfcor_flag_[48];
+  enum BoundaryStatus *emf_north_flag_;
+  enum BoundaryStatus *emf_south_flag_;
+  Real *hydro_send_[56],  *hydro_recv_[56];
+  Real *field_send_[56],  *field_recv_[56];
+  Real *flcor_send_[6],   *flcor_recv_[6][2][2];
+  Real *emfcor_send_[48], *emfcor_recv_[48];
+  Real **emf_north_send_, **emf_north_recv_;
+  Real **emf_south_send_, **emf_south_recv_;
   AthenaArray<Real> sarea_[2];
   AthenaArray<Real> exc_;
   int num_north_polar_blocks_, num_south_polar_blocks_;
 
 #ifdef MPI_PARALLEL
-  MPI_Request req_hydro_send_[NSTEP][56],  req_hydro_recv_[NSTEP][56];
-  MPI_Request req_field_send_[NSTEP][56],  req_field_recv_[NSTEP][56];
-  MPI_Request req_flcor_send_[NSTEP][6],   req_flcor_recv_[NSTEP][6][2][2];
-  MPI_Request req_emfcor_send_[NSTEP][48], req_emfcor_recv_[NSTEP][48];
-  MPI_Request *req_emf_north_send_[NSTEP], *req_emf_north_recv_[NSTEP];
-  MPI_Request *req_emf_south_send_[NSTEP], *req_emf_south_recv_[NSTEP];
+  MPI_Request req_hydro_send_[56],  req_hydro_recv_[56];
+  MPI_Request req_field_send_[56],  req_field_recv_[56];
+  MPI_Request req_flcor_send_[6],   req_flcor_recv_[6][2][2];
+  MPI_Request req_emfcor_send_[48], req_emfcor_recv_[48];
+  MPI_Request *req_emf_north_send_, *req_emf_north_recv_;
+  MPI_Request *req_emf_south_send_, *req_emf_south_recv_;
 #endif
 
   BValFunc_t BoundaryFunction_[6];
@@ -208,7 +198,7 @@ private:
   friend class Mesh;
 };
 
-unsigned int CreateBvalsMPITag(int lid, int flag, int phys, int bufid);
+unsigned int CreateBvalsMPITag(int lid, int phys, int bufid);
 unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
 int BufferID(int dim, bool multilevel, bool face_only);
 int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2, int bmax);

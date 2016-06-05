@@ -296,21 +296,21 @@ void BoundaryValues::SendFieldBoundaryBuffers(FaceField &src, int step)
     NeighborBlock& nb = pmb->neighbor[n];
     int ssize;
     if(nb.level==pmb->loc.level)
-      ssize=LoadFieldBoundaryBufferSameLevel(src, field_send_[step][nb.bufid],nb);
+      ssize=LoadFieldBoundaryBufferSameLevel(src, field_send_[nb.bufid],nb);
     else if(nb.level<pmb->loc.level)
-      ssize=LoadFieldBoundaryBufferToCoarser(src, field_send_[step][nb.bufid],nb);
+      ssize=LoadFieldBoundaryBufferToCoarser(src, field_send_[nb.bufid],nb);
     else
-      ssize=LoadFieldBoundaryBufferToFiner(src, field_send_[step][nb.bufid], nb);
+      ssize=LoadFieldBoundaryBufferToFiner(src, field_send_[nb.bufid], nb);
     if(nb.rank == Globals::my_rank) { // on the same process
       MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
       // find target buffer
-      std::memcpy(pbl->pbval->field_recv_[step][nb.targetid],
-                  field_send_[step][nb.bufid], ssize*sizeof(Real));
-      pbl->pbval->field_flag_[step][nb.targetid]=BNDRY_ARRIVED;
+      std::memcpy(pbl->pbval->field_recv_[nb.targetid],
+                  field_send_[nb.bufid], ssize*sizeof(Real));
+      pbl->pbval->field_flag_[nb.targetid]=BNDRY_ARRIVED;
     }
 #ifdef MPI_PARALLEL
     else // MPI
-      MPI_Start(&req_field_send_[step][nb.bufid]);
+      MPI_Start(&req_field_send_[nb.bufid]);
 #endif
   }
 
@@ -745,8 +745,8 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst, int step)
 
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
-    if(field_flag_[step][nb.bufid]==BNDRY_COMPLETED) continue;
-    if(field_flag_[step][nb.bufid]==BNDRY_WAITING) {
+    if(field_flag_[nb.bufid]==BNDRY_COMPLETED) continue;
+    if(field_flag_[nb.bufid]==BNDRY_WAITING) {
       if(nb.rank==Globals::my_rank) {// on the same process
         flag=false;
         continue;
@@ -755,22 +755,22 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst, int step)
       else { // MPI boundary
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-        MPI_Test(&req_field_recv_[step][nb.bufid],&test,MPI_STATUS_IGNORE);
+        MPI_Test(&req_field_recv_[nb.bufid],&test,MPI_STATUS_IGNORE);
         if(test==false) {
           flag=false;
           continue;
         }
-        field_flag_[step][nb.bufid] = BNDRY_ARRIVED;
+        field_flag_[nb.bufid] = BNDRY_ARRIVED;
       }
 #endif
     }
     if(nb.level==pmb->loc.level)
-      SetFieldBoundarySameLevel(dst, field_recv_[step][nb.bufid], nb);
+      SetFieldBoundarySameLevel(dst, field_recv_[nb.bufid], nb);
     else if(nb.level<pmb->loc.level)
-      SetFieldBoundaryFromCoarser(field_recv_[step][nb.bufid], nb);
+      SetFieldBoundaryFromCoarser(field_recv_[nb.bufid], nb);
     else
-      SetFieldBoundaryFromFiner(dst, field_recv_[step][nb.bufid], nb);
-    field_flag_[step][nb.bufid] = BNDRY_COMPLETED; // completed
+      SetFieldBoundaryFromFiner(dst, field_recv_[nb.bufid], nb);
+    field_flag_[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
   if(flag&&(pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY))
@@ -791,15 +791,15 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst, int ste
     NeighborBlock& nb = pmb->neighbor[n];
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank)
-      MPI_Wait(&req_field_recv_[0][nb.bufid],MPI_STATUS_IGNORE);
+      MPI_Wait(&req_field_recv_[nb.bufid],MPI_STATUS_IGNORE);
 #endif
     if(nb.level==pmb->loc.level)
-      SetFieldBoundarySameLevel(dst, field_recv_[0][nb.bufid], nb);
+      SetFieldBoundarySameLevel(dst, field_recv_[nb.bufid], nb);
     else if(nb.level<pmb->loc.level)
-      SetFieldBoundaryFromCoarser(field_recv_[0][nb.bufid], nb);
+      SetFieldBoundaryFromCoarser(field_recv_[nb.bufid], nb);
     else
-      SetFieldBoundaryFromFiner(dst, field_recv_[0][nb.bufid], nb);
-    field_flag_[0][nb.bufid] = BNDRY_COMPLETED; // completed
+      SetFieldBoundaryFromFiner(dst, field_recv_[nb.bufid], nb);
+    field_flag_[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
   if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY)

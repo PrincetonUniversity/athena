@@ -1246,8 +1246,7 @@ void Mesh::CompleteAllMeshTaskLists(void)
       pmb->indx_first_task_ = 0;
       pmb->num_tasks_left_ = ptlist->ntasks;
       pmb->finished_tasks = 0; // encodes which tasks are done
-      if(step==1)pmb->pbval->StartReceivingAll(1);
-      if(step==2)pmb->pbval->StartReceivingAll(0);
+      pmb->pbval->StartReceivingAll();
       pmb=pmb->next;
     }
 //    std::cout << "here0 on rank=" << Globals::my_rank <<" step="<<step<< std::endl;
@@ -1265,8 +1264,7 @@ void Mesh::CompleteAllMeshTaskLists(void)
     // clear boundary buffers
     pmb = pblock;
     while (pmb != NULL)  {
-      if(step==1)pmb->pbval->ClearBoundaryAll(1);
-      if(step==2)pmb->pbval->ClearBoundaryAll(0);
+      pmb->pbval->ClearBoundaryAll();
       pmb=pmb->next;
     }
 //    std::cout << "here2 on rank=" << Globals::my_rank <<" step="<<step<< std::endl;
