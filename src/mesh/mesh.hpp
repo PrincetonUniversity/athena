@@ -187,7 +187,7 @@ public:
   void Initialize(int res_flag, ParameterInput *pin);
   void SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
                                  enum BoundaryFlag *block_bcs);
-  void UpdateOneStep(void);
+  void CompleteAllMeshTaskLists(void);
   void NewTimeStep(void);
   void AdaptiveMeshRefinement(ParameterInput *pin);
   unsigned int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3);

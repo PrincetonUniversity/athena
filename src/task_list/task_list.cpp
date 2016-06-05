@@ -50,24 +50,24 @@ TaskList::~TaskList()
 
 //--------------------------------------------------------------------------------------
 //! \fn
-//  \brief process one task (if possible), return TaskListStatus
+//  \brief do all possible tasks in this TaskList, return status
 
-enum TaskListStatus TaskList::DoOneTask(MeshBlock *pmb) {
+enum TaskListStatus TaskList::DoAllTasksPossible(MeshBlock *pmb) {
   int skip=0;
   enum TaskStatus ret;
 
   if(pmb->num_tasks_left_==0) return TL_NOTHING_TO_DO;
 
   for(int i=pmb->indx_first_task_; i<ntasks; i++) {
-    Task &ti=task_list_[i];
+    Task &taski=task_list_[i];
 
-    if((ti.task_id & pmb->finished_tasks[ti.step_of_task])==0L) { // task not done
+    if((taski.task_id & pmb->finished_tasks[taski.step_of_task])==0L) { // task not done
       // check if dependency clear
-      if (((ti.dependency & pmb->finished_tasks[ti.step_of_depend]) == ti.dependency)) {
-        ret=ti.TaskFunc(pmb,ti.step_of_task);
+      if (((taski.dependency & pmb->finished_tasks[taski.step_of_depend]) == taski.dependency)) {
+        ret=taski.TaskFunc(pmb,taski.step_of_task);
         if(ret!=TASK_FAIL) { // success
           pmb->num_tasks_left_--;
-          pmb->finished_tasks[ti.step_of_task] |= ti.task_id;
+          pmb->finished_tasks[taski.step_of_task] |= taski.task_id;
           if(skip==0)
             pmb->indx_first_task_++;
           if(pmb->num_tasks_left_==0)

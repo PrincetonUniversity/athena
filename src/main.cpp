@@ -336,7 +336,7 @@ int main(int argc, char *argv[])
                 << " time=" << pmesh->time << " dt=" << pmesh->dt <<std::endl;
     }
 
-    pmesh->UpdateOneStep();
+    pmesh->CompleteAllMeshTaskLists();
 
     pmesh->ncycle++;
     pmesh->time += pmesh->dt;

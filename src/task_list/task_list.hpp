@@ -123,7 +123,7 @@ public:
 
   // functions
   void AddTask(int st, unsigned long int id, int sd, unsigned long int dep);
-  enum TaskListStatus DoOneTask(MeshBlock *pmb);
+  enum TaskListStatus DoAllTasksPossible(MeshBlock *pmb);
   void CreateTimeIntegrator(Mesh *pm);
 
 private:

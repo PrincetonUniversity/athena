@@ -1232,13 +1232,13 @@ MeshBlock* Mesh::FindMeshBlock(int tgid)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void Mesh::UpdateOneStep(void)
+//! \fn void Mesh::CompleteAllMeshTaskLists(void)
 //  \brief process the task list and advance one time step
 
-void Mesh::UpdateOneStep(void)
+void Mesh::CompleteAllMeshTaskLists(void)
 {
   MeshBlock *pmb = pblock;
-  int nb=nblist[Globals::my_rank];
+  int nmb_left = nblist[Globals::my_rank];
 
   // initialize
   while (pmb != NULL)  {
@@ -1250,11 +1250,11 @@ void Mesh::UpdateOneStep(void)
   }
 
   // main loop
-  while(nb>0) {
+  while(nmb_left > 0) {
     pmb = pblock;
     while (pmb != NULL)  {
-      if(ptlist->DoOneTask(pmb)==TL_COMPLETE) // task list completed
-        nb--;
+      if(ptlist->DoAllTasksPossible(pmb)==TL_COMPLETE) // task list completed
+        nmb_left--;
       pmb=pmb->next;
     }
   }
