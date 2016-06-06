@@ -26,30 +26,7 @@ enum TaskListStatus {TL_RUNNING, TL_STUCK, TL_COMPLETE, TL_NOTHING_TO_DO};
 typedef enum TaskStatus (*TaskFunc_t)(MeshBlock*, int);
 
 // 32-bit integers with "1" in different bit positions to label each hydro task.
-enum HydroTasks {
-  NONE=0,
-  CALC_FLX=1L<<0,
-  FLX_SEND=1L<<1,
-  FLX_RECV=1L<<2,
-  CALC_EMF=1L<<3,
-  EMF_SEND=1L<<4,
-  EMF_RECV=1L<<5,
-  HYD_INT =1L<<6,
-  HYD_SEND=1L<<7,
-  HYD_RECV=1L<<8,
-  FLD_INT =1L<<9,
-  FLD_SEND=1L<<10,
-  FLD_RECV=1L<<11,
-  PROLONG =1L<<12,
-  CON2PRIM=1L<<13,
-  PHY_BVAL=1L<<14,
-  USERWORK=1L<<15,
-  NEW_DT  =1L<<16,
-  AMR_FLAG=1L<<17,
-};
-
-// 32-bit integers with "1" in different bit positions to label each hydro task.
-namespace IntegratorTask {
+namespace HydroIntegratorTaskNames {
   const uint64_t NONE=0;
   const uint64_t CALC_HYDFLX=1LL<<0;
   const uint64_t CALC_FLDFLX=1LL<<1;
@@ -100,15 +77,17 @@ namespace IntegratorTask {
   const uint64_t AMR_FLAG=1LL<<38;
 };
 
+//--------------------------------------------------------------------------------------
 //!   \struct Task
 //    \brief all data related to an individual Task
 
 struct Task {
-  unsigned long int task_id;    // encodes step & task using bit positions in HydroTasks
-  unsigned long int dependency; // encodes dependencies to other tasks using " " " "
+  uint64_t task_id;    // encodes step & task using bit positions in HydroTasks
+  uint64_t dependency; // encodes dependencies to other tasks using " " " "
   TaskFunc_t TaskFunc;          // function called by this task
 };
 
+//--------------------------------------------------------------------------------------
 //!   \class TaskList
 //    \brief data and function definitions for task list
 
@@ -122,7 +101,7 @@ public:
   int nloop_over_list;
 
   // functions
-  void AddTask(unsigned long int id, unsigned long int dep);
+  void AddTask(uint64_t id, uint64_t dep);
   enum TaskListStatus DoAllTasksPossible(MeshBlock *pmb, int step);
   void CreateTimeIntegrator(Mesh *pm);
 

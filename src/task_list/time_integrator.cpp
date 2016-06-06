@@ -302,57 +302,49 @@ enum TaskStatus CheckRefinement(MeshBlock *pmb, int step)
 
 void TaskList::CreateTimeIntegrator(Mesh *pm)
 {
-  if (MAGNETIC_FIELDS_ENABLED) { // MHD
-    AddTask(CALC_FLX,NONE);
-    if(pm->multilevel==true) { // SMR or AMR
-      AddTask(FLX_SEND,CALC_FLX);
-      AddTask(FLX_RECV,CALC_FLX);
-      AddTask(HYD_INT, FLX_RECV);
-      AddTask(HYD_SEND,HYD_INT);
-      AddTask(CALC_EMF,CALC_FLX);
-      AddTask(EMF_SEND,CALC_EMF);
-      AddTask(EMF_RECV,EMF_SEND);
-      AddTask(FLD_INT, EMF_RECV);
-    } else {
-      AddTask(HYD_INT, CALC_FLX);
-      AddTask(HYD_SEND,HYD_INT);
-      AddTask(CALC_EMF,CALC_FLX);
-      AddTask(EMF_SEND,CALC_EMF);
-      AddTask(EMF_RECV,EMF_SEND);
-      AddTask(FLD_INT, EMF_RECV);
-    }
-    AddTask(FLD_SEND,FLD_INT);
-    AddTask(HYD_RECV,NONE);
-    AddTask(FLD_RECV,NONE);
-    if(pm->multilevel==true) { // SMR or AMR
-      AddTask(PROLONG, (HYD_SEND|HYD_RECV|FLD_SEND|FLD_RECV));
-      AddTask(CON2PRIM,PROLONG);
-    } else {
-      AddTask(CON2PRIM,(HYD_INT|HYD_RECV|FLD_INT|FLD_RECV));
-    }
-    AddTask(PHY_BVAL,CON2PRIM);
+  using namespace HydroIntegratorTaskNames;
 
-  } else {  // HYDRO
-    AddTask(CALC_FLX,NONE);
-    if(pm->multilevel==true) { // SMR or AMR
-      AddTask(FLX_SEND,CALC_FLX);
-      AddTask(FLX_RECV,CALC_FLX);
-      AddTask(HYD_INT, FLX_RECV);
-    }
-    else {
-      AddTask(HYD_INT,CALC_FLX);
-    }
-    AddTask(HYD_SEND,HYD_INT);
-    AddTask(HYD_RECV,NONE);
-    if(pm->multilevel==true) { // SMR or AMR
-      AddTask(PROLONG,(HYD_SEND|HYD_RECV));
-      AddTask(CON2PRIM,PROLONG);
-    } else {
-      AddTask(CON2PRIM,(HYD_INT|HYD_RECV));
-    }
-    AddTask(PHY_BVAL,CON2PRIM);
+  // compute hydro fluxes, integrate hydro variables
+  AddTask(CALC_HYDFLX,NONE);
+  if(pm->multilevel==true) { // SMR or AMR
+    AddTask(SEND_HYDFLX,CALC_HYDFLX);
+    AddTask(RECV_HYDFLX,CALC_HYDFLX);
+    AddTask(INT_HYD, RECV_HYDFLX);
+  } else {
+    AddTask(INT_HYD, CALC_HYDFLX);
+  }
+  AddTask(SEND_HYD,INT_HYD);
+  AddTask(RECV_HYD,NONE);
+
+  // compute MHD fluxes, integrate field
+  if (MAGNETIC_FIELDS_ENABLED) { // MHD
+    AddTask(CALC_FLDFLX,CALC_HYDFLX);
+    AddTask(SEND_FLDFLX,CALC_FLDFLX);
+    AddTask(RECV_FLDFLX,SEND_FLDFLX);
+    AddTask(INT_FLD, RECV_FLDFLX);
+    AddTask(SEND_FLD,INT_FLD);
+    AddTask(RECV_FLD,NONE);
   }
 
+  // prolongate, compute new primitives
+  if (MAGNETIC_FIELDS_ENABLED) { // MHD
+    if(pm->multilevel==true) { // SMR or AMR
+      AddTask(PROLONG, (SEND_HYD|RECV_HYD|SEND_FLD|RECV_FLD));
+      AddTask(CON2PRIM,PROLONG);
+    } else {
+      AddTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD));
+    }
+  } else {  // HYDRO
+    if(pm->multilevel==true) { // SMR or AMR
+      AddTask(PROLONG,(SEND_HYD|RECV_HYD));
+      AddTask(CON2PRIM,PROLONG);
+    } else {
+      AddTask(CON2PRIM,(INT_HYD|RECV_HYD));
+    }
+  }
+
+  // everything else
+  AddTask(PHY_BVAL,CON2PRIM);
   AddTask(USERWORK,PHY_BVAL);
   AddTask(NEW_DT,USERWORK);
   if(pm->adaptive==true) {
@@ -363,58 +355,59 @@ void TaskList::CreateTimeIntegrator(Mesh *pm)
 //--------------------------------------------------------------------------------------//! \fn
 //  \brief
 
-void TaskList::AddTask(unsigned long int id,unsigned long int dep)
+void TaskList::AddTask(uint64_t id, uint64_t dep)
 {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 
+  using namespace HydroIntegratorTaskNames;
   switch((id))
   {
-  case (CALC_FLX):
+  case (CALC_HYDFLX):
     task_list_[ntasks].TaskFunc=TaskFunctions::CalculateFluxes;
     break;
 
-  case (FLX_SEND):
+  case (SEND_HYDFLX):
     task_list_[ntasks].TaskFunc=TaskFunctions::FluxCorrectSend;
     break;
 
-  case (FLX_RECV):
+  case (RECV_HYDFLX):
     task_list_[ntasks].TaskFunc=TaskFunctions::FluxCorrectReceive;
     break;
 
-  case (CALC_EMF):
+  case (CALC_FLDFLX):
     task_list_[ntasks].TaskFunc=TaskFunctions::CalculateEMF;
     break;
 
-  case (EMF_SEND):
+  case (SEND_FLDFLX):
     task_list_[ntasks].TaskFunc=TaskFunctions::EMFCorrectSend;
     break;
 
-  case (EMF_RECV):
+  case (RECV_FLDFLX):
     task_list_[ntasks].TaskFunc=TaskFunctions::EMFCorrectReceive;
     break;
 
-  case (HYD_INT):
+  case (INT_HYD):
     task_list_[ntasks].TaskFunc=TaskFunctions::HydroIntegrate;
     break;
 
-  case (HYD_SEND):
+  case (SEND_HYD):
     task_list_[ntasks].TaskFunc=TaskFunctions::HydroSend;
     break;
 
-  case (HYD_RECV):
+  case (RECV_HYD):
     task_list_[ntasks].TaskFunc=TaskFunctions::HydroReceive;
     break;
 
-  case (FLD_INT):
+  case (INT_FLD):
     task_list_[ntasks].TaskFunc=TaskFunctions::FieldIntegrate;
     break;
 
-  case (FLD_SEND):
+  case (SEND_FLD):
     task_list_[ntasks].TaskFunc=TaskFunctions::FieldSend;
     break;
 
-  case (FLD_RECV):
+  case (RECV_FLD):
     task_list_[ntasks].TaskFunc=TaskFunctions::FieldReceive;
     break;
 

@@ -62,7 +62,7 @@ enum TaskListStatus TaskList::DoAllTasksPossible(MeshBlock *pmb, int step) {
   for(int i=pmb->indx_first_task_; i<ntasks; i++) {
     Task &taski=task_list_[i];
 
-    if((taski.task_id & pmb->finished_tasks)==0L) { // task not done
+    if((taski.task_id & pmb->finished_tasks)==0LL) { // task not done
       // check if dependency clear
       if (((taski.dependency & pmb->finished_tasks) == taski.dependency)) {
         ret=taski.TaskFunc(pmb,step);

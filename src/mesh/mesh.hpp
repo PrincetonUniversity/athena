@@ -138,7 +138,7 @@ private:
   int nneighbor;
   Real cost;
   Real new_block_dt;
-  unsigned long int finished_tasks;
+  uint64_t finished_tasks;
   int indx_first_task_, num_tasks_left_;
   int nreal_user_meshblock_data_, nint_user_meshblock_data_;
 
