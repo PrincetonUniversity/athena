@@ -347,10 +347,10 @@ if args['hdf5']:
   if args['cxx'] == 'bgxl':
     makefile_options['PREPROCESSOR_FLAGS'] += \
         ' -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_BSD_SOURCE' \
-        + ' -I/soft/libraries/hdf5/1.8.14/cnk-xl/V1R2M2-20150213/include' \
+        + ' -I/soft/libraries/hdf5/1.10.0/cnk-xl/current/include' \
         + ' -I/bgsys/drivers/ppcfloor/comm/include'
     makefile_options['LINKER_FLAGS'] += \
-        ' -L/soft/libraries/hdf5/1.8.14/cnk-xl/V1R2M2-20150213/lib' \
+        ' -L/soft/libraries/hdf5/1.10.0/cnk-xl/current/lib' \
         + ' -L/soft/libraries/alcf/current/xl/ZLIB/lib'
     makefile_options['LIBRARY_FLAGS'] += ' -lhdf5 -lz -lm'
 else:
