@@ -168,6 +168,12 @@ public:
   Mesh(ParameterInput *pin, IOWrapper &resfile, int test_flag=0);
   ~Mesh();
 
+  // accessors
+  int GetNumMeshBlocksThisRank(int my_rank) {return nblist[my_rank];}
+  int GetNumMeshThreads() const {return num_mesh_threads_;}
+  int64_t GetTotalCells() {return (int64_t)nbtotal*
+     pblock->block_size.nx1*pblock->block_size.nx2*pblock->block_size.nx3;}
+
   // data
   RegionSize mesh_size;
   enum BoundaryFlag mesh_bcs[6];
@@ -175,19 +181,15 @@ public:
   int nlim, ncycle;
   bool adaptive, multilevel, face_only;
 
-  TaskList *ptlist;
   MeshBlock *pblock;
 
   AthenaArray<Real> *rusermeshdata;
   AthenaArray<int> *iusermeshdata;
 
   // functions
-  int64_t GetTotalCells(void);
-  int GetNumMeshThreads() const {return num_mesh_threads_;}
   void Initialize(int res_flag, ParameterInput *pin);
   void SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
                                  enum BoundaryFlag *block_bcs);
-  void CompleteAllMeshTaskLists(void);
   void NewTimeStep(void);
   void AdaptiveMeshRefinement(ParameterInput *pin);
   unsigned int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3);

@@ -6,8 +6,7 @@
 // See LICENSE file for full public license information.
 //======================================================================================
 //!   \file tasklist.hpp
-//    \brief definition for class TaskList
-// Provides functions to control dynamic execution using tasks
+//    \brief provides functionality to control dynamic execution using tasks
 //======================================================================================
 
 // Athena++ headers
@@ -22,10 +21,10 @@ class MeshBlock;
 enum TaskStatus {TASK_FAIL, TASK_SUCCESS, TASK_NEXT};
 enum TaskListStatus {TL_RUNNING, TL_STUCK, TL_COMPLETE, TL_NOTHING_TO_DO};
 
-// definition of TaskFunc_t
+// definition of task function pointer: TaskFunc_t
 typedef enum TaskStatus (*TaskFunc_t)(MeshBlock*, int);
 
-// 32-bit integers with "1" in different bit positions to label each hydro task.
+// 64-bit integers with "1" in different bit positions to label each hydro task.
 namespace HydroIntegratorTaskNames {
   const uint64_t NONE=0;
   const uint64_t CALC_HYDFLX=1LL<<0;
@@ -82,9 +81,9 @@ namespace HydroIntegratorTaskNames {
 //    \brief all data related to an individual Task
 
 struct Task {
-  uint64_t task_id;    // encodes step & task using bit positions in HydroTasks
-  uint64_t dependency; // encodes dependencies to other tasks using " " " "
-  TaskFunc_t TaskFunc;          // function called by this task
+  uint64_t task_id;      // encodes step & task using bit positions in HydroTasks
+  uint64_t dependency;   // encodes dependencies to other tasks using " " " "
+  TaskFunc_t TaskFunc;   // function called by this task
 };
 
 //--------------------------------------------------------------------------------------
@@ -103,6 +102,7 @@ public:
   // functions
   void AddTask(uint64_t id, uint64_t dep);
   enum TaskListStatus DoAllTasksPossible(MeshBlock *pmb, int step);
+  void ExecuteTaskList(Mesh *pmesh);
   void CreateTimeIntegrator(Mesh *pm);
 
 private:

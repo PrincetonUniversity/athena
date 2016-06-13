@@ -19,6 +19,7 @@
 
 // Athena++ classes headers
 #include "../athena.hpp"
+#include "../globals.hpp"
 #include "../mesh/mesh.hpp"
 #include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
@@ -62,7 +63,7 @@ enum TaskListStatus TaskList::DoAllTasksPossible(MeshBlock *pmb, int step) {
   for(int i=pmb->indx_first_task_; i<ntasks; i++) {
     Task &taski=task_list_[i];
 
-    if((taski.task_id & pmb->finished_tasks)==0LL) { // task not done
+    if((taski.task_id & pmb->finished_tasks) == 0LL) { // task not done
       // check if dependency clear
       if (((taski.dependency & pmb->finished_tasks) == taski.dependency)) {
         ret=taski.TaskFunc(pmb,step);
@@ -77,8 +78,47 @@ enum TaskListStatus TaskList::DoAllTasksPossible(MeshBlock *pmb, int step) {
       }
       skip++; // increment number of tasks processed
 
-    } else if(skip==0) // task is done and at the top of the list
+    } else if(skip==0) // this task is already done AND it is at the top of the list
       pmb->indx_first_task_++;
   }
   return TL_STUCK; // there are still tasks to do but nothing can be done now
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void TaskList::ExecuteTaskList(Mesh *pmesh)
+//  \brief completes all tasks in this list
+
+void TaskList::ExecuteTaskList(Mesh *pmesh)
+{
+
+  for (int step=1; step<=nloop_over_list; ++step) {
+    MeshBlock *pmb = pmesh->pblock;
+    int nmb_left = pmesh->GetNumMeshBlocksThisRank(Globals::my_rank);
+    // initialize, start MPI communications (if needed)
+    while (pmb != NULL)  {
+      pmb->indx_first_task_ = 0;
+      pmb->num_tasks_left_ = ntasks;
+      pmb->finished_tasks = 0; // encodes which tasks are done
+      pmb->pbval->StartReceivingAll();
+      pmb=pmb->next;
+    }
+
+    // cycle through all MeshBlocks and perform all tasks possible
+    while(nmb_left > 0) {
+      pmb = pmesh->pblock;
+      while (pmb != NULL)  {
+        if (DoAllTasksPossible(pmb,step) == TL_COMPLETE) nmb_left--;
+        pmb=pmb->next;
+      }
+    }
+
+    // clear boundary buffers
+    pmb = pmesh->pblock;
+    while (pmb != NULL)  {
+      pmb->pbval->ClearBoundaryAll();
+      pmb=pmb->next;
+    }
+  }
+
+  return;
 }

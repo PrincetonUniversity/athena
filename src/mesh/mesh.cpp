@@ -498,9 +498,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   }
   pblock=pfirst;
 
-  // create new Task List, requires mesh to already be constructed
-  ptlist = new TaskList(this);
-
 }
 
 //--------------------------------------------------------------------------------------
@@ -815,9 +812,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
     throw std::runtime_error(msg.str().c_str());
   }
 
-  // create new Task List
-  ptlist = new TaskList(this);
-
   // clean up
   delete [] offset;
 }
@@ -832,7 +826,6 @@ Mesh::~Mesh()
   while(pblock->next != NULL)
     delete pblock->next;
   delete pblock;
-  delete ptlist;
   delete [] nslist;
   delete [] nblist;
   delete [] ranklist;
@@ -1207,15 +1200,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn int64_t Mesh::GetTotalCells(void)
-//  \brief return the total number of cells for performance counting
-
-int64_t Mesh::GetTotalCells(void)
-{
-  return (int64_t)nbtotal*pblock->block_size.nx1*pblock->block_size.nx2*pblock->block_size.nx3;
-}
-
-//--------------------------------------------------------------------------------------
 //! \fn MeshBlock* Mesh::FindMeshBlock(int tgid)
 //  \brief return the MeshBlock whose gid is tgid
 
@@ -1229,48 +1213,6 @@ MeshBlock* Mesh::FindMeshBlock(int tgid)
     pbl=pbl->next;
   }
   return pbl;
-}
-
-//--------------------------------------------------------------------------------------
-//! \fn void Mesh::CompleteAllMeshTaskLists(void)
-//  \brief process the task list and advance one time step
-
-void Mesh::CompleteAllMeshTaskLists(void)
-{
-
-  for (int step=1; step<=ptlist->nloop_over_list; ++step) {
-    MeshBlock *pmb = pblock;
-    int nmb_left = nblist[Globals::my_rank];
-    // initialize, start MPI communications (if needed)
-    while (pmb != NULL)  {
-      pmb->indx_first_task_ = 0;
-      pmb->num_tasks_left_ = ptlist->ntasks;
-      pmb->finished_tasks = 0; // encodes which tasks are done
-      pmb->pbval->StartReceivingAll();
-      pmb=pmb->next;
-    }
-//    std::cout << "here0 on rank=" << Globals::my_rank <<" step="<<step<< std::endl;
-
-    // cycle through all MeshBlocks and perform all tasks possible
-    while(nmb_left > 0) {
-      pmb = pblock;
-      while (pmb != NULL)  {
-        if (ptlist->DoAllTasksPossible(pmb,step) == TL_COMPLETE) nmb_left--;
-        pmb=pmb->next;
-      }
-    }
-//    std::cout << "here1 on rank=" << Globals::my_rank <<" step="<<step<< std::endl;
-
-    // clear boundary buffers
-    pmb = pblock;
-    while (pmb != NULL)  {
-      pmb->pbval->ClearBoundaryAll();
-      pmb=pmb->next;
-    }
-//    std::cout << "here2 on rank=" << Globals::my_rank <<" step="<<step<< std::endl;
-  }
-
-  return;
 }
 
 //--------------------------------------------------------------------------------------
