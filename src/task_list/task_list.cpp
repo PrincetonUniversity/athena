@@ -25,7 +25,7 @@
 #include "../field/field.hpp"
 #include "../bvals/bvals.hpp"
 #include "../eos/eos.hpp"
-#include "../hydro/srcterms/srcterms.hpp"
+#include "../hydro/srcterms/hydro_srcterms.hpp"
 
 // this class header
 #include "task_list.hpp"

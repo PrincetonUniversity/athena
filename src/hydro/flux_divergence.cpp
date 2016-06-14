@@ -24,7 +24,6 @@
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
 #include "../mesh/mesh.hpp"
-#include "srcterms/srcterms.hpp"
 #include "../bvals/bvals.hpp"
 #include "../reconstruct/reconstruction.hpp"
 

@@ -24,7 +24,7 @@
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
-#include "srcterms/srcterms.hpp"
+#include "srcterms/hydro_srcterms.hpp"
 
 // this class header
 #include "hydro.hpp"

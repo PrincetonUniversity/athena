@@ -49,7 +49,7 @@
 #include "../field/field.hpp"
 #include "../bvals/bvals.hpp"
 #include "../hydro/eos/eos.hpp"
-#include "../hydro/srcterms/srcterms.hpp"
+#include "../hydro/srcterms/hydro_srcterms.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../utils/utils.hpp"
 

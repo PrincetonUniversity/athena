@@ -31,7 +31,7 @@
 #include "../hydro/hydro.hpp"
 #include "../hydro/eos/eos.hpp"
 #include "../bvals/bvals.hpp"
-#include "../hydro/srcterms/srcterms.hpp"
+#include "../hydro/srcterms/hydro_srcterms.hpp"
 #include "../field/field.hpp"
 #include "../coordinates/coordinates.hpp"
 

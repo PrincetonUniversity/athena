@@ -12,8 +12,8 @@
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 //======================================================================================
-//! \file srcterms.cpp
-//  \brief implements functions that compute physical source terms for hydro
+//! \file hydro_srcterms.cpp
+//  \brief Class to implement source terms in the hydro equations
 //======================================================================================
 
 // Athena++ headers
@@ -25,18 +25,28 @@
 #include "../../parameter_input.hpp"
 
 // this class header
-#include "srcterms.hpp"
+#include "hydro_srcterms.hpp"
 
-// HydroSourceTerms constructor - sets function pointers for each of the physical source
-// terms to be included in the calculation.
+// HydroSourceTerms constructor 
 
 HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin)
 {
   pmy_hydro_ = phyd;
+  hydro_sourceterms_defined = false;
+
+  // read point mass or constant acceleration parameters from input block
   gm_ = pin->GetOrAddReal("problem","GM",0.0);
+  if (gm_ != 0.0) hydro_sourceterms_defined = true;
+
   g1_ = pin->GetOrAddReal("hydro","grav_acc1",0.0);
+  if (g1_ != 0.0) hydro_sourceterms_defined = true;
+
   g2_ = pin->GetOrAddReal("hydro","grav_acc2",0.0);
+  if (g2_ != 0.0) hydro_sourceterms_defined = true;
+
   g3_ = pin->GetOrAddReal("hydro","grav_acc3",0.0);
+  if (g3_ != 0.0) hydro_sourceterms_defined = true;
+
   UserSourceTerm = phyd->pmy_block->pmy_mesh->UserSourceTerm_;
 }
 
@@ -53,49 +63,18 @@ HydroSourceTerms::~HydroSourceTerms()
 void HydroSourceTerms::AddHydroSourceTerms(const Real dt, const AthenaArray<Real> *flux,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &cons)
 {
-  if (gm_==0.0 && g1_==0.0 && g2_==0.0 && g3_==0.0) return;
-
-// Source terms due to point mass gravity
-
   MeshBlock *pmb = pmy_hydro_->pmy_block;
-  for (int k=pmb->ks; k<=pmb->ke; ++k) {
-#pragma omp parallel for schedule(static)
-    for (int j=pmb->js; j<=pmb->je; ++j) {
-#pragma simd
-      for (int i=pmb->is; i<=pmb->ie; ++i) {
-        Real den = prim(IDN,k,j,i);
 
-        if (gm_!=0.0) {
-          Real src = dt*den*pmb->pcoord->coord_src1_i_(i)*gm_/pmb->pcoord->x1v(i);
-          cons(IM1,k,j,i) -= src;
-          if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) -=
-            dt*0.5*(pmb->pcoord->phy_src1_i_(i)*flux[X1DIR](IDN,k,j,i)*gm_
-                   +pmb->pcoord->phy_src2_i_(i)*flux[X1DIR](IDN,k,j,i+1)*gm_);
-        }
+  // accleration due to point mass (MUST BE AT ORIGIN)
+  if (gm_ != 0.0) PointMass(dt, flux, prim, cons);
 
-        if (g1_!=0.0) {
-          Real src = dt*den*g1_;
-          cons(IM1,k,j,i) += src;
-          if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVX,k,j,i);
-        }
+  // constant acceleration (e.g. for RT instability)
+  if (g1_ != 0.0 || g2_ != 0.0 || g3_ != 0.0) ConstantAcceleration(dt, flux, prim,cons);
 
-        if (g2_!=0.0) {
-          Real src = dt*den*g2_;
-          cons(IM2,k,j,i) += src;
-          if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVY,k,j,i);
-        }
+  // Add new source terms here
+  // MyNewSourceTerms()
 
-        if (g3_!=0.0) {
-          Real src = dt*den*g3_;
-          cons(IM3,k,j,i) += src;
-          if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += src*prim(IVZ,k,j,i);
-        }
-      }
-    }
-  }
-
-//  Add user source terms
-
+  //  user-defined source terms
   if (UserSourceTerm != NULL)
     UserSourceTerm(pmb, pmb->pmy_mesh->time,dt,prim,bcc,cons);
 

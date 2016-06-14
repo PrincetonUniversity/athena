@@ -30,7 +30,7 @@
 #include "../field/field.hpp"
 #include "../bvals/bvals.hpp"
 #include "../eos/eos.hpp"
-#include "../hydro/srcterms/srcterms.hpp"
+#include "../hydro/srcterms/hydro_srcterms.hpp"
 
 // this class header
 #include "task_list.hpp"
@@ -113,15 +113,30 @@ enum TaskStatus HydroIntegrate(MeshBlock *pmb, int step)
   if(step == 1) {
     phydro->FluxDivergence(pmb, phydro->u1, phydro->w, pfield->b,
                                           pfield->bcc, 1);
-    // source terms
-    Real dt = 0.5*(pmb->pmy_mesh->dt);
-    phydro->psrc->AddHydroSourceTerms(dt,pmb->phydro->flux,phydro->w,pfield->bcc,phydro->u);
   } else if(step == 2) {
     phydro->FluxDivergence(pmb, phydro->u, phydro->w1, pfield->b1,
                                           pfield->bcc1, 2);
-    // source terms
+  } else {
+    return TASK_FAIL;
+  }
+
+  return TASK_NEXT;
+}
+
+enum TaskStatus HydroSourceTerms(MeshBlock *pmb, int step)
+{
+  Hydro *phydro=pmb->phydro;
+  Field *pfield=pmb->pfield;
+
+  // return if there are no source terms to be added
+  if (phydro->psrc->hydro_sourceterms_defined == false) return TASK_NEXT;
+
+  if(step == 1) {
+    Real dt = 0.5*(pmb->pmy_mesh->dt);
+    phydro->psrc->AddHydroSourceTerms(dt,phydro->flux,phydro->w,pfield->bcc,phydro->u);
+  } else if(step == 2) {
     Real dt = (pmb->pmy_mesh->dt);
-    phydro->psrc->AddHydroSourceTerms(dt,pmb->phydro->flux,phydro->w,pfield->bcc,phydro->u);
+    phydro->psrc->AddHydroSourceTerms(dt,phydro->flux,phydro->w,pfield->bcc,phydro->u);
   } else {
     return TASK_FAIL;
   }
@@ -313,6 +328,7 @@ void TaskList::CreateTimeIntegrator(Mesh *pm)
   } else {
     AddTask(INT_HYD, CALC_HYDFLX);
   }
+  AddTask(SRCTERM_HYD,INT_HYD);
   AddTask(SEND_HYD,INT_HYD);
   AddTask(RECV_HYD,NONE);
 
@@ -361,85 +377,77 @@ void TaskList::AddTask(uint64_t id, uint64_t dep)
   task_list_[ntasks].dependency=dep;
 
   using namespace HydroIntegratorTaskNames;
-  switch((id))
-  {
-  case (CALC_HYDFLX):
-    task_list_[ntasks].TaskFunc=TaskFunctions::CalculateFluxes;
-    break;
+  switch((id)) {
+    case (CALC_HYDFLX):
+      task_list_[ntasks].TaskFunc=TaskFunctions::CalculateFluxes;
+      break;
+    case (CALC_FLDFLX):
+      task_list_[ntasks].TaskFunc=TaskFunctions::CalculateEMF;
+      break;
 
-  case (SEND_HYDFLX):
-    task_list_[ntasks].TaskFunc=TaskFunctions::FluxCorrectSend;
-    break;
+    case (SEND_HYDFLX):
+      task_list_[ntasks].TaskFunc=TaskFunctions::FluxCorrectSend;
+      break;
+    case (SEND_FLDFLX):
+      task_list_[ntasks].TaskFunc=TaskFunctions::EMFCorrectSend;
+      break;
 
-  case (RECV_HYDFLX):
-    task_list_[ntasks].TaskFunc=TaskFunctions::FluxCorrectReceive;
-    break;
+    case (RECV_HYDFLX):
+      task_list_[ntasks].TaskFunc=TaskFunctions::FluxCorrectReceive;
+      break;
+    case (RECV_FLDFLX):
+      task_list_[ntasks].TaskFunc=TaskFunctions::EMFCorrectReceive;
+      break;
 
-  case (CALC_FLDFLX):
-    task_list_[ntasks].TaskFunc=TaskFunctions::CalculateEMF;
-    break;
+    case (INT_HYD):
+      task_list_[ntasks].TaskFunc=TaskFunctions::HydroIntegrate;
+      break;
+    case (INT_FLD):
+      task_list_[ntasks].TaskFunc=TaskFunctions::FieldIntegrate;
+      break;
 
-  case (SEND_FLDFLX):
-    task_list_[ntasks].TaskFunc=TaskFunctions::EMFCorrectSend;
-    break;
+    case (SRCTERM_HYD):
+      task_list_[ntasks].TaskFunc=TaskFunctions::HydroSourceTerms;
+      break;
 
-  case (RECV_FLDFLX):
-    task_list_[ntasks].TaskFunc=TaskFunctions::EMFCorrectReceive;
-    break;
+    case (SEND_HYD):
+      task_list_[ntasks].TaskFunc=TaskFunctions::HydroSend;
+      break;
+    case (SEND_FLD):
+      task_list_[ntasks].TaskFunc=TaskFunctions::FieldSend;
+      break;
 
-  case (INT_HYD):
-    task_list_[ntasks].TaskFunc=TaskFunctions::HydroIntegrate;
-    break;
+    case (RECV_HYD):
+      task_list_[ntasks].TaskFunc=TaskFunctions::HydroReceive;
+      break;
+    case (RECV_FLD):
+      task_list_[ntasks].TaskFunc=TaskFunctions::FieldReceive;
+      break;
 
-  case (SEND_HYD):
-    task_list_[ntasks].TaskFunc=TaskFunctions::HydroSend;
-    break;
+    case (PROLONG):
+      task_list_[ntasks].TaskFunc=TaskFunctions::Prolongation;
+      break;
+    case (CON2PRIM):
+      task_list_[ntasks].TaskFunc=TaskFunctions::Primitives;
+      break;
+    case (PHY_BVAL):
+      task_list_[ntasks].TaskFunc=TaskFunctions::PhysicalBoundary;
+      break;
+    case (USERWORK):
+      task_list_[ntasks].TaskFunc=TaskFunctions::UserWork;
+      break;
+    case (NEW_DT):
+      task_list_[ntasks].TaskFunc=TaskFunctions::NewBlockTimeStep;
+      break;
+    case (AMR_FLAG):
+      task_list_[ntasks].TaskFunc=TaskFunctions::CheckRefinement;
+      break;
 
-  case (RECV_HYD):
-    task_list_[ntasks].TaskFunc=TaskFunctions::HydroReceive;
-    break;
-
-  case (INT_FLD):
-    task_list_[ntasks].TaskFunc=TaskFunctions::FieldIntegrate;
-    break;
-
-  case (SEND_FLD):
-    task_list_[ntasks].TaskFunc=TaskFunctions::FieldSend;
-    break;
-
-  case (RECV_FLD):
-    task_list_[ntasks].TaskFunc=TaskFunctions::FieldReceive;
-    break;
-
-  case (PROLONG):
-    task_list_[ntasks].TaskFunc=TaskFunctions::Prolongation;
-    break;
-
-  case (PHY_BVAL):
-    task_list_[ntasks].TaskFunc=TaskFunctions::PhysicalBoundary;
-    break;
-
-  case (CON2PRIM):
-    task_list_[ntasks].TaskFunc=TaskFunctions::Primitives;
-    break;
-
-  case (USERWORK):
-    task_list_[ntasks].TaskFunc=TaskFunctions::UserWork;
-    break;
-
-  case (NEW_DT):
-    task_list_[ntasks].TaskFunc=TaskFunctions::NewBlockTimeStep;
-    break;
-
-  case (AMR_FLAG):
-    task_list_[ntasks].TaskFunc=TaskFunctions::CheckRefinement;
-    break;
-
-  default:
-    std::stringstream msg;
-    msg << "### FATAL ERROR in AddTask" << std::endl
-        << "Invalid Task "<< id << " is specified" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    default:
+      std::stringstream msg;
+      msg << "### FATAL ERROR in AddTask" << std::endl
+          << "Invalid Task "<< id << " is specified" << std::endl;
+      throw std::runtime_error(msg.str().c_str());
   }
   ntasks++;
   return;
