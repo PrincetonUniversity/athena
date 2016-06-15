@@ -81,7 +81,7 @@ Real Hydro::NewBlockTimeStep(MeshBlock *pmb)
 
 #pragma omp for schedule(static)
     for (int j=js; j<=je; ++j){
-#pragma simd
+//#pragma simd
       for (int i=is; i<=ie; ++i){
         wi[IDN]=w(IDN,k,j,i);
         wi[IVX]=w(IVX,k,j,i);

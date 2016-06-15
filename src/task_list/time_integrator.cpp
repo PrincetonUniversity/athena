@@ -78,8 +78,10 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 
   // Now assemble list of tasks for each step of time integrator
   {using namespace HydroIntegratorTaskNames;
+    AddTimeIntegratorTask(START_ALLRECV,NONE);
+
     // compute hydro fluxes, integrate hydro variables
-    AddTimeIntegratorTask(CALC_HYDFLX,NONE);
+    AddTimeIntegratorTask(CALC_HYDFLX,START_ALLRECV);
     if(pm->multilevel==true) { // SMR or AMR
       AddTimeIntegratorTask(SEND_HYDFLX,CALC_HYDFLX);
       AddTimeIntegratorTask(RECV_HYDFLX,CALC_HYDFLX);
@@ -89,7 +91,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     }
     AddTimeIntegratorTask(SRCTERM_HYD,INT_HYD);
     AddTimeIntegratorTask(SEND_HYD,INT_HYD);
-    AddTimeIntegratorTask(RECV_HYD,NONE);
+    AddTimeIntegratorTask(RECV_HYD,START_ALLRECV);
 
     // compute MHD fluxes, integrate field
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
@@ -98,7 +100,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
       AddTimeIntegratorTask(RECV_FLDFLX,SEND_FLDFLX);
       AddTimeIntegratorTask(INT_FLD, RECV_FLDFLX);
       AddTimeIntegratorTask(SEND_FLD,INT_FLD);
-      AddTimeIntegratorTask(RECV_FLD,NONE);
+      AddTimeIntegratorTask(RECV_FLD,START_ALLRECV);
     }
 
     // prolongate, compute new primitives
@@ -124,6 +126,9 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     AddTimeIntegratorTask(NEW_DT,USERWORK);
     if(pm->adaptive==true) {
       AddTimeIntegratorTask(AMR_FLAG,USERWORK);
+      AddTimeIntegratorTask(CLEAR_ALLRECV,AMR_FLAG);
+    } else {
+      AddTimeIntegratorTask(CLEAR_ALLRECV,NEW_DT);
     }
 
   } // end of using namespace block
@@ -140,6 +145,17 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
 
   using namespace HydroIntegratorTaskNames;
   switch((id)) {
+    case (START_ALLRECV):
+      task_list_[ntasks].TaskFunc= 
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::StartAllReceive);
+      break;
+    case (CLEAR_ALLRECV):
+      task_list_[ntasks].TaskFunc= 
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::ClearAllReceive);
+      break;
+
     case (CALC_HYDFLX):
       task_list_[ntasks].TaskFunc= 
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -256,6 +272,21 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
 //--------------------------------------------------------------------------------------
 //! \fn
 //  \brief
+
+//--------------------------------------------------------------------------------------
+// Functions to start/end MPI communication
+
+enum TaskStatus TimeIntegratorTaskList::StartAllReceive(MeshBlock *pmb, int step)
+{
+  pmb->pbval->StartReceivingAll();
+  return TASK_SUCCESS;
+}
+
+enum TaskStatus TimeIntegratorTaskList::ClearAllReceive(MeshBlock *pmb, int step)
+{
+  pmb->pbval->ClearBoundaryAll();
+  return TASK_SUCCESS;
+}
 
 //--------------------------------------------------------------------------------------
 // Functions to calculates fluxes

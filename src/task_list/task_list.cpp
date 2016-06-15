@@ -33,10 +33,6 @@ TaskList::TaskList(Mesh *pm)
   pmy_mesh_ = pm;
   ntasks = 0;
   nsub_steps = 0;
-
-  // hardwired for time-integrator for now
-//  CreateTimeIntegrator(pin, pm);
-
 }
 
 // destructor
@@ -62,7 +58,6 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int step) {
     if((taski.task_id & pmb->finished_tasks) == 0LL) { // task not done
       // check if dependency clear
       if (((taski.dependency & pmb->finished_tasks) == taski.dependency)) {
-//        ret=taski.TaskFunc(pmb,step);
         ret=(this->*task_list_[i].TaskFunc)(pmb,step);
         if(ret!=TASK_FAIL) { // success
           pmb->num_tasks_left_--;
@@ -91,12 +86,11 @@ void TaskList::DoTaskList(Mesh *pmesh)
   for (int step=1; step<=nsub_steps; ++step) {
     MeshBlock *pmb = pmesh->pblock;
     int nmb_left = pmesh->GetNumMeshBlocksThisRank(Globals::my_rank);
-    // initialize, start MPI communications (if needed)
+    // initialize counters stored in each MeshBlock
     while (pmb != NULL)  {
       pmb->indx_first_task_ = 0;
       pmb->num_tasks_left_ = ntasks;
-      pmb->finished_tasks = 0; // encodes which tasks are done
-      pmb->pbval->StartReceivingAll();
+      pmb->finished_tasks = 0LL; // encodes which tasks are done
       pmb=pmb->next;
     }
 
@@ -109,12 +103,6 @@ void TaskList::DoTaskList(Mesh *pmesh)
       }
     }
 
-    // clear boundary buffers
-    pmb = pmesh->pblock;
-    while (pmb != NULL)  {
-      pmb->pbval->ClearBoundaryAll();
-      pmb=pmb->next;
-    }
   }
 
   return;
