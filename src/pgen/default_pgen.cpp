@@ -22,7 +22,7 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../parameter_input.hpp"
-#include "../mesh.hpp"
+#include "../mesh/mesh.hpp"
 
 //======================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)

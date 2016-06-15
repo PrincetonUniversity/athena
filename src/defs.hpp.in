@@ -72,7 +72,7 @@
 #define NFIELD @NFIELD_VARIABLES@
 #define NWAVE @NWAVE_VALUE@
 #define NGHOST 2
-#define NSTEP @NSTEP@
+#define MAX_NSTEP 4
 
 //--------------------------------------------------------------------------------------
 // general purpose macros (never modified)

@@ -13,26 +13,18 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-
-// Primary header
-#include "field.hpp"
-
-// C++ headers
-#include <algorithm>  // min()
-#include <cfloat>     // FLT_MAX
-#include <cmath>      // fabs(), sqrt()
-
-// Athena headers
-#include "../athena.hpp"                  // array access, macros, Real
-#include "../athena_arrays.hpp"           // AthenaArray
-#include "../mesh.hpp"                    // MeshBlock, Mesh
-#include "integrators/field_integrator.hpp"  // FieldIntegrator
-#include "../coordinates/coordinates.hpp" // Coordinates
-
-//======================================================================================
 //! \file field.cpp
 //  \brief implementation of functions in class Field
 //======================================================================================
+
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../mesh/mesh.hpp"
+#include "../coordinates/coordinates.hpp"
+
+// this class header
+#include "field.hpp"
 
 // constructor, initializes data structures and parameters
 
@@ -72,9 +64,17 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin)
     wght.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
     wght.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
 
-// Construct ptrs to objects of various classes needed to integrate B-field
+// Allocate memory for scratch vectors
+    cc_e_.NewAthenaArray(ncells3,ncells2,ncells1);
 
-    pintegrator = new FieldIntegrator(this, pin);
+    int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
+    face_area_.NewAthenaArray(nthreads,ncells1);
+    edge_length_.NewAthenaArray(nthreads,ncells1);
+    edge_length_p1_.NewAthenaArray(nthreads,ncells1);
+    if (GENERAL_RELATIVITY) {
+      g_.NewAthenaArray(NMETRIC,ncells1);
+      gi_.NewAthenaArray(NMETRIC,ncells1);
+    }
 
   }
 }
@@ -102,7 +102,14 @@ Field::~Field()
   wght.x2f.DeleteAthenaArray();
   wght.x3f.DeleteAthenaArray();
 
-  delete pintegrator;
+  cc_e_.DeleteAthenaArray();
+  face_area_.DeleteAthenaArray();
+  edge_length_.DeleteAthenaArray();
+  edge_length_p1_.DeleteAthenaArray();
+  if (GENERAL_RELATIVITY) {
+    g_.DeleteAthenaArray();
+    gi_.DeleteAthenaArray();
+  }
 }
 
 

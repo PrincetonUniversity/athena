@@ -14,7 +14,4 @@ namespace Globals
   extern int my_rank, nranks;
 }
 
-unsigned int CreateMPITag(int lid, int flag, int phys, int bufid);
-unsigned int CreateAMRMPITag(int gid, int ox1, int ox2, int ox3);
-
 #endif // GLOBALS_HPP

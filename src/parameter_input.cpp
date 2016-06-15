@@ -463,6 +463,49 @@ Real ParameterInput::GetReal(std::string block, std::string name)
 }
 
 //--------------------------------------------------------------------------------------
+//! \fn bool ParameterInput::GetBoolean(std::string block, std::string name)
+//  \brief returns boolean value of string stored in block/name
+
+bool ParameterInput::GetBoolean(std::string block, std::string name)
+{
+  InputBlock* pb;
+  InputLine* pl;
+  std::stringstream msg;
+
+  // get pointer to node with same block name in linked list of InputBlocks
+  pb = GetPtrToBlock(block);
+  if (pb == NULL) {
+    msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
+        << "Block name '" << block << "' not found when trying to set value "
+        << "for parameter '" << name << "'";
+    throw std::runtime_error(msg.str().c_str());
+  }
+
+  // get pointer to node with same parameter name in linked list of InputLines
+  pl = pb->GetPtrToLine(name);
+  if (pl == NULL) {
+    msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
+        << "Parameter name '" << name << "' not found in block '" << block << "'";
+    throw std::runtime_error(msg.str().c_str());
+  }
+
+  // check is string contains integers 0 or 1 (instead of true or false) and return
+  if (pl->param_value.compare(0, 1, "0")==0 ||
+      pl->param_value.compare(0, 1, "1")==0) {
+    return (bool)atoi(pl->param_value.c_str());
+  }
+
+  // convert string to all lower case
+  std::transform(pl->param_value.begin(), pl->param_value.end(), 
+                 pl->param_value.begin(), ::tolower);
+  // Convert string to bool and return value
+  bool b;
+  std::istringstream is(pl->param_value);
+  is >> std::boolalpha >> b;
+  return (b);
+}
+
+//--------------------------------------------------------------------------------------
 //! \fn std::string ParameterInput::GetString(std::string block, std::string name)
 //  \brief returns string stored in block/name
 
@@ -530,6 +573,24 @@ Real ParameterInput::GetOrAddReal(std::string block, std::string name, Real def_
 }
 
 //--------------------------------------------------------------------------------------
+//! \fn Real ParameterInput::GetOrAddBoolean(std::string block, std::string name,
+//    bool def_value)
+//  \brief returns boolean value stored in block/name if it exists, or creates and sets
+//  value to def_value if it does not exist
+
+bool ParameterInput::GetOrAddBoolean(std::string block,std::string name, bool def_value)
+{
+  InputBlock* pb;
+  std::stringstream ss_value;
+
+  if (DoesParameterExist(block, name)) return GetBoolean(block,name);
+  pb = FindOrAddBlock(block);
+  ss_value << def_value;
+  AddParameter(pb, name, ss_value.str(), "# Default value added at run time");
+  return def_value;
+}
+
+//--------------------------------------------------------------------------------------
 //! \fn int ParameterInput::SetInteger(std::string block, std::string name, int value)
 //  \brief updates an integer parameter; creates it if it does not exist
 
@@ -549,6 +610,21 @@ int ParameterInput::SetInteger(std::string block, std::string name, int value)
 //  \brief updates a real parameter; creates it if it does not exist
 
 Real ParameterInput::SetReal(std::string block, std::string name, Real value)
+{
+  InputBlock* pb;
+  std::stringstream ss_value;
+
+  pb = FindOrAddBlock(block);
+  ss_value << value;
+  AddParameter(pb, name, ss_value.str(), "# Updated during run time");
+  return value;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn Real ParameterInput::SetBoolean(std::string block, std::string name, bool value)
+//  \brief updates a boolean parameter; creates it if it does not exist
+
+bool ParameterInput::SetBoolean(std::string block, std::string name, bool value)
 {
   InputBlock* pb;
   std::stringstream ss_value;

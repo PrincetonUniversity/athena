@@ -1,7 +1,7 @@
 // Magnetized equatorial inflow around Kerr black hole
 
 // Primary header
-#include "../mesh.hpp"
+#include "../mesh/mesh.hpp"
 
 // C++ headers
 #include <cmath>      // cos, sin, sqrt

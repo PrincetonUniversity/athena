@@ -30,7 +30,7 @@
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh.hpp"
+#include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
@@ -82,9 +82,9 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag)
 
   // calculate the header size
   IOWrapperSize_t udsize=0;
-  for(int n=0; n<pM->niusermeshdata_; n++)
+  for(int n=0; n<pM->nint_user_mesh_data_; n++)
     udsize+=pM->iusermeshdata[n].GetSizeInBytes();
-  for(int n=0; n<pM->nrusermeshdata_; n++)
+  for(int n=0; n<pM->nreal_user_mesh_data_; n++)
     udsize+=pM->rusermeshdata[n].GetSizeInBytes();
 
   headeroffset=sbuf.size()*sizeof(char)+3*sizeof(int)+sizeof(RegionSize)
@@ -115,12 +115,12 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag)
     if(udsize!=0) {
       char *ud = new char[udsize];
       IOWrapperSize_t udoffset = 0;
-      for(int n=0; n<pM->niusermeshdata_; n++) {
+      for(int n=0; n<pM->nint_user_mesh_data_; n++) {
         memcpy(&(ud[udoffset]), pM->iusermeshdata[n].data(),
                pM->iusermeshdata[n].GetSizeInBytes());
         udoffset+=pM->iusermeshdata[n].GetSizeInBytes();
       }
-      for(int n=0; n<pM->nrusermeshdata_; n++) {
+      for(int n=0; n<pM->nreal_user_mesh_data_; n++) {
         memcpy(&(ud[udoffset]), pM->rusermeshdata[n].data(),
                pM->rusermeshdata[n].GetSizeInBytes());
         udoffset+=pM->rusermeshdata[n].GetSizeInBytes();
@@ -184,12 +184,12 @@ void RestartOutput::LoadOutputData(OutputData *pout_data, MeshBlock *pblock)
 
 
   // pack the user MeshBlock data
-  for(int n=0; n<pblock->niusermeshblockdata_; n++) {
+  for(int n=0; n<pblock->nint_user_meshblock_data_; n++) {
     memcpy(pdata, pblock->iusermeshblockdata[n].data(),
            pblock->iusermeshblockdata[n].GetSizeInBytes());
     pdata+=pblock->iusermeshblockdata[n].GetSizeInBytes();
   }
-  for(int n=0; n<pblock->nrusermeshblockdata_; n++) {
+  for(int n=0; n<pblock->nreal_user_meshblock_data_; n++) {
     memcpy(pdata, pblock->rusermeshblockdata[n].data(),
            pblock->rusermeshblockdata[n].GetSizeInBytes());
     pdata+=pblock->rusermeshblockdata[n].GetSizeInBytes();

@@ -32,7 +32,7 @@ def run():
         'meshblock/nx1=' + repr(i/4),
         'meshblock/nx2=' + repr(i/4),
         'meshblock/nx3=' + repr(i/4),
-        'output2/dt=-1', 'time/tlim=' + repr(tlim), 'problem/compute_error=1']
+        'output2/dt=-1', 'time/tlim=' + repr(tlim), 'problem/compute_error=true']
       athena.run('mhd/athinput.linear_wave3d', arguments)
   # entropy wave
   for i in (32,64):
@@ -42,13 +42,13 @@ def run():
       'meshblock/nx1=' + repr(i/4),
       'meshblock/nx2=' + repr(i/4),
       'meshblock/nx3=' + repr(i/4),
-      'output2/dt=-1', 'time/tlim=1.0', 'problem/compute_error=1']
+      'output2/dt=-1', 'time/tlim=1.0', 'problem/compute_error=true']
     athena.run('mhd/athinput.linear_wave3d', arguments)
   # L/R-going fast wave
   for w in (0,6):
     arguments = [
       'problem/wave_flag=' + repr(w),
-      'output2/dt=-1', 'time/tlim=0.5', 'problem/compute_error=1']
+      'output2/dt=-1', 'time/tlim=0.5', 'problem/compute_error=true']
     athena.run('mhd/athinput.linear_wave3d', arguments)
 
 # Analyze outputs
@@ -67,28 +67,28 @@ def analyze():
   if data[1][4] > 4.0e-8:
     print "error in L-going fast wave too large",data[1][4]
     return False
-  if data[1][4]/data[0][4] > 0.3:
+  if data[1][4]/data[0][4] > 0.4:
     print "not converging for L-going fast wave",data[0][4],data[1][4]
     return False
 
   if data[3][4] > 4.0e-8:
     print "error in L-going Alfven wave too large",data[3][4]
     return False
-  if data[3][4]/data[2][4] > 0.35:
+  if data[3][4]/data[2][4] > 0.4:
     print "not converging for L-going Alfven wave",data[2][4],data[3][4]
     return False
 
   if data[5][4] > 5.0e-8:
     print "error in L-going slow wave too large",data[5][4]
     return False
-  if data[5][4]/data[4][4] > 0.35:
+  if data[5][4]/data[4][4] > 0.4:
     print "not converging for L-going slow wave",data[4][4],data[5][4]
     return False
 
   if data[7][4] > 2.5e-8:
     print "error in entropy wave too large",data[7][4]
     return False
-  if data[7][4]/data[6][4] > 0.33:
+  if data[7][4]/data[6][4] > 0.4:
     print "not converging for entropy wave",data[6][4],data[7][4]
     return False
 

@@ -28,14 +28,14 @@ def run():
       'mesh/refinement=static',
       'mesh/nx1=' + repr(i), 'mesh/nx2=' + repr(i/2),
       'meshblock/nx1=' + repr(i/4), 'meshblock/nx2=' + repr(i/8),
-      'output2/dt=-1', 'time/tlim=1.0', 'problem/compute_error=1']
+      'output2/dt=-1', 'time/tlim=1.0', 'problem/compute_error=true']
     athena.run('mhd/athinput.cpaw2d', arguments)
   # run L-going wave
   arguments = [
     'mesh/refinement=static',
     'mesh/nx1=256', 'mesh/nx2=128',
     'meshblock/nx1=64', 'meshblock/nx2=32',
-    'output2/dt=-1', 'time/tlim=1.0', 'problem/compute_error=1', 'problem/dir=2']
+    'output2/dt=-1', 'time/tlim=1.0', 'problem/compute_error=true', 'problem/dir=2']
   athena.run('mhd/athinput.cpaw2d', arguments)
 
 # Analyze outputs

@@ -41,7 +41,7 @@
 // Athena++ headers
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../globals.hpp"                  // Globals
-#include "../mesh.hpp"                     // Mesh, MeshBlock, RegionSize
+#include "../mesh/mesh.hpp"                     // Mesh, MeshBlock, RegionSize
 #include "../parameter_input.hpp"          // ParameterInput
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // Field

@@ -21,7 +21,7 @@
 #include "../athena.hpp"          // macros, Real
 #include "../athena_arrays.hpp"   // AthenaArray
 #include "../parameter_input.hpp" // ParameterInput
-#include "../mesh.hpp"            // MeshBlock
+#include "../mesh/mesh.hpp"            // MeshBlock
 
 //======================================================================================
 //! \file cartesian.cpp

@@ -20,7 +20,7 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh.hpp"
+#include "../mesh/mesh.hpp"
 #include "bvals.hpp"
 
 //--------------------------------------------------------------------------------------

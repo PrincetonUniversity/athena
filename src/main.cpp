@@ -39,7 +39,7 @@
 // Athena++ headers
 #include "athena.hpp"
 #include "globals.hpp"
-#include "mesh.hpp"
+#include "mesh/mesh.hpp"
 #include "parameter_input.hpp" 
 #include "outputs/outputs.hpp"
 #include "outputs/wrapper.hpp"
@@ -264,6 +264,22 @@ int main(int argc, char *argv[])
     return(0);
   }
 
+/////////////////////////
+
+  TaskList *ptlist;
+  try {
+    ptlist = new TimeIntegratorTaskList(pinput, pmesh);
+  }
+  catch(std::bad_alloc& ba) {
+    std::cout << "### FATAL ERROR in main" << std::endl << "memory allocation failed "
+              << "in creating task list " << ba.what() << std::endl;
+#ifdef MPI_PARALLEL
+    MPI_Finalize();
+#endif
+    return(0);
+  }
+////////////////////////
+
 //--- Step 5. --------------------------------------------------------------------------
 // Set initial conditions by calling problem generator, or reading restart file
 
@@ -336,7 +352,7 @@ int main(int argc, char *argv[])
                 << " time=" << pmesh->time << " dt=" << pmesh->dt <<std::endl;
     }
 
-    pmesh->UpdateOneStep();
+    ptlist->DoTaskList(pmesh);
 
     pmesh->ncycle++;
     pmesh->time += pmesh->dt;
@@ -445,6 +461,7 @@ int main(int argc, char *argv[])
 
   delete pinput;
   delete pmesh;
+  delete ptlist;
   delete pouts;
 
 #ifdef MPI_PARALLEL

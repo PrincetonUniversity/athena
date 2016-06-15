@@ -33,7 +33,7 @@
 #include "../coordinates/coordinates.hpp"
 #include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
-#include "../mesh.hpp"
+#include "../mesh/mesh.hpp"
 
 //this class header
 #include "outputs.hpp"

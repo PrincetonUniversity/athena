@@ -1,7 +1,7 @@
 // General relativistic Fishbone-Moncrief torus generator
 
 // Primary header
-#include "../mesh.hpp"
+#include "../mesh/mesh.hpp"
 
 // C++ headers
 #include <algorithm>  // max(), min()
@@ -23,6 +23,10 @@
 #include "../hydro/eos/eos.hpp"            // HydroEqnOfState
 
 // Declarations
+void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
+    FaceField &bb, int is, int ie, int js, int je, int ks, int ke);
+void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
+    FaceField &bb, int is, int ie, int js, int je, int ks, int ke);
 static Real CalculateLFromRPeak(Real r);
 static Real CalculateRPeakFromL(Real l_target);
 static Real LogHAux(Real r, Real sin_theta);
@@ -51,13 +55,14 @@ static Real sample_r_rat;                        // sample grid geometric spacin
 static Real sample_cutoff;                       // density cutoff for sample grid
 static Real x1_min, x1_max, x2_min, x2_max;      // limits in chosen coordinate system
 static Real r_min, r_max, theta_min, theta_max;  // limits in r,theta
+static Real pert_amp, pert_kr, pert_kz;          // parameters for initial perturbations
 static AthenaArray<Real> g, gi;                  // metric and its inverse
 
 //--------------------------------------------------------------------------------------
 
 // Function for setting up arrays to handle user work
 // Inputs:
-//   pin: input parameters
+//   pin: input parameters (unused)
 // Outputs: (none)
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
@@ -87,6 +92,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
     x2_min = pin->GetReal("mesh", "x2min");
     x2_max = pin->GetReal("mesh", "x2max");
   }
+  pert_amp = pin->GetOrSetReal("problem", "pert_amp", 0.0);
+  pert_kr = pin->GetOrSetReal("problem", "pert_kr", 0.0);
+  pert_kz = pin->GetOrSetReal("problem", "pert_kz", 0.0);
 
   // Prepare arrays if needed for extra outputs
   if (NIFOV == 1 or NIFOV == 5 or
@@ -95,6 +103,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
     g.NewAthenaArray(NMETRIC, mesh_size.nx1/nrbx1+NGHOST);
     gi.NewAthenaArray(NMETRIC, mesh_size.nx1/nrbx1+NGHOST);
   }
+
+  // Enroll boundary functions
+  EnrollUserBoundaryFunction(INNER_X1, InflowBoundary);
+  EnrollUserBoundaryFunction(OUTER_X1, FixedBoundary);
   return;
 }
 
@@ -102,7 +114,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 
 // Function for freeing arrays needed for user work
 // Inputs:
-//   pin: input parameters (unused)
+//   pin: parameters
 // Outputs: (none)
 void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
@@ -119,7 +131,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
 // Function for setting initial conditions
 // Inputs:
-//   pin: input parameters (unused)
+//   pin: parameters
 // Outputs: (none)
 // Notes:
 //   initializes Fishbone-Moncrief torus
@@ -220,13 +232,20 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         uu3 = 0.0;
       }
 
-      // Set primitive values
+      // Set primitive values, including cylindrically symmetric radial velocity
+      // perturbations
+      Real rr = r * std::abs(sin_theta);
+      Real z = r * std::cos(theta);
+      Real amp_rel = pert_amp * std::sin(pert_kr*rr) * std::cos(pert_kz*z);
+      Real amp_abs = amp_rel * uu3;
+      Real pert_uur = rr/r * amp_abs;
+      Real pert_uutheta = std::cos(theta)/r * amp_abs;
       for (int k = kl; k <= ku; ++k)
       {
         phydro->w(IDN,k,j,i) = phydro->w1(IDN,k,j,i) = rho;
         phydro->w(IEN,k,j,i) = phydro->w1(IEN,k,j,i) = pgas;
-        phydro->w(IVX,k,j,i) = phydro->w1(IM1,k,j,i) = uu1;
-        phydro->w(IVY,k,j,i) = phydro->w1(IM2,k,j,i) = uu2;
+        phydro->w(IVX,k,j,i) = phydro->w1(IM1,k,j,i) = uu1 + pert_uur;
+        phydro->w(IVY,k,j,i) = phydro->w1(IM2,k,j,i) = uu2 + pert_uutheta;
         phydro->w(IVZ,k,j,i) = phydro->w1(IM3,k,j,i) = uu3;
       }
     }
@@ -936,6 +955,69 @@ void MeshBlock::UserWorkInLoop()
         phydro->ifov(1,k,j,i) = b_sq/2.0;
       }
     }
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Fixed boundary condition
+// Inputs:
+//   pmb: pointer to MeshBlock
+//   pcoord: pointer to Coordinates
+//   is,ie,js,je,ks,ke: indices demarkating active region
+// Outputs:
+//   prim: primitives set in ghost zones
+//   bb: face-centered magnetic field set in ghost zones
+// Notes:
+//   does nothing
+void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
+    FaceField &bb, int is, int ie, int js, int je, int ks, int ke)
+{
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Inflow boundary condition
+// Inputs:
+//   pmb: pointer to MeshBlock
+//   pcoord: pointer to Coordinates
+//   is,ie,js,je,ks,ke: indices demarkating active region
+// Outputs:
+//   prim: primitives set in ghost zones
+//   bb: face-centered magnetic field set in ghost zones
+void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
+    FaceField &bb, int is, int ie, int js, int je, int ks, int ke)
+{
+  // Set hydro variables
+  for (int k = ks; k <= ke; ++k)
+    for (int j = js; j <= je; ++j)
+      for (int i = is-NGHOST; i <= is-1; ++i)
+      {
+        prim(IDN,k,j,i) = prim(IDN,k,j,is);
+        prim(IEN,k,j,i) = prim(IEN,k,j,is);
+        prim(IM1,k,j,i) = std::min(prim(IM1,k,j,is), 0.0);
+        prim(IM2,k,j,i) = prim(IM2,k,j,is);
+        prim(IM3,k,j,i) = prim(IM3,k,j,is);
+      }
+
+  // Set radial magnetic field
+  for (int k = ks; k <= ke; ++k)
+    for (int j = js; j <= je; ++j)
+      for (int i = is-NGHOST; i <= is-1; ++i)
+        bb.x1f(k,j,i) = bb.x1f(k,j,is);
+
+  // Set polar magnetic field
+  for (int k = ks; k <= ke; ++k)
+    for (int j = js; j <= je+1; ++j)
+      for (int i = is-NGHOST; i <= is-1; ++i)
+        bb.x2f(k,j,i) = bb.x2f(k,j,is);
+
+  // Set azimuthal magnetic field
+  for (int k = ks; k <= ke+1; ++k)
+    for (int j = js; j <= je; ++j)
+      for (int i = is-NGHOST; i <= is-1; ++i)
+        bb.x3f(k,j,i) = bb.x3f(k,j,is);
   return;
 }
 

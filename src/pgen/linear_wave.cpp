@@ -28,14 +28,19 @@
 #include <string>     // c_str()
 
 // Athena++ headers
+#include "../globals.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../parameter_input.hpp"
-#include "../mesh.hpp"
+#include "../mesh/mesh.hpp"
 #include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
-#include "../hydro/eos/eos.hpp"
+#include "../eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
+
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#endif
 
 // Parameters which define initial solution -- made global so that they can be shared
 // with functions A1,2,3 which compute vector potentials
@@ -144,9 +149,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
-  // return if compute_error=0 (default)
-  int error_test;
-  if ((error_test=pin->GetOrAddInteger("problem","compute_error",0))==0) return;
+  if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
 
   // Initialize errors to zero
   Real err[NHYDRO+NFIELD];
@@ -198,47 +201,61 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     pmb=pmb->next;
   }
 
-  // normalize errors by number of cells, compute RMS
+  // normalize errors by number of cells
   for (int i=0; i<(NHYDRO+NFIELD); ++i) err[i] = err[i]/(float)GetTotalCells();
   Real rms_err = 0.0;
-  for (int i=0; i<(NHYDRO+NFIELD); ++i) rms_err += SQR(err[i]);
-  rms_err = sqrt(rms_err);
 
-  // open output file and write out errors
-  std::string fname;
-  fname.assign("linearwave-errors.dat");
-  std::stringstream msg;
-  FILE *pfile;
-
-  // The file exists -- reopen the file in append mode
-  if((pfile = fopen(fname.c_str(),"r")) != NULL){
-    if((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
-      msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
-          << std::endl << "Error output file could not be opened" <<std::endl;
-      throw std::runtime_error(msg.str().c_str());
-    }
-
-  // The file does not exist -- open the file in write mode and add headers
+#ifdef MPI_PARALLEL
+  if (Globals::my_rank == 0) {
+    MPI_Reduce(MPI_IN_PLACE,&err,(NHYDRO+NFIELD),MPI_ATHENA_REAL,MPI_SUM,0,
+               MPI_COMM_WORLD);
   } else {
-    if((pfile = fopen(fname.c_str(),"w")) == NULL){
-      msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
-          << std::endl << "Error output file could not be opened" <<std::endl;
-      throw std::runtime_error(msg.str().c_str());
-    }
-    fprintf(pfile,"# Nx1  Nx2  Nx3  Ncycle  RMS-Error  d  M1  M2  M3  E");
-    if (MAGNETIC_FIELDS_ENABLED) fprintf(pfile,"  B1c  B2c  B3c");
-    fprintf(pfile,"\n");
+    MPI_Reduce(&err,&err,(NHYDRO+NFIELD),MPI_ATHENA_REAL,MPI_SUM,0,MPI_COMM_WORLD);
   }
+#endif
 
-  // write errors
-  fprintf(pfile,"%d  %d",mesh_size.nx1,mesh_size.nx2);
-  fprintf(pfile,"  %d  %d  %e",mesh_size.nx3,ncycle,rms_err);
-  fprintf(pfile,"  %e  %e  %e  %e  %e",err[IDN],err[IM1],err[IM2],err[IM3],err[IEN]);
-  if (MAGNETIC_FIELDS_ENABLED) {
-    fprintf(pfile,"  %e  %e  %e",err[NHYDRO+IB1],err[NHYDRO+IB2],err[NHYDRO+IB3]);
+  // only the root process outputs the data
+  if (Globals::my_rank == 0) {
+    // compute rms error
+    for (int i=0; i<(NHYDRO+NFIELD); ++i) rms_err += SQR(err[i]);
+    rms_err = sqrt(rms_err);
+
+    // open output file and write out errors
+    std::string fname;
+    fname.assign("linearwave-errors.dat");
+    std::stringstream msg;
+    FILE *pfile;
+
+    // The file exists -- reopen the file in append mode
+    if((pfile = fopen(fname.c_str(),"r")) != NULL){
+      if((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
+        msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
+            << std::endl << "Error output file could not be opened" <<std::endl;
+        throw std::runtime_error(msg.str().c_str());
+      }
+
+    // The file does not exist -- open the file in write mode and add headers
+    } else {
+      if((pfile = fopen(fname.c_str(),"w")) == NULL){
+        msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
+            << std::endl << "Error output file could not be opened" <<std::endl;
+        throw std::runtime_error(msg.str().c_str());
+      }
+      fprintf(pfile,"# Nx1  Nx2  Nx3  Ncycle  RMS-Error  d  M1  M2  M3  E");
+      if (MAGNETIC_FIELDS_ENABLED) fprintf(pfile,"  B1c  B2c  B3c");
+      fprintf(pfile,"\n");
+    }
+
+    // write errors
+    fprintf(pfile,"%d  %d",mesh_size.nx1,mesh_size.nx2);
+    fprintf(pfile,"  %d  %d  %e",mesh_size.nx3,ncycle,rms_err);
+    fprintf(pfile,"  %e  %e  %e  %e  %e",err[IDN],err[IM1],err[IM2],err[IM3],err[IEN]);
+    if (MAGNETIC_FIELDS_ENABLED) {
+      fprintf(pfile,"  %e  %e  %e",err[NHYDRO+IB1],err[NHYDRO+IB2],err[NHYDRO+IB3]);
+    }
+    fprintf(pfile,"\n");
+    fclose(pfile);
   }
-  fprintf(pfile,"\n");
-  fclose(pfile);
 
   return;
 }

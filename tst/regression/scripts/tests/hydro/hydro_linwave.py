@@ -30,7 +30,7 @@ def run():
       'meshblock/nx1=' + repr(i/4),
       'meshblock/nx2=' + repr(i/4),
       'meshblock/nx3=' + repr(i/4),
-      'output2/dt=-1', 'time/tlim=1.0', 'problem/compute_error=1']
+      'output2/dt=-1', 'time/tlim=1.0', 'problem/compute_error=true']
     athena.run('hydro/athinput.linear_wave3d', arguments)
   # entropy wave
   for i in (32,64):
@@ -40,13 +40,13 @@ def run():
       'meshblock/nx1=' + repr(i/4),
       'meshblock/nx2=' + repr(i/4),
       'meshblock/nx3=' + repr(i/4),
-      'output2/dt=-1', 'time/tlim=1.0', 'problem/compute_error=1']
+      'output2/dt=-1', 'time/tlim=1.0', 'problem/compute_error=true']
     athena.run('hydro/athinput.linear_wave3d', arguments)
   # L/R-going sound wave, no SMR
   for w in (0,4):
     arguments = [
       'problem/wave_flag=' + repr(w),
-      'output2/dt=-1', 'time/tlim=1.0', 'problem/compute_error=1']
+      'output2/dt=-1', 'time/tlim=1.0', 'problem/compute_error=true']
     athena.run('hydro/athinput.linear_wave3d', arguments)
 
 # Analyze outputs

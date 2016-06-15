@@ -6,14 +6,14 @@ reference = Fishbone & Moncrief 1976, ApJ 207 962 (FM)
 problem_id = fm_torus
 
 <output1>
-file_type   = hdf5
-variable    = prim
-dt          = 1.0
+file_type = hdf5
+variable  = prim
+dt        = 1.0
 
 <output2>
-file_type   = hdf5
-variable    = cons
-dt          = 1.0
+file_type = hdf5
+variable  = cons
+dt        = 1.0
 
 <output3>
 file_type = rst
@@ -25,12 +25,12 @@ nlim       = -1
 tlim       = 1.0
 
 <mesh>
-nx1    = 64       # r-direction
+nx1    = 64    # r-direction
 x1min  = 1.96
 x1max  = 20.0
 x1rat  = 1.0
-ix1_bc = outflow
-ox1_bc = outflow
+ix1_bc = user
+ox1_bc = user
 
 nx2    = 64                 # theta-direction
 x2min  = 0.0
@@ -86,3 +86,9 @@ sample_n_theta    = 64      # number of samples in theta to use in global beta g
 sample_r_rat      = 1.0     # geometric ratio to use in r in global beta grid
 sample_cutoff     = 0.2     # density below which cells are not used for global beta
                             # rescaling calculation
+
+pert_amp = 0.0  # amplitude of perturbations to cylindrical radial velocity \tilde{u}^R
+                # (combination of \tilde{u}^r and \tilde{u}^\theta) as fraction
+                # of azimuthal velocity \tilde{u}^\phi
+pert_kr  = 0.0  # cylindrical radial wavenumber of perturbations
+pert_kz  = 0.0  # vertical wavenumber of perturbations

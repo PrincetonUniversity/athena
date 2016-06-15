@@ -40,7 +40,7 @@ void InitWTLimit(void)
     wtreq=new MPI_Request[Globals::nranks-1];
     for(int i=0; i<Globals::nranks-1; i++) {
       wtreq[i]=MPI_REQUEST_NULL;
-      MPI_Send_init(&nwtlbuf,1,MPI_INT,i+1,(int)tag_wtlimit,MPI_COMM_WORLD,&wtreq[i]);
+      MPI_Send_init(&nwtlbuf,1,MPI_INT,i+1,(int)TAG_WTLIM,MPI_COMM_WORLD,&wtreq[i]);
     }
   }
 #endif
@@ -65,9 +65,9 @@ bool TestWTLimit(int &nwtlimit)
 #ifdef MPI_PARALLEL
   if(Globals::my_rank!=0) {
     int test;
-    MPI_Iprobe(0,(int)tag_wtlimit,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
+    MPI_Iprobe(0,(int)TAG_WTLIM,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
     if(test==false) return false;
-    MPI_Recv(&nwtlbuf,1,MPI_INT,0,(int)tag_wtlimit,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+    MPI_Recv(&nwtlbuf,1,MPI_INT,0,(int)TAG_WTLIM,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
     nwtlimit=nwtlbuf;
   }
 #endif
