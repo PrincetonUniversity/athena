@@ -22,9 +22,6 @@ class TaskList;
 enum TaskStatus {TASK_FAIL, TASK_SUCCESS, TASK_NEXT};
 enum TaskListStatus {TL_RUNNING, TL_STUCK, TL_COMPLETE, TL_NOTHING_TO_DO};
 
-// definition of task function pointer: TaskFunc_t
-//typedef enum TaskStatus (*TaskFunc_t)(MeshBlock*, int);
-
 //--------------------------------------------------------------------------------------
 //! \struct IntegratorWeight
 //  \brief weights used in time integrator tasks
@@ -40,8 +37,7 @@ struct IntegratorWeight {
 struct Task {
   uint64_t task_id;      // encodes step & task using bit positions in HydroTasks
   uint64_t dependency;   // encodes dependencies to other tasks using " " " "
-  enum TaskStatus (TaskList::*TaskFunc)(MeshBlock*, int);
-//  TaskFunc_t TaskFunc;   // function called by this task
+  enum TaskStatus (TaskList::*TaskFunc)(MeshBlock*, int);  // ptr to member function
 };
 
 //--------------------------------------------------------------------------------------
@@ -77,6 +73,7 @@ public:
   ~TimeIntegratorTaskList() {};
 
   // data
+  std::string integrator;
   struct IntegratorWeight step_wghts[MAX_NSTEP];
 
   // functions
@@ -108,11 +105,11 @@ public:
   enum TaskStatus UserWork(MeshBlock *pmb, int step);
   enum TaskStatus NewBlockTimeStep(MeshBlock *pmb, int step);
   enum TaskStatus CheckRefinement(MeshBlock *pmb, int step);
-
 };
 
 //--------------------------------------------------------------------------------------
 // 64-bit integers with "1" in different bit positions used to ID  each hydro task.
+
 namespace HydroIntegratorTaskNames {
   const uint64_t NONE=0;
   const uint64_t CALC_HYDFLX=1LL<<0;

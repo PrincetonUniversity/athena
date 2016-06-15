@@ -42,8 +42,8 @@ public:
   void AddFluxDivergenceToAverage(MeshBlock *pmb,AthenaArray<Real> &u1, 
     AthenaArray<Real> &u2, AthenaArray<Real> &w, AthenaArray<Real> &bcc,
     IntegratorWeight wght, AthenaArray<Real> &u_out);
-  void CalculateFluxes(MeshBlock *pmb, AthenaArray<Real> &u, AthenaArray<Real> &w,
-    FaceField &b, AthenaArray<Real> &bcc, const int step);
+  void CalculateFluxes(MeshBlock *pmb, AthenaArray<Real> &w, FaceField &b,
+    AthenaArray<Real> &bcc, int order);
   void RiemannSolver(const int k, const int j, const int il, const int iu,
     const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
     AthenaArray<Real> &wr, AthenaArray<Real> &flx);

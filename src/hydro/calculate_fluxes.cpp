@@ -41,8 +41,8 @@
 //! \fn  void Hydro::CalculateFluxes
 //  \brief Calculate Hydrodynamic Fluxes using the Riemann solver
 
-void Hydro::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
-  AthenaArray<Real> &w, FaceField &b, AthenaArray<Real> &bcc, const int step)
+void Hydro::CalculateFluxes(MeshBlock *pmb, AthenaArray<Real> &w, FaceField &b,
+  AthenaArray<Real> &bcc, int reconstruct_order)
 {
   AthenaArray<Real> &x1flux=flux[X1DIR];
   AthenaArray<Real> &x2flux=flux[X2DIR];
@@ -50,12 +50,6 @@ void Hydro::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   int il, iu, jl, ju, kl, ku;
-  Real dt;
-  if (step == 1) {
-    dt = 0.5*(pmb->pmy_mesh->dt);
-  } else {
-    dt = (pmb->pmy_mesh->dt);
-  }
 
   AthenaArray<Real> b1,b2,b3,ei_x1f,ei_x2f,ei_x3f,w_x1f,w_x2f,w_x3f;
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -100,7 +94,7 @@ void Hydro::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
     for (int j=jl; j<=ju; ++j){
 
       // reconstruct L/R states
-      if (step == 1) {
+      if (reconstruct_order == 1) {
         pmb->precon->DonorCellX1(k,j,is,ie+1,w,bcc,wl,wr);
       } else {
         pmb->precon->PiecewiseLinearX1(k,j,is,ie+1,w,bcc,wl,wr);
@@ -126,7 +120,8 @@ void Hydro::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
           ei_x1f(X1E3,k,j,i) = -flx(IBY,i); // flux(IBY) = (v1*b2 - v2*b1) = -EMFZ
           ei_x1f(X1E2,k,j,i) =  flx(IBZ,i); // flux(IBZ) = (v1*b3 - v3*b1) =  EMFY
           const Real& dx = pmb->pcoord->CenterWidth1(k,j,i);
-          Real v_over_c = (1024)*dt*flx(IDN,i)/(dx*(wl(IDN,i) + wr(IDN,i)));
+          Real v_over_c = (1024)*(pmb->pmy_mesh->dt)*flx(IDN,i)/
+                           (dx*(wl(IDN,i) + wr(IDN,i)));
           Real tmp_min = std::min(0.5,v_over_c);
           w_x1f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
         }
@@ -151,7 +146,7 @@ void Hydro::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
       for (int j=js; j<=je+1; ++j){
 
         // reconstruct L/R states at j
-        if (step == 1) {
+        if (reconstruct_order == 1) {
           pmb->precon->DonorCellX2(k,j,il,iu,w,bcc,wl,wr);
         } else {
           pmb->precon->PiecewiseLinearX2(k,j,il,iu,w,bcc,wl,wr);
@@ -177,7 +172,8 @@ void Hydro::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
             ei_x2f(X2E1,k,j,i) = -flx(IBY,i); // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
             ei_x2f(X2E3,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
             const Real& dx = pmb->pcoord->CenterWidth2(k,j,i);
-            Real v_over_c = (1024)*dt*flx(IDN,i)/(dx*(wl(IDN,i) + wr(IDN,i)));
+            Real v_over_c = (1024)*(pmb->pmy_mesh->dt)*flx(IDN,i)/
+                             (dx*(wl(IDN,i) + wr(IDN,i)));
             Real tmp_min = std::min(0.5,v_over_c);
             w_x2f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
           }
@@ -199,7 +195,7 @@ void Hydro::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
       for (int j=jl; j<=ju; ++j){
 
         // reconstruct L/R states at k
-        if (step == 1) {
+        if (reconstruct_order == 1) {
           pmb->precon->DonorCellX3(k,j,il,iu,w,bcc,wl,wr);
         } else {
           pmb->precon->PiecewiseLinearX3(k,j,il,iu,w,bcc,wl,wr);
@@ -224,7 +220,8 @@ void Hydro::CalculateFluxes(MeshBlock *pmb,AthenaArray<Real> &u,
             ei_x3f(X3E2,k,j,i) = -flx(IBY,i); // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
             ei_x3f(X3E1,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
             const Real& dx = pmb->pcoord->CenterWidth3(k,j,i);
-            Real v_over_c = (1024)*dt*flx(IDN,i)/(dx*(wl(IDN,i) + wr(IDN,i)));
+            Real v_over_c = (1024)*(pmb->pmy_mesh->dt)*flx(IDN,i)/
+                             (dx*(wl(IDN,i) + wr(IDN,i)));
             Real tmp_min = std::min(0.5,v_over_c);
             w_x3f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
           }
