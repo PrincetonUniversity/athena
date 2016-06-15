@@ -13,19 +13,14 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file tasklist.hpp
-//  \brief task functions
+//! \file tasklist.cpp
+//  \brief functions for TaskList base class
 //======================================================================================
 
 // Athena++ classes headers
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
-#include "../field/field.hpp"
-#include "../bvals/bvals.hpp"
-#include "../eos/eos.hpp"
-#include "../hydro/srcterms/hydro_srcterms.hpp"
 
 // this class header
 #include "task_list.hpp"
@@ -37,10 +32,10 @@ TaskList::TaskList(Mesh *pm)
 {
   pmy_mesh_ = pm;
   ntasks = 0;
+  nsub_steps = 0;
 
-  // hardwired for VL2 integrator for now
-  nloop_over_list = 2;
-  CreateTimeIntegrator(pm);
+  // hardwired for time-integrator for now
+//  CreateTimeIntegrator(pin, pm);
 
 }
 
@@ -51,10 +46,11 @@ TaskList::~TaskList()
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn
-//  \brief do all possible tasks in this TaskList, return status
+//! \fn DoAllAvailableTasks
+//  \brief do all tasks that can be done (are not waiting for a dependency to be 
+//  cleared) in this TaskList, return status.  
 
-enum TaskListStatus TaskList::DoAllTasksPossible(MeshBlock *pmb, int step) {
+enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int step) {
   int skip=0;
   enum TaskStatus ret;
 
@@ -66,7 +62,8 @@ enum TaskListStatus TaskList::DoAllTasksPossible(MeshBlock *pmb, int step) {
     if((taski.task_id & pmb->finished_tasks) == 0LL) { // task not done
       // check if dependency clear
       if (((taski.dependency & pmb->finished_tasks) == taski.dependency)) {
-        ret=taski.TaskFunc(pmb,step);
+//        ret=taski.TaskFunc(pmb,step);
+        ret=(this->*task_list_[i].TaskFunc)(pmb,step);
         if(ret!=TASK_FAIL) { // success
           pmb->num_tasks_left_--;
           pmb->finished_tasks |= taski.task_id;
@@ -85,13 +82,13 @@ enum TaskListStatus TaskList::DoAllTasksPossible(MeshBlock *pmb, int step) {
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void TaskList::ExecuteTaskList(Mesh *pmesh)
-//  \brief completes all tasks in this list
+//! \fn void TaskList::DoTaskList(Mesh *pmesh)
+//  \brief completes all tasks in this list, will not return until all are tasks done
 
-void TaskList::ExecuteTaskList(Mesh *pmesh)
+void TaskList::DoTaskList(Mesh *pmesh)
 {
 
-  for (int step=1; step<=nloop_over_list; ++step) {
+  for (int step=1; step<=nsub_steps; ++step) {
     MeshBlock *pmb = pmesh->pblock;
     int nmb_left = pmesh->GetNumMeshBlocksThisRank(Globals::my_rank);
     // initialize, start MPI communications (if needed)
@@ -107,7 +104,7 @@ void TaskList::ExecuteTaskList(Mesh *pmesh)
     while(nmb_left > 0) {
       pmb = pmesh->pblock;
       while (pmb != NULL)  {
-        if (DoAllTasksPossible(pmb,step) == TL_COMPLETE) nmb_left--;
+        if (DoAllAvailableTasks(pmb,step) == TL_COMPLETE) nmb_left--;
         pmb=pmb->next;
       }
     }

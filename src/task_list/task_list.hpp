@@ -16,15 +16,103 @@
 // forward declarations
 class Mesh;
 class MeshBlock;
+class TaskList;
 
 // return codes for functions working on individual Tasks and TaskList
 enum TaskStatus {TASK_FAIL, TASK_SUCCESS, TASK_NEXT};
 enum TaskListStatus {TL_RUNNING, TL_STUCK, TL_COMPLETE, TL_NOTHING_TO_DO};
 
 // definition of task function pointer: TaskFunc_t
-typedef enum TaskStatus (*TaskFunc_t)(MeshBlock*, int);
+//typedef enum TaskStatus (*TaskFunc_t)(MeshBlock*, int);
 
-// 64-bit integers with "1" in different bit positions to label each hydro task.
+//--------------------------------------------------------------------------------------
+//! \struct IntegratorWeight
+//  \brief weights used in time integrator tasks
+
+struct IntegratorWeight {
+  Real a,b,c;
+};
+
+//--------------------------------------------------------------------------------------
+//! \struct Task
+//  \brief data and function pointer for an individual Task
+
+struct Task {
+  uint64_t task_id;      // encodes step & task using bit positions in HydroTasks
+  uint64_t dependency;   // encodes dependencies to other tasks using " " " "
+  enum TaskStatus (TaskList::*TaskFunc)(MeshBlock*, int);
+//  TaskFunc_t TaskFunc;   // function called by this task
+};
+
+//--------------------------------------------------------------------------------------
+//! \class TaskList
+//  \brief data and function definitions for task list base class
+
+class TaskList {
+friend class TimeIntegratorTaskList;
+public:
+  TaskList(Mesh *pm);
+  ~TaskList();
+
+  // data
+  int ntasks;     // number of tasks in this list
+  int nsub_steps; // number of times task list should be repeated per full time step
+
+  // functions
+  enum TaskListStatus DoAllAvailableTasks(MeshBlock *pmb, int step);
+  void DoTaskList(Mesh *pmesh);
+
+private:
+  Mesh* pmy_mesh_;
+  struct Task task_list_[64];
+};
+
+//--------------------------------------------------------------------------------------
+//! \class TimeIntegratorTaskList
+//  \brief data and function definitions for TimeIntegratorTaskList derived class
+
+class TimeIntegratorTaskList : public TaskList {
+public:
+  TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm);
+  ~TimeIntegratorTaskList() {};
+
+  // data
+  struct IntegratorWeight step_wghts[MAX_NSTEP];
+
+  // functions
+  void AddTimeIntegratorTask(uint64_t id, uint64_t dep);
+
+  enum TaskStatus CalculateFluxes(MeshBlock *pmb, int step);
+  enum TaskStatus CalculateEMF(MeshBlock *pmb, int step);
+
+  enum TaskStatus FluxCorrectSend(MeshBlock *pmb, int step);
+  enum TaskStatus EMFCorrectSend(MeshBlock *pmb, int step);
+
+  enum TaskStatus FluxCorrectReceive(MeshBlock *pmb, int step);
+  enum TaskStatus EMFCorrectReceive(MeshBlock *pmb, int step);
+
+  enum TaskStatus HydroIntegrate(MeshBlock *pmb, int step);
+  enum TaskStatus FieldIntegrate(MeshBlock *pmb, int step);
+
+  enum TaskStatus HydroSourceTerms(MeshBlock *pmb, int step);
+
+  enum TaskStatus HydroSend(MeshBlock *pmb, int step);
+  enum TaskStatus FieldSend(MeshBlock *pmb, int step);
+
+  enum TaskStatus HydroReceive(MeshBlock *pmb, int step);
+  enum TaskStatus FieldReceive(MeshBlock *pmb, int step);
+
+  enum TaskStatus Prolongation(MeshBlock *pmb, int step);
+  enum TaskStatus Primitives(MeshBlock *pmb, int step);
+  enum TaskStatus PhysicalBoundary(MeshBlock *pmb, int step);
+  enum TaskStatus UserWork(MeshBlock *pmb, int step);
+  enum TaskStatus NewBlockTimeStep(MeshBlock *pmb, int step);
+  enum TaskStatus CheckRefinement(MeshBlock *pmb, int step);
+
+};
+
+//--------------------------------------------------------------------------------------
+// 64-bit integers with "1" in different bit positions used to ID  each hydro task.
 namespace HydroIntegratorTaskNames {
   const uint64_t NONE=0;
   const uint64_t CALC_HYDFLX=1LL<<0;
@@ -74,40 +162,6 @@ namespace HydroIntegratorTaskNames {
   const uint64_t USERWORK=1LL<<36;
   const uint64_t NEW_DT  =1LL<<37;
   const uint64_t AMR_FLAG=1LL<<38;
-};
-
-//--------------------------------------------------------------------------------------
-//!   \struct Task
-//    \brief all data related to an individual Task
-
-struct Task {
-  uint64_t task_id;      // encodes step & task using bit positions in HydroTasks
-  uint64_t dependency;   // encodes dependencies to other tasks using " " " "
-  TaskFunc_t TaskFunc;   // function called by this task
-};
-
-//--------------------------------------------------------------------------------------
-//!   \class TaskList
-//    \brief data and function definitions for task list
-
-class TaskList {
-public:
-  TaskList(Mesh *pm);
-  ~TaskList();
-
-  // data
-  int ntasks;
-  int nloop_over_list;
-
-  // functions
-  void AddTask(uint64_t id, uint64_t dep);
-  enum TaskListStatus DoAllTasksPossible(MeshBlock *pmb, int step);
-  void ExecuteTaskList(Mesh *pmesh);
-  void CreateTimeIntegrator(Mesh *pm);
-
-private:
-  Mesh* pmy_mesh_;
-  Task task_list_[64];
 };
 
 #endif // TASK_LIST_HPP

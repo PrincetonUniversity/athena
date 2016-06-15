@@ -219,7 +219,6 @@ definitions['RECONSTRUCT'] = makefile_options['RECONSTRUCT_FILE'] = args['order'
 
 # --fint=[name] argument
 definitions['HYDRO_INTEGRATOR'] = makefile_options['HYDRO_INT_FILE'] = args['fint']
-definitions['NSTEP'] = '2'
 
 # -b argument
 # set variety of macros based on whether MHD/hydro or adi/iso are defined

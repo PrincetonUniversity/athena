@@ -268,7 +268,7 @@ int main(int argc, char *argv[])
 
   TaskList *ptlist;
   try {
-    ptlist = new TaskList(pmesh);
+    ptlist = new TimeIntegratorTaskList(pinput, pmesh);
   }
   catch(std::bad_alloc& ba) {
     std::cout << "### FATAL ERROR in main" << std::endl << "memory allocation failed "
@@ -352,7 +352,7 @@ int main(int argc, char *argv[])
                 << " time=" << pmesh->time << " dt=" << pmesh->dt <<std::endl;
     }
 
-    ptlist->ExecuteTaskList(pmesh);
+    ptlist->DoTaskList(pmesh);
 
     pmesh->ncycle++;
     pmesh->time += pmesh->dt;

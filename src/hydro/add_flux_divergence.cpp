@@ -13,7 +13,7 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file flux_divergence.cpp
+//! \file add_flux_divergence.cpp
 //  \brief Applies divergence of the fluxes, including geometric "source terms" added
 //         by a function implemented in each Coordinate class.
 //======================================================================================
@@ -36,23 +36,19 @@
 #endif
 
 //--------------------------------------------------------------------------------------
-//! \fn  void Hydro::FluxDivergence
-//  \brief Integrate the conservative variables using the calculated fluxes
+//! \fn  void Hydro::AddFluxDivergenceToAverage
+//  \brief Adds flux divergence to weighted average of conservative variables from
+//  previous step(s) of time integrator algorithm
 
-void Hydro::FluxDivergence(MeshBlock *pmb,AthenaArray<Real> &u,
-  AthenaArray<Real> &w, FaceField &b, AthenaArray<Real> &bcc, const int step)
+void Hydro::AddFluxDivergenceToAverage(MeshBlock *pmb, AthenaArray<Real> &u_in1,
+  AthenaArray<Real> &u_in2, AthenaArray<Real> &w, AthenaArray<Real> &bcc, 
+  const IntegratorWeight wght, AthenaArray<Real> &u_out)
 {
   AthenaArray<Real> &x1flux=flux[X1DIR];
   AthenaArray<Real> &x2flux=flux[X2DIR];
   AthenaArray<Real> &x3flux=flux[X3DIR];
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  Real dt;
-  if (step == 1) {
-    dt = 0.5*(pmb->pmy_mesh->dt);
-  } else {
-    dt = (pmb->pmy_mesh->dt);
-  }
 
   int tid=0;
   int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
@@ -110,7 +106,8 @@ void Hydro::FluxDivergence(MeshBlock *pmb,AthenaArray<Real> &u,
       pmb->pcoord->CellVolume(k,j,is,ie,vol);
       for (int n=0; n<NHYDRO; ++n) {
         for (int i=is; i<=ie; ++i) {
-          u(n,k,j,i) -= dt*dflx(n,i)/vol(i);
+          u_out(n,k,j,i) = wght.a*u_in1(n,k,j,i) + wght.b*u_in2(n,k,j,i)
+                         - wght.c*(pmb->pmy_mesh->dt)*dflx(n,i)/vol(i);
         }
       }
     }
@@ -120,7 +117,7 @@ void Hydro::FluxDivergence(MeshBlock *pmb,AthenaArray<Real> &u,
 
 
   // add coordinate (geometric) source terms
-  pmb->pcoord->CoordSrcTerms(dt,pmb->phydro->flux,w,bcc,u);
+  pmb->pcoord->CoordSrcTerms((wght.c*pmb->pmy_mesh->dt),pmb->phydro->flux,w,bcc,u);
 
   return;
 }

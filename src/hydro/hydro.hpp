@@ -12,6 +12,7 @@
 // Athena++ classes headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../task_list/task_list.hpp"
 
 class MeshBlock;
 class ParameterInput;
@@ -25,8 +26,9 @@ friend class Field;
 public:
   Hydro(MeshBlock *pmb, ParameterInput *pin);
   ~Hydro();
-  MeshBlock* pmy_block;    // ptr to MeshBlock containing this Hydro
 
+  // data
+  MeshBlock* pmy_block;    // ptr to MeshBlock containing this Hydro
   AthenaArray<Real> u,w;      // conserved and primitive variables
   AthenaArray<Real> u1,w1;    // conserved and primitive variables at intermediate step
   AthenaArray<Real> flux[3];  // conserved and primitive variables
@@ -35,11 +37,11 @@ public:
 
   HydroSourceTerms *psrc;
 
+  // functions
   Real NewBlockTimeStep(MeshBlock *pmb);    // computes new timestep on a MeshBlock
-  void CopyOrAverageHydro(AthenaArray<Real> &a, AthenaArray<Real> &b, 
-    AthenaArray<Real> &c, Real f);
-  void FluxDivergence(MeshBlock *pmb,AthenaArray<Real> &u,
-    AthenaArray<Real> &w, FaceField &b, AthenaArray<Real> &bcc, const int step);
+  void AddFluxDivergenceToAverage(MeshBlock *pmb,AthenaArray<Real> &u1, 
+    AthenaArray<Real> &u2, AthenaArray<Real> &w, AthenaArray<Real> &bcc,
+    IntegratorWeight wght, AthenaArray<Real> &u_out);
   void CalculateFluxes(MeshBlock *pmb, AthenaArray<Real> &u, AthenaArray<Real> &w,
     FaceField &b, AthenaArray<Real> &bcc, const int step);
   void RiemannSolver(const int k, const int j, const int il, const int iu,

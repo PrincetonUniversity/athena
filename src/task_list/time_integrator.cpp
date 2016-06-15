@@ -13,8 +13,9 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file time_integrator.hpp
-//  \brief implements task list for any time integrator (e.g. van Leer, RK2, RK3, etc.)
+//! \file time_integrator.cpp
+//  \brief derived class for time integrator task list.  Can create task lists for one
+//  of many different time integrators (e.g. van Leer, RK2, RK3, etc.)
 //======================================================================================
 
 // C/C++ headers
@@ -25,6 +26,7 @@
 
 // Athena++ classes headers
 #include "../athena.hpp"
+#include "../parameter_input.hpp"
 #include "../mesh/mesh.hpp"
 #include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
@@ -36,22 +38,233 @@
 #include "task_list.hpp"
 
 //--------------------------------------------------------------------------------------
+//  TimeIntegratorTaskList constructor
+
+TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
+  : TaskList(pm)
+{
+  // First, set weights for each step of time-integration algorithm.  Each step is
+  //    U^{2} = a*U^0 + b*U^1 + c*dt*Div(F), where U^0 and U^1 are previous steps 
+  // a,b=(1-a),and c are weights that are different for each step and each integrator
+  // These are stored as: time_int_wght1 = a, time_int_wght2 = b, time_int_wght3 = c
+
+  std::string input_string;
+  input_string = pin->GetOrAddString("time","integrator","vl2");
+
+  // second-order van Leer integrator (Gardiner & Stone 2009)
+  if (input_string == "vl2") {
+    nsub_steps = 2;
+    step_wghts[0].a = 1.0;
+    step_wghts[0].b = 0.0;
+    step_wghts[0].c = 0.5;
+
+    step_wghts[1].a = 1.0;
+    step_wghts[1].b = 0.0;
+    step_wghts[1].c = 1.0;
+  } else {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in CreateTimeIntegrator" << std::endl
+        << "integrator=" << input_string << " not valid time integrator" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+
+  // Now assemble list of tasks for each step of time integrator
+  {using namespace HydroIntegratorTaskNames;
+    // compute hydro fluxes, integrate hydro variables
+    AddTimeIntegratorTask(CALC_HYDFLX,NONE);
+    if(pm->multilevel==true) { // SMR or AMR
+      AddTimeIntegratorTask(SEND_HYDFLX,CALC_HYDFLX);
+      AddTimeIntegratorTask(RECV_HYDFLX,CALC_HYDFLX);
+      AddTimeIntegratorTask(INT_HYD, RECV_HYDFLX);
+    } else {
+      AddTimeIntegratorTask(INT_HYD, CALC_HYDFLX);
+    }
+    AddTimeIntegratorTask(SRCTERM_HYD,INT_HYD);
+    AddTimeIntegratorTask(SEND_HYD,INT_HYD);
+    AddTimeIntegratorTask(RECV_HYD,NONE);
+
+    // compute MHD fluxes, integrate field
+    if (MAGNETIC_FIELDS_ENABLED) { // MHD
+      AddTimeIntegratorTask(CALC_FLDFLX,CALC_HYDFLX);
+      AddTimeIntegratorTask(SEND_FLDFLX,CALC_FLDFLX);
+      AddTimeIntegratorTask(RECV_FLDFLX,SEND_FLDFLX);
+      AddTimeIntegratorTask(INT_FLD, RECV_FLDFLX);
+      AddTimeIntegratorTask(SEND_FLD,INT_FLD);
+      AddTimeIntegratorTask(RECV_FLD,NONE);
+    }
+
+    // prolongate, compute new primitives
+    if (MAGNETIC_FIELDS_ENABLED) { // MHD
+      if(pm->multilevel==true) { // SMR or AMR
+        AddTimeIntegratorTask(PROLONG, (SEND_HYD|RECV_HYD|SEND_FLD|RECV_FLD));
+        AddTimeIntegratorTask(CON2PRIM,PROLONG);
+      } else {
+        AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD));
+      }
+    } else {  // HYDRO
+      if(pm->multilevel==true) { // SMR or AMR
+        AddTimeIntegratorTask(PROLONG,(SEND_HYD|RECV_HYD));
+        AddTimeIntegratorTask(CON2PRIM,PROLONG);
+      } else {
+        AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD));
+      }
+    }
+
+    // everything else
+    AddTimeIntegratorTask(PHY_BVAL,CON2PRIM);
+    AddTimeIntegratorTask(USERWORK,PHY_BVAL);
+    AddTimeIntegratorTask(NEW_DT,USERWORK);
+    if(pm->adaptive==true) {
+      AddTimeIntegratorTask(AMR_FLAG,USERWORK);
+    }
+
+  } // end of using namespace block
+}
+
+//--------------------------------------------------------------------------------------//! \fn
+//  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
+//  value of ntask.  
+
+void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
+{
+  task_list_[ntasks].task_id=id;
+  task_list_[ntasks].dependency=dep;
+
+  using namespace HydroIntegratorTaskNames;
+  switch((id)) {
+    case (CALC_HYDFLX):
+      task_list_[ntasks].TaskFunc= 
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::CalculateFluxes);
+      break;
+    case (CALC_FLDFLX):
+      task_list_[ntasks].TaskFunc= 
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::CalculateEMF);
+      break;
+
+    case (SEND_HYDFLX):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::FluxCorrectSend);
+      break;
+    case (SEND_FLDFLX):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::EMFCorrectSend);
+      break;
+
+    case (RECV_HYDFLX):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::FluxCorrectReceive);
+      break;
+    case (RECV_FLDFLX):
+      task_list_[ntasks].TaskFunc= 
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::EMFCorrectReceive);
+      break;
+
+    case (INT_HYD):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::HydroIntegrate);
+      break;
+    case (INT_FLD):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::FieldIntegrate);
+      break;
+
+    case (SRCTERM_HYD):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::HydroSourceTerms);
+      break;
+
+    case (SEND_HYD):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::HydroSend);
+      break;
+    case (SEND_FLD):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::FieldSend);
+      break;
+
+    case (RECV_HYD):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::HydroReceive);
+      break;
+    case (RECV_FLD):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::FieldReceive);
+      break;
+
+    case (PROLONG):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::Prolongation);
+      break;
+    case (CON2PRIM):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::Primitives);
+      break;
+    case (PHY_BVAL):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::PhysicalBoundary);
+      break;
+    case (USERWORK):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::UserWork);
+      break;
+    case (NEW_DT):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::NewBlockTimeStep);
+      break;
+    case (AMR_FLAG):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::CheckRefinement);
+      break;
+
+    default:
+      std::stringstream msg;
+      msg << "### FATAL ERROR in AddTask" << std::endl
+          << "Invalid Task "<< id << " is specified" << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+  }
+  ntasks++;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
 //! \fn
 //  \brief
 
-namespace TaskFunctions {
-enum TaskStatus CalculateFluxes(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int step)
 {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
 
   if(step == 1) {
 //    phydro->u1 = phydro->u;
-    phydro->CopyOrAverageHydro(phydro->u1, phydro->u, phydro->u, 0.0);
+//    phydro->CopyOrAverageHydro(phydro->u1, phydro->u, phydro->u, 0.0);
 
-    phydro->CalculateFluxes(pmb, phydro->u1, phydro->w, pfield->b,
+//    phydro->CalculateFluxes(pmb, phydro->u1, phydro->w, pfield->b,
+//                                           pfield->bcc, 1);
+    phydro->CalculateFluxes(pmb, phydro->u, phydro->w, pfield->b,
                                            pfield->bcc, 1);
   } else if(step == 2) {
+//    phydro->CalculateFluxes(pmb, phydro->u, phydro->w1, pfield->b1,
+//                                           pfield->bcc1, 2);
     phydro->CalculateFluxes(pmb, phydro->u, phydro->w1, pfield->b1,
                                            pfield->bcc1, 2);
   } else {
@@ -61,13 +274,13 @@ enum TaskStatus CalculateFluxes(MeshBlock *pmb, int step)
   return TASK_NEXT;
 }
 
-enum TaskStatus FluxCorrectSend(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::FluxCorrectSend(MeshBlock *pmb, int step)
 {
   pmb->pbval->SendFluxCorrection();
   return TASK_SUCCESS;
 }
 
-enum TaskStatus FluxCorrectReceive(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::FluxCorrectReceive(MeshBlock *pmb, int step)
 {
   if(pmb->pbval->ReceiveFluxCorrection() == true) {
     return TASK_NEXT;
@@ -76,7 +289,7 @@ enum TaskStatus FluxCorrectReceive(MeshBlock *pmb, int step)
   }
 }
 
-enum TaskStatus CalculateEMF(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int step)
 {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
@@ -90,13 +303,13 @@ enum TaskStatus CalculateEMF(MeshBlock *pmb, int step)
   return TASK_NEXT;
 }
 
-enum TaskStatus EMFCorrectSend(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::EMFCorrectSend(MeshBlock *pmb, int step)
 {
   pmb->pbval->SendEMFCorrection();
   return TASK_SUCCESS;
 }
 
-enum TaskStatus EMFCorrectReceive(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::EMFCorrectReceive(MeshBlock *pmb, int step)
 {
   if(pmb->pbval->ReceiveEMFCorrection() == true) {
     return TASK_NEXT;
@@ -105,17 +318,21 @@ enum TaskStatus EMFCorrectReceive(MeshBlock *pmb, int step)
   }
 }
 
-enum TaskStatus HydroIntegrate(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int step)
 {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
 
   if(step == 1) {
-    phydro->FluxDivergence(pmb, phydro->u1, phydro->w, pfield->b,
-                                          pfield->bcc, 1);
+    phydro->AddFluxDivergenceToAverage(pmb,phydro->u, phydro->u,
+      phydro->w, pfield->bcc, step_wghts[0], phydro->u1);
+//    phydro->AddFluxDivergenceToAverage(pmb, phydro->u1, phydro->w, pfield->b,
+//                                          pfield->bcc, 1);
   } else if(step == 2) {
-    phydro->FluxDivergence(pmb, phydro->u, phydro->w1, pfield->b1,
-                                          pfield->bcc1, 2);
+    phydro->AddFluxDivergenceToAverage(pmb,phydro->u, phydro->u,
+      phydro->w1, pfield->bcc1, step_wghts[1], phydro->u);
+//    phydro->FluxDivergence(pmb, phydro->u, phydro->w1, pfield->b1,
+//                                          pfield->bcc1, 2);
   } else {
     return TASK_FAIL;
   }
@@ -123,7 +340,7 @@ enum TaskStatus HydroIntegrate(MeshBlock *pmb, int step)
   return TASK_NEXT;
 }
 
-enum TaskStatus HydroSourceTerms(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int step)
 {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
@@ -144,7 +361,7 @@ enum TaskStatus HydroSourceTerms(MeshBlock *pmb, int step)
   return TASK_NEXT;
 }
 
-enum TaskStatus HydroSend(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::HydroSend(MeshBlock *pmb, int step)
 {
   Hydro *phydro=pmb->phydro;
   BoundaryValues *pbval=pmb->pbval;
@@ -158,7 +375,7 @@ enum TaskStatus HydroSend(MeshBlock *pmb, int step)
   return TASK_SUCCESS;
 }
 
-enum TaskStatus HydroReceive(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::HydroReceive(MeshBlock *pmb, int step)
 {
   Hydro *phydro=pmb->phydro;
   BoundaryValues *pbval=pmb->pbval;
@@ -177,7 +394,7 @@ enum TaskStatus HydroReceive(MeshBlock *pmb, int step)
   }
 }
 
-enum TaskStatus FieldIntegrate(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int step)
 {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
@@ -185,18 +402,20 @@ enum TaskStatus FieldIntegrate(MeshBlock *pmb, int step)
 //    pfield->b1.x1f = pfield->b.x1f;
 //    pfield->b1.x2f = pfield->b.x2f;
 //    pfield->b1.x3f = pfield->b.x3f;
-    pfield->CopyOrAverageField(pfield->b1, pfield->b, pfield->b, 0.0);
+//    pfield->CopyOrAverageField(pfield->b1, pfield->b, pfield->b, 0.0);
+//    pfield->CT(pmb, pfield->b1, phydro->w, pfield->bcc, 1);
 
-    pfield->CT(pmb, pfield->b1, phydro->w, pfield->bcc, 1);
+    pfield->CT(pmb, pfield->b, pfield->b, step_wghts[0], pfield->b1);
   } else if(step == 2) {
-    pfield->CT(pmb, pfield->b, phydro->w1, pfield->bcc1, 2);
+//    pfield->CT(pmb, pfield->b, phydro->w1, pfield->bcc1, 2);
+    pfield->CT(pmb, pfield->b, pfield->b, step_wghts[1], pfield->b);
   } else {
     return TASK_FAIL;
   }
   return TASK_NEXT;
 }
 
-enum TaskStatus FieldSend(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::FieldSend(MeshBlock *pmb, int step)
 {
   Field *pfield=pmb->pfield;
   BoundaryValues *pbval=pmb->pbval;
@@ -210,7 +429,7 @@ enum TaskStatus FieldSend(MeshBlock *pmb, int step)
   return TASK_SUCCESS;
 }
 
-enum TaskStatus FieldReceive(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::FieldReceive(MeshBlock *pmb, int step)
 {
   Field *pfield=pmb->pfield;
   BoundaryValues *pbval=pmb->pbval;
@@ -229,7 +448,7 @@ enum TaskStatus FieldReceive(MeshBlock *pmb, int step)
   }
 }
 
-enum TaskStatus Prolongation(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::Prolongation(MeshBlock *pmb, int step)
 {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
@@ -244,7 +463,7 @@ enum TaskStatus Prolongation(MeshBlock *pmb, int step)
   return TASK_SUCCESS;
 }
 
-enum TaskStatus Primitives(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step)
 {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
@@ -270,7 +489,7 @@ enum TaskStatus Primitives(MeshBlock *pmb, int step)
   return TASK_SUCCESS;
 }
 
-enum TaskStatus PhysicalBoundary(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int step)
 {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
@@ -285,7 +504,7 @@ enum TaskStatus PhysicalBoundary(MeshBlock *pmb, int step)
   return TASK_SUCCESS;
 }
 
-enum TaskStatus UserWork(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::UserWork(MeshBlock *pmb, int step)
 {
   if (step != 2) return TASK_SUCCESS;
 
@@ -293,7 +512,7 @@ enum TaskStatus UserWork(MeshBlock *pmb, int step)
   return TASK_SUCCESS;
 }
 
-enum TaskStatus NewBlockTimeStep(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::NewBlockTimeStep(MeshBlock *pmb, int step)
 {
   if (step != 2) return TASK_SUCCESS;
 
@@ -301,155 +520,10 @@ enum TaskStatus NewBlockTimeStep(MeshBlock *pmb, int step)
   return TASK_SUCCESS;
 }
 
-enum TaskStatus CheckRefinement(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::CheckRefinement(MeshBlock *pmb, int step)
 {
   if (step != 2) return TASK_SUCCESS;
 
   pmb->pmr->CheckRefinementCondition();
   return TASK_SUCCESS;
 }
-
-} // namespace TaskFunctions
-
-//--------------------------------------------------------------------------------------
-//! \fn
-//  \brief
-
-void TaskList::CreateTimeIntegrator(Mesh *pm)
-{
-  using namespace HydroIntegratorTaskNames;
-
-  // compute hydro fluxes, integrate hydro variables
-  AddTask(CALC_HYDFLX,NONE);
-  if(pm->multilevel==true) { // SMR or AMR
-    AddTask(SEND_HYDFLX,CALC_HYDFLX);
-    AddTask(RECV_HYDFLX,CALC_HYDFLX);
-    AddTask(INT_HYD, RECV_HYDFLX);
-  } else {
-    AddTask(INT_HYD, CALC_HYDFLX);
-  }
-  AddTask(SRCTERM_HYD,INT_HYD);
-  AddTask(SEND_HYD,INT_HYD);
-  AddTask(RECV_HYD,NONE);
-
-  // compute MHD fluxes, integrate field
-  if (MAGNETIC_FIELDS_ENABLED) { // MHD
-    AddTask(CALC_FLDFLX,CALC_HYDFLX);
-    AddTask(SEND_FLDFLX,CALC_FLDFLX);
-    AddTask(RECV_FLDFLX,SEND_FLDFLX);
-    AddTask(INT_FLD, RECV_FLDFLX);
-    AddTask(SEND_FLD,INT_FLD);
-    AddTask(RECV_FLD,NONE);
-  }
-
-  // prolongate, compute new primitives
-  if (MAGNETIC_FIELDS_ENABLED) { // MHD
-    if(pm->multilevel==true) { // SMR or AMR
-      AddTask(PROLONG, (SEND_HYD|RECV_HYD|SEND_FLD|RECV_FLD));
-      AddTask(CON2PRIM,PROLONG);
-    } else {
-      AddTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD));
-    }
-  } else {  // HYDRO
-    if(pm->multilevel==true) { // SMR or AMR
-      AddTask(PROLONG,(SEND_HYD|RECV_HYD));
-      AddTask(CON2PRIM,PROLONG);
-    } else {
-      AddTask(CON2PRIM,(INT_HYD|RECV_HYD));
-    }
-  }
-
-  // everything else
-  AddTask(PHY_BVAL,CON2PRIM);
-  AddTask(USERWORK,PHY_BVAL);
-  AddTask(NEW_DT,USERWORK);
-  if(pm->adaptive==true) {
-    AddTask(AMR_FLAG,USERWORK);
-  }
-}
-
-//--------------------------------------------------------------------------------------//! \fn
-//  \brief
-
-void TaskList::AddTask(uint64_t id, uint64_t dep)
-{
-  task_list_[ntasks].task_id=id;
-  task_list_[ntasks].dependency=dep;
-
-  using namespace HydroIntegratorTaskNames;
-  switch((id)) {
-    case (CALC_HYDFLX):
-      task_list_[ntasks].TaskFunc=TaskFunctions::CalculateFluxes;
-      break;
-    case (CALC_FLDFLX):
-      task_list_[ntasks].TaskFunc=TaskFunctions::CalculateEMF;
-      break;
-
-    case (SEND_HYDFLX):
-      task_list_[ntasks].TaskFunc=TaskFunctions::FluxCorrectSend;
-      break;
-    case (SEND_FLDFLX):
-      task_list_[ntasks].TaskFunc=TaskFunctions::EMFCorrectSend;
-      break;
-
-    case (RECV_HYDFLX):
-      task_list_[ntasks].TaskFunc=TaskFunctions::FluxCorrectReceive;
-      break;
-    case (RECV_FLDFLX):
-      task_list_[ntasks].TaskFunc=TaskFunctions::EMFCorrectReceive;
-      break;
-
-    case (INT_HYD):
-      task_list_[ntasks].TaskFunc=TaskFunctions::HydroIntegrate;
-      break;
-    case (INT_FLD):
-      task_list_[ntasks].TaskFunc=TaskFunctions::FieldIntegrate;
-      break;
-
-    case (SRCTERM_HYD):
-      task_list_[ntasks].TaskFunc=TaskFunctions::HydroSourceTerms;
-      break;
-
-    case (SEND_HYD):
-      task_list_[ntasks].TaskFunc=TaskFunctions::HydroSend;
-      break;
-    case (SEND_FLD):
-      task_list_[ntasks].TaskFunc=TaskFunctions::FieldSend;
-      break;
-
-    case (RECV_HYD):
-      task_list_[ntasks].TaskFunc=TaskFunctions::HydroReceive;
-      break;
-    case (RECV_FLD):
-      task_list_[ntasks].TaskFunc=TaskFunctions::FieldReceive;
-      break;
-
-    case (PROLONG):
-      task_list_[ntasks].TaskFunc=TaskFunctions::Prolongation;
-      break;
-    case (CON2PRIM):
-      task_list_[ntasks].TaskFunc=TaskFunctions::Primitives;
-      break;
-    case (PHY_BVAL):
-      task_list_[ntasks].TaskFunc=TaskFunctions::PhysicalBoundary;
-      break;
-    case (USERWORK):
-      task_list_[ntasks].TaskFunc=TaskFunctions::UserWork;
-      break;
-    case (NEW_DT):
-      task_list_[ntasks].TaskFunc=TaskFunctions::NewBlockTimeStep;
-      break;
-    case (AMR_FLAG):
-      task_list_[ntasks].TaskFunc=TaskFunctions::CheckRefinement;
-      break;
-
-    default:
-      std::stringstream msg;
-      msg << "### FATAL ERROR in AddTask" << std::endl
-          << "Invalid Task "<< id << " is specified" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
-  }
-  ntasks++;
-  return;
-}
-

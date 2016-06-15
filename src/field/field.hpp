@@ -13,6 +13,7 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../task_list/task_list.hpp"
 
 class MeshBlock;
 class ParameterInput;
@@ -40,9 +41,8 @@ public:
   FaceField ei;   // face-centered electric fields (e.g. from Riemann solver)
   FaceField wght; // weights used to integrate E to corner using GS algorithm
 
-  void CopyOrAverageField(FaceField &a, FaceField &b, FaceField &c, Real factor);
-  void CT(MeshBlock *pmb, FaceField &b, AthenaArray<Real> &w,
-    AthenaArray<Real> &bcc, const int step);
+  void CT(MeshBlock *pmb, FaceField &b_in1, FaceField &b_in2, const IntegratorWeight w,
+    FaceField &b_out);
   void ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w, AthenaArray<Real> &bcc);
 
 private:
