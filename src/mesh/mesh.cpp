@@ -1120,32 +1120,57 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       pmb=pmb->next;
     }
 
+    // send conserved variables
     pmb = pblock;
     while (pmb != NULL)  {
       phydro=pmb->phydro;
       pfield=pmb->pfield;
-      pbval=pmb->pbval;
-      pbval->SendHydroBoundaryBuffers(phydro->u, 0);
+      pmb->pbval->SendHydroBoundaryBuffers(phydro->u, true);
       if (MAGNETIC_FIELDS_ENABLED)
-        pbval->SendFieldBoundaryBuffers(pfield->b,0);
-      // Send primitives to enable cons->prim inversion before prolongation
-      if (GENERAL_RELATIVITY && multilevel)
-        pbval->SendHydroBoundaryBuffers(phydro->w, 1, false);
+        pmb->pbval->SendFieldBoundaryBuffers(pfield->b);
       pmb=pmb->next;
     }
 
+    // wait to receive conserved variables
     pmb = pblock;
     while (pmb != NULL)  {
       phydro=pmb->phydro;
       pfield=pmb->pfield;
       pbval=pmb->pbval;
-      pbval->ReceiveHydroBoundaryBuffersWithWait(phydro->u, 0);
+      pbval->ReceiveHydroBoundaryBuffersWithWait(phydro->u, true);
       if (MAGNETIC_FIELDS_ENABLED)
-        pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b, 0);
-      // Receive primitives to enable cons->prim inversion before prolongation
-      if (GENERAL_RELATIVITY and multilevel)
-        pbval->ReceiveHydroBoundaryBuffersWithWait(phydro->w, 1);
+        pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b);
       pmb->pbval->ClearBoundaryForInit();
+      pmb=pmb->next;
+    }
+
+    // With AMR/SMR GR send primitives to enable cons->prim before prolongation
+    if (GENERAL_RELATIVITY && multilevel) {
+      pmb = pblock;
+      while (pmb != NULL)  {
+        phydro=pmb->phydro;
+        pmb->pbval->SendHydroBoundaryBuffers(phydro->w, false);
+        pmb=pmb->next;
+      }
+
+      // wait to receive AMR/SMR GR primitives
+      pmb = pblock;
+      while (pmb != NULL)  {
+        phydro=pmb->phydro;
+        pfield=pmb->pfield;
+        pbval=pmb->pbval;
+        pbval->ReceiveHydroBoundaryBuffersWithWait(phydro->w, false);
+        pmb->pbval->ClearBoundaryForInit();
+        pmb=pmb->next;
+      }
+    }
+
+    // Now do prolongation, compute primitives, apply BCs
+    pmb = pblock;
+    while (pmb != NULL)  {
+      phydro=pmb->phydro;
+      pfield=pmb->pfield;
+      pbval=pmb->pbval;
       if(multilevel==true)
         pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc);
 
@@ -1166,6 +1191,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc);
       pmb=pmb->next;
     }
+
     if((res_flag==0) && (adaptive==true)) {
       iflag=false;
       int onb=nbtotal;

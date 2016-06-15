@@ -154,10 +154,11 @@ int BoundaryValues::LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src, Real 
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step
+//! \fn void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src,
 //                                                    bool conserved_values)
 //  \brief Send boundary buffers
-void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step,
+
+void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src,
                                               bool conserved_values)
 {
   MeshBlock *pmb=pmy_mblock_;
@@ -363,9 +364,9 @@ void BoundaryValues::SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst, int step)
+//! \fn bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst)
 //  \brief receive the boundary data
-bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst, int step)
+bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst)
 {
   MeshBlock *pmb=pmy_mblock_;
   bool flag=true;
@@ -408,9 +409,9 @@ bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst, int ste
 
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst,
-//                                                               int step)
+//                                                               bool conserved_value)
 //  \brief receive the boundary data for initialization
-void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst, int step)
+void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst, bool conserved_value)
 {
   MeshBlock *pmb=pmy_mblock_;
 
@@ -423,7 +424,7 @@ void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst,
     if(nb.level==pmb->loc.level)
       SetHydroBoundarySameLevel(dst, hydro_recv_[nb.bufid], nb);
     else if(nb.level<pmb->loc.level)
-      SetHydroBoundaryFromCoarser(hydro_recv_[nb.bufid], nb, step == 0);
+      SetHydroBoundaryFromCoarser(hydro_recv_[nb.bufid], nb, conserved_value);
     else
       SetHydroBoundaryFromFiner(dst, hydro_recv_[nb.bufid], nb);
     hydro_flag_[nb.bufid] = BNDRY_COMPLETED; // completed

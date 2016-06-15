@@ -440,9 +440,9 @@ enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int ste
 enum TaskStatus TimeIntegratorTaskList::HydroSend(MeshBlock *pmb, int step)
 {
   if(step == 1) {
-    pmb->pbval->SendHydroBoundaryBuffers(pmb->phydro->u1, 1);
+    pmb->pbval->SendHydroBoundaryBuffers(pmb->phydro->u1, true);
   } else if(step == 2) {
-    pmb->pbval->SendHydroBoundaryBuffers(pmb->phydro->u, 0);
+    pmb->pbval->SendHydroBoundaryBuffers(pmb->phydro->u, true);
   } else {
     return TASK_FAIL;
   }
@@ -452,9 +452,9 @@ enum TaskStatus TimeIntegratorTaskList::HydroSend(MeshBlock *pmb, int step)
 enum TaskStatus TimeIntegratorTaskList::FieldSend(MeshBlock *pmb, int step)
 {
   if(step == 1) {
-    pmb->pbval->SendFieldBoundaryBuffers(pmb->pfield->b1,1);
+    pmb->pbval->SendFieldBoundaryBuffers(pmb->pfield->b1);
   } else if(step == 2) {
-    pmb->pbval->SendFieldBoundaryBuffers(pmb->pfield->b,0);
+    pmb->pbval->SendFieldBoundaryBuffers(pmb->pfield->b);
   } else {
     return TASK_FAIL;
   }
@@ -468,9 +468,9 @@ enum TaskStatus TimeIntegratorTaskList::HydroReceive(MeshBlock *pmb, int step)
 {
   bool ret;
   if(step == 1) {
-    ret=pmb->pbval->ReceiveHydroBoundaryBuffers(pmb->phydro->u1,1);
+    ret=pmb->pbval->ReceiveHydroBoundaryBuffers(pmb->phydro->u1);
   } else if(step == 2) {
-    ret=pmb->pbval->ReceiveHydroBoundaryBuffers(pmb->phydro->u,0);
+    ret=pmb->pbval->ReceiveHydroBoundaryBuffers(pmb->phydro->u);
   } else {
     return TASK_FAIL;
   }
@@ -485,9 +485,9 @@ enum TaskStatus TimeIntegratorTaskList::FieldReceive(MeshBlock *pmb, int step)
 {
   bool ret;
   if(step == 1) {
-    ret=pmb->pbval->ReceiveFieldBoundaryBuffers(pmb->pfield->b1,1);
+    ret=pmb->pbval->ReceiveFieldBoundaryBuffers(pmb->pfield->b1);
   } else if(step == 2) {
-    ret=pmb->pbval->ReceiveFieldBoundaryBuffers(pmb->pfield->b,0);
+    ret=pmb->pbval->ReceiveFieldBoundaryBuffers(pmb->pfield->b);
   } else {
     return TASK_FAIL;
   }

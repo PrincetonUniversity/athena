@@ -286,9 +286,9 @@ int BoundaryValues::LoadFieldBoundaryBufferToFiner(FaceField &src, Real *buf,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SendFieldBoundaryBuffers(FaceField &src, int step)
+//! \fn void BoundaryValues::SendFieldBoundaryBuffers(FaceField &src)
 //  \brief Send field boundary buffers
-void BoundaryValues::SendFieldBoundaryBuffers(FaceField &src, int step)
+void BoundaryValues::SendFieldBoundaryBuffers(FaceField &src)
 {
   MeshBlock *pmb=pmy_mblock_;
 
@@ -736,9 +736,9 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst, int step)
+//! \fn bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst)
 //  \brief load boundary buffer for x1 direction into the array
-bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst, int step)
+bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst)
 {
   MeshBlock *pmb=pmy_mblock_;
   bool flag=true;
@@ -780,10 +780,9 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst, int step)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst,
-//                                                               int step)
+//! \fn void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst)
 //  \brief load boundary buffer for x1 direction into the array
-void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst, int step)
+void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst)
 {
   MeshBlock *pmb=pmy_mblock_;
 

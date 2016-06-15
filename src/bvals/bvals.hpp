@@ -117,18 +117,17 @@ public:
   int LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
                                        const NeighborBlock& nb);
   int LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src, Real *buf,
-                                       const NeighborBlock& nb, bool conserved_values);
+                                       const NeighborBlock& nb, bool cons);
   int LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src, Real *buf,
                                      const NeighborBlock& nb);
-  void SendHydroBoundaryBuffers(AthenaArray<Real> &src, int step, bool conserved_values = true);
+  void SendHydroBoundaryBuffers(AthenaArray<Real> &src, bool cons);
   void SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
                                  const NeighborBlock& nb);
-  void SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock& nb,
-                                   bool conserved_values);
+  void SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock& nb, bool cons);
   void SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf,
                                  const NeighborBlock& nb);
-  bool ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst, int step);
-  void ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst, int step);
+  bool ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst);
+  void ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst, bool cons);
   void PolarSingleHydro(AthenaArray<Real> &dst);
 
   int LoadFieldBoundaryBufferSameLevel(FaceField &src, Real *buf,
@@ -137,12 +136,12 @@ public:
                                        const NeighborBlock& nb);
   int LoadFieldBoundaryBufferToFiner(FaceField &src, Real *buf,
                                      const NeighborBlock& nb);
-  void SendFieldBoundaryBuffers(FaceField &src, int step);
+  void SendFieldBoundaryBuffers(FaceField &src);
   void SetFieldBoundarySameLevel(FaceField &dst, Real *buf, const NeighborBlock& nb);
   void SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock& nb);
   void SetFieldBoundaryFromFiner(FaceField &dst, Real *buf, const NeighborBlock& nb);
-  bool ReceiveFieldBoundaryBuffers(FaceField &dst, int step);
-  void ReceiveFieldBoundaryBuffersWithWait(FaceField &dst, int step);
+  bool ReceiveFieldBoundaryBuffers(FaceField &dst);
+  void ReceiveFieldBoundaryBuffersWithWait(FaceField &dst);
   void PolarSingleField(FaceField &dst);
 
   void SendFluxCorrection(void);
