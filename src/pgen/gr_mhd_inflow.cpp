@@ -16,9 +16,9 @@
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../parameter_input.hpp"          // ParameterInput
 #include "../coordinates/coordinates.hpp"  // Coordinates
+#include "../eos/eos.hpp"                  // EquationOfState
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
-#include "../hydro/eos/eos.hpp"            // HydroEqnOfState
 
 // Declarations
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
@@ -200,8 +200,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   gi.DeleteAthenaArray();
 
   // Initialize conserved values
-  phydro->peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, is-NGHOST,
-      ie+NGHOST, js, je, ks, ke);
+  peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, is-NGHOST, ie+NGHOST, js,
+      je, ks, ke);
   bb.DeleteAthenaArray();
   return;
 }

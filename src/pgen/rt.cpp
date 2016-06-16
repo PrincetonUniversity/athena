@@ -44,13 +44,13 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
-#include "../field/field.hpp"
 #include "../bvals/bvals.hpp"
-#include "../hydro/eos/eos.hpp"
-#include "../hydro/srcterms/hydro_srcterms.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
+#include "../field/field.hpp"
+#include "../hydro/hydro.hpp"
+#include "../hydro/srcterms/hydro_srcterms.hpp"
+#include "../mesh/mesh.hpp"
 #include "../utils/utils.hpp"
 
 void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
@@ -96,7 +96,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   long int iseed = -1;
-  Real gamma = phydro->peos->GetGamma();
+  Real gamma = peos->GetGamma();
   gm1 = gamma - 1.0;
   
   Real kx = 2.0*(PI)/(pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min);

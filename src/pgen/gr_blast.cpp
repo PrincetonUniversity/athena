@@ -7,13 +7,13 @@
 #include <algorithm>  // min()
 
 // Athena headers
-#include "../athena.hpp"                   // macros, enums, Real
+#include "../athena.hpp"                   // macros, enums
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../parameter_input.hpp"          // ParameterInput
 #include "../coordinates/coordinates.hpp"  // Coordinates
+#include "../eos/eos.hpp"                  // EquationOfState
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
-#include "../hydro/eos/eos.hpp"            // HydroEqnOfState
 
 //--------------------------------------------------------------------------------------
 
@@ -41,7 +41,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   }
 
   // Get ratio of specific heats
-  Real gamma_adi = phydro->peos->GetGamma();
+  Real gamma_adi = peos->GetGamma();
   Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Read problem parameters
@@ -142,8 +142,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       }
     }
   }
-  phydro->peos->PrimitiveToConserved(phydro->w, b, phydro->u, pcoord, il, iu,
-      jl, ju, kl, ku);
+  peos->PrimitiveToConserved(phydro->w, b, phydro->u, pcoord, il, iu, jl, ju, kl, ku);
 
   // Delete auxiliary array
   b.DeleteAthenaArray();

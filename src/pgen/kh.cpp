@@ -25,13 +25,12 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
-#include "../field/field.hpp"
-#include "../hydro/eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
+#include "../field/field.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
 #include "../utils/utils.hpp"
-
 
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
@@ -41,7 +40,7 @@
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   long int iseed = -1;
-  Real gm1 = phydro->peos->GetGamma() - 1.0;
+  Real gm1 = peos->GetGamma() - 1.0;
 
   // Read problem parameters
   int iprob = pin->GetInteger("problem","iprob");

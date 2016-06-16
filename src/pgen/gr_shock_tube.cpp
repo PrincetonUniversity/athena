@@ -11,13 +11,13 @@
 #include <string>     // c_str()
 
 // Athena headers
-#include "../athena.hpp"                   // macros, enums, Real
+#include "../athena.hpp"                   // macros, enums
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../parameter_input.hpp"          // ParameterInput
 #include "../coordinates/coordinates.hpp"  // Coordinates
+#include "../eos/eos.hpp"                  // EquationOfState
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
-#include "../hydro/eos/eos.hpp"            // HydroEqnOfState
 
 //--------------------------------------------------------------------------------------
 
@@ -34,7 +34,7 @@
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   // Read and set ratio of specific heats
-  Real gamma_adi = phydro->peos->GetGamma();
+  Real gamma_adi = peos->GetGamma();
   Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Read and check shock direction and position
@@ -203,8 +203,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         bb(IB3,k,j,i) = b3 * u0 - b0 * u3;
       }
     }
-  phydro->peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, is, ie, js, je,
-      ks, ke);
+  peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, is, ie, js, je, ks, ke);
 
   // Delete auxiliary arrays
   bb.DeleteAthenaArray();

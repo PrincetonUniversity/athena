@@ -23,7 +23,7 @@
 #include <iostream>   // endl, ostream
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
-#include <algorithm>  // tansform
+#include <algorithm>  // transform
 #include <string>     // string
 
 // Athena headers

@@ -30,11 +30,11 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
-#include "../field/field.hpp"
-#include "../hydro/eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
+#include "../field/field.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
 
 #if !MAGNETIC_FIELDS_ENABLED
 #error "This problem generator requires magnetic fields"
@@ -48,7 +48,7 @@
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
-  Real gm1 = (phydro->peos->GetGamma() - 1.0);
+  Real gm1 = peos->GetGamma() - 1.0;
 
   AthenaArray<Real> az;
   int nx1 = (ie-is)+1 + 2*(NGHOST);

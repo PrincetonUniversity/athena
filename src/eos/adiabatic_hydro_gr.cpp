@@ -9,13 +9,12 @@
 #include <cmath>      // NAN, sqrt(), abs(), isfinite(), isnan(), pow()
 
 // Athena headers
-#include "../hydro/hydro.hpp"                       // Hydro
-#include "../athena.hpp"                   // enums, macros, Real
+#include "../athena.hpp"                   // enums, macros
 #include "../athena_arrays.hpp"            // AthenaArray
-#include "../mesh/mesh.hpp"                     // MeshBlock
 #include "../parameter_input.hpp"          // ParameterInput
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // FaceField
+#include "../mesh/mesh.hpp"                // MeshBlock
 
 // Declarations
 static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma_adi,
@@ -28,7 +27,7 @@ static void neighbor_average(AthenaArray<Real> &prim, AthenaArray<bool> &problem
 
 // Constructor
 // Inputs:
-//   pf: pointer to hydro object
+//   pmb: pointer to MeshBlock
 //   pin: pointer to runtime inputs
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
 {
@@ -41,13 +40,11 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
   u_min_ = pin->GetOrAddReal("hydro", "u_min", pressure_floor_/(gamma_-1.0));
   u_pow_ = pin->GetOrAddReal("hydro", "u_pow", 0.0);
   gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
-  int ncells1 = pf->pmy_block->block_size.nx1 + 2*NGHOST;
+  int ncells1 = pmb->block_size.nx1 + 2*NGHOST;
   g_.NewAthenaArray(NMETRIC, ncells1);
   g_inv_.NewAthenaArray(NMETRIC, ncells1);
-  int ncells2 = (pf->pmy_block->block_size.nx2 > 1) ?
-      pf->pmy_block->block_size.nx2 + 2*NGHOST : 1;
-  int ncells3 = (pf->pmy_block->block_size.nx3 > 1) ?
-      pf->pmy_block->block_size.nx3 + 2*NGHOST : 1;
+  int ncells2 = (pmb->block_size.nx2 > 1) ? pmb->block_size.nx2 + 2*NGHOST : 1;
+  int ncells3 = (pmb->block_size.nx3 > 1) ? pmb->block_size.nx3 + 2*NGHOST : 1;
   fixed_.NewAthenaArray(ncells3, ncells2, ncells1);
 }
 

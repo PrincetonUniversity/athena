@@ -1,8 +1,5 @@
 // Conserved-to-primitive inversion for adiabatic MHD in special relativity
 
-// TODO: make inputs const?
-// TODO: check includes
-
 // Primary header
 #include "eos.hpp"
 
@@ -12,14 +9,12 @@
 #include <cmath>      // NAN, sqrt(), abs(), isfinite()
 
 // Athena headers
-#include "../hydro/hydro.hpp"                       // Hydro
-#include "../athena.hpp"                   // enums, macros, Real
+#include "../athena.hpp"                   // enums, macros
 #include "../athena_arrays.hpp"            // AthenaArray
+#include "../parameter_input.hpp"          // ParameterInput
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../field/field.hpp"              // FaceField
-#include "../mesh/mesh.hpp"                     // MeshBlock
-#include "../parameter_input.hpp"          // GetReal()
-#include "../coordinates/coordinates.hpp" // Coordinates
+#include "../mesh/mesh.hpp"                // MeshBlock
 
 // Declarations
 static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
@@ -29,7 +24,7 @@ static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss
 
 // Constructor
 // Inputs:
-//   pf: pointer to hydro object
+//   pmb: pointer to MeshBlock
 //   pin: pointer to runtime inputs
 HydroEqnOfState::HydroEqnOfState(MeshBlock *pmb, ParameterInput *pin)
 {
@@ -40,7 +35,7 @@ HydroEqnOfState::HydroEqnOfState(MeshBlock *pmb, ParameterInput *pin)
   rho_pmag_min_ = pin->GetOrAddReal("hydro", "rho_pmag_min", 0.0);
   u_pmag_min_ = pin->GetOrAddReal("hydro", "u_pmag_min", 0.0);
   gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
-  int ncells1 = pf->pmy_block->block_size.nx1 + 2*NGHOST;
+  int ncells1 = pmb->block_size.nx1 + 2*NGHOST;
   g_.NewAthenaArray(NMETRIC,ncells1);
   g_inv_.NewAthenaArray(NMETRIC,ncells1);
 }

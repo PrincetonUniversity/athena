@@ -10,9 +10,10 @@
 #include <cmath>  // sqrt()
 
 // Athena++ headers
-#include "../athena.hpp"         // enums, macros
-#include "../athena_arrays.hpp"  // AthenaArray
-#include "../mesh/mesh.hpp"           // MeshBlock
+#include "../athena.hpp"           // enums, macros
+#include "../athena_arrays.hpp"    // AthenaArray
+#include "../parameter_input.hpp"  // ParameterInput
+#include "../mesh/mesh.hpp"        // Mesh, MeshBlock
 
 //--------------------------------------------------------------------------------------
 

@@ -37,13 +37,13 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../bvals/bvals.hpp"
 #include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
-#include "../field/field.hpp"
-#include "../hydro/eos/eos.hpp"
+#include "../bvals/bvals.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
+#include "../field/field.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
 
 // postshock flow variables are shared with IIB function
 static Real gmma1,dl,pl,ul;
@@ -74,7 +74,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
-  Real gmma  = phydro->peos->GetGamma();
+  Real gmma  = peos->GetGamma();
   gmma1 = gmma - 1.0;
 
 // Read input parameters
@@ -89,7 +89,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 // Set paramters in ambient medium ("R-state" for shock)
 
   Real dr = 1.0;
-  Real pr = 1.0/(phydro->peos->GetGamma());
+  Real pr = 1.0/(peos->GetGamma());
   Real ur = 0.0;
 
 // Uses Rankine Hugoniot relations for adiabatic gas to initialize problem

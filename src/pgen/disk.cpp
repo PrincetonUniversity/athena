@@ -26,14 +26,14 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh.hpp"
 #include "../parameter_input.hpp"
-#include "../hydro/hydro.hpp"
-#include "../hydro/eos/eos.hpp"
 #include "../bvals/bvals.hpp"
-#include "../hydro/srcterms/hydro_srcterms.hpp"
-#include "../field/field.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
+#include "../field/field.hpp"
+#include "../hydro/hydro.hpp"
+#include "../hydro/srcterms/hydro_srcterms.hpp"
+#include "../mesh/mesh.hpp"
 
 // File scope variables
 static Real gm0=0.0, r0 = 1.0;
@@ -270,7 +270,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           Real x2 = pcoord->x2v(j);
           Real r = std::max(fabs(x1*sin(x2)),pmy_mesh->mesh_size.x1min);
           Real p_over_r = p0_over_r0*pow(r/r0, pslope);
-          Real gamma = phydro->peos->GetGamma();
+          Real gamma = peos->GetGamma();
           phydro->u(IEN,k,j,i) = p_over_r*phydro->u(IDN,k,j,i)/(gamma - 1.0);
           phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM3,k,j,i))/phydro->u(IDN,k,j,i);
           if (MAGNETIC_FIELDS_ENABLED){

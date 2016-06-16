@@ -20,13 +20,13 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../bvals/bvals.hpp"
 #include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
-#include "../field/field.hpp"
-#include "../hydro/eos/eos.hpp"
+#include "../bvals/bvals.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
+#include "../field/field.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
 
 // BCs on L-x1 (left edge) of grid with jet inflow conditions
 void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
@@ -83,7 +83,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Problem Generator for the Jet problem
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
-  gm1 = phydro->peos->GetGamma() - 1.0;
+  gm1 = peos->GetGamma() - 1.0;
 
 // initialize conserved variables
    
