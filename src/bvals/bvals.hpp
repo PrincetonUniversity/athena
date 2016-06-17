@@ -199,7 +199,7 @@ private:
 
 unsigned int CreateBvalsMPITag(int lid, int phys, int bufid);
 unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
-int BufferID(int dim, bool multilevel, bool face_only);
+int BufferID(int dim, bool multilevel);
 int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2, int bmax);
 
 #endif // BOUNDARY_VALUES_HPP

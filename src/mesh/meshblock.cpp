@@ -509,7 +509,6 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
       }
     }
   }
-  if(pmy_mesh->face_only==true) return;
 
   // x1x2 edge
   for(int m=-1; m<=1; m+=2) {
