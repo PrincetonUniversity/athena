@@ -12,14 +12,14 @@
 #include <string>     // c_str()
 
 // Athena headers
-#include "../athena.hpp"                   // macros, enums, Real
+#include "../athena.hpp"                   // macros, enums, FaceField
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../parameter_input.hpp"          // ParameterInput
-#include "../bvals/bvals.hpp"              // BoundaryValues, FaceField
+#include "../bvals/bvals.hpp"              // BoundaryValues
 #include "../coordinates/coordinates.hpp"  // Coordinates
+#include "../eos/eos.hpp"                  // EquationOfState
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
-#include "../hydro/eos/eos.hpp"            // HydroEqnOfState
 
 // Declarations
 static Real QuadraticRoot(Real a1, Real a0, bool greater_root);
@@ -71,7 +71,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   }
 
   // Get ratio of specific heats
-  Real gamma_adi = phydro->peos->GetGamma();
+  Real gamma_adi = peos->GetGamma();
   Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Read background state

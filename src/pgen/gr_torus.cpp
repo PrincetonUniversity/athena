@@ -13,14 +13,14 @@
 #include <string>     // c_str(), string
 
 // Athena headers
-#include "../athena.hpp"                   // macros, enums, Real
+#include "../athena.hpp"                   // macros, enums, FaceField
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../parameter_input.hpp"          // ParameterInput
-#include "../bvals/bvals.hpp"              // BoundaryValues, FaceField
+#include "../bvals/bvals.hpp"              // BoundaryValues
 #include "../coordinates/coordinates.hpp"  // Coordinates
+#include "../eos/eos.hpp"                  // EquationOfState
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
-#include "../hydro/eos/eos.hpp"            // HydroEqnOfState
 
 // Declarations
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
@@ -165,7 +165,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   a = pcoord->GetSpin();
 
   // Get ratio of specific heats
-  gamma_adi = phydro->peos->GetGamma();
+  gamma_adi = peos->GetGamma();
 
   // Reset whichever of l,r_peak is not specified
   if (r_peak >= 0.0)
@@ -852,12 +852,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
   // Initialize conserved values
   if (MAGNETIC_FIELDS_ENABLED)
-    phydro->peos->PrimitiveToConserved(phydro->w, pfield->bcc, phydro->u, pcoord, il,
-        iu, jl, ju, kl, ku);
+    peos->PrimitiveToConserved(phydro->w, pfield->bcc, phydro->u, pcoord, il, iu, jl,
+        ju, kl, ku);
   else
   {
-    phydro->peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, il, iu, jl, ju,
-        kl, ku);
+    peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, il, iu, jl, ju, kl,
+        ku);
     bb.DeleteAthenaArray();
   }
 

@@ -18,12 +18,11 @@
 #include <math.h>  // pow, trig functions
 
 // Athena++ headers
-#include "../athena.hpp"          // macros, Real
-#include "../athena_arrays.hpp"   // AthenaArray
-#include "../parameter_input.hpp" // ParameterInput
-#include "../mesh/mesh.hpp"            // MeshBlock
-#include "../hydro/hydro.hpp"
-#include "../hydro/eos/eos.hpp"   // SoundSpeed()
+#include "../athena.hpp"           // macros, Real
+#include "../athena_arrays.hpp"    // AthenaArray
+#include "../parameter_input.hpp"  // ParameterInput
+#include "../mesh/mesh.hpp"        // MeshBlock
+#include "../eos/eos.hpp"          // GetIsoSoundSpeed()
 
 // this class header
 #include "coordinates.hpp"
@@ -360,7 +359,7 @@ Real Coordinates::GetCellVolume(const int k, const int j, const int i)
 void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
-  Real iso_cs = pmy_block->phydro->peos->GetIsoSoundSpeed();
+  Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
   bool use_x2_fluxes = pmy_block->block_size.nx2 > 1;
 
   // Go through cells

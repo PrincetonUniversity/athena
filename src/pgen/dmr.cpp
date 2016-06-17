@@ -30,21 +30,18 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../bvals/bvals.hpp"
 #include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
-#include "../field/field.hpp"
-#include "../hydro/eos/eos.hpp"
+#include "../bvals/bvals.hpp"
 #include "../coordinates/coordinates.hpp"
-
+#include "../eos/eos.hpp"
+#include "../field/field.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
 #include "../mesh_refinement/mesh_refinement.hpp"
-
 
 #if MAGNETIC_FIELDS_ENABLED
 #error "This problem generator does not support magnetic fields"
 #endif
-
 
 #include <iostream>
 #include <cmath>
@@ -133,7 +130,7 @@ void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
   Real e0 = 291.25;
   Real u0 =  8.25*sqrt(3.0)/2.0;
   Real v0 = -8.25*0.5;
-  Real gamma = pmb->phydro->peos->GetGamma();
+  Real gamma = pmb->peos->GetGamma();
   Real p0=e0*(gamma-1.0);
 
   for (int j=js; j<=je; ++j) {
@@ -159,7 +156,7 @@ void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
   Real e0 = 291.25;
   Real u0 =  8.25*sqrt(3.0)/2.0;
   Real v0 = -8.25*0.5;
-  Real gamma = pmb->phydro->peos->GetGamma();
+  Real gamma = pmb->peos->GetGamma();
   Real p0=e0*(gamma-1.0);
 
   for (int j=1;  j<=(NGHOST); ++j) {
@@ -196,7 +193,7 @@ void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
   Real u0 =  8.25*sqrt(3.0)/2.0;
   Real v0 = -8.25*0.5;
   Real shock_pos = 0.1666666666 + (1. + 20.*pmb->pmy_mesh->time)/sqrt(3.0);
-  Real gamma = pmb->phydro->peos->GetGamma();
+  Real gamma = pmb->peos->GetGamma();
   Real p0=e0*(gamma-1.0);
   Real p1=2.5*(gamma-1.0);
 

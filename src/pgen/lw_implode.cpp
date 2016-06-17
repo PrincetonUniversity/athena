@@ -23,11 +23,10 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
-#include "../hydro/eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
-
+#include "../eos/eos.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
 
 #if MAGNETIC_FIELDS_ENABLED
 #error "This problem generator does not support magnetic fields"
@@ -46,7 +45,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real d_out = pin->GetReal("problem","d_out");
   Real p_out = pin->GetReal("problem","p_out");
 
-  Real gm1 = (phydro->peos->GetGamma() - 1.0);
+  Real gm1 = peos->GetGamma() - 1.0;
   Real y0 = 0.5*(pmy_mesh->mesh_size.x2max + pmy_mesh->mesh_size.x2min);
 
 // Set initial conditions

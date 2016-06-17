@@ -26,10 +26,9 @@
 // Athena++ headers
 #include "../athena.hpp"           // enums, macros
 #include "../athena_arrays.hpp"    // AthenaArray
-#include "../mesh/mesh.hpp"             // MeshBlock
 #include "../parameter_input.hpp"  // ParameterInput
-#include "../hydro/hydro.hpp"      // Hydro
-#include "../hydro/eos/eos.hpp"    // HydroEqnOfState
+#include "../eos/eos.hpp"          // EquationOfState
+#include "../mesh/mesh.hpp"        // Mesh, MeshBlock
 
 //--------------------------------------------------------------------------------------
 
@@ -852,7 +851,7 @@ void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
     AthenaArray<Real> &cons)
 {
   // Extract ratio of specific heats
-  const Real gamma_adi = pmy_block->phydro->peos->GetGamma();
+  const Real gamma_adi = pmy_block->peos->GetGamma();
 
   // Extract useful quantities that do not depend on location
   const Real &m = bh_mass_;

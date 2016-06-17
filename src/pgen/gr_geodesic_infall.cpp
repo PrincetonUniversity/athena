@@ -12,14 +12,14 @@
 #include <cmath>    // pow(), sin(), sqrt()
 
 // Athena headers
-#include "../athena.hpp"                   // enums, Real
+#include "../athena.hpp"                   // enums, Real, FaceField
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../parameter_input.hpp"          // ParameterInput
-#include "../bvals/bvals.hpp"              // BoundaryValues, FaceField
+#include "../bvals/bvals.hpp"              // BoundaryValues
 #include "../coordinates/coordinates.hpp"  // Coordinates
+#include "../eos/eos.hpp"                  // EquationOfState
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
-#include "../hydro/eos/eos.hpp"            // HydroEqnOfState
 
 // Declarations
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
@@ -74,7 +74,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real a2 = SQR(a);
 
   // Get ratio of specific heats
-  Real gamma_adi = phydro->peos->GetGamma();
+  Real gamma_adi = peos->GetGamma();
 
   // Read other properties
   Real e = pin->GetReal("problem", "energy");
@@ -119,8 +119,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   // Initialize conserved values
   AthenaArray<Real> bb;
   bb.NewAthenaArray(3, ku+1, ju+1, iu+1);
-  phydro->peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, il, iu, jl, ju,
-      kl, ku);
+  peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, il, iu, jl, ju, kl, ku);
   bb.DeleteAthenaArray();
   return;
 }

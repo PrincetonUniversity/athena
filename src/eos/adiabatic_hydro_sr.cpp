@@ -10,16 +10,16 @@
 #include <cfloat>  // FLT_MIN
 
 // Athena headers
-#include "../hydro/hydro.hpp"               // Hydro
-#include "../athena.hpp"           // enums, macros, Real
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../mesh/mesh.hpp"             // MeshBlock
-#include "../parameter_input.hpp"  // GetReal()
-#include "../field/field.hpp"      // FaceField
+#include "../athena.hpp"                   // enums, macros
+#include "../athena_arrays.hpp"            // AthenaArray
+#include "../parameter_input.hpp"          // ParameterInput
+#include "../coordinates/coordinates.hpp"  // Coordinates
+#include "../field/field.hpp"              // FaceField
+#include "../mesh/mesh.hpp"                // MeshBlock
 
 // Constructor
 // Inputs:
-//   pf: pointer to hydro object
+//   pmb: pointer to MeshBlock
 //   pin: pointer to runtime inputs
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
 {
