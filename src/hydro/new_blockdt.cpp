@@ -87,7 +87,7 @@ Real Hydro::NewBlockTimeStep(MeshBlock *pmb)
         wi[IVX]=w(IVX,k,j,i);
         wi[IVY]=w(IVY,k,j,i);
         wi[IVZ]=w(IVZ,k,j,i);
-        if (NON_BAROTROPIC_EOS) wi[IEN]=w(IEN,k,j,i);
+        if (NON_BAROTROPIC_EOS) wi[IPR]=w(IPR,k,j,i);
 
         if (RELATIVISTIC_DYNAMICS) {
 
