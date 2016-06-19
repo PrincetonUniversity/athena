@@ -38,8 +38,8 @@
 // This class header
 #include "outputs.hpp"
 
-RestartOutput::RestartOutput(OutputParameters oparams)
-  : OutputType(oparams)
+RestartOutput::RestartOutput(OutputParameters oparams, std::string type)
+  : OutputType(oparams, type)
 {
 }
 
@@ -49,6 +49,7 @@ RestartOutput::RestartOutput(OutputParameters oparams)
 
 void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag)
 {
+/*
   std::string fname;
   std::stringstream ost;
   MeshBlock *pmb;
@@ -151,6 +152,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag)
   delete [] idlist;
 
   // leave the file open; it will be closed in Finalize()
+*/
   return;
 }
 
@@ -160,6 +162,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag)
 //  \brief Load the data array from all the MeshBlocks
 void RestartOutput::LoadOutputData(OutputData *pout_data, MeshBlock *pblock)
 {
+/*
   // pack the data
   char *pdata=&(data[pblock->lid*datasize]);
   memcpy(pdata,pblock->phydro->u.data(), pblock->phydro->u.GetSizeInBytes());
@@ -194,6 +197,7 @@ void RestartOutput::LoadOutputData(OutputData *pout_data, MeshBlock *pblock)
            pblock->rusermeshblockdata[n].GetSizeInBytes());
     pdata+=pblock->rusermeshblockdata[n].GetSizeInBytes();
   }
+*/
   return;
 }
 
@@ -201,6 +205,7 @@ void RestartOutput::LoadOutputData(OutputData *pout_data, MeshBlock *pblock)
 //--------------------------------------------------------------------------------------
 //! \fn void RestartOutput::Finalize(ParameterInput *pin)
 //  \brief perform collective data output and clean up
+/*
 void RestartOutput::Finalize(ParameterInput *pin)
 {
   // call actual write here
@@ -209,4 +214,5 @@ void RestartOutput::Finalize(ParameterInput *pin)
   resfile.Close();
   delete [] data;
 }
+*/
 

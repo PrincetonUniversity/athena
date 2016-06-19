@@ -65,6 +65,7 @@
 void ATHDF5Output::Initialize(Mesh *pmesh, ParameterInput *pin,
     bool walltime_limit=false)
 {
+/*
   // Determine number and sizes of blocks
   num_blocks_global = pmesh->nbtotal;
   num_blocks_local = pmesh->nblist[Globals::my_rank];
@@ -709,6 +710,7 @@ void ATHDF5Output::Initialize(Mesh *pmesh, ParameterInput *pin,
   #ifdef MPI_PARALLEL
     H5Pset_dxpl_mpio(property_list, H5FD_MPIO_COLLECTIVE);
   #endif
+*/
   return;
 }
 
@@ -722,6 +724,7 @@ void ATHDF5Output::Initialize(Mesh *pmesh, ParameterInput *pin,
 //   has single process write .athdf.xdmf file
 void ATHDF5Output::Finalize(ParameterInput *pin)
 {
+/*
   // Close property list
   H5Pclose(property_list);
 
@@ -782,6 +785,7 @@ void ATHDF5Output::Finalize(ParameterInput *pin)
   output_params.next_time += output_params.dt;
   pin->SetInteger(output_params.block_name, "file_number", output_params.file_number);
   pin->SetReal(output_params.block_name, "next_time", output_params.next_time);
+*/
   return;
 }
 
@@ -799,6 +803,7 @@ void ATHDF5Output::Finalize(ParameterInput *pin)
 //       it is called
 void ATHDF5Output::LoadOutputData(OutputData *pout_data, MeshBlock *pblock)
 {
+/*
   // Do nothing except for first block on Mesh
   if (pblock->lid != 0)
     return;
@@ -822,17 +827,17 @@ void ATHDF5Output::LoadOutputData(OutputData *pout_data, MeshBlock *pblock)
         data_arrays[n_dataset++]
             .InitWithShallowSlice(pblock_current->pfield->bcc, 4, 0, 3);
       // TODO: uncomment when merged with radiation
-      /*
-      if (RADIATION_ENABLED)
-      {
-        data_arrays[n_dataset++]
-            .InitWithShallowSlice(pblock_current->prad->rad_mom, 4, 0, 10);
-        data_arrays[n_dataset++]
-            .InitWithShallowSlice(pblock_current->prad->rad_mom_cm, 4, 0, 4);
-        data_arrays[n_dataset++]
-            .InitWithShallowSlice(pblock_current->prad->grey_sigma, 4, 0, 2);
-      }
-      */
+//      
+//      if (RADIATION_ENABLED)
+//      {
+//        data_arrays[n_dataset++]
+//            .InitWithShallowSlice(pblock_current->prad->rad_mom, 4, 0, 10);
+//        data_arrays[n_dataset++]
+//            .InitWithShallowSlice(pblock_current->prad->rad_mom_cm, 4, 0, 4);
+//        data_arrays[n_dataset++]
+//            .InitWithShallowSlice(pblock_current->prad->grey_sigma, 4, 0, 2);
+//      }
+//      
     }
     else if (variable.compare("d") == 0)
       data_arrays[0].InitWithShallowSlice(pblock_current->phydro->w, 4, IDN, 1);
@@ -848,31 +853,31 @@ void ATHDF5Output::LoadOutputData(OutputData *pout_data, MeshBlock *pblock)
       data_arrays[0].InitWithShallowSlice(pblock_current->phydro->u, 4, IM1, 3);
     else if (variable.compare("b") == 0)
       data_arrays[0].InitWithShallowSlice(pblock_current->pfield->bcc, 4, IB1, 3);
-    // TODO: uncomment when merged with radiation
-    /*
-    else if (variable.compare("Er") == 0)
-      data_arrays[0].InitWithShallowSlice(pblock_current->prad->rad_mom, 4, IER, 1);
-    else if (variable.compare("Fr") == 0)
-      data_arrays[0].InitWithShallowSlice(pblock_current->prad->rad_mom, 4, IFR1, 3);
-    else if (variable.compare("Pr") == 0)
-      data_arrays[0].InitWithShallowSlice(pblock_current->prad->rad_mom, 4, IPR11, 6);
-    else if (variable.compare("Er0") == 0)
-      data_arrays[0].InitWithShallowSlice(pblock_current->prad->rad_mom_cm, 4, IER, 1);
-    else if (variable.compare("Fr0") == 0)
-      data_arrays[0].InitWithShallowSlice(pblock_current->prad->rad_mom_cm, 4, IFR1, 3);
-    else if (variable.compare("Sigma_s") == 0)
-      data_arrays[0].InitWithShallowSlice(pblock_current->prad->grey_sigma, 4, OPAS, 1);
-    else if (variable.compare("Sigma_a") == 0)
-      data_arrays[0].InitWithShallowSlice(pblock_current->prad->grey_sigma, 4, OPAA, 1);
-    */
+//    // TODO: uncomment when merged with radiation
+//    
+//    else if (variable.compare("Er") == 0)
+//      data_arrays[0].InitWithShallowSlice(pblock_current->prad->rad_mom, 4, IER, 1);
+//    else if (variable.compare("Fr") == 0)
+//      data_arrays[0].InitWithShallowSlice(pblock_current->prad->rad_mom, 4, IFR1, 3);
+//    else if (variable.compare("Pr") == 0)
+//      data_arrays[0].InitWithShallowSlice(pblock_current->prad->rad_mom, 4, IPR11, 6);
+//    else if (variable.compare("Er0") == 0)
+//      data_arrays[0].InitWithShallowSlice(pblock_current->prad->rad_mom_cm, 4, IER, 1);
+//    else if (variable.compare("Fr0") == 0)
+//      data_arrays[0].InitWithShallowSlice(pblock_current->prad->rad_mom_cm, 4, IFR1, 3);
+//    else if (variable.compare("Sigma_s") == 0)
+//      data_arrays[0].InitWithShallowSlice(pblock_current->prad->grey_sigma, 4, OPAS, 1);
+//    else if (variable.compare("Sigma_a") == 0)
+//      data_arrays[0].InitWithShallowSlice(pblock_current->prad->grey_sigma, 4, OPAA, 1);
+//    
     else if (variable.compare("ifov") == 0)
       data_arrays[0].InitWithShallowSlice(pblock_current->phydro->ifov, 4, 0, NIFOV);
     // TODO: uncomment when merged with radiation
-    /*
-    else if (variable.compare("rad_fov") == 0)
-      data_arrays[0]
-          .InitWithShallowSlice(pblock_current->prad->rad_ifov, 4, 0, NRADFOV);
-    */
+//    
+//    else if (variable.compare("rad_fov") == 0)
+//      data_arrays[0]
+//          .InitWithShallowSlice(pblock_current->prad->rad_ifov, 4, 0, NRADFOV);
+//    
     else
     {
       std::stringstream message;
@@ -910,6 +915,7 @@ void ATHDF5Output::LoadOutputData(OutputData *pout_data, MeshBlock *pblock)
       data_arrays[n].DeleteAthenaArray();
     }
   }
+*/
   return;
 }
 
@@ -933,6 +939,7 @@ void ATHDF5Output::LoadOutputData(OutputData *pout_data, MeshBlock *pblock)
 //   assumes LoadOutputData() does the same
 void ATHDF5Output::WriteOutputFile(OutputData *pout_data, MeshBlock *pblock)
 {
+/*
   // Do nothing except for first block on Mesh
   if (pblock->lid != 0)
     return;
@@ -956,6 +963,7 @@ void ATHDF5Output::WriteOutputFile(OutputData *pout_data, MeshBlock *pblock)
     H5Dwrite(datasets_celldata[n], H5T_NATIVE_FLOAT,
         memspaces_vars_blocks_nx3_nx2_nx1[n], filespaces_vars_blocks_nx3_nx2_nx1[n],
         property_list, data_buffers[n]);
+*/
   return;
 }
 
@@ -971,6 +979,7 @@ void ATHDF5Output::WriteOutputFile(OutputData *pout_data, MeshBlock *pblock)
 //   for many small MeshBlocks, this can take most of the output writing time
 void ATHDF5Output::MakeXDMF()
 {
+/*
   // Open auxiliary file for writing
   std::string filename_aux(filename);
   filename_aux.append(".xdmf");
@@ -1070,5 +1079,6 @@ void ATHDF5Output::MakeXDMF()
   xdmf.close();
   return;
 }
+*/
 
 #endif  // HDF5OUTPUT

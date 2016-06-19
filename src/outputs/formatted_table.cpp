@@ -36,8 +36,8 @@
 //--------------------------------------------------------------------------------------
 // FormattedTableOutput constructor
 
-FormattedTableOutput::FormattedTableOutput(OutputParameters oparams)
-  : OutputType(oparams)
+FormattedTableOutput::FormattedTableOutput(OutputParameters oparams, std::string type)
+  : OutputType(oparams, type) 
 {
 }
 
@@ -49,6 +49,7 @@ FormattedTableOutput::FormattedTableOutput(OutputParameters oparams)
 
 void FormattedTableOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 {
+/*
   std::stringstream msg;
   if (pod->data_header.ndata == 0) return;  // slice out of range, etc.
 
@@ -123,6 +124,7 @@ void FormattedTableOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 // close output file, increment file number, update time of last output, clean up
 
   fclose(pfile);
+*/
 
   return;
 }

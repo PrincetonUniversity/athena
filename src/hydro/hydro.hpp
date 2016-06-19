@@ -33,7 +33,6 @@ public:
   AthenaArray<Real> u1,w1;    // conserved and primitive variables at intermediate step
   AthenaArray<Real> flux[3];  // conserved and primitive variables
   AthenaArray<Real> g, g_inv; // metric and its inverse
-  AthenaArray<Real> ifov;     // internal hydro output variables for analysis
 
   HydroSourceTerms *psrc;
 

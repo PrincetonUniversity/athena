@@ -37,7 +37,7 @@
 //   - id           = any string
 //   - file_number  = any integer with up to 4 digits
 //   - x[123]_slice = specifies data should be a slice at x[123] position
-//   - x[123]_sum   = set to 1 to sum data along specified direction
+//   - x[123]_sum   = set to "true" to sum data along specified direction
 //   
 // EXAMPLE of an <outputN> block for a VTK dump:
 //   <output3>
@@ -79,49 +79,20 @@
 #include "outputs.hpp"
 
 //--------------------------------------------------------------------------------------
-// OutputVariable constructor
-
-OutputVariable::OutputVariable()
-{
-  pnext = NULL;
-  pprev = NULL;
-}
-
-// destructor - iterates through linked list of OutputVariables and deletes nodes
-
-OutputVariable::~OutputVariable()
-{
-  data.DeleteAthenaArray();
-}
-
-//--------------------------------------------------------------------------------------
-// OutputData constructor
-
-OutputData::OutputData()
-{
-  pfirst_var = NULL;
-  plast_var = NULL;
-}
-
-// destructor - iterates through linked list of OutputVariables and deletes nodes
-
-OutputData::~OutputData()
-{
-  OutputVariable *pvar = pfirst_var;
-  while(pvar != NULL) {
-    OutputVariable *pvar_old = pvar;
-    pvar = pvar->pnext;
-    delete pvar_old;
-  }
-}
-
-//--------------------------------------------------------------------------------------
 // OutputType constructor
 
-OutputType::OutputType(OutputParameters oparams)
+OutputType::OutputType(OutputParameters oparams, std::string type)
 {
   output_params = oparams;
   pnext_type = NULL; // Terminate linked list with NULL ptr
+
+  // set output_type to appropriate enum, select data if necessary
+  if (type == "history") {
+    output_type = HISTORY_FILE;
+  } else if (type == "vtk") {
+//    OutputFunction = &OutputType::VTKFile;
+    SelectOutputData();
+  }
 }
 
 // destructor
@@ -148,7 +119,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
       OutputParameters op;  // define temporary OutputParameters struct
 
       // extract integer number of output block.  Save name and number 
-      std::string outn = pib->block_name.substr(6); // 6 because starts at 0!
+      std::string outn = pib->block_name.substr(6); // 6 because counting starts at 0!
       op.block_number = atoi(outn.c_str());
       op.block_name.assign(pib->block_name);
 
@@ -167,89 +138,75 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
         op.file_type = pin->GetString(op.block_name,"file_type");
 
         // read slicing options.  Check that slice is within mesh
+        op.output_slice = false;
         if (pin->DoesParameterExist(op.block_name,"x1_slice")) {
           Real x1 = pin->GetReal(op.block_name,"x1_slice");
           if (x1 >= pm->mesh_size.x1min && x1 < pm->mesh_size.x1max) {
             op.x1_slice = x1;
-            op.islice = 1;
+            op.output_slice = true;
           } else {
             msg << "### FATAL ERROR in Outputs constructor" << std::endl
                 << "Slice at x1=" << x1 << " in output block '" << op.block_name
                 << "' is out of range of Mesh" << std::endl;
             throw std::runtime_error(msg.str().c_str());
           }
-        } else {
-          op.islice = 0;
         }
 
         if (pin->DoesParameterExist(op.block_name,"x2_slice")) {
           Real x2 = pin->GetReal(op.block_name,"x2_slice");
           if (x2 >= pm->mesh_size.x2min && x2 < pm->mesh_size.x2max) {
             op.x2_slice = x2;
-            op.jslice = 1;
+            op.output_slice = true;
           } else {
             msg << "### FATAL ERROR in Outputs constructor" << std::endl
                 << "Slice at x2=" << x2 << " in output block '" << op.block_name
                 << "' is out of range of Mesh" << std::endl;
             throw std::runtime_error(msg.str().c_str());
           }
-        } else {
-          op.jslice = 0;
         }
 
         if (pin->DoesParameterExist(op.block_name,"x3_slice")) {
           Real x3 = pin->GetReal(op.block_name,"x3_slice");
           if (x3 >= pm->mesh_size.x3min && x3 < pm->mesh_size.x3max) {
             op.x3_slice = x3;
-            op.kslice = 1;
+            op.output_slice = true;
           } else {
             msg << "### FATAL ERROR in Outputs constructor" << std::endl
                 << "Slice at x3=" << x3 << " in output block '" << op.block_name
                 << "' is out of range of Mesh" << std::endl;
             throw std::runtime_error(msg.str().c_str());
           }
-        } else {
-          op.kslice = 0;
         }
 
         // read sum options.  Check for conflicts with slicing.
-        if (pin->DoesParameterExist(op.block_name,"x1_sum")) {
+        op.output_sumx1 = pin->GetOrAddBoolean(op.block_name,"x1_sum",false);
+        if (op.output_sumx1 == true) {
           if (pin->DoesParameterExist(op.block_name,"x1_slice")) {
             msg << "### FATAL ERROR in Outputs constructor" << std::endl 
                 << "Cannot request both slice and sum along x1-direction"
                 << " in output block '" << op.block_name << "'" << std::endl;
             throw std::runtime_error(msg.str().c_str());
-          } else {
-            op.isum = pin->GetInteger(op.block_name,"x1_sum");;
           }
-        } else {
-          op.isum = 0;
         }
 
-        if (pin->DoesParameterExist(op.block_name,"x2_sum")) {
+        op.output_sumx2 = pin->GetOrAddBoolean(op.block_name,"x2_sum",false);
+        if (op.output_sumx2 == true) {
           if (pin->DoesParameterExist(op.block_name,"x2_slice")) {
             msg << "### FATAL ERROR in Outputs constructor" << std::endl
                 << "Cannot request both slice and sum along x2-direction"
                 << " in output block '" << op.block_name << "'" << std::endl;
             throw std::runtime_error(msg.str().c_str());
-          } else {
-            op.jsum = pin->GetInteger(op.block_name,"x2_sum");;
           }
-        } else {
-          op.jsum = 0;
         }
 
-        if (pin->DoesParameterExist(op.block_name,"x3_sum")) {
+        op.output_sumx3 = pin->GetOrAddBoolean(op.block_name,"x3_sum",false);
+        if (op.output_sumx3 == true) {
           if (pin->DoesParameterExist(op.block_name,"x3_slice")) {
             msg << "### FATAL ERROR in Outputs constructor" << std::endl
                 << "Cannot request both slice and sum along x3-direction"
                 << " in output block '" << op.block_name << "'" << std::endl;
             throw std::runtime_error(msg.str().c_str());
-          } else {
-            op.ksum = pin->GetInteger(op.block_name,"x3_sum");;
           }
-        } else {
-          op.ksum = 0;
         }
 
         // set output variable and optional data format string used in formatted writes
@@ -261,19 +218,23 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
 
         // Construct new OutputType according to file format
         // ADD NEW OUTPUT TYPES HERE
-        if (op.file_type.compare("rst") == 0) {
-          pnew_type = new RestartOutput(op);
-        } else if (op.file_type.compare("tab") == 0) {
-          pnew_type = new FormattedTableOutput(op);
-        } else if (op.file_type.compare("hst") == 0) {
-          pnew_type = new HistoryOutput(op);
-        } else if (op.file_type.compare("vtk") == 0) {
-          pnew_type = new VTKOutput(op);
+        if (op.file_type.compare("hst") == 0) {
+          pnew_type = new OutputType(op, "history");
         }
+        
+//        if (op.file_type.compare("rst") == 0) {
+//          pnew_type = new RestartOutput(op);
+//        } else if (op.file_type.compare("tab") == 0) {
+//          pnew_type = new FormattedTableOutput(op);
+//        } else if (op.file_type.compare("hst") == 0) {
+//          pnew_type = new HistoryOutput(op);
+//        } else if (op.file_type.compare("vtk") == 0) {
+//          pnew_type = new VTKOutput(op);
+//        }
 #ifdef HDF5OUTPUT
-        else if (op.file_type.compare("ath5") == 0 || op.file_type.compare("hdf5") == 0) {
-          pnew_type = new ATHDF5Output(op);
-        }
+//        else if (op.file_type.compare("ath5") == 0 || op.file_type.compare("hdf5") == 0) {
+//          pnew_type = new ATHDF5Output(op);
+//        }
 #endif
         else {
           msg << "### FATAL ERROR in Outputs constructor" << std::endl
@@ -294,7 +255,8 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
     pib = pib->pnext;  // move to next input block name
   }
 
-  // Move the restarting block to the end of the list
+  // Move restarts to the end of the OutputType list, so file counters for other 
+  // output types are up-to-date in restart file
   int pos=0, found=0;
   OutputType *pot=pfirst_type_, *prst;
   while(pot!=NULL) {
@@ -339,167 +301,135 @@ Outputs::~Outputs()
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void OutputData::AppendNode()
-//  \brief
+//! \fn void OutputType::SelectOutputData()
+//  \brief Sets boolean flags for which data is to be output
 
-void OutputData::AppendNode(OutputVariable *pnew_var)
+void OutputType::SelectOutputData()
 {
-  if (pfirst_var == NULL)
-    pfirst_var = pnew_var;
-  else {
-    pnew_var->pprev = plast_var;
-    plast_var->pnext = pnew_var;
-  }
-  plast_var = pnew_var;
-}
+  int num_vars_ = 0;
 
-//--------------------------------------------------------------------------------------
-//! \fn void OutputData::ReplaceNode()
-//  \brief
-
-void OutputData::ReplaceNode(OutputVariable *pold, OutputVariable *pnew) 
-{
-  if (pold == pfirst_var) {
-    pfirst_var = pnew;
-    if (pold->pnext != NULL) {    // there is another node in the list 
-      pnew->pnext = pold->pnext;
-      pnew->pnext->pprev = pnew;
-    } else {                      // there is only one node in the list
-      plast_var = pnew;
-    }
-  } else if (pold == plast_var) {
-    plast_var = pnew;
-    pnew->pprev = pold->pprev;
-    pnew->pprev->pnext = pnew;
-  } else {
-    pnew->pnext = pold->pnext;
-    pnew->pprev = pold->pprev;
-    pnew->pprev->pnext = pnew;
-    pnew->pnext->pprev = pnew;
-  }
-  delete pold;
-}
-
-//--------------------------------------------------------------------------------------
-//! \fn void OutputType::LoadOutputData(OutputData *pod)
-//  \brief initializes output data in OutputData container
-
-void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
-{
-  Hydro *phyd = pmb->phydro;
-  Field *pfld = pmb->pfield;
-  std::stringstream str;
-
-// Create OutputData header
-
-  str << "# Athena++ data at time=" << pmb->pmy_mesh->time
-      << "  cycle=" << pmb->pmy_mesh->ncycle 
-      << "  variables=" << output_params.variable << std::endl;
-  pod->data_header.descriptor.append(str.str());
-  pod->data_header.il = pmb->is;
-  pod->data_header.iu = pmb->ie;
-  pod->data_header.jl = pmb->js;
-  pod->data_header.ju = pmb->je;
-  pod->data_header.kl = pmb->ks;
-  pod->data_header.ku = pmb->ke;
-  pod->data_header.ndata = (pmb->ie - pmb->is + 1)*(pmb->je - pmb->js + 1)
-                          *(pmb->ke - pmb->ks + 1);
-
-// Create linked list of OutputVariables containing requested data
-
-  OutputVariable *pov;
-  var_added = 0;
+  // density
   if (output_params.variable.compare("D") == 0 || 
+      output_params.variable.compare("d") == 0 || 
+      output_params.variable.compare("prim") == 0 ||
       output_params.variable.compare("cons") == 0) {
-    pov = new OutputVariable; 
-    pov->type = "SCALARS";
-    pov->name = "dens";
-    pov->data.InitWithShallowSlice(phyd->u,4,IDN,1);
-    pod->AppendNode(pov); // (lab-frame) density
-    var_added++;
+    out_vars.d = true;
+    num_vars_++;
   }
 
-  if (output_params.variable.compare("d") == 0 || 
-      output_params.variable.compare("prim") == 0) {
-    pov = new OutputVariable; 
-    pov->type = "SCALARS";
-    pov->name = "rho";
-    pov->data.InitWithShallowSlice(phyd->w,4,IDN,1);
-    pod->AppendNode(pov); // (rest-frame) density
-    var_added++;
-  }
-
+  // total energy
   if (NON_BAROTROPIC_EOS) {
     if (output_params.variable.compare("E") == 0 || 
         output_params.variable.compare("cons") == 0) {
-      pov = new OutputVariable; 
-      pov->type = "SCALARS";
-      pov->name = "Etot";
-      pov->data.InitWithShallowSlice(phyd->u,4,IEN,1);
-      pod->AppendNode(pov); // total energy
-      var_added++;
+      out_vars.e = true;
+      num_vars_++;
     }
   }
 
+  // pressure
   if (NON_BAROTROPIC_EOS) {
     if (output_params.variable.compare("p") == 0 || 
         output_params.variable.compare("prim") == 0) {
-      pov = new OutputVariable; 
-      pov->type = "SCALARS";
-      pov->name = "press";
-      pov->data.InitWithShallowSlice(phyd->w,4,IEN,1);
-      pod->AppendNode(pov); // pressure
-      var_added++;
+      out_vars.p = true;
+      num_vars_++;
     }
   }
 
+  // momentum
   if (output_params.variable.compare("m") == 0 || 
+      output_params.variable.compare("m1") == 0 || 
       output_params.variable.compare("cons") == 0) {
-    pov = new OutputVariable; 
-    pov->type = "VECTORS";
-    pov->name = "mom";
-    pov->data.InitWithShallowSlice(phyd->u,4,IM1,3);
-    pod->AppendNode(pov); // momentum vector
-    var_added+=3;
+    out_vars.m1 = true;
+    num_vars_+=1;
+  }
+  if (output_params.variable.compare("m") == 0 || 
+      output_params.variable.compare("m2") == 0 || 
+      output_params.variable.compare("cons") == 0) {
+    out_vars.m2 = true;
+    num_vars_+=1;
+  }
+  if (output_params.variable.compare("m") == 0 || 
+      output_params.variable.compare("m3") == 0 || 
+      output_params.variable.compare("cons") == 0) {
+    out_vars.m3 = true;
+    num_vars_+=1;
   }
 
+  // velocity
   if (output_params.variable.compare("v") == 0 || 
+      output_params.variable.compare("vx") == 0 || 
+      output_params.variable.compare("v1") == 0 || 
       output_params.variable.compare("prim") == 0) {
-    pov = new OutputVariable; 
-    pov->type = "VECTORS";
-    pov->name = "vel";
-    pov->data.InitWithShallowSlice(phyd->w,4,IVX,3);
-    pod->AppendNode(pov); // velocity vector
-    var_added+=3;
+    out_vars.v1 = true;
+    num_vars_+=1;
+  }
+  if (output_params.variable.compare("v") == 0 || 
+      output_params.variable.compare("vy") == 0 || 
+      output_params.variable.compare("v2") == 0 || 
+      output_params.variable.compare("prim") == 0) {
+    out_vars.v2 = true;
+    num_vars_+=1;
+  }
+  if (output_params.variable.compare("v") == 0 || 
+      output_params.variable.compare("vz") == 0 || 
+      output_params.variable.compare("v3") == 0 || 
+      output_params.variable.compare("prim") == 0) {
+    out_vars.v3 = true;
+    num_vars_+=1;
   }
 
   if (MAGNETIC_FIELDS_ENABLED) {
-    if (output_params.variable.compare("b") == 0 || 
+    // cell-centered magnetic field
+    if (output_params.variable.compare("bcc") == 0 || 
+        output_params.variable.compare("bcc1") == 0 || 
         output_params.variable.compare("prim") == 0 ||
         output_params.variable.compare("cons") == 0) {
-      pov = new OutputVariable; 
-      pov->type = "VECTORS";
-      pov->name = "cc-B";
-      pov->data.InitWithShallowSlice(pfld->bcc,4,IB1,3);
-      pod->AppendNode(pov); // magnetic field vector
-      var_added+=3;
+      out_vars.bcc1 = true;
+      num_vars_+=1;
     }
-  }
+    if (output_params.variable.compare("bcc") == 0 || 
+        output_params.variable.compare("bcc2") == 0 || 
+        output_params.variable.compare("prim") == 0 ||
+        output_params.variable.compare("cons") == 0) {
+      out_vars.bcc2 = true;
+      num_vars_+=1;
+    }
+    if (output_params.variable.compare("bcc") == 0 || 
+        output_params.variable.compare("bcc3") == 0 || 
+        output_params.variable.compare("prim") == 0 ||
+        output_params.variable.compare("cons") == 0) {
+      out_vars.bcc3 = true;
+      num_vars_+=1;
+    }
 
-  if (output_params.variable.compare("ifov") == 0) {
-    for (int n=0; n<(NIFOV); ++n) {
-      pov = new OutputVariable; 
-      pov->type = "SCALARS";
-      pov->name = "ifov";
-      pov->data.InitWithShallowSlice(phyd->ifov,4,n,1);
-      pod->AppendNode(pov); // internal hydro outvars
+    // face-centered magnetic field
+    if (output_params.variable.compare("b") == 0 || 
+        output_params.variable.compare("b1") == 0) {
+      out_vars.b1 = true;
+      num_vars_+=1;
     }
-    var_added+=NIFOV;
-  }
+    if (output_params.variable.compare("b") == 0 || 
+        output_params.variable.compare("b2") == 0) {
+      out_vars.b2 = true;
+      num_vars_+=1;
+    }
+    if (output_params.variable.compare("b") == 0 || 
+        output_params.variable.compare("b3") == 0) {
+      out_vars.b3 = true;
+      num_vars_+=1;
+    }
+  } // endif (MAGNETIC_FIELDS_ENABLED)
+
+// REPLCE WITH USER MESH VARIABLES
+  // internal mesh output variables
+//  if (output_params.variable.compare("imesh_ov") == 0) {
+//    out_vars.imov = true;
+//    num_vars_+=NIMOV;
+//  }
 
 // throw an error if output variable name not recognized
 
-  if (var_added==0) {
+  if (num_vars_==0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in function [OutputType::LoadOutputData]" << std::endl
         << "Output variable '" << output_params.variable << "' not implemented"
@@ -511,9 +441,72 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 }
 
 //--------------------------------------------------------------------------------------
+//! \fn void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag)
+//  \brief scans through linked list of OutputTypes and makes any outputs needed.
+
+void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag)
+{
+  OutputType* ptype = pfirst_type_;
+  MeshBlock *pmb;
+
+  while (ptype != NULL) {
+    if ((pm->time == pm->start_time) ||
+        (pm->time >= ptype->output_params.next_time) ||
+        (pm->time >= pm->tlim) ||
+        (wtflag==true && ptype->output_params.file_type=="rst")) {
+
+      switch (ptype->output_type) {
+        case HISTORY_FILE:
+          ptype->HistoryFile(pm);
+          break;
+        default:
+          std::stringstream msg;
+          msg << "### FATAL ERROR in MakeOutputs" << std::endl
+              << "Unknown output switch type" << std::endl;
+          throw std::runtime_error(msg.str().c_str());
+      }
+      ptype->FinalizeOutput(pin);
+    }
+
+    
+
+/*
+      ptype->Initialize(pm,pin,wtflag);
+      pmb=pm->pblock;
+      while (pmb != NULL)  {
+        // Create new OutputData container, load and transform data, then write to file
+        OutputData* pod = new OutputData;
+        ptype->LoadOutputData(pod,pmb);
+        ptype->TransformOutputData(pod,pmb);
+        ptype->WriteOutputFile(pod,pmb);
+        delete pod;
+        pmb=pmb->next;
+      }
+      ptype->FinalizeOutput(pin);
+*/
+
+    ptype = ptype->pnext_type; // move to next OutputType in list
+  }
+
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void OutputType::FinalizeOutput(ParameterInput *pin)
+//  \brief increment file number, update next output time, store in ParameterInput
+
+void OutputType::FinalizeOutput(ParameterInput *pin)
+{
+  output_params.file_number++;
+  output_params.next_time += output_params.dt;
+  pin->SetInteger(output_params.block_name, "file_number", output_params.file_number);
+  pin->SetReal(output_params.block_name, "next_time", output_params.next_time);
+}
+
+//--------------------------------------------------------------------------------------
 //! \fn void OutputType::TransformOutputData()
 //  \brief 
 
+/*
 void OutputType::TransformOutputData(OutputData *pod, MeshBlock *pmb)
 {
   if (output_params.kslice) {
@@ -536,11 +529,13 @@ void OutputType::TransformOutputData(OutputData *pod, MeshBlock *pmb)
   }
   return;
 }
+*/
 
 //--------------------------------------------------------------------------------------
 //! \fn void OutputType::Slice(OutputData* pod, int dim)
 //  \brief
 
+/*
 void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
 {
   int islice, jslice, kslice;
@@ -660,11 +655,13 @@ void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
 
   return;
 }
+*/
 
 //--------------------------------------------------------------------------------------
 //! \fn void OutputType::Sum(OutputData* pod, int dim)
 //  \brief
 
+/*
 void OutputType::Sum(OutputData* pod, MeshBlock* pmb, int dim)
 {
   AthenaArray<Real> *psum;
@@ -740,46 +737,4 @@ void OutputType::Sum(OutputData* pod, MeshBlock* pmb, int dim)
   return;
 }
 
-//--------------------------------------------------------------------------------------
-//! \fn void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag)
-//  \brief scans through linked list of OutputTypes and makes any outputs needed.
-
-void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag)
-{
-  OutputType* ptype = pfirst_type_;
-  MeshBlock *pmb;
-
-  while (ptype != NULL) {
-    if ((pm->time == pm->start_time) ||
-        (pm->time >= ptype->output_params.next_time) ||
-        (pm->time >= pm->tlim) ||
-        (wtflag==true && ptype->output_params.file_type=="rst")) {
-
-      ptype->Initialize(pm,pin,wtflag);
-      pmb=pm->pblock;
-      while (pmb != NULL)  {
-        // Create new OutputData container, load and transform data, then write to file
-        OutputData* pod = new OutputData;
-        ptype->LoadOutputData(pod,pmb);
-        ptype->TransformOutputData(pod,pmb);
-        ptype->WriteOutputFile(pod,pmb);
-        delete pod;
-        pmb=pmb->next;
-      }
-      ptype->Finalize(pin);
-    }
-    ptype = ptype->pnext_type; // move to next OutputType in list
-  }
-
-}
-
-//--------------------------------------------------------------------------------------
-//! \fn void OutputType::Finalize(ParameterInput *pin)
-//  \brief count up the file number and next output time
-void OutputType::Finalize(ParameterInput *pin)
-{
-  output_params.file_number++;
-  output_params.next_time += output_params.dt;
-  pin->SetInteger(output_params.block_name, "file_number", output_params.file_number);
-  pin->SetReal(output_params.block_name, "next_time", output_params.next_time);
-}
+*/

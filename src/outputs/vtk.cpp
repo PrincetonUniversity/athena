@@ -55,8 +55,8 @@ static inline void Swap4Bytes(void *vdat) {
 //--------------------------------------------------------------------------------------
 // VTKOutput constructor
 
-VTKOutput::VTKOutput(OutputParameters oparams)
-  : OutputType(oparams)
+VTKOutput::VTKOutput(OutputParameters oparams, std::string type)
+  : OutputType(oparams, type)
 {
 }
 
@@ -68,6 +68,7 @@ VTKOutput::VTKOutput(OutputParameters oparams)
 
 void VTKOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 {
+/*
   std::stringstream msg;
   int big_end = IsBigEndian(); // =1 on big endian machine
   if (pod->data_header.ndata == 0) return;  // slice out of range, etc.
@@ -207,6 +208,7 @@ void VTKOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
 
   fclose(pfile);
   delete data;
+*/
 
   return;
 }

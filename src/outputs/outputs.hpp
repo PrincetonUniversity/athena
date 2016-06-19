@@ -6,20 +6,17 @@
 // See LICENSE file for full public license information.
 //======================================================================================
 //! \file outputs.hpp
-//  \brief provides multiple classes to handle ALL types of data output
+//  \brief provides classes to handle ALL types of data output
 //======================================================================================
 
-// C headers
+// C/C++ headers
 #include <stdio.h>  // size_t
-
-// C++ headers
 #include <string>  // string
 
 // Athena++ headers
 #include "wrapper.hpp"
 #include "../athena.hpp"
 
-// External library headers
 #ifdef HDF5OUTPUT
 #include <hdf5.h>
 #endif
@@ -27,93 +24,72 @@
 class Mesh;
 class ParameterInput;
 
+//typedef void (*OutputFunction_t)(Mesh *pm);
+
+enum OutputFileType {NONE, HISTORY_FILE};
+
 //! \struct OutputParameters
-//  \brief  control parameter values read from <output> block in the input file
+//  \brief  container for parameters read from <output> block in the input file
 
 typedef struct OutputParameters {
-  Real next_time, dt;
   int block_number;
-  int file_number;
-  int islice, jslice, kslice;
-  Real x1_slice, x2_slice, x3_slice;
-  int isum, jsum, ksum;
   std::string block_name;
   std::string file_basename;
   std::string file_id;
   std::string variable;
   std::string file_type;
   std::string data_format;
+  Real next_time, dt;
+  int file_number;
+  bool output_slice, output_sumx1, output_sumx2, output_sumx3, include_ghost_zones;
+  Real x1_slice, x2_slice, x3_slice;
+  int il, iu, jl, ju, kl, ku;
 } OutputParameters;
 
-//! \struct OutputVariable
-//  \brief node in a linked list of output variables in OutputData class
+//! \struct OutputVariables
+//  \brief  container for boolean flags that label which arrays are to be output
 
-class OutputVariable {
-public:
-  OutputVariable();
-  ~OutputVariable();
+typedef struct OutputVariables {
+  bool d,e,m1,m2,m3,b1,b2,b3;
+  bool p,v1,v2,v3,bcc1,bcc2,bcc3;
+  bool imov;
+} OutputVariables;
 
-  std::string type; // one of (SCALARS,VECTORS)
-  std::string name;
-  AthenaArray<Real> data;  // array containing data (may be shallow copy/slice)
-  OutputVariable *pnext, *pprev; // ptrs to next and previous nodes in list
-};
-
-//! \struct OutputDataHeader
-//  \brief metadata describing OutputData contained within an OutputType
-
-typedef struct OutputDataHeader {
-  std::string descriptor; // time, cycle, variables in output
-  std::string transforms; // list of any transforms (sum, slice) applied to variables
-  int il,iu,jl,ju,kl,ku;  // range of data arrays
-  int ndata;              // number of data points in arrays
-} OutputDataHeader;
-
-//! \class OutputData
-//  \brief container for output data, composed of a header (metadata describing output),
-//  a linked list of OutputVariables, and functions to add and replace nodes
-
-class OutputData {
-public:
-  OutputData();
-  ~OutputData();
-
-  OutputDataHeader data_header;
-  OutputVariable *pfirst_var;  // ptr to first variable (node) in linked list
-  OutputVariable *plast_var;   // ptr to last  variable (node) in linked list
-
-  void AppendNode(OutputVariable *pvar);
-  void ReplaceNode(OutputVariable *pold, OutputVariable *pnew);
-};
-
-
-//-------------------------- OutputTypes base and derived classes ----------------------
+//--------------------------------------------------------------------------------------
 //! \class OutputType
-//  \brief abstract base class for different output types (modes), designed to be a node
-//  in a linked list created and stored in objects of the Outputs class.
+//  \brief class for different output types (modes), designed to be a node in a linked
+//  list created and stored in the Outputs class.
 
 class OutputType {
-protected:
-  int var_added;
 public:
-  OutputType(OutputParameters oparams);
+  OutputType(OutputParameters oparams, std::string type);
   ~OutputType();
+
+  // data
   OutputParameters output_params; // control data read from <output> block
+  OutputVariables out_vars;       // boolean flags labeling data to be written
+  enum OutputFileType output_type;
+  OutputType *pnext_type;         // ptr to next node in linked list of OutputTypes
 
-// functions that operate on OutputData container
+  // functions
+//  void (OutputType::*OutputFunction)(Mesh *pm);
+//  OutputFunction_t OutputFunction;
+  void SelectOutputData();
+  void FinalizeOutput(ParameterInput *pin);
 
-  virtual void Initialize(Mesh *pM, ParameterInput *pin, bool wtflag=false) {};
-  virtual void Finalize(ParameterInput *pin);
-  virtual void LoadOutputData(OutputData *pod, MeshBlock *pmb);
-  virtual void TransformOutputData(OutputData *pod, MeshBlock *pmb);
-  virtual void WriteOutputFile(OutputData *pod, MeshBlock *pmb) = 0; // pure virtual
+  void HistoryFile(Mesh *pm);
 
-// functions that implement useful transforms applied to each variable in OutputData
+private:
+  int num_vars_;
+};
 
-  void Slice(OutputData* pod, MeshBlock *pmb, int dim);
-  void Sum(OutputData* pod, MeshBlock *pmb, int dim);
 
-  OutputType *pnext_type;   // ptr to next node in linked list of OutputTypes
+//======================================================================================
+// following should be deleted as they are updated
+
+class OutputData {
+  OutputData();
+  ~OutputData() {};
 };
 
 //! \class FormattedTableOutput
@@ -121,7 +97,7 @@ public:
 
 class FormattedTableOutput : public OutputType {
 public:
-  FormattedTableOutput(OutputParameters oparams);
+  FormattedTableOutput(OutputParameters oparams, std::string type);
   ~FormattedTableOutput() {};
 
   void WriteOutputFile(OutputData *pod, MeshBlock *pmb);
@@ -134,7 +110,7 @@ private:
 
 class HistoryOutput : public OutputType {
 public:
-  HistoryOutput(OutputParameters oparams);
+  HistoryOutput(OutputParameters oparams, std::string type);
   ~HistoryOutput() {};
 
   void LoadOutputData(OutputData *pod, MeshBlock *pmb); // overloads base class function
@@ -146,7 +122,7 @@ public:
 
 class VTKOutput : public OutputType {
 public:
-  VTKOutput(OutputParameters oparams);
+  VTKOutput(OutputParameters oparams, std::string type);
   ~VTKOutput() {};
 
   void WriteOutputFile(OutputData *pod, MeshBlock *pmb);
@@ -164,10 +140,10 @@ private:
   int nbtotal, myns, mynb;
 
 public:
-  RestartOutput(OutputParameters oparams);
+  RestartOutput(OutputParameters oparams, std::string type);
   ~RestartOutput() {};
   void Initialize(Mesh *pm, ParameterInput *pin, bool wtflag);
-  void Finalize(ParameterInput *pin);
+  void FinalizeOutput(ParameterInput *pin);
   void LoadOutputData(OutputData *pod, MeshBlock *pmb);
   void TransformOutputData(OutputData *pod, MeshBlock *pmb) {};
   void WriteOutputFile(OutputData *pod, MeshBlock *pmb) {};
@@ -227,7 +203,7 @@ private:
 public:
 
   // Function declarations
-  ATHDF5Output(OutputParameters oparams) : OutputType(oparams) {};
+  ATHDF5Output(OutputParameters oparams, std::string type) : OutputType(oparams) {};
   ~ATHDF5Output() {};
   void Initialize(Mesh *pmesh, ParameterInput *pin, bool walltime_limit);
   void Finalize(ParameterInput *pin);
@@ -238,8 +214,11 @@ public:
 };
 #endif
 
-//--------------------- end of OutputTypes base and derived classes --------------------
+//======================================================================================
 
+
+
+//--------------------------------------------------------------------------------------
 //! \class Outputs
 //  \brief root class for all Athena++ outputs.  Provides a linked list of OutputTypes,
 //  with each node representing one mode of output to be made during a simulation.
