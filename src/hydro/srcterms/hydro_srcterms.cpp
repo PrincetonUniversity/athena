@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -27,7 +27,7 @@
 // this class header
 #include "hydro_srcterms.hpp"
 
-// HydroSourceTerms constructor 
+// HydroSourceTerms constructor
 
 HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin)
 {
@@ -46,6 +46,13 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin)
 
   g3_ = pin->GetOrAddReal("hydro","grav_acc3",0.0);
   if (g3_ != 0.0) hydro_sourceterms_defined = true;
+//[JMSHI
+  // read shearing box parameters from input block
+  Omega_0_ = pin->GetOrAddReal("problem","Omega0",0.0);
+  qshear_  = pin->GetOrAddReal("problem","qshear",0.0);
+  ShBoxCoord_ = pin->GetOrAddInteger("problem","shboxcoord",1);
+  if ((Omega_0_ !=0.0) && (qshear_ != 0.0)) hydro_sourceterms_defined = true;
+//JMSHI]
 
   UserSourceTerm = phyd->pmy_block->pmy_mesh->UserSourceTerm_;
 }
@@ -73,6 +80,10 @@ void HydroSourceTerms::AddHydroSourceTerms(const Real dt, const AthenaArray<Real
 
   // Add new source terms here
   // MyNewSourceTerms()
+//[JMSHI
+  // shearing box source terms: tidal and Coriolis forces
+  if ((Omega_0_ !=0.0) && (qshear_ != 0.0)) ShearingBoxSourceTerms(dt, flux, prim, cons);
+//JMSHI]
 
   //  user-defined source terms
   if (UserSourceTerm != NULL)
