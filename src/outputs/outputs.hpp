@@ -42,6 +42,14 @@ typedef struct OutputParameters {
   int il, iu, jl, ju, kl, ku;
 } OutputParameters;
 
+//! \struct OutputData
+//  \brief
+
+typedef struct OutputData {
+  AthenaArray<Real> output_data;
+  struct OutputData *pnext;
+} OutputData;
+
 //! \struct OutputVariables
 //  \brief  container for boolean flags that label which arrays are to be output
 
@@ -72,7 +80,8 @@ public:
   virtual void WriteOutputFile(Mesh *pm) = 0;   // pure virtual
 
 protected:
-  int num_vars_;  // number of variables in output
+  int num_vars_;            // number of variables in output
+  OutputData *pfirst_data_;  // ptr to first OutputData
 };
 
 //! \class HistoryFile
@@ -82,16 +91,7 @@ class HistoryOutput : public OutputType {
 public:
   HistoryOutput(OutputParameters oparams);
   ~HistoryOutput() {};
-
-  void WriteOutputFile(Mesh *pmb);
-};
-
-//======================================================================================
-// following should be deleted as they are updated
-
-class OutputData {
-  OutputData();
-  ~OutputData() {};
+  void WriteOutputFile(Mesh *pm);
 };
 
 //! \class FormattedTableOutput
@@ -101,11 +101,16 @@ class FormattedTableOutput : public OutputType {
 public:
   FormattedTableOutput(OutputParameters oparams);
   ~FormattedTableOutput() {};
-
-  void WriteOutputFile(OutputData *pod, MeshBlock *pmb);
-
-private:
+  void WriteOutputFile(Mesh *pm);
 };
+
+//======================================================================================
+// following should be deleted as they are updated
+
+//typedef struct OutputData {
+//  AthenaArray<Real> output_data;
+//  struct OutputData *pnext;
+//} OutputData;
 
 
 //! \class VTKOutput

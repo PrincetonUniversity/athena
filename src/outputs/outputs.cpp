@@ -84,7 +84,8 @@
 OutputType::OutputType(OutputParameters oparams)
 {
   output_params = oparams;
-  pnext_type = NULL; // Terminate linked list with NULL ptr
+  pfirst_data_ = NULL; // Initialize linked list of OutputData's to NULL
+  pnext_type = NULL;   // Terminate linked list with NULL ptr
 }
 
 // destructor
@@ -212,12 +213,12 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
         // ADD NEW OUTPUT TYPES HERE
         if (op.file_type.compare("hst") == 0) {
           pnew_type = new HistoryOutput(op);
+        } else if (op.file_type.compare("tab") == 0) {
+          pnew_type = new FormattedTableOutput(op);
         }
         
 //        if (op.file_type.compare("rst") == 0) {
 //          pnew_type = new RestartOutput(op);
-//        } else if (op.file_type.compare("tab") == 0) {
-//          pnew_type = new FormattedTableOutput(op);
 //        } else if (op.file_type.compare("hst") == 0) {
 //          pnew_type = new HistoryOutput(op);
 //        } else if (op.file_type.compare("vtk") == 0) {
