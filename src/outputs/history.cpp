@@ -42,10 +42,20 @@
 #define NHISTORY_VARS ((NHYDRO)+(NFIELD)+3)
 
 //--------------------------------------------------------------------------------------
+// HistoryOutput constructor
+
+HistoryOutput::HistoryOutput(OutputParameters oparams)
+  : OutputType(oparams)
+{
+}
+
+// destructor - not needed for this derived class
+
+//--------------------------------------------------------------------------------------
 //! \fn void OutputType::HistoryFile()
 //  \brief Writes a history file
 
-void OutputType::HistoryFile(Mesh *pm)
+void HistoryOutput::WriteOutputFile(Mesh *pm)
 {
   MeshBlock *pmb=pm->pblock;
   AthenaArray<Real> vol;
@@ -109,6 +119,7 @@ void OutputType::HistoryFile(Mesh *pm)
   }
 #endif
 
+  // only the master rank writes the file
   // create filename: "file_basename" + ".hst".  There is no file number.
   if (Globals::my_rank == 0) {
     std::string fname;

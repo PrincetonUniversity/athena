@@ -55,8 +55,8 @@ static inline void Swap4Bytes(void *vdat) {
 //--------------------------------------------------------------------------------------
 // VTKOutput constructor
 
-VTKOutput::VTKOutput(OutputParameters oparams, std::string type)
-  : OutputType(oparams, type)
+VTKOutput::VTKOutput(OutputParameters oparams)
+  : OutputType(oparams)
 {
 }
 

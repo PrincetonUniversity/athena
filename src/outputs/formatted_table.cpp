@@ -36,8 +36,8 @@
 //--------------------------------------------------------------------------------------
 // FormattedTableOutput constructor
 
-FormattedTableOutput::FormattedTableOutput(OutputParameters oparams, std::string type)
-  : OutputType(oparams, type) 
+FormattedTableOutput::FormattedTableOutput(OutputParameters oparams)
+  : OutputType(oparams) 
 {
 }
 

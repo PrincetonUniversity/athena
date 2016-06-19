@@ -38,8 +38,8 @@
 // This class header
 #include "outputs.hpp"
 
-RestartOutput::RestartOutput(OutputParameters oparams, std::string type)
-  : OutputType(oparams, type)
+RestartOutput::RestartOutput(OutputParameters oparams)
+  : OutputType(oparams)
 {
 }
 

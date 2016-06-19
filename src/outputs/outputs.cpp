@@ -81,18 +81,10 @@
 //--------------------------------------------------------------------------------------
 // OutputType constructor
 
-OutputType::OutputType(OutputParameters oparams, std::string type)
+OutputType::OutputType(OutputParameters oparams)
 {
   output_params = oparams;
   pnext_type = NULL; // Terminate linked list with NULL ptr
-
-  // set output_type to appropriate enum, select data if necessary
-  if (type == "history") {
-    output_type = HISTORY_FILE;
-  } else if (type == "vtk") {
-//    OutputFunction = &OutputType::VTKFile;
-    SelectOutputData();
-  }
 }
 
 // destructor
@@ -219,7 +211,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
         // Construct new OutputType according to file format
         // ADD NEW OUTPUT TYPES HERE
         if (op.file_type.compare("hst") == 0) {
-          pnew_type = new OutputType(op, "history");
+          pnew_type = new HistoryOutput(op);
         }
         
 //        if (op.file_type.compare("rst") == 0) {
@@ -455,16 +447,7 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag)
         (pm->time >= pm->tlim) ||
         (wtflag==true && ptype->output_params.file_type=="rst")) {
 
-      switch (ptype->output_type) {
-        case HISTORY_FILE:
-          ptype->HistoryFile(pm);
-          break;
-        default:
-          std::stringstream msg;
-          msg << "### FATAL ERROR in MakeOutputs" << std::endl
-              << "Unknown output switch type" << std::endl;
-          throw std::runtime_error(msg.str().c_str());
-      }
+      ptype->WriteOutputFile(pm);
       ptype->FinalizeOutput(pin);
     }
 

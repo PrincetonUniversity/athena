@@ -24,10 +24,6 @@
 class Mesh;
 class ParameterInput;
 
-//typedef void (*OutputFunction_t)(Mesh *pm);
-
-enum OutputFileType {NONE, HISTORY_FILE};
-
 //! \struct OutputParameters
 //  \brief  container for parameters read from <output> block in the input file
 
@@ -57,32 +53,38 @@ typedef struct OutputVariables {
 
 //--------------------------------------------------------------------------------------
 //! \class OutputType
-//  \brief class for different output types (modes), designed to be a node in a linked
-//  list created and stored in the Outputs class.
+//  \brief abstract base class for different output types (modes).  Each OutputType
+//  is designed to be a node in a linked list created and stored in the Outputs class.
 
 class OutputType {
 public:
-  OutputType(OutputParameters oparams, std::string type);
-  ~OutputType();
+  OutputType(OutputParameters oparams);
+  virtual ~OutputType();
 
   // data
   OutputParameters output_params; // control data read from <output> block
   OutputVariables out_vars;       // boolean flags labeling data to be written
-  enum OutputFileType output_type;
   OutputType *pnext_type;         // ptr to next node in linked list of OutputTypes
 
   // functions
-//  void (OutputType::*OutputFunction)(Mesh *pm);
-//  OutputFunction_t OutputFunction;
   void SelectOutputData();
   void FinalizeOutput(ParameterInput *pin);
+  virtual void WriteOutputFile(Mesh *pm) = 0;   // pure virtual
 
-  void HistoryFile(Mesh *pm);
-
-private:
-  int num_vars_;
+protected:
+  int num_vars_;  // number of variables in output
 };
 
+//! \class HistoryFile
+//  \brief derived OutputType class for history dumps
+
+class HistoryOutput : public OutputType {
+public:
+  HistoryOutput(OutputParameters oparams);
+  ~HistoryOutput() {};
+
+  void WriteOutputFile(Mesh *pmb);
+};
 
 //======================================================================================
 // following should be deleted as they are updated
@@ -97,7 +99,7 @@ class OutputData {
 
 class FormattedTableOutput : public OutputType {
 public:
-  FormattedTableOutput(OutputParameters oparams, std::string type);
+  FormattedTableOutput(OutputParameters oparams);
   ~FormattedTableOutput() {};
 
   void WriteOutputFile(OutputData *pod, MeshBlock *pmb);
@@ -105,24 +107,13 @@ public:
 private:
 };
 
-//! \class HistoryOutput
-//  \brief derived OutputType class for history dumps
-
-class HistoryOutput : public OutputType {
-public:
-  HistoryOutput(OutputParameters oparams, std::string type);
-  ~HistoryOutput() {};
-
-  void LoadOutputData(OutputData *pod, MeshBlock *pmb); // overloads base class function
-  void WriteOutputFile(OutputData *pod, MeshBlock *pmb);
-};
 
 //! \class VTKOutput
 //  \brief derived OutputType class for vtk dumps
 
 class VTKOutput : public OutputType {
 public:
-  VTKOutput(OutputParameters oparams, std::string type);
+  VTKOutput(OutputParameters oparams);
   ~VTKOutput() {};
 
   void WriteOutputFile(OutputData *pod, MeshBlock *pmb);
@@ -140,7 +131,7 @@ private:
   int nbtotal, myns, mynb;
 
 public:
-  RestartOutput(OutputParameters oparams, std::string type);
+  RestartOutput(OutputParameters oparams);
   ~RestartOutput() {};
   void Initialize(Mesh *pm, ParameterInput *pin, bool wtflag);
   void FinalizeOutput(ParameterInput *pin);
@@ -203,7 +194,7 @@ private:
 public:
 
   // Function declarations
-  ATHDF5Output(OutputParameters oparams, std::string type) : OutputType(oparams) {};
+  ATHDF5Output(OutputParameters oparams) : OutputType(oparams) {};
   ~ATHDF5Output() {};
   void Initialize(Mesh *pmesh, ParameterInput *pin, bool walltime_limit);
   void Finalize(ParameterInput *pin);
