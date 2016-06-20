@@ -37,9 +37,9 @@ typedef struct OutputParameters {
   std::string data_format;
   Real next_time, dt;
   int file_number;
-  bool output_slice, output_sumx1, output_sumx2, output_sumx3, include_ghost_zones;
+  bool output_slice, output_sum, include_ghost_zones;
+  int direction_of_sum;
   Real x1_slice, x2_slice, x3_slice;
-  int il, iu, jl, ju, kl, ku;
 } OutputParameters;
 
 //! \struct OutputData
@@ -65,6 +65,7 @@ public:
   virtual ~OutputType();
 
   // data
+  int il,iu,jl,ju,kl,ku;          // OutputData array start/end indices
   OutputParameters output_params; // control data read from <output> block
   OutputType *pnext_type;         // ptr to next node in linked list of OutputTypes
 

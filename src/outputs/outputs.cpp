@@ -175,35 +175,40 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
         }
 
         // read sum options.  Check for conflicts with slicing.
-        op.output_sumx1 = pin->GetOrAddBoolean(op.block_name,"x1_sum",false);
-        if (op.output_sumx1 == true) {
-          if (pin->DoesParameterExist(op.block_name,"x1_slice")) {
+        if (pin->DoesParameterExist(op.block_name,"sum_in_dir")) {
+          op.direction_of_sum = pin->GetInteger(op.block_name,"sum_in_dir");
+          op.output_sum = true;
+          if (op.direction_of_sum < 1 || op.direction_of_sum > 3) {
+            msg << "### FATAL ERROR in Outputs constructor" << std::endl 
+                << "Sums can only be in (1,2,3) directions, but sum in direction"
+                << op.direction_of_sum << "requested" << std::endl;
+            throw std::runtime_error(msg.str().c_str());
+          }
+          if (pin->DoesParameterExist(op.block_name,"x1_slice") &&
+              (op.direction_of_sum == 1)) {
             msg << "### FATAL ERROR in Outputs constructor" << std::endl 
                 << "Cannot request both slice and sum along x1-direction"
                 << " in output block '" << op.block_name << "'" << std::endl;
             throw std::runtime_error(msg.str().c_str());
           }
-        }
-
-        op.output_sumx2 = pin->GetOrAddBoolean(op.block_name,"x2_sum",false);
-        if (op.output_sumx2 == true) {
-          if (pin->DoesParameterExist(op.block_name,"x2_slice")) {
+          if (pin->DoesParameterExist(op.block_name,"x2_slice") &&
+              (op.direction_of_sum == 2)) {
             msg << "### FATAL ERROR in Outputs constructor" << std::endl
                 << "Cannot request both slice and sum along x2-direction"
                 << " in output block '" << op.block_name << "'" << std::endl;
             throw std::runtime_error(msg.str().c_str());
           }
-        }
-
-        op.output_sumx3 = pin->GetOrAddBoolean(op.block_name,"x3_sum",false);
-        if (op.output_sumx3 == true) {
-          if (pin->DoesParameterExist(op.block_name,"x3_slice")) {
+          if (pin->DoesParameterExist(op.block_name,"x3_slice") &&
+              (op.direction_of_sum == 3)) {
             msg << "### FATAL ERROR in Outputs constructor" << std::endl
                 << "Cannot request both slice and sum along x3-direction"
                 << " in output block '" << op.block_name << "'" << std::endl;
             throw std::runtime_error(msg.str().c_str());
           }
         }
+
+        // read ghost cell option
+        op.include_ghost_zones=pin->GetOrAddBoolean(op.block_name,"ghost_zones",false);
 
         // set output variable and optional data format string used in formatted writes
         if (op.file_type.compare("hst") != 0 && op.file_type.compare("rst") != 0) {
@@ -593,35 +598,6 @@ void OutputType::FinalizeOutput(ParameterInput *pin)
   pin->SetInteger(output_params.block_name, "file_number", output_params.file_number);
   pin->SetReal(output_params.block_name, "next_time", output_params.next_time);
 }
-
-//--------------------------------------------------------------------------------------
-//! \fn void OutputType::TransformOutputData()
-//  \brief 
-
-/*
-void OutputType::TransformOutputData(OutputData *pod, MeshBlock *pmb)
-{
-  if (output_params.kslice) {
-    Slice(pod,pmb,3);
-  }
-  if (output_params.jslice) {
-    Slice(pod,pmb,2);
-  }
-  if (output_params.islice) {
-    Slice(pod,pmb,1);
-  }
-  if (output_params.ksum) {
-    Sum(pod,pmb,3);
-  }
-  if (output_params.jsum) {
-    Sum(pod,pmb,2);
-  }
-  if (output_params.isum) {
-    Sum(pod,pmb,1);
-  }
-  return;
-}
-*/
 
 //--------------------------------------------------------------------------------------
 //! \fn void OutputType::Slice(OutputData* pod, int dim)

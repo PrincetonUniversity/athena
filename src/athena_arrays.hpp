@@ -44,7 +44,7 @@ public:
   int GetSize() const { return nx1_*nx2_*nx3_*nx4_*nx5_; }
   size_t GetSizeInBytes() const {return nx1_*nx2_*nx3_*nx4_*nx5_*sizeof(T); }
 
-  bool IsShallowCopy() { return (scopy_ == 1); }
+  bool IsShallowCopy() { return (scopy_ == true); }
   T *data() { return pdata_; }
   const T *data() const	{ return pdata_; }
 
@@ -82,22 +82,23 @@ public:
 private:
   T *pdata_;
   int nx1_, nx2_, nx3_, nx4_, nx5_;
-  int scopy_;  // =0 if shallow copy (prevents source from being deleted)
+  bool scopy_;  // true if shallow copy (prevents source from being deleted)
 };
 
 //constructor
 
 template<typename T>
 AthenaArray<T>::AthenaArray()
-  : pdata_(0), nx1_(0), nx2_(0), nx3_(0), nx4_(0), nx5_(0), scopy_(0)
+  : pdata_(0), nx1_(0), nx2_(0), nx3_(0), nx4_(0), nx5_(0), scopy_(true)
 {
 }
 
-// destructor -- does nothing as DeleteAthenaArray should always be used to free memory
+// destructor
 
 template<typename T>
 AthenaArray<T>::~AthenaArray()
 {
+  DeleteAthenaArray();
 }
 
 // copy constructor (does a deep copy)
@@ -144,7 +145,7 @@ void AthenaArray<T>::InitWithShallowCopy(AthenaArray<T> &src) {
   nx4_=src.nx4_;
   nx5_=src.nx5_;
   pdata_ = src.pdata_;
-  scopy_ = 1;
+  scopy_ = true;
   return;
 }
 
@@ -195,7 +196,7 @@ void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
     nx1_=nvar;
     pdata_ += indx;
   }
-  scopy_ = 1;
+  scopy_ = true;
   return;
 }
 
@@ -206,6 +207,7 @@ void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
 template<typename T>
 void AthenaArray<T>::NewAthenaArray(int nx1)
 {
+  scopy_ = false;
   nx1_ = nx1;
   nx2_ = 1;
   nx3_ = 1;
@@ -221,6 +223,7 @@ void AthenaArray<T>::NewAthenaArray(int nx1)
 template<typename T>
 void AthenaArray<T>::NewAthenaArray(int nx2, int nx1)
 {
+  scopy_ = false;
   nx1_ = nx1;
   nx2_ = nx2;
   nx3_ = 1;
@@ -236,6 +239,7 @@ void AthenaArray<T>::NewAthenaArray(int nx2, int nx1)
 template<typename T>
 void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1)
 {
+  scopy_ = false;
   nx1_ = nx1;
   nx2_ = nx2;
   nx3_ = nx3;
@@ -251,6 +255,7 @@ void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1)
 template<typename T>
 void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2, int nx1)
 {
+  scopy_ = false;
   nx1_ = nx1;
   nx2_ = nx2;
   nx3_ = nx3;
@@ -266,6 +271,7 @@ void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2, int nx1)
 template<typename T>
 void AthenaArray<T>::NewAthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1)
 {
+  scopy_ = false;
   nx1_ = nx1;
   nx2_ = nx2;
   nx3_ = nx3;
@@ -281,6 +287,11 @@ void AthenaArray<T>::NewAthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1)
 template<typename T>
 void AthenaArray<T>::DeleteAthenaArray()
 {
-  if (!scopy_) delete[] pdata_;
+  if (scopy_) {
+    pdata_ = NULL;
+  } else {
+    delete[] pdata_;
+    scopy_ = true;
+  }
 } 
 #endif // ATHENA_ARRAYS_HPP

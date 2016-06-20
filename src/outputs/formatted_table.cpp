@@ -53,9 +53,14 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm)
 
   // Loop over MeshBlocks
   while (pmb != NULL) {
-    int il=pmb->is; int iu=pmb->ie;
-    int jl=pmb->js; int ju=pmb->je;
-    int kl=pmb->ks; int ku=pmb->ke;
+    il=pmb->is; iu=pmb->ie;
+    jl=pmb->js; ju=pmb->je;
+    kl=pmb->ks; ku=pmb->ke;
+    if (output_params.include_ghost_zones) {
+      il -= NGHOST; iu += NGHOST;
+      if (pmb->block_size.nx2 > 1) {jl -= NGHOST; ju += NGHOST;}
+      if (pmb->block_size.nx3 > 1) {kl -= NGHOST; ku += NGHOST;}
+    }
 
     // set ptrs to data in OutputData linked list
     LoadOutputData(pmb);
