@@ -84,8 +84,11 @@
 OutputType::OutputType(OutputParameters oparams)
 {
   output_params = oparams;
-  pfirst_data_ = NULL; // Initialize linked list of OutputData's to NULL
-  pnext_type = NULL;   // Terminate linked list with NULL ptr
+  pnext_type = NULL;   // Terminate this node in linked list with NULL ptr
+
+  num_vars_ = 0;
+  pfirst_data_ = NULL; // Initialize start of linked list of OutputData's to NULL
+  plast_data_ = NULL;  // Initialize end   of linked list of OutputData's to NULL
 }
 
 // destructor
@@ -294,19 +297,35 @@ Outputs::~Outputs()
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void OutputType::SelectOutputData()
-//  \brief Sets boolean flags for which data is to be output
+//! \fn void OutputType::LoadOutputData(MeshBlock *pmb)
+//  \brief Create linked list of OutputData's containing requested variables
 
-void OutputType::SelectOutputData()
+void OutputType::LoadOutputData(MeshBlock *pmb)
 {
-  int num_vars_ = 0;
+  Hydro *phyd = pmb->phydro;
+  Field *pfld = pmb->pfield;
+  OutputData *pod;
+  num_vars_ = 0;
 
-  // density
+  // (lab-frame) density
   if (output_params.variable.compare("D") == 0 || 
-      output_params.variable.compare("d") == 0 || 
-      output_params.variable.compare("prim") == 0 ||
       output_params.variable.compare("cons") == 0) {
-    out_vars.d = true;
+    pod = new OutputData;
+    pod->type = "SCALARS";
+    pod->name = "dens";
+    pod->data.InitWithShallowSlice(phyd->u,4,IDN,1);
+    AppendOutputDataNode(pod);
+    num_vars_++;
+  }
+
+  // (rest-frame) density
+  if (output_params.variable.compare("d") == 0 || 
+      output_params.variable.compare("prim") == 0) {
+    pod = new OutputData;
+    pod->type = "SCALARS";
+    pod->name = "rho";
+    pod->data.InitWithShallowSlice(phyd->w,4,IDN,1);
+    AppendOutputDataNode(pod);
     num_vars_++;
   }
 
@@ -314,7 +333,11 @@ void OutputType::SelectOutputData()
   if (NON_BAROTROPIC_EOS) {
     if (output_params.variable.compare("E") == 0 || 
         output_params.variable.compare("cons") == 0) {
-      out_vars.e = true;
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "Etot";
+      pod->data.InitWithShallowSlice(phyd->u,4,IEN,1);
+      AppendOutputDataNode(pod);
       num_vars_++;
     }
   }
@@ -323,105 +346,159 @@ void OutputType::SelectOutputData()
   if (NON_BAROTROPIC_EOS) {
     if (output_params.variable.compare("p") == 0 || 
         output_params.variable.compare("prim") == 0) {
-      out_vars.p = true;
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "press";
+      pod->data.InitWithShallowSlice(phyd->w,4,IPR,1);
+      AppendOutputDataNode(pod);
       num_vars_++;
     }
   }
 
-  // momentum
+  // momentum vector
   if (output_params.variable.compare("m") == 0 || 
-      output_params.variable.compare("m1") == 0 || 
       output_params.variable.compare("cons") == 0) {
-    out_vars.m1 = true;
-    num_vars_+=1;
-  }
-  if (output_params.variable.compare("m") == 0 || 
-      output_params.variable.compare("m2") == 0 || 
-      output_params.variable.compare("cons") == 0) {
-    out_vars.m2 = true;
-    num_vars_+=1;
-  }
-  if (output_params.variable.compare("m") == 0 || 
-      output_params.variable.compare("m3") == 0 || 
-      output_params.variable.compare("cons") == 0) {
-    out_vars.m3 = true;
-    num_vars_+=1;
+    pod = new OutputData;
+    pod->type = "VECTORS";
+    pod->name = "mom";
+    pod->data.InitWithShallowSlice(phyd->u,4,IM1,3);
+    AppendOutputDataNode(pod);
+    num_vars_+=3;
   }
 
-  // velocity
-  if (output_params.variable.compare("v") == 0 || 
-      output_params.variable.compare("vx") == 0 || 
-      output_params.variable.compare("v1") == 0 || 
-      output_params.variable.compare("prim") == 0) {
-    out_vars.v1 = true;
-    num_vars_+=1;
+  // each component of momentum
+  if (output_params.variable.compare("m1") == 0) {
+    pod = new OutputData;
+    pod->type = "SCALARS";
+    pod->name = "mom1";
+    pod->data.InitWithShallowSlice(phyd->u,4,IM1,1);
+    AppendOutputDataNode(pod);
+    num_vars_++;
   }
-  if (output_params.variable.compare("v") == 0 || 
-      output_params.variable.compare("vy") == 0 || 
-      output_params.variable.compare("v2") == 0 || 
-      output_params.variable.compare("prim") == 0) {
-    out_vars.v2 = true;
-    num_vars_+=1;
+  if (output_params.variable.compare("m2") == 0) {
+    pod = new OutputData;
+    pod->type = "SCALARS";
+    pod->name = "mom2";
+    pod->data.InitWithShallowSlice(phyd->u,4,IM2,1);
+    AppendOutputDataNode(pod);
+    num_vars_++;
   }
+  if (output_params.variable.compare("m3") == 0) {
+    pod = new OutputData;
+    pod->type = "SCALARS";
+    pod->name = "mom3";
+    pod->data.InitWithShallowSlice(phyd->u,4,IM3,1);
+    AppendOutputDataNode(pod);
+    num_vars_++;
+  }
+
+  // velocity vector
   if (output_params.variable.compare("v") == 0 || 
-      output_params.variable.compare("vz") == 0 || 
-      output_params.variable.compare("v3") == 0 || 
       output_params.variable.compare("prim") == 0) {
-    out_vars.v3 = true;
-    num_vars_+=1;
+    pod = new OutputData;
+    pod->type = "VECTORS";
+    pod->name = "vel";
+    pod->data.InitWithShallowSlice(phyd->w,4,IVX,3);
+    AppendOutputDataNode(pod);
+    num_vars_+=3;
+  }
+
+  // each component of velocity
+  if (output_params.variable.compare("vx") == 0 || 
+      output_params.variable.compare("v1") == 0) {
+    pod = new OutputData;
+    pod->type = "SCALARS";
+    pod->name = "vel1";
+    pod->data.InitWithShallowSlice(phyd->w,4,IVX,1);
+    AppendOutputDataNode(pod);
+    num_vars_++;
+  }
+  if (output_params.variable.compare("vy") == 0 || 
+      output_params.variable.compare("v2") == 0) {
+    pod = new OutputData;
+    pod->type = "SCALARS";
+    pod->name = "vel2";
+    pod->data.InitWithShallowSlice(phyd->w,4,IVY,1);
+    AppendOutputDataNode(pod);
+    num_vars_++;
+  }
+  if (output_params.variable.compare("vz") == 0 || 
+      output_params.variable.compare("v3") == 0) {
+    pod = new OutputData;
+    pod->type = "SCALARS";
+    pod->name = "vel3";
+    pod->data.InitWithShallowSlice(phyd->w,4,IVZ,1);
+    AppendOutputDataNode(pod);
+    num_vars_++;
   }
 
   if (MAGNETIC_FIELDS_ENABLED) {
-    // cell-centered magnetic field
+    // vector of cell-centered magnetic field
     if (output_params.variable.compare("bcc") == 0 || 
-        output_params.variable.compare("bcc1") == 0 || 
         output_params.variable.compare("prim") == 0 ||
         output_params.variable.compare("cons") == 0) {
-      out_vars.bcc1 = true;
-      num_vars_+=1;
-    }
-    if (output_params.variable.compare("bcc") == 0 || 
-        output_params.variable.compare("bcc2") == 0 || 
-        output_params.variable.compare("prim") == 0 ||
-        output_params.variable.compare("cons") == 0) {
-      out_vars.bcc2 = true;
-      num_vars_+=1;
-    }
-    if (output_params.variable.compare("bcc") == 0 || 
-        output_params.variable.compare("bcc3") == 0 || 
-        output_params.variable.compare("prim") == 0 ||
-        output_params.variable.compare("cons") == 0) {
-      out_vars.bcc3 = true;
-      num_vars_+=1;
+      pod = new OutputData;
+      pod->type = "VECTORS";
+      pod->name = "Bcc";
+      pod->data.InitWithShallowSlice(pfld->bcc,4,IB1,3);
+      AppendOutputDataNode(pod);
+      num_vars_+=3;
     }
 
-    // face-centered magnetic field
-    if (output_params.variable.compare("b") == 0 || 
-        output_params.variable.compare("b1") == 0) {
-      out_vars.b1 = true;
-      num_vars_+=1;
+    // each component of cell-centered magnetic field
+    if (output_params.variable.compare("bcc1") == 0) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "Bcc1";
+      pod->data.InitWithShallowSlice(pfld->bcc,4,IB1,1);
+      AppendOutputDataNode(pod);
+      num_vars_++;
     }
-    if (output_params.variable.compare("b") == 0 || 
-        output_params.variable.compare("b2") == 0) {
-      out_vars.b2 = true;
-      num_vars_+=1;
+    if (output_params.variable.compare("bcc2") == 0) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "Bcc2";
+      pod->data.InitWithShallowSlice(pfld->bcc,4,IB2,1);
+      AppendOutputDataNode(pod);
+      num_vars_++;
     }
-    if (output_params.variable.compare("b") == 0 || 
-        output_params.variable.compare("b3") == 0) {
-      out_vars.b3 = true;
-      num_vars_+=1;
+    if (output_params.variable.compare("bcc3") == 0) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "Bcc2";
+      pod->data.InitWithShallowSlice(pfld->bcc,4,IB3,1);
+      AppendOutputDataNode(pod);
+      num_vars_++;
+    }
+
+    // each component of face-centered magnetic field
+    if (output_params.variable.compare("b1") == 0) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "B1";
+      pod->data.InitWithShallowSlice(pfld->b.x1f,4,0,1);
+      AppendOutputDataNode(pod);
+      num_vars_++;
+    }
+    if (output_params.variable.compare("b2") == 0) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "B2";
+      pod->data.InitWithShallowSlice(pfld->b.x2f,4,0,1);
+      AppendOutputDataNode(pod);
+      num_vars_++;
+    }
+    if (output_params.variable.compare("b3") == 0) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "B3";
+      pod->data.InitWithShallowSlice(pfld->b.x3f,4,0,1);
+      AppendOutputDataNode(pod);
+      num_vars_++;
     }
   } // endif (MAGNETIC_FIELDS_ENABLED)
 
-// REPLCE WITH USER MESH VARIABLES
-  // internal mesh output variables
-//  if (output_params.variable.compare("imesh_ov") == 0) {
-//    out_vars.imov = true;
-//    num_vars_+=NIMOV;
-//  }
-
-// throw an error if output variable name not recognized
-
+  // throw an error if output variable name not recognized
   if (num_vars_==0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in function [OutputType::LoadOutputData]" << std::endl
@@ -431,6 +508,37 @@ void OutputType::SelectOutputData()
   }
 
   return;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void OutputData::AppendOutputDataNode(OutputData *pod)
+//  \brief
+
+void OutputType::AppendOutputDataNode(OutputData *pnew_data)
+{
+  if (pfirst_data_ == NULL) {
+    pfirst_data_ = pnew_data;
+  } else {
+    pnew_data->pprev = plast_data_;
+    plast_data_->pnext = pnew_data;
+  }
+  plast_data_ = pnew_data;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void OutputData::ClearOutputData()
+//  \brief
+
+void OutputType::ClearOutputData()
+{
+  OutputData *pdata = pfirst_data_;
+  while (pdata != NULL) {
+    OutputData *pdata_old = pdata;
+    pdata = pdata->pnext;
+    delete pdata_old;
+  }
+  pfirst_data_ = NULL;
+  plast_data_  = NULL;
 }
 
 //--------------------------------------------------------------------------------------

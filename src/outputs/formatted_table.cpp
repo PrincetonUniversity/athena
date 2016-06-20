@@ -50,12 +50,15 @@ FormattedTableOutput::FormattedTableOutput(OutputParameters oparams)
 void FormattedTableOutput::WriteOutputFile(Mesh *pm)
 {
   MeshBlock *pmb=pm->pblock;
+
+  // Loop over MeshBlocks
+  while (pmb != NULL) {
     int il=pmb->is; int iu=pmb->ie;
     int jl=pmb->js; int ju=pmb->je;
     int kl=pmb->ks; int ku=pmb->ke;
 
-  // Loop over MeshBlocks
-  while (pmb != NULL) {
+    // set ptrs to data in OutputData linked list
+    LoadOutputData(pmb);
 
 //  if (pod->data_header.ndata == 0) return;  // slice out of range, etc.
 
@@ -114,17 +117,19 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm)
       // step through linked-list of OutputData's and write each on same line
       OutputData *pdata = pfirst_data_;
       while (pdata != NULL) {
-//        for (int n=0; n<(pvar->data.GetDim4()); ++n) {
-//          fprintf( pfile, output_params.data_format.c_str(), pvar->data(n,k,j,i) );
-//        }
+        for (int n=0; n<(pdata->data.GetDim4()); ++n) {
+          fprintf(pfile, output_params.data_format.c_str(), pdata->data(n,k,j,i));
+        }
         pdata = pdata->pnext;
       }
 
       fprintf(pfile,"\n"); // terminate line
     }}}
 
-    // don't forget to close the output file
+    // don't forget to close the output file and clean up ptrs to data in OutputData
     fclose(pfile);
+    ClearOutputData();
+
     pmb=pmb->next;
 
   }  // end loop over MeshBlocks

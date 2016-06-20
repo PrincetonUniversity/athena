@@ -46,18 +46,13 @@ typedef struct OutputParameters {
 //  \brief
 
 typedef struct OutputData {
-  AthenaArray<Real> output_data;
-  struct OutputData *pnext;
+  std::string type;        // one of (SCALARS,VECTORS)
+  std::string name;
+  AthenaArray<Real> data;  // array containing data (usually shallow copy/slice)
+  struct OutputData *pnext, *pprev; // ptrs to next and previous nodes in list
+
+  OutputData() : pnext(NULL), pprev(NULL) {};
 } OutputData;
-
-//! \struct OutputVariables
-//  \brief  container for boolean flags that label which arrays are to be output
-
-typedef struct OutputVariables {
-  bool d,e,m1,m2,m3,b1,b2,b3;
-  bool p,v1,v2,v3,bcc1,bcc2,bcc3;
-  bool imov;
-} OutputVariables;
 
 //--------------------------------------------------------------------------------------
 //! \class OutputType
@@ -71,17 +66,19 @@ public:
 
   // data
   OutputParameters output_params; // control data read from <output> block
-  OutputVariables out_vars;       // boolean flags labeling data to be written
   OutputType *pnext_type;         // ptr to next node in linked list of OutputTypes
 
   // functions
-  void SelectOutputData();
-  void FinalizeOutput(ParameterInput *pin);
+  void LoadOutputData(MeshBlock *pmb);
+  void AppendOutputDataNode(OutputData *pod);
+  void ClearOutputData();
   virtual void WriteOutputFile(Mesh *pm) = 0;   // pure virtual
+  void FinalizeOutput(ParameterInput *pin);
 
 protected:
-  int num_vars_;            // number of variables in output
-  OutputData *pfirst_data_;  // ptr to first OutputData
+  int num_vars_;             // number of variables in output
+  OutputData *pfirst_data_;  // ptr to first OutputData in linked list
+  OutputData *plast_data_;   // ptr to last OutputData in linked list
 };
 
 //! \class HistoryFile
