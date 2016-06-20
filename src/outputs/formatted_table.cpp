@@ -88,12 +88,23 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm)
       throw std::runtime_error(msg.str().c_str());
     }
 
-    // print header
+    // print file header
     fprintf(pfile,"# Athena++ data at time=%e",pm->time);
     fprintf(pfile,"  cycle=%d",pmb->pmy_mesh->ncycle);
     fprintf(pfile,"  variables=%s \n",output_params.variable.c_str());
 
-//  fprintf(pfile,"%s",pod->data_header.transforms.c_str());
+    // write x1, x2, x3 column headers
+    fprintf(pfile,"#");
+    if (il != iu) fprintf(pfile," i       x1v     ");
+    if (jl != ju) fprintf(pfile," j       x2v     ");
+    if (kl != ku) fprintf(pfile," k       x3v     ");
+    // write data column headers from "name" stored in linked-list of OutputData's
+    OutputData *pdata = pfirst_data_;
+    while (pdata != NULL) {
+      fprintf(pfile,"    %s      ",pdata->name.c_str());
+      pdata = pdata->pnext;
+    }
+    fprintf(pfile,"\n"); // terminate line
 
     // loop over all cells in data arrays
     for (int k=kl; k<=ku; ++k) {
