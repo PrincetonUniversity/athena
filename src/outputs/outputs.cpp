@@ -212,14 +212,12 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
           pnew_type = new HistoryOutput(op);
         } else if (op.file_type.compare("tab") == 0) {
           pnew_type = new FormattedTableOutput(op);
+        } else if (op.file_type.compare("vtk") == 0) {
+          pnew_type = new VTKOutput(op);
         }
         
 //        if (op.file_type.compare("rst") == 0) {
 //          pnew_type = new RestartOutput(op);
-//        } else if (op.file_type.compare("hst") == 0) {
-//          pnew_type = new HistoryOutput(op);
-//        } else if (op.file_type.compare("vtk") == 0) {
-//          pnew_type = new VTKOutput(op);
 //        }
 #ifdef HDF5OUTPUT
 //        else if (op.file_type.compare("ath5") == 0 || op.file_type.compare("hdf5") == 0) {
@@ -578,26 +576,8 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag)
         (wtflag==true && ptype->output_params.file_type=="rst")) {
 
       ptype->WriteOutputFile(pm);
-      ptype->FinalizeOutput(pin);
+      ptype->FinalizeOutput(pin); // increment time, counter, etc.
     }
-
-    
-
-/*
-      ptype->Initialize(pm,pin,wtflag);
-      pmb=pm->pblock;
-      while (pmb != NULL)  {
-        // Create new OutputData container, load and transform data, then write to file
-        OutputData* pod = new OutputData;
-        ptype->LoadOutputData(pod,pmb);
-        ptype->TransformOutputData(pod,pmb);
-        ptype->WriteOutputFile(pod,pmb);
-        delete pod;
-        pmb=pmb->next;
-      }
-      ptype->FinalizeOutput(pin);
-*/
-
     ptype = ptype->pnext_type; // move to next OutputType in list
   }
 

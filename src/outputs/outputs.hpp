@@ -49,7 +49,7 @@ typedef struct OutputParameters {
 } OutputParameters;
 
 //! \struct OutputData
-//  \brief
+//  \brief container for output data and metadata; used as node in linked list
 
 typedef struct OutputData {
   std::string type;        // one of (SCALARS,VECTORS)
@@ -91,6 +91,7 @@ protected:
   OutputData *plast_data_;   // ptr to last OutputData in linked list
 };
 
+//--------------------------------------------------------------------------------------
 //! \class HistoryFile
 //  \brief derived OutputType class for history dumps
 
@@ -101,6 +102,7 @@ public:
   void WriteOutputFile(Mesh *pm);
 };
 
+//--------------------------------------------------------------------------------------
 //! \class FormattedTableOutput
 //  \brief derived OutputType class for formatted table (tabular) data
 
@@ -111,15 +113,7 @@ public:
   void WriteOutputFile(Mesh *pm);
 };
 
-//======================================================================================
-// following should be deleted as they are updated
-
-//typedef struct OutputData {
-//  AthenaArray<Real> output_data;
-//  struct OutputData *pnext;
-//} OutputData;
-
-
+//--------------------------------------------------------------------------------------
 //! \class VTKOutput
 //  \brief derived OutputType class for vtk dumps
 
@@ -127,9 +121,12 @@ class VTKOutput : public OutputType {
 public:
   VTKOutput(OutputParameters oparams);
   ~VTKOutput() {};
-
-  void WriteOutputFile(OutputData *pod, MeshBlock *pmb);
+  void WriteOutputFile(Mesh *pm);
 };
+
+//======================================================================================
+// following should be deleted as they are updated
+
 
 
 //! \class RestartOutput

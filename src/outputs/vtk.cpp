@@ -13,7 +13,12 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
+//! \file vtk.cpp
+//  \brief writes output data in (legacy) vtk format.
+//  Data is written in RECTILINEAR_GRID geometry, in BINARY format, and in FLOAT type
+//======================================================================================
 
+// C/C++ headers
 #include <sstream>
 #include <iostream>
 #include <string>
@@ -22,12 +27,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../mesh/mesh.hpp"
 #include "../hydro/hydro.hpp"
 #include "outputs.hpp"
-#include "../coordinates/coordinates.hpp" // Coordinates
+#include "../coordinates/coordinates.hpp"
 
 //--------------------------------------------------------------------------------------
 // Functions to detect big endian machine, and to byte-swap 32-bit words.  The vtk
@@ -46,169 +52,174 @@ static inline void Swap4Bytes(void *vdat) {
   tmp = dat[1];  dat[1] = dat[2];  dat[2] = tmp;
 }
 
-//======================================================================================
-//! \file vtk.cpp
-//  \brief writes output data in (legacy) vtk format.
-//  Data is written in RECTILINEAR_GRID geometry, in BINARY format, and in FLOAT type
-//======================================================================================
-
 //--------------------------------------------------------------------------------------
 // VTKOutput constructor
+// destructor - not needed for this derived class
 
 VTKOutput::VTKOutput(OutputParameters oparams)
   : OutputType(oparams)
 {
 }
 
-// destructor - not needed for this derived class
-
 //--------------------------------------------------------------------------------------
-//! \fn void VTKOutput:::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
+//! \fn void VTKOutput:::WriteOutputFile(Mesh *pm)
 //  \brief writes OutputData to file in (legacy) vtk format
 
-void VTKOutput::WriteOutputFile(OutputData *pod, MeshBlock *pmb)
+void VTKOutput::WriteOutputFile(Mesh *pm)
 {
-/*
-  std::stringstream msg;
+  MeshBlock *pmb=pm->pblock;
   int big_end = IsBigEndian(); // =1 on big endian machine
-  if (pod->data_header.ndata == 0) return;  // slice out of range, etc.
 
-// create filename: "file_basename"+ "."+"bloclid"+"."+"file_id"+"."+XXXXX+".vtk",
-// where XXXXX = 5-digit file_number
-
-  std::string fname;
-  char number[6];
-  sprintf(number,"%05d",output_params.file_number);
-  char blockid[12];
-  sprintf(blockid,"block%d",pmb->gid);
-
-  fname.assign(output_params.file_basename);
-  fname.append(".");
-  fname.append(blockid);
-  fname.append(".");
-  fname.append(output_params.file_id);
-  fname.append(".");
-  fname.append(number);
-  fname.append(".vtk");
-
-// open file for output
-
-  FILE *pfile;
-  if ((pfile = fopen(fname.c_str(),"w")) == NULL){
-    msg << "### FATAL ERROR in function [VTKOutput::WriteOutputFile]"
-        << std::endl << "Output file '" << fname << "' could not be opened" <<std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-
-// There are five basic parts to the VTK "legacy" file format.
-//  1. Write file version and identifier
-
-  fprintf(pfile,"# vtk DataFile Version 2.0\n");
-
-//  2. Header
-
-  fprintf(pfile,"%s",pod->data_header.descriptor.c_str());
-
-//  3. File format
-
-  fprintf(pfile,"BINARY\n");
-
-//  4. Dataset structure
-
-
-  int ncells1 = pod->data_header.iu - pod->data_header.il + 1;
-  int ncells2 = pod->data_header.ju - pod->data_header.jl + 1;
-  int ncells3 = pod->data_header.ku - pod->data_header.kl + 1;
-  int ncoord1 = ncells1 + 1;
-  int ncoord2 = ncells2; if (ncells2 > 1) ncoord2++;
-  int ncoord3 = ncells3; if (ncells3 > 1) ncoord3++;
-
-  float *data;
-  int ndata = std::max(ncoord1,ncoord2);
-  ndata = std::max(ndata,ncoord3);
-  data = new float[3*ndata];
-
-// Specify the type of data, dimensions, and coordinates.  If N>1, then write N+1 cell
-// faces as binary floats.  If N=1, then write 1 cell center position.
-
-  fprintf(pfile,"DATASET RECTILINEAR_GRID\n");
-  fprintf(pfile,"DIMENSIONS %d %d %d\n",ncoord1,ncoord2,ncoord3);
-
-// write x1-coordinates as binary float in big endian order
-
-  fprintf(pfile,"X_COORDINATES %d float\n",ncoord1);
-  for (int i=(pod->data_header.il); i<=(pod->data_header.iu)+1; ++i) {
-    data[i-(pod->data_header.il)] = (float)(pmb->pcoord->x1f(i));
-  }
-  if (!big_end) {for (int i=0; i<ncoord1; ++i) Swap4Bytes(&data[i]);}
-  fwrite(data,sizeof(float),(size_t)ncoord1,pfile);
-
-// write x2-coordinates as binary float in big endian order
-
-  fprintf(pfile,"\nY_COORDINATES %d float\n",ncoord2);
-  if (ncells2 == 1) {
-      data[0] = (float)(pmb->pcoord->x2v(pod->data_header.jl));
-  } else {
-    for (int j=(pod->data_header.jl); j<=(pod->data_header.ju)+1; ++j) {
-      data[j-(pod->data_header.jl)] = (float)(pmb->pcoord->x2f(j));
+  // Loop over MeshBlocks
+  while (pmb != NULL) {
+    oil=pmb->is; oiu=pmb->ie;
+    ojl=pmb->js; oju=pmb->je;
+    okl=pmb->ks; oku=pmb->ke;
+    if (output_params.include_ghost_zones) {
+      oil -= NGHOST; oiu += NGHOST;
+      if (ojl != oju) {ojl -= NGHOST; oju += NGHOST;}
+      if (okl != oku) {okl -= NGHOST; oku += NGHOST;}
     }
-  }
-  if (!big_end) {for (int i=0; i<ncoord2; ++i) Swap4Bytes(&data[i]);}
-  fwrite(data,sizeof(float),(size_t)ncoord2,pfile);
 
-// write x3-coordinates as binary float in big endian order
+    // set ptrs to data in OutputData linked list
+    LoadOutputData(pmb);
+    if (TransformOutputData(pmb) == false) {continue;} // skip if slice out of range
 
-  fprintf(pfile,"\nZ_COORDINATES %d float\n",ncoord3);
-  if (ncells3 == 1) {
-      data[0] = (float)(pmb->pcoord->x3v(pod->data_header.kl));
-  } else {
-    for (int k=(pod->data_header.kl); k<=(pod->data_header.ku)+1; ++k) {
-      data[k-(pod->data_header.kl)] = (float)(pmb->pcoord->x3f(k));
+    // create filename: "file_basename"+ "."+"bloclid"+"."+"file_id"+"."+XXXXX+".vtk",
+    // where XXXXX = 5-digit file_number
+    std::string fname;
+    char number[6];
+    sprintf(number,"%05d",output_params.file_number);
+    char blockid[12];
+    sprintf(blockid,"block%d",pmb->gid);
+
+    fname.assign(output_params.file_basename);
+    fname.append(".");
+    fname.append(blockid);
+    fname.append(".");
+    fname.append(output_params.file_id);
+    fname.append(".");
+    fname.append(number);
+    fname.append(".vtk");
+
+    // open file for output
+    FILE *pfile;
+    std::stringstream msg;
+    if ((pfile = fopen(fname.c_str(),"w")) == NULL){
+      msg << "### FATAL ERROR in function [VTKOutput::WriteOutputFile]"
+          <<std::endl<< "Output file '" <<fname<< "' could not be opened" <<std::endl;
+      throw std::runtime_error(msg.str().c_str());
     }
-  }
-  if (!big_end) {for (int i=0; i<ncoord3; ++i) Swap4Bytes(&data[i]);}
-  fwrite(data,sizeof(float),(size_t)ncoord3,pfile);
 
-//  5. Data.  An arbitrary number of scalars and vectors can be written (every node in
-//  in the OutputData linked lists), all in binary floats format
+    // There are five basic parts to the VTK "legacy" file format.
+    //  1. Write file version and identifier
 
-  fprintf(pfile,"\nCELL_DATA %d", (ncells1)*(ncells2)*(ncells3));
+    fprintf(pfile,"# vtk DataFile Version 2.0\n");
 
-// step through linked-list of data nodes and write out each data array
+    //  2. Header
 
-  OutputVariable *pvar = pod->pfirst_var;
-  while (pvar != NULL) {
+    // print file header
+    fprintf(pfile,"# Athena++ data at time=%e",pm->time);
+    fprintf(pfile,"  cycle=%d",pmb->pmy_mesh->ncycle);
+    fprintf(pfile,"  variables=%s \n",output_params.variable.c_str());
 
-// write data type (SCALARS or VECTORS) and name
+    //  3. File format
 
-    fprintf(pfile,"\n%s %s float\n",pvar->type.c_str(),
-      pvar->name.c_str());
+    fprintf(pfile,"BINARY\n");
 
-    int nvar = pvar->data.GetDim4();
-    if (nvar == 1) fprintf(pfile,"LOOKUP_TABLE default\n");
-    for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k) {
-    for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j) {
+    //  4. Dataset structure
 
-      for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i) {
-      for (int n=0; n<nvar; ++n) {
-        data[nvar*(i-(pod->data_header.il))+n] = (float)pvar->data(n,k,j,i);
+    int ncells1 = oiu - oil + 1;
+    int ncells2 = oju - ojl + 1;
+    int ncells3 = oku - okl + 1;
+    int ncoord1 = ncells1 + 1;
+    int ncoord2 = ncells2; if (ncells2 > 1) ncoord2++;
+    int ncoord3 = ncells3; if (ncells3 > 1) ncoord3++;
+
+    float *data;
+    int ndata = std::max(ncoord1,ncoord2);
+    ndata = std::max(ndata,ncoord3);
+    data = new float[3*ndata];
+
+    // Specify the type of data, dimensions, and coordinates.  If N>1, then write N+1
+    // cell faces as binary floats.  If N=1, then write 1 cell center position.
+
+    fprintf(pfile,"DATASET RECTILINEAR_GRID\n");
+    fprintf(pfile,"DIMENSIONS %d %d %d\n",ncoord1,ncoord2,ncoord3);
+
+    // write x1-coordinates as binary float in big endian order
+
+    fprintf(pfile,"X_COORDINATES %d float\n",ncoord1);
+    for (int i=oil; i<=oiu+1; ++i) {
+      data[i-oil] = (float)(pmb->pcoord->x1f(i));
+    }
+    if (!big_end) {for (int i=0; i<ncoord1; ++i) Swap4Bytes(&data[i]);}
+    fwrite(data,sizeof(float),(size_t)ncoord1,pfile);
+
+    // write x2-coordinates as binary float in big endian order
+
+    fprintf(pfile,"\nY_COORDINATES %d float\n",ncoord2);
+    if (ncells2 == 1) {
+        data[0] = (float)(pmb->pcoord->x2v(ojl));
+    } else {
+      for (int j=ojl; j<=oju+1; ++j) {
+        data[j-ojl] = (float)(pmb->pcoord->x2f(j));
+      }
+    }
+    if (!big_end) {for (int i=0; i<ncoord2; ++i) Swap4Bytes(&data[i]);}
+    fwrite(data,sizeof(float),(size_t)ncoord2,pfile);
+
+    // write x3-coordinates as binary float in big endian order
+
+    fprintf(pfile,"\nZ_COORDINATES %d float\n",ncoord3);
+    if (ncells3 == 1) {
+        data[0] = (float)(pmb->pcoord->x3v(okl));
+    } else {
+      for (int k=okl; k<=oku+1; ++k) {
+        data[k-okl] = (float)(pmb->pcoord->x3f(k));
+      }
+    }
+    if (!big_end) {for (int i=0; i<ncoord3; ++i) Swap4Bytes(&data[i]);}
+    fwrite(data,sizeof(float),(size_t)ncoord3,pfile);
+
+    //  5. Data.  An arbitrary number of scalars and vectors can be written (every node
+    //  in the OutputData linked lists), all in binary floats format
+
+    fprintf(pfile,"\nCELL_DATA %d", (ncells1)*(ncells2)*(ncells3));
+
+    OutputData *pdata = pfirst_data_;
+    while (pdata != NULL) {
+
+      // write data type (SCALARS or VECTORS) and name
+      fprintf(pfile,"\n%s %s float\n",pdata->type.c_str(), pdata->name.c_str());
+
+      int nvar = pdata->data.GetDim4();
+      if (nvar == 1) fprintf(pfile,"LOOKUP_TABLE default\n");
+      for (int k=okl; k<=oku; ++k) {
+      for (int j=ojl; j<=oju; ++j) {
+
+        for (int i=oil; i<=oiu; ++i) {
+        for (int n=0; n<nvar; ++n) {
+          data[nvar*(i-oil)+n] = (float)pdata->data(n,k,j,i);
+        }}
+
+        // write data in big endian order
+        if (!big_end) {for (int i=0; i<(nvar*ncells1); ++i) Swap4Bytes(&data[i]);}
+        fwrite(data,sizeof(float),(size_t)(nvar*ncells1),pfile);
+     
       }}
 
-// write data in big endian order
+      pdata = pdata->pnext;
+    }
 
-      if (!big_end) {for (int i=0; i<(nvar*ncells1); ++i) Swap4Bytes(&data[i]);}
-      fwrite(data,sizeof(float),(size_t)(nvar*ncells1),pfile);
-     
-    }}
+    // don't forget to close the output file and clean up ptrs to data in OutputData
+    fclose(pfile);
+    ClearOutputData();
+    delete data;
 
-    pvar = pvar->pnext;
-  }
+    pmb=pmb->next;
 
-// close output file, increment file number, update time of last output, clean up
-
-  fclose(pfile);
-  delete data;
-*/
+  }  // end loop over MeshBlocks
 
   return;
 }
