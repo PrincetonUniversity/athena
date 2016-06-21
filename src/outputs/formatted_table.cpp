@@ -53,19 +53,18 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm)
 
   // Loop over MeshBlocks
   while (pmb != NULL) {
-    il=pmb->is; iu=pmb->ie;
-    jl=pmb->js; ju=pmb->je;
-    kl=pmb->ks; ku=pmb->ke;
+    oil=pmb->is; oiu=pmb->ie;
+    ojl=pmb->js; oju=pmb->je;
+    okl=pmb->ks; oku=pmb->ke;
     if (output_params.include_ghost_zones) {
-      il -= NGHOST; iu += NGHOST;
-      if (pmb->block_size.nx2 > 1) {jl -= NGHOST; ju += NGHOST;}
-      if (pmb->block_size.nx3 > 1) {kl -= NGHOST; ku += NGHOST;}
+      oil -= NGHOST; oiu += NGHOST;
+      if (ojl != oju) {ojl -= NGHOST; oju += NGHOST;}
+      if (okl != oku) {okl -= NGHOST; oku += NGHOST;}
     }
 
     // set ptrs to data in OutputData linked list
     LoadOutputData(pmb);
-
-//  if (pod->data_header.ndata == 0) return;  // slice out of range, etc.
+    if (TransformOutputData(pmb) == false) {continue;} // no output, slice out of range
 
     // create filename: "file_basename"+ "."+"bloclid"+"."+"file_id"+"."+XXXXX+".tab",
     // where XXXXX = 5-digit file_number
@@ -100,9 +99,9 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm)
 
     // write x1, x2, x3 column headers
     fprintf(pfile,"#");
-    if (il != iu) fprintf(pfile," i       x1v     ");
-    if (jl != ju) fprintf(pfile," j       x2v     ");
-    if (kl != ku) fprintf(pfile," k       x3v     ");
+    if (oil != oiu) fprintf(pfile," i       x1v     ");
+    if (ojl != oju) fprintf(pfile," j       x2v     ");
+    if (okl != oku) fprintf(pfile," k       x3v     ");
     // write data column headers from "name" stored in linked-list of OutputData's
     OutputData *pdata = pfirst_data_;
     while (pdata != NULL) {
@@ -112,20 +111,20 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm)
     fprintf(pfile,"\n"); // terminate line
 
     // loop over all cells in data arrays
-    for (int k=kl; k<=ku; ++k) {
-    for (int j=jl; j<=ju; ++j) {
-    for (int i=il; i<=iu; ++i) {
+    for (int k=okl; k<=oku; ++k) {
+    for (int j=ojl; j<=oju; ++j) {
+    for (int i=oil; i<=oiu; ++i) {
 
       // write x1, x2, x3 indices and coordinates on start of new line
-      if (il != iu) {
+      if (oil != oiu) {
         fprintf(pfile,"%04d",i);
         fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x1v(i));
       }
-      if (jl != ju) {
+      if (ojl != oju) {
         fprintf(pfile," %04d",j);  // note extra space for formatting
         fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x2v(j));
       }
-      if (kl != ku) {
+      if (okl != oku) {
         fprintf(pfile," %04d",k);  // note extra space for formatting
         fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x3v(k));
       }

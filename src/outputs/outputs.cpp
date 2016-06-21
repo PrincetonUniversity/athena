@@ -134,12 +134,11 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
         op.file_type = pin->GetString(op.block_name,"file_type");
 
         // read slicing options.  Check that slice is within mesh
-        op.output_slice = false;
         if (pin->DoesParameterExist(op.block_name,"x1_slice")) {
           Real x1 = pin->GetReal(op.block_name,"x1_slice");
           if (x1 >= pm->mesh_size.x1min && x1 < pm->mesh_size.x1max) {
             op.x1_slice = x1;
-            op.output_slice = true;
+            op.output_slicex1 = true;
           } else {
             msg << "### FATAL ERROR in Outputs constructor" << std::endl
                 << "Slice at x1=" << x1 << " in output block '" << op.block_name
@@ -152,7 +151,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
           Real x2 = pin->GetReal(op.block_name,"x2_slice");
           if (x2 >= pm->mesh_size.x2min && x2 < pm->mesh_size.x2max) {
             op.x2_slice = x2;
-            op.output_slice = true;
+            op.output_slicex2 = true;
           } else {
             msg << "### FATAL ERROR in Outputs constructor" << std::endl
                 << "Slice at x2=" << x2 << " in output block '" << op.block_name
@@ -165,7 +164,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
           Real x3 = pin->GetReal(op.block_name,"x3_slice");
           if (x3 >= pm->mesh_size.x3min && x3 < pm->mesh_size.x3max) {
             op.x3_slice = x3;
-            op.output_slice = true;
+            op.output_slicex3 = true;
           } else {
             msg << "### FATAL ERROR in Outputs constructor" << std::endl
                 << "Slice at x3=" << x3 << " in output block '" << op.block_name
@@ -175,36 +174,26 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
         }
 
         // read sum options.  Check for conflicts with slicing.
-        if (pin->DoesParameterExist(op.block_name,"sum_in_dir")) {
-          op.direction_of_sum = pin->GetInteger(op.block_name,"sum_in_dir");
-          op.output_sum = true;
-          if (op.direction_of_sum < 1 || op.direction_of_sum > 3) {
-            msg << "### FATAL ERROR in Outputs constructor" << std::endl 
-                << "Sums can only be in (1,2,3) directions, but sum in direction"
-                << op.direction_of_sum << "requested" << std::endl;
-            throw std::runtime_error(msg.str().c_str());
-          }
-          if (pin->DoesParameterExist(op.block_name,"x1_slice") &&
-              (op.direction_of_sum == 1)) {
-            msg << "### FATAL ERROR in Outputs constructor" << std::endl 
-                << "Cannot request both slice and sum along x1-direction"
-                << " in output block '" << op.block_name << "'" << std::endl;
-            throw std::runtime_error(msg.str().c_str());
-          }
-          if (pin->DoesParameterExist(op.block_name,"x2_slice") &&
-              (op.direction_of_sum == 2)) {
-            msg << "### FATAL ERROR in Outputs constructor" << std::endl
-                << "Cannot request both slice and sum along x2-direction"
-                << " in output block '" << op.block_name << "'" << std::endl;
-            throw std::runtime_error(msg.str().c_str());
-          }
-          if (pin->DoesParameterExist(op.block_name,"x3_slice") &&
-              (op.direction_of_sum == 3)) {
-            msg << "### FATAL ERROR in Outputs constructor" << std::endl
-                << "Cannot request both slice and sum along x3-direction"
-                << " in output block '" << op.block_name << "'" << std::endl;
-            throw std::runtime_error(msg.str().c_str());
-          }
+        op.output_sumx1 = pin->GetOrAddBoolean(op.block_name,"x1_sum",false);
+        if ((op.output_slicex1) && (op.output_sumx1)) {
+          msg << "### FATAL ERROR in Outputs constructor" << std::endl 
+              << "Cannot request both slice and sum along x1-direction"
+              << " in output block '" << op.block_name << "'" << std::endl;
+          throw std::runtime_error(msg.str().c_str());
+        }
+        op.output_sumx2 = pin->GetOrAddBoolean(op.block_name,"x2_sum",false);
+        if ((op.output_slicex2) && (op.output_sumx2)) {
+          msg << "### FATAL ERROR in Outputs constructor" << std::endl
+              << "Cannot request both slice and sum along x2-direction"
+              << " in output block '" << op.block_name << "'" << std::endl;
+          throw std::runtime_error(msg.str().c_str());
+        }
+        op.output_sumx3 = pin->GetOrAddBoolean(op.block_name,"x3_sum",false);
+        if ((op.output_slicex3) && (op.output_sumx3)) {
+          msg << "### FATAL ERROR in Outputs constructor" << std::endl
+              << "Cannot request both slice and sum along x3-direction"
+              << " in output block '" << op.block_name << "'" << std::endl;
+          throw std::runtime_error(msg.str().c_str());
         }
 
         // read ghost cell option
@@ -531,6 +520,33 @@ void OutputType::AppendOutputDataNode(OutputData *pnew_data)
 }
 
 //--------------------------------------------------------------------------------------
+//! \fn void OutputData::ReplaceOutputDataNode()
+//  \brief
+
+void OutputType::ReplaceOutputDataNode(OutputData *pold, OutputData *pnew)
+{
+  if (pold == pfirst_data_) {
+    pfirst_data_ = pnew;
+    if (pold->pnext != NULL) {    // there is another node in the list 
+      pnew->pnext = pold->pnext;
+      pnew->pnext->pprev = pnew;
+    } else {                      // there is only one node in the list
+      plast_data_ = pnew;
+    }
+  } else if (pold == plast_data_) {
+    plast_data_ = pnew;
+    pnew->pprev = pold->pprev;
+    pnew->pprev->pnext = pnew;
+  } else {
+    pnew->pnext = pold->pnext;
+    pnew->pprev = pold->pprev;
+    pnew->pprev->pnext = pnew;
+    pnew->pnext->pprev = pnew;
+  }
+  delete pold;
+}
+
+//--------------------------------------------------------------------------------------
 //! \fn void OutputData::ClearOutputData()
 //  \brief
 
@@ -600,130 +616,145 @@ void OutputType::FinalizeOutput(ParameterInput *pin)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void OutputType::Slice(OutputData* pod, int dim)
+//! \fn void OutputType::TransformOutputData(MeshBlock *pmb)
+//  \brief Calls sum and slice functions on each direction in turn, in order to allow
+//  mulitple operations performed on the same data set
+
+bool OutputType::TransformOutputData(MeshBlock *pmb)
+{
+  bool flag = true;
+  if (output_params.output_slicex3) {
+    bool ret = Slice(pmb,3);
+    if (ret==false) flag=false;
+  }
+  if (output_params.output_slicex2) {
+    bool ret = Slice(pmb,2);
+    if (ret==false) flag=false;
+  }
+  if (output_params.output_slicex1) {
+    bool ret = Slice(pmb,1);
+    if (ret==false) flag=false;
+  }
+//  if (output_params.output_sumx1) {
+//    Sum(pmb,3);
+//  }
+//  if (output_params.output_sumx2) {
+//    Sum(pmb,2);
+//  }
+//  if (output_params.output_sumx3) {
+//    Sum(pmb,1);
+//  }
+  return flag;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn bool OutputType::Slice(MeshBlock *pmb, int dim)
 //  \brief
 
-/*
-void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
+bool OutputType::Slice(MeshBlock *pmb, int dim)
 {
   int islice, jslice, kslice;
 
-// Check that slice is in range of data in this block, if not return 0 in ndata
-
+  // Compute i,j,k indices of slice; check if in range of data in this block
   if (dim == 1) {
     if (output_params.x1_slice >= pmb->block_size.x1min && 
         output_params.x1_slice < pmb->block_size.x1max) {
       for (int i=pmb->is+1; i<=pmb->ie+1; ++i) {
         if (pmb->pcoord->x1f(i) > output_params.x1_slice) {
-           islice = i-1;
-           output_params.islice = islice;
+          islice = i-1;
+          output_params.islice = islice;
           break;
         }
       }
     } else {
-      pod->data_header.ndata = 0;
-      return;
+      return false;
     }
   } else if (dim == 2) {
     if (output_params.x2_slice >= pmb->block_size.x2min &&
         output_params.x2_slice < pmb->block_size.x2max) {
       for (int j=pmb->js+1; j<=pmb->je+1; ++j) {
         if (pmb->pcoord->x2f(j) > output_params.x2_slice) {
-           jslice = j-1;
-           output_params.jslice = jslice;
+          jslice = j-1;
+          output_params.jslice = jslice;
           break;
         }
       }
     } else {
-      pod->data_header.ndata = 0;
-      return;
+      return false;
     }
   } else {
     if (output_params.x3_slice >= pmb->block_size.x3min &&
         output_params.x3_slice < pmb->block_size.x3max) {
       for (int k=pmb->ks+1; k<=pmb->ke+1; ++k) {
         if (pmb->pcoord->x3f(k) > output_params.x3_slice) {
-           kslice = k-1;
-           output_params.kslice = kslice;
+          kslice = k-1;
+          output_params.kslice = kslice;
           break;
         }
       }
     } else {
-      pod->data_header.ndata = 0;
-      return;
+      return false;
     }
   }
 
-// For each node in OutputData linked list, slice arrays containing output data  
+  // For each node in OutputData linked list, slice arrays containing output data  
+  OutputData *pdata,*pnew;
+  pdata = pfirst_data_;
 
-  OutputVariable *pvar,*pnew;
-  pvar = pod->pfirst_var;
+  while (pdata != NULL) {
+    pnew = new OutputData;
+    pnew->type = pdata->type;
+    pnew->name = pdata->name;
+    int nx4 = pdata->data.GetDim4();
+    int nx3 = pdata->data.GetDim3();
+    int nx2 = pdata->data.GetDim2();
+    int nx1 = pdata->data.GetDim1();
 
-  while (pvar != NULL) {
-    pnew = new OutputVariable;
-    pnew->type = pvar->type;
-    pnew->name = pvar->name;
-    int nx4 = pvar->data.GetDim4();
-    int nx3 = pvar->data.GetDim3();
-    int nx2 = pvar->data.GetDim2();
-    int nx1 = pvar->data.GetDim1();
-
-// Loop over variables and dimensions, extract slice
-
+    // Loop over variables and dimensions, extract slice
     if (dim == 3) {
       pnew->data.NewAthenaArray(nx4,1,nx2,nx1);
       for (int n=0; n<nx4; ++n){
-      for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j){
-        for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i){
-          pnew->data(n,0,j,i) = pvar->data(n,kslice,j,i);
+      for (int j=ojl; j<=oju; ++j){
+        for (int i=oil; i<=oiu; ++i){
+          pnew->data(n,0,j,i) = pdata->data(n,kslice,j,i);
         }
       }}
     } else if (dim == 2) {
       pnew->data.NewAthenaArray(nx4,nx3,1,nx1);
       for (int n=0; n<nx4; ++n){
-      for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k){
-        for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i){
-          pnew->data(n,k,0,i) = pvar->data(n,k,jslice,i);
+      for (int k=okl; k<=oku; ++k){
+        for (int i=oil; i<=oiu; ++i){
+          pnew->data(n,k,0,i) = pdata->data(n,k,jslice,i);
         }
       }}
     } else {
       pnew->data.NewAthenaArray(nx4,nx3,nx2,1);
       for (int n=0; n<nx4; ++n){
-      for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k){
-        for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j){
-          pnew->data(n,k,j,0) = pvar->data(n,k,j,islice);
+      for (int k=okl; k<=oku; ++k){
+        for (int j=ojl; j<=oju; ++j){
+          pnew->data(n,k,j,0) = pdata->data(n,k,j,islice);
         }
       }}
     }
 
-    pod->ReplaceNode(pvar,pnew);
-    pvar = pvar->pnext;
+    ReplaceOutputDataNode(pdata,pnew);
+    pdata = pdata->pnext;
   }
  
-// modify OutputData header
-
-  std::stringstream str;
+  // modify array indices
   if (dim == 3) {
-    str << "# Slice at x3=" << pmb->pcoord->x3v(output_params.kslice)
-        << "  (k-ks)=" << (output_params.kslice - pmb->ks) << std::endl;
-    pod->data_header.kl = 0;
-    pod->data_header.ku = 0;
+    okl = 0;
+    oku = 0;
   } else if (dim == 2) {
-    str << "# Slice at x2=" << pmb->pcoord->x2v(output_params.jslice)
-        << "  (j-js)=" << (output_params.jslice - pmb->js) << std::endl;
-    pod->data_header.jl = 0;
-    pod->data_header.ju = 0;
+    ojl = 0;
+    oju = 0;
   } else {
-    str << "# Slice at x1=" << pmb->pcoord->x1v(output_params.islice)
-        << "  (i-is)=" << (output_params.islice - pmb->is) << std::endl;
-    pod->data_header.il = 0;
-    pod->data_header.iu = 0;
+    oil = 0;
+    oiu = 0;
   }
-  pod->data_header.transforms.append(str.str());
 
-  return;
+  return true;
 }
-*/
 
 //--------------------------------------------------------------------------------------
 //! \fn void OutputType::Sum(OutputData* pod, int dim)

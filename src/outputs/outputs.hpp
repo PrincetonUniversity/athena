@@ -37,9 +37,15 @@ typedef struct OutputParameters {
   std::string data_format;
   Real next_time, dt;
   int file_number;
-  bool output_slice, output_sum, include_ghost_zones;
-  int direction_of_sum;
+  bool output_slicex1, output_slicex2, output_slicex3;
+  bool output_sumx1, output_sumx2, output_sumx3;
+  bool include_ghost_zones;
+  int islice, jslice, kslice;
   Real x1_slice, x2_slice, x3_slice;
+
+  OutputParameters() : output_sumx1(false), output_sumx2(false), output_sumx3(false),
+     output_slicex1(false), output_slicex2(false), output_slicex3(false),
+     include_ghost_zones(false) {};
 } OutputParameters;
 
 //! \struct OutputData
@@ -55,7 +61,6 @@ typedef struct OutputData {
 } OutputData;
 
 //--------------------------------------------------------------------------------------
-//! \class OutputType
 //  \brief abstract base class for different output types (modes).  Each OutputType
 //  is designed to be a node in a linked list created and stored in the Outputs class.
 
@@ -65,14 +70,17 @@ public:
   virtual ~OutputType();
 
   // data
-  int il,iu,jl,ju,kl,ku;          // OutputData array start/end indices
+  int oil,oiu,ojl,oju,okl,oku;    // OutputData array start/end indices
   OutputParameters output_params; // control data read from <output> block
   OutputType *pnext_type;         // ptr to next node in linked list of OutputTypes
 
   // functions
   void LoadOutputData(MeshBlock *pmb);
-  void AppendOutputDataNode(OutputData *pod);
+  void AppendOutputDataNode(OutputData *pdata);
+  void ReplaceOutputDataNode(OutputData *pold, OutputData *pnew);
   void ClearOutputData();
+  bool TransformOutputData(MeshBlock *pmb);
+  bool Slice(MeshBlock *pmb, int dim);
   virtual void WriteOutputFile(Mesh *pm) = 0;   // pure virtual
   void FinalizeOutput(ParameterInput *pin);
 
