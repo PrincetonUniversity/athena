@@ -64,7 +64,7 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm)
 
     // set ptrs to data in OutputData linked list
     LoadOutputData(pmb);
-    if (TransformOutputData(pmb) == false) {continue;} // no output, slice out of range
+    if (TransformOutputData(pmb) == false) {continue;} // skip if slice out of range
 
     // create filename: "file_basename"+ "."+"bloclid"+"."+"file_id"+"."+XXXXX+".tab",
     // where XXXXX = 5-digit file_number

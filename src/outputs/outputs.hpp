@@ -81,6 +81,7 @@ public:
   void ClearOutputData();
   bool TransformOutputData(MeshBlock *pmb);
   bool Slice(MeshBlock *pmb, int dim);
+  void Sum(MeshBlock *pmb, int dim);
   virtual void WriteOutputFile(Mesh *pm) = 0;   // pure virtual
   void FinalizeOutput(ParameterInput *pin);
 

@@ -635,15 +635,15 @@ bool OutputType::TransformOutputData(MeshBlock *pmb)
     bool ret = Slice(pmb,1);
     if (ret==false) flag=false;
   }
-//  if (output_params.output_sumx1) {
-//    Sum(pmb,3);
-//  }
-//  if (output_params.output_sumx2) {
-//    Sum(pmb,2);
-//  }
-//  if (output_params.output_sumx3) {
-//    Sum(pmb,1);
-//  }
+  if (output_params.output_sumx1) {
+    Sum(pmb,3);
+  }
+  if (output_params.output_sumx2) {
+    Sum(pmb,2);
+  }
+  if (output_params.output_sumx3) {
+    Sum(pmb,1);
+  }
   return flag;
 }
 
@@ -760,80 +760,70 @@ bool OutputType::Slice(MeshBlock *pmb, int dim)
 //! \fn void OutputType::Sum(OutputData* pod, int dim)
 //  \brief
 
-/*
-void OutputType::Sum(OutputData* pod, MeshBlock* pmb, int dim)
+void OutputType::Sum(MeshBlock* pmb, int dim)
 {
   AthenaArray<Real> *psum;
   std::stringstream str;
 
-// For each node in OutputData linked list, sum arrays containing output data  
+  // For each node in OutputData linked list, sum arrays containing output data  
+  OutputData *pdata,*pnew;
+  pdata = pfirst_data_;
 
-  OutputVariable *pvar,*pnew;
-  pvar = pod->pfirst_var;
-
-  while (pvar != NULL) {
-    pnew = new OutputVariable;
-    pnew->type = pvar->type;
-    pnew->name = pvar->name;
-    int nx4 = pvar->data.GetDim4();
-    int nx3 = pvar->data.GetDim3();
-    int nx2 = pvar->data.GetDim2();
-    int nx1 = pvar->data.GetDim1();
+  while (pdata != NULL) {
+    pnew = new OutputData;
+    pnew->type = pdata->type;
+    pnew->name = pdata->name;
+    int nx4 = pdata->data.GetDim4();
+    int nx3 = pdata->data.GetDim3();
+    int nx2 = pdata->data.GetDim2();
+    int nx1 = pdata->data.GetDim1();
     psum = new AthenaArray<Real>;
 
-// Loop over variables and dimensions, sum over specified dimension
-
+    // Loop over variables and dimensions, sum over specified dimension
     if (dim == 3) {
       pnew->data.NewAthenaArray(nx4,1,nx2,nx1);
       for (int n=0; n<nx4; ++n){
-      for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k){
-      for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j){
-        for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i){
-          pnew->data(n,0,j,i) += pvar->data(n,k,j,i);
+      for (int k=okl; k<=oku; ++k){
+      for (int j=ojl; j<=oju; ++j){
+        for (int i=oil; i<=oiu; ++i){
+          pnew->data(n,0,j,i) += pdata->data(n,k,j,i);
         }
       }}}
     } else if (dim == 2) {
       pnew->data.NewAthenaArray(nx4,nx3,1,nx1);
       for (int n=0; n<nx4; ++n){
-      for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k){
-      for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j){
-        for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i){
-          pnew->data(n,k,0,i) += pvar->data(n,k,j,i);
+      for (int k=okl; k<=oku; ++k){
+      for (int j=ojl; j<=oju; ++j){
+        for (int i=oil; i<=oiu; ++i){
+          pnew->data(n,k,0,i) += pdata->data(n,k,j,i);
         }
       }}}
     } else {
       pnew->data.NewAthenaArray(nx4,nx3,nx2,1);
       for (int n=0; n<nx4; ++n){
-      for (int k=(pod->data_header.kl); k<=(pod->data_header.ku); ++k){
-      for (int j=(pod->data_header.jl); j<=(pod->data_header.ju); ++j){
-        for (int i=(pod->data_header.il); i<=(pod->data_header.iu); ++i){
-          pnew->data(n,k,j,0) += pvar->data(n,k,j,i);
+      for (int k=okl; k<=oku; ++k){
+      for (int j=ojl; j<=oju; ++j){
+        for (int i=oil; i<=oiu; ++i){
+          pnew->data(n,k,j,0) += pdata->data(n,k,j,i);
         }
       }}}
     }
 
-    pod->ReplaceNode(pvar,pnew);
-    pvar = pvar->pnext;
+    ReplaceOutputDataNode(pdata,pnew);
+    pdata = pdata->pnext;
   }
  
-// modify OutputData header
-
+  // modify array indices
   if (dim == 3) {
-    str << "# Sum over x3" << std::endl;
-    pod->data_header.kl = 0;
-    pod->data_header.ku = 0;
+    okl = 0;
+    oku = 0;
   } else if (dim == 2) {
-    str << "# Sum over x2" << std::endl;
-    pod->data_header.jl = 0;
-    pod->data_header.ju = 0;
+    ojl = 0;
+    oju = 0;
   } else {
-    str << "# Sum over x1" << std::endl;
-    pod->data_header.il = 0;
-    pod->data_header.iu = 0;
+    oil = 0;
+    oiu = 0;
   }
-  pod->data_header.transforms.append(str.str());
 
   return;
 }
-
-*/
