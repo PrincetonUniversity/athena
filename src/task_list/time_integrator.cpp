@@ -423,10 +423,13 @@ enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int ste
   if (ph->psrc->hydro_sourceterms_defined == false) return TASK_NEXT;
 
   Real dt = (step_wghts[(step-1)].c)*(pmb->pmy_mesh->dt);
+  Real time;
+  // *** this must be changed for the RK3 integrator
+  time=pmb->pmy_mesh->time + dt*0.5*(step-1);
   if(step == 1) {
-    ph->psrc->AddHydroSourceTerms(dt,ph->flux,ph->w,pf->bcc,ph->u1);
+    ph->psrc->AddHydroSourceTerms(time,dt,ph->flux,ph->w,pf->bcc,ph->u1);
   } else if(step == 2) {
-    ph->psrc->AddHydroSourceTerms(dt,ph->flux,ph->w1,pf->bcc1,ph->u);
+    ph->psrc->AddHydroSourceTerms(time,dt,ph->flux,ph->w1,pf->bcc1,ph->u);
   } else {
     return TASK_FAIL;
   }
