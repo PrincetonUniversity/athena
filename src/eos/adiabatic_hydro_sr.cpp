@@ -1,7 +1,5 @@
 // Conserved-to-primitive inversion for adiabatic hydrodynamics in special relativity
 
-// TODO: make inputs const?
-
 // Primary header
 #include "eos.hpp"
 
@@ -17,6 +15,8 @@
 #include "../field/field.hpp"              // FaceField
 #include "../mesh/mesh.hpp"                // MeshBlock
 
+//--------------------------------------------------------------------------------------
+
 // Constructor
 // Inputs:
 //   pmb: pointer to MeshBlock
@@ -30,8 +30,12 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
   gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
 }
 
+//--------------------------------------------------------------------------------------
+
 // Destructor
 EquationOfState::~EquationOfState() {}
+
+//--------------------------------------------------------------------------------------
 
 // Variable inverter
 // Inputs:
@@ -199,6 +203,8 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   return;
 }
 
+//--------------------------------------------------------------------------------------
+
 // Function for converting all primitives to conserved variables
 // Inputs:
 //   prim: primitives
@@ -255,6 +261,8 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
     }
   return;
 }
+
+//--------------------------------------------------------------------------------------
 
 // Function for calculating relativistic sound speeds
 // Inputs:

@@ -1,18 +1,18 @@
 // HLLE Riemann solver for relativistic magnetohydrodynamics in pure GR
 
 // Primary header
-#include "../../hydro.hpp"                       // Hydro
+#include "../../hydro.hpp"
 
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
 // Athena headers
-#include "../../../eos/eos.hpp"                     // HydroEqnOfState
-#include "../../../athena.hpp"                   // enums, macros, Real
+#include "../../../athena.hpp"                   // enums, macros
 #include "../../../athena_arrays.hpp"            // AthenaArray
-#include "../../../mesh/mesh.hpp"                     // MeshBlock
 #include "../../../coordinates/coordinates.hpp"  // Coordinates
+#include "../../../eos/eos.hpp"                  // EquationOfState
+#include "../../../mesh/mesh.hpp"                // MeshBlock
 
 //--------------------------------------------------------------------------------------
 
@@ -27,8 +27,8 @@
 // Notes:
 //   implements HLLE algorithm similar to that of fluxcalc() in step_ch.c in Harm
 //   cf. HLLENonTransforming() in hlle_mhd_rel.cpp and hlld_rel.cpp
-void Hydro::RiemannSolver(const int k, const int j, const int il,
-    const int iu, const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
+void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
+    const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
     AthenaArray<Real> &prim_r, AthenaArray<Real> &flux)
 {
   // Calculate cyclic permutations of indices
