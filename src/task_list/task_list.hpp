@@ -101,7 +101,10 @@ public:
 
   enum TaskStatus HydroReceive(MeshBlock *pmb, int step);
   enum TaskStatus FieldReceive(MeshBlock *pmb, int step);
-
+//[JMSHI
+  enum TaskStatus HydroShearSend(MeshBlock *pmb, int step);
+  enum TaskStatus HydroShearReceive(MeshBlock *pmb, int step);
+//JMSHI]
   enum TaskStatus Prolongation(MeshBlock *pmb, int step);
   enum TaskStatus Primitives(MeshBlock *pmb, int step);
   enum TaskStatus PhysicalBoundary(MeshBlock *pmb, int step);
@@ -165,6 +168,11 @@ namespace HydroIntegratorTaskNames {
   const uint64_t USERWORK=1LL<<38;
   const uint64_t NEW_DT  =1LL<<39;
   const uint64_t AMR_FLAG=1LL<<40;
+
+//[JMSHI
+  const uint64_t SEND_HYDSH=1LL<<47;
+  const uint64_t RECV_HYDSH=1LL<<51;
+//JMSHI]
 };
 
 #endif // TASK_LIST_HPP

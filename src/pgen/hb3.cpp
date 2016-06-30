@@ -70,6 +70,9 @@
 #if !MAGNETIC_FIELDS_ENABLED
 #error "This problem generator requires magnetic fields"
 #endif
+#if !SHEARING_BOX
+#error "This problem generator requires shearing box"
+#endif
 
 static Real amp, nwx, nwy; // amplitude, Wavenumbers
 static int ShBoxCoord, ipert,ifield; // initial pattern
@@ -92,7 +95,7 @@ void LinearSlope(const int nvar, const int ny, const int nx, const AthenaArray<R
 				   AthenaArray<Real> &dw);
 
 //======================================================================================
-//! \fn void Mesh::InitUserMeshProperties(ParameterInput *pin)
+//! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Init the Mesh properties
 //======================================================================================
 

@@ -32,7 +32,7 @@ struct NeighborBlock;
 struct PolarNeighborBlock;
 
 // identifiers for all 6 faces of a MeshBlock
-enum BoundaryFace {FACE_UNDEF=-1, INNER_X1=0, OUTER_X1=1, INNER_X2=2, OUTER_X2=3, 
+enum BoundaryFace {FACE_UNDEF=-1, INNER_X1=0, OUTER_X1=1, INNER_X2=2, OUTER_X2=3,
   INNER_X3=4, OUTER_X3=5};
 
 // identifiers for boundary conditions
@@ -90,6 +90,18 @@ void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 // function to return boundary flag given input string
 enum BoundaryFlag GetBoundaryFlag(std::string input_string);
 
+//[JMSHI
+// Struct for describing blocks which touched the shearing-periodic boundaries
+// For now, we caclulate the list info for every boundary blocks, which might
+// cost some extra memory.
+typedef struct ShearingBoundaryBlock {
+  int *igidlist, *ilidlist, *irnklist, *ilevlist;
+  int *ogidlist, *olidlist, *ornklist, *olevlist;
+  bool inner, outer; //inner=true is inner blocks
+  int cnid, cnrk; // corner block gid and rank
+} ShearingBoundaryBlock;
+
+//JMSHI]
 
 //--------------------------------------------------------------------------------------
 //! \class BoundaryValues
@@ -111,7 +123,7 @@ public:
   void ClearBoundaryAll(void);
   void ApplyPhysicalBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
                                FaceField &bfdst, AthenaArray<Real> &bcdst);
-  void ProlongateBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst, 
+  void ProlongateBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
                             FaceField &bfdst, AthenaArray<Real> &bcdst);
 
   int LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
@@ -129,7 +141,6 @@ public:
   bool ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst);
   void ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst, bool cons);
   void PolarSingleHydro(AthenaArray<Real> &dst);
-
   int LoadFieldBoundaryBufferSameLevel(FaceField &src, Real *buf,
                                        const NeighborBlock& nb);
   int LoadFieldBoundaryBufferToCoarser(FaceField &src, Real *buf,
@@ -158,6 +169,16 @@ public:
   void AverageEMFBoundary(void);
   void PolarSingleEMF(void);
   bool ReceiveEMFCorrection(void);
+//[JMSHI
+  void LoadHydroShearing(AthenaArray<Real> &src, Real *buf1, Real *buf2, int joverlap);
+  void SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src, bool cons);
+
+  void SetHydroShearingboxBoundarySameLevel(AthenaArray<Real> &dst, Real *buf, const int nb);
+  bool ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &dst);
+  void ReceiveHydroShearingboxBoundaryBuffersWithWait(AthenaArray<Real> &dst, bool cons);
+  void FindShearBlock(void);
+  void RemapFlux(const int n, const int k, const int jinner, const int jouter, const int i, const Real eps, const AthenaArray<Real> &U, AthenaArray<Real> &Flux);
+//JMSHI]
 
 private:
   MeshBlock *pmy_mblock_;  // ptr to MeshBlock containing this BVals
@@ -193,6 +214,38 @@ private:
 
   BValFunc_t BoundaryFunction_[6];
 
+//[JMSHI
+  enum BoundaryStatus shbox_inner_hydro_flag_[2], shbox_outer_hydro_flag_[2];
+  Real x1size_,x2size_,x3size_; // mesh_size.x1max-mesh_size.x1min etc. [Lx,Ly,Lz]
+  Real Omega_0_, qshear_; // orbital freq and shear rate
+  int ShBoxCoord_; // shearcoordinate type: 1 = xy (default), 2 = xz
+  Real ssize_; // # of ghost cells in x-z plane
+
+  ShearingBoundaryBlock shbb_; // shearing block properties: lists etc.
+  AthenaArray<Real> shboxvar_inner_hydro_, shboxvar_outer_hydro_; // working arrays of ghost zones with remapped quantities
+  AthenaArray<Real> flx_inner_hydro_, flx_outer_hydro_; // flux from conservative remapping (fractional part of grid cells)
+
+  int joverlap_; // # of cells the shear runs over one block
+  Real eps_; // fraction part of the shear
+
+  int send_inner_gid_[2],recv_inner_gid_[2]; // gid of meshblocks for communication
+  int send_inner_lid_[2], recv_inner_lid_[2]; // lid of meshblocks for communication
+  int send_inner_rank_[2],recv_inner_rank_[2]; // rank of meshblocks for communication
+  int send_innersize_hydro_[2], recv_innersize_hydro_[2]; //MPI buffer sizes
+  Real *send_innerbuf_hydro_[2], *recv_innerbuf_hydro_[2]; //MPI send and recv buffers
+#ifdef MPI_PARALLEL
+  MPI_Request rq_innersend_hydro_[2],  rq_innerrecv_hydro_[2];//MPI request for send and recv msgs
+#endif
+  int send_outer_gid_[2], recv_outer_gid_[2]; // gid of meshblocks for communication
+  int send_outer_lid_[2], recv_outer_lid_[2]; // lid of meshblocks for communication
+  int send_outer_rank_[2],recv_outer_rank_[2]; // rank of meshblocks for communication
+  int send_outersize_hydro_[2], recv_outersize_hydro_[2]; //MPI buffer sizes
+  Real *send_outerbuf_hydro_[2], *recv_outerbuf_hydro_[2]; //MPI send and recv buffers
+#ifdef MPI_PARALLEL
+  MPI_Request rq_outersend_hydro_[2],  rq_outerrecv_hydro_[2];//MPI request for send and recv msgs
+#endif
+
+//JMSHI]
   // temporary
   friend class Mesh;
 };

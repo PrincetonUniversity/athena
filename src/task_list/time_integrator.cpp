@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -44,7 +44,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   : TaskList(pm)
 {
   // First, set weights for each step of time-integration algorithm.  Each step is
-  //    U^{2} = a*U^0 + b*U^1 + c*dt*Div(F), where U^0 and U^1 are previous steps 
+  //    U^{2} = a*U^0 + b*U^1 + c*dt*Div(F), where U^0 and U^1 are previous steps
   // a,b=(1-a),and c are weights that are different for each step and each integrator
   // These are stored as: time_int_wght1 = a, time_int_wght2 = b, time_int_wght3 = c
 
@@ -92,6 +92,12 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     AddTimeIntegratorTask(SRCTERM_HYD,INT_HYD);
     AddTimeIntegratorTask(SEND_HYD,INT_HYD);
     AddTimeIntegratorTask(RECV_HYD,START_ALLRECV);
+//[JMSHI
+	if (SHEARING_BOX) { // Shearingbox BC
+	  AddTimeIntegratorTask(SEND_HYDSH,RECV_HYD);
+	  AddTimeIntegratorTask(RECV_HYDSH,SEND_HYD);
+	}
+//JMSHI]
 
     // compute MHD fluxes, integrate field
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
@@ -109,14 +115,26 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
         AddTimeIntegratorTask(PROLONG, (SEND_HYD|RECV_HYD|SEND_FLD|RECV_FLD));
         AddTimeIntegratorTask(CON2PRIM,PROLONG);
       } else {
-        AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD));
+//[JMSHI
+        if (SHEARING_BOX) {
+		  AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD|RECV_HYDSH));
+		} else {
+		  AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD));
+		}
+//JMSHI]
       }
     } else {  // HYDRO
       if(pm->multilevel==true) { // SMR or AMR
         AddTimeIntegratorTask(PROLONG,(SEND_HYD|RECV_HYD));
         AddTimeIntegratorTask(CON2PRIM,PROLONG);
       } else {
-        AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD));
+//[JMSHI
+        if (SHEARING_BOX) {
+          AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|RECV_HYDSH));
+		} else {
+          AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD));
+		}
+//JMSHI]
       }
     }
 
@@ -136,7 +154,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 
 //--------------------------------------------------------------------------------------//! \fn
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
-//  value of ntask.  
+//  value of ntask.
 
 void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
 {
@@ -146,23 +164,23 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
   using namespace HydroIntegratorTaskNames;
   switch((id)) {
     case (START_ALLRECV):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::StartAllReceive);
       break;
     case (CLEAR_ALLRECV):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::ClearAllReceive);
       break;
 
     case (CALC_HYDFLX):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::CalculateFluxes);
       break;
     case (CALC_FLDFLX):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::CalculateEMF);
       break;
@@ -184,7 +202,7 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
         (&TimeIntegratorTaskList::FluxCorrectReceive);
       break;
     case (RECV_FLDFLX):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::EMFCorrectReceive);
       break;
@@ -227,6 +245,18 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::FieldReceive);
       break;
+//[JMSHI
+    case (SEND_HYDSH):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::HydroShearSend);
+      break;
+    case (RECV_HYDSH):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::HydroShearReceive);
+      break;
+//JMSHI]
 
     case (PROLONG):
       task_list_[ntasks].TaskFunc=
@@ -304,7 +334,7 @@ enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int step
   if((step == 1) && (integrator == "rk2")) {
     phydro->CalculateFluxes(pmb, phydro->w,  pfield->b,  pfield->bcc, 2);
     return TASK_NEXT;
-  } 
+  }
 
   if(step == 2) {
     phydro->CalculateFluxes(pmb, phydro->w1, pfield->b1, pfield->bcc1, 2);
@@ -324,7 +354,7 @@ enum TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int step)
   if(step == 2) {
     pmb->pfield->ComputeCornerE(pmb, pmb->phydro->w1, pmb->pfield->bcc1);
     return TASK_NEXT;
-  } 
+  }
 
   return TASK_FAIL;
 }
@@ -498,6 +528,35 @@ enum TaskStatus TimeIntegratorTaskList::FieldReceive(MeshBlock *pmb, int step)
   }
 }
 
+//[JMSHI
+enum TaskStatus TimeIntegratorTaskList::HydroShearSend(MeshBlock *pmb, int step)
+{
+  if(step == 1) {
+    pmb->pbval->SendHydroShearingboxBoundaryBuffers(pmb->phydro->u1, true);
+  } else if(step == 2) {
+    pmb->pbval->SendHydroShearingboxBoundaryBuffers(pmb->phydro->u, true);
+  } else {
+    return TASK_FAIL;
+  }
+  return TASK_SUCCESS;
+}
+enum TaskStatus TimeIntegratorTaskList::HydroShearReceive(MeshBlock *pmb, int step)
+{
+  bool ret;
+  if(step == 1) {
+    ret=pmb->pbval->ReceiveHydroShearingboxBoundaryBuffers(pmb->phydro->u1);
+  } else if(step == 2) {
+    ret=pmb->pbval->ReceiveHydroShearingboxBoundaryBuffers(pmb->phydro->u);
+  } else {
+    return TASK_FAIL;
+  }
+  if(ret==true) {
+    return TASK_SUCCESS;
+  } else {
+    return TASK_FAIL;
+  }
+}
+//JMSHI]
 //--------------------------------------------------------------------------------------
 // Functions for everything else
 
