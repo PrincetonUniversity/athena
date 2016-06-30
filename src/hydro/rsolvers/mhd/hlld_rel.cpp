@@ -1,18 +1,18 @@
 // HLLD Riemann solver for relativistic magnetohydrodynamics
 
 // Primary header
-#include "../../hydro.hpp"                       // Hydro
+#include "../../hydro.hpp"
 
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // abs(), isfinite(), NAN, sqrt()
 
 // Athena headers
-#include "../../../eos/eos.hpp"                     // HydroEqnOfState
-#include "../../../athena.hpp"                   // enums, macros, Real
+#include "../../../athena.hpp"                   // enums, macros
 #include "../../../athena_arrays.hpp"            // AthenaArray
-#include "../../../mesh/mesh.hpp"                     // MeshBlock
 #include "../../../coordinates/coordinates.hpp"  // Coordinates
+#include "../../../eos/eos.hpp"                  // EquationOfState
+#include "../../../mesh/mesh.hpp"                // MeshBlock
 
 // Declarations
 static void HLLDTransforming(MeshBlock *pmb, const int k, const int j, const int il,
@@ -26,10 +26,8 @@ static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Rea
     Real gamma_prime);
 static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
     Real gamma_prime);
-static Real PResidual(Real p, Real bbx, Real lambda_l, Real lambda_r,
-    const Real r_l[NWAVE], const Real r_r[NWAVE], int ivx);
-static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
-    const int il, const int iu, const AthenaArray<Real> &bb, AthenaArray<Real> &g,
+static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const int il,
+    const int iu, const AthenaArray<Real> &bb, AthenaArray<Real> &g,
     AthenaArray<Real> &gi, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
     AthenaArray<Real> &flux);
 
@@ -50,8 +48,8 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
 //       1141 (MUB)
 //   otherwise implements HLLE algorithm similar to that of fluxcalc() in step_ch.c in
 //       Harm
-void Hydro::RiemannSolver(const int k, const int j, const int il,
-    const int iu, const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
+void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
+    const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
     AthenaArray<Real> &prim_r, AthenaArray<Real> &flux)
 {
   if (GENERAL_RELATIVITY and ivx == IVY and pmy_block->pcoord->IsPole(j))
@@ -124,16 +122,13 @@ static void HLLDTransforming(MeshBlock *pmb, const int k, const int j, const int
     switch (ivx)
     {
       case IVX:
-        pmb->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r,
-            bb_normal);
+        pmb->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
         break;
       case IVY:
-        pmb->pcoord->PrimToLocal2(k, j, il, iu, bb, prim_l, prim_r,
-            bb_normal);
+        pmb->pcoord->PrimToLocal2(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
         break;
       case IVZ:
-        pmb->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r,
-            bb_normal);
+        pmb->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
         break;
     }
   else  // SR; need to populate 1D normal B array
@@ -655,7 +650,8 @@ static void HLLDTransforming(MeshBlock *pmb, const int k, const int j, const int
       // Set total contact pressure
       ptot_c = ptot_n;
     }
-    if (not std::isfinite(ptot_c) or ptot_c <= 0.0)
+    if (not std::isfinite(lambda_al) or not std::isfinite(lambda_ar) or
+        not std::isfinite(ptot_c) or ptot_c <= 0.0)
       switch_to_hlle = true;
 
     // Calculate remaining conserved quantities in aL region
@@ -750,40 +746,54 @@ static void HLLDTransforming(MeshBlock *pmb, const int k, const int j, const int
     if (GENERAL_RELATIVITY)
       v_interface = gi(i01,i) / std::sqrt(SQR(gi(i01,i)) - gi(I00,i)*gi(i11,i));
 
+    // Determine region of wavefan
+    Real *cons_interface, *flux_interface;
+    if (lambda_l >= v_interface)  // L region
+    {
+      cons_interface = cons_l;
+      flux_interface = flux_l;
+    }
+    else if (lambda_r <= v_interface)  // R region
+    {
+      cons_interface = cons_r;
+      flux_interface = flux_r;
+    }
+    else if (switch_to_hlle)  // HLL region
+    {
+      cons_interface = cons_hll;
+      flux_interface = flux_hll;
+    }
+    else if (lambda_al >= v_interface-vc_extension)  // aL region
+    {
+      cons_interface = cons_al;
+      flux_interface = flux_al;
+    }
+    else if (lambda_ar <= v_interface+vc_extension)  // aR region
+    {
+      cons_interface = cons_ar;
+      flux_interface = flux_ar;
+    }
+    else  // c region
+    {
+      cons_interface = cons_c;
+      flux_interface = flux_c;
+    }
+
+    // Check for any remaining HLLD failures and switch to HLLE if found
+    if (not switch_to_hlle)
+      for (int n = 0; n < NWAVE; ++n)
+        if (not std::isfinite(cons_interface[n])
+            or not std::isfinite(flux_interface[n]))
+          switch_to_hlle = true;
+
     // Set conserved quantities in GR
     if (GENERAL_RELATIVITY)
       for (int n = 0; n < NWAVE; ++n)
-      {
-        if (lambda_l >= v_interface)  // L region
-          cons(n,i) = cons_l[n];
-        else if (lambda_r <= v_interface)  // R region
-          cons(n,i) = cons_r[n];
-        else if (switch_to_hlle)  // HLL region
-          cons(n,i) = cons_hll[n];
-        else if (lambda_al >= v_interface-vc_extension)  // aL region
-          cons(n,i) = cons_al[n];
-        else if (lambda_ar <= v_interface+vc_extension)  // aR region
-          cons(n,i) = cons_ar[n];
-        else  // c region
-          cons(n,i) = cons_c[n];
-      }
+        cons(n,i) = cons_interface[n];
 
     // Set fluxes
     for (int n = 0; n < NWAVE; ++n)
-    {
-      if (lambda_l >= v_interface)  // L region
-        flux(n,i) = flux_l[n];
-      else if (lambda_r <= v_interface)  // R region
-        flux(n,i) = flux_r[n];
-      else if (switch_to_hlle)  // HLL region
-        flux(n,i) = flux_hll[n];
-      else if (lambda_al >= v_interface-vc_extension)  // aL region
-        flux(n,i) = flux_al[n];
-      else if (lambda_ar <= v_interface+vc_extension)  // aR region
-        flux(n,i) = flux_ar[n];
-      else  // c region
-        flux(n,i) = flux_c[n];
-    }
+      flux(n,i) = flux_interface[n];
   }
 
   // Transform fluxes to global coordinates if in GR
@@ -791,16 +801,13 @@ static void HLLDTransforming(MeshBlock *pmb, const int k, const int j, const int
     switch (ivx)
     {
       case IVX:
-        pmb->pcoord->FluxToGlobal1(k, j, il, iu, cons, bb_normal,
-            flux);
+        pmb->pcoord->FluxToGlobal1(k, j, il, iu, cons, bb_normal, flux);
         break;
       case IVY:
-        pmb->pcoord->FluxToGlobal2(k, j, il, iu, cons, bb_normal,
-            flux);
+        pmb->pcoord->FluxToGlobal2(k, j, il, iu, cons, bb_normal, flux);
         break;
       case IVZ:
-        pmb->pcoord->FluxToGlobal3(k, j, il, iu, cons, bb_normal,
-            flux);
+        pmb->pcoord->FluxToGlobal3(k, j, il, iu, cons, bb_normal, flux);
         break;
     }
   return;
@@ -876,102 +883,6 @@ static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss
 
 //--------------------------------------------------------------------------------------
 
-// Function whose value vanishes for correct total pressure
-// Inputs:
-//   p: guess for total pressure
-//   bbx: normal magnetic field
-//   lambda_l,lambda_r: L/R fast wavespeeds
-//   r_l,r_r: L/R fast wave jump quantities
-//   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
-// Outputs:
-//   returned value: residual
-// Notes:
-//   follows Mignone, Ugliano, & Bodo 2009, MNRAS 393 1141 (MUB)
-//   follows Athena 4.2, hlld_sr.c, in variable choices and magic numbers
-static Real PResidual(Real p, Real bbx, Real lambda_l, Real lambda_r,
-    const Real r_l[NWAVE], const Real r_r[NWAVE], int ivx)
-{
-  // Parameters
-  const Real delta_kx_aug = 1.0e-12;
-
-  // Calculate cyclic permutations of indices
-  int ivy = IVX + ((ivx-IVX)+1)%3;
-  int ivz = IVX + ((ivx-IVX)+2)%3;
-
-  // Calculate v_aL and v_aR
-  Real a = r_l[ivx] - lambda_l*r_l[IEN] + p*(1.0-SQR(lambda_l));       // (MUB 26)
-  Real g = SQR(r_l[IBY]) + SQR(r_l[IBZ]);                              // (MUB 27)
-  Real c = r_l[ivy]*r_l[IBY] + r_l[ivz]*r_l[IBZ];                      // (MUB 28)
-  Real q = -a - g + SQR(bbx)*(1.0-SQR(lambda_l));                      // (MUB 29)
-  Real x = bbx * (a*lambda_l*bbx+c) - (a+g) * (lambda_l*p+r_l[IEN]);   // (MUB 30)
-  Real vx_al = (bbx * (a*bbx+lambda_l*c) - (a+g) * (p+r_l[ivx])) / x;  // (MUB 23)
-  Real vy_al = (q*r_l[ivy]
-      + r_l[IBY] * (c + bbx * (lambda_l*r_l[ivx]-r_l[IEN]))) / x;      // (MUB 24)
-  Real vz_al = (q*r_l[ivz]
-      + r_l[IBZ] * (c + bbx * (lambda_l*r_l[ivx]-r_l[IEN]))) / x;      // (MUB 24)
-  a = r_r[ivx] - lambda_r*r_r[IEN] + p*(1.0-SQR(lambda_r));            // (MUB 26)
-  g = SQR(r_r[IBY]) + SQR(r_r[IBZ]);                                   // (MUB 27)
-  c = r_r[ivy]*r_r[IBY] + r_r[ivz]*r_r[IBZ];                           // (MUB 28)
-  q = -a - g + SQR(bbx)*(1.0-SQR(lambda_r));                           // (MUB 29)
-  x = bbx * (a*lambda_r*bbx+c) - (a+g) * (lambda_r*p+r_r[IEN]);        // (MUB 30)
-  Real vx_ar = (bbx * (a*bbx+lambda_r*c) - (a+g) * (p+r_r[ivx])) / x;  // (MUB 23)
-  Real vy_ar = (q*r_r[ivy]
-      + r_r[IBY] * (c + bbx * (lambda_r*r_r[ivx]-r_r[IEN]))) / x;      // (MUB 24)
-  Real vz_ar = (q*r_r[ivz]
-      + r_r[IBZ] * (c + bbx * (lambda_r*r_r[ivx]-r_r[IEN]))) / x;      // (MUB 24)
-
-  // Calculate B_aL and B_aR (MUB 21)
-  Real by_al = (r_l[IBY] - bbx*vy_al) / (lambda_l - vx_al);
-  Real bz_al = (r_l[IBZ] - bbx*vz_al) / (lambda_l - vx_al);
-  Real by_ar = (r_r[IBY] - bbx*vy_ar) / (lambda_r - vx_ar);
-  Real bz_ar = (r_r[IBZ] - bbx*vz_ar) / (lambda_r - vx_ar);
-
-  // Calculate w_aL and w_aR (MUB 31)
-  Real v_dot_rm = vx_al*r_l[ivx] + vy_al*r_l[ivy] + vz_al*r_l[ivz];
-  Real w_al = p + (r_l[IEN] - v_dot_rm) / (lambda_l - vx_al);
-  v_dot_rm = vx_ar*r_r[ivx] + vy_ar*r_r[ivy] + vz_ar*r_r[ivz];
-  Real w_ar = p + (r_r[IEN] - v_dot_rm) / (lambda_r - vx_ar);
-
-  // Calculate eta_L and eta_R (MUB 35)
-  Real eta_l = -copysign(std::sqrt(w_al), bbx);
-  Real eta_r = copysign(std::sqrt(w_ar), bbx);
-
-  // Calculate K_L and K_R (MUB 43)
-  Real denom = lambda_l*p + r_l[IEN] + bbx*eta_l;
-  Real kx_l = (r_l[ivx] + p + lambda_l*bbx*eta_l) / denom;  // R_{B^x} = \lambda B^x
-  Real ky_l = (r_l[ivy] + r_l[IBY]*eta_l) / denom;
-  Real kz_l = (r_l[ivz] + r_l[IBZ]*eta_l) / denom;
-  denom = lambda_r*p + r_r[IEN] + bbx*eta_r;
-  Real kx_r = (r_r[ivx] + p + lambda_r*bbx*eta_r) / denom;  // R_{B^x} = \lambda B^x
-  Real ky_r = (r_r[ivy] + r_r[IBY]*eta_r) / denom;
-  Real kz_r = (r_r[ivz] + r_r[IBZ]*eta_r) / denom;
-
-  // Rename Alfven wavespeeds for what they are
-  Real &lambda_al = kx_l;
-  Real &lambda_ar = kx_r;
-
-  // Calculate B_c (MUB 45)
-  Real delta_kx = kx_r - kx_l + delta_kx_aug;
-  Real bbx_c_delta_kx = bbx * delta_kx;
-  Real by_c_delta_kx = by_ar*(lambda_ar-vx_ar) - by_al*(lambda_al-vx_al)
-      + bbx*(vy_ar-vy_al);
-  Real bz_c_delta_kx = bz_ar*(lambda_ar-vx_ar) - bz_al*(lambda_al-vx_al)
-      + bbx*(vz_ar-vz_al);
-
-  // Calculate residual
-  Real k_sq = SQR(kx_l) + SQR(ky_l) + SQR(kz_l);
-  Real k_dot_bc_delta_kx = kx_l*bbx_c_delta_kx + ky_l*by_c_delta_kx
-      + kz_l*bz_c_delta_kx;
-  Real y_l = (1.0-k_sq) / (eta_l*delta_kx - k_dot_bc_delta_kx);      // (MUB 49)
-  k_sq = SQR(kx_r) + SQR(ky_r) + SQR(kz_r);
-  k_dot_bc_delta_kx = kx_r*bbx_c_delta_kx + ky_r*by_c_delta_kx
-      + kz_r*bz_c_delta_kx;
-  Real y_r = (1.0-k_sq) / (eta_r*delta_kx - k_dot_bc_delta_kx);      // (MUB 49)
-  return delta_kx * (1.0 - bbx * (y_r-y_l));                         // (MUB 48)
-}
-
-//--------------------------------------------------------------------------------------
-
 // Non-frame-transforming HLLE implementation
 // Inputs:
 //   pmb: pointer to MeshBlock object
@@ -986,8 +897,8 @@ static Real PResidual(Real p, Real bbx, Real lambda_l, Real lambda_r,
 //   implements HLLE algorithm similar to that of fluxcalc() in step_ch.c in Harm
 //   derived from RiemannSolver() in hlle_mhd_rel_no_transform.cpp assuming ivx = IVY
 //   same function as in hlle_mhd_rel.cpp
-static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
-    const int il, const int iu, const AthenaArray<Real> &bb, AthenaArray<Real> &g,
+static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const int il,
+    const int iu, const AthenaArray<Real> &bb, AthenaArray<Real> &g,
     AthenaArray<Real> &gi, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
     AthenaArray<Real> &flux)
 {
@@ -1097,14 +1008,14 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
     // Calculate wavespeeds in left state
     Real lambda_p_l, lambda_m_l;
     Real wgas_l = rho_l + gamma_adi/(gamma_adi-1.0) * pgas_l;
-    pmb->peos->FastMagnetosonicSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[IVY],
-        b_sq_l, g00, g02, g22, &lambda_p_l, &lambda_m_l);
+    pmb->peos->FastMagnetosonicSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[IVY], b_sq_l,
+        g00, g02, g22, &lambda_p_l, &lambda_m_l);
 
     // Calculate wavespeeds in right state
     Real lambda_p_r, lambda_m_r;
     Real wgas_r = rho_r + gamma_adi/(gamma_adi-1.0) * pgas_r;
-    pmb->peos->FastMagnetosonicSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[IVY],
-        b_sq_r, g00, g02, g22, &lambda_p_r, &lambda_m_r);
+    pmb->peos->FastMagnetosonicSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[IVY], b_sq_r,
+        g00, g02, g22, &lambda_p_r, &lambda_m_r);
 
     // Calculate extremal wavespeeds
     Real lambda_l = std::min(lambda_m_l, lambda_m_r);

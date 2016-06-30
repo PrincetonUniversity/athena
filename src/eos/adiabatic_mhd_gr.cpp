@@ -736,15 +736,18 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
         // Calculate quadratic coefficients
         Real d1 = (z0-b2 > 0.0) ? std::sqrt(z0-b2) : 0.0;
         Real e1 = -d1;
-        Real s = std::sqrt(SQR(z0)/4.0 - b0);
+        s2 = SQR(z0)/4.0 - b0;
+        Real s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
         Real d0 = (b1 < 0) ? 0.5*z0+s : 0.5*z0-s;
         Real e0 = (b1 < 0) ? 0.5*z0-s : 0.5*z0+s;
 
         // Solve quadratic equations
-        s = std::sqrt(SQR(d1) - 4.0*d0);
+        s2 = SQR(d1) - 4.0*d0;
+        s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
         y1 = (d1 >= 0.0) ? (-d1-s)/2.0 : -2.0*d0/(d1-s);
         y2 = (d1 >= 0.0) ? -2.0*d0/(d1+s) : (-d1+s)/2.0;
-        s = std::sqrt(SQR(e1) - 4.0*e0);
+        s2 = SQR(e1) - 4.0*e0;
+        s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
         y3 = (e1 >= 0.0) ? (-e1-s)/2.0 : -2.0*e0/(e1-s);
         y4 = (e1 >= 0.0) ? -2.0*e0/(e1+s) : (-e1+s)/2.0;
       }
