@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -38,7 +38,7 @@
 //   - file_number  = any integer with up to 4 digits
 //   - x[123]_slice = specifies data should be a slice at x[123] position
 //   - x[123]_sum   = set to 1 to sum data along specified direction
-//   
+//
 // EXAMPLE of an <outputN> block for a VTK dump:
 //   <output3>
 //   file_type   = tab       # Tabular data dump
@@ -147,7 +147,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
     if (pib->block_name.compare(0,6,"output") == 0) {
       OutputParameters op;  // define temporary OutputParameters struct
 
-      // extract integer number of output block.  Save name and number 
+      // extract integer number of output block.  Save name and number
       std::string outn = pib->block_name.substr(6); // 6 because starts at 0!
       op.block_number = atoi(outn.c_str());
       op.block_name.assign(pib->block_name);
@@ -215,7 +215,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
         // read sum options.  Check for conflicts with slicing.
         if (pin->DoesParameterExist(op.block_name,"x1_sum")) {
           if (pin->DoesParameterExist(op.block_name,"x1_slice")) {
-            msg << "### FATAL ERROR in Outputs constructor" << std::endl 
+            msg << "### FATAL ERROR in Outputs constructor" << std::endl
                 << "Cannot request both slice and sum along x1-direction"
                 << " in output block '" << op.block_name << "'" << std::endl;
             throw std::runtime_error(msg.str().c_str());
@@ -277,12 +277,12 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
 #endif
         else {
           msg << "### FATAL ERROR in Outputs constructor" << std::endl
-              << "Unrecognized file format = '" << op.file_type 
+              << "Unrecognized file format = '" << op.file_type
               << "' in output block '" << op.block_name << "'" << std::endl;
           throw std::runtime_error(msg.str().c_str());
         }
 
-        // Add type as node in linked list 
+        // Add type as node in linked list
         if (pfirst_type_ == NULL) {
           pfirst_type_ = pnew_type;
         } else {
@@ -357,11 +357,11 @@ void OutputData::AppendNode(OutputVariable *pnew_var)
 //! \fn void OutputData::ReplaceNode()
 //  \brief
 
-void OutputData::ReplaceNode(OutputVariable *pold, OutputVariable *pnew) 
+void OutputData::ReplaceNode(OutputVariable *pold, OutputVariable *pnew)
 {
   if (pold == pfirst_var) {
     pfirst_var = pnew;
-    if (pold->pnext != NULL) {    // there is another node in the list 
+    if (pold->pnext != NULL) {    // there is another node in the list
       pnew->pnext = pold->pnext;
       pnew->pnext->pprev = pnew;
     } else {                      // there is only one node in the list
@@ -393,25 +393,35 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 // Create OutputData header
 
   str << "# Athena++ data at time=" << pmb->pmy_mesh->time
-      << "  cycle=" << pmb->pmy_mesh->ncycle 
+      << "  cycle=" << pmb->pmy_mesh->ncycle
       << "  variables=" << output_params.variable << std::endl;
   pod->data_header.descriptor.append(str.str());
-  pod->data_header.il = pmb->is;
-  pod->data_header.iu = pmb->ie;
-  pod->data_header.jl = pmb->js;
-  pod->data_header.ju = pmb->je;
+  //pod->data_header.il = pmb->is;
+  //pod->data_header.iu = pmb->ie;
+  //pod->data_header.jl = pmb->js;
+  //pod->data_header.ju = pmb->je;
+  //pod->data_header.kl = pmb->ks;
+  //pod->data_header.ku = pmb->ke;
+  //pod->data_header.ndata = (pmb->ie - pmb->is + 1)*(pmb->je - pmb->js + 1)
+  //                        *(pmb->ke - pmb->ks + 1);
+  //[JMSHI: add ghost cells
+  pod->data_header.il = pmb->is-(NGHOST);
+  pod->data_header.iu = pmb->ie+(NGHOST);
+  pod->data_header.jl = pmb->js-(NGHOST);
+  pod->data_header.ju = pmb->je+(NGHOST);
   pod->data_header.kl = pmb->ks;
   pod->data_header.ku = pmb->ke;
-  pod->data_header.ndata = (pmb->ie - pmb->is + 1)*(pmb->je - pmb->js + 1)
+  pod->data_header.ndata = (pmb->ie - pmb->is + 1 + 2*(NGHOST))*(pmb->je - pmb->js + 1 + 2*(NGHOST))
                           *(pmb->ke - pmb->ks + 1);
+  //JMSHI]
 
 // Create linked list of OutputVariables containing requested data
 
   OutputVariable *pov;
   var_added = 0;
-  if (output_params.variable.compare("D") == 0 || 
+  if (output_params.variable.compare("D") == 0 ||
       output_params.variable.compare("cons") == 0) {
-    pov = new OutputVariable; 
+    pov = new OutputVariable;
     pov->type = "SCALARS";
     pov->name = "dens";
     pov->data.InitWithShallowSlice(phyd->u,4,IDN,1);
@@ -419,9 +429,9 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     var_added++;
   }
 
-  if (output_params.variable.compare("d") == 0 || 
+  if (output_params.variable.compare("d") == 0 ||
       output_params.variable.compare("prim") == 0) {
-    pov = new OutputVariable; 
+    pov = new OutputVariable;
     pov->type = "SCALARS";
     pov->name = "rho";
     pov->data.InitWithShallowSlice(phyd->w,4,IDN,1);
@@ -430,9 +440,9 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
   }
 
   if (NON_BAROTROPIC_EOS) {
-    if (output_params.variable.compare("E") == 0 || 
+    if (output_params.variable.compare("E") == 0 ||
         output_params.variable.compare("cons") == 0) {
-      pov = new OutputVariable; 
+      pov = new OutputVariable;
       pov->type = "SCALARS";
       pov->name = "Etot";
       pov->data.InitWithShallowSlice(phyd->u,4,IEN,1);
@@ -442,9 +452,9 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
   }
 
   if (NON_BAROTROPIC_EOS) {
-    if (output_params.variable.compare("p") == 0 || 
+    if (output_params.variable.compare("p") == 0 ||
         output_params.variable.compare("prim") == 0) {
-      pov = new OutputVariable; 
+      pov = new OutputVariable;
       pov->type = "SCALARS";
       pov->name = "press";
       pov->data.InitWithShallowSlice(phyd->w,4,IEN,1);
@@ -453,9 +463,9 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     }
   }
 
-  if (output_params.variable.compare("m") == 0 || 
+  if (output_params.variable.compare("m") == 0 ||
       output_params.variable.compare("cons") == 0) {
-    pov = new OutputVariable; 
+    pov = new OutputVariable;
     pov->type = "VECTORS";
     pov->name = "mom";
     pov->data.InitWithShallowSlice(phyd->u,4,IM1,3);
@@ -463,9 +473,9 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
     var_added+=3;
   }
 
-  if (output_params.variable.compare("v") == 0 || 
+  if (output_params.variable.compare("v") == 0 ||
       output_params.variable.compare("prim") == 0) {
-    pov = new OutputVariable; 
+    pov = new OutputVariable;
     pov->type = "VECTORS";
     pov->name = "vel";
     pov->data.InitWithShallowSlice(phyd->w,4,IVX,3);
@@ -474,10 +484,10 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
   }
 
   if (MAGNETIC_FIELDS_ENABLED) {
-    if (output_params.variable.compare("b") == 0 || 
+    if (output_params.variable.compare("b") == 0 ||
         output_params.variable.compare("prim") == 0 ||
         output_params.variable.compare("cons") == 0) {
-      pov = new OutputVariable; 
+      pov = new OutputVariable;
       pov->type = "VECTORS";
       pov->name = "cc-B";
       pov->data.InitWithShallowSlice(pfld->bcc,4,IB1,3);
@@ -488,7 +498,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 
   if (output_params.variable.compare("ifov") == 0) {
     for (int n=0; n<(NIFOV); ++n) {
-      pov = new OutputVariable; 
+      pov = new OutputVariable;
       pov->type = "SCALARS";
       pov->name = "ifov";
       pov->data.InitWithShallowSlice(phyd->ifov,4,n,1);
@@ -512,7 +522,7 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
 
 //--------------------------------------------------------------------------------------
 //! \fn void OutputType::TransformOutputData()
-//  \brief 
+//  \brief
 
 void OutputType::TransformOutputData(OutputData *pod, MeshBlock *pmb)
 {
@@ -548,7 +558,7 @@ void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
 // Check that slice is in range of data in this block, if not return 0 in ndata
 
   if (dim == 1) {
-    if (output_params.x1_slice >= pmb->block_size.x1min && 
+    if (output_params.x1_slice >= pmb->block_size.x1min &&
         output_params.x1_slice < pmb->block_size.x1max) {
       for (int i=pmb->is+1; i<=pmb->ie+1; ++i) {
         if (pmb->pcoord->x1f(i) > output_params.x1_slice) {
@@ -591,7 +601,7 @@ void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
     }
   }
 
-// For each node in OutputData linked list, slice arrays containing output data  
+// For each node in OutputData linked list, slice arrays containing output data
 
   OutputVariable *pvar,*pnew;
   pvar = pod->pfirst_var;
@@ -636,7 +646,7 @@ void OutputType::Slice(OutputData* pod, MeshBlock *pmb, int dim)
     pod->ReplaceNode(pvar,pnew);
     pvar = pvar->pnext;
   }
- 
+
 // modify OutputData header
 
   std::stringstream str;
@@ -670,7 +680,7 @@ void OutputType::Sum(OutputData* pod, MeshBlock* pmb, int dim)
   AthenaArray<Real> *psum;
   std::stringstream str;
 
-// For each node in OutputData linked list, sum arrays containing output data  
+// For each node in OutputData linked list, sum arrays containing output data
 
   OutputVariable *pvar,*pnew;
   pvar = pod->pfirst_var;
@@ -719,7 +729,7 @@ void OutputType::Sum(OutputData* pod, MeshBlock* pmb, int dim)
     pod->ReplaceNode(pvar,pnew);
     pvar = pvar->pnext;
   }
- 
+
 // modify OutputData header
 
   if (dim == 3) {

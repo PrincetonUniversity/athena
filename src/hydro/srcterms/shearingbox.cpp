@@ -55,13 +55,9 @@ void HydroSourceTerms::ShearingBoxSourceTerms(const Real dt, const AthenaArray<R
 
   MeshBlock *pmb = pmy_hydro_->pmy_block;
 
-  if (pmb->block_size.nx3 > 1) {
-    std::cout << "[ShearingBoxSourceTerms]: not compatible to 3D yet!!" << std::endl;
-	return;
-  }
-  else if (pmb->block_size.nx2 > 1) {
-	int k = pmb->ks;
-	if (ShBoxCoord_== 1) {
+
+  if (pmb->block_size.nx3 > 1 || ShBoxCoord_== 1) {
+    for (int k=pmb->ks; k<=pmb->ke; ++k) {
 //#pragma omp parallel for schedule(static)
       for (int j=pmb->js; j<=pmb->je; ++j) {
 //#pragma simd
@@ -95,33 +91,33 @@ void HydroSourceTerms::ShearingBoxSourceTerms(const Real dt, const AthenaArray<R
 			                        /pmb->pcoord->dx1v(i);
 		  }
         }
-      }
-	} else if (ShBoxCoord_ == 2) {
+    }}
+  } else if (pmb->block_size.nx3 == 1 && ShBoxCoord_ == 2) {
 //#pragma omp parallel for schedule(static)
+        int ks = pmb->ks;
         for (int j=pmb->js; j<=pmb->je; ++j) {
 //#pragma simd
           for (int i=pmb->is; i<=pmb->ie; ++i) {
-            Real den = prim(IDN,k,j,i);
+            Real den = prim(IDN,ks,j,i);
             phic = UnstratifiedDisk(pmb->pcoord->x1v(i),
 		      					pmb->pcoord->x2v(j),
-		      					pmb->pcoord->x3v(k));
+		      					pmb->pcoord->x3v(ks));
             phil = UnstratifiedDisk(pmb->pcoord->x1f(i),
 		      					pmb->pcoord->x2v(j),
-		      					pmb->pcoord->x3v(k));
+		      					pmb->pcoord->x3v(ks));
             phir = UnstratifiedDisk(pmb->pcoord->x1f(i+1),
 		      					pmb->pcoord->x2v(j),
-		      					pmb->pcoord->x3v(k));
-		    cons(IM1,k,j,i) += dt*(2.0*qshear_*Omega_0_*Omega_0_*den*pmb->pcoord->x1v(i) +
-		                         2.0*Omega_0_*den*prim(IVZ,k,j,i));
-		    cons(IM3,k,j,i) -= dt*2.0*Omega_0_*den*prim(IVX,k,j,i);
+		      					pmb->pcoord->x3v(ks));
+		    cons(IM1,ks,j,i) += dt*(2.0*qshear_*Omega_0_*Omega_0_*den*pmb->pcoord->x1v(i) +
+		                         2.0*Omega_0_*den*prim(IVZ,ks,j,i));
+		    cons(IM3,ks,j,i) -= dt*2.0*Omega_0_*den*prim(IVX,ks,j,i);
             if (NON_BAROTROPIC_EOS) {
-		        cons(IEN,k,j,i) -= dt*(flux[X1DIR](IDN,k,j,i)*(phic-phil) +
-		      				     flux[X1DIR](IDN,k,j,i+1)*(phir-phic))
+		        cons(IEN,ks,j,i) -= dt*(flux[X1DIR](IDN,ks,j,i)*(phic-phil) +
+		      				     flux[X1DIR](IDN,ks,j,i+1)*(phir-phic))
 		                          /pmb->pcoord->dx1v(i);
 		  }
         }
       }
-    }
   }
   else {
 	std::cout << "[ShearingBoxSourceTerms]: not compatible to 1D !!" << std::endl;

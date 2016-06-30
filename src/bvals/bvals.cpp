@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -384,7 +384,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         else if(pmb->block_size.nx2>1) { // 2D
           if(BoundaryValues::ni[n].ox1!=0)
             size=(pmb->block_size.nx2+1)+pmb->block_size.nx2;
-          else 
+          else
             size=(pmb->block_size.nx1+1)+pmb->block_size.nx1;
         }
         else // 1D
@@ -452,6 +452,47 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
      (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY))
        exc_.NewAthenaArray(pmb->ke+NGHOST+2);
 
+//[JMSHI
+// declare/initialize some of the private parameters for shearing box bc
+// allocate buffers
+  if (SHEARING_BOX) {
+	Mesh *pmy_mesh = pmb->pmy_mesh;
+    Omega_0_ = pin->GetOrAddReal("problem","Omega0",0.001);
+    qshear_  = pin->GetOrAddReal("problem","qshear",1.5);
+    ShBoxCoord_ = pin->GetOrAddInteger("problem","shboxcoord",1);
+    x1size_ = pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min;
+    x2size_ = pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min;
+    x3size_ = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
+    //std::cout << "[bvals.cpp]: [Lx,Lz,Ly] = [" <<x1size <<","<<x2size<<","<<x3size<<"]"<<std::endl;
+
+	int ncells2 = pmb->block_size.nx2 + 2*NGHOST;
+	int ncells3 = pmb->block_size.nx3;
+	if (pmy_mesh->mesh_size.nx3>1) ncells3 += 2*NGHOST;
+	ssize_ = NGHOST*ncells3;
+    if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
+	  shboxvar_inner_hydro_.NewAthenaArray(NHYDRO,ncells3,ncells2,NGHOST);// indicies of i and j are NOT switched.
+	  flx_inner_hydro_.NewAthenaArray(ncells2);
+	  int size = pmb->block_size.nx2*ssize_*NHYDRO;
+	  send_innerbuf_hydro_[0] = new Real[size];
+	  send_innerbuf_hydro_[1] = new Real[size];
+	  recv_innerbuf_hydro_[0] = new Real[size];
+	  recv_innerbuf_hydro_[1] = new Real[size];
+      shbox_inner_hydro_flag_[0]=BNDRY_WAITING;
+      shbox_inner_hydro_flag_[1]=BNDRY_WAITING;
+	}
+    if (pmb->loc.lx1 == (pmy_mesh->nrbx1-1)) { // if true for shearing outer blocks
+	  shboxvar_outer_hydro_.NewAthenaArray(NHYDRO,ncells3,ncells2,NGHOST);// indicies of i and j are NOT switched.
+	  flx_outer_hydro_.NewAthenaArray(ncells2);
+	  int size = pmb->block_size.nx2*ssize_*NHYDRO;
+	  send_outerbuf_hydro_[0] = new Real[size];
+	  send_outerbuf_hydro_[1] = new Real[size];
+	  recv_outerbuf_hydro_[0] = new Real[size];
+	  recv_outerbuf_hydro_[1] = new Real[size];
+      shbox_outer_hydro_flag_[0]=BNDRY_WAITING;
+      shbox_outer_hydro_flag_[1]=BNDRY_WAITING;
+	}
+ }
+//JMSHI]
 }
 
 // destructor
@@ -464,7 +505,7 @@ BoundaryValues::~BoundaryValues()
     delete [] hydro_recv_[i];
   }
   if (MAGNETIC_FIELDS_ENABLED) {
-    for(int i=0;i<pmb->pmy_mesh->maxneighbor_;i++) { 
+    for(int i=0;i<pmb->pmy_mesh->maxneighbor_;i++) {
       delete [] field_send_[i];
       delete [] field_recv_[i];
       if(BoundaryValues::ni[i].type==NEIGHBOR_FACE ||
@@ -521,6 +562,29 @@ BoundaryValues::~BoundaryValues()
      pmb->pmy_mesh->nrbx3 == 1 &&
      (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY))
        exc_.DeleteAthenaArray();
+
+//[JMSHI
+  if (SHEARING_BOX) {
+    if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
+	  //std::cout << "[inner] reach class destructer\n" << std::endl;
+	  shboxvar_inner_hydro_.DeleteAthenaArray();
+	  flx_inner_hydro_.DeleteAthenaArray();
+	  delete[] send_innerbuf_hydro_[0];
+	  delete[] recv_innerbuf_hydro_[0];
+	  delete[] send_innerbuf_hydro_[1];
+	  delete[] recv_innerbuf_hydro_[1];
+    }
+    if (pmb->loc.lx1 == (pmb->pmy_mesh->nrbx1-1)) { // if true for shearing outer blocks
+	  //std::cout << "[outer] reach class destructer\n" << std::endl;
+	  shboxvar_outer_hydro_.DeleteAthenaArray();
+	  flx_outer_hydro_.DeleteAthenaArray();
+	  delete[] send_outerbuf_hydro_[0];
+	  delete[] recv_outerbuf_hydro_[0];
+	  delete[] send_outerbuf_hydro_[1];
+	  delete[] recv_outerbuf_hydro_[1];
+	}
+  }
+//JMSHI]
 }
 
 //--------------------------------------------------------------------------------------
@@ -831,6 +895,79 @@ void BoundaryValues::Initialize(void)
     }
   }
 #endif
+
+//[JMSHI  initialize the shearing block lists
+  if (SHEARING_BOX) {
+	std::cout << "start generating shearing block list" << std::endl;
+	Mesh *pmesh = pmb->pmy_mesh;
+	long int nrbx2   = pmesh->nrbx2;
+	long int nrbx1   = pmesh->nrbx1;
+	int nbtotal = pmesh->nbtotal;
+	int *ranklist = pmesh->ranklist;
+	int *nslist = pmesh->nslist;
+	LogicalLocation *loclist = pmesh->loclist;
+
+	shbb_.outer = false;
+	shbb_.inner = false;
+
+	int count = 0;
+	if (pmb->loc.lx1 == 0) {
+	  shbb_.igidlist=new int[nrbx2];
+	  shbb_.ilidlist=new int[nrbx2];
+	  shbb_.irnklist=new int[nrbx2];
+	  shbb_.ilevlist=new int[nrbx2];
+	  for (int i=0;i<nbtotal;i++) {
+	    if (loclist[i].lx1 == 0 && loclist[i].lx3 == pmb->loc.lx3) {
+	      shbb_.inner = true; // set to inner boundary
+          shbb_.igidlist[count] = i;
+          shbb_.ilidlist[count] = i - nslist[ranklist[i]];
+          shbb_.irnklist[count] = ranklist[i];
+	      shbb_.ilevlist[count] = loclist[i].level;
+	      //std::cout << "count = " << count << " [sh_block_id, sh_rank_id, sh_lev_id]= [" << shbb.blocklist[count] <<"," << shbb.ranklist[count] <<","<< shbb.levellist[count]<<"]" << std::endl;
+		  count++;
+	    }
+	    //find the corner id cnid
+	    if (loclist[i].lx1 == nrbx1-1 && loclist[i].lx3 == pmb->loc.lx3 && loclist[i].lx2 == pmb->loc.lx2) {
+		  shbb_.cnid = i;
+		  shbb_.cnrk = ranklist[i];
+		}
+	  }
+
+	  std::cout << "shearing box block (inner boundary) list: total #=" << count << " expected = " << nrbx2 << std::endl;
+      for (int i=0;i<count;i++){
+	    std::cout << "block_id= " << shbb_.igidlist[i] << "logical_id= " << shbb_.ilidlist[i] << " rank_id= " << shbb_.irnklist[i] << " level_id= " << shbb_.ilevlist[i] <<  std::endl;
+	  }
+	}
+	count = 0;
+	if (pmb->loc.lx1 == (nrbx1-1)) {
+	  shbb_.ogidlist=new int[nrbx2];
+	  shbb_.olidlist=new int[nrbx2];
+	  shbb_.ornklist=new int[nrbx2];
+	  shbb_.olevlist=new int[nrbx2];
+	  for (int i=0;i<nbtotal;i++) {
+	    if (loclist[i].lx1 == (nrbx1-1) && loclist[i].lx3 == pmb->loc.lx3) {
+	      shbb_.outer = true; // set to outer boundary
+          shbb_.ogidlist[count] = i;
+          shbb_.olidlist[count] = i - nslist[ranklist[i]];
+          shbb_.ornklist[count] = ranklist[i];
+	      shbb_.olevlist[count] = loclist[i].level;
+		  count++;
+	    }
+	    //find the corner id cnid
+	      if (loclist[i].lx1 == 0 && loclist[i].lx3 == pmb->loc.lx3 && loclist[i].lx2 == pmb->loc.lx2) {
+			shbb_.cnid = i;
+			shbb_.cnrk = ranklist[i];
+		  }
+	  }
+	  std::cout << "shearing box block (outer boundary) list: total #=" << count << " expected = " << nrbx2 << std::endl;
+      for (int i=0;i<count;i++){
+	    std::cout << "block_id= " << shbb_.ogidlist[i] << "logical_id= " << shbb_.olidlist[i] << " rank_id= " << shbb_.ornklist[i] << " level_id= " << shbb_.olevlist[i] <<  std::endl;
+	  }
+	}
+	std::cout << "end shearing block list" << std::endl;
+
+  }
+//JMSHI]
   return;
 }
 
@@ -862,7 +999,7 @@ void BoundaryValues::StartReceivingForInit(void)
   MeshBlock *pmb=pmy_mblock_;
   for(int n=0;n<pmb->nneighbor;n++) {
     NeighborBlock& nb = pmb->neighbor[n];
-    if(nb.rank!=Globals::my_rank) { 
+    if(nb.rank!=Globals::my_rank) {
       MPI_Start(&req_hydro_recv_[nb.bufid]);
       if (MAGNETIC_FIELDS_ENABLED)
         MPI_Start(&req_field_recv_[nb.bufid]);
@@ -872,6 +1009,54 @@ void BoundaryValues::StartReceivingForInit(void)
     }
   }
 #endif
+//[JMSHI   find send_block_id and recv_block_id; post non-blocking recv
+
+  if (SHEARING_BOX) {
+    MeshBlock *pmb=pmy_mblock_;
+	Mesh *pmesh = pmb->pmy_mesh;
+	std::cout <<"reach StartReceivingForInit\n" << std::endl;
+	// update send_gid_[2] and recv_gid_[2];
+	// recv_rank_[2] and send_rank_[2] for MPI communication
+	// recv_lid_[2] and send_lid_[2]   for MPI communication(for creating diff Tags)
+	FindShearBlock();
+	// update send/recv buffer sizes: send_size_hydro_[2] and recv_size_hydro_[2].
+#ifdef MPI_PARALLEL
+	if (shbb_.inner) { // inner boundary
+	  // recv_buf_hydro_[1] for [js+joverlap:je] of current meshblock
+      int size = ssize_*NHYDRO*recv_innersize_hydro_[1];
+      int tag  = CreateBvalsMPITag(recv_inner_lid_[1], TAG_SHBOX_HYDRO, 1);
+      MPI_Irecv(recv_innerbuf_hydro_[1],size,MPI_ATHENA_REAL,
+                      recv_inner_rank_[1],tag,MPI_COMM_WORLD,
+					  &rq_innerrecv_hydro_[1]);
+	  // recv_buf_hydro_[0] for [js,js+(joverlap-1)] of current meshblock
+	  if (joverlap_ != 0) {
+        size = ssize_*NHYDRO*recv_innersize_hydro_[0];
+        tag  = CreateBvalsMPITag(recv_inner_lid_[0], TAG_SHBOX_HYDRO, 0);
+        MPI_Irecv(recv_innerbuf_hydro_[0],size,MPI_ATHENA_REAL,
+                      recv_inner_rank_[0],tag,MPI_COMM_WORLD,
+					  &rq_innerrecv_hydro_[0]);
+	  }
+	}
+
+	if (shbb_.outer) { // outer boundary
+	  // recv_buf_hydro_[1] for [js+joverlap:je] of current meshblock
+      int size = ssize_*NHYDRO*recv_outersize_hydro_[1];
+      int tag  = CreateBvalsMPITag(recv_outer_lid_[1], TAG_SHBOX_HYDRO, 3);
+      MPI_Irecv(recv_outerbuf_hydro_[1],size,MPI_ATHENA_REAL,
+                      recv_outer_rank_[1],tag,MPI_COMM_WORLD,
+					  &rq_outerrecv_hydro_[1]);
+	  // recv_buf_hydro_[0] for [js,js+(joverlap-1)] of current meshblock
+	  if (joverlap_ != 0) {
+        size = ssize_*NHYDRO*recv_outersize_hydro_[0];
+        tag  = CreateBvalsMPITag(recv_outer_lid_[0], TAG_SHBOX_HYDRO, 2);
+        MPI_Irecv(recv_outerbuf_hydro_[0],size,MPI_ATHENA_REAL,
+                      recv_outer_rank_[0],tag,MPI_COMM_WORLD,
+					  &rq_outerrecv_hydro_[0]);
+	  }
+	}
+#endif
+  }
+//JMSHI]
   return;
 }
 
@@ -886,7 +1071,7 @@ void BoundaryValues::StartReceivingAll(void)
   int mylevel=pmb->loc.level;
   for(int n=0;n<pmb->nneighbor;n++) {
     NeighborBlock& nb = pmb->neighbor[n];
-    if(nb.rank!=Globals::my_rank) { 
+    if(nb.rank!=Globals::my_rank) {
       MPI_Start(&req_hydro_recv_[nb.bufid]);
       if(nb.type==NEIGHBOR_FACE && nb.level>mylevel)
         MPI_Start(&req_flcor_recv_[nb.fid][nb.fi2][nb.fi1]);
@@ -915,6 +1100,77 @@ void BoundaryValues::StartReceivingAll(void)
     }
   }
 #endif
+//[JMSHI   find send_block_id and recv_block_id; post non-blocking recv
+  if (SHEARING_BOX) {
+    MeshBlock *pmb=pmy_mblock_;
+	Mesh *pmesh = pmb->pmy_mesh;
+	std::cout <<"reach StartReceivingAll\n" << std::endl;
+	// update send_gid_[2] and recv_gid_[2];
+	// recv_rank_[2] and send_rank_[2] for MPI communication
+	// recv_lid_[2] and send_lid_[2]   for MPI communication(for creating diff Tags)
+	FindShearBlock();
+	/*
+	std::cout << "---- on meshblock gid = " << pmb->gid << " ---" << std::endl;
+	  if(shbb_.inner) {
+		std::cout << "[inner]: " << shbb_.inner << std::endl;
+        for (int i=0;i<pmesh->nrbx2;i++){
+	      std::cout << "[inner]: block_id= " << shbb_.igidlist[i] << "logical_id= " << shbb_.ilidlist[i] << " rank_id= " << shbb_.irnklist[i] << " level_id= " << shbb_.ilevlist[i] <<  std::endl;
+		}
+	    std::cout << "joverlap= " << joverlap_ << "eps_ = " << eps_ << std::endl;
+	    std::cout << "send_inner_gid[1] = " << send_inner_gid_[1] << "send_inner_lid[1] = " << send_inner_lid_[1] << "send_inner_rank[1] = " << send_inner_rank_[1] << "send_innersize_hydro[1] = " << send_innersize_hydro_[1] << std::endl;
+	    std::cout << "recv_inner_gid[1] = " << recv_inner_gid_[1] << "recv_inner_lid[1] = " << recv_inner_lid_[1] << "recv_inner_rank[1] = " << recv_inner_rank_[1] << "recv_innersize_hydro[1] = " << recv_innersize_hydro_[1] << std::endl;
+	    std::cout << "send_inner_gid[0] = " << send_inner_gid_[0] << "send_inner_lid[0] = " << send_inner_lid_[0] << "send_inner_rank[0] = " << send_inner_rank_[0] << "send_innersize_hydro[0] = " << send_innersize_hydro_[0] << std::endl;
+	    std::cout << "recv_inner_gid[0] = " << recv_inner_gid_[0] << "recv_inner_lid[0] = " << recv_inner_lid_[0] << "recv_inner_rank[0] = " << recv_inner_rank_[0] << "recv_innersize_hydro[0] = " << recv_innersize_hydro_[0] << std::endl;
+	 }
+	 if(shbb_.outer) {
+		std::cout << "[outer]: " << shbb_.outer << std::endl;
+        for (int i=0;i<pmesh->nrbx2;i++){
+	      std::cout << "[outer]: block_id= " << shbb_.ogidlist[i] << "logical_id= " << shbb_.olidlist[i] << " rank_id= " << shbb_.ornklist[i] << " level_id= " << shbb_.olevlist[i] <<  std::endl;
+		}
+	    std::cout << "send_outer_gid[1] = " << send_outer_gid_[1] << "send_outer_lid[1] = " << send_outer_lid_[1] << "send_outer_rank[1] = " << send_outer_rank_[1] << "send_outersize_hydro[1] = " << send_outersize_hydro_[1] << std::endl;
+	    std::cout << "recv_outer_gid[1] = " << recv_outer_gid_[1] << "recv_outer_lid[1] = " << recv_outer_lid_[1] << "recv_outer_rank[1] = " << recv_outer_rank_[1] << "recv_outersize_hydro[1] = " << recv_outersize_hydro_[1] << std::endl;
+	    std::cout << "send_outer_gid[0] = " << send_outer_gid_[0] << "send_outer_lid[0] = " << send_outer_lid_[0] << "send_outer_rank[0] = " << send_outer_rank_[0] << "send_outersize_hydro[0] = " << send_outersize_hydro_[0] << std::endl;
+	    std::cout << "recv_outer_gid[0] = " << recv_outer_gid_[0] << "recv_outer_lid[0] = " << recv_outer_lid_[0] << "recv_outer_rank[0] = " << recv_outer_rank_[0] << "recv_outersize_hydro[0] = " << recv_outersize_hydro_[0] << std::endl;
+	 }
+    */
+	// update send/recv buffer sizes: send_size_hydro_[2] and recv_size_hydro_[2].
+#ifdef MPI_PARALLEL
+	if (shbb_.inner) { // inner boundary
+	  // recv_buf_hydro_[1] for [js+joverlap:je] of current meshblock
+      int size = ssize_*NHYDRO*recv_innersize_hydro_[1];
+      int tag  = CreateBvalsMPITag(recv_inner_lid_[1], TAG_SHBOX_HYDRO, 1);
+      MPI_Irecv(recv_innerbuf_hydro_[1],size,MPI_ATHENA_REAL,
+                      recv_inner_rank_[1],tag,MPI_COMM_WORLD,
+					  &rq_innerrecv_hydro_[1]);
+	  // recv_buf_hydro_[0] for [js,js+(joverlap-1)] of current meshblock
+	  if (joverlap_ != 0) {
+        size = ssize_*NHYDRO*recv_innersize_hydro_[0];
+        tag  = CreateBvalsMPITag(recv_inner_lid_[0], TAG_SHBOX_HYDRO, 0);
+        MPI_Irecv(recv_innerbuf_hydro_[0],size,MPI_ATHENA_REAL,
+                      recv_inner_rank_[0],tag,MPI_COMM_WORLD,
+					  &rq_innerrecv_hydro_[0]);
+	  }
+	}
+
+	if (shbb_.outer) { // outer boundary
+	  // recv_buf_hydro_[1] for [js+joverlap:je] of current meshblock
+      int size = ssize_*NHYDRO*recv_outersize_hydro_[1];
+      int tag  = CreateBvalsMPITag(recv_outer_lid_[1], TAG_SHBOX_HYDRO, 3);
+      MPI_Irecv(recv_outerbuf_hydro_[1],size,MPI_ATHENA_REAL,
+                      recv_outer_rank_[1],tag,MPI_COMM_WORLD,
+					  &rq_outerrecv_hydro_[1]);
+	  // recv_buf_hydro_[0] for [js,js+(joverlap-1)] of current meshblock
+	  if (joverlap_ != 0) {
+        size = ssize_*NHYDRO*recv_outersize_hydro_[0];
+        tag  = CreateBvalsMPITag(recv_outer_lid_[0], TAG_SHBOX_HYDRO, 2);
+        MPI_Irecv(recv_outerbuf_hydro_[0],size,MPI_ATHENA_REAL,
+                      recv_outer_rank_[0],tag,MPI_COMM_WORLD,
+					  &rq_outerrecv_hydro_[0]);
+	  }
+	}
+#endif
+  }
+//JMSHI]
   return;
 }
 
@@ -944,6 +1200,27 @@ void BoundaryValues::ClearBoundaryForInit(void)
     }
 #endif
   }
+//[JMSHI   clear shearingbox boundary communications
+#ifdef MPI_PARALLEL
+  if (SHEARING_BOX) {
+	std::cout <<"reach ClearBoundaryForInit\n" << std::endl;
+	if (shbb_.inner) {
+	  for (int n=0; n<2; n++){
+        if((send_inner_rank_[n] != -1) && (send_inner_rank_[n]!=Globals::my_rank)) {
+          MPI_Wait(&rq_innersend_hydro_[n],MPI_STATUS_IGNORE); // Wait for Isend
+        }
+	  }
+    } // inner boundary
+	if (shbb_.outer) {
+	  for (int n=0; n<2; n++){
+        if((send_outer_rank_[n] != -1) && (send_outer_rank_[n]!=Globals::my_rank)) {
+          MPI_Wait(&rq_outersend_hydro_[n],MPI_STATUS_IGNORE); // Wait for Isend
+        }
+	  }
+    }
+  }
+#endif
+//JMSHI]
   return;
 }
 
@@ -1004,6 +1281,27 @@ void BoundaryValues::ClearBoundaryAll(void)
 #endif
     }
   }
+//[JMSHI   clear shearingbox boundary communications
+#ifdef MPI_PARALLEL
+  if (SHEARING_BOX) {
+	std::cout <<"reach ClearBoundaryAll\n" << std::endl;
+	if (shbb_.inner) {
+	  for (int n=0; n<2; n++){
+        if((send_inner_rank_[n] != -1) && (send_inner_rank_[n]!=Globals::my_rank)) {
+          MPI_Wait(&rq_innersend_hydro_[n],MPI_STATUS_IGNORE); // Wait for Isend
+        }
+	  }
+    } // inner boundary
+	if (shbb_.outer) {
+	  for (int n=0; n<2; n++){
+        if((send_outer_rank_[n] != -1) && (send_outer_rank_[n]!=Globals::my_rank)) {
+          MPI_Wait(&rq_outersend_hydro_[n],MPI_STATUS_IGNORE); // Wait for Isend
+        }
+	  }
+    }
+  }
+#endif
+//JMSHI]
   return;
 }
 
@@ -1179,7 +1477,7 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
               if(re==pmb->cje+1 && pmb->nblevel[nk+1][nj+2][ni+1]<mylevel) re--;
               pmr->RestrictFieldX2(bfdst.x2f, pmr->coarse_b_.x2f, ris, rie, rs, re, rks, rke);
             }
-            else 
+            else
               pmr->RestrictFieldX2(bfdst.x2f, pmr->coarse_b_.x2f, ris, rie, rjs, rje, rks, rke);
             if(pmb->block_size.nx3 > 1) {
               rs=rks, re=rke+1;
