@@ -50,9 +50,9 @@ unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2)
 
 
 //--------------------------------------------------------------------------------------
-//! \fn int BufferID(int dim, bool multilevel, bool face_only)
+//! \fn int BufferID(int dim, bool multilevel)
 //  \brief calculate neighbor indexes and target buffer IDs
-int BufferID(int dim, bool multilevel, bool face_only)
+int BufferID(int dim, bool multilevel)
 {
   int nf1=1, nf2=1;
   if(multilevel==true) {

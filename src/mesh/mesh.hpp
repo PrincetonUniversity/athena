@@ -179,7 +179,7 @@ public:
   enum BoundaryFlag mesh_bcs[6];
   Real start_time, tlim, cfl_number, time, dt;
   int nlim, ncycle;
-  bool adaptive, multilevel, face_only;
+  bool adaptive, multilevel;
 
   MeshBlock *pblock;
 

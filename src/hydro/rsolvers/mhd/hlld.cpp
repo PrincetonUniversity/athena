@@ -64,7 +64,7 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
     wli[IVX]=wl(ivx,i);
     wli[IVY]=wl(ivy,i);
     wli[IVZ]=wl(ivz,i);
-    wli[IEN]=wl(IEN,i);
+    wli[IPR]=wl(IPR,i);
     wli[IBY]=wl(IBY,i);
     wli[IBZ]=wl(IBZ,i);
 
@@ -72,7 +72,7 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
     wri[IVX]=wr(ivx,i);
     wri[IVY]=wr(ivy,i);
     wri[IVZ]=wr(ivz,i);
-    wri[IEN]=wr(IEN,i);
+    wri[IPR]=wr(IPR,i);
     wri[IBY]=wr(IBY,i);
     wri[IBZ]=wr(IBZ,i);
 
@@ -89,7 +89,7 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
     ul.mx = wli[IVX]*ul.d;
     ul.my = wli[IVY]*ul.d;
     ul.mz = wli[IVZ]*ul.d;
-    ul.e  = wli[IEN]/gm1 + kel + pbl;
+    ul.e  = wli[IPR]/gm1 + kel + pbl;
     ul.by = wli[IBY];
     ul.bz = wli[IBZ];
 
@@ -97,7 +97,7 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
     ur.mx = wri[IVX]*ur.d;
     ur.my = wri[IVY]*ur.d;
     ur.mz = wri[IVZ]*ur.d;
-    ur.e  = wri[IEN]/gm1 + ker + pbr;
+    ur.e  = wri[IPR]/gm1 + ker + pbr;
     ur.by = wri[IBY];
     ur.bz = wri[IBZ];
 
@@ -121,8 +121,8 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
 
 //--- Step 3.  Compute L/R fluxes
 
-    Real ptl = wli[IEN] + pbl; // total pressures L,R
-    Real ptr = wri[IEN] + pbr;
+    Real ptl = wli[IPR] + pbl; // total pressures L,R
+    Real ptr = wri[IPR] + pbr;
 
     fl.d  = ul.mx;
     fl.mx = ul.mx*wli[IVX] + ptl - bxsq;

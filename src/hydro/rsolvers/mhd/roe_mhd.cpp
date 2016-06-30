@@ -68,7 +68,7 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
     wli[IVX]=wl(ivx,i);
     wli[IVY]=wl(ivy,i);
     wli[IVZ]=wl(ivz,i);
-    if (NON_BAROTROPIC_EOS) wli[IEN]=wl(IEN,i);
+    if (NON_BAROTROPIC_EOS) wli[IPR]=wl(IPR,i);
     wli[IBY]=wl(IBY,i);
     wli[IBZ]=wl(IBZ,i);
 
@@ -76,7 +76,7 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
     wri[IVX]=wr(ivx,i);
     wri[IVY]=wr(ivy,i);
     wri[IVZ]=wr(ivz,i);
-    if (NON_BAROTROPIC_EOS) wri[IEN]=wr(IEN,i);
+    if (NON_BAROTROPIC_EOS) wri[IPR]=wr(IPR,i);
     wri[IBY]=wr(IBY,i);
     wri[IBZ]=wr(IBZ,i);
 
@@ -104,9 +104,9 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
     Real pbr = 0.5*(bxi*bxi + SQR(wri[IBY]) + SQR(wri[IBZ]));
     Real el,er;
     if (NON_BAROTROPIC_EOS) {
-      el = wli[IEN]/gm1 + 0.5*wli[IDN]*(SQR(wli[IVX])+SQR(wli[IVY])+SQR(wli[IVZ])) +pbl;
-      er = wri[IEN]/gm1 + 0.5*wri[IDN]*(SQR(wri[IVX])+SQR(wri[IVY])+SQR(wri[IVZ])) +pbr;
-      wroe[IEN] = ((el + wli[IEN] + pbl)/sqrtdl + (er + wri[IEN] + pbr)/sqrtdr)*isdlpdr;
+      el = wli[IPR]/gm1 + 0.5*wli[IDN]*(SQR(wli[IVX])+SQR(wli[IVY])+SQR(wli[IVZ])) +pbl;
+      er = wri[IPR]/gm1 + 0.5*wri[IDN]*(SQR(wri[IVX])+SQR(wri[IVY])+SQR(wri[IVZ])) +pbr;
+      wroe[IPR] = ((el + wli[IPR] + pbl)/sqrtdl + (er + wri[IPR] + pbr)/sqrtdr)*isdlpdr;
     }
 
 //--- Step 3.  Compute eigenvalues and eigenmatrices using Roe-averaged values
@@ -131,10 +131,10 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
     fr[IVZ] = mxr*wri[IVZ] - bxi*wri[IBZ];
 
     if (NON_BAROTROPIC_EOS) {
-      fl[IVX] += wli[IEN];
-      fr[IVX] += wri[IEN];
-      fl[IEN] = (el + wli[IEN] + pbl - bxi*bxi)*wli[IVX];
-      fr[IEN] = (er + wri[IEN] + pbr - bxi*bxi)*wri[IVX];
+      fl[IVX] += wli[IPR];
+      fr[IVX] += wri[IPR];
+      fl[IEN] = (el + wli[IPR] + pbl - bxi*bxi)*wli[IVX];
+      fr[IEN] = (er + wri[IPR] + pbr - bxi*bxi)*wri[IVX];
       fl[IEN] -= bxi*(wli[IBY]*wli[IVY] + wli[IBZ]*wli[IVZ]);
       fr[IEN] -= bxi*(wri[IBY]*wri[IVY] + wri[IBZ]*wri[IVZ]);
     } else {
@@ -485,7 +485,7 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
     Real btsq = b2*b2 + b3*b3;
     Real bt_starsq = (gm1 - (gm1 - 1.0)*y)*btsq;
     Real vaxsq = b1*b1/d;
-    Real hp = wroe[IEN] - (vaxsq + btsq/d);
+    Real hp = wroe[IPR] - (vaxsq + btsq/d);
     Real twid_asq = std::max((gm1*(hp-0.5*vsq)-(gm1-1.0)*x), TINY_NUMBER);
 
     // Compute fast- and slow-magnetosonic speeds (eq. B18)

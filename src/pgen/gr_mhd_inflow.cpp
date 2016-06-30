@@ -190,7 +190,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         Real uu2 = u2 - gi(I02,i)/gi(I00,i) * u0;
         Real uu3 = u3 - gi(I03,i)/gi(I00,i) * u0;
         phydro->w(IDN,k,j,i) = phydro->w1(IDN,k,j,i) = rho;
-        phydro->w(IEN,k,j,i) = phydro->w1(IEN,k,j,i) = pgas;
+        phydro->w(IPR,k,j,i) = phydro->w1(IPR,k,j,i) = pgas;
         phydro->w(IVX,k,j,i) = phydro->w1(IVX,k,j,i) = uu1;
         phydro->w(IVY,k,j,i) = phydro->w1(IVY,k,j,i) = uu2;
         phydro->w(IVZ,k,j,i) = phydro->w1(IVZ,k,j,i) = uu3;

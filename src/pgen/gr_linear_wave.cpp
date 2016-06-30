@@ -696,7 +696,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
         // Set primitive hydro variables
         phydro->w(IDN,k,j,i) = phydro->w1(IDN,k,j,i) = rho_local;
-        phydro->w(IEN,k,j,i) = phydro->w1(IEN,k,j,i) = pgas_local;
+        phydro->w(IPR,k,j,i) = phydro->w1(IPR,k,j,i) = pgas_local;
         if (GENERAL_RELATIVITY)
         {
           Real uu1 = u_local[1] - gi(I01,i)/gi(I00,i) * u_local[0];

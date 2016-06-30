@@ -293,7 +293,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   wl[IVX] = pin->GetReal("problem","ul");
   wl[IVY] = pin->GetReal("problem","vl");
   wl[IVZ] = pin->GetReal("problem","wl");
-  if (NON_BAROTROPIC_EOS) wl[IEN] = pin->GetReal("problem","pl");
+  if (NON_BAROTROPIC_EOS) wl[IPR] = pin->GetReal("problem","pl");
   if (MAGNETIC_FIELDS_ENABLED) {
     wl[NHYDRO  ] = pin->GetReal("problem","bxl");
     wl[NHYDRO+1] = pin->GetReal("problem","byl");
@@ -306,7 +306,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   wr[IVX] = pin->GetReal("problem","ur");
   wr[IVY] = pin->GetReal("problem","vr");
   wr[IVZ] = pin->GetReal("problem","wr");
-  if (NON_BAROTROPIC_EOS) wr[IEN] = pin->GetReal("problem","pr");
+  if (NON_BAROTROPIC_EOS) wr[IPR] = pin->GetReal("problem","pr");
   if (MAGNETIC_FIELDS_ENABLED) {
     wr[NHYDRO  ] = pin->GetReal("problem","bxr");
     wr[NHYDRO+1] = pin->GetReal("problem","byr");
@@ -328,7 +328,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           phydro->u(IM2,k,j,i) = wl[IVY]*wl[IDN];
           phydro->u(IM3,k,j,i) = wl[IVZ]*wl[IDN];
           if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
-            wl[IEN]/(peos->GetGamma() - 1.0)
+            wl[IPR]/(peos->GetGamma() - 1.0)
             + 0.5*wl[IDN]*(wl[IVX]*wl[IVX] + wl[IVY]*wl[IVY] + wl[IVZ]*wl[IVZ]);
         } else {
           phydro->u(IDN,k,j,i) = wr[IDN];
@@ -336,7 +336,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           phydro->u(IM2,k,j,i) = wr[IVY]*wr[IDN];
           phydro->u(IM3,k,j,i) = wr[IVZ]*wr[IDN];
           if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
-            wr[IEN]/(peos->GetGamma() - 1.0)
+            wr[IPR]/(peos->GetGamma() - 1.0)
             + 0.5*wr[IDN]*(wr[IVX]*wr[IVX] + wr[IVY]*wr[IVY] + wr[IVZ]*wr[IVZ]);
         }
       }
@@ -354,7 +354,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           phydro->u(IM3,k,j,i) = wl[IVY]*wl[IDN];
           phydro->u(IM1,k,j,i) = wl[IVZ]*wl[IDN];
           if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
-            wl[IEN]/(peos->GetGamma() - 1.0)
+            wl[IPR]/(peos->GetGamma() - 1.0)
             + 0.5*wl[IDN]*(wl[IVX]*wl[IVX] + wl[IVY]*wl[IVY] + wl[IVZ]*wl[IVZ]);
         }
       } else {
@@ -364,7 +364,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           phydro->u(IM3,k,j,i) = wr[IVY]*wr[IDN];
           phydro->u(IM1,k,j,i) = wr[IVZ]*wr[IDN];
           if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
-            wr[IEN]/(peos->GetGamma() - 1.0)
+            wr[IPR]/(peos->GetGamma() - 1.0)
             + 0.5*wr[IDN]*(wr[IVX]*wr[IVX] + wr[IVY]*wr[IVY] + wr[IVZ]*wr[IVZ]);
         }
       }
@@ -383,7 +383,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           phydro->u(IM1,k,j,i) = wl[IVY]*wl[IDN];
           phydro->u(IM2,k,j,i) = wl[IVZ]*wl[IDN];
           if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
-            wl[IEN]/(peos->GetGamma() - 1.0)
+            wl[IPR]/(peos->GetGamma() - 1.0)
             + 0.5*wl[IDN]*(wl[IVX]*wl[IVX] + wl[IVY]*wl[IVY] + wl[IVZ]*wl[IVZ]);
         }}
       } else {
@@ -394,7 +394,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           phydro->u(IM1,k,j,i) = wr[IVY]*wr[IDN];
           phydro->u(IM2,k,j,i) = wr[IVZ]*wr[IDN];
           if (NON_BAROTROPIC_EOS) phydro->u(IEN,k,j,i) =
-            wr[IEN]/(peos->GetGamma() - 1.0)
+            wr[IPR]/(peos->GetGamma() - 1.0)
             + 0.5*wr[IDN]*(wr[IVX]*wr[IVX] + wr[IVY]*wr[IVY] + wr[IVZ]*wr[IVZ]);
         }}
       }

@@ -28,14 +28,18 @@ using namespace std;
 
 /*----------------------------------------------------------------------------*/
 /* function prototypes and global variables*/
-void stbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
-              int is, int ie, int js, int je, int ks, int ke); //sets BCs on inner-x1 (left edge) of grid.
-void stbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
-              int is, int ie, int js, int je, int ks, int ke); //sets BCs on inner-x2 (bottom edge) of grid.
-void stbv_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
-              int is, int ie, int js, int je, int ks, int ke); //sets BCs on outer-x1 (right edge) of grid.
-void stbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
-              int is, int ie, int js, int je, int ks, int ke); //sets BCs on outer-x2 (top edge) of grid.
+ //sets BCs on inner-x1 (left edge) of grid.
+void stbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
+              int is, int ie, int js, int je, int ks, int ke);
+//sets BCs on inner-x2 (bottom edge) of grid.
+void stbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
+              int is, int ie, int js, int je, int ks, int ke);
+//sets BCs on outer-x1 (right edge) of grid.
+void stbv_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
+              int is, int ie, int js, int je, int ks, int ke);
+//sets BCs on outer-x2 (top edge) of grid.
+void stbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
+              int is, int ie, int js, int je, int ks, int ke);
 
 Real A1(  Real x1,   Real x2,   Real x3);
 Real A2(  Real x1,   Real x2,   Real x3);
@@ -269,30 +273,18 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 }
 
 
-//======================================================================================
-//! \fn void MeshBlock::UserWorkInLoop(void)
-//  \brief User-defined work function for every time step
-//======================================================================================
-
-void MeshBlock::UserWorkInLoop(void)
-{
-  // nothing to do
-  return;
-}
-
-
 /*  Boundary Condtions, outflowing, ix1, ox1, ix2, ox2  */
-void stbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
+void stbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
               int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=1; i<=(NGHOST); i++) {
-        a(IDN,k,j,is-i) = a(IDN,k,j,is);
-        a(IM1,k,j,is-i) = 0.0;
-        a(IM2,k,j,is-i) = a(IM2,k,j,is); //corotating ghost region
-        a(IM3,k,j,is-i) = a(IM3,k,j,is);
-        a(IEN,k,j,is-i)=a(IEN,k,j,is-i+1)-gm/SQR(pco->x1f(is-i+1))*a(IDN,k,j,is-i+1)*pco->dx1v(is-i);
+        prim(IDN,k,j,is-i) = prim(IDN,k,j,is);
+        prim(IM1,k,j,is-i) = 0.0;
+        prim(IM2,k,j,is-i) = prim(IM2,k,j,is); //corotating ghost region
+        prim(IM3,k,j,is-i) = prim(IM3,k,j,is);
+        prim(IPR,k,j,is-i)=prim(IPR,k,j,is-i+1)-gm/SQR(pco->x1f(is-i+1))*prim(IDN,k,j,is-i+1)*pco->dx1v(is-i);
       }
     }
   }
@@ -325,19 +317,19 @@ void stbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField 
 }
 
 
-void stbv_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
+void stbv_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
               int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=1; i<=(NGHOST); i++) {
-        a(IDN,k,j,ie+i) = a(IDN,k,j,ie);
-        a(IM1,k,j,ie+i) = a(IM1,k,j,ie);
-        a(IM2,k,j,ie+i) = a(IM2,k,j,ie);
-        a(IM3,k,j,ie+i) = a(IM3,k,j,ie);
-        a(IEN,k,j,ie+i) = a(IEN,k,j,ie);
-        if(a(IM1,k,j,ie+i) < 0.0)
-          a(IM1,k,j,ie+i) = 0.0;
+        prim(IDN,k,j,ie+i) = prim(IDN,k,j,ie);
+        prim(IM1,k,j,ie+i) = prim(IM1,k,j,ie);
+        prim(IM2,k,j,ie+i) = prim(IM2,k,j,ie);
+        prim(IM3,k,j,ie+i) = prim(IM3,k,j,ie);
+        prim(IPR,k,j,ie+i) = prim(IPR,k,j,ie);
+        if(prim(IM1,k,j,ie+i) < 0.0)
+          prim(IM1,k,j,ie+i) = 0.0;
       }
     }
   }
@@ -370,19 +362,19 @@ void stbv_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField 
 }
 
 
-void stbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
+void stbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
               int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; k++) {
     for (int j=1; j<=(NGHOST); j++) {
       for (int i=is; i<=ie; i++) {
-        a(IDN,k,js-j,i) = a(IDN,k,js,i);
-        a(IM1,k,js-j,i) = a(IM1,k,js,i);
-        a(IM2,k,js-j,i) = a(IM2,k,js,i);
-        a(IM3,k,js-j,i) = a(IM3,k,js,i);
-        a(IEN,k,js-j,i) = a(IEN,k,js,i);
-        if(a(IM2,k,js-j,i) > 0.0)
-          a(IM2,k,js-j,i) = 0.0;
+        prim(IDN,k,js-j,i) = prim(IDN,k,js,i);
+        prim(IM1,k,js-j,i) = prim(IM1,k,js,i);
+        prim(IM2,k,js-j,i) = prim(IM2,k,js,i);
+        prim(IM3,k,js-j,i) = prim(IM3,k,js,i);
+        prim(IPR,k,js-j,i) = prim(IPR,k,js,i);
+        if(prim(IM2,k,js-j,i) > 0.0)
+          prim(IM2,k,js-j,i) = 0.0;
       }
     }
   }
@@ -415,19 +407,19 @@ void stbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField 
 }
 
 
-void stbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
+void stbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
               int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; k++) {
     for (int j=1; j<=(NGHOST); j++) {
       for (int i=is; i<=ie; i++) {
-        a(IDN,k,je+j,i) = a(IDN,k,je,i);
-        a(IM1,k,je+j,i) = a(IM1,k,je,i);
-        a(IM2,k,je+j,i) = a(IM2,k,je,i);
-        a(IM3,k,je+j,i) = a(IM3,k,je,i);
-        a(IEN,k,je+j,i) = a(IEN,k,je,i);
-        if(a(IM2,k,je+j,i) < 0.0)
-          a(IM2,k,je+j,i) = 0.0;
+        prim(IDN,k,je+j,i) = prim(IDN,k,je,i);
+        prim(IM1,k,je+j,i) = prim(IM1,k,je,i);
+        prim(IM2,k,je+j,i) = prim(IM2,k,je,i);
+        prim(IM3,k,je+j,i) = prim(IM3,k,je,i);
+        prim(IPR,k,je+j,i) = prim(IPR,k,je,i);
+        if(prim(IM2,k,je+j,i) < 0.0)
+          prim(IM2,k,je+j,i) = 0.0;
       }
     }
   }

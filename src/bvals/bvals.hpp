@@ -61,31 +61,31 @@ typedef struct NeighborIndexes {
 } NeighborIndexes;
 
 //-------------------- prototypes for all BC functions ---------------------------------
-void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
-                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
-void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
-                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
-void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
-                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
-void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
-                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
-void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
-                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
-void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
-                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
+void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
 
-void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
-                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
-void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
-                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
-void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
-                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
-void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
-                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
-void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
-                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
-void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
-                    FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
+void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
 
 // function to return boundary flag given input string
 enum BoundaryFlag GetBoundaryFlag(std::string input_string);
@@ -199,7 +199,7 @@ private:
 
 unsigned int CreateBvalsMPITag(int lid, int phys, int bufid);
 unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
-int BufferID(int dim, bool multilevel, bool face_only);
+int BufferID(int dim, bool multilevel);
 int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2, int bmax);
 
 #endif // BOUNDARY_VALUES_HPP

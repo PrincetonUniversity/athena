@@ -422,10 +422,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
     }
   }
 
-  face_only=true;
-  if (MAGNETIC_FIELDS_ENABLED || multilevel==true) face_only=false;
-
-  maxneighbor_=BufferID(dim, multilevel, face_only);
+  maxneighbor_=BufferID(dim, multilevel);
 
   // initial mesh hierarchy construction is completed here
 
@@ -718,10 +715,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   if(Globals::my_rank!=0)
     resfile.Seek(headeroffset);
 
-  face_only=true;
-  if (MAGNETIC_FIELDS_ENABLED || multilevel==true) face_only=false;
-
-  maxneighbor_=BufferID(dim, multilevel, face_only);
+  maxneighbor_=BufferID(dim, multilevel);
 
   // rebuild the Block Tree
   for(int i=0;i<nbtotal;i++)

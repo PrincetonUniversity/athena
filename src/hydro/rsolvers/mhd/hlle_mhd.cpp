@@ -46,7 +46,7 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
     wli[IVX]=wl(ivx,i);
     wli[IVY]=wl(ivy,i);
     wli[IVZ]=wl(ivz,i);
-    if (NON_BAROTROPIC_EOS) wli[IEN]=wl(IEN,i);
+    if (NON_BAROTROPIC_EOS) wli[IPR]=wl(IPR,i);
     wli[IBY]=wl(IBY,i);
     wli[IBZ]=wl(IBZ,i);
 
@@ -54,7 +54,7 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
     wri[IVX]=wr(ivx,i);
     wri[IVY]=wr(ivy,i);
     wri[IVZ]=wr(ivz,i);
-    if (NON_BAROTROPIC_EOS) wri[IEN]=wr(IEN,i);
+    if (NON_BAROTROPIC_EOS) wri[IPR]=wr(IPR,i);
     wri[IBY]=wr(IBY,i);
     wri[IBZ]=wr(IBZ,i);
 
@@ -82,9 +82,9 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
     Real pbr = 0.5*(bxi*bxi + SQR(wri[IBY]) + SQR(wri[IBZ]));
     Real el,er,hroe;
     if (NON_BAROTROPIC_EOS) {
-      el = wli[IEN]/gm1 + 0.5*wli[IDN]*(SQR(wli[IVX])+SQR(wli[IVY])+SQR(wli[IVZ])) +pbl;
-      er = wri[IEN]/gm1 + 0.5*wri[IDN]*(SQR(wri[IVX])+SQR(wri[IVY])+SQR(wri[IVZ])) +pbr;
-      hroe = ((el + wli[IEN] + pbl)/sqrtdl + (er + wri[IEN] + pbr)/sqrtdr)*isdlpdr;
+      el = wli[IPR]/gm1 + 0.5*wli[IDN]*(SQR(wli[IVX])+SQR(wli[IVY])+SQR(wli[IVZ])) +pbl;
+      er = wri[IPR]/gm1 + 0.5*wri[IDN]*(SQR(wri[IVX])+SQR(wri[IVY])+SQR(wri[IVZ])) +pbr;
+      hroe = ((el + wli[IPR] + pbl)/sqrtdl + (er + wri[IPR] + pbr)/sqrtdr)*isdlpdr;
     }
 
 //--- Step 3.  Compute fast magnetosonic speed in L,R, and Roe-averaged states
@@ -139,10 +139,10 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
     fr[IVZ] = wri[IDN]*wri[IVZ]*vxr - bxi*wri[IBZ];
 
     if (NON_BAROTROPIC_EOS) {
-      fl[IVX] += wli[IEN];
-      fr[IVX] += wri[IEN];
-      fl[IEN] = el*vxl + wli[IVX]*(wli[IEN] + pbl - bxi*bxi);
-      fr[IEN] = er*vxr + wri[IVX]*(wri[IEN] + pbr - bxi*bxi);
+      fl[IVX] += wli[IPR];
+      fr[IVX] += wri[IPR];
+      fl[IEN] = el*vxl + wli[IVX]*(wli[IPR] + pbl - bxi*bxi);
+      fr[IEN] = er*vxr + wri[IVX]*(wri[IPR] + pbr - bxi*bxi);
       fl[IEN] -= bxi*(wli[IBY]*wli[IVY] + wli[IBZ]*wli[IVZ]);
       fr[IEN] -= bxi*(wri[IBY]*wri[IVY] + wri[IBZ]*wri[IVZ]);
     } else {

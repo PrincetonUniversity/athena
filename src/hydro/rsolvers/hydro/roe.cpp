@@ -66,13 +66,13 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
     wli[IVX]=wl(ivx,i);
     wli[IVY]=wl(ivy,i);
     wli[IVZ]=wl(ivz,i);
-    if (NON_BAROTROPIC_EOS) wli[IEN]=wl(IEN,i);
+    if (NON_BAROTROPIC_EOS) wli[IPR]=wl(IPR,i);
 
     wri[IDN]=wr(IDN,i);
     wri[IVX]=wr(ivx,i);
     wri[IVY]=wr(ivy,i);
     wri[IVZ]=wr(ivz,i);
-    if (NON_BAROTROPIC_EOS) wri[IEN]=wr(IEN,i);
+    if (NON_BAROTROPIC_EOS) wri[IPR]=wr(IPR,i);
 
 //--- Step 2.  Compute Roe-averaged data from left- and right-states
 
@@ -89,9 +89,9 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
     // rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
     Real el,er;
     if (NON_BAROTROPIC_EOS) {
-      el = wli[IEN]/gm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
-      er = wri[IEN]/gm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
-      wroe[IEN] = ((el + wli[IEN])/sqrtdl + (er + wri[IEN])/sqrtdr)*isdlpdr;
+      el = wli[IPR]/gm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
+      er = wri[IPR]/gm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
+      wroe[IPR] = ((el + wli[IPR])/sqrtdl + (er + wri[IPR])/sqrtdr)*isdlpdr;
     }
 
 //--- Step 3.  Compute eigenvalues and eigenmatrices using Roe-averaged values
@@ -116,10 +116,10 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
     fr[IVZ] = mxr*wri[IVZ];
 
     if (NON_BAROTROPIC_EOS) {
-      fl[IVX] += wli[IEN];
-      fr[IVX] += wri[IEN];
-      fl[IEN] = (el + wli[IEN])*wli[IVX];
-      fr[IEN] = (er + wri[IEN])*wri[IVX];
+      fl[IVX] += wli[IPR];
+      fr[IVX] += wri[IPR];
+      fl[IEN] = (el + wli[IPR])*wli[IVX];
+      fr[IEN] = (er + wri[IPR])*wri[IVX];
     } else {
       fl[IVX] += (iso_cs*iso_cs)*wli[IDN];
       fr[IVX] += (iso_cs*iso_cs)*wri[IDN];
@@ -344,7 +344,7 @@ inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
 // Adiabatic hydrodynamics
 
   if (NON_BAROTROPIC_EOS) {
-    Real h = wroe[IEN];
+    Real h = wroe[IPR];
     Real vsq = v1*v1 + v2*v2 + v3*v3;
     Real q = h - 0.5*vsq;
     Real asq = (q < 0.0) ? 0.0 : gm1*q;
@@ -409,7 +409,7 @@ inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
     left_eigenmatrix[2][4] = 0.0; 
 
     Real qa = gm1/asq;
-    left_eigenmatrix[3][0] = 1.0 - na*gm1*vsq;
+    left_eigenmatrix[3][0] = \1.0 - na*gm1*vsq;
     left_eigenmatrix[3][1] = qa*v1;
     left_eigenmatrix[3][2] = qa*v2;
     left_eigenmatrix[3][3] = qa*v3;

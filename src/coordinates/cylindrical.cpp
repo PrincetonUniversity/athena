@@ -318,8 +318,8 @@ void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
         // src_2 = -< M_{phi r} ><1/r>
         Real& x_i   = x1f(i);
         Real& x_ip1 = x1f(i+1);
-        u(IM2,k,j,i) -= dt*coord_src2_i_(i)*(x_i*flux[x1face](IM2,k,j,i)
-                                           + x_ip1*flux[x1face](IM2,k,j,i+1));
+        u(IM2,k,j,i) -= dt*coord_src2_i_(i)*(x_i*flux[X1DIR](IM2,k,j,i)
+                                           + x_ip1*flux[X1DIR](IM2,k,j,i+1));
       }
     }
   }

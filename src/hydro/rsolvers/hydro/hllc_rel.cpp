@@ -127,7 +127,7 @@ static void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int
   {
     // Extract left primitives
     const Real &rho_l = prim_l(IDN,i);
-    const Real &pgas_l = prim_l(IEN,i);
+    const Real &pgas_l = prim_l(IPR,i);
     Real u_l[4];
     if (GENERAL_RELATIVITY)
     {
@@ -149,7 +149,7 @@ static void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int
 
     // Extract right primitives
     const Real &rho_r = prim_r(IDN,i);
-    const Real &pgas_r = prim_r(IEN,i);
+    const Real &pgas_r = prim_r(IPR,i);
     Real u_r[4];
     if (GENERAL_RELATIVITY)
     {
@@ -370,14 +370,14 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const 
 
     // Extract left primitives
     const Real &rho_l = prim_l(IDN,i);
-    const Real &pgas_l = prim_l(IEN,i);
+    const Real &pgas_l = prim_l(IPR,i);
     const Real &uu1_l = prim_l(IVX,i);
     const Real &uu2_l = prim_l(IVY,i);
     const Real &uu3_l = prim_l(IVZ,i);
 
     // Extract right primitives
     const Real &rho_r = prim_r(IDN,i);
-    const Real &pgas_r = prim_r(IEN,i);
+    const Real &pgas_r = prim_r(IPR,i);
     const Real &uu1_r = prim_r(IVX,i);
     const Real &uu2_r = prim_r(IVY,i);
     const Real &uu3_r = prim_r(IVZ,i);

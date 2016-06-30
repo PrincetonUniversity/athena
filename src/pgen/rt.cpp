@@ -53,13 +53,13 @@
 #include "../mesh/mesh.hpp"
 #include "../utils/utils.hpp"
 
-void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                     FaceField &b, int is, int ie, int js, int je, int ks, int ke);
-void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                     FaceField &b, int is, int ie, int js, int je, int ks, int ke);
-void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                     FaceField &b, int is, int ie, int js, int je, int ks, int ke);
-void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                     FaceField &b, int is, int ie, int js, int je, int ks, int ke);
 
 // made global to share with BC functions
@@ -239,7 +239,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //! \fn void ProjectPressureInnerX2()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                             FaceField &b, int is, int ie, int js, int je, int ks, int ke)
 {
   for (int n=0; n<(NHYDRO); ++n) {
@@ -248,18 +248,18 @@ void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
       if (n==(IVY)) {
 #pragma simd
         for (int i=is; i<=ie; ++i) {
-          a(IVY,k,js-j,i) = -a(IVY,k,js+j-1,i);  // reflect 2-velocity
+          prim(IVY,k,js-j,i) = -prim(IVY,k,js+j-1,i);  // reflect 2-velocity
         }
-      } else if (n==(IEN)) {
+      } else if (n==(IPR)) {
 #pragma simd
         for (int i=is; i<=ie; ++i) {
-          a(IEN,k,js-j,i) = a(IEN,k,js+j-1,i) 
-             - a(IDN,k,js+j-1,i)*grav_acc*(2*j-1)*pco->dx2f(j)/gm1;
+          prim(IPR,k,js-j,i) = prim(IPR,k,js+j-1,i) 
+             - prim(IDN,k,js+j-1,i)*grav_acc*(2*j-1)*pco->dx2f(j)/gm1;
         }
       } else {
 #pragma simd
         for (int i=is; i<=ie; ++i) {
-          a(n,k,js-j,i) = a(n,k,js+j-1,i);
+          prim(n,k,js-j,i) = prim(n,k,js+j-1,i);
         }
       }
     }}
@@ -299,7 +299,7 @@ void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 //! \fn void ProjectPressureOuterX2()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                             FaceField &b, int is, int ie, int js, int je, int ks, int ke)
 {
   for (int n=0; n<(NHYDRO); ++n) {
@@ -308,18 +308,18 @@ void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
       if (n==(IVY)) {
 #pragma simd
         for (int i=is; i<=ie; ++i) {
-          a(IVY,k,je+j,i) = -a(IVY,k,je-j+1,i);  // reflect 2-velocity
+          prim(IVY,k,je+j,i) = -prim(IVY,k,je-j+1,i);  // reflect 2-velocity
         }
-      } else if (n==(IEN)) {
+      } else if (n==(IPR)) {
 #pragma simd
         for (int i=is; i<=ie; ++i) {
-          a(IEN,k,je+j,i) = a(IEN,k,je-j+1,i) 
-             + a(IDN,k,je-j+1,i)*grav_acc*(2*j-1)*pco->dx2f(j)/gm1;
+          prim(IPR,k,je+j,i) = prim(IPR,k,je-j+1,i) 
+             + prim(IDN,k,je-j+1,i)*grav_acc*(2*j-1)*pco->dx2f(j)/gm1;
         }
       } else {
 #pragma simd
         for (int i=is; i<=ie; ++i) {
-          a(n,k,je+j,i) = a(n,k,je-j+1,i);
+          prim(n,k,je+j,i) = prim(n,k,je-j+1,i);
         }
       }
     }}
@@ -359,7 +359,7 @@ void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 //! \fn void ProjectPressureInnerX3()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                             FaceField &b, int is, int ie, int js, int je, int ks, int ke)
 {
   for (int n=0; n<(NHYDRO); ++n) {
@@ -368,18 +368,18 @@ void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
       if (n==(IVZ)) {
 #pragma simd
         for (int i=is; i<=ie; ++i) {
-          a(IVZ,ks-k,j,i) = -a(IVZ,ks+k-1,j,i);  // reflect 3-vel
+          prim(IVZ,ks-k,j,i) = -prim(IVZ,ks+k-1,j,i);  // reflect 3-vel
         }
-      } else if (n==(IEN)) {
+      } else if (n==(IPR)) {
 #pragma simd
         for (int i=is; i<=ie; ++i) {
-          a(IEN,ks-k,j,i) = a(IEN,ks+k-1,j,i) 
-             - a(IDN,ks+k-1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
+          prim(IPR,ks-k,j,i) = prim(IPR,ks+k-1,j,i) 
+             - prim(IDN,ks+k-1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
         }
       } else {
 #pragma simd
         for (int i=is; i<=ie; ++i) {
-          a(n,ks-k,j,i) = a(n,ks+k-1,j,i);
+          prim(n,ks-k,j,i) = prim(n,ks+k-1,j,i);
         }
       }
     }}
@@ -419,7 +419,7 @@ void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 //! \fn void ProjectPressureOuterX3()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
-void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a,
+void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                             FaceField &b, int is, int ie, int js, int je, int ks, int ke)
 {
   for (int n=0; n<(NHYDRO); ++n) {
@@ -428,18 +428,18 @@ void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
       if (n==(IVZ)) {
 #pragma simd
         for (int i=is; i<=ie; ++i) {
-          a(IVZ,ke+k,j,i) = -a(IVZ,ke-k+1,j,i);  // reflect 3-vel
+          prim(IVZ,ke+k,j,i) = -prim(IVZ,ke-k+1,j,i);  // reflect 3-vel
         }
-      } else if (n==(IEN)) {
+      } else if (n==(IPR)) {
 #pragma simd
         for (int i=is; i<=ie; ++i) {
-          a(IEN,ke+k,j,i) = a(IEN,ke-k+1,j,i)
-             + a(IDN,ke-k+1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
+          prim(IPR,ke+k,j,i) = prim(IPR,ke-k+1,j,i)
+             + prim(IDN,ke-k+1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
         }
       } else {
 #pragma simd
         for (int i=is; i<=ie; ++i) {
-          a(n,ke+k,j,i) = a(n,ke-k+1,j,i);
+          prim(n,ke+k,j,i) = prim(n,ke-k+1,j,i);
         }
       }
     }}

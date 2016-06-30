@@ -180,7 +180,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
         // Set primitives
         phydro->w(IDN,k,j,i) = phydro->w1(IDN,k,j,i) = rho;
-        phydro->w(IEN,k,j,i) = phydro->w1(IEN,k,j,i) = pgas;
+        phydro->w(IPR,k,j,i) = phydro->w1(IPR,k,j,i) = pgas;
         if (GENERAL_RELATIVITY)
         {
           Real uu1 = u1 - gi(I01,i)/gi(I00,i) * u0;

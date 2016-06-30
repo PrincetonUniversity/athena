@@ -108,7 +108,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       for (int k = kl; k <= ku; k++)
       {
         phydro->w(IDN,k,j,i) = phydro->w1(IDN,k,j,i) = rho;
-        phydro->w(IEN,k,j,i) = phydro->w1(IEN,k,j,i) = pgas;
+        phydro->w(IPR,k,j,i) = phydro->w1(IPR,k,j,i) = pgas;
         phydro->w(IVX,k,j,i) = phydro->w1(IM1,k,j,i) = uu1;
         phydro->w(IVY,k,j,i) = phydro->w1(IM2,k,j,i) = uu2;
         phydro->w(IVZ,k,j,i) = phydro->w1(IM3,k,j,i) = uu3;

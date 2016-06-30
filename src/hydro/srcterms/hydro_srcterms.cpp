@@ -27,6 +27,8 @@
 // this class header
 #include "hydro_srcterms.hpp"
 
+#include <iostream>
+
 // HydroSourceTerms constructor 
 
 HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin)
@@ -48,6 +50,7 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin)
   if (g3_ != 0.0) hydro_sourceterms_defined = true;
 
   UserSourceTerm = phyd->pmy_block->pmy_mesh->UserSourceTerm_;
+  if(UserSourceTerm != NULL) hydro_sourceterms_defined = true;
 }
 
 // destructor
