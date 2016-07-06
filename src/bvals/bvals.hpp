@@ -170,7 +170,8 @@ public:
   void PolarSingleEMF(void);
   bool ReceiveEMFCorrection(void);
 //[JMSHI
-  void LoadHydroShearing(AthenaArray<Real> &src, Real *buf1, Real *buf2, int joverlap);
+  void LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb);
+  void SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real> &src, bool cons);
   void SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src, bool cons);
 
   void SetHydroShearingboxBoundarySameLevel(AthenaArray<Real> &dst, Real *buf, const int nb);

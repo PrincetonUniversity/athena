@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -22,7 +22,7 @@
 #include <sstream>
 
 //======================================================================================
-//! \file show_config.cpp 
+//! \file show_config.cpp
 //======================================================================================
 
 //--------------------------------------------------------------------------------------
@@ -43,6 +43,11 @@ void ShowConfig(void)
   std::cout<<"  Reconstruction method:      " << RECONSTRUCTION_METHOD << std::endl;
   std::cout<<"  Hydro integrator:           " << HYDRO_TIME_INTEGRATOR << std::endl;
   std::cout<<"  Compiler and flags:         " << COMPILED_WITH << std::endl;
+  if (SHEARING_BOX) {
+    std::cout<<"  ShearingBox BCs:            ON" << std::endl;
+  } else {
+    std::cout<<"  ShearingBox BCs:            OFF" << std::endl;
+  }
   if (MAGNETIC_FIELDS_ENABLED) {
     std::cout<<"  Magnetic fields:            ON" << std::endl;
   } else {
