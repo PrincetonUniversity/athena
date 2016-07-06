@@ -6,14 +6,16 @@
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // abs(), sin(), sqrt()
+#include <cstdio>     // fopen(), fprintf(), freopen()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
-#include <string>     // c_str()
+#include <string>     // string
 
 // Athena headers
 #include "../athena.hpp"                   // macros, enums, FaceField
 #include "../athena_arrays.hpp"            // AthenaArray
+#include "../globals.hpp"                  // Globals
 #include "../parameter_input.hpp"          // ParameterInput
 #include "../bvals/bvals.hpp"              // BoundaryValues
 #include "../coordinates/coordinates.hpp"  // Coordinates
@@ -27,60 +29,58 @@ static Real CubicRootReal(Real a2, Real a1, Real a0);
 static void QuarticRoots(Real a3, Real a2, Real a1, Real a0, Real *px1, Real *px2,
     Real *px3, Real *px4);
 
+// Global variables
+Real amp;                     // amplitude of wave
+bool compute_error;           // flag indicating L1 errors should be computed and saved
+Real gamma_adi_red;           // reduced adiabatic index \Gamma/(\Gamma-1)
+Real rho, pgas;               // thermodynamic quantities
+Real vx, vy, vz;              // 3-velocity components
+Real bx;                      // longitudinal magnetic field
+Real u[4], b[4];              // contravariant quantities
+Real delta_rho, delta_pgas;   // perturbations to thermodynamic quantities
+Real delta_u[4], delta_b[4];  // perturbations to contravariant quantities
+Real delta_v[4];              // perturbations to 3-velocity
+Real lambda;                  // wavespeed
+Real wavenumber;              // wavenumber
+AthenaArray<Real> g, gi;      // metric and inverse
+int num_vars;                 // number of variables to use in calculating errors
+AthenaArray<Real> bcc;        // cell-centered initial magnetic fields
+AthenaArray<Real> initial;    // initial conditions
+AthenaArray<Real> volume;     // 1D array of volumes
+
 //--------------------------------------------------------------------------------------
 
-// Function for setting initial conditions
+// Function for initializing global variables and allocating arrays
 // Inputs:
-//   pin: parameters
+//   pin: input parameters (unused)
 // Outputs: (none)
-// Notes:
-//   initializes linear wave with sinusoidal variation
-//     sets both primitive and conserved variables
-//   references Anton et al. 2010, ApJS 188 1 (A, MHD)
-//              Falle & Komissarov 1996, MNRAS 278 586 (FK, hydro)
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
+void Mesh::InitUserMeshData(ParameterInput *pin)
 {
-  // Prepare index bounds
-  int il = is - NGHOST;
-  int iu = ie + NGHOST;
-  int jl = js;
-  int ju = je;
-  if (block_size.nx2 > 1)
-  {
-    jl -= NGHOST;
-    ju += NGHOST;
-  }
-  int kl = ks;
-  int ku = ke;
-  if (block_size.nx3 > 1)
-  {
-    kl -= NGHOST;
-    ku += NGHOST;
-  }
-
   // Read information regarding desired wave and check input
   int wave_flag = pin->GetInteger("problem", "wave_flag");
-  Real amp = pin->GetReal("problem", "amp");
   if (wave_flag < 0 or wave_flag > NWAVE-1)
   {
     std::stringstream msg;
-    msg << "### FATAL ERROR in Problem Generator" << std::endl
+    msg << "### FATAL ERROR in Problem Generator\n"
         << "wave_flag=" << wave_flag << " must be between 0 and " << NWAVE-1
         << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
+  amp = pin->GetReal("problem", "amp");
+  compute_error = pin->GetOrAddBoolean("problem", "compute_error", false);
 
   // Get ratio of specific heats
-  Real gamma_adi = peos->GetGamma();
-  Real gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
+  Real gamma_adi = pin->GetReal("hydro", "gamma");
+  gamma_adi_red = gamma_adi / (gamma_adi - 1.0);
 
   // Read background state
-  Real rho = pin->GetReal("problem", "rho");
-  Real pgas = pin->GetReal("problem", "pgas");
-  Real vx = pin->GetReal("problem", "vx");
-  Real vy = pin->GetReal("problem", "vy");
-  Real vz = pin->GetReal("problem", "vz");
-  Real bx = 0.0, by = 0.0, bz = 0.0;
+  rho = pin->GetReal("problem", "rho");
+  pgas = pin->GetReal("problem", "pgas");
+  vx = pin->GetReal("problem", "vx");
+  vy = pin->GetReal("problem", "vy");
+  vz = pin->GetReal("problem", "vz");
+  bx = 0.0;
+  Real by = 0.0, bz = 0.0;
   if (MAGNETIC_FIELDS_ENABLED)
   {
     bx = pin->GetReal("problem", "Bx");
@@ -90,7 +90,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
   // Calculate background 4-vectors
   Real v_sq = SQR(vx) + SQR(vy) + SQR(vz);
-  Real u[4], b[4];
   u[0] = 1.0 / std::sqrt(1.0 - v_sq);
   u[1] = u[0]*vx;
   u[2] = u[0]*vy;
@@ -102,16 +101,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
   // Calculate useful background scalars
   Real b_sq = -SQR(b[0]) + SQR(b[1]) + SQR(b[2]) + SQR(b[3]);
-  Real ptot = pgas + 0.5*b_sq;
   Real wgas = rho + gamma_adi_red * pgas;
   Real wtot = wgas + b_sq;
   Real cs_sq = gamma_adi * pgas / wgas;
   Real cs = std::sqrt(cs_sq);
 
   // Calculate desired perturbation
-  Real delta_rho, delta_pgas;
-  Real delta_u[4], delta_b[4], delta_v[4];
-  Real lambda;
   if (MAGNETIC_FIELDS_ENABLED)  // MHD
   {
     switch (wave_flag)
@@ -432,19 +427,19 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   }
 
   // Calculate wavenumber such that wave has single period over domain
-  Real x1_min = pmy_mesh->mesh_size.x1min;
-  Real x1_max = pmy_mesh->mesh_size.x1max;
-  Real x2_min = pmy_mesh->mesh_size.x2min;
-  Real x3_min = pmy_mesh->mesh_size.x3min;
+  Real x1_min = mesh_size.x1min;
+  Real x1_max = mesh_size.x1max;
+  Real x2_min = mesh_size.x2min;
+  Real x3_min = mesh_size.x3min;
   Real arg_min, arg_max;
   if (GENERAL_RELATIVITY)
   {
     Real t_left, x_left, y_left, z_left;
     Real t_right, x_right, y_right, z_right;
-    pcoord->MinkowskiCoordinates(0.0, x1_min, x2_min, x3_min,
-        &t_left, &x_left, &y_left, &z_left);
-    pcoord->MinkowskiCoordinates(0.0, x1_max, x2_min, x3_min,
-        &t_right, &x_right, &y_right, &z_right);
+    pblock->pcoord->MinkowskiCoordinates(0.0, x1_min, x2_min, x3_min, &t_left, &x_left,
+        &y_left, &z_left);
+    pblock->pcoord->MinkowskiCoordinates(0.0, x1_max, x2_min, x3_min, &t_right,
+        &x_right, &y_right, &z_right);
     arg_min = x_left - lambda * t_left;
     arg_max = x_right - lambda * t_right;
   }
@@ -453,21 +448,184 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     arg_min = x1_min;
     arg_max = x1_max;
   }
-  Real wavenumber = 2.0*PI / (arg_max - arg_min);
+  wavenumber = 2.0*PI / (arg_max - arg_min);
 
-  // Initialize hydro variables
-  AthenaArray<Real> g, gi;
+  // Prepare arrays to hold metric
   if (GENERAL_RELATIVITY)
   {
-    int ncells1 = block_size.nx1 + 2*NGHOST;
+    int ncells1 = mesh_size.nx1/nrbx1 + 2*NGHOST;
     g.NewAthenaArray(NMETRIC, ncells1);
     gi.NewAthenaArray(NMETRIC, ncells1);
   }
-  for (int k = kl; k <= ku; ++k) {
-    for (int j = jl; j <= ju; ++j) {
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for evaluating errors and freeing arrays
+// Inputs:
+//   pin: parameters
+// Outputs: (none)
+void Mesh::UserWorkAfterLoop(ParameterInput *pin)
+{
+  // Free metric
+  if (GENERAL_RELATIVITY)
+  {
+    g.DeleteAthenaArray();
+    gi.DeleteAthenaArray();
+  }
+
+  // Calculate L1 error against initial conditions
+  if (compute_error)
+  {
+    // Prepare error calculation variables
+    Real errors[num_vars+1];
+    for (int n = 0; n < num_vars+1; ++n)
+      errors[n] = 0.0;
+
+    // Go through blocks to calculate errors
+    MeshBlock *pmb = pblock;
+    while (pmb != NULL)
+    {
+      for (int k = pmb->ks; k <= pmb->ke; ++k)
+        for (int j = pmb->js; j <= pmb->je; ++j)
+        {
+          pmb->pcoord->CellVolume(k, j, pmb->is, pmb->ie, volume);
+          for (int i = pmb->is; i <= pmb->ie; ++i)
+          {
+            for (int n = 0; n < NHYDRO; ++n)
+              errors[n] +=
+                  std::abs(pmb->phydro->u(n,k,j,i) - initial(pmb->lid,n,k,j,i))
+                  * volume(i);
+            if (MAGNETIC_FIELDS_ENABLED)
+              for (int n = IB1; n <= IB3; ++n)
+                errors[NHYDRO+n] += std::abs(pmb->pfield->bcc(n,k,j,i)
+                    - initial(pmb->lid,NHYDRO+n,k,j,i)) * volume(i);
+            errors[num_vars] += volume(i);
+          }
+        }
+      pmb = pmb->next;
+    }
+
+    // Reduce errors across ranks
+    #ifdef MPI_PARALLEL
+    {
+      if (Globals::my_rank == 0)
+        MPI_Reduce(MPI_IN_PLACE, errors, num_vars+1, MPI_ATHENA_REAL, MPI_SUM, 0,
+            MPI_COMM_WORLD);
+      else
+        MPI_Reduce(errors, 0, num_vars+1, MPI_ATHENA_REAL, MPI_SUM, 0, MPI_COMM_WORLD);
+    }
+    #endif
+
+    // Write errors to file if root
+    if (Globals::my_rank == 0)
+    {
+      // Divide volume-weighted errors by total volume
+      for (int n = 0; n < num_vars; ++n)
+        errors[n] /= errors[num_vars];
+
+      // Calculate RMS of volume-averaged errors
+      Real total_error = 0.0;
+      for (int n = 0; n < num_vars; ++n)
+        total_error += SQR(errors[n]);
+      total_error = std::sqrt(total_error/num_vars);
+
+      // Prepare output file
+      std::string filename;
+      filename.assign("linearwave-errors.dat");
+      std::stringstream msg;
+      FILE *pfile;
+
+      // Open file
+      pfile = fopen(filename.c_str(), "r");
+      if (pfile != NULL)  // file exists
+      {
+        pfile = freopen(filename.c_str(), "a", pfile);
+        if (pfile == NULL)
+        {
+          msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]\n"
+              << "Error output file could not be opened" << std::endl;
+          throw std::runtime_error(msg.str().c_str());
+        }
+      }
+      else  // file does not exist
+      {
+        pfile = fopen(filename.c_str(), "w");
+        if (pfile == NULL)
+        {
+          msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]\n"
+              << "Error output file could not be opened" << std::endl;
+          throw std::runtime_error(msg.str().c_str());
+        }
+        fprintf(pfile, "# Nx1  Nx2  Nx3  Ncycle  RMS-Error  D  E  M1  M2  M3");
+        if (MAGNETIC_FIELDS_ENABLED)
+          fprintf(pfile, "  B1c  B2c  B3c");
+        fprintf(pfile, "\n");
+      }
+
+      // Write errors
+      fprintf(pfile, "%d  %d  %d  %d  %e", mesh_size.nx1, mesh_size.nx2, mesh_size.nx3,
+          ncycle, total_error);
+      fprintf(pfile, "  %e  %e  %e  %e  %e", errors[IDN], errors[IEN], errors[IM1],
+          errors[IM2], errors[IM3]);
+      if (MAGNETIC_FIELDS_ENABLED)
+        fprintf(pfile,"  %e  %e  %e", errors[NHYDRO+IB1], errors[NHYDRO+IB2],
+            errors[NHYDRO+IB3]);
+      fprintf(pfile, "\n");
+
+      // Close file
+      fclose(pfile);
+    }
+
+    // Free initial conditions arrays
+    if (MAGNETIC_FIELDS_ENABLED)
+      bcc.DeleteAthenaArray();
+    initial.DeleteAthenaArray();
+    volume.DeleteAthenaArray();
+  }
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+
+// Function for setting initial conditions
+// Inputs:
+//   pin: parameters
+// Outputs: (none)
+// Notes:
+//   initializes linear wave with sinusoidal variation
+//     sets both primitive and conserved variables
+//   references Anton et al. 2010, ApJS 188 1 (A, MHD)
+//              Falle & Komissarov 1996, MNRAS 278 586 (FK, hydro)
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
+{
+  // Prepare index bounds
+  int il = is - NGHOST;
+  int iu = ie + NGHOST;
+  int jl = js;
+  int ju = je;
+  if (block_size.nx2 > 1)
+  {
+    jl -= NGHOST;
+    ju += NGHOST;
+  }
+  int kl = ks;
+  int ku = ke;
+  if (block_size.nx3 > 1)
+  {
+    kl -= NGHOST;
+    ku += NGHOST;
+  }
+
+  // Initialize hydro variables
+  for (int k = kl; k <= ku; ++k)
+    for (int j = jl; j <= ju; ++j)
+    {
       if (GENERAL_RELATIVITY)
         pcoord->CellMetric(k, j, il, iu, g, gi);
-      for (int i = il; i <= iu; ++i) {
+      for (int i = il; i <= iu; ++i)
+      {
         // Find location of cell in spacetime
         Real t, x, y, z;
         if (GENERAL_RELATIVITY)
@@ -581,18 +739,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         }
       }
     }
-  }
-  if (GENERAL_RELATIVITY)
-  {
-    g.DeleteAthenaArray();
-    gi.DeleteAthenaArray();
-  }
 
   // Initialize magnetic fields
-  if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k = kl; k <= ku+1; ++k) {
-      for (int j = jl; j <= ju+1; ++j) {
-        for (int i = il; i <= iu+1; ++i) {
+  if (MAGNETIC_FIELDS_ENABLED)
+    for (int k = kl; k <= ku+1; ++k)
+      for (int j = jl; j <= ju+1; ++j)
+        for (int i = il; i <= iu+1; ++i)
+        {
           if (GENERAL_RELATIVITY)
           {
             // Set B^1 if needed
@@ -677,7 +830,37 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
               pfield->b.x3f(k,j,i) = bz_local;
           }
         }
-      }
+
+  // Prepare arrays for comparing to initial conditions (only once per Mesh)
+  if (compute_error and lid == 0)
+  {
+    int num_blocks = pmy_mesh->GetNumMeshBlocksThisRank(Globals::my_rank);
+    num_vars = NHYDRO + NFIELD;
+    int nx1 = block_size.nx1;
+    int nx2 = block_size.nx2;
+    int nx3 = block_size.nx3;
+    if (MAGNETIC_FIELDS_ENABLED)
+      bcc.NewAthenaArray(NFIELD, nx3+NGHOST, nx2+NGHOST, nx1+NGHOST);
+    initial.NewAthenaArray(num_blocks, num_vars, nx3+NGHOST, nx2+NGHOST, nx1+NGHOST);
+    volume.NewAthenaArray(nx1+NGHOST);
+  }
+
+  // Record initial conditions
+  if (compute_error)
+  {
+    for (int n = 0; n < NHYDRO; ++n)
+      for (int k = ks; k <= ke; ++k)
+        for (int j = js; j <= je; ++j)
+          for (int i = is; i <= ie; ++i)
+            initial(lid,n,k,j,i) = phydro->u(n,k,j,i);
+    if (MAGNETIC_FIELDS_ENABLED)
+    {
+      pfield->CalculateCellCenteredField(pfield->b, bcc, pcoord, is, ie, js, je, ks, ke);
+      for (int n = IB1; n <= IB3; ++n)
+        for (int k = ks; k <= ke; ++k)
+          for (int j = js; j <= je; ++j)
+            for (int i = is; i <= ie; ++i)
+              initial(lid,NHYDRO+n,k,j,i) = bcc(n,k,j,i);
     }
   }
   return;

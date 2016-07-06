@@ -664,7 +664,9 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
       Real w_tot = w_gas + b_sq;
       Real a1 = -(b_sq + cs_sq * (w_gas + bbx_sq)) / w_tot;
       Real a0 = cs_sq * bbx_sq / w_tot;
-      Real lambda_sq = 0.5 * (-a1 + std::sqrt(SQR(a1) - 4.0*a0));
+      Real s2 = SQR(a1) - 4.0*a0;
+      Real s = (s2 > 0.0) ? std::sqrt(s2) : 0.0;
+      Real lambda_sq = 0.5 * (-a1 + s);
       lambda_plus_no_v = std::sqrt(lambda_sq);
       lambda_minus_no_v = -lambda_plus_no_v;
     }
@@ -678,7 +680,8 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
       Real denominator = w_gas * (cs_sq + gamma_rel_sq*(1.0-cs_sq)) + q;
       Real a1 = -2.0 * w_gas * gamma_rel_sq * vx * (1.0-cs_sq) / denominator;
       Real a0 = (w_gas * (-cs_sq + gamma_rel_sq*vx_sq*(1.0-cs_sq)) - q) / denominator;
-      Real s = std::sqrt(SQR(a1) - 4.0*a0);
+      Real s2 = SQR(a1) - 4.0*a0;
+      Real s = (s2 > 0.0) ? std::sqrt(s2) : 0.0;
       lambda_plus_no_bbx = (a1 >= 0.0) ? -2.0*a0/(a1+s) : (-a1+s)/2.0;
       lambda_minus_no_bbx = (a1 >= 0.0) ? (-a1-s)/2.0 : -2.0*a0/(a1-s);
     }
@@ -736,15 +739,18 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
         // Calculate quadratic coefficients
         Real d1 = (z0-b2 > 0.0) ? std::sqrt(z0-b2) : 0.0;
         Real e1 = -d1;
-        Real s = std::sqrt(SQR(z0)/4.0 - b0);
+        s2 = SQR(z0)/4.0 - b0;
+        Real s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
         Real d0 = (b1 < 0) ? 0.5*z0+s : 0.5*z0-s;
         Real e0 = (b1 < 0) ? 0.5*z0-s : 0.5*z0+s;
 
         // Solve quadratic equations
-        s = std::sqrt(SQR(d1) - 4.0*d0);
+        s2 = SQR(d1) - 4.0*d0;
+        s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
         y1 = (d1 >= 0.0) ? (-d1-s)/2.0 : -2.0*d0/(d1-s);
         y2 = (d1 >= 0.0) ? -2.0*d0/(d1+s) : (-d1+s)/2.0;
-        s = std::sqrt(SQR(e1) - 4.0*e0);
+        s2 = SQR(e1) - 4.0*e0;
+        s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
         y3 = (e1 >= 0.0) ? (-e1-s)/2.0 : -2.0*e0/(e1-s);
         y4 = (e1 >= 0.0) ? -2.0*e0/(e1+s) : (-e1+s)/2.0;
       }
@@ -754,8 +760,10 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
       lambda_plus = std::max(y2, y4) - a3/4.0;
 
       // Ensure wavespeeds are not superluminal
-      lambda_minus = std::max(lambda_minus, -1.0);
-      lambda_plus = std::min(lambda_plus, 1.0);
+      if (not std::isfinite(lambda_minus) or lambda_minus < -1.0)
+        lambda_minus = -1.0;
+      if (not std::isfinite(lambda_plus) or lambda_plus > 1.0)
+        lambda_plus = 1.0;
     }
 
     // Set wavespeeds based on velocity and magnetic field
@@ -797,7 +805,6 @@ void EquationOfState::FastMagnetosonicSpeedsGR(Real rho_h, Real pgas, Real u0, R
     Real b_sq, Real g00, Real g01, Real g11, Real *plambda_plus, Real *plambda_minus)
 {
   // Parameters and constants
-  const Real discriminant_tol = -1.0e-10;  // values between this and 0 are considered 0
   const Real gamma_adi = gamma_;
 
   // Calculate comoving fast magnetosonic speed
@@ -809,9 +816,7 @@ void EquationOfState::FastMagnetosonicSpeedsGR(Real rho_h, Real pgas, Real u0, R
   Real a = SQR(u0) - (g00 + SQR(u0)) * cms_sq;
   Real b = -2.0 * (u0*u1 - (g01 + u0*u1) * cms_sq);
   Real c = SQR(u1) - (g11 + SQR(u1)) * cms_sq;
-  Real d = SQR(b) - 4.0*a*c;
-  if (d < 0.0 and d > discriminant_tol)
-    d = 0.0;
+  Real d = std::max(SQR(b) - 4.0*a*c, 0.0);
   Real d_sqrt = std::sqrt(d);
   Real root_1 = (-b + d_sqrt) / (2.0*a);
   Real root_2 = (-b - d_sqrt) / (2.0*a);

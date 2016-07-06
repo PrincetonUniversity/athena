@@ -1,18 +1,18 @@
 // Local Lax-Friedrichs Riemann solver for relativistic hydrodynamics
 
 // Primary header
-#include "../../hydro.hpp"                       // Hydro
+#include "../../hydro.hpp"
 
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
 // Athena headers
-#include "../../../eos/eos.hpp"                     // HydroEqnOfState
-#include "../../../athena.hpp"                   // enums, macros, Real
+#include "../../../athena.hpp"                   // enums, macros
 #include "../../../athena_arrays.hpp"            // AthenaArray
-#include "../../../mesh/mesh.hpp"                     // MeshBlock
 #include "../../../coordinates/coordinates.hpp"  // Coordinates
+#include "../../../eos/eos.hpp"                  // EquationOfState
+#include "../../../mesh/mesh.hpp"                // MeshBlock
 
 // Declarations
 static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int il,
@@ -38,8 +38,8 @@ static void LLFNonTransforming(MeshBlock *pmb, const int k, const int j, const i
 // Notes:
 //   prim_l, prim_r overwritten
 //   implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
-void Hydro::RiemannSolver(const int k, const int j, const int il,
-    const int iu, const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
+void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
+    const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
     AthenaArray<Real> &prim_r, AthenaArray<Real> &flux)
 {
   if (GENERAL_RELATIVITY and ivx == IVY and pmy_block->pcoord->IsPole(j))
@@ -80,16 +80,13 @@ static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int 
     switch (ivx)
     {
       case IVX:
-        pmb->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r,
-            bb_normal);
+        pmb->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
         break;
       case IVY:
-        pmb->pcoord->PrimToLocal2(k, j, il, iu, bb, prim_l, prim_r,
-            bb_normal);
+        pmb->pcoord->PrimToLocal2(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
         break;
       case IVZ:
-        pmb->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r,
-            bb_normal);
+        pmb->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
         break;
     }
 
@@ -151,14 +148,14 @@ static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int 
     // Calculate wavespeeds in left state (MB 23)
     Real lambda_p_l, lambda_m_l;
     Real wgas_l = rho_l + gamma_adi/(gamma_adi-1.0) * pgas_l;
-    pmb->peos->SoundSpeedsSR(wgas_l, pgas_l, u_l[1]/u_l[0], SQR(u_l[0]),
-        &lambda_p_l, &lambda_m_l);
+    pmb->peos->SoundSpeedsSR(wgas_l, pgas_l, u_l[1]/u_l[0], SQR(u_l[0]), &lambda_p_l,
+        &lambda_m_l);
 
     // Calculate wavespeeds in right state (MB 23)
     Real lambda_p_r, lambda_m_r;
     Real wgas_r = rho_r + gamma_adi/(gamma_adi-1.0) * pgas_r;
-    pmb->peos->SoundSpeedsSR(wgas_r, pgas_r, u_r[1]/u_r[0], SQR(u_r[0]),
-        &lambda_p_r, &lambda_m_r);
+    pmb->peos->SoundSpeedsSR(wgas_r, pgas_r, u_r[1]/u_r[0], SQR(u_r[0]), &lambda_p_r,
+        &lambda_m_r);
 
     // Calculate extremal wavespeed
     Real lambda_l = std::min(lambda_m_l, lambda_m_r);
@@ -212,16 +209,13 @@ static void LLFTransforming(MeshBlock *pmb, const int k, const int j, const int 
     switch (ivx)
     {
       case IVX:
-        pmb->pcoord->FluxToGlobal1(k, j, il, iu, cons, bb_normal,
-            flux);
+        pmb->pcoord->FluxToGlobal1(k, j, il, iu, cons, bb_normal, flux);
         break;
       case IVY:
-        pmb->pcoord->FluxToGlobal2(k, j, il, iu, cons, bb_normal,
-            flux);
+        pmb->pcoord->FluxToGlobal2(k, j, il, iu, cons, bb_normal, flux);
         break;
       case IVZ:
-        pmb->pcoord->FluxToGlobal3(k, j, il, iu, cons, bb_normal,
-            flux);
+        pmb->pcoord->FluxToGlobal3(k, j, il, iu, cons, bb_normal, flux);
         break;
     }
   return;
@@ -313,14 +307,14 @@ static void LLFNonTransforming(MeshBlock *pmb, const int k, const int j, const i
     // Calculate wavespeeds in left state
     Real lambda_p_l, lambda_m_l;
     Real wgas_l = rho_l + gamma_adi/(gamma_adi-1.0) * pgas_l;
-    pmb->peos->SoundSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[IVY], g00, g02,
-        g22, &lambda_p_l, &lambda_m_l);
+    pmb->peos->SoundSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[IVY], g00, g02, g22,
+        &lambda_p_l, &lambda_m_l);
 
     // Calculate wavespeeds in right state
     Real lambda_p_r, lambda_m_r;
     Real wgas_r = rho_r + gamma_adi/(gamma_adi-1.0) * pgas_r;
-    pmb->peos->SoundSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[IVY], g00, g02,
-        g22, &lambda_p_r, &lambda_m_r);
+    pmb->peos->SoundSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[IVY], g00, g02, g22,
+        &lambda_p_r, &lambda_m_r);
 
     // Calculate extremal wavespeed
     Real lambda_l = std::min(lambda_m_l, lambda_m_r);

@@ -25,6 +25,8 @@ static Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi);
 static void neighbor_average(AthenaArray<Real> &prim, AthenaArray<bool> &problem, int n,
     int k, int j, int i, int kl, int ku, int jl, int ju, int il, int iu);
 
+//--------------------------------------------------------------------------------------
+
 // Constructor
 // Inputs:
 //   pmb: pointer to MeshBlock
@@ -48,6 +50,8 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
   fixed_.NewAthenaArray(ncells3, ncells2, ncells1);
 }
 
+//--------------------------------------------------------------------------------------
+
 // Destructor
 EquationOfState::~EquationOfState()
 {
@@ -55,6 +59,8 @@ EquationOfState::~EquationOfState()
   g_inv_.DeleteAthenaArray();
   fixed_.DeleteAthenaArray();
 }
+
+//--------------------------------------------------------------------------------------
 
 // Variable inverter
 // Inputs:
@@ -251,6 +257,8 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   return;
 }
 
+//--------------------------------------------------------------------------------------
+
 // Function for converting all primitives to conserved variables
 // Inputs:
 //   prim: primitives
@@ -276,6 +284,8 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
     }
   return;
 }
+
+//--------------------------------------------------------------------------------------
 
 // Function for converting primitives to conserved variables in a single cell
 // Inputs:
@@ -327,6 +337,8 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
   return;
 }
 
+//--------------------------------------------------------------------------------------
+
 // Function for calculating relativistic sound speeds
 // Inputs:
 //   rho_h: enthalpy per unit volume
@@ -351,6 +363,8 @@ void EquationOfState::SoundSpeedsSR(Real rho_h, Real pgas, Real vx,
   *plambda_minus = 1.0/(1.0+sigma_s) * (vx - relative_speed);            // (MB 23)
   return;
 }
+
+//--------------------------------------------------------------------------------------
 
 // Function for calculating relativistic sound speeds in arbitrary coordinates
 // Inputs:
@@ -397,6 +411,8 @@ void EquationOfState::SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Rea
   return;
 }
 
+//--------------------------------------------------------------------------------------
+
 // Function whose value vanishes for correct enthalpy
 // Inputs:
 //   w_guess: guess for enthalpy W
@@ -418,6 +434,8 @@ static Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_ad
       * (w_guess/gamma_sq - d/std::sqrt(gamma_sq));  // (N 32)
   return -w_guess + pgas - q_n;                      // (N 29)
 }
+
+//--------------------------------------------------------------------------------------
 
 // Derivative of QNResidual()
 // Inputs:
@@ -442,6 +460,8 @@ static Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi)
       + (0.5*d*std::sqrt(gamma_sq) - w_guess) * d_gamma_sq_dw);
   return -1.0 + dpgas_dw;
 }
+
+//--------------------------------------------------------------------------------------
 
 // Function for replacing primitive value in cell with average of neighbors
 // Inputs:

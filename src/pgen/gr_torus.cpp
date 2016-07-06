@@ -92,9 +92,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
     x2_min = pin->GetReal("mesh", "x2min");
     x2_max = pin->GetReal("mesh", "x2max");
   }
-  pert_amp = pin->GetOrSetReal("problem", "pert_amp", 0.0);
-  pert_kr = pin->GetOrSetReal("problem", "pert_kr", 0.0);
-  pert_kz = pin->GetOrSetReal("problem", "pert_kz", 0.0);
+  pert_amp = pin->GetOrAddReal("problem", "pert_amp", 0.0);
+  pert_kr = pin->GetOrAddReal("problem", "pert_kr", 0.0);
+  pert_kz = pin->GetOrAddReal("problem", "pert_kz", 0.0);
 
   // Prepare arrays if needed for extra outputs
   if (NIFOV == 1 or NIFOV == 5 or
