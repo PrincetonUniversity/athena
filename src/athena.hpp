@@ -65,8 +65,8 @@ enum Athena_MPI_Tag {TAG_HYDRO=0, TAG_FIELD=1, TAG_RAD=2, TAG_CHEM=3, TAG_HYDFLX
 //--------------------------------------------------------------------------------------
 // function pointer prototypes for user-defined modules set at runtime
 
-typedef void (*BValFunc_t)(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
-  FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
+typedef void (*BValFunc_t)(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+  FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 typedef int (*AMRFlagFunc_t)(MeshBlock *pmb);
 typedef Real (*MeshGenFunc_t)(Real x, RegionSize rs);
 typedef void (*SrcTermFunc_t)(MeshBlock *pmb, const Real time, const Real dt,

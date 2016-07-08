@@ -1166,7 +1166,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       pfield=pmb->pfield;
       pbval=pmb->pbval;
       if(multilevel==true)
-        pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc);
+        pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
+                                    time, 0.0);
 
       int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
       if(pmb->nblevel[1][1][0]!=-1) is-=NGHOST;
@@ -1182,7 +1183,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b, 
                                       phydro->w, pfield->bcc, pmb->pcoord,
                                       is, ie, js, je, ks, ke);
-      pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc);
+      pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
+                                     time, 0.0);
       pmb=pmb->next;
     }
 

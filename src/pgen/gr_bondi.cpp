@@ -18,7 +18,7 @@
 
 // Declarations
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
-    FaceField &bb, int is, int ie, int js, int je, int ks, int ke);
+    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 static void CalculatePrimitives(Real r, Real temp_min, Real temp_max, Real *prho,
     Real *ppgas, Real *put, Real *pur);
 static Real TemperatureMin(Real r, Real t_min, Real t_max);
@@ -256,7 +256,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 // Notes:
 //   does nothing
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
-    FaceField &bb, int is, int ie, int js, int je, int ks, int ke)
+    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
 {
   return;
 }

@@ -25,11 +25,12 @@
 
 //--------------------------------------------------------------------------------------
 //! \fn void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+//                          FaceField &b, Real time, Real dt,
 //                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief OUTFLOW boundary conditions, inner x1 boundary
 
 void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, int is, int ie, int js, int je, int ks, int ke)
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
 {
   // copy hydro variables into ghost zones
   for (int n=0; n<(NHYDRO); ++n) {
@@ -74,11 +75,12 @@ void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 
 //--------------------------------------------------------------------------------------
 //! \fn void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-//                          int is, int ie, int js, int je, int ks, int ke)
+//                         FaceField &b, Real time, Real dt,
+//                         int is, int ie, int js, int je, int ks, int ke)
 //  \brief OUTFLOW boundary conditions, outer x1 boundary
 
 void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, int is, int ie, int js, int je, int ks, int ke)
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
 {
   // copy hydro variables into ghost zones
   for (int n=0; n<(NHYDRO); ++n) {
@@ -123,11 +125,12 @@ void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 
 //--------------------------------------------------------------------------------------
 //! \fn void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+//                          FaceField &b, Real time, Real dt,
 //                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief OUTFLOW boundary conditions, inner x2 boundary
 
 void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, int is, int ie, int js, int je, int ks, int ke)
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
 {
   // copy hydro variables into ghost zones
   for (int n=0; n<(NHYDRO); ++n) {
@@ -172,11 +175,12 @@ void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 
 //--------------------------------------------------------------------------------------
 //! \fn void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+//                          FaceField &b, Real time, Real dt,
 //                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief OUTFLOW boundary conditions, outer x2 boundary
 
 void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, int is, int ie, int js, int je, int ks, int ke)
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
 {
   // copy hydro variables into ghost zones
   for (int n=0; n<(NHYDRO); ++n) {
@@ -221,11 +225,12 @@ void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 
 //--------------------------------------------------------------------------------------
 //! \fn void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+//                          FaceField &b, Real time, Real dt,
 //                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief OUTFLOW boundary conditions, inner x3 boundary
 
 void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, int is, int ie, int js, int je, int ks, int ke)
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
 {
   // copy hydro variables into ghost zones
   for (int n=0; n<(NHYDRO); ++n) {
@@ -270,11 +275,12 @@ void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 
 //--------------------------------------------------------------------------------------
 //! \fn void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+//                          FaceField &b, Real time, Real dt,
 //                          int is, int ie, int js, int je, int ks, int ke)
 //  \brief OUTFLOW boundary conditions, outer x3 boundary
 
 void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, int is, int ie, int js, int je, int ks, int ke)
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
 {
   // copy hydro variables into ghost zones
   for (int n=0; n<(NHYDRO); ++n) {

@@ -425,10 +425,12 @@ enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int ste
   Real dt = (step_wghts[(step-1)].c)*(pmb->pmy_mesh->dt);
   Real time;
   // *** this must be changed for the RK3 integrator
-  time=pmb->pmy_mesh->time + dt*0.5*(step-1);
   if(step == 1) {
+    time=pmb->pmy_mesh->time;
     ph->psrc->AddHydroSourceTerms(time,dt,ph->flux,ph->w,pf->bcc,ph->u1);
   } else if(step == 2) {
+    if      (integrator == "vl2") time=pmb->pmy_mesh->time + 0.5*pmb->pmy_mesh->dt;
+    else if (integrator == "rk2") time=pmb->pmy_mesh->time +     pmb->pmy_mesh->dt;
     ph->psrc->AddHydroSourceTerms(time,dt,ph->flux,ph->w1,pf->bcc1,ph->u);
   } else {
     return TASK_FAIL;
@@ -509,10 +511,16 @@ enum TaskStatus TimeIntegratorTaskList::Prolongation(MeshBlock *pmb, int step)
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
   BoundaryValues *pbval=pmb->pbval;
+  Real dt;
+
   if(step == 1) {
-    pbval->ProlongateBoundaries(phydro->w1, phydro->u1, pfield->b1, pfield->bcc1);
+    dt = (step_wghts[(step-1)].c)*(pmb->pmy_mesh->dt);
+    pbval->ProlongateBoundaries(phydro->w1, phydro->u1, pfield->b1, pfield->bcc1,
+                                pmb->pmy_mesh->time+dt, dt);
   } else if(step == 2) {
-    pbval->ProlongateBoundaries(phydro->w,  phydro->u,  pfield->b,  pfield->bcc);
+    dt=pmb->pmy_mesh->dt;
+    pbval->ProlongateBoundaries(phydro->w,  phydro->u,  pfield->b,  pfield->bcc,
+                                pmb->pmy_mesh->time+dt, dt);
   } else {
     return TASK_FAIL;
   }
@@ -550,10 +558,15 @@ enum TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int ste
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
   BoundaryValues *pbval=pmb->pbval;
+  Real dt;
   if(step == 1) {
-    pbval->ApplyPhysicalBoundaries(phydro->w1, phydro->u1, pfield->b1, pfield->bcc1);
+    dt = (step_wghts[(step-1)].c)*(pmb->pmy_mesh->dt);
+    pbval->ApplyPhysicalBoundaries(phydro->w1, phydro->u1, pfield->b1, pfield->bcc1,
+                                   pmb->pmy_mesh->time+dt, dt);
   } else if(step == 2) {
-    pbval->ApplyPhysicalBoundaries(phydro->w,  phydro->u,  pfield->b,  pfield->bcc);
+    dt=pmb->pmy_mesh->dt;
+    pbval->ApplyPhysicalBoundaries(phydro->w,  phydro->u,  pfield->b,  pfield->bcc,
+                                   pmb->pmy_mesh->time+dt, dt);
   } else {
     return TASK_FAIL;
   }

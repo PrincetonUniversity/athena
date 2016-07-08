@@ -62,30 +62,30 @@ typedef struct NeighborIndexes {
 
 //-------------------- prototypes for all BC functions ---------------------------------
 void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 void ReflectInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 void ReflectOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 void ReflectOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 void ReflectOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 
 void OutflowInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 void OutflowInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 void OutflowInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 void OutflowOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                    FaceField &b, int is, int ie, int js, int je, int ks, int ke);
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 
 // function to return boundary flag given input string
 enum BoundaryFlag GetBoundaryFlag(std::string input_string);
@@ -110,9 +110,9 @@ public:
   void ClearBoundaryForInit(void);
   void ClearBoundaryAll(void);
   void ApplyPhysicalBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
-                               FaceField &bfdst, AthenaArray<Real> &bcdst);
+       FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
   void ProlongateBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst, 
-                            FaceField &bfdst, AthenaArray<Real> &bcdst);
+       FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
 
   int LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
                                        const NeighborBlock& nb);

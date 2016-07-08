@@ -30,16 +30,16 @@ using namespace std;
 /* function prototypes and global variables*/
  //sets BCs on inner-x1 (left edge) of grid.
 void stbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-              int is, int ie, int js, int je, int ks, int ke);
+              Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 //sets BCs on inner-x2 (bottom edge) of grid.
 void stbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-              int is, int ie, int js, int je, int ks, int ke);
+              Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 //sets BCs on outer-x1 (right edge) of grid.
 void stbv_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-              int is, int ie, int js, int je, int ks, int ke);
+              Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 //sets BCs on outer-x2 (top edge) of grid.
 void stbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-              int is, int ie, int js, int je, int ks, int ke);
+              Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 
 Real A1(  Real x1,   Real x2,   Real x3);
 Real A2(  Real x1,   Real x2,   Real x3);
@@ -275,7 +275,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
 /*  Boundary Condtions, outflowing, ix1, ox1, ix2, ox2  */
 void stbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-              int is, int ie, int js, int je, int ks, int ke)
+              Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
@@ -318,7 +318,7 @@ void stbv_iib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceFie
 
 
 void stbv_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-              int is, int ie, int js, int je, int ks, int ke)
+              Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
@@ -363,7 +363,7 @@ void stbv_oib(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceFie
 
 
 void stbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-              int is, int ie, int js, int je, int ks, int ke)
+              Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; k++) {
     for (int j=1; j<=(NGHOST); j++) {
@@ -408,7 +408,7 @@ void stbv_ijb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceFie
 
 
 void stbv_ojb(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-              int is, int ie, int js, int je, int ks, int ke)
+              Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
 {
   for (int k=ks; k<=ke; k++) {
     for (int j=1; j<=(NGHOST); j++) {
