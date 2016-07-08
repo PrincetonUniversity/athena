@@ -2069,9 +2069,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
 //--------------------------------------------------------------------------------------
 //! \fn unsigned int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3)
 //  \brief calculate an MPI tag for AMR block transfer
-// tag = local id of destination (25) + ox1(1) + ox2(1) + ox3(1) + physics(4)
+// tag = local id of destination (23) + ox1(1) + ox2(1) + ox3(1) + physics(5)
 
 unsigned int Mesh::CreateAMRMPITag(int lid, int ox1, int ox2, int ox3)
 {
-  return (lid<<7) | (ox1<<6)| (ox2<<5) | (ox3<<4) | TAG_AMR;
+  return (lid<<8) | (ox1<<7)| (ox2<<6) | (ox3<<5) | TAG_AMR;
 }

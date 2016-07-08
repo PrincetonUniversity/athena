@@ -192,7 +192,9 @@ int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2, int bmax)
 //--------------------------------------------------------------------------------------
 //! \fn unsigned int CreateBvalsMPITag(int lid, int phys, int bufid)
 //  \brief calculate an MPI tag for Bval communications
-// tag = local id of destination (18) + bufid(7) + physics(4)
+// tag = local id of destination (19) + bufid(7) + physics(5)
 
 unsigned int CreateBvalsMPITag(int lid, int phys, int bufid)
-  { return (lid<<11) | (bufid<<4) | phys; }
+{
+  return (lid<<12) | (bufid<<5) | phys;
+}
