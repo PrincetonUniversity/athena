@@ -1688,9 +1688,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
           BufferUtility::Pack3DData(pb->pfield->b.x1f, sendbuf[k],
                          pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
           BufferUtility::Pack3DData(pb->pfield->b.x2f, sendbuf[k],
-                         pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
+                         pb->is, pb->ie, pb->js, pb->je+f2, pb->ks, pb->ke, p);
           BufferUtility::Pack3DData(pb->pfield->b.x3f, sendbuf[k],
-                         pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
+                         pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
         }
         int tag=CreateAMRMPITag(nn-nslist[newrank[nn]], 0, 0, 0);
         MPI_Isend(sendbuf[k], bssame, MPI_ATHENA_REAL, newrank[nn],
@@ -1707,7 +1707,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
           int is, ie, js, je, ks, ke;
           if(ox1==0) is=pb->is-1,                       ie=pb->is+pb->block_size.nx1/2;
           else       is=pb->is+pb->block_size.nx1/2-1,  ie=pb->ie+1;
-          if(ox2==0) js=pb->js-f2,                      je=pb->js+pb->block_size.nx2/2;
           if(ox2==0) js=pb->js-f2,                      je=pb->js+pb->block_size.nx2/2;
           else       js=pb->js+pb->block_size.nx2/2-f2, je=pb->je+f2;
           if(ox3==0) ks=pb->ks-f3,                      ke=pb->ks+pb->block_size.nx3/2;
@@ -1943,9 +1942,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
           BufferUtility::Unpack3DData(recvbuf[k], dst.x1f,
                          pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
           BufferUtility::Unpack3DData(recvbuf[k], dst.x2f,
-                         pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
+                         pb->is, pb->ie, pb->js, pb->je+f2, pb->ks, pb->ke, p);
           BufferUtility::Unpack3DData(recvbuf[k], dst.x3f,
-                         pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
+                         pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
           if(pb->block_size.nx2==1) {
             for(int i=pb->is; i<=pb->ie; i++)
               dst.x2f(pb->ks, pb->js+1, i)=dst.x2f(pb->ks, pb->js, i);
@@ -1979,9 +1978,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
             BufferUtility::Unpack3DData(recvbuf[k], dst.x1f,
                            is, ie+1, js, je, ks, ke, p);
             BufferUtility::Unpack3DData(recvbuf[k], dst.x2f,
-                           is, ie+1, js, je, ks, ke, p);
+                           is, ie, js, je+f2, ks, ke, p);
             BufferUtility::Unpack3DData(recvbuf[k], dst.x3f,
-                           is, ie+1, js, je, ks, ke, p);
+                           is, ie, js, je, ks, ke+f3, p);
             if(pb->block_size.nx2==1) {
               for(int i=is; i<=ie; i++)
                 dst.x2f(pb->ks, pb->js+1, i)=dst.x2f(pb->ks, pb->js, i);
