@@ -588,7 +588,7 @@ BoundaryValues::~BoundaryValues()
     if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
 	  shboxvar_inner_hydro_.DeleteAthenaArray();
 	  flx_inner_hydro_.DeleteAthenaArray();
-	  for (int n; n<2; n++) {
+	  for (int n=0; n<2; n++) {
 	    delete[] send_innerbuf_hydro_[n];
 	    delete[] recv_innerbuf_hydro_[n];
 	  }
@@ -596,7 +596,7 @@ BoundaryValues::~BoundaryValues()
     if (pmb->loc.lx1 == (pmb->pmy_mesh->nrbx1-1)) { // if true for shearing outer blocks
 	  shboxvar_outer_hydro_.DeleteAthenaArray();
 	  flx_outer_hydro_.DeleteAthenaArray();
-	  for (int n; n<2; n++) {
+	  for (int n=0; n<2; n++) {
 	    delete[] send_outerbuf_hydro_[n];
 	    delete[] recv_outerbuf_hydro_[n];
 	  }
@@ -1131,32 +1131,34 @@ void BoundaryValues::StartReceivingAll(void)
 	// recv_rank_[2] and send_rank_[2] for MPI communication
 	// recv_lid_[2] and send_lid_[2]   for MPI communication(for creating diff Tags)
 	FindShearBlock();
-    /*
-	std::cout << "----cycle = "<< pmesh->ncycle << " on meshblock gid = " << pmb->gid << " ---" << std::endl;
+
+	if (pmesh->ncycle == 4) {
+	std::cout << "----cycle = "<< pmesh->ncycle << " time= " << pmesh->time << " on meshblock gid = " << pmb->gid << " ---" << std::endl;
 	  if(shbb_.inner) {
-		std::cout << "[inner]: " << shbb_.inner << std::endl;
-		std::cout << "[outer]: " << shbb_.outer << std::endl;
-        for (int i=0;i<pmesh->nrbx2;i++){
-	      std::cout << "[inner]: block_id= " << shbb_.igidlist[i] << "logical_id= " << shbb_.ilidlist[i] << " rank_id= " << shbb_.irnklist[i] << " level_id= " << shbb_.ilevlist[i] <<  std::endl;
-		}
-	    std::cout << "joverlap= " << joverlap_ << "eps_ = " << eps_ << std::endl;
-	    std::cout << "send_inner_gid[1] = " << send_inner_gid_[1] << "send_inner_lid[1] = " << send_inner_lid_[1] << "send_inner_rank[1] = " << send_inner_rank_[1] << "send_innersize_hydro[1] = " << send_innersize_hydro_[1] << std::endl;
-	    std::cout << "recv_inner_gid[1] = " << recv_inner_gid_[1] << "recv_inner_lid[1] = " << recv_inner_lid_[1] << "recv_inner_rank[1] = " << recv_inner_rank_[1] << "recv_innersize_hydro[1] = " << recv_innersize_hydro_[1] << std::endl;
-	    std::cout << "send_inner_gid[0] = " << send_inner_gid_[0] << "send_inner_lid[0] = " << send_inner_lid_[0] << "send_inner_rank[0] = " << send_inner_rank_[0] << "send_innersize_hydro[0] = " << send_innersize_hydro_[0] << std::endl;
-	    std::cout << "recv_inner_gid[0] = " << recv_inner_gid_[0] << "recv_inner_lid[0] = " << recv_inner_lid_[0] << "recv_inner_rank[0] = " << recv_inner_rank_[0] << "recv_innersize_hydro[0] = " << recv_innersize_hydro_[0] << std::endl;
+		//std::cout << "[inner]: " << shbb_.inner << std::endl;
+		//std::cout << "[outer]: " << shbb_.outer << std::endl;
+        //for (int i=0;i<pmesh->nrbx2;i++){
+	    //  std::cout << "[inner]: block_id= " << shbb_.igidlist[i] << "logical_id= " << shbb_.ilidlist[i] << " rank_id= " << shbb_.irnklist[i] << " level_id= " << shbb_.ilevlist[i] << std::endl;
+		//}
+	    //std::cout << "joverlap= " << joverlap_ << " eps_ = " << eps_ << std::endl;
+	    std::cout << "send_inner_gid[1] = " << send_inner_gid_[1] << " send_inner_lid[1] = " << send_inner_lid_[1] << " send_inner_rank[1] = " << send_inner_rank_[1] << " send_innersize_hydro[1] = " << send_innersize_hydro_[1] << " inner_bflag[1]= " << shbox_inner_hydro_flag_[1] << std::endl;
+	    std::cout << "recv_inner_gid[1] = " << recv_inner_gid_[1] << " recv_inner_lid[1] = " << recv_inner_lid_[1] << " recv_inner_rank[1] = " << recv_inner_rank_[1] << " recv_innersize_hydro[1] = " << recv_innersize_hydro_[1] << " inner_bflag[1]= " << shbox_inner_hydro_flag_[1] << std::endl;
+	    std::cout << "send_inner_gid[0] = " << send_inner_gid_[0] << " send_inner_lid[0] = " << send_inner_lid_[0] << " send_inner_rank[0] = " << send_inner_rank_[0] << " send_innersize_hydro[0] = " << send_innersize_hydro_[0] << " inner_bflag[0]= " << shbox_inner_hydro_flag_[0] << std::endl;
+	    std::cout << "recv_inner_gid[0] = " << recv_inner_gid_[0] << " recv_inner_lid[0] = " << recv_inner_lid_[0] << " recv_inner_rank[0] = " << recv_inner_rank_[0] << " recv_innersize_hydro[0] = " << recv_innersize_hydro_[0] << " inner_bflag[0]= " << shbox_inner_hydro_flag_[0] << std::endl;
 	 }
 	 if(shbb_.outer) {
-		std::cout << "[outer]: " << shbb_.outer << std::endl;
-		std::cout << "[inner]: " << shbb_.inner << std::endl;
-        for (int i=0;i<pmesh->nrbx2;i++){
-	      std::cout << "[outer]: block_id= " << shbb_.ogidlist[i] << "logical_id= " << shbb_.olidlist[i] << " rank_id= " << shbb_.ornklist[i] << " level_id= " << shbb_.olevlist[i] <<  std::endl;
-		}
-	    std::cout << "send_outer_gid[1] = " << send_outer_gid_[1] << "send_outer_lid[1] = " << send_outer_lid_[1] << "send_outer_rank[1] = " << send_outer_rank_[1] << "send_outersize_hydro[1] = " << send_outersize_hydro_[1] << std::endl;
-	    std::cout << "recv_outer_gid[1] = " << recv_outer_gid_[1] << "recv_outer_lid[1] = " << recv_outer_lid_[1] << "recv_outer_rank[1] = " << recv_outer_rank_[1] << "recv_outersize_hydro[1] = " << recv_outersize_hydro_[1] << std::endl;
-	    std::cout << "send_outer_gid[0] = " << send_outer_gid_[0] << "send_outer_lid[0] = " << send_outer_lid_[0] << "send_outer_rank[0] = " << send_outer_rank_[0] << "send_outersize_hydro[0] = " << send_outersize_hydro_[0] << std::endl;
-	    std::cout << "recv_outer_gid[0] = " << recv_outer_gid_[0] << "recv_outer_lid[0] = " << recv_outer_lid_[0] << "recv_outer_rank[0] = " << recv_outer_rank_[0] << "recv_outersize_hydro[0] = " << recv_outersize_hydro_[0] << std::endl;
+		//std::cout << "[outer]: " << shbb_.outer << std::endl;
+		//std::cout << "[inner]: " << shbb_.inner << std::endl;
+        //for (int i=0;i<pmesh->nrbx2;i++){
+	    //  std::cout << "[outer]: block_id= " << shbb_.ogidlist[i] << "logical_id= " << shbb_.olidlist[i] << " rank_id= " << shbb_.ornklist[i] << " level_id= " << shbb_.olevlist[i] <<  std::endl;
+		//}
+	    std::cout << "send_outer_gid[1] = " << send_outer_gid_[1] << " send_outer_lid[1] = " << send_outer_lid_[1] << " send_outer_rank[1] = " << send_outer_rank_[1] << " send_outersize_hydro[1] = " << send_outersize_hydro_[1] << " outer_bflag[1]= " << shbox_outer_hydro_flag_[1] << std::endl;
+	    std::cout << "recv_outer_gid[1] = " << recv_outer_gid_[1] << " recv_outer_lid[1] = " << recv_outer_lid_[1] << " recv_outer_rank[1] = " << recv_outer_rank_[1] << " recv_outersize_hydro[1] = " << recv_outersize_hydro_[1] << " outer_bflag[1]= " << shbox_outer_hydro_flag_[1] << std::endl;
+	    std::cout << "send_outer_gid[0] = " << send_outer_gid_[0] << " send_outer_lid[0] = " << send_outer_lid_[0] << " send_outer_rank[0] = " << send_outer_rank_[0] << " send_outersize_hydro[0] = " << send_outersize_hydro_[0] << " outer_bflag[0]= " << shbox_outer_hydro_flag_[0] << std::endl;
+	    std::cout << "recv_outer_gid[0] = " << recv_outer_gid_[0] << " recv_outer_lid[0] = " << recv_outer_lid_[0] << " recv_outer_rank[0] = " << recv_outer_rank_[0] << " recv_outersize_hydro[0] = " << recv_outersize_hydro_[0] << " outer_bflag[0]= " << shbox_outer_hydro_flag_[0] << std::endl;
 	 }
-	 */
+	}
+
 
 	// update send/recv buffer sizes: send_size_hydro_[2] and recv_size_hydro_[2].
 #ifdef MPI_PARALLEL
@@ -1170,10 +1172,10 @@ void BoundaryValues::StartReceivingAll(void)
           size = ssize_*NHYDRO*recv_innersize_hydro_[n];
           //tag  = CreateBvalsMPITag(recv_inner_lid_[n], TAG_SHBOX_HYDRO, n);
           tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_HYDRO, n);
-	      std::cout << "on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << "recv_inner[" << n << "] tag= " << tag << "(" << recv_inner_rank_[n] << "->" << Globals::my_rank << ")" << std::endl;
           MPI_Irecv(recv_innerbuf_hydro_[n],size,MPI_ATHENA_REAL,
                         recv_inner_rank_[n],tag,MPI_COMM_WORLD,
 					    &rq_innerrecv_hydro_[n]);
+	      std::cout << "[start_recv] on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << "recv_inner[" << n << "] tag= " << tag << " bufsize= " << size << "(" << recv_inner_rank_[n] << "->" << Globals::my_rank << ") rq_innerrecv[" << n << "]= " << rq_innerrecv_hydro_[n] << std::endl;
 	    }
 	}}
 
@@ -1187,7 +1189,7 @@ void BoundaryValues::StartReceivingAll(void)
           size = ssize_*NHYDRO*recv_outersize_hydro_[n];
           //tag  = CreateBvalsMPITag(recv_outer_lid_[n], TAG_SHBOX_HYDRO, n+offset);
           tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_HYDRO, n+offset);
-	      std::cout << "on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << "recv_outer[" << n << "] tag= " << tag << "(" << recv_outer_rank_[n] << "->" << Globals::my_rank << ")" << std::endl;
+	      std::cout << "[start_recv] on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << "recv_outer[" << n << "] tag= " << tag << " bufsize= " << size << "(" << recv_outer_rank_[n] << "->" << Globals::my_rank << ") rq_outerrecv[" << n << "]= " << rq_outerrecv_hydro_[n] << std::endl;
           MPI_Irecv(recv_outerbuf_hydro_[n],size,MPI_ATHENA_REAL,
                       recv_outer_rank_[n],tag,MPI_COMM_WORLD,
 					  &rq_outerrecv_hydro_[n]);
@@ -1315,23 +1317,27 @@ void BoundaryValues::ClearBoundaryAll(void)
 //[JMSHI   clear shearingbox boundary communications
   if (SHEARING_BOX) {
 	//std::cout <<"reach ClearBoundaryAll\n" << std::endl;
-	if (shbb_.inner) {
+	if (shbb_.inner == true) {
 	  for (int n=0; n<2; n++){
         if(send_inner_rank_[n] == -1) continue;
 		shbox_inner_hydro_flag_[n] = BNDRY_WAITING;
 #ifdef MPI_PARALLEL
         if(send_inner_rank_[n]!=Globals::my_rank) {
+	      Mesh *pmesh = pmb->pmy_mesh;
+	      std::cout << "[clear bndry] on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << "rq_innersend[" << n << "] = " << rq_innersend_hydro_[n] << std::endl;
           MPI_Wait(&rq_innersend_hydro_[n],MPI_STATUS_IGNORE); // Wait for Isend
         }
 #endif
 	  }
     } // inner boundary
-	if (shbb_.outer) {
+	if (shbb_.outer == true) {
 	  for (int n=0; n<2; n++){
         if(send_outer_rank_[n] == -1) continue;
 		shbox_outer_hydro_flag_[n] = BNDRY_WAITING;
 #ifdef MPI_PARALLEL
         if(send_outer_rank_[n]!=Globals::my_rank) {
+	      Mesh *pmesh = pmb->pmy_mesh;
+	      std::cout << "[clear_bndry] on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << "rq_outersend[" << n << "] = " << rq_outersend_hydro_[n] << std::endl;
           MPI_Wait(&rq_outersend_hydro_[n],MPI_STATUS_IGNORE); // Wait for Isend
         }
 #endif

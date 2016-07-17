@@ -206,13 +206,6 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
 		  }
 		}
 	}}
-	// debug:
-	//if (i==0 &&  k==ks && n==2) {
-	//  for(int j=js-NGHOST; j<=je+NGHOST; j++){
-	//    std::cout << "outer step 3:[i,j,k] = "<< i+ie+1 << " " << j << " " << k << " " << "GhstZns(IM2,k,i,j), GhstZnsBuf(IM2,k,i,j)= " <<
-	//	  GhstZns(n,k,i,j) << " " << GhstZnsBuf(n,k,i,j) << std::endl;
-	//  }
-	//}
 
     // step 3. load send_buf_hydro_ buffers
     LoadHydroShearing(shboxvar_inner_hydro_,send_innerbuf_hydro_[1],1);
@@ -367,7 +360,7 @@ void BoundaryValues::ReceiveHydroShearingboxBoundaryBuffersWithWait(AthenaArray<
   MeshBlock *pmb=pmy_mblock_;
   //std::cout << "do some ReceiveHydroShearingboxBoundaryBuffersWithWait\n" << std::endl;
 
-  if(shbb_.inner) { // check inner boundaries
+  if(shbb_.inner == true) { // check inner boundaries
 #ifdef MPI_PARALLEL
 	if (recv_inner_rank_[1]!=Globals::my_rank)
       MPI_Wait(&rq_innerrecv_hydro_[1],MPI_STATUS_IGNORE);
@@ -376,7 +369,7 @@ void BoundaryValues::ReceiveHydroShearingboxBoundaryBuffersWithWait(AthenaArray<
     shbox_inner_hydro_flag_[1] = BNDRY_COMPLETED;
   } // inner boundary
 
-  if(shbb_.outer) { // check inner boundaries
+  if(shbb_.outer == true) { // check inner boundaries
 #ifdef MPI_PARALLEL
 	if (recv_outer_rank_[1]!=Globals::my_rank)
       MPI_Wait(&rq_outerrecv_hydro_[1],MPI_STATUS_IGNORE);
@@ -399,7 +392,7 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
   bool flagi=true, flago=true;
   //std::cout << "do some ReceiveHydroShearingboxBoundaryBuffers\n" << std::endl;
 
-  if(shbb_.inner) { // check inner boundaries
+  if(shbb_.inner == true) { // check inner boundaries
 	for(int n=0; n<2; n++) {
       if(shbox_inner_hydro_flag_[n]==BNDRY_COMPLETED) continue;
 	  if(shbox_inner_hydro_flag_[n]==BNDRY_WAITING) {
@@ -407,8 +400,8 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
           flagi=false;
 		  continue;
 		}
-#ifdef MPI_PARALLEL
         else { // MPI boundary
+#ifdef MPI_PARALLEL
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
           MPI_Test(&rq_innerrecv_hydro_[n],&test,MPI_STATUS_IGNORE);
@@ -416,10 +409,10 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
             flagi=false;
             continue;
           }
-	      std::cout << "on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << " rank= " << Globals::my_rank << "rq_innerrecv[" << n << "] test= " << test << std::endl;
+	      std::cout << "[recv_hyd] on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << " rank= " << Globals::my_rank << "rq_innerrecv[" << n << "]" << rq_innerrecv_hydro_[n] << std::endl;
 		  shbox_inner_hydro_flag_[n] = BNDRY_ARRIVED;
-	    }
 #endif
+	    }
       }
 	  // set dst if boundary arrived
     //if(nb.level==pmb->loc.level)
@@ -429,7 +422,7 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
     } // loop over recv[0] and recv[1]
   } // inner boundary
 
-  if(shbb_.outer) { // check outer boundaries
+  if(shbb_.outer == true) { // check outer boundaries
 	int offset = 2;
 	for(int n=0; n<2; n++) {
       if(shbox_outer_hydro_flag_[n]==BNDRY_COMPLETED) continue;
@@ -447,7 +440,7 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
             flago=false;
             continue;
           }
-	      std::cout << "on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << " rank= " << Globals::my_rank << "rq_outerrecv[" << n << "] test= " << test << std::endl;
+	      std::cout << "[recv_hyd] on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << " rank= " << Globals::my_rank << "rq_outerrecv[" << n << "]" << rq_outerrecv_hydro_[n] << std::endl;
 		  shbox_outer_hydro_flag_[n] = BNDRY_ARRIVED;
 	    }
 #endif

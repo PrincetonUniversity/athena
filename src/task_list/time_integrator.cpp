@@ -95,7 +95,8 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 //[JMSHI
 	if (SHEARING_BOX) { // Shearingbox BC
 	  AddTimeIntegratorTask(SEND_HYDSH,RECV_HYD);
-	  AddTimeIntegratorTask(RECV_HYDSH,SEND_HYD);
+	  //AddTimeIntegratorTask(RECV_HYDSH,SEND_HYD);
+	  AddTimeIntegratorTask(RECV_HYDSH,RECV_HYD);
 	}
 //JMSHI]
 
