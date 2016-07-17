@@ -31,7 +31,7 @@
 #include "../mesh/mesh.hpp"
 #include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
-#include "../hydro/eos/eos.hpp"
+#include "../eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
 
 
@@ -54,7 +54,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real vl = 0.0;
   Real wl = 0.0;
 
-  Real gm1 = (phydro->peos->GetGamma()) - 1.0;
+  Real gm1 = (peos->GetGamma()) - 1.0;
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
