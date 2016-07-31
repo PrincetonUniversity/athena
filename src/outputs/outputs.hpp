@@ -11,16 +11,17 @@
 
 // C/C++ headers
 #include <stdio.h>  // size_t
-#include <string>  // string
+#include <string> 
 
 // Athena++ headers
-#include "wrapper.hpp"
+#include "io_wrapper.hpp"
 #include "../athena.hpp"
 
 #ifdef HDF5OUTPUT
 #include <hdf5.h>
 #endif
 
+// forward declarations
 class Mesh;
 class ParameterInput;
 
@@ -52,7 +53,7 @@ typedef struct OutputParameters {
 //  \brief container for output data and metadata; used as node in linked list
 
 typedef struct OutputData {
-  std::string type;        // one of (SCALARS,VECTORS)
+  std::string type;        // one of (SCALARS,VECTORS) used for vtk outputs
   std::string name;
   AthenaArray<Real> data;  // array containing data (usually shallow copy/slice)
   struct OutputData *pnext, *pprev; // ptrs to next and previous nodes in list
@@ -70,7 +71,7 @@ public:
   virtual ~OutputType();
 
   // data
-  int oil,oiu,ojl,oju,okl,oku;    // OutputData array start/end indices
+  int out_is,out_ie,out_js,out_je,out_ks,out_ke;  // OutputData array start/end indices
   OutputParameters output_params; // control data read from <output> block
   OutputType *pnext_type;         // ptr to next node in linked list of OutputTypes
 

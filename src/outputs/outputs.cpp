@@ -74,8 +74,6 @@
 #include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
 #include "../coordinates/coordinates.hpp" // Coordinates
-
-// this class header
 #include "outputs.hpp"
 
 //--------------------------------------------------------------------------------------
@@ -694,24 +692,24 @@ bool OutputType::Slice(MeshBlock *pmb, int dim)
     if (dim == 3) {
       pnew->data.NewAthenaArray(nx4,1,nx2,nx1);
       for (int n=0; n<nx4; ++n){
-      for (int j=ojl; j<=oju; ++j){
-        for (int i=oil; i<=oiu; ++i){
+      for (int j=out_js; j<=out_je; ++j){
+        for (int i=out_is; i<=out_ie; ++i){
           pnew->data(n,0,j,i) = pdata->data(n,kslice,j,i);
         }
       }}
     } else if (dim == 2) {
       pnew->data.NewAthenaArray(nx4,nx3,1,nx1);
       for (int n=0; n<nx4; ++n){
-      for (int k=okl; k<=oku; ++k){
-        for (int i=oil; i<=oiu; ++i){
+      for (int k=out_ks; k<=out_ke; ++k){
+        for (int i=out_is; i<=out_ie; ++i){
           pnew->data(n,k,0,i) = pdata->data(n,k,jslice,i);
         }
       }}
     } else {
       pnew->data.NewAthenaArray(nx4,nx3,nx2,1);
       for (int n=0; n<nx4; ++n){
-      for (int k=okl; k<=oku; ++k){
-        for (int j=ojl; j<=oju; ++j){
+      for (int k=out_ks; k<=out_ke; ++k){
+        for (int j=out_js; j<=out_je; ++j){
           pnew->data(n,k,j,0) = pdata->data(n,k,j,islice);
         }
       }}
@@ -723,14 +721,14 @@ bool OutputType::Slice(MeshBlock *pmb, int dim)
  
   // modify array indices
   if (dim == 3) {
-    okl = 0;
-    oku = 0;
+    out_ks = 0;
+    out_ke = 0;
   } else if (dim == 2) {
-    ojl = 0;
-    oju = 0;
+    out_js = 0;
+    out_je = 0;
   } else {
-    oil = 0;
-    oiu = 0;
+    out_is = 0;
+    out_ie = 0;
   }
 
   return true;
@@ -763,27 +761,27 @@ void OutputType::Sum(MeshBlock* pmb, int dim)
     if (dim == 3) {
       pnew->data.NewAthenaArray(nx4,1,nx2,nx1);
       for (int n=0; n<nx4; ++n){
-      for (int k=okl; k<=oku; ++k){
-      for (int j=ojl; j<=oju; ++j){
-        for (int i=oil; i<=oiu; ++i){
+      for (int k=out_ks; k<=out_ke; ++k){
+      for (int j=out_js; j<=out_je; ++j){
+        for (int i=out_is; i<=out_ie; ++i){
           pnew->data(n,0,j,i) += pdata->data(n,k,j,i);
         }
       }}}
     } else if (dim == 2) {
       pnew->data.NewAthenaArray(nx4,nx3,1,nx1);
       for (int n=0; n<nx4; ++n){
-      for (int k=okl; k<=oku; ++k){
-      for (int j=ojl; j<=oju; ++j){
-        for (int i=oil; i<=oiu; ++i){
+      for (int k=out_ks; k<=out_ke; ++k){
+      for (int j=out_js; j<=out_je; ++j){
+        for (int i=out_is; i<=out_ie; ++i){
           pnew->data(n,k,0,i) += pdata->data(n,k,j,i);
         }
       }}}
     } else {
       pnew->data.NewAthenaArray(nx4,nx3,nx2,1);
       for (int n=0; n<nx4; ++n){
-      for (int k=okl; k<=oku; ++k){
-      for (int j=ojl; j<=oju; ++j){
-        for (int i=oil; i<=oiu; ++i){
+      for (int k=out_ks; k<=out_ke; ++k){
+      for (int j=out_js; j<=out_je; ++j){
+        for (int i=out_is; i<=out_ie; ++i){
           pnew->data(n,k,j,0) += pdata->data(n,k,j,i);
         }
       }}}
@@ -795,14 +793,14 @@ void OutputType::Sum(MeshBlock* pmb, int dim)
  
   // modify array indices
   if (dim == 3) {
-    okl = 0;
-    oku = 0;
+    out_ks = 0;
+    out_ke = 0;
   } else if (dim == 2) {
-    ojl = 0;
-    oju = 0;
+    out_js = 0;
+    out_je = 0;
   } else {
-    oil = 0;
-    oiu = 0;
+    out_is = 0;
+    out_ie = 0;
   }
 
   return;

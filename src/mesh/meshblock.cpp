@@ -37,13 +37,10 @@
 #include "../bvals/bvals.hpp"
 #include "../eos/eos.hpp"
 #include "../parameter_input.hpp"
-#include "../outputs/wrapper.hpp"
-#include "mesh_refinement.hpp"
-#include "meshblock_tree.hpp"
 #include "../utils/buffer_utils.hpp"
 #include "../reconstruct/reconstruction.hpp"
-
-// this class header
+#include "mesh_refinement.hpp"
+#include "meshblock_tree.hpp"
 #include "mesh.hpp"
 
 //--------------------------------------------------------------------------------------

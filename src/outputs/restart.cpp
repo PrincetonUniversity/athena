@@ -75,7 +75,7 @@ void RestartOutput::Initialize(Mesh *pM, ParameterInput *pin, bool wtflag)
     pin->SetInteger(output_params.block_name, "file_number", output_params.file_number);
     pin->SetReal(output_params.block_name, "next_time", output_params.next_time);
   }
-  resfile.Open(fname.c_str(),WRAPPER_WRITE_MODE);
+  resfile.Open(fname.c_str(),IO_WRAPPER_WRITE_MODE);
 
   // prepare the input parameters
   pin->ParameterDump(ost);

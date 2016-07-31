@@ -16,7 +16,7 @@
 //! \file formatted_table.cpp
 //  \brief writes output data as a formatted table.  Should not be used to output large
 //  3D data sets as this format is very slow and memory intensive.  Most useful for 1D
-//  slices and/or sums.
+//  slices and/or sums.  Writes one file per Meshblock.
 //======================================================================================
 
 // C/C++ headers
@@ -31,8 +31,8 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../mesh/mesh.hpp"
-#include "outputs.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "outputs.hpp"
 
 //--------------------------------------------------------------------------------------
 // FormattedTableOutput constructor
@@ -46,6 +46,7 @@ FormattedTableOutput::FormattedTableOutput(OutputParameters oparams)
 //--------------------------------------------------------------------------------------
 //! \fn void FormattedTableOutput:::WriteOutputFile(Mesh *pm)
 //  \brief writes OutputData to file in tabular format using C style fprintf
+//         Writes one file per MeshBlock
 
 void FormattedTableOutput::WriteOutputFile(Mesh *pm)
 {
@@ -53,20 +54,22 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm)
 
   // Loop over MeshBlocks
   while (pmb != NULL) {
-    oil=pmb->is; oiu=pmb->ie;
-    ojl=pmb->js; oju=pmb->je;
-    okl=pmb->ks; oku=pmb->ke;
+
+    // set start/end array indices depending on whether ghost zones are included
+    out_is=pmb->is; out_ie=pmb->ie;
+    out_js=pmb->js; out_je=pmb->je;
+    out_ks=pmb->ks; out_ke=pmb->ke;
     if (output_params.include_ghost_zones) {
-      oil -= NGHOST; oiu += NGHOST;
-      if (ojl != oju) {ojl -= NGHOST; oju += NGHOST;}
-      if (okl != oku) {okl -= NGHOST; oku += NGHOST;}
+      out_is -= NGHOST; out_ie += NGHOST;
+      if (out_js != out_je) {out_js -= NGHOST; out_je += NGHOST;}
+      if (out_ks != out_ke) {out_ks -= NGHOST; out_ke += NGHOST;}
     }
 
-    // set ptrs to data in OutputData linked list
+    // set ptrs to data in OutputData linked list, then slice/sum if needed
     LoadOutputData(pmb);
-    if (TransformOutputData(pmb) == false) {continue;} // skip if slice out of range
+    if (TransformOutputData(pmb) == false) {continue;} // skip if slice was out of range
 
-    // create filename: "file_basename"+ "."+"bloclid"+"."+"file_id"+"."+XXXXX+".tab",
+    // create filename: "file_basename"+ "."+"blockid"+"."+"file_id"+"."+XXXXX+".tab",
     // where XXXXX = 5-digit file_number
     std::string fname;
     char number[6];
@@ -99,9 +102,9 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm)
 
     // write x1, x2, x3 column headers
     fprintf(pfile,"#");
-    if (oil != oiu) fprintf(pfile," i       x1v     ");
-    if (ojl != oju) fprintf(pfile," j       x2v     ");
-    if (okl != oku) fprintf(pfile," k       x3v     ");
+    if (out_is != out_ie) fprintf(pfile," i       x1v     ");
+    if (out_js != out_je) fprintf(pfile," j       x2v     ");
+    if (out_ks != out_ke) fprintf(pfile," k       x3v     ");
     // write data column headers from "name" stored in linked-list of OutputData's
     OutputData *pdata = pfirst_data_;
     while (pdata != NULL) {
@@ -111,20 +114,20 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm)
     fprintf(pfile,"\n"); // terminate line
 
     // loop over all cells in data arrays
-    for (int k=okl; k<=oku; ++k) {
-    for (int j=ojl; j<=oju; ++j) {
-    for (int i=oil; i<=oiu; ++i) {
+    for (int k=out_ks; k<=out_ke; ++k) {
+    for (int j=out_js; j<=out_je; ++j) {
+    for (int i=out_is; i<=out_ie; ++i) {
 
       // write x1, x2, x3 indices and coordinates on start of new line
-      if (oil != oiu) {
+      if (out_is != out_ie) {
         fprintf(pfile,"%04d",i);
         fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x1v(i));
       }
-      if (ojl != oju) {
+      if (out_js != out_je) {
         fprintf(pfile," %04d",j);  // note extra space for formatting
         fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x2v(j));
       }
-      if (okl != oku) {
+      if (out_ks != out_ke) {
         fprintf(pfile," %04d",k);  // note extra space for formatting
         fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x3v(k));
       }
@@ -143,7 +146,7 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm)
 
     // don't forget to close the output file and clean up ptrs to data in OutputData
     fclose(pfile);
-    ClearOutputData();
+    ClearOutputData(); // required when LoadOutputData() is used.
 
     pmb=pmb->next;
 

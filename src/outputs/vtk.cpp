@@ -16,6 +16,7 @@
 //! \file vtk.cpp
 //  \brief writes output data in (legacy) vtk format.
 //  Data is written in RECTILINEAR_GRID geometry, in BINARY format, and in FLOAT type
+//  Writes one file per MeshBlock.
 //======================================================================================
 
 // C/C++ headers
@@ -32,8 +33,8 @@
 #include "../athena_arrays.hpp"
 #include "../mesh/mesh.hpp"
 #include "../hydro/hydro.hpp"
-#include "outputs.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "outputs.hpp"
 
 //--------------------------------------------------------------------------------------
 // Functions to detect big endian machine, and to byte-swap 32-bit words.  The vtk
@@ -63,7 +64,7 @@ VTKOutput::VTKOutput(OutputParameters oparams)
 
 //--------------------------------------------------------------------------------------
 //! \fn void VTKOutput:::WriteOutputFile(Mesh *pm)
-//  \brief writes OutputData to file in (legacy) vtk format
+//  \brief writes OutputData to file in (legacy) vtk format, one MeshBlock per file
 
 void VTKOutput::WriteOutputFile(Mesh *pm)
 {
@@ -72,20 +73,22 @@ void VTKOutput::WriteOutputFile(Mesh *pm)
 
   // Loop over MeshBlocks
   while (pmb != NULL) {
-    oil=pmb->is; oiu=pmb->ie;
-    ojl=pmb->js; oju=pmb->je;
-    okl=pmb->ks; oku=pmb->ke;
+
+    // set start/end array indices depending on whether ghost zones are included
+    out_is=pmb->is; out_ie=pmb->ie;
+    out_js=pmb->js; out_je=pmb->je;
+    out_ks=pmb->ks; out_ke=pmb->ke;
     if (output_params.include_ghost_zones) {
-      oil -= NGHOST; oiu += NGHOST;
-      if (ojl != oju) {ojl -= NGHOST; oju += NGHOST;}
-      if (okl != oku) {okl -= NGHOST; oku += NGHOST;}
+      out_is -= NGHOST; out_ie += NGHOST;
+      if (out_js != out_je) {out_js -= NGHOST; out_je += NGHOST;}
+      if (out_ks != out_ke) {out_ks -= NGHOST; out_ke += NGHOST;}
     }
 
-    // set ptrs to data in OutputData linked list
+    // set ptrs to data in OutputData linked list, then slice/sum as needed
     LoadOutputData(pmb);
-    if (TransformOutputData(pmb) == false) {continue;} // skip if slice out of range
+    if (TransformOutputData(pmb) == false) {continue;} // skip if slice was out of range
 
-    // create filename: "file_basename"+ "."+"bloclid"+"."+"file_id"+"."+XXXXX+".vtk",
+    // create filename: "file_basename"+ "."+"blockid"+"."+"file_id"+"."+XXXXX+".vtk",
     // where XXXXX = 5-digit file_number
     std::string fname;
     char number[6];
@@ -113,26 +116,21 @@ void VTKOutput::WriteOutputFile(Mesh *pm)
 
     // There are five basic parts to the VTK "legacy" file format.
     //  1. Write file version and identifier
-
     fprintf(pfile,"# vtk DataFile Version 2.0\n");
 
     //  2. Header
-
-    // print file header
     fprintf(pfile,"# Athena++ data at time=%e",pm->time);
     fprintf(pfile,"  cycle=%d",pmb->pmy_mesh->ncycle);
     fprintf(pfile,"  variables=%s \n",output_params.variable.c_str());
 
     //  3. File format
-
     fprintf(pfile,"BINARY\n");
 
     //  4. Dataset structure
-
-    int ncells1 = oiu - oil + 1;
-    int ncells2 = oju - ojl + 1;
-    int ncells3 = oku - okl + 1;
-    int ncoord1 = ncells1 + 1;
+    int ncells1 = out_ie - out_is + 1;
+    int ncells2 = out_je - out_js + 1;
+    int ncells3 = out_ke - out_ks + 1;
+    int ncoord1 = ncells1; if (ncells1 > 1) ncoord1++;
     int ncoord2 = ncells2; if (ncells2 > 1) ncoord2++;
     int ncoord3 = ncells3; if (ncells3 > 1) ncoord3++;
 
@@ -143,40 +141,40 @@ void VTKOutput::WriteOutputFile(Mesh *pm)
 
     // Specify the type of data, dimensions, and coordinates.  If N>1, then write N+1
     // cell faces as binary floats.  If N=1, then write 1 cell center position.
-
     fprintf(pfile,"DATASET RECTILINEAR_GRID\n");
     fprintf(pfile,"DIMENSIONS %d %d %d\n",ncoord1,ncoord2,ncoord3);
 
     // write x1-coordinates as binary float in big endian order
-
     fprintf(pfile,"X_COORDINATES %d float\n",ncoord1);
-    for (int i=oil; i<=oiu+1; ++i) {
-      data[i-oil] = (float)(pmb->pcoord->x1f(i));
+    if (ncells1 == 1) {
+        data[0] = (float)(pmb->pcoord->x1v(out_is));
+    } else {
+      for (int i=out_is; i<=out_ie+1; ++i) {
+        data[i-out_is] = (float)(pmb->pcoord->x1f(i));
+      }
     }
     if (!big_end) {for (int i=0; i<ncoord1; ++i) Swap4Bytes(&data[i]);}
     fwrite(data,sizeof(float),(size_t)ncoord1,pfile);
 
     // write x2-coordinates as binary float in big endian order
-
     fprintf(pfile,"\nY_COORDINATES %d float\n",ncoord2);
     if (ncells2 == 1) {
-        data[0] = (float)(pmb->pcoord->x2v(ojl));
+        data[0] = (float)(pmb->pcoord->x2v(out_js));
     } else {
-      for (int j=ojl; j<=oju+1; ++j) {
-        data[j-ojl] = (float)(pmb->pcoord->x2f(j));
+      for (int j=out_js; j<=out_je+1; ++j) {
+        data[j-out_js] = (float)(pmb->pcoord->x2f(j));
       }
     }
     if (!big_end) {for (int i=0; i<ncoord2; ++i) Swap4Bytes(&data[i]);}
     fwrite(data,sizeof(float),(size_t)ncoord2,pfile);
 
     // write x3-coordinates as binary float in big endian order
-
     fprintf(pfile,"\nZ_COORDINATES %d float\n",ncoord3);
     if (ncells3 == 1) {
-        data[0] = (float)(pmb->pcoord->x3v(okl));
+        data[0] = (float)(pmb->pcoord->x3v(out_ks));
     } else {
-      for (int k=okl; k<=oku+1; ++k) {
-        data[k-okl] = (float)(pmb->pcoord->x3f(k));
+      for (int k=out_ks; k<=out_ke+1; ++k) {
+        data[k-out_ks] = (float)(pmb->pcoord->x3f(k));
       }
     }
     if (!big_end) {for (int i=0; i<ncoord3; ++i) Swap4Bytes(&data[i]);}
@@ -184,7 +182,6 @@ void VTKOutput::WriteOutputFile(Mesh *pm)
 
     //  5. Data.  An arbitrary number of scalars and vectors can be written (every node
     //  in the OutputData linked lists), all in binary floats format
-
     fprintf(pfile,"\nCELL_DATA %d", (ncells1)*(ncells2)*(ncells3));
 
     OutputData *pdata = pfirst_data_;
@@ -195,12 +192,12 @@ void VTKOutput::WriteOutputFile(Mesh *pm)
 
       int nvar = pdata->data.GetDim4();
       if (nvar == 1) fprintf(pfile,"LOOKUP_TABLE default\n");
-      for (int k=okl; k<=oku; ++k) {
-      for (int j=ojl; j<=oju; ++j) {
+      for (int k=out_ks; k<=out_ke; ++k) {
+      for (int j=out_js; j<=out_je; ++j) {
 
-        for (int i=oil; i<=oiu; ++i) {
+        for (int i=out_is; i<=out_ie; ++i) {
         for (int n=0; n<nvar; ++n) {
-          data[nvar*(i-oil)+n] = (float)pdata->data(n,k,j,i);
+          data[nvar*(i-out_is)+n] = (float)pdata->data(n,k,j,i);
         }}
 
         // write data in big endian order
@@ -214,7 +211,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm)
 
     // don't forget to close the output file and clean up ptrs to data in OutputData
     fclose(pfile);
-    ClearOutputData();
+    ClearOutputData();  // required when LoadOutputData() is used.
     delete data;
 
     pmb=pmb->next;

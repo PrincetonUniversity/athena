@@ -14,8 +14,8 @@
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
 //! \file history.cpp
-//  \brief writes history output data.  History data are volume-averaged quantities that
-//  are output frequently in time to trace their history.
+//  \brief writes history output data, volume-averaged quantities that are output
+//         frequently in time to trace their history.
 //======================================================================================
 
 // C/C++ headers
@@ -35,21 +35,18 @@
 #include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
 #include "../mesh/mesh.hpp"
-
-//this class header
 #include "outputs.hpp"
 
 #define NHISTORY_VARS ((NHYDRO)+(NFIELD)+3)
 
 //--------------------------------------------------------------------------------------
 // HistoryOutput constructor
+// destructor - not needed for this derived class
 
 HistoryOutput::HistoryOutput(OutputParameters oparams)
   : OutputType(oparams)
 {
 }
-
-// destructor - not needed for this derived class
 
 //--------------------------------------------------------------------------------------
 //! \fn void OutputType::HistoryFile()
@@ -64,14 +61,14 @@ void HistoryOutput::WriteOutputFile(Mesh *pm)
   vol.NewAthenaArray(ncells1);
 
   Real data_sum[(NHISTORY_VARS)];
-  for (int n=0; n<NHISTORY_VARS; ++n) data_sum[n]=0.0;
+  for (int n=0; n<(NHISTORY_VARS); ++n) data_sum[n]=0.0;
 
   // Loop over MeshBlocks
   while (pmb != NULL) {
     Hydro *phyd = pmb->phydro;;
     Field *pfld = pmb->pfield;;
 
-    // Sum history variables over cells
+    // Sum history variables over cells.  Note ghost cells are never included in sums
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
     for (int j=pmb->js; j<=pmb->je; ++j) {
       pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,vol);
@@ -110,6 +107,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm)
   }  // end loop over MeshBlocks
 
 #ifdef MPI_PARALLEL
+  // sum over all ranks
   if (Globals::my_rank == 0) {
     MPI_Reduce(MPI_IN_PLACE, &data_sum, (NHISTORY_VARS), MPI_ATHENA_REAL, MPI_SUM, 0,
                MPI_COMM_WORLD);
@@ -126,7 +124,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm)
     fname.assign(output_params.file_basename);
     fname.append(".hst");
 
-  // open file for output
+    // open file for output
     FILE *pfile;
     std::stringstream msg;
     if((pfile = fopen(fname.c_str(),"a")) == NULL){
@@ -135,7 +133,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm)
       throw std::runtime_error(msg.str().c_str());
     }
 
-  // If this is the first output, write header
+    // If this is the first output, write header
     if (output_params.file_number == 0) {
       fprintf(pfile,"# Athena++ history data\n"); // descriptor is first line
       fprintf(pfile,"# [1]=time     ");
@@ -156,7 +154,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm)
       fprintf(pfile,"\n");                              // terminate line
     }
 
-  // write history variables
+    // write history variables
     fprintf(pfile, output_params.data_format.c_str(), pm->time);
     fprintf(pfile, output_params.data_format.c_str(), pm->dt);
     for (int n=0; n<NHISTORY_VARS; ++n) {
