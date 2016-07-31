@@ -216,7 +216,7 @@ private:
   BValFunc_t BoundaryFunction_[6];
 
 //[JMSHI
-  enum BoundaryStatus shbox_inner_hydro_flag_[2], shbox_outer_hydro_flag_[2];
+  enum BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];
   Real x1size_,x2size_,x3size_; // mesh_size.x1max-mesh_size.x1min etc. [Lx,Ly,Lz]
   Real Omega_0_, qshear_; // orbital freq and shear rate
   int ShBoxCoord_; // shearcoordinate type: 1 = xy (default), 2 = xz
@@ -229,21 +229,21 @@ private:
   int joverlap_; // # of cells the shear runs over one block
   Real eps_; // fraction part of the shear
 
-  int send_inner_gid_[2],recv_inner_gid_[2]; // gid of meshblocks for communication
-  int send_inner_lid_[2], recv_inner_lid_[2]; // lid of meshblocks for communication
-  int send_inner_rank_[2],recv_inner_rank_[2]; // rank of meshblocks for communication
-  int send_innersize_hydro_[2], recv_innersize_hydro_[2]; //MPI buffer sizes
-  Real *send_innerbuf_hydro_[2], *recv_innerbuf_hydro_[2]; //MPI send and recv buffers
+  int send_inner_gid_[4],recv_inner_gid_[4]; // gid of meshblocks for communication
+  int send_inner_lid_[4], recv_inner_lid_[4]; // lid of meshblocks for communication
+  int send_inner_rank_[4],recv_inner_rank_[4]; // rank of meshblocks for communication
+  int send_innersize_hydro_[4], recv_innersize_hydro_[4]; //MPI buffer sizes
+  Real *send_innerbuf_hydro_[4], *recv_innerbuf_hydro_[4]; //MPI send and recv buffers
 #ifdef MPI_PARALLEL
-  MPI_Request rq_innersend_hydro_[2],  rq_innerrecv_hydro_[2];//MPI request for send and recv msgs
+  MPI_Request rq_innersend_hydro_[4],  rq_innerrecv_hydro_[4];//MPI request for send and recv msgs
 #endif
-  int send_outer_gid_[2], recv_outer_gid_[2]; // gid of meshblocks for communication
-  int send_outer_lid_[2], recv_outer_lid_[2]; // lid of meshblocks for communication
-  int send_outer_rank_[2],recv_outer_rank_[2]; // rank of meshblocks for communication
-  int send_outersize_hydro_[2], recv_outersize_hydro_[2]; //MPI buffer sizes
-  Real *send_outerbuf_hydro_[2], *recv_outerbuf_hydro_[2]; //MPI send and recv buffers
+  int send_outer_gid_[4], recv_outer_gid_[4]; // gid of meshblocks for communication
+  int send_outer_lid_[4], recv_outer_lid_[4]; // lid of meshblocks for communication
+  int send_outer_rank_[4],recv_outer_rank_[4]; // rank of meshblocks for communication
+  int send_outersize_hydro_[4], recv_outersize_hydro_[4]; //MPI buffer sizes
+  Real *send_outerbuf_hydro_[4], *recv_outerbuf_hydro_[4]; //MPI send and recv buffers
 #ifdef MPI_PARALLEL
-  MPI_Request rq_outersend_hydro_[2],  rq_outerrecv_hydro_[2];//MPI request for send and recv msgs
+  MPI_Request rq_outersend_hydro_[4],  rq_outerrecv_hydro_[4];//MPI request for send and recv msgs
 #endif
 
 //JMSHI]
