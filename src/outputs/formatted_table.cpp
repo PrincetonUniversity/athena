@@ -48,7 +48,7 @@ FormattedTableOutput::FormattedTableOutput(OutputParameters oparams)
 //  \brief writes OutputData to file in tabular format using C style fprintf
 //         Writes one file per MeshBlock
 
-void FormattedTableOutput::WriteOutputFile(Mesh *pm)
+void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
 {
   MeshBlock *pmb=pm->pblock;
 
@@ -151,6 +151,12 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm)
     pmb=pmb->next;
 
   }  // end loop over MeshBlocks
+
+  // increment counters
+  output_params.file_number++;
+  output_params.next_time += output_params.dt;
+  pin->SetInteger(output_params.block_name, "file_number", output_params.file_number);
+  pin->SetReal(output_params.block_name, "next_time", output_params.next_time);
 
   return;
 }

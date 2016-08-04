@@ -220,8 +220,8 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     memcpy(pfield->b1.x3f.data(), &(mbdata[os]), pfield->b1.x3f.GetSizeInBytes());
     os += pfield->b.x3f.GetSizeInBytes();
   }
-  // please add new physics here
 
+  // NEW_PHYSICS: add load of new physics from restart file here
 
   // load user MeshBlock data
   for(int n=0; n<nint_user_meshblock_data_; n++) {
@@ -316,8 +316,8 @@ size_t MeshBlock::GetBlockSizeInBytes(void)
   if (MAGNETIC_FIELDS_ENABLED)
     size+=(pfield->b.x1f.GetSizeInBytes()+pfield->b.x2f.GetSizeInBytes()
           +pfield->b.x3f.GetSizeInBytes());
-  // please add the size counter here when new physics is introduced
 
+  // NEW_PHYSICS: modify the size counter here when new physics is introduced
 
   // calculate user MeshBlock data size
   for(int n=0; n<nint_user_meshblock_data_; n++)

@@ -52,7 +52,7 @@ HistoryOutput::HistoryOutput(OutputParameters oparams)
 //! \fn void OutputType::HistoryFile()
 //  \brief Writes a history file
 
-void HistoryOutput::WriteOutputFile(Mesh *pm)
+void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
 {
   MeshBlock *pmb=pm->pblock;
   AthenaArray<Real> vol;
@@ -164,6 +164,9 @@ void HistoryOutput::WriteOutputFile(Mesh *pm)
     fclose(pfile);
   }
 
+  // increment counters, clean up
+  output_params.next_time += output_params.dt;
+  pin->SetReal(output_params.block_name, "next_time", output_params.next_time);
   vol.DeleteAthenaArray();
   return;
 }

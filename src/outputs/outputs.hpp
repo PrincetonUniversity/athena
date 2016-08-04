@@ -83,8 +83,8 @@ public:
   bool TransformOutputData(MeshBlock *pmb);
   bool Slice(MeshBlock *pmb, int dim);
   void Sum(MeshBlock *pmb, int dim);
-  virtual void WriteOutputFile(Mesh *pm) = 0;   // pure virtual
-  void FinalizeOutput(ParameterInput *pin);
+  // following pure virtual function must be implemented in all derived classes
+  virtual void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) = 0;
 
 protected:
   int num_vars_;             // number of variables in output
@@ -100,7 +100,7 @@ class HistoryOutput : public OutputType {
 public:
   HistoryOutput(OutputParameters oparams);
   ~HistoryOutput() {};
-  void WriteOutputFile(Mesh *pm);
+  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
 };
 
 //--------------------------------------------------------------------------------------
@@ -111,7 +111,7 @@ class FormattedTableOutput : public OutputType {
 public:
   FormattedTableOutput(OutputParameters oparams);
   ~FormattedTableOutput() {};
-  void WriteOutputFile(Mesh *pm);
+  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
 };
 
 //--------------------------------------------------------------------------------------
@@ -122,33 +122,23 @@ class VTKOutput : public OutputType {
 public:
   VTKOutput(OutputParameters oparams);
   ~VTKOutput() {};
-  void WriteOutputFile(Mesh *pm);
+  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
+};
+
+//--------------------------------------------------------------------------------------
+//! \class RestartOutput
+//  \brief derived OutputType class for restart dumps
+
+class RestartOutput : public OutputType {
+public:
+  RestartOutput(OutputParameters oparams);
+  ~RestartOutput() {};
+  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
 };
 
 //======================================================================================
 // following should be deleted as they are updated
 
-
-
-//! \class RestartOutput
-//  \brief derived OutputType class for restarting files
-
-class RestartOutput : public OutputType {
-private:
-  IOWrapper resfile;
-  IOWrapperSize_t listsize, headeroffset, datasize;
-  char *data;
-  int nbtotal, myns, mynb;
-
-public:
-  RestartOutput(OutputParameters oparams);
-  ~RestartOutput() {};
-  void Initialize(Mesh *pm, ParameterInput *pin, bool wtflag);
-  void FinalizeOutput(ParameterInput *pin);
-  void LoadOutputData(OutputData *pod, MeshBlock *pmb);
-  void TransformOutputData(OutputData *pod, MeshBlock *pmb) {};
-  void WriteOutputFile(OutputData *pod, MeshBlock *pmb) {};
-};
 
 #ifdef HDF5OUTPUT
 //! \class ATHDF5Output

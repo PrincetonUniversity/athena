@@ -64,9 +64,10 @@ VTKOutput::VTKOutput(OutputParameters oparams)
 
 //--------------------------------------------------------------------------------------
 //! \fn void VTKOutput:::WriteOutputFile(Mesh *pm)
-//  \brief writes OutputData to file in (legacy) vtk format, one MeshBlock per file
+//  \brief Cycles over all MeshBlocks and writes OutputData in (legacy) vtk format, one
+//         MeshBlock per file
 
-void VTKOutput::WriteOutputFile(Mesh *pm)
+void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
 {
   MeshBlock *pmb=pm->pblock;
   int big_end = IsBigEndian(); // =1 on big endian machine
@@ -217,6 +218,12 @@ void VTKOutput::WriteOutputFile(Mesh *pm)
     pmb=pmb->next;
 
   }  // end loop over MeshBlocks
+
+  // increment counters
+  output_params.file_number++;
+  output_params.next_time += output_params.dt;
+  pin->SetInteger(output_params.block_name, "file_number", output_params.file_number);
+  pin->SetReal(output_params.block_name, "next_time", output_params.next_time);
 
   return;
 }

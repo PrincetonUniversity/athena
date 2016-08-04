@@ -205,18 +205,17 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
         op.data_format.insert(0," "); // prepend with blank to separate columns
 
         // Construct new OutputType according to file format
-        // ADD NEW OUTPUT TYPES HERE
+        // NEW_OUTPUT_TYPES: Add block to construct new types here
         if (op.file_type.compare("hst") == 0) {
           pnew_type = new HistoryOutput(op);
         } else if (op.file_type.compare("tab") == 0) {
           pnew_type = new FormattedTableOutput(op);
         } else if (op.file_type.compare("vtk") == 0) {
           pnew_type = new VTKOutput(op);
+        } else if (op.file_type.compare("rst") == 0) {
+          pnew_type = new RestartOutput(op);
         }
         
-//        if (op.file_type.compare("rst") == 0) {
-//          pnew_type = new RestartOutput(op);
-//        }
 #ifdef HDF5OUTPUT
 //        else if (op.file_type.compare("ath5") == 0 || op.file_type.compare("hdf5") == 0) {
 //          pnew_type = new ATHDF5Output(op);
@@ -573,24 +572,11 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag)
         (pm->time >= pm->tlim) ||
         (wtflag==true && ptype->output_params.file_type=="rst")) {
 
-      ptype->WriteOutputFile(pm);
-      ptype->FinalizeOutput(pin); // increment time, counter, etc.
+      ptype->WriteOutputFile(pm, pin, wtflag);
     }
     ptype = ptype->pnext_type; // move to next OutputType in list
   }
 
-}
-
-//--------------------------------------------------------------------------------------
-//! \fn void OutputType::FinalizeOutput(ParameterInput *pin)
-//  \brief increment file number, update next output time, store in ParameterInput
-
-void OutputType::FinalizeOutput(ParameterInput *pin)
-{
-  output_params.file_number++;
-  output_params.next_time += output_params.dt;
-  pin->SetInteger(output_params.block_name, "file_number", output_params.file_number);
-  pin->SetReal(output_params.block_name, "next_time", output_params.next_time);
 }
 
 //--------------------------------------------------------------------------------------
