@@ -217,9 +217,9 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
         }
         
 #ifdef HDF5OUTPUT
-//        else if (op.file_type.compare("ath5") == 0 || op.file_type.compare("hdf5") == 0) {
-//          pnew_type = new ATHDF5Output(op);
-//        }
+        else if (op.file_type.compare("ath5") == 0 || op.file_type.compare("hdf5") == 0) {
+          pnew_type = new ATHDF5Output(op);
+        }
 #endif
         else {
           msg << "### FATAL ERROR in Outputs constructor" << std::endl
@@ -485,7 +485,20 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
       AppendOutputDataNode(pod);
       num_vars_++;
     }
+
   } // endif (MAGNETIC_FIELDS_ENABLED)
+
+/*
+  if (output_params.variable.compare("ifov") == 0) {
+    for (int n = 0; n < NIFOV; ++n) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      std::sprintf(pod->name, "ifov%d", n);
+      pod->data.InitWithShallowSlice(phyd->ifov,4,n,1);
+      AppendOutputDataNode(pod);
+      num_vars_++;
+    }
+  }*/
 
   // throw an error if output variable name not recognized
   if (num_vars_==0) {
@@ -599,13 +612,13 @@ bool OutputType::TransformOutputData(MeshBlock *pmb)
     bool ret = Slice(pmb,1);
     if (ret==false) flag=false;
   }
-  if (output_params.output_sumx1) {
+  if (output_params.output_sumx3) {
     Sum(pmb,3);
   }
   if (output_params.output_sumx2) {
     Sum(pmb,2);
   }
-  if (output_params.output_sumx3) {
+  if (output_params.output_sumx1) {
     Sum(pmb,1);
   }
   return flag;

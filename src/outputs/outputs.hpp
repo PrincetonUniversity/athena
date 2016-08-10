@@ -176,31 +176,24 @@ private:
   int num_blocks_global;                      // number of MeshBlocks in simulation
   int num_blocks_local;                       // number of MeshBlocks on this Mesh
   int nx1, nx2, nx3;                          // sizes of MeshBlocks
-  int is, ie, js, je, ks, ke;                 // indices for active zone
-  int root_level;                             // number assigned to root level
   int num_datasets;                           // count of datasets to output
   int *num_variables;                         // list of counts of variables per dataset
-  int num_total_variables;                    // total number of (scalar) variables
+  int *num_fields;                            // list of counts of data fields per dataset
   char (*dataset_names)[max_name_length+1];   // array of C-string names of datasets
   char (*variable_names)[max_name_length+1];  // array of C-string names of variables
   int *levels_mesh;                           // array of refinement levels on Mesh
   long int *locations_mesh;                   // array of logical locations on Mesh
   float *x1f_mesh;                            // array of x1 values on Mesh
-  float *x2f_mesh;                            // array of x1 values on Mesh
-  float *x3f_mesh;                            // array of x1 values on Mesh
+  float *x2f_mesh;                            // array of x2 values on Mesh
+  float *x3f_mesh;                            // array of x3 values on Mesh
   float **data_buffers;                       // array of data buffers
-  AthenaArray<Real> *data_arrays;             // array of slices into data
 
 public:
 
   // Function declarations
-  ATHDF5Output(OutputParameters oparams) : OutputType(oparams) {};
+  ATHDF5Output(OutputParameters oparams);
   ~ATHDF5Output() {};
-  void Initialize(Mesh *pmesh, ParameterInput *pin, bool walltime_limit);
-  void Finalize(ParameterInput *pin);
-  void LoadOutputData(OutputData *pout_data, MeshBlock *pblock);
-  void TransformOutputData(OutputData *pout_data, MeshBlock *pblock) {};
-  void WriteOutputFile(OutputData *pout_data, MeshBlock *pblock);
+  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
   void MakeXDMF();
 };
 #endif
