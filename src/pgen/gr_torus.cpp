@@ -97,8 +97,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   pert_kz = pin->GetOrSetReal("problem", "pert_kz", 0.0);
 
   // Prepare arrays if needed for extra outputs
-  if (NIFOV == 1 or NIFOV == 5 or
-      (MAGNETIC_FIELDS_ENABLED and (NIFOV == 2 or NIFOV == 10)))
+  if (NUSER_OUT_VAR == 1 or NUSER_OUT_VAR == 5 or
+      (MAGNETIC_FIELDS_ENABLED and (NUSER_OUT_VAR == 2 or NUSER_OUT_VAR == 10)))
   {
     g.NewAthenaArray(NMETRIC, mesh_size.nx1/nrbx1+NGHOST);
     gi.NewAthenaArray(NMETRIC, mesh_size.nx1/nrbx1+NGHOST);
@@ -118,8 +118,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 // Outputs: (none)
 void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
-  if (NIFOV == 1 or NIFOV == 5 or
-      (MAGNETIC_FIELDS_ENABLED and (NIFOV == 2 or NIFOV == 10)))
+  if (NUSER_OUT_VAR == 1 or NUSER_OUT_VAR == 5 or
+      (MAGNETIC_FIELDS_ENABLED and (NUSER_OUT_VAR == 2 or NUSER_OUT_VAR == 10)))
   {
     g.DeleteAthenaArray();
     gi.DeleteAthenaArray();
@@ -872,12 +872,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 // Inputs: (none)
 // Outputs: (none)
 // Notes:
-//   writes to ifov array the following quantities:
+//   writes to user_out_var array the following quantities:
 //     gamma (normal frame Lorentz factor)
 //     p_mag (magnetic pressure)
 //     u^mu (coordinate 4-velocity components)
 //     b^mu (coordinate 4-magnetic field components)
-//   quantities written are specified by NIFOV:
+//   quantities written are specified by NUSER_OUT_VAR:
 //     0: (nothing)
 //     1: gamma
 //     2: gamma, p_mag
@@ -886,8 +886,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 void MeshBlock::UserWorkInLoop()
 {
   // Only proceed if appropriate number of extra output variables specified
-  if (not (NIFOV == 1 or NIFOV == 5 or
-      (MAGNETIC_FIELDS_ENABLED and (NIFOV == 2 or NIFOV == 10))))
+  if (not (NUSER_OUT_VAR == 1 or NUSER_OUT_VAR == 5 or
+      (MAGNETIC_FIELDS_ENABLED and (NUSER_OUT_VAR == 2 or NUSER_OUT_VAR == 10))))
     return;
 
   // Go through all cells
@@ -905,8 +905,8 @@ void MeshBlock::UserWorkInLoop()
                  + g(I22,i)*uu2*uu2 + 2.0*g(I23,i)*uu2*uu3
                  + g(I33,i)*uu3*uu3;
         Real gamma = std::sqrt(1.0 + tmp);
-        phydro->ifov(0,k,j,i) = gamma;
-        if (NIFOV == 1)
+        user_out_var(0,k,j,i) = gamma;
+        if (NUSER_OUT_VAR == 1)
           continue;
 
         // Calculate 4-velocity
@@ -915,15 +915,15 @@ void MeshBlock::UserWorkInLoop()
         Real u1 = uu1 - alpha * gamma * gi(I01,i);
         Real u2 = uu2 - alpha * gamma * gi(I02,i);
         Real u3 = uu3 - alpha * gamma * gi(I03,i);
-        if (NIFOV == 5 or NIFOV == 10)
+        if (NUSER_OUT_VAR == 5 or NUSER_OUT_VAR == 10)
         {
-          int offset = (NIFOV == 5) ? 1 : 2;
-          phydro->ifov(offset+0,k,j,i) = u0;
-          phydro->ifov(offset+1,k,j,i) = u1;
-          phydro->ifov(offset+2,k,j,i) = u2;
-          phydro->ifov(offset+3,k,j,i) = u3;
+          int offset = (NUSER_OUT_VAR == 5) ? 1 : 2;
+          user_out_var(offset+0,k,j,i) = u0;
+          user_out_var(offset+1,k,j,i) = u1;
+          user_out_var(offset+2,k,j,i) = u2;
+          user_out_var(offset+3,k,j,i) = u3;
         }
-        if (NIFOV == 5)
+        if (NUSER_OUT_VAR == 5)
           continue;
         Real u_0, u_1, u_2, u_3;
         pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
@@ -939,20 +939,20 @@ void MeshBlock::UserWorkInLoop()
         Real b1 = (bb1 + b0 * u1) / u0;
         Real b2 = (bb2 + b0 * u2) / u0;
         Real b3 = (bb3 + b0 * u3) / u0;
-        if (NIFOV == 10)
+        if (NUSER_OUT_VAR == 10)
         {
           int offset = 6;
-          phydro->ifov(offset+0,k,j,i) = b0;
-          phydro->ifov(offset+1,k,j,i) = b1;
-          phydro->ifov(offset+2,k,j,i) = b2;
-          phydro->ifov(offset+3,k,j,i) = b3;
+          user_out_var(offset+0,k,j,i) = b0;
+          user_out_var(offset+1,k,j,i) = b1;
+          user_out_var(offset+2,k,j,i) = b2;
+          user_out_var(offset+3,k,j,i) = b3;
         }
         Real b_0, b_1, b_2, b_3;
         pcoord->LowerVectorCell(b0, b1, b2, b3, k, j, i, &b_0, &b_1, &b_2, &b_3);
 
         // Calculate magnetic pressure
         Real b_sq = b0*b_0 + b1*b_1 + b2*b_2 + b3*b_3;
-        phydro->ifov(1,k,j,i) = b_sq/2.0;
+        user_out_var(1,k,j,i) = b_sq/2.0;
       }
     }
   return;

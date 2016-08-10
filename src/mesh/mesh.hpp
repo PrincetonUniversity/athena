@@ -109,6 +109,9 @@ public:
   int gid, lid;
   int cis,cie,cjs,cje,cks,cke,cnghost;
 
+  // user output variables for analysis
+  AthenaArray<Real> user_out_var;
+
   // user MeshBlock data that can be stored in restart files
   AthenaArray<Real> *rusermeshblockdata;
   AthenaArray<int> *iusermeshblockdata;

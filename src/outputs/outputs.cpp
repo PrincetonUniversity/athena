@@ -488,17 +488,19 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
 
   } // endif (MAGNETIC_FIELDS_ENABLED)
 
-/*
-  if (output_params.variable.compare("ifov") == 0) {
-    for (int n = 0; n < NIFOV; ++n) {
+  if (output_params.variable.compare("uov") == 0
+  || output_params.variable.compare("user_out_var") == 0) {
+    for (int n = 0; n < NUSER_OUT_VAR; ++n) {
+      char vn[16];
       pod = new OutputData;
       pod->type = "SCALARS";
-      std::sprintf(pod->name, "ifov%d", n);
-      pod->data.InitWithShallowSlice(phyd->ifov,4,n,1);
+      std::sprintf(vn, "user_out_var%d", n);
+      pod->name = vn;
+      pod->data.InitWithShallowSlice(pmb->user_out_var,4,n,1);
       AppendOutputDataNode(pod);
       num_vars_++;
     }
-  }*/
+  }
 
   // throw an error if output variable name not recognized
   if (num_vars_==0) {
