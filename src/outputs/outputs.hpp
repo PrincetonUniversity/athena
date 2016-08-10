@@ -146,47 +146,17 @@ public:
 
 class ATHDF5Output : public OutputType {
 private:
-
   // Parameters
   static const int max_name_length = 20;  // maximum length of names excluding \0
-
-  // HDF5 structures
-  hid_t file;                                   // file to be written to
-  hsize_t dims_start[5], dims_count[5];         // array sizes
-  hid_t dataset_levels;                         // datasets to be written
-  hid_t dataset_locations;
-  hid_t dataset_x1f, dataset_x2f, dataset_x3f;
-  hid_t *datasets_celldata;
-  hid_t filespace_blocks;                       // local dataspaces for file
-  hid_t filespace_blocks_3;
-  hid_t filespace_blocks_nx1;
-  hid_t filespace_blocks_nx2;
-  hid_t filespace_blocks_nx3;
-  hid_t *filespaces_vars_blocks_nx3_nx2_nx1;
-  hid_t memspace_blocks;                        // local dataspaces for memory
-  hid_t memspace_blocks_3;
-  hid_t memspace_blocks_nx1;
-  hid_t memspace_blocks_nx2;
-  hid_t memspace_blocks_nx3;
-  hid_t *memspaces_vars_blocks_nx3_nx2_nx1;
-  hid_t property_list;                          // properties for writing
 
   // Metadata
   std::string filename;                       // name of athdf file
   int num_blocks_global;                      // number of MeshBlocks in simulation
-  int num_blocks_local;                       // number of MeshBlocks on this Mesh
   int nx1, nx2, nx3;                          // sizes of MeshBlocks
   int num_datasets;                           // count of datasets to output
   int *num_variables;                         // list of counts of variables per dataset
-  int *num_fields;                            // list of counts of data fields per dataset
   char (*dataset_names)[max_name_length+1];   // array of C-string names of datasets
   char (*variable_names)[max_name_length+1];  // array of C-string names of variables
-  int *levels_mesh;                           // array of refinement levels on Mesh
-  long int *locations_mesh;                   // array of logical locations on Mesh
-  float *x1f_mesh;                            // array of x1 values on Mesh
-  float *x2f_mesh;                            // array of x2 values on Mesh
-  float *x3f_mesh;                            // array of x3 values on Mesh
-  float **data_buffers;                       // array of data buffers
 
 public:
 
