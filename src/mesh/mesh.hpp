@@ -17,10 +17,11 @@
 // Athena++ classes headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "meshblock_tree.hpp"
-#include "../outputs/wrapper.hpp"
+#include "../parameter_input.hpp"
+#include "../outputs/io_wrapper.hpp"
 #include "../task_list/task_list.hpp"
 #include "../bvals/bvals.hpp"
+#include "meshblock_tree.hpp"
 #include "mesh_refinement.hpp"
 
 // Forward declarations
@@ -107,6 +108,9 @@ public:
   int is,ie,js,je,ks,ke;
   int gid, lid;
   int cis,cie,cjs,cje,cks,cke,cnghost;
+
+  // user output variables for analysis
+  AthenaArray<Real> user_out_var;
 
   // user MeshBlock data that can be stored in restart files
   AthenaArray<Real> *rusermeshblockdata;

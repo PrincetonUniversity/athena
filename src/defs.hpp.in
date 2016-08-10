@@ -60,10 +60,7 @@
 #define @HDF5_OPTION@
 
 // number of internal hydro output variables
-#define NIFOV @NUM_IFOV@
-
-// number of internal radiation output variables
-#define NRADFOV 0
+#define NUSER_OUT_VAR @NUM_USER_OUT_VAR@
 
 //--------------------------------------------------------------------------------------
 // macros associated with numerical algorithm (rarely modified)
