@@ -64,11 +64,12 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   cost=1.0;
 
   // allocate user output variables array
+  nuser_out_var=pin->GetOrAddInteger("mesh","nuser_out_var",0);
   int ncells1 = block_size.nx1 + 2*(NGHOST);
   int ncells2 = 1, ncells3 = 1;
   if (block_size.nx2 > 1) ncells2 = block_size.nx2 + 2*(NGHOST);
   if (block_size.nx3 > 1) ncells3 = block_size.nx3 + 2*(NGHOST);
-  user_out_var.NewAthenaArray(NUSER_OUT_VAR,ncells3,ncells2,ncells1);
+  user_out_var.NewAthenaArray(nuser_out_var,ncells3,ncells2,ncells1);
 
   nreal_user_meshblock_data_ = 0, nint_user_meshblock_data_ = 0; 
 
@@ -152,11 +153,12 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   for(int i=0; i<6; i++) block_bcs[i] = input_bcs[i];
 
   // allocate user output variables array
+  nuser_out_var=pin->GetOrAddInteger("mesh","nuser_out_var",0);
   int ncells1 = block_size.nx1 + 2*(NGHOST);
   int ncells2 = 1, ncells3 = 1;
   if (block_size.nx2 > 1) ncells2 = block_size.nx2 + 2*(NGHOST);
   if (block_size.nx3 > 1) ncells3 = block_size.nx3 + 2*(NGHOST);
-  user_out_var.NewAthenaArray(NUSER_OUT_VAR,ncells3,ncells2,ncells1);
+  user_out_var.NewAthenaArray(nuser_out_var,ncells3,ncells2,ncells1);
 
   nreal_user_meshblock_data_ = 0, nint_user_meshblock_data_ = 0; 
 

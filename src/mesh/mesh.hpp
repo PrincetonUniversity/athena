@@ -110,6 +110,7 @@ public:
   int cis,cie,cjs,cje,cks,cke,cnghost;
 
   // user output variables for analysis
+  int nuser_out_var;
   AthenaArray<Real> user_out_var;
 
   // user MeshBlock data that can be stored in restart files

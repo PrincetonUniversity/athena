@@ -490,7 +490,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
 
   if (output_params.variable.compare("uov") == 0
   || output_params.variable.compare("user_out_var") == 0) {
-    for (int n = 0; n < NUSER_OUT_VAR; ++n) {
+    for (int n = 0; n < pmb->nuser_out_var; ++n) {
       char vn[16];
       pod = new OutputData;
       pod->type = "SCALARS";
