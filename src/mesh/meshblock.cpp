@@ -239,14 +239,14 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   // load user MeshBlock data
   for(int n=0; n<nint_user_meshblock_data_; n++) {
-    memcpy(iusermeshblockdata[n].data(), &(mbdata[os]),
-           iusermeshblockdata[n].GetSizeInBytes());
-    os+=iusermeshblockdata[n].GetSizeInBytes();
+    memcpy(iuser_meshblock_data[n].data(), &(mbdata[os]),
+           iuser_meshblock_data[n].GetSizeInBytes());
+    os+=iuser_meshblock_data[n].GetSizeInBytes();
   }
   for(int n=0; n<nreal_user_meshblock_data_; n++) {
-    memcpy(rusermeshblockdata[n].data(), &(mbdata[os]),
-           rusermeshblockdata[n].GetSizeInBytes());
-    os+=rusermeshblockdata[n].GetSizeInBytes();
+    memcpy(ruser_meshblock_data[n].data(), &(mbdata[os]),
+           ruser_meshblock_data[n].GetSizeInBytes());
+    os+=ruser_meshblock_data[n].GetSizeInBytes();
   }
 
   return;
@@ -275,11 +275,11 @@ MeshBlock::~MeshBlock()
   user_out_var.DeleteAthenaArray();
   // delete user MeshBlock data
   for(int n=0; n<nreal_user_meshblock_data_; n++)
-    rusermeshblockdata[n].DeleteAthenaArray();
-  if(nreal_user_meshblock_data_>0) delete [] rusermeshblockdata;
+    ruser_meshblock_data[n].DeleteAthenaArray();
+  if(nreal_user_meshblock_data_>0) delete [] ruser_meshblock_data;
   for(int n=0; n<nint_user_meshblock_data_; n++)
-    iusermeshblockdata[n].DeleteAthenaArray();
-  if(nint_user_meshblock_data_>0) delete [] iusermeshblockdata;
+    iuser_meshblock_data[n].DeleteAthenaArray();
+  if(nint_user_meshblock_data_>0) delete [] iuser_meshblock_data;
 }
 
 //--------------------------------------------------------------------------------------
@@ -295,7 +295,7 @@ void MeshBlock::AllocateRealUserMeshBlockDataField(int n)
     throw std::runtime_error(msg.str().c_str());
   }
   nreal_user_meshblock_data_=n;
-  rusermeshblockdata = new AthenaArray<Real>[n];
+  ruser_meshblock_data = new AthenaArray<Real>[n];
   return;
 }
 
@@ -312,7 +312,7 @@ void MeshBlock::AllocateIntUserMeshBlockDataField(int n)
     throw std::runtime_error(msg.str().c_str());
   }
   nint_user_meshblock_data_=n;
-  iusermeshblockdata = new AthenaArray<int>[n];
+  iuser_meshblock_data = new AthenaArray<int>[n];
   return;
 }
 
@@ -337,9 +337,9 @@ size_t MeshBlock::GetBlockSizeInBytes(void)
 
   // calculate user MeshBlock data size
   for(int n=0; n<nint_user_meshblock_data_; n++)
-    size+=iusermeshblockdata[n].GetSizeInBytes();
+    size+=iuser_meshblock_data[n].GetSizeInBytes();
   for(int n=0; n<nreal_user_meshblock_data_; n++)
-    size+=rusermeshblockdata[n].GetSizeInBytes();
+    size+=ruser_meshblock_data[n].GetSizeInBytes();
 
   return size;
 }

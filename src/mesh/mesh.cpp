@@ -651,9 +651,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   // read user Mesh data
   IOWrapperSize_t udsize = 0;
   for(int n=0; n<nint_user_mesh_data_; n++)
-    udsize+=iusermeshdata[n].GetSizeInBytes();
+    udsize+=iuser_mesh_data[n].GetSizeInBytes();
   for(int n=0; n<nreal_user_mesh_data_; n++)
-    udsize+=rusermeshdata[n].GetSizeInBytes();
+    udsize+=ruser_mesh_data[n].GetSizeInBytes();
   if(udsize!=0) {
     char *userdata = new char[udsize];
     if(Globals::my_rank==0) { // only the master process reads the ID list
@@ -670,14 +670,14 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
 
     IOWrapperSize_t udoffset=0;
     for(int n=0; n<nint_user_mesh_data_; n++) {
-      memcpy(iusermeshdata[n].data(), &(userdata[udoffset]),
-             iusermeshdata[n].GetSizeInBytes());
-      udoffset+=iusermeshdata[n].GetSizeInBytes();
+      memcpy(iuser_mesh_data[n].data(), &(userdata[udoffset]),
+             iuser_mesh_data[n].GetSizeInBytes());
+      udoffset+=iuser_mesh_data[n].GetSizeInBytes();
     }
     for(int n=0; n<nreal_user_mesh_data_; n++) {
-      memcpy(rusermeshdata[n].data(), &(userdata[udoffset]),
-             rusermeshdata[n].GetSizeInBytes());
-      udoffset+=rusermeshdata[n].GetSizeInBytes();
+      memcpy(ruser_mesh_data[n].data(), &(userdata[udoffset]),
+             ruser_mesh_data[n].GetSizeInBytes());
+      udoffset+=ruser_mesh_data[n].GetSizeInBytes();
     }
     delete [] userdata;
   }
@@ -835,11 +835,11 @@ Mesh::~Mesh()
   }
   // delete user Mesh data
   for(int n=0; n<nreal_user_mesh_data_; n++)
-    rusermeshdata[n].DeleteAthenaArray();
-  if(nreal_user_mesh_data_>0) delete [] rusermeshdata;
+    ruser_mesh_data[n].DeleteAthenaArray();
+  if(nreal_user_mesh_data_>0) delete [] ruser_mesh_data;
   for(int n=0; n<nint_user_mesh_data_; n++)
-    iusermeshdata[n].DeleteAthenaArray();
-  if(nint_user_mesh_data_>0) delete [] iusermeshdata;
+    iuser_mesh_data[n].DeleteAthenaArray();
+  if(nint_user_mesh_data_>0) delete [] iuser_mesh_data;
 }
 
 //--------------------------------------------------------------------------------------
@@ -1060,7 +1060,7 @@ void Mesh::AllocateRealUserMeshDataField(int n)
     throw std::runtime_error(msg.str().c_str());
   }
   nreal_user_mesh_data_=n;
-  rusermeshdata = new AthenaArray<Real>[n];
+  ruser_mesh_data = new AthenaArray<Real>[n];
   return;
 }
 
@@ -1077,7 +1077,7 @@ void Mesh::AllocateIntUserMeshDataField(int n)
     throw std::runtime_error(msg.str().c_str());
   }
   nint_user_mesh_data_=n;
-  iusermeshdata = new AthenaArray<int>[n];
+  iuser_mesh_data = new AthenaArray<int>[n];
   return;
 }
 

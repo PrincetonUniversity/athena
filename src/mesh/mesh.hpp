@@ -113,8 +113,8 @@ public:
   AthenaArray<Real> user_out_var;
 
   // user MeshBlock data that can be stored in restart files
-  AthenaArray<Real> *rusermeshblockdata;
-  AthenaArray<int> *iusermeshblockdata;
+  AthenaArray<Real> *ruser_meshblock_data;
+  AthenaArray<int> *iuser_meshblock_data;
 
   // mesh-related objects
   Coordinates *pcoord;
@@ -187,8 +187,8 @@ public:
 
   MeshBlock *pblock;
 
-  AthenaArray<Real> *rusermeshdata;
-  AthenaArray<int> *iusermeshdata;
+  AthenaArray<Real> *ruser_mesh_data;
+  AthenaArray<int> *iuser_mesh_data;
 
   // functions
   void Initialize(int res_flag, ParameterInput *pin);

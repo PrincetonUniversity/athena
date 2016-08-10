@@ -91,9 +91,9 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   // calculate the header size
   IOWrapperSize_t udsize=0;
   for(int n=0; n<pm->nint_user_mesh_data_; n++)
-    udsize+=pm->iusermeshdata[n].GetSizeInBytes();
+    udsize+=pm->iuser_mesh_data[n].GetSizeInBytes();
   for(int n=0; n<pm->nreal_user_mesh_data_; n++)
-    udsize+=pm->rusermeshdata[n].GetSizeInBytes();
+    udsize+=pm->ruser_mesh_data[n].GetSizeInBytes();
 
   headeroffset=sbuf.size()*sizeof(char)+3*sizeof(int)+sizeof(RegionSize)
               +2*sizeof(Real)+sizeof(IOWrapperSize_t)+udsize;
@@ -124,14 +124,14 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
       char *ud = new char[udsize];
       IOWrapperSize_t udoffset = 0;
       for(int n=0; n<pm->nint_user_mesh_data_; n++) {
-        memcpy(&(ud[udoffset]), pm->iusermeshdata[n].data(),
-               pm->iusermeshdata[n].GetSizeInBytes());
-        udoffset+=pm->iusermeshdata[n].GetSizeInBytes();
+        memcpy(&(ud[udoffset]), pm->iuser_mesh_data[n].data(),
+               pm->iuser_mesh_data[n].GetSizeInBytes());
+        udoffset+=pm->iuser_mesh_data[n].GetSizeInBytes();
       }
       for(int n=0; n<pm->nreal_user_mesh_data_; n++) {
-        memcpy(&(ud[udoffset]), pm->rusermeshdata[n].data(),
-               pm->rusermeshdata[n].GetSizeInBytes());
-        udoffset+=pm->rusermeshdata[n].GetSizeInBytes();
+        memcpy(&(ud[udoffset]), pm->ruser_mesh_data[n].data(),
+               pm->ruser_mesh_data[n].GetSizeInBytes());
+        udoffset+=pm->ruser_mesh_data[n].GetSizeInBytes();
       }
       resfile.Write(ud, 1, udsize);
       delete [] ud;
@@ -187,14 +187,14 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
 
     // pack the user MeshBlock data
     for(int n=0; n<pmb->nint_user_meshblock_data_; n++) {
-      memcpy(pdata, pmb->iusermeshblockdata[n].data(),
-             pmb->iusermeshblockdata[n].GetSizeInBytes());
-      pdata+=pmb->iusermeshblockdata[n].GetSizeInBytes();
+      memcpy(pdata, pmb->iuser_meshblock_data[n].data(),
+             pmb->iuser_meshblock_data[n].GetSizeInBytes());
+      pdata+=pmb->iuser_meshblock_data[n].GetSizeInBytes();
     }
     for(int n=0; n<pmb->nreal_user_meshblock_data_; n++) {
-      memcpy(pdata, pmb->rusermeshblockdata[n].data(),
-             pmb->rusermeshblockdata[n].GetSizeInBytes());
-      pdata+=pmb->rusermeshblockdata[n].GetSizeInBytes();
+      memcpy(pdata, pmb->ruser_meshblock_data[n].data(),
+             pmb->ruser_meshblock_data[n].GetSizeInBytes());
+      pdata+=pmb->ruser_meshblock_data[n].GetSizeInBytes();
     }
     pmb=pmb->next;
   }
