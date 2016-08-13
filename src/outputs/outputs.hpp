@@ -81,8 +81,8 @@ public:
   void ReplaceOutputDataNode(OutputData *pold, OutputData *pnew);
   void ClearOutputData();
   bool TransformOutputData(MeshBlock *pmb);
-  bool Slice(MeshBlock *pmb, int dim);
-  void Sum(MeshBlock *pmb, int dim);
+  bool SliceOutputData(MeshBlock *pmb, int dim);
+  void SumOutputData(MeshBlock *pmb, int dim);
   // following pure virtual function must be implemented in all derived classes
   virtual void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) = 0;
 
@@ -136,15 +136,19 @@ public:
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
 };
 
-//======================================================================================
-// following should be deleted as they are updated
-
-
 #ifdef HDF5OUTPUT
+//--------------------------------------------------------------------------------------
 //! \class ATHDF5Output
 //  \brief derived OutputType class for Athena HDF5 files
 
 class ATHDF5Output : public OutputType {
+public:
+  // Function declarations
+  ATHDF5Output(OutputParameters oparams);
+  ~ATHDF5Output() {};
+  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
+  void MakeXDMF();
+
 private:
   // Parameters
   static const int max_name_length = 20;  // maximum length of names excluding \0
@@ -157,20 +161,8 @@ private:
   int *num_variables;                         // list of counts of variables per dataset
   char (*dataset_names)[max_name_length+1];   // array of C-string names of datasets
   char (*variable_names)[max_name_length+1];  // array of C-string names of variables
-
-public:
-
-  // Function declarations
-  ATHDF5Output(OutputParameters oparams);
-  ~ATHDF5Output() {};
-  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
-  void MakeXDMF();
 };
 #endif
-
-//======================================================================================
-
-
 
 //--------------------------------------------------------------------------------------
 //! \class Outputs

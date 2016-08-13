@@ -105,6 +105,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
   InputBlock *pib = pin->pfirst_block;
   OutputType *pnew_type;
   OutputType *plast = pfirst_type_;
+  int num_hst_outputs=0, num_rst_outputs=0; // number of history and restart outputs
 
   // loop over input block names.  Find those that start with "output", read parameters,
   // and construct linked list of OutputTypes.
@@ -208,12 +209,14 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
         // NEW_OUTPUT_TYPES: Add block to construct new types here
         if (op.file_type.compare("hst") == 0) {
           pnew_type = new HistoryOutput(op);
+          num_hst_outputs++;
         } else if (op.file_type.compare("tab") == 0) {
           pnew_type = new FormattedTableOutput(op);
         } else if (op.file_type.compare("vtk") == 0) {
           pnew_type = new VTKOutput(op);
         } else if (op.file_type.compare("rst") == 0) {
           pnew_type = new RestartOutput(op);
+          num_rst_outputs++;
         } else if (op.file_type.compare("ath5")==0 || op.file_type.compare("hdf5")==0) {
 #ifdef HDF5OUTPUT
           pnew_type = new ATHDF5Output(op);
@@ -240,6 +243,14 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
       }
     }
     pib = pib->pnext;  // move to next input block name
+  }
+
+  // check there were no more than one history or restart files requested
+  if (num_hst_outputs > 1 || num_rst_outputs > 1) {
+    msg << "### FATAL ERROR in Outputs constructor" << std::endl
+        << "More than one history or restart output block detected in input file"
+        << std::endl;
+    throw std::runtime_error(msg.str().c_str());
   }
 
   // Move restarts to the end of the OutputType list, so file counters for other 
@@ -605,34 +616,34 @@ bool OutputType::TransformOutputData(MeshBlock *pmb)
 {
   bool flag = true;
   if (output_params.output_slicex3) {
-    bool ret = Slice(pmb,3);
+    bool ret = SliceOutputData(pmb,3);
     if (ret==false) flag=false;
   }
   if (output_params.output_slicex2) {
-    bool ret = Slice(pmb,2);
+    bool ret = SliceOutputData(pmb,2);
     if (ret==false) flag=false;
   }
   if (output_params.output_slicex1) {
-    bool ret = Slice(pmb,1);
+    bool ret = SliceOutputData(pmb,1);
     if (ret==false) flag=false;
   }
   if (output_params.output_sumx3) {
-    Sum(pmb,3);
+    SumOutputData(pmb,3);
   }
   if (output_params.output_sumx2) {
-    Sum(pmb,2);
+    SumOutputData(pmb,2);
   }
   if (output_params.output_sumx1) {
-    Sum(pmb,1);
+    SumOutputData(pmb,1);
   }
   return flag;
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn bool OutputType::Slice(MeshBlock *pmb, int dim)
+//! \fn bool OutputType::SliceOutputData(MeshBlock *pmb, int dim)
 //  \brief
 
-bool OutputType::Slice(MeshBlock *pmb, int dim)
+bool OutputType::SliceOutputData(MeshBlock *pmb, int dim)
 {
   int islice, jslice, kslice;
 
@@ -738,10 +749,10 @@ bool OutputType::Slice(MeshBlock *pmb, int dim)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void OutputType::Sum(OutputData* pod, int dim)
+//! \fn void OutputType::SumOutputData(OutputData* pod, int dim)
 //  \brief
 
-void OutputType::Sum(MeshBlock* pmb, int dim)
+void OutputType::SumOutputData(MeshBlock* pmb, int dim)
 {
   AthenaArray<Real> *psum;
   std::stringstream str;

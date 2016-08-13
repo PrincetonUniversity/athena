@@ -14,19 +14,6 @@
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
 
-// HDF5 output
-#include "../athena.hpp"  // enums, macros, LogicalLocation
-
-// Only proceed if HDF5 output enabled
-#ifdef HDF5OUTPUT
-
-// Primary header
-#include "outputs.hpp"
-
-// Other Athena++ headers
-#include "../mesh/mesh.hpp"
-#include "../globals.hpp"
-
 // C++ headers
 #include <cstdio>     // sprintf()
 #include <cstring>    // strlen(), strncpy()
@@ -36,20 +23,25 @@
 #include <stdexcept>  // runtime_error
 #include <string>     // string
 
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../globals.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../field/field.hpp"
+#include "../hydro/hydro.hpp"
+#include "outputs.hpp"
+
+// Only proceed if HDF5 output enabled
+#ifdef HDF5OUTPUT
+
 // External library headers
 #include <hdf5.h>  // H5[F|P|S|T]_*, H5[A|D|F|P|S|T]*(), hid_t
 #ifdef MPI_PARALLEL
 #include <mpi.h>   // MPI_COMM_WORLD, MPI_INFO_NULL
 #endif
-
-// Athena++ headers
-#include "../athena_arrays.hpp"            // AthenaArray
-#include "../globals.hpp"                  // Globals
-#include "../mesh/mesh.hpp"                     // Mesh, MeshBlock, RegionSize
-#include "../parameter_input.hpp"          // ParameterInput
-#include "../coordinates/coordinates.hpp"  // Coordinates
-#include "../field/field.hpp"              // Field
-#include "../hydro/hydro.hpp"              // Hydro
 
 //--------------------------------------------------------------------------------------
 // ATHDF5Output constructor
