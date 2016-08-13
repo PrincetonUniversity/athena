@@ -214,14 +214,16 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
           pnew_type = new VTKOutput(op);
         } else if (op.file_type.compare("rst") == 0) {
           pnew_type = new RestartOutput(op);
-        }
-        
+        } else if (op.file_type.compare("ath5")==0 || op.file_type.compare("hdf5")==0) {
 #ifdef HDF5OUTPUT
-        else if (op.file_type.compare("ath5") == 0 || op.file_type.compare("hdf5") == 0) {
           pnew_type = new ATHDF5Output(op);
-        }
+#else
+          msg << "### FATAL ERROR in Outputs constructor" << std::endl
+              << "Executable not configured for HDF5 outputs, but HDF5 file format "
+              << "is requested in output block '" << op.block_name << "'" << std::endl;
+          throw std::runtime_error(msg.str().c_str());
 #endif
-        else {
+        } else {
           msg << "### FATAL ERROR in Outputs constructor" << std::endl
               << "Unrecognized file format = '" << op.file_type 
               << "' in output block '" << op.block_name << "'" << std::endl;

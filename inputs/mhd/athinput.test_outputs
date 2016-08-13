@@ -1,0 +1,67 @@
+<comment>
+problem   = Test outputs based on Orszag-Tang vortex
+reference = Orszag,S. & Tang,W., J. Fluid Mech., 90, 129 (1998)
+configure = -b --prob=orszag_tang
+
+<job>
+problem_id   = TestOutputs   # problem ID: basename of output filenames
+
+<output1>
+file_type  = hst       # History data dump
+dt         = 0.01      # time increment between outputs
+
+<output2>
+file_type  = tab       # formatted table data dump
+variable   = prim      # variables to be output
+x2_slice   = 0.5       # x2 slice location
+dt         = 0.1       # time increment between outputs
+
+<output3>
+file_type  = tab       # formatted table data dump
+variable   = cons      # variables to be output
+x2_sum     = true      # sum in x2
+dt         = 0.1       # time increment between outputs
+
+<output4>
+file_type  = vtk       # VTK data dump
+variable   = prim      # variables to be output
+dt         = 0.1       # time increment between outputs
+
+#<output5>
+#file_type  = hdf5      # HDF5 data dump
+#variable   = prim      # variables to be output
+#dt         = 0.1       # time increment between outputs
+
+<output6>
+file_type  = rst       # restart dump
+dt         = 0.2       # time increment between outputs
+
+<time>
+cfl_number = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1        # cycle limit
+tlim       = 1.0       # time limit
+
+<mesh>
+nx1        = 64        # Number of zones in X1-direction
+x1min      = 0.0       # minimum value of X1
+x1max      = 1.0       # maximum value of X1
+ix1_bc     = periodic  # inner-X1 boundary flag
+ox1_bc     = periodic  # outer-X1 boundary flag
+
+nx2        = 64        # Number of zones in X2-direction
+x2min      = 0.0       # minimum value of X2
+x2max      = 1.0       # maximum value of X2
+ix2_bc     = periodic  # inner-X2 boundary flag
+ox2_bc     = periodic  # outer-X2 boundary flag
+
+nx3        = 1         # Number of zones in X3-direction
+x3min      = -0.5      # minimum value of X3
+x3max      = 0.5       # maximum value of X3
+ix3_bc     = periodic  # inner-X3 boundary flag
+ox3_bc     = periodic  # outer-X3 boundary flag
+
+num_threads = 1        # maximum number of OMP threads
+
+<hydro>
+iso_sound_speed = 1.0        # isothermal sound speed
+gamma      = 1.666666667     # gamma = C_p/C_v
