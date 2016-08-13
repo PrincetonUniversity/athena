@@ -25,9 +25,9 @@ def run():
   arguments = ['time/nlim=80']
   athena.run('mhd/athinput.test_outputs', arguments)
   arguments = ['time/nlim=330']
-  athena.restart('TestOutputs.out6.00001.rst', arguments)
+  athena.restart('TestOutputs.00001.rst', arguments)
   arguments = ['time/nlim=-1']
-  athena.restart('TestOutputs.out6.00004.rst', arguments)
+  athena.restart('TestOutputs.00004.rst', arguments)
 
 # Analyze outputs
 def analyze():

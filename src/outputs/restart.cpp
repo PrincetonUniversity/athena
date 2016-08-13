@@ -55,15 +55,13 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   IOWrapper resfile;
   IOWrapperSize_t listsize, headeroffset, datasize;
 
-  // create single output filename:"file_basename"+"."+"file_id"+"."+XXXXX+".rst",
+  // create single output filename:"file_basename"+"."+XXXXX+".rst",
   // where XXXXX = 5-digit file_number
   std::string fname;
   char number[6];
   sprintf(number,"%05d",output_params.file_number);
 
   fname.assign(output_params.file_basename);
-  fname.append(".");
-  fname.append(output_params.file_id);
   fname.append(".");
   // add file number to name, unless write is forced by terminate signal, in which case
   // replace number in the name by the string "final".  This keeps the restart file
