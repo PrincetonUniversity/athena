@@ -1014,7 +1014,7 @@ int RefinementCondition(MeshBlock *pmb)
   }
   // refine : delta rho > 0.5*amp
   Real a=std::max(rmax-d0,d0-rmin);
-  if(a > 0.5*amp*rem[0][wave_flag]) return 1;
+  if(a > 0.8*amp*rem[0][wave_flag]) return 1;
   // derefinement: else
   return -1;
 }
