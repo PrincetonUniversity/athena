@@ -150,6 +150,10 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(FaceField &src, Real *buf,
     else if(nb.ox2<0) sj--;
   }
   pmr->RestrictFieldX2(src.x2f, pmr->coarse_b_.x2f, si, ei, sj, ej, sk, ek);
+  if(pmb->block_size.nx2==1) { // 1D
+    for(int i=si; i<=ei; i++)
+      pmr->coarse_b_.x2f(sk,sj+1,i)=pmr->coarse_b_.x2f(sk,sj,i);
+  }
   BufferUtility::Pack3DData(pmr->coarse_b_.x2f, buf, si, ei, sj, ej, sk, ek, p);
 
   // bx3
@@ -165,6 +169,12 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(FaceField &src, Real *buf,
     else if(nb.ox3<0) sk--;
   }
   pmr->RestrictFieldX3(src.x3f, pmr->coarse_b_.x3f, si, ei, sj, ej, sk, ek);
+  if(pmb->block_size.nx3==1) { // 1D or 2D
+    for(int j=sj; j<=ej; j++) {
+      for(int i=si; i<=ei; i++)
+        pmr->coarse_b_.x2f(sk+1,j,i)=pmr->coarse_b_.x2f(sk,j,i);
+    }
+  }
   BufferUtility::Pack3DData(pmr->coarse_b_.x3f, buf, si, ei, sj, ej, sk, ek, p);
 
   return p;
@@ -517,8 +527,14 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
       }
     }
   }
-  else
+  else {
     BufferUtility::Unpack3DData(buf, pmr->coarse_b_.x2f, si, ei, sj, ej, sk, ek, p);
+    if(pmb->block_size.nx2 == 1) { // 1D
+#pragma simd
+      for (int i=si; i<=ei; ++i)
+        pmr->coarse_b_.x2f(sk,sj+1,i) = pmr->coarse_b_.x2f(sk,sj,i);
+    }
+  }
 
   // bx3
   if(nb.ox2==0) {
@@ -551,9 +567,15 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
       }
     }
   }
-  else
+  else {
     BufferUtility::Unpack3DData(buf, pmr->coarse_b_.x3f, si, ei, sj, ej, sk, ek, p);
-
+    if(pmb->block_size.nx3 == 1) { // 2D
+      for (int j=sj; j<=ej; ++j) {
+        for (int i=si; i<=ei; ++i)
+          pmr->coarse_b_.x3f(sk+1,j,i) = pmr->coarse_b_.x3f(sk,j,i);
+      }
+    }
+  }
   return;
 }
 
