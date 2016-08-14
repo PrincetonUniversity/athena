@@ -172,7 +172,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(FaceField &src, Real *buf,
   if(pmb->block_size.nx3==1) { // 1D or 2D
     for(int j=sj; j<=ej; j++) {
       for(int i=si; i<=ei; i++)
-        pmr->coarse_b_.x2f(sk+1,j,i)=pmr->coarse_b_.x2f(sk,j,i);
+        pmr->coarse_b_.x3f(sk+1,j,i)=pmr->coarse_b_.x3f(sk,j,i);
     }
   }
   BufferUtility::Pack3DData(pmr->coarse_b_.x3f, buf, si, ei, sj, ej, sk, ek, p);
@@ -926,7 +926,6 @@ void BoundaryValues::PolarSingleField(FaceField &dst)
           dst.x2f(k,pmb->je+1,i) = 0.5*(dst.x2f(k,pmb->je,i)+dst.x2f(k,pmb->je+2,i));
         }
       }
-
     }
   }
   return;
