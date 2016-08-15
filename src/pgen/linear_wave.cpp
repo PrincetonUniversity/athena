@@ -26,7 +26,7 @@
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-//#include <algorithm>
+#include <algorithm>  // min, max
 
 // Athena++ headers
 #include "../globals.hpp"
@@ -63,6 +63,9 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
   const Real h, const Real b1, const Real b2, const Real b3, const Real x, const Real y,
   Real eigenvalues[(NWAVE)],
   Real right_eigenmatrix[(NWAVE)][(NWAVE)], Real left_eigenmatrix[(NWAVE)][(NWAVE)]);
+
+// AMR refinement condition
+int RefinementCondition(MeshBlock *pmb);
 
 //======================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -139,6 +142,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   }
 
   Eigensystem(d0,u0,v0,w0,h0,bx0,by0,bz0,xfact,yfact,ev,rem,lem);
+
+  if(adaptive==true)
+    EnrollUserRefinementCondition(RefinementCondition);
 
   return;
 }
@@ -1027,3 +1033,25 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
     }
   }
 }
+
+
+// refinement condition: density and pressure curvature
+int RefinementCondition(MeshBlock *pmb)
+{
+  AthenaArray<Real> &w = pmb->phydro->w;
+  Real rmax=0.0, rmin=2.0*d0;
+  for(int k=pmb->ks; k<=pmb->ke; k++) {
+    for(int j=pmb->js; j<=pmb->je; j++) {
+      for(int i=pmb->is; i<=pmb->ie; i++) {
+        if(w(IDN,k,j,i)>rmax) rmax=w(IDN,k,j,i);
+        if(w(IDN,k,j,i)<rmin) rmin=w(IDN,k,j,i);
+      }
+    }
+  }
+  // refine : delta rho > 0.5*amp
+  Real a=std::max(rmax-d0,d0-rmin);
+  if(a > 0.8*amp*rem[0][wave_flag]) return 1;
+  // derefinement: else
+  return -1;
+}
+

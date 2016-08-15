@@ -1530,8 +1530,10 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   Real *newcost = new Real[ntot];
   int *newtoold = new int[ntot];
   int *oldtonew = new int[nbtotal];
+  int nbtold=nbtotal;
   tree.GetMeshBlockList(newloc,newtoold,nbtotal);
   // create a list mapping the previous gid to the current one
+
   oldtonew[0]=0;
   int k=1;
   for(int n=1; n<ntot; n++) {
@@ -1544,6 +1546,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
       oldtonew[k++]=n;
     }
   }
+  // fill the last block 
+  for(;k<nbtold; k++)
+    oldtonew[k]=ntot-1;
 
 #ifdef MPI_PARALLEL
   // share the cost list
@@ -1812,11 +1817,11 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
           int ks=pmb->ks+(loclist[on+ll].lx3&1L)*pmb->block_size.nx3/2;
           AthenaArray<Real> &src=pmr->coarse_cons_;
           AthenaArray<Real> &dst=pmb->phydro->u;
-          for(int nn=0; nn<NHYDRO; nn++) {
+          for(int nv=0; nv<NHYDRO; nv++) {
             for(int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
               for(int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
                 for(int i=is, fi=pob->cis; fi<=pob->cie; i++, fi++)
-                  dst(nn, k, j, i)=src(nn, fk, fj, fi);
+                  dst(nv, k, j, i)=src(nv, fk, fj, fi);
           }}}
           if(MAGNETIC_FIELDS_ENABLED) {
             pmr->RestrictFieldX1(pob->pfield->b.x1f, pmr->coarse_b_.x1f,
@@ -1870,11 +1875,11 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
         AthenaArray<Real> &src=pob->phydro->u;
         AthenaArray<Real> &dst=pmr->coarse_cons_;
         // fill the coarse buffer
-        for(int nn=0; nn<NHYDRO; nn++) {
+        for(int nv=0; nv<NHYDRO; nv++) {
           for(int k=ks, ck=cks; k<=ke; k++, ck++) {
             for(int j=js, cj=cjs; j<=je; j++, cj++) {
               for(int i=is, ci=cis; i<=ie; i++, ci++)
-                dst(nn, k, j, i)=src(nn, ck, cj, ci);
+                dst(nv, k, j, i)=src(nv, ck, cj, ci);
         }}}
         pmr->ProlongateCellCenteredValues(dst, pmb->phydro->u, 0, NHYDRO-1,
                                           is, ie, js, je, ks, ke);

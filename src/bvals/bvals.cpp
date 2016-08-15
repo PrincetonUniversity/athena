@@ -351,17 +351,17 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         }
         int fsize=f2c1+f2c2+f2c3;
         int c2f1=
-          ((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+1+cng):cng)
+          ((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+1+cng):cng+1)
          *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng*f2d):cng)
          *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
         int c2f2=
           ((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
-         *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d+cng*f2d):cng)
+         *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d+cng*f2d):cng+1)
          *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
         int c2f3=
           ((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
          *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d*cng):cng)
-         *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+f3d+cng*f3d):cng);
+         *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+f3d+cng*f3d):cng+1);
          int csize=c2f1+c2f2+c2f3;
           size=std::max(size,std::max(csize,fsize));
       }
@@ -700,15 +700,15 @@ void BoundaryValues::Initialize(void)
             if(nb.ox3!=0) f2c3=f2c3/cng*(cng+1);
           }
           fsize=f2c1+f2c2+f2c3;
-          int c2f1=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+1+cng):cng)
+          int c2f1=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+1+cng):cng+1)
                   *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+cng*f2d):cng)
                   *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
           int c2f2=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
-                  *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+f2d+cng*f2d):cng)
+                  *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+f2d+cng*f2d):cng+1)
                   *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
           int c2f3=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
                   *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+f2d*cng):cng)
-                  *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+f3d+cng*f3d):cng);
+                  *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+f3d+cng*f3d):cng+1);
           csize=c2f1+c2f2+c2f3;
         }
         if(nb.level==mylevel) // same
@@ -1188,21 +1188,28 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
               if(re==pmb->cje+1 && pmb->nblevel[nk+1][nj+2][ni+1]<mylevel) re--;
               pmr->RestrictFieldX2(bfdst.x2f, pmr->coarse_b_.x2f, ris, rie, rs, re, rks, rke);
             }
-            else 
+            else { // 1D
               pmr->RestrictFieldX2(bfdst.x2f, pmr->coarse_b_.x2f, ris, rie, rjs, rje, rks, rke);
+              for(int i=ris; i<=rie; i++)
+                pmr->coarse_b_.x2f(rks,rjs+1,i)=pmr->coarse_b_.x2f(rks,rjs,i);
+            }
             if(pmb->block_size.nx3 > 1) {
               rs=rks, re=rke+1;
               if(rs==pmb->cks   && pmb->nblevel[nk  ][nj+1][ni+1]<mylevel) rs++;
               if(re==pmb->cke+1 && pmb->nblevel[nk+2][nj+1][ni+1]<mylevel) re--;
               pmr->RestrictFieldX3(bfdst.x3f, pmr->coarse_b_.x3f, ris, rie, rjs, rje, rs, re);
             }
-            else
+            else { // 1D or 2D
               pmr->RestrictFieldX3(bfdst.x3f, pmr->coarse_b_.x3f, ris, rie, rjs, rje, rks, rke);
+              for(int j=rjs; j<=rje; j++) {
+                for(int i=ris; i<=rie; i++)
+                  pmr->coarse_b_.x3f(rks+1,j,i)=pmr->coarse_b_.x3f(rks,j,i);
+              }
+            }
           }
         }
       }
     }
-
 
     // calculate the loop limits for the ghost zones
     int cn = (NGHOST+1)/2;
@@ -1255,6 +1262,7 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
       }
       else f3m=1, f3p=1;
     }
+
     pmb->peos->ConservedToPrimitive(pmr->coarse_cons_, pmr->coarse_prim_,
                  pmr->coarse_b_, pmr->coarse_prim_, pmr->coarse_bcc_, pmr->pcoarsec,
                  si-f1m, ei+f1p, sj-f2m, ej+f2p, sk-f3m, ek+f3p);
@@ -1304,7 +1312,7 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
     // prolongate hydro variables using primitive
     pmr->ProlongateCellCenteredValues(pmr->coarse_prim_, pdst, 0, NHYDRO-1,
                                       si, ei, sj, ej, sk, ek);
-    // prollongate magnetic fields
+    // prolongate magnetic fields
     if (MAGNETIC_FIELDS_ENABLED) {
       int il, iu, jl, ju, kl, ku;
       il=si, iu=ei+1;
@@ -1331,13 +1339,12 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
       pmr->ProlongateSharedFieldX3(pmr->coarse_b_.x3f, bfdst.x3f, si, ei, sj, ej, kl, ku);
       // step 4. calculate the internal finer fields using the Toth & Roe method
       pmr->ProlongateInternalField(bfdst, si, ei, sj, ej, sk, ek);
-
       // Field prolongation completed, calculate cell centered fields
       pmb->pfield->CalculateCellCenteredField(bfdst, bcdst, pmb->pcoord,
                                               fsi, fei, fsj, fej, fsk, fek);
     }
     // calculate conservative variables
     pmb->peos->PrimitiveToConserved(pdst, bcdst, cdst, pmb->pcoord,
-                                            fsi, fei, fsj, fej, fsk, fek);
+                                    fsi, fei, fsj, fej, fsk, fek);
   }
 }
