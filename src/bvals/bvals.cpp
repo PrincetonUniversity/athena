@@ -351,17 +351,17 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         }
         int fsize=f2c1+f2c2+f2c3;
         int c2f1=
-          ((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+1+cng):cng)
+          ((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+1+cng):cng+1)
          *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+cng*f2d):cng)
          *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
         int c2f2=
           ((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
-         *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d+cng*f2d):cng)
+         *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d+cng*f2d):cng+1)
          *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
         int c2f3=
           ((BoundaryValues::ni[n].ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
          *((BoundaryValues::ni[n].ox2==0)?((pmb->block_size.nx2+1)/2+f2d*cng):cng)
-         *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+f3d+cng*f3d):cng);
+         *((BoundaryValues::ni[n].ox3==0)?((pmb->block_size.nx3+1)/2+f3d+cng*f3d):cng+1);
          int csize=c2f1+c2f2+c2f3;
           size=std::max(size,std::max(csize,fsize));
       }
@@ -700,15 +700,15 @@ void BoundaryValues::Initialize(void)
             if(nb.ox3!=0) f2c3=f2c3/cng*(cng+1);
           }
           fsize=f2c1+f2c2+f2c3;
-          int c2f1=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+1+cng):cng)
+          int c2f1=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+1+cng):cng+1)
                   *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+cng*f2d):cng)
                   *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
           int c2f2=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
-                  *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+f2d+cng*f2d):cng)
+                  *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+f2d+cng*f2d):cng+1)
                   *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+cng*f3d):cng);
           int c2f3=((nb.ox1==0)?((pmb->block_size.nx1+1)/2+cng):cng)
                   *((nb.ox2==0)?((pmb->block_size.nx2+1)/2+f2d*cng):cng)
-                  *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+f3d+cng*f3d):cng);
+                  *((nb.ox3==0)?((pmb->block_size.nx3+1)/2+f3d+cng*f3d):cng+1);
           csize=c2f1+c2f2+c2f3;
         }
         if(nb.level==mylevel) // same
