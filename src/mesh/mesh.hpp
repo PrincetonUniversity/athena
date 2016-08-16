@@ -184,6 +184,7 @@ public:
   enum BoundaryFlag mesh_bcs[6];
   Real start_time, tlim, cfl_number, time, dt;
   int nlim, ncycle;
+  int nbtotal, nbnew, nbdel;
   bool adaptive, multilevel;
 
   MeshBlock *pblock;
@@ -204,7 +205,6 @@ public:
 private:
   // data
   int root_level, max_level, current_level;
-  int nbtotal;
   int maxneighbor_;
   int num_mesh_threads_;
   int *nslist, *ranklist, *nblist;
