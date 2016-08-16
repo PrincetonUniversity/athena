@@ -293,8 +293,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
 {
   Hydro *phyd = pmb->phydro;
   Field *pfld = pmb->pfield;
-  OutputData *pod;
   num_vars_ = 0;
+  OutputData *pod;
 
   // (lab-frame) density
   if (output_params.variable.compare("D") == 0 || 
@@ -494,7 +494,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
       char vn[16];
       pod = new OutputData;
       pod->type = "SCALARS";
-      std::sprintf(vn, "user_out_var%d", n);
+      sprintf(vn, "user_out_var%d", n);
       pod->name = vn;
       pod->data.InitWithShallowSlice(pmb->user_out_var,4,n,1);
       AppendOutputDataNode(pod);
