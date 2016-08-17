@@ -74,7 +74,6 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
 
   // Loop over MeshBlocks
   while (pmb != NULL) {
-
     // set start/end array indices depending on whether ghost zones are included
     out_is=pmb->is; out_ie=pmb->ie;
     out_js=pmb->js; out_je=pmb->je;
@@ -87,7 +86,11 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
 
     // set ptrs to data in OutputData linked list, then slice/sum as needed
     LoadOutputData(pmb);
-    if (TransformOutputData(pmb) == false) {continue;} // skip if slice was out of range
+    if (TransformOutputData(pmb) == false) {
+      ClearOutputData();  // required when LoadOutputData() is used.
+      pmb=pmb->next;
+      continue;
+    } // skip if slice was out of range
 
     // create filename: "file_basename"+ "."+"blockid"+"."+"file_id"+"."+XXXXX+".vtk",
     // where XXXXX = 5-digit file_number
@@ -187,7 +190,6 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
 
     OutputData *pdata = pfirst_data_;
     while (pdata != NULL) {
-
       // write data type (SCALARS or VECTORS) and name
       fprintf(pfile,"\n%s %s float\n",pdata->type.c_str(), pdata->name.c_str());
 
@@ -213,10 +215,9 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
     // don't forget to close the output file and clean up ptrs to data in OutputData
     fclose(pfile);
     ClearOutputData();  // required when LoadOutputData() is used.
-    delete data;
+    delete [] data;
 
     pmb=pmb->next;
-
   }  // end loop over MeshBlocks
 
   // increment counters

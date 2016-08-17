@@ -441,6 +441,12 @@ int main(int argc, char *argv[])
     std::cout << "time=" << pmesh->time << " cycle=" << pmesh->ncycle << std::endl;
     std::cout << "tlim=" << pmesh->tlim << " nlim=" << pmesh->nlim << std::endl;
 
+    if(pmesh->adaptive==true) {
+      std::cout << std::endl << "Number of MeshBlocks = " << pmesh->nbtotal 
+                << "; " << pmesh->nbnew << "  created, " << pmesh->nbdel 
+                << " destroyed during this simulation." << std::endl;
+    }
+
     // Calculate and print the zone-cycles/cpu-second and wall-second
 #ifdef OPENMP_PARALLEL
     double omp_time = omp_get_wtime() - omp_start_time;;

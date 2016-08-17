@@ -76,6 +76,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   cfl_number = pin->GetReal("time","cfl_number");
   time = start_time;
   dt   = (FLT_MAX*0.4);
+  nbnew=0; nbdel=0;
 
   nlim = pin->GetOrAddInteger("time","nlim",-1);
   ncycle = 0;
@@ -516,6 +517,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   cfl_number = pin->GetReal("time","cfl_number");
   nlim = pin->GetOrAddInteger("time","nlim",-1);
   nint_user_mesh_data_=0, nreal_user_mesh_data_=0;
+  nbnew=0; nbdel=0;
 
   // read number of OpenMP threads for mesh
   num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
@@ -1522,6 +1524,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   if(nnew==0 && ndel==0)
     return; // nothing to do
   // Tree manipulation completed
+  nbnew+=nnew; nbdel+=ndel;
 
   // Block exchange
   // Step 1. construct new lists

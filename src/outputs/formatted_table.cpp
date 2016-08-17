@@ -67,7 +67,11 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
 
     // set ptrs to data in OutputData linked list, then slice/sum if needed
     LoadOutputData(pmb);
-    if (TransformOutputData(pmb) == false) {continue;} // skip if slice was out of range
+    if (TransformOutputData(pmb) == false) {
+      ClearOutputData();  // required when LoadOutputData() is used.
+      pmb=pmb->next;
+      continue;
+    } // skip if slice was out of range
 
     // create filename: "file_basename"+ "."+"blockid"+"."+"file_id"+"."+XXXXX+".tab",
     // where XXXXX = 5-digit file_number
