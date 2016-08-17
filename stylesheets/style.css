@@ -1,0 +1,30 @@
+body { margin: 0; background-color: #ddd; /*font-size: large;*/ padding: 0;}
+div.title {background-color: #ff7900; padding: 15px 30px; margin: 0; width:1020px;}
+p {margin: 0 0 1em 0;}
+p.right {text-align: right; margin-left: auto; margin-right: 0;}
+div.footer {text-align: center; margin-left: auto; margin-right: auto; clear: both;}
+div.logo {margin: 0px; float: right; padding-bottom: 2em;}
+
+h1 {font-size: xx-large; color: #000; margin: 10px 0 10px 0; padding: 0; font-weight: bold; }
+h2 {font-size: x-large; color: #ff7900; margin: 6px 0 0 0 0; padding: 0; font-weight: bold; }
+a {color: #ff7900; text-decoration: none;}
+a:hover {color: #ff7900; text-decoration: underline;}
+a:visited {color: #ff7900; text-decoration: none;}
+a:active {color: #ff7900; text-decoration: underline;}
+
+a.title {font-weight: bold; color: #000; font-size: xx-large; text-decoration: none;}
+a.title:visited {font-weight: bold; color: #000; font-size: xx-large; text-decoration: none;}
+a.title:hover {font-weight: bold; color: #000; font-size: xx-large; text-decoration: none;}
+a.title:active {font-weight: bold; color: #000; font-size: xx-large; text-decoration: none;}
+hr {margin: 4em 0 0 0; clear: both;}
+
+div.menu {margin: 0; padding: 20px 0 20px 0; float: left; width: 180px; height: 100%; color: #ffcc00; background-color: #222; font-size: 16pt;}
+div.main {width: 820px; margin-left: 220px; margin-top: 0px; margin-right: auto; padding-top: 20px; padding-left: 20px; padding-bottom: 100px;}
+ul.menu {list-style-type: none; margin: 0; padding 0; display: table; margin-left: -1em;}
+li.menu {padding: 0; margin: 5px 0;}
+
+a.menu {color: #ffcc00; text-decoration: none;}
+a.menu:hover {color: #ffcc00; text-decoration: underline;}
+a.menu:visited {color: #ffcc00; text-decoration: none;}
+a.menu:active {color: #ffcc00; text-decoration: underline;}
+
