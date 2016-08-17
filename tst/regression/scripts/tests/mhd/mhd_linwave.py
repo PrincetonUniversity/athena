@@ -63,16 +63,16 @@ def analyze():
       data.append([float(val) for val in line.split()])
 
   # check largest maximum error scaled to RMS is within bounds at each highest res
-  if data[1][13] > 6.0:
+  if data[1][13] > 8.0:
     print "maximum error in L-going fast wave too large",data[1][13]
     return False
-  if data[3][13] > 6.0:
+  if data[3][13] > 8.0:
     print "maximum error in L-going Alfven wave too large",data[3][13]
     return False
-  if data[5][13] > 6.0:
+  if data[5][13] > 8.0:
     print "maximum error in L-going slow wave too large",data[5][13]
     return False
-  if data[7][13] > 6.0:
+  if data[7][13] > 8.0:
     print "maximum error in L-going entropy wave too large",data[7][13]
     return False
 

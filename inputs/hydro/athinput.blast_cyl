@@ -1,7 +1,7 @@
 <comment>
-problem   = spherical blast wave in spherical coordinates
+problem   = spherical blast wave in cylindrical coordinates
 reference = Gardiner. T.A. & Stone, J.M., JCP, 205, 509 (2005) (for MHD version of test)
-configure = --prob=blast
+configure = --prob=blast --coord=cylindrical
 
 <job>
 problem_id = Blast      # problem ID: basename of output filenames
@@ -14,7 +14,7 @@ dt         = 0.01       # time increment between outputs
 <time>
 cfl_number = 0.3        # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim       = -1         # cycle limit
-tlim       = 0.15       # time limit
+tlim       = 0.3        # time limit
 
 <mesh>
 nx1        = 64         # Number of zones in X1-direction
@@ -23,11 +23,11 @@ x1max      = 3.0        # maximum value of X1
 ix1_bc     = outflow    # inner-X1 boundary flag
 ox1_bc     = outflow    # outer-X1 boundary flag
 
-nx2        = 64         # Number of zones in X2-direction
+nx2        = 64             # Number of zones in X2-direction
 x2min      = -0.52359877559 # minimum value of X2
 x2max      =  0.52359877559 # maximum value of X2
-ix2_bc     = outflow    # inner-X2 boundary flag
-ox2_bc     = outflow    # outer-X2 boundary flag
+ix2_bc     = outflow        # inner-X2 boundary flag
+ox2_bc     = outflow        # outer-X2 boundary flag
 
 nx3        = 64         # Number of zones in X3-direction
 x3min      = -1.0       # minimum value of X3
@@ -41,3 +41,10 @@ gamma           = 1.666666666667 # gamma = C_p/C_v
 iso_sound_speed = 1.0
 
 <problem>
+compute_error = false # check whether blast is spherical at end
+pamb          = 0.1    # ambient pressure
+prat          = 100.   # Pressure ratio initially
+radius        = 0.25   # Radius of the inner sphere
+x1_0          = 2.0    # r-coord of center of blast
+x2_0          = 0.0    # theta-coord of center of blast
+x3_0          = 0.0    # z-coord of center of blast
