@@ -66,14 +66,12 @@ def analyze():
   if data[1][13] > 8.0:
     print "maximum error in L-going fast wave too large",data[1][13]
     return False
-  if data[3][13] > 8.0:
-    print "maximum error in L-going Alfven wave too large",data[3][13]
+  # check error in M1 for Alfven wave since density constant
+  if data[3][15]/data[3][6] > 8.0:
+    print "maximum error in L-going Alfven wave too large",data[3][15]/data[3][6]
     return False
   if data[5][13] > 8.0:
     print "maximum error in L-going slow wave too large",data[5][13]
-    return False
-  if data[7][13] > 8.0:
-    print "maximum error in L-going entropy wave too large",data[7][13]
     return False
 
   # check RMS error and convergence of all three waves
