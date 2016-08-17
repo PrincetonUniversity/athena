@@ -64,14 +64,14 @@ def analyze():
 
   # check largest maximum error scaled to RMS is within bounds at each highest res
   if data[1][13] > 8.0:
-    print "maximum error in L-going fast wave too large",data[1][13]
+    print "maximum relative error in L-going fast wave too large",data[1][13]
     return False
   # check error in M1 for Alfven wave since density constant
   if data[3][15]/data[3][6] > 8.0:
-    print "maximum error in L-going Alfven wave too large",data[3][15]/data[3][6]
+    print "maximum relative error in L-going Alfven wave too large",data[3][15]/data[3][6]
     return False
   if data[5][13] > 8.0:
-    print "maximum error in L-going slow wave too large",data[5][13]
+    print "maximum relative error in L-going slow wave too large",data[5][13]
     return False
 
   # check RMS error and convergence of all three waves
