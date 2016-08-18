@@ -1,5 +1,6 @@
-body { margin: 0; background-color: #ddd; /*font-size: large;*/ padding: 0;}
-div.title {background-color: #ff7900; padding: 15px 30px; margin: 0; width:1020px;}
+body { margin: 0; background-color: #ddd; /*font-size: large;*/ padding: 0;
+  font-family: 'Helvetica Neue', Helvetica, Arial, serif; }
+div.title {background-color: #ff7900; padding: 15px 30px; margin: 0; width:1060px;}
 p {margin: 0 0 1em 0;}
 p.right {text-align: right; margin-left: auto; margin-right: 0;}
 div.footer {text-align: center; margin-left: auto; margin-right: auto; clear: both;}
@@ -12,14 +13,16 @@ a:hover {color: #ff7900; text-decoration: underline;}
 a:visited {color: #ff7900; text-decoration: none;}
 a:active {color: #ff7900; text-decoration: underline;}
 
-a.title {font-weight: bold; color: #000; font-size: xx-large; text-decoration: none;}
-a.title:visited {font-weight: bold; color: #000; font-size: xx-large; text-decoration: none;}
-a.title:hover {font-weight: bold; color: #000; font-size: xx-large; text-decoration: none;}
-a.title:active {font-weight: bold; color: #000; font-size: xx-large; text-decoration: none;}
+a.title {font-weight: 900; color: #000; font-size: xx-large; text-decoration: none;
+         font-family: 'Chivo', 'Helvetica Neue', Helvetica, Arial, serif;
+         text-shadow: 0px 0px 11px rgba(255, 255, 255, 1);}
+a.title:visited {color: #000; font-size: xx-large; text-decoration: none;}
+a.title:hover {color: #000; font-size: xx-large; text-decoration: none;}
+a.title:active {color: #000; font-size: xx-large; text-decoration: none;}
 hr {margin: 4em 0 0 0; clear: both;}
 
-div.menu {margin: 0; padding: 30px 0 30px 0; float: left; width: 180px; color: #ffcc00; background-color: #222; font-size: 16pt;}
-div.main {width: 820px; margin-left: 220px; margin-top: 0px; margin-right: auto; padding-top: 20px; padding-left: 20px; padding-bottom: 100px;}
+div.menu {margin: 0; padding: 30px 0 30px 0; float: left; width: 220px; color: #ffcc00; background-color: #222; font-size: 16pt;}
+div.main {width: 820px; margin-left: 260px; margin-top: 0px; margin-right: auto; padding-top: 20px; padding-left: 20px; padding-bottom: 100px;}
 ul.menu {list-style-type: none; margin: 0; padding 0; display: table; margin-left: -1em;}
 li.menu {padding: 0; margin: 8px 0;}
 
