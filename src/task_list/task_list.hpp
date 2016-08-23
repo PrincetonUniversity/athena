@@ -104,6 +104,11 @@ public:
 //[JMSHI
   enum TaskStatus HydroShearSend(MeshBlock *pmb, int step);
   enum TaskStatus HydroShearReceive(MeshBlock *pmb, int step);
+  enum TaskStatus FieldShearSend(MeshBlock *pmb, int step);
+  enum TaskStatus FieldShearReceive(MeshBlock *pmb, int step);
+  enum TaskStatus EMFShearSend(MeshBlock *pmb, int step);
+  enum TaskStatus EMFShearReceive(MeshBlock *pmb, int step);
+  enum TaskStatus EMFShearRemap(MeshBlock *pmb, int step);
 //JMSHI]
   enum TaskStatus Prolongation(MeshBlock *pmb, int step);
   enum TaskStatus Primitives(MeshBlock *pmb, int step);
@@ -171,7 +176,12 @@ namespace HydroIntegratorTaskNames {
 
 //[JMSHI
   const uint64_t SEND_HYDSH=1LL<<47;
-  const uint64_t RECV_HYDSH=1LL<<51;
+  const uint64_t SEND_EMFSH=1LL<<48;
+  const uint64_t SEND_FLDSH=1LL<<49;
+  const uint64_t RECV_HYDSH=1LL<<50;
+  const uint64_t RECV_EMFSH=1LL<<51;
+  const uint64_t RECV_FLDSH=1LL<<52;
+  const uint64_t RMAP_EMFSH=1LL<<53;
 //JMSHI]
 };
 

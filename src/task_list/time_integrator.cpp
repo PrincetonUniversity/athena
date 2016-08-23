@@ -102,12 +102,38 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 
     // compute MHD fluxes, integrate field
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
-      AddTimeIntegratorTask(CALC_FLDFLX,CALC_HYDFLX);
+//[JMSHI
+	  if (SHEARING_BOX) // Shearingbox BC
+        AddTimeIntegratorTask(CALC_FLDFLX,CALC_HYDFLX);
+        //AddTimeIntegratorTask(CALC_FLDFLX,(CALC_HYDFLX|RECV_HYDSH));
+	  else
+		AddTimeIntegratorTask(CALC_FLDFLX,CALC_HYDFLX);
+//comment out the following 3 lines and uncomment the 4th
+//to get rid of flux_correction
+//      AddTimeIntegratorTask(SEND_FLDFLX,CALC_FLDFLX);
+//      AddTimeIntegratorTask(RECV_FLDFLX,SEND_FLDFLX);
+//      AddTimeIntegratorTask(INT_FLD, RECV_FLDFLX);
+//      //AddTimeIntegratorTask(INT_FLD, CALC_FLDFLX);
+//JMSHI]
       AddTimeIntegratorTask(SEND_FLDFLX,CALC_FLDFLX);
       AddTimeIntegratorTask(RECV_FLDFLX,SEND_FLDFLX);
-      AddTimeIntegratorTask(INT_FLD, RECV_FLDFLX);
+//[JMSHI
+	  if (SHEARING_BOX) {// Shearingbox BC
+        AddTimeIntegratorTask(SEND_EMFSH,RECV_FLDFLX);
+        AddTimeIntegratorTask(RECV_EMFSH,RECV_FLDFLX);
+        AddTimeIntegratorTask(RMAP_EMFSH,RECV_EMFSH);
+	  }
+//JMSHI]
+      AddTimeIntegratorTask(INT_FLD, RMAP_EMFSH);
+      //AddTimeIntegratorTask(INT_FLD, RECV_FLDFLX);
       AddTimeIntegratorTask(SEND_FLD,INT_FLD);
       AddTimeIntegratorTask(RECV_FLD,START_ALLRECV);
+//[JMSHI
+	if (SHEARING_BOX) { // Shearingbox BC
+	  AddTimeIntegratorTask(SEND_FLDSH,RECV_FLD);
+	  AddTimeIntegratorTask(RECV_FLDSH,RECV_FLD);
+	}
+//JMSHI]
     }
 
     // prolongate, compute new primitives
@@ -118,7 +144,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
       } else {
 //[JMSHI
         if (SHEARING_BOX) {
-		  AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD|RECV_HYDSH));
+		  AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD|RECV_HYDSH|RECV_FLDSH|RMAP_EMFSH));
 		} else {
 		  AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD));
 		}
@@ -256,6 +282,31 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::HydroShearReceive);
+      break;
+    case (SEND_FLDSH):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::FieldShearSend);
+      break;
+    case (RECV_FLDSH):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::FieldShearReceive);
+      break;
+    case (SEND_EMFSH):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::EMFShearSend);
+      break;
+    case (RECV_EMFSH):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::EMFShearReceive);
+      break;
+    case (RMAP_EMFSH):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::EMFShearRemap);
       break;
 //JMSHI]
 
@@ -556,6 +607,51 @@ enum TaskStatus TimeIntegratorTaskList::HydroShearReceive(MeshBlock *pmb, int st
   } else {
     return TASK_FAIL;
   }
+}
+enum TaskStatus TimeIntegratorTaskList::FieldShearSend(MeshBlock *pmb, int step)
+{
+  if(step == 1) {
+    pmb->pbval->SendFieldShearingboxBoundaryBuffers(pmb->pfield->b1, true);
+  } else if(step == 2) {
+    pmb->pbval->SendFieldShearingboxBoundaryBuffers(pmb->pfield->b, true);
+  } else {
+    return TASK_FAIL;
+  }
+  return TASK_SUCCESS;
+}
+enum TaskStatus TimeIntegratorTaskList::FieldShearReceive(MeshBlock *pmb, int step)
+{
+  bool ret;
+  if(step == 1) {
+    ret=pmb->pbval->ReceiveFieldShearingboxBoundaryBuffers(pmb->pfield->b1);
+  } else if(step == 2) {
+    ret=pmb->pbval->ReceiveFieldShearingboxBoundaryBuffers(pmb->pfield->b);
+  } else {
+    return TASK_FAIL;
+  }
+  if(ret==true) {
+    return TASK_SUCCESS;
+  } else {
+    return TASK_FAIL;
+  }
+}
+enum TaskStatus TimeIntegratorTaskList::EMFShearSend(MeshBlock *pmb, int step)
+{
+  pmb->pbval->SendEMFShearingboxBoundaryCorrection();
+  return TASK_SUCCESS;
+}
+enum TaskStatus TimeIntegratorTaskList::EMFShearReceive(MeshBlock *pmb, int step)
+{
+  if(pmb->pbval->ReceiveEMFShearingboxBoundaryCorrection() == true) {
+    return TASK_NEXT;
+  } else {
+    return TASK_FAIL;
+  }
+}
+enum TaskStatus TimeIntegratorTaskList::EMFShearRemap(MeshBlock *pmb, int step)
+{
+  pmb->pbval->RemapEMFShearingboxBoundary();
+  return TASK_SUCCESS;
 }
 //JMSHI]
 //--------------------------------------------------------------------------------------

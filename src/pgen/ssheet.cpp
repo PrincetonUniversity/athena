@@ -13,7 +13,7 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file ssheet.c
+//! \file ssheet.cpp
 //  \brief Shearing wave problem generator for 2D/3D problems.
 //
 //======================================================================================
@@ -37,9 +37,9 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 
-#if !SHEARING_BOX
-#error "This problem generator requires shearing box"
-#endif
+//#if !SHEARING_BOX
+//#error "This problem generator requires shearing box"
+//#endif
 
 static Real amp, nwx, nwy; // amplitude, Wavenumbers
 static int ipert; // initial pattern
@@ -95,10 +95,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //	  exit(0);
 //  }
 
-  if (MAGNETIC_FIELDS_ENABLED) {
-	  std::cout << "[ssheet.cpp]: only works for hydro alone" << std::endl;
-	  exit(0);
-  }
+//  if (MAGNETIC_FIELDS_ENABLED) {
+//	  std::cout << "[ssheet.cpp]: only works for hydro alone" << std::endl;
+//	  exit(0);
+//  }
 
   Real d0 = 1.0;
   Real p0 = 1e-6;
@@ -152,6 +152,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         phydro->u(IM1,k,j,i) = rd*rvx;
         phydro->u(IM2,k,j,i) -= rd*(rvy + qshear*Omega_0*x1);
         phydro->u(IM3,k,j,i) = 0.0;
+        if(MAGNETIC_FIELDS_ENABLED) {
+            pfield->b.x1f(k,j,i) = 0.0;
+            pfield->b.x2f(k,j,i) = 0.0;
+            pfield->b.x3f(k,j,i) = 1e-5*sin(kx*x1);
+            if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
+            if (j==je) pfield->b.x2f(k,je+1,i) = 0.0;
+            if (k==ke) pfield->b.x3f(ke+1,j,i) = 1e-5*sin(kx*x1);
+        }
 	  } else if (ipert == 2) {
 	    // 3) epicyclic oscillation
 		rvx = 0.1*iso_cs;

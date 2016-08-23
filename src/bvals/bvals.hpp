@@ -36,8 +36,12 @@ enum BoundaryFace {FACE_UNDEF=-1, INNER_X1=0, OUTER_X1=1, INNER_X2=2, OUTER_X2=3
   INNER_X3=4, OUTER_X3=5};
 
 // identifiers for boundary conditions
+// [JMSHI
+//enum BoundaryFlag {BLOCK_BNDRY=-1, BNDRY_UNDEF=0, REFLECTING_BNDRY=1, OUTFLOW_BNDRY=2,
+//  USER_BNDRY=3, PERIODIC_BNDRY=4, POLAR_BNDRY=5};
 enum BoundaryFlag {BLOCK_BNDRY=-1, BNDRY_UNDEF=0, REFLECTING_BNDRY=1, OUTFLOW_BNDRY=2,
-  USER_BNDRY=3, PERIODIC_BNDRY=4, POLAR_BNDRY=5};
+  USER_BNDRY=3, PERIODIC_BNDRY=4, POLAR_BNDRY=5, SHEAR_PERIODIC_BNDRY=6};
+//JMSHI]
 
 // identifiers for types of neighbor blocks
 enum NeighborType {NEIGHBOR_NONE, NEIGHBOR_FACE, NEIGHBOR_EDGE, NEIGHBOR_CORNER};
@@ -170,6 +174,7 @@ public:
   void PolarSingleEMF(void);
   bool ReceiveEMFCorrection(void);
 //[JMSHI
+  //Hydro
   void LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb);
   void SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real> &src, bool cons);
   void SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src, bool cons);
@@ -179,6 +184,26 @@ public:
   void ReceiveHydroShearingboxBoundaryBuffersWithWait(AthenaArray<Real> &dst, bool cons);
   void FindShearBlock(void);
   void RemapFlux(const int n, const int k, const int jinner, const int jouter, const int i, const Real eps, const AthenaArray<Real> &U, AthenaArray<Real> &Flux);
+  //Field
+  void LoadFieldShearing(FaceField &src, Real *buf, int nb);
+  void SendFieldShearingboxBoundaryBuffersForInit(FaceField &src, bool cons);
+  void SendFieldShearingboxBoundaryBuffers(FaceField &src, bool cons);
+  void SetFieldShearingboxBoundarySameLevel(FaceField &dst, Real *buf, const int nb);
+  bool ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst);
+  void ReceiveFieldShearingboxBoundaryBuffersWithWait(FaceField &dst, bool cons);
+  void RemapFluxField(const int k, const int jinner, const int jouter, const int i, const Real eps, const AthenaArray<Real> &U, AthenaArray<Real> &Flux);
+  // EMF
+  void LoadEMFShearing(EdgeField &src, Real *buf, const int nb);
+  void SendEMFShearingboxBoundaryCorrectionForInit(void);
+  void SendEMFShearingboxBoundaryCorrection(void);
+  void SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *buf, const int nb);
+  void ReceiveEMFShearingboxBoundaryCorrectionWithWait(void);
+  bool ReceiveEMFShearingboxBoundaryCorrection(void);
+  void RemapEMFShearingboxBoundary(void);
+  void ClearEMFShearing(EdgeField &work);
+  void RemapFluxEMF(const int k, const int jinner, const int jouter, const Real eps, const AthenaArray<Real> &U, AthenaArray<Real> &Flux);
+
+
 //JMSHI]
 
 private:
@@ -216,34 +241,62 @@ private:
   BValFunc_t BoundaryFunction_[6];
 
 //[JMSHI
-  enum BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];
+  ShearingBoundaryBlock shbb_; // shearing block properties: lists etc.
   Real x1size_,x2size_,x3size_; // mesh_size.x1max-mesh_size.x1min etc. [Lx,Ly,Lz]
   Real Omega_0_, qshear_; // orbital freq and shear rate
   int ShBoxCoord_; // shearcoordinate type: 1 = xy (default), 2 = xz
   Real ssize_; // # of ghost cells in x-z plane
-
-  ShearingBoundaryBlock shbb_; // shearing block properties: lists etc.
-  AthenaArray<Real> shboxvar_inner_hydro_, shboxvar_outer_hydro_; // working arrays of ghost zones with remapped quantities
-  AthenaArray<Real> flx_inner_hydro_, flx_outer_hydro_; // flux from conservative remapping (fractional part of grid cells)
-
   int joverlap_; // # of cells the shear runs over one block
   Real eps_; // fraction part of the shear
+  int  send_inner_gid_[5], recv_inner_gid_[5]; // gid of meshblocks for communication
+  int  send_inner_lid_[5], recv_inner_lid_[5]; // lid of meshblocks for communication
+  int send_inner_rank_[5],recv_inner_rank_[5]; // rank of meshblocks for communication
+  int  send_outer_gid_[5], recv_outer_gid_[5]; // gid of meshblocks for communication
+  int  send_outer_lid_[5], recv_outer_lid_[5]; // lid of meshblocks for communication
+  int send_outer_rank_[5],recv_outer_rank_[5]; // rank of meshblocks for communication
 
-  int send_inner_gid_[4],recv_inner_gid_[4]; // gid of meshblocks for communication
-  int send_inner_lid_[4], recv_inner_lid_[4]; // lid of meshblocks for communication
-  int send_inner_rank_[4],recv_inner_rank_[4]; // rank of meshblocks for communication
-  int send_innersize_hydro_[4], recv_innersize_hydro_[4]; //MPI buffer sizes
+  // Hydro
+  enum BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];
+  AthenaArray<Real>   shboxvar_inner_hydro_, shboxvar_outer_hydro_; // working arrays of remapped quantities
+  AthenaArray<Real>   flx_inner_hydro_, flx_outer_hydro_; // flux from conservative remapping
+  int  send_innersize_hydro_[4], recv_innersize_hydro_[4]; //MPI buffer sizes
   Real *send_innerbuf_hydro_[4], *recv_innerbuf_hydro_[4]; //MPI send and recv buffers
 #ifdef MPI_PARALLEL
   MPI_Request rq_innersend_hydro_[4],  rq_innerrecv_hydro_[4];//MPI request for send and recv msgs
 #endif
-  int send_outer_gid_[4], recv_outer_gid_[4]; // gid of meshblocks for communication
-  int send_outer_lid_[4], recv_outer_lid_[4]; // lid of meshblocks for communication
-  int send_outer_rank_[4],recv_outer_rank_[4]; // rank of meshblocks for communication
-  int send_outersize_hydro_[4], recv_outersize_hydro_[4]; //MPI buffer sizes
+  int  send_outersize_hydro_[4], recv_outersize_hydro_[4]; //MPI buffer sizes
   Real *send_outerbuf_hydro_[4], *recv_outerbuf_hydro_[4]; //MPI send and recv buffers
 #ifdef MPI_PARALLEL
   MPI_Request rq_outersend_hydro_[4],  rq_outerrecv_hydro_[4];//MPI request for send and recv msgs
+#endif
+  // Field
+  enum BoundaryStatus shbox_inner_field_flag_[4], shbox_outer_field_flag_[4];
+  FaceField shboxvar_inner_field_, shboxvar_outer_field_; // working arrays of remapped quantities
+  FaceField flx_inner_field_, flx_outer_field_; // flux from conservative remapping
+  int  send_innersize_field_[4], recv_innersize_field_[4]; //MPI buffer sizes
+  Real *send_innerbuf_field_[4], *recv_innerbuf_field_[4]; //MPI send and recv buffers
+#ifdef MPI_PARALLEL
+  MPI_Request rq_innersend_field_[4],  rq_innerrecv_field_[4];//MPI request for send and recv msgs
+#endif
+  int  send_outersize_field_[4], recv_outersize_field_[4]; //MPI buffer sizes
+  Real *send_outerbuf_field_[4], *recv_outerbuf_field_[4]; //MPI send and recv buffers
+#ifdef MPI_PARALLEL
+  MPI_Request rq_outersend_field_[4],  rq_outerrecv_field_[4];//MPI request for send and recv msgs
+#endif
+  // EMF correction
+  enum BoundaryStatus shbox_inner_emf_flag_[5], shbox_outer_emf_flag_[5];
+  EdgeField shboxvar_inner_emf_, shboxvar_outer_emf_; // working arrays of remapped quantities
+  EdgeField shboxmap_inner_emf_, shboxmap_outer_emf_; // working arrays of remapped quantities
+  EdgeField flx_inner_emf_, flx_outer_emf_; // flux from conservative remapping
+  int  send_innersize_emf_[5], recv_innersize_emf_[5]; //MPI buffer sizes
+  Real *send_innerbuf_emf_[5], *recv_innerbuf_emf_[5]; //MPI send and recv buffers
+#ifdef MPI_PARALLEL
+  MPI_Request rq_innersend_emf_[5],  rq_innerrecv_emf_[5];//MPI request for send and recv msgs
+#endif
+  int  send_outersize_emf_[5], recv_outersize_emf_[5]; //MPI buffer sizes
+  Real *send_outerbuf_emf_[5], *recv_outerbuf_emf_[5]; //MPI send and recv buffers
+#ifdef MPI_PARALLEL
+  MPI_Request rq_outersend_emf_[5],  rq_outerrecv_emf_[5];//MPI request for send and recv msgs
 #endif
 
 //JMSHI]

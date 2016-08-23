@@ -7,17 +7,17 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file get_boundary_flag.cpp 
+//! \file get_boundary_flag.cpp
 //======================================================================================
 
 // C++ headers
-#include <iostream> 
+#include <iostream>
 #include <sstream>
 #include <stdexcept>  // runtime_error
 
@@ -39,6 +39,10 @@ enum BoundaryFlag GetBoundaryFlag(std::string input_string)
     return USER_BNDRY;
   } else if (input_string == "periodic") {
     return PERIODIC_BNDRY;
+//[JMSHI
+  } else if (input_string == "shear_periodic") {
+    return SHEAR_PERIODIC_BNDRY;
+//JMSHI]
   } else if (input_string == "polar") {
     return POLAR_BNDRY;
   } else if (input_string == "none") {

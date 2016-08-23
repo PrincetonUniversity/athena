@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -390,14 +390,20 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
 
   lx+=ox1; ly+=ox2; lz+=ox3;
   // periodic and polar boundaries
+  // [JMSHI
   if(lx<0) {
-    if(bcs[INNER_X1]==PERIODIC_BNDRY) lx=(rbx<<(ll-rl))-1;
+    if(bcs[INNER_X1]==PERIODIC_BNDRY || bcs[INNER_X1]==SHEAR_PERIODIC_BNDRY)
+	  lx=(rbx<<(ll-rl))-1;
+    //if(bcs[INNER_X1]==PERIODIC_BNDRY) lx=(rbx<<(ll-rl))-1;
     else return NULL;
   }
   if(lx>=rbx<<(ll-rl)) {;
-    if(bcs[OUTER_X1]==PERIODIC_BNDRY) lx=0;
+    if(bcs[OUTER_X1]==PERIODIC_BNDRY || bcs[OUTER_X1]==SHEAR_PERIODIC_BNDRY)
+	  lx=0;
+    //if(bcs[OUTER_X1]==PERIODIC_BNDRY) lx=0;
     else return NULL;
   }
+  //JMSHI]
   bool polar = false;
   if(ly<0) {
     if(bcs[INNER_X2]==PERIODIC_BNDRY) ly=(rby<<(ll-rl))-1;

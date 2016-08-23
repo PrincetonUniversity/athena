@@ -81,6 +81,11 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     case PERIODIC_BNDRY: // periodic boundary
       BoundaryFunction_[INNER_X1] = NULL;
       break;
+//[JMSHI
+    case SHEAR_PERIODIC_BNDRY: // shearing periodic boundary
+      BoundaryFunction_[INNER_X1] = NULL;
+      break;
+//JMSHI]
     case USER_BNDRY: // user-enrolled BCs
       BoundaryFunction_[INNER_X1] = pmb->pmy_mesh->BoundaryFunction_[INNER_X1];
       break;
@@ -103,6 +108,11 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     case PERIODIC_BNDRY: // periodic boundary
       BoundaryFunction_[OUTER_X1] = NULL;
       break;
+//[JMSHI
+    case SHEAR_PERIODIC_BNDRY: // shearing periodic boundary
+      BoundaryFunction_[OUTER_X1] = NULL;
+      break;
+//JMSHI]
     case USER_BNDRY: // user-enrolled BCs
       BoundaryFunction_[OUTER_X1] = pmb->pmy_mesh->BoundaryFunction_[OUTER_X1];
       break;
@@ -473,15 +483,35 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 	int ncells3 = pmb->block_size.nx3;
 	if (pmy_mesh->mesh_size.nx3>1) ncells3 += 2*NGHOST;
 	ssize_ = NGHOST*ncells3;
+
     if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
 	  shboxvar_inner_hydro_.NewAthenaArray(NHYDRO,ncells3,ncells2,NGHOST);// indicies of i and j are NOT switched.
 	  flx_inner_hydro_.NewAthenaArray(ncells2);
+      if (MAGNETIC_FIELDS_ENABLED) {
+	    shboxvar_inner_field_.x1f.NewAthenaArray(ncells3,ncells2,NGHOST);
+	    shboxvar_inner_field_.x2f.NewAthenaArray(ncells3,ncells2+1,NGHOST);//extra cell in logitudinal dir
+	    shboxvar_inner_field_.x3f.NewAthenaArray(ncells3+1,ncells2,NGHOST);// extra cell in logitudinal dir
+	    flx_inner_field_.x1f.NewAthenaArray(ncells2);
+	    flx_inner_field_.x2f.NewAthenaArray(ncells2+1);
+	    flx_inner_field_.x3f.NewAthenaArray(ncells2);
+	    shboxvar_inner_emf_.x2e.NewAthenaArray(ncells3+1,ncells2);//extra cell in logitudinal dir
+	    shboxvar_inner_emf_.x3e.NewAthenaArray(ncells3,ncells2+1);// extra cell in logitudinal dir
+	    shboxmap_inner_emf_.x2e.NewAthenaArray(ncells3+1,ncells2);//extra cell in logitudinal dir
+	    shboxmap_inner_emf_.x3e.NewAthenaArray(ncells3,ncells2+1);// extra cell in logitudinal dir
+	    flx_inner_emf_.x2e.NewAthenaArray(ncells2);
+	    flx_inner_emf_.x3e.NewAthenaArray(ncells2+1);
+	  }
 	  shbb_.inner = true;
 	  shbb_.igidlist=new int[nrbx2];
 	  shbb_.ilidlist=new int[nrbx2];
 	  shbb_.irnklist=new int[nrbx2];
 	  shbb_.ilevlist=new int[nrbx2];
 	  int size = (pmb->block_size.nx2+NGHOST)*ssize_*NHYDRO;//attach corner cells from L/R side
+	  int bsize=0,esize=0;
+      if (MAGNETIC_FIELDS_ENABLED) {
+	    bsize = (pmb->block_size.nx2+NGHOST+1)*(ssize_+NGHOST)*NFIELD;//extra cell in azimuth/vertical
+		esize = 2*(pmb->block_size.nx2+NGHOST)*pmb->block_size.nx3+pmb->block_size.nx2+pmb->block_size.nx3+NGHOST;
+	  }
 	  for (int n=0; n<2; n++) {
 	    send_innerbuf_hydro_[n] = new Real[size];
 	    recv_innerbuf_hydro_[n] = new Real[size];
@@ -490,8 +520,26 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         rq_innersend_hydro_[n] = MPI_REQUEST_NULL;
         rq_innerrecv_hydro_[n] = MPI_REQUEST_NULL;
 #endif
+        if (MAGNETIC_FIELDS_ENABLED) {
+	      send_innerbuf_field_[n] = new Real[bsize];
+	      recv_innerbuf_field_[n] = new Real[bsize];
+          shbox_inner_field_flag_[n]=BNDRY_WAITING;
+	      send_innerbuf_emf_[n] = new Real[esize];
+	      recv_innerbuf_emf_[n] = new Real[esize];
+          shbox_inner_emf_flag_[n]=BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+          rq_innersend_field_[n] = MPI_REQUEST_NULL;
+          rq_innerrecv_field_[n] = MPI_REQUEST_NULL;
+          rq_innersend_emf_[n] = MPI_REQUEST_NULL;
+          rq_innerrecv_emf_[n] = MPI_REQUEST_NULL;
+#endif
+		}
 	  }
 	  size = NGHOST*ssize_*NHYDRO;// corner cells only
+      if (MAGNETIC_FIELDS_ENABLED) {
+		bsize = NGHOST*(ssize_+NGHOST)*NFIELD;
+		esize = 2*NGHOST*pmb->block_size.nx3+NGHOST;
+	  }
 	  for (int n=2; n<4; n++) {
 	    send_innerbuf_hydro_[n] = new Real[size];
 	    recv_innerbuf_hydro_[n] = new Real[size];
@@ -499,18 +547,60 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 #ifdef MPI_PARALLEL
         rq_innersend_hydro_[n] = MPI_REQUEST_NULL;
         rq_innerrecv_hydro_[n] = MPI_REQUEST_NULL;
+#endif
+        if (MAGNETIC_FIELDS_ENABLED) {
+	      send_innerbuf_field_[n] = new Real[bsize];
+	      recv_innerbuf_field_[n] = new Real[bsize];
+          shbox_inner_field_flag_[n]=BNDRY_WAITING;
+	      send_innerbuf_emf_[n] = new Real[esize];
+	      recv_innerbuf_emf_[n] = new Real[esize];
+          shbox_inner_emf_flag_[n]=BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+          rq_innersend_field_[n] = MPI_REQUEST_NULL;
+          rq_innerrecv_field_[n] = MPI_REQUEST_NULL;
+          rq_innersend_emf_[n] = MPI_REQUEST_NULL;
+          rq_innerrecv_emf_[n] = MPI_REQUEST_NULL;
+#endif
+		}
+	  }
+      if (MAGNETIC_FIELDS_ENABLED) {
+	    send_innerbuf_emf_[4] = new Real[esize];
+	    recv_innerbuf_emf_[4] = new Real[esize];
+        shbox_inner_emf_flag_[4]=BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+        rq_innersend_emf_[4] = MPI_REQUEST_NULL;
+        rq_innerrecv_emf_[4] = MPI_REQUEST_NULL;
 #endif
 	  }
 	}
     if (pmb->loc.lx1 == (pmy_mesh->nrbx1-1)) { // if true for shearing outer blocks
 	  shboxvar_outer_hydro_.NewAthenaArray(NHYDRO,ncells3,ncells2,NGHOST);// indicies of i and j are NOT switched.
 	  flx_outer_hydro_.NewAthenaArray(ncells2);
+      if (MAGNETIC_FIELDS_ENABLED) {
+	    shboxvar_outer_field_.x1f.NewAthenaArray(ncells3,ncells2,NGHOST);
+	    shboxvar_outer_field_.x2f.NewAthenaArray(ncells3,ncells2+1,NGHOST);//extra cell in logitudinal dir
+	    shboxvar_outer_field_.x3f.NewAthenaArray(ncells3+1,ncells2,NGHOST);// extra cell in logitudinal dir
+	    flx_outer_field_.x1f.NewAthenaArray(ncells2);
+	    flx_outer_field_.x2f.NewAthenaArray(ncells2+1);
+	    flx_outer_field_.x3f.NewAthenaArray(ncells2);
+	    shboxvar_outer_emf_.x2e.NewAthenaArray(ncells3+1,ncells2);//extra cell in logitudinal dir
+	    shboxvar_outer_emf_.x3e.NewAthenaArray(ncells3,ncells2+1);// extra cell in logitudinal dir
+	    shboxmap_outer_emf_.x2e.NewAthenaArray(ncells3+1,ncells2);//extra cell in logitudinal dir
+	    shboxmap_outer_emf_.x3e.NewAthenaArray(ncells3,ncells2+1);// extra cell in logitudinal dir
+	    flx_outer_emf_.x2e.NewAthenaArray(ncells2);
+	    flx_outer_emf_.x3e.NewAthenaArray(ncells2+1);
+	  }
 	  shbb_.outer = true;
 	  shbb_.ogidlist=new int[nrbx2];
 	  shbb_.olidlist=new int[nrbx2];
 	  shbb_.ornklist=new int[nrbx2];
 	  shbb_.olevlist=new int[nrbx2];
 	  int size = (pmb->block_size.nx2+NGHOST)*ssize_*NHYDRO;//attach corner cells from L/R side
+	  int bsize=0, esize=0;
+      if (MAGNETIC_FIELDS_ENABLED) {
+	    bsize = (pmb->block_size.nx2+NGHOST+1)*(ssize_+NGHOST)*NFIELD;//extra cell in azimuth/vertical
+		esize = 2*(pmb->block_size.nx2+NGHOST)*pmb->block_size.nx3+pmb->block_size.nx2+pmb->block_size.nx3+NGHOST;
+	  }
 	  for (int n=0; n<2; n++) {
 	    send_outerbuf_hydro_[n] = new Real[size];
 	    recv_outerbuf_hydro_[n] = new Real[size];
@@ -519,8 +609,26 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         rq_outersend_hydro_[n] = MPI_REQUEST_NULL;
         rq_outerrecv_hydro_[n] = MPI_REQUEST_NULL;
 #endif
+        if (MAGNETIC_FIELDS_ENABLED) {
+	      send_outerbuf_field_[n] = new Real[bsize];
+	      recv_outerbuf_field_[n] = new Real[bsize];
+          shbox_outer_field_flag_[n]=BNDRY_WAITING;
+	      send_outerbuf_emf_[n] = new Real[esize];
+	      recv_outerbuf_emf_[n] = new Real[esize];
+          shbox_outer_emf_flag_[n]=BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+          rq_outersend_field_[n] = MPI_REQUEST_NULL;
+          rq_outerrecv_field_[n] = MPI_REQUEST_NULL;
+          rq_outersend_emf_[n] = MPI_REQUEST_NULL;
+          rq_outerrecv_emf_[n] = MPI_REQUEST_NULL;
+#endif
+		}
 	  }
 	  size = NGHOST*ssize_*NHYDRO;// corner cells only
+      if (MAGNETIC_FIELDS_ENABLED) {
+		bsize = NGHOST*(ssize_+NGHOST)*NFIELD;
+		esize = 2*NGHOST*pmb->block_size.nx3+NGHOST;
+	  }
 	  for (int n=2; n<4; n++) {
 	    send_outerbuf_hydro_[n] = new Real[size];
 	    recv_outerbuf_hydro_[n] = new Real[size];
@@ -528,6 +636,29 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 #ifdef MPI_PARALLEL
         rq_outersend_hydro_[n] = MPI_REQUEST_NULL;
         rq_outerrecv_hydro_[n] = MPI_REQUEST_NULL;
+#endif
+        if (MAGNETIC_FIELDS_ENABLED) {
+	      send_outerbuf_field_[n] = new Real[bsize];
+	      recv_outerbuf_field_[n] = new Real[bsize];
+          shbox_outer_field_flag_[n]=BNDRY_WAITING;
+	      send_outerbuf_emf_[n] = new Real[esize];
+	      recv_outerbuf_emf_[n] = new Real[esize];
+          shbox_outer_emf_flag_[n]=BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+          rq_outersend_field_[n] = MPI_REQUEST_NULL;
+          rq_outerrecv_field_[n] = MPI_REQUEST_NULL;
+          rq_outersend_emf_[n] = MPI_REQUEST_NULL;
+          rq_outerrecv_emf_[n] = MPI_REQUEST_NULL;
+#endif
+		}
+	  }
+      if (MAGNETIC_FIELDS_ENABLED) {
+	    send_outerbuf_emf_[4] = new Real[esize];
+	    recv_outerbuf_emf_[4] = new Real[esize];
+        shbox_outer_emf_flag_[4]=BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+        rq_outersend_emf_[4] = MPI_REQUEST_NULL;
+        rq_outerrecv_emf_[4] = MPI_REQUEST_NULL;
 #endif
 	  }
 	}
@@ -612,6 +743,26 @@ BoundaryValues::~BoundaryValues()
 	    delete[] send_innerbuf_hydro_[n];
 	    delete[] recv_innerbuf_hydro_[n];
 	  }
+      if (MAGNETIC_FIELDS_ENABLED) {
+	    shboxvar_inner_field_.x1f.DeleteAthenaArray();
+	    shboxvar_inner_field_.x2f.DeleteAthenaArray();
+	    shboxvar_inner_field_.x3f.DeleteAthenaArray();
+	    flx_inner_field_.x1f.DeleteAthenaArray();
+	    flx_inner_field_.x2f.DeleteAthenaArray();
+	    flx_inner_field_.x3f.DeleteAthenaArray();
+	    shboxvar_inner_emf_.x2e.DeleteAthenaArray();
+	    shboxvar_inner_emf_.x3e.DeleteAthenaArray();
+	    flx_inner_emf_.x2e.DeleteAthenaArray();
+	    flx_inner_emf_.x3e.DeleteAthenaArray();
+	    for (int n=0; n<4; n++) {
+	      delete[] send_innerbuf_field_[n];
+	      delete[] recv_innerbuf_field_[n];
+	      delete[] send_innerbuf_emf_[n];
+	      delete[] recv_innerbuf_emf_[n];
+	    }
+		delete[] send_innerbuf_emf_[4];
+		delete[] recv_innerbuf_emf_[4];
+	  }
     }
     if (pmb->loc.lx1 == (pmb->pmy_mesh->nrbx1-1)) { // if true for shearing outer blocks
 	  shboxvar_outer_hydro_.DeleteAthenaArray();
@@ -619,6 +770,26 @@ BoundaryValues::~BoundaryValues()
 	  for (int n=0; n<4; n++) {
 	    delete[] send_outerbuf_hydro_[n];
 	    delete[] recv_outerbuf_hydro_[n];
+	  }
+      if (MAGNETIC_FIELDS_ENABLED) {
+	    shboxvar_outer_field_.x1f.DeleteAthenaArray();
+	    shboxvar_outer_field_.x2f.DeleteAthenaArray();
+	    shboxvar_outer_field_.x3f.DeleteAthenaArray();
+	    flx_outer_field_.x1f.DeleteAthenaArray();
+	    flx_outer_field_.x2f.DeleteAthenaArray();
+	    flx_outer_field_.x3f.DeleteAthenaArray();
+	    shboxvar_outer_emf_.x2e.DeleteAthenaArray();
+	    shboxvar_outer_emf_.x3e.DeleteAthenaArray();
+	    flx_outer_emf_.x2e.DeleteAthenaArray();
+	    flx_outer_emf_.x3e.DeleteAthenaArray();
+	    for (int n=0; n<4; n++) {
+	      delete[] send_outerbuf_field_[n];
+	      delete[] recv_outerbuf_field_[n];
+	      delete[] send_outerbuf_emf_[n];
+	      delete[] recv_outerbuf_emf_[n];
+	    }
+	    delete[] send_outerbuf_emf_[4];
+	    delete[] recv_outerbuf_emf_[4];
 	  }
 	}
   }
@@ -936,7 +1107,6 @@ void BoundaryValues::Initialize(void)
 
 //[JMSHI  initialize the shearing block lists
   if (SHEARING_BOX) {
-	//std::cout << "start generating shearing block list" << std::endl;
 	Mesh *pmesh = pmb->pmy_mesh;
 	long int nrbx2   = pmesh->nrbx2;
 	long int nrbx1   = pmesh->nrbx1;
@@ -945,24 +1115,14 @@ void BoundaryValues::Initialize(void)
 	int *nslist = pmesh->nslist;
 	LogicalLocation *loclist = pmesh->loclist;
 
-//	shbb_.outer = false;
-//	shbb_.inner = false;
-
 	int count = 0;
-	//if (pmb->loc.lx1 == 0) {
-	  //shbb_.igidlist=new int[nrbx2];
-	  //shbb_.ilidlist=new int[nrbx2];
-	  //shbb_.irnklist=new int[nrbx2];
-	  //shbb_.ilevlist=new int[nrbx2];
 	if (shbb_.inner) {
 	  for (int i=0;i<nbtotal;i++) {
 	    if (loclist[i].lx1 == 0 && loclist[i].lx3 == pmb->loc.lx3) {
-	      //shbb_.inner = true; // set to inner boundary
           shbb_.igidlist[count] = i;
           shbb_.ilidlist[count] = i - nslist[ranklist[i]];
           shbb_.irnklist[count] = ranklist[i];
 	      shbb_.ilevlist[count] = loclist[i].level;
-	      //std::cout << "count = " << count << " [sh_block_id, sh_rank_id, sh_lev_id]= [" << shbb.blocklist[count] <<"," << shbb.ranklist[count] <<","<< shbb.levellist[count]<<"]" << std::endl;
 		  count++;
 	    }
 	    //find the corner id cnid
@@ -979,15 +1139,9 @@ void BoundaryValues::Initialize(void)
 	  } */
 	}
 	count = 0;
-	//if (pmb->loc.lx1 == (nrbx1-1)) {
-	  //shbb_.ogidlist=new int[nrbx2];
-	  //shbb_.olidlist=new int[nrbx2];
-	  //shbb_.ornklist=new int[nrbx2];
-	  //shbb_.olevlist=new int[nrbx2];
 	if (shbb_.outer) {
 	  for (int i=0;i<nbtotal;i++) {
 	    if (loclist[i].lx1 == (nrbx1-1) && loclist[i].lx3 == pmb->loc.lx3) {
-	      //shbb_.outer = true; // set to outer boundary
           shbb_.ogidlist[count] = i;
           shbb_.olidlist[count] = i - nslist[ranklist[i]];
           shbb_.ornklist[count] = ranklist[i];
@@ -1006,7 +1160,6 @@ void BoundaryValues::Initialize(void)
 	    std::cout << "block_id= " << shbb_.ogidlist[i] << "logical_id= " << shbb_.olidlist[i] << " rank_id= " << shbb_.ornklist[i] << " level_id= " << shbb_.olevlist[i] <<  std::endl;
 	  }*/
 	}
-	//std::cout << "end shearing block list" << std::endl;
 
   }
 //JMSHI]
@@ -1056,11 +1209,7 @@ void BoundaryValues::StartReceivingForInit(void)
   if (SHEARING_BOX) {
     MeshBlock *pmb=pmy_mblock_;
 	Mesh *pmesh = pmb->pmy_mesh;
-	// update send_gid_[2] and recv_gid_[2];
-	// recv_rank_[2] and send_rank_[2] for MPI communication
-	// recv_lid_[2] and send_lid_[2]   for MPI communication(for creating diff Tags)
 	FindShearBlock();
-	// update send/recv buffer sizes: send_size_hydro_[2] and recv_size_hydro_[2].
 
 // THERE IS ACTUALLY NO MPI CALLS FOR TIME ZERO; SO COMMENTED OUT
 //#ifdef MPI_PARALLEL
@@ -1148,62 +1297,115 @@ void BoundaryValues::StartReceivingAll(void)
   if (SHEARING_BOX) {
     MeshBlock *pmb=pmy_mblock_;
 	Mesh *pmesh = pmb->pmy_mesh;
-	//std::cout <<"reach StartReceivingAll\n" << std::endl;
-	// update send_gid_[2] and recv_gid_[2];
-	// recv_rank_[2] and send_rank_[2] for MPI communication
-	// recv_lid_[2] and send_lid_[2]   for MPI communication(for creating diff Tags)
 	FindShearBlock();
 
-
-	if (pmesh->ncycle == 0) {
+	/*
+	if (pmesh->ncycle <= 10) {
 	  std::cout << "----cycle = "<< pmesh->ncycle << " time= " << pmesh->time << " on meshblock gid = " << pmb->gid << " ---" << std::endl;
 	  if(shbb_.inner) {
 		//std::cout << "[inner]: " << shbb_.inner << std::endl;
 		//std::cout << "[outer]: " << shbb_.outer << std::endl;
         //for (int i=0;i<pmesh->nrbx2;i++){
-	    //  std::cout << "[inner]: block_id= " << shbb_.igidlist[i] << "logical_id= " << shbb_.ilidlist[i] << " rank_id= " << shbb_.irnklist[i] << " level_id= " << shbb_.ilevlist[i] << std::endl;
+	    //  std::cout << "[inner]: block_id= " << shbb_.igidlist[i] << "logical_id= "
+		//  << shbb_.ilidlist[i] << " rank_id= " << shbb_.irnklist[i] << " level_id= "
+		//  << shbb_.ilevlist[i] << std::endl;
 		//}
-	    //std::cout << "joverlap= " << joverlap_ << " eps_ = " << eps_ << std::endl;
+	    std::cout << "joverlap= " << joverlap_ << " eps_ = " << eps_ << std::endl;
 		for (int n=0;n<4;n++) {
 	      std::cout << " send_inner_gid[" << n << "] = " << send_inner_gid_[n]
 			        << " send_inner_lid[" << n << "] = " << send_inner_lid_[n]
 					<< " send_inner_rank["<< n << "] = " << send_inner_rank_[n]
+					<< std::endl
 					<< " send_innersize_hydro["<< n <<"] = " << send_innersize_hydro_[n]
-					<< " inner_bflag[" << n << "] = " << shbox_inner_hydro_flag_[n]
+					<< " inner_hydro_flag[" << n << "] = " << shbox_inner_hydro_flag_[n]
+					<< std::endl
+					<< " send_innersize_field["<< n <<"] = " << send_innersize_field_[n]
+					<< " inner_field_flag[" << n << "] = " << shbox_inner_field_flag_[n]
+					<< std::endl
+					<< " send_innersize_emf["<< n <<"] = " << send_innersize_emf_[n]
+					<< " inner_emf_flag[" << n << "] = " << shbox_inner_emf_flag_[n]
 					<< std::endl;
+		  if (n==3) {
+	        std::cout << " send_inner_gid[" << n+1 << "] = " << send_inner_gid_[n+1]
+			          << " send_inner_lid[" << n+1 << "] = " << send_inner_lid_[n+1]
+					  << " send_inner_rank["<< n+1 << "] = " << send_inner_rank_[n+1]
+					  << std::endl
+					  << " send_innersize_emf["<< n+1 <<"] = " << send_innersize_emf_[n+1]
+					  << " inner_emf_flag[" << n+1 << "] = " << shbox_inner_emf_flag_[n+1]
+					  << std::endl;
+		  }
 	      std::cout << " recv_inner_gid[" << n << "] = " << recv_inner_gid_[n]
 			        << " recv_inner_lid[" << n << "] = " << recv_inner_lid_[n]
 					<< " recv_inner_rank["<< n << "] = " << recv_inner_rank_[n]
+					<< std::endl
 					<< " recv_innersize_hydro["<< n <<"] = " << recv_innersize_hydro_[n]
-					<< " inner_bflag[" << n << "] = " << shbox_inner_hydro_flag_[n]
+					<< " inner_hydro_flag[" << n << "] = " << shbox_inner_hydro_flag_[n]
+					<< std::endl
+					<< " recv_innersize_field["<< n <<"] = " << recv_innersize_field_[n]
+					<< " inner_field_flag[" << n << "] = " << shbox_inner_field_flag_[n]
+					<< std::endl
+					<< " recv_innersize_emf["<< n <<"] = " << recv_innersize_emf_[n]
+					<< " inner_emf_flag[" << n << "] = " << shbox_inner_emf_flag_[n]
 					<< std::endl;
+		  if (n==3) {
+	        std::cout << " recv_inner_gid[" << n+1 << "] = " << recv_inner_gid_[n+1]
+			        << " recv_inner_lid[" << n+1 << "] = " << recv_inner_lid_[n+1]
+					<< " recv_inner_rank["<< n+1 << "] = " << recv_inner_rank_[n+1]
+					<< std::endl
+					<< " recv_innersize_emf["<< n+1 <<"] = " << recv_innersize_emf_[n+1]
+					<< " inner_emf_flag[" << n+1 << "] = " << shbox_inner_emf_flag_[n+1]
+					<< std::endl;
+		  }
 
 	 }}
 	 if(shbb_.outer) {
 		//std::cout << "[outer]: " << shbb_.outer << std::endl;
 		//std::cout << "[inner]: " << shbb_.inner << std::endl;
-        //for (int i=0;i<pmesh->nrbx2;i++){
-	    //  std::cout << "[outer]: block_id= " << shbb_.ogidlist[i] << "logical_id= " << shbb_.olidlist[i] << " rank_id= " << shbb_.ornklist[i] << " level_id= " << shbb_.olevlist[i] <<  std::endl;
-		//}
 		for (int n=0;n<4;n++) {
 	      std::cout << " send_outer_gid[" << n << "] = " << send_outer_gid_[n]
 			        << " send_outer_lid[" << n << "] = " << send_outer_lid_[n]
 					<< " send_outer_rank["<< n << "] = " << send_outer_rank_[n]
+					<< std::endl
 					<< " send_outersize_hydro["<< n <<"] = " << send_outersize_hydro_[n]
-					<< " outer_bflag[" << n << "] = " << shbox_outer_hydro_flag_[n]
+					<< " outer_hydro_flag[" << n << "] = " << shbox_outer_hydro_flag_[n]
+					<< std::endl
+					<< " send_outersize_field["<< n <<"] = " << send_outersize_field_[n]
+					<< " outer_field_flag[" << n << "] = " << shbox_outer_field_flag_[n]
 					<< std::endl;
+		  if (n==3) {
+	        std::cout << " send_outer_gid[" << n+1 << "] = " << send_outer_gid_[n+1]
+			        << " send_outer_lid[" << n+1 << "] = " << send_outer_lid_[n+1]
+					<< " send_outer_rank["<< n+1 << "] = " << send_outer_rank_[n+1]
+					<< std::endl
+					<< " send_outersize_emf["<< n+1 <<"] = " << send_outersize_emf_[n+1]
+					<< " outer_emf_flag[" << n+1 << "] = " << shbox_outer_emf_flag_[n+1]
+					<< std::endl;
+		  }
 	      std::cout << " recv_outer_gid[" << n << "] = " << recv_outer_gid_[n]
 			        << " recv_outer_lid[" << n << "] = " << recv_outer_lid_[n]
 					<< " recv_outer_rank["<< n << "] = " << recv_outer_rank_[n]
+					<< std::endl
 					<< " recv_outersize_hydro["<< n <<"] = " << recv_outersize_hydro_[n]
-					<< " outer_bflag[" << n << "] = " << shbox_outer_hydro_flag_[n]
+					<< " outer_hydro_flag[" << n << "] = " << shbox_outer_hydro_flag_[n]
+					<< std::endl
+					<< " recv_outersize_field["<< n <<"] = " << recv_outersize_field_[n]
+					<< " outer_field_flag[" << n << "] = " << shbox_outer_field_flag_[n]
 					<< std::endl;
+		  if (n==3) {
+	        std::cout << " recv_outer_gid[" << n+1 << "] = " << recv_outer_gid_[n+1]
+			        << " recv_outer_lid[" << n+1 << "] = " << recv_outer_lid_[n+1]
+					<< " recv_outer_rank["<< n+1 << "] = " << recv_outer_rank_[n+1]
+					<< std::endl
+					<< " recv_outersize_emf["<< n+1 <<"] = " << recv_outersize_emf_[n+1]
+					<< " outer_emf_flag[" << n+1 << "] = " << shbox_outer_emf_flag_[n+1]
+					<< std::endl;
+		  }
 
 	 }}
 	}
+    */
 
 
-	// update send/recv buffer sizes: send_size_hydro_[2] and recv_size_hydro_[2].
 #ifdef MPI_PARALLEL
 	int size,tag;
 	if (shbb_.inner) { // inner boundary
@@ -1217,9 +1419,51 @@ void BoundaryValues::StartReceivingAll(void)
           tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_HYDRO, n);
           MPI_Irecv(recv_innerbuf_hydro_[n],size,MPI_ATHENA_REAL,
                         recv_inner_rank_[n],tag,MPI_COMM_WORLD,
-					    &rq_innerrecv_hydro_[n]);
-	      //std::cout << "[start_recv] on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << "recv_inner[" << n << "] tag= " << tag << " bufsize= " << size << "(" << recv_inner_rank_[n] << "->" << Globals::my_rank << ") rq_innerrecv[" << n << "]= " << rq_innerrecv_hydro_[n] << std::endl;
-	    }
+			            &rq_innerrecv_hydro_[n]);
+          if (MAGNETIC_FIELDS_ENABLED) {
+            size = recv_innersize_field_[n];
+            tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_FIELD, n);
+            MPI_Irecv(recv_innerbuf_field_[n],size,MPI_ATHENA_REAL,
+                        recv_inner_rank_[n],tag,MPI_COMM_WORLD,
+			            &rq_innerrecv_field_[n]);
+	        //int nmb = 1;
+			//if(pmb->gid==nmb) {
+	        //  std::cout << "[start_recv_field] on cycle = " << pmesh->ncycle << "gid = "
+		    //  << pmb->gid  << " tag= " << tag << " bufsize= " << size << "(" <<
+			//  recv_inner_rank_[n] << "->" << Globals::my_rank << ") rq_innerrecv_field[" <<
+			//  n << "]= " << rq_innerrecv_field_[n] << std::endl;
+			//}
+		    size = recv_innersize_emf_[n];
+            tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_EMF, n);
+            MPI_Irecv(recv_innerbuf_emf_[n],size,MPI_ATHENA_REAL,
+                        recv_inner_rank_[n],tag,MPI_COMM_WORLD,
+		                &rq_innerrecv_emf_[n]);
+			//if(pmb->gid==nmb) {
+	        //  std::cout << "[start_recv_emf] on cycle = " << pmesh->ncycle << "gid = "
+		    //  << pmb->gid  << " tag= " << tag << " bufsize= " << size << "(" <<
+			//  recv_inner_rank_[n] << "->" << Globals::my_rank << ") rq_innerrecv_emf[" <<
+			//  n << "]= " << rq_innerrecv_emf_[n] << std::endl;
+			//}
+		  }
+        }
+		if(n==3) { // extra for EMF correction
+          if (MAGNETIC_FIELDS_ENABLED) {
+			int m=n+1;
+	        if((recv_inner_rank_[m]!=Globals::my_rank) &&
+		                    (recv_inner_rank_[m]!=-1)) {
+		      size = recv_innersize_emf_[m];
+              tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_EMF, m);
+              MPI_Irecv(recv_innerbuf_emf_[m],size,MPI_ATHENA_REAL,
+                          recv_inner_rank_[m],tag,MPI_COMM_WORLD,
+			              &rq_innerrecv_emf_[m]);
+			//if(pmb->gid==nmb) {
+	        //  std::cout << "[start_recv_emf] on cycle = " << pmesh->ncycle << "gid = "
+		    //  << pmb->gid  << " tag= " << tag << " bufsize= " << size << "(" <<
+			//  recv_inner_rank_[m] << "->" << Globals::my_rank << ") rq_innerrecv_emf[" <<
+			//  m << "]= " << rq_innerrecv_emf_[m] << std::endl;
+			//}
+
+		}}}
 	}}
 
 	if (shbb_.outer) { // outer boundary
@@ -1236,7 +1480,51 @@ void BoundaryValues::StartReceivingAll(void)
           MPI_Irecv(recv_outerbuf_hydro_[n],size,MPI_ATHENA_REAL,
                       recv_outer_rank_[n],tag,MPI_COMM_WORLD,
 					  &rq_outerrecv_hydro_[n]);
+          if (MAGNETIC_FIELDS_ENABLED) {
+            size = recv_outersize_field_[n];
+            tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_FIELD, n+offset);
+            MPI_Irecv(recv_outerbuf_field_[n],size,MPI_ATHENA_REAL,
+                      recv_outer_rank_[n],tag,MPI_COMM_WORLD,
+					  &rq_outerrecv_field_[n]);
+	        // int nmb = 1;
+			//if(pmb->gid==nmb) {
+	        //  std::cout << "[start_recv_field] on cycle = " << pmesh->ncycle << "gid = "
+		    //  << pmb->gid  << " tag= " << tag << " bufsize= " << size << "(" <<
+			//  recv_outer_rank_[n] << "->" << Globals::my_rank << ") rq_outerrecv_field[" <<
+			//  n << "]= " << rq_outerrecv_field_[n] << std::endl;
+			//}
+            size = recv_outersize_emf_[n];
+            tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_EMF, n+offset+1);
+            MPI_Irecv(recv_outerbuf_emf_[n],size,MPI_ATHENA_REAL,
+                      recv_outer_rank_[n],tag,MPI_COMM_WORLD,
+					  &rq_outerrecv_emf_[n]);
+			//if(pmb->gid==nmb) {
+	        //  std::cout << "[start_recv_emf] on cycle = " << pmesh->ncycle << "gid = "
+		    //  << pmb->gid  << " tag= " << tag << " bufsize= " << size << "(" <<
+			//  recv_outer_rank_[n] << "->" << Globals::my_rank << ") rq_outerrecv_emf[" <<
+			//  n << "]= " << rq_outerrecv_emf_[n] << std::endl;
+			//}
+		  }
 	    }
+		if(n==3) { // extra for EMF correction
+          if (MAGNETIC_FIELDS_ENABLED) {
+			int m=n+1;
+	        if((recv_outer_rank_[m]!=Globals::my_rank) &&
+		                    (recv_outer_rank_[m]!=-1)) {
+		      size = recv_outersize_emf_[m];
+              tag  = CreateBvalsMPITag(pmb->lid, TAG_SHBOX_EMF, m+offset+1);
+              MPI_Irecv(recv_outerbuf_emf_[m],size,MPI_ATHENA_REAL,
+                          recv_outer_rank_[m],tag,MPI_COMM_WORLD,
+			              &rq_outerrecv_emf_[m]);
+			//if(pmb->gid==nmb) {
+	        //  std::cout << "[start_recv_emf] on cycle = " << pmesh->ncycle << "gid = "
+		    //  << pmb->gid  << " tag= " << tag << " bufsize= " << size << "(" <<
+			//  recv_outer_rank_[m] << "->" << Globals::my_rank << ") rq_outerrecv_emf[" <<
+			//  m << "]= " << rq_outerrecv_emf_[m] << std::endl;
+			//}
+
+		}}}
+
     }}
 #endif
   }
@@ -1359,32 +1647,62 @@ void BoundaryValues::ClearBoundaryAll(void)
   }
 //[JMSHI   clear shearingbox boundary communications
   if (SHEARING_BOX) {
-	//std::cout <<"reach ClearBoundaryAll\n" << std::endl;
 	if (shbb_.inner == true) {
 	  for (int n=0; n<4; n++){
         if(send_inner_rank_[n] == -1) continue;
 		shbox_inner_hydro_flag_[n] = BNDRY_WAITING;
+        if (MAGNETIC_FIELDS_ENABLED) {
+		  shbox_inner_field_flag_[n] = BNDRY_WAITING;
+		  shbox_inner_emf_flag_[n] = BNDRY_WAITING;
+		}
 #ifdef MPI_PARALLEL
         if(send_inner_rank_[n]!=Globals::my_rank) {
-	      //Mesh *pmesh = pmb->pmy_mesh;
-	      //std::cout << "[clear bndry] on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << "rq_innersend[" << n << "] = " << rq_innersend_hydro_[n] << std::endl;
           MPI_Wait(&rq_innersend_hydro_[n],MPI_STATUS_IGNORE); // Wait for Isend
+          if (MAGNETIC_FIELDS_ENABLED) {
+            MPI_Wait(&rq_innersend_field_[n],MPI_STATUS_IGNORE); // Wait for Isend
+            MPI_Wait(&rq_innersend_emf_[n],MPI_STATUS_IGNORE); // Wait for Isend
+		  }
         }
 #endif
 	  }
+      // extra for EMF
+	  if(send_inner_rank_[4] != -1) {
+        if (MAGNETIC_FIELDS_ENABLED) {
+		  shbox_inner_emf_flag_[4] = BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+          if(send_inner_rank_[4]!=Globals::my_rank)
+            MPI_Wait(&rq_innersend_emf_[4],MPI_STATUS_IGNORE); // Wait for Isend
+#endif
+      }}
     } // inner boundary
+
 	if (shbb_.outer == true) {
 	  for (int n=0; n<4; n++){
         if(send_outer_rank_[n] == -1) continue;
 		shbox_outer_hydro_flag_[n] = BNDRY_WAITING;
+        if (MAGNETIC_FIELDS_ENABLED) {
+		  shbox_outer_field_flag_[n] = BNDRY_WAITING;
+		}
 #ifdef MPI_PARALLEL
         if(send_outer_rank_[n]!=Globals::my_rank) {
 	      Mesh *pmesh = pmb->pmy_mesh;
-	      //std::cout << "[clear_bndry] on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << "rq_outersend[" << n << "] = " << rq_outersend_hydro_[n] << std::endl;
           MPI_Wait(&rq_outersend_hydro_[n],MPI_STATUS_IGNORE); // Wait for Isend
+          if (MAGNETIC_FIELDS_ENABLED) {
+            MPI_Wait(&rq_outersend_field_[n],MPI_STATUS_IGNORE); // Wait for Isend
+            MPI_Wait(&rq_outersend_emf_[n],MPI_STATUS_IGNORE); // Wait for Isend
+		  }
         }
 #endif
 	  }
+      // extra for EMF
+	  if(send_outer_rank_[4] != -1) {
+        if (MAGNETIC_FIELDS_ENABLED) {
+		  shbox_outer_emf_flag_[4] = BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+          if(send_outer_rank_[4]!=Globals::my_rank)
+            MPI_Wait(&rq_outersend_emf_[4],MPI_STATUS_IGNORE); // Wait for Isend
+#endif
+      }}
     }
   } // end shearing box
 //JMSHI]

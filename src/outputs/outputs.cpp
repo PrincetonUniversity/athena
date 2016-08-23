@@ -396,23 +396,25 @@ void OutputType::LoadOutputData(OutputData *pod, MeshBlock *pmb)
       << "  cycle=" << pmb->pmy_mesh->ncycle
       << "  variables=" << output_params.variable << std::endl;
   pod->data_header.descriptor.append(str.str());
-//  pod->data_header.il = pmb->is;
-//  pod->data_header.iu = pmb->ie;
-//  pod->data_header.jl = pmb->js;
-//  pod->data_header.ju = pmb->je;
-//  pod->data_header.kl = pmb->ks;
-//  pod->data_header.ku = pmb->ke;
-//  pod->data_header.ndata = (pmb->ie - pmb->is + 1)*(pmb->je - pmb->js + 1)
-//                          *(pmb->ke - pmb->ks + 1);
+  pod->data_header.il = pmb->is;
+  pod->data_header.iu = pmb->ie;
+  pod->data_header.jl = pmb->js;
+  pod->data_header.ju = pmb->je;
+  pod->data_header.kl = pmb->ks;
+  pod->data_header.ku = pmb->ke;
+  pod->data_header.ndata = (pmb->ie - pmb->is + 1)*(pmb->je - pmb->js + 1)
+                          *(pmb->ke - pmb->ks + 1);
   //[JMSHI: add ghost cells
+  /*
   pod->data_header.il = pmb->is-(NGHOST);
   pod->data_header.iu = pmb->ie+(NGHOST);
   pod->data_header.jl = pmb->js-(NGHOST);
   pod->data_header.ju = pmb->je+(NGHOST);
-  pod->data_header.kl = pmb->ks;
-  pod->data_header.ku = pmb->ke;
+  pod->data_header.kl = pmb->ks-(NGHOST);
+  pod->data_header.ku = pmb->ke+(NGHOST);
   pod->data_header.ndata = (pmb->ie - pmb->is + 1 + 2*(NGHOST))*(pmb->je - pmb->js + 1 + 2*(NGHOST))
-                          *(pmb->ke - pmb->ks + 1);
+                          *(pmb->ke - pmb->ks + 1 + 2*(NGHOST));
+  */
   //JMSHI]
 
 // Create linked list of OutputVariables containing requested data

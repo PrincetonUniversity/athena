@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -32,7 +32,7 @@
 #include "../globals.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "../hydro/hydro.hpp" 
+#include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
 #include "../bvals/bvals.hpp"
 #include "../eos/eos.hpp"
@@ -66,7 +66,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   loc=iloc;
   cost=1.0;
 
-  nreal_user_meshblock_data_ = 0, nint_user_meshblock_data_ = 0; 
+  nreal_user_meshblock_data_ = 0, nint_user_meshblock_data_ = 0;
 
   // initialize grid indices
 
@@ -100,7 +100,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // construct objects stored in MeshBlock class.  Note in particular that the initial
   // conditions for the simulation are set in problem generator called from main, not
   // in the Hydro constructor
- 
+
   // mesh-related objects
   pcoord = new Coordinates(this, pin);
   if(ref_flag==false) pcoord->CheckMeshSpacing();
@@ -147,7 +147,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   block_size = input_block;
   for(int i=0; i<6; i++) block_bcs[i] = input_bcs[i];
 
-  nreal_user_meshblock_data_ = 0, nint_user_meshblock_data_ = 0; 
+  nreal_user_meshblock_data_ = 0, nint_user_meshblock_data_ = 0;
 
   // initialize grid indices
   is = NGHOST;
@@ -340,10 +340,14 @@ size_t MeshBlock::GetBlockSizeInBytes(void)
 
 void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
   int iox1, int iox2, int iox3, enum NeighborType itype, int ibid, int itargetid,
-  bool ipolar, int ifi1=0, int ifi2=0)
+//[JMSHI
+  bool ipolar, bool ishear, int ifi1=0, int ifi2=0)
+  //bool ipolar, int ifi1=0, int ifi2=0)
 {
   rank=irank; level=ilevel; gid=igid; lid=ilid; ox1=iox1; ox2=iox2; ox3=iox3;
   type=itype; bufid=ibid; targetid=itargetid; polar=ipolar; fi1=ifi1; fi2=ifi2;
+  shear=ishear;
+//JMSHI]
   if(type==NEIGHBOR_FACE) {
     if(ox1==-1)      fid=INNER_X1;
     else if(ox1==1)  fid=OUTER_X1;
@@ -405,7 +409,10 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
           int nlevel=nf->loc.level;
           int tbid=FindBufferID(-n,0,0,0,0,pmy_mesh->maxneighbor_);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
-              fid-nslist[ranklist[fid]], n, 0, 0, NEIGHBOR_FACE, bufid, tbid, false, f1,
+          //[JMSHI
+              fid-nslist[ranklist[fid]], n, 0, 0, NEIGHBOR_FACE, bufid, tbid, false, false, f1,
+              //fid-nslist[ranklist[fid]], n, 0, 0, NEIGHBOR_FACE, bufid, tbid, false, f1,
+          //JMSHI]
               f2);
           bufid++; nneighbor++;
         }
@@ -416,14 +423,24 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
       int nid=neibt->gid;
       nblevel[1][1][n+1]=nlevel;
       int tbid;
+	  //[JMSHI
+	  bool shear=false;
       if(nlevel==loc.level) { // neighbor at same level
         tbid=FindBufferID(-n,0,0,0,0,pmy_mesh->maxneighbor_);
+        if ((n == -1 and block_bcs[INNER_X1] == SHEAR_PERIODIC_BNDRY)
+            or (n == 1 and block_bcs[OUTER_X1] == SHEAR_PERIODIC_BNDRY)) {
+          shear = true; // neighbor is shearing periodic
+        }
+	  //JMSHI]
       }
       else { // neighbor at coarser level
         tbid=FindBufferID(-n,0,0,myfx2,myfx3,pmy_mesh->maxneighbor_);
       }
       neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
-          nid-nslist[ranklist[nid]], n, 0, 0, NEIGHBOR_FACE, bufid, tbid, false);
+	  //[JMSHI
+          nid-nslist[ranklist[nid]], n, 0, 0, NEIGHBOR_FACE, bufid, tbid, false, shear);
+          //nid-nslist[ranklist[nid]], n, 0, 0, NEIGHBOR_FACE, bufid, tbid, false);
+	  //JMSHI]
       bufid+=nf1*nf2; nneighbor++;
     }
   }
@@ -443,7 +460,10 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
           int nlevel=nf->loc.level;
           int tbid=FindBufferID(0,-n,0,0,0,pmy_mesh->maxneighbor_);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
-              fid-nslist[ranklist[fid]], 0, n, 0, NEIGHBOR_FACE, bufid, tbid, false, f1,
+          //[JMSHI
+              fid-nslist[ranklist[fid]], 0, n, 0, NEIGHBOR_FACE, bufid, tbid, false, false, f1,
+              //fid-nslist[ranklist[fid]], 0, n, 0, NEIGHBOR_FACE, bufid, tbid, false, f1,
+		  //JMSHI]
               f2);
           bufid++; nneighbor++;
         }
@@ -466,7 +486,10 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
         tbid=FindBufferID(0,-n,0,myfx1,myfx3,pmy_mesh->maxneighbor_);
       }
       neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
-          nid-nslist[ranklist[nid]], 0, n, 0, NEIGHBOR_FACE, bufid, tbid, polar);
+	  //[JMSHI
+          nid-nslist[ranklist[nid]], 0, n, 0, NEIGHBOR_FACE, bufid, tbid, polar, false);
+          //nid-nslist[ranklist[nid]], 0, n, 0, NEIGHBOR_FACE, bufid, tbid, polar);
+	  //JMSHI]
       bufid+=nf1*nf2; nneighbor++;
     }
   }
@@ -486,7 +509,10 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
             int nlevel=nf->loc.level;
             int tbid=FindBufferID(0,0,-n,0,0,pmy_mesh->maxneighbor_);
             neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
-                fid-nslist[ranklist[fid]], 0, 0, n, NEIGHBOR_FACE, bufid, tbid, false,
+	  //[JMSHI
+                fid-nslist[ranklist[fid]], 0, 0, n, NEIGHBOR_FACE, bufid, tbid, false, false,
+                //fid-nslist[ranklist[fid]], 0, 0, n, NEIGHBOR_FACE, bufid, tbid, false,
+	  //JMSHI]
                 f1, f2);
             bufid++; nneighbor++;
           }
@@ -504,7 +530,10 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
           tbid=FindBufferID(0,0,-n,myfx1,myfx2,pmy_mesh->maxneighbor_);
         }
         neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
-            nid-nslist[ranklist[nid]], 0, 0, n, NEIGHBOR_FACE, bufid, tbid, false);
+	  //[JMSHI
+            nid-nslist[ranklist[nid]], 0, 0, n, NEIGHBOR_FACE, bufid, tbid, false, false);
+            //nid-nslist[ranklist[nid]], 0, 0, n, NEIGHBOR_FACE, bufid, tbid, false);
+	  //JMSHI]
         bufid+=nf1*nf2; nneighbor++;
       }
     }
@@ -525,7 +554,10 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
           int nlevel=nf->loc.level;
           int tbid=FindBufferID(-n,-m,0,0,0,pmy_mesh->maxneighbor_);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
-              fid-nslist[ranklist[fid]], n, m, 0, NEIGHBOR_EDGE, bufid, tbid, false, f1,
+		  //[JMSHI
+              fid-nslist[ranklist[fid]], n, m, 0, NEIGHBOR_EDGE, bufid, tbid, false, false, f1,
+              //fid-nslist[ranklist[fid]], n, m, 0, NEIGHBOR_EDGE, bufid, tbid, false, f1,
+		  //JMSHI]
               0);
           bufid++; nneighbor++;
         }
@@ -536,11 +568,20 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
         nblevel[1][m+1][n+1]=nlevel;
         int tbid;
         bool polar=false;
+		//[JMSHI
+		bool shear=false;
+		//JMSHI]
         if(nlevel==loc.level) { // neighbor at same level
           if ((m == -1 and block_bcs[INNER_X2] == POLAR_BNDRY)
               or (m == 1 and block_bcs[OUTER_X2] == POLAR_BNDRY)) {
             polar = true; // neighbor is across top or bottom pole
           }
+		  //[JMSHI
+          if ((n == -1 and block_bcs[INNER_X1] == SHEAR_PERIODIC_BNDRY)
+              or (n == 1 and block_bcs[OUTER_X1] == SHEAR_PERIODIC_BNDRY)) {
+            shear = true; // neighbor is on shearing periodic bcs
+          }
+		  //JMSHI]
           tbid=FindBufferID(-n,polar?m:-m,0,0,0,pmy_mesh->maxneighbor_);
         }
         else { // neighbor at coarser level
@@ -548,7 +589,10 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
         }
         if(nlevel>=loc.level || (myox1==n && myox2==m)) {
           neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
-              nid-nslist[ranklist[nid]], n, m, 0, NEIGHBOR_EDGE, bufid, tbid, polar);
+		  //[JMSHI
+              nid-nslist[ranklist[nid]], n, m, 0, NEIGHBOR_EDGE, bufid, tbid, polar, shear);
+              //nid-nslist[ranklist[nid]], n, m, 0, NEIGHBOR_EDGE, bufid, tbid, polar);
+		  //JMSHI]
           nneighbor++;
         }
         bufid+=nf2;
@@ -572,7 +616,10 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
           int nlevel=nf->loc.level;
           int tbid=FindBufferID(-n,0,-m,0,0,pmy_mesh->maxneighbor_);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
-              fid-nslist[ranklist[fid]], n, 0, m, NEIGHBOR_EDGE, bufid, tbid, false, f1,
+		  //[JMSHI
+              fid-nslist[ranklist[fid]], n, 0, m, NEIGHBOR_EDGE, bufid, tbid, false, false, f1,
+              //fid-nslist[ranklist[fid]], n, 0, m, NEIGHBOR_EDGE, bufid, tbid, false, f1,
+		  //JMSHI]
               0);
           bufid++; nneighbor++;
         }
@@ -582,15 +629,27 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
         int nid=neibt->gid;
         nblevel[m+1][1][n+1]=nlevel;
         int tbid;
+		//[JMSHI
+		bool shear=false;
+		//JMSHI]
         if(nlevel==loc.level) { // neighbor at same level
           tbid=FindBufferID(-n,0,-m,0,0,pmy_mesh->maxneighbor_);
+		  //[JMSHI
+          if ((n == -1 and block_bcs[INNER_X1] == SHEAR_PERIODIC_BNDRY)
+              or (n == 1 and block_bcs[OUTER_X1] == SHEAR_PERIODIC_BNDRY)) {
+            shear = true; // neighbor is across top or bottom pole
+          }
+		  //JMSHI]
         }
         else { // neighbor at coarser level
           tbid=FindBufferID(-n,0,-m,myfx2,0,pmy_mesh->maxneighbor_);
         }
         if(nlevel>=loc.level || (myox1==n && myox3==m)) {
           neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
-              nid-nslist[ranklist[nid]], n, 0, m, NEIGHBOR_EDGE, bufid, tbid, false);
+		  //[JMSHI
+              nid-nslist[ranklist[nid]], n, 0, m, NEIGHBOR_EDGE, bufid, tbid, false, shear);
+              //nid-nslist[ranklist[nid]], n, 0, m, NEIGHBOR_EDGE, bufid, tbid, false);
+		  //JMSHI]
           nneighbor++;
         }
         bufid+=nf1;
@@ -613,7 +672,10 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
           int nlevel=nf->loc.level;
           int tbid=FindBufferID(0,-n,-m,0,0,pmy_mesh->maxneighbor_);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
-              fid-nslist[ranklist[fid]], 0, n, m, NEIGHBOR_EDGE, bufid, tbid, false, f1,
+		  //[JMSHI
+              fid-nslist[ranklist[fid]], 0, n, m, NEIGHBOR_EDGE, bufid, tbid, false, false, f1,
+              //fid-nslist[ranklist[fid]], 0, n, m, NEIGHBOR_EDGE, bufid, tbid, false, f1,
+		  //JMSHI]
               0);
           bufid++; nneighbor++;
         }
@@ -636,7 +698,10 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
         }
         if(nlevel>=loc.level || (myox2==n && myox3==m)) {
           neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
-              nid-nslist[ranklist[nid]], 0, n, m, NEIGHBOR_EDGE, bufid, tbid, polar);
+		  //[JMSHI
+              nid-nslist[ranklist[nid]], 0, n, m, NEIGHBOR_EDGE, bufid, tbid, polar, false);
+              //nid-nslist[ranklist[nid]], 0, n, m, NEIGHBOR_EDGE, bufid, tbid, polar);
+		  //JMSHI]
           nneighbor++;
         }
         bufid+=nf1;
@@ -667,7 +732,10 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
           int nid=neibt->gid;
           int tbid=FindBufferID(-n,polar?m:-m,-l,0,0,pmy_mesh->maxneighbor_);
           neighbor[nneighbor].SetNeighbor(ranklist[nid], nlevel, nid,
-              nid-nslist[ranklist[nid]], n, m, l, NEIGHBOR_CORNER, bufid, tbid, polar);
+		  //[JMSHI
+              nid-nslist[ranklist[nid]], n, m, l, NEIGHBOR_CORNER, bufid, tbid, polar, false);
+              //nid-nslist[ranklist[nid]], n, m, l, NEIGHBOR_CORNER, bufid, tbid, polar);
+		  //[JMSHI
           nneighbor++;
         }
         bufid++;
