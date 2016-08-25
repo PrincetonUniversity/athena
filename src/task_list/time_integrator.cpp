@@ -93,46 +93,33 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     AddTimeIntegratorTask(SEND_HYD,INT_HYD);
     AddTimeIntegratorTask(RECV_HYD,START_ALLRECV);
 //[JMSHI
-	if (SHEARING_BOX) { // Shearingbox BC
+	if (SHEARING_BOX) { // Shearingbox BC for Hydro
 	  AddTimeIntegratorTask(SEND_HYDSH,RECV_HYD);
-	  //AddTimeIntegratorTask(RECV_HYDSH,SEND_HYD);
 	  AddTimeIntegratorTask(RECV_HYDSH,RECV_HYD);
 	}
 //JMSHI]
 
     // compute MHD fluxes, integrate field
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
-//[JMSHI
-	  if (SHEARING_BOX) // Shearingbox BC
-        AddTimeIntegratorTask(CALC_FLDFLX,CALC_HYDFLX);
-        //AddTimeIntegratorTask(CALC_FLDFLX,(CALC_HYDFLX|RECV_HYDSH));
-	  else
-		AddTimeIntegratorTask(CALC_FLDFLX,CALC_HYDFLX);
-//comment out the following 3 lines and uncomment the 4th
-//to get rid of flux_correction
-//      AddTimeIntegratorTask(SEND_FLDFLX,CALC_FLDFLX);
-//      AddTimeIntegratorTask(RECV_FLDFLX,SEND_FLDFLX);
-//      AddTimeIntegratorTask(INT_FLD, RECV_FLDFLX);
-//      //AddTimeIntegratorTask(INT_FLD, CALC_FLDFLX);
-//JMSHI]
+	  AddTimeIntegratorTask(CALC_FLDFLX,CALC_HYDFLX);
       AddTimeIntegratorTask(SEND_FLDFLX,CALC_FLDFLX);
       AddTimeIntegratorTask(RECV_FLDFLX,SEND_FLDFLX);
 //[JMSHI
-	  if (SHEARING_BOX) {// Shearingbox BC
+	  if (SHEARING_BOX) {// Shearingbox BC for EMF
         AddTimeIntegratorTask(SEND_EMFSH,RECV_FLDFLX);
         AddTimeIntegratorTask(RECV_EMFSH,RECV_FLDFLX);
         AddTimeIntegratorTask(RMAP_EMFSH,RECV_EMFSH);
-	  }
+        AddTimeIntegratorTask(INT_FLD, RMAP_EMFSH);
+	  } else
+        AddTimeIntegratorTask(INT_FLD, RECV_FLDFLX);
 //JMSHI]
-      AddTimeIntegratorTask(INT_FLD, RMAP_EMFSH);
-      //AddTimeIntegratorTask(INT_FLD, RECV_FLDFLX);
       AddTimeIntegratorTask(SEND_FLD,INT_FLD);
       AddTimeIntegratorTask(RECV_FLD,START_ALLRECV);
 //[JMSHI
-	if (SHEARING_BOX) { // Shearingbox BC
-	  AddTimeIntegratorTask(SEND_FLDSH,RECV_FLD);
-	  AddTimeIntegratorTask(RECV_FLDSH,RECV_FLD);
-	}
+	  if (SHEARING_BOX) { // Shearingbox BC for Bfield
+	    AddTimeIntegratorTask(SEND_FLDSH,RECV_FLD);
+	    AddTimeIntegratorTask(RECV_FLDSH,RECV_FLD);
+	  }
 //JMSHI]
     }
 
