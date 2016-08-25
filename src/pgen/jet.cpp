@@ -30,7 +30,7 @@
 
 // BCs on L-x1 (left edge) of grid with jet inflow conditions
 void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                   int is, int ie, int js, int je, int ks, int ke);
+                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 
 // Make radius of jet and jet variables global so they can be accessed by BC functions
 static Real r_amb,d_amb,p_amb,vx_amb,vy_amb,vz_amb,bx_amb,by_amb,bz_amb;
@@ -135,7 +135,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Sets boundary condition on left X boundary (iib) for jet problem
 
 void JetInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                   int is, int ie, int js, int je, int ks, int ke)
+                Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
 {
   // set primitive variables in inlet ghost zones
   for(int k=ks; k<=ke; ++k){

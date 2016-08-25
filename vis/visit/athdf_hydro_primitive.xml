@@ -2,7 +2,7 @@
 <Object name="ExpressionList">
     <Object name="Expression">
         <Field name="name" type="string">gas_velocity</Field>
-        <Field name="definition" type="string">{gas_velocity_x1,gas_velocity_x2,gas_velocity_x3}</Field>
+        <Field name="definition" type="string">{vel1,vel2,vel3}</Field>
         <Field name="hidden" type="bool">false</Field>
         <Field name="type" type="string">VectorMeshVar</Field>
         <Field name="fromDB" type="bool">false</Field>

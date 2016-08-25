@@ -42,7 +42,7 @@
 #include "mesh/mesh.hpp"
 #include "parameter_input.hpp" 
 #include "outputs/outputs.hpp"
-#include "outputs/wrapper.hpp"
+#include "outputs/io_wrapper.hpp"
 #include "utils/utils.hpp"
 
 // MPI/OpenMP headers
@@ -183,13 +183,13 @@ int main(int argc, char *argv[])
   try {
     pinput = new ParameterInput;
     if(res_flag==1) {
-      restartfile.Open(restart_filename,WRAPPER_READ_MODE);
+      restartfile.Open(restart_filename,IO_WRAPPER_READ_MODE);
       pinput->LoadFromFile(restartfile);
       // leave the restart file open for later use
     }
     if(iarg_flag==1) {
       // if both -r and -i are specified, override the parameters using the input file
-      infile.Open(input_filename,WRAPPER_READ_MODE);
+      infile.Open(input_filename,IO_WRAPPER_READ_MODE);
       pinput->LoadFromFile(infile);
       infile.Close();
     }
@@ -440,6 +440,12 @@ int main(int argc, char *argv[])
     }
     std::cout << "time=" << pmesh->time << " cycle=" << pmesh->ncycle << std::endl;
     std::cout << "tlim=" << pmesh->tlim << " nlim=" << pmesh->nlim << std::endl;
+
+    if(pmesh->adaptive==true) {
+      std::cout << std::endl << "Number of MeshBlocks = " << pmesh->nbtotal 
+                << "; " << pmesh->nbnew << "  created, " << pmesh->nbdel 
+                << " destroyed during this simulation." << std::endl;
+    }
 
     // Calculate and print the zone-cycles/cpu-second and wall-second
 #ifdef OPENMP_PARALLEL

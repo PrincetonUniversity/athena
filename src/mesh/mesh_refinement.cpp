@@ -844,7 +844,7 @@ void MeshRefinement::ProlongateInternalField(FaceField &fine,
                              fine.x1f(fk  ,fjj,fip)*sarea_x1_[0][  jj](fip))
                         +js*(fine.x2f(fk+1,fjp,fii)*sarea_x2_[1][2*jj](fii) -
                              fine.x2f(fk  ,fjp,fii)*sarea_x2_[0][2*jj](fii));
-              Uxyz += js*js*(fine.x1f(fk+1,fjj,fip)*sarea_x1_[1][  jj](fip) -
+              Uxyz += is*js*(fine.x1f(fk+1,fjj,fip)*sarea_x1_[1][  jj](fip) -
                              fine.x1f(fk  ,fjj,fip)*sarea_x1_[0][  jj](fip));
               Vxyz += is*js*(fine.x2f(fk+1,fjp,fii)*sarea_x2_[1][2*jj](fii) -
                              fine.x2f(fk  ,fjp,fii)*sarea_x2_[0][2*jj](fii));

@@ -23,7 +23,7 @@
 
 // Declarations
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
-    FaceField &bb, int is, int ie, int js, int je, int ks, int ke);
+    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 
 //--------------------------------------------------------------------------------------
 
@@ -137,7 +137,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 // Notes:
 //   does nothing
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
-    FaceField &bb, int is, int ie, int js, int je, int ks, int ke)
+    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
 {
   return;
 }

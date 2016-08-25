@@ -70,8 +70,9 @@ HydroSourceTerms::~HydroSourceTerms()
 //! \fn void HydroSourceTerms::AddHydroSourceTerms
 //  \brief Adds source terms to conserved variables
 
-void HydroSourceTerms::AddHydroSourceTerms(const Real dt, const AthenaArray<Real> *flux,
-  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &cons)
+void HydroSourceTerms::AddHydroSourceTerms(const Real time, const Real dt,
+     const AthenaArray<Real> *flux, const AthenaArray<Real> &prim,
+     const AthenaArray<Real> &bcc, AthenaArray<Real> &cons)
 {
   MeshBlock *pmb = pmy_hydro_->pmy_block;
 
@@ -90,7 +91,7 @@ void HydroSourceTerms::AddHydroSourceTerms(const Real dt, const AthenaArray<Real
 
   //  user-defined source terms
   if (UserSourceTerm != NULL)
-    UserSourceTerm(pmb, pmb->pmy_mesh->time,dt,prim,bcc,cons);
+    UserSourceTerm(pmb, time,dt,prim,bcc,cons);
 
   return;
 }

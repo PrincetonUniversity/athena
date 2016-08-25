@@ -13,7 +13,7 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file wrapper.cpp
+//! \file io_wrapper.cpp
 //  \brief functions that provide wrapper for MPI-IO versus serial input/output
 //======================================================================================
 
@@ -30,7 +30,7 @@
 #include "../athena.hpp"
 
 // this class header
-#include "wrapper.hpp"
+#include "io_wrapper.hpp"
 
 //--------------------------------------------------------------------------------------
 //! \fn int IOWrapper::Open(const char* fname, enum rwmode rw)
@@ -40,7 +40,7 @@ int IOWrapper::Open(const char* fname, enum rwmode rw)
 {
   std::stringstream msg;
 
-  if(rw==WRAPPER_READ_MODE) {
+  if(rw==IO_WRAPPER_READ_MODE) {
 #ifdef MPI_PARALLEL
     if(MPI_File_open(comm,const_cast<char*>(fname),MPI_MODE_RDONLY,MPI_INFO_NULL,&fh)
        !=MPI_SUCCESS) {  // use const_cast to convince the compiler.
@@ -53,7 +53,7 @@ int IOWrapper::Open(const char* fname, enum rwmode rw)
       return false;
     }
 
-  } else if(rw==WRAPPER_WRITE_MODE) {
+  } else if(rw==IO_WRAPPER_WRITE_MODE) {
 #ifdef MPI_PARALLEL
     MPI_File_delete(const_cast<char*>(fname), MPI_INFO_NULL); // truncation
     if(MPI_File_open(comm,const_cast<char*>(fname),MPI_MODE_WRONLY | MPI_MODE_CREATE,
