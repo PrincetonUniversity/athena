@@ -83,6 +83,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       break;
 //[JMSHI
     case SHEAR_PERIODIC_BNDRY: // shearing periodic boundary
+	  if(!SHEARING_BOX) pmb->block_bcs[INNER_X1]=PERIODIC_BNDRY;
       BoundaryFunction_[INNER_X1] = NULL;
       break;
 //JMSHI]
@@ -110,6 +111,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       break;
 //[JMSHI
     case SHEAR_PERIODIC_BNDRY: // shearing periodic boundary
+	  if(!SHEARING_BOX) pmb->block_bcs[OUTER_X1]=PERIODIC_BNDRY;
       BoundaryFunction_[OUTER_X1] = NULL;
       break;
 //JMSHI]
@@ -485,6 +487,16 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 	ssize_ = NGHOST*ncells3;
 
     if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
+      if (pmb->block_bcs[INNER_X1] != SHEAR_PERIODIC_BNDRY) {
+		pmb->block_bcs[INNER_X1] = SHEAR_PERIODIC_BNDRY;
+        BoundaryFunction_[INNER_X1] = NULL;
+	  }
+	  //{
+      //  std::stringstream msg;
+      //  msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
+      //      << "Flag ix1_bc=" << pmb->block_bcs[INNER_X1] << " is  not shear_periodic." << std::endl;
+      //  throw std::runtime_error(msg.str().c_str());
+	  //}
 	  shboxvar_inner_hydro_.NewAthenaArray(NHYDRO,ncells3,ncells2,NGHOST);// indicies of i and j are NOT switched.
 	  flx_inner_hydro_.NewAthenaArray(ncells2);
       if (MAGNETIC_FIELDS_ENABLED) {
@@ -574,6 +586,16 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 	  }
 	}
     if (pmb->loc.lx1 == (pmy_mesh->nrbx1-1)) { // if true for shearing outer blocks
+      if (pmb->block_bcs[OUTER_X1] != SHEAR_PERIODIC_BNDRY) {
+		pmb->block_bcs[OUTER_X1] = SHEAR_PERIODIC_BNDRY;
+        BoundaryFunction_[OUTER_X1] = NULL;
+	  }
+	  //{
+      //  std::stringstream msg;
+      //  msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
+      //      << "Flag ox1_bc=" << pmb->block_bcs[OUTER_X1] << " is  not shear_periodic." << std::endl;
+      //  throw std::runtime_error(msg.str().c_str());
+	  //}
 	  shboxvar_outer_hydro_.NewAthenaArray(NHYDRO,ncells3,ncells2,NGHOST);// indicies of i and j are NOT switched.
 	  flx_outer_hydro_.NewAthenaArray(ncells2);
       if (MAGNETIC_FIELDS_ENABLED) {
@@ -1209,7 +1231,7 @@ void BoundaryValues::StartReceivingForInit(void)
   if (SHEARING_BOX) {
     MeshBlock *pmb=pmy_mblock_;
 	Mesh *pmesh = pmb->pmy_mesh;
-	FindShearBlock();
+	FindShearBlock(0);
 
 // THERE IS ACTUALLY NO MPI CALLS FOR TIME ZERO; SO COMMENTED OUT
 //#ifdef MPI_PARALLEL
@@ -1256,7 +1278,10 @@ void BoundaryValues::StartReceivingForInit(void)
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::StartReceivingAll(void)
 //  \brief initiate MPI_Irecv for all the sweeps
-void BoundaryValues::StartReceivingAll(void)
+//[JMSHI
+void BoundaryValues::StartReceivingAll(const int step)
+//void BoundaryValues::StartReceivingAll(void)
+//JMSHI]
 {
   firsttime_=true;
 #ifdef MPI_PARALLEL
@@ -1297,7 +1322,7 @@ void BoundaryValues::StartReceivingAll(void)
   if (SHEARING_BOX) {
     MeshBlock *pmb=pmy_mblock_;
 	Mesh *pmesh = pmb->pmy_mesh;
-	FindShearBlock();
+	FindShearBlock(step);
 
 	/*
 	if (pmesh->ncycle <= 10) {

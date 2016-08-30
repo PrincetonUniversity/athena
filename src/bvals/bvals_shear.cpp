@@ -509,7 +509,8 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
 //  send_size_hydro  recv_size_hydro: for MPI_Irecv
 //  eps_,joverlap_: for update the conservative
 
-void BoundaryValues::FindShearBlock(void)
+void BoundaryValues::FindShearBlock(const int step)
+//void BoundaryValues::FindShearBlock(void)
 {
   //std::cout << "update the send_to and get_from shearing blocks \n" << std::endl;
   MeshBlock *pmb=pmy_mblock_;
@@ -528,7 +529,13 @@ void BoundaryValues::FindShearBlock(void)
   if (pmesh->mesh_size.nx3>1) ncells3 += 2*NGHOST;
 
   Real qomL = qshear_*Omega_0_*x1size_;
-  Real yshear = qomL*(pmesh->time+pmesh->dt);
+  Real wght;
+  //VL2 only, (0.0,1.0,0.5) for RK2
+  if (step == 0) wght = 0.0;
+  else if (step == 1) wght = 0.5;
+  else wght = 1.0;
+  Real yshear = qomL*(pmesh->time+wght*pmesh->dt);
+  //Real yshear = qomL*(pmesh->time+pmesh->dt);
   Real deltay = fmod(yshear,x2size_);
   int joffset = (int)(deltay/pco->dx2v(js)); // this assumes uniform grid in azimuth
   int Ngrids  = (int)(joffset/nx2);

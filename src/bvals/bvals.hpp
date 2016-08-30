@@ -122,7 +122,10 @@ public:
   void Initialize(void);
   void CheckBoundary(void);
   void StartReceivingForInit(void);
-  void StartReceivingAll(void);
+  //[JMSHI
+  void StartReceivingAll(const int step);
+  //void StartReceivingAll(void);
+  //JMSHI]
   void ClearBoundaryForInit(void);
   void ClearBoundaryAll(void);
   void ApplyPhysicalBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
@@ -162,10 +165,14 @@ public:
   void SendFluxCorrection(void);
   bool ReceiveFluxCorrection(void);
 
-  int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
+  //[JMSHI
+  int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb, const int step);
+  //int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
   int LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
   int LoadEMFBoundaryPolarBuffer(Real *buf, const PolarNeighborBlock &nb);
-  void SendEMFCorrection(void);
+  void SendEMFCorrection(int step);
+  //void SendEMFCorrection(void);
+  //JMSHI]
   void SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb);
   void SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb);
   void SetEMFBoundaryPolar(Real **buf_list, int num_bufs, bool north);
@@ -182,7 +189,7 @@ public:
   void SetHydroShearingboxBoundarySameLevel(AthenaArray<Real> &dst, Real *buf, const int nb);
   bool ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &dst);
   void ReceiveHydroShearingboxBoundaryBuffersWithWait(AthenaArray<Real> &dst, bool cons);
-  void FindShearBlock(void);
+  void FindShearBlock(const int step);
   void RemapFlux(const int n, const int k, const int jinner, const int jouter, const int i, const Real eps, const AthenaArray<Real> &U, AthenaArray<Real> &Flux);
   //Field
   void LoadFieldShearing(FaceField &src, Real *buf, int nb);

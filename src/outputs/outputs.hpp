@@ -205,6 +205,9 @@ private:
   hid_t property_list;                          // properties for writing
 
   // Metadata
+  // [JMSHI
+  float code_time;                            // time in code unit
+  // JMSHI]
   std::string filename;                       // name of athdf file
   int num_blocks_global;                      // number of MeshBlocks in simulation
   int num_blocks_local;                       // number of MeshBlocks on this Mesh

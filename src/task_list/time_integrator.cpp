@@ -347,7 +347,10 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
 
 enum TaskStatus TimeIntegratorTaskList::StartAllReceive(MeshBlock *pmb, int step)
 {
-  pmb->pbval->StartReceivingAll();
+// [JMSHI
+ // pmb->pbval->StartReceivingAll();
+  pmb->pbval->StartReceivingAll(step);
+//JMSHI]
   return TASK_SUCCESS;
 }
 
@@ -409,7 +412,10 @@ enum TaskStatus TimeIntegratorTaskList::FluxCorrectSend(MeshBlock *pmb, int step
 
 enum TaskStatus TimeIntegratorTaskList::EMFCorrectSend(MeshBlock *pmb, int step)
 {
-  pmb->pbval->SendEMFCorrection();
+  //[JMSHI add step info
+  pmb->pbval->SendEMFCorrection(step);
+  //pmb->pbval->SendEMFCorrection();
+  //JMSHI]
   return TASK_SUCCESS;
 }
 

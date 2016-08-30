@@ -484,12 +484,13 @@ void BoundaryValues::RemapEMFShearingboxBoundary(void)
   if(shbb_.inner==true) {
 	ClearEMFShearing(shboxvar_inner_emf_);
 	// step 1.-- conservative remapping
+	/*
     for(int k=ks; k<=ke; k++) {  // e3
       RemapFluxEMF(k,js,je+3,eps_,shboxmap_inner_emf_.x3e,flx_inner_emf_.x3e);
 	  for(int j=js; j<=je+1; j++) {
 	    shboxmap_inner_emf_.x3e(k,j) -= flx_inner_emf_.x3e(j+1)-flx_inner_emf_.x3e(j);
 	  }
-	}
+	} */
     for(int k=ks; k<=ke+1; k++) { // e2
       RemapFluxEMF(k,js,je+2,eps_,shboxmap_inner_emf_.x2e,flx_inner_emf_.x2e);
 	  for(int j=js; j<=je; j++) {
@@ -498,11 +499,12 @@ void BoundaryValues::RemapEMFShearingboxBoundary(void)
 	}
     // step 2.-- average the EMF correction
     // average e3
+	/*
     for(int k=ks; k<=ke; k++) {
       for(int j=js; j<=je+1; j++)
       //for(int j=js-NGHOST; j<=je+1+NGHOST; j++)
         e3(k,j,is) = 0.5*(e3(k,j,is)+shboxmap_inner_emf_.x3e(k,j));
-    }
+    } */
     // average e2
     for(int k=ks; k<=ke+1; k++) {
       for(int j=js; j<=je; j++)
@@ -515,11 +517,12 @@ void BoundaryValues::RemapEMFShearingboxBoundary(void)
   if(shbb_.outer==true) {
 	ClearEMFShearing(shboxvar_outer_emf_);
 	// step 1.-- conservative remapping
+	/*
     for(int k=ks; k<=ke; k++) {  // e3
       RemapFluxEMF(k,js-1,je+2,-eps_,shboxmap_outer_emf_.x3e,flx_outer_emf_.x3e);
 	  for(int j=js; j<=je+1; j++)
 	    shboxmap_outer_emf_.x3e(k,j) -= flx_outer_emf_.x3e(j+1)-flx_outer_emf_.x3e(j);
-	}
+	} */
     for(int k=ks; k<=ke+1; k++) { // e2
       RemapFluxEMF(k,js-1,je+1,-eps_,shboxmap_outer_emf_.x2e,flx_outer_emf_.x2e);
 	  for(int j=js; j<=je; j++)
@@ -527,11 +530,12 @@ void BoundaryValues::RemapEMFShearingboxBoundary(void)
     }
     // step 2.-- average the EMF correction
     // average e3
+	/*
     for(int k=ks; k<=ke; k++) {
       for(int j=js; j<=je+1; j++)
       //for(int j=js-NGHOST; j<=je+1+NGHOST; j++)
         e3(k,j,ie+1) = 0.5*(e3(k,j,ie+1)+shboxmap_outer_emf_.x3e(k,j));
-    }
+    } */
     // average e2
     for(int k=ks; k<=ke+1; k++) {
       for(int j=js; j<=je; j++)
