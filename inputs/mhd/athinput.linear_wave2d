@@ -44,7 +44,7 @@ gamma = 1.666666666666667 # gamma = C_p/C_v
 iso_sound_speed = 1.0     # isothermal sound speed
 
 <problem>
-compute_error = 0     # set value to one to compute L1 error compared to initial data
+compute_error = false # set value to 'true' to compute L1 error compared to initial data
 wave_flag = 0         # Wave family number (0 - 6 for adiabatic MHD)
 amp       = 1.0e-6    # Wave Amplitude
 vflow     = 0.0       # background flow velocity

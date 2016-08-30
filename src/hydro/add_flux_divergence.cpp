@@ -117,7 +117,7 @@ void Hydro::AddFluxDivergenceToAverage(MeshBlock *pmb, AthenaArray<Real> &u_in1,
 
 
   // add coordinate (geometric) source terms
-  pmb->pcoord->CoordSrcTerms((wght.c*pmb->pmy_mesh->dt),pmb->phydro->flux,w,bcc,u);
+  pmb->pcoord->CoordSrcTerms((wght.c*pmb->pmy_mesh->dt),pmb->phydro->flux,w,bcc,u_out);
 
   return;
 }

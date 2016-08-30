@@ -19,20 +19,25 @@ tlim       = 10.0
 nx1    = 100
 x1min  = -0.5
 x1max  = 0.5
-ix1_bc = periodic  # 4: periodic
-ox1_bc = periodic  # 4: periodic
+ix1_bc = periodic
+ox1_bc = periodic
 
 nx2    = 1
 x2min  = -0.5
 x2max  = 0.5
-ix2_bc = periodic  # 4: periodic
-ox2_bc = periodic  # 4: periodic
+ix2_bc = periodic
+ox2_bc = periodic
 
 nx3    = 1
 x3min  = -0.5
 x3max  = 0.5
-ix3_bc = periodic  # 4: periodic
-ox3_bc = periodic  # 4: periodic
+ix3_bc = periodic
+ox3_bc = periodic
+
+<meshblock>
+nx1 = 100
+nx2 = 1
+nx3 = 1
 
 <coord>  # in case of GR
 a = 0.0
@@ -41,14 +46,15 @@ a = 0.0
 gamma = 1.3333333333333333
 
 <problem>
-wave_flag = 3       # 0/6, 1/5, 2/4 for L/R fast, Alfven, slow; 3 for entropy
-amp       = 1.0e-6
+wave_flag     = 3       # 0/6, 1/5, 2/4 for L/R fast, Alfven, slow; 3 for entropy
+amp           = 1.0e-6
+compute_error = false
 
-rho  = 4.0
-pgas = 1.0
+rho  = 1.0
+pgas = 0.5
 vx   = 0.1
-vy   = 0.3
-vz   = -0.05
-Bx   = 2.5
-By   = 1.8
-Bz   = -1.2
+vy   = 0.15
+vz   = 0.05
+Bx   = 1.0
+By   = 0.6666666666666666
+Bz   = 0.3333333333333333

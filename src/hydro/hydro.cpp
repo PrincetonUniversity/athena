@@ -61,10 +61,6 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
   g.NewAthenaArray(NMETRIC, ncells1);
   g_inv.NewAthenaArray(NMETRIC, ncells1);
 
-// Allocate memory for internal hydro output variables (if needed)
-
-  ifov.NewAthenaArray(NIFOV,ncells3,ncells2,ncells1);
-
 // Allocate memory for scratch arrays
 
   int nthreads = pmy_block->pmy_mesh->GetNumMeshThreads();
@@ -114,7 +110,6 @@ Hydro::~Hydro()
   w1.DeleteAthenaArray();
   g.DeleteAthenaArray();
   g_inv.DeleteAthenaArray();
-  ifov.DeleteAthenaArray();
 
   flux[X1DIR].DeleteAthenaArray();
   if (pmy_block->block_size.nx2 > 1) flux[X2DIR].DeleteAthenaArray();

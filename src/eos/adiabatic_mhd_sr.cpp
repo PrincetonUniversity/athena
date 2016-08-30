@@ -22,11 +22,13 @@ static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Rea
 static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
     Real gamma_prime);
 
+//--------------------------------------------------------------------------------------
+
 // Constructor
 // Inputs:
 //   pmb: pointer to MeshBlock
 //   pin: pointer to runtime inputs
-HydroEqnOfState::HydroEqnOfState(MeshBlock *pmb, ParameterInput *pin)
+EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_block_ = pmb;
   gamma_ = pin->GetReal("hydro", "gamma");
@@ -35,17 +37,14 @@ HydroEqnOfState::HydroEqnOfState(MeshBlock *pmb, ParameterInput *pin)
   rho_pmag_min_ = pin->GetOrAddReal("hydro", "rho_pmag_min", 0.0);
   u_pmag_min_ = pin->GetOrAddReal("hydro", "u_pmag_min", 0.0);
   gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
-  int ncells1 = pmb->block_size.nx1 + 2*NGHOST;
-  g_.NewAthenaArray(NMETRIC,ncells1);
-  g_inv_.NewAthenaArray(NMETRIC,ncells1);
 }
 
+//--------------------------------------------------------------------------------------
+
 // Destructor
-HydroEqnOfState::~HydroEqnOfState()
-{
-  g_.DeleteAthenaArray();
-  g_inv_.DeleteAthenaArray();
-}
+EquationOfState::~EquationOfState() {}
+
+//--------------------------------------------------------------------------------------
 
 // Variable inverter
 // Inputs:
@@ -60,7 +59,7 @@ HydroEqnOfState::~HydroEqnOfState()
 // Notes:
 //   follows Mignone & McKinney 2007, MNRAS 378 1118 (MM)
 //   follows hlld_sr.c in Athena 4.2 in using W and E rather than W' and E'
-void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
+void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
     const AthenaArray<Real> &prim_old, const FaceField &bb,
     AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc, Coordinates *pco, int is, int ie,
     int js, int je, int ks, int ke)
@@ -178,6 +177,8 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   return;
 }
 
+//--------------------------------------------------------------------------------------
+
 // Function for converting all primitives to conserved variables
 // Inputs:
 //   prim: 3D array of primitives
@@ -186,7 +187,7 @@ void HydroEqnOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //   is,ie,js,je,ks,ke: index bounds of region to be updated
 // Outputs:
 //   cons: 3D array of conserved variables
-void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco, int is,
      int ie, int js, int je, int ks, int ke)
 {
@@ -243,6 +244,8 @@ void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
   return;
 }
 
+//--------------------------------------------------------------------------------------
+
 // Function for calculating relativistic fast wavespeeds
 // Inputs:
 //   prim: 1D array of primitive states
@@ -257,7 +260,7 @@ void HydroEqnOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //   references Numerical Recipes, 3rd ed. (NR)
 //   follows advice in NR for avoiding large cancellations in solving quadratics
 //   almost same function as in adiabatic_mhd_gr.cpp
-void HydroEqnOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
+void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
     const AthenaArray<Real> &bbx_vals, int il, int iu, int ivx,
     AthenaArray<Real> &lambdas_p, AthenaArray<Real> &lambdas_m)
 {
@@ -390,7 +393,8 @@ void HydroEqnOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
         // Calculate quadratic coefficients
         Real d1 = (z0-b2 > 0.0) ? std::sqrt(z0-b2) : 0.0;
         Real e1 = -d1;
-        Real s = std::sqrt(SQR(z0)/4.0 - b0);
+        s2 = SQR(z0)/4.0 - b0;
+        Real s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
         Real d0 = (b1 < 0) ? 0.5*z0+s : 0.5*z0-s;
         Real e0 = (b1 < 0) ? 0.5*z0-s : 0.5*z0+s;
 
@@ -434,6 +438,8 @@ void HydroEqnOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
   return;
 }
 
+//--------------------------------------------------------------------------------------
+
 // Function whose value vanishes for correct enthalpy
 // Inputs:
 //   w_guess: guess for total enthalpy W
@@ -462,6 +468,8 @@ static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Rea
       - ss_sq / (2.0*SQR(w_guess));                                // (MM A1)
   return ee_calc - ee;
 }
+
+//--------------------------------------------------------------------------------------
 
 // Derivative of EResidual()
 // Inputs:

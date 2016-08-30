@@ -27,7 +27,6 @@
 #   -omp              enable parallelization with OpenMP
 #   -hdf5             enable HDF5 output (requires the HDF5 library)
 #   --hdf5_path=path  path to HDF5 libraries (requires the HDF5 library)
-#   --ifov=N          enable N internal hydro output variables
 #---------------------------------------------------------------------------------------
 
 # Modules
@@ -151,12 +150,6 @@ parser.add_argument('--hdf5_path',
     type=str,
     default='',
     help='path to HDF5 libraries')
-
-# -ifov=N argument
-parser.add_argument('--ifov',
-    type=int,
-    default=0,
-    help='number of internal hydro output variables')
 
 # Parse command-line inputs
 args = vars(parser.parse_args())
@@ -379,9 +372,6 @@ else:
 definitions['COMPILER_FLAGS'] = ' '.join([makefile_options[opt+'_FLAGS'] for opt in \
     ['PREPROCESSOR','COMPILER','LINKER','LIBRARY']])
 
-# -ifov=N argument
-definitions['NUM_IFOV'] = str(args['ifov'])
-
 #--- Step 4. Create new files, finish up -----------------------------------------------
 
 # Terminate all filenames with .cpp extension
@@ -433,4 +423,3 @@ print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' ' \
 print('  MPI parallelism:         ' + ('ON' if args['mpi'] else 'OFF'))
 print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
 print('  HDF5 output:             ' + ('ON' if args['hdf5'] else 'OFF'))
-print('  Internal hydro outvars:  ' + str(args['ifov']))

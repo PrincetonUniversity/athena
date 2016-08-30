@@ -1,12 +1,12 @@
-#ifndef WRAPPER_HPP
-#define WRAPPER_HPP
+#ifndef IO_WRAPPER_HPP
+#define IO_WRAPPER_HPP
 //======================================================================================
 // Athena++ astrophysical MHD code
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
 // See LICENSE file for full public license information.
 //======================================================================================
-//! \file wrapper.hpp
-//  \brief small wrapper class for MPI/Serial Output.
+//! \file io_wrapper.hpp
+//  \brief defines a set of small wrapper functions for MPI versus Serial Output.
 //======================================================================================
 
 #include "../athena.hpp"
@@ -20,7 +20,7 @@ typedef FILE * IOWrapperFile;
 #endif
 
 typedef long int IOWrapperSize_t;
-enum rwmode {WRAPPER_READ_MODE, WRAPPER_WRITE_MODE};
+enum rwmode {IO_WRAPPER_READ_MODE, IO_WRAPPER_WRITE_MODE};
 
 class IOWrapper
 {
@@ -33,7 +33,7 @@ public:
 #endif
   ~IOWrapper() {};
 
-  // wrappers for basic I/O functions
+  // wrapper functions for basic I/O tasks
   int Open(const char* fname, enum rwmode rw);
   int Read(void *buf, IOWrapperSize_t size, IOWrapperSize_t count);
   int Read_all(void *buf, IOWrapperSize_t size, IOWrapperSize_t count);
@@ -51,4 +51,4 @@ private:
   MPI_Comm comm;
 #endif
 };
-#endif // WRAPPER_HPP
+#endif // IO_WRAPPER_HPP

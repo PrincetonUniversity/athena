@@ -58,8 +58,8 @@ enum {I00, I01, I02, I03, I11, I12, I13, I22, I23, I33, NMETRIC};
 // needed for arrays dimensioned over grid directions
 enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
 
-// needed wherever MPI communications are used.  Must be < 16 and unique
 // [JMSHI
+// needed wherever MPI communications are used.  Must be < 32 and unique
 enum Athena_MPI_Tag {TAG_HYDRO=0, TAG_FIELD=1, TAG_RAD=2, TAG_CHEM=3, TAG_HYDFLX=4,
   TAG_FLDFLX=5, TAG_RADFLX=6, TAG_CHMFLX=7, TAG_AMR=8, TAG_FLDFLX_POLE=9, TAG_WTLIM=10,
   TAG_SHBOX_HYDRO=13,TAG_SHBOX_FIELD=14,TAG_SHBOX_EMF=15};
@@ -70,8 +70,8 @@ enum Athena_MPI_Tag {TAG_HYDRO=0, TAG_FIELD=1, TAG_RAD=2, TAG_CHEM=3, TAG_HYDFLX
 //--------------------------------------------------------------------------------------
 // function pointer prototypes for user-defined modules set at runtime
 
-typedef void (*BValFunc_t)(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &buf,
-  FaceField &buf2, int is, int ie, int js, int je, int ks, int ke);
+typedef void (*BValFunc_t)(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+  FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 typedef int (*AMRFlagFunc_t)(MeshBlock *pmb);
 typedef Real (*MeshGenFunc_t)(Real x, RegionSize rs);
 typedef void (*SrcTermFunc_t)(MeshBlock *pmb, const Real time, const Real dt,

@@ -39,13 +39,11 @@
 #include "../bvals/bvals.hpp"
 #include "../eos/eos.hpp"
 #include "../parameter_input.hpp"
-#include "../outputs/wrapper.hpp"
-#include "mesh_refinement.hpp"
-#include "meshblock_tree.hpp"
+#include "../outputs/io_wrapper.hpp"
 #include "../utils/buffer_utils.hpp"
 #include "../reconstruct/reconstruction.hpp"
-
-// this class header
+#include "mesh_refinement.hpp"
+#include "meshblock_tree.hpp"
 #include "mesh.hpp"
 
 // MPI/OpenMP header
@@ -78,6 +76,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   cfl_number = pin->GetReal("time","cfl_number");
   time = start_time;
   dt   = (FLT_MAX*0.4);
+  nbnew=0; nbdel=0;
 
   nlim = pin->GetOrAddInteger("time","nlim",-1);
   ncycle = 0;
@@ -518,6 +517,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   cfl_number = pin->GetReal("time","cfl_number");
   nlim = pin->GetOrAddInteger("time","nlim",-1);
   nint_user_mesh_data_=0, nreal_user_mesh_data_=0;
+  nbnew=0; nbdel=0;
 
   // read number of OpenMP threads for mesh
   num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
@@ -653,9 +653,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   // read user Mesh data
   IOWrapperSize_t udsize = 0;
   for(int n=0; n<nint_user_mesh_data_; n++)
-    udsize+=iusermeshdata[n].GetSizeInBytes();
+    udsize+=iuser_mesh_data[n].GetSizeInBytes();
   for(int n=0; n<nreal_user_mesh_data_; n++)
-    udsize+=rusermeshdata[n].GetSizeInBytes();
+    udsize+=ruser_mesh_data[n].GetSizeInBytes();
   if(udsize!=0) {
     char *userdata = new char[udsize];
     if(Globals::my_rank==0) { // only the master process reads the ID list
@@ -672,14 +672,14 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
 
     IOWrapperSize_t udoffset=0;
     for(int n=0; n<nint_user_mesh_data_; n++) {
-      memcpy(iusermeshdata[n].data(), &(userdata[udoffset]),
-             iusermeshdata[n].GetSizeInBytes());
-      udoffset+=iusermeshdata[n].GetSizeInBytes();
+      memcpy(iuser_mesh_data[n].data(), &(userdata[udoffset]),
+             iuser_mesh_data[n].GetSizeInBytes());
+      udoffset+=iuser_mesh_data[n].GetSizeInBytes();
     }
     for(int n=0; n<nreal_user_mesh_data_; n++) {
-      memcpy(rusermeshdata[n].data(), &(userdata[udoffset]),
-             rusermeshdata[n].GetSizeInBytes());
-      udoffset+=rusermeshdata[n].GetSizeInBytes();
+      memcpy(ruser_mesh_data[n].data(), &(userdata[udoffset]),
+             ruser_mesh_data[n].GetSizeInBytes());
+      udoffset+=ruser_mesh_data[n].GetSizeInBytes();
     }
     delete [] userdata;
   }
@@ -837,11 +837,11 @@ Mesh::~Mesh()
   }
   // delete user Mesh data
   for(int n=0; n<nreal_user_mesh_data_; n++)
-    rusermeshdata[n].DeleteAthenaArray();
-  if(nreal_user_mesh_data_>0) delete [] rusermeshdata;
+    ruser_mesh_data[n].DeleteAthenaArray();
+  if(nreal_user_mesh_data_>0) delete [] ruser_mesh_data;
   for(int n=0; n<nint_user_mesh_data_; n++)
-    iusermeshdata[n].DeleteAthenaArray();
-  if(nint_user_mesh_data_>0) delete [] iusermeshdata;
+    iuser_mesh_data[n].DeleteAthenaArray();
+  if(nint_user_mesh_data_>0) delete [] iuser_mesh_data;
 }
 
 //--------------------------------------------------------------------------------------
@@ -1062,7 +1062,7 @@ void Mesh::AllocateRealUserMeshDataField(int n)
     throw std::runtime_error(msg.str().c_str());
   }
   nreal_user_mesh_data_=n;
-  rusermeshdata = new AthenaArray<Real>[n];
+  ruser_mesh_data = new AthenaArray<Real>[n];
   return;
 }
 
@@ -1079,7 +1079,7 @@ void Mesh::AllocateIntUserMeshDataField(int n)
     throw std::runtime_error(msg.str().c_str());
   }
   nint_user_mesh_data_=n;
-  iusermeshdata = new AthenaArray<int>[n];
+  iuser_mesh_data = new AthenaArray<int>[n];
   return;
 }
 
@@ -1172,7 +1172,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       pfield=pmb->pfield;
       pbval=pmb->pbval;
       if(multilevel==true)
-        pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc);
+        pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
+                                    time, 0.0);
 
       int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
       if(pmb->nblevel[1][1][0]!=-1) is-=NGHOST;
@@ -1188,7 +1189,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
                                       phydro->w, pfield->bcc, pmb->pcoord,
                                       is, ie, js, je, ks, ke);
-      pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc);
+      pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
+                                     time, 0.0);
       pmb=pmb->next;
     }
 
@@ -1528,6 +1530,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   if(nnew==0 && ndel==0)
     return; // nothing to do
   // Tree manipulation completed
+  nbnew+=nnew; nbdel+=ndel;
 
   // Block exchange
   // Step 1. construct new lists
@@ -1536,8 +1539,10 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   Real *newcost = new Real[ntot];
   int *newtoold = new int[ntot];
   int *oldtonew = new int[nbtotal];
+  int nbtold=nbtotal;
   tree.GetMeshBlockList(newloc,newtoold,nbtotal);
   // create a list mapping the previous gid to the current one
+
   oldtonew[0]=0;
   int k=1;
   for(int n=1; n<ntot; n++) {
@@ -1550,6 +1555,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
       oldtonew[k++]=n;
     }
   }
+  // fill the last block 
+  for(;k<nbtold; k++)
+    oldtonew[k]=ntot-1;
 
 #ifdef MPI_PARALLEL
   // share the cost list
@@ -1692,9 +1700,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
           BufferUtility::Pack3DData(pb->pfield->b.x1f, sendbuf[k],
                          pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
           BufferUtility::Pack3DData(pb->pfield->b.x2f, sendbuf[k],
-                         pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
+                         pb->is, pb->ie, pb->js, pb->je+f2, pb->ks, pb->ke, p);
           BufferUtility::Pack3DData(pb->pfield->b.x3f, sendbuf[k],
-                         pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
+                         pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
         }
         int tag=CreateAMRMPITag(nn-nslist[newrank[nn]], 0, 0, 0);
         MPI_Isend(sendbuf[k], bssame, MPI_ATHENA_REAL, newrank[nn],
@@ -1711,7 +1719,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
           int is, ie, js, je, ks, ke;
           if(ox1==0) is=pb->is-1,                       ie=pb->is+pb->block_size.nx1/2;
           else       is=pb->is+pb->block_size.nx1/2-1,  ie=pb->ie+1;
-          if(ox2==0) js=pb->js-f2,                      je=pb->js+pb->block_size.nx2/2;
           if(ox2==0) js=pb->js-f2,                      je=pb->js+pb->block_size.nx2/2;
           else       js=pb->js+pb->block_size.nx2/2-f2, je=pb->je+f2;
           if(ox3==0) ks=pb->ks-f3,                      ke=pb->ks+pb->block_size.nx3/2;
@@ -1819,11 +1826,11 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
           int ks=pmb->ks+(loclist[on+ll].lx3&1L)*pmb->block_size.nx3/2;
           AthenaArray<Real> &src=pmr->coarse_cons_;
           AthenaArray<Real> &dst=pmb->phydro->u;
-          for(int nn=0; nn<NHYDRO; nn++) {
+          for(int nv=0; nv<NHYDRO; nv++) {
             for(int k=ks, fk=pob->cks; fk<=pob->cke; k++, fk++) {
               for(int j=js, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
                 for(int i=is, fi=pob->cis; fi<=pob->cie; i++, fi++)
-                  dst(nn, k, j, i)=src(nn, fk, fj, fi);
+                  dst(nv, k, j, i)=src(nv, fk, fj, fi);
           }}}
           if(MAGNETIC_FIELDS_ENABLED) {
             pmr->RestrictFieldX1(pob->pfield->b.x1f, pmr->coarse_b_.x1f,
@@ -1877,11 +1884,11 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
         AthenaArray<Real> &src=pob->phydro->u;
         AthenaArray<Real> &dst=pmr->coarse_cons_;
         // fill the coarse buffer
-        for(int nn=0; nn<NHYDRO; nn++) {
+        for(int nv=0; nv<NHYDRO; nv++) {
           for(int k=ks, ck=cks; k<=ke; k++, ck++) {
             for(int j=js, cj=cjs; j<=je; j++, cj++) {
               for(int i=is, ci=cis; i<=ie; i++, ci++)
-                dst(nn, k, j, i)=src(nn, ck, cj, ci);
+                dst(nv, k, j, i)=src(nv, ck, cj, ci);
         }}}
         pmr->ProlongateCellCenteredValues(dst, pmb->phydro->u, 0, NHYDRO-1,
                                           is, ie, js, je, ks, ke);
@@ -1947,9 +1954,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
           BufferUtility::Unpack3DData(recvbuf[k], dst.x1f,
                          pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
           BufferUtility::Unpack3DData(recvbuf[k], dst.x2f,
-                         pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
+                         pb->is, pb->ie, pb->js, pb->je+f2, pb->ks, pb->ke, p);
           BufferUtility::Unpack3DData(recvbuf[k], dst.x3f,
-                         pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
+                         pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
           if(pb->block_size.nx2==1) {
             for(int i=pb->is; i<=pb->ie; i++)
               dst.x2f(pb->ks, pb->js+1, i)=dst.x2f(pb->ks, pb->js, i);
@@ -1983,9 +1990,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
             BufferUtility::Unpack3DData(recvbuf[k], dst.x1f,
                            is, ie+1, js, je, ks, ke, p);
             BufferUtility::Unpack3DData(recvbuf[k], dst.x2f,
-                           is, ie+1, js, je, ks, ke, p);
+                           is, ie, js, je+f2, ks, ke, p);
             BufferUtility::Unpack3DData(recvbuf[k], dst.x3f,
-                           is, ie+1, js, je, ks, ke, p);
+                           is, ie, js, je, ks, ke+f3, p);
             if(pb->block_size.nx2==1) {
               for(int i=is; i<=ie; i++)
                 dst.x2f(pb->ks, pb->js+1, i)=dst.x2f(pb->ks, pb->js, i);
@@ -2073,9 +2080,9 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
 //--------------------------------------------------------------------------------------
 //! \fn unsigned int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3)
 //  \brief calculate an MPI tag for AMR block transfer
-// tag = local id of destination (25) + ox1(1) + ox2(1) + ox3(1) + physics(4)
+// tag = local id of destination (23) + ox1(1) + ox2(1) + ox3(1) + physics(5)
 
 unsigned int Mesh::CreateAMRMPITag(int lid, int ox1, int ox2, int ox3)
 {
-  return (lid<<7) | (ox1<<6)| (ox2<<5) | (ox3<<4) | TAG_AMR;
+  return (lid<<8) | (ox1<<7)| (ox2<<6) | (ox3<<5) | TAG_AMR;
 }

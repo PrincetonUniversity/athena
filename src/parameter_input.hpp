@@ -17,9 +17,9 @@
 #include <ostream>  // ostream
 #include <string>   // string
 
-// Athena headers
-#include "athena.hpp"  // Real
-#include "outputs/wrapper.hpp"
+// Athena++ headers
+#include "athena.hpp"
+#include "outputs/io_wrapper.hpp"
 
 //--------------------------------------------------------------------------------------
 //! \struct InputLine

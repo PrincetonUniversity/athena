@@ -62,6 +62,19 @@ def run(input_filename, arguments):
   finally:
     os.chdir(current_dir)
 
+def restart(input_filename, arguments):
+  current_dir = os.getcwd()
+  os.chdir('bin')
+  try:
+    run_command = ['./athena', '-r', input_filename]
+    try:
+      subprocess.check_call(run_command+arguments)
+    except subprocess.CalledProcessError as err:
+      raise AthenaError('Return code {0} from command \'{1}\''\
+          .format(err.returncode,' '.join(err.cmd)))
+  finally:
+    os.chdir(current_dir)
+
 def mpirun(nproc, input_filename, arguments):
   current_dir = os.getcwd()
   os.chdir('bin')

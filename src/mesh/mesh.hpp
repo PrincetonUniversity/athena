@@ -17,10 +17,11 @@
 // Athena++ classes headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "meshblock_tree.hpp"
-#include "../outputs/wrapper.hpp"
+#include "../parameter_input.hpp"
+#include "../outputs/io_wrapper.hpp"
 #include "../task_list/task_list.hpp"
 #include "../bvals/bvals.hpp"
+#include "meshblock_tree.hpp"
 #include "mesh_refinement.hpp"
 
 // Forward declarations
@@ -112,9 +113,13 @@ public:
   int gid, lid;
   int cis,cie,cjs,cje,cks,cke,cnghost;
 
+  // user output variables for analysis
+  int nuser_out_var;
+  AthenaArray<Real> user_out_var;
+
   // user MeshBlock data that can be stored in restart files
-  AthenaArray<Real> *rusermeshblockdata;
-  AthenaArray<int> *iusermeshblockdata;
+  AthenaArray<Real> *ruser_meshblock_data;
+  AthenaArray<int> *iuser_meshblock_data;
 
   // mesh-related objects
   Coordinates *pcoord;
@@ -183,12 +188,13 @@ public:
   enum BoundaryFlag mesh_bcs[6];
   Real start_time, tlim, cfl_number, time, dt;
   int nlim, ncycle;
+  int nbtotal, nbnew, nbdel;
   bool adaptive, multilevel;
 
   MeshBlock *pblock;
 
-  AthenaArray<Real> *rusermeshdata;
-  AthenaArray<int> *iusermeshdata;
+  AthenaArray<Real> *ruser_mesh_data;
+  AthenaArray<int> *iuser_mesh_data;
 
   // functions
   void Initialize(int res_flag, ParameterInput *pin);
@@ -203,7 +209,6 @@ public:
 private:
   // data
   int root_level, max_level, current_level;
-  int nbtotal;
   int maxneighbor_;
   int num_mesh_threads_;
   int *nslist, *ranklist, *nblist;

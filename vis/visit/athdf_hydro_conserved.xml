@@ -2,7 +2,7 @@
 <Object name="ExpressionList">
     <Object name="Expression">
         <Field name="name" type="string">gas_velocity</Field>
-        <Field name="definition" type="string">gas_momentum/Density</Field>
+        <Field name="definition" type="string">gas_momentum/dens</Field>
         <Field name="hidden" type="bool">false</Field>
         <Field name="type" type="string">VectorMeshVar</Field>
         <Field name="fromDB" type="bool">false</Field>
@@ -26,7 +26,7 @@
     </Object>
     <Object name="Expression">
         <Field name="name" type="string">gas_momentum</Field>
-        <Field name="definition" type="string">{gas_momentum_x1,gas_momentum_x2,gas_momentum_x3}</Field>
+        <Field name="definition" type="string">{mom1,mom2,mom3}</Field>
         <Field name="hidden" type="bool">false</Field>
         <Field name="type" type="string">VectorMeshVar</Field>
         <Field name="fromDB" type="bool">false</Field>
@@ -50,7 +50,7 @@
     </Object>
     <Object name="Expression">
         <Field name="name" type="string">gas_energy</Field>
-        <Field name="definition" type="string">total_energy-0.5*Density*sqr(magnitude_gas_velocity)</Field>
+        <Field name="definition" type="string">Etot-0.5*dens*sqr(magnitude_gas_velocity)</Field>
         <Field name="hidden" type="bool">false</Field>
         <Field name="type" type="string">ScalarMeshVar</Field>
         <Field name="fromDB" type="bool">false</Field>

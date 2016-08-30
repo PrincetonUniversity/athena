@@ -541,8 +541,8 @@ inline void Coordinates::CheckMeshSpacing(void)
 {
   Real rmax=1.0, rmin=1.0;
   for(int i=pmy_block->is; i<=pmy_block->ie; i++) {
-    rmax=std::max(dx1v(i+1)/dx1v(i),rmax);
-    rmin=std::min(dx1v(i+1)/dx1v(i),rmin);
+    rmax=std::max(dx1f(i+1)/dx1f(i),rmax);
+    rmin=std::min(dx1f(i+1)/dx1f(i),rmin);
   }
   if(rmax > 1.1 || rmin  < 1.0/1.1) {
      std::cout << "### Warning in Coordinates::CheckMeshSpacing" << std::endl
@@ -552,8 +552,8 @@ inline void Coordinates::CheckMeshSpacing(void)
   if(pmy_block->je!=pmy_block->js) {
     rmax=1.0, rmin=1.0;
     for(int j=pmy_block->js; j<=pmy_block->je; j++) {
-      rmax=std::max(dx2v(j+1)/dx2v(j),rmax);
-      rmin=std::min(dx2v(j+1)/dx2v(j),rmin);
+      rmax=std::max(dx2f(j+1)/dx2f(j),rmax);
+      rmin=std::min(dx2f(j+1)/dx2f(j),rmin);
     }
     if(rmax > 1.1 || rmin  < 1.0/1.1) {
        std::cout << "### Warning in Coordinates::CheckMeshSpacing" << std::endl
@@ -564,8 +564,8 @@ inline void Coordinates::CheckMeshSpacing(void)
   if(pmy_block->ke!=pmy_block->ks) {
     rmax=1.0, rmin=1.0;
     for(int k=pmy_block->ks; k<=pmy_block->ke; k++) {
-      rmax=std::max(dx3v(k+1)/dx3v(k),rmax);
-      rmin=std::min(dx3v(k+1)/dx3v(k),rmin);
+      rmax=std::max(dx3f(k+1)/dx3f(k),rmax);
+      rmin=std::min(dx3f(k+1)/dx3f(k),rmin);
     }
     if(rmax > 1.1 || rmin  < 1.0/1.1) {
        std::cout << "### Warning in Coordinates::CheckMeshSpacing" << std::endl

@@ -1,7 +1,7 @@
 """
 Read .athdf data files and write new ones as single block at constant refinement level.
 
-Note: Requires h5py.
+Note: Requires h5py. Requires mpi4py if used with -m option.
 
 Note: Only works for 3D data.
 """
@@ -17,8 +17,26 @@ import athena_read
 # Main function
 def main(**kwargs):
 
+  # Determine which files to process given possible MPI information
+  file_nums = range(kwargs['start'], kwargs['end']+1, kwargs['stride'])
+  if kwargs['m']:
+    from mpi4py import MPI
+    comm = MPI.COMM_WORLD
+    size = comm.Get_size()
+    rank = comm.Get_rank()
+    num_files = len(file_nums)
+    num_files_per_rank = num_files/size
+    num_files_extra = num_files%size
+    num_files_list = [num_files_per_rank+1] * num_files_extra \
+        + [num_files_per_rank] * (size-num_files_extra)
+    num_files_previous = sum(num_files_list[:rank])
+    num_files_current = num_files_list[rank]
+    file_nums_local = file_nums[num_files_previous:num_files_previous+num_files_current]
+  else:
+    file_nums_local = file_nums
+
   # Go through list of files
-  for n in range(kwargs['start'], kwargs['end']+1, kwargs['stride']):
+  for n in file_nums_local:
 
     # Determine filenames
     input_filename = '{0}.out{1}.{2:05d}.athdf'\
@@ -156,6 +174,9 @@ if __name__ == '__main__':
       type=int,
       default=0,
       help='stride in file numbers to be converted')
+  parser.add_argument('-m',
+      action='store_true',
+      help='flag indicating this is an MPI job')
   parser.add_argument('-x',
       action='store_false',
       help='flag indicating no XDMF file should be written')
