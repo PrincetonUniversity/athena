@@ -205,7 +205,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
       num_blocks_global+=n_active[n];
     delete [] n_active;
 #else
-    num_blocks_global=num_blocks_local=num_blocks_active;
+    num_blocks_global=num_blocks_local=nba;
     first_block=0;
 #endif
   }
