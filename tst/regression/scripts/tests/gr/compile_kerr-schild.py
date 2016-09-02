@@ -8,7 +8,7 @@ import scripts.utils.athena as athena
 # Prepare Athena++
 def prepare():
   athena.configure('gtb',
-      prob='accretion_gr_fm_torus',
+      prob='gr_torus',
       coord='kerr-schild',
       flux='hlle')
   athena.make()

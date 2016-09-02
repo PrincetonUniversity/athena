@@ -212,6 +212,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 // Inputs:
 //   pmb: pointer to MeshBlock
 //   pcoord: pointer to Coordinates
+//   time,dt: current time and timestep of simulation
 //   is,ie,js,je,ks,ke: indices demarkating active region
 // Outputs:
 //   prim: primitives set in ghost zones

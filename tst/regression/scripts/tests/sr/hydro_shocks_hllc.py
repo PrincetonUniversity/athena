@@ -11,7 +11,7 @@ import athena_read
 # Prepare Athena++
 def prepare():
   athena.configure('s',
-      prob='shock_tube_rel',
+      prob='gr_shock_tube',
       coord='cartesian',
       flux='hllc')
   athena.make()

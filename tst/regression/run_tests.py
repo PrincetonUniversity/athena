@@ -11,6 +11,7 @@ Notes:
   - This file should not be modified when adding new scripts.
   - To add a new script, create a new .py file in a scripts/tests/ subdirectory.
   - See scripts/tests/example.py for an example.
+    - Example can be forced to run, but does not run by default in full test suite
   - For more information, check online regression test documentation.
 """
 
@@ -44,6 +45,9 @@ def main(**kwargs):
             prefix=directory+'.')])
   else:  # run selected tests
     for test in tests:
+      if test == 'example':
+        test_names.append(test)
+        continue
       if test[-1] == '/':
         test = test[:-1]  # remove trailing slash
       if '/' in test:  # specific test specified
