@@ -8,7 +8,7 @@ import scripts.utils.athena as athena
 # Prepare Athena++
 def prepare():
   athena.configure('gtb',
-      prob='shock_tube_rel',
+      prob='gr_shock_tube',
       coord='tilted',
       flux='hlle')
   athena.make()

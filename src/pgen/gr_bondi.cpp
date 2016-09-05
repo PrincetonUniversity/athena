@@ -249,6 +249,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 // Inputs:
 //   pmb: pointer to MeshBlock
 //   pcoord: pointer to Coordinates
+//   time,dt: current time and timestep of simulation
 //   is,ie,js,je,ks,ke: indices demarkating active region
 // Outputs:
 //   prim: primitives set in ghost zones
@@ -426,7 +427,7 @@ static Real TemperatureBisect(Real r, Real t_min, Real t_max)
 //   returned value: residual that should vanish for correct temperature
 // Notes:
 //   implements (76) from Hawley, Smarr, & Wilson 1984, ApJ 277 296
-static Real TemperatureResidual(Real t, Real r);
+static Real TemperatureResidual(Real t, Real r)
 {
   return SQR(1.0 + (n_adi+1.0) * t)
       * (1.0 - 2.0*m/r + SQR(c1) / (SQR(SQR(r)) * std::pow(t, 2.0*n_adi))) - c2;

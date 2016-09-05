@@ -25,7 +25,7 @@ vz = -0.05
 # Prepare Athena++
 def prepare():
   athena.configure('s',
-      prob='linear_wave_rel',
+      prob='gr_linear_wave',
       coord='cartesian',
       flux='hllc')
   athena.make()
@@ -38,6 +38,7 @@ def run():
     arguments = [
         'job/problem_id=sr_hydro_wave_{0}_low'.format(wave_flag),
         'mesh/nx1=' + repr(res_low),
+        'meshblock/nx1=' + repr(res_low),
         'time/tlim=' + repr(time),
         'output1/dt=' + repr(time),
         'hydro/gamma=' + repr(gamma_adi),
@@ -47,6 +48,7 @@ def run():
     athena.run('hydro_sr/athinput.linear_wave', arguments)
     arguments[0] = 'job/problem_id=sr_hydro_wave_{0}_high'.format(wave_flag)
     arguments[1] = 'mesh/nx1=' + repr(res_high)
+    arguments[2] = 'meshblock/nx1=' + repr(res_high)
     athena.run('hydro_sr/athinput.linear_wave', arguments)
 
 # Analyze outputs
