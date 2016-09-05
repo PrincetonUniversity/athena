@@ -14,7 +14,9 @@
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
 //! \file disk.cpp
-//  \brief Initializes Keplerian accretion disk in spherical polar coords
+//  \brief Initializes stratified Keplerian accretion disk in both cylindrical and
+//         spherical polar coordinates.  Initial conditions are in vertical hydrostatic
+//         equilibrium.
 //======================================================================================
 
 // C++ headers
