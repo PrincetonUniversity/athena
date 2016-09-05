@@ -211,12 +211,24 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 
   // Count number of blocks wrapping around pole
   if (pmb->block_bcs[INNER_X2] == POLAR_BNDRY) {
+    if(pmb->pmy_mesh->nrbx3>1 && pmb->pmy_mesh->nrbx3%2!=0) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
+          << "Number of MeshBlocks around the pole must be 1 or even." << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
     int level = pmb->loc.level - pmb->pmy_mesh->root_level;
     num_north_polar_blocks_ = pmb->pmy_mesh->nrbx3 * (1 << level);
   }
   else
     num_north_polar_blocks_ = 0;
   if (pmb->block_bcs[OUTER_X2] == POLAR_BNDRY) {
+    if(pmb->pmy_mesh->nrbx3>1 && pmb->pmy_mesh->nrbx3%2!=0) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
+          << "Number of MeshBlocks around the pole must be 1 or even." << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
     int level = pmb->loc.level - pmb->pmy_mesh->root_level;
     num_south_polar_blocks_ = pmb->pmy_mesh->nrbx3 * (1 << level);
   } else {
