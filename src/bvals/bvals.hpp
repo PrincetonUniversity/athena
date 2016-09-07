@@ -105,7 +105,7 @@ public:
 
   void Initialize(void);
   void CheckBoundary(void);
-  void StartReceivingForInit(void);
+  void StartReceivingForInit(bool cons_and_field);
   void StartReceivingAll(void);
   void ClearBoundaryForInit(void);
   void ClearBoundaryAll(void);

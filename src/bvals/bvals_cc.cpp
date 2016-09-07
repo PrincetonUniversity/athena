@@ -90,15 +90,17 @@ int BoundaryValues::LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src, Rea
   ek=(nb.ox3<0)?(pmb->cks+cn):pmb->cke;
 
   int p=0;
-  if (conserved_values) { // normal case; restrict the data before sending
+  if (conserved_values) { // normal case
     pmr->RestrictCellCenteredValues(src, pmr->coarse_cons_, 0, NHYDRO-1,
                                     si, ei, sj, ej, sk, ek);
     BufferUtility::Pack4DData(pmr->coarse_cons_, buf, 0, NHYDRO-1,
                               si, ei, sj, ej, sk, ek, p);
   }
-  else { // must be initialization; need to restrict but not send primitives
+  else { // must be initialization of boundary primitives
     pmr->RestrictCellCenteredValues(src, pmr->coarse_prim_, 0, NHYDRO-1,
                                     si, ei, sj, ej, sk, ek);
+    BufferUtility::Pack4DData(pmr->coarse_prim_, buf, 0, NHYDRO-1,
+                              si, ei, sj, ej, sk, ek, p);
   }
   return p;
 }
@@ -409,9 +411,10 @@ bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst)
 
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst,
-//                                                               bool conserved_value)
+//                                                               bool conserved_values)
 //  \brief receive the boundary data for initialization
-void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst, bool conserved_value)
+void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst,
+                                                         bool conserved_values)
 {
   MeshBlock *pmb=pmy_mblock_;
 
@@ -424,7 +427,7 @@ void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst,
     if(nb.level==pmb->loc.level)
       SetHydroBoundarySameLevel(dst, hydro_recv_[nb.bufid], nb);
     else if(nb.level<pmb->loc.level)
-      SetHydroBoundaryFromCoarser(hydro_recv_[nb.bufid], nb, conserved_value);
+      SetHydroBoundaryFromCoarser(hydro_recv_[nb.bufid], nb, conserved_values);
     else
       SetHydroBoundaryFromFiner(dst, hydro_recv_[nb.bufid], nb);
     hydro_flag_[nb.bufid] = BNDRY_COMPLETED; // completed
