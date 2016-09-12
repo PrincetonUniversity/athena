@@ -317,18 +317,22 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
         }
       }
       else {
+        int ndv=0;
         pod=pfirst_data_;
-        int nv=1;
-        if(pod->type=="VECTORS") nv=3;
-        for (int v=0; v < nv; v++) {
-          int index = 0;
-          for (int k = out_ks; k <= out_ke; k++) {
-            for (int j = out_js; j <= out_je; j++) {
-              for (int i = out_is; i <= out_ie; i++, index++)
-                data_buffers[0][(v*num_blocks_local+nba)*nx3*nx2*nx1+index]
-                            = pod->data(v,k,j,i);
+        while(pod!=NULL) {
+          int nv=1;
+          if(pod->type=="VECTORS") nv=3;
+          for (int v=0; v < nv; v++, ndv++) {
+            int index = 0;
+            for (int k = out_ks; k <= out_ke; k++) {
+              for (int j = out_js; j <= out_je; j++) {
+                for (int i = out_is; i <= out_ie; i++, index++)
+                  data_buffers[0][(ndv*num_blocks_local+nba)*nx3*nx2*nx1+index]
+                              = pod->data(v,k,j,i);
+              }
             }
           }
+          pod=pod->pnext;
         }
       }
       nba++;
