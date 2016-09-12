@@ -1135,7 +1135,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       pbval->ReceiveHydroBoundaryBuffersWithWait(phydro->u, true);
       if (MAGNETIC_FIELDS_ENABLED)
         pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b);
-      pmb->pbval->ClearBoundaryForInit();
+      pmb->pbval->ClearBoundaryForInit(true);
       pmb=pmb->next;
     }
 
@@ -1164,7 +1164,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
         pfield=pmb->pfield;
         pbval=pmb->pbval;
         pbval->ReceiveHydroBoundaryBuffersWithWait(phydro->w, false);
-        pmb->pbval->ClearBoundaryForInit();
+        pmb->pbval->ClearBoundaryForInit(false);
         pmb=pmb->next;
       }
     }
