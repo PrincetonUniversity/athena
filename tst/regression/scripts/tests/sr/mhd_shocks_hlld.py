@@ -11,7 +11,7 @@ import athena_read
 # Prepare Athena++
 def prepare():
   athena.configure('bs',
-      prob='shock_tube_rel',
+      prob='gr_shock_tube',
       coord='cartesian',
       flux='hlld')
   athena.make()
@@ -37,8 +37,10 @@ def run():
 
 # Analyze outputs
 def analyze():
-  headers = [('dens',), ('Etot',), ('mom',0), ('mom',1), ('mom',2), ('cc-B',0),
+  headers_ref = [('dens',), ('Etot',), ('mom',0), ('mom',1), ('mom',2), ('cc-B',0),
       ('cc-B',1), ('cc-B',2)]
+  headers_new = [('dens',), ('Etot',), ('mom',0), ('mom',1), ('mom',2), ('Bcc',0),
+      ('Bcc',1), ('Bcc',2)]
   tol_sets = [[0.02,  0.01,  0.02,  0.04, 0.0,   0.0, 0.01,  0.0],
               [0.003, 0.002, 0.007, 0.01, 0.005, 0.0, 0.004, 0.007],
               [0.002, 0.001, 0.02,  0.03, 0.004, 0.0, 0.001, 0.003]]
@@ -46,11 +48,17 @@ def analyze():
     x_ref,_,_,data_ref = athena_read.vtk('data/sr_mhd_shock{0}_hlld.vtk'.format(i))
     x_new,_,_,data_new = \
         athena_read.vtk('bin/sr_mhd_shock{0}.block0.out1.00001.vtk'.format(i))
-    for header,tol in zip(headers,tols):
-      array_ref = data_ref[header[0]]
-      array_ref = array_ref[0,0,:] if len(header) == 1 else array_ref[0,0,:,header[1]]
-      array_new = data_new[header[0]]
-      array_new = array_new[0,0,:] if len(header) == 1 else array_new[0,0,:,header[1]]
+    for header_ref,header_new,tol in zip(headers_ref,headers_new,tols):
+      array_ref = data_ref[header_ref[0]]
+      if len(header_ref) == 1:
+        array_ref = array_ref[0,0,:]
+      else:
+        array_ref = array_ref[0,0,:,header_ref[1]]
+      array_new = data_new[header_new[0]]
+      if len(header_new) == 1:
+        array_new = array_new[0,0,:]
+      else:
+        array_new = array_new[0,0,:,header_new[1]]
       eps = comparison.l1_diff(x_ref, array_ref, x_new, array_new)
       if tol == 0.0:
         if eps > 0.0:

@@ -223,12 +223,24 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 
   // Count number of blocks wrapping around pole
   if (pmb->block_bcs[INNER_X2] == POLAR_BNDRY) {
+    if(pmb->pmy_mesh->nrbx3>1 && pmb->pmy_mesh->nrbx3%2!=0) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
+          << "Number of MeshBlocks around the pole must be 1 or even." << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
     int level = pmb->loc.level - pmb->pmy_mesh->root_level;
     num_north_polar_blocks_ = pmb->pmy_mesh->nrbx3 * (1 << level);
   }
   else
     num_north_polar_blocks_ = 0;
   if (pmb->block_bcs[OUTER_X2] == POLAR_BNDRY) {
+    if(pmb->pmy_mesh->nrbx3>1 && pmb->pmy_mesh->nrbx3%2!=0) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
+          << "Number of MeshBlocks around the pole must be 1 or even." << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
     int level = pmb->loc.level - pmb->pmy_mesh->root_level;
     num_south_polar_blocks_ = pmb->pmy_mesh->nrbx3 * (1 << level);
   } else {
@@ -1198,21 +1210,23 @@ void BoundaryValues::CheckBoundary(void)
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::StartReceivingForInit(void)
+//! \fn void BoundaryValues::StartReceivingForInit(bool cons_and_field)
 //  \brief initiate MPI_Irecv for initialization
-void BoundaryValues::StartReceivingForInit(void)
+void BoundaryValues::StartReceivingForInit(bool cons_and_field)
 {
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_mblock_;
   for(int n=0;n<pmb->nneighbor;n++) {
     NeighborBlock& nb = pmb->neighbor[n];
     if(nb.rank!=Globals::my_rank) {
-      MPI_Start(&req_hydro_recv_[nb.bufid]);
-      if (MAGNETIC_FIELDS_ENABLED)
-        MPI_Start(&req_field_recv_[nb.bufid]);
-      // Prep sending primitives to enable cons->prim inversion before prolongation
-      if (GENERAL_RELATIVITY and pmb->pmy_mesh->multilevel)
+      if (cons_and_field) {  // normal case
         MPI_Start(&req_hydro_recv_[nb.bufid]);
+        if (MAGNETIC_FIELDS_ENABLED)
+          MPI_Start(&req_field_recv_[nb.bufid]);
+      }
+      else {  // must be primitive initialization
+        MPI_Start(&req_hydro_recv_[nb.bufid]);
+      }
     }
   }
 #endif
@@ -1550,7 +1564,7 @@ void BoundaryValues::StartReceivingAll(const int step)
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ClearBoundaryForInit(void)
 //  \brief clean up the boundary flags for initialization
-void BoundaryValues::ClearBoundaryForInit(void)
+void BoundaryValues::ClearBoundaryForInit(bool cons_and_field)
 {
   MeshBlock *pmb=pmy_mblock_;
 
@@ -1565,11 +1579,15 @@ void BoundaryValues::ClearBoundaryForInit(void)
       hydro_flag_[nb.bufid] = BNDRY_WAITING;
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank) {
-      MPI_Wait(&req_hydro_send_[nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
-      if (MAGNETIC_FIELDS_ENABLED)
-        MPI_Wait(&req_field_send_[nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
-      if (GENERAL_RELATIVITY and pmb->pmy_mesh->multilevel)
+      if (cons_and_field) {  // normal case
         MPI_Wait(&req_hydro_send_[nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
+        if (MAGNETIC_FIELDS_ENABLED)
+          MPI_Wait(&req_field_send_[nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
+      }
+      else {  // must be primitive initialization
+        if (GENERAL_RELATIVITY and pmb->pmy_mesh->multilevel)
+          MPI_Wait(&req_hydro_send_[nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
+      }
     }
 #endif
   }

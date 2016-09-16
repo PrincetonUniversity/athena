@@ -120,12 +120,15 @@ public:
 
   void Initialize(void);
   void CheckBoundary(void);
-  void StartReceivingForInit(void);
+  //void StartReceivingForInit(void);
+  void StartReceivingForInit(bool cons_and_field);
   //[JMSHI
   void StartReceivingAll(const int step);
   //void StartReceivingAll(void);
   //JMSHI]
-  void ClearBoundaryForInit(void);
+  //void ClearBoundaryForInit(void);
+  void ClearBoundaryForInit(bool cons_and_field);
+
   void ClearBoundaryAll(void);
   void ApplyPhysicalBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
        FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);

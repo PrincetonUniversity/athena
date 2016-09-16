@@ -8,7 +8,7 @@ import scripts.utils.athena as athena
 # Prepare Athena++
 def prepare():
   athena.configure('gtb',
-      prob='blast_gr',
+      prob='gr_blast',
       coord='sinusoidal',
       flux='hlle')
   athena.make()
