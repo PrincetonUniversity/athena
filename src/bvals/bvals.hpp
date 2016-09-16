@@ -102,7 +102,6 @@ typedef struct ShearingBoundaryBlock {
   int *igidlist, *ilidlist, *irnklist, *ilevlist;
   int *ogidlist, *olidlist, *ornklist, *olevlist;
   bool inner, outer; //inner=true is inner blocks
-  int cnid, cnrk; // corner block gid and rank
 } ShearingBoundaryBlock;
 
 //JMSHI]

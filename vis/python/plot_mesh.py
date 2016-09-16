@@ -14,7 +14,13 @@ with open("mesh_structure.dat") as f:
                 numbers_str = line.split()
                 x.append(float(numbers_str[0]))
                 y.append(float(numbers_str[1]))
-                z.append(float(numbers_str[2]))
+		#[JMSHI
+                #z.append(float(numbers_str[2]))
+		if(len(numbers_str)>2):
+                  z.append(float(numbers_str[2]))
+		else:
+		  z.append(0.0)
+		#JMSHI]
         if line[0]=='\n' and len(x)!=0:
 	        plt.plot(x,y,z,'k-')
 		x=[]

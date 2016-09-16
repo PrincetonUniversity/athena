@@ -1140,47 +1140,37 @@ void BoundaryValues::Initialize(void)
 	int count = 0;
 	if (shbb_.inner) {
 	  for (int i=0;i<nbtotal;i++) {
-	    if (loclist[i].lx1 == 0 && loclist[i].lx3 == pmb->loc.lx3) {
+	    if (loclist[i].lx1 == 0 && loclist[i].lx3 == pmb->loc.lx3 && loclist[i].level == pmb->loc.level) {
           shbb_.igidlist[count] = i;
           shbb_.ilidlist[count] = i - nslist[ranklist[i]];
           shbb_.irnklist[count] = ranklist[i];
 	      shbb_.ilevlist[count] = loclist[i].level;
 		  count++;
 	    }
-	    //find the corner id cnid
-	    if (loclist[i].lx1 == nrbx1-1 && loclist[i].lx3 == pmb->loc.lx3 && loclist[i].lx2 == pmb->loc.lx2) {
-		  shbb_.cnid = i;
-		  shbb_.cnrk = ranklist[i];
-		}
 	  }
 
-	  /*
-	  std::cout << "shearing box block (inner boundary) list: total #=" << count << " expected = " << nrbx2 << std::endl;
-      for (int i=0;i<count;i++){
-	    std::cout << "block_id= " << shbb_.igidlist[i] << "logical_id= " << shbb_.ilidlist[i] << " rank_id= " << shbb_.irnklist[i] << " level_id= " << shbb_.ilevlist[i] <<  std::endl;
-	  } */
+
+	  //std::cout << "shearing box block (inner boundary) list: total #=" << count << " expected = " << nrbx2 << std::endl;
+      //for (int i=0;i<count;i++){
+	  //  std::cout << "block_id= " << shbb_.igidlist[i] << "logical_id= " << shbb_.ilidlist[i] << " rank_id= " << shbb_.irnklist[i] << " level_id= " << shbb_.ilevlist[i] <<  std::endl;
+	  //}
 	}
 	count = 0;
 	if (shbb_.outer) {
 	  for (int i=0;i<nbtotal;i++) {
-	    if (loclist[i].lx1 == (nrbx1-1) && loclist[i].lx3 == pmb->loc.lx3) {
+	    if (loclist[i].lx1 == (nrbx1-1) && loclist[i].lx3 == pmb->loc.lx3 && loclist[i].level == pmb->loc.level) {
           shbb_.ogidlist[count] = i;
           shbb_.olidlist[count] = i - nslist[ranklist[i]];
           shbb_.ornklist[count] = ranklist[i];
 	      shbb_.olevlist[count] = loclist[i].level;
 		  count++;
 	    }
-	    //find the corner id cnid
-	      if (loclist[i].lx1 == 0 && loclist[i].lx3 == pmb->loc.lx3 && loclist[i].lx2 == pmb->loc.lx2) {
-			shbb_.cnid = i;
-			shbb_.cnrk = ranklist[i];
-		  }
 	  }
-	  /*
-	  std::cout << "shearing box block (outer boundary) list: total #=" << count << " expected = " << nrbx2 << std::endl;
-      for (int i=0;i<count;i++){
-	    std::cout << "block_id= " << shbb_.ogidlist[i] << "logical_id= " << shbb_.olidlist[i] << " rank_id= " << shbb_.ornklist[i] << " level_id= " << shbb_.olevlist[i] <<  std::endl;
-	  }*/
+
+	  //std::cout << "shearing box block (outer boundary) list: total #=" << count << " expected = " << nrbx2 << std::endl;
+      //for (int i=0;i<count;i++){
+	  //  std::cout << "block_id= " << shbb_.ogidlist[i] << "logical_id= " << shbb_.olidlist[i] << " rank_id= " << shbb_.ornklist[i] << " level_id= " << shbb_.olevlist[i] <<  std::endl;
+	  //}
 	}
 
   }
@@ -1324,8 +1314,8 @@ void BoundaryValues::StartReceivingAll(const int step)
 	Mesh *pmesh = pmb->pmy_mesh;
 	FindShearBlock(step);
 
-	/*
-	if (pmesh->ncycle <= 10) {
+    /*
+	if (pmesh->ncycle <= 0 && pmb->gid==5) {
 	  std::cout << "----cycle = "<< pmesh->ncycle << " time= " << pmesh->time << " on meshblock gid = " << pmb->gid << " ---" << std::endl;
 	  if(shbb_.inner) {
 		//std::cout << "[inner]: " << shbb_.inner << std::endl;
@@ -1427,8 +1417,8 @@ void BoundaryValues::StartReceivingAll(const int step)
 		  }
 
 	 }}
-	}
-    */
+	} */
+
 
 
 #ifdef MPI_PARALLEL

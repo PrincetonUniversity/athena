@@ -12,8 +12,8 @@
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 //======================================================================================
-//! \file pointmass.cpp
-//  \brief Adds source terms due to point mass AT ORIGIN
+//! \file shearingbox.cpp
+//  \brief Adds source terms due to local shearingbox approximation
 //======================================================================================
 
 // Athena++ headers
@@ -26,8 +26,6 @@
 // this class header
 #include "hydro_srcterms.hpp"
 
-//Real UnstratifiedDisk(const Real x1, const Real x2, const Real x3);
-//
 //[JMSHI
 //--------------------------------------------------------------------------------------
 //! \fn void HydroSourceTerms::ShearingBoxSourceTerms(const Real dt,
@@ -36,13 +34,9 @@
 //
 //  Detailed description starts here.
 //  We add shearing box source term via operator splitting method. The source terms are
-//  added after the fluxes are computed in each level of the integration (in
+//  added after the fluxes are computed in each step of the integration (in
 //  FluxDivergence) to give predictions of the conservative variables for either the next
-//  level or the final update.
-//  Currently, it is hard-wired to Van-Leer integration and in 2d x-y plane.
-//  Note:
-//  (1) when update CONS, should use area and vol to be consistent with other coordinates?
-//  (2)
+//  step or the final update.
 
 void HydroSourceTerms::ShearingBoxSourceTerms(const Real dt, const AthenaArray<Real> *flux,
   const AthenaArray<Real> &prim, AthenaArray<Real> &cons)

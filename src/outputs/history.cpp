@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -72,8 +72,9 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
     for (int j=pmb->js; j<=pmb->je; ++j) {
       pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,vol);
-
-#pragma simd
+//[JMSHI
+//#pragma simd
+//JMSHI]
       for (int i=pmb->is; i<=pmb->ie; ++i) {
         Real& u_d  = phyd->u(IDN,k,j,i);
         Real& u_mx = phyd->u(IM1,k,j,i);

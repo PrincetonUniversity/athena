@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -37,7 +37,10 @@
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
-#include "../mesh_refinement/mesh_refinement.hpp"
+//[JMSHI
+#include "../mesh/mesh_refinement.hpp"
+//#include "../mesh_refinement/mesh_refinement.hpp"
+//JMSHI]
 
 #if MAGNETIC_FIELDS_ENABLED
 #error "This problem generator does not support magnetic fields"
@@ -46,9 +49,9 @@
 #include <iostream>
 #include <cmath>
 
-// DMRInnerX1() - sets BCs on inner-x1 (left edge) of grid.  
-// DMRInnerX2() - sets BCs on inner-x2 (bottom edge) of grid.  
-// DMROuterX2() - sets BCs on outer-x2 (top edge) of grid.  
+// DMRInnerX1() - sets BCs on inner-x1 (left edge) of grid.
+// DMRInnerX2() - sets BCs on inner-x2 (bottom edge) of grid.
+// DMROuterX2() - sets BCs on outer-x2 (top edge) of grid.
 void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
@@ -87,7 +90,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   std::stringstream msg;
 
   if (block_size.nx3 > 1) {
-    msg << "### FATAL ERROR in Problem Generator" << std::endl << "nx3=" 
+    msg << "### FATAL ERROR in Problem Generator" << std::endl << "nx3="
         << block_size.nx3 << " but this test only works for 2D" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
