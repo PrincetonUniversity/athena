@@ -221,8 +221,8 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
   nx3=pmb->block_size.nx3;
   if (output_params.include_ghost_zones) {
     nx1+=2*NGHOST;
-    if (out_js != out_je) nx2+=2*NGHOST;
-    if (out_ks != out_ke) nx3+=2*NGHOST;
+    if (nx2 > 1) nx2+=2*NGHOST;
+    if (nx3 > 1) nx3+=2*NGHOST;
   }
   if(output_params.output_slicex1) nx1=1;
   if(output_params.output_slicex2) nx2=1;
