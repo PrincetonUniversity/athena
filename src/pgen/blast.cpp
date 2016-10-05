@@ -25,6 +25,7 @@
 // C++ headers
 #include <sstream>
 #include <cmath>
+#include <stdexcept>
 
 // Athena++ headers
 #include "../athena.hpp"

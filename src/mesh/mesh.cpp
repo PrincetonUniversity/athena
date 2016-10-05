@@ -1107,10 +1107,11 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       }
     }
 
+    // prepare to receive conserved variables
     pmb = pblock;
     while (pmb != NULL)  {
       pmb->pbval->Initialize();
-      pmb->pbval->StartReceivingForInit();
+      pmb->pbval->StartReceivingForInit(true);
       pmb=pmb->next;
     }
 
@@ -1134,14 +1135,23 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       pbval->ReceiveHydroBoundaryBuffersWithWait(phydro->u, true);
       if (MAGNETIC_FIELDS_ENABLED)
         pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b);
-      pmb->pbval->ClearBoundaryForInit();
+      pmb->pbval->ClearBoundaryForInit(true);
       pmb=pmb->next;
     }
 
     // With AMR/SMR GR send primitives to enable cons->prim before prolongation
     if (GENERAL_RELATIVITY && multilevel) {
+
+      // prepare to receive primitives
       pmb = pblock;
-      while (pmb != NULL)  {
+      while (pmb != NULL) {
+        pmb->pbval->StartReceivingForInit(false);
+        pmb=pmb->next;
+      }
+
+      // send primitives
+      pmb = pblock;
+      while (pmb != NULL) {
         phydro=pmb->phydro;
         pmb->pbval->SendHydroBoundaryBuffers(phydro->w, false);
         pmb=pmb->next;
@@ -1149,12 +1159,12 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
 
       // wait to receive AMR/SMR GR primitives
       pmb = pblock;
-      while (pmb != NULL)  {
+      while (pmb != NULL) {
         phydro=pmb->phydro;
         pfield=pmb->pfield;
         pbval=pmb->pbval;
         pbval->ReceiveHydroBoundaryBuffersWithWait(phydro->w, false);
-        pmb->pbval->ClearBoundaryForInit();
+        pmb->pbval->ClearBoundaryForInit(false);
         pmb=pmb->next;
       }
     }

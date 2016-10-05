@@ -105,9 +105,9 @@ public:
 
   void Initialize(void);
   void CheckBoundary(void);
-  void StartReceivingForInit(void);
+  void StartReceivingForInit(bool cons_and_field);
   void StartReceivingAll(void);
-  void ClearBoundaryForInit(void);
+  void ClearBoundaryForInit(bool cons_and_field);
   void ClearBoundaryAll(void);
   void ApplyPhysicalBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst,
        FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);

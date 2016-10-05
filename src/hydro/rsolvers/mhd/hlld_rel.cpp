@@ -781,10 +781,17 @@ static void HLLDTransforming(MeshBlock *pmb, const int k, const int j, const int
 
     // Check for any remaining HLLD failures and switch to HLLE if found
     if (not switch_to_hlle)
+    {
       for (int n = 0; n < NWAVE; ++n)
         if (not std::isfinite(cons_interface[n])
             or not std::isfinite(flux_interface[n]))
           switch_to_hlle = true;
+      if (switch_to_hlle)
+      {
+        cons_interface = cons_hll;
+        flux_interface = flux_hll;
+      }
+    }
 
     // Set conserved quantities in GR
     if (GENERAL_RELATIVITY)

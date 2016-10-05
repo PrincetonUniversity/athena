@@ -409,7 +409,7 @@ inline void RoeEigensystem(const Real wroe[], Real eigenvalues[],
     left_eigenmatrix[2][4] = 0.0; 
 
     Real qa = gm1/asq;
-    left_eigenmatrix[3][0] = \1.0 - na*gm1*vsq;
+    left_eigenmatrix[3][0] = 1.0 - na*gm1*vsq;
     left_eigenmatrix[3][1] = qa*v1;
     left_eigenmatrix[3][2] = qa*v2;
     left_eigenmatrix[3][3] = qa*v3;
