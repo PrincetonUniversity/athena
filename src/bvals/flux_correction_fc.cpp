@@ -53,7 +53,7 @@
 //  \brief Set EMF correction buffers for sending to a block on the same level
 int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
@@ -190,7 +190,7 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
 //  \brief Set EMF correction buffers for sending to a block on the coarser level
 int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
@@ -365,7 +365,7 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
 //  \brief Load EMF values along polar axis into send buffers
 int BoundaryValues::LoadEMFBoundaryPolarBuffer(Real *buf, const PolarNeighborBlock &nb)
 {
-  MeshBlock *pmb = pmy_mblock_;
+  MeshBlock *pmb = pmy_block_;
   int count = 0;
   int j = nb.north ? pmb->js : pmb->je+1;
   for (int i = pmb->is; i <= pmb->ie; ++i) {
@@ -383,7 +383,7 @@ int BoundaryValues::LoadEMFBoundaryPolarBuffer(Real *buf, const PolarNeighborBlo
 //  \brief Restrict, pack and send the surace EMF to the coarse neighbor(s) if needed
 void BoundaryValues::SendEMFCorrection(void)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
 
   // Send non-polar EMF values
   for(int n=0; n<pmb->nneighbor; n++) {
@@ -450,7 +450,7 @@ void BoundaryValues::SendEMFCorrection(void)
 //         Later they will be divided in the AverageEMFBoundary function
 void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
@@ -600,7 +600,7 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
 //         Later they will be divided in the AverageEMFBoundary function
 void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
@@ -781,7 +781,7 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
 //  \brief Overwrite EMF values along polar axis with azimuthal averages
 void BoundaryValues::SetEMFBoundaryPolar(Real **buf_list, int num_bufs, bool north)
 {
-  MeshBlock *pmb = pmy_mblock_;
+  MeshBlock *pmb = pmy_block_;
   int j = north ? pmb->js : pmb->je+1;
   int count = 0;
   for (int i = pmb->is; i <= pmb->ie; ++i) {
@@ -800,7 +800,7 @@ void BoundaryValues::SetEMFBoundaryPolar(Real **buf_list, int num_bufs, bool nor
 //  \brief Clear the EMFs on the surface/edge contacting with a finer block
 void BoundaryValues::ClearCoarseEMFBoundary(void)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
@@ -913,7 +913,7 @@ void BoundaryValues::ClearCoarseEMFBoundary(void)
 //  \brief Set EMF boundary received from a block on the finer level
 void BoundaryValues::AverageEMFBoundary(void)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
@@ -1061,7 +1061,7 @@ void BoundaryValues::AverageEMFBoundary(void)
 //  \brief single CPU in the azimuthal direction for the polar boundary
 void BoundaryValues::PolarSingleEMF(void)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
@@ -1132,7 +1132,7 @@ void BoundaryValues::PolarSingleEMF(void)
 //  \brief Receive and Apply the surace EMF to the coarse neighbor(s) if needed
 bool BoundaryValues::ReceiveEMFCorrection(void)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   bool flag=true;
 
   // Receive same-level non-polar EMF values

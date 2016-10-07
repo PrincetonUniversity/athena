@@ -30,7 +30,7 @@
 
 Field::Field(MeshBlock *pmb, ParameterInput *pin)
 {
-  pmy_mblock = pmb;
+  pmy_block = pmb;
 
 // Allocate memory for interface fields, but only when needed.
 
@@ -116,7 +116,7 @@ Field::~Field()
 void Field::CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &bc,
             Coordinates *pco, int is, int ie, int js, int je, int ks, int ke)
 {
-  int nthreads = pmy_mblock->pmy_mesh->GetNumMeshThreads();
+  int nthreads = pmy_block->pmy_mesh->GetNumMeshThreads();
 #pragma omp parallel default(shared) num_threads(nthreads)
 {
   for (int k=ks; k<=ke; ++k){

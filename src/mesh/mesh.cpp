@@ -1224,7 +1224,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
   // calculate the first time step
   pmb = pblock;
   while (pmb != NULL)  {
-    pmb->phydro->NewBlockTimeStep(pmb);
+    pmb->phydro->NewBlockTimeStep();
     pmb=pmb->next;
   }
   NewTimeStep();

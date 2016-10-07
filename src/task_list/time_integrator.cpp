@@ -297,17 +297,17 @@ enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int step
   Field *pfield=pmb->pfield;
 
   if((step == 1) && (integrator == "vl2")) {
-    phydro->CalculateFluxes(pmb, phydro->w,  pfield->b,  pfield->bcc, 1);
+    phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, 1);
     return TASK_NEXT;
   }
 
   if((step == 1) && (integrator == "rk2")) {
-    phydro->CalculateFluxes(pmb, phydro->w,  pfield->b,  pfield->bcc, 2);
+    phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, 2);
     return TASK_NEXT;
   } 
 
   if(step == 2) {
-    phydro->CalculateFluxes(pmb, phydro->w1, pfield->b1, pfield->bcc1, 2);
+    phydro->CalculateFluxes(phydro->w1, pfield->b1, pfield->bcc1, 2);
     return TASK_NEXT;
   }
 
@@ -317,12 +317,12 @@ enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int step
 enum TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int step)
 {
   if(step == 1) {
-    pmb->pfield->ComputeCornerE(pmb, pmb->phydro->w,  pmb->pfield->bcc);
+    pmb->pfield->ComputeCornerE(pmb->phydro->w,  pmb->pfield->bcc);
     return TASK_NEXT;
   }
 
   if(step == 2) {
-    pmb->pfield->ComputeCornerE(pmb, pmb->phydro->w1, pmb->pfield->bcc1);
+    pmb->pfield->ComputeCornerE(pmb->phydro->w1, pmb->pfield->bcc1);
     return TASK_NEXT;
   } 
 
@@ -374,17 +374,17 @@ enum TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int step)
   Field *pf=pmb->pfield;
 
   if(step == 1) {
-    ph->AddFluxDivergenceToAverage(pmb,ph->u,ph->u,ph->w,pf->bcc,step_wghts[0],ph->u1);
+    ph->AddFluxDivergenceToAverage(ph->u,ph->u,ph->w,pf->bcc,step_wghts[0],ph->u1);
     return TASK_NEXT;
   }
 
   if((step == 2) && (integrator == "vl2")) {
-    ph->AddFluxDivergenceToAverage(pmb,ph->u,ph->u,ph->w1,pf->bcc1,step_wghts[1],ph->u);
+    ph->AddFluxDivergenceToAverage(ph->u,ph->u,ph->w1,pf->bcc1,step_wghts[1],ph->u);
     return TASK_NEXT;
   }
 
   if((step == 2) && (integrator == "rk2")) {
-   ph->AddFluxDivergenceToAverage(pmb,ph->u,ph->u1,ph->w1,pf->bcc1,step_wghts[1],ph->u);
+   ph->AddFluxDivergenceToAverage(ph->u,ph->u1,ph->w1,pf->bcc1,step_wghts[1],ph->u);
    return TASK_NEXT;
   }
 
@@ -394,17 +394,17 @@ enum TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int step)
 enum TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int step)
 {
   if(step == 1) {
-    pmb->pfield->CT(pmb,pmb->pfield->b, pmb->pfield->b, step_wghts[0], pmb->pfield->b1);
+    pmb->pfield->CT(pmb->pfield->b, pmb->pfield->b, step_wghts[0], pmb->pfield->b1);
     return TASK_NEXT;
   }
 
   if((step == 2) && (integrator == "vl2")) {
-    pmb->pfield->CT(pmb,pmb->pfield->b, pmb->pfield->b, step_wghts[1], pmb->pfield->b);
+    pmb->pfield->CT(pmb->pfield->b, pmb->pfield->b, step_wghts[1], pmb->pfield->b);
     return TASK_NEXT;
   }
 
   if((step == 2) && (integrator == "rk2")) {
-    pmb->pfield->CT(pmb,pmb->pfield->b, pmb->pfield->b1, step_wghts[1], pmb->pfield->b);
+    pmb->pfield->CT(pmb->pfield->b, pmb->pfield->b1, step_wghts[1], pmb->pfield->b);
     return TASK_NEXT;
   }
 
@@ -585,7 +585,7 @@ enum TaskStatus TimeIntegratorTaskList::NewBlockTimeStep(MeshBlock *pmb, int ste
 {
   if (step != nsub_steps) return TASK_SUCCESS; // only do on last sub-step
 
-  pmb->phydro->NewBlockTimeStep(pmb);
+  pmb->phydro->NewBlockTimeStep();
   return TASK_SUCCESS;
 }
 

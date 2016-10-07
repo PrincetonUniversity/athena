@@ -37,11 +37,11 @@ public:
   HydroSourceTerms *psrc;
 
   // functions
-  Real NewBlockTimeStep(MeshBlock *pmb);    // computes new timestep on a MeshBlock
-  void AddFluxDivergenceToAverage(MeshBlock *pmb,AthenaArray<Real> &u1, 
+  Real NewBlockTimeStep(void);    // computes new timestep on a MeshBlock
+  void AddFluxDivergenceToAverage(AthenaArray<Real> &u1, 
     AthenaArray<Real> &u2, AthenaArray<Real> &w, AthenaArray<Real> &bcc,
     IntegratorWeight wght, AthenaArray<Real> &u_out);
-  void CalculateFluxes(MeshBlock *pmb, AthenaArray<Real> &w, FaceField &b,
+  void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     AthenaArray<Real> &bcc, int order);
   void RiemannSolver(const int k, const int j, const int il, const int iu,
     const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,

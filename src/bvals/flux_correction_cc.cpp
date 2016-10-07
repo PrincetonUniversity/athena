@@ -52,7 +52,7 @@
 //  \brief Restrict, pack and send the surace flux to the coarse neighbor(s)
 void BoundaryValues::SendFluxCorrection(void)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   AthenaArray<Real> &x1flux=pmb->phydro->flux[X1DIR];
   AthenaArray<Real> &x2flux=pmb->phydro->flux[X2DIR];
@@ -179,7 +179,7 @@ void BoundaryValues::SendFluxCorrection(void)
 //  \brief Receive and apply the surace flux from the finer neighbor(s)
 bool BoundaryValues::ReceiveFluxCorrection(void)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   AthenaArray<Real> &x1flux=pmb->phydro->flux[X1DIR];
   AthenaArray<Real> &x2flux=pmb->phydro->flux[X2DIR];
