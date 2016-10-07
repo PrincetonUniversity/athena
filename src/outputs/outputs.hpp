@@ -24,6 +24,7 @@
 // forward declarations
 class Mesh;
 class ParameterInput;
+class Coordinates;
 
 //! \struct OutputParameters
 //  \brief  container for parameters read from <output> block in the input file
@@ -40,7 +41,7 @@ typedef struct OutputParameters {
   int file_number;
   bool output_slicex1, output_slicex2, output_slicex3;
   bool output_sumx1, output_sumx2, output_sumx3;
-  bool include_ghost_zones;
+  bool include_ghost_zones, cartesian_vector;
   int islice, jslice, kslice;
   Real x1_slice, x2_slice, x3_slice;
 
@@ -83,6 +84,8 @@ public:
   bool TransformOutputData(MeshBlock *pmb);
   bool SliceOutputData(MeshBlock *pmb, int dim);
   void SumOutputData(MeshBlock *pmb, int dim);
+  void CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Real> &dst,
+                                Coordinates *pco);
   // following pure virtual function must be implemented in all derived classes
   virtual void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) = 0;
 
