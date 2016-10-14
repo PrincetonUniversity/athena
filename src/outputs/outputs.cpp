@@ -200,7 +200,9 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
 
         // read ghost cell option
         if(COORDINATE_SYSTEM == "cylindrical" || COORDINATE_SYSTEM == "spherical_polar")
-        op.cartesian_vector=pin->GetOrAddBoolean(op.block_name,"cartesian_vector",false);
+          op.cartesian_vector=pin->GetOrAddBoolean(op.block_name,"cartesian_vector",false);
+        else 
+          op.cartesian_vector=false;
 
         // set output variable and optional data format string used in formatted writes
         if (op.file_type.compare("hst") != 0 && op.file_type.compare("rst") != 0) {
