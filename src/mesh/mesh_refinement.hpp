@@ -61,7 +61,7 @@ public:
 
 private:
   // data
-  MeshBlock *pmy_mblock_;
+  MeshBlock *pmy_block_;
   Coordinates *pcoarsec;
   AthenaArray<Real> coarse_cons_, coarse_prim_, coarse_bcc_;
   FaceField coarse_b_;

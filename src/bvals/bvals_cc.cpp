@@ -54,7 +54,7 @@
 int BoundaryValues::LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
                                                      const NeighborBlock& nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
 
   si=(nb.ox1>0)?(pmb->ie-NGHOST+1):pmb->is;
@@ -77,7 +77,7 @@ int BoundaryValues::LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src, Rea
                                                      const NeighborBlock& nb,
                                                      bool conserved_values)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   MeshRefinement *pmr=pmb->pmr;
   int si, sj, sk, ei, ej, ek;
   int cn=pmb->cnghost-1;
@@ -112,7 +112,7 @@ int BoundaryValues::LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src, Rea
 int BoundaryValues::LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src, Real *buf,
                                                    const NeighborBlock& nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int cn=pmb->cnghost-1;
 
@@ -163,7 +163,7 @@ int BoundaryValues::LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src, Real 
 void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src,
                                               bool conserved_values)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   int mylevel=pmb->loc.level;
 
   for(int n=0; n<pmb->nneighbor; n++) {
@@ -198,7 +198,7 @@ void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src,
 void BoundaryValues::SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
                                                const NeighborBlock& nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
 
   if(nb.ox1==0)     si=pmb->is,        ei=pmb->ie;
@@ -237,7 +237,7 @@ void BoundaryValues::SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf
 void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock& nb,
     bool conserved_values)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   MeshRefinement *pmr=pmb->pmr;
 
   int si, sj, sk, ei, ej, ek;
@@ -305,7 +305,7 @@ void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock&
 void BoundaryValues::SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf,
                                                const NeighborBlock& nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   // receive already restricted data
   int si, sj, sk, ei, ej, ek;
 
@@ -370,7 +370,7 @@ void BoundaryValues::SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf
 //  \brief receive the boundary data
 bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   bool flag=true;
 
   for(int n=0; n<pmb->nneighbor; n++) {
@@ -416,7 +416,7 @@ bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst)
 void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst,
                                                          bool conserved_values)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
 
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
@@ -445,7 +445,7 @@ void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst,
 // \brief  single CPU in the azimuthal direction for the polar boundary 
 void BoundaryValues::PolarSingleHydro(AthenaArray<Real> &dst)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   if(pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1){
 
     if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY){

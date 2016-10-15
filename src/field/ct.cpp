@@ -39,9 +39,10 @@
 //! \fn  void Field::CT
 //  \brief Constrained Transport implementation of dB/dt = -Curl(E), where E=-(v X B)
 
-void Field::CT(MeshBlock *pmb, FaceField &b_in1, FaceField &b_in2,
+void Field::CT(FaceField &b_in1, FaceField &b_in2,
   const IntegratorWeight wght, FaceField &b_out)
 {
+  MeshBlock *pmb=pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 

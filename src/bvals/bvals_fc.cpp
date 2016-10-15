@@ -54,7 +54,7 @@
 int BoundaryValues::LoadFieldBoundaryBufferSameLevel(FaceField &src, Real *buf,
                                                      const NeighborBlock& nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int p=0;
 
@@ -113,7 +113,7 @@ int BoundaryValues::LoadFieldBoundaryBufferSameLevel(FaceField &src, Real *buf,
 int BoundaryValues::LoadFieldBoundaryBufferToCoarser(FaceField &src, Real *buf,
                                                      const NeighborBlock& nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   MeshRefinement *pmr=pmb->pmr;
   int si, sj, sk, ei, ej, ek;
   int cng=pmb->cnghost;
@@ -187,7 +187,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(FaceField &src, Real *buf,
 int BoundaryValues::LoadFieldBoundaryBufferToFiner(FaceField &src, Real *buf,
                                                    const NeighborBlock& nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int cn=pmb->cnghost-1;
   int p=0;
@@ -300,7 +300,7 @@ int BoundaryValues::LoadFieldBoundaryBufferToFiner(FaceField &src, Real *buf,
 //  \brief Send field boundary buffers
 void BoundaryValues::SendFieldBoundaryBuffers(FaceField &src)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
 
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
@@ -334,7 +334,7 @@ void BoundaryValues::SendFieldBoundaryBuffers(FaceField &src)
 void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
                                                const NeighborBlock& nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
 
   int p=0;
@@ -452,7 +452,7 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
 //  \brief Set field prolongation buffer received from a block on the same level
 void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock& nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   MeshRefinement *pmr=pmb->pmr;
   int si, sj, sk, ei, ej, ek;
   int cng=pmb->cnghost;
@@ -586,7 +586,7 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
 void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
                                                const NeighborBlock& nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   // receive already restricted data
   int si, sj, sk, ei, ej, ek;
   int p=0;
@@ -762,7 +762,7 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
 //  \brief load boundary buffer for x1 direction into the array
 bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   bool flag=true;
 
   for(int n=0; n<pmb->nneighbor; n++) {
@@ -806,7 +806,7 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst)
 //  \brief load boundary buffer for x1 direction into the array
 void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
 
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
@@ -834,7 +834,7 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst)
 //  \brief single CPU in the azimuthal direction for the polar boundary
 void BoundaryValues::PolarSingleField(FaceField &dst)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   if(pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1){
     if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY){
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;

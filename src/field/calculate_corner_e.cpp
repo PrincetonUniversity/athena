@@ -35,9 +35,9 @@
 //! \fn  void Field::ComputeCornerEMFs
 //  \brief
 
-void Field::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w, 
-  AthenaArray<Real> &bcc)
+void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc)
 {
+  MeshBlock *pmb = pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 

@@ -41,9 +41,10 @@
 //! \fn  void Hydro::CalculateFluxes
 //  \brief Calculate Hydrodynamic Fluxes using the Riemann solver
 
-void Hydro::CalculateFluxes(MeshBlock *pmb, AthenaArray<Real> &w, FaceField &b,
-  AthenaArray<Real> &bcc, int reconstruct_order)
+void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
+                            AthenaArray<Real> &bcc, int reconstruct_order)
 {
+  MeshBlock *pmb=pmy_block;
   AthenaArray<Real> &x1flux=flux[X1DIR];
   AthenaArray<Real> &x2flux=flux[X2DIR];
   AthenaArray<Real> &x3flux=flux[X3DIR];

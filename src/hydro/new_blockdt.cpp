@@ -43,11 +43,12 @@
 #endif
 
 //--------------------------------------------------------------------------------------
-// \!fn 
-// \brief
+// \!fn Real Hydro::NewBlockTimeStep(void)
+// \brief calculate the minimum timestep within a MeshBlock 
 
-Real Hydro::NewBlockTimeStep(MeshBlock *pmb)
+Real Hydro::NewBlockTimeStep(void)
 {
+  MeshBlock *pmb=pmy_block;
   int tid=0;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
