@@ -164,6 +164,7 @@ class Mesh {
   friend class Coordinates;
   friend class MeshRefinement;
   friend class HydroSourceTerms;
+  friend class Hydro;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
@@ -221,6 +222,7 @@ private:
   SrcTermFunc_t UserSourceTerm_;
   BValFunc_t BoundaryFunction_[6];
   AMRFlagFunc_t AMRFlag_;
+  TimeStepFunc_t UserTimeStep_;
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
   void OutputMeshStructure(int dim);
@@ -231,7 +233,8 @@ private:
   void EnrollUserBoundaryFunction (enum BoundaryFace face, BValFunc_t my_func);
   void EnrollUserRefinementCondition(AMRFlagFunc_t amrflag);
   void EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc_t my_mg);
-  void EnrollUserSourceTermFunction(SrcTermFunc_t my_func);
+  void EnrollUserExplicitSourceFunction(SrcTermFunc_t my_func);
+  void EnrollUserTimeStepFunction(TimeStepFunc_t my_func);
 };
 
 //--------------------------------------------------------------------------------------

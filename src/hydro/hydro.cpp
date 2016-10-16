@@ -95,6 +95,8 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
     cons_.NewAthenaArray(NWAVE,ncells1);
   }
 
+  UserTimeStep_ = pmb->pmy_mesh->UserTimeStep_;
+
 // Construct ptrs to objects of various classes needed to integrate hydro/MHD eqns 
 
   psrc  = new HydroSourceTerms(this,pin);

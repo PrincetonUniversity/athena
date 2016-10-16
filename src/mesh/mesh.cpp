@@ -257,6 +257,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
     BoundaryFunction_[dir]=NULL;
   AMRFlag_=NULL;
   UserSourceTerm_=NULL;
+  UserTimeStep_=NULL;
 
   // calculate the logical root level and maximum level
   for (root_level=0; (1<<root_level)<nbmax; root_level++);
@@ -629,6 +630,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
     BoundaryFunction_[dir]=NULL;
   AMRFlag_=NULL;
   UserSourceTerm_=NULL;
+  UserTimeStep_=NULL;
 
   multilevel=false;
   adaptive=false;
@@ -983,7 +985,7 @@ void Mesh::NewTimeStep(void)
   MPI_Allreduce(MPI_IN_PLACE,&min_dt,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD);
 #endif
   // set it
-  dt=std::min(min_dt*cfl_number,2.0*dt);
+  dt=std::min(min_dt,2.0*dt);
   if (time < tlim && tlim-time < dt)  // timestep would take us past desired endpoint
     dt = tlim-time;
   return;
@@ -1040,12 +1042,22 @@ void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc_t m
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserSourceTermFunction(SrcTermFunc_t my_func)
+//! \fn void Mesh::EnrollUserExplicitSourceFunction(SrcTermFunc_t my_func)
 //  \brief Enroll a user-defined source function
 
-void Mesh::EnrollUserSourceTermFunction(SrcTermFunc_t my_func)
+void Mesh::EnrollUserExplicitSourceFunction(SrcTermFunc_t my_func)
 {
   UserSourceTerm_ = my_func;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserTimeStepFunction(TimeStepFunc_t my_func)
+//  \brief Enroll a user-defined time step function
+
+void Mesh::EnrollUserTimeStepFunction(TimeStepFunc_t my_func)
+{
+  UserTimeStep_ = my_func;
   return;
 }
 

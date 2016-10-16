@@ -61,5 +61,7 @@ private:
   AthenaArray<Real> lambdas_m_r_;  // most negative wavespeeds in right state
   AthenaArray<Real> g_, gi_;       // metric and inverse, for some GR Riemann solvers
   AthenaArray<Real> cons_;         // conserved state, for some GR Riemann solvers
+
+  TimeStepFunc_t UserTimeStep_;
 };
 #endif // HYDRO_HPP
