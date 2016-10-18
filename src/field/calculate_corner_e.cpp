@@ -215,7 +215,7 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc)
     for (int k=ks-1; k<=ke+1; ++k) {
     for (int j=js; j<=je; ++j) {
       if (GENERAL_RELATIVITY)
-        pmb->pcoord->CellMetric(k, j, is, ie, g_, gi_);
+        pmb->pcoord->CellMetric(k, j, is-1, ie+1, g_, gi_);
 #pragma simd
       for (int i=is-1; i<=ie+1; ++i) {
         if (GENERAL_RELATIVITY)
