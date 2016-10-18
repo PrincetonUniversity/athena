@@ -390,7 +390,10 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
   else {
     for (int i=is-ng; i<=ie+ng+1; ++i) {
       // if there are too many levels, this won't work or be precise enough
-      noffset=((i-is)<<cflag)+(long long)lx1*block_size.nx1;
+      if (cflag == 0)
+        noffset = i-is + (long long)lx1*block_size.nx1;
+      else
+        noffset = (i-is)*2 + (long long)lx1*block_size.nx1;
       Real rx=(Real)noffset/(Real)nrootmesh;
       x1f(i)=pm->MeshGenerator_[X1DIR](rx,mesh_size);
     }
@@ -430,7 +433,10 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
     else {
       for (int j=js-ng; j<=je+ng+1; ++j) {
         // if there are too many levels, this won't work or be precise enough
-        noffset=((j-js)<<cflag)+(long long)lx2*block_size.nx2;
+        if (cflag == 0)
+          noffset = j-js + (long long)lx2*block_size.nx2;
+        else
+          noffset = (j-js)*2 + (long long)lx2*block_size.nx2;
         Real rx=(Real)noffset/(Real)nrootmesh;
         x2f(j)=pm->MeshGenerator_[X2DIR](rx,mesh_size);
       }
@@ -479,7 +485,10 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
     else {
       for (int k=ks-ng; k<=ke+ng+1; ++k) {
         // if there are too many levels, this won't work or be precise enough
-        noffset=((k-ks)<<cflag)+(long long)lx3*block_size.nx3;
+        if (cflag == 0)
+          noffset = k-ks + (long long)lx3*block_size.nx3;
+        else
+          noffset = (k-ks)*2 + (long long)lx3*block_size.nx3;
         Real rx=(Real)noffset/(Real)nrootmesh;
         x3f(k)=pm->MeshGenerator_[X3DIR](rx,mesh_size);
       }
