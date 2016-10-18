@@ -1040,7 +1040,6 @@ void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim
 //     it is equivalent to this, though seeing this requires much manipulation
 //   implements (3.8) from Fishbone & Moncrief 1976, ApJ 207 962
 //   assumes corotation
-//   TODO: add counterrotation option
 //   see CalculateRPeakFromL()
 static Real CalculateLFromRPeak(Real r)
 {
@@ -1061,7 +1060,6 @@ static Real CalculateLFromRPeak(Real r)
 //     this is *not* -u_phi/u_t
 //   uses (3.8) from Fishbone & Moncrief 1976, ApJ 207 962
 //   assumes corotation
-//   TODO: add counterrotation option
 //   uses bisection to find r such that formula for l agrees with given value
 //   proceeds until either absolute tolerance is met
 //   returns best value after max_iterations reached if tolerances not met
