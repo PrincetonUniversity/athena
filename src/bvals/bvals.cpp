@@ -128,6 +128,9 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       case POLAR_BNDRY: // polar boundary
         BoundaryFunction_[INNER_X2] = NULL;
         break;
+      case POLAR_BNDRY_WEDGE: //polar boundary with a wedge
+        BoundaryFunction_[INNER_X2] = PolarWedgeInnerX2;
+        break;
       case USER_BNDRY: // user-enrolled BCs
         BoundaryFunction_[INNER_X2] = pmb->pmy_mesh->BoundaryFunction_[INNER_X2];
         break;
@@ -150,6 +153,9 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       case PERIODIC_BNDRY: // periodic boundary
       case POLAR_BNDRY: // polar boundary
         BoundaryFunction_[OUTER_X2] = NULL;
+        break;
+      case POLAR_BNDRY_WEDGE: //polar boundary with a wedge
+        BoundaryFunction_[OUTER_X2] = PolarWedgeOuterX2;
         break;
       case USER_BNDRY: // user-enrolled BCs
         BoundaryFunction_[OUTER_X2] = pmb->pmy_mesh->BoundaryFunction_[OUTER_X2];
@@ -210,7 +216,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   }
 
   // Count number of blocks wrapping around pole
-  if (pmb->block_bcs[INNER_X2] == POLAR_BNDRY) {
+  if (pmb->block_bcs[INNER_X2] == POLAR_BNDRY || pmb->block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
     if(pmb->pmy_mesh->nrbx3>1 && pmb->pmy_mesh->nrbx3%2!=0) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
@@ -222,7 +228,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   }
   else
     num_north_polar_blocks_ = 0;
-  if (pmb->block_bcs[OUTER_X2] == POLAR_BNDRY) {
+  if (pmb->block_bcs[OUTER_X2] == POLAR_BNDRY || pmb->block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
     if(pmb->pmy_mesh->nrbx3>1 && pmb->pmy_mesh->nrbx3%2!=0) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
@@ -461,7 +467,8 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
  /* single CPU in the azimuthal direction with the polar boundary*/
   if(pmb->loc.level == pmb->pmy_mesh->root_level &&
      pmb->pmy_mesh->nrbx3 == 1 &&
-     (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY))
+     (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY||
+      pmb->block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
        exc_.NewAthenaArray(pmb->ke+NGHOST+2);
 
 }
@@ -531,7 +538,8 @@ BoundaryValues::~BoundaryValues()
   }
   if(pmb->loc.level == pmb->pmy_mesh->root_level &&
      pmb->pmy_mesh->nrbx3 == 1 &&
-     (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY))
+     (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY||
+      pmb->block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
        exc_.DeleteAthenaArray();
 }
 

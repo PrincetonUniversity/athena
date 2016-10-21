@@ -110,12 +110,12 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   pcoord = new Coordinates(this, pin);
   if(ref_flag==false) pcoord->CheckMeshSpacing();
   pbval  = new BoundaryValues(this, pin);
-  if (block_bcs[INNER_X2] == POLAR_BNDRY) {
+  if (block_bcs[INNER_X2] == POLAR_BNDRY||block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh->root_level;
     int num_north_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
     polar_neighbor_north = new PolarNeighborBlock[num_north_polar_blocks];
   }
-  if (block_bcs[OUTER_X2] == POLAR_BNDRY) {
+  if (block_bcs[OUTER_X2] == POLAR_BNDRY||block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh->root_level;
     int num_south_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
     polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
@@ -193,12 +193,12 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   // (re-)create mesh-related objects in MeshBlock
   pcoord = new Coordinates(this, pin);
   pbval  = new BoundaryValues(this, pin);
-  if (block_bcs[INNER_X2] == POLAR_BNDRY) {
+  if (block_bcs[INNER_X2] == POLAR_BNDRY||block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh->root_level;
     int num_north_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
     polar_neighbor_north = new PolarNeighborBlock[num_north_polar_blocks];
   }
-  if (block_bcs[OUTER_X2] == POLAR_BNDRY) {
+  if (block_bcs[OUTER_X2] == POLAR_BNDRY||block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh->root_level;
     int num_south_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
     polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
@@ -263,8 +263,8 @@ MeshBlock::~MeshBlock()
   if(next!=NULL) next->prev=prev;
 
   delete pcoord;
-  if (block_bcs[INNER_X2] == POLAR_BNDRY) delete[] polar_neighbor_north;
-  if (block_bcs[OUTER_X2] == POLAR_BNDRY) delete[] polar_neighbor_south;
+  if (block_bcs[INNER_X2] == POLAR_BNDRY||block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) delete[] polar_neighbor_north;
+  if (block_bcs[OUTER_X2] == POLAR_BNDRY||block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) delete[] polar_neighbor_south;
   delete pbval;
   delete precon;
   if (pmy_mesh->multilevel == true) delete pmr;
@@ -691,7 +691,7 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
   }
 
   // polar neighbors
-  if (block_bcs[INNER_X2] == POLAR_BNDRY) {
+  if (block_bcs[INNER_X2] == POLAR_BNDRY||block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh->root_level;
     int num_north_polar_blocks = nrbx3 * (1 << level);
     for (int n = 0; n < num_north_polar_blocks; ++n) {
@@ -708,7 +708,7 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
       polar_neighbor_north[neibt->loc.lx3].north = true;
     }
   }
-  if (block_bcs[OUTER_X2] == POLAR_BNDRY) {
+  if (block_bcs[OUTER_X2] == POLAR_BNDRY||block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh->root_level;
     int num_south_polar_blocks = nrbx3 * (1 << level);
     for (int n = 0; n < num_south_polar_blocks; ++n) {

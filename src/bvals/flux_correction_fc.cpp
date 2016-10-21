@@ -1068,7 +1068,7 @@ void BoundaryValues::PolarSingleEMF(void)
 
   int i, j, k, nl;
   if(pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1){
-    if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY) {
+    if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE) {
       j=pmb->js;
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       if(pmb->block_size.nx3 > 1) {
@@ -1095,7 +1095,7 @@ void BoundaryValues::PolarSingleEMF(void)
       }
     }
 
-    if(pmb->block_bcs[OUTER_X2]==POLAR_BNDRY){
+    if(pmb->block_bcs[OUTER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE){
       j=pmb->je+1;
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       if(pmb->block_size.nx3 > 1) {
@@ -1256,7 +1256,8 @@ bool BoundaryValues::ReceiveEMFCorrection(void)
       SetEMFBoundaryPolar(emf_south_recv_, num_south_polar_blocks_, false);
     for (int n = 0; n < num_south_polar_blocks_; ++n)
       emf_south_flag_[n] = BNDRY_COMPLETED;
-    if (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY)
+    if (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY||
+        pmb->block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE)
       PolarSingleEMF();
   }
   return flag;

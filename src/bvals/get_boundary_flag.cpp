@@ -41,6 +41,8 @@ enum BoundaryFlag GetBoundaryFlag(std::string input_string)
     return PERIODIC_BNDRY;
   } else if (input_string == "polar") {
     return POLAR_BNDRY;
+  } else if (input_string == "polar_wedge") {
+    return POLAR_BNDRY_WEDGE;
   } else if (input_string == "none") {
     return BNDRY_UNDEF;
   } else {
