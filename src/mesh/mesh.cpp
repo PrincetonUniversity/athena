@@ -852,8 +852,11 @@ Mesh::~Mesh()
 
 void Mesh::OutputMeshStructure(int dim)
 {
-  // open 'mesh_structure.dat' file
+  RegionSize block_size;
+  enum BoundaryFlag block_bcs[6];
   FILE *fp;
+
+  // open 'mesh_structure.dat' file
   if(dim>=2) {
     if ((fp = fopen("mesh_structure.dat","wb")) == NULL) {
       std::cout << "### ERROR in function Mesh::OutputMeshStructure" << std::endl
@@ -913,6 +916,7 @@ void Mesh::OutputMeshStructure(int dim)
     Real dx=1.0/(Real)(1L<<i);
     for (int j=0; j<nbtotal; j++) {
       if(loclist[j].level==i) {
+        SetBlockSizeAndBoundaries(loclist[j], block_size, block_bcs);
         long int &lx1=loclist[j].lx1;
         long int &lx2=loclist[j].lx2;
         long int &lx3=loclist[j].lx3;
@@ -923,31 +927,31 @@ void Mesh::OutputMeshStructure(int dim)
         fprintf(fp,"#MeshBlock %d on rank=%d with cost=%g\n",j,ranklist[j],costlist[j]);
         fprintf(fp,"#  Logical level %d, location = (%ld %ld %ld)\n",ll,lx1,lx2,lx3);
         if(dim==2) {
-          fprintf(fp, "%g %g\n", lx1*dx,    lx2*dx);
-          fprintf(fp, "%g %g\n", lx1*dx+dx, lx2*dx);
-          fprintf(fp, "%g %g\n", lx1*dx+dx, lx2*dx+dx);
-          fprintf(fp, "%g %g\n", lx1*dx,    lx2*dx+dx);
-          fprintf(fp, "%g %g\n", lx1*dx,    lx2*dx);
+          fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2min);
+          fprintf(fp, "%g %g\n", block_size.x1max, block_size.x2min);
+          fprintf(fp, "%g %g\n", block_size.x1max, block_size.x2max);
+          fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2max);
+          fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2min);
           fprintf(fp, "\n\n");
         }
         if(dim==3) {
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx,    lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx,    lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx+dx, lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx+dx, lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx,    lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx,    lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx,    lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx,    lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx,    lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx+dx, lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx+dx, lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx+dx, lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx+dx, lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx+dx, lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx+dx, lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx,    lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx,    lx3*dx);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2min, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2max, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2max, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2min, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2min, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2min, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2max, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2max, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2max, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2max, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2max, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2max, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3min);
           fprintf(fp, "\n\n");
         }
       }
