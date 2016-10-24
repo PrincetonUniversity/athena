@@ -250,13 +250,13 @@ private:
   BValFunc_t BoundaryFunction_[6];
 
 //[JMSHI
-  ShearingBoundaryBlock shbb_; // shearing block properties: lists etc.
+  ShearingBoundaryBlock shbb_;  // shearing block properties: lists etc.
   Real x1size_,x2size_,x3size_; // mesh_size.x1max-mesh_size.x1min etc. [Lx,Ly,Lz]
-  Real Omega_0_, qshear_; // orbital freq and shear rate
-  int ShBoxCoord_; // shearcoordinate type: 1 = xy (default), 2 = xz
-  Real ssize_; // # of ghost cells in x-z plane
-  int joverlap_; // # of cells the shear runs over one block
-  Real eps_; // fraction part of the shear
+  Real Omega_0_, qshear_;       // orbital freq and shear rate
+  int ShBoxCoord_;              // shearcoordinate type: 1 = xy (default), 2 = xz
+  int joverlap_;                // # of cells the shear runs over one block
+  Real ssize_;                  // # of ghost cells in x-z plane
+  Real eps_;                    // fraction part of the shear
   int  send_inner_gid_[5], recv_inner_gid_[5]; // gid of meshblocks for communication
   int  send_inner_lid_[5], recv_inner_lid_[5]; // lid of meshblocks for communication
   int send_inner_rank_[5],recv_inner_rank_[5]; // rank of meshblocks for communication
@@ -266,46 +266,46 @@ private:
 
   // Hydro
   enum BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];
-  AthenaArray<Real>   shboxvar_inner_hydro_, shboxvar_outer_hydro_; // working arrays of remapped quantities
-  AthenaArray<Real>   flx_inner_hydro_, flx_outer_hydro_; // flux from conservative remapping
-  int  send_innersize_hydro_[4], recv_innersize_hydro_[4]; //MPI buffer sizes
-  Real *send_innerbuf_hydro_[4], *recv_innerbuf_hydro_[4]; //MPI send and recv buffers
+  AthenaArray<Real>  shboxvar_inner_hydro_, shboxvar_outer_hydro_; //working arrays of remapped quantities
+  AthenaArray<Real>  flx_inner_hydro_, flx_outer_hydro_;   // flux from conservative remapping
+  int  send_innersize_hydro_[4], recv_innersize_hydro_[4]; // buffer sizes
+  Real *send_innerbuf_hydro_[4], *recv_innerbuf_hydro_[4]; // send and recv buffers
 #ifdef MPI_PARALLEL
-  MPI_Request rq_innersend_hydro_[4],  rq_innerrecv_hydro_[4];//MPI request for send and recv msgs
+  MPI_Request rq_innersend_hydro_[4], rq_innerrecv_hydro_[4]; // MPI request for send and recv msgs
 #endif
-  int  send_outersize_hydro_[4], recv_outersize_hydro_[4]; //MPI buffer sizes
-  Real *send_outerbuf_hydro_[4], *recv_outerbuf_hydro_[4]; //MPI send and recv buffers
+  int  send_outersize_hydro_[4], recv_outersize_hydro_[4]; // buffer sizes
+  Real *send_outerbuf_hydro_[4], *recv_outerbuf_hydro_[4]; // send and recv buffers
 #ifdef MPI_PARALLEL
-  MPI_Request rq_outersend_hydro_[4],  rq_outerrecv_hydro_[4];//MPI request for send and recv msgs
+  MPI_Request rq_outersend_hydro_[4], rq_outerrecv_hydro_[4]; // MPI request for send and recv msgs
 #endif
   // Field
   enum BoundaryStatus shbox_inner_field_flag_[4], shbox_outer_field_flag_[4];
   FaceField shboxvar_inner_field_, shboxvar_outer_field_; // working arrays of remapped quantities
   FaceField flx_inner_field_, flx_outer_field_; // flux from conservative remapping
-  int  send_innersize_field_[4], recv_innersize_field_[4]; //MPI buffer sizes
-  Real *send_innerbuf_field_[4], *recv_innerbuf_field_[4]; //MPI send and recv buffers
+  int  send_innersize_field_[4], recv_innersize_field_[4]; // buffer sizes
+  Real *send_innerbuf_field_[4], *recv_innerbuf_field_[4]; // send and recv buffers
 #ifdef MPI_PARALLEL
-  MPI_Request rq_innersend_field_[4],  rq_innerrecv_field_[4];//MPI request for send and recv msgs
+  MPI_Request rq_innersend_field_[4], rq_innerrecv_field_[4];// MPI request for send and recv msgs
 #endif
-  int  send_outersize_field_[4], recv_outersize_field_[4]; //MPI buffer sizes
-  Real *send_outerbuf_field_[4], *recv_outerbuf_field_[4]; //MPI send and recv buffers
+  int  send_outersize_field_[4], recv_outersize_field_[4]; // buffer sizes
+  Real *send_outerbuf_field_[4], *recv_outerbuf_field_[4]; // send and recv buffers
 #ifdef MPI_PARALLEL
-  MPI_Request rq_outersend_field_[4],  rq_outerrecv_field_[4];//MPI request for send and recv msgs
+  MPI_Request rq_outersend_field_[4], rq_outerrecv_field_[4];//MPI request for send and recv msgs
 #endif
   // EMF correction
   enum BoundaryStatus shbox_inner_emf_flag_[5], shbox_outer_emf_flag_[5];
   EdgeField shboxvar_inner_emf_, shboxvar_outer_emf_; // working arrays of remapped quantities
   EdgeField shboxmap_inner_emf_, shboxmap_outer_emf_; // working arrays of remapped quantities
   EdgeField flx_inner_emf_, flx_outer_emf_; // flux from conservative remapping
-  int  send_innersize_emf_[5], recv_innersize_emf_[5]; //MPI buffer sizes
-  Real *send_innerbuf_emf_[5], *recv_innerbuf_emf_[5]; //MPI send and recv buffers
+  int  send_innersize_emf_[5], recv_innersize_emf_[5]; // buffer sizes
+  Real *send_innerbuf_emf_[5], *recv_innerbuf_emf_[5]; // send and recv buffers
 #ifdef MPI_PARALLEL
-  MPI_Request rq_innersend_emf_[5],  rq_innerrecv_emf_[5];//MPI request for send and recv msgs
+  MPI_Request rq_innersend_emf_[5],  rq_innerrecv_emf_[5];// MPI request for send and recv msgs
 #endif
-  int  send_outersize_emf_[5], recv_outersize_emf_[5]; //MPI buffer sizes
-  Real *send_outerbuf_emf_[5], *recv_outerbuf_emf_[5]; //MPI send and recv buffers
+  int  send_outersize_emf_[5], recv_outersize_emf_[5]; // buffer sizes
+  Real *send_outerbuf_emf_[5], *recv_outerbuf_emf_[5]; // send and recv buffers
 #ifdef MPI_PARALLEL
-  MPI_Request rq_outersend_emf_[5],  rq_outerrecv_emf_[5];//MPI request for send and recv msgs
+  MPI_Request rq_outersend_emf_[5],  rq_outerrecv_emf_[5];// MPI request for send and recv msgs
 #endif
 
 //JMSHI]

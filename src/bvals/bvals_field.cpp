@@ -159,8 +159,6 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffersForInit(FaceField &src, 
 
 void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src, bool conserved_values)
 {
-  //std::cout << "do some SendFieldShearingboxBoundaryBuffers\n" << std::endl;
-
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
   Mesh *pmesh=pmb->pmy_mesh;
@@ -241,7 +239,6 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src, bool co
 #ifdef MPI_PARALLEL
           int tag=CreateBvalsMPITag(send_inner_lid_[n], TAG_SHBOX_FIELD, n); //bufid = n
           MPI_Isend(send_innerbuf_field_[n],send_innersize_field_[n],MPI_ATHENA_REAL,send_inner_rank_[n],tag,MPI_COMM_WORLD, &rq_innersend_field_[n]);
-	     // std::cout << "on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << "send_inner[1] tag= " << tag << "(" << Globals::my_rank << "->" << send_inner_rank_[1] << ")" << std::endl;
 #endif
 	   }
 	 }}
@@ -312,14 +309,6 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src, bool co
 #ifdef MPI_PARALLEL
           int tag=CreateBvalsMPITag(send_outer_lid_[n], TAG_SHBOX_FIELD, n+offset); //bufid for outer(inner): 2(0) and 3(1)
           MPI_Isend(send_outerbuf_field_[n],send_outersize_field_[n],MPI_ATHENA_REAL,send_outer_rank_[n],tag,MPI_COMM_WORLD, &rq_outersend_field_[n]);
-	      //std::cout << "on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << "send_outer[1] tag= " << tag << "(" << Globals::my_rank << "->" << send_outer_rank_[1] << ")" << std::endl;
-		    //int nmb=1;
-			//if(pmb->gid==nmb) {
-	        //  std::cout << "[start_send_field] on cycle = " << pmesh->ncycle << "gid = "
-		    //  << pmb->gid  << " tag= " << tag << " bufsize= " << send_outersize_field_[n] << " (" <<
-			//  Globals::my_rank << "->" << send_outer_rank_[n] << ") rq_outersend_field[" <<
-			//  n << "]= " << rq_outerrecv_field_[n] << std::endl;
-			//}
 #endif
 	    }
       }}
@@ -432,7 +421,6 @@ void BoundaryValues::SetFieldShearingboxBoundarySameLevel(FaceField &dst, Real *
 void BoundaryValues::ReceiveFieldShearingboxBoundaryBuffersWithWait(FaceField &dst, bool conserved_value)
 {
   MeshBlock *pmb=pmy_mblock_;
-  //std::cout << "do some ReceiveFieldShearingboxBoundaryBuffersWithWait\n" << std::endl;
 
   if(shbb_.inner == true) { // check inner boundaries
 #ifdef MPI_PARALLEL
@@ -464,7 +452,6 @@ bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst)
   MeshBlock *pmb=pmy_mblock_;
   Mesh *pmesh=pmb->pmy_mesh;
   bool flagi=true, flago=true;
-  //std::cout << "do some ReceiveFieldShearingboxBoundaryBuffers\n" << std::endl;
 
   if(shbb_.inner == true) { // check inner boundaries
 	for(int n=0; n<4; n++) {
@@ -483,14 +470,11 @@ bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst)
             flagi=false;
             continue;
           }
-	      //std::cout << "[recv_hyd] on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << " rank= " << Globals::my_rank << "rq_innerrecv[" << n << "]" << rq_innerrecv_hydro_[n] << std::endl;
 		  shbox_inner_field_flag_[n] = BNDRY_ARRIVED;
 #endif
 	    }
       }
 	  // set dst if boundary arrived
-      //if(nb.level==pmb->loc.level)
-      //SetFieldShearingboxBoundarySameLevel(shboxvar_inner_field_[n],recv_innerbuf_field_[n],n);
       SetFieldShearingboxBoundarySameLevel(dst,recv_innerbuf_field_[n],n);
       shbox_inner_field_flag_[n] = BNDRY_COMPLETED; // completed
     } // loop over recv[0] to recv[3]
@@ -514,13 +498,10 @@ bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst)
             flago=false;
             continue;
           }
-	      //std::cout << "[recv_hyd] on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << " rank= " << Globals::my_rank << "rq_outerrecv[" << n << "]" << rq_outerrecv_hydro_[n] << std::endl;
 		  shbox_outer_field_flag_[n] = BNDRY_ARRIVED;
 #endif
 	    }
       }
-      //if(nb.level==pmb->loc.level)
-      //SetFieldShearingboxBoundarySameLevel(shboxvar_outer_field_[n],recv_outerbuf_field_[n],n+offset);
       SetFieldShearingboxBoundarySameLevel(dst,recv_outerbuf_field_[n],n+offset);
       shbox_outer_field_flag_[n] = BNDRY_COMPLETED; // completed
     } // loop over recv[0] and recv[1]

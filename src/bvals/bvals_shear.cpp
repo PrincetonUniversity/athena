@@ -130,8 +130,6 @@ void BoundaryValues::LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb
 void BoundaryValues::SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real> &src,
                                               bool conserved_values)
 {
-  //std::cout << "do some SendHydroShearingboxBoundaryBuffersForInit\n" << std::endl;
-
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
   Mesh *pmesh=pmb->pmy_mesh;
@@ -198,8 +196,6 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real
 void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
                                               bool conserved_values)
 {
-  //std::cout << "do some SendHydroShearingboxBoundaryBuffers\n" << std::endl;
-
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
   Mesh *pmesh=pmb->pmy_mesh;
@@ -218,7 +214,6 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
   Real qomL = qshear_*Omega_0_*x1size_;
   int ssize = ssize_*NHYDRO;
 
-  //std::cout << "on meshblock "<< pmb->gid << " nghost= " << NGHOST << std::endl;
   if (shbb_.inner == true) {
     int ib = is-NGHOST;
 	int ii;
@@ -262,7 +257,6 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
 #ifdef MPI_PARALLEL
           int tag=CreateBvalsMPITag(send_inner_lid_[n], TAG_SHBOX_HYDRO, n); //bufid = n
           MPI_Isend(send_innerbuf_hydro_[n],send_innersize_hydro_[n]*ssize,MPI_ATHENA_REAL,send_inner_rank_[n],tag,MPI_COMM_WORLD, &rq_innersend_hydro_[n]);
-	     // std::cout << "on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << "send_inner[1] tag= " << tag << "(" << Globals::my_rank << "->" << send_inner_rank_[1] << ")" << std::endl;
 #endif
 	   }
 	 }}
@@ -313,7 +307,6 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
 #ifdef MPI_PARALLEL
           int tag=CreateBvalsMPITag(send_outer_lid_[n], TAG_SHBOX_HYDRO, n+offset); //bufid for outer(inner): 2(0) and 3(1)
           MPI_Isend(send_outerbuf_hydro_[n],send_outersize_hydro_[n]*ssize,MPI_ATHENA_REAL,send_outer_rank_[n],tag,MPI_COMM_WORLD, &rq_outersend_hydro_[n]);
-	      //std::cout << "on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << "send_outer[1] tag= " << tag << "(" << Globals::my_rank << "->" << send_outer_rank_[1] << ")" << std::endl;
 #endif
 	    }
       }}
@@ -403,7 +396,6 @@ void BoundaryValues::SetHydroShearingboxBoundarySameLevel(AthenaArray<Real> &dst
 void BoundaryValues::ReceiveHydroShearingboxBoundaryBuffersWithWait(AthenaArray<Real> &dst, bool conserved_value)
 {
   MeshBlock *pmb=pmy_mblock_;
-  //std::cout << "do some ReceiveHydroShearingboxBoundaryBuffersWithWait\n" << std::endl;
 
   if(shbb_.inner == true) { // check inner boundaries
 #ifdef MPI_PARALLEL
@@ -454,14 +446,11 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
             flagi=false;
             continue;
           }
-	      //std::cout << "[recv_hyd] on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << " rank= " << Globals::my_rank << "rq_innerrecv[" << n << "]" << rq_innerrecv_hydro_[n] << std::endl;
 		  shbox_inner_hydro_flag_[n] = BNDRY_ARRIVED;
 #endif
 	    }
       }
 	  // set dst if boundary arrived
-      //if(nb.level==pmb->loc.level)
-      //SetHydroShearingboxBoundarySameLevel(shboxvar_inner_hydro_[n],recv_innerbuf_hydro_[n],n);
       SetHydroShearingboxBoundarySameLevel(dst,recv_innerbuf_hydro_[n],n);
       shbox_inner_hydro_flag_[n] = BNDRY_COMPLETED; // completed
     } // loop over recv[0] to recv[3]
@@ -485,13 +474,10 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
             flago=false;
             continue;
           }
-	      //std::cout << "[recv_hyd] on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << " rank= " << Globals::my_rank << "rq_outerrecv[" << n << "]" << rq_outerrecv_hydro_[n] << std::endl;
 		  shbox_outer_hydro_flag_[n] = BNDRY_ARRIVED;
 #endif
 	    }
       }
-      //if(nb.level==pmb->loc.level)
-      //SetHydroShearingboxBoundarySameLevel(shboxvar_outer_hydro_[n],recv_outerbuf_hydro_[n],n+offset);
       SetHydroShearingboxBoundarySameLevel(dst,recv_outerbuf_hydro_[n],n+offset);
       shbox_outer_hydro_flag_[n] = BNDRY_COMPLETED; // completed
     } // loop over recv[0] and recv[1]
@@ -512,7 +498,6 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
 void BoundaryValues::FindShearBlock(const int step)
 //void BoundaryValues::FindShearBlock(void)
 {
-  //std::cout << "update the send_to and get_from shearing blocks \n" << std::endl;
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
   Mesh *pmesh=pmb->pmy_mesh;

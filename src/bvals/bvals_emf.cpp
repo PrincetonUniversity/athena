@@ -181,8 +181,6 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrectionForInit(void)
 
 void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void)
 {
-  //std::cout << "do some SendEMFShearingboxBoundaryCorrection" << std::endl;
-
   MeshBlock *pmb=pmy_mblock_;
   Coordinates *pco=pmb->pcoord;
   Mesh *pmesh=pmb->pmy_mesh;
@@ -207,12 +205,6 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void)
 	  for(int j=js; j<=je; j++)
 		shboxvar_inner_emf_.x2e(k,j) *= 0.5;
 	}
-	// get rid of v_shear*Bx from e3
-    //for(int k=ks; k<=ke; k++) {
-	//  for(int j=js; j<=je+1; j++)
-    //    shboxvar_inner_emf_.x3e(k,j) += 0.5*qomL*(bx1(k,j,ie+1)+bx1(k,j-1,ie+1));
-    //}
-
 
 	// step 2. -- load sendbuf; memcpy to recvbuf if on same rank, post MPI_Isend otherwise
 	for(int n=0; n<5; n++) {
@@ -227,7 +219,6 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void)
 #ifdef MPI_PARALLEL
           int tag=CreateBvalsMPITag(send_inner_lid_[n], TAG_SHBOX_EMF, n); //bufid = n
           MPI_Isend(send_innerbuf_emf_[n],send_innersize_emf_[n],MPI_ATHENA_REAL,send_inner_rank_[n],tag,MPI_COMM_WORLD, &rq_innersend_emf_[n]);
-	     // std::cout << "on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << "send_inner[1] tag= " << tag << "(" << Globals::my_rank << "->" << send_inner_rank_[1] << ")" << std::endl;
 #endif
 	   }
 	}}
@@ -245,12 +236,6 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void)
 	  for(int j=js; j<=je; j++)
 		shboxvar_outer_emf_.x2e(k,j) *= 0.5;
 	}
-	// get rid of v_shear*Bx from e3
-    //for(int k=ks; k<=ke; k++) {
-	//  for(int j=js; j<=je+1; j++)
-    //    shboxvar_outer_emf_.x3e(k,j) -= 0.5*qomL*(bx1(k,j,is)+bx1(k,j-1,is));
-    //}
-
 
 	// step 2. -- load sendbuf; memcpy to recvbuf if on same rank, post MPI_Isend otherwise
 	int offset = 5;
@@ -266,7 +251,6 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void)
 #ifdef MPI_PARALLEL
           int tag=CreateBvalsMPITag(send_outer_lid_[n], TAG_SHBOX_EMF, n+offset); //bufid for outer(inner): 2(0) and 3(1)
           MPI_Isend(send_outerbuf_emf_[n],send_outersize_emf_[n],MPI_ATHENA_REAL,send_outer_rank_[n],tag,MPI_COMM_WORLD, &rq_outersend_emf_[n]);
-	      //std::cout << "on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << "send_outer[1] tag= " << tag << "(" << Globals::my_rank << "->" << send_outer_rank_[1] << ")" << std::endl;
 #endif
 	    }
     }}
@@ -407,7 +391,6 @@ bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void)
   MeshBlock *pmb=pmy_mblock_;
   Mesh *pmesh=pmb->pmy_mesh;
   bool flagi=true, flago=true;
-  //std::cout << "do some ReceiveFieldShearingboxBoundaryBuffers\n" << std::endl;
 
   if(shbb_.inner == true) { // check inner boundaries
 	for(int n=0; n<5; n++) {
@@ -426,7 +409,6 @@ bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void)
             flagi=false;
             continue;
           }
-	      //std::cout << "[recv_hyd] on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << " rank= " << Globals::my_rank << "rq_innerrecv[" << n << "]" << rq_innerrecv_hydro_[n] << std::endl;
 		  shbox_inner_emf_flag_[n] = BNDRY_ARRIVED;
 #endif
 	    }
@@ -455,7 +437,6 @@ bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void)
             flago=false;
             continue;
           }
-	      //std::cout << "[recv_hyd] on cycle = " << pmesh->ncycle << "gid = " << pmb->gid << " rank= " << Globals::my_rank << "rq_outerrecv[" << n << "]" << rq_outerrecv_hydro_[n] << std::endl;
 		  shbox_outer_emf_flag_[n] = BNDRY_ARRIVED;
 #endif
 	    }

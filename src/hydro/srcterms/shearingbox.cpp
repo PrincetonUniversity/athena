@@ -58,31 +58,30 @@ void HydroSourceTerms::ShearingBoxSourceTerms(const Real dt, const AthenaArray<R
         for (int i=pmb->is; i<=pmb->ie; ++i) {
           Real den = prim(IDN,k,j,i);
           phic = UnstratifiedDisk(pmb->pcoord->x1v(i),
-		  						pmb->pcoord->x2v(j),
-		  						pmb->pcoord->x3v(k));
+								pmb->pcoord->x2v(j),
+								pmb->pcoord->x3v(k));
           phil = UnstratifiedDisk(pmb->pcoord->x1f(i),
-		  						pmb->pcoord->x2v(j),
-		  						pmb->pcoord->x3v(k));
+								pmb->pcoord->x2v(j),
+								pmb->pcoord->x3v(k));
           phir = UnstratifiedDisk(pmb->pcoord->x1f(i+1),
-		  						pmb->pcoord->x2v(j),
-		  						pmb->pcoord->x3v(k));
+								pmb->pcoord->x2v(j),
+								pmb->pcoord->x3v(k));
 // 1) S_M = -rho*grad(Phi); S_E = -rho*v*grad(Phi)
 //    dM1/dt = 2q\rho\Omega^2 x
 //    dE /dt = 2q\Omega^2 (\rho v_x)
 // 2) Coriolis forces:
 //    dM1/dt = 2\Omega(\rho v_y)
 //    dM2/dt = -2\Omega(\rho v_x)
-//
 
 //		  cons(IM1,k,j,i) -= dt*((phir-phil)*den/pmb->pcoord->dx1v(i) -
 //			                   2.0*Omega_0_*den*prim(IVY,k,j,i));
 		  cons(IM1,k,j,i) += dt*(2.0*qshear_*Omega_0_*Omega_0_*den*pmb->pcoord->x1v(i) +
-		  	                   2.0*Omega_0_*den*prim(IVY,k,j,i));
+			                   2.0*Omega_0_*den*prim(IVY,k,j,i));
 		  cons(IM2,k,j,i) -= dt*2.0*Omega_0_*den*prim(IVX,k,j,i);
           if (NON_BAROTROPIC_EOS) {
-		  	  cons(IEN,k,j,i) -= dt*(flux[X1DIR](IDN,k,j,i)*(phic-phil) +
-			 					     flux[X1DIR](IDN,k,j,i+1)*(phir-phic))
-			                        /pmb->pcoord->dx1v(i);
+			  cons(IEN,k,j,i) -= dt*(flux[X1DIR](IDN,k,j,i)*(phic-phil) +
+							     flux[X1DIR](IDN,k,j,i+1)*(phir-phic))
+			                     /pmb->pcoord->dx1v(i);
 		  }
         }
     }}
@@ -94,21 +93,21 @@ void HydroSourceTerms::ShearingBoxSourceTerms(const Real dt, const AthenaArray<R
           for (int i=pmb->is; i<=pmb->ie; ++i) {
             Real den = prim(IDN,ks,j,i);
             phic = UnstratifiedDisk(pmb->pcoord->x1v(i),
-		      					pmb->pcoord->x2v(j),
-		      					pmb->pcoord->x3v(ks));
+							        pmb->pcoord->x2v(j),
+							        pmb->pcoord->x3v(ks));
             phil = UnstratifiedDisk(pmb->pcoord->x1f(i),
-		      					pmb->pcoord->x2v(j),
-		      					pmb->pcoord->x3v(ks));
+							        pmb->pcoord->x2v(j),
+							        pmb->pcoord->x3v(ks));
             phir = UnstratifiedDisk(pmb->pcoord->x1f(i+1),
-		      					pmb->pcoord->x2v(j),
-		      					pmb->pcoord->x3v(ks));
+							        pmb->pcoord->x2v(j),
+							        pmb->pcoord->x3v(ks));
 		    cons(IM1,ks,j,i) += dt*(2.0*qshear_*Omega_0_*Omega_0_*den*pmb->pcoord->x1v(i) +
 		                         2.0*Omega_0_*den*prim(IVZ,ks,j,i));
 		    cons(IM3,ks,j,i) -= dt*2.0*Omega_0_*den*prim(IVX,ks,j,i);
             if (NON_BAROTROPIC_EOS) {
 		        cons(IEN,ks,j,i) -= dt*(flux[X1DIR](IDN,ks,j,i)*(phic-phil) +
-		      				     flux[X1DIR](IDN,ks,j,i+1)*(phir-phic))
-		                          /pmb->pcoord->dx1v(i);
+						            flux[X1DIR](IDN,ks,j,i+1)*(phir-phic))
+		                            /pmb->pcoord->dx1v(i);
 		  }
         }
       }
