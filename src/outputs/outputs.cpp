@@ -870,21 +870,38 @@ void OutputType::CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Re
 {
   Real n1x,n1y,n1z,n2x,n2y,n2z,n3x,n3y,n3z;
   if(COORDINATE_SYSTEM == "spherical_polar") {
-    for(int k=out_ks; k<=out_ke; k++) {
-      n3x=-sin(pco->x3v(k));
-      n3y=cos(pco->x3v(k));
-      n3z=0.0;
-      for(int j=out_js; j<=out_je; j++) {
-        n1x=sin(pco->x2v(j))*cos(pco->x3v(k));
-        n1y=sin(pco->x2v(j))*sin(pco->x3v(k));
-        n1z=cos(pco->x2v(j));
-        n2x=cos(pco->x2v(j))*cos(pco->x3v(k));
-        n2y=cos(pco->x2v(j))*sin(pco->x3v(k));
-        n2z=-sin(pco->x2v(j));
-        for(int i=out_is; i<=out_ie; i++) {
-          dst(0,k,j,i)=src(0,k,j,i)*n1x+src(1,k,j,i)*n2x+src(2,k,j,i)*n3x;
-          dst(1,k,j,i)=src(0,k,j,i)*n1y+src(1,k,j,i)*n2y+src(2,k,j,i)*n3y;
-          dst(2,k,j,i)=src(0,k,j,i)*n1z+src(1,k,j,i)*n2z+src(2,k,j,i)*n3z;
+    if(out_ks==out_ke) { // 2D
+      for(int k=out_ks; k<=out_ke; k++) {
+        for(int j=out_js; j<=out_je; j++) {
+          n1x=sin(pco->x2v(j));
+          n1z=cos(pco->x2v(j));
+          n2x=cos(pco->x2v(j));
+          n2z=-sin(pco->x2v(j));
+          for(int i=out_is; i<=out_ie; i++) {
+            dst(0,k,j,i)=src(0,k,j,i)*n1x+src(1,k,j,i)*n2x;
+            dst(1,k,j,i)=src(2,k,j,i);
+            dst(2,k,j,i)=src(0,k,j,i)*n1z+src(1,k,j,i)*n2z;
+          }
+        }
+      }
+    }
+    else { // 3D
+      for(int k=out_ks; k<=out_ke; k++) {
+        n3x=-sin(pco->x3v(k));
+        n3y=cos(pco->x3v(k));
+        n3z=0.0;
+        for(int j=out_js; j<=out_je; j++) {
+          n1x=sin(pco->x2v(j))*cos(pco->x3v(k));
+          n1y=sin(pco->x2v(j))*sin(pco->x3v(k));
+          n1z=cos(pco->x2v(j));
+          n2x=cos(pco->x2v(j))*cos(pco->x3v(k));
+          n2y=cos(pco->x2v(j))*sin(pco->x3v(k));
+          n2z=-sin(pco->x2v(j));
+          for(int i=out_is; i<=out_ie; i++) {
+            dst(0,k,j,i)=src(0,k,j,i)*n1x+src(1,k,j,i)*n2x+src(2,k,j,i)*n3x;
+            dst(1,k,j,i)=src(0,k,j,i)*n1y+src(1,k,j,i)*n2y+src(2,k,j,i)*n3y;
+            dst(2,k,j,i)=src(0,k,j,i)*n1z+src(1,k,j,i)*n2z+src(2,k,j,i)*n3z;
+          }
         }
       }
     }
