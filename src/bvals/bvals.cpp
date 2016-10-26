@@ -57,7 +57,7 @@ int BoundaryValues::bufid[56];
 
 BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 {
-  pmy_mblock_ = pmb;
+  pmy_block_ = pmb;
   int cng=pmb->cnghost, cng1=0, cng2=0, cng3=0;
   if(pmb->block_size.nx2>1) cng1=cng, cng2=cng;
   if(pmb->block_size.nx3>1) cng3=cng;
@@ -477,7 +477,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 
 BoundaryValues::~BoundaryValues()
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   for(int i=0;i<pmb->pmy_mesh->maxneighbor_;i++) {
     delete [] hydro_send_[i];
     delete [] hydro_recv_[i];
@@ -548,7 +548,7 @@ BoundaryValues::~BoundaryValues()
 //  \brief Initialize MPI requests
 void BoundaryValues::Initialize(void)
 {
-  MeshBlock* pmb=pmy_mblock_;
+  MeshBlock* pmb=pmy_block_;
   int myox1, myox2, myox3;
   int tag;
   int cng, cng1, cng2, cng3;
@@ -859,7 +859,7 @@ void BoundaryValues::Initialize(void)
 //  \brief checks if the boundary conditions are correctly enrolled
 void BoundaryValues::CheckBoundary(void)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   for(int i=0;i<nface_;i++) {
     if(pmb->block_bcs[i]==USER_BNDRY) {
       if(BoundaryFunction_[i]==NULL) {
@@ -879,7 +879,7 @@ void BoundaryValues::CheckBoundary(void)
 void BoundaryValues::StartReceivingForInit(bool cons_and_field)
 {
 #ifdef MPI_PARALLEL
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   for(int n=0;n<pmb->nneighbor;n++) {
     NeighborBlock& nb = pmb->neighbor[n];
     if(nb.rank!=Globals::my_rank) { 
@@ -904,7 +904,7 @@ void BoundaryValues::StartReceivingAll(void)
 {
   firsttime_=true;
 #ifdef MPI_PARALLEL
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   int mylevel=pmb->loc.level;
   for(int n=0;n<pmb->nneighbor;n++) {
     NeighborBlock& nb = pmb->neighbor[n];
@@ -945,7 +945,7 @@ void BoundaryValues::StartReceivingAll(void)
 //  \brief clean up the boundary flags for initialization
 void BoundaryValues::ClearBoundaryForInit(bool cons_and_field)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
 
   // Note step==0 corresponds to initial exchange of conserved variables, while step==1
   // corresponds to primitives sent only in the case of GR with refinement
@@ -979,7 +979,7 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field)
 //  \brief clean up the boundary flags after each loop
 void BoundaryValues::ClearBoundaryAll(void)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
 
   // Clear non-polar boundary communications
   for(int n=0;n<pmb->nneighbor;n++) {
@@ -1043,7 +1043,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
                      AthenaArray<Real> &cdst, FaceField &bfdst, AthenaArray<Real> &bcdst,
                      const Real time, const Real dt)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   int bis=pmb->is-NGHOST, bie=pmb->ie+NGHOST, bjs=pmb->js, bje=pmb->je,
       bks=pmb->ks, bke=pmb->ke;
@@ -1143,7 +1143,7 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
      AthenaArray<Real> &cdst, FaceField &bfdst, AthenaArray<Real> &bcdst,
      const Real time, const Real dt)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   MeshRefinement *pmr=pmb->pmr;
   int mox1, mox2, mox3;
   long int &lx1=pmb->loc.lx1;

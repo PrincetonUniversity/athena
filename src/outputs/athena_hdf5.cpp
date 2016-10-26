@@ -111,8 +111,12 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
     num_variables = new int[num_datasets];
     int n_dataset = 0;
     num_variables[n_dataset++] = NHYDRO;
+    if(output_params.cartesian_vector)
+      num_variables[n_dataset-1] += 3;
     if (MAGNETIC_FIELDS_ENABLED) {
       num_variables[n_dataset++] = 3;
+      if(output_params.cartesian_vector)
+        num_variables[n_dataset-1] += 3;
     }
   }
   else {

@@ -35,9 +35,9 @@
 //! \fn  void Field::ComputeCornerEMFs
 //  \brief
 
-void Field::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w, 
-  AthenaArray<Real> &bcc)
+void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc)
 {
+  MeshBlock *pmb = pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
@@ -215,7 +215,7 @@ void Field::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w,
     for (int k=ks-1; k<=ke+1; ++k) {
     for (int j=js; j<=je; ++j) {
       if (GENERAL_RELATIVITY)
-        pmb->pcoord->CellMetric(k, j, is, ie, g_, gi_);
+        pmb->pcoord->CellMetric(k, j, is-1, ie+1, g_, gi_);
 #pragma simd
       for (int i=is-1; i<=ie+1; ++i) {
         if (GENERAL_RELATIVITY)

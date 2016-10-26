@@ -32,16 +32,15 @@ public:
   AthenaArray<Real> u,w;      // conserved and primitive variables
   AthenaArray<Real> u1,w1;    // conserved and primitive variables at intermediate step
   AthenaArray<Real> flux[3];  // conserved and primitive variables
-  AthenaArray<Real> g, g_inv; // metric and its inverse
 
   HydroSourceTerms *psrc;
 
   // functions
-  Real NewBlockTimeStep(MeshBlock *pmb);    // computes new timestep on a MeshBlock
-  void AddFluxDivergenceToAverage(MeshBlock *pmb,AthenaArray<Real> &u1, 
+  Real NewBlockTimeStep(void);    // computes new timestep on a MeshBlock
+  void AddFluxDivergenceToAverage(AthenaArray<Real> &u1, 
     AthenaArray<Real> &u2, AthenaArray<Real> &w, AthenaArray<Real> &bcc,
     IntegratorWeight wght, AthenaArray<Real> &u_out);
-  void CalculateFluxes(MeshBlock *pmb, AthenaArray<Real> &w, FaceField &b,
+  void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     AthenaArray<Real> &bcc, int order);
   void RiemannSolver(const int k, const int j, const int il, const int iu,
     const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
@@ -61,5 +60,7 @@ private:
   AthenaArray<Real> lambdas_m_r_;  // most negative wavespeeds in right state
   AthenaArray<Real> g_, gi_;       // metric and inverse, for some GR Riemann solvers
   AthenaArray<Real> cons_;         // conserved state, for some GR Riemann solvers
+
+  TimeStepFunc_t UserTimeStep_;
 };
 #endif // HYDRO_HPP

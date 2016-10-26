@@ -166,7 +166,7 @@ public:
   bool ReceiveEMFCorrection(void);
 
 private:
-  MeshBlock *pmy_mblock_;  // ptr to MeshBlock containing this BVals
+  MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals
 
   int nface_, nedge_;
   bool edge_flag_[12];

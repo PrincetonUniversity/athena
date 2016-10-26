@@ -205,7 +205,7 @@ static void VelProfileCyl(const Real rad, const Real phi, const Real z,
     v1=0.0;
     v2=vel;
     v3=0.0;
-  }else if(COORDINATE_SYSTEM == "spherical+polar"){
+  }else if(COORDINATE_SYSTEM == "spherical_polar"){
     v1=0.0;
     v2=0.0;
     v3=vel;

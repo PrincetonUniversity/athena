@@ -43,11 +43,12 @@
 #endif
 
 //--------------------------------------------------------------------------------------
-// \!fn 
-// \brief
+// \!fn Real Hydro::NewBlockTimeStep(void)
+// \brief calculate the minimum timestep within a MeshBlock 
 
-Real Hydro::NewBlockTimeStep(MeshBlock *pmb)
+Real Hydro::NewBlockTimeStep(void)
 {
+  MeshBlock *pmb=pmy_block;
   int tid=0;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
@@ -91,36 +92,36 @@ Real Hydro::NewBlockTimeStep(MeshBlock *pmb)
 
         if (RELATIVISTIC_DYNAMICS) {
 
-          dt1(i) = pmy_block->pcoord->CenterWidth1(k,j,i);
-          dt2(i) = pmy_block->pcoord->CenterWidth2(k,j,i);
-          dt3(i) = pmy_block->pcoord->CenterWidth3(k,j,i);
+          dt1(i) = pmb->pcoord->CenterWidth1(k,j,i);
+          dt2(i) = pmb->pcoord->CenterWidth2(k,j,i);
+          dt3(i) = pmb->pcoord->CenterWidth3(k,j,i);
 
         } else if (MAGNETIC_FIELDS_ENABLED) {
 
           Real bx = bcc(IB1,k,j,i) + fabs(b_x1f(k,j,i)-bcc(IB1,k,j,i));
           wi[IBY] = bcc(IB2,k,j,i);
           wi[IBZ] = bcc(IB3,k,j,i);
-          Real cf = pmy_block->peos->FastMagnetosonicSpeed(wi,bx);
-          dt1(i)= pmy_block->pcoord->CenterWidth1(k,j,i)/(fabs(wi[IVX]) + cf);
+          Real cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
+          dt1(i)= pmb->pcoord->CenterWidth1(k,j,i)/(fabs(wi[IVX]) + cf);
 
           wi[IBY] = bcc(IB3,k,j,i);
           wi[IBZ] = bcc(IB1,k,j,i);
           bx = bcc(IB2,k,j,i) + fabs(b_x2f(k,j,i)-bcc(IB2,k,j,i));
-          cf = pmy_block->peos->FastMagnetosonicSpeed(wi,bx);
-          dt2(i)= pmy_block->pcoord->CenterWidth2(k,j,i)/(fabs(wi[IVY]) + cf);
+          cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
+          dt2(i)= pmb->pcoord->CenterWidth2(k,j,i)/(fabs(wi[IVY]) + cf);
 
           wi[IBY] = bcc(IB1,k,j,i);
           wi[IBZ] = bcc(IB2,k,j,i);
           bx = bcc(IB3,k,j,i) + fabs(b_x3f(k,j,i)-bcc(IB3,k,j,i));
-          cf = pmy_block->peos->FastMagnetosonicSpeed(wi,bx);
-          dt3(i)= pmy_block->pcoord->CenterWidth3(k,j,i)/(fabs(wi[IVZ]) + cf);
+          cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
+          dt3(i)= pmb->pcoord->CenterWidth3(k,j,i)/(fabs(wi[IVZ]) + cf);
 
         } else {
 
-          Real cs = pmy_block->peos->SoundSpeed(wi);
-          dt1(i)= pmy_block->pcoord->CenterWidth1(k,j,i)/(fabs(wi[IVX]) + cs);
-          dt2(i)= pmy_block->pcoord->CenterWidth2(k,j,i)/(fabs(wi[IVY]) + cs);
-          dt3(i)= pmy_block->pcoord->CenterWidth3(k,j,i)/(fabs(wi[IVZ]) + cs);
+          Real cs = pmb->peos->SoundSpeed(wi);
+          dt1(i)= pmb->pcoord->CenterWidth1(k,j,i)/(fabs(wi[IVX]) + cs);
+          dt2(i)= pmb->pcoord->CenterWidth2(k,j,i)/(fabs(wi[IVY]) + cs);
+          dt3(i)= pmb->pcoord->CenterWidth3(k,j,i)/(fabs(wi[IVZ]) + cs);
 
         }
       }
@@ -158,6 +159,11 @@ Real Hydro::NewBlockTimeStep(MeshBlock *pmb)
 // compute minimum across all threads
   Real min_dt = pthread_min_dt[0];
   for (int n=1; n<nthreads; ++n) min_dt = std::min(min_dt,pthread_min_dt[n]);
+
+  min_dt *= pmb->pmy_mesh->cfl_number;
+
+  if(UserTimeStep_!=NULL)
+    min_dt = std::min(min_dt, UserTimeStep_(pmb));
 
   delete[] pthread_min_dt;
 

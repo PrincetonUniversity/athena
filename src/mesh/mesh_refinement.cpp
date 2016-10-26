@@ -42,7 +42,7 @@ namespace RefinementConditions {
 
 MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin)
 {
-  pmy_mblock_ = pmb;
+  pmy_block_ = pmb;
   AMRFlag_=pmb->pmy_mesh->AMRFlag_;
   pcoarsec = new Coordinates(pmb, pin, 1);
   deref_count_ = 0;
@@ -133,7 +133,7 @@ void MeshRefinement::RestrictCellCenteredValues(const AthenaArray<Real> &fine,
                      AthenaArray<Real> &coarse, int sn, int en,
                      int csi, int cei, int csj, int cej, int csk, int cek)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   int si=(csi-pmb->cis)*2+pmb->is, ei=(cei-pmb->cis)*2+pmb->is+1;
 
@@ -200,7 +200,7 @@ void MeshRefinement::RestrictCellCenteredValues(const AthenaArray<Real> &fine,
 void MeshRefinement::RestrictFieldX1(const AthenaArray<Real> &fine, 
      AthenaArray<Real> &coarse, int csi, int cei, int csj, int cej, int csk, int cek)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   int si=(csi-pmb->cis)*2+pmb->is, ei=(cei-pmb->cis)*2+pmb->is;
 
@@ -257,7 +257,7 @@ void MeshRefinement::RestrictFieldX1(const AthenaArray<Real> &fine,
 void MeshRefinement::RestrictFieldX2(const AthenaArray<Real> &fine, 
      AthenaArray<Real> &coarse, int csi, int cei, int csj, int cej, int csk, int cek)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   int si=(csi-pmb->cis)*2+pmb->is, ei=(cei-pmb->cis)*2+pmb->is+1;
 
@@ -315,7 +315,7 @@ void MeshRefinement::RestrictFieldX2(const AthenaArray<Real> &fine,
 void MeshRefinement::RestrictFieldX3(const AthenaArray<Real> &fine, 
      AthenaArray<Real> &coarse, int csi, int cei, int csj, int cej, int csk, int cek)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   int si=(csi-pmb->cis)*2+pmb->is, ei=(cei-pmb->cis)*2+pmb->is+1;
 
@@ -378,7 +378,7 @@ void MeshRefinement::ProlongateCellCenteredValues(const AthenaArray<Real> &coars
                      AthenaArray<Real> &fine, int sn, int en,
                      int si, int ei, int sj, int ej, int sk, int ek)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   if(pmb->block_size.nx3 > 1) {
     for(int n=sn; n<=en; n++) {
@@ -527,7 +527,7 @@ void MeshRefinement::ProlongateCellCenteredValues(const AthenaArray<Real> &coars
 void MeshRefinement::ProlongateSharedFieldX1(const AthenaArray<Real> &coarse,
      AthenaArray<Real> &fine, int si, int ei, int sj, int ej, int sk, int ek)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   if(pmb->block_size.nx3 > 1) {
     for(int k=sk; k<=ek; k++) {
@@ -608,7 +608,7 @@ void MeshRefinement::ProlongateSharedFieldX1(const AthenaArray<Real> &coarse,
 void MeshRefinement::ProlongateSharedFieldX2(const AthenaArray<Real> &coarse,
      AthenaArray<Real> &fine, int si, int ei, int sj, int ej, int sk, int ek)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   if(pmb->block_size.nx3 > 1) {
     for(int k=sk; k<=ek; k++) {
@@ -693,7 +693,7 @@ void MeshRefinement::ProlongateSharedFieldX2(const AthenaArray<Real> &coarse,
 void MeshRefinement::ProlongateSharedFieldX3(const AthenaArray<Real> &coarse,
      AthenaArray<Real> &fine, int si, int ei, int sj, int ej, int sk, int ek)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   if(pmb->block_size.nx3 > 1) {
     for(int k=sk; k<=ek; k++) {
@@ -798,7 +798,7 @@ void MeshRefinement::ProlongateSharedFieldX3(const AthenaArray<Real> &coarse,
 void MeshRefinement::ProlongateInternalField(FaceField &fine,
                      int si, int ei, int sj, int ej, int sk, int ek)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   int fsi=(si-pmb->cis)*2+pmb->is, fei=(ei-pmb->cis)*2+pmb->is+1;
   if(pmb->block_size.nx3 > 1) {
@@ -954,7 +954,7 @@ void MeshRefinement::ProlongateInternalField(FaceField &fine,
 
 void MeshRefinement::CheckRefinementCondition(void)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   int ret=0, aret=-1;
   refine_flag_=0;
 

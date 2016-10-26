@@ -6,7 +6,7 @@
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cfloat>     // FLT_MIN
-#include <cmath>      // NAN, sqrt(), abs(), isfinite(), isnan(), pow()
+#include <cmath>      // abs(), cbrt(), isfinite(), isnan(), NAN, pow(), sqrt()
 
 // Athena headers
 #include "../athena.hpp"                   // enums, macros
@@ -29,8 +29,6 @@ static Real QNResidual(Real w_guess, Real d_norm, Real q_dot_n, Real q_norm_sq,
     Real bbb_sq, Real q_bbb_sq, Real gamma_prime);
 static Real QNResidualPrime(Real w_guess, Real d_norm, Real q_norm_sq, Real bbb_sq,
     Real q_bbb_sq, Real gamma_prime);
-static void neighbor_average(AthenaArray<Real> &prim, int n, int k, int j, int i,
-    int kl, int ku, int jl, int ju, int il, int iu);
 
 //--------------------------------------------------------------------------------------
 
@@ -900,59 +898,4 @@ static Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real bbb_sq,
   Real dpgas_dw = (gamma_adi-1.0)/gamma_adi / gamma_4 * dpgas_dw_b;
   return -0.5*bbb_sq*dv_norm_sq_dw - q_bbb_sq/w_cu - 1.0
       + dpgas_dw;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for replacing primitive value in cell with average of neighbors
-// Inputs:
-//   prim: array of primitives
-//   n: IDN, IEN, IVX, IVY, or IVZ
-//   k,j,i: indices of cell
-//   kl,ku,jl,ju,il,ju: limits of array
-// Outputs:
-//   prim(index,k,j,i) modified
-// Notes
-//   average will only include in-bounds, non-NAN neighbors
-//   if no such neighbors exist, value will be unmodified
-//   same function as in adiabatic_hydro_gr.cpp
-//   TODO: decide if function should be kept/implemented
-static void neighbor_average(AthenaArray<Real> &prim, int n, int k, int j, int i,
-    int kl, int ku, int jl, int ju, int il, int iu)
-{
-  Real neighbor_sum = 0.0;
-  int num_neighbors = 0;
-  if (i > il and not std::isnan(prim(n,k,j,i-1)))
-  {
-    neighbor_sum += prim(n,k,j,i-1);
-    num_neighbors += 1;
-  }
-  if (i < iu and not std::isnan(prim(n,k,j,i+1)))
-  {
-    neighbor_sum += prim(n,k,j,i+1);
-    num_neighbors += 1;
-  }
-  if (j > jl and not std::isnan(prim(n,k,j-1,i)))
-  {
-    neighbor_sum += prim(n,k,j-1,i);
-    num_neighbors += 1;
-  }
-  if (j < ju and not std::isnan(prim(n,k,j+1,i)))
-  {
-    neighbor_sum += prim(n,k,j+1,i);
-    num_neighbors += 1;
-  }
-  if (k > kl and not std::isnan(prim(n,k-1,j,i)))
-  {
-    neighbor_sum += prim(n,k-1,j,i);
-    num_neighbors += 1;
-  }
-  if (k < ku and not std::isnan(prim(n,k+1,j,i)))
-  {
-    neighbor_sum += prim(n,k+1,j,i);
-    num_neighbors += 1;
-  }
-  if (num_neighbors > 0)
-    prim(n,k,j,i) = neighbor_sum / num_neighbors;
-  return;
 }

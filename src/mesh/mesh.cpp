@@ -257,6 +257,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
     BoundaryFunction_[dir]=NULL;
   AMRFlag_=NULL;
   UserSourceTerm_=NULL;
+  UserTimeStep_=NULL;
 
   // calculate the logical root level and maximum level
   for (root_level=0; (1<<root_level)<nbmax; root_level++);
@@ -629,6 +630,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
     BoundaryFunction_[dir]=NULL;
   AMRFlag_=NULL;
   UserSourceTerm_=NULL;
+  UserTimeStep_=NULL;
 
   multilevel=false;
   adaptive=false;
@@ -850,8 +852,11 @@ Mesh::~Mesh()
 
 void Mesh::OutputMeshStructure(int dim)
 {
-  // open 'mesh_structure.dat' file
+  RegionSize block_size;
+  enum BoundaryFlag block_bcs[6];
   FILE *fp;
+
+  // open 'mesh_structure.dat' file
   if(dim>=2) {
     if ((fp = fopen("mesh_structure.dat","wb")) == NULL) {
       std::cout << "### ERROR in function Mesh::OutputMeshStructure" << std::endl
@@ -911,6 +916,7 @@ void Mesh::OutputMeshStructure(int dim)
     Real dx=1.0/(Real)(1L<<i);
     for (int j=0; j<nbtotal; j++) {
       if(loclist[j].level==i) {
+        SetBlockSizeAndBoundaries(loclist[j], block_size, block_bcs);
         long int &lx1=loclist[j].lx1;
         long int &lx2=loclist[j].lx2;
         long int &lx3=loclist[j].lx3;
@@ -921,31 +927,31 @@ void Mesh::OutputMeshStructure(int dim)
         fprintf(fp,"#MeshBlock %d on rank=%d with cost=%g\n",j,ranklist[j],costlist[j]);
         fprintf(fp,"#  Logical level %d, location = (%ld %ld %ld)\n",ll,lx1,lx2,lx3);
         if(dim==2) {
-          fprintf(fp, "%g %g\n", lx1*dx,    lx2*dx);
-          fprintf(fp, "%g %g\n", lx1*dx+dx, lx2*dx);
-          fprintf(fp, "%g %g\n", lx1*dx+dx, lx2*dx+dx);
-          fprintf(fp, "%g %g\n", lx1*dx,    lx2*dx+dx);
-          fprintf(fp, "%g %g\n", lx1*dx,    lx2*dx);
+          fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2min);
+          fprintf(fp, "%g %g\n", block_size.x1max, block_size.x2min);
+          fprintf(fp, "%g %g\n", block_size.x1max, block_size.x2max);
+          fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2max);
+          fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2min);
           fprintf(fp, "\n\n");
         }
         if(dim==3) {
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx,    lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx,    lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx+dx, lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx+dx, lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx,    lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx,    lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx,    lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx,    lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx,    lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx+dx, lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx+dx, lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx+dx, lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx+dx, lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx+dx, lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx+dx, lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx,    lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx,    lx3*dx);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2min, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2max, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2max, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2min, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2min, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2min, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2max, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2max, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2max, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2max, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2max, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2max, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3min);
           fprintf(fp, "\n\n");
         }
       }
@@ -983,7 +989,7 @@ void Mesh::NewTimeStep(void)
   MPI_Allreduce(MPI_IN_PLACE,&min_dt,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD);
 #endif
   // set it
-  dt=std::min(min_dt*cfl_number,2.0*dt);
+  dt=std::min(min_dt,2.0*dt);
   if (time < tlim && tlim-time < dt)  // timestep would take us past desired endpoint
     dt = tlim-time;
   return;
@@ -1040,12 +1046,22 @@ void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc_t m
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserSourceTermFunction(SrcTermFunc_t my_func)
+//! \fn void Mesh::EnrollUserExplicitSourceFunction(SrcTermFunc_t my_func)
 //  \brief Enroll a user-defined source function
 
-void Mesh::EnrollUserSourceTermFunction(SrcTermFunc_t my_func)
+void Mesh::EnrollUserExplicitSourceFunction(SrcTermFunc_t my_func)
 {
   UserSourceTerm_ = my_func;
+  return;
+}
+
+//--------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserTimeStepFunction(TimeStepFunc_t my_func)
+//  \brief Enroll a user-defined time step function
+
+void Mesh::EnrollUserTimeStepFunction(TimeStepFunc_t my_func)
+{
+  UserTimeStep_ = my_func;
   return;
 }
 
@@ -1224,7 +1240,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
   // calculate the first time step
   pmb = pblock;
   while (pmb != NULL)  {
-    pmb->phydro->NewBlockTimeStep(pmb);
+    pmb->phydro->NewBlockTimeStep();
     pmb=pmb->next;
   }
   NewTimeStep();

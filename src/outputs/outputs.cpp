@@ -198,6 +198,12 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin)
         // read ghost cell option
         op.include_ghost_zones=pin->GetOrAddBoolean(op.block_name,"ghost_zones",false);
 
+        // read ghost cell option
+        if(COORDINATE_SYSTEM == "cylindrical" || COORDINATE_SYSTEM == "spherical_polar")
+          op.cartesian_vector=pin->GetOrAddBoolean(op.block_name,"cartesian_vector",false);
+        else 
+          op.cartesian_vector=false;
+
         // set output variable and optional data format string used in formatted writes
         if (op.file_type.compare("hst") != 0 && op.file_type.compare("rst") != 0) {
           op.variable = pin->GetString(op.block_name,"variable");
@@ -366,6 +372,17 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
     pod->data.InitWithShallowSlice(phyd->u,4,IM1,3);
     AppendOutputDataNode(pod);
     num_vars_+=3;
+    if(output_params.cartesian_vector) {
+      AthenaArray<Real> src;
+      src.InitWithShallowSlice(phyd->u,4,IM1,3);
+      pod = new OutputData;
+      pod->type = "VECTORS";
+      pod->name = "mom_xyz";
+      pod->data.NewAthenaArray(3,phyd->u.GetDim3(),phyd->u.GetDim2(),phyd->u.GetDim1());
+      CalculateCartesianVector(src, pod->data, pmb->pcoord);
+      AppendOutputDataNode(pod);
+      num_vars_+=3;
+    }
   }
 
   // each component of momentum
@@ -403,6 +420,17 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
     pod->data.InitWithShallowSlice(phyd->w,4,IVX,3);
     AppendOutputDataNode(pod);
     num_vars_+=3;
+    if(output_params.cartesian_vector) {
+      AthenaArray<Real> src;
+      src.InitWithShallowSlice(phyd->w,4,IVX,3);
+      pod = new OutputData;
+      pod->type = "VECTORS";
+      pod->name = "vel_xyz";
+      pod->data.NewAthenaArray(3,phyd->w.GetDim3(),phyd->w.GetDim2(),phyd->w.GetDim1());
+      CalculateCartesianVector(src, pod->data, pmb->pcoord);
+      AppendOutputDataNode(pod);
+      num_vars_+=3;
+    }
   }
 
   // each component of velocity
@@ -445,6 +473,17 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
       pod->data.InitWithShallowSlice(pfld->bcc,4,IB1,3);
       AppendOutputDataNode(pod);
       num_vars_+=3;
+      if(output_params.cartesian_vector) {
+        AthenaArray<Real> src;
+        src.InitWithShallowSlice(pfld->bcc,4,IB1,3);
+        pod = new OutputData;
+        pod->type = "VECTORS";
+        pod->name = "Bcc_xyz";
+        pod->data.NewAthenaArray(3,pfld->bcc.GetDim3(),pfld->bcc.GetDim2(),pfld->bcc.GetDim1());
+        CalculateCartesianVector(src, pod->data, pmb->pcoord);
+        AppendOutputDataNode(pod);
+        num_vars_+=3;
+      }
     }
 
     // each component of cell-centered magnetic field
@@ -641,7 +680,7 @@ bool OutputType::TransformOutputData(MeshBlock *pmb)
 
 //--------------------------------------------------------------------------------------
 //! \fn bool OutputType::SliceOutputData(MeshBlock *pmb, int dim)
-//  \brief
+//  \brief perform data slicing and update the data list
 
 bool OutputType::SliceOutputData(MeshBlock *pmb, int dim)
 {
@@ -750,7 +789,7 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim)
 
 //--------------------------------------------------------------------------------------
 //! \fn void OutputType::SumOutputData(OutputData* pod, int dim)
-//  \brief
+//  \brief perform data summation and update the data list
 
 void OutputType::SumOutputData(MeshBlock* pmb, int dim)
 {
@@ -819,3 +858,69 @@ void OutputType::SumOutputData(MeshBlock* pmb, int dim)
 
   return;
 }
+
+
+//--------------------------------------------------------------------------------------
+//! \fn void OutputType::CalculateCartesianVector(AthenaArray<Real> &src,
+//                                AthenaArray<Real> &dst, Coordinates *pco)
+//  \brief Convert vectors in curvilinear coordinates into Cartesian
+
+void OutputType::CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Real> &dst,
+                                          Coordinates *pco)
+{
+  Real n1x,n1y,n1z,n2x,n2y,n2z,n3x,n3y,n3z;
+  if(COORDINATE_SYSTEM == "spherical_polar") {
+    if(out_ks==out_ke) { // 2D
+      for(int k=out_ks; k<=out_ke; k++) {
+        for(int j=out_js; j<=out_je; j++) {
+          n1x=sin(pco->x2v(j));
+          n1z=cos(pco->x2v(j));
+          n2x=cos(pco->x2v(j));
+          n2z=-sin(pco->x2v(j));
+          for(int i=out_is; i<=out_ie; i++) {
+            dst(0,k,j,i)=src(0,k,j,i)*n1x+src(1,k,j,i)*n2x;
+            dst(1,k,j,i)=src(2,k,j,i);
+            dst(2,k,j,i)=src(0,k,j,i)*n1z+src(1,k,j,i)*n2z;
+          }
+        }
+      }
+    }
+    else { // 3D
+      for(int k=out_ks; k<=out_ke; k++) {
+        n3x=-sin(pco->x3v(k));
+        n3y=cos(pco->x3v(k));
+        n3z=0.0;
+        for(int j=out_js; j<=out_je; j++) {
+          n1x=sin(pco->x2v(j))*cos(pco->x3v(k));
+          n1y=sin(pco->x2v(j))*sin(pco->x3v(k));
+          n1z=cos(pco->x2v(j));
+          n2x=cos(pco->x2v(j))*cos(pco->x3v(k));
+          n2y=cos(pco->x2v(j))*sin(pco->x3v(k));
+          n2z=-sin(pco->x2v(j));
+          for(int i=out_is; i<=out_ie; i++) {
+            dst(0,k,j,i)=src(0,k,j,i)*n1x+src(1,k,j,i)*n2x+src(2,k,j,i)*n3x;
+            dst(1,k,j,i)=src(0,k,j,i)*n1y+src(1,k,j,i)*n2y+src(2,k,j,i)*n3y;
+            dst(2,k,j,i)=src(0,k,j,i)*n1z+src(1,k,j,i)*n2z+src(2,k,j,i)*n3z;
+          }
+        }
+      }
+    }
+  }
+  if(COORDINATE_SYSTEM == "cylindrical") {
+    for(int k=out_ks; k<=out_ke; k++) {
+      for(int j=out_js; j<=out_je; j++) {
+        n1x=cos(pco->x2v(j));
+        n1y=sin(pco->x2v(j));
+        n2x=-sin(pco->x2v(j));
+        n2y=cos(pco->x2v(j));
+        for(int i=out_is; i<=out_ie; i++) {
+          dst(0,k,j,i)=src(0,k,j,i)*n1x+src(1,k,j,i)*n2x;
+          dst(1,k,j,i)=src(0,k,j,i)*n1y+src(1,k,j,i)*n2y;
+          dst(2,k,j,i)=src(2,k,j,i);
+        }
+      }
+    }
+  }
+  return;
+}
+
