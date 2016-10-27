@@ -101,6 +101,14 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
     active_flags[i]=true;
 
   // shooting a blank just for getting the variable names
+  out_is=pmb->is; out_ie=pmb->ie;
+  out_js=pmb->js; out_je=pmb->je;
+  out_ks=pmb->ks; out_ke=pmb->ke;
+  if (output_params.include_ghost_zones) {
+    out_is -= NGHOST; out_ie += NGHOST;
+    if (out_js != out_je) {out_js -= NGHOST; out_je += NGHOST;}
+    if (out_ks != out_ke) {out_ks -= NGHOST; out_ke += NGHOST;}
+  }
   LoadOutputData(pmb);
   // set num_datasets and num_variables
   // this must be expanded when new variables are introduced
