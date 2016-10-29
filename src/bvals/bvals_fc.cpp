@@ -1,21 +1,10 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file bvals_fc.cpp
 //  \brief functions that apply BCs for FACE_CENTERED variables
-//======================================================================================
 
 // C++ headers
 #include <iostream>   // endl
@@ -28,6 +17,7 @@
 #include <cmath>
 
 // Athena++ classes headers
+#include "bvals.hpp"
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../athena_arrays.hpp"
@@ -39,18 +29,16 @@
 #include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
 
-// this class header
-#include "bvals.hpp"
-
 // MPI header
 #ifdef MPI_PARALLEL
 #include <mpi.h>
 #endif
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadFieldBoundaryBufferSameLevel(FaceField &src,
 //                                                 Real *buf, const NeighborBlock& nb)
 //  \brief Set field boundary buffers for sending to a block on the same level
+
 int BoundaryValues::LoadFieldBoundaryBufferSameLevel(FaceField &src, Real *buf,
                                                      const NeighborBlock& nb)
 {
@@ -106,10 +94,11 @@ int BoundaryValues::LoadFieldBoundaryBufferSameLevel(FaceField &src, Real *buf,
   return p;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadFieldBoundaryBufferToCoarser(FaceField &src,
 //                                                 Real *buf, const NeighborBlock& nb)
 //  \brief Set field boundary buffers for sending to a block on the coarser level
+
 int BoundaryValues::LoadFieldBoundaryBufferToCoarser(FaceField &src, Real *buf,
                                                      const NeighborBlock& nb)
 {
@@ -180,10 +169,11 @@ int BoundaryValues::LoadFieldBoundaryBufferToCoarser(FaceField &src, Real *buf,
   return p;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadFieldBoundaryBufferToFiner(FaceField &src, 
 //                                                 Real *buf, const NeighborBlock& nb)
 //  \brief Set field boundary buffers for sending to a block on the finer level
+
 int BoundaryValues::LoadFieldBoundaryBufferToFiner(FaceField &src, Real *buf,
                                                    const NeighborBlock& nb)
 {
@@ -295,9 +285,10 @@ int BoundaryValues::LoadFieldBoundaryBufferToFiner(FaceField &src, Real *buf,
   return p;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SendFieldBoundaryBuffers(FaceField &src)
 //  \brief Send field boundary buffers
+
 void BoundaryValues::SendFieldBoundaryBuffers(FaceField &src)
 {
   MeshBlock *pmb=pmy_block_;
@@ -327,10 +318,11 @@ void BoundaryValues::SendFieldBoundaryBuffers(FaceField &src)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst,
 //                                               Real *buf, const NeighborBlock& nb)
 //  \brief Set field boundary received from a block on the same level
+
 void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
                                                const NeighborBlock& nb)
 {
@@ -446,10 +438,11 @@ void BoundaryValues::SetFieldBoundarySameLevel(FaceField &dst, Real *buf,
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf,
 //                                                       const NeighborBlock& nb)
 //  \brief Set field prolongation buffer received from a block on the same level
+
 void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_block_;
@@ -579,10 +572,11 @@ void BoundaryValues::SetFieldBoundaryFromCoarser(Real *buf, const NeighborBlock&
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetFielBoundaryFromFiner(FaceField &dst,
 //                                                    Real *buf, const NeighborBlock& nb)
 //  \brief Set field boundary received from a block on the same level
+
 void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
                                                const NeighborBlock& nb)
 {
@@ -757,9 +751,10 @@ void BoundaryValues::SetFieldBoundaryFromFiner(FaceField &dst, Real *buf,
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst)
 //  \brief load boundary buffer for x1 direction into the array
+
 bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst)
 {
   MeshBlock *pmb=pmy_block_;
@@ -801,9 +796,10 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst)
   return flag;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst)
 //  \brief load boundary buffer for x1 direction into the array
+
 void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst)
 {
   MeshBlock *pmb=pmy_block_;
@@ -828,10 +824,11 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::PolarSingleField(FaceField &dst)
 //
 //  \brief single CPU in the azimuthal direction for the polar boundary
+
 void BoundaryValues::PolarSingleField(FaceField &dst)
 {
   MeshBlock *pmb=pmy_block_;

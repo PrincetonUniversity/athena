@@ -1,21 +1,10 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file bvals_cc.cpp
 //  \brief functions that apply BCs for CELL_CENTERED variables
-//======================================================================================
 
 // C++ headers
 #include <iostream>   // endl
@@ -28,6 +17,7 @@
 #include <cmath>
 
 // Athena++ classes headers
+#include "bvals.hpp"
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../athena_arrays.hpp"
@@ -39,18 +29,16 @@
 #include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
 
-// this class header
-#include "bvals.hpp"
-
 // MPI header
 #ifdef MPI_PARALLEL
 #include <mpi.h>
 #endif
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src,
 //                                                 Real *buf, const NeighborBlock& nb)
 //  \brief Set hydro boundary buffers for sending to a block on the same level
+
 int BoundaryValues::LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
                                                      const NeighborBlock& nb)
 {
@@ -68,11 +56,12 @@ int BoundaryValues::LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src, Rea
   return p;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src,
 //                                                 Real *buf, const NeighborBlock& nb,
 //                                                 bool conserved_values)
 //  \brief Set hydro boundary buffers for sending to a block on the coarser level
+
 int BoundaryValues::LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src, Real *buf,
                                                      const NeighborBlock& nb,
                                                      bool conserved_values)
@@ -105,10 +94,11 @@ int BoundaryValues::LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src, Rea
   return p;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src,
 //                                                 Real *buf, const NeighborBlock& nb)
 //  \brief Set hydro boundary buffers for sending to a block on the finer level
+
 int BoundaryValues::LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src, Real *buf,
                                                    const NeighborBlock& nb)
 {
@@ -155,7 +145,7 @@ int BoundaryValues::LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src, Real 
   return p;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src,
 //                                                    bool conserved_values)
 //  \brief Send boundary buffers
@@ -191,10 +181,11 @@ void BoundaryValues::SendHydroBoundaryBuffers(AthenaArray<Real> &src,
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetHydroBoundarySameLevel(AthenaArray<Real> &dst,
 //                                           Real *buf, const NeighborBlock& nb)
 //  \brief Set hydro boundary received from a block on the same level
+
 void BoundaryValues::SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
                                                const NeighborBlock& nb)
 {
@@ -229,11 +220,12 @@ void BoundaryValues::SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf,
 //                                                       const NeighborBlock& nb,
 //                                                       bool conserved_values)
 //  \brief Set hydro prolongation buffer received from a block on a coarser level
+
 void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock& nb,
     bool conserved_values)
 {
@@ -298,10 +290,11 @@ void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock&
 }
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetHydroBoundaryFromFiner(AthenaArray<Real> &dst,
 //                                               Real *buf, const NeighborBlock& nb)
 //  \brief Set hydro boundary received from a block on a finer level
+
 void BoundaryValues::SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf,
                                                const NeighborBlock& nb)
 {
@@ -365,9 +358,10 @@ void BoundaryValues::SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst)
 //  \brief receive the boundary data
+
 bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst)
 {
   MeshBlock *pmb=pmy_block_;
@@ -409,10 +403,11 @@ bool BoundaryValues::ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst)
   return flag;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst,
 //                                                               bool conserved_values)
 //  \brief receive the boundary data for initialization
+
 void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst,
                                                          bool conserved_values)
 {
@@ -439,10 +434,11 @@ void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst,
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::PolarSingleHydro(AthenaArray<Real> &dst)
 //
 // \brief  single CPU in the azimuthal direction for the polar boundary 
+
 void BoundaryValues::PolarSingleHydro(AthenaArray<Real> &dst)
 {
   MeshBlock *pmb=pmy_block_;

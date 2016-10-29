@@ -1,13 +1,12 @@
 #ifndef BOUNDARY_VALUES_HPP
 #define BOUNDARY_VALUES_HPP
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-// See LICENSE file for full public license information.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file bvals.hpp
 //  \brief defines BoundaryValues class used for setting BCs on all data types
-//======================================================================================
 
 // C++ headers
 #include <string>   // string
@@ -60,7 +59,7 @@ typedef struct NeighborIndexes {
   }
 } NeighborIndexes;
 
-//-------------------- prototypes for all BC functions ---------------------------------
+//---------------------- prototypes for all BC functions ---------------------------------
 void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
      FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
@@ -97,7 +96,7 @@ void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
 enum BoundaryFlag GetBoundaryFlag(std::string input_string);
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \class BoundaryValues
 //  \brief BVals data and functions
 

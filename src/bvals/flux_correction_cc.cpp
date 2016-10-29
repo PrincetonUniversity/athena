@@ -1,21 +1,10 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file flux_correction_cc.cpp
 //  \brief functions that perform flux correction for CELL_CENTERED variables
-//======================================================================================
 
 // C++ headers
 #include <iostream>   // endl
@@ -28,6 +17,7 @@
 #include <cmath>
 
 // Athena++ classes headers
+#include "bvals.hpp"
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../athena_arrays.hpp"
@@ -39,17 +29,15 @@
 #include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
 
-// this class header
-#include "bvals.hpp"
-
 // MPI header
 #ifdef MPI_PARALLEL
 #include <mpi.h>
 #endif
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SendFluxCorrection(void)
 //  \brief Restrict, pack and send the surace flux to the coarse neighbor(s)
+
 void BoundaryValues::SendFluxCorrection(void)
 {
   MeshBlock *pmb=pmy_block_;
@@ -174,9 +162,10 @@ void BoundaryValues::SendFluxCorrection(void)
 }
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn bool BoundaryValues::ReceiveFluxCorrection(void)
 //  \brief Receive and apply the surace flux from the finer neighbor(s)
+
 bool BoundaryValues::ReceiveFluxCorrection(void)
 {
   MeshBlock *pmb=pmy_block_;
