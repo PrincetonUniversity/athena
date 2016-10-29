@@ -1,13 +1,12 @@
 #ifndef ATHENA_HPP
 #define ATHENA_HPP
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-// See LICENSE file for full public license information.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file athena.hpp
 //  \brief contains Athena++ general purpose types, structures, enums, etc.
-//======================================================================================
 
 #include "defs.hpp"
 #include "athena_arrays.hpp"
@@ -23,7 +22,7 @@ class MeshBlock;
 class Coordinates;
 struct RegionSize;
 
-//--------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
 //! \struct FaceField
 //  \brief container for face-centered fields
 
@@ -31,7 +30,7 @@ typedef struct FaceField {
   AthenaArray<Real> x1f,x2f,x3f;
 } FaceField;
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \struct EdgeField
 //  \brief container for edge-centered fields
 
@@ -39,7 +38,7 @@ typedef struct EdgeField {
   AthenaArray<Real> x1e,x2e,x3e;
 } EdgeField;
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // enums used everywhere
 
 // array indices for conserved: density, momemtum, total energy, face-centered field 
@@ -62,7 +61,7 @@ enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
 enum Athena_MPI_Tag {TAG_HYDRO=0, TAG_FIELD=1, TAG_RAD=2, TAG_CHEM=3, TAG_HYDFLX=4,
   TAG_FLDFLX=5, TAG_RADFLX=6, TAG_CHMFLX=7, TAG_AMR=8, TAG_FLDFLX_POLE=9, TAG_WTLIM=10};
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // function pointer prototypes for user-defined modules set at runtime
 
 typedef void (*BValFunc_t)(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
