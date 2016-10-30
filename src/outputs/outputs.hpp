@@ -1,13 +1,12 @@
 #ifndef OUTPUTS_HPP
 #define OUTPUTS_HPP
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-// See LICENSE file for full public license information.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file outputs.hpp
 //  \brief provides classes to handle ALL types of data output
-//======================================================================================
 
 // C/C++ headers
 #include <stdio.h>  // size_t
@@ -26,6 +25,7 @@ class Mesh;
 class ParameterInput;
 class Coordinates;
 
+//----------------------------------------------------------------------------------------
 //! \struct OutputParameters
 //  \brief  container for parameters read from <output> block in the input file
 
@@ -50,6 +50,7 @@ typedef struct OutputParameters {
      include_ghost_zones(false) {};
 } OutputParameters;
 
+//----------------------------------------------------------------------------------------
 //! \struct OutputData
 //  \brief container for output data and metadata; used as node in linked list
 
@@ -62,7 +63,7 @@ typedef struct OutputData {
   OutputData() : pnext(NULL), pprev(NULL) {};
 } OutputData;
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //  \brief abstract base class for different output types (modes).  Each OutputType
 //  is designed to be a node in a linked list created and stored in the Outputs class.
 
@@ -95,7 +96,7 @@ protected:
   OutputData *plast_data_;   // ptr to last OutputData in linked list
 };
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \class HistoryFile
 //  \brief derived OutputType class for history dumps
 
@@ -106,7 +107,7 @@ public:
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
 };
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \class FormattedTableOutput
 //  \brief derived OutputType class for formatted table (tabular) data
 
@@ -117,7 +118,7 @@ public:
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
 };
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \class VTKOutput
 //  \brief derived OutputType class for vtk dumps
 
@@ -128,7 +129,7 @@ public:
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
 };
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \class RestartOutput
 //  \brief derived OutputType class for restart dumps
 
@@ -140,7 +141,7 @@ public:
 };
 
 #ifdef HDF5OUTPUT
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \class ATHDF5Output
 //  \brief derived OutputType class for Athena HDF5 files
 
@@ -167,7 +168,7 @@ private:
 };
 #endif
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \class Outputs
 //  \brief root class for all Athena++ outputs.  Provides a linked list of OutputTypes,
 //  with each node representing one mode of output to be made during a simulation.

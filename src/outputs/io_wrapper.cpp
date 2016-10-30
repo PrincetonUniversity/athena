@@ -1,21 +1,10 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file io_wrapper.cpp
 //  \brief functions that provide wrapper for MPI-IO versus serial input/output
-//======================================================================================
 
 // C/C++ headers
 #include <sstream>
@@ -28,11 +17,9 @@
 
 // Athena++ classes headers
 #include "../athena.hpp"
-
-// this class header
 #include "io_wrapper.hpp"
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int IOWrapper::Open(const char* fname, enum rwmode rw)
 //  \brief wrapper for {MPI_File_open} versus {fopen} including error check
 
@@ -73,7 +60,7 @@ int IOWrapper::Open(const char* fname, enum rwmode rw)
   return true;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int IOWrapper::Read(void *buf, IOWrapperSize_t size, IOWrapperSize_t count)
 //  \brief wrapper for {MPI_File_read} versus {fread}
 
@@ -90,7 +77,7 @@ int IOWrapper::Read(void *buf, IOWrapperSize_t size, IOWrapperSize_t count)
 #endif
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int IOWrapper::Read_all(void *buf, IOWrapperSize_t size, IOWrapperSize_t count)
 //  \brief wrapper for {MPI_File_read_all} versus {fread}
 
@@ -107,7 +94,7 @@ int IOWrapper::Read_all(void *buf, IOWrapperSize_t size, IOWrapperSize_t count)
 #endif
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int IOWrapper::Read_at_all(void *buf, IOWrapperSize_t size,
 //                             IOWrapperSize_t count, IOWrapperSize_t offset)
 //  \brief wrapper for {MPI_File_read_at_all} versus {fseek+fread}
@@ -128,7 +115,7 @@ int IOWrapper::Read_at_all(void *buf, IOWrapperSize_t size,
 #endif
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int IOWrapper::Write(const void *buf, IOWrapperSize_t size, IOWrapperSize_t cnt)
 //  \brief wrapper for {MPI_File_write} versus {fwrite}
 
@@ -146,7 +133,7 @@ int IOWrapper::Write(const void *buf, IOWrapperSize_t size, IOWrapperSize_t cnt)
 #endif
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int IOWrapper::Write_at_all(const void *buf, IOWrapperSize_t size,
 //                                  IOWrapperSize_t cnt, IOWrapperSize_t offset)
 //  \brief wrapper for {MPI_File_write_at_all} versus {fseek+fwrite}.
@@ -169,7 +156,7 @@ int IOWrapper::Write_at_all(const void *buf, IOWrapperSize_t size,
 }
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void IOWrapper::Close(void)
 //  \brief wrapper for {MPI_File_close} versus {fclose}
 
@@ -182,7 +169,7 @@ int IOWrapper::Close(void)
 #endif
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int IOWrapper::Seek(IOWrapperSize_t offset)
 //  \brief wrapper for {MPI_File_seek} versus {fseek}
 
@@ -195,7 +182,7 @@ int IOWrapper::Seek(IOWrapperSize_t offset)
 #endif
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn IOWrapperSize_t IOWrapper::GetPosition(void)
 //  \brief wrapper for {MPI_File_get_position} versus {ftell}
 
