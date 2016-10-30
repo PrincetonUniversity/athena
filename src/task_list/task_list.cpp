@@ -1,21 +1,10 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file tasklist.cpp
 //  \brief functions for TaskList base class
-//======================================================================================
 
 // Athena++ classes headers
 #include "../athena.hpp"
@@ -25,7 +14,7 @@
 // this class header
 #include "task_list.hpp"
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // TaskList constructor
 
 TaskList::TaskList(Mesh *pm)
@@ -41,7 +30,7 @@ TaskList::~TaskList()
 {
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn DoAllAvailableTasks
 //  \brief do all tasks that can be done (are not waiting for a dependency to be 
 //  cleared) in this TaskList, return status.  
@@ -76,7 +65,7 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int step) {
   return TL_STUCK; // there are still tasks to do but nothing can be done now
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void TaskList::DoTaskList(Mesh *pmesh)
 //  \brief completes all tasks in this list, will not return until all are tasks done
 

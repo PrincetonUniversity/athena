@@ -1,22 +1,11 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file time_integrator.cpp
 //  \brief derived class for time integrator task list.  Can create task lists for one
 //  of many different time integrators (e.g. van Leer, RK2, RK3, etc.)
-//======================================================================================
 
 // C/C++ headers
 #include <iostream>   // endl
@@ -25,6 +14,7 @@
 #include <string>     // c_str()
 
 // Athena++ classes headers
+#include "task_list.hpp"
 #include "../athena.hpp"
 #include "../parameter_input.hpp"
 #include "../mesh/mesh.hpp"
@@ -34,10 +24,7 @@
 #include "../eos/eos.hpp"
 #include "../hydro/srcterms/hydro_srcterms.hpp"
 
-// this class header
-#include "task_list.hpp"
-
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //  TimeIntegratorTaskList constructor
 
 TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
@@ -134,7 +121,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   } // end of using namespace block
 }
 
-//--------------------------------------------------------------------------------------//! \fn
+//----------------------------------------------------------------------------------------//! \fn
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
 //  value of ntask.  
 
@@ -269,11 +256,11 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn
 //  \brief
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Functions to start/end MPI communication
 
 enum TaskStatus TimeIntegratorTaskList::StartAllReceive(MeshBlock *pmb, int step)
@@ -288,7 +275,7 @@ enum TaskStatus TimeIntegratorTaskList::ClearAllReceive(MeshBlock *pmb, int step
   return TASK_SUCCESS;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Functions to calculates fluxes
 
 enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int step)
@@ -329,7 +316,7 @@ enum TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int step)
   return TASK_FAIL;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Functions to communicate fluxes between MeshBlocks for flux correction step with AMR
 
 enum TaskStatus TimeIntegratorTaskList::FluxCorrectSend(MeshBlock *pmb, int step)
@@ -344,7 +331,7 @@ enum TaskStatus TimeIntegratorTaskList::EMFCorrectSend(MeshBlock *pmb, int step)
   return TASK_SUCCESS;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Functions to receive fluxes between MeshBlocks
 
 enum TaskStatus TimeIntegratorTaskList::FluxCorrectReceive(MeshBlock *pmb, int step)
@@ -365,7 +352,7 @@ enum TaskStatus TimeIntegratorTaskList::EMFCorrectReceive(MeshBlock *pmb, int st
   }
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Functions to integrate conserved variables
 
 enum TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int step)
@@ -411,7 +398,7 @@ enum TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int step)
   return TASK_FAIL;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Functions to add source terms
 
 enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int step)
@@ -439,7 +426,7 @@ enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int ste
   return TASK_NEXT;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Functions to communicate conserved variables between MeshBlocks
 
 enum TaskStatus TimeIntegratorTaskList::HydroSend(MeshBlock *pmb, int step)
@@ -466,7 +453,7 @@ enum TaskStatus TimeIntegratorTaskList::FieldSend(MeshBlock *pmb, int step)
   return TASK_SUCCESS;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Functions to receive conserved variables between MeshBlocks
 
 enum TaskStatus TimeIntegratorTaskList::HydroReceive(MeshBlock *pmb, int step)
@@ -503,7 +490,7 @@ enum TaskStatus TimeIntegratorTaskList::FieldReceive(MeshBlock *pmb, int step)
   }
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Functions for everything else
 
 enum TaskStatus TimeIntegratorTaskList::Prolongation(MeshBlock *pmb, int step)
