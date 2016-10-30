@@ -1,25 +1,15 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file kh.cpp
 //  \brief Problem generator for KH instability. 
 //
 // Sets up two different problems:
 //   - iprob=1: slip surface with random perturbations
 //   - iprob=2: tanh profile at interface, with single-mode perturbation
-//======================================================================================
+//========================================================================================
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -32,10 +22,10 @@
 #include "../mesh/mesh.hpp"
 #include "../utils/utils.hpp"
 
-//======================================================================================
+//========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Problem Generator for the Kelvin-Helmholz test
-//======================================================================================
+//========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
@@ -48,7 +38,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real drat = pin->GetReal("problem","drat");
   Real amp = pin->GetReal("problem","amp");
 
-// iprob=1.  Two uniform streams moving at +/- vflow, random perturbations
+//--- iprob=1.  Two uniform streams moving at +/- vflow, random perturbations
 
   if (iprob == 1) {
     for (int k=ks; k<=ke; k++) {
@@ -71,7 +61,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }}}
   }
 
-// iprob=2. Two uniform density flows with single mode perturbation, based on Ryu&Jones.
+//--- iprob=2. Two uniform density flows with single mode pert., based on Ryu&Jones.
 
   if (iprob == 2) {
     Real a = 0.05;
@@ -91,7 +81,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }}}
   }
 
-// iprob=3.  Test in SR paper, based on iprob=2
+//--- iprob=3.  Test in SR paper, based on iprob=2
 
   if (iprob == 3) {
     Real a = 0.01;

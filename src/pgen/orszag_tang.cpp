@@ -1,24 +1,14 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file orszag-tang.c
 //  \brief Problem generator for Orszag-Tang vortex problem.
 //
 // REFERENCE: For example, see: G. Toth,  "The div(B)=0 constraint in shock capturing
-//   MHD codes", JCP, 161, 605 (2000)				      */
-//======================================================================================
+//   MHD codes", JCP, 161, 605 (2000)
+//========================================================================================
 
 // C/C++ headers
 #include <iostream>   // endl
@@ -41,10 +31,10 @@
 #endif
 
 
-//======================================================================================
+//========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Problem Generator for the Orszag-Tang test
-//======================================================================================
+//========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
@@ -60,15 +50,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real v0 = 1.0;
   Real p0 = 5.0/(12*PI);
 
-// Initialize vector potential
-
+  // Initialize vector potential
   for (int j=js; j<=je+1; ++j) {
   for (int i=is; i<=ie+1; ++i) {
     az(j,i) = B0/(4.0*PI)*cos(4.0*PI*pcoord->x1f(i)) + B0/(2.0*PI)*cos(2.0*PI*pcoord->x2f(j));
   }}
 
-// Initialize density, momentum, face-centered fields
-
+  // Initialize density, momentum, face-centered fields
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
@@ -78,8 +66,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     phydro->u(IM3,k,j,i) = 0.0;
   }}}
 
-// initialize interface B
-
+  // initialize interface B
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie+1; i++) {
@@ -96,8 +83,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     pfield->b.x3f(k,j,i) = 0.0;
   }}}
 
-// initialize total energy
-
+  // initialize total energy
   if (NON_BAROTROPIC_EOS) {
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {

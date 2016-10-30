@@ -1,25 +1,15 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file linear_wave.c
 //  \brief Linear wave problem generator for 1D/2D/3D problems.
 //
 // In 1D, the problem is setup along one of the three coordinate axes (specified by
 // setting [ang_2,ang_3] = 0.0 or PI/2 in the input file).  In 2D/3D this routine
 // automatically sets the wavevector along the domain diagonal.
-//======================================================================================
+//========================================================================================
 
 // C++ headers
 #include <iostream>   // endl
@@ -67,12 +57,12 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
 // AMR refinement condition
 int RefinementCondition(MeshBlock *pmb);
 
-//======================================================================================
+//========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Function to initialize problem-specific data in mesh class.  Can also be used
 //  to initialize variables which are global to (and therefore can be passed to) other
 //  functions in this file.  Called in Mesh constructor.
-//======================================================================================
+//========================================================================================
 
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
@@ -149,10 +139,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   return;
 }
 
-//======================================================================================
+//========================================================================================
 //! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 //  \brief Compute L1 error in linear waves and output to file
-//======================================================================================
+//========================================================================================
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
@@ -303,10 +293,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   return;
 }
 
-//======================================================================================
+//========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Linear wave problem generator for 1D/2D/3D problems.
-//======================================================================================
+//========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
@@ -449,7 +439,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn static Real A1(const Real x1,const Real x2,const Real x3)
 //  \brief A1: 1-component of vector potential, using a gauge such that Ax = 0, and Ay,
 //  Az are functions of x and y alone.
@@ -464,7 +454,7 @@ static Real A1(const Real x1, const Real x2, const Real x3)
   return -Ay*sin_a3 - Az*sin_a2*cos_a3;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn static Real A2(const Real x1,const Real x2,const Real x3)
 //  \brief A2: 2-component of vector potential
 
@@ -478,7 +468,7 @@ static Real A2(const Real x1, const Real x2, const Real x3)
   return Ay*cos_a3 - Az*sin_a2*sin_a3;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn static Real A3(const Real x1,const Real x2,const Real x3)
 //  \brief A3: 3-component of vector potential
 
@@ -491,7 +481,7 @@ static Real A3(const Real x1, const Real x2, const Real x3)
   return Az*cos_a2;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn static void Eigensystem()
 //  \brief computes eigenvectors of linear waves 
 

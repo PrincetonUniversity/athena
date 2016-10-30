@@ -1,24 +1,14 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file two_ibw.c
 //  \brief Problem generator for two interacting blast waves test.
 //
 // REFERENCE: P. Woodward & P. Colella, "The numerical simulation of two-dimensional
 //   fluid flow with strong shocks", JCP, 54, 115, sect. IVa
-//======================================================================================
+//========================================================================================
 
 // C/C++ headers
 #include <iostream>   // endl
@@ -39,17 +29,16 @@
 #error "This problem generator does not support magnetic fields"
 #endif
 
-//======================================================================================
+//========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Problem Generator for the two interacting blast waves
-//======================================================================================
+//========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   std::stringstream msg;
 
-// parse shock direction: {1,2,3} -> {x1,x2,x3}
-
+  // parse shock direction: {1,2,3} -> {x1,x2,x3}
   int shk_dir = pin->GetInteger("problem","shock_dir");
   if (shk_dir < 1 || shk_dir > 3) {
     msg << "### FATAL ERROR in Problem Generator" << std::endl

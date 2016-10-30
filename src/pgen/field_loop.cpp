@@ -1,18 +1,8 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file field_loop.c
 //  \brief Problem generator for advection of a field loop test. 
 //
@@ -32,7 +22,7 @@
 //
 // REFERENCE: T. Gardiner & J.M. Stone, "An unsplit Godunov method for ideal MHD via
 // constrined transport", JCP, 205, 509 (2005)
-//======================================================================================
+//========================================================================================
 
 // C/C++ headers
 #include <iostream>   // endl
@@ -54,10 +44,10 @@
 #error "This problem generator requires magnetic fields"
 #endif
 
-//======================================================================================
+//========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief field loop advection problem generator for 2D/3D problems.
-//======================================================================================
+//========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
@@ -71,8 +61,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   ay.NewAthenaArray(nx3,nx2,nx1);
   az.NewAthenaArray(nx3,nx2,nx1);
 
-// Read initial conditions, diffusion coefficients (if needed)
-
+  // Read initial conditions, diffusion coefficients (if needed)
   Real rad = pin->GetReal("problem","rad");
   Real amp = pin->GetReal("problem","amp");
   Real vflow = pin->GetReal("problem","vflow");
@@ -80,15 +69,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   int iprob = pin->GetInteger("problem","iprob");
   Real ang_2,cos_a2,sin_a2,lambda;
 
-// For (iprob=4) -- rotated cylinder in 3D -- set up rotation angle and wavelength
-
+  // For (iprob=4) -- rotated cylinder in 3D -- set up rotation angle and wavelength
   if(iprob == 4){
     Real x1size = pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min;
     Real x3size = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
 
-// We put 1 wavelength in each direction.  Hence the wavelength
-//     lambda = x1size*cos_a;
-//     AND   lambda = x3size*sin_a;  are both satisfied.
+    // We put 1 wavelength in each direction.  Hence the wavelength
+    //     lambda = x1size*cos_a;
+    //     AND   lambda = x3size*sin_a;  are both satisfied.
 
     if(x1size == x3size){
       ang_2 = PI/4.0;
@@ -106,8 +94,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }
   }
 
-// Use vector potential to initialize field loop
-
+  // Use vector potential to initialize field loop
   for (int k=ks; k<=ke+1; k++) {
   for (int j=js; j<=je+1; j++) {
   for (int i=is; i<=ie+1; i++) {
@@ -155,6 +142,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     //    x1  = x*cos(ang_2) - z*sin(ang_2)
     //    x2  = y
     //    x3  = x*sin(ang_2) + z*cos(ang_2)
+
     if(iprob==4) {
       Real x = pcoord->x1v(i)*cos_a2 + pcoord->x3f(k)*sin_a2;
       Real y = pcoord->x2f(j);
@@ -197,8 +185,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
   }}}
 
-// Initialize density and momenta.  If drat != 1, then density and temperature will be
-// different inside loop than background values
+  // Initialize density and momenta.  If drat != 1, then density and temperature will be
+  // different inside loop than background values
 
   Real x1size = pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min;
   Real x2size = pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min;
@@ -219,8 +207,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
      }
   }}}
 
-// initialize interface B
-
+  // initialize interface B
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie+1; i++) {
@@ -240,8 +227,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                         (ax(k,j+1,i) - ax(k,j,i))/pcoord->dx2f(j);
   }}}
 
-// initialize total energy
-
+  // initialize total energy
   if (NON_BAROTROPIC_EOS) {
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {

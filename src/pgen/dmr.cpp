@@ -1,25 +1,14 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file dmr.cpp
 //  \brief Problem generator for double Mach reflection test.
 //  Only works for genuinely 2D hydro problems in X1-X2 plane with adiabatic EOS.
 //
 // REFERENCE: P. Woodward & P. Colella, "The numerical simulation of two-dimensional
 // fluid flow with strong shocks", JCP, 54, 115, sect. IVc.
-//======================================================================================
 
 // C++ headers
 #include <iostream>   // endl
@@ -57,12 +46,12 @@ void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 int RefinementCondition(MeshBlock *pmb);
 
-//======================================================================================
+//========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Function to initialize problem-specific data in mesh class.  Can also be used
 //  to initialize variables which are global to (and therefore can be passed to) other
 //  functions in this file.  Called in Mesh constructor.
-//======================================================================================
+//========================================================================================
 
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
@@ -77,10 +66,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   return;
 }
 
-//======================================================================================
+//========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Initialize DMR test
-//======================================================================================
+//========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
@@ -118,7 +107,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void DMRInnerX1()
 //  \brief Sets boundary condition on left X boundary (iib) for dmr test
 //  Quantities at this boundary are held fixed at the downstream state
@@ -143,7 +132,7 @@ void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
   }
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void DMRInnerX2()
 //  \brief  Sets boundary condition on lower Y boundary (ijb) for dmr test.
 //  Quantaties at this boundary are held fixed at the downstream state for
@@ -178,7 +167,7 @@ void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
   }
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void DMROuterX2()
 //  \brief Sets TIME-DEPENDENT boundary condition on upper Y boundary (ojb) for dmr test
 //  Quantaties at this boundary are held fixed at the downstream state for
@@ -216,7 +205,10 @@ void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
   }
 }
 
-// refinement condition: density and pressure curvature
+//----------------------------------------------------------------------------------------
+//! \fn
+//  \brief refinement condition: density and pressure curvature
+
 int RefinementCondition(MeshBlock *pmb)
 {
   AthenaArray<Real> &w = pmb->phydro->w;

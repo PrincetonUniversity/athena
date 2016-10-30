@@ -1,23 +1,11 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file disk.cpp
 //  \brief Initializes stratified Keplerian accretion disk in both cylindrical and
-//         spherical polar coordinates.  Initial conditions are in vertical hydrostatic
-//         equilibrium.
-//======================================================================================
+//  spherical polar coordinates.  Initial conditions are in vertical hydrostatic eqm.
 
 // C++ headers
 #include <iostream>   // endl
@@ -66,12 +54,12 @@ void DiskOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
 static Real gm0, r0, rho0, dslope, p0_over_r0, pslope, gamma_gas;
 static Real dfloor;
 
-//======================================================================================
+//========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Function to initialize problem-specific data in mesh class.  Can also be used
 //  to initialize variables which are global to (and therefore can be passed to) other
 //  functions in this file.  Called in Mesh constructor.
-//======================================================================================
+//========================================================================================
 
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
@@ -116,10 +104,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   return;
 }
 
-//======================================================================================
+//========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Initializes Keplerian accretion disk.
-//======================================================================================
+//========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
@@ -150,7 +138,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //!\f transform to cylindrical coordinate
 
 static void GetCylCoord(Coordinates *pco,Real &rad,Real &phi,Real &z,int i,int j,int k)
@@ -167,7 +155,7 @@ static void GetCylCoord(Coordinates *pco,Real &rad,Real &phi,Real &z,int i,int j
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \f  computes density in cylindrical coordinates
 
 static Real DenProfileCyl(const Real rad, const Real phi, const Real z)
@@ -181,7 +169,7 @@ static Real DenProfileCyl(const Real rad, const Real phi, const Real z)
   return std::max(den,dfloor);
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \f  computes pressure/density in cylindrical coordinates
 
 static Real PoverR(const Real rad, const Real phi, const Real z)
@@ -191,7 +179,7 @@ static Real PoverR(const Real rad, const Real phi, const Real z)
   return poverr;
 }
 
-//------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \f  computes rotational velocity in cylindrical coordinates
 
 static void VelProfileCyl(const Real rad, const Real phi, const Real z,
@@ -213,7 +201,7 @@ static void VelProfileCyl(const Real rad, const Real phi, const Real z,
   return;
 } 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //!\f: User-defined boundary Conditions: sets solution in ghost zones to initial values
 // 
 
