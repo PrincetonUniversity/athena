@@ -1,13 +1,12 @@
 #ifndef MESH_REFINEMENT_HPP
 #define MESH_REFINEMENT_HPP
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-// See LICENSE file for full public license information.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file mesh_refinement.hpp
 //  \brief defines MeshRefinement class used for static/adaptive mesh refinement
-//======================================================================================
 
 // Athena++ classes headers
 #include "../athena.hpp"         // Real
@@ -24,7 +23,7 @@ class Coordinates;
 struct FaceField;
 class BoundaryValues;
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \class MeshRefinement
 //  \brief
 

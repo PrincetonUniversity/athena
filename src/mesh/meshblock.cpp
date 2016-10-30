@@ -1,21 +1,10 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file mesh.cpp
 //  \brief implementation of functions in MeshBlock class
-//======================================================================================
 
 // C/C++ headers
 #include <iostream>
@@ -43,7 +32,7 @@
 #include "meshblock_tree.hpp"
 #include "mesh.hpp"
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // MeshBlock constructor: constructs coordinate, boundary condition, hydro, field
 //                        and mesh refinement objects.
 
@@ -134,7 +123,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // MeshBlock constructor for restarts
 
 MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
@@ -254,7 +243,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // MeshBlock destructor
 
 MeshBlock::~MeshBlock()
@@ -284,7 +273,7 @@ MeshBlock::~MeshBlock()
   if(nint_user_meshblock_data_>0) delete [] iuser_meshblock_data;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::AllocateRealUserMeshBlockDataField(int n)
 //  \brief Allocate Real AthenaArrays for user-defned data in MeshBlock
 
@@ -301,7 +290,7 @@ void MeshBlock::AllocateRealUserMeshBlockDataField(int n)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::AllocateIntUserMeshBlockDataField(int n)
 //  \brief Allocate integer AthenaArrays for user-defned data in MeshBlock
 
@@ -318,7 +307,7 @@ void MeshBlock::AllocateIntUserMeshBlockDataField(int n)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn size_t MeshBlock::GetBlockSizeInBytes(void)
 //  \brief Calculate the block data size required for restart.
 
@@ -346,7 +335,7 @@ size_t MeshBlock::GetBlockSizeInBytes(void)
   return size;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // \!fn void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
 //                          int iox1, int iox2, int iox3, enum NeighborType itype,
 //                          int ibid, int itargetid, int ifi1=0, int ifi2=0,
@@ -375,7 +364,7 @@ void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // \!fn void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist)
 // \brief Search and set all the neighbor blocks
 

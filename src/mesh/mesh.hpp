@@ -1,15 +1,14 @@
 #ifndef MESH_HPP
 #define MESH_HPP
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-// See LICENSE file for full public license information.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file mesh.hpp
 //  \brief defines Mesh and MeshBlock classes, and various structs used in them
 //  The Mesh is the overall grid structure, and MeshBlocks are local patches of data
 //  (potentially on different levels) that tile the entire domain.
-//======================================================================================
 
 // C/C++ headers
 #include <stdint.h>  // int64_t
@@ -37,7 +36,7 @@ class Hydro;
 class Field;
 class EquationOfState;
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \struct NeighborBlock
 //  \brief neighbor rank, level, and ids
 
@@ -56,7 +55,7 @@ typedef struct NeighborBlock {
                    bool ipolar, int ifi1, int ifi2);
 } NeighborBlock;
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \struct PolarNeighborBlock
 //  \brief Struct for describing neighbors around pole at same radius and polar angle
 
@@ -67,7 +66,7 @@ typedef struct PolarNeighborBlock {
   bool north;  // flag that is true for North pole and false for South pole
 } PolarNeighborBlock;
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \struct RegionSize
 //  \brief physical size and number of cells in a Mesh
 
@@ -78,7 +77,7 @@ typedef struct RegionSize {
   int nx1, nx2, nx3;        // number of active cells (not including ghost zones)
 } RegionSize;
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \class MeshBlock
 //  \brief data/functions associated with a single block
 
@@ -153,7 +152,7 @@ private:
   void ProblemGenerator(ParameterInput *pin); // in ../pgen
 };
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \class Mesh
 //  \brief data/functions associated with the overall mesh
 
@@ -237,7 +236,7 @@ private:
   void EnrollUserTimeStepFunction(TimeStepFunc_t my_func);
 };
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // \!fn Real DefaultMeshGeneratorX1(Real x, RegionSize rs)
 // \brief x1 mesh generator function, x is the logical location; x=i/nx1
 
@@ -255,7 +254,7 @@ inline Real DefaultMeshGeneratorX1(Real x, RegionSize rs)
   return rs.x1min*lw+rs.x1max*rw;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // \!fn Real DefaultMeshGeneratorX2(Real x, RegionSize rs)
 // \brief x2 mesh generator function, x is the logical location; x=j/nx2
 
@@ -273,7 +272,7 @@ inline Real DefaultMeshGeneratorX2(Real x, RegionSize rs)
   return rs.x2min*lw+rs.x2max*rw;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // \!fn Real DefaultMeshGeneratorX3(Real x, RegionSize rs)
 // \brief x3 mesh generator function, x is the logical location; x=k/nx3
 

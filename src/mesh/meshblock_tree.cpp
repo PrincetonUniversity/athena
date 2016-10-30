@@ -1,18 +1,8 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file meshblocktree.cpp
 //  \brief implementation of functions in the MeshBlockTree class
 // The MeshBlockTree stores the logical grid structure, and is used for neighbor
@@ -20,7 +10,6 @@
 // logical root (single block) level is 0.  Note the logical level of the physical root
 // grid (user-specified root grid) will be greater than zero if it contains more than
 // one MeshBlock
-//======================================================================================
 
 // C++ headers
 #include <iostream>
@@ -28,13 +17,11 @@
 #include <stdexcept>
 
 // Athena++ headers
+#include "meshblock_tree.hpp"
 #include "../athena.hpp"
 #include "../globals.hpp"
 
-// this class header
-#include "meshblock_tree.hpp"
-
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn MeshBlockTree::MeshBlockTree()
 //  \brief constructor for the logical root
 
@@ -54,7 +41,7 @@ MeshBlockTree::MeshBlockTree()
   }
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn MeshBlockTree::MeshBlockTree(MeshBlockTree *parent, int ox, int oy, int oz)
 //  \brief constructor for a leaf
 
@@ -77,7 +64,7 @@ MeshBlockTree::MeshBlockTree(MeshBlockTree *parent, int ox, int oy, int oz)
 }
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn MeshBlockTree::~MeshBlockTree()
 //  \brief destructor (for both root and leaves)
 
@@ -93,7 +80,7 @@ MeshBlockTree::~MeshBlockTree()
   }
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::CreateRootGrid(long int nx,long int ny, long int nz, int nl)
 //  \brief create the root grid; the root grid can be incomplete (less than 8 leaves)
 
@@ -121,7 +108,7 @@ void MeshBlockTree::CreateRootGrid(long int nx, long int ny, long int nz, int nl
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc,
 //   int dim, enum BoundaryFlag* mesh_bcs, long int rbx, long int rby, long int rbz,
 //   int rl, int &nnew)
@@ -146,7 +133,7 @@ void MeshBlockTree::AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc, int 
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::AddMeshBlockWithoutRefine(LogicalLocation rloc,
 //                          long int rbx, long int rby, long int rbz, int rl)
 //  \brief add a MeshBlock to the tree without refinement, used in restarting
@@ -170,7 +157,7 @@ void MeshBlockTree::AddMeshBlockWithoutRefine(LogicalLocation rloc,
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::Refine(MeshBlockTree& root, int dim,
 //           enum BoundaryFlag* mesh_bcs, long int rbx, long int rby, long int rbz,
 //           int rl, int &nnew)
@@ -254,7 +241,7 @@ void MeshBlockTree::Refine(MeshBlockTree& root, int dim, enum BoundaryFlag* mesh
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::Derefine(MeshBlockTree& root, int dim,
 //                                   enum BoundaryFlag* mesh_bcs, long int rbx,
 //                                   long int rby, long int rbz, int rl, int &ndel)
@@ -318,7 +305,7 @@ void MeshBlockTree::Derefine(MeshBlockTree& root, int dim, enum BoundaryFlag* me
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::CountMeshBlock(int& count)
 //  \brief creates the Location list sorted by Z-ordering
 
@@ -340,7 +327,7 @@ void MeshBlockTree::CountMeshBlock(int& count)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::GetMeshBlockList(LogicalLocation *list,
 //                                           int *pglist, int& count)
 //  \brief creates the Location list sorted by Z-ordering
@@ -368,7 +355,7 @@ void MeshBlockTree::GetMeshBlockList(LogicalLocation *list, int *pglist, int& co
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1,
 //                                    int ox2, int ox3, enum BoundaryFlag* bcs,
 //                                    long int rbx, long int rby, long int rbz, int rl)
@@ -470,7 +457,7 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
   return bt;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn MeshBlockTree* MeshBlockTree::FindMeshBlock(LogicalLocation tloc)
 //  \brief find MeshBlock with LogicalLocation tloc and return a pointer
 
