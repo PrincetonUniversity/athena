@@ -1,24 +1,14 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file add_flux_divergence.cpp
 //  \brief Applies divergence of the fluxes, including geometric "source terms" added
 //         by a function implemented in each Coordinate class.
-//======================================================================================
 
 // Athena++ headers
+#include "hydro.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
@@ -27,15 +17,12 @@
 #include "../bvals/bvals.hpp"
 #include "../reconstruct/reconstruction.hpp"
 
-// this class header
-#include "hydro.hpp"
-
 // OpenMP header
 #ifdef OPENMP_PARALLEL
 #include <omp.h>
 #endif
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn  void Hydro::AddFluxDivergenceToAverage
 //  \brief Adds flux divergence to weighted average of conservative variables from
 //  previous step(s) of time integrator algorithm
@@ -115,7 +102,6 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &u_in1,
   }
 
 } // end of omp parallel region
-
 
   // add coordinate (geometric) source terms
   pmb->pcoord->CoordSrcTerms((wght.c*pmb->pmy_mesh->dt),pmb->phydro->flux,w,bcc,u_out);

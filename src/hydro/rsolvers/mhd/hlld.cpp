@@ -1,36 +1,23 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file hlld.cpp
 //  \brief HLLD Riemann solver for adiabatic MHD.
 //
 // REFERENCES:
 // - T. Miyoshi & K. Kusano, "A multi-state HLL approximate Riemann solver for ideal
 //   MHD", JCP, 208, 315 (2005)
-//======================================================================================
 
 // C++ headers
 #include <algorithm>  // max(), min()
 
 // Athena++ headers
+#include "../../hydro.hpp"
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"
 #include "../../../eos/eos.hpp"
-
-// this class header
-#include "../../hydro.hpp"
 
 // container to store (density, momentum, total energy, tranverse magnetic field)
 // minimizes changes required to adopt athena4.2 version of this solver 
@@ -39,6 +26,9 @@ typedef struct Cons1D {
 } Cons1D;
 
 #define SMALL_NUMBER 1.0e-8
+
+//----------------------------------------------------------------------------------------
+//! \fn
 
 void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
   const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,

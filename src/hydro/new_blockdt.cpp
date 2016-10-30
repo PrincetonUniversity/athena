@@ -1,21 +1,10 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file new_blockdt.cpp
 //  \brief computes timestep using CFL condition on a MEshBlock
-//======================================================================================
 
 // C/C++ headers
 #include <algorithm>  // min()
@@ -23,15 +12,13 @@
 #include <cmath>      // fabs(), sqrt()
 
 // Athena++ headers
+#include "hydro.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../eos/eos.hpp"
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
-
-// this class header
-#include "hydro.hpp"
 
 // MPI/OpenMP header
 #ifdef MPI_PARALLEL
@@ -42,7 +29,7 @@
 #include <omp.h>
 #endif
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // \!fn Real Hydro::NewBlockTimeStep(void)
 // \brief calculate the minimum timestep within a MeshBlock 
 
@@ -126,15 +113,13 @@ Real Hydro::NewBlockTimeStep(void)
         }
       }
 
-// compute minimum of (v1 +/- C)
-
+      // compute minimum of (v1 +/- C)
       for (int i=is; i<=ie; ++i){
         Real& dt_1 = dt1(i);
         pthread_min_dt[tid] = std::min(pthread_min_dt[tid],dt_1);
       }
     
-// if grid is 2D/3D, compute minimum of (v2 +/- C)
-
+      // if grid is 2D/3D, compute minimum of (v2 +/- C)
       if (pmb->block_size.nx2 > 1) {
         for (int i=is; i<=ie; ++i){
           Real& dt_2 = dt2(i);
@@ -142,8 +127,7 @@ Real Hydro::NewBlockTimeStep(void)
         }
       }
 
-// if grid is 3D, compute minimum of (v3 +/- C)
-
+      // if grid is 3D, compute minimum of (v3 +/- C)
       if (pmb->block_size.nx3 > 1) {
         for (int i=is; i<=ie; ++i){
           Real& dt_3 = dt3(i);
@@ -156,7 +140,7 @@ Real Hydro::NewBlockTimeStep(void)
 
 } // end of omp parallel region
 
-// compute minimum across all threads
+  // compute minimum across all threads
   Real min_dt = pthread_min_dt[0];
   for (int n=1; n<nthreads; ++n) min_dt = std::min(min_dt,pthread_min_dt[n]);
 
