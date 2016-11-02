@@ -9,12 +9,12 @@
 //
 // Based on the Athena MHD code (Cambridge version), originally written in 2002-2005 by
 // Jim Stone, Tom Gardiner, and Peter Teuben, with many important contributions by many
-// other developers after that.
+// other developers after that, i.e. 2005-2014.
 //
 // Athena++ was started in Jan 2014.  The core design was finished during 4-7/2014 at the
 // KITP by Jim Stone.  GR was implemented by Chris White and AMR by Kengo Tomida during
 // 2014-2016.  Contributions from many others have continued to the present.
-//----------------------------------------------------------------------------------------
+//========================================================================================
 
 // C/C++ headers
 #include <stdint.h>   // int64_t
@@ -26,6 +26,7 @@
 #include <iostream>   // cout, endl
 #include <new>        // bad_alloc
 #include <string>     // string
+#include <csignal>
 
 // Athena++ headers
 #include "athena.hpp"
@@ -255,7 +256,8 @@ int main(int argc, char *argv[])
     return(0);
   }
 
-/////////////////////////
+//--- Step 5. ----------------------------------------------------------------------------
+// Construct and initialize TaskList
 
   TaskList *ptlist;
   try {
@@ -269,9 +271,8 @@ int main(int argc, char *argv[])
 #endif
     return(0);
   }
-////////////////////////
 
-//--- Step 5. ----------------------------------------------------------------------------
+//--- Step 6. ----------------------------------------------------------------------------
 // Set initial conditions by calling problem generator, or reading restart file
 
   try {
@@ -293,11 +294,12 @@ int main(int argc, char *argv[])
     return(0);
   }
 
-//--- Step 6. ----------------------------------------------------------------------------
+//--- Step 7. ----------------------------------------------------------------------------
 // Change to run directory, initialize outputs object, and make output of ICs
 
   Outputs *pouts;
   try {
+    SignalHandler::SignalHandlerInit();  // signal handler implemented in /utils
     ChangeRunDir(prundir);
     pouts = new Outputs(pmesh, pinput);
     if(res_flag==0) pouts->MakeOutputs(pmesh,pinput);
@@ -319,9 +321,8 @@ int main(int argc, char *argv[])
     return(0);
   }
 
-//--- Step 9. === START OF MAIN INTEGRATION LOOP =========================================
+//=== Step 9. === START OF MAIN INTEGRATION LOOP =========================================
 // For performance, there is no error handler protecting this step (except outputs)
-
 
   if(walltime_flag==1)
     WallTimeLimit::InitWTLimit();
@@ -390,6 +391,10 @@ int main(int argc, char *argv[])
       }
     }
 
+    // check for signals
+    if (SignalHandler::GetSignalFlag(SIGTERM) != 0) break;
+    if (SignalHandler::GetSignalFlag(SIGINT) != 0) break;
+
   } // END OF MAIN INTEGRATION LOOP ======================================================
 // Make final outputs, print diagnostics, clean up and terminate
 
@@ -422,7 +427,14 @@ int main(int argc, char *argv[])
   if(Globals::my_rank==0) {
     std::cout << "cycle=" << pmesh->ncycle << " time=" << pmesh->time
               << " dt=" << pmesh->dt << std::endl;
-    if (pmesh->ncycle == pmesh->nlim) {
+
+    if (SignalHandler::GetSignalFlag(SIGTERM) != 0) {
+      std::cout << std::endl << "Terminating on SIGTERM signal" << std::endl;
+
+    } else if (SignalHandler::GetSignalFlag(SIGINT) != 0) {
+      std::cout << std::endl << "Terminating on Interrupt signal" << std::endl;
+
+    } else if (pmesh->ncycle == pmesh->nlim) {
       if(walltime_flag==2)
         std::cout << std::endl << "Terminating on wall-time limit" << std::endl;
       else 
@@ -430,6 +442,7 @@ int main(int argc, char *argv[])
     } else {
       std::cout << std::endl << "Terminating on time limit" << std::endl;
     }
+
     std::cout << "time=" << pmesh->time << " cycle=" << pmesh->ncycle << std::endl;
     std::cout << "tlim=" << pmesh->tlim << " nlim=" << pmesh->nlim << std::endl;
 

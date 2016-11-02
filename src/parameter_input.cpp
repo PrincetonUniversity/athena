@@ -3,22 +3,6 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-
-// C++ headers
-#include <cstdlib>    // atoi(), atof(), NULL, size_t
-#include <fstream>    // ifstream
-#include <iostream>   // endl, ostream
-#include <sstream>    // stringstream
-#include <stdexcept>  // runtime_error
-#include <algorithm>  // transform
-#include <string>     // string
-
-// Athena headers
-#include "parameter_input.hpp"
-#include "athena.hpp"
-#include "globals.hpp"
-
-//========================================================================================
 //! \file parameter_input.cpp
 //  \brief implementation of functions in class ParameterInput
 //
@@ -26,7 +10,6 @@
 //   Functionality is loosely modeled after FORTRAN namelist.
 //
 // EXAMPLE of input file in 'Athena++' format:
-//
 //   <blockname1>      # block name; must be on a line by itself
 //                     # everything after a hash symbol is a comment and is ignored
 //   name1=value       # each parameter name must be on a line by itself
@@ -50,6 +33,21 @@
 //   - Nov 2002:  Created for Athena1.0/Cambridge release by Peter Teuben
 //   - 2003-2008: Many improvements and extensions by T. Gardiner and J.M. Stone
 //   - Jan 2014:  Rewritten in C++ for the Athena++ code by J.M. Stone
+//========================================================================================
+
+// C++ headers
+#include <cstdlib>    // atoi(), atof(), NULL, size_t
+#include <fstream>    // ifstream
+#include <iostream>   // endl, ostream
+#include <sstream>    // stringstream
+#include <stdexcept>  // runtime_error
+#include <algorithm>  // transform
+#include <string>     // string
+
+// Athena headers
+#include "parameter_input.hpp"
+#include "athena.hpp"
+#include "globals.hpp"
 
 //----------------------------------------------------------------------------------------
 // ParameterInput constructor
