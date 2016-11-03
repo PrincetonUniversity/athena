@@ -149,6 +149,7 @@ private:
   // functions
   void AllocateRealUserMeshBlockDataField(int n);
   void AllocateIntUserMeshBlockDataField(int n);
+  void AllocateUserOutputVariables(int n);
   void ProblemGenerator(ParameterInput *pin); // in ../pgen
 };
 
