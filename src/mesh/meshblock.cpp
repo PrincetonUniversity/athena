@@ -301,7 +301,7 @@ void MeshBlock::AllocateIntUserMeshBlockDataField(int n)
 
 void MeshBlock::AllocateUserOutputVariables(int n)
 {
-  nuser_out_var_=n;
+  nuser_out_var=n;
   int ncells1 = block_size.nx1 + 2*(NGHOST);
   int ncells2 = 1, ncells3 = 1;
   if (block_size.nx2 > 1) ncells2 = block_size.nx2 + 2*(NGHOST);
