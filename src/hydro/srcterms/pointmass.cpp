@@ -21,21 +21,21 @@ void HydroSourceTerms::PointMass(const Real dt, const AthenaArray<Real> *flux,
   const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
 {
 
-  MeshBlock *pmb = pmy_hydro_->pmy_block;
-  for (int k=pmb->ks; k<=pmb->ke; ++k) {
-#pragma omp parallel for schedule(static)
-    for (int j=pmb->js; j<=pmb->je; ++j) {
-#pragma simd
-      for (int i=pmb->is; i<=pmb->ie; ++i) {
-        Real den = prim(IDN,k,j,i);
-        Real src = dt*den*pmb->pcoord->coord_src1_i_(i)*gm_/pmb->pcoord->x1v(i);
-        cons(IM1,k,j,i) -= src;
-        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) -=
-          dt*0.5*(pmb->pcoord->phy_src1_i_(i)*flux[X1DIR](IDN,k,j,i)*gm_
-                 +pmb->pcoord->phy_src2_i_(i)*flux[X1DIR](IDN,k,j,i+1)*gm_);
-      }
-    }
-  }
+//  MeshBlock *pmb = pmy_hydro_->pmy_block;
+//  for (int k=pmb->ks; k<=pmb->ke; ++k) {
+//#pragma omp parallel for schedule(static)
+//    for (int j=pmb->js; j<=pmb->je; ++j) {
+//#pragma simd
+//      for (int i=pmb->is; i<=pmb->ie; ++i) {
+//        Real den = prim(IDN,k,j,i);
+//        Real src = dt*den*pmb->pcoord->coord_src1_i_(i)*gm_/pmb->pcoord->x1v(i);
+//        cons(IM1,k,j,i) -= src;
+//        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) -=
+//          dt*0.5*(pmb->pcoord->phy_src1_i_(i)*flux[X1DIR](IDN,k,j,i)*gm_
+//                 +pmb->pcoord->phy_src2_i_(i)*flux[X1DIR](IDN,k,j,i+1)*gm_);
+//      }
+//    }
+//  }
 
   return;
 }

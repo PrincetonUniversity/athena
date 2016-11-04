@@ -25,6 +25,7 @@ EXE_DIR := bin/
 EXECUTABLE := $(EXE_DIR)athena
 SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/bvals/*.cpp) \
+	     src/coordinates/coordinates.cpp \
 	     src/coordinates/$(COORDINATES_FILE) \
 	     src/eos/$(EOS_FILE) \
 	     $(wildcard src/field/*.cpp) \

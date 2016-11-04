@@ -90,8 +90,9 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // in the Hydro constructor
  
   // mesh-related objects
-  pcoord = new Coordinates(this, pin);
-  if(ref_flag==false) pcoord->CheckMeshSpacing();
+  if (COORDINATE_SYSTEM == "cartesian") {
+    pcoord = new Cartesian(this, pin, 0);
+  }
   pbval  = new BoundaryValues(this, pin);
   if (block_bcs[INNER_X2] == POLAR_BNDRY||block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh->root_level;
@@ -168,7 +169,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   }
 
   // (re-)create mesh-related objects in MeshBlock
-  pcoord = new Coordinates(this, pin);
+  if (COORDINATE_SYSTEM == "cartesian") {
+    pcoord = new Cartesian(this, pin, 0);
+  }
   pbval  = new BoundaryValues(this, pin);
   if (block_bcs[INNER_X2] == POLAR_BNDRY||block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh->root_level;

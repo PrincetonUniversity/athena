@@ -228,17 +228,17 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
 
   //initialize user-enrollable functions
   if(mesh_size.x1rat!=1.0)
-    user_meshgen_[X1DIR]=true;
+    use_meshgen_fn_[X1DIR]=true;
   else
-    user_meshgen_[X1DIR]=false;
+    use_meshgen_fn_[X1DIR]=false;
   if(mesh_size.x2rat!=1.0)
-    user_meshgen_[X2DIR]=true;
+    use_meshgen_fn_[X2DIR]=true;
   else
-    user_meshgen_[X2DIR]=false;
+    use_meshgen_fn_[X2DIR]=false;
   if(mesh_size.x3rat!=1.0)
-    user_meshgen_[X3DIR]=true;
+    use_meshgen_fn_[X3DIR]=true;
   else
-    user_meshgen_[X3DIR]=false;
+    use_meshgen_fn_[X3DIR]=false;
   MeshGenerator_[X1DIR]=DefaultMeshGeneratorX1;
   MeshGenerator_[X2DIR]=DefaultMeshGeneratorX2;
   MeshGenerator_[X3DIR]=DefaultMeshGeneratorX3;
@@ -601,17 +601,17 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
 
   //initialize user-enrollable functions
   if(mesh_size.x1rat!=1.0)
-    user_meshgen_[X1DIR]=true;
+    use_meshgen_fn_[X1DIR]=true;
   else
-    user_meshgen_[X1DIR]=false;
+    use_meshgen_fn_[X1DIR]=false;
   if(mesh_size.x2rat!=1.0)
-    user_meshgen_[X2DIR]=true;
+    use_meshgen_fn_[X2DIR]=true;
   else
-    user_meshgen_[X2DIR]=false;
+    use_meshgen_fn_[X2DIR]=false;
   if(mesh_size.x3rat!=1.0)
-    user_meshgen_[X3DIR]=true;
+    use_meshgen_fn_[X3DIR]=true;
   else
-    user_meshgen_[X3DIR]=false;
+    use_meshgen_fn_[X3DIR]=false;
   MeshGenerator_[X1DIR]=DefaultMeshGeneratorX1;
   MeshGenerator_[X2DIR]=DefaultMeshGeneratorX2;
   MeshGenerator_[X3DIR]=DefaultMeshGeneratorX3;
@@ -1029,7 +1029,7 @@ void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc_t m
         << "dirName = " << dir << " not valid" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  user_meshgen_[dir]=true;
+  use_meshgen_fn_[dir]=true;
   MeshGenerator_[dir]=my_mg;
   return;
 }

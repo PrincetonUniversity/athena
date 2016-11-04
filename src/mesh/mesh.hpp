@@ -214,7 +214,7 @@ private:
   LogicalLocation *loclist;
   MeshBlockTree tree;
   long int nrbx1, nrbx2, nrbx3;
-  bool user_meshgen_[3];
+  bool use_meshgen_fn_[3]; // flag to use non-uniform or user meshgen function
   int nreal_user_mesh_data_, nint_user_mesh_data_;
 
   // functions
