@@ -12,6 +12,7 @@
 
 // C/C++ headers
 #include <stdint.h>  // int64_t
+#include <string>
 
 // Athena++ classes headers
 #include "../athena.hpp"
@@ -159,6 +160,7 @@ private:
 
 class Mesh {
   friend class RestartOutput;
+  friend class HistoryOutput;
   friend class MeshBlock;
   friend class BoundaryValues;
   friend class Coordinates;
@@ -217,12 +219,16 @@ private:
   bool user_meshgen_[3];
   int nreal_user_mesh_data_, nint_user_mesh_data_;
 
+  int nuser_history_output_;
+  std::string *user_history_output_names_;
+
   // functions
   MeshGenFunc_t MeshGenerator_[3];
   SrcTermFunc_t UserSourceTerm_;
   BValFunc_t BoundaryFunction_[6];
   AMRFlagFunc_t AMRFlag_;
   TimeStepFunc_t UserTimeStep_;
+  HistoryOutputFunc_t *user_history_func_;
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
   void OutputMeshStructure(int dim);
@@ -235,6 +241,8 @@ private:
   void EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc_t my_mg);
   void EnrollUserExplicitSourceFunction(SrcTermFunc_t my_func);
   void EnrollUserTimeStepFunction(TimeStepFunc_t my_func);
+  void AllocateUserHistoryOutput(int n);
+  void EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, char *name);
 };
 
 //----------------------------------------------------------------------------------------
