@@ -32,12 +32,13 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin)
   pmy_block_ = pmb;
   AMRFlag_=pmb->pmy_mesh->AMRFlag_;
 
+  // Create coarse mesh object for parent grid
   if (COORDINATE_SYSTEM == "cartesian") {
-    pcoarsec = new Cartesian(pmb, pin, 1);
+    pcoarsec = new Cartesian(pmb, pin, true);
   } else if (COORDINATE_SYSTEM == "cylindrical") {
-    pcoarsec = new Cylindrical(pmb, pin, 1);
+    pcoarsec = new Cylindrical(pmb, pin, true);
   } else if (COORDINATE_SYSTEM == "spherical_polar") {
-    pcoarsec = new SphericalPolar(pmb, pin, 1);
+    pcoarsec = new SphericalPolar(pmb, pin, true);
   }
 
   deref_count_ = 0;

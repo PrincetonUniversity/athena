@@ -21,13 +21,14 @@
 class MeshBlock;
 class ParameterInput;
 
+//----------------------------------------------------------------------------------------
 //! \class Coordinates
-//  \brief abstract base class for coordinate data and functions
+//  \brief abstract base class for all coordinate derived classes
 
 class Coordinates {
 public:
 //  friend class HydroSourceTerms;
-  Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag = 0);
+  Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag = false);
   virtual ~Coordinates();
 
   // data
@@ -78,7 +79,8 @@ public:
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)=0;
 
 protected:
-  int cflag;
+  bool coarse_flag;  // true if this coordinate object is parent (coarse) mesh in AMR
+
   // Scratch arrays for coordinate factors
   // Format: coord_<type>[<direction>]_<index>[<count>]_
   //   type: vol[ume], area, etc.
@@ -128,7 +130,7 @@ protected:
 
 class Cartesian : public Coordinates {
 public:
-  Cartesian(MeshBlock *pmb, ParameterInput *pin, int flag);
+  Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag);
   ~Cartesian();
 
   // functions...
@@ -149,7 +151,7 @@ public:
 
 class Cylindrical : public Coordinates {
 public:
-  Cylindrical(MeshBlock *pmb, ParameterInput *pin, int flag);
+  Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag);
   ~Cylindrical();
 
   // functions...
@@ -186,7 +188,7 @@ public:
 
 class SphericalPolar : public Coordinates {
 public:
-  SphericalPolar(MeshBlock *pmb, ParameterInput *pin, int flag);
+  SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag);
   ~SphericalPolar();
 
   // functions...

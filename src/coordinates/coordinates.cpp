@@ -16,20 +16,19 @@
 //----------------------------------------------------------------------------------------
 // Coordinates constructor: sets coordinates and coordinate spacing of cell FACES
 
-Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
+Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag)
 {
   pmy_block = pmb;
-  cflag=flag;
+  coarse_flag=flag;
   int is, ie, js, je, ks, ke, ng;
-  if(cflag==0) {
-    is = pmb->is; js = pmb->js; ks = pmb->ks;
-    ie = pmb->ie; je = pmb->je; ke = pmb->ke;
-    ng=NGHOST;
-  }
-  else {
+  if(coarse_flag==true) {
     is = pmb->cis; js = pmb->cjs; ks = pmb->cks;
     ie = pmb->cie; je = pmb->cje; ke = pmb->cke;
     ng=pmb->cnghost;
+  } else {
+    is = pmb->is; js = pmb->js; ks = pmb->ks;
+    ie = pmb->ie; je = pmb->je; ke = pmb->ke;
+    ng=NGHOST;
   }
   Mesh *pm=pmy_block->pmy_mesh;
   RegionSize& mesh_size  = pmy_block->pmy_mesh->mesh_size;
@@ -62,7 +61,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
   if(pm->use_meshgen_fn_[X1DIR]==true) { // use nonuniform or user-defined meshgen fn
     for (int i=is-ng; i<=ie+ng+1; ++i) {
       // if there are too many levels, this won't work or be precise enough
-      if (cflag == 0) {
+      if (coarse_flag == false) {
         noffset = i-is + (long long)lx1*block_size.nx1;
       } else {
         noffset = (i-is)*2 + (long long)lx1*block_size.nx1;
@@ -124,7 +123,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
     if(pm->use_meshgen_fn_[X2DIR]==true) { // use nonuniform or user-defined meshgen fn
       for (int j=js-ng; j<=je+ng+1; ++j) {
         // if there are too many levels, this won't work or be precise enough
-        if (cflag == 0) {
+        if (coarse_flag == false) {
           noffset = j-js + (long long)lx2*block_size.nx2;
         } else {
           noffset = (j-js)*2 + (long long)lx2*block_size.nx2;
@@ -195,7 +194,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
     if(pm->use_meshgen_fn_[X3DIR]==true) {  // use nonuniform or user-defined meshgen fn
       for (int k=ks-ng; k<=ke+ng+1; ++k) {
         // if there are too many levels, this won't work or be precise enough
-        if (cflag == 0) {
+        if (coarse_flag == false) {
           noffset = k-ks + (long long)lx3*block_size.nx3;
         } else {
           noffset = (k-ks)*2 + (long long)lx3*block_size.nx3;

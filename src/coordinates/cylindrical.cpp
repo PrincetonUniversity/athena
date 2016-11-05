@@ -21,20 +21,20 @@
 //----------------------------------------------------------------------------------------
 // Cylindrical coordinates constructor
 
-Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, int flag)
+Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
   : Coordinates(pmb, pin, flag)
 {
   pmy_block = pmb;
-  cflag=flag;
+  coarse_flag=flag;
   int il, iu, jl, ju, kl, ku, ng;
-  if(cflag==0) {
-    il = pmb->is; jl = pmb->js; kl = pmb->ks;
-    iu = pmb->ie; ju = pmb->je; ku = pmb->ke;
-    ng=NGHOST;
-  } else {
+  if(coarse_flag==true) {
     il = pmb->cis; jl = pmb->cjs; kl = pmb->cks;
     iu = pmb->cie; ju = pmb->cje; ku = pmb->cke;
     ng=pmb->cnghost;
+  } else {
+    il = pmb->is; jl = pmb->js; kl = pmb->ks;
+    iu = pmb->ie; ju = pmb->je; ku = pmb->ke;
+    ng=NGHOST;
   }
   Mesh *pm=pmy_block->pmy_mesh;
   RegionSize& mesh_size  = pmy_block->pmy_mesh->mesh_size;
@@ -119,7 +119,8 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, int flag)
   }
 
   // Allocate memory for internal scratch arrays to store partial calculations
-  if(cflag==0) {
+  // (note this is skipped if object is for coarse mesh with AMR)
+  if(coarse_flag==false) {
     coord_area3_i_.NewAthenaArray(ncells1);
     coord_vol_i_.NewAthenaArray(ncells1);
     coord_src1_i_.NewAthenaArray(ncells1);
@@ -170,7 +171,7 @@ Cylindrical::~Cylindrical()
     x3s1.DeleteAthenaArray();
     x3s2.DeleteAthenaArray();
   }
-  if(cflag==0) {
+  if(coarse_flag==false) {
     coord_area3_i_.DeleteAthenaArray();
     coord_vol_i_.DeleteAthenaArray();
     coord_src1_i_.DeleteAthenaArray();
