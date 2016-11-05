@@ -34,6 +34,10 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin)
 
   if (COORDINATE_SYSTEM == "cartesian") {
     pcoarsec = new Cartesian(pmb, pin, 1);
+  } else if (COORDINATE_SYSTEM == "cylindrical") {
+    pcoarsec = new Cylindrical(pmb, pin, 1);
+  } else if (COORDINATE_SYSTEM == "spherical_polar") {
+    pcoarsec = new SphericalPolar(pmb, pin, 1);
   }
 
   deref_count_ = 0;

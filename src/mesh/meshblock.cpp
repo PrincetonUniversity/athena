@@ -92,7 +92,12 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // mesh-related objects
   if (COORDINATE_SYSTEM == "cartesian") {
     pcoord = new Cartesian(this, pin, 0);
+  } else if (COORDINATE_SYSTEM == "cylindrical") {
+    pcoord = new Cylindrical(this, pin, 0);
+  } else if (COORDINATE_SYSTEM == "spherical_polar") {
+    pcoord = new SphericalPolar(this, pin, 0);
   }
+
   pbval  = new BoundaryValues(this, pin);
   if (block_bcs[INNER_X2] == POLAR_BNDRY||block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh->root_level;
@@ -171,7 +176,12 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   // (re-)create mesh-related objects in MeshBlock
   if (COORDINATE_SYSTEM == "cartesian") {
     pcoord = new Cartesian(this, pin, 0);
+  } else if (COORDINATE_SYSTEM == "cylindrical") {
+    pcoord = new Cylindrical(this, pin, 0);
+  } else if (COORDINATE_SYSTEM == "spherical_polar") {
+    pcoord = new SphericalPolar(this, pin, 0);
   }
+
   pbval  = new BoundaryValues(this, pin);
   if (block_bcs[INNER_X2] == POLAR_BNDRY||block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh->root_level;

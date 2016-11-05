@@ -6,10 +6,10 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file coordinates.hpp
-//  \brief defines Coordinates base class containing data and functions used by all
-//   coordinates classes.  The coordinates class is used to compute/store geometrical
-//   factors (areas, volumes, coordinate source terms) related to a Mesh.  The GR
-//   coordinates class is derived from this base class, and contains additional data/fns
+//  \brief defines abstract base class Coordinates containing data and functions used by
+//  all coordinate derived classes.  The Coordinates class is used to compute/store
+//  geometrical factors (areas, volumes, coordinate source terms) related to a Mesh. The
+//  GR coordinates class is derived from this ABC, and contains additional data/fns
 
 // Athena++ classes headers
 #include "../athena.hpp"
@@ -22,7 +22,7 @@ class MeshBlock;
 class ParameterInput;
 
 //! \class Coordinates
-//  \brief coordinate data and functions
+//  \brief abstract base class for coordinate data and functions
 
 class Coordinates {
 public:
@@ -37,7 +37,7 @@ public:
   AthenaArray<Real> x1s2, x1s3, x2s1, x2s3, x3s1, x3s2; // area averaged posn for AMR
 
   // functions...
-  // ... to compute length of edges
+  // ...to compute length of edges
   virtual void Edge1Length(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &len);
   virtual void Edge2Length(const int k, const int j, const int il, const int iu,
@@ -48,12 +48,12 @@ public:
   virtual Real GetEdge2Length(const int k, const int j, const int i);
   virtual Real GetEdge3Length(const int k, const int j, const int i);
 
-  // ... to compute physical width at cell center
+  // ...to compute physical width at cell center
   virtual Real CenterWidth1(const int k, const int j, const int i);
   virtual Real CenterWidth2(const int k, const int j, const int i);
   virtual Real CenterWidth3(const int k, const int j, const int i);
 
-  // ... to compute area of faces
+  // ...to compute area of faces
   virtual void Face1Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &area);
   virtual void Face2Area(const int k, const int j, const int il, const int iu,
@@ -68,12 +68,12 @@ public:
   virtual void CellMetric(const int, const int, const int, const int, AthenaArray<Real> &,
         AthenaArray<Real> &) {return;}
 
-  // ... to compute volume of cells (pure virtual)
+  // ...to compute volume of cells (pure virtual)
   virtual void CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &vol)=0;
   virtual Real GetCellVolume(const int k, const int j, const int i)=0;
 
-  // ... to compute geometrical source terms (pure virtual)
+  // ...to compute geometrical source terms (pure virtual)
   virtual void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)=0;
 
@@ -119,26 +119,108 @@ protected:
 
   // Scratch arrays for physical source terms
   AthenaArray<Real> phy_src1_i_, phy_src2_i_;
-
 };
 
 //----------------------------------------------------------------------------------------
 //! \class Cartesian
-//  \brief derived Coordinates class for Cartesian coordinates
+//  \brief derived Coordinates class for Cartesian coordinates.  None of the virtual funcs
+//  in the abstract base class are over-written.
 
 class Cartesian : public Coordinates {
 public:
   Cartesian(MeshBlock *pmb, ParameterInput *pin, int flag);
-  ~Cartesian() {};
+  ~Cartesian();
 
   // functions...
-  // to compute volumes of cells
+  // ...to compute volumes of cells
   void CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &vol);
   Real GetCellVolume(const int k, const int j, const int i);
 
-  // ... to compute geometrical source terms (pure virtual)
+  // ...to compute geometrical source terms
   void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
 };
+
+//----------------------------------------------------------------------------------------
+//! \class Cylindrical
+//  \brief derived Coordinates class for Cylindrical coordinates.  Some of the length
+//  and area functions in the abstract base class are over-written.
+
+class Cylindrical : public Coordinates {
+public:
+  Cylindrical(MeshBlock *pmb, ParameterInput *pin, int flag);
+  ~Cylindrical();
+
+  // functions...
+  // ...to compute length of edges
+  void Edge2Length(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &len);
+  Real GetEdge2Length(const int k, const int j, const int i);
+
+  // ...to compute physical width at cell center
+  Real CenterWidth2(const int k, const int j, const int i);
+
+  // ...to compute area of faces
+  void Face1Area(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &area);
+  void Face3Area(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &area);
+  Real GetFace1Area(const int k, const int j, const int i);
+  Real GetFace3Area(const int k, const int j, const int i);
+
+  // ...to compute volumes of cells
+  void CellVolume(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &vol);
+  Real GetCellVolume(const int k, const int j, const int i);
+
+  // ...to compute geometrical source terms
+  void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+    const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
+};
+
+//----------------------------------------------------------------------------------------
+//! \class SphericalPolar
+//  \brief derived Coordinates class for spherical polar coordinates.  Some of the length
+//  and area functions in the abstract base class are over-written.
+
+class SphericalPolar : public Coordinates {
+public:
+  SphericalPolar(MeshBlock *pmb, ParameterInput *pin, int flag);
+  ~SphericalPolar();
+
+  // functions...
+  // ...to compute length of edges
+  void Edge2Length(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &len);
+  void Edge3Length(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &len);
+  Real GetEdge2Length(const int k, const int j, const int i);
+  Real GetEdge3Length(const int k, const int j, const int i);
+
+  // ...to compute physical width at cell center
+  Real CenterWidth2(const int k, const int j, const int i);
+  Real CenterWidth3(const int k, const int j, const int i);
+
+  // ...to compute area of faces
+  void Face1Area(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &area);
+  void Face2Area(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &area);
+  void Face3Area(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &area);
+  Real GetFace1Area(const int k, const int j, const int i);
+  Real GetFace2Area(const int k, const int j, const int i);
+  Real GetFace3Area(const int k, const int j, const int i);
+
+  // ...to compute volumes of cells
+  void CellVolume(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &vol);
+  Real GetCellVolume(const int k, const int j, const int i);
+
+  // ...to compute geometrical source terms (pure virtual)
+  void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+    const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
+};
+
 #endif // COORDINATES_HPP

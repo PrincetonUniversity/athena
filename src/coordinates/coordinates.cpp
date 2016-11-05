@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file coordinates.cpp
-//  \brief implements Coordinates class functions for base class
+//  \brief implements functions for Coordinates abstract base class
 
 // Athena++ headers
 #include "coordinates.hpp"
@@ -257,7 +257,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
 
 }
 
-//----------------------------------------------------------------------------------------
 // destructor
 
 Coordinates::~Coordinates()
@@ -265,23 +264,9 @@ Coordinates::~Coordinates()
   dx1f.DeleteAthenaArray();
   dx2f.DeleteAthenaArray();
   dx3f.DeleteAthenaArray();
-  dx1v.DeleteAthenaArray();
-  dx2v.DeleteAthenaArray();
-  dx3v.DeleteAthenaArray();
   x1f.DeleteAthenaArray();
   x2f.DeleteAthenaArray();
   x3f.DeleteAthenaArray();
-  x1v.DeleteAthenaArray();
-  x2v.DeleteAthenaArray();
-  x3v.DeleteAthenaArray();
-  if((pmy_block->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
-    x1s2.DeleteAthenaArray();
-    x1s3.DeleteAthenaArray();
-    x2s1.DeleteAthenaArray();
-    x2s3.DeleteAthenaArray();
-    x3s1.DeleteAthenaArray();
-    x3s2.DeleteAthenaArray();
-  }
 }
 
 //----------------------------------------------------------------------------------------
