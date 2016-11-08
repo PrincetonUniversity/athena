@@ -92,7 +92,7 @@ void ShearOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceFi
                    int is, int ie, int js, int je, int ks, int ke);
 
 void LinearSlope(const int nvar, const int ny, const int nx, const AthenaArray<Real> &w,
-				   AthenaArray<Real> &dw);
+                   AthenaArray<Real> &dw);
 
 //======================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -129,14 +129,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real gam1;
 
   if (pmy_mesh->mesh_size.nx2 == 1 || pmy_mesh->mesh_size.nx3 > 1) {
-	  std::cout << "[hb3.cpp]: only works on 2D grid" << std::endl;
-	  exit(0);
+      std::cout << "[hb3.cpp]: only works on 2D grid" << std::endl;
+      exit(0);
   }
 
 
   if (ShBoxCoord != 2) {
-	  std::cout << "[hb3.cpp]: only works for x-z plane with ShBoxCoord = 2" << std::endl;
-	  exit(0);
+      std::cout << "[hb3.cpp]: only works for x-z plane with ShBoxCoord = 2" << std::endl;
+      exit(0);
   }
 
   // Initialize boundary value arrays
@@ -147,17 +147,17 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     ibval.NewAthenaArray(nvar,nx2,(NGHOST));
     obval.NewAthenaArray(nvar,nx2,(NGHOST));
 
-	first_time = 0;
+    first_time = 0;
   }
   Real d0 = 1.0;
   Real p0 = 1e-6;
 
   if (NON_BAROTROPIC_EOS) {
     gm1 = (peos->GetGamma() - 1.0);
-	iso_cs = sqrt((gm1+1.0)*p0/d0);
+    iso_cs = sqrt((gm1+1.0)*p0/d0);
   } else {
     iso_cs = peos->GetIsoSoundSpeed();
-	p0 = d0*SQR(iso_cs);
+    p0 = d0*SQR(iso_cs);
   }
 
   B0 = sqrt((double)(2.0*p0/beta));
@@ -188,44 +188,44 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
       x1 = pcoord->x1v(i);
-	  x2 = pcoord->x2v(j);
-	  rd = d0;
-	  rp = p0;
-	  rvx = 0.0;
-	  rvy = 0.0;
-	  rvz = 0.0;
-	  if (ipert == 1) {
+      x2 = pcoord->x2v(j);
+      rd = d0;
+      rp = p0;
+      rvx = 0.0;
+      rvy = 0.0;
+      rvz = 0.0;
+      if (ipert == 1) {
         rval = 1.0 + amp*(ran2(&iseed) - 0.5);
         if (NON_BAROTROPIC_EOS) {
-		  rp = rval*p0;
-		  rd = pow(rval,1.0/(gam1+1.0))*d0;
-		} else {
-		  rd = rval*d0;
-	    }
-	    rvx = 0.0;
-	  } else if (ipert == 2) {
-		rp = p0;
-		rd = d0*(1.0+0.1*sin((double)kx*x1));
-		if (NON_BAROTROPIC_EOS) {
-		  rvx = amp*sqrt((gam1+1.0)*p0/d0);
-		} else {
-		  rvx = amp*sqrt(p0/d0);
-		}
-	  } else {
+          rp = rval*p0;
+          rd = pow(rval,1.0/(gam1+1.0))*d0;
+        } else {
+          rd = rval*d0;
+        }
+        rvx = 0.0;
+      } else if (ipert == 2) {
+        rp = p0;
+        rd = d0*(1.0+0.1*sin((double)kx*x1));
+        if (NON_BAROTROPIC_EOS) {
+          rvx = amp*sqrt((gam1+1.0)*p0/d0);
+        } else {
+          rvx = amp*sqrt(p0/d0);
+        }
+      } else {
           std::cout << "[hb3.cpp] ipert = " <<ipert <<" is unrecognized " <<std::endl;
-	      exit(0);
-	  }
+          exit(0);
+      }
       phydro->u(IDN,ks,j,i) = rd;
       phydro->u(IM1,ks,j,i) = rd*rvx;
       phydro->u(IM2,ks,j,i) = rd*rvy;
       phydro->u(IM3,ks,j,i) = rd*rvz;
       phydro->u(IM3,ks,j,i) -= rd*qshear*Omega_0*x1;
-  	  if (NON_BAROTROPIC_EOS) {
-		phydro->u(IEN,ks,j,i) = rp/gam1 +
-			 0.5*(SQR(phydro->u(IM1,ks,j,i)) +
-				  SQR(phydro->u(IM2,ks,j,i)) +
-				  SQR(phydro->u(IM3,ks,j,i)))/rd;
-	  }
+        if (NON_BAROTROPIC_EOS) {
+        phydro->u(IEN,ks,j,i) = rp/gam1 +
+             0.5*(SQR(phydro->u(IM1,ks,j,i)) +
+                  SQR(phydro->u(IM2,ks,j,i)) +
+                  SQR(phydro->u(IM3,ks,j,i)))/rd;
+      }
 
 // Initialize magnetic field.  For 2D shearing box
 // B1=Bx, B2=Bz, B3=By
@@ -235,29 +235,29 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       if (MAGNETIC_FIELDS_ENABLED) {
         if (ifield == 1) {
           pfield->b.x1f(ks,j,i) = 0.0;
-		  pfield->b.x2f(ks,j,i) = B0*(sin((double)kx*x1));
-		  pfield->b.x3f(ks,j,i) = 0.0;
-		  if (i==ie) pfield->b.x1f(ks,j,ie+1) = 0.0;
-		  if (j==je) pfield->b.x2f(ks,je+1,i) = B0*(sin((double)kx*x1));
-		} else if (ifield == 2) {
+          pfield->b.x2f(ks,j,i) = B0*(sin((double)kx*x1));
+          pfield->b.x3f(ks,j,i) = 0.0;
+          if (i==ie) pfield->b.x1f(ks,j,ie+1) = 0.0;
+          if (j==je) pfield->b.x2f(ks,je+1,i) = B0*(sin((double)kx*x1));
+        } else if (ifield == 2) {
             pfield->b.x1f(ks,j,i) = 0.0;
-			pfield->b.x2f(ks,j,i) = B0;
-			pfield->b.x3f(ks,j,i) = 0.0;
-		    if (i==ie) pfield->b.x1f(ks,j,ie+1) = 0.0;
-		    if (j==je) pfield->b.x2f(ks,je+1,i) = B0;
-		} else {
+            pfield->b.x2f(ks,j,i) = B0;
+            pfield->b.x3f(ks,j,i) = 0.0;
+            if (i==ie) pfield->b.x1f(ks,j,ie+1) = 0.0;
+            if (j==je) pfield->b.x2f(ks,je+1,i) = B0;
+        } else {
             std::cout << "[hb3.cpp] ifield = " <<ifield <<" is unrecognized " <<std::endl;
-	        exit(0);
-		}
-  	    if (NON_BAROTROPIC_EOS) {
-		  phydro->u(IEN,ks,j,i) += 0.5*(
-			      SQR(0.5*(pfield->b.x1f(ks,j,i) + pfield->b.x1f(ks,j,i+1))) +
-				  SQR(0.5*(pfield->b.x2f(ks,j,i) + pfield->b.x2f(ks,j+1,i))) +
-				  SQR(pfield->b.x3f(ks,j,i)));
-	    }
-	  }
+            exit(0);
+        }
+          if (NON_BAROTROPIC_EOS) {
+          phydro->u(IEN,ks,j,i) += 0.5*(
+                  SQR(0.5*(pfield->b.x1f(ks,j,i) + pfield->b.x1f(ks,j,i+1))) +
+                  SQR(0.5*(pfield->b.x2f(ks,j,i) + pfield->b.x2f(ks,j+1,i))) +
+                  SQR(pfield->b.x3f(ks,j,i)));
+        }
+      }
 
-	  }
+      }
     }
 
   // enroll boundary value function pointers
@@ -307,32 +307,32 @@ void ShearInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceFi
       ibval(IVY,j,i-1) = a(IVY,ks,j,ie-(NGHOST)+i);
       ibval(IVZ,j,i-1) = a(IVZ,ks,j,ie-(NGHOST)+i);
       if (NON_BAROTROPIC_EOS) {
-	    ibval(IEN,j,i-1) = a(IEN,ks,j,ie-(NGHOST)+i);
-	  }
+        ibval(IEN,j,i-1) = a(IEN,ks,j,ie-(NGHOST)+i);
+      }
       if (MAGNETIC_FIELDS_ENABLED) {
-	    ibval(NHYDRO,j,i-1) = b.x1f(ks,j,ie-(NGHOST)+i);
-	    ibval(NHYDRO+1,j,i-1) = b.x2f(ks,j,ie-(NGHOST)+i);
-	    ibval(NHYDRO+2,j,i-1) = b.x3f(ks,j,ie-(NGHOST)+i);
-	  }
+        ibval(NHYDRO,j,i-1) = b.x1f(ks,j,ie-(NGHOST)+i);
+        ibval(NHYDRO+1,j,i-1) = b.x2f(ks,j,ie-(NGHOST)+i);
+        ibval(NHYDRO+2,j,i-1) = b.x3f(ks,j,ie-(NGHOST)+i);
+      }
     }
   }
 
   for(int j=0; j<nx2; ++j) {
     for(int i=1; i<=(NGHOST); ++i) {
-	  int ib = (NGHOST) - i;
-	  a(IDN,ks,j,is-i) = ibval(IDN,j,ib);
-	  a(IVX,ks,j,is-i) = ibval(IVX,j,ib);
-	  a(IVY,ks,j,is-i) = ibval(IVY,j,ib);
-	  a(IVZ,ks,j,is-i) = ibval(IVZ,j,ib)+qshear*Omega_0*x1size;
+      int ib = (NGHOST) - i;
+      a(IDN,ks,j,is-i) = ibval(IDN,j,ib);
+      a(IVX,ks,j,is-i) = ibval(IVX,j,ib);
+      a(IVY,ks,j,is-i) = ibval(IVY,j,ib);
+      a(IVZ,ks,j,is-i) = ibval(IVZ,j,ib)+qshear*Omega_0*x1size;
       if (NON_BAROTROPIC_EOS) {
-	    a(IEN,ks,j,is-i) = ibval(IEN,j,ib);
-	  }
+        a(IEN,ks,j,is-i) = ibval(IEN,j,ib);
+      }
       if (MAGNETIC_FIELDS_ENABLED) {
-		b.x1f(ks,j,is-i) = ibval(NHYDRO,j,ib);
-		b.x2f(ks,j,is-i) = ibval(NHYDRO+1,j,ib);
-		b.x3f(ks,j,is-i) = ibval(NHYDRO+2,j,ib);
-	  }
-	}}
+        b.x1f(ks,j,is-i) = ibval(NHYDRO,j,ib);
+        b.x2f(ks,j,is-i) = ibval(NHYDRO+1,j,ib);
+        b.x3f(ks,j,is-i) = ibval(NHYDRO+2,j,ib);
+      }
+    }}
 
 }
 
@@ -363,32 +363,32 @@ void ShearOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceFi
       obval(IVZ,j,i-1) = a(IVZ,ks,j,is+i-1);
       if (NON_BAROTROPIC_EOS) {
         obval(IEN,j,i-1) = a(IEN,ks,j,is+i-1);
-	  }
+      }
       if (MAGNETIC_FIELDS_ENABLED) {
-	    obval(NHYDRO,j,i-1) = b.x1f(ks,j,is+i-1);
-	    obval(NHYDRO+1,j,i-1) = b.x2f(ks,j,is+i-1);
-	    obval(NHYDRO+2,j,i-1) = b.x3f(ks,j,is+i-1);
-	  }
+        obval(NHYDRO,j,i-1) = b.x1f(ks,j,is+i-1);
+        obval(NHYDRO+1,j,i-1) = b.x2f(ks,j,is+i-1);
+        obval(NHYDRO+2,j,i-1) = b.x3f(ks,j,is+i-1);
+      }
     }
   }
 
 
   for(int j=0; j<=nx2; ++j) {
     for(int i=1; i<=(NGHOST); ++i) {
-	  int ib =  i - 1;
-	  a(IDN,ks,j,ie+i) = obval(IDN,j,ib);
-	  a(IVX,ks,j,ie+i) = obval(IVX,j,ib);
-	  a(IVY,ks,j,ie+i) = obval(IVY,j,ib);
-	  a(IVZ,ks,j,ie+i) = obval(IVZ,j,ib)-qshear*Omega_0*x1size;
+      int ib =  i - 1;
+      a(IDN,ks,j,ie+i) = obval(IDN,j,ib);
+      a(IVX,ks,j,ie+i) = obval(IVX,j,ib);
+      a(IVY,ks,j,ie+i) = obval(IVY,j,ib);
+      a(IVZ,ks,j,ie+i) = obval(IVZ,j,ib)-qshear*Omega_0*x1size;
       if (NON_BAROTROPIC_EOS) {
-	    a(IEN,ks,j,ie+i) = obval(IEN,j,ib);
-	  }
+        a(IEN,ks,j,ie+i) = obval(IEN,j,ib);
+      }
       if (MAGNETIC_FIELDS_ENABLED) {
-		b.x1f(ks,j,ie+i) = obval(NHYDRO,j,ib);
-		b.x2f(ks,j,ie+i) = obval(NHYDRO+1,j,ib);
-		b.x3f(ks,j,ie+i) = obval(NHYDRO+2,j,ib);
-	  }
-	}}
+        b.x1f(ks,j,ie+i) = obval(NHYDRO,j,ib);
+        b.x2f(ks,j,ie+i) = obval(NHYDRO+1,j,ib);
+        b.x3f(ks,j,ie+i) = obval(NHYDRO+2,j,ib);
+      }
+    }}
 
 }
 
@@ -426,7 +426,7 @@ void LinearSlope(const int nvar, const int ny, const int nx, const AthenaArray<R
     }
     for(int i=0; i<nx; ++i) {
       dw(k,0,i) = 0.0;
-	  dw(k,ny-1,i) = 0.0;
+      dw(k,ny-1,i) = 0.0;
     }
   }
 

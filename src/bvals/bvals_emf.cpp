@@ -100,50 +100,50 @@ void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb)
     case 0:
       sj=pmb->je-joverlap_-(NGHOST-1); ej=pmb->je;
       if(joverlap_==nx2) sj=pmb->js;
-	  psj=sj; pej=ej;
-	  break;
-	case 1:
+      psj=sj; pej=ej;
+      break;
+    case 1:
       sj=pmb->js; ej=pmb->je-joverlap_+NGHOST;
       if(joverlap_<=1) ej=pmb->je;
-	  psj=sj; pej=ej+1;
-	  break;
-	case 2:
+      psj=sj; pej=ej+1;
+      break;
+    case 2:
       sj=pmb->je-(NGHOST-1); ej=pmb->je;
       if(joverlap_==nx2) sj=pmb->je;
-	  psj=sj; pej=ej;
-	  break;
-	case 3:
-	  sj=pmb->js; ej=pmb->js+(NGHOST-1);
-	  psj=sj+1; pej=ej+1;
-	  break;
-	case 4:
-	  sj=pmb->js; ej=pmb->js;
-	  psj=sj+1; pej=ej+1;
-	  break;
-	case 5:
-	  sj=pmb->js; ej=pmb->js+joverlap_+NGHOST-1;
-	  if(joverlap_==nx2) ej=pmb->je;
-	  psj=sj; pej=ej+1;
-	  break;
-	case 6:
-	  sj=pmb->js+joverlap_-NGHOST; ej=pmb->je;
-	  if(joverlap_<=1) sj=pmb->js;
-	  psj=sj; pej=ej;
-	  if(joverlap_==0) pej=ej+1;
+      psj=sj; pej=ej;
       break;
-	case 7:
-	  sj=pmb->js; ej=pmb->js+(NGHOST-1);
-	  if(joverlap_==nx2) ej=pmb->js;
-	  psj=sj+1; pej=ej+1;
-	  break;
-	case 8:
-	  sj=pmb->je-NGHOST+1; ej=pmb->je;
-	  psj=sj; pej=ej;
-	  break;
-	case 9:
-	  sj=pmb->je; ej=pmb->je;
-	  psj=sj; pej=ej;
-	  break;
+    case 3:
+      sj=pmb->js; ej=pmb->js+(NGHOST-1);
+      psj=sj+1; pej=ej+1;
+      break;
+    case 4:
+      sj=pmb->js; ej=pmb->js;
+      psj=sj+1; pej=ej+1;
+      break;
+    case 5:
+      sj=pmb->js; ej=pmb->js+joverlap_+NGHOST-1;
+      if(joverlap_==nx2) ej=pmb->je;
+      psj=sj; pej=ej+1;
+      break;
+    case 6:
+      sj=pmb->js+joverlap_-NGHOST; ej=pmb->je;
+      if(joverlap_<=1) sj=pmb->js;
+      psj=sj; pej=ej;
+      if(joverlap_==0) pej=ej+1;
+      break;
+    case 7:
+      sj=pmb->js; ej=pmb->js+(NGHOST-1);
+      if(joverlap_==nx2) ej=pmb->js;
+      psj=sj+1; pej=ej+1;
+      break;
+    case 8:
+      sj=pmb->je-NGHOST+1; ej=pmb->je;
+      psj=sj; pej=ej;
+      break;
+    case 9:
+      sj=pmb->je; ej=pmb->je;
+      psj=sj; pej=ej;
+      break;
     default:
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues:LoadEMFShearing " << std::endl
@@ -154,13 +154,13 @@ void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb)
   int p=0;
   // pack e2
   for(int k=sk; k<=ek+1; k++) {
-	for(int j=sj; j<=ej; j++)
-	  buf[p++] = src.x2e(k,j);
+    for(int j=sj; j<=ej; j++)
+      buf[p++] = src.x2e(k,j);
   }
   // pack e3
   for(int k=sk; k<=ek; k++) {
-	for(int j=psj; j<=pej; j++)
-	  buf[p++] = src.x3e(k,j);
+    for(int j=psj; j<=pej; j++)
+      buf[p++] = src.x3e(k,j);
   }
 
   return;
@@ -195,64 +195,66 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void)
 
   if (shbb_.inner == true) {
     // step 1. -- average edges of shboxvar_emf_
-	// average e3 for x1x2 edge
+    // average e3 for x1x2 edge
     for(int k=ks; k<=ke; k++) {
-	  for(int j=js; j<=je+1; j+=nx2)
+      for(int j=js; j<=je+1; j+=nx2)
         shboxvar_inner_emf_.x3e(k,j) *= 0.5;
     }
-	// average e2 for x1x3 edge
-	for(int k=ks; k<=ke+1; k+=nx3) {
-	  for(int j=js; j<=je; j++)
-		shboxvar_inner_emf_.x2e(k,j) *= 0.5;
-	}
+    // average e2 for x1x3 edge
+    for(int k=ks; k<=ke+1; k+=nx3) {
+      for(int j=js; j<=je; j++)
+        shboxvar_inner_emf_.x2e(k,j) *= 0.5;
+    }
 
-	// step 2. -- load sendbuf; memcpy to recvbuf if on same rank, post MPI_Isend otherwise
-	for(int n=0; n<5; n++) {
-	  if(send_inner_rank_[n] != -1) {
+    // step 2. -- load sendbuf; memcpy to recvbuf if on same rank, post MPI_Isend otherwise
+    for(int n=0; n<5; n++) {
+      if(send_inner_rank_[n] != -1) {
         LoadEMFShearing(shboxvar_inner_emf_, send_innerbuf_emf_[n], n);
-	    if (send_inner_rank_[n] == Globals::my_rank) {// on the same process
+        if (send_inner_rank_[n] == Globals::my_rank) {// on the same process
           MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(send_inner_gid_[n]);
           std::memcpy(pbl->pbval->recv_innerbuf_emf_[n],
                   send_innerbuf_emf_[n], send_innersize_emf_[n]*sizeof(Real));
-	      pbl->pbval->shbox_inner_emf_flag_[n]=BNDRY_ARRIVED;
-		} else { // MPI
+          pbl->pbval->shbox_inner_emf_flag_[n]=BNDRY_ARRIVED;
+        } else { // MPI
 #ifdef MPI_PARALLEL
           int tag=CreateBvalsMPITag(send_inner_lid_[n], TAG_SHBOX_EMF, n); //bufid = n
-          MPI_Isend(send_innerbuf_emf_[n],send_innersize_emf_[n],MPI_ATHENA_REAL,send_inner_rank_[n],tag,MPI_COMM_WORLD, &rq_innersend_emf_[n]);
+          MPI_Isend(send_innerbuf_emf_[n],send_innersize_emf_[n],MPI_ATHENA_REAL,
+                    send_inner_rank_[n],tag,MPI_COMM_WORLD, &rq_innersend_emf_[n]);
 #endif
-	   }
-	}}
+       }
+    }}
   } // inner boundaries
 
   if (shbb_.outer == true) {
     // step 1. -- average edges of shboxvar_emf_
-	// average e3 for x1x2 edge
+    // average e3 for x1x2 edge
     for(int k=ks; k<=ke; k++) {
-	  for(int j=js; j<=je+1; j+=nx2)
+      for(int j=js; j<=je+1; j+=nx2)
         shboxvar_outer_emf_.x3e(k,j) *= 0.5;
     }
-	// average e2 for x1x3 edge
-	for(int k=ks; k<=ke+1; k+=nx3) {
-	  for(int j=js; j<=je; j++)
-		shboxvar_outer_emf_.x2e(k,j) *= 0.5;
-	}
+    // average e2 for x1x3 edge
+    for(int k=ks; k<=ke+1; k+=nx3) {
+      for(int j=js; j<=je; j++)
+        shboxvar_outer_emf_.x2e(k,j) *= 0.5;
+    }
 
-	// step 2. -- load sendbuf; memcpy to recvbuf if on same rank, post MPI_Isend otherwise
-	int offset = 5;
-	for(int n=0; n<5; n++) {
-	  if(send_outer_rank_[n] != -1) {
+    // step 2. -- load sendbuf; memcpy to recvbuf if on same rank, post MPI_Isend otherwise
+    int offset = 5;
+    for(int n=0; n<5; n++) {
+      if(send_outer_rank_[n] != -1) {
         LoadEMFShearing(shboxvar_outer_emf_, send_outerbuf_emf_[n], n+offset);
-	    if (send_outer_rank_[n] == Globals::my_rank) {// on the same process
+        if (send_outer_rank_[n] == Globals::my_rank) {// on the same process
           MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(send_outer_gid_[n]);
           std::memcpy(pbl->pbval->recv_outerbuf_emf_[n],
                   send_outerbuf_emf_[n], send_outersize_emf_[n]*sizeof(Real));
-	      pbl->pbval->shbox_outer_emf_flag_[n]=BNDRY_ARRIVED;
-	    } else { // MPI
+          pbl->pbval->shbox_outer_emf_flag_[n]=BNDRY_ARRIVED;
+        } else { // MPI
 #ifdef MPI_PARALLEL
           int tag=CreateBvalsMPITag(send_outer_lid_[n], TAG_SHBOX_EMF, n+offset); //bufid for outer(inner): 2(0) and 3(1)
-          MPI_Isend(send_outerbuf_emf_[n],send_outersize_emf_[n],MPI_ATHENA_REAL,send_outer_rank_[n],tag,MPI_COMM_WORLD, &rq_outersend_emf_[n]);
+          MPI_Isend(send_outerbuf_emf_[n],send_outersize_emf_[n],MPI_ATHENA_REAL,
+                    send_outer_rank_[n],tag,MPI_COMM_WORLD, &rq_outersend_emf_[n]);
 #endif
-	    }
+        }
     }}
   } // outer boundaries
   return;
@@ -304,53 +306,53 @@ void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *bu
   // set [js-NGHOST:js-2]            with recv_outer[4]; nb=9 if joverlap==1
   //
   switch(nb) {
-	case 0:
+    case 0:
       sj=pmb->js-NGHOST; ej=pmb->js+(joverlap_-1);
       if(joverlap_==nx2) sj=pmb->js-1;
-	  psj=sj; pej=ej;
-	  break;
-	case 1:
+      psj=sj; pej=ej;
+      break;
+    case 1:
       sj=pmb->js+joverlap_; ej=pmb->je+NGHOST;
       if(joverlap_<=1)   ej=pmb->je+joverlap_;
-	  psj=sj; pej=ej+1;
-	  break;
-	case 2:
+      psj=sj; pej=ej+1;
+      break;
+    case 2:
       sj=pmb->js-NGHOST; ej=pmb->js-1;
       if(joverlap_==nx2) ej=pmb->js-NGHOST;
-	  psj=sj; pej=ej;
-	  break;
-	case 3:
+      psj=sj; pej=ej;
+      break;
+    case 3:
       sj=pmb->je+1; ej=pmb->je+NGHOST;
-	  psj=sj+1; pej=ej+1;
-	  break;
-	case 4:
+      psj=sj+1; pej=ej+1;
+      break;
+    case 4:
       sj=pmb->je+2; ej=pmb->je+NGHOST;
-	  psj=sj+1; pej=ej+1;
-	  break;
-	case 5:
+      psj=sj+1; pej=ej+1;
+      break;
+    case 5:
       sj=pmb->je-(joverlap_-1); ej=pmb->je+NGHOST;
-	  if(joverlap_==nx2) ej=pmb->je+1;
-	  psj=sj; pej=ej+1;
-	  break;
-	case 6:
+      if(joverlap_==nx2) ej=pmb->je+1;
+      psj=sj; pej=ej+1;
+      break;
+    case 6:
       sj=pmb->js-NGHOST; ej=pmb->je-joverlap_;
-	  if(joverlap_<=1) sj=pmb->js-joverlap_;
-	  psj=sj; pej=ej;
-	  if(joverlap_==0) pej+=1;
-	  break;
-	case 7:
+      if(joverlap_<=1) sj=pmb->js-joverlap_;
+      psj=sj; pej=ej;
+      if(joverlap_==0) pej+=1;
+      break;
+    case 7:
       sj=pmb->je+1; ej=pmb->je+NGHOST;
-	  if(joverlap_==nx2)   sj=pmb->je+NGHOST;
-	  psj=sj+1; pej=ej+1;
-	  break;
-	case 8:
+      if(joverlap_==nx2)   sj=pmb->je+NGHOST;
+      psj=sj+1; pej=ej+1;
+      break;
+    case 8:
       sj=pmb->js-NGHOST; ej=pmb->js-1;
-	  psj=sj; pej=ej;
-	  break;
-	case 9:
+      psj=sj; pej=ej;
+      break;
+    case 9:
       sj=pmb->js-NGHOST; ej=pmb->js-2;
-	  psj=sj; pej=ej;
-	  break;
+      psj=sj; pej=ej;
+      break;
     default:
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues:SetFieldShearing " << std::endl
@@ -361,8 +363,8 @@ void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *bu
   int p=0;
   // unpack e2
   for(int k=sk; k<=ek+1; k++) {
-	for(int j=sj; j<=ej; j++)
-	  dst.x2e(k,j)+=buf[p++];
+    for(int j=sj; j<=ej; j++)
+      dst.x2e(k,j)+=buf[p++];
   }
  // unpack e3
   for(int k=sk; k<=ek; k++) {
@@ -380,7 +382,6 @@ void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *bu
 //         It is not used for now as our problem generator might start with t=0 periodic config.
 void BoundaryValues::ReceiveEMFShearingboxBoundaryCorrectionWithWait(void)
 {
-  //std::cout << "do some ReceiveEMFShearingboxBoundaryBuffersWithWait\n" << std::endl;
   return;
 }
 //--------------------------------------------------------------------------------------
@@ -393,13 +394,13 @@ bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void)
   bool flagi=true, flago=true;
 
   if(shbb_.inner == true) { // check inner boundaries
-	for(int n=0; n<5; n++) {
+    for(int n=0; n<5; n++) {
       if(shbox_inner_emf_flag_[n]==BNDRY_COMPLETED) continue;
-	  if(shbox_inner_emf_flag_[n]==BNDRY_WAITING) {
-	    if (recv_inner_rank_[n]==Globals::my_rank) {// on the same process
+      if(shbox_inner_emf_flag_[n]==BNDRY_WAITING) {
+        if (recv_inner_rank_[n]==Globals::my_rank) {// on the same process
           flagi=false;
-		  continue;
-		}
+          continue;
+        }
         else { // MPI boundary
 #ifdef MPI_PARALLEL
           int test;
@@ -409,25 +410,25 @@ bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void)
             flagi=false;
             continue;
           }
-		  shbox_inner_emf_flag_[n] = BNDRY_ARRIVED;
+          shbox_inner_emf_flag_[n] = BNDRY_ARRIVED;
 #endif
-	    }
+        }
       }
-	  // set dst if boundary arrived
+      // set dst if boundary arrived
       SetEMFShearingboxBoundarySameLevel(shboxmap_inner_emf_,recv_innerbuf_emf_[n],n);
       shbox_inner_emf_flag_[n] = BNDRY_COMPLETED; // completed
     }
   } // inner boundary
 
   if(shbb_.outer == true) { // check outer boundaries
-	int offset = 5;
-	for(int n=0; n<5; n++) {
+    int offset = 5;
+    for(int n=0; n<5; n++) {
       if(shbox_outer_emf_flag_[n]==BNDRY_COMPLETED) continue;
-	  if(shbox_outer_emf_flag_[n]==BNDRY_WAITING) {
-	    if (recv_outer_rank_[n]==Globals::my_rank) {// on the same process
+      if(shbox_outer_emf_flag_[n]==BNDRY_WAITING) {
+        if (recv_outer_rank_[n]==Globals::my_rank) {// on the same process
           flago=false;
-		  continue;
-		}
+          continue;
+        }
         else { // MPI boundary
 #ifdef MPI_PARALLEL
           int test;
@@ -437,9 +438,9 @@ bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void)
             flago=false;
             continue;
           }
-		  shbox_outer_emf_flag_[n] = BNDRY_ARRIVED;
+          shbox_outer_emf_flag_[n] = BNDRY_ARRIVED;
 #endif
-	    }
+        }
       }
       SetEMFShearingboxBoundarySameLevel(shboxmap_outer_emf_,recv_outerbuf_emf_[n],n+offset);
       shbox_outer_emf_flag_[n] = BNDRY_COMPLETED; // completed
@@ -463,24 +464,24 @@ void BoundaryValues::RemapEMFShearingboxBoundary(void)
   int js=pmb->js, je=pmb->je;
   int is=pmb->is, ie=pmb->ie;
   if(shbb_.inner==true) {
-	ClearEMFShearing(shboxvar_inner_emf_);
-	// step 1.-- conservative remapping
-	/*
+    ClearEMFShearing(shboxvar_inner_emf_);
+    // step 1.-- conservative remapping
+    /*
     for(int k=ks; k<=ke; k++) {  // e3
       RemapFluxEMF(k,js,je+3,eps_,shboxmap_inner_emf_.x3e,flx_inner_emf_.x3e);
-	  for(int j=js; j<=je+1; j++) {
-	    shboxmap_inner_emf_.x3e(k,j) -= flx_inner_emf_.x3e(j+1)-flx_inner_emf_.x3e(j);
-	  }
-	} */
+      for(int j=js; j<=je+1; j++) {
+        shboxmap_inner_emf_.x3e(k,j) -= flx_inner_emf_.x3e(j+1)-flx_inner_emf_.x3e(j);
+      }
+    } */
     for(int k=ks; k<=ke+1; k++) { // e2
       RemapFluxEMF(k,js,je+2,eps_,shboxmap_inner_emf_.x2e,flx_inner_emf_.x2e);
-	  for(int j=js; j<=je; j++) {
-	    shboxmap_inner_emf_.x2e(k,j) -= flx_inner_emf_.x2e(j+1)-flx_inner_emf_.x2e(j);
-	  }
-	}
+      for(int j=js; j<=je; j++) {
+        shboxmap_inner_emf_.x2e(k,j) -= flx_inner_emf_.x2e(j+1)-flx_inner_emf_.x2e(j);
+      }
+    }
     // step 2.-- average the EMF correction
     // average e3
-	/*
+    /*
     for(int k=ks; k<=ke; k++) {
       for(int j=js; j<=je+1; j++)
       //for(int j=js-NGHOST; j<=je+1+NGHOST; j++)
@@ -490,28 +491,28 @@ void BoundaryValues::RemapEMFShearingboxBoundary(void)
     for(int k=ks; k<=ke+1; k++) {
       for(int j=js; j<=je; j++)
       //for(int j=js-NGHOST; j<=je+NGHOST; j++)
-		e2(k,j,is) = 0.5*(e2(k,j,is)+shboxmap_inner_emf_.x2e(k,j));
-	}
-	ClearEMFShearing(shboxmap_inner_emf_);
+        e2(k,j,is) = 0.5*(e2(k,j,is)+shboxmap_inner_emf_.x2e(k,j));
+    }
+    ClearEMFShearing(shboxmap_inner_emf_);
   }
 
   if(shbb_.outer==true) {
-	ClearEMFShearing(shboxvar_outer_emf_);
-	// step 1.-- conservative remapping
-	/*
+    ClearEMFShearing(shboxvar_outer_emf_);
+    // step 1.-- conservative remapping
+    /*
     for(int k=ks; k<=ke; k++) {  // e3
       RemapFluxEMF(k,js-1,je+2,-eps_,shboxmap_outer_emf_.x3e,flx_outer_emf_.x3e);
-	  for(int j=js; j<=je+1; j++)
-	    shboxmap_outer_emf_.x3e(k,j) -= flx_outer_emf_.x3e(j+1)-flx_outer_emf_.x3e(j);
-	} */
+      for(int j=js; j<=je+1; j++)
+        shboxmap_outer_emf_.x3e(k,j) -= flx_outer_emf_.x3e(j+1)-flx_outer_emf_.x3e(j);
+    } */
     for(int k=ks; k<=ke+1; k++) { // e2
       RemapFluxEMF(k,js-1,je+1,-eps_,shboxmap_outer_emf_.x2e,flx_outer_emf_.x2e);
-	  for(int j=js; j<=je; j++)
-	    shboxmap_outer_emf_.x2e(k,j) -= flx_outer_emf_.x2e(j+1)-flx_outer_emf_.x2e(j);
+      for(int j=js; j<=je; j++)
+        shboxmap_outer_emf_.x2e(k,j) -= flx_outer_emf_.x2e(j+1)-flx_outer_emf_.x2e(j);
     }
     // step 2.-- average the EMF correction
     // average e3
-	/*
+    /*
     for(int k=ks; k<=ke; k++) {
       for(int j=js; j<=je+1; j++)
       //for(int j=js-NGHOST; j<=je+1+NGHOST; j++)
@@ -521,9 +522,9 @@ void BoundaryValues::RemapEMFShearingboxBoundary(void)
     for(int k=ks; k<=ke+1; k++) {
       for(int j=js; j<=je; j++)
       //for(int j=js-NGHOST; j<=je+NGHOST; j++)
-		e2(k,j,ie+1) = 0.5*(e2(k,j,ie+1)+shboxmap_outer_emf_.x2e(k,j));
-	}
-	ClearEMFShearing(shboxmap_outer_emf_);
+        e2(k,j,ie+1) = 0.5*(e2(k,j,ie+1)+shboxmap_outer_emf_.x2e(k,j));
+    }
+    ClearEMFShearing(shboxmap_outer_emf_);
   }
 
 
@@ -542,10 +543,10 @@ void BoundaryValues::ClearEMFShearing(EdgeField &work)
   int js=pmb->js, je=pmb->je;
   for(int k=ks-NGHOST; k<=ke+NGHOST; k++) {
     for(int j=js-NGHOST; j<=je+NGHOST; j++) {
-	e2(k,j) = 0.0;
-	e3(k,j) = 0.0;
-	if(k==ke+NGHOST) e2(k+1,j) = 0.0;
-	if(j==je+NGHOST) e3(k,j+1) = 0.0;
+    e2(k,j) = 0.0;
+    e3(k,j) = 0.0;
+    if(k==ke+NGHOST) e2(k+1,j) = 0.0;
+    if(j==je+NGHOST) e3(k,j+1) = 0.0;
   }}
 
   return;
@@ -560,13 +561,13 @@ void BoundaryValues::RemapFluxEMF(const int k, const int jinner, const int joute
   int j,jl,ju;
   Real dUc,dUl,dUr,dUm,lim_slope;
 
-/* jinner,jouter are index range over which flux must be returned.  Set loop
- * limits depending on direction of upwind differences  */
+// jinner,jouter are index range over which flux must be returned.  Set loop
+// limits depending on direction of upwind differences
 
-  if (eps > 0.0) { /* eps always > 0 for inner i boundary */
+  if (eps > 0.0) { // eps always > 0 for inner i boundary
     jl = jinner-1;
     ju = jouter-1;
-  } else {         /* eps always < 0 for outer i boundary */
+  } else {         // eps always < 0 for outer i boundary
     jl = jinner;
     ju = jouter;
   }
@@ -582,9 +583,9 @@ void BoundaryValues::RemapFluxEMF(const int k, const int jinner, const int joute
         dUm = SIGN(dUc)*std::min(0.5*fabs(dUc),2.0*lim_slope);
       }
 
-    if (eps > 0.0) { /* eps always > 0 for inner i boundary */
+    if (eps > 0.0) { // eps always > 0 for inner i boundary
       Flux(j+1) = eps*(U(k,j) + 0.5*(1.0 - eps)*dUm);
-    } else {         /* eps always < 0 for outer i boundary */
+    } else {         // eps always < 0 for outer i boundary
       Flux(j  ) = eps*(U(k,j) - 0.5*(1.0 + eps)*dUm);
     }
   }

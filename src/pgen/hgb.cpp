@@ -14,7 +14,7 @@
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
 //! \file hgb.cpp
-/*! \file hgb.c
+/*
  *  \brief Problem generator for 3D shearing sheet.
  *
  * PURPOSE:  Problem generator for 3D shearing sheet.  Based on the initial
@@ -44,7 +44,7 @@
  * Code must be configured using --enable-shearing-box
  *
  * REFERENCE: Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992).
- *            Johnson, Guan, & Gammie, ApJSupp, (2008)			      */
+ *            Johnson, Guan, & Gammie, ApJSupp, (2008)                  */
 /*============================================================================*/
 
 
@@ -113,7 +113,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   static int frst=1; // flag so new history variables enrolled only once
 
   if (pmy_mesh->mesh_size.nx2 == 1){
-	  std::cout << "[hgb.cpp]: HGB only works on a 2D or 3D grid" << std::endl;
+    std::cout << "[hgb.cpp]: HGB only works on a 2D or 3D grid" << std::endl;
   }
 
 // Read problem parameters
@@ -141,7 +141,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     Real gamma = peos->GetGamma();
     Real pres = pin->GetReal("problem","pres");
   } else {
-	Real iso_cs =peos->GetIsoSoundSpeed();
+    Real iso_cs =peos->GetIsoSoundSpeed();
     Real pres = den*SQR(iso_cs);
   }
 // Compute field strength based on beta.
@@ -171,10 +171,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 /* Rescale amp to sound speed for ipert 2,3 */
   if (NON_BAROTROPIC_EOS) {
     if (ipert == 2 || ipert == 3)
-	  amp *= sqrt(gamma*pres/den);
+      amp *= sqrt(gamma*pres/den);
   } else {
     if (ipert == 2 || ipert == 3)
-	  amp *= iso_cs;
+      amp *= iso_cs;
   }
 
   Real x1,x2,x3,xmin,xmax;
@@ -185,11 +185,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
       x1 = pcoord->x1v(i);
-	  x2 = pcoord->x2v(j);
-	  x3 = pcoord->x3v(k);
+      x2 = pcoord->x2v(j);
+      x3 = pcoord->x3v(k);
       x1f = pcoord->x1f(i);
-	  x2f = pcoord->x2f(j);
-	  x3f = pcoord->x3f(k);
+      x2f = pcoord->x2f(j);
+      x3f = pcoord->x3f(k);
 
 //Initialize perturbations
 // ipert = 1 - random perturbations to P and V [default, used by HGB]
@@ -205,9 +205,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           rd = den;
         } else {
           rd = den*(1.0 + 2.0*rval);
-		}
+        }
         // Follow HGB: the perturbations to V/Cs are
-		// (1/5)amp/sqrt(gamma)
+        // (1/5)amp/sqrt(gamma)
         rval = amp*(ran2(&iseed) - 0.5);
         rvx = 0.4*rval*sqrt(pres/den);
 
@@ -232,8 +232,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         rvz = 0.0;
       }
       if (ipert == 4) {
-		std::cout << "[hgb.cpp]: ipert=4 not implemented yet!" << std::endl;
-		exit(0);
+        std::cout << "[hgb.cpp]: ipert=4 not implemented yet!" << std::endl;
+        exit(0);
       }
       // Note: ICs in JGG for this test are incorrect.
       if (ipert == 5) {
@@ -276,7 +276,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           rd  = 1.0 + rd_hat*cos((double)(kx*x1 + ky*x2));
           rvx = px_hat*sin((double)(kx*x1 + ky*x2))/rd;
           rvy = py_hat*sin((double)(kx*x1 + ky*x2))/rd;
-		}
+        }
         rvz = 0.0;
       }
 
@@ -290,7 +290,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       if (NON_BAROTROPIC_EOS) {
         phydro->u(IEN,k,j,i) = rp/(gamma-1.0)
           + 0.5*(SQR(phydro->u(IM1,k,j,i))
-			   + SQR(phydro->u(IM2,k,j,i))
+               + SQR(phydro->u(IM2,k,j,i))
                + SQR(phydro->u(IM3,k,j,i)))/rd;
       } // Hydro
 
@@ -310,20 +310,20 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             rbx = 5.48082e-7;
             rbx *= cos((double)(kx*x1f + ky*x2 + kz*x3));
             rbx += (0.1);
-			pfield->b.x1f(k,j,ie+1) =  rbx;
-		  }
+            pfield->b.x1f(k,j,ie+1) =  rbx;
+          }
           if (j==je) {
             x2f = pcoord->x2f(je+1);
             rby = 1.0962e-6;
             rby *= cos((double)(kx*x1 + ky*x2f + kz*x3));
             rby += (0.2);
-			pfield->b.x2f(k,je+1,i) =  rby;
-		  }
+            pfield->b.x2f(k,je+1,i) =  rby;
+          }
           if (k==ke) {
             x3f = pcoord->x3f(ke+1);
             rbz = 0.0;
-			pfield->b.x3f(ke+1,j,i) =  rbz;
-		  }
+            pfield->b.x3f(ke+1,j,i) =  rbz;
+          }
           //pfield->b.x1f(k,j,i) = 0.0;
           //pfield->b.x2f(k,j,i) = 0.0;
           //pfield->b.x3f(k,j,i) = 0.0;

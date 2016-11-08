@@ -393,13 +393,13 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc, int ox1, int o
   // [JMSHI
   if(lx<0) {
     if(bcs[INNER_X1]==PERIODIC_BNDRY || bcs[INNER_X1]==SHEAR_PERIODIC_BNDRY)
-	  lx=(rbx<<(ll-rl))-1;
+      lx=(rbx<<(ll-rl))-1;
     //if(bcs[INNER_X1]==PERIODIC_BNDRY) lx=(rbx<<(ll-rl))-1;
     else return NULL;
   }
   if(lx>=rbx<<(ll-rl)) {;
     if(bcs[OUTER_X1]==PERIODIC_BNDRY || bcs[OUTER_X1]==SHEAR_PERIODIC_BNDRY)
-	  lx=0;
+      lx=0;
     //if(bcs[OUTER_X1]==PERIODIC_BNDRY) lx=0;
     else return NULL;
   }

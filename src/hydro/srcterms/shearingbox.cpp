@@ -26,115 +26,78 @@
 // this class header
 #include "hydro_srcterms.hpp"
 
-//[JMSHI
 //--------------------------------------------------------------------------------------
 //! \fn void HydroSourceTerms::ShearingBoxSourceTerms(const Real dt,
-//  const AthenaArray<Real> *flux, const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
+//  const AthenaArray<Real> *flux, const AthenaArray<Real> &prim, AthenaArray<Real>
+//  &cons)
 //  \brief Shearing Box source terms
 //
 //  Detailed description starts here.
 //  We add shearing box source term via operator splitting method. The source terms are
 //  added after the fluxes are computed in each step of the integration (in
-//  FluxDivergence) to give predictions of the conservative variables for either the next
-//  step or the final update.
+//  FluxDivergence) to give predictions of the conservative variables for either the
+//  next step or the final update.
 
 void HydroSourceTerms::ShearingBoxSourceTerms(const Real dt, const AthenaArray<Real> *flux,
   const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
 {
   if (Omega_0_==0.0 || qshear_==0.0 ) {
-      std::cout << "[ShearingBoxSourceTerms]: Omega_0 or qshear not stated " << std::endl;
-	  return;
+    std::cout << "[ShearingBoxSourceTerms]: Omega_0 or qshear not stated " << std::endl;
+    return;
   }
   Real phic,phil,phir;
 
   MeshBlock *pmb = pmy_hydro_->pmy_block;
 
 
-  if (pmb->block_size.nx3 > 1 || ShBoxCoord_== 1) {
-    for (int k=pmb->ks; k<=pmb->ke; ++k) {
-//#pragma omp parallel for schedule(static)
-      for (int j=pmb->js; j<=pmb->je; ++j) {
-//#pragma simd
-        for (int i=pmb->is; i<=pmb->ie; ++i) {
-          Real den = prim(IDN,k,j,i);
-          phic = UnstratifiedDisk(pmb->pcoord->x1v(i),
-								pmb->pcoord->x2v(j),
-								pmb->pcoord->x3v(k));
-          phil = UnstratifiedDisk(pmb->pcoord->x1f(i),
-								pmb->pcoord->x2v(j),
-								pmb->pcoord->x3v(k));
-          phir = UnstratifiedDisk(pmb->pcoord->x1f(i+1),
-								pmb->pcoord->x2v(j),
-								pmb->pcoord->x3v(k));
 // 1) S_M = -rho*grad(Phi); S_E = -rho*v*grad(Phi)
 //    dM1/dt = 2q\rho\Omega^2 x
 //    dE /dt = 2q\Omega^2 (\rho v_x)
 // 2) Coriolis forces:
 //    dM1/dt = 2\Omega(\rho v_y)
 //    dM2/dt = -2\Omega(\rho v_x)
-
-//		  cons(IM1,k,j,i) -= dt*((phir-phil)*den/pmb->pcoord->dx1v(i) -
-//			                   2.0*Omega_0_*den*prim(IVY,k,j,i));
-		  cons(IM1,k,j,i) += dt*(2.0*qshear_*Omega_0_*Omega_0_*den*pmb->pcoord->x1v(i) +
-			                   2.0*Omega_0_*den*prim(IVY,k,j,i));
-		  cons(IM2,k,j,i) -= dt*2.0*Omega_0_*den*prim(IVX,k,j,i);
+  if (pmb->block_size.nx3 > 1 || ShBoxCoord_== 1) {
+    for (int k=pmb->ks; k<=pmb->ke; ++k) {
+      for (int j=pmb->js; j<=pmb->je; ++j) {
+        for (int i=pmb->is; i<=pmb->ie; ++i) {
+          Real den = prim(IDN,k,j,i);
+          cons(IM1,k,j,i) += dt*(2.0*qshear_*Omega_0_*Omega_0_*den*pmb->pcoord->x1v(i)
+                                +2.0*Omega_0_*den*prim(IVY,k,j,i));
+          cons(IM2,k,j,i) -= dt*2.0*Omega_0_*den*prim(IVX,k,j,i);
           if (NON_BAROTROPIC_EOS) {
-			  cons(IEN,k,j,i) -= dt*(flux[X1DIR](IDN,k,j,i)*(phic-phil) +
-							     flux[X1DIR](IDN,k,j,i+1)*(phir-phic))
-			                     /pmb->pcoord->dx1v(i);
-		  }
+            phic -= qshear_*SQR(Omega_0_*pmb->pcoord->x1v(i));
+            phil -= qshear_*SQR(Omega_0_*pmb->pcoord->x1f(i));
+            phir -= qshear_*SQR(Omega_0_*pmb->pcoord->x1f(i+1));
+            cons(IEN,k,j,i) -= dt*(flux[X1DIR](IDN,k,j,i)*(phic-phil) +
+                                   flux[X1DIR](IDN,k,j,i+1)*(phir-phic))
+                                   /pmb->pcoord->dx1v(i);
+          }
         }
     }}
   } else if (pmb->block_size.nx3 == 1 && ShBoxCoord_ == 2) {
-//#pragma omp parallel for schedule(static)
-        int ks = pmb->ks;
-        for (int j=pmb->js; j<=pmb->je; ++j) {
-//#pragma simd
-          for (int i=pmb->is; i<=pmb->ie; ++i) {
-            Real den = prim(IDN,ks,j,i);
-            phic = UnstratifiedDisk(pmb->pcoord->x1v(i),
-							        pmb->pcoord->x2v(j),
-							        pmb->pcoord->x3v(ks));
-            phil = UnstratifiedDisk(pmb->pcoord->x1f(i),
-							        pmb->pcoord->x2v(j),
-							        pmb->pcoord->x3v(ks));
-            phir = UnstratifiedDisk(pmb->pcoord->x1f(i+1),
-							        pmb->pcoord->x2v(j),
-							        pmb->pcoord->x3v(ks));
-		    cons(IM1,ks,j,i) += dt*(2.0*qshear_*Omega_0_*Omega_0_*den*pmb->pcoord->x1v(i) +
-		                         2.0*Omega_0_*den*prim(IVZ,ks,j,i));
-		    cons(IM3,ks,j,i) -= dt*2.0*Omega_0_*den*prim(IVX,ks,j,i);
-            if (NON_BAROTROPIC_EOS) {
-		        cons(IEN,ks,j,i) -= dt*(flux[X1DIR](IDN,ks,j,i)*(phic-phil) +
-						            flux[X1DIR](IDN,ks,j,i+1)*(phir-phic))
-		                            /pmb->pcoord->dx1v(i);
-		  }
+      int ks = pmb->ks;
+      for (int j=pmb->js; j<=pmb->je; ++j) {
+        for (int i=pmb->is; i<=pmb->ie; ++i) {
+          Real den = prim(IDN,ks,j,i);
+          cons(IM1,ks,j,i) += dt*(2.0*qshear_*Omega_0_*Omega_0_*den
+                                *pmb->pcoord->x1v(i)+2.0*Omega_0_*den*prim(IVZ,ks,j,i));
+          cons(IM3,ks,j,i) -= dt*2.0*Omega_0_*den*prim(IVX,ks,j,i);
+          if (NON_BAROTROPIC_EOS) {
+            phic -= qshear_*SQR(Omega_0_*pmb->pcoord->x1v(i));
+            phil -= qshear_*SQR(Omega_0_*pmb->pcoord->x1f(i));
+            phir -= qshear_*SQR(Omega_0_*pmb->pcoord->x1f(i+1));
+            cons(IEN,ks,j,i) -= dt*(flux[X1DIR](IDN,ks,j,i)*(phic-phil) +
+                                    flux[X1DIR](IDN,ks,j,i+1)*(phir-phic))
+                                    /pmb->pcoord->dx1v(i);
+          }
         }
       }
   }
   else {
-	std::cout << "[ShearingBoxSourceTerms]: not compatible to 1D !!" << std::endl;
-	return;
+    std::cout << "[ShearingBoxSourceTerms]: not compatible to 1D !!" << std::endl;
+    return;
   }
 
 
   return;
 }
-
-
-//--------------------------------------------------------------------------------------
-//! \fn Real HydroSourceTerms::UnstratifiedDisk(const Real x1, const Real x2, const Real x3)
-//  \brief shearing box tidal potential
-//
-//  Detailed description starts here.
-//
-
-Real HydroSourceTerms::UnstratifiedDisk(const Real x1, const Real x2, const Real x3)
-{
-
-  Real phi=0.0;
-  phi -= qshear_*Omega_0_*Omega_0_*x1*x1;
-  return phi;
-}
-//JMSHI]
-//--------------------------------------------------------------------------------------

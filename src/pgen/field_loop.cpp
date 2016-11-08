@@ -81,8 +81,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   int iprob = pin->GetInteger("problem","iprob");
   Real omega0,qshear;
   if (SHEARING_BOX) {
-	omega0 = pin->GetOrAddReal("problem","Omega0",1.0e-3);
-	qshear = pin->GetOrAddReal("problem","qshear",1.5);
+    omega0 = pin->GetOrAddReal("problem","Omega0",1.0e-3);
+    qshear = pin->GetOrAddReal("problem","qshear",1.5);
   }
   Real ang_2,cos_a2,sin_a2,lambda;
 
@@ -227,11 +227,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
        phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x2size/diag;
        phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x3size/diag;
      }
-	 if (SHEARING_BOX) {
-	   Real x1 = pcoord->x1v(i);
+     if (SHEARING_BOX) {
+       Real x1 = pcoord->x1v(i);
        phydro->u(IM1,k,j,i) += iso_cs*phydro->u(IDN,k,j,i);
        phydro->u(IM2,k,j,i) -= qshear*omega0*x1*phydro->u(IDN,k,j,i);
-	 }
+     }
   }}}
 
 // initialize interface B

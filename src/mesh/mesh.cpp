@@ -1136,10 +1136,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       if (MAGNETIC_FIELDS_ENABLED)
         pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b);
 //[JMSHI   send and receive shearingbox boundary conditions
-	  if (SHEARING_BOX) {
-		pbval->SendHydroShearingboxBoundaryBuffersForInit(phydro->u, true);
-		//pbval->ReceiveHydroShearingboxBoundaryBuffersWithWait(phydro->u, true);
-	  }
+      if (SHEARING_BOX) {
+        pbval->SendHydroShearingboxBoundaryBuffersForInit(phydro->u, true);
+        //pbval->ReceiveHydroShearingboxBoundaryBuffersWithWait(phydro->u, true);
+      }
 //JMSHI]
       //pmb->pbval->ClearBoundaryForInit();
       pmb->pbval->ClearBoundaryForInit(true);

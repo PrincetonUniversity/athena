@@ -93,33 +93,33 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     AddTimeIntegratorTask(SEND_HYD,SRCTERM_HYD);
     AddTimeIntegratorTask(RECV_HYD,START_ALLRECV);
 //[JMSHI
-	if (SHEARING_BOX) { // Shearingbox BC for Hydro
-	  AddTimeIntegratorTask(SEND_HYDSH,RECV_HYD);
-	  AddTimeIntegratorTask(RECV_HYDSH,RECV_HYD);
-	}
+    if (SHEARING_BOX) { // Shearingbox BC for Hydro
+      AddTimeIntegratorTask(SEND_HYDSH,RECV_HYD);
+      AddTimeIntegratorTask(RECV_HYDSH,RECV_HYD);
+    }
 //JMSHI]
 
     // compute MHD fluxes, integrate field
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
-	  AddTimeIntegratorTask(CALC_FLDFLX,CALC_HYDFLX);
+      AddTimeIntegratorTask(CALC_FLDFLX,CALC_HYDFLX);
       AddTimeIntegratorTask(SEND_FLDFLX,CALC_FLDFLX);
       AddTimeIntegratorTask(RECV_FLDFLX,SEND_FLDFLX);
 //[JMSHI
-	  if (SHEARING_BOX) {// Shearingbox BC for EMF
+      if (SHEARING_BOX) {// Shearingbox BC for EMF
         AddTimeIntegratorTask(SEND_EMFSH,RECV_FLDFLX);
         AddTimeIntegratorTask(RECV_EMFSH,RECV_FLDFLX);
         AddTimeIntegratorTask(RMAP_EMFSH,RECV_EMFSH);
         AddTimeIntegratorTask(INT_FLD, RMAP_EMFSH);
-	  } else
+      } else
         AddTimeIntegratorTask(INT_FLD, RECV_FLDFLX);
 //JMSHI]
       AddTimeIntegratorTask(SEND_FLD,INT_FLD);
       AddTimeIntegratorTask(RECV_FLD,START_ALLRECV);
 //[JMSHI
-	  if (SHEARING_BOX) { // Shearingbox BC for Bfield
-	    AddTimeIntegratorTask(SEND_FLDSH,RECV_FLD);
-	    AddTimeIntegratorTask(RECV_FLDSH,RECV_FLD);
-	  }
+      if (SHEARING_BOX) { // Shearingbox BC for Bfield
+        AddTimeIntegratorTask(SEND_FLDSH,RECV_FLD);
+        AddTimeIntegratorTask(RECV_FLDSH,RECV_FLD);
+      }
 //JMSHI]
     }
 
@@ -131,10 +131,10 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
       } else {
 //[JMSHI
         if (SHEARING_BOX) {
-		  AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD|RECV_HYDSH|RECV_FLDSH|RMAP_EMFSH));
-		} else {
-		  AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD));
-		}
+          AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD|RECV_HYDSH|RECV_FLDSH|RMAP_EMFSH));
+        } else {
+          AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD));
+        }
 //JMSHI]
       }
     } else {  // HYDRO
@@ -145,9 +145,9 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 //[JMSHI
         if (SHEARING_BOX) {
           AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|RECV_HYDSH));
-		} else {
+        } else {
           AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD));
-		}
+        }
 //JMSHI]
       }
     }

@@ -53,7 +53,7 @@ void ShearOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceFi
                    int is, int ie, int js, int je, int ks, int ke);
 
 void LinearSlope(const int nvar, const int ny, const int nx, const AthenaArray<Real> &w,
-				   AthenaArray<Real> &dw);
+                   AthenaArray<Real> &dw);
 
 //======================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -86,18 +86,18 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
 //  if (pmy_mesh->mesh_size.nx2 == 1 || pmy_mesh->mesh_size.nx3 > 1) {
-//	  std::cout << "[ssheet.cpp]: only works on 2D grid" << std::endl;
-//	  exit(0);
+//      std::cout << "[ssheet.cpp]: only works on 2D grid" << std::endl;
+//      exit(0);
 //  }
 
 //  if (NON_BAROTROPIC_EOS) {
-//	  std::cout << "[ssheet.cpp]: only works for isothermal eos" << std::endl;
-//	  exit(0);
+//      std::cout << "[ssheet.cpp]: only works for isothermal eos" << std::endl;
+//      exit(0);
 //  }
 
 //  if (MAGNETIC_FIELDS_ENABLED) {
-//	  std::cout << "[ssheet.cpp]: only works for hydro alone" << std::endl;
-//	  exit(0);
+//      std::cout << "[ssheet.cpp]: only works for hydro alone" << std::endl;
+//      exit(0);
 //  }
 
   Real d0 = 1.0;
@@ -105,10 +105,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
   if (NON_BAROTROPIC_EOS) {
     gm1 = (peos->GetGamma() - 1.0);
-	iso_cs = sqrt((gm1+1.0)*p0/d0);
+    iso_cs = sqrt((gm1+1.0)*p0/d0);
   } else {
     iso_cs = peos->GetIsoSoundSpeed();
-	p0 = d0*SQR(iso_cs);
+    p0 = d0*SQR(iso_cs);
   }
   std::cout << "iso_cs = " << iso_cs << std::endl;
   std::cout << "d0 = " << d0 << std::endl;
@@ -134,20 +134,20 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
       x1 = pcoord->x1v(i);
-	  x2 = pcoord->x2v(j);
-	  rd = d0;
-	  rp = p0;
-	  if (ipert == 0) {
-	    // 1) pure shear bg flow:
+      x2 = pcoord->x2v(j);
+      rd = d0;
+      rp = p0;
+      if (ipert == 0) {
+        // 1) pure shear bg flow:
         phydro->u(IDN,k,j,i) = rd;
         phydro->u(IM1,k,j,i) = 0.0;
         phydro->u(IM2,k,j,i) -= rd*(qshear*Omega_0*x1);
         phydro->u(IM3,k,j,i) = 0.0;
-	  } else if (ipert == 1) {
-	    // 2) initialize with shwave in velocity
+      } else if (ipert == 1) {
+        // 2) initialize with shwave in velocity
         //rd = d0; //d0*(1.0+amp*cos(kx*x1 + ky*x2));
-	    rvx = amp*iso_cs*sin(kx*x1 + ky*x2);
-	    rvy = amp*iso_cs*(kx/ky)*sin(kx*x1 + ky*x2);
+        rvx = amp*iso_cs*sin(kx*x1 + ky*x2);
+        rvy = amp*iso_cs*(kx/ky)*sin(kx*x1 + ky*x2);
         phydro->u(IDN,k,j,i) = rd;
         phydro->u(IM1,k,j,i) = rd*rvx;
         phydro->u(IM2,k,j,i) -= rd*(rvy + qshear*Omega_0*x1);
@@ -160,22 +160,22 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             if (j==je) pfield->b.x2f(k,je+1,i) = 0.0;
             if (k==ke) pfield->b.x3f(ke+1,j,i) = 1e-5*sin(kx*x1);
         }
-	  } else if (ipert == 2) {
-	    // 3) epicyclic oscillation
-		rvx = 0.1*iso_cs;
-		rvy = 0.0;
+      } else if (ipert == 2) {
+        // 3) epicyclic oscillation
+        rvx = 0.1*iso_cs;
+        rvy = 0.0;
         phydro->u(IDN,k,j,i) = rd;
         phydro->u(IM1,k,j,i) = rd*rvx;
         phydro->u(IM2,k,j,i) -= rd*(rvy + qshear*Omega_0*x1);
         phydro->u(IM3,k,j,i) = 0.0;
-	  } else {
+      } else {
           std::cout << "[ssheet.cpp] ipert = " <<ipert <<" is unrecognized " <<std::endl;
-	      exit(0);
-	  }
+          exit(0);
+      }
       if (NON_BAROTROPIC_EOS){
-		phydro->u(IEN,k,j,i) = rp/gm1 +0.5*(SQR(phydro->u(IM1,k,j,i))+SQR(phydro->u(IM2,k,j,i))+
-											 SQR(phydro->u(IM3,k,j,i)))/phydro->u(IDN,k,j,i);
-	  }
+        phydro->u(IEN,k,j,i) = rp/gm1 +0.5*(SQR(phydro->u(IM1,k,j,i))+SQR(phydro->u(IM2,k,j,i))+
+                                             SQR(phydro->u(IM3,k,j,i)))/phydro->u(IDN,k,j,i);
+      }
     }
   }}
 
@@ -218,7 +218,7 @@ void ShearInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceFi
   jplus  = (int)(deltay/pco->dx2v(js));
   frac   = (fmod(deltay,pco->dx2v(js)))/pco->dx2v(js); // assuming uniform grid azimuthally
 //  std::cout << "[ShearInnerX1]: [time, yshear,deltay,j+,frac] = ["<<pmb->pmy_mesh->time<<","<<yshear<<","<<","<<deltay<<","
-//	  <<jplus<<","<<frac<<"]"<< std::endl;
+//      <<jplus<<","<<frac<<"]"<< std::endl;
 
   // Initialize boundary value arrays
   int nx1 = (ie-is)+1 + 2*(NGHOST);
@@ -232,21 +232,21 @@ void ShearInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceFi
 
   // set bval variables in inlet ghost zones
   for(int j=0; j<nx2; ++j) {
-	ji = fmod(j-(jplus+(NGHOST))+nyzone, nyzone) + (NGHOST);
-	if (ji < js) ji += nyzone;
-	if (ji > je) ji -= nyzone;
-	if ((ji < js) || (ji > je)){
-	  std::cout << "[ShearInnerX1]: ji = " << ji << " < js = " << js << "or > je= " << je << std::endl;
-	  exit(1);
-	}
+    ji = fmod(j-(jplus+(NGHOST))+nyzone, nyzone) + (NGHOST);
+    if (ji < js) ji += nyzone;
+    if (ji > je) ji -= nyzone;
+    if ((ji < js) || (ji > je)){
+      std::cout << "[ShearInnerX1]: ji = " << ji << " < js = " << js << "or > je= " << je << std::endl;
+      exit(1);
+    }
     for(int i=1; i<=(NGHOST); ++i) {
       bval(IDN,j,i-1) = a(IDN,ks,ji,ie-(NGHOST)+i);
       bval(IVX,j,i-1) = a(IVX,ks,ji,ie-(NGHOST)+i);
       bval(IVY,j,i-1) = a(IVY,ks,ji,ie-(NGHOST)+i);
       bval(IVZ,j,i-1) = a(IVZ,ks,ji,ie-(NGHOST)+i);
       if (NON_BAROTROPIC_EOS) {
-	    bval(IEN,j,i-1) = a(IEN,ks,ji,ie-(NGHOST)+i);
-	  }
+        bval(IEN,j,i-1) = a(IEN,ks,ji,ie-(NGHOST)+i);
+      }
     }
   }
   // skip b-field;
@@ -257,22 +257,22 @@ void ShearInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceFi
 
   for(int j=js; j<=je; ++j) {
     for(int i=1; i<=(NGHOST); ++i) {
-	  int ib = (NGHOST) - i;
-	  a(IDN,ks,j,is-i) = (1.0-frac)*bval(IDN,j,ib) + frac*bval(IDN,j-1,ib) +
-		             0.5*frac*(1.0-frac)*(dbval(IDN,j-1,ib)-dbval(IDN,j,ib));
-	  a(IVX,ks,j,is-i) = (1.0-frac)*bval(IVX,j,ib) + frac*bval(IVX,j-1,ib) +
-		             0.5*frac*(1.0-frac)*(dbval(IVX,j-1,ib)-dbval(IVX,j,ib));
-	  a(IVY,ks,j,is-i) = (1.0-frac)*bval(IVY,j,ib) + frac*bval(IVY,j-1,ib) +
-		             0.5*frac*(1.0-frac)*(dbval(IVY,j-1,ib)-dbval(IVY,j,ib)) +
-					 //qshear*Omega_0*x1size*a(IDN,ks,j,is-i);
-					 qshear*Omega_0*x1size;
-	  a(IVZ,ks,j,is-i) = (1.0-frac)*bval(IVZ,j,ib) + frac*bval(IVZ,j-1,ib) +
-		             0.5*frac*(1.0-frac)*(dbval(IVZ,j-1,ib)-dbval(IVZ,j,ib));
+      int ib = (NGHOST) - i;
+      a(IDN,ks,j,is-i) = (1.0-frac)*bval(IDN,j,ib) + frac*bval(IDN,j-1,ib) +
+                     0.5*frac*(1.0-frac)*(dbval(IDN,j-1,ib)-dbval(IDN,j,ib));
+      a(IVX,ks,j,is-i) = (1.0-frac)*bval(IVX,j,ib) + frac*bval(IVX,j-1,ib) +
+                     0.5*frac*(1.0-frac)*(dbval(IVX,j-1,ib)-dbval(IVX,j,ib));
+      a(IVY,ks,j,is-i) = (1.0-frac)*bval(IVY,j,ib) + frac*bval(IVY,j-1,ib) +
+                     0.5*frac*(1.0-frac)*(dbval(IVY,j-1,ib)-dbval(IVY,j,ib)) +
+                     //qshear*Omega_0*x1size*a(IDN,ks,j,is-i);
+                     qshear*Omega_0*x1size;
+      a(IVZ,ks,j,is-i) = (1.0-frac)*bval(IVZ,j,ib) + frac*bval(IVZ,j-1,ib) +
+                     0.5*frac*(1.0-frac)*(dbval(IVZ,j-1,ib)-dbval(IVZ,j,ib));
       if (NON_BAROTROPIC_EOS) {
-	    a(IEN,ks,j,is-i) = (1.0-frac)*bval(IEN,j,ib) + frac*bval(IEN,j-1,ib) +
-		               0.5*frac*(1.0-frac)*(dbval(IEN,j-1,ib)-dbval(IEN,j,ib));
-	  }
-	}}
+        a(IEN,ks,j,is-i) = (1.0-frac)*bval(IEN,j,ib) + frac*bval(IEN,j-1,ib) +
+                       0.5*frac*(1.0-frac)*(dbval(IEN,j-1,ib)-dbval(IEN,j,ib));
+      }
+    }}
 
 }
 
@@ -294,7 +294,7 @@ void ShearOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceFi
   jplus  = (int)(deltay/pco->dx2v(js));
   frac   = (fmod(deltay,pco->dx2v(js)))/pco->dx2v(js);
 //  std::cout << "[ShearOuterX1]: [time, yshear,deltay,j+,frac] = ["<<pmb->pmy_mesh->time<<","<<yshear<<","<<","<<deltay<<","
-//	  <<jplus<<","<<frac<<"]"<< std::endl;
+//      <<jplus<<","<<frac<<"]"<< std::endl;
 
   // Initialize boundary value arrays
   int nx1 = (ie-is)+1 + 2*(NGHOST);
@@ -308,13 +308,13 @@ void ShearOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceFi
 
   // set primitive variables in inlet ghost zones
   for(int j=0; j<nx2; ++j) {
-	jo = fmod(j+(jplus-(NGHOST)), nyzone) + (NGHOST);
-	if (jo < js) jo += nyzone;
-	if (jo > je) jo -= nyzone;
-	if ((jo < js) || (jo > je)){
-	  std::cout << "[ShearOuterX1]: jo = " << jo << " < js = " << js << "or > je= " << je << std::endl;
-	  exit(1);
-	}
+    jo = fmod(j+(jplus-(NGHOST)), nyzone) + (NGHOST);
+    if (jo < js) jo += nyzone;
+    if (jo > je) jo -= nyzone;
+    if ((jo < js) || (jo > je)){
+      std::cout << "[ShearOuterX1]: jo = " << jo << " < js = " << js << "or > je= " << je << std::endl;
+      exit(1);
+    }
     for(int i=1; i<=(NGHOST); ++i) {
       bval(IDN,j,i-1) = a(IDN,ks,jo,is+i-1);
       bval(IVX,j,i-1) = a(IVX,ks,jo,is+i-1);
@@ -322,7 +322,7 @@ void ShearOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceFi
       bval(IVZ,j,i-1) = a(IVZ,ks,jo,is+i-1);
       if (NON_BAROTROPIC_EOS) {
         bval(IEN,j,i-1) = a(IEN,ks,jo,is+i-1);
-	  }
+      }
     }
   }
   // skip IEN and b-field;
@@ -333,22 +333,22 @@ void ShearOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceFi
 
   for(int j=js; j<=je; ++j) {
     for(int i=1; i<=(NGHOST); ++i) {
-	  int ib =  i - 1;
-	  a(IDN,ks,j,ie+i) = (1.0-frac)*bval(IDN,j,ib) + frac*bval(IDN,j+1,ib) +
-		             0.5*frac*(1.0-frac)*(dbval(IDN,j,ib)-dbval(IDN,j+1,ib));
-	  a(IVX,ks,j,ie+i) = (1.0-frac)*bval(IVX,j,ib) + frac*bval(IVX,j+1,ib) +
-		             0.5*frac*(1.0-frac)*(dbval(IVX,j,ib)-dbval(IVX,j+1,ib));
-	  a(IVY,ks,j,ie+i) = (1.0-frac)*bval(IVY,j,ib) + frac*bval(IVY,j+1,ib) +
-		             0.5*frac*(1.0-frac)*(dbval(IVY,j,ib)-dbval(IVY,j+1,ib)) -
-					 //qshear*Omega_0*x1size*a(IDN,ks,j,ie+i);
-					 qshear*Omega_0*x1size;
-	  a(IVZ,ks,j,ie+i) = (1.0-frac)*bval(IVZ,j,ib) + frac*bval(IVZ,j+1,ib) +
-		             0.5*frac*(1.0-frac)*(dbval(IVZ,j,ib)-dbval(IVZ,j+1,ib));
+      int ib =  i - 1;
+      a(IDN,ks,j,ie+i) = (1.0-frac)*bval(IDN,j,ib) + frac*bval(IDN,j+1,ib) +
+                     0.5*frac*(1.0-frac)*(dbval(IDN,j,ib)-dbval(IDN,j+1,ib));
+      a(IVX,ks,j,ie+i) = (1.0-frac)*bval(IVX,j,ib) + frac*bval(IVX,j+1,ib) +
+                     0.5*frac*(1.0-frac)*(dbval(IVX,j,ib)-dbval(IVX,j+1,ib));
+      a(IVY,ks,j,ie+i) = (1.0-frac)*bval(IVY,j,ib) + frac*bval(IVY,j+1,ib) +
+                     0.5*frac*(1.0-frac)*(dbval(IVY,j,ib)-dbval(IVY,j+1,ib)) -
+                     //qshear*Omega_0*x1size*a(IDN,ks,j,ie+i);
+                     qshear*Omega_0*x1size;
+      a(IVZ,ks,j,ie+i) = (1.0-frac)*bval(IVZ,j,ib) + frac*bval(IVZ,j+1,ib) +
+                     0.5*frac*(1.0-frac)*(dbval(IVZ,j,ib)-dbval(IVZ,j+1,ib));
       if (NON_BAROTROPIC_EOS) {
-	    a(IEN,ks,j,ie+i) = (1.0-frac)*bval(IEN,j,ib) + frac*bval(IEN,j+1,ib) +
-		               0.5*frac*(1.0-frac)*(dbval(IEN,j,ib)-dbval(IEN,j+1,ib));
-	  }
-	}}
+        a(IEN,ks,j,ie+i) = (1.0-frac)*bval(IEN,j,ib) + frac*bval(IEN,j+1,ib) +
+                       0.5*frac*(1.0-frac)*(dbval(IEN,j,ib)-dbval(IEN,j+1,ib));
+      }
+    }}
 
 }
 
@@ -386,7 +386,7 @@ void LinearSlope(const int nvar, const int ny, const int nx, const AthenaArray<R
     }
     for(int i=0; i<nx; ++i) {
       dw(k,0,i) = 0.0;
-	  dw(k,ny-1,i) = 0.0;
+      dw(k,ny-1,i) = 0.0;
     }
   }
 
