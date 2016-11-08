@@ -392,8 +392,9 @@ int main(int argc, char *argv[])
     }
 
     // check for signals
-    if (SignalHandler::GetSignalFlag(SIGTERM) != 0) break;
-    if (SignalHandler::GetSignalFlag(SIGINT) != 0) break;
+    SignalHandler::SynchronizeSignalFlag();
+    if (SignalHandler::GetSignalFlag(SIGTERM) != 0
+     || SignalHandler::GetSignalFlag(SIGINT)  != 0) break;
 
   } // END OF MAIN INTEGRATION LOOP ======================================================
 // Make final outputs, print diagnostics, clean up and terminate
@@ -403,33 +404,33 @@ int main(int argc, char *argv[])
 #ifdef MPI_PARALLEL
   WallTimeLimit::FinalizeWTLimit(walltime_flag);
 #endif
-  if(walltime_flag==2) { // hit the wall time limit
-    try {
-      pouts->MakeOutputs(pmesh,pinput,true);
-    } 
-    catch(std::bad_alloc& ba) {
-      std::cout << "### FATAL ERROR in main" << std::endl
-                << "memory allocation failed during output: " << ba.what() <<std::endl;
+  // make the final outputs
+  try {
+    pouts->MakeOutputs(pmesh,pinput,true);
+  } 
+  catch(std::bad_alloc& ba) {
+    std::cout << "### FATAL ERROR in main" << std::endl
+              << "memory allocation failed during output: " << ba.what() <<std::endl;
 #ifdef MPI_PARALLEL
-      MPI_Finalize();
+    MPI_Finalize();
 #endif
-      return(0);
-    }
-    catch(std::exception const& ex) {
-      std::cout << ex.what() << std::endl;  // prints diagnostic message  
-#ifdef MPI_PARALLEL
-      MPI_Finalize();
-#endif
-      return(0);
-    }
+    return(0);
   }
+  catch(std::exception const& ex) {
+    std::cout << ex.what() << std::endl;  // prints diagnostic message  
+#ifdef MPI_PARALLEL
+    MPI_Finalize();
+#endif
+    return(0);
+  }
+
   // print diagnostic messages
   if(Globals::my_rank==0) {
     std::cout << "cycle=" << pmesh->ncycle << " time=" << pmesh->time
               << " dt=" << pmesh->dt << std::endl;
 
     if (SignalHandler::GetSignalFlag(SIGTERM) != 0) {
-      std::cout << std::endl << "Terminating on SIGTERM signal" << std::endl;
+      std::cout << std::endl << "Terminating on Terminate signal" << std::endl;
 
     } else if (SignalHandler::GetSignalFlag(SIGINT) != 0) {
       std::cout << std::endl << "Terminating on Interrupt signal" << std::endl;

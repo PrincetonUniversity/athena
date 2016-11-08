@@ -496,7 +496,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
     if (output_params.variable.compare("bcc3") == 0) {
       pod = new OutputData;
       pod->type = "SCALARS";
-      pod->name = "Bcc2";
+      pod->name = "Bcc3";
       pod->data.InitWithShallowSlice(pfld->bcc,4,IB3,1);
       AppendOutputDataNode(pod);
       num_vars_++;

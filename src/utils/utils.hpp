@@ -8,6 +8,8 @@
 //! \file utils.hpp
 //  \brief prototypes of functions and class definitions for utils/*.cpp files
 
+#include <csignal>
+
 void ChangeRunDir(const char *pdir);
 double ran2(long int *idum);
 void ShowConfig();
@@ -24,12 +26,13 @@ namespace WallTimeLimit {
 //  \brief static data and functions that implement a simple signal handling system
 
 namespace SignalHandler {
-  static volatile int sigterm_flag;
-  static volatile int sigint_flag;
-  int GetSignalFlag(int sig);
-  void SignalHandlerInit();
-  static void SetSigtermFlag(int s);
-  static void SetSigintFlag(int s);
+  const int nsignal = 2;
+  static volatile sig_atomic_t signalflag[nsignal];
+  const int ITERM = 0, IINT = 1;
+  void SignalHandlerInit(void);
+  void SynchronizeSignalFlag(void);
+  int GetSignalFlag(int s);
+  void SetSignalFlag(int s);
 }
 
 #endif // UTILS_HPP

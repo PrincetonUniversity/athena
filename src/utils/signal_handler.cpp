@@ -16,58 +16,70 @@
 namespace SignalHandler {
 
 //----------------------------------------------------------------------------------------
-//! \fn
+//! \fn void SignalHandlerInit(void)
 //  \brief install handlers for selected signals
 
-void SignalHandlerInit()
+void SignalHandlerInit(void)
 {
-  sigterm_flag = 0;
-  sigint_flag = 0;
-  signal(SIGTERM, SetSigtermFlag);
-  signal(SIGINT,  SetSigintFlag);
+  for(int n=0; n<nsignal; n++) signalflag[n]=0;
+  signal(SIGTERM, SetSignalFlag);
+  signal(SIGINT,  SetSignalFlag);
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn 
-// \brief return specified signal flag, suitable synchronized across all MPI ranks
+//! \fn void SynchronizeSignalFlag(void)
+// \brief synchronize the signal flags across all MPI ranks
 
-int GetSignalFlag(int sig)
+void SynchronizeSignalFlag(void)
 {
-  if (sig == SIGTERM) {
 #ifdef MPI_PARALLEL
-    MPI_Allreduce(MPI_IN_PLACE, &sigterm_flag, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE, signalflag, nsignal, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 #endif
-    return sigterm_flag;
+  return;
+}
 
-  } else if (sig == SIGINT) {
-#ifdef MPI_PARALLEL
-    MPI_Allreduce(MPI_IN_PLACE, &sigint_flag, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
-#endif
-    return sigint_flag;
+//----------------------------------------------------------------------------------------
+//! \fn int GetSignalFlag(int s)
+//  \brief Gets a signal flag assuming the signalflag array is already synchronized.
+//         Returns -1 if the specified signal is not handled.
 
-  } else {
-    return 0;
+int GetSignalFlag(int s)
+{
+  int ret=-1;
+  switch(s) {
+  case SIGTERM:
+    ret=signalflag[ITERM];
+    break;
+  case SIGINT:
+    ret=signalflag[IINT];
+    break;
+  default:
+    // nothing
+    break;
   }
+  return ret;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn
-//  \brief Sets flag for SIGTERM and reinstalls the signal handler function.
+//! \fn void SetSignalFlag(int s)
+//  \brief Sets signal flags and reinstalls the signal handler function.
 
-void SetSigtermFlag(int s){
-  sigterm_flag = s;
-  signal(s, SetSigtermFlag);   // Reinstall the signal handler function
+void SetSignalFlag(int s)
+{
+  switch(s) {
+  case SIGTERM:
+    signalflag[ITERM]=1;
+    signal(s, SetSignalFlag);
+    break;
+  case SIGINT:
+    signalflag[IINT]=1;
+    signal(s, SetSignalFlag);
+    break;
+  default:
+    // nothing
+    break;
+  }
   return;
 }
 
-//----------------------------------------------------------------------------------------
-//! \fn
-//  \brief Sets flag for SIGINT and reinstalls the signal handler function.
-
-void SetSigintFlag(int s){
-  sigint_flag = s;
-  signal(s, SetSigintFlag);   // Reinstall the signal handler function
-  return;
-}
-
-} // end of namespace
+} // namespace SignalHandler
