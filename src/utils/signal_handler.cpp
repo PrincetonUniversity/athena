@@ -9,9 +9,18 @@
  
 // C++ headers
 #include <csignal>
+#include <unistd.h>
+#include <iostream>
 
 // Athena++ headers
 #include "utils.hpp"
+#include "../defs.hpp"
+#include "../globals.hpp"
+
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#endif
+
 
 namespace SignalHandler {
 
@@ -24,18 +33,28 @@ void SignalHandlerInit(void)
   for(int n=0; n<nsignal; n++) signalflag[n]=0;
   signal(SIGTERM, SetSignalFlag);
   signal(SIGINT,  SetSignalFlag);
+  signal(SIGALRM, SetSignalFlag);
+  sigemptyset(&mask);
+  sigaddset(&mask, SIGTERM);
+  sigaddset(&mask, SIGINT);
+  sigaddset(&mask, SIGALRM);
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void SynchronizeSignalFlag(void)
-// \brief synchronize the signal flags across all MPI ranks
+//! \fn int CheckSignalFlags(void)
+//  \brief Synchronize and check signal flags and return true if any of them is caught
 
-void SynchronizeSignalFlag(void)
+int CheckSignalFlags(void)
 {
+  int ret = 0;
+  sigprocmask(SIG_BLOCK,&mask,NULL);
 #ifdef MPI_PARALLEL
-    MPI_Allreduce(MPI_IN_PLACE, signalflag, nsignal, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+  MPI_Allreduce(MPI_IN_PLACE, (void *)signalflag, nsignal, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 #endif
-  return;
+  for(int n=0; n<nsignal; n++)
+    ret+=signalflag[n];
+  sigprocmask(SIG_UNBLOCK,&mask,NULL);
+  return ret;
 }
 
 //----------------------------------------------------------------------------------------
@@ -52,6 +71,9 @@ int GetSignalFlag(int s)
     break;
   case SIGINT:
     ret=signalflag[IINT];
+    break;
+  case SIGALRM:
+    ret=signalflag[IALRM];
     break;
   default:
     // nothing
@@ -75,11 +97,36 @@ void SetSignalFlag(int s)
     signalflag[IINT]=1;
     signal(s, SetSignalFlag);
     break;
+  case SIGALRM:
+    signalflag[IALRM]=1;
+    signal(s, SetSignalFlag);
+    break;
   default:
     // nothing
     break;
   }
   return;
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn void SetWallTimeAlarm(int t)
+//  \brief Set the wall time limit alarm
+
+void SetWallTimeAlarm(int t)
+{
+  alarm(t);
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void CancelWallTimeAlarm(void)
+//  \brief Cancel the wall time limit alarm
+
+void CancelWallTimeAlarm(void)
+{
+  alarm(0);
+  return;
+}
+
 
 } // namespace SignalHandler
