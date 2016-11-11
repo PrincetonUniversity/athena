@@ -242,7 +242,7 @@ private:
   void EnrollUserExplicitSourceFunction(SrcTermFunc_t my_func);
   void EnrollUserTimeStepFunction(TimeStepFunc_t my_func);
   void AllocateUserHistoryOutput(int n);
-  void EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, char *name);
+  void EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const char *name);
 };
 
 //----------------------------------------------------------------------------------------

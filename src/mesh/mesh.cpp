@@ -1072,10 +1072,11 @@ void Mesh::AllocateUserHistoryOutput(int n)
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, char *name)
+//! \fn void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func,
+//                                         const char *name)
 //  \brief Enroll a user-defined history output function and set its name
 
-void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, char *name)
+void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const char *name)
 {
   std::stringstream msg;
   if(i>=nuser_history_output_) {

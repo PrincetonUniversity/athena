@@ -378,7 +378,9 @@ int main(int argc, char *argv[])
   } // END OF MAIN INTEGRATION LOOP ======================================================
 // Make final outputs, print diagnostics, clean up and terminate
 
-  SignalHandler::CancelWallTimeAlarm();
+  if(Globals::my_rank==0 && wtlim > 0)
+    SignalHandler::CancelWallTimeAlarm();
+
   pmesh->UserWorkAfterLoop(pinput);
 
   // make the final outputs

@@ -94,7 +94,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
     }}
     for(int n=0; n<pm->nuser_history_output_; n++) { // user-defined history outputs
       if(pm->user_history_func_[n]!=NULL)
-        data_sum[NHISTORY_VARS+n] += pm->user_history_func_[n](pmb);
+        data_sum[NHISTORY_VARS+n] += pm->user_history_func_[n](pmb, n);
     }
     pmb=pmb->next;
   }  // end loop over MeshBlocks
