@@ -61,38 +61,41 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc)
   for (int k=ks; k<=ke; ++k) {
 #pragma omp for schedule(static)
   for (int j=js-1; j<=je+1; ++j) {
-    if (GENERAL_RELATIVITY)
-      pmb->pcoord->CellMetric(k, j, is-1, ie+1, g_, gi_);
+
+#if GENERAL_RELATIVITY==1
+    pmb->pcoord->CellMetric(k, j, is-1, ie+1, g_, gi_);
 #pragma simd
     for (int i=is-1; i<=ie+1; ++i) {
-      if (GENERAL_RELATIVITY)
-      {
-        const Real &uu1 = w(IVX,k,j,i);
-        const Real &uu2 = w(IVY,k,j,i);
-        const Real &uu3 = w(IVZ,k,j,i);
-        const Real &bb1 = bcc(IB1,k,j,i);
-        const Real &bb2 = bcc(IB2,k,j,i);
-        const Real &bb3 = bcc(IB3,k,j,i);
-        Real alpha = std::sqrt(-1.0/gi_(I00,i));
-        Real tmp = g_(I11,i)*SQR(uu1) + 2.0*g_(I12,i)*uu1*uu2 + 2.0*g_(I13,i)*uu1*uu3
-                 + g_(I22,i)*SQR(uu2) + 2.0*g_(I23,i)*uu2*uu3
-                 + g_(I33,i)*SQR(uu3);
-        Real gamma = std::sqrt(1.0 + tmp);
-        Real u0 = gamma / alpha;
-        Real u1 = uu1 - alpha * gamma * gi_(I01,i);
-        Real u2 = uu2 - alpha * gamma * gi_(I02,i);
-        Real u3 = uu3 - alpha * gamma * gi_(I03,i);
-        Real b0 = bb1 * (g_(I01,i)*u0 + g_(I11,i)*u1 + g_(I12,i)*u2 + g_(I13,i)*u3)
-                + bb2 * (g_(I02,i)*u0 + g_(I12,i)*u1 + g_(I22,i)*u2 + g_(I23,i)*u3)
-                + bb3 * (g_(I03,i)*u0 + g_(I13,i)*u1 + g_(I23,i)*u2 + g_(I33,i)*u3);
-        Real b1 = (bb1 + b0 * u1) / u0;
-        Real b2 = (bb2 + b0 * u2) / u0;
-        Real b3 = (bb3 + b0 * u3) / u0;
-        cc_e_(k,j,i) = b1 * u2 - b2 * u1;
-      }
-      else
-        cc_e_(k,j,i) = w(IVY,k,j,i)*bcc(IB1,k,j,i) - w(IVX,k,j,i)*bcc(IB2,k,j,i);
+      const Real &uu1 = w(IVX,k,j,i);
+      const Real &uu2 = w(IVY,k,j,i);
+      const Real &uu3 = w(IVZ,k,j,i);
+      const Real &bb1 = bcc(IB1,k,j,i);
+      const Real &bb2 = bcc(IB2,k,j,i);
+      const Real &bb3 = bcc(IB3,k,j,i);
+      Real alpha = std::sqrt(-1.0/gi_(I00,i));
+      Real tmp = g_(I11,i)*SQR(uu1) + 2.0*g_(I12,i)*uu1*uu2 + 2.0*g_(I13,i)*uu1*uu3
+               + g_(I22,i)*SQR(uu2) + 2.0*g_(I23,i)*uu2*uu3
+               + g_(I33,i)*SQR(uu3);
+      Real gamma = std::sqrt(1.0 + tmp);
+      Real u0 = gamma / alpha;
+      Real u1 = uu1 - alpha * gamma * gi_(I01,i);
+      Real u2 = uu2 - alpha * gamma * gi_(I02,i);
+      Real u3 = uu3 - alpha * gamma * gi_(I03,i);
+      Real b0 = bb1 * (g_(I01,i)*u0 + g_(I11,i)*u1 + g_(I12,i)*u2 + g_(I13,i)*u3)
+              + bb2 * (g_(I02,i)*u0 + g_(I12,i)*u1 + g_(I22,i)*u2 + g_(I23,i)*u3)
+              + bb3 * (g_(I03,i)*u0 + g_(I13,i)*u1 + g_(I23,i)*u2 + g_(I33,i)*u3);
+      Real b1 = (bb1 + b0 * u1) / u0;
+      Real b2 = (bb2 + b0 * u2) / u0;
+      Real b3 = (bb3 + b0 * u3) / u0;
+      cc_e_(k,j,i) = b1 * u2 - b2 * u1;
     }
+#else
+#pragma simd
+    for (int i=is-1; i<=ie+1; ++i) {
+      cc_e_(k,j,i) = w(IVY,k,j,i)*bcc(IB1,k,j,i) - w(IVX,k,j,i)*bcc(IB2,k,j,i);
+    }
+#endif // GENERAL_RELATIVITY
+
   }}
 
   // integrate E3 to corner using SG07
@@ -140,38 +143,41 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc)
 #pragma omp for schedule(static)
     for (int k=ks-1; k<=ke+1; ++k) {
     for (int j=js-1; j<=je+1; ++j) {
-      if (GENERAL_RELATIVITY)
-        pmb->pcoord->CellMetric(k, j, is, ie, g_, gi_);
+
+#if GENERAL_RELATIVITY==1
+      pmb->pcoord->CellMetric(k, j, is, ie, g_, gi_);
 #pragma simd
       for (int i=is; i<=ie; ++i) {
-        if (GENERAL_RELATIVITY)
-        {
-          const Real &uu1 = w(IVX,k,j,i);
-          const Real &uu2 = w(IVY,k,j,i);
-          const Real &uu3 = w(IVZ,k,j,i);
-          const Real &bb1 = bcc(IB1,k,j,i);
-          const Real &bb2 = bcc(IB2,k,j,i);
-          const Real &bb3 = bcc(IB3,k,j,i);
-          Real alpha = std::sqrt(-1.0/gi_(I00,i));
-          Real tmp = g_(I11,i)*SQR(uu1) + 2.0*g_(I12,i)*uu1*uu2 + 2.0*g_(I13,i)*uu1*uu3
-                   + g_(I22,i)*SQR(uu2) + 2.0*g_(I23,i)*uu2*uu3
-                   + g_(I33,i)*SQR(uu3);
-          Real gamma = std::sqrt(1.0 + tmp);
-          Real u0 = gamma / alpha;
-          Real u1 = uu1 - alpha * gamma * gi_(I01,i);
-          Real u2 = uu2 - alpha * gamma * gi_(I02,i);
-          Real u3 = uu3 - alpha * gamma * gi_(I03,i);
-          Real b0 = bb1 * (g_(I01,i)*u0 + g_(I11,i)*u1 + g_(I12,i)*u2 + g_(I13,i)*u3)
-                  + bb2 * (g_(I02,i)*u0 + g_(I12,i)*u1 + g_(I22,i)*u2 + g_(I23,i)*u3)
-                  + bb3 * (g_(I03,i)*u0 + g_(I13,i)*u1 + g_(I23,i)*u2 + g_(I33,i)*u3);
-          Real b1 = (bb1 + b0 * u1) / u0;
-          Real b2 = (bb2 + b0 * u2) / u0;
-          Real b3 = (bb3 + b0 * u3) / u0;
-          cc_e_(k,j,i) = b2 * u3 - b3 * u2;
-        }
-        else
-          cc_e_(k,j,i) = w(IVZ,k,j,i)*bcc(IB2,k,j,i) - w(IVY,k,j,i)*bcc(IB3,k,j,i);
+        const Real &uu1 = w(IVX,k,j,i);
+        const Real &uu2 = w(IVY,k,j,i);
+        const Real &uu3 = w(IVZ,k,j,i);
+        const Real &bb1 = bcc(IB1,k,j,i);
+        const Real &bb2 = bcc(IB2,k,j,i);
+        const Real &bb3 = bcc(IB3,k,j,i);
+        Real alpha = std::sqrt(-1.0/gi_(I00,i));
+        Real tmp = g_(I11,i)*SQR(uu1) + 2.0*g_(I12,i)*uu1*uu2 + 2.0*g_(I13,i)*uu1*uu3
+                 + g_(I22,i)*SQR(uu2) + 2.0*g_(I23,i)*uu2*uu3
+                 + g_(I33,i)*SQR(uu3);
+        Real gamma = std::sqrt(1.0 + tmp);
+        Real u0 = gamma / alpha;
+        Real u1 = uu1 - alpha * gamma * gi_(I01,i);
+        Real u2 = uu2 - alpha * gamma * gi_(I02,i);
+        Real u3 = uu3 - alpha * gamma * gi_(I03,i);
+        Real b0 = bb1 * (g_(I01,i)*u0 + g_(I11,i)*u1 + g_(I12,i)*u2 + g_(I13,i)*u3)
+                + bb2 * (g_(I02,i)*u0 + g_(I12,i)*u1 + g_(I22,i)*u2 + g_(I23,i)*u3)
+                + bb3 * (g_(I03,i)*u0 + g_(I13,i)*u1 + g_(I23,i)*u2 + g_(I33,i)*u3);
+        Real b1 = (bb1 + b0 * u1) / u0;
+        Real b2 = (bb2 + b0 * u2) / u0;
+        Real b3 = (bb3 + b0 * u3) / u0;
+        cc_e_(k,j,i) = b2 * u3 - b3 * u2;
       }
+#else
+#pragma simd
+      for (int i=is; i<=ie; ++i) {
+        cc_e_(k,j,i) = w(IVZ,k,j,i)*bcc(IB2,k,j,i) - w(IVY,k,j,i)*bcc(IB3,k,j,i);
+      }
+#endif // GENERAL_RELATIVITY
+
     }}
 
 #pragma omp for schedule(static)
@@ -201,38 +207,41 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc)
 #pragma omp for schedule(static)
     for (int k=ks-1; k<=ke+1; ++k) {
     for (int j=js; j<=je; ++j) {
-      if (GENERAL_RELATIVITY)
-        pmb->pcoord->CellMetric(k, j, is-1, ie+1, g_, gi_);
+
+#if GENERAL_RELATIVITY==1
+      pmb->pcoord->CellMetric(k, j, is-1, ie+1, g_, gi_);
 #pragma simd
       for (int i=is-1; i<=ie+1; ++i) {
-        if (GENERAL_RELATIVITY)
-        {
-          const Real &uu1 = w(IVX,k,j,i);
-          const Real &uu2 = w(IVY,k,j,i);
-          const Real &uu3 = w(IVZ,k,j,i);
-          const Real &bb1 = bcc(IB1,k,j,i);
-          const Real &bb2 = bcc(IB2,k,j,i);
-          const Real &bb3 = bcc(IB3,k,j,i);
-          Real alpha = std::sqrt(-1.0/gi_(I00,i));
-          Real tmp = g_(I11,i)*SQR(uu1) + 2.0*g_(I12,i)*uu1*uu2 + 2.0*g_(I13,i)*uu1*uu3
-                   + g_(I22,i)*SQR(uu2) + 2.0*g_(I23,i)*uu2*uu3
-                   + g_(I33,i)*SQR(uu3);
-          Real gamma = std::sqrt(1.0 + tmp);
-          Real u0 = gamma / alpha;
-          Real u1 = uu1 - alpha * gamma * gi_(I01,i);
-          Real u2 = uu2 - alpha * gamma * gi_(I02,i);
-          Real u3 = uu3 - alpha * gamma * gi_(I03,i);
-          Real b0 = bb1 * (g_(I01,i)*u0 + g_(I11,i)*u1 + g_(I12,i)*u2 + g_(I13,i)*u3)
-                  + bb2 * (g_(I02,i)*u0 + g_(I12,i)*u1 + g_(I22,i)*u2 + g_(I23,i)*u3)
-                  + bb3 * (g_(I03,i)*u0 + g_(I13,i)*u1 + g_(I23,i)*u2 + g_(I33,i)*u3);
-          Real b1 = (bb1 + b0 * u1) / u0;
-          Real b2 = (bb2 + b0 * u2) / u0;
-          Real b3 = (bb3 + b0 * u3) / u0;
-          cc_e_(k,j,i) = b3 * u1 - b1 * u3;
-        }
-        else
-          cc_e_(k,j,i) = w(IVX,k,j,i)*bcc(IB3,k,j,i) - w(IVZ,k,j,i)*bcc(IB1,k,j,i);
+        const Real &uu1 = w(IVX,k,j,i);
+        const Real &uu2 = w(IVY,k,j,i);
+        const Real &uu3 = w(IVZ,k,j,i);
+        const Real &bb1 = bcc(IB1,k,j,i);
+        const Real &bb2 = bcc(IB2,k,j,i);
+        const Real &bb3 = bcc(IB3,k,j,i);
+        Real alpha = std::sqrt(-1.0/gi_(I00,i));
+        Real tmp = g_(I11,i)*SQR(uu1) + 2.0*g_(I12,i)*uu1*uu2 + 2.0*g_(I13,i)*uu1*uu3
+                 + g_(I22,i)*SQR(uu2) + 2.0*g_(I23,i)*uu2*uu3
+                 + g_(I33,i)*SQR(uu3);
+        Real gamma = std::sqrt(1.0 + tmp);
+        Real u0 = gamma / alpha;
+        Real u1 = uu1 - alpha * gamma * gi_(I01,i);
+        Real u2 = uu2 - alpha * gamma * gi_(I02,i);
+        Real u3 = uu3 - alpha * gamma * gi_(I03,i);
+        Real b0 = bb1 * (g_(I01,i)*u0 + g_(I11,i)*u1 + g_(I12,i)*u2 + g_(I13,i)*u3)
+                + bb2 * (g_(I02,i)*u0 + g_(I12,i)*u1 + g_(I22,i)*u2 + g_(I23,i)*u3)
+                + bb3 * (g_(I03,i)*u0 + g_(I13,i)*u1 + g_(I23,i)*u2 + g_(I33,i)*u3);
+        Real b1 = (bb1 + b0 * u1) / u0;
+        Real b2 = (bb2 + b0 * u2) / u0;
+        Real b3 = (bb3 + b0 * u3) / u0;
+        cc_e_(k,j,i) = b3 * u1 - b1 * u3;
       }
+#else
+#pragma simd
+      for (int i=is-1; i<=ie+1; ++i) {
+        cc_e_(k,j,i) = w(IVX,k,j,i)*bcc(IB3,k,j,i) - w(IVZ,k,j,i)*bcc(IB1,k,j,i);
+      }
+#endif // GENERAL_RELATIVITY
+
     }}
 
 #pragma omp for schedule(static)
