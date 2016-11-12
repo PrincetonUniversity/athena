@@ -6,10 +6,10 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file coordinates.hpp
-//  \brief defines abstract base class Coordinates containing data and functions used by
-//  all coordinate derived classes.  The Coordinates class is used to compute/store
-//  geometrical factors (areas, volumes, coordinate source terms) related to a Mesh. The
-//  GR coordinates class is derived from this ABC, and contains additional data/fns
+//  \brief defines abstract base and derived classes for coordinates.  These classes
+//  provide data and functions to compute/store coordinate positions and spacing, as well
+//  as geometrical factors (areas, volumes, coordinate source terms) for various 
+//  coordinate systems.
 
 // Athena++ classes headers
 #include "../athena.hpp"
@@ -65,18 +65,74 @@ public:
   virtual Real GetFace2Area(const int k, const int j, const int i);
   virtual Real GetFace3Area(const int k, const int j, const int i);
 
-  // ...to compute metric (no-op except in GR)
-  virtual void CellMetric(const int, const int, const int, const int, AthenaArray<Real> &,
-        AthenaArray<Real> &) {return;}
-
-  // ...to compute volume of cells (pure virtual)
+  // ...to compute volume of cells
   virtual void CellVolume(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &vol)=0;
-  virtual Real GetCellVolume(const int k, const int j, const int i)=0;
+    AthenaArray<Real> &vol);
+  virtual Real GetCellVolume(const int k, const int j, const int i);
 
-  // ...to compute geometrical source terms (pure virtual)
+  // ...to compute geometrical source terms
   virtual void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-    const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)=0;
+    const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
+
+  // ...to determine if index is a pole
+  bool IsPole(int j);
+
+#if GENERAL_RELATIVITY==1
+  // In GR, functions...
+  // ...to compute metric
+  virtual void CellMetric(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &g, AthenaArray<Real> &gi);
+  virtual void Face1Metric(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
+  virtual void Face2Metric(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
+  virtual void Face3Metric(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
+
+  // ...to transform primitives to locally flat space
+  virtual void PrimToLocal1(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &b1_vals, AthenaArray<Real> &prim_left,
+    AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
+  virtual void PrimToLocal2(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &b2_vals, AthenaArray<Real> &prim_left,
+    AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
+  virtual void PrimToLocal3(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &b3_vals, AthenaArray<Real> &prim_left,
+    AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
+
+  // ...to transform fluxes in locally flat space to global frame
+  virtual void FluxToGlobal1(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
+    AthenaArray<Real> &flux);
+  virtual void FluxToGlobal2(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
+    AthenaArray<Real> &flux);
+  virtual void FluxToGlobal3(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
+    AthenaArray<Real> &flux);
+
+//    Real DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real by, Real bz);
+//    void MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3,
+//        Real *pt, Real *px, Real *py, Real *pz);
+
+  // .. to transform 4-vector from Boyer-Lindquist to global coordinates
+  virtual void TransformVectorCell(Real at, Real ax, Real ay, Real az,int k,int j,int i,
+    Real *a0, Real *a1, Real *a2, Real *a3);
+  virtual void TransformVectorFace1(Real at, Real ax, Real ay, Real az,int k,int j,int i,
+    Real *a0, Real *a1, Real *a2, Real *a3);
+  virtual void TransformVectorFace2(Real at, Real ax, Real ay, Real az,int k,int j,int i,
+    Real *a0, Real *a1, Real *a2, Real *a3);
+  virtual void TransformVectorFace3(Real at, Real ax, Real ay, Real az,int k,int j,int i,
+    Real *a0, Real *a1, Real *a2, Real *a3);
+
+  // for raising (lowering) covariant (contravariant) components of a vector
+  virtual void RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3,int k,int j,int i,
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+  virtual void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
+    Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3);
+//  void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3,
+//    Real *pr, Real *ptheta, Real *pphi);
+#endif // GENERAL_RELATIVITY
 
 protected:
   bool coarse_flag;  // true if this coordinate object is parent (coarse) mesh in AMR
@@ -125,29 +181,19 @@ protected:
 
 //----------------------------------------------------------------------------------------
 //! \class Cartesian
-//  \brief derived Coordinates class for Cartesian coordinates.  None of the virtual funcs
-//  in the abstract base class are over-written.
+//  \brief derived class for Cartesian coordinates.  None of the virtual funcs
+//  in the Coordinates abstract base class need to be over-written.
 
 class Cartesian : public Coordinates {
 public:
   Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag);
   ~Cartesian();
-
-  // functions...
-  // ...to compute volumes of cells
-  void CellVolume(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &vol);
-  Real GetCellVolume(const int k, const int j, const int i);
-
-  // ...to compute geometrical source terms
-  void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-    const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
 };
 
 //----------------------------------------------------------------------------------------
 //! \class Cylindrical
-//  \brief derived Coordinates class for Cylindrical coordinates.  Some of the length
-//  and area functions in the abstract base class are over-written.
+//  \brief derived class for Cylindrical coordinates.  Some of the length, area,
+//  and volume functions in the Coordinates abstract base class are over-written.
 
 class Cylindrical : public Coordinates {
 public:
@@ -183,8 +229,8 @@ public:
 
 //----------------------------------------------------------------------------------------
 //! \class SphericalPolar
-//  \brief derived Coordinates class for spherical polar coordinates.  Some of the length
-//  and area functions in the abstract base class are over-written.
+//  \brief derived class for spherical polar coordinates.  Many of the length, area,
+//  and volume functions in the Coordinates abstract base class are over-written.
 
 class SphericalPolar : public Coordinates {
 public:
@@ -220,9 +266,78 @@ public:
     AthenaArray<Real> &vol);
   Real GetCellVolume(const int k, const int j, const int i);
 
-  // ...to compute geometrical source terms (pure virtual)
+  // ...to compute geometrical source terms
   void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
+};
+
+//----------------------------------------------------------------------------------------
+//! \class Minkowski
+//  \brief derived class for Minkowski (flat) coordinates in GR.  None of the length,
+//  area, and vokume functions in the abstract base class need to be overwritten, but
+//  all the metric and transforms functions are.
+
+class Minkowski : public Coordinates {
+public:
+  Minkowski(MeshBlock *pmb, ParameterInput *pin, bool flag);
+  ~Minkowski();
+
+#if GENERAL_RELATIVITY==1
+  // In GR, functions...
+  // ...to compute metric
+  void CellMetric(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &g, AthenaArray<Real> &gi);
+  void Face1Metric(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
+  void Face2Metric(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
+  void Face3Metric(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
+
+  // ...to transform primitives to locally flat space
+  void PrimToLocal1(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &b1_vals, AthenaArray<Real> &prim_left,
+    AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
+  void PrimToLocal2(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &b2_vals, AthenaArray<Real> &prim_left,
+    AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
+  void PrimToLocal3(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &b3_vals, AthenaArray<Real> &prim_left,
+    AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
+
+  // ...to transform fluxes in locally flat space to global frame
+  void FluxToGlobal1(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
+    AthenaArray<Real> &flux);
+  void FluxToGlobal2(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
+    AthenaArray<Real> &flux);
+  void FluxToGlobal3(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
+    AthenaArray<Real> &flux);
+
+//    Real DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real by, Real bz);
+//    void MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3,
+//        Real *pt, Real *px, Real *py, Real *pz);
+
+  // .. to transform 4-vector from Boyer-Lindquist to global coordinates
+  void TransformVectorCell(Real at, Real ax, Real ay, Real az,int k,int j,int i,
+    Real *a0, Real *a1, Real *a2, Real *a3);
+  void TransformVectorFace1(Real at, Real ax, Real ay, Real az,int k,int j,int i,
+    Real *a0, Real *a1, Real *a2, Real *a3);
+  void TransformVectorFace2(Real at, Real ax, Real ay, Real az,int k,int j,int i,
+    Real *a0, Real *a1, Real *a2, Real *a3);
+  void TransformVectorFace3(Real at, Real ax, Real ay, Real az,int k,int j,int i,
+    Real *a0, Real *a1, Real *a2, Real *a3);
+
+  // for raising (lowering) covariant (contravariant) components of a vector
+  void RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3,int k,int j,int i,
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+  void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
+    Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3);
+//  void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3,
+//    Real *pr, Real *ptheta, Real *pphi);
+#endif // GENERAL_RELATIVITY
 };
 
 #endif // COORDINATES_HPP

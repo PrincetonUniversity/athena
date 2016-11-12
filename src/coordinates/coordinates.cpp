@@ -399,3 +399,109 @@ Real Coordinates::GetFace3Area(const int k, const int j, const int i)
 {
   return dx1f(i)*dx2f(j);
 }
+
+//----------------------------------------------------------------------------------------
+// Cell Volume function: compute volume of cell as vector
+
+void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &vol)
+{
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    // volume = dx dy dz
+    Real& vol_i = vol(i);
+    vol_i = dx1f(i)*dx2f(j)*dx3f(k);
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// GetCellVolume: returns cell volume at (i,j,k)
+
+Real Coordinates::GetCellVolume(const int k, const int j, const int i)
+{
+  return dx1f(i)*dx2f(j)*dx3f(k);
+}
+
+//----------------------------------------------------------------------------------------
+// Coordinate (Geometric) source term function
+
+void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
+{
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for determining if index corresponds to a polar boundary
+// Inputs:
+//   j: x2-index
+// Outputs:
+//   returned value: true if face indexed with j is on a pole; false otherwise
+
+bool Coordinates::IsPole(int j)
+{
+  if (pmy_block->block_bcs[INNER_X2] == POLAR_BNDRY and j == pmy_block->js) {
+    return true;
+  }
+  if (pmy_block->block_bcs[OUTER_X2] == POLAR_BNDRY and j == pmy_block->je+1) {
+    return true;
+  }
+  return false;
+}
+
+#if GENERAL_RELATIVITY==1
+//----------------------------------------------------------------------------------------
+// All GR functions are defined as no-ops in base class for all coordinate systems 
+
+// functions
+// ...to compute metric
+void Coordinates::CellMetric(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &g, AthenaArray<Real> &gi) {return;}
+void Coordinates::Face1Metric(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {return;}
+void Coordinates::Face2Metric(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {return;}
+void Coordinates::Face3Metric(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {return;}
+
+// ...to transform primitives to locally flat space
+void Coordinates::PrimToLocal1(const int k, const int j, const int il, const int iu,
+  const AthenaArray<Real> &b1_vals, AthenaArray<Real> &prim_left,
+  AthenaArray<Real> &prim_right, AthenaArray<Real> &bx) {return;}
+void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int iu,
+  const AthenaArray<Real> &b2_vals, AthenaArray<Real> &prim_left,
+  AthenaArray<Real> &prim_right, AthenaArray<Real> &bx) {return;}
+void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int iu,
+  const AthenaArray<Real> &b3_vals, AthenaArray<Real> &prim_left,
+  AthenaArray<Real> &prim_right, AthenaArray<Real> &bx) {return;}
+
+// ...to transform fluxes in locally flat space to global frame
+void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const int iu,
+  const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
+  AthenaArray<Real> &flux) {return;}
+void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const int iu,
+  const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
+  AthenaArray<Real> &flux) {return;}
+void Coordinates::FluxToGlobal3(const int k, const int j, const int il, const int iu,
+  const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
+  AthenaArray<Real> &flux) {return;}
+
+// .. to transform 4-vector from Boyer-Lindquist to global coordinates
+void Coordinates::TransformVectorCell(Real at,Real ax,Real ay,Real az,int k,int j,int i,
+  Real *a0, Real *a1, Real *a2, Real *a3) {return;}
+void Coordinates::TransformVectorFace1(Real at,Real ax,Real ay,Real az,int k,int j,int i,
+  Real *a0, Real *a1, Real *a2, Real *a3) {return;}
+void Coordinates::TransformVectorFace2(Real at,Real ax,Real ay,Real az,int k,int j,int i,
+  Real *a0, Real *a1, Real *a2, Real *a3) {return;}
+void Coordinates::TransformVectorFace3(Real at,Real ax,Real ay,Real az,int k,int j,int i,
+  Real *a0, Real *a1, Real *a2, Real *a3) {return;}
+
+// for raising (lowering) covariant (contravariant) components of a vector
+void Coordinates::RaiseVectorCell(Real a_0,Real a_1,Real a_2,Real a_3,int k,int j,int i,
+  Real *pa0, Real *pa1, Real *pa2, Real *pa3) {return;}
+void Coordinates::LowerVectorCell(Real a0,Real a1,Real a2,Real a3, int k, int j, int i,
+  Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3) {return;}
+//  void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3,
+//    Real *pr, Real *ptheta, Real *pphi);
+#endif // GENERAL_RELATIVITY

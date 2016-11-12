@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file cartesian.cpp
-//  \brief implements Coordinates class functions for Cartesian (x-y-z) coordinates
-//  Cartesian is a derived class of the Coordinates abstract base class.
+//  \brief implements functions for Cartesian (x-y-z) coordinates in a derived class of
+//  the Coordinates abstract base class.
 
 // Athena++ headers
 #include "coordinates.hpp"
@@ -133,36 +133,4 @@ Cartesian::~Cartesian()
     x3s1.DeleteAthenaArray();
     x3s2.DeleteAthenaArray();
   }
-}
-
-//----------------------------------------------------------------------------------------
-// Cell Volume function: compute volume of cell as vector
-
-void Cartesian::CellVolume(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &vol)
-{
-#pragma simd
-  for (int i=il; i<=iu; ++i){
-    // volume = dx dy dz
-    Real& vol_i = vol(i);
-    vol_i = dx1f(i)*dx2f(j)*dx3f(k);
-  }
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// GetCellVolume: returns cell volume at (i,j,k)
-
-Real Cartesian::GetCellVolume(const int k, const int j, const int i)
-{
-  return dx1f(i)*dx2f(j)*dx3f(k);
-}
-
-//----------------------------------------------------------------------------------------
-// Coordinate (Geometric) source term function
-
-void Cartesian::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-  const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
-{
-  return;
 }

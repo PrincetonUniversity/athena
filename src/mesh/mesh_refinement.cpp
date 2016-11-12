@@ -39,6 +39,8 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin)
     pcoarsec = new Cylindrical(pmb, pin, true);
   } else if (COORDINATE_SYSTEM == "spherical_polar") {
     pcoarsec = new SphericalPolar(pmb, pin, true);
+  } else if (COORDINATE_SYSTEM == "minkowski") {
+    pcoarsec = new Minkowski(pmb, pin, true);
   }
 
   deref_count_ = 0;

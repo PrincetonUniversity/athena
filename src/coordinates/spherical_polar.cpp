@@ -4,7 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file spherical_polar.cpp
-//  \brief implements Coordinates class functions for spherical polar (r-theta-phi)
+//  \brief implements functions for spherical polar (r-theta-phi) coordinates in a 
+//  derived class of the Coordinates abstract base class.
 
 // C/C++ headers
 #include <math.h>  // pow, trig functions

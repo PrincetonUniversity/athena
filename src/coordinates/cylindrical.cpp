@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file cylindrical.cpp
-//  \brief implements Coordinates class functions for cylindrical (r-phi-z) coordinates
-//  Cylindrical is a derived class of the Coordinates abstract base class.
+//  \brief implements functions for cylindrical (r-phi-z) coordinates in a derived class
+//  of the Coordinates abstract base class.
 
 // C/C++ headers
 #include <math.h>   // pow function
