@@ -69,7 +69,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
 
   nlim = pin->GetOrAddInteger("time","nlim",-1);
   ncycle = 0;
-  nint_user_mesh_data_=0, nreal_user_mesh_data_=0;
+  nint_user_mesh_data_=0;
+  nreal_user_mesh_data_=0;
+  nuser_history_output_=0;
 
   // read number of OpenMP threads for mesh
   num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
@@ -506,7 +508,10 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   tlim       = pin->GetReal("time","tlim");
   cfl_number = pin->GetReal("time","cfl_number");
   nlim = pin->GetOrAddInteger("time","nlim",-1);
-  nint_user_mesh_data_=0, nreal_user_mesh_data_=0;
+  nint_user_mesh_data_=0;
+  nreal_user_mesh_data_=0;
+  nuser_history_output_=0;
+
   nbnew=0; nbdel=0;
 
   // read number of OpenMP threads for mesh
@@ -1052,6 +1057,36 @@ void Mesh::EnrollUserTimeStepFunction(TimeStepFunc_t my_func)
 {
   UserTimeStep_ = my_func;
   return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::AllocateUserHistoryOutput(int n)
+//  \brief set the number of user-defined history outputs
+
+void Mesh::AllocateUserHistoryOutput(int n)
+{
+  nuser_history_output_ = n;
+  user_history_output_names_ = new std::string[n];
+  user_history_func_ = new HistoryOutputFunc_t[n];
+  for(int i=0; i<n; i++) user_history_func_[i] = NULL;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func,
+//                                         const char *name)
+//  \brief Enroll a user-defined history output function and set its name
+
+void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const char *name)
+{
+  std::stringstream msg;
+  if(i>=nuser_history_output_) {
+    msg << "### FATAL ERROR in EnrollUserHistoryOutput function" << std::endl
+        << "The number of the user-defined history output (" << i << ") "
+        << "exceeds the declared number (" << nuser_history_output_ << ")." << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  user_history_output_names_[i] = name;
+  user_history_func_[i] = my_func;
 }
 
 //----------------------------------------------------------------------------------------

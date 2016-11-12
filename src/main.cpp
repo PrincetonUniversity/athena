@@ -59,8 +59,7 @@ int main(int argc, char *argv[])
   int narg_flag=0;  // set to 1 if -n        argument is on cmdline
   int iarg_flag=0;  // set to 1 if -i <file> argument is on cmdline
   int mesh_flag=0;  // set to <nproc> if -m <nproc> argument is on cmdline
-  int walltime_flag=0; // wall time flag
-  Real wtlim;
+  int wtlim=0;
   int ncstart=0;
 
 //--- Step 1. ----------------------------------------------------------------------------
@@ -120,8 +119,7 @@ int main(int argc, char *argv[])
       case 't':
         int wth, wtm, wts;
         std::sscanf(argv[++i],"%d:%d:%d",&wth,&wtm,&wts);
-        walltime_flag=1;
-        wtlim=(Real)(wth*3600+wtm*60+wts);
+        wtlim=wth*3600+wtm*60+wts;
         break;
       case 'c':
         if(Globals::my_rank==0) ShowConfig();
@@ -164,6 +162,11 @@ int main(int argc, char *argv[])
 #endif
     return(0);
   }
+
+  // Set up the signal handler
+  SignalHandler::SignalHandlerInit();
+  if(Globals::my_rank==0 && wtlim > 0)
+    SignalHandler::SetWallTimeAlarm(wtlim);
 
 // Note steps 3-6 are protected by a simple error handler
 //--- Step 3. ----------------------------------------------------------------------------
@@ -299,7 +302,6 @@ int main(int argc, char *argv[])
 
   Outputs *pouts;
   try {
-    SignalHandler::SignalHandlerInit();  // signal handler implemented in /utils
     ChangeRunDir(prundir);
     pouts = new Outputs(pmesh, pinput);
     if(res_flag==0) pouts->MakeOutputs(pmesh,pinput);
@@ -323,9 +325,6 @@ int main(int argc, char *argv[])
 
 //=== Step 9. === START OF MAIN INTEGRATION LOOP =========================================
 // For performance, there is no error handler protecting this step (except outputs)
-
-  if(walltime_flag==1)
-    WallTimeLimit::InitWTLimit();
 
   if(Globals::my_rank==0) {
     std::cout<<std::endl<<"Setup complete, entering main loop..."<<std::endl<<std::endl;
@@ -373,72 +372,50 @@ int main(int argc, char *argv[])
       return(0);
     }
 
-    // check the wall time limit
-    if(walltime_flag==1) {
-      if(Globals::my_rank==0) {
-        clock_t tnow = clock();
-        Real wtnow = (Real)(tnow-tstart)/(Real)CLOCKS_PER_SEC;
-        if(wtnow > wtlim && (pmesh->nlim-pmesh->ncycle>2 || pmesh->nlim<0)
-                         && (pmesh->tlim-pmesh->time>3.0*pmesh->dt)) {
-          walltime_flag=2;
-          pmesh->nlim=pmesh->ncycle+2;
-          WallTimeLimit::SendWTLimit(pmesh->nlim);
-        }
-      }
-      else {
-        if(WallTimeLimit::TestWTLimit(pmesh->nlim)==true)
-          walltime_flag=2;
-      }
-    }
-
     // check for signals
-    if (SignalHandler::GetSignalFlag(SIGTERM) != 0) break;
-    if (SignalHandler::GetSignalFlag(SIGINT) != 0) break;
+    if (SignalHandler::CheckSignalFlags() != 0) break;
 
   } // END OF MAIN INTEGRATION LOOP ======================================================
 // Make final outputs, print diagnostics, clean up and terminate
 
+  if(Globals::my_rank==0 && wtlim > 0)
+    SignalHandler::CancelWallTimeAlarm();
+
   pmesh->UserWorkAfterLoop(pinput);
 
+  // make the final outputs
+  try {
+    pouts->MakeOutputs(pmesh,pinput,true);
+  } 
+  catch(std::bad_alloc& ba) {
+    std::cout << "### FATAL ERROR in main" << std::endl
+              << "memory allocation failed during output: " << ba.what() <<std::endl;
 #ifdef MPI_PARALLEL
-  WallTimeLimit::FinalizeWTLimit(walltime_flag);
+    MPI_Finalize();
 #endif
-  if(walltime_flag==2) { // hit the wall time limit
-    try {
-      pouts->MakeOutputs(pmesh,pinput,true);
-    } 
-    catch(std::bad_alloc& ba) {
-      std::cout << "### FATAL ERROR in main" << std::endl
-                << "memory allocation failed during output: " << ba.what() <<std::endl;
-#ifdef MPI_PARALLEL
-      MPI_Finalize();
-#endif
-      return(0);
-    }
-    catch(std::exception const& ex) {
-      std::cout << ex.what() << std::endl;  // prints diagnostic message  
-#ifdef MPI_PARALLEL
-      MPI_Finalize();
-#endif
-      return(0);
-    }
+    return(0);
   }
+  catch(std::exception const& ex) {
+    std::cout << ex.what() << std::endl;  // prints diagnostic message  
+#ifdef MPI_PARALLEL
+    MPI_Finalize();
+#endif
+    return(0);
+  }
+
   // print diagnostic messages
   if(Globals::my_rank==0) {
     std::cout << "cycle=" << pmesh->ncycle << " time=" << pmesh->time
               << " dt=" << pmesh->dt << std::endl;
 
     if (SignalHandler::GetSignalFlag(SIGTERM) != 0) {
-      std::cout << std::endl << "Terminating on SIGTERM signal" << std::endl;
-
+      std::cout << std::endl << "Terminating on Terminate signal" << std::endl;
     } else if (SignalHandler::GetSignalFlag(SIGINT) != 0) {
       std::cout << std::endl << "Terminating on Interrupt signal" << std::endl;
-
+    } else if (SignalHandler::GetSignalFlag(SIGALRM) != 0) {
+      std::cout << std::endl << "Terminating on wall-time limit" << std::endl;
     } else if (pmesh->ncycle == pmesh->nlim) {
-      if(walltime_flag==2)
-        std::cout << std::endl << "Terminating on wall-time limit" << std::endl;
-      else 
-        std::cout << std::endl << "Terminating on cycle limit" << std::endl;
+      std::cout << std::endl << "Terminating on cycle limit" << std::endl;
     } else {
       std::cout << std::endl << "Terminating on time limit" << std::endl;
     }

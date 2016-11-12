@@ -71,5 +71,6 @@ typedef Real (*MeshGenFunc_t)(Real x, RegionSize rs);
 typedef void (*SrcTermFunc_t)(MeshBlock *pmb, const Real time, const Real dt,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &cons);
 typedef Real (*TimeStepFunc_t)(MeshBlock *pmb);
+typedef Real (*HistoryOutputFunc_t)(MeshBlock *pmb, int iout);
 
 #endif // ATHENA_HPP
