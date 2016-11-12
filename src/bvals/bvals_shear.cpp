@@ -514,10 +514,9 @@ void BoundaryValues::FindShearBlock(const int step)
 
   Real qomL = qshear_*Omega_0_*x1size_;
   Real wght;
-  //VL2 only, (0.0,1.0,0.5) for RK2
+  //(0.0,0.5,1.0) for VL2, (0.0,1.0,0.5) for RK2
   if (step == 0) wght = 0.0;
-  else if (step == 1) wght = 0.5;
-  else wght = 1.0;
+  else wght = wghts_[step-1];
   Real yshear = qomL*(pmesh->time+wght*pmesh->dt);
   //Real yshear = qomL*(pmesh->time+pmesh->dt);
   Real deltay = fmod(yshear,x2size_);

@@ -188,11 +188,15 @@ public:
   void SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real> &src, bool cons);
   void SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src, bool cons);
 
-  void SetHydroShearingboxBoundarySameLevel(AthenaArray<Real> &dst, Real *buf, const int nb);
+  void SetHydroShearingboxBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
+                                            const int nb);
   bool ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &dst);
-  void ReceiveHydroShearingboxBoundaryBuffersWithWait(AthenaArray<Real> &dst, bool cons);
+  void ReceiveHydroShearingboxBoundaryBuffersWithWait(AthenaArray<Real> &dst,
+                                                      bool cons);
   void FindShearBlock(const int step);
-  void RemapFlux(const int n, const int k, const int jinner, const int jouter, const int i, const Real eps, const AthenaArray<Real> &U, AthenaArray<Real> &Flux);
+  void RemapFlux(const int n, const int k, const int jinner, const int jouter,
+                 const int i, const Real eps, const AthenaArray<Real> &U,
+                 AthenaArray<Real> &Flux);
   //Field
   void LoadFieldShearing(FaceField &src, Real *buf, int nb);
   void SendFieldShearingboxBoundaryBuffersForInit(FaceField &src, bool cons);
@@ -200,7 +204,9 @@ public:
   void SetFieldShearingboxBoundarySameLevel(FaceField &dst, Real *buf, const int nb);
   bool ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst);
   void ReceiveFieldShearingboxBoundaryBuffersWithWait(FaceField &dst, bool cons);
-  void RemapFluxField(const int k, const int jinner, const int jouter, const int i, const Real eps, const AthenaArray<Real> &U, AthenaArray<Real> &Flux);
+  void RemapFluxField(const int k, const int jinner, const int jouter, const int i,
+                      const Real eps, const AthenaArray<Real> &U,
+                      AthenaArray<Real> &Flux);
   // EMF
   void LoadEMFShearing(EdgeField &src, Real *buf, const int nb);
   void SendEMFShearingboxBoundaryCorrectionForInit(void);
@@ -210,9 +216,11 @@ public:
   bool ReceiveEMFShearingboxBoundaryCorrection(void);
   void RemapEMFShearingboxBoundary(void);
   void ClearEMFShearing(EdgeField &work);
-  void RemapFluxEMF(const int k, const int jinner, const int jouter, const Real eps, const AthenaArray<Real> &U, AthenaArray<Real> &Flux);
+  void RemapFluxEMF(const int k, const int jinner, const int jouter, const Real eps,
+                    const AthenaArray<Real> &U, AthenaArray<Real> &Flux);
 
-
+  // misc
+  void GetTimeIntegratorWeight(ParameterInput *pin);
 //JMSHI]
 
 private:
@@ -250,6 +258,8 @@ private:
   BValFunc_t BoundaryFunction_[6];
 
 //[JMSHI
+  Real wghts_[MAX_NSTEP];        // integrator weight factor for given step
+  Real nsteps_;                 // total number of substeps of integrator
   ShearingBoundaryBlock shbb_;  // shearing block properties: lists etc.
   Real x1size_,x2size_,x3size_; // mesh_size.x1max-mesh_size.x1min etc. [Lx,Ly,Lz]
   Real Omega_0_, qshear_;       // orbital freq and shear rate
