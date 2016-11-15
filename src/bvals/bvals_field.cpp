@@ -53,7 +53,7 @@
 //  \brief Load shearingbox field boundary buffers
 void BoundaryValues::LoadFieldShearing(FaceField &src, Real *buf, int nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Mesh *pmesh=pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
   int psj,pej; // indices for bx2
@@ -159,7 +159,7 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffersForInit(FaceField &src, 
 
 void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src, bool conserved_values)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   Mesh *pmesh=pmb->pmy_mesh;
 
@@ -326,7 +326,7 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src, bool co
 void BoundaryValues::SetFieldShearingboxBoundarySameLevel(FaceField &dst, Real *buf,
                                                const int nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Mesh *pmesh=pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
   int psi,pei,psj,pej;
@@ -423,7 +423,7 @@ void BoundaryValues::SetFieldShearingboxBoundarySameLevel(FaceField &dst, Real *
 //         It is not used for now as our problem generator might start with t=0 periodic config.
 void BoundaryValues::ReceiveFieldShearingboxBoundaryBuffersWithWait(FaceField &dst, bool conserved_value)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
 
   if(shbb_.inner == true) { // check inner boundaries
 #ifdef MPI_PARALLEL
@@ -452,7 +452,7 @@ void BoundaryValues::ReceiveFieldShearingboxBoundaryBuffersWithWait(FaceField &d
 //  \brief receive shearingbox boundary data for field(face-centered) variables
 bool BoundaryValues::ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Mesh *pmesh=pmb->pmy_mesh;
   bool flagi=true, flago=true;
 

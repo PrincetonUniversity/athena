@@ -1,38 +1,23 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
+//! \file spherical_polar.cpp
+//  \brief implements Coordinates class functions for spherical polar (r-theta-phi)
 
 // C/C++ headers
 #include <math.h>  // pow, trig functions
 
 // Athena++ headers
+#include "coordinates.hpp"
 #include "../athena.hpp"           // macros, Real
 #include "../athena_arrays.hpp"    // AthenaArray
 #include "../parameter_input.hpp"  // ParameterInput
 #include "../mesh/mesh.hpp"        // MeshBlock
 #include "../eos/eos.hpp"          // GetIsoSoundSpeed()
 
-// this class header
-#include "coordinates.hpp"
-
-//======================================================================================
-//! \file spherical_polar.cpp
-//  \brief implements Coordinates class functions for spherical polar (r-theta-phi)
-//======================================================================================
-
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Coordinates constructor
 
 Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
@@ -220,7 +205,7 @@ Coordinates::~Coordinates()
   coord_src3_j_.DeleteAthenaArray();
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Edge Length functions: returns physical length at cell edges
 // Edge1(i,j,k) located at (i,j-1/2,k-1/2), i.e. (x1v(i), x2f(j), x3f(k))
 
@@ -272,7 +257,7 @@ Real Coordinates::GetEdge3Length(const int k, const int j, const int i)
   return x1f(i)*coord_area2_j_(j)*dx3f(k);
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Cell-center Width functions: returns physical width at cell-center
 
 Real Coordinates::CenterWidth1(const int k, const int j, const int i)
@@ -290,7 +275,7 @@ Real Coordinates::CenterWidth3(const int k, const int j, const int i)
   return x1v(i)*fabs(sin(x2v(j)))*dx3f(k);
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Face Area functions
 
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
@@ -333,7 +318,7 @@ Real Coordinates::GetFace1Area(const int k, const int j, const int i)
 }
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Cell Volume function
 
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
@@ -353,7 +338,7 @@ Real Coordinates::GetCellVolume(const int k, const int j, const int i)
   return coord_vol_i_(i)*coord_vol_j_(j)*dx3f(k);
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term functions
 
 void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
@@ -422,7 +407,7 @@ void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   return;
 }
 
-//-------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
 // Calculate Divv 
 void Coordinates::Divv(const AthenaArray<Real> &prim, AthenaArray<Real> &divv)
 {
@@ -600,7 +585,7 @@ void Coordinates::FaceZdz(const int k, const int j, const int il, const int iu,
 }
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Viscous (Geometric) source term functions
 
 void Coordinates::VisSrcTermsX1(const int k, const int j, const Real dt,

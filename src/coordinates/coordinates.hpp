@@ -1,14 +1,13 @@
 #ifndef COORDINATES_HPP
 #define COORDINATES_HPP
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-// See LICENSE file for full public license information.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file coordinates.hpp
 //  \brief defines Coordinates class used to compute/store geometrical factors (areas,
 //  volumes, source terms) related to a Mesh
-//======================================================================================
 
 // Athena++ classes headers
 #include "../athena.hpp"
@@ -50,7 +49,7 @@ public:
   Real GetMass() const {return bh_mass_;}
   Real GetSpin() const {return bh_spin_;}
 
-// functions to compute length of edges
+  // functions to compute length of edges
   void Edge1Length(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &len);
   void Edge2Length(const int k, const int j, const int il, const int iu,
@@ -61,12 +60,12 @@ public:
   Real GetEdge2Length(const int k, const int j, const int i);
   Real GetEdge3Length(const int k, const int j, const int i);
 
-// functions to compute physical width at cell center
+  // functions to compute physical width at cell center
   Real CenterWidth1(const int k, const int j, const int i);
   Real CenterWidth2(const int k, const int j, const int i);
   Real CenterWidth3(const int k, const int j, const int i);
 
-// functions to compute area of faces
+  // functions to compute area of faces
   void Face1Area(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &area);
   void Face2Area(const int k, const int j, const int il, const int iu,
@@ -77,16 +76,16 @@ public:
   Real GetFace1Area(const int k, const int j, const int i);
 
 
-// function to compute volume of cells
+  // function to compute volume of cells
   void CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &vol);
   Real GetCellVolume(const int k, const int j, const int i);
 
-// function to compute geometrical source terms
+  // function to compute geometrical source terms
   void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
 
-// Functions to calculate covariant derivatives at faces, for viscosity calculations  
+  // Functions to calculate covariant derivatives at faces, for viscosity calculations  
   #if !GENERAL_RELATIVITY  // declare, but do not define, in non-GR case
     void FaceXdx(const int k, const int j, const int il, const int iu,
       const AthenaArray<Real> &prim, AthenaArray<Real> &len);
@@ -127,14 +126,14 @@ public:
         AthenaArray<Real> &) {return;}
   #endif  // !GENERAL_RELATIVITY
 
-// function to compute Divv
+  // function to compute Divv
   #if !GENERAL_RELATIVITY  // declare, but do not define, in non-GR case
     void Divv(const AthenaArray<Real> &prim, AthenaArray<Real> &divv);
   #else  // GR: define as no-op in all coordinate systems
     void Divv(const AthenaArray<Real> &, AthenaArray<Real> &) {return;}
   #endif  // !GENERAL_RELATIVITY
 
-// function to compute viscous source terms
+  // function to compute viscous source terms
   #if !GENERAL_RELATIVITY  // declare, but do not define, in non-GR case
     void VisSrcTermsX1(const int k, const int j, const Real dt,
       const AthenaArray<Real> &flx,
@@ -320,6 +319,10 @@ private:
   AthenaArray<Real> g_, gi_;
 };
 
+//----------------------------------------------------------------------------------------
+//! \fn 
+//
+
 inline void Coordinates::AllocateAndSetBasicCoordinates(void)
 {
   Mesh *pm=pmy_block->pmy_mesh;
@@ -390,7 +393,10 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
   else {
     for (int i=is-ng; i<=ie+ng+1; ++i) {
       // if there are too many levels, this won't work or be precise enough
-      noffset=((i-is)<<cflag)+(long long)lx1*block_size.nx1;
+      if (cflag == 0)
+        noffset = i-is + (long long)lx1*block_size.nx1;
+      else
+        noffset = (i-is)*2 + (long long)lx1*block_size.nx1;
       Real rx=(Real)noffset/(Real)nrootmesh;
       x1f(i)=pm->MeshGenerator_[X1DIR](rx,mesh_size);
     }
@@ -430,7 +436,10 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
     else {
       for (int j=js-ng; j<=je+ng+1; ++j) {
         // if there are too many levels, this won't work or be precise enough
-        noffset=((j-js)<<cflag)+(long long)lx2*block_size.nx2;
+        if (cflag == 0)
+          noffset = j-js + (long long)lx2*block_size.nx2;
+        else
+          noffset = (j-js)*2 + (long long)lx2*block_size.nx2;
         Real rx=(Real)noffset/(Real)nrootmesh;
         x2f(j)=pm->MeshGenerator_[X2DIR](rx,mesh_size);
       }
@@ -479,7 +488,10 @@ inline void Coordinates::AllocateAndSetBasicCoordinates(void)
     else {
       for (int k=ks-ng; k<=ke+ng+1; ++k) {
         // if there are too many levels, this won't work or be precise enough
-        noffset=((k-ks)<<cflag)+(long long)lx3*block_size.nx3;
+        if (cflag == 0)
+          noffset = k-ks + (long long)lx3*block_size.nx3;
+        else
+          noffset = (k-ks)*2 + (long long)lx3*block_size.nx3;
         Real rx=(Real)noffset/(Real)nrootmesh;
         x3f(k)=pm->MeshGenerator_[X3DIR](rx,mesh_size);
       }
@@ -538,6 +550,9 @@ inline void Coordinates::DeleteBasicCoordinates(void)
   }
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn 
+//
 
 inline void Coordinates::CheckMeshSpacing(void)
 {
@@ -578,11 +593,15 @@ inline void Coordinates::CheckMeshSpacing(void)
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn 
+//
 // Function for determining if index corresponds to a polar boundary
 // Inputs:
 //   j: x2-index
 // Outputs:
 //   returned value: true if face indexed with j is on a pole; false otherwise
+
 inline bool Coordinates::IsPole(int j)
 {
   if (pmy_block->block_bcs[INNER_X2] == POLAR_BNDRY and j == pmy_block->js)

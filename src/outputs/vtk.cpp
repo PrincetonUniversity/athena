@@ -1,23 +1,12 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file vtk.cpp
 //  \brief writes output data in (legacy) vtk format.
 //  Data is written in RECTILINEAR_GRID geometry, in BINARY format, and in FLOAT type
 //  Writes one file per MeshBlock.
-//======================================================================================
 
 // C/C++ headers
 #include <sstream>
@@ -36,7 +25,7 @@
 #include "../coordinates/coordinates.hpp"
 #include "outputs.hpp"
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Functions to detect big endian machine, and to byte-swap 32-bit words.  The vtk
 // legacy format requires data to be stored as big-endian.
 
@@ -53,7 +42,7 @@ static inline void Swap4Bytes(void *vdat) {
   tmp = dat[1];  dat[1] = dat[2];  dat[2] = tmp;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // VTKOutput constructor
 // destructor - not needed for this derived class
 
@@ -62,7 +51,7 @@ VTKOutput::VTKOutput(OutputParameters oparams)
 {
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void VTKOutput:::WriteOutputFile(Mesh *pm)
 //  \brief Cycles over all MeshBlocks and writes OutputData in (legacy) vtk format, one
 //         MeshBlock per file

@@ -1,21 +1,10 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file bvals.cpp
 //  \brief constructor/destructor and utility functions for BoundaryValues class
-//======================================================================================
 
 // C++ headers
 #include <iostream>   // endl
@@ -28,6 +17,7 @@
 #include <cmath>
 
 // Athena++ classes headers
+#include "bvals.hpp"
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../athena_arrays.hpp"
@@ -39,9 +29,6 @@
 #include "../coordinates/coordinates.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
-
-// this class header
-#include "bvals.hpp"
 
 // MPI header
 #ifdef MPI_PARALLEL
@@ -57,7 +44,7 @@ int BoundaryValues::bufid[56];
 
 BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 {
-  pmy_mblock_ = pmb;
+  pmy_block_ = pmb;
   int cng=pmb->cnghost, cng1=0, cng2=0, cng3=0;
   if(pmb->block_size.nx2>1) cng1=cng, cng2=cng;
   if(pmb->block_size.nx3>1) cng3=cng;
@@ -67,7 +54,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   for(int i=0; i<6; i++)
     BoundaryFunction_[i]=NULL;
 
-// Set BC functions for each of the 6 boundaries in turn -------------------------------
+// Set BC functions for each of the 6 boundaries in turn ---------------------------------
   // Inner x1
   nface_=2; nedge_=0;
   switch(pmb->block_bcs[INNER_X1]){
@@ -140,6 +127,9 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       case POLAR_BNDRY: // polar boundary
         BoundaryFunction_[INNER_X2] = NULL;
         break;
+      case POLAR_BNDRY_WEDGE: //polar boundary with a wedge
+        BoundaryFunction_[INNER_X2] = PolarWedgeInnerX2;
+        break;
       case USER_BNDRY: // user-enrolled BCs
         BoundaryFunction_[INNER_X2] = pmb->pmy_mesh->BoundaryFunction_[INNER_X2];
         break;
@@ -162,6 +152,9 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       case PERIODIC_BNDRY: // periodic boundary
       case POLAR_BNDRY: // polar boundary
         BoundaryFunction_[OUTER_X2] = NULL;
+        break;
+      case POLAR_BNDRY_WEDGE: //polar boundary with a wedge
+        BoundaryFunction_[OUTER_X2] = PolarWedgeOuterX2;
         break;
       case USER_BNDRY: // user-enrolled BCs
         BoundaryFunction_[OUTER_X2] = pmb->pmy_mesh->BoundaryFunction_[OUTER_X2];
@@ -222,7 +215,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   }
 
   // Count number of blocks wrapping around pole
-  if (pmb->block_bcs[INNER_X2] == POLAR_BNDRY) {
+  if (pmb->block_bcs[INNER_X2] == POLAR_BNDRY || pmb->block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
     if(pmb->pmy_mesh->nrbx3>1 && pmb->pmy_mesh->nrbx3%2!=0) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
@@ -234,7 +227,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   }
   else
     num_north_polar_blocks_ = 0;
-  if (pmb->block_bcs[OUTER_X2] == POLAR_BNDRY) {
+  if (pmb->block_bcs[OUTER_X2] == POLAR_BNDRY || pmb->block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
     if(pmb->pmy_mesh->nrbx3>1 && pmb->pmy_mesh->nrbx3%2!=0) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
@@ -473,7 +466,8 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
  /* single CPU in the azimuthal direction with the polar boundary*/
   if(pmb->loc.level == pmb->pmy_mesh->root_level &&
      pmb->pmy_mesh->nrbx3 == 1 &&
-     (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY))
+     (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY||
+      pmb->block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
        exc_.NewAthenaArray(pmb->ke+NGHOST+2);
 
 //[JMSHI
@@ -697,7 +691,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 
 BoundaryValues::~BoundaryValues()
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   for(int i=0;i<pmb->pmy_mesh->maxneighbor_;i++) {
     delete [] hydro_send_[i];
     delete [] hydro_recv_[i];
@@ -758,7 +752,8 @@ BoundaryValues::~BoundaryValues()
   }
   if(pmb->loc.level == pmb->pmy_mesh->root_level &&
      pmb->pmy_mesh->nrbx3 == 1 &&
-     (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY))
+     (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY||
+      pmb->block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
        exc_.DeleteAthenaArray();
 
 //[JMSHI
@@ -823,12 +818,13 @@ BoundaryValues::~BoundaryValues()
 //JMSHI]
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::Initialize(void)
 //  \brief Initialize MPI requests
+
 void BoundaryValues::Initialize(void)
 {
-  MeshBlock* pmb=pmy_mblock_;
+  MeshBlock* pmb=pmy_block_;
   int myox1, myox2, myox3;
   int tag;
   int cng, cng1, cng2, cng3;
@@ -1173,12 +1169,13 @@ void BoundaryValues::Initialize(void)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::CheckBoundary(void)
 //  \brief checks if the boundary conditions are correctly enrolled
+
 void BoundaryValues::CheckBoundary(void)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   for(int i=0;i<nface_;i++) {
     if(pmb->block_bcs[i]==USER_BNDRY) {
       if(BoundaryFunction_[i]==NULL) {
@@ -1192,13 +1189,14 @@ void BoundaryValues::CheckBoundary(void)
   }
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::StartReceivingForInit(bool cons_and_field)
 //  \brief initiate MPI_Irecv for initialization
+
 void BoundaryValues::StartReceivingForInit(bool cons_and_field)
 {
 #ifdef MPI_PARALLEL
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   for(int n=0;n<pmb->nneighbor;n++) {
     NeighborBlock& nb = pmb->neighbor[n];
     if(nb.rank!=Globals::my_rank) {
@@ -1215,7 +1213,7 @@ void BoundaryValues::StartReceivingForInit(bool cons_and_field)
 #endif
 //[JMSHI   find send_block_id and recv_block_id;
   if (SHEARING_BOX) {
-    MeshBlock *pmb=pmy_mblock_;
+    MeshBlock *pmb=pmy_block_;
     Mesh *pmesh = pmb->pmy_mesh;
     FindShearBlock(0);
   }
@@ -1224,7 +1222,7 @@ void BoundaryValues::StartReceivingForInit(bool cons_and_field)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::StartReceivingAll(void)
 //  \brief initiate MPI_Irecv for all the sweeps
 //[JMSHI
@@ -1234,7 +1232,7 @@ void BoundaryValues::StartReceivingAll(const int step)
 {
   firsttime_=true;
 #ifdef MPI_PARALLEL
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   int mylevel=pmb->loc.level;
   for(int n=0;n<pmb->nneighbor;n++) {
     NeighborBlock& nb = pmb->neighbor[n];
@@ -1269,7 +1267,7 @@ void BoundaryValues::StartReceivingAll(const int step)
 #endif
 //[JMSHI   find send_block_id and recv_block_id; post non-blocking recv
   if (SHEARING_BOX) {
-    MeshBlock *pmb=pmy_mblock_;
+    MeshBlock *pmb=pmy_block_;
     Mesh *pmesh = pmb->pmy_mesh;
     FindShearBlock(step);
 #ifdef MPI_PARALLEL
@@ -1356,12 +1354,13 @@ void BoundaryValues::StartReceivingAll(const int step)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ClearBoundaryForInit(void)
 //  \brief clean up the boundary flags for initialization
+
 void BoundaryValues::ClearBoundaryForInit(bool cons_and_field)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
 
   // Note step==0 corresponds to initial exchange of conserved variables, while step==1
   // corresponds to primitives sent only in the case of GR with refinement
@@ -1390,12 +1389,13 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field)
 }
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ClearBoundaryAll(void)
 //  \brief clean up the boundary flags after each loop
+
 void BoundaryValues::ClearBoundaryAll(void)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
 
   // Clear non-polar boundary communications
   for(int n=0;n<pmb->nneighbor;n++) {
@@ -1511,16 +1511,17 @@ void BoundaryValues::ClearBoundaryAll(void)
 }
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
 //           AthenaArray<Real> &cdst, FaceField &bfdst, AthenaArray<Real> &bcdst,
 //           const Real time, const Real dt)
 //  \brief Apply all the physical boundary conditions for both hydro and field
+
 void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
                      AthenaArray<Real> &cdst, FaceField &bfdst, AthenaArray<Real> &bcdst,
                      const Real time, const Real dt)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   int bis=pmb->is-NGHOST, bie=pmb->ie+NGHOST, bjs=pmb->js, bje=pmb->je,
       bks=pmb->ks, bke=pmb->ke;
@@ -1611,16 +1612,17 @@ void BoundaryValues::ApplyPhysicalBoundaries(AthenaArray<Real> &pdst,
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
 //           AthenaArray<Real> &cdst, FaceField &bdst, AthenaArray<Real> &bcdst,
 //           const Real time, const Real dt)
 //  \brief Prolongate the level boundary using the coarse data
+
 void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
      AthenaArray<Real> &cdst, FaceField &bfdst, AthenaArray<Real> &bcdst,
      const Real time, const Real dt)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   MeshRefinement *pmr=pmb->pmr;
   int mox1, mox2, mox3;
   long int &lx1=pmb->loc.lx1;

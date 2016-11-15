@@ -1,27 +1,17 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file adiabatic_mhd.cpp
 //  \brief implements functions in class EquationOfState for adiabatic MHD
-//======================================================================================
 
 // C++ headers
 #include <cmath>   // sqrt()
 #include <cfloat>  // FLT_MIN
 
 // Athena++ headers
+#include "eos.hpp"
 #include "../hydro/hydro.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
@@ -29,9 +19,6 @@
 #include "../parameter_input.hpp"
 #include "../field/field.hpp"
 #include "../coordinates/coordinates.hpp"
-
-// this class header
-#include "eos.hpp"
 
 // EquationOfState constructor
 
@@ -49,7 +36,7 @@ EquationOfState::~EquationOfState()
 {
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // \!fn void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //    const AthenaArray<Real> &prim_old, const FaceField &b,
 //    AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
@@ -58,7 +45,7 @@ EquationOfState::~EquationOfState()
 //  For the Field, computes cell-centered from face-centered magnetic field.
 
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-	    const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
+    const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
     AthenaArray<Real> &bcc, Coordinates *pco,
     int is, int ie, int js, int je, int ks, int ke)
 {
@@ -113,7 +100,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // \!fn void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //           const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
 //           int is, int ie, int js, int je, int ks, int ke);
@@ -162,7 +149,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // \!fn Real EquationOfState::SoundSpeed(Real prim[NHYDRO])
 // \brief returns adiabatic sound speed given vector of primitive variables
 
@@ -171,7 +158,7 @@ Real EquationOfState::SoundSpeed(const Real prim[NHYDRO])
   return sqrt(GetGamma()*prim[IEN]/prim[IDN]);
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // \!fn Real EquationOfState::FastMagnetosonicSpeed(const Real prim[], const Real bx)
 // \brief returns fast magnetosonic speed given vector of primitive variables
 // Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN 

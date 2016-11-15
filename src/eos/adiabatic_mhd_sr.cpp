@@ -6,7 +6,7 @@
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cfloat>     // FLT_MIN
-#include <cmath>      // NAN, sqrt(), abs(), isfinite()
+#include <cmath>      // abs(), cbrt(), isfinite(), NAN, sqrt()
 
 // Athena headers
 #include "../athena.hpp"                   // enums, macros

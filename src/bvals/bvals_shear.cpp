@@ -53,7 +53,7 @@
 //  \brief Load shearingbox hydro boundary buffers
 void BoundaryValues::LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Mesh *pmesh=pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
   int nx2=pmb->block_size.nx2-1;
@@ -130,7 +130,7 @@ void BoundaryValues::LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb
 void BoundaryValues::SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real> &src,
                                               bool conserved_values)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   Mesh *pmesh=pmb->pmy_mesh;
 
@@ -190,7 +190,7 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real
 void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
                                               bool conserved_values)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   Mesh *pmesh=pmb->pmy_mesh;
 
@@ -319,7 +319,7 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src,
 void BoundaryValues::SetHydroShearingboxBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
                                                const int nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Mesh *pmesh=pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
   int nx2=pmb->block_size.nx2-1;
@@ -393,7 +393,7 @@ void BoundaryValues::SetHydroShearingboxBoundarySameLevel(AthenaArray<Real> &dst
 //         It is not used for now as our problem generator might start with t=0 periodic config.
 void BoundaryValues::ReceiveHydroShearingboxBoundaryBuffersWithWait(AthenaArray<Real> &dst, bool conserved_value)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
 
   if(shbb_.inner == true) { // check inner boundaries
 #ifdef MPI_PARALLEL
@@ -421,7 +421,7 @@ void BoundaryValues::ReceiveHydroShearingboxBoundaryBuffersWithWait(AthenaArray<
 //  \brief receive shearingbox boundary data for hydro variables
 bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &dst)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Mesh *pmesh=pmb->pmy_mesh;
   bool flagi=true, flago=true;
   //std::cout << "do some ReceiveHydroShearingboxBoundaryBuffers\n" << std::endl;
@@ -495,7 +495,7 @@ bool BoundaryValues::ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &d
 void BoundaryValues::FindShearBlock(const int step)
 //void BoundaryValues::FindShearBlock(void)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   Mesh *pmesh=pmb->pmy_mesh;
 

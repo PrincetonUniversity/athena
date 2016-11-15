@@ -1,25 +1,15 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file field_loop_poles.c
 //  \brief Advection of a field loop THROUGH the poles in spherical_polar coordinates.
 // 
 //  Originally developed by ZZ.  Sets up constant uniform-density flow in x-direction
 //  through poles, and follows advection of loop.  Set xz>0 (xz<0) for loop through
 //  upper (lower) pole.  Works in 2D and 3D.
-//======================================================================================
+//========================================================================================
 
 // C++ headers
 #include <iostream>   // endl
@@ -63,12 +53,12 @@ void LoopOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
 static Real vy0, rho0, isocs2, gamma_gas;
 static Real xc, yc, zc, beta, b0;
 
-//======================================================================================
+//========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Function to initialize problem-specific data in mesh class.  Can also be used
 //  to initialize variables which are global to (and therefore can be passed to) other
 //  functions in this file.  Called in Mesh constructor.
-//======================================================================================
+//========================================================================================
 
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
@@ -108,10 +98,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   return;
 }
 
-//======================================================================================
+//========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Initializes field loop advection through pole.
-//======================================================================================
+//========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
@@ -254,7 +244,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \f transforms uniform velocity in x-directin in spherical polar coords
 
 static void VelProfileCyl(const Real x1, const Real x2, const Real x3,
@@ -266,7 +256,7 @@ static void VelProfileCyl(const Real x1, const Real x2, const Real x3,
   return;
 } 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \f compute 3-compnent of vector potential
 
 static Real A3(const Real x1, const Real x2, const Real x3)
@@ -275,7 +265,7 @@ static Real A3(const Real x1, const Real x2, const Real x3)
   return a3;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \f compute 2-compnent of vector potential
 
 static Real A2(const Real x1, const Real x2, const Real x3)
@@ -296,7 +286,7 @@ static Real A2(const Real x1, const Real x2, const Real x3)
   return a2;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \f compute 1-compnent of vector potential
 
 static Real A1(const Real x1, const Real x2, const Real x3)
@@ -317,7 +307,7 @@ static Real A1(const Real x1, const Real x2, const Real x3)
   return a1;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //!\f: User-defined boundary Conditions: LoopInnerX1
 
 void LoopInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
@@ -366,7 +356,7 @@ void LoopInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
   }
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //!\f: User-defined boundary Conditions: LoopOuterX1
 
 void LoopOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
@@ -415,7 +405,7 @@ void LoopOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
   }
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //!\f: User-defined boundary Conditions: LoopInnerX2
 
 void LoopInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
@@ -464,7 +454,7 @@ void LoopInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
   }
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //!\f: User-defined boundary Conditions: LoopOuterX2
 
 void LoopOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,

@@ -1,34 +1,19 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
-
-// Primary header
-#include "coordinates.hpp"
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
+//! \file cartesian.cpp
+//  \brief implements Coordinates class functions for Cartesian (x-y-z) coordinates
 
 // Athena++ headers
+#include "coordinates.hpp"
 #include "../athena.hpp"          // macros, Real
 #include "../athena_arrays.hpp"   // AthenaArray
 #include "../parameter_input.hpp" // ParameterInput
 #include "../mesh/mesh.hpp"            // MeshBlock
 
-//======================================================================================
-//! \file cartesian.cpp
-//  \brief implements Coordinates class functions for Cartesian (x-y-z) coordinates
-//======================================================================================
-
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Coordinates constructor
 
 Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
@@ -111,7 +96,7 @@ Coordinates::~Coordinates()
   DeleteBasicCoordinates();
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Edge Length functions: returns physical length at cell edges
 // Edge1(i,j,k) located at (i,j-1/2,k-1/2), i.e. (x1v(i), x2f(j), x3f(k))
 
@@ -161,7 +146,7 @@ Real Coordinates::GetEdge3Length(const int k, const int j, const int i)
   return dx3f(k);
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Cell-center Width functions: returns physical width at cell-center
 
 Real Coordinates::CenterWidth1(const int k, const int j, const int i)
@@ -179,7 +164,7 @@ Real Coordinates::CenterWidth3(const int k, const int j, const int i)
   return dx3f(k);
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Face Area functions
 
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
@@ -227,7 +212,7 @@ Real Coordinates::GetFace1Area(const int k, const int j, const int i)
 
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Cell Volume function
 
 void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
@@ -248,7 +233,7 @@ Real Coordinates::GetCellVolume(const int k, const int j, const int i)
   return dx1f(i)*dx2f(j)*dx3f(k);
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term functions
 
 void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
@@ -258,7 +243,7 @@ void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
 }
 
 
-//-------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
 // Calculate Divv 
 void Coordinates::Divv(const AthenaArray<Real> &prim, AthenaArray<Real> &divv)
 {
@@ -428,7 +413,7 @@ void Coordinates::FaceZdz(const int k, const int j, const int il, const int iu,
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Viscous (Geometric) source term functions
 
 void Coordinates::VisSrcTermsX1(const int k, const int j, const Real dt,

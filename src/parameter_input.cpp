@@ -1,36 +1,8 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
-
-// Primary header
-#include "parameter_input.hpp"
-
-// C++ headers
-#include <cstdlib>    // atoi(), atof(), NULL, size_t
-#include <fstream>    // ifstream
-#include <iostream>   // endl, ostream
-#include <sstream>    // stringstream
-#include <stdexcept>  // runtime_error
-#include <algorithm>  // transform
-#include <string>     // string
-
-// Athena headers
-#include "athena.hpp"
-#include "globals.hpp"
-
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file parameter_input.cpp
 //  \brief implementation of functions in class ParameterInput
 //
@@ -38,7 +10,6 @@
 //   Functionality is loosely modeled after FORTRAN namelist.
 //
 // EXAMPLE of input file in 'Athena++' format:
-//
 //   <blockname1>      # block name; must be on a line by itself
 //                     # everything after a hash symbol is a comment and is ignored
 //   name1=value       # each parameter name must be on a line by itself
@@ -62,9 +33,23 @@
 //   - Nov 2002:  Created for Athena1.0/Cambridge release by Peter Teuben
 //   - 2003-2008: Many improvements and extensions by T. Gardiner and J.M. Stone
 //   - Jan 2014:  Rewritten in C++ for the Athena++ code by J.M. Stone
-//======================================================================================
+//========================================================================================
 
-//--------------------------------------------------------------------------------------
+// C++ headers
+#include <cstdlib>    // atoi(), atof(), NULL, size_t
+#include <fstream>    // ifstream
+#include <iostream>   // endl, ostream
+#include <sstream>    // stringstream
+#include <stdexcept>  // runtime_error
+#include <algorithm>  // transform
+#include <string>     // string
+
+// Athena headers
+#include "parameter_input.hpp"
+#include "athena.hpp"
+#include "globals.hpp"
+
+//----------------------------------------------------------------------------------------
 // ParameterInput constructor
 
 ParameterInput::ParameterInput()
@@ -85,7 +70,7 @@ ParameterInput::~ParameterInput()
   }
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // InputBlock constructor
 
 InputBlock::InputBlock()
@@ -104,7 +89,7 @@ InputBlock::~InputBlock()
   }
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn  void ParameterInput::LoadFromStream(std::istream &is)
 //  \brief Load input parameters from a stream
 //  Input block names are allocated and stored in a linked list of InputBlocks.  Within
@@ -158,7 +143,7 @@ void ParameterInput::LoadFromStream(std::istream &is)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn  void ParameterInput::LoadFromFile(IOWrapper &input)
 //  \brief Read the parameters from an input file or restarting file.
 //         Return the position at the end of the header, which is used in restarting
@@ -206,7 +191,7 @@ void ParameterInput::LoadFromFile(IOWrapper &input)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn InputBlock* ParameterInput::FindOrAddBlock(std::string name)
 //  \brief find or add specified InputBlock.  Returns pointer to block.
 
@@ -239,7 +224,7 @@ InputBlock* ParameterInput::FindOrAddBlock(std::string name)
   return pib;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void ParameterInput::ParseLine(InputBlock *pib, std::string line,
 //           std::string& name, std::string& value, std::string& comment)
 //  \brief parse "name = value # comment" format, return name/value/comment strings. 
@@ -278,7 +263,7 @@ void ParameterInput::ParseLine(InputBlock *pib, std::string line,
   }
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void ParameterInput::AddParameter(InputBlock *pb, std::string name, 
 //   std::string value, std::string comment)
 //  \brief add name/value/comment tuple to the InputLine linked list in block *pb.  
@@ -326,7 +311,7 @@ void ParameterInput::AddParameter(InputBlock *pb, std::string name,
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! void ParameterInput::ModifyFromCmdline(int argc, char *argv[])
 //  \brief parse commandline for changes to input parameters
 // Note this function is very forgiving (no warnings!) if there is an error in format
@@ -374,7 +359,7 @@ void ParameterInput::ModifyFromCmdline(int argc, char *argv[])
   }
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn InputBlock* ParameterInput::GetPtrToBlock(std::string name)
 //  \brief return pointer to specified InputBlock if it exists 
 
@@ -387,7 +372,7 @@ InputBlock* ParameterInput::GetPtrToBlock(std::string name)
   return NULL;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int ParameterInput::DoesParameterExist(std::string block, std::string name)
 //  \brief check whether parameter of given name in given block exists 
 
@@ -401,7 +386,7 @@ int ParameterInput::DoesParameterExist(std::string block, std::string name)
   return (pl == NULL ? 0 : 1);
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int ParameterInput::GetInteger(std::string block, std::string name)
 //  \brief returns integer value of string stored in block/name 
 
@@ -432,7 +417,7 @@ int ParameterInput::GetInteger(std::string block, std::string name)
   return atoi(pl->param_value.c_str());
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn Real ParameterInput::GetReal(std::string block, std::string name)
 //  \brief returns real value of string stored in block/name
 
@@ -463,7 +448,7 @@ Real ParameterInput::GetReal(std::string block, std::string name)
   return (Real)atof(pl->param_value.c_str());
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn bool ParameterInput::GetBoolean(std::string block, std::string name)
 //  \brief returns boolean value of string stored in block/name
 
@@ -506,7 +491,7 @@ bool ParameterInput::GetBoolean(std::string block, std::string name)
   return (b);
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn std::string ParameterInput::GetString(std::string block, std::string name)
 //  \brief returns string stored in block/name
 
@@ -537,7 +522,7 @@ std::string ParameterInput::GetString(std::string block, std::string name)
   return pl->param_value;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int ParameterInput::GetOrAddInteger(std::string block, std::string name,
 //    int default_value)
 //  \brief returns integer value stored in block/name if it exists, or creates and sets
@@ -555,7 +540,7 @@ int ParameterInput::GetOrAddInteger(std::string block, std::string name, int def
   return def_value;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn Real ParameterInput::GetOrAddReal(std::string block, std::string name,
 //    Real def_value)
 //  \brief returns real value stored in block/name if it exists, or creates and sets
@@ -573,7 +558,7 @@ Real ParameterInput::GetOrAddReal(std::string block, std::string name, Real def_
   return def_value;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn Real ParameterInput::GetOrAddBoolean(std::string block, std::string name,
 //    bool def_value)
 //  \brief returns boolean value stored in block/name if it exists, or creates and sets
@@ -591,7 +576,7 @@ bool ParameterInput::GetOrAddBoolean(std::string block,std::string name, bool de
   return def_value;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int ParameterInput::SetInteger(std::string block, std::string name, int value)
 //  \brief updates an integer parameter; creates it if it does not exist
 
@@ -606,7 +591,7 @@ int ParameterInput::SetInteger(std::string block, std::string name, int value)
   return value;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn Real ParameterInput::SetReal(std::string block, std::string name, Real value)
 //  \brief updates a real parameter; creates it if it does not exist
 
@@ -621,7 +606,7 @@ Real ParameterInput::SetReal(std::string block, std::string name, Real value)
   return value;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn Real ParameterInput::SetBoolean(std::string block, std::string name, bool value)
 //  \brief updates a boolean parameter; creates it if it does not exist
 
@@ -636,7 +621,7 @@ bool ParameterInput::SetBoolean(std::string block, std::string name, bool value)
   return value;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn std::string ParameterInput::GetOrAddString(std::string block, std::string name, 
 //std::string def_value)
 //  \brief returns string value stored in block/name if it exists, or creates and sets
@@ -654,7 +639,7 @@ std::string ParameterInput::GetOrAddString(std::string block, std::string name,
   return def_value;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void ParameterInput::ParameterDump(std::ostream& os)
 //  \brief output entire InputBlock/InputLine hierarchy to specified stream
 
@@ -686,7 +671,7 @@ void ParameterInput::ParameterDump(std::ostream& os)
   os<< "<par_end>" << std::endl;    // finish with par-end (useful in restart files)
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn InputLine* InputBlock::GetPtrToLine(std::string name)
 //  \brief return pointer to InputLine containing specified parameter if it exists
 

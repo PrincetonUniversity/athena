@@ -1,18 +1,8 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file shk_cloud.c
 //  \brief Problem generator for shock-cloud problem
 //
@@ -26,7 +16,7 @@
 // center of the cloud, and should be in the middle of the cloud. The shock is initially
 // at x1=-2.0.  A typical grid domain should span x1 in [-3.0,7.0] , y and z in 
 //[-2.5,2.5] (see input file in /tst).
-//======================================================================================
+//========================================================================================
 
 // C++ headers
 #include <iostream>   // endl
@@ -53,12 +43,12 @@ static Real bxl,byl,bzl;
 void ShockCloudInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
      FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 
-//======================================================================================
+//========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Function to initialize problem-specific data in mesh class.  Can also be used
 //  to initialize variables which are global to (and therefore can be passed to) other
 //  functions in this file.  Called in Mesh constructor.
-//======================================================================================
+//========================================================================================
 
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
@@ -67,18 +57,17 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   return;
 }
 
-//======================================================================================
+//========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Problem Generator for the shock-cloud interaction test
-//======================================================================================
+//========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   Real gmma  = peos->GetGamma();
   gmma1 = gmma - 1.0;
 
-// Read input parameters
-
+  // Read input parameters
   Real xshock = -2.0;
   Real rad    = 1.0;
   Real mach = pin->GetReal("problem","Mach");
@@ -86,14 +75,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real beta;
   if (MAGNETIC_FIELDS_ENABLED) beta = pin->GetReal("problem","beta");
   
-// Set paramters in ambient medium ("R-state" for shock)
-
+  // Set paramters in ambient medium ("R-state" for shock)
   Real dr = 1.0;
   Real pr = 1.0/(peos->GetGamma());
   Real ur = 0.0;
 
-// Uses Rankine Hugoniot relations for adiabatic gas to initialize problem
-
+  // Uses Rankine Hugoniot relations for adiabatic gas to initialize problem
   Real jump1 = (gmma + 1.0)/(gmma1 + 2.0/(mach*mach));
   Real jump2 = (2.0*gmma*mach*mach - gmma1)/(gmma + 1.0);
   Real jump3 = 2.0*(1.0 - 1.0/(mach*mach))/(gmma + 1.0);
@@ -102,8 +89,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   pl = pr*jump2;
   ul = ur + jump3*mach*sqrt(gmma*pr/dr);
 
-// Initialize the grid
-
+  // Initialize the grid
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
@@ -135,8 +121,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }
   }}}
 
-// initialize interface B, assuming longitudinal field only B=(1,0,0)
-
+  // initialize interface B, assuming longitudinal field only B=(1,0,0)
   if (MAGNETIC_FIELDS_ENABLED) {
     Real bxr = sqrt(2.0/beta);
     Real byr = 0.0;
@@ -188,8 +173,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   return;
 }
 
-
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void ShockCloudInnerX1()
 //  \brief Sets boundary condition on left X boundary (iib) 
 // Note quantities at this boundary are held fixed at the downstream state

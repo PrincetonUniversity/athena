@@ -1,21 +1,10 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file mesh.cpp
 //  \brief implementation of functions in MeshBlock class
-//======================================================================================
 
 // C/C++ headers
 #include <iostream>
@@ -43,7 +32,7 @@
 #include "meshblock_tree.hpp"
 #include "mesh.hpp"
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // MeshBlock constructor: constructs coordinate, boundary condition, hydro, field
 //                        and mesh refinement objects.
 
@@ -63,15 +52,9 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   loc=iloc;
   cost=1.0;
 
-  // allocate user output variables array
-  nuser_out_var=pin->GetOrAddInteger("mesh","nuser_out_var",0);
-  int ncells1 = block_size.nx1 + 2*(NGHOST);
-  int ncells2 = 1, ncells3 = 1;
-  if (block_size.nx2 > 1) ncells2 = block_size.nx2 + 2*(NGHOST);
-  if (block_size.nx3 > 1) ncells3 = block_size.nx3 + 2*(NGHOST);
-  user_out_var.NewAthenaArray(nuser_out_var,ncells3,ncells2,ncells1);
-
-  nreal_user_meshblock_data_ = 0, nint_user_meshblock_data_ = 0;
+  nuser_out_var = 0;
+  nreal_user_meshblock_data_ = 0;
+  nint_user_meshblock_data_ = 0;
 
   // initialize grid indices
 
@@ -110,12 +93,12 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   pcoord = new Coordinates(this, pin);
   if(ref_flag==false) pcoord->CheckMeshSpacing();
   pbval  = new BoundaryValues(this, pin);
-  if (block_bcs[INNER_X2] == POLAR_BNDRY) {
+  if (block_bcs[INNER_X2] == POLAR_BNDRY||block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh->root_level;
     int num_north_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
     polar_neighbor_north = new PolarNeighborBlock[num_north_polar_blocks];
   }
-  if (block_bcs[OUTER_X2] == POLAR_BNDRY) {
+  if (block_bcs[OUTER_X2] == POLAR_BNDRY||block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh->root_level;
     int num_south_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
     polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
@@ -134,7 +117,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // MeshBlock constructor for restarts
 
 MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
@@ -152,15 +135,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   block_size = input_block;
   for(int i=0; i<6; i++) block_bcs[i] = input_bcs[i];
 
-  // allocate user output variables array
-  nuser_out_var=pin->GetOrAddInteger("mesh","nuser_out_var",0);
-  int ncells1 = block_size.nx1 + 2*(NGHOST);
-  int ncells2 = 1, ncells3 = 1;
-  if (block_size.nx2 > 1) ncells2 = block_size.nx2 + 2*(NGHOST);
-  if (block_size.nx3 > 1) ncells3 = block_size.nx3 + 2*(NGHOST);
-  user_out_var.NewAthenaArray(nuser_out_var,ncells3,ncells2,ncells1);
-
-  nreal_user_meshblock_data_ = 0, nint_user_meshblock_data_ = 0;
+  nuser_out_var = 0;
+  nreal_user_meshblock_data_ = 0;
+  nint_user_meshblock_data_ = 0;
 
   // initialize grid indices
   is = NGHOST;
@@ -193,12 +170,12 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   // (re-)create mesh-related objects in MeshBlock
   pcoord = new Coordinates(this, pin);
   pbval  = new BoundaryValues(this, pin);
-  if (block_bcs[INNER_X2] == POLAR_BNDRY) {
+  if (block_bcs[INNER_X2] == POLAR_BNDRY||block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh->root_level;
     int num_north_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
     polar_neighbor_north = new PolarNeighborBlock[num_north_polar_blocks];
   }
-  if (block_bcs[OUTER_X2] == POLAR_BNDRY) {
+  if (block_bcs[OUTER_X2] == POLAR_BNDRY||block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh->root_level;
     int num_south_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
     polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
@@ -254,7 +231,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // MeshBlock destructor
 
 MeshBlock::~MeshBlock()
@@ -263,8 +240,8 @@ MeshBlock::~MeshBlock()
   if(next!=NULL) next->prev=prev;
 
   delete pcoord;
-  if (block_bcs[INNER_X2] == POLAR_BNDRY) delete[] polar_neighbor_north;
-  if (block_bcs[OUTER_X2] == POLAR_BNDRY) delete[] polar_neighbor_south;
+  if (block_bcs[INNER_X2] == POLAR_BNDRY||block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) delete[] polar_neighbor_north;
+  if (block_bcs[OUTER_X2] == POLAR_BNDRY||block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) delete[] polar_neighbor_south;
   delete pbval;
   delete precon;
   if (pmy_mesh->multilevel == true) delete pmr;
@@ -284,7 +261,7 @@ MeshBlock::~MeshBlock()
   if(nint_user_meshblock_data_>0) delete [] iuser_meshblock_data;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::AllocateRealUserMeshBlockDataField(int n)
 //  \brief Allocate Real AthenaArrays for user-defned data in MeshBlock
 
@@ -301,7 +278,7 @@ void MeshBlock::AllocateRealUserMeshBlockDataField(int n)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::AllocateIntUserMeshBlockDataField(int n)
 //  \brief Allocate integer AthenaArrays for user-defned data in MeshBlock
 
@@ -318,7 +295,22 @@ void MeshBlock::AllocateIntUserMeshBlockDataField(int n)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
+//! \fn void MeshBlock::AllocateUserOutputVariables(int n)
+//  \brief Allocate user-defined output variables
+
+void MeshBlock::AllocateUserOutputVariables(int n)
+{
+  nuser_out_var=n;
+  int ncells1 = block_size.nx1 + 2*(NGHOST);
+  int ncells2 = 1, ncells3 = 1;
+  if (block_size.nx2 > 1) ncells2 = block_size.nx2 + 2*(NGHOST);
+  if (block_size.nx3 > 1) ncells3 = block_size.nx3 + 2*(NGHOST);
+  user_out_var.NewAthenaArray(nuser_out_var,ncells3,ncells2,ncells1);
+  return;
+}
+
+//----------------------------------------------------------------------------------------
 //! \fn size_t MeshBlock::GetBlockSizeInBytes(void)
 //  \brief Calculate the block data size required for restart.
 
@@ -346,7 +338,7 @@ size_t MeshBlock::GetBlockSizeInBytes(void)
   return size;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // \!fn void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
 //                          int iox1, int iox2, int iox3, enum NeighborType itype,
 //                          int ibid, int itargetid, int ifi1=0, int ifi2=0,
@@ -379,7 +371,7 @@ void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // \!fn void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist)
 // \brief Search and set all the neighbor blocks
 
@@ -614,6 +606,42 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
       }
     }
   }
+
+  // polar neighbors
+  if (block_bcs[INNER_X2] == POLAR_BNDRY||block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
+    int level = loc.level - pmy_mesh->root_level;
+    int num_north_polar_blocks = nrbx3 * (1 << level);
+    for (int n = 0; n < num_north_polar_blocks; ++n) {
+      LogicalLocation neighbor_loc;
+      neighbor_loc.lx1 = loc.lx1;
+      neighbor_loc.lx2 = loc.lx2;
+      neighbor_loc.lx3 = n;
+      neighbor_loc.level = loc.level;
+      neibt = tree.FindMeshBlock(neighbor_loc);
+      int nid = neibt->gid;
+      polar_neighbor_north[neibt->loc.lx3].rank = ranklist[nid];
+      polar_neighbor_north[neibt->loc.lx3].lid = nid - nslist[ranklist[nid]];
+      polar_neighbor_north[neibt->loc.lx3].gid = nid;
+      polar_neighbor_north[neibt->loc.lx3].north = true;
+    }
+  }
+  if (block_bcs[OUTER_X2] == POLAR_BNDRY||block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
+    int level = loc.level - pmy_mesh->root_level;
+    int num_south_polar_blocks = nrbx3 * (1 << level);
+    for (int n = 0; n < num_south_polar_blocks; ++n) {
+      LogicalLocation neighbor_loc;
+      neighbor_loc.lx1 = loc.lx1;
+      neighbor_loc.lx2 = loc.lx2;
+      neighbor_loc.lx3 = n;
+      neighbor_loc.level = loc.level;
+      neibt = tree.FindMeshBlock(neighbor_loc);
+      int nid = neibt->gid;
+      polar_neighbor_south[neibt->loc.lx3].rank = ranklist[nid];
+      polar_neighbor_south[neibt->loc.lx3].lid = nid - nslist[ranklist[nid]];
+      polar_neighbor_south[neibt->loc.lx3].gid = nid;
+      polar_neighbor_south[neibt->loc.lx3].north = false;
+    }
+  }
   if(block_size.nx3==1) return;
 
   // x1x3 edge
@@ -758,40 +786,5 @@ void MeshBlock::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *n
     }
   }
 
-  // polar neighbors
-  if (block_bcs[INNER_X2] == POLAR_BNDRY) {
-    int level = loc.level - pmy_mesh->root_level;
-    int num_north_polar_blocks = nrbx3 * (1 << level);
-    for (int n = 0; n < num_north_polar_blocks; ++n) {
-      LogicalLocation neighbor_loc;
-      neighbor_loc.lx1 = loc.lx1;
-      neighbor_loc.lx2 = loc.lx2;
-      neighbor_loc.lx3 = n;
-      neighbor_loc.level = loc.level;
-      neibt = tree.FindMeshBlock(neighbor_loc);
-      int nid = neibt->gid;
-      polar_neighbor_north[neibt->loc.lx3].rank = ranklist[nid];
-      polar_neighbor_north[neibt->loc.lx3].lid = nid - nslist[ranklist[nid]];
-      polar_neighbor_north[neibt->loc.lx3].gid = nid;
-      polar_neighbor_north[neibt->loc.lx3].north = true;
-    }
-  }
-  if (block_bcs[OUTER_X2] == POLAR_BNDRY) {
-    int level = loc.level - pmy_mesh->root_level;
-    int num_south_polar_blocks = nrbx3 * (1 << level);
-    for (int n = 0; n < num_south_polar_blocks; ++n) {
-      LogicalLocation neighbor_loc;
-      neighbor_loc.lx1 = loc.lx1;
-      neighbor_loc.lx2 = loc.lx2;
-      neighbor_loc.lx3 = n;
-      neighbor_loc.level = loc.level;
-      neibt = tree.FindMeshBlock(neighbor_loc);
-      int nid = neibt->gid;
-      polar_neighbor_south[neibt->loc.lx3].rank = ranklist[nid];
-      polar_neighbor_south[neibt->loc.lx3].lid = nid - nslist[ranklist[nid]];
-      polar_neighbor_south[neibt->loc.lx3].gid = nid;
-      polar_neighbor_south[neibt->loc.lx3].north = false;
-    }
-  }
   return;
 }

@@ -53,7 +53,7 @@
 //  \brief Load shearingbox EMF boundary buffers
 void BoundaryValues::LoadEMFShearing(EdgeField &src, Real *buf, const int nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   //Mesh *pmesh=pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
   int psj,pej; // indices for e3
@@ -181,7 +181,7 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrectionForInit(void)
 
 void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   Mesh *pmesh=pmb->pmy_mesh;
 
@@ -265,7 +265,7 @@ void BoundaryValues::SendEMFShearingboxBoundaryCorrection(void)
 //  \brief Set EMF shearingbox boundary received from a block on the same level
 void BoundaryValues::SetEMFShearingboxBoundarySameLevel(EdgeField &dst, Real *buf, const int nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Mesh *pmesh=pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
   int psj,pej;
@@ -389,7 +389,7 @@ void BoundaryValues::ReceiveEMFShearingboxBoundaryCorrectionWithWait(void)
 //  \brief receive shearingbox boundary data for EMF correction
 bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Mesh *pmesh=pmb->pmy_mesh;
   bool flagi=true, flago=true;
 
@@ -457,7 +457,7 @@ bool BoundaryValues::ReceiveEMFShearingboxBoundaryCorrection(void)
 //  \brief Set EMF boundary received from a block on the finer level
 void BoundaryValues::RemapEMFShearingboxBoundary(void)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
   int ks=pmb->ks, ke=pmb->ke;
@@ -536,7 +536,7 @@ void BoundaryValues::RemapEMFShearingboxBoundary(void)
 //  \brief Clear the working array for EMFs on the surface/edge contacting with a shearing periodic boundary
 void BoundaryValues::ClearEMFShearing(EdgeField &work)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e2=work.x2e;
   AthenaArray<Real> &e3=work.x3e;
   int ks=pmb->ks, ke=pmb->ke;

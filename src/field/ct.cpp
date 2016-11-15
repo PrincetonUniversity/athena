@@ -1,47 +1,35 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file ct.cpp
 //  \brief
-//======================================================================================
 
 // C++ headers
 #include <algorithm>  // max(), min()
 
 // Athena++ headers
+#include "field.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../bvals/bvals.hpp"
 
-// this class header
-#include "field.hpp"
-
 // OpenMP header
 #ifdef OPENMP_PARALLEL
 #include <omp.h>
 #endif
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn  void Field::CT
 //  \brief Constrained Transport implementation of dB/dt = -Curl(E), where E=-(v X B)
 
-void Field::CT(MeshBlock *pmb, FaceField &b_in1, FaceField &b_in2,
+void Field::CT(FaceField &b_in1, FaceField &b_in2,
   const IntegratorWeight wght, FaceField &b_out)
 {
+  MeshBlock *pmb=pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
@@ -101,8 +89,8 @@ void Field::CT(MeshBlock *pmb, FaceField &b_in1, FaceField &b_in2,
   for (int k=ks; k<=ke; ++k) {
     // reset loop limits for polar boundary
     int jl=js; int ju=je+1;
-    if (pmb->block_bcs[INNER_X2] == POLAR_BNDRY) jl=js+1;
-    if (pmb->block_bcs[OUTER_X2] == POLAR_BNDRY) ju=je;
+    if (pmb->block_bcs[INNER_X2] == POLAR_BNDRY || pmb->block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) jl=js+1;
+    if (pmb->block_bcs[OUTER_X2] == POLAR_BNDRY || pmb->block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) ju=je;
 #pragma omp for schedule(static)
     for (int j=jl; j<=ju; ++j) {
       pmb->pcoord->Face2Area(k,j,is,ie,area);

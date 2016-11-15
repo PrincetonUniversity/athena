@@ -1,47 +1,32 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file field.cpp
 //  \brief implementation of functions in class Field
-//======================================================================================
 
 // Athena++ headers
+#include "field.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 
-// this class header
-#include "field.hpp"
-
 // constructor, initializes data structures and parameters
 
 Field::Field(MeshBlock *pmb, ParameterInput *pin)
 {
-  pmy_mblock = pmb;
+  pmy_block = pmb;
 
-// Allocate memory for interface fields, but only when needed.
-
+  // Allocate memory for interface fields, but only when needed.
   if (MAGNETIC_FIELDS_ENABLED) {
     int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
     int ncells2 = 1, ncells3 = 1;
     if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
     if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
 
-//  Note the extra cell in each longitudinal dirn for interface fields
-
+    //  Note the extra cell in each longitudinal dirn for interface fields
     b.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
     b.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
     b.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
@@ -64,7 +49,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin)
     wght.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
     wght.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
 
-// Allocate memory for scratch vectors
+    // Allocate memory for scratch vectors
     cc_e_.NewAthenaArray(ncells3,ncells2,ncells1);
 
     int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
@@ -112,11 +97,14 @@ Field::~Field()
   }
 }
 
+//----------------------------------------------------------------------------------------
+// \! fn
+// \! brief
 
 void Field::CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &bc,
             Coordinates *pco, int is, int ie, int js, int je, int ks, int ke)
 {
-  int nthreads = pmy_mblock->pmy_mesh->GetNumMeshThreads();
+  int nthreads = pmy_block->pmy_mesh->GetNumMeshThreads();
 #pragma omp parallel default(shared) num_threads(nthreads)
 {
   for (int k=ks; k<=ke; ++k){

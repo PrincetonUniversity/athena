@@ -1,21 +1,11 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file jet.cpp
 //  \brief Sets up a jet introduced through L-x1 boundary (left edge)
-//======================================================================================
+//========================================================================================
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -38,12 +28,12 @@ static Real r_jet,d_jet,p_jet,vx_jet,vy_jet,vz_jet,bx_jet,by_jet,bz_jet;
 static Real gm1,x2_0,x3_0;
 
 
-//======================================================================================
+//========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Function to initialize problem-specific data in mesh class.  Can also be used
 //  to initialize variables which are global to (and therefore can be passed to) other
 //  functions in this file.  Called in Mesh constructor.
-//======================================================================================
+//========================================================================================
 
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
@@ -78,15 +68,14 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 }
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Problem Generator for the Jet problem
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   gm1 = peos->GetGamma() - 1.0;
 
-// initialize conserved variables
-   
+  // initialize conserved variables
   for(int k=ks; k<=ke; ++k){
   for(int j=js; j<=je; ++j){
   for(int i=is; i<=ie; ++i){
@@ -99,8 +88,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }
   }}}
 
-// initialize interface B
-
+  // initialize interface B
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
@@ -130,7 +118,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 }
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void JetInnerX1()
 //  \brief Sets boundary condition on left X boundary (iib) for jet problem
 

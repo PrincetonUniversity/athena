@@ -1,22 +1,11 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file history.cpp
 //  \brief writes history output data, volume-averaged quantities that are output
 //         frequently in time to trace their history.
-//======================================================================================
 
 // C/C++ headers
 #include <sstream>
@@ -39,7 +28,7 @@
 
 #define NHISTORY_VARS ((NHYDRO)+(NFIELD)+3)
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // HistoryOutput constructor
 // destructor - not needed for this derived class
 
@@ -48,7 +37,7 @@ HistoryOutput::HistoryOutput(OutputParameters oparams)
 {
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void OutputType::HistoryFile()
 //  \brief Writes a history file
 
@@ -59,9 +48,10 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
 
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
   vol.NewAthenaArray(ncells1);
+  int nhistory_output=NHISTORY_VARS+pm->nuser_history_output_;
 
-  Real data_sum[(NHISTORY_VARS)];
-  for (int n=0; n<(NHISTORY_VARS); ++n) data_sum[n]=0.0;
+  Real *data_sum = new Real[nhistory_output];
+  for (int n=0; n<nhistory_output; ++n) data_sum[n]=0.0;
 
   // Loop over MeshBlocks
   while (pmb != NULL) {
@@ -103,17 +93,20 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
         }
       }
     }}
+    for(int n=0; n<pm->nuser_history_output_; n++) { // user-defined history outputs
+      if(pm->user_history_func_[n]!=NULL)
+        data_sum[NHISTORY_VARS+n] += pm->user_history_func_[n](pmb, n);
+    }
     pmb=pmb->next;
-
   }  // end loop over MeshBlocks
 
 #ifdef MPI_PARALLEL
   // sum over all ranks
   if (Globals::my_rank == 0) {
-    MPI_Reduce(MPI_IN_PLACE, &data_sum, (NHISTORY_VARS), MPI_ATHENA_REAL, MPI_SUM, 0,
+    MPI_Reduce(MPI_IN_PLACE, data_sum, nhistory_output, MPI_ATHENA_REAL, MPI_SUM, 0,
                MPI_COMM_WORLD);
   } else {
-    MPI_Reduce(&data_sum, &data_sum, (NHISTORY_VARS), MPI_ATHENA_REAL, MPI_SUM, 0,
+    MPI_Reduce(data_sum, data_sum, nhistory_output, MPI_ATHENA_REAL, MPI_SUM, 0,
                MPI_COMM_WORLD);
   }
 #endif
@@ -135,32 +128,34 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
     }
 
     // If this is the first output, write header
+    int iout = 1;
     if (output_params.file_number == 0) {
       fprintf(pfile,"# Athena++ history data\n"); // descriptor is first line
-      fprintf(pfile,"# [1]=time     ");
-      fprintf(pfile,"[2]=dt       ");
-      fprintf(pfile,"[3]=mass     ");
-      fprintf(pfile,"[4]=1-mom    ");
-      fprintf(pfile,"[5]=2-mom    ");
-      fprintf(pfile,"[6]=3-mom    ");
-      fprintf(pfile,"[7]=1-KE     ");
-      fprintf(pfile,"[8]=2-KE     ");
-      fprintf(pfile,"[9]=3-KE     ");
-      if (NON_BAROTROPIC_EOS) fprintf(pfile,"[10]=tot-E   ");
+      fprintf(pfile,"# [%d]=time     ", iout++);
+      fprintf(pfile,"[%d]=dt       ", iout++);
+      fprintf(pfile,"[%d]=mass     ", iout++);
+      fprintf(pfile,"[%d]=1-mom    ", iout++);
+      fprintf(pfile,"[%d]=2-mom    ", iout++);
+      fprintf(pfile,"[%d]=3-mom    ", iout++);
+      fprintf(pfile,"[%d]=1-KE     ", iout++);
+      fprintf(pfile,"[%d]=2-KE     ", iout++);
+      fprintf(pfile,"[%d]=3-KE     ", iout++);
+      if (NON_BAROTROPIC_EOS) fprintf(pfile,"[%d]=tot-E   ", iout++);
       if (MAGNETIC_FIELDS_ENABLED) {
-        fprintf(pfile,"[11]=1-ME    ");
-        fprintf(pfile,"[12]=2-ME    ");
-        fprintf(pfile,"[13]=3-ME    ");
+        fprintf(pfile,"[%d]=1-ME    ", iout++);
+        fprintf(pfile,"[%d]=2-ME    ", iout++);
+        fprintf(pfile,"[%d]=3-ME    ", iout++);
       }
+      for(int n=0; n<pm->nuser_history_output_; n++)
+        fprintf(pfile,"[%d]=%-8s", iout++, pm->user_history_output_names_[n].c_str());
       fprintf(pfile,"\n");                              // terminate line
     }
 
     // write history variables
     fprintf(pfile, output_params.data_format.c_str(), pm->time);
     fprintf(pfile, output_params.data_format.c_str(), pm->dt);
-    for (int n=0; n<NHISTORY_VARS; ++n) {
+    for (int n=0; n<nhistory_output; ++n)
       fprintf(pfile, output_params.data_format.c_str(), data_sum[n]);
-    }
     fprintf(pfile,"\n"); // terminate line
     fclose(pfile);
   }
@@ -171,5 +166,6 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
   pin->SetInteger(output_params.block_name, "file_number", output_params.file_number);
   pin->SetReal(output_params.block_name, "next_time", output_params.next_time);
   vol.DeleteAthenaArray();
+  delete [] data_sum;
   return;
 }

@@ -1,14 +1,13 @@
 #ifndef EOS_HPP
 #define EOS_HPP
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-// See LICENSE file for full public license information.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file eos.hpp
 //  \brief defines class EquationOfState
 //  Contains data and functions that implement the equation of state
-//======================================================================================
 
 // Athena headers
 #include "../athena.hpp"         // Real
@@ -111,7 +110,11 @@ private:
   Real rho_min_, rho_pow_;               // variables to control power-law denity floor
   Real u_min_, u_pow_;                   // variables to control power-law energy floor
   AthenaArray<Real> g_, g_inv_;          // metric and its inverse, used in GR
-  AthenaArray<bool> fixed_;              // array for flagging fixed cells, used in GR
+  AthenaArray<Real> normal_dd_;          // normal-frame densities, used in GR
+  AthenaArray<Real> normal_ee_;          // normal-frame energies, used in GR
+  AthenaArray<Real> normal_mm_;          // normal-frame momenta, used in GR
+  AthenaArray<Real> normal_bb_;          // normal-frame fields, used in GR
+  AthenaArray<Real> normal_tt_;          // normal-frame M.B, used in GR
 };
 
 #endif

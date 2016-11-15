@@ -1,21 +1,10 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file new_blockdt.cpp
 //  \brief computes timestep using CFL condition on a MEshBlock
-//======================================================================================
 
 // C/C++ headers
 #include <algorithm>  // min()
@@ -23,15 +12,13 @@
 #include <cmath>      // fabs(), sqrt()
 
 // Athena++ headers
+#include "hydro.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../eos/eos.hpp"
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
-
-// this class header
-#include "hydro.hpp"
 
 // MPI/OpenMP header
 #ifdef MPI_PARALLEL
@@ -42,12 +29,13 @@
 #include <omp.h>
 #endif
 
-//--------------------------------------------------------------------------------------
-// \!fn 
-// \brief
+//----------------------------------------------------------------------------------------
+// \!fn Real Hydro::NewBlockTimeStep(void)
+// \brief calculate the minimum timestep within a MeshBlock 
 
-Real Hydro::NewBlockTimeStep(MeshBlock *pmb)
+Real Hydro::NewBlockTimeStep(void)
 {
+  MeshBlock *pmb=pmy_block;
   int tid=0;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
@@ -91,49 +79,47 @@ Real Hydro::NewBlockTimeStep(MeshBlock *pmb)
 
         if (RELATIVISTIC_DYNAMICS) {
 
-          dt1(i) = pmy_block->pcoord->CenterWidth1(k,j,i);
-          dt2(i) = pmy_block->pcoord->CenterWidth2(k,j,i);
-          dt3(i) = pmy_block->pcoord->CenterWidth3(k,j,i);
+          dt1(i) = pmb->pcoord->CenterWidth1(k,j,i);
+          dt2(i) = pmb->pcoord->CenterWidth2(k,j,i);
+          dt3(i) = pmb->pcoord->CenterWidth3(k,j,i);
 
         } else if (MAGNETIC_FIELDS_ENABLED) {
 
           Real bx = bcc(IB1,k,j,i) + fabs(b_x1f(k,j,i)-bcc(IB1,k,j,i));
           wi[IBY] = bcc(IB2,k,j,i);
           wi[IBZ] = bcc(IB3,k,j,i);
-          Real cf = pmy_block->peos->FastMagnetosonicSpeed(wi,bx);
-          dt1(i)= pmy_block->pcoord->CenterWidth1(k,j,i)/(fabs(wi[IVX]) + cf);
+          Real cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
+          dt1(i)= pmb->pcoord->CenterWidth1(k,j,i)/(fabs(wi[IVX]) + cf);
 
           wi[IBY] = bcc(IB3,k,j,i);
           wi[IBZ] = bcc(IB1,k,j,i);
           bx = bcc(IB2,k,j,i) + fabs(b_x2f(k,j,i)-bcc(IB2,k,j,i));
-          cf = pmy_block->peos->FastMagnetosonicSpeed(wi,bx);
-          dt2(i)= pmy_block->pcoord->CenterWidth2(k,j,i)/(fabs(wi[IVY]) + cf);
+          cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
+          dt2(i)= pmb->pcoord->CenterWidth2(k,j,i)/(fabs(wi[IVY]) + cf);
 
           wi[IBY] = bcc(IB1,k,j,i);
           wi[IBZ] = bcc(IB2,k,j,i);
           bx = bcc(IB3,k,j,i) + fabs(b_x3f(k,j,i)-bcc(IB3,k,j,i));
-          cf = pmy_block->peos->FastMagnetosonicSpeed(wi,bx);
-          dt3(i)= pmy_block->pcoord->CenterWidth3(k,j,i)/(fabs(wi[IVZ]) + cf);
+          cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
+          dt3(i)= pmb->pcoord->CenterWidth3(k,j,i)/(fabs(wi[IVZ]) + cf);
 
         } else {
 
-          Real cs = pmy_block->peos->SoundSpeed(wi);
-          dt1(i)= pmy_block->pcoord->CenterWidth1(k,j,i)/(fabs(wi[IVX]) + cs);
-          dt2(i)= pmy_block->pcoord->CenterWidth2(k,j,i)/(fabs(wi[IVY]) + cs);
-          dt3(i)= pmy_block->pcoord->CenterWidth3(k,j,i)/(fabs(wi[IVZ]) + cs);
+          Real cs = pmb->peos->SoundSpeed(wi);
+          dt1(i)= pmb->pcoord->CenterWidth1(k,j,i)/(fabs(wi[IVX]) + cs);
+          dt2(i)= pmb->pcoord->CenterWidth2(k,j,i)/(fabs(wi[IVY]) + cs);
+          dt3(i)= pmb->pcoord->CenterWidth3(k,j,i)/(fabs(wi[IVZ]) + cs);
 
         }
       }
 
-// compute minimum of (v1 +/- C)
-
+      // compute minimum of (v1 +/- C)
       for (int i=is; i<=ie; ++i){
         Real& dt_1 = dt1(i);
         pthread_min_dt[tid] = std::min(pthread_min_dt[tid],dt_1);
       }
     
-// if grid is 2D/3D, compute minimum of (v2 +/- C)
-
+      // if grid is 2D/3D, compute minimum of (v2 +/- C)
       if (pmb->block_size.nx2 > 1) {
         for (int i=is; i<=ie; ++i){
           Real& dt_2 = dt2(i);
@@ -141,8 +127,7 @@ Real Hydro::NewBlockTimeStep(MeshBlock *pmb)
         }
       }
 
-// if grid is 3D, compute minimum of (v3 +/- C)
-
+      // if grid is 3D, compute minimum of (v3 +/- C)
       if (pmb->block_size.nx3 > 1) {
         for (int i=is; i<=ie; ++i){
           Real& dt_3 = dt3(i);
@@ -155,9 +140,14 @@ Real Hydro::NewBlockTimeStep(MeshBlock *pmb)
 
 } // end of omp parallel region
 
-// compute minimum across all threads
+  // compute minimum across all threads
   Real min_dt = pthread_min_dt[0];
   for (int n=1; n<nthreads; ++n) min_dt = std::min(min_dt,pthread_min_dt[n]);
+
+  min_dt *= pmb->pmy_mesh->cfl_number;
+
+  if(UserTimeStep_!=NULL)
+    min_dt = std::min(min_dt, UserTimeStep_(pmb));
 
   delete[] pthread_min_dt;
 

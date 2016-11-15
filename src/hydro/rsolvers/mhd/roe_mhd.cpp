@@ -1,18 +1,8 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file  roe_mhd.cpp
 //  \brief Roe's linearized Riemann solver for MHD.
 //
@@ -22,28 +12,27 @@
 // REFERENCES:
 // - P. Roe, "Approximate Riemann solvers, parameter vectors, and difference schemes",
 //   JCP, 43, 357 (1981).
-//======================================================================================
-
 
 // C/C++ headers
 #include <algorithm>  // max()
 #include <cmath>      // sqrt()
 
 // Athena++ headers
+#include "../../hydro.hpp"
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"
 #include "../../../eos/eos.hpp"
 
-// this class header
-#include "../../hydro.hpp"
-
-// function to compute eigenvalues and eigenvectors of Roe's matrix A
+// prototype for function to compute eigenvalues and eigenvectors of Roe's matrix A
 inline static void RoeEigensystem(const Real wroe[], const Real b1, 
   const Real x, const Real y, Real eigenvalues[],
   Real right_eigenmatrix[][(NWAVE)], Real left_eigenmatrix[][(NWAVE)]);
 
 // (gamma-1) and isothermal sound speed made global so can be shared with eigensystem
 static Real gm1, iso_cs;
+
+//----------------------------------------------------------------------------------------
+//! \fn
 
 void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
   const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
@@ -444,7 +433,7 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // \!fn RoeEigensystem()
 // \brief computes eigenvalues and eigenvectors for MHD
 //
@@ -465,7 +454,6 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
 //
 // - J. Stone, T. Gardiner, P. Teuben, J. Hawley, & J. Simon "Athena: A new code for
 //   astrophysical MHD", ApJS, (2008), Appendix B  Equation numbers refer to this paper.
-//--------------------------------------------------------------------------------------
 
 inline static void RoeEigensystem(const Real wroe[], const Real b1, 
   const Real x, const Real y, Real eigenvalues[],
@@ -478,7 +466,7 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
   Real b2 = wroe[IBY];
   Real b3 = wroe[IBZ];
 
-// Adiabatic MHD
+//--- Adiabatic MHD
 
   if (NON_BAROTROPIC_EOS) {
     Real vsq = v1*v1 + v2*v2 + v3*v3;
@@ -692,7 +680,7 @@ inline static void RoeEigensystem(const Real wroe[], const Real b1,
     left_eigenmatrix[6][5] = left_eigenmatrix[0][5];
     left_eigenmatrix[6][6] = left_eigenmatrix[0][6];
 
-// Isothermal MHD
+//--- Isothermal MHD
 
   } else {
     Real di = 1.0/d;

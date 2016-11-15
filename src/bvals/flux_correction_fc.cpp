@@ -1,21 +1,10 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file flux_correction_fc.cpp
 //  \brief functions that perform flux correction for FACE_CENTERED variables
-//======================================================================================
 
 // C++ headers
 #include <iostream>   // endl
@@ -28,6 +17,7 @@
 #include <cmath>
 
 // Athena++ classes headers
+#include "bvals.hpp"
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../athena_arrays.hpp"
@@ -39,15 +29,12 @@
 #include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
 
-// this class header
-#include "bvals.hpp"
-
 // MPI header
 #ifdef MPI_PARALLEL
 #include <mpi.h>
 #endif
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf,
 //                                                         const NeighborBlock& nb)
 //  \brief Set EMF correction buffers for sending to a block on the same level
@@ -56,16 +43,16 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
 //int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb)
 //JMSHI]
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
-
+//[JMSHI
   Real qomL = qshear_*Omega_0_*x1size_;
   AthenaArray<Real> &bx1=pmb->pfield->b.x1f;
   if (step == 2)
     AthenaArray<Real> &bx1=pmb->pfield->b1.x1f;
-
+//JMSHI]
   int p=0;
   if(nb.type==NEIGHBOR_FACE) {
     if(pmb->block_size.nx3 > 1) { // 3D
@@ -217,13 +204,14 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
 }
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf,
 //                                                         const NeighborBlock& nb)
 //  \brief Set EMF correction buffers for sending to a block on the coarser level
+
 int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
@@ -392,13 +380,14 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
   return p;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int BoundaryValues::LoadEMFBoundaryPolarBuffer(Real *buf,
 //          const PolarNeighborBlock &nb)
 //  \brief Load EMF values along polar axis into send buffers
+
 int BoundaryValues::LoadEMFBoundaryPolarBuffer(Real *buf, const PolarNeighborBlock &nb)
 {
-  MeshBlock *pmb = pmy_mblock_;
+  MeshBlock *pmb = pmy_block_;
   int count = 0;
   int j = nb.north ? pmb->js : pmb->je+1;
   for (int i = pmb->is; i <= pmb->ie; ++i) {
@@ -411,7 +400,7 @@ int BoundaryValues::LoadEMFBoundaryPolarBuffer(Real *buf, const PolarNeighborBlo
   return count;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SendEMFCorrection(void)
 //  \brief Restrict, pack and send the surace EMF to the coarse neighbor(s) if needed
 // [JMSHI
@@ -419,7 +408,7 @@ void BoundaryValues::SendEMFCorrection(int step)
 //void BoundaryValues::SendEMFCorrection(void)
 //JMSHI]
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
 
   // Send non-polar EMF values
   for(int n=0; n<pmb->nneighbor; n++) {
@@ -483,13 +472,14 @@ void BoundaryValues::SendEMFCorrection(int step)
 }
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
 //  \brief Add up the EMF received from a block on the same level
 //         Later they will be divided in the AverageEMFBoundary function
+
 void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
@@ -683,13 +673,14 @@ void BoundaryValues::SetEMFBoundarySameLevel(Real *buf, const NeighborBlock& nb)
 }
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
 //  \brief Add up the EMF received from a block on the finer level
 //         Later they will be divided in the AverageEMFBoundary function
+
 void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
@@ -864,13 +855,14 @@ void BoundaryValues::SetEMFBoundaryFromFiner(Real *buf, const NeighborBlock& nb)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetEMFBoundaryPolar(Real **buf_list, int num_bufs,
 //          bool north)
 //  \brief Overwrite EMF values along polar axis with azimuthal averages
+
 void BoundaryValues::SetEMFBoundaryPolar(Real **buf_list, int num_bufs, bool north)
 {
-  MeshBlock *pmb = pmy_mblock_;
+  MeshBlock *pmb = pmy_block_;
   int j = north ? pmb->js : pmb->je+1;
   int count = 0;
   for (int i = pmb->is; i <= pmb->ie; ++i) {
@@ -884,12 +876,13 @@ void BoundaryValues::SetEMFBoundaryPolar(Real **buf_list, int num_bufs, bool nor
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ClearCoarseEMFBoundary(void)
 //  \brief Clear the EMFs on the surface/edge contacting with a finer block
+
 void BoundaryValues::ClearCoarseEMFBoundary(void)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
@@ -997,12 +990,13 @@ void BoundaryValues::ClearCoarseEMFBoundary(void)
 }
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::AverageEMFBoundary(void)
 //  \brief Set EMF boundary received from a block on the finer level
+
 void BoundaryValues::AverageEMFBoundary(void)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
@@ -1152,19 +1146,20 @@ void BoundaryValues::AverageEMFBoundary(void)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::PolarSingleEMF(void)
 //  \brief single CPU in the azimuthal direction for the polar boundary
+
 void BoundaryValues::PolarSingleEMF(void)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   AthenaArray<Real> &e1=pmb->pfield->e.x1e;
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
 
   int i, j, k, nl;
   if(pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1){
-    if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY) {
+    if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE) {
       j=pmb->js;
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       if(pmb->block_size.nx3 > 1) {
@@ -1191,7 +1186,7 @@ void BoundaryValues::PolarSingleEMF(void)
       }
     }
 
-    if(pmb->block_bcs[OUTER_X2]==POLAR_BNDRY){
+    if(pmb->block_bcs[OUTER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE){
       j=pmb->je+1;
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       if(pmb->block_size.nx3 > 1) {
@@ -1223,12 +1218,13 @@ void BoundaryValues::PolarSingleEMF(void)
 
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ReceiveEMFCorrection(void)
 //  \brief Receive and Apply the surace EMF to the coarse neighbor(s) if needed
+
 bool BoundaryValues::ReceiveEMFCorrection(void)
 {
-  MeshBlock *pmb=pmy_mblock_;
+  MeshBlock *pmb=pmy_block_;
   bool flag=true;
 
   // Receive same-level non-polar EMF values
@@ -1352,7 +1348,8 @@ bool BoundaryValues::ReceiveEMFCorrection(void)
       SetEMFBoundaryPolar(emf_south_recv_, num_south_polar_blocks_, false);
     for (int n = 0; n < num_south_polar_blocks_; ++n)
       emf_south_flag_[n] = BNDRY_COMPLETED;
-    if (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY)
+    if (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY||
+        pmb->block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE)
       PolarSingleEMF();
   }
   return flag;

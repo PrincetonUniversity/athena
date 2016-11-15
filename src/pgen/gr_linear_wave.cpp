@@ -5,7 +5,7 @@
 
 // C++ headers
 #include <algorithm>  // max(), min()
-#include <cmath>      // abs(), sin(), sqrt()
+#include <cmath>      // abs(), cbrt(), sin(), sqrt()
 #include <cstdio>     // fopen(), fprintf(), freopen()
 #include <iostream>   // endl
 #include <sstream>    // stringstream

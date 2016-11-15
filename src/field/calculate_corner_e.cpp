@@ -1,43 +1,30 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file corner_emf.cpp
 //  \brief
-//======================================================================================
 
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
 // Athena++ headers
+#include "field.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../hydro/hydro.hpp"
 
-// this class header
-#include "field.hpp"
-
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn  void Field::ComputeCornerEMFs
 //  \brief
 
-void Field::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w, 
-  AthenaArray<Real> &bcc)
+void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc)
 {
+  MeshBlock *pmb = pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
@@ -215,7 +202,7 @@ void Field::ComputeCornerE(MeshBlock *pmb, AthenaArray<Real> &w,
     for (int k=ks-1; k<=ke+1; ++k) {
     for (int j=js; j<=je; ++j) {
       if (GENERAL_RELATIVITY)
-        pmb->pcoord->CellMetric(k, j, is, ie, g_, gi_);
+        pmb->pcoord->CellMetric(k, j, is-1, ie+1, g_, gi_);
 #pragma simd
       for (int i=is-1; i<=ie+1; ++i) {
         if (GENERAL_RELATIVITY)

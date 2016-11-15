@@ -1,21 +1,10 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file mesh.cpp
 //  \brief implementation of functions in Mesh class
-//======================================================================================
 
 // C/C++ headers
 #include <cfloat>     // FLT_MAX
@@ -55,7 +44,7 @@
 #include <omp.h>
 #endif
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Mesh constructor, builds mesh at start of calculation using parameters in input file
 
 Mesh::Mesh(ParameterInput *pin, int mesh_test)
@@ -80,7 +69,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
 
   nlim = pin->GetOrAddInteger("time","nlim",-1);
   ncycle = 0;
-  nint_user_mesh_data_=0, nreal_user_mesh_data_=0;
+  nint_user_mesh_data_=0;
+  nreal_user_mesh_data_=0;
+  nuser_history_output_=0;
 
   // read number of OpenMP threads for mesh
   num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
@@ -257,6 +248,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
     BoundaryFunction_[dir]=NULL;
   AMRFlag_=NULL;
   UserSourceTerm_=NULL;
+  UserTimeStep_=NULL;
 
   // calculate the logical root level and maximum level
   for (root_level=0; (1<<root_level)<nbmax; root_level++);
@@ -496,7 +488,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
 
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Mesh constructor for restarts. Load the restart file
 
 Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
@@ -516,7 +508,10 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   tlim       = pin->GetReal("time","tlim");
   cfl_number = pin->GetReal("time","cfl_number");
   nlim = pin->GetOrAddInteger("time","nlim",-1);
-  nint_user_mesh_data_=0, nreal_user_mesh_data_=0;
+  nint_user_mesh_data_=0;
+  nreal_user_mesh_data_=0;
+  nuser_history_output_=0;
+
   nbnew=0; nbdel=0;
 
   // read number of OpenMP threads for mesh
@@ -629,6 +624,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
     BoundaryFunction_[dir]=NULL;
   AMRFlag_=NULL;
   UserSourceTerm_=NULL;
+  UserTimeStep_=NULL;
 
   multilevel=false;
   adaptive=false;
@@ -810,7 +806,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   delete [] offset;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // destructor
 
 Mesh::~Mesh()
@@ -844,14 +840,17 @@ Mesh::~Mesh()
   if(nint_user_mesh_data_>0) delete [] iuser_mesh_data;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void Mesh::OutputMeshStructure(int dim)
 //  \brief print the mesh structure information
 
 void Mesh::OutputMeshStructure(int dim)
 {
-  // open 'mesh_structure.dat' file
+  RegionSize block_size;
+  enum BoundaryFlag block_bcs[6];
   FILE *fp;
+
+  // open 'mesh_structure.dat' file
   if(dim>=2) {
     if ((fp = fopen("mesh_structure.dat","wb")) == NULL) {
       std::cout << "### ERROR in function Mesh::OutputMeshStructure" << std::endl
@@ -911,6 +910,7 @@ void Mesh::OutputMeshStructure(int dim)
     Real dx=1.0/(Real)(1L<<i);
     for (int j=0; j<nbtotal; j++) {
       if(loclist[j].level==i) {
+        SetBlockSizeAndBoundaries(loclist[j], block_size, block_bcs);
         long int &lx1=loclist[j].lx1;
         long int &lx2=loclist[j].lx2;
         long int &lx3=loclist[j].lx3;
@@ -921,31 +921,31 @@ void Mesh::OutputMeshStructure(int dim)
         fprintf(fp,"#MeshBlock %d on rank=%d with cost=%g\n",j,ranklist[j],costlist[j]);
         fprintf(fp,"#  Logical level %d, location = (%ld %ld %ld)\n",ll,lx1,lx2,lx3);
         if(dim==2) {
-          fprintf(fp, "%g %g\n", lx1*dx,    lx2*dx);
-          fprintf(fp, "%g %g\n", lx1*dx+dx, lx2*dx);
-          fprintf(fp, "%g %g\n", lx1*dx+dx, lx2*dx+dx);
-          fprintf(fp, "%g %g\n", lx1*dx,    lx2*dx+dx);
-          fprintf(fp, "%g %g\n", lx1*dx,    lx2*dx);
+          fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2min);
+          fprintf(fp, "%g %g\n", block_size.x1max, block_size.x2min);
+          fprintf(fp, "%g %g\n", block_size.x1max, block_size.x2max);
+          fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2max);
+          fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2min);
           fprintf(fp, "\n\n");
         }
         if(dim==3) {
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx,    lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx,    lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx+dx, lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx+dx, lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx,    lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx,    lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx,    lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx,    lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx,    lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx+dx, lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx+dx, lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx+dx, lx2*dx+dx, lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx+dx, lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx+dx, lx3*dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx+dx, lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx,    lx3*dx+dx);
-          fprintf(fp, "%g %g %g\n", lx1*dx,    lx2*dx,    lx3*dx);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2min, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2max, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2max, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2min, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2min, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2min, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2max, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2max, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2max, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2max, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2max, block_size.x3min);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2max, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3max);
+          fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min, block_size.x3min);
           fprintf(fp, "\n\n");
         }
       }
@@ -965,7 +965,7 @@ void Mesh::OutputMeshStructure(int dim)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // \!fn void Mesh::NewTimeStep(void)
 // \brief function that loops over all MeshBlocks and find new timestep
 //        this assumes that phydro->NewBlockTimeStep is already called
@@ -983,13 +983,13 @@ void Mesh::NewTimeStep(void)
   MPI_Allreduce(MPI_IN_PLACE,&min_dt,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD);
 #endif
   // set it
-  dt=std::min(min_dt*cfl_number,2.0*dt);
+  dt=std::min(min_dt,2.0*dt);
   if (time < tlim && tlim-time < dt)  // timestep would take us past desired endpoint
     dt = tlim-time;
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValHydro_t my_bc)
 //  \brief Enroll a user-defined boundary function
 
@@ -1011,7 +1011,7 @@ void Mesh::EnrollUserBoundaryFunction(enum BoundaryFace dir, BValFunc_t my_bc)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserRefinementCondition(AMRFlagFunc_t amrflag)
 //  \brief Enroll a user-defined function for checking refinement criteria
 
@@ -1022,7 +1022,7 @@ void Mesh::EnrollUserRefinementCondition(AMRFlagFunc_t amrflag)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection,MeshGenFunc_t my_mg)
 //  \brief Enroll a user-defined function for Mesh generation
 
@@ -1039,17 +1039,57 @@ void Mesh::EnrollUserMeshGenerator(enum CoordinateDirection dir, MeshGenFunc_t m
   return;
 }
 
-//--------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserSourceTermFunction(SrcTermFunc_t my_func)
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserExplicitSourceFunction(SrcTermFunc_t my_func)
 //  \brief Enroll a user-defined source function
 
-void Mesh::EnrollUserSourceTermFunction(SrcTermFunc_t my_func)
+void Mesh::EnrollUserExplicitSourceFunction(SrcTermFunc_t my_func)
 {
   UserSourceTerm_ = my_func;
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserTimeStepFunction(TimeStepFunc_t my_func)
+//  \brief Enroll a user-defined time step function
+
+void Mesh::EnrollUserTimeStepFunction(TimeStepFunc_t my_func)
+{
+  UserTimeStep_ = my_func;
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::AllocateUserHistoryOutput(int n)
+//  \brief set the number of user-defined history outputs
+
+void Mesh::AllocateUserHistoryOutput(int n)
+{
+  nuser_history_output_ = n;
+  user_history_output_names_ = new std::string[n];
+  user_history_func_ = new HistoryOutputFunc_t[n];
+  for(int i=0; i<n; i++) user_history_func_[i] = NULL;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func,
+//                                         const char *name)
+//  \brief Enroll a user-defined history output function and set its name
+
+void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const char *name)
+{
+  std::stringstream msg;
+  if(i>=nuser_history_output_) {
+    msg << "### FATAL ERROR in EnrollUserHistoryOutput function" << std::endl
+        << "The number of the user-defined history output (" << i << ") "
+        << "exceeds the declared number (" << nuser_history_output_ << ")." << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  user_history_output_names_[i] = name;
+  user_history_func_[i] = my_func;
+}
+
+//----------------------------------------------------------------------------------------
 //! \fn void Mesh::AllocateRealUserMeshDataField(int n)
 //  \brief Allocate Real AthenaArrays for user-defned data in Mesh
 
@@ -1066,7 +1106,7 @@ void Mesh::AllocateRealUserMeshDataField(int n)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void Mesh::AllocateIntUserMeshDataField(int n)
 //  \brief Allocate integer AthenaArrays for user-defned data in Mesh
 
@@ -1083,7 +1123,7 @@ void Mesh::AllocateIntUserMeshDataField(int n)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // \!fn void Mesh::Initialize(int res_flag, ParameterInput *pin)
 // \brief  initialization before the main loop
 
@@ -1231,14 +1271,14 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
   // calculate the first time step
   pmb = pblock;
   while (pmb != NULL)  {
-    pmb->phydro->NewBlockTimeStep(pmb);
+    pmb->phydro->NewBlockTimeStep();
     pmb=pmb->next;
   }
   NewTimeStep();
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn MeshBlock* Mesh::FindMeshBlock(int tgid)
 //  \brief return the MeshBlock whose gid is tgid
 
@@ -1254,7 +1294,7 @@ MeshBlock* Mesh::FindMeshBlock(int tgid)
   return pbl;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // \!fn void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb)
 // \brief Calculate distribution of MeshBlocks based on the cost list
 
@@ -1309,7 +1349,7 @@ void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // \!fn void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc,
 //                 RegionSize &block_size, enum BundaryFlag *block_bcs)
 // \brief Set the physical part of a block_size structure and block boundary conditions
@@ -1399,7 +1439,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // \!fn void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
 // \brief Main function for adaptive mesh refinement
 
@@ -2088,7 +2128,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn unsigned int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3)
 //  \brief calculate an MPI tag for AMR block transfer
 // tag = local id of destination (23) + ox1(1) + ox2(1) + ox3(1) + physics(5)

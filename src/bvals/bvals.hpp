@@ -1,13 +1,12 @@
 #ifndef BOUNDARY_VALUES_HPP
 #define BOUNDARY_VALUES_HPP
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-// See LICENSE file for full public license information.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file bvals.hpp
 //  \brief defines BoundaryValues class used for setting BCs on all data types
-//======================================================================================
 
 // C++ headers
 #include <string>   // string
@@ -40,7 +39,7 @@ enum BoundaryFace {FACE_UNDEF=-1, INNER_X1=0, OUTER_X1=1, INNER_X2=2, OUTER_X2=3
 //enum BoundaryFlag {BLOCK_BNDRY=-1, BNDRY_UNDEF=0, REFLECTING_BNDRY=1, OUTFLOW_BNDRY=2,
 //  USER_BNDRY=3, PERIODIC_BNDRY=4, POLAR_BNDRY=5};
 enum BoundaryFlag {BLOCK_BNDRY=-1, BNDRY_UNDEF=0, REFLECTING_BNDRY=1, OUTFLOW_BNDRY=2,
-  USER_BNDRY=3, PERIODIC_BNDRY=4, POLAR_BNDRY=5, SHEAR_PERIODIC_BNDRY=6};
+  USER_BNDRY=3, PERIODIC_BNDRY=4, POLAR_BNDRY=5, POLAR_BNDRY_WEDGE=6, SHEAR_PERIODIC_BNDRY=7};
 //JMSHI]
 
 // identifiers for types of neighbor blocks
@@ -64,7 +63,7 @@ typedef struct NeighborIndexes {
   }
 } NeighborIndexes;
 
-//-------------------- prototypes for all BC functions ---------------------------------
+//---------------------- prototypes for all BC functions ---------------------------------
 void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
      FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 void ReflectInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
@@ -91,6 +90,12 @@ void OutflowOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 void OutflowOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
      FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 
+void PolarWedgeInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
+void PolarWedgeOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+     FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
+
+
 // function to return boundary flag given input string
 enum BoundaryFlag GetBoundaryFlag(std::string input_string);
 
@@ -106,7 +111,7 @@ typedef struct ShearingBoundaryBlock {
 
 //JMSHI]
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \class BoundaryValues
 //  \brief BVals data and functions
 
@@ -224,7 +229,7 @@ public:
 //JMSHI]
 
 private:
-  MeshBlock *pmy_mblock_;  // ptr to MeshBlock containing this BVals
+  MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals
 
   int nface_, nedge_;
   bool edge_flag_[12];

@@ -1,21 +1,10 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file bvals_buffer.cpp
 //  \brief utility functions for BoundaryValues buffers
-//======================================================================================
 
 // C++ headers
 #include <iostream>   // endl
@@ -37,9 +26,10 @@
 // this class header
 #include "bvals.hpp"
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2)
 //  \brief calculate a buffer identifier
+
 unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2)
 {
   unsigned int ux1=(unsigned)(ox1+1);
@@ -49,9 +39,10 @@ unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2)
 }
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int BufferID(int dim, bool multilevel)
 //  \brief calculate neighbor indexes and target buffer IDs
+
 int BufferID(int dim, bool multilevel)
 {
   int nf1=1, nf2=1;
@@ -176,9 +167,10 @@ int BufferID(int dim, bool multilevel)
   return b;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2, int bmax)
 //  \brief
+
 int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2, int bmax)
 {
   int bid=CreateBufferID(ox1, ox2, ox3, fi1, fi2);
@@ -189,7 +181,7 @@ int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2, int bmax)
   return -1;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn unsigned int CreateBvalsMPITag(int lid, int phys, int bufid)
 //  \brief calculate an MPI tag for Bval communications
 // tag = local id of destination (20) + bufid(6) + physics(5)

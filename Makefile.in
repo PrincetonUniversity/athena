@@ -62,11 +62,6 @@ $(OBJ_DIR):
 $(EXECUTABLE) : $(OBJ_FILES)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $(OBJ_FILES) $(LDFLAGS) $(LDLIBS)
 
-## Create static library containing default problem generator functions
-#
-#$(OBJ_DIR)libprob.a : $(PROB_OBJ)
-#	ar rc $@ $(PROB_OBJ)
-#
 # Create objects from source files
 
 $(OBJ_DIR)%.o : %.cpp

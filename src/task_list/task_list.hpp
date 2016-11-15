@@ -1,13 +1,12 @@
 #ifndef TASK_LIST_HPP
 #define TASK_LIST_HPP
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-// See LICENSE file for full public license information.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //!   \file tasklist.hpp
 //    \brief provides functionality to control dynamic execution using tasks
-//======================================================================================
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -22,7 +21,7 @@ class TaskList;
 enum TaskStatus {TASK_FAIL, TASK_SUCCESS, TASK_NEXT};
 enum TaskListStatus {TL_RUNNING, TL_STUCK, TL_COMPLETE, TL_NOTHING_TO_DO};
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \struct IntegratorWeight
 //  \brief weights used in time integrator tasks
 
@@ -30,7 +29,7 @@ struct IntegratorWeight {
   Real a,b,c;
 };
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \struct Task
 //  \brief data and function pointer for an individual Task
 
@@ -40,7 +39,7 @@ struct Task {
   enum TaskStatus (TaskList::*TaskFunc)(MeshBlock*, int);  // ptr to member function
 };
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \class TaskList
 //  \brief data and function definitions for task list base class
 
@@ -63,7 +62,7 @@ private:
   struct Task task_list_[64];
 };
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \class TimeIntegratorTaskList
 //  \brief data and function definitions for TimeIntegratorTaskList derived class
 
@@ -118,7 +117,7 @@ public:
   enum TaskStatus CheckRefinement(MeshBlock *pmb, int step);
 };
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // 64-bit integers with "1" in different bit positions used to ID  each hydro task.
 
 namespace HydroIntegratorTaskNames {

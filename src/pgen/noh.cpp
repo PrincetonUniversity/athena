@@ -1,24 +1,14 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file noh.c
 //  \brief Spherical Noh implosion problem, from Liska & Wendroff, section 4.5 (fig 4.7)
 //
 //  Tests code on VERY strong shock, also sensitive to carbuncle instability.
 // REFERENCE: R. Liska & B. Wendroff, SIAM J. Sci. Comput., 25, 995 (2003)
-//======================================================================================
+//========================================================================================
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -46,16 +36,16 @@ void Noh3DOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
 // made global to share with BC functions
 static Real gmma, gmma1;
 
-//======================================================================================
+//========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Function to initialize problem-specific data in mesh class.  Can also be used
 //  to initialize variables which are global to (and therefore can be passed to) other
 //  functions in this file.  Called in Mesh constructor.
-//======================================================================================
+//========================================================================================
 
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
-// Enroll boundary value function pointers
+  // Enroll boundary value function pointers
   EnrollUserBoundaryFunction(OUTER_X1, Noh3DOuterX1);
   EnrollUserBoundaryFunction(OUTER_X2, Noh3DOuterX2);
   if (mesh_size.nx3 > 1)
@@ -64,18 +54,17 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 }
 
 
-//======================================================================================
+//========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Problem Generator for the Noh spherical implosion test
-//======================================================================================
+//========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   gmma  = peos->GetGamma();
   gmma1 = gmma - 1.0;
 
-// Initialize the grid: d=1, v=-1.0 in radial direction, p=10^-6
-
+  // Initialize the grid: d=1, v=-1.0 in radial direction, p=10^-6
   for (int k=ks; k<=ke; k++) {
   for (int j=js; j<=je; j++) {
   for (int i=is; i<=ie; i++) {
@@ -95,7 +84,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 }
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void Noh3DOuterX1()
 //  \brief Sets boundary condition on right X1 boundary (oib) for noh3d test
 //
@@ -132,7 +121,7 @@ void Noh3DOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
   }}
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void Noh3DOuterX2()
 //  \brief Sets boundary condition on right X2 boundary (ojb) for noh3d test
 //
@@ -169,7 +158,7 @@ void Noh3DOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
   }}
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void Noh3DOuterX3()
 //  \brief Sets boundary condition on right X3 boundary (okb) for noh3d test
 //
