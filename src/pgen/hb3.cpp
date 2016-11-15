@@ -25,23 +25,12 @@
 // * Several different perturbations and field configurations are possible:
 // * - ipert = 1 - isentropic perturbations to P & d [default]
 // * - ipert = 2 - uniform Vx=amp, sinusoidal density
-// * - ipert = 3 - random perturbations to P [used by HB]
-// * - ipert = 4 - sinusoidal perturbation to Vx in z
 // *
 // * - ifield = 1 - Bz=B0 sin(x1) field with zero-net-flux [default]
 // * - ifield = 2 - uniform Bz
 // *
 // * PRIVATE FUNCTION PROTOTYPES:
 // * - ran2() - random number generator from NR
-// * - UnstratifiedDisk() - tidal potential in 2D shearing box
-// * - expr_dV3() - computes delta(Vy)
-// * - hst_rho_Vx_dVy () - new history variable
-// * - hst_E_total() - new history variable
-// * - hst_dEk() - new history variable
-// * - hst_Bx()  - new history variable
-// * - hst_By()  - new history variable
-// * - hst_Bz()  - new history variable
-// * - hst_BxBy() - new history variable
 // *
 // * REFERENCE: Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992).*/
 //
@@ -87,9 +76,9 @@ static int first_time=1;
 
 static double ran2(long int *idum);
 void ShearInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
-                   int is, int ie, int js, int je, int ks, int ke);
+                   Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 void ShearOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
-                   int is, int ie, int js, int je, int ks, int ke);
+                   Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 
 void LinearSlope(const int nvar, const int ny, const int nx, const AthenaArray<Real> &w,
                    AthenaArray<Real> &dw);
@@ -182,9 +171,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 // Initialize perturbations
 // *  ipert = 1 - isentropic perturbations to P & d [default]
 // *  ipert = 2 - uniform Vx=amp, sinusoidal density
-// *  ipert = 3 - random perturbations to P [used by HB]
-// *  ipert = 4 - sinusoidal perturbation to Vx in z
-// *  ipert = 5 - sinusoidal modes (Nordita workshop test)
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
       x1 = pcoord->x1v(i);
@@ -220,7 +206,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       phydro->u(IM2,ks,j,i) = rd*rvy;
       phydro->u(IM3,ks,j,i) = rd*rvz;
       phydro->u(IM3,ks,j,i) -= rd*qshear*Omega_0*x1;
-        if (NON_BAROTROPIC_EOS) {
+      if (NON_BAROTROPIC_EOS) {
         phydro->u(IEN,ks,j,i) = rp/gam1 +
              0.5*(SQR(phydro->u(IM1,ks,j,i)) +
                   SQR(phydro->u(IM2,ks,j,i)) +
@@ -286,7 +272,7 @@ void MeshBlock::UserWorkInLoop(void)
 //  \brief Sets boundary condition on left X boundary (iib) for ssheet problem
 
 void ShearInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
-                   int is, int ie, int js, int je, int ks, int ke)
+                   Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
 {
 
   Real qomL = qshear*Omega_0*x1size;
@@ -341,7 +327,7 @@ void ShearInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceFi
 //  \brief Sets boundary condition on right X boundary (oib) for ssheet problem
 
 void ShearOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
-                   int is, int ie, int js, int je, int ks, int ke)
+                   Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
 {
 
 //  // Initialize boundary value arrays

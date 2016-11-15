@@ -477,8 +477,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
        exc_.NewAthenaArray(pmb->ke+NGHOST+2);
 
 //[JMSHI
-// set parameters for shearing box bc
-// allocate buffers
+// set parameters for shearing box bc and allocate buffers
   if (SHEARING_BOX) {
     GetTimeIntegratorWeight(pin);
     Mesh *pmy_mesh = pmb->pmy_mesh;
@@ -494,198 +493,200 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     shbb_.outer = false;
     shbb_.inner = false;
 
-    int ncells2 = pmb->block_size.nx2 + 2*NGHOST;
-    int ncells3 = pmb->block_size.nx3;
-    if (pmy_mesh->mesh_size.nx3>1) ncells3 += 2*NGHOST;
-    ssize_ = NGHOST*ncells3;
+    if(ShBoxCoord_ == 1) {
+      int ncells2 = pmb->block_size.nx2 + 2*NGHOST;
+      int ncells3 = pmb->block_size.nx3;
+      if (pmy_mesh->mesh_size.nx3>1) ncells3 += 2*NGHOST;
+      ssize_ = NGHOST*ncells3;
 
-    if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
-      if (pmb->block_bcs[INNER_X1] != SHEAR_PERIODIC_BNDRY) {
-        pmb->block_bcs[INNER_X1] = SHEAR_PERIODIC_BNDRY;
-        BoundaryFunction_[INNER_X1] = NULL;
-      }
-      shboxvar_inner_hydro_.NewAthenaArray(NHYDRO,ncells3,ncells2,NGHOST);
-      flx_inner_hydro_.NewAthenaArray(ncells2);
-      if (MAGNETIC_FIELDS_ENABLED) {
-        shboxvar_inner_field_.x1f.NewAthenaArray(ncells3,ncells2,NGHOST);
-        shboxvar_inner_field_.x2f.NewAthenaArray(ncells3,ncells2+1,NGHOST);// extra cell in logitudinal dir
-        shboxvar_inner_field_.x3f.NewAthenaArray(ncells3+1,ncells2,NGHOST);// extra cell in logitudinal dir
-        flx_inner_field_.x1f.NewAthenaArray(ncells2);
-        flx_inner_field_.x2f.NewAthenaArray(ncells2+1);
-        flx_inner_field_.x3f.NewAthenaArray(ncells2);
-        shboxvar_inner_emf_.x2e.NewAthenaArray(ncells3+1,ncells2);// extra cell in logitudinal dir
-        shboxvar_inner_emf_.x3e.NewAthenaArray(ncells3,ncells2+1);// extra cell in logitudinal dir
-        shboxmap_inner_emf_.x2e.NewAthenaArray(ncells3+1,ncells2);// extra cell in logitudinal dir
-        shboxmap_inner_emf_.x3e.NewAthenaArray(ncells3,ncells2+1);// extra cell in logitudinal dir
-        flx_inner_emf_.x2e.NewAthenaArray(ncells2);
-        flx_inner_emf_.x3e.NewAthenaArray(ncells2+1);
-      }
-      shbb_.inner = true;
-      shbb_.igidlist=new int[nrbx2];
-      shbb_.ilidlist=new int[nrbx2];
-      shbb_.irnklist=new int[nrbx2];
-      shbb_.ilevlist=new int[nrbx2];
-      int size = (pmb->block_size.nx2+NGHOST)*ssize_*NHYDRO;// attach corner cells from L/R side
-      int bsize=0,esize=0;
-      if (MAGNETIC_FIELDS_ENABLED) {
-        bsize = (pmb->block_size.nx2+NGHOST+1)*(ssize_+NGHOST)*NFIELD;// extra cell in azimuth/vertical
-        esize = 2*(pmb->block_size.nx2+NGHOST)*pmb->block_size.nx3
-              +pmb->block_size.nx2+pmb->block_size.nx3+NGHOST;    // face plus edge for EMF
-      }
-      for (int n=0; n<2; n++) {
-        send_innerbuf_hydro_[n] = new Real[size];
-        recv_innerbuf_hydro_[n] = new Real[size];
-        shbox_inner_hydro_flag_[n]=BNDRY_WAITING;
-#ifdef MPI_PARALLEL
-        rq_innersend_hydro_[n] = MPI_REQUEST_NULL;
-        rq_innerrecv_hydro_[n] = MPI_REQUEST_NULL;
-#endif
+      if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
+        if (pmb->block_bcs[INNER_X1] != SHEAR_PERIODIC_BNDRY) {
+          pmb->block_bcs[INNER_X1] = SHEAR_PERIODIC_BNDRY;
+          BoundaryFunction_[INNER_X1] = NULL;
+        }
+        shboxvar_inner_hydro_.NewAthenaArray(NHYDRO,ncells3,ncells2,NGHOST);
+        flx_inner_hydro_.NewAthenaArray(ncells2);
         if (MAGNETIC_FIELDS_ENABLED) {
-          send_innerbuf_field_[n] = new Real[bsize];
-          recv_innerbuf_field_[n] = new Real[bsize];
-          shbox_inner_field_flag_[n]=BNDRY_WAITING;
-          send_innerbuf_emf_[n] = new Real[esize];
-          recv_innerbuf_emf_[n] = new Real[esize];
-          shbox_inner_emf_flag_[n]=BNDRY_WAITING;
+          shboxvar_inner_field_.x1f.NewAthenaArray(ncells3,ncells2,NGHOST);
+          shboxvar_inner_field_.x2f.NewAthenaArray(ncells3,ncells2+1,NGHOST);// extra cell in logitudinal dir
+          shboxvar_inner_field_.x3f.NewAthenaArray(ncells3+1,ncells2,NGHOST);// extra cell in logitudinal dir
+          flx_inner_field_.x1f.NewAthenaArray(ncells2);
+          flx_inner_field_.x2f.NewAthenaArray(ncells2+1);
+          flx_inner_field_.x3f.NewAthenaArray(ncells2);
+          shboxvar_inner_emf_.x2e.NewAthenaArray(ncells3+1,ncells2);// extra cell in logitudinal dir
+          shboxvar_inner_emf_.x3e.NewAthenaArray(ncells3,ncells2+1);// extra cell in logitudinal dir
+          shboxmap_inner_emf_.x2e.NewAthenaArray(ncells3+1,ncells2);// extra cell in logitudinal dir
+          shboxmap_inner_emf_.x3e.NewAthenaArray(ncells3,ncells2+1);// extra cell in logitudinal dir
+          flx_inner_emf_.x2e.NewAthenaArray(ncells2);
+          flx_inner_emf_.x3e.NewAthenaArray(ncells2+1);
+        }
+        shbb_.inner = true;
+        shbb_.igidlist=new int[nrbx2];
+        shbb_.ilidlist=new int[nrbx2];
+        shbb_.irnklist=new int[nrbx2];
+        shbb_.ilevlist=new int[nrbx2];
+        int size = (pmb->block_size.nx2+NGHOST)*ssize_*NHYDRO;// attach corner cells from L/R side
+        int bsize=0,esize=0;
+        if (MAGNETIC_FIELDS_ENABLED) {
+          bsize = (pmb->block_size.nx2+NGHOST+1)*(ssize_+NGHOST)*NFIELD;// extra cell in azimuth/vertical
+          esize = 2*(pmb->block_size.nx2+NGHOST)*pmb->block_size.nx3
+                +pmb->block_size.nx2+pmb->block_size.nx3+NGHOST;    // face plus edge for EMF
+        }
+        for (int n=0; n<2; n++) {
+          send_innerbuf_hydro_[n] = new Real[size];
+          recv_innerbuf_hydro_[n] = new Real[size];
+          shbox_inner_hydro_flag_[n]=BNDRY_WAITING;
 #ifdef MPI_PARALLEL
-          rq_innersend_field_[n] = MPI_REQUEST_NULL;
-          rq_innerrecv_field_[n] = MPI_REQUEST_NULL;
-          rq_innersend_emf_[n] = MPI_REQUEST_NULL;
-          rq_innerrecv_emf_[n] = MPI_REQUEST_NULL;
+          rq_innersend_hydro_[n] = MPI_REQUEST_NULL;
+          rq_innerrecv_hydro_[n] = MPI_REQUEST_NULL;
+#endif
+          if (MAGNETIC_FIELDS_ENABLED) {
+            send_innerbuf_field_[n] = new Real[bsize];
+            recv_innerbuf_field_[n] = new Real[bsize];
+            shbox_inner_field_flag_[n]=BNDRY_WAITING;
+            send_innerbuf_emf_[n] = new Real[esize];
+            recv_innerbuf_emf_[n] = new Real[esize];
+            shbox_inner_emf_flag_[n]=BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+            rq_innersend_field_[n] = MPI_REQUEST_NULL;
+            rq_innerrecv_field_[n] = MPI_REQUEST_NULL;
+            rq_innersend_emf_[n] = MPI_REQUEST_NULL;
+            rq_innerrecv_emf_[n] = MPI_REQUEST_NULL;
+#endif
+          }
+        }
+        size = NGHOST*ssize_*NHYDRO;// corner cells only
+        if (MAGNETIC_FIELDS_ENABLED) {
+            bsize = NGHOST*(ssize_+NGHOST)*NFIELD;
+            esize = 2*NGHOST*pmb->block_size.nx3+NGHOST;
+        }
+        for (int n=2; n<4; n++) {
+          send_innerbuf_hydro_[n] = new Real[size];
+          recv_innerbuf_hydro_[n] = new Real[size];
+          shbox_inner_hydro_flag_[n]=BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+          rq_innersend_hydro_[n] = MPI_REQUEST_NULL;
+          rq_innerrecv_hydro_[n] = MPI_REQUEST_NULL;
+#endif
+          if (MAGNETIC_FIELDS_ENABLED) {
+            send_innerbuf_field_[n] = new Real[bsize];
+            recv_innerbuf_field_[n] = new Real[bsize];
+            shbox_inner_field_flag_[n]=BNDRY_WAITING;
+            send_innerbuf_emf_[n] = new Real[esize];
+            recv_innerbuf_emf_[n] = new Real[esize];
+            shbox_inner_emf_flag_[n]=BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+            rq_innersend_field_[n] = MPI_REQUEST_NULL;
+            rq_innerrecv_field_[n] = MPI_REQUEST_NULL;
+            rq_innersend_emf_[n] = MPI_REQUEST_NULL;
+            rq_innerrecv_emf_[n] = MPI_REQUEST_NULL;
+#endif
+          }
+        }
+        if (MAGNETIC_FIELDS_ENABLED) {
+          send_innerbuf_emf_[4] = new Real[esize];
+          recv_innerbuf_emf_[4] = new Real[esize];
+          shbox_inner_emf_flag_[4]=BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+          rq_innersend_emf_[4] = MPI_REQUEST_NULL;
+          rq_innerrecv_emf_[4] = MPI_REQUEST_NULL;
 #endif
         }
       }
-      size = NGHOST*ssize_*NHYDRO;// corner cells only
-      if (MAGNETIC_FIELDS_ENABLED) {
+
+      if (pmb->loc.lx1 == (pmy_mesh->nrbx1-1)) { // if true for shearing outer blocks
+        if (pmb->block_bcs[OUTER_X1] != SHEAR_PERIODIC_BNDRY) {
+          pmb->block_bcs[OUTER_X1] = SHEAR_PERIODIC_BNDRY;
+          BoundaryFunction_[OUTER_X1] = NULL;
+        }
+        shboxvar_outer_hydro_.NewAthenaArray(NHYDRO,ncells3,ncells2,NGHOST);
+        flx_outer_hydro_.NewAthenaArray(ncells2);
+        if (MAGNETIC_FIELDS_ENABLED) {
+          shboxvar_outer_field_.x1f.NewAthenaArray(ncells3,ncells2,NGHOST);
+          shboxvar_outer_field_.x2f.NewAthenaArray(ncells3,ncells2+1,NGHOST);//extra cell in logitudinal dir
+          shboxvar_outer_field_.x3f.NewAthenaArray(ncells3+1,ncells2,NGHOST);// extra cell in logitudinal dir
+          flx_outer_field_.x1f.NewAthenaArray(ncells2);
+          flx_outer_field_.x2f.NewAthenaArray(ncells2+1);
+          flx_outer_field_.x3f.NewAthenaArray(ncells2);
+          shboxvar_outer_emf_.x2e.NewAthenaArray(ncells3+1,ncells2);//extra cell in logitudinal dir
+          shboxvar_outer_emf_.x3e.NewAthenaArray(ncells3,ncells2+1);// extra cell in logitudinal dir
+          shboxmap_outer_emf_.x2e.NewAthenaArray(ncells3+1,ncells2);//extra cell in logitudinal dir
+          shboxmap_outer_emf_.x3e.NewAthenaArray(ncells3,ncells2+1);// extra cell in logitudinal dir
+          flx_outer_emf_.x2e.NewAthenaArray(ncells2);
+          flx_outer_emf_.x3e.NewAthenaArray(ncells2+1);
+        }
+        shbb_.outer = true;
+        shbb_.ogidlist=new int[nrbx2];
+        shbb_.olidlist=new int[nrbx2];
+        shbb_.ornklist=new int[nrbx2];
+        shbb_.olevlist=new int[nrbx2];
+        int size = (pmb->block_size.nx2+NGHOST)*ssize_*NHYDRO;//attach corner cells from L/R side
+        int bsize=0, esize=0;
+        if (MAGNETIC_FIELDS_ENABLED) {
+          bsize = (pmb->block_size.nx2+NGHOST+1)*(ssize_+NGHOST)*NFIELD;//extra cell in azimuth/vertical
+          esize = 2*(pmb->block_size.nx2+NGHOST)*pmb->block_size.nx3
+                +pmb->block_size.nx2+pmb->block_size.nx3+NGHOST;// face plug edges for EMF
+        }
+        for (int n=0; n<2; n++) {
+          send_outerbuf_hydro_[n] = new Real[size];
+          recv_outerbuf_hydro_[n] = new Real[size];
+          shbox_outer_hydro_flag_[n]=BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+          rq_outersend_hydro_[n] = MPI_REQUEST_NULL;
+          rq_outerrecv_hydro_[n] = MPI_REQUEST_NULL;
+#endif
+          if (MAGNETIC_FIELDS_ENABLED) {
+            send_outerbuf_field_[n] = new Real[bsize];
+            recv_outerbuf_field_[n] = new Real[bsize];
+            shbox_outer_field_flag_[n]=BNDRY_WAITING;
+            send_outerbuf_emf_[n] = new Real[esize];
+            recv_outerbuf_emf_[n] = new Real[esize];
+            shbox_outer_emf_flag_[n]=BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+            rq_outersend_field_[n] = MPI_REQUEST_NULL;
+            rq_outerrecv_field_[n] = MPI_REQUEST_NULL;
+            rq_outersend_emf_[n] = MPI_REQUEST_NULL;
+            rq_outerrecv_emf_[n] = MPI_REQUEST_NULL;
+#endif
+          }
+        }
+        size = NGHOST*ssize_*NHYDRO;// corner cells only
+        if (MAGNETIC_FIELDS_ENABLED) {
           bsize = NGHOST*(ssize_+NGHOST)*NFIELD;
           esize = 2*NGHOST*pmb->block_size.nx3+NGHOST;
-      }
-      for (int n=2; n<4; n++) {
-        send_innerbuf_hydro_[n] = new Real[size];
-        recv_innerbuf_hydro_[n] = new Real[size];
-        shbox_inner_hydro_flag_[n]=BNDRY_WAITING;
+        }
+        for (int n=2; n<4; n++) {
+          send_outerbuf_hydro_[n] = new Real[size];
+          recv_outerbuf_hydro_[n] = new Real[size];
+          shbox_outer_hydro_flag_[n]=BNDRY_WAITING;
 #ifdef MPI_PARALLEL
-        rq_innersend_hydro_[n] = MPI_REQUEST_NULL;
-        rq_innerrecv_hydro_[n] = MPI_REQUEST_NULL;
+          rq_outersend_hydro_[n] = MPI_REQUEST_NULL;
+          rq_outerrecv_hydro_[n] = MPI_REQUEST_NULL;
 #endif
-        if (MAGNETIC_FIELDS_ENABLED) {
-          send_innerbuf_field_[n] = new Real[bsize];
-          recv_innerbuf_field_[n] = new Real[bsize];
-          shbox_inner_field_flag_[n]=BNDRY_WAITING;
-          send_innerbuf_emf_[n] = new Real[esize];
-          recv_innerbuf_emf_[n] = new Real[esize];
-          shbox_inner_emf_flag_[n]=BNDRY_WAITING;
+          if (MAGNETIC_FIELDS_ENABLED) {
+            send_outerbuf_field_[n] = new Real[bsize];
+            recv_outerbuf_field_[n] = new Real[bsize];
+            shbox_outer_field_flag_[n]=BNDRY_WAITING;
+            send_outerbuf_emf_[n] = new Real[esize];
+            recv_outerbuf_emf_[n] = new Real[esize];
+            shbox_outer_emf_flag_[n]=BNDRY_WAITING;
 #ifdef MPI_PARALLEL
-          rq_innersend_field_[n] = MPI_REQUEST_NULL;
-          rq_innerrecv_field_[n] = MPI_REQUEST_NULL;
-          rq_innersend_emf_[n] = MPI_REQUEST_NULL;
-          rq_innerrecv_emf_[n] = MPI_REQUEST_NULL;
+            rq_outersend_field_[n] = MPI_REQUEST_NULL;
+            rq_outerrecv_field_[n] = MPI_REQUEST_NULL;
+            rq_outersend_emf_[n] = MPI_REQUEST_NULL;
+            rq_outerrecv_emf_[n] = MPI_REQUEST_NULL;
+#endif
+          }
+        }
+        if (MAGNETIC_FIELDS_ENABLED) {
+          send_outerbuf_emf_[4] = new Real[esize];
+          recv_outerbuf_emf_[4] = new Real[esize];
+          shbox_outer_emf_flag_[4]=BNDRY_WAITING;
+#ifdef MPI_PARALLEL
+          rq_outersend_emf_[4] = MPI_REQUEST_NULL;
+          rq_outerrecv_emf_[4] = MPI_REQUEST_NULL;
 #endif
         }
-      }
-      if (MAGNETIC_FIELDS_ENABLED) {
-        send_innerbuf_emf_[4] = new Real[esize];
-        recv_innerbuf_emf_[4] = new Real[esize];
-        shbox_inner_emf_flag_[4]=BNDRY_WAITING;
-#ifdef MPI_PARALLEL
-        rq_innersend_emf_[4] = MPI_REQUEST_NULL;
-        rq_innerrecv_emf_[4] = MPI_REQUEST_NULL;
-#endif
-      }
-    }
-
-    if (pmb->loc.lx1 == (pmy_mesh->nrbx1-1)) { // if true for shearing outer blocks
-      if (pmb->block_bcs[OUTER_X1] != SHEAR_PERIODIC_BNDRY) {
-        pmb->block_bcs[OUTER_X1] = SHEAR_PERIODIC_BNDRY;
-        BoundaryFunction_[OUTER_X1] = NULL;
-      }
-      shboxvar_outer_hydro_.NewAthenaArray(NHYDRO,ncells3,ncells2,NGHOST);
-      flx_outer_hydro_.NewAthenaArray(ncells2);
-      if (MAGNETIC_FIELDS_ENABLED) {
-        shboxvar_outer_field_.x1f.NewAthenaArray(ncells3,ncells2,NGHOST);
-        shboxvar_outer_field_.x2f.NewAthenaArray(ncells3,ncells2+1,NGHOST);//extra cell in logitudinal dir
-        shboxvar_outer_field_.x3f.NewAthenaArray(ncells3+1,ncells2,NGHOST);// extra cell in logitudinal dir
-        flx_outer_field_.x1f.NewAthenaArray(ncells2);
-        flx_outer_field_.x2f.NewAthenaArray(ncells2+1);
-        flx_outer_field_.x3f.NewAthenaArray(ncells2);
-        shboxvar_outer_emf_.x2e.NewAthenaArray(ncells3+1,ncells2);//extra cell in logitudinal dir
-        shboxvar_outer_emf_.x3e.NewAthenaArray(ncells3,ncells2+1);// extra cell in logitudinal dir
-        shboxmap_outer_emf_.x2e.NewAthenaArray(ncells3+1,ncells2);//extra cell in logitudinal dir
-        shboxmap_outer_emf_.x3e.NewAthenaArray(ncells3,ncells2+1);// extra cell in logitudinal dir
-        flx_outer_emf_.x2e.NewAthenaArray(ncells2);
-        flx_outer_emf_.x3e.NewAthenaArray(ncells2+1);
-      }
-      shbb_.outer = true;
-      shbb_.ogidlist=new int[nrbx2];
-      shbb_.olidlist=new int[nrbx2];
-      shbb_.ornklist=new int[nrbx2];
-      shbb_.olevlist=new int[nrbx2];
-      int size = (pmb->block_size.nx2+NGHOST)*ssize_*NHYDRO;//attach corner cells from L/R side
-      int bsize=0, esize=0;
-      if (MAGNETIC_FIELDS_ENABLED) {
-        bsize = (pmb->block_size.nx2+NGHOST+1)*(ssize_+NGHOST)*NFIELD;//extra cell in azimuth/vertical
-        esize = 2*(pmb->block_size.nx2+NGHOST)*pmb->block_size.nx3
-              +pmb->block_size.nx2+pmb->block_size.nx3+NGHOST;// face plug edges for EMF
-      }
-      for (int n=0; n<2; n++) {
-        send_outerbuf_hydro_[n] = new Real[size];
-        recv_outerbuf_hydro_[n] = new Real[size];
-        shbox_outer_hydro_flag_[n]=BNDRY_WAITING;
-#ifdef MPI_PARALLEL
-        rq_outersend_hydro_[n] = MPI_REQUEST_NULL;
-        rq_outerrecv_hydro_[n] = MPI_REQUEST_NULL;
-#endif
-        if (MAGNETIC_FIELDS_ENABLED) {
-          send_outerbuf_field_[n] = new Real[bsize];
-          recv_outerbuf_field_[n] = new Real[bsize];
-          shbox_outer_field_flag_[n]=BNDRY_WAITING;
-          send_outerbuf_emf_[n] = new Real[esize];
-          recv_outerbuf_emf_[n] = new Real[esize];
-          shbox_outer_emf_flag_[n]=BNDRY_WAITING;
-#ifdef MPI_PARALLEL
-          rq_outersend_field_[n] = MPI_REQUEST_NULL;
-          rq_outerrecv_field_[n] = MPI_REQUEST_NULL;
-          rq_outersend_emf_[n] = MPI_REQUEST_NULL;
-          rq_outerrecv_emf_[n] = MPI_REQUEST_NULL;
-#endif
-        }
-      }
-      size = NGHOST*ssize_*NHYDRO;// corner cells only
-      if (MAGNETIC_FIELDS_ENABLED) {
-        bsize = NGHOST*(ssize_+NGHOST)*NFIELD;
-        esize = 2*NGHOST*pmb->block_size.nx3+NGHOST;
-      }
-      for (int n=2; n<4; n++) {
-        send_outerbuf_hydro_[n] = new Real[size];
-        recv_outerbuf_hydro_[n] = new Real[size];
-        shbox_outer_hydro_flag_[n]=BNDRY_WAITING;
-#ifdef MPI_PARALLEL
-        rq_outersend_hydro_[n] = MPI_REQUEST_NULL;
-        rq_outerrecv_hydro_[n] = MPI_REQUEST_NULL;
-#endif
-        if (MAGNETIC_FIELDS_ENABLED) {
-          send_outerbuf_field_[n] = new Real[bsize];
-          recv_outerbuf_field_[n] = new Real[bsize];
-          shbox_outer_field_flag_[n]=BNDRY_WAITING;
-          send_outerbuf_emf_[n] = new Real[esize];
-          recv_outerbuf_emf_[n] = new Real[esize];
-          shbox_outer_emf_flag_[n]=BNDRY_WAITING;
-#ifdef MPI_PARALLEL
-          rq_outersend_field_[n] = MPI_REQUEST_NULL;
-          rq_outerrecv_field_[n] = MPI_REQUEST_NULL;
-          rq_outersend_emf_[n] = MPI_REQUEST_NULL;
-          rq_outerrecv_emf_[n] = MPI_REQUEST_NULL;
-#endif
-        }
-      }
-      if (MAGNETIC_FIELDS_ENABLED) {
-        send_outerbuf_emf_[4] = new Real[esize];
-        recv_outerbuf_emf_[4] = new Real[esize];
-        shbox_outer_emf_flag_[4]=BNDRY_WAITING;
-#ifdef MPI_PARALLEL
-        rq_outersend_emf_[4] = MPI_REQUEST_NULL;
-        rq_outerrecv_emf_[4] = MPI_REQUEST_NULL;
-#endif
       }
     }
   } // shearing box
