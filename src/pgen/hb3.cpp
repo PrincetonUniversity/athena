@@ -72,17 +72,15 @@ static Real Omega_0,qshear;
 static int nx1,nx2,nvar;
 static AthenaArray<Real> ibval,obval; // ghost cells array
 static int first_time=1;
+AthenaArray<Real> volume; // 1D array of volumes
 
 
 static double ran2(long int *idum);
+static Real hst_BxBy(MeshBlock *pmb, int iout);
 void ShearInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                    Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 void ShearOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceField &b,
                    Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
-
-void LinearSlope(const int nvar, const int ny, const int nx, const AthenaArray<Real> &w,
-                   AthenaArray<Real> &dw);
-
 //======================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Init the Mesh properties
@@ -105,6 +103,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   EnrollUserBoundaryFunction(INNER_X1, ShearInnerX1);
   EnrollUserBoundaryFunction(OUTER_X1, ShearOuterX1);
 
+  // enroll new history variables
+  AllocateUserHistoryOutput(1);
+  EnrollUserHistoryOutput(0, hst_BxBy, "<-BxBy>");
   return;
 }
 
@@ -127,6 +128,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       std::cout << "[hb3.cpp]: only works for x-z plane with ShBoxCoord = 2" << std::endl;
       exit(0);
   }
+  // allocate 1D array for cell volume used in usr def history
+  int ncells1 = block_size.nx1 + 2*(NGHOST);
+  volume.NewAthenaArray(ncells1);
 
   // Initialize boundary value arrays
   if (first_time) {
@@ -245,12 +249,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
       }
     }
-
-  // enroll boundary value function pointers
-  // in InitUserMeshProperties now.
-  //
-  //EnrollUserBoundaryFunction(INNER_X1, ShearInnerX1);
-  //EnrollUserBoundaryFunction(OUTER_X1, ShearOuterX1);
 
   return;
 }
@@ -378,47 +376,6 @@ void ShearOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &a, FaceFi
 
 }
 
-//--------------------------------------------------------------------------------------
-//! \fn void LinearSlope(const int nvar, const int ny, const int nx, const AthenaArray<Real> &w, const AthenaArray<Real> &dw)
-//  \brief cell center monotonic slope.
-void LinearSlope(const int nvar, const int ny, const int nx, const AthenaArray<Real> &w, AthenaArray<Real> &dw) {
-//
-//
-// This is an implementation of van Leer's harmonic mean
-// monotonic slope.  Other slope monotonic slope functions
-// could be substituted, if desired.
-//
-// Input W:  state variable
-//
-// Output :
-//    dwc =  centered non-monotonic slope
-//    dwl =  left-centered non-monotonic slope
-//    dwr =  right-centered non-monotonic slope
-//    dw  =  centered monotonic slope
-//
-
-  Real dwl, dwr;
-
-  for(int k=0; k<nvar; ++k) {
-    for(int j=1; j<ny-1; ++j)  {
-      for(int i=0; i<nx; ++i) {
-        dwl = w(k,j,i) - w(k,j-1,i);
-        dwr = w(k,j+1,i) - w(k,j,i);
-        if (dwl*dwr > 0.0) {
-          dw(k,j,i) = 2.0*dwl*dwr/(dwl+dwr);
-        } else {
-          dw(k,j,i) = 0.0;
-        }}
-    }
-    for(int i=0; i<nx; ++i) {
-      dw(k,0,i) = 0.0;
-      dw(k,ny-1,i) = 0.0;
-    }
-  }
-
-  return;
-}
-
 #define IM1 2147483563
 #define IM2 2147483399
 #define AM (1.0/IM1)
@@ -494,4 +451,25 @@ double ran2(long int *idum)
 #undef NTAB
 #undef NDIV
 #undef RNMX
+
+
+static Real hst_BxBy(MeshBlock *pmb, int iout)
+{
+  Real bxby=0;
+  int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
+  AthenaArray<Real> &b = pmb->pfield->bcc;
+
+  for(int k=ks; k<=ke; k++) {
+    for(int j=js; j<=je; j++) {
+      pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
+      for(int i=is; i<=ie; i++) {
+        bxby-=volume(i)*b(IB1,k,j,i)*b(IB3,k,j,i);
+      }
+    }
+  }
+
+  return bxby;
+}
+
+
 //JMSHI]

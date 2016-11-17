@@ -75,7 +75,8 @@
 //  \brief field loop advection problem generator for 2D/3D problems.
 //======================================================================================
 
-Real Lx,Ly,Lz; /* root grid size, global to share with output functions */
+Real Lx,Ly,Lz; // root grid size, global to share with output functions
+AthenaArray<Real> volume; // 1D array of volumes
 
 /*==============================================================================
  * PRIVATE FUNCTION PROTOTYPES:
@@ -86,6 +87,7 @@ Real Lx,Ly,Lz; /* root grid size, global to share with output functions */
  *============================================================================*/
 
 static double ran2(long int *idum);
+static Real hst_BxBy(MeshBlock *pmb, int iout);
 /*
 static Real UnstratifiedDisk(const Real x1, const Real x2, const Real x3);
 static Real expr_dV2(const GridS *pG, const int i, const int j, const int k);
@@ -106,8 +108,21 @@ static Real hst_dBy(const GridS *pG, const int i, const int j, const int k);
 */
 /*----------------------------------------------------------------------------*/
 
+
+
+void Mesh::InitUserMeshData(ParameterInput *pin)
+{
+  AllocateUserHistoryOutput(1);
+  EnrollUserHistoryOutput(0, hst_BxBy, "<-BxBy>");
+  return;
+}
+
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
+  // allocate 1D array for cell volume used in usr def history
+  int ncells1 = block_size.nx1 + 2*(NGHOST);
+  volume.NewAthenaArray(ncells1);
+
   FILE *fp;
   Real xFP[160],dFP[160],vxFP[160],vyFP[160];
   static int frst=1; // flag so new history variables enrolled only once
@@ -476,5 +491,21 @@ double ran2(long int *idum)
 #undef RNMX
 
 
+static Real hst_BxBy(MeshBlock *pmb, int iout)
+{
+  Real bxby=0;
+  int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
+  AthenaArray<Real> &b = pmb->pfield->bcc;
 
+  for(int k=ks; k<=ke; k++) {
+    for(int j=js; j<=je; j++) {
+      pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
+      for(int i=is; i<=ie; i++) {
+        bxby-=volume(i)*b(IB1,k,j,i)*b(IB2,k,j,i);
+      }
+    }
+  }
+
+  return bxby;
+}
 
