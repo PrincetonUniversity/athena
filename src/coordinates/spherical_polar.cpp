@@ -243,7 +243,6 @@ SphericalPolar::~SphericalPolar()
 //----------------------------------------------------------------------------------------
 // EdgeXLength functions: compute physical length at cell edge-X as vector
 // Edge1(i,j,k) located at (i,j-1/2,k-1/2), i.e. (x1v(i), x2f(j), x3f(k))
-
 // Edge2(i,j,k) located at (i-1/2,j,k-1/2), i.e. (x1f(i), x2v(j), x3f(k))
 
 void SphericalPolar::Edge2Length(const int k, const int j, const int il, const int iu,

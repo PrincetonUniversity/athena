@@ -33,7 +33,7 @@ int IsBigEndian(void)
 {
   short int n = 1;
   char *ep = (char *)&n;
-  return (*ep == 0); // Returns 1 on a big endian machine
+  return (*ep == 0); // Returns 1 (true) on a big endian machine
 }
 
 static inline void Swap4Bytes(void *vdat) {
