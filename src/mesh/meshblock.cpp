@@ -98,6 +98,10 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     pcoord = new SphericalPolar(this, pin, false);
   } else if (COORDINATE_SYSTEM == "minkowski") {
     pcoord = new Minkowski(this, pin, false);
+  } else if (COORDINATE_SYSTEM == "schwarzschild") {
+    pcoord = new Schwarzschild(this, pin, false);
+  } else if (COORDINATE_SYSTEM == "kerr-schild") {
+    pcoord = new KerrSchild(this, pin, false);
   }
 
   pbval  = new BoundaryValues(this, pin);
@@ -184,6 +188,10 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     pcoord = new SphericalPolar(this, pin, false);
   } else if (COORDINATE_SYSTEM == "minkowski") {
     pcoord = new Minkowski(this, pin, false);
+  } else if (COORDINATE_SYSTEM == "schwarzschild") {
+    pcoord = new Schwarzschild(this, pin, false);
+  } else if (COORDINATE_SYSTEM == "kerr-schild") {
+    pcoord = new KerrSchild(this, pin, false);
   }
 
   pbval  = new BoundaryValues(this, pin);

@@ -111,10 +111,6 @@ public:
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
     AthenaArray<Real> &flux);
 
-//    Real DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real by, Real bz);
-//    void MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3,
-//        Real *pt, Real *px, Real *py, Real *pz);
-
   // .. to transform 4-vector from Boyer-Lindquist to global coordinates
   virtual void TransformVectorCell(Real at, Real ax, Real ay, Real az,int k,int j,int i,
     Real *a0, Real *a1, Real *a2, Real *a3);
@@ -341,10 +337,6 @@ public:
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
     AthenaArray<Real> &flux);
 
-//    Real DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real by, Real bz);
-//    void MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3,
-//        Real *pt, Real *px, Real *py, Real *pz);
-
   // .. to transform 4-vector from Boyer-Lindquist to global coordinates
   void TransformVectorCell(Real at, Real ax, Real ay, Real az,int k,int j,int i,
     Real *a0, Real *a1, Real *a2, Real *a3);
@@ -446,9 +438,110 @@ public:
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
     AthenaArray<Real> &flux);
 
-//    Real DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real by, Real bz);
-//    void MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3,
-//        Real *pt, Real *px, Real *py, Real *pz);
+  // .. to transform 4-vector from Boyer-Lindquist to global coordinates
+  void TransformVectorCell(Real at, Real ax, Real ay, Real az,int k,int j,int i,
+    Real *a0, Real *a1, Real *a2, Real *a3);
+  void TransformVectorFace1(Real at, Real ax, Real ay, Real az,int k,int j,int i,
+    Real *a0, Real *a1, Real *a2, Real *a3);
+  void TransformVectorFace2(Real at, Real ax, Real ay, Real az,int k,int j,int i,
+    Real *a0, Real *a1, Real *a2, Real *a3);
+  void TransformVectorFace3(Real at, Real ax, Real ay, Real az,int k,int j,int i,
+    Real *a0, Real *a1, Real *a2, Real *a3);
+
+  // for raising (lowering) covariant (contravariant) components of a vector
+  void RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3,int k,int j,int i,
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+  void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
+    Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3);
+//  void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3,
+//    Real *pr, Real *ptheta, Real *pphi);
+
+protected:
+  Real bh_mass_; 
+
+#endif // GENERAL_RELATIVITY
+};
+
+//----------------------------------------------------------------------------------------
+//! \class KerrSchild
+//  \brief derived class for Kerr spacetime and Kerr-Schild coordinates in GR.
+//  Nearly every function in the abstract base class need to be overwritten.
+
+class KerrSchild : public Coordinates {
+public:
+  KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag);
+  ~KerrSchild();
+
+  // functions...
+  // ...to compute length of edges
+  void Edge1Length(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &len);
+  void Edge2Length(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &len);
+  void Edge3Length(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &len);
+  Real GetEdge1Length(const int k, const int j, const int i);
+  Real GetEdge2Length(const int k, const int j, const int i);
+  Real GetEdge3Length(const int k, const int j, const int i);
+
+  // ...to compute physical width at cell center
+  Real CenterWidth1(const int k, const int j, const int i);
+  Real CenterWidth2(const int k, const int j, const int i);
+  Real CenterWidth3(const int k, const int j, const int i);
+
+  // ...to compute area of faces
+  void Face1Area(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &area);
+  void Face2Area(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &area);
+  void Face3Area(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &area);
+  Real GetFace1Area(const int k, const int j, const int i);
+  Real GetFace2Area(const int k, const int j, const int i);
+  Real GetFace3Area(const int k, const int j, const int i);
+
+  // ...to compute volumes of cells
+  void CellVolume(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &vol);
+  Real GetCellVolume(const int k, const int j, const int i);
+
+  // ...to compute geometrical source terms
+  void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+    const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
+
+#if GENERAL_RELATIVITY==1
+  // In GR, functions...
+  // ...to compute metric
+  void CellMetric(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &g, AthenaArray<Real> &gi);
+  void Face1Metric(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
+  void Face2Metric(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
+  void Face3Metric(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
+
+  // ...to transform primitives to locally flat space
+  void PrimToLocal1(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &b1_vals, AthenaArray<Real> &prim_left,
+    AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
+  void PrimToLocal2(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &b2_vals, AthenaArray<Real> &prim_left,
+    AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
+  void PrimToLocal3(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &b3_vals, AthenaArray<Real> &prim_left,
+    AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
+
+  // ...to transform fluxes in locally flat space to global frame
+  void FluxToGlobal1(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
+    AthenaArray<Real> &flux);
+  void FluxToGlobal2(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
+    AthenaArray<Real> &flux);
+  void FluxToGlobal3(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
+    AthenaArray<Real> &flux);
 
   // .. to transform 4-vector from Boyer-Lindquist to global coordinates
   void TransformVectorCell(Real at, Real ax, Real ay, Real az,int k,int j,int i,

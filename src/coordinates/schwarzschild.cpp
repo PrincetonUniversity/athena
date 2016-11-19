@@ -84,7 +84,6 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
   // Set parameters
   bh_mass_ = pin->GetReal("coord", "m");
-  bh_spin_ = 0.0;
   const Real &m = bh_mass_;
 
   // Initialize volume-averaged coordinates and spacings: r-direction
@@ -152,11 +151,9 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     }
   }
 
-  // Allocate arrays for intermediate geometric quantities: r-direction
-  // (note only the "metric_cell*" factors are needed if object is for coarse mesh)
+  // Allocate and compute arrays for intermediate geometric quantities always needed
   metric_cell_i1_.NewAthenaArray(ncells1);
   metric_cell_j1_.NewAthenaArray(ncells2);
-
   for (int i = il-ng; i <= iu+ng; ++i) {
     Real r_c = x1v(i);
     Real alpha_c = std::sqrt(1.0 - 2.0*m/r_c);
@@ -169,14 +166,16 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
   } else {
     jll = jl; juu = ju;
   }
-  
   for (int j = jll; j <= juu; ++j) {
     Real sin_c = std::sin(x2v(j));
     Real sin_c_sq = SQR(sin_c);
     metric_cell_j1_(j) = sin_c_sq;
   }
 
+  // Allocate and compute arrays for intermediate geometric quantities that are only
+  // needed if object is NOT a coarse mesh
   if(coarse_flag==false) {
+    // Allocate arrays for intermediate geometric quantities: r-direction
     coord_vol_i1_.NewAthenaArray(ncells1);
     coord_area1_i1_.NewAthenaArray(ncells1+1);
     coord_area2_i1_.NewAthenaArray(ncells1);
@@ -239,11 +238,9 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
       coord_area3_i1_(i) = coord_vol_i1_(i);
       coord_len1_i1_(i) = coord_vol_i1_(i);
       coord_len2_i1_(i) = coord_area1_i1_(i);
-      if (i == (iu+ng)) {
-        coord_len2_i1_(i+1) = coord_area1_i1_(i+1);
-      }
       coord_len3_i1_(i) = coord_area1_i1_(i);
       if (i == (iu+ng)) {
+        coord_len2_i1_(i+1) = coord_area1_i1_(i+1);
         coord_len3_i1_(i+1) = coord_area1_i1_(i+1);
       }
       coord_width1_i1_(i) = r_p*alpha_p - r_m*alpha_m
@@ -357,45 +354,47 @@ Schwarzschild::~Schwarzschild()
     x3s1.DeleteAthenaArray();
     x3s2.DeleteAthenaArray();
   }
-  coord_vol_i1_.DeleteAthenaArray();
-  coord_area1_i1_.DeleteAthenaArray();
-  coord_area2_i1_.DeleteAthenaArray();
-  coord_area3_i1_.DeleteAthenaArray();
-  coord_len1_i1_.DeleteAthenaArray();
-  coord_len2_i1_.DeleteAthenaArray();
-  coord_len3_i1_.DeleteAthenaArray();
-  coord_width1_i1_.DeleteAthenaArray();
-  coord_src_i1_.DeleteAthenaArray();
-  coord_src_i2_.DeleteAthenaArray();
-  coord_src_i3_.DeleteAthenaArray();
-  coord_src_i4_.DeleteAthenaArray();
-  coord_vol_j1_.DeleteAthenaArray();
-  coord_area1_j1_.DeleteAthenaArray();
-  coord_area2_j1_.DeleteAthenaArray();
-  coord_area3_j1_.DeleteAthenaArray();
-  coord_len1_j1_.DeleteAthenaArray();
-  coord_len2_j1_.DeleteAthenaArray();
-  coord_len3_j1_.DeleteAthenaArray();
-  coord_width3_j1_.DeleteAthenaArray();
-  coord_src_j1_.DeleteAthenaArray();
-  coord_src_j2_.DeleteAthenaArray();
-  coord_src_j3_.DeleteAthenaArray();
   metric_cell_i1_.DeleteAthenaArray();
   metric_cell_j1_.DeleteAthenaArray();
-  metric_face1_i1_.DeleteAthenaArray();
-  metric_face1_j1_.DeleteAthenaArray();
-  metric_face2_i1_.DeleteAthenaArray();
-  metric_face2_j1_.DeleteAthenaArray();
-  metric_face3_i1_.DeleteAthenaArray();
-  metric_face3_j1_.DeleteAthenaArray();
-  trans_face1_i1_.DeleteAthenaArray();
-  trans_face1_j1_.DeleteAthenaArray();
-  trans_face2_i1_.DeleteAthenaArray();
-  trans_face2_j1_.DeleteAthenaArray();
-  trans_face3_i1_.DeleteAthenaArray();
-  trans_face3_j1_.DeleteAthenaArray();
-  g_.DeleteAthenaArray();
-  gi_.DeleteAthenaArray();
+  if(coarse_flag==false) {
+    coord_vol_i1_.DeleteAthenaArray();
+    coord_area1_i1_.DeleteAthenaArray();
+    coord_area2_i1_.DeleteAthenaArray();
+    coord_area3_i1_.DeleteAthenaArray();
+    coord_len1_i1_.DeleteAthenaArray();
+    coord_len2_i1_.DeleteAthenaArray();
+    coord_len3_i1_.DeleteAthenaArray();
+    coord_width1_i1_.DeleteAthenaArray();
+    coord_src_i1_.DeleteAthenaArray();
+    coord_src_i2_.DeleteAthenaArray();
+    coord_src_i3_.DeleteAthenaArray();
+    coord_src_i4_.DeleteAthenaArray();
+    coord_vol_j1_.DeleteAthenaArray();
+    coord_area1_j1_.DeleteAthenaArray();
+    coord_area2_j1_.DeleteAthenaArray();
+    coord_area3_j1_.DeleteAthenaArray();
+    coord_len1_j1_.DeleteAthenaArray();
+    coord_len2_j1_.DeleteAthenaArray();
+    coord_len3_j1_.DeleteAthenaArray();
+    coord_width3_j1_.DeleteAthenaArray();
+    coord_src_j1_.DeleteAthenaArray();
+    coord_src_j2_.DeleteAthenaArray();
+    coord_src_j3_.DeleteAthenaArray();
+    metric_face1_i1_.DeleteAthenaArray();
+    metric_face1_j1_.DeleteAthenaArray();
+    metric_face2_i1_.DeleteAthenaArray();
+    metric_face2_j1_.DeleteAthenaArray();
+    metric_face3_i1_.DeleteAthenaArray();
+    metric_face3_j1_.DeleteAthenaArray();
+    trans_face1_i1_.DeleteAthenaArray();
+    trans_face1_j1_.DeleteAthenaArray();
+    trans_face2_i1_.DeleteAthenaArray();
+    trans_face2_j1_.DeleteAthenaArray();
+    trans_face3_i1_.DeleteAthenaArray();
+    trans_face3_j1_.DeleteAthenaArray();
+    g_.DeleteAthenaArray();
+    gi_.DeleteAthenaArray();
+  }
 }
 
 //--------------------------------------------------------------------------------------

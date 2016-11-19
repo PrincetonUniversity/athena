@@ -41,6 +41,10 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin)
     pcoarsec = new SphericalPolar(pmb, pin, true);
   } else if (COORDINATE_SYSTEM == "minkowski") {
     pcoarsec = new Minkowski(pmb, pin, true);
+  } else if (COORDINATE_SYSTEM == "schwarzschild") {
+    pcoarsec = new Schwarzschild(pmb, pin, true);
+  } else if (COORDINATE_SYSTEM == "kerr-schild") {
+    pcoarsec = new KerrSchild(pmb, pin, true);
   }
 
   deref_count_ = 0;

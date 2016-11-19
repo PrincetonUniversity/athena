@@ -1,9 +1,17 @@
-// Kerr spacetime, Kerr-Schild coordinates
+//========================================================================================
+// Athena++ astrophysical MHD code
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
+//! \file kerr-schild.cpp
+//  \brief implements functions for Kerr spacetime and Kerr-Schild (t,r,theta,phi) 
+//  coordinates in a derived class of the Coordinates abstract base class.
+//  Original implementation by CJ White.
+//
 // Notes:
 //   coordinates: t, r, \theta, \phi
-//   parameters:
-//     M (mass), M > 0
-//     a (spin), -M < a < M
+//   parameters: M (mass), M > 0
+//               a (spin), -M < a < M
 //   metric:
 //     ds^2 = -(1 - 2 M r/\Sigma) dt^2
 //            + 4 M r/\Sigma dt dr
@@ -12,60 +20,77 @@
 //            - 2 a (1 + 2 M r/\Sigma) \sin^2\theta dr d\phi
 //            + \Sigma d\theta^2
 //            + (r^2 + a^2 + (2 M a^2 r/\Sigma) \sin^2\theta) \sin^2\theta d\phi^2
-//     \Delta = r^2 - 2 M r + a^2
-//     \Sigma = r^2 + a^2 cos^2\theta
-//     \Xi = r^2 - a^2 cos^2\theta
+//     where \Delta = r^2 - 2 M r + a^2
+//           \Sigma = r^2 + a^2 cos^2\theta
+//           \Xi = r^2 - a^2 cos^2\theta
 //   other "Kerr-Schild" coordinates exist
 
-// Primary header
-#include "coordinates.hpp"
-
 // C++ headers
-#include <cmath>  // NAN, abs(), cos(), log(), sin(), sqrt()
+#include <cmath>  // abs(), cos(), log(), sin(), sqrt()
 
 // Athena++ headers
-#include "../athena.hpp"           // enums, macros
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../eos/eos.hpp"          // EquationOfState
-#include "../mesh/mesh.hpp"        // Mesh, MeshBlock
+#include "coordinates.hpp"
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../eos/eos.hpp"
+#include "../mesh/mesh.hpp"
 
-//--------------------------------------------------------------------------------------
-
-// Constructor
+//----------------------------------------------------------------------------------------
+// KerrSchild Constructor
 // Inputs:
 //   pmb: pointer to MeshBlock containing this grid
 //   pin: pointer to runtime inputs
-//   flag: indicator that this is special refinement case
-Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
+//   flag: true if object is for coarse grid only in an AMR calculation
+
+KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
+  : Coordinates(pmb, pin, flag)
 {
-  // Set pointer to host MeshBlock and note active zone boundaries
   pmy_block = pmb;
-  cflag = flag;
-  int is, ie, js, je, ks, ke, ng;
-  if(cflag == 0)
-  {
-    is = pmb->is;
-    ie = pmb->ie;
-    js = pmb->js;
-    je = pmb->je;
-    ks = pmb->ks;
-    ke = pmb->ke;
+  coarse_flag = flag;
+  int il, iu, jl, ju, kl, ku, ng;
+  if(coarse_flag == true) {
+    il = pmb->cis;
+    iu = pmb->cie;
+    jl = pmb->cjs;
+    ju = pmb->cje;
+    kl = pmb->cks;
+    ku = pmb->cke;
+    ng = pmb->cnghost;
+  } else {
+    il = pmb->is;
+    iu = pmb->ie;
+    jl = pmb->js;
+    ju = pmb->je;
+    kl = pmb->ks;
+    ku = pmb->ke;
     ng = NGHOST;
   }
-  else
-  {
-    is = pmb->cis;
-    ie = pmb->cie;
-    js = pmb->cjs;
-    je = pmb->cje;
-    ks = pmb->cks;
-    ke = pmb->cke;
-    ng = pmb->cnghost;
-  }
+  Mesh *pm=pmy_block->pmy_mesh;
+  RegionSize& mesh_size  = pmy_block->pmy_mesh->mesh_size;
+  RegionSize& block_size = pmy_block->block_size;
 
-  // Set face-centered positions and distances
-  AllocateAndSetBasicCoordinates();
+  // allocate arrays for volume-centered coordinates and positions of cells
+  int ncells1 = (iu-il+1) + 2*ng;
+  int ncells2 = 1, ncells3 = 1;
+  if (block_size.nx2 > 1) ncells2 = (ju-jl+1) + 2*ng;
+  if (block_size.nx3 > 1) ncells3 = (ku-kl+1) + 2*ng;
+  dx1v.NewAthenaArray(ncells1);
+  dx2v.NewAthenaArray(ncells2);
+  dx3v.NewAthenaArray(ncells3);
+  x1v.NewAthenaArray(ncells1);
+  x2v.NewAthenaArray(ncells2);
+  x3v.NewAthenaArray(ncells3);
+
+  // allocate arrays for area weighted positions for AMR/SMR MHD
+  if((pm->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+    x1s2.NewAthenaArray(ncells1);
+    x1s3.NewAthenaArray(ncells1);
+    x2s1.NewAthenaArray(ncells2);
+    x2s3.NewAthenaArray(ncells2);
+    x3s1.NewAthenaArray(ncells3);
+    x3s2.NewAthenaArray(ncells3);
+  }
 
   // Set parameters
   bh_mass_ = pin->GetReal("coord", "m");
@@ -73,326 +98,229 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
   const Real &m = bh_mass_;
   const Real &a = bh_spin_;
 
-  // Initialize volume-averaged positions and spacings: r-direction
-  for (int i = is-ng; i <= ie+ng; ++i)
-  {
+  // Initialize volume-averaged coordinates and spacings: r-direction
+  for (int i = il-ng; i <= iu+ng; ++i) {
     Real r_m = x1f(i);
     Real r_p = x1f(i+1);
     x1v(i) = 0.5 * (r_m + r_p);  // approximate
   }
-  for (int i = is-ng; i <= ie+ng-1; ++i)
+  for (int i = il-ng; i <= iu+ng-1; ++i) {
     dx1v(i) = x1v(i+1) - x1v(i);
-
-  // Initialize volume-averaged positions and spacings: theta-direction
-  if (pmb->block_size.nx2 == 1)  // no extent
-  {
-    Real theta_m = x2f(js);
-    Real theta_p = x2f(js+1);
-    x2v(js) = 0.5 * (theta_m + theta_p);  // approximate
-    dx2v(js) = dx2f(js);
   }
-  else  // extended
-  {
-    for (int j = js-ng; j <= je+ng; ++j)
-    {
+
+  // Initialize volume-averaged coordinates and spacings: theta-direction
+  if (pmb->block_size.nx2 == 1) {
+    Real theta_m = x2f(jl);
+    Real theta_p = x2f(jl+1);
+    x2v(jl) = 0.5 * (theta_m + theta_p);  // approximate
+    dx2v(jl) = dx2f(jl);
+  } else {
+    for (int j = jl-ng; j <= ju+ng; ++j) {
       Real theta_m = x2f(j);
       Real theta_p = x2f(j+1);
       x2v(j) = 0.5 * (theta_m + theta_p);  // approximate
     }
-    for (int j = js-ng; j <= je+ng-1; ++j)
+    for (int j = jl-ng; j <= ju+ng-1; ++j) {
       dx2v(j) = x2v(j+1) - x2v(j);
+    }
   }
 
-  // Initialize volume-averaged positions and spacings: phi-direction
-  if (pmb->block_size.nx3 == 1)  // no extent
-  {
-    Real phi_m = x3f(ks);
-    Real phi_p = x3f(ks+1);
-    x3v(ks) = 0.5 * (phi_m + phi_p);
-    dx3v(ks) = dx3f(ks);
-  }
-  else  // extended
-  {
-    for (int k = ks-ng; k <= ke+ng; ++k)
-    {
+  // Initialize volume-averaged coordinates and spacings: phi-direction
+  if (pmb->block_size.nx3 == 1) {
+    Real phi_m = x3f(kl);
+    Real phi_p = x3f(kl+1);
+    x3v(kl) = 0.5 * (phi_m + phi_p);
+    dx3v(kl) = dx3f(kl);
+  } else {
+    for (int k = kl-ng; k <= ku+ng; ++k) {
       Real phi_m = x3f(k);
       Real phi_p = x3f(k+1);
       x3v(k) = 0.5 * (phi_m + phi_p);
     }
-    for (int k = ks-ng; k <= ke+ng-1; ++k)
+    for (int k = kl-ng; k <= ku+ng-1; ++k) {
       dx3v(k) = x3v(k+1) - x3v(k);
+    }
   }
 
-  // Prepare for MHD mesh refinement
-  if (pmb->pmy_mesh->multilevel && MAGNETIC_FIELDS_ENABLED)
-  {
-    for (int i = is-NGHOST; i <= ie+NGHOST; ++i)
+  // initialize area-averaged coordinates used with MHD AMR
+  if (pmb->pmy_mesh->multilevel && MAGNETIC_FIELDS_ENABLED) {
+    for (int i = il-ng; i <= iu+ng; ++i) {
       x1s2(i) = x1s3(i) = x1v(i);
-    if (pmb->block_size.nx2 == 1)
-      x2s1(js) = x2s3(js) = x2v(js);
-    else
-      for (int j = js-NGHOST; j <= je+NGHOST; ++j)
+    }
+    if (pmb->block_size.nx2 == 1) {
+      x2s1(jl) = x2s3(jl) = x2v(jl);
+    } else {
+      for (int j = jl-ng; j <= ju+ng; ++j) {
         x2s1(j) = x2s3(j) = x2v(j);
-    if (pmb->block_size.nx3 == 1)
-      x3s1(ks) = x3s2(ks) = x3v(ks);
-    else
-      for (int k = ks-NGHOST; k <= ke+NGHOST; ++k)
+      }
+    }
+    if (pmb->block_size.nx3 == 1) {
+      x3s1(kl) = x3s2(kl) = x3v(kl);
+    } else {
+      for (int k = kl-ng; k <= ku+ng; ++k) {
         x3s1(k) = x3s2(k) = x3v(k);
+      }
+    }
   }
 
-  // Allocate arrays for intermediate geometric quantities: r-direction
-  int n_cells_1 = pmb->block_size.nx1 + 2*ng;
-  coord_vol_i1_.NewAthenaArray(n_cells_1);
-  coord_vol_i2_.NewAthenaArray(n_cells_1);
-  coord_area1_i1_.NewAthenaArray(n_cells_1+1);
-  coord_area2_i1_.NewAthenaArray(n_cells_1);
-  coord_area2_i2_.NewAthenaArray(n_cells_1);
-  coord_area3_i1_.NewAthenaArray(n_cells_1);
-  coord_area3_i2_.NewAthenaArray(n_cells_1);
-  coord_len1_i1_.NewAthenaArray(n_cells_1);
-  coord_len1_i2_.NewAthenaArray(n_cells_1);
-  coord_len2_i1_.NewAthenaArray(n_cells_1+1);
-  coord_len3_i1_.NewAthenaArray(n_cells_1+1);
-  coord_width1_i1_.NewAthenaArray(n_cells_1);
-  coord_width2_i1_.NewAthenaArray(n_cells_1);
-  coord_src_i1_.NewAthenaArray(n_cells_1);
-  metric_cell_i1_.NewAthenaArray(n_cells_1);
-  metric_face1_i1_.NewAthenaArray(n_cells_1+1);
-  metric_face2_i1_.NewAthenaArray(n_cells_1);
-  metric_face3_i1_.NewAthenaArray(n_cells_1);
-  g_.NewAthenaArray(NMETRIC, n_cells_1+1);
-  gi_.NewAthenaArray(NMETRIC, n_cells_1+1);
-
-  // Allocate arrays for intermediate geometric quantities: theta-direction
-  int n_cells_2 = (pmb->block_size.nx2 > 1) ? pmb->block_size.nx2 + 2*ng : 1;
-  coord_vol_j1_.NewAthenaArray(n_cells_2);
-  coord_vol_j2_.NewAthenaArray(n_cells_2);
-  coord_area1_j1_.NewAthenaArray(n_cells_2);
-  coord_area1_j2_.NewAthenaArray(n_cells_2);
-  coord_area2_j1_.NewAthenaArray(n_cells_2+1);
-  coord_area2_j2_.NewAthenaArray(n_cells_2+1);
-  coord_area3_j1_.NewAthenaArray(n_cells_2);
-  coord_area3_j2_.NewAthenaArray(n_cells_2);
-  coord_len1_j1_.NewAthenaArray(n_cells_2+1);
-  coord_len1_j2_.NewAthenaArray(n_cells_2+1);
-  coord_len2_j1_.NewAthenaArray(n_cells_2);
-  coord_len2_j2_.NewAthenaArray(n_cells_2);
-  coord_len3_j1_.NewAthenaArray(n_cells_2+1);
-  coord_len3_j2_.NewAthenaArray(n_cells_2+1);
-  coord_width2_j1_.NewAthenaArray(n_cells_2);
-  coord_width3_j1_.NewAthenaArray(n_cells_2);
-  coord_width3_j2_.NewAthenaArray(n_cells_2);
-  coord_width3_j3_.NewAthenaArray(n_cells_2);
-  coord_src_j1_.NewAthenaArray(n_cells_2);
-  coord_src_j2_.NewAthenaArray(n_cells_2);
-  metric_cell_j1_.NewAthenaArray(n_cells_2);
-  metric_cell_j2_.NewAthenaArray(n_cells_2);
-  metric_face1_j1_.NewAthenaArray(n_cells_2);
-  metric_face1_j2_.NewAthenaArray(n_cells_2);
-  metric_face2_j1_.NewAthenaArray(n_cells_2+1);
-  metric_face2_j2_.NewAthenaArray(n_cells_2+1);
-  metric_face3_j1_.NewAthenaArray(n_cells_2);
-  metric_face3_j2_.NewAthenaArray(n_cells_2);
-
-  // Allocate arrays for intermediate geometric quantities: phi-direction
-  int n_cells_3 = (pmb->block_size.nx3 > 1) ? pmb->block_size.nx3 + 2*ng : 1;
-  coord_vol_k1_.NewAthenaArray(n_cells_3);
-  coord_area1_k1_.NewAthenaArray(n_cells_3);
-  coord_area2_k1_.NewAthenaArray(n_cells_3);
-  coord_len3_k1_.NewAthenaArray(n_cells_3);
-  coord_width3_k1_.NewAthenaArray(n_cells_3);
-
-  // Allocate arrays for intermediate geometric quantities: r-theta-direction
-  coord_width3_ji1_.NewAthenaArray(n_cells_2, n_cells_1);
-  trans_face1_ji1_.NewAthenaArray(n_cells_2, n_cells_1+1);
-  trans_face1_ji2_.NewAthenaArray(n_cells_2, n_cells_1+1);
-  trans_face1_ji3_.NewAthenaArray(n_cells_2, n_cells_1+1);
-  trans_face1_ji4_.NewAthenaArray(n_cells_2, n_cells_1+1);
-  trans_face1_ji5_.NewAthenaArray(n_cells_2, n_cells_1+1);
-  trans_face1_ji6_.NewAthenaArray(n_cells_2, n_cells_1+1);
-  trans_face1_ji7_.NewAthenaArray(n_cells_2, n_cells_1+1);
-  trans_face2_ji1_.NewAthenaArray(n_cells_2+1, n_cells_1);
-  trans_face2_ji2_.NewAthenaArray(n_cells_2+1, n_cells_1);
-  trans_face2_ji3_.NewAthenaArray(n_cells_2+1, n_cells_1);
-  trans_face2_ji4_.NewAthenaArray(n_cells_2+1, n_cells_1);
-  trans_face2_ji5_.NewAthenaArray(n_cells_2+1, n_cells_1);
-  trans_face2_ji6_.NewAthenaArray(n_cells_2+1, n_cells_1);
-  trans_face3_ji1_.NewAthenaArray(n_cells_2, n_cells_1);
-  trans_face3_ji2_.NewAthenaArray(n_cells_2, n_cells_1);
-  trans_face3_ji3_.NewAthenaArray(n_cells_2, n_cells_1);
-  trans_face3_ji4_.NewAthenaArray(n_cells_2, n_cells_1);
-  trans_face3_ji5_.NewAthenaArray(n_cells_2, n_cells_1);
-  trans_face3_ji6_.NewAthenaArray(n_cells_2, n_cells_1);
-
-  // Calculate intermediate geometric quantities: r-direction
-  int il = is - ng;
-  int iu = ie + ng;
-  for (int i = il; i <= iu; ++i)
-  {
-    // Useful quantities
+  // Allocate and compute arrays for intermediate geometric quantities always needed
+  metric_cell_i1_.NewAthenaArray(ncells1);
+  metric_cell_j1_.NewAthenaArray(ncells2);
+  metric_cell_j2_.NewAthenaArray(ncells2);
+  for (int i = il-ng; i <= iu+ng; ++i) {
     Real r_c = x1v(i);
-    Real r_m = x1f(i);
-    Real r_p = x1f(i+1);
-    Real r_c_sq = SQR(r_c);
-    Real r_m_sq = SQR(r_m);
-    Real r_p_sq = SQR(r_p);
-    Real r_m_cu = r_m * r_m_sq;
-    Real rm_m = std::sqrt(r_m_sq + SQR(m));
-    Real rm_p = std::sqrt(r_p_sq + SQR(m));
-
-    // Volumes, areas, lengths, and widths
-    coord_vol_i1_(i) = dx1f(i);
-    coord_vol_i2_(i) = r_m_sq + r_m * r_p + r_p_sq;
-    coord_area1_i1_(i) = SQR(r_m);
-    if (i == iu)
-      coord_area1_i1_(i+1) = SQR(r_p);
-    coord_area2_i1_(i) = coord_vol_i1_(i);
-    coord_area2_i2_(i) = coord_vol_i2_(i);
-    coord_area3_i1_(i) = coord_vol_i1_(i);
-    coord_area3_i2_(i) = coord_vol_i2_(i);
-    coord_len1_i1_(i) = coord_vol_i1_(i);
-    coord_len1_i2_(i) = coord_vol_i2_(i);
-    coord_len2_i1_(i) = coord_area1_i1_(i);
-    if (i == iu)
-      coord_len2_i1_(i+1) = coord_area1_i1_(i+1);
-    coord_len3_i1_(i) = coord_area1_i1_(i);
-    if (i == iu)
-      coord_len3_i1_(i+1) = coord_area1_i1_(i+1);
-    coord_width1_i1_(i) = rm_p - rm_m + m * std::log((rm_p + r_p) / (rm_m + r_m));
-    coord_width2_i1_(i) = x1v(i);
-
-    // Source terms
-    coord_src_i1_(i) = r_c;
-
-    // Metric coefficients
     metric_cell_i1_(i) = r_c;
-    metric_face1_i1_(i) = r_m;
-    if (i == iu)
-      metric_face1_i1_(i+1) = r_p;
-    metric_face2_i1_(i) = r_c;
-    metric_face3_i1_(i) = r_c;
   }
 
-  // Calculate intermediate geometric quantities: theta-direction
-  int jl, ju;
-  if (n_cells_2 > 1)  // extended
-  {
-    jl = js - ng;
-    ju = je + ng;
+  int jll, juu;
+  if (pmb->block_size.nx2 > 1) {
+    jll = jl - ng; juu = ju + ng;
+  } else {
+    jll = jl; juu = ju;
   }
-  else  // no extent
-  {
-    jl = js;
-    ju = js;
-  }
-  for (int j = jl; j <= ju; ++j)
-  {
-    // Useful quantities
+  for (int j = jll; j <= juu; ++j) {
     Real theta_c = x2v(j);
-    Real theta_m = x2f(j);
-    Real theta_p = x2f(j+1);
     Real sin_c = std::sin(theta_c);
-    Real sin_m = std::sin(theta_m);
-    Real sin_p = std::sin(theta_p);
     Real cos_c = std::cos(theta_c);
-    Real cos_m = std::cos(theta_m);
-    Real cos_p = std::cos(theta_p);
     Real sin_c_sq = SQR(sin_c);
-    Real sin_m_sq = SQR(sin_m);
-    Real sin_p_sq = SQR(sin_p);
     Real cos_c_sq = SQR(cos_c);
-    Real cos_m_sq = SQR(cos_m);
-    Real cos_p_sq = SQR(cos_p);
-    Real sin_m_cu = sin_m_sq*sin_m;
-    Real sin_p_cu = SQR(sin_p)*sin_p;
-
-    // Volumes, areas, lengths, and widths
-    coord_vol_j1_(j) = std::abs(cos_m - cos_p);
-    coord_vol_j2_(j) = SQR(a) * (cos_m_sq + cos_m * cos_p + cos_p_sq);
-    coord_area1_j1_(j) = coord_vol_j1_(j);
-    coord_area1_j2_(j) = coord_vol_j2_(j);
-    coord_area2_j1_(j) = std::abs(sin_m);
-    if (j == ju)
-      coord_area2_j1_(j+1) = std::abs(sin_p);
-    coord_area2_j2_(j) = SQR(a) * cos_m_sq;
-    if (j == ju)
-      coord_area2_j2_(j+1) = SQR(a) * cos_p_sq;
-    coord_area3_j1_(j) = coord_vol_j1_(j);
-    coord_area3_j2_(j) = coord_vol_j2_(j);
-    coord_len1_j1_(j) = coord_area2_j1_(j);
-    if (j == ju)
-      coord_len1_j1_(j+1) = coord_area2_j1_(j+1);
-    coord_len1_j2_(j) = coord_area2_j2_(j);
-    if (j == ju)
-      coord_len1_j2_(j+1) = coord_area2_j2_(j+1);
-    coord_len2_j1_(j) = coord_vol_j1_(j);
-    coord_len2_j2_(j) = coord_vol_j2_(j);
-    coord_len3_j1_(j) = coord_area2_j1_(j);
-    if (j == ju)
-      coord_len3_j1_(j+1) = coord_area2_j1_(j+1);
-    coord_len3_j2_(j) = coord_area2_j2_(j);
-    if (j == ju)
-      coord_len3_j2_(j+1) = coord_area2_j2_(j+1);
-    coord_width2_j1_(j) = dx2f(j);
-    coord_width3_j1_(j) = std::abs(sin_c);
-    coord_width3_j2_(j) = SQR(a) * sin_c_sq;
-    coord_width3_j3_(j) = SQR(a) * cos_c_sq;
-
-    // Source terms
-    coord_src_j1_(j) = sin_c;
-    coord_src_j2_(j) = cos_c;
-
-    // Metric coefficients
     metric_cell_j1_(j) = sin_c_sq;
     metric_cell_j2_(j) = cos_c_sq;
-    metric_face1_j1_(j) = sin_c_sq;
-    metric_face1_j2_(j) = cos_c_sq;
-    metric_face2_j1_(j) = sin_m_sq;
-    if (j == ju)
-      metric_face2_j1_(j) = sin_p_sq;
-    metric_face2_j2_(j) = cos_m_sq;
-    if (j == ju)
-      metric_face2_j2_(j) = cos_p_sq;
-    metric_face3_j1_(j) = sin_c_sq;
-    metric_face3_j2_(j) = cos_c_sq;
   }
 
-  // Calculate intermediate geometric quantities: phi-direction
-  int kl, ku;
-  if (n_cells_3 > 1)  // extended
-  {
-    kl = ks - ng;
-    ku = ke + ng;
-  }
-  else  // no extent
-  {
-    kl = ks;
-    ku = ks;
-  }
-  for (int k = kl; k <= ku; ++k)
-  {
-    // Volumes, areas, lengths, and widths
-    coord_vol_k1_(k) = dx3f(k);
-    coord_area1_k1_(k) = coord_vol_k1_(k);
-    coord_area2_k1_(k) = coord_vol_k1_(k);
-    coord_len3_k1_(k) = coord_vol_k1_(k);
-    coord_width3_k1_(k) = coord_vol_k1_(k);
-  }
+  // Allocate and compute arrays for intermediate geometric quantities that are only
+  // needed if object is NOT a coarse mesh
+  if(coarse_flag==false) {
+    // Allocate arrays for intermediate geometric quantities: r-direction
+    coord_vol_i1_.NewAthenaArray(ncells1);
+    coord_vol_i2_.NewAthenaArray(ncells1);
+    coord_area1_i1_.NewAthenaArray(ncells1+1);
+    coord_area2_i1_.NewAthenaArray(ncells1);
+    coord_area2_i2_.NewAthenaArray(ncells1);
+    coord_area3_i1_.NewAthenaArray(ncells1);
+    coord_area3_i2_.NewAthenaArray(ncells1);
+    coord_len1_i1_.NewAthenaArray(ncells1);
+    coord_len1_i2_.NewAthenaArray(ncells1);
+    coord_len2_i1_.NewAthenaArray(ncells1+1);
+    coord_len3_i1_.NewAthenaArray(ncells1+1);
+    coord_width1_i1_.NewAthenaArray(ncells1);
+    coord_width2_i1_.NewAthenaArray(ncells1);
+    coord_src_i1_.NewAthenaArray(ncells1);
+    metric_face1_i1_.NewAthenaArray(ncells1+1);
+    metric_face2_i1_.NewAthenaArray(ncells1);
+    metric_face3_i1_.NewAthenaArray(ncells1);
+    g_.NewAthenaArray(NMETRIC, ncells1+1);
+    gi_.NewAthenaArray(NMETRIC, ncells1+1);
 
-  // Calculate intermediate geometric quantities: r-theta-direction
-  for (int j = jl; j <= ju; ++j)
-    for (int i = il; i <= iu; ++i)
-    {
+    // Allocate arrays for intermediate geometric quantities: theta-direction
+    coord_vol_j1_.NewAthenaArray(ncells2);
+    coord_vol_j2_.NewAthenaArray(ncells2);
+    coord_area1_j1_.NewAthenaArray(ncells2);
+    coord_area1_j2_.NewAthenaArray(ncells2);
+    coord_area2_j1_.NewAthenaArray(ncells2+1);
+    coord_area2_j2_.NewAthenaArray(ncells2+1);
+    coord_area3_j1_.NewAthenaArray(ncells2);
+    coord_area3_j2_.NewAthenaArray(ncells2);
+    coord_len1_j1_.NewAthenaArray(ncells2+1);
+    coord_len1_j2_.NewAthenaArray(ncells2+1);
+    coord_len2_j1_.NewAthenaArray(ncells2);
+    coord_len2_j2_.NewAthenaArray(ncells2);
+    coord_len3_j1_.NewAthenaArray(ncells2+1);
+    coord_len3_j2_.NewAthenaArray(ncells2+1);
+    coord_width2_j1_.NewAthenaArray(ncells2);
+    coord_width3_j1_.NewAthenaArray(ncells2);
+    coord_width3_j2_.NewAthenaArray(ncells2);
+    coord_width3_j3_.NewAthenaArray(ncells2);
+    coord_src_j1_.NewAthenaArray(ncells2);
+    coord_src_j2_.NewAthenaArray(ncells2);
+    metric_face1_j1_.NewAthenaArray(ncells2);
+    metric_face1_j2_.NewAthenaArray(ncells2);
+    metric_face2_j1_.NewAthenaArray(ncells2+1);
+    metric_face2_j2_.NewAthenaArray(ncells2+1);
+    metric_face3_j1_.NewAthenaArray(ncells2);
+    metric_face3_j2_.NewAthenaArray(ncells2);
+  
+    // Allocate arrays for intermediate geometric quantities: phi-direction
+    coord_vol_k1_.NewAthenaArray(ncells3);
+    coord_area1_k1_.NewAthenaArray(ncells3);
+    coord_area2_k1_.NewAthenaArray(ncells3);
+    coord_len3_k1_.NewAthenaArray(ncells3);
+    coord_width3_k1_.NewAthenaArray(ncells3);
+  
+    // Allocate arrays for intermediate geometric quantities: r-theta-direction
+    coord_width3_ji1_.NewAthenaArray(ncells2, ncells1);
+    trans_face1_ji1_.NewAthenaArray(ncells2, ncells1+1);
+    trans_face1_ji2_.NewAthenaArray(ncells2, ncells1+1);
+    trans_face1_ji3_.NewAthenaArray(ncells2, ncells1+1);
+    trans_face1_ji4_.NewAthenaArray(ncells2, ncells1+1);
+    trans_face1_ji5_.NewAthenaArray(ncells2, ncells1+1);
+    trans_face1_ji6_.NewAthenaArray(ncells2, ncells1+1);
+    trans_face1_ji7_.NewAthenaArray(ncells2, ncells1+1);
+    trans_face2_ji1_.NewAthenaArray(ncells2+1, ncells1);
+    trans_face2_ji2_.NewAthenaArray(ncells2+1, ncells1);
+    trans_face2_ji3_.NewAthenaArray(ncells2+1, ncells1);
+    trans_face2_ji4_.NewAthenaArray(ncells2+1, ncells1);
+    trans_face2_ji5_.NewAthenaArray(ncells2+1, ncells1);
+    trans_face2_ji6_.NewAthenaArray(ncells2+1, ncells1);
+    trans_face3_ji1_.NewAthenaArray(ncells2, ncells1);
+    trans_face3_ji2_.NewAthenaArray(ncells2, ncells1);
+    trans_face3_ji3_.NewAthenaArray(ncells2, ncells1);
+    trans_face3_ji4_.NewAthenaArray(ncells2, ncells1);
+    trans_face3_ji5_.NewAthenaArray(ncells2, ncells1);
+    trans_face3_ji6_.NewAthenaArray(ncells2, ncells1);
+  
+    // Calculate intermediate geometric quantities: r-direction
+    for (int i = il-ng; i <= iu+ng; ++i) {
       // Useful quantities
-      Real a2 = SQR(a);
       Real r_c = x1v(i);
       Real r_m = x1f(i);
       Real r_p = x1f(i+1);
       Real r_c_sq = SQR(r_c);
       Real r_m_sq = SQR(r_m);
       Real r_p_sq = SQR(r_p);
-      Real r_m_qu = SQR(r_m_sq);
-      Real r_p_qu = SQR(r_p_sq);
+      Real r_m_cu = r_m * r_m_sq;
+      Real rm_m = std::sqrt(r_m_sq + SQR(m));
+      Real rm_p = std::sqrt(r_p_sq + SQR(m));
+  
+      // Volumes, areas, lengths, and widths
+      coord_vol_i1_(i) = dx1f(i);
+      coord_vol_i2_(i) = r_m_sq + r_m * r_p + r_p_sq;
+      coord_area1_i1_(i) = SQR(r_m);
+      if (i == (iu+ng)) {
+        coord_area1_i1_(i+1) = SQR(r_p);
+      }
+      coord_area2_i1_(i) = coord_vol_i1_(i);
+      coord_area2_i2_(i) = coord_vol_i2_(i);
+      coord_area3_i1_(i) = coord_vol_i1_(i);
+      coord_area3_i2_(i) = coord_vol_i2_(i);
+      coord_len1_i1_(i) = coord_vol_i1_(i);
+      coord_len1_i2_(i) = coord_vol_i2_(i);
+      coord_len2_i1_(i) = coord_area1_i1_(i);
+      if (i == (iu+ng)) {
+        coord_len2_i1_(i+1) = coord_area1_i1_(i+1);
+      }
+      coord_len3_i1_(i) = coord_area1_i1_(i);
+      if (i == (iu+ng)) {
+        coord_len3_i1_(i+1) = coord_area1_i1_(i+1);
+      }
+      coord_width1_i1_(i) = rm_p - rm_m + m * std::log((rm_p + r_p) / (rm_m + r_m));
+      coord_width2_i1_(i) = x1v(i);
+  
+      // Source terms
+      coord_src_i1_(i) = r_c;
+  
+      // Metric coefficients
+      metric_face1_i1_(i) = r_m;
+      if (i == (iu+ng)) {
+        metric_face1_i1_(i+1) = r_p;
+      }
+      metric_face2_i1_(i) = r_c;
+      metric_face3_i1_(i) = r_c;
+    }
+  
+    // Calculate intermediate geometric quantities: theta-direction
+    for (int j = jll; j <= juu; ++j) {
+      // Useful quantities
       Real theta_c = x2v(j);
       Real theta_m = x2f(j);
       Real theta_p = x2f(j+1);
@@ -408,170 +336,436 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
       Real cos_c_sq = SQR(cos_c);
       Real cos_m_sq = SQR(cos_m);
       Real cos_p_sq = SQR(cos_p);
-      Real delta_m = r_m_sq - 2.0*m*r_m + a2;
-      Real delta_p = r_p_sq - 2.0*m*r_p + a2;
-      Real sigma_cc = r_c_sq + a2 * cos_c_sq;
-      Real sigma_cm = r_c_sq + a2 * cos_m_sq;
-      Real sigma_cp = r_c_sq + a2 * cos_p_sq;
-      Real sigma_mc = r_m_sq + a2 * cos_c_sq;
-      Real sigma_pc = r_p_sq + a2 * cos_c_sq;
-
+      Real sin_m_cu = sin_m_sq*sin_m;
+      Real sin_p_cu = SQR(sin_p)*sin_p;
+  
       // Volumes, areas, lengths, and widths
-      coord_width3_ji1_(j,i) = std::sqrt(r_c_sq + a2
-          + 2.0 * m * a2 * r_c * sin_c_sq / (r_c_sq + a2 * cos_c_sq));
+      coord_vol_j1_(j) = std::abs(cos_m - cos_p);
+      coord_vol_j2_(j) = SQR(a) * (cos_m_sq + cos_m * cos_p + cos_p_sq);
+      coord_area1_j1_(j) = coord_vol_j1_(j);
+      coord_area1_j2_(j) = coord_vol_j2_(j);
+      coord_area2_j1_(j) = std::abs(sin_m);
+      coord_area2_j2_(j) = SQR(a) * cos_m_sq;
+      if (j == juu) {
+        coord_area2_j1_(j+1) = std::abs(sin_p);
+        coord_area2_j2_(j+1) = SQR(a) * cos_p_sq;
+      }
+      coord_area3_j1_(j) = coord_vol_j1_(j);
+      coord_area3_j2_(j) = coord_vol_j2_(j);
+      coord_len1_j1_(j) = coord_area2_j1_(j);
+      coord_len1_j2_(j) = coord_area2_j2_(j);
+      if (j == juu) {
+        coord_len1_j1_(j+1) = coord_area2_j1_(j+1);
+        coord_len1_j2_(j+1) = coord_area2_j2_(j+1);
+      }
+      coord_len2_j1_(j) = coord_vol_j1_(j);
+      coord_len2_j2_(j) = coord_vol_j2_(j);
+      coord_len3_j1_(j) = coord_area2_j1_(j);
+      coord_len3_j2_(j) = coord_area2_j2_(j);
+      if (j == juu) {
+        coord_len3_j1_(j+1) = coord_area2_j1_(j+1);
+        coord_len3_j2_(j+1) = coord_area2_j2_(j+1);
+      }
+      coord_width2_j1_(j) = dx2f(j);
+      coord_width3_j1_(j) = std::abs(sin_c);
+      coord_width3_j2_(j) = SQR(a) * sin_c_sq;
+      coord_width3_j3_(j) = SQR(a) * cos_c_sq;
 
-      // Coordinate transformations
-      trans_face1_ji1_(j,i) = 1.0 / std::sqrt(1.0 + 2.0*m*r_m/sigma_mc);
-      if (i == iu)
-        trans_face1_ji1_(j,i+1) = 1.0 / std::sqrt(1.0 + 2.0*m*r_p/sigma_pc);
-      trans_face1_ji2_(j,i) = std::sqrt((sigma_mc + 2.0*m*r_m)
-          / (r_m_sq + a2 + 2.0*m*a2*r_m/sigma_mc * sin_c_sq));
-      if (i == iu)
-        trans_face1_ji2_(j,i+1) = std::sqrt((sigma_pc + 2.0*m*r_p)
-            / (r_p_sq + a2 + 2.0*m*a2*r_p/sigma_pc * sin_c_sq));
-      trans_face1_ji3_(j,i) = std::sqrt(sigma_mc);
-      if (i == iu)
-        trans_face1_ji3_(j,i+1) = std::sqrt(sigma_pc);
-      trans_face1_ji4_(j,i) = std::abs(sin_c)
-          * std::sqrt(r_m_sq + a2 + 2.0*m*a2*r_m/sigma_mc * sin_c_sq);
-      if (i == iu)
-        trans_face1_ji4_(j,i+1) = std::abs(sin_c)
-            * std::sqrt(r_p_sq + a2 + 2.0*m*a2*r_p/sigma_pc * sin_c_sq);
-      trans_face1_ji5_(j,i) = 2.0*m*r_m * std::sqrt(sigma_mc
-          / ((sigma_mc + 2.0*m*r_m)
-          * (r_m_qu + a2*r_m_sq + 2.0*m*a2*r_m + delta_m*a2*cos_c_sq)));
-      if (i == iu)
-        trans_face1_ji5_(j,i+1) = 2.0*m*r_p * std::sqrt(sigma_pc
-            / ((sigma_pc + 2.0*m*r_p)
-            * (r_p_qu + a2*r_p_sq + 2.0*m*a2*r_p + delta_p*a2*cos_c_sq)));
-      trans_face1_ji6_(j,i) = -2.0*m*a*r_m * std::abs(sin_c)
-          * std::sqrt(r_m_sq + a2 + 2.0*m*a2*r_m/sigma_mc * sin_c_sq)
-          / (r_m_qu + a2*r_m_sq + 2.0*m*a2*r_m + delta_m*a2*cos_c_sq);
-      if (i == iu)
-        trans_face1_ji6_(j,i+1) = -2.0*m*a*r_p * std::abs(sin_c)
-            * std::sqrt(r_p_sq + a2 + 2.0*m*a2*r_p/sigma_pc * sin_c_sq)
-            / (r_p_qu + a2*r_p_sq + 2.0*m*a2*r_p + delta_p*a2*cos_c_sq);
-      trans_face1_ji7_(j,i) = -a * (sigma_mc + 2.0*m*r_m) * std::abs(sin_c)
-          * std::sqrt(r_m_sq + a2 + 2.0*m*a2*r_m/sigma_mc * sin_c_sq)
-          / (r_m_qu + a2*r_m_sq + 2.0*m*a2*r_m + delta_m*a2*cos_c_sq);
-      if (i == iu)
-        trans_face1_ji7_(j,i+1) = -a * (sigma_pc + 2.0*m*r_p) * std::abs(sin_c)
-            * std::sqrt(r_p_sq + a2 + 2.0*m*a2*r_p/sigma_pc * sin_c_sq)
-            / (r_p_qu + a2*r_p_sq + 2.0*m*a2*r_p + delta_p*a2*cos_c_sq);
-      trans_face2_ji1_(j,i) = 1.0 / std::sqrt(1.0 + 2.0*m*r_c/sigma_cm);
-      if (j == ju)
-        trans_face2_ji1_(j+1,i) = 1.0 / std::sqrt(1.0 + 2.0*m*r_c/sigma_cp);
-      trans_face2_ji2_(j,i) = std::sqrt(1.0 + 2.0*m*r_c/sigma_cm);
-      if (j == ju)
-        trans_face2_ji2_(j+1,i) = std::sqrt(1.0 + 2.0*m*r_c/sigma_cp);
-      trans_face2_ji3_(j,i) = std::sqrt(sigma_cm);
-      if (j == ju)
-        trans_face2_ji3_(j+1,i) = std::sqrt(sigma_cp);
-      trans_face2_ji4_(j,i) = std::sqrt(sigma_cm) * std::abs(sin_m);
-      if (j == ju)
-        trans_face2_ji4_(j+1,i) = std::sqrt(sigma_cp) * std::abs(sin_p);
-      trans_face2_ji5_(j,i) = 2.0*m*r_c
-          / (sigma_cm * std::sqrt(1.0 + 2.0*m*r_c/sigma_cm));
-      if (j == ju)
-        trans_face2_ji5_(j+1,i) = 2.0*m*r_c
-            / (sigma_cp * std::sqrt(1.0 + 2.0*m*r_c/sigma_cp));
-      trans_face2_ji6_(j,i) = -a * sin_m_sq * std::sqrt(1.0 + 2.0*m*r_c/sigma_cm);
-      if (j == ju)
-        trans_face2_ji6_(j+1,i) = -a * sin_p_sq * std::sqrt(1.0 + 2.0*m*r_c/sigma_cp);
-      trans_face3_ji1_(j,i) = 1.0 / std::sqrt(1.0 + 2.0*m*r_c/sigma_cc);
-      trans_face3_ji2_(j,i) = std::sqrt(1.0 + 2.0*m*r_c/sigma_cc);
-      trans_face3_ji3_(j,i) = std::sqrt(sigma_cc);
-      trans_face3_ji4_(j,i) = std::sqrt(sigma_cc) * std::abs(sin_c);
-      trans_face3_ji5_(j,i) = 2.0*m*r_c
-          / (sigma_cc * std::sqrt(1.0 + 2.0*m*r_c/sigma_cc));
-      trans_face3_ji6_(j,i) = -a * sin_c_sq * std::sqrt(1.0 + 2.0*m*r_c/sigma_cc);
+      // Source terms
+      coord_src_j1_(j) = sin_c;
+      coord_src_j2_(j) = cos_c;
+  
+      // Metric coefficients
+      metric_face1_j1_(j) = sin_c_sq;
+      metric_face1_j2_(j) = cos_c_sq;
+      metric_face2_j1_(j) = sin_m_sq;
+      metric_face2_j2_(j) = cos_m_sq;
+      if (j == juu) {
+        metric_face2_j1_(j) = sin_p_sq;
+        metric_face2_j2_(j) = cos_p_sq;
+      }
+      metric_face3_j1_(j) = sin_c_sq;
+      metric_face3_j2_(j) = cos_c_sq;
     }
+  
+    // Calculate intermediate geometric quantities: phi-direction
+    int kll, kuu;
+    if (pmb->block_size.nx2 > 1) {
+      kll = kl - ng; kuu = ku + ng;
+    } else {
+      kll = kl; kuu = ku;
+    }
+    for (int k = kll; k <= kuu; ++k) {
+      // Volumes, areas, lengths, and widths
+      coord_vol_k1_(k) = dx3f(k);
+      coord_area1_k1_(k) = coord_vol_k1_(k);
+      coord_area2_k1_(k) = coord_vol_k1_(k);
+      coord_len3_k1_(k) = coord_vol_k1_(k);
+      coord_width3_k1_(k) = coord_vol_k1_(k);
+    }
+  
+    // Calculate intermediate geometric quantities: r-theta-direction
+    for (int j = jll; j <= juu; ++j) {
+      for (int i = il-ng; i <= iu+ng; ++i) {
+        // Useful quantities
+        Real a2 = SQR(a);
+        Real r_c = x1v(i);
+        Real r_m = x1f(i);
+        Real r_p = x1f(i+1);
+        Real r_c_sq = SQR(r_c);
+        Real r_m_sq = SQR(r_m);
+        Real r_p_sq = SQR(r_p);
+        Real r_m_qu = SQR(r_m_sq);
+        Real r_p_qu = SQR(r_p_sq);
+        Real theta_c = x2v(j);
+        Real theta_m = x2f(j);
+        Real theta_p = x2f(j+1);
+        Real sin_c = std::sin(theta_c);
+        Real sin_m = std::sin(theta_m);
+        Real sin_p = std::sin(theta_p);
+        Real cos_c = std::cos(theta_c);
+        Real cos_m = std::cos(theta_m);
+        Real cos_p = std::cos(theta_p);
+        Real sin_c_sq = SQR(sin_c);
+        Real sin_m_sq = SQR(sin_m);
+        Real sin_p_sq = SQR(sin_p);
+        Real cos_c_sq = SQR(cos_c);
+        Real cos_m_sq = SQR(cos_m);
+        Real cos_p_sq = SQR(cos_p);
+        Real delta_m = r_m_sq - 2.0*m*r_m + a2;
+        Real delta_p = r_p_sq - 2.0*m*r_p + a2;
+        Real sigma_cc = r_c_sq + a2 * cos_c_sq;
+        Real sigma_cm = r_c_sq + a2 * cos_m_sq;
+        Real sigma_cp = r_c_sq + a2 * cos_p_sq;
+        Real sigma_mc = r_m_sq + a2 * cos_c_sq;
+        Real sigma_pc = r_p_sq + a2 * cos_c_sq;
+
+        // Volumes, areas, lengths, and widths
+        coord_width3_ji1_(j,i) = std::sqrt(r_c_sq + a2
+          + 2.0 * m * a2 * r_c * sin_c_sq / (r_c_sq + a2 * cos_c_sq));
+  
+        // Coordinate transformations
+        trans_face1_ji1_(j,i) = 1.0 / std::sqrt(1.0 + 2.0*m*r_m/sigma_mc);
+        trans_face1_ji2_(j,i) = std::sqrt((sigma_mc + 2.0*m*r_m)
+            / (r_m_sq + a2 + 2.0*m*a2*r_m/sigma_mc * sin_c_sq));
+        trans_face1_ji3_(j,i) = std::sqrt(sigma_mc);
+        trans_face1_ji4_(j,i) = std::abs(sin_c)
+            * std::sqrt(r_m_sq + a2 + 2.0*m*a2*r_m/sigma_mc * sin_c_sq);
+        trans_face1_ji5_(j,i) = 2.0*m*r_m * std::sqrt(sigma_mc/((sigma_mc + 2.0*m*r_m)
+            * (r_m_qu + a2*r_m_sq + 2.0*m*a2*r_m + delta_m*a2*cos_c_sq)));
+        trans_face1_ji6_(j,i) = -2.0*m*a*r_m * std::abs(sin_c)
+            * std::sqrt(r_m_sq + a2 + 2.0*m*a2*r_m/sigma_mc * sin_c_sq)
+          / (r_m_qu + a2*r_m_sq + 2.0*m*a2*r_m + delta_m*a2*cos_c_sq);
+        trans_face1_ji7_(j,i) = -a * (sigma_mc + 2.0*m*r_m) * std::abs(sin_c)
+            * std::sqrt(r_m_sq + a2 + 2.0*m*a2*r_m/sigma_mc * sin_c_sq)
+            / (r_m_qu + a2*r_m_sq + 2.0*m*a2*r_m + delta_m*a2*cos_c_sq);
+        if (i == (iu+ng)) {
+          trans_face1_ji1_(j,i+1) = 1.0 / std::sqrt(1.0 + 2.0*m*r_p/sigma_pc);
+          trans_face1_ji2_(j,i+1) = std::sqrt((sigma_pc + 2.0*m*r_p)
+              / (r_p_sq + a2 + 2.0*m*a2*r_p/sigma_pc * sin_c_sq));
+          trans_face1_ji3_(j,i+1) = std::sqrt(sigma_pc);
+          trans_face1_ji4_(j,i+1) = std::abs(sin_c)
+            * std::sqrt(r_p_sq + a2 + 2.0*m*a2*r_p/sigma_pc * sin_c_sq);
+          trans_face1_ji5_(j,i+1) = 2.0*m*r_p * std::sqrt(sigma_pc/((sigma_pc + 2.0*m*r_p)
+            * (r_p_qu + a2*r_p_sq + 2.0*m*a2*r_p + delta_p*a2*cos_c_sq)));
+          trans_face1_ji6_(j,i+1) = -2.0*m*a*r_p * std::abs(sin_c)
+              * std::sqrt(r_p_sq + a2 + 2.0*m*a2*r_p/sigma_pc * sin_c_sq)
+              / (r_p_qu + a2*r_p_sq + 2.0*m*a2*r_p + delta_p*a2*cos_c_sq);
+          trans_face1_ji7_(j,i+1) = -a * (sigma_pc + 2.0*m*r_p) * std::abs(sin_c)
+              * std::sqrt(r_p_sq + a2 + 2.0*m*a2*r_p/sigma_pc * sin_c_sq)
+              / (r_p_qu + a2*r_p_sq + 2.0*m*a2*r_p + delta_p*a2*cos_c_sq);
+        }
+
+        trans_face2_ji1_(j,i) = 1.0 / std::sqrt(1.0 + 2.0*m*r_c/sigma_cm);
+        trans_face2_ji2_(j,i) = std::sqrt(1.0 + 2.0*m*r_c/sigma_cm);
+        trans_face2_ji3_(j,i) = std::sqrt(sigma_cm);
+        trans_face2_ji4_(j,i) = std::sqrt(sigma_cm) * std::abs(sin_m);
+        trans_face2_ji5_(j,i) = 2.0*m*r_c
+          / (sigma_cm * std::sqrt(1.0 + 2.0*m*r_c/sigma_cm));
+        trans_face2_ji6_(j,i) = -a * sin_m_sq * std::sqrt(1.0 + 2.0*m*r_c/sigma_cm);
+        if (j == juu) {
+          trans_face2_ji1_(j+1,i) = 1.0 / std::sqrt(1.0 + 2.0*m*r_c/sigma_cp);
+          trans_face2_ji2_(j+1,i) = std::sqrt(1.0 + 2.0*m*r_c/sigma_cp);
+          trans_face2_ji3_(j+1,i) = std::sqrt(sigma_cp);
+          trans_face2_ji4_(j+1,i) = std::sqrt(sigma_cp) * std::abs(sin_p);
+          trans_face2_ji5_(j+1,i) = 2.0*m*r_c
+              / (sigma_cp * std::sqrt(1.0 + 2.0*m*r_c/sigma_cp));
+          trans_face2_ji6_(j+1,i) = -a * sin_p_sq * std::sqrt(1.0 + 2.0*m*r_c/sigma_cp);
+        }
+        trans_face3_ji1_(j,i) = 1.0 / std::sqrt(1.0 + 2.0*m*r_c/sigma_cc);
+        trans_face3_ji2_(j,i) = std::sqrt(1.0 + 2.0*m*r_c/sigma_cc);
+        trans_face3_ji3_(j,i) = std::sqrt(sigma_cc);
+        trans_face3_ji4_(j,i) = std::sqrt(sigma_cc) * std::abs(sin_c);
+        trans_face3_ji5_(j,i) = 2.0*m*r_c
+            / (sigma_cc * std::sqrt(1.0 + 2.0*m*r_c/sigma_cc));
+        trans_face3_ji6_(j,i) = -a * sin_c_sq * std::sqrt(1.0 + 2.0*m*r_c/sigma_cc);
+      }
+    }
+  }
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Destructor
-Coordinates::~Coordinates()
+
+KerrSchild::~KerrSchild()
 {
-  DeleteBasicCoordinates();
-  coord_vol_i1_.DeleteAthenaArray();
-  coord_vol_i2_.DeleteAthenaArray();
-  coord_area1_i1_.DeleteAthenaArray();
-  coord_area2_i1_.DeleteAthenaArray();
-  coord_area2_i2_.DeleteAthenaArray();
-  coord_area3_i1_.DeleteAthenaArray();
-  coord_area3_i2_.DeleteAthenaArray();
-  coord_len1_i1_.DeleteAthenaArray();
-  coord_len1_i2_.DeleteAthenaArray();
-  coord_len2_i1_.DeleteAthenaArray();
-  coord_len3_i1_.DeleteAthenaArray();
-  coord_width1_i1_.DeleteAthenaArray();
-  coord_width2_i1_.DeleteAthenaArray();
-  coord_src_i1_.DeleteAthenaArray();
+  dx1v.DeleteAthenaArray();
+  dx2v.DeleteAthenaArray();
+  dx3v.DeleteAthenaArray();
+  x1v.DeleteAthenaArray();
+  x2v.DeleteAthenaArray();
+  x3v.DeleteAthenaArray();
+  if((pmy_block->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+    x1s2.DeleteAthenaArray();
+    x1s3.DeleteAthenaArray();
+    x2s1.DeleteAthenaArray();
+    x2s3.DeleteAthenaArray();
+    x3s1.DeleteAthenaArray();
+    x3s2.DeleteAthenaArray();
+  }
   metric_cell_i1_.DeleteAthenaArray();
-  metric_face1_i1_.DeleteAthenaArray();
-  metric_face2_i1_.DeleteAthenaArray();
-  metric_face3_i1_.DeleteAthenaArray();
-  g_.DeleteAthenaArray();
-  gi_.DeleteAthenaArray();
-  coord_vol_j1_.DeleteAthenaArray();
-  coord_vol_j2_.DeleteAthenaArray();
-  coord_area1_j1_.DeleteAthenaArray();
-  coord_area1_j2_.DeleteAthenaArray();
-  coord_area2_j1_.DeleteAthenaArray();
-  coord_area2_j2_.DeleteAthenaArray();
-  coord_area3_j1_.DeleteAthenaArray();
-  coord_area3_j2_.DeleteAthenaArray();
-  coord_len1_j1_.DeleteAthenaArray();
-  coord_len1_j2_.DeleteAthenaArray();
-  coord_len2_j1_.DeleteAthenaArray();
-  coord_len2_j2_.DeleteAthenaArray();
-  coord_len3_j1_.DeleteAthenaArray();
-  coord_len3_j2_.DeleteAthenaArray();
-  coord_width2_j1_.DeleteAthenaArray();
-  coord_width3_j1_.DeleteAthenaArray();
-  coord_width3_j2_.DeleteAthenaArray();
-  coord_width3_j3_.DeleteAthenaArray();
-  coord_src_j1_.DeleteAthenaArray();
-  coord_src_j2_.DeleteAthenaArray();
   metric_cell_j1_.DeleteAthenaArray();
   metric_cell_j2_.DeleteAthenaArray();
-  metric_face1_j1_.DeleteAthenaArray();
-  metric_face1_j2_.DeleteAthenaArray();
-  metric_face2_j1_.DeleteAthenaArray();
-  metric_face2_j2_.DeleteAthenaArray();
-  metric_face3_j1_.DeleteAthenaArray();
-  metric_face3_j2_.DeleteAthenaArray();
-  coord_vol_k1_.DeleteAthenaArray();
-  coord_area1_k1_.DeleteAthenaArray();
-  coord_area2_k1_.DeleteAthenaArray();
-  coord_len3_k1_.DeleteAthenaArray();
-  coord_width3_k1_.DeleteAthenaArray();
-  coord_width3_ji1_.DeleteAthenaArray();
-  trans_face1_ji1_.DeleteAthenaArray();
-  trans_face1_ji2_.DeleteAthenaArray();
-  trans_face1_ji3_.DeleteAthenaArray();
-  trans_face1_ji4_.DeleteAthenaArray();
-  trans_face1_ji5_.DeleteAthenaArray();
-  trans_face1_ji6_.DeleteAthenaArray();
-  trans_face1_ji7_.DeleteAthenaArray();
-  trans_face2_ji1_.DeleteAthenaArray();
-  trans_face2_ji2_.DeleteAthenaArray();
-  trans_face2_ji3_.DeleteAthenaArray();
-  trans_face2_ji4_.DeleteAthenaArray();
-  trans_face2_ji5_.DeleteAthenaArray();
-  trans_face2_ji6_.DeleteAthenaArray();
-  trans_face3_ji1_.DeleteAthenaArray();
-  trans_face3_ji2_.DeleteAthenaArray();
-  trans_face3_ji3_.DeleteAthenaArray();
-  trans_face3_ji4_.DeleteAthenaArray();
-  trans_face3_ji5_.DeleteAthenaArray();
-  trans_face3_ji6_.DeleteAthenaArray();
+  if(coarse_flag==false) {
+    coord_vol_i1_.DeleteAthenaArray();
+    coord_vol_i2_.DeleteAthenaArray();
+    coord_area1_i1_.DeleteAthenaArray();
+    coord_area2_i1_.DeleteAthenaArray();
+    coord_area2_i2_.DeleteAthenaArray();
+    coord_area3_i1_.DeleteAthenaArray();
+    coord_area3_i2_.DeleteAthenaArray();
+    coord_len1_i1_.DeleteAthenaArray();
+    coord_len1_i2_.DeleteAthenaArray();
+    coord_len2_i1_.DeleteAthenaArray();
+    coord_len3_i1_.DeleteAthenaArray();
+    coord_width1_i1_.DeleteAthenaArray();
+    coord_width2_i1_.DeleteAthenaArray();
+    coord_src_i1_.DeleteAthenaArray();
+    metric_face1_i1_.DeleteAthenaArray();
+    metric_face2_i1_.DeleteAthenaArray();
+    metric_face3_i1_.DeleteAthenaArray();
+    g_.DeleteAthenaArray();
+    gi_.DeleteAthenaArray();
+    coord_vol_j1_.DeleteAthenaArray();
+    coord_vol_j2_.DeleteAthenaArray();
+    coord_area1_j1_.DeleteAthenaArray();
+    coord_area1_j2_.DeleteAthenaArray();
+    coord_area2_j1_.DeleteAthenaArray();
+    coord_area2_j2_.DeleteAthenaArray();
+    coord_area3_j1_.DeleteAthenaArray();
+    coord_area3_j2_.DeleteAthenaArray();
+    coord_len1_j1_.DeleteAthenaArray();
+    coord_len1_j2_.DeleteAthenaArray();
+    coord_len2_j1_.DeleteAthenaArray();
+    coord_len2_j2_.DeleteAthenaArray();
+    coord_len3_j1_.DeleteAthenaArray();
+    coord_len3_j2_.DeleteAthenaArray();
+    coord_width2_j1_.DeleteAthenaArray();
+    coord_width3_j1_.DeleteAthenaArray();
+    coord_width3_j2_.DeleteAthenaArray();
+    coord_width3_j3_.DeleteAthenaArray();
+    coord_src_j1_.DeleteAthenaArray();
+    coord_src_j2_.DeleteAthenaArray();
+    metric_face1_j1_.DeleteAthenaArray();
+    metric_face1_j2_.DeleteAthenaArray();
+    metric_face2_j1_.DeleteAthenaArray();
+    metric_face2_j2_.DeleteAthenaArray();
+    metric_face3_j1_.DeleteAthenaArray();
+    metric_face3_j2_.DeleteAthenaArray();
+    coord_vol_k1_.DeleteAthenaArray();
+    coord_area1_k1_.DeleteAthenaArray();
+    coord_area2_k1_.DeleteAthenaArray();
+    coord_len3_k1_.DeleteAthenaArray();
+    coord_width3_k1_.DeleteAthenaArray();
+    coord_width3_ji1_.DeleteAthenaArray();
+    trans_face1_ji1_.DeleteAthenaArray();
+    trans_face1_ji2_.DeleteAthenaArray();
+    trans_face1_ji3_.DeleteAthenaArray();
+    trans_face1_ji4_.DeleteAthenaArray();
+    trans_face1_ji5_.DeleteAthenaArray();
+    trans_face1_ji6_.DeleteAthenaArray();
+    trans_face1_ji7_.DeleteAthenaArray();
+    trans_face2_ji1_.DeleteAthenaArray();
+    trans_face2_ji2_.DeleteAthenaArray();
+    trans_face2_ji3_.DeleteAthenaArray();
+    trans_face2_ji4_.DeleteAthenaArray();
+    trans_face2_ji5_.DeleteAthenaArray();
+    trans_face2_ji6_.DeleteAthenaArray();
+    trans_face3_ji1_.DeleteAthenaArray();
+    trans_face3_ji2_.DeleteAthenaArray();
+    trans_face3_ji3_.DeleteAthenaArray();
+    trans_face3_ji4_.DeleteAthenaArray();
+    trans_face3_ji5_.DeleteAthenaArray();
+    trans_face3_ji6_.DeleteAthenaArray();
+  }
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
+// EdgeXLength functions: compute physical length at cell edge-X as vector
+// Edge1(i,j,k) located at (i,j-1/2,k-1/2), i.e. (x1v(i), x2f(j), x3f(k))
+// Notes:
+//   \Delta L = 1/3 (r_+ - r_-) |\sin\theta_-|
+//       * (r_-^2 + r_- r_+ + r_+^2 + 3 a^2 \cos^2\theta_-)
 
-// Function for computing cell volumes
+void KerrSchild::Edge1Length(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &lengths)
+{
+  #pragma simd
+  for (int i = il; i <= iu; ++i) {
+    lengths(i) = coord_len1_i1_(i) * coord_len1_j1_(j)
+        * (1.0/3.0 * coord_len1_i2_(i) + coord_len1_j2_(j));
+  }
+  return;
+}
+
+// Edge2(i,j,k) located at (i-1/2,j,k-1/2), i.e. (x1f(i), x2v(j), x3f(k))
+//   \Delta L = 1/3 * |\cos\theta_- - \cos\theta_+|
+//       * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
+
+void KerrSchild::Edge2Length(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &lengths)
+{
+  #pragma simd
+  for (int i = il; i <= iu; ++i) {
+    lengths(i) = coord_len2_j1_(j) * (coord_len2_i1_(i) + 1.0/3.0 * coord_len2_j2_(j));
+  }
+  return;
+}
+
+// Edge3(i,j,k) located at (i-1/2,j-1/2,k), i.e. (x1f(i), x2f(j), x3v(k))
+//   \Delta L = (\phi_+ - \phi_-) |\sin\theta_-| (r_-^2 + a^2 \cos^2\theta_-)
+
+void KerrSchild::Edge3Length(const int k, const int j, const int il, const int iu,
+  AthenaArray<Real> &lengths)
+{
+  #pragma simd
+  for (int i = il; i <= iu; ++i) {
+    lengths(i)=coord_len3_k1_(k)*coord_len3_j1_(j)*(coord_len3_i1_(i)+ coord_len3_j2_(j));
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// GetEdgeXLength functions: return length of edge-X at (i,j,k)
+
+Real KerrSchild::GetEdge1Length(const int k, const int j, const int i)
+{
+  return coord_len1_i1_(i) * coord_len1_j1_(j)
+     * (1.0/3.0 * coord_len1_i2_(i) + coord_len1_j2_(j));
+}
+
+Real KerrSchild::GetEdge2Length(const int k, const int j, const int i)
+{
+  return coord_len2_j1_(j) * (coord_len2_i1_(i) + 1.0/3.0 * coord_len2_j2_(j));
+}
+
+Real KerrSchild::GetEdge3Length(const int k, const int j, const int i)
+{
+  return coord_len3_k1_(k) * coord_len3_j1_(j)
+      * (coord_len3_i1_(i) + coord_len3_j2_(j));
+}
+
+//----------------------------------------------------------------------------------------
+// CenterWidthX functions: return physical width in X-dir at (i,j,k) cell-center
+
+Real KerrSchild::CenterWidth1(const int k, const int j, const int i)
+{
+  // \Delta W >= \sqrt{r_+^2 + M^2} - \sqrt{r_-^2 + M^2}
+  //     + M \log{(\sqrt{r_+^2 + M^2} + r_+) / (\sqrt{r_-^2 + M^2} + r_-)}
+  return coord_width1_i1_(i);
+}
+
+Real KerrSchild::CenterWidth2(const int k, const int j, const int i)
+{
+  //   \Delta W >= r (\theta_+ - \theta_-)
+  return coord_width2_i1_(i) * coord_width2_j1_(j);
+}
+
+Real KerrSchild::CenterWidth3(const int k, const int j, const int i)
+{
+  // \Delta W = |\sin\theta| (\phi_+ - \phi_-)
+  //     * \sqrt{r^2 + a^2 + 2 M a^2 r \sin^2\theta / (r^2 + a^2 \cos^2\theta)}
+  return coord_width3_j1_(j) * coord_width3_k1_(k) * coord_width3_ji1_(j,i);
+}
+
+//----------------------------------------------------------------------------------------
+// FaceXArea functions: compute area of face with normal in X-dir as vector
+// Inputs:
+//   k,j: phi- and theta-indices
+//   il,iu: r-index bounds
+// Outputs:
+//   areas: 1D array of interface areas orthogonal to X-face
+
+void KerrSchild::Face1Area(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &areas)
+{
+  // \Delta A = 1/3 * |\cos\theta_- - \cos\theta_+| (\phi_+ - \phi_-)
+  //     * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
+  #pragma simd
+  for (int i = il; i <= iu; ++i)
+    areas(i) = GetFace1Area(k, j, i);
+  return;
+}
+
+void KerrSchild::Face2Area(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &areas)
+{
+  // \Delta A = 1/3 (r_+ - r_-) |\sin\theta_-| (\phi_+ - \phi_-)
+  //     * (r_-^2 + r_- r_+ + r_+^2 + 3 a^2 \cos^2\theta_-)
+  #pragma simd
+  for (int i = il; i <= iu; ++i)
+    areas(i) = coord_area2_i1_(i) * coord_area2_j1_(j) * coord_area2_k1_(k)
+               * (1.0/3.0 * coord_area2_i2_(i) + coord_area2_j2_(j));
+  return;
+}
+
+void KerrSchild::Face3Area(const int k, const int j, const int il, const int iu,
+    AthenaArray<Real> &areas)
+{
+  // \Delta A = 1/3 (r_+ - r_-) |\cos\theta_- - \cos\theta_+|
+  //     * (r_-^2 + r_- r_+ + r_+^2
+  //     + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
+  #pragma simd
+  for (int i = il; i <= iu; ++i)
+    areas(i) = 1.0/3.0 * coord_area3_i1_(i) * coord_area3_j1_(j)
+             * (coord_area3_i2_(i) + coord_area3_j2_(j));
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// GetFaceXArea functions: return area of face with normal in X-dir at (i,j,k)
+// Inputs:
+//   k,j,i: phi- theta- and r-indices
+// return:
+//   interface area orthogonal to X-face
+
+Real KerrSchild::GetFace1Area(const int k, const int j, const int i)
+{
+  //   \Delta A = 1/3 * |\cos\theta_- - \cos\theta_+| (\phi_+ - \phi_-)
+  //       * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
+  return coord_area1_j1_(j) * coord_area1_k1_(k)
+      * (coord_area1_i1_(i) + 1.0/3.0 * coord_area1_j2_(j));
+}
+
+Real KerrSchild::GetFace2Area(const int k, const int j, const int i)
+{
+  // \Delta A = 1/3 (r_+ - r_-) |\sin\theta_-| (\phi_+ - \phi_-)
+  //     * (r_-^2 + r_- r_+ + r_+^2 + 3 a^2 \cos^2\theta_-)
+  return coord_area2_i1_(i) * coord_area2_j1_(j) * coord_area2_k1_(k)
+               * (1.0/3.0 * coord_area2_i2_(i) + coord_area2_j2_(j));
+}
+
+Real KerrSchild::GetFace3Area(const int k, const int j, const int i)
+{
+  // \Delta A = 1/3 (r_+ - r_-) |\cos\theta_- - \cos\theta_+|
+  //     * (r_-^2 + r_- r_+ + r_+^2
+  //     + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
+  return 1.0/3.0 * coord_area3_i1_(i) * coord_area3_j1_(j)
+             * (coord_area3_i2_(i) + coord_area3_j2_(j));
+}
+
+//----------------------------------------------------------------------------------------
+// Cell Volume function: compute volume of cell as vector
 // Inputs:
 //   k,j: phi- and theta-indices
 //   il,iu: r-index bounds
@@ -581,19 +775,19 @@ Coordinates::~Coordinates()
 //   \Delta V = 1/3 * (r_+ - r_-) |\cos\theta_- - \cos\theta_+| (\phi_+ - \phi_-)
 //       * (r_-^2 + r_- r_+ + r_+^2
 //       + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
-//   cf. GetCellVolume()
-void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
+
+void KerrSchild::CellVolume(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &volumes)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i)
-    volumes(i) = GetCellVolume(k, j, i);
+    volumes(i) = 1.0/3.0 * coord_vol_i1_(i) * coord_vol_j1_(j) * coord_vol_k1_(k)
+      * (coord_vol_i2_(i) + coord_vol_j2_(j));
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for computing single cell volume
+//----------------------------------------------------------------------------------------
+// GetCellVolume: returns cell volume at (i,j,k)
 // Inputs:
 //   k,j,i: phi-, theta-, and r-indices
 // Outputs:
@@ -602,241 +796,15 @@ void Coordinates::CellVolume(const int k, const int j, const int il, const int i
 //   \Delta V = 1/3 * (r_+ - r_-) |\cos\theta_- - \cos\theta_+| (\phi_+ - \phi_-)
 //       * (r_-^2 + r_- r_+ + r_+^2
 //       + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
-//   cf. CellVolume()
-Real Coordinates::GetCellVolume(const int k, const int j, const int i)
+
+Real KerrSchild::GetCellVolume(const int k, const int j, const int i)
 {
   return 1.0/3.0 * coord_vol_i1_(i) * coord_vol_j1_(j) * coord_vol_k1_(k)
       * (coord_vol_i2_(i) + coord_vol_j2_(j));
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for computing areas orthogonal to r
-// Inputs:
-//   k,j: phi- and theta-indices
-//   il,iu: r-index bounds
-// Outputs:
-//   areas: 1D array of interface areas orthogonal to r
-// Notes:
-//   \Delta A = 1/3 * |\cos\theta_- - \cos\theta_+| (\phi_+ - \phi_-)
-//       * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
-//   cf. GetFace1Area()
-void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &areas)
-{
-  #pragma simd
-  for (int i = il; i <= iu; ++i)
-    areas(i) = GetFace1Area(k, j, i);
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing single area orthogonal to r
-// Inputs:
-//   k,j,i: phi-, theta-, and r-indices
-// Outputs:
-//   returned value: interface area orthogonal to r
-// Notes:
-//   \Delta A = 1/3 * |\cos\theta_- - \cos\theta_+| (\phi_+ - \phi_-)
-//       * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
-//   cf. Face1Area()
-Real Coordinates::GetFace1Area(const int k, const int j, const int i)
-{
-  return coord_area1_j1_(j) * coord_area1_k1_(k)
-      * (coord_area1_i1_(i) + 1.0/3.0 * coord_area1_j2_(j));
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing areas orthogonal to theta
-// Inputs:
-//   k,j: phi- and theta-indices
-//   il,iu: r-index bounds
-// Outputs:
-//   areas: 1D array of interface areas orthogonal to theta
-// Notes:
-//   \Delta A = 1/3 (r_+ - r_-) |\sin\theta_-| (\phi_+ - \phi_-)
-//       * (r_-^2 + r_- r_+ + r_+^2 + 3 a^2 \cos^2\theta_-)
-void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &areas)
-{
-  #pragma simd
-  for (int i = il; i <= iu; ++i)
-    areas(i) = coord_area2_i1_(i) * coord_area2_j1_(j) * coord_area2_k1_(k)
-               * (1.0/3.0 * coord_area2_i2_(i) + coord_area2_j2_(j));
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing areas orthogonal to phi
-// Inputs:
-//   k: phi-index (unused)
-//   j: theta-index
-//   il,iu: r-index bounds
-// Outputs:
-//   areas: 1D array of interface areas orthogonal to phi
-// Notes:
-//   \Delta A = 1/3 (r_+ - r_-) |\cos\theta_- - \cos\theta_+|
-//       * (r_-^2 + r_- r_+ + r_+^2
-//       + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
-void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &areas)
-{
-  #pragma simd
-  for (int i = il; i <= iu; ++i)
-    areas(i) = 1.0/3.0 * coord_area3_i1_(i) * coord_area3_j1_(j)
-             * (coord_area3_i2_(i) + coord_area3_j2_(j));
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing lengths of edges in the r-direction
-// Inputs:
-//   k: phi-index (unused)
-//   j: theta-index
-//   il,iu: r-index bounds
-// Outputs:
-//   lengths: 1D array of edge lengths along r
-// Notes:
-//   \Delta L = 1/3 (r_+ - r_-) |\sin\theta_-|
-//       * (r_-^2 + r_- r_+ + r_+^2 + 3 a^2 \cos^2\theta_-)
-void Coordinates::Edge1Length(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &lengths)
-{
-  #pragma simd
-  for (int i = il; i <= iu; ++i)
-    lengths(i) = coord_len1_i1_(i) * coord_len1_j1_(j)
-        * (1.0/3.0 * coord_len1_i2_(i) + coord_len1_j2_(j));
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing lengths of edges in the theta-direction
-// Inputs:
-//   k: phi-index (unused)
-//   j: theta-index
-//   il,iu: r-index bounds
-// Outputs:
-//   lengths: 1D array of edge lengths along r
-// Notes:
-//   \Delta L = 1/3 * |\cos\theta_- - \cos\theta_+|
-//       * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
-//   cf. GetEdge2Length()
-void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &lengths)
-{
-  #pragma simd
-  for (int i = il; i <= iu; ++i)
-    lengths(i) = GetEdge2Length(k, j, i);
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing single length of edge in the theta-direction
-// Inputs:
-//   k: phi-index (unused)
-//   j,i: theta- and r-indices
-// Outputs:
-//   returned value: length of edge along theta
-// Notes:
-//   \Delta L = 1/3 * |\cos\theta_- - \cos\theta_+|
-//       * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
-//   cf. Edge2Length()
-Real Coordinates::GetEdge2Length(const int k, const int j, const int i)
-{
-  return coord_len2_j1_(j) * (coord_len2_i1_(i) + 1.0/3.0 * coord_len2_j2_(j));
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing lengths of edges in the phi-direction
-// Inputs:
-//   k,j: phi- and theta-indices
-//   il,iu: r-index bounds
-// Outputs:
-//   lengths: 1D array of edge lengths along r
-// Notes:
-//   \Delta L = (\phi_+ - \phi_-) |\sin\theta_-| (r_-^2 + a^2 \cos^2\theta_-)
-//   cf. GetEdge3Length()
-void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
-  AthenaArray<Real> &lengths)
-{
-  #pragma simd
-  for (int i = il; i <= iu; ++i)
-    lengths(i) = GetEdge3Length(k, j, i);
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing single length of edge in the phi-direction
-// Inputs:
-//   k,j,i: phi-, theta-, and r-indices
-// Outputs:
-//   returned value: length of edge along phi
-// Notes:
-//   \Delta L = (\phi_+ - \phi_-) |\sin\theta_-| (r_-^2 + a^2 \cos^2\theta_-)
-//   cf. Edge3Length()
-Real Coordinates::GetEdge3Length(const int k, const int j, const int i)
-{
-  return coord_len3_k1_(k) * coord_len3_j1_(j)
-      * (coord_len3_i1_(i) + coord_len3_j2_(j));
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing widths of cells in the r-direction
-// Inputs:
-//   k,j: phi- and theta-indices (unused)
-//   i: r-index
-// Outputs:
-//   returned value: r-width of cell (i,j,k)
-// Notes:
-//   \Delta W >= \sqrt{r_+^2 + M^2} - \sqrt{r_-^2 + M^2}
-//       + M \log{(\sqrt{r_+^2 + M^2} + r_+) / (\sqrt{r_-^2 + M^2} + r_-)}
-Real Coordinates::CenterWidth1(const int k, const int j, const int i)
-{
-  return coord_width1_i1_(i);
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing widths of cells in the theta-direction
-// Inputs:
-//   k: phi-index (unused)
-//   j,i: theta- and r-indices
-// Outputs:
-//   returned value: theta-width of cell (i,j,k)
-// Notes:
-//   \Delta W >= r (\theta_+ - \theta_-)
-Real Coordinates::CenterWidth2(const int k, const int j, const int i)
-{
-  return coord_width2_i1_(i) * coord_width2_j1_(j);
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing widths of cells in the phi-direction
-// Inputs:
-//   k,j,i: phi-, theta-, and r-indices
-// Outputs:
-//   returned value: phi-width of cell (i,j,k)
-// Notes:
-//   \Delta W = |\sin\theta| (\phi_+ - \phi_-)
-//       * \sqrt{r^2 + a^2 + 2 M a^2 r \sin^2\theta / (r^2 + a^2 \cos^2\theta)}
-Real Coordinates::CenterWidth3(const int k, const int j, const int i)
-{
-  return coord_width3_j1_(j) * coord_width3_k1_(k) * coord_width3_ji1_(j,i);
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing source terms using fluxes
+//----------------------------------------------------------------------------------------
+// Coordinate (Geometric) source term function
 // Inputs:
 //   dt: size of timestep
 //   flux: 3D array of fluxes
@@ -846,7 +814,8 @@ Real Coordinates::CenterWidth3(const int k, const int j, const int i)
 //   cons: source terms added to 3D array of conserved variables
 // Notes:
 //   all source terms computed in this function
-void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+
+void KerrSchild::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bb_cc,
     AthenaArray<Real> &cons)
 {
@@ -1080,8 +1049,7 @@ void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for computing cell-centered metric coefficients
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -1089,7 +1057,8 @@ void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
-void Coordinates::CellMetric(const int k, const int j, const int il, const int iu,
+
+void KerrSchild::CellMetric(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
 {
   // Extract useful quantities that do not depend on r
@@ -1129,8 +1098,7 @@ void Coordinates::CellMetric(const int k, const int j, const int il, const int i
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for computing face-centered metric coefficients: r-interface
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -1138,7 +1106,8 @@ void Coordinates::CellMetric(const int k, const int j, const int il, const int i
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
-void Coordinates::Face1Metric(const int k, const int j, const int il, const int iu,
+
+void KerrSchild::Face1Metric(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
 {
   // Extract useful quantities that do not depend on r
@@ -1178,8 +1147,7 @@ void Coordinates::Face1Metric(const int k, const int j, const int il, const int 
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for computing face-centered metric coefficients: theta-interface
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -1187,7 +1155,8 @@ void Coordinates::Face1Metric(const int k, const int j, const int il, const int 
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
-void Coordinates::Face2Metric(const int k, const int j, const int il, const int iu,
+
+void KerrSchild::Face2Metric(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
 {
   // Extract useful quantities that do not depend on r
@@ -1227,8 +1196,7 @@ void Coordinates::Face2Metric(const int k, const int j, const int il, const int 
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for computing face-centered metric coefficients: phi-interface
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -1236,7 +1204,8 @@ void Coordinates::Face2Metric(const int k, const int j, const int il, const int 
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
-void Coordinates::Face3Metric(const int k, const int j, const int il, const int iu,
+
+void KerrSchild::Face3Metric(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
 {
   // Extract useful quantities that do not depend on r
@@ -1276,8 +1245,7 @@ void Coordinates::Face3Metric(const int k, const int j, const int il, const int 
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for transforming primitives to locally flat frame: r-interface
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -1297,7 +1265,8 @@ void Coordinates::Face3Metric(const int k, const int j, const int il, const int 
 //   puts B^x in bbx
 //   puts B^y/B^z in IBY/IBZ slots
 //   \tilde{u}^\hat{i} = u^\hat{i}
-void Coordinates::PrimToLocal1(const int k, const int j, const int il, const int iu,
+
+void KerrSchild::PrimToLocal1(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &bb1, AthenaArray<Real> &prim_l,
     AthenaArray<Real> &prim_r, AthenaArray<Real> &bbx)
 {
@@ -1442,8 +1411,7 @@ void Coordinates::PrimToLocal1(const int k, const int j, const int il, const int
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for transforming primitives to locally flat frame: theta-interface
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -1463,7 +1431,8 @@ void Coordinates::PrimToLocal1(const int k, const int j, const int il, const int
 //   puts B^x in bbx
 //   puts B^y/B^z in IBY/IBZ slots
 //   \tilde{u}^\hat{i} = u^\hat{i}
-void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int iu,
+
+void KerrSchild::PrimToLocal2(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &bb2, AthenaArray<Real> &prim_l,
     AthenaArray<Real> &prim_r, AthenaArray<Real> &bbx)
 {
@@ -1608,8 +1577,7 @@ void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for transforming primitives to locally flat frame: phi-interface
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -1629,7 +1597,8 @@ void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int
 //   puts B^x in bbx
 //   puts B^y/B^z in IBY/IBZ slots
 //   \tilde{u}^\hat{i} = u^\hat{i}
-void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int iu,
+
+void KerrSchild::PrimToLocal3(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &bb3, AthenaArray<Real> &prim_l,
     AthenaArray<Real> &prim_r, AthenaArray<Real> &bbx)
 {
@@ -1774,8 +1743,7 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for transforming fluxes to global frame: r-interface
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -1790,7 +1758,8 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
 //   expects values and x-fluxes of By/Bz in IBY/IBZ slots
 //   puts r-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
 //   puts r-fluxes of B2/B3 in IBY/IBZ slots
-void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const int iu,
+
+void KerrSchild::FluxToGlobal1(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
     AthenaArray<Real> &flux)
 {
@@ -1876,8 +1845,7 @@ void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const in
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for transforming fluxes to global frame: theta-interface
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -1892,7 +1860,8 @@ void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const in
 //   expects values and x-fluxes of By/Bz in IBY/IBZ slots
 //   puts theta-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
 //   puts theta-fluxes of B3/B1 in IBY/IBZ slots
-void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const int iu,
+
+void KerrSchild::FluxToGlobal2(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
     AthenaArray<Real> &flux)
 {
@@ -1976,8 +1945,7 @@ void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const in
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for transforming fluxes to global frame: phi-interface
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -1992,7 +1960,8 @@ void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const in
 //   expects values and x-fluxes of By/Bz in IBY/IBZ slots
 //   puts phi-fluxes of M1/M2/M3 in IM1/IM2/IM3 slots
 //   puts phi-fluxes of B1/B2 in IBY/IBZ slots
-void Coordinates::FluxToGlobal3(const int k, const int j, const int il, const int iu,
+
+void KerrSchild::FluxToGlobal3(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
     AthenaArray<Real> &flux)
 {
@@ -2076,31 +2045,15 @@ void Coordinates::FluxToGlobal3(const int k, const int j, const int il, const in
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for calculating distance between two points
-// Inputs:
-//   a1,a2,a3: global coordinates of first point (unused)
-//   bx,by,bz: Minkowski coordinates of second point (unused)
-// Outputs:
-//   returned value: NAN
-// Notes:
-//   should not be called
-Real Coordinates::DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real by,
-    Real bz)
-{
-  return NAN;
-}
-
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for transforming 4-vector from Boyer-Lindquist to Kerr-Schild
 // Inputs:
 //   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
 //   k,j,i: indices of cell in which transformation is desired
 // Outputs:
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Kerr-Schild coordinates
-void Coordinates::TransformVectorCell(
+
+void KerrSchild::TransformVectorCell(
     Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, int k, int j, int i,
     Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
@@ -2115,15 +2068,15 @@ void Coordinates::TransformVectorCell(
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for transforming 4-vector from Boyer-Lindquist to Kerr-Schild
 // Inputs:
 //   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
 //   k,j,i: indices of x1-face in which transformation is desired
 // Outputs:
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Kerr-Schild coordinates
-void Coordinates::TransformVectorFace1(
+
+void KerrSchild::TransformVectorFace1(
     Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, int k, int j, int i,
     Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
@@ -2138,15 +2091,15 @@ void Coordinates::TransformVectorFace1(
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for transforming 4-vector from Boyer-Lindquist to Kerr-Schild
 // Inputs:
 //   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
 //   k,j,i: indices of x2-face in which transformation is desired
 // Outputs:
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Kerr-Schild coordinates
-void Coordinates::TransformVectorFace2(
+
+void KerrSchild::TransformVectorFace2(
     Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, int k, int j, int i,
     Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
@@ -2161,15 +2114,15 @@ void Coordinates::TransformVectorFace2(
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for transforming 4-vector from Boyer-Lindquist to Kerr-Schild
 // Inputs:
 //   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
 //   k,j,i: indices of x3-face in which transformation is desired
 // Outputs:
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Kerr-Schild coordinates
-void Coordinates::TransformVectorFace3(
+
+void KerrSchild::TransformVectorFace3(
     Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, int k, int j, int i,
     Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
@@ -2184,15 +2137,15 @@ void Coordinates::TransformVectorFace3(
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for raising covariant components of a vector
 // Inputs:
 //   a_0,a_1,a_2,a_3: covariant components of vector
 //   k,j,i: indices of cell in which transformation is desired
 // Outputs:
 //   pa0,pa1,pa2,pa3: pointers to contravariant 4-vector components
-void Coordinates::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j,
+
+void KerrSchild::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j,
     int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   // Extract geometric quantities
@@ -2232,15 +2185,15 @@ void Coordinates::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k,
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for lowering contravariant components of a vector
 // Inputs:
 //   a0,a1,a2,a3: contravariant components of vector
 //   k,j,i: indices of cell in which transformation is desired
 // Outputs:
 //   pa_0,pa_1,pa_2,pa_3: pointers to covariant 4-vector components
-void Coordinates::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j,
+
+void KerrSchild::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j,
     int i, Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3)
 {
   // Extract geometric quantities
@@ -2279,8 +2232,7 @@ void Coordinates::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for returning Boyer-Lindquist coordinates of given cell
 // Inputs:
 //   x1,x2,x3: Kerr-Schild coordinates to be converted
@@ -2296,11 +2248,12 @@ void Coordinates::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int
 //   ignores x0/t
 //       surfaces of constant x0 are not surfaces of constant t
 //       not a problem if used for initializing stationary problem
-void Coordinates::GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3,
-    Real *pr, Real *ptheta, Real *pphi)
-{
-  *pr = x1;
-  *ptheta = x2;
-  *pphi = x3;
-  return;
-}
+//
+//void KerrSchild::GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3,
+//    Real *pr, Real *ptheta, Real *pphi)
+//{
+//  *pr = x1;
+//  *ptheta = x2;
+//  *pphi = x3;
+//  return;
+//}
