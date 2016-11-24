@@ -1793,23 +1793,3 @@ void Schwarzschild::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, i
   *pa_3 = g_33 * a3;
   return;
 }
-
-//--------------------------------------------------------------------------------------
-// Function for returning Boyer-Lindquist coordinates of given cell
-// Inputs:
-//   x1,x2,x3: Schwarzschild coordinates to be converted
-// Outputs:
-//   pr: pointer to stored value of r
-//   ptheta: pointer to stored value of theta
-//   pphi: pointer to stored value of phi
-// Notes:
-//   Schwarzschild (x1,x2,x3) match Boyer-Lindquist (r,theta,phi) when a = 0
-//
-//void Schwarzschild::GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-//    Real *ptheta, Real *pphi)
-//{
-//  *pr = x1;
-//  *ptheta = x2;
-//  *pphi = x3;
-//  return;
-//}

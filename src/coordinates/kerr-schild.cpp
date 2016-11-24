@@ -2231,29 +2231,3 @@ void KerrSchild::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int 
   *pa_3 = g_30*a0 + g_31*a1 + g_32*a2 + g_33*a3;
   return;
 }
-
-//----------------------------------------------------------------------------------------
-// Function for returning Boyer-Lindquist coordinates of given cell
-// Inputs:
-//   x1,x2,x3: Kerr-Schild coordinates to be converted
-// Outputs:
-//   pr: pointer to stored value of r
-//   ptheta: pointer to stored value of theta
-//   pphi: pointer to stored value of phi
-// Notes:
-//   Kerr-Schild (x1,x2) match Boyer-Lindquist (r,theta)
-//   returns x3 = phi
-//       not correct
-//       not a problem if used for initializing azimuthally symmetric problem
-//   ignores x0/t
-//       surfaces of constant x0 are not surfaces of constant t
-//       not a problem if used for initializing stationary problem
-//
-//void KerrSchild::GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3,
-//    Real *pr, Real *ptheta, Real *pphi)
-//{
-//  *pr = x1;
-//  *ptheta = x2;
-//  *pphi = x3;
-//  return;
-//}

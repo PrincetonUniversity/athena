@@ -452,7 +452,29 @@ bool Coordinates::IsPole(int j)
 
 #if GENERAL_RELATIVITY==1
 //----------------------------------------------------------------------------------------
-// All GR functions are defined as no-ops in base class for all coordinate systems 
+// Function for returning Boyer-Lindquist coordinates of given cell in GR
+// Inputs:
+//   x1,x2,x3: global coordinates to be converted
+// Outputs:
+//   pr: pointer to stored value of r
+//   ptheta: pointer to stored value of theta
+//   pphi: pointer to stored value of phi
+// Notes:
+//   In all GR coordinates implemented to data (Minkowski,Schwarzschild, Kerr-Schild)
+//   the conversion to Boyer-Lindquist is the same (trivial)
+
+void Coordinates::GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+    Real *ptheta, Real *pphi)
+{
+  *pr = x1;
+  *ptheta = x2;
+  *pphi = x3;
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// All other GR functions are defined as no-ops in base class so they are defined in
+// non-GR coordinate systems.  They are all over-written in the derived GR classes.
 
 // functions
 // ...to compute metric
@@ -502,6 +524,6 @@ void Coordinates::RaiseVectorCell(Real a_0,Real a_1,Real a_2,Real a_3,int k,int 
   Real *pa0, Real *pa1, Real *pa2, Real *pa3) {return;}
 void Coordinates::LowerVectorCell(Real a0,Real a1,Real a2,Real a3, int k, int j, int i,
   Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3) {return;}
-//  void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3,
-//    Real *pr, Real *ptheta, Real *pphi);
+  void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3,
+    Real *pr, Real *ptheta, Real *pphi) {return;};
 #endif // GENERAL_RELATIVITY

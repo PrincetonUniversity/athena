@@ -79,6 +79,10 @@ public:
 
 #if GENERAL_RELATIVITY==1
   // In GR, functions...
+  // ...to return private variables
+  Real GetMass() const {return bh_mass_;}
+  Real GetSpin() const {return bh_spin_;}
+
   // ...to compute metric
   virtual void CellMetric(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &g, AthenaArray<Real> &gi);
@@ -111,7 +115,17 @@ public:
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
     AthenaArray<Real> &flux);
 
-  // .. to transform 4-vector from Boyer-Lindquist to global coordinates
+  // ...to raise (lower) covariant (contravariant) components of a vector
+  virtual void RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3,int k,int j,int i,
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+  virtual void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
+    Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3);
+
+  // ...to convert from global to Boyer-Lindquist coordinates (useful for pgens)
+  void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3,
+    Real *pr, Real *ptheta, Real *pphi);
+
+  // ...to transform 4-vector from Boyer-Lindquist to global coordinates (for pgens)
   virtual void TransformVectorCell(Real at, Real ax, Real ay, Real az,int k,int j,int i,
     Real *a0, Real *a1, Real *a2, Real *a3);
   virtual void TransformVectorFace1(Real at, Real ax, Real ay, Real az,int k,int j,int i,
@@ -120,14 +134,6 @@ public:
     Real *a0, Real *a1, Real *a2, Real *a3);
   virtual void TransformVectorFace3(Real at, Real ax, Real ay, Real az,int k,int j,int i,
     Real *a0, Real *a1, Real *a2, Real *a3);
-
-  // for raising (lowering) covariant (contravariant) components of a vector
-  virtual void RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3,int k,int j,int i,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3);
-  virtual void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
-    Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3);
-//  void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3,
-//    Real *pr, Real *ptheta, Real *pphi);
 #endif // GENERAL_RELATIVITY
 
 protected:
@@ -197,6 +203,10 @@ protected:
   AthenaArray<Real> trans_face3_ji1_, trans_face3_ji2_, trans_face3_ji3_,
       trans_face3_ji4_, trans_face3_ji5_, trans_face3_ji6_;
   AthenaArray<Real> g_, gi_;
+
+  Real bh_mass_; 
+  Real bh_spin_; 
+
 #endif // GENERAL_RELATIVITY
 };
 
@@ -352,8 +362,6 @@ public:
     Real *pa0, Real *pa1, Real *pa2, Real *pa3);
   void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
     Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3);
-//  void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3,
-//    Real *pr, Real *ptheta, Real *pphi);
 #endif // GENERAL_RELATIVITY
 };
 
@@ -453,12 +461,6 @@ public:
     Real *pa0, Real *pa1, Real *pa2, Real *pa3);
   void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
     Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3);
-//  void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3,
-//    Real *pr, Real *ptheta, Real *pphi);
-
-protected:
-  Real bh_mass_; 
-
 #endif // GENERAL_RELATIVITY
 };
 
@@ -558,13 +560,6 @@ public:
     Real *pa0, Real *pa1, Real *pa2, Real *pa3);
   void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
     Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3);
-//  void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3,
-//    Real *pr, Real *ptheta, Real *pphi);
-
-protected:
-  Real bh_mass_;
-  Real bh_spin_;
-
 #endif // GENERAL_RELATIVITY
 };
 
