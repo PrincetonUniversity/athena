@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file schwarzschild.cpp
-//  \brief implements functions for Schwarzschild spacetime and spherical (t,r,theta,phi) 
+//  \brief implements functions for Schwarzschild spacetime and spherical (t,r,theta,phi)
 //  coordinates in a derived class of the Coordinates abstract base class.
 //  Original implementation by CJ White.
 //
@@ -26,7 +26,7 @@
 #include "../eos/eos.hpp"
 #include "../mesh/mesh.hpp"
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Schwarzschild Constructor
 // Inputs:
 //   pmb: pointer to MeshBlock containing this grid
@@ -36,10 +36,11 @@
 Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
   : Coordinates(pmb, pin, flag)
 {
+  // Set indices
   pmy_block = pmb;
   coarse_flag = flag;
   int il, iu, jl, ju, kl, ku, ng;
-  if(coarse_flag == true) {
+  if (coarse_flag == true) {
     il = pmb->cis;
     iu = pmb->cie;
     jl = pmb->cjs;
@@ -56,11 +57,11 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     ku = pmb->ke;
     ng = NGHOST;
   }
-  Mesh *pm=pmy_block->pmy_mesh;
-  RegionSize& mesh_size  = pmy_block->pmy_mesh->mesh_size;
+  Mesh *pm = pmy_block->pmy_mesh;
+  RegionSize& mesh_size = pmy_block->pmy_mesh->mesh_size;
   RegionSize& block_size = pmy_block->block_size;
 
-  // allocate arrays for volume-centered coordinates and positions of cells
+  // Allocate arrays for volume-centered coordinates and positions of cells
   int ncells1 = (iu-il+1) + 2*ng;
   int ncells2 = 1, ncells3 = 1;
   if (block_size.nx2 > 1) ncells2 = (ju-jl+1) + 2*ng;
@@ -72,8 +73,8 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
   x2v.NewAthenaArray(ncells2);
   x3v.NewAthenaArray(ncells3);
 
-  // allocate arrays for area weighted positions for AMR/SMR MHD
-  if((pm->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+  // Allocate arrays for area weighted positions for AMR/SMR MHD
+  if (pm->multilevel && MAGNETIC_FIELDS_ENABLED) {
     x1s2.NewAthenaArray(ncells1);
     x1s3.NewAthenaArray(ncells1);
     x2s1.NewAthenaArray(ncells2);
@@ -130,7 +131,7 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     }
   }
 
-  // initialize area-averaged coordinates used with MHD AMR
+  // Initialize area-averaged coordinates used with MHD AMR
   if (pmb->pmy_mesh->multilevel && MAGNETIC_FIELDS_ENABLED) {
     for (int i = il-ng; i <= iu+ng; ++i) {
       x1s2(i) = x1s3(i) = x1v(i);
@@ -174,7 +175,8 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
   // Allocate and compute arrays for intermediate geometric quantities that are only
   // needed if object is NOT a coarse mesh
-  if(coarse_flag==false) {
+  if (coarse_flag == false) {
+
     // Allocate arrays for intermediate geometric quantities: r-direction
     coord_vol_i1_.NewAthenaArray(ncells1);
     coord_area1_i1_.NewAthenaArray(ncells1+1);
@@ -218,6 +220,7 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
     // Calculate intermediate geometric quantities: r-direction
     for (int i = il-ng; i <= iu+ng; ++i) {
+
       // Useful quantities
       Real r_c = x1v(i);
       Real r_m = x1f(i);
@@ -274,6 +277,7 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
     // Calculate intermediate geometric quantities: theta-direction
     for (int j = jll; j <= juu; ++j) {
+
       // Useful quantities
       Real theta_c = x2v(j);
       Real theta_m = x2f(j);
@@ -307,7 +311,7 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
         coord_len3_j1_(j+1) = coord_area2_j1_(j+1);
       }
       coord_width3_j1_(j) = std::abs(sin_c);
-  
+
       // Source terms
       coord_src_j1_(j) = 1.0/6.0
           * (4.0 - std::cos(2.0*theta_m)
@@ -315,7 +319,7 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
       coord_src_j2_(j) = 1.0/3.0 * (sin_m_cu - sin_p_cu)
           / (cos_m - cos_p);
       coord_src_j3_(j) = (sin_p-sin_m) / (cos_m-cos_p);    // cot((theta_p+theta_m)/2)
-  
+
       // Metric coefficients
       metric_face1_j1_(j) = sin_c_sq;
       metric_face2_j1_(j) = sin_m_sq;
@@ -323,7 +327,7 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
         metric_face2_j1_(j+1) = sin_p_sq;
       }
       metric_face3_j1_(j) = sin_c_sq;
-  
+
       // Coordinate transformations
       trans_face1_j1_(j) = std::abs(sin_c);
       trans_face2_j1_(j) = std::abs(sin_m);
@@ -335,7 +339,7 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Destructor
 
 Schwarzschild::~Schwarzschild()
@@ -346,7 +350,7 @@ Schwarzschild::~Schwarzschild()
   x1v.DeleteAthenaArray();
   x2v.DeleteAthenaArray();
   x3v.DeleteAthenaArray();
-  if((pmy_block->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+  if (pmy_block->pmy_mesh->multilevel && MAGNETIC_FIELDS_ENABLED) {
     x1s2.DeleteAthenaArray();
     x1s3.DeleteAthenaArray();
     x2s1.DeleteAthenaArray();
@@ -356,7 +360,7 @@ Schwarzschild::~Schwarzschild()
   }
   metric_cell_i1_.DeleteAthenaArray();
   metric_cell_j1_.DeleteAthenaArray();
-  if(coarse_flag==false) {
+  if (coarse_flag == false) {
     coord_vol_i1_.DeleteAthenaArray();
     coord_area1_i1_.DeleteAthenaArray();
     coord_area2_i1_.DeleteAthenaArray();
@@ -397,15 +401,16 @@ Schwarzschild::~Schwarzschild()
   }
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // EdgeXLength functions: compute physical length at cell edge-X as vector
 // Edge1(i,j,k) located at (i,j-1/2,k-1/2), i.e. (x1v(i), x2f(j), x3f(k))
-// Notes:
-//   \Delta L = 1/3 \Delta(r^3) \sin\theta
+// Edge2(i,j,k) located at (i-1/2,j,k-1/2), i.e. (x1f(i), x2v(j), x3f(k))
+// Edge3(i,j,k) located at (i-1/2,j-1/2,k), i.e. (x1f(i), x2f(j), x3v(k))
 
 void Schwarzschild::Edge1Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &lengths)
 {
+  // \Delta L = 1/3 \Delta(r^3) \sin\theta
   #pragma simd
   for (int i = il; i <= iu; ++i) {
     lengths(i) = coord_len1_i1_(i) * coord_len1_j1_(j);
@@ -413,12 +418,10 @@ void Schwarzschild::Edge1Length(const int k, const int j, const int il, const in
   return;
 }
 
-// Edge2(i,j,k) located at (i-1/2,j,k-1/2), i.e. (x1f(i), x2v(j), x3f(k))
-//   \Delta L = r^2 (-\Delta\cos\theta)
-
 void Schwarzschild::Edge2Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &lengths)
 {
+  // \Delta L = r^2 (-\Delta\cos\theta)
   #pragma simd
   for (int i = il; i <= iu; ++i) {
     lengths(i) = coord_len2_i1_(i) * coord_len2_j1_(j);
@@ -426,12 +429,10 @@ void Schwarzschild::Edge2Length(const int k, const int j, const int il, const in
   return;
 }
 
-// Edge3(i,j,k) located at (i-1/2,j-1/2,k), i.e. (x1f(i), x2f(j), x3v(k))
-//   \Delta L = r^2 \sin\theta \Delta\phi
-
 void Schwarzschild::Edge3Length(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &lengths)
 {
+  // \Delta L = r^2 \sin\theta \Delta\phi
   #pragma simd
   for (int i = il; i <= iu; ++i) {
     lengths(i) = coord_len3_i1_(i) * coord_len3_j1_(j) * dx3f(k);
@@ -444,20 +445,23 @@ void Schwarzschild::Edge3Length(const int k, const int j, const int il, const in
 
 Real Schwarzschild::GetEdge1Length(const int k, const int j, const int i)
 {
+  // \Delta L = 1/3 \Delta(r^3) \sin\theta
   return coord_len1_i1_(i) * coord_len1_j1_(j);
 }
 
 Real Schwarzschild::GetEdge2Length(const int k, const int j, const int i)
 {
+  // \Delta L = r^2 (-\Delta\cos\theta)
   return coord_len2_i1_(i) * coord_len2_j1_(j);
 }
 
 Real Schwarzschild::GetEdge3Length(const int k, const int j, const int i)
 {
+  // \Delta L = r^2 \sin\theta \Delta\phi
   return coord_len3_i1_(i) * coord_len3_j1_(j) * dx3f(k);
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // CenterWidthX functions: return physical width in X-dir at (i,j,k) cell-center
 
 Real Schwarzschild::CenterWidth1(const int k, const int j, const int i)
@@ -478,7 +482,7 @@ Real Schwarzschild::CenterWidth3(const int k, const int j, const int i)
   return x1v(i) * coord_width3_j1_(j) * dx3f(k);
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // FaceXArea functions: compute area of face with normal in X-dir as vector
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -516,7 +520,7 @@ void Schwarzschild::Face3Area(const int k, const int j, const int il, const int 
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // GetFaceXArea functions: return area of face with normal in X-dir at (i,j,k)
 // Inputs:
 //   k,j,i: phi- theta- and r-indices
@@ -525,7 +529,7 @@ void Schwarzschild::Face3Area(const int k, const int j, const int il, const int 
 
 Real Schwarzschild::GetFace1Area(const int k, const int j, const int i)
 {
-  //  \Delta A = r^2 (-\Delta\cos\theta) \Delta\phi
+  // \Delta A = r^2 (-\Delta\cos\theta) \Delta\phi
   return coord_area1_i1_(i) * coord_area1_j1_(j) * dx3f(k);
 }
 
@@ -541,7 +545,7 @@ Real Schwarzschild::GetFace3Area(const int k, const int j, const int i)
   return coord_area3_i1_(i) * coord_area3_j1_(j);
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Cell Volume function: compute volume of cell as vector
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -561,7 +565,7 @@ void Schwarzschild::CellVolume(const int k, const int j, const int il, const int
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // GetCellVolume: returns cell volume at (i,j,k)
 // Inputs:
 //   k,j,i: phi-, theta-, and r-indices
@@ -575,8 +579,8 @@ Real Schwarzschild::GetCellVolume(const int k, const int j, const int i)
   return coord_vol_i1_(i) * coord_vol_j1_(j) * dx3f(k);
 }
 
-//--------------------------------------------------------------------------------------
-// Coordinate (Geometric) source term function
+//----------------------------------------------------------------------------------------
+// Coordinate (geometric) source term function
 // Inputs:
 //   dt: size of timestep
 //   flux: 3D array of fluxes
@@ -584,8 +588,6 @@ Real Schwarzschild::GetCellVolume(const int k, const int j, const int i)
 //   bb_cc: 3D array of cell-centered magnetic fields
 // Outputs:
 //   cons: source terms added to 3D array of conserved variables
-// Notes:
-//   all source terms computed in this function
 
 void Schwarzschild::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bb_cc,
@@ -595,13 +597,13 @@ void Schwarzschild::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   const Real gamma_adi = pmy_block->peos->GetGamma();
 
   // Go through cells
-  for (int k = pmy_block->ks; k <= pmy_block->ke; ++k)
-  {
+  for (int k = pmy_block->ks; k <= pmy_block->ke; ++k) {
     #pragma omp parallel for schedule(static)
-    for (int j=pmy_block->js; j<=pmy_block->je; ++j) {
+    for (int j = pmy_block->js; j <= pmy_block->je; ++j) {
       CellMetric(k, j, pmy_block->is, pmy_block->ie, g_, gi_);
       #pragma simd
       for (int i = pmy_block->is; i <= pmy_block->ie; ++i) {
+
         // Extract metric coefficients
         const Real &g_00 = g_(I00,i);
         const Real &g_01 = 0.0;
@@ -653,8 +655,7 @@ void Schwarzschild::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
           const Real &bb1 = bb_cc(IB1,k,j,i);
           const Real &bb2 = bb_cc(IB2,k,j,i);
           const Real &bb3 = bb_cc(IB3,k,j,i);
-          b0 =
-                g_10*bb1*u0 + g_11*bb1*u1 + g_12*bb1*u2 + g_13*bb1*u3
+          b0  = g_10*bb1*u0 + g_11*bb1*u1 + g_12*bb1*u2 + g_13*bb1*u3
               + g_20*bb2*u0 + g_21*bb2*u1 + g_22*bb2*u2 + g_23*bb2*u3
               + g_30*bb3*u0 + g_31*bb3*u1 + g_32*bb3*u2 + g_33*bb3*u3;
           b1 = (bb1 + b0 * u1) / u0;
@@ -721,7 +722,7 @@ void Schwarzschild::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Function for computing cell-centered metric coefficients
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -739,6 +740,7 @@ void Schwarzschild::CellMetric(const int k, const int j, const int il, const int
   // Go through 1D block of cells
   #pragma simd
   for (int i = il; i <= iu; ++i) {
+
     // Extract remaining geometric quantities
     const Real &alpha_sq = metric_cell_i1_(i);
     const Real &r = x1v(i);
@@ -767,7 +769,7 @@ void Schwarzschild::CellMetric(const int k, const int j, const int il, const int
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Function for computing face-centered metric coefficients: r-interface
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -785,6 +787,7 @@ void Schwarzschild::Face1Metric(const int k, const int j, const int il, const in
   // Go through 1D block of cells
   #pragma simd
   for (int i = il; i <= iu; ++i) {
+
     // Extract remaining geometric quantities
     const Real &alpha_sq = metric_face1_i1_(i);
     const Real &r = x1f(i);
@@ -813,7 +816,7 @@ void Schwarzschild::Face1Metric(const int k, const int j, const int il, const in
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Function for computing face-centered metric coefficients: theta-interface
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -831,6 +834,7 @@ void Schwarzschild::Face2Metric(const int k, const int j, const int il, const in
   // Go through 1D block of cells
   #pragma simd
   for (int i = il; i <= iu; ++i) {
+
     // Extract remaining geometric quantities
     const Real &alpha_sq = metric_face2_i1_(i);
     const Real &r = x1v(i);
@@ -859,7 +863,7 @@ void Schwarzschild::Face2Metric(const int k, const int j, const int il, const in
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Function for computing face-centered metric coefficients: phi-interface
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -877,6 +881,7 @@ void Schwarzschild::Face3Metric(const int k, const int j, const int il, const in
   // Go through 1D block of cells
   #pragma simd
   for (int i = il; i <= iu; ++i) {
+
     // Extract remaining geometric quantities
     const Real &alpha_sq = metric_face3_i1_(i);
     const Real &r = x1v(i);
@@ -905,7 +910,7 @@ void Schwarzschild::Face3Metric(const int k, const int j, const int il, const in
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Function for transforming primitives to locally flat frame: r-interface
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -927,8 +932,8 @@ void Schwarzschild::Face3Metric(const int k, const int j, const int il, const in
 //   \tilde{u}^\hat{i} = u^\hat{i}
 
 void Schwarzschild::PrimToLocal1(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &bb1, AthenaArray<Real> &prim_l,
-    AthenaArray<Real> &prim_r, AthenaArray<Real> &bbx)
+    const AthenaArray<Real> &bb1, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+    AthenaArray<Real> &bbx)
 {
   // Calculate metric coefficients
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -941,6 +946,7 @@ void Schwarzschild::PrimToLocal1(const int k, const int j, const int il, const i
   // Go through 1D block of cells
   #pragma simd
   for (int i = il; i <= iu; ++i) {
+
     // Extract transformation coefficients
     const Real &r = x1f(i);
     const Real &alpha = trans_face1_i1_(i);
@@ -979,6 +985,7 @@ void Schwarzschild::PrimToLocal1(const int k, const int j, const int il, const i
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
+
       // Extract metric coefficients
       const Real &g_00 = g_(I00,i);
       const Real &g_01 = 0.0;
@@ -1073,7 +1080,7 @@ void Schwarzschild::PrimToLocal1(const int k, const int j, const int il, const i
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Function for transforming primitives to locally flat frame: theta-interface
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -1095,8 +1102,8 @@ void Schwarzschild::PrimToLocal1(const int k, const int j, const int il, const i
 //   \tilde{u}^\hat{i} = u^\hat{i}
 
 void Schwarzschild::PrimToLocal2(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &bb2, AthenaArray<Real> &prim_l,
-    AthenaArray<Real> &prim_r, AthenaArray<Real> &bbx)
+    const AthenaArray<Real> &bb2, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+    AthenaArray<Real> &bbx)
 {
   // Calculate metric coefficients
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -1109,6 +1116,7 @@ void Schwarzschild::PrimToLocal2(const int k, const int j, const int il, const i
   // Go through 1D block of cells
   #pragma simd
   for (int i = il; i <= iu; ++i) {
+
     // Extract transformation coefficients
     const Real &r = x1v(i);
     const Real &alpha = trans_face2_i1_(i);
@@ -1147,6 +1155,7 @@ void Schwarzschild::PrimToLocal2(const int k, const int j, const int il, const i
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
+
       // Extract metric coefficients
       const Real &g_00 = g_(I00,i);
       const Real &g_01 = 0.0;
@@ -1241,7 +1250,7 @@ void Schwarzschild::PrimToLocal2(const int k, const int j, const int il, const i
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Function for transforming primitives to locally flat frame: phi-interface
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -1263,8 +1272,8 @@ void Schwarzschild::PrimToLocal2(const int k, const int j, const int il, const i
 //   \tilde{u}^\hat{i} = u^\hat{i}
 
 void Schwarzschild::PrimToLocal3(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &bb3, AthenaArray<Real> &prim_l,
-    AthenaArray<Real> &prim_r, AthenaArray<Real> &bbx)
+    const AthenaArray<Real> &bb3, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+    AthenaArray<Real> &bbx)
 {
   // Calculate metric coefficients
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -1277,6 +1286,7 @@ void Schwarzschild::PrimToLocal3(const int k, const int j, const int il, const i
   // Go through 1D block of cells
   #pragma simd
   for (int i = il; i <= iu; ++i) {
+
     // Extract transformation coefficients
     const Real &r = x1v(i);
     const Real &alpha = trans_face3_i1_(i);
@@ -1315,6 +1325,7 @@ void Schwarzschild::PrimToLocal3(const int k, const int j, const int il, const i
 
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
+
       // Extract metric coefficients
       const Real &g_00 = g_(I00,i);
       const Real &g_01 = 0.0;
@@ -1409,7 +1420,7 @@ void Schwarzschild::PrimToLocal3(const int k, const int j, const int il, const i
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Function for transforming fluxes to global frame: r-interface
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -1426,8 +1437,7 @@ void Schwarzschild::PrimToLocal3(const int k, const int j, const int il, const i
 //   puts r-fluxes of B2/B3 in IBY/IBZ slots
 
 void Schwarzschild::FluxToGlobal1(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
-    AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux)
 {
   // Extract geometric quantities that do not depend on r
   const Real &sin_sq_theta = metric_face1_j1_(j);
@@ -1436,6 +1446,7 @@ void Schwarzschild::FluxToGlobal1(const int k, const int j, const int il, const 
   // Go through 1D block of cells
   #pragma simd
   for (int i = il; i <= iu; ++i) {
+
     // Extract geometric quantities
     const Real &alpha_sq = metric_face1_i1_(i);
     const Real &r = x1f(i);
@@ -1490,7 +1501,7 @@ void Schwarzschild::FluxToGlobal1(const int k, const int j, const int il, const 
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Function for transforming fluxes to global frame: theta-interface
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -1507,8 +1518,7 @@ void Schwarzschild::FluxToGlobal1(const int k, const int j, const int il, const 
 //   puts theta-fluxes of B3/B1 in IBY/IBZ slots
 
 void Schwarzschild::FluxToGlobal2(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
-    AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux)
 {
   // Extract geometric quantities that do not depend on r
   const Real &sin_sq_theta = metric_face2_j1_(j);
@@ -1517,6 +1527,7 @@ void Schwarzschild::FluxToGlobal2(const int k, const int j, const int il, const 
   // Go through 1D block of cells
   #pragma simd
   for (int i = il; i <= iu; ++i) {
+
     // Extract geometric quantities
     const Real &alpha_sq = metric_face2_i1_(i);
     const Real &r = x1v(i);
@@ -1571,7 +1582,7 @@ void Schwarzschild::FluxToGlobal2(const int k, const int j, const int il, const 
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Function for transforming fluxes to global frame: phi-interface
 // Inputs:
 //   k,j: phi- and theta-indices
@@ -1588,8 +1599,7 @@ void Schwarzschild::FluxToGlobal2(const int k, const int j, const int il, const 
 //   puts phi-fluxes of B1/B2 in IBY/IBZ slots
 
 void Schwarzschild::FluxToGlobal3(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
-    AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux)
 {
   // Extract geometric quantities that do not depend on r
   const Real &sin_sq_theta = metric_face3_j1_(j);
@@ -1598,6 +1608,7 @@ void Schwarzschild::FluxToGlobal3(const int k, const int j, const int il, const 
   // Go through 1D block of cells
   #pragma simd
   for (int i = il; i <= iu; ++i) {
+
     // Extract geometric quantities
     const Real &alpha_sq = metric_face3_i1_(i);
     const Real &r = x1v(i);
@@ -1652,7 +1663,7 @@ void Schwarzschild::FluxToGlobal3(const int k, const int j, const int il, const 
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Function for transforming 4-vector from Boyer-Lindquist to Schwarzschild
 // Inputs:
 //   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
@@ -1672,7 +1683,7 @@ void Schwarzschild::TransformVectorCell(Real a0_bl, Real a1_bl, Real a2_bl, Real
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Function for transforming 4-vector from Boyer-Lindquist to Schwarzschild
 // Inputs:
 //   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
@@ -1692,7 +1703,7 @@ void Schwarzschild::TransformVectorFace1(Real a0_bl, Real a1_bl, Real a2_bl, Rea
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Function for transforming 4-vector from Boyer-Lindquist to Schwarzschild
 // Inputs:
 //   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
@@ -1712,7 +1723,7 @@ void Schwarzschild::TransformVectorFace2(Real a0_bl, Real a1_bl, Real a2_bl, Rea
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Function for transforming 4-vector from Boyer-Lindquist to Schwarzschild
 // Inputs:
 //   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
@@ -1732,7 +1743,7 @@ void Schwarzschild::TransformVectorFace3(Real a0_bl, Real a1_bl, Real a2_bl, Rea
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Function for raising covariant components of a vector
 // Inputs:
 //   a_0,a_1,a_2,a_3: covariant components of vector
@@ -1763,7 +1774,7 @@ void Schwarzschild::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int 
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Function for lowering contravariant components of a vector
 // Inputs:
 //   a0,a1,a2,a3: contravariant components of vector

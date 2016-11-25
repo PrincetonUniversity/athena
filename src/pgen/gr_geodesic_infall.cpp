@@ -1,7 +1,10 @@
-// General relativistic problem generator for dust falling onto black hole
-
-// Primary header
-#include "../mesh/mesh.hpp"
+//========================================================================================
+// Athena++ astrophysical MHD code
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
+//! \file adiabatic_hydro_sr.cpp
+//  \brief Problem generator for dust falling onto black hole.
 
 #if MAGNETIC_FIELDS_ENABLED
 #error "This problem generator does not support magnetic fields"
@@ -11,7 +14,8 @@
 #include <cassert>  // assert
 #include <cmath>    // pow(), sin(), sqrt()
 
-// Athena headers
+// Athena++ headers
+#include "../mesh/mesh.hpp"
 #include "../athena.hpp"                   // enums, Real, FaceField
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../parameter_input.hpp"          // ParameterInput
@@ -25,12 +29,12 @@
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
     FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for initializing global mesh properties
 // Inputs:
 //   pin: input parameters (unused)
 // Outputs: (none)
+
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
   // Enroll boundary functions
@@ -38,8 +42,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for setting initial conditions
 // Inputs:
 //   phyd: Hydro
@@ -48,6 +51,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 // Outputs: (none)
 // Notes:
 //   assumes x3 is axisymmetric direction
+
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   // Prepare index bounds
@@ -55,15 +59,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   int iu = ie + NGHOST;
   int jl = js;
   int ju = je;
-  if (block_size.nx2 > 1)
-  {
+  if (block_size.nx2 > 1) {
     jl -= (NGHOST);
     ju += (NGHOST);
   }
   int kl = ks;
   int ku = ke;
-  if (block_size.nx3 > 1)
-  {
+  if (block_size.nx3 > 1) {
     kl -= (NGHOST);
     ku += (NGHOST);
   }
@@ -88,10 +90,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   AthenaArray<Real> g, gi;
   g.NewAthenaArray(NMETRIC, iu+1);
   gi.NewAthenaArray(NMETRIC, iu+1);
-  for (int j = jl; j <= ju; j++)
-  {
-    for (int i = il; i <= iu; i++)
-    {
+  for (int j = jl; j <= ju; j++) {
+    for (int i = il; i <= iu; i++) {
+
       // Get Boyer-Lindquist coordinates of cell
       Real r, theta, phi;
       pmb->pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
@@ -105,8 +106,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       Real uu3 = 0.0;
 
       // Set primitive values
-      for (int k = kl; k <= ku; k++)
-      {
+      for (int k = kl; k <= ku; k++) {
         phydro->w(IDN,k,j,i) = phydro->w1(IDN,k,j,i) = rho;
         phydro->w(IPR,k,j,i) = phydro->w1(IPR,k,j,i) = pgas;
         phydro->w(IVX,k,j,i) = phydro->w1(IM1,k,j,i) = uu1;
@@ -124,8 +124,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Fixed boundary condition
 // Inputs:
 //   pmb: pointer to MeshBlock
@@ -137,6 +136,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //   bb: face-centered magnetic field set in ghost zones
 // Notes:
 //   does nothing
+
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
     FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
 {

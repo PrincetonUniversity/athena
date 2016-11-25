@@ -4,15 +4,12 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file minkowski.cpp
-//  \brief implements functions for Minkowski (flat) spacetime and Cartesian (t,x,y,z) 
+//  \brief implements functions for Minkowski (flat) spacetime and Cartesian (t,x,y,z)
 //  coordinates in a derived class of the Coordinates abstract base class.
 //
 // Notes:
 //   coordinates: t, x, y, z
 //   metric: ds^2 = -dt^2 + dx^2 + dy^2 + dz^2
-
-// C++ headers
-#include <cmath>  // sqrt()
 
 // Athena++ headers
 #include "coordinates.hpp"
@@ -31,10 +28,11 @@
 Minkowski::Minkowski(MeshBlock *pmb, ParameterInput *pin, bool flag)
   : Coordinates(pmb, pin, flag)
 {
+  // Set indices
   pmy_block = pmb;
   coarse_flag = flag;
   int il, iu, jl, ju, kl, ku, ng;
-  if(coarse_flag == true) {
+  if (coarse_flag == true) {
     il = pmb->cis;
     iu = pmb->cie;
     jl = pmb->cjs;
@@ -51,11 +49,11 @@ Minkowski::Minkowski(MeshBlock *pmb, ParameterInput *pin, bool flag)
     ku = pmb->ke;
     ng = NGHOST;
   }
-  Mesh *pm=pmy_block->pmy_mesh;
-  RegionSize& mesh_size  = pmy_block->pmy_mesh->mesh_size;
+  Mesh *pm = pmy_block->pmy_mesh;
+  RegionSize& mesh_size = pmy_block->pmy_mesh->mesh_size;
   RegionSize& block_size = pmy_block->block_size;
 
-  // allocate arrays for volume-centered coordinates and positions of cells
+  // Allocate arrays for volume-centered coordinates and positions of cells
   int ncells1 = (iu-il+1) + 2*ng;
   int ncells2 = 1, ncells3 = 1;
   if (block_size.nx2 > 1) ncells2 = (ju-jl+1) + 2*ng;
@@ -67,8 +65,8 @@ Minkowski::Minkowski(MeshBlock *pmb, ParameterInput *pin, bool flag)
   x2v.NewAthenaArray(ncells2);
   x3v.NewAthenaArray(ncells3);
 
-  // allocate arrays for area weighted positions for AMR/SMR MHD
-  if((pm->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+  // Allocate arrays for area weighted positions for AMR/SMR MHD
+  if (pm->multilevel && MAGNETIC_FIELDS_ENABLED) {
     x1s2.NewAthenaArray(ncells1);
     x1s3.NewAthenaArray(ncells1);
     x2s1.NewAthenaArray(ncells2);
@@ -111,7 +109,7 @@ Minkowski::Minkowski(MeshBlock *pmb, ParameterInput *pin, bool flag)
     }
   }
 
-  // initialize area-averaged coordinates used with MHD AMR
+  // Initialize area-averaged coordinates used with MHD AMR
   if (pmb->pmy_mesh->multilevel && MAGNETIC_FIELDS_ENABLED) {
     for (int i = il-ng; i <= iu+ng; ++i) {
       x1s2(i) = x1s3(i) = x1v(i);
@@ -144,7 +142,7 @@ Minkowski::~Minkowski()
   x1v.DeleteAthenaArray();
   x2v.DeleteAthenaArray();
   x3v.DeleteAthenaArray();
-  if((pmy_block->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+  if (pmy_block->pmy_mesh->multilevel && MAGNETIC_FIELDS_ENABLED) {
     x1s2.DeleteAthenaArray();
     x1s3.DeleteAthenaArray();
     x2s1.DeleteAthenaArray();
@@ -154,7 +152,7 @@ Minkowski::~Minkowski()
   }
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Function for computing cell-centered metric coefficients
 // Inputs:
 //   k,j: z- and y-indices
@@ -180,8 +178,8 @@ void Minkowski::CellMetric(const int k, const int j, const int il, const int iu,
   return;
 }
 
-//--------------------------------------------------------------------------------------
-// Functions for computing face-centered metric coefficients at X-face
+//----------------------------------------------------------------------------------------
+// Functions for computing face-centered metric coefficients
 // Inputs:
 //   k,j: z- and y-indices
 //   il,iu: x-index bounds
@@ -240,9 +238,9 @@ void Minkowski::Face3Metric(const int k, const int j, const int il, const int iu
   return;
 }
 
-//--------------------------------------------------------------------------------------
-// Function for transforming primitives to locally flat frame: X-interface
-// Inputs:
+//----------------------------------------------------------------------------------------
+// Functions for transforming face-centered primitives to locally flat frame
+// Inputs
 //   k,j: z- and y-indices
 //   il,iu: x-index bounds
 //   bb1: 3D array of normal components B^1 of magnetic field, in global coordinates
@@ -256,8 +254,8 @@ void Minkowski::Face3Metric(const int k, const int j, const int il, const int iu
 //   transformation is trivial
 
 void Minkowski::PrimToLocal1(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &bb1, AthenaArray<Real> &prim_l,
-    AthenaArray<Real> &prim_r, AthenaArray<Real> &bbx)
+    const AthenaArray<Real> &bb1, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+    AthenaArray<Real> &bbx)
 {
   if (MAGNETIC_FIELDS_ENABLED) {
     #pragma simd
@@ -269,8 +267,8 @@ void Minkowski::PrimToLocal1(const int k, const int j, const int il, const int i
 }
 
 void Minkowski::PrimToLocal2(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &bb2, AthenaArray<Real> &prim_l,
-    AthenaArray<Real> &prim_r, AthenaArray<Real> &bbx)
+    const AthenaArray<Real> &bb2, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+    AthenaArray<Real> &bbx)
 {
   if (MAGNETIC_FIELDS_ENABLED) {
     #pragma simd
@@ -282,8 +280,8 @@ void Minkowski::PrimToLocal2(const int k, const int j, const int il, const int i
 }
 
 void Minkowski::PrimToLocal3(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &bb3, AthenaArray<Real> &prim_l,
-    AthenaArray<Real> &prim_r, AthenaArray<Real> &bbx)
+    const AthenaArray<Real> &bb3, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+    AthenaArray<Real> &bbx)
 {
   if (MAGNETIC_FIELDS_ENABLED) {
     #pragma simd
@@ -294,7 +292,7 @@ void Minkowski::PrimToLocal3(const int k, const int j, const int il, const int i
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Function for transforming fluxes to global frame: X-interface
 // Inputs:
 //   k,j: z- and y-indices
@@ -308,8 +306,7 @@ void Minkowski::PrimToLocal3(const int k, const int j, const int il, const int i
 //   transformation is trivial except for sign change from lowering time index
 
 void Minkowski::FluxToGlobal1(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
-    AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i) {
@@ -321,8 +318,7 @@ void Minkowski::FluxToGlobal1(const int k, const int j, const int il, const int 
 }
 
 void Minkowski::FluxToGlobal2(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
-    AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i) {
@@ -334,8 +330,7 @@ void Minkowski::FluxToGlobal2(const int k, const int j, const int il, const int 
 }
 
 void Minkowski::FluxToGlobal3(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
-    AthenaArray<Real> &flux)
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux)
 {
   #pragma simd
   for (int i = il; i <= iu; ++i) {
@@ -346,8 +341,8 @@ void Minkowski::FluxToGlobal3(const int k, const int j, const int il, const int 
   return;
 }
 
-//--------------------------------------------------------------------------------------
-// Function for transforming 4-vector from Minkowski to global: cell-centered
+//----------------------------------------------------------------------------------------
+// Function for transforming cell-centered 4-vector from Minkowski to global
 // Inputs:
 //   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
 //   k,j,i: z-, y-, and x-indices (unused)
@@ -366,8 +361,8 @@ void Minkowski::TransformVectorCell(Real at, Real ax, Real ay, Real az, int k, i
   return;
 }
 
-//--------------------------------------------------------------------------------------
-// Function for transforming 4-vector from Minkowski to global: X-interface
+//----------------------------------------------------------------------------------------
+// Functions for transforming face-centered 4-vectors from Minkowski to global
 // Inputs:
 //   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
 //   k,j,i: z-, y-, and x-indices (unused)
@@ -406,7 +401,7 @@ void Minkowski::TransformVectorFace3(Real at, Real ax, Real ay, Real az, int k, 
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Function for raising covariant components of a vector
 // Inputs:
 //   a_0,a_1,a_2,a_3: covariant components of vector
@@ -424,7 +419,7 @@ void Minkowski::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, i
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 // Function for lowering contravariant components of a vector
 // Inputs:
 //   a0,a1,a2,a3: contravariant components of vector
