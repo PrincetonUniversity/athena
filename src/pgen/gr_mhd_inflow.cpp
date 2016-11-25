@@ -3,7 +3,7 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file adiabatic_hydro_sr.cpp
+//! \file gr_mhd_inflow.cpp
 //  \brief Problem generator for magnetized equatorial inflow around Kerr black hole.
 
 // C++ headers
