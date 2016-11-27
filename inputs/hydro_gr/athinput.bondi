@@ -2,7 +2,7 @@
 problem = GR hydro accretion in radial direction
 
 <job>
-problem_id = Bondi
+problem_id = gr_bondi
 
 <output1>
 file_type = vtk
@@ -14,49 +14,37 @@ file_type = vtk
 variable  = cons
 dt        = 100.0
 
-<output3>
-file_type   = tab
-data_format = %24.16e
-variable    = prim
-dt          = 100.0
-
-<output4>
-file_type   = tab
-data_format = %24.16e
-variable    = cons
-dt          = 100.0
-
 <time>
-cfl_number = 0.4
+cfl_number = 0.8
 nlim       = -1
 tlim       = 100.0
 
 <mesh>
-nx1    = 100   # number of zones in r-direction
-x1min  = 3.0   # inner r
-x1max  = 20.0  # outer r
-ix1_bc = user  # 3: custom
-ox1_bc = user  # 3: custom
+nx1    = 100   # number of cells in r-direction
+x1min  = 3.0   # minimum r
+x1max  = 20.0  # maximum r
+ix1_bc = user  # inner boundary
+ox1_bc = user  # outer boundary
 
-nx2    = 1                   # number of zones in theta-direction
-x2min  = 1.0707963267948966  # lower theta (pi/2 - 1/2)
-x2max  = 2.0707963267948966  # upper theta (pi/2 + 1/2)
-ix2_bc = periodic            # 4: periodic
-ox2_bc = periodic            # 4: periodic
+nx2    = 1                   # number of cells in theta-direction
+x2min  = 1.0707963267948966  # minimum theta (pi/2 - 1/2)
+x2max  = 2.0707963267948966  # maximum theta (pi/2 + 1/2)
+ix2_bc = periodic            # upper boundary
+ox2_bc = periodic            # lower boundary
 
-nx3    = 1                   # number of zones in phi-direction
-x3min  = -0.5                # minimum phi
-x3max  = 0.5                 # maximum phi
-ix3_bc = periodic            # 4: periodic
-ox3_bc = periodic            # 4: periodic
+nx3    = 1         # number of cells in phi-direction
+x3min  = -0.5      # minimum phi
+x3max  = 0.5       # maximum phi
+ix3_bc = periodic  # clockwise boundary
+ox3_bc = periodic  # counterclockwise boundary
 
 <coord>
 m = 1.0  # black hole mass M
-a = 0.0  # black hole spin
+a = 0.0  # black hole spin a (0 <= a/M < 1)
 
 <hydro>
-gamma = 1.3333333333333333  # \Gamma = C_p/C_V
-k_adi = 1.0                 # p = K \rho^\Gamma
+gamma = 1.3333333333333333  # ratio of specific heats Gamma
+k_adi = 1.0                 # adiabat K, p_gas = K rho^Gamma
 
 <problem>
 r_crit       = 8.0  # sonic point radius, in units of mass

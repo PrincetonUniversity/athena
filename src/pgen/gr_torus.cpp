@@ -44,37 +44,36 @@ static Real CalculateMagneticPressure(Real bb1, Real bb2, Real bb3, Real r,
     Real sin_theta, Real cos_theta);
 
 // Global variables
-static Real m, a;                                // black hole parameters
-static Real gamma_adi, k_adi;                    // hydro parameters
-static Real r_edge, r_peak, l, rho_max;          // fixed torus parameters
-static Real log_h_edge, log_h_peak;              // calculated torus parameters
-static Real pgas_over_rho_peak, rho_peak;        // more calculated torus parameters
-static Real rho_min, rho_pow, u_min, u_pow;      // background parameters
-static Real potential_cutoff;                    // sets region of torus to magnetize
-static Real potential_r_pow, potential_rho_pow;  // set how vector potential scales
-static Real beta_min;                            // min ratio of gas to mag pressure
-static std::string field_config;                 // type of magnetic field
-static int sample_n_r, sample_n_theta;           // number of cells in sample grid
-static Real sample_r_rat;                        // sample grid geometric spacing ratio
-static Real sample_cutoff;                       // density cutoff for sample grid
-static Real x1_min, x1_max, x2_min, x2_max;      // limits in chosen coordinate system
-static Real r_min, r_max, theta_min, theta_max;  // limits in r,theta
-static Real pert_amp, pert_kr, pert_kz;          // parameters for initial perturbations
-static AthenaArray<Real> g, gi;                  // metric and its inverse
+static Real m, a;                                  // black hole parameters
+static Real gamma_adi, k_adi;                      // hydro parameters
+static Real r_edge, r_peak, l, rho_max;            // fixed torus parameters
+static Real log_h_edge, log_h_peak;                // calculated torus parameters
+static Real pgas_over_rho_peak, rho_peak;          // more calculated torus parameters
+static Real rho_min, rho_pow, pgas_min, pgas_pow;  // background parameters
+static Real potential_cutoff;                      // sets region of torus to magnetize
+static Real potential_r_pow, potential_rho_pow;    // set how vector potential scales
+static Real beta_min;                              // min ratio of gas to mag pressure
+static std::string field_config;                   // type of magnetic field
+static int sample_n_r, sample_n_theta;             // number of cells in sample grid
+static Real sample_r_rat;                          // sample grid geometric spacing ratio
+static Real sample_cutoff;                         // density cutoff for sample grid
+static Real x1_min, x1_max, x2_min, x2_max;        // limits in chosen coordinate system
+static Real r_min, r_max, theta_min, theta_max;    // limits in r,theta
+static Real pert_amp, pert_kr, pert_kz;            // parameters for initial perturbations
 
 //----------------------------------------------------------------------------------------
-// Function for setting up arrays to handle user work
+// Function for preparing Mesh
 // Inputs:
 //   pin: input parameters (unused)
 // Outputs: (none)
 
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
-  // Read problem-specific properties from input file
+  // Read problem-specific parameters from input file
   rho_min = pin->GetReal("hydro", "rho_min");
   rho_pow = pin->GetReal("hydro", "rho_pow");
-  u_min = pin->GetReal("hydro", "u_min");
-  u_pow = pin->GetReal("hydro", "u_pow");
+  pgas_min = pin->GetReal("hydro", "pgas_min");
+  pgas_pow = pin->GetReal("hydro", "pgas_pow");
   k_adi = pin->GetReal("problem", "k_adi");
   r_edge = pin->GetReal("problem", "r_edge");
   r_peak = pin->GetReal("problem", "r_peak");
@@ -99,15 +98,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   pert_kr = pin->GetOrAddReal("problem", "pert_kr", 0.0);
   pert_kz = pin->GetOrAddReal("problem", "pert_kz", 0.0);
 
-  int nuser_out_var=pin->GetOrAddInteger("mesh","nuser_out_var",0);
-
-  // Prepare arrays if needed for extra outputs
-  if (nuser_out_var == 1 or nuser_out_var == 5 or
-      (MAGNETIC_FIELDS_ENABLED and (nuser_out_var == 2 or nuser_out_var == 10))) {
-    g.NewAthenaArray(NMETRIC, mesh_size.nx1/nrbx1+NGHOST);
-    gi.NewAthenaArray(NMETRIC, mesh_size.nx1/nrbx1+NGHOST);
-  }
-
   // Enroll boundary functions
   EnrollUserBoundaryFunction(INNER_X1, InflowBoundary);
   EnrollUserBoundaryFunction(OUTER_X1, FixedBoundary);
@@ -115,19 +105,23 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 }
 
 //----------------------------------------------------------------------------------------
-// Function for freeing arrays needed for user work
+// Function for preparing MeshBlock
 // Inputs:
-//   pin: parameters
+//   pin: input parameters (unused)
 // Outputs: (none)
+// Notes:
+//   user arrays are metric and its inverse
 
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
+void MeshBlock::InitUserMeshBlockData(ParameterInput *pin)
 {
-  int nuser_out_var=pin->GetOrAddInteger("mesh","nuser_out_var",0);
-  if (nuser_out_var == 1 or nuser_out_var == 5 or
-      (MAGNETIC_FIELDS_ENABLED and (nuser_out_var == 2 or nuser_out_var == 10))) {
-    g.DeleteAthenaArray();
-    gi.DeleteAthenaArray();
+  if (MAGNETIC_FIELDS_ENABLED) {
+    AllocateUserOutputVariables(2);
+  } else {
+    AllocateUserOutputVariables(1);
   }
+  AllocateRealUserMeshBlockDataField(2);
+  ruser_meshblock_data[0].NewAthenaArray(NMETRIC, ie+1);
+  ruser_meshblock_data[1].NewAthenaArray(NMETRIC, ie+1);
   return;
 }
 
@@ -224,8 +218,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         uu3 = u3_pref - gi(I03,i)/gi(I00,i) * u0_pref;
       } else {
         rho = rho_min * std::pow(r, rho_pow);
-        Real u = u_min * std::pow(r, u_pow);
-        pgas = (gamma_adi-1.0) * u;
+        pgas = pgas_min * std::pow(r, pgas_pow);
         uu1 = 0.0;
         uu2 = 0.0;
         uu3 = 0.0;
@@ -820,7 +813,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         Real &rho = phydro->w(IDN,k,j,i);
         Real &pgas = phydro->w(IEN,k,j,i);
         rho = std::max(rho, rho_min * std::pow(r, rho_pow));
-        pgas = std::max(pgas, (gamma_adi-1.0) * u_min * std::pow(r, u_pow));
+        pgas = std::max(pgas, pgas_min * std::pow(r, pgas_pow));
         phydro->w1(IDN,k,j,i) = rho;
         phydro->w1(IEN,k,j,i) = pgas;
       }
@@ -856,24 +849,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 // Outputs: (none)
 // Notes:
 //   writes to user_out_var array the following quantities:
-//     gamma (normal frame Lorentz factor)
-//     p_mag (magnetic pressure)
-//     u^mu (coordinate 4-velocity components)
-//     b^mu (coordinate 4-magnetic field components)
-//   quantities written are specified by nuser_out_var:
-//     0: (nothing)
-//     1: gamma
-//     2: gamma, p_mag
-//     5: gamma, u^mu
-//     10: gamma, p_mag, u^mu, b^mu
+//     0: gamma (normal frame Lorentz factor)
+//     1: p_mag (magnetic pressure)
 
 void MeshBlock::UserWorkInLoop()
 {
-  // Only proceed if appropriate number of extra output variables specified
-  if (not (nuser_out_var == 1 or nuser_out_var == 5 or
-      (MAGNETIC_FIELDS_ENABLED and (nuser_out_var == 2 or nuser_out_var == 10)))) {
-    return;
-  }
+  // Create aliases for metric
+  AthenaArray<Real> g, gi;
+  g.InitWithShallowCopy(ruser_meshblock_data[0]);
+  gi.InitWithShallowCopy(ruser_meshblock_data[1]);
 
   // Go through all cells
   for (int k = ks; k <= ke; ++k) {
@@ -890,7 +874,7 @@ void MeshBlock::UserWorkInLoop()
                  + g(I33,i)*uu3*uu3;
         Real gamma = std::sqrt(1.0 + tmp);
         user_out_var(0,k,j,i) = gamma;
-        if (nuser_out_var == 1) {
+        if (not MAGNETIC_FIELDS_ENABLED) {
           continue;
         }
 
@@ -900,16 +884,6 @@ void MeshBlock::UserWorkInLoop()
         Real u1 = uu1 - alpha * gamma * gi(I01,i);
         Real u2 = uu2 - alpha * gamma * gi(I02,i);
         Real u3 = uu3 - alpha * gamma * gi(I03,i);
-        if (nuser_out_var == 5 or nuser_out_var == 10) {
-          int offset = (nuser_out_var == 5) ? 1 : 2;
-          user_out_var(offset+0,k,j,i) = u0;
-          user_out_var(offset+1,k,j,i) = u1;
-          user_out_var(offset+2,k,j,i) = u2;
-          user_out_var(offset+3,k,j,i) = u3;
-        }
-        if (nuser_out_var == 5) {
-          continue;
-        }
         Real u_0, u_1, u_2, u_3;
         pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
 
@@ -924,13 +898,6 @@ void MeshBlock::UserWorkInLoop()
         Real b1 = (bb1 + b0 * u1) / u0;
         Real b2 = (bb2 + b0 * u2) / u0;
         Real b3 = (bb3 + b0 * u3) / u0;
-        if (nuser_out_var == 10) {
-          int offset = 6;
-          user_out_var(offset+0,k,j,i) = b0;
-          user_out_var(offset+1,k,j,i) = b1;
-          user_out_var(offset+2,k,j,i) = b2;
-          user_out_var(offset+3,k,j,i) = b3;
-        }
         Real b_0, b_1, b_2, b_3;
         pcoord->LowerVectorCell(b0, b1, b2, b3, k, j, i, &b_0, &b_1, &b_2, &b_3);
 
@@ -986,6 +953,9 @@ void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim
         prim(IM3,k,j,i) = prim(IM3,k,j,is);
       }
     }
+  }
+  if (not MAGNETIC_FIELDS_ENABLED) {
+    return;
   }
 
   // Set radial magnetic field

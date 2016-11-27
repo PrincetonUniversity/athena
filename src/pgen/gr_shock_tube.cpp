@@ -108,9 +108,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   // Initialize hydro variables
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je; ++j) {
-      if (GENERAL_RELATIVITY) {
+      #if GENERAL_RELATIVITY
+      {
         pcoord->CellMetric(k, j, is, ie, g, gi);
       }
+      #endif  // GENERAL_RELATIVITY
       for (int i = is; i <= ie; ++i) {
 
         // Determine which variables to use
@@ -158,10 +160,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         // Transform 4-vectors
         Real u0, u1, u2, u3;
         Real b0, b1, b2, b3;
-        if (GENERAL_RELATIVITY) {
+        #if GENERAL_RELATIVITY
+        {
           pcoord->TransformVectorCell(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
           pcoord->TransformVectorCell(bt, bx, by, bz, k, j, i, &b0, &b1, &b2, &b3);
-        } else {
+        }
+        #else  // SR
+        {
           u0 = ut;
           u1 = ux;
           u2 = uy;
@@ -171,6 +176,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           b2 = by;
           b3 = bz;
         }
+        #endif  // GENERAL_RELATIVITY
 
         // Set primitives
         phydro->w(IDN,k,j,i) = phydro->w1(IDN,k,j,i) = rho;
@@ -251,33 +257,37 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           // Set magnetic fields
           Real u0, u1, u2, u3;
           Real b0, b1, b2, b3;
-          if (j != je+1 && k != ke+1) {
-            if (GENERAL_RELATIVITY) {
+          #if GENERAL_RELATIVITY
+          {
+            if (j != je+1 && k != ke+1) {
               pcoord->TransformVectorFace1(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
               pcoord->TransformVectorFace1(bt, bx, by, bz, k, j, i, &b0, &b1, &b2, &b3);
               pfield->b.x1f(k,j,i) = b1 * u0 - b0 * u1;
-            } else {
-              pfield->b.x1f(k,j,i) = bbx;
             }
-          }
-          if (i != ie+1 && k != ke+1) {
-            if (GENERAL_RELATIVITY) {
+            if (i != ie+1 && k != ke+1) {
               pcoord->TransformVectorFace2(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
               pcoord->TransformVectorFace2(bt, bx, by, bz, k, j, i, &b0, &b1, &b2, &b3);
               pfield->b.x2f(k,j,i) = b2 * u0 - b0 * u2;
-            } else {
-              pfield->b.x2f(k,j,i) = bby;
             }
-          }
-          if (i != ie+1 && j != je+1) {
-            if (GENERAL_RELATIVITY) {
+            if (i != ie+1 && j != je+1) {
               pcoord->TransformVectorFace3(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
               pcoord->TransformVectorFace3(bt, bx, by, bz, k, j, i, &b0, &b1, &b2, &b3);
               pfield->b.x3f(k,j,i) = b3 * u0 - b0 * u3;
-            } else {
+            }
+          }
+          #else  // SR
+          {
+            if (j != je+1 && k != ke+1) {
+              pfield->b.x1f(k,j,i) = bbx;
+            }
+            if (i != ie+1 && k != ke+1) {
+              pfield->b.x2f(k,j,i) = bby;
+            }
+            if (i != ie+1 && j != je+1) {
               pfield->b.x3f(k,j,i) = bbz;
             }
           }
+          #endif  // GENERAL_RELATIVITY
         }
       }
     }

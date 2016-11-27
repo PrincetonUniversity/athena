@@ -2,7 +2,7 @@
 problem = Geodesic infall
 
 <job>
-problem_id = Infall
+problem_id = gr_infall
 
 <output1>
 file_type = vtk
@@ -20,37 +20,37 @@ nlim       = -1
 tlim       = 1.0
 
 <mesh>
-nx1    = 100
-x1min  = 1.96
-x1max  = 20.0
-ix1_bc = outflow
-ox1_bc = user
+nx1    = 100      # number of cells in r-direction
+x1min  = 1.96     # minimum r
+x1max  = 20.0     # maximum r
+ix1_bc = outflow  # inner boundary
+ox1_bc = user     # outer boundary
 
-nx2    = 100
-x2min  = 0.5235987755982988  # pi/6
-x2max  = 2.6179938779914944  # 5*pi/6
-ix2_bc = reflecting
-ox2_bc = reflecting
+nx2    = 100                 # number of cells in theta-direction
+x2min  = 0.5235987755982988  # minimum theta (pi/6)
+x2max  = 2.6179938779914944  # maximum theta (5*pi/6)
+ix2_bc = reflecting          # upper boundary
+ox2_bc = reflecting          # lower boundary
 
-nx3    = 1
-x3min  = -0.5
-x3max  = 0.5
-ix3_bc = periodic
-ox3_bc = periodic
+nx3    = 1         # number of cells in phi-direction
+x3min  = -0.5      # minimum phi
+x3max  = 0.5       # maximum phi
+ix3_bc = periodic  # clockwise boundary
+ox3_bc = periodic  # counterclockwise boundary
 
 <coord>
 m = 1.0  # black hole mass M
-a = 0.0  # black hole spin (0 <= a/M < 1)
+a = 0.0  # black hole spin a (0 <= a/M < 1)
 
 <hydro>
-gamma     = 1.3333333333333333
-dfloor    = 1.0e-6
-pfloor    = 1.0e-8
-rho_min   = 1.0e-4
-rho_pow   = -1.5
-u_min     = 1.0e-4
-u_pow     = -2.5
-gamma_max = 50.0
+gamma     = 1.3333333333333333     # ratio of specific heats Gamma
+dfloor    = 1.0e-6                 # floor on density rho
+pfloor    = 1.0e-8                 # floor on gas pressure p_gas
+rho_min   = 1.0e-4                 # floor on rho given by rho_min ...
+rho_pow   = -1.5                   # ... * r^rho_pow
+pgas_min  = 3.3333333333333335e-5  # floor on p_gas given by pgas_min ...
+pgas_pow  = -2.5                   # ... * r^pgas_pow
+gamma_max = 50.0                   # ceiling on normal Lorentz factor gamma
 
 <problem>
 energy = 1.0  # E/m for particles

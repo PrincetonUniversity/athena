@@ -44,6 +44,14 @@ static Real bsq_over_rho;  // b^2/rho at inner radius
 
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
+  // Read problem parameters
+  k_adi = pin->GetReal("hydro", "k_adi");
+  r_crit = pin->GetReal("problem", "r_crit");
+  bsq_over_rho = 0.0;
+  if (MAGNETIC_FIELDS_ENABLED) {
+    bsq_over_rho = pin->GetReal("problem", "bsq_over_rho");
+  }
+
   // Enroll boundary functions
   EnrollUserBoundaryFunction(INNER_X1, FixedBoundary);
   EnrollUserBoundaryFunction(OUTER_X1, FixedBoundary);
@@ -87,14 +95,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   // Get ratio of specific heats
   Real gamma_adi = peos->GetGamma();
   n_adi = 1.0/(gamma_adi-1.0);
-
-  // Read problem parameters
-  k_adi = pin->GetReal("hydro", "k_adi");
-  r_crit = pin->GetReal("problem", "r_crit");
-  bsq_over_rho = 0.0;
-  if (MAGNETIC_FIELDS_ENABLED) {
-    bsq_over_rho = pin->GetReal("problem", "bsq_over_rho");
-  }
 
   // Prepare scratch arrays
   AthenaArray<Real> g, gi;
@@ -148,7 +148,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     Real bsq_over_rho_actual = bsq/rho;
     Real normalization = std::sqrt(bsq_over_rho/bsq_over_rho_actual);
 
-    // Set field
+    // Set face-centered field
     for (int k = kl; k <= ku+1; ++k) {
       for (int j = jl; j <= ju+1; ++j) {
         for (int i = il; i <= iu+1; ++i) {
@@ -200,44 +200,19 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         }
       }
     }
-  }
 
-  // Calculate cell-centered magnetic field
-  AthenaArray<Real> bb;
-  bb.NewAthenaArray(3, ku+1, ju+1, iu+1);
-  if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k = kl; k <= ku; ++k) {
-      for (int j = jl; j <= ju; ++j) {
-        for (int i = il; i <= iu; ++i) {
-
-          // Extract face-centered magnetic field
-          const Real &bbf1m = pfield->b.x1f(k,j,i);
-          const Real &bbf1p = pfield->b.x1f(k,j,i+1);
-          const Real &bbf2m = pfield->b.x2f(k,j,i);
-          const Real &bbf2p = pfield->b.x2f(k,j+1,i);
-          const Real &bbf3m = pfield->b.x3f(k,j,i);
-          const Real &bbf3p = pfield->b.x3f(k+1,j,i);
-
-          // Calculate cell-centered magnetic field
-          Real tmp = (pcoord->x1v(i) - pcoord->x1f(i)) / pcoord->dx1f(i);
-          bb(IB1,k,j,i) = (1.0-tmp) * bbf1m + tmp * bbf1p;
-          tmp = (pcoord->x2v(j) - pcoord->x2f(j)) / pcoord->dx2f(j);
-          bb(IB2,k,j,i) = (1.0-tmp) * bbf2m + tmp * bbf2p;
-          tmp = (pcoord->x3v(k) - pcoord->x3f(k)) / pcoord->dx3f(k);
-          bb(IB3,k,j,i) = (1.0-tmp) * bbf3m + tmp * bbf3p;
-        }
-      }
-    }
+    // Calculate cell-centered magnetic field
+    pfield->CalculateCellCenteredField(pfield->b, pfield->bcc, pcoord, il, iu, jl, ju, kl,
+        ku);
   }
 
   // Initialize conserved variables
-  peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, il, iu, jl, ju, kl, ku);
+  peos->PrimitiveToConserved(phydro->w, pfield->bcc, phydro->u, pcoord, il, iu, jl, ju,
+      kl, ku);
 
   // Free scratch arrays
   g.DeleteAthenaArray();
   gi.DeleteAthenaArray();
-  bb.DeleteAthenaArray();
-
   return;
 }
 

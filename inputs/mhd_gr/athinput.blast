@@ -2,7 +2,7 @@
 problem = GR MHD spherical blast wave
 
 <job>
-problem_id = GRBlast
+problem_id = gr_blast
 
 <output1>
 file_type = vtk
@@ -15,32 +15,28 @@ nlim       = -1
 tlim       = 1.0
 
 <mesh>
-nx1    = 120
-x1min  = -0.3
-x1max  = 0.3
-ix1_bc = periodic  # 4: periodic
-ox1_bc = periodic  # 4: periodic
+nx1    = 120       # number of cells in x-direction
+x1min  = -0.3      # minimum x
+x1max  = 0.3       # maximum x
+ix1_bc = periodic  # left boundary
+ox1_bc = periodic  # right boundary
 
-nx2    = 180
-x2min  = -0.45
-x2max  = 0.45
-ix2_bc = periodic  # 4: periodic
-ox2_bc = periodic  # 4: periodic
+nx2    = 180       # number of cells in y-direction
+x2min  = -0.45     # minimum y
+x2max  = 0.45      # maximum y
+ix2_bc = periodic  # inner boundary
+ox2_bc = periodic  # outer boundary
 
-nx3    = 1
-x3min  = -0.5
-x3max  = 0.5
-ix3_bc = periodic  # 4: periodic
-ox3_bc = periodic  # 4: periodic
-
-<coord>
-a = 0.0  # amplitude for sinusoidal coordinates
-k = 0.0  # wavenumber for sinusoidal coordinates
+nx3    = 1         # number of cells in z-direction
+x3min  = -0.5      # minimum z
+x3max  = 0.5       # maximum z
+ix3_bc = periodic  # lower boundary
+ox3_bc = periodic  # upper boundary
 
 <hydro>
-gamma = 1.3333333333333333
-dfloor = 1.0e-5
-pfloor = 1.0e-5
+gamma  = 1.3333333333333333  # ratio of specific heats Gamma
+dfloor = 1.0e-5              # floor on density rho
+pfloor = 1.0e-5              # floor on gas pressure p_gas
 
 <problem>
 num_x     = 0    # number of blast centers strictly left and right of central one
@@ -49,12 +45,10 @@ x_spacing = 0.6  # separation of blast centers in x
 y_spacing = 0.9  # separation of blast centers in y
 radius    = 0.1  # radius of blast centers
 
-rho_inner = 1.0   # density in blast center
+rho_inner  = 1.0  # density in blast center
 pgas_inner = 2.5  # gas pressure in blast center
-
-rho_outer = 1.0   # density outside blast center
+rho_outer  = 1.0  # density outside blast center
 pgas_outer = 0.1  # gas pressure outside blast center
-
-bx = 0.0  # initial B^x everywhere
-by = 0.0  # initial B^y everywhere
-bz = 0.0  # initial B^z everywhere
+bx         = 0.0  # initial B^x everywhere
+by         = 0.0  # initial B^y everywhere
+bz         = 0.0  # initial B^z everywhere

@@ -83,8 +83,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real lz = pin->GetReal("problem", "l_z");
   Real rho_min = pin->GetReal("hydro", "rho_min");
   Real rho_pow = pin->GetReal("hydro", "rho_pow");
-  Real u_min = pin->GetReal("hydro", "u_min");
-  Real u_pow = pin->GetReal("hydro", "u_pow");
+  Real pgas_min = pin->GetReal("hydro", "pgas_min");
+  Real pgas_pow = pin->GetReal("hydro", "pgas_pow");
 
   // Initialize primitive values
   AthenaArray<Real> g, gi;
@@ -95,12 +95,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
       // Get Boyer-Lindquist coordinates of cell
       Real r, theta, phi;
-      pmb->pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
+      pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
           pcoord->x3v(kl), &r, &theta, &phi);
 
       // Calculate primitives depending on location
       Real rho = rho_min * std::pow(r, rho_pow);
-      Real pgas = (gamma_adi-1.0) * u_min * std::pow(r, u_pow);
+      Real pgas = pgas_min * std::pow(r, pgas_pow);
       Real uu1 = 0.0;
       Real uu2 = 0.0;
       Real uu3 = 0.0;
