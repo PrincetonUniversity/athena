@@ -83,7 +83,8 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int
 {
   // Calculate metric if in GR
   int i01, i11;
-  if (GENERAL_RELATIVITY) {
+  #if GENERAL_RELATIVITY
+  {
     switch (ivx) {
       case IVX:
         pmb->pcoord->Face1Metric(k, j, il, iu, g, gi);
@@ -102,9 +103,11 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int
         break;
     }
   }
+  #endif  // GENERAL_RELATIVITY
 
   // Transform primitives to locally flat coordinates if in GR
-  if (GENERAL_RELATIVITY) {
+  #if GENERAL_RELATIVITY
+  {
     switch (ivx) {
       case IVX:
         pmb->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
@@ -117,6 +120,7 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int
         break;
     }
   }
+  #endif  // GENERAL_RELATIVITY
 
   // Calculate cyclic permutations of indices
   int ivy = IVX + ((ivx-IVX)+1)%3;
@@ -262,7 +266,8 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int
   }
 
   // Transform fluxes to global coordinates if in GR
-  if (GENERAL_RELATIVITY) {
+  #if GENERAL_RELATIVITY
+  {
     switch (ivx) {
       case IVX:
         pmb->pcoord->FluxToGlobal1(k, j, il, iu, cons, bb_normal, flux);
@@ -275,6 +280,7 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int
         break;
     }
   }
+  #endif  // GENERAL_RELATIVITY
   return;
 }
 
@@ -296,6 +302,7 @@ static void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int
 static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const int il,
     const int iu, AthenaArray<Real> &g, AthenaArray<Real> &gi, AthenaArray<Real> &prim_l,
     AthenaArray<Real> &prim_r, AthenaArray<Real> &flux)
+#if GENERAL_RELATIVITY
 {
   // Extract ratio of specific heats
   const Real gamma_adi = pmb->peos->GetGamma();
@@ -432,3 +439,9 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const 
   }
   return;
 }
+
+#else
+{
+  return;
+}
+#endif  // GENERAL_RELATIVITY

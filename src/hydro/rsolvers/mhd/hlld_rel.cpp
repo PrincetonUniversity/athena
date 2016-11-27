@@ -102,7 +102,8 @@ static void HLLDTransforming(MeshBlock *pmb, const int k, const int j, const int
 
   // Calculate metric if in GR
   int i01, i11;
-  if (GENERAL_RELATIVITY) {
+  #if GENERAL_RELATIVITY
+  {
     switch (ivx) {
       case IVX:
         pmb->pcoord->Face1Metric(k, j, il, iu, g, gi);
@@ -121,9 +122,11 @@ static void HLLDTransforming(MeshBlock *pmb, const int k, const int j, const int
         break;
     }
   }
+  #endif  // GENERAL_RELATIVITY
 
   // Transform primitives to locally flat coordinates if in GR
-  if (GENERAL_RELATIVITY) {
+  #if GENERAL_RELATIVITY
+  {
     switch (ivx) {
       case IVX:
         pmb->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
@@ -135,12 +138,15 @@ static void HLLDTransforming(MeshBlock *pmb, const int k, const int j, const int
         pmb->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
         break;
     }
-  } else {  // SR; need to populate 1D normal B array
+  }
+  #else  // SR; need to populate 1D normal B array
+  {
     #pragma simd
     for (int i = il; i <= iu; ++i) {
       bb_normal(i) = bb(k,j,i);
     }
   }
+  #endif  // GENERAL_RELATIVITY
 
   // Calculate wavespeeds
   pmb->peos->FastMagnetosonicSpeedsSR(prim_l, bb_normal, il, iu, ivx, lambdas_p_l,
@@ -786,7 +792,8 @@ static void HLLDTransforming(MeshBlock *pmb, const int k, const int j, const int
   }
 
   // Transform fluxes to global coordinates if in GR
-  if (GENERAL_RELATIVITY) {
+  #if GENERAL_RELATIVITY
+  {
     switch (ivx) {
       case IVX:
         pmb->pcoord->FluxToGlobal1(k, j, il, iu, cons, bb_normal, flux);
@@ -799,6 +806,7 @@ static void HLLDTransforming(MeshBlock *pmb, const int k, const int j, const int
         break;
     }
   }
+  #endif  // GENERAL_RELATIVITY
   return;
 }
 
@@ -890,6 +898,7 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const 
     const int iu, const AthenaArray<Real> &bb, AthenaArray<Real> &g,
     AthenaArray<Real> &gi, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
     AthenaArray<Real> &flux)
+#if GENERAL_RELATIVITY
 {
   // Extract ratio of specific heats
   const Real gamma_adi = pmb->peos->GetGamma();
@@ -1081,3 +1090,9 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const 
   }
   return;
 }
+
+#else
+{
+  return;
+}
+#endif  // GENERAL_RELATIVITY
