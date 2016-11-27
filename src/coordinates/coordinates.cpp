@@ -6,6 +6,9 @@
 //! \file coordinates.cpp
 //  \brief implements functions for Coordinates abstract base class
 
+// C++ headers
+#include <cmath>  // sqrt
+
 // Athena++ headers
 #include "coordinates.hpp"
 #include "../athena.hpp"
@@ -460,8 +463,8 @@ bool Coordinates::IsPole(int j)
 //   ptheta: pointer to stored value of theta
 //   pphi: pointer to stored value of phi
 // Notes:
-//   In all GR coordinates implemented to data (Minkowski,Schwarzschild, Kerr-Schild)
-//   the conversion to Boyer-Lindquist is the same (trivial)
+//   In all GR coordinates implemented to date where this should ever be called
+//       (Schwarzschild, Kerr-Schild), the conversion is the same and trivial.
 
 void Coordinates::GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
     Real *ptheta, Real *pphi)
@@ -470,6 +473,43 @@ void Coordinates::GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *
   *ptheta = x2;
   *pphi = x3;
   return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for returning Minkowski coordinates of given cell in GR
+// Inputs:
+//   x0,x1,x2,x3: global coordinates to be converted
+// Outputs:
+//   pt,px,py,pz: variables pointed to set to Minkowski coordinates
+// Notes:
+//   In all GR coordinates implemented to date where this should ever be called
+//       (Minkowski), the conversion is the same and trivial.
+
+void Coordinates::GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
+    Real *px, Real *py, Real *pz)
+{
+  *pt = x0;
+  *px = x1;
+  *py = x2;
+  *pz = x3;
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for returning spatial separation between points at same time
+// Inputs:
+//   x1,x2,x3: spatial coordinates of one point
+//   y1,y2,y3: spatial coordinates of other point
+// Outputs:
+//   returned value: spatial separation between x and y
+// Notes:
+//   In all GR coordinates implemented to date where this should ever be called
+//       (Minkowski), the distance function is the same (Euclidean).
+
+Real Coordinates::DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2,
+    Real y3)
+{
+  return std::sqrt(SQR(x1-y1) + SQR(x2-y2) + SQR(x3-y3));
 }
 
 //----------------------------------------------------------------------------------------
