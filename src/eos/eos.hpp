@@ -110,11 +110,12 @@ private:
   Real rho_min_, rho_pow_;               // variables to control power-law denity floor
   Real u_min_, u_pow_;                   // variables to control power-law energy floor
   AthenaArray<Real> g_, g_inv_;          // metric and its inverse, used in GR
-  AthenaArray<Real> normal_dd_;          // normal-frame densities, used in GR
-  AthenaArray<Real> normal_ee_;          // normal-frame energies, used in GR
-  AthenaArray<Real> normal_mm_;          // normal-frame momenta, used in GR
-  AthenaArray<Real> normal_bb_;          // normal-frame fields, used in GR
-  AthenaArray<Real> normal_tt_;          // normal-frame M.B, used in GR
+  AthenaArray<Real> fixed_;              // cells with problems, used in GR hydro
+  AthenaArray<Real> normal_dd_;          // normal-frame densities, used in GR MHD
+  AthenaArray<Real> normal_ee_;          // normal-frame energies, used in GR MHD
+  AthenaArray<Real> normal_mm_;          // normal-frame momenta, used in GR MHD
+  AthenaArray<Real> normal_bb_;          // normal-frame fields, used in GR MHD
+  AthenaArray<Real> normal_tt_;          // normal-frame M.B, used in GR MHD
 };
 
 #endif
