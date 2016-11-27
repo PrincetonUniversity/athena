@@ -102,7 +102,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 // 2D PROBLEM ---------------------------------------------------------------
 
   if (block_size.nx3 == 1) {
-    grav_acc = phydro->pf_srcterms->GetG2();
+    grav_acc = phydro->psrc->GetG2();
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
@@ -157,7 +157,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 // 3D PROBLEM ----------------------------------------------------------------
 
   } else {
-    grav_acc = phydro->pf_srcterms->GetG3();
+    grav_acc = phydro->psrc->GetG3();
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
