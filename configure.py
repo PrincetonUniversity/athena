@@ -169,9 +169,11 @@ if args['flux'] == 'hlld' and not args['b']:
 # Check relativity
 if args['s'] and args['g']:
   raise SystemExit('### CONFIGURE ERROR: ' \
-      + 'GR implies SR; the -s option is restricted to pure SR.')
+      + 'GR implies SR; the -s option is restricted to pure SR')
 if args['t'] and not args['g']:
-  raise SystemExit('### CONFIGURE ERROR: Frame transformations only apply to GR.')
+  raise SystemExit('### CONFIGURE ERROR: Frame transformations only apply to GR')
+if args['g'] and not args['t'] and args['flux'] not in ('llf','hlle'):
+  raise SystemExit('### CONFIGURE ERROR: Frame transformations required for ' + args['flux'])
 if args['g'] and args['coord'] in ('cartesian','cylindrical','spherical_polar'):
   raise SystemExit('### CONFIGURE ERROR: ' \
       + 'GR cannot be used with ' + args['coord'] + ' coordinates')
@@ -181,7 +183,7 @@ if not args['g'] and args['coord'] not in ('cartesian','cylindrical','spherical_
 if args['eos'] == 'isothermal':
   if args['s'] or args['g']:
     raise SystemExit('### CONFIGURE ERROR: '\
-        + 'Isothermal EOS is incompatible with relativity.')
+        + 'Isothermal EOS is incompatible with relativity')
 
 #--- Step 3. Set definitions and Makefile options based on above arguments -------------
 
