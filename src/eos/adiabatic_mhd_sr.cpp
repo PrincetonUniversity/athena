@@ -39,8 +39,8 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
   gamma_ = pin->GetReal("hydro", "gamma");
   density_floor_ = pin->GetOrAddReal("hydro", "dfloor", 1024*FLT_MIN);
   pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", 1024*FLT_MIN);
-  rho_pmag_min_ = pin->GetOrAddReal("hydro", "rho_pmag_min", 0.0);
-  u_pmag_min_ = pin->GetOrAddReal("hydro", "u_pmag_min", 0.0);
+  sigma_max_ = pin->GetOrAddReal("hydro", "sigma_max",  0.0);
+  beta_min_ = pin->GetOrAddReal("hydro", "beta_min", 0.0);
   gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
 }
 
@@ -150,9 +150,14 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real pmag = 0.5*b_sq;
 
         // Calculate floors for density and pressure
-        Real density_floor_local = std::max(density_floor_, rho_pmag_min_*pmag);
-        Real pressure_floor_local =
-            std::max(pressure_floor_, (gamma_-1.0)*u_pmag_min_*pmag);
+        Real density_floor_local = density_floor_;
+        if (sigma_max_ > 0.0) {
+          density_floor_local = std::max(density_floor_local, 2.0*pmag/sigma_max_);
+        }
+        Real pressure_floor_local = pressure_floor_;
+        if (beta_min_ > 0.0) {
+          pressure_floor_local = std::max(pressure_floor_local, beta_min_*pmag);
+        }
 
         // Set density, correcting only conserved density if floor applied
         rho = dd/gamma_lorentz;  // (MM A12)

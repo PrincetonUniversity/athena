@@ -50,10 +50,10 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
   pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", 1024*FLT_MIN);
   rho_min_ = pin->GetOrAddReal("hydro", "rho_min", density_floor_);
   rho_pow_ = pin->GetOrAddReal("hydro", "rho_pow", 0.0);
-  u_min_ = pin->GetOrAddReal("hydro", "u_min", pressure_floor_/(gamma_-1.0));
-  u_pow_ = pin->GetOrAddReal("hydro", "u_pow", 0.0);
-  rho_pmag_min_ = pin->GetOrAddReal("hydro", "rho_pmag_min", 0.0);
-  u_pmag_min_ = pin->GetOrAddReal("hydro", "u_pmag_min", 0.0);
+  pgas_min_ = pin->GetOrAddReal("hydro", "pgas_min", pressure_floor_);
+  pgas_pow_ = pin->GetOrAddReal("hydro", "pgas_pow", 0.0);
+  sigma_max_ = pin->GetOrAddReal("hydro", "sigma_max",  0.0);
+  beta_min_ = pin->GetOrAddReal("hydro", "beta_min", 0.0);
   gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
   int ncells1 = pmb->block_size.nx1 + 2*NGHOST;
   g_.NewAthenaArray(NMETRIC, ncells1);
@@ -129,9 +129,9 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
               std::max(density_floor_local, rho_min_ * std::pow(pco->x1v(i), rho_pow_));
         }
         Real pressure_floor_local = pressure_floor_;
-        if (u_pow_ != 0.0) {
+        if (pgas_pow_ != 0.0) {
           pressure_floor_local = std::max(pressure_floor_local,
-              (gamma_adi-1.0) * u_min_ * std::pow(pco->x1v(i), u_pow_));
+              pgas_min_ * std::pow(pco->x1v(i), pgas_pow_));
         }
 
         // Ensure conserved density is large enough
@@ -176,9 +176,12 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         }
 
         // Apply density and gas pressure floors in normal frame
-        density_floor_local = std::max(density_floor_local, rho_pmag_min_ * pmag);
-        pressure_floor_local = std::max(pressure_floor_local,
-            (gamma_adi-1.0) * u_pmag_min_ * pmag);
+        if (sigma_max_ > 0.0) {
+          density_floor_local = std::max(density_floor_local, 2.0*pmag/sigma_max_);
+        }
+        if (beta_min_ > 0.0) {
+          pressure_floor_local = std::max(pressure_floor_local, beta_min_*pmag);
+        }
         Real rho_add = std::max(density_floor_local-prim(IDN,k,j,i), 0.0);
         Real pgas_add = std::max(pressure_floor_local-prim(IPR,k,j,i), 0.0);
         if (success and (rho_add > 0.0 or pgas_add > 0.0)) {
@@ -243,14 +246,17 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
           density_floor_local =
               std::max(density_floor_local, rho_min_ * std::pow(pco->x1v(i), rho_pow_));
         }
-        density_floor_local = std::max(density_floor_local, rho_pmag_min_ * pmag);
-        pressure_floor_local = pressure_floor_;
-        if (u_pow_ != 0.0) {
-          pressure_floor_local = std::max(pressure_floor_local,
-              (gamma_adi-1.0) * u_min_ * std::pow(pco->x1v(i), u_pow_));
+        if (sigma_max_ > 0.0) {
+          density_floor_local = std::max(density_floor_local, 2.0*pmag/sigma_max_);
         }
-        pressure_floor_local =
-            std::max(pressure_floor_local, (gamma_adi-1.0) * u_pmag_min_ * pmag);
+        pressure_floor_local = pressure_floor_;
+        if (pgas_pow_ != 0.0) {
+          pressure_floor_local = std::max(pressure_floor_local,
+              pgas_min_ * std::pow(pco->x1v(i), pgas_pow_));
+        }
+        if (beta_min_ > 0.0) {
+          pressure_floor_local = std::max(pressure_floor_local, beta_min_*pmag);
+        }
 
         // Apply density and gas pressure floors in fluid frame
         Real &rho = prim(IDN,k,j,i);
