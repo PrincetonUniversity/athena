@@ -464,22 +464,37 @@ Real Schwarzschild::GetEdge3Length(const int k, const int j, const int i)
 //----------------------------------------------------------------------------------------
 // CenterWidthX functions: return physical width in X-dir at (i,j,k) cell-center
 
-Real Schwarzschild::CenterWidth1(const int k, const int j, const int i)
+void Schwarzschild::CenterWidth1(const int k, const int j, const int il, const int iu,
+                               AthenaArray<Real> &dx1)
 {
-  // \Delta W = \Delta(r \alpha) + M \Delta\log(r(1+\alpha)-M)
-  return coord_width1_i1_(i);
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    // \Delta W = \Delta(r \alpha) + M \Delta\log(r(1+\alpha)-M)
+    dx1(i) = coord_width1_i1_(i);
+  }
+  return;
 }
 
-Real Schwarzschild::CenterWidth2(const int k, const int j, const int i)
+void Schwarzschild::CenterWidth2(const int k, const int j, const int il, const int iu,
+                               AthenaArray<Real> &dx2)
 {
-  // \Delta W = r \Delta\theta
-  return x1v(i) * dx1f(j);
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    // \Delta W = r \Delta\theta
+    dx2(i) = x1v(i) * dx1f(j);
+  }
+  return;
 }
 
-Real Schwarzschild::CenterWidth3(const int k, const int j, const int i)
+void Schwarzschild::CenterWidth3(const int k, const int j, const int il, const int iu,
+                               AthenaArray<Real> &dx3)
 {
-  // \Delta W = r \sin\theta \Delta\phi
-  return x1v(i) * coord_width3_j1_(j) * dx3f(k);
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    // \Delta W = r \sin\theta \Delta\phi
+    dx3(i) = x1v(i) * coord_width3_j1_(j) * dx3f(k);
+  }
+  return;
 }
 
 //----------------------------------------------------------------------------------------

@@ -285,14 +285,24 @@ Real SphericalPolar::GetEdge3Length(const int k, const int j, const int i)
 //----------------------------------------------------------------------------------------
 // CenterWidthX functions: return physical width in X-dir at (i,j,k) cell-center
 
-Real SphericalPolar::CenterWidth2(const int k, const int j, const int i)
+void SphericalPolar::CenterWidth2(const int k, const int j, const int il, const int iu,
+                               AthenaArray<Real> &dx2)
 {
-  return x1v(i)*dx2f(j);
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    dx2(i) = x1v(i)*dx2f(j);
+  }
+  return;
 }
 
-Real SphericalPolar::CenterWidth3(const int k, const int j, const int i)
+void SphericalPolar::CenterWidth3(const int k, const int j, const int il, const int iu,
+                               AthenaArray<Real> &dx3)
 {
-  return x1v(i)*fabs(sin(x2v(j)))*dx3f(k);
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    dx3(i) = x1v(i)*fabs(sin(x2v(j)))*dx3f(k);
+  }
+  return;
 }
 
 //----------------------------------------------------------------------------------------

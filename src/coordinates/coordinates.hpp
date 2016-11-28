@@ -50,9 +50,12 @@ public:
   virtual Real GetEdge3Length(const int k, const int j, const int i);
 
   // ...to compute physical width at cell center
-  virtual Real CenterWidth1(const int k, const int j, const int i);
-  virtual Real CenterWidth2(const int k, const int j, const int i);
-  virtual Real CenterWidth3(const int k, const int j, const int i);
+  virtual void CenterWidth1(const int k, const int j, const int il, const int iu,
+                            AthenaArray<Real> &dx1);
+  virtual void CenterWidth2(const int k, const int j, const int il, const int iu,
+                            AthenaArray<Real> &dx2);
+  virtual void CenterWidth3(const int k, const int j, const int il, const int iu,
+                            AthenaArray<Real> &dx3);
 
   // ...to compute area of faces
   virtual void Face1Area(const int k, const int j, const int il, const int iu,
@@ -238,7 +241,8 @@ public:
   Real GetEdge2Length(const int k, const int j, const int i);
 
   // ...to compute physical width at cell center
-  Real CenterWidth2(const int k, const int j, const int i);
+  void CenterWidth2(const int k, const int j, const int il, const int iu,
+                            AthenaArray<Real> &dx2);
 
   // ...to compute area of faces
   void Face1Area(const int k, const int j, const int il, const int iu,
@@ -278,8 +282,10 @@ public:
   Real GetEdge3Length(const int k, const int j, const int i);
 
   // ...to compute physical width at cell center
-  Real CenterWidth2(const int k, const int j, const int i);
-  Real CenterWidth3(const int k, const int j, const int i);
+  void CenterWidth2(const int k, const int j, const int il, const int iu,
+                            AthenaArray<Real> &dx2);
+  void CenterWidth3(const int k, const int j, const int il, const int iu,
+                            AthenaArray<Real> &dx3);
 
   // ...to compute area of faces
   void Face1Area(const int k, const int j, const int il, const int iu,
@@ -386,9 +392,12 @@ public:
   Real GetEdge3Length(const int k, const int j, const int i);
 
   // ...to compute physical width at cell center
-  Real CenterWidth1(const int k, const int j, const int i);
-  Real CenterWidth2(const int k, const int j, const int i);
-  Real CenterWidth3(const int k, const int j, const int i);
+  void CenterWidth1(const int k, const int j, const int il, const int iu,
+                            AthenaArray<Real> &dx1);
+  void CenterWidth2(const int k, const int j, const int il, const int iu,
+                            AthenaArray<Real> &dx2);
+  void CenterWidth3(const int k, const int j, const int il, const int iu,
+                            AthenaArray<Real> &dx3);
 
   // ...to compute area of faces
   void Face1Area(const int k, const int j, const int il, const int iu,
@@ -483,9 +492,12 @@ public:
   Real GetEdge3Length(const int k, const int j, const int i);
 
   // ...to compute physical width at cell center
-  Real CenterWidth1(const int k, const int j, const int i);
-  Real CenterWidth2(const int k, const int j, const int i);
-  Real CenterWidth3(const int k, const int j, const int i);
+  void CenterWidth1(const int k, const int j, const int il, const int iu,
+                            AthenaArray<Real> &dx1);
+  void CenterWidth2(const int k, const int j, const int il, const int iu,
+                            AthenaArray<Real> &dx2);
+  void CenterWidth3(const int k, const int j, const int il, const int iu,
+                            AthenaArray<Real> &dx3);
 
   // ...to compute area of faces
   void Face1Area(const int k, const int j, const int il, const int iu,

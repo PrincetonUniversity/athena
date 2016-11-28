@@ -208,9 +208,14 @@ Real Cylindrical::GetEdge2Length(const int k, const int j, const int i)
 //----------------------------------------------------------------------------------------
 // CenterWidthX functions: return physical width in X-dir at (i,j,k) cell-center
 
-Real Cylindrical::CenterWidth2(const int k, const int j, const int i)
+void Cylindrical::CenterWidth2(const int k, const int j, const int il, const int iu,
+                               AthenaArray<Real> &dx2)
 {
-  return x1v(i)*dx2f(j);
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    dx2(i) = x1v(i)*dx2f(j);
+  }
+  return;
 }
 
 //----------------------------------------------------------------------------------------

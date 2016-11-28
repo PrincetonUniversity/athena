@@ -46,6 +46,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
   dt1_.NewAthenaArray(nthreads,ncells1);
   dt2_.NewAthenaArray(nthreads,ncells1);
   dt3_.NewAthenaArray(nthreads,ncells1);
+  dxw_.NewAthenaArray(nthreads,ncells1);
   wl_.NewAthenaArray(nthreads,(NWAVE),ncells1);
   wr_.NewAthenaArray(nthreads,(NWAVE),ncells1);
   flx_.NewAthenaArray(nthreads,(NWAVE),ncells1);
@@ -96,6 +97,7 @@ Hydro::~Hydro()
   dt1_.DeleteAthenaArray();
   dt2_.DeleteAthenaArray();
   dt3_.DeleteAthenaArray();
+  dxw_.DeleteAthenaArray();
   wl_.DeleteAthenaArray();
   wr_.DeleteAthenaArray();
   flx_.DeleteAthenaArray();

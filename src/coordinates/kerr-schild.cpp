@@ -675,24 +675,39 @@ Real KerrSchild::GetEdge3Length(const int k, const int j, const int i)
 //----------------------------------------------------------------------------------------
 // CenterWidthX functions: return physical width in X-dir at (i,j,k) cell-center
 
-Real KerrSchild::CenterWidth1(const int k, const int j, const int i)
+void KerrSchild::CenterWidth1(const int k, const int j, const int il, const int iu,
+                               AthenaArray<Real> &dx1)
 {
-  // \Delta W >= \sqrt{r_+^2 + M^2} - \sqrt{r_-^2 + M^2}
-  //     + M \log{(\sqrt{r_+^2 + M^2} + r_+) / (\sqrt{r_-^2 + M^2} + r_-)}
-  return coord_width1_i1_(i);
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    // \Delta W >= \sqrt{r_+^2 + M^2} - \sqrt{r_-^2 + M^2}
+    //     + M \log{(\sqrt{r_+^2 + M^2} + r_+) / (\sqrt{r_-^2 + M^2} + r_-)}
+    dx1(i) = coord_width1_i1_(i);
+  }
+  return;
 }
 
-Real KerrSchild::CenterWidth2(const int k, const int j, const int i)
+void KerrSchild::CenterWidth2(const int k, const int j, const int il, const int iu,
+                               AthenaArray<Real> &dx2)
 {
-  // \Delta W >= r (\theta_+ - \theta_-)
-  return coord_width2_i1_(i) * coord_width2_j1_(j);
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    // \Delta W >= r (\theta_+ - \theta_-)
+    dx2(i) =  coord_width2_i1_(i) * coord_width2_j1_(j);
+  }
+  return;
 }
 
-Real KerrSchild::CenterWidth3(const int k, const int j, const int i)
+void KerrSchild::CenterWidth3(const int k, const int j, const int il, const int iu,
+                               AthenaArray<Real> &dx3)
 {
-  // \Delta W = |\sin\theta| (\phi_+ - \phi_-)
-  //     * \sqrt{r^2 + a^2 + 2 M a^2 r \sin^2\theta / (r^2 + a^2 \cos^2\theta)}
-  return coord_width3_j1_(j) * coord_width3_k1_(k) * coord_width3_ji1_(j,i);
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    // \Delta W = |\sin\theta| (\phi_+ - \phi_-)
+    //     * \sqrt{r^2 + a^2 + 2 M a^2 r \sin^2\theta / (r^2 + a^2 \cos^2\theta)}
+    dx3(i) =  coord_width3_j1_(j) * coord_width3_k1_(k) * coord_width3_ji1_(j,i);
+  }
+  return;
 }
 
 //----------------------------------------------------------------------------------------

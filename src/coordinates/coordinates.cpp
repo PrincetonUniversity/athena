@@ -331,19 +331,34 @@ Real Coordinates::GetEdge3Length(const int k, const int j, const int i)
 //----------------------------------------------------------------------------------------
 // CenterWidthX functions: return physical width in X-dir at (i,j,k) cell-center
 
-Real Coordinates::CenterWidth1(const int k, const int j, const int i)
+void Coordinates::CenterWidth1(const int k, const int j, const int il, const int iu,
+                               AthenaArray<Real> &dx1)
 {
-  return dx1f(i);
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    dx1(i) = dx1f(i);
+  }
+  return;
 }
 
-Real Coordinates::CenterWidth2(const int k, const int j, const int i)
+void Coordinates::CenterWidth2(const int k, const int j, const int il, const int iu,
+                               AthenaArray<Real> &dx2)
 {
-  return dx2f(j);
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    dx2(i) = dx2f(j);
+  }
+  return;
 }
 
-Real Coordinates::CenterWidth3(const int k, const int j, const int i)
+void Coordinates::CenterWidth3(const int k, const int j, const int il, const int iu,
+                               AthenaArray<Real> &dx3)
 {
-  return dx3f(k);
+#pragma simd
+  for (int i=il; i<=iu; ++i){
+    dx3(i) = dx3f(k);
+  }
+  return;
 }
 
 //----------------------------------------------------------------------------------------
