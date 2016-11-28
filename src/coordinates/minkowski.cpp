@@ -11,6 +11,9 @@
 //   coordinates: t, x, y, z
 //   metric: ds^2 = -dt^2 + dx^2 + dy^2 + dz^2
 
+// C++ headers
+#include <cmath>  // sqrt
+
 // Athena++ headers
 #include "coordinates.hpp"
 #include "../athena.hpp"
@@ -435,4 +438,40 @@ void Minkowski::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j
   *pa_2 = a2;
   *pa_3 = a3;
   return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for returning Minkowski coordinates of given cell in GR
+// Inputs:
+//   x0,x1,x2,x3: global coordinates to be converted
+// Outputs:
+//   pt,px,py,pz: variables pointed to set to Minkowski coordinates
+// Notes:
+//   conversion is trivial
+//   useful to have if other coordinate systems for Minkowski space are developed
+
+void Minkowski::GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
+    Real *px, Real *py, Real *pz)
+{
+  *pt = x0;
+  *px = x1;
+  *py = x2;
+  *pz = x3;
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for returning spatial separation between points at same time
+// Inputs:
+//   x1,x2,x3: spatial coordinates of one point
+//   y1,y2,y3: spatial coordinates of other point
+// Outputs:
+//   returned value: spatial separation between x and y
+// Notes:
+//   distance function is Euclidean
+
+Real Minkowski::DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2,
+    Real y3)
+{
+  return std::sqrt(SQR(x1-y1) + SQR(x2-y2) + SQR(x3-y3));
 }
