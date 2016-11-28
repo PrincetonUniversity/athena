@@ -24,6 +24,11 @@
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
 
+// Configuration checking
+#if not GENERAL_RELATIVITY
+#error "This problem generator must be used with general relativity"
+#endif
+
 // Declarations
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
     FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);

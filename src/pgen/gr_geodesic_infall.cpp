@@ -6,10 +6,6 @@
 //! \file gr_geodesic_infall.cpp
 //  \brief Problem generator for dust falling onto black hole.
 
-#if MAGNETIC_FIELDS_ENABLED
-#error "This problem generator does not support magnetic fields"
-#endif
-
 // C++ headers
 #include <cassert>  // assert
 #include <cmath>    // pow(), sin(), sqrt()
@@ -24,6 +20,14 @@
 #include "../eos/eos.hpp"                  // EquationOfState
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
+
+// Configuration checking
+#if not GENERAL_RELATIVITY
+#error "This problem generator must be used with general relativity"
+#endif
+#if MAGNETIC_FIELDS_ENABLED
+#error "This problem generator does not support magnetic fields"
+#endif
 
 // Declarations
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,

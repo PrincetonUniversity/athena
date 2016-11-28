@@ -27,6 +27,11 @@
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
 
+// Configuration checking
+#if not RELATIVISTIC_DYNAMICS
+#error "This problem generator must be used with relativity"
+#endif
+
 // Declarations
 static Real QuadraticRoot(Real a1, Real a0, bool greater_root);
 static Real CubicRootReal(Real a2, Real a1, Real a0);

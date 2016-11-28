@@ -23,6 +23,11 @@
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
 
+// Configuration checking
+#if not RELATIVISTIC_DYNAMICS
+#error "This problem generator must be used with relativity"
+#endif
+
 //----------------------------------------------------------------------------------------
 // Function for setting initial conditions
 // Inputs:

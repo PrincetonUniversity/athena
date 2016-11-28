@@ -19,6 +19,11 @@
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
 
+// Configuration checking
+#if not GENERAL_RELATIVITY
+#error "This problem generator must be used with general relativity"
+#endif
+
 //----------------------------------------------------------------------------------------
 // Function for setting initial conditions
 // Inputs:
