@@ -39,3 +39,9 @@ meshtest.dat
 
 # Visualization package files
 .smhist
+
+# Mac OS metadata
+.DS_Store
+
+# editor temp files
+*~
