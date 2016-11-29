@@ -1,0 +1,55 @@
+<comment>
+problem   = SR hydro shocktube problem 3
+reference = Mignone & Bodo 2005, MNRAS 364 126
+
+<job>
+problem_id = hydro_shock_rel_3
+
+<output1>
+file_type   = tab
+variable    = cons
+data_format = %24.16e
+dt          = 0.4
+
+<time>
+cfl_number = 0.4
+nlim       = -1
+tlim       = 0.4
+
+<mesh>
+nx1    = 400      # number of cells in x-direction
+x1min  = -0.5     # minimum x
+x1max  = 0.5      # maximum x
+ix1_bc = outflow  # left boundary
+ox1_bc = outflow  # right boundary
+
+nx2    = 1         # number of cells in y-direction
+x2min  = -0.5      # minimum y
+x2max  = 0.5       # maximum y
+ix2_bc = periodic  # inner boundary
+ox2_bc = periodic  # outer boundary
+
+nx3    = 1         # number of cells in z-direction
+x3min  = -0.5      # minimum z
+x3max  = 0.5       # maximum z
+ix3_bc = periodic  # lower boundary
+ox3_bc = periodic  # upper boundary
+
+<hydro>
+gamma = 1.6666666666666667  # ratio of specific heats Gamma
+
+<problem>
+shock_dir = 1    # 1/2/3 for x/y/z-directions
+xshock    = 0.0  # position of initial interface
+
+dl = 10.0                # left density rho
+pl = 13.333333333333334  # left gas pressure p_gas
+ul = 0.0                 # left 3-velocity v^x
+vl = 0.0                 # left 3-velocity v^y
+wl = 0.0                 # left 3-velocity v^z
+
+dr = 1.0                   # right density rho
+pr = 6.666666666666666e-7  # right gas pressure p_gas
+ur = 0.0                   # right 3-velocity v^x
+vr = 0.0                   # right 3-velocity v^y
+wr = 0.0                   # right 3-velocity v^z

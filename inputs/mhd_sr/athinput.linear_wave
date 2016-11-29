@@ -1,0 +1,57 @@
+<comment>
+problem = 1D linear wave
+
+<job>
+problem_id = linear_wave_mhd_rel
+
+<output1>
+file_type   = tab
+variable    = prim
+data_format = %24.16e
+dt          = 10.0
+
+<time>
+cfl_number = 0.8
+nlim       = -1
+tlim       = 10.0
+
+<mesh>
+nx1    = 100       # number of cells in x-direction
+x1min  = -0.5      # minimum x
+x1max  = 0.5       # maximum x
+ix1_bc = periodic  # left boundary
+ox1_bc = periodic  # right boundary
+
+nx2    = 1         # number of cells in y-direction
+x2min  = -0.5      # minimum y
+x2max  = 0.5       # maximum y
+ix2_bc = periodic  # inner boundary
+ox2_bc = periodic  # outer boundary
+
+nx3    = 1         # number of cells in z-direction
+x3min  = -0.5      # minimum z
+x3max  = 0.5       # maximum z
+ix3_bc = periodic  # lower boundary
+ox3_bc = periodic  # upper boundary
+
+<meshblock>
+nx1 = 100
+nx2 = 1
+nx3 = 1
+
+<hydro>
+gamma = 1.3333333333333333  # ratio of specific heats Gamma
+
+<problem>
+wave_flag     = 3       # 0/6, 1/5, 2/4 for L/R fast, Alfven, slow; 3 for entropy
+amp           = 1.0e-6  # amplitude of perturbation
+compute_error = false   # flag indicating error analysis should be performed
+
+rho  = 1.0                 # background density rho
+pgas = 0.5                 # background gas pressure p_gas
+vx   = 0.1                 # background 3-velocity v^x
+vy   = 0.15                # background 3-velocity v^y
+vz   = 0.05                # background 3-velocity v^z
+Bx   = 1.0                 # background magnetic field B^z
+By   = 0.6666666666666666  # background magnetic field B^y
+Bz   = 0.3333333333333333  # background magnetic field B^z

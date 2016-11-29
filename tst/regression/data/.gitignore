@@ -1,0 +1,4 @@
+# Restore Athena output files
+!*.tab
+!*.vtk
+!*.hst

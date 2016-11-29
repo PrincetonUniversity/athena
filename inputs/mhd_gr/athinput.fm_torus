@@ -1,0 +1,96 @@
+<comment>
+problem   = Fishbone-Moncrief equilibrium torus
+reference = Fishbone & Moncrief 1976, ApJ 207 962
+
+<job>
+problem_id = fm_torus
+
+<output1>
+file_type = hdf5
+variable  = prim
+id        = prim
+dt        = 1.0
+
+<output2>
+file_type = hdf5
+variable  = uov
+id        = user
+dt        = 1.0
+
+<output3>
+file_type = rst
+dt        = 100.0
+
+<time>
+cfl_number = 0.2
+nlim       = -1
+tlim       = 1.0
+
+<mesh>
+nx1    = 64    # number of cells in r-direction
+x1min  = 1.96  # minimum r
+x1max  = 20.0  # maximum r
+x1rat  = 1.0   # ratio of adjacent r-widths
+ix1_bc = user  # inner boundary
+ox1_bc = user  # outer boundary
+
+nx2    = 64                 # number of cells in theta-direction
+x2min  = 0.0                # minimum theta
+x2max  = 3.141592653589793  # maximum theta (pi)
+ix2_bc = polar              # upper boundary
+ox2_bc = polar              # lower boundary
+
+nx3    = 64                 # number of cells in phi-direction
+x3min  = 0.0                # minimum phi
+x3max  = 6.283185307179586  # maximum phi (2*pi)
+ix3_bc = periodic           # clockwise boundary
+ox3_bc = periodic           # counterclockwise boundary
+
+<meshblock>
+nx1 = 64
+nx2 = 64
+nx3 = 64
+
+<coord>
+m = 1.0  # black hole mass M
+a = 0.0  # black hole spin a (0 <= a/M < 1)
+
+<hydro>
+gamma     = 1.3333333333333333  # ratio of specific heats Gamma
+dfloor    = 1.0e-6              # floor on density rho
+pfloor    = 1.0e-8              # floor on gas pressure p_gas
+rho_min   = 1.0e-2              # floor on rho given by rho_min ...
+rho_pow   = -1.5                # ... * r^rho_pow
+pgas_min  = 1.0e-2              # floor on p_gas given by pgas_min ...
+pgas_pow  = -2.5                # ... * r^pgas_pow
+sigma_max = 100.0               # maximum allowed value of 2*p_mag/rho
+beta_min  = 0.001               # minimum allowed value of p_gas/p_mag
+gamma_max = 50.0                # ceiling on normal Lorentz factor gamma
+
+<problem>
+k_adi   = 1.0   # adiabat K, p_gas = K * rho^Gamma
+r_edge  = 6.0   # radius of inner edge of disk
+r_peak  = 12.0  # radius of pressure maximum; use l instead if negative
+l       = 0.0   # constant ang. mom. per unit mass u^t u_phi; only used if r_peak < 0
+rho_max = 1.0   # if greater than 0, rescale density to have this peak, and rescale
+                # pressure by same factor
+
+field_config      = normal  # normal or renorm (equalize beta then recalculate A_phi)
+potential_cutoff  = 0.2     # amount to subtract from density when calculating potential
+                            # (field_config=normal); floor (relative to max) on
+                            # potential (field_config=renorm)
+potential_r_pow   = 0.0     # vector potential proportional to this power of radius
+potential_rho_pow = 1.0     # vector potential proportional to this power of density
+beta_min          = 100.0   # desired minimum ratio of gas pressure to magnetic
+                            # pressure; magnetic field zeroed if negative
+sample_n_r        = 64      # number of samples in r to use in global beta grid
+sample_n_theta    = 64      # number of samples in theta to use in global beta grid
+sample_r_rat      = 1.0     # geometric ratio to use in r in global beta grid
+sample_cutoff     = 0.2     # density below which cells are not used for global beta
+                            # rescaling calculation
+
+pert_amp = 0.0  # amplitude of perturbations to cylindrical radial velocity \tilde{u}^R
+                # (combination of \tilde{u}^r and \tilde{u}^\theta) as fraction
+                # of azimuthal velocity \tilde{u}^\phi
+pert_kr  = 0.0  # cylindrical radial wavenumber of perturbations
+pert_kz  = 0.0  # vertical wavenumber of perturbations

@@ -1,0 +1,54 @@
+<comment>
+problem = GR MHD spherical blast wave
+
+<job>
+problem_id = gr_blast
+
+<output1>
+file_type = vtk
+variable  = prim
+dt        = 0.1
+
+<time>
+cfl_number = 0.4
+nlim       = -1
+tlim       = 1.0
+
+<mesh>
+nx1    = 120       # number of cells in x-direction
+x1min  = -0.3      # minimum x
+x1max  = 0.3       # maximum x
+ix1_bc = periodic  # left boundary
+ox1_bc = periodic  # right boundary
+
+nx2    = 180       # number of cells in y-direction
+x2min  = -0.45     # minimum y
+x2max  = 0.45      # maximum y
+ix2_bc = periodic  # inner boundary
+ox2_bc = periodic  # outer boundary
+
+nx3    = 1         # number of cells in z-direction
+x3min  = -0.5      # minimum z
+x3max  = 0.5       # maximum z
+ix3_bc = periodic  # lower boundary
+ox3_bc = periodic  # upper boundary
+
+<hydro>
+gamma  = 1.3333333333333333  # ratio of specific heats Gamma
+dfloor = 1.0e-5              # floor on density rho
+pfloor = 1.0e-5              # floor on gas pressure p_gas
+
+<problem>
+num_x     = 0    # number of blast centers strictly left and right of central one
+num_y     = 0    # number of blast centers strictly below and above central one
+x_spacing = 0.6  # separation of blast centers in x
+y_spacing = 0.9  # separation of blast centers in y
+radius    = 0.1  # radius of blast centers
+
+rho_inner  = 1.0  # density in blast center
+pgas_inner = 2.5  # gas pressure in blast center
+rho_outer  = 1.0  # density outside blast center
+pgas_outer = 0.1  # gas pressure outside blast center
+bx         = 0.0  # initial B^x everywhere
+by         = 0.0  # initial B^y everywhere
+bz         = 0.0  # initial B^z everywhere

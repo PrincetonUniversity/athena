@@ -1,0 +1,52 @@
+<comment>
+problem   = spherical MHD blast wave
+reference = Gardiner. T.A. & Stone, J.M., JCP, 205, 509 (2005) (for MHD version of test)
+configure = --prob=blast -b
+
+<job>
+problem_id = Blast      # problem ID: basename of output filenames
+
+<output1>
+file_type  = vtk        # VTK data dump
+variable   = prim       # variables to be output
+dt         = 0.1        # time increment between outputs
+
+<time>
+cfl_number = 0.3        # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1         # cycle limit
+tlim       = 1.0        # time limit
+
+<mesh>
+nx1        = 64         # Number of zones in X1-direction
+x1min      = -1.0       # minimum value of X1
+x1max      =  1.0       # maximum value of X1
+ix1_bc     = periodic   # inner-X1 boundary flag
+ox1_bc     = periodic   # outer-X1 boundary flag
+
+nx2        = 64         # Number of zones in X2-direction
+x2min      = -1.0       # minimum value of X2
+x2max      =  1.0       # maximum value of X2
+ix2_bc     = periodic   # inner-X2 boundary flag
+ox2_bc     = periodic   # outer-X2 boundary flag
+
+nx3        = 64         # Number of zones in X3-direction
+x3min      = -1.0       # minimum value of X3
+x3max      =  1.0       # maximum value of X3
+ix3_bc     = periodic   # inner-X3 boundary flag
+ox3_bc     = periodic   # outer-X3 boundary flag
+
+num_threads = 1         # Number of OpenMP threads per process
+
+<hydro>
+gamma           = 1.666666666667 # gamma = C_p/C_v
+iso_sound_speed = 0.4082482905   # equavalent to sqrt(gamma*p/d) for p=0.1, d=1
+
+<problem>
+pamb       = 0.1    # ambient pressure
+prat       = 100.   # Pressure ratio initially
+radius     = 0.1    # Radius of the inner sphere
+damb       = 1.0
+drat       = 1.0
+ramp       = 0.0
+b0         = 1.0
+angle      = 30

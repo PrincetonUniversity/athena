@@ -1,0 +1,46 @@
+<comment>
+problem   = Mach 3 shock interacting with a sine wave in the density (Example 6)
+reference = Shu, C.-W., & Osher, S., JCP 83, pp. 32-78 (1989)
+configure = --with-gas=hydro --with-problem=shu-osher
+
+<job>
+problem_id  = ShuOsher  # problem ID: basename of output filenames
+
+<output1>
+file_type   = tab       # Tabular data dump
+variable    = prim      # variables to be output
+data_format = %12.5e    # Optional data format string
+dt          = 0.0235    # time increment between outputs
+x2_slice    = 0.5       # slice in x2
+x3_slice    = 0.5       # slice in x3
+
+<output2>
+file_type   = hst       # History data dump
+dt          = 0.0235    # time increment between outputs
+
+<time>
+cfl_number  = 0.8       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim        = 5000      # cycle limit
+tlim        = 0.47      # time limit
+
+<mesh>
+nx1         = 200       # Number of zones in X1-direction
+x1min       = -1.0      # minimum value of X1
+x1max       = 1.0       # maximum value of X1
+ix1_bc      = outflow   # Inner-X1 boundary condition flag
+ox1_bc      = outflow   # Outer-X1 boundary condition flag
+
+nx2         = 1         # Number of zones in X2-direction
+x2min       = 0.0       # minimum value of X2
+x2max       = 1.0       # maximum value of X2
+ix2_bc      = periodic  # Inner-X2 boundary condition flag
+ox2_bc      = periodic  # Outer-X2 boundary condition flag
+
+nx3         = 1         # Number of zones in X3-direction
+x3min       = 0.0       # minimum value of X3
+x3max       = 1.0       # maximum value of X3
+ix3_bc      = periodic  # Inner-X3 boundary condition flag
+ox3_bc      = periodic  # Outer-X3 boundary condition flag
+
+<hydro>
+gamma       = 1.4       # gamma = C_p/C_v
