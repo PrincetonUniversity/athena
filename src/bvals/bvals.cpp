@@ -481,8 +481,13 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     x1size_ = pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min;
     x2size_ = pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min;
     x3size_ = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
-    long int nrbx1 = pmy_mesh->nrbx1;
-    long int nrbx2 = pmy_mesh->nrbx2;
+	//[SMR
+    //long int nrbx1 = pmy_mesh->nrbx1;
+    //long int nrbx2 = pmy_mesh->nrbx2;
+    int level = pmb->loc.level - pmy_mesh->root_level;
+    long int nrbx1 = pmy_mesh->nrbx1*(1L << level);
+    long int nrbx2 = pmy_mesh->nrbx2*(1L << level);
+	//SMR]
 
     shbb_.outer = false;
     shbb_.inner = false;
@@ -588,7 +593,8 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
         }
       }
 
-      if (pmb->loc.lx1 == (pmy_mesh->nrbx1-1)) { // if true for shearing outer blocks
+      //if (pmb->loc.lx1 == (pmy_mesh->nrbx1-1)) { // if true for shearing outer blocks
+      if (pmb->loc.lx1 == (nrbx1-1)) { // if true for shearing outer blocks
         if (pmb->block_bcs[OUTER_X1] != SHEAR_PERIODIC_BNDRY) {
           pmb->block_bcs[OUTER_X1] = SHEAR_PERIODIC_BNDRY;
           BoundaryFunction_[OUTER_X1] = NULL;
@@ -758,6 +764,10 @@ BoundaryValues::~BoundaryValues()
 
 //[JMSHI
   if (SHEARING_BOX) {
+	//[SMR
+    int level = pmb->loc.level - pmb->pmy_mesh->root_level;
+    long int nrbx1 = pmb->pmy_mesh->nrbx1*(1L << level);
+	//SMR]
     if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
       shboxvar_inner_hydro_.DeleteAthenaArray();
       flx_inner_hydro_.DeleteAthenaArray();
@@ -786,7 +796,8 @@ BoundaryValues::~BoundaryValues()
         delete[] recv_innerbuf_emf_[4];
       }
     }
-    if (pmb->loc.lx1 == (pmb->pmy_mesh->nrbx1-1)) { // if true for shearing outer blocks
+    //if (pmb->loc.lx1 == (pmb->pmy_mesh->nrbx1-1)) { // if true for shearing outer blocks
+    if (pmb->loc.lx1 == (nrbx1-1)) { // if true for shearing outer blocks
       shboxvar_outer_hydro_.DeleteAthenaArray();
       flx_outer_hydro_.DeleteAthenaArray();
       for (int n=0; n<4; n++) {
@@ -1131,9 +1142,16 @@ void BoundaryValues::Initialize(void)
 //[JMSHI  initialize the shearing block lists
   if (SHEARING_BOX) {
     Mesh *pmesh = pmb->pmy_mesh;
-    long int nrbx2   = pmesh->nrbx2;
-    long int nrbx1   = pmesh->nrbx1;
+	//[SMR
+    //long int nrbx2   = pmesh->nrbx2;
+    //long int nrbx1   = pmesh->nrbx1;
+    int level = pmb->loc.level - pmesh->root_level;
+    long int nrbx1 = pmesh->nrbx1*(1L << level);
+    long int nrbx2 = pmesh->nrbx2*(1L << level);
+	//SMR]
     int nbtotal = pmesh->nbtotal;
+    //long int nrbx2   = pmesh->nrbx2;
+    //long int nrbx1   = pmesh->nrbx1;
     int *ranklist = pmesh->ranklist;
     int *nslist = pmesh->nslist;
     LogicalLocation *loclist = pmesh->loclist;

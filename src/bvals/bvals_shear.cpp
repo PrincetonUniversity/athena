@@ -505,7 +505,9 @@ void BoundaryValues::FindShearBlock(const int step)
 
   // pmesh->nrbx2 # of meshblocks in azimuth on root level
   // assuming same-level refinement across all horizontal blocks at given height
-  int nrbx2 = pmesh->nrbx2<<(pmb->loc.level-pmesh->root_level);
+  //int nrbx2 = pmesh->nrbx2<<(pmb->loc.level-pmesh->root_level);
+  int level = pmb->loc.level-pmesh->root_level;
+  long int nrbx2 = pmesh->nrbx2*(1L<<level);
   int nx2   = pmb->block_size.nx2; // # of cells per meshblock
   int nx3   = pmb->block_size.nx3; // # of cells per meshblock
   int ncells2 = pmb->block_size.nx2 + 2*NGHOST;
