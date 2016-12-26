@@ -1,7 +1,8 @@
 """
-Read .athdf data files and write new ones as single block at constant refinement level.
+Read .athdf data files and write new ones as single block at constant refinement
+level.
 
-Note: Requires h5py. Requires mpi4py if used with -m option.
+Note: Requires h5py.
 
 Note: Only works for 3D data.
 """
@@ -20,10 +21,8 @@ def main(**kwargs):
   # Determine which files to process given possible MPI information
   file_nums = range(kwargs['start'], kwargs['end']+1, kwargs['stride'])
   if kwargs['m']:
-    from mpi4py import MPI
-    comm = MPI.COMM_WORLD
-    size = comm.Get_size()
-    rank = comm.Get_rank()
+    size = int(os.environ['OMPI_COMM_WORLD_SIZE'])
+    rank = int(os.environ['OMPI_COMM_WORLD_RANK'])
     num_files = len(file_nums)
     num_files_per_rank = num_files/size
     num_files_extra = num_files%size
@@ -94,6 +93,9 @@ def main(**kwargs):
       f.create_dataset('x1f', data=data['x1f'], dtype='>f4', shape=(1,nx1+1))
       f.create_dataset('x2f', data=data['x2f'], dtype='>f4', shape=(1,nx2+1))
       f.create_dataset('x3f', data=data['x3f'], dtype='>f4', shape=(1,nx3+1))
+      f.create_dataset('x1v', data=data['x1v'], dtype='>f4', shape=(1,nx1))
+      f.create_dataset('x2v', data=data['x2v'], dtype='>f4', shape=(1,nx2))
+      f.create_dataset('x3v', data=data['x3v'], dtype='>f4', shape=(1,nx3))
       var_offset = 0
       for dataset_name,num_vars in zip(f.attrs['DatasetNames'],f.attrs['NumVariables']):
         f.create_dataset(dataset_name, dtype='>f4', shape=(num_vars,1,nx3,nx2,nx1))
@@ -115,8 +117,7 @@ def main(**kwargs):
             + ' NumberOfElements="{0} {1} {2}"/>\n').format(nx3+1,nx2+1,nx1+1))
         f.write('    <Geometry GeometryType="VXVYVZ">\n')
         for nx,xf_string in zip((nx1,nx2,nx3),('x1f','x2f','x3f')):
-          f.write('      <DataItem ItemType="HyperSlab" Dimensions="{0}">\n'\
-              .format(nx+1))
+          f.write('      <DataItem ItemType="HyperSlab" Dimensions="{0}">\n'.format(nx+1))
           f.write(('        <DataItem Dimensions="3 2" NumberType="Int">' \
               + ' 0 0 1 1 1 {0} </DataItem>\n').format(nx+1))
           f.write(('        <DataItem Dimensions="1 {0}" Format="HDF">' \
