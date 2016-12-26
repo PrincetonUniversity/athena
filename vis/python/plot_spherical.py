@@ -47,20 +47,17 @@ def main(**kwargs):
       level=level)
 
   # Extract basic coordinate information
-  r = data['x1f']
-  theta = data['x2f']
-  phi = data['x3f']
-  r_mid = r[:-1] + 0.5 * np.ediff1d(r)
-  theta_mid = theta[:-1] + 0.5 * np.ediff1d(theta)
-  phi_mid = phi[:-1] + 0.5 * np.ediff1d(phi)
-  nx2 = len(theta_mid)
-  nx3 = len(phi_mid)
+  r = data['x1v']
+  theta = data['x2v']
+  phi = data['x3v']
+  nx2 = len(theta)
+  nx3 = len(phi)
 
   # Set radial extent
   if kwargs['r_max'] is not None:
     r_max = kwargs['r_max']
   else:
-    r_max = r[-1]
+    r_max = data['x1f'][-1]
 
   # Perform slicing/averaging
   if kwargs['midplane']:
@@ -90,14 +87,14 @@ def main(**kwargs):
   # Create grids
   if kwargs['midplane']:
     phi_extended = \
-        np.concatenate((phi_mid[-1:]-2.0*np.pi, phi_mid, phi_mid[:1]+2.0*np.pi))
-    r_grid,phi_grid = np.meshgrid(r_mid, phi_extended)
+        np.concatenate((phi[-1:]-2.0*np.pi, phi, phi[:1]+2.0*np.pi))
+    r_grid,phi_grid = np.meshgrid(r, phi_extended)
     x_grid = r_grid * np.cos(phi_grid)
     y_grid = r_grid * np.sin(phi_grid)
   else:
-    theta_extended = np.concatenate((-theta_mid[0:1], theta_mid, \
-        2.0*np.pi-theta_mid[::-1], 2.0*np.pi+theta_mid[0:1]))
-    r_grid,theta_grid = np.meshgrid(r_mid, theta_extended)
+    theta_extended = np.concatenate((-theta[0:1], theta, 2.0*np.pi-theta[::-1], \
+        2.0*np.pi+theta[0:1]))
+    r_grid,theta_grid = np.meshgrid(r, theta_extended)
     x_grid = r_grid * np.sin(theta_grid)
     y_grid = r_grid * np.cos(theta_grid)
 
