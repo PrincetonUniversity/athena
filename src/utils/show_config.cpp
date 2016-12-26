@@ -29,21 +29,25 @@ void ShowConfig(void)
   std::cout<<"  Riemann solver:             " << RIEMANN_SOLVER << std::endl;
   std::cout<<"  Reconstruction method:      " << RECONSTRUCTION_METHOD << std::endl;
   std::cout<<"  Hydro integrator:           " << HYDRO_TIME_INTEGRATOR << std::endl;
-  std::cout<<"  Compiler and flags:         " << COMPILED_WITH << std::endl;
   if (MAGNETIC_FIELDS_ENABLED) {
     std::cout<<"  Magnetic fields:            ON" << std::endl;
   } else {
     std::cout<<"  Magnetic fields:            OFF" << std::endl;
   }
   if (RELATIVISTIC_DYNAMICS) {
-    std::cout<<"  Relativistic dynamics:      ON " << std::endl;
+    std::cout<<"  Relativistic dynamics:      ON" << std::endl;
   } else {
-    std::cout<<"  Relativistic dynamics:      OFF " << std::endl;
+    std::cout<<"  Relativistic dynamics:      OFF" << std::endl;
   }
   if (GENERAL_RELATIVITY) {
-    std::cout<<"  General Relativity:         ON " << std::endl;
+    std::cout<<"  General relativity:         ON" << std::endl;
+    if (FRAME_TRANSFORMATIONS) {
+      std::cout<<"  Frame transformations:      ON" << std::endl;
+    } else {
+      std::cout<<"  Frame transformations:      OFF" << std::endl;
+    }
   } else {
-    std::cout<<"  General Relativity:         OFF " << std::endl;
+    std::cout<<"  General Relativity:         OFF" << std::endl;
   }
 #ifdef MPI_PARALLEL
   std::cout<<"  MPI parallelism:            ON" << std::endl;
@@ -60,6 +64,8 @@ void ShowConfig(void)
 #else
   std::cout<<"  HDF5 Output:                OFF" << std::endl;
 #endif
-
+  std::cout<<"  Compiler:                   " << COMPILED_WITH << std::endl;
+  std::cout<<"  Compilation command:        " << COMPILER_COMMAND << ' '
+      << COMPILED_WITH_OPTIONS << std::endl;
   return;
 }
