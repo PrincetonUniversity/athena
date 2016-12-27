@@ -22,6 +22,15 @@
 // non-barotropic equation of state (i.e. P not simply a func of rho)? default=1 (true)
 #define NON_BAROTROPIC_EOS @NON_BAROTROPIC_EOS@
 
+// Riemann solver
+#define RIEMANN_SOLVER "@RSOLVER@"
+
+// spatial reconstruction algorithm
+#define RECONSTRUCTION_METHOD "@RECONSTRUCT@"
+
+// hydro time-integration algorithm
+#define HYDRO_TIME_INTEGRATOR "@HYDRO_INTEGRATOR@"
+
 // include magnetic fields? default=0 (false)
 #define MAGNETIC_FIELDS_ENABLED @MAGNETIC_FIELDS_ENABLED@
 
@@ -34,20 +43,8 @@
 // enable general relativity? default=0 (false)
 #define GENERAL_RELATIVITY @GENERAL_RELATIVITY@
 
-// Riemann solver
-#define RIEMANN_SOLVER "@RSOLVER@"
-
-// spatial reconstruction algorithm
-#define RECONSTRUCTION_METHOD "@RECONSTRUCT@"
-
-// hydro time-integration algorithm
-#define HYDRO_TIME_INTEGRATOR "@HYDRO_INTEGRATOR@"
-
-// hydro time-integration algorithm
-#define COMPILED_WITH "@COMPILER_CHOICE@"
-
-// compiler options
-#define COMPILED_WITH_OPTIONS "@COMPILER_FLAGS@"
+// enable GR frame transformations? default=0 (false)
+#define FRAME_TRANSFORMATIONS @FRAME_TRANSFORMATIONS@
 
 // MPI parallelization (MPI_PARALLEL or NOT_MPI_PARALLEL)
 #define @MPI_OPTION@
@@ -57,6 +54,11 @@
 
 // HDF5 output (HDF5OUTPUT or NO_HDF5OUTPUT)
 #define @HDF5_OPTION@
+
+// compiler options
+#define COMPILED_WITH "@COMPILER_CHOICE@"
+#define COMPILER_COMMAND "@COMPILER_COMMAND@"
+#define COMPILED_WITH_OPTIONS "@COMPILER_FLAGS@"
 
 //----------------------------------------------------------------------------------------
 // macros associated with numerical algorithm (rarely modified)
