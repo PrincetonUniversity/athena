@@ -23,6 +23,9 @@
 #include "../bvals/bvals.hpp"
 #include "../eos/eos.hpp"
 #include "../hydro/srcterms/hydro_srcterms.hpp"
+//[diffusion
+#include "../hydro/diffusion/diffusion.hpp"
+//diffusion]
 
 //----------------------------------------------------------------------------------------
 //  TimeIntegratorTaskList constructor
@@ -31,7 +34,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   : TaskList(pm)
 {
   // First, set weights for each step of time-integration algorithm.  Each step is
-  //    U^{2} = a*U^0 + b*U^1 + c*dt*Div(F), where U^0 and U^1 are previous steps 
+  //    U^{2} = a*U^0 + b*U^1 + c*dt*Div(F), where U^0 and U^1 are previous steps
   // a,b=(1-a),and c are weights that are different for each step and each integrator
   // These are stored as: time_int_wght1 = a, time_int_wght2 = b, time_int_wght3 = c
 
@@ -69,6 +72,11 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 
     // compute hydro fluxes, integrate hydro variables
     AddTimeIntegratorTask(CALC_HYDFLX,START_ALLRECV);
+    //[diffusion
+    // add hydro fluxes due to diffusive processess
+    // 1) add diflx to flux; 2) store diflx for geometry src term
+    AddTimeIntegratorTask(DIFFUSE_HYD,CALC_HYDFLX);
+    //diffusion]
     if(pm->multilevel==true) { // SMR or AMR
       AddTimeIntegratorTask(SEND_HYDFLX,CALC_HYDFLX);
       AddTimeIntegratorTask(RECV_HYDFLX,CALC_HYDFLX);
@@ -123,7 +131,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 
 //----------------------------------------------------------------------------------------//! \fn
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
-//  value of ntask.  
+//  value of ntask.
 
 void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
 {
@@ -133,23 +141,23 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
   using namespace HydroIntegratorTaskNames;
   switch((id)) {
     case (START_ALLRECV):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::StartAllReceive);
       break;
     case (CLEAR_ALLRECV):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::ClearAllReceive);
       break;
 
     case (CALC_HYDFLX):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::CalculateFluxes);
       break;
     case (CALC_FLDFLX):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::CalculateEMF);
       break;
@@ -171,7 +179,7 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
         (&TimeIntegratorTaskList::FluxCorrectReceive);
       break;
     case (RECV_FLDFLX):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::EMFCorrectReceive);
       break;
@@ -245,6 +253,13 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::CheckRefinement);
       break;
+    //[diffusion
+    case (DIFFUSE_HYD):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::HydroDiffusion);
+      break;
+    //diffusion]
 
     default:
       std::stringstream msg;
@@ -291,7 +306,7 @@ enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int step
   if((step == 1) && (integrator == "rk2")) {
     phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, 2);
     return TASK_NEXT;
-  } 
+  }
 
   if(step == 2) {
     phydro->CalculateFluxes(phydro->w1, pfield->b1, pfield->bcc1, 2);
@@ -311,7 +326,7 @@ enum TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int step)
   if(step == 2) {
     pmb->pfield->ComputeCornerE(pmb->phydro->w1, pmb->pfield->bcc1);
     return TASK_NEXT;
-  } 
+  }
 
   return TASK_FAIL;
 }
@@ -425,6 +440,35 @@ enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int ste
 
   return TASK_NEXT;
 }
+
+//[diffusion
+//----------------------------------------------------------------------------------------
+// Functions to add diffusion fluxes
+enum TaskStatus TimeIntegratorTaskList::HydroDiffusion(MeshBlock *pmb, int step)
+{
+  Hydro *ph=pmb->phydro;
+  Field *pf=pmb->pfield;
+
+  // return if there are no diffusion to be added
+  if (ph->pdif->hydro_diffusion_defined == false) return TASK_NEXT;
+
+  Real dt = (step_wghts[(step-1)].c)*(pmb->pmy_mesh->dt);
+  Real time;
+  // *** this must be changed for the RK3 integrator
+  if(step == 1) {
+    time=pmb->pmy_mesh->time;
+    ph->pdif->AddHydroDiffusionFlux(ph->w,ph->u1,ph->flux);
+  } else if(step == 2) {
+    if      (integrator == "vl2") time=pmb->pmy_mesh->time + 0.5*pmb->pmy_mesh->dt;
+    else if (integrator == "rk2") time=pmb->pmy_mesh->time +     pmb->pmy_mesh->dt;
+    ph->pdif->AddHydroDiffusionFlux(ph->w1,ph->u,ph->flux);
+  } else {
+    return TASK_FAIL;
+  }
+
+  return TASK_NEXT;
+}
+//diffusion]
 
 //----------------------------------------------------------------------------------------
 // Functions to communicate conserved variables between MeshBlocks

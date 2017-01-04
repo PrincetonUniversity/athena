@@ -8,7 +8,7 @@
 //! \file coordinates.hpp
 //  \brief defines abstract base and derived classes for coordinates.  These classes
 //  provide data and functions to compute/store coordinate positions and spacing, as well
-//  as geometrical factors (areas, volumes, coordinate source terms) for various 
+//  as geometrical factors (areas, volumes, coordinate source terms) for various
 //  coordinate systems.
 
 // Athena++ classes headers
@@ -27,7 +27,7 @@ class ParameterInput;
 
 class Coordinates {
 public:
-//  friend class HydroSourceTerms;
+  friend class HydroSourceTerms;
   Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag = false);
   virtual ~Coordinates();
 
@@ -36,6 +36,11 @@ public:
   AthenaArray<Real> dx1f, dx2f, dx3f, x1f, x2f, x3f; // face   spacing and positions
   AthenaArray<Real> dx1v, dx2v, dx3v, x1v, x2v, x3v; // volume spacing and positions
   AthenaArray<Real> x1s2, x1s3, x2s1, x2s3, x3s1, x3s2; // area averaged posn for AMR
+  //[diffusion
+  // geometry coefficient
+  AthenaArray<Real> h2f,dh2fd1,h31f,h32f,dh31fd1,dh32fd2;
+  AthenaArray<Real> h2v,dh2vd1,h31v,h32v,dh31vd1,dh32vd2;
+  //diffusion]
 
   // functions...
   // ...to compute length of edges
@@ -74,8 +79,11 @@ public:
   virtual Real GetCellVolume(const int k, const int j, const int i);
 
   // ...to compute geometrical source terms
-  virtual void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-      const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
+  // [diffusion
+  //virtual void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+  virtual void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux, const AthenaArray<Real> *diflx,
+                             const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
+  //diffusion]
 
   // ...to determine if index is a pole
   bool IsPole(int j);
@@ -209,8 +217,8 @@ protected:
       trans_face3_ji4_, trans_face3_ji5_, trans_face3_ji6_;
   AthenaArray<Real> g_, gi_;
 
-  Real bh_mass_; 
-  Real bh_spin_; 
+  Real bh_mass_;
+  Real bh_spin_;
 
 };
 
@@ -259,7 +267,8 @@ public:
   Real GetCellVolume(const int k, const int j, const int i);
 
   // ...to compute geometrical source terms
-  void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+  //void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+  void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux, const AthenaArray<Real> *diflx,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
 };
 
@@ -305,7 +314,8 @@ public:
   Real GetCellVolume(const int k, const int j, const int i);
 
   // ...to compute geometrical source terms
-  void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+  //void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+  void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux, const AthenaArray<Real> *diflx,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
 };
 

@@ -16,6 +16,9 @@
 class MeshBlock;
 class ParameterInput;
 class HydroSourceTerms;
+//[diffusion
+class HydroDiffusion;
+//diffusion]
 
 //! \class Hydro
 //  \brief hydro data and functions
@@ -33,10 +36,13 @@ public:
   AthenaArray<Real> flux[3];  // conserved and primitive variables
 
   HydroSourceTerms *psrc;
+//[diffusion
+  HydroDiffusion *pdif;
+//diffusion]
 
   // functions
   Real NewBlockTimeStep(void);    // computes new timestep on a MeshBlock
-  void AddFluxDivergenceToAverage(AthenaArray<Real> &u1, 
+  void AddFluxDivergenceToAverage(AthenaArray<Real> &u1,
     AthenaArray<Real> &u2, AthenaArray<Real> &w, AthenaArray<Real> &bcc,
     IntegratorWeight wght, AthenaArray<Real> &u_out);
   void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,

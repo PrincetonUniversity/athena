@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file spherical_polar.cpp
-//  \brief implements functions for spherical polar (r-theta-phi) coordinates in a 
+//  \brief implements functions for spherical polar (r-theta-phi) coordinates in a
 //  derived class of the Coordinates abstract base class.
 
 // C/C++ headers
@@ -51,6 +51,21 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
   x1v.NewAthenaArray(ncells1);
   x2v.NewAthenaArray(ncells2);
   x3v.NewAthenaArray(ncells3);
+  //[diffusion
+  // allocate arrays for volume- and face-centered geometry coefficients of cells
+  h2f.NewAthenaArray(ncells1);
+  dh2fd1.NewAthenaArray(ncells1);
+  h31f.NewAthenaArray(ncells1);
+  dh31fd1.NewAthenaArray(ncells1);
+  h32f.NewAthenaArray(ncells2);
+  dh32fd2.NewAthenaArray(ncells2);
+  h2v.NewAthenaArray(ncells1);
+  dh2vd1.NewAthenaArray(ncells1);
+  h31v.NewAthenaArray(ncells1);
+  dh31vd1.NewAthenaArray(ncells1);
+  h32v.NewAthenaArray(ncells2);
+  dh32vd2.NewAthenaArray(ncells2);
+  //diffusion]
 
   // allocate arrays for area weighted positions for AMR/SMR MHD
   if((pm->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
@@ -99,6 +114,36 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
       dx3v(k) = x3v(k+1) - x3v(k);
     }
   }
+
+  //[diffusion
+  // initialize geometry coefficients
+  // x1-direction
+  for (int i=il-ng; i<=iu+ng; ++i) {
+    h2v(i) = x1v(i);
+    h2f(i) = x1f(i);
+    h31v(i) = x1v(i);
+    h31f(i) = x1f(i);
+    dh2vd1(i) = 1.0;
+    dh2fd1(i) = 1.0;
+    dh31vd1(i) = 1.0;
+    dh31fd1(i) = 1.0;
+  }
+
+  // x2-direction
+  if (pmb->block_size.nx2 == 1) {
+    h32v(jl) = sin(x2v(jl));
+    h32f(jl) = sin(x2f(jl));
+    dh32vd2(jl) = cos(x2v(jl));
+    dh32fd2(jl) = cos(x2f(jl));
+  } else {
+    for (int j=jl-ng; j<=ju+ng; ++j) {
+      h32v(j) = sin(x2v(j));
+      h32f(j) = sin(x2f(j));
+      dh32vd2(j) = cos(x2v(j));
+      dh32fd2(j) = cos(x2f(j));
+    }
+  }
+  //diffusion]
 
   // initialize area-averaged coordinates used with MHD AMR
   if((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
@@ -314,7 +359,7 @@ void SphericalPolar::Face1Area(const int k, const int j, const int il, const int
 #pragma simd
   for (int i=il; i<=iu; ++i){
     // area1 = r^2 sin[theta] dtheta dphi = r^2 d(-cos[theta]) dphi
-    area(i) = coord_area1_i_(i)*coord_area1_j_(j)*dx3f(k); 
+    area(i) = coord_area1_i_(i)*coord_area1_j_(j)*dx3f(k);
   }
   return;
 }
@@ -383,8 +428,10 @@ Real SphericalPolar::GetCellVolume(const int k, const int j, const int i)
 
 //----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term function
-
-void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+//[diffusion
+//void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux, const AthenaArray<Real> *diflx,
+//diffusion]
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
@@ -406,17 +453,31 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
         if (MAGNETIC_FIELDS_ENABLED) {
            m_ii += SQR(bcc(IB1,k,j,i));
         }
+        //[diffusion
+        m_ii += 0.5*(diflx[X2DIR](IM2,k,j+1,i)+diflx[X2DIR](IM2,k,j,i));
+        m_ii += 0.5*(diflx[X3DIR](IM3,k,j+1,i)+diflx[X3DIR](IM3,k,j,i));
+        //diffusion]
         u(IM1,k,j,i) += dt*coord_src1_i_(i)*m_ii;
 
-        // src_2 = -< M_{theta r} ><1/r> 
+        // src_2 = -< M_{theta r} ><1/r>
+        //[diffusion
+        //u(IM2,k,j,i) -= dt*coord_src2_i_(i)*
+        //  (coord_area1_i_(i)*flux[X1DIR](IM2,k,j,i)
+        // + coord_area1_i_(i+1)*flux[X1DIR](IM2,k,j,i+1));
         u(IM2,k,j,i) -= dt*coord_src2_i_(i)*
-          (coord_area1_i_(i)*flux[X1DIR](IM2,k,j,i)
-         + coord_area1_i_(i+1)*flux[X1DIR](IM2,k,j,i+1));
+          (coord_area1_i_(i)*(flux[X1DIR](IM2,k,j,i)+diflx[X1DIR](IM2,k,j,i))
+         + coord_area1_i_(i+1)*(flux[X1DIR](IM2,k,j,i+1)+diflx[X1DIR](k,j,i+1)));
+        //diffusion]
 
-        // src_3 = -< M_{phi r} ><1/r> 
+        // src_3 = -< M_{phi r} ><1/r>
+        //[diffusion
+        //u(IM3,k,j,i) -= dt*coord_src2_i_(i)*
+        //  (coord_area1_i_(i)*flux[X1DIR](IM3,k,j,i)
+        // + coord_area1_i_(i+1)*flux[X1DIR](IM3,k,j,i+1));
         u(IM3,k,j,i) -= dt*coord_src2_i_(i)*
-          (coord_area1_i_(i)*flux[X1DIR](IM3,k,j,i)
-         + coord_area1_i_(i+1)*flux[X1DIR](IM3,k,j,i+1));
+          (coord_area1_i_(i)*(flux[X1DIR](IM3,k,j,i)+diflx[X1DIR](IM3,k,j,i))
+         + coord_area1_i_(i+1)*(flux[X1DIR](IM3,k,j,i+1)+diflx[X1DIR](IM3,k,j,i)));
+        //diffusion]
 
         // src_2 = < M_{phi phi} ><cot theta/r>
         Real m_pp = prim(IDN,k,j,i)*SQR(prim(IM3,k,j,i));
@@ -428,19 +489,29 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
         if (MAGNETIC_FIELDS_ENABLED) {
            m_pp += 0.5*( SQR(bcc(IB1,k,j,i)) + SQR(bcc(IB2,k,j,i)) - SQR(bcc(IB3,k,j,i)) );
         }
+        //[diffusion
+        m_pp += 0.5*(diflx[X3DIR](IM3,k+1,j,i)+diflx[X3DIR](IM3,k,j,i));
+        //diffusion]
         u(IM2,k,j,i) += dt*coord_src1_i_(i)*coord_src1_j_(j)*m_pp;
 
-        // src_3 = -< M_{phi theta} ><cot theta/r> 
+        // src_3 = -< M_{phi theta} ><cot theta/r>
         if (use_x2_fluxes) {
+          //[diffusion
+          //u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src2_j_(j)*
+          //    (coord_area2_j_(j)*flux[X2DIR](IM3,k,j,i)
+          //    + coord_area2_j_(j+1)*flux[X2DIR](IM3,k,j+1,i));
           u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src2_j_(j)*
-              (coord_area2_j_(j)*flux[X2DIR](IM3,k,j,i)
-              + coord_area2_j_(j+1)*flux[X2DIR](IM3,k,j+1,i));
+              (coord_area2_j_(j)*(flux[X2DIR](IM3,k,j,i)+diflx[X2DIR](IM3,k,j,i))
+              + coord_area2_j_(j+1)*(flux[X2DIR](IM3,k,j+1,i)+diflx[X2DIR](IM3,k,j+1,i)));
         }
         else {
           Real m_ph = prim(IDN,k,j,i) * prim(IM3,k,j,i) * prim(IM2,k,j,i);
           if (MAGNETIC_FIELDS_ENABLED) {
             m_ph -= bcc(IB3,k,j,i) * bcc(IB2,k,j,i);
           }
+          //[diffusion
+          m_ph += 0.5*(diflx[X2DIR](IM3,k,j+1,i)+diflx[X2DIR](IM3,k,j,i));
+          //diffusion]
           u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src3_j_(j)*m_ph;
         }
       }

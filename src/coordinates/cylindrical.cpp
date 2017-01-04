@@ -51,6 +51,21 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
   x1v.NewAthenaArray(ncells1);
   x2v.NewAthenaArray(ncells2);
   x3v.NewAthenaArray(ncells3);
+  //[diffusion
+  // allocate arrays for volume- and face-centered geometry coefficients of cells
+  h2f.NewAthenaArray(ncells1);
+  dh2fd1.NewAthenaArray(ncells1);
+  h31f.NewAthenaArray(ncells1);
+  dh31fd1.NewAthenaArray(ncells1);
+  h32f.NewAthenaArray(ncells2);
+  dh32fd2.NewAthenaArray(ncells2);
+  h2v.NewAthenaArray(ncells1);
+  dh2vd1.NewAthenaArray(ncells1);
+  h31v.NewAthenaArray(ncells1);
+  dh31vd1.NewAthenaArray(ncells1);
+  h32v.NewAthenaArray(ncells2);
+  dh32vd2.NewAthenaArray(ncells2);
+  //diffusion]
 
   // allocate arrays for area weighted positions for AMR/SMR MHD
   if((pm->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
@@ -96,6 +111,36 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
       dx3v(k) = x3v(k+1) - x3v(k);
     }
   }
+
+  //[diffusion
+  // initialize geometry coefficients
+  // x1-direction
+  for (int i=il-ng; i<=iu+ng; ++i) {
+    h2v(i) = x1v(i);
+    h2f(i) = x1f(i);
+    h31v(i) = 1.0;
+    h31f(i) = 1.0;
+    dh2vd1(i) = 1.0;
+    dh2fd1(i) = 1.0;
+    dh31vd1(i) = 0.0;
+    dh31fd1(i) = 0.0;
+  }
+
+  // x2-direction
+  if (pmb->block_size.nx2 == 1) {
+    h32v(jl) = 1.0;
+    h32f(jl) = 1.0;
+    dh32vd2(jl) = 0.0;
+    dh32fd2(jl) = 0.0;
+  } else {
+    for (int j=jl-ng; j<=ju+ng; ++j) {
+      h32v(j) = 1.0;
+      h32f(j) = 1.0;
+      dh32vd2(j) = 0.0;
+      dh32fd2(j) = 0.0;
+    }
+  }
+  //diffusion]
 
   // initialize area-averaged coordinates used with MHD AMR
   if((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
@@ -147,7 +192,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
     }
 #pragma simd
     for (int i=il-ng; i<=iu+(ng-1); ++i){
-       // Rf_{i+1}/R_{i}/Rf_{i+1}^2 
+       // Rf_{i+1}/R_{i}/Rf_{i+1}^2
       phy_src2_i_(i) = 1.0/(x1v(i)*x1f(i+1));
     }
   }
@@ -226,7 +271,7 @@ void Cylindrical::Face1Area(const int k, const int j, const int il, const int iu
 {
 #pragma simd
   for (int i=il; i<=iu; ++i){
-    // area1 = r dphi dz 
+    // area1 = r dphi dz
     area(i) = x1f(i)*dx2f(j)*dx3f(k);
   }
   return;
@@ -248,7 +293,7 @@ void Cylindrical::Face3Area(const int k, const int j, const int il, const int iu
 
 Real Cylindrical::GetFace1Area(const int k, const int j, const int i)
 {
-  // area1 = r dphi dz 
+  // area1 = r dphi dz
   return x1f(i)*dx2f(j)*dx3f(k);
 }
 
@@ -282,8 +327,10 @@ Real Cylindrical::GetCellVolume(const int k, const int j, const int i)
 
 //----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term function
-
-void Cylindrical::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+//[diffusion
+//void Cylindrical::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+void Cylindrical::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux, const AthenaArray<Real> *diflx,
+//diffusion]
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
@@ -303,13 +350,27 @@ void Cylindrical::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
         if (MAGNETIC_FIELDS_ENABLED) {
           m_pp += 0.5*( SQR(bcc(IB1,k,j,i)) - SQR(bcc(IB2,k,j,i)) + SQR(bcc(IB3,k,j,i)) );
         }
+        //[diffusion
+        m_pp += 0.5*(diflx[X2DIR](IM2,k,j+1,i)+diflx[X2DIR](IM2,k,j,i));
+        //diffusion]
         u(IM1,k,j,i) += dt*coord_src1_i_(i)*m_pp;
+        //[diffusion
+        // in 3d it is possible to replace the primitive representatives with precalculated fluxes
+        // might not be accurate; need to be tested
+        // However, since flux[x2DIR] not always computed, we may have to deal with it
+        // in a separate routine.
+        // u(IM1,k,j,i) += dt*coord_src1_i_(i)*0.5*(flux[x2DIR](IM2,k,j,i) + flux[x2DIR](IM2,k,j+1,i));
+        //diffusion]
 
         // src_2 = -< M_{phi r} ><1/r>
         Real& x_i   = x1f(i);
         Real& x_ip1 = x1f(i+1);
-        u(IM2,k,j,i) -= dt*coord_src2_i_(i)*(x_i*flux[X1DIR](IM2,k,j,i)
-                                           + x_ip1*flux[X1DIR](IM2,k,j,i+1));
+        //[diffusion
+        //u(IM2,k,j,i) -= dt*coord_src2_i_(i)*(x_i*flux[X1DIR](IM2,k,j,i)
+        //                                   + x_ip1*flux[X1DIR](IM2,k,j,i+1));
+        u(IM2,k,j,i) -= dt*coord_src2_i_(i)*(x_i*(flux[X1DIR](IM2,k,j,i)+diflx[X1DIR](IM2,k,j,i))
+                                           + x_ip1*(flux[X1DIR](IM2,k,j,i+1)+diflx[X1DIR](IM2,k,j,i+1)));
+        //diffusion]
       }
     }
   }

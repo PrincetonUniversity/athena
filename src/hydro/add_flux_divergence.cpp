@@ -16,6 +16,7 @@
 #include "../mesh/mesh.hpp"
 #include "../bvals/bvals.hpp"
 #include "../reconstruct/reconstruction.hpp"
+#include "diffusion/diffusion.hpp"
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL
@@ -28,7 +29,7 @@
 //  previous step(s) of time integrator algorithm
 
 void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &u_in1,
-  AthenaArray<Real> &u_in2, AthenaArray<Real> &w, AthenaArray<Real> &bcc, 
+  AthenaArray<Real> &u_in2, AthenaArray<Real> &w, AthenaArray<Real> &bcc,
   const IntegratorWeight wght, AthenaArray<Real> &u_out)
 {
   MeshBlock *pmb=pmy_block;
@@ -55,7 +56,7 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &u_in1,
   dflx.InitWithShallowSlice(flx_,2,tid,1);
 
 #pragma omp for schedule(static)
-  for (int k=ks; k<=ke; ++k) { 
+  for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
 
       // calculate x1-flux divergence
@@ -104,7 +105,10 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &u_in1,
 } // end of omp parallel region
 
   // add coordinate (geometric) source terms
-  pmb->pcoord->CoordSrcTerms((wght.c*pmb->pmy_mesh->dt),pmb->phydro->flux,w,bcc,u_out);
-
+  // [diffusion
+  //pmb->pcoord->CoordSrcTerms((wght.c*pmb->pmy_mesh->dt),pmb->phydro->flux,w,bcc,u_out);
+  // std::cout << "pmb->phydro->pdif->hydro_diffusion_defined = " << pmb->phydro->pdif->hydro_diffusion_defined << std::endl;
+  pmb->pcoord->CoordSrcTerms((wght.c*pmb->pmy_mesh->dt),pmb->phydro->flux,pmb->phydro->pdif->diflx,w,bcc,u_out);
+  //diffusion]
   return;
 }

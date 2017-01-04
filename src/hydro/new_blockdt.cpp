@@ -19,6 +19,7 @@
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
+#include "diffusion/diffusion.hpp"
 
 // MPI/OpenMP header
 #ifdef MPI_PARALLEL
@@ -31,7 +32,7 @@
 
 //----------------------------------------------------------------------------------------
 // \!fn Real Hydro::NewBlockTimeStep(void)
-// \brief calculate the minimum timestep within a MeshBlock 
+// \brief calculate the minimum timestep within a MeshBlock
 
 Real Hydro::NewBlockTimeStep(void)
 {
@@ -109,6 +110,13 @@ Real Hydro::NewBlockTimeStep(void)
             dt3(i) /= (fabs(wi[IVZ]) + cs);
 
           }
+          //[diffusion
+          if (pmb->phydro->pdif->hydro_diffusion_defined) {
+            dt1(i)=std::min(pmb->phydro->pdif->NewDtDiff(pmb->pcoord->dx1f(i),k,j,i),dt1(i));
+            dt2(i)=std::min(pmb->phydro->pdif->NewDtDiff(pmb->pcoord->dx2f(j)*pmb->pcoord->h2v(i),k,j,i),dt2(i));
+            dt3(i)=std::min(pmb->phydro->pdif->NewDtDiff(pmb->pcoord->dx3f(k)*pmb->pcoord->h31v(i)*fabs(pmb->pcoord->h32v(j)),k,j,i),dt3(i));
+          }
+          //diffusion]
         }
       }
 
@@ -117,7 +125,7 @@ Real Hydro::NewBlockTimeStep(void)
         Real& dt_1 = dt1(i);
         pthread_min_dt[tid] = std::min(pthread_min_dt[tid],dt_1);
       }
-    
+
       // if grid is 2D/3D, compute minimum of (v2 +/- C)
       if (pmb->block_size.nx2 > 1) {
         for (int i=is; i<=ie; ++i){

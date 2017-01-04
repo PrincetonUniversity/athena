@@ -94,6 +94,9 @@ public:
   enum TaskStatus FieldIntegrate(MeshBlock *pmb, int step);
 
   enum TaskStatus HydroSourceTerms(MeshBlock *pmb, int step);
+  //[diffusion
+  enum TaskStatus HydroDiffusion(MeshBlock *pmb, int step);
+  //diffusion]
 
   enum TaskStatus HydroSend(MeshBlock *pmb, int step);
   enum TaskStatus FieldSend(MeshBlock *pmb, int step);
@@ -164,6 +167,10 @@ namespace HydroIntegratorTaskNames {
   const uint64_t USERWORK=1LL<<38;
   const uint64_t NEW_DT  =1LL<<39;
   const uint64_t AMR_FLAG=1LL<<40;
+
+  //[diffusion
+  const uint64_t DIFFUSE_HYD=1LL<<41;
+  //diffusion]
 };
 
 #endif // TASK_LIST_HPP

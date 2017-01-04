@@ -440,8 +440,10 @@ Real Coordinates::GetCellVolume(const int k, const int j, const int i)
 
 //----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term function
-
-void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+//[diffusion
+//void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux, const AthenaArray<Real> *diflx,
+//diffusion]
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
   return;

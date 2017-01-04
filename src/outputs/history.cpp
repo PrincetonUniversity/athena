@@ -55,13 +55,15 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
 
   // Loop over MeshBlocks
   while (pmb != NULL) {
-    Hydro *phyd = pmb->phydro;
-    Field *pfld = pmb->pfield;
+    Hydro *phyd = pmb->phydro;;
+    Field *pfld = pmb->pfield;;
 
     // Sum history variables over cells.  Note ghost cells are never included in sums
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
     for (int j=pmb->js; j<=pmb->je; ++j) {
       pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,vol);
+
+#pragma simd
       for (int i=pmb->is; i<=pmb->ie; ++i) {
         Real& u_d  = phyd->u(IDN,k,j,i);
         Real& u_mx = phyd->u(IM1,k,j,i);
