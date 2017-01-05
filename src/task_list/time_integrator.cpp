@@ -82,7 +82,8 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
       AddTimeIntegratorTask(RECV_HYDFLX,CALC_HYDFLX);
       AddTimeIntegratorTask(INT_HYD, RECV_HYDFLX);
     } else {
-      AddTimeIntegratorTask(INT_HYD, CALC_HYDFLX);
+      AddTimeIntegratorTask(INT_HYD, (DIFFUSE_HYD|CALC_HYDFLX));
+      //AddTimeIntegratorTask(INT_HYD, CALC_HYDFLX);
     }
     AddTimeIntegratorTask(SRCTERM_HYD,INT_HYD);
     AddTimeIntegratorTask(SEND_HYD,SRCTERM_HYD);

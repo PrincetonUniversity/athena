@@ -17,6 +17,10 @@
 #include "../parameter_input.hpp"
 #include "../mesh/mesh.hpp"
 #include "../eos/eos.hpp"
+//[diffusion
+#include "../hydro/hydro.hpp"
+#include "../hydro/diffusion/diffusion.hpp"
+//diffusion]
 
 //----------------------------------------------------------------------------------------
 // Cylindrical coordinates constructor
@@ -327,10 +331,7 @@ Real Cylindrical::GetCellVolume(const int k, const int j, const int i)
 
 //----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term function
-//[diffusion
-//void Cylindrical::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-void Cylindrical::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux, const AthenaArray<Real> *diflx,
-//diffusion]
+void Cylindrical::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
@@ -351,7 +352,7 @@ void Cylindrical::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux, co
           m_pp += 0.5*( SQR(bcc(IB1,k,j,i)) - SQR(bcc(IB2,k,j,i)) + SQR(bcc(IB3,k,j,i)) );
         }
         //[diffusion
-        m_pp += 0.5*(diflx[X2DIR](IM2,k,j+1,i)+diflx[X2DIR](IM2,k,j,i));
+        if (pmy_block->phydro->pdif->hydro_diffusion_defined) m_pp += 0.5*(pmy_block->phydro->pdif->diflx[X2DIR](IM2,k,j+1,i)+pmy_block->phydro->pdif->diflx[X2DIR](IM2,k,j,i));
         //diffusion]
         u(IM1,k,j,i) += dt*coord_src1_i_(i)*m_pp;
         //[diffusion
@@ -366,10 +367,13 @@ void Cylindrical::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux, co
         Real& x_i   = x1f(i);
         Real& x_ip1 = x1f(i+1);
         //[diffusion
-        //u(IM2,k,j,i) -= dt*coord_src2_i_(i)*(x_i*flux[X1DIR](IM2,k,j,i)
-        //                                   + x_ip1*flux[X1DIR](IM2,k,j,i+1));
-        u(IM2,k,j,i) -= dt*coord_src2_i_(i)*(x_i*(flux[X1DIR](IM2,k,j,i)+diflx[X1DIR](IM2,k,j,i))
-                                           + x_ip1*(flux[X1DIR](IM2,k,j,i+1)+diflx[X1DIR](IM2,k,j,i+1)));
+        if (pmy_block->phydro->pdif->hydro_diffusion_defined) {
+          u(IM2,k,j,i) -= dt*coord_src2_i_(i)*(x_i*(flux[X1DIR](IM2,k,j,i)+pmy_block->phydro->pdif->diflx[X1DIR](IM2,k,j,i))
+                                           + x_ip1*(flux[X1DIR](IM2,k,j,i+1)+pmy_block->phydro->pdif->diflx[X1DIR](IM2,k,j,i+1)));
+		} else {
+          u(IM2,k,j,i) -= dt*coord_src2_i_(i)*(x_i*flux[X1DIR](IM2,k,j,i)
+                                           + x_ip1*flux[X1DIR](IM2,k,j,i+1));
+		}
         //diffusion]
       }
     }

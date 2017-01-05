@@ -66,7 +66,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   // Get parameters for gravitatonal potential of central point mass
   v0 = pin->GetOrAddReal("problem","v0",0.001);
   t0 = pin->GetOrAddReal("problem","t0",0.5);
-  nuiso = pin->GetOrAddReal("problem","nuiso",0.03);
+  nuiso = pin->GetOrAddReal("problem","nuiso",0.0);
   iprob = pin->GetOrAddInteger("problem","iprob",0);
   gm0 = pin->GetOrAddReal("problem","GM", 0.0);
 
@@ -88,6 +88,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
   //  Initialize density and momenta in Cartesian grids
   if (iprob == 0) { //visc column
+	if (nuiso == 0) nuiso = 0.03;
     for(int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {

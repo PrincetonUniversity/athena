@@ -17,6 +17,10 @@
 #include "../parameter_input.hpp"
 #include "../mesh/mesh.hpp"
 #include "../eos/eos.hpp"
+//[diffusion
+#include "../hydro/hydro.hpp"
+#include "../hydro/diffusion/diffusion.hpp"
+//diffusion]
 
 //----------------------------------------------------------------------------------------
 // Spherical polar coordinates constructor
@@ -428,10 +432,7 @@ Real SphericalPolar::GetCellVolume(const int k, const int j, const int i)
 
 //----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term function
-//[diffusion
-//void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux, const AthenaArray<Real> *diflx,
-//diffusion]
+void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
@@ -454,29 +455,39 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
            m_ii += SQR(bcc(IB1,k,j,i));
         }
         //[diffusion
-        m_ii += 0.5*(diflx[X2DIR](IM2,k,j+1,i)+diflx[X2DIR](IM2,k,j,i));
-        m_ii += 0.5*(diflx[X3DIR](IM3,k,j+1,i)+diflx[X3DIR](IM3,k,j,i));
+		if (pmy_block->phydro->pdif->hydro_diffusion_defined) {
+          m_ii += 0.5*(pmy_block->phydro->pdif->diflx[X2DIR](IM2,k,j+1,i)+pmy_block->phydro->pdif->diflx[X2DIR](IM2,k,j,i));
+          m_ii += 0.5*(pmy_block->phydro->pdif->diflx[X3DIR](IM3,k,j+1,i)+pmy_block->phydro->pdif->diflx[X3DIR](IM3,k,j,i));
+		}
         //diffusion]
         u(IM1,k,j,i) += dt*coord_src1_i_(i)*m_ii;
 
         // src_2 = -< M_{theta r} ><1/r>
         //[diffusion
-        //u(IM2,k,j,i) -= dt*coord_src2_i_(i)*
-        //  (coord_area1_i_(i)*flux[X1DIR](IM2,k,j,i)
-        // + coord_area1_i_(i+1)*flux[X1DIR](IM2,k,j,i+1));
-        u(IM2,k,j,i) -= dt*coord_src2_i_(i)*
-          (coord_area1_i_(i)*(flux[X1DIR](IM2,k,j,i)+diflx[X1DIR](IM2,k,j,i))
-         + coord_area1_i_(i+1)*(flux[X1DIR](IM2,k,j,i+1)+diflx[X1DIR](k,j,i+1)));
+		if (pmy_block->phydro->pdif->hydro_diffusion_defined) {
+          u(IM2,k,j,i) -= dt*coord_src2_i_(i)*
+            (coord_area1_i_(i)*(flux[X1DIR](IM2,k,j,i)+pmy_block->phydro->pdif->diflx[X1DIR](IM2,k,j,i))
+           + coord_area1_i_(i+1)*(flux[X1DIR](IM2,k,j,i+1)+pmy_block->phydro->pdif->diflx[X1DIR](k,j,i+1)));
+		} else {
+          u(IM2,k,j,i) -= dt*coord_src2_i_(i)*
+            (coord_area1_i_(i)*flux[X1DIR](IM2,k,j,i)
+           + coord_area1_i_(i+1)*flux[X1DIR](IM2,k,j,i+1));
+	   }
+
+
         //diffusion]
 
         // src_3 = -< M_{phi r} ><1/r>
         //[diffusion
-        //u(IM3,k,j,i) -= dt*coord_src2_i_(i)*
-        //  (coord_area1_i_(i)*flux[X1DIR](IM3,k,j,i)
-        // + coord_area1_i_(i+1)*flux[X1DIR](IM3,k,j,i+1));
-        u(IM3,k,j,i) -= dt*coord_src2_i_(i)*
-          (coord_area1_i_(i)*(flux[X1DIR](IM3,k,j,i)+diflx[X1DIR](IM3,k,j,i))
-         + coord_area1_i_(i+1)*(flux[X1DIR](IM3,k,j,i+1)+diflx[X1DIR](IM3,k,j,i)));
+		if (pmy_block->phydro->pdif->hydro_diffusion_defined) {
+          u(IM3,k,j,i) -= dt*coord_src2_i_(i)*
+            (coord_area1_i_(i)*(flux[X1DIR](IM3,k,j,i)+pmy_block->phydro->pdif->diflx[X1DIR](IM3,k,j,i))
+           + coord_area1_i_(i+1)*(flux[X1DIR](IM3,k,j,i+1)+pmy_block->phydro->pdif->diflx[X1DIR](IM3,k,j,i)));
+		} else {
+          u(IM3,k,j,i) -= dt*coord_src2_i_(i)*
+            (coord_area1_i_(i)*flux[X1DIR](IM3,k,j,i)
+           + coord_area1_i_(i+1)*flux[X1DIR](IM3,k,j,i+1));
+        }
         //diffusion]
 
         // src_2 = < M_{phi phi} ><cot theta/r>
@@ -490,19 +501,23 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
            m_pp += 0.5*( SQR(bcc(IB1,k,j,i)) + SQR(bcc(IB2,k,j,i)) - SQR(bcc(IB3,k,j,i)) );
         }
         //[diffusion
-        m_pp += 0.5*(diflx[X3DIR](IM3,k+1,j,i)+diflx[X3DIR](IM3,k,j,i));
+		if (pmy_block->phydro->pdif->hydro_diffusion_defined)
+          m_pp += 0.5*(pmy_block->phydro->pdif->diflx[X3DIR](IM3,k+1,j,i)+pmy_block->phydro->pdif->diflx[X3DIR](IM3,k,j,i));
         //diffusion]
         u(IM2,k,j,i) += dt*coord_src1_i_(i)*coord_src1_j_(j)*m_pp;
 
         // src_3 = -< M_{phi theta} ><cot theta/r>
         if (use_x2_fluxes) {
           //[diffusion
-          //u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src2_j_(j)*
-          //    (coord_area2_j_(j)*flux[X2DIR](IM3,k,j,i)
-          //    + coord_area2_j_(j+1)*flux[X2DIR](IM3,k,j+1,i));
-          u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src2_j_(j)*
-              (coord_area2_j_(j)*(flux[X2DIR](IM3,k,j,i)+diflx[X2DIR](IM3,k,j,i))
-              + coord_area2_j_(j+1)*(flux[X2DIR](IM3,k,j+1,i)+diflx[X2DIR](IM3,k,j+1,i)));
+		  if (pmy_block->phydro->pdif->hydro_diffusion_defined){
+            u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src2_j_(j)*
+                (coord_area2_j_(j)*(flux[X2DIR](IM3,k,j,i)+pmy_block->phydro->pdif->diflx[X2DIR](IM3,k,j,i))
+                + coord_area2_j_(j+1)*(flux[X2DIR](IM3,k,j+1,i)+pmy_block->phydro->pdif->diflx[X2DIR](IM3,k,j+1,i)));
+		  } else {
+            u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src2_j_(j)*
+                (coord_area2_j_(j)*flux[X2DIR](IM3,k,j,i)
+                + coord_area2_j_(j+1)*flux[X2DIR](IM3,k,j+1,i));
+		 }
         }
         else {
           Real m_ph = prim(IDN,k,j,i) * prim(IM3,k,j,i) * prim(IM2,k,j,i);
@@ -510,7 +525,8 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
             m_ph -= bcc(IB3,k,j,i) * bcc(IB2,k,j,i);
           }
           //[diffusion
-          m_ph += 0.5*(diflx[X2DIR](IM3,k,j+1,i)+diflx[X2DIR](IM3,k,j,i));
+		  if (pmy_block->phydro->pdif->hydro_diffusion_defined)
+          m_ph += 0.5*(pmy_block->phydro->pdif->diflx[X2DIR](IM3,k,j+1,i)+pmy_block->phydro->pdif->diflx[X2DIR](IM3,k,j,i));
           //diffusion]
           u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src3_j_(j)*m_ph;
         }

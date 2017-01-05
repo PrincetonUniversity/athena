@@ -12,6 +12,10 @@
 #include "../athena_arrays.hpp"
 #include "../parameter_input.hpp"
 #include "../mesh/mesh.hpp"
+//[diffusion
+#include "../hydro/hydro.hpp"
+#include "../hydro/diffusion/diffusion.hpp"
+//diffusion]
 
 //----------------------------------------------------------------------------------------
 // Coordinates constructor: sets coordinates and coordinate spacing of cell FACES
@@ -440,10 +444,7 @@ Real Coordinates::GetCellVolume(const int k, const int j, const int i)
 
 //----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term function
-//[diffusion
-//void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux, const AthenaArray<Real> *diflx,
-//diffusion]
+void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u)
 {
   return;

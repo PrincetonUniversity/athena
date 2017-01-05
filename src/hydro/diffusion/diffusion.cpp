@@ -46,9 +46,10 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin)
     fy_.NewAthenaArray(ncells1);
     fz_.NewAthenaArray(ncells1);
     divv_.NewAthenaArray(ncells3,ncells2,ncells1);
-  } else {
-    std::cout << "[HydroDiffusion]: unable to construct hydrodiffusion class" << std::endl;
   }
+  //else {
+  //  std::cout << "[HydroDiffusion]: unable to construct hydrodiffusion class" << std::endl;
+  //}
 }
 
 // destructor
@@ -97,11 +98,15 @@ void HydroDiffusion::AddHydroDiffusionFlux(const AthenaArray<Real> &prim,
   for (int j=js; j<=je; ++j){
   for (int i=is; i<=ie; ++i){
     x1flux(n,k,j,i) += x1diflx(n,k,j,i);
-    x2flux(n,k,j,i) += x2diflx(n,k,j,i);
-    x3flux(n,k,j,i) += x3diflx(n,k,j,i);
     if(i==ie) x1flux(n,k,j,i+1) += x1diflx(n,k,j,i+1);
-    if(j==je) x2flux(n,k,j+1,i) += x2diflx(n,k,j+1,i);
-    if(k==ke) x3flux(n,k+1,j,i) += x3diflx(n,k+1,j,i);
+    if (pmb_->block_size.nx2 > 1) {
+      x2flux(n,k,j,i) += x2diflx(n,k,j,i);
+      if(j==je) x2flux(n,k,j+1,i) += x2diflx(n,k,j+1,i);
+	}
+    if (pmb_->block_size.nx3 > 1) {
+      x3flux(n,k,j,i) += x3diflx(n,k,j,i);
+      if(k==ke) x3flux(n,k+1,j,i) += x3diflx(n,k+1,j,i);
+	}
   }}}}
 
   // template to add other diffusion processes

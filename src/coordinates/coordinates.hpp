@@ -79,11 +79,8 @@ public:
   virtual Real GetCellVolume(const int k, const int j, const int i);
 
   // ...to compute geometrical source terms
-  // [diffusion
-  //virtual void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-  virtual void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux, const AthenaArray<Real> *diflx,
+  virtual void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
                              const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
-  //diffusion]
 
   // ...to determine if index is a pole
   bool IsPole(int j);
@@ -267,8 +264,7 @@ public:
   Real GetCellVolume(const int k, const int j, const int i);
 
   // ...to compute geometrical source terms
-  //void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-  void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux, const AthenaArray<Real> *diflx,
+  void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
 };
 
@@ -314,8 +310,7 @@ public:
   Real GetCellVolume(const int k, const int j, const int i);
 
   // ...to compute geometrical source terms
-  //void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-  void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux, const AthenaArray<Real> *diflx,
+  void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
 };
 

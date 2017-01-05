@@ -16,7 +16,9 @@
 #include "../mesh/mesh.hpp"
 #include "../bvals/bvals.hpp"
 #include "../reconstruct/reconstruction.hpp"
+//[diffusion
 #include "diffusion/diffusion.hpp"
+//diffusion]
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL
@@ -105,10 +107,6 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &u_in1,
 } // end of omp parallel region
 
   // add coordinate (geometric) source terms
-  // [diffusion
-  //pmb->pcoord->CoordSrcTerms((wght.c*pmb->pmy_mesh->dt),pmb->phydro->flux,w,bcc,u_out);
-  // std::cout << "pmb->phydro->pdif->hydro_diffusion_defined = " << pmb->phydro->pdif->hydro_diffusion_defined << std::endl;
-  pmb->pcoord->CoordSrcTerms((wght.c*pmb->pmy_mesh->dt),pmb->phydro->flux,pmb->phydro->pdif->diflx,w,bcc,u_out);
-  //diffusion]
+  pmb->pcoord->CoordSrcTerms((wght.c*pmb->pmy_mesh->dt),pmb->phydro->flux,w,bcc,u_out);
   return;
 }
