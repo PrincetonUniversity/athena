@@ -164,6 +164,15 @@ public:
   void PolarSingleEMF(void);
   bool ReceiveEMFCorrection(void);
 
+// Gravity
+  int LoadGravityBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
+                                       const NeighborBlock& nb);
+  void SendGravityBoundaryBuffers(AthenaArray<Real> &src, bool cons);
+  void SetGravityBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
+                                 const NeighborBlock& nb);
+  bool ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst);
+  void ReceiveGravityBoundaryBuffersWithWait(AthenaArray<Real> &dst, bool cons);
+
 private:
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals
 
@@ -172,13 +181,14 @@ private:
   int nedge_fine_[12];
   bool firsttime_;
 
-  enum BoundaryStatus hydro_flag_[56], field_flag_[56];
+  enum BoundaryStatus hydro_flag_[56], field_flag_[56], gravity_flag_[56];
   enum BoundaryStatus flcor_flag_[6][2][2];
   enum BoundaryStatus emfcor_flag_[48];
   enum BoundaryStatus *emf_north_flag_;
   enum BoundaryStatus *emf_south_flag_;
   Real *hydro_send_[56],  *hydro_recv_[56];
   Real *field_send_[56],  *field_recv_[56];
+  Real *gravity_send_[56],  *gravity_recv_[56];
   Real *flcor_send_[6],   *flcor_recv_[6][2][2];
   Real *emfcor_send_[48], *emfcor_recv_[48];
   Real **emf_north_send_, **emf_north_recv_;
@@ -190,6 +200,7 @@ private:
 #ifdef MPI_PARALLEL
   MPI_Request req_hydro_send_[56],  req_hydro_recv_[56];
   MPI_Request req_field_send_[56],  req_field_recv_[56];
+  MPI_Request req_gravity_send_[56],  req_gravity_recv_[56];
   MPI_Request req_flcor_send_[6],   req_flcor_recv_[6][2][2];
   MPI_Request req_emfcor_send_[48], req_emfcor_recv_[48];
   MPI_Request *req_emf_north_send_, *req_emf_north_recv_;
