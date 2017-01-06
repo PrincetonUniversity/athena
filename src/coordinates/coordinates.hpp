@@ -15,6 +15,8 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../mesh/mesh.hpp"
+#include "../hydro/srcterms/hydro_srcterms.hpp"
+
 #include <iostream>
 
 // forward declarations
@@ -27,7 +29,7 @@ class ParameterInput;
 
 class Coordinates {
 public:
-//  friend class HydroSourceTerms;
+  friend class HydroSourceTerms;
   Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag = false);
   virtual ~Coordinates();
 
@@ -220,6 +222,8 @@ protected:
 //  in the Coordinates abstract base class need to be over-written.
 
 class Cartesian : public Coordinates {
+  friend class HydroSourceTerms;
+
 public:
   Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag);
   ~Cartesian();
@@ -231,6 +235,8 @@ public:
 //  and volume functions in the Coordinates abstract base class are over-written.
 
 class Cylindrical : public Coordinates {
+  friend class HydroSourceTerms;
+
 public:
   Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag);
   ~Cylindrical();
@@ -269,6 +275,8 @@ public:
 //  and volume functions in the Coordinates abstract base class are over-written.
 
 class SphericalPolar : public Coordinates {
+  friend class HydroSourceTerms;
+
 public:
   SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag);
   ~SphericalPolar();
@@ -316,6 +324,8 @@ public:
 //  overwritten, but all the metric and transforms functions are.
 
 class Minkowski : public Coordinates {
+  friend class HydroSourceTerms;
+
 public:
   Minkowski(MeshBlock *pmb, ParameterInput *pin, bool flag);
   ~Minkowski();
@@ -381,6 +391,8 @@ public:
 //  Nearly every function in the abstract base class need to be overwritten.
 
 class Schwarzschild : public Coordinates {
+  friend class HydroSourceTerms;
+
 public:
   Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag);
   ~Schwarzschild();
@@ -485,6 +497,8 @@ public:
 //  Nearly every function in the abstract base class need to be overwritten.
 
 class KerrSchild : public Coordinates {
+  friend class HydroSourceTerms;
+
 public:
   KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag);
   ~KerrSchild();

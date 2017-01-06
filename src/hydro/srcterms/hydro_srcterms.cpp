@@ -5,6 +5,12 @@
 //========================================================================================
 //  \brief Class to implement source terms in the hydro equations
 
+// C/C++ headers
+#include <iostream>
+#include <sstream>
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str()
+
 // Athena++ headers
 #include "hydro_srcterms.hpp"
 #include "../../athena.hpp"
@@ -22,9 +28,23 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin)
   hydro_sourceterms_defined = false;
 
   // read point mass or constant acceleration parameters from input block
-  gm_ = pin->GetOrAddReal("problem","GM",0.0);
-  if (gm_ != 0.0) hydro_sourceterms_defined = true;
 
+  // set the point source only when the coordinate is spherical or 2D cylindrical.
+  gm_ = pin->GetOrAddReal("problem","GM",0.0);
+  if (gm_ != 0.0) {
+    if (COORDINATE_SYSTEM == "spherical_polar"
+    || (COORDINATE_SYSTEM == "cylindrical" && phyd->pmy_block->block_size.nx3==1)) {
+      hydro_sourceterms_defined = true;
+    }
+    else {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in HydroSourceTerms constructor" << std::endl
+          << "The point source gravity works only in spherical polar coordinates " 
+          << "or in 2D cylindrical coordinates." << std::endl
+          << "Check <problem> GM parameter in the input file." << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+  }
   g1_ = pin->GetOrAddReal("hydro","grav_acc1",0.0);
   if (g1_ != 0.0) hydro_sourceterms_defined = true;
 
