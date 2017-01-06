@@ -35,6 +35,7 @@ class Coordinates;
 class Reconstruction;
 class Hydro;
 class Field;
+class Gravity;
 class EquationOfState;
 
 //----------------------------------------------------------------------------------------
@@ -126,6 +127,7 @@ public:
   // physics-related objects
   Hydro *phydro;
   Field *pfield;
+  Gravity *pgravity;
   EquationOfState *peos;
 
   MeshBlock *prev, *next;

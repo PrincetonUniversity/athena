@@ -122,6 +122,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   phydro = new Hydro(this, pin);
   if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
   peos = new EquationOfState(this, pin);
+  if (SELF_GRAVITY_ENABLED) pgravity = new Gravity(this, pin);
 
   // Create user mesh data
   InitUserMeshBlockData(pin);
@@ -212,6 +213,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   phydro = new Hydro(this, pin);
   if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
   peos = new EquationOfState(this, pin);
+  if (SELF_GRAVITY_ENABLED) pgravity = new Gravity(this, pin);
 
   InitUserMeshBlockData(pin);
 
@@ -237,6 +239,10 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     memcpy(pfield->b.x3f.data(), &(mbdata[os]), pfield->b.x3f.GetSizeInBytes());
     memcpy(pfield->b1.x3f.data(), &(mbdata[os]), pfield->b1.x3f.GetSizeInBytes());
     os += pfield->b.x3f.GetSizeInBytes();
+  }
+  if (SELF_GRAVITY_ENABLED) {
+    memcpy(pgravity->phi.data(), &(mbdata[os]), pgravity->phi.GetSizeInBytes());
+    os += pgravity->phi.GetSizeInBytes();
   }
 
   // NEW_PHYSICS: add load of new physics from restart file here
@@ -274,6 +280,7 @@ MeshBlock::~MeshBlock()
   delete phydro;
   if (MAGNETIC_FIELDS_ENABLED) delete pfield;
   delete peos;
+  if (SELF_GRAVITY_ENABLED) delete pgravity;
 
   // delete user output variables array
   user_out_var.DeleteAthenaArray();
@@ -351,6 +358,8 @@ size_t MeshBlock::GetBlockSizeInBytes(void)
   if (MAGNETIC_FIELDS_ENABLED)
     size+=(pfield->b.x1f.GetSizeInBytes()+pfield->b.x2f.GetSizeInBytes()
           +pfield->b.x3f.GetSizeInBytes());
+  if (SELF_GRAVITY_ENABLED)
+    size+=pgravity->phi.GetSizeInBytes();
 
   // NEW_PHYSICS: modify the size counter here when new physics is introduced
 
