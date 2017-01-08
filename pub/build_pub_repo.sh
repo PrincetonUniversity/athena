@@ -7,7 +7,11 @@
 # to the top of the Git repo
 # Here is an example for excluding multiple directories
 # PRIVATE="{pub,private,inputs}"
-PRIVATE="{pub}"
+# Note: for a single directory, you should not use the curly
+# brackets e.g.
+# incorrect: PRIVATE="{pub}"
+#   correct: PRIVATE="pub"
+PRIVATE="pub"
 
 # Repo URLs
 PRIV_REPO_URL="https://github.com/PrincetonUniversity/athena.git"
