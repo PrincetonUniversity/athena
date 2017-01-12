@@ -23,6 +23,8 @@
 #include "../coordinates/coordinates.hpp"
 #include "../hydro/hydro.hpp" 
 #include "../field/field.hpp"
+#include "../gravity/gravity.hpp"
+#include "../fft/athena_fft.hpp"
 #include "../bvals/bvals.hpp"
 #include "../eos/eos.hpp"
 #include "../parameter_input.hpp"
@@ -124,6 +126,9 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   peos = new EquationOfState(this, pin);
   if (SELF_GRAVITY_ENABLED) pgravity = new Gravity(this, pin);
 
+  // FFT object
+  if (FFT_ENABLED) pfft = new AthenaFFT(this);
+
   // Create user mesh data
   InitUserMeshBlockData(pin);
 
@@ -215,6 +220,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   peos = new EquationOfState(this, pin);
   if (SELF_GRAVITY_ENABLED) pgravity = new Gravity(this, pin);
 
+  // FFT object
+  if (FFT_ENABLED) pfft = new AthenaFFT(this);
+
   InitUserMeshBlockData(pin);
 
   // load hydro and field data
@@ -281,6 +289,8 @@ MeshBlock::~MeshBlock()
   if (MAGNETIC_FIELDS_ENABLED) delete pfield;
   delete peos;
   if (SELF_GRAVITY_ENABLED) delete pgravity;
+
+  if (FFT_ENABLED) delete pfft;
 
   // delete user output variables array
   user_out_var.DeleteAthenaArray();

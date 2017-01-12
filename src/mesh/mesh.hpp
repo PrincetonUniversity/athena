@@ -36,6 +36,7 @@ class Reconstruction;
 class Hydro;
 class Field;
 class Gravity;
+class AthenaFFT;
 class EquationOfState;
 
 //----------------------------------------------------------------------------------------
@@ -129,6 +130,9 @@ public:
   Field *pfield;
   Gravity *pgravity;
   EquationOfState *peos;
+
+  // fft object
+  AthenaFFT *pfft;
 
   MeshBlock *prev, *next;
 
