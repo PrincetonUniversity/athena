@@ -22,6 +22,8 @@
 #   -mpi              enable parallelization with MPI
 #   -omp              enable parallelization with OpenMP
 #   -hdf5             enable HDF5 output (requires the HDF5 library)
+#   -sg               enable self-gravity
+#   -fft              enable FFT (requires the FFTW library)
 #   --hdf5_path=path  path to HDF5 libraries (requires the HDF5 library)
 #   --cxx=choice      use choice as the C++ compiler
 #   --ccmd=choice     use choice as the command to call the C++ compiler
@@ -124,6 +126,18 @@ parser.add_argument('-omp',
     action='store_true',
     default=False,
     help='enable parallelization with OpenMP')
+
+# -sg argument
+parser.add_argument('-sg',
+    action='store_true',
+    default=False,
+    help='enable self-gravity')
+
+# -fft argument
+parser.add_argument('-fft',
+    action='store_true',
+    default=False,
+    help='enable FFT')
 
 # -hdf5 argument
 parser.add_argument('-hdf5',
@@ -342,6 +356,10 @@ else:
     #   3180: pragma omp not recognized
     makefile_options['COMPILER_FLAGS'] += ' -diag-disable 3180'
 
+# -sg, -fft argument
+definitions['SELF_GRAVITY_ENABLED'] = '1' if args['sg'] else '0'
+definitions['FFT_ENABLED'] = '1' if args['fft'] else '0'
+
 # -hdf5 argument
 if args['hdf5']:
   definitions['HDF5_OPTION'] = 'HDF5OUTPUT'
@@ -407,6 +425,7 @@ print('  Riemann solver:          ' + args['flux'])
 print('  Reconstruction method:   ' + args['order'])
 print('  Hydro integrator:        ' + args['fint'])
 print('  Magnetic fields:         ' + ('ON' if args['b'] else 'OFF'))
+print('  Self Gravity:            ' + ('ON' if args['sg'] else 'OFF'))
 print('  Special relativity:      ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))
@@ -415,6 +434,7 @@ print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' ' \
     + makefile_options['LIBRARY_FLAGS'])
 print('  MPI parallelism:         ' + ('ON' if args['mpi'] else 'OFF'))
 print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
+print('  FFT:                     ' + ('ON' if args['fft'] else 'OFF'))
 print('  HDF5 output:             ' + ('ON' if args['hdf5'] else 'OFF'))
 print('  Compiler:                ' + args['cxx'])
 print('  Compilation command:     ' + makefile_options['COMPILER_COMMAND'] + ' ' \

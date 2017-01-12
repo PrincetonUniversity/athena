@@ -34,6 +34,12 @@
 // include magnetic fields? default=0 (false)
 #define MAGNETIC_FIELDS_ENABLED @MAGNETIC_FIELDS_ENABLED@
 
+// include self gravity? default=0 (false)
+#define SELF_GRAVITY_ENABLED @SELF_GRAVITY_ENABLED@
+
+// make use of FFT? default=0 (false)
+#define FFT_ENABLED @FFT_ENABLED@
+
 // include radiative transfer? default=0 (false)
 #define RADIATION_ENABLED 0
 
