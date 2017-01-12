@@ -167,11 +167,11 @@ public:
 // Gravity
   int LoadGravityBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
                                        const NeighborBlock& nb);
-  void SendGravityBoundaryBuffers(AthenaArray<Real> &src, bool cons);
+  void SendGravityBoundaryBuffers(AthenaArray<Real> &src);
   void SetGravityBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
                                  const NeighborBlock& nb);
   bool ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst);
-  void ReceiveGravityBoundaryBuffersWithWait(AthenaArray<Real> &dst, bool cons);
+  void ReceiveGravityBoundaryBuffersWithWait(AthenaArray<Real> &dst);
 
 private:
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals

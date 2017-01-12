@@ -61,8 +61,7 @@ int BoundaryValues::LoadGravityBoundaryBufferSameLevel(AthenaArray<Real> &src, R
 //                                                    bool conserved_values)
 //  \brief Send boundary buffers
 
-void BoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src,
-                                              bool conserved_values)
+void BoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src)
 {
   MeshBlock *pmb=pmy_block_;
   int mylevel=pmb->loc.level;
@@ -162,8 +161,7 @@ bool BoundaryValues::ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst)
 //                                                               bool conserved_values)
 //  \brief receive the boundary data for initialization
 
-void BoundaryValues::ReceiveGravityBoundaryBuffersWithWait(AthenaArray<Real> &dst,
-                                                         bool conserved_values)
+void BoundaryValues::ReceiveGravityBoundaryBuffersWithWait(AthenaArray<Real> &dst)
 {
   MeshBlock *pmb=pmy_block_;
 
