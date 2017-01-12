@@ -141,8 +141,8 @@ public:
       Real *ptheta, Real *pphi) {};
   virtual void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
       Real *px, Real *py, Real *pz) {};
-  virtual Real DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2, Real y3)
-      {};
+  virtual Real DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2, 
+      Real y3) {return 0.0;};
 
 protected:
   bool coarse_flag;  // true if this coordinate object is parent (coarse) mesh in AMR
