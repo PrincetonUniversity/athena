@@ -173,6 +173,7 @@ class Mesh {
   friend class MeshRefinement;
   friend class HydroSourceTerms;
   friend class Hydro;
+  friend class AthenaFFT;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif

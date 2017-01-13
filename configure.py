@@ -154,7 +154,7 @@ parser.add_argument('--hdf5_path',
 # --cxx=[name] argument
 parser.add_argument('--cxx',
     default='g++',
-    choices=['g++','icc','cray','bgxl'],
+    choices=['g++','icc','cray','bgxl','clang++'],
     help='select C++ compiler')
 
 # --ccmd=[name] argument
@@ -308,6 +308,13 @@ if args['cxx'] == 'bgxl':
       '-O3 -qstrict -qlanglvl=extended -qsuppress=1500-036 -qsuppress=1540-1401'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
+if args['cxx'] == 'clang++':
+  definitions['COMPILER_CHOICE'] = 'clang++'
+  definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'clang++'
+  makefile_options['PREPROCESSOR_FLAGS'] = ''
+  makefile_options['COMPILER_FLAGS'] = '-O3'
+  makefile_options['LINKER_FLAGS'] = ''
+  makefile_options['LIBRARY_FLAGS'] = ''
 
 # -debug argument
 if args['debug']:
@@ -324,7 +331,7 @@ else:
 # -mpi argument
 if args['mpi']:
   definitions['MPI_OPTION'] = 'MPI_PARALLEL'
-  if args['cxx'] == 'g++' or args['cxx'] == 'icc':
+  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'clang++':
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpicxx'
   if args['cxx'] == 'cray':
     makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
@@ -336,7 +343,7 @@ else:
 # -omp argument
 if args['omp']:
   definitions['OPENMP_OPTION'] = 'OPENMP_PARALLEL'
-  if args['cxx'] == 'g++':
+  if args['cxx'] == 'g++' or args['cxx'] == 'clang++':
     makefile_options['COMPILER_FLAGS'] += ' -fopenmp'
   if args['cxx'] == 'icc':
     makefile_options['COMPILER_FLAGS'] += ' -openmp'
@@ -358,7 +365,14 @@ else:
 
 # -sg, -fft argument
 definitions['SELF_GRAVITY_ENABLED'] = '1' if args['sg'] else '0'
-definitions['FFT_ENABLED'] = '1' if args['fft'] else '0'
+if args['fft']:
+  definitions['FFT_ENABLED'] = '1'
+  makefile_options['LIBRARY_FLAGS'] += ' -lfftw3'
+  if args['omp']:
+    makefile_options['LIBRARY_FLAGS'] += ' -lfftw3_omp'
+else:
+  definitions['FFT_ENABLED'] = '0'
+
 
 # -hdf5 argument
 if args['hdf5']:
