@@ -14,16 +14,23 @@
 #include "../athena_arrays.hpp"
 
 // FFTW header
-#include "fftw3.h"
 
 enum AthenaFFTDirection { AthenaFFTForward = -1, AthenaFFTBackward = 1 };
+
+#ifdef MPI_PARALLEL
+#include "mpifft.hpp"
+#else
+#include "fftw3.h"
+
 typedef fftw_complex AthenaFFTComplex;
-typedef ptrdiff_t AthenaFFTInt;
+typedef int AthenaFFTInt;
 typedef struct AthenaFFTPlan{
   fftw_plan plan;
   enum AthenaFFTDirection dir;
   int dim;
 } AthenaFFTPlan;
+#endif
+
 
 class MeshBlock;
 class ParameterInput;
@@ -32,6 +39,7 @@ class ParameterInput;
 //  \brief 
 
 class AthenaFFT {
+friend MeshBlock;
 public:
   AthenaFFT(MeshBlock *pmb);
   ~AthenaFFT();
@@ -39,14 +47,15 @@ public:
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
 
   AthenaFFTPlan *QuickCreatePlan(enum AthenaFFTDirection dir);
-  AthenaFFTPlan *CreatePlan(int nx1, AthenaFFTComplex *data, 
+  AthenaFFTPlan *CreatePlan(AthenaFFTInt nx1, AthenaFFTComplex *data, 
                             enum AthenaFFTDirection dir);
-  AthenaFFTPlan *CreatePlan(int nx1, int nx2, AthenaFFTComplex *data, 
+  AthenaFFTPlan *CreatePlan(AthenaFFTInt nx1, AthenaFFTInt nx2, AthenaFFTComplex *data, 
                             enum AthenaFFTDirection dir);
-  AthenaFFTPlan *CreatePlan(int nx1, int nx2, int nx3, 
+  AthenaFFTPlan *CreatePlan(AthenaFFTInt nx1, AthenaFFTInt nx2, AthenaFFTInt nx3, 
                             AthenaFFTComplex *data, 
                             enum AthenaFFTDirection dir);
   void Initialize();
+  void MpiCleanup();
   void Execute(AthenaFFTPlan *plan);
   void Execute(AthenaFFTPlan *plan, AthenaFFTComplex *data);
 

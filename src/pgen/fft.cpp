@@ -36,26 +36,19 @@
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
+  std::cout << "MPI rank: " << Globals::my_rank  << std::endl
+            << "MPI configuration: " << pfft->np1_ << "x" << pfft->np2_ 
+            << "x" << pfft->np3_ << std::endl
+            << "x3 index: " << pfft->gks_ << " " << pfft->gke_ << std::endl
+            << "x2 index: " << pfft->gjs_ << " " << pfft->gje_ << std::endl
+            << "x1 index: " << pfft->gis_ << " " << pfft->gie_ << std::endl;
 
-}
-
-//========================================================================================
-//! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-//  \brief
-//========================================================================================
-
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
-  AthenaFFT *pfft = pblock->pfft;
-  Coordinates *pcoord = pblock->pcoord;
   Real x0=0.0, y0=0.0, z0=0.0;
-  int is=pblock->is, ie=pblock->ie;
-  int js=pblock->js, je=pblock->je;
-  int ks=pblock->ks, ke=pblock->ke;
 
   if(FFT_ENABLED){
-    int ncycle =  pin->GetOrAddInteger("problem","ncycle",100);
   // Repeating FFTs for timing
+    std::cout << "=====================================================" << std::endl;
+    std::cout << "Initialize...                                        " << std::endl;
     std::cout << "=====================================================" << std::endl;
     pfft->Initialize();
     pfft->fplan = pfft->QuickCreatePlan(AthenaFFTForward);
@@ -74,6 +67,29 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
       pfft->work[idx][0] = std::exp(-r2);
       pfft->work[idx][1] = 0.0;
     }}}
+  }
+}
+
+//========================================================================================
+//! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
+//  \brief
+//========================================================================================
+
+void Mesh::UserWorkAfterLoop(ParameterInput *pin)
+{
+  AthenaFFT *pfft = pblock->pfft;
+  Coordinates *pcoord = pblock->pcoord;
+  Real x0=0.0, y0=0.0, z0=0.0;
+  int is=pblock->is, ie=pblock->ie;
+  int js=pblock->js, je=pblock->je;
+  int ks=pblock->ks, ke=pblock->ke;
+
+  if(FFT_ENABLED){
+  // Repeating FFTs for timing
+    int ncycle = pin->GetOrAddInteger("problem","ncycle",100);
+    std::cout << "=====================================================" << std::endl;
+    std::cout << "Execute                                              " << std::endl;
+    std::cout << "=====================================================" << std::endl;
 
     clock_t tstart = clock();
 #ifdef OPENMP_PARALLEL
@@ -114,7 +130,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
       pfft->work[idx][0] = std::exp(-r2);
       pfft->work[idx][1] = 0.0;
     }}}
-
 
     pfft->Execute(pfft->fplan);
     pfft->Execute(pfft->bplan);

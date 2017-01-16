@@ -10,6 +10,7 @@ RECONSTRUCT_FILE = @RECONSTRUCT_FILE@
 RSOLVER_FILE = @RSOLVER_FILE@
 RSOLVER_DIR = @RSOLVER_DIR@
 HYDRO_INT_FILE = @HYDRO_INT_FILE@
+MPIFFT_FILE = @MPIFFT_FILE@
 
 # General compiler specifications
 
@@ -29,7 +30,8 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     src/eos/$(EOS_FILE) \
 	     $(wildcard src/field/*.cpp) \
 	     $(wildcard src/gravity/*.cpp) \
-	     $(wildcard src/fft/*.cpp) \
+	     src/fft/athena_fft.cpp \
+	     src/fft/$(MPIFFT_FILE) \
 	     $(wildcard src/hydro/*.cpp) \
 	     $(wildcard src/hydro/srcterms/*.cpp) \
 	     src/hydro/rsolvers/$(RSOLVER_DIR)$(RSOLVER_FILE) \

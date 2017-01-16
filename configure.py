@@ -139,6 +139,19 @@ parser.add_argument('-fft',
     default=False,
     help='enable FFT')
 
+# --mpifft=[name] argument
+parser.add_argument('--mpifft',
+    default='fftw',
+    choices=['fftw','accfft','plimpton'],
+    help='select MPI FFT')
+
+# --mpifft_path argument
+parser.add_argument('--mpifft_path',
+    type=str,
+    default='',
+    help='path to MPIFFT libraries')
+
+
 # -hdf5 argument
 parser.add_argument('-hdf5',
     action='store_true',
@@ -367,12 +380,35 @@ else:
 definitions['SELF_GRAVITY_ENABLED'] = '1' if args['sg'] else '0'
 if args['fft']:
   definitions['FFT_ENABLED'] = '1'
-  makefile_options['LIBRARY_FLAGS'] += ' -lfftw3'
+  definitions['MPIFFT_DEFINE'] = 'NO_MPIFFT'
+  makefile_options['MPIFFT_FILE'] = 'athena_fft_fftw.cpp'
+  if args['fftw_path'] != '':
+    makefile_options['PREPROCESSOR_FLAGS'] += '-I%s/include' % args['fftw_path']
+    makefile_options['LINKER_FLAGS'] += '-L%s/lib' % args['fftw_path']
   if args['omp']:
     makefile_options['LIBRARY_FLAGS'] += ' -lfftw3_omp'
+  if args['mpi']:
+    if args['mpifft_path'] != '':
+      makefile_options['PREPROCESSOR_FLAGS'] += '-I%s/include' % args['mpifft_path']
+      makefile_options['LINKER_FLAGS'] += '-L%s/lib' % args['mpifft_path']
+    if args['mpifft'] == 'fftw':
+      definitions['MPIFFT_DEFINE'] = 'FFTW_MPI'
+      makefile_options['LIBRARY_FLAGS'] += ' -lfftw3_mpi'
+      makefile_options['MPIFFT_FILE'] = 'athena_fft_fftw.cpp'
+    elif args['mpifft'] == 'plimpton':
+      definitions['MPIFFT_DEFINE'] = 'PLIMPTON'
+      makefile_options['PREPROCESSOR_FLAGS'] += '-I./src/fft/plimpton'
+      makefile_options['MPIFFT_FILE'] = 'athena_fft_plimpton.cpp'
+      makefile_options['LIBRARY_FLAGS'] += '-L./src/fft/plimpton -lfftp'
+    elif args['mpifft'] == 'accfft':
+      definitions['MPIFFT_DEFINE'] = 'ACCFFT'
+      makefile_options['MPIFFT_FILE'] = 'athena_fft_accfft.cpp'
+      makefile_options['LIBRARY_FLAGS'] += ' -laccfft'
+  makefile_options['LIBRARY_FLAGS'] += ' -lfftw3'
 else:
   definitions['FFT_ENABLED'] = '0'
-
+  definitions['MPIFFT_DEFINE'] = 'NO_MPIFFT'
+  makefile_options['MPIFFT_FILE'] = 'athena_fft_fftw.cpp'
 
 # -hdf5 argument
 if args['hdf5']:
