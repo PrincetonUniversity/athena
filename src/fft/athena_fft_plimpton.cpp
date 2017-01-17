@@ -16,36 +16,10 @@
 #include "../athena_arrays.hpp"
 #include "../mesh/mesh.hpp"
 
-// plimpton's
-#ifdef MPI_PARALLEL
-#include "mpi.h"
-#include "plimpton/fft_2d.h"
-#include "plimpton/fft_3d.h"
-#endif
-
 // destructor
 
 void AthenaFFT::MpiCleanup()
 {
-}
-
-// plan 1D fft
-AthenaFFTPlan *AthenaFFT::CreatePlan(AthenaFFTInt nx1, AthenaFFTComplex *data, 
-                                     enum AthenaFFTDirection dir)
-{
-  AthenaFFTPlan *plan;
-  if(FFT_ENABLED){
-    plan = new AthenaFFTPlan;
-    plan->dim = 1;
-    if(dir == AthenaFFTForward){
-      plan->dir = FFTW_FORWARD;
-      plan->plan = fftw_plan_dft_1d(nx1, data, data, FFTW_FORWARD, FFTW_ESTIMATE);
-    } else {
-      plan->dir = FFTW_BACKWARD;
-      plan->plan = fftw_plan_dft_1d(nx1, data, data, FFTW_BACKWARD, FFTW_ESTIMATE);
-    }
-  }
-  return plan;
 }
 
 // plan 2D fft

@@ -44,9 +44,9 @@ AthenaFFT::AthenaFFT(MeshBlock *pmb)
     int jdisp = loc.lx2*nx2_;
     int kdisp = loc.lx3*nx3_;
  
-    gis_ = idisp; gie_= idisp+nx1_; 
-    gjs_ = jdisp; gje_= jdisp+nx2_; 
-    gks_ = kdisp; gke_= kdisp+nx3_; 
+    gis_ = idisp; gie_= idisp+nx1_-1; 
+    gjs_ = jdisp; gje_= jdisp+nx2_-1; 
+    gks_ = kdisp; gke_= kdisp+nx3_-1; 
  
     gnx1_ = mesh_size.nx1;
     gnx2_ = mesh_size.nx2;

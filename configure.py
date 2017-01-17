@@ -139,6 +139,12 @@ parser.add_argument('-fft',
     default=False,
     help='enable FFT')
 
+# --fftw_path argument
+parser.add_argument('--fftw_path',
+    type=str,
+    default='',
+    help='path to FFTW libraries')
+
 # --mpifft=[name] argument
 parser.add_argument('--mpifft',
     default='fftw',
@@ -150,7 +156,6 @@ parser.add_argument('--mpifft_path',
     type=str,
     default='',
     help='path to MPIFFT libraries')
-
 
 # -hdf5 argument
 parser.add_argument('-hdf5',
