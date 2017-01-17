@@ -22,7 +22,7 @@
 #   -mpi              enable parallelization with MPI
 #   -omp              enable parallelization with OpenMP
 #   -hdf5             enable HDF5 output (requires the HDF5 library)
-#   -sg               enable self-gravity
+#   --grav=choice     use choice as the self-gravity solver
 #   -fft              enable FFT (requires the FFTW library)
 #   --hdf5_path=path  path to HDF5 libraries (requires the HDF5 library)
 #   --cxx=choice      use choice as the C++ compiler
@@ -85,6 +85,13 @@ parser.add_argument('--fint',
     choices=['vl2'],
     help='select hydro time-integration algorithm')
 
+# --grav=[name] argument
+parser.add_argument('--grav',
+    default='none',
+    choices=['none','fft'],
+    help='select self-gravity solver')
+
+
 # -b argument
 parser.add_argument('-b',
     action='store_true',
@@ -126,12 +133,6 @@ parser.add_argument('-omp',
     action='store_true',
     default=False,
     help='enable parallelization with OpenMP')
-
-# -sg argument
-parser.add_argument('-sg',
-    action='store_true',
-    default=False,
-    help='enable self-gravity')
 
 # -fft argument
 parser.add_argument('-fft',
@@ -381,8 +382,18 @@ else:
     #   3180: pragma omp not recognized
     makefile_options['COMPILER_FLAGS'] += ' -diag-disable 3180'
 
-# -sg, -fft argument
-definitions['SELF_GRAVITY_ENABLED'] = '1' if args['sg'] else '0'
+# --grav argument
+if args['grav'] == "none":
+  definitions['SELF_GRAVITY_ENABLED'] = '0'
+  makefile_options['GRAVITY_FILE'] = 'empty_solver.cpp'
+else:
+  definitions['SELF_GRAVITY_ENABLED'] = '1'
+  if args['grav'] == "fft":
+    makefile_options['GRAVITY_FILE'] = 'fft_solver.cpp'
+    if not args['fft']:
+      raise SystemExit('### CONFIGURE ERROR: FFT Poisson solver only be used with FFT')
+
+# -fft argument
 if args['fft']:
   definitions['FFT_ENABLED'] = '1'
   definitions['MPIFFT_DEFINE'] = 'NO_MPIFFT'
@@ -479,8 +490,8 @@ print('  Equation of state:       ' + args['eos'])
 print('  Riemann solver:          ' + args['flux'])
 print('  Reconstruction method:   ' + args['order'])
 print('  Hydro integrator:        ' + args['fint'])
+print('  Self Gravity:            ' + ('OFF' if args['grav'] == 'none' else args['grav']))
 print('  Magnetic fields:         ' + ('ON' if args['b'] else 'OFF'))
-print('  Self Gravity:            ' + ('ON' if args['sg'] else 'OFF'))
 print('  Special relativity:      ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))

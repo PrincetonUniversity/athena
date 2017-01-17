@@ -11,7 +11,6 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../mesh/mesh.hpp"
-#include "../coordinates/coordinates.hpp"
 
 // constructor, initializes data structures and parameters
 
@@ -21,15 +20,20 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin)
 
   // Allocate memory for gravitational potential, but only when needed.
   if (SELF_GRAVITY_ENABLED) {
-    int ncells1 = pmb->block_size.nx1;
+    int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
     int ncells2 = 1, ncells3 = 1;
-    if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2;
-    if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3;
+    if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
+    if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
 
-    phi.NewAthenaArray (ncells3,ncells2,ncells1);
+    gconst = 1.0;
+    four_pi_gconst = 4*PI*gconst;
+    grav_mean_rho = 0.0;
+    phi.NewAthenaArray(ncells3,ncells2,ncells1);
+    phi_old.NewAthenaArray(ncells3,ncells2,ncells1);
 
+    Initialize(pin);
     // Allocate memory for scratch vectors
-    den_.NewAthenaArray (ncells3,ncells2,ncells1);
+    den_.NewAthenaArray(ncells3,ncells2,ncells1);
   }
 }
 
@@ -38,10 +42,7 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin)
 Gravity::~Gravity()
 {
   phi.DeleteAthenaArray();
+  phi_old.DeleteAthenaArray();
   den_.DeleteAthenaArray();
 }
-
-//----------------------------------------------------------------------------------------
-// \! fn
-// \! brief
 

@@ -1133,7 +1133,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
   MeshBlock *pmb;
   Hydro *phydro;
   Field *pfield;
-  Gravity *pgravity;
+  Gravity *pgrav;
   BoundaryValues *pbval;
   std::stringstream msg;
   int inb=nbtotal;
@@ -1162,12 +1162,12 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     while (pmb != NULL)  {
       phydro=pmb->phydro;
       pfield=pmb->pfield;
-      pgravity=pmb->pgravity;
+      pgrav=pmb->pgrav;
       pmb->pbval->SendHydroBoundaryBuffers(phydro->u, true);
       if (MAGNETIC_FIELDS_ENABLED)
         pmb->pbval->SendFieldBoundaryBuffers(pfield->b);
       if (SELF_GRAVITY_ENABLED)
-        pmb->pbval->SendGravityBoundaryBuffers(pgravity->phi);
+        pmb->pbval->SendGravityBoundaryBuffers(pgrav->phi);
       pmb=pmb->next;
     }
 
@@ -1176,13 +1176,13 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     while (pmb != NULL)  {
       phydro=pmb->phydro;
       pfield=pmb->pfield;
-      pgravity=pmb->pgravity;
+      pgrav=pmb->pgrav;
       pbval=pmb->pbval;
       pbval->ReceiveHydroBoundaryBuffersWithWait(phydro->u, true);
       if (MAGNETIC_FIELDS_ENABLED)
         pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b);
       if (SELF_GRAVITY_ENABLED)
-        pmb->pbval->ReceiveGravityBoundaryBuffers(pgravity->phi);
+        pmb->pbval->ReceiveGravityBoundaryBuffers(pgrav->phi);
       pmb->pbval->ClearBoundaryForInit(true);
       pmb=pmb->next;
     }
@@ -1222,7 +1222,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     while (pmb != NULL)  {
       phydro=pmb->phydro;
       pfield=pmb->pfield;
-      pgravity=pmb->pgravity;
+      pgrav=pmb->pgrav;
       pbval=pmb->pbval;
       if(multilevel==true)
         pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,

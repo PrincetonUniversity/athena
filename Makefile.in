@@ -11,6 +11,7 @@ RSOLVER_FILE = @RSOLVER_FILE@
 RSOLVER_DIR = @RSOLVER_DIR@
 HYDRO_INT_FILE = @HYDRO_INT_FILE@
 MPIFFT_FILE = @MPIFFT_FILE@
+GRAVITY_FILE = @GRAVITY_FILE@
 
 # General compiler specifications
 
@@ -30,6 +31,7 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     src/eos/$(EOS_FILE) \
 	     $(wildcard src/field/*.cpp) \
 	     $(wildcard src/gravity/*.cpp) \
+	     src/gravity/solvers/$(GRAVITY_FILE) \
 	     src/fft/athena_fft.cpp \
 	     src/fft/$(MPIFFT_FILE) \
 	     $(wildcard src/hydro/*.cpp) \

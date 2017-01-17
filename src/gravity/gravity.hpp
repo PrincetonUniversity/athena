@@ -12,28 +12,27 @@
 // Athena++ classes headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../coordinates/coordinates.hpp"
-#include "../task_list/task_list.hpp"
+#include "../parameter_input.hpp"
 
 class MeshBlock;
 class ParameterInput;
-class Hydro;
 
 //! \class Gravity
 //  \brief gravitational potential data and functions
 
 class Gravity {
-friend class Hydro;
 public:
   Gravity(MeshBlock *pmb, ParameterInput *pin);
   ~Gravity();
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
 
-  AthenaArray<Real> phi;  // gravitational potential
+  AthenaArray<Real> phi, phi_old;  // gravitational potential
+  Real gconst, four_pi_gconst;
+  Real grav_mean_rho;
 
-  void GravitySolver(AthenaArray<Real> &den, AthenaArray<Real> &phi, Coordinates *pco, 
-       int is, int ie, int js, int je, int ks, int ke);
+  void Initialize(ParameterInput *pin);
+  void Solver(const AthenaArray<Real> &den);
 
 private:
   // scratch space used to compute fluxes

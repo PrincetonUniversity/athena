@@ -33,7 +33,7 @@ AthenaFFTPlan *AthenaFFT::CreatePlan(AthenaFFTInt nx1, AthenaFFTInt nx2,
   if(FFT_ENABLED){
     plan = new AthenaFFTPlan;
     plan->dir = dir;
-    plan->dim = 2;
+    plan->dim = dim;
 #ifdef MPI_PARALLEL
     std::cout << "ACCFFT does not support 2D MPI FFT!" << std::endl;
 #else // MPI_PARALLEL
@@ -56,7 +56,7 @@ AthenaFFTPlan *AthenaFFT::CreatePlan(AthenaFFTInt nx1, AthenaFFTInt nx2, AthenaF
   if(FFT_ENABLED){
     plan = new AthenaFFTPlan;
     plan->dir = dir;
-    plan->dim = 3;
+    plan->dim = dim;
 #ifdef MPI_PARALLEL
     int gnx[3] = {nx1, nx2, nx3};
     if(dir == AthenaFFTForward) plan->dir = ACCFFT_FORWARD;

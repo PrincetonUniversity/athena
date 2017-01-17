@@ -128,7 +128,7 @@ public:
   // physics-related objects
   Hydro *phydro;
   Field *pfield;
-  Gravity *pgravity;
+  Gravity *pgrav;
   EquationOfState *peos;
 
   // fft object

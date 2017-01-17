@@ -12,6 +12,7 @@
 // Athena++ classes headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../gravity/gravity.hpp"
 
 // FFTW header
 
@@ -34,17 +35,23 @@ typedef struct AthenaFFTPlan{
 
 class MeshBlock;
 class ParameterInput;
+class Gravity;
 
 //! \class AthenaFFT
 //  \brief 
 
 class AthenaFFT {
-friend MeshBlock;
+friend class MeshBlock;
+friend class Gravity;
 public:
   AthenaFFT(MeshBlock *pmb);
   ~AthenaFFT();
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
+
+  int dim;
+  int idisp,jdisp,kdisp;
+  Real dkx,dky,dkz; 
 
   AthenaFFTPlan *QuickCreatePlan(enum AthenaFFTDirection dir);
   AthenaFFTPlan *CreatePlan(AthenaFFTInt nx1, AthenaFFTComplex *data, 
@@ -59,9 +66,15 @@ public:
   void Execute(AthenaFFTPlan *plan);
   void Execute(AthenaFFTPlan *plan, AthenaFFTComplex *data);
 
-  int GetIndex(const int i);
-  int GetIndex(const int j, const int i);
-  int GetIndex(const int k, const int j, const int i);
+  long int GetIndex(const int i);
+  long int GetIndex(const int j, const int i);
+  long int GetIndex(const int k, const int j, const int i);
+
+  long int GetGlobalIndex(const int i);
+  long int GetGlobalIndex(const int j, const int i);
+  long int GetGlobalIndex(const int k, const int j, const int i);
+
+  long int GetKcomp(const int i, const int disp, const int nx);
 
   long int cnt,gcnt;
   AthenaFFTPlan *fplan,*bplan;

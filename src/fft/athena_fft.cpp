@@ -36,22 +36,26 @@ AthenaFFT::AthenaFFT(MeshBlock *pmb)
     np2_ = pm->nrbx2;
     np3_ = pm->nrbx3;
  
-    int dim = 1;
+    dim = 1;
     if(mesh_size.nx2 > 1) dim=2;
     if(mesh_size.nx3 > 1) dim=3;
  
-    int idisp = loc.lx1*nx1_;
-    int jdisp = loc.lx2*nx2_;
-    int kdisp = loc.lx3*nx3_;
+    idisp = loc.lx1*nx1_;
+    jdisp = loc.lx2*nx2_;
+    kdisp = loc.lx3*nx3_;
  
-    gis_ = idisp; gie_= idisp+nx1_-1; 
-    gjs_ = jdisp; gje_= jdisp+nx2_-1; 
-    gks_ = kdisp; gke_= kdisp+nx3_-1; 
+    gis_ = idisp; gie_= idisp + nx1_ - 1; 
+    gjs_ = jdisp; gje_= jdisp + nx2_ - 1; 
+    gks_ = kdisp; gke_= kdisp + nx3_ - 1; 
  
     gnx1_ = mesh_size.nx1;
     gnx2_ = mesh_size.nx2;
     gnx3_ = mesh_size.nx3;
  
+    dkx = 2.0*PI/(Real)(gnx1_);
+    dky = 2.0*PI/(Real)(gnx2_);
+    dkz = 2.0*PI/(Real)(gnx3_);
+
     cnt = nx1_*nx2_*nx3_;
     gcnt = gnx1_*gnx2_*gnx3_;
  
@@ -91,20 +95,43 @@ AthenaFFTPlan *AthenaFFT::QuickCreatePlan(enum AthenaFFTDirection dir)
 }
 
 
-int AthenaFFT::GetIndex(const int i)
+long int AthenaFFT::GetIndex(const int i)
 {
   return i;
 }
-int AthenaFFT::GetIndex(const int j, const int i)
+
+long int AthenaFFT::GetIndex(const int j, const int i)
 {
   return j + nx2_*i;
 //  return i + nx1_*j;
 }
-int AthenaFFT::GetIndex(const int k, const int j, const int i)
+
+long int AthenaFFT::GetIndex(const int k, const int j, const int i)
 {
   return k + nx3_*(j + nx2_*i);
 //  return i + nx1_*(j + nx2_*k);
 }
+
+long int AthenaFFT::GetKcomp(const int i, const int disp, const int nx)
+{
+  return (i + disp) - (int)(2*(i+disp)/nx)*nx;
+}
+
+long int AthenaFFT::GetGlobalIndex(const int i)
+{
+  return i + idisp;
+}
+
+long int AthenaFFT::GetGlobalIndex(const int j, const int i)
+{
+  return j + jdisp + gnx2_ * ( i + idisp);
+}
+
+long int AthenaFFT::GetGlobalIndex(const int k, const int j, const int i)
+{
+  return k + kdisp + gnx3_ * ( j + jdisp + gnx2_ * ( i + idisp) );
+}
+
 
 // plan 1D fft
 AthenaFFTPlan *AthenaFFT::CreatePlan(AthenaFFTInt nx1, AthenaFFTComplex *data, 
@@ -114,7 +141,7 @@ AthenaFFTPlan *AthenaFFT::CreatePlan(AthenaFFTInt nx1, AthenaFFTComplex *data,
   if(FFT_ENABLED){
     plan = new AthenaFFTPlan;
     plan->dir = dir;
-    plan->dim = 1;
+    plan->dim = dim;
     if(dir == AthenaFFTForward)
       plan->plan = fftw_plan_dft_1d(nx1, data, data, FFTW_FORWARD, FFTW_ESTIMATE);
     else

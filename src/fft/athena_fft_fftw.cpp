@@ -34,7 +34,7 @@ AthenaFFTPlan *AthenaFFT::CreatePlan(AthenaFFTInt nx1, AthenaFFTInt nx2,
   if(FFT_ENABLED){
     plan = new AthenaFFTPlan;
     plan->dir = dir;
-    plan->dim = 2;
+    plan->dim = dim;
 #ifdef MPI_PARALLEL
     if(dir == AthenaFFTForward)
       plan->plan = fftw_mpi_plan_dft_2d(nx1,nx2,data, data, 
@@ -62,7 +62,7 @@ AthenaFFTPlan *AthenaFFT::CreatePlan(AthenaFFTInt nx1, AthenaFFTInt nx2, AthenaF
   if(FFT_ENABLED){
     plan = new AthenaFFTPlan;
     plan->dir = dir;
-    plan->dim = 3;
+    plan->dim = dim;
 #ifdef MPI_PARALLEL
     if(dir == AthenaFFTForward)
       plan->plan = fftw_mpi_plan_dft_3d(nx1,nx2,nx3,data, data, 
