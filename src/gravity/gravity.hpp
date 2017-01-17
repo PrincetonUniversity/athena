@@ -32,7 +32,7 @@ public:
   Real grav_mean_rho;
 
   void Initialize(ParameterInput *pin);
-  void Solver(const AthenaArray<Real> &den);
+  void Solver(const AthenaArray<Real> &u);
 
 private:
   // scratch space used to compute fluxes

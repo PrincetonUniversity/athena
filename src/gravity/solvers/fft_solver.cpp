@@ -5,6 +5,7 @@
 //========================================================================================
 
 // C/C++ headers
+#include <iostream>
 #include <cmath>
 
 // Athena++ headers
@@ -12,9 +13,8 @@
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
 #include "../../parameter_input.hpp"
-#include "../../mesh/mesh.hpp"
-#include "../../bvals/bvals.hpp"
 #include "../../coordinates/coordinates.hpp"
+#include "../../mesh/mesh.hpp"
 #include "../../fft/athena_fft.hpp"
 
 //----------------------------------------------------------------------------------------
@@ -35,7 +35,7 @@ void Gravity::Initialize(ParameterInput *pin)
 //! \fn  void Gravity::Solver
 //  \brief Calculate potential from density using FFT
 
-void Gravity::Solver(const AthenaArray<Real> &den)
+void Gravity::Solver(const AthenaArray<Real> &u)
 {
   MeshBlock *pmb=pmy_block;
   AthenaFFT *pfft=pmb->pfft;
@@ -57,7 +57,7 @@ void Gravity::Solver(const AthenaArray<Real> &den)
     for(int j=js; j<=je; ++j){
       for(int i=is; i<=ie; ++i){
         long int idx=pfft->GetIndex(k-ks,j-js,i-is);
-        pfft->work[idx][0] = (den(k,j,i) - grav_mean_rho);
+        pfft->work[idx][0] = (u(IDN,k,j,i) - grav_mean_rho);
         pfft->work[idx][1] = 0.0;
       }
     }
@@ -77,10 +77,12 @@ void Gravity::Solver(const AthenaArray<Real> &den)
           pcoeff = ((2.0*std::cos(((i-is)+pfft->idisp)*pfft->dkx)-2.0)/dx1sq);
           if(pfft->dim > 1)
             pcoeff += ((2.0*std::cos(((j-js)+pfft->jdisp)*pfft->dky)-2.0)/dx2sq);
-          else if (pfft->dim > 2)
+          if(pfft->dim > 2)
             pcoeff += ((2.0*std::cos(((k-ks)+pfft->kdisp)*pfft->dkz)-2.0)/dx3sq);
+          pcoeff = 1.0/pcoeff;
         }
         long int idx=pfft->GetIndex(k-ks,j-js,i-is);
+        //std::cout << gidx << " " << idx << " " << pcoeff << std::endl;
         pfft->work[idx][0] *= pcoeff;
         pfft->work[idx][1] *= pcoeff;
       }

@@ -12,7 +12,6 @@
 // Athena++ classes headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../gravity/gravity.hpp"
 
 // FFTW header
 

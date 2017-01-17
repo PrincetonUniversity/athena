@@ -22,9 +22,12 @@
 #   -mpi              enable parallelization with MPI
 #   -omp              enable parallelization with OpenMP
 #   -hdf5             enable HDF5 output (requires the HDF5 library)
-#   --grav=choice     use choice as the self-gravity solver
-#   -fft              enable FFT (requires the FFTW library)
 #   --hdf5_path=path  path to HDF5 libraries (requires the HDF5 library)
+#   -fft              enable FFT (requires the FFTW library)
+#   --fftw_path=path  path to FFTW libraries (requires the FFTW library)
+#   --mpifft=choice   use choice as the MPI-FFT
+#   --mpifft_path=path path to MPI-FFT libraries
+#   --grav=choice     use choice as the self-gravity solver
 #   --cxx=choice      use choice as the C++ compiler
 #   --ccmd=choice     use choice as the command to call the C++ compiler
 #---------------------------------------------------------------------------------------
@@ -413,9 +416,8 @@ if args['fft']:
       makefile_options['MPIFFT_FILE'] = 'athena_fft_fftw.cpp'
     elif args['mpifft'] == 'plimpton':
       definitions['MPIFFT_DEFINE'] = 'PLIMPTON'
-      makefile_options['PREPROCESSOR_FLAGS'] += '-I./src/fft/plimpton'
       makefile_options['MPIFFT_FILE'] = 'athena_fft_plimpton.cpp'
-      makefile_options['LIBRARY_FLAGS'] += '-L./src/fft/plimpton -lfftp'
+      makefile_options['LIBRARY_FLAGS'] += ' -lfftp'
     elif args['mpifft'] == 'accfft':
       definitions['MPIFFT_DEFINE'] = 'ACCFFT'
       makefile_options['MPIFFT_FILE'] = 'athena_fft_accfft.cpp'

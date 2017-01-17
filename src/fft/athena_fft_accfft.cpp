@@ -119,6 +119,13 @@ void AthenaFFT::Initialize()
     std::cout << np1_ << " x " << np2_ << " x " << np3_ << std::endl;
     std::cout << "np: " << np[0] << "x" << np[1] << std::endl;
     accfft_create_comm(MPI_COMM_WORLD, np, &comm_);
+
+    int Nx[3] = {gnx1_,gnx2_,gnx3_};
+    int alloc_local, Ni[3], No[3], iis[3], ios[3];
+    alloc_local = accfft_local_size_dft_c2c(Nx, Ni, iis, No, ios, comm_);
+    std::cout << "My decomposition " << gis_ << " " << gjs_ << " " << gks_ << std::endl;
+    std::cout << "ACCFFT decomposition " << iis[0] << " " << iis[1] << " " << iis[2] << std::endl;
+
 #endif
 
 #ifdef OPENMP_PARALLEL

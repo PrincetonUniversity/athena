@@ -147,7 +147,7 @@ bool BoundaryValues::ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst)
 #endif
     }
     if(nb.level==pmb->loc.level)
-      SetHydroBoundarySameLevel(dst, gravity_recv_[nb.bufid], nb);
+      SetGravityBoundarySameLevel(dst, gravity_recv_[nb.bufid], nb);
 //    else
 // error message
     gravity_flag_[nb.bufid] = BNDRY_COMPLETED; // completed
@@ -172,7 +172,7 @@ void BoundaryValues::ReceiveGravityBoundaryBuffersWithWait(AthenaArray<Real> &ds
       MPI_Wait(&req_gravity_recv_[nb.bufid],MPI_STATUS_IGNORE);
 #endif
     if(nb.level==pmb->loc.level)
-      SetHydroBoundarySameLevel(dst, gravity_recv_[nb.bufid], nb);
+      SetGravityBoundarySameLevel(dst, gravity_recv_[nb.bufid], nb);
 //    else
 //  error message
     gravity_flag_[nb.bufid] = BNDRY_COMPLETED; // completed

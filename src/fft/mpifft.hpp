@@ -10,8 +10,8 @@ typedef struct AthenaFFTPlan{
 } AthenaFFTPlan;
 #elif defined(PLIMPTON)
 #include "mpi.h"
-#include "plimpton/fft_3d.h"
-#include "plimpton/fft_2d.h"
+#include "fft_3d.h"
+#include "fft_2d.h"
 typedef fftw_complex AthenaFFTComplex;
 typedef int AthenaFFTInt;
 typedef struct AthenaFFTPlan{

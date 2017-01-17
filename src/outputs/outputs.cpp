@@ -63,6 +63,7 @@
 #include "../mesh/mesh.hpp"
 #include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
+#include "../gravity/gravity.hpp"
 #include "../coordinates/coordinates.hpp" // Coordinates
 #include "outputs.hpp"
 
@@ -302,6 +303,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
 {
   Hydro *phyd = pmb->phydro;
   Field *pfld = pmb->pfield;
+  Gravity *pgrav = pmb->pgrav;
   num_vars_ = 0;
   OutputData *pod;
 
@@ -529,6 +531,19 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
     }
 
   } // endif (MAGNETIC_FIELDS_ENABLED)
+
+  if (SELF_GRAVITY_ENABLED) {
+    if (output_params.variable.compare("phi") == 0 ||
+        output_params.variable.compare("prim") == 0 ||
+        output_params.variable.compare("cons") == 0) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "Phi";
+      pod->data.InitWithShallowCopy(pgrav->phi);
+      AppendOutputDataNode(pod);
+      num_vars_++;
+    }
+  } // endif (SELF_GRAVITY_ENABLED)
 
   if (output_params.variable.compare("uov") == 0
   || output_params.variable.compare("user_out_var") == 0) {

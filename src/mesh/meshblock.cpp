@@ -120,14 +120,14 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   precon = new Reconstruction(this, pin);
   if(pm->multilevel==true) pmr = new MeshRefinement(this, pin);
 
+  // FFT object (need to be set before Gravity class)
+  if (FFT_ENABLED) pfft = new AthenaFFT(this);
+
   // physics-related objects
   phydro = new Hydro(this, pin);
   if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
   peos = new EquationOfState(this, pin);
   if (SELF_GRAVITY_ENABLED) pgrav = new Gravity(this, pin);
-
-  // FFT object
-  if (FFT_ENABLED) pfft = new AthenaFFT(this);
 
   // Create user mesh data
   InitUserMeshBlockData(pin);
@@ -214,14 +214,14 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   precon = new Reconstruction(this, pin);
   if(pm->multilevel==true) pmr = new MeshRefinement(this, pin);
 
+  // FFT object
+  if (FFT_ENABLED) pfft = new AthenaFFT(this);
+
   // (re-)create physics-related objects in MeshBlock
   phydro = new Hydro(this, pin);
   if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
   peos = new EquationOfState(this, pin);
   if (SELF_GRAVITY_ENABLED) pgrav = new Gravity(this, pin);
-
-  // FFT object
-  if (FFT_ENABLED) pfft = new AthenaFFT(this);
 
   InitUserMeshBlockData(pin);
 
@@ -285,12 +285,12 @@ MeshBlock::~MeshBlock()
   delete precon;
   if (pmy_mesh->multilevel == true) delete pmr;
 
+  if (FFT_ENABLED) delete pfft;
+
   delete phydro;
   if (MAGNETIC_FIELDS_ENABLED) delete pfield;
   delete peos;
   if (SELF_GRAVITY_ENABLED) delete pgrav;
-
-  if (FFT_ENABLED) delete pfft;
 
   // delete user output variables array
   user_out_var.DeleteAthenaArray();

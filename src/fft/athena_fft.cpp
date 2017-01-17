@@ -59,7 +59,6 @@ AthenaFFT::AthenaFFT(MeshBlock *pmb)
     cnt = nx1_*nx2_*nx3_;
     gcnt = gnx1_*gnx2_*gnx3_;
  
-//    work = (AthenaFFTComplex *) fftw_malloc(sizeof(AthenaFFTComplex *) * cnt);
     work = new AthenaFFTComplex[cnt];
 //    work->NewAthenaArray(nx3,nx2,nx1);
     fplan = new AthenaFFTPlan;
@@ -73,25 +72,21 @@ AthenaFFT::AthenaFFT(MeshBlock *pmb)
 
 AthenaFFT::~AthenaFFT()
 {
-  if(FFT_ENABLED) {
-    MpiCleanup();
-    delete work;
-    delete fplan;
-    delete bplan;
+  MpiCleanup();
+  delete work;
+  delete fplan;
+  delete bplan;
 #ifdef OPENMP_PARALLEL
-    fftw_cleanup_threads();
+  fftw_cleanup_threads();
 #endif
-    fftw_cleanup();
-  }
+  fftw_cleanup();
 }
 
 AthenaFFTPlan *AthenaFFT::QuickCreatePlan(enum AthenaFFTDirection dir)
 {
-  if(FFT_ENABLED){
-    if(gnx3_ > 1) return CreatePlan(gnx1_,gnx2_,gnx3_,work,dir);
-    else if(gnx2_ > 1) return CreatePlan(gnx1_,gnx2_,work,dir);
-    else  return CreatePlan(gnx1_,work,dir);
-  }
+  if(gnx3_ > 1) return CreatePlan(gnx1_,gnx2_,gnx3_,work,dir);
+  else if(gnx2_ > 1) return CreatePlan(gnx1_,gnx2_,work,dir);
+  else  return CreatePlan(gnx1_,work,dir);
 }
 
 
@@ -108,8 +103,8 @@ long int AthenaFFT::GetIndex(const int j, const int i)
 
 long int AthenaFFT::GetIndex(const int k, const int j, const int i)
 {
-  return k + nx3_*(j + nx2_*i);
-//  return i + nx1_*(j + nx2_*k);
+//  return k + nx3_*(j + nx2_*i);
+  return i + nx1_*(j + nx2_*k);
 }
 
 long int AthenaFFT::GetKcomp(const int i, const int disp, const int nx)

@@ -174,6 +174,7 @@ class Mesh {
   friend class HydroSourceTerms;
   friend class Hydro;
   friend class AthenaFFT;
+  friend class Gravity;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
