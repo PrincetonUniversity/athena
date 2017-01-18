@@ -62,7 +62,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                       *std::sin(z*pfft->dkz/dz); // dkx=2*PI/Nx
             phydro->u(IDN,k,j,i) = den;
             phydro->u(IM1,k,j,i) = den;
-            phydro->u(IM2,k,j,i) = den;
+            phydro->u(IM2,k,j,i) = SQR(den);
             phydro->u(IM3,k,j,i) = den;
           }}} // for-loop
         } // fft
