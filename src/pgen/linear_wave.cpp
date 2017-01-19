@@ -282,7 +282,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
       fprintf(pfile,"  %e",l1_err[NHYDRO+IB3]);
     }
     fprintf(pfile,"  %e  %e  ",max_max_over_l1,max_err[IDN]);
-    fprintf(pfile,"%e  %e  %ee",max_err[IM1],max_err[IM2],max_err[IM3]);
+    fprintf(pfile,"%e  %e  %e",max_err[IM1],max_err[IM2],max_err[IM3]);
     if (NON_BAROTROPIC_EOS)
       fprintf(pfile,"  %e",max_err[IEN]);
     if (MAGNETIC_FIELDS_ENABLED) {
