@@ -17,20 +17,7 @@
 
 enum AthenaFFTDirection { AthenaFFTForward = -1, AthenaFFTBackward = 1 };
 
-#ifdef MPI_PARALLEL
 #include "mpifft.hpp"
-#else
-#include "fftw3.h"
-
-typedef fftw_complex AthenaFFTComplex;
-typedef int AthenaFFTInt;
-typedef struct AthenaFFTPlan{
-  fftw_plan plan;
-  enum AthenaFFTDirection dir;
-  int dim;
-} AthenaFFTPlan;
-#endif
-
 
 class MeshBlock;
 class ParameterInput;
@@ -50,6 +37,9 @@ public:
 
   int dim;
   int idisp,jdisp,kdisp;
+  int idisp_k,jdisp_k,kdisp_k;
+  int nx1,nx2,nx3;
+  int knx1,knx2,knx3;
   Real dkx,dky,dkz; 
 
   AthenaFFTPlan *QuickCreatePlan(enum AthenaFFTDirection dir);
@@ -65,15 +55,9 @@ public:
   void Execute(AthenaFFTPlan *plan);
   void Execute(AthenaFFTPlan *plan, AthenaFFTComplex *data);
 
-  long int GetIndex(const int i);
-  long int GetIndex(const int j, const int i);
-  long int GetIndex(const int k, const int j, const int i);
-
   long int GetGlobalIndex(const int i);
   long int GetGlobalIndex(const int j, const int i);
   long int GetGlobalIndex(const int k, const int j, const int i);
-
-  long int GetKcomp(const int i, const int disp, const int nx);
 
   long int cnt,gcnt;
   AthenaFFTPlan *fplan,*bplan;
@@ -89,7 +73,6 @@ private:
   int gis_,gie_;
   int gjs_,gje_;
   int gks_,gke_;
-  int nx1_,nx2_,nx3_;
   AthenaFFTInt gnx1_,gnx2_,gnx3_;
 };
 

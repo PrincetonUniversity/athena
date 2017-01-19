@@ -40,6 +40,7 @@ void Gravity::Solver(const AthenaArray<Real> &u)
   MeshBlock *pmb=pmy_block;
   AthenaFFT *pfft=pmb->pfft;
   Coordinates *pcoord = pmb->pcoord;
+  Mesh *pm=pmy_block->pmy_mesh;
 
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
@@ -56,7 +57,7 @@ void Gravity::Solver(const AthenaArray<Real> &u)
   for(int k=ks; k<=ke; ++k){
     for(int j=js; j<=je; ++j){
       for(int i=is; i<=ie; ++i){
-        long int idx=pfft->GetIndex(k-ks,j-js,i-is);
+        long int idx=F3DI(i-is,j-js,k-ks,pfft->nx1,pfft->nx2,pfft->nx3);
         pfft->work[idx][0] = (u(IDN,k,j,i) - grav_mean_rho);
         pfft->work[idx][1] = 0.0;
       }
@@ -67,21 +68,21 @@ void Gravity::Solver(const AthenaArray<Real> &u)
 
 // Multiply kernel coefficient
 
-  for(int k=ks; k<=ke; ++k){
-    for(int j=js; j<=je; ++j){
-      for(int i=is; i<=ie; ++i){
-        long int gidx = pfft->GetGlobalIndex(k-ks,j-js,i-is); 
+  for(int k=0; k<pfft->knx3; k++){
+    for(int j=0; j<pfft->knx2; j++){
+      for(int i=0; i<pfft->knx1; i++){
+        long int gidx = pfft->GetGlobalIndex(k,j,i); 
         if(gidx == 0){
           pcoeff = 0.0;
         } else { 
-          pcoeff = ((2.0*std::cos(((i-is)+pfft->idisp)*pfft->dkx)-2.0)/dx1sq);
+          pcoeff = ((2.0*std::cos(((i)+pfft->idisp_k)*pfft->dkx)-2.0)/dx1sq);
           if(pfft->dim > 1)
-            pcoeff += ((2.0*std::cos(((j-js)+pfft->jdisp)*pfft->dky)-2.0)/dx2sq);
+            pcoeff += ((2.0*std::cos(((j)+pfft->jdisp_k)*pfft->dky)-2.0)/dx2sq);
           if(pfft->dim > 2)
-            pcoeff += ((2.0*std::cos(((k-ks)+pfft->kdisp)*pfft->dkz)-2.0)/dx3sq);
+            pcoeff += ((2.0*std::cos(((k)+pfft->kdisp_k)*pfft->dkz)-2.0)/dx3sq);
           pcoeff = 1.0/pcoeff;
         }
-        long int idx=pfft->GetIndex(k-ks,j-js,i-is);
+        long int idx=F3DK(i,j,k,pfft->knx1,pfft->knx2,pfft->knx3);
         //std::cout << gidx << " " << idx << " " << pcoeff << std::endl;
         pfft->work[idx][0] *= pcoeff;
         pfft->work[idx][1] *= pcoeff;
@@ -96,7 +97,7 @@ void Gravity::Solver(const AthenaArray<Real> &u)
   for(int k=ks; k<=ke; ++k){
     for(int j=js; j<=je; ++j){
       for(int i=is; i<=ie; ++i){
-        long int idx=pfft->GetIndex(k-ks,j-js,i-is);
+        long int idx=F3DI(i-is,j-js,k-ks,pfft->nx1,pfft->nx2,pfft->nx3);
         phi(k,j,i) = four_pi_gconst * pfft->work[idx][0]/pfft->gcnt;
       }
     }

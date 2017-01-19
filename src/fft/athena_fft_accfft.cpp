@@ -116,16 +116,23 @@ void AthenaFFT::Initialize()
           << np1_ << " x " << np2_ << " x " << np3_ << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
-    std::cout << np1_ << " x " << np2_ << " x " << np3_ << std::endl;
-    std::cout << "np: " << np[0] << "x" << np[1] << std::endl;
+//    std::cout << np1_ << " x " << np2_ << " x " << np3_ << std::endl;
+//    std::cout << "np: " << np[0] << "x" << np[1] << std::endl;
     accfft_create_comm(MPI_COMM_WORLD, np, &comm_);
-
-    int Nx[3] = {gnx1_,gnx2_,gnx3_};
-    int alloc_local, Ni[3], No[3], iis[3], ios[3];
+    int alloc_local,Ni[3],No[3],iis[3],ios[3];
+    int Nx[3]={gnx1_,gnx2_,gnx3_};
     alloc_local = accfft_local_size_dft_c2c(Nx, Ni, iis, No, ios, comm_);
-    std::cout << "My decomposition " << gis_ << " " << gjs_ << " " << gks_ << std::endl;
-    std::cout << "ACCFFT decomposition " << iis[0] << " " << iis[1] << " " << iis[2] << std::endl;
+    int procid;
+    MPI_Comm_rank(MPI_COMM_WORLD, &procid);
 
+    std::cout << procid << " " << gis_ << " " << gjs_ << " " << gks_ << std::endl
+              << "  " << Ni[0] << "x" << Ni[1] << "x" << Ni[2] << std::endl
+              << "  " << iis[0] << " " << iis[1] << " " << iis[2] << std::endl
+              << "  " << No[0] << "x" << No[1] << "x" << No[2] << std::endl
+              << "  " << ios[0] << " " << ios[1] << " " << ios[2] << std::endl;
+
+    knx1 = No[0]; knx2 = No[1]; knx3 = No[2];
+    idisp_k = ios[0]; jdisp_k = ios[1]; kdisp_k = ios[2];
 #endif
 
 #ifdef OPENMP_PARALLEL

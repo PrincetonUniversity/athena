@@ -28,9 +28,10 @@ AthenaFFT::AthenaFFT(MeshBlock *pmb)
     LogicalLocation& loc = pmy_block->loc;
     int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
     int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-    nx1_ = block_size.nx1;
-    nx2_ = block_size.nx2;
-    nx3_ = block_size.nx3;
+    nx1 = block_size.nx1;
+    nx2 = block_size.nx2;
+    nx3 = block_size.nx3;
+    knx1 = nx1; knx2 = nx2; knx3 = nx3;
  
     np1_ = pm->nrbx1;
     np2_ = pm->nrbx2;
@@ -40,13 +41,14 @@ AthenaFFT::AthenaFFT(MeshBlock *pmb)
     if(mesh_size.nx2 > 1) dim=2;
     if(mesh_size.nx3 > 1) dim=3;
  
-    idisp = loc.lx1*nx1_;
-    jdisp = loc.lx2*nx2_;
-    kdisp = loc.lx3*nx3_;
+    idisp = loc.lx1*nx1;
+    jdisp = loc.lx2*nx2;
+    kdisp = loc.lx3*nx3;
+    idisp_k = idisp; jdisp_k = jdisp; kdisp_k = kdisp;
  
-    gis_ = idisp; gie_= idisp + nx1_ - 1; 
-    gjs_ = jdisp; gje_= jdisp + nx2_ - 1; 
-    gks_ = kdisp; gke_= kdisp + nx3_ - 1; 
+    gis_ = idisp; gie_= idisp + nx1 - 1; 
+    gjs_ = jdisp; gje_= jdisp + nx2 - 1; 
+    gks_ = kdisp; gke_= kdisp + nx3 - 1; 
  
     gnx1_ = mesh_size.nx1;
     gnx2_ = mesh_size.nx2;
@@ -56,7 +58,7 @@ AthenaFFT::AthenaFFT(MeshBlock *pmb)
     dky = 2.0*PI/(Real)(gnx2_);
     dkz = 2.0*PI/(Real)(gnx3_);
 
-    cnt = nx1_*nx2_*nx3_;
+    cnt = nx1*nx2*nx3;
     gcnt = gnx1_*gnx2_*gnx3_;
  
     work = new AthenaFFTComplex[cnt];
@@ -89,29 +91,6 @@ AthenaFFTPlan *AthenaFFT::QuickCreatePlan(enum AthenaFFTDirection dir)
   else  return CreatePlan(gnx1_,work,dir);
 }
 
-
-long int AthenaFFT::GetIndex(const int i)
-{
-  return i;
-}
-
-long int AthenaFFT::GetIndex(const int j, const int i)
-{
-  return j + nx2_*i;
-//  return i + nx1_*j;
-}
-
-long int AthenaFFT::GetIndex(const int k, const int j, const int i)
-{
-  return k + nx3_*(j + nx2_*i);
-//  return i + nx1_*(j + nx2_*k);
-}
-
-long int AthenaFFT::GetKcomp(const int i, const int disp, const int nx)
-{
-  return (i + disp) - (int)(2*(i+disp)/nx)*nx;
-}
-
 long int AthenaFFT::GetGlobalIndex(const int i)
 {
   return i + idisp;
@@ -126,7 +105,6 @@ long int AthenaFFT::GetGlobalIndex(const int k, const int j, const int i)
 {
   return k + kdisp + gnx3_ * ( j + jdisp + gnx2_ * ( i + idisp) );
 }
-
 
 // plan 1D fft
 AthenaFFTPlan *AthenaFFT::CreatePlan(AthenaFFTInt nx1, AthenaFFTComplex *data, 

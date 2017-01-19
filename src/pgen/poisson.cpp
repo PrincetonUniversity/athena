@@ -85,7 +85,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           Real den = da*std::pow((1.0+r2/SQR(a0)),-2.5);
           phydro->u(IDN,k,j,i) = den;
           phydro->u(IM1,k,j,i) = den;
-          phydro->u(IM2,k,j,i) = den;
+          phydro->u(IM2,k,j,i) = SQR(den);
           phydro->u(IM3,k,j,i) = den;
         }}} //for-loop
       } // case 2
@@ -141,7 +141,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
                        /(SQR(pfft->dkx/dx)+SQR(pfft->dky/dy)+SQR(pfft->dkz/dz));
             phia = phi0*phydro->u(IM1,k,j,i);
             err1 += std::abs(pgrav->phi(k,j,i) - phia);
-            err2 += std::abs(phydro->u(IM1,k,j,i) - pgrav->phi(k,j,i)/phi0);
+            err2 += std::abs(phydro->u(IM1,k,j,i) - pgrav->phi(k,j,i));
           }}} // for-loop
         } // fft
         break;
@@ -159,9 +159,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
             Real z = pcoord->x3v(k);
             r2 = sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
           }
-          phia = - pgrav->gconst*M/std::sqrt(r2+SQR(a0));
+          phia = - pgrav->gconst*M/sqrt(r2+SQR(a0));
           err1 += std::abs(pgrav->phi(k,j,i) - phia);
-          err2 += SQR(pgrav->phi(k,j,i) - phia);
+          err2 += std::abs(phydro->u(IM1,k,j,i) - pgrav->phi(k,j,i));
         }}}
       }
     }
