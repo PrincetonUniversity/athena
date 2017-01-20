@@ -19,7 +19,10 @@
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
+//[diffusion
 #include "diffusion/diffusion.hpp"
+#include "../field/field_diffusion/field_diffusion.hpp"
+//diffusion]
 
 // MPI/OpenMP header
 #ifdef MPI_PARALLEL
@@ -115,6 +118,11 @@ Real Hydro::NewBlockTimeStep(void)
             dt1(i)=std::min(pmb->phydro->pdif->NewDtDiff(pmb->pcoord->dx1f(i),k,j,i),dt1(i));
             dt2(i)=std::min(pmb->phydro->pdif->NewDtDiff(pmb->pcoord->dx2f(j)*pmb->pcoord->h2v(i),k,j,i),dt2(i));
             dt3(i)=std::min(pmb->phydro->pdif->NewDtDiff(pmb->pcoord->dx3f(k)*pmb->pcoord->h31v(i)*fabs(pmb->pcoord->h32v(j)),k,j,i),dt3(i));
+          }
+          if (pmb->pfield->pdif->field_diffusion_defined) {
+            dt1(i)=std::min(pmb->pfield->pdif->NewDtFldDiff(pmb->pcoord->dx1f(i),k,j,i),dt1(i));
+            dt2(i)=std::min(pmb->pfield->pdif->NewDtFldDiff(pmb->pcoord->dx2f(j)*pmb->pcoord->h2v(i),k,j,i),dt2(i));
+            dt3(i)=std::min(pmb->pfield->pdif->NewDtFldDiff(pmb->pcoord->dx3f(k)*pmb->pcoord->h31v(i)*fabs(pmb->pcoord->h32v(j)),k,j,i),dt3(i));
           }
           //diffusion]
         }

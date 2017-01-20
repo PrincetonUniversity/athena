@@ -25,6 +25,7 @@
 #include "../hydro/srcterms/hydro_srcterms.hpp"
 //[diffusion
 #include "../hydro/diffusion/diffusion.hpp"
+#include "../field/field_diffusion/field_diffusion.hpp"
 //diffusion]
 
 //----------------------------------------------------------------------------------------
@@ -92,6 +93,9 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     // compute MHD fluxes, integrate field
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
       AddTimeIntegratorTask(CALC_FLDFLX,CALC_HYDFLX);
+      //[diffusion
+      AddTimeIntegratorTask(DIFFUSE_FLD,CALC_FLDFLX);
+      //diffusion]
       AddTimeIntegratorTask(SEND_FLDFLX,CALC_FLDFLX);
       AddTimeIntegratorTask(RECV_FLDFLX,SEND_FLDFLX);
       AddTimeIntegratorTask(INT_FLD, RECV_FLDFLX);
@@ -259,6 +263,11 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::HydroDiffusion);
+      break;
+    case (DIFFUSE_FLD):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::FieldDiffusion);
       break;
     //diffusion]
 
@@ -463,6 +472,32 @@ enum TaskStatus TimeIntegratorTaskList::HydroDiffusion(MeshBlock *pmb, int step)
     if      (integrator == "vl2") time=pmb->pmy_mesh->time + 0.5*pmb->pmy_mesh->dt;
     else if (integrator == "rk2") time=pmb->pmy_mesh->time +     pmb->pmy_mesh->dt;
     ph->pdif->AddHydroDiffusionFlux(ph->w1,ph->u,ph->flux);
+  } else {
+    return TASK_FAIL;
+  }
+
+  return TASK_NEXT;
+}
+//----------------------------------------------------------------------------------------
+// Functions to add diffusion EMF
+enum TaskStatus TimeIntegratorTaskList::FieldDiffusion(MeshBlock *pmb, int step)
+{
+  Hydro *ph=pmb->phydro;
+  Field *pf=pmb->pfield;
+
+  // return if there are no diffusion to be added
+  if (pf->pdif->field_diffusion_defined == false) return TASK_NEXT;
+
+  Real dt = (step_wghts[(step-1)].c)*(pmb->pmy_mesh->dt);
+  Real time;
+  // *** this must be changed for the RK3 integrator
+  if(step == 1) {
+    time=pmb->pmy_mesh->time;
+    pf->pdif->AddFieldDiffusionEMF(pf->b,pf->bcc,pf->e);
+  } else if(step == 2) {
+    if      (integrator == "vl2") time=pmb->pmy_mesh->time + 0.5*pmb->pmy_mesh->dt;
+    else if (integrator == "rk2") time=pmb->pmy_mesh->time +     pmb->pmy_mesh->dt;
+    pf->pdif->AddFieldDiffusionEMF(pf->b1,pf->bcc1,pf->e);
   } else {
     return TASK_FAIL;
   }

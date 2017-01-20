@@ -22,6 +22,7 @@ void HydroDiffusion::Viscosity(const AthenaArray<Real> &prim,
   AthenaArray<Real> &x1flux=diflx[X1DIR];
   AthenaArray<Real> &x2flux=diflx[X2DIR];
   AthenaArray<Real> &x3flux=diflx[X3DIR];
+  int il, iu, jl, ju, kl, ku;
   int is = pmb_->is; int js = pmb_->js; int ks = pmb_->ks;
   int ie = pmb_->ie; int je = pmb_->je; int ke = pmb_->ke;
   Real denf;
@@ -34,8 +35,18 @@ void HydroDiffusion::Viscosity(const AthenaArray<Real> &prim,
 
 // step-2. calculate the flux across each face
 // i-direction
-  for (int k=ks; k<=ke; ++k){
-    for (int j=js; j<=je; ++j){
+// set the loop limits
+  jl=js, ju=je, kl=ks, ku=ke;
+  if (MAGNETIC_FIELDS_ENABLED) {
+    if(pmb_->block_size.nx2 > 1) {
+      if(pmb_->block_size.nx3 == 1) // 2D
+        jl=js-1, ju=je+1, kl=ks, ku=ke;
+      else // 3D
+        jl=js-1, ju=je+1, kl=ks-1, ku=ke+1;
+    }
+  }
+  for (int k=kl; k<=ku; ++k){
+    for (int j=jl; j<=ju; ++j){
       // compute fluxes
       FaceXdx(k,j,is,ie+1,prim,fx_);
       FaceXdy(k,j,is,ie+1,prim,fy_);
@@ -43,7 +54,7 @@ void HydroDiffusion::Viscosity(const AthenaArray<Real> &prim,
       // store fluxes
       for (int i=is; i<=ie+1; ++i){
         denf = 0.5*(prim(IDN,k,j,i)+prim(IDN,k,j,i-1));
-        x1flux(IM1,k,j,i) = -denf*nuiso1*(fx_(i)+nuiso2*(divv_(k,j,i)+divv_(k,j,i-1)));
+        x1flux(IM1,k,j,i) = -denf*nuiso1*(fx_(i)+nuiso2*0.5*(divv_(k,j,i)+divv_(k,j,i-1)));
         x1flux(IM2,k,j,i) = -denf*nuiso1*fy_(i);
         x1flux(IM3,k,j,i) = -denf*nuiso1*fz_(i);
         if(NON_BAROTROPIC_EOS)
@@ -54,18 +65,26 @@ void HydroDiffusion::Viscosity(const AthenaArray<Real> &prim,
   }}
 
 // j-direction
-  for (int k=ks; k<=ke; ++k){
+// set the loop limits
+  il=is, iu=ie, kl=ks, ku=ke;
+  if (MAGNETIC_FIELDS_ENABLED) {
+    if(pmb_->block_size.nx3 == 1) // 2D
+      il=is-1, iu=ie+1, kl=ks, ku=ke;
+    else // 3D
+      il=is-1, iu=ie+1, kl=ks-1, ku=ke+1;
+  }
+  for (int k=kl; k<=ku; ++k){
     for (int j=js; j<=je+1; ++j){
       // compute fluxes
       FaceYdx(k,j,is,ie,prim,fx_);
       FaceYdy(k,j,is,ie,prim,fy_);
       FaceYdz(k,j,is,ie,prim,fz_);
       // store fluxes
-      for(int i=is; i<=ie; i++) {
+      for(int i=il; i<=iu; i++) {
         denf = 0.5*(prim(IDN,k,j+1,i)+prim(IDN,k,j,i));
         x2flux(IM1,k,j,i) = -denf*nuiso1*fx_(i);
         x2flux(IM2,k,j,i) = -denf*nuiso1*
-                         (fy_(i)+nuiso2*(divv_(k,j+1,i)+divv_(k,j,i)));
+                         (fy_(i)+nuiso2*0.5*(divv_(k,j+1,i)+divv_(k,j,i)));
         x2flux(IM3,k,j,i) = -denf*nuiso1*fz_(i);
         if (NON_BAROTROPIC_EOS)
           x2flux(IEN,k,j,i) = 0.5*((prim(IM1,k,j,i)+prim(IM1,k,j+1,i))*x2flux(IM1,k,j,i) +
@@ -76,18 +95,26 @@ void HydroDiffusion::Viscosity(const AthenaArray<Real> &prim,
 
 
 // k-direction
+// set the loop limits
+  il=is, iu=ie, jl=js, ju=je;
+  if (MAGNETIC_FIELDS_ENABLED) {
+    if(pmb_->block_size.nx2 > 1) // 2D or 3D
+      il=is-1, iu=ie+1, jl=js-1, ju=je+1;
+    else // 1D
+      il=is-1, iu=ie+1;
+  }
   for (int k=ks; k<=ke+1; ++k){
-    for (int j=js; j<=je; ++j){
+    for (int j=jl; j<=ju; ++j){
       // compute fluxes
       FaceZdx(k,j,is,ie,prim,fx_);
       FaceZdy(k,j,is,ie,prim,fy_);
       FaceZdz(k,j,is,ie,prim,fz_);
       // store fluxes
-      for(int i=is; i<=ie; i++) {
+      for(int i=il; i<=iu; i++) {
         denf = 0.5*(prim(IDN,k+1,j,i)+prim(IDN,k,j,i));
         x3flux(IM1,k,j,i) = -denf*nuiso1*fx_(i);
         x3flux(IM2,k,j,i) = -denf*nuiso1*fy_(i);
-        x3flux(IM3,k,j,i) = -denf*nuiso1*(fz_(i)+nuiso2*(divv_(k+1,j,i)+divv_(k,j,i)));
+        x3flux(IM3,k,j,i) = -denf*nuiso1*(fz_(i)+nuiso2*0.5*(divv_(k+1,j,i)+divv_(k,j,i)));
         if (NON_BAROTROPIC_EOS)
           x3flux(IEN,k,j,i) = 0.5*((prim(IM1,k,j,i)+prim(IM1,k+1,j,i))*x3flux(IM1,k,j,i) +
                                   (prim(IM2,k,j,i)+prim(IM2,k+1,j,i))*x3flux(IM2,k,j,i) +

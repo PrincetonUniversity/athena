@@ -67,6 +67,6 @@ private:
   AthenaArray<Real> x1area_,x2area_,x2area_p1_,x3area_,x3area_p1_;
   AthenaArray<Real> vol_;
   AthenaArray<Real> fx_,fy_,fz_;
-  AthenaArray<Real> dflx_,flx_;
+  //AthenaArray<Real> dflx_,flx_;
 };
 #endif

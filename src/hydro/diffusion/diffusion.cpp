@@ -69,6 +69,7 @@ HydroDiffusion::~HydroDiffusion()
     fx_.DeleteAthenaArray();
     fy_.DeleteAthenaArray();
     fz_.DeleteAthenaArray();
+    divv_.DeleteAthenaArray();
   }
 }
 

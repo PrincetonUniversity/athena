@@ -36,7 +36,7 @@ static void GetCartCoord(Coordinates *pco,Real &x1,Real &x2,Real &x3,int i,int j
 //static void VelProfileCyl(const Real rad, const Real phi, const Real z,
 //  Real &v1, Real &v2, Real &v3);
 //
-//// User-defined boundary conditions for disk simulations
+// User-defined boundary conditions for disk simulations
 //void DiskInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
 //  Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 //void DiskOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
@@ -70,6 +70,13 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   iprob = pin->GetOrAddInteger("problem","iprob",0);
   gm0 = pin->GetOrAddReal("problem","GM", 0.0);
 
+//  // enroll user-defined boundary condition
+//  if(mesh_bcs[INNER_X1] == GetBoundaryFlag("user")) {
+//    EnrollUserBoundaryFunction(INNER_X1, DiskInnerX1);
+//  }
+//  if(mesh_bcs[OUTER_X1] == GetBoundaryFlag("user")) {
+//    EnrollUserBoundaryFunction(OUTER_X1, DiskOuterX1);
+//  }
   return;
 }
 
@@ -137,12 +144,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
        std::cout << "[visc]: viscous ring test only compatible with cylindrical coord with point mass in center" << std::endl;
        exit(0);
      }
+	 Real width = 0.1;
      for(int k=ks; k<=ke; ++k) {
      for (int j=js; j<=je; ++j) {
        for (int i=is; i<=ie; ++i) {
          rad=pcoord->x1v(i);
-         d0 = exp(-SQR(rad-x0)/2.0/SQR(0.1));
+         d0 = exp(-SQR(rad-x0)/2.0/SQR(width));
          if(d0 < 1e-6) d0 += 1e-6;
+		 v1 = -3.0*nuiso*(0.5/rad - (rad-x0)/SQR(width));
          v2 = sqrt(gm0/rad); // set it to be Mach=100
          phydro->u(IDN,k,j,i) = d0;
          phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*v1;
@@ -184,4 +193,49 @@ static void GetCartCoord(Coordinates *pco,Real &x1,Real &x2,Real &x3,int i,int j
   }
   return;
 }
+
+//----------------------------------------------------------------------------------------
+//!\f: User-defined boundary Conditions: sets solution in ghost zones to initial values
+////
+//void DiskInnerX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
+//                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
+//{
+//  Real rad,phi,z;
+//  Real v1=, v2, v3;
+//  for (int k=ks; k<=ke; ++k) {
+//    for (int j=js; j<=je; ++j) {
+//      for (int i=1; i<=(NGHOST); ++i) {
+//        GetCylCoord(pco,rad,phi,z,is-i,j,k);
+//        prim(IDN,k,j,is-i) = DenProfileCyl(rad,phi,z);
+//        VelProfileCyl(rad,phi,z,v1,v2,v3);
+//        prim(IM1,k,j,is-i) = v1;
+//        prim(IM2,k,j,is-i) = v2;
+//        prim(IM3,k,j,is-i) = v3;
+//        if (NON_BAROTROPIC_EOS)
+//          prim(IEN,k,j,is-i) = PoverR(rad, phi, z)*prim(IDN,k,j,is-i);
+//      }
+//    }
+//  }
+//}
+//
+//void DiskOuterX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
+//                 Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
+//{
+//  Real rad,phi,z;
+//  Real v1, v2, v3;
+//  for (int k=ks; k<=ke; ++k) {
+//    for (int j=js; j<=je; ++j) {
+//      for (int i=1; i<=(NGHOST); ++i) {
+//        GetCylCoord(pco,rad,phi,z,ie+i,j,k);
+//        prim(IDN,k,j,ie+i) = DenProfileCyl(rad,phi,z);
+//        VelProfileCyl(rad,phi,z,v1,v2,v3);
+//        prim(IM1,k,j,ie+i) = v1;
+//        prim(IM2,k,j,ie+i) = v2;
+//        prim(IM3,k,j,ie+i) = v3;
+//        if (NON_BAROTROPIC_EOS)
+//          prim(IEN,k,j,ie+i) = PoverR(rad, phi, z)*prim(IDN,k,j,ie+i);
+//      }
+//    }
+//  }
+//}
 

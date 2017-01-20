@@ -96,6 +96,7 @@ public:
   enum TaskStatus HydroSourceTerms(MeshBlock *pmb, int step);
   //[diffusion
   enum TaskStatus HydroDiffusion(MeshBlock *pmb, int step);
+  enum TaskStatus FieldDiffusion(MeshBlock *pmb, int step);
   //diffusion]
 
   enum TaskStatus HydroSend(MeshBlock *pmb, int step);
@@ -170,6 +171,7 @@ namespace HydroIntegratorTaskNames {
 
   //[diffusion
   const uint64_t DIFFUSE_HYD=1LL<<41;
+  const uint64_t DIFFUSE_FLD=1LL<<42;
   //diffusion]
 };
 
