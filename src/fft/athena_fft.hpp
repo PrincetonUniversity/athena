@@ -54,10 +54,12 @@ public:
   void MpiCleanup();
   void Execute(AthenaFFTPlan *plan);
   void Execute(AthenaFFTPlan *plan, AthenaFFTComplex *data);
+  void CompatabilityCheck(int verbose);
 
-  long int GetGlobalIndex(const int i);
-  long int GetGlobalIndex(const int j, const int i);
-  long int GetGlobalIndex(const int k, const int j, const int i);
+  long int GetIndex(const int i, const int j, const int k);
+  long int GetFreq(const int i, const int j, const int k);
+
+  long int GetGlobalIndex(const int i, const int j, const int k);
 
   long int cnt,gcnt;
   AthenaFFTPlan *fplan,*bplan;
@@ -66,7 +68,8 @@ public:
   
 private:
 #ifdef MPI_PARALLEL
-  MPI_Comm comm_;
+  int decomp_; // decomposition type
+  MPI_Comm cart_2d_comm_; // communicator; only used for pencil decomp. lik ACCFFT
 #endif
   int nthreads_;
   int np1_, np2_, np3_;

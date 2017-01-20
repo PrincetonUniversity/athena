@@ -62,7 +62,7 @@ AthenaFFTPlan *AthenaFFT::CreatePlan(AthenaFFTInt nx1, AthenaFFTInt nx2, AthenaF
     if(dir == AthenaFFTForward) plan->dir = ACCFFT_FORWARD;
     else plan->dir = ACCFFT_BACKWARD;
     //std::cout << "gnx: " << gnx[0] << "x" << gnx[1] << "x" << gnx[2] << std::endl;
-    plan->plan3d = accfft_plan_dft_3d_c2c(gnx,data,data,comm_,ACCFFT_MEASURE);
+    plan->plan3d = accfft_plan_dft_3d_c2c(gnx,data,data,cart_2d_comm_,ACCFFT_MEASURE);
 #else // MPI_PARALLEL
     if(dir == AthenaFFTForward){
       plan->plan = fftw_plan_dft_3d(nx1,nx2,nx3,data, data, FFTW_FORWARD, FFTW_MEASURE);
@@ -104,35 +104,53 @@ void AthenaFFT::Initialize()
 #ifdef MPI_PARALLEL
     std::stringstream msg;
     int np[2];
-    if(np1_ == 1) {
-      np[0] = np2_; np[1] = np3_;
-    } else if (np2_ == 1) {
-      np[0] = np1_; np[1] = np3_;
-    } else if (np3_ == 1) {
-      np[0] = np1_; np[1] = np2_;
+    if(np1_ == 1) { // decomposed y and z axes
+      np[0] = np2_; np[1] = np3_; decomp_ = 1;
+    } else if (np2_ == 1) { // decomposed x and z axes
+      np[0] = np1_; np[1] = np3_; decomp_ = 2;
+    } else if (np3_ == 1) { // decomposed x and y axes
+      np[0] = np1_; np[1] = np2_; decomp_ = 3;
     } else {
       msg << "ACCFFT requires pencil decomposition!" << std:: endl
-          << "Current MPI Configureation is " 
+          << "Current MPI Configuration is " 
           << np1_ << " x " << np2_ << " x " << np3_ << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
-//    std::cout << np1_ << " x " << np2_ << " x " << np3_ << std::endl;
-//    std::cout << "np: " << np[0] << "x" << np[1] << std::endl;
-    accfft_create_comm(MPI_COMM_WORLD, np, &comm_);
+
+    std::cout << "MPI configuration : " << np[0] << "x" << np[1] << std::endl;
+    accfft_create_comm(MPI_COMM_WORLD, np, &cart_2d_comm_);
     int alloc_local,Ni[3],No[3],iis[3],ios[3];
-    int Nx[3]={gnx1_,gnx2_,gnx3_};
-    alloc_local = accfft_local_size_dft_c2c(Nx, Ni, iis, No, ios, comm_);
+    AthenaFFTInt Nx[3]={gnx3_,gnx2_,gnx1_};
+    if (decomp_ == 1){ // decomposed in x-dir; swap x<->y in k-space
+    } else if (decomp_ == 2){ // decomposed in y-dir; swap y<->x in k-space
+      Nx[0]=gnx3_; Nx[1]=gnx1_; Nx[2] = gnx2_;
+    } else if (decomp_ == 3){ // decomposed in z-dir; swap x<->z in k-space
+      Nx[0]=gnx2_; Nx[1]=gnx1_; Nx[2] = gnx3_;
+    }
+    alloc_local = accfft_local_size_dft_c2c(Nx, Ni, iis, No, ios, cart_2d_comm_);
     int procid;
     MPI_Comm_rank(MPI_COMM_WORLD, &procid);
 
-    std::cout << procid << " " << gis_ << " " << gjs_ << " " << gks_ << std::endl
-              << "  " << Ni[0] << "x" << Ni[1] << "x" << Ni[2] << std::endl
-              << "  " << iis[0] << " " << iis[1] << " " << iis[2] << std::endl
+    std::cout << procid << " Athena's decomposition: " << std::endl
+              << " MeshBlock: " << nx1 << " " << nx2 << " " << nx3 
+              << " starts at " << gis_ << " " << gjs_ << " " << gks_ << std::endl
+              << " ACCFFT's decomposition: " << std::endl
+              << "  " << Ni[0] << "x" << Ni[1] << "x" << Ni[2] 
+              << " starts at " << iis[0] << " " << iis[1] << " " << iis[2] << std::endl
+              << " ACCFFT decomposition in k-space: " << std::endl
               << "  " << No[0] << "x" << No[1] << "x" << No[2] << std::endl
-              << "  " << ios[0] << " " << ios[1] << " " << ios[2] << std::endl;
+              << " starts at " << ios[0] << " " << ios[1] << " " << ios[2] << std::endl;
 
-    knx1 = No[0]; knx2 = No[1]; knx3 = No[2];
-    idisp_k = ios[0]; jdisp_k = ios[1]; kdisp_k = ios[2];
+    if(decomp_ == 1){
+      knx3 = No[0]; knx2 = No[1]; knx1 = No[2];
+      kdisp_k = ios[0]; jdisp_k = ios[1]; idisp_k = ios[2];
+    } else if (decomp_ == 2) {
+      knx3 = No[0]; knx1 = No[1]; knx2 = No[2];
+      kdisp_k = ios[0]; idisp_k = ios[1]; jdisp_k = ios[2];
+    } else {
+      knx2 = No[0]; knx1 = No[1]; knx3 = No[2];
+      jdisp_k = ios[0]; idisp_k = ios[1]; kdisp_k = ios[2];
+    }
 #endif
 
 #ifdef OPENMP_PARALLEL
@@ -142,4 +160,33 @@ void AthenaFFT::Initialize()
 #endif
   }
 }
+
+long int AthenaFFT::GetIndex(const int i, const int j, const int k)
+{
+  if (decomp_ == 1) return i + nx1 * ( j + nx2 * k );
+  else if (decomp_ == 2) return j + nx2 * ( i + nx1 * k );
+  else  return k + nx3 * ( i + nx1 * j );
+}
+
+long int AthenaFFT::GetFreq(const int i, const int j, const int k)
+{
+  if (decomp_ == 1) return i + knx1 * ( j + knx2 * k);
+  else if (decomp_ == 2) return j + knx2 * ( i + knx1 * k );
+  else  return k + knx3 * ( i + knx1 * j );
+}
+
+AthenaFFTPlan *AthenaFFT::QuickCreatePlan(enum AthenaFFTDirection dir)
+{
+  AthenaFFTInt Nx[3]={gnx3_,gnx2_,gnx1_};
+  if (decomp_ == 1){ // decomposed in x-dir; swap x<->y in k-space
+  } else if (decomp_ == 2){ // decomposed in y-dir; swap y<->x in k-space
+    Nx[0]=gnx3_; Nx[1]=gnx1_; Nx[2] = gnx2_;
+  } else if (decomp_ == 3){ // decomposed in z-dir; swap x<->z in k-space
+    Nx[0]=gnx2_; Nx[1]=gnx1_; Nx[2] = gnx3_;
+  }
+  if(gnx3_ > 1) return CreatePlan(Nx[0],Nx[1],Nx[2],work,dir);
+  else if(gnx2_ > 1) return CreatePlan(Nx[0],Nx[1],work,dir);
+  else  return CreatePlan(gnx1_,work,dir);
+}
+
 

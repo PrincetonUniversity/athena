@@ -60,9 +60,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             Real den = std::sin(x*pfft->dkx/dx)
                       *std::sin(y*pfft->dky/dy)
                       *std::sin(z*pfft->dkz/dz); // dkx=2*PI/Nx
+            Real phi0 =-pgrav->four_pi_gconst
+                       /(SQR(pfft->dkx/dx)+SQR(pfft->dky/dy)+SQR(pfft->dkz/dz));
             phydro->u(IDN,k,j,i) = den;
             phydro->u(IM1,k,j,i) = den;
-            phydro->u(IM2,k,j,i) = SQR(den);
+            phydro->u(IM2,k,j,i) = phi0*den;
             phydro->u(IM3,k,j,i) = den;
           }}} // for-loop
         } // fft
@@ -83,12 +85,33 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             r2 = sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
           }
           Real den = da*std::pow((1.0+r2/SQR(a0)),-2.5);
+          Real phia = - pgrav->gconst*M/sqrt(r2+SQR(a0));
           phydro->u(IDN,k,j,i) = den;
           phydro->u(IM1,k,j,i) = den;
-          phydro->u(IM2,k,j,i) = SQR(den);
+          phydro->u(IM2,k,j,i) = phia;
           phydro->u(IM3,k,j,i) = den;
         }}} //for-loop
       } // case 2
+      case 3: { //gaussian
+        Real a0 = pin->GetOrAddReal("problem","a0",1.0);
+        for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie; i++) {
+          Real r,r2;
+          if (COORDINATE_SYSTEM == "cartesian") {
+            Real x = pcoord->x1v(i);
+            Real y = pcoord->x2v(j);
+            Real z = pcoord->x3v(k);
+            r2 = sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
+          }
+          Real den = (4.0*SQR(a0)*r2-6.0*a0)*exp(-a0*r2);
+          Real phia = pgrav->four_pi_gconst*exp(-a0*r2);
+          phydro->u(IDN,k,j,i) = den;
+          phydro->u(IM1,k,j,i) = den;
+          phydro->u(IM2,k,j,i) = phia;
+          phydro->u(IM3,k,j,i) = den;
+        }}} //for-loop
+      } // case 3
     } // switch
     pgrav->Solver(phydro->u);
   } // self-gravity
@@ -125,45 +148,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   if(SELF_GRAVITY_ENABLED){
     Real err1=0.0,err2=0.0;
     int iprob = pin->GetOrAddInteger("problem","iprob",1);
-    switch(iprob){
-      case 1: { // sine
-        if(FFT_ENABLED){
-          for (int k=ks; k<=ke; k++) {
-          for (int j=js; j<=je; j++) {
-          for (int i=is; i<=ie; i++) {
-            Real x = pcoord->x1v(i);
-            Real y = pcoord->x2v(j);
-            Real z = pcoord->x3v(k);
-            Real dx = pcoord->dx1v(i);
-            Real dy = pcoord->dx2v(j);
-            Real dz = pcoord->dx3v(k);
-            Real phi0 =-pgrav->four_pi_gconst
-                       /(SQR(pfft->dkx/dx)+SQR(pfft->dky/dy)+SQR(pfft->dkz/dz));
-            phia = phi0*phydro->u(IM1,k,j,i);
-            err1 += std::abs(pgrav->phi(k,j,i) - phia);
-            err2 += std::abs(phydro->u(IM1,k,j,i) - pgrav->phi(k,j,i));
-          }}} // for-loop
-        } // fft
-        break;
-      } // case 1
-      case 2: { // plummer density
-        Real M = pin->GetOrAddReal("problem","M",1.0);
-        Real a0 = pin->GetOrAddReal("problem","a0",1.0);
-        for (int k=ks; k<=ke; k++) {
-        for (int j=js; j<=je; j++) {
-        for (int i=is; i<=ie; i++) {
-          Real r,r2;
-          if (COORDINATE_SYSTEM == "cartesian") {
-            Real x = pcoord->x1v(i);
-            Real y = pcoord->x2v(j);
-            Real z = pcoord->x3v(k);
-            r2 = sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
-          }
-          phia = - pgrav->gconst*M/sqrt(r2+SQR(a0));
-          err1 += std::abs(pgrav->phi(k,j,i) - phia);
-          err2 += std::abs(phydro->u(IM1,k,j,i) - pgrav->phi(k,j,i));
-        }}}
-      }
+    if(FFT_ENABLED){
+      for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++) {
+        err1 += std::abs(pgrav->phi(k,j,i) - phydro->u(IM2,k,j,i));
+        err2 += pgrav->phi(k,j,i)/phydro->u(IM2,k,j,i);
+      }}} // for-loop
     }
 
     err1 = err1/cnt;

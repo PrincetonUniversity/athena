@@ -57,7 +57,7 @@ void Gravity::Solver(const AthenaArray<Real> &u)
   for(int k=ks; k<=ke; ++k){
     for(int j=js; j<=je; ++j){
       for(int i=is; i<=ie; ++i){
-        long int idx=F3DI(i-is,j-js,k-ks,pfft->nx1,pfft->nx2,pfft->nx3);
+        long int idx=pfft->GetIndex(i-is,j-js,k-ks);
         pfft->work[idx][0] = (u(IDN,k,j,i) - grav_mean_rho);
         pfft->work[idx][1] = 0.0;
       }
@@ -71,7 +71,7 @@ void Gravity::Solver(const AthenaArray<Real> &u)
   for(int k=0; k<pfft->knx3; k++){
     for(int j=0; j<pfft->knx2; j++){
       for(int i=0; i<pfft->knx1; i++){
-        long int gidx = pfft->GetGlobalIndex(k,j,i); 
+        long int gidx = pfft->GetGlobalIndex(i,j,k); 
         if(gidx == 0){
           pcoeff = 0.0;
         } else { 
@@ -82,7 +82,7 @@ void Gravity::Solver(const AthenaArray<Real> &u)
             pcoeff += ((2.0*std::cos(((k)+pfft->kdisp_k)*pfft->dkz)-2.0)/dx3sq);
           pcoeff = 1.0/pcoeff;
         }
-        long int idx=F3DK(i,j,k,pfft->knx1,pfft->knx2,pfft->knx3);
+        long int idx=pfft->GetFreq(i,j,k);
         //std::cout << gidx << " " << idx << " " << pcoeff << std::endl;
         pfft->work[idx][0] *= pcoeff;
         pfft->work[idx][1] *= pcoeff;
@@ -97,7 +97,7 @@ void Gravity::Solver(const AthenaArray<Real> &u)
   for(int k=ks; k<=ke; ++k){
     for(int j=js; j<=je; ++j){
       for(int i=is; i<=ie; ++i){
-        long int idx=F3DI(i-is,j-js,k-ks,pfft->nx1,pfft->nx2,pfft->nx3);
+        long int idx=pfft->GetIndex(i-is,j-js,k-ks);
         phi(k,j,i) = four_pi_gconst * pfft->work[idx][0]/pfft->gcnt;
       }
     }

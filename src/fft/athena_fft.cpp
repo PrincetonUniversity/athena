@@ -67,6 +67,8 @@ AthenaFFT::AthenaFFT(MeshBlock *pmb)
     bplan = new AthenaFFTPlan;
  
     nthreads_ = pmy_block->pmy_mesh->GetNumMeshThreads();
+
+    CompatabilityCheck(1);
   }
 }
 
@@ -84,24 +86,24 @@ AthenaFFT::~AthenaFFT()
   fftw_cleanup();
 }
 
-AthenaFFTPlan *AthenaFFT::QuickCreatePlan(enum AthenaFFTDirection dir)
+AthenaFFTPlan __attribute__((weak)) *AthenaFFT::QuickCreatePlan(enum AthenaFFTDirection dir)
 {
   if(gnx3_ > 1) return CreatePlan(gnx1_,gnx2_,gnx3_,work,dir);
   else if(gnx2_ > 1) return CreatePlan(gnx1_,gnx2_,work,dir);
   else  return CreatePlan(gnx1_,work,dir);
 }
 
-long int AthenaFFT::GetGlobalIndex(const int i)
+long int __attribute__((weak)) AthenaFFT::GetIndex(const int i, const int j, const int k)
 {
-  return i + idisp;
+  return k + nx3 * ( j + nx2 * i);
 }
 
-long int AthenaFFT::GetGlobalIndex(const int j, const int i)
+long int __attribute__((weak)) AthenaFFT::GetFreq(const int i, const int j, const int k)
 {
-  return j + jdisp + gnx2_ * ( i + idisp);
+  return k + knx3 * ( j + knx2 * i);
 }
 
-long int AthenaFFT::GetGlobalIndex(const int k, const int j, const int i)
+long int AthenaFFT::GetGlobalIndex(const int i, const int j, const int k)
 {
   return k + kdisp + gnx3_ * ( j + jdisp + gnx2_ * ( i + idisp) );
 }
@@ -123,4 +125,5 @@ AthenaFFTPlan *AthenaFFT::CreatePlan(AthenaFFTInt nx1, AthenaFFTComplex *data,
   return plan;
 }
 
-
+void __attribute__((weak)) AthenaFFT::CompatabilityCheck(int verbose){
+}
