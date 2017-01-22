@@ -12,35 +12,35 @@ nlim       = -1
 tlim       = 15.0
 
 <mesh>
-nx1    = 128
-x1min  = 2.0
-x1max  = 4.0
-x1rat  = 1.0054299011128027
-ix1_bc = outflow
-ox1_bc = user
+nx1    = 128                 # number of cells in r-direction
+x1min  = 2.0                 # minimum r
+x1max  = 4.0                 # maximum r
+x1rat  = 1.0054299011128027  # ratio of adjacent r-widths
+ix1_bc = outflow             # inner boundary
+ox1_bc = user                # outer boundary
 
-nx2    = 1
-x2min  = 1.5707649108683606
-x2max  = 1.5708277427214323
-ix2_bc = outflow
-ox2_bc = outflow
+nx2    = 1                   # number of cells in theta-direction
+x2min  = 1.5707649108683606  # minimum theta ((1/2-10^-5)*pi)
+x2max  = 1.5708277427214323  # maximum theta ((1/2+10^-5)*pi)
+ix2_bc = outflow             # upper boundary
+ox2_bc = outflow             # lower boundary
 
-nx3    = 1
-x3min  = 0.0
-x3max  = 6.283185307179586
-ix3_bc = periodic
-ox3_bc = periodic
+nx3    = 1                  # number of cells in phi-direction
+x3min  = 0.0                # minimum phi
+x3max  = 6.283185307179586  # maximum phi (2*pi)
+ix3_bc = periodic           # clockwise boundary
+ox3_bc = periodic           # counterclockwise boundary
 
 <coord>
-m = 1.0
-a = 0.5
+m = 1.0  # black hole mass M
+a = 0.5  # black hole spin a (0 <= a/M < 1)
 
 <hydro>
-gamma  = 1.3333333333333333
-dfloor = 1.0e-6
-pfloor = 1.0e-10
+gamma  = 1.3333333333333333  # ratio of specific heats Gamma
+dfloor = 1.0e-6              # floor on density rho
+pfloor = 1.0e-10             # floor on gas pressure p_gas
 
 <problem>
-temperature    = 1.0e-10
-num_data_lines = 2050
+temperature    = 1.0e-10                # small but positive temperature
+num_data_lines = 2050                   # number of lines in data file
 data_file      = magnetized_inflow.dat  # data file must be provided to work

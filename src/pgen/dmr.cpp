@@ -26,10 +26,7 @@
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
-//[JMSHI
 #include "../mesh/mesh_refinement.hpp"
-//#include "../mesh_refinement/mesh_refinement.hpp"
-//JMSHI]
 
 #if MAGNETIC_FIELDS_ENABLED
 #error "This problem generator does not support magnetic fields"

@@ -1,13 +1,18 @@
-// Conserved-to-primitive inversion for adiabatic hydrodynamics in special relativity
-
-// Primary header
-#include "eos.hpp"
+//========================================================================================
+// Athena++ astrophysical MHD code
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
+//! \file adiabatic_hydro_sr.cpp
+//  \brief Implements functions for going between primitive and conserved variables in
+//  special-relativistic hydrodynamics, as well as for computing wavespeeds.
 
 // C++ headers
 #include <cmath>   // atan2(), cbrt(), cos(), sqrt()
 #include <cfloat>  // FLT_MIN
 
-// Athena headers
+// Athena++ headers
+#include "eos.hpp"
 #include "../athena.hpp"                   // enums, macros
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../parameter_input.hpp"          // ParameterInput
@@ -15,12 +20,12 @@
 #include "../field/field.hpp"              // FaceField
 #include "../mesh/mesh.hpp"                // MeshBlock
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Constructor
 // Inputs:
 //   pmb: pointer to MeshBlock
 //   pin: pointer to runtime inputs
+
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_block_ = pmb;
@@ -30,13 +35,12 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
   gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Destructor
+
 EquationOfState::~EquationOfState() {}
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Variable inverter
 // Inputs:
 //   cons: conserved quantities
@@ -70,6 +74,7 @@ EquationOfState::~EquationOfState() {}
 //          d0 = 1/2 * (x0 - sqrt(x0^2 - 4 a0))
 //          then |v|^2 + d1 |v| + d0 = 0
 //          |v| = 1/2 * (-d1 + sqrt(d1^2 - 4 d0))
+
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const AthenaArray<Real> &prim_old, const FaceField &bb, AthenaArray<Real> &prim,
   AthenaArray<Real> &bb_cc, Coordinates *pco, int is, int ie, int js, int je, int ks,
@@ -88,12 +93,11 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   prim_copy.InitWithShallowCopy(prim);
 
   // Go through cells
-  for (int k = ks; k <= ke; k++)
-    for (int j = js; j <= je; j++)
-    {
+  for (int k = ks; k <= ke; k++) {
+    for (int j = js; j <= je; j++) {
       #pragma simd
-      for (int i = is; i <= ie; i++)
-      {
+      for (int i = is; i <= ie; i++) {
+
         // Extract conserved quantities
         Real &d = cons_copy(IDN,k,j,i);
         Real &e = cons_copy(IEN,k,j,i);
@@ -112,8 +116,8 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real m_sq = SQR(mx) + SQR(my) + SQR(mz);
 
         // Case out based on whether momentum vanishes
-        if (m_sq >= SQR(TINY_NUMBER))  // generic case, nonzero velocity
-        {
+        if (m_sq >= SQR(TINY_NUMBER)) {  // generic case, nonzero velocity
+
           // Step 1: Prepare quartic coefficients
           Real m_abs = std::sqrt(m_sq);
           Real denom_inverse = 1.0 / (SQR(gamma_adi_minus_1) * (SQR(d) + m_sq));
@@ -135,11 +139,13 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
           // Step 4: Find real root of new cubic
           Real y0;
-          if (c3 >= 0.0)
+          if (c3 >= 0.0) {
             y0 = cbrt(c2 + std::sqrt(c3)) + cbrt(c2 - std::sqrt(c3));
-          else
+          }
+          else {
             y0 = 2.0 * cbrt(SQR(c2) + c3)
                 * std::cos(std::atan2(std::sqrt(-c3), c2) / 3.0);
+          }
 
           // Step 5: Find real root of original (resolvent) cubic:
           Real x0 = y0 - b2/3.0;
@@ -156,8 +162,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
           // Set density, correcting only conserved density if floor applied
           Real gamma_rel = 1.0 / std::sqrt(1.0 - SQR(v_abs));
           rho = d / gamma_rel;
-          if (rho < density_floor_)
-          {
+          if (rho < density_floor_) {
             rho = density_floor_;
             d = gamma_rel * rho;
           }
@@ -169,26 +174,23 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
           // Set pressure, correcting only energy if floor applied
           pgas = gamma_adi_minus_1 * (e - (mx*vx + my*vy + mz*vz) - rho);
-          if (pgas < pressure_floor_)
-          {
+          if (pgas < pressure_floor_) {
             pgas = pressure_floor_;
             e = pgas/gamma_adi_minus_1 + (mx*vx + my*vy + mz*vz) + rho;
           }
-        }
-        else  // vanishing velocity
-        {
+
+        } else {  // vanishing velocity
+
           // Set density, correcting only conserved density if floor applied
           rho = d;
-          if (rho < density_floor_)
-          {
+          if (rho < density_floor_) {
             rho = density_floor_;
             d = rho;
           }
 
           // Set pressure, correcting only energy if floor applied
           pgas = gamma_adi_minus_1 * (e - rho);
-          if (pgas < pressure_floor_)
-          {
+          if (pgas < pressure_floor_) {
             pgas = pressure_floor_;
             e = pgas/gamma_adi_minus_1 + rho;
           }
@@ -200,11 +202,11 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         }
       }
     }
+  }
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for converting all primitives to conserved variables
 // Inputs:
 //   prim: primitives
@@ -216,6 +218,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 // Notes:
 //   single-cell function exists for other purposes; call made to that function rather
 //       than having duplicate code
+
 void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons, Coordinates *pco, int is,
      int ie, int js, int je, int ks, int ke)
@@ -224,12 +227,11 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
   Real gamma_adi_red = gamma_/(gamma_-1.0);
 
   // Go through all cells
-  for (int k = ks; k <= ke; ++k)
-    for (int j = js; j <= je; ++j)
-    {
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je; ++j) {
       #pragma simd
-      for (int i = is; i <= ie; ++i)
-      {
+      for (int i = is; i <= ie; ++i) {
+
         // Extract primitives
         const Real &rho = prim(IDN,k,j,i);
         const Real &pgas = prim(IEN,k,j,i);
@@ -259,11 +261,11 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
         m3 = wgas * u0 * u3;
       }
     }
+  }
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for calculating relativistic sound speeds
 // Inputs:
 //   rho_h: enthalpy per unit volume
@@ -276,6 +278,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 // Notes:
 //   same function as in adiabatic_hydro_gr.cpp
 //   references Mignone & Bodo 2005, MNRAS 364 126 (MB)
+
 void EquationOfState::SoundSpeedsSR(
     Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
     Real *plambda_plus, Real *plambda_minus)

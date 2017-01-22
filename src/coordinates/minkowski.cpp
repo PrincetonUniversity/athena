@@ -1,394 +1,161 @@
-// Minkowski spacetime, Minkowski (Cartesian) coordinates
+//========================================================================================
+// Athena++ astrophysical MHD code
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
+//! \file minkowski.cpp
+//  \brief implements functions for Minkowski (flat) spacetime and Cartesian (t,x,y,z)
+//  coordinates in a derived class of the Coordinates abstract base class.
+//
 // Notes:
 //   coordinates: t, x, y, z
 //   metric: ds^2 = -dt^2 + dx^2 + dy^2 + dz^2
 
-// Primary header
-#include "coordinates.hpp"
-
 // C++ headers
-#include <cmath>  // sqrt()
+#include <cmath>  // sqrt
 
 // Athena++ headers
-#include "../athena.hpp"           // enums, macros
-#include "../athena_arrays.hpp"    // AthenaArray
-#include "../parameter_input.hpp"  // ParameterInput
-#include "../mesh/mesh.hpp"        // Mesh, MeshBlock
+#include "coordinates.hpp"
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../parameter_input.hpp"
+#include "../mesh/mesh.hpp"
 
-//--------------------------------------------------------------------------------------
-
-// Constructor
+//----------------------------------------------------------------------------------------
+// Minkowski constructor
 // Inputs:
 //   pmb: pointer to block containing this grid
 //   pin: pointer to runtime inputs (not used)
-//   flag: indicator that this is special refinement case
-Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, int flag)
+//   flag: true if object is for coarse grid only in an AMR calculation
+
+Minkowski::Minkowski(MeshBlock *pmb, ParameterInput *pin, bool flag)
+  : Coordinates(pmb, pin, flag)
 {
-  // Set pointer to host MeshBlock and note active zone boundaries
+  // Set indices
   pmy_block = pmb;
-  cflag = flag;
-  int is, ie, js, je, ks, ke, ng;
-  if(cflag == 0)
-  {
-    is = pmb->is;
-    ie = pmb->ie;
-    js = pmb->js;
-    je = pmb->je;
-    ks = pmb->ks;
-    ke = pmb->ke;
+  coarse_flag = flag;
+  int il, iu, jl, ju, kl, ku, ng;
+  if (coarse_flag == true) {
+    il = pmb->cis;
+    iu = pmb->cie;
+    jl = pmb->cjs;
+    ju = pmb->cje;
+    kl = pmb->cks;
+    ku = pmb->cke;
+    ng = pmb->cnghost;
+  } else {
+    il = pmb->is;
+    iu = pmb->ie;
+    jl = pmb->js;
+    ju = pmb->je;
+    kl = pmb->ks;
+    ku = pmb->ke;
     ng = NGHOST;
   }
-  else
-  {
-    is = pmb->cis;
-    ie = pmb->cie;
-    js = pmb->cjs;
-    je = pmb->cje;
-    ks = pmb->cks;
-    ke = pmb->cke;
-    ng = pmb->cnghost;
+  Mesh *pm = pmy_block->pmy_mesh;
+  RegionSize& mesh_size = pmy_block->pmy_mesh->mesh_size;
+  RegionSize& block_size = pmy_block->block_size;
+
+  // Allocate arrays for volume-centered coordinates and positions of cells
+  int ncells1 = (iu-il+1) + 2*ng;
+  int ncells2 = 1, ncells3 = 1;
+  if (block_size.nx2 > 1) ncells2 = (ju-jl+1) + 2*ng;
+  if (block_size.nx3 > 1) ncells3 = (ku-kl+1) + 2*ng;
+  dx1v.NewAthenaArray(ncells1);
+  dx2v.NewAthenaArray(ncells2);
+  dx3v.NewAthenaArray(ncells3);
+  x1v.NewAthenaArray(ncells1);
+  x2v.NewAthenaArray(ncells2);
+  x3v.NewAthenaArray(ncells3);
+
+  // Allocate arrays for area weighted positions for AMR/SMR MHD
+  if (pm->multilevel && MAGNETIC_FIELDS_ENABLED) {
+    x1s2.NewAthenaArray(ncells1);
+    x1s3.NewAthenaArray(ncells1);
+    x2s1.NewAthenaArray(ncells2);
+    x2s3.NewAthenaArray(ncells2);
+    x3s1.NewAthenaArray(ncells3);
+    x3s2.NewAthenaArray(ncells3);
   }
 
-  // Set face-centered positions and distances
-  AllocateAndSetBasicCoordinates();
-
-  // Initialize volume-averaged positions and spacings: x-direction
-  for (int i = is-ng; i <= ie+ng; ++i)
+  // Initialize volume-averaged coordinates and spacings: x-direction
+  for (int i = il-ng; i <= iu+ng; ++i) {
     x1v(i) = 0.5 * (x1f(i) + x1f(i+1));
-  for (int i = is-ng; i <= ie+ng-1; ++i)
+  }
+  for (int i = il-ng; i <= iu+ng-1; ++i) {
     dx1v(i) = x1v(i+1) - x1v(i);
-
-  // Initialize volume-averaged positions and spacings: y-direction
-  if (pmb->block_size.nx2 == 1)  // no extent
-  {
-    x2v(js) = 0.5 * (x2f(js) + x2f(js+1));
-    dx2v(js) = dx2f(js);
   }
-  else  // extended
-  {
-    for (int j = js-ng; j <= je+ng; ++j)
+
+  // Initialize volume-averaged coordinates and spacings: y-direction
+  if (pmb->block_size.nx2 == 1) {
+    x2v(jl) = 0.5 * (x2f(jl) + x2f(jl+1));
+    dx2v(jl) = dx2f(jl);
+  } else {
+    for (int j = jl-ng; j <= ju+ng; ++j) {
       x2v(j) = 0.5 * (x2f(j) + x2f(j+1));
-    for (int j = js-ng; j <= je+ng-1; ++j)
+    }
+    for (int j = jl-ng; j <= ju+ng-1; ++j) {
       dx2v(j) = x2v(j+1) - x2v(j);
+    }
   }
 
-  // Initialize volume-averaged positions and spacings: z-direction
-  if (pmb->block_size.nx3 == 1)  // no extent
-  {
-    x3v(ks) = 0.5 * (x3f(ks) + x3f(ks+1));
-    dx3v(ks) = dx3f(ks);
-  }
-  else  // extended
-  {
-    for (int k = ks-ng; k <= ke+ng; ++k)
+  // Initialize volume-averaged coordinates and spacings: z-direction
+  if (pmb->block_size.nx3 == 1) {
+    x3v(kl) = 0.5 * (x3f(kl) + x3f(kl+1));
+    dx3v(kl) = dx3f(kl);
+  } else {
+    for (int k = kl-ng; k <= ku+ng; ++k) {
       x3v(k) = 0.5 * (x3f(k) + x3f(k+1));
-    for (int k = ks-ng; k <= ke+ng-1; ++k)
+    }
+    for (int k = kl-ng; k <= ku+ng-1; ++k) {
       dx3v(k) = x3v(k+1) - x3v(k);
+    }
   }
 
-  // Prepare for MHD mesh refinement
-  if (pmb->pmy_mesh->multilevel && MAGNETIC_FIELDS_ENABLED)
-  {
-    for (int i = is-ng; i <= ie+ng; ++i)
+  // Initialize area-averaged coordinates used with MHD AMR
+  if (pmb->pmy_mesh->multilevel && MAGNETIC_FIELDS_ENABLED) {
+    for (int i = il-ng; i <= iu+ng; ++i) {
       x1s2(i) = x1s3(i) = x1v(i);
-    if (pmb->block_size.nx2 == 1)
-      x2s1(js) = x2s3(js) = x2v(js);
-    else
-      for (int j = js-ng; j <= je+ng; ++j)
+    }
+    if (pmb->block_size.nx2 == 1) {
+      x2s1(jl) = x2s3(jl) = x2v(jl);
+    } else {
+      for (int j = jl-ng; j <= ju+ng; ++j) {
         x2s1(j) = x2s3(j) = x2v(j);
-    if (pmb->block_size.nx3 == 1)
-      x3s1(ks) = x3s2(ks) = x3v(ks);
-    else
-      for (int k = ks-ng; k <= ke+ng; ++k)
+      }
+    }
+    if (pmb->block_size.nx3 == 1) {
+      x3s1(kl) = x3s2(kl) = x3v(kl);
+    } else {
+      for (int k = kl-ng; k <= ku+ng; ++k) {
         x3s1(k) = x3s2(k) = x3v(k);
+      }
+    }
   }
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Destructor
-Coordinates::~Coordinates()
+
+Minkowski::~Minkowski()
 {
-  DeleteBasicCoordinates();
+  dx1v.DeleteAthenaArray();
+  dx2v.DeleteAthenaArray();
+  dx3v.DeleteAthenaArray();
+  x1v.DeleteAthenaArray();
+  x2v.DeleteAthenaArray();
+  x3v.DeleteAthenaArray();
+  if (pmy_block->pmy_mesh->multilevel && MAGNETIC_FIELDS_ENABLED) {
+    x1s2.DeleteAthenaArray();
+    x1s3.DeleteAthenaArray();
+    x2s1.DeleteAthenaArray();
+    x2s3.DeleteAthenaArray();
+    x3s1.DeleteAthenaArray();
+    x3s2.DeleteAthenaArray();
+  }
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for computing cell volumes
-// Inputs:
-//   k: z-index
-//   j: y-index
-//   il,iu: x-index bounds
-// Outputs:
-//   volumes: 1D array of cell volumes
-// Notes:
-//   \Delta V = \Delta x * \Delta y * \Delta z
-//   cf. GetCellVolume()
-void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &volumes)
-{
-  #pragma simd
-  for (int i = il; i <= iu; ++i)
-    volumes(i) = GetCellVolume(k, j, i);
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing single cell volume
-// Inputs:
-//   k,j,i: z-, y-, and x-indices
-// Outputs:
-//   returned value: cell volume
-// Notes:
-//   \Delta V = \Delta x * \Delta y * \Delta z
-//   cf. CellVolume()
-Real Coordinates::GetCellVolume(const int k, const int j, const int i)
-{
-  return dx1f(i) * dx2f(j) * dx3f(k);
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing areas orthogonal to x
-// Inputs:
-//   k: z-index
-//   j: y-index
-//   il,iu: x-index bounds
-// Outputs:
-//   areas: 1D array of interface areas orthogonal to x
-// Notes:
-//   \Delta A = \Delta y * \Delta z
-//   cf. GetFace1Area()
-void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &areas)
-{
-  #pragma simd
-  for (int i = il; i <= iu; ++i)
-    areas(i) = GetFace1Area(k, j, i);
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing single area orthogonal to x
-// Inputs:
-//   k,j,i: z-, y-, and x-indices
-// Outputs:
-//   returned value: interface area orthogonal to x
-// Notes:
-//   \Delta A = \Delta y * \Delta z
-//   cf. Face1Area()
-Real Coordinates::GetFace1Area(const int k, const int j, const int i)
-{
-  return dx2f(j) * dx3f(k);
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing areas orthogonal to y
-// Inputs:
-//   k: z-index
-//   j: y-index
-//   il,iu: x-index bounds
-// Outputs:
-//   areas: 1D array of interface areas orthogonal to y
-// Notes:
-//   \Delta A = \Delta x * \Delta z
-void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &areas)
-{
-  #pragma simd
-  for (int i = il; i <= iu; ++i)
-    areas(i) = dx1f(i) * dx3f(k);
-  return;
-}
-
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing areas orthogonal to z
-// Inputs:
-//   k: z-index
-//   j: y-index
-//   il,iu: x-index bounds
-// Outputs:
-//   areas: 1D array of interface areas orthogonal to z
-// Notes:
-//   \Delta A = \Delta x * \Delta y
-void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &areas)
-{
-  #pragma simd
-  for (int i = il; i <= iu; ++i)
-    areas(i) = dx1f(i) * dx2f(j);
-  return;
-}
-
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing lengths of edges in the x-direction
-// Inputs:
-//   k: z-index (unused)
-//   j: y-index (unused)
-//   il,iu: x-index bounds
-// Outputs:
-//   lengths: 1D array of edge lengths along x
-// Notes:
-//   \Delta L = \Delta x
-void Coordinates::Edge1Length(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &lengths)
-{
-  #pragma simd
-  for (int i = il; i <= iu; ++i)
-    lengths(i) = dx1f(i);
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing lengths of edges in the y-direction
-// Inputs:
-//   k: z-index (unused)
-//   j: y-index
-//   il,iu: x-index bounds
-// Outputs:
-//   lengths: 1D array of edge lengths along y
-// Notes:
-//   \Delta L = \Delta y
-//   cf. GetEdge2Length()
-void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &lengths)
-{
-  #pragma simd
-  for (int i = il; i <= iu; ++i)
-    lengths(i) = GetEdge2Length(k, j, i);
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing single length of edge in the y-direction
-// Inputs:
-//   k,i: z- and x-indices (unused)
-//   j: y-index
-// Outputs:
-//   returned value: length of edge along y
-// Notes:
-//   \Delta L = \Delta y
-//   cf. Edge2Length()
-Real Coordinates::GetEdge2Length(const int k, const int j, const int i)
-{
-  return dx2f(j);
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing lengths of edges in the z-direction
-// Inputs:
-//   k: z-index
-//   j: y-index (unused)
-//   il,iu: x-index bounds
-// Outputs:
-//   lengths: 1D array of edge lengths along z
-// Notes:
-//   \Delta L = \Delta z
-//   cf. GetEdge3Length()
-void Coordinates::Edge3Length(const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &lengths)
-{
-  #pragma simd
-  for (int i = il; i <= iu; ++i)
-    lengths(i) = GetEdge3Length(k, j, i);
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing single length of edge in the z-direction
-// Inputs:
-//   k: z-index
-//   j,i: y- and x-indices (unused)
-// Outputs:
-//   returned value: length of edge along z
-// Notes:
-//   \Delta L = \Delta z
-//   cf. Edge3Length()
-Real Coordinates::GetEdge3Length(const int k, const int j, const int i)
-{
-  return dx3f(k);
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing widths of cells in the x-direction
-// Inputs:
-//   k: z-index (unused)
-//   j: y-index (unused)
-//   i: x-index
-// Outputs:
-//   returned value: x-width of cell (i,j,k)
-// Notes:
-//   \Delta W = \Delta x
-Real Coordinates::CenterWidth1(const int k, const int j, const int i)
-{
-  return dx1f(i);
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing widths of cells in the y-direction
-// Inputs:
-//   k: z-index (unused)
-//   j: y-index
-//   i: x-index (unused)
-// Outputs:
-//   returned value: y-width of cell (i,j,k)
-// Notes:
-//   \Delta W = \Delta y
-Real Coordinates::CenterWidth2(const int k, const int j, const int i)
-{
-  return dx2f(j);
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing widths of cells in the z-direction
-// Inputs:
-//   k: z-index
-//   j: y-index (unused)
-//   i: x-index (unused)
-// Outputs:
-//   returned value: z-width of cell (i,j,k)
-// Notes:
-//   \Delta W = \Delta z
-Real Coordinates::CenterWidth3(const int k, const int j, const int i)
-{
-  return dx3f(k);
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for computing source terms using fluxes
-// Inputs:
-//   dt: size of timestep
-//   flux: 1D array of x-fluxes
-//   prim: 3D array of primitive values at beginning of half timestep
-//   bb_cc: 3D array of cell-centered magnetic fields
-// Outputs:
-//   cons: source terms added to 3D array of conserved variables
-// Notes:
-//   source terms all vanish identically
-void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
-    const AthenaArray<Real> &prim, const AthenaArray<Real> &bb_cc,
-    AthenaArray<Real> &cons)
-{
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for computing cell-centered metric coefficients
 // Inputs:
 //   k,j: z- and y-indices
@@ -396,12 +163,12 @@ void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
-void Coordinates::CellMetric(const int k, const int j, const int il, const int iu,
+
+void Minkowski::CellMetric(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
 {
   #pragma simd
-  for (int i = il; i <= iu; ++i)
-  {
+  for (int i = il; i <= iu; ++i) {
     g(I00,i) = -1.0;
     g(I11,i) = 1.0;
     g(I22,i) = 1.0;
@@ -414,21 +181,20 @@ void Coordinates::CellMetric(const int k, const int j, const int il, const int i
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for computing face-centered metric coefficients: x-interface
+//----------------------------------------------------------------------------------------
+// Functions for computing face-centered metric coefficients
 // Inputs:
 //   k,j: z- and y-indices
 //   il,iu: x-index bounds
 // Outputs:
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
-void Coordinates::Face1Metric(const int k, const int j, const int il, const int iu,
+
+void Minkowski::Face1Metric(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
 {
   #pragma simd
-  for (int i = il; i <= iu; ++i)
-  {
+  for (int i = il; i <= iu; ++i) {
     g(I00,i) = -1.0;
     g(I11,i) = 1.0;
     g(I22,i) = 1.0;
@@ -441,21 +207,11 @@ void Coordinates::Face1Metric(const int k, const int j, const int il, const int 
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for computing face-centered metric coefficients: y-interface
-// Inputs:
-//   k,j: z- and y-indices
-//   il,iu: x-index bounds
-// Outputs:
-//   g: array of metric components in 1D
-//   g_inv: array of inverse metric components in 1D
-void Coordinates::Face2Metric(const int k, const int j, const int il, const int iu,
+void Minkowski::Face2Metric(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
 {
   #pragma simd
-  for (int i = il; i <= iu; ++i)
-  {
+  for (int i = il; i <= iu; ++i) {
     g(I00,i) = -1.0;
     g(I11,i) = 1.0;
     g(I22,i) = 1.0;
@@ -468,21 +224,11 @@ void Coordinates::Face2Metric(const int k, const int j, const int il, const int 
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for computing face-centered metric coefficients: z-interface
-// Inputs:
-//   k,j: z- and y-indices
-//   il,iu: x-index bounds
-// Outputs:
-//   g: array of metric components in 1D
-//   g_inv: array of inverse metric components in 1D
-void Coordinates::Face3Metric(const int k, const int j, const int il, const int iu,
+void Minkowski::Face3Metric(const int k, const int j, const int il, const int iu,
     AthenaArray<Real> &g, AthenaArray<Real> &g_inv)
 {
   #pragma simd
-  for (int i = il; i <= iu; ++i)
-  {
+  for (int i = il; i <= iu; ++i) {
     g(I00,i) = -1.0;
     g(I11,i) = 1.0;
     g(I22,i) = 1.0;
@@ -495,10 +241,9 @@ void Coordinates::Face3Metric(const int k, const int j, const int il, const int 
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for transforming primitives to locally flat frame: x-interface
-// Inputs:
+//----------------------------------------------------------------------------------------
+// Functions for transforming face-centered primitives to locally flat frame
+// Inputs
 //   k,j: z- and y-indices
 //   il,iu: x-index bounds
 //   bb1: 3D array of normal components B^1 of magnetic field, in global coordinates
@@ -510,78 +255,48 @@ void Coordinates::Face3Metric(const int k, const int j, const int il, const int 
 //   bbx: 1D array of normal magnetic fields, in local coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::PrimToLocal1(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &bb1, AthenaArray<Real> &prim_l,
-    AthenaArray<Real> &prim_r, AthenaArray<Real> &bbx)
+
+void Minkowski::PrimToLocal1(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &bb1, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+    AthenaArray<Real> &bbx)
 {
-  if (MAGNETIC_FIELDS_ENABLED)
-  {
+  if (MAGNETIC_FIELDS_ENABLED) {
     #pragma simd
-    for (int i = il; i <= iu; ++i)
+    for (int i = il; i <= iu; ++i) {
       bbx(i) = bb1(k,j,i);
+    }
   }
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for transforming primitives to locally flat frame: y-interface
-// Inputs:
-//   k,j: z- and y-indices
-//   il,iu: x-index bounds
-//   bb2: 3D array of normal components B^2 of magnetic field, in global coordinates
-//   prim_l: 1D array of left primitives, using global coordinates
-//   prim_r: 1D array of right primitives, using global coordinates
-// Outputs:
-//   prim_l: values overwritten in local coordinates
-//   prim_r: values overwritten in local coordinates
-//   bbx: 1D array of normal magnetic fields, in local coordinates
-// Notes:
-//   transformation is trivial
-void Coordinates::PrimToLocal2(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &bb2, AthenaArray<Real> &prim_l,
-    AthenaArray<Real> &prim_r, AthenaArray<Real> &bbx)
+void Minkowski::PrimToLocal2(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &bb2, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+    AthenaArray<Real> &bbx)
 {
-  if (MAGNETIC_FIELDS_ENABLED)
-  {
+  if (MAGNETIC_FIELDS_ENABLED) {
     #pragma simd
-    for (int i = il; i <= iu; ++i)
+    for (int i = il; i <= iu; ++i) {
       bbx(i) = bb2(k,j,i);
+    }
   }
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for transforming primitives to locally flat frame: z-interface
-// Inputs:
-//   k,j: z- and y-indices
-//   il,iu: x-index bounds
-//   bb3: 3D array of normal components B^3 of magnetic field, in global coordinates
-//   prim_l: 1D array of left primitives, using global coordinates
-//   prim_r: 1D array of right primitives, using global coordinates
-// Outputs:
-//   prim_l: values overwritten in local coordinates
-//   prim_r: values overwritten in local coordinates
-//   bbx: 1D array of normal magnetic fields, in local coordinates
-// Notes:
-//   transformation is trivial
-void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &bb3, AthenaArray<Real> &prim_l,
-    AthenaArray<Real> &prim_r, AthenaArray<Real> &bbx)
+void Minkowski::PrimToLocal3(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &bb3, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+    AthenaArray<Real> &bbx)
 {
-  if (MAGNETIC_FIELDS_ENABLED)
-  {
+  if (MAGNETIC_FIELDS_ENABLED) {
     #pragma simd
-    for (int i = il; i <= iu; ++i)
+    for (int i = il; i <= iu; ++i) {
       bbx(i) = bb3(k,j,i);
+    }
   }
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for transforming fluxes to global frame: x-interface
+//----------------------------------------------------------------------------------------
+// Function for transforming fluxes to global frame: X-interface
 // Inputs:
 //   k,j: z- and y-indices
 //   il,iu: x-index bounds
@@ -592,13 +307,12 @@ void Coordinates::PrimToLocal3(const int k, const int j, const int il, const int
 //   flux: values overwritten in global coordinates
 // Notes:
 //   transformation is trivial except for sign change from lowering time index
-void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
-    AthenaArray<Real> &flux)
+
+void Minkowski::FluxToGlobal1(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux)
 {
   #pragma simd
-  for (int i = il; i <= iu; ++i)
-  {
+  for (int i = il; i <= iu; ++i) {
     const Real &txt = flux(IEN,i);
     Real &t10 = flux(IEN,i);
     t10 = -txt;
@@ -606,26 +320,11 @@ void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const in
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for transforming fluxes to global frame: y-interface
-// Inputs:
-//   k,j: z- and y-indices
-//   il,iu: x-index bounds
-//   cons: array of conserved quantities in 1D, using local coordinates (unused)
-//   bbx: 1D array of longitudinal magnetic fields, in local coordinates (unused)
-//   flux: array of fluxes in 1D, using local coordinates
-// Outputs:
-//   flux: values overwritten in global coordinates
-// Notes:
-//   transformation is trivial except for sign change from lowering time index
-void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
-    AthenaArray<Real> &flux)
+void Minkowski::FluxToGlobal2(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux)
 {
   #pragma simd
-  for (int i = il; i <= iu; ++i)
-  {
+  for (int i = il; i <= iu; ++i) {
     const Real &tyt = flux(IEN,i);
     Real &t20 = flux(IEN,i);
     t20 = -tyt;
@@ -633,26 +332,11 @@ void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const in
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for transforming fluxes to global frame: z-interface
-// Inputs:
-//   k,j: z- and y-indices
-//   il,iu: x-index bounds
-//   cons: array of conserved quantities in 1D, using local coordinates (unused)
-//   bbx: 1D array of longitudinal magnetic fields, in local coordinates (unused)
-//   flux: array of fluxes in 1D, using local coordinates
-// Outputs:
-//   flux: values overwritten in global coordinates
-// Notes:
-//   transformation is trivial except for sign change from lowering time index
-void Coordinates::FluxToGlobal3(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx,
-    AthenaArray<Real> &flux)
+void Minkowski::FluxToGlobal3(const int k, const int j, const int il, const int iu,
+    const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux)
 {
   #pragma simd
-  for (int i = il; i <= iu; ++i)
-  {
+  for (int i = il; i <= iu; ++i) {
     const Real &tzt = flux(IEN,i);
     Real &t30 = flux(IEN,i);
     t30 = -tzt;
@@ -660,45 +344,8 @@ void Coordinates::FluxToGlobal3(const int k, const int j, const int il, const in
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for calculating distance between two points
-// Inputs:
-//   a1,a2,a3: global coordinates of first point
-//   bx,by,bz: Minkowski coordinates of second point
-// Outputs:
-//   returned value: Euclidean distance between a and b
-Real Coordinates::DistanceBetweenPoints(Real a1, Real a2, Real a3, Real bx, Real by,
-    Real bz)
-{
-  Real ax = a1;
-  Real ay = a2;
-  Real az = a3;
-  return std::sqrt(SQR(ax-bx) + SQR(ay-by) + SQR(az-bz));
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for calculating Minkowski coordinates of cell
-// Inputs:
-//   x0,x1,x2,x3: Minkowski coordinates
-// Outputs:
-//   pt,px,py,pz: Minkowski coordinate values set
-// Notes:
-//   transformation is trivial
-void Coordinates::MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
-    Real *px, Real *py, Real *pz)
-{
-  *pt = x0;
-  *px = x1;
-  *py = x2;
-  *pz = x3;
-  return;
-}
-
-//--------------------------------------------------------------------------------------
-
-// Function for transforming 4-vector from Minkowski to global: cell-centered
+//----------------------------------------------------------------------------------------
+// Function for transforming cell-centered 4-vector from Minkowski to global
 // Inputs:
 //   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
 //   k,j,i: z-, y-, and x-indices (unused)
@@ -706,7 +353,8 @@ void Coordinates::MinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real 
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::TransformVectorCell(Real at, Real ax, Real ay, Real az, int k, int j,
+
+void Minkowski::TransformVectorCell(Real at, Real ax, Real ay, Real az, int k, int j,
     int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   *pa0 = at;
@@ -716,9 +364,8 @@ void Coordinates::TransformVectorCell(Real at, Real ax, Real ay, Real az, int k,
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for transforming 4-vector from Minkowski to global: x-interface
+//----------------------------------------------------------------------------------------
+// Functions for transforming face-centered 4-vectors from Minkowski to global
 // Inputs:
 //   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
 //   k,j,i: z-, y-, and x-indices (unused)
@@ -726,7 +373,8 @@ void Coordinates::TransformVectorCell(Real at, Real ax, Real ay, Real az, int k,
 //   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
 // Notes:
 //   transformation is trivial
-void Coordinates::TransformVectorFace1(Real at, Real ax, Real ay, Real az, int k, int j,
+
+void Minkowski::TransformVectorFace1(Real at, Real ax, Real ay, Real az, int k, int j,
     int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   *pa0 = at;
@@ -736,17 +384,7 @@ void Coordinates::TransformVectorFace1(Real at, Real ax, Real ay, Real az, int k
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for transforming 4-vector from Minkowski to global: y-interface
-// Inputs:
-//   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
-//   k,j,i: z-, y-, and x-indices (unused)
-// Outputs:
-//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
-// Notes:
-//   transformation is trivial
-void Coordinates::TransformVectorFace2(Real at, Real ax, Real ay, Real az, int k, int j,
+void Minkowski::TransformVectorFace2(Real at, Real ax, Real ay, Real az, int k, int j,
     int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   *pa0 = at;
@@ -756,17 +394,7 @@ void Coordinates::TransformVectorFace2(Real at, Real ax, Real ay, Real az, int k
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
-// Function for transforming 4-vector from Minkowski to global: z-interface
-// Inputs:
-//   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
-//   k,j,i: z-, y-, and x-indices (unused)
-// Outputs:
-//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
-// Notes:
-//   transformation is trivial
-void Coordinates::TransformVectorFace3(Real at, Real ax, Real ay, Real az, int k, int j,
+void Minkowski::TransformVectorFace3(Real at, Real ax, Real ay, Real az, int k, int j,
     int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   *pa0 = at;
@@ -776,15 +404,15 @@ void Coordinates::TransformVectorFace3(Real at, Real ax, Real ay, Real az, int k
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for raising covariant components of a vector
 // Inputs:
 //   a_0,a_1,a_2,a_3: covariant components of vector
 //   k,j,i: indices of cell in which transformation is desired
 // Outputs:
 //   pa0,pa1,pa2,pa3: pointers to contravariant 4-vector components
-void Coordinates::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j,
+
+void Minkowski::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j,
     int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
 {
   *pa0 = -a_0;
@@ -794,15 +422,15 @@ void Coordinates::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k,
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for lowering contravariant components of a vector
 // Inputs:
 //   a0,a1,a2,a3: contravariant components of vector
 //   k,j,i: indices of cell in which transformation is desired
 // Outputs:
 //   pa_0,pa_1,pa_2,pa_3: pointers to covariant 4-vector components
-void Coordinates::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j,
+
+void Minkowski::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j,
     int i, Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3)
 {
   *pa_0 = -a0;
@@ -810,4 +438,40 @@ void Coordinates::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int
   *pa_2 = a2;
   *pa_3 = a3;
   return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for returning Minkowski coordinates of given cell in GR
+// Inputs:
+//   x0,x1,x2,x3: global coordinates to be converted
+// Outputs:
+//   pt,px,py,pz: variables pointed to set to Minkowski coordinates
+// Notes:
+//   conversion is trivial
+//   useful to have if other coordinate systems for Minkowski space are developed
+
+void Minkowski::GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
+    Real *px, Real *py, Real *pz)
+{
+  *pt = x0;
+  *px = x1;
+  *py = x2;
+  *pz = x3;
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for returning spatial separation between points at same time
+// Inputs:
+//   x1,x2,x3: spatial coordinates of one point
+//   y1,y2,y3: spatial coordinates of other point
+// Outputs:
+//   returned value: spatial separation between x and y
+// Notes:
+//   distance function is Euclidean
+
+Real Minkowski::DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2,
+    Real y3)
+{
+  return std::sqrt(SQR(x1-y1) + SQR(x2-y2) + SQR(x3-y3));
 }

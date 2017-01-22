@@ -1,14 +1,19 @@
-// Conserved-to-primitive inversion for adiabatic hydrodynamics in general relativity
-
-// Primary header
-#include "eos.hpp"
+//========================================================================================
+// Athena++ astrophysical MHD code
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
+//! \file adiabatic_hydro_gr.cpp
+//  \brief Implements functions for going between primitive and conserved variables in
+//  general-relativistic hydrodynamics, as well as for computing wavespeeds.
 
 // C++ headers
 #include <algorithm>  // max()
 #include <cfloat>     // FLT_MIN
 #include <cmath>      // NAN, sqrt(), abs(), isfinite(), isnan(), pow()
 
-// Athena headers
+// Athena++ headers
+#include "eos.hpp"
 #include "../athena.hpp"                   // enums, macros
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../parameter_input.hpp"          // ParameterInput
@@ -23,12 +28,12 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
 static Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_adi);
 static Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi);
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Constructor
 // Inputs:
 //   pmb: pointer to MeshBlock
 //   pin: pointer to runtime inputs
+
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_block_ = pmb;
@@ -37,8 +42,8 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
   pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", 1024*FLT_MIN);
   rho_min_ = pin->GetOrAddReal("hydro", "rho_min", density_floor_);
   rho_pow_ = pin->GetOrAddReal("hydro", "rho_pow", 0.0);
-  u_min_ = pin->GetOrAddReal("hydro", "u_min", pressure_floor_/(gamma_-1.0));
-  u_pow_ = pin->GetOrAddReal("hydro", "u_pow", 0.0);
+  pgas_min_ = pin->GetOrAddReal("hydro", "pgas_min", pressure_floor_);
+  pgas_pow_ = pin->GetOrAddReal("hydro", "pgas_pow", 0.0);
   gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
   int ncells1 = pmb->block_size.nx1 + 2*NGHOST;
   g_.NewAthenaArray(NMETRIC, ncells1);
@@ -48,9 +53,9 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
   fixed_.NewAthenaArray(ncells3, ncells2, ncells1);
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Destructor
+
 EquationOfState::~EquationOfState()
 {
   g_.DeleteAthenaArray();
@@ -58,8 +63,7 @@ EquationOfState::~EquationOfState()
   fixed_.DeleteAthenaArray();
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Variable inverter
 // Inputs:
 //   cons: conserved quantities
@@ -79,10 +83,11 @@ EquationOfState::~EquationOfState()
 //       writing uu for \tilde{u}
 //       writing vv for v
 //   implements formulas assuming no magnetic field
+
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-    const AthenaArray<Real> &prim_old, const FaceField &bb,
-    AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc, Coordinates *pco, int is, int ie,
-    int js, int je, int ks, int ke)
+    const AthenaArray<Real> &prim_old, const FaceField &bb, AthenaArray<Real> &prim,
+    AthenaArray<Real> &bb_cc, Coordinates *pco, int is, int ie, int js, int je, int ks,
+    int ke)
 {
   // Parameters
   const Real max_wgas_rel = 1.0e8;
@@ -93,13 +98,12 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const Real &gamma_adi = gamma_;
 
   // Go through cells
-  for (int k = ks; k <= ke; ++k)
-    for (int j = js; j <= je; ++j)
-    {
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je; ++j) {
       pco->CellMetric(k, j, is, ie, g_, g_inv_);
       #pragma simd
-      for (int i = is; i <= ie; ++i)
-      {
+      for (int i = is; i <= ie; ++i) {
+
         // Extract metric
         const Real
             &g_00 = g_(I00,i), &g_01 = g_(I01,i), &g_02 = g_(I02,i), &g_03 = g_(I03,i),
@@ -131,8 +135,7 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         Real qq1 = g10*q_0 + g11*q_1 + g12*q_2 + g13*q_3 - alpha * g01 * q_n;
         Real qq2 = g20*q_0 + g21*q_1 + g22*q_2 + g23*q_3 - alpha * g02 * q_n;
         Real qq3 = g30*q_0 + g31*q_1 + g32*q_2 + g33*q_3 - alpha * g03 * q_n;
-        Real tmp1 = g00*q_0*q_0 + 2.0*g01*q_0*q_1 + 2.0*g02*q_0*q_2
-                      + 2.0*g03*q_0*q_3
+        Real tmp1 = g00*q_0*q_0 + 2.0*g01*q_0*q_1 + 2.0*g02*q_0*q_2 + 2.0*g03*q_0*q_3
                   + g11*q_1*q_1 + 2.0*g12*q_1*q_2 + 2.0*g13*q_1*q_3
                   + g22*q_2*q_2 + 2.0*g23*q_2*q_3
                   + g33*q_3*q_3;
@@ -147,27 +150,25 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         const Real &uu3_old = prim_old(IVZ,k,j,i);
 
         // Construct initial guess for relativistic gas enthalpy W
-        Real tmp = g_11*SQR(uu1_old) + 2.0*g_12*uu1_old*uu2_old
-                     + 2.0*g_13*uu1_old*uu3_old
+        Real tmp = g_11*SQR(uu1_old) + 2.0*g_12*uu1_old*uu2_old + 2.0*g_13*uu1_old*uu3_old
                  + g_22*SQR(uu2_old) + 2.0*g_23*uu2_old*uu3_old
                  + g_33*SQR(uu3_old);
         Real gamma_sq = 1.0 + tmp;
         Real wgas_rel_init =
             gamma_sq * (rho_old + gamma_adi/(gamma_adi-1.0) * pgas_old);
-        for (int count = 0; count < initial_guess_multiplications; ++count)
-        {
-          if (SQR(wgas_rel_init) <= qq_sq)  // v^2 >= 1 according to (N 28)
+        for (int count = 0; count < initial_guess_multiplications; ++count) {
+          if (SQR(wgas_rel_init) <= qq_sq) {  // v^2 >= 1 according to (N 28)
             wgas_rel_init *= initial_guess_multiplier;
-          else
+          } else {
             break;
+          }
         }
 
         // Apply Newton-Raphson method to find new W
         const int num_iterations = 5;
         Real wgas_rel_new = wgas_rel_init;
         Real res_new = QNResidual(wgas_rel_new, d, q_n, qq_sq, gamma_adi);
-        for (int n = 0; n < num_iterations; ++n)
-        {
+        for (int n = 0; n < num_iterations; ++n) {
           Real wgas_rel_old = wgas_rel_new;
           Real res_old = res_new;
           Real derivative = QNResidualPrime(wgas_rel_old, d, qq_sq, gamma_adi);
@@ -176,16 +177,14 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
           res_new = QNResidual(wgas_rel_new, d, q_n, qq_sq, gamma_adi);
         }
         Real wgas_rel_true = wgas_rel_new;
-        if (not (wgas_rel_true > 0.0 and wgas_rel_true < max_wgas_rel))
-        {
+        if (not (wgas_rel_true > 0.0 and wgas_rel_true < max_wgas_rel)) {
           fixed_(k,j,i) = true;
           wgas_rel_true = wgas_rel_init;
         }
         Real vv_sq = qq_sq / SQR(wgas_rel_true);  // (N 28)
         gamma_sq = 1.0/(1.0-vv_sq);
         Real gamma_rel = std::sqrt(gamma_sq);
-        if (std::isnan(gamma_rel) or not std::isfinite(gamma_rel) or gamma_rel < 1.0)
-        {
+        if (std::isnan(gamma_rel) or not std::isfinite(gamma_rel) or gamma_rel < 1.0) {
           fixed_(k,j,i) = true;
           gamma_rel = 1.0;
           gamma_sq = SQR(gamma_rel);
@@ -210,27 +209,26 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 
         // Apply floors to density and pressure
         Real density_floor_local = density_floor_;
-        if (rho_pow_ != 0.0)
+        if (rho_pow_ != 0.0) {
           density_floor_local = std::max(density_floor_local,
               rho_min_*std::pow(pco->x1v(i),rho_pow_));
+        }
         Real pressure_floor_local = pressure_floor_;
-        if (u_pow_ != 0.0)
+        if (pgas_pow_ != 0.0) {
           pressure_floor_local = std::max(pressure_floor_local,
-              (gamma_-1.0)*u_min_*std::pow(pco->x1v(i),u_pow_));
-        if (rho < density_floor_local or std::isnan(rho))
-        {
+              pgas_min_ * std::pow(pco->x1v(i), pgas_pow_));
+        }
+        if (rho < density_floor_local or std::isnan(rho)) {
           rho = density_floor_local;
           fixed_(k,j,i) = true;
         }
-        if (pgas < pressure_floor_local or std::isnan(pgas))
-        {
+        if (pgas < pressure_floor_local or std::isnan(pgas)) {
           pgas = pressure_floor_local;
           fixed_(k,j,i) = true;
         }
 
         // Apply ceiling to velocity
-        if (gamma_rel > gamma_max_)
-        {
+        if (gamma_rel > gamma_max_) {
           Real factor = std::sqrt((SQR(gamma_max_)-1.0) / (SQR(gamma_rel)-1.0));
           uu1 *= factor;
           uu2 *= factor;
@@ -239,24 +237,24 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
         }
       }
     }
+  }
 
   // Fix corresponding conserved values if any changes made
-  for (int k = ks; k <= ke; ++k)
-    for (int j = js; j <= je; ++j)
-    {
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je; ++j) {
       pco->CellMetric(k, j, is, ie, g_, g_inv_);
-      for (int i = is; i <= ie; ++i)
-        if (fixed_(k,j,i))
-        {
+      for (int i = is; i <= ie; ++i) {
+        if (fixed_(k,j,i)) {
           PrimitiveToConservedSingle(prim, gamma_adi, g_, g_inv_, k, j, i, cons, pco);
           fixed_(k,j,i) = false;
         }
+      }
     }
+  }
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for converting all primitives to conserved variables
 // Inputs:
 //   prim: primitives
@@ -268,23 +266,24 @@ void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 // Notes:
 //   single-cell function exists for other purposes; call made to that function rather
 //       than having duplicate code
+
 void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
      const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons, Coordinates *pco, int is,
      int ie, int js, int je, int ks, int ke)
 {
-  for (int k = ks; k <= ke; ++k)
-    for (int j = js; j <= je; ++j)
-    {
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je; ++j) {
       pco->CellMetric(k, j, is, ie, g_, g_inv_);
       #pragma simd
-      for (int i = is; i <= ie; ++i)
+      for (int i = is; i <= ie; ++i) {
         PrimitiveToConservedSingle(prim, gamma_, g_, g_inv_, k, j, i, cons, pco);
+      }
     }
+  }
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for converting primitives to conserved variables in a single cell
 // Inputs:
 //   prim: 3D array of primitives
@@ -294,6 +293,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //   pco: pointer to Coordinates
 // Outputs:
 //   cons: conserved variables set in desired cell
+
 static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma_adi,
     const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int i,
     AthenaArray<Real> &cons, Coordinates *pco)
@@ -335,8 +335,7 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for calculating relativistic sound speeds
 // Inputs:
 //   rho_h: enthalpy per unit volume
@@ -350,8 +349,9 @@ static void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma
 //   same function as in adiabatic_hydro_sr.cpp
 //     uses SR formula (should be called in locally flat coordinates)
 //   references Mignone & Bodo 2005, MNRAS 364 126 (MB)
-void EquationOfState::SoundSpeedsSR(Real rho_h, Real pgas, Real vx,
-    Real gamma_lorentz_sq, Real *plambda_plus, Real *plambda_minus)
+
+void EquationOfState::SoundSpeedsSR(Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
+    Real *plambda_plus, Real *plambda_minus)
 {
   const Real gamma_adi = gamma_;
   Real cs_sq = gamma_adi * pgas / rho_h;                                 // (MB 4)
@@ -362,8 +362,7 @@ void EquationOfState::SoundSpeedsSR(Real rho_h, Real pgas, Real vx,
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function for calculating relativistic sound speeds in arbitrary coordinates
 // Inputs:
 //   rho_h: enthalpy per unit volume
@@ -376,6 +375,7 @@ void EquationOfState::SoundSpeedsSR(Real rho_h, Real pgas, Real vx,
 // Notes:
 //   follows same general procedure as vchar() in phys.c in Harm
 //   variables are named as though 1 is normal direction
+
 void EquationOfState::SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Real g00,
     Real g01, Real g11, Real *plambda_plus, Real *plambda_minus)
 {
@@ -391,13 +391,13 @@ void EquationOfState::SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Rea
   Real b = -2.0 * (u0*u1 - (g01 + u0*u1) * cs_sq);
   Real c = SQR(u1) - (g11 + SQR(u1)) * cs_sq;
   Real d = SQR(b) - 4.0*a*c;
-  if (d < 0.0 and d > discriminant_tol)
+  if (d < 0.0 and d > discriminant_tol) {
     d = 0.0;
+  }
   Real d_sqrt = std::sqrt(d);
   Real root_1 = (-b + d_sqrt) / (2.0*a);
   Real root_2 = (-b - d_sqrt) / (2.0*a);
-  if (root_1 > root_2)
-  {
+  if (root_1 > root_2) {
     *plambda_plus = root_1;
     *plambda_minus = root_2;
   }
@@ -409,21 +409,20 @@ void EquationOfState::SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Rea
   return;
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Function whose value vanishes for correct enthalpy
 // Inputs:
 //   w_guess: guess for enthalpy W
 //   d: D = alpha * rho * u^0
 //   q_n: Q_mu n^mu = -alpha^2 g^{mu 0} T^0_mu
-//   qq_sq: \tilde{Q}^2 = alpha^2 g^{mu nu} T^0_mu T^0_nu
-//                          + alpha^4 (g^{0 mu} T^0_mu)^2
+//   qq_sq: \tilde{Q}^2 = alpha^2 g^{mu nu} T^0_mu T^0_nu + alpha^4 (g^{0 mu} T^0_mu)^2
 //   gamma_adi: ratio of specific heats
 // Outputs:
 //   returned value: calculated minus given value of q_n
 // Notes:
 //   follows Noble et al. 2006, ApJ 641 626 (N)
 //   implements formulas assuming no magnetic field
+
 static Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_adi)
 {
   Real v_norm_sq = qq_sq / (w_guess*w_guess);        // (N 28)
@@ -433,20 +432,19 @@ static Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_ad
   return -w_guess + pgas - q_n;                      // (N 29)
 }
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Derivative of QNResidual()
 // Inputs:
 //   w_guess: guess for enthalpy W
 //   d: D = alpha * rho * u^0
-//   qq_sq: \tilde{Q}^2 = alpha^2 g^{mu nu} T^0_mu T^0_nu
-//                          + alpha^4 (g^{0 mu} T^0_mu)^2
+//   qq_sq: \tilde{Q}^2 = alpha^2 g^{mu nu} T^0_mu T^0_nu + alpha^4 (g^{0 mu} T^0_mu)^2
 //   gamma_adi: ratio of specific heats
 // Outputs:
 //   returned value: derivative of calculated value of Q_mu n^mu
 // Notes:
 //   follows Noble et al. 2006, ApJ 641 626 (N)
 //   implements formulas assuming no magnetic field
+
 static Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi)
 {
   Real v_norm_sq = qq_sq/SQR(w_guess);                             // (N 28)

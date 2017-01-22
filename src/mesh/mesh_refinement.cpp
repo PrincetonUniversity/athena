@@ -31,7 +31,22 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_block_ = pmb;
   AMRFlag_=pmb->pmy_mesh->AMRFlag_;
-  pcoarsec = new Coordinates(pmb, pin, 1);
+
+  // Create coarse mesh object for parent grid
+  if (COORDINATE_SYSTEM == "cartesian") {
+    pcoarsec = new Cartesian(pmb, pin, true);
+  } else if (COORDINATE_SYSTEM == "cylindrical") {
+    pcoarsec = new Cylindrical(pmb, pin, true);
+  } else if (COORDINATE_SYSTEM == "spherical_polar") {
+    pcoarsec = new SphericalPolar(pmb, pin, true);
+  } else if (COORDINATE_SYSTEM == "minkowski") {
+    pcoarsec = new Minkowski(pmb, pin, true);
+  } else if (COORDINATE_SYSTEM == "schwarzschild") {
+    pcoarsec = new Schwarzschild(pmb, pin, true);
+  } else if (COORDINATE_SYSTEM == "kerr-schild") {
+    pcoarsec = new KerrSchild(pmb, pin, true);
+  }
+
   deref_count_ = 0;
   deref_threshold_ = pin->GetOrAddInteger("mesh","derefine_count",10);
   // allocate prolongation buffer

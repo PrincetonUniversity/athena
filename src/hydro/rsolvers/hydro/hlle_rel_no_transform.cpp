@@ -1,21 +1,24 @@
-// HLLE Riemann solver for relativistic hydrodynamics in pure GR
-
-// Primary header
-#include "../../hydro.hpp"
+//========================================================================================
+// Athena++ astrophysical MHD code
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
+//! \file hlle_rel_no_transform.cpp
+//  \brief Implements HLLE Riemann solver for relativistic hydrodynamics in pure GR.
 
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
-// Athena headers
+// Athena++ headers
+#include "../../hydro.hpp"
 #include "../../../athena.hpp"                   // enums, macros
 #include "../../../athena_arrays.hpp"            // AthenaArray
 #include "../../../coordinates/coordinates.hpp"  // Coordinates
 #include "../../../eos/eos.hpp"                  // EquationOfState
 #include "../../../mesh/mesh.hpp"                // MeshBlock
 
-//--------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------
 // Riemann solver
 // Inputs:
 //   k,j: x3- and x2-indices
@@ -28,6 +31,7 @@
 // Notes:
 //   implements HLLE algorithm similar to that of fluxcalc() in step_ch.c in Harm
 //   cf. HLLENonTransforming() in hlle_rel.cpp and hllc_rel.cpp
+
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     const int ivx, const AthenaArray<Real> &bb, AthenaArray<Real> &prim_l,
     AthenaArray<Real> &prim_r, AthenaArray<Real> &flux)
@@ -40,8 +44,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   const Real gamma_adi = pmy_block->peos->GetGamma();
 
   // Get metric components
-  switch (ivx)
-  {
+  switch (ivx) {
     case IVX:
       pmy_block->pcoord->Face1Metric(k, j, il, iu, g_, gi_);
       break;
@@ -55,8 +58,8 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 
   // Go through each interface
   #pragma simd
-  for (int i = il; i <= iu; ++i)
-  {
+  for (int i = il; i <= iu; ++i) {
+
     // Extract metric
     const Real
         &g_00 = g_(I00,i), &g_01 = g_(I01,i), &g_02 = g_(I02,i), &g_03 = g_(I03,i),
@@ -70,8 +73,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
         &g30 = gi_(I03,i), &g31 = gi_(I13,i), &g32 = gi_(I23,i), &g33 = gi_(I33,i);
     Real alpha = std::sqrt(-1.0/g00);
     Real gii, g0i;
-    switch (ivx)
-    {
+    switch (ivx) {
       case IVX:
         gii = g11;
         g0i = g01;
@@ -182,20 +184,20 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 
     // Calculate fluxes in HLL region
     Real flux_hll[NWAVE];
-    for (int n = 0; n < NWAVE; ++n)
+    for (int n = 0; n < NWAVE; ++n) {
       flux_hll[n] = (lambda_r*flux_l[n] - lambda_l*flux_r[n]
-          + lambda_r*lambda_l * (cons_r[n] - cons_l[n]))
-          / (lambda_r-lambda_l);
+          + lambda_r*lambda_l * (cons_r[n] - cons_l[n])) / (lambda_r-lambda_l);
+    }
 
     // Set fluxes
-    for (int n = 0; n < NWAVE; ++n)
-    {
-      if (lambda_l >= 0.0)  // L region
+    for (int n = 0; n < NWAVE; ++n) {
+      if (lambda_l >= 0.0) {  // L region
         flux(n,i) = flux_l[n];
-      else if (lambda_r <= 0.0)  // R region
+      } else if (lambda_r <= 0.0) {  // R region
         flux(n,i) = flux_r[n];
-      else  // HLL region
+      } else {  // HLL region
         flux(n,i) = flux_hll[n];
+      }
     }
   }
   return;

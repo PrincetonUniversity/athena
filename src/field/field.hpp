@@ -17,12 +17,18 @@
 class MeshBlock;
 class ParameterInput;
 class Hydro;
+//[diffusion
+class FieldDiffusion;
+//diffusion]
 
 //! \class Field
 //  \brief electric and magnetic field data and functions
 
 class Field {
 friend class Hydro;
+//[diffusion
+//friend class HydroDiffusion;
+//diffusion]
 public:
   Field(MeshBlock *pmb, ParameterInput *pin);
   ~Field();
@@ -30,6 +36,9 @@ public:
        Coordinates *pco, int is, int ie, int js, int je, int ks, int ke);
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
+//[diffusion
+  FieldDiffusion *pdif;
+//diffusion]
 
   FaceField b;       // face-centered magnetic fields
   FaceField b1;      // face-centered magnetic fields at intermediate step

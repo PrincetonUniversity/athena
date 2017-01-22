@@ -21,12 +21,13 @@
 #[JMSHI
 #   -sh               enable shearing periodic boundary conditions
 #JMSHI]
-#   --cxx=choice      use choice as the C++ compiler
 #   -debug            enable debug flags (-g -O0); override other compiler options
 #   -mpi              enable parallelization with MPI
 #   -omp              enable parallelization with OpenMP
 #   -hdf5             enable HDF5 output (requires the HDF5 library)
 #   --hdf5_path=path  path to HDF5 libraries (requires the HDF5 library)
+#   --cxx=choice      use choice as the C++ compiler
+#   --ccmd=choice     use choice as the command to call the C++ compiler
 #---------------------------------------------------------------------------------------
 
 # Modules
@@ -115,12 +116,6 @@ parser.add_argument('-sh',
     default=False,
     help='enable shearing box')
 
-# --cxx=[name] argument
-parser.add_argument('--cxx',
-    default='g++',
-    choices=['g++','icc','cray','bgxl'],
-    help='select C++ compiler')
-
 # -debug argument
 parser.add_argument('-debug',
     action='store_true',
@@ -151,6 +146,18 @@ parser.add_argument('--hdf5_path',
     default='',
     help='path to HDF5 libraries')
 
+# --cxx=[name] argument
+parser.add_argument('--cxx',
+    default='g++',
+    choices=['g++','icc','cray','bgxl'],
+    help='select C++ compiler')
+
+# --ccmd=[name] argument
+parser.add_argument('--ccmd',
+    type=str,
+    default=None,
+    help='override for command to use to call C++ compiler')
+
 # Parse command-line inputs
 args = vars(parser.parse_args())
 
@@ -178,9 +185,11 @@ if args['flux'] == 'hlld' and not args['b']:
 # Check relativity
 if args['s'] and args['g']:
   raise SystemExit('### CONFIGURE ERROR: ' \
-      + 'GR implies SR; the -s option is restricted to pure SR.')
+      + 'GR implies SR; the -s option is restricted to pure SR')
 if args['t'] and not args['g']:
-  raise SystemExit('### CONFIGURE ERROR: Frame transformations only apply to GR.')
+  raise SystemExit('### CONFIGURE ERROR: Frame transformations only apply to GR')
+if args['g'] and not args['t'] and args['flux'] not in ('llf','hlle'):
+  raise SystemExit('### CONFIGURE ERROR: Frame transformations required for ' + args['flux'])
 if args['g'] and args['coord'] in ('cartesian','cylindrical','spherical_polar'):
   raise SystemExit('### CONFIGURE ERROR: ' \
       + 'GR cannot be used with ' + args['coord'] + ' coordinates')
@@ -190,7 +199,7 @@ if not args['g'] and args['coord'] not in ('cartesian','cylindrical','spherical_
 if args['eos'] == 'isothermal':
   if args['s'] or args['g']:
     raise SystemExit('### CONFIGURE ERROR: '\
-        + 'Isothermal EOS is incompatible with relativity.')
+        + 'Isothermal EOS is incompatible with relativity')
 
 #--- Step 3. Set definitions and Makefile options based on above arguments -------------
 
@@ -251,6 +260,7 @@ else:
 # -s, -g, and -t arguments
 definitions['RELATIVISTIC_DYNAMICS'] = '1' if args['s'] or args['g'] else '0'
 definitions['GENERAL_RELATIVITY'] = '1' if args['g'] else '0'
+definitions['FRAME_TRANSFORMATIONS'] = '1' if args['t'] else '0'
 if args['s']:
   makefile_options['EOS_FILE'] += '_sr'
   makefile_options['RSOLVER_FILE'] += '_rel'
@@ -272,20 +282,22 @@ else:
 
 # --cxx=[name] argument
 if args['cxx'] == 'g++':
-  definitions['COMPILER_CHOICE'] = makefile_options['COMPILER_CHOICE'] = 'g++'
+  definitions['COMPILER_CHOICE'] = 'g++'
+  definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'g++'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
   makefile_options['COMPILER_FLAGS'] = '-O3'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'icc':
-  definitions['COMPILER_CHOICE'] = makefile_options['COMPILER_CHOICE'] = 'icc'
+  definitions['COMPILER_CHOICE'] = 'icc'
+  definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
   makefile_options['COMPILER_FLAGS'] = '-O3 -xhost -ipo -inline-forceinline'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'cray':
   definitions['COMPILER_CHOICE'] = 'cray'
-  makefile_options['COMPILER_CHOICE'] = 'CC'
+  definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'CC'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
   makefile_options['COMPILER_FLAGS'] = '-O3 -h aggress -h vector3 -hfp3'
   makefile_options['LINKER_FLAGS'] = '-hwp -hpl=obj/lib'
@@ -294,7 +306,8 @@ if args['cxx'] == 'bgxl':
   # suppressed messages:
   #   1500-036:  nostrict option can change semantics
   #   1540-1401: pragma (simd) not recognized
-  definitions['COMPILER_CHOICE'] = makefile_options['COMPILER_CHOICE'] = 'bgxlc++'
+  definitions['COMPILER_CHOICE'] = 'bgxlc++'
+  definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'bgxlc++'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
   makefile_options['COMPILER_FLAGS'] = \
       '-O3 -qstrict -qlanglvl=extended -qsuppress=1500-036 -qsuppress=1540-1401'
@@ -317,11 +330,11 @@ else:
 if args['mpi']:
   definitions['MPI_OPTION'] = 'MPI_PARALLEL'
   if args['cxx'] == 'g++' or args['cxx'] == 'icc':
-    definitions['COMPILER_CHOICE'] = makefile_options['COMPILER_CHOICE'] = 'mpicxx'
+    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpicxx'
   if args['cxx'] == 'cray':
     makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
   if args['cxx'] == 'bgxl':
-    definitions['COMPILER_CHOICE'] = makefile_options['COMPILER_CHOICE'] = 'mpixlcxx'
+    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpixlcxx'
 else:
   definitions['MPI_OPTION'] = 'NOT_MPI_PARALLEL'
 
@@ -336,8 +349,8 @@ if args['omp']:
     makefile_options['COMPILER_FLAGS'] += ' -homp'
   if args['cxx'] == 'bgxl':
     # use thread-safe version of compiler
-    definitions['COMPILER_CHOICE'] += '_r'
-    makefile_options['COMPILER_CHOICE'] += '_r'
+    definitions['COMPILER_COMMAND'] += '_r'
+    makefile_options['COMPILER_COMMAND'] += '_r'
     makefile_options['COMPILER_FLAGS'] += ' -qsmp'
 else:
   definitions['OPENMP_OPTION'] = 'NOT_OPENMP_PARALLEL'
@@ -367,6 +380,10 @@ if args['hdf5']:
     makefile_options['LIBRARY_FLAGS'] += ' -lhdf5 -lz -lm'
 else:
   definitions['HDF5_OPTION'] = 'NO_HDF5OUTPUT'
+
+# --ccmd=[name] argument
+if args['ccmd'] is not None:
+  definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['ccmd']
 
 # Assemble all flags of any sort given to compiler
 definitions['COMPILER_FLAGS'] = ' '.join([makefile_options[opt+'_FLAGS'] for opt in \
@@ -415,11 +432,12 @@ print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))
 #[JMSHI
 print('  ShearingBox:             ' + ('ON' if args['sh'] else 'OFF'))
 #JMSHI]
-print('  Compiler and flags:      ' + makefile_options['COMPILER_CHOICE'] + ' ' \
-    + makefile_options['PREPROCESSOR_FLAGS'] + ' ' + makefile_options['COMPILER_FLAGS'])
 print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
 print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' ' \
     + makefile_options['LIBRARY_FLAGS'])
 print('  MPI parallelism:         ' + ('ON' if args['mpi'] else 'OFF'))
 print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
 print('  HDF5 output:             ' + ('ON' if args['hdf5'] else 'OFF'))
+print('  Compiler:                ' + args['cxx'])
+print('  Compilation command:     ' + makefile_options['COMPILER_COMMAND'] + ' ' \
+    + makefile_options['PREPROCESSOR_FLAGS'] + ' ' + makefile_options['COMPILER_FLAGS'])

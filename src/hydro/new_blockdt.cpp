@@ -19,6 +19,10 @@
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
+//[diffusion
+#include "diffusion/diffusion.hpp"
+#include "../field/field_diffusion/field_diffusion.hpp"
+//diffusion]
 
 // MPI/OpenMP header
 #ifdef MPI_PARALLEL
@@ -31,7 +35,7 @@
 
 //----------------------------------------------------------------------------------------
 // \!fn Real Hydro::NewBlockTimeStep(void)
-// \brief calculate the minimum timestep within a MeshBlock 
+// \brief calculate the minimum timestep within a MeshBlock
 
 Real Hydro::NewBlockTimeStep(void)
 {
@@ -69,47 +73,58 @@ Real Hydro::NewBlockTimeStep(void)
 
 #pragma omp for schedule(static)
     for (int j=js; j<=je; ++j){
+      pmb->pcoord->CenterWidth1(k,j,is,ie,dt1);
+      pmb->pcoord->CenterWidth2(k,j,is,ie,dt2);
+      pmb->pcoord->CenterWidth3(k,j,is,ie,dt3);
+      if(!RELATIVISTIC_DYNAMICS) {
 //#pragma simd
-      for (int i=is; i<=ie; ++i){
-        wi[IDN]=w(IDN,k,j,i);
-        wi[IVX]=w(IVX,k,j,i);
-        wi[IVY]=w(IVY,k,j,i);
-        wi[IVZ]=w(IVZ,k,j,i);
-        if (NON_BAROTROPIC_EOS) wi[IPR]=w(IPR,k,j,i);
+        for (int i=is; i<=ie; ++i){
+          wi[IDN]=w(IDN,k,j,i);
+          wi[IVX]=w(IVX,k,j,i);
+          wi[IVY]=w(IVY,k,j,i);
+          wi[IVZ]=w(IVZ,k,j,i);
+          if (NON_BAROTROPIC_EOS) wi[IPR]=w(IPR,k,j,i);
 
-        if (RELATIVISTIC_DYNAMICS) {
+          if (MAGNETIC_FIELDS_ENABLED) {
 
-          dt1(i) = pmb->pcoord->CenterWidth1(k,j,i);
-          dt2(i) = pmb->pcoord->CenterWidth2(k,j,i);
-          dt3(i) = pmb->pcoord->CenterWidth3(k,j,i);
+            Real bx = bcc(IB1,k,j,i) + fabs(b_x1f(k,j,i)-bcc(IB1,k,j,i));
+            wi[IBY] = bcc(IB2,k,j,i);
+            wi[IBZ] = bcc(IB3,k,j,i);
+            Real cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
+            dt1(i) /= (fabs(wi[IVX]) + cf);
 
-        } else if (MAGNETIC_FIELDS_ENABLED) {
+            wi[IBY] = bcc(IB3,k,j,i);
+            wi[IBZ] = bcc(IB1,k,j,i);
+            bx = bcc(IB2,k,j,i) + fabs(b_x2f(k,j,i)-bcc(IB2,k,j,i));
+            cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
+            dt2(i) /= (fabs(wi[IVY]) + cf);
 
-          Real bx = bcc(IB1,k,j,i) + fabs(b_x1f(k,j,i)-bcc(IB1,k,j,i));
-          wi[IBY] = bcc(IB2,k,j,i);
-          wi[IBZ] = bcc(IB3,k,j,i);
-          Real cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
-          dt1(i)= pmb->pcoord->CenterWidth1(k,j,i)/(fabs(wi[IVX]) + cf);
+            wi[IBY] = bcc(IB1,k,j,i);
+            wi[IBZ] = bcc(IB2,k,j,i);
+            bx = bcc(IB3,k,j,i) + fabs(b_x3f(k,j,i)-bcc(IB3,k,j,i));
+            cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
+            dt3(i) /= (fabs(wi[IVZ]) + cf);
 
-          wi[IBY] = bcc(IB3,k,j,i);
-          wi[IBZ] = bcc(IB1,k,j,i);
-          bx = bcc(IB2,k,j,i) + fabs(b_x2f(k,j,i)-bcc(IB2,k,j,i));
-          cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
-          dt2(i)= pmb->pcoord->CenterWidth2(k,j,i)/(fabs(wi[IVY]) + cf);
+          } else {
 
-          wi[IBY] = bcc(IB1,k,j,i);
-          wi[IBZ] = bcc(IB2,k,j,i);
-          bx = bcc(IB3,k,j,i) + fabs(b_x3f(k,j,i)-bcc(IB3,k,j,i));
-          cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
-          dt3(i)= pmb->pcoord->CenterWidth3(k,j,i)/(fabs(wi[IVZ]) + cf);
+            Real cs = pmb->peos->SoundSpeed(wi);
+            dt1(i) /= (fabs(wi[IVX]) + cs);
+            dt2(i) /= (fabs(wi[IVY]) + cs);
+            dt3(i) /= (fabs(wi[IVZ]) + cs);
 
-        } else {
-
-          Real cs = pmb->peos->SoundSpeed(wi);
-          dt1(i)= pmb->pcoord->CenterWidth1(k,j,i)/(fabs(wi[IVX]) + cs);
-          dt2(i)= pmb->pcoord->CenterWidth2(k,j,i)/(fabs(wi[IVY]) + cs);
-          dt3(i)= pmb->pcoord->CenterWidth3(k,j,i)/(fabs(wi[IVZ]) + cs);
-
+          }
+          //[diffusion
+          if (pmb->phydro->pdif->hydro_diffusion_defined) {
+            dt1(i)=std::min(pmb->phydro->pdif->NewDtDiff(pmb->pcoord->dx1f(i),k,j,i),dt1(i));
+            dt2(i)=std::min(pmb->phydro->pdif->NewDtDiff(pmb->pcoord->dx2f(j)*pmb->pcoord->h2v(i),k,j,i),dt2(i));
+            dt3(i)=std::min(pmb->phydro->pdif->NewDtDiff(pmb->pcoord->dx3f(k)*pmb->pcoord->h31v(i)*fabs(pmb->pcoord->h32v(j)),k,j,i),dt3(i));
+          }
+          if (MAGNETIC_FIELDS_ENABLED && pmb->pfield->pdif->field_diffusion_defined) {
+            dt1(i)=std::min(pmb->pfield->pdif->NewDtFldDiff(pmb->pcoord->dx1f(i),k,j,i),dt1(i));
+            dt2(i)=std::min(pmb->pfield->pdif->NewDtFldDiff(pmb->pcoord->dx2f(j)*pmb->pcoord->h2v(i),k,j,i),dt2(i));
+            dt3(i)=std::min(pmb->pfield->pdif->NewDtFldDiff(pmb->pcoord->dx3f(k)*pmb->pcoord->h31v(i)*fabs(pmb->pcoord->h32v(j)),k,j,i),dt3(i));
+          }
+          //diffusion]
         }
       }
 
@@ -118,7 +133,7 @@ Real Hydro::NewBlockTimeStep(void)
         Real& dt_1 = dt1(i);
         pthread_min_dt[tid] = std::min(pthread_min_dt[tid],dt_1);
       }
-    
+
       // if grid is 2D/3D, compute minimum of (v2 +/- C)
       if (pmb->block_size.nx2 > 1) {
         for (int i=is; i<=ie; ++i){

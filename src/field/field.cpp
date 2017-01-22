@@ -12,6 +12,9 @@
 #include "../athena_arrays.hpp"
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
+//[diffusion
+#include "field_diffusion/field_diffusion.hpp"
+//diffusion]
 
 // constructor, initializes data structures and parameters
 
@@ -61,6 +64,10 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin)
       gi_.NewAthenaArray(NMETRIC,ncells1);
     }
 
+  //[diffusion
+  // Construct ptrs to objects of diffusion processes needed to integrate hydro/MHD eqns
+  pdif = new FieldDiffusion(this,pin);
+  //diffusion]
   }
 }
 

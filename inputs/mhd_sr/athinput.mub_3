@@ -3,59 +3,59 @@ problem   = SR MHD shocktube problem 3
 reference = Mignone, Ugliano, & Bodo 2009, MNRAS 393 1141
 
 <job>
-problem_id  = MUBShock3  # problem ID: basename of output filenames
+problem_id = mhd_shock_rel_3
 
 <output1>
-file_type   = tab      # type of data dump (tab,vtk,...)
-variable    = cons     # variables to be output
-data_format = %24.16e  # optional data format string
-dt          = 0.4      # time increment between outputs
+file_type   = tab
+variable    = cons
+data_format = %24.16e
+dt          = 0.4
 
 <time>
-cfl_number = 0.4    # Courant-Friedrichs-Lewy number
-nlim       = -1     # cycle limit
-tlim       = 0.4    # time limit
+cfl_number = 0.4
+nlim       = -1
+tlim       = 0.4
 
 <mesh>
-nx1    = 400        # number of zones in x1-direction
-x1min  = -0.5       # minimum value of x1
-x1max  = 0.5        # maximum value of x1
-ix1_bc = outflow    # inner-x1 boundary condition flag
-ox1_bc = outflow    # outer-x1 boundary condition flag
+nx1    = 400      # number of cells in x-direction
+x1min  = -0.5     # minimum x
+x1max  = 0.5      # maximum x
+ix1_bc = outflow  # left boundary
+ox1_bc = outflow  # right boundary
 
-nx2    = 1          # number of zones in x2-direction
-x2min  = -0.5       # minimum value of x2
-x2max  = 0.5        # maximum value of x2
-ix2_bc = periodic   # inner-x2 boundary condition flag
-ox2_bc = periodic   # outer-x2 boundary condition flag
+nx2    = 1         # number of cells in y-direction
+x2min  = -0.5      # minimum y
+x2max  = 0.5       # maximum y
+ix2_bc = periodic  # inner boundary
+ox2_bc = periodic  # outer boundary
 
-nx3    = 1          # number of zones in x3-direction
-x3min  = -0.5       # minimum value of x3
-x3max  = 0.5        # maximum value of x3
-ix3_bc = periodic   # inner-x3 boundary condition flag
-ox3_bc = periodic   # outer-x3 boundary condition flag
+nx3    = 1         # number of cells in z-direction
+x3min  = -0.5      # minimum z
+x3max  = 0.5       # maximum z
+ix3_bc = periodic  # lower boundary
+ox3_bc = periodic  # upper boundary
 
 <hydro>
-gamma = 1.6666666666666667  # Gamma = C_p/C_V
+gamma = 1.6666666666666667  # ratio of specific heats Gamma
 
 <problem>
-shock_dir  = 1       # shock direction: (1,2,3) correspond to (x1,x2,x3)
-xshock     = 0.0     # position of initial interface
+shock_dir = 1    # 1/2/3 for x/y/z-directions
+xshock    = 0.0  # position of initial interface
 
-dl         = 1.0     # left density rho
-pl         = 0.1     # left gas pressure p_gas
-ul         = 0.999   # left velocity v^x
-vl         = 0.0     # left velocity v^y
-wl         = 0.0     # left velocity v^z
-bxl        = 10.0    # left magnetic field B^x
-byl        = 7.0     # left magnetic field B^y
-bzl        = 7.0     # left magnetic field B^z
+dl  = 1.0    # left density rho
+pl  = 0.1    # left gas pressure p_gas
+ul  = 0.999  # left velocity v^x
+vl  = 0.0    # left velocity v^y
+wl  = 0.0    # left velocity v^z
+bxl = 10.0   # left magnetic field B^x
+byl = 7.0    # left magnetic field B^y
+bzl = 7.0    # left magnetic field B^z
 
-dr         = 1.0     # right density rho
-pr         = 0.1     # right gas pressure p_gas
-ur         = -0.999  # right velocity v^x
-vr         = 0.0     # right velocity v^y
-wr         = 0.0     # right velocity v^z
-bxr        = 10.0    # right magnetic field B^x
-byr        = -7.0    # right magnetic field B^y
-bzr        = -7.0    # right magnetic field B^z
+dr  = 1.0     # right density rho
+pr  = 0.1     # right gas pressure p_gas
+ur  = -0.999  # right velocity v^x
+vr  = 0.0     # right velocity v^y
+wr  = 0.0     # right velocity v^z
+bxr = 10.0    # right magnetic field B^x
+byr = -7.0    # right magnetic field B^y
+bzr = -7.0    # right magnetic field B^z

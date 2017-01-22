@@ -15,6 +15,9 @@
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
 #include "srcterms/hydro_srcterms.hpp"
+//[diffusion
+#include "diffusion/diffusion.hpp"
+//diffusion]
 
 // constructor, initializes data structures and parameters
 
@@ -36,9 +39,9 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
   w1.NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1);
 
   flux[X1DIR].NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1+1);
-  if (pmy_block->block_size.nx2 > 1) 
+  if (pmy_block->block_size.nx2 > 1)
     flux[X2DIR].NewAthenaArray(NHYDRO,ncells3,ncells2+1,ncells1);
-  if (pmy_block->block_size.nx3 > 1) 
+  if (pmy_block->block_size.nx3 > 1)
     flux[X3DIR].NewAthenaArray(NHYDRO,ncells3+1,ncells2,ncells1);
 
   // Allocate memory for scratch arrays
@@ -46,6 +49,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
   dt1_.NewAthenaArray(nthreads,ncells1);
   dt2_.NewAthenaArray(nthreads,ncells1);
   dt3_.NewAthenaArray(nthreads,ncells1);
+  dxw_.NewAthenaArray(nthreads,ncells1);
   wl_.NewAthenaArray(nthreads,(NWAVE),ncells1);
   wr_.NewAthenaArray(nthreads,(NWAVE),ncells1);
   flx_.NewAthenaArray(nthreads,(NWAVE),ncells1);
@@ -76,9 +80,13 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
 
   UserTimeStep_ = pmb->pmy_mesh->UserTimeStep_;
 
-  // Construct ptrs to objects of various classes needed to integrate hydro/MHD eqns 
+  // Construct ptrs to objects of various classes needed to integrate hydro/MHD eqns
   psrc  = new HydroSourceTerms(this,pin);
+  //[diffusion
+  // Construct ptrs to objects of diffusion processes needed to integrate hydro/MHD eqns
+  pdif = new HydroDiffusion(this,pin);
 }
+  //diffusion]
 
 // destructor
 
@@ -96,6 +104,7 @@ Hydro::~Hydro()
   dt1_.DeleteAthenaArray();
   dt2_.DeleteAthenaArray();
   dt3_.DeleteAthenaArray();
+  dxw_.DeleteAthenaArray();
   wl_.DeleteAthenaArray();
   wr_.DeleteAthenaArray();
   flx_.DeleteAthenaArray();
@@ -125,4 +134,7 @@ Hydro::~Hydro()
   }
 
   delete psrc;
+  //[diffusion
+  delete pdif;
+  //diffusion]
 }

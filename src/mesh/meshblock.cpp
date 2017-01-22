@@ -90,8 +90,20 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // in the Hydro constructor
 
   // mesh-related objects
-  pcoord = new Coordinates(this, pin);
-  if(ref_flag==false) pcoord->CheckMeshSpacing();
+  if (COORDINATE_SYSTEM == "cartesian") {
+    pcoord = new Cartesian(this, pin, false);
+  } else if (COORDINATE_SYSTEM == "cylindrical") {
+    pcoord = new Cylindrical(this, pin, false);
+  } else if (COORDINATE_SYSTEM == "spherical_polar") {
+    pcoord = new SphericalPolar(this, pin, false);
+  } else if (COORDINATE_SYSTEM == "minkowski") {
+    pcoord = new Minkowski(this, pin, false);
+  } else if (COORDINATE_SYSTEM == "schwarzschild") {
+    pcoord = new Schwarzschild(this, pin, false);
+  } else if (COORDINATE_SYSTEM == "kerr-schild") {
+    pcoord = new KerrSchild(this, pin, false);
+  }
+
   pbval  = new BoundaryValues(this, pin);
   if (block_bcs[INNER_X2] == POLAR_BNDRY||block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh->root_level;
@@ -168,7 +180,20 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   }
 
   // (re-)create mesh-related objects in MeshBlock
-  pcoord = new Coordinates(this, pin);
+  if (COORDINATE_SYSTEM == "cartesian") {
+    pcoord = new Cartesian(this, pin, false);
+  } else if (COORDINATE_SYSTEM == "cylindrical") {
+    pcoord = new Cylindrical(this, pin, false);
+  } else if (COORDINATE_SYSTEM == "spherical_polar") {
+    pcoord = new SphericalPolar(this, pin, false);
+  } else if (COORDINATE_SYSTEM == "minkowski") {
+    pcoord = new Minkowski(this, pin, false);
+  } else if (COORDINATE_SYSTEM == "schwarzschild") {
+    pcoord = new Schwarzschild(this, pin, false);
+  } else if (COORDINATE_SYSTEM == "kerr-schild") {
+    pcoord = new KerrSchild(this, pin, false);
+  }
+
   pbval  = new BoundaryValues(this, pin);
   if (block_bcs[INNER_X2] == POLAR_BNDRY||block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
     int level = loc.level - pmy_mesh->root_level;
