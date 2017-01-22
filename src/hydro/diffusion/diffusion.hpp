@@ -32,7 +32,9 @@ public:
   AthenaArray<Real> diflx[3]; //stress tensor
 
   // functions
-  void AddHydroDiffusionFlux(const AthenaArray<Real> &p, const AthenaArray<Real> &c, AthenaArray<Real> *flx);
+  void CalcHydroDiffusionFlux(const AthenaArray<Real> &p, const AthenaArray<Real> &c, AthenaArray<Real> *flx);
+  void AddHydroDiffusionFlux(AthenaArray<Real> *flx);
+  void AddEnergyFlux(const AthenaArray<Real> &bc, AthenaArray<Real> *flx);
   // viscosity
   void Viscosity(const AthenaArray<Real> &p,const AthenaArray<Real> &c, AthenaArray<Real> *flx);
   Real NewDtDiff(Real len, int k, int j, int i);

@@ -32,7 +32,8 @@ public:
   EdgeField emf; //stress tensor
 
   // functions
-  void AddFieldDiffusionEMF(const FaceField &bi, const AthenaArray<Real> &bc, EdgeField &e);
+  void CalcFieldDiffusionEMF(const FaceField &bi, const AthenaArray<Real> &bc, EdgeField &e);
+  void AddFieldDiffusionEMF(EdgeField &e);
   // resistivity
   void Resistivity(const FaceField &bi,const AthenaArray<Real> &bc, EdgeField &e);
   Real NewDtFldDiff(Real len, int k, int j, int i);

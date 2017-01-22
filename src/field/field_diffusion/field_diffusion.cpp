@@ -63,11 +63,54 @@ FieldDiffusion::~FieldDiffusion()
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FieldDiffusion::AddFieldDiffusionEMF
-//  \brief Adds diffusion flux to hydro flux
+//! \fn void FieldDiffusion::CalcFieldDiffusionEMF
+//  \brief Calculate diffusion EMF
 
-void FieldDiffusion::AddFieldDiffusionEMF(const FaceField &bi,
+void FieldDiffusion::CalcFieldDiffusionEMF(const FaceField &bi,
      const AthenaArray<Real> &bc, EdgeField &e)
+{
+
+  //int is = pmb_->is; int js = pmb_->js; int ks = pmb_->ks;
+  //int ie = pmb_->ie; int je = pmb_->je; int ke = pmb_->ke;
+
+  //AthenaArray<Real> &e1=e.x1e;
+  //AthenaArray<Real> &e2=e.x2e;
+  //AthenaArray<Real> &e3=e.x3e;
+  //AthenaArray<Real> &emf1=emf.x1e;
+  //AthenaArray<Real> &emf2=emf.x2e;
+  //AthenaArray<Real> &emf3=emf.x3e;
+
+  // Ohmic dissipation: to calc and add the EMF =\eta_Ohmic*J
+  if (etaO_ != 0.0) {
+    Resistivity(bi, bc, emf);
+
+  //  for (int k=ks; k<=ke+1; ++k){
+  //  for (int j=js; j<=je+1; ++j){
+  //  for (int i=is; i<=ie; ++i){
+  //    e1(k,j,i) += emf1(k,j,i);
+  //  }}}
+
+  //  for (int k=ks; k<=ke+1; ++k){
+  //  for (int j=js; j<=je; ++j){
+  //  for (int i=is; i<=ie+1; ++i){
+  //    e2(k,j,i) += emf2(k,j,i);
+  //  }}}
+
+  //  for (int k=ks; k<=ke; ++k){
+  //  for (int j=js; j<=je+1; ++j){
+  //  for (int i=is; i<=ie+1; ++i){
+  //    e3(k,j,i) += emf3(k,j,i);
+  //  }}}
+  }
+
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void FieldDiffusion::AddFieldDiffusionEMF
+//  \brief Add diffusion EMF
+
+void FieldDiffusion::AddFieldDiffusionEMF(EdgeField &e)
 {
 
   int is = pmb_->is; int js = pmb_->js; int ks = pmb_->ks;
@@ -80,31 +123,26 @@ void FieldDiffusion::AddFieldDiffusionEMF(const FaceField &bi,
   AthenaArray<Real> &emf2=emf.x2e;
   AthenaArray<Real> &emf3=emf.x3e;
 
-  // Ohmic dissipation: to calc and add the EMF =\eta_Ohmic*J
-  if (etaO_ != 0.0) {
-    Resistivity(bi, bc, emf);
-    for (int k=ks; k<=ke+1; ++k){
-    for (int j=js; j<=je+1; ++j){
-    for (int i=is; i<=ie; ++i){
-      e1(k,j,i) += emf1(k,j,i);
-    }}}
+  for (int k=ks; k<=ke+1; ++k){
+  for (int j=js; j<=je+1; ++j){
+  for (int i=is; i<=ie; ++i){
+    e1(k,j,i) += emf1(k,j,i);
+  }}}
 
-    for (int k=ks; k<=ke+1; ++k){
-    for (int j=js; j<=je; ++j){
-    for (int i=is; i<=ie+1; ++i){
-      e2(k,j,i) += emf2(k,j,i);
-    }}}
+  for (int k=ks; k<=ke+1; ++k){
+  for (int j=js; j<=je; ++j){
+  for (int i=is; i<=ie+1; ++i){
+    e2(k,j,i) += emf2(k,j,i);
+  }}}
 
-    for (int k=ks; k<=ke; ++k){
-    for (int j=js; j<=je+1; ++j){
-    for (int i=is; i<=ie+1; ++i){
-      e3(k,j,i) += emf3(k,j,i);
-    }}}
-  }
+  for (int k=ks; k<=ke; ++k){
+  for (int j=js; j<=je+1; ++j){
+  for (int i=is; i<=ie+1; ++i){
+    e3(k,j,i) += emf3(k,j,i);
+  }}}
 
   return;
 }
-
 //----------------------------------------------------------------------------------------
 //! \fn void FieldDiffusion::NewDtFldDiff(Real len, int k, int j, int i)
 //  \brief return the time step constraints due to explicit diffusion processes

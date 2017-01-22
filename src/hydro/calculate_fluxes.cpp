@@ -18,6 +18,10 @@
 #include "../mesh/mesh.hpp"
 #include "../bvals/bvals.hpp"
 #include "../reconstruct/reconstruction.hpp"
+//[diffusion
+#include "diffusion/diffusion.hpp"
+#include "../field/field_diffusion/field_diffusion.hpp"
+//diffusion]
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL
@@ -78,7 +82,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         jl=js-1, ju=je+1, kl=ks-1, ku=ke+1;
     }
   }
-  for (int k=kl; k<=ku; ++k){ 
+  for (int k=kl; k<=ku; ++k){
 #pragma omp for schedule(static)
     for (int j=jl; j<=ju; ++j){
 
@@ -142,7 +146,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         }
 
         // compute fluxes at j
-        RiemannSolver(k,j,il,iu,IVY,b2,wl,wr,flx); 
+        RiemannSolver(k,j,il,iu,IVY,b2,wl,wr,flx);
 
         // store fluxes
         if(k>=ks && k<=ke) {
@@ -172,7 +176,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   }
 
 //----------------------------------------------------------------------------------------
-// k-direction 
+// k-direction
 
   if (pmb->block_size.nx3 > 1) {
     // set the loop limits
@@ -220,6 +224,13 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   }
 
 } // end of omp parallel region
+
+//[diffusion
+  if (pdif->hydro_diffusion_defined) pdif->AddHydroDiffusionFlux(flux); //add hydro diffusion fluxes
+  if (MAGNETIC_FIELDS_ENABLED && NON_BAROTROPIC_EOS &&
+      pmb->pfield->pdif->field_diffusion_defined)
+    pdif->AddEnergyFlux(bcc,flux); //add field diffusion only to energy diffusion
+//diffusion]
 
   return;
 }

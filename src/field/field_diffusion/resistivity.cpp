@@ -79,31 +79,45 @@ void FieldDiffusion::CurlB(const FaceField &bi, const AthenaArray<Real> &bc, Edg
   if(pmb_->block_size.nx2==1) {
     for (int i=is;i<=ie+1;i++) {
       crnt1(ks,js,i) = 0.0;
-      crnt2(ks,js,i) = (pco_->h31v(i-1)*bc(IB3,ks,js,i-1)-pco_->h31v(i)*bc(IB3,ks,js,i))/pco_->dx1v(i-1)/pco_->h31f(i);
-      crnt3(ks,js,i) = (pco_->h2v(i)*bc(IB2,ks,js,i)-pco_->h2v(i-1))/pco_->dx1v(i-1)/pco_->h2f(i);
+      crnt2(ks,js,i) = (pco_->h31v(i-1)*bc(IB3,ks,js,i-1)
+                       -pco_->h31v(i)*bc(IB3,ks,js,i))/pco_->dx1v(i-1)/pco_->h31f(i);
+      crnt3(ks,js,i) = (pco_->h2v(i)*bc(IB2,ks,js,i)
+                       -pco_->h2v(i-1))/pco_->dx1v(i-1)/pco_->h2f(i);
     }
   }
   // 2-dim case
   if(pmb_->block_size.nx3==1) {
     for (int j=js;j<=je;j++) {
       for (int i=is;i<=ie;i++) {
-        crnt1(ks,j,i)=(pco_->h32v(j)*bc(IB3,ks,j,i)-pco_->h32v(j-1)*bc(IB3,ks,j-1,i))/pco_->dx2v(j-1)/(pco_->h2v(i)*pco_->h32f(j));
-        crnt2(ks,j,i)=(pco_->h31v(i-1)*bc(IB3,ks,j,i-1)-pco_->h31v(i)*bc(IB3,ks,j,i))/pco_->dx1v(i-1)/pco_->h31f(i);
-        crnt3(ks,j,i)=((pco_->h2v(i)*bf2(ks,j,i)-pco_->h2v(i-1)*bf2(ks,j,i-1))/pco_->dx1v(i-1)-
+        crnt1(ks,j,i)=(pco_->h32v(j)*bc(IB3,ks,j,i)
+                      -pco_->h32v(j-1)*bc(IB3,ks,j-1,i))
+                      /pco_->dx2v(j-1)/(pco_->h2v(i)*pco_->h32f(j));
+        crnt2(ks,j,i)=(pco_->h31v(i-1)*bc(IB3,ks,j,i-1)
+                      -pco_->h31v(i)*bc(IB3,ks,j,i))
+                      /pco_->dx1v(i-1)/pco_->h31f(i);
+        crnt3(ks,j,i)=((pco_->h2v(i)*bf2(ks,j,i)
+                       -pco_->h2v(i-1)*bf2(ks,j,i-1))/pco_->dx1v(i-1)-
                        (bf1(ks,j,i)-bf1(ks,j-1,i))/pco_->dx2v(j-1))/pco_->h2f(i);
       }
-      crnt2(ks,j,ie+1)=(pco_->h31v(ie)*bc(IB3,ks,j,ie)-pco_->h31v(ie+1)*bc(IB3,ks,j,ie+1))/pco_->dx1v(ie)/pco_->h31f(ie+1);
-      crnt3(ks,j,ie+1)=((pco_->h2v(ie+1)*bf2(ks,j,ie+1)-pco_->h2v(ie)*bf2(ks,j,ie))/pco_->dx1v(ie)-
-                       (bf1(ks,j,ie+1)-bf1(ks,j-1,ie+1))/pco_->dx2v(j-1))/pco_->h2f(ie+1);
+      crnt2(ks,j,ie+1)=(pco_->h31v(ie)*bc(IB3,ks,j,ie)
+                       -pco_->h31v(ie+1)*bc(IB3,ks,j,ie+1))
+                       /pco_->dx1v(ie)/pco_->h31f(ie+1);
+      crnt3(ks,j,ie+1)=((pco_->h2v(ie+1)*bf2(ks,j,ie+1)
+                        -pco_->h2v(ie)*bf2(ks,j,ie))/pco_->dx1v(ie)-
+                        (bf1(ks,j,ie+1)-bf1(ks,j-1,ie+1))/pco_->dx2v(j-1))/pco_->h2f(ie+1);
     }
 
     for (int i=is;i<=ie;i++){
-      crnt1(ks,je+1,i)=(pco_->h32v(je+1)*bc(IB3,ks,je+1,i)-pco_->h32v(je)*bc(IB3,ks,je,i))/pco_->dx2v(je)/(pco_->h2v(i)*pco_->h32f(je+1));
-      crnt3(ks,je+1,i)=((pco_->h2v(i)*bf2(ks,je+1,i)-pco_->h2v(i-1)*bf2(ks,je+1,i-1))/pco_->dx1v(i-1)-
-                       (bf1(ks,je+1,i)-bf1(ks,je,i))/pco_->dx2v(je))/pco_->h2f(i);
+      crnt1(ks,je+1,i)=(pco_->h32v(je+1)*bc(IB3,ks,je+1,i)
+                       -pco_->h32v(je)*bc(IB3,ks,je,i))
+                       /pco_->dx2v(je)/(pco_->h2v(i)*pco_->h32f(je+1));
+      crnt3(ks,je+1,i)=((pco_->h2v(i)*bf2(ks,je+1,i)
+                        -pco_->h2v(i-1)*bf2(ks,je+1,i-1))/pco_->dx1v(i-1)-
+                        (bf1(ks,je+1,i)-bf1(ks,je,i))/pco_->dx2v(je))/pco_->h2f(i);
     }
-    crnt3(ks,je+1,ie+1)=((pco_->h2v(ie+1)*bf2(ks,je+1,ie+1)-pco_->h2v(ie)*bf2(ks,je+1,ie))/pco_->dx1v(ie)-
-                       (bf1(ks,je+1,ie+1)-bf1(ks,je,ie+1))/pco_->dx2v(je))/pco_->h2f(ie+1);
+    crnt3(ks,je+1,ie+1)=((pco_->h2v(ie+1)*bf2(ks,je+1,ie+1)
+                         -pco_->h2v(ie)*bf2(ks,je+1,ie))/pco_->dx1v(ie)-
+                         (bf1(ks,je+1,ie+1)-bf1(ks,je,ie+1))/pco_->dx2v(je))/pco_->h2f(ie+1);
   }
   // 3-dim case
   if(pmb_->block_size.nx3>1) {
