@@ -147,7 +147,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
   if(SELF_GRAVITY_ENABLED){
     Real err1=0.0,err2=0.0;
-    int iprob = pin->GetOrAddInteger("problem","iprob",1);
     if(FFT_ENABLED){
       for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {

@@ -133,7 +133,7 @@ void AthenaFFT::Initialize()
 
     std::cout << procid << " Athena's decomposition: " << std::endl
               << " MeshBlock: " << nx1 << " " << nx2 << " " << nx3 
-              << " starts at " << gis_ << " " << gjs_ << " " << gks_ << std::endl
+              << " starts at " << idisp << " " << jdisp << " " << kdisp << std::endl
               << " ACCFFT's decomposition: " << std::endl
               << "  " << Ni[0] << "x" << Ni[1] << "x" << Ni[2] 
               << " starts at " << iis[0] << " " << iis[1] << " " << iis[2] << std::endl
