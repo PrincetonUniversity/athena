@@ -115,8 +115,8 @@ static Real hst_dBy(const GridS *pG, const int i, const int j, const int k);
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
   AllocateUserHistoryOutput(2);
-  EnrollUserHistoryOutput(0, hst_BxBy, "<-BxBy>");
-  EnrollUserHistoryOutput(0, hst_dVxVy, "<-dVxVy>");
+  EnrollUserHistoryOutput(0, hst_BxBy, "-BxBy");
+  EnrollUserHistoryOutput(1, hst_dVxVy, "dVxVy");
   return;
 }
 
