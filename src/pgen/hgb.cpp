@@ -88,6 +88,8 @@ AthenaArray<Real> volume; // 1D array of volumes
 
 static double ran2(long int *idum);
 static Real hst_BxBy(MeshBlock *pmb, int iout);
+static Real hst_dVxVy(MeshBlock *pmb, int iout);
+static Real Omega_0,qshear;
 /*
 static Real UnstratifiedDisk(const Real x1, const Real x2, const Real x3);
 static Real expr_dV2(const GridS *pG, const int i, const int j, const int k);
@@ -112,8 +114,9 @@ static Real hst_dBy(const GridS *pG, const int i, const int j, const int k);
 
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
-  AllocateUserHistoryOutput(1);
+  AllocateUserHistoryOutput(2);
   EnrollUserHistoryOutput(0, hst_BxBy, "<-BxBy>");
+  EnrollUserHistoryOutput(0, hst_dVxVy, "<-dVxVy>");
   return;
 }
 
@@ -132,8 +135,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   }
 
 // Read problem parameters
-  Real Omega_0 = pin->GetOrAddReal("problem","Omega0",1.0e-3);
-  Real qshear  = pin->GetOrAddReal("problem","qshear",1.5);
+  Omega_0 = pin->GetOrAddReal("problem","Omega0",1.0e-3);
+  qshear  = pin->GetOrAddReal("problem","qshear",1.5);
   Real amp = pin->GetReal("problem","amp");
   int ipert = pin->GetOrAddInteger("problem","ipert", 1);
 
@@ -509,3 +512,22 @@ static Real hst_BxBy(MeshBlock *pmb, int iout)
   return bxby;
 }
 
+static Real hst_dVxVy(MeshBlock *pmb, int iout)
+{
+  Real dvxvy=0.0;
+  int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
+  AthenaArray<Real> &w = pmb->phydro->w;
+  Real vshear=0.0;
+
+  for(int k=ks; k<=ke; k++) {
+    for(int j=js; j<=je; j++) {
+      pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
+      for(int i=is; i<=ie; i++) {
+		vshear = qshear*Omega_0*pmb->pcoord->x1v(i);
+        dvxvy+=volume(i)*w(IDN,k,j,i)*w(IVX,k,j,i)*(w(IVY,k,j,i)+vshear);
+      }
+    }
+  }
+
+  return dvxvy;
+}
