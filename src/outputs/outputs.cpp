@@ -539,7 +539,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
       pod = new OutputData;
       pod->type = "SCALARS";
       pod->name = "Phi";
-      pod->data.InitWithShallowCopy(pgrav->phi);
+      pod->data.InitWithShallowSlice(pgrav->phi,4,0,1);
       AppendOutputDataNode(pod);
       num_vars_++;
     }

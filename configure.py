@@ -399,8 +399,8 @@ else:
 # -fft argument
 if args['fft']:
   definitions['FFT_ENABLED'] = '1'
-  definitions['MPIFFT_DEFINE'] = 'NO_MPIFFT'
-  makefile_options['MPIFFT_FILE'] = 'athena_fft_fftw.cpp'
+  definitions['FFT_DEFINE'] = 'FFTW'
+  makefile_options['MPIFFT_FILE'] = ' ' 
   if args['fftw_path'] != '':
     makefile_options['PREPROCESSOR_FLAGS'] += '-I%s/include' % args['fftw_path']
     makefile_options['LINKER_FLAGS'] += '-L%s/lib' % args['fftw_path']
@@ -411,22 +411,22 @@ if args['fft']:
       makefile_options['PREPROCESSOR_FLAGS'] += '-I%s/include' % args['mpifft_path']
       makefile_options['LINKER_FLAGS'] += '-L%s/lib' % args['mpifft_path']
     if args['mpifft'] == 'fftw':
-      definitions['MPIFFT_DEFINE'] = 'FFTW_MPI'
+      definitions['FFT_DEFINE'] = 'FFTW_MPI'
       makefile_options['LIBRARY_FLAGS'] += ' -lfftw3_mpi'
-      makefile_options['MPIFFT_FILE'] = 'athena_fft_fftw.cpp'
+      makefile_options['MPIFFT_FILE'] = ' src/fft/athena_fft_fftw.cpp'
     elif args['mpifft'] == 'plimpton':
-      definitions['MPIFFT_DEFINE'] = 'PLIMPTON'
-      makefile_options['MPIFFT_FILE'] = 'athena_fft_plimpton.cpp'
+      definitions['FFT_DEFINE'] = 'PLIMPTON'
+      makefile_options['MPIFFT_FILE'] = ' src/fft/athena_fft_plimpton.cpp'
       makefile_options['LIBRARY_FLAGS'] += ' -lfftp'
     elif args['mpifft'] == 'accfft':
-      definitions['MPIFFT_DEFINE'] = 'ACCFFT'
-      makefile_options['MPIFFT_FILE'] = 'athena_fft_accfft.cpp'
+      definitions['FFT_DEFINE'] = 'ACCFFT'
+      makefile_options['MPIFFT_FILE'] = ' src/fft/athena_fft_accfft.cpp'
       makefile_options['LIBRARY_FLAGS'] += ' -laccfft'
   makefile_options['LIBRARY_FLAGS'] += ' -lfftw3'
 else:
   definitions['FFT_ENABLED'] = '0'
-  definitions['MPIFFT_DEFINE'] = 'NO_MPIFFT'
-  makefile_options['MPIFFT_FILE'] = 'athena_fft_fftw.cpp'
+  definitions['FFT_DEFINE'] = 'NO_FFT'
+  makefile_options['MPIFFT_FILE'] = ' '
 
 # -hdf5 argument
 if args['hdf5']:

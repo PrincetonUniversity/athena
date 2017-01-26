@@ -1149,6 +1149,17 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       }
     }
 
+    // solve gravity for the first time
+    if(SELF_GRAVITY_ENABLED){
+      pmb = pblock;
+      while (pmb != NULL) {
+        phydro=pmb->phydro;
+        pgrav=pmb->pgrav;
+        pgrav->Solver(phydro->u);
+        pmb=pmb->next;
+      }
+    }
+
     // prepare to receive conserved variables
     pmb = pblock;
     while (pmb != NULL)  {
@@ -1182,7 +1193,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       if (MAGNETIC_FIELDS_ENABLED)
         pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b);
       if (SELF_GRAVITY_ENABLED)
-        pmb->pbval->ReceiveGravityBoundaryBuffers(pgrav->phi);
+        pmb->pbval->ReceiveGravityBoundaryBuffersWithWait(pgrav->phi);
       pmb->pbval->ClearBoundaryForInit(true);
       pmb=pmb->next;
     }

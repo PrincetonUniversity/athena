@@ -76,21 +76,21 @@ AthenaFFT::AthenaFFT(MeshBlock *pmb)
 
 AthenaFFT::~AthenaFFT()
 {
-  MpiCleanup();
-  delete[] work;
-  delete fplan;
-  delete bplan;
-#ifdef OPENMP_PARALLEL
-  fftw_cleanup_threads();
-#endif
-  fftw_cleanup();
+  if(FFT_ENABLED){
+    MpiCleanup();
+    delete[] work;
+    delete fplan;
+    delete bplan;
+  }
 }
 
 AthenaFFTPlan __attribute__((weak)) *AthenaFFT::QuickCreatePlan(enum AthenaFFTDirection dir)
 {
-  if(gnx3_ > 1) return CreatePlan(gnx1_,gnx2_,gnx3_,work,dir);
-  else if(gnx2_ > 1) return CreatePlan(gnx1_,gnx2_,work,dir);
-  else  return CreatePlan(gnx1_,work,dir);
+  if(FFT_ENABLED){
+    if(gnx3_ > 1) return CreatePlan(gnx1_,gnx2_,gnx3_,work,dir);
+    else if(gnx2_ > 1) return CreatePlan(gnx1_,gnx2_,work,dir);
+    else  return CreatePlan(gnx1_,work,dir);
+  }
 }
 
 long int __attribute__((weak)) AthenaFFT::GetIndex(const int i, const int j, const int k)
@@ -106,23 +106,6 @@ long int __attribute__((weak)) AthenaFFT::GetFreq(const int i, const int j, cons
 long int AthenaFFT::GetGlobalIndex(const int i, const int j, const int k)
 {
   return k + kdisp + gnx3_ * ( j + jdisp + gnx2_ * ( i + idisp) );
-}
-
-// plan 1D fft
-AthenaFFTPlan *AthenaFFT::CreatePlan(AthenaFFTInt nx1, AthenaFFTComplex *data, 
-                                     enum AthenaFFTDirection dir)
-{
-  AthenaFFTPlan *plan;
-  if(FFT_ENABLED){
-    plan = new AthenaFFTPlan;
-    plan->dir = dir;
-    plan->dim = dim;
-    if(dir == AthenaFFTForward)
-      plan->plan = fftw_plan_dft_1d(nx1, data, data, FFTW_FORWARD, FFTW_ESTIMATE);
-    else
-      plan->plan = fftw_plan_dft_1d(nx1, data, data, FFTW_BACKWARD, FFTW_ESTIMATE);
-  }
-  return plan;
 }
 
 void __attribute__((weak)) AthenaFFT::CompatabilityCheck(int verbose){

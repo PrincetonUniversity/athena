@@ -40,7 +40,7 @@
 // make use of FFT? default=0 (false)
 #define FFT_ENABLED @FFT_ENABLED@
 
-#define @MPIFFT_DEFINE@
+#define @FFT_DEFINE@
 
 // include radiative transfer? default=0 (false)
 #define RADIATION_ENABLED 0

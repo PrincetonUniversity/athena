@@ -13,6 +13,10 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 
+#ifdef MPI_PARALLEL
+#include "mpi.h"
+#endif
+
 // FFTW header
 
 enum AthenaFFTDirection { AthenaFFTForward = -1, AthenaFFTBackward = 1 };

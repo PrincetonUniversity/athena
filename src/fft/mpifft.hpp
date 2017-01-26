@@ -1,4 +1,3 @@
-#ifdef MPI_PARALLEL
 #if defined(FFTW_MPI)
 #include "fftw3-mpi.h"
 
@@ -11,7 +10,6 @@ typedef struct AthenaFFTPlan{
 } AthenaFFTPlan;
 
 #elif defined(PLIMPTON)
-#include "mpi.h"
 #include "fft_3d.h"
 #include "fft_2d.h"
 typedef fftw_complex AthenaFFTComplex;
@@ -35,8 +33,7 @@ typedef struct AthenaFFTPlan{
   int dim;
 } AthenaFFTPlan;
 
-#endif
-#else // MPI_PARALLEL
+#elif defined(FFTW)
 #include "fftw3.h"
 
 typedef fftw_complex AthenaFFTComplex;
@@ -46,5 +43,12 @@ typedef struct AthenaFFTPlan{
   enum AthenaFFTDirection dir;
   int dim;
 } AthenaFFTPlan;
-
-#endif // MPI_PARALLEL
+#else //no FFT
+typedef Real AthenaFFTComplex[2];
+typedef int AthenaFFTInt;
+typedef struct AthenaFFTPlan{
+  void *plan;
+  enum AthenaFFTDirection dir;
+  int dim;
+} AthenaFFTPlan;
+#endif

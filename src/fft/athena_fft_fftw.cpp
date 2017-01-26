@@ -23,7 +23,28 @@ void AthenaFFT::MpiCleanup()
 #ifdef MPI_PARALLEL
     fftw_mpi_cleanup();
 #endif
+#ifdef OPENMP_PARALLEL
+    fftw_cleanup_threads();
+#endif
+    fftw_cleanup();
   }
+}
+
+// plan 1D fft
+AthenaFFTPlan *AthenaFFT::CreatePlan(AthenaFFTInt nx1, AthenaFFTComplex *data, 
+                                     enum AthenaFFTDirection dir)
+{
+  AthenaFFTPlan *plan;
+  if(FFT_ENABLED){
+    plan = new AthenaFFTPlan;
+    plan->dir = dir;
+    plan->dim = dim;
+    if(dir == AthenaFFTForward)
+      plan->plan = fftw_plan_dft_1d(nx1, data, data, FFTW_FORWARD, FFTW_ESTIMATE);
+    else
+      plan->plan = fftw_plan_dft_1d(nx1, data, data, FFTW_BACKWARD, FFTW_ESTIMATE);
+  }
+  return plan;
 }
 
 // plan 2D fft
