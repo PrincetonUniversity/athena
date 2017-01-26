@@ -21,6 +21,7 @@
 #include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
 #include "../bvals/bvals.hpp"
+#include "../gravity/gravity.hpp"
 #include "../eos/eos.hpp"
 #include "../hydro/srcterms/hydro_srcterms.hpp"
 
@@ -90,20 +91,33 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
       AddTimeIntegratorTask(RECV_FLD,START_ALLRECV);
     }
 
-    // prolongate, compute new primitives
-    if (MAGNETIC_FIELDS_ENABLED) { // MHD
-      if(pm->multilevel==true) { // SMR or AMR
-        AddTimeIntegratorTask(PROLONG, (SEND_HYD|RECV_HYD|SEND_FLD|RECV_FLD));
-        AddTimeIntegratorTask(CON2PRIM,PROLONG);
+    // self gravity
+    if (SELF_GRAVITY_ENABLED) {
+      if (MAGNETIC_FIELDS_ENABLED) {
+        AddTimeIntegratorTask(SOLV_GRAV,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD));
       } else {
-        AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD));
+        AddTimeIntegratorTask(SOLV_GRAV,(INT_HYD|RECV_HYD));
       }
-    } else {  // HYDRO
-      if(pm->multilevel==true) { // SMR or AMR
-        AddTimeIntegratorTask(PROLONG,(SEND_HYD|RECV_HYD));
-        AddTimeIntegratorTask(CON2PRIM,PROLONG);
-      } else {
-        AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD));
+      AddTimeIntegratorTask(SEND_GRAV,SOLV_GRAV);
+      AddTimeIntegratorTask(RECV_GRAV,START_ALLRECV);
+      AddTimeIntegratorTask(CON2PRIM,(SOLV_GRAV|RECV_GRAV));
+//      AddTimeIntegratorTask(CON2PRIM,SOLV_GRAV);
+    } else {
+      // prolongate, compute new primitives
+      if (MAGNETIC_FIELDS_ENABLED) { // MHD
+        if(pm->multilevel==true) { // SMR or AMR
+          AddTimeIntegratorTask(PROLONG, (SEND_HYD|RECV_HYD|SEND_FLD|RECV_FLD));
+          AddTimeIntegratorTask(CON2PRIM,PROLONG);
+        } else {
+          AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD));
+        }
+      } else {  // HYDRO
+        if(pm->multilevel==true) { // SMR or AMR
+          AddTimeIntegratorTask(PROLONG,(SEND_HYD|RECV_HYD));
+          AddTimeIntegratorTask(CON2PRIM,PROLONG);
+        } else {
+          AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD));
+        }
       }
     }
 
@@ -244,6 +258,22 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::CheckRefinement);
+      break;
+
+    case (SOLV_GRAV):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::GravSolve);
+      break;
+    case (SEND_GRAV):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::GravSend);
+      break;
+    case (RECV_GRAV):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::GravReceive);
       break;
 
     default:
@@ -583,3 +613,32 @@ enum TaskStatus TimeIntegratorTaskList::CheckRefinement(MeshBlock *pmb, int step
   pmb->pmr->CheckRefinementCondition();
   return TASK_SUCCESS;
 }
+
+enum TaskStatus TimeIntegratorTaskList::GravSolve(MeshBlock *pmb, int step)
+{
+  if (step != nsub_steps) return TASK_NEXT; // only do on last sub-step
+
+  pmb->pgrav->Solver(pmb->phydro->u);
+  return TASK_NEXT;
+}
+
+enum TaskStatus TimeIntegratorTaskList::GravSend(MeshBlock *pmb, int step)
+{
+//  if (step != nsub_steps) return TASK_SUCCESS; // only do on last sub-step
+
+  pmb->pbval->SendGravityBoundaryBuffers(pmb->pgrav->phi);
+  return TASK_SUCCESS;
+}
+
+enum TaskStatus TimeIntegratorTaskList::GravReceive(MeshBlock *pmb, int step)
+{
+//  if (step != nsub_steps) return TASK_SUCCESS; // only do on last sub-step
+
+  if(pmb->pbval->ReceiveGravityBoundaryBuffers(pmb->pgrav->phi) == true){
+    return TASK_SUCCESS;
+  } else {
+    return TASK_FAIL;
+  }
+}
+
+
