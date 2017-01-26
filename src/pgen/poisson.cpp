@@ -23,7 +23,6 @@
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../gravity/gravity.hpp"
-#include "../fft/athena_fft.hpp"
 #include "../mesh/mesh.hpp"
 
 #ifdef OPENMP_PARALLEL
@@ -38,82 +37,64 @@
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   Real x0=0.0, y0=0.0, z0=0.0;
+  Real x, y, z;
+  Real r, r2;
+  Real den, phia;
+  RegionSize &mesh_size = pmy_mesh->mesh_size;
+
+  Real x1size = mesh_size.x1max - mesh_size.x1min;
+  Real x2size = mesh_size.x2max - mesh_size.x2min;
+  Real x3size = mesh_size.x3max - mesh_size.x3min;
+
+  Real gconst = 1.0;
+  Real four_pi_gconst = 4.0*PI*gconst;
+  Real grav_mean_rho = 0.0;
+  // Assigning Plummer density profile
+  int iprob = pin->GetOrAddInteger("problem","iprob",1);
+  int nlim = pin->GetInteger("time","nlim");
+  for (int k=ks; k<=ke; ++k) {
+    std::cout << k << std::endl;
+  for (int j=js; j<=je; ++j) {
+  for (int i=is; i<=ie; ++i) {
+    x = pcoord->x1v(i);
+    y = pcoord->x2v(j);
+    z = pcoord->x3v(k);
+    r2 = sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
+    if(iprob == 1){
+      den = std::sin(2*PI*x/x1size)
+                *std::sin(2*PI*y/x2size)
+                *std::sin(2*PI*z/x3size); // dkx=2*PI/Nx
+      phia =-den*four_pi_gconst
+                 /(SQR(2*PI/x1size)+SQR(2*PI/x2size)+SQR(2*PI/x3size));
+    } else if (iprob == 2){
+      Real M = pin->GetOrAddReal("problem","M",1.0);
+      Real a0 = pin->GetOrAddReal("problem","a0",1.0);
+      Real da = 3.0*M/(4*PI*a0*a0*a0);
+      den = da*std::pow((1.0+r2/SQR(a0)),-2.5);
+      phia = - gconst*M/sqrt(r2+SQR(a0));
+    } else if (iprob == 3){
+      Real a0 = pin->GetOrAddReal("problem","a0",1.0);
+      den = (4.0*SQR(a0)*r2-6.0*a0)*exp(-a0*r2);
+      phia = four_pi_gconst*exp(-a0*r2);
+    }
+
+    if(nlim > 0){
+      phydro->u(IDN,k,j,i) = den;
+      phydro->u(IM1,k,j,i) = 0.0;
+      phydro->u(IM2,k,j,i) = 0.0;
+      phydro->u(IM3,k,j,i) = 0.0;
+    } else {
+      phydro->u(IDN,k,j,i) = den;
+      phydro->u(IM1,k,j,i) = den;
+      phydro->u(IM2,k,j,i) = phia;
+      phydro->u(IM3,k,j,i) = 0.0;
+    }
+  }}}
 
   if(SELF_GRAVITY_ENABLED){
-    pgrav->gconst = 1.0;
-    pgrav->four_pi_gconst = 4.0*PI*pgrav->gconst;
-    pgrav->grav_mean_rho = 0.0;
-    // Assigning Plummer density profile
-    int iprob = pin->GetOrAddInteger("problem","iprob",1);
-    switch(iprob){
-      case 1: { // sine
-        if(FFT_ENABLED){
-          for (int k=ks; k<=ke; k++) {
-          for (int j=js; j<=je; j++) {
-          for (int i=is; i<=ie; i++) {
-            Real x = pcoord->x1v(i);
-            Real y = pcoord->x2v(j);
-            Real z = pcoord->x3v(k);
-            Real dx = pcoord->dx1v(i);
-            Real dy = pcoord->dx2v(j);
-            Real dz = pcoord->dx3v(k);
-            Real den = std::sin(x*pfft->dkx/dx)
-                      *std::sin(y*pfft->dky/dy)
-                      *std::sin(z*pfft->dkz/dz); // dkx=2*PI/Nx
-            Real phi0 =-pgrav->four_pi_gconst
-                       /(SQR(pfft->dkx/dx)+SQR(pfft->dky/dy)+SQR(pfft->dkz/dz));
-            phydro->u(IDN,k,j,i) = den;
-            phydro->u(IM1,k,j,i) = den;
-            phydro->u(IM2,k,j,i) = phi0*den;
-            phydro->u(IM3,k,j,i) = den;
-          }}} // for-loop
-        } // fft
-        break;
-      } // case 1
-      case 2: { // plummer density
-        Real M = pin->GetOrAddReal("problem","M",1.0);
-        Real a0 = pin->GetOrAddReal("problem","a0",1.0);
-        Real da = 3.0*M/(4*PI*a0*a0*a0);
-        for (int k=ks; k<=ke; k++) {
-        for (int j=js; j<=je; j++) {
-        for (int i=is; i<=ie; i++) {
-          Real r,r2;
-          if (COORDINATE_SYSTEM == "cartesian") {
-            Real x = pcoord->x1v(i);
-            Real y = pcoord->x2v(j);
-            Real z = pcoord->x3v(k);
-            r2 = sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
-          }
-          Real den = da*std::pow((1.0+r2/SQR(a0)),-2.5);
-          Real phia = - pgrav->gconst*M/sqrt(r2+SQR(a0));
-          phydro->u(IDN,k,j,i) = den;
-          phydro->u(IM1,k,j,i) = den;
-          phydro->u(IM2,k,j,i) = phia;
-          phydro->u(IM3,k,j,i) = den;
-        }}} //for-loop
-      } // case 2
-      case 3: { //gaussian
-        Real a0 = pin->GetOrAddReal("problem","a0",1.0);
-        for (int k=ks; k<=ke; k++) {
-        for (int j=js; j<=je; j++) {
-        for (int i=is; i<=ie; i++) {
-          Real r,r2;
-          if (COORDINATE_SYSTEM == "cartesian") {
-            Real x = pcoord->x1v(i);
-            Real y = pcoord->x2v(j);
-            Real z = pcoord->x3v(k);
-            r2 = sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
-          }
-          Real den = (4.0*SQR(a0)*r2-6.0*a0)*exp(-a0*r2);
-          Real phia = pgrav->four_pi_gconst*exp(-a0*r2);
-          phydro->u(IDN,k,j,i) = den;
-          phydro->u(IM1,k,j,i) = den;
-          phydro->u(IM2,k,j,i) = phia;
-          phydro->u(IM3,k,j,i) = den;
-        }}} //for-loop
-      } // case 3
-    } // switch
-    pgrav->Solver(phydro->u);
+    pgrav->gconst = gconst;
+    pgrav->four_pi_gconst = four_pi_gconst;
+    pgrav->grav_mean_rho = grav_mean_rho;
   } // self-gravity
 }
 
@@ -136,25 +117,23 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
   Hydro *phydro = pblock->phydro;
   Coordinates *pcoord = pblock->pcoord;
-  Gravity *pgrav = pblock->pgrav;
-  AthenaFFT *pfft = pblock->pfft;
   Real x0=0.0, y0=0.0, z0=0.0;
   int is=pblock->is, ie=pblock->ie;
   int js=pblock->js, je=pblock->je;
   int ks=pblock->ks, ke=pblock->ke;
   int cnt = (ke-ks+1)*(je-js+1)*(ie-is+1);
-  Real phia;
 
-  if(SELF_GRAVITY_ENABLED){
+  int nlim = pin->GetInteger("time","nlim");
+
+  if(SELF_GRAVITY_ENABLED && nlim == 0){
+    Gravity *pgrav = pblock->pgrav;
     Real err1=0.0,err2=0.0;
-    if(FFT_ENABLED){
-      for (int k=ks; k<=ke; k++) {
-      for (int j=js; j<=je; j++) {
-      for (int i=is; i<=ie; i++) {
-        err1 += std::abs(pgrav->phi(k,j,i) - phydro->u(IM2,k,j,i));
-        err2 += pgrav->phi(k,j,i)/phydro->u(IM2,k,j,i);
-      }}} // for-loop
-    }
+    for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
+    for (int i=is; i<=ie; ++i) {
+      err1 += std::abs(pgrav->phi(k,j,i) - phydro->u(IM2,k,j,i));
+      err2 += pgrav->phi(k,j,i)/phydro->u(IM2,k,j,i);
+    }}} // for-loop
 
     err1 = err1/cnt;
     err2 = err2/cnt;
