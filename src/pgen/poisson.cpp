@@ -53,7 +53,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   int iprob = pin->GetOrAddInteger("problem","iprob",1);
   int nlim = pin->GetInteger("time","nlim");
   for (int k=ks; k<=ke; ++k) {
-    std::cout << k << std::endl;
   for (int j=js; j<=je; ++j) {
   for (int i=is; i<=ie; ++i) {
     x = pcoord->x1v(i);
