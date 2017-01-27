@@ -273,14 +273,18 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     fprintf(pfile,"%d  %d",mesh_size.nx1,mesh_size.nx2);
     fprintf(pfile,"  %d  %d",mesh_size.nx3,ncycle);
     fprintf(pfile,"  %e  %e",rms_err,l1_err[IDN]);
-    fprintf(pfile,"  %e  %e  %e  %e",l1_err[IM1],l1_err[IM2],l1_err[IM3],l1_err[IEN]);
+    fprintf(pfile,"  %e  %e  %e",l1_err[IM1],l1_err[IM2],l1_err[IM3]);
+    if (NON_BAROTROPIC_EOS)
+      fprintf(pfile,"  %e",l1_err[IEN]);
     if (MAGNETIC_FIELDS_ENABLED) {
       fprintf(pfile,"  %e",l1_err[NHYDRO+IB1]);
       fprintf(pfile,"  %e",l1_err[NHYDRO+IB2]);
       fprintf(pfile,"  %e",l1_err[NHYDRO+IB3]);
     }
     fprintf(pfile,"  %e  %e  ",max_max_over_l1,max_err[IDN]);
-    fprintf(pfile,"%e  %e  %e  %e",max_err[IM1],max_err[IM2],max_err[IM3],max_err[IEN]);
+    fprintf(pfile,"%e  %e  %e",max_err[IM1],max_err[IM2],max_err[IM3]);
+    if (NON_BAROTROPIC_EOS)
+      fprintf(pfile,"  %e",max_err[IEN]);
     if (MAGNETIC_FIELDS_ENABLED) {
       fprintf(pfile,"  %e",max_err[NHYDRO+IB1]);
       fprintf(pfile,"  %e",max_err[NHYDRO+IB2]);
