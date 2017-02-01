@@ -91,17 +91,17 @@ AthenaFFTPlan __attribute__((weak)) *AthenaFFT::QuickCreatePlan(enum AthenaFFTDi
 
 long int __attribute__((weak)) AthenaFFT::GetIndex(const int i, const int j, const int k)
 {
-  return k + nx3 * ( j + nx2 * i);
+  return i + nx1 * ( j + nx2 * k);
 }
 
 long int __attribute__((weak)) AthenaFFT::GetFreq(const int i, const int j, const int k)
 {
-  return k + knx3 * ( j + knx2 * i);
+  return i + knx1 * ( j + knx2 * k);
 }
 
 long int AthenaFFT::GetGlobalIndex(const int i, const int j, const int k)
 {
-  return k + kdisp + gnx3_ * ( j + jdisp + gnx2_ * ( i + idisp) );
+  return i + idisp + gnx1_ * ( j + jdisp + gnx2_ * ( k + kdisp) );
 }
 
 void __attribute__((weak)) AthenaFFT::CompatabilityCheck(int verbose){

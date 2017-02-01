@@ -148,8 +148,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     for (int k=0; k<pfft->knx3; k++) {
     for (int j=0; j<pfft->knx2; j++) {
     for (int i=0; i<pfft->knx1; i++) {
-      long int idx_in=pfft->GetFreq(i,j,k,pfft->swap2);
-      long int idx_out=pfft->GetFreq(i,j,k,false);
+      long int idx_in=pfft->GetFreq(i,j,k,false);
+      long int idx_out=pfft->GetFreq(i,j,k,pfft->swap2);
       in[idx_in][0] = out[idx_out][0];
       in[idx_in][1] = out[idx_out][1];
     }}}
@@ -167,7 +167,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         Real z = pcoord->x3v(k);
         r2 = sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
       }
-      long int idx=pfft->GetIndex(i-is,j-js,k-ks,pfft->swap1);
+      long int idx=pfft->GetIndex(i-is,j-js,k-ks,false);
       err1 += std::abs(out[idx][0]/pfft->gcnt - std::exp(-r2));
       err2 += std::abs(out[idx][1]/pfft->gcnt);
     }}}

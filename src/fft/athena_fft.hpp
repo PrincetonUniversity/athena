@@ -27,13 +27,15 @@ class MeshBlock;
 class ParameterInput;
 class Gravity;
 
-typedef struct Idx3D{
-  int gnfast,gnmid,gnslow;
+typedef struct AthenaFFTIndex{
+// mesh size
+  int N[3];
+// decomposition
+  int np[3],ip[3];
+// local size and indices
   int nfast,nmid,nslow;
-  int np1,np2;
-  int ip1,ip2;
   int fs,fe,ms,me,ss,se;
-} Idx3D;
+} AthenaFFTIndex;
 
 //! \class AthenaFFT
 //  \brief 
@@ -55,7 +57,7 @@ public:
   Real dkx,dky,dkz; 
 
   int gnfast, gnmid, gnslow;
-  Idx3D f_in,f_out,b_in,b_out;
+  AthenaFFTIndex f_in,f_out,b_in,b_out;
   int permute1, permute2;
   bool swap1,swap2;
   unsigned int decomp; 
