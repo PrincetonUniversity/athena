@@ -400,7 +400,7 @@ else:
 if args['fft']:
   definitions['FFT_ENABLED'] = '1'
   definitions['FFT_DEFINE'] = 'FFTW'
-  makefile_options['MPIFFT_FILE'] = ' ' 
+  makefile_options['MPIFFT_FILE'] = ' src/fft/athena_fft_fftw.cpp' 
   if args['fftw_path'] != '':
     makefile_options['PREPROCESSOR_FLAGS'] += '-I%s/include' % args['fftw_path']
     makefile_options['LINKER_FLAGS'] += '-L%s/lib' % args['fftw_path']
@@ -416,8 +416,7 @@ if args['fft']:
       makefile_options['MPIFFT_FILE'] = ' src/fft/athena_fft_fftw.cpp'
     elif args['mpifft'] == 'plimpton':
       definitions['FFT_DEFINE'] = 'PLIMPTON'
-      makefile_options['MPIFFT_FILE'] = ' src/fft/athena_fft_plimpton.cpp'
-      makefile_options['LIBRARY_FLAGS'] += ' -lfftp'
+      makefile_options['MPIFFT_FILE'] = ' src/fft/athena_fft_mpi.cpp $(wildcard src/fft/plimpton/*.cpp)'
     elif args['mpifft'] == 'accfft':
       definitions['FFT_DEFINE'] = 'ACCFFT'
       makefile_options['MPIFFT_FILE'] = ' src/fft/athena_fft_accfft.cpp'

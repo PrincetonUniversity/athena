@@ -86,6 +86,8 @@ AthenaFFTPlan *AthenaFFT::CreatePlan(AthenaFFTInt nx1, AthenaFFTInt nx2, AthenaF
     plan->dir = dir;
     plan->dim = dim;
 #ifdef MPI_PARALLEL
+    std::cout<< nx1 << "x" << nx2 << "x" << nx3 << std::endl;
+    std::cout<< "dir = " << plan->dir << "dim" << plan->dim << std::endl;
     if(dir == AthenaFFTForward)
       plan->plan = fftw_mpi_plan_dft_3d(nx1,nx2,nx3,data, data, 
                                   MPI_COMM_WORLD, FFTW_FORWARD,
@@ -165,7 +167,7 @@ void AthenaFFT::CompatabilityCheck(int verbose)
       idisp_k = idisp; jdisp_k = kdisp/nx3*knx2; kdisp_k = jdisp;
     }
 
-    if(vergose) {
+    if(verbose) {
       AthenaFFTInt local_n0,local_0_start;
       AthenaFFTInt local_n1,local_1_start;
       AthenaFFTInt alloc_local=
@@ -196,10 +198,10 @@ void AthenaFFT::CompatabilityCheck(int verbose)
 AthenaFFTPlan *AthenaFFT::QuickCreatePlan(enum AthenaFFTDirection dir)
 {
   AthenaFFTInt Nx[3]={gnx1_,gnx2_,gnx3_};
-  if (decomp_ == 1){ // decomposed in x-dir; swap x<->y in k-space
-  } else if (decomp_ == 2){ // decomposed in y-dir; swap y<->x in k-space
+  if (decomp_ == 1){ // decomposed along x-dir; swap x<->y in k-space
+  } else if (decomp_ == 2){ // decomposed along y-dir; swap y<->x in k-space
     Nx[0]=gnx2_; Nx[1]=gnx1_;
-  } else if (decomp_ == 3){ // decomposed in z-dir; swap x<->z in k-space
+  } else if (decomp_ == 3){ // decomposed along z-dir; swap x<->z in k-space
     Nx[0]=gnx3_; Nx[2]=gnx1_;
   }
   if(gnx3_ > 1) return CreatePlan(Nx[0],Nx[1],Nx[2],work,dir);

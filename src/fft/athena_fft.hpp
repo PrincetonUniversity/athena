@@ -27,6 +27,14 @@ class MeshBlock;
 class ParameterInput;
 class Gravity;
 
+typedef struct Idx3D{
+  int gnfast,gnmid,gnslow;
+  int nfast,nmid,nslow;
+  int np1,np2;
+  int ip1,ip2;
+  int fs,fe,ms,me,ss,se;
+} Idx3D;
+
 //! \class AthenaFFT
 //  \brief 
 
@@ -46,22 +54,31 @@ public:
   int knx1,knx2,knx3;
   Real dkx,dky,dkz; 
 
+  int gnfast, gnmid, gnslow;
+  Idx3D f_in,f_out,b_in,b_out;
+  int permute1, permute2;
+  bool swap1,swap2;
+  unsigned int decomp; 
+
   AthenaFFTPlan *QuickCreatePlan(enum AthenaFFTDirection dir);
-  AthenaFFTPlan *CreatePlan(AthenaFFTInt nx1, AthenaFFTComplex *data, 
+  AthenaFFTPlan *CreatePlan(AthenaFFTInt nfast, AthenaFFTComplex *data, 
                             enum AthenaFFTDirection dir);
-  AthenaFFTPlan *CreatePlan(AthenaFFTInt nx1, AthenaFFTInt nx2, AthenaFFTComplex *data, 
+  AthenaFFTPlan *CreatePlan(AthenaFFTInt nfast, AthenaFFTInt nslow, AthenaFFTComplex *data, 
                             enum AthenaFFTDirection dir);
-  AthenaFFTPlan *CreatePlan(AthenaFFTInt nx1, AthenaFFTInt nx2, AthenaFFTInt nx3, 
+  AthenaFFTPlan *CreatePlan(AthenaFFTInt nfast, AthenaFFTInt nmid, AthenaFFTInt nslow, 
                             AthenaFFTComplex *data, 
                             enum AthenaFFTDirection dir);
   void Initialize();
   void MpiCleanup();
   void Execute(AthenaFFTPlan *plan);
   void Execute(AthenaFFTPlan *plan, AthenaFFTComplex *data);
+  void Execute(AthenaFFTPlan *plan, AthenaFFTComplex *in , AthenaFFTComplex *out);
   void CompatabilityCheck(int verbose);
 
   long int GetIndex(const int i, const int j, const int k);
+  long int GetIndex(const int i, const int j, const int k, bool swap);
   long int GetFreq(const int i, const int j, const int k);
+  long int GetFreq(const int i, const int j, const int k, bool swap);
 
   long int GetGlobalIndex(const int i, const int j, const int k);
 
@@ -77,10 +94,17 @@ private:
 #endif
   int nthreads_;
   int np1_, np2_, np3_;
-  int gis_,gie_;
-  int gjs_,gje_;
-  int gks_,gke_;
   AthenaFFTInt gnx1_,gnx2_,gnx3_;
+};
+
+namespace DecompositionNames{
+  const unsigned int x_decomp = 1<<0;
+  const unsigned int y_decomp = 1<<1;
+  const unsigned int z_decomp = 1<<2;
+  const unsigned int xy_decomp = x_decomp | y_decomp;
+  const unsigned int yz_decomp = y_decomp | z_decomp;
+  const unsigned int xz_decomp = x_decomp | z_decomp;
+  const unsigned int xyz_decomp = x_decomp | y_decomp | z_decomp;
 };
 
 #endif // ATHENA_FFT_HPP

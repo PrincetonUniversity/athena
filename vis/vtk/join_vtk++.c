@@ -698,7 +698,7 @@ static void write_joined_vtk(const char *out_name){
       }
     // write the last corner coord
     if(nzp != 1){
-      fcoord = domain_3d[0][NGrid_z-1][0].Z[domain_3d[0][NGrid_z-1][0].Nz];
+      fcoord = domain_3d[NGrid_z-1][0][0].Z[domain_3d[NGrid_z-1][0][0].Nz];
       if(!big_end) Swap4Bytes(&fcoord);
       fwrite(&fcoord, sizeof(float), 1, fp_out);
     }

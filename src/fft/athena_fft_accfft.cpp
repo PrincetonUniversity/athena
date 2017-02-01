@@ -23,6 +23,22 @@
 void AthenaFFT::MpiCleanup()
 {
 }
+// plan 1D fft
+AthenaFFTPlan *AthenaFFT::CreatePlan(AthenaFFTInt nfast, AthenaFFTComplex *data, 
+                                     enum AthenaFFTDirection dir)
+{
+  AthenaFFTPlan *plan;
+  if(FFT_ENABLED){
+    plan = new AthenaFFTPlan;
+    plan->dir = dir;
+    plan->dim = dim;
+    if(dir == AthenaFFTForward)
+      plan->plan = fftw_plan_dft_1d(nfast, data, data, FFTW_FORWARD, FFTW_ESTIMATE);
+    else
+      plan->plan = fftw_plan_dft_1d(nfast, data, data, FFTW_BACKWARD, FFTW_ESTIMATE);
+  }
+  return plan;
+}
 
 // plan 2D fft
 AthenaFFTPlan *AthenaFFT::CreatePlan(AthenaFFTInt nx1, AthenaFFTInt nx2, 
@@ -94,6 +110,17 @@ void AthenaFFT::Execute(AthenaFFTPlan *plan, AthenaFFTComplex *data)
     if(plan->dim == 3) accfft_execute_c2c(plan->plan3d, plan->dir, data, data);
 #else
     fftw_execute_dft(plan->plan, data, data);
+#endif
+  }
+}
+
+void AthenaFFT::Execute(AthenaFFTPlan *plan, AthenaFFTComplex *in, AthenaFFTComplex *out)
+{
+  if(FFT_ENABLED){
+#ifdef MPI_PARALLEL
+    if(plan->dim == 3) accfft_execute_c2c(plan->plan3d, plan->dir, in, out);
+#else
+    fftw_execute_dft(plan->plan, in, out);
 #endif
   }
 }
@@ -175,6 +202,19 @@ long int AthenaFFT::GetFreq(const int i, const int j, const int k)
   else  return k + knx3 * ( i + knx1 * j );
 }
 
+long int AthenaFFT::GetIndex(const int i, const int j, const int k, bool swap)
+{
+  if (decomp_ == 1) return i + nx1 * ( j + nx2 * k );
+  else if (decomp_ == 2) return j + nx2 * ( i + nx1 * k );
+  else  return k + nx3 * ( i + nx1 * j );
+}
+
+long int AthenaFFT::GetFreq(const int i, const int j, const int k, bool swap)
+{
+  if (decomp_ == 1) return i + knx1 * ( j + knx2 * k);
+  else if (decomp_ == 2) return j + knx2 * ( i + knx1 * k );
+  else  return k + knx3 * ( i + knx1 * j );
+}
 AthenaFFTPlan *AthenaFFT::QuickCreatePlan(enum AthenaFFTDirection dir)
 {
   AthenaFFTInt Nx[3]={gnx3_,gnx2_,gnx1_};

@@ -57,14 +57,14 @@ void Gravity::Solver(const AthenaArray<Real> &u)
   for(int k=ks; k<=ke; ++k){
     for(int j=js; j<=je; ++j){
       for(int i=is; i<=ie; ++i){
-        long int idx=pfft->GetIndex(i-is,j-js,k-ks);
+        long int idx=pfft->GetIndex(i-is,j-js,k-ks,pfft->swap1);
         pfft->work[idx][0] = (u(IDN,k,j,i) - grav_mean_rho);
         pfft->work[idx][1] = 0.0;
       }
     }
   }
 
-  pfft->Execute(pfft->fplan);
+  pfft->Execute(pfft->fplan, pfft->work);
 
 // Multiply kernel coefficient
 
@@ -82,7 +82,7 @@ void Gravity::Solver(const AthenaArray<Real> &u)
             pcoeff += ((2.0*std::cos(((k)+pfft->kdisp_k)*pfft->dkz)-2.0)/dx3sq);
           pcoeff = 1.0/pcoeff;
         }
-        long int idx=pfft->GetFreq(i,j,k);
+        long int idx=pfft->GetFreq(i,j,k,pfft->swap2);
         //std::cout << gidx << " " << idx << " " << pcoeff << std::endl;
         pfft->work[idx][0] *= pcoeff;
         pfft->work[idx][1] *= pcoeff;
@@ -90,14 +90,14 @@ void Gravity::Solver(const AthenaArray<Real> &u)
     }
   }
   
-  pfft->Execute(pfft->bplan);
+  pfft->Execute(pfft->bplan, pfft->work);
 
 // Return phi
 
   for(int k=ks; k<=ke; ++k){
     for(int j=js; j<=je; ++j){
       for(int i=is; i<=ie; ++i){
-        long int idx=pfft->GetIndex(i-is,j-js,k-ks);
+        long int idx=pfft->GetIndex(i-is,j-js,k-ks,pfft->swap1);
         phi(k,j,i) = four_pi_gconst * pfft->work[idx][0]/pfft->gcnt;
       }
     }
