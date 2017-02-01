@@ -269,7 +269,6 @@ void HydroDiffusion::FaceXdy(const int k, const int j, const int il, const int i
 void HydroDiffusion::FaceXdz(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &prim, AthenaArray<Real> &len)
 {
-#pragma simd
   if(pmb_->block_size.nx3 > 1) {
     for (int i=il; i<=iu; ++i){
       len(i) = pco_->h31f(i)*(prim(IM3,k,j,i)/pco_->h31v(i)-prim(IM3,k,j,i-1)/pco_->h31v(i-1))/pco_->dx1v(i-1)
@@ -288,7 +287,6 @@ void HydroDiffusion::FaceXdz(const int k, const int j, const int il, const int i
 void HydroDiffusion::FaceYdx(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &prim, AthenaArray<Real> &len)
 {
-#pragma simd
   if(pmb_->block_size.nx2 > 1) {
     for (int i=il; i<=iu; ++i){
       len(i) = (prim(IM1,k,j,i)-prim(IM1,k,j-1,i))/pco_->h2v(i)/pco_->dx2v(j-1)
@@ -310,7 +308,6 @@ void HydroDiffusion::FaceYdx(const int k, const int j, const int il, const int i
 void HydroDiffusion::FaceYdy(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &prim, AthenaArray<Real> &len)
 {
-#pragma simd
   if(pmb_->block_size.nx2 > 1) {
     for (int i=il; i<=iu; ++i){
       len(i) = 2.0*(prim(IM2,k,j,i)-prim(IM2,k,j-1,i))/pco_->h2v(i)/pco_->dx2v(j-1)
@@ -327,7 +324,6 @@ void HydroDiffusion::FaceYdy(const int k, const int j, const int il, const int i
 void HydroDiffusion::FaceYdz(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &prim, AthenaArray<Real> &len)
 {
-#pragma simd
   if(pmb_->block_size.nx3 > 1) {
     for (int i=il; i<=iu; ++i){
       len(i) = pco_->h32f(j)*(prim(IM3,k,j,i)/pco_->h32f(j)
@@ -351,7 +347,6 @@ void HydroDiffusion::FaceYdz(const int k, const int j, const int il, const int i
 void HydroDiffusion::FaceZdx(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &prim, AthenaArray<Real> &len)
 {
-#pragma simd
   if(pmb_->block_size.nx3 > 1) {
     for (int i=il; i<=iu; ++i){
       len(i) = (prim(IM1,k,j,i)-prim(IM1,k-1,j,i))/pco_->dx3v(k-1)
@@ -373,7 +368,6 @@ void HydroDiffusion::FaceZdx(const int k, const int j, const int il, const int i
 void HydroDiffusion::FaceZdy(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &prim, AthenaArray<Real> &len)
 {
-#pragma simd
   if(pmb_->block_size.nx3 > 1) {
     for (int i=il; i<=iu; ++i){
       len(i) = (prim(IM2,k,j,i)-prim(IM2,k-1,j,i))/pco_->h31v(i)/pco_->h32v(j)/pco_->dx3v(k-1)
@@ -397,7 +391,6 @@ void HydroDiffusion::FaceZdy(const int k, const int j, const int il, const int i
 void HydroDiffusion::FaceZdz(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &prim, AthenaArray<Real> &len)
 {
-#pragma simd
   if(pmb_->block_size.nx3 > 1) {
     for (int i=il; i<=iu; ++i){
       len(i) = 2.0*(prim(IM3,k,j,i)-prim(IM3,k-1,j,i))/pco_->dx3v(k-1)/pco_->h31v(i)/pco_->h32v(j)

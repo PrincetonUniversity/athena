@@ -128,6 +128,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
   FILE *fp;
   Real xFP[160],dFP[160],vxFP[160],vyFP[160];
+  Real SumRvx=0.0, SumRvy=0.0, SumRvz=0.0;
   static int frst=1; // flag so new history variables enrolled only once
 
   if (pmy_mesh->mesh_size.nx2 == 1){
@@ -222,18 +223,21 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           rp = pres*(1.0 + 2.0*rval);
           rd = den;
         } else {
-          rd = den*(1.0 + 2.0*rval);
+          rd = den; //den*(1.0 + 2.0*rval);
         }
         // Follow HGB: the perturbations to V/Cs are
         // (1/5)amp/sqrt(gamma)
         rval = amp*(ran2(&iseed) - 0.5);
         rvx = 0.4*rval*sqrt(pres/den);
+        SumRvx += rvx;
 
         rval = amp*(ran2(&iseed) - 0.5);
         rvy = 0.4*rval*sqrt(pres/den);
+        SumRvy += rvz;
 
         rval = amp*(ran2(&iseed) - 0.5);
         rvz = 0.4*rval*sqrt(pres/den);
+        SumRvz += rvz;
       }
       if (ipert == 2) {
         rp = pres;
@@ -410,6 +414,23 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  }
 //#endif /* MHD */
 
+/* For random perturbations as in HGB, ensure net momentum is zero by
+ * subtracting off mean of perturbations */
+
+  if (ipert == 1) {
+    int cell_num = block_size.nx1*block_size.nx2*block_size.nx3;
+    SumRvx /= cell_num;
+    SumRvy /= cell_num;
+    SumRvz /= cell_num;
+    for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++) {
+        phydro->u(IM1,k,j,i) -= rd*SumRvx;
+        phydro->u(IM2,k,j,i) -= rd*SumRvy;
+        phydro->u(IM3,k,j,i) -= rd*SumRvz;
+      }
+    }}
+  }
 
 // enroll new history variables, only once
 // not implemented yet
@@ -523,7 +544,7 @@ static Real hst_dVxVy(MeshBlock *pmb, int iout)
     for(int j=js; j<=je; j++) {
       pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
       for(int i=is; i<=ie; i++) {
-		vshear = qshear*Omega_0*pmb->pcoord->x1v(i);
+        vshear = qshear*Omega_0*pmb->pcoord->x1v(i);
         dvxvy+=volume(i)*w(IDN,k,j,i)*w(IVX,k,j,i)*(w(IVY,k,j,i)+vshear);
       }
     }
