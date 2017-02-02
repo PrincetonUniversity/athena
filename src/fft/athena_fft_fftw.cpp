@@ -122,6 +122,12 @@ void AthenaFFT::Execute(AthenaFFTPlan *plan, AthenaFFTComplex *data)
   }
 }
 
+void AthenaFFT::Execute(AthenaFFTPlan *plan, AthenaFFTComplex *in, AthenaFFTComplex *out)
+{
+  if(FFT_ENABLED){
+    fftw_execute_dft(plan->plan, in, out);
+  }
+}
 void AthenaFFT::Initialize()
 {
   if(FFT_ENABLED){
@@ -223,3 +229,13 @@ long int AthenaFFT::GetFreq(const int i, const int j, const int k)
   else return i + knx1 * ( k + knx3 * j);
 }
 #endif
+
+long int AthenaFFT::GetIndex(const int i, const int j, const int k, bool swap)
+{
+  return i + nx1 * ( j + nx2 * k );
+}
+
+long int AthenaFFT::GetFreq(const int i, const int j, const int k, bool swap)
+{
+  return i + knx1 * ( j + knx2 * k);
+}

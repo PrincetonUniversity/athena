@@ -64,7 +64,9 @@ AthenaFFT::AthenaFFT(MeshBlock *pmb)
  
     nthreads_ = pmy_block->pmy_mesh->GetNumMeshThreads();
 
+#ifdef MPI_PARALLEL
     CompatabilityCheck(1);
+#endif
   }
 }
 
