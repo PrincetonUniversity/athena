@@ -9,6 +9,7 @@
 // C/C++ headers
 #include <iostream>
 #include <sstream>
+#include <stdexcept>  // runtime_error
 
 // Athena++ headers
 #include "athena_fft.hpp"

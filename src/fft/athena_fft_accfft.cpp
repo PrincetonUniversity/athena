@@ -17,6 +17,7 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../mesh/mesh.hpp"
+#include "../globals.hpp"
 
 // destructor
 
@@ -144,7 +145,8 @@ void AthenaFFT::Initialize()
       throw std::runtime_error(msg.str().c_str());
     }
 
-    std::cout << "MPI configuration : " << np[0] << "x" << np[1] << std::endl;
+    if(Globals::my_rank == 0)
+      std::cout << "MPI configuration : " << np[0] << "x" << np[1] << std::endl;
     accfft_create_comm(MPI_COMM_WORLD, np, &cart_2d_comm_);
     int alloc_local,Ni[3],No[3],iis[3],ios[3];
     AthenaFFTInt Nx[3]={gnx3_,gnx2_,gnx1_};
@@ -158,6 +160,7 @@ void AthenaFFT::Initialize()
     int procid;
     MPI_Comm_rank(MPI_COMM_WORLD, &procid);
 
+/*
     std::cout << procid << " Athena's decomposition: " << std::endl
               << " MeshBlock: " << nx1 << " " << nx2 << " " << nx3 
               << " starts at " << idisp << " " << jdisp << " " << kdisp << std::endl
@@ -167,6 +170,7 @@ void AthenaFFT::Initialize()
               << " ACCFFT decomposition in k-space: " << std::endl
               << "  " << No[0] << "x" << No[1] << "x" << No[2] << std::endl
               << " starts at " << ios[0] << " " << ios[1] << " " << ios[2] << std::endl;
+*/
 
     if(decomp_ == 1){
       knx3 = No[0]; knx2 = No[1]; knx1 = No[2];

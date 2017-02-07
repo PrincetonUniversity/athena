@@ -124,22 +124,72 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
   int nlim = pin->GetInteger("time","nlim");
 
-  if(SELF_GRAVITY_ENABLED && nlim == 0){
+  if(SELF_GRAVITY_ENABLED){
     Gravity *pgrav = pblock->pgrav;
-    Real err1=0.0,err2=0.0;
-    for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je; ++j) {
-    for (int i=is; i<=ie; ++i) {
-      err1 += std::abs(pgrav->phi(k,j,i) - phydro->u(IM2,k,j,i));
-      err2 += pgrav->phi(k,j,i)/phydro->u(IM2,k,j,i);
-    }}} // for-loop
+    if(nlim == 0){
+      Real err1=0.0,err2=0.0;
+      for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
+      for (int i=is; i<=ie; ++i) {
+        err1 += std::abs(pgrav->phi(k,j,i) - phydro->u(IM2,k,j,i));
+        err2 += pgrav->phi(k,j,i)/phydro->u(IM2,k,j,i);
+      }}} // for-loop
+ 
+      err1 = err1/cnt;
+      err2 = err2/cnt;
+ 
+      if(Globals::my_rank == 0){
+        std::cout << "=====================================================" << std::endl;
+        std::cout << "L1 : " << err1 <<" L2: " << err2 << std::endl;
+        std::cout << "=====================================================" << std::endl;
+      }
+// timing measure after loop
+      int ncycle = pin->GetOrAddInteger("problem","ncycle",100);
+      if(Globals::my_rank == 0){
+        std::cout << "=====================================================" << std::endl;
+        std::cout << "Call Poisson Solver  " << ncycle << " times          " << std::endl;
+        std::cout << "=====================================================" << std::endl;
+      }
+      clock_t tstart = clock();
+#ifdef OPENMP_PARALLEL
+      double omp_start_time = omp_get_wtime();
+#endif
+      for (int n=0; n <= ncycle; n++) pgrav->Solver(phydro->u);
+#ifdef OPENMP_PARALLEL
+      double omp_time = omp_get_wtime() - omp_start_time;;
+#endif
+      clock_t tstop = clock();
+      float cpu_time = (tstop>tstart ? (float)(tstop-tstart) : 1.0)/(float)CLOCKS_PER_SEC;
+      int64_t zones = GetTotalCells();
+      int64_t mb_zones = GetTotalCells()/nbtotal;
+      float zc_cpus = (float)(mb_zones*ncycle)/cpu_time;
+      float zc_cpus2 = (float)(mb_zones*log2(mb_zones)*ncycle)/cpu_time;
 
-    err1 = err1/cnt;
-    err2 = err2/cnt;
-
-    std::cout << "=====================================================" << std::endl;
-    std::cout << "L1 : " << err1 <<" L2: " << err2 << std::endl;
-    std::cout << "=====================================================" << std::endl;
+      if(Globals::my_rank == 0){
+        std::cout << "Timing Possison Solver                               " << std::endl;
+        std::cout << "number of zones in Mesh = " << zones << std::endl;
+        std::cout << "Mesh configuration = " << mesh_size.nx1 << "x" 
+                  << mesh_size.nx2 << "x" << mesh_size.nx3 << std::endl;
+        std::cout << "number of zones in MeshBlock = " << mb_zones << std::endl;
+        std::cout << "MeshBlock configuration = " << pblock->block_size.nx1 << "x" 
+                  << pblock->block_size.nx2 << "x" << pblock->block_size.nx3 << std::endl;
+        std::cout << "number of processors = " << Globals::nranks << std::endl;
+        std::cout << "processor configuration = " 
+                  << nrbx1 << "x" << nrbx2 << "x" << nrbx3 << std::endl;
+        std::cout << "cpu time used  = " << cpu_time << std::endl;
+        std::cout << "cpu time used/cycle  = " << cpu_time/(float)(ncycle) << std::endl;
+        std::cout << "zone-cycles/cpu_second = " << zc_cpus << std::endl;
+        std::cout << "zone-cycles(NlogN)/cpu_second = " << zc_cpus2 << std::endl;
+#ifdef OPENMP_PARALLEL
+        std::cout << "=====================================================" << std::endl;
+        float zc_omps = (float)(zones*ncycle)/omp_time;
+        std::cout << "omp number of threads = " << GetNumMeshThreads() << std::endl;
+        std::cout << "omp wtime used = " << omp_time << std::endl;
+        std::cout << "zone-cycles/omp_wsecond = " << zc_omps << std::endl;
+#endif
+        std::cout << "=====================================================" << std::endl;
+      }
+    }
   }
 
   return;

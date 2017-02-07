@@ -33,8 +33,7 @@ typedef struct AthenaFFTIndex{
 // decomposition
   int np[3],ip[3];
 // local size and indices
-  int nfast,nmid,nslow;
-  int fs,fe,ms,me,ss,se;
+  int nx[3],is[3],ie[3];
 } AthenaFFTIndex;
 
 //! \class AthenaFFT
@@ -58,7 +57,7 @@ public:
 
   int gnfast, gnmid, gnslow;
   AthenaFFTIndex f_in,f_out,b_in,b_out;
-  int permute1, permute2;
+  int permute0, permute1, permute2;
   bool swap1,swap2;
   unsigned int decomp; 
 

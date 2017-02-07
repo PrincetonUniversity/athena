@@ -309,7 +309,7 @@ if args['cxx'] == 'icc':
   definitions['COMPILER_CHOICE'] = 'icc'
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
-  makefile_options['COMPILER_FLAGS'] = '-O3 -xhost -ipo -inline-forceinline'
+  makefile_options['COMPILER_FLAGS'] = '-O3 -xhost -inline-forceinline'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'cray':
@@ -368,7 +368,7 @@ if args['omp']:
   if args['cxx'] == 'g++' or args['cxx'] == 'clang++':
     makefile_options['COMPILER_FLAGS'] += ' -fopenmp'
   if args['cxx'] == 'icc':
-    makefile_options['COMPILER_FLAGS'] += ' -openmp'
+    makefile_options['COMPILER_FLAGS'] += ' -qopenmp'
   if args['cxx'] == 'cray':
     makefile_options['COMPILER_FLAGS'] += ' -homp'
   if args['cxx'] == 'bgxl':
@@ -402,14 +402,14 @@ if args['fft']:
   definitions['FFT_DEFINE'] = 'FFTW'
   makefile_options['MPIFFT_FILE'] = ' src/fft/athena_fft_fftw.cpp' 
   if args['fftw_path'] != '':
-    makefile_options['PREPROCESSOR_FLAGS'] += '-I%s/include' % args['fftw_path']
-    makefile_options['LINKER_FLAGS'] += '-L%s/lib' % args['fftw_path']
+    makefile_options['PREPROCESSOR_FLAGS'] += ' -I%s/include' % args['fftw_path']
+    makefile_options['LINKER_FLAGS'] += ' -L%s/lib' % args['fftw_path']
   if args['omp']:
     makefile_options['LIBRARY_FLAGS'] += ' -lfftw3_omp'
   if args['mpi']:
     if args['mpifft_path'] != '':
-      makefile_options['PREPROCESSOR_FLAGS'] += '-I%s/include' % args['mpifft_path']
-      makefile_options['LINKER_FLAGS'] += '-L%s/lib' % args['mpifft_path']
+      makefile_options['PREPROCESSOR_FLAGS'] += ' -I%s/include' % args['mpifft_path']
+      makefile_options['LINKER_FLAGS'] += ' -L%s/lib' % args['mpifft_path']
     if args['mpifft'] == 'fftw':
       definitions['FFT_DEFINE'] = 'FFTW_MPI'
       makefile_options['LIBRARY_FLAGS'] += ' -lfftw3_mpi'
@@ -421,7 +421,7 @@ if args['fft']:
       definitions['FFT_DEFINE'] = 'ACCFFT'
       makefile_options['MPIFFT_FILE'] = ' src/fft/athena_fft_accfft.cpp'
       makefile_options['LIBRARY_FLAGS'] += ' -laccfft'
-  makefile_options['LIBRARY_FLAGS'] += ' -lfftw3'
+  makefile_options['LIBRARY_FLAGS'] += ' -lfftw3 -lfftw3f'
 else:
   definitions['FFT_ENABLED'] = '0'
   definitions['FFT_DEFINE'] = 'NO_FFT'
