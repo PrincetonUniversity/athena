@@ -24,7 +24,9 @@
 #   -hdf5             enable HDF5 output (requires the HDF5 library)
 #   --hdf5_path=path  path to HDF5 libraries (requires the HDF5 library)
 #   --cxx=choice      use choice as the C++ compiler
-#   --ccmd=choice     use choice as the command to call the C++ compiler
+#   --ccmd=name       use name as the command to call the C++ compiler
+#   --include=path    use -Ipath when compiling
+#   --lib=path        use -Lpath when linking
 #---------------------------------------------------------------------------------------
 
 # Modules
@@ -133,7 +135,6 @@ parser.add_argument('-hdf5',
 
 # --hdf5_path argument
 parser.add_argument('--hdf5_path',
-    type=str,
     default='',
     help='path to HDF5 libraries')
 
@@ -145,9 +146,20 @@ parser.add_argument('--cxx',
 
 # --ccmd=[name] argument
 parser.add_argument('--ccmd',
-    type=str,
     default=None,
     help='override for command to use to call C++ compiler')
+
+# --include=[name] arguments
+parser.add_argument('--include',
+    action='append',
+    help='extra path for included header files (-I<path>); can be specified multiple \
+        times')
+
+# --lib=[name] arguments
+parser.add_argument('--lib',
+    action='append',
+    help='extra path for linked library files (-L<path>); can be specified multiple \
+        times')
 
 # Parse command-line inputs
 args = vars(parser.parse_args())
@@ -365,6 +377,14 @@ else:
 # --ccmd=[name] argument
 if args['ccmd'] is not None:
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['ccmd']
+
+# --include=[name] arguments
+for include_path in args['include']:
+  makefile_options['COMPILER_FLAGS'] += ' -I'+include_path
+
+# --lib=[name] arguments
+for library_path in args['lib']:
+  makefile_options['LINKER_FLAGS'] += ' -L'+library_path
 
 # Assemble all flags of any sort given to compiler
 definitions['COMPILER_FLAGS'] = ' '.join([makefile_options[opt+'_FLAGS'] for opt in \
