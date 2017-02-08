@@ -151,12 +151,14 @@ parser.add_argument('--ccmd',
 
 # --include=[name] arguments
 parser.add_argument('--include',
+    default=[],
     action='append',
     help='extra path for included header files (-I<path>); can be specified multiple \
         times')
 
 # --lib=[name] arguments
 parser.add_argument('--lib',
+    default=[],
     action='append',
     help='extra path for linked library files (-L<path>); can be specified multiple \
         times')
