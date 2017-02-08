@@ -36,6 +36,10 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
     FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
     FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
+static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+    Real *ptheta, Real *pphi);
+static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
+    Real theta, Real phi, Real *pa0, Real *pa1, Real *pa2, Real *pa3);
 static Real CalculateLFromRPeak(Real r);
 static Real CalculateRPeakFromL(Real l_target);
 static Real LogHAux(Real r, Real sin_theta);
@@ -210,8 +214,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
         // Calculate Boyer-Lindquist coordinates of cell
         Real r, theta, phi;
-        pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-            pcoord->x3v(k), &r, &theta, &phi);
+        GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(k), &r,
+            &theta, &phi);
         Real sin_theta = std::sin(theta);
         Real cos_theta = std::cos(theta);
         Real sin_phi = std::sin(phi);
@@ -268,8 +272,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
           // Transform to preferred coordinates
           Real u0, u1, u2, u3;
-          pcoord->TransformVectorCell(u0_bl, 0.0, u2_bl, u3_bl, k, j, i, &u0, &u1, &u2,
-              &u3);
+          TransformVector(u0_bl, 0.0, u2_bl, u3_bl, r, theta, phi, &u0, &u1, &u2, &u3);
           uu1 = u1 - gi(I01,i)/gi(I00,i) * u0;
           uu2 = u2 - gi(I02,i)/gi(I00,i) * u0;
           uu3 = u3 - gi(I03,i)/gi(I00,i) * u0;
@@ -305,7 +308,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       Real x1_val = (p%2 == 0) ? x1_min : x1_max;
       Real x2_val = ((p/2)%2 == 0) ? x2_min : x2_max;
       Real x3_val = ((p/4)%2 == 0) ? x3_min : x3_max;
-      pcoord->GetBoyerLindquistCoordinates(x1_val, x2_val, x3_val, r_vals+p, theta_vals+p,
+      GetBoyerLindquistCoordinates(x1_val, x2_val, x3_val, r_vals+p, theta_vals+p,
           phi_vals+p);
     }
     r_min = *std::min_element(r_vals, r_vals+8);
@@ -342,8 +345,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         for (int j = jl; j <= ju+1; ++j) {
           for (int i = il; i <= iu+1; ++i) {
             Real r, theta, phi;
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j),
-                pcoord->x3v(kl), &r, &theta, &phi);
+            GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(kl),
+                &r, &theta, &phi);
             if (r >= r_edge) {
               Real log_h = LogHAux(r, std::sin(theta)) - log_h_edge;  // (FM 3.6)
               if (log_h >= 0.0) {
@@ -363,8 +366,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         for (int j = jl; j <= ju; ++j) {
           for (int i = il; i <= iu; ++i) {
             Real r, theta, phi;
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-                pcoord->x3v(kl), &r, &theta, &phi);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(kl),
+                &r, &theta, &phi);
             if (r >= r_edge) {
               Real log_h = LogHAux(r, std::sin(theta)) - log_h_edge;  // (FM 3.6)
               if (log_h >= 0.0) {
@@ -386,19 +389,19 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             for (int i = il; i <= iu+1; ++i) {
               Real r_vals[4], theta_vals[4], phi_vals[4];
               if (i != iu+1 and j != ju+1 and k != ku+1) {
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
+                GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
                     pcoord->x3v(k), r_vals+0, theta_vals+0, phi_vals+0);
               }
               if (i != iu+1) {
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j),
+                GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j),
                     pcoord->x3f(k), r_vals+1, theta_vals+1, phi_vals+1);
               }
               if (j != ju+1) {
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j),
+                GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j),
                     pcoord->x3f(k), r_vals+2, theta_vals+2, phi_vals+2);
               }
               if (k != ku+1) {
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j),
+                GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j),
                     pcoord->x3v(k), r_vals+3, theta_vals+3, phi_vals+3);
               }
               for (int p = 0; p < 4; ++p) {
@@ -525,8 +528,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       for (int j = 0; j < sample_n_theta/2+1; ++j) {
         for (int i = 0; i < sample_n_r+1; ++i) {
           Real r, theta, phi;
-          pcoord->GetBoyerLindquistCoordinates(r_face(i), theta_face(j), pcoord->x3v(kl),
-              &r, &theta, &phi);
+          GetBoyerLindquistCoordinates(r_face(i), theta_face(j), pcoord->x3v(kl), &r,
+              &theta, &phi);
           Real rho = 0.0;
           if (r >= r_edge) {
             Real log_h = LogHAux(r, std::sin(theta)) - log_h_edge;  // (FM 3.6)
@@ -544,8 +547,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       for (int j = 0; j < sample_n_theta/2; ++j) {
         for (int i = 0; i < sample_n_r; ++i) {
           Real r, theta, phi;
-          pcoord->GetBoyerLindquistCoordinates(r_cell(i), theta_cell(j), pcoord->x3v(kl),
-              &r, &theta, &phi);
+          GetBoyerLindquistCoordinates(r_cell(i), theta_cell(j), pcoord->x3v(kl), &r,
+              &theta, &phi);
           Real rho = 0.0;
           if (r >= r_edge) {
             Real log_h = LogHAux(r, std::sin(theta)) - log_h_edge;  // (FM 3.6)
@@ -706,8 +709,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       for (int j = jl; j <= ju+1; ++j) {
         for (int i = il; i <= iu+1; ++i) {
           Real r_c, theta_c, phi;
-          pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j),
-              pcoord->x3v(kl), &r_c, &theta_c, &phi);
+          GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(kl),
+              &r_c, &theta_c, &phi);
           if (theta_c > PI/2.0) {
             theta_c = PI - theta_c;
           }
@@ -757,8 +760,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       for (int j = jl; j <= ju; ++j) {
         for (int i = il; i <= iu; ++i) {
           Real r_c, theta_c, phi;
-          pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-              pcoord->x3v(kl), &r_c, &theta_c, &phi);
+          GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(kl),
+              &r_c, &theta_c, &phi);
           if (theta_c > PI/2.0) {
             theta_c = PI - theta_c;
           }
@@ -831,13 +834,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             // Set B^1
             if (j != ju+1 and k != ku+1) {
               Real r, theta, phi;
-              pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j),
-                  pcoord->x3v(k), &r, &theta, &phi);
+              GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3v(k),
+                  &r, &theta, &phi);
               Real r_1, theta_1, phi_1;
-              pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j),
-                  pcoord->x3v(k), &r_1, &theta_1, &phi_1);
+              GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k),
+                  &r_1, &theta_1, &phi_1);
               Real r_2, theta_2, phi_2;
-              pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j+1),
+              GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j+1),
                   pcoord->x3v(k), &r_2, &theta_2, &phi_2);
               Real cos_theta = std::cos(theta);
               Real det = (SQR(r) + SQR(a) * SQR(cos_theta)) * std::abs(std::sin(theta));
@@ -848,20 +851,20 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                 a_phi_1 = 0.5 * (a_phi_edges(j,i) + a_phi_edges(j+1,i));
                 a_phi_2 = a_phi_cells(j,i);
                 r_1 = r;
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
+                GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
                     pcoord->x3v(k), &r_2, &theta_2, &phi_2);
               } else if (i == iu+1) {
                 a_phi_1 = a_phi_cells(j,i-1);
                 a_phi_2 = 0.5 * (a_phi_edges(j,i) + a_phi_edges(j+1,i));
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i-1), pcoord->x2v(j),
+                GetBoyerLindquistCoordinates(pcoord->x1v(i-1), pcoord->x2v(j),
                     pcoord->x3v(k), &r_1, &theta_1, &phi_1);
                 r_2 = r;
               } else {
                 a_phi_1 = a_phi_cells(j,i-1);
                 a_phi_2 = a_phi_cells(j,i);
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i-1), pcoord->x2v(j),
+                GetBoyerLindquistCoordinates(pcoord->x1v(i-1), pcoord->x2v(j),
                     pcoord->x3v(k), &r_1, &theta_1, &phi_1);
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
+                GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
                     pcoord->x3v(k), &r_2, &theta_2, &phi_2);
               }
               Real bbtheta = -1.0/det * (a_phi_2-a_phi_1) / (r_2-r_1);
@@ -878,11 +881,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                 Real br = 1.0/ut * bbr;
                 Real btheta = 1.0/ut * bbtheta;
                 Real u0, u1, u2, u3;
-                pcoord->TransformVectorFace1(ut, 0.0, 0.0, uphi, k, j, i, &u0, &u1, &u2,
-                    &u3);
+                TransformVector(ut, 0.0, 0.0, uphi, r, theta, phi, &u0, &u1, &u2, &u3);
                 Real b0, b1, b2, b3;
-                pcoord->TransformVectorFace1(bt, br, btheta, 0.0, k, j, i, &b0, &b1, &b2,
-                    &b3);
+                TransformVector(bt, br, btheta, 0.0, r, theta, phi, &b0, &b1, &b2, &b3);
                 pfield->b.x1f(k,j,i) = (b1 * u0 - b0 * u1) * normalization;
               }
             }
@@ -890,13 +891,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             // Set B^2
             if (i != iu+1 and k != ku+1) {
               Real r, theta, phi;
-              pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j),
-                  pcoord->x3v(k), &r, &theta, &phi);
+              GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3v(k),
+                  &r, &theta, &phi);
               Real r_1, theta_1, phi_1;
-              pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j),
-                  pcoord->x3v(k), &r_1, &theta_1, &phi_1);
+              GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k),
+                  &r_1, &theta_1, &phi_1);
               Real r_2, theta_2, phi_2;
-              pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i+1), pcoord->x2f(j),
+              GetBoyerLindquistCoordinates(pcoord->x1f(i+1), pcoord->x2f(j),
                   pcoord->x3v(k), &r_2, &theta_2, &phi_2);
               Real cos_theta = std::cos(theta);
               Real det = (SQR(r) + SQR(a) * SQR(cos_theta)) * std::abs(std::sin(theta));
@@ -906,20 +907,20 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                 a_phi_1 = 0.5 * (a_phi_edges(j,i) + a_phi_edges(j,i+1));
                 a_phi_2 = a_phi_cells(j,i);
                 theta_1 = theta;
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
+                GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
                     pcoord->x3v(k), &r_2, &theta_2, &phi_2);
               } else if (j == ju+1) {
                 a_phi_1 = a_phi_cells(j-1,i);
                 a_phi_2 = 0.5 * (a_phi_edges(j,i) + a_phi_edges(j,i+1));
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j-1),
+                GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j-1),
                     pcoord->x3v(k), &r_1, &theta_1, &phi_1);
                 theta_2 = theta;
               } else {
                 a_phi_1 = a_phi_cells(j-1,i);
                 a_phi_2 = a_phi_cells(j,i);
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j-1),
+                GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j-1),
                     pcoord->x3v(k), &r_1, &theta_1, &phi_1);
-                pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
+                GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
                     pcoord->x3v(k), &r_2, &theta_2, &phi_2);
               }
               Real bbr = 1.0/det * (a_phi_2 - a_phi_1) / (theta_2 - theta_1);
@@ -936,11 +937,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                 Real br = 1.0/ut * bbr;
                 Real btheta = 1.0/ut * bbtheta;
                 Real u0, u1, u2, u3;
-                pcoord->TransformVectorFace2(ut, 0.0, 0.0, uphi, k, j, i, &u0, &u1, &u2,
-                    &u3);
+                TransformVector(ut, 0.0, 0.0, uphi, r, theta, phi, &u0, &u1, &u2, &u3);
                 Real b0, b1, b2, b3;
-                pcoord->TransformVectorFace2(bt, br, btheta, 0.0, k, j, i, &b0, &b1, &b2,
-                    &b3);
+                TransformVector(bt, br, btheta, 0.0, r, theta, phi, &b0, &b1, &b2, &b3);
                 pfield->b.x2f(k,j,i) = (b2 * u0 - b0 * u2) * normalization;
               }
             }
@@ -968,23 +967,23 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             Real bbr, bbtheta, bbphi;
 
             // Set B^1
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j),
-                pcoord->x3v(k), &r, &theta, &phi);
+            GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3v(k),
+                &r, &theta, &phi);
             det = (SQR(r) + SQR(a) * SQR(std::cos(theta))) * std::abs(std::sin(theta));
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i-1), pcoord->x2v(j),
-                pcoord->x3v(k), &r_m, &theta_m, &phi_m);
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-                pcoord->x3v(k), &r_p, &theta_p, &phi_p);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i-1), pcoord->x2v(j), pcoord->x3v(k),
+                &r_m, &theta_m, &phi_m);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(k),
+                &r_p, &theta_p, &phi_p);
             delta_r = r_p - r_m;
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j),
-                pcoord->x3v(k), &r_m, &theta_m, &phi_m);
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j+1),
-                pcoord->x3v(k), &r_p, &theta_p, &phi_p);
+            GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k),
+                &r_m, &theta_m, &phi_m);
+            GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j+1), pcoord->x3v(k),
+                &r_p, &theta_p, &phi_p);
             delta_theta = theta_p - theta_m;
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j),
-                pcoord->x3f(k), &r_m, &theta_m, &phi_m);
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j),
-                pcoord->x3f(k+1), &r_p, &theta_p, &phi_p);
+            GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k),
+                &r_m, &theta_m, &phi_m);
+            GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k+1),
+                &r_p, &theta_p, &phi_p);
             delta_phi = phi_p - phi_m;
             bbr = 1.0/det * ((a_phi_3(k,j+1,i)-a_phi_3(k,j,i))/delta_theta
                 - (a_theta_2(k+1,j,i)-a_theta_2(k,j,i))/delta_phi);
@@ -1010,32 +1009,30 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
               Real btheta = (bbtheta + bt * utheta) / ut;
               Real bphi = (bbphi + bt * uphi) / ut;
               Real u0, u1, u2, u3;
-              pcoord->TransformVectorFace1(ut, ur, utheta, uphi, k, j, i, &u0, &u1, &u2,
-                  &u3);
+              TransformVector(ut, ur, utheta, uphi, r, theta, phi, &u0, &u1, &u2, &u3);
               Real b0, b1, b2, b3;
-              pcoord->TransformVectorFace1(bt, br, btheta, bphi, k, j, i, &b0, &b1, &b2,
-                  &b3);
+              TransformVector(bt, br, btheta, bphi, r, theta, phi, &b0, &b1, &b2, &b3);
               pfield->b.x1f(k,j,i) = (b1 * u0 - b0 * u1) * normalization;
             }
 
             // Set B^2
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j),
-                pcoord->x3v(k), &r, &theta, &phi);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3v(k),
+                &r, &theta, &phi);
             det = (SQR(r) + SQR(a) * SQR(std::cos(theta))) * std::abs(std::sin(theta));
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j),
-                pcoord->x3v(k), &r_m, &theta_m, &phi_m);
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i+1), pcoord->x2f(j),
-                pcoord->x3v(k), &r_p, &theta_p, &phi_p);
+            GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k),
+                &r_m, &theta_m, &phi_m);
+            GetBoyerLindquistCoordinates(pcoord->x1f(i+1), pcoord->x2f(j), pcoord->x3v(k),
+                &r_p, &theta_p, &phi_p);
             delta_r = r_p - r_m;
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j-1),
-                pcoord->x3v(k), &r_m, &theta_m, &phi_m);
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-                pcoord->x3v(k), &r_p, &theta_p, &phi_p);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j-1), pcoord->x3v(k),
+                &r_m, &theta_m, &phi_m);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(k),
+                &r_p, &theta_p, &phi_p);
             delta_theta = theta_p - theta_m;
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j),
-                pcoord->x3f(k), &r_m, &theta_m, &phi_m);
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j),
-                pcoord->x3f(k+1), &r_p, &theta_p, &phi_p);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k),
+                &r_m, &theta_m, &phi_m);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k+1),
+                &r_p, &theta_p, &phi_p);
             delta_phi = phi_p - phi_m;
             bbr = 1.0/det * ((a_phi_0(k,j,i)-a_phi_0(k,j-1,i))/delta_theta
                 - (a_theta_1(k+1,j,i)-a_theta_1(k,j,i))/delta_phi);
@@ -1061,32 +1058,30 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
               Real btheta = (bbtheta + bt * utheta) / ut;
               Real bphi = (bbphi + bt * uphi) / ut;
               Real u0, u1, u2, u3;
-              pcoord->TransformVectorFace1(ut, ur, utheta, uphi, k, j, i, &u0, &u1, &u2,
-                  &u3);
+              TransformVector(ut, ur, utheta, uphi, r, theta, phi, &u0, &u1, &u2, &u3);
               Real b0, b1, b2, b3;
-              pcoord->TransformVectorFace1(bt, br, btheta, bphi, k, j, i, &b0, &b1, &b2,
-                  &b3);
+              TransformVector(bt, br, btheta, bphi, r, theta, phi, &b0, &b1, &b2, &b3);
               pfield->b.x2f(k,j,i) = (b2 * u0 - b0 * u2) * normalization;
             }
 
             // Set B^3
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-                pcoord->x3f(k), &r, &theta, &phi);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3f(k),
+                &r, &theta, &phi);
             det = (SQR(r) + SQR(a) * SQR(std::cos(theta))) * std::abs(std::sin(theta));
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j),
-                pcoord->x3f(k), &r_m, &theta_m, &phi_m);
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1f(i+1), pcoord->x2v(j),
-                pcoord->x3f(k), &r_p, &theta_p, &phi_p);
+            GetBoyerLindquistCoordinates(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k),
+                &r_m, &theta_m, &phi_m);
+            GetBoyerLindquistCoordinates(pcoord->x1f(i+1), pcoord->x2v(j), pcoord->x3f(k),
+                &r_p, &theta_p, &phi_p);
             delta_r = r_p - r_m;
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j),
-                pcoord->x3f(k), &r_m, &theta_m, &phi_m);
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j+1),
-                pcoord->x3f(k), &r_p, &theta_p, &phi_p);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k),
+                &r_m, &theta_m, &phi_m);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2f(j+1), pcoord->x3f(k),
+                &r_p, &theta_p, &phi_p);
             delta_theta = theta_p - theta_m;
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-                pcoord->x3v(k-1), &r_m, &theta_m, &phi_m);
-            pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-                pcoord->x3v(k), &r_p, &theta_p, &phi_p);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(k-1),
+                &r_m, &theta_m, &phi_m);
+            GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(k),
+                &r_p, &theta_p, &phi_p);
             delta_phi = phi_p - phi_m;
             bbr = 1.0/det * ((a_phi_1(k,j+1,i)-a_phi_1(k,j,i))/delta_theta
                 - (a_theta_0(k,j,i)-a_theta_0(k-1,j,i))/delta_phi);
@@ -1112,11 +1107,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
               Real btheta = (bbtheta + bt * utheta) / ut;
               Real bphi = (bbphi + bt * uphi) / ut;
               Real u0, u1, u2, u3;
-              pcoord->TransformVectorFace1(ut, ur, utheta, uphi, k, j, i, &u0, &u1, &u2,
-                  &u3);
+              TransformVector(ut, ur, utheta, uphi, r, theta, phi, &u0, &u1, &u2, &u3);
               Real b0, b1, b2, b3;
-              pcoord->TransformVectorFace1(bt, br, btheta, bphi, k, j, i, &b0, &b1, &b2,
-                  &b3);
+              TransformVector(bt, br, btheta, bphi, r, theta, phi, &b0, &b1, &b2, &b3);
               pfield->b.x3f(k,j,i) = (b3 * u0 - b0 * u3) * normalization;
             }
           }
@@ -1145,8 +1138,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     for (int j = jl; j <= ju; ++j) {
       for (int i = il; i <= iu; ++i) {
         Real r, theta, phi;
-        pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-            pcoord->x3v(kl), &r, &theta, &phi);
+        GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(kl), &r,
+            &theta, &phi);
         Real &rho = phydro->w(IDN,k,j,i);
         Real &pgas = phydro->w(IEN,k,j,i);
         rho = std::max(rho, rho_min * std::pow(r, rho_pow));
@@ -1320,6 +1313,54 @@ void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim
         bb.x3f(k,j,i) = bb.x3f(k,j,is);
       }
     }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for returning corresponding Boyer-Lindquist coordinates of point
+// Inputs:
+//   x1,x2,x3: global coordinates to be converted
+// Outputs:
+//   pr,ptheta,pphi: variables pointed to set to Boyer-Lindquist coordinates
+// Notes:
+//   conversion is trivial in all currently implemented coordinate systems
+
+static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+    Real *ptheta, Real *pphi)
+{
+  if (COORDINATE_SYSTEM == "schwarzschild" or COORDINATE_SYSTEM == "kerr-schild") {
+    *pr = x1;
+    *ptheta = x2;
+    *pphi = x3;
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for transforming 4-vector from Boyer-Lindquist to desired coordinates
+// Inputs:
+//   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
+//   r,theta,phi: Boyer-Lindquist coordinates of point
+// Outputs:
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in desired coordinates
+// Notes:
+//   Schwarzschild coordinates match Boyer-Lindquist when a = 0
+
+static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
+    Real theta, Real phi, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+{
+  if (COORDINATE_SYSTEM == "schwarzschild") {
+    *pa0 = a0_bl;
+    *pa1 = a1_bl;
+    *pa2 = a2_bl;
+    *pa3 = a3_bl;
+  } else if (COORDINATE_SYSTEM == "kerr-schild") {
+    Real delta = SQR(r) - 2.0*m*r + SQR(a);
+    *pa0 = a0_bl + 2.0*m*r/delta * a1_bl;
+    *pa1 = a1_bl;
+    *pa2 = a2_bl;
+    *pa3 = a3_bl + a/delta * a1_bl;
   }
   return;
 }

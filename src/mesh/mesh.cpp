@@ -1090,6 +1090,16 @@ void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const cha
 }
 
 //----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserMetric(MetricFunc_t my_func)
+//  \brief Enroll a user-defined metric for arbitrary GR coordinates
+
+void Mesh::EnrollUserMetric(MetricFunc_t my_func)
+{
+  UserMetric_ = my_func;
+  return;
+}
+
+//----------------------------------------------------------------------------------------
 //! \fn void Mesh::AllocateRealUserMeshDataField(int n)
 //  \brief Allocate Real AthenaArrays for user-defned data in Mesh
 

@@ -232,6 +232,7 @@ private:
   AMRFlagFunc_t AMRFlag_;
   TimeStepFunc_t UserTimeStep_;
   HistoryOutputFunc_t *user_history_func_;
+  MetricFunc_t UserMetric_;
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
   void OutputMeshStructure(int dim);
@@ -246,6 +247,7 @@ private:
   void EnrollUserTimeStepFunction(TimeStepFunc_t my_func);
   void AllocateUserHistoryOutput(int n);
   void EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const char *name);
+  void EnrollUserMetric(MetricFunc_t my_func);
 };
 
 //----------------------------------------------------------------------------------------

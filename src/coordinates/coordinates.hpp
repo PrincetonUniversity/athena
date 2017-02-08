@@ -89,6 +89,9 @@ public:
   Real GetSpin() const {return bh_spin_;}
 
   // ...to compute metric
+  void Metric(Real x1, Real x2, Real x3, ParameterInput *pin, AthenaArray<Real> &g,
+      AthenaArray<Real> &g_inv, AthenaArray<Real> &dg_dx1, AthenaArray<Real> &dg_dx2,
+      AthenaArray<Real> &dg_dx3);
   virtual void CellMetric(const int k, const int j, const int il, const int iu,
       AthenaArray<Real> &g, AthenaArray<Real> &gi) {};
   virtual void Face1Metric(const int k, const int j, const int il, const int iu,
@@ -120,29 +123,11 @@ public:
       const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
       AthenaArray<Real> &flux) {};
 
-  // ...to transform 4-vector from Boyer-Lindquist to global coordinates (for pgens)
-  virtual void TransformVectorCell(Real at, Real ax, Real ay, Real az, int k, int j,
-      int i, Real *a0, Real *a1, Real *a2, Real *a3) {};
-  virtual void TransformVectorFace1(Real at, Real ax, Real ay, Real az, int k, int j,
-      int i, Real *a0, Real *a1, Real *a2, Real *a3) {};
-  virtual void TransformVectorFace2(Real at, Real ax, Real ay, Real az, int k, int j,
-      int i, Real *a0, Real *a1, Real *a2, Real *a3) {};
-  virtual void TransformVectorFace3(Real at, Real ax, Real ay, Real az, int k, int j,
-      int i, Real *a0, Real *a1, Real *a2, Real *a3) {};
-
   // ...to raise (lower) covariant (contravariant) components of a vector
   virtual void RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j,
       int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3) {};
   virtual void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
       Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3) {};
-
-  // ...to convert between coordinate systems (useful for pgens)
-  virtual void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-      Real *ptheta, Real *pphi) {};
-  virtual void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
-      Real *px, Real *py, Real *pz) {};
-  virtual Real DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2, 
-      Real y3) {return 0.0;};
 
 protected:
   bool coarse_flag;  // true if this coordinate object is parent (coarse) mesh in AMR
@@ -156,29 +141,40 @@ protected:
   AthenaArray<Real> coord_vol_i_, coord_vol_i1_, coord_vol_i2_;
   AthenaArray<Real> coord_vol_j_, coord_vol_j1_, coord_vol_j2_;
   AthenaArray<Real> coord_vol_k1_;
+  AthenaArray<Real> coord_vol_kji_;
   AthenaArray<Real> coord_area1_i_, coord_area1_i1_;
   AthenaArray<Real> coord_area1_j_, coord_area1_j1_, coord_area1_j2_;
   AthenaArray<Real> coord_area1_k1_;
+  AthenaArray<Real> coord_area1_kji_;
   AthenaArray<Real> coord_area2_i_, coord_area2_i1_, coord_area2_i2_;
   AthenaArray<Real> coord_area2_j_, coord_area2_j1_, coord_area2_j2_;
   AthenaArray<Real> coord_area2_k1_;
+  AthenaArray<Real> coord_area2_kji_;
   AthenaArray<Real> coord_area3_i_, coord_area3_i1_, coord_area3_i2_;
   AthenaArray<Real> coord_area3_j1_, coord_area3_j2_;
+  AthenaArray<Real> coord_area3_kji_;
   AthenaArray<Real> coord_len1_i1_, coord_len1_i2_;
   AthenaArray<Real> coord_len1_j1_, coord_len1_j2_;
+  AthenaArray<Real> coord_len1_kji_;
   AthenaArray<Real> coord_len2_i1_;
   AthenaArray<Real> coord_len2_j1_, coord_len2_j2_;
+  AthenaArray<Real> coord_len2_kji_;
   AthenaArray<Real> coord_len3_i1_;
   AthenaArray<Real> coord_len3_j1_, coord_len3_j2_;
   AthenaArray<Real> coord_len3_k1_;
+  AthenaArray<Real> coord_len3_kji_;
   AthenaArray<Real> coord_width1_i1_;
+  AthenaArray<Real> coord_width1_kji_;
   AthenaArray<Real> coord_width2_i1_;
   AthenaArray<Real> coord_width2_j1_;
+  AthenaArray<Real> coord_width2_kji_;
   AthenaArray<Real> coord_width3_j1_, coord_width3_j2_, coord_width3_j3_;
   AthenaArray<Real> coord_width3_k1_;
   AthenaArray<Real> coord_width3_ji1_;
+  AthenaArray<Real> coord_width3_kji_;
   AthenaArray<Real> coord_src_i1_, coord_src_i2_, coord_src_i3_, coord_src_i4_;
   AthenaArray<Real> coord_src_j1_, coord_src_j2_, coord_src_j3_;
+  AthenaArray<Real> coord_src_kji_;
   AthenaArray<Real> coord_src1_i_;
   AthenaArray<Real> coord_src1_j_;
   AthenaArray<Real> coord_src2_i_;
@@ -191,29 +187,36 @@ protected:
   // GR-specific scratch arrays
   AthenaArray<Real> metric_cell_i1_, metric_cell_i2_;
   AthenaArray<Real> metric_cell_j1_, metric_cell_j2_;
+  AthenaArray<Real> metric_cell_kji_;
   AthenaArray<Real> metric_face1_i1_, metric_face1_i2_;
   AthenaArray<Real> metric_face1_j1_, metric_face1_j2_;
+  AthenaArray<Real> metric_face1_kji_;
   AthenaArray<Real> metric_face2_i1_, metric_face2_i2_;
   AthenaArray<Real> metric_face2_j1_, metric_face2_j2_;
+  AthenaArray<Real> metric_face2_kji_;
   AthenaArray<Real> metric_face3_i1_, metric_face3_i2_;
   AthenaArray<Real> metric_face3_j1_, metric_face3_j2_;
+  AthenaArray<Real> metric_face3_kji_;
   AthenaArray<Real> trans_face1_i1_, trans_face1_i2_;
   AthenaArray<Real> trans_face1_j1_;
   AthenaArray<Real> trans_face1_ji1_, trans_face1_ji2_, trans_face1_ji3_,
       trans_face1_ji4_, trans_face1_ji5_, trans_face1_ji6_, trans_face1_ji7_;
+  AthenaArray<Real> trans_face1_kji_;
   AthenaArray<Real> trans_face2_i1_, trans_face2_i2_;
   AthenaArray<Real> trans_face2_j1_;
   AthenaArray<Real> trans_face2_ji1_, trans_face2_ji2_, trans_face2_ji3_,
       trans_face2_ji4_, trans_face2_ji5_, trans_face2_ji6_;
+  AthenaArray<Real> trans_face2_kji_;
   AthenaArray<Real> trans_face3_i1_, trans_face3_i2_;
   AthenaArray<Real> trans_face3_j1_;
   AthenaArray<Real> trans_face3_ji1_, trans_face3_ji2_, trans_face3_ji3_,
       trans_face3_ji4_, trans_face3_ji5_, trans_face3_ji6_;
+  AthenaArray<Real> trans_face3_kji_;
   AthenaArray<Real> g_, gi_;
 
-  Real bh_mass_; 
-  Real bh_spin_; 
-
+  // GR-specific variables
+  Real bh_mass_;
+  Real bh_spin_;
 };
 
 //----------------------------------------------------------------------------------------
@@ -363,26 +366,11 @@ public:
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
     AthenaArray<Real> &flux);
 
-  // .. to transform 4-vector from Boyer-Lindquist to global coordinates
-  void TransformVectorCell(Real at, Real ax, Real ay, Real az,int k,int j,int i,
-    Real *a0, Real *a1, Real *a2, Real *a3);
-  void TransformVectorFace1(Real at, Real ax, Real ay, Real az,int k,int j,int i,
-    Real *a0, Real *a1, Real *a2, Real *a3);
-  void TransformVectorFace2(Real at, Real ax, Real ay, Real az,int k,int j,int i,
-    Real *a0, Real *a1, Real *a2, Real *a3);
-  void TransformVectorFace3(Real at, Real ax, Real ay, Real az,int k,int j,int i,
-    Real *a0, Real *a1, Real *a2, Real *a3);
-
   // for raising (lowering) covariant (contravariant) components of a vector
-  void RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3,int k,int j,int i,
+  void RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j, int i,
     Real *pa0, Real *pa1, Real *pa2, Real *pa3);
   void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
     Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3);
-
-  // ...to convert between coordinate systems (useful for pgens)
-  void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt, Real *px,
-      Real *py, Real *pz);
-  Real DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2, Real y3);
 };
 
 //----------------------------------------------------------------------------------------
@@ -470,25 +458,11 @@ public:
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
     AthenaArray<Real> &flux);
 
-  // .. to transform 4-vector from Boyer-Lindquist to global coordinates
-  void TransformVectorCell(Real at, Real ax, Real ay, Real az,int k,int j,int i,
-    Real *a0, Real *a1, Real *a2, Real *a3);
-  void TransformVectorFace1(Real at, Real ax, Real ay, Real az,int k,int j,int i,
-    Real *a0, Real *a1, Real *a2, Real *a3);
-  void TransformVectorFace2(Real at, Real ax, Real ay, Real az,int k,int j,int i,
-    Real *a0, Real *a1, Real *a2, Real *a3);
-  void TransformVectorFace3(Real at, Real ax, Real ay, Real az,int k,int j,int i,
-    Real *a0, Real *a1, Real *a2, Real *a3);
-
   // for raising (lowering) covariant (contravariant) components of a vector
-  void RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3,int k,int j,int i,
+  void RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j, int i,
     Real *pa0, Real *pa1, Real *pa2, Real *pa3);
   void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
     Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3);
-
-  // ...to convert between coordinate systems (useful for pgens)
-  void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr, Real *ptheta,
-      Real *pphi);
 };
 
 //----------------------------------------------------------------------------------------
@@ -576,25 +550,103 @@ public:
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
     AthenaArray<Real> &flux);
 
-  // .. to transform 4-vector from Boyer-Lindquist to global coordinates
-  void TransformVectorCell(Real at, Real ax, Real ay, Real az,int k,int j,int i,
-    Real *a0, Real *a1, Real *a2, Real *a3);
-  void TransformVectorFace1(Real at, Real ax, Real ay, Real az,int k,int j,int i,
-    Real *a0, Real *a1, Real *a2, Real *a3);
-  void TransformVectorFace2(Real at, Real ax, Real ay, Real az,int k,int j,int i,
-    Real *a0, Real *a1, Real *a2, Real *a3);
-  void TransformVectorFace3(Real at, Real ax, Real ay, Real az,int k,int j,int i,
-    Real *a0, Real *a1, Real *a2, Real *a3);
-
   // for raising (lowering) covariant (contravariant) components of a vector
-  void RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3,int k,int j,int i,
+  void RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j, int i,
     Real *pa0, Real *pa1, Real *pa2, Real *pa3);
   void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
     Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3);
+};
 
-  // ...to convert between coordinate systems (useful for pgens)
-  void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr, Real *ptheta,
-      Real *pphi);
+//----------------------------------------------------------------------------------------
+//! \class GRUser
+//  \brief derived class for arbitrary (stationary) user-defined coordinates in GR.
+//  Nearly every function in the abstract base class need to be overwritten.
+
+class GRUser : public Coordinates {
+  friend class HydroSourceTerms;
+
+public:
+  GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag);
+  ~GRUser();
+
+  // functions...
+  // ...to compute length of edges
+  void Edge1Length(const int k, const int j, const int il, const int iu,
+      AthenaArray<Real> &len);
+  void Edge2Length(const int k, const int j, const int il, const int iu,
+      AthenaArray<Real> &len);
+  void Edge3Length(const int k, const int j, const int il, const int iu,
+      AthenaArray<Real> &len);
+  Real GetEdge1Length(const int k, const int j, const int i);
+  Real GetEdge2Length(const int k, const int j, const int i);
+  Real GetEdge3Length(const int k, const int j, const int i);
+
+  // ...to compute physical width at cell center
+  void CenterWidth1(const int k, const int j, const int il, const int iu,
+      AthenaArray<Real> &dx1);
+  void CenterWidth2(const int k, const int j, const int il, const int iu,
+      AthenaArray<Real> &dx2);
+  void CenterWidth3(const int k, const int j, const int il, const int iu,
+      AthenaArray<Real> &dx3);
+
+  // ...to compute area of faces
+  void Face1Area(const int k, const int j, const int il, const int iu,
+      AthenaArray<Real> &area);
+  void Face2Area(const int k, const int j, const int il, const int iu,
+      AthenaArray<Real> &area);
+  void Face3Area(const int k, const int j, const int il, const int iu,
+      AthenaArray<Real> &area);
+  Real GetFace1Area(const int k, const int j, const int i);
+  Real GetFace2Area(const int k, const int j, const int i);
+  Real GetFace3Area(const int k, const int j, const int i);
+
+  // ...to compute volumes of cells
+  void CellVolume(const int k, const int j, const int il, const int iu,
+      AthenaArray<Real> &vol);
+  Real GetCellVolume(const int k, const int j, const int i);
+
+  // ...to compute geometrical source terms
+  void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+      const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u);
+
+  // In GR, functions...
+  // ...to compute metric
+  void CellMetric(const int k, const int j, const int il, const int iu,
+      AthenaArray<Real> &g, AthenaArray<Real> &gi);
+  void Face1Metric(const int k, const int j, const int il, const int iu,
+      AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
+  void Face2Metric(const int k, const int j, const int il, const int iu,
+      AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
+  void Face3Metric(const int k, const int j, const int il, const int iu,
+      AthenaArray<Real> &g, AthenaArray<Real> &g_inv);
+
+  // ...to transform primitives to locally flat space
+  void PrimToLocal1(const int k, const int j, const int il, const int iu,
+      const AthenaArray<Real> &b1_vals, AthenaArray<Real> &prim_left,
+      AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
+  void PrimToLocal2(const int k, const int j, const int il, const int iu,
+      const AthenaArray<Real> &b2_vals, AthenaArray<Real> &prim_left,
+      AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
+  void PrimToLocal3(const int k, const int j, const int il, const int iu,
+      const AthenaArray<Real> &b3_vals, AthenaArray<Real> &prim_left,
+      AthenaArray<Real> &prim_right, AthenaArray<Real> &bx);
+
+  // ...to transform fluxes in locally flat space to global frame
+  void FluxToGlobal1(const int k, const int j, const int il, const int iu,
+      const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
+      AthenaArray<Real> &flux);
+  void FluxToGlobal2(const int k, const int j, const int il, const int iu,
+      const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
+      AthenaArray<Real> &flux);
+  void FluxToGlobal3(const int k, const int j, const int il, const int iu,
+      const AthenaArray<Real> &cons, const AthenaArray<Real> &bx,
+      AthenaArray<Real> &flux);
+
+  // ...for raising (lowering) covariant (contravariant) components of a vector
+  void RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j, int i,
+      Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+  void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
+      Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3);
 };
 
 #endif // COORDINATES_HPP
