@@ -5,7 +5,7 @@ Read Athena++ output data files.
 # Python modules
 import numpy as np
 
-#=======================================================================================
+#=========================================================================================
 
 def tab(filename, headings=None, dimensions=1):
   """Read .tab files and return dict or array."""
@@ -68,7 +68,7 @@ def tab(filename, headings=None, dimensions=1):
   else:
     return data_array
 
-#=======================================================================================
+#=========================================================================================
 
 def vtk(filename):
   """Read .vtk files and return dict of arrays of data."""
@@ -176,7 +176,7 @@ def vtk(filename):
     raise AthenaError('File not formatted as expected')
   return x_faces,y_faces,z_faces,data
 
-#=======================================================================================
+#=========================================================================================
 
 def athdf(filename, data=None, quantities=None, level=0, subsample=False,
     fast_restrict=False, vol_func=None, vol_params=None, center_func_1=None,
@@ -274,8 +274,8 @@ def athdf(filename, data=None, quantities=None, level=0, subsample=False,
       max_restrict_factor = 2**(max_level-level)
       for current_block_size in block_size[:dim]:
         if current_block_size % max_restrict_factor != 0:
-          raise AthenaError('Block boundaries at finest level must be cell boundaries ' \
-              + 'at desired level for\nsubsampling or fast restriction to work')
+          raise AthenaError('Block boundaries at finest level must be cell boundaries' \
+              + ' at desired level for\nsubsampling or fast restriction to work')
 
     # Create list of all quantities if none given
     if data is not None:
@@ -331,7 +331,7 @@ def athdf(filename, data=None, quantities=None, level=0, subsample=False,
             xmin + (1.0-xrat**np.arange(nx+1)) / (1.0-xrat**nx) * (xmax-xmin)
       data['x'+repr(d)+'v'] = np.empty(nx)
       for i in range(nx):
-        data['x'+repr(d)+'v'] = \
+        data['x'+repr(d)+'v'][i] = \
             center_func(data['x'+repr(d)+'f'][i], data['x'+repr(d)+'f'][i+1])
 
     # Go through blocks in data file
@@ -487,7 +487,7 @@ def athdf(filename, data=None, quantities=None, level=0, subsample=False,
 
   return data
 
-#=======================================================================================
+#=========================================================================================
 
 class AthenaError(RuntimeError):
   """General exception class for Athena++ read functions."""
