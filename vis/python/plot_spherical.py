@@ -4,7 +4,7 @@
 Script for plotting vertical (r,theta) or midplane (r,phi) slices of data in
 spherical coordinates.
 
-Run "python azimuthal_average.py -h" to see description of inputs.
+Run "plot_spherical.py -h" to see description of inputs.
 
 See documentation on athena_read.athdf() for important notes about reading files
 with mesh refinement.
@@ -59,6 +59,11 @@ def main(**kwargs):
   else:
     r_max = data['x1f'][-1]
 
+  # Account for logarithmic radial coordinate
+  if kwargs['logr']:
+    r = np.log10(r)
+    r_max = np.log10(r_max)
+
   # Perform slicing/averaging
   if kwargs['midplane']:
     if nx2%2 == 0:
@@ -88,12 +93,14 @@ def main(**kwargs):
   if kwargs['midplane']:
     phi_extended = \
         np.concatenate((phi[-1:]-2.0*np.pi, phi, phi[:1]+2.0*np.pi))
+    phi_extended -= 0.5 * 2.0*np.pi/nx3
     r_grid,phi_grid = np.meshgrid(r, phi_extended)
     x_grid = r_grid * np.cos(phi_grid)
     y_grid = r_grid * np.sin(phi_grid)
   else:
     theta_extended = np.concatenate((-theta[0:1], theta, 2.0*np.pi-theta[::-1], \
         2.0*np.pi+theta[0:1]))
+    theta_extended -= 0.5 * np.pi/nx2
     r_grid,theta_grid = np.meshgrid(r, theta_extended)
     x_grid = r_grid * np.sin(theta_grid)
     y_grid = r_grid * np.cos(theta_grid)
@@ -102,7 +109,7 @@ def main(**kwargs):
   cmap = plt.get_cmap(kwargs['colormap'])
   vmin = kwargs['vmin']
   vmax = kwargs['vmax']
-  if kwargs['log']:
+  if kwargs['logc']:
     norm = colors.LogNorm()
   else:
     norm = colors.Normalize()
@@ -114,6 +121,11 @@ def main(**kwargs):
   plt.gca().set_aspect('equal')
   plt.xlim((-r_max, r_max))
   plt.ylim((-r_max, r_max))
+  r_string = r'\log_{10}(r)\ ' if kwargs['logr'] else r'r\ '
+  angle_string_x = r'\cos(\phi)' if kwargs['midplane'] else r'\sin(\theta)'
+  angle_string_y = r'\sin(\phi)' if kwargs['midplane'] else r'\cos(\theta)'
+  plt.xlabel('$'+r_string+angle_string_x+'$')
+  plt.ylabel('$'+r_string+angle_string_y+'$')
   plt.colorbar(im)
   plt.savefig(kwargs['output_file'])
 
@@ -143,6 +155,9 @@ if __name__ == '__main__':
       type=float,
       default=None,
       help='maximum radial extent of plot')
+  parser.add_argument('--logr',
+      action='store_true',
+      help='flag indicating data should be logarithmically in radius')
   parser.add_argument('-c', '--colormap',
       type=str,
       default=None,
@@ -158,7 +173,7 @@ if __name__ == '__main__':
       default=None,
       help='data value to correspond to colormap maximum; use --vmax=<val> if <val> has \
           negative sign')
-  parser.add_argument('--log',
+  parser.add_argument('--logc',
       action='store_true',
       help='flag indicating data should be colormapped logarithmically')
   args = parser.parse_args()
