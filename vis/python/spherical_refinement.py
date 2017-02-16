@@ -67,7 +67,7 @@ def main(**kwargs):
     except ValueError:
       raise RuntimeError('invalid parameter')
   if metric == 'boyer-lindquist' or metric == 'kerr-schild':
-    if len(parameters) != 1:
+    if len(parameters) != 2:
       raise RuntimeError('must specify 2 parameters (mass and spin) for this metric')
     try:
       float(parameters[0])
