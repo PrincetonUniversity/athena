@@ -25,8 +25,6 @@
 #   --hdf5_path=path  path to HDF5 libraries (requires the HDF5 library)
 #   -fft              enable FFT (requires the FFTW library)
 #   --fftw_path=path  path to FFTW libraries (requires the FFTW library)
-#   --mpifft=choice   use choice as the MPI-FFT
-#   --mpifft_path=path path to MPI-FFT libraries
 #   --grav=choice     use choice as the self-gravity solver
 #   --cxx=choice      use choice as the C++ compiler
 #   --ccmd=choice     use choice as the command to call the C++ compiler
@@ -148,18 +146,6 @@ parser.add_argument('--fftw_path',
     type=str,
     default='',
     help='path to FFTW libraries')
-
-# --mpifft=[name] argument
-parser.add_argument('--mpifft',
-    default='fftw',
-    choices=['fftw','accfft','plimpton'],
-    help='select MPI FFT')
-
-# --mpifft_path argument
-parser.add_argument('--mpifft_path',
-    type=str,
-    default='',
-    help='path to MPIFFT libraries')
 
 # -hdf5 argument
 parser.add_argument('-hdf5',
@@ -397,35 +383,20 @@ else:
       raise SystemExit('### CONFIGURE ERROR: FFT Poisson solver only be used with FFT')
 
 # -fft argument
+makefile_options['MPIFFT_FILE'] = ' '
+definitions['FFT_ENABLED'] = '0'
+definitions['FFT_DEFINE'] = 'NO_FFT'
 if args['fft']:
   definitions['FFT_ENABLED'] = '1'
-  definitions['FFT_DEFINE'] = 'FFTW'
-  makefile_options['MPIFFT_FILE'] = ' src/fft/athena_fft_fftw.cpp' 
+  definitions['FFT_DEFINE'] = 'FFT'
   if args['fftw_path'] != '':
     makefile_options['PREPROCESSOR_FLAGS'] += ' -I%s/include' % args['fftw_path']
     makefile_options['LINKER_FLAGS'] += ' -L%s/lib' % args['fftw_path']
   if args['omp']:
     makefile_options['LIBRARY_FLAGS'] += ' -lfftw3_omp'
   if args['mpi']:
-    if args['mpifft_path'] != '':
-      makefile_options['PREPROCESSOR_FLAGS'] += ' -I%s/include' % args['mpifft_path']
-      makefile_options['LINKER_FLAGS'] += ' -L%s/lib' % args['mpifft_path']
-    if args['mpifft'] == 'fftw':
-      definitions['FFT_DEFINE'] = 'FFTW_MPI'
-      makefile_options['LIBRARY_FLAGS'] += ' -lfftw3_mpi'
-      makefile_options['MPIFFT_FILE'] = ' src/fft/athena_fft_fftw.cpp'
-    elif args['mpifft'] == 'plimpton':
-      definitions['FFT_DEFINE'] = 'PLIMPTON'
-      makefile_options['MPIFFT_FILE'] = ' src/fft/athena_fft_mpi.cpp $(wildcard src/fft/plimpton/*.cpp)'
-    elif args['mpifft'] == 'accfft':
-      definitions['FFT_DEFINE'] = 'ACCFFT'
-      makefile_options['MPIFFT_FILE'] = ' src/fft/athena_fft_accfft.cpp'
-      makefile_options['LIBRARY_FLAGS'] += ' -laccfft'
-  makefile_options['LIBRARY_FLAGS'] += ' -lfftw3 -lfftw3f'
-else:
-  definitions['FFT_ENABLED'] = '0'
-  definitions['FFT_DEFINE'] = 'NO_FFT'
-  makefile_options['MPIFFT_FILE'] = ' '
+    makefile_options['MPIFFT_FILE'] = ' $(wildcard src/fft/plimpton/*.cpp)'
+  makefile_options['LIBRARY_FLAGS'] += ' -lfftw3'
 
 # -hdf5 argument
 if args['hdf5']:
