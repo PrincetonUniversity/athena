@@ -13,7 +13,6 @@ typedef struct AthenaFFTPlan{
 #include "plimpton/fft_3d.h"
 #include "plimpton/fft_2d.h"
 typedef fftw_complex AthenaFFTComplex;
-typedef int AthenaFFTInt;
 typedef struct AthenaFFTPlan{
   struct fft_plan_3d *plan3d;
   struct fft_plan_2d *plan2d;
@@ -25,7 +24,6 @@ typedef struct AthenaFFTPlan{
 #elif defined(ACCFFT)
 #include "accfft.h"
 typedef fftw_complex AthenaFFTComplex;
-typedef int AthenaFFTInt;
 typedef struct AthenaFFTPlan{
   accfft_plan *plan3d;
   fftw_plan plan;
@@ -45,7 +43,6 @@ typedef struct AthenaFFTPlan{
 } AthenaFFTPlan;
 #else //no FFT
 typedef Real AthenaFFTComplex[2];
-typedef int AthenaFFTInt;
 typedef struct AthenaFFTPlan{
   void *plan;
   enum AthenaFFTDirection dir;

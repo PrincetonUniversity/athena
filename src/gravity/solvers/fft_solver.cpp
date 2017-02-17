@@ -26,9 +26,8 @@ void Gravity::Initialize(ParameterInput *pin)
   MeshBlock *pmb=pmy_block;
   AthenaFFT *pfft=pmb->pfft;
 
-  pfft->Initialize();
-  pfft->fplan = pfft->QuickCreatePlan(AthenaFFTForward);
-  pfft->bplan = pfft->QuickCreatePlan(AthenaFFTBackward);
+  pfft->fplan = pfft->QuickCreatePlan(AthenaFFTForward,pfft->in);
+  pfft->bplan = pfft->QuickCreatePlan(AthenaFFTBackward,pfft->in);
 }
 
 //----------------------------------------------------------------------------------------
@@ -50,8 +49,6 @@ void Gravity::Solver(const AthenaArray<Real> &u)
   Real dx1sq = SQR(dx1), dx2sq = SQR(dx2), dx3sq = SQR(dx3);
 
   Real pcoeff;
-  AthenaFFTComplex *out;
-  out = new AthenaFFTComplex[pfft->cnt];
 // Copy phi to phi_old
 
 // Fill the work array
@@ -59,49 +56,48 @@ void Gravity::Solver(const AthenaArray<Real> &u)
   for(int k=ks; k<=ke; ++k){
     for(int j=js; j<=je; ++j){
       for(int i=is; i<=ie; ++i){
-        long int idx=pfft->GetIndex(i-is,j-js,k-ks,pfft->swap1);
-        pfft->work[idx][0] = (u(IDN,k,j,i) - grav_mean_rho);
-        pfft->work[idx][1] = 0.0;
+        long int idx=pfft->GetIndex(i-is,j-js,k-ks,pfft->f_in);
+        pfft->in[idx][0] = (u(IDN,k,j,i) - grav_mean_rho);
+        pfft->in[idx][1] = 0.0;
       }
     }
   }
 
-  pfft->Execute(pfft->fplan, pfft->work, out);
+  pfft->Execute(pfft->fplan);
 
 // Multiply kernel coefficient
 
-  for(int k=0; k<pfft->knx3; k++){
-    for(int j=0; j<pfft->knx2; j++){
-      for(int i=0; i<pfft->knx1; i++){
+  for(int k=0; k<pfft->knx[2]; k++){
+    for(int j=0; j<pfft->knx[1]; j++){
+      for(int i=0; i<pfft->knx[0]; i++){
         long int gidx = pfft->GetGlobalIndex(i,j,k); 
         if(gidx == 0){
           pcoeff = 0.0;
         } else { 
-          pcoeff = ((2.0*std::cos(((i)+pfft->idisp_k)*pfft->dkx)-2.0)/dx1sq);
-          if(pfft->dim > 1)
-            pcoeff += ((2.0*std::cos(((j)+pfft->jdisp_k)*pfft->dky)-2.0)/dx2sq);
-          if(pfft->dim > 2)
-            pcoeff += ((2.0*std::cos(((k)+pfft->kdisp_k)*pfft->dkz)-2.0)/dx3sq);
+          pcoeff = ((2.0*std::cos((i+pfft->kdisp[0])*pfft->dkx[0])-2.0)/dx1sq);
+          if(pfft->dim_ > 1)
+            pcoeff += ((2.0*std::cos((j+pfft->kdisp[1])*pfft->dkx[1])-2.0)/dx2sq);
+          if(pfft->dim_ > 2)
+            pcoeff += ((2.0*std::cos((k+pfft->kdisp[2])*pfft->dkx[2])-2.0)/dx3sq);
           pcoeff = 1.0/pcoeff;
         }
-        long int idx=pfft->GetFreq(i,j,k,false);
-        long int idx_out=pfft->GetFreq(i,j,k,pfft->swap2);
-        //std::cout << gidx << " " << idx << " " << pcoeff << std::endl;
-        pfft->work[idx][0] = out[idx_out][0]*pcoeff;
-        pfft->work[idx][1] = out[idx_out][1]*pcoeff;
+        long int idx_in=pfft->GetIndex(i,j,k,pfft->b_in);
+        long int idx_out=pfft->GetIndex(i,j,k,pfft->f_out);
+        pfft->in[idx_in][0] = pfft->out[idx_out][0]*pcoeff;
+        pfft->in[idx_in][1] = pfft->out[idx_out][1]*pcoeff;
       }
     }
   }
   
-  pfft->Execute(pfft->bplan, pfft->work);
+  pfft->Execute(pfft->bplan);
 
 // Return phi
 
   for(int k=ks; k<=ke; ++k){
     for(int j=js; j<=je; ++j){
       for(int i=is; i<=ie; ++i){
-        long int idx=pfft->GetIndex(i-is,j-js,k-ks,false);
-        phi(k,j,i) = four_pi_gconst * pfft->work[idx][0]/pfft->gcnt;
+        long int idx=pfft->GetIndex(i-is,j-js,k-ks,pfft->b_out);
+        phi(k,j,i) = four_pi_gconst * pfft->out[idx][0]/pfft->gcnt;
       }
     }
   }

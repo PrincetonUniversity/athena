@@ -33,8 +33,6 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin)
 
     Initialize(pin);
 
-    // Allocate memory for scratch vectors
-    den_.NewAthenaArray(ncells3,ncells2,ncells1);
   }
 }
 
@@ -44,5 +42,4 @@ Gravity::~Gravity()
 {
   phi.DeleteAthenaArray();
   phi_old.DeleteAthenaArray();
-  den_.DeleteAthenaArray();
 }
