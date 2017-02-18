@@ -163,14 +163,14 @@ def main(**kwargs):
   # Determine refinement regions
   refinement_regions = []
   num_blocks = np.zeros(max_levels+1, dtype=int)
+  num_blocks[0] = \
+      (num_r/num_r_block) * (num_theta/num_theta_block) * (num_phi/num_phi_block)
   for l in range(max_levels):
 
     # Calculate number of blocks in this level
     num_blocks_r = num_r/num_r_block * 2**l
     num_blocks_theta = num_theta/num_theta_block * 2**l
     num_blocks_phi = num_phi/num_phi_block * 2**l
-    if l == 0:
-      num_blocks[0] = num_blocks_r * num_blocks_theta * num_blocks_phi
 
     # Find block limit of region to be refined
     j_lims = np.empty(num_blocks_r, dtype=int)
@@ -344,6 +344,7 @@ def plot_grid(refinement, r_bounds, theta_bounds, output_filename, colormap, \
   matplotlib.use('agg')
   matplotlib.rc('font', family='serif', size=14)
   import matplotlib.pyplot as plt
+  import matplotlib.cm as cm
   import matplotlib.colors as colors
   import matplotlib.patches as patches
 
@@ -398,6 +399,10 @@ def plot_grid(refinement, r_bounds, theta_bounds, output_filename, colormap, \
   # Set discrete colormap
   bounds = range(max_level+2)
   norm = colors.BoundaryNorm(bounds, 256)
+  if max_level == 0:
+    cmap = cm.get_cmap(colormap)
+    color = cmap(0.0)
+    colormap,norm = colors.from_levels_and_colors(range(3), (color, color))
 
   # Plot colors to indicate level
   plt.figure()
@@ -418,7 +423,9 @@ def plot_grid(refinement, r_bounds, theta_bounds, output_filename, colormap, \
     plt.ylabel(r'$r\ \cos(\theta)$')
 
   # Make colorbar
-  ticks = np.arange(max_level+2) + 0.5
+  ticks = np.arange(max_level+1) + 0.5
+  if max_level == 0:
+    ticks = (1,)
   labels = [repr(n) for n in range(max_level+1)]
   cbar = plt.colorbar(im, ticks=ticks)
   cax = cbar.ax
