@@ -662,8 +662,8 @@ static void write_joined_vtk(const char *out_name){
     fprintf(fp_out,"X_COORDINATES %d float\n",nxp);
     for(i=0; i<NGrid_x; i++)
       for(ii=0; ii<domain_3d[0][0][i].Nx; ++ii){
-	fcoord=domain_3d[0][0][i].X[ii];
-	if(!big_end) Swap4Bytes(&fcoord);
+        fcoord=domain_3d[0][0][i].X[ii];
+        if(!big_end) Swap4Bytes(&fcoord);
         fwrite(&fcoord, sizeof(float), 1, fp_out);
       }
     // write the last corner coord
@@ -677,7 +677,7 @@ static void write_joined_vtk(const char *out_name){
     fprintf(fp_out,"\nY_COORDINATES %d float\n",nyp);
     for(j=0; j<NGrid_y; j++)
       for(jj=0; jj<domain_3d[0][j][0].Ny; ++jj){
-	fcoord=domain_3d[0][j][0].Y[jj];
+        fcoord=domain_3d[0][j][0].Y[jj];
         if(!big_end) Swap4Bytes(&fcoord);
         fwrite(&fcoord, sizeof(float), 1, fp_out);
       }
@@ -692,7 +692,7 @@ static void write_joined_vtk(const char *out_name){
     fprintf(fp_out,"\nZ_COORDINATES %d float\n",nzp);
     for(k=0; k<NGrid_z; k++)
       for(kk=0; kk<domain_3d[k][0][0].Nz; ++kk){ 
-	fcoord = domain_3d[k][0][0].Z[kk];
+        fcoord = domain_3d[k][0][0].Z[kk];
         if(!big_end) Swap4Bytes(&fcoord);
         fwrite(&fcoord, sizeof(float), 1, fp_out);
       }
