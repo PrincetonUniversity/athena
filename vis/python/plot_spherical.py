@@ -191,27 +191,47 @@ def main(**kwargs):
 
   # Transform vector data to Cartesian components
   if kwargs['stream'] is not None:
-    if kwargs['midplane']:
-      if coordinates == 'schwarzschild' or coordinates == 'kerr-schild':
-        vals_x = np.cos(phi_grid_stream_coord) * vals_r \
-            - r_grid_stream_coord * np.sin(phi_grid_stream_coord) * vals_phi
-        vals_y = np.sin(phi_grid_stream_coord) * vals_r \
-            + r_grid_stream_coord * np.cos(phi_grid_stream_coord) * vals_phi
-      else:
-        vals_x = np.cos(phi_grid_stream_coord) * vals_r - vals_phi
-        vals_y = np.sin(phi_grid_stream_coord) * vals_r \
-            + 1.0/np.tan(phi_grid_stream_coord) * vals_phi
+    if kwargs['logr']:
+      r_vals = 10.0**r_grid_stream_coord
+      logr_vals = r_grid_stream_coord
     else:
-      if coordinates == 'schwarzschild' or coordinates == 'kerr-schild':
-        vals_x = np.sin(theta_grid_stream_coord) * vals_r \
-            + r_grid_stream_coord * np.cos(theta_grid_stream_coord) * vals_theta
-        vals_z = np.cos(theta_grid_stream_coord) * vals_r \
-            - r_grid_stream_coord * np.sin(theta_grid_stream_coord) * vals_theta
+      r_vals = r_grid_stream_coord
+    if kwargs['midplane']:
+      sin_phi = np.sin(phi_grid_stream_coord)
+      cos_phi = np.cos(phi_grid_stream_coord)
+      if kwargs['logr']:
+        dx_dr = 1.0 / (np.log(10.0) * r_vals) * cos_phi
+        dy_dr = 1.0 / (np.log(10.0) * r_vals) * sin_phi
+        dx_dphi = -logr_vals * sin_phi
+        dy_dphi = logr_vals * cos_phi
       else:
-        vals_x = np.sin(theta_grid_stream_coord) * vals_r \
-            + np.cos(theta_grid_stream_coord) * vals_theta
-        vals_z = np.cos(theta_grid_stream_coord) * vals_r \
-            - np.sin(theta_grid_stream_coord) * vals_theta
+        dx_dr = cos_phi
+        dy_dr = sin_phi
+        dx_dphi = -r_vals * sin_phi
+        dy_dphi = r_vals * cos_phi
+      if not (coordinates == 'schwarzschild' or coordinates == 'kerr-schild'):
+        dx_dphi /= r_vals
+        dy_dphi /= r_vals
+      vals_x = dx_dr * vals_r + dx_dphi * vals_phi
+      vals_y = dy_dr * vals_r + dy_dphi * vals_phi
+    else:
+      sin_theta = np.sin(theta_grid_stream_coord)
+      cos_theta = np.cos(theta_grid_stream_coord)
+      if kwargs['logr']:
+        dx_dr = 1.0 / (np.log(10.0) * r_vals) * sin_theta
+        dz_dr = 1.0 / (np.log(10.0) * r_vals) * cos_theta
+        dx_dtheta = logr_vals * cos_theta
+        dz_dtheta = -logr_vals * sin_theta
+      else:
+        dx_dr = sin_theta
+        dz_dr = cos_theta
+        dx_dtheta = r_vals * cos_theta
+        dz_dtheta = -r_vals * sin_theta
+      if not (coordinates == 'schwarzschild' or coordinates == 'kerr-schild'):
+        dx_dtheta /= r_vals
+        dz_dtheta /= r_vals
+      vals_x = dx_dr * vals_r + dx_dtheta * vals_theta
+      vals_z = dz_dr * vals_r + dz_dtheta * vals_theta
 
   # Determine colormapping properties
   cmap = plt.get_cmap(kwargs['colormap'])
