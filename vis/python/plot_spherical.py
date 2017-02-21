@@ -16,6 +16,8 @@ Users are encouraged to make their own versions of this script for improved
 results by adjusting figure size, spacings, tick locations, axes labels, etc.
 The script must also be modified to plot any functions of the quantities in the
 file, including combinations of multiple quantities.
+
+Requires scipy if making streamplot.
 """
 
 # Python modules
@@ -35,6 +37,10 @@ import athena_read
 # Main function
 def main(**kwargs):
 
+  # Python modules
+  if kwargs['stream'] is not None:
+    from scipy.ndimage import map_coordinates
+
   # Determine refinement level to use
   if kwargs['level'] is not None:
     level = kwargs['level']
@@ -43,13 +49,22 @@ def main(**kwargs):
       level = f.attrs['MaxLevel']
 
   # Read data
-  data = athena_read.athdf(kwargs['data_file'], quantities=(kwargs['quantity'],), \
-      level=level)
+  quantities = [kwargs['quantity']]
+  if kwargs['stream'] is not None:
+    quantities.append(kwargs['stream']+'1')
+    if kwargs['midplane']:
+      quantities.append(kwargs['stream']+'3')
+    else:
+      quantities.append(kwargs['stream']+'2')
+  data = athena_read.athdf(kwargs['data_file'], quantities=quantities, level=level)
 
   # Extract basic coordinate information
+  with h5py.File(kwargs['data_file'], 'r') as f:
+    coordinates = f.attrs['Coordinates']
   r = data['x1v']
   theta = data['x2v']
   phi = data['x3v']
+  nx1 = len(r)
   nx2 = len(theta)
   nx3 = len(phi)
 
@@ -64,7 +79,50 @@ def main(**kwargs):
     r = np.log10(r)
     r_max = np.log10(r_max)
 
-  # Perform slicing/averaging
+  # Create scalar grid
+  if kwargs['midplane']:
+    phi_extended = \
+        np.concatenate((phi[-1:]-2.0*np.pi, phi, phi[:1]+2.0*np.pi))
+    phi_extended -= 0.5 * 2.0*np.pi/nx3
+    r_grid,phi_grid = np.meshgrid(r, phi_extended)
+    x_grid = r_grid * np.cos(phi_grid)
+    y_grid = r_grid * np.sin(phi_grid)
+  else:
+    theta_extended = np.concatenate((-theta[0:1], theta, 2.0*np.pi-theta[::-1], \
+        2.0*np.pi+theta[0:1]))
+    theta_extended -= 0.5 * np.pi/nx2
+    r_grid,theta_grid = np.meshgrid(r, theta_extended)
+    x_grid = r_grid * np.sin(theta_grid)
+    y_grid = r_grid * np.cos(theta_grid)
+
+  # Create streamline grid
+  if kwargs['stream'] is not None:
+    x_stream = np.linspace(-r_max, r_max, 2*nx1+1)
+    if kwargs['midplane']:
+      y_stream = np.linspace(-r_max, r_max, 2*nx1+1)
+      x_grid_stream,y_grid_stream = np.meshgrid(x_stream, y_stream)
+      r_grid_stream_coord = (x_grid_stream.T**2 + y_grid_stream.T**2) ** 0.5
+      phi_grid_stream_coord = np.pi + np.arctan2(-y_grid_stream.T, -x_grid_stream.T)
+      phi_grid_stream_pix = \
+          (phi_grid_stream_coord+phi[0]) / (2.0*np.pi+2.0*phi[0]) * (nx3+1)
+    else:
+      z_stream = np.linspace(-r_max, r_max, 2*nx1+1)
+      x_grid_stream,z_grid_stream = np.meshgrid(x_stream, z_stream)
+      r_grid_stream_coord = (x_grid_stream.T**2 + z_grid_stream.T**2) ** 0.5
+      theta_grid_stream_coord = np.pi - np.arctan2(x_grid_stream.T, -z_grid_stream.T)
+      theta_grid_stream_pix = \
+          (theta_grid_stream_coord+theta[0]) / (2.0*np.pi+2.0*theta[0]) * (2*nx2+1)
+    r_grid_stream_pix = np.empty_like(r_grid_stream_coord)
+    for (i,j),r_val in np.ndenumerate(r_grid_stream_coord):
+      index = sum(r < r_val) - 1
+      if index < 0:
+        r_grid_stream_pix[i,j] = -1
+      elif index < nx1-1:
+        r_grid_stream_pix[i,j] = index + (r_val-r[index]) / (r[index+1]-r[index])
+      else:
+        r_grid_stream_pix[i,j] = index + 1
+
+  # Perform slicing/averaging of scalar data
   if kwargs['midplane']:
     if nx2%2 == 0:
       vals = np.mean(data[kwargs['quantity']][:,nx2/2-1:nx2/2+1,:], axis=1)
@@ -82,28 +140,78 @@ def main(**kwargs):
       vals_left = 0.5 \
           * (data[kwargs['quantity']][nx3/2-1,:,:] + data[kwargs['quantity']][nx3/2,:,:])
 
-  # Join data through boundaries
+  # Join scalar data through boundaries
   if kwargs['midplane']:
-    vals_extended = np.vstack((vals[-1:,:], vals, vals[:1,:]))
+    vals = np.vstack((vals[-1:,:], vals, vals[:1,:]))
   else:
-    vals_extended = \
-        np.vstack((vals_left[0:1,:], vals_right, vals_right[::-1,:], vals_left[0:1,:]))
+    vals = np.vstack((vals_left[0:1,:], vals_right, vals_right[::-1,:], vals_left[0:1,:]))
 
-  # Create grids
-  if kwargs['midplane']:
-    phi_extended = \
-        np.concatenate((phi[-1:]-2.0*np.pi, phi, phi[:1]+2.0*np.pi))
-    phi_extended -= 0.5 * 2.0*np.pi/nx3
-    r_grid,phi_grid = np.meshgrid(r, phi_extended)
-    x_grid = r_grid * np.cos(phi_grid)
-    y_grid = r_grid * np.sin(phi_grid)
-  else:
-    theta_extended = np.concatenate((-theta[0:1], theta, 2.0*np.pi-theta[::-1], \
-        2.0*np.pi+theta[0:1]))
-    theta_extended -= 0.5 * np.pi/nx2
-    r_grid,theta_grid = np.meshgrid(r, theta_extended)
-    x_grid = r_grid * np.sin(theta_grid)
-    y_grid = r_grid * np.cos(theta_grid)
+  # Perform slicing/averaging of vector data
+  if kwargs['stream'] is not None:
+    if kwargs['midplane']:
+      if nx2%2 == 0:
+        vals_r = np.mean(data[kwargs['stream']+'1'][:,nx2/2-1:nx2/2+1,:], axis=1).T
+        vals_phi = np.mean(data[kwargs['stream']+'3'][:,nx2/2-1:nx2/2+1,:], axis=1).T
+      else:
+        vals_r = data[kwargs['stream']+'1'][:,nx2/2,:].T
+        vals_phi = data[kwargs['stream']+'3'][:,nx2/2,:].T
+      if kwargs['stream_average']:
+        vals_r = np.tile(np.reshape(np.mean(vals_r, axis=1), (nx1,1)), nx3)
+        vals_phi = np.tile(np.reshape(np.mean(vals_phi, axis=1), (nx1,1)), nx3)
+    else:
+      if kwargs['stream_average']:
+        vals_r_right = np.mean(data[kwargs['stream']+'1'], axis=0).T
+        vals_r_left = vals_r_right
+        vals_theta_right = np.mean(data[kwargs['stream']+'2'], axis=0).T
+        vals_theta_left = -vals_theta_right
+      else:
+        vals_r_right = data[kwargs['stream']+'1'][0,:,:].T
+        vals_r_left = data[kwargs['stream']+'1'][nx3/2,:,:].T
+        vals_theta_right = data[kwargs['stream']+'2'][0,:,:].T
+        vals_theta_left = -data[kwargs['stream']+'2'][nx3/2,:,:].T
+
+  # Join vector data through boundaries
+  if kwargs['stream'] is not None:
+    if kwargs['midplane']:
+      vals_r = np.hstack((vals_r[:,-1:], vals_r, vals_r[:,:1]))
+      vals_r = map_coordinates(vals_r, (r_grid_stream_pix, phi_grid_stream_pix), \
+          order=1, cval=np.nan)
+      vals_phi = np.hstack((vals_phi[:,-1:], vals_phi, vals_phi[:,:1]))
+      vals_phi = map_coordinates(vals_phi, (r_grid_stream_pix, phi_grid_stream_pix), \
+          order=1, cval=np.nan)
+    else:
+      vals_r = np.hstack((vals_r_left[:,:1], vals_r_right, vals_r_left[:,::-1], \
+          vals_r_right[:,:1]))
+      vals_r = map_coordinates(vals_r, (r_grid_stream_pix, theta_grid_stream_pix), \
+          order=1, cval=np.nan)
+      vals_theta = np.hstack((vals_theta_left[:,:1], vals_theta_right, \
+          vals_theta_left[:,::-1], vals_theta_right[:,:1]))
+      vals_theta = map_coordinates(vals_theta, \
+          (r_grid_stream_pix, theta_grid_stream_pix), order=1, cval=np.nan)
+
+  # Transform vector data to Cartesian components
+  if kwargs['stream'] is not None:
+    if kwargs['midplane']:
+      if coordinates == 'schwarzschild' or coordinates == 'kerr-schild':
+        vals_x = np.cos(phi_grid_stream_coord) * vals_r \
+            - r_grid_stream_coord * np.sin(phi_grid_stream_coord) * vals_phi
+        vals_y = np.sin(phi_grid_stream_coord) * vals_r \
+            + r_grid_stream_coord * np.cos(phi_grid_stream_coord) * vals_phi
+      else:
+        vals_x = np.cos(phi_grid_stream_coord) * vals_r - vals_phi
+        vals_y = np.sin(phi_grid_stream_coord) * vals_r \
+            + 1.0/np.tan(phi_grid_stream_coord) * vals_phi
+    else:
+      if coordinates == 'schwarzschild' or coordinates == 'kerr-schild':
+        vals_x = np.sin(theta_grid_stream_coord) * vals_r \
+            + r_grid_stream_coord * np.cos(theta_grid_stream_coord) * vals_theta
+        vals_z = np.cos(theta_grid_stream_coord) * vals_r \
+            - r_grid_stream_coord * np.sin(theta_grid_stream_coord) * vals_theta
+      else:
+        vals_x = np.sin(theta_grid_stream_coord) * vals_r \
+            + np.cos(theta_grid_stream_coord) * vals_theta
+        vals_z = np.cos(theta_grid_stream_coord) * vals_r \
+            - np.sin(theta_grid_stream_coord) * vals_theta
 
   # Determine colormapping properties
   cmap = plt.get_cmap(kwargs['colormap'])
@@ -116,8 +224,14 @@ def main(**kwargs):
 
   # Make plot
   plt.figure()
-  im = plt.pcolormesh(x_grid, y_grid, vals_extended, cmap=cmap, vmin=vmin, vmax=vmax, \
-      norm=norm)
+  im = plt.pcolormesh(x_grid, y_grid, vals, cmap=cmap, vmin=vmin, vmax=vmax, norm=norm)
+  if kwargs['stream'] is not None:
+    if kwargs['midplane']:
+      plt.streamplot(x_stream, y_stream, vals_x.T, vals_y.T, \
+          density=kwargs['stream_density'], color='k')
+    else:
+      plt.streamplot(x_stream, z_stream, vals_x.T, vals_z.T, \
+          density=kwargs['stream_density'], color='k')
   plt.gca().set_aspect('equal')
   plt.xlim((-r_max, r_max))
   plt.ylim((-r_max, r_max))
@@ -133,13 +247,10 @@ def main(**kwargs):
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument('data_file',
-      type=str,
       help='name of input file, possibly including path')
   parser.add_argument('quantity',
-      type=str,
       help='name of quantity to be plotted')
   parser.add_argument('output_file',
-      type=str,
       help='name of output to be (over)written, possibly including path')
   parser.add_argument('-m', '--midplane',
       action='store_true',
@@ -159,7 +270,6 @@ if __name__ == '__main__':
       action='store_true',
       help='flag indicating data should be logarithmically in radius')
   parser.add_argument('-c', '--colormap',
-      type=str,
       default=None,
       help='name of Matplotlib colormap to use instead of default; highly recommended; \
           try "RdBu_r" or "gist_heat" if looking for suggestions')
@@ -176,5 +286,15 @@ if __name__ == '__main__':
   parser.add_argument('--logc',
       action='store_true',
       help='flag indicating data should be colormapped logarithmically')
+  parser.add_argument('-s', '--stream',
+      default=None,
+      help='name of vector quantity to use to make stream plot')
+  parser.add_argument('--stream_average',
+      action='store_true',
+      help='flag indicating phi-averaging should be done on streamplot data')
+  parser.add_argument('--stream_density',
+      type=float,
+      default=1.0,
+      help='density of streamlines')
   args = parser.parse_args()
   main(**vars(args))
