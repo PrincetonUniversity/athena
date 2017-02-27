@@ -357,18 +357,15 @@ def athdf(filename, data=None, quantities=None, level=0, subsample=False,
         ju = jl + block_size[1] * s if dim >= 2 else 1
         ku = kl + block_size[2] * s if dim == 3 else 1
 
-        # Calculate fine-level offsets
-        io_vals = range(s)
-        jo_vals = range(s) if dim >= 2 else (0,)
-        ko_vals = range(s) if dim == 3 else (0,)
-
         # Assign values
         for q,dataset,index in zip(quantities,quantity_datasets,quantity_indices):
-          for ko in ko_vals:
-            for jo in jo_vals:
-              for io in io_vals:
-                data[q][kl+ko:ku+ko:s,jl+jo:ju+jo:s,il+io:iu+io:s] \
-                    = f[dataset][index,block_num,:]
+          block_data = f[dataset][index,block_num,:]
+          block_data = np.repeat(block_data, s, axis=2)
+          if dim >= 2:
+            block_data = np.repeat(block_data, s, axis=1)
+          if dim == 3:
+            block_data = np.repeat(block_data, s, axis=0)
+          data[q][kl:ku,jl:ju,il:iu] = block_data
 
       # Restrict fine data
       else:
