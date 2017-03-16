@@ -18,6 +18,7 @@
 #include "../mesh/mesh.hpp"
 #include "../bvals/bvals.hpp"
 #include "../reconstruct/reconstruction.hpp"
+#include "../gravity/gravity.hpp"
 
 // OpenMP header
 #ifdef OPENMP_PARALLEL
@@ -220,6 +221,11 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   }
 
 } // end of omp parallel region
+
+  if(SELF_GRAVITY_ENABLED){
+    pmb->pgrav->CalculateGravityFlux();
+    pmb->pgrav->AddGravityFlux(flux);
+  }
 
   return;
 }

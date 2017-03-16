@@ -50,6 +50,13 @@ void Gravity::Solver(const AthenaArray<Real> &u)
 
   Real pcoeff;
 // Copy phi to phi_old
+  for(int k=ks; k<=ke; ++k){
+    for(int j=js; j<=je; ++j){
+      for(int i=is; i<=ie; ++i){
+        phi_old(k,j,i) = phi(k,j,i);
+      }
+    }
+  }
 
 // Fill the work array
 
@@ -97,7 +104,7 @@ void Gravity::Solver(const AthenaArray<Real> &u)
     for(int j=js; j<=je; ++j){
       for(int i=is; i<=ie; ++i){
         long int idx=pfft->GetIndex(i-is,j-js,k-ks,pfft->b_out);
-        phi(k,j,i) = four_pi_gconst * pfft->out[idx][0]/pfft->gcnt;
+        phi(k,j,i) = four_pi_G * pfft->out[idx][0]/pfft->gcnt;
       }
     }
   }

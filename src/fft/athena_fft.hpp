@@ -23,7 +23,6 @@ typedef fftw_complex AthenaFFTComplex;
 #include "mpi.h"
 #include "plimpton/fft_3d.h"
 #include "plimpton/fft_2d.h"
-typedef fftw_complex AthenaFFTComplex;
 typedef struct AthenaFFTPlan{
   struct fft_plan_3d *plan3d;
   struct fft_plan_2d *plan2d;
@@ -31,13 +30,13 @@ typedef struct AthenaFFTPlan{
   int dir;
   int dim;
 } AthenaFFTPlan;
-#else
+#else // MPI_PARALLEL
 typedef struct AthenaFFTPlan{
   fftw_plan plan;
   int dir;
   int dim;
 } AthenaFFTPlan;
-#endif
+#endif // MPI_PARALLEL
 #else // FFT
 typedef Real AthenaFFTComplex[2];
 typedef struct AthenaFFTPlan{
@@ -85,8 +84,6 @@ private:
   void RemapArray_(int arr[], int loc[], int dir);
   void PrintIndex(void);
 };
-
-
 
 //! \class AthenaFFT
 //  \brief 

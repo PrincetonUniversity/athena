@@ -12,10 +12,10 @@
 // Athena++ classes headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 
 class MeshBlock;
 class ParameterInput;
+class Coordinates;
 
 //! \class Gravity
 //  \brief gravitational potential data and functions
@@ -28,10 +28,12 @@ public:
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
 
   AthenaArray<Real> phi, phi_old;  // gravitational potential
-  Real gconst, four_pi_gconst;
+  AthenaArray<Real> gflx[3]; // gravity tensor
+  Real gconst, four_pi_G;
   Real grav_mean_rho;
 
-
+  void AddGravityFlux(AthenaArray<Real> *flx);
+  void CalculateGravityFlux();
   void Initialize(ParameterInput *pin);
   void Solver(const AthenaArray<Real> &u);
 

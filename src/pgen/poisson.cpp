@@ -47,24 +47,32 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real x3size = mesh_size.x3max - mesh_size.x3min;
 
   Real gconst = 1.0;
-  Real four_pi_gconst = 4.0*PI*gconst;
+  Real four_pi_G = 4.0*PI*gconst;
   Real grav_mean_rho = 0.0;
-  // Assigning Plummer density profile
+  
   int iprob = pin->GetOrAddInteger("problem","iprob",1);
   int nlim = pin->GetInteger("time","nlim");
+
+  int dim = 1;
+  if(mesh_size.nx2 > 1) dim=2;
+  if(mesh_size.nx3 > 1) dim=3;
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
   for (int i=is; i<=ie; ++i) {
     x = pcoord->x1v(i);
     y = pcoord->x2v(j);
     z = pcoord->x3v(k);
-    r2 = sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
+    r2 = SQR(x - x0);
+    if(dim > 1) r2 += SQR(y - y0);
+    if(dim > 2) r2 += SQR(z - z0);
     if(iprob == 1){
-      den = std::sin(2*PI*x/x1size)
-                *std::sin(2*PI*y/x2size)
-                *std::sin(2*PI*z/x3size); // dkx=2*PI/Nx
-      phia =-den*four_pi_gconst
-                 /(SQR(2*PI/x1size)+SQR(2*PI/x2size)+SQR(2*PI/x3size));
+      den = std::sin(2*PI*x/x1size);
+      if(dim > 1) den *= std::sin(2*PI*y/x2size);
+      if(dim > 2) den *= std::sin(2*PI*z/x3size); // dkx=2*PI/Nx
+      phia = SQR(2*PI/x1size);
+      if(dim > 1) phia += SQR(2*PI/x2size);
+      if(dim > 2) phia += SQR(2*PI/x3size);
+      phia = -den*four_pi_G/phia;
     } else if (iprob == 2){
       Real M = pin->GetOrAddReal("problem","M",1.0);
       Real a0 = pin->GetOrAddReal("problem","a0",1.0);
@@ -74,7 +82,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     } else if (iprob == 3){
       Real a0 = pin->GetOrAddReal("problem","a0",1.0);
       den = (4.0*SQR(a0)*r2-6.0*a0)*exp(-a0*r2);
-      phia = four_pi_gconst*exp(-a0*r2);
+      phia = four_pi_G*exp(-a0*r2);
     }
 
     if(nlim > 0){
@@ -92,7 +100,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
   if(SELF_GRAVITY_ENABLED){
     pgrav->gconst = gconst;
-    pgrav->four_pi_gconst = four_pi_gconst;
+    pgrav->four_pi_G = four_pi_G;
     pgrav->grav_mean_rho = grav_mean_rho;
   } // self-gravity
 }

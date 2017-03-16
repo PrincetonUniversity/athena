@@ -23,7 +23,7 @@
 AthenaFFT::AthenaFFT(MeshBlock *pmb)
 {
   pmy_block = pmb;  
-  if (FFT_ENABLED) {
+#ifdef FFT
     Mesh *pm=pmy_block->pmy_mesh;
     RegionSize& mesh_size  = pmy_block->pmy_mesh->mesh_size;
     RegionSize& block_size = pmy_block->block_size;
@@ -77,7 +77,7 @@ AthenaFFT::AthenaFFT(MeshBlock *pmb)
     b_in  = new AthenaFFTIndex(dim_,pmb);
     b_out = new AthenaFFTIndex(dim_,pmb);
 #endif
-    for(int i=0;i<dim_;i++){
+    for(int i=0;i<3;i++){
       Nx[f_in->iloc[i]]=f_in->Nx[i];
       nx[f_in->iloc[i]]=f_in->nx[i];
       disp[f_in->iloc[i]]=f_in->is[i];
@@ -85,14 +85,14 @@ AthenaFFT::AthenaFFT(MeshBlock *pmb)
       kdisp[b_in->iloc[i]]=b_in->is[i];
       dkx[b_in->iloc[i]]=2*PI/(Real)b_in->Nx[i];
     }
-  }
+#endif
 }
 
 // destructor
 
 AthenaFFT::~AthenaFFT()
 {
-  if(FFT_ENABLED){
+#ifdef FFT
     delete fplan;
     delete bplan;
     delete[] in;
@@ -102,7 +102,7 @@ AthenaFFT::~AthenaFFT()
     delete f_out;
     delete b_in;
     delete b_out;
-  }
+#endif
 }
 
 AthenaFFTPlan *AthenaFFT::QuickCreatePlan(enum AthenaFFTDirection dir,
@@ -115,7 +115,7 @@ AthenaFFTPlan *AthenaFFT::QuickCreatePlan(enum AthenaFFTDirection dir,
     nfast = b_in->Nx[0]; nmid = b_in->Nx[1]; nslow = b_in->Nx[2];
   }
   if(dim_==3) return CreatePlan(nfast,nmid,nslow,work,dir);
-  else if(dim_==2) return CreatePlan(nfast,nslow,work,dir);
+  else if(dim_==2) return CreatePlan(nfast,nmid,work,dir);
   else  return CreatePlan(nfast,work,dir);
 }
 
@@ -132,7 +132,7 @@ long int AthenaFFT::GetGlobalIndex(const int i, const int j, const int k)
 long int AthenaFFT::GetIndex(const int i, const int j, const int k, AthenaFFTIndex *pidx)
 {
   int old_idx[3]={i,j,k};
-  int new_idx[3],nx[3];
+  int new_idx[3];
   new_idx[0]=old_idx[pidx->iloc[0]];
   new_idx[1]=old_idx[pidx->iloc[1]];
   new_idx[2]=old_idx[pidx->iloc[2]];
@@ -403,7 +403,7 @@ AthenaFFTIndex::AthenaFFTIndex(int dim, MeshBlock *pmb)
   RegionSize& mesh_size  = pmy_block->pmy_mesh->mesh_size;
   RegionSize& block_size = pmy_block->block_size;
   LogicalLocation& loc = pmy_block->loc;
-  dim_=dim;
+  dim_=3;
 
   Nx = new int[dim_];
   np = new int[dim_];
@@ -416,24 +416,22 @@ AthenaFFTIndex::AthenaFFTIndex(int dim, MeshBlock *pmb)
   Nx[0] = mesh_size.nx1;
   np[0] = mesh_size.nx1/block_size.nx1;
   ip[0] = loc.lx1;
+  iloc[0]=0;
+  ploc[0]=0;
   if(dim_ > 1){
     Nx[1] = mesh_size.nx2;
     np[1] = mesh_size.nx2/block_size.nx2;
     ip[1] = loc.lx2; 
+    iloc[1]=1;
+    ploc[1]=1;
   }
   if(dim_ > 2){
     Nx[2] = mesh_size.nx3;
     np[2] = mesh_size.nx3/block_size.nx3;
     ip[2] = loc.lx3;
+    iloc[2]=2;
+    ploc[2]=2;
   }
-
-  iloc[0]=0;
-  iloc[1]=1;
-  iloc[2]=2;
-
-  ploc[0]=0;
-  ploc[1]=1;
-  ploc[2]=2;
 
   SetLocalIndex();
 }

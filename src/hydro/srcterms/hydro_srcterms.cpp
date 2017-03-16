@@ -81,6 +81,7 @@ void HydroSourceTerms::AddHydroSourceTerms(const Real time, const Real dt,
   if (g1_ != 0.0 || g2_ != 0.0 || g3_ != 0.0) ConstantAcceleration(dt, flux, prim,cons);
 
   // Add new source terms here
+  if (SELF_GRAVITY_ENABLED) SelfGravity(dt, flux, prim,cons);
   // MyNewSourceTerms()
 
   //  user-defined source terms

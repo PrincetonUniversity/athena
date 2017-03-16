@@ -91,39 +91,33 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
       AddTimeIntegratorTask(RECV_FLD,START_ALLRECV);
     }
 
-    // self gravity
-    if (SELF_GRAVITY_ENABLED) {
-      if (MAGNETIC_FIELDS_ENABLED) {
-        AddTimeIntegratorTask(SOLV_GRAV,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD));
+    // prolongate, compute new primitives
+    if (MAGNETIC_FIELDS_ENABLED) { // MHD
+      if(pm->multilevel==true) { // SMR or AMR
+        AddTimeIntegratorTask(PROLONG, (SEND_HYD|RECV_HYD|SEND_FLD|RECV_FLD));
+        AddTimeIntegratorTask(CON2PRIM,PROLONG);
       } else {
-        AddTimeIntegratorTask(SOLV_GRAV,(INT_HYD|RECV_HYD));
+        AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD));
       }
-      AddTimeIntegratorTask(SEND_GRAV,SOLV_GRAV);
-      AddTimeIntegratorTask(RECV_GRAV,START_ALLRECV);
-      AddTimeIntegratorTask(CON2PRIM,(SOLV_GRAV|RECV_GRAV));
-//      AddTimeIntegratorTask(CON2PRIM,SOLV_GRAV);
-    } else {
-      // prolongate, compute new primitives
-      if (MAGNETIC_FIELDS_ENABLED) { // MHD
-        if(pm->multilevel==true) { // SMR or AMR
-          AddTimeIntegratorTask(PROLONG, (SEND_HYD|RECV_HYD|SEND_FLD|RECV_FLD));
-          AddTimeIntegratorTask(CON2PRIM,PROLONG);
-        } else {
-          AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD|INT_FLD|RECV_FLD));
-        }
-      } else {  // HYDRO
-        if(pm->multilevel==true) { // SMR or AMR
-          AddTimeIntegratorTask(PROLONG,(SEND_HYD|RECV_HYD));
-          AddTimeIntegratorTask(CON2PRIM,PROLONG);
-        } else {
-          AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD));
-        }
+    } else {  // HYDRO
+      if(pm->multilevel==true) { // SMR or AMR
+        AddTimeIntegratorTask(PROLONG,(SEND_HYD|RECV_HYD));
+        AddTimeIntegratorTask(CON2PRIM,PROLONG);
+      } else {
+        AddTimeIntegratorTask(CON2PRIM,(INT_HYD|RECV_HYD));
       }
     }
 
     // everything else
     AddTimeIntegratorTask(PHY_BVAL,CON2PRIM);
-    AddTimeIntegratorTask(USERWORK,PHY_BVAL);
+    if (SELF_GRAVITY_ENABLED){
+      AddTimeIntegratorTask(SOLV_GRAV,PHY_BVAL);
+      AddTimeIntegratorTask(SEND_GRAV,SOLV_GRAV);
+      AddTimeIntegratorTask(RECV_GRAV,SEND_GRAV);
+      AddTimeIntegratorTask(USERWORK,RECV_GRAV);
+    } else {
+      AddTimeIntegratorTask(USERWORK,PHY_BVAL);
+    }
     AddTimeIntegratorTask(NEW_DT,USERWORK);
     if(pm->adaptive==true) {
       AddTimeIntegratorTask(AMR_FLAG,USERWORK);
