@@ -155,11 +155,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
   Hydro *phydro = pblock->phydro;
   Coordinates *pcoord = pblock->pcoord;
-  Real sinkx, coskx;
+  Real sinkx, coskx, sinot, cosot;
   int is=pblock->is, ie=pblock->ie;
   int js=pblock->js, je=pblock->je;
   int ks=pblock->ks, ke=pblock->ke;
 
+  Real tlim = pin->GetReal("time","tlim");
   while (pmb != NULL) {
     for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
@@ -168,16 +169,24 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
                + pcoord->x3v(k)*sin_a2;
         sinkx = sin(x*kwave);
         coskx = cos(x*kwave);
+        sinot = sin(omega*tlim);
+        cosot = cos(omega*tlim);
   
-        l1_err[IDN] += fabs(d0*(1.0+amp*sinkx) - phydro->u(IDN,k,j,i));
-        max_err[IDN] = std::max(fabs(d0*(1.0+amp*sinkx) - phydro->u(IDN,k,j,i)),max_err[IDN]);
+        Real den=d0*(1.0+amp*sinkx*cosot);
+        l1_err[IDN] += fabs(den - phydro->u(IDN,k,j,i));
+        max_err[IDN] = std::max(fabs(den - phydro->u(IDN,k,j,i)),max_err[IDN]);
 
-        l1_err[IM1] += fabs(phydro->u(IM1,k,j,i));
-        l1_err[IM2] += fabs(phydro->u(IM2,k,j,i));
-        l1_err[IM3] += fabs(phydro->u(IM3,k,j,i));
-        max_err[IM1] = std::max(fabs(phydro->u(IM1,k,j,i)),max_err[IM1]);
-        max_err[IM2] = std::max(fabs(phydro->u(IM2,k,j,i)),max_err[IM2]);
-        max_err[IM3] = std::max(fabs(phydro->u(IM3,k,j,i)),max_err[IM3]);
+        Real m = den*(omega/kwave)*amp*coskx*sinot;
+        Real m1 = m*cos_a3*cos_a2;
+        Real m2 = m*sin_a3*cos_a2;
+        Real m3 = m*sin_a2;
+
+        l1_err[IM1] += fabs(m1-phydro->u(IM1,k,j,i));
+        l1_err[IM2] += fabs(m2-phydro->u(IM2,k,j,i));
+        l1_err[IM3] += fabs(m3-phydro->u(IM3,k,j,i));
+        max_err[IM1] = std::max(fabs(m1-phydro->u(IM1,k,j,i)),max_err[IM1]);
+        max_err[IM2] = std::max(fabs(m2-phydro->u(IM2,k,j,i)),max_err[IM2]);
+        max_err[IM3] = std::max(fabs(m3-phydro->u(IM3,k,j,i)),max_err[IM3]);
         if (NON_BAROTROPIC_EOS) {
           Real e0 = p0/gm1 + 0.5*d0*u0*u0 + amp*sinkx;
           if (MAGNETIC_FIELDS_ENABLED) {
