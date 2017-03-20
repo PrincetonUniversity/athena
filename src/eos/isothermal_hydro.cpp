@@ -38,7 +38,7 @@ EquationOfState::~EquationOfState()
 //           const AthenaArray<Real> &prim_old, const FaceField &b,
 //           AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
 //           int is, int ie, int js, int je, int ks, int ke)
-// \brief Converts conserved into primitive variables in adiabatic hydro.
+// \brief Converts conserved into primitive variables in isothermal hydro.
 
 void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
   const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,

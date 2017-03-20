@@ -104,6 +104,8 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     pcoord = new Schwarzschild(this, pin, false);
   } else if (COORDINATE_SYSTEM == "kerr-schild") {
     pcoord = new KerrSchild(this, pin, false);
+  } else if (COORDINATE_SYSTEM == "gr_user") {
+    pcoord = new GRUser(this, pin, false);
   }
 
   pbval  = new BoundaryValues(this, pin);
@@ -198,6 +200,8 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     pcoord = new Schwarzschild(this, pin, false);
   } else if (COORDINATE_SYSTEM == "kerr-schild") {
     pcoord = new KerrSchild(this, pin, false);
+  } else if (COORDINATE_SYSTEM == "gr_user") {
+    pcoord = new GRUser(this, pin, false);
   }
 
   pbval  = new BoundaryValues(this, pin);
@@ -293,7 +297,10 @@ MeshBlock::~MeshBlock()
   if (SELF_GRAVITY_ENABLED) delete pgrav;
 
   // delete user output variables array
-  user_out_var.DeleteAthenaArray();
+  if(nuser_out_var > 0) {
+    user_out_var.DeleteAthenaArray();
+    delete [] user_out_var_names_;
+  }
   // delete user MeshBlock data
   for(int n=0; n<nreal_user_meshblock_data_; n++)
     ruser_meshblock_data[n].DeleteAthenaArray();
@@ -331,6 +338,7 @@ void MeshBlock::AllocateIntUserMeshBlockDataField(int n)
     msg << "### FATAL ERROR in MeshBlock::AllocateIntusermeshblockDataField"
         << std::endl << "User MeshBlock data arrays are already allocated" << std::endl;
     throw std::runtime_error(msg.str().c_str());
+    return;
   }
   nint_user_meshblock_data_=n;
   iuser_meshblock_data = new AthenaArray<int>[n];
@@ -343,12 +351,39 @@ void MeshBlock::AllocateIntUserMeshBlockDataField(int n)
 
 void MeshBlock::AllocateUserOutputVariables(int n)
 {
+  if(n<=0) return;
+  if(nuser_out_var!=0) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in MeshBlock::AllocateUserOutputVariables"
+        << std::endl << "User output variables are already allocated." << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+    return;
+  }
   nuser_out_var=n;
   int ncells1 = block_size.nx1 + 2*(NGHOST);
   int ncells2 = 1, ncells3 = 1;
   if (block_size.nx2 > 1) ncells2 = block_size.nx2 + 2*(NGHOST);
   if (block_size.nx3 > 1) ncells3 = block_size.nx3 + 2*(NGHOST);
   user_out_var.NewAthenaArray(nuser_out_var,ncells3,ncells2,ncells1);
+  user_out_var_names_ = new std::string[n];
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MeshBlock::SetUserOutputVariableName(int n, const char *name)
+//  \brief set the user-defined output variable name
+
+void MeshBlock::SetUserOutputVariableName(int n, const char *name)
+{
+  if(n>=nuser_out_var) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in MeshBlock::SetUserOutputVariableName"
+        << std::endl << "User output variable is not allocated." << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+    return;
+  }
+  user_out_var_names_[n]=name;
   return;
 }
 

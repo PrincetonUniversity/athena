@@ -394,7 +394,7 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
     // Calculate intermediate geometric quantities: phi-direction
     int kll, kuu;
-    if (pmb->block_size.nx2 > 1) {
+    if (pmb->block_size.nx3 > 1) {
       kll = kl - ng; kuu = ku + ng;
     } else {
       kll = kl; kuu = ku;
@@ -724,8 +724,9 @@ void KerrSchild::Face1Area(const int k, const int j, const int il, const int iu,
   // \Delta A = 1/3 * |\cos\theta_- - \cos\theta_+| (\phi_+ - \phi_-)
   //     * (3 r_-^2 + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
   #pragma simd
-  for (int i = il; i <= iu; ++i)
+  for (int i = il; i <= iu; ++i) {
     areas(i) = GetFace1Area(k, j, i);
+  }
   return;
 }
 
@@ -735,9 +736,10 @@ void KerrSchild::Face2Area(const int k, const int j, const int il, const int iu,
   // \Delta A = 1/3 (r_+ - r_-) |\sin\theta_-| (\phi_+ - \phi_-)
   //     * (r_-^2 + r_- r_+ + r_+^2 + 3 a^2 \cos^2\theta_-)
   #pragma simd
-  for (int i = il; i <= iu; ++i)
+  for (int i = il; i <= iu; ++i) {
     areas(i) = coord_area2_i1_(i) * coord_area2_j1_(j) * coord_area2_k1_(k)
         * (1.0/3.0 * coord_area2_i2_(i) + coord_area2_j2_(j));
+  }
   return;
 }
 
@@ -748,16 +750,17 @@ void KerrSchild::Face3Area(const int k, const int j, const int il, const int iu,
   //     * (r_-^2 + r_- r_+ + r_+^2
   //     + a^2 (\cos^2\theta_- + \cos\theta_- \cos\theta_+ + \cos^2\theta_+))
   #pragma simd
-  for (int i = il; i <= iu; ++i)
+  for (int i = il; i <= iu; ++i) {
     areas(i) = 1.0/3.0 * coord_area3_i1_(i) * coord_area3_j1_(j)
         * (coord_area3_i2_(i) + coord_area3_j2_(j));
+  }
   return;
 }
 
 //----------------------------------------------------------------------------------------
 // GetFaceXArea functions: return area of face with normal in X-dir at (i,j,k)
 // Inputs:
-//   k,j,i: phi- theta- and r-indices
+//   k,j,i: phi-, theta-, and r-indices
 // return:
 //   interface area orthogonal to X-face
 
@@ -802,9 +805,10 @@ void KerrSchild::CellVolume(const int k, const int j, const int il, const int iu
     AthenaArray<Real> &volumes)
 {
   #pragma simd
-  for (int i = il; i <= iu; ++i)
+  for (int i = il; i <= iu; ++i) {
     volumes(i) = 1.0/3.0 * coord_vol_i1_(i) * coord_vol_j1_(j) * coord_vol_k1_(k)
         * (coord_vol_i2_(i) + coord_vol_j2_(j));
+  }
   return;
 }
 
@@ -2056,94 +2060,6 @@ void KerrSchild::FluxToGlobal3(const int k, const int j, const int il, const int
 }
 
 //----------------------------------------------------------------------------------------
-// Function for transforming 4-vector from Boyer-Lindquist to Kerr-Schild
-// Inputs:
-//   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
-//   k,j,i: indices of cell in which transformation is desired
-// Outputs:
-//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Kerr-Schild coordinates
-
-void KerrSchild::TransformVectorCell(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl,
-    int k, int j, int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
-  const Real &m = bh_mass_;
-  const Real &a = bh_spin_;
-  const Real &r = x1v(i);
-  Real delta = SQR(r) - 2.0*m*r + SQR(a);
-  *pa0 = a0_bl + 2.0*m*r/delta * a1_bl;
-  *pa1 = a1_bl;
-  *pa2 = a2_bl;
-  *pa3 = a3_bl + a/delta * a1_bl;
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// Function for transforming 4-vector from Boyer-Lindquist to Kerr-Schild
-// Inputs:
-//   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
-//   k,j,i: indices of x1-face in which transformation is desired
-// Outputs:
-//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Kerr-Schild coordinates
-
-void KerrSchild::TransformVectorFace1(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl,
-    int k, int j, int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
-  const Real &m = bh_mass_;
-  const Real &a = bh_spin_;
-  const Real &r = x1f(i);
-  Real delta = SQR(r) - 2.0*m*r + SQR(a);
-  *pa0 = a0_bl + 2.0*m*r/delta * a1_bl;
-  *pa1 = a1_bl;
-  *pa2 = a2_bl;
-  *pa3 = a3_bl + a/delta * a1_bl;
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// Function for transforming 4-vector from Boyer-Lindquist to Kerr-Schild
-// Inputs:
-//   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
-//   k,j,i: indices of x2-face in which transformation is desired
-// Outputs:
-//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Kerr-Schild coordinates
-
-void KerrSchild::TransformVectorFace2(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl,
-    int k, int j, int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
-  const Real &m = bh_mass_;
-  const Real &a = bh_spin_;
-  const Real &r = x1v(i);
-  Real delta = SQR(r) - 2.0*m*r + SQR(a);
-  *pa0 = a0_bl + 2.0*m*r/delta * a1_bl;
-  *pa1 = a1_bl;
-  *pa2 = a2_bl;
-  *pa3 = a3_bl + a/delta * a1_bl;
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// Function for transforming 4-vector from Boyer-Lindquist to Kerr-Schild
-// Inputs:
-//   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
-//   k,j,i: indices of x3-face in which transformation is desired
-// Outputs:
-//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Kerr-Schild coordinates
-
-void KerrSchild::TransformVectorFace3(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl,
-    int k, int j, int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
-  const Real &m = bh_mass_;
-  const Real &a = bh_spin_;
-  const Real &r = x1v(i);
-  Real delta = SQR(r) - 2.0*m*r + SQR(a);
-  *pa0 = a0_bl + 2.0*m*r/delta * a1_bl;
-  *pa1 = a1_bl;
-  *pa2 = a2_bl;
-  *pa3 = a3_bl + a/delta * a1_bl;
-  return;
-}
-
-//----------------------------------------------------------------------------------------
 // Function for raising covariant components of a vector
 // Inputs:
 //   a_0,a_1,a_2,a_3: covariant components of vector
@@ -2235,25 +2151,5 @@ void KerrSchild::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int 
   *pa_1 = g_10*a0 + g_11*a1 + g_12*a2 + g_13*a3;
   *pa_2 = g_20*a0 + g_21*a1 + g_22*a2 + g_23*a3;
   *pa_3 = g_30*a0 + g_31*a1 + g_32*a2 + g_33*a3;
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// Function for returning Boyer-Lindquist coordinates of given cell in GR
-// Inputs:
-//   x1,x2,x3: global coordinates to be converted
-// Outputs:
-//   pr: pointer to stored value of r
-//   ptheta: pointer to stored value of theta
-//   pphi: pointer to stored value of phi
-// Notes:
-//   conversion is trivial
-
-void KerrSchild::GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-    Real *ptheta, Real *pphi)
-{
-  *pr = x1;
-  *ptheta = x2;
-  *pphi = x3;
   return;
 }

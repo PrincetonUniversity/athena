@@ -548,14 +548,31 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
   if (output_params.variable.compare("uov") == 0
   || output_params.variable.compare("user_out_var") == 0) {
     for (int n = 0; n < pmb->nuser_out_var; ++n) {
-      char vn[16];
       pod = new OutputData;
       pod->type = "SCALARS";
-      sprintf(vn, "user_out_var%d", n);
-      pod->name = vn;
+      if(pmb->user_out_var_names_[n].length()!=0)
+        pod->name=pmb->user_out_var_names_[n];
+      else {
+        char vn[16];
+        sprintf(vn, "user_out_var%d", n);
+        pod->name = vn;
+      }
       pod->data.InitWithShallowSlice(pmb->user_out_var,4,n,1);
       AppendOutputDataNode(pod);
       num_vars_++;
+    }
+  }
+
+  for (int n = 0; n < pmb->nuser_out_var; ++n) {
+    if(pmb->user_out_var_names_[n].length()!=0) {
+      if(output_params.variable.compare(pmb->user_out_var_names_[n]) == 0) {
+        pod = new OutputData;
+        pod->type = "SCALARS";
+        pod->name=pmb->user_out_var_names_[n];
+        pod->data.InitWithShallowSlice(pmb->user_out_var,4,n,1);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+      }
     }
   }
 

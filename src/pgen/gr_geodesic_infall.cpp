@@ -32,6 +32,8 @@
 // Declarations
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
     FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
+static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+    Real *ptheta, Real *pphi);
 
 //----------------------------------------------------------------------------------------
 // Function for initializing global mesh properties
@@ -99,8 +101,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
       // Get Boyer-Lindquist coordinates of cell
       Real r, theta, phi;
-      pcoord->GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j),
-          pcoord->x3v(kl), &r, &theta, &phi);
+      GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(kl), &r,
+          &theta, &phi);
 
       // Calculate primitives depending on location
       Real rho = rho_min * std::pow(r, rho_pow);
@@ -144,5 +146,25 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
     FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke)
 {
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for returning corresponding Boyer-Lindquist coordinates of point
+// Inputs:
+//   x1,x2,x3: global coordinates to be converted
+// Outputs:
+//   pr,ptheta,pphi: variables pointed to set to Boyer-Lindquist coordinates
+// Notes:
+//   conversion is trivial in all currently implemented coordinate systems
+
+static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+    Real *ptheta, Real *pphi)
+{
+  if (COORDINATE_SYSTEM == "schwarzschild" or COORDINATE_SYSTEM == "kerr-schild") {
+    *pr = x1;
+    *ptheta = x2;
+    *pphi = x3;
+  }
   return;
 }

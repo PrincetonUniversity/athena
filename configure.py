@@ -27,7 +27,9 @@
 #   --fftw_path=path  path to FFTW libraries (requires the FFTW library)
 #   --grav=choice     use choice as the self-gravity solver
 #   --cxx=choice      use choice as the C++ compiler
-#   --ccmd=choice     use choice as the command to call the C++ compiler
+#   --ccmd=name       use name as the command to call the C++ compiler
+#   --include=path    use -Ipath when compiling
+#   --lib=path        use -Lpath when linking
 #---------------------------------------------------------------------------------------
 
 # Modules
@@ -59,7 +61,7 @@ parser.add_argument('--prob',
 parser.add_argument('--coord',
     default='cartesian',
     choices=['cartesian','cylindrical','spherical_polar','minkowski','sinusoidal',
-        'tilted','schwarzschild','kerr-schild'],
+        'tilted','schwarzschild','kerr-schild','gr_user'],
     help='select coordinate system')
 
 # --eos=[name] argument
@@ -155,21 +157,33 @@ parser.add_argument('-hdf5',
 
 # --hdf5_path argument
 parser.add_argument('--hdf5_path',
-    type=str,
     default='',
     help='path to HDF5 libraries')
 
 # --cxx=[name] argument
 parser.add_argument('--cxx',
     default='g++',
-    choices=['g++','icc','cray','bgxl','clang++'],
+    choices=['g++','icc','cray','bgxl','icc-phi','clang++'],
     help='select C++ compiler')
 
 # --ccmd=[name] argument
 parser.add_argument('--ccmd',
-    type=str,
     default=None,
     help='override for command to use to call C++ compiler')
+
+# --include=[name] arguments
+parser.add_argument('--include',
+    default=[],
+    action='append',
+    help='extra path for included header files (-I<path>); can be specified multiple \
+        times')
+
+# --lib=[name] arguments
+parser.add_argument('--lib',
+    default=[],
+    action='append',
+    help='extra path for linked library files (-L<path>); can be specified multiple \
+        times')
 
 # Parse command-line inputs
 args = vars(parser.parse_args())
@@ -316,6 +330,15 @@ if args['cxx'] == 'bgxl':
       '-O3 -qstrict -qlanglvl=extended -qsuppress=1500-036 -qsuppress=1540-1401'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
+
+if args['cxx'] == 'icc-phi':
+  definitions['COMPILER_CHOICE'] = 'icc'
+  definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
+  makefile_options['PREPROCESSOR_FLAGS'] = ''
+  makefile_options['COMPILER_FLAGS'] = '-O3 -xMIC-AVX512 -ipo -inline-forceinline'
+  makefile_options['LINKER_FLAGS'] = ''
+  makefile_options['LIBRARY_FLAGS'] = ''
+
 if args['cxx'] == 'clang++':
   definitions['COMPILER_CHOICE'] = 'clang++'
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'clang++'
@@ -333,13 +356,15 @@ if args['debug']:
     makefile_options['COMPILER_FLAGS'] = '-O0'
   if args['cxx'] == 'bgxl':
     makefile_options['COMPILER_FLAGS'] = '-O0 -g -qlanglvl=extended'
+  if args['cxx'] == 'icc-phi':
+    makefile_options['COMPILER_FLAGS'] = '-O0 -g -xMIC-AVX512'
 else:
   definitions['DEBUG'] = 'NOT_DEBUG'
 
 # -mpi argument
 if args['mpi']:
   definitions['MPI_OPTION'] = 'MPI_PARALLEL'
-  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'clang++':
+  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'icc-phi' or args['cxx'] == 'clang++':
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpicxx'
   if args['cxx'] == 'cray':
     makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
@@ -353,7 +378,7 @@ if args['omp']:
   definitions['OPENMP_OPTION'] = 'OPENMP_PARALLEL'
   if args['cxx'] == 'g++' or args['cxx'] == 'clang++':
     makefile_options['COMPILER_FLAGS'] += ' -fopenmp'
-  if args['cxx'] == 'icc':
+  if args['cxx'] == 'icc' or args['cxx'] == 'icc-phi':
     makefile_options['COMPILER_FLAGS'] += ' -qopenmp'
   if args['cxx'] == 'cray':
     makefile_options['COMPILER_FLAGS'] += ' -homp'
@@ -366,7 +391,7 @@ else:
   definitions['OPENMP_OPTION'] = 'NOT_OPENMP_PARALLEL'
   if args['cxx'] == 'cray':
     makefile_options['COMPILER_FLAGS'] += ' -hnoomp'
-  if args['cxx'] == 'icc':
+  if args['cxx'] == 'icc' or args['cxx'] == 'icc-phi':
     # suppressed messages:
     #   3180: pragma omp not recognized
     makefile_options['COMPILER_FLAGS'] += ' -diag-disable 3180'
@@ -404,7 +429,7 @@ if args['hdf5']:
   if args['hdf5_path'] != '':
     makefile_options['PREPROCESSOR_FLAGS'] += '-I%s/include' % args['hdf5_path']
     makefile_options['LINKER_FLAGS'] += '-L%s/lib' % args['hdf5_path']
-  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'cray':
+  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'cray' or args['cxx'] == 'icc-phi' or args['cxx'] == 'clang++':
     makefile_options['LIBRARY_FLAGS'] += ' -lhdf5'
   if args['cxx'] == 'bgxl':
     makefile_options['PREPROCESSOR_FLAGS'] += \
@@ -421,6 +446,14 @@ else:
 # --ccmd=[name] argument
 if args['ccmd'] is not None:
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['ccmd']
+
+# --include=[name] arguments
+for include_path in args['include']:
+  makefile_options['COMPILER_FLAGS'] += ' -I'+include_path
+
+# --lib=[name] arguments
+for library_path in args['lib']:
+  makefile_options['LINKER_FLAGS'] += ' -L'+library_path
 
 # Assemble all flags of any sort given to compiler
 definitions['COMPILER_FLAGS'] = ' '.join([makefile_options[opt+'_FLAGS'] for opt in \

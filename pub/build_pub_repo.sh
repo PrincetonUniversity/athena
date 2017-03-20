@@ -7,7 +7,11 @@
 # to the top of the Git repo
 # Here is an example for excluding multiple directories
 # PRIVATE="{pub,private,inputs}"
-PRIVATE="{pub}"
+# Note: for a single directory, you should not use the curly
+# brackets e.g.
+# incorrect: PRIVATE="{pub}"
+#   correct: PRIVATE="pub"
+PRIVATE="pub"
 
 # Repo URLs
 PRIV_REPO_URL="https://github.com/PrincetonUniversity/athena.git"
@@ -70,6 +74,14 @@ else
     exit 1
 fi
 
+# clean up the files and directories we don't want to make public
+git filter-branch --force --index-filter \
+    "git rm -r --cached --ignore-unmatch $PRIVATE" \
+    --prune-empty --tag-name-filter cat -- --all
+
+# rebase to eliminate merge commit since last_public
+git rebase last_public
+
 # add the public_repo remote
 git remote add $PUB_REMOTE_NAME $PUB_REPO_URL
 git fetch --all
@@ -83,8 +95,4 @@ git checkout -b $PRIV_REPO_PUB_BRANCH $PUB_REMOTE_NAME/$PUB_REPO_BRANCH
 # configure git so it pushes from the public branch to public_repo:master
 git config push.default upstream
 
-# clean up the files and directories we don't want to make public
-git filter-branch --force --index-filter \
-    "git rm -r --cached --ignore-unmatch $PRIVATE" \
-    --prune-empty --tag-name-filter cat -- --all
 
