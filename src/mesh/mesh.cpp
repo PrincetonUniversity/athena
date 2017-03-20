@@ -869,8 +869,8 @@ void Mesh::OutputMeshStructure(int dim)
   std::cout << "Number of logical  refinement levels = " << current_level << std::endl;
 
   // compute/output number of blocks per level, and cost per level
-  int nb_per_plevel[max_level];
-  int cost_per_plevel[max_level];
+  int *nb_per_plevel = new int[max_level];
+  int *cost_per_plevel = new int[max_level];
   for (int i=0; i<=max_level; ++i) {
     nb_per_plevel[i]=0;
     cost_per_plevel[i]=0;
@@ -889,8 +889,8 @@ void Mesh::OutputMeshStructure(int dim)
 
   // compute/output number of blocks per rank, and cost per rank
   std::cout << "Number of parallel ranks = " << Globals::nranks << std::endl;
-  int nb_per_rank[Globals::nranks];
-  int cost_per_rank[Globals::nranks];
+  int *nb_per_rank = new int[Globals::nranks];
+  int *cost_per_rank = new int[Globals::nranks];
   for (int i=0; i<Globals::nranks; ++i) {
     nb_per_rank[i]=0;
     cost_per_rank[i]=0;
@@ -961,6 +961,11 @@ void Mesh::OutputMeshStructure(int dim)
             << " of MeshBlocks." << std::endl;
   std::cout << "Use 'python ../vis/python/plot_mesh.py' or gnuplot"
             << " to visualize mesh structure." << std::endl << std::endl;
+
+  delete [] nb_per_plevel;
+  delete [] cost_per_plevel;
+  delete [] nb_per_rank;
+  delete [] cost_per_rank;
 
   return;
 }
