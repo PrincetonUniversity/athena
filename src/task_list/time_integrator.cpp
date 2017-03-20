@@ -114,7 +114,8 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
       AddTimeIntegratorTask(SOLV_GRAV,PHY_BVAL);
       AddTimeIntegratorTask(SEND_GRAV,SOLV_GRAV);
       AddTimeIntegratorTask(RECV_GRAV,SEND_GRAV);
-      AddTimeIntegratorTask(USERWORK,RECV_GRAV);
+      AddTimeIntegratorTask(CORR_GFLX,RECV_GRAV);
+      AddTimeIntegratorTask(USERWORK,CORR_GFLX);
     } else {
       AddTimeIntegratorTask(USERWORK,PHY_BVAL);
     }
@@ -269,6 +270,12 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::GravReceive);
       break;
+    case (CORR_GFLX):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::GravFluxCorrection);
+      break;
+
 
     default:
       std::stringstream msg;
@@ -635,4 +642,10 @@ enum TaskStatus TimeIntegratorTaskList::GravReceive(MeshBlock *pmb, int step)
   }
 }
 
+enum TaskStatus TimeIntegratorTaskList::GravFluxCorrection(MeshBlock *pmb, int step)
+{
+  if (step != nsub_steps) return TASK_NEXT; // only do on last sub-step
 
+  pmb->pgrav->CorrectGravityFlux(pmb->phydro->u);
+  return TASK_NEXT;
+}

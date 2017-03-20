@@ -42,8 +42,9 @@
 static Real ang_2, ang_3; // Rotation angles about the y and z' axis
 static Real sin_a2, cos_a2, sin_a3, cos_a3;
 static Real amp, njeans, lambda, kwave; // amplitude, Wavelength, 2*PI/wavelength
-static Real cs2;
+static Real cs2,gm1,omega,omega2;
 static Real ev[NWAVE], rem[NWAVE][NWAVE], lem[NWAVE][NWAVE];
+static Real d0,p0,v0,u0,w0,va,b0;
 
 
 //========================================================================================
@@ -86,12 +87,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   if (mesh_size.nx2 > 1 && ang_3 != 0.0) lambda = std::min(lambda,x2);
   if (mesh_size.nx3 > 1 && ang_2 != 0.0) lambda = std::min(lambda,x3);
 
-  Real d0 = 1.0, p0 = 1.0;
-  Real u0 = 0.0, v0 = 0.0, w0 = 0.0;
-  Real va = 0.0, b0 = 0.0;
+  d0 = 1.0, p0 = 1.0;
+  u0 = 0.0, v0 = 0.0, w0 = 0.0;
+  va = 0.0, b0 = 0.0;
 
   if (NON_BAROTROPIC_EOS) {
     Real gam = pin->GetReal("hydro","gamma");
+    gm1 = gam-1;
     cs2 = gam*p0/d0;
   } else {
     Real iso_cs = pin->GetReal("hydro","iso_sound_speed");
@@ -102,13 +104,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real grav_mean_rho = d0;
 
   kwave = 2.0*PI/lambda;
-  Real omega2 = SQR(kwave)*cs2*(1.0 - SQR(njeans));
-  Real omega = sqrt(fabs(omega2));
+  omega2 = SQR(kwave)*cs2*(1.0 - SQR(njeans));
+  omega = sqrt(fabs(omega2));
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
   for (int i=is; i<=ie; ++i) {
-    Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3) + pcoord->x3v(k)*sin_a2;
+    Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3)
+           + pcoord->x3v(k)*sin_a2;
     sinkx = sin(x*kwave);
     coskx = cos(x*kwave);
 
@@ -134,6 +137,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
   if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
+  if (omega2 < 0){ 
+    std::cout << "This problem is Jeans unstable, njeans = " << njeans << std::endl;
+    return;
+  }
+
+  MeshBlock *pmb = pblock;
   // Initialize errors to zero
   Real l1_err[NHYDRO+NFIELD],max_err[NHYDRO+NFIELD];
   for (int i=0; i<(NHYDRO+NFIELD); ++i) {
@@ -148,24 +157,115 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   int js=pblock->js, je=pblock->je;
   int ks=pblock->ks, ke=pblock->ke;
 
-  for (int k=ks; k<=ke; k++) {
+  while (pmb != NULL) {
+    for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
-    Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3) + pcoord->x3v(k)*sin_a2;
-    sinkx = sin(x*kwave);
-    coskx = cos(x*kwave);
+        Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3) 
+               + pcoord->x3v(k)*sin_a2;
+        sinkx = sin(x*kwave);
+        coskx = cos(x*kwave);
+  
+        l1_err[IDN] += fabs(d0*(1.0+amp*sinkx) - phydro->u(IDN,k,j,i));
+        max_err[IDN] = std::max(fabs(d0*(1.0+amp*sinkx) - phydro->u(IDN,k,j,i)),max_err[IDN]);
 
-    if (omega2 > 0){
-      l1_err[IDN] += fabs( d0*(1.0+amp*sinkx) - phydro->u(IDN,k,j,i));
-      max_err[IDN] = std::max(fabs(d0*(1.0+amp*sinkx) - phydro->u(IDN,k,j,i)),max_err[IDN]);
+        l1_err[IM1] += fabs(phydro->u(IM1,k,j,i));
+        l1_err[IM2] += fabs(phydro->u(IM2,k,j,i));
+        l1_err[IM3] += fabs(phydro->u(IM3,k,j,i));
+        max_err[IM1] = std::max(fabs(phydro->u(IM1,k,j,i)),max_err[IM1]);
+        max_err[IM2] = std::max(fabs(phydro->u(IM2,k,j,i)),max_err[IM2]);
+        max_err[IM3] = std::max(fabs(phydro->u(IM3,k,j,i)),max_err[IM3]);
+        if (NON_BAROTROPIC_EOS) {
+          Real e0 = p0/gm1 + 0.5*d0*u0*u0 + amp*sinkx;
+          if (MAGNETIC_FIELDS_ENABLED) {
+            e0 += 0.5*(b0*b0);
+          }
+          l1_err[IEN] += fabs(e0 - phydro->u(IEN,k,j,i));
+          max_err[IEN] = std::max(fabs(e0 - phydro->u(IEN,k,j,i)),max_err[IEN]);
+        }
+      }
+    }}
+    pmb=pmb->next;
+  }
 
-      l1_err[IM1] += fabs(phydro->u(IM1,k,j,i));
-      l1_err[IM2] += fabs(phydro->u(IM2,k,j,i));
-      l1_err[IM3] += fabs(phydro->u(IM3,k,j,i));
-      max_err[IM1] = std::max(fabs(phydro->u(IM1,k,j,i)),max_err[IM1]);
-      max_err[IM2] = std::max(fabs(phydro->u(IM2,k,j,i)),max_err[IM2]);
-      max_err[IM3] = std::max(fabs(phydro->u(IM3,k,j,i)),max_err[IM3]);
+  for (int i=0; i<(NHYDRO+NFIELD); ++i) l1_err[i] = l1_err[i]/(float)GetTotalCells();
+  Real rms_err = 0.0, max_max_over_l1=0.0;
+#ifdef MPI_PARALLEL
+  if (Globals::my_rank == 0) {
+    MPI_Reduce(MPI_IN_PLACE,&l1_err,(NHYDRO+NFIELD),MPI_ATHENA_REAL,MPI_SUM,0,
+               MPI_COMM_WORLD);
+    MPI_Reduce(MPI_IN_PLACE,&max_err,(NHYDRO+NFIELD),MPI_ATHENA_REAL,MPI_MAX,0,
+               MPI_COMM_WORLD);
+  } else {
+    MPI_Reduce(&l1_err,&l1_err,(NHYDRO+NFIELD),MPI_ATHENA_REAL,MPI_SUM,0,
+               MPI_COMM_WORLD);
+    MPI_Reduce(&max_err,&max_err,(NHYDRO+NFIELD),MPI_ATHENA_REAL,MPI_MAX,0,
+               MPI_COMM_WORLD);
+  }
+#endif
+
+  // only the root process outputs the data
+  if (Globals::my_rank == 0) {
+    // compute rms error
+    for (int i=0; i<(NHYDRO+NFIELD); ++i) {
+       rms_err += SQR(l1_err[i]);
+       max_max_over_l1 = std::max(max_max_over_l1, (max_err[i]/l1_err[i]));
+    }
+    rms_err = sqrt(rms_err);
+
+    // open output file and write out errors
+    std::string fname;
+    fname.assign("jeans-errors.dat");
+    std::stringstream msg;
+    FILE *pfile;
+
+    // The file exists -- reopen the file in append mode
+    if((pfile = fopen(fname.c_str(),"r")) != NULL){
+      if((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
+        msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
+            << std::endl << "Error output file could not be opened" <<std::endl;
+        throw std::runtime_error(msg.str().c_str());
+      }
+
+    // The file does not exist -- open the file in write mode and add headers
     } else {
+      if((pfile = fopen(fname.c_str(),"w")) == NULL){
+        msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
+            << std::endl << "Error output file could not be opened" <<std::endl;
+        throw std::runtime_error(msg.str().c_str());
+      }
+      fprintf(pfile,"# Nx1  Nx2  Nx3  Ncycle  ");
+      fprintf(pfile,"RMS-L1-Error  d_L1  M1_L1  M2_L1  M3_L1");
+      if (NON_BAROTROPIC_EOS) fprintf(pfile,"  E_L1 ");
+      if (MAGNETIC_FIELDS_ENABLED) fprintf(pfile,"  B1c_L1  B2c_L1  B3c_L1");
+      fprintf(pfile,"  Largest-Max/L1  d_max  M1_max  M2_max  M3_max");
+      if (NON_BAROTROPIC_EOS) fprintf(pfile,"  E_max ");
+      if (MAGNETIC_FIELDS_ENABLED) fprintf(pfile,"  B1c_max  B2c_max  B3c_max");
+      fprintf(pfile,"\n");
     }
 
-} 
+    // write errors
+    fprintf(pfile,"%d  %d",mesh_size.nx1,mesh_size.nx2);
+    fprintf(pfile,"  %d  %d",mesh_size.nx3,ncycle);
+    fprintf(pfile,"  %e  %e",rms_err,l1_err[IDN]);
+    fprintf(pfile,"  %e  %e  %e",l1_err[IM1],l1_err[IM2],l1_err[IM3]);
+    if (NON_BAROTROPIC_EOS) fprintf(pfile,"  %e",l1_err[IEN]);
+    if (MAGNETIC_FIELDS_ENABLED) {
+      fprintf(pfile,"  %e",l1_err[NHYDRO+IB1]);
+      fprintf(pfile,"  %e",l1_err[NHYDRO+IB2]);
+      fprintf(pfile,"  %e",l1_err[NHYDRO+IB3]);
+    }
+    fprintf(pfile,"  %e  %e  ",max_max_over_l1,max_err[IDN]);
+    fprintf(pfile,"%e  %e  %e",max_err[IM1],max_err[IM2],max_err[IM3],max_err[IEN]);
+    if (NON_BAROTROPIC_EOS) fprintf(pfile,"  %e",max_err[IEN]);
+    if (MAGNETIC_FIELDS_ENABLED) {
+      fprintf(pfile,"  %e",max_err[NHYDRO+IB1]);
+      fprintf(pfile,"  %e",max_err[NHYDRO+IB2]);
+      fprintf(pfile,"  %e",max_err[NHYDRO+IB3]);
+    }
+    fprintf(pfile,"\n");
+    fclose(pfile);
+  }
+
+  return;
+}

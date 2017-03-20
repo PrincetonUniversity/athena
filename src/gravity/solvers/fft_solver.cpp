@@ -108,4 +108,6 @@ void Gravity::Solver(const AthenaArray<Real> &u)
       }
     }
   }
+
+  CalculateGravityFlux(phi);
 }

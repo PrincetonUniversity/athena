@@ -28,15 +28,21 @@ public:
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
 
   AthenaArray<Real> phi, phi_old;  // gravitational potential
-  AthenaArray<Real> gflx[3]; // gravity tensor
+  AthenaArray<Real> gflx[3],gflx_old[3]; // gravity tensor
   Real gconst, four_pi_G;
   Real grav_mean_rho;
 
   void AddGravityFlux(AthenaArray<Real> *flx);
-  void CalculateGravityFlux();
+  void CalculateGravityFlux(AthenaArray<Real> &phi_in);
   void Initialize(ParameterInput *pin);
   void Solver(const AthenaArray<Real> &u);
+  void CorrectGravityFlux(AthenaArray<Real> &u);
 
 private:
+  AthenaArray<Real> flx_;
+  AthenaArray<Real> x1face_area_, x2face_area_, x3face_area_;
+  AthenaArray<Real> x2face_area_p1_, x3face_area_p1_;
+  AthenaArray<Real> cell_volume_;
+ 
 };
 #endif // GRAVITY_HPP
