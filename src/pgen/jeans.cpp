@@ -17,6 +17,7 @@
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 #include <algorithm>  // min, max
+#include <cmath>
 
 // Athena++ headers
 #include "../globals.hpp"
@@ -127,6 +128,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   std::cout << "four_pi_G " << four_pi_G << std::endl;
   std::cout << "lambda " << lambda << std::endl;
   std::cout << "period " << (2*PI/omega) << std::endl;
+  std::cout << "angle2 " << ang_2*180./PI << " " << sin_a2 << " " << cos_a2 << std::endl;
+  std::cout << "angle3 " << ang_3*180./PI << " " << sin_a3 << " " << cos_a3 << std::endl;
   if(SELF_GRAVITY_ENABLED){
     pgrav->gconst = gconst;
     pgrav->four_pi_G = four_pi_G;

@@ -188,9 +188,9 @@ AthenaFFTPlan *AthenaFFT::CreatePlan(int nfast, int nslow,
   }
 #else // MPI_PARALLEL
   if(dir == AthenaFFTForward)
-    plan->plan = fftw_plan_dft_2d(nfast,nslow,data, data, FFTW_FORWARD, FFTW_MEASURE);
+    plan->plan = fftw_plan_dft_2d(nslow,nfast,data, data, FFTW_FORWARD, FFTW_MEASURE);
   else
-    plan->plan = fftw_plan_dft_2d(nfast,nslow,data, data, FFTW_BACKWARD, FFTW_MEASURE);
+    plan->plan = fftw_plan_dft_2d(nslow,nfast,data, data, FFTW_BACKWARD, FFTW_MEASURE);
 #endif
 #endif // FFT
 

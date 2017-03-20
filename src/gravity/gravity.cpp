@@ -22,6 +22,8 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin)
 
   // Allocate memory for gravitational potential, but only when needed.
   if (SELF_GRAVITY_ENABLED) {
+    gravity_tensor_momentum_=true;
+    gravity_tensor_energy_=false;
     int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
     int ncells2 = 1, ncells3 = 1;
     if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
@@ -110,38 +112,22 @@ void Gravity::AddGravityFlux(AthenaArray<Real> *flux)
     AthenaArray<Real> &x2gflx=gflx[X2DIR];
     AthenaArray<Real> &x3gflx=gflx[X3DIR];
  
+    for (int n=IM1; n<=IM3; ++n){
     for (int k=ks; k<=ke; ++k){
     for (int j=js; j<=je; ++j){
     for (int i=is; i<=ie; ++i){
-      x1flux(IM1,k,j,i) += x1gflx(IM1,k,j,i);
-      x1flux(IM2,k,j,i) += x1gflx(IM2,k,j,i);
-      x1flux(IM3,k,j,i) += x1gflx(IM3,k,j,i);
-      if(i==ie){
-        x1flux(IM1,k,j,i+1) += x1gflx(IM1,k,j,i+1);
-        x1flux(IM2,k,j,i+1) += x1gflx(IM2,k,j,i+1);
-        x1flux(IM3,k,j,i+1) += x1gflx(IM3,k,j,i+1);
-      }
-      if (pmb->block_size.nx2 > 1) {
-        x2flux(IM1,k,j,i) += x2gflx(IM1,k,j,i);
-        x2flux(IM2,k,j,i) += x2gflx(IM2,k,j,i);
-        x2flux(IM3,k,j,i) += x2gflx(IM3,k,j,i);
-        if(j==je){
-          x2flux(IM1,k,j+1,i) += x2gflx(IM1,k,j+1,i);
-          x2flux(IM2,k,j+1,i) += x2gflx(IM2,k,j+1,i);
-          x2flux(IM3,k,j+1,i) += x2gflx(IM3,k,j+1,i);
+        x1flux(n,k,j,i) += x1gflx(n,k,j,i);
+        if(i==ie) x1flux(n,k,j,i+1) += x1gflx(n,k,j,i+1);
+        if (pmb->block_size.nx2 > 1) {
+          x2flux(n,k,j,i) += x2gflx(n,k,j,i);
+          if(j==je) x2flux(n,k,j+1,i) += x2gflx(n,k,j+1,i);
         }
-      }
-      if (pmb->block_size.nx3 > 1) {
-        x3flux(IM1,k,j,i) += x3gflx(IM1,k,j,i);
-        x3flux(IM2,k,j,i) += x3gflx(IM2,k,j,i);
-        x3flux(IM3,k,j,i) += x3gflx(IM3,k,j,i);
-        if(k==ke){
-          x3flux(IM1,k+1,j,i) += x3gflx(IM1,k+1,j,i);
-          x3flux(IM2,k+1,j,i) += x3gflx(IM2,k+1,j,i);
-          x3flux(IM3,k+1,j,i) += x3gflx(IM3,k+1,j,i);
+        if (pmb->block_size.nx3 > 1) {
+          x3flux(n,k,j,i) += x3gflx(n,k,j,i);
+          if(k==ke) x3flux(n,k+1,j,i) += x3gflx(n,k+1,j,i);
         }
-      }
     }}}
+    }
   }
 
   return;
