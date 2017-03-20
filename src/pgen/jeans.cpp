@@ -162,9 +162,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
   Real tlim = pin->GetReal("time","tlim");
   while (pmb != NULL) {
-    for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je; j++) {
-      for (int i=is; i<=ie; i++) {
+    for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
+      for (int i=is; i<=ie; ++i) {
         Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3) 
                + pcoord->x3v(k)*sin_a2;
         sinkx = sin(x*kwave);
@@ -176,17 +176,17 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         l1_err[IDN] += fabs(den - phydro->u(IDN,k,j,i));
         max_err[IDN] = std::max(fabs(den - phydro->u(IDN,k,j,i)),max_err[IDN]);
 
-        Real m = den*(omega/kwave)*amp*coskx*sinot;
+        Real m = -(omega/kwave)*amp*coskx*sinot;
         Real m1 = m*cos_a3*cos_a2;
         Real m2 = m*sin_a3*cos_a2;
         Real m3 = m*sin_a2;
 
-        l1_err[IM1] += fabs(m1-phydro->u(IM1,k,j,i));
-        l1_err[IM2] += fabs(m2-phydro->u(IM2,k,j,i));
-        l1_err[IM3] += fabs(m3-phydro->u(IM3,k,j,i));
-        max_err[IM1] = std::max(fabs(m1-phydro->u(IM1,k,j,i)),max_err[IM1]);
-        max_err[IM2] = std::max(fabs(m2-phydro->u(IM2,k,j,i)),max_err[IM2]);
-        max_err[IM3] = std::max(fabs(m3-phydro->u(IM3,k,j,i)),max_err[IM3]);
+        l1_err[IM1] += fabs(m1-phydro->w(IM1,k,j,i));
+        l1_err[IM2] += fabs(m2-phydro->w(IM2,k,j,i));
+        l1_err[IM3] += fabs(m3-phydro->w(IM3,k,j,i));
+        max_err[IM1] = std::max(fabs(m1-phydro->w(IM1,k,j,i)),max_err[IM1]);
+        max_err[IM2] = std::max(fabs(m2-phydro->w(IM2,k,j,i)),max_err[IM2]);
+        max_err[IM3] = std::max(fabs(m3-phydro->w(IM3,k,j,i)),max_err[IM3]);
         if (NON_BAROTROPIC_EOS) {
           Real e0 = p0/gm1 + 0.5*d0*u0*u0 + amp*sinkx;
           if (MAGNETIC_FIELDS_ENABLED) {
