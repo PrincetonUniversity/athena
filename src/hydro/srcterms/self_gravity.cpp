@@ -43,11 +43,12 @@ void HydroSourceTerms::SelfGravity(const Real dt,const AthenaArray<Real> *flux,
 
 // Update momenta and energy with d/dx1 terms
         if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) -= 
-          dtodx1*(flux[X1DIR](IDN,k,j,i  )*(phic - phil) - 
-                  flux[X1DIR](IDN,k,j,i+1)*(phir - phic));
+          0.5*dtodx1*(flux[X1DIR](IDN,k,j,i  )*(phic - phil) + 
+                      flux[X1DIR](IDN,k,j,i+1)*(phir - phic));
       }
     }}
 
+    if (pmb->block_size.nx2 > 1) {
   // acceleration in 2-direction
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
 #pragma omp parallel for schedule(static)
@@ -62,11 +63,13 @@ void HydroSourceTerms::SelfGravity(const Real dt,const AthenaArray<Real> *flux,
         phil = 0.5*(pgrav->phi(k,j-1,i)+pgrav->phi(k,j  ,i));
         phir = 0.5*(pgrav->phi(k,j  ,i)+pgrav->phi(k,j+1,i));
         if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) -= 
-          dtodx2*(flux[X2DIR](IDN,k,j  ,i)*(phic - phil) - 
-                  flux[X2DIR](IDN,k,j+1,i)*(phir - phic));
+          0.5*dtodx2*(flux[X2DIR](IDN,k,j  ,i)*(phic - phil) + 
+                      flux[X2DIR](IDN,k,j+1,i)*(phir - phic));
       }
     }}
+    }
 
+    if (pmb->block_size.nx3 > 1) {
   // acceleration in 3-direction
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
 #pragma omp parallel for schedule(static)
@@ -77,11 +80,15 @@ void HydroSourceTerms::SelfGravity(const Real dt,const AthenaArray<Real> *flux,
         Real dx2 = pmb->pcoord->dx2v(j);
         Real dx3 = pmb->pcoord->dx3v(k);
         Real dtodx3 = dt/dx3;
+        phic = pgrav->phi(k,j,i);
+        phil = 0.5*(pgrav->phi(k-1,j,i)+pgrav->phi(k  ,j,i));
+        phir = 0.5*(pgrav->phi(k  ,j,i)+pgrav->phi(k+1,j,i));
         if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) -= 
-          dtodx3*(flux[X3DIR](IDN,k  ,j,i)*(phic - phil) - 
-                  flux[X3DIR](IDN,k+1,j,i)*(phir - phic));
+          0.5*dtodx3*(flux[X3DIR](IDN,k  ,j,i)*(phic - phil) + 
+                      flux[X3DIR](IDN,k+1,j,i)*(phir - phic));
       }
     }}
+    }
   }
   return;
 }

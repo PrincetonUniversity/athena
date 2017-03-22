@@ -31,9 +31,10 @@ public:
   AthenaArray<Real> gflx[3],gflx_old[3]; // gravity tensor
   Real gconst, four_pi_G;
   Real grav_mean_rho;
+  bool srcterm;
 
   void AddGravityFlux(AthenaArray<Real> *flx);
-  void CalculateGravityFlux(AthenaArray<Real> &phi_in);
+  void CalculateGravityFlux(AthenaArray<Real> &phi_in, AthenaArray<Real> *flx);
   void Initialize(ParameterInput *pin);
   void Solver(const AthenaArray<Real> &u);
   void CorrectGravityFlux(AthenaArray<Real> &u);

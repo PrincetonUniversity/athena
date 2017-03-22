@@ -54,6 +54,8 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin)
   g3_ = pin->GetOrAddReal("hydro","grav_acc3",0.0);
   if (g3_ != 0.0) hydro_sourceterms_defined = true;
 
+  if(SELF_GRAVITY_ENABLED) hydro_sourceterms_defined = true;
+
   UserSourceTerm = phyd->pmy_block->pmy_mesh->UserSourceTerm_;
   if(UserSourceTerm != NULL) hydro_sourceterms_defined = true;
 }
