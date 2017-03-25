@@ -119,21 +119,25 @@ public:
   void ProlongateBoundaries(AthenaArray<Real> &pdst, AthenaArray<Real> &cdst, 
        FaceField &bfdst, AthenaArray<Real> &bcdst, const Real time, const Real dt);
 
-  int LoadHydroBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
-                                       const NeighborBlock& nb);
-  int LoadHydroBoundaryBufferToCoarser(AthenaArray<Real> &src, Real *buf,
-                                       const NeighborBlock& nb, bool cons);
-  int LoadHydroBoundaryBufferToFiner(AthenaArray<Real> &src, Real *buf,
-                                     const NeighborBlock& nb);
-  void SendHydroBoundaryBuffers(AthenaArray<Real> &src, bool cons);
-  void SetHydroBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
-                                 const NeighborBlock& nb);
-  void SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock& nb, bool cons);
-  void SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf,
-                                 const NeighborBlock& nb);
-  bool ReceiveHydroBoundaryBuffers(AthenaArray<Real> &dst);
-  void ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst, bool cons);
-  void PolarSingleHydro(AthenaArray<Real> &dst);
+  int LoadCellCenteredBoundaryBufferSameLevel(AthenaArray<Real> &src,
+                      int ns, int ne, Real *buf, const NeighborBlock& nb);
+  int LoadCellCenteredBoundaryBufferToCoarser(AthenaArray<Real> &src,
+      int ns, int ne, Real *buf, AthenaArray<Real> &cbuf, const NeighborBlock& nb);
+  int LoadCellCenteredBoundaryBufferToFiner(AthenaArray<Real> &src,
+                      int ns, int ne, Real *buf, const NeighborBlock& nb);
+  void SendCellCenteredBoundaryBuffers(AthenaArray<Real> &src,
+                                       enum CCBoundaryType type);
+  void SetCellCenteredBoundarySameLevel(AthenaArray<Real> &dst, int ns, int ne,
+                                  Real *buf, const NeighborBlock& nb, bool *flip);
+  void SetCellCenteredBoundaryFromCoarser(int ns, int ne, Real *buf,
+                      AthenaArray<Real> &cbuf, const NeighborBlock& nb, bool *flip);
+  void SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst, int ns, int ne,
+                                  Real *buf, const NeighborBlock& nb, bool *flip);
+  bool ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
+                                          enum CCBoundaryType type);
+  void ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real> &dst,
+                                           enum CCBoundaryType type);
+  void PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int ne);
 
   int LoadFieldBoundaryBufferSameLevel(FaceField &src, Real *buf,
                                        const NeighborBlock& nb);
@@ -149,8 +153,8 @@ public:
   void ReceiveFieldBoundaryBuffersWithWait(FaceField &dst);
   void PolarSingleField(FaceField &dst);
 
-  void SendFluxCorrection(void);
-  bool ReceiveFluxCorrection(void);
+  void SendFluxCorrection(enum FluxCorrectionType type);
+  bool ReceiveFluxCorrection(enum FluxCorrectionType type);
 
   int LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
   int LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);

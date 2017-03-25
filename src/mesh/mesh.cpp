@@ -1175,7 +1175,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     while (pmb != NULL)  {
       phydro=pmb->phydro;
       pfield=pmb->pfield;
-      pmb->pbval->SendHydroBoundaryBuffers(phydro->u, true);
+      pmb->pbval->SendCellCenteredBoundaryBuffers(phydro->u, HYDRO_CONS);
       if (MAGNETIC_FIELDS_ENABLED)
         pmb->pbval->SendFieldBoundaryBuffers(pfield->b);
       pmb=pmb->next;
@@ -1187,7 +1187,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       phydro=pmb->phydro;
       pfield=pmb->pfield;
       pbval=pmb->pbval;
-      pbval->ReceiveHydroBoundaryBuffersWithWait(phydro->u, true);
+      pbval->ReceiveCellCenteredBoundaryBuffersWithWait(phydro->u, HYDRO_CONS);
       if (MAGNETIC_FIELDS_ENABLED)
         pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b);
       pmb->pbval->ClearBoundaryForInit(true);
@@ -1208,7 +1208,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       pmb = pblock;
       while (pmb != NULL) {
         phydro=pmb->phydro;
-        pmb->pbval->SendHydroBoundaryBuffers(phydro->w, false);
+        pmb->pbval->SendCellCenteredBoundaryBuffers(phydro->w, HYDRO_PRIM);
         pmb=pmb->next;
       }
 
@@ -1218,7 +1218,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
         phydro=pmb->phydro;
         pfield=pmb->pfield;
         pbval=pmb->pbval;
-        pbval->ReceiveHydroBoundaryBuffersWithWait(phydro->w, false);
+        pbval->ReceiveCellCenteredBoundaryBuffersWithWait(phydro->w, HYDRO_PRIM);
         pmb->pbval->ClearBoundaryForInit(false);
         pmb=pmb->next;
       }
