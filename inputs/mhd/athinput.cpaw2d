@@ -44,7 +44,7 @@ refinement  = none
 <meshblock>
 nx1        = 256       # Number of zones in X1-direction
 nx2        = 128       # Number of zones in X2-direction
-nx3        = 128       # Number of zones in X3-direction
+nx3        = 1         # Number of zones in X3-direction
 
 <refinement1>
 x1min = 1.0

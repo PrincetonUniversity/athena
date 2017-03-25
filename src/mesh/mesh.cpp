@@ -1187,13 +1187,15 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     pmb = pblock;
     while (pmb != NULL)  {
       phydro=pmb->phydro;
-      pfield=pmb->pfield;
-      pgrav=pmb->pgrav;
-      pmb->pbval->SendHydroBoundaryBuffers(phydro->u, true);
-      if (MAGNETIC_FIELDS_ENABLED)
+      pmb->pbval->SendCellCenteredBoundaryBuffers(phydro->u, HYDRO_CONS);
+      if (MAGNETIC_FIELDS_ENABLED) {
+        pfield=pmb->pfield;
         pmb->pbval->SendFieldBoundaryBuffers(pfield->b);
-      if (SELF_GRAVITY_ENABLED)
+      }
+      if (SELF_GRAVITY_ENABLED) {
+        pgrav=pmb->pgrav;
         pmb->pbval->SendGravityBoundaryBuffers(pgrav->phi);
+      }
       pmb=pmb->next;
     }
 
@@ -1201,14 +1203,16 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     pmb = pblock;
     while (pmb != NULL)  {
       phydro=pmb->phydro;
-      pfield=pmb->pfield;
-      pgrav=pmb->pgrav;
       pbval=pmb->pbval;
-      pbval->ReceiveHydroBoundaryBuffersWithWait(phydro->u, true);
-      if (MAGNETIC_FIELDS_ENABLED)
+      pbval->ReceiveCellCenteredBoundaryBuffersWithWait(phydro->u, HYDRO_CONS);
+      if (MAGNETIC_FIELDS_ENABLED) {
+        pfield=pmb->pfield;
         pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b);
-      if (SELF_GRAVITY_ENABLED)
+      }
+      if (SELF_GRAVITY_ENABLED) {
+        pgrav=pmb->pgrav;
         pmb->pbval->ReceiveGravityBoundaryBuffersWithWait(pgrav->phi);
+      }
       pmb->pbval->ClearBoundaryForInit(true);
       pmb=pmb->next;
     }
@@ -1227,7 +1231,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       pmb = pblock;
       while (pmb != NULL) {
         phydro=pmb->phydro;
-        pmb->pbval->SendHydroBoundaryBuffers(phydro->w, false);
+        pmb->pbval->SendCellCenteredBoundaryBuffers(phydro->w, HYDRO_PRIM);
         pmb=pmb->next;
       }
 
@@ -1237,7 +1241,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
         phydro=pmb->phydro;
         pfield=pmb->pfield;
         pbval=pmb->pbval;
-        pbval->ReceiveHydroBoundaryBuffersWithWait(phydro->w, false);
+        pbval->ReceiveCellCenteredBoundaryBuffersWithWait(phydro->w, HYDRO_PRIM);
         pmb->pbval->ClearBoundaryForInit(false);
         pmb=pmb->next;
       }
