@@ -15,6 +15,7 @@
 #include "../../parameter_input.hpp"
 #include "../../coordinates/coordinates.hpp"
 #include "../../mesh/mesh.hpp"
+#include "../../hydro/hydro.hpp"
 #include "../../fft/athena_fft.hpp"
 
 //----------------------------------------------------------------------------------------
@@ -109,5 +110,5 @@ void Gravity::Solver(const AthenaArray<Real> &u)
     }
   }
 
-  CalculateGravityFlux(phi);
+  CalculateGravityFlux(phi,pmb->phydro->flux);
 }

@@ -43,7 +43,7 @@
 static Real ang_2, ang_3; // Rotation angles about the y and z' axis
 static Real sin_a2, cos_a2, sin_a3, cos_a3;
 static Real amp, njeans, lambda, kwave; // amplitude, Wavelength, 2*PI/wavelength
-static Real cs2,gm1,omega,omega2;
+static Real cs2,gam,gm1,omega,omega2;
 static Real ev[NWAVE], rem[NWAVE][NWAVE], lem[NWAVE][NWAVE];
 static Real d0,p0,v0,u0,w0,va,b0;
 
@@ -93,7 +93,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   va = 0.0, b0 = 0.0;
 
   if (NON_BAROTROPIC_EOS) {
-    Real gam = pin->GetReal("hydro","gamma");
+    gam = pin->GetReal("hydro","gamma");
+    p0 = 1.0/gam;
     gm1 = gam-1;
     cs2 = gam*p0/d0;
   } else {
@@ -123,6 +124,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     phydro->u(IM1,k,j,i) = m*cos_a3*cos_a2;
     phydro->u(IM2,k,j,i) = m*sin_a3*cos_a2;
     phydro->u(IM3,k,j,i) = m*sin_a2;
+
+    if (NON_BAROTROPIC_EOS) {
+      phydro->u(IEN,k,j,i) = p0/gm1*(1.0 + gam*amp*sinkx);
+    }
   }}}
 
   std::cout << "four_pi_G " << four_pi_G << std::endl;
@@ -130,6 +135,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   std::cout << "period " << (2*PI/omega) << std::endl;
   std::cout << "angle2 " << ang_2*180./PI << " " << sin_a2 << " " << cos_a2 << std::endl;
   std::cout << "angle3 " << ang_3*180./PI << " " << sin_a3 << " " << cos_a3 << std::endl;
+
+  pmy_mesh->tlim=pin->SetReal("time","tlim",2.0*PI/omega*2.0);
+
   if(SELF_GRAVITY_ENABLED){
     pgrav->gconst = gconst;
     pgrav->four_pi_G = four_pi_G;
@@ -160,7 +168,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   int js=pblock->js, je=pblock->je;
   int ks=pblock->ks, ke=pblock->ke;
 
-  Real tlim = pin->GetReal("time","tlim");
+  Real tlim = time;
   while (pmb != NULL) {
     for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
@@ -176,24 +184,21 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         l1_err[IDN] += fabs(den - phydro->u(IDN,k,j,i));
         max_err[IDN] = std::max(fabs(den - phydro->u(IDN,k,j,i)),max_err[IDN]);
 
-        Real m = -(omega/kwave)*amp*coskx*sinot;
+        Real m = -den*(omega/kwave)*amp*coskx*sinot;
         Real m1 = m*cos_a3*cos_a2;
         Real m2 = m*sin_a3*cos_a2;
         Real m3 = m*sin_a2;
 
-        l1_err[IM1] += fabs(m1-phydro->w(IM1,k,j,i));
-        l1_err[IM2] += fabs(m2-phydro->w(IM2,k,j,i));
-        l1_err[IM3] += fabs(m3-phydro->w(IM3,k,j,i));
-        max_err[IM1] = std::max(fabs(m1-phydro->w(IM1,k,j,i)),max_err[IM1]);
-        max_err[IM2] = std::max(fabs(m2-phydro->w(IM2,k,j,i)),max_err[IM2]);
-        max_err[IM3] = std::max(fabs(m3-phydro->w(IM3,k,j,i)),max_err[IM3]);
+        l1_err[IM1] += fabs(m1-phydro->u(IM1,k,j,i));
+        l1_err[IM2] += fabs(m2-phydro->u(IM2,k,j,i));
+        l1_err[IM3] += fabs(m3-phydro->u(IM3,k,j,i));
+        max_err[IM1] = std::max(fabs(m1-phydro->u(IM1,k,j,i)),max_err[IM1]);
+        max_err[IM2] = std::max(fabs(m2-phydro->u(IM2,k,j,i)),max_err[IM2]);
+        max_err[IM3] = std::max(fabs(m3-phydro->u(IM3,k,j,i)),max_err[IM3]);
         if (NON_BAROTROPIC_EOS) {
-          Real e0 = p0/gm1 + 0.5*d0*u0*u0 + amp*sinkx;
-          if (MAGNETIC_FIELDS_ENABLED) {
-            e0 += 0.5*(b0*b0);
-          }
-          l1_err[IEN] += fabs(e0 - phydro->u(IEN,k,j,i));
-          max_err[IEN] = std::max(fabs(e0 - phydro->u(IEN,k,j,i)),max_err[IEN]);
+          Real e0 = p0*(1 + gam*amp*sinkx*cosot);///gm1 + 0.5*m*m/den;
+          l1_err[IEN] += fabs(e0 - phydro->w(IEN,k,j,i));
+          max_err[IEN] = std::max(fabs(e0 - phydro->w(IEN,k,j,i)),max_err[IEN]);
         }
       }
     }}

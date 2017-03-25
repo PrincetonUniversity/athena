@@ -23,7 +23,8 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin)
   // Allocate memory for gravitational potential, but only when needed.
   if (SELF_GRAVITY_ENABLED) {
     gravity_tensor_momentum_=true;
-    gravity_tensor_energy_=false;
+    gravity_tensor_energy_=true;
+    srcterm = ~(gravity_tensor_momentum_ && gravity_tensor_energy_);
     int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
     int ncells2 = 1, ncells3 = 1;
     if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
@@ -137,12 +138,15 @@ void Gravity::AddGravityFlux(AthenaArray<Real> *flux)
 //! \fn void Gravity::CalcGravityFlux
 //  \brief Calcuates gravity flux to hydro flux
   
-void Gravity::CalculateGravityFlux(AthenaArray<Real> &phi_in)
+void Gravity::CalculateGravityFlux(AthenaArray<Real> &phi_in, AthenaArray<Real> *flux)
 {
   MeshBlock *pmb=pmy_block;
   Coordinates *pco=pmb->pcoord;
 
   if(SELF_GRAVITY_ENABLED){
+    AthenaArray<Real> &x1flux=flux[X1DIR];
+    AthenaArray<Real> &x2flux=flux[X2DIR];
+    AthenaArray<Real> &x3flux=flux[X3DIR];
     AthenaArray<Real> &x1gflx=gflx[X1DIR];
     AthenaArray<Real> &x2gflx=gflx[X2DIR];
     AthenaArray<Real> &x3gflx=gflx[X3DIR];
