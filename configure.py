@@ -299,14 +299,20 @@ if args['cxx'] == 'cray':
   makefile_options['LIBRARY_FLAGS'] = '-lm'
 if args['cxx'] == 'bgxl':
   # suppressed messages:
-  #   1500-036:  nostrict option can change semantics
-  #   1540-1401: pragma (simd) not recognized
+  #   1500-036:  The NOSTRICT option has the potential to alter the semantics of a program
+  #   1540-1401: An unknown "pragma simd" is specified
+  #   1586-083:  ld option ignored by IPA
+  #   1586-233:  Duplicate definition of symbol ignored
+  #   1586-267:  Inlining of specified subprogram failed due to the presence of a C++
+  #                exception handler
   definitions['COMPILER_CHOICE'] = 'bgxlc++'
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'bgxlc++'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
   makefile_options['COMPILER_FLAGS'] = \
-      '-O3 -qstrict -qlanglvl=extended -qsuppress=1500-036 -qsuppress=1540-1401'
-  makefile_options['LINKER_FLAGS'] = ''
+      '-O3 -qhot=level=1:vector -qinline=level=5:auto -qipa=level=1:noobject' \
+      + ' -qmaxmem=150000 -qlanglvl=extended -qsuppress=1500-036 -qsuppress=1540-1401' \
+      + ' -qsuppress=1586-083 -qsuppress=1586-233 -qsuppress=1586-267'
+  makefile_options['LINKER_FLAGS'] = makefile_options['COMPILER_FLAGS']
   makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'icc-phi':
   definitions['COMPILER_CHOICE'] = 'icc'
