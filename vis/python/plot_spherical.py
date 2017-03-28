@@ -21,9 +21,10 @@ Requires scipy if making streamplot.
 """
 
 # Python modules
-import numpy as np
 import argparse
 import h5py
+import numpy as np
+import warnings
 
 # Python plotting modules
 import matplotlib
@@ -97,16 +98,16 @@ def main(**kwargs):
 
   # Create streamline grid
   if kwargs['stream'] is not None:
-    x_stream = np.linspace(-r_max, r_max, 2*nx1+1)
+    x_stream = np.linspace(-r_max, r_max, kwargs['stream_samples'])
     if kwargs['midplane']:
-      y_stream = np.linspace(-r_max, r_max, 2*nx1+1)
+      y_stream = np.linspace(-r_max, r_max, kwargs['stream_samples'])
       x_grid_stream,y_grid_stream = np.meshgrid(x_stream, y_stream)
       r_grid_stream_coord = (x_grid_stream.T**2 + y_grid_stream.T**2) ** 0.5
       phi_grid_stream_coord = np.pi + np.arctan2(-y_grid_stream.T, -x_grid_stream.T)
       phi_grid_stream_pix = \
           (phi_grid_stream_coord+phi[0]) / (2.0*np.pi+2.0*phi[0]) * (nx3+1)
     else:
-      z_stream = np.linspace(-r_max, r_max, 2*nx1+1)
+      z_stream = np.linspace(-r_max, r_max, kwargs['stream_samples'])
       x_grid_stream,z_grid_stream = np.meshgrid(x_stream, z_stream)
       r_grid_stream_coord = (x_grid_stream.T**2 + z_grid_stream.T**2) ** 0.5
       theta_grid_stream_coord = np.pi - np.arctan2(x_grid_stream.T, -z_grid_stream.T)
@@ -120,7 +121,7 @@ def main(**kwargs):
       elif index < nx1-1:
         r_grid_stream_pix[i,j] = index + (r_val-r[index]) / (r[index+1]-r[index])
       else:
-        r_grid_stream_pix[i,j] = index + 1
+        r_grid_stream_pix[i,j] = nx1 + 1
 
   # Perform slicing/averaging of scalar data
   if kwargs['midplane']:
@@ -246,12 +247,15 @@ def main(**kwargs):
   plt.figure()
   im = plt.pcolormesh(x_grid, y_grid, vals, cmap=cmap, vmin=vmin, vmax=vmax, norm=norm)
   if kwargs['stream'] is not None:
-    if kwargs['midplane']:
-      plt.streamplot(x_stream, y_stream, vals_x.T, vals_y.T, \
-          density=kwargs['stream_density'], color='k')
-    else:
-      plt.streamplot(x_stream, z_stream, vals_x.T, vals_z.T, \
-          density=kwargs['stream_density'], color='k')
+    with warnings.catch_warnings():
+      warnings.filterwarnings('ignore', 'invalid value encountered in greater_equal', \
+          RuntimeWarning, 'numpy')
+      if kwargs['midplane']:
+        plt.streamplot(x_stream, y_stream, vals_x.T, vals_y.T, \
+            density=kwargs['stream_density'], color='k')
+      else:
+        plt.streamplot(x_stream, z_stream, vals_x.T, vals_z.T, \
+            density=kwargs['stream_density'], color='k')
   plt.gca().set_aspect('equal')
   plt.xlim((-r_max, r_max))
   plt.ylim((-r_max, r_max))
@@ -316,5 +320,9 @@ if __name__ == '__main__':
       type=float,
       default=1.0,
       help='density of streamlines')
+  parser.add_argument('--stream_samples',
+      type=int,
+      default=100,
+      help='linear size of streamline sampling grid')
   args = parser.parse_args()
   main(**vars(args))
