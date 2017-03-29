@@ -63,7 +63,7 @@ def analyze():
     return False
 
   # check error identical for waves in each direction
-  if data[2][4] - data[1][4] > 2.0e-6:
+  if abs(data[2][4] - data[1][4]) > 2.0e-6:
     print "error in L/R-going Alfven waves not equal",data[2][4],data[0][4]
     return False
 
