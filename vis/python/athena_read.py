@@ -178,12 +178,14 @@ def vtk(filename):
 
 #=========================================================================================
 
-def athdf(filename, data=None, quantities=None, level=0, subsample=False,
-    fast_restrict=False, vol_func=None, vol_params=None, center_func_1=None,
-    center_func_2=None, center_func_3=None):
+def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
+    subsample=False, fast_restrict=False, vol_func=None, vol_params=None,
+    center_func_1=None, center_func_2=None, center_func_3=None):
   """Read .athdf files and populate dict of arrays of data."""
 
-  # Python module for reading hdf5 files
+  # Python modules
+  import sys
+  import warnings
   import h5py
 
   # Open file
@@ -253,6 +255,9 @@ def athdf(filename, data=None, quantities=None, level=0, subsample=False,
         raise AthenaError('Coordinates not recognized')
 
     # Extract size information
+    max_level = f.attrs['MaxLevel']
+    if level is None:
+      level = max_level
     block_size = f.attrs['MeshBlockSize']
     root_grid_size = f.attrs['RootGridSize']
     nx1 = root_grid_size[0] * 2**level
@@ -268,22 +273,40 @@ def athdf(filename, data=None, quantities=None, level=0, subsample=False,
     else:
       dim = 1
 
+    # Check output level compared to max level in file
+    if level < max_level and not subsample and not fast_restrict:
+      warnings.warn('Exact restriction being used: performance severely affected; see' \
+          + ' documentation', AthenaWarning)
+      sys.stderr.flush()
+    if level > max_level:
+      warnings.warn('Requested refinement level higher than maximum level in file: all' \
+          + ' cells will be prolongated', AthenaWarning)
+      sys.stderr.flush()
+
     # Check that subsampling and/or fast restriction will work if needed
-    max_level = f.attrs['MaxLevel']
     if subsample or fast_restrict:
       max_restrict_factor = 2**(max_level-level)
       for current_block_size in block_size[:dim]:
         if current_block_size % max_restrict_factor != 0:
           raise AthenaError('Block boundaries at finest level must be cell boundaries' \
-              + ' at desired level for\nsubsampling or fast restriction to work')
+              + ' at desired level for subsampling or fast restriction to work')
 
     # Create list of all quantities if none given
+    file_quantities = f.attrs['VariableNames'][:]
+    coord_quantities = ('x1f', 'x2f', 'x3f', 'x1v', 'x2v', 'x3v')
     if data is not None:
       quantities = data.values()
     elif quantities is None:
-      quantities = f.attrs['VariableNames'][:]
-    quantities = [str(q) for q in quantities if q != 'x1f' and q != 'x2f' and q != 'x3f' \
-        and q != 'x1v' and q != 'x2v' and q != 'x3v']
+      quantities = file_quantities
+    else:
+      for q in quantities:
+        if q not in file_quantities and q not in coord_quantities:
+          possibilities = '", "'.join(file_quantities)
+          possibilities = '"' + possibilities + '"'
+          error_string = 'Quantity not recognized: file does not include "{0}" but does' \
+              + ' include {1}'
+          raise AthenaError(error_string.format(q,possibilities))
+    quantities = [str(q) for q in quantities if q not in coord_quantities]
 
     # Get metadata describing file layout
     num_blocks = f.attrs['NumMeshBlocks']
@@ -312,7 +335,7 @@ def athdf(filename, data=None, quantities=None, level=0, subsample=False,
     else:
       data = {}
       for q in quantities:
-        data[q] = np.zeros((nx3,nx2,nx1))
+        data[q] = np.zeros((nx3,nx2,nx1), dtype=dtype)
     if not subsample and not fast_restrict and max_level > level:
       restricted_data = np.zeros((lx3,lx2,lx1), dtype=bool)
 
@@ -488,4 +511,8 @@ def athdf(filename, data=None, quantities=None, level=0, subsample=False,
 
 class AthenaError(RuntimeError):
   """General exception class for Athena++ read functions."""
+  pass
+
+class AthenaWarning(RuntimeWarning):
+  """General warning class for Athena++ read functions."""
   pass
