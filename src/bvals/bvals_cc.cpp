@@ -495,6 +495,7 @@ void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real
         if(nb.rank!=Globals::my_rank)
           req=&(req_hydro_recv_[nb.bufid]);
 #endif
+        break;
       case HYDRO_PRIM:
         ns=0, ne=NHYDRO-1;
         rbuf=hydro_recv_[nb.bufid];

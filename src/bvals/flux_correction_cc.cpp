@@ -87,7 +87,6 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type)
               << "invalid flux correction type." << std::endl;
           throw std::runtime_error(msg.str().c_str());
           break;
-        break;
       }
       int p=0;
       // x1 direction
@@ -232,7 +231,6 @@ bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type)
               << "invalid flux correction type." << std::endl;
           throw std::runtime_error(msg.str().c_str());
           break;
-        break;
       }
       if(*flag==BNDRY_COMPLETED) continue;
       if(*flag==BNDRY_WAITING) {
