@@ -407,6 +407,10 @@ else:
     if not args['fft']:
       raise SystemExit('### CONFIGURE ERROR: FFT Poisson solver only be used with FFT')
 
+  definitions['SELF_GRAVITY_ENABLED'] = '2'
+  if args['grav'] == "mg":
+    makefile_options['GRAVITY_FILE'] = 'mg_solver.cpp'
+
 # -fft argument
 makefile_options['MPIFFT_FILE'] = ' '
 definitions['FFT_ENABLED'] = '0'
