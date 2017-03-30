@@ -36,6 +36,7 @@ class Reconstruction;
 class Hydro;
 class Field;
 class Gravity;
+class GravityDriver;
 class AthenaFFT;
 class EquationOfState;
 
@@ -90,15 +91,18 @@ class MeshBlock {
   friend class Mesh;
   friend class Hydro;
   friend class TaskList;
+  friend class MeshBlock;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
 
 public:
   MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_size,
-    enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, bool ref_flag = false);
+            enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, int igflag,
+            bool ref_flag = false);
   MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, LogicalLocation iloc,
-    RegionSize input_block, enum BoundaryFlag *input_bcs, Real icost, char *mbdata);
+            RegionSize input_block, enum BoundaryFlag *input_bcs, Real icost, char *mbdata,
+            int igflag);
   ~MeshBlock();
 
   //data
@@ -110,6 +114,7 @@ public:
   int is,ie,js,je,ks,ke;
   int gid, lid;
   int cis,cie,cjs,cje,cks,cke,cnghost;
+  int gflag;
 
   // user output variables for analysis
   int nuser_out_var;
@@ -177,7 +182,8 @@ class Mesh {
   friend class HydroSourceTerms;
   friend class Hydro;
   friend class AthenaFFT;
-  friend class Gravity;
+  friend class MultigridDriver;
+  friend class GravityDriver;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
@@ -202,6 +208,8 @@ public:
   bool adaptive, multilevel;
 
   MeshBlock *pblock;
+
+  GravityDriver *pgrd;
 
   AthenaArray<Real> *ruser_mesh_data;
   AthenaArray<int> *iuser_mesh_data;

@@ -61,6 +61,10 @@ private:
   AthenaArray<Real> g_, gi_;       // metric and inverse, for some GR Riemann solvers
   AthenaArray<Real> cons_;         // conserved state, for some GR Riemann solvers
 
+  // self-gravity
+  AthenaArray<Real> gflx[3], gflx_old[3]; // gravity tensor
+
+
   TimeStepFunc_t UserTimeStep_;
 };
 #endif // HYDRO_HPP

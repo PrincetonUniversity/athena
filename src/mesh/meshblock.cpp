@@ -39,7 +39,7 @@
 //                        and mesh refinement objects.
 
 MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_block,
-           enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, bool ref_flag)
+  enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, int igflag, bool ref_flag)
 {
   std::stringstream msg;
   int root_level;
@@ -52,6 +52,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   gid=igid;
   lid=ilid;
   loc=iloc;
+  gflag=igflag;
   cost=1.0;
 
   nuser_out_var = 0;
@@ -124,12 +125,16 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   // FFT object (need to be set before Gravity class)
   if (FFT_ENABLED) pfft = new AthenaFFT(this);
+  // Multgrid
+  if (SELF_GRAVITY_ENABLED == 2) pmg = new Multigrid(this, pin);
 
   // physics-related objects
-  phydro = new Hydro(this, pin);
-  if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
-  peos = new EquationOfState(this, pin);
-  if (SELF_GRAVITY_ENABLED) pgrav = new Gravity(this, pin);
+  if(SELF_GRAVITY_ENABLED <= 1) {
+    phydro = new Hydro(this, pin);
+    if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
+    peos = new EquationOfState(this, pin);
+  }
+  if (SELF_GRAVITY_ENABLED >= 1) pgrav = new Gravity(this, pin);
 
   // Create user mesh data
   InitUserMeshBlockData(pin);
@@ -142,7 +147,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
 MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
            LogicalLocation iloc, RegionSize input_block, enum BoundaryFlag *input_bcs,
-           Real icost, char *mbdata)
+           Real icost, char *mbdata, int igflag)
 {
   std::stringstream msg;
   pmy_mesh = pm;
@@ -151,6 +156,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   gid=igid;
   lid=ilid;
   loc=iloc;
+  gflag=igflag;
   cost=icost;
   block_size = input_block;
   for(int i=0; i<6; i++) block_bcs[i] = input_bcs[i];
@@ -221,54 +227,63 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   // FFT object
   if (FFT_ENABLED) pfft = new AthenaFFT(this);
 
-  // (re-)create physics-related objects in MeshBlock
-  phydro = new Hydro(this, pin);
-  if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
-  peos = new EquationOfState(this, pin);
-  if (SELF_GRAVITY_ENABLED) pgrav = new Gravity(this, pin);
+  // Multgrid
+  if (SELF_GRAVITY_ENABLED == 2) pmg = new Multigrid(this, pin);
+
+  if(SELF_GRAVITY_ENABLED <= 1) {
+    // (re-)create physics-related objects in MeshBlock
+    phydro = new Hydro(this, pin);
+    if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
+    peos = new EquationOfState(this, pin);
+  }
+  if (SELF_GRAVITY_ENABLED >= 1) pgrav = new Gravity(this, pin);
 
   InitUserMeshBlockData(pin);
 
-  // load hydro and field data
-  int os=0;
-  memcpy(phydro->u.data(), &(mbdata[os]), phydro->u.GetSizeInBytes());
-  // load it into the half-step arrays too
-  memcpy(phydro->u1.data(), &(mbdata[os]), phydro->u1.GetSizeInBytes());
-  os += phydro->u.GetSizeInBytes();
-  if (GENERAL_RELATIVITY) {
-    memcpy(phydro->w.data(), &(mbdata[os]), phydro->w.GetSizeInBytes());
-    os += phydro->w.GetSizeInBytes();
-    memcpy(phydro->w1.data(), &(mbdata[os]), phydro->w1.GetSizeInBytes());
-    os += phydro->w1.GetSizeInBytes();
+  if(SELF_GRAVITY_ENABLED <= 1) {
+    // load hydro and field data
+    int os=0;
+    memcpy(phydro->u.data(), &(mbdata[os]), phydro->u.GetSizeInBytes());
+    // load it into the half-step arrays too
+    memcpy(phydro->u1.data(), &(mbdata[os]), phydro->u1.GetSizeInBytes());
+    os += phydro->u.GetSizeInBytes();
+    if (GENERAL_RELATIVITY) {
+      memcpy(phydro->w.data(), &(mbdata[os]), phydro->w.GetSizeInBytes());
+      os += phydro->w.GetSizeInBytes();
+      memcpy(phydro->w1.data(), &(mbdata[os]), phydro->w1.GetSizeInBytes());
+      os += phydro->w1.GetSizeInBytes();
+    }
+    if (MAGNETIC_FIELDS_ENABLED) {
+      memcpy(pfield->b.x1f.data(), &(mbdata[os]), pfield->b.x1f.GetSizeInBytes());
+      memcpy(pfield->b1.x1f.data(), &(mbdata[os]), pfield->b1.x1f.GetSizeInBytes());
+      os += pfield->b.x1f.GetSizeInBytes();
+      memcpy(pfield->b.x2f.data(), &(mbdata[os]), pfield->b.x2f.GetSizeInBytes());
+      memcpy(pfield->b1.x2f.data(), &(mbdata[os]), pfield->b1.x2f.GetSizeInBytes());
+      os += pfield->b.x2f.GetSizeInBytes();
+      memcpy(pfield->b.x3f.data(), &(mbdata[os]), pfield->b.x3f.GetSizeInBytes());
+      memcpy(pfield->b1.x3f.data(), &(mbdata[os]), pfield->b1.x3f.GetSizeInBytes());
+      os += pfield->b.x3f.GetSizeInBytes();
+    }
   }
-  if (MAGNETIC_FIELDS_ENABLED) {
-    memcpy(pfield->b.x1f.data(), &(mbdata[os]), pfield->b.x1f.GetSizeInBytes());
-    memcpy(pfield->b1.x1f.data(), &(mbdata[os]), pfield->b1.x1f.GetSizeInBytes());
-    os += pfield->b.x1f.GetSizeInBytes();
-    memcpy(pfield->b.x2f.data(), &(mbdata[os]), pfield->b.x2f.GetSizeInBytes());
-    memcpy(pfield->b1.x2f.data(), &(mbdata[os]), pfield->b1.x2f.GetSizeInBytes());
-    os += pfield->b.x2f.GetSizeInBytes();
-    memcpy(pfield->b.x3f.data(), &(mbdata[os]), pfield->b.x3f.GetSizeInBytes());
-    memcpy(pfield->b1.x3f.data(), &(mbdata[os]), pfield->b1.x3f.GetSizeInBytes());
-    os += pfield->b.x3f.GetSizeInBytes();
-  }
-  if (SELF_GRAVITY_ENABLED) {
+
+  // NEW_PHYSICS: add load of new physics from restart file here
+  if (SELF_GRAVITY_ENABLED >= 1) {
     memcpy(pgrav->phi.data(), &(mbdata[os]), pgrav->phi.GetSizeInBytes());
     os += pgrav->phi.GetSizeInBytes();
   }
 
-  // NEW_PHYSICS: add load of new physics from restart file here
-
-  // load user MeshBlock data
-  for(int n=0; n<nint_user_meshblock_data_; n++) {
-    memcpy(iuser_meshblock_data[n].data(), &(mbdata[os]),
-           iuser_meshblock_data[n].GetSizeInBytes());
-    os+=iuser_meshblock_data[n].GetSizeInBytes();
-  }
-  for(int n=0; n<nreal_user_meshblock_data_; n++) {
-    memcpy(ruser_meshblock_data[n].data(), &(mbdata[os]),
-           ruser_meshblock_data[n].GetSizeInBytes());
-    os+=ruser_meshblock_data[n].GetSizeInBytes();
+  if(SELF_GRAVITY_ENABLED <= 1) {
+    // load user MeshBlock data
+    for(int n=0; n<nint_user_meshblock_data_; n++) {
+      memcpy(iuser_meshblock_data[n].data(), &(mbdata[os]),
+             iuser_meshblock_data[n].GetSizeInBytes());
+      os+=iuser_meshblock_data[n].GetSizeInBytes();
+    }
+    for(int n=0; n<nreal_user_meshblock_data_; n++) {
+      memcpy(ruser_meshblock_data[n].data(), &(mbdata[os]),
+             ruser_meshblock_data[n].GetSizeInBytes());
+      os+=ruser_meshblock_data[n].GetSizeInBytes();
+    }
   }
 
   return;

@@ -110,7 +110,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 
     // everything else
     AddTimeIntegratorTask(PHY_BVAL,CON2PRIM);
-    if (SELF_GRAVITY_ENABLED){
+    if (SELF_GRAVITY_ENABLED == 1){
       AddTimeIntegratorTask(SOLV_GRAV,PHY_BVAL);
       AddTimeIntegratorTask(SEND_GRAV,SOLV_GRAV);
       AddTimeIntegratorTask(RECV_GRAV,SEND_GRAV);
@@ -646,6 +646,6 @@ enum TaskStatus TimeIntegratorTaskList::GravFluxCorrection(MeshBlock *pmb, int s
 {
   if (step != nsub_steps) return TASK_NEXT; // only do on last sub-step
 
-  pmb->pgrav->CorrectGravityFlux(pmb->phydro->u);
+  pmb->phydro->CorrectGravityFlux(pmb->phydro->u);
   return TASK_NEXT;
 }

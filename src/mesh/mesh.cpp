@@ -228,7 +228,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   nbmax=(nrbx1>nrbx2)?nrbx1:nrbx2;
   nbmax=(nbmax>nrbx3)?nbmax:nrbx3;
 
-
   //initialize user-enrollable functions
   if(mesh_size.x1rat!=1.0)
     use_meshgen_fn_[X1DIR]=true;
@@ -276,6 +275,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   } else {
     max_level = 63;
   }
+
+  if (SELF_GRAVITY_ENABLED == 2) pgrd = new GravityDriver(this, pin);
 
   InitUserMeshData(pin);
 
@@ -466,6 +467,12 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
     return;
   }
 
+  // set gravity flag
+  gflag=0;
+  if(SELF_GRAVITY_ENABLED) gflag=1;
+//  if(SELF_GRAVITY_ENABLED==2 && ...) // independent allocation
+//    gflag=2;
+
   // create MeshBlock list for this process
   int nbs=nslist[Globals::my_rank];
   int nbe=nbs+nblist[Globals::my_rank]-1;
@@ -474,11 +481,13 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
     SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
     // create a block and add into the link list
     if(i==nbs) {
-      pblock = new MeshBlock(i, i-nbs, loclist[i], block_size, block_bcs, this, pin);
+      pblock = new MeshBlock(i, i-nbs, loclist[i], block_size, block_bcs, this,
+                             pin, gflag);
       pfirst = pblock;
     }
     else {
-      pblock->next = new MeshBlock(i, i-nbs, loclist[i], block_size, block_bcs, this, pin);
+      pblock->next = new MeshBlock(i, i-nbs, loclist[i], block_size, block_bcs,
+                                   this, pin, gflag);
       pblock->next->prev = pblock;
       pblock = pblock->next;
     }
@@ -487,6 +496,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   }
   pblock=pfirst;
 
+  if (SELF_GRAVITY_ENABLED == 2) pgrd->Initialize();
 }
 
 //----------------------------------------------------------------------------------------
@@ -645,6 +655,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
     max_level = 63;
   }
 
+
+  if (SELF_GRAVITY_ENABLED == 2) pgrd = new GravityDriver(this, pin);
+
   InitUserMeshData(pin);
 
   // read user Mesh data
@@ -764,6 +777,12 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
     return;
   }
 
+  // set gravity flag
+  gflag=0;
+  if(SELF_GRAVITY_ENABLED) gflag=1;
+//  if(SELF_GRAVITY_ENABLED==2 && ...) // independent allocation
+//    gflag=2;
+
   // allocate data buffer
   int nb=nblist[Globals::my_rank];
   int nbs=nslist[Globals::my_rank];
@@ -805,6 +824,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
 
   // clean up
   delete [] offset;
+
+  if (SELF_GRAVITY_ENABLED == 2) pgrd->Initialize();
 }
 
 //----------------------------------------------------------------------------------------
@@ -1888,11 +1909,13 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
       // on a different level or node - create a new block
       SetBlockSizeAndBoundaries(newloc[n], block_size, block_bcs);
       if(n==nbs) { // first
-        newlist = new MeshBlock(n, n-nbs, newloc[n], block_size, block_bcs, this, pin, true);
+        newlist = new MeshBlock(n, n-nbs, newloc[n], block_size, block_bcs, this,
+                                pin, gflag, true);
         pmb=newlist;
       }
       else {
-        pmb->next = new MeshBlock(n, n-nbs, newloc[n], block_size, block_bcs, this, pin, true);
+        pmb->next = new MeshBlock(n, n-nbs, newloc[n], block_size, block_bcs, this,
+                                  pin, gflag, true);
         pmb->next->prev=pmb;
         pmb=pmb->next;
       }
