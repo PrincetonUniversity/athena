@@ -91,7 +91,7 @@ parser.add_argument('--fint',
 # --grav=[name] argument
 parser.add_argument('--grav',
     default='none',
-    choices=['none','fft'],
+    choices=['none','fft','mg'],
     help='select self-gravity solver')
 
 
@@ -409,7 +409,7 @@ else:
 
   definitions['SELF_GRAVITY_ENABLED'] = '2'
   if args['grav'] == "mg":
-    makefile_options['GRAVITY_FILE'] = 'mg_solver.cpp'
+    makefile_options['GRAVITY_FILE'] = 'empty_solver.cpp'
 
 # -fft argument
 makefile_options['MPIFFT_FILE'] = ' '

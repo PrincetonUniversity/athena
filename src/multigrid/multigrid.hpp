@@ -41,7 +41,7 @@ private:
 
 class Multigrid {
 public:
-  Multigrid(MeshBlock *pmb, ParameterInput *pin, int invar);
+  Multigrid(MeshBlock *pmb, int invar);
   virtual ~Multigrid();
 
   MeshBlock *pmy_block;
@@ -50,19 +50,20 @@ public:
   void LoadFinestData(AthenaArray<Real> &src, int ns);
   void LoadFinestSource(AthenaArray<Real> &src, int ns, Real fac);
   void RetrieveResult(AthenaArray<real> &dst, int ns);
+  void ZeroClearData(int lev);
   void Restrict(int clev);
   void ProlongateAndCorrect(int clev);
   void FMGProlongate(int clev);
-  Real CalculateResidualNorm(int nrm);
+  Real CalculateDefectNorm(int nrm);
 
   // pure virtual functions
   virtual void Smooth(int lev, int color) = 0;
-  virtual void CalculateResidual(int lev) = 0;
+  virtual void CalculateDefect(int lev) = 0;
 
 protected:
   // the multigrid solver
   const int ngh_=1;
   Real dx_;
-  AthenaArray<Real> *u_, *src_, *res_;
+  AthenaArray<Real> *u_, *def_, *src_;
 };
 #endif // MULTIGRID_HPP

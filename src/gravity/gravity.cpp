@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file gravity.cpp
-//  \brief implementation of functions in class Field
+//  \brief implementation of functions in class Gravity
 
 // Athena++ headers
 #include "gravity.hpp"
@@ -36,7 +36,6 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin)
 
 Gravity::~Gravity()
 {
-  Finalize();
   phi.DeleteAthenaArray();
   phi_old.DeleteAthenaArray();
 }

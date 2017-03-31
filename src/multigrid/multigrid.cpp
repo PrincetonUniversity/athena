@@ -9,6 +9,7 @@
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
+#include <cstring>    // memset
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -19,9 +20,9 @@
 #include "../hydro/hydro.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn  void MultiGrid::LoadFinestData(AthenaArray<Real> &src, int ns)
+//! \fn  void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns)
 //  \brief Fill the active zone of the finest level
-void MultiGrid::LoadFinestData(AthenaArray<Real> &src, int ns)
+void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns)
 {
   AthenaArray<Real> &dst=u_[nlev-1];
 #pragma ivdep
@@ -33,7 +34,7 @@ void MultiGrid::LoadFinestData(AthenaArray<Real> &src, int ns)
       for(int j=pmb->js, mj=ngh; j<=pmb->je; j++, mj++) {
 #pragma ivdep
         for(int i=pmb->is, mi=ngh; i<=pmb->ie; i++, mi++)
-          dst(n,mk,mj,mi)=src(nsrc,k,j,i)*fac;
+          dst(n,mk,mj,mi)=src(nsrc,k,j,i);
       }
     }
   }
@@ -42,9 +43,9 @@ void MultiGrid::LoadFinestData(AthenaArray<Real> &src, int ns)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn  void MultiGrid::LoadFinestSource(AthenaArray<Real> &src, int ns, Real fac)
+//! \fn  void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, Real fac)
 //  \brief Fill the active zone of the finest level
-void MultiGrid::LoadFinestSource(AthenaArray<Real> &src, int ns, Real fac)
+void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, Real fac)
 {
   AthenaArray<Real> &dst=src_[nlev-1];
 #pragma ivdep
@@ -65,11 +66,11 @@ void MultiGrid::LoadFinestSource(AthenaArray<Real> &src, int ns, Real fac)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn  void MultiGrid::RetrieveResult(AthenaArray<real> &dst, int ns)
+//! \fn  void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns)
 //  \brief Set the result
-void MultiGrid::RetrieveResult(AthenaArray<real> &dst, int ns)
+void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns)
 {
-  AthenaArray<Real> &src=src_[nlev-1];
+  const AthenaArray<Real> &src=src_[nlev-1];
 #pragma ivdep
   for(int n=0; n<nvar; n++) {
     int ndst=ns+n;
@@ -87,15 +88,25 @@ void MultiGrid::RetrieveResult(AthenaArray<real> &dst, int ns)
 }
 
 
+//----------------------------------------------------------------------------------------
+//! \fn  void Multigrid::ZeroClearData(int lev)
+//  \brief Clear the data array with zero
+void Multigrid::ZeroClearData(int lev)
+{
+  AthenaArray<Real> &u=u_[lev];
+  std::memset(u.data(), 0, u.GetSizeInBytes());
+  return;
+}
+
 
 //----------------------------------------------------------------------------------------
-//! \fn  void MultiGrid::Restrict(int clev)
+//! \fn  void Multigrid::Restrict(int clev)
 //  \brief Restrict the potential/density to level=clev
-void MultiGrid::Restrict(int clev)
+void Multigrid::Restrict(int clev)
 {
+  AthenaArray<Real> &dst=src_[clev];
+  AthenaArray<Real> &src=def_[clev+1];
   int ns=ngh, ne=ngh+(1<<clev)-1;
-  AthenaArray<Real> &dst=u_[clev];
-  AthenaArray<Real> &src=res_[clev+1];
 #pragma ivdep
   for(int n=0; n<nvar; n++) {
 #pragma ivdep
@@ -112,15 +123,17 @@ void MultiGrid::Restrict(int clev)
     }
   }
   return;
+  return;
 }
 
+
 //----------------------------------------------------------------------------------------
-//! \fn  void MultiGrid::ProlongateAndCorrect(int clev)
+//! \fn  void Multigrid::ProlongateAndCorrect(int clev)
 //  \brief Prolongate the potential from level=clev using tri-linear interpolation
-void MultiGrid::ProlongateAndCorrect(int clev)
+void Multigrid::ProlongateAndCorrect(int clev)
 {
-  AthenaArray<Real> &src=u_[clev];
-  AthenaArray<Real> &dst=res_[clev+1];
+  const AthenaArray<Real> &src=u_[clev];
+  AthenaArray<Real> &dst=def_[clev+1];
   int ns=ngh, ne=ngh+(1<<clev)-1;
 #pragma ivdep
   for(int n=0; n<nvar; n++) {
@@ -163,9 +176,9 @@ void MultiGrid::ProlongateAndCorrect(int clev)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn  void MultiGrid::FMGProlongate(int clev)
-//  \brief Prolongate the potential from level=clev for Full MultiGrid cycle
-void MultiGrid::FMGProlongate(int clev)
+//! \fn  void Multigrid::FMGProlongate(int clev)
+//  \brief Prolongate the potential from level=clev for Full Multigrid cycle
+void Multigrid::FMGProlongate(int clev)
 {
   AthenaArray<Real> &src=u_[clev];
   AthenaArray<Real> &dst=u_[clev+1];
@@ -211,61 +224,12 @@ void MultiGrid::FMGProlongate(int clev)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn  void MultiGrid::Smooth(int lev, int color)
-//  \brief Red-Black Gauss-Seidel Smoother
-void MultiGrid::Smooth(int lev, int color)
-{
-  const Real omg = 1.15; 
-  int ns=ngh, ne=ngh+(1<<lev)-1;
-  int c=color;
-#pragma ivdep
-  for(int k=ns; k<=ne; k++) {
-#pragma ivdep
-    for(int j=ns; j<=ne; j++) {
-#pragma ivdep
-      for(int i=ns+c; i<=ne; i+=2)
-        phi(k,j,i)=0.0;
-      c^=1:
-    }
-    c^=1:
-  }
-  return;
-}
-
-
-//----------------------------------------------------------------------------------------
-//! \fn void MultiGrid::CalculateResidual(int lev)
-//  \brief calculate the residual
-
-void MultiGrid::CalculateResidual(int lev)
-{
-  int ns=ngh, ne=ngh+(1<<lev)-1;
-  Real idx2=1.0/(6.0*SQR(dx));
-
-#pragma ivdep
-  for(int n=0; n<nvar; n++) {
-#pragma ivdep
-    for(int k=ns; k<=ne; k++) {
-#pragma ivdep
-      for(int j=ns; j<=ne; j++) {
-#pragma ivdep
-        for(int i=ns; i<=ne; i++)
-          res(k,j,i)=d(k,j,i)+(6.0*phi(k,j,i)-phi(k+1,j,i)-phi(k,j+1,i)-phi(k,j,i+1)
-                                             -phi(k-1,j,i)-phi(k,j-1,i)-phi(k,j,i-1))*idx2;
-      }
-    }
-  }
-  return;
-}
-
-
-//----------------------------------------------------------------------------------------
-//! \fn Real MultiGrid::CalculateResidualNorm(int nrm)
+//! \fn Real Multigrid::CalculateDefectNorm(int nrm)
 //  \brief calculate the residual norm
 
-Real MultiGrid::CalculateResidualNorm(int nrm)
+Real Multigrid::CalculateDefectNorm(int nrm)
 {
-  AthenaArray<Real> &res=res_[nlev-1];
+  AthenaArray<Real> &def=def_[nlev-1];
   int ns=ngh, ne=ngh+(1<<nlev)-1;
   Real norm=0.0;
   if(nrm==0) { // special case: max norm
@@ -277,7 +241,7 @@ Real MultiGrid::CalculateResidualNorm(int nrm)
         for(int j=ns; j<=ne; j++) {
 #pragma ivdep
           for(int i=ns; i<=ne; i++)
-            norm=std::max(norm,std::fabs(res(k,j,i)));
+            norm=std::max(norm,std::fabs(def(k,j,i)));
         }
       }
     }
@@ -291,7 +255,7 @@ Real MultiGrid::CalculateResidualNorm(int nrm)
         for(int j=ns; j<=ne; j++) {
 #pragma ivdep
           for(int i=ns; i<=ne; i++)
-            norm+=std::fabs(res(k,j,i));
+            norm+=std::fabs(def(k,j,i));
         }
       }
     }
@@ -305,7 +269,7 @@ Real MultiGrid::CalculateResidualNorm(int nrm)
         for(int j=ns; j<=ne; j++) {
 #pragma ivdep
             for(int i=ns; i<=ne; i++)
-            norm+=SQR(res(k,j,i));
+            norm+=SQR(def(k,j,i));
         }
       }
     }
@@ -316,10 +280,10 @@ Real MultiGrid::CalculateResidualNorm(int nrm)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn  void MultiGrid::MultiGrid(MeshBlock *pmb, ParameterInput *pin, int invar)
+//! \fn  void Multigrid::Multigrid(MeshBlock *pmb, int invar)
 //  \brief Multigrid constructor
 
-void MultiGrid::MultiGrid(MeshBlock *pmb, ParameterInput *pin, int invar)
+void Multigrid::Multigrid(MeshBlock *pmb, int invar)
 {
   pmy_block=pmb;
   pmgd=pmb->pmy_mesh->pmgd;
@@ -328,14 +292,14 @@ void MultiGrid::MultiGrid(MeshBlock *pmb, ParameterInput *pin, int invar)
   if(pmb->block_size.nx1!=pmb->block_size.nx2
   || pmb->block_size.nx1!=pmb->block_size.nx3) {
     std::stringstream msg;
-    msg << "### FATAL ERROR in MultiGrid::Initialize" << std::endl
+    msg << "### FATAL ERROR in Multigrid::Initialize" << std::endl
         << "The Multigrid solver requires cubic MeshBlocks." << std::endl;
     throw std::runtime_error(msg.str().c_str());
     break;
   }
   if(pmb->block_size.nx2==1 || pmb->block_size.nx3==1 ) {
     std::stringstream msg;
-    msg << "### FATAL ERROR in MultiGrid::Initialize" << std::endl
+    msg << "### FATAL ERROR in Multigrid::Initialize" << std::endl
         << "Currently the Multigrid solver works only in 3D." << std::endl;
     throw std::runtime_error(msg.str().c_str());
     break;
@@ -344,7 +308,7 @@ void MultiGrid::MultiGrid(MeshBlock *pmb, ParameterInput *pin, int invar)
   || pmb->pmy_mesh->use_meshgen_fn_[X2DIR]==true
   || pmb->pmy_mesh->use_meshgen_fn_[X3DIR]==true) {
     std::stringstream msg;
-    msg << "### FATAL ERROR in MultiGrid::Initialize" << std::endl
+    msg << "### FATAL ERROR in Multigrid::Initialize" << std::endl
         << "Non-uniform mesh spacing is not supported." << std::endl;
     throw std::runtime_error(msg.str().c_str());
     break;
@@ -352,7 +316,7 @@ void MultiGrid::MultiGrid(MeshBlock *pmb, ParameterInput *pin, int invar)
   dx_=pmb->pcoord->dx1f(0);
   if(dx_!=pmb->pcoord->dx2f(0) || dx_!=pmb->pcoord->dx3f(0)) {
     std::stringstream msg;
-    msg << "### FATAL ERROR in MultiGrid::Initialize" << std::endl
+    msg << "### FATAL ERROR in Multigrid::Initialize" << std::endl
         << "The cell size must be cubic." << std::endl;
     throw std::runtime_error(msg.str().c_str());
     break;
@@ -367,7 +331,7 @@ void MultiGrid::MultiGrid(MeshBlock *pmb, ParameterInput *pin, int invar)
   }
   if(nlev==0) {
     std::stringstream msg;
-    msg << "### FATAL ERROR in MultiGrid::Initialize" << std::endl
+    msg << "### FATAL ERROR in Multigrid::Initialize" << std::endl
         << "The MeshBlock size must be power of two." << std::endl;
     throw std::runtime_error(msg.str().c_str());
     break;
@@ -375,28 +339,28 @@ void MultiGrid::MultiGrid(MeshBlock *pmb, ParameterInput *pin, int invar)
   // allocate arrays
   u_ = new AthenaArray<Real>[nlev];
   src_ = new AthenaArray<Real>[nlev];
-  res_ = new AthenaArray<Real>[nlev];
+  def_ = new AthenaArray<Real>[nlev];
   for(int l=0; l<nlev; l++) {
     int nc=(1<<l)+2*ngh;
     u_[l].NewAthenaArray(nvar,nc,nc,nc);
     src_[l].NewAthenaArray(nvar,nc,nc,nc);
-    res_[l].NewAthenaArray(nvar,nc,nc,nc);
+    def_[l].NewAthenaArray(nvar,nc,nc,nc);
   }
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn  void MultiGrid::~MultiGrid
-//  \brief MultiGrid destroctor
+//! \fn  virtual void Multigrid::~Multigrid
+//  \brief Multigrid destroctor
 
-void MultiGrid::~MultiGrid()
+virtual void Multigrid::~Multigrid()
 {
   for(int l=0; l<nlev; l++) {
     u_[l].DeleteAthenaArray();
     src_[l].DeleteAthenaArray();
-    res_[l].DeleteAthenaArray();
+    def_[l].DeleteAthenaArray();
   }
   delete [] u_;
   delete [] src_;
-  delete [] res_;
+  delete [] def_;
 }
 
