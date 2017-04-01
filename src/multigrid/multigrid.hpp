@@ -17,52 +17,34 @@ class MeshBlock;
 class ParameterInput;
 class Coordinates;
 
-
-//! \class MultigridDriver
-//  \brief Driver class
-
-class MultigridDriver {
-public:
-  MultigridDriver(Mesh *pm, ParameterInput *pin, int nvar);
-  ~MultigridDriver();
-
-  void SetupMultigrid(ParameterInput *pin);
-  void Solve(const AthenaArray<Real> &u);
-
-private:
-  MeshBlock *pblock_;
-
-  friend class Multigrid;
-};
-
-
 //! \class Multigrid
 //  \brief gravitational block
 
 class Multigrid {
 public:
-  Multigrid(MeshBlock *pmb, int invar);
+  Multigrid(int invar, int nx, int ny, int nz, int ngh, Real dx);
   virtual ~Multigrid();
 
   MeshBlock *pmy_block;
-  MultigridDriver *pmgd;
 
-  void LoadFinestData(AthenaArray<Real> &src, int ns);
-  void LoadFinestSource(AthenaArray<Real> &src, int ns, Real fac);
-  void RetrieveResult(AthenaArray<real> &dst, int ns);
+  void LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh);
+  void LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real fac);
+  void RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh);
   void ZeroClearData(int lev);
+  void ApplyPhysicalBoundary(int lev);
   void Restrict(int clev);
   void ProlongateAndCorrect(int clev);
   void FMGProlongate(int clev);
-  Real CalculateDefectNorm(int nrm);
+  Real CalculateDefectNorm(int n, int nrm);
+  Real CalculateTotalSource(int n);
+  void SubtractMeanSource(int n, Real ave);
 
   // pure virtual functions
   virtual void Smooth(int lev, int color) = 0;
   virtual void CalculateDefect(int lev) = 0;
 
 protected:
-  // the multigrid solver
-  const int ngh_=1;
+  int nlev_, nx_, ny_, nz_, int ngh_;
   Real dx_;
   AthenaArray<Real> *u_, *def_, *src_;
 };

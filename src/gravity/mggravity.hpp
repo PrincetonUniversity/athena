@@ -20,16 +20,32 @@ class Coordinates;
 class Multigrid
 
 //! \class MGGravity
-//  \brief Multigrid gravity Solver
+//  \brief Multigrid gravity solver for each block
 
 class MGGravity : public Multigrid {
 public:
-  MGGravity(MeshBlock *pmb) : Multigrid(pmb, 1) {};
+  MGGravity(int nx, int ny, int nz, int ngh, Real dx)
+    : Multigrid(1, nx, ny, nz, ngh, dx) {};
   ~MGGravity() {};
   void Smooth(int lev, int color);
   void CalculateResidual(int lev);
 
 private:
-  const Real omega = 1.15;
+  const Real omega_ = 1.15;
 };
+
+
+//! \class GravityDriver
+//  \brief Multigrid gravity solver
+
+class GravityDriver {
+public:
+  GravityDriver();
+  ~GravityDriver() {};
+
+private:
+  MGGravity *mgroot_;
+  int umode_, mode_;
+};
+
 #endif // MGGRAVITY_HPP

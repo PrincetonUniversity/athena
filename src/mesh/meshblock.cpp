@@ -126,7 +126,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // FFT object (need to be set before Gravity class)
   if (FFT_ENABLED) pfft = new AthenaFFT(this);
   // Multgrid
-  if (SELF_GRAVITY_ENABLED == 2) pmg = new Multigrid(this, pin);
+  if (SELF_GRAVITY_ENABLED == 2) pmggrav = new MGGravity(this, pin);
 
   // physics-related objects
   if(SELF_GRAVITY_ENABLED <= 1) {

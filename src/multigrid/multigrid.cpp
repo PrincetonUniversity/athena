@@ -17,23 +17,26 @@
 #include "../parameter_input.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
+#include "./multigrid.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn  void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns)
+//! \fn  void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh)
 //  \brief Fill the active zone of the finest level
-void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns)
+void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh)
 {
-  AthenaArray<Real> &dst=u_[nlev-1];
+  AthenaArray<Real> &dst=u_[nlev_-1];
+  int is, ie, js, je, ks, ke;
+  is=js=ks=ngh_;
+  ie=is+nx_-1, je=js+ny_-1, ke=ks+nz_-1;
 #pragma ivdep
   for(int n=0; n<nvar; n++) {
     int nsrc=ns+n;
 #pragma ivdep
-    for(int k=pmb->ks, mk=ngh; k<=pmb->ke; k++, mk++) {
+    for(int k=ngh, mk=ks; mk<=ke; k++, mk++) {
 #pragma ivdep
-      for(int j=pmb->js, mj=ngh; j<=pmb->je; j++, mj++) {
+      for(int j=ngh, mj=js; mj<=je; j++, mj++) {
 #pragma ivdep
-        for(int i=pmb->is, mi=ngh; i<=pmb->ie; i++, mi++)
+        for(int i=ngh, mi=is; mi<=ie; i++, mi++)
           dst(n,mk,mj,mi)=src(nsrc,k,j,i);
       }
     }
@@ -43,20 +46,24 @@ void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn  void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, Real fac)
+//! \fn  void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh,
+//                                  Real fac)
 //  \brief Fill the active zone of the finest level
-void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, Real fac)
+void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real fac)
 {
-  AthenaArray<Real> &dst=src_[nlev-1];
+  AthenaArray<Real> &dst=src_[nlev_-1];
+  int is, ie, js, je, ks, ke;
+  is=js=ks=ngh_;
+  ie=is+nx_-1, je=js+ny_-1, ke=ks+nz_-1;
 #pragma ivdep
   for(int n=0; n<nvar; n++) {
     int nsrc=ns+n;
 #pragma ivdep
-    for(int k=pmb->ks, mk=ngh; k<=pmb->ke; k++, mk++) {
+    for(int k=ngh, mk=ks; mk<=ke; k++, mk++) {
 #pragma ivdep
-      for(int j=pmb->js, mj=ngh; j<=pmb->je; j++, mj++) {
+      for(int j=ngh, mj=js; mj<=je; j++, mj++) {
 #pragma ivdep
-        for(int i=pmb->is, mi=ngh; i<=pmb->ie; i++, mi++)
+        for(int i=ngh, mi=is; mi<=ie; i++, mi++)
           dst(n,mk,mj,mi)=src(nsrc,k,j,i)*fac;
       }
     }
@@ -66,20 +73,23 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, Real fac)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn  void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns)
-//  \brief Set the result
-void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns)
+//! \fn  void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh)
+//  \brief Set the result, including the ghost zone
+void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh)
 {
-  const AthenaArray<Real> &src=src_[nlev-1];
+  const AthenaArray<Real> &src=src_[nlev_-1];
+  int is, ie, js, je, ks, ke;
+  is=js=ks=0;
+  ie=nx_+2*ngh_-1, je=ny_+2*ngh_-1, ke=nz_+2*ngh_-1;
 #pragma ivdep
   for(int n=0; n<nvar; n++) {
     int ndst=ns+n;
 #pragma ivdep
-    for(int k=pmb->ks, mk=ngh; k<=pmb->ke; k++, mk++) {
+    for(int k=ngh-ngh_, mk=ks; mk<=ke; k++, mk++) {
 #pragma ivdep
-      for(int j=pmb->js, mj=ngh; j<=pmb->je; j++, mj++) {
+      for(int j=ngh-ngh_, mj=js; mj<=je; j++, mj++) {
 #pragma ivdep
-        for(int i=pmb->is, mi=ngh; i<=pmb->ie; i++, mi++)
+        for(int i=ngh-ngh_, mi=is; mi<=ie; i++, mi++)
           dst(ndst,k,j,i)=src(n,mk,mj,mi);
       }
     }
@@ -106,15 +116,18 @@ void Multigrid::Restrict(int clev)
 {
   AthenaArray<Real> &dst=src_[clev];
   AthenaArray<Real> &src=def_[clev+1];
-  int ns=ngh, ne=ngh+(1<<clev)-1;
+  int ll=nlev_-1-clev;
+  int is, ie, js, je, ks, ke;
+  is=js=ks=ngh_;
+  ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
 #pragma ivdep
   for(int n=0; n<nvar; n++) {
 #pragma ivdep
-    for(int k=ns, fk=ns; k<=ne; k++, fk+=2) {
+    for(int k=ks, fk=ks; k<=ke; k++, fk+=2) {
 #pragma ivdep
-      for(int j=ns, fj=ns; j<=ne; j++, fj+=2) {
+      for(int j=js, fj=js; j<=je; j++, fj+=2) {
 #pragma ivdep
-        for(int i=ns, fi=ns; i<=ne; i++, fi+=2)
+        for(int i=is, fi=is; i<=ie; i++, fi+=2)
           dst(n, k, j, i)=0.125*(src(n, fk,   fj,   fi)+src(n, fk,   fj,   fi+1)
                                 +src(n, fk,   fj+1, fi)+src(n, fk,   fj+1, fi+1)
                                 +src(n, fk+1, fj,   fi)+src(n, fk+1, fj,   fi+1)
@@ -134,15 +147,18 @@ void Multigrid::ProlongateAndCorrect(int clev)
 {
   const AthenaArray<Real> &src=u_[clev];
   AthenaArray<Real> &dst=def_[clev+1];
-  int ns=ngh, ne=ngh+(1<<clev)-1;
+  int ll=nlev_-1-clev;
+  int is, ie, js, je, ks, ke;
+  is=js=ks=ngh_;
+  ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
 #pragma ivdep
   for(int n=0; n<nvar; n++) {
 #pragma ivdep
-    for(int k=ns, fk=ns; k<=ne; k++, fk+=2) {
+    for(int k=ks, fk=ks; k<=ke; k++, fk+=2) {
 #pragma ivdep
-      for(int j=ns, fj=ns; j<=ne; j++, fj+=2) {
+      for(int j=js, fj=js; j<=je; j++, fj+=2) {
 #pragma ivdep
-        for(int i=ns, fi=ns; i<=ne; i++, fi+=2) {
+        for(int i=is, fi=is; i<=ie; i++, fi+=2) {
           dst(n,fk  ,fj  ,fi  )+=0.015625*(27.0*src(n,k,j,i) + src(n,k-1,j-1,i-1)
                           +9.0*(src(n,k,j,i-1)+src(n,k,j-1,i)+src(n,k-1,j,i))
                           +3.0*(src(n,k-1,j-1,i)+src(n,k-1,j,i-1)+src(n,k,j-1,i-1)));
@@ -182,15 +198,18 @@ void Multigrid::FMGProlongate(int clev)
 {
   AthenaArray<Real> &src=u_[clev];
   AthenaArray<Real> &dst=u_[clev+1];
-  int ns=ngh, ne=ngh+(1<<clev)-1;
+  int ll=nlev_-1-clev;
+  int is, ie, js, je, ks, ke;
+  is=js=ks=ngh_;
+  ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
 #pragma ivdep
   for(int n=0; n<nvar; n++) {
 #pragma ivdep
-    for(int k=ns, fk=ns; k<=ne; k++, fk+=2) {
+    for(int k=ks, fk=ks; k<=ke; k++, fk+=2) {
 #pragma ivdep
-      for(int j=ns, fj=ns; j<=ne; j++, fj+=2) {
+      for(int j=js, fj=js; j<=je; j++, fj+=2) {
 #pragma ivdep
-        for(int i=ns, fi=ns; i<=ne; i++, fi+=2) {
+        for(int i=is, fi=is; i<=ie; i++, fi+=2) {
           dst(n,fk  ,fj  ,fi  )=0.015625*(27.0*src(n,k,j,i) + src(n,k-1,j-1,i-1)
                           +9.0*(src(n,k,j,i-1)+src(n,k,j-1,i)+src(n,k-1,j,i))
                           +3.0*(src(n,k-1,j-1,i)+src(n,k-1,j,i-1)+src(n,k,j-1,i-1)));
@@ -224,53 +243,47 @@ void Multigrid::FMGProlongate(int clev)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn Real Multigrid::CalculateDefectNorm(int nrm)
+//! \fn Real Multigrid::CalculateDefectNorm(int n, int nrm)
 //  \brief calculate the residual norm
 
-Real Multigrid::CalculateDefectNorm(int nrm)
+Real Multigrid::CalculateDefectNorm(int n, int nrm)
 {
-  AthenaArray<Real> &def=def_[nlev-1];
-  int ns=ngh, ne=ngh+(1<<nlev)-1;
+  AthenaArray<Real> &def=def_[nlev_-1];
+  int is, ie, js, je, ks, ke;
+  is=js=ks=ngh_;
+  ie=is+nx_-1, je=js+ny_-1, ke=ks+nz_-1;
+
   Real norm=0.0;
   if(nrm==0) { // special case: max norm
 #pragma ivdep
-    for(int n=0; n<nvar; n++) {
+    for(int k=ks; k<=ke; k++) {
 #pragma ivdep
-      for(int k=ns; k<=ne; k++) {
+      for(int j=js; j<=je; j++) {
 #pragma ivdep
-        for(int j=ns; j<=ne; j++) {
-#pragma ivdep
-          for(int i=ns; i<=ne; i++)
-            norm=std::max(norm,std::fabs(def(k,j,i)));
-        }
+        for(int i=is; i<=ie; i++)
+          norm=std::max(norm,std::fabs(def(n,k,j,i)));
       }
     }
   }
   else if (nrm==1) {
 #pragma ivdep
-    for(int n=0; n<nvar; n++) {
+    for(int k=ks; k<=ke; k++) {
 #pragma ivdep
-      for(int k=ns; k<=ne; k++) {
+      for(int j=js; j<=je; j++) {
 #pragma ivdep
-        for(int j=ns; j<=ne; j++) {
-#pragma ivdep
-          for(int i=ns; i<=ne; i++)
-            norm+=std::fabs(def(k,j,i));
-        }
+        for(int i=is; i<=ie; i++)
+          norm+=std::fabs(def(n,k,j,i));
       }
     }
   }
   else { // nrm>1 -> nrm=2
 #pragma ivdep
-    for(int n=0; n<nvar; n++) {
+    for(int k=ks; k<=ke; k++) {
 #pragma ivdep
-      for(int k=ns; k<=ne; k++) {
+      for(int j=js; j<=je; j++) {
 #pragma ivdep
-        for(int j=ns; j<=ne; j++) {
-#pragma ivdep
-            for(int i=ns; i<=ne; i++)
-            norm+=SQR(def(k,j,i));
-        }
+        for(int i=is; i<=ie; i++)
+          norm+=SQR(def(n,k,j,i));
       }
     }
     norm=std::sqrt(norm);
@@ -280,71 +293,83 @@ Real Multigrid::CalculateDefectNorm(int nrm)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn  void Multigrid::Multigrid(MeshBlock *pmb, int invar)
+//! \fn Real Multigrid::CalculateTotalSource(int n)
+//  \brief calculate the sum of the source function
+
+Real CalculateTotalSource(int n)
+{
+  AthenaArray<Real> &src=src_[nlev_-1];
+  Real s=0.0;
+  int is, ie, js, je, ks, ke;
+  is=js=ks=ngh_;
+  ie=is+nx_-1, je=js+ny_-1, ke=ks+nz_-1;
+
+#pragma ivdep
+  for(int k=ks; k<=ke; k++) {
+#pragma ivdep
+    for(int j=js; j<=je; j++) {
+#pragma ivdep
+      for(int i=is; i<=ie; i++)
+        s+=src(n,k,j,i);
+    }
+  }
+  return s*dx_*dx_*dx_;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn Real Multigrid::SubtractMeanSource(int n, Real ave)
+//  \brief subtract the mean value of the source function for periodic boundary cases
+
+void Multigrid::SubtractMeanSource(int n, Real ave)
+{
+  AthenaArray<Real> &src=src_[nlev_-1];
+  Real s=0.0;
+  int is, ie, js, je, ks, ke;
+  is=js=ks=ngh_;
+  ie=is+nx_-1, je=js+ny_-1, ke=ks+nz_-1;
+
+#pragma ivdep
+  for(int k=ks; k<=ke; k++) {
+#pragma ivdep
+    for(int j=js; j<=je; j++) {
+#pragma ivdep
+      for(int i=is; i<=ie; i++)
+        src(n,k,j,i)-=ave;
+    }
+  }
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn  void Multigrid::Multigrid(int invar, int nx, int ny, int nz, int ngh, Real dx)
 //  \brief Multigrid constructor
 
-void Multigrid::Multigrid(MeshBlock *pmb, int invar)
+void Multigrid::Multigrid(int invar, int nx, int ny, int nz, int ngh, Real dx)
 {
-  pmy_block=pmb;
-  pmgd=pmb->pmy_mesh->pmgd;
-  nvar=invar;
+  nvar=invar, ngh_=ngh;
+  nx_=nx, ny_=ny, nz_=nz;
+  dx=dx_;
 
-  if(pmb->block_size.nx1!=pmb->block_size.nx2
-  || pmb->block_size.nx1!=pmb->block_size.nx3) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in Multigrid::Initialize" << std::endl
-        << "The Multigrid solver requires cubic MeshBlocks." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-    break;
-  }
-  if(pmb->block_size.nx2==1 || pmb->block_size.nx3==1 ) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in Multigrid::Initialize" << std::endl
-        << "Currently the Multigrid solver works only in 3D." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-    break;
-  }
-  if(pmb->pmy_mesh->use_meshgen_fn_[X1DIR]==true
-  || pmb->pmy_mesh->use_meshgen_fn_[X2DIR]==true
-  || pmb->pmy_mesh->use_meshgen_fn_[X3DIR]==true) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in Multigrid::Initialize" << std::endl
-        << "Non-uniform mesh spacing is not supported." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-    break;
-  }
-  dx_=pmb->pcoord->dx1f(0);
-  if(dx_!=pmb->pcoord->dx2f(0) || dx_!=pmb->pcoord->dx3f(0)) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in Multigrid::Initialize" << std::endl
-        << "The cell size must be cubic." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-    break;
-  }
-  // count multigrid levels
-  nlev=0;
+  nlev_=0;
+  int n = std::min(nx,std::min(ny, nz));
   for(int l=0; l<20; l++) {
-    if((1<<l) == pmb->block_size.nx1) {
-      nlev=l+1;
+    if((1<<l) == n) {
+      nlev_=l+1;
       break;
     }
   }
-  if(nlev==0) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in Multigrid::Initialize" << std::endl
-        << "The MeshBlock size must be power of two." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-    break;
-  }
-  // allocate arrays
-  u_ = new AthenaArray<Real>[nlev];
-  src_ = new AthenaArray<Real>[nlev];
-  def_ = new AthenaArray<Real>[nlev];
-  for(int l=0; l<nlev; l++) {
-    int nc=(1<<l)+2*ngh;
-    u_[l].NewAthenaArray(nvar,nc,nc,nc);
-    src_[l].NewAthenaArray(nvar,nc,nc,nc);
-    def_[l].NewAthenaArray(nvar,nc,nc,nc);
+
+   // allocate arrays
+  u_ = new AthenaArray<Real>[nlev_];
+  src_ = new AthenaArray<Real>[nlev_];
+  def_ = new AthenaArray<Real>[nlev_];
+  for(int l=nlev_-1; l>=0; l++) {
+    int ll=nlev_-1-l;
+    int ncx=(nx>>ll)+2*ngh, ncy=(ny>>ll)+2*ngh, ncz=(nz>>ll)+2*ngh;
+    u_[l].NewAthenaArray(nvar,ncz,ncy,ncx);
+    src_[l].NewAthenaArray(nvar,ncz,ncy,ncx);
+    def_[l].NewAthenaArray(nvar,ncz,ncy,ncx);
   }
 }
 
@@ -354,7 +379,7 @@ void Multigrid::Multigrid(MeshBlock *pmb, int invar)
 
 virtual void Multigrid::~Multigrid()
 {
-  for(int l=0; l<nlev; l++) {
+  for(int l=0; l<nlev_; l++) {
     u_[l].DeleteAthenaArray();
     src_[l].DeleteAthenaArray();
     def_[l].DeleteAthenaArray();

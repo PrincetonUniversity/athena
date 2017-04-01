@@ -23,6 +23,7 @@
 #include "../bvals/bvals.hpp"
 #include "meshblock_tree.hpp"
 #include "mesh_refinement.hpp"
+#include "../gravity/mggravity.hpp"
 
 // Forward declarations
 class ParameterInput;
@@ -38,6 +39,7 @@ class Field;
 class Gravity;
 class GravityDriver;
 class AthenaFFT;
+class MGGravity;
 class EquationOfState;
 
 //----------------------------------------------------------------------------------------
@@ -139,6 +141,8 @@ public:
 
   // fft object
   AthenaFFT *pfft;
+  // Multigrid Gravity solver
+  MGGravity *pmgrav;
 
   MeshBlock *prev, *next;
 
