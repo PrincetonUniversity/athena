@@ -41,7 +41,7 @@ private:
 class GravityDriver {
 public:
   GravityDriver();
-  ~GravityDriver() {};
+  ~GravityDriver();
 
 private:
   MGGravity *mgroot_;

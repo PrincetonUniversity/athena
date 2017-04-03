@@ -233,12 +233,15 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     hydro_flag_[i]=BNDRY_WAITING;
     field_flag_[i]=BNDRY_WAITING;
     gravity_flag_[i]=BNDRY_WAITING;
+    mggrav_flag_[i]=BNDRY_WAITING;
     hydro_send_[i]=NULL;
     hydro_recv_[i]=NULL;
     field_send_[i]=NULL;
     field_recv_[i]=NULL;
     gravity_send_[i]=NULL;
     gravity_recv_[i]=NULL;
+    mggrav_send_[i]=NULL;
+    mggrav_recv_[i]=NULL;
 #ifdef MPI_PARALLEL
     req_hydro_send_[i]=MPI_REQUEST_NULL;
     req_hydro_recv_[i]=MPI_REQUEST_NULL;
@@ -246,6 +249,8 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     req_field_recv_[i]=MPI_REQUEST_NULL;
     req_gravity_send_[i]=MPI_REQUEST_NULL;
     req_gravity_recv_[i]=MPI_REQUEST_NULL;
+    req_mggrav_send_[i]=MPI_REQUEST_NULL;
+    req_mggrav_recv_[i]=MPI_REQUEST_NULL;
 #endif
   }
   for(int i=0;i<48;i++){
@@ -336,6 +341,24 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
               *((BoundaryValues::ni[n].ox3==0)?pmb->block_size.nx3:NGHOST);
       gravity_send_[n]=new Real[size];
       gravity_recv_[n]=new Real[size];
+    }
+  }
+
+  if(SELF_GRAVITY_ENABLED == 2){ // multigrid
+    for(int n=0;n<pmb->pmy_mesh->maxneighbor_;n++) {
+      int size, int nc=pmb->block_size.nx1;
+      if(pmb->pmy_mesh->multilevel==true) { // with refinement - NGHOST = 1
+        if(BoundaryValues::ni[n].type==NEIGHBOR_FACE) size=SQR(nc);
+        else if(BoundaryValues::ni[n].type==NEIGHBOR_EDGE) size=nc+nc/2;
+        else if(BoundaryValues::ni[n].type==NEIGHBOR_CORNER) size=2;
+      }
+      else { // uniform - NGHOST=2
+        size=((BoundaryValues::ni[n].ox1==0)?pmb->block_size.nx1:2)
+            *((BoundaryValues::ni[n].ox2==0)?pmb->block_size.nx2:2)
+            *((BoundaryValues::ni[n].ox3==0)?pmb->block_size.nx3:2);
+      }
+      mggrav_send_[n]=new Real[size];
+      mggrav_recv_[n]=new Real[size];
     }
   }
 
@@ -491,6 +514,12 @@ BoundaryValues::~BoundaryValues()
     for(int i=0;i<pmb->pmy_mesh->maxneighbor_;i++) {
       delete [] gravity_send_[i];
       delete [] gravity_recv_[i];
+    }
+  }
+  if (SELF_GRAVITY_ENABLED == 2){
+    for(int i=0;i<pmb->pmy_mesh->maxneighbor_;i++) {
+      delete [] mggrav_send_[i];
+      delete [] mggrav_recv_[i];
     }
   }
   if (MAGNETIC_FIELDS_ENABLED) {

@@ -61,11 +61,12 @@ enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
 
 // needed wherever MPI communications are used.  Must be < 32 and unique
 enum Athena_MPI_Tag {TAG_HYDRO=0, TAG_FIELD=1, TAG_RAD=2, TAG_CHEM=3, TAG_HYDFLX=4,
-  TAG_FLDFLX=5, TAG_RADFLX=6, TAG_CHMFLX=7, TAG_AMR=8, TAG_FLDFLX_POLE=9, TAG_WTLIM=10,
-  TAG_GRAVITY=11};
+  TAG_FLDFLX=5, TAG_RADFLX=6, TAG_CHMFLX=7, TAG_AMR=8, TAG_FLDFLX_POLE=9, TAG_GRAVITY=11,
+  TAG_MGGRAV=12};
 
 enum CCBoundaryType {HYDRO_CONS=0, HYDRO_PRIM=1};
 enum FluxCorrectionType {FLUX_HYDRO=0};
+enum MGBoundaryType {BND_MGGRAV = 0};
 
 //----------------------------------------------------------------------------------------
 // function pointer prototypes for user-defined modules set at runtime

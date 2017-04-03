@@ -184,10 +184,10 @@ void BoundaryValues::SendCellCenteredBoundaryBuffers(AthenaArray<Real> &src,
 #endif
         break;
       defualt:
-        std::stringstream msg;
-        msg << "### FATAL ERROR in SendCellCenteredBoundaryBuffers" << std::endl
-            << "invalid boundary buffer type." << std::endl;
-        throw std::runtime_error(msg.str().c_str());
+//        std::stringstream msg;
+//        msg << "### FATAL ERROR in SendCellCenteredBoundaryBuffers" << std::endl
+//            << "invalid boundary buffer type." << std::endl;
+//        throw std::runtime_error(msg.str().c_str());
         break;
     }
     int ssize;
@@ -424,10 +424,10 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
 #endif
         break;
       defualt:
-        std::stringstream msg;
-        msg << "### FATAL ERROR in ReceiveCellCenteredBoundaryBuffers" << std::endl
-            << "invalid boundary buffer type." << std::endl;
-        throw std::runtime_error(msg.str().c_str());
+//        std::stringstream msg;
+//        msg << "### FATAL ERROR in ReceiveCellCenteredBoundaryBuffers" << std::endl
+//            << "invalid boundary buffer type." << std::endl;
+//        throw std::runtime_error(msg.str().c_str());
         break;
     }
     if(*flag==BNDRY_COMPLETED) continue;
@@ -507,10 +507,10 @@ void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real
 #endif
         break;
       defualt:
-        std::stringstream msg;
-        msg << "### FATAL ERROR in ReceiveCellCenteredBoundaryBuffers" << std::endl
-            << "invalid boundary buffer type." << std::endl;
-        throw std::runtime_error(msg.str().c_str());
+//        std::stringstream msg;
+//        msg << "### FATAL ERROR in ReceiveCellCenteredBoundaryBuffers" << std::endl
+//            << "invalid boundary buffer type." << std::endl;
+//        throw std::runtime_error(msg.str().c_str());
         break;
     }
 #ifdef MPI_PARALLEL

@@ -177,6 +177,18 @@ public:
   bool ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst);
   void ReceiveGravityBoundaryBuffersWithWait(AthenaArray<Real> &dst);
 
+// Multigrid
+  void StartReceivingMultigrid(int nc, enum MGBoundaryType type);
+  void ClearBoundaryMultigrid(enum MGBoundaryType type);
+  int LoadMultigridBoundaryBufferSameLevel(AthenaArray<Real> &src,
+                   int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb);
+  void SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
+                                    int nc, int ngh, enum MGBoundaryType type);
+  void SetMultigridBoundarySameLevel(AthenaArray<Real> &dst,
+                   int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb);
+  bool ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
+                                  int nc, int ngh, enum MGBoundaryType type);
+
 private:
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals
 
@@ -185,7 +197,8 @@ private:
   int nedge_fine_[12];
   bool firsttime_;
 
-  enum BoundaryStatus hydro_flag_[56], field_flag_[56], gravity_flag_[56];
+  enum BoundaryStatus hydro_flag_[56], field_flag_[56];
+  enum BoundaryStatus gravity_flag_[56], mggrav_flag_[56];
   enum BoundaryStatus flcor_flag_[6][2][2];
   enum BoundaryStatus emfcor_flag_[48];
   enum BoundaryStatus *emf_north_flag_;
@@ -193,6 +206,7 @@ private:
   Real *hydro_send_[56],  *hydro_recv_[56];
   Real *field_send_[56],  *field_recv_[56];
   Real *gravity_send_[56],  *gravity_recv_[56];
+  Real *mggrav_send_[56],  *mggrav_recv_[56];
   Real *flcor_send_[6],   *flcor_recv_[6][2][2];
   Real *emfcor_send_[48], *emfcor_recv_[48];
   Real **emf_north_send_, **emf_north_recv_;
@@ -205,6 +219,7 @@ private:
   MPI_Request req_hydro_send_[56],  req_hydro_recv_[56];
   MPI_Request req_field_send_[56],  req_field_recv_[56];
   MPI_Request req_gravity_send_[56],  req_gravity_recv_[56];
+  MPI_Request req_mggrav_send_[56],  req_mggrav_recv_[56];
   MPI_Request req_flcor_send_[6],   req_flcor_recv_[6][2][2];
   MPI_Request req_emfcor_send_[48], req_emfcor_recv_[48];
   MPI_Request *req_emf_north_send_, *req_emf_north_recv_;

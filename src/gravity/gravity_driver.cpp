@@ -97,5 +97,6 @@ GravityDriver::GravityDriver(Mesh *pm, ParameterInput *pin)
 
 GravityDriver::~GravityDriver()
 {
+  delete mgroot_;
 }
 
