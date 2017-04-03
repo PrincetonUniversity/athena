@@ -44,8 +44,24 @@ public:
   virtual void CalculateDefect(int lev) = 0;
 
 protected:
-  int nlev_, nx_, ny_, nz_, int ngh_;
+  int nlev_, nx_, ny_, nz_, ngh_;
   Real dx_;
   AthenaArray<Real> *u_, *def_, *src_;
 };
+
+
+//! \class MultigridDriver
+//  \brief Multigrid driver
+
+class MultigridDriver
+{
+public:
+  MultigridDriver(Mesh *pm, ParameterInput *pin);
+  virtual ~MultigridDriver();
+  virtual Multigrid* GetMultigridBlock(MeshBlock *) = 0;
+
+  Mesh *pmy_mesh;
+};
+
+
 #endif // MULTIGRID_HPP

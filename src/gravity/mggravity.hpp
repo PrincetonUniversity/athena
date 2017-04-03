@@ -38,14 +38,11 @@ private:
 //! \class GravityDriver
 //  \brief Multigrid gravity solver
 
-class GravityDriver {
+class GravityDriver : MultigridDriver{
 public:
-  GravityDriver();
-  ~GravityDriver();
-
-private:
-  MGGravity *mgroot_;
-  int umode_, mode_;
+  GravityDriver(Mesh *pm, ParameterInput *pin);
+  ~GravityDriver() {};
+  GetMultigridBlock (MeshBlock *pmb);
 };
 
 #endif // MGGRAVITY_HPP
