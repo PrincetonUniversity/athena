@@ -125,8 +125,11 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   // FFT object (need to be set before Gravity class)
   if (FFT_ENABLED) pfft = new AthenaFFT(this);
-  // Multgrid
-  if (SELF_GRAVITY_ENABLED == 2) pmggrav = new MGGravity(this, pin);
+
+  // Multigrid
+  if (SELF_GRAVITY_ENABLED == 2)
+    pmggrav = new MGGravity(this, block_size.nx1, block_size.nx2, block_size.nx3,
+                            block_size, pm->MGBoundaryFunction_);
 
   // physics-related objects
   if(SELF_GRAVITY_ENABLED <= 1) {
@@ -227,8 +230,10 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   // FFT object
   if (FFT_ENABLED) pfft = new AthenaFFT(this);
 
-  // Multgrid
-  if (SELF_GRAVITY_ENABLED == 2) pmg = new Multigrid(this, pin);
+  // Multigrid
+  if (SELF_GRAVITY_ENABLED == 2)
+    pmggrav = new MGGravity(this, block_size.nx1, block_size.nx2, block_size.nx3,
+                            block_size, pm->MGBoundaryFunction_);
 
   if(SELF_GRAVITY_ENABLED <= 1) {
     // (re-)create physics-related objects in MeshBlock

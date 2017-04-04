@@ -19,8 +19,9 @@
 #include "../mesh/mesh.hpp"
 #include "./multigrid.hpp"
 
+
 //----------------------------------------------------------------------------------------
-//! \fn  void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh)
+//! \fn void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh)
 //  \brief Fill the active zone of the finest level
 void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh)
 {
@@ -46,7 +47,7 @@ void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn  void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh,
+//! \fn void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh,
 //                                  Real fac)
 //  \brief Fill the active zone of the finest level
 void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real fac)
@@ -73,7 +74,7 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
 
 
 //----------------------------------------------------------------------------------------
-//! \fn  void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh)
+//! \fn void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh)
 //  \brief Set the result, including the ghost zone
 void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh)
 {
@@ -99,7 +100,7 @@ void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn  void Multigrid::ZeroClearData(int lev)
+//! \fn void Multigrid::ZeroClearData(int lev)
 //  \brief Clear the data array with zero
 void Multigrid::ZeroClearData(int lev)
 {
@@ -110,7 +111,60 @@ void Multigrid::ZeroClearData(int lev)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn  void Multigrid::Restrict(int clev)
+//! \fn void Multigrid::ApplyPhysicalBoundaries(int lev)
+//  \brief A
+
+void Multigrid::ApplyPhysicalBoundaries(int lev)
+{
+  AthenaArray<Real> &dst=u_[lev];
+  int ll=nlev_-1-lev;
+  int ncx=nx_>>ll, ncy=ny_>>ll, ncz=nz_>>ll;
+  int is=ngh_, ie=ncx_+ngh_-1, js=ngh_, je=ncy_+ngh_-1, ks=ngh_, ke=ncz_+ngh_-1;
+  int bis=is-ngh_, bie=ie+ngh_, bjs=js, bje=je, bks=ks, bke=ke;
+  Real dx, dy, dz;
+  Real dx=rdx_/(Real)(1<<ll), dy=rdy_/(Real)(1<<ll), dz=rdz_/(Real)(1<<ll);
+  Real x0=size.x1min-((Real)ngh_+0.5)*dx;
+  Real y0=size.x2min-((Real)ngh_+0.5)*dy;
+  Real z0=size.x3min-((Real)ngh_+0.5)*dz;
+  if(MGBoundaryFunction_[INNER_X2]==NULL) bjs=js-ngh_;
+  if(MGBoundaryFunction_[OUTER_X2]==NULL) bje=je+ngh_;
+  if(MGBoundaryFunction_[INNER_X3]==NULL) bks=ks-ngh_;
+  if(MGBoundaryFunction_[OUTER_X3]==NULL) bke=ke*ngh_;
+
+  // Apply boundary function on inner-x1
+  if (MGBoundaryFunction_[INNER_X1] != NULL)
+    MGBoundaryFunction_[INNER_X1](dst, time, dt, nvar, is, ie, bjs, bje, bks, bke,
+                                  x0, y0, z0, dx, dy, dz);
+  // Apply boundary function on outer-x1
+  if (MGBoundaryFunction_[OUTER_X1] != NULL)
+    MGBoundaryFunction_[OUTER_X1](dst, time, dt, nvar, is, ie, bjs, bje, bks, bke,
+                                  x0, y0, z0, dx, dy, dz);
+
+  // Apply boundary function on inner-x2
+  if (MGBoundaryFunction_[INNER_X2] != NULL)
+    MGBoundaryFunction_[INNER_X2](dst, time, dt, nvar, bis, bie, js, je, bks, bke,
+                                  x0, y0, z0, dx, dy, dz);
+  // Apply boundary function on outer-x2
+  if (MGBoundaryFunction_[OUTER_X2] != NULL)
+    MGBoundaryFunction_[OUTER_X2](dst, time, dt, nvar, bis, bie, js, je, bks, bke,
+                                  x0, y0, z0, dx, dy, dz);
+
+  bjs=js-ngh_, bje=je+ngh_;
+  // Apply boundary function on inner-x3
+  if (MGBoundaryFunction_[INNER_X3] != NULL)
+    MGBoundaryFunction_[INNER_X3](dst, time, dt, nvar, bis, bie, bjs, bje, ks, ke,
+                                  x0, y0, z0, dx, dy, dz);
+  // Apply boundary function on outer-x3
+  if (MGBoundaryFunction_[OUTER_X3] != NULL)
+    MGBoundaryFunction_[OUTER_X3](dst, time, dt, nvar, bis, bie, bjs, bje, ks, ke,
+                                  x0, y0, z0, dx, dy, dz);
+
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void Multigrid::Restrict(int clev)
 //  \brief Restrict the potential/density to level=clev
 void Multigrid::Restrict(int clev)
 {
@@ -141,7 +195,7 @@ void Multigrid::Restrict(int clev)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn  void Multigrid::ProlongateAndCorrect(int clev)
+//! \fn void Multigrid::ProlongateAndCorrect(int clev)
 //  \brief Prolongate the potential from level=clev using tri-linear interpolation
 void Multigrid::ProlongateAndCorrect(int clev)
 {
@@ -192,7 +246,7 @@ void Multigrid::ProlongateAndCorrect(int clev)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn  void Multigrid::FMGProlongate(int clev)
+//! \fn void Multigrid::FMGProlongate(int clev)
 //  \brief Prolongate the potential from level=clev for Full Multigrid cycle
 void Multigrid::FMGProlongate(int clev)
 {
@@ -313,7 +367,7 @@ Real CalculateTotalSource(int n)
         s+=src(n,k,j,i);
     }
   }
-  return s*dx_*dx_*dx_;
+  return s*rdx_*rdy_*rdz_;
 }
 
 
@@ -342,14 +396,41 @@ void Multigrid::SubtractMeanSource(int n, Real ave)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn  void Multigrid::Multigrid(int invar, int nx, int ny, int nz, int ngh, Real dx)
+//! \fn int Multigrid::GetCurrentNumberOfCells(void)
+//  \brief returns the number of the cells in one direction
+
+int Multigrid::GetCurrentNumberOfCells(void)
+{
+  return 1<<current_level_;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn AthenaArray<Reall>& Multigrid::GetCurrentData(void)
+//  \brief returns the reference of the current level
+
+AthenaArray<Real>& Multigrid::GetCurrentData(void)
+{
+  return u_[current_level_];
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void Multigrid::Multigrid(MeshBlock *pmb, int invar, int nx, int ny, int nz,
+//                                RegionSize isize, MGBoundaryFunc_t *MGBoundary)
 //  \brief Multigrid constructor
 
-void Multigrid::Multigrid(int invar, int nx, int ny, int nz, int ngh, Real dx)
+void Multigrid::Multigrid(MeshBlock *pmb, int invar, int nx, int ny, int nz,
+                          RegionSize isize, MGBoundaryFunc_t *MGBoundary)
 {
-  nvar=invar, ngh_=ngh;
+  pmy_block_=pmb;
+  size_=isize;
+  nvar=invar;
+  ngh_=1;
   nx_=nx, ny_=ny, nz_=nz;
-  dx=dx_;
+  rdx_=(size_.x1max-size_.x1min)/(Real)nx;
+  rdy_=(size_.x2max-size_.x2min)/(Real)ny;
+  rdz_=(size_.x3max-size_.x3min)/(Real)nz;
 
   nlev_=0;
   int n = std::min(nx,std::min(ny, nz));
@@ -360,7 +441,19 @@ void Multigrid::Multigrid(int invar, int nx, int ny, int nz, int ngh, Real dx)
     }
   }
 
-   // allocate arrays
+  for(int i=0; i<6; i++)
+    MGBoundaryFunction_[i]=MGBoundary[i];
+  if(pmb!=NULL) { // not root grid
+      if(pmb->pmy_mesh->multilevel==false)
+        ngh_=2;
+      for(int i=0; i<6; i++) {
+        if(pmb->block_bcs[i]==PERIODIC_BNDRY || pmb->block_bcs[i]==BLOCK_BNDRY)
+          MGBoundaryFunction_[i]=NULL;
+      }
+    }
+  }
+
+  // allocate arrays
   u_ = new AthenaArray<Real>[nlev_];
   src_ = new AthenaArray<Real>[nlev_];
   def_ = new AthenaArray<Real>[nlev_];
@@ -374,7 +467,7 @@ void Multigrid::Multigrid(int invar, int nx, int ny, int nz, int ngh, Real dx)
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn  virtual void Multigrid::~Multigrid
+//! \fn virtual void Multigrid::~Multigrid
 //  \brief Multigrid destroctor
 
 virtual void Multigrid::~Multigrid()
@@ -387,5 +480,161 @@ virtual void Multigrid::~Multigrid()
   delete [] u_;
   delete [] src_;
   delete [] def_;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn MGPeriodicInnerX1(AthenaArray<Real> &dst,Real time, Real dt,
+//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                     Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//  \brief Periodic (default) boundary condition in the inner-X1 direction
+
+void MGPeriodicInnerX1(AthenaArray<Real> &dst,Real time, Real dt,
+                       int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+{
+#pragma ivdep
+  for(int n=0; n<nvar; n++) {
+#pragma ivdep
+    for(int k=ks, k<=ke; k++) {
+#pragma ivdep
+      for(int j=js; j<=je; j++) {
+#pragma ivdep
+        for(int i=0; i<ngh; i++)
+          dst(n,k,j,is-i-1)=dst(n,k,j,ie-i);
+      }
+    }
+  }
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn MGPeriodicOuterX1(AthenaArray<Real> &dst,Real time, Real dt,
+//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                     Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//  \brief Periodic (default) boundary condition in the outer-X1 direction
+
+void MGPeriodicOuterX1(AthenaArray<Real> &dst,Real time, Real dt,
+                       int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+{
+#pragma ivdep
+  for(int n=0; n<nvar; n++) {
+#pragma ivdep
+    for(int k=ks, k<=ke; k++) {
+#pragma ivdep
+      for(int j=js; j<=je; j++) {
+#pragma ivdep
+        for(int i=0; i<ngh; i++)
+          dst(n,k,j,ie+i+1)=dst(n,k,j,is+i);
+      }
+    }
+  }
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn MGPeriodicInnerX2(AthenaArray<Real> &dst,Real time, Real dt,
+//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                     Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//  \brief Periodic (default) boundary condition in the inner-X2 direction
+
+void MGPeriodicInnerX2(AthenaArray<Real> &dst,Real time, Real dt,
+                       int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+{
+#pragma ivdep
+  for(int n=0; n<nvar; n++) {
+#pragma ivdep
+    for(int k=ks, k<=ke; k++) {
+#pragma ivdep
+      for(int j=0; j<ngh; j++) {
+#pragma ivdep
+        for(int i=is; i<=ie; i++)
+          dst(n,k,js-j-1,i)=dst(n,k,je-j,i);
+      }
+    }
+  }
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn MGPeriodicOuterX2(AthenaArray<Real> &dst,Real time, Real dt,
+//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                     Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//  \brief Periodic (default) boundary condition in the outer-X2 direction
+
+void MGPeriodicOuterX2(AthenaArray<Real> &dst,Real time, Real dt,
+                       int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+{
+#pragma ivdep
+  for(int n=0; n<nvar; n++) {
+#pragma ivdep
+    for(int k=ks, k<=ke; k++) {
+#pragma ivdep
+      for(int j=0; j<ngh; j++) {
+#pragma ivdep
+        for(int i=is; i<=ie; i++)
+          dst(n,k,je+j+1,i)=dst(n,k,js+j,i);
+      }
+    }
+  }
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn MGPeriodicInnerX3(AthenaArray<Real> &dst,Real time, Real dt,
+//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                     Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//  \brief Periodic (default) boundary condition in the inner-X3 direction
+
+void MGPeriodicInnerX3(AthenaArray<Real> &dst, Real time, Real dt,
+                       int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+{
+#pragma ivdep
+  for(int n=0; n<nvar; n++) {
+#pragma ivdep
+    for(int k=0, k<=ngh; k++) {
+#pragma ivdep
+      for(int j=js; j<=je; j++) {
+#pragma ivdep
+        for(int i=is; i<=ie; i++)
+          dst(n,ks-k-1,j,i)=dst(n,ke-k,j,i);
+      }
+    }
+  }
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn MGPeriodicOuterX3(AthenaArray<Real> &dst,Real time, Real dt,
+//                int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//  \brief Periodic (default) boundary condition in the outer-X3 direction
+
+void MGPeriodicOuterX3(AthenaArray<Real> &dst,Real time, Real dt,
+                       int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+{
+#pragma ivdep
+  for(int n=0; n<nvar; n++) {
+#pragma ivdep
+    for(int k=0, k<=ngh; k++) {
+#pragma ivdep
+      for(int j=js; j<=je; j++) {
+#pragma ivdep
+        for(int i=is; i<=ie; i++)
+          dst(n,ke+k+1,j,i)=dst(n,ks+k,j,i);
+      }
+    }
+  }
+  return;
 }
 

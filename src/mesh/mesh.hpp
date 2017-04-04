@@ -83,6 +83,22 @@ typedef struct RegionSize {
   int nx1, nx2, nx3;        // number of active cells (not including ghost zones)
 } RegionSize;
 
+
+//---------------------------------------------------------------------------------------
+//! \class TaskState
+//  \brief container for task states
+
+class TaskState {
+  uint64_t finished_tasks;
+  int indx_first_task, num_tasks_left;
+  void Reset(int ntasks) {
+    indx_first_task = 0;
+    num_tasks_left = ntasks;
+    finished_tasks = 0LL;
+  };
+};
+
+
 //----------------------------------------------------------------------------------------
 //! \class MeshBlock
 //  \brief data/functions associated with a single block
@@ -159,8 +175,7 @@ private:
   int nneighbor;
   Real cost;
   Real new_block_dt;
-  uint64_t finished_tasks;
-  int indx_first_task_, num_tasks_left_;
+  TaskState tasks;
   int nreal_user_meshblock_data_, nint_user_meshblock_data_;
 
   // functions
@@ -253,6 +268,8 @@ private:
   TimeStepFunc_t UserTimeStep_;
   HistoryOutputFunc_t *user_history_func_;
   MetricFunc_t UserMetric_;
+  MGBoundaryFunc_t MGBoundaryFunction_[6];
+
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
   void OutputMeshStructure(int dim);
@@ -268,6 +285,7 @@ private:
   void AllocateUserHistoryOutput(int n);
   void EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const char *name);
   void EnrollUserMetric(MetricFunc_t my_func);
+  void EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t my_bc);
 };
 
 //----------------------------------------------------------------------------------------

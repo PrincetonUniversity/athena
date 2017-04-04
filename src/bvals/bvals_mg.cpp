@@ -140,7 +140,6 @@ void BoundaryValues::ClearBoundaryMultigrid(enum MGBoundaryType type)
 int BoundaryValues::LoadMultigridBoundaryBufferSameLevel(AthenaArray<Real> &src,
                     int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb)
 {
-  MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
 
   si=(nb.ox1>0)?nc:ngh;
@@ -157,17 +156,17 @@ int BoundaryValues::LoadMultigridBoundaryBufferSameLevel(AthenaArray<Real> &src,
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
-//                                        int nc, int ngh, enum MGBoundaryType type)
+//                                                int nc, enum MGBoundaryType type)
 //  \brief Send boundary buffers
 
 void BoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
-                                  int nc, int ngh, enum MGBoundaryType type)
+                                                  int nc, enum MGBoundaryType type)
 {
   MeshBlock *pmb=pmy_block_, *pbl;
   int mylevel=pmb->loc.level;
-  int nvar, tag;
+  int nvar, tag, ngh;
   Real *sbuf, *rbuf;
-  AthenaArray<Real> cbuf;
+//  AthenaArray<Real> cbuf;
   enum BoundaryStatus *flag;
 #ifdef MPI_PARALLEL
   MPI_Request *req;
@@ -180,8 +179,8 @@ void BoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
     switch(type) {
       case BND_MGGRAV:
         sbuf=mggrav_send_[nb.bufid];
-        if(nb.level<mylevel) cbuf.InitWithShallowCopy(pmb->pmr->coarse_cons_);
-        nvar=1;
+//        if(nb.level<mylevel) cbuf.InitWithShallowCopy(pmb->pmr->coarse_cons_);
+        nvar=1, ngh=2;
         tag=CreateBvalsMPITag(nb.lid, TAG_MGGRAV, nb.target);
         if(nb.rank == Globals::my_rank) {
           rbuf=pbl->pbval->mggrav_recv_[nb.targetid];
@@ -218,11 +217,11 @@ void BoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetMultigridBoundarySameLevel(AthenaArray<Real> &dst,
-//                           int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb)
+//                              int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb)
 //  \brief Set hydro boundary received from a block on the same level
 
 void BoundaryValues::SetMultigridBoundarySameLevel(AthenaArray<Real> &dst,
-                     int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb)
+                        int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb)
 {
   MeshBlock *pmb=pmy_block_;
   int si, sj, sk, ei, ej, ek;
@@ -245,18 +244,18 @@ void BoundaryValues::SetMultigridBoundarySameLevel(AthenaArray<Real> &dst,
 
 //----------------------------------------------------------------------------------------
 //! \fn bool BoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
-//                                  int nvar, int nc, int ngh, enum MGBoundaryType type)
+//                                                   int nc, enum MGBoundaryType type)
 //  \brief receive the boundary data
 
-bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
-                                        int nc, int ngh, enum MGBoundaryType type)
+bool BoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
+                                                     int nc, enum MGBoundaryType type)
 {
   MeshBlock *pmb=pmy_block_;
   bool bflag=true;
   bool *flip=NULL;
   Real *rbuf;
-  AthenaArray<Real> cbuf;
-  int nvar;
+//  AthenaArray<Real> cbuf;
+  int nvar, ngh;
   enum BoundaryStatus *flag;
 #ifdef MPI_PARALLEL
   MPI_Request *req;
@@ -266,9 +265,9 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
     NeighborBlock& nb = pmb->neighbor[n];
     switch(type) {
       case BND_MGGRAV:
-        nvar=1;
+        nvar=1, ngh=2;
         rbuf=mggrav_recv_[nb.bufid];
-        if(nb.level<pmb->loc.level) cbuf.InitWithShallowCopy(pmb->pmr->coarse_cons_);
+//        if(nb.level<pmb->loc.level) cbuf.InitWithShallowCopy(pmb->pmr->coarse_cons_);
         flag=&(mggrav_flag_[nb.bufid]);
 #ifdef MPI_PARALLEL
         if(nb.rank!=Globals::my_rank)

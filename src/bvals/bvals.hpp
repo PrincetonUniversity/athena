@@ -183,11 +183,11 @@ public:
   int LoadMultigridBoundaryBufferSameLevel(AthenaArray<Real> &src,
                    int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb);
   void SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
-                                    int nc, int ngh, enum MGBoundaryType type);
+                                    int nc, enum MGBoundaryType type);
   void SetMultigridBoundarySameLevel(AthenaArray<Real> &dst,
                    int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb);
   bool ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
-                                  int nc, int ngh, enum MGBoundaryType type);
+                                          int nc, enum MGBoundaryType type);
 
 private:
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals

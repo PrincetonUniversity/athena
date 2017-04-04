@@ -134,7 +134,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
 //  value of ntask.  
 
-void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
+void TimeIntegratorTaskList::AddTask(uint64_t id, uint64_t dep)
 {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;

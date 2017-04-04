@@ -16,14 +16,15 @@
 #include "../multigrid/multigrid.hpp"
 
 
-//! \fn GravityDriver::GravityDriver(Mesh *pm, ParameterInput *pin)
+//! \fn GravityDriver::GravityDriver(Mesh *pm, MeshBlock *pblock,
+//                                   MGBoundaryFunc_t *MGBoundary, ParameterInput *pin)
 //  \brief GravityDriver constructor
 
-GravityDriver::GravityDriver(Mesh *pm, ParameterInput *pin)
- : MultigridDriver(Mesh *pm, ParameterInput *pin)
+GravityDriver::GravityDriver(Mesh *pm, MeshBlock *pblock, MGBoundaryFunc_t *MGBoundary,
+                             ParameterInput *pin)
+ : MultigridDriver(pm, pblock, MGBoundary, pin)
 {
-  Real dx=(pm->mesh_size.x1max-pm->mesh_size.x1min)/pm->mesh_size.nx1;
-  mgroot_ = new MGGravity(pm->nrbx1, pm->nrbx2, pm->nrbx3, 1, dx);
+  mgroot_ = new MGGravity(pm->nrbx1, pm->nrbx2, pm->nrbx3, pm->mesh_size, MGBoundary);
 }
 
 

@@ -16,10 +16,11 @@
 
 // constructor, initializes data structures and parameters
 
-MultigridDriver::MultigridDriver(Mesh *pm, ParameterInput *pin)
+MultigridDriver::MultigridDriver(Mesh *pm, MeshBlock *pmb, MGBoundaryFunc_t *MGBoundary,
+                                 ParameterInput *pin)
 {
-  pmy_mesh=pm;
-  pblock_=pm->pblock;
+  pmy_mesh_=pm;
+  pblock_=pmb;
   if(pblock_->block_size.nx1!=pblock_->block_size.nx2
   || pblock_->block_size.nx1!=pblock_->block_size.nx3) {
     std::stringstream msg;
@@ -82,6 +83,16 @@ MultigridDriver::MultigridDriver(Mesh *pm, ParameterInput *pin)
         << "The root grid size must be power of 2." << std::endl;
     throw std::runtime_error(msg.str().c_str());
     break;
+  }
+
+  for(int i=0; i<6; i++)
+    MGBoundaryFunction_[i]=pm->MGBoundaryFunction_[i];
+
+  nblocks_=0;
+  MeshBlocks *pb=pmb;
+  while(pb!=NULL) {
+    nblocks_++;
+    pb=pb->next;
   }
 
   umode_=0; // SMR - 2 boundary calls per smoothing

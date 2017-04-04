@@ -249,6 +249,12 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   AMRFlag_=NULL;
   UserSourceTerm_=NULL;
   UserTimeStep_=NULL;
+  MGBoundaryFunction_[INNER_X1]=MGPeriodicInnerX1;
+  MGBoundaryFunction_[OUTER_X1]=MGPeriodicOuterX1;
+  MGBoundaryFunction_[INNER_X2]=MGPeriodicInnerX2;
+  MGBoundaryFunction_[OUTER_X2]=MGPeriodicOuterX2;
+  MGBoundaryFunction_[INNER_X3]=MGPeriodicInnerX3;
+  MGBoundaryFunction_[OUTER_X3]=MGPeriodicOuterX3;
 
   // calculate the logical root level and maximum level
   for (root_level=0; (1<<root_level)<nbmax; root_level++);
@@ -275,8 +281,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   } else {
     max_level = 63;
   }
-
-  if (SELF_GRAVITY_ENABLED == 2) pgrd = new GravityDriver(this, pin);
 
   InitUserMeshData(pin);
 
@@ -496,7 +500,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   }
   pblock=pfirst;
 
-  if (SELF_GRAVITY_ENABLED == 2) pgrd->Initialize();
+  if (SELF_GRAVITY_ENABLED==2)
+    pgrd = new GravityDriver(this, pblock, MGBoundaryFunction_, pin);
 }
 
 //----------------------------------------------------------------------------------------
@@ -654,9 +659,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   } else {
     max_level = 63;
   }
-
-
-  if (SELF_GRAVITY_ENABLED == 2) pgrd = new GravityDriver(this, pin);
 
   InitUserMeshData(pin);
 
@@ -825,7 +827,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   // clean up
   delete [] offset;
 
-  if (SELF_GRAVITY_ENABLED == 2) pgrd->Initialize();
+  if (SELF_GRAVITY_ENABLED==2)
+    pgrd = new GravityDriver(this, pblock, MGBoundaryFunction_, pin);
 }
 
 //----------------------------------------------------------------------------------------
@@ -1159,6 +1162,25 @@ void Mesh::AllocateIntUserMeshDataField(int n)
   iuser_mesh_data = new AthenaArray<int>[n];
   return;
 }
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir
+//                                              MGBoundaryFunc_t my_bc)
+//  \brief Enroll a user-defined boundary function
+
+void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t my_bc)
+{
+  std::stringstream msg;
+  if(dir<0 || dir>5) {
+    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
+        << "dirName = " << dir << " not valid" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  MGBoundaryFunction_[dir]=my_bc;
+  return;
+}
+
 
 //----------------------------------------------------------------------------------------
 // \!fn void Mesh::Initialize(int res_flag, ParameterInput *pin)

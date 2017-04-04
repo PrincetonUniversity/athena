@@ -28,7 +28,7 @@ void MGGravity::Smooth(int lev, int color)
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
-  Real dx = dx_/(Real)(1<<ll);
+  Real dx = rdx_/(Real)(1<<ll);
   Real dx2 = SQR(dx), isix=omega_/6.0;
 #pragma ivdep
   for(int k=ks; k<=ke; k++) {
@@ -59,7 +59,7 @@ void MGGravity::CalculateResidual(int lev)
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
-  Real dx = dx_/(Real)(1<<ll);
+  Real dx = rdx_/(Real)(1<<ll);
   Real idx2 = 1.0/SQR(dx);
 #pragma ivdep
   for(int k=ks; k<=ke; k++) {

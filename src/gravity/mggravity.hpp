@@ -24,8 +24,9 @@ class Multigrid
 
 class MGGravity : public Multigrid {
 public:
-  MGGravity(int nx, int ny, int nz, int ngh, Real dx)
-    : Multigrid(1, nx, ny, nz, ngh, dx) {};
+  MGGravity(MeshBlock *pmb, int nx, int ny, int nz,
+            RegionSize isize, MGBoundaryFunc_t *MGBoundary)
+    : Multigrid(pmb, 1, nx, ny, nz, isize, MGBoundary) {};
   ~MGGravity() {};
   void Smooth(int lev, int color);
   void CalculateResidual(int lev);
@@ -40,7 +41,8 @@ private:
 
 class GravityDriver : MultigridDriver{
 public:
-  GravityDriver(Mesh *pm, ParameterInput *pin);
+  GravityDriver(Mesh *pm, MeshBlock *pmb, MGBoundaryFunc_t *MGBoundary,
+                ParameterInput *pin);
   ~GravityDriver() {};
   GetMultigridBlock (MeshBlock *pmb);
 };
