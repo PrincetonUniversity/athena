@@ -343,7 +343,9 @@ int main(int argc, char *argv[])
                 << " time=" << pmesh->time << " dt=" << pmesh->dt <<std::endl;
     }
 
-    ptlist->DoTaskList(pmesh);
+    for (int step=1; step<=ptlist->nsub_steps; ++step) {
+      ptlist->DoTaskListOneSubstep(pmesh, step);
+    }
 
     pmesh->ncycle++;
     pmesh->time += pmesh->dt;

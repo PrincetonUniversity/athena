@@ -52,7 +52,7 @@ void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh)
 //  \brief Fill the active zone of the finest level
 void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real fac)
 {
-  AthenaArray<Real> &dst=src_[nlev_-1];
+  AthenaArray<Real> &dst=fmgsrc_[nlev_-1];
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+nx_-1, je=js+ny_-1, ke=ks+nz_-1;
@@ -72,6 +72,38 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
   return;
 }
 
+
+//----------------------------------------------------------------------------------------
+//! \fn void Multigrid::RestrictFMGSource(void)
+//  \brief restrict the source through all the multigrid levels
+
+void Multigrid::RestrictFMGSource(void)
+{
+  std::memcpy(fmgsrc_[nlev-1].data(), src_[nlev-1].data(),
+              src_[nlev-1].GetSizeInBytes());
+  for(int lev=nlev_-1; lev>0; lev--) {
+    int ll=nlev_-lev;
+    ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
+    AthenaArray<Real> &csrc=fmgsrc_[lev-1];
+    AthenaArray<Real> &fsrc=fmgsrc_[lev];
+#pragma ivdep
+    for(int n=0; n<nvar; n++) {
+#pragma ivdep
+      for(int k=ks, fk=ks; k<=ke; k++, fk+=2) {
+#pragma ivdep
+        for(int j=js, fj=js; j<=je; j++, fj+=2) {
+#pragma ivdep
+          for(int i=is, fi=is; i<=ie; i++, fi+=2)
+            csrc(n, k, j, i)=0.125*(fsrc(n, fk,   fj,   fi)+fsrc(n, fk,   fj,   fi+1)
+                                   +fsrc(n, fk,   fj+1, fi)+fsrc(n, fk,   fj+1, fi+1)
+                                   +fsrc(n, fk+1, fj,   fi)+fsrc(n, fk+1, fj,   fi+1)
+                                   +fsrc(n, fk+1, fj+1, fi)+fsrc(n, fk+1, fj+1, fi+1));
+        }
+      }
+    }
+  }
+  return;
+}
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh)
@@ -100,24 +132,24 @@ void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void Multigrid::ZeroClearData(int lev)
+//! \fn void Multigrid::ZeroClearData(void)
 //  \brief Clear the data array with zero
-void Multigrid::ZeroClearData(int lev)
+void Multigrid::ZeroClearData(void)
 {
-  AthenaArray<Real> &u=u_[lev];
+  AthenaArray<Real> &u=u_[current_level_];
   std::memset(u.data(), 0, u.GetSizeInBytes());
   return;
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void Multigrid::ApplyPhysicalBoundaries(int lev)
+//! \fn void Multigrid::ApplyPhysicalBoundaries(void)
 //  \brief A
 
-void Multigrid::ApplyPhysicalBoundaries(int lev)
+void Multigrid::ApplyPhysicalBoundaries(void)
 {
-  AthenaArray<Real> &dst=u_[lev];
-  int ll=nlev_-1-lev;
+  AthenaArray<Real> &dst=u_[current_level_];
+  int ll=nlev_-1-current_level_;
   int ncx=nx_>>ll, ncy=ny_>>ll, ncz=nz_>>ll;
   int is=ngh_, ie=ncx_+ngh_-1, js=ngh_, je=ncy_+ngh_-1, ks=ngh_, ke=ncz_+ngh_-1;
   int bis=is-ngh_, bie=ie+ngh_, bjs=js, bje=je, bks=ks, bke=ke;
@@ -164,13 +196,13 @@ void Multigrid::ApplyPhysicalBoundaries(int lev)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void Multigrid::Restrict(int clev)
-//  \brief Restrict the potential/density to level=clev
-void Multigrid::Restrict(int clev)
+//! \fn void Multigrid::Restrict(void)
+//  \brief Restrict the defect to the source
+void Multigrid::Restrict(void)
 {
-  AthenaArray<Real> &dst=src_[clev];
-  AthenaArray<Real> &src=def_[clev+1];
-  int ll=nlev_-1-clev;
+  AthenaArray<Real> &dst=src_[current_level_-1];
+  AthenaArray<Real> &src=def_[current_level_];
+  int ll=nlev_-current_level_;
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
@@ -189,19 +221,19 @@ void Multigrid::Restrict(int clev)
       }
     }
   }
-  return;
+  current_level_--;
   return;
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void Multigrid::ProlongateAndCorrect(int clev)
-//  \brief Prolongate the potential from level=clev using tri-linear interpolation
-void Multigrid::ProlongateAndCorrect(int clev)
+//! \fn void Multigrid::ProlongateAndCorrect(void)
+//  \brief Prolongate the potential using tri-linear interpolation
+void Multigrid::ProlongateAndCorrect(void)
 {
-  const AthenaArray<Real> &src=u_[clev];
-  AthenaArray<Real> &dst=def_[clev+1];
-  int ll=nlev_-1-clev;
+  const AthenaArray<Real> &src=u_[current_level_];
+  AthenaArray<Real> &dst=def_[current_level_+1];
+  int ll=nlev_-1-current_level_;
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
@@ -241,18 +273,19 @@ void Multigrid::ProlongateAndCorrect(int clev)
       }
     }
   }
+  current_level_++;
   return;
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void Multigrid::FMGProlongate(int clev)
-//  \brief Prolongate the potential from level=clev for Full Multigrid cycle
-void Multigrid::FMGProlongate(int clev)
+//! \fn void Multigrid::FMGProlongate(void)
+//  \brief Prolongate the potential for Full Multigrid cycle
+void Multigrid::FMGProlongate(void)
 {
-  AthenaArray<Real> &src=u_[clev];
-  AthenaArray<Real> &dst=u_[clev+1];
-  int ll=nlev_-1-clev;
+  AthenaArray<Real> &src=u_[current_level_];
+  AthenaArray<Real> &dst=u_[current_level_+1];
+  int ll=nlev_-1-current_level_;
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
@@ -292,6 +325,19 @@ void Multigrid::FMGProlongate(int clev)
       }
     }
   }
+  current_level_++;
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void Multigrid::SetFMGSource(void)
+//  \brief Copy the restricted Source term to the source array
+void Multigrid::SetFMGSource(void)
+{
+  AthenaArray<Real> &src=fmgsrc_[current_level_];
+  AthenaArray<Real> &dst=src_[current_level_];
+  std::memcpy(dst.data(), src.data(), src.GetSizeInBytes());
   return;
 }
 
@@ -372,10 +418,10 @@ Real CalculateTotalSource(int n)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn Real Multigrid::SubtractMeanSource(int n, Real ave)
+//! \fn Real Multigrid::SubtractAverageSource(int n, Real ave)
 //  \brief subtract the mean value of the source function for periodic boundary cases
 
-void Multigrid::SubtractMeanSource(int n, Real ave)
+void Multigrid::SubtractAverageSource(int n, Real ave)
 {
   AthenaArray<Real> &src=src_[nlev_-1];
   Real s=0.0;
@@ -456,12 +502,13 @@ void Multigrid::Multigrid(MeshBlock *pmb, int invar, int nx, int ny, int nz,
   // allocate arrays
   u_ = new AthenaArray<Real>[nlev_];
   src_ = new AthenaArray<Real>[nlev_];
+  fmgsrc_ = new AthenaArray<Real>[nlev_];
   def_ = new AthenaArray<Real>[nlev_];
   for(int l=nlev_-1; l>=0; l++) {
     int ll=nlev_-1-l;
     int ncx=(nx>>ll)+2*ngh, ncy=(ny>>ll)+2*ngh, ncz=(nz>>ll)+2*ngh;
     u_[l].NewAthenaArray(nvar,ncz,ncy,ncx);
-    src_[l].NewAthenaArray(nvar,ncz,ncy,ncx);
+    fmgsrc_[l].NewAthenaArray(nvar,ncz,ncy,ncx);
     def_[l].NewAthenaArray(nvar,ncz,ncy,ncx);
   }
 }
@@ -475,10 +522,12 @@ virtual void Multigrid::~Multigrid()
   for(int l=0; l<nlev_; l++) {
     u_[l].DeleteAthenaArray();
     src_[l].DeleteAthenaArray();
+    fmgsrc_[l].DeleteAthenaArray();
     def_[l].DeleteAthenaArray();
   }
   delete [] u_;
   delete [] src_;
+  delete [] fmgsrc_;
   delete [] def_;
 }
 

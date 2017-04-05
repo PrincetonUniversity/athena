@@ -122,9 +122,9 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     AddTimeIntegratorTask(NEW_DT,USERWORK);
     if(pm->adaptive==true) {
       AddTimeIntegratorTask(AMR_FLAG,USERWORK);
-      AddTimeIntegratorTask(CLEAR_ALLRECV,AMR_FLAG);
+      AddTimeIntegratorTask(CLEAR_ALLBND,AMR_FLAG);
     } else {
-      AddTimeIntegratorTask(CLEAR_ALLRECV,NEW_DT);
+      AddTimeIntegratorTask(CLEAR_ALLBND,NEW_DT);
     }
 
   } // end of using namespace block
@@ -146,10 +146,10 @@ void TimeIntegratorTaskList::AddTask(uint64_t id, uint64_t dep)
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::StartAllReceive);
       break;
-    case (CLEAR_ALLRECV):
+    case (CLEAR_ALLBND):
       task_list_[ntasks].TaskFunc= 
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::ClearAllReceive);
+        (&TimeIntegratorTaskList::ClearAllBoundary);
       break;
 
     case (CALC_HYDFLX):
@@ -300,7 +300,7 @@ enum TaskStatus TimeIntegratorTaskList::StartAllReceive(MeshBlock *pmb, int step
   return TASK_SUCCESS;
 }
 
-enum TaskStatus TimeIntegratorTaskList::ClearAllReceive(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int step)
 {
   pmb->pbval->ClearBoundaryAll();
   return TASK_SUCCESS;

@@ -14,11 +14,10 @@
 #include "../coordinates/coordinates.hpp"
 #include "../multigrid/multigrid.hpp"
 
-
 //----------------------------------------------------------------------------------------
-//! \fn  void MGGravity::Smooth(int lev, int color)
+//! \fn  void MGGravity::Smooth(int color)
 //  \brief Red-Black Gauss-Seidel Smoother
-void MGGravity::Smooth(int lev, int color)
+void MGGravity::Smooth(int color)
 {
   int ns=ngh, ne=ngh+(1<<lev)-1;
   int c=color;
@@ -26,8 +25,15 @@ void MGGravity::Smooth(int lev, int color)
   AthenaArray<Real> &src=src_[lev];
   int ll=nlev_-1-lev;
   int is, ie, js, je, ks, ke;
-  is=js=ks=ngh_;
-  ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
+  if(ngh_==2 && color==0) {
+    is=js=ks=ngh_-1;
+    ie=is+(nx_>>ll), je=js+(ny_>>ll), ke=ks+(nz_>>ll);
+    c=1;
+  }
+  else {
+    is=js=ks=ngh_;
+    ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
+  }
   Real dx = rdx_/(Real)(1<<ll);
   Real dx2 = SQR(dx), isix=omega_/6.0;
 #pragma ivdep
@@ -46,16 +52,16 @@ void MGGravity::Smooth(int lev, int color)
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGGravity::CalculateResidual(int lev)
+//! \fn void MGGravity::CalculateResidual(void)
 //  \brief calculate the residual
 
-void MGGravity::CalculateResidual(int lev)
+void MGGravity::CalculateResidual(void)
 {
-  int ns=ngh, ne=ngh+(1<<lev)-1;
-  AthenaArray<Real> &u=u_[lev];
-  AthenaArray<Real> &src=src_[lev];
-  AthenaArray<Real> &res=res_[lev];
-  int ll=nlev_-1-lev;
+  int ns=ngh, ne=ngh+(1<<current_level_)-1;
+  AthenaArray<Real> &u=u_[current_level_];
+  AthenaArray<Real> &src=src_[current_level_];
+  AthenaArray<Real> &res=res_[current_level_];
+  int ll=ncurrent_level__-1-current_level_;
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;

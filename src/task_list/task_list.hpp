@@ -55,8 +55,7 @@ public:
 
   // functions
   enum TaskListStatus DoAllAvailableTasks(MeshBlock *pmb, int step, TaskState &ts);
-  void DoTaskList(Mesh *pmesh);
-  void ClearTaskList(void);
+  void DoTaskListOneSubStep(Mesh *pmesh, int step);
   virtual void AddTask(uint64_t id, uint64_t dep) = 0;
 
 private:
@@ -116,23 +115,6 @@ public:
   enum TaskStatus GravFluxCorrection(MeshBlock *pmb, int step);
 };
 
-
-//----------------------------------------------------------------------------------------
-//! \class MultigridTaskList
-//  \brief data and function definitions for MultigridTaskList derived class
-
-class MultigridTaskList : public TaskList {
-public:
-  MultigridTaskList() : TaskList(NULL) {};
-  ~MultigridTaskList() {};
-
-  void DoTaskList(MultigridDriver *pmd);
-  void AddTask(uint64_t id, uint64_t dep);
-
-  // functions
-  enum TaskStatus MGGravityStartReceive(MeshBlock *pmb, int step);
-  enum TaskStatus MGGravityClearBoundary(MeshBlock *pmb, int step);
-  enum TaskStatus MGGravitySendBoundary(MeshBlock *pmb, int step);
 
 //----------------------------------------------------------------------------------------
 // 64-bit integers with "1" in different bit positions used to ID  each hydro task.

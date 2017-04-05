@@ -14,6 +14,10 @@
 #include "../athena_arrays.hpp"
 #include "../mesh/mesh.hpp"
 
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#endif
+
 class MeshBlock;
 class ParameterInput;
 class Coordinates;
@@ -50,31 +54,38 @@ public:
             RegionSize isize, MGBoundaryFunc_t *MGBoundary);
   virtual ~Multigrid();
 
+  const enum MGBoundaryType btype;
+
   void LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh);
   void LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real fac);
   void RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh);
-  void ZeroClearData(int lev);
-  void ApplyPhysicalBoundaries(int lev);
-  void Restrict(int clev);
-  void ProlongateAndCorrect(int clev);
-  void FMGProlongate(int clev);
+  void ZeroClearData(void);
+  void ApplyPhysicalBoundaries(void);
+  void Restrict(void);
+  void ProlongateAndCorrect(void);
+  void FMGProlongate(void);
+  void RestrictFMGSource(void);
+  void SetFMGSource(void);
   Real CalculateDefectNorm(int n, int nrm);
   Real CalculateTotalSource(int n);
-  void SubtractMeanSource(int n, Real ave);
+  void SubtractAverageSource(int n, Real ave);
 
   // pure virtual functions
-  virtual void Smooth(int lev, int color) = 0;
-  virtual void CalculateDefect(int lev) = 0;
+  virtual void Smooth(int color) = 0;
+  virtual void CalculateDefect(void) = 0;
 
   friend class MultigridDriver;
 
 protected:
-  MeshBlock *pmy_block_;
   RegionSize size_;
   int nlev_, nx_, ny_, nz_, ngh_;
   int current_level_;
   Real rdx_, rdy_, rdz_;
-  AthenaArray<Real> *u_, *def_, *src_;
+  AthenaArray<Real> *u_, *def_, *src_, *fmgsrc_;
+
+private:
+  MeshBlock *pmy_block_;
+  TaskState ts_;
   MGBoundaryFunc_t MGBoundaryFunction_[6];
 };
 
@@ -85,19 +96,27 @@ protected:
 class MultigridDriver
 {
 public:
-  MultigridDriver(Mesh *pm, MEshBlock *pmb, MGBoundaryFunc_t *MGBoundary,
+  MultigridDriver(Mesh *pm, MeshBlock *pmb, MGBoundaryFunc_t *MGBoundary,
                   ParameterInput *pin);
   virtual ~MultigridDriver();
+  int GetNumMeshBlocks(void) { return nblocks_; };
+  void SetupMultiGrid(void);
+
   virtual Multigrid* GetMultigridBlock(MeshBlock *) = 0;
-  int GetNumMeshBlocks(void) { return nblocks;};
+  virtual void LoadSourceAndData(void) = 0;
+
   friend class Multigrid;
 
 protected:
+  int nvar_;
   Mesh *pmy_mesh_;
   MeshBlock *pblock_;
-  int nblocks_;
-  TaskState ts_;
+  int nblocks_, int nrootlevel_;
   MGBoundaryFunc_t MGBoundaryFunction_[6];
+  int *nslist_, *nblist_;
+#ifdef MPI_PARALLEL
+  MPI_Comm MPI_COMM_MULTIGRID;
+#endif
 };
 
 

@@ -67,39 +67,26 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int step, Task
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void TaskList::DoTaskList(Mesh *pmesh)
+//! \fn void TaskList::DoTaskListOneSubstep(Mesh *pmesh, int step)
 //  \brief completes all tasks in this list, will not return until all are tasks done
 
-void TaskList::DoTaskList(Mesh *pmesh)
+void TaskList::DoTaskListOneSubstep(Mesh *pmesh, int step)
 {
-  for (int step=1; step<=nsub_steps; ++step) {
-    MeshBlock *pmb = pmesh->pblock;
-    int nmb_left = pmesh->GetNumMeshBlocksThisRank(Globals::my_rank);
-    // initialize counters stored in each MeshBlock
-    while (pmb != NULL)  {
-      pmb->ts.Reset(ntasks);
-      pmb=pmb->next;
-    }
+  MeshBlock *pmb = pmesh->pblock;
+  int nmb_left = pmesh->GetNumMeshBlocksThisRank(Globals::my_rank);
+  // initialize counters stored in each MeshBlock
+  while (pmb != NULL)  {
+    pmb->ts.Reset(ntasks);
+    pmb=pmb->next;
+  }
 
-    // cycle through all MeshBlocks and perform all tasks possible
-    while(nmb_left > 0) {
-      pmb = pmesh->pblock;
-      while (pmb != NULL)  {
-        if (DoAllAvailableTasks(pmb,step,pmb->ts) == TL_COMPLETE) nmb_left--;
-        pmb=pmb->next;
-      }
+  // cycle through all MeshBlocks and perform all tasks possible
+  while(nmb_left > 0) {
+    pmb = pmesh->pblock;
+    while (pmb != NULL)  {
+      if (DoAllAvailableTasks(pmb,step,pmb->ts) == TL_COMPLETE) nmb_left--;
+      pmb=pmb->next;
     }
   }
   return;
 }
-
-
-//----------------------------------------------------------------------------------------
-//! \fn void TaskList::ClearTaskList(void)
-//  \brief clear the task list.
-void TaskList::ClearTaskList(void)
-{
-  ntasks = 0;
-  return;
-}
-

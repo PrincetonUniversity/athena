@@ -4,15 +4,16 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file mg_task_list.cpp
-//  \brief functions for TaskList base class
+//  \brief functions for MultigridTaskList class
 
 // Athena++ classes headers
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../mesh/mesh.hpp"
+#include "../multigrid/multigrid.hpp"
 
 // this class header
-#include "task_list.hpp"
+#include "mg_task_list.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridTaskList::DoTaskList(MultigridDriver *pmd)
@@ -24,7 +25,8 @@ void MultigridTaskList::DoTaskList(MultigridDriver *pmd)
   int nmb_left = pmd->GetNumMeshBlocks();
 
   while (pmb != NULL)  {
-    pmb->ts.Reset(ntasks);
+    Multigrid *pmg=pmd->GetMultigridBlock(pmb);
+    pmg->ts.Reset(ntasks);
     pmb=pmb->next;
   }
 
@@ -32,7 +34,8 @@ void MultigridTaskList::DoTaskList(MultigridDriver *pmd)
   while(nmb_left > 0) {
     pmb = pmd->pblock;
     while (pmb != NULL)  {
-      if (DoAllAvailableTasks(pmb,step,pmd->ts_) == TL_COMPLETE) nmb_left--;
+      Multigrid *pmg=pmd->GetMultigridBlock(pmb);
+      if (DoAllAvailableTasks(pmg,pmg->ts_) == TL_COMPLETE) nmb_left--;
       pmb=pmb->next;
     }
   }
@@ -50,17 +53,46 @@ void MultigridTaskList::AddTask(uint64_t id, uint64_t dep)
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 
-  using namespace HydroIntegratorTaskNames;
-  switch((id)) {
-    case (MGGRAV_STARTRECV):
-      task_list_[ntasks].TaskFunc= 
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&MultigridTaskList::MGGravStartReceive);
+  using namespace MultigridTaskNames;
+  switch(id) {
+    case (MG_STARTRECV):
+      task_list_[ntasks].TaskFunc=MultigridTaskList::StartReceive;
       break;
-    case (MGGRAV_CLEARBND):
-      task_list_[ntasks].TaskFunc= 
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&MultigridTaskList::MGGravClearBoundary);
+    case (MG_CLEARBND):
+      task_list_[ntasks].TaskFunc=MultigridTaskList::ClearBoundary;
+      break;
+    case (MG_SENDRED):
+      task_list_[ntasks].TaskFunc=MultigridTaskList::SendBoundary;
+      break;
+    case (MG_RECVRED):
+      task_list_[ntasks].TaskFunc=MultigridTaskList::ReceiveBoundary;
+      break;
+    case (MG_SENDBLACK):
+      task_list_[ntasks].TaskFunc=MultigridTaskList::SendBoundary;
+      break;
+    case (MG_RECVBLACK):
+      task_list_[ntasks].TaskFunc=MultigridTaskList::ReceiveBoundary;
+      break;
+    case (MG_SMOOTHRED):
+      task_list_[ntasks].TaskFunc=MultigridTaskList::SmoothRed;
+      break;
+    case (MG_SMOOTHBLACK):
+      task_list_[ntasks].TaskFunc=MultigridTaskList::SmoothBlack;
+      break;
+    case (MG_CALCDEFECT):
+      task_list_[ntasks].TaskFunc=MultigridTaskList::CalculateDefect;
+      break;
+    case (MG_RESTRICT):
+      task_list_[ntasks].TaskFunc=MultigridTaskList::Restrict;
+      break;
+    case (MG_PROLONG):
+      task_list_[ntasks].TaskFunc=MultigridTaskList::Prolongate;
+      break;
+    case (MG_FMGPROLONG):
+      task_list_[ntasks].TaskFunc=MultigridTaskList::FMGProlongate;
+      break;
+    case (MG_PHYSBND):
+      task_list_[ntasks].TaskFunc=MultigridTaskList::PhysicalBoundary;
       break;
 
     default:
@@ -75,33 +107,83 @@ void MultigridTaskList::AddTask(uint64_t id, uint64_t dep)
 
 
 
-enum TaskStatus MultigridTaskList::MGGravityStartReceive(MeshBlock *pmb, int step)
+enum TaskStatus MultigridTaskList::StartReceive(Multigrid *pmg, int step)
 {
-  int nc=pmb->pmggrav->GetCurrentNumberOfCells();
-  pmb->pbval->StartReceivingMultigrid(nc, BND_MGGRAV);
-  return TASK_SUCCESS;
-}
-
-enum TaskStatus MultigridTaskList::MGGravityClearBoundary(MeshBlock *pmb, int step)
-{
-  pmb->pbval->ClearBoundaryMultigrid(BND_MGGRAV);
-  return TASK_SUCCESS;
-}
-
-enum TaskStatus MultigridTaskList::MGGravitySendBoundary(MeshBlock *pmb, int step)
-{
-  MGGravity *pmg=pmb->pmggrav;
   int nc=pmg->GetCurrentNumberOfCells();
-  pmb->pbval->SendMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, BND_MGGRAV);
+  pmg->pmb->pbval->StartReceivingMultigrid(nc, BND_MGGRAV);
+  return TASK_SUCCESS;
+}
+
+enum TaskStatus MultigridTaskList::ClearBoundary(Multigrid *pmg, int step)
+{
+  pmg->pmb->pbval->ClearBoundaryMultigrid(BND_MGGRAV);
+  return TASK_SUCCESS;
+}
+
+enum TaskStatus MultigridTaskList::SendBoundary(Multigrid *pmg, int step)
+{
+  int nc=pmg->GetCurrentNumberOfCells();
+  pmg->pmy_block->pbval->
+    SendMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, BND_MGGRAV);
   return TASK_SUCCESS;
 }
 
 
-enum TaskStatus MultigridTaskList::MGGravityReceiveBoundary(MeshBlock *pmb, int step)
+enum TaskStatus MultigridTaskList::ReceiveBoundary(Multigrid *pmg, int step)
 {
-  MGGravity *pmg=pmb->pmggrav;
   int nc=pmg->GetCurrentNumberOfCells();
-  if(pmb->pbval->ReceiveMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, BND_MGGRAV)
-     == true) return TASK_NEXT;
+  if(pmg->pmy_block->pbval->
+     ReceiveMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, BND_MGGRAV)== true)
+    return TASK_NEXT;
   else return TASK_FAIL;
 }
+
+
+enum TaskStatus MultigridTaskList::SmoothRed(Multigrid *pmg, int step)
+{
+  pmg->Smooth(0);
+  return TASK_NEXT;
+}
+
+
+enum TaskStatus MultigridTaskList::SmoothBlack(Multigrid *pmg, int step)
+{
+  pmg->Smooth(1);
+  return TASK_NEXT;
+}
+
+
+enum TaskStatus MultigridTaskList::CalculateDefect(Multigrid *pmg, int step)
+{
+  pmg->CalculateDefect();
+  return TASK_SUCCESS;
+}
+
+
+enum TaskStatus MultigridTaskList::Restrict(Multigrid *pmg, int step)
+{
+  pmg->Restrict();
+  pmg->ZeroClearData();
+  return TASK_NEXT;
+}
+
+
+enum TaskStatus MultigridTaskList::Prolongate(Multigrid *pmg, int step)
+{
+  pmg->ProlongateAndCorrect();
+  return TASK_NEXT;
+}
+
+
+enum TaskStatus MultigridTaskList::FMGProlongate(Multigrid *pmg, int step)
+{
+  pmg->FMGProlongate();
+  return TASK_NEXT;
+}
+
+enum TaskStatus MultigridTaskList::PhysicalBoundary(Multigrid *pmg, int step)
+{
+  pmg->ApplyPhysicalBoundary();
+  return TASK_NEXT;
+}
+
