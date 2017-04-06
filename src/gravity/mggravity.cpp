@@ -19,11 +19,11 @@
 //  \brief Red-Black Gauss-Seidel Smoother
 void MGGravity::Smooth(int color)
 {
-  int ns=ngh, ne=ngh+(1<<lev)-1;
+  int ns=ngh, ne=ngh+(1<<current_level_)-1;
   int c=color;
-  AthenaArray<Real> &u=u_[lev];
-  AthenaArray<Real> &src=src_[lev];
-  int ll=nlev_-1-lev;
+  AthenaArray<Real> &u=u_[current_level_];
+  AthenaArray<Real> &src=src_[current_level_];
+  int ll=nlevel_-1-current_level_;
   int is, ie, js, je, ks, ke;
   if(ngh_==2 && color==0) {
     is=js=ks=ngh_-1;
@@ -52,16 +52,16 @@ void MGGravity::Smooth(int color)
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGGravity::CalculateResidual(void)
+//! \fn void MGGravity::CalculateDefect(void)
 //  \brief calculate the residual
 
-void MGGravity::CalculateResidual(void)
+void MGGravity::CalculateDefect(void)
 {
   int ns=ngh, ne=ngh+(1<<current_level_)-1;
   AthenaArray<Real> &u=u_[current_level_];
   AthenaArray<Real> &src=src_[current_level_];
-  AthenaArray<Real> &res=res_[current_level_];
-  int ll=ncurrent_level__-1-current_level_;
+  AthenaArray<Real> &def=def_[current_level_];
+  int ll=nlevel__-1-current_level_;
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
@@ -73,7 +73,7 @@ void MGGravity::CalculateResidual(void)
     for(int j=js; j<=je; j++) {
 #pragma ivdep
       for(int i=is; i<=ie; i++)
-        res(0,k,j,i)=(6.0*u(0,k,j,i)-u(0,k+1,j,i)-u(0,k,j+1,i)-u(0,k,j,i+1)
+        def(0,k,j,i)=(6.0*u(0,k,j,i)-u(0,k+1,j,i)-u(0,k,j+1,i)-u(0,k,j,i+1)
                          -u(0,k-1,j,i)-u(0,k,j-1,i)-u(0,k,j,i-1))*idx2+src(0,k,j,i);
     }
   }

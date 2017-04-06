@@ -13,6 +13,7 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../mesh/mesh.hpp"
+#include "../task_list/mg_task_list.hpp"
 
 #ifdef MPI_PARALLEL
 #include <mpi.h>
@@ -68,7 +69,15 @@ public:
   void SetFMGSource(void);
   Real CalculateDefectNorm(int n, int nrm);
   Real CalculateTotalSource(int n);
-  void SubtractAverageSource(int n, Real ave);
+  void SubtractAverageSource(int type, int n, Real ave);
+
+  // small functions
+  int GetCurrentLevel(void) { return current_level_; };
+  void SetCurrentLevel(int level) { current_level_=level; return; };
+  int GetCurrentNumberOfCells(void) { return 1<<current_level_; };
+  AthenaArray<Real>& GetCurrentData(void) { return u_[current_level_]; };
+  AthenaArray<Real>& GetCurrentSource(void) { return src_[current_level_]; };
+  Real GetRootSource(int n) { return src_[0].(n,ngh_,ngh_,ngh_); };
 
   // pure virtual functions
   virtual void Smooth(int color) = 0;
@@ -78,7 +87,7 @@ public:
 
 protected:
   RegionSize size_;
-  int nlev_, nx_, ny_, nz_, ngh_;
+  int nlevel_, nx_, ny_, nz_, ngh_, nvar_;
   int current_level_;
   Real rdx_, rdy_, rdz_;
   AthenaArray<Real> *u_, *def_, *src_, *fmgsrc_;
@@ -99,21 +108,30 @@ public:
   MultigridDriver(Mesh *pm, MeshBlock *pmb, MGBoundaryFunc_t *MGBoundary,
                   ParameterInput *pin);
   virtual ~MultigridDriver();
+  void SetupMultigrid(void);
+  void CollectSource(void);
+  void FillRootGrid(void);
+
+  // small functions
   int GetNumMeshBlocks(void) { return nblocks_; };
-  void SetupMultiGrid(void);
 
   virtual Multigrid* GetMultigridBlock(MeshBlock *) = 0;
   virtual void LoadSourceAndData(void) = 0;
+  virtual void SolveCoarsestGrid(void);
 
   friend class Multigrid;
 
 protected:
-  int nvar_;
+  int nvar_, nblocks_, nrootlevel_, nmblevel_, ntotallevel_, fmglevel_;
   Mesh *pmy_mesh_;
   MeshBlock *pblock_;
-  int nblocks_, int nrootlevel_;
+  Multigrid *mgroot_;
+private:
+  MultigridTaskList *mgtlist_;
   MGBoundaryFunc_t MGBoundaryFunction_[6];
   int *nslist_, *nblist_;
+  Real *rootbuf_;
+  AthenaArray<Real> rootsrc_;
 #ifdef MPI_PARALLEL
   MPI_Comm MPI_COMM_MULTIGRID;
 #endif

@@ -28,8 +28,8 @@ public:
             RegionSize isize, MGBoundaryFunc_t *MGBoundary)
     : Multigrid(pmb, 1, nx, ny, nz, isize, MGBoundary), btype(BND_MGGRAV) {};
   ~MGGravity() {};
-  void Smooth(int lev, int color);
-  void CalculateResidual(int lev);
+  void Smooth(int color);
+  void CalculateDefect(void);
 
 private:
   const Real omega_ = 1.15;
@@ -45,6 +45,7 @@ public:
                 ParameterInput *pin);
   Multigrid* GetMultigridBlock (MeshBlock *pmb);
   void LoadSourceAndData(void);
+  void SolveCoarsestGrid(void);
 
 private:
   four_pi_G_;

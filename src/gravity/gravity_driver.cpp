@@ -35,10 +35,10 @@ GravityDriver::GravityDriver(Mesh *pm, MeshBlock *pblock, MGBoundaryFunc_t *MGBo
 
 
 //----------------------------------------------------------------------------------------
-//! \fn Multigrid* GravityDriver::GetMultigridBlock (MeshBlock *pmb)
+//! \fn Multigrid* GravityDriver::GetMultigridBlock(MeshBlock *pmb)
 //  \brief returns a pointer to the multigrid gravity object
 
-Multigrid* GravityDriver::GetMultigridBlock (MeshBlock *pmb)
+Multigrid* GravityDriver::GetMultigridBlock(MeshBlock *pmb)
 {
   return pmb->pmggrav;
 }
@@ -59,4 +59,5 @@ void GravityDriver::LoadSourceAndData(void)
   }
   return;
 }
+
 
