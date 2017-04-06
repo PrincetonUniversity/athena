@@ -59,20 +59,20 @@ public:
 
   void LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh);
   void LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real fac);
+  void RestrictFMGSource(void);
   void RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh);
   void ZeroClearData(void);
+  void SetFMGSource(void);
   void ApplyPhysicalBoundaries(void);
   void Restrict(void);
   void ProlongateAndCorrect(void);
   void FMGProlongate(void);
-  void RestrictFMGSource(void);
-  void SetFMGSource(void);
+  void SetFromRootGrid(AthenaArray<Real> &src, int ci, int cj, int ck);
   Real CalculateDefectNorm(int n, int nrm);
-  Real CalculateTotalSource(int n);
-  void SubtractAverageSource(int type, int n, Real ave);
+  Real CalculateTotal(int type, int n);
+  void SubtractAverage(int type, int n, Real ave);
 
   // small functions
-  int GetCurrentLevel(void) { return current_level_; };
   void SetCurrentLevel(int level) { current_level_=level; return; };
   int GetCurrentNumberOfCells(void) { return 1<<current_level_; };
   AthenaArray<Real>& GetCurrentData(void) { return u_[current_level_]; };
@@ -111,18 +111,26 @@ public:
   void SetupMultigrid(void);
   void CollectSource(void);
   void FillRootGrid(void);
+  void FMGProlongate(void);
+  void TransferFromRootToBlock(bool fmgflag);
+  void OneStepToFiner(int nsmooth);
+  void OneStepToCoarser(int nsmooth);
+  void SolveVCycle(void);
+  void SolveFCycle(void);
+  void SolveFMGCycle(void);
+  virtual void SolveCoarsestGrid(void);
+  Real CalculateDefectNorm(int n, int nrm);
 
   // small functions
   int GetNumMeshBlocks(void) { return nblocks_; };
 
   virtual Multigrid* GetMultigridBlock(MeshBlock *) = 0;
   virtual void LoadSourceAndData(void) = 0;
-  virtual void SolveCoarsestGrid(void);
 
   friend class Multigrid;
 
 protected:
-  int nvar_, nblocks_, nrootlevel_, nmblevel_, ntotallevel_, fmglevel_;
+  int nvar_, nblocks_, nrootlevel_, nmblevel_, ntotallevel_;
   Mesh *pmy_mesh_;
   MeshBlock *pblock_;
   Multigrid *mgroot_;

@@ -90,6 +90,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MeshBlock *pmb, MGBoundaryFunc_t *MGB
   nrootlevel_=std::min(nrlx,std::min(nrly,nrlz));
   rootsrc_.NewAthenaArray(nvar_,pm->nrbx3,pm->nrbx2,pm->nrbx1);
   ntotallevel_=nrootlevel_+nmblevel_-1;
+  current_level_=ntotallevel_-1;
 
   fperiodic_=false;
   for(int i=0; i<6; i++)
@@ -151,7 +152,7 @@ MultigridDriver::~MultigridDriver()
 //! \fn void MultigridDriver::SetupMultigrid(void)
 //  \brief initialize the source assuming that the source terms are already loaded
 
-MultigridDriver::SetupMultigrid(void)
+void MultigridDriver::SetupMultigrid(void)
 {
   Mesh *pm=pmy_mesh_;
   MeshBlocks *pb=pblock_;
@@ -160,7 +161,7 @@ MultigridDriver::SetupMultigrid(void)
     while(pb!=NULL) {
       Multigrid *pmg=GetMultigridBlock(pb);
       for(int v=0; v<nvar_; v++)
-        rootbuf_[pb->gid*nvar_+v]=pmg->CalculateTotalSource(v);
+        rootbuf_[pb->gid*nvar_+v]=pmg->CalculateTotal(v);
       pb=pb->next;
     }
 #ifdef MPI_PARALLEL
@@ -195,6 +196,7 @@ MultigridDriver::SetupMultigrid(void)
     }
     FillRootGridSource();
     mgroot_->RestrictFMGSource();
+    current_level_=0;
   }
   return;
 }
@@ -208,8 +210,9 @@ void MultigridDriver::CollectSource(void)
 {
   MeshBlocks *pb=pblock_;
   while(pb!=NULL) {
+    Multigrid *pmg=GetMultigridBlock(pb);
     for(int v=0; v<nvar_; v++)
-      rootbuf_[pb->gid*nvar_+v]=pb->pmggrav->GetRootSource(v);
+      rootbuf_[pb->gid*nvar_+v]=pmg->GetRootSource(v);
     pb=pb->next;
   }
 #ifdef MPI_PARALLEL
@@ -243,42 +246,155 @@ void MultigridDriver::FillRootGrid(void)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::SolveVCycle(int startlevel)
-//  \brief Solve the V-cycle starting from startlevel
+//! \fn void MultigridDriver::FMGProlongate(void)
+//  \brief Prolongation for FMG Cycle
 
-void MultigridDriver::SolveVCycle(int startlevel)
+void MultigridDriver::FMGProlongate(void)
 {
-  int mblevel=startlevel-nrootlevel_+1;
-  int rtlevel=std::min(nrootlevel_-1, startlevel);
-  if(startlevel >= nrootlevel_) {
-    mgtlist_->SetVCycleToCoarser();
-    for(int mblev=mblevel; mblev>0; mblev--)
+  if(current_level_ >= nrootlevel_) {
+    if(current_level_==nrootlevel_)
+      TransferFromRootToBlocks(true);
+    else {
+      mgtlist_->SetMGTaskListToCoarser(nsmooth);
       mgtlist_->DoTaskList(this);
-    CollectSource();
-    FillRootGrid();
+    }
   }
-  for(int nrlev=rtlevel; nrlev>0; nrlev--) {
-    mgroot_->ApplyPhysicalBoundary_();
-    mgroot_->Smooth(0);
-    mgroot_->ApplyPhysicalBoundary_();
-    mgroot_->Smooth(1);
-    mgroot_->Restrict();
+  else { // root grid
+    for(int n=0; n<nsmooth; n++) {
+      mgroot_->ApplyPhysicalBoundary();
+      mgroot_->FMGProlongate();
+    }
   }
+  current_level++;
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::TransferFromRootToBlock(bool fmgflag)
+//  \brief Transfer the data from the root grid to the coarsest level of each MeshBlock
+
+void MultigridDriver::TransferFromRootToBlock(bool fmgflag)
+{
+  MeshBlock *pb=pblock_;
+  AthenaArray<Real> &src=mgroot_->GetCurrentData();
+  if(pmy_mesh_->multilevel) {
+    // *** implement later ***
+  }
+  else {
+    while(pb!=NULL) {
+      Multigrid *pmg=GetMultigridBlock(pb);
+      LogicalLocation &loc=pb->loc;
+      pmg_->SetFromRootGrid(src, loc.lx1, loc.lx2, loc.lx3);
+      if(fmgflag) pmg->FMGProlongate();
+      else pmg->ProlongateAndCorrect();
+      pb=pb->next;
+    }
+  }
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::OneStepUpward(int nsmooth)
+//  \brief smoothing and restriction one level
+
+void MultigridDriver::OneStepToFiner(int nsmooth)
+{
+  if(current_level_ >= nrootlevel_) {
+    mgtlist_->SetMGTaskListToFiner(nsmooth);
+    mgtlist_->DoTaskList(this);
+    if(current_level_==nrootlevel_) {
+      CollectSource();
+      FillRootGrid();
+    }
+  }
+  else { // root grid
+    mgroot_->ApplyPhysicalBoundary();
+    mgroot_->ProlongateAndCorrect();
+    for(int n=0; n<nsmooth; n++) {
+      mgroot_->ApplyPhysicalBoundary();
+      mgroot_->Smooth(0);
+      mgroot_->ApplyPhysicalBoundary();
+      mgroot_->Smooth(1);
+    }
+  }
+  current_level--;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::OneStepToCoarser(int nsmooth)
+//  \brief smoothing and restriction one level
+
+void MultigridDriver::OneStepToCoarser(int nsmooth)
+{
+  if(current_level_ >= nrootlevel_) {
+    if(current_level_==nrootlevel_)
+      TransferFromRootToBlocks(0);
+    else {
+      mgtlist_->SetMGTaskListToCoarser(nsmooth);
+      mgtlist_->DoTaskList(this);
+    }
+  }
+  else { // root grid
+    mgroot_->ApplyPhysicalBoundary();
+    mgroot_->ProlongateAndCorrect();
+    for(int n=0; n<nsmooth; n++) {
+      mgroot_->ApplyPhysicalBoundary();
+      mgroot_->Smooth(0);
+      mgroot_->ApplyPhysicalBoundary();
+      mgroot_->Smooth(1);
+    }
+  }
+  current_level++;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::SolveVCycle(int npresmooth, int npostsmooth)
+//  \brief Solve the V-cycle starting from the current level
+
+void MultigridDriver::SolveVCycle(void)
+{
+  int startlevel=current_level_;
+  while(current_level_>0)
+    OneStepToFiner(npresmooth);
   SolveCoarsestGrid();
-  for(int nrlev=0; nrlev<=rtlevel; nrlev++) {
-    mgroot_->ApplyPhysicalBoundary_();
-    mgroot_->ProlongAndCorrect();
-    mgroot_->ApplyPhysicalBoundary_();
-    mgroot_->Smooth(0);
-    mgroot_->ApplyPhysicalBoundary_();
-    mgroot_->Smooth(1);
-  }
-  if(startlevel >= nrootlevel_) {
-    mblevel=startlevel-nrootlevel_+1;
-    TransferFromRootToBlocks();
-    mgtlist_->SetVCycleToFiner();
-    for(int mblev=1; mblev<=rtlevel; mblev--)
-      mgtlist_->DoTaskList(this);
+  while(current_level_<=startlevel)
+    OneStepToFiner(npresmooth);
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::SolveFCycle(int npresmooth, int npostsmooth)
+//  \brief Solve the F-cycle starting from the current level
+
+void MultigridDriver::SolveFCycle(void)
+{
+  int startlevel=current_level_;
+  while(current_level_>0)
+    OneStepToFiner(npresmooth);
+  SolveCoarsestGrid();
+  while(current_level_<=startlevel)
+    OneStepToFiner(npresmooth);
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::SolveFMGCycle(void)
+//  \brief Solve the FMG Cycle
+
+void MultigridDriver::SolveFMGCycle(void)
+{
+  for(int lev=0; lev<=ntotal_level_; lev++) {
+    if(mode_==0)
+      SolveVCycle();
+    else if(mode_==1)
+      SolveFCycle();
+    FMGProlongate();
   }
   return;
 }
@@ -288,12 +404,11 @@ void MultigridDriver::SolveVCycle(int startlevel)
 //! \fn void MultigridDriver::SolveCoarsestGrid(void)
 //  \brief Solve the coarsest root grid
 
-void MultigridDriver::SolveCoarsestGrid(void)
+virtual void MultigridDriver::SolveCoarsestGrid(void)
 {
   int ni=std::max(pmy_mesh->nrbx1, std::max(pmy_mesh->nrbx2, pmy_mesh->nrbx3));
-  if(fperiodic_ && ni==1)
-    // trivial case - all zero
-    mgroot_->ZeroClearData();
+  if(fperiodic_ && ni==1) // trivial case - all zero
+    return;
   else {
     for(int i=0; i<ni; ni++) { // iterate ni times
       mgroot_->ApplyPhysicalBoundary();
@@ -305,10 +420,40 @@ void MultigridDriver::SolveCoarsestGrid(void)
       Real vol=(pm->mesh_size.(x1max-x1min)*pm->mesh_size.(x2max-x2min)
                                            *pm->mesh_size.(x3max-x3min));
       for(int v=0; v<nvar_; v++) {
-        Real ave=pmg->CalculateTotalData(v)/vol;
+        Real ave=pmg->CalculateTotal(v)/vol;
         pmg->SubtractAverage(1, v, ave);
       }
     }
   }
   return;
 }
+
+
+//----------------------------------------------------------------------------------------
+//! \fn Real MultigridDriver::CalculateDefectNorm(int n, int nrm)
+//  \brief calculate the defect norm
+
+Real MultigridDriver::CalculateDefectNorm(int n, int nrm)
+{
+  MeshBlocks *pb=pblock_;
+  Real norm=0.0;
+  while(pb!=NULL) {
+    Multigrid *pmg=GetMultigridBlock(pb);
+    if(nrm==0)
+      norm=std::max(norm, pmg->CauclateDefectNorm(n, nrm));
+    else
+      norm+=pmg->CauclateDefectNorm(n, nrm);
+    pb=pb->next;
+  }
+#ifdef MPI_PARALLEL
+  if(nrm==0)
+    MPI_Allreduce(MPI_IN_PLACE,&norm,1,MPI_ATHENA_REAL,MPI_MAX,MPI_COMM_GRAVITY);
+  else
+    MPI_Allreduce(MPI_IN_PLACE,&norm,1,MPI_ATHENA_REAL,MPI_SUM,MPI_COMM_GRAVITY);
+#endif
+  if(nrm==2)
+    norm=std::sqrt(norm);
+
+  return norm;
+}
+

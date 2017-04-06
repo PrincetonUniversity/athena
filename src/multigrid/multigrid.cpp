@@ -20,6 +20,79 @@
 #include "./multigrid.hpp"
 
 
+
+//----------------------------------------------------------------------------------------
+//! \fn void Multigrid::Multigrid(MeshBlock *pmb, int invar, int nx, int ny, int nz,
+//                                RegionSize isize, MGBoundaryFunc_t *MGBoundary)
+//  \brief Multigrid constructor
+
+void Multigrid::Multigrid(MeshBlock *pmb, int invar, int nx, int ny, int nz,
+                          RegionSize isize, MGBoundaryFunc_t *MGBoundary)
+{
+  pmy_block_=pmb;
+  size_=isize;
+  nvar_=invar;
+  ngh_=1;
+  nx_=nx, ny_=ny, nz_=nz;
+  rdx_=(size_.x1max-size_.x1min)/(Real)nx;
+  rdy_=(size_.x2max-size_.x2min)/(Real)ny;
+  rdz_=(size_.x3max-size_.x3min)/(Real)nz;
+
+  nlevel_=0;
+  int n = std::min(nx,std::min(ny, nz));
+  for(int l=0; l<20; l++) {
+    if((1<<l) == n) {
+      nlevel_=l+1;
+      break;
+    }
+  }
+
+  for(int i=0; i<6; i++)
+    MGBoundaryFunction_[i]=MGBoundary[i];
+  if(pmb!=NULL) { // not root grid
+      if(pmb->pmy_mesh->multilevel==false)
+        ngh_=2;
+      for(int i=0; i<6; i++) {
+        if(pmb->block_bcs[i]==PERIODIC_BNDRY || pmb->block_bcs[i]==BLOCK_BNDRY)
+          MGBoundaryFunction_[i]=NULL;
+      }
+    }
+  }
+
+  // allocate arrays
+  u_ = new AthenaArray<Real>[nlevel_];
+  src_ = new AthenaArray<Real>[nlevel_];
+  fmgsrc_ = new AthenaArray<Real>[nlevel_];
+  def_ = new AthenaArray<Real>[nlevel_];
+  for(int l=nlevel_-1; l>=0; l++) {
+    int ll=nlevel_-1-l;
+    int ncx=(nx>>ll)+2*ngh, ncy=(ny>>ll)+2*ngh, ncz=(nz>>ll)+2*ngh;
+    u_[l].NewAthenaArray(nvar,ncz,ncy,ncx);
+    fmgsrc_[l].NewAthenaArray(nvar,ncz,ncy,ncx);
+    def_[l].NewAthenaArray(nvar,ncz,ncy,ncx);
+  }
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn virtual void Multigrid::~Multigrid
+//  \brief Multigrid destroctor
+
+virtual void Multigrid::~Multigrid()
+{
+  for(int l=0; l<nlevel_; l++) {
+    u_[l].DeleteAthenaArray();
+    src_[l].DeleteAthenaArray();
+    fmgsrc_[l].DeleteAthenaArray();
+    def_[l].DeleteAthenaArray();
+  }
+  delete [] u_;
+  delete [] src_;
+  delete [] fmgsrc_;
+  delete [] def_;
+}
+
+
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh)
 //  \brief Fill the active zone of the finest level
@@ -162,6 +235,18 @@ void Multigrid::ZeroClearData(void)
 
 
 //----------------------------------------------------------------------------------------
+//! \fn void Multigrid::SetFMGSource(void)
+//  \brief Copy the restricted Source term to the source array
+void Multigrid::SetFMGSource(void)
+{
+  AthenaArray<Real> &src=fmgsrc_[current_level_];
+  AthenaArray<Real> &dst=src_[current_level_];
+  std::memcpy(dst.data(), src.data(), src.GetSizeInBytes());
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
 //! \fn void Multigrid::ApplyPhysicalBoundaries(void)
 //  \brief A
 
@@ -223,6 +308,8 @@ void Multigrid::Restrict(void)
   AthenaArray<Real> &src=def_[current_level_];
   int ll=nlevel_-current_level_;
   int is, ie, js, je, ks, ke;
+
+  CalculateDefect();
   is=js=ks=ngh_;
   ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
 #pragma ivdep
@@ -241,6 +328,7 @@ void Multigrid::Restrict(void)
     }
   }
   current_level_--;
+  ZeroClearData();
   return;
 }
 
@@ -345,20 +433,34 @@ void Multigrid::FMGProlongate(void)
     }
   }
   current_level_++;
+  SetFMGSource();
   return;
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void Multigrid::SetFMGSource(void)
-//  \brief Copy the restricted Source term to the source array
-void Multigrid::SetFMGSource(void)
+//! \fn void Multigrid::SetFromRootGrid(AthenaArray<Real> &src, int ci, int cj, int ck)
+//  \brief Load the data from the root grid
+void Multigrid::SetFromRootGrid(AthenaArray<Real> &src, int ci, int cj, int ck)
 {
-  AthenaArray<Real> &src=fmgsrc_[current_level_];
-  AthenaArray<Real> &dst=src_[current_level_];
-  std::memcpy(dst.data(), src.data(), src.GetSizeInBytes());
+  current_level_=0;
+  AthenaArray<Real> &dst=u_[current_level_];
+#pragma ivdep
+  for(int n=0; n<nvar; n++) {
+#pragma ivdep
+    for(int k=ck-1, tk=ngh_-1; k<=ck+1; k++, tk++) {
+#pragma ivdep
+      for(int j=cj-1, tj=ngh_-1; j<=cj+1; j++, tj++) {
+#pragma ivdep
+        for(int i=ci-1, ti=ngh_-1; i<=ci+1; i++, ti++)
+          dst(n,tk,tj,ti)=src(n,ck,cj,ci);
+      }
+    }
+  }
   return;
 }
+
+
 
 
 //----------------------------------------------------------------------------------------
@@ -406,19 +508,19 @@ Real Multigrid::CalculateDefectNorm(int n, int nrm)
           norm+=SQR(def(n,k,j,i));
       }
     }
-    norm=std::sqrt(norm);
   }
 \  return norm;
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn Real Multigrid::CalculateTotalSource(int n)
-//  \brief calculate the sum of the source function
+//! \fn Real Multigrid::CalculateTotal(int type, int n)
+//  \brief calculate the sum of the array (type: 0=source, 1=u)
 
-Real CalculateTotalSource(int n)
+Real CalculateTotal(int type, int n)
 {
-  AthenaArray<Real> &src=src_[nlevel_-1];
+  if(type==0) src.InitWithShallowCopy(src_[current_level_]);
+  else src.InitWithShallowCopy(u_[current_level_]);
   Real s=0.0;
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
@@ -438,10 +540,10 @@ Real CalculateTotalSource(int n)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn Real Multigrid::SubtractAverageSource(int type, int n, Real ave)
+//! \fn Real Multigrid::SubtractAverage(int type, int n, Real ave)
 //  \brief subtract the average value (type: 0=source, 1=u)
 
-void Multigrid::SubtractAverageSource(int type, int n, Real ave)
+void Multigrid::SubtractAverage(int type, int n, Real ave)
 {
   AthenaArray<Real> dst;
   if(type==0) dst.InitWithShallowCopy(src_[nlevel_-1]);
@@ -460,77 +562,6 @@ void Multigrid::SubtractAverageSource(int type, int n, Real ave)
         dst(n,k,j,i)-=ave;
     }
   }
-}
-
-
-//----------------------------------------------------------------------------------------
-//! \fn void Multigrid::Multigrid(MeshBlock *pmb, int invar, int nx, int ny, int nz,
-//                                RegionSize isize, MGBoundaryFunc_t *MGBoundary)
-//  \brief Multigrid constructor
-
-void Multigrid::Multigrid(MeshBlock *pmb, int invar, int nx, int ny, int nz,
-                          RegionSize isize, MGBoundaryFunc_t *MGBoundary)
-{
-  pmy_block_=pmb;
-  size_=isize;
-  nvar_=invar;
-  ngh_=1;
-  nx_=nx, ny_=ny, nz_=nz;
-  rdx_=(size_.x1max-size_.x1min)/(Real)nx;
-  rdy_=(size_.x2max-size_.x2min)/(Real)ny;
-  rdz_=(size_.x3max-size_.x3min)/(Real)nz;
-
-  nlevel_=0;
-  int n = std::min(nx,std::min(ny, nz));
-  for(int l=0; l<20; l++) {
-    if((1<<l) == n) {
-      nlevel_=l+1;
-      break;
-    }
-  }
-
-  for(int i=0; i<6; i++)
-    MGBoundaryFunction_[i]=MGBoundary[i];
-  if(pmb!=NULL) { // not root grid
-      if(pmb->pmy_mesh->multilevel==false)
-        ngh_=2;
-      for(int i=0; i<6; i++) {
-        if(pmb->block_bcs[i]==PERIODIC_BNDRY || pmb->block_bcs[i]==BLOCK_BNDRY)
-          MGBoundaryFunction_[i]=NULL;
-      }
-    }
-  }
-
-  // allocate arrays
-  u_ = new AthenaArray<Real>[nlevel_];
-  src_ = new AthenaArray<Real>[nlevel_];
-  fmgsrc_ = new AthenaArray<Real>[nlevel_];
-  def_ = new AthenaArray<Real>[nlevel_];
-  for(int l=nlevel_-1; l>=0; l++) {
-    int ll=nlevel_-1-l;
-    int ncx=(nx>>ll)+2*ngh, ncy=(ny>>ll)+2*ngh, ncz=(nz>>ll)+2*ngh;
-    u_[l].NewAthenaArray(nvar,ncz,ncy,ncx);
-    fmgsrc_[l].NewAthenaArray(nvar,ncz,ncy,ncx);
-    def_[l].NewAthenaArray(nvar,ncz,ncy,ncx);
-  }
-}
-
-//----------------------------------------------------------------------------------------
-//! \fn virtual void Multigrid::~Multigrid
-//  \brief Multigrid destroctor
-
-virtual void Multigrid::~Multigrid()
-{
-  for(int l=0; l<nlevel_; l++) {
-    u_[l].DeleteAthenaArray();
-    src_[l].DeleteAthenaArray();
-    fmgsrc_[l].DeleteAthenaArray();
-    def_[l].DeleteAthenaArray();
-  }
-  delete [] u_;
-  delete [] src_;
-  delete [] fmgsrc_;
-  delete [] def_;
 }
 
 
