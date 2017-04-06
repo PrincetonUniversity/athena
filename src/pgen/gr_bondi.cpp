@@ -39,7 +39,7 @@ static Real TemperatureBisect(Real r, Real t_min, Real t_max);
 static Real TemperatureResidual(Real t, Real r);
 
 // Global variables
-static Real m;             // black hole mass
+static Real m, a;          // black hole mass and spin
 static Real n_adi, k_adi;  // hydro parameters
 static Real r_crit;        // sonic point radius
 static Real c1, c2;        // useful constants
@@ -100,6 +100,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
   // Get mass of black hole
   m = pcoord->GetMass();
+  m = pcoord->GetSpin();
 
   // Get ratio of specific heats
   Real gamma_adi = peos->GetGamma();
