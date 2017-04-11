@@ -1,0 +1,68 @@
+<comment>
+problem   = Kerlerian disk in cylindrical coordinates
+reference = 
+configure = --prob=disk --coord=cylindrical
+
+<job>
+problem_id  = disk      # problem ID: basename of output filenames
+
+<output1>
+file_type   = hdf5       # VTK data dump
+variable    = cons      #
+dt          = 0.628     # time increment between outputs
+
+<output2>
+file_type   = hst       # History data dump
+dt          = 0.00628   # time increment between outputs
+
+<time>
+cfl_number  = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim        = -1        # cycle limit
+tlim        = 6.28e1      $62.8      # time limit
+
+<mesh>
+nx1         = 512            # Number of zones in X1-direction
+x1min       = -5.0           # minimum value of X1
+x1max       = 5.0            # maximum value of X1
+ix1_bc      = outflow           # Inner-X1 boundary condition flag
+ox1_bc      = outflow           # Outer-X1 boundary condition flag
+#x1rat       = 1.009          # non-uniform grid ratio
+
+nx2         = 512            # Number of zones in X2-direction
+x2min       = -5.0           # minimum value of X2
+x2max       = 5.0            # maximum value of X2
+ix2_bc      = outflow        # Inner-X2 boundary condition flag
+ox2_bc      = outflow        # Outer-X2 boundary condition flag
+
+nx3         = 1              # Number of zones in X3-direction
+x3min       = -0.4           # minimum value of X3
+x3max       = 0.4            # maximum value of X3
+ix3_bc      = user           # Inner-X3 boundary condition flag
+ox3_bc      = user           # Outer-X3 boundary condition flag
+
+refinement  = None
+
+<hydro>
+gamma           = 1.66666667 # gamma = C_p/C_v
+iso_sound_speed = 0.01        # isothermal sound speed
+dfloor          = 1.e-6
+pfloor          = 1.e-9
+
+<problem>
+GM              = 1.0
+r0              = 1.0
+rsoft           = 0.05
+rin             = 2.0
+rout            = 3.0
+rho0            = 1.0
+tsink           = 0.01
+p0_over_r0      = 0.0001
+p0overr0        = 0.0001
+pslope          = 0.0 #-0.5
+dslope          = 0.0 #-2.25
+
+
+<meshblock>
+nx1 = 256 
+nx2 = 256
+nx3 = 1 
