@@ -161,5 +161,6 @@ Real FieldDiffusion::Eta_Ohmic(const int k, const int j, const int i)
   if(ieta_==0) return etaO_;
   else {
     std::cout << "ieta_= " << ieta_ << " not implemented yet" << std::endl;
+    return 0.0;
   }
 }

@@ -29,22 +29,30 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin)
 
   // read point mass or constant acceleration parameters from input block
 
-  // set the point source only when the coordinate is spherical or 2D cylindrical.
+  //// set the point source only when the coordinate is spherical or 2D cylindrical.
+  //gm_ = pin->GetOrAddReal("problem","GM",0.0);
+  //if (gm_ != 0.0) {
+  //  if (COORDINATE_SYSTEM == "spherical_polar"
+  //  || (COORDINATE_SYSTEM == "cylindrical" && phyd->pmy_block->block_size.nx3==1)) {
+  //    hydro_sourceterms_defined = true;
+  //  }
+  //  else {
+  //    std::stringstream msg;
+  //    msg << "### FATAL ERROR in HydroSourceTerms constructor" << std::endl
+  //        << "The point source gravity works only in spherical polar coordinates "
+  //        << "or in 2D cylindrical coordinates." << std::endl
+  //        << "Check <problem> GM parameter in the input file." << std::endl;
+  //    throw std::runtime_error(msg.str().c_str());
+  //  }
+  //}
+  //[JMSHI
   gm_ = pin->GetOrAddReal("problem","GM",0.0);
   if (gm_ != 0.0) {
-    if (COORDINATE_SYSTEM == "spherical_polar"
-    || (COORDINATE_SYSTEM == "cylindrical" && phyd->pmy_block->block_size.nx3==1)) {
-      hydro_sourceterms_defined = true;
-    }
-    else {
-      std::stringstream msg;
-      msg << "### FATAL ERROR in HydroSourceTerms constructor" << std::endl
-          << "The point source gravity works only in spherical polar coordinates " 
-          << "or in 2D cylindrical coordinates." << std::endl
-          << "Check <problem> GM parameter in the input file." << std::endl;
-      throw std::runtime_error(msg.str().c_str());
-    }
+    hydro_sourceterms_defined = true;
+    rsoft_ = pin->GetOrAddReal("problem","rsoft",0.0);
   }
+  //JMSHI]
+
   g1_ = pin->GetOrAddReal("hydro","grav_acc1",0.0);
   if (g1_ != 0.0) hydro_sourceterms_defined = true;
 

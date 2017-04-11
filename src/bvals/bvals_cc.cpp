@@ -238,7 +238,7 @@ void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock&
   if(nb.ox1==0) {
     si=pmb->cis, ei=pmb->cie;
     if((pmb->loc.lx1&1L)==0L) ei+=cng;
-    else             si-=cng; 
+    else             si-=cng;
   }
   else if(nb.ox1>0)  si=pmb->cie+1,   ei=pmb->cie+cng;
   else               si=pmb->cis-cng, ei=pmb->cis-1;
@@ -246,7 +246,7 @@ void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock&
     sj=pmb->cjs, ej=pmb->cje;
     if(pmb->block_size.nx2 > 1) {
       if((pmb->loc.lx2&1L)==0L) ej+=cng;
-      else             sj-=cng; 
+      else             sj-=cng;
     }
   }
   else if(nb.ox2>0)  sj=pmb->cje+1,   ej=pmb->cje+cng;
@@ -255,7 +255,7 @@ void BoundaryValues::SetHydroBoundaryFromCoarser(Real *buf, const NeighborBlock&
     sk=pmb->cks, ek=pmb->cke;
     if(pmb->block_size.nx3 > 1) {
       if((pmb->loc.lx3&1L)==0L) ek+=cng;
-      else             sk-=cng; 
+      else             sk-=cng;
     }
   }
   else if(nb.ox3>0)  sk=pmb->cke+1,   ek=pmb->cke+cng;
@@ -353,7 +353,7 @@ void BoundaryValues::SetHydroBoundaryFromFiner(AthenaArray<Real> &dst, Real *buf
       }
     }
   }
-  else 
+  else
     BufferUtility::Unpack4DData(buf, dst, 0, NHYDRO-1, si, ei, sj, ej, sk, ek, p);
   return;
 }
@@ -427,7 +427,7 @@ void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst,
       SetHydroBoundaryFromFiner(dst, hydro_recv_[nb.bufid], nb);
     hydro_flag_[nb.bufid] = BNDRY_COMPLETED; // completed
   }
- 
+
   if (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY)
     PolarSingleHydro(dst);
 
@@ -437,7 +437,7 @@ void BoundaryValues::ReceiveHydroBoundaryBuffersWithWait(AthenaArray<Real> &dst,
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::PolarSingleHydro(AthenaArray<Real> &dst)
 //
-// \brief  single CPU in the azimuthal direction for the polar boundary 
+// \brief  single CPU in the azimuthal direction for the polar boundary
 
 void BoundaryValues::PolarSingleHydro(AthenaArray<Real> &dst)
 {
