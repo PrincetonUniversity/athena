@@ -40,10 +40,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real da   = pin->GetOrAddReal("problem","damb",1.0);
   Real prat = pin->GetReal("problem","prat");
   Real drat = pin->GetOrAddReal("problem","drat",1.0);
-  Real b0,theta;
+  Real b0,angle;
   if (MAGNETIC_FIELDS_ENABLED) {
     b0 = pin->GetReal("problem","b0");
-    theta = (PI/180.0)*pin->GetReal("problem","angle");
+    angle = (PI/180.0)*pin->GetReal("problem","angle");
   }
   Real gamma = peos->GetGamma();
   Real gm1 = gamma - 1.0;
@@ -122,26 +122,61 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
   // initialize interface B and total energy
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je; j++) {
-    for (int i=is; i<=ie+1; i++) {
-      pfield->b.x1f(k,j,i) = b0*cos(theta);
-    }}}
-    for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je+1; j++) {
-    for (int i=is; i<=ie; i++) {
-      pfield->b.x2f(k,j,i) = b0*sin(theta);
-    }}}
-    for (int k=ks; k<=ke+1; k++) {
-    for (int j=js; j<=je; j++) {
-    for (int i=is; i<=ie; i++) {
-      pfield->b.x3f(k,j,i) = 0.0;
-    }}}
-    for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je; j++) {
-    for (int i=is; i<=ie+1; i++) {
-      phydro->u(IEN,k,j,i) += 0.5*b0*b0;
-    }}}
+    for (int k = ks; k <= ke; ++k) {
+      for (int j = js; j <= je; ++j) {
+        for (int i = is; i <= ie+1; ++i) {
+          if (COORDINATE_SYSTEM == "cartesian") {
+            pfield->b.x1f(k,j,i) = b0 * cos(angle);
+          } else if (COORDINATE_SYSTEM == "cylindrical") {
+            Real phi = pcoord->x2v(j);
+            pfield->b.x1f(k,j,i) = b0 * (cos(angle) * cos(phi) - sin(angle) * sin(phi));
+          } else if (COORDINATE_SYSTEM == "spherical_polar") {
+            Real theta = pcoord->x2v(j);
+            Real phi = pcoord->x3v(k);
+            pfield->b.x1f(k,j,i) = b0 * abs(sin(theta))
+                * (cos(angle) * cos(phi) - sin(angle) * sin(phi));
+          }
+        }
+      }
+    }
+    for (int k = ks; k <= ke; ++k) {
+      for (int j = js; j <= je+1; ++j) {
+        for (int i = is; i <= ie; ++i) {
+          if (COORDINATE_SYSTEM == "cartesian") {
+            pfield->b.x2f(k,j,i) = b0 * sin(angle);
+          } else if (COORDINATE_SYSTEM == "cylindrical") {
+            Real phi = pcoord->x2v(j);
+            pfield->b.x2f(k,j,i) = -b0 * (sin(angle) * cos(phi) + cos(angle) * sin(phi));
+          } else if (COORDINATE_SYSTEM == "spherical_polar") {
+            Real theta = pcoord->x2v(j);
+            Real phi = pcoord->x3v(k);
+            pfield->b.x2f(k,j,i) = b0 * cos(theta)
+                * (cos(angle) * cos(phi) - sin(angle) * sin(phi));
+            if (sin(theta) < 0.0)
+              pfield->b.x2f(k,j,i) *= -1.0;
+          }
+        }
+      }
+    }
+    for (int k = ks; k <= ke+1; ++k) {
+      for (int j = js; j <= je; ++j) {
+        for (int i = is; i <= ie; ++i) {
+          if (COORDINATE_SYSTEM == "cartesian" || COORDINATE_SYSTEM == "cylindrical") {
+            pfield->b.x3f(k,j,i) = 0.0;
+          } else if (COORDINATE_SYSTEM == "spherical_polar") {
+            Real phi = pcoord->x3v(k);
+            pfield->b.x3f(k,j,i) = -b0 * (sin(angle) * cos(phi) + cos(angle) * sin(phi));
+          }
+        }
+      }
+    }
+    for (int k = ks; k <= ke; ++k) {
+      for (int j = js; j <= je; ++j) {
+        for (int i = is; i <= ie; ++i) {
+          phydro->u(IEN,k,j,i) += 0.5*b0*b0;
+        }
+      }
+    }
   }
 
 }
