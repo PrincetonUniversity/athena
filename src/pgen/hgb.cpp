@@ -76,7 +76,6 @@
 //======================================================================================
 
 Real Lx,Ly,Lz; // root grid size, global to share with output functions
-AthenaArray<Real> volume; // 1D array of volumes
 
 /*==============================================================================
  * PRIVATE FUNCTION PROTOTYPES:
@@ -117,27 +116,22 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   AllocateUserHistoryOutput(2);
   EnrollUserHistoryOutput(0, hst_BxBy, "-BxBy");
   EnrollUserHistoryOutput(1, hst_dVxVy, "dVxVy");
+// Read problem parameters
+  Omega_0 = pin->GetOrAddReal("problem","Omega0",1.0e-3);
+  qshear  = pin->GetOrAddReal("problem","qshear",1.5);
+  //std::cout << "[hgb.cpp]: initusermeshdata omg,qshear= " << Omega_0 << qshear << std::endl;
   return;
 }
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
-  // allocate 1D array for cell volume used in usr def history
-  int ncells1 = block_size.nx1 + 2*(NGHOST);
-  volume.NewAthenaArray(ncells1);
 
-  FILE *fp;
-  Real xFP[160],dFP[160],vxFP[160],vyFP[160];
   Real SumRvx=0.0, SumRvy=0.0, SumRvz=0.0;
-  static int frst=1; // flag so new history variables enrolled only once
-
   if (pmy_mesh->mesh_size.nx2 == 1){
     std::cout << "[hgb.cpp]: HGB only works on a 2D or 3D grid" << std::endl;
   }
 
-// Read problem parameters
-  Omega_0 = pin->GetOrAddReal("problem","Omega0",1.0e-3);
-  qshear  = pin->GetOrAddReal("problem","qshear",1.5);
+// Read problem parameters for initial conditions
   Real amp = pin->GetReal("problem","amp");
   int ipert = pin->GetOrAddInteger("problem","ipert", 1);
 
@@ -520,6 +514,10 @@ static Real hst_BxBy(MeshBlock *pmb, int iout)
   Real bxby=0;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   AthenaArray<Real> &b = pmb->pfield->bcc;
+  AthenaArray<Real> volume; // 1D array of volumes
+  // allocate 1D array for cell volume used in usr def history
+  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
+  volume.NewAthenaArray(ncells1);
 
   for(int k=ks; k<=ke; k++) {
     for(int j=js; j<=je; j++) {
@@ -529,6 +527,7 @@ static Real hst_BxBy(MeshBlock *pmb, int iout)
       }
     }
   }
+  volume.DeleteAthenaArray();
 
   return bxby;
 }
@@ -539,6 +538,10 @@ static Real hst_dVxVy(MeshBlock *pmb, int iout)
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   AthenaArray<Real> &w = pmb->phydro->w;
   Real vshear=0.0;
+  AthenaArray<Real> volume; // 1D array of volumes
+  // allocate 1D array for cell volume used in usr def history
+  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
+  volume.NewAthenaArray(ncells1);
 
   for(int k=ks; k<=ke; k++) {
     for(int j=js; j<=je; j++) {
@@ -550,5 +553,6 @@ static Real hst_dVxVy(MeshBlock *pmb, int iout)
     }
   }
 
+  volume.DeleteAthenaArray();
   return dvxvy;
 }
