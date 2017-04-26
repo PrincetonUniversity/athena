@@ -34,6 +34,8 @@ static Real DenProfileCyl(const Real rad, const Real phi, const Real z);
 static Real PoverR(const Real rad, const Real phi, const Real z);
 static void VelProfileCyl(const Real rad, const Real phi, const Real z,
   Real &v1, Real &v2, Real &v3);
+static Real RampFunc(const Real rad, const Real phi, const Real z,
+					 const Real v1, const Real v2, const Real v3);
 //
 //// User-defined boundary conditions for disk simulations
 //void DiskInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
@@ -54,6 +56,7 @@ static Real gm0, r0, rho0, dslope, p0_over_r0, pslope, gamma_gas;
 static Real dfloor;
 static Real rsoft,rin,rout;
 static Real tsink; // mass removing time scale
+static Real rbuf1,rbuf2;
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -71,6 +74,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   rin = pin->GetOrAddReal("problem","rin",0.0);
   rout = pin->GetOrAddReal("problem","rout",5.0);
   tsink = pin->GetOrAddReal("problem","tsink",100.0);
+  rbuf1 = pin->GetOrAddReal("problem","rbuf1",8.0);
+  rbuf2 = pin->GetOrAddReal("problem","rbuf2",10.0);
 
   // Get parameters for initial density and velocity
   rho0 = pin->GetReal("problem","rho0");
@@ -125,10 +130,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     for (int i=is; i<=ie; ++i) {
       GetCylCoord(pcoord,rad,phi,z,i,j,k); // convert to cylindrical coordinates
       // compute initial conditions in cylindrical coordinates
-      if (rad >= rin && rad <= rout)
-        phydro->u(IDN,k,j,i) = DenProfileCyl(rad,phi,z);
-      else
-        phydro->u(IDN,k,j,i) = dfloor;
+	  // 1) pure power law with truncation radii rin rout
+      //if (rad >= rin && rad <= rout)
+      //  phydro->u(IDN,k,j,i) = DenProfileCyl(rad,phi,z);
+      //else
+      //  phydro->u(IDN,k,j,i) = dfloor;
+	  // 2) power law profile with exponential taper interior to rin
+	  phydro->u(IDN,k,j,i) = DenProfileCyl(rad,phi,z)*exp(-pow((rad/rin),-10.0));
       VelProfileCyl(rad,phi,z,v1,v2,v3);
       phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i)*v1;
       phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*v2;
@@ -198,23 +206,62 @@ static void VelProfileCyl(const Real rad, const Real phi, const Real z,
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \f  computes ramp function R/\tau
+// R(x) = a*x^2 + b*x  + c; where a=1/(r2^2-r1r2), and b=-a*r1
+// tau  = 2PI/Omega(r1)
+
+static Real RampFunc(const Real rad, const Real phi, const Real z,
+					 const Real v1, const Real v2, const Real v3)
+{
+  Real ramp,tau;
+  if (rad >= rbuf2) {
+	ramp = 1000.0;
+  } else if (rad >= rbuf1) {
+    Real fac = 1.0/(SQR(rbuf2)-rbuf1*rbuf2);
+    ramp = fac*SQR(rad)-fac*rbuf1*rad;
+  } else {
+	  ramp = 0.0;
+  }
+  tau = 2.0*PI/sqrt(gm0/rbuf1/SQR(rbuf1));
+  return ramp/tau;
+}
+
 void MeshBlock::UserWorkInLoop(void)
 {
+  // apply sink cells within the rsink( ususally >= rsoft)
   for(int k=ks; k<=ke; k++) {
     for(int j=js; j<=je; j++) {
       for(int i=is; i<=ie; i++) {
         Real x1 = pcoord->x1v(i);
         Real x2 = pcoord->x2v(j);
         Real x3 = pcoord->x3v(k);
-        Real rad = sqrt(SQR(x1)+SQR(x2)+SQR(x3));
-        if (rad <= rsoft) { // sink cells within r<=rsoft
+        Real rad, phi, z;
+        if (rad <= rsoft) { // sink cells within r<=rsink
           phydro->u(IDN,k,j,i) -= pmy_mesh->dt*phydro->u(IDN,k,j,i)/tsink;
         }
+		// apply buffer zones within [rbuf1,rbuf2] to quench m=4 mode
+        GetCylCoord(pcoord,rad,phi,z,i,j,k); // convert to cylindrical coordinates
+		if (rad >= rbuf1) {
+		  Real v1, v2, v3;
+		  Real den0 = DenProfileCyl(rad,phi,z);
+          VelProfileCyl(rad,phi,z,v1,v2,v3);
+		  Real ramp = RampFunc(rad,phi,z,v1,v2,v3);
+          phydro->u(IDN,k,j,i) -= pmy_mesh->dt*(phydro->u(IDN,k,j,i)-den0)*ramp;
+          phydro->u(IM1,k,j,i) -= pmy_mesh->dt*(phydro->u(IM1,k,j,i)-den0*v1)*ramp;
+          phydro->u(IM2,k,j,i) -= pmy_mesh->dt*(phydro->u(IM2,k,j,i)-den0*v2)*ramp;
+          phydro->u(IM3,k,j,i) -= pmy_mesh->dt*(phydro->u(IM3,k,j,i)-den0*v3)*ramp;
+          if (NON_BAROTROPIC_EOS){
+            Real p_over_r = PoverR(rad,phi,z);
+            Real eng0 = p_over_r*den0/(gamma_gas - 1.0);
+			eng0 += 0.5*den0*(SQR(v1)+SQR(v2)+SQR(v3));
+            phydro->u(IEN,k,j,i) -= pmy_mesh->dt*(phydro->u(IEN,k,j,i)-eng0)*ramp;
+          }
+		}
       }
     }
   }
 }
-
 
 ////----------------------------------------------------------------------------------------
 ////!\f: User-defined boundary Conditions: sets solution in ghost zones to initial values
