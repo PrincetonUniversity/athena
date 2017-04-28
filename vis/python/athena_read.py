@@ -197,9 +197,24 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
       level = max_level
     block_size = f.attrs['MeshBlockSize']
     root_grid_size = f.attrs['RootGridSize']
-    nx1 = root_grid_size[0] * 2**level if block_size[0] > 1 else 1
-    nx2 = root_grid_size[1] * 2**level if block_size[1] > 1 else 1
-    nx3 = root_grid_size[2] * 2**level if block_size[2] > 1 else 1
+    levels = f['Levels'][:]
+    logical_locations = f['LogicalLocations'][:]
+    nx_vals = []
+    for d in range(3):
+      if block_size[d] == 1 and root_grid_size[d] > 1:  # sum or slice
+        other_locations = [location for location in \
+            zip(levels, logical_locations[:,(d+1)%3], logical_locations[:,(d+2)%3])]
+        if len(set(other_locations)) == len(other_locations):  # effective slice
+          nx_vals.append(1)
+        else:  # nontrivial sum
+          nx_vals.append(2**level)
+      elif block_size[d] == 1:  # singleton dimension
+        nx_vals.append(1)
+      else:  # normal case
+        nx_vals.append(root_grid_size[d] * 2**level)
+    nx1 = nx_vals[0]
+    nx2 = nx_vals[1]
+    nx3 = nx_vals[2]
     lx1 = nx1 / block_size[0]
     lx2 = nx2 / block_size[1]
     lx3 = nx3 / block_size[2]
@@ -320,8 +335,6 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
     dataset_sizes = f.attrs['NumVariables'][:]
     dataset_sizes_cumulative = np.cumsum(dataset_sizes)
     variable_names = f.attrs['VariableNames'][:]
-    levels = f['Levels'][:]
-    logical_locations = f['LogicalLocations'][:]
     quantity_datasets = []
     quantity_indices = []
     for q in quantities:
@@ -355,7 +368,6 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
       restricted_data = np.zeros((lx3, lx2, lx1), dtype=bool)
 
     # Populate coordinate arrays
-    nx_vals = (nx1, nx2, nx3)
     center_funcs = (center_func_1, center_func_2, center_func_3)
     for d,nx,center_func in zip(range(1, 4), nx_vals, center_funcs):
       if nx == 1:
