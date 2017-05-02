@@ -25,7 +25,8 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin)
   hydro_diffusion_defined = false;
 
   // read parameters such as viscosity from input block
-  nuiso_ = pin->GetOrAddReal("problem","nuiso",0.0);
+  nuiso_ = pin->GetOrAddReal("problem","nuiso",0.0); // first coefficient
+  inu_   = pin->GetOrAddInteger("problem","inu",0);  // default constant nuiso
   if (nuiso_ != 0.0) {
     hydro_diffusion_defined = true;
     // Allocate memory for fluxes
@@ -190,16 +191,17 @@ void HydroDiffusion::AddEnergyFlux(const AthenaArray<Real> &bc, AthenaArray<Real
 //----------------------------------------------------------------------------------------
 //! \fn void HydroDiffusion::NewDtDiff(Real len, int k, int j, int i)
 //  \brief return the time step constraints due to explicit diffusion processes
-Real HydroDiffusion::NewDtDiff(Real len, int k, int j, int i)
+Real HydroDiffusion::NewDtDiff(const AthenaArray<Real> &prim, const Real len, const int k, const int j, const int i)
 {
   Real diff_dt;
+  Real cnuiso1 = nuiso1(prim,IM1,k,j,i);
   if(pmb_->block_size.nx3>1){
-    diff_dt = SQR(len)/6.0/nuiso_;
+    diff_dt = SQR(len)/6.0/cnuiso1;
   } else {
     if(pmb_->block_size.nx2>1)
-      diff_dt = SQR(len)/8.0/nuiso_;
+      diff_dt = SQR(len)/8.0/cnuiso1;
     else
-      diff_dt = SQR(len)/4.0/nuiso_;
+      diff_dt = SQR(len)/4.0/cnuiso1;
   }
   return diff_dt;
 }

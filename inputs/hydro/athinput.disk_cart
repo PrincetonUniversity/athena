@@ -1,7 +1,7 @@
 <comment>
-problem   = Kerlerian disk in cylindrical coordinates
+problem   = Kerlerian disk in cartesian coordinates
 reference = 
-configure = --prob=disk --coord=cylindrical
+configure = --prob=cart_disk --coord=cartesian
 
 <job>
 problem_id  = disk      # problem ID: basename of output filenames
@@ -44,7 +44,7 @@ refinement  = None
 
 <hydro>
 gamma           = 1.66666667 # gamma = C_p/C_v
-iso_sound_speed = 0.01        # isothermal sound speed
+iso_sound_speed = 0.05        # isothermal sound speed
 dfloor          = 1.e-6
 pfloor          = 1.e-9
 
@@ -54,12 +54,15 @@ r0              = 1.0
 rsoft           = 0.05
 rin             = 2.0
 rout            = 3.0
+rbuf1           = 4.0
+rbuf2           = 5.0
 rho0            = 1.0
-tsink           = 0.01
-p0_over_r0      = 0.0001
-p0overr0        = 0.0001
+tsink           = 50
+p0_over_r0      = 0.0025
+p0overr0        = 0.0025
 pslope          = 0.0 #-0.5
-dslope          = 0.0 #-2.25
+dslope          = -0.5 #-2.25
+nuiso           = 2.5e-4
 
 
 <meshblock>

@@ -36,8 +36,9 @@ public:
   void AddHydroDiffusionFlux(AthenaArray<Real> *flx);
   void AddEnergyFlux(const AthenaArray<Real> &bc, AthenaArray<Real> *flx);
   // viscosity
+  Real nuiso1(const AthenaArray<Real> &p, const int n, const int k, const int j, const int i);
   void Viscosity(const AthenaArray<Real> &p,const AthenaArray<Real> &c, AthenaArray<Real> *flx);
-  Real NewDtDiff(Real len, int k, int j, int i);
+  Real NewDtDiff(const AthenaArray<Real> &p,const Real len, const int k, const int j, const int i);
   //Real nuiso1(int n, int k, int j, int i);
   //Real cnuiso2(int k, int j, int i);
   void Divv(const AthenaArray<Real> &prim, AthenaArray<Real> &divv);
@@ -64,7 +65,7 @@ private:
   MeshBlock *pmb_;    // ptr to meshblock containing this HydroDiffusion
   Hydro *pmy_hydro_;  // ptr to Hydro containing this HydroDiffusion
   Coordinates *pco_;  // ptr to coordinates class
-  Real nuiso_;        // iso viscosity
+  Real nuiso_, inu_;        // iso viscosity and option flag
   AthenaArray<Real> divv_; // divergence of velocity
   AthenaArray<Real> x1area_,x2area_,x2area_p1_,x3area_,x3area_p1_;
   AthenaArray<Real> vol_;
