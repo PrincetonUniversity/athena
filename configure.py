@@ -310,8 +310,9 @@ if args['cxx'] == 'bgxl':
   makefile_options['PREPROCESSOR_FLAGS'] = ''
   makefile_options['COMPILER_FLAGS'] = \
       '-O3 -qhot=level=1:vector -qinline=level=5:auto -qipa=level=1:noobject' \
-      + ' -qmaxmem=150000 -qlanglvl=extended -qsuppress=1500-036 -qsuppress=1540-1401' \
-      + ' -qsuppress=1586-083 -qsuppress=1586-233 -qsuppress=1586-267'
+      + ' -qstrict=subnormals -qmaxmem=150000 -qlanglvl=extended -qsuppress=1500-036' \
+      + ' -qsuppress=1540-1401 -qsuppress=1586-083 -qsuppress=1586-233' \
+      + ' -qsuppress=1586-267'
   makefile_options['LINKER_FLAGS'] = makefile_options['COMPILER_FLAGS']
   makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'icc-phi':
