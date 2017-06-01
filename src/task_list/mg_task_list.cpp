@@ -44,7 +44,8 @@ void MultigridTaskList::DoTaskList(MultigridDriver *pmd)
 }
 
 
-//----------------------------------------------------------------------------------------//! \fn
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridTaskList::AddTask(uint64_t id, uint64_t dep)
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
 //  value of ntask.  
 
@@ -60,6 +61,9 @@ void MultigridTaskList::AddTask(uint64_t id, uint64_t dep)
       break;
     case (MG_CLEARBND):
       task_list_[ntasks].TaskFunc=MultigridTaskList::ClearBoundary;
+      break;
+    case (MG_RESETBND):
+      task_list_[ntasks].TaskFunc=MultigridTaskList::ClearAndStartBoundary;
       break;
     case (MG_SENDRED):
       task_list_[ntasks].TaskFunc=MultigridTaskList::SendBoundary;
@@ -105,39 +109,35 @@ void MultigridTaskList::AddTask(uint64_t id, uint64_t dep)
   return;
 }
 
-
-
 enum TaskStatus MultigridTaskList::StartReceive(Multigrid *pmg, int step)
 {
   int nc=pmg->GetCurrentNumberOfCells();
-  pmg->pmb->pbval->StartReceivingMultigrid(nc, BND_MGGRAV);
+  pmg->pmb->pbval->StartReceivingMultigrid(nc, pmg->btype);
   return TASK_SUCCESS;
 }
 
 enum TaskStatus MultigridTaskList::ClearBoundary(Multigrid *pmg, int step)
 {
-  pmg->pmb->pbval->ClearBoundaryMultigrid(BND_MGGRAV);
-  return TASK_SUCCESS;
+  pmg->pmb->pbval->ClearBoundaryMultigrid(pmg->btype);
+  return TASK_NEXT;
 }
 
 enum TaskStatus MultigridTaskList::SendBoundary(Multigrid *pmg, int step)
 {
   int nc=pmg->GetCurrentNumberOfCells();
   pmg->pmy_block->pbval->
-    SendMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, BND_MGGRAV);
+    SendMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btype);
   return TASK_SUCCESS;
 }
-
 
 enum TaskStatus MultigridTaskList::ReceiveBoundary(Multigrid *pmg, int step)
 {
   int nc=pmg->GetCurrentNumberOfCells();
   if(pmg->pmy_block->pbval->
-     ReceiveMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, BND_MGGRAV)== true)
-    return TASK_NEXT;
-  else return TASK_FAIL;
+     ReceiveMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btype)== false)
+    return TASK_FAIL;
+  return TASK_NEXT;
 }
-
 
 enum TaskStatus MultigridTaskList::SmoothRed(Multigrid *pmg, int step)
 {
@@ -145,35 +145,23 @@ enum TaskStatus MultigridTaskList::SmoothRed(Multigrid *pmg, int step)
   return TASK_NEXT;
 }
 
-
 enum TaskStatus MultigridTaskList::SmoothBlack(Multigrid *pmg, int step)
 {
   pmg->Smooth(1);
   return TASK_NEXT;
 }
 
-
-enum TaskStatus MultigridTaskList::CalculateDefect(Multigrid *pmg, int step)
-{
-  pmg->CalculateDefect();
-  return TASK_SUCCESS;
-}
-
-
 enum TaskStatus MultigridTaskList::Restrict(Multigrid *pmg, int step)
 {
   pmg->Restrict();
-  pmg->ZeroClearData();
   return TASK_NEXT;
 }
-
 
 enum TaskStatus MultigridTaskList::Prolongate(Multigrid *pmg, int step)
 {
   pmg->ProlongateAndCorrect();
   return TASK_NEXT;
 }
-
 
 enum TaskStatus MultigridTaskList::FMGProlongate(Multigrid *pmg, int step)
 {
@@ -183,7 +171,43 @@ enum TaskStatus MultigridTaskList::FMGProlongate(Multigrid *pmg, int step)
 
 enum TaskStatus MultigridTaskList::PhysicalBoundary(Multigrid *pmg, int step)
 {
-  pmg->ApplyPhysicalBoundary();
   return TASK_NEXT;
 }
 
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, bool mlflag)
+//  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
+//  value of ntask.  
+
+void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, bool mlflag)
+{
+  ntasks=0;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth, bool mlflag)
+//  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
+//  value of ntask.  
+
+void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth, bool mlflag)
+{
+  ntasks=0;
+  if(nsmooth>0) {
+    AddTask(MG_STARTRECV1, NONE);
+  }
+  AddTask()
+  else 
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridTaskList::SetMGTaskListFMGProlongate(bool mlflag)
+//  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
+//  value of ntask.  
+
+void MultigridTaskList::SetMGTaskListFMGProlongate(bool mlflag)
+{
+  ntasks=0;
+}

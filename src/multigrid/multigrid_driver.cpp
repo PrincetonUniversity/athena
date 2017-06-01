@@ -255,7 +255,7 @@ void MultigridDriver::FMGProlongate(void)
     if(current_level_==nrootlevel_)
       TransferFromRootToBlocks(true);
     else {
-      mgtlist_->SetMGTaskListToCoarser(nsmooth);
+      mgtlist_->SetMGTaskListFMGProlongate();
       mgtlist_->DoTaskList(this);
     }
   }
@@ -338,14 +338,13 @@ void MultigridDriver::OneStepToCoarser(int nsmooth)
     }
   }
   else { // root grid
-    mgroot_->ApplyPhysicalBoundary();
-    mgroot_->ProlongateAndCorrect();
     for(int n=0; n<nsmooth; n++) {
       mgroot_->ApplyPhysicalBoundary();
       mgroot_->Smooth(0);
       mgroot_->ApplyPhysicalBoundary();
       mgroot_->Smooth(1);
     }
+    Restrict();
   }
   current_level++;
 }

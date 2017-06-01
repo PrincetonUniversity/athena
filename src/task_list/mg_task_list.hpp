@@ -74,19 +74,23 @@ private:
 
 namespace MultigridTaskNames {
   const uint64_t NONE=0;
-  const uint64_t MG_STARTRECV   = 1LL<<0;
-  const uint64_t MG_CLEARBND    = 1LL<<1;
-  const uint64_t MG_SENDRED     = 1LL<<2;
-  const uint64_t MG_RECVRED     = 1LL<<3;
-  const uint64_t MG_SENDBLACK   = 1LL<<4;
-  const uint64_t MG_RECVBLACK   = 1LL<<5;
-  const uint64_t MG_SMOOTHRED   = 1LL<<6;
-  const uint64_t MG_SMOOTHBLACK = 1LL<<7;
-  const uint64_t MG_CALCDEFECT  = 1LL<<8;
-  const uint64_t MG_RESTRICT    = 1LL<<9;
-  const uint64_t MG_PROLONG     = 1LL<<10;
-  const uint64_t MG_FMGPROLONG  = 1LL<<11;
-  const uint64_t MG_PHYSBND     = 1LL<<12;
+  const uint64_t MG_STARTRECV1   = 1LL<<0;
+  const uint64_t MG_CLEARBND1    = 1LL<<1;
+  const uint64_t MG_SENDBND1     = 1LL<<2;
+  const uint64_t MG_RECVBND1     = 1LL<<3;
+  const uint64_t MG_SMOOTHRED1   = 1LL<<4;
+  const uint64_t MG_SMOOTHBLACK1 = 1LL<<5;
+  const uint64_t MG_STARTRECV2   = 1LL<<6;
+  const uint64_t MG_CLEARBND2    = 1LL<<7;
+  const uint64_t MG_SENDBND2     = 1LL<<8;
+  const uint64_t MG_RECVBND2     = 1LL<<9;
+  const uint64_t MG_SMOOTHRED2   = 1LL<<10;
+  const uint64_t MG_SMOOTHBLACK2 = 1LL<<11;
+  const uint64_t MG_PHYSBND1     = 1LL<<12;
+  const uint64_t MG_PHYSBND2     = 1LL<<13;
+  const uint64_t MG_RESTRICT     = 1LL<<14;
+  const uint64_t MG_PROLONG      = 1LL<<15;
+  const uint64_t MG_FMGPROLONG   = 1LL<<16;
 };
 
 #endif // MG_TASK_LIST_HPP

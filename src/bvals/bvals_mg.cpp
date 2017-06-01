@@ -44,6 +44,7 @@ void BoundaryValues::StartReceivingMultigrid(int nc, enum MGBoundaryType type)
   int mylevel=pmb->loc.level;
   int nvar, tag;
   Real *rbuf;
+  enum BoundaryStatus *flag;
 #ifdef MPI_PARALLEL
   MPI_Request *req;
 #endif
@@ -55,6 +56,7 @@ void BoundaryValues::StartReceivingMultigrid(int nc, enum MGBoundaryType type)
         nvar=1;
         tag=CreateBvalsMPITag(pmb->lid, TAG_MGGRAV, nb.bufid);
         rbuf=mggrav_recv_[nb.bufid];
+        flag=mggrav_flag_[nb.bufid];
 #ifdef MPI_PARALLEL
         if(nb.rank!=Globals::my_rank)
           req=&(req_mggrav_recv_[nb.bufid]);
@@ -63,6 +65,7 @@ void BoundaryValues::StartReceivingMultigrid(int nc, enum MGBoundaryType type)
       default:
         break;
     }
+    *flag = BNDRY_WAITING;
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank) {
       int size;
@@ -104,7 +107,6 @@ void BoundaryValues::StartReceivingMultigrid(int nc, enum MGBoundaryType type)
 void BoundaryValues::ClearBoundaryMultigrid(enum MGBoundaryType type)
 {
   MeshBlock *pmb=pmy_block_;
-  enum BoundaryStatus *flag;
 #ifdef MPI_PARALLEL
   MPI_Request *req;
 #endif
@@ -113,7 +115,6 @@ void BoundaryValues::ClearBoundaryMultigrid(enum MGBoundaryType type)
     NeighborBlock& nb = pmb->neighbor[n];
     switch(type) {
       case BND_MGGRAV:
-        flag=mggrav_flag_[nb.bufid];
 #ifdef MPI_PARALLEL
         if(nb.rank!=Globals::my_rank)
           req=&(req_mggrav_send_[nb.bufid]);
@@ -122,7 +123,6 @@ void BoundaryValues::ClearBoundaryMultigrid(enum MGBoundaryType type)
       default:
         break;
     }
-    *flag = BNDRY_WAITING;
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank)
       MPI_Wait(req,MPI_STATUS_IGNORE); // Wait for Isend
