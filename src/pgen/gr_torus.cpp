@@ -287,7 +287,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         // perturbations
         Real rr = r * sin_vartheta;
         Real z = r * cos_vartheta;
-        Real amp_rel = pert_amp * std::sin(pert_kr*rr) * std::cos(pert_kz*z);
+        Real amp_rel = 0.0;
+        if (in_torus) {
+          amp_rel = pert_amp * std::sin(pert_kr*rr) * std::cos(pert_kz*z);
+        }
         Real amp_abs = amp_rel * uu3;
         Real pert_uur = rr/r * amp_abs;
         Real pert_uutheta = cos_theta/r * amp_abs;

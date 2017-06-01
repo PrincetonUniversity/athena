@@ -545,9 +545,18 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
     }
   } // endif (SELF_GRAVITY_ENABLED)
 
-  if (output_params.variable.compare("uov") == 0
-  || output_params.variable.compare("user_out_var") == 0) {
-    for (int n = 0; n < pmb->nuser_out_var; ++n) {
+  if (output_params.variable.compare(0, 3, "uov") == 0
+   || output_params.variable.compare(0, 12, "user_out_var") == 0) {
+    int iv, ns=0, ne=pmb->nuser_out_var-1;
+    if(sscanf(output_params.variable.c_str(), "uov%d", &iv)>0) {
+      if(iv>=0 && iv<pmb->nuser_out_var)
+        ns=iv, ne=iv;
+    }
+    else if(sscanf(output_params.variable.c_str(), "user_out_var%d", &iv)>0) {
+      if(iv>=0 && iv<pmb->nuser_out_var)
+        ns=iv, ne=iv;
+    }
+    for (int n = ns; n <= ne; ++n) {
       pod = new OutputData;
       pod->type = "SCALARS";
       if(pmb->user_out_var_names_[n].length()!=0)
