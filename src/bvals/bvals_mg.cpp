@@ -45,8 +45,8 @@ void BoundaryValues::StartReceivingMultigrid(int nc, enum MGBoundaryType type)
   int nvar, tag;
   BoundaryData *pbd;
 
-  if(type==BND_MGGRAV) {
-    pbd=bd_mggrav_;
+  if(type==BNDRY_MGGRAV) {
+    pbd=&bd_mggrav_;
     nvar=1;
     phys=TAG_MGGRAV;
   }
@@ -97,8 +97,8 @@ void BoundaryValues::ClearBoundaryMultigrid(enum MGBoundaryType type)
 {
   MeshBlock *pmb=pmy_block_;
 
-  if(type==BND_MGGRAV)
-    pbd=bd_mggrav_;
+  if(type==BNDRY_MGGRAV)
+    pbd=&bd_mggrav_;
   for(int n=0;n<pmb->nneighbor;n++) {
     NeighborBlock& nb = pmb->neighbor[n];
 #ifdef MPI_PARALLEL
@@ -145,8 +145,8 @@ void BoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
   int nvar, tag, ngh, phy;
   BoundaryData *pbd, *ptarget;
 
-  if(type==BND_MGGRAV) {
-    pbd=bd_mggrav_;
+  if(type==BNDRY_MGGRAV) {
+    pbd=&bd_mggrav_;
     nvar=1, ngh=2;
     phy=TAG_MGGRAV;
   }
@@ -164,8 +164,8 @@ void BoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
 //    else
 //      ssize=LoadMultigridBoundaryBufferToFiner(src, nvar, pbd->send[nb.bufid], nb);
     if(nb.rank == Globals::my_rank) {
-      if(type==BND_MGGRAV)
-        ptarget=pbl->pbval->bd_mggrav_;
+      if(type==BNDRY_MGGRAV)
+        ptarget=&(pbl->pbval->bd_mggrav_);
       std::memcpy(ptarget->recv[nb.targetid], pbd->send[nb.bufid], ssize*sizeof(Real));
       ptarget->flag[nb.bufid]=BNDRY_ARRIVED;
     }
@@ -223,8 +223,8 @@ bool BoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
   int nvar, ngh;
   BoundaryData *pbd;
 
-  if(type==BND_MGGRAV) {
-    pbd=bd_mggrav_;
+  if(type==BNDRY_MGGRAV) {
+    pbd=&bd_mggrav_;
     nvar=1, ngh=2;
   }
 

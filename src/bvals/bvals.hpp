@@ -39,7 +39,7 @@ enum BoundaryFlag {BLOCK_BNDRY=-1, BNDRY_UNDEF=0, REFLECTING_BNDRY=1, OUTFLOW_BN
   USER_BNDRY=3, PERIODIC_BNDRY=4, POLAR_BNDRY=5, POLAR_BNDRY_WEDGE=6};
 
 // identifiers for types of neighbor blocks
-enum NeighborType {NEIGHBOR_NONE, NEIGHBOR_FACE, NEIGHBOR_EDGE, NEIGHBOR_CORNER};
+enum NeighborType {NEIGHBOR_NONE=0, NEIGHBOR_FACE=1, NEIGHBOR_EDGE=2, NEIGHBOR_CORNER=3};
 
 // identifiers for status of MPI boundary communications
 enum BoundaryStatus {BNDRY_WAITING, BNDRY_ARRIVED, BNDRY_COMPLETED};
@@ -62,6 +62,7 @@ typedef struct NeighborIndexes {
 //! \struct BoundaryData
 //  \brief structure storing boundary information
 typedef struct BoundaryData {
+  int nbmax;
   enum BoundaryStatus flag[56];
   Real *send[56], *recv[56];
 #ifdef MPI_PARALLEL
@@ -209,13 +210,9 @@ private:
   int nedge_fine_[12];
   bool firsttime_;
 
-  BoundaryData bd_hydro_, bd_field_, bd_gravity_, bd_mggrav_;
-  enum BoundaryStatus flcor_flag_[6][2][2];
-  enum BoundaryStatus emfcor_flag_[48];
+  BoundaryData bd_hydro_, bd_field_, bd_gravity_, bd_mggrav_, bd_flcor_, bd_emfcor_;
   enum BoundaryStatus *emf_north_flag_;
   enum BoundaryStatus *emf_south_flag_;
-  Real *flcor_send_[6],   *flcor_recv_[6][2][2];
-  Real *emfcor_send_[48], *emfcor_recv_[48];
   Real **emf_north_send_, **emf_north_recv_;
   Real **emf_south_send_, **emf_south_recv_;
   AthenaArray<Real> sarea_[2];
@@ -223,8 +220,6 @@ private:
   int num_north_polar_blocks_, num_south_polar_blocks_;
 
 #ifdef MPI_PARALLEL
-  MPI_Request req_flcor_send_[6],   req_flcor_recv_[6][2][2];
-  MPI_Request req_emfcor_send_[48], req_emfcor_recv_[48];
   MPI_Request *req_emf_north_send_, *req_emf_north_recv_;
   MPI_Request *req_emf_south_send_, *req_emf_south_recv_;
 #endif
