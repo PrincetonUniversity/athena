@@ -70,19 +70,19 @@ void BoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src)
     NeighborBlock& nb = pmb->neighbor[n];
     int ssize;
     if(nb.level==mylevel)
-      ssize=LoadGravityBoundaryBufferSameLevel(src, gravity_send_[nb.bufid],nb);
+      ssize=LoadGravityBoundaryBufferSameLevel(src, bd_gravity_.send[nb.bufid],nb);
 //  else
 // error message
 
     if(nb.rank == Globals::my_rank) { // on the same process
       MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
-      std::memcpy(pbl->pbval->gravity_recv_[nb.targetid],
-                  gravity_send_[nb.bufid], ssize*sizeof(Real));
-      pbl->pbval->gravity_flag_[nb.targetid]=BNDRY_ARRIVED;
+      std::memcpy(pbl->pbval->bd_gravity_.recv[nb.targetid],
+                  bd_gravity_.send[nb.bufid], ssize*sizeof(Real));
+      pbl->pbval->bd_gravity_.flag[nb.targetid]=BNDRY_ARRIVED;
     }
 #ifdef MPI_PARALLEL
     else // MPI
-      MPI_Start(&req_gravity_send_[nb.bufid]);
+      MPI_Start(&(bd_gravity_.req_send[nb.bufid]));
 #endif
   }
 
@@ -127,8 +127,8 @@ bool BoundaryValues::ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst)
 
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
-    if(gravity_flag_[nb.bufid]==BNDRY_COMPLETED) continue;
-    if(gravity_flag_[nb.bufid]==BNDRY_WAITING) {
+    if(bd_gravity_.flag[nb.bufid]==BNDRY_COMPLETED) continue;
+    if(bd_gravity_.flag[nb.bufid]==BNDRY_WAITING) {
       if(nb.rank==Globals::my_rank) {// on the same process
         flag=false;
         continue;
@@ -137,20 +137,20 @@ bool BoundaryValues::ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst)
       else { // MPI boundary
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&test,MPI_STATUS_IGNORE);
-        MPI_Test(&req_gravity_recv_[nb.bufid],&test,MPI_STATUS_IGNORE);
+        MPI_Test(&(bd_gravity_.req_recv[nb.bufid]),&test,MPI_STATUS_IGNORE);
         if(test==false) {
           flag=false;
           continue;
         }
-        gravity_flag_[nb.bufid] = BNDRY_ARRIVED;
+        bd_gravity_.flag[nb.bufid] = BNDRY_ARRIVED;
       }
 #endif
     }
     if(nb.level==pmb->loc.level)
-      SetGravityBoundarySameLevel(dst, gravity_recv_[nb.bufid], nb);
+      SetGravityBoundarySameLevel(dst, bd_gravity_.recv[nb.bufid], nb);
 //    else
 // error message
-    gravity_flag_[nb.bufid] = BNDRY_COMPLETED; // completed
+    bd_gravity_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
   return flag;
@@ -169,13 +169,13 @@ void BoundaryValues::ReceiveGravityBoundaryBuffersWithWait(AthenaArray<Real> &ds
     NeighborBlock& nb = pmb->neighbor[n];
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank)
-      MPI_Wait(&req_gravity_recv_[nb.bufid],MPI_STATUS_IGNORE);
+      MPI_Wait(&(bd_gravity_.req_recv[nb.bufid]),MPI_STATUS_IGNORE);
 #endif
     if(nb.level==pmb->loc.level)
-      SetGravityBoundarySameLevel(dst, gravity_recv_[nb.bufid], nb);
+      SetGravityBoundarySameLevel(dst, bd_gravity_.recv[nb.bufid], nb);
 //    else
 //  error message
-    gravity_flag_[nb.bufid] = BNDRY_COMPLETED; // completed
+    bd_gravity_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
  
   return;
