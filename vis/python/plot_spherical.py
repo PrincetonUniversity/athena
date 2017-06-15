@@ -46,10 +46,9 @@ def main(**kwargs):
   if kwargs['level'] is not None:
     level = kwargs['level']
   else:
-    with h5py.File(kwargs['data_file'], 'r') as f:
-      level = f.attrs['MaxLevel']
+    level = None
 
-  # Read data
+  # Determine if vector quantities should be read
   quantities = [kwargs['quantity']]
   if kwargs['stream'] is not None:
     quantities.append(kwargs['stream']+'1')
@@ -57,7 +56,20 @@ def main(**kwargs):
       quantities.append(kwargs['stream']+'3')
     else:
       quantities.append(kwargs['stream']+'2')
-  data = athena_read.athdf(kwargs['data_file'], quantities=quantities, level=level)
+
+  # Determine if grid is compressed in theta
+  if kwargs['theta_compression'] is not None:
+    h = kwargs['theta_compression']
+    def theta_func(xmin, xmax, _, nf):
+      x2_vals = np.linspace(xmin, xmax, nf)
+      theta_vals = x2_vals + (1.0-h)/2.0 * np.sin(2.0*x2_vals)
+      return theta_vals
+  else:
+    theta_func = None
+
+  # Read data
+  data = athena_read.athdf(kwargs['data_file'], quantities=quantities, level=level, \
+      face_func_2=theta_func)
 
   # Extract basic coordinate information
   with h5py.File(kwargs['data_file'], 'r') as f:
@@ -324,5 +336,9 @@ if __name__ == '__main__':
       type=int,
       default=100,
       help='linear size of streamline sampling grid')
+  parser.add_argument('--theta_compression',
+      type=float,
+      default=None,
+      help='compression parameter h in theta = pi*x_2 + (1-h)/2 * sin(2*pi*x_2)')
   args = parser.parse_args()
   main(**vars(args))
