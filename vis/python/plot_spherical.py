@@ -103,7 +103,7 @@ def main(**kwargs):
   else:
     theta_extended = np.concatenate((-theta[0:1], theta, 2.0*np.pi-theta[::-1], \
         2.0*np.pi+theta[0:1]))
-    theta_extended -= 0.5 * np.pi/nx2
+    theta_extended -= 0.5 * (theta[1] - theta[0])
     r_grid,theta_grid = np.meshgrid(r, theta_extended)
     x_grid = r_grid * np.sin(theta_grid)
     y_grid = r_grid * np.cos(theta_grid)
