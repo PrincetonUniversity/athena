@@ -125,6 +125,7 @@ MeshRefinement::~MeshRefinement()
     coarse_b_.x3f.DeleteAthenaArray();
     coarse_bcc_.DeleteAthenaArray();
   }
+  delete pcoarsec;
 }
 
 //----------------------------------------------------------------------------------------
