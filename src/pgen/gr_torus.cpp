@@ -868,16 +868,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             } else {
               Real ut, uphi;
               CalculateVelocityInTorus(r, sin_theta, &ut, &uphi);
-              Real sin_sq_theta = SQR(sin_theta);
-              Real cos_sq_theta = 1.0 - sin_sq_theta;
-              Real sigma = SQR(r) + SQR(a) * cos_sq_theta;
-              Real bt = -2.0*m*a*r * SQR(sin_theta) / sigma * bbr * ut;
               Real br = 1.0/ut * bbr;
               Real btheta = 1.0/ut * bbtheta;
               Real u0, u1, u2, u3;
               TransformVector(ut, 0.0, 0.0, uphi, r, theta, phi, &u0, &u1, &u2, &u3);
               Real b0, b1, b2, b3;
-              TransformVector(bt, br, btheta, 0.0, r, theta, phi, &b0, &b1, &b2, &b3);
+              TransformVector(0.0, br, btheta, 0.0, r, theta, phi, &b0, &b1, &b2, &b3);
               pfield->b.x1f(k,j,i) = (b1 * u0 - b0 * u1) * normalization;
             }
           }
@@ -903,16 +899,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             } else {
               Real ut, uphi;
               CalculateVelocityInTorus(r, sin_theta, &ut, &uphi);
-              Real sin_sq_theta = SQR(sin_theta);
-              Real cos_sq_theta = 1.0 - sin_sq_theta;
-              Real sigma = SQR(r) + SQR(a) * cos_sq_theta;
-              Real bt = -2.0*m*a*r * SQR(sin_theta) / sigma * bbr * ut;
               Real br = 1.0/ut * bbr;
               Real btheta = 1.0/ut * bbtheta;
               Real u0, u1, u2, u3;
               TransformVector(ut, 0.0, 0.0, uphi, r, theta, phi, &u0, &u1, &u2, &u3);
               Real b0, b1, b2, b3;
-              TransformVector(bt, br, btheta, 0.0, r, theta, phi, &b0, &b1, &b2, &b3);
+              TransformVector(0.0, br, btheta, 0.0, r, theta, phi, &b0, &b1, &b2, &b3);
               pfield->b.x2f(k,j,i) = (b2 * u0 - b0 * u2) * normalization;
             }
           }
@@ -976,16 +968,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
               Real ut, uphi;
               Real sin_theta = std::sin(theta);
               CalculateVelocityInTorus(r, sin_theta, &ut, &uphi);
-              Real sin_sq_theta = SQR(sin_theta);
-              Real cos_sq_theta = 1.0 - sin_sq_theta;
-              Real sigma = SQR(r) + SQR(a) * cos_sq_theta;
-              Real bt = -2.0*m*a*r * SQR(sin_theta) / sigma * bbr * ut;
               Real br = 1.0/ut * bbr;
               Real btheta = 1.0/ut * bbtheta;
               Real u0, u1, u2, u3;
               TransformVector(ut, 0.0, 0.0, uphi, r, theta, phi, &u0, &u1, &u2, &u3);
               Real b0, b1, b2, b3;
-              TransformVector(bt, br, btheta, 0.0, r, theta, phi, &b0, &b1, &b2, &b3);
+              TransformVector(0.0, br, btheta, 0.0, r, theta, phi, &b0, &b1, &b2, &b3);
               pfield->b.x1f(k,j,i) = (b1 * u0 - b0 * u1) * normalization;
             }
           }
@@ -1036,16 +1024,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
               Real ut, uphi;
               Real sin_theta = std::sin(theta);
               CalculateVelocityInTorus(r, sin_theta, &ut, &uphi);
-              Real sin_sq_theta = SQR(sin_theta);
-              Real cos_sq_theta = 1.0 - sin_sq_theta;
-              Real sigma = SQR(r) + SQR(a) * cos_sq_theta;
-              Real bt = -2.0*m*a*r * SQR(sin_theta) / sigma * bbr * ut;
               Real br = 1.0/ut * bbr;
               Real btheta = 1.0/ut * bbtheta;
               Real u0, u1, u2, u3;
               TransformVector(ut, 0.0, 0.0, uphi, r, theta, phi, &u0, &u1, &u2, &u3);
               Real b0, b1, b2, b3;
-              TransformVector(bt, br, btheta, 0.0, r, theta, phi, &b0, &b1, &b2, &b3);
+              TransformVector(0.0, br, btheta, 0.0, r, theta, phi, &b0, &b1, &b2, &b3);
               pfield->b.x2f(k,j,i) = (b2 * u0 - b0 * u2) * normalization;
             }
           }
