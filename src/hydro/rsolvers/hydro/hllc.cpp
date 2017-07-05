@@ -99,7 +99,7 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
     Real mr = -(wri[IDN]*vxr);
 
     // Determine the contact wave speed...
-    Real am = (tl - tr)/(ml + mr);
+    Real am = (ml + mr) != 0.0 ? (tl - tr)/(ml + mr) : 0.0;
     // ...and the pressure at the contact surface
     Real cp = (ml*tr + mr*tl)/(ml + mr);
     cp = cp > 0.0 ? cp : 0.0;
