@@ -30,6 +30,7 @@ def main(**kwargs):
   r_ratio = kwargs['r_ratio']
   metric = kwargs['metric']
   parameters = kwargs['parameters']
+  theta_compress = kwargs['theta_compress']
   output_filename = kwargs['output_filename']
   colormap = kwargs['colormap']
   grid_refined = kwargs['grid_refined']
@@ -74,6 +75,8 @@ def main(**kwargs):
       float(parameters[1])
     except ValueError:
       raise RuntimeError('invalid parameters')
+  if theta_compress <= 0.0 or theta_compress > 1.0:
+    raise RuntimeError('must have 0 < theta_compress <= 1')
 
   # Calculate minimum width
   if r_ratio is None:
@@ -81,8 +84,8 @@ def main(**kwargs):
   delta_phi = 2.0*np.pi / num_phi
   r1 = r_min
   r2 = pos_face(r_min, r_max, r_ratio, num_r, 1)
-  theta1 = theta_min
-  theta2 = pos_face(theta_min, theta_max, 1.0, num_theta, 1)
+  theta1 = theta_adjust(theta_min, theta_compress)
+  theta2 = theta_adjust(pos_face(theta_min, theta_max, 1.0, num_theta, 1), theta_compress)
   w_r_min,w_theta_min,w_phi_min = \
       widths(r1, r2, theta1, theta2, delta_phi, metric, parameters)
   width_min = min(w_r_min, w_theta_min, w_phi_min)
@@ -102,8 +105,9 @@ def main(**kwargs):
       r_bounds[l][i] = \
           pos_face(r_min, r_max, r_ratio**(1.0/2**l), num_r*2**l, i*num_r_block)
     for j in range(num_blocks_theta+1):
-      theta_bounds[l][j] = \
+      theta_unadjusted = \
           pos_face(theta_min, theta_max, 1.0, num_theta*2**l, j*num_theta_block)
+      theta_bounds[l][j] = theta_adjust(theta_unadjusted, theta_compress)
 
     # Record which blocks might be refined (level 0) or might exist (otherwise)
     refinement.append(np.ones((num_blocks_r, num_blocks_theta), dtype=bool))
@@ -126,13 +130,15 @@ def main(**kwargs):
         if not refinement[l][i,j]:
           continue
         if j < (num_blocks_theta+1)/2:
-          theta1 = theta_bounds[l][j]
-          theta2 = \
+          theta1 = theta_adjust(theta_bounds[l][j], theta_compress)
+          theta2_unadjusted = \
               pos_face(theta_bounds[l][j], theta_bounds[l][j+1], 1.0, num_theta_block, 1)
+          theta2 = theta_adjust(theta2_unadjusted, theta_compress)
         else:
-          theta1 = pos_face(theta_bounds[l][j], theta_bounds[l][j+1], 1.0, \
+          theta1_unadjusted = pos_face(theta_bounds[l][j], theta_bounds[l][j+1], 1.0, \
               num_theta_block, num_theta_block-1)
-          theta2 = theta_bounds[l][j+1]
+          theta_1 = theta_adjust(theta1_unadjusted, theta_compress)
+          theta2 = theta_adjust(theta_bounds[l][j+1], theta_compress)
         w_r,w_theta,w_phi = \
             widths(r1, r2, theta1, theta2, delta_phi/2**l, metric, parameters)
         if min(w_r,w_theta,w_phi) < width_min:
@@ -228,10 +234,11 @@ def main(**kwargs):
       r2 = pos_face(r_bounds[l][i_end], r_bounds[l][i_end+1], r_ratio**(1.0/2**l), \
           num_r_block, num_r_block/2)
     if j_lim == 0:
-      theta1 = theta_min
+      theta1 = theta_adjust(theta_min, theta_compress)
     else:
-      theta1 = pos_face(theta_bounds[l][j_lim], theta_bounds[l][j_lim+1], 1.0, \
-          num_theta_block, num_theta_block/2)
+      theta1_unadjusted = pos_face(theta_bounds[l][j_lim], theta_bounds[l][j_lim+1], \
+          1.0, num_theta_block, num_theta_block/2)
+      theta1 = theta_adjust(theta1_unadjusted, theta_compress)
     theta2 = np.pi - theta1
     print('\n<refinement{0}>'.format(refinement_num+1))
     print('level = ' + repr(l+1))
@@ -290,6 +297,12 @@ def pos_face(x1, x2, ratio, n, n_face):
   ratio_powers = ratio ** np.arange(n)
   x = x1 + (x2-x1) * math.fsum(ratio_powers[:n_face]) / math.fsum(ratio_powers)
   return x
+
+# Function for compressing theta-position
+def theta_adjust(theta_unadjusted, theta_compress):
+  theta_adjusted = \
+      theta_unadjusted + (1.0-theta_compress)/2.0 * np.sin(2.0*theta_unadjusted)
+  return theta_adjusted
 
 # Function for calculating cell widths
 def widths(r1, r2, theta1, theta2, delta_phi, metric, parameters):
@@ -541,6 +554,10 @@ if __name__ == '__main__':
       nargs='+',
       help='parameters (mass M, possibly spin a, 0 <= a < M) to be used if metric is \
           specified')
+  parser.add_argument('--theta_compress',
+      type=float,
+      default=1.0,
+      help='parameter h governing midplane compression of theta-surfaces')
   parser.add_argument('-o', '--output_filename',
       help='name of image file to write showing grid')
   parser.add_argument('-c', '--colormap',

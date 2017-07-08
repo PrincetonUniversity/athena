@@ -181,7 +181,8 @@ def vtk(filename):
 def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
     subsample=False, fast_restrict=False, x1_min=None, x1_max=None, x2_min=None,
     x2_max=None, x3_min=None, x3_max=None, vol_func=None, vol_params=None,
-    center_func_1=None, center_func_2=None, center_func_3=None):
+    face_func_1=None, face_func_2=None, face_func_3=None, center_func_1=None,
+    center_func_2=None, center_func_3=None):
   """Read .athdf files and populate dict of arrays of data."""
 
   # Python modules
@@ -366,8 +367,9 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
       new_data = True
 
     # Populate coordinate arrays
+    face_funcs = (face_func_1, face_func_2, face_func_3)
     center_funcs = (center_func_1, center_func_2, center_func_3)
-    for d,nx,center_func in zip(range(1, 4), nx_vals, center_funcs):
+    for d,nx,face_func,center_func in zip(range(1, 4), nx_vals, face_funcs, center_funcs):
       if nx == 1:
         xm = (x1m, x2m, x3m)[d-1]
         xp = (x1p, x2p, x3p)[d-1]
@@ -376,7 +378,9 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
         xmin = f.attrs['RootGridX'+repr(d)][0]
         xmax = f.attrs['RootGridX'+repr(d)][1]
         xrat_root = f.attrs['RootGridX'+repr(d)][2]
-        if (xrat_root == 1.0):
+        if (face_func is not None):
+          data['x'+repr(d)+'f'] = face_func(xmin, xmax, xrat_root, nx+1)
+        elif (xrat_root == 1.0):
           data['x'+repr(d)+'f'] = np.linspace(xmin, xmax, nx+1)
         else:
           xrat = xrat_root ** (1.0 / 2**level)

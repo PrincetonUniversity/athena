@@ -456,10 +456,12 @@ void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
 
 bool Coordinates::IsPole(int j)
 {
-  if (pmy_block->block_bcs[INNER_X2] == POLAR_BNDRY and j == pmy_block->js) {
+  if ((pmy_block->block_bcs[INNER_X2] == POLAR_BNDRY
+      or pmy_block->block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) and j == pmy_block->js) {
     return true;
   }
-  if (pmy_block->block_bcs[OUTER_X2] == POLAR_BNDRY and j == pmy_block->je+1) {
+  if ((pmy_block->block_bcs[OUTER_X2] == POLAR_BNDRY
+      or pmy_block->block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) and j == pmy_block->je+1) {
     return true;
   }
   return false;

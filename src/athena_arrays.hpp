@@ -88,7 +88,7 @@ private:
 
 template<typename T>
 AthenaArray<T>::AthenaArray()
-  : pdata_(0), nx1_(0), nx2_(0), nx3_(0), nx4_(0), nx5_(0), scopy_(true)
+  : pdata_(NULL), nx1_(0), nx2_(0), nx3_(0), nx4_(0), nx5_(0), scopy_(true)
 {
 }
 
@@ -290,6 +290,7 @@ void AthenaArray<T>::DeleteAthenaArray()
     pdata_ = NULL;
   } else {
     delete[] pdata_;
+    pdata_ = NULL;
     scopy_ = true;
   }
 } 
