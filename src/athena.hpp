@@ -83,7 +83,11 @@ typedef void (*SrcTermFunc_t)(MeshBlock *pmb, const Real time, const Real dt,
 typedef Real (*TimeStepFunc_t)(MeshBlock *pmb);
 typedef Real (*HistoryOutputFunc_t)(MeshBlock *pmb, int iout);
 typedef void (*MetricFunc_t)(Real x1, Real x2, Real x3, ParameterInput *pin,
-    AthenaArray<Real> &g, AthenaArray<Real> &g_inv, AthenaArray<Real> &dg_dx1,
-    AthenaArray<Real> &dg_dx2, AthenaArray<Real> &dg_dx3);
+             AthenaArray<Real> &g, AthenaArray<Real> &g_inv, AthenaArray<Real> &dg_dx1,
+             AthenaArray<Real> &dg_dx2, AthenaArray<Real> &dg_dx3);
+typedef void (*MGBoundaryFunc_t)(AthenaArray<Real> &dst,Real time, int nvar,
+             int is, int ie, int js, int je, int ks, int ke, int ngh,
+             Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+
 
 #endif // ATHENA_HPP

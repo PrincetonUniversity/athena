@@ -369,7 +369,7 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
   int ns, ne;
   BoundaryData *pbd;
 
-  if(type==HYDRP_CONS || type==HYDRO_PRIM) {
+  if(type==HYDRO_CONS || type==HYDRO_PRIM) {
     pbd=&bd_hydro_;
     ns=0, ne=NHYDRO-1;
     flip=flip_across_pole_hydro;
@@ -398,17 +398,17 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
           bflag=false;
           continue;
         }
-        pbf->flag[nb.bufid] = BNDRY_ARRIVED;
+        pbd->flag[nb.bufid] = BNDRY_ARRIVED;
       }
 #endif
     }
     if(nb.level==pmb->loc.level)
-      SetCellCenteredBoundarySameLevel(dst, ns, ne, pbf->recv[nb.bufid], nb, flip);
+      SetCellCenteredBoundarySameLevel(dst, ns, ne, pbd->recv[nb.bufid], nb, flip);
     else if(nb.level<pmb->loc.level) // this set only the prolongation buffer
-      SetCellCenteredBoundaryFromCoarser(ns, ne, pbf->recv[nb.bufid], cbuf, nb, flip);
+      SetCellCenteredBoundaryFromCoarser(ns, ne, pbd->recv[nb.bufid], cbuf, nb, flip);
     else
-      SetCellCenteredBoundaryFromFiner(dst, ns, ne, pbf->recv[nb.bufid], nb, flip);
-    pbf->flag[nb.bufid] = BNDRY_COMPLETED; // completed
+      SetCellCenteredBoundaryFromFiner(dst, ns, ne, pbd->recv[nb.bufid], nb, flip);
+    pbd->flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
   if(bflag && (pmb->block_bcs[INNER_X2]==POLAR_BNDRY
@@ -431,7 +431,7 @@ void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real
   int ns, ne;
   BoundaryData *pbd;
 
-  if(type==HYDRP_CONS || type==HYDRO_PRIM) {
+  if(type==HYDRO_CONS || type==HYDRO_PRIM) {
     pbd=&bd_hydro_;
     ns=0, ne=NHYDRO-1;
     flip=flip_across_pole_hydro;
@@ -447,7 +447,7 @@ void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real
     NeighborBlock& nb = pmb->neighbor[n];
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank)
-      MPI_Wait(&(pbd->req[nb.bufid]),MPI_STATUS_IGNORE);
+      MPI_Wait(&(pbd->req_recv[nb.bufid]),MPI_STATUS_IGNORE);
 #endif
     if(nb.level==pmb->loc.level)
       SetCellCenteredBoundarySameLevel(dst, ns, ne, pbd->recv[nb.bufid], nb, flip);

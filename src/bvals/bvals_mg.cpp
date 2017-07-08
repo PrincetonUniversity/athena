@@ -42,7 +42,7 @@ void BoundaryValues::StartReceivingMultigrid(int nc, enum MGBoundaryType type)
 {
   MeshBlock *pmb=pmy_block_;
   int mylevel=pmb->loc.level;
-  int nvar, tag;
+  int nvar, tag, phys;
   BoundaryData *pbd;
 
   if(type==BNDRY_MGGRAV) {
@@ -81,7 +81,7 @@ void BoundaryValues::StartReceivingMultigrid(int nc, enum MGBoundaryType type)
       size*=nvar;
       tag=CreateBvalsMPITag(pmb->lid, phys, nb.bufid);
       MPI_Irecv(pbd->recv[nb.bufid], size, MPI_ATHENA_REAL, nb.rank, tag,
-                MPI_COMM_WORLD, pbd->req_recv[nb.bufid]);
+                MPI_COMM_WORLD, &(pbd->req_recv[nb.bufid]));
     }
 #endif
   }
@@ -96,9 +96,11 @@ void BoundaryValues::StartReceivingMultigrid(int nc, enum MGBoundaryType type)
 void BoundaryValues::ClearBoundaryMultigrid(enum MGBoundaryType type)
 {
   MeshBlock *pmb=pmy_block_;
+  BoundaryData *pbd;
 
   if(type==BNDRY_MGGRAV)
     pbd=&bd_mggrav_;
+
   for(int n=0;n<pmb->nneighbor;n++) {
     NeighborBlock& nb = pmb->neighbor[n];
 #ifdef MPI_PARALLEL
@@ -142,13 +144,13 @@ void BoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
 {
   MeshBlock *pmb=pmy_block_, *pbl;
   int mylevel=pmb->loc.level;
-  int nvar, tag, ngh, phy;
+  int nvar, tag, ngh, phys;
   BoundaryData *pbd, *ptarget;
 
   if(type==BNDRY_MGGRAV) {
     pbd=&bd_mggrav_;
     nvar=1, ngh=2;
-    phy=TAG_MGGRAV;
+    phys=TAG_MGGRAV;
   }
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
@@ -171,9 +173,9 @@ void BoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
     }
 #ifdef MPI_PARALLEL
     else { // MPI
-      tag=CreateBvalsMPITag(nb.lid, phys, nb.target);
+      tag=CreateBvalsMPITag(nb.lid, phys, nb.targetid);
       MPI_Isend(pbd->send[nb.bufid], ssize, MPI_ATHENA_REAL, nb.rank, tag,
-                MPI_COMM_WORLD, pbd->req_send[nb.bufid]);
+                MPI_COMM_WORLD, &(pbd->req_send[nb.bufid]));
     }
 #endif
   }

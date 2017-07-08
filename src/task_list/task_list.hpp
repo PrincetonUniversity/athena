@@ -8,9 +8,10 @@
 //!   \file task_list.hpp
 //    \brief provides functionality to control dynamic execution using tasks
 
+#include <stdint.h>
+
 // Athena++ headers
 #include "../athena.hpp"
-#include "../mesh/mesh.hpp"
 
 // forward declarations
 class Mesh;
@@ -39,6 +40,23 @@ struct Task {
   enum TaskStatus (TaskList::*TaskFunc)(MeshBlock*, int);  // ptr to member function
 };
 
+
+//---------------------------------------------------------------------------------------
+//! \class TaskState
+//  \brief container for task states
+
+class TaskState {
+  public:
+  uint64_t finished_tasks;
+  int indx_first_task, num_tasks_left;
+  void Reset(int ntasks) {
+    indx_first_task = 0;
+    num_tasks_left = ntasks;
+    finished_tasks = 0LL;
+  };
+};
+
+
 //----------------------------------------------------------------------------------------
 //! \class TaskList
 //  \brief data and function definitions for task list base class
@@ -55,8 +73,8 @@ public:
 
   // functions
   enum TaskListStatus DoAllAvailableTasks(MeshBlock *pmb, int step, TaskState &ts);
-  void DoTaskListOneSubStep(Mesh *pmesh, int step);
-  virtual void AddTask(uint64_t id, uint64_t dep) = 0;
+  void DoTaskListOneSubstep(Mesh *pmesh, int step);
+  virtual void AddTimeIntegratorTask(uint64_t id, uint64_t dep) = 0;
 
 private:
   Mesh* pmy_mesh_;
@@ -76,11 +94,11 @@ public:
   std::string integrator;
   struct IntegratorWeight step_wghts[MAX_NSTEP];
 
-  void AddTask(uint64_t id, uint64_t dep);
+  void AddTimeIntegratorTask(uint64_t id, uint64_t dep);
 
   // functions
   enum TaskStatus StartAllReceive(MeshBlock *pmb, int step);
-  enum TaskStatus ClearAllReceive(MeshBlock *pmb, int step);
+  enum TaskStatus ClearAllBoundary(MeshBlock *pmb, int step);
 
   enum TaskStatus CalculateFluxes(MeshBlock *pmb, int step);
   enum TaskStatus CalculateEMF(MeshBlock *pmb, int step);
@@ -122,7 +140,7 @@ public:
 namespace HydroIntegratorTaskNames {
   const uint64_t NONE=0;
   const uint64_t START_ALLRECV=1LL<<0;
-  const uint64_t CLEAR_ALLRECV=1LL<<1;
+  const uint64_t CLEAR_ALLBND=1LL<<1;
 
   const uint64_t CALC_HYDFLX=1LL<<2;
   const uint64_t CALC_FLDFLX=1LL<<3;

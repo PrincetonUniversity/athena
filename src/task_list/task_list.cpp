@@ -31,7 +31,7 @@ TaskList::~TaskList()
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn DoAllAvailableTasks
+//! \fn enum TaskListStatus TaskList::DoAllAvailableTasks
 //  \brief do all tasks that can be done (are not waiting for a dependency to be 
 //  cleared) in this TaskList, return status.  
 
@@ -48,7 +48,7 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int step, Task
     if((taski.task_id & ts.finished_tasks) == 0LL) { // task not done
       // check if dependency clear
       if (((taski.dependency & ts.finished_tasks) == taski.dependency)) {
-        ret=(this->*task_list_[i].TaskFunc)(pmb,step);
+        ret=(this->*task_list_[i].TaskFunc)(pmb, step);
         if(ret!=TASK_FAIL) { // success
           ts.num_tasks_left--;
           ts.finished_tasks |= taski.task_id;
@@ -76,7 +76,7 @@ void TaskList::DoTaskListOneSubstep(Mesh *pmesh, int step)
   int nmb_left = pmesh->GetNumMeshBlocksThisRank(Globals::my_rank);
   // initialize counters stored in each MeshBlock
   while (pmb != NULL)  {
-    pmb->ts.Reset(ntasks);
+    pmb->tasks.Reset(ntasks);
     pmb=pmb->next;
   }
 
@@ -84,7 +84,7 @@ void TaskList::DoTaskListOneSubstep(Mesh *pmesh, int step)
   while(nmb_left > 0) {
     pmb = pmesh->pblock;
     while (pmb != NULL)  {
-      if (DoAllAvailableTasks(pmb,step,pmb->ts) == TL_COMPLETE) nmb_left--;
+      if (DoAllAvailableTasks(pmb,step,pmb->tasks) == TL_COMPLETE) nmb_left--;
       pmb=pmb->next;
     }
   }

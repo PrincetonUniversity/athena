@@ -17,7 +17,7 @@
 class MeshBlock;
 class ParameterInput;
 class Coordinates;
-class Multigrid
+class Multigrid;
 
 //! \class MGGravity
 //  \brief Multigrid gravity solver for each block
@@ -26,29 +26,28 @@ class MGGravity : public Multigrid {
 public:
   MGGravity(MeshBlock *pmb, int nx, int ny, int nz,
             RegionSize isize, MGBoundaryFunc_t *MGBoundary)
-    : Multigrid(pmb, 1, nx, ny, nz, isize, MGBoundary), btype(BND_MGGRAV) {};
+    : Multigrid(pmb, 1, nx, ny, nz, isize, MGBoundary), omega_(1.15) {btype=BND_MGGRAV;};
   ~MGGravity() {};
   void Smooth(int color);
   void CalculateDefect(void);
 
 private:
-  const Real omega_ = 1.15;
+  const Real omega_;
 };
 
 
 //! \class GravityDriver
 //  \brief Multigrid gravity solver
 
-class GravityDriver : MultigridDriver{
+class GravityDriver : public MultigridDriver{
 public:
   GravityDriver(Mesh *pm, MeshBlock *pmb, MGBoundaryFunc_t *MGBoundary,
                 ParameterInput *pin);
   Multigrid* GetMultigridBlock (MeshBlock *pmb);
   void LoadSourceAndData(void);
-  void SolveCoarsestGrid(void);
 
 private:
-  four_pi_G_;
+  Real four_pi_G_;
 };
 
 #endif // MGGRAVITY_HPP

@@ -134,7 +134,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
 //  value of ntask.  
 
-void TimeIntegratorTaskList::AddTask(uint64_t id, uint64_t dep)
+void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
 {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
@@ -279,7 +279,7 @@ void TimeIntegratorTaskList::AddTask(uint64_t id, uint64_t dep)
 
     default:
       std::stringstream msg;
-      msg << "### FATAL ERROR in AddTask" << std::endl
+      msg << "### FATAL ERROR in AddTimeIntegratorTask" << std::endl
           << "Invalid Task "<< id << " is specified" << std::endl;
       throw std::runtime_error(msg.str().c_str());
   }
@@ -646,6 +646,6 @@ enum TaskStatus TimeIntegratorTaskList::GravFluxCorrection(MeshBlock *pmb, int s
 {
   if (step != nsub_steps) return TASK_NEXT; // only do on last sub-step
 
-  pmb->phydro->CorrectGravityFlux(pmb->phydro->u);
+  pmb->phydro->CorrectGravityFlux();
   return TASK_NEXT;
 }

@@ -30,11 +30,6 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/coordinates/*.cpp) \
 	     src/eos/$(EOS_FILE) \
 	     $(wildcard src/field/*.cpp) \
-	     $(wildcard src/gravity/*.cpp) \
-	     src/gravity/solvers/$(GRAVITY_FILE) \
-	     src/fft/athena_fft.cpp \
-	     src/fft/multigrid.cpp \
-	     $(MPIFFT_FILE) \
 	     $(wildcard src/hydro/*.cpp) \
 	     $(wildcard src/hydro/srcterms/*.cpp) \
 	     src/hydro/rsolvers/$(RSOLVER_DIR)$(RSOLVER_FILE) \
@@ -43,6 +38,11 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/reconstruct/*.cpp) \
 	     $(wildcard src/task_list/*.cpp) \
 	     $(wildcard src/utils/*.cpp) \
+	     $(wildcard src/multigrid/*.cpp) \
+	     $(wildcard src/gravity/*.cpp) \
+	     src/gravity/solvers/$(GRAVITY_FILE) \
+	     src/fft/athena_fft.cpp \
+	     $(MPIFFT_FILE) \
 	     src/pgen/$(PROBLEM_FILE) \
 	     src/pgen/default_pgen.cpp
 OBJ_DIR := obj/

@@ -45,12 +45,6 @@ int BoundaryValues::bufid[56];
 BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_block_ = pmb;
-  int cng=pmb->cnghost, cng1=0, cng2=0, cng3=0;
-  if(pmb->block_size.nx2>1) cng1=cng, cng2=cng;
-  if(pmb->block_size.nx3>1) cng3=cng;
-  int f2d=0, f3d=0;
-  if(pmb->block_size.nx2 > 1) f2d=1;
-  if(pmb->block_size.nx3 > 1) f3d=1;
   for(int i=0; i<6; i++)
     BoundaryFunction_[i]=NULL;
 
@@ -378,6 +372,12 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
 {
   MeshBlock *pmb=pmy_block_;
   bool multilevel=pmb->pmy_mesh->multilevel;
+  int cng=pmb->cnghost, cng1=0, cng2=0, cng3=0;
+  if(pmb->block_size.nx2>1) cng1=cng, cng2=cng;
+  if(pmb->block_size.nx3>1) cng3=cng;
+  int f2d=0, f3d=0;
+  if(pmb->block_size.nx2 > 1) f2d=1;
+  if(pmb->block_size.nx3 > 1) f3d=1;
   int size;
   if(type==BNDRY_FLCOR)
     for(bd.nbmax=0; BoundaryValues::ni[bd.nbmax].type==NEIGHBOR_FACE; bd.nbmax++);
@@ -483,11 +483,11 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
         }
         break;
       case BNDRY_FLCOR:
-        if((BoundaryValues::ni[n].ox1!=0)
+        if(BoundaryValues::ni[n].ox1!=0)
           size=(pmb->block_size.nx2+1)/2*(pmb->block_size.nx3+1)/2*NHYDRO;
-        if((BoundaryValues::ni[n].ox2!=0)
+        if(BoundaryValues::ni[n].ox2!=0)
           size=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx3+1)/2*NHYDRO;
-        if((BoundaryValues::ni[n].ox3!=0)
+        if(BoundaryValues::ni[n].ox3!=0)
           size=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx2+1)/2*NHYDRO;
         break;
       case BNDRY_EMFCOR:
@@ -659,10 +659,10 @@ void BoundaryValues::Initialize(void)
       // specify the offsets in the view point of the target block: flip ox? signs
       tag=CreateBvalsMPITag(nb.lid, TAG_HYDRO, nb.targetid);
       MPI_Send_init(bd_hydro_.send[nb.bufid],ssize,MPI_ATHENA_REAL,
-                    nb.rank,tag,MPI_COMM_WORLD,&(bd_hydro_.req_send_[nb.bufid]));
+                    nb.rank,tag,MPI_COMM_WORLD,&(bd_hydro_.req_send[nb.bufid]));
       tag=CreateBvalsMPITag(pmb->lid, TAG_HYDRO, nb.bufid);
       MPI_Recv_init(bd_hydro_.recv[nb.bufid],rsize,MPI_ATHENA_REAL,
-                    nb.rank,tag,MPI_COMM_WORLD,&(bd_hydro_.req_recv_[nb.bufid]));
+                    nb.rank,tag,MPI_COMM_WORLD,&(bd_hydro_.req_recv[nb.bufid]));
 
       if (SELF_GRAVITY_ENABLED == 1){
         if(nb.level==mylevel) { // same
@@ -672,10 +672,10 @@ void BoundaryValues::Initialize(void)
         }
         tag=CreateBvalsMPITag(nb.lid, TAG_GRAVITY, nb.targetid);
         MPI_Send_init(bd_gravity_.send[nb.bufid],ssize,MPI_ATHENA_REAL,
-                      nb.rank,tag,MPI_COMM_WORLD,&(bd_gravity_.req_send_[nb.bufid]));
+                      nb.rank,tag,MPI_COMM_WORLD,&(bd_gravity_.req_send[nb.bufid]));
         tag=CreateBvalsMPITag(pmb->lid, TAG_GRAVITY, nb.bufid);
         MPI_Recv_init(bd_gravity_.recv[nb.bufid],rsize,MPI_ATHENA_REAL,
-                      nb.rank,tag,MPI_COMM_WORLD,&(bd_gravity_.req_recv_[nb.bufid]));
+                      nb.rank,tag,MPI_COMM_WORLD,&(bd_gravity_.req_recv[nb.bufid]));
       }
 
       // flux correction
@@ -754,10 +754,10 @@ void BoundaryValues::Initialize(void)
 
         tag=CreateBvalsMPITag(nb.lid, TAG_FIELD, nb.targetid);
         MPI_Send_init(bd_field_.send[nb.bufid],ssize,MPI_ATHENA_REAL,
-                      nb.rank,tag,MPI_COMM_WORLD,&(bd_field_.req_send_[nb.bufid]));
+                      nb.rank,tag,MPI_COMM_WORLD,&(bd_field_.req_send[nb.bufid]));
         tag=CreateBvalsMPITag(pmb->lid, TAG_FIELD, nb.bufid);
         MPI_Recv_init(bd_field_.recv[nb.bufid],rsize,MPI_ATHENA_REAL,
-                      nb.rank,tag,MPI_COMM_WORLD,&(bd_field_.req_recv_[nb.bufid]));
+                      nb.rank,tag,MPI_COMM_WORLD,&(bd_field_.req_recv[nb.bufid]));
         // EMF correction
         int fi1, fi2, f2csize;
         if(nb.type==NEIGHBOR_FACE) { // face
@@ -828,7 +828,7 @@ void BoundaryValues::Initialize(void)
         if(nb.level>mylevel) { // finer neighbor
           tag=CreateBvalsMPITag(pmb->lid, TAG_FLDFLX, nb.bufid);
           MPI_Recv_init(bd_emfcor_.recv[nb.bufid],f2csize,MPI_ATHENA_REAL,
-                        nb.rank,tag,MPI_COMM_WORLD,&(&bd_emfcor_.req_recv[nb.bufid]));
+                        nb.rank,tag,MPI_COMM_WORLD,&(bd_emfcor_.req_recv[nb.bufid]));
         }
         if(nb.level<mylevel) { // coarser neighbor
           tag=CreateBvalsMPITag(nb.lid, TAG_FLDFLX, nb.targetid);

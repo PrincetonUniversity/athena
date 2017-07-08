@@ -23,7 +23,6 @@
 #include "../bvals/bvals.hpp"
 #include "meshblock_tree.hpp"
 #include "mesh_refinement.hpp"
-#include "../gravity/mggravity.hpp"
 
 // Forward declarations
 class ParameterInput;
@@ -32,6 +31,7 @@ class MeshRefinement;
 class MeshBlockTree;
 class BoundaryValues;
 class TaskList;
+class TaskState;
 class Coordinates;
 class Reconstruction;
 class Hydro;
@@ -84,21 +84,6 @@ typedef struct RegionSize {
 } RegionSize;
 
 
-//---------------------------------------------------------------------------------------
-//! \class TaskState
-//  \brief container for task states
-
-class TaskState {
-  uint64_t finished_tasks;
-  int indx_first_task, num_tasks_left;
-  void Reset(int ntasks) {
-    indx_first_task = 0;
-    num_tasks_left = ntasks;
-    finished_tasks = 0LL;
-  };
-};
-
-
 //----------------------------------------------------------------------------------------
 //! \class MeshBlock
 //  \brief data/functions associated with a single block
@@ -109,7 +94,6 @@ class MeshBlock {
   friend class Mesh;
   friend class Hydro;
   friend class TaskList;
-  friend class MeshBlock;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
@@ -158,7 +142,7 @@ public:
   // fft object
   AthenaFFT *pfft;
   // Multigrid Gravity solver
-  MGGravity *pmgrav;
+  MGGravity *pmggrav;
 
   MeshBlock *prev, *next;
 
@@ -225,6 +209,7 @@ public:
   int nlim, ncycle;
   int nbtotal, nbnew, nbdel;
   bool adaptive, multilevel;
+  int gflag;
 
   MeshBlock *pblock;
 

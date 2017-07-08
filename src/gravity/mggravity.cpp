@@ -19,7 +19,7 @@
 //  \brief Red-Black Gauss-Seidel Smoother
 void MGGravity::Smooth(int color)
 {
-  int ns=ngh, ne=ngh+(1<<current_level_)-1;
+  int ns=ngh_, ne=ngh_+(1<<current_level_)-1;
   int c=color;
   AthenaArray<Real> &u=u_[current_level_];
   AthenaArray<Real> &src=src_[current_level_];
@@ -44,9 +44,9 @@ void MGGravity::Smooth(int color)
       for(int i=is+c; i<=ie; i+=2)
         u(0,k,j,i)-=((6.0*u(0,k,j,i)-u(0,k+1,j,i)-u(0,k,j+1,i)-u(0,k,j,i+1)
                      -u(0,k-1,j,i)-u(0,k,j-1,i)-u(0,k,j,i-1))+src(0,k,j,i)*dx2)*isix;
-      c^=1:
+      c^=1;
     }
-    c^=1:
+    c^=1;
   }
   return;
 }
@@ -57,11 +57,11 @@ void MGGravity::Smooth(int color)
 
 void MGGravity::CalculateDefect(void)
 {
-  int ns=ngh, ne=ngh+(1<<current_level_)-1;
+  int ns=ngh_, ne=ngh_+(1<<current_level_)-1;
   AthenaArray<Real> &u=u_[current_level_];
   AthenaArray<Real> &src=src_[current_level_];
   AthenaArray<Real> &def=def_[current_level_];
-  int ll=nlevel__-1-current_level_;
+  int ll=nlevel_-1-current_level_;
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;

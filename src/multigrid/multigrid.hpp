@@ -11,6 +11,7 @@
 
 // Athena++ classes headers
 #include "../athena.hpp"
+#include "../globals.hpp"
 #include "../athena_arrays.hpp"
 #include "../mesh/mesh.hpp"
 #include "../task_list/mg_task_list.hpp"
@@ -23,28 +24,24 @@ class MeshBlock;
 class ParameterInput;
 class Coordinates;
 
-typedef void (*MGBoundaryFunc_t)(AthenaArray<Real> &dst,Real time, Real dt,
-             int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-             Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
-
-void MGPeriodicInnerX1(AthenaArray<Real> &dst,Real time, Real dt,
-                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-                    Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
-void MGPeriodicOuterX1(AthenaArray<Real> &dst,Real time, Real dt,
-                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-                    Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
-void MGPeriodicInnerX2(AthenaArray<Real> &dst,Real time, Real dt,
-                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-                    Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
-void MGPeriodicOuterX2(AthenaArray<Real> &dst,Real time, Real dt,
-                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-                    Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
-void MGPeriodicInnerX3(AthenaArray<Real> &dst,Real time, Real dt,
-                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-                    Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
-void MGPeriodicOuterX3(AthenaArray<Real> &dst,Real time, Real dt,
-                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-                    Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGPeriodicInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
+                       int is, int ie, int js, int je, int ks, int ke, int ngh,
+                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGPeriodicOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
+                       int is, int ie, int js, int je, int ks, int ke, int ngh,
+                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGPeriodicInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
+                       int is, int ie, int js, int je, int ks, int ke, int ngh,
+                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGPeriodicOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
+                       int is, int ie, int js, int je, int ks, int ke, int ngh,
+                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGPeriodicInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
+                       int is, int ie, int js, int je, int ks, int ke, int ngh,
+                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGPeriodicOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
+                       int is, int ie, int js, int je, int ks, int ke, int ngh,
+                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
 
 //! \class Multigrid
 //  \brief gravitational block
@@ -55,7 +52,7 @@ public:
             RegionSize isize, MGBoundaryFunc_t *MGBoundary);
   virtual ~Multigrid();
 
-  const enum MGBoundaryType btype;
+  enum MGBoundaryType btype;
 
   void LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh);
   void LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real fac);
@@ -77,18 +74,18 @@ public:
   int GetCurrentNumberOfCells(void) { return 1<<current_level_; };
   AthenaArray<Real>& GetCurrentData(void) { return u_[current_level_]; };
   AthenaArray<Real>& GetCurrentSource(void) { return src_[current_level_]; };
-  Real GetRootSource(int n) { return src_[0].(n,ngh_,ngh_,ngh_); };
+  Real GetRootSource(int n) { return src_[0](n,ngh_,ngh_,ngh_); };
 
   // pure virtual functions
   virtual void Smooth(int color) = 0;
   virtual void CalculateDefect(void) = 0;
 
   friend class MultigridDriver;
+  friend class MultigridTaskList;
 
 protected:
   RegionSize size_;
-  int nlevel_, nx_, ny_, nz_, ngh_, nvar_;
-  int current_level_;
+  int nlevel_, nx_, ny_, nz_, ngh_, nvar_, current_level_;
   Real rdx_, rdy_, rdz_;
   AthenaArray<Real> *u_, *def_, *src_, *fmgsrc_;
 
@@ -106,17 +103,17 @@ class MultigridDriver
 {
 public:
   MultigridDriver(Mesh *pm, MeshBlock *pmb, MGBoundaryFunc_t *MGBoundary,
-                  ParameterInput *pin);
+                  int invar, ParameterInput *pin);
   virtual ~MultigridDriver();
   void SetupMultigrid(void);
   void CollectSource(void);
-  void FillRootGrid(void);
+  void FillRootGridSource(void);
   void FMGProlongate(void);
-  void TransferFromRootToBlock(bool fmgflag);
+  void TransferFromRootToBlocks(bool fmgflag);
   void OneStepToFiner(int nsmooth);
   void OneStepToCoarser(int nsmooth);
-  void SolveVCycle(void);
-  void SolveFCycle(void);
+  void SolveVCycle(int npresmooth, int npostsmooth);
+  void SolveFCycle(int npresmooth, int npostsmooth);
   void SolveFMGCycle(void);
   virtual void SolveCoarsestGrid(void);
   Real CalculateDefectNorm(int n, int nrm);
@@ -128,16 +125,19 @@ public:
   virtual void LoadSourceAndData(void) = 0;
 
   friend class Multigrid;
+  friend class MultigridTaskList;
 
 protected:
-  int nvar_, nblocks_, nrootlevel_, nmblevel_, ntotallevel_;
+  int nranks_, nvar_, nblocks_, nrootlevel_, nmblevel_, ntotallevel_, mode_;
+  int current_level_;
   Mesh *pmy_mesh_;
   MeshBlock *pblock_;
   Multigrid *mgroot_;
+  bool fperiodic_;
 private:
   MultigridTaskList *mgtlist_;
   MGBoundaryFunc_t MGBoundaryFunction_[6];
-  int *nslist_, *nblist_;
+  int *nslist_, *nblist_, *nvlist_, *nvslist_;
   Real *rootbuf_;
   AthenaArray<Real> rootsrc_;
 #ifdef MPI_PARALLEL

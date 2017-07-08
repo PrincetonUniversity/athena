@@ -23,7 +23,9 @@
 #include "../coordinates/coordinates.hpp"
 #include "../hydro/hydro.hpp" 
 #include "../field/field.hpp"
+#include "../multigrid/multigrid.hpp"
 #include "../gravity/gravity.hpp"
+#include "../gravity/mggravity.hpp"
 #include "../fft/athena_fft.hpp"
 #include "../bvals/bvals.hpp"
 #include "../eos/eos.hpp"
@@ -245,9 +247,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   InitUserMeshBlockData(pin);
 
+  int os=0;
   if(SELF_GRAVITY_ENABLED <= 1) {
     // load hydro and field data
-    int os=0;
     memcpy(phydro->u.data(), &(mbdata[os]), phydro->u.GetSizeInBytes());
     // load it into the half-step arrays too
     memcpy(phydro->u1.data(), &(mbdata[os]), phydro->u1.GetSizeInBytes());

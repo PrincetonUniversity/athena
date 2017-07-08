@@ -25,7 +25,9 @@
 #include "../coordinates/coordinates.hpp"
 #include "../hydro/hydro.hpp" 
 #include "../field/field.hpp"
+#include "../multigrid/multigrid.hpp"
 #include "../gravity/gravity.hpp"
+#include "../gravity/mggravity.hpp"
 #include "../bvals/bvals.hpp"
 #include "../eos/eos.hpp"
 #include "../parameter_input.hpp"
@@ -803,12 +805,12 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
     // create a block and add into the link list
     if(i==nbs) {
       pblock = new MeshBlock(i, i-nbs, this, pin, loclist[i], block_size,
-                             block_bcs, costlist[i], mbdata+buff_os);
+                             block_bcs, costlist[i], mbdata+buff_os, gflag);
       pfirst = pblock;
     }
     else {
       pblock->next = new MeshBlock(i, i-nbs, this, pin, loclist[i], block_size,
-                                   block_bcs, costlist[i], mbdata+buff_os);
+                                   block_bcs, costlist[i], mbdata+buff_os, gflag);
       pblock->next->prev = pblock;
       pblock = pblock->next;
     }

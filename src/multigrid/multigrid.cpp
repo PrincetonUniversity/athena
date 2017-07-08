@@ -22,12 +22,12 @@
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void Multigrid::Multigrid(MeshBlock *pmb, int invar, int nx, int ny, int nz,
-//                                RegionSize isize, MGBoundaryFunc_t *MGBoundary)
+//! \fn Multigrid::Multigrid(MeshBlock *pmb, int invar, int nx, int ny, int nz,
+//                           RegionSize isize, MGBoundaryFunc_t *MGBoundary)
 //  \brief Multigrid constructor
 
-void Multigrid::Multigrid(MeshBlock *pmb, int invar, int nx, int ny, int nz,
-                          RegionSize isize, MGBoundaryFunc_t *MGBoundary)
+Multigrid::Multigrid(MeshBlock *pmb, int invar, int nx, int ny, int nz,
+                     RegionSize isize, MGBoundaryFunc_t *MGBoundary)
 {
   pmy_block_=pmb;
   size_=isize;
@@ -50,12 +50,11 @@ void Multigrid::Multigrid(MeshBlock *pmb, int invar, int nx, int ny, int nz,
   for(int i=0; i<6; i++)
     MGBoundaryFunction_[i]=MGBoundary[i];
   if(pmb!=NULL) { // not root grid
-      if(pmb->pmy_mesh->multilevel==false)
-        ngh_=2;
-      for(int i=0; i<6; i++) {
-        if(pmb->block_bcs[i]==PERIODIC_BNDRY || pmb->block_bcs[i]==BLOCK_BNDRY)
-          MGBoundaryFunction_[i]=NULL;
-      }
+    if(pmb->pmy_mesh->multilevel==false)
+      ngh_=2;
+    for(int i=0; i<6; i++) {
+      if(pmb->block_bcs[i]==PERIODIC_BNDRY || pmb->block_bcs[i]==BLOCK_BNDRY)
+        MGBoundaryFunction_[i]=NULL;
     }
   }
 
@@ -66,19 +65,19 @@ void Multigrid::Multigrid(MeshBlock *pmb, int invar, int nx, int ny, int nz,
   def_ = new AthenaArray<Real>[nlevel_];
   for(int l=nlevel_-1; l>=0; l++) {
     int ll=nlevel_-1-l;
-    int ncx=(nx>>ll)+2*ngh, ncy=(ny>>ll)+2*ngh, ncz=(nz>>ll)+2*ngh;
-    u_[l].NewAthenaArray(nvar,ncz,ncy,ncx);
-    fmgsrc_[l].NewAthenaArray(nvar,ncz,ncy,ncx);
-    def_[l].NewAthenaArray(nvar,ncz,ncy,ncx);
+    int ncx=(nx>>ll)+2*ngh_, ncy=(ny>>ll)+2*ngh_, ncz=(nz>>ll)+2*ngh_;
+    u_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
+    fmgsrc_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
+    def_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
   }
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn virtual void Multigrid::~Multigrid
+//! \fn Multigrid::~Multigrid
 //  \brief Multigrid destroctor
 
-virtual void Multigrid::~Multigrid()
+Multigrid::~Multigrid()
 {
   for(int l=0; l<nlevel_; l++) {
     u_[l].DeleteAthenaArray();
@@ -103,7 +102,7 @@ void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh)
   is=js=ks=ngh_;
   ie=is+nx_-1, je=js+ny_-1, ke=ks+nz_-1;
 #pragma ivdep
-  for(int n=0; n<nvar; n++) {
+  for(int n=0; n<nvar_; n++) {
     int nsrc=ns+n;
 #pragma ivdep
     for(int k=ngh, mk=ks; mk<=ke; k++, mk++) {
@@ -131,7 +130,7 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
   ie=is+nx_-1, je=js+ny_-1, ke=ks+nz_-1;
   if(fac==1.0) {
 #pragma ivdep
-    for(int n=0; n<nvar; n++) {
+    for(int n=0; n<nvar_; n++) {
       int nsrc=ns+n;
 #pragma ivdep
       for(int k=ngh, mk=ks; mk<=ke; k++, mk++) {
@@ -146,7 +145,7 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
   }
   else {
 #pragma ivdep
-    for(int n=0; n<nvar; n++) {
+    for(int n=0; n<nvar_; n++) {
       int nsrc=ns+n;
 #pragma ivdep
       for(int k=ngh, mk=ks; mk<=ke; k++, mk++) {
@@ -170,6 +169,7 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
 
 void Multigrid::RestrictFMGSource(void)
 {
+  int is, ie, js, je, ks, ke;
   current_level_=nlevel_-1;
   std::memcpy(fmgsrc_[current_level_].data(), src_[current_level_].data(),
               src_[current_level_].GetSizeInBytes());
@@ -179,7 +179,7 @@ void Multigrid::RestrictFMGSource(void)
     AthenaArray<Real> &csrc=fmgsrc_[current_level_-1];
     AthenaArray<Real> &fsrc=fmgsrc_[current_level_];
 #pragma ivdep
-    for(int n=0; n<nvar; n++) {
+    for(int n=0; n<nvar_; n++) {
 #pragma ivdep
       for(int k=ks, fk=ks; k<=ke; k++, fk+=2) {
 #pragma ivdep
@@ -207,7 +207,7 @@ void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh)
   is=js=ks=0;
   ie=nx_+2*ngh_-1, je=ny_+2*ngh_-1, ke=nz_+2*ngh_-1;
 #pragma ivdep
-  for(int n=0; n<nvar; n++) {
+  for(int n=0; n<nvar_; n++) {
     int ndst=ns+n;
 #pragma ivdep
     for(int k=ngh-ngh_, mk=ks; mk<=ke; k++, mk++) {
@@ -255,44 +255,44 @@ void Multigrid::ApplyPhysicalBoundaries(void)
   AthenaArray<Real> &dst=u_[current_level_];
   int ll=nlevel_-1-current_level_;
   int ncx=nx_>>ll, ncy=ny_>>ll, ncz=nz_>>ll;
-  int is=ngh_, ie=ncx_+ngh_-1, js=ngh_, je=ncy_+ngh_-1, ks=ngh_, ke=ncz_+ngh_-1;
+  int is=ngh_, ie=ncx+ngh_-1, js=ngh_, je=ncy+ngh_-1, ks=ngh_, ke=ncz+ngh_-1;
   int bis=is-ngh_, bie=ie+ngh_, bjs=js, bje=je, bks=ks, bke=ke;
-  Real dx, dy, dz;
   Real dx=rdx_/(Real)(1<<ll), dy=rdy_/(Real)(1<<ll), dz=rdz_/(Real)(1<<ll);
-  Real x0=size.x1min-((Real)ngh_+0.5)*dx;
-  Real y0=size.x2min-((Real)ngh_+0.5)*dy;
-  Real z0=size.x3min-((Real)ngh_+0.5)*dz;
-  if(MGBoundaryFunction_[INNER_X2]==NULL) bjs=js-ngh_;
+  Real x0=size_.x1min-((Real)ngh_+0.5)*dx;
+  Real y0=size_.x2min-((Real)ngh_+0.5)*dy;
+  Real z0=size_.x3min-((Real)ngh_+0.5)*dz;
+  Real time=pmy_block_->pmy_mesh->time;
+ if(MGBoundaryFunction_[INNER_X2]==NULL) bjs=js-ngh_;
   if(MGBoundaryFunction_[OUTER_X2]==NULL) bje=je+ngh_;
   if(MGBoundaryFunction_[INNER_X3]==NULL) bks=ks-ngh_;
   if(MGBoundaryFunction_[OUTER_X3]==NULL) bke=ke*ngh_;
 
   // Apply boundary function on inner-x1
   if (MGBoundaryFunction_[INNER_X1] != NULL)
-    MGBoundaryFunction_[INNER_X1](dst, time, dt, nvar, is, ie, bjs, bje, bks, bke,
+    MGBoundaryFunction_[INNER_X1](dst, time, nvar_, is, ie, bjs, bje, bks, bke, ngh_,
                                   x0, y0, z0, dx, dy, dz);
   // Apply boundary function on outer-x1
   if (MGBoundaryFunction_[OUTER_X1] != NULL)
-    MGBoundaryFunction_[OUTER_X1](dst, time, dt, nvar, is, ie, bjs, bje, bks, bke,
+    MGBoundaryFunction_[OUTER_X1](dst, time, nvar_, is, ie, bjs, bje, bks, bke, ngh_,
                                   x0, y0, z0, dx, dy, dz);
 
   // Apply boundary function on inner-x2
   if (MGBoundaryFunction_[INNER_X2] != NULL)
-    MGBoundaryFunction_[INNER_X2](dst, time, dt, nvar, bis, bie, js, je, bks, bke,
+    MGBoundaryFunction_[INNER_X2](dst, time, nvar_, bis, bie, js, je, bks, bke, ngh_,
                                   x0, y0, z0, dx, dy, dz);
   // Apply boundary function on outer-x2
   if (MGBoundaryFunction_[OUTER_X2] != NULL)
-    MGBoundaryFunction_[OUTER_X2](dst, time, dt, nvar, bis, bie, js, je, bks, bke,
+    MGBoundaryFunction_[OUTER_X2](dst, time, nvar_, bis, bie, js, je, bks, bke, ngh_,
                                   x0, y0, z0, dx, dy, dz);
 
   bjs=js-ngh_, bje=je+ngh_;
   // Apply boundary function on inner-x3
   if (MGBoundaryFunction_[INNER_X3] != NULL)
-    MGBoundaryFunction_[INNER_X3](dst, time, dt, nvar, bis, bie, bjs, bje, ks, ke,
+    MGBoundaryFunction_[INNER_X3](dst, time, nvar_, bis, bie, bjs, bje, ks, ke, ngh_,
                                   x0, y0, z0, dx, dy, dz);
   // Apply boundary function on outer-x3
   if (MGBoundaryFunction_[OUTER_X3] != NULL)
-    MGBoundaryFunction_[OUTER_X3](dst, time, dt, nvar, bis, bie, bjs, bje, ks, ke,
+    MGBoundaryFunction_[OUTER_X3](dst, time, nvar_, bis, bie, bjs, bje, ks, ke, ngh_,
                                   x0, y0, z0, dx, dy, dz);
 
   return;
@@ -313,7 +313,7 @@ void Multigrid::Restrict(void)
   is=js=ks=ngh_;
   ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
 #pragma ivdep
-  for(int n=0; n<nvar; n++) {
+  for(int n=0; n<nvar_; n++) {
 #pragma ivdep
     for(int k=ks, fk=ks; k<=ke; k++, fk+=2) {
 #pragma ivdep
@@ -345,7 +345,7 @@ void Multigrid::ProlongateAndCorrect(void)
   is=js=ks=ngh_;
   ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
 #pragma ivdep
-  for(int n=0; n<nvar; n++) {
+  for(int n=0; n<nvar_; n++) {
 #pragma ivdep
     for(int k=ks, fk=ks; k<=ke; k++, fk+=2) {
 #pragma ivdep
@@ -397,7 +397,7 @@ void Multigrid::FMGProlongate(void)
   is=js=ks=ngh_;
   ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
 #pragma ivdep
-  for(int n=0; n<nvar; n++) {
+  for(int n=0; n<nvar_; n++) {
 #pragma ivdep
     for(int k=ks, fk=ks; k<=ke; k++, fk+=2) {
 #pragma ivdep
@@ -446,7 +446,7 @@ void Multigrid::SetFromRootGrid(AthenaArray<Real> &src, int ci, int cj, int ck)
   current_level_=0;
   AthenaArray<Real> &dst=u_[current_level_];
 #pragma ivdep
-  for(int n=0; n<nvar; n++) {
+  for(int n=0; n<nvar_; n++) {
 #pragma ivdep
     for(int k=ck-1, tk=ngh_-1; k<=ck+1; k++, tk++) {
 #pragma ivdep
@@ -509,7 +509,7 @@ Real Multigrid::CalculateDefectNorm(int n, int nrm)
       }
     }
   }
-\  return norm;
+  return norm;
 }
 
 
@@ -517,8 +517,9 @@ Real Multigrid::CalculateDefectNorm(int n, int nrm)
 //! \fn Real Multigrid::CalculateTotal(int type, int n)
 //  \brief calculate the sum of the array (type: 0=source, 1=u)
 
-Real CalculateTotal(int type, int n)
+Real Multigrid::CalculateTotal(int type, int n)
 {
+  AthenaArray<Real> src;
   if(type==0) src.InitWithShallowCopy(src_[current_level_]);
   else src.InitWithShallowCopy(u_[current_level_]);
   Real s=0.0;
@@ -566,19 +567,19 @@ void Multigrid::SubtractAverage(int type, int n, Real ave)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn MGPeriodicInnerX1(AthenaArray<Real> &dst,Real time, Real dt,
-//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                     Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//! \fn MGPeriodicInnerX1(AthenaArray<Real> &dst,Real time, int nvar,
+//                int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 //  \brief Periodic (default) boundary condition in the inner-X1 direction
 
-void MGPeriodicInnerX1(AthenaArray<Real> &dst,Real time, Real dt,
-                       int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+void MGPeriodicInnerX1(AthenaArray<Real> &dst,Real time, int nvar,
+                       int is, int ie, int js, int je, int ks, int ke, int ngh,
                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 {
 #pragma ivdep
   for(int n=0; n<nvar; n++) {
 #pragma ivdep
-    for(int k=ks, k<=ke; k++) {
+    for(int k=ks; k<=ke; k++) {
 #pragma ivdep
       for(int j=js; j<=je; j++) {
 #pragma ivdep
@@ -592,19 +593,19 @@ void MGPeriodicInnerX1(AthenaArray<Real> &dst,Real time, Real dt,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn MGPeriodicOuterX1(AthenaArray<Real> &dst,Real time, Real dt,
-//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                     Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//! \fn MGPeriodicOuterX1(AthenaArray<Real> &dst,Real time, int nvar,
+//                int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 //  \brief Periodic (default) boundary condition in the outer-X1 direction
 
-void MGPeriodicOuterX1(AthenaArray<Real> &dst,Real time, Real dt,
-                       int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+void MGPeriodicOuterX1(AthenaArray<Real> &dst,Real time, int nvar,
+                       int is, int ie, int js, int je, int ks, int ke, int ngh,
                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 {
 #pragma ivdep
   for(int n=0; n<nvar; n++) {
 #pragma ivdep
-    for(int k=ks, k<=ke; k++) {
+    for(int k=ks; k<=ke; k++) {
 #pragma ivdep
       for(int j=js; j<=je; j++) {
 #pragma ivdep
@@ -618,19 +619,19 @@ void MGPeriodicOuterX1(AthenaArray<Real> &dst,Real time, Real dt,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn MGPeriodicInnerX2(AthenaArray<Real> &dst,Real time, Real dt,
-//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                     Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//! \fn MGPeriodicInnerX2(AthenaArray<Real> &dst,Real time, int nvar,
+//                int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 //  \brief Periodic (default) boundary condition in the inner-X2 direction
 
-void MGPeriodicInnerX2(AthenaArray<Real> &dst,Real time, Real dt,
-                       int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+void MGPeriodicInnerX2(AthenaArray<Real> &dst,Real time, int nvar,
+                       int is, int ie, int js, int je, int ks, int ke, int ngh,
                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 {
 #pragma ivdep
   for(int n=0; n<nvar; n++) {
 #pragma ivdep
-    for(int k=ks, k<=ke; k++) {
+    for(int k=ks; k<=ke; k++) {
 #pragma ivdep
       for(int j=0; j<ngh; j++) {
 #pragma ivdep
@@ -644,19 +645,19 @@ void MGPeriodicInnerX2(AthenaArray<Real> &dst,Real time, Real dt,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn MGPeriodicOuterX2(AthenaArray<Real> &dst,Real time, Real dt,
-//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                     Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//! \fn MGPeriodicOuterX2(AthenaArray<Real> &dst,Real time, int nvar,
+//                int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 //  \brief Periodic (default) boundary condition in the outer-X2 direction
 
-void MGPeriodicOuterX2(AthenaArray<Real> &dst,Real time, Real dt,
-                       int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+void MGPeriodicOuterX2(AthenaArray<Real> &dst,Real time, int nvar,
+                       int is, int ie, int js, int je, int ks, int ke, int ngh,
                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 {
 #pragma ivdep
   for(int n=0; n<nvar; n++) {
 #pragma ivdep
-    for(int k=ks, k<=ke; k++) {
+    for(int k=ks; k<=ke; k++) {
 #pragma ivdep
       for(int j=0; j<ngh; j++) {
 #pragma ivdep
@@ -670,19 +671,19 @@ void MGPeriodicOuterX2(AthenaArray<Real> &dst,Real time, Real dt,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn MGPeriodicInnerX3(AthenaArray<Real> &dst,Real time, Real dt,
-//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                     Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//! \fn MGPeriodicInnerX3(AthenaArray<Real> &dst,Real time, int nvar,
+//                int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 //  \brief Periodic (default) boundary condition in the inner-X3 direction
 
-void MGPeriodicInnerX3(AthenaArray<Real> &dst, Real time, Real dt,
-                       int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+void MGPeriodicInnerX3(AthenaArray<Real> &dst,Real time, int nvar,
+                       int is, int ie, int js, int je, int ks, int ke, int ngh,
                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 {
 #pragma ivdep
   for(int n=0; n<nvar; n++) {
 #pragma ivdep
-    for(int k=0, k<=ngh; k++) {
+    for(int k=0; k<=ngh; k++) {
 #pragma ivdep
       for(int j=js; j<=je; j++) {
 #pragma ivdep
@@ -696,19 +697,19 @@ void MGPeriodicInnerX3(AthenaArray<Real> &dst, Real time, Real dt,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn MGPeriodicOuterX3(AthenaArray<Real> &dst,Real time, Real dt,
-//                int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//! \fn MGPeriodicOuterX3(AthenaArray<Real> &dst,Real time, int nvar,
+//                int is, int ie, int js, int je, int ks, int ke, int ngh,
 //                Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 //  \brief Periodic (default) boundary condition in the outer-X3 direction
 
-void MGPeriodicOuterX3(AthenaArray<Real> &dst,Real time, Real dt,
-                       int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+void MGPeriodicOuterX3(AthenaArray<Real> &dst,Real time, int nvar,
+                       int is, int ie, int js, int je, int ks, int ke, int ngh,
                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 {
 #pragma ivdep
   for(int n=0; n<nvar; n++) {
 #pragma ivdep
-    for(int k=0, k<=ngh; k++) {
+    for(int k=0; k<=ngh; k++) {
 #pragma ivdep
       for(int j=js; j<=je; j++) {
 #pragma ivdep

@@ -24,6 +24,6 @@ void Gravity::Initialize(ParameterInput *pin)
 //! \fn  void Gravity::Solver
 //  \brief Empty solver
 
-void Gravity::Solver(const AthenaArray<Real> &u, bool first_flag)
+void Gravity::Solver(const AthenaArray<Real> &u)
 {
 }

@@ -11,11 +11,12 @@
 // Athena++ classes headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../task_list/task_list.hpp"
+//#include "../task_list/task_list.hpp"
 
 class MeshBlock;
 class ParameterInput;
 class HydroSourceTerms;
+struct IntegratorWeight;
 
 //! \class Hydro
 //  \brief hydro data and functions
@@ -38,12 +39,16 @@ public:
   Real NewBlockTimeStep(void);    // computes new timestep on a MeshBlock
   void AddFluxDivergenceToAverage(AthenaArray<Real> &u1, 
     AthenaArray<Real> &u2, AthenaArray<Real> &w, AthenaArray<Real> &bcc,
-    IntegratorWeight wght, AthenaArray<Real> &u_out);
+    const IntegratorWeight wght, AthenaArray<Real> &u_out);
   void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     AthenaArray<Real> &bcc, int order);
   void RiemannSolver(const int k, const int j, const int il, const int iu,
     const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
     AthenaArray<Real> &wr, AthenaArray<Real> &flx);
+
+  void AddGravityFlux(void);
+  void CalculateGravityFlux(AthenaArray<Real> &phi_in);
+  void CorrectGravityFlux(void);
 
 private:
   AthenaArray<Real> dt1_,dt2_,dt3_;  // scratch arrays used in NewTimeStep

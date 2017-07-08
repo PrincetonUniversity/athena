@@ -1,3 +1,17 @@
+//========================================================================================
+// Athena++ astrophysical MHD code
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
+//! \file gravity_fluxes.cpp
+//  \brief Calculate gravity fluxes
+
+// Athena++ headers
+#include "hydro.hpp"
+#include "../mesh/mesh.hpp"
+#include "../coordinates/coordinates.hpp"
+#include "../gravity/gravity.hpp"
+
 //----------------------------------------------------------------------------------------
 //! \fn void Hydro::AddGravityFlux(void)
 //  \brief Adds gravity flux to hydro flux
@@ -38,13 +52,14 @@ void Hydro::AddGravityFlux(void)
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Hydro::CalcGravityFlux(AthenaArray<Real> &phi_in)
+//! \fn void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
 //  \brief Calcuates gravity flux to hydro flux
   
 void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
 {
   MeshBlock *pmb=pmy_block;
   Coordinates *pco=pmb->pcoord;
+  Real four_pi_G=pmb->pgrav->four_pi_G, grav_mean_rho=pmb->pgrav->grav_mean_rho;
 
   AthenaArray<Real> &x1flux=flux[X1DIR];
   AthenaArray<Real> &x2flux=flux[X2DIR];

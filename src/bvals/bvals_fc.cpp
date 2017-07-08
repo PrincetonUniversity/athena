@@ -816,7 +816,7 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst)
       SetFieldBoundaryFromCoarser(bd_field_.recv[nb.bufid], nb);
     else
       SetFieldBoundaryFromFiner(dst, bd_field_.recv[nb.bufid], nb);
-    field_flag_[nb.bufid] = BNDRY_COMPLETED; // completed
+    bd_field_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
   if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY)

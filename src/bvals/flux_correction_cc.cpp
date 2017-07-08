@@ -44,7 +44,7 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type)
   Coordinates *pco=pmb->pcoord;
   AthenaArray<Real> x1flux, x2flux, x3flux;
   int ns, ne;
-  BoudaryData *pbd, *ptarget;
+  BoundaryData *pbd, *ptarget;
 
   if(type==FLUX_HYDRO) {
     ns=0, ne=NHYDRO-1;
@@ -171,6 +171,7 @@ bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type)
   MeshBlock *pmb=pmy_block_;
   Coordinates *pco=pmb->pcoord;
   AthenaArray<Real> x1flux, x2flux, x3flux;
+  bool bflag=true;
   int ns, ne;
   BoundaryData *pbd;
 
