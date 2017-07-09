@@ -147,7 +147,7 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type)
       }
       if(nb.rank==Globals::my_rank) { // on the same node
         pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
-        if(type==BNDRY_MGGRAV)
+        if(type==FLUX_HYDRO)
           ptarget=&(pbl->pbval->bd_flcor_);
         std::memcpy(ptarget->recv[nb.targetid], sbuf, p*sizeof(Real));
         ptarget->flag[nb.targetid]=BNDRY_ARRIVED;

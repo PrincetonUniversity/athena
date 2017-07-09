@@ -70,6 +70,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
           << "Flag ix1_bc=" << pmb->block_bcs[INNER_X1] << " not valid" << std::endl;
       throw std::runtime_error(msg.str().c_str());
+      break;
    }
 
   // Outer x1
@@ -226,13 +227,13 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   if(pmb->pmy_mesh->multilevel==true) // SMR or AMR
     InitBoundaryData(bd_flcor_, BNDRY_FLCOR);
   if(MAGNETIC_FIELDS_ENABLED) {
-    InitBoundaryData(bd_hydro_, BNDRY_FIELD);
+    InitBoundaryData(bd_field_, BNDRY_FIELD);
     InitBoundaryData(bd_emfcor_, BNDRY_EMFCOR);
   }
   if(SELF_GRAVITY_ENABLED == 1)
-    InitBoundaryData(bd_hydro_, BNDRY_GRAVITY);
+    InitBoundaryData(bd_gravity_, BNDRY_GRAVITY);
   if(SELF_GRAVITY_ENABLED == 2)
-    InitBoundaryData(bd_hydro_, BNDRY_MGGRAV);
+    InitBoundaryData(bd_mggrav_, BNDRY_MGGRAV);
 
   if (num_north_polar_blocks_ > 0) {
     emf_north_send_ = new Real *[num_north_polar_blocks_];
@@ -523,6 +524,10 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
         }
         break;
       default:
+        std::stringstream msg;
+        msg << "### FATAL ERROR in InitBoundaryData" << std::endl
+            << "Invalid boundary type is specified." << std::endl;
+        throw std::runtime_error(msg.str().c_str());
         break;
     }
     bd.send[n]=new Real [size];
@@ -537,8 +542,8 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
 void BoundaryValues::DestroyBoundaryData(BoundaryData &bd)
 {
   for(int n=0;n<bd.nbmax;n++) {
-    delete [] bd.send;
-    delete [] bd.recv;
+    delete [] bd.send[n];
+    delete [] bd.recv[n];
   }
 }
 
@@ -1026,7 +1031,7 @@ void BoundaryValues::ClearBoundaryAll(void)
       if (SELF_GRAVITY_ENABLED == 1)
         MPI_Wait(&(bd_gravity_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
       if(nb.type==NEIGHBOR_FACE && nb.level<pmb->loc.level)
-        MPI_Wait(&(bd_flcor_.req_send[nb.fid]),MPI_STATUS_IGNORE); // Wait for Isend
+        MPI_Wait(&(bd_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
       if (MAGNETIC_FIELDS_ENABLED) {
         MPI_Wait(&(bd_field_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
         if(nb.type==NEIGHBOR_FACE || nb.type==NEIGHBOR_EDGE) {
