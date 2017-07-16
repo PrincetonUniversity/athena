@@ -848,6 +848,7 @@ Mesh::~Mesh()
   delete [] ranklist;
   delete [] costlist;
   delete [] loclist;
+  if (SELF_GRAVITY_ENABLED==2) delete pgrd;
   if(adaptive==true) { // deallocate arrays for AMR
     delete [] nref;
     delete [] nderef;
@@ -1237,7 +1238,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
         pfield=pmb->pfield;
         pmb->pbval->SendFieldBoundaryBuffers(pfield->b);
       }
-      if (SELF_GRAVITY_ENABLED) {
+      if (SELF_GRAVITY_ENABLED==1) {
         pgrav=pmb->pgrav;
         pmb->pbval->SendGravityBoundaryBuffers(pgrav->phi);
       }
@@ -1254,7 +1255,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
         pfield=pmb->pfield;
         pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b);
       }
-      if (SELF_GRAVITY_ENABLED) {
+      if (SELF_GRAVITY_ENABLED==1) {
         pgrav=pmb->pgrav;
         pmb->pbval->ReceiveGravityBoundaryBuffersWithWait(pgrav->phi);
       }

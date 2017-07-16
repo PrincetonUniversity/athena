@@ -69,7 +69,6 @@ enum BoundaryType {BNDRY_HYDRO=0, BNDRY_FIELD=1, BNDRY_GRAVITY=2, BNDRY_MGGRAV=3
                    BNDRY_FLCOR=4, BNDRY_EMFCOR=5};
 enum CCBoundaryType {HYDRO_CONS=0, HYDRO_PRIM=1};
 enum FluxCorrectionType {FLUX_HYDRO=0};
-enum MGBoundaryType {BND_MGGRAV = 0};
 
 //----------------------------------------------------------------------------------------
 // function pointer prototypes for user-defined modules set at runtime

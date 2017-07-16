@@ -191,16 +191,16 @@ public:
   void ReceiveGravityBoundaryBuffersWithWait(AthenaArray<Real> &dst);
 
 // Multigrid
-  void StartReceivingMultigrid(int nc, enum MGBoundaryType type);
-  void ClearBoundaryMultigrid(enum MGBoundaryType type);
+  void StartReceivingMultigrid(int nc, enum BoundaryType type);
+  void ClearBoundaryMultigrid(enum BoundaryType type);
   int LoadMultigridBoundaryBufferSameLevel(AthenaArray<Real> &src,
                    int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb);
   void SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
-                                    int nc, enum MGBoundaryType type);
+                                    int nc, enum BoundaryType type);
   void SetMultigridBoundarySameLevel(AthenaArray<Real> &dst,
                    int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb);
   bool ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
-                                       int nc, enum MGBoundaryType type);
+                                       int nc, enum BoundaryType type);
 
 private:
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals

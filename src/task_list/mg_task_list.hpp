@@ -47,7 +47,7 @@ public:
   // functions
   enum TaskListStatus DoAllAvailableTasks(Multigrid *pmg, TaskState &ts);
   void DoTaskListOneSubStep(MultigridDriver *pmd);
-  void ClearTaskList(void);
+  void ClearTaskList(void) {ntasks=0;};
   void AddMultigridTask(uint64_t id, uint64_t dep);
 
   // functions
@@ -58,13 +58,12 @@ public:
   enum TaskStatus SmoothRed(Multigrid *pmg);
   enum TaskStatus SmoothBlack(Multigrid *pmg);
   enum TaskStatus PhysicalBoundary(Multigrid *pmg);
-  enum TaskStatus CalculateDefect(Multigrid *pmg);
   enum TaskStatus Restrict(Multigrid *pmg);
   enum TaskStatus Prolongate(Multigrid *pmg);
   enum TaskStatus FMGProlongate(Multigrid *pmg);
 
-  void SetMGTaskListToFiner(int nsmooth);
-  void SetMGTaskListToCoarser(int nsmooth);
+  void SetMGTaskListToFiner(int nsmooth, int ngh);
+  void SetMGTaskListToCoarser(int nsmooth, int ngh);
   void SetMGTaskListFMGProlongate(void);
 
 private:
@@ -77,32 +76,38 @@ private:
 
 namespace MultigridTaskNames {
   const uint64_t NONE           = 0;
-  const uint64_t MG_STARTRECV1R = 1LL<<0;
-  const uint64_t MG_STARTRECV1B = 1LL<<1;
-  const uint64_t MG_STARTRECV2R = 1LL<<2;
-  const uint64_t MG_STARTRECV2B = 1LL<<3;
-  const uint64_t MG_CLEARBND1R  = 1LL<<4;
-  const uint64_t MG_CLEARBND1B  = 1LL<<5;
-  const uint64_t MG_CLEARBND2R  = 1LL<<6;
-  const uint64_t MG_CLEARBND2B  = 1LL<<7;
-  const uint64_t MG_SENDBND1R   = 1LL<<8;
-  const uint64_t MG_SENDBND1B   = 1LL<<9;
-  const uint64_t MG_SENDBND2R   = 1LL<<10;
-  const uint64_t MG_SENDBND2B   = 1LL<<11;
-  const uint64_t MG_RECVBND1R   = 1LL<<12;
-  const uint64_t MG_RECVBND1B   = 1LL<<13;
-  const uint64_t MG_RECVBND2R   = 1LL<<14;
-  const uint64_t MG_RECVBND2B   = 1LL<<15;
-  const uint64_t MG_SMOOTH1R    = 1LL<<16;
-  const uint64_t MG_SMOOTH1B    = 1LL<<17;
-  const uint64_t MG_SMOOTH2R    = 1LL<<18;
-  const uint64_t MG_SMOOTH2B    = 1LL<<19;
-  const uint64_t MG_PHYSBND1    = 1LL<<20;
-  const uint64_t MG_PHYSBND2    = 1LL<<21;
-  const uint64_t MG_CALCDEFECT  = 1LL<<22;
-  const uint64_t MG_RESTRICT    = 1LL<<23;
-  const uint64_t MG_PROLONG     = 1LL<<24;
-  const uint64_t MG_FMGPROLONG  = 1LL<<25;
+  const uint64_t MG_STARTRECV0  = 1LL<<0;
+  const uint64_t MG_STARTRECV1R = 1LL<<1;
+  const uint64_t MG_STARTRECV1B = 1LL<<2;
+  const uint64_t MG_STARTRECV2R = 1LL<<3;
+  const uint64_t MG_STARTRECV2B = 1LL<<4;
+  const uint64_t MG_CLEARBND0   = 1LL<<5;
+  const uint64_t MG_CLEARBND1R  = 1LL<<6;
+  const uint64_t MG_CLEARBND1B  = 1LL<<7;
+  const uint64_t MG_CLEARBND2R  = 1LL<<8;
+  const uint64_t MG_CLEARBND2B  = 1LL<<9;
+  const uint64_t MG_SENDBND0    = 1LL<<10;
+  const uint64_t MG_SENDBND1R   = 1LL<<11;
+  const uint64_t MG_SENDBND1B   = 1LL<<12;
+  const uint64_t MG_SENDBND2R   = 1LL<<13;
+  const uint64_t MG_SENDBND2B   = 1LL<<14;
+  const uint64_t MG_RECVBND0    = 1LL<<15;
+  const uint64_t MG_RECVBND1R   = 1LL<<16;
+  const uint64_t MG_RECVBND1B   = 1LL<<17;
+  const uint64_t MG_RECVBND2R   = 1LL<<18;
+  const uint64_t MG_RECVBND2B   = 1LL<<19;
+  const uint64_t MG_SMOOTH1R    = 1LL<<20;
+  const uint64_t MG_SMOOTH1B    = 1LL<<21;
+  const uint64_t MG_SMOOTH2R    = 1LL<<22;
+  const uint64_t MG_SMOOTH2B    = 1LL<<23;
+  const uint64_t MG_PHYSBND0    = 1LL<<24;
+  const uint64_t MG_PHYSBND1R   = 1LL<<25;
+  const uint64_t MG_PHYSBND1B   = 1LL<<26;
+  const uint64_t MG_PHYSBND2R   = 1LL<<27;
+  const uint64_t MG_PHYSBND2B   = 1LL<<28;
+  const uint64_t MG_RESTRICT    = 1LL<<29;
+  const uint64_t MG_PROLONG     = 1LL<<30;
+  const uint64_t MG_FMGPROLONG  = 1LL<<31;
 };
 
 #endif // MG_TASK_LIST_HPP

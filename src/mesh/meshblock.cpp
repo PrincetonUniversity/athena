@@ -128,18 +128,17 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // FFT object (need to be set before Gravity class)
   if (FFT_ENABLED) pfft = new AthenaFFT(this);
 
+  // physics-related objects
+  phydro = new Hydro(this, pin);
+  if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
+  peos = new EquationOfState(this, pin);
+
+  if (SELF_GRAVITY_ENABLED >= 1) pgrav = new Gravity(this, pin);
+
   // Multigrid
   if (SELF_GRAVITY_ENABLED == 2)
-    pmggrav = new MGGravity(this, block_size.nx1, block_size.nx2, block_size.nx3,
-                            block_size, pm->MGBoundaryFunction_);
-
-  // physics-related objects
-  if(SELF_GRAVITY_ENABLED <= 1) {
-    phydro = new Hydro(this, pin);
-    if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
-    peos = new EquationOfState(this, pin);
-  }
-  if (SELF_GRAVITY_ENABLED >= 1) pgrav = new Gravity(this, pin);
+    pmggrav = new MGGravity(pmy_mesh, this, block_size.nx1, block_size.nx2,
+                            block_size.nx3, block_size, pm->MGBoundaryFunction_);
 
   // Create user mesh data
   InitUserMeshBlockData(pin);
@@ -232,45 +231,42 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   // FFT object
   if (FFT_ENABLED) pfft = new AthenaFFT(this);
 
+  // (re-)create physics-related objects in MeshBlock
+  phydro = new Hydro(this, pin);
+  if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
+  peos = new EquationOfState(this, pin);
+
+  if (SELF_GRAVITY_ENABLED >= 1) pgrav = new Gravity(this, pin);
+
   // Multigrid
   if (SELF_GRAVITY_ENABLED == 2)
-    pmggrav = new MGGravity(this, block_size.nx1, block_size.nx2, block_size.nx3,
-                            block_size, pm->MGBoundaryFunction_);
-
-  if(SELF_GRAVITY_ENABLED <= 1) {
-    // (re-)create physics-related objects in MeshBlock
-    phydro = new Hydro(this, pin);
-    if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
-    peos = new EquationOfState(this, pin);
-  }
-  if (SELF_GRAVITY_ENABLED >= 1) pgrav = new Gravity(this, pin);
+    pmggrav = new MGGravity(pmy_mesh, this, block_size.nx1, block_size.nx2,
+                            block_size.nx3, block_size, pm->MGBoundaryFunction_);
 
   InitUserMeshBlockData(pin);
 
   int os=0;
-  if(SELF_GRAVITY_ENABLED <= 1) {
-    // load hydro and field data
-    memcpy(phydro->u.data(), &(mbdata[os]), phydro->u.GetSizeInBytes());
-    // load it into the half-step arrays too
-    memcpy(phydro->u1.data(), &(mbdata[os]), phydro->u1.GetSizeInBytes());
-    os += phydro->u.GetSizeInBytes();
-    if (GENERAL_RELATIVITY) {
-      memcpy(phydro->w.data(), &(mbdata[os]), phydro->w.GetSizeInBytes());
-      os += phydro->w.GetSizeInBytes();
-      memcpy(phydro->w1.data(), &(mbdata[os]), phydro->w1.GetSizeInBytes());
-      os += phydro->w1.GetSizeInBytes();
-    }
-    if (MAGNETIC_FIELDS_ENABLED) {
-      memcpy(pfield->b.x1f.data(), &(mbdata[os]), pfield->b.x1f.GetSizeInBytes());
-      memcpy(pfield->b1.x1f.data(), &(mbdata[os]), pfield->b1.x1f.GetSizeInBytes());
-      os += pfield->b.x1f.GetSizeInBytes();
-      memcpy(pfield->b.x2f.data(), &(mbdata[os]), pfield->b.x2f.GetSizeInBytes());
-      memcpy(pfield->b1.x2f.data(), &(mbdata[os]), pfield->b1.x2f.GetSizeInBytes());
-      os += pfield->b.x2f.GetSizeInBytes();
-      memcpy(pfield->b.x3f.data(), &(mbdata[os]), pfield->b.x3f.GetSizeInBytes());
-      memcpy(pfield->b1.x3f.data(), &(mbdata[os]), pfield->b1.x3f.GetSizeInBytes());
-      os += pfield->b.x3f.GetSizeInBytes();
-    }
+  // load hydro and field data
+  memcpy(phydro->u.data(), &(mbdata[os]), phydro->u.GetSizeInBytes());
+  // load it into the half-step arrays too
+  memcpy(phydro->u1.data(), &(mbdata[os]), phydro->u1.GetSizeInBytes());
+  os += phydro->u.GetSizeInBytes();
+  if (GENERAL_RELATIVITY) {
+    memcpy(phydro->w.data(), &(mbdata[os]), phydro->w.GetSizeInBytes());
+    os += phydro->w.GetSizeInBytes();
+    memcpy(phydro->w1.data(), &(mbdata[os]), phydro->w1.GetSizeInBytes());
+    os += phydro->w1.GetSizeInBytes();
+  }
+  if (MAGNETIC_FIELDS_ENABLED) {
+    memcpy(pfield->b.x1f.data(), &(mbdata[os]), pfield->b.x1f.GetSizeInBytes());
+    memcpy(pfield->b1.x1f.data(), &(mbdata[os]), pfield->b1.x1f.GetSizeInBytes());
+    os += pfield->b.x1f.GetSizeInBytes();
+    memcpy(pfield->b.x2f.data(), &(mbdata[os]), pfield->b.x2f.GetSizeInBytes());
+    memcpy(pfield->b1.x2f.data(), &(mbdata[os]), pfield->b1.x2f.GetSizeInBytes());
+    os += pfield->b.x2f.GetSizeInBytes();
+    memcpy(pfield->b.x3f.data(), &(mbdata[os]), pfield->b.x3f.GetSizeInBytes());
+    memcpy(pfield->b1.x3f.data(), &(mbdata[os]), pfield->b1.x3f.GetSizeInBytes());
+    os += pfield->b.x3f.GetSizeInBytes();
   }
 
   // NEW_PHYSICS: add load of new physics from restart file here
@@ -279,18 +275,16 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     os += pgrav->phi.GetSizeInBytes();
   }
 
-  if(SELF_GRAVITY_ENABLED <= 1) {
-    // load user MeshBlock data
-    for(int n=0; n<nint_user_meshblock_data_; n++) {
-      memcpy(iuser_meshblock_data[n].data(), &(mbdata[os]),
-             iuser_meshblock_data[n].GetSizeInBytes());
-      os+=iuser_meshblock_data[n].GetSizeInBytes();
-    }
-    for(int n=0; n<nreal_user_meshblock_data_; n++) {
-      memcpy(ruser_meshblock_data[n].data(), &(mbdata[os]),
-             ruser_meshblock_data[n].GetSizeInBytes());
-      os+=ruser_meshblock_data[n].GetSizeInBytes();
-    }
+  // load user MeshBlock data
+  for(int n=0; n<nint_user_meshblock_data_; n++) {
+    memcpy(iuser_meshblock_data[n].data(), &(mbdata[os]),
+           iuser_meshblock_data[n].GetSizeInBytes());
+    os+=iuser_meshblock_data[n].GetSizeInBytes();
+  }
+  for(int n=0; n<nreal_user_meshblock_data_; n++) {
+    memcpy(ruser_meshblock_data[n].data(), &(mbdata[os]),
+           ruser_meshblock_data[n].GetSizeInBytes());
+    os+=ruser_meshblock_data[n].GetSizeInBytes();
   }
 
   return;
@@ -317,6 +311,7 @@ MeshBlock::~MeshBlock()
   if (MAGNETIC_FIELDS_ENABLED) delete pfield;
   delete peos;
   if (SELF_GRAVITY_ENABLED) delete pgrav;
+  if (SELF_GRAVITY_ENABLED == 2) delete pmggrav;
 
   // delete user output variables array
   if(nuser_out_var > 0) {

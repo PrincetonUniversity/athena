@@ -19,6 +19,7 @@
 Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_block = pmb;
+  four_pi_G=pin->GetOrAddReal("problem", "four_pi_G", 1.0); // default: 4piG=1
 
   // Allocate memory for gravitational potential, but only when needed.
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);

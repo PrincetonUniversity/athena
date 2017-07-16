@@ -6,8 +6,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file gravity.hpp
-//  \brief defines Gravity class which implements data and functions for gravitational potential
+//! \file mggravity.hpp
+//  \brief defines MGGravity class
 
 // Athena++ classes headers
 #include "../athena.hpp"
@@ -24,9 +24,9 @@ class Multigrid;
 
 class MGGravity : public Multigrid {
 public:
-  MGGravity(MeshBlock *pmb, int nx, int ny, int nz,
+  MGGravity(Mesh *pm, MeshBlock *pmb, int nx, int ny, int nz,
             RegionSize isize, MGBoundaryFunc_t *MGBoundary)
-    : Multigrid(pmb, 1, nx, ny, nz, isize, MGBoundary), omega_(1.15) {btype=BND_MGGRAV;};
+   : Multigrid(pm,pmb,1,nx,ny,nz,isize,MGBoundary),omega_(1.15) {btype=BNDRY_MGGRAV;};
   ~MGGravity() {};
   void Smooth(int color);
   void CalculateDefect(void);

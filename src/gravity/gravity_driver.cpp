@@ -32,7 +32,7 @@ GravityDriver::GravityDriver(Mesh *pm, MeshBlock *pblock, MGBoundaryFunc_t *MGBo
                              ParameterInput *pin)
  : MultigridDriver(pm, pblock, MGBoundary, 1, pin)
 {
-  mgroot_ = new MGGravity(NULL,pm->nrbx1,pm->nrbx2,pm->nrbx3,pm->mesh_size,MGBoundary);
+  mgroot_ = new MGGravity(pm,NULL,pm->nrbx1,pm->nrbx2,pm->nrbx3,pm->mesh_size,MGBoundary);
   four_pi_G_=pin->GetOrAddReal("problem", "four_pi_G", 1.0); // default: 4piG=1
 }
 

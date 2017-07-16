@@ -100,6 +100,7 @@ void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep)
   task_list_[ntasks].dependency=dep;
 
   switch(id) {
+    case (MG_STARTRECV0):
     case (MG_STARTRECV1R):
     case (MG_STARTRECV1B):
     case (MG_STARTRECV2R):
@@ -108,6 +109,7 @@ void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep)
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
                                     (&MultigridTaskList::StartReceive);
       break;
+    case (MG_CLEARBND0):
     case (MG_CLEARBND1R):
     case (MG_CLEARBND1B):
     case (MG_CLEARBND2R):
@@ -116,6 +118,7 @@ void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep)
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
                                     (&MultigridTaskList::ClearBoundary);
       break;
+    case (MG_SENDBND0):
     case (MG_SENDBND1R):
     case (MG_SENDBND1B):
     case (MG_SENDBND2R):
@@ -124,6 +127,7 @@ void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep)
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
                                     (&MultigridTaskList::SendBoundary);
       break;
+    case (MG_RECVBND0):
     case (MG_RECVBND1R):
     case (MG_RECVBND1B):
     case (MG_RECVBND2R):
@@ -144,8 +148,11 @@ void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep)
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
                                     (&MultigridTaskList::SmoothBlack);
       break;
-    case (MG_PHYSBND1):
-    case (MG_PHYSBND2):
+    case (MG_PHYSBND0):
+    case (MG_PHYSBND1R):
+    case (MG_PHYSBND1B):
+    case (MG_PHYSBND2R):
+    case (MG_PHYSBND2B):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
                                     (&MultigridTaskList::PhysicalBoundary);
@@ -243,42 +250,173 @@ enum TaskStatus MultigridTaskList::PhysicalBoundary(Multigrid *pmg)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridTaskList::SetMGTaskListToFiner(int nsmooth)
-//  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
-//  value of ntask.  
+//! \fn void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh)
+//  \brief Set the task list for prolongation and post smoothing
 
-void MultigridTaskList::SetMGTaskListToFiner(int nsmooth)
+void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh)
 {
-  ntasks=0;
+  ClearTaskList();
+  // nsmooth==0 should not be used
+  AddMultigridTask(MG_STARTRECV0, NONE);
+  AddMultigridTask(MG_SENDBND0,   MG_STARTRECV0);
+  AddMultigridTask(MG_RECVBND0,   MG_SENDBND0);
+  AddMultigridTask(MG_PHYSBND0,   MG_RECVBND0);
+  AddMultigridTask(MG_PROLONG,    MG_PHYSBND0);
+  AddMultigridTask(MG_CLEARBND0,  MG_PHYSBND0);
+  if(nsmooth==1) {
+    if(ngh==1) {
+      AddMultigridTask(MG_STARTRECV1R, MG_CLEARBND0);
+      AddMultigridTask(MG_SENDBND1R,   MG_STARTRECV1R);
+      AddMultigridTask(MG_RECVBND1R,   MG_SENDBND1R);
+      AddMultigridTask(MG_PHYSBND1R,   MG_RECVBND1R);
+      AddMultigridTask(MG_SMOOTH1R,    MG_PHYSBND1R);
+      AddMultigridTask(MG_CLEARBND1R,  MG_SMOOTH1R);
+      AddMultigridTask(MG_STARTRECV1B, MG_CLEARBND1R);
+      AddMultigridTask(MG_SENDBND1B,   MG_STARTRECV1B);
+      AddMultigridTask(MG_RECVBND1B,   MG_SENDBND1B);
+      AddMultigridTask(MG_PHYSBND1B,   MG_RECVBND1B);
+      AddMultigridTask(MG_SMOOTH1B,    MG_PHYSBND1B);
+      AddMultigridTask(MG_CLEARBND1B,  MG_SMOOTH1B);
+    }
+    else {
+      AddMultigridTask(MG_STARTRECV1R, MG_CLEARBND0);
+      AddMultigridTask(MG_SENDBND1R,   MG_STARTRECV1R);
+      AddMultigridTask(MG_RECVBND1R,   MG_SENDBND1R);
+      AddMultigridTask(MG_PHYSBND1R,   MG_RECVBND1R);
+      AddMultigridTask(MG_SMOOTH1R,    MG_PHYSBND1R);
+      AddMultigridTask(MG_PHYSBND1B,   MG_SMOOTH1R);
+      AddMultigridTask(MG_SMOOTH1B,    MG_PHYSBND1B);
+      AddMultigridTask(MG_CLEARBND1R,  MG_SMOOTH1B);
+    }
+  }
+  if(nsmooth==2) {
+    if(ngh==1) {
+      AddMultigridTask(MG_STARTRECV2R, MG_CLEARBND1B);
+      AddMultigridTask(MG_SENDBND2R,   MG_STARTRECV2R);
+      AddMultigridTask(MG_RECVBND2R,   MG_SENDBND2R);
+      AddMultigridTask(MG_PHYSBND2R,   MG_RECVBND2R);
+      AddMultigridTask(MG_SMOOTH2R,    MG_PHYSBND2R);
+      AddMultigridTask(MG_CLEARBND2R,  MG_SMOOTH2R);
+      AddMultigridTask(MG_STARTRECV2B, MG_CLEARBND2R);
+      AddMultigridTask(MG_SENDBND2B,   MG_STARTRECV2B);
+      AddMultigridTask(MG_RECVBND2B,   MG_SENDBND2B);
+      AddMultigridTask(MG_PHYSBND2B,   MG_RECVBND2B);
+      AddMultigridTask(MG_SMOOTH2B,    MG_PHYSBND2B);
+      AddMultigridTask(MG_CLEARBND2B,  MG_SMOOTH2B);
+    }
+    else {
+      AddMultigridTask(MG_STARTRECV2R, MG_CLEARBND1R);
+      AddMultigridTask(MG_SENDBND2R,   MG_STARTRECV2R);
+      AddMultigridTask(MG_RECVBND2R,   MG_SENDBND2R);
+      AddMultigridTask(MG_PHYSBND2R,   MG_RECVBND2R);
+      AddMultigridTask(MG_SMOOTH2R,    MG_PHYSBND2R);
+      AddMultigridTask(MG_PHYSBND2B,   MG_SMOOTH2R);
+      AddMultigridTask(MG_SMOOTH2B,    MG_PHYSBND2B);
+      AddMultigridTask(MG_CLEARBND2R,  MG_SMOOTH2B);
+    }
+  }
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth)
-//  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
-//  value of ntask.  
+//! \fn void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth, int ngh)
+//  \brief Set the task list for pre smoothing and restriction
 
-void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth)
+void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth, int ngh)
 {
-  ntasks=0;
-  if(nsmooth==0) {
-    AddMultigridTask(MG_STARTRECV1R, NONE);
-  }
+  ClearTaskList();
+  if(nsmooth==0)
+    AddMultigridTask(MG_RESTRICT, NONE);
   else if(nsmooth==1) {
-    AddMultigridTask(MG_STARTRECV1R, NONE);
+    if(ngh==1) {
+      AddMultigridTask(MG_STARTRECV1R, NONE);
+      AddMultigridTask(MG_SENDBND1R,   MG_STARTRECV1R);
+      AddMultigridTask(MG_RECVBND1R,   MG_SENDBND1R);
+      AddMultigridTask(MG_PHYSBND1R,   MG_RECVBND1R);
+      AddMultigridTask(MG_SMOOTH1R,    MG_PHYSBND1R);
+      AddMultigridTask(MG_CLEARBND1R,  MG_SMOOTH1R);
+      AddMultigridTask(MG_STARTRECV1B, MG_CLEARBND1R);
+      AddMultigridTask(MG_SENDBND1B,   MG_STARTRECV1B);
+      AddMultigridTask(MG_RECVBND1B,   MG_SENDBND1B);
+      AddMultigridTask(MG_PHYSBND1B,   MG_RECVBND1B);
+      AddMultigridTask(MG_SMOOTH1B,    MG_PHYSBND1B);
+      AddMultigridTask(MG_RESTRICT,    MG_SMOOTH1B);
+      AddMultigridTask(MG_CLEARBND1B,  MG_RESTRICT);
+    }
+    else {
+      AddMultigridTask(MG_STARTRECV1R, NONE);
+      AddMultigridTask(MG_SENDBND1R,   MG_STARTRECV1R);
+      AddMultigridTask(MG_RECVBND1R,   MG_SENDBND1R);
+      AddMultigridTask(MG_PHYSBND1R,   MG_RECVBND1R);
+      AddMultigridTask(MG_SMOOTH1R,    MG_PHYSBND1R);
+      AddMultigridTask(MG_PHYSBND1B,   MG_SMOOTH1R);
+      AddMultigridTask(MG_SMOOTH1B,    MG_PHYSBND1B);
+      AddMultigridTask(MG_RESTRICT,    MG_SMOOTH1B);
+      AddMultigridTask(MG_CLEARBND1R,  MG_RESTRICT);
+    }
   }
   else if(nsmooth==2) {
-    AddMultigridTask(MG_STARTRECV1R, NONE);
+    if(ngh==1) {
+      AddMultigridTask(MG_STARTRECV1R, NONE);
+      AddMultigridTask(MG_SENDBND1R,   MG_STARTRECV1R);
+      AddMultigridTask(MG_RECVBND1R,   MG_SENDBND1R);
+      AddMultigridTask(MG_PHYSBND1R,   MG_RECVBND1R);
+      AddMultigridTask(MG_SMOOTH1R,    MG_PHYSBND1R);
+      AddMultigridTask(MG_CLEARBND1R,  MG_SMOOTH1R);
+      AddMultigridTask(MG_STARTRECV1B, MG_CLEARBND1R);
+      AddMultigridTask(MG_SENDBND1B,   MG_STARTRECV1B);
+      AddMultigridTask(MG_RECVBND1B,   MG_SENDBND1B);
+      AddMultigridTask(MG_PHYSBND1B,   MG_RECVBND1B);
+      AddMultigridTask(MG_SMOOTH1B,    MG_PHYSBND1B);
+      AddMultigridTask(MG_CLEARBND1B,  MG_SMOOTH1B);
+      AddMultigridTask(MG_STARTRECV2R, MG_CLEARBND1B);
+      AddMultigridTask(MG_SENDBND2R,   MG_STARTRECV2R);
+      AddMultigridTask(MG_RECVBND2R,   MG_SENDBND2R);
+      AddMultigridTask(MG_PHYSBND2R,   MG_RECVBND2R);
+      AddMultigridTask(MG_SMOOTH2R,    MG_PHYSBND2R);
+      AddMultigridTask(MG_CLEARBND2R,  MG_SMOOTH2R);
+      AddMultigridTask(MG_STARTRECV2B, MG_CLEARBND2R);
+      AddMultigridTask(MG_SENDBND2B,   MG_STARTRECV2B);
+      AddMultigridTask(MG_RECVBND2B,   MG_SENDBND2B);
+      AddMultigridTask(MG_PHYSBND2B,   MG_RECVBND2B);
+      AddMultigridTask(MG_SMOOTH2B,    MG_PHYSBND2B);
+      AddMultigridTask(MG_RESTRICT,    MG_SMOOTH2B);
+      AddMultigridTask(MG_CLEARBND2B,  MG_RESTRICT);
+    }
+    else {
+      AddMultigridTask(MG_STARTRECV1R, NONE);
+      AddMultigridTask(MG_SENDBND1R,   MG_STARTRECV1R);
+      AddMultigridTask(MG_RECVBND1R,   MG_SENDBND1R);
+      AddMultigridTask(MG_PHYSBND1R,   MG_RECVBND1R);
+      AddMultigridTask(MG_SMOOTH1R,    MG_PHYSBND1R);
+      AddMultigridTask(MG_PHYSBND1B,   MG_SMOOTH1R);
+      AddMultigridTask(MG_SMOOTH1B,    MG_PHYSBND1B);
+      AddMultigridTask(MG_CLEARBND1R,  MG_SMOOTH1B);
+      AddMultigridTask(MG_STARTRECV2R, MG_CLEARBND1R);
+      AddMultigridTask(MG_SENDBND2R,   MG_STARTRECV2R);
+      AddMultigridTask(MG_RECVBND2R,   MG_SENDBND2R);
+      AddMultigridTask(MG_PHYSBND2R,   MG_RECVBND2R);
+      AddMultigridTask(MG_SMOOTH2R,    MG_PHYSBND2R);
+      AddMultigridTask(MG_PHYSBND2B,   MG_SMOOTH2R);
+      AddMultigridTask(MG_SMOOTH2B,    MG_PHYSBND2B);
+      AddMultigridTask(MG_RESTRICT,    MG_SMOOTH2B);
+      AddMultigridTask(MG_CLEARBND2R,  MG_RESTRICT);
+    }
   }
 }
 
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridTaskList::SetMGTaskListFMGProlongate(void)
-//  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
-//  value of ntask.  
+//  \brief Set the task list for FMG prolongation
 
 void MultigridTaskList::SetMGTaskListFMGProlongate(void)
 {
-  ntasks=0;
+  ClearTaskList();
+  AddMultigridTask(MG_STARTRECV0, NONE);
+  AddMultigridTask(MG_SENDBND0,   MG_STARTRECV0);
+  AddMultigridTask(MG_RECVBND0,   MG_SENDBND0);
+  AddMultigridTask(MG_PHYSBND0,   MG_RECVBND0);
+  AddMultigridTask(MG_FMGPROLONG, MG_PHYSBND0);
+  AddMultigridTask(MG_CLEARBND0,  MG_FMGPROLONG);
 }

@@ -16,10 +16,13 @@
 #include "../mesh/mesh.hpp"
 #include "../task_list/mg_task_list.hpp"
 
+#include <iostream>
 #ifdef MPI_PARALLEL
 #include <mpi.h>
 #endif
 
+
+class Mesh;
 class MeshBlock;
 class ParameterInput;
 class Coordinates;
@@ -48,11 +51,11 @@ void MGPeriodicOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
 
 class Multigrid {
 public:
-  Multigrid(MeshBlock *pmb, int invar, int nx, int ny, int nz,
+  Multigrid(Mesh *pm, MeshBlock *pmb, int invar, int nx, int ny, int nz,
             RegionSize isize, MGBoundaryFunc_t *MGBoundary);
   virtual ~Multigrid();
 
-  enum MGBoundaryType btype;
+  enum BoundaryType btype;
 
   void LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh);
   void LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real fac);
@@ -71,7 +74,7 @@ public:
 
   // small functions
   void SetCurrentLevel(int level) { current_level_=level; return; };
-  int GetCurrentNumberOfCells(void) { return 1<<current_level_; };
+  int GetCurrentNumberOfCells(void) { std::cout << current_level_ << std::endl; return 1<<current_level_; };
   AthenaArray<Real>& GetCurrentData(void) { return u_[current_level_]; };
   AthenaArray<Real>& GetCurrentSource(void) { return src_[current_level_]; };
   Real GetRootSource(int n) { return src_[0](n,ngh_,ngh_,ngh_); };
@@ -90,6 +93,7 @@ protected:
   AthenaArray<Real> *u_, *def_, *src_, *fmgsrc_;
 
 private:
+  Mesh *pmy_mesh_;
   MeshBlock *pmy_block_;
   TaskState ts_;
   MGBoundaryFunc_t MGBoundaryFunction_[6];
@@ -106,7 +110,6 @@ public:
                   int invar, ParameterInput *pin);
   virtual ~MultigridDriver();
   void SetupMultigrid(void);
-  void CollectSource(void);
   void FillRootGridSource(void);
   void FMGProlongate(void);
   void TransferFromRootToBlocks(bool fmgflag);

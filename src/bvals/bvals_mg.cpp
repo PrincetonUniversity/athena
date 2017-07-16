@@ -35,10 +35,10 @@
 #endif
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::StartReceivingMultigrid(int nc, enum MGBoundaryType type)
+//! \fn void BoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type)
 //  \brief initiate MPI_Irecv for multigrid
 
-void BoundaryValues::StartReceivingMultigrid(int nc, enum MGBoundaryType type)
+void BoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type)
 {
   MeshBlock *pmb=pmy_block_;
   int mylevel=pmb->loc.level;
@@ -90,10 +90,10 @@ void BoundaryValues::StartReceivingMultigrid(int nc, enum MGBoundaryType type)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ClearBoundaryMultigrid(enum MGBoundaryType type)
+//! \fn void BoundaryValues::ClearBoundaryMultigrid(enum BoundaryType type)
 //  \brief clean up the boundary flags after each loop for multigrid
 
-void BoundaryValues::ClearBoundaryMultigrid(enum MGBoundaryType type)
+void BoundaryValues::ClearBoundaryMultigrid(enum BoundaryType type)
 {
   MeshBlock *pmb=pmy_block_;
   BoundaryData *pbd;
@@ -136,11 +136,11 @@ int BoundaryValues::LoadMultigridBoundaryBufferSameLevel(AthenaArray<Real> &src,
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
-//                                                int nc, enum MGBoundaryType type)
+//                                                int nc, enum BoundaryType type)
 //  \brief Send boundary buffers
 
 void BoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
-                                                  int nc, enum MGBoundaryType type)
+                                                  int nc, enum BoundaryType type)
 {
   MeshBlock *pmb=pmy_block_, *pbl;
   int mylevel=pmb->loc.level;
@@ -213,11 +213,11 @@ void BoundaryValues::SetMultigridBoundarySameLevel(AthenaArray<Real> &dst,
 
 //----------------------------------------------------------------------------------------
 //! \fn bool BoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
-//                                                   int nc, enum MGBoundaryType type)
+//                                                   int nc, enum BoundaryType type)
 //  \brief receive the boundary data
 
 bool BoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
-                                                     int nc, enum MGBoundaryType type)
+                                                     int nc, enum BoundaryType type)
 {
   MeshBlock *pmb=pmy_block_;
   bool bflag=true;
