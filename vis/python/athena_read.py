@@ -278,6 +278,13 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
   # Python module
   import h5py
 
+  # Prepare dictionary for results
+  if data is None:
+    data = {}
+    new_data = True
+  else:
+    new_data = False
+
   # Open file
   with h5py.File(filename, 'r') as f:
 
@@ -406,21 +413,27 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
               + ' at desired level for subsampling or fast restriction to work')
 
     # Create list of all quantities if none given
-    file_quantities = f.attrs['VariableNames'][:]
+    var_quantities = f.attrs['VariableNames'][:]
     coord_quantities = ('x1f', 'x2f', 'x3f', 'x1v', 'x2v', 'x3v')
-    if data is not None:
+    attr_quantities = [key for key in f.attrs]
+    if not new_data:
       quantities = data.values()
     elif quantities is None:
-      quantities = file_quantities
+      quantities = var_quantities
     else:
       for q in quantities:
-        if q not in file_quantities and q not in coord_quantities:
-          possibilities = '", "'.join(file_quantities)
+        if q not in var_quantities and q not in coord_quantities:
+          possibilities = '", "'.join(var_quantities)
           possibilities = '"' + possibilities + '"'
           error_string = 'Quantity not recognized: file does not include "{0}" but does' \
               + ' include {1}'
           raise AthenaError(error_string.format(q, possibilities))
-    quantities = [str(q) for q in quantities if q not in coord_quantities]
+    quantities = [str(q) for q in quantities \
+        if q not in coord_quantities and q not in attr_quantities]
+
+    # Store file attribute metadata
+    for key in attr_quantities:
+      data[str(key)] = f.attrs[key]
 
     # Get metadata describing file layout
     num_blocks = f.attrs['NumMeshBlocks']
@@ -448,11 +461,6 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
     x2p = f['x2f'][fine_block,1]
     x3m = f['x3f'][fine_block,0]
     x3p = f['x3f'][fine_block,1]
-
-    # Prepare dictionary for results
-    if data is None:
-      data = {}
-      new_data = True
 
     # Populate coordinate arrays
     face_funcs = (face_func_1, face_func_2, face_func_3)
@@ -705,39 +713,39 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
           loc3 = (nx3 > 1 ) * block_location[2] / s
           restricted_data[loc3,loc2,loc1] = True
 
-    # Remove volume factors from restricted data
-    if level < max_level and not subsample and not fast_restrict:
-      for loc3 in range(lx3):
-        for loc2 in range(lx2):
-          for loc1 in range(lx1):
-            if restricted_data[loc3,loc2,loc1]:
-              il = loc1 * block_size[0]
-              jl = loc2 * block_size[1]
-              kl = loc3 * block_size[2]
-              iu = il + block_size[0]
-              ju = jl + block_size[1]
-              ku = kl + block_size[2]
-              il = max(il, i_min) - i_min
-              jl = max(jl, j_min) - j_min
-              kl = max(kl, k_min) - k_min
-              iu = min(iu, i_max) - i_min
-              ju = min(ju, j_max) - j_min
-              ku = min(ku, k_max) - k_min
-              for k in range(kl, ku):
-                if nx3 > 1:
-                  x3m = data['x3f'][k]
-                  x3p = data['x3f'][k+1]
-                for j in range(jl, ju):
-                  if nx2 > 1:
-                    x2m = data['x2f'][j]
-                    x2p = data['x2f'][j+1]
-                  for i in range(il, iu):
-                    if nx1 > 1:
-                      x1m = data['x1f'][i]
-                      x1p = data['x1f'][i+1]
-                    vol = vol_func(x1m, x1p, x2m, x2p, x3m, x3p)
-                    for q in quantities:
-                      data[q][k,j,i] /= vol
+  # Remove volume factors from restricted data
+  if level < max_level and not subsample and not fast_restrict:
+    for loc3 in range(lx3):
+      for loc2 in range(lx2):
+        for loc1 in range(lx1):
+          if restricted_data[loc3,loc2,loc1]:
+            il = loc1 * block_size[0]
+            jl = loc2 * block_size[1]
+            kl = loc3 * block_size[2]
+            iu = il + block_size[0]
+            ju = jl + block_size[1]
+            ku = kl + block_size[2]
+            il = max(il, i_min) - i_min
+            jl = max(jl, j_min) - j_min
+            kl = max(kl, k_min) - k_min
+            iu = min(iu, i_max) - i_min
+            ju = min(ju, j_max) - j_min
+            ku = min(ku, k_max) - k_min
+            for k in range(kl, ku):
+              if nx3 > 1:
+                x3m = data['x3f'][k]
+                x3p = data['x3f'][k+1]
+              for j in range(jl, ju):
+                if nx2 > 1:
+                  x2m = data['x2f'][j]
+                  x2p = data['x2f'][j+1]
+                for i in range(il, iu):
+                  if nx1 > 1:
+                    x1m = data['x1f'][i]
+                    x1p = data['x1f'][i+1]
+                  vol = vol_func(x1m, x1p, x2m, x2p, x3m, x3p)
+                  for q in quantities:
+                    data[q][k,j,i] /= vol
 
   # Return dictionary containing requested data arrays
   return data
