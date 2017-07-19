@@ -4,6 +4,73 @@ Read Athena++ output data files.
 
 # Python modules
 import numpy as np
+import re
+import struct
+import sys
+import warnings
+
+#=========================================================================================
+
+def hst(filename, raw=False):
+  """Read .hst files and return dict of 1D arrays."""
+
+  # Read data
+  with open(filename, 'r') as data_file:
+
+    # Find header
+    header_found = False
+    multiple_headers = False
+    header_location = None
+    line = data_file.readline()
+    while len(line) > 0:
+      if line == '# Athena++ history data\n':
+        if header_found:
+          multiple_headers = True
+        else:
+          header_found = True
+        header_location = data_file.tell()
+      line = data_file.readline()
+    if multiple_headers:
+      warnings.warn('Multiple headers found; using most recent data', AthenaWarning)
+    if header_location is None:
+      raise AthenaError('No header found')
+
+    # Parse header
+    data_file.seek(header_location)
+    header = data_file.readline()
+    data_names = re.findall(r'\[\d+\]=(\S+)', header)
+    if len(data_names) == 0:
+      raise AthenaError('Header could not be parsed')
+
+    # Prepare dictionary of results
+    data = {}
+    for name in data_names:
+      data[name] = []
+
+    # Read data
+    for line in data_file:
+      vals = re.findall(r'(\S+)', line)
+      for name,val in zip(data_names, vals):
+        data[name].append(float(val))
+
+    # Finalize data
+    for key,val in data.iteritems():
+      data[key] = np.array(val)
+    if not raw:
+      if data_names[0] != 'time':
+        raise AthenaError('Cannot remove spurious data because time column could not be' \
+            + ' identified')
+      branches_removed = False
+      while not branches_removed:
+        branches_removed = True
+        for n in range(1, len(data['time'])):
+          if data['time'][n] <= data['time'][n-1]:
+            branch_index = np.where(data['time'][:n] >= data['time'][n])[0][0]
+            for key,val in data.iteritems():
+              data[key] = np.concatenate((val[:branch_index], val[n:]))
+            branches_removed = False
+            break
+    return data
 
 #=========================================================================================
 
@@ -72,9 +139,6 @@ def tab(filename, headings=None, dimensions=1):
 
 def vtk(filename):
   """Read .vtk files and return dict of arrays of data."""
-
-  # Python module
-  import struct
 
   # Read raw data
   with open(filename, 'r') as data_file:
@@ -185,9 +249,7 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
     center_func_2=None, center_func_3=None):
   """Read .athdf files and populate dict of arrays of data."""
 
-  # Python modules
-  import sys
-  import warnings
+  # Python module
   import h5py
 
   # Open file
