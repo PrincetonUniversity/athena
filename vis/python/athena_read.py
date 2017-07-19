@@ -49,91 +49,117 @@ def hst(filename, raw=False):
 
     # Read data
     for line in data_file:
-      vals = re.findall(r'(\S+)', line)
-      for name,val in zip(data_names, vals):
+      for name,val in zip(data_names, line.split()):
         data[name].append(float(val))
 
-    # Finalize data
-    for key,val in data.iteritems():
-      data[key] = np.array(val)
-    if not raw:
-      if data_names[0] != 'time':
-        raise AthenaError('Cannot remove spurious data because time column could not be' \
-            + ' identified')
-      branches_removed = False
-      while not branches_removed:
-        branches_removed = True
-        for n in range(1, len(data['time'])):
-          if data['time'][n] <= data['time'][n-1]:
-            branch_index = np.where(data['time'][:n] >= data['time'][n])[0][0]
-            for key,val in data.iteritems():
-              data[key] = np.concatenate((val[:branch_index], val[n:]))
-            branches_removed = False
-            break
-    return data
+  # Finalize data
+  for key,val in data.iteritems():
+    data[key] = np.array(val)
+  if not raw:
+    if data_names[0] != 'time':
+      raise AthenaError('Cannot remove spurious data because time column could not be' \
+          + ' identified')
+    branches_removed = False
+    while not branches_removed:
+      branches_removed = True
+      for n in range(1, len(data['time'])):
+        if data['time'][n] <= data['time'][n-1]:
+          branch_index = np.where(data['time'][:n] >= data['time'][n])[0][0]
+          for key,val in data.iteritems():
+            data[key] = np.concatenate((val[:branch_index], val[n:]))
+          branches_removed = False
+          break
+  return data
 
 #=========================================================================================
 
-def tab(filename, headings=None, dimensions=1):
+def tab(filename, raw=False, dimensions=None):
   """Read .tab files and return dict or array."""
 
   # Check for valid number of dimensions
-  if dimensions != 1 and dimensions !=2 and dimensions != 3:
+  if raw and not (dimensions == 1 or dimensions == 2 or dimensions == 3):
     raise AthenaError('Improper number of dimensions')
+  if not raw and dimensions is not None:
+    warnings.warn('Ignoring specified number of dimensions', AthenaWarning)
 
-  # Read raw data
-  with open(filename, 'r') as data_file:
-    raw_data = data_file.readlines()
+  # Parse header
+  if not raw:
+    data_dict = {}
+    with open(filename, 'r') as data_file:
+      line = data_file.readline()
+      attributes = re.search(r'time=(\S+)\s+cycle=(\S+)\s+variables=(\S+)', line)
+      line = data_file.readline()
+      headings = line.split()[1:]
+    data_dict['time'] = float(attributes.group(1))
+    data_dict['cycle'] = int(attributes.group(2))
+    data_dict['variables'] = attributes.group(3)
+    if headings[0] == 'i' and headings[2] == 'j' and headings[4] == 'k':
+      headings = headings[1:2] + headings[3:4] + headings[5:]
+      dimensions = 3
+    elif headings[0] == 'i' and headings[2] == 'j':
+      headings = headings[1:2] + headings[3:]
+      dimensions = 2
+    elif headings[0] == 'i':
+      headings = headings[1:]
+      dimensions = 1
+    else:
+      raise AthenaError('Could not parse header')
 
-  # Organize data into array of numbers
+  # Go through lines
   data_array = []
-  first_line = True
-  last_line_number = len(raw_data)
-  line_number = 0
-  for line in raw_data:
-    line_number += 1
-    if line.split()[0][0] == '#':  # comment line
-      continue
-    row = []
-    col = 0
-    for val in line.split():
-      col += 1
-      if col == 1:
-        if first_line:
-          i_min = int(val)
-        if line_number == last_line_number:
-          i_max = int(val)
-      elif col == 3 and dimensions >= 2:
-        if first_line:
-          j_min = int(val)
-        if line_number == last_line_number:
-          j_max = int(val)
-      elif col == 5 and dimensions == 3:
-        if first_line:
-          k_min = int(val)
-        if line_number == last_line_number:
-          j_max = int(val)
+  with open(filename, 'r') as data_file:
+    first_line = True
+    for line in data_file:
+
+      # Skip comments
+      if line.split()[0][0] == '#':
+        continue
+
+      # Extract cell indices
+      vals = line.split()
+      if first_line:
+        i_min = i_max = int(vals[0])
+        if dimensions == 2 or dimensions == 3:
+          j_min = j_max = int(vals[2])
+        if dimensions == 3:
+          k_min = k_max = int(vals[4])
+        num_entries = len(vals) - dimensions
+        first_line = False
       else:
-        row.append(float(val))
-    first_line = False
-    data_array.append(row)
+        i_max = max(i_max, int(vals[0]))
+        if dimensions == 2 or dimensions == 3:
+          j_max = max(j_max, int(vals[2]))
+        if dimensions == 3:
+          k_max = max(k_max, int(vals[4]))
+
+      # Extract cell values
+      if dimensions == 1:
+        vals = vals[1:]
+      if dimensions == 2:
+        vals = vals[1:2] + vals[3:]
+      if dimensions == 3:
+        vals = vals[1:2] + vals[3:4] + vals[5:]
+      data_array.append([float(val) for val in vals])
 
   # Reshape array based on number of dimensions
   if dimensions == 1:
-    j_min = j_max = 0
-  if dimensions <= 2:
-    k_min = k_max = 0
-  array_shape = (k_max-k_min+1,j_max-j_min+1,i_max-i_min+1,len(row))
-  data_array = np.reshape(data_array, array_shape)
+    array_shape = (i_max-i_min+1, num_entries)
+    array_transpose = (1, 0)
+  if dimensions == 2:
+    array_shape = (j_max-j_min+1, i_max-i_min+1, num_entries)
+    array_transpose = (2, 0, 1)
+  if dimensions == 3:
+    array_shape = (k_max-k_min+1, j_max-j_min+1, i_max-i_min+1, num_entries)
+    array_transpose = (3, 0, 1, 2)
+  data_array = np.transpose(np.reshape(data_array, array_shape), array_transpose)
 
-  # Store separate variables as dictionary entries if headings given
-  if headings is not None:
-    data_dict = {}
-    for n in range(len(headings)):
-      data_dict[headings[n]] = data_array[:,:,:,n]
-    return data_dict
-  else:
+  # Finalize data
+  if raw:
     return data_array
+  else:
+    for n,heading in enumerate(headings):
+      data_dict[heading] = data_array[n,...]
+    return data_dict
 
 #=========================================================================================
 
