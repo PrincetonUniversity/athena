@@ -62,10 +62,9 @@ Multigrid::Multigrid(Mesh *pm, MeshBlock *pmb, int invar, int nx, int ny, int nz
   src_ = new AthenaArray<Real>[nlevel_];
   fmgsrc_ = new AthenaArray<Real>[nlevel_];
   def_ = new AthenaArray<Real>[nlevel_];
-  for(int l=nlevel_-1; l>=0; l--) {
+  for(int l=0; l<nlevel_; l++) {
     int ll=nlevel_-1-l;
     int ncx=(nx>>ll)+2*ngh_, ncy=(ny>>ll)+2*ngh_, ncz=(nz>>ll)+2*ngh_;
-    std::cout << "Multigrid allocation: " << ll << " " << ncx << " " << ncy << " " << ncz << std::endl;
     u_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
     src_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
     fmgsrc_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
@@ -205,18 +204,17 @@ void Multigrid::RestrictFMGSource(void)
 void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh)
 {
   const AthenaArray<Real> &src=u_[nlevel_-1];
-  int is, ie, js, je, ks, ke;
-  is=js=ks=ngh_;
-  ie=nx_+2*ngh_-1, je=ny_+2*ngh_-1, ke=nz_+2*ngh_-1;
+  int sngh=std::min(ngh_,ngh);
+  int ie=nx_+ngh_+sngh-1, je=ny_+ngh_+sngh-1, ke=nz_+ngh_+sngh-1;
 #pragma ivdep
   for(int n=0; n<nvar_; n++) {
     int ndst=ns+n;
 #pragma ivdep
-    for(int k=ngh-ngh_, mk=ks; mk<=ke; k++, mk++) {
+    for(int k=ngh-sngh, mk=ngh_-sngh; mk<=ke; k++, mk++) {
 #pragma ivdep
-      for(int j=ngh-ngh_, mj=js; mj<=je; j++, mj++) {
+      for(int j=ngh-sngh, mj=ngh_-sngh; mj<=je; j++, mj++) {
 #pragma ivdep
-        for(int i=ngh-ngh_, mi=is; mi<=ie; i++, mi++)
+        for(int i=ngh-sngh, mi=ngh_-sngh; mi<=ie; i++, mi++)
           dst(ndst,k,j,i)=src(n,mk,mj,mi);
       }
     }
@@ -259,7 +257,7 @@ void Multigrid::ApplyPhysicalBoundaries(void)
   int ncx=nx_>>ll, ncy=ny_>>ll, ncz=nz_>>ll;
   int is=ngh_, ie=ncx+ngh_-1, js=ngh_, je=ncy+ngh_-1, ks=ngh_, ke=ncz+ngh_-1;
   int bis=is-ngh_, bie=ie+ngh_, bjs=js, bje=je, bks=ks, bke=ke;
-  Real dx=rdx_/(Real)(1<<ll), dy=rdy_/(Real)(1<<ll), dz=rdz_/(Real)(1<<ll);
+  Real dx=rdx_*(Real)(1<<ll), dy=rdy_*(Real)(1<<ll), dz=rdz_*(Real)(1<<ll);
   Real x0=size_.x1min-((Real)ngh_+0.5)*dx;
   Real y0=size_.x2min-((Real)ngh_+0.5)*dy;
   Real z0=size_.x3min-((Real)ngh_+0.5)*dz;
@@ -341,7 +339,7 @@ void Multigrid::Restrict(void)
 void Multigrid::ProlongateAndCorrect(void)
 {
   const AthenaArray<Real> &src=u_[current_level_];
-  AthenaArray<Real> &dst=def_[current_level_+1];
+  AthenaArray<Real> &dst=u_[current_level_+1];
   int ll=nlevel_-1-current_level_;
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
@@ -517,18 +515,20 @@ Real Multigrid::CalculateDefectNorm(int n, int nrm)
 
 //----------------------------------------------------------------------------------------
 //! \fn Real Multigrid::CalculateTotal(int type, int n)
-//  \brief calculate the sum of the array (type: 0=source, 1=u)
+//  \brief calculate the sum of the array (type: 0=fmgsrc, 1=u, 2=src)
 
 Real Multigrid::CalculateTotal(int type, int n)
 {
   AthenaArray<Real> src;
-  if(type==0) src.InitWithShallowCopy(src_[current_level_]);
-  else src.InitWithShallowCopy(u_[current_level_]);
+  int ll=nlevel_-1-current_level_;
+  if(type==0) src.InitWithShallowCopy(fmgsrc_[current_level_]);
+  else if(type==1) src.InitWithShallowCopy(u_[current_level_]);
+  else src.InitWithShallowCopy(src_[current_level_]);
   Real s=0.0;
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
-  ie=is+nx_-1, je=js+ny_-1, ke=ks+nz_-1;
-
+  ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
+  Real dx=rdx_*(Real)(1<<ll), dy=rdy_*(Real)(1<<ll), dz=rdz_*(Real)(1<<ll);
 #pragma ivdep
   for(int k=ks; k<=ke; k++) {
 #pragma ivdep
@@ -538,7 +538,7 @@ Real Multigrid::CalculateTotal(int type, int n)
         s+=src(n,k,j,i);
     }
   }
-  return s*rdx_*rdy_*rdz_;
+  return s*dx*dy*dz;
 }
 
 
@@ -549,7 +549,7 @@ Real Multigrid::CalculateTotal(int type, int n)
 void Multigrid::SubtractAverage(int type, int n, Real ave)
 {
   AthenaArray<Real> dst;
-  if(type==0) dst.InitWithShallowCopy(src_[nlevel_-1]);
+  if(type==0) dst.InitWithShallowCopy(fmgsrc_[nlevel_-1]);
   else dst.InitWithShallowCopy(u_[nlevel_-1]);
   Real s=0.0;
   int is, ie, js, je, ks, ke;

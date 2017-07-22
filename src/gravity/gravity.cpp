@@ -14,6 +14,7 @@
 #include "../coordinates/coordinates.hpp"
 #include "../parameter_input.hpp"
 
+#include <iostream>
 // constructor, initializes data structures and parameters
 
 Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin)
@@ -28,7 +29,7 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin)
   if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
 
   phi.NewAthenaArray(ncells3,ncells2,ncells1);
-  phi_old.NewAthenaArray(ncells3,ncells2,ncells1);
+//  phi_old.NewAthenaArray(ncells3,ncells2,ncells1);
 
   Initialize(pin);
 }
@@ -38,6 +39,6 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin)
 Gravity::~Gravity()
 {
   phi.DeleteAthenaArray();
-  phi_old.DeleteAthenaArray();
+//  phi_old.DeleteAthenaArray();
 }
 

@@ -19,7 +19,6 @@
 //  \brief Red-Black Gauss-Seidel Smoother
 void MGGravity::Smooth(int color)
 {
-  int ns=ngh_, ne=ngh_+(1<<current_level_)-1;
   int c=color;
   AthenaArray<Real> &u=u_[current_level_];
   AthenaArray<Real> &src=src_[current_level_];
@@ -27,15 +26,16 @@ void MGGravity::Smooth(int color)
   int is, ie, js, je, ks, ke;
   if(ngh_==2 && color==0) {
     is=js=ks=ngh_-1;
-    ie=is+(nx_>>ll), je=js+(ny_>>ll), ke=ks+(nz_>>ll);
+    ie=is+(nx_>>ll)+1, je=js+(ny_>>ll)+1, ke=ks+(nz_>>ll)+1;
     c=1;
   }
   else {
     is=js=ks=ngh_;
     ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
   }
-  Real dx = rdx_/(Real)(1<<ll);
-  Real dx2 = SQR(dx), isix=omega_/6.0;
+  Real dx = rdx_*(Real)(1<<ll);
+  Real dx2 = SQR(dx);
+  Real isix=omega_/6.0;
 #pragma ivdep
   for(int k=ks; k<=ke; k++) {
 #pragma ivdep
@@ -65,16 +65,19 @@ void MGGravity::CalculateDefect(void)
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
-  Real dx = rdx_/(Real)(1<<ll);
+  Real dx = rdx_*(Real)(1<<ll);
   Real idx2 = 1.0/SQR(dx);
+  Real t=0.0;
 #pragma ivdep
   for(int k=ks; k<=ke; k++) {
 #pragma ivdep
     for(int j=js; j<=je; j++) {
 #pragma ivdep
-      for(int i=is; i<=ie; i++)
+      for(int i=is; i<=ie; i++) {
         def(0,k,j,i)=(6.0*u(0,k,j,i)-u(0,k+1,j,i)-u(0,k,j+1,i)-u(0,k,j,i+1)
                          -u(0,k-1,j,i)-u(0,k,j-1,i)-u(0,k,j,i-1))*idx2+src(0,k,j,i);
+        t+=def(0,k,j,i)*dx*dx*dx;
+      }
     }
   }
   return;

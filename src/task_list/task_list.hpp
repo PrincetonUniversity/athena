@@ -65,7 +65,7 @@ class TaskList {
 friend class TimeIntegratorTaskList;
 public:
   TaskList(Mesh *pm);
-  ~TaskList();
+  virtual ~TaskList();
 
   // data
   int ntasks;     // number of tasks in this list

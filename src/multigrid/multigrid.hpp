@@ -74,7 +74,7 @@ public:
 
   // small functions
   void SetCurrentLevel(int level) { current_level_=level; return; };
-  int GetCurrentNumberOfCells(void) { std::cout << current_level_ << std::endl; return 1<<current_level_; };
+  int GetCurrentNumberOfCells(void) { return 1<<current_level_; };
   AthenaArray<Real>& GetCurrentData(void) { return u_[current_level_]; };
   AthenaArray<Real>& GetCurrentSource(void) { return src_[current_level_]; };
   Real GetRootSource(int n) { return src_[0](n,ngh_,ngh_,ngh_); };
@@ -109,6 +109,7 @@ public:
   MultigridDriver(Mesh *pm, MeshBlock *pmb, MGBoundaryFunc_t *MGBoundary,
                   int invar, ParameterInput *pin);
   virtual ~MultigridDriver();
+  void SubtractAverage(int type);
   void SetupMultigrid(void);
   void FillRootGridSource(void);
   void FMGProlongate(void);
