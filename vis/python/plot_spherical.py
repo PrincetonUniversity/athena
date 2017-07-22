@@ -103,8 +103,8 @@ def main(**kwargs):
   else:
     theta_extended = np.concatenate((-theta[0:1], theta, 2.0*np.pi-theta[::-1], \
         2.0*np.pi+theta[0:1]))
-    theta_extended -= 0.5 * (theta[1] - theta[0])
-    r_grid,theta_grid = np.meshgrid(r, theta_extended)
+    theta_extended_corrected = theta_extended - 0.5 * (theta[1] - theta[0])
+    r_grid,theta_grid = np.meshgrid(r, theta_extended_corrected)
     x_grid = r_grid * np.sin(theta_grid)
     y_grid = r_grid * np.cos(theta_grid)
 
@@ -123,8 +123,20 @@ def main(**kwargs):
       x_grid_stream,z_grid_stream = np.meshgrid(x_stream, z_stream)
       r_grid_stream_coord = (x_grid_stream.T**2 + z_grid_stream.T**2) ** 0.5
       theta_grid_stream_coord = np.pi - np.arctan2(x_grid_stream.T, -z_grid_stream.T)
-      theta_grid_stream_pix = \
-          (theta_grid_stream_coord+theta[0]) / (2.0*np.pi+2.0*theta[0]) * (2*nx2+1)
+      if kwargs['theta_compression'] is None:
+        theta_grid_stream_pix = \
+            (theta_grid_stream_coord+theta[0]) / (2.0*np.pi+2.0*theta[0]) * (2*nx2+1)
+      else:
+        theta_grid_stream_pix = np.empty_like(theta_grid_stream_coord)
+        for (i,j),theta_val in np.ndenumerate(theta_grid_stream_coord):
+          index = sum(theta_extended[1:-1] < theta_val) - 1
+          if index < 0:
+            theta_grid_stream_pix[i,j] = -1
+          elif index < 2*nx2-1:
+            theta_grid_stream_pix[i,j] = index + (theta_val-theta_extended[index]) \
+                / (theta_extended[index+1]-theta_extended[index])
+          else:
+            theta_grid_stream_pix[i,j] = 2*nx2 + 2
     r_grid_stream_pix = np.empty_like(r_grid_stream_coord)
     for (i,j),r_val in np.ndenumerate(r_grid_stream_coord):
       index = sum(r < r_val) - 1
@@ -133,7 +145,7 @@ def main(**kwargs):
       elif index < nx1-1:
         r_grid_stream_pix[i,j] = index + (r_val-r[index]) / (r[index+1]-r[index])
       else:
-        r_grid_stream_pix[i,j] = nx1 + 1
+        r_grid_stream_pix[i,j] = nx1
 
   # Perform slicing/averaging of scalar data
   if kwargs['midplane']:

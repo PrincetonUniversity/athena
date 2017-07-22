@@ -53,7 +53,7 @@ EquationOfState::~EquationOfState() {}
 // Variable inverter
 // Inputs:
 //   cons: conserved quantities
-//   prim_old: primitive quantities from previous half timestep
+//   prim_old: primitive quantities from previous half timestep (not used)
 //   bb: face-centered magnetic field
 //   pco: pointer to Coordinates
 //   is,ie,js,je,ks,ke: index bounds of region to be updated
