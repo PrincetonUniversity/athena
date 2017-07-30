@@ -454,6 +454,20 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
     num_vars_++;
   }
 
+  if (SELF_GRAVITY_ENABLED) {
+    if (output_params.variable.compare("phi") == 0 ||
+        output_params.variable.compare("prim") == 0 ||
+        output_params.variable.compare("cons") == 0) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "Phi";
+      pod->data.InitWithShallowSlice(pgrav->phi,4,0,1);
+      AppendOutputDataNode(pod);
+      num_vars_++;
+    }
+  } // endif (SELF_GRAVITY_ENABLED)
+
+
   if (MAGNETIC_FIELDS_ENABLED) {
     // vector of cell-centered magnetic field
     if (output_params.variable.compare("bcc") == 0 || 
@@ -531,19 +545,6 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
     }
 
   } // endif (MAGNETIC_FIELDS_ENABLED)
-
-  if (SELF_GRAVITY_ENABLED) {
-    if (output_params.variable.compare("phi") == 0 ||
-        output_params.variable.compare("prim") == 0 ||
-        output_params.variable.compare("cons") == 0) {
-      pod = new OutputData;
-      pod->type = "SCALARS";
-      pod->name = "Phi";
-      pod->data.InitWithShallowSlice(pgrav->phi,4,0,1);
-      AppendOutputDataNode(pod);
-      num_vars_++;
-    }
-  } // endif (SELF_GRAVITY_ENABLED)
 
   if (output_params.variable.compare(0, 3, "uov") == 0
    || output_params.variable.compare(0, 12, "user_out_var") == 0) {
