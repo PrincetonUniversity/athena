@@ -51,7 +51,7 @@ def prepare():
   athena.configure('b',
       prob='linear_wave',
       flux='hlld',
-      eos='isothermal')
+      eos='adiabatic') #isothermal')
 
   # Call make as though we ran
   #     make clean
@@ -127,13 +127,20 @@ def analyze():
     tt[i]     = i*dumprate
 
   # estimate the decay rate from simulation
-  def func(x,a,b,c):
-      return a*np.exp(-b*x)+c
-
+  #def func(x,a,b,c):
+  #    return a*np.exp(-b*x)+c
+  #popt,pcov = curve_fit(func,tt,max_vy)
+  #new_rate = popt[1]
+  #print '[Decaying Linear Wave-3D]: Ref(decay_rate) = ',rate
+  #print '[Decaying Linear Wave-3D]: New(decay_rate) = ',new_rate
+  #print 'optimal parameter values: (a,b,c) = ',popt[0],popt[1],popt[2] 
+  def func(x,b):
+      return max_vy[0]*np.exp(-b*x)
   popt,pcov = curve_fit(func,tt,max_vy)
-  new_rate = popt[1]
+  new_rate = popt[0]
   print '[Decaying Linear Wave-3D]: Ref(decay_rate) = ',rate
   print '[Decaying Linear Wave-3D]: New(decay_rate) = ',new_rate
+
   flag = True
   error_rel = np.fabs(rate/new_rate-1.0)
   if error_rel > 0.1:

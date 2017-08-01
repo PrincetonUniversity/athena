@@ -30,7 +30,6 @@ void HydroDiffusion::Viscosity(const AthenaArray<Real> &prim,
   Real nuiso2 = -(2./3.);
 
 
-// step-1. calculate the flux due to viscous stress
   Divv(prim,divv_);
 
 // step-2. calculate the flux across each face
@@ -53,7 +52,7 @@ void HydroDiffusion::Viscosity(const AthenaArray<Real> &prim,
       FaceXdz(k,j,is,ie+1,prim,fz_);
       // store fluxes
       for (int i=is; i<=ie+1; ++i){
-		Real nu1 = nuiso1(prim,IM1,k,j,i);
+        Real nu1 = nuiso1(prim,IM1,k,j,i);
         denf = 0.5*(prim(IDN,k,j,i)+prim(IDN,k,j,i-1));
         x1flux(IM1,k,j,i) = -denf*nu1*(fx_(i)+nuiso2*0.5*(divv_(k,j,i)+divv_(k,j,i-1)));
         x1flux(IM2,k,j,i) = -denf*nu1*fy_(i);
@@ -83,16 +82,16 @@ void HydroDiffusion::Viscosity(const AthenaArray<Real> &prim,
         FaceYdz(k,j,is,ie,prim,fz_);
         // store fluxes
         for(int i=il; i<=iu; i++) {
-		  Real nu1 = nuiso1(prim,IM1,k,j,i);
-          denf = 0.5*(prim(IDN,k,j+1,i)+prim(IDN,k,j,i));
+          Real nu1 = nuiso1(prim,IM1,k,j,i);
+          denf = 0.5*(prim(IDN,k,j-1,i)+prim(IDN,k,j,i));
           x2flux(IM1,k,j,i) = -denf*nu1*fx_(i);
           x2flux(IM2,k,j,i) = -denf*nu1*
-                           (fy_(i)+nuiso2*0.5*(divv_(k,j+1,i)+divv_(k,j,i)));
+                           (fy_(i)+nuiso2*0.5*(divv_(k,j-1,i)+divv_(k,j,i)));
           x2flux(IM3,k,j,i) = -denf*nu1*fz_(i);
           if (NON_BAROTROPIC_EOS)
-            x2flux(IEN,k,j,i) = 0.5*((prim(IM1,k,j,i)+prim(IM1,k,j+1,i))*x2flux(IM1,k,j,i) +
-                                  (prim(IM2,k,j,i)+prim(IM2,k,j+1,i))*x2flux(IM2,k,j,i) +
-                                  (prim(IM3,k,j,i)+prim(IM3,k,j+1,i))*x2flux(IM3,k,j,i));
+            x2flux(IEN,k,j,i) = 0.5*((prim(IM1,k,j,i)+prim(IM1,k,j-1,i))*x2flux(IM1,k,j,i) +
+                                  (prim(IM2,k,j,i)+prim(IM2,k,j-1,i))*x2flux(IM2,k,j,i) +
+                                  (prim(IM3,k,j,i)+prim(IM3,k,j-1,i))*x2flux(IM3,k,j,i));
         }
     }}
   } else { // 1D
@@ -102,7 +101,7 @@ void HydroDiffusion::Viscosity(const AthenaArray<Real> &prim,
     FaceYdz(ks,js,is,ie,prim,fz_);
     // store fluxes
     for(int i=il; i<=iu; i++) {
-	  Real nu1 = nuiso1(prim,IM1,ks,js,i);
+      Real nu1 = nuiso1(prim,IM1,ks,js,i);
       denf = prim(IDN,ks,js,i);
       x2flux(IM1,ks,js,i) = -denf*nu1*fx_(i);
       x2flux(IM2,ks,js,i) = -denf*nu1*(fy_(i)+nuiso2*divv_(ks,js,i));
@@ -138,15 +137,15 @@ void HydroDiffusion::Viscosity(const AthenaArray<Real> &prim,
         FaceZdz(k,j,is,ie,prim,fz_);
         // store fluxes
         for(int i=il; i<=iu; i++) {
-	      Real nu1 = nuiso1(prim,IM1,k,j,i);
-          denf = 0.5*(prim(IDN,k+1,j,i)+prim(IDN,k,j,i));
+          Real nu1 = nuiso1(prim,IM1,k,j,i);
+          denf = 0.5*(prim(IDN,k-1,j,i)+prim(IDN,k,j,i));
           x3flux(IM1,k,j,i) = -denf*nu1*fx_(i);
           x3flux(IM2,k,j,i) = -denf*nu1*fy_(i);
-          x3flux(IM3,k,j,i) = -denf*nu1*(fz_(i)+nuiso2*0.5*(divv_(k+1,j,i)+divv_(k,j,i)));
+          x3flux(IM3,k,j,i) = -denf*nu1*(fz_(i)+nuiso2*0.5*(divv_(k-1,j,i)+divv_(k,j,i)));
           if (NON_BAROTROPIC_EOS)
-            x3flux(IEN,k,j,i) = 0.5*((prim(IM1,k,j,i)+prim(IM1,k+1,j,i))*x3flux(IM1,k,j,i) +
-                                    (prim(IM2,k,j,i)+prim(IM2,k+1,j,i))*x3flux(IM2,k,j,i) +
-                                    (prim(IM3,k,j,i)+prim(IM3,k+1,j,i))*x3flux(IM3,k,j,i));
+            x3flux(IEN,k,j,i) = 0.5*((prim(IM1,k,j,i)+prim(IM1,k-1,j,i))*x3flux(IM1,k,j,i) +
+                                    (prim(IM2,k,j,i)+prim(IM2,k-1,j,i))*x3flux(IM2,k,j,i) +
+                                    (prim(IM3,k,j,i)+prim(IM3,k-1,j,i))*x3flux(IM3,k,j,i));
         }
     }}
   } else {
@@ -157,7 +156,7 @@ void HydroDiffusion::Viscosity(const AthenaArray<Real> &prim,
       FaceZdz(ks,j,is,ie,prim,fz_);
       // store fluxes
       for(int i=il; i<=iu; i++) {
-	    Real nu1 = nuiso1(prim,IM1,ks,j,i);
+        Real nu1 = nuiso1(prim,IM1,ks,j,i);
         denf = prim(IDN,ks,j,i);
         x3flux(IM1,ks,j,i) = -denf*nu1*fx_(i);
         x3flux(IM2,ks,j,i) = -denf*nu1*fy_(i);
@@ -183,33 +182,33 @@ Real HydroDiffusion::nuiso1(const AthenaArray<Real> &prim, const int n, const in
 {
   if(inu_==0) return (nuiso_);
   else {
-	// if inu != 0, prescribe viscosity according to nu = alpha cs^2/Omega
-	// where alpha = nuiso_ and Omega = sqrt(GM/r^3) the Keplerian orb freq
-	if(COORDINATE_SYSTEM == "cartesian" && NON_BAROTROPIC_EOS) {
+  // if inu != 0, prescribe viscosity according to nu = alpha cs^2/Omega
+  // where alpha = nuiso_ and Omega = sqrt(GM/r^3) the Keplerian orb freq
+  if(COORDINATE_SYSTEM == "cartesian" && NON_BAROTROPIC_EOS) {
       Real x1 = pmb_->pcoord->x1v(i);
-	  Real x2 = pmb_->pcoord->x2v(j);
-	  Real rad = sqrt(SQR(x1)+SQR(x2)+SQR(0.05));// softening by 0.05
+    Real x2 = pmb_->pcoord->x2v(j);
+    Real rad = sqrt(SQR(x1)+SQR(x2)+SQR(0.05));// softening by 0.05
       Real gamma = pmb_->peos->GetGamma();
-	  // 1) calc visc coef using updated prim variable (unstable)
-	  //Real cs2  = gamma*prim(IPR,k,j,i)/prim(IDN,k,j,i);
-	  //Real omg = 1.0/sqrt(SQR(rad)/rad); // Kepler freq with GM=1.0
-	  //Real nuprof = cs2/omg; //
-	  // 2) calc visc coef using not updated cons variable
-	  Real dens  = pmb_->phydro->u(IDN,k,j,i);
-	  Real m1 = pmb_->phydro->u(IM1,k,j,i);
-	  Real m2 = pmb_->phydro->u(IM2,k,j,i);
-	  Real m3 = pmb_->phydro->u(IM3,k,j,i);
-	  Real pres = (gamma-1.0)*(pmb_->phydro->u(IEN,k,j,i)-0.5*(SQR(m1)+SQR(m2)+SQR(m3))/dens);
-	  Real omg = 1.0/sqrt(SQR(rad)/rad); // Kepler freq with GM=1.0
-	  Real nuprof = gamma*pres/dens/omg;
-	  // 3) calc visc coef using pure power regardless of binary location
-	  //Real nuprof = gamma*0.0025/sqrt(rad); // power law
-	  if (nuprof <= 0.0 || isnan(nuprof) || isinf(nuprof)) nuprof = SQR(0.05)/omg;
+    // 1) calc visc coef using updated prim variable (unstable)
+    //Real cs2  = gamma*prim(IPR,k,j,i)/prim(IDN,k,j,i);
+    //Real omg = 1.0/sqrt(SQR(rad)/rad); // Kepler freq with GM=1.0
+    //Real nuprof = cs2/omg; //
+    // 2) calc visc coef using not updated cons variable
+    Real dens  = pmb_->phydro->u(IDN,k,j,i);
+    Real m1 = pmb_->phydro->u(IM1,k,j,i);
+    Real m2 = pmb_->phydro->u(IM2,k,j,i);
+    Real m3 = pmb_->phydro->u(IM3,k,j,i);
+    Real pres = (gamma-1.0)*(pmb_->phydro->u(IEN,k,j,i)-0.5*(SQR(m1)+SQR(m2)+SQR(m3))/dens);
+    Real omg = 1.0/sqrt(SQR(rad)/rad); // Kepler freq with GM=1.0
+    Real nuprof = gamma*pres/dens/omg;
+    // 3) calc visc coef using pure power regardless of binary location
+    //Real nuprof = gamma*0.0025/sqrt(rad); // power law
+    if (nuprof <= 0.0 || isnan(nuprof) || isinf(nuprof)) nuprof = SQR(0.05)/omg;
       return (nuiso_*nuprof);
-	} else {
+  } else {
       std::cout << "inu_= " << inu_ << "for other coord and eos are not implemented yet" << std::endl;
-	  return 0.0;
-	}
+    return 0.0;
+  }
   }
 }
 

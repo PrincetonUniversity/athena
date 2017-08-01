@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file kh.cpp
-//  \brief Problem generator for KH instability. 
+//  \brief Problem generator for KH instability.
 //
 // Sets up two different problems:
 //   - iprob=1: slip surface with random perturbations
@@ -29,7 +29,7 @@
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
-  long int iseed = -1;
+  long int iseed = -1 - gid;
   Real gm1 = peos->GetGamma() - 1.0;
 
   // Read problem parameters
@@ -53,7 +53,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         phydro->u(IM1,k,j,i) = -drat*(vflow + amp*(ran2(&iseed) - 0.5));
         phydro->u(IM2,k,j,i) = drat*amp*(ran2(&iseed) - 0.5);
       }
-      // Pressure scaled to give a sound speed of 1 with gamma=1.4 
+      // Pressure scaled to give a sound speed of 1 with gamma=1.4
       if (NON_BAROTROPIC_EOS) {
         phydro->u(IEN,k,j,i) = 2.5/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +
           SQR(phydro->u(IM2,k,j,i)))/phydro->u(IDN,k,j,i);
