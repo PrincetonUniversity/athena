@@ -101,7 +101,13 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
     // write data column headers from "name" stored in linked-list of OutputData's
     OutputData *pdata = pfirst_data_;
     while (pdata != NULL) {
-      fprintf(pfile,"    %s      ",pdata->name.c_str());
+      if (pdata->type == "VECTORS") {
+        for (int index = 1; index <= 3; ++index) {
+          fprintf(pfile, "    %s%d     ", pdata->name.c_str(), index);
+        }
+      } else {
+        fprintf(pfile, "    %s      ", pdata->name.c_str());
+      }
       pdata = pdata->pnext;
     }
     fprintf(pfile,"\n"); // terminate line

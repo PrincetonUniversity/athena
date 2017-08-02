@@ -33,6 +33,10 @@
 #endif
 
 // Declarations
+static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
+    Real *px, Real *py, Real *pz);
+static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3);
 static Real QuadraticRoot(Real a1, Real a0, bool greater_root);
 static Real CubicRootReal(Real a2, Real a1, Real a0);
 static void QuarticRoots(Real a3, Real a2, Real a1, Real a0, Real *px1, Real *px2,
@@ -588,10 +592,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   {
     Real t_left, x_left, y_left, z_left;
     Real t_right, x_right, y_right, z_right;
-    pcoord->GetMinkowskiCoordinates(0.0, x1_min, x2_min, x3_min, &t_left, &x_left,
-        &y_left, &z_left);
-    pcoord->GetMinkowskiCoordinates(0.0, x1_max, x2_min, x3_min, &t_right, &x_right,
-        &y_right, &z_right);
+    GetMinkowskiCoordinates(0.0, x1_min, x2_min, x3_min, &t_left, &x_left, &y_left,
+        &z_left);
+    GetMinkowskiCoordinates(0.0, x1_max, x2_min, x3_min, &t_right, &x_right, &y_right,
+        &z_right);
     arg_min = x_left - lambda * t_left;
     arg_max = x_right - lambda * t_right;
   }
@@ -617,8 +621,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         Real t, x, y, z;
         #if GENERAL_RELATIVITY
         {
-          pcoord->GetMinkowskiCoordinates(0.0, pcoord->x1v(i), pcoord->x2v(j),
-              pcoord->x3v(k), &t, &x, &y, &z);
+          GetMinkowskiCoordinates(0.0, pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(k), &t,
+              &x, &y, &z);
         }
         #else  // SR
         {
@@ -654,9 +658,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         Real u_local[4], b_local[4], u_local_low[4], b_local_low[4];
         #if GENERAL_RELATIVITY
         {
-          pcoord->TransformVectorCell(u_mink[0], u_mink[1], u_mink[2], u_mink[3], k, j, i,
+          TransformVector(u_mink[0], u_mink[1], u_mink[2], u_mink[3], x, y, z,
               &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
-          pcoord->TransformVectorCell(b_mink[0], b_mink[1], b_mink[2], b_mink[3], k, j, i,
+          TransformVector(b_mink[0], b_mink[1], b_mink[2], b_mink[3], x, y, z,
               &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
           pcoord->LowerVectorCell(u_local[0], u_local[1], u_local[2], u_local[3], k, j, i,
               &u_local_low[0], &u_local_low[1], &u_local_low[2], &u_local_low[3]);
@@ -730,8 +734,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             // Set B^1 if needed
             if (j != ju+1 and k != ku+1) {
               Real t, x, y, z;
-              pcoord->GetMinkowskiCoordinates(0.0, pcoord->x1f(i), pcoord->x2v(j),
-                  pcoord->x3v(k), &t, &x, &y, &z);
+              GetMinkowskiCoordinates(0.0, pcoord->x1f(i), pcoord->x2v(j), pcoord->x3v(k),
+                  &t, &x, &y, &z);
               Real local_amp = amp * std::sin(wavenumber * (x - lambda * t));
               Real u_mink[4], b_mink[4];
               for (int mu = 0; mu < 4; ++mu) {
@@ -739,18 +743,18 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                 b_mink[mu] = b[mu] + local_amp * delta_b[mu];
               }
               Real u_local[4], b_local[4];
-              pcoord->TransformVectorFace1(u_mink[0], u_mink[1], u_mink[2], u_mink[3], k,
-                  j, i, &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
-              pcoord->TransformVectorFace1(b_mink[0], b_mink[1], b_mink[2], b_mink[3], k,
-                  j, i, &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
+              TransformVector(u_mink[0], u_mink[1], u_mink[2], u_mink[3], x, y, z,
+                  &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
+              TransformVector(b_mink[0], b_mink[1], b_mink[2], b_mink[3], x, y, z,
+                  &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
               pfield->b.x1f(k,j,i) = b_local[1] * u_local[0] - b_local[0] * u_local[1];
             }
 
             // Set B^2 if needed
             if (i != iu+1 and k != ku+1) {
               Real t, x, y, z;
-              pcoord->GetMinkowskiCoordinates(0.0, pcoord->x1v(i), pcoord->x2f(j),
-                  pcoord->x3v(k), &t, &x, &y, &z);
+              GetMinkowskiCoordinates(0.0, pcoord->x1v(i), pcoord->x2f(j), pcoord->x3v(k),
+                  &t, &x, &y, &z);
               Real local_amp = amp * std::sin(wavenumber * (x - lambda * t));
               Real u_mink[4], b_mink[4];
               for (int mu = 0; mu < 4; ++mu) {
@@ -758,18 +762,18 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                 b_mink[mu] = b[mu] + local_amp * delta_b[mu];
               }
               Real u_local[4], b_local[4];
-              pcoord->TransformVectorFace2(u_mink[0], u_mink[1], u_mink[2], u_mink[3], k,
-                  j, i, &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
-              pcoord->TransformVectorFace2(b_mink[0], b_mink[1], b_mink[2], b_mink[3], k,
-                  j, i, &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
+              TransformVector(u_mink[0], u_mink[1], u_mink[2], u_mink[3], x, y, z,
+                  &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
+              TransformVector(b_mink[0], b_mink[1], b_mink[2], b_mink[3], x, y, z,
+                  &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
               pfield->b.x2f(k,j,i) = b_local[2] * u_local[0] - b_local[0] * u_local[2];
             }
 
             // Set B^3 if needed
             if (i != iu+1 and j != ju+1) {
               Real t, x, y, z;
-              pcoord->GetMinkowskiCoordinates(0.0, pcoord->x1v(i), pcoord->x2v(j),
-                  pcoord->x3f(k), &t, &x, &y, &z);
+              GetMinkowskiCoordinates(0.0, pcoord->x1v(i), pcoord->x2v(j), pcoord->x3f(k),
+                  &t, &x, &y, &z);
               Real local_amp = amp * std::sin(wavenumber * (x - lambda * t));
               Real u_mink[4], b_mink[4];
               for (int mu = 0; mu < 4; ++mu) {
@@ -777,10 +781,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                 b_mink[mu] = b[mu] + local_amp * delta_b[mu];
               }
               Real u_local[4], b_local[4];
-              pcoord->TransformVectorFace3(u_mink[0], u_mink[1], u_mink[2], u_mink[3], k,
-                  j, i, &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
-              pcoord->TransformVectorFace3(b_mink[0], b_mink[1], b_mink[2], b_mink[3], k,
-                  j, i, &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
+              TransformVector(u_mink[0], u_mink[1], u_mink[2], u_mink[3], x, y, z,
+                  &u_local[0], &u_local[1], &u_local[2], &u_local[3]);
+              TransformVector(b_mink[0], b_mink[1], b_mink[2], b_mink[3], x, y, z,
+                  &b_local[0], &b_local[1], &b_local[2], &b_local[3]);
               pfield->b.x3f(k,j,i) = b_local[3] * u_local[0] - b_local[0] * u_local[3];
             }
           }
@@ -847,6 +851,51 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         }
       }
     }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for returning corresponding Minkowski coordinates of point
+// Inputs:
+//   x0,x1,x2,x3: global coordinates to be converted
+// Outputs:
+//   pt,px,py,pz: variables pointed to set to Minkowski coordinates
+// Notes:
+//   conversion is trivial
+//   useful to have if other coordinate systems for Minkowski space are developed
+
+static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
+    Real *px, Real *py, Real *pz)
+{
+  if (COORDINATE_SYSTEM == "minkowski") {
+    *pt = x0;
+    *px = x1;
+    *py = x2;
+    *pz = x3;
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for transforming 4-vector from Minkowski to desired coordinates
+// Inputs:
+//   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
+//   x,y,z: Minkowski coordinates of point
+// Outputs:
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in desired coordinates
+// Notes:
+//   conversion is trivial
+//   useful to have if other coordinate systems for Minkowski space are developed
+
+static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+{
+  if (COORDINATE_SYSTEM == "minkowski") {
+    *pa0 = at;
+    *pa1 = ax;
+    *pa2 = ay;
+    *pa3 = az;
   }
   return;
 }

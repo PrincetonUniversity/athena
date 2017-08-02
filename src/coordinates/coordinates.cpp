@@ -459,11 +459,30 @@ void Coordinates::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
 
 bool Coordinates::IsPole(int j)
 {
-  if (pmy_block->block_bcs[INNER_X2] == POLAR_BNDRY and j == pmy_block->js) {
+  if ((pmy_block->block_bcs[INNER_X2] == POLAR_BNDRY
+      or pmy_block->block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) and j == pmy_block->js) {
     return true;
   }
-  if (pmy_block->block_bcs[OUTER_X2] == POLAR_BNDRY and j == pmy_block->je+1) {
+  if ((pmy_block->block_bcs[OUTER_X2] == POLAR_BNDRY
+      or pmy_block->block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) and j == pmy_block->je+1) {
     return true;
   }
   return false;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for implementing user-defined metric
+// Inputs:
+//   x1,x2,x3: spatial location of point
+//   pin: pointer to runtime inputs
+// Outputs:
+//   g,g_inv: arrays of metric covariant and contravariant components
+//   dg_dx1,dg_dx2,dg_dx3: arrays of spatial derivatives of covariant components
+
+void Coordinates::Metric(Real x1, Real x2, Real x3, ParameterInput *pin,
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv, AthenaArray<Real> &dg_dx1,
+    AthenaArray<Real> &dg_dx2, AthenaArray<Real> &dg_dx3)
+{
+  pmy_block->pmy_mesh->UserMetric_(x1, x2, x3, pin, g, g_inv, dg_dx1, dg_dx2, dg_dx3);
+  return;
 }

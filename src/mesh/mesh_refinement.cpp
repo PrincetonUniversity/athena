@@ -45,6 +45,8 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin)
     pcoarsec = new Schwarzschild(pmb, pin, true);
   } else if (COORDINATE_SYSTEM == "kerr-schild") {
     pcoarsec = new KerrSchild(pmb, pin, true);
+  } else if (COORDINATE_SYSTEM == "gr_user") {
+    pcoarsec = new GRUser(pmb, pin, true);
   }
 
   deref_count_ = 0;
@@ -123,6 +125,7 @@ MeshRefinement::~MeshRefinement()
     coarse_b_.x3f.DeleteAthenaArray();
     coarse_bcc_.DeleteAthenaArray();
   }
+  delete pcoarsec;
 }
 
 //----------------------------------------------------------------------------------------

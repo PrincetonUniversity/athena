@@ -28,6 +28,12 @@
 #error "This problem generator must be used with relativity"
 #endif
 
+// Declarations
+static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
+    Real *px, Real *py, Real *pz);
+static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+
 //----------------------------------------------------------------------------------------
 // Function for setting initial conditions
 // Inputs:
@@ -167,8 +173,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         Real b0, b1, b2, b3;
         #if GENERAL_RELATIVITY
         {
-          pcoord->TransformVectorCell(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
-          pcoord->TransformVectorCell(bt, bx, by, bz, k, j, i, &b0, &b1, &b2, &b3);
+          Real x1 = pcoord->x1v(i);
+          Real x2 = pcoord->x2v(j);
+          Real x3 = pcoord->x3v(k);
+          Real t, x, y, z;
+          GetMinkowskiCoordinates(0.0, x1, x2, x3, &t, &x, &y, &z);
+          TransformVector(ut, ux, uy, uz, x, y, z, &u0, &u1, &u2, &u3);
+          TransformVector(bt, bx, by, bz, x, y, z, &b0, &b1, &b2, &b3);
         }
         #else  // SR
         {
@@ -265,18 +276,33 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           #if GENERAL_RELATIVITY
           {
             if (j != je+1 && k != ke+1) {
-              pcoord->TransformVectorFace1(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
-              pcoord->TransformVectorFace1(bt, bx, by, bz, k, j, i, &b0, &b1, &b2, &b3);
+              Real x1 = pcoord->x1f(i);
+              Real x2 = pcoord->x2v(j);
+              Real x3 = pcoord->x3v(k);
+              Real t, x, y, z;
+              GetMinkowskiCoordinates(0.0, x1, x2, x3, &t, &x, &y, &z);
+              TransformVector(ut, ux, uy, uz, x, y, z, &u0, &u1, &u2, &u3);
+              TransformVector(bt, bx, by, bz, x, y, z, &b0, &b1, &b2, &b3);
               pfield->b.x1f(k,j,i) = b1 * u0 - b0 * u1;
             }
             if (i != ie+1 && k != ke+1) {
-              pcoord->TransformVectorFace2(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
-              pcoord->TransformVectorFace2(bt, bx, by, bz, k, j, i, &b0, &b1, &b2, &b3);
+              Real x1 = pcoord->x1v(i);
+              Real x2 = pcoord->x2f(j);
+              Real x3 = pcoord->x3v(k);
+              Real t, x, y, z;
+              GetMinkowskiCoordinates(0.0, x1, x2, x3, &t, &x, &y, &z);
+              TransformVector(ut, ux, uy, uz, x, y, z, &u0, &u1, &u2, &u3);
+              TransformVector(bt, bx, by, bz, x, y, z, &b0, &b1, &b2, &b3);
               pfield->b.x2f(k,j,i) = b2 * u0 - b0 * u2;
             }
             if (i != ie+1 && j != je+1) {
-              pcoord->TransformVectorFace3(ut, ux, uy, uz, k, j, i, &u0, &u1, &u2, &u3);
-              pcoord->TransformVectorFace3(bt, bx, by, bz, k, j, i, &b0, &b1, &b2, &b3);
+              Real x1 = pcoord->x1v(i);
+              Real x2 = pcoord->x2v(j);
+              Real x3 = pcoord->x3f(k);
+              Real t, x, y, z;
+              GetMinkowskiCoordinates(0.0, x1, x2, x3, &t, &x, &y, &z);
+              TransformVector(ut, ux, uy, uz, x, y, z, &u0, &u1, &u2, &u3);
+              TransformVector(bt, bx, by, bz, x, y, z, &b0, &b1, &b2, &b3);
               pfield->b.x3f(k,j,i) = b3 * u0 - b0 * u3;
             }
           }
@@ -296,6 +322,51 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         }
       }
     }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for returning corresponding Minkowski coordinates of point
+// Inputs:
+//   x0,x1,x2,x3: global coordinates to be converted
+// Outputs:
+//   pt,px,py,pz: variables pointed to set to Minkowski coordinates
+// Notes:
+//   conversion is trivial
+//   useful to have if other coordinate systems for Minkowski space are developed
+
+static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
+    Real *px, Real *py, Real *pz)
+{
+  if (COORDINATE_SYSTEM == "minkowski") {
+    *pt = x0;
+    *px = x1;
+    *py = x2;
+    *pz = x3;
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for transforming 4-vector from Minkowski to desired coordinates
+// Inputs:
+//   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
+//   x,y,z: Minkowski coordinates of point
+// Outputs:
+//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in desired coordinates
+// Notes:
+//   conversion is trivial
+//   useful to have if other coordinate systems for Minkowski space are developed
+
+static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
+    Real *pa0, Real *pa1, Real *pa2, Real *pa3)
+{
+  if (COORDINATE_SYSTEM == "minkowski") {
+    *pa0 = at;
+    *pa1 = ax;
+    *pa2 = ay;
+    *pa3 = az;
   }
   return;
 }

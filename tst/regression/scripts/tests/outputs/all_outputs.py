@@ -32,21 +32,23 @@ def run():
 # Analyze outputs
 def analyze():
   # check density max and Vz and Bz components in tab slice
-  slice_data = athena_read.tab(filename='bin/TestOutputs.block0.out2.00010.tab')
-  if max(slice_data[0,0,:,1]) < 0.25:
+  slice_data = athena_read.tab(filename='bin/TestOutputs.block0.out2.00010.tab', raw=True,
+      dimensions=1)
+  if max(slice_data[1,:]) < 0.25:
     return False
-  if max(slice_data[0,0,:,5]) != 0.0:
+  if max(slice_data[5,:]) != 0.0:
     return False
-  if max(slice_data[0,0,:,8]) != 0.0:
+  if max(slice_data[8,:]) != 0.0:
     return False
 
   # check density max and Vz and Bz components in tab sum
-  sum_data = athena_read.tab(filename='bin/TestOutputs.block0.out3.00010.tab')
-  if max(sum_data[0,0,:,1]) < 15.0 and max(sum_data[0,0,:,1]) > 20.0:
+  sum_data = athena_read.tab(filename='bin/TestOutputs.block0.out3.00010.tab', raw=True,
+      dimensions=1)
+  if max(sum_data[1,:]) < 15.0 and max(sum_data[:,1]) > 20.0:
     return False
-  if max(sum_data[0,0,:,5]) != 0.0:
+  if max(sum_data[5,:]) != 0.0:
     return False
-  if max(sum_data[0,0,:,8]) != 0.0:
+  if max(sum_data[8,:]) != 0.0:
     return False
 
   # check data in VTK dump

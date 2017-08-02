@@ -1679,86 +1679,6 @@ void Schwarzschild::FluxToGlobal3(const int k, const int j, const int il, const 
 }
 
 //----------------------------------------------------------------------------------------
-// Function for transforming 4-vector from Boyer-Lindquist to Schwarzschild
-// Inputs:
-//   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
-//   k,j,i: indices of cell in which transformation is desired
-// Outputs:
-//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Schwarzschild coordinates
-// Notes:
-//   Schwarzschild coordinates match Boyer-Lindquist when a = 0
-
-void Schwarzschild::TransformVectorCell(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl,
-    int k, int j, int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
-  *pa0 = a0_bl;
-  *pa1 = a1_bl;
-  *pa2 = a2_bl;
-  *pa3 = a3_bl;
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// Function for transforming 4-vector from Boyer-Lindquist to Schwarzschild
-// Inputs:
-//   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
-//   k,j,i: indices of x1-face in which transformation is desired
-// Outputs:
-//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Schwarzschild coordinates
-// Notes:
-//   Schwarzschild coordinates match Boyer-Lindquist when a = 0
-
-void Schwarzschild::TransformVectorFace1(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl,
-    int k, int j, int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
-  *pa0 = a0_bl;
-  *pa1 = a1_bl;
-  *pa2 = a2_bl;
-  *pa3 = a3_bl;
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// Function for transforming 4-vector from Boyer-Lindquist to Schwarzschild
-// Inputs:
-//   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
-//   k,j,i: indices of x2-face in which transformation is desired
-// Outputs:
-//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Schwarzschild coordinates
-// Notes:
-//   Schwarzschild coordinates match Boyer-Lindquist when a = 0
-
-void Schwarzschild::TransformVectorFace2(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl,
-    int k, int j, int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
-  *pa0 = a0_bl;
-  *pa1 = a1_bl;
-  *pa2 = a2_bl;
-  *pa3 = a3_bl;
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// Function for transforming 4-vector from Boyer-Lindquist to Schwarzschild
-// Inputs:
-//   a0_bl,a1_bl,a2_bl,a3_bl: upper 4-vector components in Boyer-Lindquist coordinates
-//   k,j,i: indices of x3-face in which transformation is desired
-// Outputs:
-//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in Schwarzschild coordinates
-// Notes:
-//   Schwarzschild coordinates match Boyer-Lindquist when a = 0
-
-void Schwarzschild::TransformVectorFace3(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl,
-    int k, int j, int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
-  *pa0 = a0_bl;
-  *pa1 = a1_bl;
-  *pa2 = a2_bl;
-  *pa3 = a3_bl;
-  return;
-}
-
-//----------------------------------------------------------------------------------------
 // Function for raising covariant components of a vector
 // Inputs:
 //   a_0,a_1,a_2,a_3: covariant components of vector
@@ -1817,25 +1737,5 @@ void Schwarzschild::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, i
   *pa_1 = g_11 * a1;
   *pa_2 = g_22 * a2;
   *pa_3 = g_33 * a3;
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// Function for returning Boyer-Lindquist coordinates of given cell in GR
-// Inputs:
-//   x1,x2,x3: global coordinates to be converted
-// Outputs:
-//   pr: pointer to stored value of r
-//   ptheta: pointer to stored value of theta
-//   pphi: pointer to stored value of phi
-// Notes:
-//   conversion is trivial
-
-void Schwarzschild::GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-    Real *ptheta, Real *pphi)
-{
-  *pr = x1;
-  *ptheta = x2;
-  *pphi = x3;
   return;
 }

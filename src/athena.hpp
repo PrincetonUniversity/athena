@@ -20,6 +20,7 @@ typedef double Real;
 
 class MeshBlock;
 class Coordinates;
+class ParameterInput;
 struct RegionSize;
 
 //---------------------------------------------------------------------------------------
@@ -51,8 +52,9 @@ enum {IVX=1, IVY=2, IVZ=3, IPR=4, IBY=(NHYDRO), IBZ=((NHYDRO)+1)};
 // array indices for face-centered electric fields returned by Riemann solver
 enum {X1E2=0, X1E3=1, X2E3=0, X2E1=1, X3E1=0, X3E2=1};
 
-// array indices for metric in GR
+// array indices for metric and triangular matrices in GR
 enum {I00, I01, I02, I03, I11, I12, I13, I22, I23, I33, NMETRIC};
+enum {T00, T10, T11, T20, T21, T22, T30, T31, T32, T33, NTRIANGULAR};
 
 // needed for arrays dimensioned over grid directions
 enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
@@ -66,7 +68,9 @@ enum Athena_MPI_Tag {TAG_HYDRO=0, TAG_FIELD=1, TAG_RAD=2, TAG_CHEM=3, TAG_HYDFLX
 //  TAG_FLDFLX=5, TAG_RADFLX=6, TAG_CHMFLX=7, TAG_AMR=8, TAG_FLDFLX_POLE=9, TAG_WTLIM=10};
 //JMSHI]
 
-//--------------------------------------------------------------------------------------
+enum CCBoundaryType {HYDRO_CONS=0, HYDRO_PRIM=1};
+enum FluxCorrectionType {FLUX_HYDRO=0};
+
 // function pointer prototypes for user-defined modules set at runtime
 
 typedef void (*BValFunc_t)(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
@@ -77,5 +81,8 @@ typedef void (*SrcTermFunc_t)(MeshBlock *pmb, const Real time, const Real dt,
   const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &cons);
 typedef Real (*TimeStepFunc_t)(MeshBlock *pmb);
 typedef Real (*HistoryOutputFunc_t)(MeshBlock *pmb, int iout);
+typedef void (*MetricFunc_t)(Real x1, Real x2, Real x3, ParameterInput *pin,
+    AthenaArray<Real> &g, AthenaArray<Real> &g_inv, AthenaArray<Real> &dg_dx1,
+    AthenaArray<Real> &dg_dx2, AthenaArray<Real> &dg_dx3);
 
 #endif // ATHENA_HPP

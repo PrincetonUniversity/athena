@@ -59,34 +59,34 @@ def run():
 def analyze():
 
   # Specify tab file columns
-  headings = ('x', 'rho', 'pgas', 'vx', 'vy', 'vz', 'Bx', 'By', 'Bz')
+  columns = (1, 2, 3, 4, 5, 6, 7, 8)
 
   # Check that convergence is attained for each wave
   for wave_flag in wave_flags:
 
     # Read low and high resolution initial and final states
     prim_initial_low = athena_read.tab(
-        'bin/sr_mhd_wave_{0}_low.block0.out1.00000.tab'.format(wave_flag),
-        headings=headings, dimensions=1)
+        'bin/sr_mhd_wave_{0}_low.block0.out1.00000.tab'.format(wave_flag), raw=True,
+        dimensions=1)
     prim_initial_high = athena_read.tab(
-        'bin/sr_mhd_wave_{0}_high.block0.out1.00000.tab'.format(wave_flag),
-        headings=headings, dimensions=1)
+        'bin/sr_mhd_wave_{0}_high.block0.out1.00000.tab'.format(wave_flag), raw=True,
+        dimensions=1)
     prim_final_low = athena_read.tab(
-        'bin/sr_mhd_wave_{0}_low.block0.out1.00001.tab'.format(wave_flag),
-        headings=headings, dimensions=1)
+        'bin/sr_mhd_wave_{0}_low.block0.out1.00001.tab'.format(wave_flag), raw=True,
+        dimensions=1)
     prim_final_high = athena_read.tab(
-        'bin/sr_mhd_wave_{0}_high.block0.out1.00001.tab'.format(wave_flag),
-        headings=headings, dimensions=1)
+        'bin/sr_mhd_wave_{0}_high.block0.out1.00001.tab'.format(wave_flag), raw=True,
+        dimensions=1)
 
     # Calculate overall errors for low and high resolution runs
     epsilons_low = []
     epsilons_high = []
-    for quantity in headings[1:]:
-      qi = prim_initial_low[quantity][0,0,:]
-      qf = prim_final_low[quantity][0,0,:]
+    for column in columns:
+      qi = prim_initial_low[column,:]
+      qf = prim_final_low[column,:]
       epsilons_low.append(math.fsum(abs(qf-qi)) / res_low)
-      qi = prim_initial_high[quantity][0,0,:]
-      qf = prim_final_high[quantity][0,0,:]
+      qi = prim_initial_high[column,:]
+      qf = prim_final_high[column,:]
       epsilons_high.append(math.fsum(abs(qf-qi)) / res_high)
     epsilons_low = np.array(epsilons_low)
     epsilons_high = np.array(epsilons_high)

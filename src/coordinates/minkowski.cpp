@@ -345,66 +345,6 @@ void Minkowski::FluxToGlobal3(const int k, const int j, const int il, const int 
 }
 
 //----------------------------------------------------------------------------------------
-// Function for transforming cell-centered 4-vector from Minkowski to global
-// Inputs:
-//   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
-//   k,j,i: z-, y-, and x-indices (unused)
-// Outputs:
-//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
-// Notes:
-//   transformation is trivial
-
-void Minkowski::TransformVectorCell(Real at, Real ax, Real ay, Real az, int k, int j,
-    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
-  *pa0 = at;
-  *pa1 = ax;
-  *pa2 = ay;
-  *pa3 = az;
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// Functions for transforming face-centered 4-vectors from Minkowski to global
-// Inputs:
-//   at,ax,ay,az: upper 4-vector components in Minkowski coordinates
-//   k,j,i: z-, y-, and x-indices (unused)
-// Outputs:
-//   pa0,pa1,pa2,pa3: pointers to upper 4-vector components in global coordinates
-// Notes:
-//   transformation is trivial
-
-void Minkowski::TransformVectorFace1(Real at, Real ax, Real ay, Real az, int k, int j,
-    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
-  *pa0 = at;
-  *pa1 = ax;
-  *pa2 = ay;
-  *pa3 = az;
-  return;
-}
-
-void Minkowski::TransformVectorFace2(Real at, Real ax, Real ay, Real az, int k, int j,
-    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
-  *pa0 = at;
-  *pa1 = ax;
-  *pa2 = ay;
-  *pa3 = az;
-  return;
-}
-
-void Minkowski::TransformVectorFace3(Real at, Real ax, Real ay, Real az, int k, int j,
-    int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3)
-{
-  *pa0 = at;
-  *pa1 = ax;
-  *pa2 = ay;
-  *pa3 = az;
-  return;
-}
-
-//----------------------------------------------------------------------------------------
 // Function for raising covariant components of a vector
 // Inputs:
 //   a_0,a_1,a_2,a_3: covariant components of vector
@@ -438,40 +378,4 @@ void Minkowski::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j
   *pa_2 = a2;
   *pa_3 = a3;
   return;
-}
-
-//----------------------------------------------------------------------------------------
-// Function for returning Minkowski coordinates of given cell in GR
-// Inputs:
-//   x0,x1,x2,x3: global coordinates to be converted
-// Outputs:
-//   pt,px,py,pz: variables pointed to set to Minkowski coordinates
-// Notes:
-//   conversion is trivial
-//   useful to have if other coordinate systems for Minkowski space are developed
-
-void Minkowski::GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
-    Real *px, Real *py, Real *pz)
-{
-  *pt = x0;
-  *px = x1;
-  *py = x2;
-  *pz = x3;
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// Function for returning spatial separation between points at same time
-// Inputs:
-//   x1,x2,x3: spatial coordinates of one point
-//   y1,y2,y3: spatial coordinates of other point
-// Outputs:
-//   returned value: spatial separation between x and y
-// Notes:
-//   distance function is Euclidean
-
-Real Minkowski::DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2,
-    Real y3)
-{
-  return std::sqrt(SQR(x1-y1) + SQR(x2-y2) + SQR(x3-y3));
 }

@@ -417,7 +417,7 @@ enum TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int step)
 
 enum TaskStatus TimeIntegratorTaskList::FluxCorrectSend(MeshBlock *pmb, int step)
 {
-  pmb->pbval->SendFluxCorrection();
+  pmb->pbval->SendFluxCorrection(FLUX_HYDRO);
   return TASK_SUCCESS;
 }
 
@@ -435,7 +435,7 @@ enum TaskStatus TimeIntegratorTaskList::EMFCorrectSend(MeshBlock *pmb, int step)
 
 enum TaskStatus TimeIntegratorTaskList::FluxCorrectReceive(MeshBlock *pmb, int step)
 {
-  if(pmb->pbval->ReceiveFluxCorrection() == true) {
+  if(pmb->pbval->ReceiveFluxCorrection(FLUX_HYDRO) == true) {
     return TASK_NEXT;
   } else {
     return TASK_FAIL;
@@ -586,9 +586,9 @@ enum TaskStatus TimeIntegratorTaskList::FieldDiffusion(MeshBlock *pmb, int step)
 enum TaskStatus TimeIntegratorTaskList::HydroSend(MeshBlock *pmb, int step)
 {
   if(step == 1) {
-    pmb->pbval->SendHydroBoundaryBuffers(pmb->phydro->u1, true);
+    pmb->pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u1, HYDRO_CONS);
   } else if(step == 2) {
-    pmb->pbval->SendHydroBoundaryBuffers(pmb->phydro->u, true);
+    pmb->pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
   } else {
     return TASK_FAIL;
   }
@@ -614,9 +614,9 @@ enum TaskStatus TimeIntegratorTaskList::HydroReceive(MeshBlock *pmb, int step)
 {
   bool ret;
   if(step == 1) {
-    ret=pmb->pbval->ReceiveHydroBoundaryBuffers(pmb->phydro->u1);
+    ret=pmb->pbval->ReceiveCellCenteredBoundaryBuffers(pmb->phydro->u1, HYDRO_CONS);
   } else if(step == 2) {
-    ret=pmb->pbval->ReceiveHydroBoundaryBuffers(pmb->phydro->u);
+    ret=pmb->pbval->ReceiveCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
   } else {
     return TASK_FAIL;
   }
