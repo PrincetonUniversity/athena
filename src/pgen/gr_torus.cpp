@@ -444,9 +444,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                 Real rho_cutoff = std::max(rho-potential_cutoff, 0.0);
                 Real a_varphi = std::pow(r_vals[p], potential_r_pow)
                     * std::pow(rho_cutoff, potential_rho_pow);
-                Real dvarphi_dtheta =
-                    -sin_psi * SQR(sin_varphi) / (SQR(sin_theta) * sin_phi);
-                Real dvarphi_dphi = SQR(sin_varphi) / SQR(sin_phi)
+                Real dvarphi_dtheta = -sin_psi * sin_phi / (SQR(varx) + SQR(vary));
+                Real dvarphi_dphi = SQR(sin_theta) / (SQR(varx) + SQR(vary))
                     * (cos_psi - sin_psi * cos_theta * cos_phi / sin_theta);
                 switch (p) {
                   case 0:
@@ -1771,6 +1770,7 @@ static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta
   // Account for tilt
   Real sin_theta_vals[7], cos_theta_vals[7];
   Real sin_phi_vals[7], cos_phi_vals[7];
+  Real varx_vals[7], vary_vals[7];
   Real sin_vartheta_vals[7], cos_vartheta_vals[7];
   Real sin_varphi_vals[7], cos_varphi_vals[7];
   for (int p = 0; p < 7; ++p) {
@@ -1783,15 +1783,15 @@ static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta
       Real x = sin_theta_vals[p] * cos_phi_vals[p];
       Real y = sin_theta_vals[p] * sin_phi_vals[p];
       Real z = cos_theta_vals[p];
-      Real varx = cos_psi * x - sin_psi * z;
-      Real vary = y;
+      varx_vals[p] = cos_psi * x - sin_psi * z;
+      vary_vals[p] = y;
       Real varz = sin_psi * x + cos_psi * z;
-      sin_vartheta_vals[p] = std::sqrt(SQR(varx) + SQR(vary));
+      sin_vartheta_vals[p] = std::sqrt(SQR(varx_vals[p]) + SQR(vary_vals[p]));
       if (field_config == "vertical") {
         break;
       }
       cos_vartheta_vals[p] = varz;
-      varphi = std::atan2(vary, varx);
+      varphi = std::atan2(vary_vals[p], varx_vals[p]);
     } else {
       sin_vartheta_vals[p] = std::abs(sin_theta_vals[p]);
       if (field_config == "vertical") {
@@ -1848,9 +1848,11 @@ static bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta
     for (int p = 0; p < 7; ++p) {
       if (psi != 0.0) {
         Real dvarphi_dtheta =
-            -sin_psi * SQR(sin_varphi_vals[p]) / (SQR(sin_theta_vals[p]) * sin_phi_vals[p]);
-        Real dvarphi_dphi = SQR(sin_varphi_vals[p]) / SQR(sin_phi_vals[p])
-            * (cos_psi - sin_psi * cos_theta_vals[p] * cos_phi_vals[p] / sin_theta_vals[p]);
+            -sin_psi * sin_phi_vals[p] / (SQR(varx_vals[p]) + SQR(vary_vals[p]));
+        Real dvarphi_dphi = SQR(sin_theta_vals[p])
+            / (SQR(varx_vals[p]) + SQR(vary_vals[p]))
+            * (cos_psi - sin_psi * cos_theta_vals[p] * cos_phi_vals[p]
+            / sin_theta_vals[p]);
         a_theta_vals[p] = dvarphi_dtheta * a_varphi_vals[p];
         a_phi_vals[p] = dvarphi_dphi * a_varphi_vals[p];
       } else {
