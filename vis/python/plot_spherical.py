@@ -169,7 +169,7 @@ def main(**kwargs):
   if kwargs['midplane']:
     vals = np.vstack((vals[-1:,:], vals, vals[:1,:]))
   else:
-    vals = np.vstack((vals_left[0:1,:], vals_right, vals_right[::-1,:], vals_left[0:1,:]))
+    vals = np.vstack((vals_left[:1,:], vals_right, vals_left[::-1,:], vals_right[:1,:]))
 
   # Perform slicing/averaging of vector data
   if kwargs['stream'] is not None:
