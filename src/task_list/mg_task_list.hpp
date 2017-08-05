@@ -52,9 +52,13 @@ public:
 
   // functions
   enum TaskStatus StartReceive(Multigrid *pmg);
+  enum TaskStatus StartReceiveFace(Multigrid *pmg);
   enum TaskStatus ClearBoundary(Multigrid *pmg);
+  enum TaskStatus ClearBoundaryFace(Multigrid *pmg);
   enum TaskStatus SendBoundary(Multigrid *pmg);
+  enum TaskStatus SendBoundaryFace(Multigrid *pmg);
   enum TaskStatus ReceiveBoundary(Multigrid *pmg);
+  enum TaskStatus ReceiveBoundaryFace(Multigrid *pmg);
   enum TaskStatus SmoothRed(Multigrid *pmg);
   enum TaskStatus SmoothBlack(Multigrid *pmg);
   enum TaskStatus PhysicalBoundary(Multigrid *pmg);

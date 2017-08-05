@@ -26,6 +26,8 @@
 #include "../hydro/hydro.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
+#include "../multigrid/multigrid.hpp"
+#include "../gravity/mggravity.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
@@ -471,16 +473,17 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
             *((BoundaryValues::ni[n].ox3==0)?pmb->block_size.nx3:NGHOST);
         break;
       case BNDRY_MGGRAV:
+        int ngh=pmb->pmggrav->GetNumberOfGhostCells();
         if(multilevel) { // with refinement - NGHOST = 1
           int nc=pmb->block_size.nx1;
-          if(BoundaryValues::ni[n].type==NEIGHBOR_FACE) size=SQR(nc);
-          else if(BoundaryValues::ni[n].type==NEIGHBOR_EDGE) size=nc+nc/2;
-          else if(BoundaryValues::ni[n].type==NEIGHBOR_CORNER) size=2;
+          if(BoundaryValues::ni[n].type==NEIGHBOR_FACE) size=SQR(nc)*ngh;
+          else if(BoundaryValues::ni[n].type==NEIGHBOR_EDGE) size=nc*ngh*ngh+(nc*ngh*ngh)/2;
+          else if(BoundaryValues::ni[n].type==NEIGHBOR_CORNER) size=ngh*ngh*ngh*2;
         }
-        else { // uniform - NGHOST=2
-          size=((BoundaryValues::ni[n].ox1==0)?pmb->block_size.nx1:2)
-              *((BoundaryValues::ni[n].ox2==0)?pmb->block_size.nx2:2)
-              *((BoundaryValues::ni[n].ox3==0)?pmb->block_size.nx3:2);
+        else { // uniform - NGHOST=1
+          size=((BoundaryValues::ni[n].ox1==0)?pmb->block_size.nx1:ngh)
+              *((BoundaryValues::ni[n].ox2==0)?pmb->block_size.nx2:ngh)
+              *((BoundaryValues::ni[n].ox3==0)?pmb->block_size.nx3:ngh);
         }
         break;
       case BNDRY_FLCOR:

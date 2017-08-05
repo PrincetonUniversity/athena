@@ -233,6 +233,7 @@ void MultigridDriver::SubtractAverage(int type)
 void MultigridDriver::FillRootGridSource(void)
 {
   MeshBlock *pb=pblock_;
+  int type;
   while(pb!=NULL) {
     Multigrid *pmg=GetMultigridBlock(pb);
     for(int v=0; v<nvar_; v++)
@@ -265,7 +266,7 @@ void MultigridDriver::FillRootGridSource(void)
 void MultigridDriver::FMGProlongate(void)
 {
   if(current_level_==nrootlevel_-1)
-    TransferFromRootToBlocks(true);
+    TransferFromRootToBlocks();
   if(current_level_ >= nrootlevel_-1) {
     mgtlist_->SetMGTaskListFMGProlongate();
     mgtlist_->DoTaskListOneSubStep(this);
@@ -280,10 +281,10 @@ void MultigridDriver::FMGProlongate(void)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::TransferFromRootToBlocks(bool fmgflag)
+//! \fn void MultigridDriver::TransferFromRootToBlocks(void)
 //  \brief Transfer the data from the root grid to the coarsest level of each MeshBlock
 
-void MultigridDriver::TransferFromRootToBlocks(bool fmgflag)
+void MultigridDriver::TransferFromRootToBlocks(void)
 {
   MeshBlock *pb=pblock_;
   AthenaArray<Real> &src=mgroot_->GetCurrentData();
@@ -310,7 +311,7 @@ void MultigridDriver::OneStepToFiner(int nsmooth)
 {
   int ngh=mgroot_->ngh_;
   if(current_level_==nrootlevel_-1)
-    TransferFromRootToBlocks(false);
+    TransferFromRootToBlocks();
   if(current_level_ >= nrootlevel_-1) {
     mgtlist_->SetMGTaskListToFiner(nsmooth, ngh);
     mgtlist_->DoTaskListOneSubStep(this);
@@ -336,11 +337,11 @@ void MultigridDriver::OneStepToFiner(int nsmooth)
 void MultigridDriver::OneStepToCoarser(int nsmooth)
 {
   int ngh=mgroot_->ngh_;
-  if(current_level_==nrootlevel_-1)
-    FillRootGridSource();
-  else if(current_level_ >= nrootlevel_) {
+  if(current_level_ >= nrootlevel_) {
     mgtlist_->SetMGTaskListToCoarser(nsmooth, ngh);
     mgtlist_->DoTaskListOneSubStep(this);
+    if(current_level_==nrootlevel_)
+      FillRootGridSource();
   }
   else { // root grid
     for(int n=0; n<nsmooth; n++) {
@@ -414,7 +415,7 @@ void MultigridDriver::SolveFMGCycle(void)
 void MultigridDriver::SolveCoarsestGrid(void)
 {
   Mesh *pm=pmy_mesh_;
-  int ni=std::max(pm->nrbx1, std::max(pm->nrbx2, pm->nrbx3));
+  int ni=std::max(pm->nrbx1, std::max(pm->nrbx2, pm->nrbx3)) >> (nrootlevel_-1);
   if(fperiodic_ && ni==1) { // trivial case - all zero
     mgroot_->ZeroClearData();
     return;

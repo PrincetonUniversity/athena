@@ -26,7 +26,8 @@ class MGGravity : public Multigrid {
 public:
   MGGravity(Mesh *pm, MeshBlock *pmb, int nx, int ny, int nz,
             RegionSize isize, MGBoundaryFunc_t *MGBoundary)
-   : Multigrid(pm,pmb,1,nx,ny,nz,isize,MGBoundary),omega_(1.15) {btype=BNDRY_MGGRAV;};
+   : Multigrid(pm,pmb,1,nx,ny,nz,isize,MGBoundary),omega_(1.15)
+  { btype=BNDRY_MGGRAV; btypef=BNDRY_MGGRAVF; };
   ~MGGravity() {};
   void Smooth(int color);
   void CalculateDefect(void);

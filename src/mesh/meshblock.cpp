@@ -111,18 +111,6 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     pcoord = new GRUser(this, pin, false);
   }
 
-  pbval  = new BoundaryValues(this, pin);
-  if (block_bcs[INNER_X2] == POLAR_BNDRY||block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
-    int level = loc.level - pmy_mesh->root_level;
-    int num_north_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
-    polar_neighbor_north = new PolarNeighborBlock[num_north_polar_blocks];
-  }
-  if (block_bcs[OUTER_X2] == POLAR_BNDRY||block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
-    int level = loc.level - pmy_mesh->root_level;
-    int num_south_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
-    polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
-  }
-  precon = new Reconstruction(this, pin);
   if(pm->multilevel==true) pmr = new MeshRefinement(this, pin);
 
   // FFT object (need to be set before Gravity class)
@@ -139,6 +127,19 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   if (SELF_GRAVITY_ENABLED == 2)
     pmggrav = new MGGravity(pmy_mesh, this, block_size.nx1, block_size.nx2,
                             block_size.nx3, block_size, pm->MGBoundaryFunction_);
+
+  pbval  = new BoundaryValues(this, pin);
+  if (block_bcs[INNER_X2] == POLAR_BNDRY||block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
+    int level = loc.level - pmy_mesh->root_level;
+    int num_north_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
+    polar_neighbor_north = new PolarNeighborBlock[num_north_polar_blocks];
+  }
+  if (block_bcs[OUTER_X2] == POLAR_BNDRY||block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
+    int level = loc.level - pmy_mesh->root_level;
+    int num_south_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
+    polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
+  }
+  precon = new Reconstruction(this, pin);
 
   // Create user mesh data
   InitUserMeshBlockData(pin);
@@ -214,18 +215,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     pcoord = new GRUser(this, pin, false);
   }
 
-  pbval  = new BoundaryValues(this, pin);
-  if (block_bcs[INNER_X2] == POLAR_BNDRY||block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
-    int level = loc.level - pmy_mesh->root_level;
-    int num_north_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
-    polar_neighbor_north = new PolarNeighborBlock[num_north_polar_blocks];
-  }
-  if (block_bcs[OUTER_X2] == POLAR_BNDRY||block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
-    int level = loc.level - pmy_mesh->root_level;
-    int num_south_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
-    polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
-  }
-  precon = new Reconstruction(this, pin);
   if(pm->multilevel==true) pmr = new MeshRefinement(this, pin);
 
   // FFT object
@@ -242,6 +231,19 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   if (SELF_GRAVITY_ENABLED == 2)
     pmggrav = new MGGravity(pmy_mesh, this, block_size.nx1, block_size.nx2,
                             block_size.nx3, block_size, pm->MGBoundaryFunction_);
+
+  pbval  = new BoundaryValues(this, pin);
+  if (block_bcs[INNER_X2] == POLAR_BNDRY||block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
+    int level = loc.level - pmy_mesh->root_level;
+    int num_north_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
+    polar_neighbor_north = new PolarNeighborBlock[num_north_polar_blocks];
+  }
+  if (block_bcs[OUTER_X2] == POLAR_BNDRY||block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
+    int level = loc.level - pmy_mesh->root_level;
+    int num_south_polar_blocks = pmy_mesh->nrbx3 * (1 << level);
+    polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
+  }
+  precon = new Reconstruction(this, pin);
 
   InitUserMeshBlockData(pin);
 

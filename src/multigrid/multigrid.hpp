@@ -55,14 +55,13 @@ public:
             RegionSize isize, MGBoundaryFunc_t *MGBoundary);
   virtual ~Multigrid();
 
-  enum BoundaryType btype;
+  enum BoundaryType btype, btypef;
 
   void LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh);
   void LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real fac);
   void RestrictFMGSource(void);
   void RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh);
   void ZeroClearData(void);
-  void SetFMGSource(void);
   void ApplyPhysicalBoundaries(void);
   void Restrict(void);
   void ProlongateAndCorrect(void);
@@ -75,6 +74,7 @@ public:
   // small functions
   void SetCurrentLevel(int level) { current_level_=level; return; };
   int GetCurrentNumberOfCells(void) { return 1<<current_level_; };
+  int GetNumberOfGhostCells(void) {return ngh_;}
   AthenaArray<Real>& GetCurrentData(void) { return u_[current_level_]; };
   AthenaArray<Real>& GetCurrentSource(void) { return src_[current_level_]; };
   Real GetRootSource(int n) { return src_[0](n,ngh_,ngh_,ngh_); };
@@ -90,7 +90,7 @@ protected:
   RegionSize size_;
   int nlevel_, nx_, ny_, nz_, ngh_, nvar_, current_level_;
   Real rdx_, rdy_, rdz_;
-  AthenaArray<Real> *u_, *def_, *src_, *fmgsrc_;
+  AthenaArray<Real> *u_, *def_, *src_;
 
 private:
   Mesh *pmy_mesh_;
@@ -113,7 +113,7 @@ public:
   void SetupMultigrid(void);
   void FillRootGridSource(void);
   void FMGProlongate(void);
-  void TransferFromRootToBlocks(bool fmgflag);
+  void TransferFromRootToBlocks(void);
   void OneStepToFiner(int nsmooth);
   void OneStepToCoarser(int nsmooth);
   void SolveVCycle(int npresmooth, int npostsmooth);

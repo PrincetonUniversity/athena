@@ -101,15 +101,23 @@ void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep)
 
   switch(id) {
     case (MG_STARTRECV0):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
+                                    (&MultigridTaskList::StartReceive);
+      break;
     case (MG_STARTRECV1R):
     case (MG_STARTRECV1B):
     case (MG_STARTRECV2R):
     case (MG_STARTRECV2B):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::StartReceive);
+                                    (&MultigridTaskList::StartReceiveFace);
       break;
     case (MG_CLEARBND0):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
+                                    (&MultigridTaskList::ClearBoundaryFace);
+      break;
     case (MG_CLEARBND1R):
     case (MG_CLEARBND1B):
     case (MG_CLEARBND2R):
@@ -119,6 +127,10 @@ void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep)
                                     (&MultigridTaskList::ClearBoundary);
       break;
     case (MG_SENDBND0):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
+                                    (&MultigridTaskList::SendBoundaryFace);
+      break;
     case (MG_SENDBND1R):
     case (MG_SENDBND1B):
     case (MG_SENDBND2R):
@@ -128,6 +140,10 @@ void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep)
                                     (&MultigridTaskList::SendBoundary);
       break;
     case (MG_RECVBND0):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
+                                    (&MultigridTaskList::ReceiveBoundaryFace);
+      break;
     case (MG_RECVBND1R):
     case (MG_RECVBND1B):
     case (MG_RECVBND2R):
@@ -190,9 +206,22 @@ enum TaskStatus MultigridTaskList::StartReceive(Multigrid *pmg)
   return TASK_SUCCESS;
 }
 
+enum TaskStatus MultigridTaskList::StartReceiveFace(Multigrid *pmg)
+{
+  int nc=pmg->GetCurrentNumberOfCells();
+  pmg->pmy_block_->pbval->StartReceivingMultigrid(nc, pmg->btypef);
+  return TASK_SUCCESS;
+}
+
 enum TaskStatus MultigridTaskList::ClearBoundary(Multigrid *pmg)
 {
   pmg->pmy_block_->pbval->ClearBoundaryMultigrid(pmg->btype);
+  return TASK_NEXT;
+}
+
+enum TaskStatus MultigridTaskList::ClearBoundaryFace(Multigrid *pmg)
+{
+  pmg->pmy_block_->pbval->ClearBoundaryMultigrid(pmg->btypef);
   return TASK_NEXT;
 }
 
@@ -204,11 +233,28 @@ enum TaskStatus MultigridTaskList::SendBoundary(Multigrid *pmg)
   return TASK_SUCCESS;
 }
 
+enum TaskStatus MultigridTaskList::SendBoundaryFace(Multigrid *pmg)
+{
+  int nc=pmg->GetCurrentNumberOfCells();
+  pmg->pmy_block_->pbval->
+    SendMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btypef);
+  return TASK_SUCCESS;
+}
+
 enum TaskStatus MultigridTaskList::ReceiveBoundary(Multigrid *pmg)
 {
   int nc=pmg->GetCurrentNumberOfCells();
   if(pmg->pmy_block_->pbval->
      ReceiveMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btype)== false)
+    return TASK_FAIL;
+  return TASK_NEXT;
+}
+
+enum TaskStatus MultigridTaskList::ReceiveBoundaryFace(Multigrid *pmg)
+{
+  int nc=pmg->GetCurrentNumberOfCells();
+  if(pmg->pmy_block_->pbval->
+     ReceiveMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btypef)== false)
     return TASK_FAIL;
   return TASK_NEXT;
 }
