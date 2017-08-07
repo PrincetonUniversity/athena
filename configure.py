@@ -1,10 +1,10 @@
 #! /usr/bin/env python
-#---------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------
 # configure.py: Athena++ configuration script in python. Original version by CJW.
 #
 # When configure.py is run, it uses the command line options and default settings to
 # create custom versions of the files Makefile and src/defs.hpp from the template files
-# Makefile.in and src/defs.hpp.in repspectively.
+# Makefile.in and src/defs.hpp.in respectively.
 #
 # The following options are implememted:
 #   -h  --help        help message
@@ -12,8 +12,6 @@
 #   --coord=choice    use choice as the coordinate system
 #   --eos=choice      use choice as the equation of state
 #   --flux=choice     use choice as the Riemann solver
-#   --order=choice    use choice as the spatial reconstruction algorithm
-#   --fint=choice     use choice as the hydro time-integration algorithm
 #   -b                enable magnetic fields
 #   -s                enable special relativity
 #   -g                enable general relativity
@@ -27,7 +25,7 @@
 #   --ccmd=name       use name as the command to call the C++ compiler
 #   --include=path    use -Ipath when compiling
 #   --lib=path        use -Lpath when linking
-#---------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------
 
 # Modules
 import argparse
@@ -40,7 +38,7 @@ makefile_output = 'Makefile'
 defsfile_input = 'src/defs.hpp.in'
 defsfile_output = 'src/defs.hpp'
 
-#--- Step 1. Prepare parser, add each of the arguments ---------------------------------
+#--- Step 1. Prepare parser, add each of the arguments -----------------------------------
 parser = argparse.ArgumentParser()
 
 # --prob=[name] argument
@@ -72,18 +70,6 @@ parser.add_argument('--flux',
     default='default',
     choices=['default','hlle','hllc','hlld','roe','llf'],
     help='select Riemann solver')
-
-# --order=[name] argument
-parser.add_argument('--order',
-    default='plm',
-    choices=['plm'],
-    help='select spatial reconstruction algorithm')
-
-# --fint=[name] argument
-parser.add_argument('--fint',
-    default='vl2',
-    choices=['vl2'],
-    help='select hydro time-integration algorithm')
 
 # -b argument
 parser.add_argument('-b',
@@ -166,7 +152,7 @@ parser.add_argument('--lib',
 # Parse command-line inputs
 args = vars(parser.parse_args())
 
-#--- Step 2. Test for incompatible arguments -------------------------------------------
+#--- Step 2. Test for incompatible arguments ---------------------------------------------
 
 # Set default flux; HLLD for MHD, HLLC for hydro, HLLE for isothermal hydro or any GR
 if args['flux'] == 'default':
@@ -206,7 +192,7 @@ if args['eos'] == 'isothermal':
     raise SystemExit('### CONFIGURE ERROR: '\
         + 'Isothermal EOS is incompatible with relativity')
 
-#--- Step 3. Set definitions and Makefile options based on above arguments -------------
+#--- Step 3. Set definitions and Makefile options based on above arguments ---------------
 
 # Prepare dictionaries of substitutions to be made
 definitions = {}
@@ -230,12 +216,6 @@ if args['eos'] == 'isothermal':
 
 # --flux=[name] argument
 definitions['RSOLVER'] = makefile_options['RSOLVER_FILE'] = args['flux']
-
-# --order=[name] argument
-definitions['RECONSTRUCT'] = makefile_options['RECONSTRUCT_FILE'] = args['order']
-
-# --fint=[name] argument
-definitions['HYDRO_INTEGRATOR'] = makefile_options['HYDRO_INT_FILE'] = args['fint']
 
 # -b argument
 # set variety of macros based on whether MHD/hydro or adi/iso are defined
@@ -408,15 +388,13 @@ for library_path in args['lib']:
 definitions['COMPILER_FLAGS'] = ' '.join([makefile_options[opt+'_FLAGS'] for opt in \
     ['PREPROCESSOR','COMPILER','LINKER','LIBRARY']])
 
-#--- Step 4. Create new files, finish up -----------------------------------------------
+#--- Step 4. Create new files, finish up -------------------------------------------------
 
 # Terminate all filenames with .cpp extension
 makefile_options['PROBLEM_FILE'] += '.cpp'
 makefile_options['COORDINATES_FILE'] += '.cpp'
 makefile_options['EOS_FILE'] += '.cpp'
 makefile_options['RSOLVER_FILE'] += '.cpp'
-makefile_options['RECONSTRUCT_FILE'] += '.cpp'
-makefile_options['HYDRO_INT_FILE'] += '.cpp'
 
 # Read templates
 with open(defsfile_input, 'r') as current_file:
@@ -442,8 +420,6 @@ print('  Problem generator:       ' + args['prob'])
 print('  Coordinate system:       ' + args['coord'])
 print('  Equation of state:       ' + args['eos'])
 print('  Riemann solver:          ' + args['flux'])
-print('  Reconstruction method:   ' + args['order'])
-print('  Hydro integrator:        ' + args['fint'])
 print('  Magnetic fields:         ' + ('ON' if args['b'] else 'OFF'))
 print('  Special relativity:      ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
