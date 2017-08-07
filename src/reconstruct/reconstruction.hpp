@@ -24,34 +24,28 @@ public:
   Reconstruction(MeshBlock *pmb, ParameterInput *pin);
   ~Reconstruction();
 
-  void PiecewiseLinearX1(const int k, const int j,
-    const int il, const int iu,
-    const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
+  void PiecewiseLinearX1(const int kl, const int ku, const int jl, const int ju  ,
+    const int il, const int iu, const AthenaArray<Real> &q, const int nin, const int nout,
     AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
-  void PiecewiseLinearX2(const int k, const int j,
-    const int il, const int iu,
-    const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
+  void PiecewiseLinearX2(const int kl, const int ku, const int jl, const int ju  ,
+    const int il, const int iu, const AthenaArray<Real> &q, const int nin, const int nout,
     AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
-  void PiecewiseLinearX3(const int k, const int j,
-    const int il, const int iu,
-    const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
+  void PiecewiseLinearX3(const int kl, const int ku, const int jl, const int ju  ,
+    const int il, const int iu, const AthenaArray<Real> &q, const int nin, const int nout,
     AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
-  void DonorCellX1(const int k, const int j,
-    const int il, const int iu,
-    const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
+  void DonorCellX1(const int kl, const int ku, const int jl, const int ju  ,
+    const int il, const int iu, const AthenaArray<Real> &q, const int nin, const int nout,
     AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
-  void DonorCellX2(const int k, const int j,
-    const int il, const int iu,
-    const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
+  void DonorCellX2(const int kl, const int ku, const int jl, const int ju  ,
+    const int il, const int iu, const AthenaArray<Real> &q, const int nin, const int nout,
     AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
-  void DonorCellX3(const int k, const int j,
-    const int il, const int iu,
-    const AthenaArray<Real> &q, const AthenaArray<Real> &bcc,
+  void DonorCellX3(const int kl, const int ku, const int jl, const int ju  ,
+    const int il, const int iu, const AthenaArray<Real> &q, const int nin, const int nout,
     AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
 private:

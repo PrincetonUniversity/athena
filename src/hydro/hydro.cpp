@@ -47,9 +47,9 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
   dt2_.NewAthenaArray(nthreads,ncells1);
   dt3_.NewAthenaArray(nthreads,ncells1);
   dxw_.NewAthenaArray(nthreads,ncells1);
-  wl_.NewAthenaArray(nthreads,(NWAVE),ncells1);
-  wr_.NewAthenaArray(nthreads,(NWAVE),ncells1);
-  flx_.NewAthenaArray(nthreads,(NWAVE),ncells1);
+  wl_.NewAthenaArray((NWAVE),ncells3,ncells2,ncells1);
+  wr_.NewAthenaArray((NWAVE),ncells3,ncells2,ncells1);
+  flx_.NewAthenaArray((NWAVE),ncells3,ncells2,ncells1);
   x1face_area_.NewAthenaArray(nthreads,ncells1+1);
   if(pmy_block->block_size.nx2 > 1) {
     x2face_area_.NewAthenaArray(nthreads,ncells1);

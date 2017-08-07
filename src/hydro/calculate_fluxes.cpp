@@ -60,14 +60,16 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   tid=omp_get_thread_num();
 #endif
 
-  AthenaArray<Real> wl, wr, flx, dxw;
-  wl.InitWithShallowSlice(wl_,3,tid,1);
-  wr.InitWithShallowSlice(wr_,3,tid,1);
-  flx.InitWithShallowSlice(flx_,3,tid,1);
+  AthenaArray<Real> wl, wr, flx;
+  wl.InitWithShallowCopy(wl_);
+  wr.InitWithShallowCopy(wr_);
+  flx.InitWithShallowCopy(flx_);
+  AthenaArray<Real> dxw;
   dxw.InitWithShallowSlice(dxw_,2,tid,1);
 
 //----------------------------------------------------------------------------------------
 // i-direction
+
   // set the loop limits
   jl=js, ju=je, kl=ks, ku=ke;
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -78,26 +80,34 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         jl=js-1, ju=je+1, kl=ks-1, ku=ke+1;
     }
   }
+
+  // reconstruct L/R states
+  if (reconstruct_order == 1) {
+    pmb->precon->DonorCellX1(kl,ku,jl,ju,is,ie+1,w,IDN,IDN,wl,wr);
+    pmb->precon->DonorCellX1(kl,ku,jl,ju,is,ie+1,w,IM1,IM1,wl,wr);
+    pmb->precon->DonorCellX1(kl,ku,jl,ju,is,ie+1,w,IM2,IM2,wl,wr);
+    pmb->precon->DonorCellX1(kl,ku,jl,ju,is,ie+1,w,IM3,IM3,wl,wr);
+    pmb->precon->DonorCellX1(kl,ku,jl,ju,is,ie+1,w,IEN,IEN,wl,wr);
+  } else {
+    pmb->precon->PiecewiseLinearX1(kl,ku,jl,ju,is,ie+1,w,IDN,IDN,wl,wr);
+    pmb->precon->PiecewiseLinearX1(kl,ku,jl,ju,is,ie+1,w,IM1,IM1,wl,wr);
+    pmb->precon->PiecewiseLinearX1(kl,ku,jl,ju,is,ie+1,w,IM2,IM2,wl,wr);
+    pmb->precon->PiecewiseLinearX1(kl,ku,jl,ju,is,ie+1,w,IM3,IM3,wl,wr);
+    pmb->precon->PiecewiseLinearX1(kl,ku,jl,ju,is,ie+1,w,IEN,IEN,wl,wr);
+  }
+
+  // compute fluxes
+  RiemannSolver(kl,ku,jl,ju,is,ie+1,IVX,b1,wl,wr,flx);
+
+  // store fluxes
   for (int k=kl; k<=ku; ++k){ 
 #pragma omp for schedule(static)
     for (int j=jl; j<=ju; ++j){
-
-      // reconstruct L/R states
-      if (reconstruct_order == 1) {
-        pmb->precon->DonorCellX1(k,j,is,ie+1,w,bcc,wl,wr);
-      } else {
-        pmb->precon->PiecewiseLinearX1(k,j,is,ie+1,w,bcc,wl,wr);
-      }
-
-      // compute fluxes
-      RiemannSolver(k,j,is,ie+1,IVX,b1,wl,wr,flx);
-
-      // store fluxes
       if(k>=ks && k<=ke && j>=js && j<=je) {
         for(int n=0; n<NHYDRO; n++) {
 #pragma simd
           for(int i=is; i<=ie+1; i++)
-            x1flux(n,k,j,i)=flx(n,i);
+            x1flux(n,k,j,i)=flx(n,k,j,i);
         }
       }
 
@@ -107,10 +117,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         pmb->pcoord->CenterWidth1(k,j,is,ie+1,dxw);
 #pragma simd
         for (int i=is; i<=ie+1; ++i){
-          ei_x1f(X1E3,k,j,i) = -flx(IBY,i); // flux(IBY) = (v1*b2 - v2*b1) = -EMFZ
-          ei_x1f(X1E2,k,j,i) =  flx(IBZ,i); // flux(IBZ) = (v1*b3 - v3*b1) =  EMFY
-          Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*flx(IDN,i)
-                        / (dxw(i)*(wl(IDN,i) + wr(IDN,i)));
+          ei_x1f(X1E3,k,j,i) = -flx(IBY,k,j,i); // flux(IBY) = (v1*b2 - v2*b1) = -EMFZ
+          ei_x1f(X1E2,k,j,i) =  flx(IBZ,k,j,i); // flux(IBZ) = (v1*b3 - v3*b1) =  EMFY
+          Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*flx(IDN,k,j,i)
+                        / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
           Real tmp_min = std::min(0.5,v_over_c);
           w_x1f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
         }
@@ -122,6 +132,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 // j-direction
 
   if (pmb->block_size.nx2 > 1) {
+
     // set the loop limits
     il=is, iu=ie, kl=ks, ku=ke;
     if (MAGNETIC_FIELDS_ENABLED) {
@@ -130,26 +141,34 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       else // 3D
         il=is-1, iu=ie+1, kl=ks-1, ku=ke+1;
     }
+
+    // reconstruct L/R states at j
+    if (reconstruct_order == 1) {
+      pmb->precon->DonorCellX2(kl,ku,js,je+1,il,iu,w,IDN,IDN,wl,wr);
+      pmb->precon->DonorCellX2(kl,ku,js,je+1,il,iu,w,IM1,IM1,wl,wr);
+      pmb->precon->DonorCellX2(kl,ku,js,je+1,il,iu,w,IM2,IM2,wl,wr);
+      pmb->precon->DonorCellX2(kl,ku,js,je+1,il,iu,w,IM3,IM3,wl,wr);
+      pmb->precon->DonorCellX2(kl,ku,js,je+1,il,iu,w,IEN,IEN,wl,wr);
+    } else {
+      pmb->precon->PiecewiseLinearX2(kl,ku,js,je+1,il,iu,w,IDN,IDN,wl,wr);
+      pmb->precon->PiecewiseLinearX2(kl,ku,js,je+1,il,iu,w,IM1,IM1,wl,wr);
+      pmb->precon->PiecewiseLinearX2(kl,ku,js,je+1,il,iu,w,IM2,IM2,wl,wr);
+      pmb->precon->PiecewiseLinearX2(kl,ku,js,je+1,il,iu,w,IM3,IM3,wl,wr);
+      pmb->precon->PiecewiseLinearX2(kl,ku,js,je+1,il,iu,w,IEN,IEN,wl,wr);
+    }
+
+    // compute fluxes at j
+    RiemannSolver(kl,ku,js,je+1,il,iu,IVY,b2,wl,wr,flx);
+
+    // store fluxes
     for (int k=kl; k<=ku; ++k){
 #pragma omp for schedule(static)
       for (int j=js; j<=je+1; ++j){
-
-        // reconstruct L/R states at j
-        if (reconstruct_order == 1) {
-          pmb->precon->DonorCellX2(k,j,il,iu,w,bcc,wl,wr);
-        } else {
-          pmb->precon->PiecewiseLinearX2(k,j,il,iu,w,bcc,wl,wr);
-        }
-
-        // compute fluxes at j
-        RiemannSolver(k,j,il,iu,IVY,b2,wl,wr,flx); 
-
-        // store fluxes
         if(k>=ks && k<=ke) {
           for(int n=0; n<NHYDRO; n++) {
 #pragma simd
             for(int i=is; i<=ie; i++)
-              x2flux(n,k,j,i)=flx(n,i);
+              x2flux(n,k,j,i)=flx(n,k,j,i);
           }
         }
 
@@ -159,10 +178,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           pmb->pcoord->CenterWidth2(k,j,il,iu,dxw);
 #pragma simd
           for (int i=il; i<=iu; ++i){
-            ei_x2f(X2E1,k,j,i) = -flx(IBY,i); // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
-            ei_x2f(X2E3,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
-            Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*flx(IDN,i)
-                          / (dxw(i)*(wl(IDN,i) + wr(IDN,i)));
+            ei_x2f(X2E1,k,j,i) = -flx(IBY,k,j,i); // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
+            ei_x2f(X2E3,k,j,i) =  flx(IBZ,k,j,i); // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
+            Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*flx(IDN,k,j,i)
+                          / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
             Real tmp_min = std::min(0.5,v_over_c);
             w_x2f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
           }
@@ -175,29 +194,38 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 // k-direction 
 
   if (pmb->block_size.nx3 > 1) {
+
     // set the loop limits
     il=is, iu=ie, jl=js, ju=je;
     if (MAGNETIC_FIELDS_ENABLED)
       il=is-1, iu=ie+1, jl=js-1, ju=je+1;
+
+    // reconstruct L/R states at k
+    if (reconstruct_order == 1) {
+      pmb->precon->DonorCellX3(ks,ke+1,jl,ju,il,iu,w,IDN,IDN,wl,wr);
+      pmb->precon->DonorCellX3(ks,ke+1,jl,ju,il,iu,w,IM1,IM1,wl,wr);
+      pmb->precon->DonorCellX3(ks,ke+1,jl,ju,il,iu,w,IM2,IM2,wl,wr);
+      pmb->precon->DonorCellX3(ks,ke+1,jl,ju,il,iu,w,IM3,IM3,wl,wr);
+      pmb->precon->DonorCellX3(ks,ke+1,jl,ju,il,iu,w,IEN,IEN,wl,wr);
+    } else {
+      pmb->precon->PiecewiseLinearX3(ks,ke+1,jl,ju,il,iu,w,IDN,IDN,wl,wr);
+      pmb->precon->PiecewiseLinearX3(ks,ke+1,jl,ju,il,iu,w,IM1,IM1,wl,wr);
+      pmb->precon->PiecewiseLinearX3(ks,ke+1,jl,ju,il,iu,w,IM2,IM2,wl,wr);
+      pmb->precon->PiecewiseLinearX3(ks,ke+1,jl,ju,il,iu,w,IM3,IM3,wl,wr);
+      pmb->precon->PiecewiseLinearX3(ks,ke+1,jl,ju,il,iu,w,IEN,IEN,wl,wr);
+    }
+
+    // compute fluxes at k
+    RiemannSolver(ks,ke+1,jl,ju,il,iu,IVZ,b3,wl,wr,flx);
+
 #pragma omp for schedule(static)
     for (int k=ks; k<=ke+1; ++k){
       for (int j=jl; j<=ju; ++j){
-
-        // reconstruct L/R states at k
-        if (reconstruct_order == 1) {
-          pmb->precon->DonorCellX3(k,j,il,iu,w,bcc,wl,wr);
-        } else {
-          pmb->precon->PiecewiseLinearX3(k,j,il,iu,w,bcc,wl,wr);
-        }
-
-        // compute fluxes at k
-        RiemannSolver(k,j,il,iu,IVZ,b3,wl,wr,flx);
-
         if(j>=js && j<=je) {
           for(int n=0; n<NHYDRO; n++) {
 #pragma simd
             for(int i=is; i<=ie; i++)
-              x3flux(n,k,j,i)=flx(n,i);
+              x3flux(n,k,j,i)=flx(n,k,j,i);
           }
         }
 
@@ -207,10 +235,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           pmb->pcoord->CenterWidth3(k,j,il,iu,dxw);
 #pragma simd
           for (int i=il; i<=iu; ++i){
-            ei_x3f(X3E2,k,j,i) = -flx(IBY,i); // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
-            ei_x3f(X3E1,k,j,i) =  flx(IBZ,i); // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
-            Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*flx(IDN,i)
-                          / (dxw(i)*(wl(IDN,i) + wr(IDN,i)));
+            ei_x3f(X3E2,k,j,i) = -flx(IBY,k,j,i); // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
+            ei_x3f(X3E1,k,j,i) =  flx(IBZ,k,j,i); // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
+            Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*flx(IDN,k,j,i)
+                          / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
             Real tmp_min = std::min(0.5,v_over_c);
             w_x3f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
           }

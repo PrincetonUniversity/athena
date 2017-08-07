@@ -27,9 +27,9 @@
 //! \file
 //! \brief
 
-void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
-  const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
-  AthenaArray<Real> &wr, AthenaArray<Real> &flx)
+void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
+  const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
+  const AthenaArray<Real> &wl, const AthenaArray<Real> &wr, AthenaArray<Real> &flx)
 {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
@@ -37,22 +37,24 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
   Real flxi[(NHYDRO)],fl[(NHYDRO)],fr[(NHYDRO)];
   Real gm1 = pmy_block->peos->GetGamma() - 1.0;
 
+  for (int k=kl; k<=ku; ++k){
+  for (int j=jl; j<=ju; ++j){
 #pragma simd
   for (int i=il; i<=iu; ++i){
 
 //--- Step 1.  Load L/R states into local variables
 
-    wli[IDN]=wl(IDN,i);
-    wli[IVX]=wl(ivx,i);
-    wli[IVY]=wl(ivy,i);
-    wli[IVZ]=wl(ivz,i);
-    wli[IPR]=wl(IPR,i);
+    wli[IDN]=wl(IDN,k,j,i);
+    wli[IVX]=wl(ivx,k,j,i);
+    wli[IVY]=wl(ivy,k,j,i);
+    wli[IVZ]=wl(ivz,k,j,i);
+    wli[IPR]=wl(IPR,k,j,i);
 
-    wri[IDN]=wr(IDN,i);
-    wri[IVX]=wr(ivx,i);
-    wri[IVY]=wr(ivy,i);
-    wri[IVZ]=wr(ivz,i);
-    wri[IPR]=wr(IPR,i);
+    wri[IDN]=wr(IDN,k,j,i);
+    wri[IVX]=wr(ivx,k,j,i);
+    wri[IVY]=wr(ivy,k,j,i);
+    wri[IVZ]=wr(ivz,k,j,i);
+    wri[IPR]=wr(IPR,k,j,i);
 
 //--- Step2.  Compute Roe-averaged state
 
@@ -147,12 +149,13 @@ void Hydro::RiemannSolver(const int k,const int j, const int il, const int iu,
     flxi[IVZ] = sl*fl[IVZ] + sr*fr[IVZ];
     flxi[IEN] = sl*fl[IEN] + sr*fr[IEN] + sm*cp*am;
 
-    flx(IDN,i) = flxi[IDN];
-    flx(ivx,i) = flxi[IVX];
-    flx(ivy,i) = flxi[IVY];
-    flx(ivz,i) = flxi[IVZ];
-    flx(IEN,i) = flxi[IEN];
+    flx(IDN,k,j,i) = flxi[IDN];
+    flx(ivx,k,j,i) = flxi[IVX];
+    flx(ivy,k,j,i) = flxi[IVY];
+    flx(ivz,k,j,i) = flxi[IVZ];
+    flx(IEN,k,j,i) = flxi[IEN];
   }
+  }}
 
   return;
 }
