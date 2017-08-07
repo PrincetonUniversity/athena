@@ -69,12 +69,24 @@ void HydroSourceTerms::PointMass(const Real dt, const AthenaArray<Real> *flux,
           Real x2  = pmb->pcoord->x2v(j);
           Real x3  = pmb->pcoord->x3v(k);
           Real rad = sqrt(SQR(x1)+SQR(x2)+SQR(x3)+SQR(rsoft_));
-          Real src = dt*den*gm_/SQR(rad)/rad;
+          Real dpt = gm_/SQR(rad)/rad;
+          Real src = dt*den*dpt;
           cons(IM1,k,j,i) -= src*x1;
           cons(IM2,k,j,i) -= src*x2;
           cons(IM3,k,j,i) -= src*x3;
-          if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) -=
-            src*(x1*prim(IVX,k,j,i)+x2*prim(IVY,k,j,i)+x3*prim(IVZ,k,j,i));
+          if (NON_BAROTROPIC_EOS) {
+			cons(IEN,k,j,i) -= 0.5*dt*dpt*x1*(flux[X1DIR](IDN,k,j,i)+flux[X1DIR](IDN,k,j,i+1));
+            if (pmb->block_size.nx2 > 1)
+              cons(IEN,k,j,i) -= 0.5*dt*dpt*x2*(flux[X2DIR](IDN,k,j,i)+flux[X2DIR](IDN,k,j+1,i));
+            if (pmb->block_size.nx3 > 1)
+              cons(IEN,k,j,i) -= 0.5*dt*dpt*x3*(flux[X3DIR](IDN,k,j,i)+flux[X3DIR](IDN,k+1,j,i));
+          }
+          //Real src = dt*den*gm_/SQR(rad)/rad;
+          //cons(IM1,k,j,i) -= src*x1;
+          //cons(IM2,k,j,i) -= src*x2;
+          //cons(IM3,k,j,i) -= src*x3;
+          //if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) -=
+          //  src*(x1*prim(IVX,k,j,i)+x2*prim(IVY,k,j,i)+x3*prim(IVZ,k,j,i));
     }}}
   } else {
       std::stringstream msg;

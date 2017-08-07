@@ -202,7 +202,7 @@ Real HydroDiffusion::nuiso1(const AthenaArray<Real> &prim, const int n, const in
     Real omg = 1.0/sqrt(SQR(rad)/rad); // Kepler freq with GM=1.0
     Real nuprof = gamma*pres/dens/omg;
     // 3) calc visc coef using pure power regardless of binary location
-    //Real nuprof = gamma*0.0025/sqrt(rad); // power law
+    //Real nuprof = gamma*0.01/sqrt(rad); // power law
     if (nuprof <= 0.0 || isnan(nuprof) || isinf(nuprof)) nuprof = SQR(0.05)/omg;
       return (nuiso_*nuprof);
   } else {

@@ -32,10 +32,11 @@
 static void GetCylCoord(Coordinates *pco,Real &rad,Real &phi,Real &z,int i,int j,int k);
 static Real DenProfileCyl(const Real rad, const Real phi, const Real z);
 static Real PoverR(const Real rad, const Real phi, const Real z);
+//static void VelProfileCyl(const Real rad, const Real phi, const Real x, const Real y, const Real z,
 static void VelProfileCyl(const Real rad, const Real phi, const Real z,
   Real &v1, Real &v2, Real &v3);
-static Real RampFunc(const Real rad, const Real phi, const Real z,
-					 const Real v1, const Real v2, const Real v3);
+static Real InnerRampFunc(const Real rad, const Real phi, const Real z, const Real r1, const Real r2);
+static Real OuterRampFunc(const Real rad, const Real phi, const Real z, const Real r1, const Real r2);
 //User source terms
 void Cooling(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Real> &prim,
              const AthenaArray<Real> &bcc, AthenaArray<Real> &cons);
@@ -61,7 +62,7 @@ static Real rsoft,rin,rout;
 static Real tsink; // mass removing time scale
 static Real rsink;
 static Real beta_th;//dimensionless cooling time
-static Real rbuf1,rbuf2;
+static Real rbuf1,rbuf2,rbuf3,rbuf4;
 static Real alpha;
 
 //========================================================================================
@@ -82,9 +83,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   rout = pin->GetOrAddReal("problem","rout",5.0);
   tsink = pin->GetOrAddReal("problem","tsink",100.0);
   beta_th = pin->GetOrAddReal("problem","beta_th",0.0);
-  alpha = pin->GetOrAddReal("problem","alpha",0.0);
+  alpha = pin->GetOrAddReal("problem","nuiso",0.1);
   rbuf1 = pin->GetOrAddReal("problem","rbuf1",8.0);
   rbuf2 = pin->GetOrAddReal("problem","rbuf2",10.0);
+  rbuf3 = pin->GetOrAddReal("problem","rbuf3",0.1);
+  rbuf4 = pin->GetOrAddReal("problem","rbuf4",1.0);
 
   // Get parameters for initial density and velocity
   rho0 = pin->GetReal("problem","rho0");
@@ -105,18 +108,18 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 
 
   // enroll user-defined boundary condition
-  //if(mesh_bcs[INNER_X1] == GetBoundaryFlag("user")) {
-  //  EnrollUserBoundaryFunction(INNER_X1, DiskInnerX1);
-  //}
-  //if(mesh_bcs[OUTER_X1] == GetBoundaryFlag("user")) {
-  //  EnrollUserBoundaryFunction(OUTER_X1, DiskOuterX1);
-  //}
-  //if(mesh_bcs[INNER_X2] == GetBoundaryFlag("user")) {
-  //  EnrollUserBoundaryFunction(INNER_X2, DiskInnerX2);
-  //}
-  //if(mesh_bcs[OUTER_X2] == GetBoundaryFlag("user")) {
-  //  EnrollUserBoundaryFunction(OUTER_X2, DiskOuterX2);
-  //}
+  if(mesh_bcs[INNER_X1] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(INNER_X1, DiskInnerX1);
+  }
+  if(mesh_bcs[OUTER_X1] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(OUTER_X1, DiskOuterX1);
+  }
+  if(mesh_bcs[INNER_X2] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(INNER_X2, DiskInnerX2);
+  }
+  if(mesh_bcs[OUTER_X2] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(OUTER_X2, DiskOuterX2);
+  }
 //  if(mesh_bcs[INNER_X3] == GetBoundaryFlag("user")) {
 //    EnrollUserBoundaryFunction(INNER_X3, DiskInnerX3);
 //  }
@@ -190,7 +193,7 @@ static Real DenProfileCyl(const Real rad, const Real phi, const Real z)
   if (NON_BAROTROPIC_EOS) p_over_r = PoverR(rad, phi, z);
   Real denmid = rho0*pow(rad/r0,dslope);
   Real dentem = denmid*exp(gm0/p_over_r*(1./sqrt(SQR(rad)+SQR(rsoft)+SQR(z))-1./sqrt(SQR(rad)+SQR(rsoft))));
-  den = dentem;
+  den = denmid; //dentem;
   return std::max(den,dfloor);
 }
 
@@ -207,7 +210,9 @@ static Real PoverR(const Real rad, const Real phi, const Real z)
 //----------------------------------------------------------------------------------------
 //! \f  computes rotational velocity in cylindrical coordinates
 
-static void VelProfileCyl(const Real rad, const Real phi, const Real z,
+static void VelProfileCyl(const Real rad, const Real phi,
+                         //const Real x, const Real y, const Real z,
+                          const Real z,
                           Real &v1, Real &v2, Real &v3)
 {
   Real p_over_r = PoverR(rad, phi, z);
@@ -216,15 +221,17 @@ static void VelProfileCyl(const Real rad, const Real phi, const Real z,
   Real vel = sqrt((dslope+pslope)*p_over_r + gm0*SQR(rad/rad1)/rad1
             +pslope*gm0*(1.0/rad1 -1.0/rad2));
 
-  v1 = -vel*sin(phi);
-  v2 = vel*cos(phi);
+  Real sinphi = sin(phi); //y/rad;
+  Real cosphi = cos(phi); //x/rad;
+  v1 = -vel*sinphi;
+  v2 = vel*cosphi;
   v3 = 0.0;
 
   // correct with radial drift due to accretion
   if (NON_BAROTROPIC_EOS) {
-	vel = 1.5*p_over_r*gamma_gas*alpha/sqrt(gm0/rad);
-    v1 += -vel*cos(phi);
-	v2 += -vel*sin(phi);
+	vel = 1.5*p_over_r*gamma_gas*alpha/sqrt(gm0/r0)*pow(rad/r0,0.5);
+    v1 -= vel*cosphi; //cos(phi);
+	v2 -= vel*sinphi; //sin(phi);
   }
   return;
 }
@@ -234,19 +241,36 @@ static void VelProfileCyl(const Real rad, const Real phi, const Real z,
 // R(x) = a*x^2 + b*x  + c; where a=1/(r2^2-r1r2), and b=-a*r1
 // tau  = 2PI/Omega(r1)
 
-static Real RampFunc(const Real rad, const Real phi, const Real z,
-					 const Real v1, const Real v2, const Real v3)
+static Real OuterRampFunc(const Real rad, const Real phi, const Real z,
+						  const Real r1, const Real r2)
 {
   Real ramp,tau;
-  if (rad >= rbuf2) {
+  if (rad >= r2) {
 	ramp = 100.0;
-  } else if (rad >= rbuf1) {
-    Real fac = 1.0/(SQR(rbuf2)-rbuf1*rbuf2);
-    ramp = fac*SQR(rad)-fac*rbuf1*rad;
+  } else if (rad >= r1) {
+    Real fac = 1.0/(SQR(r2)-r1*r2);
+    ramp = fac*(SQR(rad)-r1*rad);
   } else {
 	  ramp = 0.0;
   }
-  tau = 2.0*PI/sqrt(gm0/rbuf1/SQR(rbuf1));
+  //tau = 2.0*PI/sqrt(gm0/rbuf1/SQR(rbuf1));
+  tau = 2.0*PI/sqrt(gm0/r2/SQR(r2));
+  return ramp/tau;
+}
+
+static Real InnerRampFunc(const Real rad, const Real phi, const Real z,
+						  const Real r1, const Real r2)
+{
+  Real ramp,tau;
+  if (rad < r1) {
+	ramp = 100.0;
+  } else if (rad <= r2) {
+    Real fac = 1.0/(SQR(r1)-r1*r2);
+    ramp = fac*(SQR(rad)-r2*rad);
+  } else {
+	  ramp = 0.0;
+  }
+  tau = 2.0*PI/sqrt(gm0/r1/SQR(r1));
   return ramp/tau;
 }
 
@@ -261,15 +285,15 @@ void MeshBlock::UserWorkInLoop(void)
         Real rad, phi, z;
         GetCylCoord(pcoord,rad,phi,z,i,j,k); // convert to cylindrical coordinates
         // apply sink cells within the rsink( ususally >= rsoft)
-        if (rad <= rsink) { // sink cells within r<=rsink
-          phydro->u(IDN,k,j,i) -= pmy_mesh->dt*phydro->u(IDN,k,j,i)/tsink;
-        }
+        //if (rad <= rsink) { // sink cells within r<=rsink
+        //  phydro->u(IDN,k,j,i) -= pmy_mesh->dt*phydro->u(IDN,k,j,i)/tsink;
+        //}
 		// apply buffer zones within [rbuf1,rbuf2] to quench m=4 mode
 		if (rad >= rbuf1) {
 		  Real v1, v2, v3;
 		  Real den0 = DenProfileCyl(rad,phi,z);
           VelProfileCyl(rad,phi,z,v1,v2,v3);
-		  Real ramp = RampFunc(rad,phi,z,v1,v2,v3);
+		  Real ramp = OuterRampFunc(rad,phi,z,rbuf1,rbuf2);
           phydro->u(IDN,k,j,i) -= pmy_mesh->dt*(phydro->u(IDN,k,j,i)-den0)*ramp;
           phydro->u(IM1,k,j,i) -= pmy_mesh->dt*(phydro->u(IM1,k,j,i)-den0*v1)*ramp;
           phydro->u(IM2,k,j,i) -= pmy_mesh->dt*(phydro->u(IM2,k,j,i)-den0*v2)*ramp;
@@ -278,6 +302,24 @@ void MeshBlock::UserWorkInLoop(void)
             Real p_over_r = PoverR(rad,phi,z);
             Real eng0 = p_over_r*den0/(gamma_gas - 1.0);
 			eng0 += 0.5*den0*(SQR(v1)+SQR(v2)+SQR(v3));
+            phydro->u(IEN,k,j,i) -= pmy_mesh->dt*(phydro->u(IEN,k,j,i)-eng0)*ramp;
+          }
+		}
+		// apply buffer zones within [rbuf3,rbuf4] to quench m=4 mode
+		if (rad <= rbuf4 && rad >=rbuf3) {
+		  Real v1, v2, v3;
+		  Real den0 = DenProfileCyl(rad,phi,z);
+          VelProfileCyl(rad,phi,z,v1,v2,v3);
+		  Real ramp = InnerRampFunc(rad,phi,z,rbuf3,rbuf4);
+          phydro->u(IDN,k,j,i) -= pmy_mesh->dt*(phydro->u(IDN,k,j,i)-den0)*ramp;
+          phydro->u(IM1,k,j,i) -= pmy_mesh->dt*(phydro->u(IM1,k,j,i)-den0*v1)*ramp;
+          phydro->u(IM2,k,j,i) -= pmy_mesh->dt*(phydro->u(IM2,k,j,i)-den0*v2)*ramp;
+          phydro->u(IM3,k,j,i) -= pmy_mesh->dt*(phydro->u(IM3,k,j,i)-den0*v3)*ramp;
+          if (NON_BAROTROPIC_EOS){
+            Real p_over_r = PoverR(rad,phi,z);
+            Real eng0 = p_over_r*den0/(gamma_gas - 1.0);
+			eng0 += 0.5*den0*(SQR(v1)+SQR(v2)+SQR(v3));
+            //phydro->u(IEN,k,j,i) = eng0;
             phydro->u(IEN,k,j,i) -= pmy_mesh->dt*(phydro->u(IEN,k,j,i)-eng0)*ramp;
           }
 		}
@@ -296,6 +338,7 @@ void Cooling(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<R
   Real gam1 = gamma_gas-1.0;
   Real tau = 0.01;
   Real rad, phi, z;
+  Real hdx = pmb->pcoord->dx1v(pmb->is)*0.5*1.414;
   for (int k=pmb->ks; k<=pmb->ke; ++k) {
     for (int j=pmb->js; j<=pmb->je; ++j) {
       for (int i=pmb->is; i<=pmb->ie; ++i) {
@@ -304,7 +347,23 @@ void Cooling(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<R
 										SQR(cons(IM3,k,j,i)))/cons(IDN,k,j,i);
 		Real eth0 = cons(IDN,k,j,i)*PoverR(rad,phi,z)/gam1;
 		Real tcool= std::max(beta_th*2.0*PI/sqrt(gm0/SQR(rad)/rad),dt);
-        cons(IEN,k,j,i) -= dt*(eth-eth0)*dt/tcool;
+        cons(IEN,k,j,i) -= (eth-eth0)*dt/tcool;
+        // reset the inner disk to be initial value
+		if ((rad-rbuf3)< hdx) {
+		//if (((rad-rbuf4)< hdx) && rad >=rbuf3) {
+		  Real v1, v2, v3;
+		  Real den0 = DenProfileCyl(rad,phi,z);
+          VelProfileCyl(rad,phi,z,v1,v2,v3);
+		  Real ramp = 1.0; //InnerRampFunc(rad,phi,z,rbuf3,rbuf4);
+          cons(IDN,k,j,i) = den0;
+          cons(IM1,k,j,i) = den0*v1;
+          cons(IM2,k,j,i) = den0*v2;
+          cons(IM3,k,j,i) = den0*v3;
+          Real p_over_r = PoverR(rad,phi,z);
+          Real eng0 = p_over_r*den0/(gamma_gas - 1.0);
+		  eng0 += 0.5*den0*(SQR(v1)+SQR(v2)+SQR(v3));
+          cons(IEN,k,j,i) = eng0;
+        }
       }
     }
   }
@@ -389,6 +448,7 @@ void DiskOuterX2(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
         GetCylCoord(pco,rad,phi,z,i,je+j,k);
         prim(IDN,k,je+j,i) = DenProfileCyl(rad,phi,z);
         VelProfileCyl(rad,phi,z,v1,v2,v3);
+        //VelProfileCyl(rad,phi,pco->x1v(i),pco->x2v(je+j),z,v1,v2,v3);
         prim(IM1,k,je+j,i) = v1;
         prim(IM2,k,je+j,i) = v2;
         prim(IM3,k,je+j,i) = v3;
