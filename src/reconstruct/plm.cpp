@@ -18,11 +18,10 @@
 //! \fn Reconstruction::ReconstructionFuncX1()
 //  \brief 
 
-void Reconstruction::PiecewiseLinearX1(const int kl, const int ku,
+void Reconstruction::PiecewiseLinearX1(Coordinates *pco, const int kl, const int ku,
   const int jl, const int ju, const int il, const int iu, const AthenaArray<Real> &q,
   const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
-  Coordinates *pco = pmy_block_->pcoord;
   Real dql,dqr,dqc,q_im1,q_i;
 
   for (int k=kl; k<=ku; ++k){
@@ -38,6 +37,7 @@ void Reconstruction::PiecewiseLinearX1(const int kl, const int ku,
       dql = (q(nin,k,j,i-1) - q(nin,k,j,i-2))/dx_im2;
       dqc = (q(nin,k,j,i  ) - q(nin,k,j,i-1))/dx_im1;
       dqr = (q(nin,k,j,i+1) - q(nin,k,j,i  ))/dx_i;
+
       // compute ql_(i-1/2) using Mignone 2014's modified van-Leer limiter
       Real dq2 = dql*dqc;
       ql(nout,k,j,i) = q_im1;
@@ -67,11 +67,10 @@ void Reconstruction::PiecewiseLinearX1(const int kl, const int ku,
 //! \fn Reconstruction::ReconstructionFuncX2()
 //  \brief 
 
-void Reconstruction::PiecewiseLinearX2(const int kl, const int ku,
+void Reconstruction::PiecewiseLinearX2(Coordinates *pco, const int kl, const int ku,
   const int jl, const int ju, const int il, const int iu, const AthenaArray<Real> &q,
   const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
-  Coordinates *pco = pmy_block_->pcoord;
   Real dql,dqr,dqc,q_jm1,q_j;
 
   for (int k=kl; k<=ku; ++k){
@@ -93,14 +92,14 @@ void Reconstruction::PiecewiseLinearX2(const int kl, const int ku,
       dqc = (q(nin,k,j  ,i) - q(nin,k,j-1,i))*dx2jm1i;
       dqr = (q(nin,k,j+1,i) - q(nin,k,j  ,i))*dx2ji;
 
-      // Apply monotonicity constraints, compute ql_(i-1/2)
+      // compute ql_(j-1/2) using Mignone 2014's modified van-Leer limiter
       Real dq2 = dql*dqc;
       ql(nout,k,j,i) = q_jm1;
       if(dq2>0.0) {
         ql(nout,k,j,i) += dxfr*dq2*(cfm*dql+cbm*dqc)/(dql*dql+(cfm+cbm-2.0)*dq2+dqc*dqc);
       }
         
-      // Apply monotonicity constraints, compute qr_(i-1/2)
+      // compute qr_(j-1/2) using Mignone 2014's modified van-Leer limiter
       dq2 = dqc*dqr;
       qr(nout,k,j,i) = q_j;
       if(dq2>0.0) {
@@ -116,11 +115,11 @@ void Reconstruction::PiecewiseLinearX2(const int kl, const int ku,
 //! \fn Reconstruction::ReconstructionFuncX3()
 //  \brief 
 
-void Reconstruction::PiecewiseLinearX3(const int kl, const int ku,
+void Reconstruction::PiecewiseLinearX3(Coordinates *pco, const int kl, const int ku,
   const int jl, const int ju, const int il, const int iu, const AthenaArray<Real> &q,
   const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
-  Coordinates *pco = pmy_block_->pcoord;
+//  Coordinates *pco = pmy_block_->pcoord;
   Real dql,dqr,dqc,q_km1,q_k;
 
   for (int k=kl; k<=ku; ++k){
@@ -142,14 +141,14 @@ void Reconstruction::PiecewiseLinearX3(const int kl, const int ku,
       dqc = (q(nin,k  ,j,i) - q(nin,k-1,j,i))*dx3km1i;
       dqr = (q(nin,k+1,j,i) - q(nin,k  ,j,i))*dx3ki;
 
-      // Apply monotonicity constraints, compute ql_(i-1/2)
+      // compute ql_(k-1/2) using Mignone 2014's modified van-Leer limiter
       Real dq2 = dql*dqc;
       ql(nout,k,j,i) = q_km1;
       if(dq2>0.0) {
         ql(nout,k,j,i) += dxfr*dq2*(cfm*dql+cbm*dqc)/(dql*dql+(cfm+cbm-2.0)*dq2+dqc*dqc);
       }
       
-      // Apply monotonicity constraints, compute qr_(i-1/2)
+      // compute qr_(k-1/2) using Mignone 2014's modified van-Leer limiter
       dq2 = dqc*dqr;
       qr(nout,k,j,i) = q_k;
       if(dq2>0.0) {

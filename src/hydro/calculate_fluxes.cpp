@@ -89,11 +89,11 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     pmb->precon->DonorCellX1(kl,ku,jl,ju,is,ie+1,w,IM3,IM3,wl,wr);
     pmb->precon->DonorCellX1(kl,ku,jl,ju,is,ie+1,w,IEN,IEN,wl,wr);
   } else {
-    pmb->precon->PiecewiseLinearX1(kl,ku,jl,ju,is,ie+1,w,IDN,IDN,wl,wr);
-    pmb->precon->PiecewiseLinearX1(kl,ku,jl,ju,is,ie+1,w,IM1,IM1,wl,wr);
-    pmb->precon->PiecewiseLinearX1(kl,ku,jl,ju,is,ie+1,w,IM2,IM2,wl,wr);
-    pmb->precon->PiecewiseLinearX1(kl,ku,jl,ju,is,ie+1,w,IM3,IM3,wl,wr);
-    pmb->precon->PiecewiseLinearX1(kl,ku,jl,ju,is,ie+1,w,IEN,IEN,wl,wr);
+    pmb->precon->ReconstructFuncX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IDN,IDN,wl,wr);
+    pmb->precon->ReconstructFuncX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IM1,IM1,wl,wr);
+    pmb->precon->ReconstructFuncX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IM2,IM2,wl,wr);
+    pmb->precon->ReconstructFuncX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IM3,IM3,wl,wr);
+    pmb->precon->ReconstructFuncX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IEN,IEN,wl,wr);
   }
 
   // compute fluxes
@@ -150,11 +150,11 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       pmb->precon->DonorCellX2(kl,ku,js,je+1,il,iu,w,IM3,IM3,wl,wr);
       pmb->precon->DonorCellX2(kl,ku,js,je+1,il,iu,w,IEN,IEN,wl,wr);
     } else {
-      pmb->precon->PiecewiseLinearX2(kl,ku,js,je+1,il,iu,w,IDN,IDN,wl,wr);
-      pmb->precon->PiecewiseLinearX2(kl,ku,js,je+1,il,iu,w,IM1,IM1,wl,wr);
-      pmb->precon->PiecewiseLinearX2(kl,ku,js,je+1,il,iu,w,IM2,IM2,wl,wr);
-      pmb->precon->PiecewiseLinearX2(kl,ku,js,je+1,il,iu,w,IM3,IM3,wl,wr);
-      pmb->precon->PiecewiseLinearX2(kl,ku,js,je+1,il,iu,w,IEN,IEN,wl,wr);
+      pmb->precon->ReconstructFuncX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IDN,IDN,wl,wr);
+      pmb->precon->ReconstructFuncX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IM1,IM1,wl,wr);
+      pmb->precon->ReconstructFuncX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IM2,IM2,wl,wr);
+      pmb->precon->ReconstructFuncX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IM3,IM3,wl,wr);
+      pmb->precon->ReconstructFuncX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IEN,IEN,wl,wr);
     }
 
     // compute fluxes at j
@@ -208,11 +208,11 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       pmb->precon->DonorCellX3(ks,ke+1,jl,ju,il,iu,w,IM3,IM3,wl,wr);
       pmb->precon->DonorCellX3(ks,ke+1,jl,ju,il,iu,w,IEN,IEN,wl,wr);
     } else {
-      pmb->precon->PiecewiseLinearX3(ks,ke+1,jl,ju,il,iu,w,IDN,IDN,wl,wr);
-      pmb->precon->PiecewiseLinearX3(ks,ke+1,jl,ju,il,iu,w,IM1,IM1,wl,wr);
-      pmb->precon->PiecewiseLinearX3(ks,ke+1,jl,ju,il,iu,w,IM2,IM2,wl,wr);
-      pmb->precon->PiecewiseLinearX3(ks,ke+1,jl,ju,il,iu,w,IM3,IM3,wl,wr);
-      pmb->precon->PiecewiseLinearX3(ks,ke+1,jl,ju,il,iu,w,IEN,IEN,wl,wr);
+      pmb->precon->ReconstructFuncX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IDN,IDN,wl,wr);
+      pmb->precon->ReconstructFuncX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IM1,IM1,wl,wr);
+      pmb->precon->ReconstructFuncX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IM2,IM2,wl,wr);
+      pmb->precon->ReconstructFuncX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IM3,IM3,wl,wr);
+      pmb->precon->ReconstructFuncX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IEN,IEN,wl,wr);
     }
 
     // compute fluxes at k
