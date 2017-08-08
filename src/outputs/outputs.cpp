@@ -663,8 +663,6 @@ void OutputType::ClearOutputData()
 void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag)
 {
   OutputType* ptype = pfirst_type_;
-  MeshBlock *pmb;
-
   while (ptype != NULL) {
     if ((pm->time == pm->start_time) ||
         (pm->time >= ptype->output_params.next_time) ||
@@ -675,7 +673,6 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag)
     }
     ptype = ptype->pnext_type; // move to next OutputType in list
   }
-
 }
 
 //----------------------------------------------------------------------------------------
@@ -825,7 +822,6 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim)
 
 void OutputType::SumOutputData(MeshBlock* pmb, int dim)
 {
-  AthenaArray<Real> *psum;
   std::stringstream str;
 
   // For each node in OutputData linked list, sum arrays containing output data  
@@ -840,7 +836,6 @@ void OutputType::SumOutputData(MeshBlock* pmb, int dim)
     int nx3 = pdata->data.GetDim3();
     int nx2 = pdata->data.GetDim2();
     int nx1 = pdata->data.GetDim1();
-    psum = new AthenaArray<Real>;
 
     // Loop over variables and dimensions, sum over specified dimension
     if (dim == 3) {

@@ -166,7 +166,6 @@ MultigridDriver::~MultigridDriver()
 
 void MultigridDriver::SetupMultigrid(void)
 {
-  Mesh *pm=pmy_mesh_;
   MeshBlock *pb;
 
   if(fperiodic_)
@@ -212,8 +211,6 @@ void MultigridDriver::SubtractAverage(int type)
     for(int n=0; n<Globals::nranks; n++)
       total+=rootbuf_[n*nvar_+v];
     Real ave=total/vol;
-    for(int n=0; n<pmy_mesh_->nbtotal; n++)
-      rootbuf_[n*nvar_+v]-=ave;
     pb=pblock_;
     while(pb!=NULL) {
       Multigrid *pmg=GetMultigridBlock(pb);
@@ -233,7 +230,6 @@ void MultigridDriver::SubtractAverage(int type)
 void MultigridDriver::FillRootGridSource(void)
 {
   MeshBlock *pb=pblock_;
-  int type;
   while(pb!=NULL) {
     Multigrid *pmg=GetMultigridBlock(pb);
     for(int v=0; v<nvar_; v++)
@@ -340,8 +336,10 @@ void MultigridDriver::OneStepToCoarser(int nsmooth)
   if(current_level_ >= nrootlevel_) {
     mgtlist_->SetMGTaskListToCoarser(nsmooth, ngh);
     mgtlist_->DoTaskListOneSubStep(this);
-    if(current_level_==nrootlevel_)
+    if(current_level_==nrootlevel_) {
       FillRootGridSource();
+      mgroot_->ZeroClearData();
+    }
   }
   else { // root grid
     for(int n=0; n<nsmooth; n++) {
@@ -350,6 +348,7 @@ void MultigridDriver::OneStepToCoarser(int nsmooth)
       mgroot_->ApplyPhysicalBoundaries();
       mgroot_->Smooth(1);
     }
+    mgroot_->ApplyPhysicalBoundaries();
     mgroot_->Restrict();
   }
   current_level_--;

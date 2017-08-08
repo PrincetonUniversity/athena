@@ -13,6 +13,7 @@
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../multigrid/multigrid.hpp"
+#include "../globals.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn  void MGGravity::Smooth(int color)
@@ -36,11 +37,8 @@ void MGGravity::Smooth(int color)
   Real dx = rdx_*(Real)(1<<ll);
   Real dx2 = SQR(dx);
   Real isix=omega_/6.0;
-#pragma ivdep
   for(int k=ks; k<=ke; k++) {
-#pragma ivdep
     for(int j=js; j<=je; j++) {
-#pragma ivdep
       for(int i=is+c; i<=ie; i+=2)
         u(0,k,j,i)-=((6.0*u(0,k,j,i)-u(0,k+1,j,i)-u(0,k,j+1,i)-u(0,k,j,i+1)
                      -u(0,k-1,j,i)-u(0,k,j-1,i)-u(0,k,j,i-1))+src(0,k,j,i)*dx2)*isix;
@@ -57,7 +55,6 @@ void MGGravity::Smooth(int color)
 
 void MGGravity::CalculateDefect(void)
 {
-  int ns=ngh_, ne=ngh_+(1<<current_level_)-1;
   AthenaArray<Real> &u=u_[current_level_];
   AthenaArray<Real> &src=src_[current_level_];
   AthenaArray<Real> &def=def_[current_level_];
@@ -67,16 +64,11 @@ void MGGravity::CalculateDefect(void)
   ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
   Real dx = rdx_*(Real)(1<<ll);
   Real idx2 = 1.0/SQR(dx);
-  Real t=0.0;
-#pragma ivdep
   for(int k=ks; k<=ke; k++) {
-#pragma ivdep
     for(int j=js; j<=je; j++) {
-#pragma ivdep
       for(int i=is; i<=ie; i++) {
         def(0,k,j,i)=(6.0*u(0,k,j,i)-u(0,k+1,j,i)-u(0,k,j+1,i)-u(0,k,j,i+1)
                          -u(0,k-1,j,i)-u(0,k,j-1,i)-u(0,k,j,i-1))*idx2+src(0,k,j,i);
-        t+=def(0,k,j,i)*dx*dx*dx;
       }
     }
   }

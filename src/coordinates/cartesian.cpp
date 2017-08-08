@@ -33,7 +33,6 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
     ng=NGHOST;
   }
   Mesh *pm=pmy_block->pmy_mesh;
-  RegionSize& mesh_size  = pmy_block->pmy_mesh->mesh_size;
   RegionSize& block_size = pmy_block->block_size;
 
   // allocate arrays for volume-centered coordinates and positions of cells

@@ -96,14 +96,10 @@ void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh)
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+nx_-1, je=js+ny_-1, ke=ks+nz_-1;
-#pragma ivdep
   for(int n=0; n<nvar_; n++) {
     int nsrc=ns+n;
-#pragma ivdep
     for(int k=ngh, mk=ks; mk<=ke; k++, mk++) {
-#pragma ivdep
       for(int j=ngh, mj=js; mj<=je; j++, mj++) {
-#pragma ivdep
         for(int i=ngh, mi=is; mi<=ie; i++, mi++)
           dst(n,mk,mj,mi)=src(nsrc,k,j,i);
       }
@@ -124,14 +120,10 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
   is=js=ks=ngh_;
   ie=is+nx_-1, je=js+ny_-1, ke=ks+nz_-1;
   if(fac==1.0) {
-#pragma ivdep
     for(int n=0; n<nvar_; n++) {
       int nsrc=ns+n;
-#pragma ivdep
       for(int k=ngh, mk=ks; mk<=ke; k++, mk++) {
-#pragma ivdep
         for(int j=ngh, mj=js; mj<=je; j++, mj++) {
-#pragma ivdep
           for(int i=ngh, mi=is; mi<=ie; i++, mi++)
             dst(n,mk,mj,mi)=src(nsrc,k,j,i);
         }
@@ -139,14 +131,10 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
     }
   }
   else {
-#pragma ivdep
     for(int n=0; n<nvar_; n++) {
       int nsrc=ns+n;
-#pragma ivdep
       for(int k=ngh, mk=ks; mk<=ke; k++, mk++) {
-#pragma ivdep
         for(int j=ngh, mj=js; mj<=je; j++, mj++) {
-#pragma ivdep
           for(int i=ngh, mi=is; mi<=ie; i++, mi++)
             dst(n,mk,mj,mi)=src(nsrc,k,j,i)*fac;
         }
@@ -172,13 +160,9 @@ void Multigrid::RestrictFMGSource(void)
     ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
     AthenaArray<Real> &csrc=src_[current_level_-1];
     const AthenaArray<Real> &fsrc=src_[current_level_];
-#pragma ivdep
     for(int n=0; n<nvar_; n++) {
-#pragma ivdep
       for(int k=ks, fk=ks; k<=ke; k++, fk+=2) {
-#pragma ivdep
         for(int j=js, fj=js; j<=je; j++, fj+=2) {
-#pragma ivdep
           for(int i=is, fi=is; i<=ie; i++, fi+=2)
             csrc(n, k, j, i)=0.125*(fsrc(n, fk,   fj,   fi)+fsrc(n, fk,   fj,   fi+1)
                                    +fsrc(n, fk,   fj+1, fi)+fsrc(n, fk,   fj+1, fi+1)
@@ -199,14 +183,10 @@ void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh)
   const AthenaArray<Real> &src=u_[nlevel_-1];
   int sngh=std::min(ngh_,ngh);
   int ie=nx_+ngh_+sngh-1, je=ny_+ngh_+sngh-1, ke=nz_+ngh_+sngh-1;
-#pragma ivdep
   for(int n=0; n<nvar_; n++) {
     int ndst=ns+n;
-#pragma ivdep
     for(int k=ngh-sngh, mk=ngh_-sngh; mk<=ke; k++, mk++) {
-#pragma ivdep
       for(int j=ngh-sngh, mj=ngh_-sngh; mj<=je; j++, mj++) {
-#pragma ivdep
         for(int i=ngh-sngh, mi=ngh_-sngh; mi<=ie; i++, mi++)
           dst(ndst,k,j,i)=src(n,mk,mj,mi);
       }
@@ -246,7 +226,7 @@ void Multigrid::ApplyPhysicalBoundaries(void)
   if(MGBoundaryFunction_[INNER_X2]==NULL) bjs=js-ngh_;
   if(MGBoundaryFunction_[OUTER_X2]==NULL) bje=je+ngh_;
   if(MGBoundaryFunction_[INNER_X3]==NULL) bks=ks-ngh_;
-  if(MGBoundaryFunction_[OUTER_X3]==NULL) bke=ke*ngh_;
+  if(MGBoundaryFunction_[OUTER_X3]==NULL) bke=ke+ngh_;
 
   // Apply boundary function on inner-x1
   if (MGBoundaryFunction_[INNER_X1] != NULL)
@@ -286,20 +266,16 @@ void Multigrid::ApplyPhysicalBoundaries(void)
 void Multigrid::Restrict(void)
 {
   AthenaArray<Real> &dst=src_[current_level_-1];
-  AthenaArray<Real> &src=def_[current_level_];
+  const AthenaArray<Real> &src=def_[current_level_];
   int ll=nlevel_-current_level_;
   int is, ie, js, je, ks, ke;
 
   CalculateDefect();
   is=js=ks=ngh_;
   ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
-#pragma ivdep
   for(int n=0; n<nvar_; n++) {
-#pragma ivdep
     for(int k=ks, fk=ks; k<=ke; k++, fk+=2) {
-#pragma ivdep
       for(int j=js, fj=js; j<=je; j++, fj+=2) {
-#pragma ivdep
         for(int i=is, fi=is; i<=ie; i++, fi+=2)
           dst(n, k, j, i)=0.125*(src(n, fk,   fj,   fi)+src(n, fk,   fj,   fi+1)
                                 +src(n, fk,   fj+1, fi)+src(n, fk,   fj+1, fi+1)
@@ -325,13 +301,9 @@ void Multigrid::ProlongateAndCorrect(void)
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
-#pragma ivdep
   for(int n=0; n<nvar_; n++) {
-#pragma ivdep
     for(int k=ks, fk=ks; k<=ke; k++, fk+=2) {
-#pragma ivdep
       for(int j=js, fj=js; j<=je; j++, fj+=2) {
-#pragma ivdep
         for(int i=is, fi=is; i<=ie; i++, fi+=2) {
           dst(n,fk  ,fj  ,fi  )+=0.015625*(27.0*src(n,k,j,i) + src(n,k-1,j-1,i-1)
                           +9.0*(src(n,k,j,i-1)+src(n,k,j-1,i)+src(n,k-1,j,i))
@@ -377,13 +349,9 @@ void Multigrid::FMGProlongate(void)
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
-#pragma ivdep
   for(int n=0; n<nvar_; n++) {
-#pragma ivdep
     for(int k=ks, fk=ks; k<=ke; k++, fk+=2) {
-#pragma ivdep
       for(int j=js, fj=js; j<=je; j++, fj+=2) {
-#pragma ivdep
         for(int i=is, fi=is; i<=ie; i++, fi+=2) {
           dst(n,fk  ,fj,  fi  )=(
           + 125.0*src(n,k-1,j-1,i-1)+  750.0*src(n,k-1,j-1,i  )-  75.0*src(n,k-1,j-1,i+1)
@@ -489,17 +457,8 @@ void Multigrid::SetFromRootGrid(AthenaArray<Real> &src, int ci, int cj, int ck)
 {
   current_level_=0;
   AthenaArray<Real> &dst=u_[current_level_];
-#pragma ivdep
   for(int n=0; n<nvar_; n++) {
-#pragma ivdep
-    for(int k=ck-1+ngh_, tk=ngh_-1; k<=ck+1+ngh_; k++, tk++) {
-#pragma ivdep
-      for(int j=cj-1+ngh_, tj=ngh_-1; j<=cj+1+ngh_; j++, tj++) {
-#pragma ivdep
-        for(int i=ci-1+ngh_, ti=ngh_-1; i<=ci+1+ngh_; i++, ti++)
-          dst(n,tk,tj,ti)=src(n,k,j,i);
-      }
-    }
+    dst(n,ngh_,ngh_,ngh_)=src(n,ck+ngh_,cj+ngh_,ci+ngh_);
   }
   return;
 }
@@ -521,33 +480,24 @@ Real Multigrid::CalculateDefectNorm(int n, int nrm)
 
   Real norm=0.0;
   if(nrm==0) { // special case: max norm
-#pragma ivdep
     for(int k=ks; k<=ke; k++) {
-#pragma ivdep
       for(int j=js; j<=je; j++) {
-#pragma ivdep
         for(int i=is; i<=ie; i++)
           norm=std::max(norm,std::fabs(def(n,k,j,i)));
       }
     }
   }
   else if (nrm==1) {
-#pragma ivdep
     for(int k=ks; k<=ke; k++) {
-#pragma ivdep
       for(int j=js; j<=je; j++) {
-#pragma ivdep
         for(int i=is; i<=ie; i++)
           norm+=std::fabs(def(n,k,j,i));
       }
     }
   }
   else { // nrm>1 -> nrm=2
-#pragma ivdep
     for(int k=ks; k<=ke; k++) {
-#pragma ivdep
       for(int j=js; j<=je; j++) {
-#pragma ivdep
         for(int i=is; i<=ie; i++)
           norm+=SQR(def(n,k,j,i));
       }
@@ -572,11 +522,8 @@ Real Multigrid::CalculateTotal(int type, int n)
   is=js=ks=ngh_;
   ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
   Real dx=rdx_*(Real)(1<<ll), dy=rdy_*(Real)(1<<ll), dz=rdz_*(Real)(1<<ll);
-#pragma ivdep
   for(int k=ks; k<=ke; k++) {
-#pragma ivdep
     for(int j=js; j<=je; j++) {
-#pragma ivdep
       for(int i=is; i<=ie; i++)
         s+=src(n,k,j,i);
     }
@@ -594,16 +541,12 @@ void Multigrid::SubtractAverage(int type, int n, Real ave)
   AthenaArray<Real> dst;
   if(type==0) dst.InitWithShallowCopy(src_[nlevel_-1]);
   else dst.InitWithShallowCopy(u_[nlevel_-1]);
-  Real s=0.0;
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+nx_-1, je=js+ny_-1, ke=ks+nz_-1;
 
-#pragma ivdep
   for(int k=ks; k<=ke; k++) {
-#pragma ivdep
     for(int j=js; j<=je; j++) {
-#pragma ivdep
       for(int i=is; i<=ie; i++)
         dst(n,k,j,i)-=ave;
     }
@@ -621,13 +564,9 @@ void MGPeriodicInnerX1(AthenaArray<Real> &dst,Real time, int nvar,
                        int is, int ie, int js, int je, int ks, int ke, int ngh,
                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 {
-#pragma ivdep
   for(int n=0; n<nvar; n++) {
-#pragma ivdep
     for(int k=ks; k<=ke; k++) {
-#pragma ivdep
       for(int j=js; j<=je; j++) {
-#pragma ivdep
         for(int i=0; i<ngh; i++)
           dst(n,k,j,is-i-1)=dst(n,k,j,ie-i);
       }
@@ -647,13 +586,9 @@ void MGPeriodicOuterX1(AthenaArray<Real> &dst,Real time, int nvar,
                        int is, int ie, int js, int je, int ks, int ke, int ngh,
                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 {
-#pragma ivdep
   for(int n=0; n<nvar; n++) {
-#pragma ivdep
     for(int k=ks; k<=ke; k++) {
-#pragma ivdep
       for(int j=js; j<=je; j++) {
-#pragma ivdep
         for(int i=0; i<ngh; i++)
           dst(n,k,j,ie+i+1)=dst(n,k,j,is+i);
       }
@@ -673,13 +608,9 @@ void MGPeriodicInnerX2(AthenaArray<Real> &dst,Real time, int nvar,
                        int is, int ie, int js, int je, int ks, int ke, int ngh,
                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 {
-#pragma ivdep
   for(int n=0; n<nvar; n++) {
-#pragma ivdep
     for(int k=ks; k<=ke; k++) {
-#pragma ivdep
       for(int j=0; j<ngh; j++) {
-#pragma ivdep
         for(int i=is; i<=ie; i++)
           dst(n,k,js-j-1,i)=dst(n,k,je-j,i);
       }
@@ -699,13 +630,9 @@ void MGPeriodicOuterX2(AthenaArray<Real> &dst,Real time, int nvar,
                        int is, int ie, int js, int je, int ks, int ke, int ngh,
                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 {
-#pragma ivdep
   for(int n=0; n<nvar; n++) {
-#pragma ivdep
     for(int k=ks; k<=ke; k++) {
-#pragma ivdep
       for(int j=0; j<ngh; j++) {
-#pragma ivdep
         for(int i=is; i<=ie; i++)
           dst(n,k,je+j+1,i)=dst(n,k,js+j,i);
       }
@@ -725,13 +652,9 @@ void MGPeriodicInnerX3(AthenaArray<Real> &dst,Real time, int nvar,
                        int is, int ie, int js, int je, int ks, int ke, int ngh,
                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 {
-#pragma ivdep
   for(int n=0; n<nvar; n++) {
-#pragma ivdep
     for(int k=0; k<ngh; k++) {
-#pragma ivdep
       for(int j=js; j<=je; j++) {
-#pragma ivdep
         for(int i=is; i<=ie; i++)
           dst(n,ks-k-1,j,i)=dst(n,ke-k,j,i);
       }
@@ -751,13 +674,9 @@ void MGPeriodicOuterX3(AthenaArray<Real> &dst,Real time, int nvar,
                        int is, int ie, int js, int je, int ks, int ke, int ngh,
                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 {
-#pragma ivdep
   for(int n=0; n<nvar; n++) {
-#pragma ivdep
     for(int k=0; k<ngh; k++) {
-#pragma ivdep
       for(int j=js; j<=je; j++) {
-#pragma ivdep
         for(int i=is; i<=ie; i++)
           dst(n,ke+k+1,j,i)=dst(n,ks+k,j,i);
       }

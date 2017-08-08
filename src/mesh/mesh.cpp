@@ -54,7 +54,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
 {
   std::stringstream msg;
   RegionSize block_size;
-  MeshBlockTree *neibt;
   MeshBlock *pfirst;
   enum BoundaryFlag block_bcs[6];
   int nbmax, dim;
@@ -515,7 +514,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   RegionSize block_size;
   enum BoundaryFlag block_bcs[6];
   MeshBlock *pfirst;
-  int i, j, dim;
+  int i, dim;
   IOWrapperSize_t *offset, datasize, listsize, headeroffset;
 
   // mesh test
@@ -935,7 +934,6 @@ void Mesh::OutputMeshStructure(int dim)
   // output relative size/locations of meshblock to file, for plotting
   Real mincost=FLT_MAX, maxcost=0.0, totalcost=0.0;
   for (int i=root_level; i<=max_level; i++) {
-    Real dx=1.0/(Real)(1L<<i);
     for (int j=0; j<nbtotal; j++) {
       if(loclist[j].level==i) {
         SetBlockSizeAndBoundaries(loclist[j], block_size, block_bcs);

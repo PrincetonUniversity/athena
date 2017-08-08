@@ -234,7 +234,6 @@ void BoundaryValues::SetCellCenteredBoundaryFromCoarser(int ns, int ne,
              Real *buf, AthenaArray<Real> &cbuf, const NeighborBlock& nb, bool *flip)
 {
   MeshBlock *pmb=pmy_block_;
-  MeshRefinement *pmr=pmb->pmr;
 
   int si, sj, sk, ei, ej, ek;
   int cng=pmb->cnghost;

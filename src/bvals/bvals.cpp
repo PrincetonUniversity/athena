@@ -402,7 +402,7 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
     // Allocate buffers
     // calculate the buffer size
     switch(type) {
-      case BNDRY_HYDRO:
+      case BNDRY_HYDRO: {
         size=((BoundaryValues::ni[n].ox1==0)?pmb->block_size.nx1:NGHOST)
             *((BoundaryValues::ni[n].ox2==0)?pmb->block_size.nx2:NGHOST)
             *((BoundaryValues::ni[n].ox3==0)?pmb->block_size.nx3:NGHOST);
@@ -417,8 +417,9 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
           size=std::max(size,f2c);
         }
         size*=NHYDRO;
-        break;
-      case BNDRY_FIELD:
+      }
+      break;
+      case BNDRY_FIELD: {
         int size1=((BoundaryValues::ni[n].ox1==0)?(pmb->block_size.nx1+1):NGHOST)
                  *((BoundaryValues::ni[n].ox2==0)?(pmb->block_size.nx2):NGHOST)
                  *((BoundaryValues::ni[n].ox3==0)?(pmb->block_size.nx3):NGHOST);
@@ -466,13 +467,15 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
           int csize=c2f1+c2f2+c2f3;
           size=std::max(size,std::max(csize,fsize));
         }
-        break;
-      case BNDRY_GRAVITY:
+      }
+      break;
+      case BNDRY_GRAVITY: {
         size=((BoundaryValues::ni[n].ox1==0)?pmb->block_size.nx1:NGHOST)
             *((BoundaryValues::ni[n].ox2==0)?pmb->block_size.nx2:NGHOST)
             *((BoundaryValues::ni[n].ox3==0)?pmb->block_size.nx3:NGHOST);
-        break;
-      case BNDRY_MGGRAV:
+      }
+      break;
+      case BNDRY_MGGRAV: {
         int ngh=pmb->pmggrav->GetNumberOfGhostCells();
         if(multilevel) { // with refinement - NGHOST = 1
           int nc=pmb->block_size.nx1;
@@ -485,16 +488,18 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
               *((BoundaryValues::ni[n].ox2==0)?pmb->block_size.nx2:ngh)
               *((BoundaryValues::ni[n].ox3==0)?pmb->block_size.nx3:ngh);
         }
-        break;
-      case BNDRY_FLCOR:
+      }
+      break;
+      case BNDRY_FLCOR: {
         if(BoundaryValues::ni[n].ox1!=0)
           size=(pmb->block_size.nx2+1)/2*(pmb->block_size.nx3+1)/2*NHYDRO;
         if(BoundaryValues::ni[n].ox2!=0)
           size=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx3+1)/2*NHYDRO;
         if(BoundaryValues::ni[n].ox3!=0)
           size=(pmb->block_size.nx1+1)/2*(pmb->block_size.nx2+1)/2*NHYDRO;
-        break;
-      case BNDRY_EMFCOR:
+      }
+      break;
+      case BNDRY_EMFCOR: {
         if(BoundaryValues::ni[n].type==NEIGHBOR_FACE) {
           if(pmb->block_size.nx3>1) { // 3D
             if(BoundaryValues::ni[n].ox1!=0)
@@ -525,13 +530,15 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
          else if(pmb->block_size.nx2>1)
             size=1;
         }
-        break;
-      default:
+      }
+      break;
+      default: {
         std::stringstream msg;
         msg << "### FATAL ERROR in InitBoundaryData" << std::endl
             << "Invalid boundary type is specified." << std::endl;
         throw std::runtime_error(msg.str().c_str());
-        break;
+      }
+      break;
     }
     bd.send[n]=new Real [size];
     bd.recv[n]=new Real [size];
@@ -688,13 +695,13 @@ void BoundaryValues::Initialize(void)
 
       // flux correction
       if(pmb->pmy_mesh->multilevel==true && nb.type==NEIGHBOR_FACE) {
-        int fi1, fi2, size;
+        int size;
         if(nb.fid==0 || nb.fid==1)
-          fi1=myox2, fi2=myox3, size=((pmb->block_size.nx2+1)/2)*((pmb->block_size.nx3+1)/2);
+          size=((pmb->block_size.nx2+1)/2)*((pmb->block_size.nx3+1)/2);
         else if(nb.fid==2 || nb.fid==3)
-          fi1=myox1, fi2=myox3, size=((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx3+1)/2);
+          size=((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx3+1)/2);
         else if(nb.fid==4 || nb.fid==5)
-          fi1=myox1, fi2=myox2, size=((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx2+1)/2);
+          size=((pmb->block_size.nx1+1)/2)*((pmb->block_size.nx2+1)/2);
         size*=NHYDRO;
         if(nb.level<mylevel) { // send to coarser
           tag=CreateBvalsMPITag(nb.lid, TAG_HYDFLX, nb.targetid);
@@ -1185,20 +1192,14 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
 {
   MeshBlock *pmb=pmy_block_;
   MeshRefinement *pmr=pmb->pmr;
-  int mox1, mox2, mox3;
   long int &lx1=pmb->loc.lx1;
   long int &lx2=pmb->loc.lx2;
   long int &lx3=pmb->loc.lx3;
   int &mylevel=pmb->loc.level;
-  mox1=((int)(lx1&1L)<<1)-1;
-  mox2=((int)(lx2&1L)<<1)-1;
-  mox3=((int)(lx3&1L)<<1)-1;
 
   for(int n=0; n<pmb->nneighbor; n++) {
     NeighborBlock& nb = pmb->neighbor[n];
     if(nb.level >= mylevel) continue;
-
-    int mytype=std::abs(nb.ox1)+std::abs(nb.ox2)+std::abs(nb.ox3);
     // fill the required ghost-ghost zone
     int nis, nie, njs, nje, nks, nke;
     nis=std::max(nb.ox1-1,-1), nie=std::min(nb.ox1+1,1);

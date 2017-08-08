@@ -169,7 +169,6 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type)
 bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type)
 {
   MeshBlock *pmb=pmy_block_;
-  Coordinates *pco=pmb->pcoord;
   AthenaArray<Real> x1flux, x2flux, x3flux;
   bool bflag=true;
   int ns, ne;

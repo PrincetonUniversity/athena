@@ -909,7 +909,7 @@ void MeshRefinement::ProlongateInternalField(FaceField &fine,
     }
   }
   else if(pmb->block_size.nx2 > 1) {
-    int k=pmb->cks, fk=pmb->ks;
+    int fk=pmb->ks;
     for(int j=sj; j<=ej; j++) {
       int fj=(j-pmb->cjs)*2+pmb->js;
       pco->Face1Area(fk,   fj,   fsi, fei+1, sarea_x1_[0][0]);
