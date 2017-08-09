@@ -42,12 +42,16 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin)
     e.x2e.NewAthenaArray((ncells3+1), ncells2   ,(ncells1+1));
     e.x3e.NewAthenaArray( ncells3   ,(ncells2+1),(ncells1+1));
 
-    ei.x1f.NewAthenaArray(((NFIELD)-1), ncells3   , ncells2   ,(ncells1+1));
-    ei.x2f.NewAthenaArray(((NFIELD)-1), ncells3   ,(ncells2+1), ncells1   );
-    ei.x3f.NewAthenaArray(((NFIELD)-1),(ncells3+1), ncells2   , ncells1   );
     wght.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
     wght.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
     wght.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
+
+    e2_x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
+    e3_x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
+    e1_x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
+    e3_x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
+    e1_x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
+    e2_x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
 
     // Allocate memory for scratch vectors
     cc_e_.NewAthenaArray(ncells3,ncells2,ncells1);
@@ -80,12 +84,15 @@ Field::~Field()
   e.x1e.DeleteAthenaArray();
   e.x2e.DeleteAthenaArray();
   e.x3e.DeleteAthenaArray();
-  ei.x1f.DeleteAthenaArray();
-  ei.x2f.DeleteAthenaArray();
-  ei.x3f.DeleteAthenaArray();
   wght.x1f.DeleteAthenaArray();
   wght.x2f.DeleteAthenaArray();
   wght.x3f.DeleteAthenaArray();
+  e2_x1f.DeleteAthenaArray();
+  e3_x1f.DeleteAthenaArray();
+  e1_x2f.DeleteAthenaArray();
+  e3_x2f.DeleteAthenaArray();
+  e1_x3f.DeleteAthenaArray();
+  e2_x3f.DeleteAthenaArray();
 
   cc_e_.DeleteAthenaArray();
   face_area_.DeleteAthenaArray();

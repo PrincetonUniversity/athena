@@ -43,7 +43,8 @@ public:
     AthenaArray<Real> &bcc, int order);
   void RiemannSolver(const int kl, const int ku, const int jl, const int ju,
     const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
-    const AthenaArray<Real> &wl, const AthenaArray<Real> &wr, AthenaArray<Real> &flx);
+    const AthenaArray<Real> &wl, const AthenaArray<Real> &wr,
+    AthenaArray<Real> &flx, AthenaArray<Real> &e1, AthenaArray<Real> &e2);
 
 private:
   AthenaArray<Real> dt1_,dt2_,dt3_;  // scratch arrays used in NewTimeStep
