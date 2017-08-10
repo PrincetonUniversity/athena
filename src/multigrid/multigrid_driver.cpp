@@ -80,23 +80,30 @@ MultigridDriver::MultigridDriver(Mesh *pm, MeshBlock *pmb, MGBoundaryFunc_t *MGB
     return;
   }
   // count multigrid levels
-  int nrlx=0, nrly=0, nrlz=0;
-  for(int l=0; l<20; l++) {
-    if((1<<l) == pm->nrbx1)
-      nrlx=l+1;
-    if((1<<l) == pm->nrbx2)
-      nrly=l+1;
-    if((1<<l) == pm->nrbx3)
-      nrlz=l+1;
+  nrootlevel_=1;
+  int nbx=pm->nrbx1, nby=pm->nrbx2, nbz=pm->nrbx3;
+  for(int l=0; l<30; l++) {
+    if(pm->nrbx1%(1<<l)==0 && pm->nrbx2%(1<<l)==0 && pm->nrbx3%(1<<l)==0) {
+      nrootlevel_=l+1;
+      nbx=pm->nrbx1/(1<<l), nby=pm->nrbx2/(1<<l), nbz=pm->nrbx3/(1<<l);
+    }
   }
-  if(nrlx==0 || nrly==0 || nrlz==0) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
-        << "The root grid size must be power of 2." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-    return;
+  int nmaxr=std::max(nbx, std::max(nby, nbz));
+  int nminr=std::min(nbx, std::min(nby, nbz));
+  if(nmaxr!=1 && Globals::my_rank==0) {
+    std::cout << "### Warning in MultigridDriver::MultigridDriver" << std::endl
+      << "The root grid can not be reduced to a single cell." << std::endl
+      << "Multigrid should still work, but this is not the most efficient configuration "
+      << "as the coarsest level is not solved exactly but iteratively." << std::endl;
   }
-  nrootlevel_=std::min(nrlx,std::min(nrly,nrlz));
+  if(nbx*nby*nbz>1000 && Globals::my_rank==0) {
+    std::cout << "### Warning in MultigridDriver::MultigridDriver" << std::endl
+      << "The degrees of freedom on the coarsest level is very large: "
+      << nbx << " x " << nby << " x " << nbz << " = " << nbx*nby*nbz<< std::endl
+      << "Multigrid should still work, but this is not efficient configuration "
+      << "as the coarsest level solver costs considerably." << std::endl
+      << "We recommend to reconsider grid configuration." << std::endl;
+  }
   rootsrc_.NewAthenaArray(nvar_,pm->nrbx3,pm->nrbx2,pm->nrbx1);
   ntotallevel_=nrootlevel_+nmblevel_-1;
   current_level_=ntotallevel_-1;
@@ -420,7 +427,7 @@ void MultigridDriver::SolveCoarsestGrid(void)
     return;
   }
   else {
-    for(int i=0; i<ni; ni++) { // iterate ni times
+    for(int i=0; i<ni; i++) { // iterate ni times
       mgroot_->ApplyPhysicalBoundaries();
       mgroot_->Smooth(0);
       mgroot_->ApplyPhysicalBoundaries();
