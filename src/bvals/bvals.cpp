@@ -392,6 +392,7 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
   for(int n=0;n<bd.nbmax;n++) {
     // Clear flags and requests
     bd.flag[n]=BNDRY_WAITING;
+    bd.sflag[n]=BNDRY_WAITING;
     bd.send[n]=NULL;
     bd.recv[n]=NULL;
 #ifdef MPI_PARALLEL

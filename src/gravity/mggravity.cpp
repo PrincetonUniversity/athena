@@ -46,6 +46,28 @@ void MGGravity::Smooth(int color)
     }
     c^=1;
   }
+/*  if(Globals::my_rank==0) {
+    if(pmy_block_!=NULL) std::cout << "Source " << pmy_block_->gid << std::endl;
+    else std::cout << "Source " << "root " << std::endl;
+    for(int k=ks; k<=ke; k++) {
+      for(int j=js; j<=je; j++) {
+        std::cout << k << " " << j << " ";
+        for(int i=is; i<=ie; i++)
+          std::cout << src(0,k,j,i) << " ";
+          std::cout << std::endl;
+      }
+    }
+    if(pmy_block_!=NULL) std::cout << "Data " << pmy_block_->gid << std::endl;
+    else std::cout << "Data " << "root " << std::endl;
+    for(int k=ks; k<=ke; k++) {
+      for(int j=js; j<=je; j++) {
+        std::cout << k << " " << j << " ";
+        for(int i=is; i<=ie; i++)
+          std::cout << u(0,k,j,i) << " ";
+          std::cout << std::endl;
+      }
+    }
+  }*/
   return;
 }
 

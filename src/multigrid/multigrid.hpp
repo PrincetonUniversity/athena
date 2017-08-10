@@ -87,14 +87,14 @@ public:
   friend class MultigridTaskList;
 
 protected:
+  Mesh *pmy_mesh_;
+  MeshBlock *pmy_block_;
   RegionSize size_;
   int nlevel_, nx_, ny_, nz_, ngh_, nvar_, current_level_;
   Real rdx_, rdy_, rdz_;
   AthenaArray<Real> *u_, *def_, *src_;
 
 private:
-  Mesh *pmy_mesh_;
-  MeshBlock *pmy_block_;
   TaskState ts_;
   MGBoundaryFunc_t MGBoundaryFunction_[6];
 };

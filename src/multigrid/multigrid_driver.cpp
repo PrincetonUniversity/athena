@@ -118,7 +118,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MeshBlock *pmb, MGBoundaryFunc_t *MGB
 
   // Setting up the MPI information
   // *** this part should be modified when dedicate processes are allocated ***
-  pblock_=pmb;
+  // *** we also need to construct another neighbor list for Multigrid ***
   MeshBlock *pb=pblock_;
   nblocks_=0;
   while(pb!=NULL) {
@@ -208,7 +208,7 @@ void MultigridDriver::SubtractAverage(int type)
           *(pmy_mesh_->mesh_size.x3max-pmy_mesh_->mesh_size.x3min);
   for(int v=0; v<nvar_; v++) {
     Real total=0.0;
-    for(int n=0; n<Globals::nranks; n++)
+    for(int n=0; n<pmy_mesh_->nbtotal; n++)
       total+=rootbuf_[n*nvar_+v];
     Real ave=total/vol;
     pb=pblock_;

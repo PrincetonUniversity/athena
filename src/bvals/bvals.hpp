@@ -63,7 +63,7 @@ typedef struct NeighborIndexes {
 //  \brief structure storing boundary information
 typedef struct BoundaryData {
   int nbmax;
-  enum BoundaryStatus flag[56];
+  enum BoundaryStatus flag[56], sflag[56];
   Real *send[56], *recv[56];
 #ifdef MPI_PARALLEL
   MPI_Request req_send[56], req_recv[56];
@@ -195,7 +195,7 @@ public:
   void ClearBoundaryMultigrid(enum BoundaryType type);
   int LoadMultigridBoundaryBufferSameLevel(AthenaArray<Real> &src,
                    int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb);
-  void SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
+  bool SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
                                     int nc, enum BoundaryType type);
   void SetMultigridBoundarySameLevel(AthenaArray<Real> &dst,
                    int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb);
