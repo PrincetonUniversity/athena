@@ -28,6 +28,7 @@
 #include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
 #include "../reconstruct/reconstruction.hpp"
+#include "../fft/athena_fft.hpp"
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
 #include "mesh.hpp"
@@ -125,6 +126,9 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
   peos = new EquationOfState(this, pin);
 
+  // FFT object (need to be set before Gravity class)
+  if (FFT_ENABLED) pfft = new AthenaFFT(this);
+
   // Create user mesh data
   InitUserMeshBlockData(pin);
 
@@ -217,6 +221,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
   peos = new EquationOfState(this, pin);
 
+  // FFT object
+  if (FFT_ENABLED) pfft = new AthenaFFT(this);
+
   InitUserMeshBlockData(pin);
 
   // load hydro and field data
@@ -278,6 +285,8 @@ MeshBlock::~MeshBlock()
   delete phydro;
   if (MAGNETIC_FIELDS_ENABLED) delete pfield;
   delete peos;
+
+  if (FFT_ENABLED) delete pfft;
 
   // delete user output variables array
   if(nuser_out_var > 0) {

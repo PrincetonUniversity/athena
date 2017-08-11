@@ -23,6 +23,8 @@
 #   -omp              enable parallelization with OpenMP
 #   -hdf5             enable HDF5 output (requires the HDF5 library)
 #   --hdf5_path=path  path to HDF5 libraries (requires the HDF5 library)
+#   -fft              enable FFT (requires the FFTW library)
+#   --fftw_path=path  path to FFTW libraries (requires the FFTW library)
 #   --cxx=choice      use choice as the C++ compiler
 #   --ccmd=name       use name as the command to call the C++ compiler
 #   --include=path    use -Ipath when compiling
@@ -137,6 +139,18 @@ parser.add_argument('-hdf5',
 parser.add_argument('--hdf5_path',
     default='',
     help='path to HDF5 libraries')
+
+# -fft argument
+parser.add_argument('-fft',
+    action='store_true',
+    default=False,
+    help='enable FFT')
+
+# --fftw_path argument
+parser.add_argument('--fftw_path',
+    type=str,
+    default='',
+    help='path to FFTW libraries')
 
 # --cxx=[name] argument
 parser.add_argument('--cxx',
@@ -392,6 +406,23 @@ if args['hdf5']:
 else:
   definitions['HDF5_OPTION'] = 'NO_HDF5OUTPUT'
 
+# -fft argument
+makefile_options['MPIFFT_FILE'] = ' '
+if args['fft']:
+  definitions['FFT_ENABLED'] = '1'
+  definitions['FFT_DEFINE'] = 'FFT'
+  if args['fftw_path'] != '':
+    makefile_options['PREPROCESSOR_FLAGS'] += ' -I%s/include' % args['fftw_path']
+    makefile_options['LINKER_FLAGS'] += ' -L%s/lib' % args['fftw_path']
+  if args['omp']:
+    makefile_options['LIBRARY_FLAGS'] += ' -lfftw3_omp'
+  if args['mpi']:
+    makefile_options['MPIFFT_FILE'] = ' $(wildcard src/fft/plimpton/*.cpp)'
+  makefile_options['LIBRARY_FLAGS'] += ' -lfftw3'
+else:
+  definitions['FFT_ENABLED'] = '0'
+  definitions['FFT_DEFINE'] = 'NO_FFT'
+
 # --ccmd=[name] argument
 if args['ccmd'] is not None:
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['ccmd']
@@ -454,6 +485,7 @@ print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' ' \
 print('  MPI parallelism:         ' + ('ON' if args['mpi'] else 'OFF'))
 print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
 print('  HDF5 output:             ' + ('ON' if args['hdf5'] else 'OFF'))
+print('  FFT:                     ' + ('ON' if args['fft'] else 'OFF'))
 print('  Compiler:                ' + args['cxx'])
 print('  Compilation command:     ' + makefile_options['COMPILER_COMMAND'] + ' ' \
     + makefile_options['PREPROCESSOR_FLAGS'] + ' ' + makefile_options['COMPILER_FLAGS'])
