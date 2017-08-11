@@ -36,15 +36,15 @@ public:
 
   // functions
   Real NewBlockTimeStep(void);    // computes new timestep on a MeshBlock
-  void AddFluxDivergenceToAverage(AthenaArray<Real> &u1, 
+  void AddFluxDivergenceToAverage(AthenaArray<Real> &u1,
     AthenaArray<Real> &u2, AthenaArray<Real> &w, AthenaArray<Real> &bcc,
     IntegratorWeight wght, AthenaArray<Real> &u_out);
   void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     AthenaArray<Real> &bcc, int order);
   void RiemannSolver(const int kl, const int ku, const int jl, const int ju,
     const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
-    const AthenaArray<Real> &wl, const AthenaArray<Real> &wr,
-    AthenaArray<Real> &flx, AthenaArray<Real> &e1, AthenaArray<Real> &e2);
+    AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
+    AthenaArray<Real> &e1, AthenaArray<Real> &e2);
 
 private:
   AthenaArray<Real> dt1_,dt2_,dt3_;  // scratch arrays used in NewTimeStep
