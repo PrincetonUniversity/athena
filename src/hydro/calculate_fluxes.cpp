@@ -63,10 +63,9 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   tid=omp_get_thread_num();
 #endif
 
-  AthenaArray<Real> wl, wr, flx;
+  AthenaArray<Real> wl, wr;
   wl.InitWithShallowCopy(wl_);
   wr.InitWithShallowCopy(wr_);
-  flx.InitWithShallowCopy(flx_);
   AthenaArray<Real> dxw;
   dxw.InitWithShallowSlice(dxw_,2,tid,1);
 
@@ -121,7 +120,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       pmb->pcoord->CenterWidth1(k,j,is,ie+1,dxw);
 #pragma simd
       for (int i=is; i<=ie+1; ++i){
-        Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*flx(IDN,k,j,i)
+        Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x1flux(IDN,k,j,i)
                       / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
         Real tmp_min = std::min(0.5,v_over_c);
         w_x1f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
@@ -179,7 +178,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         pmb->pcoord->CenterWidth2(k,j,il,iu,dxw);
 #pragma simd
         for (int i=il; i<=iu; ++i){
-          Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*flx(IDN,k,j,i)
+          Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x2flux(IDN,k,j,i)
                         / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
           Real tmp_min = std::min(0.5,v_over_c);
           w_x2f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
@@ -234,7 +233,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         pmb->pcoord->CenterWidth3(k,j,il,iu,dxw);
 #pragma simd
         for (int i=il; i<=iu; ++i){
-          Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*flx(IDN,k,j,i)
+          Real v_over_c = (1024.0)*(pmb->pmy_mesh->dt)*x3flux(IDN,k,j,i)
                         / (dxw(i)*(wl(IDN,k,j,i) + wr(IDN,k,j,i)));
           Real tmp_min = std::min(0.5,v_over_c);
           w_x3f(k,j,i) = 0.5 + std::max(-0.5,tmp_min);
