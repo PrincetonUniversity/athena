@@ -169,9 +169,16 @@ bool BoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
     NeighborBlock& nb = pmb->neighbor[n];
     if(faceonly && nb.type>NEIGHBOR_FACE) break;
     if(pbd->sflag[nb.bufid]==BNDRY_COMPLETED) continue;
-    if(nb.rank == Globals::my_rank) // on the same process
-      pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
     int ssize;
+    if(nb.rank == Globals::my_rank) {
+      pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
+      if(type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF)
+        ptarget=&(pbl->pbval->bd_mggrav_);
+      if(ptarget->flag[nb.targetid] != BNDRY_WAITING) {
+        bflag=false;
+        continue;
+      }
+    }
     if(nb.level==mylevel)
       ssize=LoadMultigridBoundaryBufferSameLevel(src, nvar, nc, ngh,
                                                  pbd->send[nb.bufid], nb);
@@ -181,12 +188,6 @@ bool BoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
 //    else
 //      ssize=LoadMultigridBoundaryBufferToFiner(src, nvar, pbd->send[nb.bufid], nb);
     if(nb.rank == Globals::my_rank) {
-      if(type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF)
-        ptarget=&(pbl->pbval->bd_mggrav_);
-      if(ptarget->flag[nb.targetid] != BNDRY_WAITING) {
-        bflag=false;
-        continue;
-      }
       std::memcpy(ptarget->recv[nb.targetid], pbd->send[nb.bufid], ssize*sizeof(Real));
       ptarget->flag[nb.targetid] = BNDRY_ARRIVED;
     }

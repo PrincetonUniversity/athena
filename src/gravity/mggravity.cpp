@@ -25,15 +25,8 @@ void MGGravity::Smooth(int color)
   AthenaArray<Real> &src=src_[current_level_];
   int ll=nlevel_-1-current_level_;
   int is, ie, js, je, ks, ke;
-  if(ngh_==2 && color==0) {
-    is=js=ks=ngh_-1;
-    ie=is+(nx_>>ll)+1, je=js+(ny_>>ll)+1, ke=ks+(nz_>>ll)+1;
-    c=1;
-  }
-  else {
-    is=js=ks=ngh_;
-    ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
-  }
+  is=js=ks=ngh_;
+  ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
   Real dx = rdx_*(Real)(1<<ll);
   Real dx2 = SQR(dx);
   Real isix=omega_/6.0;
@@ -46,28 +39,6 @@ void MGGravity::Smooth(int color)
     }
     c^=1;
   }
-/*  if(Globals::my_rank==0) {
-    if(pmy_block_!=NULL) std::cout << "Source " << pmy_block_->gid << std::endl;
-    else std::cout << "Source " << "root " << std::endl;
-    for(int k=ks; k<=ke; k++) {
-      for(int j=js; j<=je; j++) {
-        std::cout << k << " " << j << " ";
-        for(int i=is; i<=ie; i++)
-          std::cout << src(0,k,j,i) << " ";
-          std::cout << std::endl;
-      }
-    }
-    if(pmy_block_!=NULL) std::cout << "Data " << pmy_block_->gid << std::endl;
-    else std::cout << "Data " << "root " << std::endl;
-    for(int k=ks; k<=ke; k++) {
-      for(int j=js; j<=je; j++) {
-        std::cout << k << " " << j << " ";
-        for(int i=is; i<=ie; i++)
-          std::cout << u(0,k,j,i) << " ";
-          std::cout << std::endl;
-      }
-    }
-  }*/
   return;
 }
 

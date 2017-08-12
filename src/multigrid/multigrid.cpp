@@ -40,11 +40,9 @@ Multigrid::Multigrid(Mesh *pm, MeshBlock *pmb, int invar, int nx, int ny, int nz
   rdz_=(size_.x3max-size_.x3min)/(Real)nz;
 
   nlevel_=0;
-  int n = std::min(nx,std::min(ny, nz));
   for(int l=0; l<20; l++) {
-    if((1<<l) == n) {
+    if(nx_%(1<<l)==0 && ny_%(1<<l)==0 && nz_%(1<<l)==0) {
       nlevel_=l+1;
-      break;
     }
   }
   for(int i=0; i<6; i++)

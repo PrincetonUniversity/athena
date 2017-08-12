@@ -57,7 +57,8 @@ MultigridDriver::MultigridDriver(Mesh *pm, MeshBlock *pmb, MGBoundaryFunc_t *MGB
     return;
   }
   Real dx=pblock_->pcoord->dx1f(0);
-  if(dx!=pblock_->pcoord->dx2f(0) || dx!=pblock_->pcoord->dx3f(0)) {
+  if(std::fabs(pblock_->pcoord->dx2f(0)-dx)>1.0e-5
+  || std::fabs(pblock_->pcoord->dx3f(0)-dx)>1.0e-5) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
         << "The cell size must be cubic." << std::endl;
@@ -82,10 +83,11 @@ MultigridDriver::MultigridDriver(Mesh *pm, MeshBlock *pmb, MGBoundaryFunc_t *MGB
   // count multigrid levels
   nrootlevel_=1;
   int nbx=pm->nrbx1, nby=pm->nrbx2, nbz=pm->nrbx3;
-  for(int l=0; l<30; l++) {
-    if(pm->nrbx1%(1<<l)==0 && pm->nrbx2%(1<<l)==0 && pm->nrbx3%(1<<l)==0) {
+  for(int l=0; l<20; l++) {
+    int d=(1<<l);
+    if(pm->nrbx1%d==0 && pm->nrbx2%d==0 && pm->nrbx3%d==0) {
       nrootlevel_=l+1;
-      nbx=pm->nrbx1/(1<<l), nby=pm->nrbx2/(1<<l), nbz=pm->nrbx3/(1<<l);
+      nbx=pm->nrbx1/d, nby=pm->nrbx2/d, nbz=pm->nrbx3/d;
     }
   }
   int nmaxr=std::max(nbx, std::max(nby, nbz));
@@ -427,6 +429,15 @@ void MultigridDriver::SolveCoarsestGrid(void)
     return;
   }
   else {
+    if(fperiodic_) {
+      Real vol=(pm->mesh_size.x1max-pm->mesh_size.x1min)
+              *(pm->mesh_size.x2max-pm->mesh_size.x2min)
+              *(pm->mesh_size.x3max-pm->mesh_size.x3min);
+      for(int v=0; v<nvar_; v++) {
+        Real ave=mgroot_->CalculateTotal(1, v)/vol;
+        mgroot_->SubtractAverage(1, v, ave);
+      }
+    }
     for(int i=0; i<ni; i++) { // iterate ni times
       mgroot_->ApplyPhysicalBoundaries();
       mgroot_->Smooth(0);
