@@ -43,36 +43,6 @@ class MGGravity;
 class EquationOfState;
 
 //----------------------------------------------------------------------------------------
-//! \struct NeighborBlock
-//  \brief neighbor rank, level, and ids
-
-typedef struct NeighborBlock {
-  int rank, level, gid, lid, ox1, ox2, ox3, fi1, fi2, bufid, eid, targetid;
-  enum NeighborType type;
-  enum BoundaryFace fid;
-  bool polar; // flag indicating boundary is across a pole
-
-  NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1), ox1(-1), ox2(-1), ox3(-1),
-    bufid(-1), targetid(-1), fi1(-1), fi2(-1), eid(-1), type(NEIGHBOR_NONE),
-    fid(FACE_UNDEF), polar(false) {};
-
-  void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
-                   int iox3, enum NeighborType itype, int ibid, int itargetid,
-                   bool ipolar, int ifi1, int ifi2);
-} NeighborBlock;
-
-//----------------------------------------------------------------------------------------
-//! \struct PolarNeighborBlock
-//  \brief Struct for describing neighbors around pole at same radius and polar angle
-
-typedef struct PolarNeighborBlock {
-  int rank;    // MPI rank of neighbor
-  int lid;     // local ID of neighbor
-  int gid;     // global ID of neighbor
-  bool north;  // flag that is true for North pole and false for South pole
-} PolarNeighborBlock;
-
-//----------------------------------------------------------------------------------------
 //! \struct RegionSize
 //  \brief physical size and number of cells in a Mesh
 
@@ -111,8 +81,6 @@ public:
   Mesh *pmy_mesh;  // ptr to Mesh containing this MeshBlock
   LogicalLocation loc;
   RegionSize block_size;
-  enum BoundaryFlag block_bcs[6];
-  int nblevel[3][3][3];
   int is,ie,js,je,ks,ke;
   int gid, lid;
   int cis,cie,cjs,cje,cks,cke,cnghost;
@@ -154,9 +122,6 @@ public:
 
 private:
   // data
-  NeighborBlock neighbor[56];
-  PolarNeighborBlock *polar_neighbor_north, *polar_neighbor_south;
-  int nneighbor;
   Real cost;
   Real new_block_dt;
   TaskState tasks;
@@ -179,6 +144,7 @@ class Mesh {
   friend class RestartOutput;
   friend class HistoryOutput;
   friend class MeshBlock;
+  friend class BoundaryBase;
   friend class BoundaryValues;
   friend class Coordinates;
   friend class MeshRefinement;
@@ -231,7 +197,6 @@ public:
 private:
   // data
   int root_level, max_level, current_level;
-  int maxneighbor_;
   int num_mesh_threads_;
   int *nslist, *ranklist, *nblist;
   Real *costlist;

@@ -66,8 +66,8 @@ void BoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src)
   MeshBlock *pmb=pmy_block_;
   int mylevel=pmb->loc.level;
 
-  for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0; n<nneighbor; n++) {
+    NeighborBlock& nb = neighbor[n];
     int ssize;
     if(nb.level==mylevel)
       ssize=LoadGravityBoundaryBufferSameLevel(src, bd_gravity_.send[nb.bufid],nb);
@@ -125,8 +125,8 @@ bool BoundaryValues::ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst)
   MeshBlock *pmb=pmy_block_;
   bool flag=true;
 
-  for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0; n<nneighbor; n++) {
+    NeighborBlock& nb = neighbor[n];
     if(bd_gravity_.flag[nb.bufid]==BNDRY_COMPLETED) continue;
     if(bd_gravity_.flag[nb.bufid]==BNDRY_WAITING) {
       if(nb.rank==Globals::my_rank) {// on the same process
@@ -165,8 +165,8 @@ void BoundaryValues::ReceiveGravityBoundaryBuffersWithWait(AthenaArray<Real> &ds
 {
   MeshBlock *pmb=pmy_block_;
 
-  for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0; n<nneighbor; n++) {
+    NeighborBlock& nb = neighbor[n];
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank)
       MPI_Wait(&(bd_gravity_.req_recv[nb.bufid]),MPI_STATUS_IGNORE);

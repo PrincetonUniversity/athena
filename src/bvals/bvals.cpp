@@ -37,23 +37,20 @@
 #include <mpi.h>
 #endif
 
-// forward declaration of static members of this class
-NeighborIndexes BoundaryValues::ni[56];
-int BoundaryValues::bufid[56];
-
 // BoundaryValues constructor - sets functions for the appropriate
 // boundary conditions at each of the 6 dirs of a MeshBlock
 
-BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
+BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin,
+                               enum BoundaryFlag *input_bcs)
+ : BoundaryBase(pmb, pin, input_bcs)
 {
-  pmy_block_ = pmb;
   for(int i=0; i<6; i++)
     BoundaryFunction_[i]=NULL;
 
 // Set BC functions for each of the 6 boundaries in turn ---------------------------------
   // Inner x1
   nface_=2; nedge_=0;
-  switch(pmb->block_bcs[INNER_X1]){
+  switch(block_bcs[INNER_X1]){
     case REFLECTING_BNDRY:
       BoundaryFunction_[INNER_X1] = ReflectInnerX1;
       break;
@@ -70,13 +67,13 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     default:
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-          << "Flag ix1_bc=" << pmb->block_bcs[INNER_X1] << " not valid" << std::endl;
+          << "Flag ix1_bc=" << block_bcs[INNER_X1] << " not valid" << std::endl;
       throw std::runtime_error(msg.str().c_str());
       break;
    }
 
   // Outer x1
-  switch(pmb->block_bcs[OUTER_X1]){
+  switch(block_bcs[OUTER_X1]){
     case REFLECTING_BNDRY:
       BoundaryFunction_[OUTER_X1] = ReflectOuterX1;
       break;
@@ -93,14 +90,14 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     default:
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-          << "Flag ox1_bc=" << pmb->block_bcs[OUTER_X1] << " not valid" << std::endl;
+          << "Flag ox1_bc=" << block_bcs[OUTER_X1] << " not valid" << std::endl;
       throw std::runtime_error(msg.str().c_str());
   }
 
   if (pmb->block_size.nx2 > 1) {
     nface_=4; nedge_=4;
     // Inner x2
-    switch(pmb->block_bcs[INNER_X2]){
+    switch(block_bcs[INNER_X2]){
       case REFLECTING_BNDRY:
         BoundaryFunction_[INNER_X2] = ReflectInnerX2;
         break;
@@ -121,12 +118,12 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       default:
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ix2_bc=" << pmb->block_bcs[INNER_X2] << " not valid" << std::endl;
+            << "Flag ix2_bc=" << block_bcs[INNER_X2] << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
      }
 
     // Outer x2
-    switch(pmb->block_bcs[OUTER_X2]){
+    switch(block_bcs[OUTER_X2]){
       case REFLECTING_BNDRY:
         BoundaryFunction_[OUTER_X2] = ReflectOuterX2;
         break;
@@ -147,7 +144,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       default:
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ox2_bc=" << pmb->block_bcs[OUTER_X2] << " not valid" << std::endl;
+            << "Flag ox2_bc=" << block_bcs[OUTER_X2] << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
     }
   }
@@ -155,7 +152,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   if (pmb->block_size.nx3 > 1) {
     nface_=6; nedge_=12;
     // Inner x3
-    switch(pmb->block_bcs[INNER_X3]){
+    switch(block_bcs[INNER_X3]){
       case REFLECTING_BNDRY:
         BoundaryFunction_[INNER_X3] = ReflectInnerX3;
         break;
@@ -172,12 +169,12 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       default:
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ix3_bc=" << pmb->block_bcs[INNER_X3] << " not valid" << std::endl;
+            << "Flag ix3_bc=" << block_bcs[INNER_X3] << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
      }
 
     // Outer x3
-    switch(pmb->block_bcs[OUTER_X3]){
+    switch(block_bcs[OUTER_X3]){
       case REFLECTING_BNDRY:
         BoundaryFunction_[OUTER_X3] = ReflectOuterX3;
         break;
@@ -194,13 +191,13 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
       default:
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ox3_bc=" << pmb->block_bcs[OUTER_X3] << " not valid" << std::endl;
+            << "Flag ox3_bc=" << block_bcs[OUTER_X3] << " not valid" << std::endl;
         throw std::runtime_error(msg.str().c_str());
     }
   }
 
   // Count number of blocks wrapping around pole
-  if (pmb->block_bcs[INNER_X2] == POLAR_BNDRY || pmb->block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
+  if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
     if(pmb->pmy_mesh->nrbx3>1 && pmb->pmy_mesh->nrbx3%2!=0) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
@@ -212,7 +209,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   }
   else
     num_north_polar_blocks_ = 0;
-  if (pmb->block_bcs[OUTER_X2] == POLAR_BNDRY || pmb->block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
+  if (block_bcs[OUTER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
     if(pmb->pmy_mesh->nrbx3>1 && pmb->pmy_mesh->nrbx3%2!=0) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
@@ -300,8 +297,8 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
  /* single CPU in the azimuthal direction with the polar boundary*/
   if(pmb->loc.level == pmb->pmy_mesh->root_level &&
      pmb->pmy_mesh->nrbx3 == 1 &&
-     (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY||
-      pmb->block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
+     (block_bcs[INNER_X2]==POLAR_BNDRY||block_bcs[OUTER_X2]==POLAR_BNDRY||
+      block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE||block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
        exc_.NewAthenaArray(pmb->ke+NGHOST+2);
 
 }
@@ -362,8 +359,8 @@ BoundaryValues::~BoundaryValues()
   }
   if(pmb->loc.level == pmb->pmy_mesh->root_level &&
      pmb->pmy_mesh->nrbx3 == 1 &&
-     (pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY||
-      pmb->block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
+     (block_bcs[INNER_X2]==POLAR_BNDRY||block_bcs[OUTER_X2]==POLAR_BNDRY||
+      block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE||block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
        exc_.DeleteAthenaArray();
 }
 
@@ -387,7 +384,7 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
   else if(type==BNDRY_EMFCOR)
     for(bd.nbmax=0; BoundaryValues::ni[bd.nbmax].type<=NEIGHBOR_EDGE; bd.nbmax++);
   else
-    bd.nbmax=pmy_block_->pmy_mesh->maxneighbor_;
+    bd.nbmax=maxneighbor_;
 
   for(int n=0;n<bd.nbmax;n++) {
     // Clear flags and requests
@@ -477,7 +474,7 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
       }
       break;
       case BNDRY_MGGRAV: {
-        int ngh=pmb->pmggrav->GetNumberOfGhostCells();
+        int ngh=1;
         if(multilevel) { // with refinement - NGHOST = 1
           int nc=pmb->block_size.nx1;
           if(BoundaryValues::ni[n].type==NEIGHBOR_FACE) size=SQR(nc)*ngh;
@@ -595,9 +592,9 @@ void BoundaryValues::Initialize(void)
         int nf=0, fl=mylevel;
         for(int nj=njs; nj<=nje; nj++) {
           for(int ni=nis; ni<=nie; ni++) {
-            if(pmb->nblevel[1][nj+1][ni+1] > fl)
+            if(nblevel[1][nj+1][ni+1] > fl)
               fl++, nf=0;
-            if(pmb->nblevel[1][nj+1][ni+1]==fl)
+            if(nblevel[1][nj+1][ni+1]==fl)
               nf++;
           }
         }
@@ -615,9 +612,9 @@ void BoundaryValues::Initialize(void)
         int nf=0, fl=mylevel;
         for(int nk=nks; nk<=nke; nk++) {
           for(int ni=nis; ni<=nie; ni++) {
-            if(pmb->nblevel[nk+1][1][ni+1] > fl)
+            if(nblevel[nk+1][1][ni+1] > fl)
               fl++, nf=0;
-            if(pmb->nblevel[nk+1][1][ni+1]==fl)
+            if(nblevel[nk+1][1][ni+1]==fl)
               nf++;
           }
         }
@@ -633,9 +630,9 @@ void BoundaryValues::Initialize(void)
         int nf=0, fl=mylevel;
         for(int nk=nks; nk<=nke; nk++) {
           for(int nj=njs; nj<=nje; nj++) {
-            if(pmb->nblevel[nk+1][nj+1][1] > fl)
+            if(nblevel[nk+1][nj+1][1] > fl)
               fl++, nf=0;
-            if(pmb->nblevel[nk+1][nj+1][1]==fl)
+            if(nblevel[nk+1][nj+1][1]==fl)
               nf++;
           }
         }
@@ -647,8 +644,8 @@ void BoundaryValues::Initialize(void)
 
 #ifdef MPI_PARALLEL
   // Initialize non-polar neighbor communications to other ranks
-  for(int n=0;n<pmb->nneighbor;n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0;n<nneighbor;n++) {
+    NeighborBlock& nb = neighbor[n];
     if(nb.rank!=Globals::my_rank) {
       if(nb.level==mylevel) { // same
         ssize=rsize=((nb.ox1==0)?pmb->block_size.nx1:NGHOST)
@@ -858,7 +855,7 @@ void BoundaryValues::Initialize(void)
   // Initialize polar neighbor communications to other ranks
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int n = 0; n < num_north_polar_blocks_; ++n) {
-      const PolarNeighborBlock &nb = pmb->polar_neighbor_north[n];
+      const PolarNeighborBlock &nb = polar_neighbor_north[n];
       if(nb.rank != Globals::my_rank) {
         tag = CreateBvalsMPITag(nb.lid, TAG_FLDFLX_POLE, pmb->loc.lx3);
         MPI_Send_init(emf_north_send_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
@@ -869,7 +866,7 @@ void BoundaryValues::Initialize(void)
       }
     }
     for (int n = 0; n < num_south_polar_blocks_; ++n) {
-      const PolarNeighborBlock &nb = pmb->polar_neighbor_south[n];
+      const PolarNeighborBlock &nb = polar_neighbor_south[n];
       if(nb.rank != Globals::my_rank) {
         tag = CreateBvalsMPITag(nb.lid, TAG_FLDFLX_POLE, pmb->loc.lx3);
         MPI_Send_init(emf_south_send_[n], pmb->block_size.nx1, MPI_ATHENA_REAL,
@@ -892,7 +889,7 @@ void BoundaryValues::CheckBoundary(void)
 {
   MeshBlock *pmb=pmy_block_;
   for(int i=0;i<nface_;i++) {
-    if(pmb->block_bcs[i]==USER_BNDRY) {
+    if(block_bcs[i]==USER_BNDRY) {
       if(BoundaryFunction_[i]==NULL) {
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues::CheckBoundary" << std::endl
@@ -912,8 +909,8 @@ void BoundaryValues::StartReceivingForInit(bool cons_and_field)
 {
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_block_;
-  for(int n=0;n<pmb->nneighbor;n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0;n<nneighbor;n++) {
+    NeighborBlock& nb = neighbor[n];
     if(nb.rank!=Globals::my_rank) { 
       if (cons_and_field) {  // normal case
         MPI_Start(&(bd_hydro_.req_recv[nb.bufid]));
@@ -940,8 +937,8 @@ void BoundaryValues::StartReceivingAll(void)
 #ifdef MPI_PARALLEL
   MeshBlock *pmb=pmy_block_;
   int mylevel=pmb->loc.level;
-  for(int n=0;n<pmb->nneighbor;n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0;n<nneighbor;n++) {
+    NeighborBlock& nb = neighbor[n];
     if(nb.rank!=Globals::my_rank) { 
       MPI_Start(&(bd_hydro_.req_recv[nb.bufid]));
       if (SELF_GRAVITY_ENABLED == 1)
@@ -960,13 +957,13 @@ void BoundaryValues::StartReceivingAll(void)
   }
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int n = 0; n < num_north_polar_blocks_; ++n) {
-      const PolarNeighborBlock &nb = pmb->polar_neighbor_north[n];
+      const PolarNeighborBlock &nb = polar_neighbor_north[n];
       if (nb.rank != Globals::my_rank) {
         MPI_Start(&req_emf_north_recv_[n]);
       }
     }
     for (int n = 0; n < num_south_polar_blocks_; ++n) {
-      const PolarNeighborBlock &nb = pmb->polar_neighbor_south[n];
+      const PolarNeighborBlock &nb = polar_neighbor_south[n];
       if (nb.rank != Globals::my_rank) {
         MPI_Start(&req_emf_south_recv_[n]);
       }
@@ -986,8 +983,8 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field)
 
   // Note step==0 corresponds to initial exchange of conserved variables, while step==1
   // corresponds to primitives sent only in the case of GR with refinement
-  for(int n=0;n<pmb->nneighbor;n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0;n<nneighbor;n++) {
+    NeighborBlock& nb = neighbor[n];
     bd_hydro_.flag[nb.bufid] = BNDRY_WAITING;
     if (MAGNETIC_FIELDS_ENABLED)
       bd_field_.flag[nb.bufid] = BNDRY_WAITING;
@@ -1024,8 +1021,8 @@ void BoundaryValues::ClearBoundaryAll(void)
   MeshBlock *pmb=pmy_block_;
 
   // Clear non-polar boundary communications
-  for(int n=0;n<pmb->nneighbor;n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0;n<nneighbor;n++) {
+    NeighborBlock& nb = neighbor[n];
     bd_hydro_.flag[nb.bufid] = BNDRY_WAITING;
     if(nb.type==NEIGHBOR_FACE)
       bd_flcor_.flag[nb.bufid] = BNDRY_WAITING;
@@ -1060,7 +1057,7 @@ void BoundaryValues::ClearBoundaryAll(void)
   // Clear polar boundary communications
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int n = 0; n < num_north_polar_blocks_; ++n) {
-      PolarNeighborBlock &nb = pmb->polar_neighbor_north[n];
+      PolarNeighborBlock &nb = polar_neighbor_north[n];
       emf_north_flag_[n] = BNDRY_WAITING;
 #ifdef MPI_PARALLEL
       if(nb.rank != Globals::my_rank)
@@ -1068,7 +1065,7 @@ void BoundaryValues::ClearBoundaryAll(void)
 #endif
     }
     for (int n = 0; n < num_south_polar_blocks_; ++n) {
-      PolarNeighborBlock &nb = pmb->polar_neighbor_south[n];
+      PolarNeighborBlock &nb = polar_neighbor_south[n];
       emf_south_flag_[n] = BNDRY_WAITING;
 #ifdef MPI_PARALLEL
       if(nb.rank != Globals::my_rank)
@@ -1198,8 +1195,8 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
   long int &lx3=pmb->loc.lx3;
   int &mylevel=pmb->loc.level;
 
-  for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0; n<nneighbor; n++) {
+    NeighborBlock& nb = neighbor[n];
     if(nb.level >= mylevel) continue;
     // fill the required ghost-ghost zone
     int nis, nie, njs, nje, nks, nke;
@@ -1213,7 +1210,7 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
         for(int ni=nis; ni<=nie; ni++) {
           int ntype=std::abs(ni)+std::abs(nj)+std::abs(nk);
           // skip myself or coarse levels; only the same level must be restricted
-          if(ntype==0 || pmb->nblevel[nk+1][nj+1][ni+1]!=mylevel) continue;
+          if(ntype==0 || nblevel[nk+1][nj+1][ni+1]!=mylevel) continue;
 
           // this neighbor block is on the same level
           // and needs to be restricted for prolongation
@@ -1247,13 +1244,13 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
                                                  ris, rie, rjs, rje, rks, rke);
           if (MAGNETIC_FIELDS_ENABLED) {
             int rs=ris, re=rie+1;
-            if(rs==pmb->cis   && pmb->nblevel[nk+1][nj+1][ni  ]<mylevel) rs++;
-            if(re==pmb->cie+1 && pmb->nblevel[nk+1][nj+1][ni+2]<mylevel) re--;
+            if(rs==pmb->cis   && nblevel[nk+1][nj+1][ni  ]<mylevel) rs++;
+            if(re==pmb->cie+1 && nblevel[nk+1][nj+1][ni+2]<mylevel) re--;
             pmr->RestrictFieldX1(bfdst.x1f, pmr->coarse_b_.x1f, rs, re, rjs, rje, rks, rke);
             if(pmb->block_size.nx2 > 1) {
               rs=rjs, re=rje+1;
-              if(rs==pmb->cjs   && pmb->nblevel[nk+1][nj  ][ni+1]<mylevel) rs++;
-              if(re==pmb->cje+1 && pmb->nblevel[nk+1][nj+2][ni+1]<mylevel) re--;
+              if(rs==pmb->cjs   && nblevel[nk+1][nj  ][ni+1]<mylevel) rs++;
+              if(re==pmb->cje+1 && nblevel[nk+1][nj+2][ni+1]<mylevel) re--;
               pmr->RestrictFieldX2(bfdst.x2f, pmr->coarse_b_.x2f, ris, rie, rs, re, rks, rke);
             }
             else { // 1D
@@ -1263,8 +1260,8 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
             }
             if(pmb->block_size.nx3 > 1) {
               rs=rks, re=rke+1;
-              if(rs==pmb->cks   && pmb->nblevel[nk  ][nj+1][ni+1]<mylevel) rs++;
-              if(re==pmb->cke+1 && pmb->nblevel[nk+2][nj+1][ni+1]<mylevel) re--;
+              if(rs==pmb->cks   && nblevel[nk  ][nj+1][ni+1]<mylevel) rs++;
+              if(re==pmb->cke+1 && nblevel[nk+2][nj+1][ni+1]<mylevel) re--;
               pmr->RestrictFieldX3(bfdst.x3f, pmr->coarse_b_.x3f, ris, rie, rjs, rje, rs, re);
             }
             else { // 1D or 2D
@@ -1312,21 +1309,21 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
     // this includes cell-centered field calculation
     int f1m=0, f1p=0, f2m=0, f2p=0, f3m=0, f3p=0;
     if(nb.ox1==0) {
-      if(pmb->nblevel[1][1][0]!=-1) f1m=1;
-      if(pmb->nblevel[1][1][2]!=-1) f1p=1;
+      if(nblevel[1][1][0]!=-1) f1m=1;
+      if(nblevel[1][1][2]!=-1) f1p=1;
     }
     else f1m=1, f1p=1;
     if(pmb->block_size.nx2>1) {
       if(nb.ox2==0) {
-        if(pmb->nblevel[1][0][1]!=-1) f2m=1;
-        if(pmb->nblevel[1][2][1]!=-1) f2p=1;
+        if(nblevel[1][0][1]!=-1) f2m=1;
+        if(nblevel[1][2][1]!=-1) f2p=1;
       }
       else f2m=1, f2p=1;
     }
     if(pmb->block_size.nx3>1) {
       if(nb.ox3==0) {
-        if(pmb->nblevel[0][1][1]!=-1) f3m=1;
-        if(pmb->nblevel[2][1][1]!=-1) f3p=1;
+        if(nblevel[0][1][1]!=-1) f3m=1;
+        if(nblevel[2][1][1]!=-1) f3p=1;
       }
       else f3m=1, f3p=1;
     }
@@ -1384,18 +1381,18 @@ void BoundaryValues::ProlongateBoundaries(AthenaArray<Real> &pdst,
     if (MAGNETIC_FIELDS_ENABLED) {
       int il, iu, jl, ju, kl, ku;
       il=si, iu=ei+1;
-      if((nb.ox1>=0) && (pmb->nblevel[nb.ox3+1][nb.ox2+1][nb.ox1  ]>=mylevel)) il++;
-      if((nb.ox1<=0) && (pmb->nblevel[nb.ox3+1][nb.ox2+1][nb.ox1+2]>=mylevel)) iu--;
+      if((nb.ox1>=0) && (nblevel[nb.ox3+1][nb.ox2+1][nb.ox1  ]>=mylevel)) il++;
+      if((nb.ox1<=0) && (nblevel[nb.ox3+1][nb.ox2+1][nb.ox1+2]>=mylevel)) iu--;
       if(pmb->block_size.nx2 > 1) {
         jl=sj, ju=ej+1;
-        if((nb.ox2>=0) && (pmb->nblevel[nb.ox3+1][nb.ox2  ][nb.ox1+1]>=mylevel)) jl++;
-        if((nb.ox2<=0) && (pmb->nblevel[nb.ox3+1][nb.ox2+2][nb.ox1+1]>=mylevel)) ju--;
+        if((nb.ox2>=0) && (nblevel[nb.ox3+1][nb.ox2  ][nb.ox1+1]>=mylevel)) jl++;
+        if((nb.ox2<=0) && (nblevel[nb.ox3+1][nb.ox2+2][nb.ox1+1]>=mylevel)) ju--;
       }
       else jl=sj, ju=ej;
       if(pmb->block_size.nx3 > 1) {
         kl=sk, ku=ek+1;
-        if((nb.ox3>=0) && (pmb->nblevel[nb.ox3  ][nb.ox2+1][nb.ox1+1]>=mylevel)) kl++;
-        if((nb.ox3<=0) && (pmb->nblevel[nb.ox3+2][nb.ox2+1][nb.ox1+1]>=mylevel)) ku--;
+        if((nb.ox3>=0) && (nblevel[nb.ox3  ][nb.ox2+1][nb.ox1+1]>=mylevel)) kl++;
+        if((nb.ox3<=0) && (nblevel[nb.ox3+2][nb.ox2+1][nb.ox1+1]>=mylevel)) ku--;
       }
       else kl=sk, ku=ek;
 

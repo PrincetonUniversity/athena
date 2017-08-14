@@ -52,7 +52,7 @@ void MGPeriodicOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
 class Multigrid {
 public:
   Multigrid(Mesh *pm, MeshBlock *pmb, int invar, int nx, int ny, int nz,
-            RegionSize isize, MGBoundaryFunc_t *MGBoundary);
+            int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary);
   virtual ~Multigrid();
 
   enum BoundaryType btype, btypef;
@@ -74,7 +74,6 @@ public:
   // small functions
   void SetCurrentLevel(int level) { current_level_=level; return; };
   int GetCurrentNumberOfCells(void) { return 1<<current_level_; };
-  int GetNumberOfGhostCells(void) {return ngh_;}
   AthenaArray<Real>& GetCurrentData(void) { return u_[current_level_]; };
   AthenaArray<Real>& GetCurrentSource(void) { return src_[current_level_]; };
   Real GetRootSource(int n) { return src_[0](n,ngh_,ngh_,ngh_); };

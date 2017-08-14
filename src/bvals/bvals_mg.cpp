@@ -53,8 +53,8 @@ void BoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type)
   }
   if(type==BNDRY_MGGRAVF)
     faceonly=true;
-  for(int n=0;n<pmb->nneighbor;n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0;n<nneighbor;n++) {
+    NeighborBlock& nb = neighbor[n];
     if(faceonly && nb.type>NEIGHBOR_FACE) break;
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank) {
@@ -107,8 +107,8 @@ void BoundaryValues::ClearBoundaryMultigrid(enum BoundaryType type)
   if(type==BNDRY_MGGRAVF)
     faceonly=true;
 
-  for(int n=0;n<pmb->nneighbor;n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0;n<nneighbor;n++) {
+    NeighborBlock& nb = neighbor[n];
     if(faceonly && nb.type>NEIGHBOR_FACE) break;
     pbd->flag[nb.bufid] = BNDRY_WAITING;
     pbd->sflag[nb.bufid] = BNDRY_WAITING;
@@ -165,8 +165,8 @@ bool BoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
   }
   if(type==BNDRY_MGGRAVF)
     faceonly=true;
-  for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0; n<nneighbor; n++) {
+    NeighborBlock& nb = neighbor[n];
     if(faceonly && nb.type>NEIGHBOR_FACE) break;
     if(pbd->sflag[nb.bufid]==BNDRY_COMPLETED) continue;
     int ssize;
@@ -251,8 +251,8 @@ bool BoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
   if(type==BNDRY_MGGRAVF)
     faceonly=true;
 
-  for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0; n<nneighbor; n++) {
+    NeighborBlock& nb = neighbor[n];
     if(faceonly && nb.type>NEIGHBOR_FACE) break;
     if(pbd->flag[nb.bufid]==BNDRY_COMPLETED) continue;
     if(pbd->flag[nb.bufid]==BNDRY_WAITING) {

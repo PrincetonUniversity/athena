@@ -420,8 +420,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
     }
   }
 
-  maxneighbor_=BufferID(dim, multilevel);
-
   // initial mesh hierarchy construction is completed here
 
   tree.CountMeshBlock(nbtotal);
@@ -497,7 +495,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
       pblock = pblock->next;
     }
 
-    pblock->SearchAndSetNeighbors(tree, ranklist, nslist);
+    pblock->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
   }
   pblock=pfirst;
 
@@ -728,8 +726,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   if(Globals::my_rank!=0)
     resfile.Seek(headeroffset);
 
-  maxneighbor_=BufferID(dim, multilevel);
-
   // rebuild the Block Tree
   for(int i=0;i<nbtotal;i++)
     tree.AddMeshBlockWithoutRefine(loclist[i],nrbx1,nrbx2,nrbx3,root_level);
@@ -813,7 +809,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
       pblock->next->prev = pblock;
       pblock = pblock->next;
     }
-    pblock->SearchAndSetNeighbors(tree, ranklist, nslist);
+    pblock->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
   }
   pblock=pfirst;
   delete [] mbdata;
@@ -1303,15 +1299,15 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
                                     time, 0.0);
 
       int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
-      if(pmb->nblevel[1][1][0]!=-1) is-=NGHOST;
-      if(pmb->nblevel[1][1][2]!=-1) ie+=NGHOST;
+      if(pbval->nblevel[1][1][0]!=-1) is-=NGHOST;
+      if(pbval->nblevel[1][1][2]!=-1) ie+=NGHOST;
       if(pmb->block_size.nx2 > 1) {
-        if(pmb->nblevel[1][0][1]!=-1) js-=NGHOST;
-        if(pmb->nblevel[1][2][1]!=-1) je+=NGHOST;
+        if(pbval->nblevel[1][0][1]!=-1) js-=NGHOST;
+        if(pbval->nblevel[1][2][1]!=-1) je+=NGHOST;
       }
       if(pmb->block_size.nx3 > 1) {
-        if(pmb->nblevel[0][1][1]!=-1) ks-=NGHOST;
-        if(pmb->nblevel[2][1][1]!=-1) ke+=NGHOST;
+        if(pbval->nblevel[0][1][1]!=-1) ks-=NGHOST;
+        if(pbval->nblevel[2][1][1]!=-1) ke+=NGHOST;
       }
       pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b, 
                                       phydro->w, pfield->bcc, pmb->pcoord,
@@ -2199,7 +2195,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   // re-initialize the MeshBlocks
   pmb=pblock;
   while(pmb!=NULL) {
-    pmb->SearchAndSetNeighbors(tree, ranklist, nslist);
+    pmb->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
     pmb=pmb->next;
   }
   Initialize(2, pin);

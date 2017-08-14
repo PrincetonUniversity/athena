@@ -987,7 +987,7 @@ void MeshRefinement::CheckRefinementCondition(void)
       for(int k=ks; k<=ke; k++) {
         for(int j=js; j<=je; j++) {
           for(int i=-1; i<=1; i++)
-            if(pmb->nblevel[k+1][j+1][i+1]>pmb->loc.level) ec++;
+            if(pmb->pbval->nblevel[k+1][j+1][i+1]>pmb->loc.level) ec++;
         }
       }
       if(ec>0) refine_flag_=0;

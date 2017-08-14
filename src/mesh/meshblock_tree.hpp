@@ -42,6 +42,7 @@ typedef struct LogicalLocation {
 class MeshBlockTree {
   friend class Mesh;
   friend class MeshBlock;
+  friend class BoundaryBase;
 public:
   MeshBlockTree();
   MeshBlockTree(MeshBlockTree *parent, int ox, int oy, int oz);

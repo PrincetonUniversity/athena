@@ -22,13 +22,12 @@
 
 // forward declarations
 class MeshBlock;
+class MeshBlockTree;
 class Hydro;
 class Field;
 class ParameterInput;
 class Coordinates;
 struct FaceField;
-struct NeighborBlock;
-struct PolarNeighborBlock;
 
 // identifiers for all 6 faces of a MeshBlock
 enum BoundaryFace {FACE_UNDEF=-1, INNER_X1=0, OUTER_X1=1, INNER_X2=2, OUTER_X2=3, 
@@ -47,6 +46,37 @@ enum BoundaryStatus {BNDRY_WAITING, BNDRY_ARRIVED, BNDRY_COMPLETED};
 // flags to mark which variables are reversed across polar boundary
 static bool flip_across_pole_hydro[] = {false, false, true, true, false};
 static bool flip_across_pole_field[] = {false, true, true};
+
+
+//----------------------------------------------------------------------------------------
+//! \struct NeighborBlock
+//  \brief neighbor rank, level, and ids
+
+typedef struct NeighborBlock {
+  int rank, level, gid, lid, ox1, ox2, ox3, fi1, fi2, bufid, eid, targetid;
+  enum NeighborType type;
+  enum BoundaryFace fid;
+  bool polar; // flag indicating boundary is across a pole
+
+  NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1), ox1(-1), ox2(-1), ox3(-1),
+    bufid(-1), targetid(-1), fi1(-1), fi2(-1), eid(-1), type(NEIGHBOR_NONE),
+    fid(FACE_UNDEF), polar(false) {};
+
+  void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
+                   int iox3, enum NeighborType itype, int ibid, int itargetid,
+                   bool ipolar, int ifi1, int ifi2);
+} NeighborBlock;
+
+//----------------------------------------------------------------------------------------
+//! \struct PolarNeighborBlock
+//  \brief Struct for describing neighbors around pole at same radius and polar angle
+
+typedef struct PolarNeighborBlock {
+  int rank;    // MPI rank of neighbor
+  int lid;     // local ID of neighbor
+  int gid;     // global ID of neighbor
+  bool north;  // flag that is true for North pole and false for South pole
+} PolarNeighborBlock;
 
 //! \struct NeighborType
 //  \brief data to describe MeshBlock neighbors
@@ -108,16 +138,45 @@ enum BoundaryFlag GetBoundaryFlag(std::string input_string);
 
 
 //----------------------------------------------------------------------------------------
-//! \class BoundaryValues
-//  \brief BVals data and functions
+//! \class BoundaryBase
+//  \brief Base class for all the BoundaryValues classes
 
-class BoundaryValues {
+class BoundaryBase {
 public:
-  BoundaryValues(MeshBlock *pmb, ParameterInput *pin);
-  ~BoundaryValues();
+  BoundaryBase(MeshBlock *pmb, ParameterInput *pin, enum BoundaryFlag *input_bcs);
+  virtual ~BoundaryBase();
 
   static NeighborIndexes ni[56];
   static int bufid[56];
+  NeighborBlock neighbor[56];
+  int nneighbor;
+  int nblevel[3][3][3];
+  enum BoundaryFlag block_bcs[6];
+  PolarNeighborBlock *polar_neighbor_north, *polar_neighbor_south;
+
+  static unsigned int CreateBvalsMPITag(int lid, int phys, int bufid);
+  static unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
+  static int BufferID(int dim, bool multilevel);
+  static int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
+
+  void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
+
+protected:
+  MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals
+  static int maxneighbor_;
+
+private:
+  static bool called_;
+};
+
+//----------------------------------------------------------------------------------------
+//! \class BoundaryValues
+//  \brief BVals data and functions
+
+class BoundaryValues : public BoundaryBase {
+public:
+  BoundaryValues(MeshBlock *pmb, ParameterInput *pin, enum BoundaryFlag *input_bcs);
+  ~BoundaryValues();
 
   void InitBoundaryData(BoundaryData &bd, enum BoundaryType type);
   void DestroyBoundaryData(BoundaryData &bd);
@@ -203,8 +262,6 @@ public:
                                        int nc, enum BoundaryType type);
 
 private:
-  MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals
-
   int nface_, nedge_;
   bool edge_flag_[12];
   int nedge_fine_[12];
@@ -229,10 +286,5 @@ private:
   // temporary
   friend class Mesh;
 };
-
-unsigned int CreateBvalsMPITag(int lid, int phys, int bufid);
-unsigned int CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2);
-int BufferID(int dim, bool multilevel);
-int FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2, int bmax);
 
 #endif // BOUNDARY_VALUES_HPP

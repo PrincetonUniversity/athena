@@ -232,12 +232,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je+1; j++) {
         for (int i=is; i<=ie+1; i++) {
-          if ((nblevel[1][0][1]>level && j==js) || (nblevel[1][2][1]>level && j==je+1)
-           || (nblevel[0][1][1]>level && k==ks) || (nblevel[2][1][1]>level && k==ke+1)
-           || (nblevel[0][0][1]>level && j==js   && k==ks)
-           || (nblevel[0][2][1]>level && j==je+1 && k==ks)
-           || (nblevel[2][0][1]>level && j==js   && k==ke+1)
-           || (nblevel[2][2][1]>level && j==je+1 && k==ke+1)) {
+          if ((pbval->nblevel[1][0][1]>level && j==js)
+           || (pbval->nblevel[1][2][1]>level && j==je+1)
+           || (pbval->nblevel[0][1][1]>level && k==ks)
+           || (pbval->nblevel[2][1][1]>level && k==ke+1)
+           || (pbval->nblevel[0][0][1]>level && j==js   && k==ks)
+           || (pbval->nblevel[0][2][1]>level && j==je+1 && k==ks)
+           || (pbval->nblevel[2][0][1]>level && j==js   && k==ke+1)
+           || (pbval->nblevel[2][2][1]>level && j==je+1 && k==ke+1)) {
             Real x1l = pcoord->x1f(i)+0.25*pcoord->dx1f(i);
             Real x1r = pcoord->x1f(i)+0.75*pcoord->dx1f(i);
             a1(k,j,i) = 0.5*(A1(x1l, pcoord->x2f(j), pcoord->x3f(k)) +
@@ -246,12 +248,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             a1(k,j,i) = A1(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k));
           }
 
-          if ((nblevel[1][1][0]>level && i==is) || (nblevel[1][1][2]>level && i==ie+1)
-           || (nblevel[0][1][1]>level && k==ks) || (nblevel[2][1][1]>level && k==ke+1)
-           || (nblevel[0][1][0]>level && i==is   && k==ks) 
-           || (nblevel[0][1][2]>level && i==ie+1 && k==ks)
-           || (nblevel[2][1][0]>level && i==is   && k==ke+1)
-           || (nblevel[2][1][2]>level && i==ie+1 && k==ke+1)) {
+          if ((pbval->nblevel[1][1][0]>level && i==is)
+           || (pbval->nblevel[1][1][2]>level && i==ie+1)
+           || (pbval->nblevel[0][1][1]>level && k==ks)
+           || (pbval->nblevel[2][1][1]>level && k==ke+1)
+           || (pbval->nblevel[0][1][0]>level && i==is   && k==ks) 
+           || (pbval->nblevel[0][1][2]>level && i==ie+1 && k==ks)
+           || (pbval->nblevel[2][1][0]>level && i==is   && k==ke+1)
+           || (pbval->nblevel[2][1][2]>level && i==ie+1 && k==ke+1)) {
             Real x2l = pcoord->x2f(j)+0.25*pcoord->dx2f(j);
             Real x2r = pcoord->x2f(j)+0.75*pcoord->dx2f(j);
             a2(k,j,i) = 0.5*(A2(pcoord->x1f(i), x2l, pcoord->x3f(k)) +
@@ -260,12 +264,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             a2(k,j,i) = A2(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k));
           }
 
-          if ((nblevel[1][1][0]>level && i==is) || (nblevel[1][1][2]>level && i==ie+1)
-           || (nblevel[1][0][1]>level && j==js) || (nblevel[1][2][1]>level && j==je+1)
-           || (nblevel[1][0][0]>level && i==is   && j==js) 
-           || (nblevel[1][0][2]>level && i==ie+1 && j==js)
-           || (nblevel[1][2][0]>level && i==is   && j==je+1)
-           || (nblevel[1][2][2]>level && i==ie+1 && j==je+1)) {
+          if ((pbval->nblevel[1][1][0]>level && i==is)
+           || (pbval->nblevel[1][1][2]>level && i==ie+1)
+           || (pbval->nblevel[1][0][1]>level && j==js)
+           || (pbval->nblevel[1][2][1]>level && j==je+1)
+           || (pbval->nblevel[1][0][0]>level && i==is   && j==js) 
+           || (pbval->nblevel[1][0][2]>level && i==ie+1 && j==js)
+           || (pbval->nblevel[1][2][0]>level && i==is   && j==je+1)
+           || (pbval->nblevel[1][2][2]>level && i==ie+1 && j==je+1)) {
             Real x3l = pcoord->x3f(k)+0.25*pcoord->dx3f(k);
             Real x3r = pcoord->x3f(k)+0.75*pcoord->dx3f(k);
             a3(k,j,i) = 0.5*(A3(pcoord->x1f(i), pcoord->x2f(j), x3l) +

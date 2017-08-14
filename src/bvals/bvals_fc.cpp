@@ -293,8 +293,8 @@ void BoundaryValues::SendFieldBoundaryBuffers(FaceField &src)
 {
   MeshBlock *pmb=pmy_block_;
 
-  for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0; n<nneighbor; n++) {
+    NeighborBlock& nb = neighbor[n];
     int ssize;
     if(nb.level==pmb->loc.level)
       ssize=LoadFieldBoundaryBufferSameLevel(src, bd_field_.send[nb.bufid],nb);
@@ -760,8 +760,8 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst)
   MeshBlock *pmb=pmy_block_;
   bool flag=true;
 
-  for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0; n<nneighbor; n++) {
+    NeighborBlock& nb = neighbor[n];
     if(bd_field_.flag[nb.bufid]==BNDRY_COMPLETED) continue;
     if(bd_field_.flag[nb.bufid]==BNDRY_WAITING) {
       if(nb.rank==Globals::my_rank) {// on the same process
@@ -790,7 +790,7 @@ bool BoundaryValues::ReceiveFieldBoundaryBuffers(FaceField &dst)
     bd_field_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if(flag&&(pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY))
+  if(flag&&(block_bcs[INNER_X2]==POLAR_BNDRY||block_bcs[OUTER_X2]==POLAR_BNDRY))
     PolarSingleField(dst);
 
   return flag;
@@ -804,8 +804,8 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst)
 {
   MeshBlock *pmb=pmy_block_;
 
-  for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0; n<nneighbor; n++) {
+    NeighborBlock& nb = neighbor[n];
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank)
       MPI_Wait(&(bd_field_.req_recv[nb.bufid]),MPI_STATUS_IGNORE);
@@ -819,7 +819,7 @@ void BoundaryValues::ReceiveFieldBoundaryBuffersWithWait(FaceField &dst)
     bd_field_.flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY||pmb->block_bcs[OUTER_X2]==POLAR_BNDRY)
+  if(block_bcs[INNER_X2]==POLAR_BNDRY||block_bcs[OUTER_X2]==POLAR_BNDRY)
     PolarSingleField(dst);
   return;
 }
@@ -833,7 +833,7 @@ void BoundaryValues::PolarSingleField(FaceField &dst)
 {
   MeshBlock *pmb=pmy_block_;
   if(pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1){
-    if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY){
+    if(block_bcs[INNER_X2]==POLAR_BNDRY){
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
        for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i){
@@ -879,7 +879,7 @@ void BoundaryValues::PolarSingleField(FaceField &dst)
       }
     }
 
-    if(pmb->block_bcs[OUTER_X2]==POLAR_BNDRY){
+    if(block_bcs[OUTER_X2]==POLAR_BNDRY){
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST+1; ++i){

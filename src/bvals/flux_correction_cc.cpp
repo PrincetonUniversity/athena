@@ -54,8 +54,8 @@ void BoundaryValues::SendFluxCorrection(enum FluxCorrectionType type)
     pbd=&bd_flcor_;
   }
 
-  for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0; n<nneighbor; n++) {
+    NeighborBlock& nb = neighbor[n];
     if(nb.type!=NEIGHBOR_FACE) break;
     if(nb.level==pmb->loc.level-1) {
       int p=0;
@@ -182,8 +182,8 @@ bool BoundaryValues::ReceiveFluxCorrection(enum FluxCorrectionType type)
     x3flux.InitWithShallowCopy(pmb->phydro->flux[X3DIR]);
   }
 
-  for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0; n<nneighbor; n++) {
+    NeighborBlock& nb = neighbor[n];
     if(nb.type!=NEIGHBOR_FACE) break;
     if(nb.level==pmb->loc.level+1) {
       if(pbd->flag[nb.bufid]==BNDRY_COMPLETED) continue;

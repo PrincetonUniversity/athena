@@ -549,13 +549,14 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step)
 {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
+  BoundaryValues *pbval=pmb->pbval;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
-  if(pmb->nblevel[1][1][0]!=-1) is-=NGHOST;
-  if(pmb->nblevel[1][1][2]!=-1) ie+=NGHOST;
-  if(pmb->nblevel[1][0][1]!=-1) js-=NGHOST;
-  if(pmb->nblevel[1][2][1]!=-1) je+=NGHOST;
-  if(pmb->nblevel[0][1][1]!=-1) ks-=NGHOST;
-  if(pmb->nblevel[2][1][1]!=-1) ke+=NGHOST;
+  if(pbval->nblevel[1][1][0]!=-1) is-=NGHOST;
+  if(pbval->nblevel[1][1][2]!=-1) ie+=NGHOST;
+  if(pbval->nblevel[1][0][1]!=-1) js-=NGHOST;
+  if(pbval->nblevel[1][2][1]!=-1) je+=NGHOST;
+  if(pbval->nblevel[0][1][1]!=-1) ks-=NGHOST;
+  if(pbval->nblevel[2][1][1]!=-1) ke+=NGHOST;
 
   if(step == 1) {
     pmb->peos->ConservedToPrimitive(phydro->u1, phydro->w, pfield->b1,

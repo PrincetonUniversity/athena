@@ -159,8 +159,8 @@ void BoundaryValues::SendCellCenteredBoundaryBuffers(AthenaArray<Real> &src,
     }
   }
 
-  for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0; n<nneighbor; n++) {
+    NeighborBlock& nb = neighbor[n];
     if(nb.rank == Globals::my_rank) // on the same process
       pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
     int ssize;
@@ -380,8 +380,8 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
     }
   }
 
-  for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0; n<nneighbor; n++) {
+    NeighborBlock& nb = neighbor[n];
     if(pbd->flag[nb.bufid]==BNDRY_COMPLETED) continue;
     if(pbd->flag[nb.bufid]==BNDRY_WAITING) {
       if(nb.rank==Globals::my_rank) {// on the same process
@@ -410,8 +410,8 @@ bool BoundaryValues::ReceiveCellCenteredBoundaryBuffers(AthenaArray<Real> &dst,
     pbd->flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
 
-  if(bflag && (pmb->block_bcs[INNER_X2]==POLAR_BNDRY
-           ||  pmb->block_bcs[OUTER_X2]==POLAR_BNDRY))
+  if(bflag && (block_bcs[INNER_X2]==POLAR_BNDRY
+           ||  block_bcs[OUTER_X2]==POLAR_BNDRY))
      PolarSingleCellCentered(dst, ns, ne);
   return bflag;
 }
@@ -442,8 +442,8 @@ void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real
     }
   }
 
-  for(int n=0; n<pmb->nneighbor; n++) {
-    NeighborBlock& nb = pmb->neighbor[n];
+  for(int n=0; n<nneighbor; n++) {
+    NeighborBlock& nb = neighbor[n];
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank)
       MPI_Wait(&(pbd->req_recv[nb.bufid]),MPI_STATUS_IGNORE);
@@ -457,7 +457,7 @@ void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real
     pbd->flag[nb.bufid] = BNDRY_COMPLETED; // completed
   }
  
-  if (pmb->block_bcs[INNER_X2]==POLAR_BNDRY || pmb->block_bcs[OUTER_X2]==POLAR_BNDRY)
+  if (block_bcs[INNER_X2]==POLAR_BNDRY || block_bcs[OUTER_X2]==POLAR_BNDRY)
     PolarSingleCellCentered(dst, ns, ne);
 
   return;
@@ -474,7 +474,7 @@ void BoundaryValues::PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int
   MeshBlock *pmb=pmy_block_;
   if(pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1){
 
-    if(pmb->block_bcs[INNER_X2]==POLAR_BNDRY){
+    if(block_bcs[INNER_X2]==POLAR_BNDRY){
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int n=ns; n<=ne; ++n) {
         for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
@@ -492,7 +492,7 @@ void BoundaryValues::PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int
       }
     }
 
-    if(pmb->block_bcs[OUTER_X2]==POLAR_BNDRY){
+    if(block_bcs[OUTER_X2]==POLAR_BNDRY){
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int n=ns; n<=ne; ++n) {
         for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {

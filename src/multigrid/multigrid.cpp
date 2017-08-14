@@ -27,13 +27,13 @@
 //  \brief Multigrid constructor
 
 Multigrid::Multigrid(Mesh *pm, MeshBlock *pmb, int invar, int nx, int ny, int nz,
-                     RegionSize isize, MGBoundaryFunc_t *MGBoundary)
+                     int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary)
 {
   pmy_mesh_=pm;
   pmy_block_=pmb;
+  ngh_=nghost;
   size_=isize;
   nvar_=invar;
-  ngh_=1;
   nx_=nx, ny_=ny, nz_=nz;
   rdx_=(size_.x1max-size_.x1min)/(Real)nx;
   rdy_=(size_.x2max-size_.x2min)/(Real)ny;
@@ -49,7 +49,8 @@ Multigrid::Multigrid(Mesh *pm, MeshBlock *pmb, int invar, int nx, int ny, int nz
     MGBoundaryFunction_[i]=MGBoundary[i];
   if(pmb!=NULL) { // not root grid
     for(int i=0; i<6; i++) {
-      if(pmb->block_bcs[i]==PERIODIC_BNDRY || pmb->block_bcs[i]==BLOCK_BNDRY)
+      if(pmb->pbval->block_bcs[i]==PERIODIC_BNDRY
+      || pmb->pbval->block_bcs[i]==BLOCK_BNDRY)
         MGBoundaryFunction_[i]=NULL;
     }
   }
