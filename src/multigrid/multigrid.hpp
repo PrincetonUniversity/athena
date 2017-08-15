@@ -14,6 +14,7 @@
 #include "../globals.hpp"
 #include "../athena_arrays.hpp"
 #include "../mesh/mesh.hpp"
+#include "../bvals/bvals_mg.hpp"
 #include "../task_list/mg_task_list.hpp"
 
 #include <iostream>
@@ -55,7 +56,9 @@ public:
             int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary);
   virtual ~Multigrid();
 
+  MGBoundaryValues *pbval;
   enum BoundaryType btype, btypef;
+  Multigrid *next, *prev;
 
   void LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh);
   void LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real fac);
@@ -84,18 +87,19 @@ public:
 
   friend class MultigridDriver;
   friend class MultigridTaskList;
+  friend class MGBoundaryValues;
 
 protected:
+  int gid_, lid_;
+  LogicalLocation loc_;
   Mesh *pmy_mesh_;
-  MeshBlock *pmy_block_;
+  MultigridDriver *pmy_driver_;
   RegionSize size_;
   int nlevel_, nx_, ny_, nz_, ngh_, nvar_, current_level_;
   Real rdx_, rdy_, rdz_;
   AthenaArray<Real> *u_, *def_, *src_;
-
 private:
   TaskState ts_;
-  MGBoundaryFunc_t MGBoundaryFunction_[6];
 };
 
 
@@ -120,21 +124,21 @@ public:
   void SolveFMGCycle(void);
   virtual void SolveCoarsestGrid(void);
   Real CalculateDefectNorm(int n, int nrm);
+  Multigrid* FindMultigrid(int tgid);
 
   // small functions
-  int GetNumMeshBlocks(void) { return nblocks_; };
+  int GetNumMultigrids(void) { return nmultigrids_; };
 
-  virtual Multigrid* GetMultigridBlock(MeshBlock *) = 0;
   virtual void LoadSourceAndData(void) = 0;
 
   friend class Multigrid;
   friend class MultigridTaskList;
 
 protected:
-  int nranks_, nvar_, nblocks_, nrootlevel_, nmblevel_, ntotallevel_, mode_;
+  int nranks_, nvar_, nmultigrids_, nrootlevel_, nmblevel_, ntotallevel_, mode_;
   int current_level_;
   Mesh *pmy_mesh_;
-  MeshBlock *pblock_;
+  Multigrid *pmg_;
   Multigrid *mgroot_;
   bool fperiodic_;
 private:

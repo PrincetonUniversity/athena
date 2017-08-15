@@ -19,6 +19,7 @@
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../parameter_input.hpp"
+#include "../bvals/bvals_mg.hpp"
 #include "multigrid.hpp"
 
 #ifdef MPI_PARALLEL
@@ -31,17 +32,16 @@ MultigridDriver::MultigridDriver(Mesh *pm, MeshBlock *pmb, MGBoundaryFunc_t *MGB
                                  int invar, ParameterInput *pin)
 {
   pmy_mesh_=pm;
-  pblock_=pmb;
   nvar_=invar;
-  if(pblock_->block_size.nx1!=pblock_->block_size.nx2
-  || pblock_->block_size.nx1!=pblock_->block_size.nx3) {
+  if(pmb->block_size.nx1!=pmb->block_size.nx2
+  || pmb->block_size.nx1!=pmb->block_size.nx3) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
         << "The Multigrid solver requires logically cubic MeshBlock." << std::endl;
     throw std::runtime_error(msg.str().c_str());
     return;
   }
-  if(pblock_->block_size.nx2==1 || pblock_->block_size.nx3==1 ) {
+  if(pmb->block_size.nx2==1 || pmb->block_size.nx3==1 ) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
         << "Currently the Multigrid solver works only in 3D." << std::endl;
@@ -56,9 +56,9 @@ MultigridDriver::MultigridDriver(Mesh *pm, MeshBlock *pmb, MGBoundaryFunc_t *MGB
     throw std::runtime_error(msg.str().c_str());
     return;
   }
-  Real dx=pblock_->pcoord->dx1f(0);
-  if(std::fabs(pblock_->pcoord->dx2f(0)-dx)>1.0e-5
-  || std::fabs(pblock_->pcoord->dx3f(0)-dx)>1.0e-5) {
+  Real dx=pmb->pcoord->dx1f(0);
+  if(std::fabs(pmb->pcoord->dx2f(0)-dx)>1.0e-5
+  || std::fabs(pmb->pcoord->dx3f(0)-dx)>1.0e-5) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
         << "The cell size must be cubic." << std::endl;
@@ -68,7 +68,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MeshBlock *pmb, MGBoundaryFunc_t *MGB
   // count multigrid levels
   nmblevel_=0;
   for(int l=0; l<20; l++) {
-    if((1<<l) == pblock_->block_size.nx1) {
+    if((1<<l) == pmb->block_size.nx1) {
       nmblevel_=l+1;
       break;
     }
@@ -128,12 +128,8 @@ MultigridDriver::MultigridDriver(Mesh *pm, MeshBlock *pmb, MGBoundaryFunc_t *MGB
   // Setting up the MPI information
   // *** this part should be modified when dedicate processes are allocated ***
   // *** we also need to construct another neighbor list for Multigrid ***
-  MeshBlock *pb=pblock_;
-  nblocks_=0;
-  while(pb!=NULL) {
-    nblocks_++;
-    pb=pb->next;
-  }
+  nmultigrids_=0;
+  pmg_=NULL;
 
   nranks_  = Globals::nranks;
   nslist_  = new int[nranks_];
@@ -170,21 +166,25 @@ MultigridDriver::~MultigridDriver()
 
 
 //----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::AddMultigrid(void)
+//  \brief Add a new Multigrid object to the list
+
+
+//----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::SetupMultigrid(void)
 //  \brief initialize the source assuming that the source terms are already loaded
 
 void MultigridDriver::SetupMultigrid(void)
 {
-  MeshBlock *pb;
+  Multigrid *pmg=pmg_;
 
   if(fperiodic_)
     SubtractAverage(0);
   if(mode_<=1) { // FMG
-    pb=pblock_;
-    while(pb!=NULL) {
-      Multigrid *pmg=GetMultigridBlock(pb);
+    pmg=pmg_;
+    while(pmg!=NULL) {
       pmg->RestrictFMGSource();
-      pb=pb->next;
+      pmg=pmg->next;
     }
     FillRootGridSource();
     mgroot_->RestrictFMGSource();
@@ -201,12 +201,11 @@ void MultigridDriver::SetupMultigrid(void)
 
 void MultigridDriver::SubtractAverage(int type)
 {
-  MeshBlock *pb=pblock_;
-  while(pb!=NULL) {
-    Multigrid *pmg=GetMultigridBlock(pb);
+  Multigrid *pmg=pmg_;
+  while(pmg!=NULL) {
     for(int v=0; v<nvar_; v++)
-      rootbuf_[pb->gid*nvar_+v]=pmg->CalculateTotal(type, v);
-    pb=pb->next;
+      rootbuf_[pmg->gid_*nvar_+v]=pmg->CalculateTotal(type, v);
+    pmg=pmg->next;
   }
 #ifdef MPI_PARALLEL
   MPI_Allgatherv(MPI_IN_PLACE, nblist_[Globals::my_rank]*nvar_, MPI_ATHENA_REAL,
@@ -220,11 +219,10 @@ void MultigridDriver::SubtractAverage(int type)
     for(int n=0; n<pmy_mesh_->nbtotal; n++)
       total+=rootbuf_[n*nvar_+v];
     Real ave=total/vol;
-    pb=pblock_;
-    while(pb!=NULL) {
-      Multigrid *pmg=GetMultigridBlock(pb);
+    pmg=pmg_;
+    while(pmg!=NULL) {
       pmg->SubtractAverage(type, v, ave);
-      pb=pb->next;
+      pmg=pmg->next;
     }
   }
 
@@ -238,12 +236,11 @@ void MultigridDriver::SubtractAverage(int type)
 
 void MultigridDriver::FillRootGridSource(void)
 {
-  MeshBlock *pb=pblock_;
-  while(pb!=NULL) {
-    Multigrid *pmg=GetMultigridBlock(pb);
+  Multigrid *pmg=pmg_;
+  while(pmg!=NULL) {
     for(int v=0; v<nvar_; v++)
-      rootbuf_[pb->gid*nvar_+v]=pmg->GetRootSource(v);
-    pb=pb->next;
+      rootbuf_[pmg->gid_*nvar_+v]=pmg->GetRootSource(v);
+    pmg=pmg->next;
   }
 #ifdef MPI_PARALLEL
   MPI_Allgatherv(MPI_IN_PLACE, nblist_[Globals::my_rank]*nvar_, MPI_ATHENA_REAL,
@@ -291,17 +288,16 @@ void MultigridDriver::FMGProlongate(void)
 
 void MultigridDriver::TransferFromRootToBlocks(void)
 {
-  MeshBlock *pb=pblock_;
+  Multigrid *pmg=pmg_;
   AthenaArray<Real> &src=mgroot_->GetCurrentData();
   if(pmy_mesh_->multilevel) {
     // *** implement later ***
   }
   else {
-    while(pb!=NULL) {
-      Multigrid *pmg=GetMultigridBlock(pb);
-      LogicalLocation &loc=pb->loc;
+    while(pmg!=NULL) {
+      LogicalLocation &loc=pmg->loc_;
       pmg->SetFromRootGrid(src, loc.lx1, loc.lx2, loc.lx3);
-      pb=pb->next;
+      pmg=pmg->next;
     }
   }
   return;
@@ -465,15 +461,14 @@ void MultigridDriver::SolveCoarsestGrid(void)
 
 Real MultigridDriver::CalculateDefectNorm(int n, int nrm)
 {
-  MeshBlock *pb=pblock_;
+  Multigrid *pmg=pmg_;
   Real norm=0.0;
-  while(pb!=NULL) {
-    Multigrid *pmg=GetMultigridBlock(pb);
+  while(pmg!=NULL) {
     if(nrm==0)
       norm=std::max(norm, pmg->CalculateDefectNorm(n, nrm));
     else
       norm+=pmg->CalculateDefectNorm(n, nrm);
-    pb=pb->next;
+    pmg=pmg->next;
   }
 #ifdef MPI_PARALLEL
   if(nrm==0)
@@ -485,5 +480,22 @@ Real MultigridDriver::CalculateDefectNorm(int n, int nrm)
     norm=std::sqrt(norm);
 
   return norm;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn Multigrid* MultigridDriver::FindMultigrid(int tgid)
+//  \brief return the Multigrid whose gid is tgid
+
+Multigrid* MultigridDriver::FindMultigrid(int tgid)
+{
+  Multigrid *pmg=pmg_;
+  while(pmg!=NULL)
+  {
+    if(pmg->gid_==tgid)
+      break;
+    pmg=pmg->next;
+  }
+  return pmg;
 }
 

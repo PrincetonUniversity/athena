@@ -17,16 +17,14 @@
 #include <cmath>
 
 // Athena++ classes headers
-#include "bvals.hpp"
+#include "bvals_mg.hpp"
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../athena_arrays.hpp"
 #include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
-#include "../eos/eos.hpp"
-#include "../field/field.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../parameter_input.hpp"
+#include "../multigrid/multigrid.hpp"
 #include "../utils/buffer_utils.hpp"
 
 // MPI header
@@ -34,17 +32,102 @@
 #include <mpi.h>
 #endif
 
+class Multigrid;
+
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type)
+//! \fn MGBoundaryValues::MGBoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
+//  \brief Constructor of the MGBoundaryValues class
+
+MGBoundaryValues::MGBoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
+ : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs)
+{
+  if(SELF_GRAVITY_ENABLED == 2)
+    InitBoundaryData(bd_mggrav_, BNDRY_MGGRAV);
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn MGBoundaryValues::~MGBoundaryValues()
+//  \brief Destructor of the MGBoundaryValues class
+
+MGBoundaryValues::~MGBoundaryValues()
+{
+  if (SELF_GRAVITY_ENABLED == 2)
+    DestroyBoundaryData(bd_mggrav_);
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd, enum BoundaryType type)
+//  \brief Initialize MGBoundaryData structure
+void MGBoundaryValues::InitBoundaryData(MGBoundaryData &bd, enum BoundaryType type)
+{
+ int size;
+  bd.nbmax=maxneighbor_;
+  for(int n=0;n<bd.nbmax;n++) {
+    // Clear flags and requests
+    bd.flag[n]=BNDRY_WAITING;
+    bd.sflag[n]=BNDRY_WAITING;
+    bd.send[n]=NULL;
+    bd.recv[n]=NULL;
+#ifdef MPI_PARALLEL
+    bd.req_send[n]=MPI_REQUEST_NULL;
+    bd.req_recv[n]=MPI_REQUEST_NULL;
+#endif
+
+    // Allocate buffers
+    // calculate the buffer size
+    switch(type) {
+      case BNDRY_MGGRAV: {
+        int ngh=pmy_mg_->ngh_;
+        if(pmy_mesh_->multilevel) { // with refinement - NGHOST = 1
+          int nc=block_size_.nx1;
+          if(BoundaryValues::ni[n].type==NEIGHBOR_FACE) size=SQR(nc)*ngh;
+          else if(BoundaryValues::ni[n].type==NEIGHBOR_EDGE) size=nc*ngh*ngh+(nc*ngh*ngh)/2;
+          else if(BoundaryValues::ni[n].type==NEIGHBOR_CORNER) size=ngh*ngh*ngh*2;
+        }
+        else { // uniform - NGHOST=1
+          size=((BoundaryValues::ni[n].ox1==0)?block_size_.nx1:ngh)
+              *((BoundaryValues::ni[n].ox2==0)?block_size_.nx2:ngh)
+              *((BoundaryValues::ni[n].ox3==0)?block_size_.nx3:ngh);
+        }
+      }
+      break;
+      default: {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in InitBoundaryData" << std::endl
+            << "Invalid boundary type is specified." << std::endl;
+        throw std::runtime_error(msg.str().c_str());
+      }
+      break;
+    }
+    bd.send[n]=new Real [size];
+    bd.recv[n]=new Real [size];
+  }
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MGBoundaryValues::DestroyBoundaryData(MGBoundaryData &bd)
+//  \brief Destroy MGBoundaryData structure
+void MGBoundaryValues::DestroyBoundaryData(MGBoundaryData &bd)
+{
+  for(int n=0;n<bd.nbmax;n++) {
+    delete [] bd.send[n];
+    delete [] bd.recv[n];
+  }
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MGBoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type)
 //  \brief initiate MPI_Irecv for multigrid
 
-void BoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type)
+void MGBoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type)
 {
-  MeshBlock *pmb=pmy_block_;
-  int mylevel=pmb->loc.level;
+  int mylevel=loc.level;
   int nvar, tag, phys, ngh;
   bool faceonly=false;
-  BoundaryData *pbd;
+  MGBoundaryData *pbd;
 
   if(type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF) {
     pbd=&bd_mggrav_;
@@ -59,7 +142,7 @@ void BoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type)
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank) {
       int size;
-      if(pmb->pmy_mesh->multilevel==true) { // with refinement - NGHOST = 1
+      if(pmy_mesh_->multilevel==true) { // with refinement - NGHOST = 1
         if(nb.level == mylevel) { // same
           if(nb.type==NEIGHBOR_FACE) size=SQR(nc);
           else if(nb.type==NEIGHBOR_EDGE) size=nc+nc/2;
@@ -82,7 +165,7 @@ void BoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type)
         else if(nb.type==NEIGHBOR_CORNER) size=ngh*ngh*ngh;
       }
       size*=nvar;
-      tag=CreateBvalsMPITag(pmb->lid, phys, nb.bufid);
+      tag=CreateBvalsMPITag(pmy_mg_->lid_, phys, nb.bufid);
       MPI_Irecv(pbd->recv[nb.bufid], size, MPI_ATHENA_REAL, nb.rank, tag,
                 MPI_COMM_WORLD, &(pbd->req_recv[nb.bufid]));
     }
@@ -93,14 +176,13 @@ void BoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ClearBoundaryMultigrid(enum BoundaryType type)
+//! \fn void MGBoundaryValues::ClearBoundaryMultigrid(enum BoundaryType type)
 //  \brief clean up the boundary flags after each loop for multigrid
 
-void BoundaryValues::ClearBoundaryMultigrid(enum BoundaryType type)
+void MGBoundaryValues::ClearBoundaryMultigrid(enum BoundaryType type)
 {
-  MeshBlock *pmb=pmy_block_;
   bool faceonly=false;
-  BoundaryData *pbd;
+  MGBoundaryData *pbd;
 
   if(type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF)
     pbd=&bd_mggrav_;
@@ -122,12 +204,12 @@ void BoundaryValues::ClearBoundaryMultigrid(enum BoundaryType type)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn int BoundaryValues::LoadMultigridBoundaryBufferSameLevel(AthenaArray<Real> &src,
-//                          int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb)
+//! \fn int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(AthenaArray<Real> &src,
+//                            int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb)
 //  \brief Set hydro boundary buffers for sending to a block on the same level
 
-int BoundaryValues::LoadMultigridBoundaryBufferSameLevel(AthenaArray<Real> &src,
-                    int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb)
+int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(AthenaArray<Real> &src,
+                      int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb)
 {
   int si, sj, sk, ei, ej, ek;
 
@@ -144,19 +226,18 @@ int BoundaryValues::LoadMultigridBoundaryBufferSameLevel(AthenaArray<Real> &src,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
-//                                                int nc, enum BoundaryType type)
+//! \fn bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
+//                                                  int nc, enum BoundaryType type)
 //  \brief Send boundary buffers
 
-bool BoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
-                                                  int nc, enum BoundaryType type)
+bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
+                                                    int nc, enum BoundaryType type)
 {
-  MeshBlock *pmb=pmy_block_, *pbl;
-  int mylevel=pmb->loc.level;
+  int mylevel=loc.level;
   int nvar, tag, ngh, phys;
   bool faceonly=false;
   bool bflag=true;
-  BoundaryData *pbd, *ptarget;
+  MGBoundaryData *pbd, *ptarget;
 
   if(type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF) {
     pbd=&bd_mggrav_;
@@ -171,9 +252,9 @@ bool BoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
     if(pbd->sflag[nb.bufid]==BNDRY_COMPLETED) continue;
     int ssize;
     if(nb.rank == Globals::my_rank) {
-      pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
+      Multigrid *pmg=pmy_mg_->pmy_driver_->FindMultigrid(nb.gid);
       if(type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF)
-        ptarget=&(pbl->pbval->bd_mggrav_);
+        ptarget=&(pmg->pbval->bd_mggrav_);
       if(ptarget->flag[nb.targetid] != BNDRY_WAITING) {
         bflag=false;
         continue;
@@ -206,11 +287,11 @@ bool BoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::SetMultigridBoundarySameLevel(AthenaArray<Real> &dst,
-//                              int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb)
+//! \fn void MGBoundaryValues::SetMultigridBoundarySameLevel(AthenaArray<Real> &dst,
+//                     int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb)
 //  \brief Set hydro boundary received from a block on the same level
 
-void BoundaryValues::SetMultigridBoundarySameLevel(AthenaArray<Real> &dst,
+void MGBoundaryValues::SetMultigridBoundarySameLevel(AthenaArray<Real> &dst,
                         int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb)
 {
   int si, sj, sk, ei, ej, ek;
@@ -232,17 +313,16 @@ void BoundaryValues::SetMultigridBoundarySameLevel(AthenaArray<Real> &dst,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn bool BoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
-//                                                   int nc, enum BoundaryType type)
+//! \fn bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
+//                                                     int nc, enum BoundaryType type)
 //  \brief receive the boundary data
 
-bool BoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
-                                                     int nc, enum BoundaryType type)
+bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
+                                                       int nc, enum BoundaryType type)
 {
-  MeshBlock *pmb=pmy_block_;
   bool bflag=true, faceonly=false;
   int nvar, ngh;
-  BoundaryData *pbd;
+  MGBoundaryData *pbd;
 
   if(type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF) {
     pbd=&bd_mggrav_;
@@ -273,9 +353,9 @@ bool BoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
       }
 #endif
     }
-    if(nb.level==pmb->loc.level)
+    if(nb.level==loc.level)
       SetMultigridBoundarySameLevel(dst, nvar, nc, ngh, pbd->recv[nb.bufid], nb);
-//    else if(nb.level<pmb->loc.level) // this set only the prolongation buffer
+//    else if(nb.level<loc.level) // this set only the prolongation buffer
 //      SetMultigridBoundaryFromCoarser(nvar, nc, ngh, pbd->recv[nb.bufid], cbuf, nb);
 //    else
 //      SetMultigridBoundaryFromFiner(dst, nvar, nc, ngh, pbd->recv[nb.bufid], nb);

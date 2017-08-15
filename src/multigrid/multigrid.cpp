@@ -23,14 +23,13 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn Multigrid::Multigrid(Mesh *pm, MeshBlock *pmb, int invar, int nx, int ny, int nz,
-//                           RegionSize isize, MGBoundaryFunc_t *MGBoundary)
+//                           int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary)
 //  \brief Multigrid constructor
 
 Multigrid::Multigrid(Mesh *pm, MeshBlock *pmb, int invar, int nx, int ny, int nz,
                      int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary)
 {
   pmy_mesh_=pm;
-  pmy_block_=pmb;
   ngh_=nghost;
   size_=isize;
   nvar_=invar;
@@ -45,13 +44,15 @@ Multigrid::Multigrid(Mesh *pm, MeshBlock *pmb, int invar, int nx, int ny, int nz
       nlevel_=l+1;
     }
   }
-  for(int i=0; i<6; i++)
-    MGBoundaryFunction_[i]=MGBoundary[i];
   if(pmb!=NULL) { // not root grid
+    pbval = new MGBoundaryValues(pmb, pmb->pbval->block_bcs);
     for(int i=0; i<6; i++) {
+      
       if(pmb->pbval->block_bcs[i]==PERIODIC_BNDRY
       || pmb->pbval->block_bcs[i]==BLOCK_BNDRY)
-        MGBoundaryFunction_[i]=NULL;
+        pbval->MGBoundaryFunction_[i]=NULL;
+      else 
+        pbval->MGBoundaryFunction_[i]=MGBoundary[i];
     }
   }
 
@@ -75,6 +76,9 @@ Multigrid::Multigrid(Mesh *pm, MeshBlock *pmb, int invar, int nx, int ny, int nz
 
 Multigrid::~Multigrid()
 {
+  if(prev!=NULL) prev->next=next;
+  if(next!=NULL) next->prev=prev;
+
   for(int l=0; l<nlevel_; l++) {
     u_[l].DeleteAthenaArray();
     src_[l].DeleteAthenaArray();
@@ -83,6 +87,7 @@ Multigrid::~Multigrid()
   delete [] u_;
   delete [] src_;
   delete [] def_;
+  delete pbval;
 }
 
 
@@ -222,37 +227,37 @@ void Multigrid::ApplyPhysicalBoundaries(void)
   Real y0=size_.x2min-((Real)ngh_+0.5)*dy;
   Real z0=size_.x3min-((Real)ngh_+0.5)*dz;
   Real time=pmy_mesh_->time;
-  if(MGBoundaryFunction_[INNER_X2]==NULL) bjs=js-ngh_;
-  if(MGBoundaryFunction_[OUTER_X2]==NULL) bje=je+ngh_;
-  if(MGBoundaryFunction_[INNER_X3]==NULL) bks=ks-ngh_;
-  if(MGBoundaryFunction_[OUTER_X3]==NULL) bke=ke+ngh_;
+  if(pbval->MGBoundaryFunction_[INNER_X2]==NULL) bjs=js-ngh_;
+  if(pbval->MGBoundaryFunction_[OUTER_X2]==NULL) bje=je+ngh_;
+  if(pbval->MGBoundaryFunction_[INNER_X3]==NULL) bks=ks-ngh_;
+  if(pbval->MGBoundaryFunction_[OUTER_X3]==NULL) bke=ke+ngh_;
 
   // Apply boundary function on inner-x1
-  if (MGBoundaryFunction_[INNER_X1] != NULL)
-    MGBoundaryFunction_[INNER_X1](dst, time, nvar_, is, ie, bjs, bje, bks, bke, ngh_,
+  if (pbval->MGBoundaryFunction_[INNER_X1] != NULL)
+    pbval->MGBoundaryFunction_[INNER_X1](dst, time, nvar_, is, ie, bjs, bje, bks, bke, ngh_,
                                   x0, y0, z0, dx, dy, dz);
   // Apply boundary function on outer-x1
-  if (MGBoundaryFunction_[OUTER_X1] != NULL)
-    MGBoundaryFunction_[OUTER_X1](dst, time, nvar_, is, ie, bjs, bje, bks, bke, ngh_,
+  if (pbval->MGBoundaryFunction_[OUTER_X1] != NULL)
+    pbval->MGBoundaryFunction_[OUTER_X1](dst, time, nvar_, is, ie, bjs, bje, bks, bke, ngh_,
                                   x0, y0, z0, dx, dy, dz);
 
   // Apply boundary function on inner-x2
-  if (MGBoundaryFunction_[INNER_X2] != NULL)
-    MGBoundaryFunction_[INNER_X2](dst, time, nvar_, bis, bie, js, je, bks, bke, ngh_,
+  if (pbval->MGBoundaryFunction_[INNER_X2] != NULL)
+    pbval->MGBoundaryFunction_[INNER_X2](dst, time, nvar_, bis, bie, js, je, bks, bke, ngh_,
                                   x0, y0, z0, dx, dy, dz);
   // Apply boundary function on outer-x2
-  if (MGBoundaryFunction_[OUTER_X2] != NULL)
-    MGBoundaryFunction_[OUTER_X2](dst, time, nvar_, bis, bie, js, je, bks, bke, ngh_,
+  if (pbval->MGBoundaryFunction_[OUTER_X2] != NULL)
+    pbval->MGBoundaryFunction_[OUTER_X2](dst, time, nvar_, bis, bie, js, je, bks, bke, ngh_,
                                   x0, y0, z0, dx, dy, dz);
 
   bjs=js-ngh_, bje=je+ngh_;
   // Apply boundary function on inner-x3
-  if (MGBoundaryFunction_[INNER_X3] != NULL)
-    MGBoundaryFunction_[INNER_X3](dst, time, nvar_, bis, bie, bjs, bje, ks, ke, ngh_,
+  if (pbval->MGBoundaryFunction_[INNER_X3] != NULL)
+    pbval->MGBoundaryFunction_[INNER_X3](dst, time, nvar_, bis, bie, bjs, bje, ks, ke, ngh_,
                                   x0, y0, z0, dx, dy, dz);
   // Apply boundary function on outer-x3
-  if (MGBoundaryFunction_[OUTER_X3] != NULL)
-    MGBoundaryFunction_[OUTER_X3](dst, time, nvar_, bis, bie, bjs, bje, ks, ke, ngh_,
+  if (pbval->MGBoundaryFunction_[OUTER_X3] != NULL)
+    pbval->MGBoundaryFunction_[OUTER_X3](dst, time, nvar_, bis, bie, bjs, bje, ks, ke, ngh_,
                                   x0, y0, z0, dx, dy, dz);
 
   return;

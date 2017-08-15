@@ -42,17 +42,6 @@ class AthenaFFT;
 class MGGravity;
 class EquationOfState;
 
-//----------------------------------------------------------------------------------------
-//! \struct RegionSize
-//  \brief physical size and number of cells in a Mesh
-
-typedef struct RegionSize {
-  Real x1min, x2min, x3min;
-  Real x1max, x2max, x3max;
-  Real x1rat, x2rat, x3rat; // ratio of x(i)/x(i-1)
-  int nx1, nx2, nx3;        // number of active cells (not including ghost zones)
-} RegionSize;
-
 
 //----------------------------------------------------------------------------------------
 //! \class MeshBlock

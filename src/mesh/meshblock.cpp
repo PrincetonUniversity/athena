@@ -23,7 +23,6 @@
 #include "../coordinates/coordinates.hpp"
 #include "../hydro/hydro.hpp" 
 #include "../field/field.hpp"
-#include "../multigrid/multigrid.hpp"
 #include "../gravity/gravity.hpp"
 #include "../gravity/mggravity.hpp"
 #include "../fft/athena_fft.hpp"
@@ -96,7 +95,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // mesh-related objects
 
   // Boundary
-  pbval  = new BoundaryValues(this, pin, input_bcs);
+  pbval  = new BoundaryValues(this, input_bcs);
 
   // FFT object (need to be set before Gravity class)
   if (FFT_ENABLED) pfft = new AthenaFFT(this);
@@ -108,10 +107,6 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   if (SELF_GRAVITY_ENABLED) pgrav = new Gravity(this, pin);
 
-  // Multigrid
-  if (SELF_GRAVITY_ENABLED == 2)
-    pmggrav = new MGGravity(pmy_mesh, this, block_size.nx1, block_size.nx2,
-                            block_size.nx3, block_size, pm->MGBoundaryFunction_);
   // Reconstruction
   precon = new Reconstruction(this, pin);
 
@@ -193,7 +188,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   // (re-)create mesh-related objects in MeshBlock
 
   // Boundary
-  pbval  = new BoundaryValues(this, pin, input_bcs);
+  pbval  = new BoundaryValues(this, input_bcs);
 
   // FFT object
   if (FFT_ENABLED) pfft = new AthenaFFT(this);
@@ -204,11 +199,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   peos = new EquationOfState(this, pin);
 
   if (SELF_GRAVITY_ENABLED) pgrav = new Gravity(this, pin);
-
-  // Multigrid
-  if (SELF_GRAVITY_ENABLED == 2)
-    pmggrav = new MGGravity(pmy_mesh, this, block_size.nx1, block_size.nx2,
-                            block_size.nx3, block_size, pm->MGBoundaryFunction_);
 
   precon = new Reconstruction(this, pin);
 

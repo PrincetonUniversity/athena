@@ -24,6 +24,39 @@ class ParameterInput;
 struct RegionSize;
 
 
+//--------------------------------------------------------------------------------------
+//! \struct LogicalLocation
+//  \brief stores logical location and level of meshblock
+
+typedef struct LogicalLocation {
+  long int lx1, lx2, lx3;
+  int level;
+
+  LogicalLocation() : lx1(-1), lx2(-1), lx3(-1), level(-1) {};
+
+  // operators useful for sorting
+  bool operator==(LogicalLocation &ll)
+    { return ((ll.level==level) && (ll.lx1==lx1) && (ll.lx2==lx2) && (ll.lx3==lx3)); }
+  static bool Lesser(const LogicalLocation &left, const LogicalLocation &right)
+    { return left.level < right.level; };
+  static bool Greater(const LogicalLocation & left, const LogicalLocation &right)
+    { return left.level > right.level; };
+
+} LogicalLocation;
+
+
+//----------------------------------------------------------------------------------------
+//! \struct RegionSize
+//  \brief physical size and number of cells in a Mesh or a MeshBlock
+
+typedef struct RegionSize {
+  Real x1min, x2min, x3min;
+  Real x1max, x2max, x3max;
+  Real x1rat, x2rat, x3rat; // ratio of x(i)/x(i-1)
+  int nx1, nx2, nx3;        // number of active cells (not including ghost zones)
+} RegionSize;
+
+
 //---------------------------------------------------------------------------------------
 //! \struct FaceField
 //  \brief container for face-centered fields

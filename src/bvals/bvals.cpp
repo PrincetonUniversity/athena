@@ -29,7 +29,6 @@
 #include "../multigrid/multigrid.hpp"
 #include "../gravity/mggravity.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
 
 // MPI header
@@ -40,9 +39,8 @@
 // BoundaryValues constructor - sets functions for the appropriate
 // boundary conditions at each of the 6 dirs of a MeshBlock
 
-BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin,
-                               enum BoundaryFlag *input_bcs)
- : BoundaryBase(pmb, pin, input_bcs)
+BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
+ : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs)
 {
   for(int i=0; i<6; i++)
     BoundaryFunction_[i]=NULL;
@@ -231,8 +229,6 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin,
   }
   if(SELF_GRAVITY_ENABLED == 1)
     InitBoundaryData(bd_gravity_, BNDRY_GRAVITY);
-  if(SELF_GRAVITY_ENABLED == 2)
-    InitBoundaryData(bd_mggrav_, BNDRY_MGGRAV);
 
   if (num_north_polar_blocks_ > 0) {
     emf_north_send_ = new Real *[num_north_polar_blocks_];
@@ -318,8 +314,6 @@ BoundaryValues::~BoundaryValues()
   }
   if (SELF_GRAVITY_ENABLED == 1)
     DestroyBoundaryData(bd_gravity_);
-  if (SELF_GRAVITY_ENABLED == 2)
-    DestroyBoundaryData(bd_mggrav_);
 
   if (MAGNETIC_FIELDS_ENABLED) {
     if (num_north_polar_blocks_ > 0) {
@@ -389,7 +383,6 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
   for(int n=0;n<bd.nbmax;n++) {
     // Clear flags and requests
     bd.flag[n]=BNDRY_WAITING;
-    bd.sflag[n]=BNDRY_WAITING;
     bd.send[n]=NULL;
     bd.recv[n]=NULL;
 #ifdef MPI_PARALLEL
@@ -471,21 +464,6 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
         size=((BoundaryValues::ni[n].ox1==0)?pmb->block_size.nx1:NGHOST)
             *((BoundaryValues::ni[n].ox2==0)?pmb->block_size.nx2:NGHOST)
             *((BoundaryValues::ni[n].ox3==0)?pmb->block_size.nx3:NGHOST);
-      }
-      break;
-      case BNDRY_MGGRAV: {
-        int ngh=1;
-        if(multilevel) { // with refinement - NGHOST = 1
-          int nc=pmb->block_size.nx1;
-          if(BoundaryValues::ni[n].type==NEIGHBOR_FACE) size=SQR(nc)*ngh;
-          else if(BoundaryValues::ni[n].type==NEIGHBOR_EDGE) size=nc*ngh*ngh+(nc*ngh*ngh)/2;
-          else if(BoundaryValues::ni[n].type==NEIGHBOR_CORNER) size=ngh*ngh*ngh*2;
-        }
-        else { // uniform - NGHOST=1
-          size=((BoundaryValues::ni[n].ox1==0)?pmb->block_size.nx1:ngh)
-              *((BoundaryValues::ni[n].ox2==0)?pmb->block_size.nx2:ngh)
-              *((BoundaryValues::ni[n].ox3==0)?pmb->block_size.nx3:ngh);
-        }
       }
       break;
       case BNDRY_FLCOR: {

@@ -38,27 +38,18 @@ GravityDriver::GravityDriver(Mesh *pm, MeshBlock *pblock, MGBoundaryFunc_t *MGBo
 
 
 //----------------------------------------------------------------------------------------
-//! \fn Multigrid* GravityDriver::GetMultigridBlock(MeshBlock *pmb)
-//  \brief returns a pointer to the multigrid gravity object
-
-Multigrid* GravityDriver::GetMultigridBlock(MeshBlock *pmb)
-{
-  return pmb->pmggrav;
-}
-
-
-//----------------------------------------------------------------------------------------
 //! \fn void GravityDriver::LoadSourceAndData(void)
 //  \brief load the sourterm and initial guess (if needed)
 
 void GravityDriver::LoadSourceAndData(void)
 {
-  MeshBlock *pb=pblock_;
-  while(pb!=NULL) {
-    pb->pmggrav->LoadSource(pb->phydro->u, IDN, NGHOST, four_pi_G_);
+  AthenaArray<Real> tmp;
+  Multigrid *pmggrav=pmg_;
+  while(pmggrav!=NULL) {
+    pmggrav->LoadSource(tmp, IDN, NGHOST, four_pi_G_);
     if(mode_>=2) // iterative mode - load initial guess
-      pb->pmggrav->LoadFinestData(pb->pgrav->phi, 0, NGHOST);
-    pb=pb->next;
+      pmggrav->LoadFinestData(tmp, 0, NGHOST);
+    pmggrav=pmggrav->next;
   }
   return;
 }

@@ -21,12 +21,14 @@
 #endif
 
 // forward declarations
+class Mesh;
 class MeshBlock;
 class MeshBlockTree;
 class Hydro;
 class Field;
 class ParameterInput;
 class Coordinates;
+struct RegionSize;
 struct FaceField;
 
 // identifiers for all 6 faces of a MeshBlock
@@ -93,12 +95,13 @@ typedef struct NeighborIndexes {
 //  \brief structure storing boundary information
 typedef struct BoundaryData {
   int nbmax;
-  enum BoundaryStatus flag[56], sflag[56];
+  enum BoundaryStatus flag[56];
   Real *send[56], *recv[56];
 #ifdef MPI_PARALLEL
   MPI_Request req_send[56], req_recv[56];
 #endif
 } BoundaryData;
+
 
 //---------------------- prototypes for all BC functions ---------------------------------
 void ReflectInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
@@ -143,7 +146,8 @@ enum BoundaryFlag GetBoundaryFlag(std::string input_string);
 
 class BoundaryBase {
 public:
-  BoundaryBase(MeshBlock *pmb, ParameterInput *pin, enum BoundaryFlag *input_bcs);
+  BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
+               enum BoundaryFlag *input_bcs);
   virtual ~BoundaryBase();
 
   static NeighborIndexes ni[56];
@@ -151,6 +155,7 @@ public:
   NeighborBlock neighbor[56];
   int nneighbor;
   int nblevel[3][3][3];
+  LogicalLocation loc;
   enum BoundaryFlag block_bcs[6];
   PolarNeighborBlock *polar_neighbor_north, *polar_neighbor_south;
 
@@ -162,8 +167,9 @@ public:
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
 
 protected:
-  MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals
   static int maxneighbor_;
+  Mesh *pmy_mesh_;
+  RegionSize block_size_;
 
 private:
   static bool called_;
@@ -175,7 +181,7 @@ private:
 
 class BoundaryValues : public BoundaryBase {
 public:
-  BoundaryValues(MeshBlock *pmb, ParameterInput *pin, enum BoundaryFlag *input_bcs);
+  BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs);
   ~BoundaryValues();
 
   void InitBoundaryData(BoundaryData &bd, enum BoundaryType type);
@@ -249,25 +255,14 @@ public:
   bool ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst);
   void ReceiveGravityBoundaryBuffersWithWait(AthenaArray<Real> &dst);
 
-// Multigrid
-  void StartReceivingMultigrid(int nc, enum BoundaryType type);
-  void ClearBoundaryMultigrid(enum BoundaryType type);
-  int LoadMultigridBoundaryBufferSameLevel(AthenaArray<Real> &src,
-                   int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb);
-  bool SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
-                                    int nc, enum BoundaryType type);
-  void SetMultigridBoundarySameLevel(AthenaArray<Real> &dst,
-                   int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb);
-  bool ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
-                                       int nc, enum BoundaryType type);
-
 private:
+  MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals
   int nface_, nedge_;
   bool edge_flag_[12];
   int nedge_fine_[12];
   bool firsttime_;
 
-  BoundaryData bd_hydro_, bd_field_, bd_gravity_, bd_mggrav_, bd_flcor_, bd_emfcor_;
+  BoundaryData bd_hydro_, bd_field_, bd_gravity_, bd_flcor_, bd_emfcor_;
   enum BoundaryStatus *emf_north_flag_;
   enum BoundaryStatus *emf_south_flag_;
   Real **emf_north_send_, **emf_north_recv_;
