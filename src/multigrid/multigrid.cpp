@@ -22,39 +22,75 @@
 
 
 //----------------------------------------------------------------------------------------
-//! \fn Multigrid::Multigrid(Mesh *pm, MeshBlock *pmb, int invar, int nx, int ny, int nz,
-//                           int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary)
+//! \fn Multigrid::Multigrid(MultigridDriver *pmd, int invar, int nghost, RegionSize isize,
+//      MGBoundaryFunc_t *MGBoundary, enum BoundaryFlag *input_bcs, bool root = false)
 //  \brief Multigrid constructor
 
-Multigrid::Multigrid(Mesh *pm, MeshBlock *pmb, int invar, int nx, int ny, int nz,
-                     int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary)
+Multigrid::Multigrid(MultigridDriver *pmd, int invar, int nghost, RegionSize isize,
+           MGBoundaryFunc_t *MGBoundary, enum BoundaryFlag *input_bcs, bool root = false)
 {
-  pmy_mesh_=pm;
+  pmy_driver_=pmd;
   ngh_=nghost;
   size_=isize;
   nvar_=invar;
-  nx_=nx, ny_=ny, nz_=nz;
-  rdx_=(size_.x1max-size_.x1min)/(Real)nx;
-  rdy_=(size_.x2max-size_.x2min)/(Real)ny;
-  rdz_=(size_.x3max-size_.x3min)/(Real)nz;
+  root_flag_=root;
+  rdx_=(size_.x1max-size_.x1min)/(Real)size_.nx1;
+  rdy_=(size_.x2max-size_.x2min)/(Real)size_.nx2;
+  rdz_=(size_.x3max-size_.x3min)/(Real)size_.nx3;
+  prev=NULL;
+  next=NULL;
 
   nlevel_=0;
-  for(int l=0; l<20; l++) {
-    if(nx_%(1<<l)==0 && ny_%(1<<l)==0 && nz_%(1<<l)==0) {
-      nlevel_=l+1;
+  if(root_flag_ == true) {
+    int nbx, nby, nbz;
+    for(int l=0; l<20; l++) {
+      if(size_.nx1%(1<<l)==0 && size_.nx2%(1<<l)==0 && size_.nx3%(1<<l)==0) {
+        nbx=size_.nx1/(1<<l), nby=size_.nx2/(1<<l), nbz=size_.nx3/(1<<l);
+        nlevel_=l+1;
+      }
+    }
+    int nmaxr=std::max(nbx, std::max(nby, nbz));
+    int nminr=std::min(nbx, std::min(nby, nbz));
+    if(nmaxr!=1 && Globals::my_rank==0) {
+      std::cout << "### Warning in Multigrid::Multigrid" << std::endl
+        << "The root grid can not be reduced to a single cell." << std::endl
+        << "Multigrid should still work, but this is not the most efficient configuration "
+        << "as the coarsest level is not solved exactly but iteratively." << std::endl;
+    }
+    if(nbx*nby*nbz>100 && Globals::my_rank==0) {
+      std::cout << "### Warning in Multigrid::Multigrid" << std::endl
+        << "The degrees of freedom on the coarsest level is very large: "
+        << nbx << " x " << nby << " x " << nbz << " = " << nbx*nby*nbz<< std::endl
+        << "Multigrid should still work, but this is not efficient configuration "
+        << "as the coarsest level solver costs considerably." << std::endl
+        << "We recommend to reconsider grid configuration." << std::endl;
     }
   }
-  if(pmb!=NULL) { // not root grid
-    pbval = new MGBoundaryValues(pmb, pmb->pbval->block_bcs);
-    for(int i=0; i<6; i++) {
-      
-      if(pmb->pbval->block_bcs[i]==PERIODIC_BNDRY
-      || pmb->pbval->block_bcs[i]==BLOCK_BNDRY)
-        pbval->MGBoundaryFunction_[i]=NULL;
-      else 
-        pbval->MGBoundaryFunction_[i]=MGBoundary[i];
+  else {
+    for(int l=0; l<20; l++) {
+      if((1<<l) == size_.nx1) {
+        nlevel_=l+1;
+        break;
+      }
+    }
+    if(nlevel_==0) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Multigrid::Multigrid" << std::endl
+          << "The MeshBlock size must be power of two." << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+      return;
+    }
+    // *** temporary ***
+    if(std::fabs(rdx_-rdy_)>1.0e-5 || std::fabs(rdx_-rdz_)>1.0e-5) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Multigrid::Multigrid" << std::endl
+          << "The cell size must be cubic." << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+      return;
     }
   }
+
+  pmgbval = new MGBoundaryValues(this, input_bcs, MGBoundary);
 
   // allocate arrays
   u_ = new AthenaArray<Real>[nlevel_];
@@ -62,7 +98,7 @@ Multigrid::Multigrid(Mesh *pm, MeshBlock *pmb, int invar, int nx, int ny, int nz
   def_ = new AthenaArray<Real>[nlevel_];
   for(int l=0; l<nlevel_; l++) {
     int ll=nlevel_-1-l;
-    int ncx=(nx>>ll)+2*ngh_, ncy=(ny>>ll)+2*ngh_, ncz=(nz>>ll)+2*ngh_;
+    int ncx=(size_.nx1>>ll)+2*ngh_, ncy=(size_.nx2>>ll)+2*ngh_, ncz=(size_.nx3>>ll)+2*ngh_;
     u_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
     src_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
     def_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
@@ -87,7 +123,7 @@ Multigrid::~Multigrid()
   delete [] u_;
   delete [] src_;
   delete [] def_;
-  delete pbval;
+  delete pmgbval;
 }
 
 
@@ -99,7 +135,7 @@ void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh)
   AthenaArray<Real> &dst=u_[nlevel_-1];
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
-  ie=is+nx_-1, je=js+ny_-1, ke=ks+nz_-1;
+  ie=is+size_.nx1-1, je=js+size_.nx2-1, ke=ks+size_.nx3-1;
   for(int n=0; n<nvar_; n++) {
     int nsrc=ns+n;
     for(int k=ngh, mk=ks; mk<=ke; k++, mk++) {
@@ -122,7 +158,7 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
   AthenaArray<Real> &dst=src_[nlevel_-1];
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
-  ie=is+nx_-1, je=js+ny_-1, ke=ks+nz_-1;
+  ie=is+size_.nx1-1, je=js+size_.nx2-1, ke=ks+size_.nx3-1;
   if(fac==1.0) {
     for(int n=0; n<nvar_; n++) {
       int nsrc=ns+n;
@@ -161,7 +197,7 @@ void Multigrid::RestrictFMGSource(void)
   current_level_=nlevel_-1;
   for(; current_level_>0; current_level_--) {
     int ll=nlevel_-current_level_;
-    ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
+    ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
     AthenaArray<Real> &csrc=src_[current_level_-1];
     const AthenaArray<Real> &fsrc=src_[current_level_];
     for(int n=0; n<nvar_; n++) {
@@ -186,7 +222,7 @@ void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh)
 {
   const AthenaArray<Real> &src=u_[nlevel_-1];
   int sngh=std::min(ngh_,ngh);
-  int ie=nx_+ngh_+sngh-1, je=ny_+ngh_+sngh-1, ke=nz_+ngh_+sngh-1;
+  int ie=size_.nx1+ngh_+sngh-1, je=size_.nx2+ngh_+sngh-1, ke=size_.nx3+ngh_+sngh-1;
   for(int n=0; n<nvar_; n++) {
     int ndst=ns+n;
     for(int k=ngh-sngh, mk=ngh_-sngh; mk<=ke; k++, mk++) {
@@ -219,45 +255,45 @@ void Multigrid::ApplyPhysicalBoundaries(void)
 {
   AthenaArray<Real> &dst=u_[current_level_];
   int ll=nlevel_-1-current_level_;
-  int ncx=nx_>>ll, ncy=ny_>>ll, ncz=nz_>>ll;
+  int ncx=size_.nx1>>ll, ncy=size_.nx2>>ll, ncz=size_.nx3>>ll;
   int is=ngh_, ie=ncx+ngh_-1, js=ngh_, je=ncy+ngh_-1, ks=ngh_, ke=ncz+ngh_-1;
   int bis=is-ngh_, bie=ie+ngh_, bjs=js, bje=je, bks=ks, bke=ke;
   Real dx=rdx_*(Real)(1<<ll), dy=rdy_*(Real)(1<<ll), dz=rdz_*(Real)(1<<ll);
   Real x0=size_.x1min-((Real)ngh_+0.5)*dx;
   Real y0=size_.x2min-((Real)ngh_+0.5)*dy;
   Real z0=size_.x3min-((Real)ngh_+0.5)*dz;
-  Real time=pmy_mesh_->time;
-  if(pbval->MGBoundaryFunction_[INNER_X2]==NULL) bjs=js-ngh_;
-  if(pbval->MGBoundaryFunction_[OUTER_X2]==NULL) bje=je+ngh_;
-  if(pbval->MGBoundaryFunction_[INNER_X3]==NULL) bks=ks-ngh_;
-  if(pbval->MGBoundaryFunction_[OUTER_X3]==NULL) bke=ke+ngh_;
+  Real time=pmy_driver_->pmy_mesh_->time;
+  if(pmgbval->MGBoundaryFunction_[INNER_X2]==NULL) bjs=js-ngh_;
+  if(pmgbval->MGBoundaryFunction_[OUTER_X2]==NULL) bje=je+ngh_;
+  if(pmgbval->MGBoundaryFunction_[INNER_X3]==NULL) bks=ks-ngh_;
+  if(pmgbval->MGBoundaryFunction_[OUTER_X3]==NULL) bke=ke+ngh_;
 
   // Apply boundary function on inner-x1
-  if (pbval->MGBoundaryFunction_[INNER_X1] != NULL)
-    pbval->MGBoundaryFunction_[INNER_X1](dst, time, nvar_, is, ie, bjs, bje, bks, bke, ngh_,
+  if (pmgbval->MGBoundaryFunction_[INNER_X1] != NULL)
+    pmgbval->MGBoundaryFunction_[INNER_X1](dst, time, nvar_, is, ie, bjs, bje, bks, bke, ngh_,
                                   x0, y0, z0, dx, dy, dz);
   // Apply boundary function on outer-x1
-  if (pbval->MGBoundaryFunction_[OUTER_X1] != NULL)
-    pbval->MGBoundaryFunction_[OUTER_X1](dst, time, nvar_, is, ie, bjs, bje, bks, bke, ngh_,
+  if (pmgbval->MGBoundaryFunction_[OUTER_X1] != NULL)
+    pmgbval->MGBoundaryFunction_[OUTER_X1](dst, time, nvar_, is, ie, bjs, bje, bks, bke, ngh_,
                                   x0, y0, z0, dx, dy, dz);
 
   // Apply boundary function on inner-x2
-  if (pbval->MGBoundaryFunction_[INNER_X2] != NULL)
-    pbval->MGBoundaryFunction_[INNER_X2](dst, time, nvar_, bis, bie, js, je, bks, bke, ngh_,
+  if (pmgbval->MGBoundaryFunction_[INNER_X2] != NULL)
+    pmgbval->MGBoundaryFunction_[INNER_X2](dst, time, nvar_, bis, bie, js, je, bks, bke, ngh_,
                                   x0, y0, z0, dx, dy, dz);
   // Apply boundary function on outer-x2
-  if (pbval->MGBoundaryFunction_[OUTER_X2] != NULL)
-    pbval->MGBoundaryFunction_[OUTER_X2](dst, time, nvar_, bis, bie, js, je, bks, bke, ngh_,
+  if (pmgbval->MGBoundaryFunction_[OUTER_X2] != NULL)
+    pmgbval->MGBoundaryFunction_[OUTER_X2](dst, time, nvar_, bis, bie, js, je, bks, bke, ngh_,
                                   x0, y0, z0, dx, dy, dz);
 
   bjs=js-ngh_, bje=je+ngh_;
   // Apply boundary function on inner-x3
-  if (pbval->MGBoundaryFunction_[INNER_X3] != NULL)
-    pbval->MGBoundaryFunction_[INNER_X3](dst, time, nvar_, bis, bie, bjs, bje, ks, ke, ngh_,
+  if (pmgbval->MGBoundaryFunction_[INNER_X3] != NULL)
+    pmgbval->MGBoundaryFunction_[INNER_X3](dst, time, nvar_, bis, bie, bjs, bje, ks, ke, ngh_,
                                   x0, y0, z0, dx, dy, dz);
   // Apply boundary function on outer-x3
-  if (pbval->MGBoundaryFunction_[OUTER_X3] != NULL)
-    pbval->MGBoundaryFunction_[OUTER_X3](dst, time, nvar_, bis, bie, bjs, bje, ks, ke, ngh_,
+  if (pmgbval->MGBoundaryFunction_[OUTER_X3] != NULL)
+    pmgbval->MGBoundaryFunction_[OUTER_X3](dst, time, nvar_, bis, bie, bjs, bje, ks, ke, ngh_,
                                   x0, y0, z0, dx, dy, dz);
 
   return;
@@ -276,7 +312,7 @@ void Multigrid::Restrict(void)
 
   CalculateDefect();
   is=js=ks=ngh_;
-  ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
+  ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
   for(int n=0; n<nvar_; n++) {
     for(int k=ks, fk=ks; k<=ke; k++, fk+=2) {
       for(int j=js, fj=js; j<=je; j++, fj+=2) {
@@ -304,7 +340,7 @@ void Multigrid::ProlongateAndCorrect(void)
   int ll=nlevel_-1-current_level_;
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
-  ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
+  ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
   for(int n=0; n<nvar_; n++) {
     for(int k=ks, fk=ks; k<=ke; k++, fk+=2) {
       for(int j=js, fj=js; j<=je; j++, fj+=2) {
@@ -352,7 +388,7 @@ void Multigrid::FMGProlongate(void)
   int ll=nlevel_-1-current_level_;
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
-  ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
+  ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
   for(int n=0; n<nvar_; n++) {
     for(int k=ks, fk=ks; k<=ke; k++, fk+=2) {
       for(int j=js, fj=js; j<=je; j++, fj+=2) {
@@ -480,7 +516,7 @@ Real Multigrid::CalculateDefectNorm(int n, int nrm)
   int ll=nlevel_-1-current_level_;
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
-  ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
+  ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
 
   Real norm=0.0;
   if(nrm==0) { // special case: max norm
@@ -524,7 +560,7 @@ Real Multigrid::CalculateTotal(int type, int n)
   Real s=0.0;
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
-  ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
+  ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
   Real dx=rdx_*(Real)(1<<ll), dy=rdy_*(Real)(1<<ll), dz=rdz_*(Real)(1<<ll);
   for(int k=ks; k<=ke; k++) {
     for(int j=js; j<=je; j++) {
@@ -547,7 +583,7 @@ void Multigrid::SubtractAverage(int type, int n, Real ave)
   else dst.InitWithShallowCopy(u_[nlevel_-1]);
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
-  ie=is+nx_-1, je=js+ny_-1, ke=ks+nz_-1;
+  ie=is+size_.nx1-1, je=js+size_.nx2-1, ke=ks+size_.nx3-1;
 
   for(int k=ks; k<=ke; k++) {
     for(int j=js; j<=je; j++) {

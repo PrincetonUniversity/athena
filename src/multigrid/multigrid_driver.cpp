@@ -28,109 +28,49 @@
 
 // constructor, initializes data structures and parameters
 
-MultigridDriver::MultigridDriver(Mesh *pm, MeshBlock *pmb, MGBoundaryFunc_t *MGBoundary,
-                                 int invar, ParameterInput *pin)
+MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int invar)
 {
   pmy_mesh_=pm;
   nvar_=invar;
-  if(pmb->block_size.nx1!=pmb->block_size.nx2
-  || pmb->block_size.nx1!=pmb->block_size.nx3) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
-        << "The Multigrid solver requires logically cubic MeshBlock." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-    return;
-  }
-  if(pmb->block_size.nx2==1 || pmb->block_size.nx3==1 ) {
+  mode_=0; // 0: FMG+V(1,1), 1: FMG+F(0,1), 2: V(1,1)
+
+  if(pmy_mesh_->mesh_size.nx2==1 || pmy_mesh_->mesh_size.nx3==1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
         << "Currently the Multigrid solver works only in 3D." << std::endl;
     throw std::runtime_error(msg.str().c_str());
     return;
   }
-  if(pm->use_meshgen_fn_[X1DIR]==true || pm->use_meshgen_fn_[X2DIR]==true
-  || pm->use_meshgen_fn_[X3DIR]==true) {
+  if(pmy_mesh_->use_meshgen_fn_[X1DIR]==true || pmy_mesh_->use_meshgen_fn_[X2DIR]==true
+  || pmy_mesh_->use_meshgen_fn_[X3DIR]==true) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
         << "Non-uniform mesh spacing is not supported." << std::endl;
     throw std::runtime_error(msg.str().c_str());
     return;
   }
-  Real dx=pmb->pcoord->dx1f(0);
-  if(std::fabs(pmb->pcoord->dx2f(0)-dx)>1.0e-5
-  || std::fabs(pmb->pcoord->dx3f(0)-dx)>1.0e-5) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
-        << "The cell size must be cubic." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-    return;
-  }
-  // count multigrid levels
-  nmblevel_=0;
-  for(int l=0; l<20; l++) {
-    if((1<<l) == pmb->block_size.nx1) {
-      nmblevel_=l+1;
-      break;
-    }
-  }
-  if(nmblevel_==0) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
-        << "The MeshBlock size must be power of two." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-    return;
-  }
-  // count multigrid levels
-  nrootlevel_=1;
-  int nbx=pm->nrbx1, nby=pm->nrbx2, nbz=pm->nrbx3;
-  for(int l=0; l<20; l++) {
-    int d=(1<<l);
-    if(pm->nrbx1%d==0 && pm->nrbx2%d==0 && pm->nrbx3%d==0) {
-      nrootlevel_=l+1;
-      nbx=pm->nrbx1/d, nby=pm->nrbx2/d, nbz=pm->nrbx3/d;
-    }
-  }
-  int nmaxr=std::max(nbx, std::max(nby, nbz));
-  int nminr=std::min(nbx, std::min(nby, nbz));
-  if(nmaxr!=1 && Globals::my_rank==0) {
-    std::cout << "### Warning in MultigridDriver::MultigridDriver" << std::endl
-      << "The root grid can not be reduced to a single cell." << std::endl
-      << "Multigrid should still work, but this is not the most efficient configuration "
-      << "as the coarsest level is not solved exactly but iteratively." << std::endl;
-  }
-  if(nbx*nby*nbz>1000 && Globals::my_rank==0) {
-    std::cout << "### Warning in MultigridDriver::MultigridDriver" << std::endl
-      << "The degrees of freedom on the coarsest level is very large: "
-      << nbx << " x " << nby << " x " << nbz << " = " << nbx*nby*nbz<< std::endl
-      << "Multigrid should still work, but this is not efficient configuration "
-      << "as the coarsest level solver costs considerably." << std::endl
-      << "We recommend to reconsider grid configuration." << std::endl;
-  }
+
+  // create the root multigrid
+  RegionSize root_size=pmy_mesh_->mesh_size;
+  root_size.nx1=pmy_mesh_->nrbx1;
+  root_size.nx2=pmy_mesh_->nrbx2;
+  root_size.nx3=pmy_mesh_->nrbx3;
+//  mgroot_=AllocateNewMultigrid(root_size, MGBoundary, pmy_mesh_->mesh_bcs, true);
+  nrootlevel_=mgroot_->GetNumberOfLevels();
   rootsrc_.NewAthenaArray(nvar_,pm->nrbx3,pm->nrbx2,pm->nrbx1);
-  ntotallevel_=nrootlevel_+nmblevel_-1;
-  current_level_=ntotallevel_-1;
 
   fperiodic_=false;
-  for(int i=0; i<6; i++)
-    MGBoundaryFunction_[i]=pm->MGBoundaryFunction_[i];
-  if(MGBoundaryFunction_[INNER_X1]==MGPeriodicInnerX1
-  && MGBoundaryFunction_[OUTER_X1]==MGPeriodicOuterX1
-  && MGBoundaryFunction_[INNER_X2]==MGPeriodicInnerX2
-  && MGBoundaryFunction_[OUTER_X2]==MGPeriodicOuterX2
-  && MGBoundaryFunction_[INNER_X3]==MGPeriodicInnerX3
-  && MGBoundaryFunction_[OUTER_X3]==MGPeriodicOuterX3)
+  if(MGBoundary[INNER_X1]==MGPeriodicInnerX1 && MGBoundary[OUTER_X1]==MGPeriodicOuterX1
+  && MGBoundary[INNER_X2]==MGPeriodicInnerX2 && MGBoundary[OUTER_X2]==MGPeriodicOuterX2
+  && MGBoundary[INNER_X3]==MGPeriodicInnerX3 && MGBoundary[OUTER_X3]==MGPeriodicOuterX3)
     fperiodic_=true;
-
-  mode_=0; // 0: FMG+V(1,1), 1: FMG+F(0,1), 2: V(1,1)
-
-  mgroot_=NULL;
 
   // Setting up the MPI information
   // *** this part should be modified when dedicate processes are allocated ***
   // *** we also need to construct another neighbor list for Multigrid ***
-  nmultigrids_=0;
-  pmg_=NULL;
-
+  ranklist_  = new int[pmy_mesh_->nbtotal];
+  for(int n=0; n<pmy_mesh_->nbtotal; n++)
+    ranklist_[n]=pmy_mesh_->ranklist[n];
   nranks_  = Globals::nranks;
   nslist_  = new int[nranks_];
   nblist_  = new int[nranks_];
@@ -140,12 +80,47 @@ MultigridDriver::MultigridDriver(Mesh *pm, MeshBlock *pmb, MGBoundaryFunc_t *MGB
   MPI_Comm_dup(MPI_COMM_WORLD, &MPI_COMM_MULTIGRID);
 #endif
   for(int n=0; n<nranks_; n++) {
-    nslist_[n]  = pm->nslist[n];
-    nblist_[n]  = pm->nblist[n];
+    nslist_[n]  = pmy_mesh_->nslist[n];
+    nblist_[n]  = pmy_mesh_->nblist[n];
     nvslist_[n] = nslist_[n]*nvar_;
     nvlist_[n]  = nblist_[n]*nvar_;
   }
   rootbuf_=new Real[pm->nbtotal*nvar_];
+
+  // Allocate multigrid objects
+  pmg_=NULL;
+  Multigrid *pfirst;
+  RegionSize block_size;
+  int nbs=nslist_[Globals::my_rank];
+  int nbe=nbs+nblist_[Globals::my_rank]-1;
+  // create Multigrid list for this process
+  for(int i=nbs;i<=nbe;i++) {
+    enum BoundaryFlag block_bcs[6];
+    pmy_mesh_->SetBlockSizeAndBoundaries(pmy_mesh_->loclist[i], block_size, block_bcs);
+    // create a block and add into the link list
+    if(pmg_==NULL) {
+//      pmg_=AllocateNewMultigrid(block_size, MGBoundary, block_bcs, false);
+      pfirst=pmg_;
+    }
+    else {
+//      pmg_->next=AllocateNewMultigrid(block_size, MGBoundary, block_bcs, false);
+      pmg_->next->prev=pmg_;
+      pmg_=pmg_->next;
+    }
+  }
+  pmg_=pfirst;
+
+  if(block_size.nx1!=block_size.nx2 || block_size.nx1!=block_size.nx3) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
+        << "The Multigrid solver requires logically cubic MeshBlock." << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+    return;
+  }
+
+  nmblevel_=pmg_->GetNumberOfLevels();
+  ntotallevel_=nrootlevel_+nmblevel_-1;
+  current_level_=ntotallevel_-1;
 
   mgtlist_ = new MultigridTaskList(this);
 }
@@ -155,6 +130,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MeshBlock *pmb, MGBoundaryFunc_t *MGB
 MultigridDriver::~MultigridDriver()
 {
   delete mgroot_;
+  delete [] ranklist_;
   delete [] nslist_;
   delete [] nblist_;
   delete [] nvslist_;
@@ -162,12 +138,12 @@ MultigridDriver::~MultigridDriver()
   delete [] rootbuf_;
   rootsrc_.DeleteAthenaArray();
   delete mgtlist_;
+  while(pmg_->prev != NULL) // should not be true
+    delete pmg_->prev;
+  while(pmg_->next != NULL)
+    delete pmg_->next;
+  delete pmg_;
 }
-
-
-//----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::AddMultigrid(void)
-//  \brief Add a new Multigrid object to the list
 
 
 //----------------------------------------------------------------------------------------

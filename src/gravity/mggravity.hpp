@@ -24,9 +24,9 @@ class Multigrid;
 
 class MGGravity : public Multigrid {
 public:
-  MGGravity(Mesh *pm, MeshBlock *pmb, int nx, int ny, int nz,
-            RegionSize isize, MGBoundaryFunc_t *MGBoundary)
-   : Multigrid(pm,pmb,1,nx,ny,nz,1,isize,MGBoundary),omega_(1.15)
+  MGGravity(MultigridDriver *pmd, RegionSize isize, MGBoundaryFunc_t *MGBoundary,
+            enum BoundaryFlag *input_bcs, bool root)
+   : Multigrid(pmd,1,1,isize,MGBoundary,input_bcs,root), omega_(1.15)
   { btype=BNDRY_MGGRAV; btypef=BNDRY_MGGRAVF; };
   ~MGGravity() {};
   void Smooth(int color);
@@ -42,10 +42,10 @@ private:
 
 class GravityDriver : public MultigridDriver{
 public:
-  GravityDriver(Mesh *pm, MeshBlock *pmb, MGBoundaryFunc_t *MGBoundary,
-                ParameterInput *pin);
-  Multigrid* GetMultigridBlock (MeshBlock *pmb);
+  GravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, ParameterInput *pin);
   void LoadSourceAndData(void);
+  Multigrid* AllocateNewMultigrid(RegionSize isize, MGBoundaryFunc_t *MGBoundary,
+                                  enum BoundaryFlag *input_bcs, bool root);
 
 private:
   Real four_pi_G_;

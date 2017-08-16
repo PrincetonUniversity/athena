@@ -23,17 +23,28 @@
 
 class MeshBlock;
 
+
+
 //----------------------------------------------------------------------------------------
-//! \fn GravityDriver::GravityDriver(Mesh *pm, MeshBlock *pblock,
-//                                   MGBoundaryFunc_t *MGBoundary, ParameterInput *pin)
+//! \fn GravityDriver::GravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary,
+//                                   ParameterInput *pin)
 //  \brief GravityDriver constructor
 
-GravityDriver::GravityDriver(Mesh *pm, MeshBlock *pblock, MGBoundaryFunc_t *MGBoundary,
-                             ParameterInput *pin)
- : MultigridDriver(pm, pblock, MGBoundary, 1, pin)
+GravityDriver::GravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, ParameterInput *pin)
+ : MultigridDriver(pm, MGBoundary, 1)
 {
-  mgroot_ = new MGGravity(pm,NULL,pm->nrbx1,pm->nrbx2,pm->nrbx3,pm->mesh_size,MGBoundary);
   four_pi_G_=pin->GetOrAddReal("problem", "four_pi_G", 1.0); // default: 4piG=1
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn Multigrid* GravityDriver::AllocateNewMultigrid(RegionSize isize,
+//                 MGBoundaryFunc_t *MGBoundary, enum BoundaryFlag *input_bcs, bool root)
+//  \brief Allocate a MGGravity object
+Multigrid* GravityDriver::AllocateNewMultigrid(RegionSize isize,
+           MGBoundaryFunc_t *MGBoundary, enum BoundaryFlag *input_bcs, bool root = false)
+{
+  return new MGGravity(this, isize, MGBoundary, input_bcs, root);
 }
 
 

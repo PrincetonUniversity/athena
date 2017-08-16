@@ -33,16 +33,30 @@
 #endif
 
 class Multigrid;
+class MultigridDriver;
 
 //----------------------------------------------------------------------------------------
-//! \fn MGBoundaryValues::MGBoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
+//! \fn MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
+//                                         MGBoundaryFunc_t *MGBoundary)
 //  \brief Constructor of the MGBoundaryValues class
 
-MGBoundaryValues::MGBoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
- : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs)
+MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
+                                   MGBoundaryFunc_t *MGBoundary)
+  : BoundaryBase(pmg->pmy_driver_->pmy_mesh_, pmg->loc_, pmg->size_, input_bcs)
 {
-  if(SELF_GRAVITY_ENABLED == 2)
-    InitBoundaryData(bd_mggrav_, BNDRY_MGGRAV);
+  pmy_mg_=pmg;
+  for(int i=0; i<6; i++) {
+    if(block_bcs[i]==PERIODIC_BNDRY || block_bcs[i]==BLOCK_BNDRY)
+      MGBoundaryFunction_[i]=NULL;
+    else 
+      MGBoundaryFunction_[i]=MGBoundary[i];
+  }
+  if(pmg->root_flag_) {
+    if(SELF_GRAVITY_ENABLED == 2)
+      InitBoundaryData(bd_mggrav_, BNDRY_MGGRAV);
+  }
+  SearchAndSetNeighbors(pmy_mesh_->tree, pmy_mg_->pmy_driver_->ranklist_,
+                                         pmy_mg_->pmy_driver_->nslist_);
 }
 
 
@@ -254,7 +268,7 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
     if(nb.rank == Globals::my_rank) {
       Multigrid *pmg=pmy_mg_->pmy_driver_->FindMultigrid(nb.gid);
       if(type==BNDRY_MGGRAV || type==BNDRY_MGGRAVF)
-        ptarget=&(pmg->pbval->bd_mggrav_);
+        ptarget=&(pmg->pmgbval->bd_mggrav_);
       if(ptarget->flag[nb.targetid] != BNDRY_WAITING) {
         bflag=false;
         continue;

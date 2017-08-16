@@ -39,7 +39,6 @@ class Field;
 class Gravity;
 class GravityDriver;
 class AthenaFFT;
-class MGGravity;
 class EquationOfState;
 
 
@@ -98,8 +97,6 @@ public:
 
   // fft object
   AthenaFFT *pfft;
-  // Multigrid Gravity solver
-  MGGravity *pmggrav;
 
   MeshBlock *prev, *next;
 
@@ -135,6 +132,7 @@ class Mesh {
   friend class MeshBlock;
   friend class BoundaryBase;
   friend class BoundaryValues;
+  friend class MGBoundaryValues;
   friend class Coordinates;
   friend class MeshRefinement;
   friend class HydroSourceTerms;

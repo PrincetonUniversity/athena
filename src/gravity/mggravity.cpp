@@ -26,7 +26,7 @@ void MGGravity::Smooth(int color)
   int ll=nlevel_-1-current_level_;
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
-  ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
+  ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
   Real dx = rdx_*(Real)(1<<ll);
   Real dx2 = SQR(dx);
   Real isix=omega_/6.0;
@@ -54,7 +54,7 @@ void MGGravity::CalculateDefect(void)
   int ll=nlevel_-1-current_level_;
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
-  ie=is+(nx_>>ll)-1, je=js+(ny_>>ll)-1, ke=ks+(nz_>>ll)-1;
+  ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
   Real dx = rdx_*(Real)(1<<ll);
   Real idx2 = 1.0/SQR(dx);
   for(int k=ks; k<=ke; k++) {

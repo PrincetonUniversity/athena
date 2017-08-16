@@ -24,7 +24,6 @@
 #include "../hydro/hydro.hpp" 
 #include "../field/field.hpp"
 #include "../gravity/gravity.hpp"
-#include "../gravity/mggravity.hpp"
 #include "../fft/athena_fft.hpp"
 #include "../bvals/bvals.hpp"
 #include "../eos/eos.hpp"
@@ -287,7 +286,6 @@ MeshBlock::~MeshBlock()
   if (MAGNETIC_FIELDS_ENABLED) delete pfield;
   delete peos;
   if (SELF_GRAVITY_ENABLED) delete pgrav;
-  if (SELF_GRAVITY_ENABLED == 2) delete pmggrav;
 
   // delete user output variables array
   if(nuser_out_var > 0) {

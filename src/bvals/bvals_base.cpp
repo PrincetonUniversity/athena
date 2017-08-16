@@ -94,6 +94,13 @@ BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
     int num_south_polar_blocks = pmy_mesh_->nrbx3 * (1 << level);
     polar_neighbor_south = new PolarNeighborBlock[num_south_polar_blocks];
   }
+
+  if(pmy_mesh_->multilevel==true) { // SMR or AMR
+    // allocate surface area array
+    int nc1=block_size_.nx1+2*NGHOST;
+    sarea_[0].NewAthenaArray(nc1);
+    sarea_[1].NewAthenaArray(nc1);
+  }
 }
 
 //----------------------------------------------------------------------------------------
@@ -107,6 +114,10 @@ BoundaryBase::~BoundaryBase()
   if (block_bcs[OUTER_X2] == POLAR_BNDRY
    || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE)
     delete [] polar_neighbor_south;
+  if(pmy_mesh_->multilevel==true) {
+    sarea_[0].DeleteAthenaArray();
+    sarea_[1].DeleteAthenaArray();
+  }
 }
 
 

@@ -40,7 +40,7 @@
 // boundary conditions at each of the 6 dirs of a MeshBlock
 
 BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
- : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs)
+ : BoundaryBase(pmy_mesh_, pmb->loc, pmb->block_size, input_bcs)
 {
   for(int i=0; i<6; i++)
     BoundaryFunction_[i]=NULL;
@@ -60,7 +60,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
       BoundaryFunction_[INNER_X1] = NULL;
       break;
     case USER_BNDRY: // user-enrolled BCs
-      BoundaryFunction_[INNER_X1] = pmb->pmy_mesh->BoundaryFunction_[INNER_X1];
+      BoundaryFunction_[INNER_X1] = pmy_mesh_->BoundaryFunction_[INNER_X1];
       break;
     default:
       std::stringstream msg;
@@ -83,7 +83,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
       BoundaryFunction_[OUTER_X1] = NULL;
       break;
     case USER_BNDRY: // user-enrolled BCs
-      BoundaryFunction_[OUTER_X1] = pmb->pmy_mesh->BoundaryFunction_[OUTER_X1];
+      BoundaryFunction_[OUTER_X1] = pmy_mesh_->BoundaryFunction_[OUTER_X1];
       break;
     default:
       std::stringstream msg;
@@ -111,7 +111,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
         BoundaryFunction_[INNER_X2] = PolarWedgeInnerX2;
         break;
       case USER_BNDRY: // user-enrolled BCs
-        BoundaryFunction_[INNER_X2] = pmb->pmy_mesh->BoundaryFunction_[INNER_X2];
+        BoundaryFunction_[INNER_X2] = pmy_mesh_->BoundaryFunction_[INNER_X2];
         break;
       default:
         std::stringstream msg;
@@ -137,7 +137,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
         BoundaryFunction_[OUTER_X2] = PolarWedgeOuterX2;
         break;
       case USER_BNDRY: // user-enrolled BCs
-        BoundaryFunction_[OUTER_X2] = pmb->pmy_mesh->BoundaryFunction_[OUTER_X2];
+        BoundaryFunction_[OUTER_X2] = pmy_mesh_->BoundaryFunction_[OUTER_X2];
         break;
       default:
         std::stringstream msg;
@@ -162,7 +162,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
         BoundaryFunction_[INNER_X3] = NULL;
         break;
       case USER_BNDRY: // user-enrolled BCs
-        BoundaryFunction_[INNER_X3] = pmb->pmy_mesh->BoundaryFunction_[INNER_X3];
+        BoundaryFunction_[INNER_X3] = pmy_mesh_->BoundaryFunction_[INNER_X3];
         break;
       default:
         std::stringstream msg;
@@ -184,7 +184,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
         BoundaryFunction_[OUTER_X3] = NULL;
         break;
       case USER_BNDRY: // user-enrolled BCs
-        BoundaryFunction_[OUTER_X3] = pmb->pmy_mesh->BoundaryFunction_[OUTER_X3];
+        BoundaryFunction_[OUTER_X3] = pmy_mesh_->BoundaryFunction_[OUTER_X3];
         break;
       default:
         std::stringstream msg;
@@ -196,32 +196,32 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
 
   // Count number of blocks wrapping around pole
   if (block_bcs[INNER_X2] == POLAR_BNDRY || block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) {
-    if(pmb->pmy_mesh->nrbx3>1 && pmb->pmy_mesh->nrbx3%2!=0) {
+    if(pmy_mesh_->nrbx3>1 && pmy_mesh_->nrbx3%2!=0) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
           << "Number of MeshBlocks around the pole must be 1 or even." << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
-    int level = pmb->loc.level - pmb->pmy_mesh->root_level;
-    num_north_polar_blocks_ = pmb->pmy_mesh->nrbx3 * (1 << level);
+    int level = pmb->loc.level - pmy_mesh_->root_level;
+    num_north_polar_blocks_ = pmy_mesh_->nrbx3 * (1 << level);
   }
   else
     num_north_polar_blocks_ = 0;
   if (block_bcs[OUTER_X2] == POLAR_BNDRY || block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) {
-    if(pmb->pmy_mesh->nrbx3>1 && pmb->pmy_mesh->nrbx3%2!=0) {
+    if(pmy_mesh_->nrbx3>1 && pmy_mesh_->nrbx3%2!=0) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
           << "Number of MeshBlocks around the pole must be 1 or even." << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
-    int level = pmb->loc.level - pmb->pmy_mesh->root_level;
-    num_south_polar_blocks_ = pmb->pmy_mesh->nrbx3 * (1 << level);
+    int level = pmb->loc.level - pmy_mesh_->root_level;
+    num_south_polar_blocks_ = pmy_mesh_->nrbx3 * (1 << level);
   } else {
     num_south_polar_blocks_ = 0;
   }
 
   InitBoundaryData(bd_hydro_, BNDRY_HYDRO);
-  if(pmb->pmy_mesh->multilevel==true) // SMR or AMR
+  if(pmy_mesh_->multilevel==true) // SMR or AMR
     InitBoundaryData(bd_flcor_, BNDRY_FLCOR);
   if(MAGNETIC_FIELDS_ENABLED) {
     InitBoundaryData(bd_field_, BNDRY_FIELD);
@@ -283,16 +283,9 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
     }
   }
 
-  if(pmb->pmy_mesh->multilevel==true) { // SMR or AMR
-    // allocate surface area array
-    int nc1=pmb->block_size.nx1+2*NGHOST;
-    sarea_[0].NewAthenaArray(nc1);
-    sarea_[1].NewAthenaArray(nc1);
-  }
-
  /* single CPU in the azimuthal direction with the polar boundary*/
-  if(pmb->loc.level == pmb->pmy_mesh->root_level &&
-     pmb->pmy_mesh->nrbx3 == 1 &&
+  if(pmb->loc.level == pmy_mesh_->root_level &&
+     pmy_mesh_->nrbx3 == 1 &&
      (block_bcs[INNER_X2]==POLAR_BNDRY||block_bcs[OUTER_X2]==POLAR_BNDRY||
       block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE||block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
        exc_.NewAthenaArray(pmb->ke+NGHOST+2);
@@ -306,7 +299,7 @@ BoundaryValues::~BoundaryValues()
   MeshBlock *pmb=pmy_block_;
 
   DestroyBoundaryData(bd_hydro_);
-  if(pmb->pmy_mesh->multilevel==true) // SMR or AMR
+  if(pmy_mesh_->multilevel==true) // SMR or AMR
     DestroyBoundaryData(bd_flcor_);
   if (MAGNETIC_FIELDS_ENABLED) {
     DestroyBoundaryData(bd_field_);
@@ -347,15 +340,13 @@ BoundaryValues::~BoundaryValues()
 #endif
     }
   }
-  if(pmb->pmy_mesh->multilevel==true) {
-    sarea_[0].DeleteAthenaArray();
-    sarea_[1].DeleteAthenaArray();
-  }
-  if(pmb->loc.level == pmb->pmy_mesh->root_level &&
-     pmb->pmy_mesh->nrbx3 == 1 &&
+  if(pmb->loc.level == pmy_mesh_->root_level &&
+     pmy_mesh_->nrbx3 == 1 &&
      (block_bcs[INNER_X2]==POLAR_BNDRY||block_bcs[OUTER_X2]==POLAR_BNDRY||
       block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE||block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE))
        exc_.DeleteAthenaArray();
+
+  SearchAndSetNeighbors(pmy_mesh_->tree, pmy_mesh_->ranklist, pmy_mesh_->nslist);
 }
 
 
@@ -365,7 +356,7 @@ BoundaryValues::~BoundaryValues()
 void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
 {
   MeshBlock *pmb=pmy_block_;
-  bool multilevel=pmb->pmy_mesh->multilevel;
+  bool multilevel=pmy_mesh_->multilevel;
   int cng=pmb->cnghost, cng1=0, cng2=0, cng3=0;
   if(pmb->block_size.nx2>1) cng1=cng, cng2=cng;
   if(pmb->block_size.nx3>1) cng3=cng;
@@ -670,7 +661,7 @@ void BoundaryValues::Initialize(void)
       }
 
       // flux correction
-      if(pmb->pmy_mesh->multilevel==true && nb.type==NEIGHBOR_FACE) {
+      if(pmy_mesh_->multilevel==true && nb.type==NEIGHBOR_FACE) {
         int size;
         if(nb.fid==0 || nb.fid==1)
           size=((pmb->block_size.nx2+1)/2)*((pmb->block_size.nx3+1)/2);
@@ -703,7 +694,7 @@ void BoundaryValues::Initialize(void)
                  *((nb.ox2==0)?(pmb->block_size.nx2):NGHOST)
                  *((nb.ox3==0)?(pmb->block_size.nx3+f3d):NGHOST);
         size=size1+size2+size3;
-        if(pmb->pmy_mesh->multilevel==true) {
+        if(pmy_mesh_->multilevel==true) {
           if(nb.type!=NEIGHBOR_FACE) {
             if(nb.ox1!=0) size1=size1/NGHOST*(NGHOST+1);
             if(nb.ox2!=0) size2=size2/NGHOST*(NGHOST+1);
@@ -968,7 +959,7 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field)
       bd_field_.flag[nb.bufid] = BNDRY_WAITING;
     if (SELF_GRAVITY_ENABLED == 1)
       bd_gravity_.flag[nb.bufid] = BNDRY_WAITING;
-    if (GENERAL_RELATIVITY and pmb->pmy_mesh->multilevel)
+    if (GENERAL_RELATIVITY and pmy_mesh_->multilevel)
       bd_hydro_.flag[nb.bufid] = BNDRY_WAITING;
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank) {
@@ -980,7 +971,7 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field)
           MPI_Wait(&(bd_gravity_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
       }
       else {  // must be primitive initialization
-        if (GENERAL_RELATIVITY and pmb->pmy_mesh->multilevel)
+        if (GENERAL_RELATIVITY and pmy_mesh_->multilevel)
           MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
       }
     }

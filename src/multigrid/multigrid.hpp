@@ -52,11 +52,11 @@ void MGPeriodicOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
 
 class Multigrid {
 public:
-  Multigrid(Mesh *pm, MeshBlock *pmb, int invar, int nx, int ny, int nz,
-            int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary);
+  Multigrid(MultigridDriver *pmd, int invar, int nghost, RegionSize isize,
+     MGBoundaryFunc_t *MGBoundary, enum BoundaryFlag *input_bcs, bool root);
   virtual ~Multigrid();
 
-  MGBoundaryValues *pbval;
+  MGBoundaryValues *pmgbval;
   enum BoundaryType btype, btypef;
   Multigrid *next, *prev;
 
@@ -75,8 +75,8 @@ public:
   void SubtractAverage(int type, int n, Real ave);
 
   // small functions
-  void SetCurrentLevel(int level) { current_level_=level; return; };
   int GetCurrentNumberOfCells(void) { return 1<<current_level_; };
+  int GetNumberOfLevels(void) { return nlevel_; };
   AthenaArray<Real>& GetCurrentData(void) { return u_[current_level_]; };
   AthenaArray<Real>& GetCurrentSource(void) { return src_[current_level_]; };
   Real GetRootSource(int n) { return src_[0](n,ngh_,ngh_,ngh_); };
@@ -92,13 +92,13 @@ public:
 protected:
   int gid_, lid_;
   LogicalLocation loc_;
-  Mesh *pmy_mesh_;
   MultigridDriver *pmy_driver_;
   RegionSize size_;
-  int nlevel_, nx_, ny_, nz_, ngh_, nvar_, current_level_;
+  int nlevel_, ngh_, nvar_, current_level_;
   Real rdx_, rdy_, rdz_;
   AthenaArray<Real> *u_, *def_, *src_;
 private:
+  bool root_flag_;
   TaskState ts_;
 };
 
@@ -109,8 +109,7 @@ private:
 class MultigridDriver
 {
 public:
-  MultigridDriver(Mesh *pm, MeshBlock *pmb, MGBoundaryFunc_t *MGBoundary,
-                  int invar, ParameterInput *pin);
+  MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int invar);
   virtual ~MultigridDriver();
   void SubtractAverage(int type);
   void SetupMultigrid(void);
@@ -127,15 +126,18 @@ public:
   Multigrid* FindMultigrid(int tgid);
 
   // small functions
-  int GetNumMultigrids(void) { return nmultigrids_; };
+  int GetNumMultigrids(void) { return nblist_[Globals::my_rank]; };
 
+  virtual Multigrid *AllocateNewMultigrid(RegionSize isize,
+    MGBoundaryFunc_t *MGBoundary, enum BoundaryFlag *input_bcs, bool root) = 0;
   virtual void LoadSourceAndData(void) = 0;
 
   friend class Multigrid;
   friend class MultigridTaskList;
+  friend class MGBoundaryValues;
 
 protected:
-  int nranks_, nvar_, nmultigrids_, nrootlevel_, nmblevel_, ntotallevel_, mode_;
+  int nranks_, nvar_, nrootlevel_, nmblevel_, ntotallevel_, mode_;
   int current_level_;
   Mesh *pmy_mesh_;
   Multigrid *pmg_;
@@ -144,7 +146,7 @@ protected:
 private:
   MultigridTaskList *mgtlist_;
   MGBoundaryFunc_t MGBoundaryFunction_[6];
-  int *nslist_, *nblist_, *nvlist_, *nvslist_;
+  int *nslist_, *nblist_, *nvlist_, *nvslist_, *ranklist_;
   Real *rootbuf_;
   AthenaArray<Real> rootsrc_;
 #ifdef MPI_PARALLEL

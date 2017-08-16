@@ -170,6 +170,7 @@ protected:
   static int maxneighbor_;
   Mesh *pmy_mesh_;
   RegionSize block_size_;
+  AthenaArray<Real> sarea_[2];
 
 private:
   static bool called_;
@@ -267,7 +268,6 @@ private:
   enum BoundaryStatus *emf_south_flag_;
   Real **emf_north_send_, **emf_north_recv_;
   Real **emf_south_send_, **emf_south_recv_;
-  AthenaArray<Real> sarea_[2];
   AthenaArray<Real> exc_;
   int num_north_polar_blocks_, num_south_polar_blocks_;
 

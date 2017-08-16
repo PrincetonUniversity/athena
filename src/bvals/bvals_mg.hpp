@@ -45,7 +45,8 @@ typedef struct MGBoundaryData {
 
 class MGBoundaryValues : public BoundaryBase {
 public:
-  MGBoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs);
+  MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
+                   MGBoundaryFunc_t *MGBoundary);
   ~MGBoundaryValues();
 
   void InitBoundaryData(MGBoundaryData &bd, enum BoundaryType type);

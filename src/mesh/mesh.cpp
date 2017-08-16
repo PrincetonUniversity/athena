@@ -494,13 +494,11 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
       pblock->next->prev = pblock;
       pblock = pblock->next;
     }
-
-    pblock->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
   }
   pblock=pfirst;
 
   if (SELF_GRAVITY_ENABLED==2)
-    pgrd = new GravityDriver(this, pblock, MGBoundaryFunction_, pin);
+    pgrd = new GravityDriver(this, MGBoundaryFunction_);
 }
 
 //----------------------------------------------------------------------------------------
@@ -809,7 +807,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
       pblock->next->prev = pblock;
       pblock = pblock->next;
     }
-    pblock->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
   }
   pblock=pfirst;
   delete [] mbdata;
@@ -825,7 +822,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   delete [] offset;
 
   if (SELF_GRAVITY_ENABLED==2)
-    pgrd = new GravityDriver(this, pblock, MGBoundaryFunction_, pin);
+    pgrd = new GravityDriver(this, MGBoundaryFunction_);
 }
 
 //----------------------------------------------------------------------------------------
