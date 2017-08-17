@@ -46,6 +46,7 @@ public:
     const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
     AthenaArray<Real> &wr, AthenaArray<Real> &flx);
 
+  void AddGravityFluxMG(void);
   void AddGravityFlux(void);
   void CalculateGravityFlux(AthenaArray<Real> &phi_in);
   void CorrectGravityFlux(void);

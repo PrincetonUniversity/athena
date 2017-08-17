@@ -140,6 +140,7 @@ class Mesh {
   friend class AthenaFFT;
   friend class MultigridDriver;
   friend class GravityDriver;
+  friend class Gravity;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
@@ -197,6 +198,9 @@ private:
   int nuser_history_output_;
   std::string *user_history_output_names_;
 
+  // global constants
+  Real four_pi_G_;
+
   // functions
   MeshGenFunc_t MeshGenerator_[3];
   SrcTermFunc_t UserSourceTerm_;
@@ -223,6 +227,8 @@ private:
   void EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const char *name);
   void EnrollUserMetric(MetricFunc_t my_func);
   void EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t my_bc);
+  void SetGravitationalConstant(Real g) { four_pi_G_=4.0*PI*g; };
+  void SetFourPiG(Real fpg) { four_pi_G_=fpg; };
 };
 
 //----------------------------------------------------------------------------------------

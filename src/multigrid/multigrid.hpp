@@ -147,6 +147,7 @@ protected:
   Multigrid *pmg_;
   Multigrid *mgroot_;
   bool fperiodic_;
+  Real last_ave_;
 private:
   MultigridTaskList *mgtlist_;
   Real *rootbuf_;

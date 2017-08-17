@@ -72,7 +72,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
     gi_.NewAthenaArray(NMETRIC,ncells1);
     cons_.NewAthenaArray(NWAVE,ncells1);
   }
-  if (SELF_GRAVITY_ENABLED) {
+  if (SELF_GRAVITY_ENABLED == 1) {
     gflx[X1DIR].NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1+1);
     if (pmy_block->block_size.nx2 > 1) 
       gflx[X2DIR].NewAthenaArray(NHYDRO,ncells3,ncells2+1,ncells1);
@@ -135,7 +135,7 @@ Hydro::~Hydro()
     gi_.DeleteAthenaArray();
     cons_.DeleteAthenaArray();
   }
-  if (SELF_GRAVITY_ENABLED) {
+  if (SELF_GRAVITY_ENABLED == 1) {
     gflx[X1DIR].DeleteAthenaArray();
     if (pmy_block->block_size.nx2 > 1) gflx[X2DIR].DeleteAthenaArray();
     if (pmy_block->block_size.nx3 > 1) gflx[X3DIR].DeleteAthenaArray();

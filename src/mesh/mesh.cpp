@@ -69,6 +69,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   dt   = (FLT_MAX*0.4);
   nbnew=0; nbdel=0;
 
+  four_pi_G_=0.0;
+
   nlim = pin->GetOrAddInteger("time","nlim",-1);
   ncycle = 0;
   nint_user_mesh_data_=0;
@@ -524,6 +526,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   nint_user_mesh_data_=0;
   nreal_user_mesh_data_=0;
   nuser_history_output_=0;
+
+  four_pi_G_=0.0;
 
   nbnew=0; nbdel=0;
 
@@ -1202,7 +1206,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     }
 
     // solve gravity for the first time
-    if(SELF_GRAVITY_ENABLED){
+    if(SELF_GRAVITY_ENABLED == 1){
       pmb = pblock;
       while (pmb != NULL) {
         phydro=pmb->phydro;
@@ -1211,6 +1215,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
         pmb=pmb->next;
       }
     }
+    if(SELF_GRAVITY_ENABLED == 2)
+      pgrd->Solve(1);
 
     // prepare to receive conserved variables
     pmb = pblock;

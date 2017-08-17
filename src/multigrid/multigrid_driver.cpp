@@ -183,10 +183,10 @@ void MultigridDriver::SubtractAverage(int type)
     Real total=0.0;
     for(int n=0; n<pmy_mesh_->nbtotal; n++)
       total+=rootbuf_[n*nvar_+v];
-    Real ave=total/vol;
+    last_ave_=total/vol;
     pmg=pmg_;
     while(pmg!=NULL) {
-      pmg->SubtractAverage(type, v, ave);
+      pmg->SubtractAverage(type, v, last_ave_);
       pmg=pmg->next;
     }
   }
@@ -364,7 +364,6 @@ void MultigridDriver::SolveFCycle(int npresmooth, int npostsmooth)
 
 void MultigridDriver::SolveFMGCycle(void)
 {
-  SetupMultigrid();
   for(int lev=0; lev<ntotallevel_; lev++) {
     if(mode_==0)
       SolveVCycle(1, 1);

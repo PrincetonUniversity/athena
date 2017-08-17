@@ -17,6 +17,11 @@
 #include "../parameter_input.hpp"
 #include "../multigrid/multigrid.hpp"
 
+#include <iostream>
+#include <sstream>    // sstream
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str()
+
 #ifdef MPI_PARALLEL
 #include <mpi.h>
 #endif
@@ -33,7 +38,16 @@ class MeshBlock;
 GravityDriver::GravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, ParameterInput *pin)
  : MultigridDriver(pm, MGBoundary, 1)
 {
-  four_pi_G_=pin->GetOrAddReal("problem", "four_pi_G", 1.0); // default: 4piG=1
+  four_pi_G_=pmy_mesh_->four_pi_G_;
+  if(four_pi_G_==0.0) {
+   std::stringstream msg;
+   msg << "### FATAL ERROR in GravityDriver::GravityDriver" << std::endl
+        << "Gravitational constant must be set in the Mesh::InitUserMeshData "
+        << "using the SetGravitationalConstant or SetFourPiG function." << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+    return;
+  }
+
   // Allocate multigrid objects
   RegionSize root_size=pmy_mesh_->mesh_size;
   root_size.nx1=pmy_mesh_->nrbx1;
@@ -84,14 +98,18 @@ void GravityDriver::Solve(int step)
     pmggrav=pmggrav->next;
   }
 
+  SetupMultigrid();
+  Real mean_rho=last_ave_/four_pi_G_;
   SolveFMGCycle();
 
   // Return the result
   pmggrav=pmg_;
   while(pmggrav!=NULL) {
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(pmggrav->gid_);
-    if(pmb!=NULL)
+    if(pmb!=NULL) {
       pmggrav->RetrieveResult(pmb->pgrav->phi,0,2);
+      pmb->pgrav->grav_mean_rho=mean_rho;
+    }
 //    else { // on another process
 //    }
     pmggrav=pmggrav->next;

@@ -15,12 +15,24 @@
 #include "../parameter_input.hpp"
 
 #include <iostream>
+#include <sstream>    // sstream
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str()
+
 // constructor, initializes data structures and parameters
 
 Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_block = pmb;
-  four_pi_G=pin->GetOrAddReal("problem", "four_pi_G", 1.0); // default: 4piG=1
+  four_pi_G=pmb->pmy_mesh->four_pi_G_; // default: 4piG=1
+  if(four_pi_G==0.0) {
+   std::stringstream msg;
+   msg << "### FATAL ERROR in Gravity::Gravity" << std::endl
+        << "Gravitational constant must be set in the Mesh::InitUserMeshData "
+        << "using the SetGravitationalConstant or SetFourPiG function." << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+    return;
+  }
 
   // Allocate memory for gravitational potential, but only when needed.
   int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);

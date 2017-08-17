@@ -12,6 +12,103 @@
 #include "../coordinates/coordinates.hpp"
 #include "../gravity/gravity.hpp"
 
+
+//----------------------------------------------------------------------------------------
+//! \fn void Hydro::AddGravityFluxMG(void)
+//  \brief Add gravity flux (for multigrid solver)
+
+void Hydro::AddGravityFluxMG(void)
+{
+  MeshBlock *pmb=pmy_block;
+  Coordinates *pco=pmb->pcoord;
+  Real four_pi_G=pmb->pgrav->four_pi_G, grav_mean_rho=pmb->pgrav->grav_mean_rho;
+  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
+  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+  AthenaArray<Real> &x1flux=flux[X1DIR];
+  AthenaArray<Real> &x2flux=flux[X2DIR];
+  AthenaArray<Real> &x3flux=flux[X3DIR];
+  AthenaArray<Real> &phi=pmb->pgrav->phi;
+  Real phil;
+  Real gxl,gyl,gzl;
+
+  // i-direction
+  for (int k=ks; k<=ke; ++k) { 
+    Real dx3 = pco->dx3v(k);
+    for (int j=js; j<=je; ++j) {
+      Real dx2 = pco->dx2v(j);
+      for (int i=is; i<=ie+1; ++i) {
+        Real dx1 = pco->dx1v(i);
+        phil = 0.5*(phi(k,j,i-1)+phi(k,j,i));
+        // gx, gy, and gz centered at L and R x1-faces
+        gxl =       (phi(k,j  ,i-1) - phi(k,j  ,i  ))/dx1;
+        gyl = 0.25*((phi(k,j-1,i-1) - phi(k,j+1,i-1)) +
+                    (phi(k,j-1,i  ) - phi(k,j+1,i  )))/dx2;
+        gzl = 0.25*((phi(k-1,j,i-1) - phi(k+1,j,i-1)) +
+                    (phi(k-1,j,i  ) - phi(k+1,j,i  )))/dx3;
+        // momentum fluxes in x1-dir. 
+        // 2nd term is needed only if Jean's swindle used
+        x1flux(IM1,k,j,i) += 0.5*(gxl*gxl-gyl*gyl-gzl*gzl)/four_pi_G 
+                          +  grav_mean_rho*phil;
+        x1flux(IM2,k,j,i) += gxl*gyl/four_pi_G;
+        x1flux(IM3,k,j,i) += gxl*gzl/four_pi_G;
+        // energy source term is included as a source term separately
+        // see hydro/srctrm/gravity.cpp
+      }
+    }
+  }
+  // j-direction
+  for (int k=ks; k<=ke; ++k) {
+    Real dx3 = pco->dx3v(k);
+    for (int j=js; j<=je+1; ++j) {
+      Real dx2 = pco->dx2v(j);
+      for(int i=is; i<=ie; i++) { 
+        Real dx1 = pco->dx1v(i);
+        phil = 0.5*(phi(k,j-1,i)+phi(k,j,i));
+        // gx, gy, and gz centered at L and R x2-faces
+        gxl = 0.25*((phi(k,j-1,i-1) - phi(k,j-1,i+1)) +
+                    (phi(k,j  ,i-1) - phi(k,j  ,i+1)))/dx1;
+        gyl =       (phi(k,j-1,i  ) - phi(k,j  ,i  ))/dx2;
+        gzl = 0.25*((phi(k-1,j-1,i) - phi(k+1,j-1,i)) +
+                    (phi(k-1,j  ,i) - phi(k+1,j  ,i)))/dx3;
+        // momentum fluxes in x2-dir. 
+        // 2nd term is needed only if Jean's swindle used
+        x2flux(IM1,k,j,i) += gyl*gxl/four_pi_G;
+        x2flux(IM2,k,j,i) += 0.5*(gyl*gyl-gxl*gxl-gzl*gzl)/four_pi_G 
+                          +  grav_mean_rho*phil;
+        x2flux(IM3,k,j,i) += gyl*gzl/four_pi_G;
+        // energy source term is included as a source term separately
+        // see hydro/srctrm/gravity.cpp
+      }
+    }
+  }
+  // k-direction
+  for (int k=ks; k<=ke+1; ++k) {
+    Real dx3 = pco->dx3v(k);
+    for (int j=js; j<=je; ++j) {
+      Real dx2 = pco->dx2v(j);
+      for(int i=is; i<=ie; i++) { 
+        Real dx1 = pco->dx1v(i);
+        phil = 0.5*(phi(k-1,j,i)+phi(k,j,i));
+        // gx, gy, and gz centered at L and R x3-faces
+        gxl = 0.25*((phi(k-1,j,i-1) - phi(k-1,j,i+1)) +
+                    (phi(k  ,j,i-1) - phi(k  ,j,i+1)))/dx1;
+        gyl = 0.25*((phi(k-1,j-1,i) - phi(k-1,j+1,i)) +
+                    (phi(k  ,j-1,i) - phi(k  ,j+1,i)))/dx2;
+        gzl =       (phi(k-1,j  ,i) - phi(k  ,j  ,i))/dx3;
+        // momentum fluxes in x3-dir.
+        // 2nd term is needed only if Jean's swindle used
+        x3flux(IM1,k,j,i) += gzl*gxl/four_pi_G;
+        x3flux(IM2,k,j,i) += gzl*gyl/four_pi_G;
+        x3flux(IM3,k,j,i) += 0.5*(gzl*gzl-gxl*gxl-gyl*gyl)/four_pi_G 
+                          +  grav_mean_rho*phil;
+        // energy source term is included as a source term separately
+        // see hydro/srctrm/gravity.cpp
+      }
+    }
+  }
+  return;
+}
+
 //----------------------------------------------------------------------------------------
 //! \fn void Hydro::AddGravityFlux(void)
 //  \brief Adds gravity flux to hydro flux

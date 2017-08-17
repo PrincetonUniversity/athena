@@ -37,6 +37,10 @@
 #include <mpi.h>
 #endif
 
+#if MAGNETIC_FIELDS_ENABLED
+#error "This problem generator does not support magnetic fields"
+#endif
+
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief
