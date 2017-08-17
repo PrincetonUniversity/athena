@@ -239,7 +239,7 @@ void MultigridDriver::FMGProlongate(void)
     mgtlist_->DoTaskListOneSubStep(this);
   }
   else { // root grid
-    mgroot_->ApplyPhysicalBoundaries();
+    mgroot_->pmgbval->ApplyPhysicalBoundaries();
     mgroot_->FMGProlongate();
   }
   current_level_++;
@@ -283,12 +283,12 @@ void MultigridDriver::OneStepToFiner(int nsmooth)
     mgtlist_->DoTaskListOneSubStep(this);
   }
   else { // root grid
-    mgroot_->ApplyPhysicalBoundaries();
+    mgroot_->pmgbval->ApplyPhysicalBoundaries();
     mgroot_->ProlongateAndCorrect();
     for(int n=0; n<nsmooth; n++) {
-      mgroot_->ApplyPhysicalBoundaries();
+      mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->Smooth(0);
-      mgroot_->ApplyPhysicalBoundaries();
+      mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->Smooth(1);
     }
   }
@@ -313,12 +313,12 @@ void MultigridDriver::OneStepToCoarser(int nsmooth)
   }
   else { // root grid
     for(int n=0; n<nsmooth; n++) {
-      mgroot_->ApplyPhysicalBoundaries();
+      mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->Smooth(0);
-      mgroot_->ApplyPhysicalBoundaries();
+      mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->Smooth(1);
     }
-    mgroot_->ApplyPhysicalBoundaries();
+    mgroot_->pmgbval->ApplyPhysicalBoundaries();
     mgroot_->Restrict();
   }
   current_level_--;
@@ -400,12 +400,12 @@ void MultigridDriver::SolveCoarsestGrid(void)
       }
     }
     for(int i=0; i<ni; i++) { // iterate ni times
-      mgroot_->ApplyPhysicalBoundaries();
+      mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->Smooth(0);
-      mgroot_->ApplyPhysicalBoundaries();
+      mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->Smooth(1);
     }
-    mgroot_->ApplyPhysicalBoundaries();
+    mgroot_->pmgbval->ApplyPhysicalBoundaries();
     if(fperiodic_) {
       Real vol=(pm->mesh_size.x1max-pm->mesh_size.x1min)
               *(pm->mesh_size.x2max-pm->mesh_size.x2min)

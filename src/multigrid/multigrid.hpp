@@ -66,7 +66,6 @@ public:
   void RestrictFMGSource(void);
   void RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh);
   void ZeroClearData(void);
-  void ApplyPhysicalBoundaries(void);
   void Restrict(void);
   void ProlongateAndCorrect(void);
   void FMGProlongate(void);
@@ -78,6 +77,7 @@ public:
   // small functions
   int GetCurrentNumberOfCells(void) { return 1<<current_level_; };
   int GetNumberOfLevels(void) { return nlevel_; };
+  int GetCurrentLevel(void) { return current_level_; };
   AthenaArray<Real>& GetCurrentData(void) { return u_[current_level_]; };
   AthenaArray<Real>& GetCurrentSource(void) { return src_[current_level_]; };
   Real GetRootSource(int n) { return src_[0](n,ngh_,ngh_,ngh_); };

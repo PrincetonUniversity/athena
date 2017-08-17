@@ -52,6 +52,7 @@ public:
   void InitBoundaryData(MGBoundaryData &bd, enum BoundaryType type);
   void DestroyBoundaryData(MGBoundaryData &bd);
 
+  void ApplyPhysicalBoundaries(void);
   void StartReceivingMultigrid(int nc, enum BoundaryType type);
   void ClearBoundaryMultigrid(enum BoundaryType type);
   int LoadMultigridBoundaryBufferSameLevel(AthenaArray<Real> &src,

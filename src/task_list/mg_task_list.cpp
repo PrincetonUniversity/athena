@@ -295,7 +295,7 @@ enum TaskStatus MultigridTaskList::FMGProlongate(Multigrid *pmg)
 
 enum TaskStatus MultigridTaskList::PhysicalBoundary(Multigrid *pmg)
 {
-  pmg->ApplyPhysicalBoundaries();
+  pmg->pmgbval->ApplyPhysicalBoundaries();
   return TASK_NEXT;
 }
 

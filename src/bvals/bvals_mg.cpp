@@ -137,6 +137,62 @@ void MGBoundaryValues::DestroyBoundaryData(MGBoundaryData &bd)
 
 
 //----------------------------------------------------------------------------------------
+//! \fn void MGBoundaryValues::ApplyPhysicalBoundaries(void)
+//  \brief Apply physical boundary conditions to the current Multigrid data
+
+void MGBoundaryValues::ApplyPhysicalBoundaries(void)
+{
+  AthenaArray<Real> &dst=pmy_mg_->GetCurrentData();
+  int ll=pmy_mg_->nlevel_-1-pmy_mg_->current_level_;
+  int ngh=pmy_mg_->ngh_, nvar=pmy_mg_->nvar_;
+  int ncx=block_size_.nx1>>ll, ncy=block_size_.nx2>>ll, ncz=block_size_.nx3>>ll;
+  int is=ngh, ie=ncx+ngh-1, js=ngh, je=ncy+ngh-1, ks=ngh, ke=ncz+ngh-1;
+  int bis=is-ngh, bie=ie+ngh, bjs=js, bje=je, bks=ks, bke=ke;
+  Real dx=pmy_mg_->rdx_*(Real)(1<<ll);
+  Real dy=pmy_mg_->rdy_*(Real)(1<<ll);
+  Real dz=pmy_mg_->rdz_*(Real)(1<<ll);
+  Real x0=block_size_.x1min-((Real)ngh+0.5)*dx;
+  Real y0=block_size_.x2min-((Real)ngh+0.5)*dy;
+  Real z0=block_size_.x3min-((Real)ngh+0.5)*dz;
+  Real time=pmy_mesh_->time;
+  if(MGBoundaryFunction_[INNER_X2]==NULL) bjs=js-ngh;
+  if(MGBoundaryFunction_[OUTER_X2]==NULL) bje=je+ngh;
+  if(MGBoundaryFunction_[INNER_X3]==NULL) bks=ks-ngh;
+  if(MGBoundaryFunction_[OUTER_X3]==NULL) bke=ke+ngh;
+
+  // Apply boundary function on inner-x1
+  if (MGBoundaryFunction_[INNER_X1] != NULL)
+    MGBoundaryFunction_[INNER_X1](dst, time, nvar, is, ie, bjs, bje, bks, bke, ngh,
+                                  x0, y0, z0, dx, dy, dz);
+  // Apply boundary function on outer-x1
+  if (MGBoundaryFunction_[OUTER_X1] != NULL)
+    MGBoundaryFunction_[OUTER_X1](dst, time, nvar, is, ie, bjs, bje, bks, bke, ngh,
+                                  x0, y0, z0, dx, dy, dz);
+
+  // Apply boundary function on inner-x2
+  if (MGBoundaryFunction_[INNER_X2] != NULL)
+    MGBoundaryFunction_[INNER_X2](dst, time, nvar, bis, bie, js, je, bks, bke, ngh,
+                                  x0, y0, z0, dx, dy, dz);
+  // Apply boundary function on outer-x2
+  if (MGBoundaryFunction_[OUTER_X2] != NULL)
+    MGBoundaryFunction_[OUTER_X2](dst, time, nvar, bis, bie, js, je, bks, bke, ngh,
+                                  x0, y0, z0, dx, dy, dz);
+
+  bjs=js-ngh, bje=je+ngh;
+  // Apply boundary function on inner-x3
+  if (MGBoundaryFunction_[INNER_X3] != NULL)
+    MGBoundaryFunction_[INNER_X3](dst, time, nvar, bis, bie, bjs, bje, ks, ke, ngh,
+                                  x0, y0, z0, dx, dy, dz);
+  // Apply boundary function on outer-x3
+  if (MGBoundaryFunction_[OUTER_X3] != NULL)
+    MGBoundaryFunction_[OUTER_X3](dst, time, nvar, bis, bie, bjs, bje, ks, ke, ngh,
+                                  x0, y0, z0, dx, dy, dz);
+
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::StartReceivingMultigrid(int nc, enum BoundaryType type)
 //  \brief initiate MPI_Irecv for multigrid
 

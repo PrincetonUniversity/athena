@@ -253,59 +253,6 @@ void Multigrid::ZeroClearData(void)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void Multigrid::ApplyPhysicalBoundaries(void)
-//  \brief Apply physical boundary conditions to the current multigrid level
-
-void Multigrid::ApplyPhysicalBoundaries(void)
-{
-  AthenaArray<Real> &dst=u_[current_level_];
-  int ll=nlevel_-1-current_level_;
-  int ncx=size_.nx1>>ll, ncy=size_.nx2>>ll, ncz=size_.nx3>>ll;
-  int is=ngh_, ie=ncx+ngh_-1, js=ngh_, je=ncy+ngh_-1, ks=ngh_, ke=ncz+ngh_-1;
-  int bis=is-ngh_, bie=ie+ngh_, bjs=js, bje=je, bks=ks, bke=ke;
-  Real dx=rdx_*(Real)(1<<ll), dy=rdy_*(Real)(1<<ll), dz=rdz_*(Real)(1<<ll);
-  Real x0=size_.x1min-((Real)ngh_+0.5)*dx;
-  Real y0=size_.x2min-((Real)ngh_+0.5)*dy;
-  Real z0=size_.x3min-((Real)ngh_+0.5)*dz;
-  Real time=pmy_driver_->pmy_mesh_->time;
-  if(pmgbval->MGBoundaryFunction_[INNER_X2]==NULL) bjs=js-ngh_;
-  if(pmgbval->MGBoundaryFunction_[OUTER_X2]==NULL) bje=je+ngh_;
-  if(pmgbval->MGBoundaryFunction_[INNER_X3]==NULL) bks=ks-ngh_;
-  if(pmgbval->MGBoundaryFunction_[OUTER_X3]==NULL) bke=ke+ngh_;
-
-  // Apply boundary function on inner-x1
-  if (pmgbval->MGBoundaryFunction_[INNER_X1] != NULL)
-    pmgbval->MGBoundaryFunction_[INNER_X1](dst, time, nvar_, is, ie, bjs, bje, bks, bke, ngh_,
-                                  x0, y0, z0, dx, dy, dz);
-  // Apply boundary function on outer-x1
-  if (pmgbval->MGBoundaryFunction_[OUTER_X1] != NULL)
-    pmgbval->MGBoundaryFunction_[OUTER_X1](dst, time, nvar_, is, ie, bjs, bje, bks, bke, ngh_,
-                                  x0, y0, z0, dx, dy, dz);
-
-  // Apply boundary function on inner-x2
-  if (pmgbval->MGBoundaryFunction_[INNER_X2] != NULL)
-    pmgbval->MGBoundaryFunction_[INNER_X2](dst, time, nvar_, bis, bie, js, je, bks, bke, ngh_,
-                                  x0, y0, z0, dx, dy, dz);
-  // Apply boundary function on outer-x2
-  if (pmgbval->MGBoundaryFunction_[OUTER_X2] != NULL)
-    pmgbval->MGBoundaryFunction_[OUTER_X2](dst, time, nvar_, bis, bie, js, je, bks, bke, ngh_,
-                                  x0, y0, z0, dx, dy, dz);
-
-  bjs=js-ngh_, bje=je+ngh_;
-  // Apply boundary function on inner-x3
-  if (pmgbval->MGBoundaryFunction_[INNER_X3] != NULL)
-    pmgbval->MGBoundaryFunction_[INNER_X3](dst, time, nvar_, bis, bie, bjs, bje, ks, ke, ngh_,
-                                  x0, y0, z0, dx, dy, dz);
-  // Apply boundary function on outer-x3
-  if (pmgbval->MGBoundaryFunction_[OUTER_X3] != NULL)
-    pmgbval->MGBoundaryFunction_[OUTER_X3](dst, time, nvar_, bis, bie, bjs, bje, ks, ke, ngh_,
-                                  x0, y0, z0, dx, dy, dz);
-
-  return;
-}
-
-
-//----------------------------------------------------------------------------------------
 //! \fn void Multigrid::Restrict(void)
 //  \brief Restrict the defect to the source
 void Multigrid::Restrict(void)
