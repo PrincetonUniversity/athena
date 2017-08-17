@@ -364,6 +364,7 @@ void MultigridDriver::SolveFCycle(int npresmooth, int npostsmooth)
 
 void MultigridDriver::SolveFMGCycle(void)
 {
+  SetupMultigrid();
   for(int lev=0; lev<ntotallevel_; lev++) {
     if(mode_==0)
       SolveVCycle(1, 1);

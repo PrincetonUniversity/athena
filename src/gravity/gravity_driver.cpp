@@ -61,19 +61,37 @@ GravityDriver::GravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, ParameterIn
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void GravityDriver::LoadSourceAndData(void)
-//  \brief load the sourterm and initial guess (if needed)
+//! \fn void GravityDriver::Solve(int step)
+//  \brief load the data and solve
 
-void GravityDriver::LoadSourceAndData(void)
+void GravityDriver::Solve(int step)
 {
   Multigrid *pmggrav=pmg_;
+  AthenaArray<Real> in;
+
+  // Load the source 
   while(pmggrav!=NULL) {
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(pmggrav->gid_);
     if(pmb!=NULL) {
+      if(step==1) in.InitWithShallowCopy(pmb->phydro->u);
+      else if(step==2) in.InitWithShallowCopy(pmb->phydro->u1);
       pmggrav->LoadSource(pmb->phydro->u, IDN, NGHOST, four_pi_G_);
       if(mode_>=2) // iterative mode - load initial guess
         pmggrav->LoadFinestData(pmb->pgrav->phi, 0, NGHOST);
     }
+//    else { // on another process
+//    }
+    pmggrav=pmggrav->next;
+  }
+
+  SolveFMGCycle();
+
+  // Return the result
+  pmggrav=pmg_;
+  while(pmggrav!=NULL) {
+    MeshBlock *pmb=pmy_mesh_->FindMeshBlock(pmggrav->gid_);
+    if(pmb!=NULL)
+      pmggrav->RetrieveResult(pmb->pgrav->phi,0,2);
 //    else { // on another process
 //    }
     pmggrav=pmggrav->next;

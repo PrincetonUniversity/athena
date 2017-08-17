@@ -45,9 +45,7 @@ class GravityDriver : public MultigridDriver{
 public:
   GravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, ParameterInput *pin);
   ~GravityDriver() {};
-  void LoadSourceAndData(void);
-  Multigrid* AllocateNewMultigrid(RegionSize isize, MGBoundaryFunc_t *MGBoundary,
-                                  enum BoundaryFlag *input_bcs, bool root);
+  void Solve(int step);
 
 private:
   Real four_pi_G_;

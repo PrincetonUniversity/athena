@@ -36,6 +36,7 @@
 #include "outputs/outputs.hpp"
 #include "outputs/io_wrapper.hpp"
 #include "utils/utils.hpp"
+#include "gravity/mggravity.hpp"
 
 // MPI/OpenMP headers
 #ifdef MPI_PARALLEL
@@ -344,6 +345,8 @@ int main(int argc, char *argv[])
     }
 
     for (int step=1; step<=ptlist->nsub_steps; ++step) {
+      if(SELF_GRAVITY_ENABLED == 2) // multigrid
+        pmesh->pgrd->Solve(step);
       ptlist->DoTaskListOneSubstep(pmesh, step);
     }
 

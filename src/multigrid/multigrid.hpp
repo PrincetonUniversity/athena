@@ -131,7 +131,8 @@ public:
   // small functions
   int GetNumMultigrids(void) { return nblist_[Globals::my_rank]; };
 
-  virtual void LoadSourceAndData(void) = 0;
+  // pure virtual functions
+  virtual void Solve(int step) = 0;
 
   friend class Multigrid;
   friend class MultigridTaskList;
