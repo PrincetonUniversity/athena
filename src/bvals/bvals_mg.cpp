@@ -45,18 +45,22 @@ MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
   : BoundaryBase(pmg->pmy_driver_->pmy_mesh_, pmg->loc_, pmg->size_, input_bcs)
 {
   pmy_mg_=pmg;
-  for(int i=0; i<6; i++) {
-    if(block_bcs[i]==PERIODIC_BNDRY || block_bcs[i]==BLOCK_BNDRY)
-      MGBoundaryFunction_[i]=NULL;
-    else 
+  if(pmy_mg_->root_flag_==true) {
+    for(int i=0; i<6; i++)
       MGBoundaryFunction_[i]=MGBoundary[i];
   }
-  if(pmg->root_flag_) {
+  else {
+    for(int i=0; i<6; i++) {
+      if(block_bcs[i]==PERIODIC_BNDRY || block_bcs[i]==BLOCK_BNDRY)
+        MGBoundaryFunction_[i]=NULL;
+      else 
+        MGBoundaryFunction_[i]=MGBoundary[i];
+    }
+    SearchAndSetNeighbors(pmy_mesh_->tree, pmy_mg_->pmy_driver_->ranklist_,
+                                           pmy_mg_->pmy_driver_->nslist_);
     if(SELF_GRAVITY_ENABLED == 2)
       InitBoundaryData(bd_mggrav_, BNDRY_MGGRAV);
   }
-  SearchAndSetNeighbors(pmy_mesh_->tree, pmy_mg_->pmy_driver_->ranklist_,
-                                         pmy_mg_->pmy_driver_->nslist_);
 }
 
 

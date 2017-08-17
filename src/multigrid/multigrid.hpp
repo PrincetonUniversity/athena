@@ -52,8 +52,9 @@ void MGPeriodicOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
 
 class Multigrid {
 public:
-  Multigrid(MultigridDriver *pmd, int invar, int nghost, RegionSize isize,
-     MGBoundaryFunc_t *MGBoundary, enum BoundaryFlag *input_bcs, bool root);
+  Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid, int ilid,
+     int invar, int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary,
+     enum BoundaryFlag *input_bcs, bool root);
   virtual ~Multigrid();
 
   MGBoundaryValues *pmgbval;
@@ -88,6 +89,7 @@ public:
   friend class MultigridDriver;
   friend class MultigridTaskList;
   friend class MGBoundaryValues;
+  friend class GravityDriver;
 
 protected:
   int gid_, lid_;
@@ -111,6 +113,7 @@ class MultigridDriver
 public:
   MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int invar);
   virtual ~MultigridDriver();
+  void AddMultigrid(Multigrid *nmg);
   void SubtractAverage(int type);
   void SetupMultigrid(void);
   void FillRootGridSource(void);
@@ -128,8 +131,6 @@ public:
   // small functions
   int GetNumMultigrids(void) { return nblist_[Globals::my_rank]; };
 
-  virtual Multigrid *AllocateNewMultigrid(RegionSize isize,
-    MGBoundaryFunc_t *MGBoundary, enum BoundaryFlag *input_bcs, bool root) = 0;
   virtual void LoadSourceAndData(void) = 0;
 
   friend class Multigrid;
@@ -139,14 +140,14 @@ public:
 protected:
   int nranks_, nvar_, nrootlevel_, nmblevel_, ntotallevel_, mode_;
   int current_level_;
+  int *nslist_, *nblist_, *nvlist_, *nvslist_, *ranklist_;
+  MGBoundaryFunc_t MGBoundaryFunction_[6];
   Mesh *pmy_mesh_;
   Multigrid *pmg_;
   Multigrid *mgroot_;
   bool fperiodic_;
 private:
   MultigridTaskList *mgtlist_;
-  MGBoundaryFunc_t MGBoundaryFunction_[6];
-  int *nslist_, *nblist_, *nvlist_, *nvslist_, *ranklist_;
   Real *rootbuf_;
   AthenaArray<Real> rootsrc_;
 #ifdef MPI_PARALLEL

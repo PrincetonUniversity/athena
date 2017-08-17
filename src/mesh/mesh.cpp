@@ -498,7 +498,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   pblock=pfirst;
 
   if (SELF_GRAVITY_ENABLED==2)
-    pgrd = new GravityDriver(this, MGBoundaryFunction_);
+    pgrd = new GravityDriver(this, MGBoundaryFunction_, pin);
 }
 
 //----------------------------------------------------------------------------------------
@@ -822,7 +822,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   delete [] offset;
 
   if (SELF_GRAVITY_ENABLED==2)
-    pgrd = new GravityDriver(this, MGBoundaryFunction_);
+    pgrd = new GravityDriver(this, MGBoundaryFunction_, pin);
 }
 
 //----------------------------------------------------------------------------------------

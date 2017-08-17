@@ -22,14 +22,19 @@
 
 
 //----------------------------------------------------------------------------------------
-//! \fn Multigrid::Multigrid(MultigridDriver *pmd, int invar, int nghost, RegionSize isize,
-//      MGBoundaryFunc_t *MGBoundary, enum BoundaryFlag *input_bcs, bool root = false)
+//! \fn Multigrid::Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid, int ilid,
+//                 int invar, int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary,
+//                 enum BoundaryFlag *input_bcs, bool root);
 //  \brief Multigrid constructor
 
-Multigrid::Multigrid(MultigridDriver *pmd, int invar, int nghost, RegionSize isize,
-           MGBoundaryFunc_t *MGBoundary, enum BoundaryFlag *input_bcs, bool root = false)
+Multigrid::Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid, int ilid,
+           int invar, int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary,
+           enum BoundaryFlag *input_bcs, bool root)
 {
   pmy_driver_=pmd;
+  loc_=iloc;
+  gid_=igid;
+  lid_=ilid;
   ngh_=nghost;
   size_=isize;
   nvar_=invar;
@@ -249,7 +254,7 @@ void Multigrid::ZeroClearData(void)
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::ApplyPhysicalBoundaries(void)
-//  \brief A
+//  \brief Apply physical boundary conditions to the current multigrid level
 
 void Multigrid::ApplyPhysicalBoundaries(void)
 {

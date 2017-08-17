@@ -49,15 +49,16 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int inv
     throw std::runtime_error(msg.str().c_str());
     return;
   }
-
-  // create the root multigrid
-  RegionSize root_size=pmy_mesh_->mesh_size;
-  root_size.nx1=pmy_mesh_->nrbx1;
-  root_size.nx2=pmy_mesh_->nrbx2;
-  root_size.nx3=pmy_mesh_->nrbx3;
-//  mgroot_=AllocateNewMultigrid(root_size, MGBoundary, pmy_mesh_->mesh_bcs, true);
-  nrootlevel_=mgroot_->GetNumberOfLevels();
-  rootsrc_.NewAthenaArray(nvar_,pm->nrbx3,pm->nrbx2,pm->nrbx1);
+  int nbx1=pmy_mesh_->mesh_size.nx1/pmy_mesh_->nrbx1;
+  int nbx2=pmy_mesh_->mesh_size.nx2/pmy_mesh_->nrbx2;
+  int nbx3=pmy_mesh_->mesh_size.nx3/pmy_mesh_->nrbx3;
+  if(nbx1 != nbx2 || nbx1 != nbx3) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
+        << "The Multigrid solver requires logically cubic MeshBlock." << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+    return;
+  }
 
   fperiodic_=false;
   if(MGBoundary[INNER_X1]==MGPeriodicInnerX1 && MGBoundary[OUTER_X1]==MGPeriodicOuterX1
@@ -86,43 +87,8 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int inv
     nvlist_[n]  = nblist_[n]*nvar_;
   }
   rootbuf_=new Real[pm->nbtotal*nvar_];
-
-  // Allocate multigrid objects
-  pmg_=NULL;
-  Multigrid *pfirst;
-  RegionSize block_size;
-  int nbs=nslist_[Globals::my_rank];
-  int nbe=nbs+nblist_[Globals::my_rank]-1;
-  // create Multigrid list for this process
-  for(int i=nbs;i<=nbe;i++) {
-    enum BoundaryFlag block_bcs[6];
-    pmy_mesh_->SetBlockSizeAndBoundaries(pmy_mesh_->loclist[i], block_size, block_bcs);
-    // create a block and add into the link list
-    if(pmg_==NULL) {
-//      pmg_=AllocateNewMultigrid(block_size, MGBoundary, block_bcs, false);
-      pfirst=pmg_;
-    }
-    else {
-//      pmg_->next=AllocateNewMultigrid(block_size, MGBoundary, block_bcs, false);
-      pmg_->next->prev=pmg_;
-      pmg_=pmg_->next;
-    }
-  }
-  pmg_=pfirst;
-
-  if(block_size.nx1!=block_size.nx2 || block_size.nx1!=block_size.nx3) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
-        << "The Multigrid solver requires logically cubic MeshBlock." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-    return;
-  }
-
-  nmblevel_=pmg_->GetNumberOfLevels();
-  ntotallevel_=nrootlevel_+nmblevel_-1;
-  current_level_=ntotallevel_-1;
-
   mgtlist_ = new MultigridTaskList(this);
+  rootsrc_.NewAthenaArray(nvar_,pm->nrbx3,pm->nrbx2,pm->nrbx1);
 }
 
 // destructor
@@ -138,11 +104,29 @@ MultigridDriver::~MultigridDriver()
   delete [] rootbuf_;
   rootsrc_.DeleteAthenaArray();
   delete mgtlist_;
-  while(pmg_->prev != NULL) // should not be true
-    delete pmg_->prev;
-  while(pmg_->next != NULL)
-    delete pmg_->next;
-  delete pmg_;
+  if(pmg_!=NULL) {
+    while(pmg_->prev != NULL) // should not be true
+      delete pmg_->prev;
+    while(pmg_->next != NULL)
+      delete pmg_->next;
+    delete pmg_;
+  }
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::AddMultigrid(Multigrid *nmg)
+//  \brief add a Multigrid object to the linked list
+void MultigridDriver::AddMultigrid(Multigrid *nmg)
+{
+  if(pmg_==NULL)
+    pmg_=nmg;
+  else {
+    Multigrid *pg=pmg_;
+    while(pg->next!=NULL) pg=pg->next;
+    pg->next=nmg;
+    pg->next->prev=pg;
+  }
 }
 
 
@@ -153,6 +137,11 @@ MultigridDriver::~MultigridDriver()
 void MultigridDriver::SetupMultigrid(void)
 {
   Multigrid *pmg=pmg_;
+
+  nrootlevel_=mgroot_->GetNumberOfLevels();
+  nmblevel_=pmg_->GetNumberOfLevels();
+  ntotallevel_=nrootlevel_+nmblevel_-1;
+  current_level_=ntotallevel_-1;
 
   if(fperiodic_)
     SubtractAverage(0);
