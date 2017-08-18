@@ -306,21 +306,28 @@ enum TaskStatus MultigridTaskList::PhysicalBoundary(Multigrid *pmg)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, bool last)
+//! \fn void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, int flag)
 //  \brief Set the task list for prolongation and post smoothing
 
-void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, bool last)
+void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, int flag)
 {
   ClearTaskList();
   // nsmooth==0 should not be used
-  AddMultigridTask(MG_STARTRECV0, NONE);
-  AddMultigridTask(MG_SENDBND0,   MG_STARTRECV0);
-  AddMultigridTask(MG_RECVBND0,   MG_STARTRECV0);
-  AddMultigridTask(MG_PHYSBND0,   MG_SENDBND0|MG_RECVBND0);
-  AddMultigridTask(MG_PROLONG,    MG_PHYSBND0);
-  AddMultigridTask(MG_CLEARBND0,  MG_PROLONG);
+  if(flag==1) // first time on the block level
+    AddMultigridTask(MG_PROLONG,    NONE);
+  else {
+    AddMultigridTask(MG_STARTRECV0, NONE);
+    AddMultigridTask(MG_SENDBND0,   MG_STARTRECV0);
+    AddMultigridTask(MG_RECVBND0,   MG_STARTRECV0);
+    AddMultigridTask(MG_PHYSBND0,   MG_SENDBND0|MG_RECVBND0);
+    AddMultigridTask(MG_PROLONG,    MG_PHYSBND0);
+    AddMultigridTask(MG_CLEARBND0,  MG_PROLONG);
+  }
   if(nsmooth==1) {
-    AddMultigridTask(MG_STARTRECV1R, MG_CLEARBND0);
+    if(flag==1)
+      AddMultigridTask(MG_STARTRECV1R, MG_PROLONG);
+    else 
+      AddMultigridTask(MG_STARTRECV1R, MG_CLEARBND0);
     AddMultigridTask(MG_SENDBND1R,   MG_STARTRECV1R);
     AddMultigridTask(MG_RECVBND1R,   MG_STARTRECV1R);
     AddMultigridTask(MG_PHYSBND1R,   MG_SENDBND1R|MG_RECVBND1R);
@@ -347,7 +354,7 @@ void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, bool last)
     AddMultigridTask(MG_SMOOTH2B,    MG_PHYSBND2B);
     AddMultigridTask(MG_CLEARBND2B,  MG_SMOOTH2B);
   }
-  if(last) {
+  if(flag==2) { // last
     if(nsmooth==1)
       AddMultigridTask(MG_STARTRECVL, MG_CLEARBND1B);
     else if(nsmooth==2)
@@ -431,16 +438,20 @@ void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth, int ngh)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridTaskList::SetMGTaskListFMGProlongate(void)
+//! \fn void MultigridTaskList::SetMGTaskListFMGProlongate(int flag)
 //  \brief Set the task list for FMG prolongation
 
-void MultigridTaskList::SetMGTaskListFMGProlongate(void)
+void MultigridTaskList::SetMGTaskListFMGProlongate(int flag)
 {
   ClearTaskList();
-  AddMultigridTask(MG_STARTRECV0, NONE);
-  AddMultigridTask(MG_SENDBND0,   MG_STARTRECV0);
-  AddMultigridTask(MG_RECVBND0,   MG_STARTRECV0);
-  AddMultigridTask(MG_PHYSBND0,   MG_RECVBND0|MG_SENDBND0);
-  AddMultigridTask(MG_FMGPROLONG, MG_PHYSBND0);
-  AddMultigridTask(MG_CLEARBND0,  MG_FMGPROLONG);
+  if(flag==1) // first time on the block level
+    AddMultigridTask(MG_FMGPROLONG,    NONE);
+  else {
+    AddMultigridTask(MG_STARTRECV0, NONE);
+    AddMultigridTask(MG_SENDBND0,   MG_STARTRECV0);
+    AddMultigridTask(MG_RECVBND0,   MG_STARTRECV0);
+    AddMultigridTask(MG_PHYSBND0,   MG_RECVBND0|MG_SENDBND0);
+    AddMultigridTask(MG_FMGPROLONG, MG_PHYSBND0);
+    AddMultigridTask(MG_CLEARBND0,  MG_FMGPROLONG);
+  }
 }

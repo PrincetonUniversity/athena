@@ -134,7 +134,7 @@ Multigrid::~Multigrid()
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh)
-//  \brief Fill the active zone of the finest level
+//  \brief Fill the inital guess in the active zone of the finest level
 void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh)
 {
   AthenaArray<Real> &dst=u_[nlevel_-1];
@@ -157,7 +157,7 @@ void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh)
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh,
 //                                 Real fac)
-//  \brief Fill the active zone of the finest level
+//  \brief Fill the source in the active zone of the finest level
 void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real fac)
 {
   AthenaArray<Real> &dst=src_[nlevel_-1];
@@ -450,7 +450,12 @@ void Multigrid::SetFromRootGrid(AthenaArray<Real> &src, int ci, int cj, int ck)
   current_level_=0;
   AthenaArray<Real> &dst=u_[current_level_];
   for(int n=0; n<nvar_; n++) {
-    dst(n,ngh_,ngh_,ngh_)=src(n,ck+ngh_,cj+ngh_,ci+ngh_);
+    for(int k=-1;k<=1;k++) {
+      for(int j=-1;j<=1;j++) {
+        for(int i=-1;i<=1;i++)
+          dst(n,ngh_+k,ngh_+j,ngh_+i)=src(n,ck+k+ngh_,cj+j+ngh_,ci+i+ngh_);
+      }
+    }
   }
   return;
 }

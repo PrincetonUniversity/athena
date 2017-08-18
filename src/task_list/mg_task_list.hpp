@@ -66,9 +66,9 @@ public:
   enum TaskStatus Prolongate(Multigrid *pmg);
   enum TaskStatus FMGProlongate(Multigrid *pmg);
 
-  void SetMGTaskListToFiner(int nsmooth, int ngh, bool last = false);
+  void SetMGTaskListToFiner(int nsmooth, int ngh, int flag = 0);
   void SetMGTaskListToCoarser(int nsmooth, int ngh);
-  void SetMGTaskListFMGProlongate(void);
+  void SetMGTaskListFMGProlongate(int flag = 0);
 
 private:
   MultigridDriver* pmy_mgdriver_;

@@ -232,10 +232,13 @@ void MultigridDriver::FillRootGridSource(void)
 
 void MultigridDriver::FMGProlongate(void)
 {
-  if(current_level_==nrootlevel_-1)
+  int flag=0;
+  if(current_level_==nrootlevel_-1) {
     TransferFromRootToBlocks();
+    flag=1;
+  }
   if(current_level_ >= nrootlevel_-1) {
-    mgtlist_->SetMGTaskListFMGProlongate();
+    mgtlist_->SetMGTaskListFMGProlongate(flag);
     mgtlist_->DoTaskListOneSubStep(this);
   }
   else { // root grid
@@ -255,6 +258,7 @@ void MultigridDriver::TransferFromRootToBlocks(void)
 {
   Multigrid *pmg=pmg_;
   AthenaArray<Real> &src=mgroot_->GetCurrentData();
+  mgroot_->pmgbval->ApplyPhysicalBoundaries();
   if(pmy_mesh_->multilevel) {
     // *** implement later ***
   }
@@ -276,12 +280,14 @@ void MultigridDriver::TransferFromRootToBlocks(void)
 void MultigridDriver::OneStepToFiner(int nsmooth)
 {
   int ngh=mgroot_->ngh_;
-  bool last=false;
-  if(current_level_==nrootlevel_-1)
+  int flag=0;
+  if(current_level_==nrootlevel_-1) {
     TransferFromRootToBlocks();
+    flag=1;
+  }
   if(current_level_ >= nrootlevel_-1) {
-    if(current_level_==ntotallevel_-2) last=true;
-    mgtlist_->SetMGTaskListToFiner(nsmooth, ngh, last);
+    if(current_level_==ntotallevel_-2) flag=2;
+    mgtlist_->SetMGTaskListToFiner(nsmooth, ngh, flag);
     mgtlist_->DoTaskListOneSubStep(this);
   }
   else { // root grid
