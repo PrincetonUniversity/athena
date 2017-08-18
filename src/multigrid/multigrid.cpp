@@ -534,9 +534,8 @@ void Multigrid::SubtractAverage(int type, int n, Real ave)
   if(type==0) dst.InitWithShallowCopy(src_[nlevel_-1]);
   else dst.InitWithShallowCopy(u_[nlevel_-1]);
   int is, ie, js, je, ks, ke;
-  is=js=ks=ngh_;
-  ie=is+size_.nx1-1, je=js+size_.nx2-1, ke=ks+size_.nx3-1;
-
+  is=js=ks=0;
+  ie=is+size_.nx1+1, je=js+size_.nx2+1, ke=ks+size_.nx3+1;
   for(int k=ks; k<=ke; k++) {
     for(int j=js; j<=je; j++) {
       for(int i=is; i<=ie; i++)

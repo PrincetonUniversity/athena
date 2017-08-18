@@ -276,10 +276,12 @@ void MultigridDriver::TransferFromRootToBlocks(void)
 void MultigridDriver::OneStepToFiner(int nsmooth)
 {
   int ngh=mgroot_->ngh_;
+  bool last=false;
   if(current_level_==nrootlevel_-1)
     TransferFromRootToBlocks();
   if(current_level_ >= nrootlevel_-1) {
-    mgtlist_->SetMGTaskListToFiner(nsmooth, ngh);
+    if(current_level_==ntotallevel_-2) last=true;
+    mgtlist_->SetMGTaskListToFiner(nsmooth, ngh, last);
     mgtlist_->DoTaskListOneSubStep(this);
   }
   else { // root grid

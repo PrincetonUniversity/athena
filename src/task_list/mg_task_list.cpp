@@ -99,6 +99,7 @@ void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep)
 
   switch(id) {
     case (MG_STARTRECV0):
+    case (MG_STARTRECVL):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
                                     (&MultigridTaskList::StartReceive);
@@ -113,6 +114,7 @@ void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep)
                                     (&MultigridTaskList::StartReceiveFace);
       break;
     case (MG_CLEARBND0):
+    case (MG_CLEARBNDL):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
                                     (&MultigridTaskList::ClearBoundary);
@@ -127,6 +129,7 @@ void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep)
                                     (&MultigridTaskList::ClearBoundaryFace);
       break;
     case (MG_SENDBND0):
+    case (MG_SENDBNDL):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
                                     (&MultigridTaskList::SendBoundary);
@@ -141,6 +144,7 @@ void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep)
                                     (&MultigridTaskList::SendBoundaryFace);
       break;
     case (MG_RECVBND0):
+    case (MG_RECVBNDL):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
                                     (&MultigridTaskList::ReceiveBoundary);
@@ -171,6 +175,7 @@ void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep)
     case (MG_PHYSBND1B):
     case (MG_PHYSBND2R):
     case (MG_PHYSBND2B):
+    case (MG_PHYSBNDL):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
                                     (&MultigridTaskList::PhysicalBoundary);
@@ -301,10 +306,10 @@ enum TaskStatus MultigridTaskList::PhysicalBoundary(Multigrid *pmg)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh)
+//! \fn void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, bool last)
 //  \brief Set the task list for prolongation and post smoothing
 
-void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh)
+void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, bool last)
 {
   ClearTaskList();
   // nsmooth==0 should not be used
@@ -341,6 +346,16 @@ void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh)
     AddMultigridTask(MG_PHYSBND2B,   MG_SENDBND2B|MG_RECVBND2B);
     AddMultigridTask(MG_SMOOTH2B,    MG_PHYSBND2B);
     AddMultigridTask(MG_CLEARBND2B,  MG_SMOOTH2B);
+  }
+  if(last) {
+    if(nsmooth==1)
+      AddMultigridTask(MG_STARTRECVL, MG_CLEARBND1B);
+    else if(nsmooth==2)
+      AddMultigridTask(MG_STARTRECVL, MG_CLEARBND2B);
+    AddMultigridTask(MG_SENDBNDL,   MG_STARTRECVL);
+    AddMultigridTask(MG_RECVBNDL,   MG_STARTRECVL);
+    AddMultigridTask(MG_PHYSBNDL,   MG_SENDBNDL|MG_RECVBNDL);
+    AddMultigridTask(MG_CLEARBNDL,  MG_PHYSBNDL);
   }
 }
 
