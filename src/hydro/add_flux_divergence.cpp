@@ -52,7 +52,7 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &u_in1,
   x3area.InitWithShallowSlice(x3face_area_,2,tid,1);
   x3area_p1.InitWithShallowSlice(x3face_area_p1_,2,tid,1);
   vol.InitWithShallowSlice(cell_volume_,2,tid,1);
-  dflx.InitWithShallowSlice(flx_,2,tid,1);
+  dflx.InitWithShallowCopy(dflx_);
 
 #pragma omp for schedule(static)
   for (int k=ks; k<=ke; ++k) { 

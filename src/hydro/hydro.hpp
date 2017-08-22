@@ -37,14 +37,15 @@ public:
 
   // functions
   Real NewBlockTimeStep(void);    // computes new timestep on a MeshBlock
-  void AddFluxDivergenceToAverage(AthenaArray<Real> &u1, 
+  void AddFluxDivergenceToAverage(AthenaArray<Real> &u1,
     AthenaArray<Real> &u2, AthenaArray<Real> &w, AthenaArray<Real> &bcc,
     const IntegratorWeight wght, AthenaArray<Real> &u_out);
   void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     AthenaArray<Real> &bcc, int order);
-  void RiemannSolver(const int k, const int j, const int il, const int iu,
-    const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
-    AthenaArray<Real> &wr, AthenaArray<Real> &flx);
+  void RiemannSolver(const int kl, const int ku, const int jl, const int ju,
+    const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
+    AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
+    AthenaArray<Real> &e1, AthenaArray<Real> &e2);
 
   void AddGravityFluxMG(void);
   void AddGravityFlux(void);
@@ -54,11 +55,12 @@ public:
 private:
   AthenaArray<Real> dt1_,dt2_,dt3_;  // scratch arrays used in NewTimeStep
   // scratch space used to compute fluxes
-  AthenaArray<Real> wl_, wr_, flx_;
+  AthenaArray<Real> wl_, wr_;
   AthenaArray<Real> dxw_;
   AthenaArray<Real> x1face_area_, x2face_area_, x3face_area_;
   AthenaArray<Real> x2face_area_p1_, x3face_area_p1_;
   AthenaArray<Real> cell_volume_;
+  AthenaArray<Real> dflx_;
   AthenaArray<Real> bb_normal_;    // normal magnetic field, for (SR/GR)MHD
   AthenaArray<Real> lambdas_p_l_;  // most positive wavespeeds in left state
   AthenaArray<Real> lambdas_m_l_;  // most negative wavespeeds in left state

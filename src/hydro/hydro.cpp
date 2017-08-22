@@ -47,9 +47,8 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
   dt2_.NewAthenaArray(nthreads,ncells1);
   dt3_.NewAthenaArray(nthreads,ncells1);
   dxw_.NewAthenaArray(nthreads,ncells1);
-  wl_.NewAthenaArray(nthreads,(NWAVE),ncells1);
-  wr_.NewAthenaArray(nthreads,(NWAVE),ncells1);
-  flx_.NewAthenaArray(nthreads,(NWAVE),ncells1);
+  wl_.NewAthenaArray((NWAVE),ncells3,ncells2,ncells1);
+  wr_.NewAthenaArray((NWAVE),ncells3,ncells2,ncells1);
   x1face_area_.NewAthenaArray(nthreads,ncells1+1);
   if(pmy_block->block_size.nx2 > 1) {
     x2face_area_.NewAthenaArray(nthreads,ncells1);
@@ -60,6 +59,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
     x3face_area_p1_.NewAthenaArray(nthreads,ncells1);
   }
   cell_volume_.NewAthenaArray(nthreads,ncells1);
+  dflx_.NewAthenaArray((NHYDRO),ncells1);
   if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS) { // only used in (SR/GR)MHD
     bb_normal_.NewAthenaArray(ncells1);
     lambdas_p_l_.NewAthenaArray(ncells1);
@@ -110,7 +110,6 @@ Hydro::~Hydro()
   dxw_.DeleteAthenaArray();
   wl_.DeleteAthenaArray();
   wr_.DeleteAthenaArray();
-  flx_.DeleteAthenaArray();
   x1face_area_.DeleteAthenaArray();
   if(pmy_block->block_size.nx2 > 1) {
     x2face_area_.DeleteAthenaArray();
@@ -121,6 +120,7 @@ Hydro::~Hydro()
     x3face_area_p1_.DeleteAthenaArray();
   }
   cell_volume_.DeleteAthenaArray();
+  dflx_.DeleteAthenaArray();
   if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS)  // only used in (SR/GR)MHD
   {
     bb_normal_.DeleteAthenaArray();
