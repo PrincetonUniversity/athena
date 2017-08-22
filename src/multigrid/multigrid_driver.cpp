@@ -341,10 +341,10 @@ void MultigridDriver::SolveVCycle(int npresmooth, int npostsmooth)
 {
   int startlevel=current_level_;
   while(current_level_>0)
-    OneStepToCoarser(npostsmooth);
+    OneStepToCoarser(npresmooth);
   SolveCoarsestGrid();
   while(current_level_<startlevel)
-    OneStepToFiner(npresmooth);
+    OneStepToFiner(npostsmooth);
   return;
 }
 
@@ -355,13 +355,17 @@ void MultigridDriver::SolveVCycle(int npresmooth, int npostsmooth)
 
 void MultigridDriver::SolveFCycle(int npresmooth, int npostsmooth)
 {
-  // *** need to implement
   int startlevel=current_level_;
-  while(current_level_>0)
-    OneStepToCoarser(npostsmooth);
-  SolveCoarsestGrid();
-  while(current_level_<startlevel)
-    OneStepToFiner(npresmooth);
+  int turnlevel;
+  if(startlevel==0) turnlevel=0;
+  else turnlevel=1;
+  for(; turnlevel<=startlevel; turnlevel++) {
+    while(current_level_>0)
+      OneStepToCoarser(npresmooth);
+    SolveCoarsestGrid();
+    while(current_level_<turnlevel)
+      OneStepToFiner(npostsmooth);
+  }
   return;
 }
 

@@ -99,7 +99,8 @@ void GravityDriver::Solve(int step)
   }
 
   SetupMultigrid();
-  Real mean_rho=last_ave_/four_pi_G_;
+  Real mean_rho=0.0;
+  if(fperiodic_) mean_rho=last_ave_/four_pi_G_;
   SolveFMGCycle();
 
   // Return the result
