@@ -69,7 +69,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   dt   = (FLT_MAX*0.4);
   nbnew=0; nbdel=0;
 
-  four_pi_G_=0.0;
+  four_pi_G_=0.0, grav_eps_=-1.0;
 
   nlim = pin->GetOrAddInteger("time","nlim",-1);
   ncycle = 0;
@@ -527,7 +527,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   nreal_user_mesh_data_=0;
   nuser_history_output_=0;
 
-  four_pi_G_=0.0;
+  four_pi_G_=0.0, grav_eps_=-1.0;
 
   nbnew=0; nbdel=0;
 

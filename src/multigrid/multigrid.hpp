@@ -124,6 +124,8 @@ public:
   void SolveVCycle(int npresmooth, int npostsmooth);
   void SolveFCycle(int npresmooth, int npostsmooth);
   void SolveFMGCycle(void);
+  void SolveIterative(void);
+
   virtual void SolveCoarsestGrid(void);
   Real CalculateDefectNorm(int n, int nrm);
   Multigrid* FindMultigrid(int tgid);
@@ -148,6 +150,7 @@ protected:
   Multigrid *mgroot_;
   bool fperiodic_;
   Real last_ave_;
+  Real eps_;
 private:
   MultigridTaskList *mgtlist_;
   Real *rootbuf_;

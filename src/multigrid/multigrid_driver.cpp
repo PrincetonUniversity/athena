@@ -32,6 +32,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int inv
 {
   pmy_mesh_=pm;
   nvar_=invar;
+  eps_=-1.0;
   mode_=0; // 0: FMG+V(1,1), 1: FMG+F(0,1), 2: V(1,1)
 
   if(pmy_mesh_->mesh_size.nx2==1 || pmy_mesh_->mesh_size.nx3==1) {
@@ -382,6 +383,44 @@ void MultigridDriver::SolveFMGCycle(void)
     else if(mode_==1)
       SolveFCycle(0, 1);
     if(lev!=ntotallevel_-1) FMGProlongate();
+  }
+  if(fperiodic_)
+    SubtractAverage(1);
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::SolveIterative(void)
+//  \brief Solve iteratively until the convergence is achieved
+
+void MultigridDriver::SolveIterative(void)
+{
+  Real def=eps_+1e-10;
+  int niter=0;
+  std::cout << std::scientific;
+  while(def>eps_) {
+    SolveVCycle(1,1);
+    Real olddef=def;
+    def=0.0;
+    for(int n=0; n<nvar_; n++)
+      def+=CalculateDefectNorm(n, 2);
+    if(niter > 0 && def/olddef > 0.5) {
+      if(eps_==0.0) break;
+      if(Globals::my_rank==0)
+        std::cout << "### Warning in MultigridDriver::SolveIterative" << std::endl
+          << "Slow multigrid convergence : defect norm = " << def
+          << ", convergence factor = " << def/olddef << "." << std::endl;
+    }
+    if(niter>100) {
+      if(Globals::my_rank==0) {
+        std::cout << "### Warning in MultigridDriver::SolveIterative" << std::endl
+          << "Aborting because the number of iterations is too large, niter > 100." << std::endl
+          << "Check the solution as it may not be accurate enough." << std::endl;
+      }
+      break;
+    }
+    niter++;
   }
   if(fperiodic_)
     SubtractAverage(1);

@@ -199,7 +199,7 @@ private:
   std::string *user_history_output_names_;
 
   // global constants
-  Real four_pi_G_;
+  Real four_pi_G_, grav_eps_;
 
   // functions
   MeshGenFunc_t MeshGenerator_[3];
@@ -229,6 +229,7 @@ private:
   void EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t my_bc);
   void SetGravitationalConstant(Real g) { four_pi_G_=4.0*PI*g; };
   void SetFourPiG(Real fpg) { four_pi_G_=fpg; };
+  void SetGravityThreshold(Real eps) { grav_eps_=eps; };
 };
 
 //----------------------------------------------------------------------------------------

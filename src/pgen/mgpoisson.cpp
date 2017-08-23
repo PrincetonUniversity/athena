@@ -13,6 +13,7 @@
 #include <ctime>
 #include <iostream>
 #include <iomanip>
+#include <cstring>    // memset
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -44,7 +45,9 @@
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
   Real four_pi_G = pin->GetReal("problem","four_pi_G");
+  Real eps = pin->GetOrAddReal("problem","grav_eps", 0.0);
   SetFourPiG(four_pi_G);
+  SetGravityThreshold(eps);
 }
 
 //========================================================================================
@@ -160,8 +163,14 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
       double omp_start_time = omp_get_wtime();
 #endif
 
-      for (int n=0; n < ncycle; n++)
+      for (int n=0; n < ncycle; n++) {
+        pmb=pblock;
+        while(pmb!=NULL) {
+          std::memset(pmb->pgrav->phi.data(), 0, pmb->pgrav->phi.GetSizeInBytes());
+          pmb=pmb->next;
+        }
         pgrd->Solve(1);
+      }
 
 #ifdef OPENMP_PARALLEL
       double omp_time = omp_get_wtime() - omp_start_time;;
@@ -199,6 +208,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
       }
 
       Real err1=0.0,err2=0.0,maxphi=0.0;
+      pmb=pblock;
       while(pmb!=NULL) {
         Hydro *phydro = pmb->phydro;
         Gravity *pgrav = pmb->pgrav;

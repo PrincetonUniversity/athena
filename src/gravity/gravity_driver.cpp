@@ -39,11 +39,21 @@ GravityDriver::GravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, ParameterIn
  : MultigridDriver(pm, MGBoundary, 1)
 {
   four_pi_G_=pmy_mesh_->four_pi_G_;
+  eps_=pmy_mesh_->grav_eps_;
   if(four_pi_G_==0.0) {
    std::stringstream msg;
    msg << "### FATAL ERROR in GravityDriver::GravityDriver" << std::endl
         << "Gravitational constant must be set in the Mesh::InitUserMeshData "
         << "using the SetGravitationalConstant or SetFourPiG function." << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+    return;
+  }
+  if(mode_>=2 && eps_<0.0) {
+   std::stringstream msg;
+   msg << "### FATAL ERROR in GravityDriver::GravityDriver" << std::endl
+        << "Convergence threshold must be set in the Mesh::InitUserMeshData "
+        << "using the SetGravitatyThreshold for the iterative mode." << std::endl
+        << "Set the threshold = 0.0 for automatic convergence control." << std::endl;
     throw std::runtime_error(msg.str().c_str());
     return;
   }
@@ -101,7 +111,8 @@ void GravityDriver::Solve(int step)
   SetupMultigrid();
   Real mean_rho=0.0;
   if(fperiodic_) mean_rho=last_ave_/four_pi_G_;
-  SolveFMGCycle();
+  if(mode_<=1) SolveFMGCycle();
+  else SolveIterative();
 
   // Return the result
   pmggrav=pmg_;
