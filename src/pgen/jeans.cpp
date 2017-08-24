@@ -54,52 +54,55 @@ static Real d0,p0,v0,u0,w0,va,b0;
 
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
-   Real x1size = mesh_size.x1max - mesh_size.x1min;
-   Real x2size = mesh_size.x2max - mesh_size.x2min;
-   Real x3size = mesh_size.x3max - mesh_size.x3min;
-   amp = pin->GetReal("problem","amp");
-   njeans = pin->GetReal("problem","njeans");
-   ang_2 = pin->GetOrAddReal("problem","ang_2",-999.9);
-   ang_3 = pin->GetOrAddReal("problem","ang_3",-999.9);
-   // User should never input -999.9 in angles
-   if (ang_3 == -999.9) ang_3 = atan(x1size/x2size);
-   sin_a3 = sin(ang_3);
-   cos_a3 = cos(ang_3);
-   if (ang_2 == -999.9) ang_2 = atan(0.5*(x1size*cos_a3 + x2size*sin_a3)/x3size);
-   sin_a2 = sin(ang_2);
-   cos_a2 = cos(ang_2);
-   Real x1 = x1size*cos_a2*cos_a3;
-   Real x2 = x2size*cos_a2*sin_a3;
-   Real x3 = x3size*sin_a2;
-   njeans = pin->GetReal("problem","njeans");
-   // For lambda choose the smaller of the 3
-   lambda = x1;
-   if (mesh_size.nx2 > 1 && ang_3 != 0.0) lambda = std::min(lambda,x2);
-   if (mesh_size.nx3 > 1 && ang_2 != 0.0) lambda = std::min(lambda,x3);
+  Real x1size = mesh_size.x1max - mesh_size.x1min;
+  Real x2size = mesh_size.x2max - mesh_size.x2min;
+  Real x3size = mesh_size.x3max - mesh_size.x3min;
+  amp = pin->GetReal("problem","amp");
+  njeans = pin->GetReal("problem","njeans");
+  ang_2 = pin->GetOrAddReal("problem","ang_2",-999.9);
+  ang_3 = pin->GetOrAddReal("problem","ang_3",-999.9);
+  // User should never input -999.9 in angles
+  if (ang_3 == -999.9) ang_3 = atan(x1size/x2size);
+  sin_a3 = sin(ang_3);
+  cos_a3 = cos(ang_3);
+  if (ang_2 == -999.9) ang_2 = atan(0.5*(x1size*cos_a3 + x2size*sin_a3)/x3size);
+  sin_a2 = sin(ang_2);
+  cos_a2 = cos(ang_2);
+  Real x1 = x1size*cos_a2*cos_a3;
+  Real x2 = x2size*cos_a2*sin_a3;
+  Real x3 = x3size*sin_a2;
+  njeans = pin->GetReal("problem","njeans");
+  // For lambda choose the smaller of the 3
+  lambda = x1;
+  if (mesh_size.nx2 > 1 && ang_3 != 0.0) lambda = std::min(lambda,x2);
+  if (mesh_size.nx3 > 1 && ang_2 != 0.0) lambda = std::min(lambda,x3);
 
-   d0 = 1.0, p0 = 1.0;
-   u0 = 0.0, v0 = 0.0, w0 = 0.0;
-   va = 0.0, b0 = 0.0;
+  d0 = 1.0, p0 = 1.0;
+  u0 = 0.0, v0 = 0.0, w0 = 0.0;
+  va = 0.0, b0 = 0.0;
 
-   if (NON_BAROTROPIC_EOS) {
-     gam = pin->GetReal("hydro","gamma");
-     p0 = 1.0/gam;
-     gm1 = gam-1.0;
-     cs2 = gam*p0/d0;
-   } else {
-     Real iso_cs = pin->GetReal("hydro","iso_sound_speed");
-     cs2 = SQR(iso_cs);
-   }
-   gconst = cs2*PI*njeans*njeans/(d0*lambda*lambda);
-   grav_mean_rho = d0;
+  if (NON_BAROTROPIC_EOS) {
+    gam = pin->GetReal("hydro","gamma");
+    p0 = 1.0/gam;
+    gm1 = gam-1.0;
+    cs2 = gam*p0/d0;
+  } else {
+    Real iso_cs = pin->GetReal("hydro","iso_sound_speed");
+    cs2 = SQR(iso_cs);
+  }
+  gconst = cs2*PI*njeans*njeans/(d0*lambda*lambda);
+  grav_mean_rho = d0;
 
-   kwave = 2.0*PI/lambda;
-   omega2 = SQR(kwave)*cs2*(1.0 - SQR(njeans));
-   omega = sqrt(fabs(omega2));
+  kwave = 2.0*PI/lambda;
+  omega2 = SQR(kwave)*cs2*(1.0 - SQR(njeans));
+  omega = sqrt(fabs(omega2));
 
-   if(SELF_GRAVITY_ENABLED)
-     SetGravitationalConstant(gconst);
-   return;
+  if(SELF_GRAVITY_ENABLED) {
+    SetGravitationalConstant(gconst);
+    Real eps = pin->GetOrAddReal("problem","grav_eps", 0.0);
+    SetGravityThreshold(eps);
+  }
+  return;
 }
 
 //========================================================================================

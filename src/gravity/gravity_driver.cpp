@@ -99,7 +99,7 @@ void GravityDriver::Solve(int step)
     if(pmb!=NULL) {
       if(step==1) in.InitWithShallowCopy(pmb->phydro->u);
       else if(step==2) in.InitWithShallowCopy(pmb->phydro->u1);
-      pmggrav->LoadSource(pmb->phydro->u, IDN, NGHOST, four_pi_G_);
+      pmggrav->LoadSource(in, IDN, NGHOST, four_pi_G_);
       if(mode_>=2) // iterative mode - load initial guess
         pmggrav->LoadFinestData(pmb->pgrav->phi, 0, NGHOST);
     }
