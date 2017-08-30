@@ -36,7 +36,7 @@ class Reconstruction;
 class Hydro;
 class Field;
 class EquationOfState;
-class AthenaFFT;
+class FFTDriver;
 
 //----------------------------------------------------------------------------------------
 //! \struct NeighborBlock
@@ -130,9 +130,6 @@ public:
   Field *pfield;
   EquationOfState *peos;
 
-  // fft object
-  AthenaFFT *pfft;
-
   MeshBlock *prev, *next;
 
   // functions
@@ -174,7 +171,7 @@ class Mesh {
   friend class MeshRefinement;
   friend class HydroSourceTerms;
   friend class Hydro;
-  friend class AthenaFFT;
+  friend class FFTDriver;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
@@ -199,6 +196,8 @@ public:
   bool adaptive, multilevel;
 
   MeshBlock *pblock;
+
+//  FFTDriver *pfftd;
 
   AthenaArray<Real> *ruser_mesh_data;
   AthenaArray<int> *iuser_mesh_data;
