@@ -233,11 +233,10 @@ struct fft_plan_3d *fft_3d_create_plan(
 			   FFT_PRECISION,0,0,2);
     if (plan->pre_plan == NULL) return NULL;
 
-    printf("%d in    start: %d %d %d \n", me, in_ilo, in_jlo, in_klo);
-    printf("%d in    end  : %d %d %d \n", me, in_ihi, in_jhi, in_khi);
-
-    printf("%d first start: %d %d %d \n", me, first_ilo, first_jlo, first_klo);
-    printf("%d first end  : %d %d %d \n", me, first_ihi, first_jhi, first_khi);
+    if(Globals::my_rank==0)
+      std::cout << "### WARNING in MPIFFT: " << std::endl
+                << "Current domain decomp. requires additional  global communication "
+                << "to prepare FFT along the fastest axis" << std::endl;
   }
 
 
@@ -298,9 +297,6 @@ struct fft_plan_3d *fft_3d_create_plan(
     third_jhi = (ip2+1)*nmid/np2 - 1;
     third_klo = 0;
     third_khi = nslow - 1;
-
-    printf("%d third start: %d %d %d \n", me, third_ilo, third_jlo, third_klo);
-    printf("%d third end  : %d %d %d \n", me, third_ihi, third_jhi, third_khi);
   }
   
 
@@ -343,8 +339,10 @@ struct fft_plan_3d *fft_3d_create_plan(
 			   FFT_PRECISION,(permute+1)%3,0,2);
     if (plan->post_plan == NULL) return NULL;
 
-    printf("%d out   start: %d %d %d \n", me, out_ilo, out_jlo, out_klo);
-    printf("%d out   end  : %d %d %d \n", me, out_ihi, out_jhi, out_khi);
+    if(Globals::my_rank==0)
+      std::cout << "### WARNING in MPIFFT: " << std::endl
+                << "Current domain decomp. requires additional  global communication "
+                << "to match input and output arrays" << std::endl;
   }
 
 /* configure plan memory pointers and allocate work space
