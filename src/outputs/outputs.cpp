@@ -454,6 +454,20 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
     num_vars_++;
   }
 
+  if (SELF_GRAVITY_ENABLED) {
+    if (output_params.variable.compare("phi") == 0 ||
+        output_params.variable.compare("prim") == 0 ||
+        output_params.variable.compare("cons") == 0) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "Phi";
+      pod->data.InitWithShallowSlice(pgrav->phi,4,0,1);
+      AppendOutputDataNode(pod);
+      num_vars_++;
+    }
+  } // endif (SELF_GRAVITY_ENABLED)
+
+
   if (MAGNETIC_FIELDS_ENABLED) {
     // vector of cell-centered magnetic field
     if (output_params.variable.compare("bcc") == 0 || 
@@ -649,8 +663,6 @@ void OutputType::ClearOutputData()
 void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag)
 {
   OutputType* ptype = pfirst_type_;
-  MeshBlock *pmb;
-
   while (ptype != NULL) {
     if ((pm->time == pm->start_time) ||
         (pm->time >= ptype->output_params.next_time) ||
@@ -661,7 +673,6 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag)
     }
     ptype = ptype->pnext_type; // move to next OutputType in list
   }
-
 }
 
 //----------------------------------------------------------------------------------------
@@ -811,7 +822,6 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim)
 
 void OutputType::SumOutputData(MeshBlock* pmb, int dim)
 {
-  AthenaArray<Real> *psum;
   std::stringstream str;
 
   // For each node in OutputData linked list, sum arrays containing output data  
@@ -826,7 +836,6 @@ void OutputType::SumOutputData(MeshBlock* pmb, int dim)
     int nx3 = pdata->data.GetDim3();
     int nx2 = pdata->data.GetDim2();
     int nx1 = pdata->data.GetDim1();
-    psum = new AthenaArray<Real>;
 
     // Loop over variables and dimensions, sum over specified dimension
     if (dim == 3) {

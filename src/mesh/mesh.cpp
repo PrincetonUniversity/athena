@@ -26,8 +26,10 @@
 #include "../hydro/hydro.hpp" 
 #include "../field/field.hpp"
 #include "../fft/athena_fft.hpp"
-#include "../gravity/gravity.hpp"
 #include "../gravity/fftgravity.hpp"
+#include "../multigrid/multigrid.hpp"
+#include "../gravity/gravity.hpp"
+#include "../gravity/mggravity.hpp"
 #include "../bvals/bvals.hpp"
 #include "../eos/eos.hpp"
 #include "../parameter_input.hpp"
@@ -54,7 +56,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
 {
   std::stringstream msg;
   RegionSize block_size;
-  MeshBlockTree *neibt;
   MeshBlock *pfirst;
   enum BoundaryFlag block_bcs[6];
   int nbmax, dim;
@@ -69,6 +70,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   time = start_time;
   dt   = (FLT_MAX*0.4);
   nbnew=0; nbdel=0;
+
+  four_pi_G_=0.0, grav_eps_=-1.0;
 
   nlim = pin->GetOrAddInteger("time","nlim",-1);
   ncycle = 0;
@@ -232,7 +235,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   nbmax=(nrbx1>nrbx2)?nrbx1:nrbx2;
   nbmax=(nbmax>nrbx3)?nbmax:nrbx3;
 
-
   //initialize user-enrollable functions
   if(mesh_size.x1rat!=1.0)
     use_meshgen_fn_[X1DIR]=true;
@@ -254,6 +256,12 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   AMRFlag_=NULL;
   UserSourceTerm_=NULL;
   UserTimeStep_=NULL;
+  MGBoundaryFunction_[INNER_X1]=MGPeriodicInnerX1;
+  MGBoundaryFunction_[OUTER_X1]=MGPeriodicOuterX1;
+  MGBoundaryFunction_[INNER_X2]=MGPeriodicInnerX2;
+  MGBoundaryFunction_[OUTER_X2]=MGPeriodicOuterX2;
+  MGBoundaryFunction_[INNER_X3]=MGPeriodicInnerX3;
+  MGBoundaryFunction_[OUTER_X3]=MGPeriodicOuterX3;
 
   // calculate the logical root level and maximum level
   for (root_level=0; (1<<root_level)<nbmax; root_level++);
@@ -418,8 +426,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
     }
   }
 
-  maxneighbor_=BufferID(dim, multilevel);
-
   // initial mesh hierarchy construction is completed here
 
   tree.CountMeshBlock(nbtotal);
@@ -470,6 +476,12 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
     return;
   }
 
+  // set gravity flag
+  gflag=0;
+  if(SELF_GRAVITY_ENABLED) gflag=1;
+//  if(SELF_GRAVITY_ENABLED==2 && ...) // independent allocation
+//    gflag=2;
+
   // create MeshBlock list for this process
   int nbs=nslist[Globals::my_rank];
   int nbe=nbs+nblist[Globals::my_rank]-1;
@@ -478,22 +490,24 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
     SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
     // create a block and add into the link list
     if(i==nbs) {
-      pblock = new MeshBlock(i, i-nbs, loclist[i], block_size, block_bcs, this, pin);
+      pblock = new MeshBlock(i, i-nbs, loclist[i], block_size, block_bcs, this,
+                             pin, gflag);
       pfirst = pblock;
     }
     else {
-      pblock->next = new MeshBlock(i, i-nbs, loclist[i], block_size, block_bcs, this, pin);
+      pblock->next = new MeshBlock(i, i-nbs, loclist[i], block_size, block_bcs,
+                                   this, pin, gflag);
       pblock->next->prev = pblock;
       pblock = pblock->next;
     }
-
-    pblock->SearchAndSetNeighbors(tree, ranklist, nslist);
   }
   pblock=pfirst;
 
   if (SELF_GRAVITY_ENABLED==1)
-    pgrd = new FFTGravityDriver(this, pin);
+    pfgrd = new FFTGravityDriver(this, pin);
 
+  if (SELF_GRAVITY_ENABLED==2)
+    pgrd = new GravityDriver(this, MGBoundaryFunction_, pin);
 }
 
 //----------------------------------------------------------------------------------------
@@ -505,7 +519,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   RegionSize block_size;
   enum BoundaryFlag block_bcs[6];
   MeshBlock *pfirst;
-  int i, j, dim;
+  int i, dim;
   IOWrapperSize_t *offset, datasize, listsize, headeroffset;
 
   // mesh test
@@ -520,7 +534,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   nreal_user_mesh_data_=0;
   nuser_history_output_=0;
 
-  four_pi_G_=0.0;
+  four_pi_G_=0.0, grav_eps_=-1.0;
 
   nbnew=0; nbdel=0;
 
@@ -721,8 +735,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   if(Globals::my_rank!=0)
     resfile.Seek(headeroffset);
 
-  maxneighbor_=BufferID(dim, multilevel);
-
   // rebuild the Block Tree
   for(int i=0;i<nbtotal;i++)
     tree.AddMeshBlockWithoutRefine(loclist[i],nrbx1,nrbx2,nrbx3,root_level);
@@ -773,6 +785,12 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
     return;
   }
 
+  // set gravity flag
+  gflag=0;
+  if(SELF_GRAVITY_ENABLED) gflag=1;
+//  if(SELF_GRAVITY_ENABLED==2 && ...) // independent allocation
+//    gflag=2;
+
   // allocate data buffer
   int nb=nblist[Globals::my_rank];
   int nbs=nslist[Globals::my_rank];
@@ -791,16 +809,15 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
     // create a block and add into the link list
     if(i==nbs) {
       pblock = new MeshBlock(i, i-nbs, this, pin, loclist[i], block_size,
-                             block_bcs, costlist[i], mbdata+buff_os);
+                             block_bcs, costlist[i], mbdata+buff_os, gflag);
       pfirst = pblock;
     }
     else {
       pblock->next = new MeshBlock(i, i-nbs, this, pin, loclist[i], block_size,
-                                   block_bcs, costlist[i], mbdata+buff_os);
+                                   block_bcs, costlist[i], mbdata+buff_os, gflag);
       pblock->next->prev = pblock;
       pblock = pblock->next;
     }
-    pblock->SearchAndSetNeighbors(tree, ranklist, nslist);
   }
   pblock=pfirst;
   delete [] mbdata;
@@ -814,6 +831,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
 
   // clean up
   delete [] offset;
+
+  if (SELF_GRAVITY_ENABLED==2)
+    pgrd = new GravityDriver(this, MGBoundaryFunction_, pin);
 }
 
 //----------------------------------------------------------------------------------------
@@ -831,6 +851,7 @@ Mesh::~Mesh()
   delete [] ranklist;
   delete [] costlist;
   delete [] loclist;
+  if (SELF_GRAVITY_ENABLED==2) delete pgrd;
   if(adaptive==true) { // deallocate arrays for AMR
     delete [] nref;
     delete [] nderef;
@@ -917,7 +938,6 @@ void Mesh::OutputMeshStructure(int dim)
   // output relative size/locations of meshblock to file, for plotting
   Real mincost=FLT_MAX, maxcost=0.0, totalcost=0.0;
   for (int i=root_level; i<=max_level; i++) {
-    Real dx=1.0/(Real)(1L<<i);
     for (int j=0; j<nbtotal; j++) {
       if(loclist[j].level==i) {
         SetBlockSizeAndBoundaries(loclist[j], block_size, block_bcs);
@@ -1148,6 +1168,25 @@ void Mesh::AllocateIntUserMeshDataField(int n)
   return;
 }
 
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir
+//                                              MGBoundaryFunc_t my_bc)
+//  \brief Enroll a user-defined boundary function
+
+void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t my_bc)
+{
+  std::stringstream msg;
+  if(dir<0 || dir>5) {
+    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
+        << "dirName = " << dir << " not valid" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  MGBoundaryFunction_[dir]=my_bc;
+  return;
+}
+
+
 //----------------------------------------------------------------------------------------
 // \!fn void Mesh::Initialize(int res_flag, ParameterInput *pin)
 // \brief  initialization before the main loop
@@ -1174,7 +1213,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     }
 
     // solve gravity for the first time
-    if(SELF_GRAVITY_ENABLED){
+    if(SELF_GRAVITY_ENABLED == 1){
       pmb = pblock;
       while (pmb != NULL) {
         phydro=pmb->phydro;
@@ -1183,6 +1222,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
         pmb=pmb->next;
       }
     }
+    if(SELF_GRAVITY_ENABLED == 2)
+      pgrd->Solve(1);
 
     // prepare to receive conserved variables
     pmb = pblock;
@@ -1196,12 +1237,15 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     pmb = pblock;
     while (pmb != NULL)  {
       phydro=pmb->phydro;
-      pfield=pmb->pfield;
       pmb->pbval->SendCellCenteredBoundaryBuffers(phydro->u, HYDRO_CONS);
-      if (MAGNETIC_FIELDS_ENABLED)
+      if (MAGNETIC_FIELDS_ENABLED) {
+        pfield=pmb->pfield;
         pmb->pbval->SendFieldBoundaryBuffers(pfield->b);
-      if (SELF_GRAVITY_ENABLED)
+      }
+      if (SELF_GRAVITY_ENABLED==1) {
+        pgrav=pmb->pgrav;
         pmb->pbval->SendGravityBoundaryBuffers(pgrav->phi);
+      }
       pmb=pmb->next;
     }
 
@@ -1209,14 +1253,16 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     pmb = pblock;
     while (pmb != NULL)  {
       phydro=pmb->phydro;
-      pfield=pmb->pfield;
-      pgrav=pmb->pgrav;
       pbval=pmb->pbval;
       pbval->ReceiveCellCenteredBoundaryBuffersWithWait(phydro->u, HYDRO_CONS);
-      if (MAGNETIC_FIELDS_ENABLED)
+      if (MAGNETIC_FIELDS_ENABLED) {
+        pfield=pmb->pfield;
         pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b);
-      if (SELF_GRAVITY_ENABLED)
+      }
+      if (SELF_GRAVITY_ENABLED==1) {
+        pgrav=pmb->pgrav;
         pmb->pbval->ReceiveGravityBoundaryBuffersWithWait(pgrav->phi);
+      }
       pmb->pbval->ClearBoundaryForInit(true);
       pmb=pmb->next;
     }
@@ -1263,15 +1309,15 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
                                     time, 0.0);
 
       int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
-      if(pmb->nblevel[1][1][0]!=-1) is-=NGHOST;
-      if(pmb->nblevel[1][1][2]!=-1) ie+=NGHOST;
+      if(pbval->nblevel[1][1][0]!=-1) is-=NGHOST;
+      if(pbval->nblevel[1][1][2]!=-1) ie+=NGHOST;
       if(pmb->block_size.nx2 > 1) {
-        if(pmb->nblevel[1][0][1]!=-1) js-=NGHOST;
-        if(pmb->nblevel[1][2][1]!=-1) je+=NGHOST;
+        if(pbval->nblevel[1][0][1]!=-1) js-=NGHOST;
+        if(pbval->nblevel[1][2][1]!=-1) je+=NGHOST;
       }
       if(pmb->block_size.nx3 > 1) {
-        if(pmb->nblevel[0][1][1]!=-1) ks-=NGHOST;
-        if(pmb->nblevel[2][1][1]!=-1) ke+=NGHOST;
+        if(pbval->nblevel[0][1][1]!=-1) ks-=NGHOST;
+        if(pbval->nblevel[2][1][1]!=-1) ke+=NGHOST;
       }
       pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b, 
                                       phydro->w, pfield->bcc, pmb->pcoord,
@@ -1892,11 +1938,13 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
       // on a different level or node - create a new block
       SetBlockSizeAndBoundaries(newloc[n], block_size, block_bcs);
       if(n==nbs) { // first
-        newlist = new MeshBlock(n, n-nbs, newloc[n], block_size, block_bcs, this, pin, true);
+        newlist = new MeshBlock(n, n-nbs, newloc[n], block_size, block_bcs, this,
+                                pin, gflag, true);
         pmb=newlist;
       }
       else {
-        pmb->next = new MeshBlock(n, n-nbs, newloc[n], block_size, block_bcs, this, pin, true);
+        pmb->next = new MeshBlock(n, n-nbs, newloc[n], block_size, block_bcs, this,
+                                  pin, gflag, true);
         pmb->next->prev=pmb;
         pmb=pmb->next;
       }
@@ -2157,7 +2205,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   // re-initialize the MeshBlocks
   pmb=pblock;
   while(pmb!=NULL) {
-    pmb->SearchAndSetNeighbors(tree, ranklist, nslist);
+    pmb->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
     pmb=pmb->next;
   }
   Initialize(2, pin);

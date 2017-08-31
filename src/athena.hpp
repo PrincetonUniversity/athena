@@ -23,6 +23,40 @@ class Coordinates;
 class ParameterInput;
 struct RegionSize;
 
+
+//--------------------------------------------------------------------------------------
+//! \struct LogicalLocation
+//  \brief stores logical location and level of meshblock
+
+typedef struct LogicalLocation {
+  long int lx1, lx2, lx3;
+  int level;
+
+  LogicalLocation() : lx1(-1), lx2(-1), lx3(-1), level(-1) {};
+
+  // operators useful for sorting
+  bool operator==(LogicalLocation &ll)
+    { return ((ll.level==level) && (ll.lx1==lx1) && (ll.lx2==lx2) && (ll.lx3==lx3)); }
+  static bool Lesser(const LogicalLocation &left, const LogicalLocation &right)
+    { return left.level < right.level; };
+  static bool Greater(const LogicalLocation & left, const LogicalLocation &right)
+    { return left.level > right.level; };
+
+} LogicalLocation;
+
+
+//----------------------------------------------------------------------------------------
+//! \struct RegionSize
+//  \brief physical size and number of cells in a Mesh or a MeshBlock
+
+typedef struct RegionSize {
+  Real x1min, x2min, x3min;
+  Real x1max, x2max, x3max;
+  Real x1rat, x2rat, x3rat; // ratio of x(i)/x(i-1)
+  int nx1, nx2, nx3;        // number of active cells (not including ghost zones)
+} RegionSize;
+
+
 //---------------------------------------------------------------------------------------
 //! \struct FaceField
 //  \brief container for face-centered fields
@@ -61,9 +95,11 @@ enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
 
 // needed wherever MPI communications are used.  Must be < 32 and unique
 enum Athena_MPI_Tag {TAG_HYDRO=0, TAG_FIELD=1, TAG_RAD=2, TAG_CHEM=3, TAG_HYDFLX=4,
-  TAG_FLDFLX=5, TAG_RADFLX=6, TAG_CHMFLX=7, TAG_AMR=8, TAG_FLDFLX_POLE=9, TAG_WTLIM=10,
-  TAG_GRAVITY=11};
+  TAG_FLDFLX=5, TAG_RADFLX=6, TAG_CHMFLX=7, TAG_AMR=8, TAG_FLDFLX_POLE=9, TAG_GRAVITY=11,
+  TAG_MGGRAV=12};
 
+enum BoundaryType {BNDRY_HYDRO=0, BNDRY_FIELD=1, BNDRY_GRAVITY=2, BNDRY_MGGRAV=3,
+                   BNDRY_MGGRAVF=4, BNDRY_FLCOR=5, BNDRY_EMFCOR=6};
 enum CCBoundaryType {HYDRO_CONS=0, HYDRO_PRIM=1};
 enum FluxCorrectionType {FLUX_HYDRO=0};
 
@@ -79,7 +115,11 @@ typedef void (*SrcTermFunc_t)(MeshBlock *pmb, const Real time, const Real dt,
 typedef Real (*TimeStepFunc_t)(MeshBlock *pmb);
 typedef Real (*HistoryOutputFunc_t)(MeshBlock *pmb, int iout);
 typedef void (*MetricFunc_t)(Real x1, Real x2, Real x3, ParameterInput *pin,
-    AthenaArray<Real> &g, AthenaArray<Real> &g_inv, AthenaArray<Real> &dg_dx1,
-    AthenaArray<Real> &dg_dx2, AthenaArray<Real> &dg_dx3);
+             AthenaArray<Real> &g, AthenaArray<Real> &g_inv, AthenaArray<Real> &dg_dx1,
+             AthenaArray<Real> &dg_dx2, AthenaArray<Real> &dg_dx3);
+typedef void (*MGBoundaryFunc_t)(AthenaArray<Real> &dst,Real time, int nvar,
+             int is, int ie, int js, int je, int ks, int ke, int ngh,
+             Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+
 
 #endif // ATHENA_HPP

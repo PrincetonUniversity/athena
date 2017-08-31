@@ -30,11 +30,9 @@
 #include "omp.h"
 #endif
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
-  Real four_pi_G = pin->GetReal("problem","four_pi_G");
-  SetFourPiG(four_pi_G);
-}
+#if MAGNETIC_FIELDS_ENABLED
+#error "This problem generator does not support magnetic fields"
+#endif
 
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)

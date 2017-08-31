@@ -252,8 +252,9 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //----------------------------------------------------------------------------------------
 // Function for calculating relativistic fast wavespeeds
 // Inputs:
-//   prim: 1D array of primitive states
+//   prim: 3D array of primitive states
 //   bbx_vals: 1D array of B^x
+//   k,j: x3- and x2-indices
 //   il,iu: lower and upper x1-indices
 //   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
 // Outputs:
@@ -266,7 +267,7 @@ void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
 //   almost same function as in adiabatic_mhd_gr.cpp
 
 void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
-    const AthenaArray<Real> &bbx_vals, int il, int iu, int ivx,
+    const AthenaArray<Real> &bbx_vals, int k, int j, int il, int iu, int ivx,
     AthenaArray<Real> &lambdas_p, AthenaArray<Real> &lambdas_m)
 {
   // Parameters
@@ -286,14 +287,14 @@ void EquationOfState::FastMagnetosonicSpeedsSR(const AthenaArray<Real> &prim,
   for (int i = il; i <= iu; ++i) {
 
     // Extract primitives
-    const Real &rho = prim(IDN,i);
-    const Real &pgas = prim(IEN,i);
-    const Real &vx = prim(ivx,i);
-    const Real &vy = prim(ivy,i);
-    const Real &vz = prim(ivz,i);
+    const Real &rho = prim(IDN,k,j,i);
+    const Real &pgas = prim(IEN,k,j,i);
+    const Real &vx = prim(ivx,k,j,i);
+    const Real &vy = prim(ivy,k,j,i);
+    const Real &vz = prim(ivz,k,j,i);
     const Real &bbx = bbx_vals(i);
-    const Real &bby = prim(IBY,i);
-    const Real &bbz = prim(IBZ,i);
+    const Real &bby = prim(IBY,k,j,i);
+    const Real &bbz = prim(IBZ,k,j,i);
 
     // Calculate 4-velocity
     Real u[4];

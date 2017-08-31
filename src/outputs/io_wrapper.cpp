@@ -68,7 +68,7 @@ int IOWrapper::Read(void *buf, IOWrapperSize_t size, IOWrapperSize_t count)
 {
 #ifdef MPI_PARALLEL
   MPI_Status status;
-  int ierr, nread;
+  int nread;
   if(MPI_File_read(fh,buf,count*size,MPI_BYTE,&status)!=MPI_SUCCESS) return -1;
   if(MPI_Get_count(&status,MPI_BYTE,&nread)==MPI_UNDEFINED) return -1;
   return nread/size;
@@ -85,7 +85,7 @@ int IOWrapper::Read_all(void *buf, IOWrapperSize_t size, IOWrapperSize_t count)
 {
 #ifdef MPI_PARALLEL
   MPI_Status status;
-  int ierr, nread;
+  int nread;
   if(MPI_File_read_all(fh,buf,count*size,MPI_BYTE,&status)!=MPI_SUCCESS) return -1;
   if(MPI_Get_count(&status,MPI_BYTE,&nread)==MPI_UNDEFINED) return -1;
   return nread/size;
@@ -104,7 +104,7 @@ int IOWrapper::Read_at_all(void *buf, IOWrapperSize_t size,
 {
 #ifdef MPI_PARALLEL
   MPI_Status status;
-  int ierr, nread;
+  int nread;
   if(MPI_File_read_at_all(fh,offset,buf,count*size,MPI_BYTE,&status)!=MPI_SUCCESS)
     return -1;
   if(MPI_Get_count(&status,MPI_BYTE,&nread)==MPI_UNDEFINED) return -1;
@@ -123,7 +123,7 @@ int IOWrapper::Write(const void *buf, IOWrapperSize_t size, IOWrapperSize_t cnt)
 {
 #ifdef MPI_PARALLEL
   MPI_Status status;
-  int ierr, nwrite;
+  int nwrite;
   if(MPI_File_write(fh,const_cast<void*>(buf),cnt*size,MPI_BYTE,&status)!=MPI_SUCCESS)
     return -1;
   if(MPI_Get_count(&status,MPI_BYTE,&nwrite)==MPI_UNDEFINED) return -1;
@@ -143,7 +143,7 @@ int IOWrapper::Write_at_all(const void *buf, IOWrapperSize_t size,
 {
 #ifdef MPI_PARALLEL
   MPI_Status status;
-  int ierr, nwrite;
+  int nwrite;
   if(MPI_File_write_at_all(fh,offset,const_cast<void*>(buf),cnt*size,MPI_BYTE,&status)
      !=MPI_SUCCESS)
     return -1;

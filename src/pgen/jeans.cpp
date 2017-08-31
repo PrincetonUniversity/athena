@@ -39,50 +39,39 @@
 #include "omp.h"
 #endif
 
+#if MAGNETIC_FIELDS_ENABLED
+#error "This problem generator does not support magnetic fields"
+#endif
+
 // with functions A1,2,3 which compute vector potentials
 static Real ang_2, ang_3; // Rotation angles about the y and z' axis
 static Real sin_a2, cos_a2, sin_a3, cos_a3;
 static Real amp, njeans, lambda, kwave; // amplitude, Wavelength, 2*PI/wavelength
-static Real cs2,gam,gm1,omega,omega2;
+static Real cs2,gam,gm1,omega,omega2, grav_mean_rho, gconst;
 static Real ev[NWAVE], rem[NWAVE][NWAVE], lem[NWAVE][NWAVE];
 static Real d0,p0,v0,u0,w0,va,b0;
 
 
-//========================================================================================
-//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief
-//========================================================================================
-
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
+void Mesh::InitUserMeshData(ParameterInput *pin)
 {
-  Real x0=0.0, y0=0.0, z0=0.0;
-  Real x, y, z;
-  Real dx, dy, dz;
-  Real xl, sinkx, coskx;
-  RegionSize &mesh_size = pmy_mesh->mesh_size;
-
   Real x1size = mesh_size.x1max - mesh_size.x1min;
   Real x2size = mesh_size.x2max - mesh_size.x2min;
   Real x3size = mesh_size.x3max - mesh_size.x3min;
- 
   amp = pin->GetReal("problem","amp");
   njeans = pin->GetReal("problem","njeans");
   ang_2 = pin->GetOrAddReal("problem","ang_2",-999.9);
   ang_3 = pin->GetOrAddReal("problem","ang_3",-999.9);
-
   // User should never input -999.9 in angles
   if (ang_3 == -999.9) ang_3 = atan(x1size/x2size);
   sin_a3 = sin(ang_3);
   cos_a3 = cos(ang_3);
-
   if (ang_2 == -999.9) ang_2 = atan(0.5*(x1size*cos_a3 + x2size*sin_a3)/x3size);
   sin_a2 = sin(ang_2);
   cos_a2 = cos(ang_2);
-
   Real x1 = x1size*cos_a2*cos_a3;
   Real x2 = x2size*cos_a2*sin_a3;
   Real x3 = x3size*sin_a2;
-
+  njeans = pin->GetReal("problem","njeans");
   // For lambda choose the smaller of the 3
   lambda = x1;
   if (mesh_size.nx2 > 1 && ang_3 != 0.0) lambda = std::min(lambda,x2);
@@ -95,19 +84,35 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   if (NON_BAROTROPIC_EOS) {
     gam = pin->GetReal("hydro","gamma");
     p0 = 1.0/gam;
-    gm1 = gam-1;
+    gm1 = gam-1.0;
     cs2 = gam*p0/d0;
   } else {
     Real iso_cs = pin->GetReal("hydro","iso_sound_speed");
     cs2 = SQR(iso_cs);
   }
-  Real gconst = cs2*PI*njeans*njeans/(d0*lambda*lambda);
-  Real four_pi_G = 4.0*PI*gconst;
-  Real grav_mean_rho = d0;
+  gconst = cs2*PI*njeans*njeans/(d0*lambda*lambda);
+  grav_mean_rho = d0;
 
   kwave = 2.0*PI/lambda;
   omega2 = SQR(kwave)*cs2*(1.0 - SQR(njeans));
   omega = sqrt(fabs(omega2));
+
+  if(SELF_GRAVITY_ENABLED) {
+    SetGravitationalConstant(gconst);
+    Real eps = pin->GetOrAddReal("problem","grav_eps", 0.0);
+    SetGravityThreshold(eps);
+  }
+  return;
+}
+
+//========================================================================================
+//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
+//  \brief
+//========================================================================================
+
+void MeshBlock::ProblemGenerator(ParameterInput *pin)
+{
+  Real x, sinkx, coskx;
 
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
@@ -130,17 +135,17 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }
   }}}
 
-  std::cout << "four_pi_G " << four_pi_G << std::endl;
-  std::cout << "lambda " << lambda << std::endl;
-  std::cout << "period " << (2*PI/omega) << std::endl;
-  std::cout << "angle2 " << ang_2*180./PI << " " << sin_a2 << " " << cos_a2 << std::endl;
-  std::cout << "angle3 " << ang_3*180./PI << " " << sin_a3 << " " << cos_a3 << std::endl;
+  if(Globals::my_rank==0) {
+    std::cout << "four_pi_G " << gconst*4.0*PI << std::endl;
+    std::cout << "lambda " << lambda << std::endl;
+    std::cout << "period " << (2*PI/omega) << std::endl;
+    std::cout << "angle2 " << ang_2*180./PI << " " << sin_a2 << " " << cos_a2 << std::endl;
+    std::cout << "angle3 " << ang_3*180./PI << " " << sin_a3 << " " << cos_a3 << std::endl;
+  }
 
   pmy_mesh->tlim=pin->SetReal("time","tlim",2.0*PI/omega*2.0);
 
   if(SELF_GRAVITY_ENABLED){
-    pgrav->gconst = gconst;
-    pgrav->four_pi_G = four_pi_G;
     pgrav->grav_mean_rho = grav_mean_rho;
   } // self-gravity
 }
@@ -149,7 +154,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
   if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
   if (omega2 < 0){ 
-    std::cout << "This problem is Jeans unstable, njeans = " << njeans << std::endl;
+    if(Globals::my_rank==0)
+      std::cout << "This problem is Jeans unstable, njeans = " << njeans << std::endl;
     return;
   }
 
@@ -273,7 +279,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
       fprintf(pfile,"  %e",l1_err[NHYDRO+IB3]);
     }
     fprintf(pfile,"  %e  %e  ",max_max_over_l1,max_err[IDN]);
-    fprintf(pfile,"%e  %e  %e",max_err[IM1],max_err[IM2],max_err[IM3],max_err[IEN]);
+    fprintf(pfile,"%e  %e  %e",max_err[IM1],max_err[IM2],max_err[IM3]);
     if (NON_BAROTROPIC_EOS) fprintf(pfile,"  %e",max_err[IEN]);
     if (MAGNETIC_FIELDS_ENABLED) {
       fprintf(pfile,"  %e",max_err[NHYDRO+IB1]);

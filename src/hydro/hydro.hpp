@@ -11,11 +11,12 @@
 // Athena++ classes headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../task_list/task_list.hpp"
+//#include "../task_list/task_list.hpp"
 
 class MeshBlock;
 class ParameterInput;
 class HydroSourceTerms;
+struct IntegratorWeight;
 
 //! \class Hydro
 //  \brief hydro data and functions
@@ -36,23 +37,30 @@ public:
 
   // functions
   Real NewBlockTimeStep(void);    // computes new timestep on a MeshBlock
-  void AddFluxDivergenceToAverage(AthenaArray<Real> &u1, 
+  void AddFluxDivergenceToAverage(AthenaArray<Real> &u1,
     AthenaArray<Real> &u2, AthenaArray<Real> &w, AthenaArray<Real> &bcc,
-    IntegratorWeight wght, AthenaArray<Real> &u_out);
+    const IntegratorWeight wght, AthenaArray<Real> &u_out);
   void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     AthenaArray<Real> &bcc, int order);
-  void RiemannSolver(const int k, const int j, const int il, const int iu,
-    const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
-    AthenaArray<Real> &wr, AthenaArray<Real> &flx);
+  void RiemannSolver(const int kl, const int ku, const int jl, const int ju,
+    const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
+    AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
+    AthenaArray<Real> &e1, AthenaArray<Real> &e2);
+
+  void AddGravityFluxMG(void);
+  void AddGravityFlux(void);
+  void CalculateGravityFlux(AthenaArray<Real> &phi_in);
+  void CorrectGravityFlux(void);
 
 private:
   AthenaArray<Real> dt1_,dt2_,dt3_;  // scratch arrays used in NewTimeStep
   // scratch space used to compute fluxes
-  AthenaArray<Real> wl_, wr_, flx_;
+  AthenaArray<Real> wl_, wr_;
   AthenaArray<Real> dxw_;
   AthenaArray<Real> x1face_area_, x2face_area_, x3face_area_;
   AthenaArray<Real> x2face_area_p1_, x3face_area_p1_;
   AthenaArray<Real> cell_volume_;
+  AthenaArray<Real> dflx_;
   AthenaArray<Real> bb_normal_;    // normal magnetic field, for (SR/GR)MHD
   AthenaArray<Real> lambdas_p_l_;  // most positive wavespeeds in left state
   AthenaArray<Real> lambdas_m_l_;  // most negative wavespeeds in left state
@@ -60,6 +68,10 @@ private:
   AthenaArray<Real> lambdas_m_r_;  // most negative wavespeeds in right state
   AthenaArray<Real> g_, gi_;       // metric and inverse, for some GR Riemann solvers
   AthenaArray<Real> cons_;         // conserved state, for some GR Riemann solvers
+
+  // self-gravity
+  AthenaArray<Real> gflx[3], gflx_old[3]; // gravity tensor
+
 
   TimeStepFunc_t UserTimeStep_;
 };

@@ -31,55 +31,17 @@ class MeshRefinement;
 class MeshBlockTree;
 class BoundaryValues;
 class TaskList;
+class TaskState;
 class Coordinates;
 class Reconstruction;
 class Hydro;
 class Field;
 class Gravity;
+class GravityDriver;
 class EquationOfState;
 class FFTDriver;
 class FFTGravityDriver;
 
-//----------------------------------------------------------------------------------------
-//! \struct NeighborBlock
-//  \brief neighbor rank, level, and ids
-
-typedef struct NeighborBlock {
-  int rank, level, gid, lid, ox1, ox2, ox3, fi1, fi2, bufid, eid, targetid;
-  enum NeighborType type;
-  enum BoundaryFace fid;
-  bool polar; // flag indicating boundary is across a pole
-
-  NeighborBlock() : rank(-1), level(-1), gid(-1), lid(-1), ox1(-1), ox2(-1), ox3(-1),
-    bufid(-1), targetid(-1), fi1(-1), fi2(-1), eid(-1), type(NEIGHBOR_NONE),
-    fid(FACE_UNDEF), polar(false) {};
-
-  void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
-                   int iox3, enum NeighborType itype, int ibid, int itargetid,
-                   bool ipolar, int ifi1, int ifi2);
-} NeighborBlock;
-
-//----------------------------------------------------------------------------------------
-//! \struct PolarNeighborBlock
-//  \brief Struct for describing neighbors around pole at same radius and polar angle
-
-typedef struct PolarNeighborBlock {
-  int rank;    // MPI rank of neighbor
-  int lid;     // local ID of neighbor
-  int gid;     // global ID of neighbor
-  bool north;  // flag that is true for North pole and false for South pole
-} PolarNeighborBlock;
-
-//----------------------------------------------------------------------------------------
-//! \struct RegionSize
-//  \brief physical size and number of cells in a Mesh
-
-typedef struct RegionSize {
-  Real x1min, x2min, x3min;
-  Real x1max, x2max, x3max;
-  Real x1rat, x2rat, x3rat; // ratio of x(i)/x(i-1)
-  int nx1, nx2, nx3;        // number of active cells (not including ghost zones)
-} RegionSize;
 
 //----------------------------------------------------------------------------------------
 //! \class MeshBlock
@@ -97,20 +59,21 @@ class MeshBlock {
 
 public:
   MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_size,
-    enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, bool ref_flag = false);
+            enum BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, int igflag,
+            bool ref_flag = false);
   MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, LogicalLocation iloc,
-    RegionSize input_block, enum BoundaryFlag *input_bcs, Real icost, char *mbdata);
+            RegionSize input_block, enum BoundaryFlag *input_bcs, Real icost, char *mbdata,
+            int igflag);
   ~MeshBlock();
 
   //data
   Mesh *pmy_mesh;  // ptr to Mesh containing this MeshBlock
   LogicalLocation loc;
   RegionSize block_size;
-  enum BoundaryFlag block_bcs[6];
-  int nblevel[3][3][3];
   int is,ie,js,je,ks,ke;
   int gid, lid;
   int cis,cie,cjs,cje,cks,cke,cnghost;
+  int gflag;
 
   // user output variables for analysis
   int nuser_out_var;
@@ -143,13 +106,9 @@ public:
 
 private:
   // data
-  NeighborBlock neighbor[56];
-  PolarNeighborBlock *polar_neighbor_north, *polar_neighbor_south;
-  int nneighbor;
   Real cost;
   Real new_block_dt;
-  uint64_t finished_tasks;
-  int indx_first_task_, num_tasks_left_;
+  TaskState tasks;
   int nreal_user_meshblock_data_, nint_user_meshblock_data_;
 
   // functions
@@ -169,13 +128,17 @@ class Mesh {
   friend class RestartOutput;
   friend class HistoryOutput;
   friend class MeshBlock;
+  friend class BoundaryBase;
   friend class BoundaryValues;
+  friend class MGBoundaryValues;
   friend class Coordinates;
   friend class MeshRefinement;
   friend class HydroSourceTerms;
   friend class Hydro;
   friend class FFTDriver;
   friend class FFTGravityDriver;
+  friend class MultigridDriver;
+  friend class GravityDriver;
   friend class Gravity;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
@@ -199,10 +162,12 @@ public:
   int nlim, ncycle;
   int nbtotal, nbnew, nbdel;
   bool adaptive, multilevel;
+  int gflag;
 
   MeshBlock *pblock;
 
-  FFTGravityDriver *pgrd;
+  FFTGravityDriver *pfgrd;
+  GravityDriver *pgrd;
 
   AthenaArray<Real> *ruser_mesh_data;
   AthenaArray<int> *iuser_mesh_data;
@@ -220,7 +185,6 @@ public:
 private:
   // data
   int root_level, max_level, current_level;
-  int maxneighbor_;
   int num_mesh_threads_;
   int *nslist, *ranklist, *nblist;
   Real *costlist;
@@ -235,7 +199,7 @@ private:
   std::string *user_history_output_names_;
 
   // global constants
-  Real four_pi_G_;
+  Real four_pi_G_, grav_eps_;
 
   // functions
   MeshGenFunc_t MeshGenerator_[3];
@@ -245,6 +209,8 @@ private:
   TimeStepFunc_t UserTimeStep_;
   HistoryOutputFunc_t *user_history_func_;
   MetricFunc_t UserMetric_;
+  MGBoundaryFunc_t MGBoundaryFunction_[6];
+
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
   void OutputMeshStructure(int dim);
@@ -260,9 +226,10 @@ private:
   void AllocateUserHistoryOutput(int n);
   void EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const char *name);
   void EnrollUserMetric(MetricFunc_t my_func);
-
+  void EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t my_bc);
   void SetGravitationalConstant(Real g) { four_pi_G_=4.0*PI*g; };
   void SetFourPiG(Real fpg) { four_pi_G_=fpg; };
+  void SetGravityThreshold(Real eps) { grav_eps_=eps; };
 };
 
 //----------------------------------------------------------------------------------------
