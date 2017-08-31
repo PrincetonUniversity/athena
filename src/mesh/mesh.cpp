@@ -25,6 +25,7 @@
 #include "../coordinates/coordinates.hpp"
 #include "../hydro/hydro.hpp" 
 #include "../field/field.hpp"
+#include "../gravity/gravity.hpp"
 #include "../bvals/bvals.hpp"
 #include "../eos/eos.hpp"
 #include "../parameter_input.hpp"
@@ -1147,6 +1148,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
   MeshBlock *pmb;
   Hydro *phydro;
   Field *pfield;
+  Gravity *pgrav;
   BoundaryValues *pbval;
   std::stringstream msg;
   int inb=nbtotal;
@@ -1158,6 +1160,17 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       while (pmb != NULL)  {
         pmb->ProblemGenerator(pin);
         pmb->pbval->CheckBoundary();
+        pmb=pmb->next;
+      }
+    }
+
+    // solve gravity for the first time
+    if(SELF_GRAVITY_ENABLED){
+      pmb = pblock;
+      while (pmb != NULL) {
+        phydro=pmb->phydro;
+        pgrav=pmb->pgrav;
+        pgrav->Solver(phydro->u);
         pmb=pmb->next;
       }
     }
@@ -1178,6 +1191,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       pmb->pbval->SendCellCenteredBoundaryBuffers(phydro->u, HYDRO_CONS);
       if (MAGNETIC_FIELDS_ENABLED)
         pmb->pbval->SendFieldBoundaryBuffers(pfield->b);
+      if (SELF_GRAVITY_ENABLED)
+        pmb->pbval->SendGravityBoundaryBuffers(pgrav->phi);
       pmb=pmb->next;
     }
 
@@ -1186,10 +1201,13 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     while (pmb != NULL)  {
       phydro=pmb->phydro;
       pfield=pmb->pfield;
+      pgrav=pmb->pgrav;
       pbval=pmb->pbval;
       pbval->ReceiveCellCenteredBoundaryBuffersWithWait(phydro->u, HYDRO_CONS);
       if (MAGNETIC_FIELDS_ENABLED)
         pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b);
+      if (SELF_GRAVITY_ENABLED)
+        pmb->pbval->ReceiveGravityBoundaryBuffersWithWait(pgrav->phi);
       pmb->pbval->ClearBoundaryForInit(true);
       pmb=pmb->next;
     }
@@ -1229,6 +1247,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     while (pmb != NULL)  {
       phydro=pmb->phydro;
       pfield=pmb->pfield;
+      pgrav=pmb->pgrav;
       pbval=pmb->pbval;
       if(multilevel==true)
         pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
@@ -1248,6 +1267,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b, 
                                       phydro->w, pfield->bcc, pmb->pcoord,
                                       is, ie, js, je, ks, ke);
+// TODO: may need to pass phi
       pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
                                      time, 0.0);
       pmb=pmb->next;

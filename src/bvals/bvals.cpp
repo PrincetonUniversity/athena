@@ -232,13 +232,20 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
   for(int i=0;i<56;i++){
     hydro_flag_[i]=BNDRY_WAITING;
     field_flag_[i]=BNDRY_WAITING;
+    gravity_flag_[i]=BNDRY_WAITING;
     hydro_send_[i]=NULL;
     hydro_recv_[i]=NULL;
     field_send_[i]=NULL;
     field_recv_[i]=NULL;
+    gravity_send_[i]=NULL;
+    gravity_recv_[i]=NULL;
 #ifdef MPI_PARALLEL
     req_hydro_send_[i]=MPI_REQUEST_NULL;
     req_hydro_recv_[i]=MPI_REQUEST_NULL;
+    req_field_send_[i]=MPI_REQUEST_NULL;
+    req_field_recv_[i]=MPI_REQUEST_NULL;
+    req_gravity_send_[i]=MPI_REQUEST_NULL;
+    req_gravity_recv_[i]=MPI_REQUEST_NULL;
 #endif
   }
   for(int i=0;i<48;i++){
@@ -321,6 +328,17 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, ParameterInput *pin)
     hydro_send_[n]=new Real[size];
     hydro_recv_[n]=new Real[size];
   }
+
+  if(SELF_GRAVITY_ENABLED){
+    for(int n=0;n<pmb->pmy_mesh->maxneighbor_;n++) {
+      int size=((BoundaryValues::ni[n].ox1==0)?pmb->block_size.nx1:NGHOST)
+              *((BoundaryValues::ni[n].ox2==0)?pmb->block_size.nx2:NGHOST)
+              *((BoundaryValues::ni[n].ox3==0)?pmb->block_size.nx3:NGHOST);
+      gravity_send_[n]=new Real[size];
+      gravity_recv_[n]=new Real[size];
+    }
+  }
+
   if (MAGNETIC_FIELDS_ENABLED) {
     for(int n=0;n<pmb->pmy_mesh->maxneighbor_;n++) {
       int size1=((BoundaryValues::ni[n].ox1==0)?(pmb->block_size.nx1+1):NGHOST)
@@ -468,6 +486,12 @@ BoundaryValues::~BoundaryValues()
   for(int i=0;i<pmb->pmy_mesh->maxneighbor_;i++) {
     delete [] hydro_send_[i];
     delete [] hydro_recv_[i];
+  }
+  if (SELF_GRAVITY_ENABLED){
+    for(int i=0;i<pmb->pmy_mesh->maxneighbor_;i++) {
+      delete [] gravity_send_[i];
+      delete [] gravity_recv_[i];
+    }
   }
   if (MAGNETIC_FIELDS_ENABLED) {
     for(int i=0;i<pmb->pmy_mesh->maxneighbor_;i++) { 
@@ -652,6 +676,22 @@ void BoundaryValues::Initialize(void)
       MPI_Recv_init(hydro_recv_[nb.bufid],rsize,MPI_ATHENA_REAL,
                     nb.rank,tag,MPI_COMM_WORLD,&req_hydro_recv_[nb.bufid]);
 
+      if (SELF_GRAVITY_ENABLED){
+        if(nb.level==mylevel) { // same
+          ssize=rsize=((nb.ox1==0)?pmb->block_size.nx1:NGHOST)
+                     *((nb.ox2==0)?pmb->block_size.nx2:NGHOST)
+                     *((nb.ox3==0)?pmb->block_size.nx3:NGHOST);
+        }
+//        else
+// error message
+        tag=CreateBvalsMPITag(nb.lid, TAG_GRAVITY, nb.targetid);
+        MPI_Send_init(gravity_send_[nb.bufid],ssize,MPI_ATHENA_REAL,
+                      nb.rank,tag,MPI_COMM_WORLD,&req_gravity_send_[nb.bufid]);
+        tag=CreateBvalsMPITag(pmb->lid, TAG_GRAVITY, nb.bufid);
+        MPI_Recv_init(gravity_recv_[nb.bufid],rsize,MPI_ATHENA_REAL,
+                      nb.rank,tag,MPI_COMM_WORLD,&req_gravity_recv_[nb.bufid]);
+      }
+
       // flux correction
       if(pmb->pmy_mesh->multilevel==true && nb.type==NEIGHBOR_FACE) {
         int fi1, fi2, size;
@@ -673,6 +713,8 @@ void BoundaryValues::Initialize(void)
               nb.rank,tag,MPI_COMM_WORLD,&req_flcor_recv_[nb.fid][nb.fi2][nb.fi1]);
         }
       }
+
+
 
       if (MAGNETIC_FIELDS_ENABLED) {
         int size, csize, fsize;
@@ -877,6 +919,8 @@ void BoundaryValues::StartReceivingForInit(bool cons_and_field)
         MPI_Start(&req_hydro_recv_[nb.bufid]);
         if (MAGNETIC_FIELDS_ENABLED)
           MPI_Start(&req_field_recv_[nb.bufid]);
+        if (SELF_GRAVITY_ENABLED)
+          MPI_Start(&req_gravity_recv_[nb.bufid]);
       }
       else {  // must be primitive initialization
         MPI_Start(&req_hydro_recv_[nb.bufid]);
@@ -901,6 +945,8 @@ void BoundaryValues::StartReceivingAll(void)
     NeighborBlock& nb = pmb->neighbor[n];
     if(nb.rank!=Globals::my_rank) { 
       MPI_Start(&req_hydro_recv_[nb.bufid]);
+      if (SELF_GRAVITY_ENABLED)
+        MPI_Start(&req_gravity_recv_[nb.bufid]);
       if(nb.type==NEIGHBOR_FACE && nb.level>mylevel)
         MPI_Start(&req_flcor_recv_[nb.fid][nb.fi2][nb.fi1]);
       if (MAGNETIC_FIELDS_ENABLED) {
@@ -946,6 +992,8 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field)
     hydro_flag_[nb.bufid] = BNDRY_WAITING;
     if (MAGNETIC_FIELDS_ENABLED)
       field_flag_[nb.bufid] = BNDRY_WAITING;
+    if (SELF_GRAVITY_ENABLED)
+      gravity_flag_[nb.bufid] = BNDRY_WAITING;
     if (GENERAL_RELATIVITY and pmb->pmy_mesh->multilevel)
       hydro_flag_[nb.bufid] = BNDRY_WAITING;
 #ifdef MPI_PARALLEL
@@ -954,6 +1002,8 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field)
         MPI_Wait(&req_hydro_send_[nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
         if (MAGNETIC_FIELDS_ENABLED)
           MPI_Wait(&req_field_send_[nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
+        if (SELF_GRAVITY_ENABLED)
+          MPI_Wait(&req_gravity_send_[nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
       }
       else {  // must be primitive initialization
         if (GENERAL_RELATIVITY and pmb->pmy_mesh->multilevel)
@@ -985,9 +1035,13 @@ void BoundaryValues::ClearBoundaryAll(void)
       if((nb.type==NEIGHBOR_FACE) || (nb.type==NEIGHBOR_EDGE))
         emfcor_flag_[nb.bufid] = BNDRY_WAITING;
     }
+    if (SELF_GRAVITY_ENABLED)
+      gravity_flag_[nb.bufid] = BNDRY_WAITING;
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank) {
       MPI_Wait(&req_hydro_send_[nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
+      if (SELF_GRAVITY_ENABLED)
+        MPI_Wait(&req_gravity_send_[nb.bufid],MPI_STATUS_IGNORE); // Wait for Isend
       if(nb.type==NEIGHBOR_FACE && nb.level<pmb->loc.level)
         MPI_Wait(&req_flcor_send_[nb.fid],MPI_STATUS_IGNORE); // Wait for Isend
       if (MAGNETIC_FIELDS_ENABLED) {

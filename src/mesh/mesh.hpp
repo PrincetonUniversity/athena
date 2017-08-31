@@ -35,6 +35,8 @@ class Coordinates;
 class Reconstruction;
 class Hydro;
 class Field;
+class Gravity;
+class AthenaFFT;
 class EquationOfState;
 class FFTDriver;
 
@@ -128,7 +130,11 @@ public:
   // physics-related objects
   Hydro *phydro;
   Field *pfield;
+  Gravity *pgrav;
   EquationOfState *peos;
+
+  // fft object
+  AthenaFFT *pfft;
 
   MeshBlock *prev, *next;
 

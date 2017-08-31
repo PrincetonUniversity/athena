@@ -25,6 +25,7 @@
 #   --hdf5_path=path  path to HDF5 libraries (requires the HDF5 library)
 #   -fft              enable FFT (requires the FFTW library)
 #   --fftw_path=path  path to FFTW libraries (requires the FFTW library)
+#   --grav=choice     use choice as the self-gravity solver
 #   --cxx=choice      use choice as the C++ compiler
 #   --ccmd=name       use name as the command to call the C++ compiler
 #   --include=path    use -Ipath when compiling
@@ -87,6 +88,13 @@ parser.add_argument('--fint',
     choices=['vl2'],
     help='select hydro time-integration algorithm')
 
+# --grav=[name] argument
+parser.add_argument('--grav',
+    default='none',
+    choices=['none','fft'],
+    help='select self-gravity solver')
+
+
 # -b argument
 parser.add_argument('-b',
     action='store_true',
@@ -129,6 +137,18 @@ parser.add_argument('-omp',
     default=False,
     help='enable parallelization with OpenMP')
 
+# -fft argument
+parser.add_argument('-fft',
+    action='store_true',
+    default=False,
+    help='enable FFT')
+
+# --fftw_path argument
+parser.add_argument('--fftw_path',
+    type=str,
+    default='',
+    help='path to FFTW libraries')
+
 # -hdf5 argument
 parser.add_argument('-hdf5',
     action='store_true',
@@ -155,7 +175,11 @@ parser.add_argument('--fftw_path',
 # --cxx=[name] argument
 parser.add_argument('--cxx',
     default='g++',
+<<<<<<< HEAD
     choices=['g++','icc','cray','bgxl','icc-phi'],
+=======
+    choices=['g++','icc','cray','bgxl','clang++'],
+>>>>>>> self-gravity-fft
     help='select C++ compiler')
 
 # --ccmd=[name] argument
@@ -301,7 +325,7 @@ if args['cxx'] == 'icc':
   definitions['COMPILER_CHOICE'] = 'icc'
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
-  makefile_options['COMPILER_FLAGS'] = '-O3 -xhost -ipo -inline-forceinline'
+  makefile_options['COMPILER_FLAGS'] = '-O3 -xhost -inline-forceinline'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'cray':
@@ -336,6 +360,13 @@ if args['cxx'] == 'icc-phi':
   makefile_options['COMPILER_FLAGS'] = '-O3 -xMIC-AVX512 -ipo -inline-forceinline'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
+if args['cxx'] == 'clang++':
+  definitions['COMPILER_CHOICE'] = 'clang++'
+  definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'clang++'
+  makefile_options['PREPROCESSOR_FLAGS'] = ''
+  makefile_options['COMPILER_FLAGS'] = '-O3'
+  makefile_options['LINKER_FLAGS'] = ''
+  makefile_options['LIBRARY_FLAGS'] = ''
 
 # -debug argument
 if args['debug']:
@@ -354,7 +385,11 @@ else:
 # -mpi argument
 if args['mpi']:
   definitions['MPI_OPTION'] = 'MPI_PARALLEL'
+<<<<<<< HEAD
   if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'icc-phi':
+=======
+  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'clang++':
+>>>>>>> self-gravity-fft
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpicxx'
   if args['cxx'] == 'cray':
     makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
@@ -366,10 +401,15 @@ else:
 # -omp argument
 if args['omp']:
   definitions['OPENMP_OPTION'] = 'OPENMP_PARALLEL'
-  if args['cxx'] == 'g++':
+  if args['cxx'] == 'g++' or args['cxx'] == 'clang++':
     makefile_options['COMPILER_FLAGS'] += ' -fopenmp'
+<<<<<<< HEAD
   if args['cxx'] == 'icc' or args['cxx'] == 'icc-phi':
     makefile_options['COMPILER_FLAGS'] += ' -openmp'
+=======
+  if args['cxx'] == 'icc':
+    makefile_options['COMPILER_FLAGS'] += ' -qopenmp'
+>>>>>>> self-gravity-fft
   if args['cxx'] == 'cray':
     makefile_options['COMPILER_FLAGS'] += ' -homp'
   if args['cxx'] == 'bgxl':
@@ -385,6 +425,33 @@ else:
     # suppressed messages:
     #   3180: pragma omp not recognized
     makefile_options['COMPILER_FLAGS'] += ' -diag-disable 3180'
+
+# --grav argument
+if args['grav'] == "none":
+  definitions['SELF_GRAVITY_ENABLED'] = '0'
+  makefile_options['GRAVITY_FILE'] = 'empty_solver.cpp'
+else:
+  definitions['SELF_GRAVITY_ENABLED'] = '1'
+  if args['grav'] == "fft":
+    makefile_options['GRAVITY_FILE'] = 'fft_solver.cpp'
+    if not args['fft']:
+      raise SystemExit('### CONFIGURE ERROR: FFT Poisson solver only be used with FFT')
+
+# -fft argument
+makefile_options['MPIFFT_FILE'] = ' '
+definitions['FFT_ENABLED'] = '0'
+definitions['FFT_DEFINE'] = 'NO_FFT'
+if args['fft']:
+  definitions['FFT_ENABLED'] = '1'
+  definitions['FFT_DEFINE'] = 'FFT'
+  if args['fftw_path'] != '':
+    makefile_options['PREPROCESSOR_FLAGS'] += ' -I%s/include' % args['fftw_path']
+    makefile_options['LINKER_FLAGS'] += ' -L%s/lib' % args['fftw_path']
+  if args['omp']:
+    makefile_options['LIBRARY_FLAGS'] += ' -lfftw3_omp'
+  if args['mpi']:
+    makefile_options['MPIFFT_FILE'] = ' $(wildcard src/fft/plimpton/*.cpp)'
+  makefile_options['LIBRARY_FLAGS'] += ' -lfftw3'
 
 # -hdf5 argument
 if args['hdf5']:
@@ -475,6 +542,7 @@ print('  Equation of state:       ' + args['eos'])
 print('  Riemann solver:          ' + args['flux'])
 print('  Reconstruction method:   ' + args['order'])
 print('  Hydro integrator:        ' + args['fint'])
+print('  Self Gravity:            ' + ('OFF' if args['grav'] == 'none' else args['grav']))
 print('  Magnetic fields:         ' + ('ON' if args['b'] else 'OFF'))
 print('  Special relativity:      ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
@@ -484,6 +552,7 @@ print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' ' \
     + makefile_options['LIBRARY_FLAGS'])
 print('  MPI parallelism:         ' + ('ON' if args['mpi'] else 'OFF'))
 print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
+print('  FFT:                     ' + ('ON' if args['fft'] else 'OFF'))
 print('  HDF5 output:             ' + ('ON' if args['hdf5'] else 'OFF'))
 print('  FFT:                     ' + ('ON' if args['fft'] else 'OFF'))
 print('  Compiler:                ' + args['cxx'])

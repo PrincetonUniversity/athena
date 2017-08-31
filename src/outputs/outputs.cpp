@@ -63,6 +63,7 @@
 #include "../mesh/mesh.hpp"
 #include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
+#include "../gravity/gravity.hpp"
 #include "../coordinates/coordinates.hpp" // Coordinates
 #include "outputs.hpp"
 
@@ -302,6 +303,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb)
 {
   Hydro *phyd = pmb->phydro;
   Field *pfld = pmb->pfield;
+  Gravity *pgrav = pmb->pgrav;
   num_vars_ = 0;
   OutputData *pod;
 
