@@ -34,7 +34,7 @@ FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
   rdz_=(bsize_.x3max-bsize_.x3min)/(Real)bsize_.nx3;
 
   cnt_ = bsize_.nx1*bsize_.nx2*bsize_.nx3;
-  gcnt_ = msize_.nx1*msize_.nx2*msize_.nx3;
+  gcnt_ = pmy_driver_->gcnt_;
 
   dim_=pmy_driver_->dim_;
 

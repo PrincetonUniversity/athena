@@ -25,7 +25,9 @@
 #include "../coordinates/coordinates.hpp"
 #include "../hydro/hydro.hpp" 
 #include "../field/field.hpp"
+#include "../fft/athena_fft.hpp"
 #include "../gravity/gravity.hpp"
+#include "../gravity/fftgravity.hpp"
 #include "../bvals/bvals.hpp"
 #include "../eos/eos.hpp"
 #include "../parameter_input.hpp"
@@ -73,6 +75,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   nint_user_mesh_data_=0;
   nreal_user_mesh_data_=0;
   nuser_history_output_=0;
+
+  four_pi_G_=0.0;
 
   // read number of OpenMP threads for mesh
   num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
@@ -487,6 +491,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   }
   pblock=pfirst;
 
+  if (SELF_GRAVITY_ENABLED==1)
+    pgrd = new FFTGravityDriver(this, pin);
+
 }
 
 //----------------------------------------------------------------------------------------
@@ -512,6 +519,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   nint_user_mesh_data_=0;
   nreal_user_mesh_data_=0;
   nuser_history_output_=0;
+
+  four_pi_G_=0.0;
 
   nbnew=0; nbdel=0;
 

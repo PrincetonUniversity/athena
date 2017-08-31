@@ -36,9 +36,9 @@ class Reconstruction;
 class Hydro;
 class Field;
 class Gravity;
-class AthenaFFT;
 class EquationOfState;
 class FFTDriver;
+class FFTGravityDriver;
 
 //----------------------------------------------------------------------------------------
 //! \struct NeighborBlock
@@ -133,9 +133,6 @@ public:
   Gravity *pgrav;
   EquationOfState *peos;
 
-  // fft object
-  AthenaFFT *pfft;
-
   MeshBlock *prev, *next;
 
   // functions
@@ -178,6 +175,8 @@ class Mesh {
   friend class HydroSourceTerms;
   friend class Hydro;
   friend class FFTDriver;
+  friend class FFTGravityDriver;
+  friend class Gravity;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
@@ -203,7 +202,7 @@ public:
 
   MeshBlock *pblock;
 
-//  FFTDriver *pfftd;
+  FFTGravityDriver *pgrd;
 
   AthenaArray<Real> *ruser_mesh_data;
   AthenaArray<int> *iuser_mesh_data;
@@ -235,6 +234,9 @@ private:
   int nuser_history_output_;
   std::string *user_history_output_names_;
 
+  // global constants
+  Real four_pi_G_;
+
   // functions
   MeshGenFunc_t MeshGenerator_[3];
   SrcTermFunc_t UserSourceTerm_;
@@ -258,6 +260,9 @@ private:
   void AllocateUserHistoryOutput(int n);
   void EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const char *name);
   void EnrollUserMetric(MetricFunc_t my_func);
+
+  void SetGravitationalConstant(Real g) { four_pi_G_=4.0*PI*g; };
+  void SetFourPiG(Real fpg) { four_pi_G_=fpg; };
 };
 
 //----------------------------------------------------------------------------------------

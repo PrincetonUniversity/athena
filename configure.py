@@ -1,10 +1,10 @@
 #! /usr/bin/env python
-#---------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------
 # configure.py: Athena++ configuration script in python. Original version by CJW.
 #
 # When configure.py is run, it uses the command line options and default settings to
 # create custom versions of the files Makefile and src/defs.hpp from the template files
-# Makefile.in and src/defs.hpp.in repspectively.
+# Makefile.in and src/defs.hpp.in respectively.
 #
 # The following options are implememted:
 #   -h  --help        help message
@@ -12,8 +12,6 @@
 #   --coord=choice    use choice as the coordinate system
 #   --eos=choice      use choice as the equation of state
 #   --flux=choice     use choice as the Riemann solver
-#   --order=choice    use choice as the spatial reconstruction algorithm
-#   --fint=choice     use choice as the hydro time-integration algorithm
 #   -b                enable magnetic fields
 #   -s                enable special relativity
 #   -g                enable general relativity
@@ -30,7 +28,7 @@
 #   --ccmd=name       use name as the command to call the C++ compiler
 #   --include=path    use -Ipath when compiling
 #   --lib=path        use -Lpath when linking
-#---------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------
 
 # Modules
 import argparse
@@ -43,7 +41,7 @@ makefile_output = 'Makefile'
 defsfile_input = 'src/defs.hpp.in'
 defsfile_output = 'src/defs.hpp'
 
-#--- Step 1. Prepare parser, add each of the arguments ---------------------------------
+#--- Step 1. Prepare parser, add each of the arguments -----------------------------------
 parser = argparse.ArgumentParser()
 
 # --prob=[name] argument
@@ -75,25 +73,6 @@ parser.add_argument('--flux',
     default='default',
     choices=['default','hlle','hllc','hlld','roe','llf'],
     help='select Riemann solver')
-
-# --order=[name] argument
-parser.add_argument('--order',
-    default='plm',
-    choices=['plm'],
-    help='select spatial reconstruction algorithm')
-
-# --fint=[name] argument
-parser.add_argument('--fint',
-    default='vl2',
-    choices=['vl2'],
-    help='select hydro time-integration algorithm')
-
-# --grav=[name] argument
-parser.add_argument('--grav',
-    default='none',
-    choices=['none','fft'],
-    help='select self-gravity solver')
-
 
 # -b argument
 parser.add_argument('-b',
@@ -137,6 +116,12 @@ parser.add_argument('-omp',
     default=False,
     help='enable parallelization with OpenMP')
 
+# --grav=[name] argument
+parser.add_argument('--grav',
+    default='none',
+    choices=['none','fft','mg'],
+    help='select self-gravity solver')
+
 # -fft argument
 parser.add_argument('-fft',
     action='store_true',
@@ -160,26 +145,10 @@ parser.add_argument('--hdf5_path',
     default='',
     help='path to HDF5 libraries')
 
-# -fft argument
-parser.add_argument('-fft',
-    action='store_true',
-    default=False,
-    help='enable FFT')
-
-# --fftw_path argument
-parser.add_argument('--fftw_path',
-    type=str,
-    default='',
-    help='path to FFTW libraries')
-
 # --cxx=[name] argument
 parser.add_argument('--cxx',
     default='g++',
-<<<<<<< HEAD
-    choices=['g++','icc','cray','bgxl','icc-phi'],
-=======
-    choices=['g++','icc','cray','bgxl','clang++'],
->>>>>>> self-gravity-fft
+    choices=['g++','icc','cray','bgxl','icc-phi','clang++'],
     help='select C++ compiler')
 
 # --ccmd=[name] argument
@@ -204,7 +173,7 @@ parser.add_argument('--lib',
 # Parse command-line inputs
 args = vars(parser.parse_args())
 
-#--- Step 2. Test for incompatible arguments -------------------------------------------
+#--- Step 2. Test for incompatible arguments ---------------------------------------------
 
 # Set default flux; HLLD for MHD, HLLC for hydro, HLLE for isothermal hydro or any GR
 if args['flux'] == 'default':
@@ -244,7 +213,7 @@ if args['eos'] == 'isothermal':
     raise SystemExit('### CONFIGURE ERROR: '\
         + 'Isothermal EOS is incompatible with relativity')
 
-#--- Step 3. Set definitions and Makefile options based on above arguments -------------
+#--- Step 3. Set definitions and Makefile options based on above arguments ---------------
 
 # Prepare dictionaries of substitutions to be made
 definitions = {}
@@ -268,12 +237,6 @@ if args['eos'] == 'isothermal':
 
 # --flux=[name] argument
 definitions['RSOLVER'] = makefile_options['RSOLVER_FILE'] = args['flux']
-
-# --order=[name] argument
-definitions['RECONSTRUCT'] = makefile_options['RECONSTRUCT_FILE'] = args['order']
-
-# --fint=[name] argument
-definitions['HYDRO_INTEGRATOR'] = makefile_options['HYDRO_INT_FILE'] = args['fint']
 
 # -b argument
 # set variety of macros based on whether MHD/hydro or adi/iso are defined
@@ -325,7 +288,7 @@ if args['cxx'] == 'icc':
   definitions['COMPILER_CHOICE'] = 'icc'
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
   makefile_options['PREPROCESSOR_FLAGS'] = ''
-  makefile_options['COMPILER_FLAGS'] = '-O3 -xhost -inline-forceinline'
+  makefile_options['COMPILER_FLAGS'] = '-O3 -ipo -xhost -inline-forceinline'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'cray':
@@ -353,6 +316,7 @@ if args['cxx'] == 'bgxl':
       + ' -qsuppress=1586-267'
   makefile_options['LINKER_FLAGS'] = makefile_options['COMPILER_FLAGS']
   makefile_options['LIBRARY_FLAGS'] = ''
+
 if args['cxx'] == 'icc-phi':
   definitions['COMPILER_CHOICE'] = 'icc'
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icc'
@@ -360,6 +324,7 @@ if args['cxx'] == 'icc-phi':
   makefile_options['COMPILER_FLAGS'] = '-O3 -xMIC-AVX512 -ipo -inline-forceinline'
   makefile_options['LINKER_FLAGS'] = ''
   makefile_options['LIBRARY_FLAGS'] = ''
+
 if args['cxx'] == 'clang++':
   definitions['COMPILER_CHOICE'] = 'clang++'
   definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'clang++'
@@ -385,11 +350,7 @@ else:
 # -mpi argument
 if args['mpi']:
   definitions['MPI_OPTION'] = 'MPI_PARALLEL'
-<<<<<<< HEAD
-  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'icc-phi':
-=======
-  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'clang++':
->>>>>>> self-gravity-fft
+  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'icc-phi' or args['cxx'] == 'clang++':
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpicxx'
   if args['cxx'] == 'cray':
     makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
@@ -403,13 +364,8 @@ if args['omp']:
   definitions['OPENMP_OPTION'] = 'OPENMP_PARALLEL'
   if args['cxx'] == 'g++' or args['cxx'] == 'clang++':
     makefile_options['COMPILER_FLAGS'] += ' -fopenmp'
-<<<<<<< HEAD
   if args['cxx'] == 'icc' or args['cxx'] == 'icc-phi':
-    makefile_options['COMPILER_FLAGS'] += ' -openmp'
-=======
-  if args['cxx'] == 'icc':
     makefile_options['COMPILER_FLAGS'] += ' -qopenmp'
->>>>>>> self-gravity-fft
   if args['cxx'] == 'cray':
     makefile_options['COMPILER_FLAGS'] += ' -homp'
   if args['cxx'] == 'bgxl':
@@ -429,13 +385,14 @@ else:
 # --grav argument
 if args['grav'] == "none":
   definitions['SELF_GRAVITY_ENABLED'] = '0'
-  makefile_options['GRAVITY_FILE'] = 'empty_solver.cpp'
 else:
-  definitions['SELF_GRAVITY_ENABLED'] = '1'
   if args['grav'] == "fft":
-    makefile_options['GRAVITY_FILE'] = 'fft_solver.cpp'
+    definitions['SELF_GRAVITY_ENABLED'] = '1'
     if not args['fft']:
       raise SystemExit('### CONFIGURE ERROR: FFT Poisson solver only be used with FFT')
+
+  if args['grav'] == "mg":
+    definitions['SELF_GRAVITY_ENABLED'] = '2'
 
 # -fft argument
 makefile_options['MPIFFT_FILE'] = ' '
@@ -459,7 +416,7 @@ if args['hdf5']:
   if args['hdf5_path'] != '':
     makefile_options['PREPROCESSOR_FLAGS'] += '-I%s/include' % args['hdf5_path']
     makefile_options['LINKER_FLAGS'] += '-L%s/lib' % args['hdf5_path']
-  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'cray' or args['cxx'] == 'icc-phi':
+  if args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'cray' or args['cxx'] == 'icc-phi' or args['cxx'] == 'clang++':
     makefile_options['LIBRARY_FLAGS'] += ' -lhdf5'
   if args['cxx'] == 'bgxl':
     makefile_options['PREPROCESSOR_FLAGS'] += \
@@ -472,23 +429,6 @@ if args['hdf5']:
     makefile_options['LIBRARY_FLAGS'] += ' -lhdf5 -lz -lm'
 else:
   definitions['HDF5_OPTION'] = 'NO_HDF5OUTPUT'
-
-# -fft argument
-makefile_options['MPIFFT_FILE'] = ' '
-if args['fft']:
-  definitions['FFT_ENABLED'] = '1'
-  definitions['FFT_DEFINE'] = 'FFT'
-  if args['fftw_path'] != '':
-    makefile_options['PREPROCESSOR_FLAGS'] += ' -I%s/include' % args['fftw_path']
-    makefile_options['LINKER_FLAGS'] += ' -L%s/lib' % args['fftw_path']
-  if args['omp']:
-    makefile_options['LIBRARY_FLAGS'] += ' -lfftw3_omp'
-  if args['mpi']:
-    makefile_options['MPIFFT_FILE'] = ' $(wildcard src/fft/plimpton/*.cpp)'
-  makefile_options['LIBRARY_FLAGS'] += ' -lfftw3'
-else:
-  definitions['FFT_ENABLED'] = '0'
-  definitions['FFT_DEFINE'] = 'NO_FFT'
 
 # --ccmd=[name] argument
 if args['ccmd'] is not None:
@@ -506,15 +446,13 @@ for library_path in args['lib']:
 definitions['COMPILER_FLAGS'] = ' '.join([makefile_options[opt+'_FLAGS'] for opt in \
     ['PREPROCESSOR','COMPILER','LINKER','LIBRARY']])
 
-#--- Step 4. Create new files, finish up -----------------------------------------------
+#--- Step 4. Create new files, finish up -------------------------------------------------
 
 # Terminate all filenames with .cpp extension
 makefile_options['PROBLEM_FILE'] += '.cpp'
 makefile_options['COORDINATES_FILE'] += '.cpp'
 makefile_options['EOS_FILE'] += '.cpp'
 makefile_options['RSOLVER_FILE'] += '.cpp'
-makefile_options['RECONSTRUCT_FILE'] += '.cpp'
-makefile_options['HYDRO_INT_FILE'] += '.cpp'
 
 # Read templates
 with open(defsfile_input, 'r') as current_file:
@@ -540,8 +478,6 @@ print('  Problem generator:       ' + args['prob'])
 print('  Coordinate system:       ' + args['coord'])
 print('  Equation of state:       ' + args['eos'])
 print('  Riemann solver:          ' + args['flux'])
-print('  Reconstruction method:   ' + args['order'])
-print('  Hydro integrator:        ' + args['fint'])
 print('  Self Gravity:            ' + ('OFF' if args['grav'] == 'none' else args['grav']))
 print('  Magnetic fields:         ' + ('ON' if args['b'] else 'OFF'))
 print('  Special relativity:      ' + ('ON' if args['s'] else 'OFF'))
@@ -554,7 +490,6 @@ print('  MPI parallelism:         ' + ('ON' if args['mpi'] else 'OFF'))
 print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
 print('  FFT:                     ' + ('ON' if args['fft'] else 'OFF'))
 print('  HDF5 output:             ' + ('ON' if args['hdf5'] else 'OFF'))
-print('  FFT:                     ' + ('ON' if args['fft'] else 'OFF'))
 print('  Compiler:                ' + args['cxx'])
 print('  Compilation command:     ' + makefile_options['COMPILER_COMMAND'] + ' ' \
     + makefile_options['PREPROCESSOR_FLAGS'] + ' ' + makefile_options['COMPILER_FLAGS'])

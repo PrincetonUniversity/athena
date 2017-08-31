@@ -23,11 +23,18 @@
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../gravity/gravity.hpp"
+#include "../gravity/fftgravity.hpp"
 #include "../mesh/mesh.hpp"
 
 #ifdef OPENMP_PARALLEL
 #include "omp.h"
 #endif
+
+void Mesh::InitUserMeshData(ParameterInput *pin)
+{
+  Real four_pi_G = pin->GetReal("problem","four_pi_G");
+  SetFourPiG(four_pi_G);
+}
 
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
@@ -46,8 +53,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real x2size = mesh_size.x2max - mesh_size.x2min;
   Real x3size = mesh_size.x3max - mesh_size.x3min;
 
-  Real gconst = 1.0;
-  Real four_pi_G = 4.0*PI*gconst;
+  Real four_pi_G = pin->GetReal("problem","four_pi_G");
+  Real gconst = four_pi_G / (4.0*PI);
   Real grav_mean_rho = 0.0;
   
   int iprob = pin->GetOrAddInteger("problem","iprob",1);
@@ -97,12 +104,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       phydro->u(IM3,k,j,i) = 0.0;
     }
   }}}
-
-  if(SELF_GRAVITY_ENABLED){
-    pgrav->gconst = gconst;
-    pgrav->four_pi_G = four_pi_G;
-    pgrav->grav_mean_rho = grav_mean_rho;
-  } // self-gravity
 }
 
 //========================================================================================

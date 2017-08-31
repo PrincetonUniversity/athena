@@ -89,6 +89,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
   fft_block_size_.nx2=pm->mesh_size.nx2/npx2;
   fft_block_size_.nx3=pm->mesh_size.nx3/npx3;
 
+  gcnt_ = fft_mesh_size_.nx1*fft_mesh_size_.nx2*fft_mesh_size_.nx3;
 
 #ifdef MPI_PARALLEL
   {using namespace DecompositionNames;

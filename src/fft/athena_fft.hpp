@@ -186,6 +186,7 @@ protected:
   int decomp_,pdim_;
 #endif
 private:
+  int gcnt_;
   int dim_;
 #ifdef MPI_PARALLEL
   MPI_Comm MPI_COMM_FFT;

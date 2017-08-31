@@ -30,6 +30,8 @@ FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
     throw std::runtime_error(msg.str().c_str());
     return;
   }
+
+  pmy_fb->SetNormFactor(four_pi_G_/gcnt_);
 }
 
 
@@ -39,7 +41,7 @@ FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
 
 void FFTGravityDriver::Solve(int step)
 {
-  FFTBlock *pfb=pfb_;
+  FFTBlock *pfb=pmy_fb;
   AthenaArray<Real> in;
 
   // Load the source 
@@ -48,22 +50,22 @@ void FFTGravityDriver::Solve(int step)
   for(int igid=nbs;igid<=nbe;igid++){
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(gid);
     if(pmb!=NULL) {
-      in.InitWithShallowCopy(pmb->phydro->u);
-      pfb->LoadSource(in, IDN, NGHOST, pmb->loc, pmb->block_size);
+      in.InitWithShallowSlice(pmb->phydro->u,4,IDN,1);
+      pfb->LoadSource(in, 1, NGHOST, pmb->loc, pmb->block_size);
     }
 //    else { // on another process
 //    }
   }
 
-  pfblock->Execute(pfblock->fplan); 
-  pfblock->ApplyKernel(mode);
-  pfblock->Execute(pfblock->bplan); 
+  pfb->ExecuteForward();
+  pfb->ApplyKernel(mode);
+  pfb->ExecuteBackward();
 
   // Return the result
   for(int gid=nbs;gid<=nbe;gid++){
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(gid);
     if(pmb!=NULL) {
-      pfblock->RetrieveResult(pmb->pgrav->phi, 0, NGHOST, 
+      pfblock->RetrieveResult(pmb->pgrav->phi, 1, NGHOST, 
                               pmb->loc, pmb->block_size);
     }
 //    else { // on another process
