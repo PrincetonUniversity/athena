@@ -23,6 +23,8 @@
 #include "remap_3d.h"
 #include "fft_3d.h"
 
+#include "../../globals.hpp"
+
 #define MIN(A,B) ((A) < (B)) ? (A) : (B)
 #define MAX(A,B) ((A) > (B)) ? (A) : (B)
 

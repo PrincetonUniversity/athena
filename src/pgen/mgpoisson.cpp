@@ -79,6 +79,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   int dim = 1;
   if(mesh_size.nx2 > 1) dim=2;
   if(mesh_size.nx3 > 1) dim=3;
+
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
   for (int i=is; i<=ie; ++i) {

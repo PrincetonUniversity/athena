@@ -73,7 +73,7 @@ void FFTGravityDriver::Solve(int step)
   }
 
   pfb->ExecuteForward();
-  pfb->ApplyKernel(0);
+  pfb->ApplyKernel(1);
   pfb->ExecuteBackward();
 
   // Return the result
@@ -102,26 +102,31 @@ void FFTGravity::ApplyKernel(int mode)
   for(int k=0; k<knx_[2]; k++) {
     for(int j=0; j<knx_[1]; j++) {
       for(int i=0; i<knx_[0]; i++) {
-        if(mode == 0){ // fully periodic in all directions
-          long int gidx = GetGlobalIndex(i,j,k);
-          if(gidx == 0){ pcoeff = 0.0;}
-          else {
+        long int gidx = GetGlobalIndex(i,j,k);
+        if(gidx == 0){ pcoeff = 0.0;}
+        else {
+          if(mode == 0){ // Discrete FT
             pcoeff = ((2.0*std::cos((i+kdisp_[0])*dkx_[0])-2.0)/dx1sq);
             if(dim_ > 1)
               pcoeff += ((2.0*std::cos((j+kdisp_[1])*dkx_[1])-2.0)/dx2sq);
             if(dim_ > 2)
               pcoeff += ((2.0*std::cos((k+kdisp_[2])*dkx_[2])-2.0)/dx3sq);
-            pcoeff = 1.0/pcoeff;
+          } else if(mode == 1) { // Continous FT
+            Real kx=(i+kdisp_[0])*dkx_[0];
+            Real ky=(j+kdisp_[1])*dkx_[1];
+            Real kz=(k+kdisp_[2])*dkx_[2];
+            if(kx > PI) kx -= 2*PI;
+            if(ky > PI) ky -= 2*PI;
+            if(kz > PI) kz -= 2*PI;
+            pcoeff = -(kx*kx/dx1sq+ky*ky/dx2sq+kz*kz/dx3sq);
           }
- 
-          long int idx_in=GetIndex(i,j,k,b_in_);
-          long int idx_out=GetIndex(i,j,k,f_out_);
-          in_[idx_in][0] = out_[idx_out][0]*pcoeff;
-          in_[idx_in][1] = out_[idx_out][1]*pcoeff;
-        } 
-//        else if (mode == 1){ 
-// some other cases
-//        }
+          pcoeff = 1.0/pcoeff;
+        }
+
+        long int idx_in=GetIndex(i,j,k,b_in_);
+        long int idx_out=GetIndex(i,j,k,f_out_);
+        in_[idx_in][0] = out_[idx_out][0]*pcoeff;
+        in_[idx_in][1] = out_[idx_out][1]*pcoeff;
       }
     }
   }
