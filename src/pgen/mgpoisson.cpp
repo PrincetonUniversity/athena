@@ -28,6 +28,8 @@
 #include "../mesh/mesh.hpp"
 #include "../gravity/mggravity.hpp"
 #include "../multigrid/multigrid.hpp"
+#include "../gravity/fftgravity.hpp"
+#include "../fft/athena_fft.hpp"
 
 
 #ifdef OPENMP_PARALLEL
@@ -151,7 +153,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   if(SELF_GRAVITY_ENABLED){
     if(nlim == 0){
 // timing measure after loop
-      int ncycle = pin->GetOrAddInteger("problem","ncycle",100);
+      int ncycle = pin->GetInteger("problem","ncycle");
       if(Globals::my_rank == 0){
         std::cout << "=====================================================" << std::endl;
         std::cout << "Call Poisson Solver  " << ncycle << " times          " << std::endl;
@@ -169,7 +171,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           std::memset(pmb->pgrav->phi.data(), 0, pmb->pgrav->phi.GetSizeInBytes());
           pmb=pmb->next;
         }
-        pgrd->Solve(1);
+        if(SELF_GRAVITY_ENABLED == 1) pfgrd->Solve(1);
+        else if (SELF_GRAVITY_ENABLED == 2) pgrd->Solve(1);
       }
 
 #ifdef OPENMP_PARALLEL

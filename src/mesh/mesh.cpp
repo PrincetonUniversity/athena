@@ -505,8 +505,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
 
   if (SELF_GRAVITY_ENABLED==1)
     pfgrd = new FFTGravityDriver(this, pin);
-
-  if (SELF_GRAVITY_ENABLED==2)
+  else if (SELF_GRAVITY_ENABLED==2)
     pgrd = new GravityDriver(this, MGBoundaryFunction_, pin);
 }
 
@@ -851,7 +850,8 @@ Mesh::~Mesh()
   delete [] ranklist;
   delete [] costlist;
   delete [] loclist;
-  if (SELF_GRAVITY_ENABLED==2) delete pgrd;
+  if (SELF_GRAVITY_ENABLED==1) delete pfgrd;
+  else if (SELF_GRAVITY_ENABLED==2) delete pgrd;
   if(adaptive==true) { // deallocate arrays for AMR
     delete [] nref;
     delete [] nderef;
@@ -1213,16 +1213,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     }
 
     // solve gravity for the first time
-    if(SELF_GRAVITY_ENABLED == 1){
-      pmb = pblock;
-      while (pmb != NULL) {
-        phydro=pmb->phydro;
-        pgrav=pmb->pgrav;
-        pgrav->Solver(phydro->u);
-        pmb=pmb->next;
-      }
-    }
-    if(SELF_GRAVITY_ENABLED == 2)
+    if(SELF_GRAVITY_ENABLED == 1)
+      pfgrd->Solve(1);
+    else if(SELF_GRAVITY_ENABLED == 2)
       pgrd->Solve(1);
 
     // prepare to receive conserved variables
@@ -1242,10 +1235,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
         pfield=pmb->pfield;
         pmb->pbval->SendFieldBoundaryBuffers(pfield->b);
       }
-      if (SELF_GRAVITY_ENABLED==1) {
-        pgrav=pmb->pgrav;
-        pmb->pbval->SendGravityBoundaryBuffers(pgrav->phi);
-      }
+//      if (SELF_GRAVITY_ENABLED==1) {
+//        pgrav=pmb->pgrav;
+//        pmb->pbval->SendGravityBoundaryBuffers(pgrav->phi);
+//      }
       pmb=pmb->next;
     }
 
@@ -1259,10 +1252,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
         pfield=pmb->pfield;
         pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b);
       }
-      if (SELF_GRAVITY_ENABLED==1) {
-        pgrav=pmb->pgrav;
-        pmb->pbval->ReceiveGravityBoundaryBuffersWithWait(pgrav->phi);
-      }
+//      if (SELF_GRAVITY_ENABLED==1) {
+//        pgrav=pmb->pgrav;
+//        pmb->pbval->ReceiveGravityBoundaryBuffersWithWait(pgrav->phi);
+//      }
       pmb->pbval->ClearBoundaryForInit(true);
       pmb=pmb->next;
     }

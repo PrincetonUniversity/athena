@@ -96,9 +96,6 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // Boundary
   pbval  = new BoundaryValues(this, input_bcs);
 
-  // FFT object (need to be set before Gravity class)
-  if (FFT_ENABLED) pfft = new AthenaFFT(this);
-
   // physics-related objects
   phydro = new Hydro(this, pin);
   if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
@@ -189,9 +186,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   // Boundary
   pbval  = new BoundaryValues(this, input_bcs);
 
-  // FFT object
-  if (FFT_ENABLED) pfft = new AthenaFFT(this);
-
   // (re-)create physics-related objects in MeshBlock
   phydro = new Hydro(this, pin);
   if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
@@ -279,8 +273,6 @@ MeshBlock::~MeshBlock()
   delete pbval;
   delete precon;
   if (pmy_mesh->multilevel == true) delete pmr;
-
-  if (FFT_ENABLED) delete pfft;
 
   delete phydro;
   if (MAGNETIC_FIELDS_ENABLED) delete pfield;

@@ -8,18 +8,28 @@
 
 // Athena++ headers
 #include "fftgravity.hpp"
+#include "gravity.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../fft/athena_fft.hpp"
 #include "../globals.hpp"
+#include "../hydro/hydro.hpp"
+
+#include <iostream>
+#include <sstream>    // sstream
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str()
+#include <cmath>
+
 
 //----------------------------------------------------------------------------------------
 //! \fn FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
 //  \brief FFTGravityDriver constructor
 
 FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
+ : FFTDriver(pm, pin)
 {
   four_pi_G_=pmy_mesh_->four_pi_G_;
   if(four_pi_G_==0.0) {
@@ -31,7 +41,12 @@ FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
     return;
   }
 
+  int igid=nslist_[Globals::my_rank];
+  pmy_fb=new FFTGravity(this, fft_loclist_[igid], igid, fft_mesh_size_, fft_block_size_);
+
   pmy_fb->SetNormFactor(four_pi_G_/gcnt_);
+
+  QuickCreatePlan();
 }
 
 
@@ -48,7 +63,7 @@ void FFTGravityDriver::Solve(int step)
   int nbs=nslist_[Globals::my_rank];
   int nbe=nbs+nblist_[Globals::my_rank]-1;
   for(int igid=nbs;igid<=nbe;igid++){
-    MeshBlock *pmb=pmy_mesh_->FindMeshBlock(gid);
+    MeshBlock *pmb=pmy_mesh_->FindMeshBlock(igid);
     if(pmb!=NULL) {
       in.InitWithShallowSlice(pmb->phydro->u,4,IDN,1);
       pfb->LoadSource(in, 1, NGHOST, pmb->loc, pmb->block_size);
@@ -58,43 +73,43 @@ void FFTGravityDriver::Solve(int step)
   }
 
   pfb->ExecuteForward();
-  pfb->ApplyKernel(mode);
+  pfb->ApplyKernel(0);
   pfb->ExecuteBackward();
 
   // Return the result
-  for(int gid=nbs;gid<=nbe;gid++){
-    MeshBlock *pmb=pmy_mesh_->FindMeshBlock(gid);
+  for(int igid=nbs;igid<=nbe;igid++){
+    MeshBlock *pmb=pmy_mesh_->FindMeshBlock(igid);
     if(pmb!=NULL) {
-      pfblock->RetrieveResult(pmb->pgrav->phi, 1, NGHOST, 
-                              pmb->loc, pmb->block_size);
+      pfb->RetrieveResult(pmb->pgrav->phi, 1, NGHOST, 
+                          pmb->loc, pmb->block_size);
     }
 //    else { // on another process
 //    }
   }
+
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FFTBlock::ApplyKernel(const AthenaArray<Real> &src, int ns)
+//! \fn void FFTGravity::ApplyKernel(const AthenaArray<Real> &src, int ns)
 //  \brief Apply kernel
 void FFTGravity::ApplyKernel(int mode)
 {
-  int is, ie, js, je, ks, ke;
   Real pcoeff;
   Real dx1sq=rdx_*rdx_;
   Real dx2sq=rdy_*rdy_;
   Real dx3sq=rdz_*rdz_;
-  for(int k=0, k<knx_[2]; k++) {
-    for(int j=0, j<knx_[1]; j++) {
-      for(int i=0, i<knx_[0]; i++) {
+  for(int k=0; k<knx_[2]; k++) {
+    for(int j=0; j<knx_[1]; j++) {
+      for(int i=0; i<knx_[0]; i++) {
         if(mode == 0){ // fully periodic in all directions
           long int gidx = GetGlobalIndex(i,j,k);
-          if(gidx == 0){ pcoeffi = 0.0;}
+          if(gidx == 0){ pcoeff = 0.0;}
           else {
             pcoeff = ((2.0*std::cos((i+kdisp_[0])*dkx_[0])-2.0)/dx1sq);
-            if(pfft->dim_ > 1)
+            if(dim_ > 1)
               pcoeff += ((2.0*std::cos((j+kdisp_[1])*dkx_[1])-2.0)/dx2sq);
-            if(pfft->dim_ > 2)
+            if(dim_ > 2)
               pcoeff += ((2.0*std::cos((k+kdisp_[2])*dkx_[2])-2.0)/dx3sq);
             pcoeff = 1.0/pcoeff;
           }

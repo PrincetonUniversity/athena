@@ -29,9 +29,9 @@ FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
   gid_=igid;
   msize_=msize;
   bsize_=bsize;
-  rdx_=(bsize_.x1max-bsize_.x1min)/(Real)bsize_.nx1;
-  rdy_=(bsize_.x2max-bsize_.x2min)/(Real)bsize_.nx2;
-  rdz_=(bsize_.x3max-bsize_.x3min)/(Real)bsize_.nx3;
+  rdx_=(msize_.x1max-msize_.x1min)/(Real)msize_.nx1;
+  rdy_=(msize_.x2max-msize_.x2min)/(Real)msize_.nx2;
+  rdz_=(msize_.x3max-msize_.x3min)/(Real)msize_.nx3;
 
   cnt_ = bsize_.nx1*bsize_.nx2*bsize_.nx3;
   gcnt_ = pmy_driver_->gcnt_;
@@ -75,12 +75,6 @@ FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
 FFTBlock::~FFTBlock()
 {
 #ifdef FFT
-    delete[] Nx_;
-    delete[] nx_;
-    delete[] disp_;
-    delete[] knx_;
-    delete[] kdisp_;
-    delete[] dkx_;
     delete fplan_;
     delete bplan_;
     delete[] in_;
@@ -147,7 +141,11 @@ void FFTBlock::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh, LogicalLo
       for(int j=ngh, mj=js; mj<=je; j++, mj++) {
         for(int i=ngh, mi=is; mi<=ie; i++, mi++){
           long int idx=GetIndex(mi,mj,mk,b_out_);
-          dst(n,k,j,i)=src[idx][n]*norm_factor_;
+          if(ns == 1){
+            dst(k,j,i)=src[idx][0]*norm_factor_;
+          } else {
+            dst(n,k,j,i)=src[idx][n]*norm_factor_;
+          }
         }
       }
     }
@@ -558,12 +556,7 @@ AthenaFFTIndex::AthenaFFTIndex(const AthenaFFTIndex *psrc){
 
 AthenaFFTIndex::~AthenaFFTIndex()
 {
-  delete[] Nx;
-  delete[] np;
-  delete[] ip;
-  delete[] nx;
-  delete[] is;
-  delete[] ie;
+
 }
 
 void AthenaFFTIndex::SetLocalIndex(){

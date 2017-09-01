@@ -43,7 +43,6 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin)
   phi.NewAthenaArray(ncells3,ncells2,ncells1);
 //  phi_old.NewAthenaArray(ncells3,ncells2,ncells1);
 
-  Initialize(pin);
 }
 
 // destructor

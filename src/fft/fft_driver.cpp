@@ -82,9 +82,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
     throw std::runtime_error(msg.str().c_str());
     return;
   }
-  fft_mesh_size_.nx1=pm->mesh_size.nx1;
-  fft_mesh_size_.nx2=pm->mesh_size.nx2;
-  fft_mesh_size_.nx3=pm->mesh_size.nx3;
+  fft_mesh_size_=pm->mesh_size;
   fft_block_size_.nx1=pm->mesh_size.nx1/npx1;
   fft_block_size_.nx2=pm->mesh_size.nx2/npx2;
   fft_block_size_.nx3=pm->mesh_size.nx3/npx3;
@@ -108,16 +106,20 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
   }}
 #endif
 
-  int igid=nslist_[Globals::my_rank];
-  pmy_fb=new FFTBlock(this, fft_loclist_[igid], igid, fft_mesh_size_, fft_block_size_);
+//  int igid=nslist_[Globals::my_rank];
+//  pmy_fb=new FFTBlock(this, fft_loclist_[igid], igid, fft_mesh_size_, fft_block_size_);
+
+//  QuickCreatePlan();
 }
 
 // destructor
 
 FFTDriver::~FFTDriver()
 {
+  delete [] ranklist_;
   delete [] nslist_;
   delete [] nblist_;
+  delete [] fft_loclist_;
   delete pmy_fb;
 }
 

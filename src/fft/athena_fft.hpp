@@ -16,6 +16,8 @@
 #include "../mesh/mesh.hpp"
 #include "../mesh/meshblock_tree.hpp"
 
+#include <iostream>
+
 enum AthenaFFTDirection { AthenaFFTForward = -1, AthenaFFTBackward = 1 };
 
 #ifdef FFT
@@ -129,6 +131,7 @@ public:
   void ExecuteBackward(void) {Execute(bplan_);};
 
   void PrintSource(int in);
+  void PrintNormFactor(void) {std::cout << norm_factor_ << std::endl;};
 
   void SetNormFactor(Real norm) { norm_factor_=norm;};
 
@@ -137,26 +140,25 @@ public:
 protected:
   long int cnt_,gcnt_;
   int gid_;
-  LogicalLocation loc_;
   FFTDriver *pmy_driver_;
-  RegionSize msize_, bsize_;
   Real rdx_, rdy_, rdz_;
-#ifdef MPI_PARALLEL
-  int decomp_,pdim_;
-  int permute0_, permute1_, permute2_;
-  bool swap1_,swap2_;
-#endif
   AthenaFFTComplex *in_, *out_;
   AthenaFFTPlan *fplan_,*bplan_;
   AthenaFFTIndex *orig_idx_;
   AthenaFFTIndex *f_in_,*f_out_,*b_in_,*b_out_;
-
-private:
   int Nx_[3], nx_[3], disp_[3];
   int knx_[3], kdisp_[3];
   Real dkx_[3];   
   Real norm_factor_;
   int dim_;
+private:
+  LogicalLocation loc_;
+  RegionSize msize_, bsize_;
+#ifdef MPI_PARALLEL
+  int decomp_,pdim_;
+  int permute0_, permute1_, permute2_;
+  bool swap1_,swap2_;
+#endif
 };
 
 //! \class FFTDriver
@@ -177,6 +179,7 @@ public:
 
   friend class FFTBlock;
 protected:
+  long int gcnt_;
   int nranks_, nblocks_;
   int *ranklist_, *nslist_, *nblist_;
   Mesh *pmy_mesh_;
@@ -186,7 +189,6 @@ protected:
   int decomp_,pdim_;
 #endif
 private:
-  int gcnt_;
   int dim_;
 #ifdef MPI_PARALLEL
   MPI_Comm MPI_COMM_FFT;

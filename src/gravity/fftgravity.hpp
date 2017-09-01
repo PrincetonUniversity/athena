@@ -17,14 +17,18 @@
 class MeshBlock;
 class ParameterInput;
 class Coordinates;
-class AthenaFFTBlock;
+class FFTBlock;
 
 //! \class FFTGravity
 //  \brief FFT gravity solver for each block
 
-class FFTGravity : public AthenaFFTBlock {
+class FFTGravity : public FFTBlock {
 public:
+  FFTGravity(FFTDriver *pfd, LogicalLocation iloc, int igid, 
+           RegionSize msize, RegionSize bsize)
+  : FFTBlock(pfd, iloc, igid, msize, bsize) {};
   ~FFTGravity() {};
+  void ApplyKernel(int mode);
 };
 
 
