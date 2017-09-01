@@ -337,6 +337,8 @@ int main(int argc, char *argv[])
   double omp_start_time = omp_get_wtime();
 #endif
 
+  if(SELF_GRAVITY_ENABLED == 1) pmesh->pfgrd->Solve(1);
+
   while ((pmesh->time < pmesh->tlim) && 
          (pmesh->nlim < 0 || pmesh->ncycle < pmesh->nlim)){
 
@@ -346,9 +348,9 @@ int main(int argc, char *argv[])
     }
 
     for (int step=1; step<=ptlist->nsub_steps; ++step) {
-      if(SELF_GRAVITY_ENABLED == 1 and step == 1) // fft
+      if(SELF_GRAVITY_ENABLED == 1 && step == 2) // fft
         pmesh->pfgrd->Solve(step);
-      if(SELF_GRAVITY_ENABLED == 2) // multigrid
+      else if(SELF_GRAVITY_ENABLED == 2) // multigrid
         pmesh->pgrd->Solve(step);
       ptlist->DoTaskListOneSubstep(pmesh, step);
     }

@@ -210,6 +210,7 @@ private:
   HistoryOutputFunc_t *user_history_func_;
   MetricFunc_t UserMetric_;
   MGBoundaryFunc_t MGBoundaryFunction_[6];
+  GravityBoundaryFunc_t GravityBoundaryFunction_[6];
 
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
@@ -227,6 +228,7 @@ private:
   void EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const char *name);
   void EnrollUserMetric(MetricFunc_t my_func);
   void EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t my_bc);
+  void EnrollUserGravityBoundaryFunction(enum BoundaryFace dir, GravityBoundaryFunc_t my_bc);
   void SetGravitationalConstant(Real g) { four_pi_G_=4.0*PI*g; };
   void SetFourPiG(Real fpg) { four_pi_G_=fpg; };
   void SetGravityThreshold(Real eps) { grav_eps_=eps; };

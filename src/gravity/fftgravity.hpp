@@ -18,6 +18,8 @@ class MeshBlock;
 class ParameterInput;
 class Coordinates;
 class FFTBlock;
+class FFTDriver;
+class GravitySolverTaskList;
 
 //! \class FFTGravity
 //  \brief FFT gravity solver for each block
@@ -43,6 +45,7 @@ public:
 
 private:
   Real four_pi_G_;
+  GravitySolverTaskList *gtlist_; 
 };
 
 #endif // FFTGRAVITY_HPP

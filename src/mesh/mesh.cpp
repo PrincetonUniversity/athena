@@ -263,6 +263,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   MGBoundaryFunction_[INNER_X3]=MGPeriodicInnerX3;
   MGBoundaryFunction_[OUTER_X3]=MGPeriodicOuterX3;
 
+
   // calculate the logical root level and maximum level
   for (root_level=0; (1<<root_level)<nbmax; root_level++);
   current_level=root_level;
@@ -831,6 +832,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   // clean up
   delete [] offset;
 
+  if (SELF_GRAVITY_ENABLED==1)
+    pfgrd = new FFTGravityDriver(this, pin);
   if (SELF_GRAVITY_ENABLED==2)
     pgrd = new GravityDriver(this, MGBoundaryFunction_, pin);
 }
@@ -1186,6 +1189,21 @@ void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t 
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir, GravityBoundaryFunc_t my_bc)
+//  \brief Enroll a user-defined boundary function
+
+void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir, GravityBoundaryFunc_t my_bc)
+{
+  std::stringstream msg;
+  if(dir<0 || dir>5) {
+    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
+        << "dirName = " << dir << " not valid" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  GravityBoundaryFunction_[dir]=my_bc;
+  return;
+}
 
 //----------------------------------------------------------------------------------------
 // \!fn void Mesh::Initialize(int res_flag, ParameterInput *pin)
@@ -1213,8 +1231,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     }
 
     // solve gravity for the first time
-    if(SELF_GRAVITY_ENABLED == 1)
-      pfgrd->Solve(1);
     else if(SELF_GRAVITY_ENABLED == 2)
       pgrd->Solve(1);
 
@@ -1235,10 +1251,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
         pfield=pmb->pfield;
         pmb->pbval->SendFieldBoundaryBuffers(pfield->b);
       }
-//      if (SELF_GRAVITY_ENABLED==1) {
-//        pgrav=pmb->pgrav;
-//        pmb->pbval->SendGravityBoundaryBuffers(pgrav->phi);
-//      }
       pmb=pmb->next;
     }
 
@@ -1252,10 +1264,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
         pfield=pmb->pfield;
         pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b);
       }
-//      if (SELF_GRAVITY_ENABLED==1) {
-//        pgrav=pmb->pgrav;
-//        pmb->pbval->ReceiveGravityBoundaryBuffersWithWait(pgrav->phi);
-//      }
       pmb->pbval->ClearBoundaryForInit(true);
       pmb=pmb->next;
     }

@@ -228,8 +228,6 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
     InitBoundaryData(bd_field_, BNDRY_FIELD);
     InitBoundaryData(bd_emfcor_, BNDRY_EMFCOR);
   }
-//  if(SELF_GRAVITY_ENABLED == 1)
-//    InitBoundaryData(bd_gravity_, BNDRY_GRAVITY);
 
   if (num_north_polar_blocks_ > 0) {
     emf_north_send_ = new Real *[num_north_polar_blocks_];
@@ -307,8 +305,6 @@ BoundaryValues::~BoundaryValues()
     DestroyBoundaryData(bd_field_);
     DestroyBoundaryData(bd_emfcor_);
   }
-//  if (SELF_GRAVITY_ENABLED == 1)
-//    DestroyBoundaryData(bd_gravity_);
 
   if (MAGNETIC_FIELDS_ENABLED) {
     if (num_north_polar_blocks_ > 0) {
@@ -646,20 +642,6 @@ void BoundaryValues::Initialize(void)
       MPI_Recv_init(bd_hydro_.recv[nb.bufid],rsize,MPI_ATHENA_REAL,
                     nb.rank,tag,MPI_COMM_WORLD,&(bd_hydro_.req_recv[nb.bufid]));
 
-//      if (SELF_GRAVITY_ENABLED == 1){
-//        if(nb.level==mylevel) { // same
-//          ssize=rsize=((nb.ox1==0)?pmb->block_size.nx1:NGHOST)
-//                     *((nb.ox2==0)?pmb->block_size.nx2:NGHOST)
-//                     *((nb.ox3==0)?pmb->block_size.nx3:NGHOST);
-//        }
-//        tag=CreateBvalsMPITag(nb.lid, TAG_GRAVITY, nb.targetid);
-//        MPI_Send_init(bd_gravity_.send[nb.bufid],ssize,MPI_ATHENA_REAL,
-//                      nb.rank,tag,MPI_COMM_WORLD,&(bd_gravity_.req_send[nb.bufid]));
-//        tag=CreateBvalsMPITag(pmb->lid, TAG_GRAVITY, nb.bufid);
-//        MPI_Recv_init(bd_gravity_.recv[nb.bufid],rsize,MPI_ATHENA_REAL,
-//                      nb.rank,tag,MPI_COMM_WORLD,&(bd_gravity_.req_recv[nb.bufid]));
-//      }
-
       // flux correction
       if(pmy_mesh_->multilevel==true && nb.type==NEIGHBOR_FACE) {
         int size;
@@ -885,8 +867,6 @@ void BoundaryValues::StartReceivingForInit(bool cons_and_field)
         MPI_Start(&(bd_hydro_.req_recv[nb.bufid]));
         if (MAGNETIC_FIELDS_ENABLED)
           MPI_Start(&(bd_field_.req_recv[nb.bufid]));
-//        if (SELF_GRAVITY_ENABLED == 1)
-//          MPI_Start(&(bd_gravity_.req_recv[nb.bufid]));
       }
       else  // must be primitive initialization
         MPI_Start(&(bd_hydro_.req_recv[nb.bufid]));
@@ -910,8 +890,6 @@ void BoundaryValues::StartReceivingAll(void)
     NeighborBlock& nb = neighbor[n];
     if(nb.rank!=Globals::my_rank) { 
       MPI_Start(&(bd_hydro_.req_recv[nb.bufid]));
-//      if (SELF_GRAVITY_ENABLED == 1)
-//        MPI_Start(&(bd_gravity_.req_recv[nb.bufid]));
       if(nb.type==NEIGHBOR_FACE && nb.level>mylevel)
         MPI_Start(&(bd_flcor_.req_recv[nb.bufid]));
       if (MAGNETIC_FIELDS_ENABLED) {
@@ -957,8 +935,6 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field)
     bd_hydro_.flag[nb.bufid] = BNDRY_WAITING;
     if (MAGNETIC_FIELDS_ENABLED)
       bd_field_.flag[nb.bufid] = BNDRY_WAITING;
-//    if (SELF_GRAVITY_ENABLED == 1)
-//      bd_gravity_.flag[nb.bufid] = BNDRY_WAITING;
     if (GENERAL_RELATIVITY and pmy_mesh_->multilevel)
       bd_hydro_.flag[nb.bufid] = BNDRY_WAITING;
 #ifdef MPI_PARALLEL
@@ -967,8 +943,6 @@ void BoundaryValues::ClearBoundaryForInit(bool cons_and_field)
         MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
         if (MAGNETIC_FIELDS_ENABLED)
           MPI_Wait(&(bd_field_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
-//        if (SELF_GRAVITY_ENABLED == 1)
-//          MPI_Wait(&(bd_gravity_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
       }
       else {  // must be primitive initialization
         if (GENERAL_RELATIVITY and pmy_mesh_->multilevel)
@@ -1000,13 +974,9 @@ void BoundaryValues::ClearBoundaryAll(void)
       if((nb.type==NEIGHBOR_FACE) || (nb.type==NEIGHBOR_EDGE))
         bd_emfcor_.flag[nb.bufid] = BNDRY_WAITING;
     }
-//    if (SELF_GRAVITY_ENABLED == 1)
-//      bd_gravity_.flag[nb.bufid] = BNDRY_WAITING;
 #ifdef MPI_PARALLEL
     if(nb.rank!=Globals::my_rank) {
       MPI_Wait(&(bd_hydro_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
-//      if (SELF_GRAVITY_ENABLED == 1)
-//        MPI_Wait(&(bd_gravity_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
       if(nb.type==NEIGHBOR_FACE && nb.level<pmb->loc.level)
         MPI_Wait(&(bd_flcor_.req_send[nb.bufid]),MPI_STATUS_IGNORE); // Wait for Isend
       if (MAGNETIC_FIELDS_ENABLED) {

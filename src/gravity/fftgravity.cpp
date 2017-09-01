@@ -16,6 +16,7 @@
 #include "../fft/athena_fft.hpp"
 #include "../globals.hpp"
 #include "../hydro/hydro.hpp"
+#include "../task_list/grav_task_list.hpp"
 
 #include <iostream>
 #include <sstream>    // sstream
@@ -47,6 +48,8 @@ FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
   pmy_fb->SetNormFactor(four_pi_G_/gcnt_);
 
   QuickCreatePlan();
+
+  gtlist_ = new GravitySolverTaskList(pin, pm);
 }
 
 
@@ -58,14 +61,14 @@ void FFTGravityDriver::Solve(int step)
 {
   FFTBlock *pfb=pmy_fb;
   AthenaArray<Real> in;
-
   // Load the source 
   int nbs=nslist_[Globals::my_rank];
   int nbe=nbs+nblist_[Globals::my_rank]-1;
   for(int igid=nbs;igid<=nbe;igid++){
     MeshBlock *pmb=pmy_mesh_->FindMeshBlock(igid);
     if(pmb!=NULL) {
-      in.InitWithShallowSlice(pmb->phydro->u,4,IDN,1);
+      if(step == 1) in.InitWithShallowSlice(pmb->phydro->u,4,IDN,1);
+      else if(step == 2) in.InitWithShallowSlice(pmb->phydro->u1,4,IDN,1);
       pfb->LoadSource(in, 1, NGHOST, pmb->loc, pmb->block_size);
     }
 //    else { // on another process
@@ -73,7 +76,7 @@ void FFTGravityDriver::Solve(int step)
   }
 
   pfb->ExecuteForward();
-  pfb->ApplyKernel(1);
+  pfb->ApplyKernel(0);
   pfb->ExecuteBackward();
 
   // Return the result
@@ -86,6 +89,8 @@ void FFTGravityDriver::Solve(int step)
 //    else { // on another process
 //    }
   }
+
+  gtlist_->DoTaskListOneSubstep(pmy_mesh_,step);
 
   return;
 }

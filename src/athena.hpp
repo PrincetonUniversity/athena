@@ -120,6 +120,8 @@ typedef void (*MetricFunc_t)(Real x1, Real x2, Real x3, ParameterInput *pin,
 typedef void (*MGBoundaryFunc_t)(AthenaArray<Real> &dst,Real time, int nvar,
              int is, int ie, int js, int je, int ks, int ke, int ngh,
              Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
-
+typedef void (*GravityBoundaryFunc_t)(MeshBlock *pmb, Coordinates *pco,
+             AthenaArray<Real> &dst, Real time, Real dt,
+             int is, int ie, int js, int je, int ks, int ke);
 
 #endif // ATHENA_HPP

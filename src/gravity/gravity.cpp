@@ -13,6 +13,7 @@
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../parameter_input.hpp"
+#include "../bvals/bvals_grav.hpp"
 
 #include <iostream>
 #include <sstream>    // sstream
@@ -41,8 +42,18 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin)
   if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
 
   phi.NewAthenaArray(ncells3,ncells2,ncells1);
-//  phi_old.NewAthenaArray(ncells3,ncells2,ncells1);
+  if(SELF_GRAVITY_ENABLED == 1){
+    enum BoundaryFlag grav_bcs[6];
+    grav_bcs[INNER_X1]=BLOCK_BNDRY; 
+    grav_bcs[OUTER_X1]=BLOCK_BNDRY; 
+    grav_bcs[INNER_X2]=BLOCK_BNDRY; 
+    grav_bcs[OUTER_X2]=BLOCK_BNDRY; 
+    grav_bcs[INNER_X3]=BLOCK_BNDRY; 
+    grav_bcs[OUTER_X3]=BLOCK_BNDRY; 
 
+    phi_old.NewAthenaArray(ncells3,ncells2,ncells1);
+    pgbval = new GravityBoundaryValues(pmb,grav_bcs);
+  }
 }
 
 // destructor
@@ -50,6 +61,6 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin)
 Gravity::~Gravity()
 {
   phi.DeleteAthenaArray();
-//  phi_old.DeleteAthenaArray();
+  if(SELF_GRAVITY_ENABLED == 1) phi_old.DeleteAthenaArray();
 }
 
