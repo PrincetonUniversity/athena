@@ -496,6 +496,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
       pblock->next->prev = pblock;
       pblock = pblock->next;
     }
+    pblock->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
   }
   pblock=pfirst;
 
@@ -612,9 +613,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   nslist=new int[Globals::nranks];
   nblist=new int[Globals::nranks];
 
-  block_size.nx1 = pin->GetOrAddReal("meshblock","nx1",mesh_size.nx1);
-  block_size.nx2 = pin->GetOrAddReal("meshblock","nx2",mesh_size.nx2);
-  block_size.nx3 = pin->GetOrAddReal("meshblock","nx3",mesh_size.nx3);
+  block_size.nx1 = pin->GetOrAddInteger("meshblock","nx1",mesh_size.nx1);
+  block_size.nx2 = pin->GetOrAddInteger("meshblock","nx2",mesh_size.nx2);
+  block_size.nx3 = pin->GetOrAddInteger("meshblock","nx3",mesh_size.nx3);
 
   // calculate the number of the blocks
   nrbx1=mesh_size.nx1/block_size.nx1;
@@ -811,6 +812,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
       pblock->next->prev = pblock;
       pblock = pblock->next;
     }
+    pblock->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
   }
   pblock=pfirst;
   delete [] mbdata;

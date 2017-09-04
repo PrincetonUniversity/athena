@@ -79,6 +79,7 @@ GravityDriver::GravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, ParameterIn
     pmy_mesh_->SetBlockSizeAndBoundaries(pmy_mesh_->loclist[i], block_size, block_bcs);
     Multigrid *nmg=new MGGravity(this, pmy_mesh_->loclist[i], i, i-nbs, block_size,
                                  MGBoundary, block_bcs, false);
+    nmg->pmgbval->SearchAndSetNeighbors(pmy_mesh_->tree, ranklist_, nslist_);
     AddMultigrid(nmg);
   }
 }

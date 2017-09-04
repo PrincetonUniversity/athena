@@ -56,8 +56,6 @@ MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
       else 
         MGBoundaryFunction_[i]=MGBoundary[i];
     }
-    SearchAndSetNeighbors(pmy_mesh_->tree, pmy_mg_->pmy_driver_->ranklist_,
-                                           pmy_mg_->pmy_driver_->nslist_);
     if(SELF_GRAVITY_ENABLED == 2)
       InitBoundaryData(bd_mggrav_, BNDRY_MGGRAV);
   }
