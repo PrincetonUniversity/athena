@@ -15,10 +15,11 @@
      Rewritten to work only with FFTW 3.x
 */
 
-#include "stdio.h"
-#include "mpi.h"
-#include "malloc.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <iostream>
 
+#include "mpi.h"
 #include "pack_3d.h"
 #include "remap_3d.h"
 #include "fft_3d.h"
