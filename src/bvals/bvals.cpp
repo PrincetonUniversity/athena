@@ -447,12 +447,6 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
         }
       }
       break;
-      case BNDRY_GRAVITY: {
-        size=((BoundaryValues::ni[n].ox1==0)?pmb->block_size.nx1:NGHOST)
-            *((BoundaryValues::ni[n].ox2==0)?pmb->block_size.nx2:NGHOST)
-            *((BoundaryValues::ni[n].ox3==0)?pmb->block_size.nx3:NGHOST);
-      }
-      break;
       case BNDRY_FLCOR: {
         if(BoundaryValues::ni[n].ox1!=0)
           size=(pmb->block_size.nx2+1)/2*(pmb->block_size.nx3+1)/2*NHYDRO;

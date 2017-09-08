@@ -1214,7 +1214,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
   MeshBlock *pmb;
   Hydro *phydro;
   Field *pfield;
-  Gravity *pgrav;
   BoundaryValues *pbval;
   std::stringstream msg;
   int inb=nbtotal;
@@ -1231,6 +1230,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     }
 
     // solve gravity for the first time
+    else if(SELF_GRAVITY_ENABLED == 1)
+      pfgrd->Solve(1);
     else if(SELF_GRAVITY_ENABLED == 2)
       pgrd->Solve(1);
 
@@ -1303,7 +1304,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     while (pmb != NULL)  {
       phydro=pmb->phydro;
       pfield=pmb->pfield;
-      pgrav=pmb->pgrav;
       pbval=pmb->pbval;
       if(multilevel==true)
         pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,

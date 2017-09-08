@@ -30,6 +30,7 @@ class Mesh;
 class MeshRefinement;
 class MeshBlockTree;
 class BoundaryValues;
+class GravityBoundaryValues;
 class TaskList;
 class TaskState;
 class Coordinates;
@@ -50,6 +51,7 @@ class FFTGravityDriver;
 class MeshBlock {
   friend class RestartOutput;
   friend class BoundaryValues;
+  friend class GravityBoundaryValues;
   friend class Mesh;
   friend class Hydro;
   friend class TaskList;
@@ -87,6 +89,7 @@ public:
   // mesh-related objects
   Coordinates *pcoord;
   BoundaryValues *pbval;
+  GravityBoundaryValues *pgbval;
   Reconstruction *precon;
   MeshRefinement *pmr;
 
@@ -131,6 +134,7 @@ class Mesh {
   friend class BoundaryBase;
   friend class BoundaryValues;
   friend class MGBoundaryValues;
+  friend class GravityBoundaryValues;
   friend class Coordinates;
   friend class MeshRefinement;
   friend class HydroSourceTerms;

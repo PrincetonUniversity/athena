@@ -26,6 +26,7 @@
 #include "../gravity/gravity.hpp"
 #include "../fft/athena_fft.hpp"
 #include "../bvals/bvals.hpp"
+#include "../bvals/bvals_grav.hpp"
 #include "../eos/eos.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/buffer_utils.hpp"
@@ -102,6 +103,9 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   peos = new EquationOfState(this, pin);
 
   if (SELF_GRAVITY_ENABLED) pgrav = new Gravity(this, pin);
+  if (SELF_GRAVITY_ENABLED == 1) {
+    pgbval = new GravityBoundaryValues(this,input_bcs);
+  }
 
   // Reconstruction
   precon = new Reconstruction(this, pin);
@@ -192,6 +196,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   peos = new EquationOfState(this, pin);
 
   if (SELF_GRAVITY_ENABLED) pgrav = new Gravity(this, pin);
+  if (SELF_GRAVITY_ENABLED == 1) {
+    pgbval = new GravityBoundaryValues(this,input_bcs);
+  }
 
   precon = new Reconstruction(this, pin);
 
@@ -278,6 +285,7 @@ MeshBlock::~MeshBlock()
   if (MAGNETIC_FIELDS_ENABLED) delete pfield;
   delete peos;
   if (SELF_GRAVITY_ENABLED) delete pgrav;
+  if (SELF_GRAVITY_ENABLED==1) delete pgbval;
 
   // delete user output variables array
   if(nuser_out_var > 0) {

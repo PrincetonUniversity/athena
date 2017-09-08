@@ -39,16 +39,20 @@ class FFTBlock;
 class FFTDriver;
 
 //----------------------------------------------------------------------------------------
-//! \fn GravityBoundaryValues::GravityBoundaryValues(Multigrid *pmg, enum BoundaryFlag *input_bcs,
-//                                         MGBoundaryFunc_t *MGBoundary)
+//! \fn GravityBoundaryValues::GravityBoundaryValues(MeshbBlock *pmb, enum BoundaryFlag *input_bcs)
 //  \brief Constructor of the GravityBoundaryValues class
 
 GravityBoundaryValues::GravityBoundaryValues(MeshBlock *pmb, enum BoundaryFlag *input_bcs)
  : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs)
 {
   pmy_block_=pmb;
-  for(int i=0; i<6; i++)
-    GravityBoundaryFunction_[i]=NULL;
+  for(int i=0; i<6; i++){
+    if(block_bcs[i] == PERIODIC_BNDRY || block_bcs[i]==BLOCK_BNDRY)
+      GravityBoundaryFunction_[i]=NULL;
+    // else
+  }
+
+  SearchAndSetNeighbors(pmy_mesh_->tree, pmy_mesh_->ranklist, pmy_mesh_->nslist);
 
   InitBoundaryData(bd_gravity_);
 }
@@ -106,7 +110,7 @@ void GravityBoundaryValues::DestroyBoundaryData(GravityBoundaryData &bd)
 
 //----------------------------------------------------------------------------------------
 //! \fn void GravityBoundaryValues::ApplyPhysicalBoundaries(void)
-//  \brief Apply physical boundary conditions to the current Multigrid data
+//  \brief Apply physical boundary conditions to the gravitational potential
 
 void GravityBoundaryValues::ApplyPhysicalBoundaries(void)
 {
@@ -163,7 +167,7 @@ void GravityBoundaryValues::ApplyPhysicalBoundaries(void)
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void GravityBoundaryValues::StartReceivingGravity(enum BoundaryType type)
+//! \fn void GravityBoundaryValues::StartReceivingGravity(void)
 //  \brief initiate MPI_Irecv for gravity 
 
 void GravityBoundaryValues::StartReceivingGravity(void)
@@ -193,7 +197,7 @@ void GravityBoundaryValues::StartReceivingGravity(void)
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void GravityBoundaryValues::ClearBoundaryGravity(enum BoundaryType type)
+//! \fn void GravityBoundaryValues::ClearBoundaryGravity(void)
 //  \brief clean up the boundary flags after each loop for multigrid
 
 void GravityBoundaryValues::ClearBoundaryGravity(void)
@@ -237,8 +241,7 @@ int GravityBoundaryValues::LoadGravityBoundaryBufferSameLevel(AthenaArray<Real> 
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void GravityBoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src,
-//                                                    bool conserved_values)
+//! \fn void GravityBoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src)
 //  \brief Send boundary buffers
 
 bool GravityBoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src)
@@ -259,7 +262,7 @@ bool GravityBoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src)
 
     if(nb.rank == Globals::my_rank) { // on the same process
       MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(nb.gid);
-      ptarget=&(pbl->pgrav->pgbval->bd_gravity_);
+      ptarget=&(pbl->pgbval->bd_gravity_);
       if(ptarget->flag[nb.targetid] != BNDRY_WAITING) {
         bflag=false;
         continue;
