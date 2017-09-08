@@ -1065,30 +1065,26 @@ void BoundaryValues::PolarSingleEMF(void)
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
   int j;
 
-  if(pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1){
+  if(pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1
+  && pmb->block_size.nx3 > 1) {
     if(block_bcs[INNER_X2]==POLAR_BNDRY||block_bcs[INNER_X2]==POLAR_BNDRY_WEDGE) {
       j=pmb->js;
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
-      if(pmb->block_size.nx3 > 1) {
-        for(int i=pmb->is; i<=pmb->ie; i++){
-          Real tote1=0.0;
-          for(int k=pmb->ks; k<=pmb->ke; k++) {
-            tote1+=e1(k,j,i);
-          }
-          Real e1a=tote1/double(pmb->ke-pmb->ks+1);
-	  for(int k=pmb->ks; k<=pmb->ke+1; k++) {
-            e1(k,j,i)=e1a;
-          }
-        }
-        for(int i=pmb->is; i<=pmb->ie+1; i++){
-          for(int k=pmb->ks; k<=pmb->ke; k++) {
-            exc_(k)=e3(k,j,i);
-          }
-          for(int k=pmb->ks; k<=pmb->ke; k++) {
-            int k_shift = k;
-            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            e3(k,j,i)=exc_(k_shift);
-          }
+      for(int i=pmb->is; i<=pmb->ie; i++){
+        Real tote1=0.0;
+        for(int k=pmb->ks; k<=pmb->ke; k++)
+          tote1+=e1(k,j,i);
+        Real e1a=tote1/double(pmb->ke-pmb->ks+1);
+        for(int k=pmb->ks; k<=pmb->ke+1; k++)
+          e1(k,j,i)=e1a;
+      }
+      for(int i=pmb->is; i<=pmb->ie+1; i++){
+        for(int k=pmb->ks; k<=pmb->ke; k++)
+          exc_(k)=e3(k,j,i);
+        for(int k=pmb->ks; k<=pmb->ke; k++) {
+          int k_shift = k;
+          k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+          e3(k,j,i)=exc_(k_shift);
         }
       }
     }
@@ -1096,26 +1092,21 @@ void BoundaryValues::PolarSingleEMF(void)
     if(block_bcs[OUTER_X2]==POLAR_BNDRY||block_bcs[OUTER_X2]==POLAR_BNDRY_WEDGE){
       j=pmb->je+1;
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
-      if(pmb->block_size.nx3 > 1) {
-        for(int i=pmb->is; i<=pmb->ie; i++){
-          Real tote1=0.0;
-          for (int k=pmb->ks; k<=pmb->ke; ++k) {
-            tote1+=e1(k,j,i);
-          }
-          Real e1a=tote1/double(pmb->ke-pmb->ks+1);
-          for (int k=pmb->ks; k<=pmb->ke+1; ++k) {
-            e1(k,j,i)=e1a;
-          }
-        }
-        for(int i=pmb->is; i<=pmb->ie+1; i++){
-          for(int k=pmb->ks; k<=pmb->ke; k++) {
-            exc_(k)=e3(k,j,i);
-          }
-          for(int k=pmb->ks; k<=pmb->ke; k++) {
-            int k_shift = k;
-            k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
-            e3(k,j,i)=exc_(k_shift);
-          }
+      for(int i=pmb->is; i<=pmb->ie; i++){
+        Real tote1=0.0;
+        for (int k=pmb->ks; k<=pmb->ke; ++k)
+          tote1+=e1(k,j,i);
+        Real e1a=tote1/double(pmb->ke-pmb->ks+1);
+        for (int k=pmb->ks; k<=pmb->ke+1; ++k)
+          e1(k,j,i)=e1a;
+      }
+      for(int i=pmb->is; i<=pmb->ie+1; i++){
+        for(int k=pmb->ks; k<=pmb->ke; k++)
+          exc_(k)=e3(k,j,i);
+        for(int k=pmb->ks; k<=pmb->ke; k++) {
+          int k_shift = k;
+          k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
+          e3(k,j,i)=exc_(k_shift);
         }
       }
     }

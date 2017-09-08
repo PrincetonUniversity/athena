@@ -472,16 +472,15 @@ void BoundaryValues::ReceiveCellCenteredBoundaryBuffersWithWait(AthenaArray<Real
 void BoundaryValues::PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int ne)
 {
   MeshBlock *pmb=pmy_block_;
-  if(pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1){
-
+  if(pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1
+  && pmb->block_size.nx3 > 1){
     if(block_bcs[INNER_X2]==POLAR_BNDRY){
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int n=ns; n<=ne; ++n) {
         for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
          for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
-           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
              exc_(k)=dst(n,k,j,i);
-           }
            for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
              int k_shift = k;
              k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
@@ -497,9 +496,8 @@ void BoundaryValues::PolarSingleCellCentered(AthenaArray<Real> &dst, int ns, int
       for (int n=ns; n<=ne; ++n) {
         for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
          for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i){
-           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
+           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k)
              exc_(k)=dst(n,k,j,i);
-           }
            for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
              int k_shift = k;
              k_shift += (k < (nx3_half+NGHOST) ? 1 : -1) * nx3_half;
