@@ -42,7 +42,7 @@ FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
     return;
   }
 
-  int igid=nslist_[Globals::my_rank];
+  int igid=Globals::my_rank;
   pmy_fb=new FFTGravity(this, fft_loclist_[igid], igid, fft_mesh_size_, fft_block_size_);
 
   pmy_fb->SetNormFactor(four_pi_G_/gcnt_);

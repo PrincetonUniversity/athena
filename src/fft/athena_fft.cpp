@@ -132,10 +132,11 @@ void FFTBlock::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh, LogicalLo
 {
   const AthenaFFTComplex *src=out_;
   int is, ie, js, je, ks, ke;
-  is=loc.lx1*bsize.nx1-disp_[0];
-  js=loc.lx2*bsize.nx2-disp_[1];
-  ks=loc.lx3*bsize.nx3-disp_[2];
+  is=loc.lx1*bsize.nx1-loc_.lx1*bsize_.nx1;
+  js=loc.lx2*bsize.nx2-loc_.lx2*bsize_.nx2;
+  ks=loc.lx3*bsize.nx3-loc_.lx3*bsize_.nx3;
   ie=is+bsize.nx1-1, je=js+bsize.nx2-1, ke=ks+bsize.nx3-1;
+
   for(int n=0; n<ns; n++) {
     for(int k=ngh, mk=ks; mk<=ke; k++, mk++) {
       for(int j=ngh, mj=js; mj<=je; j++, mj++) {
@@ -160,10 +161,11 @@ void FFTBlock::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Logical
 {
   AthenaFFTComplex *dst=in_;
   int is, ie, js, je, ks, ke;
-  is=loc.lx1*bsize.nx1-disp_[0];
-  js=loc.lx2*bsize.nx2-disp_[1];
-  ks=loc.lx3*bsize.nx3-disp_[2];
+  is=loc.lx1*bsize.nx1-loc_.lx1*bsize_.nx1;
+  js=loc.lx2*bsize.nx2-loc_.lx2*bsize_.nx2;
+  ks=loc.lx3*bsize.nx3-loc_.lx3*bsize_.nx3;
   ie=is+bsize.nx1-1, je=js+bsize.nx2-1, ke=ks+bsize.nx3-1;
+
   for(int n=0; n<ns; n++) {
     for(int k=ngh, mk=ks; mk<=ke; k++, mk++) {
       for(int j=ngh, mj=js; mj<=je; j++, mj++) {
@@ -405,7 +407,7 @@ void FFTBlock::MpiInitialize()
 {
 #ifdef MPI_PARALLEL
   std::stringstream msg;
-  if(pdim_ < dim_ && dim_ == 3){
+  if((pdim_ == 2 || pdim_ ==1) && dim_ == 3){
 // To achieve best performance with 2D-pencil decomposition,
 // (1) if the "long"-axis (undecomposed-axis) is not the "slow"-axis (x-axis),
 //     one needs to permute the axes to make it fast by setting "permute0":
@@ -429,7 +431,7 @@ void FFTBlock::MpiInitialize()
 
     swap1_ = true; swap2_ = true;
     permute1_ = 2; permute2_ = 2;
-    {using namespace DecompositionNames;
+      {using namespace DecompositionNames;
       if(decomp_ == x_decomp){
         permute0_ = 1;
       } else if(decomp_ == y_decomp){
