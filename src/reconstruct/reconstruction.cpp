@@ -6,6 +6,11 @@
 //! \file reconstruction.cpp
 //  \brief 
 
+// C/C++ headers
+#include <sstream>
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str()
+
 // Athena++ headers
 #include "reconstruction.hpp"
 #include "../athena.hpp"
@@ -18,24 +23,48 @@
 Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_block_ = pmb;
+  int xorder = pin->GetOrAddInteger("time","xorder",2);
 
   // set function pointers for reconstruction functions in each direction
-  if (pmb->block_size.x1rat == 1.0) {
-    ReconstructFuncX1 = PiecewiseLinearUniformX1;
-  } else {
-    ReconstructFuncX1 = PiecewiseLinearX1;
-  }
+  // First-order (donor cell) reconstruction
+  if (xorder == 1) {
+    ReconstructFuncX1 = DonorCellX1;
+    ReconstructFuncX2 = DonorCellX2;
+    ReconstructFuncX3 = DonorCellX3;
 
-  if (pmb->block_size.x2rat == 1.0) {
-    ReconstructFuncX2 = PiecewiseLinearUniformX2;
-  } else {
-    ReconstructFuncX2 = PiecewiseLinearX2;
-  }
+  // Second-order (piecewise linear) reconstruction
+  } else if (xorder == 2) {
+    if (pmb->block_size.x1rat == 1.0) {
+      ReconstructFuncX1 = PiecewiseLinearUniformX1;
+    } else {
+      ReconstructFuncX1 = PiecewiseLinearX1;
+    }
 
-  if (pmb->block_size.x3rat == 1.0) {
-    ReconstructFuncX3 = PiecewiseLinearUniformX3;
+    if (pmb->block_size.x2rat == 1.0) {
+      ReconstructFuncX2 = PiecewiseLinearUniformX2;
+    } else {
+      ReconstructFuncX2 = PiecewiseLinearX2;
+    }
+
+    if (pmb->block_size.x3rat == 1.0) {
+      ReconstructFuncX3 = PiecewiseLinearUniformX3;
+    } else {
+      ReconstructFuncX3 = PiecewiseLinearX3;
+    }
+
+  // Third/Fourth-order (piecewise parabolic) reconstruction
+  } else if (xorder == 3) {
+    ReconstructFuncX1 = PPMUniformX1;
+    ReconstructFuncX2 = PPMUniformX2;
+    ReconstructFuncX3 = PPMUniformX3;
+
+  // Error; unknown order
   } else {
-    ReconstructFuncX3 = PiecewiseLinearX3;
+    std:: stringstream msg;
+    msg << "### FATAL ERROR in function [Reconstruction constructor]" << std::endl
+        << "spatial order xorder= " << xorder << " not supported" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+
   }
 }
 

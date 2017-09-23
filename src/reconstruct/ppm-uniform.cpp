@@ -42,14 +42,15 @@ void Reconstruction::PPMUniformX1(Coordinates *pco, const int kl, const int ku,
   Real qa,qb,qc,qd,qe,rho;
 
   // 1D scratch arrays
+  int ncells1 = iu-il + 2*(NGHOST);
   AthenaArray<Real> dph, qplus, qminus, dqf_plus, dqf_minus, d2qf, d2qc;
-  dph.InitWithShallowCopy(dph_);
-  qplus.InitWithShallowCopy(qplus_);
-  qminus.InitWithShallowCopy(qminus_);
-  dqf_plus.InitWithShallowCopy(dqf_plus_);
-  dqf_plus.InitWithShallowCopy(dqf_minus_);
-  d2qf.InitWithShallowCopy(d2qf_);
-  d2qc.InitWithShallowCopy(d2qc_);
+  dph.NewAthenaArray(ncells1);
+  qplus.NewAthenaArray(ncells1);
+  qminus.NewAthenaArray(ncells1);
+  dqf_plus.NewAthenaArray(ncells1);
+  dqf_minus.NewAthenaArray(ncells1);
+  d2qf.NewAthenaArray(ncells1);
+  d2qc.NewAthenaArray(ncells1);
 
   for (int k=kl; k<=ku; ++k) {
   for (int j=jl; j<=ju; ++j) {
@@ -160,6 +161,13 @@ void Reconstruction::PPMUniformX1(Coordinates *pco, const int kl, const int ku,
 
   }}
 
+  dph.DeleteAthenaArray();
+  qplus.DeleteAthenaArray();
+  qminus.DeleteAthenaArray();
+  dqf_plus.DeleteAthenaArray();
+  dqf_minus.DeleteAthenaArray();
+  d2qf.DeleteAthenaArray();
+  d2qc.DeleteAthenaArray();
   return;
 }
 
@@ -177,18 +185,19 @@ void Reconstruction::PPMUniformX2(Coordinates *pco, const int kl, const int ku,
   Real qa,qb,qc,qd,qe,rho;
 
   // 1D scratch arrays
+  int ncells1 = iu-il + 2*(NGHOST);
   AthenaArray<Real> dph, dph_jp1, qplus, qminus, dqf_plus, dqf_minus, d2qf;
   AthenaArray<Real> d2qc_jm1, d2qc, d2qc_jp1;
-  dph.InitWithShallowCopy(dph_);
-  dph_jp1.InitWithShallowCopy(dph_p1_);
-  qplus.InitWithShallowCopy(qplus_);
-  qminus.InitWithShallowCopy(qminus_);
-  dqf_plus.InitWithShallowCopy(dqf_plus_);
-  dqf_plus.InitWithShallowCopy(dqf_minus_);
-  d2qf.InitWithShallowCopy(d2qf_);
-  d2qc_jm1.InitWithShallowCopy(d2qc_m1_);
-  d2qc.InitWithShallowCopy(d2qc_);
-  d2qc_jp1.InitWithShallowCopy(d2qc_p1_);
+  dph.NewAthenaArray(ncells1);
+  dph_jp1.NewAthenaArray(ncells1);
+  qplus.NewAthenaArray(ncells1);
+  qminus.NewAthenaArray(ncells1);
+  dqf_plus.NewAthenaArray(ncells1);
+  dqf_minus.NewAthenaArray(ncells1);
+  d2qf.NewAthenaArray(ncells1);
+  d2qc_jm1.NewAthenaArray(ncells1);
+  d2qc.NewAthenaArray(ncells1);
+  d2qc_jp1.NewAthenaArray(ncells1);
 
   for (int k=kl; k<=ku; ++k) {
 
@@ -340,6 +349,16 @@ void Reconstruction::PPMUniformX2(Coordinates *pco, const int kl, const int ku,
     } // end loop over [jl-1,ju]
   }   // end loop over [kl,ku]
 
+  dph.DeleteAthenaArray();
+  dph_jp1.DeleteAthenaArray();
+  qplus.DeleteAthenaArray();
+  qminus.DeleteAthenaArray();
+  dqf_plus.DeleteAthenaArray();
+  dqf_minus.DeleteAthenaArray();
+  d2qf.DeleteAthenaArray();
+  d2qc_jm1.DeleteAthenaArray();
+  d2qc.DeleteAthenaArray();
+  d2qc_jp1.DeleteAthenaArray();
   return;
 }
 
@@ -357,18 +376,19 @@ void Reconstruction::PPMUniformX3(Coordinates *pco, const int kl, const int ku,
   Real qa,qb,qc,qd,qe,rho;
 
   // 1D scratch arrays
+  int ncells1 = iu-il + 2*(NGHOST);
   AthenaArray<Real> dph, dph_kp1, qplus, qminus, dqf_plus, dqf_minus, d2qf;
   AthenaArray<Real> d2qc_km1, d2qc, d2qc_kp1;
-  dph.InitWithShallowCopy(dph_);
-  dph_kp1.InitWithShallowCopy(dph_p1_);
-  qplus.InitWithShallowCopy(qplus_);
-  qminus.InitWithShallowCopy(qminus_);
-  dqf_plus.InitWithShallowCopy(dqf_plus_);
-  dqf_plus.InitWithShallowCopy(dqf_minus_);
-  d2qf.InitWithShallowCopy(d2qf_);
-  d2qc_km1.InitWithShallowCopy(d2qc_m1_);
-  d2qc.InitWithShallowCopy(d2qc_);
-  d2qc_kp1.InitWithShallowCopy(d2qc_p1_);
+  dph.NewAthenaArray(ncells1);
+  dph_kp1.NewAthenaArray(ncells1);
+  qplus.NewAthenaArray(ncells1);
+  qminus.NewAthenaArray(ncells1);
+  dqf_plus.NewAthenaArray(ncells1);
+  dqf_minus.NewAthenaArray(ncells1);
+  d2qf.NewAthenaArray(ncells1);
+  d2qc_km1.NewAthenaArray(ncells1);
+  d2qc.NewAthenaArray(ncells1);
+  d2qc_kp1.NewAthenaArray(ncells1);
 
   for (int j=jl; j<=ju; ++j) {
 
@@ -520,5 +540,15 @@ void Reconstruction::PPMUniformX3(Coordinates *pco, const int kl, const int ku,
     } // end loop over [kl-1,ku]
   }   // end loop over [jl,ju]
 
+  dph.DeleteAthenaArray();
+  dph_kp1.DeleteAthenaArray();
+  qplus.DeleteAthenaArray();
+  qminus.DeleteAthenaArray();
+  dqf_plus.DeleteAthenaArray();
+  dqf_minus.DeleteAthenaArray();
+  d2qf.DeleteAthenaArray();
+  d2qc_km1.DeleteAthenaArray();
+  d2qc.DeleteAthenaArray();
+  d2qc_kp1.DeleteAthenaArray();
   return;
 }
