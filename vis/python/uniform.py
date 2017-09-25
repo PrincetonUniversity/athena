@@ -7,10 +7,12 @@ Note: Requires h5py.
 Note: Only works for 3D data.
 """
 
-# Python modules
+# Python standard modules
 import argparse
-import h5py
 import os
+
+# Other Python modules
+import h5py
 
 # Athena++ modules
 import athena_read
