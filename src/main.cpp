@@ -349,7 +349,7 @@ int main(int argc, char *argv[])
       if(SELF_GRAVITY_ENABLED == 1) // fft
         pmesh->pfgrd->Solve(step);
       else if(SELF_GRAVITY_ENABLED == 2) // multigrid
-        pmesh->pgrd->Solve(step);
+        pmesh->pmgrd->Solve(step);
       ptlist->DoTaskListOneSubstep(pmesh, step);
     }
 

@@ -38,7 +38,7 @@ class Reconstruction;
 class Hydro;
 class Field;
 class Gravity;
-class GravityDriver;
+class MGGravityDriver;
 class EquationOfState;
 class FFTDriver;
 class FFTGravityDriver;
@@ -142,7 +142,7 @@ class Mesh {
   friend class FFTDriver;
   friend class FFTGravityDriver;
   friend class MultigridDriver;
-  friend class GravityDriver;
+  friend class MGGravityDriver;
   friend class Gravity;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
@@ -171,7 +171,7 @@ public:
   MeshBlock *pblock;
 
   FFTGravityDriver *pfgrd;
-  GravityDriver *pgrd;
+  MGGravityDriver *pmgrd;
 
   AthenaArray<Real> *ruser_mesh_data;
   AthenaArray<int> *iuser_mesh_data;

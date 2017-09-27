@@ -508,7 +508,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   if (SELF_GRAVITY_ENABLED==1)
     pfgrd = new FFTGravityDriver(this, pin);
   else if (SELF_GRAVITY_ENABLED==2)
-    pgrd = new GravityDriver(this, MGBoundaryFunction_, pin);
+    pmgrd = new MGGravityDriver(this, MGBoundaryFunction_, pin);
 }
 
 //----------------------------------------------------------------------------------------
@@ -837,7 +837,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   if (SELF_GRAVITY_ENABLED==1)
     pfgrd = new FFTGravityDriver(this, pin);
   if (SELF_GRAVITY_ENABLED==2)
-    pgrd = new GravityDriver(this, MGBoundaryFunction_, pin);
+    pmgrd = new MGGravityDriver(this, MGBoundaryFunction_, pin);
 }
 
 //----------------------------------------------------------------------------------------
@@ -856,7 +856,7 @@ Mesh::~Mesh()
   delete [] costlist;
   delete [] loclist;
   if (SELF_GRAVITY_ENABLED==1) delete pfgrd;
-  else if (SELF_GRAVITY_ENABLED==2) delete pgrd;
+  else if (SELF_GRAVITY_ENABLED==2) delete pmgrd;
   if(adaptive==true) { // deallocate arrays for AMR
     delete [] nref;
     delete [] nderef;
@@ -1235,7 +1235,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     else if(SELF_GRAVITY_ENABLED == 1)
       pfgrd->Solve(1);
     else if(SELF_GRAVITY_ENABLED == 2)
-      pgrd->Solve(1);
+      pmgrd->Solve(1);
 
     // prepare to receive conserved variables
     pmb = pblock;

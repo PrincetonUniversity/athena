@@ -28,7 +28,7 @@ public:
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
 
-  AthenaArray<Real> phi, phi_old;  // gravitational potential
+  AthenaArray<Real> phi;  // gravitational potential
   Real gconst, four_pi_G;
   Real grav_mean_rho;
   bool srcterm;
