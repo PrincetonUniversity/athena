@@ -362,12 +362,11 @@ void BoundaryValues::InitBoundaryData(BoundaryData &bd, enum BoundaryType type)
   if(pmb->block_size.nx2 > 1) f2d=1;
   if(pmb->block_size.nx3 > 1) f3d=1;
   int size;
-  if(type==BNDRY_FLCOR)
+  bd.nbmax=maxneighbor_;
+  if(type==BNDRY_FLCOR || type==BNDRY_EMFCOR)
     for(bd.nbmax=0; BoundaryValues::ni[bd.nbmax].type==NEIGHBOR_FACE; bd.nbmax++);
-  else if(type==BNDRY_EMFCOR)
-    for(bd.nbmax=0; BoundaryValues::ni[bd.nbmax].type<=NEIGHBOR_EDGE; bd.nbmax++);
-  else
-    bd.nbmax=maxneighbor_;
+  if(type==BNDRY_EMFCOR)
+    for(          ; BoundaryValues::ni[bd.nbmax].type==NEIGHBOR_EDGE; bd.nbmax++);
 
   for(int n=0;n<bd.nbmax;n++) {
     // Clear flags and requests
