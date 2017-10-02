@@ -8,10 +8,12 @@
 //
 
 // C++ headers
-#include <sstream>
 #include <cmath>
 #include <stdexcept>
 #include <ctime>
+#include <iostream>
+#include <iomanip>
+#include <cstring>    // memset
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -24,14 +26,31 @@
 #include "../hydro/hydro.hpp"
 #include "../gravity/gravity.hpp"
 #include "../mesh/mesh.hpp"
+#include "../gravity/mggravity.hpp"
+#include "../multigrid/multigrid.hpp"
+#include "../gravity/fftgravity.hpp"
+#include "../fft/athena_fft.hpp"
+
 
 #ifdef OPENMP_PARALLEL
 #include "omp.h"
 #endif
 
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#endif
+
 #if MAGNETIC_FIELDS_ENABLED
 #error "This problem generator does not support magnetic fields"
 #endif
+
+void Mesh::InitUserMeshData(ParameterInput *pin)
+{
+  Real four_pi_G = pin->GetReal("problem","four_pi_G");
+  Real eps = pin->GetOrAddReal("problem","grav_eps", 0.0);
+  SetFourPiG(four_pi_G);
+  SetGravityThreshold(eps);
+}
 
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
@@ -50,8 +69,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real x2size = mesh_size.x2max - mesh_size.x2min;
   Real x3size = mesh_size.x3max - mesh_size.x3min;
 
-  Real gconst = 1.0;
-  Real four_pi_G = 4.0*PI*gconst;
+  Real four_pi_G = pin->GetReal("problem","four_pi_G");
+  Real gconst = four_pi_G / (4.0*PI);
   Real grav_mean_rho = 0.0;
   
   int iprob = pin->GetOrAddInteger("problem","iprob",1);
@@ -60,6 +79,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   int dim = 1;
   if(mesh_size.nx2 > 1) dim=2;
   if(mesh_size.nx3 > 1) dim=3;
+
   for (int k=ks; k<=ke; ++k) {
   for (int j=js; j<=je; ++j) {
   for (int i=is; i<=ie; ++i) {
@@ -77,6 +97,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       if(dim > 1) phia += SQR(2*PI/x2size);
       if(dim > 2) phia += SQR(2*PI/x3size);
       phia = -den*four_pi_G/phia;
+      den+=2.0;
     } else if (iprob == 2){
       Real M = pin->GetOrAddReal("problem","M",1.0);
       Real a0 = pin->GetOrAddReal("problem","a0",1.0);
@@ -102,11 +123,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     }
   }}}
 
-  if(SELF_GRAVITY_ENABLED){
-    pgrav->gconst = gconst;
-    pgrav->four_pi_G = four_pi_G;
-    pgrav->grav_mean_rho = grav_mean_rho;
-  } // self-gravity
 }
 
 //========================================================================================
@@ -126,8 +142,7 @@ void MeshBlock::UserWorkInLoop(void)
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
-  Hydro *phydro = pblock->phydro;
-  Coordinates *pcoord = pblock->pcoord;
+  MeshBlock *pmb=pblock;
   Real x0=0.0, y0=0.0, z0=0.0;
   int is=pblock->is, ie=pblock->ie;
   int js=pblock->js, je=pblock->je;
@@ -137,43 +152,37 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   int nlim = pin->GetInteger("time","nlim");
 
   if(SELF_GRAVITY_ENABLED){
-    Gravity *pgrav = pblock->pgrav;
     if(nlim == 0){
-      Real err1=0.0,err2=0.0;
-      for (int k=ks; k<=ke; ++k) {
-      for (int j=js; j<=je; ++j) {
-      for (int i=is; i<=ie; ++i) {
-        err1 += std::abs(pgrav->phi(k,j,i) - phydro->u(IM2,k,j,i));
-        err2 += pgrav->phi(k,j,i)/phydro->u(IM2,k,j,i);
-      }}} // for-loop
- 
-      err1 = err1/cnt;
-      err2 = err2/cnt;
- 
-      if(Globals::my_rank == 0){
-        std::cout << "=====================================================" << std::endl;
-        std::cout << "L1 : " << err1 <<" L2: " << err2 << std::endl;
-        std::cout << "=====================================================" << std::endl;
-      }
 // timing measure after loop
-      int ncycle = pin->GetOrAddInteger("problem","ncycle",100);
+      int ncycle = pin->GetInteger("problem","ncycle");
       if(Globals::my_rank == 0){
         std::cout << "=====================================================" << std::endl;
         std::cout << "Call Poisson Solver  " << ncycle << " times          " << std::endl;
         std::cout << "=====================================================" << std::endl;
       }
       clock_t tstart = clock();
+
 #ifdef OPENMP_PARALLEL
       double omp_start_time = omp_get_wtime();
 #endif
-      for (int n=0; n <= ncycle; n++) pgrav->Solver(phydro->u);
+
+      for (int n=0; n < ncycle; n++) {
+        pmb=pblock;
+        while(pmb!=NULL) {
+          std::memset(pmb->pgrav->phi.data(), 0, pmb->pgrav->phi.GetSizeInBytes());
+          pmb=pmb->next;
+        }
+        if(SELF_GRAVITY_ENABLED == 1) pfgrd->Solve(1);
+        else if (SELF_GRAVITY_ENABLED == 2) pmgrd->Solve(1);
+      }
+
 #ifdef OPENMP_PARALLEL
       double omp_time = omp_get_wtime() - omp_start_time;;
 #endif
       clock_t tstop = clock();
       float cpu_time = (tstop>tstart ? (float)(tstop-tstart) : 1.0)/(float)CLOCKS_PER_SEC;
       int64_t zones = GetTotalCells();
-      int64_t mb_zones = GetTotalCells()/nbtotal;
+      int64_t mb_zones = GetTotalCells()/nbtotal*nblist[Globals::my_rank];
       float zc_cpus = (float)(mb_zones*ncycle)/cpu_time;
       float zc_cpus2 = (float)(mb_zones*log2(mb_zones)*ncycle)/cpu_time;
 
@@ -199,6 +208,44 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         std::cout << "omp wtime used = " << omp_time << std::endl;
         std::cout << "zone-cycles/omp_wsecond = " << zc_omps << std::endl;
 #endif
+        std::cout << "=====================================================" << std::endl;
+      }
+
+      Real err1=0.0,err2=0.0,maxphi=0.0;
+      pmb=pblock;
+      while(pmb!=NULL) {
+        Hydro *phydro = pmb->phydro;
+        Gravity *pgrav = pmb->pgrav;
+        for (int k=ks; k<=ke; ++k) {
+        for (int j=js; j<=je; ++j) {
+        for (int i=is; i<=ie; ++i) {
+          err1 += std::abs(pgrav->phi(k,j,i) - phydro->u(IM2,k,j,i));
+//          err2 += pgrav->phi(k,j,i)/phydro->u(IM2,k,j,i);
+          maxphi=std::max(pgrav->phi(k,j,i),maxphi);
+        }}} // for-loop
+        pmb=pmb->next;
+      }
+#ifdef MPI_PARALLEL
+      MPI_Allreduce(MPI_IN_PLACE,&err1,1,MPI_ATHENA_REAL,MPI_SUM,MPI_COMM_WORLD);
+      MPI_Allreduce(MPI_IN_PLACE,&maxphi,1,MPI_ATHENA_REAL,MPI_MAX,MPI_COMM_WORLD);
+#endif
+
+      err1 = err1/((Real)cnt*nbtotal);
+      err2 = err2/cnt;
+
+      Real x1size = mesh_size.x1max - mesh_size.x1min;
+      Real x2size = mesh_size.x2max - mesh_size.x2min;
+      Real x3size = mesh_size.x3max - mesh_size.x3min;
+      Real four_pi_G = pin->GetReal("problem","four_pi_G");
+      Real phiamp = SQR(2*PI/x1size);
+      phiamp += SQR(2*PI/x2size);
+      phiamp += SQR(2*PI/x3size);
+      phiamp = 1.0*four_pi_G/phiamp;
+
+      if(Globals::my_rank == 0){
+        std::cout << std::setprecision(15) << std::scientific;
+        std::cout << "=====================================================" << std::endl;
+        std::cout << "L1 : " << err1 <<" MaxPhi: " << maxphi << " Amp: " << phiamp << std::endl;
         std::cout << "=====================================================" << std::endl;
       }
     }

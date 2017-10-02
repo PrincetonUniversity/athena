@@ -12,9 +12,9 @@
    See the README file in the top-level directory of the distribution.
 */
 
-#include "stdio.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include "mpi.h"
-#include "malloc.h"
 #include "assert.h"
 
 #include "pack_3d.h"

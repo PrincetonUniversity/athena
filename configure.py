@@ -385,17 +385,14 @@ else:
 # --grav argument
 if args['grav'] == "none":
   definitions['SELF_GRAVITY_ENABLED'] = '0'
-  makefile_options['GRAVITY_FILE'] = 'empty_solver.cpp'
 else:
-  definitions['SELF_GRAVITY_ENABLED'] = '1'
   if args['grav'] == "fft":
-    makefile_options['GRAVITY_FILE'] = 'fft_solver.cpp'
+    definitions['SELF_GRAVITY_ENABLED'] = '1'
     if not args['fft']:
       raise SystemExit('### CONFIGURE ERROR: FFT Poisson solver only be used with FFT')
 
-  definitions['SELF_GRAVITY_ENABLED'] = '2'
   if args['grav'] == "mg":
-    makefile_options['GRAVITY_FILE'] = 'empty_solver.cpp'
+    definitions['SELF_GRAVITY_ENABLED'] = '2'
 
 # -fft argument
 makefile_options['MPIFFT_FILE'] = ' '

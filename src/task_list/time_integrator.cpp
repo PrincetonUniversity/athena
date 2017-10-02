@@ -110,15 +110,12 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 
     // everything else
     AddTimeIntegratorTask(PHY_BVAL,CON2PRIM);
-    if (SELF_GRAVITY_ENABLED == 1){
-      AddTimeIntegratorTask(SOLV_GRAV,PHY_BVAL);
-      AddTimeIntegratorTask(SEND_GRAV,SOLV_GRAV);
-      AddTimeIntegratorTask(RECV_GRAV,SEND_GRAV);
-      AddTimeIntegratorTask(CORR_GFLX,RECV_GRAV);
-      AddTimeIntegratorTask(USERWORK,CORR_GFLX);
-    } else {
-      AddTimeIntegratorTask(USERWORK,PHY_BVAL);
-    }
+//    if (SELF_GRAVITY_ENABLED == 1){
+//      AddTimeIntegratorTask(CORR_GFLX,PHY_BVAL);
+//      AddTimeIntegratorTask(USERWORK,CORR_GFLX);
+//    } else {
+    AddTimeIntegratorTask(USERWORK,PHY_BVAL);
+//    }
     AddTimeIntegratorTask(NEW_DT,USERWORK);
     if(pm->adaptive==true) {
       AddTimeIntegratorTask(AMR_FLAG,USERWORK);
@@ -253,22 +250,6 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::CheckRefinement);
-      break;
-
-    case (SOLV_GRAV):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::GravSolve);
-      break;
-    case (SEND_GRAV):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::GravSend);
-      break;
-    case (RECV_GRAV):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::GravReceive);
       break;
     case (CORR_GFLX):
       task_list_[ntasks].TaskFunc=
@@ -616,37 +597,10 @@ enum TaskStatus TimeIntegratorTaskList::CheckRefinement(MeshBlock *pmb, int step
   return TASK_SUCCESS;
 }
 
-enum TaskStatus TimeIntegratorTaskList::GravSolve(MeshBlock *pmb, int step)
-{
-  if (step != nsub_steps) return TASK_NEXT; // only do on last sub-step
-
-  pmb->pgrav->Solver(pmb->phydro->u);
-  return TASK_NEXT;
-}
-
-enum TaskStatus TimeIntegratorTaskList::GravSend(MeshBlock *pmb, int step)
-{
-//  if (step != nsub_steps) return TASK_SUCCESS; // only do on last sub-step
-
-  pmb->pbval->SendGravityBoundaryBuffers(pmb->pgrav->phi);
-  return TASK_SUCCESS;
-}
-
-enum TaskStatus TimeIntegratorTaskList::GravReceive(MeshBlock *pmb, int step)
-{
-//  if (step != nsub_steps) return TASK_SUCCESS; // only do on last sub-step
-
-  if(pmb->pbval->ReceiveGravityBoundaryBuffers(pmb->pgrav->phi) == true){
-    return TASK_SUCCESS;
-  } else {
-    return TASK_FAIL;
-  }
-}
-
 enum TaskStatus TimeIntegratorTaskList::GravFluxCorrection(MeshBlock *pmb, int step)
 {
-  if (step != nsub_steps) return TASK_NEXT; // only do on last sub-step
+  if (step != nsub_steps) return TASK_SUCCESS; // only do on last sub-step
 
   pmb->phydro->CorrectGravityFlux();
-  return TASK_NEXT;
+  return TASK_SUCCESS;
 }

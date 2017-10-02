@@ -12,12 +12,12 @@
    See the README file in the top-level directory of the distribution.
 */
 
-#include "stdio.h"
-#include "mpi.h"
+#include <stdio.h>
+#include <stdlib.h>
 
+#include "mpi.h"
 #include "pack_2d.h"
 #include "remap_2d.h"
-#include "malloc.h"
 #include "assert.h"
 
 #define MIN(A,B) ((A) < (B)) ? (A) : (B)
