@@ -56,6 +56,7 @@ class MeshBlock;
 class ParameterInput;
 class FFTBlock;
 class FFTDriver;
+class TurbulenceDriver;
 
 class AthenaFFTIndex{
 public:
@@ -64,6 +65,7 @@ public:
 
   AthenaFFTIndex(const AthenaFFTIndex *psrc);
 // mesh size
+  Real Lx[3];
   int Nx[3];
 // MPI decomposition
   int np[3], ip[3];
@@ -135,23 +137,25 @@ public:
 
   void SetNormFactor(Real norm) { norm_factor_=norm;};
 
+  int Nx[3], nx[3], disp[3];
+  int kNx[3], knx[3], kdisp[3];
+  Real dkx[3], dx1, dx2, dx3;
+
+  friend class TurbulenceDriver;
   friend class FFTDriver;
+  friend class Mesh;
 
 protected:
   long int cnt_,gcnt_;
   int gid_;
   FFTDriver *pmy_driver_;
-  Real rdx_, rdy_, rdz_;
   AthenaFFTComplex *in_, *out_;
   AthenaFFTPlan *fplan_,*bplan_;
   AthenaFFTIndex *orig_idx_;
   AthenaFFTIndex *f_in_,*f_out_,*b_in_,*b_out_;
-  int Nx_[3], nx_[3], disp_[3];
-  int knx_[3], kdisp_[3];
-  Real dkx_[3];   
   Real norm_factor_;
   int dim_;
-private:
+
   LogicalLocation loc_;
   RegionSize msize_, bsize_;
 #ifdef MPI_PARALLEL
@@ -169,15 +173,17 @@ public:
   FFTDriver(Mesh *pm, ParameterInput *pin);
   virtual ~FFTDriver();
 
-  int npx1,npx2,npx3;
+  int npx1,npx2,npx3,nmb;
   FFTBlock *pmy_fb;
 
-  virtual void Solve(int step) { return; };
   void QuickCreatePlan();
+  void InitializeFFTBlock(bool set_norm);
 // small functions
   int GetNumFFTBlocks(void) { return nblist_[Globals::my_rank]; };
 
   friend class FFTBlock;
+  friend class Mesh;
+
 protected:
   long int gcnt_;
   int nranks_, nblocks_;
@@ -188,7 +194,6 @@ protected:
 #ifdef MPI_PARALLEL
   int decomp_,pdim_;
 #endif
-private:
   int dim_;
 #ifdef MPI_PARALLEL
   MPI_Comm MPI_COMM_FFT;

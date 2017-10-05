@@ -12,6 +12,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <ctime>
+#include <iomanip>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -64,6 +65,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   if(FFT_ENABLED){
     FFTDriver *pfftd;
     pfftd = new FFTDriver(this, pin);
+    pfftd->InitializeFFTBlock(true);
+    pfftd->QuickCreatePlan();
+
     FFTBlock *pfft = pfftd->pmy_fb;
   // Repeating FFTs for timing
     if(Globals::my_rank == 0){
@@ -127,7 +131,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
       std::cout << std::endl << "omp wtime used = " << omp_time << std::endl;
       std::cout << "zone-cycles/omp_wsecond = " << zc_omps << std::endl;
 #endif
-      std::cout << "=====================================================" << std::endl;
     }
 // Reset everything and do FFT once for error estimation
     for (int k=ks; k<=ke; ++k) {
@@ -157,6 +160,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
       err2 += std::abs(dst(1,k,j,i));
     }}}
     if(Globals::my_rank == 0){
+      std::cout << std::setprecision(15) << std::scientific;
+      std::cout << "=====================================================" << std::endl;
       std::cout << "Error for Real: " << err1 <<" Imaginary: " << err2 << std::endl;
       std::cout << "=====================================================" << std::endl;
     }

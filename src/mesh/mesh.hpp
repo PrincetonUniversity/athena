@@ -42,6 +42,7 @@ class MGGravityDriver;
 class EquationOfState;
 class FFTDriver;
 class FFTGravityDriver;
+class TurbulenceDriver;
 
 
 //----------------------------------------------------------------------------------------
@@ -141,6 +142,7 @@ class Mesh {
   friend class Hydro;
   friend class FFTDriver;
   friend class FFTGravityDriver;
+  friend class TurbulenceDriver;
   friend class MultigridDriver;
   friend class MGGravityDriver;
   friend class Gravity;
@@ -167,9 +169,11 @@ public:
   int nbtotal, nbnew, nbdel;
   bool adaptive, multilevel;
   int gflag;
+  int turb_flag; // turbulence flag
 
   MeshBlock *pblock;
 
+  TurbulenceDriver *ptrbd;
   FFTGravityDriver *pfgrd;
   MGGravityDriver *pmgrd;
 

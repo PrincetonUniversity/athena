@@ -1,7 +1,7 @@
 <comment>
 problem   = poisson's solver test
 reference = 
-configure = --prob=poisson
+configure = --prob=poisson --grav=mg/fft (-fft)
 
 <job>
 problem_id = Poisson    # problem ID: basename of output filenames
@@ -51,3 +51,4 @@ iso_sound_speed = 0.4082482905   # equavalent to sqrt(gamma*p/d) for p=0.1, d=1
 <problem>
 iprob           = 1 # problem choice
 four_pi_G       = 12.5663706144
+ncycle          = 100

@@ -29,23 +29,20 @@ FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
   gid_=igid;
   msize_=msize;
   bsize_=bsize;
-  rdx_=(msize_.x1max-msize_.x1min)/(Real)msize_.nx1;
-  rdy_=(msize_.x2max-msize_.x2min)/(Real)msize_.nx2;
-  rdz_=(msize_.x3max-msize_.x3min)/(Real)msize_.nx3;
+  dx1=(msize_.x1max-msize_.x1min)/(Real)msize_.nx1;
+  dx2=(msize_.x2max-msize_.x2min)/(Real)msize_.nx2;
+  dx3=(msize_.x3max-msize_.x3min)/(Real)msize_.nx3;
 
   cnt_ = bsize_.nx1*bsize_.nx2*bsize_.nx3;
   gcnt_ = pmy_driver_->gcnt_;
 
   dim_=pmy_driver_->dim_;
 
-  norm_factor_ = 1.0/gcnt_;
+//  norm_factor_ = 1.0/gcnt_;
 
   in_ = new AthenaFFTComplex[cnt_];
   out_ = new AthenaFFTComplex[cnt_];
 
-  fplan_ = new AthenaFFTPlan;
-  bplan_ = new AthenaFFTPlan;
- 
   orig_idx_ = new AthenaFFTIndex(dim_,loc_,msize_,bsize_);
   f_in_  = new AthenaFFTIndex(orig_idx_);
   f_out_ = new AthenaFFTIndex(orig_idx_);
@@ -60,12 +57,13 @@ FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
 
 #ifdef FFT
   for(int i=0;i<3;i++){
-    Nx_[f_in_->iloc[i]]=f_in_->Nx[i];
-    nx_[f_in_->iloc[i]]=f_in_->nx[i];
-    disp_[f_in_->iloc[i]]=f_in_->is[i];
-    knx_[b_in_->iloc[i]]=b_in_->nx[i];
-    kdisp_[b_in_->iloc[i]]=b_in_->is[i];
-    dkx_[b_in_->iloc[i]]=2*PI/(Real)b_in_->Nx[i];
+    Nx[f_in_->iloc[i]]=f_in_->Nx[i];
+    nx[f_in_->iloc[i]]=f_in_->nx[i];
+    disp[f_in_->iloc[i]]=f_in_->is[i];
+    kNx[b_in_->iloc[i]]=b_in_->Nx[i];
+    knx[b_in_->iloc[i]]=b_in_->nx[i];
+    kdisp[b_in_->iloc[i]]=b_in_->is[i];
+    dkx[b_in_->iloc[i]]=2*PI/b_in_->Lx[i];
   }
 #endif
 }
@@ -74,9 +72,6 @@ FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
 
 FFTBlock::~FFTBlock()
 {
-#ifdef FFT
-    delete fplan_;
-    delete bplan_;
     delete[] in_;
     delete[] out_;
     delete orig_idx_;
@@ -84,17 +79,16 @@ FFTBlock::~FFTBlock()
     delete f_out_;
     delete b_in_;
     delete b_out_;
-#endif
 }
 
 
 void FFTBlock::PrintSource(int in)
 {
-  std::cout << Nx_[0] << "x" << Nx_[1] << "x" << Nx_[2] << std::endl;
+  std::cout << Nx[0] << "x" << Nx[1] << "x" << Nx[2] << std::endl;
 
-  for (int k=0; k<Nx_[2]; ++k) {
-    for (int j=0; j<Nx_[1]; ++j) {
-      for (int i=0; i<Nx_[0]; ++i) {
+  for (int k=0; k<Nx[2]; ++k) {
+    for (int j=0; j<Nx[1]; ++j) {
+      for (int i=0; i<Nx[0]; ++i) {
         long int idx=GetIndex(i,j,k,f_in_);
         if(in == 1) std::cout << in_[idx][0] << " ";
         if(in == -1) std::cout << out_[idx][0] << " ";
@@ -106,12 +100,12 @@ void FFTBlock::PrintSource(int in)
 }
 long int FFTBlock::GetIndex(const int i, const int j, const int k)
 {
-  return i + nx_[0] * ( j + nx_[1] * k);
+  return i + nx[0] * ( j + nx[1] * k);
 }
 
 long int FFTBlock::GetGlobalIndex(const int i, const int j, const int k)
 {
-  return i + disp_[0] + Nx_[0]* ( j + disp_[1] + Nx_[1]* ( k + disp_[2]) );
+  return i + disp[0] + Nx[0]* ( j + disp[1] + Nx[1]* ( k + disp[2]) );
 }
 
 long int FFTBlock::GetIndex(const int i, const int j, const int k, AthenaFFTIndex *pidx)
@@ -189,9 +183,9 @@ void FFTBlock::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Logical
 //  \brief Apply kernel
 void FFTBlock::ApplyKernel(int mode)
 {
-  for(int k=0; k<knx_[2]; k++) {
-    for(int j=0; j<knx_[1]; j++) {
-      for(int i=0; i<knx_[0]; i++) {
+  for(int k=0; k<knx[2]; k++) {
+    for(int j=0; j<knx[1]; j++) {
+      for(int i=0; i<knx[0]; i++) {
         long int idx_in=GetIndex(i,j,k,b_in_);
         long int idx_out=GetIndex(i,j,k,f_out_);
         in_[idx_in][0] = out_[idx_out][0];
@@ -518,12 +512,14 @@ AthenaFFTIndex::AthenaFFTIndex(int dim, LogicalLocation loc, RegionSize msize, R
 {
   dim_=dim;
 
+  Lx[0] = msize.x1max-msize.x1min;
   Nx[0] = msize.nx1;
   np[0] = msize.nx1/bsize.nx1;
   ip[0] = loc.lx1;
   iloc[0]=0;
   ploc[0]=0;
   if(dim_ > 1){
+    Lx[1] = msize.x2max-msize.x2min;
     Nx[1] = msize.nx2;
     np[1] = msize.nx2/bsize.nx2;
     ip[1] = loc.lx2; 
@@ -531,6 +527,7 @@ AthenaFFTIndex::AthenaFFTIndex(int dim, LogicalLocation loc, RegionSize msize, R
     ploc[1]=1;
   }
   if(dim_ > 2){
+    Lx[2] = msize.x3max-msize.x3min;
     Nx[2] = msize.nx3;
     np[2] = msize.nx3/bsize.nx3;
     ip[2] = loc.lx3;
@@ -546,6 +543,7 @@ AthenaFFTIndex::AthenaFFTIndex(const AthenaFFTIndex *psrc){
   dim_ = psrc->dim_;
 
   for(int i=0; i<dim_; i++){
+    Lx[i]=psrc->Lx[i];
     Nx[i]=psrc->Nx[i];
     np[i]=psrc->np[i];
     ip[i]=psrc->ip[i];
@@ -629,7 +627,8 @@ void AthenaFFTIndex::RemapProc(int dir){
 }
 
 void AthenaFFTIndex::PrintIndex(void){
-  std::cout << "Nx:" << Nx[0] << " "  << Nx[1] << " " << Nx[2] << std::endl
+  std::cout << "Lx:" << Lx[0] << " "  << Lx[1] << " " << Lx[2] << std::endl
+            << "Nx:" << Nx[0] << " "  << Nx[1] << " " << Nx[2] << std::endl
             << "np:" << np[0] << " "  << np[1] << " " << np[2] << std::endl
             << "ip:" << ip[0] << " "  << ip[1] << " " << ip[2] << std::endl
             << "nx:" << nx[0] << " "  << nx[1] << " " << nx[2] << std::endl

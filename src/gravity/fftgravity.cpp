@@ -42,9 +42,10 @@ FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
     return;
   }
 
+// initialize using FFTGravity
+
   int igid=Globals::my_rank;
   pmy_fb=new FFTGravity(this, fft_loclist_[igid], igid, fft_mesh_size_, fft_block_size_);
-
   pmy_fb->SetNormFactor(four_pi_G_/gcnt_);
 
   QuickCreatePlan();
@@ -52,12 +53,15 @@ FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
   gtlist_ = new GravitySolverTaskList(pin, pm);
 }
 
+FFTGravityDriver::~FFTGravityDriver(){
+  delete gtlist_;
+}
 
 //----------------------------------------------------------------------------------------
 //! \fn void GravityDriver::Solve(int step)
 //  \brief load the data and solve
 
-void FFTGravityDriver::Solve(int step)
+void FFTGravityDriver::Solve(int step, int mode)
 {
   FFTBlock *pfb=pmy_fb;
   AthenaArray<Real> in;
@@ -76,7 +80,7 @@ void FFTGravityDriver::Solve(int step)
   }
 
   pfb->ExecuteForward();
-  pfb->ApplyKernel(0);
+  pfb->ApplyKernel(mode);
   pfb->ExecuteBackward();
 
   // Return the result
@@ -101,29 +105,35 @@ void FFTGravityDriver::Solve(int step)
 void FFTGravity::ApplyKernel(int mode)
 {
   Real pcoeff;
-  Real dx1sq=rdx_*rdx_;
-  Real dx2sq=rdy_*rdy_;
-  Real dx3sq=rdz_*rdz_;
-  for(int k=0; k<knx_[2]; k++) {
-    for(int j=0; j<knx_[1]; j++) {
-      for(int i=0; i<knx_[0]; i++) {
+  Real dx1sq=SQR(2*PI/(kNx[0]*dkx[0]));
+  Real dx2sq=SQR(2*PI/(kNx[1]*dkx[1]));
+  Real dx3sq=SQR(2*PI/(kNx[2]*dkx[2]));
+  for(int k=0; k<knx[2]; k++) {
+    for(int j=0; j<knx[1]; j++) {
+      for(int i=0; i<knx[0]; i++) {
         long int gidx = GetGlobalIndex(i,j,k);
         if(gidx == 0){ pcoeff = 0.0;}
         else {
+          Real kx=(i+kdisp[0]);
+          Real ky=(j+kdisp[1]);
+          Real kz=(k+kdisp[2]);
+          if(kx > 0.5*kNx[0]) kx -= kNx[0];
+          if(ky > 0.5*kNx[1]) ky -= kNx[1];
+          if(kz > 0.5*kNx[2]) kz -= kNx[2];
           if(mode == 0){ // Discrete FT
-            pcoeff = ((2.0*std::cos((i+kdisp_[0])*dkx_[0])-2.0)/dx1sq);
-            if(dim_ > 1)
-              pcoeff += ((2.0*std::cos((j+kdisp_[1])*dkx_[1])-2.0)/dx2sq);
-            if(dim_ > 2)
-              pcoeff += ((2.0*std::cos((k+kdisp_[2])*dkx_[2])-2.0)/dx3sq);
+            kx *= 2*PI/(Real)kNx[0];
+            ky *= 2*PI/(Real)kNx[1];
+            kz *= 2*PI/(Real)kNx[2];
+            pcoeff = ((2.0*std::cos(kx)-2.0)/dx1sq);
+            if(dim_ > 1) pcoeff += ((2.0*std::cos(ky)-2.0)/dx2sq);
+            if(dim_ > 2) pcoeff += ((2.0*std::cos(kz)-2.0)/dx3sq);
           } else if(mode == 1) { // Continous FT
-            Real kx=(i+kdisp_[0])*dkx_[0];
-            Real ky=(j+kdisp_[1])*dkx_[1];
-            Real kz=(k+kdisp_[2])*dkx_[2];
-            if(kx > PI) kx -= 2*PI;
-            if(ky > PI) ky -= 2*PI;
-            if(kz > PI) kz -= 2*PI;
-            pcoeff = -(kx*kx/dx1sq+ky*ky/dx2sq+kz*kz/dx3sq);
+            kx *= dkx[0];
+            ky *= dkx[1];
+            kz *= dkx[2];
+            pcoeff = -kx*kx;
+            if(dim_ > 1) pcoeff -= ky*ky;
+            if(dim_ > 2) pcoeff -= kz*kz;
           }
           pcoeff = 1.0/pcoeff;
         }

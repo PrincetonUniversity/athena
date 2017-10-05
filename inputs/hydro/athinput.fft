@@ -1,5 +1,5 @@
 <comment>
-problem   = FFT test
+problem   = FFT test and timing
 reference =
 configure = --prob=fft -fft
 
