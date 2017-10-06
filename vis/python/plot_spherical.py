@@ -20,10 +20,8 @@ file, including combinations of multiple quantities.
 Requires scipy if making streamplot.
 """
 
-# Python modules
+# Python standard modules
 import argparse
-import h5py
-import numpy as np
 import warnings
 
 # Python plotting modules
@@ -32,13 +30,17 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
+# Other Python modules
+import h5py
+import numpy as np
+
 # Athena++ modules
 import athena_read
 
 # Main function
 def main(**kwargs):
 
-  # Python modules
+  # Load function for transforming coordinates
   if kwargs['stream'] is not None:
     from scipy.ndimage import map_coordinates
 
@@ -289,7 +291,7 @@ def main(**kwargs):
   plt.xlabel('$'+r_string+angle_string_x+'$')
   plt.ylabel('$'+r_string+angle_string_y+'$')
   plt.colorbar(im)
-  plt.savefig(kwargs['output_file'])
+  plt.savefig(kwargs['output_file'], bbox_inches='tight')
 
 # Execute main function
 if __name__ == '__main__':

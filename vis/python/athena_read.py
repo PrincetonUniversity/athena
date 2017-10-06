@@ -3,11 +3,13 @@ Read Athena++ output data files.
 """
 
 # Python modules
-import numpy as np
 import re
 import struct
 import sys
 import warnings
+
+# Other Python modules
+import numpy as np
 
 #=========================================================================================
 
@@ -275,7 +277,7 @@ def athdf(filename, data=None, quantities=None, dtype=np.float32, level=None,
     center_func_2=None, center_func_3=None):
   """Read .athdf files and populate dict of arrays of data."""
 
-  # Python module
+  # Load HDF5 reader
   import h5py
 
   # Prepare dictionary for results
