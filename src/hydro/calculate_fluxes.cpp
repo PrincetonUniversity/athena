@@ -90,7 +90,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     pmb->precon->DonorCellX1(kl,ku,jl,ju,is,ie+1,w,IM1,IM1,wl,wr);
     pmb->precon->DonorCellX1(kl,ku,jl,ju,is,ie+1,w,IM2,IM2,wl,wr);
     pmb->precon->DonorCellX1(kl,ku,jl,ju,is,ie+1,w,IM3,IM3,wl,wr);
-    pmb->precon->DonorCellX1(kl,ku,jl,ju,is,ie+1,w,IEN,IEN,wl,wr);
+    if(NON_BAROTROPIC_EOS) pmb->precon->DonorCellX1(kl,ku,jl,ju,is,ie+1,w,IEN,IEN,wl,wr);
     if (MAGNETIC_FIELDS_ENABLED) {
       pmb->precon->DonorCellX1(kl,ku,jl,ju,is,ie+1,bcc,IB2,IBY,wl,wr);
       pmb->precon->DonorCellX1(kl,ku,jl,ju,is,ie+1,bcc,IB3,IBZ,wl,wr);
@@ -100,7 +100,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     pmb->precon->ReconstructFuncX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IM1,IM1,wl,wr);
     pmb->precon->ReconstructFuncX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IM2,IM2,wl,wr);
     pmb->precon->ReconstructFuncX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IM3,IM3,wl,wr);
-    pmb->precon->ReconstructFuncX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IEN,IEN,wl,wr);
+    if(NON_BAROTROPIC_EOS) pmb->precon->ReconstructFuncX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IEN,IEN,wl,wr);
     if (MAGNETIC_FIELDS_ENABLED) {
       pmb->precon->ReconstructFuncX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,bcc,IB2,IBY,wl,wr);
       pmb->precon->ReconstructFuncX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,bcc,IB3,IBZ,wl,wr);
@@ -149,7 +149,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       pmb->precon->DonorCellX2(kl,ku,js,je+1,il,iu,w,IM1,IM1,wl,wr);
       pmb->precon->DonorCellX2(kl,ku,js,je+1,il,iu,w,IM2,IM2,wl,wr);
       pmb->precon->DonorCellX2(kl,ku,js,je+1,il,iu,w,IM3,IM3,wl,wr);
-      pmb->precon->DonorCellX2(kl,ku,js,je+1,il,iu,w,IEN,IEN,wl,wr);
+      if(NON_BAROTROPIC_EOS) pmb->precon->DonorCellX2(kl,ku,js,je+1,il,iu,w,IEN,IEN,wl,wr);
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->precon->DonorCellX2(kl,ku,js,je+1,il,iu,bcc,IB3,IBY,wl,wr);
         pmb->precon->DonorCellX2(kl,ku,js,je+1,il,iu,bcc,IB1,IBZ,wl,wr);
@@ -159,7 +159,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       pmb->precon->ReconstructFuncX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IM1,IM1,wl,wr);
       pmb->precon->ReconstructFuncX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IM2,IM2,wl,wr);
       pmb->precon->ReconstructFuncX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IM3,IM3,wl,wr);
-      pmb->precon->ReconstructFuncX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IEN,IEN,wl,wr);
+      if(NON_BAROTROPIC_EOS) pmb->precon->ReconstructFuncX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IEN,IEN,wl,wr);
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->precon->ReconstructFuncX2(pmb->pcoord,kl,ku,js,je+1,il,iu,bcc,IB3,IBY,wl,wr);
         pmb->precon->ReconstructFuncX2(pmb->pcoord,kl,ku,js,je+1,il,iu,bcc,IB1,IBZ,wl,wr);
@@ -204,7 +204,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       pmb->precon->DonorCellX3(ks,ke+1,jl,ju,il,iu,w,IM1,IM1,wl,wr);
       pmb->precon->DonorCellX3(ks,ke+1,jl,ju,il,iu,w,IM2,IM2,wl,wr);
       pmb->precon->DonorCellX3(ks,ke+1,jl,ju,il,iu,w,IM3,IM3,wl,wr);
-      pmb->precon->DonorCellX3(ks,ke+1,jl,ju,il,iu,w,IEN,IEN,wl,wr);
+      if(NON_BAROTROPIC_EOS) pmb->precon->DonorCellX3(ks,ke+1,jl,ju,il,iu,w,IEN,IEN,wl,wr);
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->precon->DonorCellX3(ks,ke+1,jl,ju,il,iu,bcc,IB1,IBY,wl,wr);
         pmb->precon->DonorCellX3(ks,ke+1,jl,ju,il,iu,bcc,IB2,IBZ,wl,wr);
@@ -214,7 +214,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       pmb->precon->ReconstructFuncX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IM1,IM1,wl,wr);
       pmb->precon->ReconstructFuncX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IM2,IM2,wl,wr);
       pmb->precon->ReconstructFuncX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IM3,IM3,wl,wr);
-      pmb->precon->ReconstructFuncX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IEN,IEN,wl,wr);
+      if(NON_BAROTROPIC_EOS) pmb->precon->ReconstructFuncX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IEN,IEN,wl,wr);
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->precon->ReconstructFuncX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,bcc,IB1,IBY,wl,wr);
         pmb->precon->ReconstructFuncX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,bcc,IB2,IBZ,wl,wr);
