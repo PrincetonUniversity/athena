@@ -1191,6 +1191,7 @@ void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t 
   return;
 }
 
+
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir, GravityBoundaryFunc_t my_bc)
 //  \brief Enroll a user-defined boundary function
@@ -1205,6 +1206,19 @@ void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir, GravityBound
   }
   GravityBoundaryFunction_[dir]=my_bc;
   return;
+}
+
+
+//----------------------------------------------------------------------------------------
+// \!fn void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin)
+// \brief Apply MeshBlock::UserWorkBeforeOutput
+void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin)
+{
+  MeshBlock *pmb = pblock;
+  while (pmb != NULL)  {
+    pmb->UserWorkBeforeOutput(pin);
+    pmb=pmb->next;
+  }
 }
 
 //----------------------------------------------------------------------------------------
