@@ -122,7 +122,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     sinkx = sin(x*kwave);
     coskx = cos(x*kwave);
 
-    phydro->u(IDN,k,j,i) = d0*(1.0+amp*sinkx);
+    phydro->u(IDN,k,j,i) = d0*(1.0+amp*sinkx+amp*amp*sin(pcoord->x1v(i)*kwave));
 
     Real m = (omega2 < 0) ? d0*(omega/kwave)*amp*coskx:0.0;
 
@@ -132,6 +132,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
     if (NON_BAROTROPIC_EOS) {
       phydro->u(IEN,k,j,i) = p0/gm1*(1.0 + gam*amp*sinkx);
+      phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM1,k,j,i))/phydro->u(IDN,k,j,i);
+      phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM2,k,j,i))/phydro->u(IDN,k,j,i);
+      phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM3,k,j,i))/phydro->u(IDN,k,j,i);
     }
   }}}
 
@@ -143,7 +146,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     std::cout << "angle3 " << ang_3*180./PI << " " << sin_a3 << " " << cos_a3 << std::endl;
   }
 
-  pmy_mesh->tlim=pin->SetReal("time","tlim",2.0*PI/omega*2.0);
+//  pmy_mesh->tlim=pin->SetReal("time","tlim",2.0*PI/omega*2.0);
 
   if(SELF_GRAVITY_ENABLED){
     pgrav->grav_mean_rho = grav_mean_rho;
@@ -167,6 +170,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     max_err[i]=0.0;
   }
 
+  Gravity *pgrav = pblock->pgrav;
   Hydro *phydro = pblock->phydro;
   Coordinates *pcoord = pblock->pcoord;
   Real sinkx, coskx, sinot, cosot;

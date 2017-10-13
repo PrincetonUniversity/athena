@@ -55,6 +55,7 @@ FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
   MpiInitialize();
 #endif
 
+  f_in_->PrintIndex();
 #ifdef FFT
   for(int i=0;i<3;i++){
     Nx[f_in_->iloc[i]]=f_in_->Nx[i];
@@ -129,11 +130,13 @@ void FFTBlock::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh, LogicalLo
   is=loc.lx1*bsize.nx1-loc_.lx1*bsize_.nx1;
   js=loc.lx2*bsize.nx2-loc_.lx2*bsize_.nx2;
   ks=loc.lx3*bsize.nx3-loc_.lx3*bsize_.nx3;
-  ie=is+bsize.nx1-1, je=js+bsize.nx2-1, ke=ks+bsize.nx3-1;
+  ie=is+bsize.nx1-1, je=bsize.nx2>1?js+bsize.nx2-1:js, ke=bsize.nx3>1?ks+bsize.nx3-1:ks;
+  int jl=bsize.nx2>1?ngh:0;
+  int kl=bsize.nx3>1?ngh:0;
 
   for(int n=0; n<ns; n++) {
-    for(int k=ngh, mk=ks; mk<=ke; k++, mk++) {
-      for(int j=ngh, mj=js; mj<=je; j++, mj++) {
+    for(int k=kl, mk=ks; mk<=ke; k++, mk++) {
+      for(int j=jl, mj=js; mj<=je; j++, mj++) {
         for(int i=ngh, mi=is; mi<=ie; i++, mi++){
           long int idx=GetIndex(mi,mj,mk,b_out_);
           if(ns == 1){
@@ -158,11 +161,13 @@ void FFTBlock::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Logical
   is=loc.lx1*bsize.nx1-loc_.lx1*bsize_.nx1;
   js=loc.lx2*bsize.nx2-loc_.lx2*bsize_.nx2;
   ks=loc.lx3*bsize.nx3-loc_.lx3*bsize_.nx3;
-  ie=is+bsize.nx1-1, je=js+bsize.nx2-1, ke=ks+bsize.nx3-1;
+  ie=is+bsize.nx1-1, je=bsize.nx2>1?js+bsize.nx2-1:js, ke=bsize.nx3>1?ks+bsize.nx3-1:ks;
+  int jl=bsize.nx2>1?ngh:0;
+  int kl=bsize.nx3>1?ngh:0;
 
   for(int n=0; n<ns; n++) {
-    for(int k=ngh, mk=ks; mk<=ke; k++, mk++) {
-      for(int j=ngh, mj=js; mj<=je; j++, mj++) {
+    for(int k=kl, mk=ks; mk<=ke; k++, mk++) {
+      for(int j=jl, mj=js; mj<=je; j++, mj++) {
         for(int i=ngh, mi=is; mi<=ie; i++, mi++) {
           long int idx=GetIndex(mi,mj,mk,f_in_);
           if(ns == 1){
@@ -518,22 +523,18 @@ AthenaFFTIndex::AthenaFFTIndex(int dim, LogicalLocation loc, RegionSize msize, R
   ip[0] = loc.lx1;
   iloc[0]=0;
   ploc[0]=0;
-  if(dim_ > 1){
-    Lx[1] = msize.x2max-msize.x2min;
-    Nx[1] = msize.nx2;
-    np[1] = msize.nx2/bsize.nx2;
-    ip[1] = loc.lx2; 
-    iloc[1]=1;
-    ploc[1]=1;
-  }
-  if(dim_ > 2){
-    Lx[2] = msize.x3max-msize.x3min;
-    Nx[2] = msize.nx3;
-    np[2] = msize.nx3/bsize.nx3;
-    ip[2] = loc.lx3;
-    iloc[2]=2;
-    ploc[2]=2;
-  }
+  Lx[1] = msize.x2max-msize.x2min;
+  Nx[1] = msize.nx2;
+  np[1] = msize.nx2/bsize.nx2;
+  ip[1] = loc.lx2; 
+  iloc[1]=1;
+  ploc[1]=1;
+  Lx[2] = msize.x3max-msize.x3min;
+  Nx[2] = msize.nx3;
+  np[2] = msize.nx3/bsize.nx3;
+  ip[2] = loc.lx3;
+  iloc[2]=2;
+  ploc[2]=2;
 
   SetLocalIndex();
 }
@@ -542,7 +543,7 @@ AthenaFFTIndex::AthenaFFTIndex(int dim, LogicalLocation loc, RegionSize msize, R
 AthenaFFTIndex::AthenaFFTIndex(const AthenaFFTIndex *psrc){
   dim_ = psrc->dim_;
 
-  for(int i=0; i<dim_; i++){
+  for(int i=0; i<3; i++){
     Lx[i]=psrc->Lx[i];
     Nx[i]=psrc->Nx[i];
     np[i]=psrc->np[i];
@@ -560,7 +561,7 @@ AthenaFFTIndex::~AthenaFFTIndex()
 }
 
 void AthenaFFTIndex::SetLocalIndex(){
-  for(int i=0; i<dim_; i++){
+  for(int i=0; i<3; i++){
     nx[i] = Nx[i]/np[i];
     is[i] = ip[i]*nx[i];
     ie[i] = is[i]+nx[i]-1;
