@@ -159,7 +159,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   if (omega2 < 0){ 
     if(Globals::my_rank==0)
       std::cout << "This problem is Jeans unstable, njeans = " << njeans << std::endl;
-    return;
+    //    return;
   }
 
   MeshBlock *pmb = pblock;
@@ -187,9 +187,14 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
                + pcoord->x3v(k)*sin_a2;
         sinkx = sin(x*kwave);
         coskx = cos(x*kwave);
-        sinot = sin(omega*tlim);
-        cosot = cos(omega*tlim);
-  
+	if (omega2 < 0) {
+	  sinot = exp(-omega*tlim);//time dependent factor of vel
+	  cosot = exp(-omega*tlim);//time dependent factor of rho
+	} 
+	else {
+	  sinot = sin(omega*tlim);//time dependent factor of vel
+	  cosot = cos(omega*tlim);//time dependent factor of rho
+	}
         Real den=d0*(1.0+amp*sinkx*cosot);
         l1_err[IDN] += fabs(den - phydro->u(IDN,k,j,i));
         max_err[IDN] = std::max(fabs(den - phydro->u(IDN,k,j,i)),max_err[IDN]);
