@@ -32,7 +32,7 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
  : FFTDriver(pm, pin)
 {
   
-  rseed = -1; // seed for random number. 
+  rseed = pin->GetOrAddInteger("problem","rseed",-1); // seed for random number. 
 
   nlow = pin->GetOrAddInteger("problem","nlow",0); // cut-off wavenumber 
   nhigh = pin->GetOrAddInteger("problem","nhigh",pm->mesh_size.nx1/2); // cut-off wavenumber 
@@ -198,7 +198,7 @@ void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp){
 
 void TurbulenceDriver::Perturb(Real dt){
   Mesh *pm = pmy_mesh_;
-
+  std::stringstream msg;
   int nbs=nslist_[Globals::my_rank];
   int nbe=nbs+nblist_[Globals::my_rank]-1;
 
@@ -231,7 +231,12 @@ void TurbulenceDriver::Perturb(Real dt){
 #ifdef MPI_PARALLEL
 // Sum the perturbations over all processors 
   mpierr = MPI_Allreduce(m, gm, 4, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  if (mpierr) ath_error("[normalize]: MPI_Allreduce error = %d\n", mpierr);
+  if (mpierr) {
+    msg << "[normalize]: MPI_Allreduce error = " 
+	<< mpierr << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  // Ask Changgoo about this
   for (int n=0;n<4;n++) m[n]=gm[n];
 #endif // MPI_PARALLEL 
 
@@ -274,7 +279,12 @@ void TurbulenceDriver::Perturb(Real dt){
 #ifdef MPI_PARALLEL
   // Sum the perturbations over all processors 
   mpierr = MPI_Allreduce(m, gm, 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  if (mpierr) ath_error("[normalize]: MPI_Allreduce error = %d\n", mpierr);
+  if (mpierr) {
+    msg << "[normalize]: MPI_Allreduce error = " 
+	<< mpierr << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  //  if (mpierr) ath_error("[normalize]: MPI_Allreduce error = %d\n", mpierr);
   m[0] = gm[0];  m[1] = gm[1];
 #endif // MPI_PARALLEL 
 
