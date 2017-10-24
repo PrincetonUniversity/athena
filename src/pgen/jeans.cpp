@@ -188,8 +188,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         sinkx = sin(x*kwave);
         coskx = cos(x*kwave);
 	if (omega2 < 0) {
-	  sinot = exp(-omega*tlim);//time dependent factor of vel
-	  cosot = exp(-omega*tlim);//time dependent factor of rho
+	  sinot = exp(omega*tlim);//time dependent factor of vel
+	  cosot = exp(omega*tlim);//time dependent factor of rho
 	} 
 	else {
 	  sinot = sin(omega*tlim);//time dependent factor of vel
