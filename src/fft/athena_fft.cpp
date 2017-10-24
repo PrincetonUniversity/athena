@@ -44,15 +44,16 @@ FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
   out_ = new AthenaFFTComplex[cnt_];
 
   orig_idx_ = new AthenaFFTIndex(dim_,loc_,msize_,bsize_);
-  f_in_  = new AthenaFFTIndex(orig_idx_);
-  f_out_ = new AthenaFFTIndex(orig_idx_);
-  b_in_  = new AthenaFFTIndex(orig_idx_);
-  b_out_ = new AthenaFFTIndex(orig_idx_);
 
 #ifdef MPI_PARALLEL
   decomp_=pmy_driver_->decomp_;
   pdim_=pmy_driver_->pdim_;
   MpiInitialize();
+#else
+  f_in_  = new AthenaFFTIndex(orig_idx_);
+  f_out_ = new AthenaFFTIndex(orig_idx_);
+  b_in_  = new AthenaFFTIndex(orig_idx_);
+  b_out_ = new AthenaFFTIndex(orig_idx_);
 #endif
 
   f_in_->PrintIndex();
@@ -80,8 +81,20 @@ FFTBlock::~FFTBlock()
     delete f_out_;
     delete b_in_;
     delete b_out_;
+    if(fplan_) DestroyPlan(fplan_);
+    if(bplan_) DestroyPlan(bplan_);
 }
 
+void FFTBlock::DestroyPlan(AthenaFFTPlan *plan)
+{
+#ifdef MPI_PARALLEL
+  fft_3d_destroy_plan(plan->plan3d);
+  fft_2d_destroy_plan(plan->plan2d);
+  delete plan;
+#else
+  delete plan;
+#endif
+}
 
 void FFTBlock::PrintSource(int in)
 {

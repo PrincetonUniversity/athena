@@ -114,6 +114,7 @@ public:
 
   long int GetGlobalIndex(const int i, const int j, const int k);
 
+  void DestroyPlan(AthenaFFTPlan *plan);
   void MpiInitialize();
   void Execute(AthenaFFTPlan *plan);
   void Execute(AthenaFFTPlan *plan, AthenaFFTComplex *data);
