@@ -247,15 +247,6 @@ public:
   void PolarSingleEMF(void);
   bool ReceiveEMFCorrection(void);
 
-// Gravity
-  int LoadGravityBoundaryBufferSameLevel(AthenaArray<Real> &src, Real *buf,
-                                       const NeighborBlock& nb);
-  void SendGravityBoundaryBuffers(AthenaArray<Real> &src);
-  void SetGravityBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
-                                 const NeighborBlock& nb);
-  bool ReceiveGravityBoundaryBuffers(AthenaArray<Real> &dst);
-  void ReceiveGravityBoundaryBuffersWithWait(AthenaArray<Real> &dst);
-
 private:
   MeshBlock *pmy_block_;  // ptr to MeshBlock containing this BVals
   int nface_, nedge_;
@@ -263,7 +254,7 @@ private:
   int nedge_fine_[12];
   bool firsttime_;
 
-  BoundaryData bd_hydro_, bd_field_, bd_gravity_, bd_flcor_, bd_emfcor_;
+  BoundaryData bd_hydro_, bd_field_, bd_flcor_, bd_emfcor_;
   enum BoundaryStatus *emf_north_flag_;
   enum BoundaryStatus *emf_south_flag_;
   Real **emf_north_send_, **emf_north_recv_;

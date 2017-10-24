@@ -17,6 +17,7 @@
 class Mesh;
 class MeshBlock;
 class TaskList;
+class GravitySolverTaskList;
 
 // return codes for functions working on individual Tasks and TaskList
 enum TaskStatus {TASK_FAIL, TASK_SUCCESS, TASK_NEXT};
@@ -63,6 +64,7 @@ class TaskState {
 
 class TaskList {
 friend class TimeIntegratorTaskList;
+friend class GravitySolverTaskList;
 public:
   TaskList(Mesh *pm);
   virtual ~TaskList();
@@ -74,7 +76,6 @@ public:
   // functions
   enum TaskListStatus DoAllAvailableTasks(MeshBlock *pmb, int step, TaskState &ts);
   void DoTaskListOneSubstep(Mesh *pmesh, int step);
-  virtual void AddTimeIntegratorTask(uint64_t id, uint64_t dep) = 0;
 
 private:
   Mesh* pmy_mesh_;

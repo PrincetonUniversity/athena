@@ -25,6 +25,8 @@
 #include "../coordinates/coordinates.hpp"
 #include "../hydro/hydro.hpp" 
 #include "../field/field.hpp"
+#include "../fft/athena_fft.hpp"
+#include "../gravity/fftgravity.hpp"
 #include "../multigrid/multigrid.hpp"
 #include "../gravity/gravity.hpp"
 #include "../gravity/mggravity.hpp"
@@ -76,6 +78,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   nint_user_mesh_data_=0;
   nreal_user_mesh_data_=0;
   nuser_history_output_=0;
+
+  four_pi_G_=0.0;
 
   // read number of OpenMP threads for mesh
   num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
@@ -258,6 +262,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   MGBoundaryFunction_[OUTER_X2]=MGPeriodicOuterX2;
   MGBoundaryFunction_[INNER_X3]=MGPeriodicInnerX3;
   MGBoundaryFunction_[OUTER_X3]=MGPeriodicOuterX3;
+
 
   // calculate the logical root level and maximum level
   for (root_level=0; (1<<root_level)<nbmax; root_level++);
@@ -500,8 +505,10 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   }
   pblock=pfirst;
 
-  if (SELF_GRAVITY_ENABLED==2)
-    pgrd = new GravityDriver(this, MGBoundaryFunction_, pin);
+  if (SELF_GRAVITY_ENABLED==1)
+    pfgrd = new FFTGravityDriver(this, pin);
+  else if (SELF_GRAVITY_ENABLED==2)
+    pmgrd = new MGGravityDriver(this, MGBoundaryFunction_, pin);
 }
 
 //----------------------------------------------------------------------------------------
@@ -827,8 +834,10 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   // clean up
   delete [] offset;
 
+  if (SELF_GRAVITY_ENABLED==1)
+    pfgrd = new FFTGravityDriver(this, pin);
   if (SELF_GRAVITY_ENABLED==2)
-    pgrd = new GravityDriver(this, MGBoundaryFunction_, pin);
+    pmgrd = new MGGravityDriver(this, MGBoundaryFunction_, pin);
 }
 
 //----------------------------------------------------------------------------------------
@@ -846,7 +855,8 @@ Mesh::~Mesh()
   delete [] ranklist;
   delete [] costlist;
   delete [] loclist;
-  if (SELF_GRAVITY_ENABLED==2) delete pgrd;
+  if (SELF_GRAVITY_ENABLED==1) delete pfgrd;
+  else if (SELF_GRAVITY_ENABLED==2) delete pmgrd;
   if(adaptive==true) { // deallocate arrays for AMR
     delete [] nref;
     delete [] nderef;
@@ -1183,6 +1193,35 @@ void Mesh::EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t 
 
 
 //----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir, GravityBoundaryFunc_t my_bc)
+//  \brief Enroll a user-defined boundary function
+
+void Mesh::EnrollUserGravityBoundaryFunction(enum BoundaryFace dir, GravityBoundaryFunc_t my_bc)
+{
+  std::stringstream msg;
+  if(dir<0 || dir>5) {
+    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
+        << "dirName = " << dir << " not valid" << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+  GravityBoundaryFunction_[dir]=my_bc;
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+// \!fn void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin)
+// \brief Apply MeshBlock::UserWorkBeforeOutput
+void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin)
+{
+  MeshBlock *pmb = pblock;
+  while (pmb != NULL)  {
+    pmb->UserWorkBeforeOutput(pin);
+    pmb=pmb->next;
+  }
+}
+
+//----------------------------------------------------------------------------------------
 // \!fn void Mesh::Initialize(int res_flag, ParameterInput *pin)
 // \brief  initialization before the main loop
 
@@ -1191,7 +1230,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
   MeshBlock *pmb;
   Hydro *phydro;
   Field *pfield;
-  Gravity *pgrav;
   BoundaryValues *pbval;
   std::stringstream msg;
   int inb=nbtotal;
@@ -1208,17 +1246,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     }
 
     // solve gravity for the first time
-    if(SELF_GRAVITY_ENABLED == 1){
-      pmb = pblock;
-      while (pmb != NULL) {
-        phydro=pmb->phydro;
-        pgrav=pmb->pgrav;
-        pgrav->Solver(phydro->u);
-        pmb=pmb->next;
-      }
-    }
-    if(SELF_GRAVITY_ENABLED == 2)
-      pgrd->Solve(1);
+    else if(SELF_GRAVITY_ENABLED == 1)
+      pfgrd->Solve(1);
+    else if(SELF_GRAVITY_ENABLED == 2)
+      pmgrd->Solve(1);
 
     // prepare to receive conserved variables
     pmb = pblock;
@@ -1237,10 +1268,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
         pfield=pmb->pfield;
         pmb->pbval->SendFieldBoundaryBuffers(pfield->b);
       }
-      if (SELF_GRAVITY_ENABLED==1) {
-        pgrav=pmb->pgrav;
-        pmb->pbval->SendGravityBoundaryBuffers(pgrav->phi);
-      }
       pmb=pmb->next;
     }
 
@@ -1253,10 +1280,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       if (MAGNETIC_FIELDS_ENABLED) {
         pfield=pmb->pfield;
         pbval->ReceiveFieldBoundaryBuffersWithWait(pfield->b);
-      }
-      if (SELF_GRAVITY_ENABLED==1) {
-        pgrav=pmb->pgrav;
-        pmb->pbval->ReceiveGravityBoundaryBuffersWithWait(pgrav->phi);
       }
       pmb->pbval->ClearBoundaryForInit(true);
       pmb=pmb->next;
@@ -1297,7 +1320,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     while (pmb != NULL)  {
       phydro=pmb->phydro;
       pfield=pmb->pfield;
-      pgrav=pmb->pgrav;
       pbval=pmb->pbval;
       if(multilevel==true)
         pbval->ProlongateBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,

@@ -89,7 +89,7 @@ public:
   friend class MultigridDriver;
   friend class MultigridTaskList;
   friend class MGBoundaryValues;
-  friend class GravityDriver;
+  friend class MGGravityDriver;
 
 protected:
   int gid_, lid_;

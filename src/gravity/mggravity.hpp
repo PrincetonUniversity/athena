@@ -38,13 +38,13 @@ private:
 };
 
 
-//! \class GravityDriver
+//! \class MGGravityDriver
 //  \brief Multigrid gravity solver
 
-class GravityDriver : public MultigridDriver{
+class MGGravityDriver : public MultigridDriver{
 public:
-  GravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, ParameterInput *pin);
-  ~GravityDriver() {};
+  MGGravityDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, ParameterInput *pin);
+  ~MGGravityDriver() {};
   void Solve(int step);
 
 private:

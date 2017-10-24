@@ -30,6 +30,7 @@ class Mesh;
 class MeshRefinement;
 class MeshBlockTree;
 class BoundaryValues;
+class GravityBoundaryValues;
 class TaskList;
 class TaskState;
 class Coordinates;
@@ -37,9 +38,10 @@ class Reconstruction;
 class Hydro;
 class Field;
 class Gravity;
-class GravityDriver;
-class AthenaFFT;
+class MGGravityDriver;
 class EquationOfState;
+class FFTDriver;
+class FFTGravityDriver;
 
 
 //----------------------------------------------------------------------------------------
@@ -49,6 +51,7 @@ class EquationOfState;
 class MeshBlock {
   friend class RestartOutput;
   friend class BoundaryValues;
+  friend class GravityBoundaryValues;
   friend class Mesh;
   friend class Hydro;
   friend class TaskList;
@@ -86,6 +89,7 @@ public:
   // mesh-related objects
   Coordinates *pcoord;
   BoundaryValues *pbval;
+  GravityBoundaryValues *pgbval;
   Reconstruction *precon;
   MeshRefinement *pmr;
 
@@ -95,9 +99,6 @@ public:
   Gravity *pgrav;
   EquationOfState *peos;
 
-  // fft object
-  AthenaFFT *pfft;
-
   MeshBlock *prev, *next;
 
   // functions
@@ -105,6 +106,7 @@ public:
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
   void UserWorkInLoop(void); // in ../pgen
   void InitUserMeshBlockData(ParameterInput *pin); // in ../pgen
+  void UserWorkBeforeOutput(ParameterInput *pin); // in ../pgen
 
 private:
   // data
@@ -133,13 +135,15 @@ class Mesh {
   friend class BoundaryBase;
   friend class BoundaryValues;
   friend class MGBoundaryValues;
+  friend class GravityBoundaryValues;
   friend class Coordinates;
   friend class MeshRefinement;
   friend class HydroSourceTerms;
   friend class Hydro;
-  friend class AthenaFFT;
+  friend class FFTDriver;
+  friend class FFTGravityDriver;
   friend class MultigridDriver;
-  friend class GravityDriver;
+  friend class MGGravityDriver;
   friend class Gravity;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
@@ -167,7 +171,8 @@ public:
 
   MeshBlock *pblock;
 
-  GravityDriver *pgrd;
+  FFTGravityDriver *pfgrd;
+  MGGravityDriver *pmgrd;
 
   AthenaArray<Real> *ruser_mesh_data;
   AthenaArray<int> *iuser_mesh_data;
@@ -180,6 +185,7 @@ public:
   void AdaptiveMeshRefinement(ParameterInput *pin);
   unsigned int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3);
   MeshBlock* FindMeshBlock(int tgid);
+  void ApplyUserWorkBeforeOutput(ParameterInput *pin);
   void UserWorkAfterLoop(ParameterInput *pin); // method in ../pgen
 
 private:
@@ -210,6 +216,7 @@ private:
   HistoryOutputFunc_t *user_history_func_;
   MetricFunc_t UserMetric_;
   MGBoundaryFunc_t MGBoundaryFunction_[6];
+  GravityBoundaryFunc_t GravityBoundaryFunction_[6];
 
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
@@ -227,6 +234,7 @@ private:
   void EnrollUserHistoryOutput(int i, HistoryOutputFunc_t my_func, const char *name);
   void EnrollUserMetric(MetricFunc_t my_func);
   void EnrollUserMGBoundaryFunction(enum BoundaryFace dir, MGBoundaryFunc_t my_bc);
+  void EnrollUserGravityBoundaryFunction(enum BoundaryFace dir, GravityBoundaryFunc_t my_bc);
   void SetGravitationalConstant(Real g) { four_pi_G_=4.0*PI*g; };
   void SetFourPiG(Real fpg) { four_pi_G_=fpg; };
   void SetGravityThreshold(Real eps) { grav_eps_=eps; };

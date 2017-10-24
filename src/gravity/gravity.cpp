@@ -13,6 +13,7 @@
 #include "../mesh/mesh.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../parameter_input.hpp"
+#include "../bvals/bvals_grav.hpp"
 
 #include <iostream>
 #include <sstream>    // sstream
@@ -41,9 +42,6 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin)
   if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
 
   phi.NewAthenaArray(ncells3,ncells2,ncells1);
-//  phi_old.NewAthenaArray(ncells3,ncells2,ncells1);
-
-  Initialize(pin);
 }
 
 // destructor
@@ -51,6 +49,5 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin)
 Gravity::~Gravity()
 {
   phi.DeleteAthenaArray();
-//  phi_old.DeleteAthenaArray();
 }
 
