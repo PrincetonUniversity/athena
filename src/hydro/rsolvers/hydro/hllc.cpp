@@ -64,7 +64,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real sqrtdr = sqrt(wri[IDN]);
     Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
 
-    wroe[IDN] = sqrtdl*sqrtdr;
+
+    //    wroe[IDN] = sqrtdl*sqrtdr; // unused in signal velocity estimates
     wroe[IVX] = (sqrtdl*wli[IVX] + sqrtdr*wri[IVX])*isdlpdr;
     wroe[IVY] = (sqrtdl*wli[IVY] + sqrtdr*wri[IVY])*isdlpdr;
     wroe[IVZ] = (sqrtdl*wli[IVZ] + sqrtdr*wri[IVZ])*isdlpdr;
