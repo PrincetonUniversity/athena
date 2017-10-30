@@ -186,10 +186,6 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     coord_len2_i1_.NewAthenaArray(ncells1+1);
     coord_len3_i1_.NewAthenaArray(ncells1+1);
     coord_width1_i1_.NewAthenaArray(ncells1);
-    coord_src_i1_.NewAthenaArray(ncells1);
-    coord_src_i2_.NewAthenaArray(ncells1);
-    coord_src_i3_.NewAthenaArray(ncells1);
-    coord_src_i4_.NewAthenaArray(ncells1);
     metric_face1_i1_.NewAthenaArray(ncells1+1);
     metric_face2_i1_.NewAthenaArray(ncells1);
     metric_face3_i1_.NewAthenaArray(ncells1);
@@ -210,7 +206,6 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     coord_width3_j1_.NewAthenaArray(ncells2);
     coord_src_j1_.NewAthenaArray(ncells2);
     coord_src_j2_.NewAthenaArray(ncells2);
-    coord_src_j3_.NewAthenaArray(ncells2);
     metric_face1_j1_.NewAthenaArray(ncells2);
     metric_face2_j1_.NewAthenaArray(ncells2+1);
     metric_face3_j1_.NewAthenaArray(ncells2);
@@ -249,15 +244,6 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
       coord_width1_i1_(i) = r_p*alpha_p - r_m*alpha_m
           + m * std::log((r_p*(1.0+alpha_p)-m) / (r_m*(1.0+alpha_m)-m));
 
-      // Source terms
-      coord_src_i1_(i) = 3.0*m / (r_p_cu - r_m_cu)
-          * (r_p - r_m + 2.0*m * std::log((r_p-2.0*m) / (r_m-2.0*m)));
-      coord_src_i2_(i) = 3.0*m / (r_p_cu - r_m_cu)
-          * (r_p - r_m - 2.0*m * std::log(r_p/r_m));
-      coord_src_i3_(i) = 2.0*m - 3.0/4.0 * (r_m + r_p) * (SQR(r_m) + SQR(r_p))
-          / (SQR(r_m) + r_m * r_p + SQR(r_p));
-      coord_src_i4_(i) = 3.0/2.0 * (r_m + r_p) / (SQR(r_m) + r_m * r_p + SQR(r_p));
-
       // Metric coefficients
       metric_face1_i1_(i) = SQR(alpha_m);
       if (i == (iu+ng)) {
@@ -285,13 +271,12 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
       Real sin_c = std::sin(theta_c);
       Real sin_m = std::sin(theta_m);
       Real sin_p = std::sin(theta_p);
+      Real cos_c = std::cos(theta_c);
       Real cos_m = std::cos(theta_m);
       Real cos_p = std::cos(theta_p);
       Real sin_c_sq = SQR(sin_c);
       Real sin_m_sq = SQR(sin_m);
       Real sin_p_sq = SQR(sin_p);
-      Real sin_m_cu = sin_m_sq*sin_m;
-      Real sin_p_cu = SQR(sin_p)*sin_p;
 
       // Volumes, areas, lengths, and widths
       coord_vol_j1_(j) = std::abs(cos_m - cos_p);
@@ -313,12 +298,8 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
       coord_width3_j1_(j) = std::abs(sin_c);
 
       // Source terms
-      coord_src_j1_(j) = 1.0/6.0
-          * (4.0 - std::cos(2.0*theta_m)
-          - 2.0 * cos_m * cos_p - std::cos(2.0*theta_p));
-      coord_src_j2_(j) = 1.0/3.0 * (sin_m_cu - sin_p_cu)
-          / (cos_m - cos_p);
-      coord_src_j3_(j) = (sin_p-sin_m) / (cos_m-cos_p);    // cot((theta_p+theta_m)/2)
+      coord_src_j1_(j) = sin_c;
+      coord_src_j2_(j) = cos_c;
 
       // Metric coefficients
       metric_face1_j1_(j) = sin_c_sq;
@@ -369,10 +350,6 @@ Schwarzschild::~Schwarzschild()
     coord_len2_i1_.DeleteAthenaArray();
     coord_len3_i1_.DeleteAthenaArray();
     coord_width1_i1_.DeleteAthenaArray();
-    coord_src_i1_.DeleteAthenaArray();
-    coord_src_i2_.DeleteAthenaArray();
-    coord_src_i3_.DeleteAthenaArray();
-    coord_src_i4_.DeleteAthenaArray();
     coord_vol_j1_.DeleteAthenaArray();
     coord_area1_j1_.DeleteAthenaArray();
     coord_area2_j1_.DeleteAthenaArray();
@@ -383,7 +360,6 @@ Schwarzschild::~Schwarzschild()
     coord_width3_j1_.DeleteAthenaArray();
     coord_src_j1_.DeleteAthenaArray();
     coord_src_j2_.DeleteAthenaArray();
-    coord_src_j3_.DeleteAthenaArray();
     metric_face1_i1_.DeleteAthenaArray();
     metric_face1_j1_.DeleteAthenaArray();
     metric_face2_i1_.DeleteAthenaArray();
@@ -611,35 +587,44 @@ void Schwarzschild::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   // Extract ratio of specific heats
   const Real gamma_adi = pmy_block->peos->GetGamma();
 
+  // Extract geometric quantities that do not depend on location
+  const Real &m = bh_mass_;
+
   // Go through cells
   for (int k = pmy_block->ks; k <= pmy_block->ke; ++k) {
     #pragma omp parallel for schedule(static)
     for (int j = pmy_block->js; j <= pmy_block->je; ++j) {
+
+      // Extract geometric quantities that do not depend on r
+      const Real &sin = coord_src_j1_(j);
+      const Real &cos = coord_src_j2_(j);
+      Real sin2 = SQR(sin);
+      Real sincos = sin * cos;
+
+      // Calculate metric coefficients
       CellMetric(k, j, pmy_block->is, pmy_block->ie, g_, gi_);
+
+      // Go through 1D slice
       #pragma simd
       for (int i = pmy_block->is; i <= pmy_block->ie; ++i) {
 
-        // Extract metric coefficients
+        // Extract geometric quantities
         const Real &g_00 = g_(I00,i);
-        const Real &g_01 = 0.0;
-        const Real &g_02 = 0.0;
-        const Real &g_03 = 0.0;
-        const Real &g_10 = 0.0;
         const Real &g_11 = g_(I11,i);
-        const Real &g_12 = 0.0;
-        const Real &g_13 = 0.0;
-        const Real &g_20 = 0.0;
-        const Real &g_21 = 0.0;
         const Real &g_22 = g_(I22,i);
-        const Real &g_23 = 0.0;
-        const Real &g_30 = 0.0;
-        const Real &g_31 = 0.0;
-        const Real &g_32 = 0.0;
         const Real &g_33 = g_(I33,i);
-        const Real &g01 = 0.0;
-        const Real &g02 = 0.0;
-        const Real &g03 = 0.0;
-        Real alpha = std::sqrt(-1.0/gi_(I00,i));
+        const Real &g00 = gi_(I00,i);
+        const Real &g11 = gi_(I11,i);
+        const Real &g22 = gi_(I22,i);
+        const Real &g33 = gi_(I33,i);
+        Real alpha = std::sqrt(-1.0/g00);
+        const Real &r = x1v(i);
+        Real r2 = SQR(r);
+        Real d1_g_00 = -2.0*m / r2;
+        Real d1_g_11 = -2.0*m / r2 * SQR(g_11);
+        Real d1_g_22 = 2.0 * r;
+        Real d1_g_33 = 2.0 * r * sin2;
+        Real d2_g_33 = 2.0 * r2 * sincos;
 
         // Extract primitives
         const Real &rho = prim(IDN,k,j,i);
@@ -649,88 +634,53 @@ void Schwarzschild::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
         const Real &uu3 = prim(IVZ,k,j,i);
 
         // Calculate 4-velocity
-        Real tmp = g_11*uu1*uu1 + 2.0*g_12*uu1*uu2 + 2.0*g_13*uu1*uu3
-                 + g_22*uu2*uu2 + 2.0*g_23*uu2*uu3
-                 + g_33*uu3*uu3;
-        Real gamma = std::sqrt(1.0 + tmp);
+        Real uu_sq = g_11*uu1*uu1 + g_22*uu2*uu2 + g_33*uu3*uu3;
+        Real gamma = std::sqrt(1.0 + uu_sq);
         Real u0 = gamma / alpha;
-        Real u1 = uu1 - alpha * gamma * g01;
-        Real u2 = uu2 - alpha * gamma * g02;
-        Real u3 = uu3 - alpha * gamma * g03;
-        Real u_0 = g_00*u0 + g_01*u1 + g_02*u2 + g_03*u3;
-        Real u_1 = g_10*u0 + g_11*u1 + g_12*u2 + g_13*u3;
-        Real u_2 = g_20*u0 + g_21*u1 + g_22*u2 + g_23*u3;
-        Real u_3 = g_30*u0 + g_31*u1 + g_32*u2 + g_33*u3;
+        Real u1 = uu1;
+        Real u2 = uu2;
+        Real u3 = uu3;
 
         // Extract and calculate magnetic field
         Real b0 = 0.0, b1 = 0.0, b2 = 0.0, b3 = 0.0;
-        Real b_0 = 0.0, b_1 = 0.0, b_2 = 0.0, b_3 = 0.0;
         Real b_sq = 0.0;
         if (MAGNETIC_FIELDS_ENABLED) {
+          Real u_1 = g_11*u1;
+          Real u_2 = g_22*u2;
+          Real u_3 = g_33*u3;
           const Real &bb1 = bb_cc(IB1,k,j,i);
           const Real &bb2 = bb_cc(IB2,k,j,i);
           const Real &bb3 = bb_cc(IB3,k,j,i);
-          b0  = g_10*bb1*u0 + g_11*bb1*u1 + g_12*bb1*u2 + g_13*bb1*u3
-              + g_20*bb2*u0 + g_21*bb2*u1 + g_22*bb2*u2 + g_23*bb2*u3
-              + g_30*bb3*u0 + g_31*bb3*u1 + g_32*bb3*u2 + g_33*bb3*u3;
+          b0 = u_1*bb1 + u_2*bb2 + u_3*bb3;
           b1 = (bb1 + b0 * u1) / u0;
           b2 = (bb2 + b0 * u2) / u0;
           b3 = (bb3 + b0 * u3) / u0;
-          b_0 = g_00*b0 + g_01*b1 + g_02*b2 + g_03*b3;
-          b_1 = g_10*b0 + g_11*b1 + g_12*b2 + g_13*b3;
-          b_2 = g_20*b0 + g_21*b1 + g_22*b2 + g_23*b3;
-          b_3 = g_30*b0 + g_31*b1 + g_32*b2 + g_33*b3;
-          b_sq = b0*b_0 + b1*b_1 + b2*b_2 + b3*b_3;
+          Real b_0 = g_00*b0;
+          Real b_1 = g_11*b1;
+          Real b_2 = g_22*b2;
+          Real b_3 = g_33*b3;
+          b_sq = b_0*b0 + b_1*b1 + b_2*b2 + b_3*b3;
         }
 
         // Calculate stress-energy tensor
         Real wtot = rho + gamma_adi/(gamma_adi-1.0) * pgas + b_sq;
         Real ptot = pgas + 0.5*b_sq;
-        Real t0_0 = wtot*u0*u_0 - b0*b_0 + ptot;
-        Real t0_1 = wtot*u0*u_1 - b0*b_1;
-        Real t1_0 = wtot*u1*u_0 - b1*b_0;
-        Real t1_1 = wtot*u1*u_1 - b1*b_1 + ptot;
-        Real t1_2 = wtot*u1*u_2 - b1*b_2;
-        Real t1_3 = wtot*u1*u_3 - b1*b_3;
-        Real t2_1 = wtot*u2*u_1 - b2*b_1;
-        Real t2_2 = wtot*u2*u_2 - b2*b_2 + ptot;
-        Real t2_3 = wtot*u2*u_3 - b2*b_3;
-        Real t3_1 = wtot*u3*u_1 - b3*b_1;
-        Real t3_2 = wtot*u3*u_2 - b3*b_2;
-        Real t3_3 = wtot*u3*u_3 - b3*b_3 + ptot;
-
-        // Extract connection coefficients
-        const Real &gamma0_01 = coord_src_i1_(i);
-        const Real &gamma1_00 = coord_src_i2_(i);
-        const Real gamma1_11 = -gamma0_01;
-        const Real &gamma1_22 = coord_src_i3_(i);
-        const Real gamma1_33 = gamma1_22 * coord_src_j1_(j);
-        const Real &gamma2_12 = coord_src_i4_(i);
-        const Real &gamma2_33 = coord_src_j2_(j);
-        const Real &gamma3_13 = gamma2_12;
-        const Real &gamma3_23 = coord_src_j3_(j);
-        const Real &gamma0_10 = gamma0_01;
-        const Real &gamma2_21 = gamma2_12;
-        const Real &gamma3_31 = gamma3_13;
-        const Real &gamma3_32 = gamma3_23;
+        Real tt00 = wtot * u0 * u0 + ptot * g00 - b0 * b0;
+        Real tt11 = wtot * u1 * u1 + ptot * g11 - b1 * b1;
+        Real tt22 = wtot * u2 * u2 + ptot * g22 - b2 * b2;
+        Real tt33 = wtot * u3 * u3 + ptot * g33 - b3 * b3;
 
         // Calculate source terms
-        Real s_0 = gamma0_10*t1_0 + gamma1_00*t0_1;
-        Real s_1 = gamma0_01*t0_0 + gamma1_11*t1_1 + gamma2_21*t2_2 + gamma3_31*t3_3;
-        Real s_2 = gamma1_22*t2_1 + gamma2_12*t1_2 + gamma3_32*t3_3;
-        Real s_3 = gamma1_33*t3_1 + gamma2_33*t3_2 + gamma3_13*t1_3 + gamma3_23*t2_3;
+        Real s_1 = 0.5 * (d1_g_00*tt00 + d1_g_11*tt11 + d1_g_22*tt22 + d1_g_33*tt33);
+        Real s_2 = 0.5 * d2_g_33*tt33;
 
         // Extract conserved quantities
-        Real &m_0 = cons(IEN,k,j,i);
         Real &m_1 = cons(IM1,k,j,i);
         Real &m_2 = cons(IM2,k,j,i);
-        Real &m_3 = cons(IM3,k,j,i);
 
         // Add source terms to conserved quantities
-        m_0 += dt * s_0;
         m_1 += dt * s_1;
         m_2 += dt * s_2;
-        m_3 += dt * s_3;
       }
     }
   }

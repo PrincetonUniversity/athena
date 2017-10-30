@@ -172,8 +172,7 @@ protected:
   AthenaArray<Real> coord_width3_k1_;
   AthenaArray<Real> coord_width3_ji1_;
   AthenaArray<Real> coord_width3_kji_;
-  AthenaArray<Real> coord_src_i1_, coord_src_i2_, coord_src_i3_, coord_src_i4_;
-  AthenaArray<Real> coord_src_j1_, coord_src_j2_, coord_src_j3_;
+  AthenaArray<Real> coord_src_j1_, coord_src_j2_;
   AthenaArray<Real> coord_src_kji_;
   AthenaArray<Real> coord_src1_i_;
   AthenaArray<Real> coord_src1_j_;
