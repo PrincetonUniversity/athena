@@ -89,7 +89,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
   int nbx2=lx2max-lx2min+1;
   int nbx3=lx3max-lx3min+1;
 
-  int nmb = nbx1*nbx2*nbx3; // number of mesh blocks to be loaded to the FFT block
+  nmb = nbx1*nbx2*nbx3; // number of mesh blocks to be loaded to the FFT block
   if(pm->nbtotal/nmb != nranks_){
     // Will be implemented later.
     std::stringstream msg;
@@ -153,10 +153,6 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin)
   }}
 #endif
 
-//  int igid=nslist_[Globals::my_rank];
-//  pmy_fb=new FFTBlock(this, fft_loclist_[igid], igid, fft_mesh_size_, fft_block_size_);
-
-//  QuickCreatePlan();
 }
 
 // destructor
@@ -168,6 +164,12 @@ FFTDriver::~FFTDriver()
   delete [] nblist_;
   delete [] fft_loclist_;
   delete pmy_fb;
+}
+
+void FFTDriver::InitializeFFTBlock(bool set_norm){
+  int igid=Globals::my_rank;
+  pmy_fb=new FFTBlock(this, fft_loclist_[igid], igid, fft_mesh_size_, fft_block_size_);
+  if(set_norm) pmy_fb->SetNormFactor(1./gcnt_);
 }
 
 void FFTDriver::QuickCreatePlan(void){

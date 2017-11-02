@@ -40,8 +40,8 @@ public:
 class FFTGravityDriver : public FFTDriver{
 public:
   FFTGravityDriver(Mesh *pm, ParameterInput *pin);
-  ~FFTGravityDriver() {};
-  void Solve(int step);
+  ~FFTGravityDriver();
+  void Solve(int step, int mode);
 
 private:
   Real four_pi_G_;

@@ -257,8 +257,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
 } // end of omp parallel region
 
-  if(SELF_GRAVITY_ENABLED == 1) AddGravityFluxMG();
-  if(SELF_GRAVITY_ENABLED == 2) AddGravityFluxMG();
+  if(SELF_GRAVITY_ENABLED) AddGravityFlux(); // add gravity flux directly 
 
   return;
 }

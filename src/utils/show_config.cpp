@@ -27,6 +27,17 @@ void ShowConfig(void)
     std::cout<<"  Equation of state:          isothermal" << std::endl;
   }
   std::cout<<"  Riemann solver:             " << RIEMANN_SOLVER << std::endl;
+
+  if (SELF_GRAVITY_ENABLED == 1) {
+    std::cout<<"  Self Gravity:               FFT" << std::endl;
+  } else if (SELF_GRAVITY_ENABLED == 2) {
+    std::cout<<"  Self Gravity:               Multigrid" << std::endl;
+  } else {
+    std::cout<<"  Self Gravity:               Off" << std::endl;
+  }
+
+
+
   if (MAGNETIC_FIELDS_ENABLED) {
     std::cout<<"  Magnetic fields:            ON" << std::endl;
   } else {
@@ -57,6 +68,13 @@ void ShowConfig(void)
 #else
   std::cout<<"  OpenMP parallelism:         OFF" << std::endl;
 #endif
+
+#ifdef FFT
+  std::cout<<"  FFT:                        ON" << std::endl;
+#else
+  std::cout<<"  FFT:                        OFF" << std::endl;
+#endif
+
 #ifdef HDF5OUTPUT
   std::cout<<"  HDF5 Output:                ON" << std::endl;
 #else

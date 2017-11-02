@@ -276,10 +276,11 @@ bool GravityBoundaryValues::SendGravityBoundaryBuffers(AthenaArray<Real> &src)
       ptarget->flag[nb.targetid]=BNDRY_ARRIVED;
     }
 #ifdef MPI_PARALLEL
-    else // MPI
+    else {// MPI
       tag=CreateBvalsMPITag(nb.lid, TAG_GRAVITY, nb.targetid);
       MPI_Isend(pbd->send[nb.bufid], ssize, MPI_ATHENA_REAL, nb.rank, tag,
                 MPI_COMM_WORLD, &(pbd->req_send[nb.bufid]));
+    }
 #endif
     pbd->sflag[nb.bufid] = BNDRY_COMPLETED;
   }

@@ -38,6 +38,7 @@
 #include "utils/utils.hpp"
 #include "gravity/mggravity.hpp"
 #include "gravity/fftgravity.hpp"
+#include "fft/turbulence.hpp"
 
 // MPI/OpenMP headers
 #ifdef MPI_PARALLEL
@@ -299,6 +300,7 @@ int main(int argc, char *argv[])
     return(0);
   }
 
+
 //--- Step 7. ----------------------------------------------------------------------------
 // Change to run directory, initialize outputs object, and make output of ICs
 
@@ -328,6 +330,7 @@ int main(int argc, char *argv[])
 //=== Step 9. === START OF MAIN INTEGRATION LOOP =========================================
 // For performance, there is no error handler protecting this step (except outputs)
 
+
   if(Globals::my_rank==0) {
     std::cout<<std::endl<<"Setup complete, entering main loop..."<<std::endl<<std::endl;
   }
@@ -345,9 +348,11 @@ int main(int argc, char *argv[])
                 << " time=" << pmesh->time << " dt=" << pmesh->dt <<std::endl;
     }
 
+    if(pmesh->turb_flag == 2) pmesh->ptrbd->Driving(); // driven turbulence
+
     for (int step=1; step<=ptlist->nsub_steps; ++step) {
-      if(SELF_GRAVITY_ENABLED == 1) // fft
-        pmesh->pfgrd->Solve(step);
+      if(SELF_GRAVITY_ENABLED == 1) // fft (flag 0 for discrete kernel, 1 for continuous)
+        pmesh->pfgrd->Solve(step,0);
       else if(SELF_GRAVITY_ENABLED == 2) // multigrid
         pmesh->pmgrd->Solve(step);
       ptlist->DoTaskListOneSubstep(pmesh, step);

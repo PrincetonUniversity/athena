@@ -26,6 +26,7 @@
 #include "../hydro/hydro.hpp" 
 #include "../field/field.hpp"
 #include "../fft/athena_fft.hpp"
+#include "../fft/turbulence.hpp"
 #include "../gravity/fftgravity.hpp"
 #include "../multigrid/multigrid.hpp"
 #include "../gravity/gravity.hpp"
@@ -73,13 +74,13 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
 
   four_pi_G_=0.0, grav_eps_=-1.0;
 
+  turb_flag = 0;
+
   nlim = pin->GetOrAddInteger("time","nlim",-1);
   ncycle = 0;
   nint_user_mesh_data_=0;
   nreal_user_mesh_data_=0;
   nuser_history_output_=0;
-
-  four_pi_G_=0.0;
 
   // read number of OpenMP threads for mesh
   num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
@@ -509,6 +510,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
     pfgrd = new FFTGravityDriver(this, pin);
   else if (SELF_GRAVITY_ENABLED==2)
     pmgrd = new MGGravityDriver(this, MGBoundaryFunction_, pin);
+
+  if (turb_flag > 0)
+    ptrbd = new TurbulenceDriver(this, pin);
 }
 
 //----------------------------------------------------------------------------------------
@@ -836,8 +840,11 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
 
   if (SELF_GRAVITY_ENABLED==1)
     pfgrd = new FFTGravityDriver(this, pin);
-  if (SELF_GRAVITY_ENABLED==2)
+  else if (SELF_GRAVITY_ENABLED==2)
     pmgrd = new MGGravityDriver(this, MGBoundaryFunction_, pin);
+
+  if (turb_flag > 0)
+    ptrbd = new TurbulenceDriver(this, pin);
 }
 
 //----------------------------------------------------------------------------------------
@@ -857,6 +864,7 @@ Mesh::~Mesh()
   delete [] loclist;
   if (SELF_GRAVITY_ENABLED==1) delete pfgrd;
   else if (SELF_GRAVITY_ENABLED==2) delete pmgrd;
+  if (turb_flag > 0) delete ptrbd;
   if(adaptive==true) { // deallocate arrays for AMR
     delete [] nref;
     delete [] nderef;
@@ -1245,9 +1253,13 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       }
     }
 
+    // add perturbation from turbulence
+    if(turb_flag > 0) 
+      ptrbd->Driving();
+
     // solve gravity for the first time
-    else if(SELF_GRAVITY_ENABLED == 1)
-      pfgrd->Solve(1);
+    if(SELF_GRAVITY_ENABLED == 1)
+      pfgrd->Solve(1,0);
     else if(SELF_GRAVITY_ENABLED == 2)
       pmgrd->Solve(1);
 
@@ -1339,7 +1351,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
       pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b, 
                                       phydro->w, pfield->bcc, pmb->pcoord,
                                       is, ie, js, je, ks, ke);
-// TODO: may need to pass phi
       pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
                                      time, 0.0);
       pmb=pmb->next;
