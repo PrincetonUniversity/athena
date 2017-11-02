@@ -23,7 +23,7 @@
 #include "../globals.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "../hydro/hydro.hpp" 
+#include "../hydro/hydro.hpp"
 #include "../field/field.hpp"
 #include "../fft/athena_fft.hpp"
 #include "../fft/turbulence.hpp"
@@ -68,6 +68,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   start_time = pin->GetOrAddReal("time","start_time",0.0);
   tlim       = pin->GetReal("time","tlim");
   cfl_number = pin->GetReal("time","cfl_number");
+  ncycle_out = pin->GetOrAddInteger("time","ncycle_out",1);
   time = start_time;
   dt   = (FLT_MAX*0.4);
   nbnew=0; nbdel=0;
@@ -86,16 +87,16 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
   if (num_mesh_threads_ < 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Number of OpenMP threads must be >= 1, but num_threads=" 
+        << "Number of OpenMP threads must be >= 1, but num_threads="
         << num_mesh_threads_ << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
 
-  // read number of grid cells in root level of mesh from input file.  
+  // read number of grid cells in root level of mesh from input file.
   mesh_size.nx1 = pin->GetInteger("mesh","nx1");
   if (mesh_size.nx1 < 4) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "In mesh block in input file nx1 must be >= 4, but nx1=" 
+        << "In mesh block in input file nx1 must be >= 4, but nx1="
         << mesh_size.nx1 << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
@@ -103,7 +104,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   mesh_size.nx2 = pin->GetInteger("mesh","nx2");
   if (mesh_size.nx2 < 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "In mesh block in input file nx2 must be >= 1, but nx2=" 
+        << "In mesh block in input file nx2 must be >= 1, but nx2="
         << mesh_size.nx2 << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
@@ -111,13 +112,13 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   mesh_size.nx3 = pin->GetInteger("mesh","nx3");
   if (mesh_size.nx3 < 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "In mesh block in input file nx3 must be >= 1, but nx3=" 
+        << "In mesh block in input file nx3 must be >= 1, but nx3="
         << mesh_size.nx3 << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
   if (mesh_size.nx2 == 1 && mesh_size.nx3 > 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "In mesh block in input file: nx2=1, nx3=" << mesh_size.nx3 
+        << "In mesh block in input file: nx2=1, nx3=" << mesh_size.nx3
         << ", 2D problems in x1-x3 plane not supported" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
@@ -143,7 +144,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
     throw std::runtime_error(msg.str().c_str());
   }
 
-  // read physical size of mesh (root level) from input file.  
+  // read physical size of mesh (root level) from input file.
   mesh_size.x1min = pin->GetReal("mesh","x1min");
   mesh_size.x2min = pin->GetReal("mesh","x2min");
   mesh_size.x3min = pin->GetReal("mesh","x3min");
@@ -154,19 +155,19 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
 
   if (mesh_size.x1max <= mesh_size.x1min) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Input x1max must be larger than x1min: x1min=" << mesh_size.x1min 
+        << "Input x1max must be larger than x1min: x1min=" << mesh_size.x1min
         << " x1max=" << mesh_size.x1max << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
   if (mesh_size.x2max <= mesh_size.x2min) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Input x2max must be larger than x2min: x2min=" << mesh_size.x2min 
+        << "Input x2max must be larger than x2min: x2min=" << mesh_size.x2min
         << " x2max=" << mesh_size.x2max << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
   if (mesh_size.x3max <= mesh_size.x3min) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Input x3max must be larger than x3min: x3min=" << mesh_size.x3min 
+        << "Input x3max must be larger than x3min: x3min=" << mesh_size.x3min
         << " x3max=" << mesh_size.x3max << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
@@ -178,19 +179,19 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
 
   if (std::abs(mesh_size.x1rat - 1.0) > 0.1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Ratio of cell sizes must be 0.9 <= x1rat <= 1.1, x1rat=" 
+        << "Ratio of cell sizes must be 0.9 <= x1rat <= 1.1, x1rat="
         << mesh_size.x1rat << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
   if (std::abs(mesh_size.x2rat - 1.0) > 0.1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Ratio of cell sizes must be 0.9 <= x2rat <= 1.1, x2rat=" 
+        << "Ratio of cell sizes must be 0.9 <= x2rat <= 1.1, x2rat="
         << mesh_size.x2rat << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
   if (std::abs(mesh_size.x3rat - 1.0) > 0.1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Ratio of cell sizes must be 0.9 <= x3rat <= 1.1, x3rat=" 
+        << "Ratio of cell sizes must be 0.9 <= x3rat <= 1.1, x3rat="
         << mesh_size.x3rat << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
@@ -534,6 +535,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   start_time = pin->GetOrAddReal("time","start_time",0.0);
   tlim       = pin->GetReal("time","tlim");
   cfl_number = pin->GetReal("time","cfl_number");
+  ncycle_out = pin->GetOrAddInteger("time","ncycle_out",1);
   nlim = pin->GetOrAddInteger("time","nlim",-1);
   nint_user_mesh_data_=0;
   nreal_user_mesh_data_=0;
@@ -547,7 +549,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
   if (num_mesh_threads_ < 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "Number of OpenMP threads must be >= 1, but num_threads=" 
+        << "Number of OpenMP threads must be >= 1, but num_threads="
         << num_mesh_threads_ << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
@@ -908,7 +910,7 @@ void Mesh::OutputMeshStructure(int dim)
   std::cout << "Root grid = " << nrbx1 << " x " << nrbx2 << " x " << nrbx3
             << " MeshBlocks" << std::endl;
   std::cout << "Total number of MeshBlocks = " << nbtotal << std::endl;
-  std::cout << "Number of physical refinement levels = " 
+  std::cout << "Number of physical refinement levels = "
             << (current_level - root_level) << std::endl;
   std::cout << "Number of logical  refinement levels = " << current_level << std::endl;
 
@@ -925,8 +927,8 @@ void Mesh::OutputMeshStructure(int dim)
   }
   for(int i=root_level;i<=max_level;i++) {
     if(nb_per_plevel[i-root_level]!=0) {
-      std::cout << "  Physical level = " << i-root_level << " (logical level = " << i 
-                << "): " << nb_per_plevel[i-root_level] << " MeshBlocks, cost = " 
+      std::cout << "  Physical level = " << i-root_level << " (logical level = " << i
+                << "): " << nb_per_plevel[i-root_level] << " MeshBlocks, cost = "
                 << cost_per_plevel[i-root_level] <<  std::endl;
     }
   }
@@ -1254,7 +1256,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
     }
 
     // add perturbation from turbulence
-    if(turb_flag > 0) 
+    if(turb_flag > 0)
       ptrbd->Driving();
 
     // solve gravity for the first time
@@ -1348,7 +1350,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin)
         if(pbval->nblevel[0][1][1]!=-1) ks-=NGHOST;
         if(pbval->nblevel[2][1][1]!=-1) ke+=NGHOST;
       }
-      pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b, 
+      pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
                                       phydro->w, pfield->bcc, pmb->pcoord,
                                       is, ie, js, je, ks, ke);
       pbval->ApplyPhysicalBoundaries(phydro->w, phydro->u, pfield->b, pfield->bcc,
@@ -1717,7 +1719,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
       oldtonew[k++]=n;
     }
   }
-  // fill the last block 
+  // fill the last block
   for(;k<nbtold; k++)
     oldtonew[k]=ntot-1;
 
@@ -1764,7 +1766,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
 #ifdef MPI_PARALLEL
   // Step 3. count the number of the blocks to be sent / received
   int nsend=0, nrecv=0;
-  for(int n=nbs; n<=nbe; n++) { 
+  for(int n=nbs; n<=nbe; n++) {
     int on=newtoold[n];
     if(loclist[on].level > newloc[n].level) { // f2c
       for(int k=0; k<nlbl; k++) {
@@ -1777,7 +1779,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
         nrecv++;
     }
   }
-  for(int n=onbs; n<=onbe; n++) { 
+  for(int n=onbs; n<=onbe; n++) {
     int nn=oldtonew[n];
     if(loclist[n].level < newloc[nn].level) { // c2f
       for(int k=0; k<nlbl; k++) {
@@ -1812,7 +1814,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
     recvbuf = new Real*[nrecv];
     req_recv = new MPI_Request[nrecv];
     int k=0;
-    for(int n=nbs; n<=nbe; n++) { 
+    for(int n=nbs; n<=nbe; n++) {
       int on=newtoold[n];
       LogicalLocation &oloc=loclist[on];
       LogicalLocation &nloc=newloc[n];
@@ -1846,7 +1848,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
     sendbuf = new Real*[nsend];
     req_send = new MPI_Request[nsend];
     int k=0;
-    for(int n=onbs; n<=onbe; n++) { 
+    for(int n=onbs; n<=onbe; n++) {
       int nn=oldtonew[n];
       LogicalLocation &oloc=loclist[n];
       LogicalLocation &nloc=newloc[nn];
@@ -2102,7 +2104,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
 #ifdef MPI_PARALLEL
   if(nrecv!=0) {
     int k=0;
-    for(int n=nbs; n<=nbe; n++) { 
+    for(int n=nbs; n<=nbe; n++) {
       int on=newtoold[n];
       LogicalLocation &oloc=loclist[on];
       LogicalLocation &nloc=newloc[n];

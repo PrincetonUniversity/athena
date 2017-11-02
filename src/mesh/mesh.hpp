@@ -166,7 +166,7 @@ public:
   RegionSize mesh_size;
   enum BoundaryFlag mesh_bcs[6];
   Real start_time, tlim, cfl_number, time, dt;
-  int nlim, ncycle;
+  int nlim, ncycle, ncycle_out;
   int nbtotal, nbnew, nbdel;
   bool adaptive, multilevel;
   int gflag;
