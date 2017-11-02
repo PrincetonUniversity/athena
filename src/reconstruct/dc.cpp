@@ -17,9 +17,9 @@
 //! \fn Reconstruction::DonorCellX1()
 //  \brief 
 
-void Reconstruction::DonorCellX1(const int kl, const int ku, const int jl, const int ju,
-  const int il, const int iu, const AthenaArray<Real> &q, const int nin, const int nout,
-  AthenaArray<Real> &ql, AthenaArray<Real> &qr)
+void Reconstruction::DonorCellX1(Coordinates *pco, const int kl, const int ku,
+  const int jl, const int ju, const int il, const int iu, const AthenaArray<Real> &q,
+  const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
   for (int k=kl; k<=ku; ++k){
   for (int j=jl; j<=ju; ++j){
@@ -37,9 +37,9 @@ void Reconstruction::DonorCellX1(const int kl, const int ku, const int jl, const
 //! \fn Reconstruction::DonorCellX2()
 //  \brief 
 
-void Reconstruction::DonorCellX2(const int kl, const int ku, const int jl, const int ju,
-  const int il, const int iu, const AthenaArray<Real> &q, const int nin, const int nout,
-  AthenaArray<Real> &ql, AthenaArray<Real> &qr)
+void Reconstruction::DonorCellX2(Coordinates *pco, const int kl, const int ku,
+  const int jl, const int ju, const int il, const int iu, const AthenaArray<Real> &q,
+  const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
   for (int k=kl; k<=ku; ++k){
   for (int j=jl; j<=ju; ++j){
@@ -57,9 +57,9 @@ void Reconstruction::DonorCellX2(const int kl, const int ku, const int jl, const
 //! \fn Reconstruction::DonorCellX3()
 //  \brief 
 
-void Reconstruction::DonorCellX3(const int kl, const int ku, const int jl, const int ju,
-  const int il, const int iu, const AthenaArray<Real> &q, const int nin, const int nout,
-  AthenaArray<Real> &ql, AthenaArray<Real> &qr)
+void Reconstruction::DonorCellX3(Coordinates *pco, const int kl, const int ku,
+  const int jl, const int ju, const int il, const int iu, const AthenaArray<Real> &q,
+  const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr)
 {
   for (int k=kl; k<=ku; ++k){
   for (int j=jl; j<=ju; ++j){

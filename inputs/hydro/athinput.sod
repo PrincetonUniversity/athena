@@ -24,6 +24,7 @@ cfl_number  = 0.8       # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim        = -1        # cycle limit
 tlim        = 0.25      # time limit
 integrator  = vl2       # time integration algorithm
+xorder      = 2         # order of spatial reconstruction
 
 <mesh>
 nx1         = 256       # Number of zones in X1-direction

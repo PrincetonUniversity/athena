@@ -107,6 +107,7 @@ public:
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
   void UserWorkInLoop(void); // in ../pgen
   void InitUserMeshBlockData(ParameterInput *pin); // in ../pgen
+  void UserWorkBeforeOutput(ParameterInput *pin); // in ../pgen
 
 private:
   // data
@@ -188,6 +189,7 @@ public:
   void AdaptiveMeshRefinement(ParameterInput *pin);
   unsigned int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3);
   MeshBlock* FindMeshBlock(int tgid);
+  void ApplyUserWorkBeforeOutput(ParameterInput *pin);
   void UserWorkAfterLoop(ParameterInput *pin); // method in ../pgen
 
 private:
