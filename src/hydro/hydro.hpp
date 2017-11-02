@@ -47,8 +47,8 @@ public:
     AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
     AthenaArray<Real> &e1, AthenaArray<Real> &e2);
 
-  void AddGravityFluxMG(void);
   void AddGravityFlux(void);
+  void AddGravityFluxWithGflx(void);
   void CalculateGravityFlux(AthenaArray<Real> &phi_in);
   void CorrectGravityFlux(void);
 
@@ -70,7 +70,7 @@ private:
   AthenaArray<Real> cons_;         // conserved state, for some GR Riemann solvers
 
   // self-gravity
-  AthenaArray<Real> gflx[3], gflx_old[3]; // gravity tensor
+  AthenaArray<Real> gflx[3], gflx_old[3]; // gravity tensor (old Athena style)
 
 
   TimeStepFunc_t UserTimeStep_;
