@@ -87,11 +87,13 @@ FFTBlock::~FFTBlock()
 
 void FFTBlock::DestroyPlan(AthenaFFTPlan *plan)
 {
+#ifdef FFT
 #ifdef MPI_PARALLEL
   fft_3d_destroy_plan(plan->plan3d);
   fft_2d_destroy_plan(plan->plan2d);
   delete plan;
 #else
+#endif
   delete plan;
 #endif
 }
