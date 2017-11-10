@@ -108,6 +108,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real cp = (ml*tr + mr*tl)/(ml + mr);
     cp = cp > 0.0 ? cp : 0.0;
 
+    // No loop-carried dependencies
+    #pragma distribute_point
 //--- Step 6.  Compute L/R fluxes along the line bm, bp
 
     vxl = wli[IVX] - bm;
