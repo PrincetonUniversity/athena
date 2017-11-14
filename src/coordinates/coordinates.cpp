@@ -365,7 +365,7 @@ void Coordinates::CenterWidth3(const int k, const int j, const int il, const int
 void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-#pragma simd
+#pragma nounroll
   for (int i=il; i<=iu; ++i){
     // area1 = dy dz
     Real& area_i = area(i);
@@ -377,7 +377,7 @@ void Coordinates::Face1Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face2Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-#pragma simd
+#pragma nounroll
   for (int i=il; i<=iu; ++i){
     // area2 = dx dz
     Real& area_i = area(i);
@@ -389,7 +389,7 @@ void Coordinates::Face2Area(const int k, const int j, const int il, const int iu
 void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
   AthenaArray<Real> &area)
 {
-#pragma simd
+#pragma nounroll
   for (int i=il; i<=iu; ++i){
     // area3 = dx dy
     Real& area_i = area(i);
