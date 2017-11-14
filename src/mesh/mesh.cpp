@@ -543,6 +543,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
 
   four_pi_G_=0.0, grav_eps_=-1.0;
 
+  turb_flag = 0;
+
   nbnew=0; nbdel=0;
 
   // read number of OpenMP threads for mesh
