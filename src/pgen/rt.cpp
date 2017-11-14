@@ -448,7 +448,7 @@ void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
     for (int k=1; k<=(NGHOST); ++k) {
     for (int j=js; j<=je+1; ++j) {
 #pragma simd
-      for (int i=is-(NGHOST); i<=ie+(NGHOST); ++i) {
+      for (int i=is; i<=ie; ++i) {
         b.x2f((ke+k  ),j,i) =  b.x2f((ke-k+1),j,i);
       }
     }}
