@@ -98,10 +98,12 @@ def tab(filename, raw=False, dimensions=None):
     if headings[0] == 'i' and headings[2] == 'j' and headings[4] == 'k':
       headings = headings[1:2] + headings[3:4] + headings[5:]
       dimensions = 3
-    elif headings[0] == 'i' and headings[2] == 'j':
+    elif ((headings[0] == 'i' and headings[2] == 'j') or
+          (headings[0] == 'i' and headings[2] == 'k') or
+          (headings[0] == 'j' and headings[2] == 'k')):
       headings = headings[1:2] + headings[3:]
       dimensions = 2
-    elif headings[0] == 'i':
+    elif headings[0] == 'i' or headings[0] == 'j' or headings[0] == 'k':
       headings = headings[1:]
       dimensions = 1
     else:
