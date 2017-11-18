@@ -3,13 +3,15 @@
 """
 Script for finding optimal static mesh refinement grid in spherical coordinates.
 
-Requires matplotlib if output_filename is specified. Requires scipy if r_ratio
-is not specified.
+Requires matplotlib if output other than "show" is specified. Requires scipy if
+r_ratio is not specified.
 """
 
-# Python modules
+# Python standard modules
 import argparse
 import math
+
+# Other Python modules
 import numpy as np
 
 # Main function
@@ -31,7 +33,7 @@ def main(**kwargs):
   metric = kwargs['metric']
   parameters = kwargs['parameters']
   theta_compress = kwargs['theta_compress']
-  output_filename = kwargs['output_filename']
+  output = kwargs['output']
   colormap = kwargs['colormap']
   grid_refined = kwargs['grid_refined']
   log = kwargs['log']
@@ -112,10 +114,6 @@ def main(**kwargs):
     # Record which blocks might be refined (level 0) or might exist (otherwise)
     refinement.append(np.ones((num_blocks_r, num_blocks_theta), dtype=bool))
     if l == 0:
-      if theta_min == 0.0:
-        for i in range(num_blocks_r):
-          refinement[0][i,0] = False
-          refinement[0][i,num_blocks_theta-1] = False
       continue
     for i in range(num_blocks_r/2):
       for j in range(num_blocks_theta/2):
@@ -137,7 +135,7 @@ def main(**kwargs):
         else:
           theta1_unadjusted = pos_face(theta_bounds[l][j], theta_bounds[l][j+1], 1.0, \
               num_theta_block, num_theta_block-1)
-          theta_1 = theta_adjust(theta1_unadjusted, theta_compress)
+          theta1 = theta_adjust(theta1_unadjusted, theta_compress)
           theta2 = theta_adjust(theta_bounds[l][j+1], theta_compress)
         w_r,w_theta,w_phi = \
             widths(r1, r2, theta1, theta2, delta_phi/2**l, metric, parameters)
@@ -274,9 +272,8 @@ def main(**kwargs):
   print('')
 
   # Create image of grid
-  if output_filename is not None:
-    plot_grid(refinement, r_bounds, theta_bounds, output_filename, colormap, \
-        grid_refined, log)
+  if output is not None:
+    plot_grid(refinement, r_bounds, theta_bounds, output, colormap, grid_refined, log)
 
 # Function for calculating geometric ratio closest to logarithmic spacing
 def log_ratio(f, n):
@@ -349,17 +346,17 @@ def widths(r1, r2, theta1, theta2, delta_phi, metric, parameters):
   return (w_r, w_theta, w_phi)
 
 # Function for making image of grid
-def plot_grid(refinement, r_bounds, theta_bounds, output_filename, colormap, \
-    grid_refined, log):
+def plot_grid(refinement, r_bounds, theta_bounds, output, colormap, grid_refined, log):
 
-  # Python plotting modules
+  # Load Python plotting modules
   import matplotlib
-  matplotlib.use('agg')
+  if output != 'show':
+    matplotlib.use('agg')
   matplotlib.rc('font', family='serif', size=14)
-  import matplotlib.pyplot as plt
   import matplotlib.cm as cm
   import matplotlib.colors as colors
   import matplotlib.patches as patches
+  import matplotlib.pyplot as plt
 
   # Locate corners of cells
   eps = 1.0e-6
@@ -506,8 +503,11 @@ def plot_grid(refinement, r_bounds, theta_bounds, output_filename, colormap, \
         plt.plot((x1, x2), (y1, y2), 'k')
         plt.plot((-x1, -x2), (y1, y2), 'k')
 
-  # Save figure
-  plt.savefig(output_filename)
+  # Show or save figure
+  if output == 'show':
+    plt.show()
+  else:
+    plt.savefig(output, bbox_inches='tight')
 
 # Execute main function
 if __name__ == '__main__':
@@ -558,8 +558,9 @@ if __name__ == '__main__':
       type=float,
       default=1.0,
       help='parameter h governing midplane compression of theta-surfaces')
-  parser.add_argument('-o', '--output_filename',
-      help='name of image file to write showing grid')
+  parser.add_argument('-o', '--output',
+      help='name of image file to write showing grid; use "show" to show interactive \
+          plot instead')
   parser.add_argument('-c', '--colormap',
       default='cool',
       help='name of colormap')
