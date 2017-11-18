@@ -231,6 +231,7 @@ public:
   bool ReceiveFieldBoundaryBuffers(FaceField &dst);
   void ReceiveFieldBoundaryBuffersWithWait(FaceField &dst);
   void PolarSingleField(FaceField &dst);
+  void PolarAxisFieldAverage(FaceField &dst);
 
   void SendFluxCorrection(enum FluxCorrectionType type);
   bool ReceiveFluxCorrection(enum FluxCorrectionType type);

@@ -424,17 +424,25 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
     for(int n=-1; n<=1; n+=2) {
       neibt=tree.FindNeighbor(loc,n,m,0,block_bcs,nrbx1,nrbx2,nrbx3,pmy_mesh_->root_level);
       if(neibt==NULL) { bufid+=nf2; continue;}
+      bool polar=false;
+      if ((m == -1 and block_bcs[INNER_X2] == POLAR_BNDRY)
+          or (m == 1 and block_bcs[OUTER_X2] == POLAR_BNDRY)) {
+        polar = true; // neighbor is across top or bottom pole
+      }
       if(neibt->flag==false) { // neighbor at finer level
         int ff1=1-(n+1)/2; // 0 for OUTER_X1, 1 for INNER_X1
         int ff2=1-(m+1)/2; // 0 for OUTER_X2, 1 for INNER_X2
+        if (polar) {
+          ff2 = 1 - ff2;
+        }
         nblevel[1][m+1][n+1]=neibt->loc.level+1;
         for(int f1=0;f1<nf2;f1++) {
           MeshBlockTree* nf=neibt->GetLeaf(ff1,ff2,f1);
           int fid = nf->gid;
           int nlevel=nf->loc.level;
-          int tbid=FindBufferID(-n,-m,0,0,0);
+          int tbid=FindBufferID(-n,polar?m:-m,0,0,0);
           neighbor[nneighbor].SetNeighbor(ranklist[fid], nlevel, fid,
-              fid-nslist[ranklist[fid]], n, m, 0, NEIGHBOR_EDGE, bufid, tbid, false, f1,
+              fid-nslist[ranklist[fid]], n, m, 0, NEIGHBOR_EDGE, bufid, tbid, polar, f1,
               0);
           bufid++; nneighbor++;
         }
@@ -444,12 +452,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
         int nid=neibt->gid;
         nblevel[1][m+1][n+1]=nlevel;
         int tbid;
-        bool polar=false;
         if(nlevel==loc.level) { // neighbor at same level
-          if ((m == -1 and block_bcs[INNER_X2] == POLAR_BNDRY)
-              or (m == 1 and block_bcs[OUTER_X2] == POLAR_BNDRY)) {
-            polar = true; // neighbor is across top or bottom pole
-          }
           tbid=FindBufferID(-n,polar?m:-m,0,0,0);
         }
         else { // neighbor at coarser level
@@ -604,6 +607,9 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int
           int ff1=1-(n+1)/2; // 0 for OUTER_X1, 1 for INNER_X1
           int ff2=1-(m+1)/2; // 0 for OUTER_X2, 1 for INNER_X2
           int ff3=1-(l+1)/2; // 0 for OUTER_X3, 1 for INNER_X3
+          if (polar) {
+            ff2 = 1 - ff2;
+          }
           neibt=neibt->GetLeaf(ff1,ff2,ff3);
         }
         int nlevel=neibt->loc.level;

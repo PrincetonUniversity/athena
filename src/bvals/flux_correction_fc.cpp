@@ -206,8 +206,15 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
         // restrict and pack e3
         for(int k=pmb->ks; k<=pmb->ke; k+=2) {
           for(int j=pmb->js; j<=pmb->je+1; j+=2) {
-            Real el1=pco->GetEdge3Length(k,j,i);
-            Real el2=pco->GetEdge3Length(k+1,j,i);
+            bool pole = pco->IsPole(j);
+            Real el1, el2;
+            if (not pole) {
+              el1 = pco->GetEdge3Length(k,j,i);
+              el2 = pco->GetEdge3Length(k+1,j,i);
+            } else {
+              el1 = pco->dx3f(k);
+              el2 = pco->dx3f(k+1);
+            }
             buf[p++]=(e3(k,j,i)*el1+e3(k+1,j,i)*el2)/(el1+el2);
           }
         }
@@ -217,16 +224,31 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
         int j;
         if(nb.fid==INNER_X2) j=pmb->js;
         else j=pmb->je+1;
+        bool pole = pco->IsPole(j);
         // restrict and pack e1
         for(int k=pmb->ks; k<=pmb->ke+1; k+=2) {
-          pco->Edge1Length(k, j, pmb->is, pmb->ie, le1);
+          if (not pole or not GENERAL_RELATIVITY) {
+            pco->Edge1Length(k, j, pmb->is, pmb->ie, le1);
+          } else {
+            for (int i = pmb->is; i <= pmb->ie+1; i+=2) {
+              le1(i) = pco->dx1f(i);
+              le1(i+1) = pco->dx1f(i+1);
+            }
+          }
           for(int i=pmb->is; i<=pmb->ie; i+=2)
             buf[p++]=(e1(k,j,i)*le1(i)+e1(k,j,i+1)*le1(i+1))/(le1(i)+le1(i+1));
         }
         // restrict and pack e3
         for(int k=pmb->ks; k<=pmb->ke; k+=2) {
-          pco->Edge3Length(k,   j, pmb->is, pmb->ie+1, le1);
-          pco->Edge3Length(k+1, j, pmb->is, pmb->ie+1, le2);
+          if (not pole) {
+            pco->Edge3Length(k,   j, pmb->is, pmb->ie+1, le1);
+            pco->Edge3Length(k+1, j, pmb->is, pmb->ie+1, le2);
+          } else {
+            for (int i = pmb->is; i <= pmb->ie+1; i+=2) {
+              le1(i) = pco->dx3f(k);
+              le2(i) = pco->dx3f(k+1);
+            }
+          }
           for(int i=pmb->is; i<=pmb->ie+1; i+=2)
             buf[p++]=(e3(k,j,i)*le1(i)+e3(k+1,j,i)*le2(i))/(le1(i)+le2(i));
         }
@@ -238,7 +260,15 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
         else k=pmb->ke+1;
         // restrict and pack e1
         for(int j=pmb->js; j<=pmb->je+1; j+=2) {
-          pco->Edge1Length(k, j, pmb->is, pmb->ie, le1);
+          bool pole = pco->IsPole(j);
+          if (not pole or not GENERAL_RELATIVITY) {
+            pco->Edge1Length(k, j, pmb->is, pmb->ie, le1);
+          } else {
+            for (int i = pmb->is; i <= pmb->ie; i+=2) {
+              le1(i) = pco->dx1f(i);
+              le1(i+1) = pco->dx1f(i+1);
+            }
+          }
           for(int i=pmb->is; i<=pmb->ie; i+=2)
             buf[p++]=(e1(k,j,i)*le1(i)+e1(k,j,i+1)*le1(i+1))/(le1(i)+le1(i+1));
         }
@@ -273,8 +303,16 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
         int j;
         if(nb.fid==INNER_X2) j=pmb->js;
         else j=pmb->je+1;
+        bool pole = pco->IsPole(j);
         // restrict and pack e1
-        pco->Edge1Length(k, j, pmb->is, pmb->ie, le1);
+        if (not pole or not GENERAL_RELATIVITY) {
+          pco->Edge1Length(k, j, pmb->is, pmb->ie, le1);
+        } else {
+          for (int i = pmb->is; i <= pmb->ie; i+=2) {
+            le1(i) = pco->dx1f(i);
+            le1(i+1) = pco->dx1f(i+1);
+          }
+        }
         for(int i=pmb->is; i<=pmb->ie; i+=2)
           buf[p++]=(e1(k,j,i)*le1(i)+e1(k,j,i+1)*le1(i+1))/(le1(i)+le1(i+1));
         // pack e3
@@ -300,10 +338,17 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
         else i=pmb->ie+1;
         if((nb.eid&2)==0) j=pmb->js;
         else j=pmb->je+1;
+        bool pole = pco->IsPole(j);
         // restrict and pack e3
         for(int k=pmb->ks; k<=pmb->ke; k+=2) {
-          Real el1=pco->GetEdge3Length(k,j,i);
-          Real el2=pco->GetEdge3Length(k+1,j,i);
+          Real el1, el2;
+          if (not pole) {
+            el1 = pco->GetEdge3Length(k,j,i);
+            el2 = pco->GetEdge3Length(k+1,j,i);
+          } else {
+            el1 = pco->dx3f(k);
+            el2 = pco->dx3f(k+1);
+          }
           buf[p++]=(e3(k,j,i)*el1+e3(k+1,j,i)*el2)/(el1+el2);
         }
       }
@@ -326,10 +371,18 @@ int BoundaryValues::LoadEMFBoundaryBufferToCoarser(Real *buf, const NeighborBloc
         int j, k;
         if((nb.eid&1)==0) j=pmb->js;
         else j=pmb->je+1;
+        bool pole = pco->IsPole(j);
         if((nb.eid&2)==0) k=pmb->ks;
         else k=pmb->ke+1;
         // restrict and pack e1
-        pco->Edge1Length(k, j, pmb->is, pmb->ie, le1);
+        if (not pole or not GENERAL_RELATIVITY) {
+          pco->Edge1Length(k, j, pmb->is, pmb->ie, le1);
+        } else {
+          for (int i = pmb->is; i <= pmb->ie; i+=2) {
+            le1(i) = pco->dx1f(i);
+            le1(i+1) = pco->dx1f(i+1);
+          }
+        }
         for(int i=pmb->is; i<=pmb->ie; i+=2)
           buf[p++]=(e1(k,j,i)*le1(i)+e1(k,j,i+1)*le1(i+1))/(le1(i)+le1(i+1));
       }

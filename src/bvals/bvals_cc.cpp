@@ -340,7 +340,7 @@ void BoundaryValues::SetCellCenteredBoundaryFromFiner(AthenaArray<Real> &dst,
       Real sign=1.0;
       if(flip!=NULL) sign = flip[n] ? -1.0 : 1.0;
       for (int k=sk; k<=ek; ++k) {
-        for (int j=sj; j<=ej; ++j) {
+        for (int j=ej; j>=sj; --j) {
 #pragma simd
           for (int i=si; i<=ei; ++i)
             dst(n,k,j,i) = sign * buf[p++];
