@@ -68,6 +68,18 @@ public:
     const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
     const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
+  static void PPMX1(Coordinates *pco, const int kl, const int ku,
+    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
+    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  static void PPMX2(Coordinates *pco, const int kl, const int ku,
+    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
+    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  static void PPMX3(Coordinates *pco, const int kl, const int ku,
+    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
+    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
   static void PPMUniformX1(Coordinates *pco, const int kl, const int ku,
     const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
     const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
