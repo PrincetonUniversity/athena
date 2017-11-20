@@ -116,7 +116,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real bm = al < 0.0 ? al : 0.0;
 
 //--- Step 5.  Compute L/R fluxes along the lines bm/bp: F_L - (S_L)U_L; F_R - (S_R)U_R
- 
+
     Real vxl = wli[IVX] - bm;
     Real vxr = wri[IVX] - bp;
 
@@ -171,6 +171,6 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     ey(k,j,i) = -flxi[IBY];
     ez(k,j,i) =  flxi[IBZ];
   }
-
+  }}
   return;
 }
