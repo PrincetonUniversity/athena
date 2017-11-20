@@ -891,7 +891,7 @@ void KerrSchild::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
         Real d1_g_11 = -2.0*m * xi / sigma_sq;
         Real d1_g_13 = 2.0*m * xi / sigma_sq * a * sin2;
         Real d1_g_22 = 2.0 * r;
-        Real d1_g_33 = 2.0 * (r + m * xi / sigma_sq * a2 * sin2) * sin2;
+        Real d1_g_33 = 2.0 * (r - m * xi / sigma_sq * a2 * sin2) * sin2;
         Real d2_g_00 = 4.0*m*a2 * r / sigma_sq * sincos;
         Real d2_g_01 = 4.0*m*a2 * r / sigma_sq * sincos;
         Real d2_g_03 = -4.0*m*a * r * r2_a2 / sigma_sq * sincos;
