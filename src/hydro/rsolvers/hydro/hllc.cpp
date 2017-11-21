@@ -37,6 +37,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
   Real wli[(NHYDRO)],wri[(NHYDRO)],wroe[(NHYDRO)];
   Real flxi[(NHYDRO)],fl[(NHYDRO)],fr[(NHYDRO)];
   Real gm1 = pmy_block->peos->GetGamma() - 1.0;
+  Real igm1 = 1.0/gm1;
 
   for (int k=kl; k<=ku; ++k){
   for (int j=jl; j<=ju; ++j){
@@ -63,7 +64,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real sqrtdr = sqrt(wri[IDN]);
     Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
 
-    wroe[IDN] = sqrtdl*sqrtdr;
+
+    //    wroe[IDN] = sqrtdl*sqrtdr; // unused in signal velocity estimates
     wroe[IVX] = (sqrtdl*wli[IVX] + sqrtdr*wri[IVX])*isdlpdr;
     wroe[IVY] = (sqrtdl*wli[IVY] + sqrtdr*wri[IVY])*isdlpdr;
     wroe[IVZ] = (sqrtdl*wli[IVZ] + sqrtdr*wri[IVZ])*isdlpdr;
@@ -71,8 +73,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     // Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
     // rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
     Real el,er,hroe;
-    el = wli[IPR]/gm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
-    er = wri[IPR]/gm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
+    el = wli[IPR]*igm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
+    er = wri[IPR]*igm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
     hroe = ((el + wli[IPR])/sqrtdl + (er + wri[IPR])/sqrtdr)*isdlpdr;
 
 //--- Step 3.  Compute sound speed in L,R, and Roe-averaged states
@@ -107,6 +109,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real cp = (ml*tr + mr*tl)/(ml + mr);
     cp = cp > 0.0 ? cp : 0.0;
 
+    // No loop-carried dependencies
+    #pragma distribute_point
 //--- Step 6.  Compute L/R fluxes along the line bm, bp
 
     vxl = wli[IVX] - bm;
