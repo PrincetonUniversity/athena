@@ -38,8 +38,8 @@ x3min      = -0.5     # minimum value of X3
 x3max      = 0.5      # maximum value of X3
 
 <meshblock>
-nx1 = 65
-nx2 = 40
+nx1 = 260
+nx2 = 80
 
 <hydro>
 gamma = 1.4           # gamma = C_p/C_v
