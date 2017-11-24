@@ -71,7 +71,7 @@ def analyze():
     return False
 
   # check absolute error and convergence in x1
-  if data[0][4] > 0.01:
+  if data[0][4] > 0.011:
     print "error in x1 too large",data[0][4]
     return False
   if data[1][4]/data[0][4] > 0.6:
@@ -79,7 +79,7 @@ def analyze():
     return False
 
   # check absolute error and convergence in x2
-  if data[2][4] > 0.01:
+  if data[2][4] > 0.011:
     print "error in x2 too large",data[2][4]
     return False
   if data[3][4]/data[2][4] > 0.6:
@@ -87,7 +87,7 @@ def analyze():
     return False
 
   # check absolute error and convergence in x3
-  if data[4][4] > 0.01:
+  if data[4][4] > 0.011:
     print "error in x3 too large",data[4][4]
     return False
   if data[5][4]/data[4][4] > 0.6:

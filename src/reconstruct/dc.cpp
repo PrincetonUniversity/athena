@@ -17,7 +17,7 @@
 //! \fn Reconstruction::DonorCellX1()
 //  \brief 
 
-void Reconstruction::DonorCellX1(Coordinates *pco,
+void Reconstruction::DonorCellX1(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
@@ -56,7 +56,7 @@ void Reconstruction::DonorCellX1(Coordinates *pco,
 //! \fn Reconstruction::DonorCellX2()
 //  \brief 
 
-void Reconstruction::DonorCellX2(Coordinates *pco,
+void Reconstruction::DonorCellX2(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
@@ -95,7 +95,7 @@ void Reconstruction::DonorCellX2(Coordinates *pco,
 //! \fn Reconstruction::DonorCellX3()
 //  \brief 
 
-void Reconstruction::DonorCellX3(Coordinates *pco,
+void Reconstruction::DonorCellX3(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)

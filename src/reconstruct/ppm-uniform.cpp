@@ -33,7 +33,7 @@
 //  \brief Returns L/R interface values in X1-dir constructed using fourth-order PPM and
 //         Colella-Sekora extremum-preserving limiting over [kl,ku][jl,ju][il,iu]
 
-void Reconstruction::PPMUniformX1(Coordinates *pco,
+void Reconstruction::PPMUniformX1(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
@@ -180,7 +180,7 @@ void Reconstruction::PPMUniformX1(Coordinates *pco,
 //  \brief Returns L/R interface values in X2-dir constructed using fourth-order PPM and
 //         Colella-Sekora extremum-preserving limiting over [kl,ku][jl,ju][il,iu]
 
-void Reconstruction::PPMUniformX2(Coordinates *pco,
+void Reconstruction::PPMUniformX2(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
@@ -379,7 +379,7 @@ void Reconstruction::PPMUniformX2(Coordinates *pco,
 //  \brief Returns L/R interface values in X3-dir constructed using fourth-order PPM and
 //         Colella-Sekora extremum-preserving limiting over [kl,ku][jl,ju][il,iu]
 
-void Reconstruction::PPMUniformX3(Coordinates *pco,
+void Reconstruction::PPMUniformX3(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)

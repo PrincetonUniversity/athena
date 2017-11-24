@@ -18,7 +18,7 @@
 //! \fn Reconstruction::ReconstructionFuncX1()
 //  \brief 
 
-void Reconstruction::PiecewiseLinearX1(Coordinates *pco,
+void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc, 
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
@@ -58,6 +58,8 @@ void Reconstruction::PiecewiseLinearX1(Coordinates *pco,
     }
 
     // Project slopes to characteristic variables, if necessary
+    LeftEigenmatrixVectorProduct(pmb,IVX,wc,il-1,iu,dwl);
+    LeftEigenmatrixVectorProduct(pmb,IVX,wc,il-1,iu,dwr);
 
     //  Apply van Leer limiter
     for (int n=0; n<(NWAVE); ++n) {
@@ -70,6 +72,9 @@ void Reconstruction::PiecewiseLinearX1(Coordinates *pco,
         if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
       }
     }
+
+    // Project limited slope back to primitive variables, if necessary
+    VectorRightEigenmatrixProduct(pmb,IVX,wc,il-1,iu,dwm);
 
     // compute ql_(i-1/2) and qr_(i+1/2) using monotonized slopes
     for (int n=0; n<(NWAVE); ++n) {
@@ -95,7 +100,7 @@ void Reconstruction::PiecewiseLinearX1(Coordinates *pco,
 //! \fn Reconstruction::ReconstructionFuncX2()
 //  \brief 
 
-void Reconstruction::PiecewiseLinearX2(Coordinates *pco,
+void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
@@ -136,6 +141,8 @@ void Reconstruction::PiecewiseLinearX2(Coordinates *pco,
     }
 
     // Project slopes to characteristic variables, if necessary
+    LeftEigenmatrixVectorProduct(pmb,IVY,wc,il,iu,dwl);
+    LeftEigenmatrixVectorProduct(pmb,IVY,wc,il,iu,dwr);
 
     //  Apply van Leer limiter
     for (int n=0; n<(NWAVE); ++n) {
@@ -148,6 +155,9 @@ void Reconstruction::PiecewiseLinearX2(Coordinates *pco,
         if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
       }
     }
+
+    // Project limited slope back to primitive variables, if necessary
+    VectorRightEigenmatrixProduct(pmb,IVY,wc,il,iu,dwm);
 
     // compute ql_(i-1/2) and qr_(i+1/2) using monotonized slopes
     for (int n=0; n<(NWAVE); ++n) {
@@ -172,7 +182,7 @@ void Reconstruction::PiecewiseLinearX2(Coordinates *pco,
 //! \fn Reconstruction::ReconstructionFuncX3()
 //  \brief 
 
-void Reconstruction::PiecewiseLinearX3(Coordinates *pco,
+void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
   const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
@@ -212,6 +222,9 @@ void Reconstruction::PiecewiseLinearX3(Coordinates *pco,
     }
 
     // Project slopes to characteristic variables, if necessary
+    LeftEigenmatrixVectorProduct(pmb,IVZ,wc,il,iu,dwl);
+    LeftEigenmatrixVectorProduct(pmb,IVZ,wc,il,iu,dwr);
+
 
     //  Apply van Leer limiter
     for (int n=0; n<(NWAVE); ++n) {
@@ -224,6 +237,9 @@ void Reconstruction::PiecewiseLinearX3(Coordinates *pco,
         if(dw2(n,i) <= 0.0) dwm(n,i) = 0.0;
       }
     }
+
+    // Project limited slope back to primitive variables, if necessary
+    VectorRightEigenmatrixProduct(pmb,IVZ,wc,il,iu,dwm);
 
     // compute ql_(i-1/2) and qr_(i+1/2) using monotonized slopes
     for (int n=0; n<(NWAVE); ++n) {
