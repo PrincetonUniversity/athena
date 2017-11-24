@@ -30,10 +30,12 @@
 //  \brief Returns L/R interface values in X1-dir constructed using fourth-order PPM and
 //         Mignone limiting over [kl,ku][jl,ju][il,iu]
 
-void Reconstruction::PPMX1(Coordinates *pco, const int kl, const int ku,
-  const int jl, const int ju, const int il, const int iu, const AthenaArray<Real> &q,
-  const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr)
+void Reconstruction::PPMX1(Coordinates *pco,
+  const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
+  const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
+#ifdef NO_COMPILE
   Real qa, qb, qc, qd;
 
   // 1D scratch arrays
@@ -165,6 +167,7 @@ void Reconstruction::PPMX1(Coordinates *pco, const int kl, const int ku,
   qminus.DeleteAthenaArray();
   dqf_plus.DeleteAthenaArray();
   dqf_minus.DeleteAthenaArray();
+#endif
   return;
 }
 
@@ -173,10 +176,12 @@ void Reconstruction::PPMX1(Coordinates *pco, const int kl, const int ku,
 //  \brief Returns L/R interface values in X2-dir constructed using fourth-order PPM and
 //         Mignone limiting over [kl,ku][jl,ju][il,iu]
 
-void Reconstruction::PPMX2(Coordinates *pco, const int kl, const int ku,
-  const int jl, const int ju, const int il, const int iu, const AthenaArray<Real> &q,
-  const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr)
+void Reconstruction::PPMX2(Coordinates *pco,
+  const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
+  const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
+#ifdef NO_COMPILE
   Real qa,qb,qc,qd;
   // 1D scratch arrays
   int ncells1 = iu-il + 2*(NGHOST);
@@ -367,6 +372,7 @@ void Reconstruction::PPMX2(Coordinates *pco, const int kl, const int ku,
   qminus.DeleteAthenaArray();
   dqf_plus.DeleteAthenaArray();
   dqf_minus.DeleteAthenaArray();
+#endif
   return;
 }
 
@@ -375,10 +381,12 @@ void Reconstruction::PPMX2(Coordinates *pco, const int kl, const int ku,
 //  \brief Returns L/R interface values in X3-dir constructed using fourth-order PPM and
 //         Mignone limiting over [kl,ku][jl,ju][il,iu]
 
-void Reconstruction::PPMX3(Coordinates *pco, const int kl, const int ku,
-  const int jl, const int ju, const int il, const int iu, const AthenaArray<Real> &q,
-  const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr)
+void Reconstruction::PPMX3(Coordinates *pco,
+  const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
+  const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
+#ifdef NO_COMPILE
   Real qa,qb,qc,qd;
   // 1D scratch arrays
   int ncells1 = iu-il + 2*(NGHOST);
@@ -573,5 +581,6 @@ void Reconstruction::PPMX3(Coordinates *pco, const int kl, const int ku,
   dqf_plus.DeleteAthenaArray();
   dqf_minus.DeleteAthenaArray();
 
+#endif
   return;
 }

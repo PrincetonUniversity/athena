@@ -34,23 +34,9 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
 
   // Second-order (piecewise linear) reconstruction
   } else if (xorder == 2) {
-    if (pmb->block_size.x1rat == 1.0) {
-      ReconstructFuncX1 = PiecewiseLinearUniformX1;
-    } else {
       ReconstructFuncX1 = PiecewiseLinearX1;
-    }
-
-    if (pmb->block_size.x2rat == 1.0) {
-      ReconstructFuncX2 = PiecewiseLinearUniformX2;
-    } else {
       ReconstructFuncX2 = PiecewiseLinearX2;
-    }
-
-    if (pmb->block_size.x3rat == 1.0) {
-      ReconstructFuncX3 = PiecewiseLinearUniformX3;
-    } else {
       ReconstructFuncX3 = PiecewiseLinearX3;
-    }
 
   // Third/Fourth-order (piecewise parabolic) reconstruction
   } else if (xorder == 3) {
@@ -79,10 +65,23 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
     throw std::runtime_error(msg.str().c_str());
 
   }
+
+  // Allocate memory for scratch arrays
+//  int ncells1 = ((pmy_block->ie)-(pmy_block->is) + 1) + 2*(NGHOST);
+//  dwl_.NewAthenaArray(NWAVE,ncells1);
+//  dwr_.NewAthenaArray(NWAVE,ncells1);
+//  dw2_.NewAthenaArray(NWAVE,ncells1);
+//  dwm_.NewAthenaArray(NWAVE,ncells1);
+//  wc_.NewAthenaArray(NWAVE,ncells1);
 }
 
 // destructor
 
 Reconstruction::~Reconstruction()
 {
+//  dwl_.DeleteAthenaArray();
+//  dwr_.DeleteAthenaArray();
+//  dw2_.DeleteAthenaArray();
+//  dwm_.DeleteAthenaArray();
+//  wc_.DeleteAthenaArray();
 }

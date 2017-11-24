@@ -17,18 +17,37 @@
 //! \fn Reconstruction::DonorCellX1()
 //  \brief 
 
-void Reconstruction::DonorCellX1(Coordinates *pco, const int kl, const int ku,
-  const int jl, const int ju, const int il, const int iu, const AthenaArray<Real> &q,
-  const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr)
+void Reconstruction::DonorCellX1(Coordinates *pco,
+  const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
+  const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
-  for (int k=kl; k<=ku; ++k){
-  for (int j=jl; j<=ju; ++j){
+  // compute L/R states for each variable
+  for (int n=0; n<(NHYDRO); ++n) {
+    for (int k=kl; k<=ku; ++k){
+    for (int j=jl; j<=ju; ++j){
 #pragma simd
-    for (int i=il; i<=iu; ++i){
-      ql(nout,k,j,i) = q(nin,k,j,i-1);
-      qr(nout,k,j,i) = q(nin,k,j,i  );
-    }
-  }}
+      for (int i=il; i<=iu; ++i){
+        wl(n,k,j,i) = w(n,k,j,i-1);
+        wr(n,k,j,i) = w(n,k,j,i  );
+      }
+    }}
+  }
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for (int k=kl; k<=ku; ++k){
+    for (int j=jl; j<=ju; ++j){
+#pragma simd
+      for (int i=il; i<=iu; ++i){
+        wl(IBY,k,j,i) = w(IB2,k,j,i-1);
+        wr(IBY,k,j,i) = w(IB2,k,j,i  );
+      }
+#pragma simd
+      for (int i=il; i<=iu; ++i){
+        wl(IBZ,k,j,i) = w(IB3,k,j,i-1);
+        wr(IBZ,k,j,i) = w(IB3,k,j,i  );
+      }
+    }}
+  }
 
   return;
 }
@@ -37,18 +56,37 @@ void Reconstruction::DonorCellX1(Coordinates *pco, const int kl, const int ku,
 //! \fn Reconstruction::DonorCellX2()
 //  \brief 
 
-void Reconstruction::DonorCellX2(Coordinates *pco, const int kl, const int ku,
-  const int jl, const int ju, const int il, const int iu, const AthenaArray<Real> &q,
-  const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr)
+void Reconstruction::DonorCellX2(Coordinates *pco,
+  const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
+  const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
-  for (int k=kl; k<=ku; ++k){
-  for (int j=jl; j<=ju; ++j){
+  // compute L/R states for each variable
+  for (int n=0; n<(NHYDRO); ++n) {
+    for (int k=kl; k<=ku; ++k){
+    for (int j=jl; j<=ju; ++j){
 #pragma simd
-    for (int i=il; i<=iu; ++i){
-      ql(nout,k,j,i) = q(nin,k,j-1,i);
-      qr(nout,k,j,i) = q(nin,k,j  ,i);
-    }
-  }}
+      for (int i=il; i<=iu; ++i){
+        wl(n,k,j,i) = w(n,k,j-1,i);
+        wr(n,k,j,i) = w(n,k,j  ,i);
+      }
+    }}
+  }
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for (int k=kl; k<=ku; ++k){
+    for (int j=jl; j<=ju; ++j){
+#pragma simd
+      for (int i=il; i<=iu; ++i){
+        wl(IBY,k,j,i) = w(IB3,k,j-1,i);
+        wr(IBY,k,j,i) = w(IB3,k,j  ,i);
+      }
+#pragma simd
+      for (int i=il; i<=iu; ++i){
+        wl(IBZ,k,j,i) = w(IB1,k,j-1,i);
+        wr(IBZ,k,j,i) = w(IB1,k,j  ,i);
+      }
+    }}
+  }
 
   return;
 }
@@ -57,18 +95,37 @@ void Reconstruction::DonorCellX2(Coordinates *pco, const int kl, const int ku,
 //! \fn Reconstruction::DonorCellX3()
 //  \brief 
 
-void Reconstruction::DonorCellX3(Coordinates *pco, const int kl, const int ku,
-  const int jl, const int ju, const int il, const int iu, const AthenaArray<Real> &q,
-  const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr)
+void Reconstruction::DonorCellX3(Coordinates *pco,
+  const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
+  const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
-  for (int k=kl; k<=ku; ++k){
-  for (int j=jl; j<=ju; ++j){
+  // compute L/R states for each variable
+  for (int n=0; n<(NHYDRO); ++n) {
+    for (int k=kl; k<=ku; ++k){
+    for (int j=jl; j<=ju; ++j){
 #pragma simd
-    for (int i=il; i<=iu; ++i){
-      ql(nout,k,j,i) = q(nin,k-1,j,i);
-      qr(nout,k,j,i) = q(nin,k  ,j,i);
-    }
-  }}
+      for (int i=il; i<=iu; ++i){
+        wl(n,k,j,i) = w(n,k-1,j,i);
+        wr(n,k,j,i) = w(n,k  ,j,i);
+      }
+    }}
+  }
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for (int k=kl; k<=ku; ++k){
+    for (int j=jl; j<=ju; ++j){
+#pragma simd
+      for (int i=il; i<=iu; ++i){
+        wl(IBY,k,j,i) = w(IB1,k-1,j,i);
+        wr(IBY,k,j,i) = w(IB1,k  ,j,i);
+      }
+#pragma simd
+      for (int i=il; i<=iu; ++i){
+        wl(IBZ,k,j,i) = w(IB2,k-1,j,i);
+        wr(IBZ,k,j,i) = w(IB2,k  ,j,i);
+      }
+    }}
+  }
 
   return;
 }

@@ -17,9 +17,10 @@ class MeshBlock;
 class ParameterInput;
 
 // Reconstruction function pointer prototype
-typedef void (*ReconstructFunc_t) (Coordinates *pco, const int kl, const int ku,
-    const int jl, const int ju, const int il, const int iu, const AthenaArray<Real> &q,
-    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+typedef void (*ReconstructFunc_t) (Coordinates *pco,
+  const int kl, const int ku, const int jl, const int ju, const int il, const int iu,
+  const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+  AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
 //! \class Reconstruction
 //  \brief member functions implement various spatial reconstruction algorithms
@@ -33,64 +34,64 @@ public:
   ReconstructFunc_t ReconstructFuncX1, ReconstructFuncX2, ReconstructFuncX3;
 
   static void DonorCellX1(Coordinates *pco, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
-    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
+    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
   static void DonorCellX2(Coordinates *pco, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
-    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
+    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
   static void DonorCellX3(Coordinates *pco, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
-    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
+    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
   static void PiecewiseLinearX1(Coordinates *pco, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
-    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
+    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
   static void PiecewiseLinearX2(Coordinates *pco, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
-    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
+    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
   static void PiecewiseLinearX3(Coordinates *pco, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
-    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
+    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  static void PiecewiseLinearUniformX1(Coordinates *pco, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
-    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
-
-  static void PiecewiseLinearUniformX2(Coordinates *pco, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
-    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
-
-  static void PiecewiseLinearUniformX3(Coordinates *pco, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
-    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+//  static void PiecewiseLinearUniformX1(Coordinates *pco, const int kl, const int ku,
+//    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
+//    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+//
+//  static void PiecewiseLinearUniformX2(Coordinates *pco, const int kl, const int ku,
+//    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
+//    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+//
+//  static void PiecewiseLinearUniformX3(Coordinates *pco, const int kl, const int ku,
+//    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
+//    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
   static void PPMX1(Coordinates *pco, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
-    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
+    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
   static void PPMX2(Coordinates *pco, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
-    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
+    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
   static void PPMX3(Coordinates *pco, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
-    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
+    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
   static void PPMUniformX1(Coordinates *pco, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
-    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
+    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
   static void PPMUniformX2(Coordinates *pco, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
-    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
+    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
   static void PPMUniformX3(Coordinates *pco, const int kl, const int ku,
-    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &q,
-    const int nin, const int nout, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+    const int jl, const int ju  , const int il, const int iu, const AthenaArray<Real> &w,
+    const AthenaArray<Real> &bcc, AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
 private:
   MeshBlock* pmy_block_;  // ptr to MeshBlock containing this Reconstruction
@@ -100,5 +101,9 @@ private:
   AthenaArray<Real> qplus_, qminus_;
   AthenaArray<Real> dqf_plus_, dqf_minus_, d2qf_;
   AthenaArray<Real> d2qc_m1_, d2qc_, d2qc_p1_;
+
+  // 2D scratch arrays used in PLM functions
+  AthenaArray<Real> dwl_,dwr_,wc_,dw2_,dwm_;
+
 };
 #endif // RECONSTRUCTION_HPP
