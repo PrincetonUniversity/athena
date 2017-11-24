@@ -58,8 +58,10 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
     }
 
     // Project slopes to characteristic variables, if necessary
-    LeftEigenmatrixVectorProduct(pmb,IVX,wc,il-1,iu,dwl);
-    LeftEigenmatrixVectorProduct(pmb,IVX,wc,il-1,iu,dwr);
+    if (pmb->precon->characteristic_reconstruction) {
+      LeftEigenmatrixVectorProduct(pmb,IVX,wc,il-1,iu,dwl);
+      LeftEigenmatrixVectorProduct(pmb,IVX,wc,il-1,iu,dwr);
+    }
 
     //  Apply van Leer limiter
     for (int n=0; n<(NWAVE); ++n) {
@@ -74,7 +76,9 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
     }
 
     // Project limited slope back to primitive variables, if necessary
-    VectorRightEigenmatrixProduct(pmb,IVX,wc,il-1,iu,dwm);
+    if (pmb->precon->characteristic_reconstruction) {
+      VectorRightEigenmatrixProduct(pmb,IVX,wc,il-1,iu,dwm);
+    }
 
     // compute ql_(i-1/2) and qr_(i+1/2) using monotonized slopes
     for (int n=0; n<(NWAVE); ++n) {
@@ -141,8 +145,10 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
     }
 
     // Project slopes to characteristic variables, if necessary
-    LeftEigenmatrixVectorProduct(pmb,IVY,wc,il,iu,dwl);
-    LeftEigenmatrixVectorProduct(pmb,IVY,wc,il,iu,dwr);
+    if (pmb->precon->characteristic_reconstruction) {
+      LeftEigenmatrixVectorProduct(pmb,IVY,wc,il,iu,dwl);
+      LeftEigenmatrixVectorProduct(pmb,IVY,wc,il,iu,dwr);
+    }
 
     //  Apply van Leer limiter
     for (int n=0; n<(NWAVE); ++n) {
@@ -157,7 +163,9 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
     }
 
     // Project limited slope back to primitive variables, if necessary
-    VectorRightEigenmatrixProduct(pmb,IVY,wc,il,iu,dwm);
+    if (pmb->precon->characteristic_reconstruction) {
+      VectorRightEigenmatrixProduct(pmb,IVY,wc,il,iu,dwm);
+    }
 
     // compute ql_(i-1/2) and qr_(i+1/2) using monotonized slopes
     for (int n=0; n<(NWAVE); ++n) {
@@ -222,8 +230,10 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
     }
 
     // Project slopes to characteristic variables, if necessary
-    LeftEigenmatrixVectorProduct(pmb,IVZ,wc,il,iu,dwl);
-    LeftEigenmatrixVectorProduct(pmb,IVZ,wc,il,iu,dwr);
+    if (pmb->precon->characteristic_reconstruction) {
+      LeftEigenmatrixVectorProduct(pmb,IVZ,wc,il,iu,dwl);
+      LeftEigenmatrixVectorProduct(pmb,IVZ,wc,il,iu,dwr);
+    }
 
 
     //  Apply van Leer limiter
@@ -239,7 +249,9 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
     }
 
     // Project limited slope back to primitive variables, if necessary
-    VectorRightEigenmatrixProduct(pmb,IVZ,wc,il,iu,dwm);
+    if (pmb->precon->characteristic_reconstruction) {
+      VectorRightEigenmatrixProduct(pmb,IVZ,wc,il,iu,dwm);
+    }
 
     // compute ql_(i-1/2) and qr_(i+1/2) using monotonized slopes
     for (int n=0; n<(NWAVE); ++n) {

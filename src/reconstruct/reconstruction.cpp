@@ -24,7 +24,23 @@
 Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
 {
   pmy_block_ = pmb;
-  int xorder = pin->GetOrAddInteger("time","xorder",2);
+
+  // read and set type of spatial reconstruction
+  characteristic_reconstruction = false;
+  std::string input_recon = pin->GetOrAddString("time","xorder","2");
+  if (input_recon == "1") {
+    xorder = 1;
+  } else if (input_recon == "2") {
+    xorder = 2;
+  } else if (input_recon == "2c") {
+    xorder = 2;
+    characteristic_reconstruction = true;
+  } else {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+        << "xorder=" << input_recon << " not valid choice for reconstruction"<< std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
 
   // set function pointers for reconstruction functions in each direction
   // First-order (donor cell) reconstruction
@@ -64,7 +80,6 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
     msg << "### FATAL ERROR in function [Reconstruction constructor]" << std::endl
         << "spatial order xorder= " << xorder << " not supported" << std::endl;
     throw std::runtime_error(msg.str().c_str());
-
   }
 
   // Allocate memory for scratch arrays

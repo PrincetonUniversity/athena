@@ -30,6 +30,12 @@ public:
   Reconstruction(MeshBlock *pmb, ParameterInput *pin);
   ~Reconstruction();
 
+  // order and type of reconstruction algorithm
+  int xorder;
+  bool characteristic_reconstruction;
+
+  // functions to perform linear transformations of vectors between primitive and
+  // characteristic variables
   static void LeftEigenmatrixVectorProduct(MeshBlock *pmb, const int ivx,
     const AthenaArray<Real> &w, const int il, const int iu, AthenaArray<Real> &vect);
   static void VectorRightEigenmatrixProduct(MeshBlock *pmb, const int ivx,
