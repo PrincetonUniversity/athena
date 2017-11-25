@@ -38,13 +38,13 @@ void Reconstruction::DonorCellX1(MeshBlock *pmb,
     for (int j=jl; j<=ju; ++j){
 #pragma simd
       for (int i=il; i<=iu; ++i){
-        wl(IBY,k,j,i) = w(IB2,k,j,i-1);
-        wr(IBY,k,j,i) = w(IB2,k,j,i  );
+        wl(IBY,k,j,i) = bcc(IB2,k,j,i-1);
+        wr(IBY,k,j,i) = bcc(IB2,k,j,i  );
       }
 #pragma simd
       for (int i=il; i<=iu; ++i){
-        wl(IBZ,k,j,i) = w(IB3,k,j,i-1);
-        wr(IBZ,k,j,i) = w(IB3,k,j,i  );
+        wl(IBZ,k,j,i) = bcc(IB3,k,j,i-1);
+        wr(IBZ,k,j,i) = bcc(IB3,k,j,i  );
       }
     }}
   }
@@ -77,13 +77,13 @@ void Reconstruction::DonorCellX2(MeshBlock *pmb,
     for (int j=jl; j<=ju; ++j){
 #pragma simd
       for (int i=il; i<=iu; ++i){
-        wl(IBY,k,j,i) = w(IB3,k,j-1,i);
-        wr(IBY,k,j,i) = w(IB3,k,j  ,i);
+        wl(IBY,k,j,i) = bcc(IB3,k,j-1,i);
+        wr(IBY,k,j,i) = bcc(IB3,k,j  ,i);
       }
 #pragma simd
       for (int i=il; i<=iu; ++i){
-        wl(IBZ,k,j,i) = w(IB1,k,j-1,i);
-        wr(IBZ,k,j,i) = w(IB1,k,j  ,i);
+        wl(IBZ,k,j,i) = bcc(IB1,k,j-1,i);
+        wr(IBZ,k,j,i) = bcc(IB1,k,j  ,i);
       }
     }}
   }
@@ -116,13 +116,13 @@ void Reconstruction::DonorCellX3(MeshBlock *pmb,
     for (int j=jl; j<=ju; ++j){
 #pragma simd
       for (int i=il; i<=iu; ++i){
-        wl(IBY,k,j,i) = w(IB1,k-1,j,i);
-        wr(IBY,k,j,i) = w(IB1,k  ,j,i);
+        wl(IBY,k,j,i) = bcc(IB1,k-1,j,i);
+        wr(IBY,k,j,i) = bcc(IB1,k  ,j,i);
       }
 #pragma simd
       for (int i=il; i<=iu; ++i){
-        wl(IBZ,k,j,i) = w(IB2,k-1,j,i);
-        wr(IBZ,k,j,i) = w(IB2,k  ,j,i);
+        wl(IBZ,k,j,i) = bcc(IB2,k-1,j,i);
+        wr(IBZ,k,j,i) = bcc(IB2,k  ,j,i);
       }
     }}
   }
