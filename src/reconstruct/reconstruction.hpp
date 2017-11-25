@@ -36,10 +36,12 @@ public:
 
   // functions to perform linear transformations of vectors between primitive and
   // characteristic variables
-  static void LeftEigenmatrixVectorProduct(MeshBlock *pmb, const int ivx,
-    const AthenaArray<Real> &w, const int il, const int iu, AthenaArray<Real> &vect);
-  static void VectorRightEigenmatrixProduct(MeshBlock *pmb, const int ivx,
-    const AthenaArray<Real> &w, const int il, const int iu, AthenaArray<Real> &vect);
+  static void LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
+    const int il, const int iu, const AthenaArray<Real> &b1, const AthenaArray<Real> &w,
+    AthenaArray<Real> &vect);
+  static void VectorDotRightEigenmatrix(MeshBlock *pmb, const int ivx,
+    const int il, const int iu, const AthenaArray<Real> &b1, const AthenaArray<Real> &w,
+    AthenaArray<Real> &vect);
 
   // reconstruction function pointers in each direction
   ReconstructFunc_t ReconstructFuncX1, ReconstructFuncX2, ReconstructFuncX3;

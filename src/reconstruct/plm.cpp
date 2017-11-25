@@ -23,13 +23,14 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc, 
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
-  AthenaArray<Real> dwl,dwr,dw2,dwm,wc;
+  AthenaArray<Real> dwl,dwr,dw2,dwm,wc,bx;
   int ncells1 = (iu-il+1) + 2*(NGHOST);
   dwl.NewAthenaArray(NWAVE,ncells1);
   dwr.NewAthenaArray(NWAVE,ncells1);
   dw2.NewAthenaArray(NWAVE,ncells1);
   dwm.NewAthenaArray(NWAVE,ncells1);
   wc.NewAthenaArray(NWAVE,ncells1);
+  bx.NewAthenaArray(ncells1);
 
   for (int k=kl; k<=ku; ++k){
   for (int j=jl; j<=ju; ++j){
@@ -47,20 +48,21 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
       for (int i=il-1; i<=iu; ++i){
         dwl(IBY,i) = (bcc(IB2,k,j,i  ) - bcc(IB2,k,j,i-1));
         dwr(IBY,i) = (bcc(IB2,k,j,i+1) - bcc(IB2,k,j,i  ));
-        wc(IBY,i) = w(IB2,k,j,i);
+        wc(IBY,i) = bcc(IB2,k,j,i);
+        bx(i) = bcc(IB1,k,j,i);
       }
 #pragma simd
       for (int i=il-1; i<=iu; ++i){
         dwl(IBZ,i) = (bcc(IB3,k,j,i  ) - bcc(IB3,k,j,i-1));
         dwr(IBZ,i) = (bcc(IB3,k,j,i+1) - bcc(IB3,k,j,i  ));
-        wc(IBZ,i) = w(IB3,k,j,i);
+        wc(IBZ,i) = bcc(IB3,k,j,i);
       }
     }
 
     // Project slopes to characteristic variables, if necessary
     if (pmb->precon->characteristic_reconstruction) {
-      LeftEigenmatrixVectorProduct(pmb,IVX,wc,il-1,iu,dwl);
-      LeftEigenmatrixVectorProduct(pmb,IVX,wc,il-1,iu,dwr);
+      LeftEigenmatrixDotVector(pmb,IVX,il-1,iu,bx,wc,dwl);
+      LeftEigenmatrixDotVector(pmb,IVX,il-1,iu,bx,wc,dwr);
     }
 
     //  Apply van Leer limiter
@@ -77,10 +79,10 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
 
     // Project limited slope back to primitive variables, if necessary
     if (pmb->precon->characteristic_reconstruction) {
-      VectorRightEigenmatrixProduct(pmb,IVX,wc,il-1,iu,dwm);
+      VectorDotRightEigenmatrix(pmb,IVX,il-1,iu,bx,wc,dwm);
     }
 
-    // compute ql_(i-1/2) and qr_(i+1/2) using monotonized slopes
+    // compute ql_(i+1/2) and qr_(i-1/2) using monotonized slopes
     for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
       for (int i=il-1; i<=iu; ++i){
@@ -96,6 +98,7 @@ void Reconstruction::PiecewiseLinearX1(MeshBlock *pmb,
   dw2.DeleteAthenaArray();
   dwm.DeleteAthenaArray();
   wc.DeleteAthenaArray();
+  bx.DeleteAthenaArray();
 
   return;
 }
@@ -109,13 +112,14 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
-  AthenaArray<Real> dwl,dwr,dw2,dwm,wc;
+  AthenaArray<Real> dwl,dwr,dw2,dwm,wc,bx;
   int ncells1 = (iu-il+1) + 2*(NGHOST);
   dwl.NewAthenaArray(NWAVE,ncells1);
   dwr.NewAthenaArray(NWAVE,ncells1);
   dw2.NewAthenaArray(NWAVE,ncells1);
   dwm.NewAthenaArray(NWAVE,ncells1);
   wc.NewAthenaArray(NWAVE,ncells1);
+  bx.NewAthenaArray(ncells1);
 
   for (int k=kl; k<=ku; ++k){
   for (int j=jl-1; j<=ju; ++j){
@@ -134,20 +138,21 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
       for (int i=il; i<=iu; ++i){
         dwl(IBY,i) = (bcc(IB3,k,j  ,i) - bcc(IB3,k,j-1,i));
         dwr(IBY,i) = (bcc(IB3,k,j+1,i) - bcc(IB3,k,j  ,i));
-        wc(IBY,i) = w(IB3,k,j,i);
+        wc(IBY,i) = bcc(IB3,k,j,i);
+        bx(i) = bcc(IB2,k,j,i);
       }  
 #pragma simd
       for (int i=il; i<=iu; ++i){
         dwl(IBZ,i) = (bcc(IB1,k,j  ,i) - bcc(IB1,k,j-1,i));
         dwr(IBZ,i) = (bcc(IB1,k,j+1,i) - bcc(IB1,k,j  ,i));
-        wc(IBZ,i) = w(IB1,k,j,i);
+        wc(IBZ,i) = bcc(IB1,k,j,i);
       }
     }
 
     // Project slopes to characteristic variables, if necessary
     if (pmb->precon->characteristic_reconstruction) {
-      LeftEigenmatrixVectorProduct(pmb,IVY,wc,il,iu,dwl);
-      LeftEigenmatrixVectorProduct(pmb,IVY,wc,il,iu,dwr);
+      LeftEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,dwl);
+      LeftEigenmatrixDotVector(pmb,IVY,il,iu,bx,wc,dwr);
     }
 
     //  Apply van Leer limiter
@@ -164,10 +169,10 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
 
     // Project limited slope back to primitive variables, if necessary
     if (pmb->precon->characteristic_reconstruction) {
-      VectorRightEigenmatrixProduct(pmb,IVY,wc,il,iu,dwm);
+      VectorDotRightEigenmatrix(pmb,IVY,il,iu,bx,wc,dwm);
     }
 
-    // compute ql_(i-1/2) and qr_(i+1/2) using monotonized slopes
+    // compute ql_(j+1/2) and qr_(j-1/2) using monotonized slopes
     for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
       for (int i=il; i<=iu; ++i){
@@ -182,6 +187,7 @@ void Reconstruction::PiecewiseLinearX2(MeshBlock *pmb,
   dw2.DeleteAthenaArray();
   dwm.DeleteAthenaArray();
   wc.DeleteAthenaArray();
+  bx.DeleteAthenaArray();
 
   return;
 }
@@ -195,13 +201,14 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
   AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 {
-  AthenaArray<Real> dwl,dwr,dw2,dwm,wc;
+  AthenaArray<Real> dwl,dwr,dw2,dwm,wc,bx;
   int ncells1 = (iu-il+1) + 2*(NGHOST);
   dwl.NewAthenaArray(NWAVE,ncells1);
   dwr.NewAthenaArray(NWAVE,ncells1);
   dw2.NewAthenaArray(NWAVE,ncells1);
   dwm.NewAthenaArray(NWAVE,ncells1);
   wc.NewAthenaArray(NWAVE,ncells1);
+  bx.NewAthenaArray(ncells1);
 
   for (int k=kl-1; k<=ku; ++k){
   for (int j=jl; j<=ju; ++j){
@@ -219,20 +226,21 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
       for (int i=il; i<=iu; ++i){
         dwl(IBY,i) = (bcc(IB1,k  ,j,i) - bcc(IB1,k-1,j,i));
         dwr(IBY,i) = (bcc(IB1,k+1,j,i) - bcc(IB1,k  ,j,i));
-        wc(IBY,i) = w(IB1,k,j,i);
+        wc(IBY,i) = bcc(IB1,k,j,i);
+        bx(i) = bcc(IB3,k,j,i);
       }  
 #pragma simd
       for (int i=il; i<=iu; ++i){
         dwl(IBZ,i) = (bcc(IB2,k  ,j,i) - bcc(IB2,k-1,j,i));
         dwr(IBZ,i) = (bcc(IB2,k+1,j,i) - bcc(IB2,k  ,j,i));
-        wc(IBZ,i) = w(IB2,k,j,i);
+        wc(IBZ,i) = bcc(IB2,k,j,i);
       }
     }
 
     // Project slopes to characteristic variables, if necessary
     if (pmb->precon->characteristic_reconstruction) {
-      LeftEigenmatrixVectorProduct(pmb,IVZ,wc,il,iu,dwl);
-      LeftEigenmatrixVectorProduct(pmb,IVZ,wc,il,iu,dwr);
+      LeftEigenmatrixDotVector(pmb,IVZ,il,iu,bx,wc,dwl);
+      LeftEigenmatrixDotVector(pmb,IVZ,il,iu,bx,wc,dwr);
     }
 
 
@@ -250,10 +258,10 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
 
     // Project limited slope back to primitive variables, if necessary
     if (pmb->precon->characteristic_reconstruction) {
-      VectorRightEigenmatrixProduct(pmb,IVZ,wc,il,iu,dwm);
+      VectorDotRightEigenmatrix(pmb,IVZ,il,iu,bx,wc,dwm);
     }
 
-    // compute ql_(i-1/2) and qr_(i+1/2) using monotonized slopes
+    // compute ql_(k+1/2) and qr_(k-1/2) using monotonized slopes
     for (int n=0; n<(NWAVE); ++n) {
 #pragma simd
       for (int i=il; i<=iu; ++i){
@@ -268,6 +276,7 @@ void Reconstruction::PiecewiseLinearX3(MeshBlock *pmb,
   dw2.DeleteAthenaArray();
   dwm.DeleteAthenaArray();
   wc.DeleteAthenaArray();
+  bx.DeleteAthenaArray();
 
   return;
 }
