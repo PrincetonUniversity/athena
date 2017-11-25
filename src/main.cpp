@@ -397,8 +397,6 @@ int main(int argc, char *argv[])
   if(Globals::my_rank==0 && wtlim > 0)
     SignalHandler::CancelWallTimeAlarm();
 
-  pmesh->UserWorkAfterLoop(pinput);
-
   // make the final outputs
   try {
     pouts->MakeOutputs(pmesh,pinput,true);
@@ -418,6 +416,8 @@ int main(int argc, char *argv[])
 #endif
     return(0);
   }
+
+  pmesh->UserWorkAfterLoop(pinput);
 
   // print diagnostic messages
   if(Globals::my_rank==0) {
