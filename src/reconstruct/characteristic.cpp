@@ -32,18 +32,19 @@ void Reconstruction::VectorDotRightEigenmatrix(MeshBlock *pmb, const int ivx,
   int ivz = IVX + ((ivx-IVX)+2)%3;
 
   if (MAGNETIC_FIELDS_ENABLED) {
-    // Adiabatic MHD (eq. A3)
+
+    // Adiabatic MHD ---------------------------------------------------------------------
     if (NON_BAROTROPIC_EOS) {
       Real gamma = pmb->peos->GetGamma();
 #pragma simd
       for (int i=il; i<=iu; ++i) {
-        Real d = w(IDN,i);
-        Real sqrtd = sqrt(d);
+        Real id = 1.0/w(IDN,i);
+        Real sqrtd = sqrt(w(IDN,i));
 
         Real btsq  = SQR(w(IBY,i)) + SQR(w(IBZ,i));
-        Real ct2   = btsq/d;
-        Real vaxsq = b1(i)*b1(i)/d;
-        Real asq   = gamma*w(IEN,i)/d;
+        Real ct2   = btsq*id;
+        Real vaxsq = b1(i)*b1(i)*id;
+        Real asq   = gamma*w(IEN,i)*id;
         Real a = sqrt(asq);
 
         // Compute fast- and slow-magnetosonic speeds (eq. A10)
@@ -58,7 +59,7 @@ void Reconstruction::VectorDotRightEigenmatrix(MeshBlock *pmb, const int ivx,
 
         // Compute beta(s) (eq A17)
         Real bt  = sqrt(btsq);
-        Real bet2 = 1.0;
+        Real bet2 = 0.0;
         Real bet3 = 0.0;
         if (bt != 0.0) {
           bet2 = w(IBY,i)/bt;
@@ -88,13 +89,16 @@ void Reconstruction::VectorDotRightEigenmatrix(MeshBlock *pmb, const int ivx,
         Real af = a*alpha_f*sqrtd;
         Real as = a*alpha_s*sqrtd;
 
-        Real v_0 = d*(alpha_f*(vect(0,i) + vect(6,i)) + alpha_s*(vect(2,i) + vect(4,i)));
+        // Compute vector-R_matrix product using matrix elements from eq. A12
+        Real v_0 = w(IDN,i)*(alpha_f*(vect(0,i) + vect(6,i)) +
+                             alpha_s*(vect(2,i) + vect(4,i))) + vect(3,i);
         Real v_1 = cf*alpha_f*(vect(6,i)-vect(0,i)) + cs*alpha_s*(vect(4,i)-vect(2,i));
         Real v_2 = bet2*(qs*(vect(0,i) - vect(6,i)) + qf*(vect(4,i) - vect(2,i)))
                  + bet3*(vect(5,i) - vect(1,i)); 
         Real v_3 = bet3*(qs*(vect(0,i) - vect(6,i)) + qf*(vect(4,i) - vect(2,i)))
                  + bet2*(vect(1,i) - vect(5,i)); 
-        Real v_4 = d*asq*(alpha_f*(vect(0,i)+vect(6,i)) + alpha_s*(vect(2,i)+vect(4,i))); 
+        Real v_4 = w(IDN,i)*asq*(alpha_f*(vect(0,i) + vect(6,i)) +
+                                 alpha_s*(vect(2,i) + vect(4,i))); 
         Real v_5 = bet2*(as*(vect(0,i) + vect(6,i)) - af*(vect(2,i) + vect(4,i)))
                  - bet3*s*sqrtd*(vect(5,i) + vect(1,i)); 
         Real v_6 = bet3*(as*(vect(0,i) + vect(6,i)) - af*(vect(2,i) + vect(4,i)))
@@ -109,18 +113,18 @@ void Reconstruction::VectorDotRightEigenmatrix(MeshBlock *pmb, const int ivx,
         vect(IBZ,i) = v_6; 
       }
 
-    // Isothermal MHD (eq. A12)
+    // Isothermal MHD --------------------------------------------------------------------
     } else {
       Real iso_cs = pmb->peos->GetIsoSoundSpeed();
       Real iso_cs2 = SQR(iso_cs);
 #pragma simd
       for (int i=il; i<=iu; ++i) {
-        Real d = w(IDN,i);
-        Real sqrtd = sqrt(d);
+        Real id = 1.0/w(IDN,i);
+        Real sqrtd = sqrt(w(IDN,i));
 
         Real btsq  = SQR(w(IBY,i)) + SQR(w(IBZ,i));
-        Real ct2   = btsq/d;
-        Real vaxsq = b1(i)*b1(i)/d;
+        Real ct2   = btsq*id;
+        Real vaxsq = b1(i)*b1(i)*id;
 
         // Compute fast- and slow-magnetosonic speeds (eq. A10)
         Real tdif = vaxsq + ct2 - iso_cs2;
@@ -134,7 +138,7 @@ void Reconstruction::VectorDotRightEigenmatrix(MeshBlock *pmb, const int ivx,
 
         // Compute beta(s) (eq A17)
         Real bt  = sqrt(btsq);
-        Real bet2 = 1.0;
+        Real bet2 = 0.0;
         Real bet3 = 0.0;
         if (bt != 0.0) {
           bet2 = w(IBY,i)/bt;
@@ -164,7 +168,9 @@ void Reconstruction::VectorDotRightEigenmatrix(MeshBlock *pmb, const int ivx,
         Real af = iso_cs*alpha_f*sqrtd;
         Real as = iso_cs*alpha_s*sqrtd;
 
-        Real v_0 = d*(alpha_f*(vect(0,i) + vect(5,i)) + alpha_s*(vect(2,i) + vect(3,i)));
+        // Compute vector-R_matrix product using matrix elements from eq. A12
+        Real v_0 = w(IDN,i)*(alpha_f*(vect(0,i) + vect(5,i)) +
+                             alpha_s*(vect(2,i) + vect(3,i)));
         Real v_1 = cf*alpha_f*(vect(5,i) - vect(0,i)) + cs*alpha_s*(vect(3,i)-vect(2,i));
         Real v_2 = bet2*(qs*(vect(0,i) - vect(5,i)) + qf*(vect(3,i) - vect(2,i)))
                  + bet3*(vect(4,i) - vect(1,i)); 
@@ -186,7 +192,7 @@ void Reconstruction::VectorDotRightEigenmatrix(MeshBlock *pmb, const int ivx,
     }
 
   } else {
-    // Adiabatic hydrodynamics (eq. A3)
+    // Adiabatic hydrodynamics -----------------------------------------------------------
     if (NON_BAROTROPIC_EOS) {
       Real gamma = pmb->peos->GetGamma();
 #pragma simd
@@ -194,6 +200,7 @@ void Reconstruction::VectorDotRightEigenmatrix(MeshBlock *pmb, const int ivx,
         Real asq = gamma*w(IEN,i)/w(IDN,i);
         Real a   = sqrt(asq);
 
+        // Compute vector-R_matrix product using matrix elements from eq. A3
         Real v_0 = vect(0,i) + vect(1,i) + vect(4,i);
         Real v_1 = a*(vect(4,i) - vect(0,i))/w(IDN,i);
         Real v_2 = vect(2,i);
@@ -207,11 +214,12 @@ void Reconstruction::VectorDotRightEigenmatrix(MeshBlock *pmb, const int ivx,
         vect(IEN,i) = v_4; 
       }
 
-    // Isothermal hydrodynamics (eq. A3)
+    // Isothermal hydrodynamics ----------------------------------------------------------
     } else {
       Real iso_cs = pmb->peos->GetIsoSoundSpeed();
 #pragma simd
       for (int i=il; i<=iu; ++i) {
+        // Compute vector-R_matrix product using matrix elements from eq. A3
         Real v_0 = vect(0,i) + vect(3,i);
         Real v_1 = iso_cs*(vect(3,i) - vect(0,i))/w(IDN,i);
         Real v_2 = vect(1,i);
@@ -246,14 +254,14 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
   int ivz = IVX + ((ivx-IVX)+2)%3;
 
   if (MAGNETIC_FIELDS_ENABLED) {
-    // Adiabatic MHD (eq. A3)
+
+    // Adiabatic MHD ---------------------------------------------------------------------
     if (NON_BAROTROPIC_EOS) {
       Real gamma = pmb->peos->GetGamma();
 #pragma simd
       for (int i=il; i<=iu; ++i) {
-        Real d = w(IDN,i);
-        Real id = 1.0/d;
-        Real sqrtd = sqrt(d);
+        Real id = 1.0/w(IDN,i);
+        Real sqrtd = sqrt(w(IDN,i));
         Real isqrtd = 1.0/sqrtd;
 
         Real btsq  = SQR(w(IBY,i)) + SQR(w(IBZ,i));
@@ -274,7 +282,7 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 
         // Compute beta(s) (eq A17)
         Real bt  = sqrt(btsq);
-        Real bet2 = 1.0;
+        Real bet2 = 0.0;
         Real bet3 = 0.0;
         if (bt != 0.0) {
           bet2 = w(IBY,i)/bt;
@@ -299,27 +307,28 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 
         // Compute Q(s) and A(s) (eq. A14-15), etc.
         Real s = SIGN(b1(i));
-        Real na = 0.5/asq;
-        Real qf = na*cf*alpha_f*s;
-        Real qs = na*cs*alpha_s*s;
+        Real nf = 0.5/asq;
+        Real qf = nf*cf*alpha_f*s;
+        Real qs = nf*cs*alpha_s*s;
         Real af_prime = 0.5*alpha_f/(a*sqrtd);
         Real as_prime = 0.5*alpha_s/(a*sqrtd);
 
-        Real v_0 = na*alpha_f*(vect(IEN,i)*id - cf*vect(ivx,i)) + 
+        // Compute L_matrix-vector product using matrix elements from eq. A18
+        Real v_0 = nf*alpha_f*(vect(IEN,i)*id - cf*vect(ivx,i)) + 
                       qs*(bet2*vect(ivy,i) + bet3*vect(ivz,i)) +
                 as_prime*(bet2*vect(IBY,i) + bet3*vect(IBZ,i));
         Real v_1 = 0.5*(bet2*(vect(IBZ,i)*s*isqrtd + vect(ivz,i)) - 
                         bet3*(vect(IBY,i)*s*isqrtd + vect(ivy,i)));
-        Real v_2 = na*alpha_s*(vect(IEN,i)*id - cs*vect(ivx,i)) - 
+        Real v_2 = nf*alpha_s*(vect(IEN,i)*id - cs*vect(ivx,i)) - 
                       qf*(bet2*vect(ivy,i) + bet3*vect(ivz,i)) -
                 af_prime*(bet2*vect(IBY,i) + bet3*vect(IBZ,i));
         Real v_3 = vect(IDN,i) - vect(IEN,i)/asq; 
-        Real v_4 = na*alpha_s*(vect(IEN,i)*id + cs*vect(ivx,i)) + 
-                      qf*(bet2*vect(ivy,i) - bet3*vect(ivz,i)) +
-                af_prime*(bet2*vect(IBY,i) - bet3*vect(IBZ,i));
+        Real v_4 = nf*alpha_s*(vect(IEN,i)*id + cs*vect(ivx,i)) + 
+                      qf*(bet2*vect(ivy,i) + bet3*vect(ivz,i)) -
+                af_prime*(bet2*vect(IBY,i) + bet3*vect(IBZ,i));
         Real v_5 = 0.5*(bet2*(vect(IBZ,i)*s*isqrtd - vect(ivz,i)) - 
                         bet3*(vect(IBY,i)*s*isqrtd - vect(ivy,i)));
-        Real v_6 = na*alpha_f*(vect(IEN,i)*id + cf*vect(ivx,i)) - 
+        Real v_6 = nf*alpha_f*(vect(IEN,i)*id + cf*vect(ivx,i)) - 
                       qs*(bet2*vect(ivy,i) + bet3*vect(ivz,i)) +
                 as_prime*(bet2*vect(IBY,i) + bet3*vect(IBZ,i));
 
@@ -332,15 +341,14 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
         vect(6,i) = v_6; 
       }
 
-    // Isothermal MHD (eq. A3)
+    // Isothermal MHD --------------------------------------------------------------------
     } else {
       Real iso_cs = pmb->peos->GetIsoSoundSpeed();
       Real iso_cs2 = SQR(iso_cs);
 #pragma simd
       for (int i=il; i<=iu; ++i) {
-        Real d = w(IDN,i);
-        Real id = 1.0/d;
-        Real sqrtd = sqrt(d);
+        Real id = 1.0/w(IDN,i);
+        Real sqrtd = sqrt(w(IDN,i));
         Real isqrtd = 1.0/sqrtd;
 
         Real btsq  = SQR(w(IBY,i)) + SQR(w(IBZ,i));
@@ -359,7 +367,7 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
 
         // Compute beta(s) (eq A17)
         Real bt  = sqrt(btsq);
-        Real bet2 = 1.0;
+        Real bet2 = 0.0;
         Real bet3 = 0.0;
         if (bt != 0.0) {
           bet2 = w(IBY,i)/bt;
@@ -389,6 +397,7 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
         Real af_prime = 0.5*alpha_f/(iso_cs*sqrtd);
         Real as_prime = 0.5*alpha_s/(iso_cs*sqrtd);
 
+        // Compute L_matrix-vector product using matrix elements from eq. A22
         Real v_0 = 0.5*alpha_f*(vect(IDN,i)*id - cf*vect(ivx,i)/iso_cs2) + 
                       qs*(bet2*vect(ivy,i) + bet3*vect(ivz,i)) +
                 as_prime*(bet2*vect(IBY,i) + bet3*vect(IBZ,i));
@@ -397,12 +406,12 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
         Real v_2 = 0.5*alpha_s*(vect(IDN,i)*id - cs*vect(ivx,i)/iso_cs2) - 
                       qf*(bet2*vect(ivy,i) + bet3*vect(ivz,i)) -
                 af_prime*(bet2*vect(IBY,i) + bet3*vect(IBZ,i));
-        Real v_3 = 0.5*alpha_s*(vect(IDN,i)*id - cs*vect(ivx,i)/iso_cs2) - 
-                      qf*(bet2*vect(ivy,i) - bet3*vect(ivz,i)) +
+        Real v_3 = 0.5*alpha_s*(vect(IDN,i)*id + cs*vect(ivx,i)/iso_cs2) + 
+                      qf*(bet2*vect(ivy,i) + bet3*vect(ivz,i)) -
                 af_prime*(bet2*vect(IBY,i) + bet3*vect(IBZ,i));
         Real v_4 = 0.5*(bet2*(vect(IBZ,i)*s*isqrtd - vect(ivz,i)) - 
                         bet3*(vect(IBY,i)*s*isqrtd - vect(ivy,i)));
-        Real v_5 = 0.5*alpha_f*(vect(IDN,i)*id - cf*vect(ivx,i)/iso_cs2) - 
+        Real v_5 = 0.5*alpha_f*(vect(IDN,i)*id + cf*vect(ivx,i)/iso_cs2) - 
                       qs*(bet2*vect(ivy,i) + bet3*vect(ivz,i)) +
                 as_prime*(bet2*vect(IBY,i) + bet3*vect(IBZ,i));
 
@@ -416,7 +425,7 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
     }
 
   } else {
-    // Adiabatic hydrodynamics (eq. A4)
+    // Adiabatic hydrodynamics -----------------------------------------------------------
     if (NON_BAROTROPIC_EOS) {
       Real gamma = pmb->peos->GetGamma();
 #pragma simd
@@ -424,6 +433,7 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
         Real asq = gamma*w(IEN,i)/w(IDN,i);
         Real a   = sqrt(asq);
   
+        // Compute L_matrix-vector product using matrix elements from eq. A4
         Real v_0 = 0.5*(vect(IEN,i)/asq - w(IDN,i)*vect(ivx,i)/a);
         Real v_1 = vect(IDN,i) - vect(IEN,i)/asq;
         Real v_2 = vect(ivy,i);
@@ -437,11 +447,12 @@ void Reconstruction::LeftEigenmatrixDotVector(MeshBlock *pmb, const int ivx,
         vect(4,i) = v_4; 
       }
 
-    // Isothermal hydrodynamics (eq. A7)
+    // Isothermal hydrodynamics ----------------------------------------------------------
     } else {
       Real iso_cs = pmb->peos->GetIsoSoundSpeed();
 #pragma simd
       for (int i=il; i<=iu; ++i) {
+        // Compute L_matrix-vector product using matrix elements from eq. A7
         Real v_0 = 0.5*(vect(IDN,i) - w(IDN,i)*vect(ivx,i)/iso_cs);
         Real v_1 = vect(ivy,i);
         Real v_2 = vect(ivz,i);
