@@ -53,7 +53,6 @@ void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
      FaceField &b, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke);
 
 // made global to share with BC functions
-static Real gm1;
 static Real grav_acc;
 
 //========================================================================================
@@ -87,7 +86,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   long int iseed = -1;
   Real gamma = peos->GetGamma();
-  gm1 = gamma - 1.0;
+  Real gm1 = gamma - 1.0;
   
   Real kx = 2.0*(PI)/(pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min);
   Real ky = 2.0*(PI)/(pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min);
@@ -244,7 +243,7 @@ void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 #pragma simd
         for (int i=is; i<=ie; ++i) {
           prim(IPR,k,js-j,i) = prim(IPR,k,js+j-1,i) 
-             - prim(IDN,k,js+j-1,i)*grav_acc*(2*j-1)*pco->dx2f(j)/gm1;
+             - prim(IDN,k,js+j-1,i)*grav_acc*(2*j-1)*pco->dx2f(j);
         }
       } else {
 #pragma simd
@@ -304,7 +303,7 @@ void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 #pragma simd
         for (int i=is; i<=ie; ++i) {
           prim(IPR,k,je+j,i) = prim(IPR,k,je-j+1,i) 
-             + prim(IDN,k,je-j+1,i)*grav_acc*(2*j-1)*pco->dx2f(j)/gm1;
+             + prim(IDN,k,je-j+1,i)*grav_acc*(2*j-1)*pco->dx2f(j);
         }
       } else {
 #pragma simd
