@@ -28,11 +28,14 @@ public:
   ~Field();
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
-
-  FaceField b;       // face-centered magnetic fields
-  FaceField b1;      // face-centered magnetic fields at intermediate step
-  AthenaArray<Real> bcc;  // cell-centered magnetic fields
-  AthenaArray<Real> bcc1; // cell-centered magnetic fields at intermediate step
+  // face-centered magnetic fields
+  FaceField b;       // time-integrator memory register #1
+  FaceField b1;      // time-integrator memory register #2
+  FaceField b2;      // time-integrator memory register #3
+  // cell-centered magnetic fields
+  AthenaArray<Real> bcc;  // time-integrator memory register #1
+  AthenaArray<Real> bcc1; // time-integrator memory register #2
+  AthenaArray<Real> bcc2; // time-integrator memory register #3
 
   EdgeField e;    // edge-centered electric fields used in CT
   FaceField wght; // weights used to integrate E to corner using GS algorithm
