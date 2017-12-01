@@ -29,9 +29,11 @@ public:
 
   // data
   MeshBlock* pmy_block;    // ptr to MeshBlock containing this Hydro
-  AthenaArray<Real> u,w;      // conserved and primitive variables
-  AthenaArray<Real> u1,w1;    // conserved and primitive variables at intermediate step
-  AthenaArray<Real> flux[3];  // conserved and primitive variables
+  // conserved and primitive variables
+  AthenaArray<Real> u,w;      // time-integrator memory register #1
+  AthenaArray<Real> u1,w1;    // time-integrator memory register #2
+  AthenaArray<Real> u2,w2;    // time-integrator memory register #3
+  AthenaArray<Real> flux[3];  // face-averaged flux vector
 
   HydroSourceTerms *psrc;
 
