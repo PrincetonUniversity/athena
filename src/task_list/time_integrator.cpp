@@ -32,7 +32,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   : TaskList(pm)
 {
   // First, set weights for each step of time-integration algorithm.  Each step is
-  //    U^{2} = a*U^0 + b*U^1 + c*dt*Div(F), where U^0 and U^1 are previous steps 
+  //    U^{2} = a*U^0 + b*U^1 + c*dt*Div(F), where U^0 and U^1 are previous steps
   // a,b=(1-a),and c are weights that are different for each step and each integrator
   // These are stored as: time_int_wght1 = a, time_int_wght2 = b, time_int_wght3 = c
 
@@ -129,7 +129,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 
 //----------------------------------------------------------------------------------------//! \fn
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
-//  value of ntask.  
+//  value of ntask.
 
 void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
 {
@@ -139,23 +139,23 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
   using namespace HydroIntegratorTaskNames;
   switch((id)) {
     case (START_ALLRECV):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::StartAllReceive);
       break;
     case (CLEAR_ALLBND):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::ClearAllBoundary);
       break;
 
     case (CALC_HYDFLX):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::CalculateFluxes);
       break;
     case (CALC_FLDFLX):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::CalculateEMF);
       break;
@@ -177,7 +177,7 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
         (&TimeIntegratorTaskList::FluxCorrectReceive);
       break;
     case (RECV_FLDFLX):
-      task_list_[ntasks].TaskFunc= 
+      task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::EMFCorrectReceive);
       break;
@@ -303,7 +303,7 @@ enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int step
   if((step == 1) && (integrator == "rk2")) {
     phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, 2);
     return TASK_NEXT;
-  } 
+  }
 
   if(step == 2) {
     phydro->CalculateFluxes(phydro->w1, pfield->b1, pfield->bcc1, 2);
@@ -323,7 +323,7 @@ enum TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int step)
   if(step == 2) {
     pmb->pfield->ComputeCornerE(pmb->phydro->w1, pmb->pfield->bcc1);
     return TASK_NEXT;
-  } 
+  }
 
   return TASK_FAIL;
 }
@@ -373,17 +373,20 @@ enum TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int step)
   Field *pf=pmb->pfield;
 
   if(step == 1) {
-    ph->AddFluxDivergenceToAverage(ph->u,ph->u,ph->w,pf->bcc,step_wghts[0],ph->u1);
+    //ph->u,ph->u,
+    ph->AddFluxDivergenceToAverage(ph->w,pf->bcc,step_wghts[0],ph->u1);
     return TASK_NEXT;
   }
 
   if((step == 2) && (integrator == "vl2")) {
-    ph->AddFluxDivergenceToAverage(ph->u,ph->u,ph->w1,pf->bcc1,step_wghts[1],ph->u);
+    // ph->u,ph->u,
+    ph->AddFluxDivergenceToAverage(ph->w1,pf->bcc1,step_wghts[1],ph->u);
     return TASK_NEXT;
   }
 
   if((step == 2) && (integrator == "rk2")) {
-   ph->AddFluxDivergenceToAverage(ph->u,ph->u1,ph->w1,pf->bcc1,step_wghts[1],ph->u);
+    // ph->u,ph->u1,
+   ph->AddFluxDivergenceToAverage(ph->w1,pf->bcc1,step_wghts[1],ph->u);
    return TASK_NEXT;
   }
 

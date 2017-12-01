@@ -27,8 +27,7 @@
 //  \brief Adds flux divergence to weighted average of conservative variables from
 //  previous step(s) of time integrator algorithm
 
-void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &u_in1,
-  AthenaArray<Real> &u_in2, AthenaArray<Real> &w, AthenaArray<Real> &bcc, 
+void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &bcc,
   const IntegratorWeight wght, AthenaArray<Real> &u_out)
 {
   MeshBlock *pmb=pmy_block;
@@ -55,7 +54,7 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &u_in1,
   dflx.InitWithShallowCopy(dflx_);
 
 #pragma omp for schedule(static)
-  for (int k=ks; k<=ke; ++k) { 
+  for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
 
       // calculate x1-flux divergence
@@ -94,8 +93,7 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &u_in1,
       pmb->pcoord->CellVolume(k,j,is,ie,vol);
       for (int n=0; n<NHYDRO; ++n) {
         for (int i=is; i<=ie; ++i) {
-          u_out(n,k,j,i) = wght.a*u_in1(n,k,j,i) + wght.b*u_in2(n,k,j,i)
-                         - wght.c*(pmb->pmy_mesh->dt)*dflx(n,i)/vol(i);
+          u_out(n,k,j,i) -= wght.c*(pmb->pmy_mesh->dt)*dflx(n,i)/vol(i);
         }
       }
     }
