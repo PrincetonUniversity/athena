@@ -26,8 +26,7 @@
 //! \fn  void Field::CT
 //  \brief Constrained Transport implementation of dB/dt = -Curl(E), where E=-(v X B)
 
-void Field::CT(FaceField &b_in1, FaceField &b_in2,
-  const IntegratorWeight wght, FaceField &b_out)
+void Field::CT(const IntegratorWeight wght, FaceField &b_out)
 {
   MeshBlock *pmb=pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
@@ -55,11 +54,6 @@ void Field::CT(FaceField &b_in1, FaceField &b_in2,
   for (int k=ks; k<=ke; ++k) {
 #pragma omp for schedule(static)
   for (int j=js; j<=je; ++j) {
-
-    // average old values for 1D problems
-    for (int i=is; i<=ie+1; ++i) {
-      b_out.x1f(k,j,i) = wght.a*b_in1.x1f(k,j,i) + wght.b*b_in2.x1f(k,j,i);
-    }
 
     // add curl(E) in 2D and 3D problem
     if (pmb->block_size.nx2 > 1) {
@@ -99,8 +93,8 @@ void Field::CT(FaceField &b_in1, FaceField &b_in2,
       pmb->pcoord->Edge3Length(k,j,is,ie+1,len);
 #pragma simd
       for (int i=is; i<=ie; ++i) {
-        b_out.x2f(k,j,i) = wght.a*b_in1.x2f(k,j,i) + wght.b*b_in2.x2f(k,j,i) +
-         (wght.c*(pmb->pmy_mesh->dt)/area(i))*(len(i+1)*e3(k,j,i+1) - len(i)*e3(k,j,i));
+        b_out.x2f(k,j,i) += (wght.c*(pmb->pmy_mesh->dt)/area(i))*(len(i+1)*e3(k,j,i+1)
+                                                                  - len(i)*e3(k,j,i));
       }
       if (pmb->block_size.nx3 > 1) {
         pmb->pcoord->Edge1Length(k  ,j,is,ie,len);
@@ -123,8 +117,8 @@ void Field::CT(FaceField &b_in1, FaceField &b_in2,
     pmb->pcoord->Edge2Length(k,j,is,ie+1,len);
 #pragma simd
     for (int i=is; i<=ie; ++i) {
-      b_out.x3f(k,j,i) = wght.a*b_in1.x3f(k,j,i) + wght.b*b_in2.x3f(k,j,i) -
-         (wght.c*(pmb->pmy_mesh->dt)/area(i))*(len(i+1)*e2(k,j,i+1) - len(i)*e2(k,j,i));
+      b_out.x3f(k,j,i) -= (wght.c*(pmb->pmy_mesh->dt)/area(i))*(len(i+1)*e2(k,j,i+1) -
+                                                                len(i)*e2(k,j,i));
     }
     if (pmb->block_size.nx2 > 1) {
       pmb->pcoord->Edge1Length(k,j  ,is,ie,len);
