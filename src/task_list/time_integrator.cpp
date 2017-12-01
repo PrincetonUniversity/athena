@@ -373,20 +373,20 @@ enum TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int step)
   Field *pf=pmb->pfield;
 
   if(step == 1) {
-    //ph->u,ph->u,
+    ph->WeightedAveU(ph->u,ph->u,step_wghts[0],ph->u1);
     ph->AddFluxDivergenceToAverage(ph->w,pf->bcc,step_wghts[0],ph->u1);
     return TASK_NEXT;
   }
 
   if((step == 2) && (integrator == "vl2")) {
-    // ph->u,ph->u,
+    ph->WeightedAveU(ph->u,ph->u,step_wghts[1],ph->u);
     ph->AddFluxDivergenceToAverage(ph->w1,pf->bcc1,step_wghts[1],ph->u);
     return TASK_NEXT;
   }
 
   if((step == 2) && (integrator == "rk2")) {
-    // ph->u,ph->u1,
-   ph->AddFluxDivergenceToAverage(ph->w1,pf->bcc1,step_wghts[1],ph->u);
+    ph->WeightedAveU(ph->u,ph->u1,step_wghts[1],ph->u);
+    ph->AddFluxDivergenceToAverage(ph->w1,pf->bcc1,step_wghts[1],ph->u);
    return TASK_NEXT;
   }
 
