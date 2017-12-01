@@ -106,3 +106,38 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &
 
   return;
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn  void Hydro::WeightedAveU
+//  \brief Compute weighted average of cell-averaged U in time integrator step
+
+void Hydro::WeightedAveU(AthenaArray<Real> &u_in1, AthenaArray<Real> &u_in2,
+                         const IntegratorWeight wght, AthenaArray<Real> &u_out)
+{
+  MeshBlock *pmb=pmy_block;
+  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
+  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+
+  int tid=0;
+  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
+#pragma omp parallel default(shared) private(tid) num_threads(nthreads)
+{
+#ifdef OPENMP_PARALLEL
+  tid=omp_get_thread_num();
+#endif
+
+#pragma omp for schedule(static)
+  for (int n=0; n<NHYDRO; ++n) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
+#pragma simd
+        for (int i=is; i<=ie; ++i) {
+          u_out(n,k,j,i) = wght.a*u_in1(n,k,j,i) + wght.b*u_in2(n,k,j,i);
+        }
+      }
+    }
+  }
+} // end of omp parallel region
+
+  return;
+}

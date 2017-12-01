@@ -37,6 +37,8 @@ public:
 
   // functions
   Real NewBlockTimeStep(void);    // computes new timestep on a MeshBlock
+  void WeightedAveU(AthenaArray<Real> &u_in1, AthenaArray<Real> &u_in2,
+    const IntegratorWeight wght, AthenaArray<Real> &u_out);
   void AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &bcc,
     const IntegratorWeight wght, AthenaArray<Real> &u_out);
   void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
