@@ -396,16 +396,22 @@ enum TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int step)
 enum TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int step)
 {
   if(step == 1) {
+    pmb->pfield->WeightedAveB(pmb->pfield->b, pmb->pfield->b,
+                              step_wghts[0], pmb->pfield->b1);
     pmb->pfield->CT(step_wghts[0], pmb->pfield->b1);
     return TASK_NEXT;
   }
 
   if((step == 2) && (integrator == "vl2")) {
+    pmb->pfield->WeightedAveB(pmb->pfield->b, pmb->pfield->b,
+                              step_wghts[1], pmb->pfield->b);
     pmb->pfield->CT(step_wghts[1], pmb->pfield->b);
     return TASK_NEXT;
   }
 
   if((step == 2) && (integrator == "rk2")) {
+    pmb->pfield->WeightedAveB(pmb->pfield->b, pmb->pfield->b1,
+                              step_wghts[1], pmb->pfield->b);
     pmb->pfield->CT(step_wghts[1], pmb->pfield->b);
     return TASK_NEXT;
   }
