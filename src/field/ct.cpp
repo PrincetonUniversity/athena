@@ -78,7 +78,7 @@ void Field::CT(const IntegratorWeight wght, FaceField &b_out)
     }
   }}
 
-//---- update B2 (in 1D and 3D problems)
+//---- update B2 (curl terms in 1D and 3D problems)
 
   for (int k=ks; k<=ke; ++k) {
     // reset loop limits for polar boundary
@@ -108,7 +108,7 @@ void Field::CT(const IntegratorWeight wght, FaceField &b_out)
     }
   }
 
-//---- update B3 (in 1D and 2D problems)
+//---- update B3 (curl terms in 1D and 2D problems)
 
   for (int k=ks; k<=ke+1; ++k) {
 #pragma omp for schedule(static)
@@ -131,6 +131,68 @@ void Field::CT(const IntegratorWeight wght, FaceField &b_out)
     }
   }}
 
+} // end of OMP parallel region
+
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn  void Field::WeightedAveB
+//  \brief Compute weighted average of face-averaged B in time integrator step
+
+void Field::WeightedAveB(FaceField &b_in1, FaceField &b_in2,
+                         const IntegratorWeight wght, FaceField &b_out)
+{
+  MeshBlock *pmb=pmy_block;
+  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
+  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+
+  int tid=0;
+  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
+#pragma omp parallel default(shared) private(tid) num_threads(nthreads)
+{
+#ifdef OPENMP_PARALLEL
+  tid=omp_get_thread_num();
+#endif
+
+//---- B1
+  for (int k=ks; k<=ke; ++k) {
+#pragma omp for schedule(static)
+  for (int j=js; j<=je; ++j) {
+#pragma simd
+    for (int i=is; i<=ie+1; ++i) {
+      b_out.x1f(k,j,i) = wght.a*b_in1.x1f(k,j,i) + wght.b*b_in2.x1f(k,j,i);
+    }
+  }}
+
+//---- B2
+
+  for (int k=ks; k<=ke; ++k) {
+    // reset loop limits for polar boundary
+    int jl=js; int ju=je+1;
+    if (pmb->pbval->block_bcs[INNER_X2] == POLAR_BNDRY
+     || pmb->pbval->block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) jl=js+1;
+    if (pmb->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY
+     || pmb->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) ju=je;
+#pragma omp for schedule(static)
+    for (int j=jl; j<=ju; ++j) {
+#pragma simd
+      for (int i=is; i<=ie; ++i) {
+        b_out.x2f(k,j,i) = wght.a*b_in1.x2f(k,j,i) + wght.b*b_in2.x2f(k,j,i);
+      }
+    }
+  }
+
+//---- B3
+
+  for (int k=ks; k<=ke+1; ++k) {
+#pragma omp for schedule(static)
+  for (int j=js; j<=je; ++j) {
+#pragma simd
+    for (int i=is; i<=ie; ++i) {
+      b_out.x3f(k,j,i) = wght.a*b_in1.x3f(k,j,i) + wght.b*b_in2.x3f(k,j,i);
+    }
+  }}
 } // end of OMP parallel region
 
   return;
