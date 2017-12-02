@@ -66,7 +66,8 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
 
   // Now assemble list of tasks for each step of time integrator
   {using namespace HydroIntegratorTaskNames;
-    AddTimeIntegratorTask(START_ALLRECV,NONE);
+    AddTimeIntegratorTask(STARTUP_INT,NONE);
+    AddTimeIntegratorTask(START_ALLRECV,STARTUP_INT);
 
     // compute hydro fluxes, integrate hydro variables
     AddTimeIntegratorTask(CALC_HYDFLX,START_ALLRECV);
@@ -256,7 +257,11 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::GravFluxCorrection);
       break;
-
+    case (STARTUP_INT):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::StartupTimeIntegrator);
+      break;
 
     default:
       std::stringstream msg;
@@ -395,17 +400,19 @@ enum TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int step)
 
 enum TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int step)
 {
+  Field *pf=pmb->pfield;
+
   if(step == 1) {
-    pmb->pfield->WeightedAveB(pmb->pfield->b, pmb->pfield->b,
-                              step_wghts[0], pmb->pfield->b1);
-    pmb->pfield->CT(step_wghts[0], pmb->pfield->b1);
+    pf->WeightedAveB(pf->b, pf->b,
+                              step_wghts[0], pf->b1);
+    pf->CT(step_wghts[0], pf->b1);
     return TASK_NEXT;
   }
 
   if((step == 2) && (integrator == "vl2")) {
-    pmb->pfield->WeightedAveB(pmb->pfield->b, pmb->pfield->b,
-                              step_wghts[1], pmb->pfield->b);
-    pmb->pfield->CT(step_wghts[1], pmb->pfield->b);
+    pf->WeightedAveB(pf->b, pf->b,
+                              step_wghts[1], pf->b);
+    pf->CT(step_wghts[1], pf->b);
     return TASK_NEXT;
   }
 
@@ -611,5 +618,25 @@ enum TaskStatus TimeIntegratorTaskList::GravFluxCorrection(MeshBlock *pmb, int s
   if (step != nsub_steps) return TASK_SUCCESS; // only do on last sub-step
 
   pmb->phydro->CorrectGravityFlux();
+  return TASK_SUCCESS;
+}
+
+enum TaskStatus TimeIntegratorTaskList::StartupTimeIntegrator(MeshBlock *pmb, int step)
+{
+  if (step != 1) return TASK_SUCCESS; // only do on first sub-step
+  //if (nsub_steps <= 3) return TASK_SUCCESS; // not necessary for third-order or lower
+  Hydro *ph=pmb->phydro;
+  // Cache U^n in third memory register, u2, via deep copy
+  ph->u2 = ph->u;
+  //ph->WeightedAveU(ph->u, ph->u1, wght, ph->u2);
+  if (MAGNETIC_FIELDS_ENABLED) { // MHD
+    Field *pf=pmb->pfield;
+    // Cache face-averaged B^n in third memory register, b2, via deep copy
+    pf->b2.x1f = pf->b.x1f;
+    pf->b2.x2f = pf->b.x2f;
+    pf->b2.x3f = pf->b.x3f;
+    // Cache cell-averaged B^n in third memory register, bcc2, via deep copy
+    pf->bcc2 = pf->bcc;
+  }
   return TASK_SUCCESS;
 }
