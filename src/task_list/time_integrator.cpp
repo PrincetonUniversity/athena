@@ -260,7 +260,7 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
     case (STARTUP_INT):
       task_list_[ntasks].TaskFunc=
         static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::StartupTimeIntegrator);
+        (&TimeIntegratorTaskList::StartupIntegrator);
       break;
 
     default:
@@ -621,7 +621,7 @@ enum TaskStatus TimeIntegratorTaskList::GravFluxCorrection(MeshBlock *pmb, int s
   return TASK_SUCCESS;
 }
 
-enum TaskStatus TimeIntegratorTaskList::StartupTimeIntegrator(MeshBlock *pmb, int step)
+enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int step)
 {
   if (step != 1) return TASK_SUCCESS; // only do on first sub-step
   //if (nsub_steps <= 3) return TASK_SUCCESS; // not necessary for third-order or lower
