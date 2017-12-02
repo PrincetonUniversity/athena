@@ -45,9 +45,9 @@ public:
 
   void CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &bc,
        Coordinates *pco, int is, int ie, int js, int je, int ks, int ke);
-  void CT(const IntegratorWeight w, FaceField &b_out);
-  void WeightedAveB(FaceField &b_in1, FaceField &b_in2, const IntegratorWeight w,
-    FaceField &b_out);
+  void CT(const Real wght, FaceField &b_out);
+  void WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
+       const Real wght[3]);
   void ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc);
 
 private:

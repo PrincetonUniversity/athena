@@ -28,7 +28,7 @@
 //  previous step(s) of time integrator algorithm
 
 void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &bcc,
-  const IntegratorWeight wght, AthenaArray<Real> &u_out)
+                                       const Real wght, AthenaArray<Real> &u_out)
 {
   MeshBlock *pmb=pmy_block;
   AthenaArray<Real> &x1flux=flux[X1DIR];
@@ -93,7 +93,7 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &
       pmb->pcoord->CellVolume(k,j,is,ie,vol);
       for (int n=0; n<NHYDRO; ++n) {
         for (int i=is; i<=ie; ++i) {
-          u_out(n,k,j,i) -= wght.c*(pmb->pmy_mesh->dt)*dflx(n,i)/vol(i);
+          u_out(n,k,j,i) -= wght*(pmb->pmy_mesh->dt)*dflx(n,i)/vol(i);
         }
       }
     }
@@ -102,7 +102,7 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &
 } // end of omp parallel region
 
   // add coordinate (geometric) source terms
-  pmb->pcoord->CoordSrcTerms((wght.c*pmb->pmy_mesh->dt),pmb->phydro->flux,w,bcc,u_out);
+  pmb->pcoord->CoordSrcTerms((wght*pmb->pmy_mesh->dt),pmb->phydro->flux,w,bcc,u_out);
 
   return;
 }
@@ -111,8 +111,8 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &
 //! \fn  void Hydro::WeightedAveU
 //  \brief Compute weighted average of cell-averaged U in time integrator step
 
-void Hydro::WeightedAveU(AthenaArray<Real> &u_in1, AthenaArray<Real> &u_in2,
-                         const IntegratorWeight wght, AthenaArray<Real> &u_out)
+void Hydro::WeightedAveU(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
+                         AthenaArray<Real> &u_in2, const Real wght[3])
 {
   MeshBlock *pmb=pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
@@ -132,7 +132,8 @@ void Hydro::WeightedAveU(AthenaArray<Real> &u_in1, AthenaArray<Real> &u_in2,
       for (int j=js; j<=je; ++j) {
 #pragma simd
         for (int i=is; i<=ie; ++i) {
-          u_out(n,k,j,i) = wght.a*u_in1(n,k,j,i) + wght.b*u_in2(n,k,j,i);
+          u_out(n,k,j,i) = wght[0]*u_out(n,k,j,i) + wght[1]*u_in1(n,k,j,i)
+              + wght[2]*u_in2(n,k,j,i);
         }
       }
     }

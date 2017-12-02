@@ -26,7 +26,7 @@
 //! \fn  void Field::CT
 //  \brief Constrained Transport implementation of dB/dt = -Curl(E), where E=-(v X B)
 
-void Field::CT(const IntegratorWeight wght, FaceField &b_out)
+void Field::CT(const Real wght, FaceField &b_out)
 {
   MeshBlock *pmb=pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
@@ -62,7 +62,7 @@ void Field::CT(const IntegratorWeight wght, FaceField &b_out)
       pmb->pcoord->Edge3Length(k,j+1,is,ie+1,len_p1);
 #pragma simd
       for (int i=is; i<=ie+1; ++i) {
-        b_out.x1f(k,j,i) -= wght.c*
+        b_out.x1f(k,j,i) -= wght*
            ((pmb->pmy_mesh->dt)/area(i))*(len_p1(i)*e3(k,j+1,i) - len(i)*e3(k,j,i));
       }
 
@@ -71,7 +71,7 @@ void Field::CT(const IntegratorWeight wght, FaceField &b_out)
         pmb->pcoord->Edge2Length(k+1,j,is,ie+1,len_p1);
 #pragma simd
         for (int i=is; i<=ie+1; ++i) {
-          b_out.x1f(k,j,i) += wght.c*
+          b_out.x1f(k,j,i) += wght*
              ((pmb->pmy_mesh->dt)/area(i))*(len_p1(i)*e2(k+1,j,i) -len(i)*e2(k,j,i));
         }
       }
@@ -93,7 +93,7 @@ void Field::CT(const IntegratorWeight wght, FaceField &b_out)
       pmb->pcoord->Edge3Length(k,j,is,ie+1,len);
 #pragma simd
       for (int i=is; i<=ie; ++i) {
-        b_out.x2f(k,j,i) += (wght.c*(pmb->pmy_mesh->dt)/area(i))*(len(i+1)*e3(k,j,i+1)
+        b_out.x2f(k,j,i) += (wght*(pmb->pmy_mesh->dt)/area(i))*(len(i+1)*e3(k,j,i+1)
                                                                   - len(i)*e3(k,j,i));
       }
       if (pmb->block_size.nx3 > 1) {
@@ -101,7 +101,7 @@ void Field::CT(const IntegratorWeight wght, FaceField &b_out)
         pmb->pcoord->Edge1Length(k+1,j,is,ie,len_p1);
 #pragma simd
         for (int i=is; i<=ie; ++i) {
-          b_out.x2f(k,j,i) -= wght.c*
+          b_out.x2f(k,j,i) -= wght*
              ((pmb->pmy_mesh->dt)/area(i))*(len_p1(i)*e1(k+1,j,i) - len(i)*e1(k,j,i));
         }
       }
@@ -117,7 +117,7 @@ void Field::CT(const IntegratorWeight wght, FaceField &b_out)
     pmb->pcoord->Edge2Length(k,j,is,ie+1,len);
 #pragma simd
     for (int i=is; i<=ie; ++i) {
-      b_out.x3f(k,j,i) -= (wght.c*(pmb->pmy_mesh->dt)/area(i))*(len(i+1)*e2(k,j,i+1) -
+      b_out.x3f(k,j,i) -= (wght*(pmb->pmy_mesh->dt)/area(i))*(len(i+1)*e2(k,j,i+1) -
                                                                 len(i)*e2(k,j,i));
     }
     if (pmb->block_size.nx2 > 1) {
@@ -125,7 +125,7 @@ void Field::CT(const IntegratorWeight wght, FaceField &b_out)
       pmb->pcoord->Edge1Length(k,j+1,is,ie,len_p1);
 #pragma simd
       for (int i=is; i<=ie; ++i) {
-        b_out.x3f(k,j,i) += wght.c*
+        b_out.x3f(k,j,i) += wght*
            ((pmb->pmy_mesh->dt)/area(i))*(len_p1(i)*e1(k,j+1,i) - len(i)*e1(k,j,i));
       }
     }
@@ -140,8 +140,8 @@ void Field::CT(const IntegratorWeight wght, FaceField &b_out)
 //! \fn  void Field::WeightedAveB
 //  \brief Compute weighted average of face-averaged B in time integrator step
 
-void Field::WeightedAveB(FaceField &b_in1, FaceField &b_in2,
-                         const IntegratorWeight wght, FaceField &b_out)
+void Field::WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
+                         const Real wght[3])
 {
   MeshBlock *pmb=pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
@@ -155,13 +155,16 @@ void Field::WeightedAveB(FaceField &b_in1, FaceField &b_in2,
   tid=omp_get_thread_num();
 #endif
 
+  // Note: these loops can be combined now that they avoid curl terms
+  // Only need to account for final face loop limit differences
 //---- B1
   for (int k=ks; k<=ke; ++k) {
 #pragma omp for schedule(static)
   for (int j=js; j<=je; ++j) {
 #pragma simd
     for (int i=is; i<=ie+1; ++i) {
-      b_out.x1f(k,j,i) = wght.a*b_in1.x1f(k,j,i) + wght.b*b_in2.x1f(k,j,i);
+      b_out.x1f(k,j,i) = wght[0]*b_out.x1f(k,j,i) + wght[1]*b_in1.x1f(k,j,i)
+          + wght[2]*b_in2.x1f(k,j,i);
     }
   }}
 
@@ -178,7 +181,8 @@ void Field::WeightedAveB(FaceField &b_in1, FaceField &b_in2,
     for (int j=jl; j<=ju; ++j) {
 #pragma simd
       for (int i=is; i<=ie; ++i) {
-        b_out.x2f(k,j,i) = wght.a*b_in1.x2f(k,j,i) + wght.b*b_in2.x2f(k,j,i);
+        b_out.x2f(k,j,i) = wght[0]*b_out.x2f(k,j,i) + wght[1]*b_in1.x2f(k,j,i)
+          + wght[2]*b_in2.x2f(k,j,i);
       }
     }
   }
@@ -190,7 +194,8 @@ void Field::WeightedAveB(FaceField &b_in1, FaceField &b_in2,
   for (int j=js; j<=je; ++j) {
 #pragma simd
     for (int i=is; i<=ie; ++i) {
-      b_out.x3f(k,j,i) = wght.a*b_in1.x3f(k,j,i) + wght.b*b_in2.x3f(k,j,i);
+      b_out.x3f(k,j,i) = wght[0]*b_out.x3f(k,j,i) + wght[1]*b_in1.x3f(k,j,i)
+          + wght[2]*b_in2.x3f(k,j,i);
     }
   }}
 } // end of OMP parallel region
