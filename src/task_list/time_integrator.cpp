@@ -41,25 +41,17 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   // second-order van Leer integrator (Gardiner & Stone, NewA 14, 139 2009)
   if (integrator == "vl2") {
     nsub_steps = 2;
-    // step_wghts[0].a = 1.0;
-    // step_wghts[0].b = 0.0;
-    // step_wghts[0].c = 0.5;
-
-    // step_wghts[1].a = 1.0;
-    // step_wghts[1].b = 0.0;
-    // step_wghts[1].c = 1.0;
-
     // Expressed in 3S* algorithm
-    step_wghts[0].delta = 0.0;
-    step_wghts[0].gamma_1 = 1.0;
-    step_wghts[0].gamma_2 = 0.0;
+    step_wghts[0].delta = 1.0;
+    step_wghts[0].gamma_1 = 0.0;
+    step_wghts[0].gamma_2 = 1.0;
     step_wghts[0].gamma_3 = 0.0;
     step_wghts[0].beta = 0.5;
 
     step_wghts[1].delta = 0.0;
     step_wghts[1].gamma_1 = 0.0;
-    step_wghts[1].gamma_2 = 0.0;
-    step_wghts[1].gamma_3 = 1.0;
+    step_wghts[1].gamma_2 = 1.0;
+    step_wghts[1].gamma_3 = 0.0;
     step_wghts[1].beta = 1.0;
 
   } else if (integrator == "rk2") {
@@ -325,16 +317,6 @@ enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int step
     return TASK_NEXT;
   }
 
-  // if((step == 1) && (integrator == "rk2")) {
-  //   phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, 2);
-  //   return TASK_NEXT;
-  // }
-
-  // if(step == 2) {
-  //   phydro->CalculateFluxes(phydro->w1, pfield->b1, pfield->bcc1, 2);
-  //   return TASK_NEXT;
-  // }
-
   return TASK_FAIL;
 }
 
@@ -344,15 +326,6 @@ enum TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int step)
     pmb->pfield->ComputeCornerE(pmb->phydro->w,  pmb->pfield->bcc);
     return TASK_NEXT;
   }
-  // if(step == 1) {
-  //   pmb->pfield->ComputeCornerE(pmb->phydro->w,  pmb->pfield->bcc);
-  //   return TASK_NEXT;
-  // }
-
-  // if(step == 2) {
-  //   pmb->pfield->ComputeCornerE(pmb->phydro->w1, pmb->pfield->bcc1);
-  //   return TASK_NEXT;
-  // }
 
   return TASK_FAIL;
 }
@@ -412,25 +385,9 @@ enum TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int step)
     ave_wghts[2] = step_wghts[step-1].gamma_3;
     ph->WeightedAveU(ph->u,ph->u1,ph->u2,ave_wghts);
     ph->AddFluxDivergenceToAverage(ph->w,pf->bcc,step_wghts[step-1].beta,ph->u);
+
     return TASK_NEXT;
   }
-  // if(step == 1) {
-  //   ph->WeightedAveU(ph->u,ph->u,step_wghts[0],ph->u1);
-  //   ph->AddFluxDivergenceToAverage(ph->w,pf->bcc,step_wghts[0],ph->u1);
-  //   return TASK_NEXT;
-  // }
-
-  // if((step == 2) && (integrator == "vl2")) {
-  //   ph->WeightedAveU(ph->u,ph->u,step_wghts[1],ph->u);
-  //   ph->AddFluxDivergenceToAverage(ph->w1,pf->bcc1,step_wghts[1],ph->u);
-  //   return TASK_NEXT;
-  // }
-
-  // if((step == 2) && (integrator == "rk2")) {
-  //   ph->WeightedAveU(ph->u,ph->u1,step_wghts[1],ph->u);
-  //   ph->AddFluxDivergenceToAverage(ph->w1,pf->bcc1,step_wghts[1],ph->u);
-  //  return TASK_NEXT;
-  // }
 
   return TASK_FAIL;
 }
@@ -455,27 +412,6 @@ enum TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int step)
     pf->CT(step_wghts[step-1].beta, pf->b);
     return TASK_NEXT;
   }
-
-  // if(step == 1) {
-  //   pf->WeightedAveB(pf->b, pf->b,
-  //                             step_wghts[0], pf->b1);
-  //   pf->CT(step_wghts[0], pf->b1);
-  //   return TASK_NEXT;
-  // }
-
-  // if((step == 2) && (integrator == "vl2")) {
-  //   pf->WeightedAveB(pf->b, pf->b,
-  //                             step_wghts[1], pf->b);
-  //   pf->CT(step_wghts[1], pf->b);
-  //   return TASK_NEXT;
-  // }
-
-  // if((step == 2) && (integrator == "rk2")) {
-  //   pmb->pfield->WeightedAveB(pmb->pfield->b, pmb->pfield->b1,
-  //                             step_wghts[1], pmb->pfield->b);
-  //   pmb->pfield->CT(step_wghts[1], pmb->pfield->b);
-  //   return TASK_NEXT;
-  // }
 
   return TASK_FAIL;
 }
@@ -514,11 +450,6 @@ enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int ste
 
 enum TaskStatus TimeIntegratorTaskList::HydroSend(MeshBlock *pmb, int step)
 {
-  // if(step == 1) {
-  //   pmb->pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u1, HYDRO_CONS);
-  // } else if(step == 2) {
-  //   pmb->pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
-  // }
   if (step <= nsub_steps) {
     pmb->pbval->SendCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
   }
@@ -530,14 +461,6 @@ enum TaskStatus TimeIntegratorTaskList::HydroSend(MeshBlock *pmb, int step)
 
 enum TaskStatus TimeIntegratorTaskList::FieldSend(MeshBlock *pmb, int step)
 {
-  // if(step == 1) {
-  //   pmb->pbval->SendFieldBoundaryBuffers(pmb->pfield->b1);
-  // } else if(step == 2) {
-  //   pmb->pbval->SendFieldBoundaryBuffers(pmb->pfield->b);
-  // } else {
-  //   return TASK_FAIL;
-  // }
-
   if (step <= nsub_steps) {
     pmb->pbval->SendFieldBoundaryBuffers(pmb->pfield->b);
   }
@@ -554,14 +477,6 @@ enum TaskStatus TimeIntegratorTaskList::FieldSend(MeshBlock *pmb, int step)
 enum TaskStatus TimeIntegratorTaskList::HydroReceive(MeshBlock *pmb, int step)
 {
   bool ret;
-  // if(step == 1) {
-  //   ret=pmb->pbval->ReceiveCellCenteredBoundaryBuffers(pmb->phydro->u1, HYDRO_CONS);
-  // } else if(step == 2) {
-  //   ret=pmb->pbval->ReceiveCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
-  // } else {
-  //   return TASK_FAIL;
-  // }
-
   if (step <= nsub_steps) {
     ret=pmb->pbval->ReceiveCellCenteredBoundaryBuffers(pmb->phydro->u, HYDRO_CONS);
   }
@@ -579,13 +494,6 @@ enum TaskStatus TimeIntegratorTaskList::HydroReceive(MeshBlock *pmb, int step)
 enum TaskStatus TimeIntegratorTaskList::FieldReceive(MeshBlock *pmb, int step)
 {
   bool ret;
-  // if(step == 1) {
-  //   ret=pmb->pbval->ReceiveFieldBoundaryBuffers(pmb->pfield->b1);
-  // } else if(step == 2) {
-  //   ret=pmb->pbval->ReceiveFieldBoundaryBuffers(pmb->pfield->b);
-  // } else {
-  //   return TASK_FAIL;
-  // }
   if (step <= nsub_steps) {
     ret=pmb->pbval->ReceiveFieldBoundaryBuffers(pmb->pfield->b);
   }
