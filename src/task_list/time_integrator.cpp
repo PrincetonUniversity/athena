@@ -87,7 +87,8 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     } else {
       AddTimeIntegratorTask(INT_HYD, CALC_HYDFLX);
     }
-    AddTimeIntegratorTask(SRCTERM_HYD,INT_HYD);
+    AddTimeIntegratorTask(UPDATE_DT,INT_HYD);
+    AddTimeIntegratorTask(SRCTERM_HYD,UPDATE_DT);
     AddTimeIntegratorTask(SEND_HYD,SRCTERM_HYD);
     AddTimeIntegratorTask(RECV_HYD,START_ALLRECV);
 
@@ -272,6 +273,12 @@ void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
         (&TimeIntegratorTaskList::StartupIntegrator);
       break;
 
+    case (UPDATE_DT):
+      task_list_[ntasks].TaskFunc=
+        static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::UpdateTimeStep);
+      break;
+
     default:
       std::stringstream msg;
       msg << "### FATAL ERROR in AddTimeIntegratorTask" << std::endl
@@ -430,21 +437,14 @@ enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int ste
   // return if there are no source terms to be added
   if (ph->psrc->hydro_sourceterms_defined == false) return TASK_NEXT;
 
-  // need to calculate from abscissas
-  // Real dt = 0.0; //(step_wghts[(step-1)].c)*(pmb->pmy_mesh->dt);
-  // Real time;
-  // // *** this must be changed for the RK3 integrator
-  // if(step == 1) {
-  //   time=pmb->pmy_mesh->time;
-  //   ph->psrc->AddHydroSourceTerms(time,dt,ph->flux,ph->w,pf->bcc,ph->u1);
-  // } else if(step == 2) {
-  //   if      (integrator == "vl2") time=pmb->pmy_mesh->time + 0.5*pmb->pmy_mesh->dt;
-  //   else if (integrator == "rk2") time=pmb->pmy_mesh->time +     pmb->pmy_mesh->dt;
-  //   ph->psrc->AddHydroSourceTerms(time,dt,ph->flux,ph->w1,pf->bcc1,ph->u);
-  // } else {
-  //   return TASK_FAIL;
-  // }
-
+  if (step <= nsub_steps) {
+    Real time=pmb->pmy_mesh->time;
+    Real dt = step_dt[0];
+    ph->psrc->AddHydroSourceTerms(time,dt,ph->flux,ph->w,pf->bcc,ph->u);
+  } else {
+    // Evaluate the source terms at the beginning of the
+    return TASK_FAIL;
+  }
   return TASK_NEXT;
 }
 
@@ -470,7 +470,6 @@ enum TaskStatus TimeIntegratorTaskList::FieldSend(MeshBlock *pmb, int step)
   else {
     return TASK_FAIL;
   }
-
   return TASK_SUCCESS;
 }
 
@@ -521,17 +520,14 @@ enum TaskStatus TimeIntegratorTaskList::Prolongation(MeshBlock *pmb, int step)
   BoundaryValues *pbval=pmb->pbval;
   Real dt;
 
-  // if(step == 1) {
-  //   dt = (step_wghts[(step-1)].c)*(pmb->pmy_mesh->dt);
-  //   pbval->ProlongateBoundaries(phydro->w1, phydro->u1, pfield->b1, pfield->bcc1,
-  //                               pmb->pmy_mesh->time+dt, dt);
-  // } else if(step == 2) {
-  //   dt=pmb->pmy_mesh->dt;
-  //   pbval->ProlongateBoundaries(phydro->w,  phydro->u,  pfield->b,  pfield->bcc,
-  //                               pmb->pmy_mesh->time+dt, dt);
-  // } else {
-  //   return TASK_FAIL;
-  // }
+  if (step <= nsub_steps) {
+    dt = step_dt[0];
+    pbval->ProlongateBoundaries(phydro->w,  phydro->u,  pfield->b,  pfield->bcc,
+                                pmb->pmy_mesh->time+dt, dt);
+  } else {
+    return TASK_FAIL;
+  }
+
   return TASK_SUCCESS;
 }
 
@@ -624,31 +620,11 @@ enum TaskStatus TimeIntegratorTaskList::GravFluxCorrection(MeshBlock *pmb, int s
 
 enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int step)
 {
+  // Initialize registers only on first sub-step
   if (step != 1) {
-    // Update the dt abscissae of each memory register to values at end of this substep
-    Real dt, dt1, dt2;
-    const IntegratorWeight w = step_wghts[step-1];
-    // u1 = u1 + delta*u
-    dt1 = step_dt[1] + w.delta*step_dt[0];
-    // u = gamma_1*u + gamma_2*u1 + gamma_3*u2 + beta*dt*F(u)
-    dt = w.gamma_1*step_dt[0] +
-        w.gamma_2*dt1 +
-        w.gamma_3*step_dt[2] +
-        w.beta*pmb->pmy_mesh->dt;
-    // u2 = u^n
-    dt2 = 0.0;
-
-    step_dt[0]= dt;
-    step_dt[1]= dt1;
-    step_dt[2]= dt2;
     return TASK_SUCCESS;
   }
   else {
-    // Initialize the dt abscissae of each memory register
-    step_dt[0]= 0.0;
-    step_dt[1]= 0.0;
-    step_dt[2]= 0.0;
-    // Initialize registers only on first sub-step
     // if (nsub_steps <= 3) return TASK_SUCCESS; // not necessary for third-order or lower
     Hydro *ph=pmb->phydro;
     // Cache U^n in third memory register, u2, via deep copy
@@ -676,7 +652,37 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
     ave_wghts[1] = 0.0;
     ave_wghts[2] = 0.0;
     ph->WeightedAveU(ph->u1,ph->u,ph->u,ave_wghts);
+    return TASK_SUCCESS;
+  }
+}
 
+
+enum TaskStatus TimeIntegratorTaskList::UpdateTimeStep(MeshBlock *pmb, int step){
+  // Occurs after HydroIntegrate(), but before HydroSourceTerms() and FieldIntegrate()
+  if (step != 1) {
+    // Update the dt abscissae of each memory register to values at end of this substep
+    Real dt, dt1, dt2;
+    const IntegratorWeight w = step_wghts[step-1];
+    // u1 = u1 + delta*u
+    dt1 = step_dt[1] + w.delta*step_dt[0];
+    // u = gamma_1*u + gamma_2*u1 + gamma_3*u2 + beta*dt*F(u)
+    dt = w.gamma_1*step_dt[0] +
+        w.gamma_2*dt1 +
+        w.gamma_3*step_dt[2] +
+        w.beta*pmb->pmy_mesh->dt;
+    // u2 = u^n
+    dt2 = 0.0;
+
+    step_dt[0]= dt;
+    step_dt[1]= dt1;
+    step_dt[2]= dt2;
+    return TASK_SUCCESS;
+  }
+  else {
+    // Initialize the dt abscissae of each memory register
+    step_dt[0]= 0.0;
+    step_dt[1]= 0.0;
+    step_dt[2]= 0.0;
     return TASK_SUCCESS;
   }
 }

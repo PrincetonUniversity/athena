@@ -139,6 +139,7 @@ public:
   enum TaskStatus GravFluxCorrection(MeshBlock *pmb, int step);
 
   enum TaskStatus StartupIntegrator(MeshBlock *pmb, int step);
+  enum TaskStatus UpdateTimeStep(MeshBlock *pmb, int step);
 };
 
 
@@ -204,6 +205,7 @@ namespace HydroIntegratorTaskNames {
   const uint64_t CORR_GFLX=1LL<<44;
 
   const uint64_t STARTUP_INT=1LL<<45;
+  const uint64_t UPDATE_DT=1LL<<46;
 };
 
 #endif // TASK_LIST_HPP
