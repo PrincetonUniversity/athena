@@ -420,6 +420,7 @@ enum TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int step)
     pf->WeightedAveB(pf->b,pf->b1,pf->b2,ave_wghts);
 
     pf->CT(step_wghts[step-1].beta, pf->b);
+
     return TASK_NEXT;
   }
 
@@ -637,13 +638,18 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
       pf->b2.x2f = pf->b.x2f;
       pf->b2.x3f = pf->b.x3f;
       // Cache cell-averaged B^n in third memory register, bcc2, via deep copy
-      pf->bcc2 = pf->bcc; // However, bcc is not initialized until end of first substep?
+      // However, bcc is not computed until end of substep, in W(U)
+      //      pf->bcc2 = pf->bcc;
 
       // 2nd registers, including u1, need to be initialized to 0
       pf->b1.x1f = pf->b.x1f;
       pf->b1.x2f = pf->b.x2f;
       pf->b1.x3f = pf->b.x3f;
-
+      Real ave_wghts[3];
+      ave_wghts[0] = 0.0;
+      ave_wghts[1] = 0.0;
+      ave_wghts[2] = 0.0;
+      pf->WeightedAveB(pf->b1,pf->b,pf->b,ave_wghts);
     }
     // 2nd registers, including u1, need to be initialized to 0
     ph->u1 = ph->u;
