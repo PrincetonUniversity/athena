@@ -97,6 +97,8 @@ public:
   // data
   std::string integrator;
   struct IntegratorWeight step_wghts[MAX_NSTEP];
+  // Track the partial dt abscissae for substepping each memory register
+  Real step_dt[3];
 
   void AddTimeIntegratorTask(uint64_t id, uint64_t dep);
 

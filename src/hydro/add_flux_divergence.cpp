@@ -126,6 +126,7 @@ void Hydro::WeightedAveU(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
   tid=omp_get_thread_num();
 #endif
 
+  // Only averages the real cells
 #pragma omp for schedule(static)
   for (int n=0; n<NHYDRO; ++n) {
     for (int k=ks; k<=ke; ++k) {

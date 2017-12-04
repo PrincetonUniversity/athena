@@ -625,34 +625,59 @@ enum TaskStatus TimeIntegratorTaskList::GravFluxCorrection(MeshBlock *pmb, int s
 
 enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int step)
 {
-  if (step != 1) return TASK_SUCCESS; // only do on first sub-step
-  //if (nsub_steps <= 3) return TASK_SUCCESS; // not necessary for third-order or lower
-  Hydro *ph=pmb->phydro;
-  // Cache U^n in third memory register, u2, via deep copy
-  ph->u2 = ph->u;
+  if (step != 1) {
+    // Update the dt abscissae of each memory register to values at end of this substep
+    Real dt_1, dt_2, dt_3;
+    const IntegratorWeight w = step_wghts[step-1];
+    // u1 = u1 + delta*u
+    dt_1 = step_dt[1] + w.delta*step_dt[0];
+    // u = gamma_1*u + gamma_2*u1 + gamma_3*u2 + beta*dt*F(u)
+    dt_2 = w.gamma_1*step_dt[0] +
+        w.gamma_2*step_dt[1] +
+        w.gamma_3*step_dt[2] +
+        w.beta*pmb->pmy_mesh->dt;
+    // u2 = u^n
+    dt_3 = 0.0;
 
-  if (MAGNETIC_FIELDS_ENABLED) { // MHD
-    Field *pf=pmb->pfield;
-    // Cache face-averaged B^n in third memory register, b2, via deep copy
-    pf->b2.x1f = pf->b.x1f;
-    pf->b2.x2f = pf->b.x2f;
-    pf->b2.x3f = pf->b.x3f;
-    // Cache cell-averaged B^n in third memory register, bcc2, via deep copy
-    pf->bcc2 = pf->bcc; // However, bcc is not initialized until end of first substep?
-
-    // 2nd registers, including u1, need to be initialized to 0
-    pf->b1.x1f = pf->b.x1f;
-    pf->b1.x2f = pf->b.x2f;
-    pf->b1.x3f = pf->b.x3f;
-
+    step_dt[0]= dt_1;
+    step_dt[1]= dt_2;
+    step_dt[2]= dt_3;
+    return TASK_SUCCESS;
   }
-  // 2nd registers, including u1, need to be initialized to 0
-  ph->u1 = ph->u;
-  Real ave_wghts[3];
-  ave_wghts[0] = 0.0;
-  ave_wghts[1] = 0.0;
-  ave_wghts[2] = 0.0;
-  ph->WeightedAveU(ph->u1,ph->u,ph->u,ave_wghts);
+  else {
+    // Initialize the dt abscissae of each memory register
+    step_dt[0]= 0.0;
+    step_dt[1]= 0.0;
+    step_dt[2]= 0.0;
+    // Initialize registers only on first sub-step
+    // if (nsub_steps <= 3) return TASK_SUCCESS; // not necessary for third-order or lower
+    Hydro *ph=pmb->phydro;
+    // Cache U^n in third memory register, u2, via deep copy
+    ph->u2 = ph->u;
 
-  return TASK_SUCCESS;
+    if (MAGNETIC_FIELDS_ENABLED) { // MHD
+      Field *pf=pmb->pfield;
+      // Cache face-averaged B^n in third memory register, b2, via deep copy
+      pf->b2.x1f = pf->b.x1f;
+      pf->b2.x2f = pf->b.x2f;
+      pf->b2.x3f = pf->b.x3f;
+      // Cache cell-averaged B^n in third memory register, bcc2, via deep copy
+      pf->bcc2 = pf->bcc; // However, bcc is not initialized until end of first substep?
+
+      // 2nd registers, including u1, need to be initialized to 0
+      pf->b1.x1f = pf->b.x1f;
+      pf->b1.x2f = pf->b.x2f;
+      pf->b1.x3f = pf->b.x3f;
+
+    }
+    // 2nd registers, including u1, need to be initialized to 0
+    ph->u1 = ph->u;
+    Real ave_wghts[3];
+    ave_wghts[0] = 0.0;
+    ave_wghts[1] = 0.0;
+    ave_wghts[2] = 0.0;
+    ph->WeightedAveU(ph->u1,ph->u,ph->u,ave_wghts);
+
+    return TASK_SUCCESS;
+  }
 }
