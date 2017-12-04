@@ -80,11 +80,42 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     step_wghts[1].gamma_3 = 0.0;
     step_wghts[1].beta = 0.25;
 
+    step_wghts[2].delta = 0.0;
+    step_wghts[2].gamma_1 = TWO_3RD;
+    step_wghts[2].gamma_2 = ONE_3RD;
+    step_wghts[2].gamma_3 = 0.0;
+    step_wghts[2].beta = TWO_3RD;
+  } else if (integrator == "ssprk54") {
+    nsub_steps = 5;
+    step_wghts[0].delta = 1.0;
+    step_wghts[0].gamma_1 = 0.0;
+    step_wghts[0].gamma_2 = 1.0;
+    step_wghts[0].gamma_3 = 0.0;
+    step_wghts[0].beta = 0.391752226571890;
+
     step_wghts[1].delta = 0.0;
-    step_wghts[1].gamma_1 = TWO_3RD;
-    step_wghts[1].gamma_2 = ONE_3RD;
+    step_wghts[1].gamma_1 = 0.25;
+    step_wghts[1].gamma_2 = 0.75;
     step_wghts[1].gamma_3 = 0.0;
-    step_wghts[1].beta = TWO_3RD;
+    step_wghts[1].beta = 0.25;
+
+    step_wghts[2].delta = 0.0;
+    step_wghts[2].gamma_1 = TWO_3RD;
+    step_wghts[2].gamma_2 = ONE_3RD;
+    step_wghts[2].gamma_3 = 0.0;
+    step_wghts[2].beta = TWO_3RD;
+
+    step_wghts[3].delta = 0.0;
+    step_wghts[3].gamma_1 = TWO_3RD;
+    step_wghts[3].gamma_2 = ONE_3RD;
+    step_wghts[3].gamma_3 = 0.0;
+    step_wghts[3].beta = TWO_3RD;
+
+    step_wghts[4].delta = 0.0;
+    step_wghts[4].gamma_1 = TWO_3RD;
+    step_wghts[4].gamma_2 = ONE_3RD;
+    step_wghts[4].gamma_3 = 0.0;
+    step_wghts[4].beta = TWO_3RD;
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in CreateTimeIntegrator" << std::endl
