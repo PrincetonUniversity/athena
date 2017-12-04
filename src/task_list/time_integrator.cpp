@@ -547,6 +547,8 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step)
 
   if (step <= nsub_steps) {
     // Incompatible with GR right now due to hardcoded w_old=w1 usage
+    // Cache w from previous substep in w1
+    phydro->w1 = phydro->w;
     pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
                                     phydro->w, pfield->bcc, pmb->pcoord,
                                     is, ie, js, je, ks, ke);
