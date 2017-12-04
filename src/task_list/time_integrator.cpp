@@ -66,6 +66,25 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     step_wghts[1].gamma_2 = 0.5;
     step_wghts[1].gamma_3 = 0.0;
     step_wghts[1].beta = 0.5;
+  } else if (integrator == "rk3") {
+    nsub_steps = 3;
+    step_wghts[0].delta = 1.0;
+    step_wghts[0].gamma_1 = 0.0;
+    step_wghts[0].gamma_2 = 1.0;
+    step_wghts[0].gamma_3 = 0.0;
+    step_wghts[0].beta = 1.0;
+
+    step_wghts[1].delta = 0.0;
+    step_wghts[1].gamma_1 = 0.25;
+    step_wghts[1].gamma_2 = 0.75;
+    step_wghts[1].gamma_3 = 0.0;
+    step_wghts[1].beta = 0.25;
+
+    step_wghts[1].delta = 0.0;
+    step_wghts[1].gamma_1 = TWO_3RD;
+    step_wghts[1].gamma_2 = ONE_3RD;
+    step_wghts[1].gamma_3 = 0.0;
+    step_wghts[1].beta = TWO_3RD;
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in CreateTimeIntegrator" << std::endl
