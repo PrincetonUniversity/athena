@@ -137,9 +137,9 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   } // end of using namespace block
 }
 
-//----------------------------------------------------------------------------------------//! \fn
-//  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
-//  value of ntask.
+//---------------------------------------------------------------------------------------
+//  Sets id and dependency for "ntask" member of task_list_ array, then iterates value of
+//  ntask.
 
 void TimeIntegratorTaskList::AddTimeIntegratorTask(uint64_t id, uint64_t dep)
 {
