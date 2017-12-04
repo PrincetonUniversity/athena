@@ -41,8 +41,8 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   // second-order van Leer integrator (Gardiner & Stone, NewA 14, 139 2009)
   if (integrator == "vl2") {
     nsub_steps = 2;
-    // Expressed in 3S* algorithm
-    step_wghts[0].delta = 1.0;
+    // Expressed in 3S* algorithm form
+    step_wghts[0].delta = 1.0; // required for consistency
     step_wghts[0].gamma_1 = 0.0;
     step_wghts[0].gamma_2 = 1.0;
     step_wghts[0].gamma_3 = 0.0;
@@ -53,16 +53,19 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     step_wghts[1].gamma_2 = 1.0;
     step_wghts[1].gamma_3 = 0.0;
     step_wghts[1].beta = 1.0;
-
   } else if (integrator == "rk2") {
     nsub_steps = 2;
-    // step_wghts[0].a = 1.0;
-    // step_wghts[0].b = 0.0;
-    // step_wghts[0].c = 1.0;
+    step_wghts[0].delta = 1.0;
+    step_wghts[0].gamma_1 = 0.0;
+    step_wghts[0].gamma_2 = 1.0;
+    step_wghts[0].gamma_3 = 0.0;
+    step_wghts[0].beta = 1.0;
 
-    // step_wghts[1].a = 0.5;
-    // step_wghts[1].b = 0.5;
-    // step_wghts[1].c = 0.5;
+    step_wghts[1].delta = 0.0;
+    step_wghts[1].gamma_1 = 0.5;
+    step_wghts[1].gamma_2 = 0.5;
+    step_wghts[1].gamma_3 = 0.0;
+    step_wghts[1].beta = 0.5;
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in CreateTimeIntegrator" << std::endl
