@@ -577,17 +577,16 @@ enum TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int ste
   Field *pfield=pmb->pfield;
   BoundaryValues *pbval=pmb->pbval;
   Real dt;
-  // if(step == 1) {
-  //   dt = (step_wghts[(step-1)].c)*(pmb->pmy_mesh->dt);
-  //   pbval->ApplyPhysicalBoundaries(phydro->w1, phydro->u1, pfield->b1, pfield->bcc1,
-  //                                  pmb->pmy_mesh->time+dt, dt);
-  // } else if(step == 2) {
-  //   dt=pmb->pmy_mesh->dt;
-  //   pbval->ApplyPhysicalBoundaries(phydro->w,  phydro->u,  pfield->b,  pfield->bcc,
-  //                                  pmb->pmy_mesh->time+dt, dt);
-  // } else {
-  //   return TASK_FAIL;
-  // }
+
+  if (step <= nsub_steps) {
+    dt = step_dt[0];
+    pbval->ApplyPhysicalBoundaries(phydro->w,  phydro->u,  pfield->b,  pfield->bcc,
+                                   pmb->pmy_mesh->time+dt, dt);
+  }
+  else {
+    return TASK_FAIL;
+  }
+
   return TASK_SUCCESS;
 }
 
@@ -627,21 +626,21 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
 {
   if (step != 1) {
     // Update the dt abscissae of each memory register to values at end of this substep
-    Real dt_1, dt_2, dt_3;
+    Real dt, dt1, dt2;
     const IntegratorWeight w = step_wghts[step-1];
     // u1 = u1 + delta*u
-    dt_1 = step_dt[1] + w.delta*step_dt[0];
+    dt1 = step_dt[1] + w.delta*step_dt[0];
     // u = gamma_1*u + gamma_2*u1 + gamma_3*u2 + beta*dt*F(u)
-    dt_2 = w.gamma_1*step_dt[0] +
-        w.gamma_2*step_dt[1] +
+    dt = w.gamma_1*step_dt[0] +
+        w.gamma_2*dt1 +
         w.gamma_3*step_dt[2] +
         w.beta*pmb->pmy_mesh->dt;
     // u2 = u^n
-    dt_3 = 0.0;
+    dt2 = 0.0;
 
-    step_dt[0]= dt_1;
-    step_dt[1]= dt_2;
-    step_dt[2]= dt_3;
+    step_dt[0]= dt;
+    step_dt[1]= dt1;
+    step_dt[2]= dt2;
     return TASK_SUCCESS;
   }
   else {
