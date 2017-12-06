@@ -93,15 +93,15 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   beta   = pin->GetReal("problem","beta");
   nwx = pin->GetOrAddInteger("problem","nwx",1);
   nwy = pin->GetOrAddInteger("problem","nwy",1);
-  ShBoxCoord = pin->GetInteger("problem","shboxcoord");
+  ShBoxCoord = pin->GetOrAddInteger("problem","shboxcoord",2);
   ipert  = pin->GetOrAddInteger("problem","ipert",1);
   ifield = pin->GetOrAddInteger("problem","ifield",1);
   Omega_0= pin->GetOrAddReal("problem","Omega0",0.001);
   qshear = pin->GetOrAddReal("problem","qshear",1.5);
 
   // enroll boundary value function pointers
-  EnrollUserBoundaryFunction(INNER_X1, ShearInnerX1);
-  EnrollUserBoundaryFunction(OUTER_X1, ShearOuterX1);
+  //EnrollUserBoundaryFunction(INNER_X1, ShearInnerX1);
+  //EnrollUserBoundaryFunction(OUTER_X1, ShearOuterX1);
 
   // enroll new history variables
   AllocateUserHistoryOutput(1);
@@ -171,7 +171,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real kz = (2.0*PI/x2size)*((double)nwy);
 
   Real x1,x2,x3,rd,rp,rval, rvx, rvy, rvz;
-  long int iseed = -1; /* Initialize on the first call to ran2 */
+  long int iseed = -1-gid; /* Initialize on the first call to ran2 */
 // Initialize perturbations
 // *  ipert = 1 - isentropic perturbations to P & d [default]
 // *  ipert = 2 - uniform Vx=amp, sinusoidal density

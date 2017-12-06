@@ -34,7 +34,7 @@ public:
   // functions
   void CalcHydroDiffusionFlux(const AthenaArray<Real> &p, const AthenaArray<Real> &c, AthenaArray<Real> *flx);
   void AddHydroDiffusionFlux(AthenaArray<Real> *flx);
-  void AddEnergyFlux(const AthenaArray<Real> &bc, AthenaArray<Real> *flx);
+  //void AddEnergyFlux(const AthenaArray<Real> &bc, AthenaArray<Real> *flx);
   // viscosity
   Real nuiso1(const AthenaArray<Real> &p, const int n, const int k, const int j, const int i);
   void Viscosity(const AthenaArray<Real> &p,const AthenaArray<Real> &c, AthenaArray<Real> *flx);

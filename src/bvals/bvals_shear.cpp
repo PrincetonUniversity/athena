@@ -173,7 +173,7 @@ void BoundaryValues::SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real
           ii = ib+i;
           shboxvar_outer_hydro_(IM2,k,j,i) = src(IM2,k,j,ii) - qomL*src(IDN,k,j,ii);//add shear to conservative
           if (NON_BAROTROPIC_EOS) {
-            src(IEN,k,j,ii) += (0.5/src(IDN,k,j,ii))*(SQR(shboxvar_inner_hydro_(IM2,k,j,i)) -
+            src(IEN,k,j,ii) += (0.5/src(IDN,k,j,ii))*(SQR(shboxvar_outer_hydro_(IM2,k,j,i)) -
                                                       SQR(src(IM2,k,j,ii)));
           } // update energy
           src(IM2,k,j,ii) = shboxvar_outer_hydro_(IM2,k,j,i);//update IM2

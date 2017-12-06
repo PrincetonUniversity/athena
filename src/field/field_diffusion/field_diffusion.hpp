@@ -34,6 +34,7 @@ public:
   // functions
   void CalcFieldDiffusionEMF(const FaceField &bi, const AthenaArray<Real> &bc, EdgeField &e);
   void AddFieldDiffusionEMF(EdgeField &e);
+  void AddEnergyFlux(const AthenaArray<Real> &bc, AthenaArray<Real> *flx);//add resistive dissipation to energy
   // resistivity
   void Resistivity(const FaceField &bi,const AthenaArray<Real> &bc, EdgeField &e);
   Real NewDtFldDiff(Real len, int k, int j, int i);
@@ -66,7 +67,7 @@ private:
   //Hydro *pmy_hydro_;  // ptr to Hydro containing this FieldDiffusion
   Coordinates *pco_;  // ptr to coordinates class
   Real ieta_, etaO_;  // Ohmic diffusion coeff
-  EdgeField j_;       // curl of B
+  EdgeField j_;       // curl of B at cell-center
   //AthenaArray<Real> x1area_,x2area_,x2area_p1_,x3area_,x3area_p1_;
   //AthenaArray<Real> vol_;
   //AthenaArray<Real> fx_,fy_,fz_;

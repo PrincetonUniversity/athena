@@ -796,7 +796,7 @@ BoundaryValues::~BoundaryValues()
         delete[] recv_innerbuf_emf_[4];
       }
     }
-    //if (pmb->loc.lx1 == (pmb->pmy_mesh->nrbx1-1)) { // if true for shearing outer blocks
+    //if (pmb->loc.lx1 == (pmb->pmy_mesh->nrbx1-1))  // if true for shearing outer blocks
     if (pmb->loc.lx1 == (nrbx1-1)) { // if true for shearing outer blocks
       shboxvar_outer_hydro_.DeleteAthenaArray();
       flx_outer_hydro_.DeleteAthenaArray();

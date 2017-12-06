@@ -229,7 +229,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   if (pdif->hydro_diffusion_defined) pdif->AddHydroDiffusionFlux(flux); //add hydro diffusion fluxes
   if (MAGNETIC_FIELDS_ENABLED && NON_BAROTROPIC_EOS &&
       pmb->pfield->pdif->field_diffusion_defined)
-    pdif->AddEnergyFlux(bcc,flux); //add field diffusion only to energy diffusion
+    pmb->pfield->pdif->AddEnergyFlux(bcc,flux); //add field diffusion only to energy diffusion
 //diffusion]
 
   return;

@@ -126,9 +126,23 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
         int i;
         if(nb.fid==INNER_X1) i=pmb->is;
         else i=pmb->ie+1;
+        // [JMSHI
         // pack e2
-        for(int j=pmb->js; j<=pmb->je; j++)
-          buf[p++]=e2(k,j,i);
+        if (SHEARING_BOX) {
+          if(ShBoxCoord_==2 && (pmb->loc.lx1==0) && (nb.ox1==-1))   {
+            for(int j=pmb->js; j<=pmb->je; j++)
+              buf[p++]=e2(k,j,i)+qomL*bx1(k,j,i);
+          } else if(ShBoxCoord_==2 && (pmb->loc.lx1==(pmb->pmy_mesh->nrbx1-1)) && nb.ox1==1){
+            for(int j=pmb->js; j<=pmb->je; j++)
+              buf[p++]=e2(k,j,i)-qomL*bx1(k,j,i);
+          } else {
+          for(int j=pmb->js; j<=pmb->je; j++)
+            buf[p++]=e2(k,j,i);
+          }
+        } else {
+          for(int j=pmb->js; j<=pmb->je; j++)
+            buf[p++]=e2(k,j,i);
+        }
         // pack e3
         for(int j=pmb->js; j<=pmb->je+1; j++)
           buf[p++]=e3(k,j,i);
@@ -184,10 +198,25 @@ int BoundaryValues::LoadEMFBoundaryBufferSameLevel(Real *buf, const NeighborBloc
       else i=pmb->ie+1;
       if((nb.eid&2)==0) k=pmb->ks;
       else k=pmb->ke+1;
+      //[JMSHI
       // pack e2
-      for(int j=pmb->js; j<=pmb->je; j++)
-        buf[p++]=e2(k,j,i);
+      if(SHEARING_BOX) {
+        if(ShBoxCoord_==2 && (pmb->loc.lx1==0) && (nb.ox1==-1))   {
+          for(int j=pmb->js; j<=pmb->je; j++)
+            buf[p++]=e2(k,j,i)+qomL*bx1(k,j,i);
+        } else if(ShBoxCoord_==2 && (pmb->loc.lx1==(pmb->pmy_mesh->nrbx1-1)) && nb.ox1==1){
+          for(int j=pmb->js; j<=pmb->je; j++)
+            buf[p++]=e2(k,j,i)-qomL*bx1(k,j,i);
+        } else {
+          for(int j=pmb->js; j<=pmb->je; j++)
+            buf[p++]=e2(k,j,i);
+        }
+      } else {
+        for(int j=pmb->js; j<=pmb->je; j++)
+          buf[p++]=e2(k,j,i);
+      }
     }
+    //JMSHI]
     // x2x3 edge
     else if(nb.eid>=8 && nb.eid<12) {
       int j, k;

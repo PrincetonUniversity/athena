@@ -75,7 +75,7 @@ void HydroSourceTerms::PointMass(const Real dt, const AthenaArray<Real> *flux,
           cons(IM2,k,j,i) -= src*x2;
           cons(IM3,k,j,i) -= src*x3;
           if (NON_BAROTROPIC_EOS) {
-			cons(IEN,k,j,i) -= 0.5*dt*dpt*x1*(flux[X1DIR](IDN,k,j,i)+flux[X1DIR](IDN,k,j,i+1));
+            cons(IEN,k,j,i) -= 0.5*dt*dpt*x1*(flux[X1DIR](IDN,k,j,i)+flux[X1DIR](IDN,k,j,i+1));
             if (pmb->block_size.nx2 > 1)
               cons(IEN,k,j,i) -= 0.5*dt*dpt*x2*(flux[X2DIR](IDN,k,j,i)+flux[X2DIR](IDN,k,j+1,i));
             if (pmb->block_size.nx3 > 1)

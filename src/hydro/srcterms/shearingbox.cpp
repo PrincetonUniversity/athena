@@ -65,9 +65,9 @@ void HydroSourceTerms::ShearingBoxSourceTerms(const Real dt, const AthenaArray<R
                                 +2.0*Omega_0_*den*prim(IVY,k,j,i));
           cons(IM2,k,j,i) -= dt*2.0*Omega_0_*den*prim(IVX,k,j,i);
           if (NON_BAROTROPIC_EOS) {
-            phic -= qshear_*SQR(Omega_0_*pmb->pcoord->x1v(i));
-            phil -= qshear_*SQR(Omega_0_*pmb->pcoord->x1f(i));
-            phir -= qshear_*SQR(Omega_0_*pmb->pcoord->x1f(i+1));
+            phic = -qshear_*SQR(Omega_0_*pmb->pcoord->x1v(i));
+            phil = -qshear_*SQR(Omega_0_*pmb->pcoord->x1f(i));
+            phir = -qshear_*SQR(Omega_0_*pmb->pcoord->x1f(i+1));
             cons(IEN,k,j,i) -= dt*(flux[X1DIR](IDN,k,j,i)*(phic-phil) +
                                    flux[X1DIR](IDN,k,j,i+1)*(phir-phic))
                                    /pmb->pcoord->dx1v(i);
@@ -83,9 +83,9 @@ void HydroSourceTerms::ShearingBoxSourceTerms(const Real dt, const AthenaArray<R
                                 *pmb->pcoord->x1v(i)+2.0*Omega_0_*den*prim(IVZ,ks,j,i));
           cons(IM3,ks,j,i) -= dt*2.0*Omega_0_*den*prim(IVX,ks,j,i);
           if (NON_BAROTROPIC_EOS) {
-            phic -= qshear_*SQR(Omega_0_*pmb->pcoord->x1v(i));
-            phil -= qshear_*SQR(Omega_0_*pmb->pcoord->x1f(i));
-            phir -= qshear_*SQR(Omega_0_*pmb->pcoord->x1f(i+1));
+            phic = -qshear_*SQR(Omega_0_*pmb->pcoord->x1v(i));
+            phil = -qshear_*SQR(Omega_0_*pmb->pcoord->x1f(i));
+            phir = -qshear_*SQR(Omega_0_*pmb->pcoord->x1f(i+1));
             cons(IEN,ks,j,i) -= dt*(flux[X1DIR](IDN,ks,j,i)*(phic-phil) +
                                     flux[X1DIR](IDN,ks,j,i+1)*(phir-phic))
                                     /pmb->pcoord->dx1v(i);

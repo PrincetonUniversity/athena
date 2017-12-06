@@ -144,6 +144,65 @@ void FieldDiffusion::AddFieldDiffusionEMF(EdgeField &e)
   return;
 }
 //----------------------------------------------------------------------------------------
+//! \fn void FieldDiffusion::AddEnergyFlux
+//  \brief Adds diffusion flux (due to field dissipation) to hydro energy flux
+
+void FieldDiffusion::AddEnergyFlux(const AthenaArray<Real> &bc, AthenaArray<Real> *flux)
+{
+
+  int is = pmb_->is; int js = pmb_->js; int ks = pmb_->ks;
+  int ie = pmb_->ie; int je = pmb_->je; int ke = pmb_->ke;
+
+  AthenaArray<Real> &x1flux=flux[X1DIR];
+  AthenaArray<Real> &x2flux=flux[X2DIR];
+  AthenaArray<Real> &x3flux=flux[X3DIR];
+  //AthenaArray<Real> &e1=pmb_->pfield->e.x1e;
+  //AthenaArray<Real> &e2=pmb_->pfield->e.x2e;
+  //AthenaArray<Real> &e3=pmb_->pfield->e.x3e;
+  AthenaArray<Real> &e1=emf.x1e;
+  AthenaArray<Real> &e2=emf.x2e;
+  AthenaArray<Real> &e3=emf.x3e;
+
+  Real exb;
+  for (int k=ks; k<=ke; ++k) {
+  for (int j=js; j<=je; ++j) {
+  for (int i=is; i<=ie; ++i) {
+    // x1flux
+    exb = 0.25*(e2(k,j,i)+e2(k+1,j,i))*(bc(IB3,k,j,i)+bc(IB3,k,j,i-1))-
+          0.25*(e3(k,j,i)+e3(k,j+1,i))*(bc(IB2,k,j,i)+bc(IB2,k,j,i-1));
+    x1flux(IEN,k,j,i) += exb;
+    if(i==ie) {
+      exb = 0.25*(e2(k,j,i+1)+e2(k+1,j,i+1))*(bc(IB3,k,j,i+1)+bc(IB3,k,j,i))-
+            0.25*(e3(k,j,i+1)+e3(k,j+1,i+1))*(bc(IB2,k,j,i+1)+bc(IB2,k,j,i));
+      x1flux(IEN,k,j,i+1) += exb;
+    }
+    // x2flux
+    if(pmb_->block_size.nx2 > 1) {
+      exb = 0.25*(e3(k,j,i)+e3(k,j,i+1))*(bc(IB1,k,j,i)+bc(IB1,k,j-1,i))-
+            0.25*(e1(k,j,i)+e1(k+1,j,i))*(bc(IB3,k,j,i)+bc(IB3,k,j-1,i));
+      x2flux(IEN,k,j,i) += exb;
+      if(j==je) {
+        exb = 0.25*(e3(k,j+1,i)+e3(k,j+1,i+1))*(bc(IB1,k,j+1,i)+bc(IB1,k,j,i))-
+              0.25*(e1(k,j+1,i)+e1(k+1,j+1,i))*(bc(IB3,k,j+1,i)+bc(IB3,k,j,i));
+        x2flux(IEN,k,j+1,i) += exb;
+	    }
+    }
+    // x3flux
+    if(pmb_->block_size.nx3 > 1) {
+      exb = 0.25*(e1(k,j,i)+e1(k,j+1,i))*(bc(IB2,k,j,i)+bc(IB2,k-1,j,i))-
+            0.25*(e2(k,j,i)+e2(k,j,i+1))*(bc(IB1,k,j,i)+bc(IB1,k-1,j,i));
+      x3flux(IEN,k,j,i) += exb;
+      if(k==ke) {
+        exb = 0.25*(e1(k+1,j,i)+e1(k+1,j+1,i))*(bc(IB2,k+1,j,i)+bc(IB2,k,j,i))-
+              0.25*(e2(k+1,j,i)+e2(k+1,j,i+1))*(bc(IB1,k+1,j,i)+bc(IB1,k,j,i));
+        x3flux(IEN,k+1,j,i) += exb;
+      }
+    }
+  }}}
+  return;
+}
+
+//----------------------------------------------------------------------------------------
 //! \fn void FieldDiffusion::NewDtFldDiff(Real len, int k, int j, int i)
 //  \brief return the time step constraints due to explicit diffusion processes
 Real FieldDiffusion::NewDtFldDiff(Real len, int k, int j, int i)

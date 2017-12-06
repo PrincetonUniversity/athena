@@ -185,13 +185,14 @@ Real HydroDiffusion::nuiso1(const AthenaArray<Real> &prim, const int n, const in
   // if inu != 0, prescribe viscosity according to nu = alpha cs^2/Omega
   // where alpha = nuiso_ and Omega = sqrt(GM/r^3) the Keplerian orb freq
   if(COORDINATE_SYSTEM == "cartesian" && NON_BAROTROPIC_EOS) {
-      Real x1 = pmb_->pcoord->x1v(i);
+    Real x1 = pmb_->pcoord->x1v(i);
     Real x2 = pmb_->pcoord->x2v(j);
-    Real rad = sqrt(SQR(x1)+SQR(x2)+SQR(0.05));// softening by 0.05
-      Real gamma = pmb_->peos->GetGamma();
+    Real x3 = pmb_->pcoord->x3v(k);
+    Real rad = sqrt(SQR(x1)+SQR(x2); //+SQR(x3)+SQR(0.05));// softening by 0.05
+    Real gamma = pmb_->peos->GetGamma();
     // 1) calc visc coef using updated prim variable (unstable)
     //Real cs2  = gamma*prim(IPR,k,j,i)/prim(IDN,k,j,i);
-    //Real omg = 1.0/sqrt(SQR(rad)/rad); // Kepler freq with GM=1.0
+    //Real omg = 1.0/sqrt(SQR(rad)*rad); // Kepler freq with GM=1.0
     //Real nuprof = cs2/omg; //
     // 2) calc visc coef using not updated cons variable
     Real dens  = pmb_->phydro->u(IDN,k,j,i);
@@ -199,11 +200,11 @@ Real HydroDiffusion::nuiso1(const AthenaArray<Real> &prim, const int n, const in
     Real m2 = pmb_->phydro->u(IM2,k,j,i);
     Real m3 = pmb_->phydro->u(IM3,k,j,i);
     Real pres = (gamma-1.0)*(pmb_->phydro->u(IEN,k,j,i)-0.5*(SQR(m1)+SQR(m2)+SQR(m3))/dens);
-    Real omg = 1.0/sqrt(SQR(rad)/rad); // Kepler freq with GM=1.0
+    Real omg = 1.0/sqrt(SQR(rad)*rad); // Kepler freq with GM=1.0
     Real nuprof = gamma*pres/dens/omg;
     // 3) calc visc coef using pure power regardless of binary location
-    //Real nuprof = gamma*0.01/sqrt(rad); // power law
-    if (nuprof <= 0.0 || isnan(nuprof) || isinf(nuprof)) nuprof = SQR(0.05)/omg;
+    //Real nuprof = gamma*0.01*sqrt(rad); // power law
+    if (nuprof <= 0.0 || isnan(nuprof) || isinf(nuprof)) nuprof = SQR(0.10)/omg;
       return (nuiso_*nuprof);
   } else {
       std::cout << "inu_= " << inu_ << "for other coord and eos are not implemented yet" << std::endl;
