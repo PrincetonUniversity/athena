@@ -63,22 +63,22 @@ def analyze():
 
   # check absolute error and convergence of all three waves
   if data[1][4] > 3.0e-8:
-    print "error in L-going sound wave too large",data[1][4]
+    print("error in L-going sound wave too large",data[1][4])
     return False
   if data[1][4]/data[0][4] > 0.3:
-    print "not converging for L-going sound wave",data[0][4],data[1][4]
+    print("not converging for L-going sound wave",data[0][4],data[1][4])
     return False
 
   if data[3][4] > 2.2e-8:
-    print "error in entropy wave too large",data[3][4]
+    print("error in entropy wave too large",data[3][4])
     return False
   if data[3][4]/data[2][4] > 0.33:
-    print "not converging for entropy wave",data[2][4],data[3][4]
+    print("not converging for entropy wave",data[2][4],data[3][4])
     return False
 
   # check error identical for waves in each direction
   if data[4][4] != data[5][4]:
-    print "error in L/R-going sound waves not equal",data[4][4],data[5][4]
+    print("error in L/R-going sound waves not equal",data[4][4],data[5][4])
     return False
 
   return True
