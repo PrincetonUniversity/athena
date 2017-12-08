@@ -37,11 +37,20 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   // These are stored as: time_int_wght1 = a, time_int_wght2 = b, time_int_wght3 = c
 
   integrator = pin->GetOrAddString("time","integrator","vl2");
+  int dim = 1;
+  if (pm->mesh_size.nx2 > 1) dim = 2;
+  if (pm->mesh_size.nx3 > 1) dim = 3;
 
-  // second-order van Leer integrator (Gardiner & Stone, NewA 14, 139 2009)
   if (integrator == "vl2") {
+    // VL: second-order van Leer integrator (Stone & Gardiner, NewA 14, 139 2009)
+    // Simple predictor-corrector scheme similar to MUSCL-Hancock
+    // Expressed in 2S or 3S* algorithm form
     nsub_steps = 2;
-    // Expressed in 3S* algorithm form
+    cfl_limit = 1.0;
+    // Modify VL2 stability limit in 2D, 3D
+    if (dim == 2) cfl_limit = 0.5;
+    if (dim == 3) cfl_limit = 1.0/3.0;
+
     step_wghts[0].delta = 1.0; // required for consistency
     step_wghts[0].gamma_1 = 0.0;
     step_wghts[0].gamma_2 = 1.0;
@@ -54,7 +63,10 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     step_wghts[1].gamma_3 = 0.0;
     step_wghts[1].beta = 1.0;
   } else if (integrator == "rk2") {
+    // Heun's method / SSPRK (2,2): Gottlieb (2009) equation 3.1
+    // Optimal (in error bounds) explicit two-stage, second-order SSPRK
     nsub_steps = 2;
+    cfl_limit = 1.0;
     step_wghts[0].delta = 1.0;
     step_wghts[0].gamma_1 = 0.0;
     step_wghts[0].gamma_2 = 1.0;
@@ -67,7 +79,10 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     step_wghts[1].gamma_3 = 0.0;
     step_wghts[1].beta = 0.5;
   } else if (integrator == "rk3") {
+    // SSPRK (3,3): Gottlieb (2009) equation 3.2
+    // Optimal (in error bounds) explicit three-stage, third-order SSPRK
     nsub_steps = 3;
+    cfl_limit = 1.0;
     step_wghts[0].delta = 1.0;
     step_wghts[0].gamma_1 = 0.0;
     step_wghts[0].gamma_2 = 1.0;
@@ -85,43 +100,62 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     step_wghts[2].gamma_2 = ONE_3RD;
     step_wghts[2].gamma_3 = 0.0;
     step_wghts[2].beta = TWO_3RD;
-  } else if (integrator == "ssprk54") {
+    //} else if (integrator == "ssprk5_3") {
+    //} else if (integrator == "ssprk10_4") {
+  } else if (integrator == "rk4") {
+    // SSPRK (5,4): Gottlieb (2009) section 3.1
+    // Optimal (in error bounds) explicit five-stage, fourth-order SSPRK
+    // 3N method, but there is no 3S* formulation due to irregular sparsity
+    // of Shu-Osher form matrix, alpha
     nsub_steps = 5;
+    cfl_limit = 1.3925;
     step_wghts[0].delta = 1.0;
     step_wghts[0].gamma_1 = 0.0;
     step_wghts[0].gamma_2 = 1.0;
     step_wghts[0].gamma_3 = 0.0;
     step_wghts[0].beta = 0.391752226571890;
 
-    step_wghts[1].delta = 0.0;
-    step_wghts[1].gamma_1 = 0.25;
-    step_wghts[1].gamma_2 = 0.75;
+    step_wghts[1].delta = 0.0; // u1 = u^n
+    step_wghts[1].gamma_1 = 0.555629506348765;
+    step_wghts[1].gamma_2 = 0.444370493651235;
     step_wghts[1].gamma_3 = 0.0;
-    step_wghts[1].beta = 0.25;
+    step_wghts[1].beta = 0.368410593050371;
 
     step_wghts[2].delta = 0.0;
-    step_wghts[2].gamma_1 = TWO_3RD;
-    step_wghts[2].gamma_2 = ONE_3RD;
-    step_wghts[2].gamma_3 = 0.0;
-    step_wghts[2].beta = TWO_3RD;
+    step_wghts[2].gamma_1 = 0.379898148511597;
+    step_wghts[2].gamma_2 = 0.0;
+    step_wghts[2].gamma_3 = 0.620101851488403; // u2 = u^n
+    step_wghts[2].beta = 0.251891774271694;
 
     step_wghts[3].delta = 0.0;
     step_wghts[3].gamma_1 = TWO_3RD;
     step_wghts[3].gamma_2 = ONE_3RD;
-    step_wghts[3].gamma_3 = 0.0;
-    step_wghts[3].beta = TWO_3RD;
+    step_wghts[3].gamma_3 = 0.178079954393132; // u2 = u^n
+    step_wghts[3].beta = 0.544974750228521;
 
     step_wghts[4].delta = 0.0;
-    step_wghts[4].gamma_1 = TWO_3RD;
+    step_wghts[4].gamma_1 = 0.386708617503268; // from Gottlieb (2009), u^(4) coeff.
     step_wghts[4].gamma_2 = ONE_3RD;
     step_wghts[4].gamma_3 = 0.0;
-    step_wghts[4].beta = TWO_3RD;
+    step_wghts[4].beta = 0.226007483236906; // from Gottlieb (2009), F(u^(4)) coeff.
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in CreateTimeIntegrator" << std::endl
         << "integrator=" << integrator << " not valid time integrator" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
+
+  // Set cfl_number based on user input and time integrator CFL limit
+  Real cfl_number = pin->GetReal("time","cfl_number");
+  if(cfl_number > cfl_limit) {
+    std::cout << "### Warning in CreateTimeIntegrator" << std::endl
+        << "User CFL number " << cfl_number << " must be smaller than " << cfl_limit
+        << " for integrator=" << integrator << " in "
+        << dim << "D simulation" << std::endl << "Setting to limit" << std::endl;
+    cfl_number = cfl_limit;
+  }
+  // Save to Mesh class
+  pm->cfl_number = cfl_number;
 
   // Now assemble list of tasks for each step of time integrator
   {using namespace HydroIntegratorTaskNames;

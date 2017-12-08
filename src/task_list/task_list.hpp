@@ -28,10 +28,10 @@ enum TaskListStatus {TL_RUNNING, TL_STUCK, TL_COMPLETE, TL_NOTHING_TO_DO};
 //  \brief weights used in time integrator tasks
 
 struct IntegratorWeight {
-  // 3S* or 2S low-storage RK coefficients, Ketchenson (2010)
+  // 2S or 3S* low-storage RK coefficients, Ketchenson (2010)
   Real delta; // low-storage coefficients to avoid double F() evaluation per substage
   Real gamma_1, gamma_2, gamma_3; // low-storage coeff for weighted ave of registers
-  Real beta; // Coefficients from bidiagonal Shu-Osher form Beta matrix
+  Real beta; // Coefficients from bidiagonal Shu-Osher form Beta matrix, -1 diagonal terms
 };
 
 //----------------------------------------------------------------------------------------
@@ -96,7 +96,9 @@ public:
 
   // data
   std::string integrator;
+  Real cfl_limit; // dt stability limit for the particular time integrator + spatial order
   struct IntegratorWeight step_wghts[MAX_NSTEP];
+
   // Track the partial dt abscissae for substepping each memory register
   Real step_dt[3];
 
