@@ -35,7 +35,6 @@ public:
   // cell-centered magnetic fields
   AthenaArray<Real> bcc;  // time-integrator memory register #1
   AthenaArray<Real> bcc1; // time-integrator memory register #2
-  AthenaArray<Real> bcc2; // time-integrator memory register #3
 
   EdgeField e;    // edge-centered electric fields used in CT
   FaceField wght; // weights used to integrate E to corner using GS algorithm
