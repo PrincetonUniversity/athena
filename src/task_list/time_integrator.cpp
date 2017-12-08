@@ -430,17 +430,16 @@ enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int step
 {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
-
-  if((step == 1) && (integrator == "vl2")) {
-    phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, true);
-    return TASK_NEXT;
+  if ( step <= nsub_steps) {
+    if((step == 1) && (integrator == "vl2")) {
+      phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, true);
+      return TASK_NEXT;
+    }
+    else {
+      phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, false);
+      return TASK_NEXT;
+    }
   }
-
-  else if (step != 1 && step <= nsub_steps) {
-    phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, false);
-    return TASK_NEXT;
-  }
-
   return TASK_FAIL;
 }
 
