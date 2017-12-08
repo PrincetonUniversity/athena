@@ -7,6 +7,7 @@ import re
 import struct
 import sys
 import warnings
+from io import open
 
 # Other Python modules
 import numpy as np
@@ -171,7 +172,7 @@ def vtk(filename):
   """Read .vtk files and return dict of arrays of data."""
 
   # Read raw data
-  with open(filename, 'r') as data_file:
+  with open(filename, 'rb') as data_file:
     raw_data = data_file.read()
 
   # Skip header
