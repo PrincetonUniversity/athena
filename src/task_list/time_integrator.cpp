@@ -103,6 +103,37 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     //} else if (integrator == "ssprk5_3") {
     //} else if (integrator == "ssprk10_4") {
   } else if (integrator == "rk4") {
+    // RK4()4[2S] from Table 2 of Ketchenson (2010)
+    // Non-SSP, explicit four-stage, fourth-order RK
+    nsub_steps = 4;
+    // Stability properties are similar to classical RK4
+    // Refer to Colella (2011) for constant advection with 4th order fluxes
+    // linear stability analysis
+    cfl_limit = 1.3925;
+    step_wghts[0].delta = 1.0;
+    step_wghts[0].gamma_1 = 0.0;
+    step_wghts[0].gamma_2 = 1.0;
+    step_wghts[0].gamma_3 = 0.0;
+    step_wghts[0].beta = 1.193743905974738;
+
+    step_wghts[1].delta = 0.217683334308543;
+    step_wghts[1].gamma_1 = 0.121098479554482;
+    step_wghts[1].gamma_2 = 0.721781678111411;
+    step_wghts[1].gamma_3 = 0.0;
+    step_wghts[1].beta = 0.099279895495783;
+
+    step_wghts[2].delta = 1.065841341361089;
+    step_wghts[2].gamma_1 = -3.843833699660025;
+    step_wghts[2].gamma_2 = 2.121209265338722;
+    step_wghts[2].gamma_3 = 0.0;
+    step_wghts[2].beta = 1.131678018054042;
+
+    step_wghts[3].delta = 0.0;
+    step_wghts[3].gamma_1 = 0.546370891121863;
+    step_wghts[3].gamma_2 = 0.198653035682705;
+    step_wghts[3].gamma_3 = 0.0;
+    step_wghts[3].beta = 0.310665766509336;
+  } else if (integrator == "ssprk5_4") {
     // SSPRK (5,4): Gottlieb (2009) section 3.1
     // Optimal (in error bounds) explicit five-stage, fourth-order SSPRK
     // 3N method, but there is no 3S* formulation due to irregular sparsity
