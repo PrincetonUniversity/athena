@@ -33,8 +33,11 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin)
   w.NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1);
   u1.NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1);
   w1.NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1);
-  u2.NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1);
-  w2.NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1);
+  // If user-requested time integrator is type 3S*, allocate additional memory registers
+  std::string integrator = pin->GetOrAddString("time","integrator","vl2");
+  if (integrator == "ssprk5_4")
+    // future extension may add "int nregister" to Hydro class
+    u2.NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1);
 
   flux[X1DIR].NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1+1);
   if (pmy_block->block_size.nx2 > 1)
@@ -100,8 +103,8 @@ Hydro::~Hydro()
   w.DeleteAthenaArray();
   u1.DeleteAthenaArray();
   w1.DeleteAthenaArray();
+  // only allocated if integrator was 3S* integrator
   u2.DeleteAthenaArray();
-  w2.DeleteAthenaArray();
 
   flux[X1DIR].DeleteAthenaArray();
   if (pmy_block->block_size.nx2 > 1) flux[X2DIR].DeleteAthenaArray();
