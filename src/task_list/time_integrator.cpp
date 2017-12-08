@@ -367,13 +367,12 @@ enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int step
   Field *pfield=pmb->pfield;
 
   if((step == 1) && (integrator == "vl2")) {
-    phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, 1);
+    phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, true);
     return TASK_NEXT;
   }
 
   else if (step != 1 && step <= nsub_steps) {
-    // 2 is a dummy argument; it simply ensures that DCU isnt used.
-    phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, 2);
+    phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, false);
     return TASK_NEXT;
   }
 
