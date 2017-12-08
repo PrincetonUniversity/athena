@@ -7,7 +7,8 @@ import re
 import struct
 import sys
 import warnings
-from io import open
+from io import open # This breaks the Py2 open() conversion to str type in vtk()
+#from future.utils.surrogateescape import register_surrogateescape
 
 # Other Python modules
 import numpy as np
@@ -171,33 +172,35 @@ def tab(filename, raw=False, dimensions=None):
 def vtk(filename):
   """Read .vtk files and return dict of arrays of data."""
 
-  # Read raw data
+  # Read row data
   with open(filename, 'rb') as data_file:
     raw_data = data_file.read()
 
+  raw_data_ascii = raw_data.decode('ascii', 'replace')
+
   # Skip header
   current_index = 0
-  current_char = raw_data[current_index]
+  current_char = raw_data_ascii[current_index]
   while current_char == '#':
     while current_char != '\n':
       current_index += 1
-      current_char = raw_data[current_index]
+      current_char = raw_data_ascii[current_index]
     current_index += 1
-    current_char = raw_data[current_index]
+    current_char = raw_data_ascii[current_index]
 
   # Function for skipping though the file
   def skip_string(expected_string):
     expected_string_len = len(expected_string)
-    if raw_data[current_index:current_index+expected_string_len] != expected_string:
+    if raw_data_ascii[current_index:current_index+expected_string_len] != expected_string:
       raise AthenaError('File not formatted as expected')
     return current_index+expected_string_len
 
   # Read metadata
   current_index = skip_string('BINARY\nDATASET RECTILINEAR_GRID\nDIMENSIONS ')
   end_of_line_index = current_index + 1
-  while raw_data[end_of_line_index] != '\n':
+  while raw_data_ascii[end_of_line_index] != '\n':
     end_of_line_index += 1
-  face_dimensions = map(int, raw_data[current_index:end_of_line_index].split(' '))
+  face_dimensions = list(map(int, raw_data_ascii[current_index:end_of_line_index].split(' ')))
   current_index = end_of_line_index + 1
 
   # Function for reading interface locations
@@ -219,7 +222,7 @@ def vtk(filename):
       for dim in face_dimensions])
   num_cells = cell_dimensions.prod()
   current_index = skip_string('CELL_DATA {0}\n'.format(num_cells))
-  if raw_data[current_index:current_index+1] == '\n':
+  if raw_data_ascii[current_index:current_index+1] == '\n':
     current_index = skip_string('\n')  # extra newline inserted by join script
   data = {}
 
@@ -227,9 +230,9 @@ def vtk(filename):
   def read_cell_scalars():
     begin_index = skip_string('SCALARS ')
     end_of_word_index = begin_index + 1
-    while raw_data[end_of_word_index] != ' ':
+    while raw_data_ascii[end_of_word_index] != ' ':
       end_of_word_index += 1
-    array_name = raw_data[begin_index:end_of_word_index]
+    array_name = raw_data_ascii[begin_index:end_of_word_index]
     string_to_skip = 'SCALARS {0} float\nLOOKUP_TABLE default\n'.format(array_name)
     begin_index = skip_string(string_to_skip)
     format_string = '>' + 'f'*num_cells
@@ -243,9 +246,9 @@ def vtk(filename):
   def read_cell_vectors():
     begin_index = skip_string('VECTORS ')
     end_of_word_index = begin_index + 1
-    while raw_data[end_of_word_index] != '\n':
+    while raw_data_ascii[end_of_word_index] != '\n':
       end_of_word_index += 1
-    array_name = raw_data[begin_index:end_of_word_index]
+    array_name = raw_data_ascii[begin_index:end_of_word_index]
     string_to_skip = 'VECTORS {0}\n'.format(array_name)
     array_name = array_name[:-6]  # remove ' float'
     begin_index = skip_string(string_to_skip)
@@ -260,12 +263,12 @@ def vtk(filename):
   while current_index < len(raw_data):
     expected_string = 'SCALARS'
     expected_string_len = len(expected_string)
-    if raw_data[current_index:current_index+expected_string_len] == expected_string:
+    if raw_data_ascii[current_index:current_index+expected_string_len] == expected_string:
       current_index = read_cell_scalars()
       continue
     expected_string = 'VECTORS'
     expected_string_len = len(expected_string)
-    if raw_data[current_index:current_index+expected_string_len] == expected_string:
+    if raw_data_ascii[current_index:current_index+expected_string_len] == expected_string:
       current_index = read_cell_vectors()
       continue
     raise AthenaError('File not formatted as expected')
