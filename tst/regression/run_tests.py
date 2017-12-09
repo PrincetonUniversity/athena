@@ -1,4 +1,3 @@
-from __future__ import print_function
 #! /usr/bin/env python
 
 """
@@ -15,6 +14,7 @@ Notes:
     - Example can be forced to run, but does not run by default in full test suite
   - For more information, check online regression test documentation.
 """
+from __future__ import print_function
 
 # Python modules
 import argparse
