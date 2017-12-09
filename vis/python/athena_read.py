@@ -7,8 +7,7 @@ import re
 import struct
 import sys
 import warnings
-from io import open # This breaks the Py2 open() conversion to str type in vtk()
-#from future.utils.surrogateescape import register_surrogateescape
+from io import open  # Consistent binary I/O from Python 2 and 3
 
 # Other Python modules
 import numpy as np
