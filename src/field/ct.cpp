@@ -147,19 +147,12 @@ void Field::WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  int tid=0;
-  int nthreads = pmb->pmy_mesh->GetNumMeshThreads();
-#pragma omp parallel default(shared) private(tid) num_threads(nthreads)
-{
-#ifdef OPENMP_PARALLEL
-  tid=omp_get_thread_num();
-#endif
-
   // Note: these loops can be combined now that they avoid curl terms
-  // Only need to account for final face loop limit differences
+  // Only need to separately account for the final longitudinal face in each loop limit
+
 //---- B1
+
   for (int k=ks; k<=ke; ++k) {
-#pragma omp for schedule(static)
   for (int j=js; j<=je; ++j) {
 #pragma simd
     for (int i=is; i<=ie+1; ++i) {
@@ -177,7 +170,6 @@ void Field::WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
      || pmb->pbval->block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) jl=js+1;
     if (pmb->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY
      || pmb->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) ju=je;
-#pragma omp for schedule(static)
     for (int j=jl; j<=ju; ++j) {
 #pragma simd
       for (int i=is; i<=ie; ++i) {
@@ -190,7 +182,6 @@ void Field::WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
 //---- B3
 
   for (int k=ks; k<=ke+1; ++k) {
-#pragma omp for schedule(static)
   for (int j=js; j<=je; ++j) {
 #pragma simd
     for (int i=is; i<=ie; ++i) {
@@ -198,7 +189,6 @@ void Field::WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
           + wght[2]*b_in2.x3f(k,j,i);
     }
   }}
-} // end of OMP parallel region
 
   return;
 }
