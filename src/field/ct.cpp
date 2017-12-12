@@ -150,45 +150,85 @@ void Field::WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
   // Note: these loops can be combined now that they avoid curl terms
   // Only need to separately account for the final longitudinal face in each loop limit
 
+  // b_in2 may be an unallocated AthenaArray if using a 2S time integrator
+  if (wght[2] != 0.0) {
 //---- B1
-
-  for (int k=ks; k<=ke; ++k) {
-  for (int j=js; j<=je; ++j) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
 #pragma simd
-    for (int i=is; i<=ie+1; ++i) {
-      b_out.x1f(k,j,i) = wght[0]*b_out.x1f(k,j,i) + wght[1]*b_in1.x1f(k,j,i)
-          + wght[2]*b_in2.x1f(k,j,i);
-    }
-  }}
+        for (int i=is; i<=ie+1; ++i) {
+          b_out.x1f(k,j,i) = wght[0]*b_out.x1f(k,j,i) + wght[1]*b_in1.x1f(k,j,i)
+              + wght[2]*b_in2.x1f(k,j,i);
+        }
+      }}
 
 //---- B2
 
-  for (int k=ks; k<=ke; ++k) {
-    // reset loop limits for polar boundary
-    int jl=js; int ju=je+1;
-    if (pmb->pbval->block_bcs[INNER_X2] == POLAR_BNDRY
-     || pmb->pbval->block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) jl=js+1;
-    if (pmb->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY
-     || pmb->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) ju=je;
-    for (int j=jl; j<=ju; ++j) {
+    for (int k=ks; k<=ke; ++k) {
+      // reset loop limits for polar boundary
+      int jl=js; int ju=je+1;
+      // move these limit modifications outside the loop
+      if (pmb->pbval->block_bcs[INNER_X2] == POLAR_BNDRY
+          || pmb->pbval->block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) jl=js+1;
+      if (pmb->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY
+          || pmb->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) ju=je;
+      for (int j=jl; j<=ju; ++j) {
 #pragma simd
-      for (int i=is; i<=ie; ++i) {
-        b_out.x2f(k,j,i) = wght[0]*b_out.x2f(k,j,i) + wght[1]*b_in1.x2f(k,j,i)
-          + wght[2]*b_in2.x2f(k,j,i);
+        for (int i=is; i<=ie; ++i) {
+          b_out.x2f(k,j,i) = wght[0]*b_out.x2f(k,j,i) + wght[1]*b_in1.x2f(k,j,i)
+              + wght[2]*b_in2.x2f(k,j,i);
+        }
       }
     }
-  }
 
 //---- B3
 
-  for (int k=ks; k<=ke+1; ++k) {
-  for (int j=js; j<=je; ++j) {
+    for (int k=ks; k<=ke+1; ++k) {
+      for (int j=js; j<=je; ++j) {
 #pragma simd
-    for (int i=is; i<=ie; ++i) {
-      b_out.x3f(k,j,i) = wght[0]*b_out.x3f(k,j,i) + wght[1]*b_in1.x3f(k,j,i)
-          + wght[2]*b_in2.x3f(k,j,i);
-    }
-  }}
+        for (int i=is; i<=ie; ++i) {
+          b_out.x3f(k,j,i) = wght[0]*b_out.x3f(k,j,i) + wght[1]*b_in1.x3f(k,j,i)
+              + wght[2]*b_in2.x3f(k,j,i);
+        }
+      }}
+  }
 
+  else { // do not derefernce b_in2
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
+#pragma simd
+        for (int i=is; i<=ie+1; ++i) {
+          b_out.x1f(k,j,i) = wght[0]*b_out.x1f(k,j,i) + wght[1]*b_in1.x1f(k,j,i);
+        }
+      }}
+
+//---- B2
+
+    for (int k=ks; k<=ke; ++k) {
+      // reset loop limits for polar boundary
+      int jl=js; int ju=je+1;
+      // move these limit modifications outside the loop
+      if (pmb->pbval->block_bcs[INNER_X2] == POLAR_BNDRY
+          || pmb->pbval->block_bcs[INNER_X2] == POLAR_BNDRY_WEDGE) jl=js+1;
+      if (pmb->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY
+          || pmb->pbval->block_bcs[OUTER_X2] == POLAR_BNDRY_WEDGE) ju=je;
+      for (int j=jl; j<=ju; ++j) {
+#pragma simd
+        for (int i=is; i<=ie; ++i) {
+          b_out.x2f(k,j,i) = wght[0]*b_out.x2f(k,j,i) + wght[1]*b_in1.x2f(k,j,i);
+        }
+      }
+    }
+
+//---- B3
+
+    for (int k=ks; k<=ke+1; ++k) {
+      for (int j=js; j<=je; ++j) {
+#pragma simd
+        for (int i=is; i<=ie; ++i) {
+          b_out.x3f(k,j,i) = wght[0]*b_out.x3f(k,j,i) + wght[1]*b_in1.x3f(k,j,i);
+        }
+      }}
+  }
   return;
 }

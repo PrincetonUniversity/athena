@@ -118,14 +118,28 @@ void Hydro::WeightedAveU(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  // Only averages the real cells
-  for (int n=0; n<NHYDRO; ++n) {
-    for (int k=ks; k<=ke; ++k) {
-      for (int j=js; j<=je; ++j) {
+  // u_in2 may be an unallocated AthenaArray if using a 2S time integrator
+  if (wght[2] != 0.0) {
+    for (int n=0; n<NHYDRO; ++n) {
+      for (int k=ks; k<=ke; ++k) {
+        for (int j=js; j<=je; ++j) {
 #pragma simd
-        for (int i=is; i<=ie; ++i) {
-          u_out(n,k,j,i) = wght[0]*u_out(n,k,j,i) + wght[1]*u_in1(n,k,j,i)
-              + wght[2]*u_in2(n,k,j,i);
+          for (int i=is; i<=ie; ++i) {
+            u_out(n,k,j,i) = wght[0]*u_out(n,k,j,i) + wght[1]*u_in1(n,k,j,i)
+                + wght[2]*u_in2(n,k,j,i);
+          }
+        }
+      }
+    }
+  }
+  else { // do not dereference u_in2
+    for (int n=0; n<NHYDRO; ++n) {
+      for (int k=ks; k<=ke; ++k) {
+        for (int j=js; j<=je; ++j) {
+#pragma simd
+          for (int i=is; i<=ie; ++i) {
+            u_out(n,k,j,i) = wght[0]*u_out(n,k,j,i) + wght[1]*u_in1(n,k,j,i);
+          }
         }
       }
     }

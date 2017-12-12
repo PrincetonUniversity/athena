@@ -556,7 +556,9 @@ enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int ste
   if (ph->psrc->hydro_sourceterms_defined == false) return TASK_NEXT;
 
   if (step <= nsub_steps) {
+    // Time at beginning of step for u()
     Real time=pmb->pmy_mesh->time + step_dt[0];
+    // Scaled coefficient for RHS update
     Real dt = (step_wghts[(step-1)].beta)*(pmb->pmy_mesh->dt);
     ph->psrc->AddHydroSourceTerms(time,dt,ph->flux,ph->w,pf->bcc,ph->u);
   } else {
