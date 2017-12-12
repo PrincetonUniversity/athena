@@ -31,10 +31,20 @@
 TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   : TaskList(pm)
 {
-  // First, set weights for each step of time-integration algorithm.  Each step is
-  //    U^{2} = a*U^0 + b*U^1 + c*dt*Div(F), where U^0 and U^1 are previous steps
-  // a,b=(1-a),and c are weights that are different for each step and each integrator
-  // These are stored as: time_int_wght1 = a, time_int_wght2 = b, time_int_wght3 = c
+  // First, define each time-integrator by setting weights for each step of the algorithm
+  // and the CFL number stability limit when coupled to the single-stage spatial operator.
+  // Currently, the time-integrators must be expressed as 2S-type algorithms as in
+  // Ketchenson (2010) Algorithm 3, which incudes 2N (Williamson) and 2R (van der Houwen)
+  // popular 2-register low-storage RK methods. The 2S-type integrators depend on a
+  // bidiagonally sparse Shu-Osher representation; at each stage l:
+  //    U^{l} = a_{l,l-2}*U^{l-2} + a_{l-1}*U^{l-1}
+  //           + b_{l,l-2}*dt*Div(F_{l-2}) + b_{l,l-1}*dt*Div(F_{l-1})
+  // where U^{l-1} and U^{l-2} are previous stages and a_{l,l-2}, a_{l,l-1}=(1-a_{l,l-2}),
+  // and b_{l,l-2}, b_{l,l-1} are weights that are different for each stage and integrator
+
+  // The 2x RHS evaluations of Div(F) and source terms per stage is avoided by adding
+  // another weighted average / caching of these terms each stage.
+  // API and framework is extensible to three register 3S* methods
 
   integrator = pin->GetOrAddString("time","integrator","vl2");
   int dim = 1;
