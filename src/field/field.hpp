@@ -34,7 +34,6 @@ public:
   FaceField b2;      // time-integrator memory register #3
   // cell-centered magnetic fields
   AthenaArray<Real> bcc;  // time-integrator memory register #1
-  AthenaArray<Real> bcc1; // time-integrator memory register #2
 
   EdgeField e;    // edge-centered electric fields used in CT
   FaceField wght; // weights used to integrate E to corner using GS algorithm

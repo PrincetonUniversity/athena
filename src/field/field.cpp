@@ -44,7 +44,6 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin)
     }
 
     bcc.NewAthenaArray (NFIELD,ncells3,ncells2,ncells1);
-    bcc1.NewAthenaArray(NFIELD,ncells3,ncells2,ncells1);
 
     e.x1e.NewAthenaArray((ncells3+1),(ncells2+1), ncells1   );
     e.x2e.NewAthenaArray((ncells3+1), ncells2   ,(ncells1+1));
@@ -91,7 +90,6 @@ Field::~Field()
   b2.x2f.DeleteAthenaArray();
   b2.x3f.DeleteAthenaArray();
   bcc.DeleteAthenaArray();
-  bcc1.DeleteAthenaArray();
 
   e.x1e.DeleteAthenaArray();
   e.x2e.DeleteAthenaArray();
