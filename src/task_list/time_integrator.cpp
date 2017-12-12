@@ -187,6 +187,10 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
   }
   // Save to Mesh class
   pm->cfl_number = cfl_number;
+  // Initialize the dt abscissae of each memory register to beginning of interval, t^n
+  step_dt[0]= 0.0;
+  step_dt[1]= 0.0; // u1 set to 0, but then u1 = 0*u1 + 1.0*u in first substep
+  step_dt[2]= 0.0; // u2 = u for all substeps in 3S* methods
 
   // Now assemble list of tasks for each step of time integrator
   {using namespace HydroIntegratorTaskNames;
@@ -202,8 +206,8 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm)
     } else {
       AddTimeIntegratorTask(INT_HYD, CALC_HYDFLX);
     }
-    AddTimeIntegratorTask(UPDATE_DT,INT_HYD);
-    AddTimeIntegratorTask(SRCTERM_HYD,UPDATE_DT);
+    AddTimeIntegratorTask(SRCTERM_HYD,INT_HYD);
+    AddTimeIntegratorTask(UPDATE_DT,SRCTERM_HYD);
     AddTimeIntegratorTask(SEND_HYD,SRCTERM_HYD);
     AddTimeIntegratorTask(RECV_HYD,START_ALLRECV);
 
@@ -552,8 +556,8 @@ enum TaskStatus TimeIntegratorTaskList::HydroSourceTerms(MeshBlock *pmb, int ste
   if (ph->psrc->hydro_sourceterms_defined == false) return TASK_NEXT;
 
   if (step <= nsub_steps) {
-    Real time=pmb->pmy_mesh->time;
-    Real dt = step_dt[0];
+    Real time=pmb->pmy_mesh->time + step_dt[0];
+    Real dt = (step_wghts[(step-1)].beta)*(pmb->pmy_mesh->dt);
     ph->psrc->AddHydroSourceTerms(time,dt,ph->flux,ph->w,pf->bcc,ph->u);
   } else {
     // Evaluate the source terms at the beginning of the
@@ -768,8 +772,8 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
 
 
 enum TaskStatus TimeIntegratorTaskList::UpdateTimeStep(MeshBlock *pmb, int step){
-  // Occurs after HydroIntegrate(), but before HydroSourceTerms() and FieldIntegrate()
-  if (step != 1) {
+  // Occurs after HydroIntegrate() and HydroSourceTerms(), before FieldIntegrate()
+  if (step <= nsub_steps) {
     // Update the dt abscissae of each memory register to values at end of this substep
     Real dt, dt1, dt2;
     const IntegratorWeight w = step_wghts[step-1];
@@ -789,10 +793,6 @@ enum TaskStatus TimeIntegratorTaskList::UpdateTimeStep(MeshBlock *pmb, int step)
     return TASK_SUCCESS;
   }
   else {
-    // Initialize the dt abscissae of each memory register: beginning of interval, t^n
-    step_dt[0]= 0.0;
-    step_dt[1]= 0.0; // u1 set to 0, but then u1 = 0*u1 + 1.0*u in first substep
-    step_dt[2]= 0.0; // u2 = u for all substeps in 3S* methods
-    return TASK_SUCCESS;
+    return TASK_FAIL;
   }
 }
