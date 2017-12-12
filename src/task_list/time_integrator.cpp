@@ -430,7 +430,7 @@ enum TaskStatus TimeIntegratorTaskList::CalculateFluxes(MeshBlock *pmb, int step
 {
   Hydro *phydro=pmb->phydro;
   Field *pfield=pmb->pfield;
-  if ( step <= nsub_steps) {
+  if (step <= nsub_steps) {
     if((step == 1) && (integrator == "vl2")) {
       phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, true);
       return TASK_NEXT;
@@ -497,6 +497,7 @@ enum TaskStatus TimeIntegratorTaskList::HydroIntegrate(MeshBlock *pmb, int step)
   Hydro *ph=pmb->phydro;
   Field *pf=pmb->pfield;
   if (step <= nsub_steps) {
+    // This time-integrator-specific averaging operation logic is identical to FieldInt
     Real ave_wghts[3];
     ave_wghts[0] = 1.0;
     ave_wghts[1] = step_wghts[step-1].delta;
@@ -520,7 +521,7 @@ enum TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int step)
   Field *pf=pmb->pfield;
 
   if (step <= nsub_steps) {
-    // This time-integrator-specific averaging is redundant with Hydro
+    // This time-integrator-specific averaging operation logic is identical to HydroInt
     Real ave_wghts[3];
     ave_wghts[0] = 1.0;
     ave_wghts[1] = step_wghts[step-1].delta;
@@ -531,7 +532,6 @@ enum TaskStatus TimeIntegratorTaskList::FieldIntegrate(MeshBlock *pmb, int step)
     ave_wghts[1] = step_wghts[step-1].gamma_2;
     ave_wghts[2] = step_wghts[step-1].gamma_3;
     pf->WeightedAveB(pf->b,pf->b1,pf->b2,ave_wghts);
-
     pf->CT(step_wghts[step-1].beta, pf->b);
 
     return TASK_NEXT;
@@ -659,8 +659,9 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step)
   if(pbval->nblevel[2][1][1]!=-1) ke+=NGHOST;
 
   if (step <= nsub_steps) {
-    // Incompatible with GR right now due to hardcoded w_old=w1 usage
-    // Cache w from previous substep in w1
+    // Cache w from previous substep in w1 via AthenaArray deep copy
+    // For the second order integrators, this uses t^n and then t^{n+1/2}
+    // or t^{n+1} abscissae for the prim_old initial guess in Newton-Raphson solver
     phydro->w1 = phydro->w;
     pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
                                     phydro->w, pfield->bcc, pmb->pcoord,
@@ -669,17 +670,7 @@ enum TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int step)
   else {
     return TASK_FAIL;
   }
-  // if(step == 1) {
-  //   pmb->peos->ConservedToPrimitive(phydro->u1, phydro->w, pfield->b1,
-  //                                   phydro->w1, pfield->bcc1, pmb->pcoord,
-  //                                   is, ie, js, je, ks, ke);
-  // } else if(step == 2) {
-  //   pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
-  //                                   phydro->w, pfield->bcc, pmb->pcoord,
-  //                                   is, ie, js, je, ks, ke);
-  // } else {
-  //   return TASK_FAIL;
-  // }
+
   return TASK_SUCCESS;
 }
 
@@ -741,20 +732,18 @@ enum TaskStatus TimeIntegratorTaskList::StartupIntegrator(MeshBlock *pmb, int st
     return TASK_SUCCESS;
   }
   else {
-    // if (nsub_steps <= 3) return TASK_SUCCESS; // not necessary for third-order or lower
     Hydro *ph=pmb->phydro;
     // Cache U^n in third memory register, u2, via deep copy
-    ph->u2 = ph->u;
+    // (if using a 3S* time-integrator)
+    // ph->u2 = ph->u;
 
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
       Field *pf=pmb->pfield;
-      // Cache face-averaged B^n in third memory register, b2, via deep copy
-      pf->b2.x1f = pf->b.x1f;
-      pf->b2.x2f = pf->b.x2f;
-      pf->b2.x3f = pf->b.x3f;
-      // Cache cell-averaged B^n in third memory register, bcc2, via deep copy
-      // However, bcc is not computed until end of substep, in W(U)
-      //      pf->bcc2 = pf->bcc;
+      // Cache face-averaged B^n in third memory register, b2, via AthenaArray deep copy
+      // (if using a 3S* time-integrator)
+      // pf->b2.x1f = pf->b.x1f;
+      // pf->b2.x2f = pf->b.x2f;
+      // pf->b2.x3f = pf->b.x3f;
 
       // 2nd registers, including u1, need to be initialized to 0
       pf->b1.x1f = pf->b.x1f;
@@ -800,10 +789,10 @@ enum TaskStatus TimeIntegratorTaskList::UpdateTimeStep(MeshBlock *pmb, int step)
     return TASK_SUCCESS;
   }
   else {
-    // Initialize the dt abscissae of each memory register
+    // Initialize the dt abscissae of each memory register: beginning of interval, t^n
     step_dt[0]= 0.0;
-    step_dt[1]= 0.0;
-    step_dt[2]= 0.0;
+    step_dt[1]= 0.0; // u1 set to 0, but then u1 = 0*u1 + 1.0*u in first substep
+    step_dt[2]= 0.0; // u2 = u for all substeps in 3S* methods
     return TASK_SUCCESS;
   }
 }
