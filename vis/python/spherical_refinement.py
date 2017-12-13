@@ -33,6 +33,7 @@ def main(**kwargs):
   metric = kwargs['metric']
   parameters = kwargs['parameters']
   theta_compress = kwargs['theta_compress']
+  minimum_width = kwargs['minimum_width']
   output = kwargs['output']
   colormap = kwargs['colormap']
   grid_refined = kwargs['grid_refined']
@@ -79,18 +80,23 @@ def main(**kwargs):
       raise RuntimeError('invalid parameters')
   if theta_compress <= 0.0 or theta_compress > 1.0:
     raise RuntimeError('must have 0 < theta_compress <= 1')
+  if minimum_width is not None and minimum_width <= 0.0:
+    raise RuntimeError('must have minimum_width > 0')
 
   # Calculate minimum width
   if r_ratio is None:
     r_ratio = log_ratio(r_max/r_min, num_r)
   delta_phi = 2.0*np.pi / num_phi
-  r1 = r_min
-  r2 = pos_face(r_min, r_max, r_ratio, num_r, 1)
-  theta1 = theta_adjust(theta_min, theta_compress)
-  theta2 = theta_adjust(pos_face(theta_min, theta_max, 1.0, num_theta, 1), theta_compress)
-  w_r_min,w_theta_min,w_phi_min = \
-      widths(r1, r2, theta1, theta2, delta_phi, metric, parameters)
-  width_min = min(w_r_min, w_theta_min, w_phi_min)
+  if minimum_width is None:
+    r1 = r_min
+    r2 = pos_face(r_min, r_max, r_ratio, num_r, 1)
+    theta1 = theta_adjust(theta_min, theta_compress)
+    theta2 = theta_adjust(pos_face(theta_min, theta_max, 1.0, num_theta, 1), theta_compress)
+    w_r_min,w_theta_min,w_phi_min = \
+        widths(r1, r2, theta1, theta2, delta_phi, metric, parameters)
+    width_min = min(w_r_min, w_theta_min, w_phi_min)
+  else:
+    width_min = minimum_width
 
   # Determine refinement
   refinement = []
@@ -261,7 +267,7 @@ def main(**kwargs):
 
   # Report cell width
   print('\nLimiting width: {0:.3e}'.format(width_min))
-  if width_min != w_phi_min:
+  if minimum_width is None and width_min != w_phi_min:
     print('Note: phi-width not smallest width of this cell')
 
   # Report ratio information
@@ -558,6 +564,9 @@ if __name__ == '__main__':
       type=float,
       default=1.0,
       help='parameter h governing midplane compression of theta-surfaces')
+  parser.add_argument('--minimum_width',
+      type=float,
+      help='override for smallest allowed cell width')
   parser.add_argument('-o', '--output',
       help='name of image file to write showing grid; use "show" to show interactive \
           plot instead')

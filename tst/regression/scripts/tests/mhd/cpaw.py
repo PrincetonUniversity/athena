@@ -50,21 +50,21 @@ def analyze():
         continue
       data.append([float(val) for val in line.split()])
 
-  print data[0][4]
-  print data[1][4]
-  print data[2][4]
+  print(data[0][4])
+  print(data[1][4])
+  print(data[2][4])
 
   # check absolute error and convergence
   if data[1][4] > 2.0e-4:
-    print "error in L-going fast wave too large",data[1][4]
+    print("error in L-going fast wave too large",data[1][4])
     return False
   if data[1][4]/data[0][4] > 0.3:
-    print "not converging for L-going fast wave",data[0][4],data[1][4]
+    print("not converging for L-going fast wave",data[0][4],data[1][4])
     return False
 
   # check error identical for waves in each direction
   if abs(data[2][4] - data[1][4]) > 2.0e-6:
-    print "error in L/R-going Alfven waves not equal",data[2][4],data[0][4]
+    print("error in L/R-going Alfven waves not equal",data[2][4],data[0][4])
     return False
 
   return True

@@ -18,7 +18,7 @@ pgen_choices = [choice[len(pgen_directory):-4] for choice in pgen_choices]
 def prepare():
   for pgen in pgen_choices:
     if pgen[0:3] == 'gr_':
-      print pgen
+      print(pgen)
 #      athena.configure('g',coord='minkowski',flux='hlle',prob=pgen)
 #      athena.make()
     elif pgen=='cpaw' or pgen=='field_loop' or pgen=='orszag_tang' or pgen=='rotor':

@@ -60,6 +60,7 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &
       // calculate x1-flux divergence
       pmb->pcoord->Face1Area(k,j,is,ie+1,x1area);
       for (int n=0; n<NHYDRO; ++n) {
+#pragma simd
         for (int i=is; i<=ie; ++i) {
           dflx(n,i) = (x1area(i+1) *x1flux(n,k,j,i+1) - x1area(i)*x1flux(n,k,j,i));
         }
@@ -92,6 +93,7 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &
       // update conserved variables
       pmb->pcoord->CellVolume(k,j,is,ie,vol);
       for (int n=0; n<NHYDRO; ++n) {
+#pragma simd
         for (int i=is; i<=ie; ++i) {
           u_out(n,k,j,i) -= wght*(pmb->pmy_mesh->dt)*dflx(n,i)/vol(i);
         }

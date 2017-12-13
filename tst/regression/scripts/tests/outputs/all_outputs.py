@@ -57,8 +57,8 @@ def analyze():
 #    return False
 #  if max(yf) != 1.0 and min(yf) != 0.0:
 #    return False
-#  print vtk_data['dens']
+#  print(vtk_data['dens'])
 
-#  print max(vtk_data[:,:,:,'dens']), min(vtk_data[:,:,:,'dens'])
+#  print(max(vtk_data[:,:,:,'dens']), min(vtk_data[:,:,:,'dens']))
 
   return True
