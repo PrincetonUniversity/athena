@@ -16,7 +16,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::ReconstructionFuncX1()
-//  \brief 
+//  \brief
 
 void Reconstruction::PiecewiseLinearX1(Coordinates *pco, const int kl, const int ku,
   const int jl, const int ju, const int il, const int iu, const AthenaArray<Real> &q,
@@ -65,7 +65,7 @@ void Reconstruction::PiecewiseLinearX1(Coordinates *pco, const int kl, const int
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::ReconstructionFuncX2()
-//  \brief 
+//  \brief
 
 void Reconstruction::PiecewiseLinearX2(Coordinates *pco, const int kl, const int ku,
   const int jl, const int ju, const int il, const int iu, const AthenaArray<Real> &q,
@@ -75,22 +75,24 @@ void Reconstruction::PiecewiseLinearX2(Coordinates *pco, const int kl, const int
 
   for (int k=kl; k<=ku; ++k){
   for (int j=jl; j<=ju; ++j){
-    Real dx2jm2i = 1.0/pco->dx2v(j-2);
-    Real dx2jm1i = 1.0/pco->dx2v(j-1);
-    Real dx2ji   = 1.0/pco->dx2v(j);
+    Real dx2_jm2 = pco->dx2v(j-2);
+    Real dx2_jm1 = pco->dx2v(j-1);
+    Real dx2_j   = pco->dx2v(j);
     Real dxfr=pco->x2f(j)-pco->x2v(j-1);
     Real dxfl=pco->x2v(j)-pco->x2f(j);
-    Real cfm=pco->dx2v(j-1)/dxfr;
-    Real cbm=pco->dx2v(j-2)/(pco->x2v(j-1)-pco->x2f(j-1));
-    Real cfp=pco->dx2v(j)/(pco->x2f(j+1)-pco->x2v(j));
-    Real cbp=pco->dx2v(j-1)/dxfl;
+    Real dxfrp=pco->x2f(j+1)-pco->x2v(j);
+    Real dxflm=pco->x2v(j-1)-pco->x2f(j-1);
+    Real cfm=dx2_jm1/dxfr;
+    Real cbm=dx2_jm2/dxflm;
+    Real cfp=dx2_j/dxfrp;
+    Real cbp=dx2_jm1/dxfl;
 #pragma simd
     for (int i=il; i<=iu; ++i){
       q_jm1 = q(nin,k,j-1,i);
       q_j   = q(nin,k,j  ,i);
-      dql = (q(nin,k,j-1,i) - q(nin,k,j-2,i))*dx2jm2i;
-      dqc = (q(nin,k,j  ,i) - q(nin,k,j-1,i))*dx2jm1i;
-      dqr = (q(nin,k,j+1,i) - q(nin,k,j  ,i))*dx2ji;
+      dql = (q(nin,k,j-1,i) - q(nin,k,j-2,i))/dx2_jm2;
+      dqc = (q(nin,k,j  ,i) - q(nin,k,j-1,i))/dx2_jm1;
+      dqr = (q(nin,k,j+1,i) - q(nin,k,j  ,i))/dx2_j;
 
       // compute ql_(j-1/2) using Mignone 2014's modified van-Leer limiter
       Real dq2 = dql*dqc;
@@ -98,7 +100,7 @@ void Reconstruction::PiecewiseLinearX2(Coordinates *pco, const int kl, const int
       if(dq2>0.0) {
         ql(nout,k,j,i) += dxfr*dq2*(cfm*dql+cbm*dqc)/(dql*dql+(cfm+cbm-2.0)*dq2+dqc*dqc);
       }
-        
+
       // compute qr_(j-1/2) using Mignone 2014's modified van-Leer limiter
       dq2 = dqc*dqr;
       qr(nout,k,j,i) = q_j;
@@ -113,7 +115,7 @@ void Reconstruction::PiecewiseLinearX2(Coordinates *pco, const int kl, const int
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::ReconstructionFuncX3()
-//  \brief 
+//  \brief
 
 void Reconstruction::PiecewiseLinearX3(Coordinates *pco, const int kl, const int ku,
   const int jl, const int ju, const int il, const int iu, const AthenaArray<Real> &q,
@@ -147,7 +149,7 @@ void Reconstruction::PiecewiseLinearX3(Coordinates *pco, const int kl, const int
       if(dq2>0.0) {
         ql(nout,k,j,i) += dxfr*dq2*(cfm*dql+cbm*dqc)/(dql*dql+(cfm+cbm-2.0)*dq2+dqc*dqc);
       }
-      
+
       // compute qr_(k-1/2) using Mignone 2014's modified van-Leer limiter
       dq2 = dqc*dqr;
       qr(nout,k,j,i) = q_k;
