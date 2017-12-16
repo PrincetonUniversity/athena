@@ -127,23 +127,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   if(mesh_size.nx2>1) dim=2;
   if(mesh_size.nx3>1) dim=3;
 
-  // check cfl_number
-  if(cfl_number > 1.0 && dim==1) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "The CFL number must be smaller than 1.0 in 1D simulation" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  if(cfl_number > 0.5 && dim==2) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "The CFL number must be smaller than 0.5 in 2D simulation" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  if(cfl_number > 1.0/3.0 && dim==3) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "The CFL number must be smaller than 1/3 in 3D simulation" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-
   // read physical size of mesh (root level) from input file.
   mesh_size.x1min = pin->GetReal("mesh","x1min");
   mesh_size.x2min = pin->GetReal("mesh","x2min");
@@ -534,7 +517,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   // read time and cycle limits from input file
   start_time = pin->GetOrAddReal("time","start_time",0.0);
   tlim       = pin->GetReal("time","tlim");
-  cfl_number = pin->GetReal("time","cfl_number");
   ncycle_out = pin->GetOrAddInteger("time","ncycle_out",1);
   nlim = pin->GetOrAddInteger("time","nlim",-1);
   nint_user_mesh_data_=0;
@@ -604,23 +586,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   dim=1;
   if(mesh_size.nx2>1) dim=2;
   if(mesh_size.nx3>1) dim=3;
-
-  // check cfl_number
-  if(cfl_number > 1.0 && dim==1) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "The CFL number must be smaller than 1.0 in 1D simulation" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  if(cfl_number > 0.5 && dim==2) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "The CFL number must be smaller than 0.5 in 2D simulation" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  if(cfl_number > 1.0/3.0 && dim==3) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "The CFL number must be smaller than 1/3 in 3D simulation" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
 
   //initialize
   loclist=new LogicalLocation[nbtotal];

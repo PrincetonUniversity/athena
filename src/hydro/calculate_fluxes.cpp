@@ -30,7 +30,7 @@
 //  \brief Calculate Hydrodynamic Fluxes using the Riemann solver
 
 void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
-                            AthenaArray<Real> &bcc, int reconstruct_order)
+                            AthenaArray<Real> &bcc, bool first_order)
 {
   MeshBlock *pmb=pmy_block;
   AthenaArray<Real> &x1flux=flux[X1DIR];
@@ -85,7 +85,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   }
 
   // reconstruct L/R states
-  if (reconstruct_order == 1) {
+  if (first_order) {
     pmb->precon->DonorCellX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IDN,IDN,wl,wr);
     pmb->precon->DonorCellX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IM1,IM1,wl,wr);
     pmb->precon->DonorCellX1(pmb->pcoord,kl,ku,jl,ju,is,ie+1,w,IM2,IM2,wl,wr);
@@ -118,7 +118,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
   // compute weights for GS07 CT algorithm
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=kl; k<=ku; ++k){ 
+    for (int k=kl; k<=ku; ++k){
 #pragma omp for schedule(static)
     for (int j=jl; j<=ju; ++j){
 
@@ -148,7 +148,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     }
 
     // reconstruct L/R states at j
-    if (reconstruct_order == 1) {
+    if (first_order) {
       pmb->precon->DonorCellX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IDN,IDN,wl,wr);
       pmb->precon->DonorCellX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IM1,IM1,wl,wr);
       pmb->precon->DonorCellX2(pmb->pcoord,kl,ku,js,je+1,il,iu,w,IM2,IM2,wl,wr);
@@ -197,7 +197,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   }
 
 //----------------------------------------------------------------------------------------
-// k-direction 
+// k-direction
 
   if (pmb->block_size.nx3 > 1) {
 
@@ -207,7 +207,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       il=is-1, iu=ie+1, jl=js-1, ju=je+1;
 
     // reconstruct L/R states at k
-    if (reconstruct_order == 1) {
+    if (first_order) {
       pmb->precon->DonorCellX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IDN,IDN,wl,wr);
       pmb->precon->DonorCellX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IM1,IM1,wl,wr);
       pmb->precon->DonorCellX3(pmb->pcoord,ks,ke+1,jl,ju,il,iu,w,IM2,IM2,wl,wr);
@@ -257,7 +257,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
 } // end of omp parallel region
 
-  if(SELF_GRAVITY_ENABLED) AddGravityFlux(); // add gravity flux directly 
+  if(SELF_GRAVITY_ENABLED) AddGravityFlux(); // add gravity flux directly
 
   return;
 }
