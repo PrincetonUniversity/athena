@@ -130,6 +130,12 @@ void MGBoundaryValues::DestroyBoundaryData(MGBoundaryData &bd)
   for(int n=0;n<bd.nbmax;n++) {
     delete [] bd.send[n];
     delete [] bd.recv[n];
+#ifdef MPI_PARALLEL
+    if(bd.req_send[n]!=MPI_REQUEST_NULL)
+      MPI_Request_free(&bd.req_send[n]);
+    if(bd.req_recv[n]!=MPI_REQUEST_NULL)
+      MPI_Request_free(&bd.req_recv[n]);
+#endif
   }
 }
 

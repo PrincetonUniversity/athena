@@ -17,6 +17,7 @@
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 #include <algorithm>  // min, max
+#include <cmath>
 
 // Athena++ headers
 #include "../globals.hpp"
@@ -133,6 +134,13 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 
   Eigensystem(d0,u0,v0,w0,h0,bx0,by0,bz0,xfact,yfact,ev,rem,lem);
 
+  if (pin->GetOrAddBoolean("problem","test",false)==true && ncycle==0) {
+    // reinterpret tlim as the number of orbital periods
+    Real ntlim=lambda/std::fabs(ev[wave_flag])*tlim;
+    tlim=ntlim;
+    pin->SetReal("time","tlim",ntlim);
+  }
+
   if(adaptive==true)
     EnrollUserRefinementCondition(RefinementCondition);
 
@@ -164,9 +172,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         Real x = cos_a2*(pmb->pcoord->x1v(i)*cos_a3 + pmb->pcoord->x2v(j)*sin_a3) 
                        + pmb->pcoord->x3v(k)*sin_a2;
         Real sn = sin(k_par*x);
+        Real vol = pmb->pcoord->GetCellVolume(k, j, i);
   
         Real d1 = d0 + amp*sn*rem[0][wave_flag];
-        l1_err[IDN] += fabs(d1 - pmb->phydro->u(IDN,k,j,i));
+        l1_err[IDN] += fabs(d1 - pmb->phydro->u(IDN,k,j,i))*vol;
         max_err[IDN] = std::max(fabs(d1 - pmb->phydro->u(IDN,k,j,i)),max_err[IDN]);
   
         Real mx = d0*vflow + amp*sn*rem[1][wave_flag];
@@ -175,9 +184,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         Real m1 = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
         Real m2 = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
         Real m3 = mx*sin_a2                    + mz*cos_a2;
-        l1_err[IM1] += fabs(m1 - pmb->phydro->u(IM1,k,j,i));
-        l1_err[IM2] += fabs(m2 - pmb->phydro->u(IM2,k,j,i));
-        l1_err[IM3] += fabs(m3 - pmb->phydro->u(IM3,k,j,i));
+        l1_err[IM1] += fabs(m1 - pmb->phydro->u(IM1,k,j,i))*vol;
+        l1_err[IM2] += fabs(m2 - pmb->phydro->u(IM2,k,j,i))*vol;
+        l1_err[IM3] += fabs(m3 - pmb->phydro->u(IM3,k,j,i))*vol;
         max_err[IM1] = std::max(fabs(m1 - pmb->phydro->u(IM1,k,j,i)),max_err[IM1]);
         max_err[IM2] = std::max(fabs(m2 - pmb->phydro->u(IM2,k,j,i)),max_err[IM2]);
         max_err[IM3] = std::max(fabs(m3 - pmb->phydro->u(IM3,k,j,i)),max_err[IM3]);
@@ -187,7 +196,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           if (MAGNETIC_FIELDS_ENABLED) {
             e0 += 0.5*(bx0*bx0+by0*by0+bz0*bz0);
           }
-          l1_err[IEN] += fabs(e0 - pmb->phydro->u(IEN,k,j,i));
+          l1_err[IEN] += fabs(e0 - pmb->phydro->u(IEN,k,j,i))*vol;
           max_err[IEN] = std::max(fabs(e0 - pmb->phydro->u(IEN,k,j,i)),max_err[IEN]);
         }
 
@@ -201,9 +210,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
           Real db1 = fabs(b1 - pmb->pfield->bcc(IB1,k,j,i));
           Real db2 = fabs(b2 - pmb->pfield->bcc(IB2,k,j,i));
           Real db3 = fabs(b3 - pmb->pfield->bcc(IB3,k,j,i));
-          l1_err[NHYDRO + IB1] += db1;
-          l1_err[NHYDRO + IB2] += db2;
-          l1_err[NHYDRO + IB3] += db3;
+          l1_err[NHYDRO + IB1] += db1*vol;
+          l1_err[NHYDRO + IB2] += db2*vol;
+          l1_err[NHYDRO + IB3] += db3*vol;
           max_err[NHYDRO + IB1] = std::max(db1, max_err[NHYDRO+IB1]);
           max_err[NHYDRO + IB2] = std::max(db2, max_err[NHYDRO+IB2]);
           max_err[NHYDRO + IB3] = std::max(db3, max_err[NHYDRO+IB3]);
@@ -213,8 +222,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     pmb=pmb->next;
   }
 
-  // normalize errors by number of cells
-  for (int i=0; i<(NHYDRO+NFIELD); ++i) l1_err[i] = l1_err[i]/(float)GetTotalCells();
   Real rms_err = 0.0, max_max_over_l1=0.0;
 
 #ifdef MPI_PARALLEL
@@ -233,6 +240,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
   // only the root process outputs the data
   if (Globals::my_rank == 0) {
+    // normalize errors by number of cells
+    Real vol= (mesh_size.x1max-mesh_size.x1min)*(mesh_size.x2max-mesh_size.x2min)
+             *(mesh_size.x3max-mesh_size.x3min);
+    for (int i=0; i<(NHYDRO+NFIELD); ++i) l1_err[i] = l1_err[i]/vol;
     // compute rms error
     for (int i=0; i<(NHYDRO+NFIELD); ++i) {
        rms_err += SQR(l1_err[i]);
@@ -1035,7 +1046,7 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
 }
 
 
-// refinement condition: density and pressure curvature
+// refinement condition: density curvature
 int RefinementCondition(MeshBlock *pmb)
 {
   AthenaArray<Real> &w = pmb->phydro->w;
@@ -1048,10 +1059,29 @@ int RefinementCondition(MeshBlock *pmb)
       }
     }
   }
-  // refine : delta rho > 0.5*amp
-  Real a=std::max(rmax-d0,d0-rmin);
-  if(a > 0.8*amp*rem[0][wave_flag]) return 1;
+  // refine : delta rho > 0.9*amp
+  if(rmax-d0 > 0.9*amp*rem[0][wave_flag]) return 1;
+//  Real a=std::max(rmax-d0,d0-rmin);
+//  if(a > 0.9*amp*rem[0][wave_flag]) return 1;
   // derefinement: else
   return -1;
+}
+
+
+void MeshBlock::InitUserMeshBlockData(ParameterInput *pin)
+{
+  AllocateUserOutputVariables(1);
+  return;
+}
+
+void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin)
+{
+  for(int k=ks; k<=ke; k++) {
+    for(int j=js; j<=je; j++) {
+      for(int i=is; i<=ie; i++)
+        user_out_var(0,k,j,i) = phydro->w(IDN,k,j,i)-d0;
+    }
+  }
+  return;
 }
 

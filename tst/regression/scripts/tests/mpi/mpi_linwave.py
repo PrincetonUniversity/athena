@@ -57,17 +57,17 @@ def analyze():
         continue
       data.append([float(val) for val in line.split()])
 
-  print data[0][4],data[1][4],data[2][4],data[3][4]
+  print(data[0][4],data[1][4],data[2][4],data[3][4])
 
   # check errors between runs w/wo MPI and different numbers of cores
   if data[0][4] != data[1][4]:
-    print "Linear wave error with one core w/wo MPI not identical",data[0][4],data[1][4]
+    print("Linear wave error with one core w/wo MPI not identical",data[0][4],data[1][4])
     return False
   if abs(data[2][4]-data[0][4]) > 5.0e-4:
-    print "Linear wave error between 2 and 1 cores too large",data[2][4],data[0][4]
+    print("Linear wave error between 2 and 1 cores too large",data[2][4],data[0][4])
     return False
   if abs(data[3][4]-data[0][4]) > 5.0e-4:
-    print "Linear wave error between 4 and 1 cores too large",data[2][4],data[0][4]
+    print("Linear wave error between 4 and 1 cores too large",data[2][4],data[0][4])
     return False
 
   return True

@@ -64,10 +64,10 @@ def analyze():
 
   # check Ncycles same for each direction
   if data[1][3] != data[3][3]:
-    print "Ncycles in x1 not equal to Ncycles in x2",data[1][3],data[3][3]
+    print("Ncycles in x1 not equal to Ncycles in x2",data[1][3],data[3][3])
     return False
   if data[1][3] != data[5][3]:
-    print "Ncycles in x1 not equal to Ncycles in x3",data[1][3],data[5][3]
+    print("Ncycles in x1 not equal to Ncycles in x3",data[1][3],data[5][3])
     return False
 
   # check absolute error and convergence in x1
@@ -75,7 +75,7 @@ def analyze():
     print "error in x1 too large",data[0][4]
     return False
   if data[1][4]/data[0][4] > 0.6:
-    print "not converging in x1",data[0][4],data[1][4]
+    print("not converging in x1",data[0][4],data[1][4])
     return False
 
   # check absolute error and convergence in x2
@@ -83,7 +83,7 @@ def analyze():
     print "error in x2 too large",data[2][4]
     return False
   if data[3][4]/data[2][4] > 0.6:
-    print "not converging in x2",data[2][4],data[3][4]
+    print("not converging in x2",data[2][4],data[3][4])
     return False
 
   # check absolute error and convergence in x3
@@ -91,7 +91,7 @@ def analyze():
     print "error in x3 too large",data[4][4]
     return False
   if data[5][4]/data[4][4] > 0.6:
-    print "not converging in x3",data[4][4],data[5][4]
+    print("not converging in x3",data[4][4],data[5][4])
     return False
 
   return True

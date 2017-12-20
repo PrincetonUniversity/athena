@@ -56,7 +56,14 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin)
       ReconstructFuncX3 = PiecewiseLinearX3;
 
   // Third/Fourth-order (piecewise parabolic) reconstruction
-  } else if (xorder == 3) {
+  } else if (xorder == 3 || xorder == 4) {
+    if (NGHOST < 3) {
+      std:: stringstream msg;
+      msg << "### FATAL ERROR in function [Reconstruction constructor]" << std::endl
+          << "spatial order xorder= " << xorder << " requires NGHOST >=3" << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+
     if (pmb->block_size.x1rat == 1.0) {
       ReconstructFuncX1 = PPMUniformX1;
     } else {

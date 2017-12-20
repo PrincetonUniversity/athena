@@ -127,23 +127,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test)
   if(mesh_size.nx2>1) dim=2;
   if(mesh_size.nx3>1) dim=3;
 
-  // check cfl_number
-  if(cfl_number > 1.0 && dim==1) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "The CFL number must be smaller than 1.0 in 1D simulation" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  if(cfl_number > 0.5 && dim==2) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "The CFL number must be smaller than 0.5 in 2D simulation" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  if(cfl_number > 1.0/3.0 && dim==3) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "The CFL number must be smaller than 1/3 in 3D simulation" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-
   // read physical size of mesh (root level) from input file.
   mesh_size.x1min = pin->GetReal("mesh","x1min");
   mesh_size.x2min = pin->GetReal("mesh","x2min");
@@ -534,7 +517,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   // read time and cycle limits from input file
   start_time = pin->GetOrAddReal("time","start_time",0.0);
   tlim       = pin->GetReal("time","tlim");
-  cfl_number = pin->GetReal("time","cfl_number");
   ncycle_out = pin->GetOrAddInteger("time","ncycle_out",1);
   nlim = pin->GetOrAddInteger("time","nlim",-1);
   nint_user_mesh_data_=0;
@@ -599,26 +581,11 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)
   memcpy(&datasize, &(headerdata[hdos]), sizeof(IOWrapperSize_t));
   hdos+=sizeof(IOWrapperSize_t);
 
+  delete [] headerdata;
+
   dim=1;
   if(mesh_size.nx2>1) dim=2;
   if(mesh_size.nx3>1) dim=3;
-
-  // check cfl_number
-  if(cfl_number > 1.0 && dim==1) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "The CFL number must be smaller than 1.0 in 1D simulation" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  if(cfl_number > 0.5 && dim==2) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "The CFL number must be smaller than 0.5 in 2D simulation" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
-  if(cfl_number > 1.0/3.0 && dim==3) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "The CFL number must be smaller than 1/3 in 3D simulation" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
 
   //initialize
   loclist=new LogicalLocation[nbtotal];
@@ -1551,6 +1518,11 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
       block_bcs[OUTER_X3]=BLOCK_BNDRY;
     }
   }
+
+  block_size.x1rat=mesh_size.x1rat;
+  block_size.x2rat=mesh_size.x2rat;
+  block_size.x3rat=mesh_size.x3rat;
+
   return;
 }
 
@@ -1561,6 +1533,9 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
 void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
 {
   MeshBlock *pmb;
+  int nlbl=2, dim=1;
+  if(mesh_size.nx2 > 1) nlbl=4, dim=2;
+  if(mesh_size.nx3 > 1) nlbl=8, dim=3;
 
   // collect refinement flags from all the meshblocks
   // count the number of the blocks to be (de)refined
@@ -1583,7 +1558,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
     tnref  += nref[n];
     tnderef+= nderef[n];
   }
-  if(tnref==0 && tnderef==0) // nothing to do
+  if(tnref==0 && tnderef<nlbl) // nothing to do
     return;
 
   int rd=0, dd=0;
@@ -1599,13 +1574,10 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   }
 
   // allocate memory for the location arrays
-  int nlbl=2, dim=1;
-  if(mesh_size.nx2 > 1) nlbl=4, dim=2;
-  if(mesh_size.nx3 > 1) nlbl=8, dim=3;
   LogicalLocation *lref, *lderef, *clderef;
   if(tnref!=0)
     lref = new LogicalLocation[tnref];
-  if(tnderef>nlbl) {
+  if(tnderef>=nlbl) {
     lderef = new LogicalLocation[tnderef];
     clderef = new LogicalLocation[tnderef/nlbl];
   }
@@ -1616,22 +1588,16 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   while(pmb!=NULL) {
     if(pmb->pmr->refine_flag_== 1)
       lref[iref++]=pmb->loc;
-    if(pmb->pmr->refine_flag_==-1 && tnderef>nlbl)
+    if(pmb->pmr->refine_flag_==-1 && tnderef>=nlbl)
       lderef[ideref++]=pmb->loc;
     pmb=pmb->next;
   }
 #ifdef MPI_PARALLEL
-  if(tnref>0 && tnderef>nlbl) {
-    MPI_Allgatherv(MPI_IN_PLACE, bnref[Globals::my_rank],   MPI_BYTE,
-                   lref,   bnref,   brdisp, MPI_BYTE, MPI_COMM_WORLD);
-    MPI_Allgatherv(MPI_IN_PLACE, bnderef[Globals::my_rank], MPI_BYTE,
-                   lderef, bnderef, bddisp, MPI_BYTE, MPI_COMM_WORLD);
-  }
-  else if(tnref>0) {
+  if(tnref>0) {
     MPI_Allgatherv(MPI_IN_PLACE, bnref[Globals::my_rank],   MPI_BYTE,
                    lref,   bnref,   brdisp, MPI_BYTE, MPI_COMM_WORLD);
   }
-  else if(tnderef>nlbl) {
+  if(tnderef>=nlbl) {
     MPI_Allgatherv(MPI_IN_PLACE, bnderef[Globals::my_rank], MPI_BYTE,
                    lderef, bnderef, bddisp, MPI_BYTE, MPI_COMM_WORLD);
   }
@@ -1639,7 +1605,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
 
   // calculate the list of the newly derefined blocks
   int ctnd=0;
-  if(tnderef>nlbl) {
+  if(tnderef>=nlbl) {
     int lk=0, lj=0;
     if(mesh_size.nx2 > 1) lj=1;
     if(mesh_size.nx3 > 1) lk=1;
@@ -1672,7 +1638,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   if(ctnd>1)
     std::sort(clderef, &(clderef[ctnd-1]), LogicalLocation::Greater);
 
-  if(tnderef>nlbl)
+  if(tnderef>=nlbl)
     delete [] lderef;
 
   // Now the lists of the blocks to be refined and derefined are completed
@@ -1685,12 +1651,13 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   }
   if(tnref!=0)
     delete [] lref;
+
   // Step 2. perform derefinement
   for(int n=0; n<ctnd; n++) {
     MeshBlockTree *bt=tree.FindMeshBlock(clderef[n]);
     bt->Derefine(tree, dim, mesh_bcs, nrbx1, nrbx2, nrbx3, root_level, ndel);
   }
-  if(tnderef>nlbl)
+  if(tnderef>=nlbl)
     delete [] clderef;
   ntot=nbtotal+nnew-ndel;
   if(nnew==0 && ndel==0)
@@ -1707,8 +1674,8 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
   int *oldtonew = new int[nbtotal];
   int nbtold=nbtotal;
   tree.GetMeshBlockList(newloc,newtoold,nbtotal);
-  // create a list mapping the previous gid to the current one
 
+  // create a list mapping the previous gid to the current one
   oldtonew[0]=0;
   int k=1;
   for(int n=1; n<ntot; n++) {
@@ -2041,7 +2008,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
       }
       else if((loclist[on].level < newloc[n].level) && (ranklist[on]==Globals::my_rank)) {
         // coarse to fine on the same node - prolongation
-        if(ranklist[on]!=Globals::my_rank) continue;
         MeshBlock* pob=FindMeshBlock(on);
         MeshRefinement *pmr=pmb->pmr;
         int is=pob->cis-1, ie=pob->cie+1, js=pob->cjs-f2,
